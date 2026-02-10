@@ -5,6 +5,12 @@ export type Point = {
   y: number;
 };
 
+function requirePositiveZoom(zoom: number): void {
+  if (zoom <= 0) {
+    throw new RangeError("zoom must be greater than 0");
+  }
+}
+
 export function worldToScreen(point: Point, transform: Transform): Point {
   return {
     x: point.x * transform.zoom + transform.panX,
@@ -13,6 +19,8 @@ export function worldToScreen(point: Point, transform: Transform): Point {
 }
 
 export function screenToWorld(point: Point, transform: Transform): Point {
+  requirePositiveZoom(transform.zoom);
+
   return {
     x: (point.x - transform.panX) / transform.zoom,
     y: (point.y - transform.panY) / transform.zoom,
@@ -36,6 +44,9 @@ export function applyZoomAtScreenPoint(
   zoomFactor: number,
   screenPoint: Point
 ): Transform {
+  requirePositiveZoom(transform.zoom);
+  requirePositiveZoom(zoomFactor);
+
   const nextZoom = transform.zoom * zoomFactor;
   const anchorWorld = screenToWorld(screenPoint, transform);
 
