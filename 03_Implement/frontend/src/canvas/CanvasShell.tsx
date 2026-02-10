@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import type { PointerEvent, WheelEvent } from "react";
+import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
-import type { Transform } from "../domain/types";
+import type { DocumentV1, Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
+import { CardView } from "./CardView";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -12,6 +13,11 @@ type DragState = {
   pointerId: number;
   startClientX: number;
   startClientY: number;
+};
+
+type CanvasShellProps = {
+  document: DocumentV1;
+  children?: ReactNode;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -26,15 +32,11 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
-export function CanvasShell() {
+export function CanvasShell({ document, children }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
-  const [transform, setTransform] = useState<Transform>({
-    panX: 0,
-    panY: 0,
-    zoom: 1,
-  });
+  const [transform, setTransform] = useState<Transform>(document.transform);
   const [isDragging, setIsDragging] = useState(false);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -144,7 +146,12 @@ export function CanvasShell() {
           transform: `translate(${transform.panX}px, ${transform.panY}px) scale(${transform.zoom})`,
           transformOrigin: "0 0",
         }}
-      />
+      >
+        {document.cards.map((card) => (
+          <CardView key={card.id} card={card} />
+        ))}
+        {children}
+      </div>
     </div>
   );
 }
