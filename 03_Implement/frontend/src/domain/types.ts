@@ -9,6 +9,7 @@ export type Card = {
   text: string;
   x: number;
   y: number;
+  critique?: string;
 };
 
 export type EdgeType = "related" | "negate";
@@ -32,6 +33,7 @@ export type Island = {
   cardIds: string[];
   title?: string;
   imageUrl?: string;
+  critique?: string;
 };
 
 export type DocumentV1 = {

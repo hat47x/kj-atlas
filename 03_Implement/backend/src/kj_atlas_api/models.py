@@ -30,6 +30,7 @@ class Card(BaseModel):
     text: str
     x: float
     y: float
+    critique: str | None = None
 
 
 class EdgeV1(BaseModel):
@@ -50,6 +51,8 @@ class Island(BaseModel):
     id: str
     cardIds: list[str]
     title: str | None = None
+    imageUrl: str | None = None
+    critique: str | None = None
 
 
 class DocumentV1(BaseModel):

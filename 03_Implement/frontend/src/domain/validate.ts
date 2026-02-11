@@ -60,6 +60,7 @@ function parseCards(value: unknown): Card[] | null {
       text: item.text,
       x,
       y,
+      critique: typeof item.critique === "string" ? item.critique : undefined,
     });
   }
 
@@ -117,6 +118,7 @@ function parseIslands(value: unknown): Island[] {
       cardIds,
       title: typeof item.title === "string" ? item.title : undefined,
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
+      critique: typeof item.critique === "string" ? item.critique : undefined,
     });
   }
 
