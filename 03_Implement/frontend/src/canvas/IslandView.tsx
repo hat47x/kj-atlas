@@ -2,7 +2,10 @@ import type { Card, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
-const ISLAND_PADDING = 20;
+const ISLAND_PADDING = 24;
+const ISLAND_HEADER_HEIGHT = 24;
+const ISLAND_TITLE_MARGIN_LEFT = 10;
+const ISLAND_TITLE_MARGIN_TOP = 6;
 
 type IslandViewProps = {
   island: Island;
@@ -79,8 +82,20 @@ export function IslandView({ island, cards }: IslandViewProps) {
       <div
         style={{
           position: "absolute",
-          left: 8,
-          top: 6,
+          left: 0,
+          top: 0,
+          width: "100%",
+          height: ISLAND_HEADER_HEIGHT,
+          borderBottom: "1px solid #bae6fd",
+          backgroundColor: "rgba(240, 249, 255, 0.9)",
+          zIndex: 1,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: ISLAND_TITLE_MARGIN_LEFT,
+          top: ISLAND_TITLE_MARGIN_TOP,
           fontSize: 12,
           fontWeight: 700,
           color: "#0c4a6e",
