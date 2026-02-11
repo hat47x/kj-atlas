@@ -55,8 +55,27 @@ export function IslandView({ island, cards }: IslandViewProps) {
         borderRadius: 12,
         backgroundColor: "rgba(14, 165, 233, 0.05)",
         boxSizing: "border-box",
+        overflow: "hidden",
+        zIndex: -1,
+        isolation: "isolate",
       }}
     >
+      {island.imageUrl ? (
+        <img
+          src={island.imageUrl}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: 0.18,
+            zIndex: 0,
+          }}
+        />
+      ) : null}
       <div
         style={{
           position: "absolute",
@@ -69,6 +88,7 @@ export function IslandView({ island, cards }: IslandViewProps) {
           padding: "2px 6px",
           borderRadius: 6,
           border: "1px solid #bae6fd",
+          zIndex: 1,
         }}
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}

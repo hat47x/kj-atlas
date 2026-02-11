@@ -1,4 +1,4 @@
-import type { Document, DocumentV2 } from "../domain/types";
+import type { Document, DocumentV2, Island } from "../domain/types";
 
 const API_BASE = "/api";
 
@@ -24,6 +24,24 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return response.statusText || "Request failed";
 }
 
+function normalizeIsland(island: Island): Island {
+  return {
+    ...island,
+    imageUrl: typeof island.imageUrl === "string" ? island.imageUrl : undefined,
+  };
+}
+
+function normalizeDocument(document: Document): Document {
+  if (document.version !== 2) {
+    return document;
+  }
+
+  return {
+    ...document,
+    islands: document.islands.map(normalizeIsland),
+  };
+}
+
 export async function getDocument(docId: string): Promise<Document> {
   const response = await fetch(`${API_BASE}/docs/${docId}`);
 
@@ -31,7 +49,7 @@ export async function getDocument(docId: string): Promise<Document> {
     throw new ApiError(response.status, await parseErrorMessage(response));
   }
 
-  return (await response.json()) as Document;
+  return normalizeDocument((await response.json()) as Document);
 }
 
 export async function putDocument(docId: string, document: DocumentV2): Promise<DocumentV2> {
@@ -47,5 +65,11 @@ export async function putDocument(docId: string, document: DocumentV2): Promise<
     throw new ApiError(response.status, await parseErrorMessage(response));
   }
 
-  return (await response.json()) as DocumentV2;
+  const normalizedDocument = normalizeDocument((await response.json()) as Document);
+
+  if (normalizedDocument.version !== 2) {
+    throw new ApiError(500, "Unexpected document version in update response");
+  }
+
+  return normalizedDocument;
 }
