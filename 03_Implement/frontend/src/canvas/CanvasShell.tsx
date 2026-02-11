@@ -5,6 +5,7 @@ import type { DocumentV2, Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
+import { Marquee } from "./Marquee";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -12,9 +13,12 @@ const ZOOM_SENSITIVITY = 0.0015;
 
 type DragState = {
   pointerId: number;
-  startClientX: number;
-  startClientY: number;
+  lastClientX: number;
+  lastClientY: number;
+  startScreenX: number;
+  startScreenY: number;
   didMove: boolean;
+  mode: "pan" | "marquee";
 };
 
 type CanvasShellProps = {
@@ -23,6 +27,7 @@ type CanvasShellProps = {
   selectedCardIds: string[];
   onCardSelect: (cardId: string, isShiftPressed: boolean) => void;
   onCanvasBackgroundClick: () => void;
+  onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
   children?: ReactNode;
 };
@@ -45,6 +50,7 @@ export function CanvasShell({
   selectedCardIds,
   onCardSelect,
   onCanvasBackgroundClick,
+  onMarqueeSelect,
   onTransformChange,
   children,
 }: CanvasShellProps) {
@@ -52,7 +58,37 @@ export function CanvasShell({
   const dragRef = useRef<DragState | null>(null);
 
   const [transform, setTransform] = useState<Transform>(document.transform);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<"none" | "pan" | "marquee">("none");
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [marqueeRect, setMarqueeRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        setIsSpacePressed(true);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        setIsSpacePressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (!onTransformChange) {
@@ -64,7 +100,8 @@ export function CanvasShell({
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
-    setIsDragging(false);
+    setDragMode("none");
+    setMarqueeRect(null);
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -76,13 +113,28 @@ export function CanvasShell({
       return;
     }
 
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const rect = viewport.getBoundingClientRect();
+    const startScreenX = event.clientX - rect.left;
+    const startScreenY = event.clientY - rect.top;
+
+    // Mode rule: hold Space to pan. Otherwise, dragging on empty canvas starts marquee selection.
+    const mode = isSpacePressed ? "pan" : "marquee";
+
     dragRef.current = {
       pointerId: event.pointerId,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
+      lastClientX: event.clientX,
+      lastClientY: event.clientY,
+      startScreenX,
+      startScreenY,
       didMove: false,
+      mode,
     };
-    setIsDragging(true);
+    setDragMode(mode);
 
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -93,8 +145,8 @@ export function CanvasShell({
       return;
     }
 
-    const deltaX = event.clientX - drag.startClientX;
-    const deltaY = event.clientY - drag.startClientY;
+    const deltaX = event.clientX - drag.lastClientX;
+    const deltaY = event.clientY - drag.lastClientY;
 
     if (deltaX === 0 && deltaY === 0) {
       return;
@@ -102,10 +154,33 @@ export function CanvasShell({
 
     dragRef.current = {
       ...drag,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
+      lastClientX: event.clientX,
+      lastClientY: event.clientY,
       didMove: true,
     };
+
+    if (drag.mode === "marquee") {
+      const viewport = viewportRef.current;
+      if (!viewport) {
+        return;
+      }
+
+      const rect = viewport.getBoundingClientRect();
+      const currentScreenX = event.clientX - rect.left;
+      const currentScreenY = event.clientY - rect.top;
+      const left = Math.min(drag.startScreenX, currentScreenX);
+      const top = Math.min(drag.startScreenY, currentScreenY);
+      const width = Math.abs(currentScreenX - drag.startScreenX);
+      const height = Math.abs(currentScreenY - drag.startScreenY);
+
+      setMarqueeRect({
+        x: left,
+        y: top,
+        width,
+        height,
+      });
+      return;
+    }
 
     setTransform((prev) => applyPan(prev, deltaX, deltaY));
   };
@@ -118,6 +193,47 @@ export function CanvasShell({
 
     if (!drag.didMove) {
       onCanvasBackgroundClick();
+    } else if (drag.mode === "marquee") {
+      const viewport = viewportRef.current;
+      if (!viewport) {
+        clearDragState(event);
+        return;
+      }
+
+      const viewportRect = viewport.getBoundingClientRect();
+      const endScreenX = event.clientX - viewportRect.left;
+      const endScreenY = event.clientY - viewportRect.top;
+      const selectionRect = {
+        x: Math.min(drag.startScreenX, endScreenX),
+        y: Math.min(drag.startScreenY, endScreenY),
+        width: Math.abs(endScreenX - drag.startScreenX),
+        height: Math.abs(endScreenY - drag.startScreenY),
+      };
+
+      const worldRect = {
+        x: (selectionRect.x - transform.panX) / transform.zoom,
+        y: (selectionRect.y - transform.panY) / transform.zoom,
+        width: selectionRect.width / transform.zoom,
+        height: selectionRect.height / transform.zoom,
+      };
+
+      const intersects = (cardX: number, cardY: number) => {
+        const cardWidth = 220;
+        const cardHeight = 80;
+
+        return (
+          cardX < worldRect.x + worldRect.width &&
+          cardX + cardWidth > worldRect.x &&
+          cardY < worldRect.y + worldRect.height &&
+          cardY + cardHeight > worldRect.y
+        );
+      };
+
+      const selectedByMarquee = document.cards
+        .filter((card) => intersects(card.x, card.y))
+        .map((card) => card.id);
+
+      onMarqueeSelect(selectedByMarquee, event.shiftKey);
     }
 
     clearDragState(event);
@@ -178,7 +294,7 @@ export function CanvasShell({
         backgroundImage:
           "linear-gradient(to right, rgba(30, 41, 59, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(30, 41, 59, 0.08) 1px, transparent 1px)",
         backgroundSize: "24px 24px",
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: dragMode === "pan" ? "grabbing" : isSpacePressed ? "grab" : "default",
       }}
     >
       <div
@@ -202,6 +318,7 @@ export function CanvasShell({
         ))}
         {children}
       </div>
+      {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
     </div>
   );
 }
