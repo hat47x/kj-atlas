@@ -13,11 +13,15 @@ type DragState = {
   pointerId: number;
   startClientX: number;
   startClientY: number;
+  didMove: boolean;
 };
 
 type CanvasShellProps = {
   document: DocumentV1;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
+  selectedCardIds: string[];
+  onCardSelect: (cardId: string, isShiftPressed: boolean) => void;
+  onCanvasBackgroundClick: () => void;
   onTransformChange?: (transform: Transform) => void;
   children?: ReactNode;
 };
@@ -34,7 +38,15 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
-export function CanvasShell({ document, onCardMove, onTransformChange, children }: CanvasShellProps) {
+export function CanvasShell({
+  document,
+  onCardMove,
+  selectedCardIds,
+  onCardSelect,
+  onCanvasBackgroundClick,
+  onTransformChange,
+  children,
+}: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
@@ -49,6 +61,15 @@ export function CanvasShell({ document, onCardMove, onTransformChange, children 
     onTransformChange(transform);
   }, [onTransformChange, transform]);
 
+  const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
+    dragRef.current = null;
+    setIsDragging(false);
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!canStartDrag(event)) {
       return;
@@ -58,6 +79,7 @@ export function CanvasShell({ document, onCardMove, onTransformChange, children 
       pointerId: event.pointerId,
       startClientX: event.clientX,
       startClientY: event.clientY,
+      didMove: false,
     };
     setIsDragging(true);
 
@@ -81,23 +103,32 @@ export function CanvasShell({ document, onCardMove, onTransformChange, children 
       ...drag,
       startClientX: event.clientX,
       startClientY: event.clientY,
+      didMove: true,
     };
 
     setTransform((prev) => applyPan(prev, deltaX, deltaY));
   };
 
-  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) {
       return;
     }
 
-    dragRef.current = null;
-    setIsDragging(false);
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!drag.didMove) {
+      onCanvasBackgroundClick();
     }
+
+    clearDragState(event);
+  };
+
+  const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    clearDragState(event);
   };
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
@@ -133,8 +164,8 @@ export function CanvasShell({ document, onCardMove, onTransformChange, children 
       ref={viewportRef}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onWheel={handleWheel}
       style={{
         position: "relative",
@@ -163,6 +194,8 @@ export function CanvasShell({ document, onCardMove, onTransformChange, children 
             card={card}
             zoom={transform.zoom}
             onMove={onCardMove}
+            isSelected={selectedCardIds.includes(card.id)}
+            onSelect={onCardSelect}
           />
         ))}
         {children}

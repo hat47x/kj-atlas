@@ -54,6 +54,7 @@ function withUpdatedTimestamp(document: DocumentV1): DocumentV1 {
 
 export default function App() {
   const [document, setDocument] = useState<DocumentV1 | null>(null);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -70,6 +71,7 @@ export default function App() {
         const loadedDocument = await getDocument(DOCUMENT_ID);
         if (!isCancelled) {
           setDocument(loadedDocument);
+          setSelectedCardIds([]);
           setIsDirty(false);
           setStatusMessage("Document loaded");
         }
@@ -81,6 +83,7 @@ export default function App() {
             const savedDocument = await putDocument(DOCUMENT_ID, defaultDocument);
             if (!isCancelled) {
               setDocument(savedDocument);
+              setSelectedCardIds([]);
               setIsDirty(false);
               setStatusMessage("Created a new document");
             }
@@ -182,6 +185,35 @@ export default function App() {
     }
   };
 
+  const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
+    setSelectedCardIds((previousSelectedCardIds) => {
+      if (isShiftPressed) {
+        const isAlreadySelected = previousSelectedCardIds.includes(cardId);
+        if (isAlreadySelected) {
+          return previousSelectedCardIds.filter((selectedCardId) => selectedCardId !== cardId);
+        }
+
+        return [...previousSelectedCardIds, cardId];
+      }
+
+      if (previousSelectedCardIds.length === 1 && previousSelectedCardIds[0] === cardId) {
+        return previousSelectedCardIds;
+      }
+
+      return [cardId];
+    });
+  }, []);
+
+  const handleCanvasBackgroundClick = useCallback(() => {
+    setSelectedCardIds((previousSelectedCardIds) => {
+      if (previousSelectedCardIds.length === 0) {
+        return previousSelectedCardIds;
+      }
+
+      return [];
+    });
+  }, []);
+
   const saveButton = (
     <button
       type="button"
@@ -222,6 +254,9 @@ export default function App() {
           document={document}
           onCardMove={handleCardMove}
           onTransformChange={handleTransformChange}
+          selectedCardIds={selectedCardIds}
+          onCardSelect={handleCardSelect}
+          onCanvasBackgroundClick={handleCanvasBackgroundClick}
         />
       )}
       <div
