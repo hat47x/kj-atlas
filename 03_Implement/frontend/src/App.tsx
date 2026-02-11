@@ -236,6 +236,25 @@ export default function App() {
     });
   }, []);
 
+  const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
+    setSelectedCardIds((previousSelectedCardIds) => {
+      const uniqueCardIds = Array.from(new Set(cardIds));
+
+      if (isShiftPressed) {
+        return Array.from(new Set([...previousSelectedCardIds, ...uniqueCardIds]));
+      }
+
+      if (
+        previousSelectedCardIds.length === uniqueCardIds.length &&
+        previousSelectedCardIds.every((id, index) => id === uniqueCardIds[index])
+      ) {
+        return previousSelectedCardIds;
+      }
+
+      return uniqueCardIds;
+    });
+  }, []);
+
   const canCreateIsland = selectedCardIds.length > 0;
 
   const handleCreateIsland = useCallback(() => {
@@ -343,6 +362,7 @@ export default function App() {
           selectedCardIds={selectedCardIds}
           onCardSelect={handleCardSelect}
           onCanvasBackgroundClick={handleCanvasBackgroundClick}
+          onMarqueeSelect={handleMarqueeSelect}
         >
           {uniqueIslands.map((island) => (
             <IslandView key={island.id} island={island} cards={document.cards} />
