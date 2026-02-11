@@ -31,6 +31,7 @@ export type Island = {
   id: string;
   cardIds: string[];
   title?: string;
+  imageUrl?: string;
 };
 
 export type DocumentV1 = {

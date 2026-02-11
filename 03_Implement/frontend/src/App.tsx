@@ -77,6 +77,7 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 export default function App() {
   const [document, setDocument] = useState<DocumentV2 | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -94,6 +95,7 @@ export default function App() {
         if (!isCancelled) {
           setDocument(loadedDocument);
           setSelectedCardIds([]);
+          setSelectedIslandId(null);
           setIsDirty(false);
           setStatusMessage("Document loaded");
         }
@@ -106,6 +108,7 @@ export default function App() {
             if (!isCancelled) {
               setDocument(savedDocument);
               setSelectedCardIds([]);
+              setSelectedIslandId(null);
               setIsDirty(false);
               setStatusMessage("Created a new document");
             }
@@ -264,16 +267,53 @@ export default function App() {
 
     const uniqueSelectedCardIds = Array.from(new Set(selectedCardIds));
 
+    const newIsland = createIslandFromSelection(uniqueSelectedCardIds, document.islands);
+
     setDocument({
       ...document,
-      islands: [
-        ...document.islands,
-        createIslandFromSelection(uniqueSelectedCardIds, document.islands),
-      ],
+      islands: [...document.islands, newIsland],
     });
+    setSelectedIslandId(newIsland.id);
     setIsDirty(true);
     setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
   }, [document, selectedCardIds]);
+
+  const handleIslandImageUrlChange = useCallback(
+    (islandId: string, rawImageUrl: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextImageUrl = rawImageUrl.length > 0 ? rawImageUrl : undefined;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.imageUrl ?? undefined) === nextImageUrl) {
+          return island;
+        }
+
+        return {
+          ...island,
+          imageUrl: nextImageUrl,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      setDocument({
+        ...document,
+        islands: nextIslands,
+      });
+      setIsDirty(true);
+      setStatusMessage("Updated island image URL");
+    },
+    [document]
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -299,6 +339,22 @@ export default function App() {
         cardIds: Array.from(new Set(island.cardIds)),
       })),
     [document]
+  );
+
+  useEffect(() => {
+    if (uniqueIslands.length === 0) {
+      setSelectedIslandId(null);
+      return;
+    }
+
+    if (!selectedIslandId || !uniqueIslands.some((island) => island.id === selectedIslandId)) {
+      setSelectedIslandId(uniqueIslands[0].id);
+    }
+  }, [selectedIslandId, uniqueIslands]);
+
+  const selectedIsland = useMemo(
+    () => uniqueIslands.find((island) => island.id === selectedIslandId) ?? null,
+    [selectedIslandId, uniqueIslands]
   );
 
   const headerRight = (
@@ -355,19 +411,107 @@ export default function App() {
           Loading canvas...
         </div>
       ) : (
-        <CanvasShell
-          document={document}
-          onCardMove={handleCardMove}
-          onTransformChange={handleTransformChange}
-          selectedCardIds={selectedCardIds}
-          onCardSelect={handleCardSelect}
-          onCanvasBackgroundClick={handleCanvasBackgroundClick}
-          onMarqueeSelect={handleMarqueeSelect}
-        >
-          {uniqueIslands.map((island) => (
-            <IslandView key={island.id} island={island} cards={document.cards} />
-          ))}
-        </CanvasShell>
+        <>
+          <CanvasShell
+            document={document}
+            onCardMove={handleCardMove}
+            onTransformChange={handleTransformChange}
+            selectedCardIds={selectedCardIds}
+            onCardSelect={handleCardSelect}
+            onCanvasBackgroundClick={handleCanvasBackgroundClick}
+            onMarqueeSelect={handleMarqueeSelect}
+          >
+            {uniqueIslands.map((island) => (
+              <IslandView key={island.id} island={island} cards={document.cards} />
+            ))}
+          </CanvasShell>
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              width: 280,
+              border: "1px solid #cbd5e1",
+              borderRadius: 8,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              padding: 12,
+              boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#334155" }}>
+              Island Image
+            </div>
+            {uniqueIslands.length === 0 ? (
+              <div style={{ fontSize: 12, color: "#64748b" }}>Create an island to attach an image.</div>
+            ) : (
+              <>
+                <select
+                  value={selectedIslandId ?? ""}
+                  onChange={(event) => {
+                    setSelectedIslandId(event.target.value);
+                  }}
+                  style={{
+                    width: "100%",
+                    marginBottom: 8,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 6,
+                    padding: "6px 8px",
+                  }}
+                >
+                  {uniqueIslands.map((island) => (
+                    <option key={island.id} value={island.id}>
+                      {island.title && island.title.length > 0 ? island.title : "Island"}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={selectedIsland?.imageUrl ?? ""}
+                  onChange={(event) => {
+                    if (!selectedIsland) {
+                      return;
+                    }
+
+                    handleIslandImageUrlChange(selectedIsland.id, event.target.value);
+                  }}
+                  style={{
+                    width: "100%",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 6,
+                    padding: "6px 8px",
+                    boxSizing: "border-box",
+                    marginBottom: 8,
+                  }}
+                />
+                <div
+                  style={{
+                    height: 120,
+                    borderRadius: 6,
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                    backgroundColor: "#f8fafc",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#94a3b8",
+                    fontSize: 12,
+                  }}
+                >
+                  {selectedIsland?.imageUrl ? (
+                    <img
+                      src={selectedIsland.imageUrl}
+                      alt="Island preview"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    "No image"
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </>
       )}
       <div
         style={{
