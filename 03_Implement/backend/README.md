@@ -37,3 +37,36 @@ uvicorn kj_atlas_api.main:app --reload
 ```
 
 PostgreSQL を使う場合は `DATABASE_URL` を PostgreSQL の URL に変更してください。
+
+## Minimal backup / restore
+
+`documents.payload_json` に `DocumentV1` 全体を JSON スナップショットとして保存しています。
+
+### SQLite
+
+- DB ファイル場所（既定）: `03_Implement/backend/kj_atlas.db`（`DATABASE_URL=sqlite:///./kj_atlas.db` の場合）
+- バックアップ: API 停止中にファイルをそのままコピー
+
+```bash
+cp 03_Implement/backend/kj_atlas.db 03_Implement/backend/kj_atlas.db.bak
+```
+
+- リストア: 退避しておいた `.bak` を元ファイル名へ戻す
+
+```bash
+cp 03_Implement/backend/kj_atlas.db.bak 03_Implement/backend/kj_atlas.db
+```
+
+### PostgreSQL
+
+- バックアップ（最小例: custom format）
+
+```bash
+pg_dump -Fc "$DATABASE_URL" -f kj_atlas_pg.dump
+```
+
+- リストア（最小例）
+
+```bash
+pg_restore -d "$DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
+```
