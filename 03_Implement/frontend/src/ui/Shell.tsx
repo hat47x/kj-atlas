@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 type ShellProps = {
   title: string;
   children: ReactNode;
+  headerRight?: ReactNode;
 };
 
-export function Shell({ title, children }: ShellProps) {
+export function Shell({ title, children, headerRight }: ShellProps) {
   return (
     <div
       style={{
@@ -22,6 +23,7 @@ export function Shell({ title, children }: ShellProps) {
           height: "56px",
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           padding: "0 16px",
           borderBottom: "1px solid #e2e8f0",
           backgroundColor: "#ffffff",
@@ -29,10 +31,12 @@ export function Shell({ title, children }: ShellProps) {
           fontWeight: 600,
         }}
       >
-        {title}
+        <span>{title}</span>
+        {headerRight ? <div>{headerRight}</div> : null}
       </header>
       <main
         style={{
+          position: "relative",
           flex: 1,
           minHeight: 0,
         }}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
 import type { DocumentV1, Transform } from "../domain/types";
@@ -18,6 +18,7 @@ type DragState = {
 type CanvasShellProps = {
   document: DocumentV1;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
+  onTransformChange?: (transform: Transform) => void;
   children?: ReactNode;
 };
 
@@ -33,12 +34,20 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
-export function CanvasShell({ document, onCardMove, children }: CanvasShellProps) {
+export function CanvasShell({ document, onCardMove, onTransformChange, children }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
   const [transform, setTransform] = useState<Transform>(document.transform);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (!onTransformChange) {
+      return;
+    }
+
+    onTransformChange(transform);
+  }, [onTransformChange, transform]);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!canStartDrag(event)) {
