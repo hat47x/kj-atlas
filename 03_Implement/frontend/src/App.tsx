@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 
 import { ApiError, getDocument, putDocument } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import type { Document, DocumentV2, Island } from "./domain/types";
+import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { Shell } from "./ui/Shell";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
@@ -109,6 +111,7 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -326,6 +329,70 @@ export default function App() {
       setIsSaving(false);
     }
   };
+
+  const handleExport = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(document, null, 2)], { type: "application/json" });
+    const objectUrl = URL.createObjectURL(blob);
+    const downloadLink = window.document.createElement("a");
+
+    downloadLink.href = objectUrl;
+    downloadLink.download = `kj-atlas-doc-${document.id}.json`;
+    window.document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    URL.revokeObjectURL(objectUrl);
+    setStatusMessage("Exported document as JSON");
+  }, [document]);
+
+  const handleImportFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = event.target.files?.[0];
+      event.target.value = "";
+
+      if (!selectedFile) {
+        return;
+      }
+
+      try {
+        const rawText = await selectedFile.text();
+        const parsedJson: unknown = JSON.parse(rawText);
+        const validateResult = validateAndUpgradeImportedDocument(parsedJson);
+
+        if (!validateResult.ok) {
+          setStatusMessage(validateResult.error);
+          return;
+        }
+
+        pendingCardDragSnapshotRef.current = null;
+        setHistory({
+          past: [],
+          present: cloneDocument(validateResult.document),
+          future: [],
+        });
+        setSelectedCardIds([]);
+        setSelectedIslandId(null);
+        setIsDirty(true);
+        setStatusMessage("Imported document");
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          setStatusMessage("Failed to parse JSON file");
+          return;
+        }
+
+        setStatusMessage(error instanceof Error ? error.message : "Failed to import document");
+      }
+    },
+    []
+  );
+
+  const handleImportClick = useCallback(() => {
+    importInputRef.current?.click();
+  }, []);
 
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     setSelectedCardIds((previousSelectedCardIds) => {
@@ -619,6 +686,38 @@ export default function App() {
       </button>
       <button
         type="button"
+        onClick={handleImportClick}
+        disabled={isLoading}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading ? "not-allowed" : "pointer",
+        }}
+      >
+        Import
+      </button>
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={isLoading || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        Export
+      </button>
+      <button
+        type="button"
         onClick={handleCreateIsland}
         disabled={isLoading || !document || !canCreateIsland}
         style={{
@@ -656,6 +755,15 @@ export default function App() {
 
   return (
     <Shell title="kj-atlas Canvas MVP" headerRight={headerRight} hasUnsavedChanges={isDirty}>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json,.json"
+        onChange={(event) => {
+          void handleImportFileChange(event);
+        }}
+        style={{ display: "none" }}
+      />
       {isLoading || !document ? (
         <div
           style={{
