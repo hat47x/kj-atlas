@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiError, getDocument, putDocument } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
@@ -7,6 +7,13 @@ import type { Document, DocumentV2, Island } from "./domain/types";
 import { Shell } from "./ui/Shell";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
+const HISTORY_LIMIT = 50;
+
+type DocumentHistory = {
+  past: DocumentV2[];
+  present: DocumentV2;
+  future: DocumentV2[];
+};
 
 function createDefaultDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
@@ -66,6 +73,21 @@ function withUpdatedTimestamp(document: DocumentV2): DocumentV2 {
   };
 }
 
+function cloneDocument(document: DocumentV2): DocumentV2 {
+  return structuredClone(document);
+}
+
+function pushHistorySnapshot(history: DocumentHistory, nextDocument: DocumentV2): DocumentHistory {
+  const nextPast = [...history.past, cloneDocument(history.present)];
+  const trimmedPast = nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
+
+  return {
+    past: trimmedPast,
+    present: cloneDocument(nextDocument),
+    future: [],
+  };
+}
+
 function createIslandFromSelection(selectedCardIds: string[], existingIslands: Island[]): Island {
   return {
     id: crypto.randomUUID(),
@@ -75,13 +97,18 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 }
 
 export default function App() {
-  const [document, setDocument] = useState<DocumentV2 | null>(null);
+  const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
+
+  const document = history?.present ?? null;
+  const canUndo = (history?.past.length ?? 0) > 0;
+  const canRedo = (history?.future.length ?? 0) > 0;
+  const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -93,10 +120,15 @@ export default function App() {
       try {
         const loadedDocument = toDocumentV2(await getDocument(DOCUMENT_ID));
         if (!isCancelled) {
-          setDocument(loadedDocument);
+          setHistory({
+            past: [],
+            present: cloneDocument(loadedDocument),
+            future: [],
+          });
           setSelectedCardIds([]);
           setSelectedIslandId(null);
           setIsDirty(false);
+          pendingCardDragSnapshotRef.current = null;
           setStatusMessage("Document loaded");
         }
       } catch (error) {
@@ -106,10 +138,15 @@ export default function App() {
           try {
             const savedDocument = toDocumentV2(await putDocument(DOCUMENT_ID, defaultDocument));
             if (!isCancelled) {
-              setDocument(savedDocument);
+              setHistory({
+                past: [],
+                present: cloneDocument(savedDocument),
+                future: [],
+              });
               setSelectedCardIds([]);
               setSelectedIslandId(null);
               setIsDirty(false);
+              pendingCardDragSnapshotRef.current = null;
               setStatusMessage("Created a new document");
             }
           } catch (saveError) {
@@ -136,6 +173,22 @@ export default function App() {
     };
   }, []);
 
+  const applyDocumentChange = useCallback((nextDocument: DocumentV2, nextStatusMessage?: string) => {
+    pendingCardDragSnapshotRef.current = null;
+
+    setHistory((previousHistory) => {
+      if (!previousHistory) {
+        return previousHistory;
+      }
+
+      return pushHistorySnapshot(previousHistory, nextDocument);
+    });
+    setIsDirty(true);
+    if (nextStatusMessage) {
+      setStatusMessage(nextStatusMessage);
+    }
+  }, []);
+
   const handleTransformChange = useCallback(
     (nextTransform: DocumentV2["transform"]) => {
       if (!document) {
@@ -152,9 +205,18 @@ export default function App() {
       }
 
       setIsDirty(true);
-      setDocument({
-        ...document,
-        transform: nextTransform,
+      setHistory((previousHistory) => {
+        if (!previousHistory) {
+          return previousHistory;
+        }
+
+        return {
+          ...previousHistory,
+          present: {
+            ...previousHistory.present,
+            transform: nextTransform,
+          },
+        };
       });
     },
     [document]
@@ -181,14 +243,64 @@ export default function App() {
         return;
       }
 
+      if (!pendingCardDragSnapshotRef.current) {
+        pendingCardDragSnapshotRef.current = cloneDocument(document);
+      }
+
       setIsDirty(true);
-      setDocument({
-        ...document,
-        cards: nextCards,
+      setHistory((previousHistory) => {
+        if (!previousHistory) {
+          return previousHistory;
+        }
+
+        return {
+          ...previousHistory,
+          present: {
+            ...previousHistory.present,
+            cards: nextCards,
+          },
+        };
       });
     },
     [document]
   );
+
+
+  useEffect(() => {
+    const commitCardDragSnapshot = () => {
+      const dragSnapshot = pendingCardDragSnapshotRef.current;
+      pendingCardDragSnapshotRef.current = null;
+
+      if (!dragSnapshot) {
+        return;
+      }
+
+      setHistory((previousHistory) => {
+        if (!previousHistory) {
+          return previousHistory;
+        }
+
+        const nextPast = [...previousHistory.past, dragSnapshot];
+        const trimmedPast =
+          nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
+
+        return {
+          past: trimmedPast,
+          present: cloneDocument(previousHistory.present),
+          future: [],
+        };
+      });
+      setStatusMessage("Moved card");
+    };
+
+    window.addEventListener("pointerup", commitCardDragSnapshot);
+    window.addEventListener("pointercancel", commitCardDragSnapshot);
+
+    return () => {
+      window.removeEventListener("pointerup", commitCardDragSnapshot);
+      window.removeEventListener("pointercancel", commitCardDragSnapshot);
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!document || isSaving || !isDirty) {
@@ -200,7 +312,12 @@ export default function App() {
 
     try {
       const savedDocument = toDocumentV2(await putDocument(document.id, withUpdatedTimestamp(document)));
-      setDocument(savedDocument);
+      pendingCardDragSnapshotRef.current = null;
+      setHistory({
+        past: [],
+        present: cloneDocument(savedDocument),
+        future: [],
+      });
       setIsDirty(false);
       setStatusMessage("Saved");
     } catch (error) {
@@ -269,14 +386,51 @@ export default function App() {
 
     const newIsland = createIslandFromSelection(uniqueSelectedCardIds, document.islands);
 
-    setDocument({
+    applyDocumentChange({
       ...document,
       islands: [...document.islands, newIsland],
     });
     setSelectedIslandId(newIsland.id);
-    setIsDirty(true);
     setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
-  }, [document, selectedCardIds]);
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleIslandTitleChange = useCallback(
+    (islandId: string, rawTitle: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextTitle = rawTitle.trim().length > 0 ? rawTitle : undefined;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.title ?? undefined) === nextTitle) {
+          return island;
+        }
+
+        return {
+          ...island,
+          title: nextTitle,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island title"
+      );
+    },
+    [applyDocumentChange, document]
+  );
 
   const handleIslandImageUrlChange = useCallback(
     (islandId: string, rawImageUrl: string) => {
@@ -305,14 +459,15 @@ export default function App() {
         return;
       }
 
-      setDocument({
-        ...document,
-        islands: nextIslands,
-      });
-      setIsDirty(true);
-      setStatusMessage("Updated island image URL");
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island image URL"
+      );
     },
-    [document]
+    [applyDocumentChange, document]
   );
 
   useEffect(() => {
@@ -331,6 +486,77 @@ export default function App() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [canCreateIsland, handleCreateIsland]);
+
+  const handleUndo = useCallback(() => {
+    pendingCardDragSnapshotRef.current = null;
+
+    setHistory((previousHistory) => {
+      if (!previousHistory || previousHistory.past.length === 0) {
+        return previousHistory;
+      }
+
+      const previousDocument = previousHistory.past[previousHistory.past.length - 1];
+      return {
+        past: previousHistory.past.slice(0, -1),
+        present: cloneDocument(previousDocument),
+        future: [cloneDocument(previousHistory.present), ...previousHistory.future],
+      };
+    });
+    setIsDirty(true);
+    setStatusMessage("Undo");
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    pendingCardDragSnapshotRef.current = null;
+
+    setHistory((previousHistory) => {
+      if (!previousHistory || previousHistory.future.length === 0) {
+        return previousHistory;
+      }
+
+      const [nextDocument, ...remainingFuture] = previousHistory.future;
+      const nextPast = [...previousHistory.past, cloneDocument(previousHistory.present)];
+      const trimmedPast =
+        nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
+
+      return {
+        past: trimmedPast,
+        present: cloneDocument(nextDocument),
+        future: remainingFuture,
+      };
+    });
+    setIsDirty(true);
+    setStatusMessage("Redo");
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isModifierPressed = event.metaKey || event.ctrlKey;
+      if (!isModifierPressed) {
+        return;
+      }
+
+      const lowerKey = event.key.toLowerCase();
+
+      const wantsUndo = lowerKey === "z" && !event.shiftKey;
+      if (wantsUndo && canUndo) {
+        event.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      const wantsRedo = lowerKey === "y" || (lowerKey === "z" && event.shiftKey);
+      if (wantsRedo && canRedo) {
+        event.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canRedo, canUndo, handleRedo, handleUndo]);
 
   const uniqueIslands = useMemo(
     () =>
@@ -359,6 +585,38 @@ export default function App() {
 
   const headerRight = (
     <div style={{ display: "flex", gap: 8 }}>
+      <button
+        type="button"
+        onClick={handleUndo}
+        disabled={isLoading || !document || !canUndo}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document || !canUndo ? "not-allowed" : "pointer",
+        }}
+      >
+        Undo
+      </button>
+      <button
+        type="button"
+        onClick={handleRedo}
+        disabled={isLoading || !document || !canRedo}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document || !canRedo ? "not-allowed" : "pointer",
+        }}
+      >
+        Redo
+      </button>
       <button
         type="button"
         onClick={handleCreateIsland}
@@ -464,6 +722,26 @@ export default function App() {
                     </option>
                   ))}
                 </select>
+                <input
+                  type="text"
+                  placeholder="Island title"
+                  value={selectedIsland?.title ?? ""}
+                  onChange={(event) => {
+                    if (!selectedIsland) {
+                      return;
+                    }
+
+                    handleIslandTitleChange(selectedIsland.id, event.target.value);
+                  }}
+                  style={{
+                    width: "100%",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 6,
+                    padding: "6px 8px",
+                    boxSizing: "border-box",
+                    marginBottom: 8,
+                  }}
+                />
                 <input
                   type="url"
                   placeholder="https://example.com/image.jpg"

@@ -56,7 +56,7 @@ export function Shell({ title, children, headerRight, hasUnsavedChanges = false 
             </span>
           ) : null}
         </div>
-        {headerRight ? <div>{headerRight}</div> : null}
+        {headerRight ? <div style={{ display: "flex", alignItems: "center" }}>{headerRight}</div> : null}
       </header>
       <main
         style={{
