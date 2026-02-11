@@ -4,9 +4,10 @@ type ShellProps = {
   title: string;
   children: ReactNode;
   headerRight?: ReactNode;
+  hasUnsavedChanges?: boolean;
 };
 
-export function Shell({ title, children, headerRight }: ShellProps) {
+export function Shell({ title, children, headerRight, hasUnsavedChanges = false }: ShellProps) {
   return (
     <div
       style={{
@@ -31,7 +32,30 @@ export function Shell({ title, children, headerRight }: ShellProps) {
           fontWeight: 600,
         }}
       >
-        <span>{title}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span>{title}</span>
+          {hasUnsavedChanges ? (
+            <span
+              style={{
+                fontSize: 12,
+                color: "#92400e",
+                backgroundColor: "#fef3c7",
+                border: "1px solid #fde68a",
+                borderRadius: 999,
+                padding: "2px 8px",
+                fontWeight: 600,
+              }}
+            >
+              Unsaved changes
+            </span>
+          ) : null}
+        </div>
         {headerRight ? <div>{headerRight}</div> : null}
       </header>
       <main
