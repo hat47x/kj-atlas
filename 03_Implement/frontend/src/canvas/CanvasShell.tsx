@@ -4,6 +4,7 @@ import type { PointerEvent, ReactNode, WheelEvent } from "react";
 import type { DocumentV1, Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
+import { EdgeLayer } from "./EdgeLayer";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -188,6 +189,7 @@ export function CanvasShell({
           transformOrigin: "0 0",
         }}
       >
+        <EdgeLayer cards={document.cards} edges={document.edges} />
         {document.cards.map((card) => (
           <CardView
             key={card.id}
