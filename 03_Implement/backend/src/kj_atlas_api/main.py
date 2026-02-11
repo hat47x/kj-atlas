@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from kj_atlas_api.db import init_db
+from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.docs import router as docs_router
 
 app = FastAPI(title="kj-atlas API")
@@ -24,3 +25,4 @@ def healthz() -> dict[str, str]:
 
 
 app.include_router(docs_router)
+app.include_router(ai_router)

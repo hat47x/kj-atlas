@@ -73,3 +73,40 @@ export async function putDocument(docId: string, document: DocumentV2): Promise<
 
   return normalizedDocument;
 }
+
+export type SuggestLayoutResult = {
+  suggestionId: string;
+  suggestedDoc: DocumentV2;
+  notes?: string;
+};
+
+export async function suggestLayout(doc: DocumentV2, instruction?: string): Promise<SuggestLayoutResult> {
+  const response = await fetch(`${API_BASE}/ai/suggest-layout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, instruction }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as {
+    suggestionId: string;
+    suggestedDoc: Document;
+    notes?: string;
+  };
+
+  const suggestedDoc = normalizeDocument(body.suggestedDoc);
+  if (suggestedDoc.version !== 2) {
+    throw new ApiError(500, "Unexpected document version in suggestion response");
+  }
+
+  return {
+    suggestionId: body.suggestionId,
+    suggestedDoc,
+    notes: body.notes,
+  };
+}

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { Island } from "../domain/types";
 
 type SidePanelProps = {
@@ -8,6 +10,7 @@ type SidePanelProps = {
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
+  topContent?: ReactNode;
 };
 
 export function SidePanel({
@@ -18,6 +21,7 @@ export function SidePanel({
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
+  topContent,
 }: SidePanelProps) {
   return (
     <aside
@@ -31,6 +35,7 @@ export function SidePanel({
         overflowY: "auto",
       }}
     >
+      {topContent}
       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
       {!selectedIsland ? (
         <div style={{ fontSize: 12, color: "#64748b" }}>Select an island from the canvas.</div>

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { ApiError, getDocument, putDocument } from "./api/client";
+import { ApiError, getDocument, putDocument, suggestLayout } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
+import { SuggestionPanel } from "./ui/SuggestionPanel";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -107,8 +108,17 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const [suggestionInstruction, setSuggestionInstruction] = useState("");
+  const [suggestedDocument, setSuggestedDocument] = useState<DocumentV2 | null>(null);
+  const [suggestionId, setSuggestionId] = useState<string | null>(null);
+  const [suggestionNotes, setSuggestionNotes] = useState<string | null>(null);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [isSuggestionPreviewEnabled, setIsSuggestionPreviewEnabled] = useState(true);
 
   const document = history?.present ?? null;
+  const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
+  const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -132,6 +142,10 @@ export default function App() {
           setSelectedCardIds([]);
           setSelectedIslandId(null);
           setIsDirty(false);
+          setSuggestedDocument(null);
+          setSuggestionId(null);
+          setSuggestionNotes(null);
+          setSuggestionError(null);
           pendingCardDragSnapshotRef.current = null;
           setStatusMessage("Document loaded");
         }
@@ -150,6 +164,10 @@ export default function App() {
               setSelectedCardIds([]);
               setSelectedIslandId(null);
               setIsDirty(false);
+              setSuggestedDocument(null);
+              setSuggestionId(null);
+              setSuggestionNotes(null);
+              setSuggestionError(null);
               pendingCardDragSnapshotRef.current = null;
               setStatusMessage("Created a new document");
             }
@@ -188,6 +206,10 @@ export default function App() {
       return pushHistorySnapshot(previousHistory, nextDocument);
     });
     setIsDirty(true);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
     if (nextStatusMessage) {
       setStatusMessage(nextStatusMessage);
     }
@@ -195,7 +217,7 @@ export default function App() {
 
   const handleTransformChange = useCallback(
     (nextTransform: DocumentV2["transform"]) => {
-      if (!document) {
+      if (!document || isPreviewingSuggestion) {
         return;
       }
 
@@ -223,12 +245,12 @@ export default function App() {
         };
       });
     },
-    [document]
+    [document, isPreviewingSuggestion]
   );
 
   const handleCardMove = useCallback(
     (cardId: string, deltaWorldX: number, deltaWorldY: number) => {
-      if (!document || (deltaWorldX === 0 && deltaWorldY === 0)) {
+      if (!document || isPreviewingSuggestion || (deltaWorldX === 0 && deltaWorldY === 0)) {
         return;
       }
 
@@ -266,7 +288,7 @@ export default function App() {
         };
       });
     },
-    [document]
+    [document, isPreviewingSuggestion]
   );
 
 
@@ -331,6 +353,52 @@ export default function App() {
     }
   };
 
+  const handleSuggestLayout = useCallback(async () => {
+    if (!document || isSuggesting) {
+      return;
+    }
+
+    setIsSuggesting(true);
+    setSuggestionError(null);
+    setStatusMessage("Requesting draft suggestion...");
+
+    try {
+      const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
+      setSuggestionId(result.suggestionId);
+      setSuggestedDocument(cloneDocument(result.suggestedDoc));
+      setSuggestionNotes(result.notes ?? null);
+      setSuggestionError(null);
+      setIsSuggestionPreviewEnabled(true);
+      setStatusMessage("Draft suggestion ready for preview");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to get suggestion";
+      setSuggestionError(message);
+      setStatusMessage(message);
+      setSuggestedDocument(null);
+      setSuggestionId(null);
+      setSuggestionNotes(null);
+    } finally {
+      setIsSuggesting(false);
+    }
+  }, [document, isSuggesting, suggestionInstruction]);
+
+  const handleApplySuggestion = useCallback(() => {
+    if (!document || !suggestedDocument) {
+      return;
+    }
+
+    applyDocumentChange(cloneDocument(suggestedDocument), "Applied draft suggestion");
+  }, [applyDocumentChange, document, suggestedDocument]);
+
+  const handleDiscardSuggestion = useCallback(() => {
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setIsSuggestionPreviewEnabled(true);
+    setStatusMessage("Discarded draft suggestion");
+  }, []);
+
   const handleExport = useCallback(() => {
     if (!document) {
       return;
@@ -378,6 +446,10 @@ export default function App() {
         setSelectedCardIds([]);
         setSelectedIslandId(null);
         setIsDirty(true);
+        setSuggestedDocument(null);
+        setSuggestionId(null);
+        setSuggestionNotes(null);
+        setSuggestionError(null);
         setStatusMessage("Imported document");
       } catch (error) {
         if (error instanceof SyntaxError) {
@@ -723,6 +795,24 @@ export default function App() {
     <div style={{ display: "flex", gap: 8 }}>
       <button
         type="button"
+        onClick={() => {
+          void handleSuggestLayout();
+        }}
+        disabled={isLoading || !document || isSuggesting}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+        }}
+      >
+        {isSuggesting ? "Suggesting..." : "Suggest layout"}
+      </button>
+      <button
+        type="button"
         onClick={handleUndo}
         disabled={isLoading || !document || !canUndo}
         style={{
@@ -829,6 +919,23 @@ export default function App() {
       hasUnsavedChanges={isDirty}
       sidePanel={
         <SidePanel
+          topContent={
+            <SuggestionPanel
+              instruction={suggestionInstruction}
+              onInstructionChange={setSuggestionInstruction}
+              onSuggest={() => {
+                void handleSuggestLayout();
+              }}
+              onApply={handleApplySuggestion}
+              onDiscard={handleDiscardSuggestion}
+              hasSuggestion={Boolean(suggestedDocument && suggestionId)}
+              isPreviewEnabled={isSuggestionPreviewEnabled}
+              onPreviewToggle={setIsSuggestionPreviewEnabled}
+              isSuggesting={isSuggesting}
+              errorMessage={suggestionError}
+              notes={suggestionNotes}
+            />
+          }
           selectedIsland={selectedIsland}
           selectedCardCount={selectedCardIds.length}
           onTitleChange={(value) => {
@@ -860,7 +967,7 @@ export default function App() {
         }}
         style={{ display: "none" }}
       />
-      {isLoading || !document ? (
+      {isLoading || !visibleDocument ? (
         <div
           style={{
             display: "flex",
@@ -875,7 +982,7 @@ export default function App() {
       ) : (
         <>
           <CanvasShell
-            document={document}
+            document={visibleDocument}
             onCardMove={handleCardMove}
             onTransformChange={handleTransformChange}
             selectedCardIds={selectedCardIds}
@@ -887,7 +994,7 @@ export default function App() {
               <IslandView
                 key={island.id}
                 island={island}
-                cards={document.cards}
+                cards={visibleDocument.cards}
                 isSelected={selectedIslandId === island.id}
                 onSelect={handleIslandSelect}
               />

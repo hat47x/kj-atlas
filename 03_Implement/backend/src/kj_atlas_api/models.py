@@ -76,3 +76,14 @@ class DocumentV2(BaseModel):
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]
+
+
+class SuggestLayoutRequest(BaseModel):
+    doc: DocumentV2
+    instruction: str | None = None
+
+
+class SuggestLayoutResponse(BaseModel):
+    suggestionId: str
+    suggestedDoc: DocumentV2
+    notes: str | None = None
