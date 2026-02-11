@@ -11,7 +11,14 @@ export type Card = {
   y: number;
 };
 
-export type EdgeType = "related";
+export type EdgeType = "related" | "negate";
+
+export type EdgeV1 = {
+  id: string;
+  fromId: string;
+  toId: string;
+  type: "related";
+};
 
 export type Edge = {
   id: string;
@@ -34,5 +41,19 @@ export type DocumentV1 = {
   updatedAt: string;
   transform: Transform;
   cards: Card[];
-  edges: Edge[];
+  edges: EdgeV1[];
 };
+
+export type DocumentV2 = {
+  version: 2;
+  id: string;
+  title?: string;
+  createdAt: string;
+  updatedAt: string;
+  transform: Transform;
+  cards: Card[];
+  edges: Edge[];
+  islands: Island[];
+};
+
+export type Document = DocumentV1 | DocumentV2;

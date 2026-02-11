@@ -3,16 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, getDocument, putDocument } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
-import type { DocumentV1, Island } from "./domain/types";
+import type { Document, DocumentV2, Island } from "./domain/types";
 import { Shell } from "./ui/Shell";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
-function createDefaultDocument(docId: string): DocumentV1 {
+function createDefaultDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
 
   return {
-    version: 1,
+    version: 2,
     id: docId,
     title: "Phase 1 Canvas Sample",
     createdAt: now,
@@ -43,10 +43,23 @@ function createDefaultDocument(docId: string): DocumentV1 {
       },
     ],
     edges: [],
+    islands: [],
   };
 }
 
-function withUpdatedTimestamp(document: DocumentV1): DocumentV1 {
+function toDocumentV2(document: Document): DocumentV2 {
+  if (document.version === 2) {
+    return document;
+  }
+
+  return {
+    ...document,
+    version: 2,
+    islands: [],
+  };
+}
+
+function withUpdatedTimestamp(document: DocumentV2): DocumentV2 {
   return {
     ...document,
     updatedAt: new Date().toISOString(),
@@ -62,9 +75,8 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
 }
 
 export default function App() {
-  const [document, setDocument] = useState<DocumentV1 | null>(null);
+  const [document, setDocument] = useState<DocumentV2 | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const [islands, setIslands] = useState<Island[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -78,11 +90,10 @@ export default function App() {
       setStatusMessage("Loading document...");
 
       try {
-        const loadedDocument = await getDocument(DOCUMENT_ID);
+        const loadedDocument = toDocumentV2(await getDocument(DOCUMENT_ID));
         if (!isCancelled) {
           setDocument(loadedDocument);
           setSelectedCardIds([]);
-          setIslands([]);
           setIsDirty(false);
           setStatusMessage("Document loaded");
         }
@@ -91,11 +102,10 @@ export default function App() {
           const defaultDocument = createDefaultDocument(DOCUMENT_ID);
 
           try {
-            const savedDocument = await putDocument(DOCUMENT_ID, defaultDocument);
+            const savedDocument = toDocumentV2(await putDocument(DOCUMENT_ID, defaultDocument));
             if (!isCancelled) {
               setDocument(savedDocument);
               setSelectedCardIds([]);
-              setIslands([]);
               setIsDirty(false);
               setStatusMessage("Created a new document");
             }
@@ -124,7 +134,7 @@ export default function App() {
   }, []);
 
   const handleTransformChange = useCallback(
-    (nextTransform: DocumentV1["transform"]) => {
+    (nextTransform: DocumentV2["transform"]) => {
       if (!document) {
         return;
       }
@@ -186,7 +196,7 @@ export default function App() {
     setStatusMessage("Saving...");
 
     try {
-      const savedDocument = await putDocument(document.id, withUpdatedTimestamp(document));
+      const savedDocument = toDocumentV2(await putDocument(document.id, withUpdatedTimestamp(document)));
       setDocument(savedDocument);
       setIsDirty(false);
       setStatusMessage("Saved");
@@ -229,17 +239,22 @@ export default function App() {
   const canCreateIsland = selectedCardIds.length > 0;
 
   const handleCreateIsland = useCallback(() => {
-    if (selectedCardIds.length === 0) {
+    if (!document || selectedCardIds.length === 0) {
       return;
     }
 
-    setIslands((previousIslands) => [
-      ...previousIslands,
-      createIslandFromSelection(Array.from(new Set(selectedCardIds)), previousIslands),
-    ]);
+    const uniqueSelectedCardIds = Array.from(new Set(selectedCardIds));
 
+    setDocument({
+      ...document,
+      islands: [
+        ...document.islands,
+        createIslandFromSelection(uniqueSelectedCardIds, document.islands),
+      ],
+    });
+    setIsDirty(true);
     setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
-  }, [selectedCardIds]);
+  }, [document, selectedCardIds]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -260,11 +275,11 @@ export default function App() {
 
   const uniqueIslands = useMemo(
     () =>
-      islands.map((island) => ({
+      (document?.islands ?? []).map((island) => ({
         ...island,
         cardIds: Array.from(new Set(island.cardIds)),
       })),
-    [islands]
+    [document]
   );
 
   const headerRight = (

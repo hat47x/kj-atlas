@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
-import type { DocumentV1, Transform } from "../domain/types";
+import type { DocumentV2, Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
@@ -18,7 +18,7 @@ type DragState = {
 };
 
 type CanvasShellProps = {
-  document: DocumentV1;
+  document: DocumentV2;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
   selectedCardIds: string[];
   onCardSelect: (cardId: string, isShiftPressed: boolean) => void;
