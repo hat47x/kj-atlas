@@ -17,6 +17,7 @@ type DragState = {
 
 type CanvasShellProps = {
   document: DocumentV1;
+  onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
   children?: ReactNode;
 };
 
@@ -32,7 +33,7 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
-export function CanvasShell({ document, children }: CanvasShellProps) {
+export function CanvasShell({ document, onCardMove, children }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
@@ -148,7 +149,12 @@ export function CanvasShell({ document, children }: CanvasShellProps) {
         }}
       >
         {document.cards.map((card) => (
-          <CardView key={card.id} card={card} />
+          <CardView
+            key={card.id}
+            card={card}
+            zoom={transform.zoom}
+            onMove={onCardMove}
+          />
         ))}
         {children}
       </div>
