@@ -56,6 +56,7 @@ export default function App() {
   const [document, setDocument] = useState<DocumentV1 | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function App() {
         const loadedDocument = await getDocument(DOCUMENT_ID);
         if (!isCancelled) {
           setDocument(loadedDocument);
+          setIsDirty(false);
           setStatusMessage("Document loaded");
         }
       } catch (error) {
@@ -79,6 +81,7 @@ export default function App() {
             const savedDocument = await putDocument(DOCUMENT_ID, defaultDocument);
             if (!isCancelled) {
               setDocument(savedDocument);
+              setIsDirty(false);
               setStatusMessage("Created a new document");
             }
           } catch (saveError) {
@@ -105,55 +108,62 @@ export default function App() {
     };
   }, []);
 
-
-  const handleTransformChange = useCallback((nextTransform: DocumentV1["transform"]) => {
-    setDocument((prev) => {
-      if (!prev) {
-        return prev;
+  const handleTransformChange = useCallback(
+    (nextTransform: DocumentV1["transform"]) => {
+      if (!document) {
+        return;
       }
 
-      const current = prev.transform;
+      const current = document.transform;
       if (
         current.panX === nextTransform.panX &&
         current.panY === nextTransform.panY &&
         current.zoom === nextTransform.zoom
       ) {
-        return prev;
+        return;
       }
 
-      return {
-        ...prev,
+      setIsDirty(true);
+      setDocument({
+        ...document,
         transform: nextTransform,
-      };
-    });
-  }, []);
-  const handleCardMove = (cardId: string, deltaWorldX: number, deltaWorldY: number) => {
-    if (deltaWorldX === 0 && deltaWorldY === 0) {
-      return;
-    }
+      });
+    },
+    [document]
+  );
 
-    setDocument((prev) => {
-      if (!prev) {
-        return prev;
+  const handleCardMove = useCallback(
+    (cardId: string, deltaWorldX: number, deltaWorldY: number) => {
+      if (!document || (deltaWorldX === 0 && deltaWorldY === 0)) {
+        return;
       }
 
-      return {
-        ...prev,
-        cards: prev.cards.map((card) =>
-          card.id === cardId
-            ? {
-                ...card,
-                x: card.x + deltaWorldX,
-                y: card.y + deltaWorldY,
-              }
-            : card
-        ),
-      };
-    });
-  };
+      const nextCards = document.cards.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              x: card.x + deltaWorldX,
+              y: card.y + deltaWorldY,
+            }
+          : card
+      );
+
+      const didMove = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!didMove) {
+        return;
+      }
+
+      setIsDirty(true);
+      setDocument({
+        ...document,
+        cards: nextCards,
+      });
+    },
+    [document]
+  );
 
   const handleSave = async () => {
-    if (!document || isSaving) {
+    if (!document || isSaving || !isDirty) {
       return;
     }
 
@@ -163,6 +173,7 @@ export default function App() {
     try {
       const savedDocument = await putDocument(document.id, withUpdatedTimestamp(document));
       setDocument(savedDocument);
+      setIsDirty(false);
       setStatusMessage("Saved");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Failed to save document");
@@ -177,7 +188,7 @@ export default function App() {
       onClick={() => {
         void handleSave();
       }}
-      disabled={isLoading || !document || isSaving}
+      disabled={isLoading || !document || isSaving || !isDirty}
       style={{
         border: "1px solid #cbd5e1",
         backgroundColor: isSaving ? "#f8fafc" : "#ffffff",
@@ -185,7 +196,7 @@ export default function App() {
         borderRadius: 6,
         padding: "6px 12px",
         fontWeight: 600,
-        cursor: isLoading || !document || isSaving ? "not-allowed" : "pointer",
+        cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
       }}
     >
       {isSaving ? "Saving..." : "Save"}
@@ -193,7 +204,7 @@ export default function App() {
   );
 
   return (
-    <Shell title="kj-atlas Canvas MVP" headerRight={saveButton}>
+    <Shell title="kj-atlas Canvas MVP" headerRight={saveButton} hasUnsavedChanges={isDirty}>
       {isLoading || !document ? (
         <div
           style={{
