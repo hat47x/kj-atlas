@@ -12,7 +12,7 @@ Phase 1 では `DocumentV1` のスナップショット保存/読込のみを実
 
 - テーブル: `documents(id TEXT PK, version INT, updated_at TEXT, payload_json TEXT)`
 - `payload_json` に `DocumentV1` 全体(JSON文字列)を保存
-- 初期化は Alembic ではなく `SQLAlchemy Base.metadata.create_all()` を採用（Phase 1 の最小構成）
+- スキーマ管理は Alembic migration を利用
 
 ## Environment variables
 
@@ -28,10 +28,11 @@ Phase 1 では `DocumentV1` のスナップショット保存/読込のみを実
 cd 03_Implement/backend
 python -m venv .venv
 source .venv/bin/activate
-pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings psycopg[binary]
+pip install fastapi uvicorn sqlalchemy alembic pydantic pydantic-settings psycopg[binary]
 export PYTHONPATH=src
 export DATABASE_URL="sqlite:///./kj_atlas.db"
 export LLM_PROVIDER="none"
+alembic upgrade head
 uvicorn kj_atlas_api.main:app --reload
 ```
 

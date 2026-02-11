@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import Session, sessionmaker
 
-from kj_atlas_api.models import Base
 from kj_atlas_api.settings import settings
 
 
@@ -31,7 +30,8 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
 def init_db() -> None:
-    Base.metadata.create_all(bind=engine)
+    """Keep startup DB initialization non-failing. Schema is managed by Alembic."""
+    return None
 
 
 def get_db() -> Generator[Session, None, None]:
