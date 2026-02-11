@@ -2,12 +2,14 @@ import json
 from hashlib import sha256
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
-from kj_atlas_api.models import DocumentRow, DocumentV1
+from kj_atlas_api.models import DocumentPayload, DocumentRow
 
 router = APIRouter(prefix="/docs", tags=["docs"])
+document_payload_adapter = TypeAdapter(DocumentPayload)
 
 
 def _compute_etag(payload_json: str) -> str:
@@ -31,24 +33,24 @@ def _parse_if_match(if_match: str) -> set[str]:
     return values
 
 
-@router.get("/{doc_id}", response_model=DocumentV1)
-def get_document(doc_id: str, response: Response, db: Session = Depends(get_db)) -> DocumentV1:
+@router.get("/{doc_id}", response_model=DocumentPayload)
+def get_document(doc_id: str, response: Response, db: Session = Depends(get_db)) -> DocumentPayload:
     doc_row = db.get(DocumentRow, doc_id)
     if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     response.headers["ETag"] = _format_etag(_compute_etag(doc_row.payload_json))
     payload = json.loads(doc_row.payload_json)
-    return DocumentV1.model_validate(payload)
+    return document_payload_adapter.validate_python(payload)
 
 
-@router.put("/{doc_id}", response_model=DocumentV1)
+@router.put("/{doc_id}", response_model=DocumentPayload)
 def put_document(
     doc_id: str,
-    document: DocumentV1,
+    document: DocumentPayload,
     if_match: str | None = Header(default=None, alias="If-Match"),
     db: Session = Depends(get_db),
-) -> DocumentV1:
+) -> DocumentPayload:
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
 

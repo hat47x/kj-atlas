@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Integer, Text
@@ -32,11 +32,24 @@ class Card(BaseModel):
     y: float
 
 
-class Edge(BaseModel):
+class EdgeV1(BaseModel):
     id: str
     fromId: str
     toId: str
-    type: str = Field(pattern="^related$")
+    type: Literal["related"]
+
+
+class EdgeV2(BaseModel):
+    id: str
+    fromId: str
+    toId: str
+    type: Literal["related", "negate"]
+
+
+class Island(BaseModel):
+    id: str
+    cardIds: list[str]
+    title: str | None = None
 
 
 class DocumentV1(BaseModel):
@@ -47,4 +60,19 @@ class DocumentV1(BaseModel):
     updatedAt: datetime
     transform: Transform
     cards: list[Card]
-    edges: list[Edge]
+    edges: list[EdgeV1]
+
+
+class DocumentV2(BaseModel):
+    version: Literal[2]
+    id: str
+    title: str | None = None
+    createdAt: datetime
+    updatedAt: datetime
+    transform: Transform
+    cards: list[Card]
+    edges: list[EdgeV2]
+    islands: list[Island]
+
+
+DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]
