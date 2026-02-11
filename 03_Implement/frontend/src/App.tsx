@@ -7,6 +7,7 @@ import { IslandView } from "./canvas/IslandView";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { Shell } from "./ui/Shell";
+import { SidePanel } from "./ui/SidePanel";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -421,6 +422,7 @@ export default function App() {
 
       return [];
     });
+    setSelectedIslandId(null);
   }, []);
 
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
@@ -467,7 +469,7 @@ export default function App() {
         return;
       }
 
-      const nextTitle = rawTitle.trim().length > 0 ? rawTitle : undefined;
+      const nextTitle = rawTitle.length > 0 ? rawTitle : undefined;
       const nextIslands = document.islands.map((island) => {
         if (island.id !== islandId) {
           return island;
@@ -640,8 +642,8 @@ export default function App() {
       return;
     }
 
-    if (!selectedIslandId || !uniqueIslands.some((island) => island.id === selectedIslandId)) {
-      setSelectedIslandId(uniqueIslands[0].id);
+    if (selectedIslandId && !uniqueIslands.some((island) => island.id === selectedIslandId)) {
+      setSelectedIslandId(null);
     }
   }, [selectedIslandId, uniqueIslands]);
 
@@ -649,6 +651,73 @@ export default function App() {
     () => uniqueIslands.find((island) => island.id === selectedIslandId) ?? null,
     [selectedIslandId, uniqueIslands]
   );
+
+  const handleIslandSelect = useCallback((islandId: string) => {
+    setSelectedIslandId(islandId);
+  }, []);
+
+  const handleAddSelectedCardsToIsland = useCallback(() => {
+    if (!document || !selectedIsland || selectedCardIds.length === 0) {
+      return;
+    }
+
+    const mergedCardIds = Array.from(new Set([...selectedIsland.cardIds, ...selectedCardIds]));
+    if (
+      mergedCardIds.length === selectedIsland.cardIds.length &&
+      mergedCardIds.every((cardId, index) => cardId === selectedIsland.cardIds[index])
+    ) {
+      return;
+    }
+
+    applyDocumentChange(
+      {
+        ...document,
+        islands: document.islands.map((island) =>
+          island.id === selectedIsland.id ? { ...island, cardIds: mergedCardIds } : island
+        ),
+      },
+      "Added selected cards to island"
+    );
+  }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
+
+  const handleRemoveSelectedCardsFromIsland = useCallback(() => {
+    if (!document || !selectedIsland || selectedCardIds.length === 0) {
+      return;
+    }
+
+    const selectedCardIdSet = new Set(selectedCardIds);
+    const nextCardIds = selectedIsland.cardIds.filter((cardId) => !selectedCardIdSet.has(cardId));
+
+    if (nextCardIds.length === selectedIsland.cardIds.length) {
+      return;
+    }
+
+    applyDocumentChange(
+      {
+        ...document,
+        islands: document.islands.map((island) =>
+          island.id === selectedIsland.id ? { ...island, cardIds: nextCardIds } : island
+        ),
+      },
+      "Removed selected cards from island"
+    );
+  }, [applyDocumentChange, document, selectedCardIds, selectedIsland]);
+
+  const handleDeleteSelectedIsland = useCallback(() => {
+    if (!document || !selectedIsland) {
+      return;
+    }
+
+    const nextIslands = document.islands.filter((island) => island.id !== selectedIsland.id);
+    applyDocumentChange(
+      {
+        ...document,
+        islands: nextIslands,
+      },
+      "Deleted island"
+    );
+    setSelectedIslandId(null);
+  }, [applyDocumentChange, document, selectedIsland]);
 
   const headerRight = (
     <div style={{ display: "flex", gap: 8 }}>
@@ -754,7 +823,34 @@ export default function App() {
   );
 
   return (
-    <Shell title="kj-atlas Canvas MVP" headerRight={headerRight} hasUnsavedChanges={isDirty}>
+    <Shell
+      title="kj-atlas Canvas MVP"
+      headerRight={headerRight}
+      hasUnsavedChanges={isDirty}
+      sidePanel={
+        <SidePanel
+          selectedIsland={selectedIsland}
+          selectedCardCount={selectedCardIds.length}
+          onTitleChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandTitleChange(selectedIsland.id, value);
+          }}
+          onImageUrlChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandImageUrlChange(selectedIsland.id, value);
+          }}
+          onAddSelectedCards={handleAddSelectedCardsToIsland}
+          onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
+          onDeleteIsland={handleDeleteSelectedIsland}
+        />
+      }
+    >
       <input
         ref={importInputRef}
         type="file"
@@ -788,115 +884,15 @@ export default function App() {
             onMarqueeSelect={handleMarqueeSelect}
           >
             {uniqueIslands.map((island) => (
-              <IslandView key={island.id} island={island} cards={document.cards} />
+              <IslandView
+                key={island.id}
+                island={island}
+                cards={document.cards}
+                isSelected={selectedIslandId === island.id}
+                onSelect={handleIslandSelect}
+              />
             ))}
           </CanvasShell>
-          <div
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              width: 280,
-              border: "1px solid #cbd5e1",
-              borderRadius: 8,
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              padding: 12,
-              boxShadow: "0 6px 18px rgba(15, 23, 42, 0.12)",
-            }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: "#334155" }}>
-              Island Image
-            </div>
-            {uniqueIslands.length === 0 ? (
-              <div style={{ fontSize: 12, color: "#64748b" }}>Create an island to attach an image.</div>
-            ) : (
-              <>
-                <select
-                  value={selectedIslandId ?? ""}
-                  onChange={(event) => {
-                    setSelectedIslandId(event.target.value);
-                  }}
-                  style={{
-                    width: "100%",
-                    marginBottom: 8,
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 6,
-                    padding: "6px 8px",
-                  }}
-                >
-                  {uniqueIslands.map((island) => (
-                    <option key={island.id} value={island.id}>
-                      {island.title && island.title.length > 0 ? island.title : "Island"}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Island title"
-                  value={selectedIsland?.title ?? ""}
-                  onChange={(event) => {
-                    if (!selectedIsland) {
-                      return;
-                    }
-
-                    handleIslandTitleChange(selectedIsland.id, event.target.value);
-                  }}
-                  style={{
-                    width: "100%",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 6,
-                    padding: "6px 8px",
-                    boxSizing: "border-box",
-                    marginBottom: 8,
-                  }}
-                />
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={selectedIsland?.imageUrl ?? ""}
-                  onChange={(event) => {
-                    if (!selectedIsland) {
-                      return;
-                    }
-
-                    handleIslandImageUrlChange(selectedIsland.id, event.target.value);
-                  }}
-                  style={{
-                    width: "100%",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 6,
-                    padding: "6px 8px",
-                    boxSizing: "border-box",
-                    marginBottom: 8,
-                  }}
-                />
-                <div
-                  style={{
-                    height: 120,
-                    borderRadius: 6,
-                    border: "1px solid #e2e8f0",
-                    overflow: "hidden",
-                    backgroundColor: "#f8fafc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#94a3b8",
-                    fontSize: 12,
-                  }}
-                >
-                  {selectedIsland?.imageUrl ? (
-                    <img
-                      src={selectedIsland.imageUrl}
-                      alt="Island preview"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    "No image"
-                  )}
-                </div>
-              </>
-            )}
-          </div>
         </>
       )}
       <div
