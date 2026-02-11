@@ -5,9 +5,10 @@ type ShellProps = {
   children: ReactNode;
   headerRight?: ReactNode;
   hasUnsavedChanges?: boolean;
+  sidePanel?: ReactNode;
 };
 
-export function Shell({ title, children, headerRight, hasUnsavedChanges = false }: ShellProps) {
+export function Shell({ title, children, headerRight, hasUnsavedChanges = false, sidePanel }: ShellProps) {
   return (
     <div
       style={{
@@ -60,12 +61,22 @@ export function Shell({ title, children, headerRight, hasUnsavedChanges = false 
       </header>
       <main
         style={{
-          position: "relative",
+          display: "flex",
           flex: 1,
           minHeight: 0,
         }}
       >
-        {children}
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+          }}
+        >
+          {children}
+        </div>
+        {sidePanel}
       </main>
     </div>
   );

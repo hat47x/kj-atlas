@@ -1,3 +1,5 @@
+import type { CSSProperties, KeyboardEvent } from "react";
+
 import type { Card, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
@@ -10,6 +12,13 @@ const ISLAND_TITLE_MARGIN_TOP = 6;
 type IslandViewProps = {
   island: Island;
   cards: Card[];
+  isSelected: boolean;
+  onSelect: (islandId: string) => void;
+};
+
+type EdgeHitbox = {
+  key: string;
+  style: CSSProperties;
 };
 
 function getIslandBounds(island: Island, cards: Card[]) {
@@ -38,12 +47,58 @@ function getIslandBounds(island: Island, cards: Card[]) {
   };
 }
 
-export function IslandView({ island, cards }: IslandViewProps) {
+function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    onSelect();
+  }
+}
+
+export function IslandView({ island, cards, isSelected, onSelect }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
 
   if (!bounds) {
     return null;
   }
+
+  const edgeHitboxes: EdgeHitbox[] = [
+    {
+      key: "top",
+      style: {
+        left: 0,
+        top: 0,
+        width: "100%",
+        height: 8,
+      },
+    },
+    {
+      key: "right",
+      style: {
+        right: 0,
+        top: 0,
+        width: 8,
+        height: "100%",
+      },
+    },
+    {
+      key: "bottom",
+      style: {
+        left: 0,
+        bottom: 0,
+        width: "100%",
+        height: 8,
+      },
+    },
+    {
+      key: "left",
+      style: {
+        left: 0,
+        top: 0,
+        width: 8,
+        height: "100%",
+      },
+    },
+  ];
 
   return (
     <div
@@ -54,15 +109,45 @@ export function IslandView({ island, cards }: IslandViewProps) {
         top: bounds.top,
         width: bounds.width,
         height: bounds.height,
-        border: "2px solid #0ea5e9",
         borderRadius: 12,
-        backgroundColor: "rgba(14, 165, 233, 0.05)",
         boxSizing: "border-box",
         overflow: "hidden",
-        zIndex: -1,
+        zIndex: 0,
         isolation: "isolate",
       }}
     >
+      {edgeHitboxes.map((edgeHitbox) => (
+        <button
+          key={edgeHitbox.key}
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(island.id);
+          }}
+          style={{
+            pointerEvents: "auto",
+            position: "absolute",
+            ...edgeHitbox.style,
+            border: "none",
+            backgroundColor: "transparent",
+            padding: 0,
+            cursor: "pointer",
+            zIndex: 2,
+          }}
+          aria-label={`Select island ${island.id}`}
+        />
+      ))}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          border: isSelected ? "2px solid #0284c7" : "2px solid #0ea5e9",
+          borderRadius: 12,
+          backgroundColor: isSelected ? "rgba(14, 165, 233, 0.12)" : "rgba(14, 165, 233, 0.05)",
+          boxSizing: "border-box",
+          zIndex: 1,
+        }}
+      />
       {island.imageUrl ? (
         <img
           src={island.imageUrl}
@@ -92,7 +177,19 @@ export function IslandView({ island, cards }: IslandViewProps) {
         }}
       />
       <div
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect(island.id);
+        }}
+        onKeyDown={(event) => {
+          handleTitleKeyDown(event, () => {
+            onSelect(island.id);
+          });
+        }}
         style={{
+          pointerEvents: "auto",
           position: "absolute",
           left: ISLAND_TITLE_MARGIN_LEFT,
           top: ISLAND_TITLE_MARGIN_TOP,
@@ -103,7 +200,8 @@ export function IslandView({ island, cards }: IslandViewProps) {
           padding: "2px 6px",
           borderRadius: 6,
           border: "1px solid #bae6fd",
-          zIndex: 1,
+          zIndex: 3,
+          cursor: "pointer",
         }}
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
