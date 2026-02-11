@@ -11,6 +11,14 @@ class Settings(BaseSettings):
         default="none",
         alias="LLM_PROVIDER",
     )
+    local_llm_base_url: str | None = Field(
+        default=None,
+        alias="LOCAL_LLM_BASE_URL",
+    )
+    local_llm_model: str | None = Field(
+        default=None,
+        alias="LOCAL_LLM_MODEL",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
