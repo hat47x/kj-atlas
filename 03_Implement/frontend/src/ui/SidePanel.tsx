@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 
-import type { Island } from "../domain/types";
+import type { Card, Island } from "../domain/types";
 
 type SidePanelProps = {
+  selectedCard: Card | null;
   selectedIsland: Island | null;
   selectedCardCount: number;
+  onCardCritiqueChange: (value: string) => void;
   onTitleChange: (value: string) => void;
   onImageUrlChange: (value: string) => void;
+  onIslandCritiqueChange: (value: string) => void;
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
@@ -14,10 +17,13 @@ type SidePanelProps = {
 };
 
 export function SidePanel({
+  selectedCard,
   selectedIsland,
   selectedCardCount,
+  onCardCritiqueChange,
   onTitleChange,
   onImageUrlChange,
+  onIslandCritiqueChange,
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
@@ -36,6 +42,34 @@ export function SidePanel({
       }}
     >
       {topContent}
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Card Editor</div>
+      {!selectedCard ? (
+        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>Select a single card from the canvas.</div>
+      ) : (
+        <>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Critique note
+          </label>
+          <textarea
+            value={selectedCard.critique ?? ""}
+            onChange={(event) => {
+              onCardCritiqueChange(event.target.value);
+            }}
+            placeholder="Optional feedback about this card"
+            rows={4}
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 12,
+              resize: "vertical",
+            }}
+          />
+        </>
+      )}
+
       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
       {!selectedIsland ? (
         <div style={{ fontSize: 12, color: "#64748b" }}>Select an island from the canvas.</div>
@@ -95,6 +129,27 @@ export function SidePanel({
               padding: "6px 8px",
               boxSizing: "border-box",
               marginBottom: 10,
+            }}
+          />
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Critique note
+          </label>
+          <textarea
+            value={selectedIsland.critique ?? ""}
+            onChange={(event) => {
+              onIslandCritiqueChange(event.target.value);
+            }}
+            placeholder="Optional feedback about this island"
+            rows={4}
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 10,
+              resize: "vertical",
             }}
           />
 

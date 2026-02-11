@@ -56,6 +56,7 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
 
 export function IslandView({ island, cards, isSelected, onSelect }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
+  const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
 
   if (!bounds) {
     return null;
@@ -202,9 +203,24 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
           border: "1px solid #bae6fd",
           zIndex: 3,
           cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
         }}
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
+        {hasCritique ? (
+          <span
+            aria-label="Island has critique note"
+            title="Island has critique note"
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              backgroundColor: "#f59e0b",
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

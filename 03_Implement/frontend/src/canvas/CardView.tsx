@@ -29,6 +29,7 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
 export function CardView({ card, zoom, isSelected, onMove, onSelect }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -134,6 +135,21 @@ export function CardView({ card, zoom, isSelected, onMove, onSelect }: CardViewP
         cursor: isDragging ? "grabbing" : "grab",
       }}
     >
+      {hasCritique ? (
+        <span
+          aria-label="Card has critique note"
+          title="Card has critique note"
+          style={{
+            position: "absolute",
+            top: 6,
+            right: 6,
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            backgroundColor: "#f59e0b",
+          }}
+        />
+      ) : null}
       {card.text}
     </div>
   );

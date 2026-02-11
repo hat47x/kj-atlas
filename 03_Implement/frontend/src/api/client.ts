@@ -1,4 +1,4 @@
-import type { Document, DocumentV2, Island } from "../domain/types";
+import type { Card, Document, DocumentV2, Island } from "../domain/types";
 
 const API_BASE = "/api";
 
@@ -24,10 +24,18 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return response.statusText || "Request failed";
 }
 
+function normalizeCard(card: Card): Card {
+  return {
+    ...card,
+    critique: typeof card.critique === "string" ? card.critique : undefined,
+  };
+}
+
 function normalizeIsland(island: Island): Island {
   return {
     ...island,
     imageUrl: typeof island.imageUrl === "string" ? island.imageUrl : undefined,
+    critique: typeof island.critique === "string" ? island.critique : undefined,
   };
 }
 
@@ -38,6 +46,7 @@ function normalizeDocument(document: Document): Document {
 
   return {
     ...document,
+    cards: document.cards.map(normalizeCard),
     islands: document.islands.map(normalizeIsland),
   };
 }

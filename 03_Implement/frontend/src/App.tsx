@@ -611,6 +611,82 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleCardCritiqueChange = useCallback(
+    (cardId: string, rawCritique: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextCritique = rawCritique.length > 0 ? rawCritique : undefined;
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        if ((card.critique ?? undefined) === nextCritique) {
+          return card;
+        }
+
+        return {
+          ...card,
+          critique: nextCritique,
+        };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        "Updated card critique"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleIslandCritiqueChange = useCallback(
+    (islandId: string, rawCritique: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextCritique = rawCritique.length > 0 ? rawCritique : undefined;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.critique ?? undefined) === nextCritique) {
+          return island;
+        }
+
+        return {
+          ...island,
+          critique: nextCritique,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island critique"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
@@ -723,6 +799,13 @@ export default function App() {
     () => uniqueIslands.find((island) => island.id === selectedIslandId) ?? null,
     [selectedIslandId, uniqueIslands]
   );
+  const selectedCard = useMemo(() => {
+    if (!document || selectedCardIds.length !== 1) {
+      return null;
+    }
+
+    return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
+  }, [document, selectedCardIds]);
 
   const handleIslandSelect = useCallback((islandId: string) => {
     setSelectedIslandId(islandId);
@@ -919,6 +1002,7 @@ export default function App() {
       hasUnsavedChanges={isDirty}
       sidePanel={
         <SidePanel
+          selectedCard={selectedCard}
           topContent={
             <SuggestionPanel
               instruction={suggestionInstruction}
@@ -938,6 +1022,13 @@ export default function App() {
           }
           selectedIsland={selectedIsland}
           selectedCardCount={selectedCardIds.length}
+          onCardCritiqueChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardCritiqueChange(selectedCard.id, value);
+          }}
           onTitleChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -951,6 +1042,13 @@ export default function App() {
             }
 
             handleIslandImageUrlChange(selectedIsland.id, value);
+          }}
+          onIslandCritiqueChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandCritiqueChange(selectedIsland.id, value);
           }}
           onAddSelectedCards={handleAddSelectedCardsToIsland}
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
