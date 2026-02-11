@@ -43,11 +43,30 @@ function createInitialDocument(): DocumentV1 {
 }
 
 export default function App() {
-  const [document] = useState<DocumentV1>(() => createInitialDocument());
+  const [document, setDocument] = useState<DocumentV1>(() => createInitialDocument());
+
+  const handleCardMove = (cardId: string, deltaWorldX: number, deltaWorldY: number) => {
+    if (deltaWorldX === 0 && deltaWorldY === 0) {
+      return;
+    }
+
+    setDocument((prev) => ({
+      ...prev,
+      cards: prev.cards.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              x: card.x + deltaWorldX,
+              y: card.y + deltaWorldY,
+            }
+          : card
+      ),
+    }));
+  };
 
   return (
     <Shell title="kj-atlas Canvas MVP">
-      <CanvasShell document={document} />
+      <CanvasShell document={document} onCardMove={handleCardMove} />
     </Shell>
   );
 }
