@@ -46,10 +46,6 @@ export function EdgeLayer({ cards, edges }: EdgeLayerProps) {
       }}
     >
       {edges.map((edge) => {
-        if (edge.type !== "related") {
-          return null;
-        }
-
         const fromCenter = cardCenterById.get(edge.fromId);
         const toCenter = cardCenterById.get(edge.toId);
 
@@ -68,6 +64,7 @@ export function EdgeLayer({ cards, edges }: EdgeLayerProps) {
             strokeWidth={2}
             vectorEffect="non-scaling-stroke"
             strokeLinecap="round"
+            strokeDasharray={edge.type === "negate" ? "6 4" : undefined}
           />
         );
       })}
