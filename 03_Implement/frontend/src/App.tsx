@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError, getDocument, putDocument } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
-import type { DocumentV1 } from "./domain/types";
+import { IslandView } from "./canvas/IslandView";
+import type { DocumentV1, Island } from "./domain/types";
 import { Shell } from "./ui/Shell";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
@@ -52,9 +53,18 @@ function withUpdatedTimestamp(document: DocumentV1): DocumentV1 {
   };
 }
 
+function createIslandFromSelection(selectedCardIds: string[], existingIslands: Island[]): Island {
+  return {
+    id: crypto.randomUUID(),
+    cardIds: selectedCardIds,
+    title: `Island ${existingIslands.length + 1}`,
+  };
+}
+
 export default function App() {
   const [document, setDocument] = useState<DocumentV1 | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [islands, setIslands] = useState<Island[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -72,6 +82,7 @@ export default function App() {
         if (!isCancelled) {
           setDocument(loadedDocument);
           setSelectedCardIds([]);
+          setIslands([]);
           setIsDirty(false);
           setStatusMessage("Document loaded");
         }
@@ -84,6 +95,7 @@ export default function App() {
             if (!isCancelled) {
               setDocument(savedDocument);
               setSelectedCardIds([]);
+              setIslands([]);
               setIsDirty(false);
               setStatusMessage("Created a new document");
             }
@@ -214,29 +226,88 @@ export default function App() {
     });
   }, []);
 
-  const saveButton = (
-    <button
-      type="button"
-      onClick={() => {
-        void handleSave();
-      }}
-      disabled={isLoading || !document || isSaving || !isDirty}
-      style={{
-        border: "1px solid #cbd5e1",
-        backgroundColor: isSaving ? "#f8fafc" : "#ffffff",
-        color: "#0f172a",
-        borderRadius: 6,
-        padding: "6px 12px",
-        fontWeight: 600,
-        cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
-      }}
-    >
-      {isSaving ? "Saving..." : "Save"}
-    </button>
+  const canCreateIsland = selectedCardIds.length > 0;
+
+  const handleCreateIsland = useCallback(() => {
+    if (selectedCardIds.length === 0) {
+      return;
+    }
+
+    setIslands((previousIslands) => [
+      ...previousIslands,
+      createIslandFromSelection(Array.from(new Set(selectedCardIds)), previousIslands),
+    ]);
+
+    setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
+  }, [selectedCardIds]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
+      if (!usesShortcut || !canCreateIsland) {
+        return;
+      }
+
+      event.preventDefault();
+      handleCreateIsland();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [canCreateIsland, handleCreateIsland]);
+
+  const uniqueIslands = useMemo(
+    () =>
+      islands.map((island) => ({
+        ...island,
+        cardIds: Array.from(new Set(island.cardIds)),
+      })),
+    [islands]
+  );
+
+  const headerRight = (
+    <div style={{ display: "flex", gap: 8 }}>
+      <button
+        type="button"
+        onClick={handleCreateIsland}
+        disabled={isLoading || !document || !canCreateIsland}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
+        }}
+      >
+        Create Island
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void handleSave();
+        }}
+        disabled={isLoading || !document || isSaving || !isDirty}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: isSaving ? "#f8fafc" : "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
+        }}
+      >
+        {isSaving ? "Saving..." : "Save"}
+      </button>
+    </div>
   );
 
   return (
-    <Shell title="kj-atlas Canvas MVP" headerRight={saveButton} hasUnsavedChanges={isDirty}>
+    <Shell title="kj-atlas Canvas MVP" headerRight={headerRight} hasUnsavedChanges={isDirty}>
       {isLoading || !document ? (
         <div
           style={{
@@ -257,7 +328,11 @@ export default function App() {
           selectedCardIds={selectedCardIds}
           onCardSelect={handleCardSelect}
           onCanvasBackgroundClick={handleCanvasBackgroundClick}
-        />
+        >
+          {uniqueIslands.map((island) => (
+            <IslandView key={island.id} island={island} cards={document.cards} />
+          ))}
+        </CanvasShell>
       )}
       <div
         style={{

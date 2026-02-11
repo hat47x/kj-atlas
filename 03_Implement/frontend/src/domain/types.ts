@@ -20,6 +20,12 @@ export type Edge = {
   type: EdgeType;
 };
 
+export type Island = {
+  id: string;
+  cardIds: string[];
+  title?: string;
+};
+
 export type DocumentV1 = {
   version: 1;
   id: string;
