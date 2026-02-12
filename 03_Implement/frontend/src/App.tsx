@@ -287,6 +287,7 @@ export default function App() {
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
+  const focusedVisibleDocument = visibleDocument;
   const suggestionMoveDiffs = useMemo(() => {
     if (!document || !suggestedDocument || !isPreviewingSuggestion) {
       return [] as SuggestionMoveDiff[];
@@ -332,17 +333,17 @@ export default function App() {
   const activeMatchIndex = matchedCardIds.length > 0 ? ((currentMatchIndex % matchedCardIds.length) + matchedCardIds.length) % matchedCardIds.length : 0;
   const activeMatchedCardId = matchedCardIds.length > 0 ? matchedCardIds[activeMatchIndex] : null;
   const collapsedIslandIdSet = useMemo(() => {
-    if (!visibleDocument) {
+    if (!focusedVisibleDocument) {
       return new Set<string>();
     }
 
-    return collectCollapsedIslandIds(visibleDocument.islands);
-  }, [visibleDocument]);
+    return collectCollapsedIslandIds(focusedVisibleDocument.islands);
+  }, [focusedVisibleDocument]);
   const hiddenCardIdSet = useMemo(() => {
     const hiddenCardIds = new Set<string>();
 
-    if (visibleDocument) {
-      for (const island of visibleDocument.islands) {
+    if (focusedVisibleDocument) {
+      for (const island of focusedVisibleDocument.islands) {
         if (!collapsedIslandIdSet.has(island.id)) {
           continue;
         }
@@ -353,8 +354,8 @@ export default function App() {
       }
     }
 
-    if (hideNonMatches && normalizedSearchQuery.length > 0 && visibleDocument) {
-      for (const card of visibleDocument.cards) {
+    if (hideNonMatches && normalizedSearchQuery.length > 0 && focusedVisibleDocument) {
+      for (const card of focusedVisibleDocument.cards) {
         if (!matchedCardIdSet.has(card.id)) {
           hiddenCardIds.add(card.id);
         }
@@ -362,7 +363,7 @@ export default function App() {
     }
 
     return hiddenCardIds;
-  }, [collapsedIslandIdSet, hideNonMatches, matchedCardIdSet, normalizedSearchQuery, visibleDocument]);
+  }, [collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
