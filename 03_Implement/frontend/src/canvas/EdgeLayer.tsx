@@ -1,3 +1,5 @@
+import { memo, useMemo } from "react";
+
 import type { Card, Edge } from "../domain/types";
 
 const CARD_WIDTH = 220;
@@ -23,12 +25,16 @@ function getCardCenter(card: Card): CardCenter {
   };
 }
 
-export function EdgeLayer({ cards, edges }: EdgeLayerProps) {
-  const cardCenterById = new Map<string, CardCenter>();
+function EdgeLayerComponent({ cards, edges }: EdgeLayerProps) {
+  const cardCenterById = useMemo(() => {
+    const nextCardCenterById = new Map<string, CardCenter>();
 
-  for (const card of cards) {
-    cardCenterById.set(card.id, getCardCenter(card));
-  }
+    for (const card of cards) {
+      nextCardCenterById.set(card.id, getCardCenter(card));
+    }
+
+    return nextCardCenterById;
+  }, [cards]);
 
   return (
     <svg
@@ -71,3 +77,5 @@ export function EdgeLayer({ cards, edges }: EdgeLayerProps) {
     </svg>
   );
 }
+
+export const EdgeLayer = memo(EdgeLayerComponent);

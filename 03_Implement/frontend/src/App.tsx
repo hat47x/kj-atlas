@@ -1133,7 +1133,7 @@ export default function App() {
         ...island,
         cardIds: Array.from(new Set(island.cardIds)),
       })),
-    [document]
+    [document?.islands]
   );
 
   useEffect(() => {
@@ -1157,11 +1157,27 @@ export default function App() {
     }
 
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
-  }, [document, selectedCardIds]);
+  }, [document?.cards, selectedCardIds]);
 
   const handleIslandSelect = useCallback((islandId: string) => {
     setSelectedIslandId(islandId);
   }, []);
+
+  const islandViews = useMemo(() => {
+    if (!visibleDocument) {
+      return null;
+    }
+
+    return uniqueIslands.map((island) => (
+      <IslandView
+        key={island.id}
+        island={island}
+        cards={visibleDocument.cards}
+        isSelected={selectedIslandId === island.id}
+        onSelect={handleIslandSelect}
+      />
+    ));
+  }, [handleIslandSelect, selectedIslandId, uniqueIslands, visibleDocument]);
 
   const handleAddSelectedCardsToIsland = useCallback(() => {
     if (!document || !selectedIsland || selectedCardIds.length === 0) {
@@ -1607,15 +1623,7 @@ export default function App() {
             focusCardId={focusCardId}
             focusRequestSeq={focusRequestSeq}
           >
-            {uniqueIslands.map((island) => (
-              <IslandView
-                key={island.id}
-                island={island}
-                cards={visibleDocument.cards}
-                isSelected={selectedIslandId === island.id}
-                onSelect={handleIslandSelect}
-              />
-            ))}
+            {islandViews}
           </CanvasShell>
         </>
       )}
