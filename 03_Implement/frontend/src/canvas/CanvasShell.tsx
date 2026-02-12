@@ -35,6 +35,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -81,6 +82,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = false,
+  peekCardIds,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -195,8 +197,34 @@ export function CanvasShell({
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
   const visibleEdges = useMemo(() => {
-    return document.edges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId));
-  }, [document.edges, isCardHidden]);
+    const baseEdges =
+      !hiddenCardIds || hiddenCardIds.size === 0
+        ? document.edges
+        : document.edges.filter(
+            (edge) => !hiddenCardIds.has(edge.fromId) && !hiddenCardIds.has(edge.toId),
+          );
+
+    // codex 側のロジック（isCardHidden）も反映：利用可能ならこちらを優先して除外
+    const withHiddenApplied =
+      typeof isCardHidden === "function"
+        ? baseEdges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId))
+        : baseEdges;
+
+    if (!peekCardIds || peekCardIds.size === 0) {
+      return withHiddenApplied;
+    }
+
+    return withHiddenApplied.filter((edge) => {
+      const fromIsPeekCard = peekCardIds.has(edge.fromId);
+      const toIsPeekCard = peekCardIds.has(edge.toId);
+
+      if (!fromIsPeekCard && !toIsPeekCard) {
+        return true;
+      }
+
+      return fromIsPeekCard && toIsPeekCard;
+    });
+  }, [document.edges, hiddenCardIds, peekCardIds, isCardHidden]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
