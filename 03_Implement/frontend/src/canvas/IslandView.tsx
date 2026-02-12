@@ -14,8 +14,9 @@ type IslandViewProps = {
   island: Island;
   cards: Card[];
   isSelected: boolean;
-  zIndex?: number;
   onSelect: (islandId: string) => void;
+  isPickingEdgeTarget?: boolean;
+  zIndex?: number;
 };
 
 type EdgeHitbox = {
@@ -95,7 +96,14 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
   }
 }
 
-function IslandViewComponent({ island, cards, isSelected, zIndex = 0, onSelect }: IslandViewProps) {
+function IslandViewComponent({
+  island,
+  cards,
+  isSelected,
+  onSelect,
+  isPickingEdgeTarget = false,
+  zIndex = 0,
+}: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const islandBackgroundImage = island.imageUrl
@@ -129,16 +137,16 @@ function IslandViewComponent({ island, cards, isSelected, zIndex = 0, onSelect }
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id);
           }}
           style={{
-            pointerEvents: "auto",
+            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
             position: "absolute",
             ...edgeHitbox.style,
             border: "none",
             backgroundColor: "transparent",
             padding: 0,
-            cursor: "pointer",
+            cursor: isPickingEdgeTarget ? "default" : "pointer",
             zIndex: 2,
           }}
           aria-label={`Select island ${island.id}`}
@@ -184,18 +192,18 @@ function IslandViewComponent({ island, cards, isSelected, zIndex = 0, onSelect }
       />
       <div
         role="button"
-        tabIndex={0}
+        tabIndex={isPickingEdgeTarget ? -1 : 0}
         onClick={(event) => {
           event.stopPropagation();
-          onSelect(island.id);
+          if (!isPickingEdgeTarget) onSelect(island.id);
         }}
         onKeyDown={(event) => {
           handleTitleKeyDown(event, () => {
-            onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id);
           });
         }}
         style={{
-          pointerEvents: "auto",
+          pointerEvents: isPickingEdgeTarget ? "none" : "auto",
           position: "absolute",
           left: ISLAND_TITLE_MARGIN_LEFT,
           top: ISLAND_TITLE_MARGIN_TOP,
@@ -207,7 +215,7 @@ function IslandViewComponent({ island, cards, isSelected, zIndex = 0, onSelect }
           borderRadius: 6,
           border: "1px solid #bae6fd",
           zIndex: 3,
-          cursor: "pointer",
+          cursor: isPickingEdgeTarget ? "default" : "pointer",
           display: "flex",
           alignItems: "center",
           gap: 6,
