@@ -86,6 +86,33 @@ function cloneDocument(document: DocumentV2): DocumentV2 {
   return structuredClone(document);
 }
 
+function markSuggestedFieldsUnreviewed(document: DocumentV2, baseDocument: DocumentV2): DocumentV2 {
+  const baseCardsById = new Map(baseDocument.cards.map((card) => [card.id, card]));
+  const baseIslandsById = new Map(baseDocument.islands.map((island) => [island.id, island]));
+
+  return {
+    ...document,
+    cards: document.cards.map((card) => ({
+      ...card,
+      textReviewed:
+        !baseCardsById.has(card.id) || baseCardsById.get(card.id)?.text !== card.text
+          ? false
+          : baseCardsById.get(card.id)?.textReviewed,
+    })),
+    islands: document.islands.map((island) => ({
+      ...island,
+      titleReviewed:
+        !baseIslandsById.has(island.id) || baseIslandsById.get(island.id)?.title !== island.title
+          ? false
+          : baseIslandsById.get(island.id)?.titleReviewed,
+      imageReviewed:
+        !baseIslandsById.has(island.id) || baseIslandsById.get(island.id)?.imageUrl !== island.imageUrl
+          ? false
+          : baseIslandsById.get(island.id)?.imageReviewed,
+    })),
+  };
+}
+
 function pushHistorySnapshot(history: DocumentHistory, nextDocument: DocumentV2): DocumentHistory {
   const nextPast = [...history.past, cloneDocument(history.present)];
   const trimmedPast = nextPast.length > HISTORY_LIMIT ? nextPast.slice(nextPast.length - HISTORY_LIMIT) : nextPast;
@@ -479,7 +506,7 @@ export default function App() {
     try {
       const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
       setSuggestionId(result.suggestionId);
-      setSuggestedDocument(cloneDocument(result.suggestedDoc));
+      setSuggestedDocument(markSuggestedFieldsUnreviewed(cloneDocument(result.suggestedDoc), document));
       setSuggestionNotes(result.notes ?? null);
       setSuggestionError(null);
       setIsSuggestionPreviewEnabled(true);
@@ -679,6 +706,7 @@ export default function App() {
         return {
           ...island,
           title: nextTitle,
+          titleReviewed: true,
         };
       });
 
@@ -717,6 +745,7 @@ export default function App() {
         return {
           ...island,
           imageUrl: nextImageUrl,
+          imageReviewed: true,
         };
       });
 
@@ -807,6 +836,80 @@ export default function App() {
           islands: nextIslands,
         },
         "Updated island critique"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleIslandTitleReviewedChange = useCallback(
+    (islandId: string, reviewed: boolean) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.titleReviewed ?? false) === reviewed) {
+          return island;
+        }
+
+        return {
+          ...island,
+          titleReviewed: reviewed,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island title reviewed state"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleIslandImageReviewedChange = useCallback(
+    (islandId: string, reviewed: boolean) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.imageReviewed ?? false) === reviewed) {
+          return island;
+        }
+
+        return {
+          ...island,
+          imageReviewed: reviewed,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island image reviewed state"
       );
     },
     [applyDocumentChange, document]
@@ -1272,12 +1375,26 @@ export default function App() {
 
             handleIslandTitleChange(selectedIsland.id, value);
           }}
+          onTitleReviewedChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandTitleReviewedChange(selectedIsland.id, value);
+          }}
           onImageUrlChange={(value) => {
             if (!selectedIsland) {
               return;
             }
 
             handleIslandImageUrlChange(selectedIsland.id, value);
+          }}
+          onImageReviewedChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandImageReviewedChange(selectedIsland.id, value);
           }}
           onIslandCritiqueChange={(value) => {
             if (!selectedIsland) {

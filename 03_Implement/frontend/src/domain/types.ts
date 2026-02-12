@@ -10,6 +10,7 @@ export type Card = {
   x: number;
   y: number;
   critique?: string;
+  textReviewed?: boolean;
 };
 
 export type EdgeType = "related" | "negate";
@@ -32,7 +33,9 @@ export type Island = {
   id: string;
   cardIds: string[];
   title?: string;
+  titleReviewed?: boolean;
   imageUrl?: string;
+  imageReviewed?: boolean;
   critique?: string;
 };
 
