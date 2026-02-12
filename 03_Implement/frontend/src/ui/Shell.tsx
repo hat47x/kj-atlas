@@ -3,12 +3,20 @@ import type { ReactNode } from "react";
 type ShellProps = {
   title: string;
   children: ReactNode;
+  headerCenter?: ReactNode;
   headerRight?: ReactNode;
   hasUnsavedChanges?: boolean;
   sidePanel?: ReactNode;
 };
 
-export function Shell({ title, children, headerRight, hasUnsavedChanges = false, sidePanel }: ShellProps) {
+export function Shell({
+  title,
+  children,
+  headerCenter,
+  headerRight,
+  hasUnsavedChanges = false,
+  sidePanel,
+}: ShellProps) {
   return (
     <div
       style={{
@@ -40,7 +48,7 @@ export function Shell({ title, children, headerRight, hasUnsavedChanges = false,
             gap: 12,
           }}
         >
-          <span>{title}</span>
+          <span style={{ whiteSpace: "nowrap" }}>{title}</span>
           {hasUnsavedChanges ? (
             <span
               style={{
@@ -57,6 +65,13 @@ export function Shell({ title, children, headerRight, hasUnsavedChanges = false,
             </span>
           ) : null}
         </div>
+        {headerCenter ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "0 16px" }}>
+            {headerCenter}
+          </div>
+        ) : (
+          <div style={{ flex: 1 }} />
+        )}
         {headerRight ? (
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{headerRight}</div>
         ) : null}

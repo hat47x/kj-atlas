@@ -10,6 +10,8 @@ import { Marquee } from "./Marquee";
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 const ZOOM_SENSITIVITY = 0.0015;
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 80;
 
 type DragState = {
   pointerId: number;
@@ -29,11 +31,30 @@ type CanvasShellProps = {
   onCanvasBackgroundClick: () => void;
   onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
+  hiddenCardIds?: Set<string>;
+  searchQuery?: string;
+  matchedCardIds?: Set<string>;
+  activeMatchedCardId?: string | null;
+  focusCardId?: string | null;
+  focusRequestSeq?: number;
   children?: ReactNode;
 };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+export function focusTransformAtWorldPoint(
+  currentTransform: Transform,
+  worldPoint: { x: number; y: number },
+  viewportWidth: number,
+  viewportHeight: number
+): Transform {
+  return {
+    ...currentTransform,
+    panX: viewportWidth / 2 - worldPoint.x * currentTransform.zoom,
+    panY: viewportHeight / 2 - worldPoint.y * currentTransform.zoom,
+  };
 }
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -52,6 +73,12 @@ export function CanvasShell({
   onCanvasBackgroundClick,
   onMarqueeSelect,
   onTransformChange,
+  hiddenCardIds,
+  searchQuery = "",
+  matchedCardIds,
+  activeMatchedCardId,
+  focusCardId,
+  focusRequestSeq = 0,
   children,
 }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -91,12 +118,44 @@ export function CanvasShell({
   }, []);
 
   useEffect(() => {
+    setTransform(document.transform);
+  }, [document.transform]);
+
+  useEffect(() => {
     if (!onTransformChange) {
       return;
     }
 
     onTransformChange(transform);
   }, [onTransformChange, transform]);
+
+  useEffect(() => {
+    if (!focusCardId) {
+      return;
+    }
+
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const targetCard = document.cards.find((card) => card.id === focusCardId);
+    if (!targetCard) {
+      return;
+    }
+
+    setTransform((previousTransform) =>
+      focusTransformAtWorldPoint(
+        previousTransform,
+        {
+          x: targetCard.x + CARD_WIDTH / 2,
+          y: targetCard.y + CARD_HEIGHT / 2,
+        },
+        viewport.clientWidth,
+        viewport.clientHeight
+      )
+    );
+  }, [document.cards, focusCardId, focusRequestSeq]);
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -122,7 +181,6 @@ export function CanvasShell({
     const startScreenX = event.clientX - rect.left;
     const startScreenY = event.clientY - rect.top;
 
-    // Mode rule: hold Space to pan. Otherwise, dragging on empty canvas starts marquee selection.
     const mode = isSpacePressed ? "pan" : "marquee";
 
     dragRef.current = {
@@ -218,14 +276,11 @@ export function CanvasShell({
       };
 
       const intersects = (cardX: number, cardY: number) => {
-        const cardWidth = 220;
-        const cardHeight = 80;
-
         return (
           cardX < worldRect.x + worldRect.width &&
-          cardX + cardWidth > worldRect.x &&
+          cardX + CARD_WIDTH > worldRect.x &&
           cardY < worldRect.y + worldRect.height &&
-          cardY + cardHeight > worldRect.y
+          cardY + CARD_HEIGHT > worldRect.y
         );
       };
 
@@ -306,16 +361,25 @@ export function CanvasShell({
         }}
       >
         <EdgeLayer cards={document.cards} edges={document.edges} />
-        {document.cards.map((card) => (
-          <CardView
-            key={card.id}
-            card={card}
-            zoom={transform.zoom}
-            onMove={onCardMove}
-            isSelected={selectedCardIds.includes(card.id)}
-            onSelect={onCardSelect}
-          />
-        ))}
+        {document.cards.map((card) => {
+          if (hiddenCardIds?.has(card.id)) {
+            return null;
+          }
+
+          return (
+            <CardView
+              key={card.id}
+              card={card}
+              zoom={transform.zoom}
+              onMove={onCardMove}
+              isSelected={selectedCardIds.includes(card.id)}
+              onSelect={onCardSelect}
+              searchQuery={searchQuery}
+              isSearchMatch={matchedCardIds?.has(card.id) ?? false}
+              isActiveSearchMatch={activeMatchedCardId === card.id}
+            />
+          );
+        })}
         {children}
       </div>
       {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
