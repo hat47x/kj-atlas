@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -11,7 +13,8 @@ from kj_atlas_api.db import _normalize_database_url, get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
 
-POSTGRES_TEST_URL_ENV = "KJ_ATLAS_TEST_POSTGRES_URL"
+RUN_PG_TESTS_ENV = "RUN_PG_TESTS"
+DATABASE_URL_ENV = "DATABASE_URL"
 
 
 @pytest.fixture()
@@ -23,12 +26,18 @@ def sqlite_client(tmp_path) -> Iterator[TestClient]:
 
 @pytest.fixture()
 def postgres_client() -> Iterator[TestClient]:
-    postgres_url = os.getenv(POSTGRES_TEST_URL_ENV)
-    if not postgres_url:
+    postgres_url = os.getenv(DATABASE_URL_ENV, "")
+    should_run_pg_tests = os.getenv(RUN_PG_TESTS_ENV) == "1" or postgres_url.startswith(
+        "postgresql"
+    )
+
+    if not should_run_pg_tests or not postgres_url.startswith("postgresql"):
         pytest.skip(
-            f"set {POSTGRES_TEST_URL_ENV} to run PostgreSQL docs roundtrip tests",
+            f"set {RUN_PG_TESTS_ENV}=1 and {DATABASE_URL_ENV}=postgresql://... to run PostgreSQL docs roundtrip tests",
             allow_module_level=False,
         )
+
+    subprocess.run(["alembic", "upgrade", "head"], check=True)
 
     yield from _client_for_database_url(postgres_url)
 

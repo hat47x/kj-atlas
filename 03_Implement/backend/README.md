@@ -70,3 +70,21 @@ pg_dump -Fc "$DATABASE_URL" -f kj_atlas_pg.dump
 ```bash
 pg_restore -d "$DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
 ```
+
+
+## Tests
+
+```bash
+cd 03_Implement/backend
+export PYTHONPATH=src
+pytest
+```
+
+PostgreSQL roundtrip test を実行する場合:
+
+```bash
+export DATABASE_URL="postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas"
+export RUN_PG_TESTS=1
+alembic upgrade head
+pytest -m postgres
+```
