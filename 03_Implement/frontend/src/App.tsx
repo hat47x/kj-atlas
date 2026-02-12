@@ -1863,6 +1863,16 @@ export default function App() {
     return Math.max(...islandDepthById.values());
   }, [islandDepthById]);
 
+  useEffect(() => {
+    if (maxDepth === "all") {
+      return;
+    }
+
+    if (maxDepth > maxAvailableDepth) {
+      setMaxDepth(maxAvailableDepth);
+    }
+  }, [maxAvailableDepth, maxDepth]);
+
   const visibleIslands = useMemo(() => {
     return uniqueIslands.filter((island) => {
       if (depthHiddenIslandIdSet.has(island.id)) {
