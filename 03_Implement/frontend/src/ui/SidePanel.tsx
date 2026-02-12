@@ -16,6 +16,8 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
+  onSummaryTextChange: (value: string) => void;
+  onSummaryReviewedChange: (value: boolean) => void;
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCritiqueChange: (value: string) => void;
@@ -53,6 +55,8 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onTitleChange,
   onTitleReviewedChange,
+  onSummaryTextChange,
+  onSummaryReviewedChange,
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCritiqueChange,
@@ -386,6 +390,46 @@ export function SidePanel({
               checked={selectedIsland.titleReviewed === true}
               onChange={(event) => {
                 onTitleReviewedChange(event.target.checked);
+              }}
+            />
+            Reviewed
+          </label>
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Summary
+          </label>
+          <textarea
+            value={selectedIsland.summaryText ?? ""}
+            onChange={(event) => {
+              onSummaryTextChange(event.target.value);
+            }}
+            placeholder="Optional summary for collapsed view"
+            rows={3}
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 10,
+              resize: "vertical",
+            }}
+          />
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "#334155",
+              marginBottom: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIsland.summaryReviewed === true}
+              onChange={(event) => {
+                onSummaryReviewedChange(event.target.checked);
               }}
             />
             Reviewed

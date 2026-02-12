@@ -46,6 +46,8 @@ export type Island = {
   parentIslandId?: string;
   title?: string;
   titleReviewed?: boolean;
+  summaryText?: string;
+  summaryReviewed?: boolean;
   imageUrl?: string;
   imageReviewed?: boolean;
   critique?: string;

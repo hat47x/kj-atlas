@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -59,10 +59,18 @@ class Island(BaseModel):
     parentIslandId: str | None = None
     title: str | None = None
     titleReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    summaryText: str | None = None
+    summaryReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @model_validator(mode="after")
+    def ensure_summary_review_default(self) -> "Island":
+        if self.summaryText is not None and self.summaryReviewed is None:
+            self.summaryReviewed = False
+        return self
 
 
 class DocumentV1(BaseModel):
