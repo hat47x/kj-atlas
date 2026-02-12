@@ -16,6 +16,7 @@ type IslandViewProps = {
   isSelected: boolean;
   onSelect: (islandId: string) => void;
   isPickingEdgeTarget?: boolean;
+  zIndex?: number;
 };
 
 type EdgeHitbox = {
@@ -101,6 +102,7 @@ function IslandViewComponent({
   isSelected,
   onSelect,
   isPickingEdgeTarget = false,
+  zIndex = 0,
 }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
@@ -125,7 +127,7 @@ function IslandViewComponent({
         borderRadius: 12,
         boxSizing: "border-box",
         overflow: "hidden",
-        zIndex: 0,
+        zIndex,
         isolation: "isolate",
       }}
     >
@@ -135,16 +137,16 @@ function IslandViewComponent({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id);
           }}
           style={{
-            pointerEvents: "auto",
+            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
             position: "absolute",
             ...edgeHitbox.style,
             border: "none",
             backgroundColor: "transparent",
             padding: 0,
-            cursor: isPickingEdgeTarget ? "crosshair" : "pointer",
+            cursor: isPickingEdgeTarget ? "default" : "pointer",
             zIndex: 2,
           }}
           aria-label={`Select island ${island.id}`}
@@ -190,18 +192,18 @@ function IslandViewComponent({
       />
       <div
         role="button"
-        tabIndex={0}
+        tabIndex={isPickingEdgeTarget ? -1 : 0}
         onClick={(event) => {
           event.stopPropagation();
-          onSelect(island.id);
+          if (!isPickingEdgeTarget) onSelect(island.id);
         }}
         onKeyDown={(event) => {
           handleTitleKeyDown(event, () => {
-            onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id);
           });
         }}
         style={{
-          pointerEvents: "auto",
+          pointerEvents: isPickingEdgeTarget ? "none" : "auto",
           position: "absolute",
           left: ISLAND_TITLE_MARGIN_LEFT,
           top: ISLAND_TITLE_MARGIN_TOP,
@@ -213,7 +215,7 @@ function IslandViewComponent({
           borderRadius: 6,
           border: "1px solid #bae6fd",
           zIndex: 3,
-          cursor: isPickingEdgeTarget ? "crosshair" : "pointer",
+          cursor: isPickingEdgeTarget ? "default" : "pointer",
           display: "flex",
           alignItems: "center",
           gap: 6,
