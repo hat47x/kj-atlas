@@ -86,6 +86,7 @@ class DocumentV2(BaseModel):
     cards: list[CardV2]
     edges: list[EdgeV2]
     islands: list[Island]
+    readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

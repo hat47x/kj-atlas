@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CRITIQUE_TAGS } from "../domain/types";
 import type { Card, CritiqueTag, Island } from "../domain/types";
 
+type ReadingOrderItem = {
+  id: string;
+  label: string;
+};
+
 type SidePanelProps = {
   selectedCard: Card | null;
   selectedIsland: Island | null;
@@ -32,6 +37,11 @@ type SidePanelProps = {
   onConnectEdgeTypeChange: (value: "related" | "negate") => void;
   onStartConnect: () => void;
   onCancelConnect: () => void;
+  readingOrderItems: ReadingOrderItem[];
+  canAddSelectedItemToReadingOrder: boolean;
+  onAddSelectedItemToReadingOrder: () => void;
+  onMoveReadingOrderItem: (index: number, direction: -1 | 1) => void;
+  onRemoveReadingOrderItem: (index: number) => void;
   topContent?: ReactNode;
 };
 
@@ -64,6 +74,11 @@ export function SidePanel({
   onConnectEdgeTypeChange,
   onStartConnect,
   onCancelConnect,
+  readingOrderItems,
+  canAddSelectedItemToReadingOrder,
+  onAddSelectedItemToReadingOrder,
+  onMoveReadingOrderItem,
+  onRemoveReadingOrderItem,
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
@@ -224,6 +239,78 @@ export function SidePanel({
         {isPickingEdgeTarget ? (
           <div style={{ marginTop: 8, fontSize: 12, color: "#334155" }}>Pick target card or island. (Esc to cancel)</div>
         ) : null}
+      </section>
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Reading Order</div>
+        {canAddSelectedItemToReadingOrder ? (
+          <button
+            type="button"
+            onClick={onAddSelectedItemToReadingOrder}
+            style={{
+              width: "100%",
+              marginBottom: 8,
+              border: "1px solid #cbd5e1",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              borderRadius: 6,
+              padding: "6px 10px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Add to Reading Order
+          </button>
+        ) : (
+          <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>
+            Select one island or one card to add to reading order.
+          </div>
+        )}
+        {readingOrderItems.length === 0 ? (
+          <div style={{ fontSize: 12, color: "#64748b" }}>No reading order entries yet.</div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {readingOrderItems.map((item, index) => (
+              <div
+                key={`${item.id}_${index}`}
+                style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 6, backgroundColor: "#f8fafc" }}
+              >
+                <div style={{ fontSize: 11, color: "#64748b" }}>{item.id}</div>
+                <div style={{ fontSize: 12, color: "#0f172a", marginBottom: 4 }}>{item.label}</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMoveReadingOrderItem(index, -1);
+                    }}
+                    disabled={index === 0}
+                    style={{ cursor: index === 0 ? "not-allowed" : "pointer" }}
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onMoveReadingOrderItem(index, 1);
+                    }}
+                    disabled={index === readingOrderItems.length - 1}
+                    style={{ cursor: index === readingOrderItems.length - 1 ? "not-allowed" : "pointer" }}
+                  >
+                    Down
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRemoveReadingOrderItem(index);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
       {selectedIsland ? (
         <>

@@ -73,6 +73,7 @@ export type DocumentV2 = {
   cards: Card[];
   edges: Edge[];
   islands: Island[];
+  readingOrder?: string[];
 };
 
 export type Document = DocumentV1 | DocumentV2;
