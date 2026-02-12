@@ -15,8 +15,9 @@ import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
+import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 
-const DOCUMENT_ID = "doc_phase1_canvas";
+const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
@@ -43,13 +44,13 @@ type EdgeConnectSource = {
   kind: EdgeEndpointKind;
 };
 
-function createDefaultDocument(docId: string): DocumentV2 {
+function createSampleDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
 
   return {
     version: 2,
     id: docId,
-    title: "Phase 1 Canvas Sample",
+    title: "Untitled",
     createdAt: now,
     updatedAt: now,
     transform: {
@@ -59,19 +60,19 @@ function createDefaultDocument(docId: string): DocumentV2 {
     },
     cards: [
       {
-        id: "card_1",
+        id: crypto.randomUUID(),
         text: "ユーザー課題を集める",
         x: 80,
         y: 60,
       },
       {
-        id: "card_2",
+        id: crypto.randomUUID(),
         text: "観察メモをカード化する",
         x: 380,
         y: 180,
       },
       {
-        id: "card_3",
+        id: crypto.randomUUID(),
         text: "似ている内容を近くに置く",
         x: 220,
         y: 360,
@@ -79,6 +80,17 @@ function createDefaultDocument(docId: string): DocumentV2 {
     ],
     edges: [],
     islands: [],
+  };
+}
+
+function duplicateDocumentWithNewId(sourceDocument: DocumentV2): DocumentV2 {
+  const now = new Date().toISOString();
+
+  return {
+    ...cloneDocument(sourceDocument),
+    id: crypto.randomUUID(),
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -181,6 +193,9 @@ export default function App() {
   const [docEtag, setDocEtag] = useState<string | null>(null);
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
+  const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
+  const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
   const [suggestedDocument, setSuggestedDocument] = useState<DocumentV2 | null>(null);
   const [suggestionId, setSuggestionId] = useState<string | null>(null);
@@ -261,8 +276,12 @@ export default function App() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
 
+  const rememberRecentDocumentId = useCallback((docId: string) => {
+    setRecentDocumentIds(pushRecentDocumentId(docId));
+  }, []);
+
   const loadDocument = useCallback(
-    async (options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
+    async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
       const isReload = options?.isReload ?? false;
       if (isReload) {
@@ -272,7 +291,7 @@ export default function App() {
       setStatusMessage(isReload ? "Reloading document..." : "Loading document...");
 
       try {
-        const loaded = await getDocument(DOCUMENT_ID);
+        const loaded = await getDocument(docId);
         const loadedDocument = toDocumentV2(loaded.document);
 
         setHistory({
@@ -280,6 +299,9 @@ export default function App() {
           present: cloneDocument(loadedDocument),
           future: [],
         });
+        setActiveDocumentId(loadedDocument.id);
+        rememberRecentDocumentId(loadedDocument.id);
+        setSelectedRecentDocumentId(loadedDocument.id);
         setDocEtag(loaded.etag ?? null);
         setSelectedCardIds([]);
         setSelectedIslandId(null);
@@ -293,10 +315,10 @@ export default function App() {
         setStatusMessage("Document loaded");
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
-          const defaultDocument = createDefaultDocument(DOCUMENT_ID);
+          const defaultDocument = createSampleDocument(docId);
 
           try {
-            const saved = await putDocument(DOCUMENT_ID, defaultDocument);
+            const saved = await putDocument(docId, defaultDocument);
             const savedDocument = toDocumentV2(saved.document);
 
             setHistory({
@@ -304,6 +326,9 @@ export default function App() {
               present: cloneDocument(savedDocument),
               future: [],
             });
+            setActiveDocumentId(savedDocument.id);
+            rememberRecentDocumentId(savedDocument.id);
+            setSelectedRecentDocumentId(savedDocument.id);
             setDocEtag(saved.etag ?? null);
             setSelectedCardIds([]);
             setSelectedIslandId(null);
@@ -319,7 +344,11 @@ export default function App() {
             setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
           }
         } else {
-          setStatusMessage(error instanceof Error ? error.message : "Failed to load document");
+          if (error instanceof ApiError && error.status === 404) {
+            setStatusMessage(`Document ${docId} was not found`);
+          } else {
+            setStatusMessage(error instanceof Error ? error.message : "Failed to load document");
+          }
         }
       } finally {
         setIsLoading(false);
@@ -328,7 +357,7 @@ export default function App() {
         }
       }
     },
-    []
+    [rememberRecentDocumentId]
   );
 
   useEffect(() => {
@@ -339,7 +368,7 @@ export default function App() {
         return;
       }
 
-      await loadDocument({ allowCreateOnNotFound: true });
+      await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
     };
 
     void loadForMount();
@@ -585,6 +614,9 @@ export default function App() {
         present: cloneDocument(savedDocument),
         future: [],
       });
+      setActiveDocumentId(savedDocument.id);
+      rememberRecentDocumentId(savedDocument.id);
+      setSelectedRecentDocumentId(savedDocument.id);
       setDocEtag(saved.etag ?? null);
       setIsDirty(false);
       setHasSaveConflict(false);
@@ -601,6 +633,67 @@ export default function App() {
       setIsSaving(false);
     }
   };
+
+  const handleNewDocument = useCallback(() => {
+    const newDocId = crypto.randomUUID();
+    const newDocument = createSampleDocument(newDocId);
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(newDocument),
+      future: [],
+    });
+    setActiveDocumentId(newDocId);
+    rememberRecentDocumentId(newDocId);
+    setSelectedRecentDocumentId(newDocId);
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setIsDirty(true);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setStatusMessage("Created a new local document");
+  }, [rememberRecentDocumentId]);
+
+  const handleDuplicateDocument = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const duplicated = duplicateDocumentWithNewId(document);
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(duplicated),
+      future: [],
+    });
+    setActiveDocumentId(duplicated.id);
+    rememberRecentDocumentId(duplicated.id);
+    setSelectedRecentDocumentId(duplicated.id);
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setIsDirty(true);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setStatusMessage("Duplicated the current document");
+  }, [document, rememberRecentDocumentId]);
+
+  const handleOpenRecent = useCallback(() => {
+    if (!selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId) {
+      return;
+    }
+
+    void loadDocument(selectedRecentDocumentId);
+  }, [activeDocumentId, loadDocument, selectedRecentDocumentId]);
 
   const handleSuggestLayout = useCallback(async () => {
     if (!document || isSuggesting) {
@@ -799,6 +892,9 @@ export default function App() {
           present: cloneDocument(validateResult.document),
           future: [],
         });
+        setActiveDocumentId(validateResult.document.id);
+        rememberRecentDocumentId(validateResult.document.id);
+        setSelectedRecentDocumentId(validateResult.document.id);
         setDocEtag(null);
         setSelectedCardIds([]);
         setSelectedIslandId(null);
@@ -818,7 +914,7 @@ export default function App() {
         setStatusMessage(error instanceof Error ? error.message : "Failed to import document");
       }
     },
-    []
+    [rememberRecentDocumentId]
   );
 
   const handleImportClick = useCallback(() => {
@@ -1661,7 +1757,81 @@ export default function App() {
   });
 
   const headerRight = (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <button
+        type="button"
+        onClick={handleNewDocument}
+        disabled={isLoading || isSaving}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || isSaving ? "not-allowed" : "pointer",
+        }}
+      >
+        New
+      </button>
+      <button
+        type="button"
+        onClick={handleDuplicateDocument}
+        disabled={isLoading || isSaving || !document}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor: isLoading || isSaving || !document ? "not-allowed" : "pointer",
+        }}
+      >
+        Duplicate
+      </button>
+      <select
+        value={selectedRecentDocumentId}
+        onChange={(event) => {
+          setSelectedRecentDocumentId(event.target.value);
+        }}
+        disabled={isLoading || recentDocumentIds.length === 0}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 500,
+          minWidth: 180,
+        }}
+      >
+        <option value="">Recent documents</option>
+        {recentDocumentIds.map((docId) => (
+          <option key={docId} value={docId}>
+            {docId}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={handleOpenRecent}
+        disabled={isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontWeight: 600,
+          cursor:
+            isLoading || !selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId
+              ? "not-allowed"
+              : "pointer",
+        }}
+      >
+        Open
+      </button>
       <button
         type="button"
         onClick={() => {
@@ -1784,6 +1954,7 @@ export default function App() {
   return (
     <Shell
       title="kj-atlas Canvas MVP"
+      subtitle={`Document: ${activeDocumentId}`}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
@@ -1793,7 +1964,7 @@ export default function App() {
           : undefined
       }
       onReloadAfterConflict={() => {
-        void loadDocument({ isReload: true });
+        void loadDocument(activeDocumentId, { isReload: true });
       }}
       onExportAfterConflict={handleExport}
       isReloadingAfterConflict={isReloadingDocument}

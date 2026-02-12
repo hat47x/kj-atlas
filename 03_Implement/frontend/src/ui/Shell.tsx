@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 type ShellProps = {
   title: string;
+  subtitle?: ReactNode;
   children: ReactNode;
   headerCenter?: ReactNode;
   headerRight?: ReactNode;
@@ -15,6 +16,7 @@ type ShellProps = {
 
 export function Shell({
   title,
+  subtitle,
   children,
   headerCenter,
   headerRight,
@@ -74,6 +76,7 @@ export function Shell({
               </span>
             ) : null}
           </div>
+          {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span
