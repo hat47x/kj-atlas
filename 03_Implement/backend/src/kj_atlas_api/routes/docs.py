@@ -48,6 +48,7 @@ def get_document(doc_id: str, response: Response, db: Session = Depends(get_db))
 def put_document(
     doc_id: str,
     document: DocumentPayload,
+    response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
@@ -80,4 +81,5 @@ def put_document(
         doc_row.payload_json = payload_json
 
     db.commit()
+    response.headers["ETag"] = _format_etag(_compute_etag(payload_json))
     return document

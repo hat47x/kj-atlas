@@ -11,6 +11,11 @@ export class ApiError extends Error {
   }
 }
 
+export type DocumentWithEtag<TDocument extends Document> = {
+  document: TDocument;
+  etag?: string;
+};
+
 async function parseErrorMessage(response: Response): Promise<string> {
   try {
     const body = await response.json();
@@ -52,22 +57,70 @@ function normalizeDocument(document: Document): Document {
   };
 }
 
-export async function getDocument(docId: string): Promise<Document> {
+function normalizeEtag(rawEtag: string | null): string | undefined {
+  if (!rawEtag) {
+    return undefined;
+  }
+
+  let value = rawEtag.trim();
+  if (value.startsWith("W/")) {
+    value = value.slice(2).trim();
+  }
+
+  if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+    return value.slice(1, -1);
+  }
+
+  return value.length > 0 ? value : undefined;
+}
+
+function formatIfMatchHeader(etag: string): string {
+  return etag === "*" ? etag : `"${etag}"`;
+}
+
+async function sha256Hex(value: string): Promise<string | undefined> {
+  if (!globalThis.crypto?.subtle) {
+    return undefined;
+  }
+
+  const encoded = new TextEncoder().encode(value);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", encoded);
+  const bytes = Array.from(new Uint8Array(digest));
+  return bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function parseDocumentResponse(responseBody: string): Document {
+  return JSON.parse(responseBody) as Document;
+}
+
+export async function getDocument(docId: string): Promise<DocumentWithEtag<Document>> {
   const response = await fetch(`${API_BASE}/docs/${docId}`);
 
   if (!response.ok) {
     throw new ApiError(response.status, await parseErrorMessage(response));
   }
 
-  return normalizeDocument((await response.json()) as Document);
+  return {
+    document: normalizeDocument(parseDocumentResponse(await response.text())),
+    etag: normalizeEtag(response.headers.get("ETag")),
+  };
 }
 
-export async function putDocument(docId: string, document: DocumentV2): Promise<DocumentV2> {
+export async function putDocument(
+  docId: string,
+  document: DocumentV2,
+  ifMatch?: string
+): Promise<DocumentWithEtag<DocumentV2>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (ifMatch) {
+    headers["If-Match"] = formatIfMatchHeader(ifMatch);
+  }
+
   const response = await fetch(`${API_BASE}/docs/${docId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(document),
   });
 
@@ -75,13 +128,17 @@ export async function putDocument(docId: string, document: DocumentV2): Promise<
     throw new ApiError(response.status, await parseErrorMessage(response));
   }
 
-  const normalizedDocument = normalizeDocument((await response.json()) as Document);
+  const responseBody = await response.text();
+  const normalizedDocument = normalizeDocument(parseDocumentResponse(responseBody));
 
   if (normalizedDocument.version !== 2) {
     throw new ApiError(500, "Unexpected document version in update response");
   }
 
-  return normalizedDocument;
+  return {
+    document: normalizedDocument,
+    etag: normalizeEtag(response.headers.get("ETag")) ?? (await sha256Hex(responseBody)),
+  };
 }
 
 export type SuggestLayoutResult = {

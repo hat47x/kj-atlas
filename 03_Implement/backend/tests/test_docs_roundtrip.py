@@ -103,10 +103,47 @@ def _assert_put_get_roundtrip(client: TestClient) -> None:
     assert get_response.json() == payload
 
 
+def _assert_etag_optimistic_locking(client: TestClient) -> None:
+    doc_id = "doc-etag"
+    payload = _sample_payload(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    first_etag = put_response.headers.get("etag")
+    assert first_etag
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    assert get_response.headers.get("etag") == first_etag
+
+    stale_payload = {**payload, "updatedAt": "2026-02-11T00:01:00Z", "title": "stale update"}
+    stale_put = client.put(
+        f"/docs/{doc_id}",
+        json=stale_payload,
+        headers={"If-Match": '"definitely-stale-etag"'},
+    )
+    assert stale_put.status_code == 409
+
+    fresh_payload = {**payload, "updatedAt": "2026-02-11T00:02:00Z", "title": "fresh update"}
+    fresh_put = client.put(f"/docs/{doc_id}", json=fresh_payload, headers={"If-Match": first_etag})
+    assert fresh_put.status_code == 200
+    second_etag = fresh_put.headers.get("etag")
+    assert second_etag
+    assert second_etag != first_etag
+
 def test_docs_put_get_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_put_get_roundtrip(sqlite_client)
+
+
+def test_docs_etag_sqlite(sqlite_client: TestClient) -> None:
+    _assert_etag_optimistic_locking(sqlite_client)
 
 
 @pytest.mark.postgres
 def test_docs_put_get_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_put_get_roundtrip(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_etag_postgres(postgres_client: TestClient) -> None:
+    _assert_etag_optimistic_locking(postgres_client)
