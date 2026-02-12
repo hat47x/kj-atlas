@@ -10,7 +10,15 @@ from kj_atlas_api.llm.provider import (
     ProviderRequestError,
     get_provider,
 )
-from kj_atlas_api.models import Card, SuggestLayoutRequest, SuggestLayoutResponse, Transform
+from kj_atlas_api.models import (
+    Card,
+    MergeSuggestion,
+    SuggestLayoutRequest,
+    SuggestLayoutResponse,
+    SuggestMergesRequest,
+    SuggestMergesResponse,
+    Transform,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -104,6 +112,74 @@ def _parse_suggestion(raw_text: str, source_doc: SuggestLayoutRequest) -> tuple[
     return transform, suggested_cards, notes_data
 
 
+def _build_merge_prompt(payload: SuggestMergesRequest) -> str:
+    card_lines = [f'- id="{card.id}", text="{card.text}"' for card in payload.doc.cards]
+    instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
+
+    return "\n".join(
+        [
+            "You suggest potential merge candidates for similar cards.",
+            "You must only propose suggestions. Do not apply merges and do not delete anything.",
+            "Return strict JSON only. No markdown. No explanation text outside JSON.",
+            "Return at most 10 suggestions.",
+            "Use this exact schema:",
+            '{"suggestions":[{"groupId":string,"cardIds":[string,...],"mergedTextDraft":string,"rationale":string?}]}',
+            "Each suggestion must include at least 2 cardIds.",
+            "Only use card IDs from the input.",
+            f"Instruction: {instruction}",
+            "Cards:",
+            *card_lines,
+        ]
+    )
+
+
+def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) -> list[MergeSuggestion]:
+    try:
+        parsed = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=422, detail="LLM response must be a JSON object")
+
+    suggestions_data = parsed.get("suggestions")
+    if not isinstance(suggestions_data, list):
+        raise HTTPException(status_code=422, detail="LLM response missing suggestions array")
+    if len(suggestions_data) > 10:
+        raise HTTPException(status_code=422, detail="LLM response included more than 10 suggestions")
+
+    known_card_ids = {card.id for card in source_doc.doc.cards}
+    parsed_suggestions: list[MergeSuggestion] = []
+    seen_group_ids: set[str] = set()
+
+    for item in suggestions_data:
+        if not isinstance(item, dict):
+            raise HTTPException(status_code=422, detail="Each merge suggestion must be an object")
+
+        try:
+            suggestion = MergeSuggestion.model_validate(item)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail="Invalid merge suggestion payload") from exc
+
+        if suggestion.groupId in seen_group_ids:
+            raise HTTPException(status_code=422, detail="Duplicate merge suggestion groupId")
+        seen_group_ids.add(suggestion.groupId)
+
+        if len(suggestion.cardIds) < 2:
+            raise HTTPException(status_code=422, detail="Each merge suggestion must include at least 2 cardIds")
+
+        if len(set(suggestion.cardIds)) != len(suggestion.cardIds):
+            raise HTTPException(status_code=422, detail="Each merge suggestion cardIds must not contain duplicates")
+
+        unknown_ids = [card_id for card_id in suggestion.cardIds if card_id not in known_card_ids]
+        if unknown_ids:
+            raise HTTPException(status_code=422, detail="LLM response included unknown card id")
+
+        parsed_suggestions.append(suggestion)
+
+    return parsed_suggestions
+
+
 @router.post("/suggest-layout", response_model=SuggestLayoutResponse)
 def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     provider = get_provider()
@@ -133,3 +209,22 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
         suggestedDoc=suggested_doc,
         notes=notes,
     )
+
+
+@router.post("/suggest-merges", response_model=SuggestMergesResponse)
+def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
+    provider = get_provider()
+    try:
+        llm_response = provider.generate(
+            LLMRequest(
+                task="suggest_merges",
+                prompt=_build_merge_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ProviderRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
+    return SuggestMergesResponse(suggestions=suggestions)

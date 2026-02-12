@@ -61,6 +61,7 @@ function parseCards(value: unknown): Card[] | null {
       x,
       y,
       critique: typeof item.critique === "string" ? item.critique : undefined,
+      textReviewed: typeof item.textReviewed === "boolean" ? item.textReviewed : undefined,
     });
   }
 

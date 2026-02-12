@@ -10,6 +10,7 @@ export type Card = {
   x: number;
   y: number;
   critique?: string;
+  textReviewed?: boolean;
 };
 
 export type EdgeType = "related" | "negate";

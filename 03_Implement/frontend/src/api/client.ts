@@ -28,6 +28,7 @@ function normalizeCard(card: Card): Card {
   return {
     ...card,
     critique: typeof card.critique === "string" ? card.critique : undefined,
+    textReviewed: typeof card.textReviewed === "boolean" ? card.textReviewed : undefined,
   };
 }
 
@@ -118,4 +119,33 @@ export async function suggestLayout(doc: DocumentV2, instruction?: string): Prom
     suggestedDoc,
     notes: body.notes,
   };
+}
+
+
+export type MergeSuggestion = {
+  groupId: string;
+  cardIds: string[];
+  mergedTextDraft: string;
+  rationale?: string;
+};
+
+export async function suggestMerges(doc: DocumentV2, instruction?: string): Promise<{ suggestions: MergeSuggestion[] }> {
+  const response = await fetch(`${API_BASE}/ai/suggest-merges`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, instruction }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as { suggestions?: MergeSuggestion[] };
+  if (!Array.isArray(body.suggestions)) {
+    throw new ApiError(500, "Invalid merge suggestions response");
+  }
+
+  return { suggestions: body.suggestions };
 }
