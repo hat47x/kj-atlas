@@ -40,3 +40,13 @@ docker compose logs api --tail=100
 - 既定の `LLM_PROVIDER=none` では外部送信は行いません。
 - ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
+
+## 4. セキュリティ運用メモ（MVP）
+
+- 公開時は API を直接公開せず、Nginx / Traefik などのリバースプロキシ配下で TLS 終端してください。
+- イントラネット / VPN 境界での運用を前提にし、可能であれば IP 許可リストを設定してください。
+- 迅速な保護が必要な場合は、プロキシ側 Basic 認証を有効化してください。
+- API と DB はネットワークを分離し、DB ポートの外部公開を避けてください。
+- 定期バックアップとパッチ適用を運用手順に含めてください。
+
+詳細は [security.md](./security.md) を参照してください。

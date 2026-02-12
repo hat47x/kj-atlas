@@ -25,6 +25,16 @@ LLM連携方式を指定します。
 - `local_http`
 - `external`（将来向け・現状未実装）
 
+
+### `API_KEY`（任意）
+
+簡易なAPI保護キーです。
+
+- 未設定: 認証なし（既定動作）
+- 設定時: `/healthz` 以外のAPIで `X-API-Key: <API_KEY>` を必須化
+
+> 本機能はMVP向けの簡易ガードです。完全な認証/認可の代替ではありません。
+
 ## 3. `local_http` 設定（ローカル/社内LLM）
 
 `LLM_PROVIDER=local_http` のときは以下を設定します。
@@ -59,6 +69,15 @@ export LOCAL_LLM_MODEL='local-model-name'
 docker compose up -d
 ```
 
+
+### APIキーを有効化（任意）
+
+```bash
+cd /path/to/kj-atlas/03_Implement/deploy
+export API_KEY='change-me'
+docker compose up -d
+```
+
 ## 5. データ搬送（JSON Export / Import）
 
 フロントエンドで JSON Export / Import を利用できます。
@@ -67,3 +86,8 @@ docker compose up -d
 - Import: JSON を読み込み、バリデーション後に反映
 
 イントラ運用時の持ち出し可否や保管場所は、組織ルールで管理してください。
+
+## セキュリティ設定
+
+最小運用の保護策（リバースプロキシ/TLS、IP制限、Basic認証、API_KEY など）は
+[security.md](./security.md) を参照してください。
