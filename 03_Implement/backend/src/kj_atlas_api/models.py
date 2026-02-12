@@ -30,6 +30,8 @@ class Card(BaseModel):
     text: str
     x: float
     y: float
+    canonicalId: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    sources: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)

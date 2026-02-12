@@ -9,10 +9,20 @@ export type Card = {
   text: string;
   x: number;
   y: number;
+  canonicalId?: string;
+  sources?: string[];
   critique?: string;
   critiqueTags?: string[];
   textReviewed?: boolean;
 };
+
+export function isCanonicalCard(card: Card): boolean {
+  return card.canonicalId === undefined;
+}
+
+export function isSourceCard(card: Card): boolean {
+  return card.canonicalId !== undefined;
+}
 
 export const CRITIQUE_TAGS = [
   "too_close",
