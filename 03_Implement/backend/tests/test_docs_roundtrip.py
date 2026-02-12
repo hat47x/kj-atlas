@@ -90,6 +90,78 @@ def _sample_payload(doc_id: str) -> dict:
     }
 
 
+
+
+def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-1",
+                "text": "alpha",
+                "x": 12.5,
+                "y": -9.0,
+            },
+            {
+                "id": "card-2",
+                "text": "beta",
+                "x": 212.5,
+                "y": 91.0,
+            },
+        ],
+        "edges": [
+            {
+                "id": "edge-1",
+                "fromId": "card-1",
+                "toId": "card-2",
+                "type": "related",
+            }
+        ],
+        "islands": [
+            {
+                "id": "parent-island",
+                "cardIds": ["card-1"],
+                "collapsed": True,
+                "title": "Parent",
+            },
+            {
+                "id": "child-island",
+                "cardIds": ["card-2"],
+                "parentIslandId": "parent-island",
+                "collapsed": False,
+                "title": "Child",
+            },
+        ],
+    }
+
+
+def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-collapsed"
+    payload = _sample_payload_v2_with_collapsed(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    assert put_json["version"] == 2
+    assert put_json["id"] == doc_id
+
+    put_islands_by_id = {island["id"]: island for island in put_json["islands"]}
+    assert put_islands_by_id["parent-island"]["collapsed"] is True
+    assert put_islands_by_id["child-island"]["collapsed"] is False
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+
+    get_islands_by_id = {island["id"]: island for island in get_json["islands"]}
+    assert get_islands_by_id["parent-island"]["collapsed"] is True
+    assert get_islands_by_id["child-island"]["collapsed"] is False
+
 def _assert_put_get_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip"
     payload = _sample_payload(doc_id)
@@ -147,3 +219,12 @@ def test_docs_put_get_roundtrip_postgres(postgres_client: TestClient) -> None:
 @pytest.mark.postgres
 def test_docs_etag_postgres(postgres_client: TestClient) -> None:
     _assert_etag_optimistic_locking(postgres_client)
+
+
+def test_docs_v2_collapsed_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_collapsed_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_collapsed_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_collapsed_roundtrip(postgres_client)

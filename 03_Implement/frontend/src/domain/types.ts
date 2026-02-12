@@ -44,6 +44,7 @@ export type Island = {
   id: string;
   cardIds: string[];
   parentIslandId?: string;
+  collapsed?: boolean;
   title?: string;
   titleReviewed?: boolean;
   imageUrl?: string;

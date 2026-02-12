@@ -169,6 +169,21 @@ export function CanvasShell({
   }, [document.cards, focusCardId, focusRequestSeq]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
+  const visibleCards = useMemo(() => {
+    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+      return document.cards;
+    }
+
+    return document.cards.filter((card) => !hiddenCardIds.has(card.id));
+  }, [document.cards, hiddenCardIds]);
+  const visibleEdges = useMemo(() => {
+    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+      return document.edges;
+    }
+
+    return document.edges.filter((edge) => !hiddenCardIds.has(edge.fromId) && !hiddenCardIds.has(edge.toId));
+  }, [document.edges, hiddenCardIds]);
+
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
     if (!hiddenCardIds || hiddenCardIds.size === 0) {
@@ -320,7 +335,7 @@ export function CanvasShell({
         );
       };
 
-      const selectedByMarquee = document.cards
+      const selectedByMarquee = visibleCards
         .filter((card) => intersects(card.x, card.y))
         .map((card) => card.id);
 
@@ -396,10 +411,10 @@ export function CanvasShell({
           transformOrigin: "0 0",
         }}
       >
-        <EdgeLayer cards={document.cards} edges={document.edges} />
+        <EdgeLayer cards={visibleCards} edges={visibleEdges} />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
-        {document.cards.map((card) => {
+        {visibleCards.map((card) => {
           if (hiddenCardIds?.has(card.id)) {
             return null;
           }

@@ -18,6 +18,7 @@ type SidePanelProps = {
   onTitleReviewedChange: (value: boolean) => void;
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
+  onIslandCollapsedChange: (value: boolean) => void;
   onIslandCritiqueChange: (value: string) => void;
   onIslandCritiqueTagsChange: (value: string[]) => void;
   onAddSelectedCards: () => void;
@@ -55,6 +56,7 @@ export function SidePanel({
   onTitleReviewedChange,
   onImageUrlChange,
   onImageReviewedChange,
+  onIslandCollapsedChange,
   onIslandCritiqueChange,
   onIslandCritiqueTagsChange,
   onAddSelectedCards,
@@ -352,6 +354,26 @@ export function SidePanel({
               backgroundColor: "#f8fafc",
             }}
           />
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "#334155",
+              marginBottom: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIsland.collapsed === true}
+              onChange={(event) => {
+                onIslandCollapsedChange(event.target.checked);
+              }}
+            />
+            Collapsed
+          </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Title
