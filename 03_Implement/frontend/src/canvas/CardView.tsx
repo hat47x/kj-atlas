@@ -18,6 +18,7 @@ type CardViewProps = {
   isActiveSearchMatch?: boolean;
   onMove: (cardId: string, deltaScreenX: number, deltaScreenY: number) => void;
   onSelect: (cardId: string, isShiftPressed: boolean) => void;
+  isPickingEdgeTarget?: boolean;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -78,6 +79,7 @@ function CardViewComponent({
   isActiveSearchMatch = false,
   onMove,
   onSelect,
+  isPickingEdgeTarget = false,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -93,6 +95,12 @@ function CardViewComponent({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (isPickingEdgeTarget) {
+      event.stopPropagation();
+      onSelect(card.id, false);
+      return;
+    }
+
     if (!canStartDrag(event)) {
       return;
     }
@@ -190,7 +198,7 @@ function CardViewComponent({
         color: "#0f172a",
         lineHeight: 1.4,
         whiteSpace: "pre-wrap",
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
     >
       {hasCritique ? (

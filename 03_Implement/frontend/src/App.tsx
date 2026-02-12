@@ -34,6 +34,13 @@ type MergeSuggestionDraft = {
   isEdited: boolean;
 };
 
+type EdgeEndpointKind = "card" | "island";
+
+type EdgeConnectSource = {
+  id: string;
+  kind: EdgeEndpointKind;
+};
+
 function createDefaultDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
 
@@ -170,6 +177,8 @@ export default function App() {
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
+  const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
+  const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
@@ -765,6 +774,42 @@ export default function App() {
   }, []);
 
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
+    if (isPickingEdgeTarget) {
+      if (!document) {
+        return;
+      }
+
+      const source =
+        selectedIslandId && selectedCardIds.length === 0
+          ? { id: selectedIslandId, kind: "island" as const }
+          : !selectedIslandId && selectedCardIds.length === 1
+            ? { id: selectedCardIds[0], kind: "card" as const }
+            : null;
+
+      if (!source || (source.id === cardId && source.kind === "card")) {
+        return;
+      }
+
+      const edgeWithKinds = {
+        id: crypto.randomUUID(),
+        fromId: source.id,
+        toId: cardId,
+        fromKind: source.kind,
+        toKind: "card",
+        type: connectEdgeType,
+      } as DocumentV2["edges"][number];
+
+      applyDocumentChange(
+        {
+          ...document,
+          edges: [...document.edges, edgeWithKinds],
+        },
+        `Connected ${source.kind} → card`
+      );
+      setIsPickingEdgeTarget(false);
+      return;
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (isShiftPressed) {
         const isAlreadySelected = previousSelectedCardIds.includes(cardId);
@@ -781,9 +826,13 @@ export default function App() {
 
       return [cardId];
     });
-  }, []);
+  }, [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]);
 
   const handleCanvasBackgroundClick = useCallback(() => {
+    if (isPickingEdgeTarget) {
+      return;
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (previousSelectedCardIds.length === 0) {
         return previousSelectedCardIds;
@@ -792,9 +841,15 @@ export default function App() {
       return [];
     });
     setSelectedIslandId(null);
-  }, []);
+  }, [isPickingEdgeTarget]);
 
   const handleClearSelection = useCallback(() => {
+    if (isPickingEdgeTarget) {
+      setIsPickingEdgeTarget(false);
+      setStatusMessage("Canceled connect");
+      return;
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (previousSelectedCardIds.length === 0) {
         return previousSelectedCardIds;
@@ -803,9 +858,13 @@ export default function App() {
       return [];
     });
     setSelectedIslandId(null);
-  }, []);
+  }, [isPickingEdgeTarget]);
 
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
+    if (isPickingEdgeTarget) {
+      return;
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       const uniqueCardIds = Array.from(new Set(cardIds));
 
@@ -822,9 +881,70 @@ export default function App() {
 
       return uniqueCardIds;
     });
-  }, []);
+  }, [isPickingEdgeTarget]);
 
   const canCreateIsland = selectedCardIds.length > 0;
+  const edgeConnectSource = useMemo<EdgeConnectSource | null>(() => {
+    if (selectedIslandId && selectedCardIds.length === 0) {
+      return { id: selectedIslandId, kind: "island" };
+    }
+
+    if (!selectedIslandId && selectedCardIds.length === 1) {
+      return { id: selectedCardIds[0], kind: "card" };
+    }
+
+    return null;
+  }, [selectedCardIds, selectedIslandId]);
+  const canStartConnect = edgeConnectSource !== null;
+
+  const handleStartConnect = useCallback(() => {
+    if (!edgeConnectSource) {
+      return;
+    }
+
+    setIsPickingEdgeTarget(true);
+    setStatusMessage("Select a target card or island");
+  }, [edgeConnectSource]);
+
+  const handleCancelConnect = useCallback(() => {
+    if (!isPickingEdgeTarget) {
+      return;
+    }
+
+    setIsPickingEdgeTarget(false);
+    setStatusMessage("Canceled connect");
+  }, [isPickingEdgeTarget]);
+
+  const handleConnectToTarget = useCallback(
+    (target: EdgeConnectSource) => {
+      if (!document || !isPickingEdgeTarget || !edgeConnectSource) {
+        return;
+      }
+
+      if (edgeConnectSource.id === target.id && edgeConnectSource.kind === target.kind) {
+        return;
+      }
+
+      const edgeWithKinds = {
+        id: crypto.randomUUID(),
+        fromId: edgeConnectSource.id,
+        toId: target.id,
+        fromKind: edgeConnectSource.kind,
+        toKind: target.kind,
+        type: connectEdgeType,
+      } as DocumentV2["edges"][number];
+
+      applyDocumentChange(
+        {
+          ...document,
+          edges: [...document.edges, edgeWithKinds],
+        },
+        `Connected ${edgeConnectSource.kind} → ${target.kind}`
+      );
+      setIsPickingEdgeTarget(false);
+    },
+    [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]
+  );
 
   const handleCreateIsland = useCallback(() => {
     if (!document || selectedCardIds.length === 0) {
@@ -1192,8 +1312,13 @@ export default function App() {
   }, [document?.cards, selectedCardIds]);
 
   const handleIslandSelect = useCallback((islandId: string) => {
+    if (isPickingEdgeTarget) {
+      handleConnectToTarget({ id: islandId, kind: "island" });
+      return;
+    }
+
     setSelectedIslandId(islandId);
-  }, []);
+  }, [handleConnectToTarget, isPickingEdgeTarget]);
 
   const islandViews = useMemo(() => {
     if (!visibleDocument) {
@@ -1207,6 +1332,7 @@ export default function App() {
         cards={visibleDocument.cards}
         isSelected={selectedIslandId === island.id}
         onSelect={handleIslandSelect}
+        isPickingEdgeTarget={isPickingEdgeTarget}
       />
     ));
   }, [handleIslandSelect, selectedIslandId, uniqueIslands, visibleDocument]);
@@ -1624,6 +1750,12 @@ export default function App() {
           onDistributeVertically={() => {
             handleDistribute("vertical");
           }}
+          canStartConnect={canStartConnect}
+          isPickingEdgeTarget={isPickingEdgeTarget}
+          connectEdgeType={connectEdgeType}
+          onConnectEdgeTypeChange={setConnectEdgeType}
+          onStartConnect={handleStartConnect}
+          onCancelConnect={handleCancelConnect}
         />
       }
     >
@@ -1664,6 +1796,7 @@ export default function App() {
             hiddenCardIds={hiddenCardIdSet}
             focusCardId={focusCardId}
             focusRequestSeq={focusRequestSeq}
+            isPickingEdgeTarget={isPickingEdgeTarget}
           >
             {islandViews}
           </CanvasShell>
