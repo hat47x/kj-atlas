@@ -32,6 +32,7 @@ export type Edge = {
 export type Island = {
   id: string;
   cardIds: string[];
+  parentIslandId?: string;
   title?: string;
   titleReviewed?: boolean;
   imageUrl?: string;

@@ -14,6 +14,7 @@ type IslandViewProps = {
   island: Island;
   cards: Card[];
   isSelected: boolean;
+  zIndex?: number;
   onSelect: (islandId: string) => void;
 };
 
@@ -94,7 +95,7 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
   }
 }
 
-function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandViewProps) {
+function IslandViewComponent({ island, cards, isSelected, zIndex = 0, onSelect }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const islandBackgroundImage = island.imageUrl
@@ -118,7 +119,7 @@ function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandView
         borderRadius: 12,
         boxSizing: "border-box",
         overflow: "hidden",
-        zIndex: 0,
+        zIndex,
         isolation: "isolate",
       }}
     >

@@ -55,6 +55,7 @@ class EdgeV2(BaseModel):
 class Island(BaseModel):
     id: str
     cardIds: list[str]
+    parentIslandId: str | None = None
     title: str | None = None
     titleReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     imageUrl: str | None = None

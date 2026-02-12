@@ -184,6 +184,25 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Parent island ID
+          </label>
+          <input
+            type="text"
+            readOnly
+            value={selectedIsland.parentIslandId ?? ""}
+            placeholder="(none)"
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 10,
+              backgroundColor: "#f8fafc",
+            }}
+          />
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Title
           </label>
           <input

@@ -117,6 +117,7 @@ function parseIslands(value: unknown): Island[] {
     islands.push({
       id: item.id,
       cardIds,
+      parentIslandId: typeof item.parentIslandId === "string" ? item.parentIslandId : undefined,
       title: typeof item.title === "string" ? item.title : undefined,
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
       critique: typeof item.critique === "string" ? item.critique : undefined,

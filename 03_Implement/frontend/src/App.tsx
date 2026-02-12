@@ -142,6 +142,25 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
   };
 }
 
+function getIslandDepth(island: Island, islandsById: Map<string, Island>): number {
+  let depth = 0;
+  let cursor = island;
+  const visited = new Set<string>([island.id]);
+
+  while (cursor.parentIslandId) {
+    const parent = islandsById.get(cursor.parentIslandId);
+    if (!parent || visited.has(parent.id)) {
+      break;
+    }
+
+    depth += 1;
+    cursor = parent;
+    visited.add(parent.id);
+  }
+
+  return depth;
+}
+
 export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -1159,14 +1178,28 @@ export default function App() {
     };
   }, [canRedo, canUndo, handleRedo, handleUndo]);
 
-  const uniqueIslands = useMemo(
-    () =>
-      (document?.islands ?? []).map((island) => ({
-        ...island,
-        cardIds: Array.from(new Set(island.cardIds)),
-      })),
-    [document?.islands]
-  );
+  const uniqueIslands = useMemo(() => {
+    const normalizedIslands = (visibleDocument?.islands ?? []).map((island) => ({
+      ...island,
+      cardIds: Array.from(new Set(island.cardIds)),
+    }));
+    const islandsById = new Map(normalizedIslands.map((island) => [island.id, island]));
+
+    return normalizedIslands
+      .map((island, index) => ({
+        island,
+        index,
+        depth: getIslandDepth(island, islandsById),
+      }))
+      .sort((left, right) => {
+        if (left.depth !== right.depth) {
+          return left.depth - right.depth;
+        }
+
+        return left.index - right.index;
+      })
+      .map((entry) => entry.island);
+  }, [visibleDocument?.islands]);
 
   useEffect(() => {
     if (uniqueIslands.length === 0) {
@@ -1200,12 +1233,13 @@ export default function App() {
       return null;
     }
 
-    return uniqueIslands.map((island) => (
+    return uniqueIslands.map((island, index) => (
       <IslandView
         key={island.id}
         island={island}
         cards={visibleDocument.cards}
         isSelected={selectedIslandId === island.id}
+        zIndex={index}
         onSelect={handleIslandSelect}
       />
     ));
