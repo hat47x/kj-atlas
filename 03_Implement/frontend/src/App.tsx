@@ -14,10 +14,12 @@ import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
+import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
+const SUGGESTION_MOVE_THRESHOLD = 1;
 
 type DocumentHistory = {
   past: DocumentV2[];
@@ -202,6 +204,37 @@ export default function App() {
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
+  const suggestionMoveDiffs = useMemo(() => {
+    if (!document || !suggestedDocument || !isPreviewingSuggestion) {
+      return [] as SuggestionMoveDiff[];
+    }
+
+    const baseCardsById = new Map(document.cards.map((card) => [card.id, card]));
+
+    return suggestedDocument.cards
+      .map((card) => {
+        const baseCard = baseCardsById.get(card.id);
+        if (!baseCard) {
+          return null;
+        }
+
+        const deltaX = card.x - baseCard.x;
+        const deltaY = card.y - baseCard.y;
+
+        if (Math.hypot(deltaX, deltaY) <= SUGGESTION_MOVE_THRESHOLD) {
+          return null;
+        }
+
+        return {
+          cardId: card.id,
+          fromX: baseCard.x,
+          fromY: baseCard.y,
+          toX: card.x,
+          toY: card.y,
+        } satisfies SuggestionMoveDiff;
+      })
+      .filter((diff): diff is SuggestionMoveDiff => diff !== null);
+  }, [document, isPreviewingSuggestion, suggestedDocument]);
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const matchedCardIds = useMemo(() => {
     if (!visibleDocument || normalizedSearchQuery.length === 0) {
@@ -1831,6 +1864,7 @@ export default function App() {
             focusCardId={focusCardId}
             focusRequestSeq={focusRequestSeq}
             isPickingEdgeTarget={isPickingEdgeTarget}
+            suggestionMoveDiffs={suggestionMoveDiffs}
           >
             {islandViews}
           </CanvasShell>

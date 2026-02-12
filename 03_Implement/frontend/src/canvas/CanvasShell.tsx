@@ -6,6 +6,8 @@ import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
 import { Marquee } from "./Marquee";
+import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
+import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -38,6 +40,7 @@ type CanvasShellProps = {
   focusCardId?: string | null;
   focusRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
+  suggestionMoveDiffs?: SuggestionMoveDiff[];
   children?: ReactNode;
 };
 
@@ -81,6 +84,7 @@ export function CanvasShell({
   focusCardId,
   focusRequestSeq = 0,
   isPickingEdgeTarget = false,
+  suggestionMoveDiffs,
   children,
 }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -165,6 +169,14 @@ export function CanvasShell({
   }, [document.cards, focusCardId, focusRequestSeq]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
+  const visibleSuggestionMoveDiffs = useMemo(() => {
+    const diffs = suggestionMoveDiffs ?? [];
+    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+      return diffs;
+    }
+
+    return diffs.filter((diff) => !hiddenCardIds.has(diff.cardId));
+  }, [hiddenCardIds, suggestionMoveDiffs]);
 
   const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -385,6 +397,7 @@ export function CanvasShell({
         }}
       >
         <EdgeLayer cards={document.cards} edges={document.edges} />
+        <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
         {document.cards.map((card) => {
           if (hiddenCardIds?.has(card.id)) {
