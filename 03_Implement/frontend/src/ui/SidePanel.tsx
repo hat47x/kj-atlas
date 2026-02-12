@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { Card, Island } from "../domain/types";
 
@@ -29,6 +29,49 @@ export function SidePanel({
   onDeleteIsland,
   topContent,
 }: SidePanelProps) {
+  const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
+
+  useEffect(() => {
+    setHasImagePreviewError(false);
+  }, [selectedIsland?.id, selectedIsland?.imageUrl]);
+
+  const hasCardSelection = selectedCardCount > 0;
+  const selectedCardLabel = useMemo(() => {
+    if (selectedCardCount === 1) {
+      return "1 card selected";
+    }
+
+    return `${selectedCardCount} cards selected`;
+  }, [selectedCardCount]);
+
+  const handleDeleteIslandClick = () => {
+    if (!selectedIsland) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(`Delete island \"${selectedIsland.title ?? selectedIsland.id}\"?`);
+    if (!shouldDelete) {
+      return;
+    }
+
+    onDeleteIsland();
+  };
+
+  const handleRemoveSelectedCardsClick = () => {
+    if (!selectedIsland || !hasCardSelection) {
+      return;
+    }
+
+    const shouldRemove = window.confirm(
+      `Remove ${selectedCardLabel} from island "${selectedIsland.title ?? selectedIsland.id}"?`
+    );
+    if (!shouldRemove) {
+      return;
+    }
+
+    onRemoveSelectedCards();
+  };
+
   return (
     <aside
       style={{
@@ -42,39 +85,10 @@ export function SidePanel({
       }}
     >
       {topContent}
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Card Editor</div>
-      {!selectedCard ? (
-        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>Select a single card from the canvas.</div>
-      ) : (
+      {selectedIsland ? (
         <>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Critique note
-          </label>
-          <textarea
-            value={selectedCard.critique ?? ""}
-            onChange={(event) => {
-              onCardCritiqueChange(event.target.value);
-            }}
-            placeholder="Optional feedback about this card"
-            rows={4}
-            style={{
-              width: "100%",
-              border: "1px solid #cbd5e1",
-              borderRadius: 6,
-              padding: "6px 8px",
-              boxSizing: "border-box",
-              marginBottom: 12,
-              resize: "vertical",
-            }}
-          />
-        </>
-      )}
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
 
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
-      {!selectedIsland ? (
-        <div style={{ fontSize: 12, color: "#64748b" }}>Select an island from the canvas.</div>
-      ) : (
-        <>
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             ID
           </label>
@@ -165,26 +179,33 @@ export function SidePanel({
               justifyContent: "center",
               color: "#94a3b8",
               fontSize: 12,
-              marginBottom: 12,
+              marginBottom: 8,
             }}
           >
             {selectedIsland.imageUrl ? (
-              <img
-                src={selectedIsland.imageUrl}
-                alt="Island preview"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
+              hasImagePreviewError ? (
+                <span style={{ color: "#b91c1c" }}>Unable to load image preview.</span>
+              ) : (
+                <img
+                  src={selectedIsland.imageUrl}
+                  alt="Island preview"
+                  onError={() => {
+                    setHasImagePreviewError(true);
+                  }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              )
             ) : (
               "No image"
             )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Selected cards: {selectedCardCount}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Selection: {selectedCardLabel}</div>
             <button
               type="button"
               onClick={onAddSelectedCards}
-              disabled={selectedCardCount === 0}
+              disabled={!hasCardSelection}
               style={{
                 border: "1px solid #cbd5e1",
                 backgroundColor: "#ffffff",
@@ -192,15 +213,15 @@ export function SidePanel({
                 borderRadius: 6,
                 padding: "6px 10px",
                 fontWeight: 600,
-                cursor: selectedCardCount === 0 ? "not-allowed" : "pointer",
+                cursor: hasCardSelection ? "pointer" : "not-allowed",
               }}
             >
-              Add selected cards to island
+              Add selected cards to island ({selectedCardCount})
             </button>
             <button
               type="button"
-              onClick={onRemoveSelectedCards}
-              disabled={selectedCardCount === 0}
+              onClick={handleRemoveSelectedCardsClick}
+              disabled={!hasCardSelection}
               style={{
                 border: "1px solid #cbd5e1",
                 backgroundColor: "#ffffff",
@@ -208,14 +229,14 @@ export function SidePanel({
                 borderRadius: 6,
                 padding: "6px 10px",
                 fontWeight: 600,
-                cursor: selectedCardCount === 0 ? "not-allowed" : "pointer",
+                cursor: hasCardSelection ? "pointer" : "not-allowed",
               }}
             >
-              Remove selected cards from island
+              Remove selected cards from island ({selectedCardCount})
             </button>
             <button
               type="button"
-              onClick={onDeleteIsland}
+              onClick={handleDeleteIslandClick}
               style={{
                 border: "1px solid #fecaca",
                 backgroundColor: "#fff1f2",
@@ -230,6 +251,43 @@ export function SidePanel({
             </button>
           </div>
         </>
+      ) : hasCardSelection ? (
+        <>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Card Inspector</div>
+          {!selectedCard ? (
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+              {selectedCardLabel}. Select a single card to edit critique notes.
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{selectedCardLabel}</div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                Critique note
+              </label>
+              <textarea
+                value={selectedCard.critique ?? ""}
+                onChange={(event) => {
+                  onCardCritiqueChange(event.target.value);
+                }}
+                placeholder="Optional feedback about this card"
+                rows={4}
+                style={{
+                  width: "100%",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  boxSizing: "border-box",
+                  marginBottom: 12,
+                  resize: "vertical",
+                }}
+              />
+            </>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>
+          Select an island to edit it, or select one or more cards to inspect card details.
+        </div>
       )}
     </aside>
   );
