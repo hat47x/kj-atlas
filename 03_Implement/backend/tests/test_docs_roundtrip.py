@@ -140,6 +140,56 @@ def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
     }
 
 
+
+
+def _sample_payload_v2_with_canonical(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-canonical",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {
+                "id": "card-canonical",
+                "text": "alpha",
+                "x": 12.5,
+                "y": -9.0,
+                "sources": ["card-source"],
+            },
+            {
+                "id": "card-source",
+                "text": "alpha (duplicate)",
+                "x": 212.5,
+                "y": 91.0,
+                "canonicalId": "card-canonical",
+            },
+        ],
+        "edges": [],
+        "islands": [],
+    }
+
+
+def _assert_v2_canonical_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-canonical"
+    payload = _sample_payload_v2_with_canonical(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    put_cards_by_id = {card["id"]: card for card in put_json["cards"]}
+    assert put_cards_by_id["card-source"]["canonicalId"] == "card-canonical"
+    assert put_cards_by_id["card-canonical"]["sources"] == ["card-source"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+    get_cards_by_id = {card["id"]: card for card in get_json["cards"]}
+    assert get_cards_by_id["card-source"]["canonicalId"] == "card-canonical"
+    assert get_cards_by_id["card-canonical"]["sources"] == ["card-source"]
+
+
 def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v2-collapsed"
     payload = _sample_payload_v2_with_collapsed(doc_id)
@@ -228,3 +278,12 @@ def test_docs_v2_collapsed_roundtrip_sqlite(sqlite_client: TestClient) -> None:
 @pytest.mark.postgres
 def test_docs_v2_collapsed_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_collapsed_roundtrip(postgres_client)
+
+
+def test_docs_v2_canonical_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_canonical_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_canonical_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_canonical_roundtrip(postgres_client)

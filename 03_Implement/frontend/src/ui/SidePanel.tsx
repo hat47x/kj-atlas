@@ -31,6 +31,8 @@ type SidePanelProps = {
   onClearFocus: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
+  hideSourceCards: boolean;
+  onHideSourceCardsChange: (value: boolean) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -74,6 +76,8 @@ export function SidePanel({
   onClearFocus,
   isGridSnapEnabled,
   onGridSnapToggle,
+  hideSourceCards,
+  onHideSourceCardsChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -182,6 +186,25 @@ export function SidePanel({
             }}
           />
           Grid Snap (10)
+        </label>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "#334155",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={hideSourceCards}
+            onChange={(event) => {
+              onHideSourceCardsChange(event.target.checked);
+            }}
+          />
+          Hide source cards
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
@@ -664,6 +687,21 @@ export function SidePanel({
           ) : (
             <>
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{selectedCardLabel}</div>
+              {selectedCard.canonicalId ? (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    fontSize: 12,
+                    color: "#334155",
+                    backgroundColor: "#f8fafc",
+                  }}
+                >
+                  canonicalId: {selectedCard.canonicalId}
+                </div>
+              ) : null}
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note
               </label>
