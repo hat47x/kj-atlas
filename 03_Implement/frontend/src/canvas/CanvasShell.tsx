@@ -35,6 +35,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -81,6 +82,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = false,
+  peekCardIds,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -194,10 +196,31 @@ export function CanvasShell({
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
-  const visibleEdges = useMemo(() => {
-    return document.edges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId));
-  }, [document.edges, isCardHidden]);
+const visibleEdges = useMemo(() => {
+  const baseEdges = document.edges.filter((edge) => {
+    const fromHidden = typeof isCardHidden === "function"
+      ? isCardHidden(edge.fromId)
+      : !!hiddenCardIds?.has(edge.fromId);
 
+    const toHidden = typeof isCardHidden === "function"
+      ? isCardHidden(edge.toId)
+      : !!hiddenCardIds?.has(edge.toId);
+
+    return !fromHidden && !toHidden;
+  });
+
+  if (!peekCardIds || peekCardIds.size === 0) {
+    return baseEdges;
+  }
+
+  return baseEdges.filter((edge) => {
+    const fromIsPeek = peekCardIds.has(edge.fromId);
+    const toIsPeek = peekCardIds.has(edge.toId);
+
+    if (!fromIsPeek && !toIsPeek) return true;
+    return fromIsPeek && toIsPeek;
+  });
+}, [document.edges, isCardHidden, hiddenCardIds, peekCardIds]);
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
     return diffs.filter((diff) => !isCardHidden(diff.cardId));

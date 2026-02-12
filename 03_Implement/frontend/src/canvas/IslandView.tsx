@@ -15,8 +15,11 @@ type IslandViewProps = {
   island: Island;
   cards: Card[];
   isSelected: boolean;
+  isPeeking?: boolean;
   onSelect: (islandId: string) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
+  onPeekStart?: (islandId: string) => void;
+  onPeekEnd?: () => void;
   isPickingEdgeTarget?: boolean;
   zIndex?: number;
 };
@@ -102,8 +105,11 @@ function IslandViewComponent({
   island,
   cards,
   isSelected,
+  isPeeking = false,
   onSelect,
   onToggleCollapsed,
+  onPeekStart,
+  onPeekEnd,
   isPickingEdgeTarget = false,
   zIndex = 0,
 }: IslandViewProps) {
@@ -234,6 +240,50 @@ function IslandViewComponent({
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
         {island.collapsed === true ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        {island.collapsed === true ? (
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              onPeekStart?.(island.id);
+            }}
+            onPointerUp={(event) => {
+              event.stopPropagation();
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+              onPeekEnd?.();
+            }}
+            onPointerCancel={(event) => {
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+              onPeekEnd?.();
+            }}
+            onLostPointerCapture={() => {
+              onPeekEnd?.();
+            }}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+            }}
+            style={{
+              pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+              border: "1px solid #7dd3fc",
+              borderRadius: 4,
+              backgroundColor: isPeeking ? "#0ea5e9" : "#e0f2fe",
+              color: isPeeking ? "#f8fafc" : "#075985",
+              fontSize: 10,
+              lineHeight: 1,
+              padding: "3px 6px",
+              cursor: isPickingEdgeTarget ? "default" : "pointer",
+            }}
+            aria-label={`Peek island ${island.id}`}
+            title="Press and hold to peek cards"
+          >
+            Peek
+          </button>
+        ) : null}
         {hasCritique ? (
           <span
             aria-label="Island has critique note"
