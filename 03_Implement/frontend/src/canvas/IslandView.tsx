@@ -7,6 +7,7 @@ const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
 const ISLAND_PADDING = 24;
 const ISLAND_HEADER_HEIGHT = 24;
+const ISLAND_HEADER_HEIGHT_WITH_SUMMARY = 70;
 const ISLAND_TITLE_MARGIN_LEFT = 10;
 const ISLAND_TITLE_MARGIN_TOP = 6;
 
@@ -108,6 +109,8 @@ function IslandViewComponent({
 }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
+  const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
+  const headerHeight = hasSummary ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl
     ? `url("${encodeURI(island.imageUrl)}")`
     : null;
@@ -186,7 +189,7 @@ function IslandViewComponent({
           left: 0,
           top: 0,
           width: "100%",
-          height: ISLAND_HEADER_HEIGHT,
+          height: headerHeight,
           borderBottom: "1px solid #bae6fd",
           backgroundColor: "rgba(240, 249, 255, 0.9)",
           zIndex: 1,
@@ -244,6 +247,29 @@ function IslandViewComponent({
           />
         ) : null}
       </div>
+
+      {hasSummary ? (
+        <div
+          style={{
+            position: "absolute",
+            left: ISLAND_TITLE_MARGIN_LEFT,
+            top: ISLAND_TITLE_MARGIN_TOP + 28,
+            right: ISLAND_TITLE_MARGIN_LEFT,
+            fontSize: 11,
+            lineHeight: 1.3,
+            color: "#0c4a6e",
+            zIndex: 3,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          title={island.summaryText}
+        >
+          {island.summaryText}
+        </div>
+      ) : null}
     </div>
   );
 }

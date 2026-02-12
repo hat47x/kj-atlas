@@ -47,6 +47,8 @@ export type Island = {
   collapsed?: boolean;
   title?: string;
   titleReviewed?: boolean;
+  summaryText?: string;
+  summaryReviewed?: boolean;
   imageUrl?: string;
   imageReviewed?: boolean;
   critique?: string;

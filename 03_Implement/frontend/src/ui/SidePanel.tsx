@@ -16,6 +16,8 @@ type SidePanelProps = {
   onCardCritiqueTagsChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
+  onSummaryTextChange: (value: string) => void;
+  onSummaryReviewedChange: (value: boolean) => void;
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCollapsedChange: (value: boolean) => void;
@@ -24,6 +26,9 @@ type SidePanelProps = {
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
+  isFocusActive: boolean;
+  onFocusIsland: () => void;
+  onClearFocus: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
   onAlignLeft: () => void;
@@ -54,6 +59,8 @@ export function SidePanel({
   onCardCritiqueTagsChange,
   onTitleChange,
   onTitleReviewedChange,
+  onSummaryTextChange,
+  onSummaryReviewedChange,
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCollapsedChange,
@@ -62,6 +69,9 @@ export function SidePanel({
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
+  isFocusActive,
+  onFocusIsland,
+  onClearFocus,
   isGridSnapEnabled,
   onGridSnapToggle,
   onAlignLeft,
@@ -414,6 +424,46 @@ export function SidePanel({
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Summary
+          </label>
+          <textarea
+            value={selectedIsland.summaryText ?? ""}
+            onChange={(event) => {
+              onSummaryTextChange(event.target.value);
+            }}
+            placeholder="Optional summary for collapsed view"
+            rows={3}
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 10,
+              resize: "vertical",
+            }}
+          />
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "#334155",
+              marginBottom: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIsland.summaryReviewed === true}
+              onChange={(event) => {
+                onSummaryReviewedChange(event.target.checked);
+              }}
+            />
+            Reviewed
+          </label>
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Image URL
           </label>
           <input
@@ -523,6 +573,38 @@ export function SidePanel({
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Selection: {selectedCardLabel}</div>
+            <button
+              type="button"
+              onClick={onFocusIsland}
+              style={{
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: "#0f172a",
+                borderRadius: 6,
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Focus
+            </button>
+            {isFocusActive ? (
+              <button
+                type="button"
+                onClick={onClearFocus}
+                style={{
+                  border: "1px solid #bae6fd",
+                  backgroundColor: "#f0f9ff",
+                  color: "#0c4a6e",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Clear focus
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onAddSelectedCards}

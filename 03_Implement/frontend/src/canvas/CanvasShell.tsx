@@ -38,6 +38,7 @@ type CanvasShellProps = {
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
   focusCardId?: string | null;
+  focusWorldPoint?: { x: number; y: number } | null;
   focusRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
@@ -82,6 +83,7 @@ export function CanvasShell({
   matchedCardIds,
   activeMatchedCardId,
   focusCardId,
+  focusWorldPoint,
   focusRequestSeq = 0,
   isPickingEdgeTarget = false,
   suggestionMoveDiffs,
@@ -141,12 +143,19 @@ export function CanvasShell({
   }, [onTransformChange, transform]);
 
   useEffect(() => {
-    if (!focusCardId) {
+    const viewport = viewportRef.current;
+    if (!viewport) {
       return;
     }
 
-    const viewport = viewportRef.current;
-    if (!viewport) {
+    if (focusWorldPoint) {
+      setTransform((previousTransform) =>
+        focusTransformAtWorldPoint(previousTransform, focusWorldPoint, viewport.clientWidth, viewport.clientHeight)
+      );
+      return;
+    }
+
+    if (!focusCardId) {
       return;
     }
 
@@ -166,7 +175,7 @@ export function CanvasShell({
         viewport.clientHeight
       )
     );
-  }, [document.cards, focusCardId, focusRequestSeq]);
+  }, [document.cards, focusCardId, focusRequestSeq, focusWorldPoint]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
   const visibleCards = useMemo(() => {
