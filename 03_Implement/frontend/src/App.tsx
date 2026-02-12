@@ -80,6 +80,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     ],
     edges: [],
     islands: [],
+    readingOrder: [],
   };
 }
 
@@ -123,13 +124,17 @@ function duplicateDocumentWithNewId(sourceDocument: DocumentV2): DocumentV2 {
 
 function toDocumentV2(document: Document): DocumentV2 {
   if (document.version === 2) {
-    return document;
+    return {
+      ...document,
+      readingOrder: document.readingOrder ?? [],
+    };
   }
 
   return {
     ...document,
     version: 2,
     islands: [],
+    readingOrder: [],
   };
 }
 
@@ -1607,6 +1612,96 @@ export default function App() {
     ));
   }, [handleIslandSelect, selectedIslandId, uniqueIslands, visibleDocument]);
 
+  const readingOrderItems = useMemo(() => {
+    if (!document) {
+      return [] as Array<{ id: string; label: string }>;
+    }
+
+    return (document.readingOrder ?? []).map((entryId) => {
+      const island = document.islands.find((item) => item.id === entryId);
+      if (island) {
+        const label = island.title?.trim() ? island.title.trim() : `Island ${island.id}`;
+        return { id: entryId, label };
+      }
+
+      const card = document.cards.find((item) => item.id === entryId);
+      if (card) {
+        const snippet = card.text.trim().slice(0, 40);
+        return { id: entryId, label: snippet.length > 0 ? snippet : `Card ${card.id}` };
+      }
+
+      return { id: entryId, label: "(missing)" };
+    });
+  }, [document]);
+
+  const handleAddSelectedItemToReadingOrder = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const targetId = selectedIsland?.id ?? selectedCard?.id;
+    if (!targetId) {
+      return;
+    }
+
+    applyDocumentChange(
+      {
+        ...document,
+        readingOrder: [...(document.readingOrder ?? []), targetId],
+      },
+      "Added item to reading order"
+    );
+  }, [applyDocumentChange, document, selectedCard?.id, selectedIsland?.id]);
+
+  const handleMoveReadingOrderItem = useCallback(
+    (index: number, direction: -1 | 1) => {
+      if (!document) {
+        return;
+      }
+
+      const readingOrder = [...(document.readingOrder ?? [])];
+      const nextIndex = index + direction;
+      if (index < 0 || index >= readingOrder.length || nextIndex < 0 || nextIndex >= readingOrder.length) {
+        return;
+      }
+
+      const [entry] = readingOrder.splice(index, 1);
+      readingOrder.splice(nextIndex, 0, entry);
+
+      applyDocumentChange(
+        {
+          ...document,
+          readingOrder,
+        },
+        "Reordered reading order"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRemoveReadingOrderItem = useCallback(
+    (index: number) => {
+      if (!document) {
+        return;
+      }
+
+      const readingOrder = [...(document.readingOrder ?? [])];
+      if (index < 0 || index >= readingOrder.length) {
+        return;
+      }
+
+      readingOrder.splice(index, 1);
+      applyDocumentChange(
+        {
+          ...document,
+          readingOrder,
+        },
+        "Removed item from reading order"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleAddSelectedCardsToIsland = useCallback(() => {
     if (!document || !selectedIsland || selectedCardIds.length === 0) {
       return;
@@ -1664,6 +1759,7 @@ export default function App() {
       {
         ...document,
         islands: nextIslands,
+        readingOrder: (document.readingOrder ?? []).filter((id) => id !== selectedIsland.id),
       },
       "Deleted island"
     );
@@ -1715,6 +1811,13 @@ export default function App() {
           cards: nextCards,
           edges: nextEdges,
           islands: nextIslands,
+          readingOrder: (document.readingOrder ?? []).filter((entryId) => {
+            if (selectedCardIdSet.has(entryId)) {
+              return false;
+            }
+
+            return nextCards.some((card) => card.id === entryId) || nextIslands.some((island) => island.id === entryId);
+          }),
         },
         "Deleted selected cards"
       );
@@ -1740,6 +1843,7 @@ export default function App() {
       {
         ...document,
         islands: nextIslands,
+        readingOrder: (document.readingOrder ?? []).filter((id) => id !== selectedIslandId),
       },
       "Deleted selected island"
     );
@@ -2115,6 +2219,11 @@ export default function App() {
           onConnectEdgeTypeChange={setConnectEdgeType}
           onStartConnect={handleStartConnect}
           onCancelConnect={handleCancelConnect}
+          readingOrderItems={readingOrderItems}
+          canAddSelectedItemToReadingOrder={Boolean(selectedIsland || selectedCard)}
+          onAddSelectedItemToReadingOrder={handleAddSelectedItemToReadingOrder}
+          onMoveReadingOrderItem={handleMoveReadingOrderItem}
+          onRemoveReadingOrderItem={handleRemoveReadingOrderItem}
         />
       }
     >
