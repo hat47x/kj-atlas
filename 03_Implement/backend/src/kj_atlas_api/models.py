@@ -31,6 +31,7 @@ class Card(BaseModel):
     x: float
     y: float
     critique: str | None = None
+    critiqueTags: list[str] | None = None
     textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
@@ -61,6 +62,7 @@ class Island(BaseModel):
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
+    critiqueTags: list[str] | None = None
 
 
 class DocumentV1(BaseModel):

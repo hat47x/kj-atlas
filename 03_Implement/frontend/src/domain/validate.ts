@@ -36,6 +36,20 @@ function parseTransform(value: unknown): Transform | null {
   return { panX, panY, zoom };
 }
 
+
+function parseCritiqueTags(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const critiqueTags = value.filter((tag): tag is string => typeof tag === "string");
+  if (critiqueTags.length === 0) {
+    return undefined;
+  }
+
+  return critiqueTags;
+}
+
 function parseCards(value: unknown): Card[] | null {
   if (!Array.isArray(value)) {
     return null;
@@ -61,6 +75,7 @@ function parseCards(value: unknown): Card[] | null {
       x,
       y,
       critique: typeof item.critique === "string" ? item.critique : undefined,
+      critiqueTags: parseCritiqueTags(item.critiqueTags),
       textReviewed: typeof item.textReviewed === "boolean" ? item.textReviewed : undefined,
     });
   }
@@ -121,6 +136,7 @@ function parseIslands(value: unknown): Island[] {
       title: typeof item.title === "string" ? item.title : undefined,
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
       critique: typeof item.critique === "string" ? item.critique : undefined,
+      critiqueTags: parseCritiqueTags(item.critiqueTags),
     });
   }
 

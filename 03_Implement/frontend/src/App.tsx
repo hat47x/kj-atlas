@@ -1098,6 +1098,47 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleCardCritiqueTagsChange = useCallback(
+    (cardId: string, nextTags: string[]) => {
+      if (!document) {
+        return;
+      }
+
+      const normalizedNextTags = nextTags.length > 0 ? [...nextTags] : undefined;
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentTags = card.critiqueTags ?? [];
+        const tagsChanged =
+          currentTags.length !== nextTags.length || currentTags.some((tag, index) => tag !== nextTags[index]);
+        if (!tagsChanged) {
+          return card;
+        }
+
+        return {
+          ...card,
+          critiqueTags: normalizedNextTags,
+        };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        "Updated card critique tags"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleIslandCritiqueChange = useCallback(
     (islandId: string, rawCritique: string) => {
       if (!document) {
@@ -1131,6 +1172,48 @@ export default function App() {
           islands: nextIslands,
         },
         "Updated island critique"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+
+  const handleIslandCritiqueTagsChange = useCallback(
+    (islandId: string, nextTags: string[]) => {
+      if (!document) {
+        return;
+      }
+
+      const normalizedNextTags = nextTags.length > 0 ? [...nextTags] : undefined;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        const currentTags = island.critiqueTags ?? [];
+        const tagsChanged =
+          currentTags.length !== nextTags.length || currentTags.some((tag, index) => tag !== nextTags[index]);
+        if (!tagsChanged) {
+          return island;
+        }
+
+        return {
+          ...island,
+          critiqueTags: normalizedNextTags,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island critique tags"
       );
     },
     [applyDocumentChange, document]
@@ -1726,6 +1809,13 @@ export default function App() {
 
             handleCardCritiqueChange(selectedCard.id, value);
           }}
+          onCardCritiqueTagsChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardCritiqueTagsChange(selectedCard.id, value);
+          }}
           onTitleChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -1760,6 +1850,13 @@ export default function App() {
             }
 
             handleIslandCritiqueChange(selectedIsland.id, value);
+          }}
+          onIslandCritiqueTagsChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandCritiqueTagsChange(selectedIsland.id, value);
           }}
           onAddSelectedCards={handleAddSelectedCardsToIsland}
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}

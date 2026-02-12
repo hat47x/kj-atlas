@@ -10,8 +10,19 @@ export type Card = {
   x: number;
   y: number;
   critique?: string;
+  critiqueTags?: string[];
   textReviewed?: boolean;
 };
+
+export const CRITIQUE_TAGS = [
+  "too_close",
+  "too_far",
+  "belongs_together",
+  "unrelated",
+  "unclear_boundary",
+] as const;
+
+export type CritiqueTag = (typeof CRITIQUE_TAGS)[number];
 
 export type EdgeType = "related" | "negate";
 
@@ -38,6 +49,7 @@ export type Island = {
   imageUrl?: string;
   imageReviewed?: boolean;
   critique?: string;
+  critiqueTags?: string[];
 };
 
 export type DocumentV1 = {
