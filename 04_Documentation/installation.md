@@ -1,6 +1,6 @@
-# インストール（Docker Compose）
+# インストール（Docker Compose / イントラ向け最小手順）
 
-この手順は、イントラネット/自前ホスト環境で `kj-atlas` を最小構成で起動するためのものです。
+この手順は、`kj-atlas` をイントラネット・自前ホスト環境で最小構成起動するためのものです。
 
 ## 前提条件
 
@@ -9,31 +9,30 @@
 
 ## クイックスタート
 
-1. リポジトリ直下へ移動します。
+1. リポジトリへ移動します。
 
 ```bash
-cd /path/to/kj-atlas
+cd /path/to/kj-atlas/03_Implement/deploy
 ```
 
-2. Compose を起動します。
+2. 起動します（初回はビルドあり）。
 
 ```bash
-cd 03_Implement/deploy
 docker compose up --build -d
 ```
 
-3. 起動確認を行います。
+3. 稼働確認を行います。
 
 ```bash
 docker compose ps
 docker compose logs api --tail=50
 ```
 
-4. ブラウザで以下にアクセスします。
+4. ブラウザで確認します。
 
 - `http://localhost:8080`
 
-5. 停止する場合:
+5. 停止する場合。
 
 ```bash
 docker compose down
@@ -41,6 +40,6 @@ docker compose down
 
 ## 補足
 
-- 既定では PostgreSQL を含む 3 サービス（`web` / `api` / `db`）が起動します。
-- 既定設定では `LLM_PROVIDER=none` のため、データを外部 LLM へ送信しません。
-- ドキュメントは画面から JSON Export / Import が可能です。
+- 既定で `web` / `api` / `db`（PostgreSQL）の3サービスが起動します。
+- 既定値は `LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
+- 画面から JSON Export / Import が利用できます。
