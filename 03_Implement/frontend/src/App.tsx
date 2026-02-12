@@ -4,6 +4,8 @@ import type { ChangeEvent } from "react";
 import { ApiError, getDocument, putDocument, suggestLayout } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
+import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
+import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -14,6 +16,7 @@ import { SearchBar } from "./ui/SearchBar";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
+const GRID_SNAP_SIZE = 10;
 
 type DocumentHistory = {
   past: DocumentV2[];
@@ -122,6 +125,7 @@ export default function App() {
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
@@ -322,15 +326,20 @@ export default function App() {
         return;
       }
 
-      const nextCards = document.cards.map((card) =>
-        card.id === cardId
-          ? {
-              ...card,
-              x: card.x + deltaWorldX,
-              y: card.y + deltaWorldY,
-            }
-          : card
-      );
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const nextX = card.x + deltaWorldX;
+        const nextY = card.y + deltaWorldY;
+
+        return {
+          ...card,
+          x: isGridSnapEnabled ? snapValueToGrid(nextX, { gridSize: GRID_SNAP_SIZE }) : nextX,
+          y: isGridSnapEnabled ? snapValueToGrid(nextY, { gridSize: GRID_SNAP_SIZE }) : nextY,
+        };
+      });
 
       const didMove = nextCards.some((card, index) => card !== document.cards[index]);
       if (!didMove) {
@@ -356,7 +365,44 @@ export default function App() {
         };
       });
     },
-    [document, isPreviewingSuggestion]
+    [document, isGridSnapEnabled, isPreviewingSuggestion]
+  );
+
+  const applyLayoutOperation = useCallback(
+    (operationName: string, operation: (cards: DocumentV2["cards"]) => DocumentV2["cards"]) => {
+      if (!document || isPreviewingSuggestion) {
+        return;
+      }
+
+      const nextCards = operation(document.cards);
+      if (nextCards === document.cards) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        operationName
+      );
+    },
+    [applyDocumentChange, document, isPreviewingSuggestion]
+  );
+
+  const handleAlign = useCallback(
+    (direction: AlignDirection) => {
+      applyLayoutOperation(`Aligned ${direction}`, (cards) => alignSelectedCards(cards, selectedCardIds, direction, {}));
+    },
+    [applyLayoutOperation, selectedCardIds]
+  );
+
+  const handleDistribute = useCallback(
+    (direction: DistributeDirection) => {
+      const status = direction === "horizontal" ? "Distributed horizontally" : "Distributed vertically";
+      applyLayoutOperation(status, (cards) => distributeSelectedCards(cards, selectedCardIds, direction, {}));
+    },
+    [applyLayoutOperation, selectedCardIds]
   );
 
 
@@ -1243,6 +1289,26 @@ export default function App() {
           onAddSelectedCards={handleAddSelectedCardsToIsland}
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
           onDeleteIsland={handleDeleteSelectedIsland}
+          isGridSnapEnabled={isGridSnapEnabled}
+          onGridSnapToggle={setIsGridSnapEnabled}
+          onAlignLeft={() => {
+            handleAlign("left");
+          }}
+          onAlignRight={() => {
+            handleAlign("right");
+          }}
+          onAlignTop={() => {
+            handleAlign("top");
+          }}
+          onAlignBottom={() => {
+            handleAlign("bottom");
+          }}
+          onDistributeHorizontally={() => {
+            handleDistribute("horizontal");
+          }}
+          onDistributeVertically={() => {
+            handleDistribute("vertical");
+          }}
         />
       }
     >
