@@ -6,6 +6,7 @@ import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
+import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
@@ -564,6 +565,17 @@ export default function App() {
     setSelectedIslandId(null);
   }, []);
 
+  const handleClearSelection = useCallback(() => {
+    setSelectedCardIds((previousSelectedCardIds) => {
+      if (previousSelectedCardIds.length === 0) {
+        return previousSelectedCardIds;
+      }
+
+      return [];
+    });
+    setSelectedIslandId(null);
+  }, []);
+
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
     setSelectedCardIds((previousSelectedCardIds) => {
       const uniqueCardIds = Array.from(new Set(cardIds));
@@ -956,6 +968,100 @@ export default function App() {
       onHideNonMatchesChange={setHideNonMatches}
     />
   );
+
+  const handleDeleteSelection = useCallback(() => {
+    if (!document || isPreviewingSuggestion) {
+      return;
+    }
+
+    if (selectedCardIds.length > 0) {
+      const selectedCardIdSet = new Set(selectedCardIds);
+      const nextCards = document.cards.filter((card) => !selectedCardIdSet.has(card.id));
+
+      if (nextCards.length === document.cards.length) {
+        return;
+      }
+
+      const nextEdges = document.edges.filter(
+        (edge) => !selectedCardIdSet.has(edge.fromId) && !selectedCardIdSet.has(edge.toId)
+      );
+      const nextIslands = document.islands
+        .map((island) => ({
+          ...island,
+          cardIds: island.cardIds.filter((cardId) => !selectedCardIdSet.has(cardId)),
+        }))
+        .filter((island) => island.cardIds.length > 0);
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+          edges: nextEdges,
+          islands: nextIslands,
+        },
+        "Deleted selected cards"
+      );
+      setSelectedCardIds([]);
+      setSelectedIslandId((previousSelectedIslandId) =>
+        previousSelectedIslandId && nextIslands.some((island) => island.id === previousSelectedIslandId)
+          ? previousSelectedIslandId
+          : null
+      );
+      return;
+    }
+
+    if (!selectedIslandId) {
+      return;
+    }
+
+    const nextIslands = document.islands.filter((island) => island.id !== selectedIslandId);
+    if (nextIslands.length === document.islands.length) {
+      return;
+    }
+
+    applyDocumentChange(
+      {
+        ...document,
+        islands: nextIslands,
+      },
+      "Deleted selected island"
+    );
+    setSelectedIslandId(null);
+  }, [applyDocumentChange, document, isPreviewingSuggestion, selectedCardIds, selectedIslandId]);
+
+  const handleNudgeSelection = useCallback(
+    (dx: number, dy: number) => {
+      if (!document || isPreviewingSuggestion || selectedCardIds.length === 0) {
+        return;
+      }
+
+      const selectedCardIdSet = new Set(selectedCardIds);
+      const nextCards = document.cards.map((card) =>
+        selectedCardIdSet.has(card.id)
+          ? {
+              ...card,
+              x: card.x + dx,
+              y: card.y + dy,
+            }
+          : card
+      );
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        "Nudged selected cards"
+      );
+    },
+    [applyDocumentChange, document, isPreviewingSuggestion, selectedCardIds]
+  );
+
+  useHotkeys({
+    onClearSelection: handleClearSelection,
+    onDeleteSelection: handleDeleteSelection,
+    onNudge: handleNudgeSelection,
+  });
 
   const headerRight = (
     <div style={{ display: "flex", gap: 8 }}>
