@@ -8,7 +8,9 @@ type SidePanelProps = {
   selectedCardCount: number;
   onCardCritiqueChange: (value: string) => void;
   onTitleChange: (value: string) => void;
+  onTitleReviewedChange: (value: boolean) => void;
   onImageUrlChange: (value: string) => void;
+  onImageReviewedChange: (value: boolean) => void;
   onIslandCritiqueChange: (value: string) => void;
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
@@ -30,7 +32,9 @@ export function SidePanel({
   selectedCardCount,
   onCardCritiqueChange,
   onTitleChange,
+  onTitleReviewedChange,
   onImageUrlChange,
+  onImageReviewedChange,
   onIslandCritiqueChange,
   onAddSelectedCards,
   onRemoveSelectedCards,
@@ -197,6 +201,25 @@ export function SidePanel({
               marginBottom: 10,
             }}
           />
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "#334155",
+              marginBottom: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIsland.titleReviewed === true}
+              onChange={(event) => {
+                onTitleReviewedChange(event.target.checked);
+              }}
+            />
+            Reviewed
+          </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Image URL
@@ -217,6 +240,25 @@ export function SidePanel({
               marginBottom: 10,
             }}
           />
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "#334155",
+              marginBottom: 10,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIsland.imageReviewed === true}
+              onChange={(event) => {
+                onImageReviewedChange(event.target.checked);
+              }}
+            />
+            Reviewed
+          </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Critique note

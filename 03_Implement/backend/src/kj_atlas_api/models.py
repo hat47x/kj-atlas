@@ -31,6 +31,7 @@ class Card(BaseModel):
     x: float
     y: float
     critique: str | None = None
+    textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class EdgeV1(BaseModel):
@@ -51,7 +52,9 @@ class Island(BaseModel):
     id: str
     cardIds: list[str]
     title: str | None = None
+    titleReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     imageUrl: str | None = None
+    imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
 
 
