@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import type { Card, Island } from "../domain/types";
+import { CRITIQUE_TAGS } from "../domain/types";
+import type { Card, CritiqueTag, Island } from "../domain/types";
 
 type SidePanelProps = {
   selectedCard: Card | null;
   selectedIsland: Island | null;
   selectedCardCount: number;
   onCardCritiqueChange: (value: string) => void;
+  onCardCritiqueTagsChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCritiqueChange: (value: string) => void;
+  onIslandCritiqueTagsChange: (value: string[]) => void;
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
@@ -37,11 +40,13 @@ export function SidePanel({
   selectedIsland,
   selectedCardCount,
   onCardCritiqueChange,
+  onCardCritiqueTagsChange,
   onTitleChange,
   onTitleReviewedChange,
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCritiqueChange,
+  onIslandCritiqueTagsChange,
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
@@ -104,6 +109,17 @@ export function SidePanel({
     }
 
     onRemoveSelectedCards();
+  };
+
+  const toggleCritiqueTag = (currentTags: string[] | undefined, tag: CritiqueTag): string[] => {
+    const currentTagSet = new Set(currentTags ?? []);
+    if (currentTagSet.has(tag)) {
+      currentTagSet.delete(tag);
+    } else {
+      currentTagSet.add(tag);
+    }
+
+    return CRITIQUE_TAGS.filter((candidateTag) => currentTagSet.has(candidateTag));
   };
 
   return (
@@ -347,6 +363,21 @@ export function SidePanel({
               resize: "vertical",
             }}
           />
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Critique tags</div>
+          <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
+            {CRITIQUE_TAGS.map((tag) => (
+              <label key={tag} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <input
+                  type="checkbox"
+                  checked={(selectedIsland.critiqueTags ?? []).includes(tag)}
+                  onChange={() => {
+                    onIslandCritiqueTagsChange(toggleCritiqueTag(selectedIsland.critiqueTags, tag));
+                  }}
+                />
+                {tag}
+              </label>
+            ))}
+          </div>
 
           <div
             style={{
@@ -462,6 +493,21 @@ export function SidePanel({
                   resize: "vertical",
                 }}
               />
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Critique tags</div>
+              <div style={{ display: "grid", gap: 6, marginBottom: 12 }}>
+                {CRITIQUE_TAGS.map((tag) => (
+                  <label key={tag} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={(selectedCard.critiqueTags ?? []).includes(tag)}
+                      onChange={() => {
+                        onCardCritiqueTagsChange(toggleCritiqueTag(selectedCard.critiqueTags, tag));
+                      }}
+                    />
+                    {tag}
+                  </label>
+                ))}
+              </div>
             </>
           )}
         </>
