@@ -44,7 +44,46 @@ type EdgeConnectSource = {
   kind: EdgeEndpointKind;
 };
 
-function createSampleDocument(docId: string): DocumentV2 {
+function createDefaultDocument(docId: string): DocumentV2 {
+  const now = new Date().toISOString();
+
+  return {
+    version: 2,
+    id: docId,
+    title: "Phase 1 Canvas Sample",
+    createdAt: now,
+    updatedAt: now,
+    transform: {
+      panX: 0,
+      panY: 0,
+      zoom: 1,
+    },
+    cards: [
+      {
+        id: "card_1",
+        text: "ユーザー課題を集める",
+        x: 80,
+        y: 60,
+      },
+      {
+        id: "card_2",
+        text: "観察メモをカード化する",
+        x: 380,
+        y: 180,
+      },
+      {
+        id: "card_3",
+        text: "似ている内容を近くに置く",
+        x: 220,
+        y: 360,
+      },
+    ],
+    edges: [],
+    islands: [],
+  };
+}
+
+function createNewDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
 
   return {
@@ -61,21 +100,9 @@ function createSampleDocument(docId: string): DocumentV2 {
     cards: [
       {
         id: crypto.randomUUID(),
-        text: "ユーザー課題を集める",
-        x: 80,
-        y: 60,
-      },
-      {
-        id: crypto.randomUUID(),
-        text: "観察メモをカード化する",
-        x: 380,
-        y: 180,
-      },
-      {
-        id: crypto.randomUUID(),
-        text: "似ている内容を近くに置く",
-        x: 220,
-        y: 360,
+        text: "新しいカード",
+        x: 120,
+        y: 120,
       },
     ],
     edges: [],
@@ -315,7 +342,7 @@ export default function App() {
         setStatusMessage("Document loaded");
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
-          const defaultDocument = createSampleDocument(docId);
+          const defaultDocument = createDefaultDocument(docId);
 
           try {
             const saved = await putDocument(docId, defaultDocument);
@@ -357,7 +384,7 @@ export default function App() {
         }
       }
     },
-    [rememberRecentDocumentId]
+    []
   );
 
   useEffect(() => {
@@ -636,7 +663,7 @@ export default function App() {
 
   const handleNewDocument = useCallback(() => {
     const newDocId = crypto.randomUUID();
-    const newDocument = createSampleDocument(newDocId);
+    const newDocument = createNewDocument(newDocId);
 
     pendingCardDragSnapshotRef.current = null;
     setHistory({
@@ -645,8 +672,7 @@ export default function App() {
       future: [],
     });
     setActiveDocumentId(newDocId);
-    rememberRecentDocumentId(newDocId);
-    setSelectedRecentDocumentId(newDocId);
+    setSelectedRecentDocumentId("");
     setDocEtag(null);
     setSelectedCardIds([]);
     setSelectedIslandId(null);
@@ -657,7 +683,7 @@ export default function App() {
     setSuggestionNotes(null);
     setSuggestionError(null);
     setStatusMessage("Created a new local document");
-  }, [rememberRecentDocumentId]);
+  }, []);
 
   const handleDuplicateDocument = useCallback(() => {
     if (!document) {
@@ -673,8 +699,7 @@ export default function App() {
       future: [],
     });
     setActiveDocumentId(duplicated.id);
-    rememberRecentDocumentId(duplicated.id);
-    setSelectedRecentDocumentId(duplicated.id);
+    setSelectedRecentDocumentId("");
     setDocEtag(null);
     setSelectedCardIds([]);
     setSelectedIslandId(null);
@@ -685,7 +710,7 @@ export default function App() {
     setSuggestionNotes(null);
     setSuggestionError(null);
     setStatusMessage("Duplicated the current document");
-  }, [document, rememberRecentDocumentId]);
+  }, [document]);
 
   const handleOpenRecent = useCallback(() => {
     if (!selectedRecentDocumentId || selectedRecentDocumentId === activeDocumentId) {
@@ -893,8 +918,7 @@ export default function App() {
           future: [],
         });
         setActiveDocumentId(validateResult.document.id);
-        rememberRecentDocumentId(validateResult.document.id);
-        setSelectedRecentDocumentId(validateResult.document.id);
+        setSelectedRecentDocumentId("");
         setDocEtag(null);
         setSelectedCardIds([]);
         setSelectedIslandId(null);
@@ -914,7 +938,7 @@ export default function App() {
         setStatusMessage(error instanceof Error ? error.message : "Failed to import document");
       }
     },
-    [rememberRecentDocumentId]
+    []
   );
 
   const handleImportClick = useCallback(() => {
