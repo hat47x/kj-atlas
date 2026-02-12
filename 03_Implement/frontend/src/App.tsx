@@ -199,8 +199,43 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
   return {
     id: crypto.randomUUID(),
     cardIds: selectedCardIds,
+    collapsed: false,
     title: `Island ${existingIslands.length + 1}`,
   };
+}
+
+
+function collectCollapsedIslandIds(islands: Island[]): Set<string> {
+  const islandsByParentId = new Map<string, Island[]>();
+
+  for (const island of islands) {
+    if (!island.parentIslandId) {
+      continue;
+    }
+
+    const siblings = islandsByParentId.get(island.parentIslandId) ?? [];
+    siblings.push(island);
+    islandsByParentId.set(island.parentIslandId, siblings);
+  }
+
+  const hiddenIslandIds = new Set<string>();
+  const stack = islands.filter((island) => island.collapsed === true);
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || hiddenIslandIds.has(current.id)) {
+      continue;
+    }
+
+    hiddenIslandIds.add(current.id);
+
+    const children = islandsByParentId.get(current.id) ?? [];
+    for (const child of children) {
+      stack.push(child);
+    }
+  }
+
+  return hiddenIslandIds;
 }
 
 function getIslandDepth(island: Island, islandsById: Map<string, Island>): number {
@@ -262,48 +297,7 @@ export default function App() {
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
-  const focusedVisibleDocument = useMemo(() => {
-    if (!visibleDocument || !focusTarget.focusIslandId) {
-      return visibleDocument;
-    }
-
-    const islandsById = new Map(visibleDocument.islands.map((island) => [island.id, island]));
-    if (!islandsById.has(focusTarget.focusIslandId)) {
-      return visibleDocument;
-    }
-
-    const visibleIslandIds = new Set<string>();
-    const queue = [focusTarget.focusIslandId];
-
-    while (queue.length > 0) {
-      const islandId = queue.shift();
-      if (!islandId || visibleIslandIds.has(islandId)) {
-        continue;
-      }
-
-      visibleIslandIds.add(islandId);
-      visibleDocument.islands.forEach((island) => {
-        if (island.parentIslandId === islandId) {
-          queue.push(island.id);
-        }
-      });
-    }
-
-    const visibleIslands = visibleDocument.islands.filter((island) => visibleIslandIds.has(island.id));
-    const visibleCardIds = new Set(visibleIslands.flatMap((island) => island.cardIds));
-    const visibleCards = visibleDocument.cards.filter((card) => visibleCardIds.has(card.id));
-    const visibleNodeIds = new Set([...visibleCardIds, ...visibleIslandIds]);
-
-    return {
-      ...visibleDocument,
-      cards: visibleCards,
-      islands: visibleIslands,
-      edges: visibleDocument.edges.filter(
-        (edge) => visibleNodeIds.has(edge.fromId) && visibleNodeIds.has(edge.toId)
-      ),
-      readingOrder: (visibleDocument.readingOrder ?? []).filter((id) => visibleNodeIds.has(id)),
-    };
-  }, [focusTarget.focusIslandId, visibleDocument]);
+  const focusedVisibleDocument = visibleDocument;
   const suggestionMoveDiffs = useMemo(() => {
     if (!document || !suggestedDocument || !isPreviewingSuggestion) {
       return [] as SuggestionMoveDiff[];
@@ -348,13 +342,38 @@ export default function App() {
   const matchedCardIdSet = useMemo(() => new Set(matchedCardIds), [matchedCardIds]);
   const activeMatchIndex = matchedCardIds.length > 0 ? ((currentMatchIndex % matchedCardIds.length) + matchedCardIds.length) % matchedCardIds.length : 0;
   const activeMatchedCardId = matchedCardIds.length > 0 ? matchedCardIds[activeMatchIndex] : null;
-  const hiddenCardIdSet = useMemo(() => {
-    if (!hideNonMatches || normalizedSearchQuery.length === 0 || !focusedVisibleDocument) {
+  const collapsedIslandIdSet = useMemo(() => {
+    if (!focusedVisibleDocument) {
       return new Set<string>();
     }
 
-    return new Set(focusedVisibleDocument.cards.filter((card) => !matchedCardIdSet.has(card.id)).map((card) => card.id));
-  }, [focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery]);
+    return collectCollapsedIslandIds(focusedVisibleDocument.islands);
+  }, [focusedVisibleDocument]);
+  const hiddenCardIdSet = useMemo(() => {
+    const hiddenCardIds = new Set<string>();
+
+    if (focusedVisibleDocument) {
+      for (const island of focusedVisibleDocument.islands) {
+        if (!collapsedIslandIdSet.has(island.id)) {
+          continue;
+        }
+
+        for (const cardId of island.cardIds) {
+          hiddenCardIds.add(cardId);
+        }
+      }
+    }
+
+    if (hideNonMatches && normalizedSearchQuery.length > 0 && focusedVisibleDocument) {
+      for (const card of focusedVisibleDocument.cards) {
+        if (!matchedCardIdSet.has(card.id)) {
+          hiddenCardIds.add(card.id);
+        }
+      }
+    }
+
+    return hiddenCardIds;
+  }, [collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -1620,6 +1639,44 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleIslandCollapsedChange = useCallback(
+    (islandId: string, collapsed: boolean) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        const currentCollapsed = island.collapsed === true;
+        if (currentCollapsed === collapsed) {
+          return island;
+        }
+
+        return {
+          ...island,
+          collapsed,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        collapsed ? "Collapsed island" : "Expanded island"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
@@ -1711,6 +1768,7 @@ export default function App() {
   const uniqueIslands = useMemo(() => {
     const normalizedIslands = (focusedVisibleDocument?.islands ?? []).map((island) => ({
       ...island,
+      collapsed: island.collapsed === true,
       cardIds: Array.from(new Set(island.cardIds)),
     }));
     const islandsById = new Map(normalizedIslands.map((island) => [island.id, island]));
@@ -1814,18 +1872,21 @@ export default function App() {
       return null;
     }
 
-    return uniqueIslands.map((island, index) => (
-      <IslandView
-        key={island.id}
-        island={island}
-        cards={focusedVisibleDocument.cards}
-        isSelected={selectedIslandId === island.id}
-        zIndex={index}
-        onSelect={handleIslandSelect}
-        isPickingEdgeTarget={isPickingEdgeTarget}
-      />
-    ));
-  }, [focusedVisibleDocument, handleIslandSelect, selectedIslandId, uniqueIslands]);
+    return uniqueIslands
+      .filter((island) => !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId))
+      .map((island, index) => (
+        <IslandView
+          key={island.id}
+          island={island}
+          cards={visibleDocument.cards}
+          isSelected={selectedIslandId === island.id}
+          zIndex={index}
+          onSelect={handleIslandSelect}
+          onToggleCollapsed={handleIslandCollapsedChange}
+          isPickingEdgeTarget={isPickingEdgeTarget}
+        />
+      ));
+  }, [collapsedIslandIdSet, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, selectedIslandId, uniqueIslands, visibleDocument]);
 
   const readingOrderItems = useMemo(() => {
     if (!document) {
@@ -2409,6 +2470,13 @@ export default function App() {
             }
 
             handleIslandImageReviewedChange(selectedIsland.id, value);
+          }}
+          onIslandCollapsedChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandCollapsedChange(selectedIsland.id, value);
           }}
           onIslandCritiqueChange={(value) => {
             if (!selectedIsland) {

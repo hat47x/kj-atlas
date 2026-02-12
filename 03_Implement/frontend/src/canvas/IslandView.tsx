@@ -16,6 +16,7 @@ type IslandViewProps = {
   cards: Card[];
   isSelected: boolean;
   onSelect: (islandId: string) => void;
+  onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   isPickingEdgeTarget?: boolean;
   zIndex?: number;
 };
@@ -102,6 +103,7 @@ function IslandViewComponent({
   cards,
   isSelected,
   onSelect,
+  onToggleCollapsed,
   isPickingEdgeTarget = false,
   zIndex = 0,
 }: IslandViewProps) {
@@ -205,6 +207,12 @@ function IslandViewComponent({
             if (!isPickingEdgeTarget) onSelect(island.id);
           });
         }}
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          if (!isPickingEdgeTarget) {
+            onToggleCollapsed?.(island.id, island.collapsed !== true);
+          }
+        }}
         style={{
           pointerEvents: isPickingEdgeTarget ? "none" : "auto",
           position: "absolute",
@@ -225,6 +233,7 @@ function IslandViewComponent({
         }}
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
+        {island.collapsed === true ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
         {hasCritique ? (
           <span
             aria-label="Island has critique note"

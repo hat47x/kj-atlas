@@ -34,4 +34,33 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(child?.parentIslandId).toBe("parent");
     expect(child?.critiqueTags).toEqual(["unclear_boundary"]);
   });
+
+  it("defaults island collapsed to false and preserves explicit true", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_collapsed",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        { id: "i1", cardIds: ["c1"] },
+        { id: "i2", cardIds: [], collapsed: true },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    const defaultCollapsedIsland = result.document.islands.find((island) => island.id === "i1");
+    const explicitCollapsedIsland = result.document.islands.find((island) => island.id === "i2");
+
+    expect(defaultCollapsedIsland?.collapsed).toBe(false);
+    expect(explicitCollapsedIsland?.collapsed).toBe(true);
+  });
+
 });
