@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 
 import type { Card } from "../domain/types";
@@ -12,12 +12,11 @@ type CardDragState = {
 
 type CardViewProps = {
   card: Card;
-  zoom: number;
   isSelected: boolean;
   searchQuery?: string;
   isSearchMatch?: boolean;
   isActiveSearchMatch?: boolean;
-  onMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
+  onMove: (cardId: string, deltaScreenX: number, deltaScreenY: number) => void;
   onSelect: (cardId: string, isShiftPressed: boolean) => void;
 };
 
@@ -71,9 +70,8 @@ function renderHighlightedText(text: string, searchQuery: string): JSX.Element {
   return <>{parts}</>;
 }
 
-export function CardView({
+function CardViewComponent({
   card,
-  zoom,
   isSelected,
   searchQuery = "",
   isSearchMatch = false,
@@ -134,7 +132,7 @@ export function CardView({
       didMove: true,
     };
 
-    onMove(card.id, deltaScreenX / zoom, deltaScreenY / zoom);
+    onMove(card.id, deltaScreenX, deltaScreenY);
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -214,3 +212,5 @@ export function CardView({
     </div>
   );
 }
+
+export const CardView = memo(CardViewComponent);

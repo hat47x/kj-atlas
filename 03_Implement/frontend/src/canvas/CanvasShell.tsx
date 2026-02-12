@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
 import type { DocumentV2, Transform } from "../domain/types";
@@ -85,6 +85,7 @@ export function CanvasShell({
   const dragRef = useRef<DragState | null>(null);
 
   const [transform, setTransform] = useState<Transform>(document.transform);
+  const transformRef = useRef<Transform>(document.transform);
   const [dragMode, setDragMode] = useState<"none" | "pan" | "marquee">("none");
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [marqueeRect, setMarqueeRect] = useState<{
@@ -122,6 +123,10 @@ export function CanvasShell({
   }, [document.transform]);
 
   useEffect(() => {
+    transformRef.current = transform;
+  }, [transform]);
+
+  useEffect(() => {
     if (!onTransformChange) {
       return;
     }
@@ -157,7 +162,9 @@ export function CanvasShell({
     );
   }, [document.cards, focusCardId, focusRequestSeq]);
 
-  const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
+  const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
+
+  const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
     setDragMode("none");
     setMarqueeRect(null);
@@ -165,7 +172,22 @@ export function CanvasShell({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-  };
+  }, []);
+
+  const handleCardMove = useCallback(
+    (cardId: string, deltaScreenX: number, deltaScreenY: number) => {
+      const currentZoom = transformRef.current.zoom;
+      onCardMove(cardId, deltaScreenX / currentZoom, deltaScreenY / currentZoom);
+    },
+    [onCardMove]
+  );
+
+  const handleCardSelect = useCallback(
+    (cardId: string, isShiftPressed: boolean) => {
+      onCardSelect(cardId, isShiftPressed);
+    },
+    [onCardSelect]
+  );
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!canStartDrag(event)) {
@@ -371,10 +393,9 @@ export function CanvasShell({
             <CardView
               key={card.id}
               card={card}
-              zoom={transform.zoom}
-              onMove={onCardMove}
-              isSelected={selectedCardIds.includes(card.id)}
-              onSelect={onCardSelect}
+              onMove={handleCardMove}
+              isSelected={selectedCardIdSet.has(card.id)}
+              onSelect={handleCardSelect}
               searchQuery={searchQuery}
               isSearchMatch={matchedCardIds?.has(card.id) ?? false}
               isActiveSearchMatch={activeMatchedCardId === card.id}

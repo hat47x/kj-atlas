@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 
 import type { Card, Island } from "../domain/types";
@@ -20,6 +21,45 @@ type EdgeHitbox = {
   key: string;
   style: CSSProperties;
 };
+
+const EDGE_HITBOXES: EdgeHitbox[] = [
+  {
+    key: "top",
+    style: {
+      left: 0,
+      top: 0,
+      width: "100%",
+      height: 8,
+    },
+  },
+  {
+    key: "right",
+    style: {
+      right: 0,
+      top: 0,
+      width: 8,
+      height: "100%",
+    },
+  },
+  {
+    key: "bottom",
+    style: {
+      left: 0,
+      bottom: 0,
+      width: "100%",
+      height: 8,
+    },
+  },
+  {
+    key: "left",
+    style: {
+      left: 0,
+      top: 0,
+      width: 8,
+      height: "100%",
+    },
+  },
+];
 
 function getIslandBounds(island: Island, cards: Card[]) {
   const islandCards = cards.filter((card) => island.cardIds.includes(card.id));
@@ -54,7 +94,7 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
   }
 }
 
-export function IslandView({ island, cards, isSelected, onSelect }: IslandViewProps) {
+function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const islandBackgroundImage = island.imageUrl
@@ -65,44 +105,6 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
     return null;
   }
 
-  const edgeHitboxes: EdgeHitbox[] = [
-    {
-      key: "top",
-      style: {
-        left: 0,
-        top: 0,
-        width: "100%",
-        height: 8,
-      },
-    },
-    {
-      key: "right",
-      style: {
-        right: 0,
-        top: 0,
-        width: 8,
-        height: "100%",
-      },
-    },
-    {
-      key: "bottom",
-      style: {
-        left: 0,
-        bottom: 0,
-        width: "100%",
-        height: 8,
-      },
-    },
-    {
-      key: "left",
-      style: {
-        left: 0,
-        top: 0,
-        width: 8,
-        height: "100%",
-      },
-    },
-  ];
 
   return (
     <div
@@ -120,7 +122,7 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
         isolation: "isolate",
       }}
     >
-      {edgeHitboxes.map((edgeHitbox) => (
+      {EDGE_HITBOXES.map((edgeHitbox) => (
         <button
           key={edgeHitbox.key}
           type="button"
@@ -227,3 +229,5 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
     </div>
   );
 }
+
+export const IslandView = memo(IslandViewComponent);
