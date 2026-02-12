@@ -178,29 +178,30 @@ export function CanvasShell({
   }, [document.cards, focusCardId, focusRequestSeq, focusWorldPoint]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
+  const hiddenCardIdSet = hiddenCardIds ?? new Set<string>();
   const visibleCards = useMemo(() => {
-    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+    if (hiddenCardIdSet.size === 0) {
       return document.cards;
     }
 
-    return document.cards.filter((card) => !hiddenCardIds.has(card.id));
-  }, [document.cards, hiddenCardIds]);
+    return document.cards.filter((card) => !hiddenCardIdSet.has(card.id));
+  }, [document.cards, hiddenCardIdSet]);
   const visibleEdges = useMemo(() => {
-    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+    if (hiddenCardIdSet.size === 0) {
       return document.edges;
     }
 
-    return document.edges.filter((edge) => !hiddenCardIds.has(edge.fromId) && !hiddenCardIds.has(edge.toId));
-  }, [document.edges, hiddenCardIds]);
+    return document.edges.filter((edge) => !hiddenCardIdSet.has(edge.fromId) && !hiddenCardIdSet.has(edge.toId));
+  }, [document.edges, hiddenCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
-    if (!hiddenCardIds || hiddenCardIds.size === 0) {
+    if (hiddenCardIdSet.size === 0) {
       return diffs;
     }
 
-    return diffs.filter((diff) => !hiddenCardIds.has(diff.cardId));
-  }, [hiddenCardIds, suggestionMoveDiffs]);
+    return diffs.filter((diff) => !hiddenCardIdSet.has(diff.cardId));
+  }, [hiddenCardIdSet, suggestionMoveDiffs]);
 
   const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -424,10 +425,6 @@ export function CanvasShell({
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
         {visibleCards.map((card) => {
-          if (hiddenCardIds?.has(card.id)) {
-            return null;
-          }
-
           return (
             <CardView
               key={card.id}

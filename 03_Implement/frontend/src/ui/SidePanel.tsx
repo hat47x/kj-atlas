@@ -31,6 +31,9 @@ type SidePanelProps = {
   onClearFocus: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
+  maxDepth: number | "all";
+  maxAvailableDepth: number;
+  onMaxDepthChange: (value: number | "all") => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -74,6 +77,9 @@ export function SidePanel({
   onClearFocus,
   isGridSnapEnabled,
   onGridSnapToggle,
+  maxDepth,
+  maxAvailableDepth,
+  onMaxDepthChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -183,6 +189,29 @@ export function SidePanel({
           />
           Grid Snap (10)
         </label>
+        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Depth view</label>
+        <select
+          value={maxDepth === "all" ? "all" : String(maxDepth)}
+          onChange={(event) => {
+            if (event.target.value === "all") {
+              onMaxDepthChange("all");
+              return;
+            }
+
+            onMaxDepthChange(Number(event.target.value));
+          }}
+          style={{ width: "100%", marginBottom: 10 }}
+        >
+          <option value="all">All depths</option>
+          {Array.from({ length: maxAvailableDepth + 1 }, (_, depth) => (
+            <option key={depth} value={depth}>
+              Depth {depth}
+            </option>
+          ))}
+        </select>
+        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 10 }}>
+          Current: {maxDepth === "all" ? "All depths" : `Depth ${maxDepth}`}
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
             Align Left
