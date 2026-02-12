@@ -172,6 +172,10 @@ function markSuggestedFieldsUnreviewed(document: DocumentV2, baseDocument: Docum
         !baseIslandsById.has(island.id) || baseIslandsById.get(island.id)?.imageUrl !== island.imageUrl
           ? false
           : baseIslandsById.get(island.id)?.imageReviewed,
+      summaryReviewed:
+        !baseIslandsById.has(island.id) || baseIslandsById.get(island.id)?.summaryText !== island.summaryText
+          ? false
+          : baseIslandsById.get(island.id)?.summaryReviewed,
     })),
   };
 }
@@ -1210,6 +1214,45 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleIslandSummaryTextChange = useCallback(
+    (islandId: string, rawSummaryText: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextSummaryText = rawSummaryText.length > 0 ? rawSummaryText : undefined;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.summaryText ?? undefined) === nextSummaryText && island.summaryReviewed === true) {
+          return island;
+        }
+
+        return {
+          ...island,
+          summaryText: nextSummaryText,
+          summaryReviewed: true,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island summary"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleIslandImageUrlChange = useCallback(
     (islandId: string, rawImageUrl: string) => {
       if (!document) {
@@ -1444,6 +1487,43 @@ export default function App() {
           islands: nextIslands,
         },
         "Updated island title reviewed state"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleIslandSummaryReviewedChange = useCallback(
+    (islandId: string, reviewed: boolean) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if ((island.summaryReviewed ?? false) === reviewed) {
+          return island;
+        }
+
+        return {
+          ...island,
+          summaryReviewed: reviewed,
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Updated island summary reviewed state"
       );
     },
     [applyDocumentChange, document]
@@ -2211,6 +2291,20 @@ export default function App() {
             }
 
             handleIslandTitleReviewedChange(selectedIsland.id, value);
+          }}
+          onSummaryTextChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandSummaryTextChange(selectedIsland.id, value);
+          }}
+          onSummaryReviewedChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandSummaryReviewedChange(selectedIsland.id, value);
           }}
           onImageUrlChange={(value) => {
             if (!selectedIsland) {
