@@ -6,6 +6,10 @@ type ShellProps = {
   headerCenter?: ReactNode;
   headerRight?: ReactNode;
   hasUnsavedChanges?: boolean;
+  saveConflictMessage?: string;
+  onReloadAfterConflict?: () => void;
+  onExportAfterConflict?: () => void;
+  isReloadingAfterConflict?: boolean;
   sidePanel?: ReactNode;
 };
 
@@ -15,6 +19,10 @@ export function Shell({
   headerCenter,
   headerRight,
   hasUnsavedChanges = false,
+  saveConflictMessage,
+  onReloadAfterConflict,
+  onExportAfterConflict,
+  isReloadingAfterConflict = false,
   sidePanel,
 }: ShellProps) {
   return (
@@ -30,39 +38,92 @@ export function Shell({
     >
       <header
         style={{
-          height: "56px",
+          minHeight: "56px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 16px",
+          padding: "8px 16px",
           borderBottom: "1px solid #e2e8f0",
           backgroundColor: "#ffffff",
           color: "#0f172a",
           fontWeight: 600,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <span style={{ whiteSpace: "nowrap" }}>{title}</span>
-          {hasUnsavedChanges ? (
-            <span
-              style={{
-                fontSize: 12,
-                color: "#92400e",
-                backgroundColor: "#fef3c7",
-                border: "1px solid #fde68a",
-                borderRadius: 999,
-                padding: "2px 8px",
-                fontWeight: 600,
-              }}
-            >
-              Unsaved changes
-            </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <span style={{ whiteSpace: "nowrap" }}>{title}</span>
+            {hasUnsavedChanges ? (
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#92400e",
+                  backgroundColor: "#fef3c7",
+                  border: "1px solid #fde68a",
+                  borderRadius: 999,
+                  padding: "2px 8px",
+                  fontWeight: 600,
+                }}
+              >
+                Unsaved changes
+              </span>
+            ) : null}
+          </div>
+          {saveConflictMessage ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#991b1b",
+                  backgroundColor: "#fee2e2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 6,
+                  padding: "2px 8px",
+                }}
+              >
+                {saveConflictMessage}
+              </span>
+              {onReloadAfterConflict ? (
+                <button
+                  type="button"
+                  onClick={onReloadAfterConflict}
+                  disabled={isReloadingAfterConflict}
+                  style={{
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#ffffff",
+                    color: "#0f172a",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontWeight: 600,
+                    cursor: isReloadingAfterConflict ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isReloadingAfterConflict ? "Reloading..." : "Reload"}
+                </button>
+              ) : null}
+              {onExportAfterConflict ? (
+                <button
+                  type="button"
+                  onClick={onExportAfterConflict}
+                  style={{
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#ffffff",
+                    color: "#0f172a",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Export JSON
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
         {headerCenter ? (

@@ -148,7 +148,10 @@ export default function App() {
   const [selectedIslandId, setSelectedIslandId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isReloadingDocument, setIsReloadingDocument] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [docEtag, setDocEtag] = useState<string | null>(null);
+  const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
   const [suggestedDocument, setSuggestedDocument] = useState<DocumentV2 | null>(null);
@@ -197,76 +200,93 @@ export default function App() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    const loadDocument = async () => {
+  const loadDocument = useCallback(
+    async (options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
+      const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
+      const isReload = options?.isReload ?? false;
+      if (isReload) {
+        setIsReloadingDocument(true);
+      }
       setIsLoading(true);
-      setStatusMessage("Loading document...");
+      setStatusMessage(isReload ? "Reloading document..." : "Loading document...");
 
       try {
-        const loadedDocument = toDocumentV2(await getDocument(DOCUMENT_ID));
-        if (!isCancelled) {
-          setHistory({
-            past: [],
-            present: cloneDocument(loadedDocument),
-            future: [],
-          });
-          setSelectedCardIds([]);
-          setSelectedIslandId(null);
-          setIsDirty(false);
-          setSuggestedDocument(null);
-          setSuggestionId(null);
-          setSuggestionNotes(null);
-          setSuggestionError(null);
-          pendingCardDragSnapshotRef.current = null;
-          setStatusMessage("Document loaded");
-        }
+        const loaded = await getDocument(DOCUMENT_ID);
+        const loadedDocument = toDocumentV2(loaded.document);
+
+        setHistory({
+          past: [],
+          present: cloneDocument(loadedDocument),
+          future: [],
+        });
+        setDocEtag(loaded.etag ?? null);
+        setSelectedCardIds([]);
+        setSelectedIslandId(null);
+        setIsDirty(false);
+        setHasSaveConflict(false);
+        setSuggestedDocument(null);
+        setSuggestionId(null);
+        setSuggestionNotes(null);
+        setSuggestionError(null);
+        pendingCardDragSnapshotRef.current = null;
+        setStatusMessage("Document loaded");
       } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
+        if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
           const defaultDocument = createDefaultDocument(DOCUMENT_ID);
 
           try {
-            const savedDocument = toDocumentV2(await putDocument(DOCUMENT_ID, defaultDocument));
-            if (!isCancelled) {
-              setHistory({
-                past: [],
-                present: cloneDocument(savedDocument),
-                future: [],
-              });
-              setSelectedCardIds([]);
-              setSelectedIslandId(null);
-              setIsDirty(false);
-              setSuggestedDocument(null);
-              setSuggestionId(null);
-              setSuggestionNotes(null);
-              setSuggestionError(null);
-              pendingCardDragSnapshotRef.current = null;
-              setStatusMessage("Created a new document");
-            }
+            const saved = await putDocument(DOCUMENT_ID, defaultDocument);
+            const savedDocument = toDocumentV2(saved.document);
+
+            setHistory({
+              past: [],
+              present: cloneDocument(savedDocument),
+              future: [],
+            });
+            setDocEtag(saved.etag ?? null);
+            setSelectedCardIds([]);
+            setSelectedIslandId(null);
+            setIsDirty(false);
+            setHasSaveConflict(false);
+            setSuggestedDocument(null);
+            setSuggestionId(null);
+            setSuggestionNotes(null);
+            setSuggestionError(null);
+            pendingCardDragSnapshotRef.current = null;
+            setStatusMessage("Created a new document");
           } catch (saveError) {
-            if (!isCancelled) {
-              setStatusMessage(
-                saveError instanceof Error ? saveError.message : "Failed to create document"
-              );
-            }
+            setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
           }
-        } else if (!isCancelled) {
+        } else {
           setStatusMessage(error instanceof Error ? error.message : "Failed to load document");
         }
       } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
+        setIsLoading(false);
+        if (isReload) {
+          setIsReloadingDocument(false);
         }
       }
+    },
+    []
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadForMount = async () => {
+      if (isCancelled) {
+        return;
+      }
+
+      await loadDocument({ allowCreateOnNotFound: true });
     };
 
-    void loadDocument();
+    void loadForMount();
 
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [loadDocument]);
 
   const applyDocumentChange = useCallback((nextDocument: DocumentV2, nextStatusMessage?: string) => {
     pendingCardDragSnapshotRef.current = null;
@@ -285,6 +305,7 @@ export default function App() {
     setSuggestionError(null);
     setMergeSuggestions([]);
     setMergeSuggestionError(null);
+    setHasSaveConflict(false);
     if (nextStatusMessage) {
       setStatusMessage(nextStatusMessage);
     }
@@ -495,16 +516,25 @@ export default function App() {
     setStatusMessage("Saving...");
 
     try {
-      const savedDocument = toDocumentV2(await putDocument(document.id, withUpdatedTimestamp(document)));
+      const saved = await putDocument(document.id, withUpdatedTimestamp(document), docEtag ?? undefined);
+      const savedDocument = toDocumentV2(saved.document);
       pendingCardDragSnapshotRef.current = null;
       setHistory({
         past: [],
         present: cloneDocument(savedDocument),
         future: [],
       });
+      setDocEtag(saved.etag ?? null);
       setIsDirty(false);
+      setHasSaveConflict(false);
       setStatusMessage("Saved");
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setHasSaveConflict(true);
+        setStatusMessage("This document has been updated elsewhere. Please reload or export your changes.");
+        return;
+      }
+
       setStatusMessage(error instanceof Error ? error.message : "Failed to save document");
     } finally {
       setIsSaving(false);
@@ -708,9 +738,11 @@ export default function App() {
           present: cloneDocument(validateResult.document),
           future: [],
         });
+        setDocEtag(null);
         setSelectedCardIds([]);
         setSelectedIslandId(null);
         setIsDirty(true);
+        setHasSaveConflict(false);
         setSuggestedDocument(null);
         setSuggestionId(null);
         setSuggestionNotes(null);
@@ -1479,6 +1511,16 @@ export default function App() {
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
+      saveConflictMessage={
+        hasSaveConflict
+          ? "This document has been updated elsewhere. Please reload or export your changes."
+          : undefined
+      }
+      onReloadAfterConflict={() => {
+        void loadDocument({ isReload: true });
+      }}
+      onExportAfterConflict={handleExport}
+      isReloadingAfterConflict={isReloadingDocument}
       sidePanel={
         <SidePanel
           selectedCard={selectedCard}
