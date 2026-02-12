@@ -19,6 +19,10 @@ class Settings(BaseSettings):
         default=None,
         alias="LOCAL_LLM_MODEL",
     )
+    api_key: str | None = Field(
+        default=None,
+        alias="API_KEY",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
