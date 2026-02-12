@@ -361,6 +361,7 @@ export function CanvasShell({
         }}
       >
         <EdgeLayer cards={document.cards} edges={document.edges} />
+        {children}
         {document.cards.map((card) => {
           if (hiddenCardIds?.has(card.id)) {
             return null;
@@ -380,7 +381,6 @@ export function CanvasShell({
             />
           );
         })}
-        {children}
       </div>
       {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
     </div>

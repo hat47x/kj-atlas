@@ -57,6 +57,9 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
 export function IslandView({ island, cards, isSelected, onSelect }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
+  const islandBackgroundImage = island.imageUrl
+    ? `url("${encodeURI(island.imageUrl)}")`
+    : null;
 
   if (!bounds) {
     return null;
@@ -138,6 +141,21 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
           aria-label={`Select island ${island.id}`}
         />
       ))}
+      {islandBackgroundImage ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: islandBackgroundImage,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            opacity: 0.15,
+            zIndex: 0,
+          }}
+        />
+      ) : null}
       <div
         style={{
           position: "absolute",
@@ -149,22 +167,6 @@ export function IslandView({ island, cards, isSelected, onSelect }: IslandViewPr
           zIndex: 1,
         }}
       />
-      {island.imageUrl ? (
-        <img
-          src={island.imageUrl}
-          alt=""
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: 0.18,
-            zIndex: 0,
-          }}
-        />
-      ) : null}
       <div
         style={{
           position: "absolute",
