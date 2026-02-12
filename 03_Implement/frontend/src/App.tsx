@@ -286,6 +286,7 @@ export default function App() {
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
@@ -350,7 +351,8 @@ export default function App() {
     return collectCollapsedIslandIds(focusedVisibleDocument.islands);
   }, [focusedVisibleDocument]);
   const hiddenCardIdSet = useMemo(() => {
-    const hiddenCardIds = new Set<string>();
+    const collapsedHiddenCardIds = new Set<string>();
+    const searchHiddenCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       for (const island of focusedVisibleDocument.islands) {
@@ -359,7 +361,7 @@ export default function App() {
         }
 
         for (const cardId of island.cardIds) {
-          hiddenCardIds.add(cardId);
+          collapsedHiddenCardIds.add(cardId);
         }
       }
     }
@@ -367,13 +369,35 @@ export default function App() {
     if (hideNonMatches && normalizedSearchQuery.length > 0 && focusedVisibleDocument) {
       for (const card of focusedVisibleDocument.cards) {
         if (!matchedCardIdSet.has(card.id)) {
-          hiddenCardIds.add(card.id);
+          searchHiddenCardIds.add(card.id);
         }
       }
     }
 
+    if (peekIslandId && focusedVisibleDocument) {
+      const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
+      if (peekIsland) {
+        for (const cardId of peekIsland.cardIds) {
+          collapsedHiddenCardIds.delete(cardId);
+        }
+      }
+    }
+
+    const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
+    for (const cardId of searchHiddenCardIds) {
+      hiddenCardIds.add(cardId);
+    }
+
     return hiddenCardIds;
-  }, [collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery]);
+  }, [collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery, peekIslandId]);
+  const peekCardIdSet = useMemo(() => {
+    if (!peekIslandId || !focusedVisibleDocument) {
+      return undefined;
+    }
+
+    const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
+    return peekIsland ? new Set(peekIsland.cardIds) : undefined;
+  }, [focusedVisibleDocument, peekIslandId]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -1678,6 +1702,17 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (!peekIslandId || !focusedVisibleDocument) {
+      return;
+    }
+
+    const hasPeekTarget = focusedVisibleDocument.islands.some((island) => island.id === peekIslandId);
+    if (!hasPeekTarget) {
+      setPeekIslandId(undefined);
+    }
+  }, [focusedVisibleDocument, peekIslandId]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
       if (!usesShortcut || !canCreateIsland) {
@@ -1880,13 +1915,20 @@ export default function App() {
           island={island}
           cards={visibleDocument.cards}
           isSelected={selectedIslandId === island.id}
+          isPeeking={peekIslandId === island.id}
           zIndex={index}
           onSelect={handleIslandSelect}
           onToggleCollapsed={handleIslandCollapsedChange}
+          onPeekStart={(islandId) => {
+            setPeekIslandId(islandId);
+          }}
+          onPeekEnd={() => {
+            setPeekIslandId(undefined);
+          }}
           isPickingEdgeTarget={isPickingEdgeTarget}
         />
       ));
-  }, [collapsedIslandIdSet, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, selectedIslandId, uniqueIslands, visibleDocument]);
+  }, [collapsedIslandIdSet, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, peekIslandId, selectedIslandId, uniqueIslands, visibleDocument]);
 
   const readingOrderItems = useMemo(() => {
     if (!document) {
@@ -2567,6 +2609,7 @@ export default function App() {
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
+            peekCardIds={peekCardIdSet}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
