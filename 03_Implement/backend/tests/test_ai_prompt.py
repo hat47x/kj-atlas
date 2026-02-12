@@ -1,4 +1,4 @@
-from kj_atlas_api.models import Card, DocumentV2, EdgeV2, Island, SuggestLayoutRequest, Transform
+from kj_atlas_api.models import CardV2, DocumentV2, EdgeV2, Island, SuggestLayoutRequest, Transform
 from kj_atlas_api.routes.ai import _build_prompt
 
 
@@ -11,8 +11,8 @@ def _sample_payload() -> SuggestLayoutRequest:
         updatedAt="2026-02-11T00:00:00Z",
         transform=Transform(panX=10, panY=20, zoom=1.25),
         cards=[
-            Card(id="c1", text="alpha", x=100, y=200, critique="too close"),
-            Card(id="c2", text="beta", x=260, y=205),
+            CardV2(id="c1", text="alpha", x=100, y=200, critique="too close"),
+            CardV2(id="c2", text="beta", x=260, y=205),
         ],
         edges=[EdgeV2(id="e1", fromId="c1", toId="c2", type="related")],
         islands=[
