@@ -34,6 +34,10 @@ class Card(BaseModel):
     textReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class CardV2(Card):
+    textReviewed: bool | None = None
+
+
 class EdgeV1(BaseModel):
     id: str
     fromId: str
@@ -76,7 +80,7 @@ class DocumentV2(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     transform: Transform
-    cards: list[Card]
+    cards: list[CardV2]
     edges: list[EdgeV2]
     islands: list[Island]
 
@@ -93,3 +97,19 @@ class SuggestLayoutResponse(BaseModel):
     suggestionId: str
     suggestedDoc: DocumentV2
     notes: str | None = None
+
+
+class MergeSuggestion(BaseModel):
+    groupId: str
+    cardIds: list[str]
+    mergedTextDraft: str
+    rationale: str | None = None
+
+
+class SuggestMergesRequest(BaseModel):
+    doc: DocumentV2
+    instruction: str | None = None
+
+
+class SuggestMergesResponse(BaseModel):
+    suggestions: list[MergeSuggestion]

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { ApiError, getDocument, putDocument, suggestLayout } from "./api/client";
+import { ApiError, getDocument, putDocument, suggestLayout, suggestMerges } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
@@ -13,6 +13,7 @@ import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
+import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -22,6 +23,15 @@ type DocumentHistory = {
   past: DocumentV2[];
   present: DocumentV2;
   future: DocumentV2[];
+};
+
+type MergeSuggestionDraft = {
+  groupId: string;
+  cardIds: string[];
+  mergedTextDraft: string;
+  rationale?: string;
+  editedText: string;
+  isEdited: boolean;
 };
 
 function createDefaultDocument(docId: string): DocumentV2 {
@@ -153,6 +163,10 @@ export default function App() {
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
+  const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
+  const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
+  const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
+  const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
@@ -181,6 +195,7 @@ export default function App() {
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -268,6 +283,8 @@ export default function App() {
     setSuggestionId(null);
     setSuggestionNotes(null);
     setSuggestionError(null);
+    setMergeSuggestions([]);
+    setMergeSuggestionError(null);
     if (nextStatusMessage) {
       setStatusMessage(nextStatusMessage);
     }
@@ -539,6 +556,113 @@ export default function App() {
     setIsSuggestionPreviewEnabled(true);
     setStatusMessage("Discarded draft suggestion");
   }, []);
+
+  const handleSuggestMerges = useCallback(async () => {
+    if (!document || isSuggestingMerges) {
+      return;
+    }
+
+    setIsSuggestingMerges(true);
+    setMergeSuggestionError(null);
+    setStatusMessage("Requesting merge suggestions...");
+
+    try {
+      const result = await suggestMerges(document, mergeSuggestionInstruction.trim() || undefined);
+      setMergeSuggestions(
+        result.suggestions.map((suggestion) => ({
+          ...suggestion,
+          editedText: suggestion.mergedTextDraft,
+          isEdited: false,
+        }))
+      );
+      setMergeSuggestionError(null);
+      setStatusMessage("Merge suggestions ready");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to get merge suggestions";
+      setMergeSuggestionError(message);
+      setMergeSuggestions([]);
+      setStatusMessage(message);
+    } finally {
+      setIsSuggestingMerges(false);
+    }
+  }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
+
+  const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
+    setMergeSuggestions((previousSuggestions) =>
+      previousSuggestions.map((suggestion) =>
+        suggestion.groupId === groupId
+          ? {
+              ...suggestion,
+              editedText: value,
+              isEdited: value !== suggestion.mergedTextDraft,
+            }
+          : suggestion
+      )
+    );
+  }, []);
+
+  const handleDismissMergeSuggestion = useCallback((groupId: string) => {
+    setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((suggestion) => suggestion.groupId !== groupId));
+  }, []);
+
+  const handleApplyMergeSuggestion = useCallback(
+    (groupId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const suggestion = mergeSuggestions.find((item) => item.groupId === groupId);
+      if (!suggestion) {
+        return;
+      }
+
+      const cardsToMerge = document.cards.filter((card) => suggestion.cardIds.includes(card.id));
+      if (cardsToMerge.length < 2) {
+        setMergeSuggestionError("Merge suggestion is no longer applicable.");
+        return;
+      }
+
+      const mergedCardIds = new Set(cardsToMerge.map((card) => card.id));
+      const averageX = cardsToMerge.reduce((sum, card) => sum + card.x, 0) / cardsToMerge.length;
+      const averageY = cardsToMerge.reduce((sum, card) => sum + card.y, 0) / cardsToMerge.length;
+      const newCardId = crypto.randomUUID();
+
+      const nextDocument: DocumentV2 = {
+        ...document,
+        cards: [
+          ...document.cards.filter((card) => !mergedCardIds.has(card.id)),
+          {
+            id: newCardId,
+            text: suggestion.editedText,
+            x: averageX,
+            y: averageY,
+            critique: "",
+            textReviewed: suggestion.isEdited,
+          },
+        ],
+        edges: document.edges.filter((edge) => !mergedCardIds.has(edge.fromId) && !mergedCardIds.has(edge.toId)),
+        islands: document.islands.map((island) => {
+          const hasMergedCard = island.cardIds.some((cardId) => mergedCardIds.has(cardId));
+          if (!hasMergedCard) {
+            return island;
+          }
+
+          const preservedIds = island.cardIds.filter((cardId) => !mergedCardIds.has(cardId));
+          return {
+            ...island,
+            cardIds: [...preservedIds, newCardId],
+          };
+        }),
+      };
+
+      applyDocumentChange(nextDocument, "Applied merge suggestion");
+      setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((item) => item.groupId !== groupId));
+      setSelectedCardIds((previousCardIds) =>
+        previousCardIds.filter((cardId) => !mergedCardIds.has(cardId)).concat(newCardId)
+      );
+    },
+    [applyDocumentChange, document, mergeSuggestions]
+  );
 
   const handleExport = useCallback(() => {
     if (!document) {
@@ -1343,21 +1467,37 @@ export default function App() {
         <SidePanel
           selectedCard={selectedCard}
           topContent={
-            <SuggestionPanel
-              instruction={suggestionInstruction}
-              onInstructionChange={setSuggestionInstruction}
-              onSuggest={() => {
-                void handleSuggestLayout();
-              }}
-              onApply={handleApplySuggestion}
-              onDiscard={handleDiscardSuggestion}
-              hasSuggestion={Boolean(suggestedDocument && suggestionId)}
-              isPreviewEnabled={isSuggestionPreviewEnabled}
-              onPreviewToggle={setIsSuggestionPreviewEnabled}
-              isSuggesting={isSuggesting}
-              errorMessage={suggestionError}
-              notes={suggestionNotes}
-            />
+            <>
+              <MergeSuggestionsPanel
+                instruction={mergeSuggestionInstruction}
+                onInstructionChange={setMergeSuggestionInstruction}
+                onSuggest={() => {
+                  void handleSuggestMerges();
+                }}
+                isSuggesting={isSuggestingMerges}
+                errorMessage={mergeSuggestionError}
+                suggestions={mergeSuggestions}
+                cardsById={cardsById}
+                onMergedTextChange={handleMergeSuggestionTextChange}
+                onApply={handleApplyMergeSuggestion}
+                onDismiss={handleDismissMergeSuggestion}
+              />
+              <SuggestionPanel
+                instruction={suggestionInstruction}
+                onInstructionChange={setSuggestionInstruction}
+                onSuggest={() => {
+                  void handleSuggestLayout();
+                }}
+                onApply={handleApplySuggestion}
+                onDiscard={handleDiscardSuggestion}
+                hasSuggestion={Boolean(suggestedDocument && suggestionId)}
+                isPreviewEnabled={isSuggestionPreviewEnabled}
+                onPreviewToggle={setIsSuggestionPreviewEnabled}
+                isSuggesting={isSuggesting}
+                errorMessage={suggestionError}
+                notes={suggestionNotes}
+              />
+            </>
           }
           selectedIsland={selectedIsland}
           selectedCardCount={selectedCardIds.length}
