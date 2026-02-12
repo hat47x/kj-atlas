@@ -63,4 +63,32 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(explicitCollapsedIsland?.collapsed).toBe(true);
   });
 
+  it("preserves canonical relationship fields from imported cards", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_canonical",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "canonical", x: 0, y: 0, sources: ["c2"] },
+        { id: "c2", text: "source", x: 10, y: 20, canonicalId: "c1" },
+      ],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    const canonicalCard = result.document.cards.find((card) => card.id === "c1");
+    const sourceCard = result.document.cards.find((card) => card.id === "c2");
+
+    expect(canonicalCard?.sources).toEqual(["c2"]);
+    expect(sourceCard?.canonicalId).toBe("c1");
+  });
+
 });

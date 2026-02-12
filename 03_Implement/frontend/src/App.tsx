@@ -282,6 +282,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
+  const [hideSourceCards, setHideSourceCards] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -2542,6 +2543,8 @@ export default function App() {
           onClearFocus={handleClearFocus}
           isGridSnapEnabled={isGridSnapEnabled}
           onGridSnapToggle={setIsGridSnapEnabled}
+          hideSourceCards={hideSourceCards}
+          onHideSourceCardsChange={setHideSourceCards}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -2609,6 +2612,7 @@ export default function App() {
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
+            hideSourceCards={hideSourceCards}
             peekCardIds={peekCardIdSet}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
