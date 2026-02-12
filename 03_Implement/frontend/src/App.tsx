@@ -9,6 +9,7 @@ import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
+import { SearchBar } from "./ui/SearchBar";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -115,10 +116,35 @@ export default function App() {
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSuggestionPreviewEnabled, setIsSuggestionPreviewEnabled] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [hideNonMatches, setHideNonMatches] = useState(false);
+  const [focusCardId, setFocusCardId] = useState<string | null>(null);
+  const [focusRequestSeq, setFocusRequestSeq] = useState(0);
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const matchedCardIds = useMemo(() => {
+    if (!visibleDocument || normalizedSearchQuery.length === 0) {
+      return [] as string[];
+    }
+
+    return visibleDocument.cards
+      .filter((card) => card.text.toLowerCase().includes(normalizedSearchQuery))
+      .map((card) => card.id);
+  }, [normalizedSearchQuery, visibleDocument]);
+  const matchedCardIdSet = useMemo(() => new Set(matchedCardIds), [matchedCardIds]);
+  const activeMatchIndex = matchedCardIds.length > 0 ? ((currentMatchIndex % matchedCardIds.length) + matchedCardIds.length) % matchedCardIds.length : 0;
+  const activeMatchedCardId = matchedCardIds.length > 0 ? matchedCardIds[activeMatchIndex] : null;
+  const hiddenCardIdSet = useMemo(() => {
+    if (!hideNonMatches || normalizedSearchQuery.length === 0 || !visibleDocument) {
+      return new Set<string>();
+    }
+
+    return new Set(visibleDocument.cards.filter((card) => !matchedCardIdSet.has(card.id)).map((card) => card.id));
+  }, [hideNonMatches, matchedCardIdSet, normalizedSearchQuery, visibleDocument]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -214,6 +240,47 @@ export default function App() {
       setStatusMessage(nextStatusMessage);
     }
   }, []);
+
+
+  useEffect(() => {
+    if (matchedCardIds.length === 0) {
+      if (currentMatchIndex !== 0) {
+        setCurrentMatchIndex(0);
+      }
+      return;
+    }
+
+    if (currentMatchIndex >= matchedCardIds.length) {
+      setCurrentMatchIndex(0);
+    }
+  }, [currentMatchIndex, matchedCardIds]);
+
+  const requestCanvasFocus = useCallback((cardId: string) => {
+    setFocusCardId(cardId);
+    setFocusRequestSeq((previousSeq) => previousSeq + 1);
+  }, []);
+
+  const handleSearchNext = useCallback(() => {
+    if (matchedCardIds.length === 0) {
+      return;
+    }
+
+    const nextIndex = (activeMatchIndex + 1) % matchedCardIds.length;
+    const nextCardId = matchedCardIds[nextIndex];
+    setCurrentMatchIndex(nextIndex);
+    requestCanvasFocus(nextCardId);
+  }, [activeMatchIndex, matchedCardIds, requestCanvasFocus]);
+
+  const handleSearchPrev = useCallback(() => {
+    if (matchedCardIds.length === 0) {
+      return;
+    }
+
+    const prevIndex = (activeMatchIndex - 1 + matchedCardIds.length) % matchedCardIds.length;
+    const prevCardId = matchedCardIds[prevIndex];
+    setCurrentMatchIndex(prevIndex);
+    requestCanvasFocus(prevCardId);
+  }, [activeMatchIndex, matchedCardIds, requestCanvasFocus]);
 
   const handleTransformChange = useCallback(
     (nextTransform: DocumentV2["transform"]) => {
@@ -874,6 +941,22 @@ export default function App() {
     setSelectedIslandId(null);
   }, [applyDocumentChange, document, selectedIsland]);
 
+  const headerCenter = (
+    <SearchBar
+      query={searchQuery}
+      totalMatches={matchedCardIds.length}
+      currentMatchIndex={activeMatchIndex}
+      hideNonMatches={hideNonMatches}
+      onQueryChange={(nextQuery) => {
+        setSearchQuery(nextQuery);
+        setCurrentMatchIndex(0);
+      }}
+      onPrev={handleSearchPrev}
+      onNext={handleSearchNext}
+      onHideNonMatchesChange={setHideNonMatches}
+    />
+  );
+
   const headerRight = (
     <div style={{ display: "flex", gap: 8 }}>
       <button
@@ -998,6 +1081,7 @@ export default function App() {
   return (
     <Shell
       title="kj-atlas Canvas MVP"
+      headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
       sidePanel={
@@ -1087,6 +1171,12 @@ export default function App() {
             onCardSelect={handleCardSelect}
             onCanvasBackgroundClick={handleCanvasBackgroundClick}
             onMarqueeSelect={handleMarqueeSelect}
+            searchQuery={normalizedSearchQuery}
+            matchedCardIds={matchedCardIdSet}
+            activeMatchedCardId={activeMatchedCardId}
+            hiddenCardIds={hiddenCardIdSet}
+            focusCardId={focusCardId}
+            focusRequestSeq={focusRequestSeq}
           >
             {uniqueIslands.map((island) => (
               <IslandView

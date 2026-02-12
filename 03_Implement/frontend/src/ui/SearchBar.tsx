@@ -1,0 +1,90 @@
+import type { ChangeEvent } from "react";
+
+type SearchBarProps = {
+  query: string;
+  totalMatches: number;
+  currentMatchIndex: number;
+  hideNonMatches: boolean;
+  onQueryChange: (query: string) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onHideNonMatchesChange: (hideNonMatches: boolean) => void;
+};
+
+export function SearchBar({
+  query,
+  totalMatches,
+  currentMatchIndex,
+  hideNonMatches,
+  onQueryChange,
+  onPrev,
+  onNext,
+  onHideNonMatchesChange,
+}: SearchBarProps) {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onQueryChange(event.target.value);
+  };
+
+  const hasMatches = totalMatches > 0;
+  const displayedIndex = hasMatches ? currentMatchIndex + 1 : 0;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <input
+        type="text"
+        value={query}
+        onChange={handleInputChange}
+        placeholder="Search cards"
+        style={{
+          width: 220,
+          height: 32,
+          border: "1px solid #cbd5e1",
+          borderRadius: 6,
+          padding: "0 10px",
+          fontSize: 14,
+        }}
+      />
+      <span style={{ fontSize: 12, color: "#475569", minWidth: 56, textAlign: "center" }}>
+        {displayedIndex}/{totalMatches}
+      </span>
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={!hasMatches}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          borderRadius: 6,
+          padding: "6px 10px",
+          cursor: hasMatches ? "pointer" : "not-allowed",
+        }}
+      >
+        Prev
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!hasMatches}
+        style={{
+          border: "1px solid #cbd5e1",
+          backgroundColor: "#ffffff",
+          borderRadius: 6,
+          padding: "6px 10px",
+          cursor: hasMatches ? "pointer" : "not-allowed",
+        }}
+      >
+        Next
+      </button>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
+        <input
+          type="checkbox"
+          checked={hideNonMatches}
+          onChange={(event) => {
+            onHideNonMatchesChange(event.target.checked);
+          }}
+        />
+        Hide non-matches
+      </label>
+    </div>
+  );
+}

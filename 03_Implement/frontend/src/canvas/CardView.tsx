@@ -14,6 +14,9 @@ type CardViewProps = {
   card: Card;
   zoom: number;
   isSelected: boolean;
+  searchQuery?: string;
+  isSearchMatch?: boolean;
+  isActiveSearchMatch?: boolean;
   onMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
   onSelect: (cardId: string, isShiftPressed: boolean) => void;
 };
@@ -26,7 +29,58 @@ function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
   return true;
 }
 
-export function CardView({ card, zoom, isSelected, onMove, onSelect }: CardViewProps) {
+function renderHighlightedText(text: string, searchQuery: string): JSX.Element {
+  if (!searchQuery) {
+    return <>{text}</>;
+  }
+
+  const query = searchQuery.toLowerCase();
+  const lowerText = text.toLowerCase();
+  const parts: JSX.Element[] = [];
+  let cursor = 0;
+  let key = 0;
+
+  while (cursor < text.length) {
+    const foundIndex = lowerText.indexOf(query, cursor);
+    if (foundIndex < 0) {
+      parts.push(<span key={key}>{text.slice(cursor)}</span>);
+      break;
+    }
+
+    if (foundIndex > cursor) {
+      parts.push(<span key={key}>{text.slice(cursor, foundIndex)}</span>);
+      key += 1;
+    }
+
+    parts.push(
+      <mark
+        key={key}
+        style={{
+          backgroundColor: "#fde68a",
+          color: "inherit",
+          padding: 0,
+        }}
+      >
+        {text.slice(foundIndex, foundIndex + searchQuery.length)}
+      </mark>
+    );
+    key += 1;
+    cursor = foundIndex + searchQuery.length;
+  }
+
+  return <>{parts}</>;
+}
+
+export function CardView({
+  card,
+  zoom,
+  isSelected,
+  searchQuery = "",
+  isSearchMatch = false,
+  isActiveSearchMatch = false,
+  onMove,
+  onSelect,
+}: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
@@ -122,7 +176,13 @@ export function CardView({ card, zoom, isSelected, onMove, onSelect }: CardViewP
         minHeight: 80,
         padding: 12,
         border: "1px solid #cbd5e1",
-        outline: isSelected ? "2px solid #2563eb" : "none",
+        outline: isActiveSearchMatch
+          ? "3px solid #f59e0b"
+          : isSelected
+            ? "2px solid #2563eb"
+            : isSearchMatch
+              ? "2px solid #fcd34d"
+              : "none",
         outlineOffset: 1,
         borderRadius: 8,
         backgroundColor: "#ffffff",
@@ -150,7 +210,7 @@ export function CardView({ card, zoom, isSelected, onMove, onSelect }: CardViewP
           }}
         />
       ) : null}
-      {card.text}
+      {renderHighlightedText(card.text, searchQuery)}
     </div>
   );
 }
