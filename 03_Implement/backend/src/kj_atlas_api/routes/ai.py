@@ -16,16 +16,44 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 
 def _build_prompt(payload: SuggestLayoutRequest) -> str:
-    card_lines = [
-        f'- id="{card.id}", text="{card.text}", x={card.x}, y={card.y}' for card in payload.doc.cards
-    ]
+    cards_by_id = {card.id: card for card in payload.doc.cards}
+    card_lines = []
+    for card in payload.doc.cards:
+        critique_text = f', critique={json.dumps(card.critique)}' if card.critique else ""
+        card_lines.append(
+            f'- id="{card.id}", text={json.dumps(card.text)}, x={card.x}, y={card.y}{critique_text}'
+        )
+
+    island_lines = []
+    for island in payload.doc.islands:
+        island_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+        if island_cards:
+            x_values = [card.x for card in island_cards]
+            y_values = [card.y for card in island_cards]
+            bounds_text = (
+                f'bounds=({min(x_values):.2f},{min(y_values):.2f})-({max(x_values):.2f},{max(y_values):.2f}), '
+                f'anchor=({sum(x_values) / len(x_values):.2f},{sum(y_values) / len(y_values):.2f})'
+            )
+        else:
+            bounds_text = "bounds=unknown, anchor=unknown"
+
+        title_text = json.dumps(island.title) if island.title else '""'
+        critique_text = f', critique={json.dumps(island.critique)}' if island.critique else ""
+        island_lines.append(
+            f'- id="{island.id}", title={title_text}, cardIds={json.dumps(island.cardIds)}, '
+            f'{bounds_text}{critique_text}'
+        )
+
     instruction = payload.instruction.strip() if payload.instruction else "No extra instruction"
 
     return "\n".join(
         [
             "You are generating a draft layout suggestion.",
             "Return JSON only, no markdown.",
-            "Do not delete or rename cards.",
+            "Do not force a single correct answer. Suggest one plausible alternative layout.",
+            "If a critique says 'too close', increase distance.",
+            "If a critique says 'belongs together', place nearer.",
+            "Preserve all ids and texts. Only propose positions and transform.",
             "Use this exact schema:",
             '{"transform":{"panX":number,"panY":number,"zoom":number},"cards":[{"id":string,"x":number,"y":number}],"notes":string?}',
             f"Instruction: {instruction}",
@@ -35,6 +63,8 @@ def _build_prompt(payload: SuggestLayoutRequest) -> str:
             ),
             "Cards:",
             *card_lines,
+            "Islands:",
+            *island_lines,
         ]
     )
 

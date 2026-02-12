@@ -36,6 +36,9 @@ export function SuggestionPanel({
       }}
     >
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Draft suggestion</div>
+      <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
+        This is an unreviewed suggestion. Apply only if it feels right.
+      </div>
       <textarea
         value={instruction}
         onChange={(event) => {
