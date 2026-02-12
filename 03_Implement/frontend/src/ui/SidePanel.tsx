@@ -23,6 +23,12 @@ type SidePanelProps = {
   onAlignBottom: () => void;
   onDistributeHorizontally: () => void;
   onDistributeVertically: () => void;
+  canStartConnect: boolean;
+  isPickingEdgeTarget: boolean;
+  connectEdgeType: "related" | "negate";
+  onConnectEdgeTypeChange: (value: "related" | "negate") => void;
+  onStartConnect: () => void;
+  onCancelConnect: () => void;
   topContent?: ReactNode;
 };
 
@@ -47,6 +53,12 @@ export function SidePanel({
   onAlignBottom,
   onDistributeHorizontally,
   onDistributeVertically,
+  canStartConnect,
+  isPickingEdgeTarget,
+  connectEdgeType,
+  onConnectEdgeTypeChange,
+  onStartConnect,
+  onCancelConnect,
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
@@ -160,6 +172,42 @@ export function SidePanel({
             Distribute Vertically
           </button>
         </div>
+      </section>
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Connect</div>
+        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Edge type</label>
+        <select
+          value={connectEdgeType}
+          onChange={(event) => {
+            onConnectEdgeTypeChange(event.target.value === "negate" ? "negate" : "related");
+          }}
+          disabled={isPickingEdgeTarget}
+          style={{ width: "100%", marginBottom: 8 }}
+        >
+          <option value="related">related</option>
+          <option value="negate">negate</option>
+        </select>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <button
+            type="button"
+            onClick={onStartConnect}
+            disabled={!canStartConnect || isPickingEdgeTarget}
+            style={{ cursor: !canStartConnect || isPickingEdgeTarget ? "not-allowed" : "pointer" }}
+          >
+            Connect
+          </button>
+          <button
+            type="button"
+            onClick={onCancelConnect}
+            disabled={!isPickingEdgeTarget}
+            style={{ cursor: isPickingEdgeTarget ? "pointer" : "not-allowed" }}
+          >
+            Cancel
+          </button>
+        </div>
+        {isPickingEdgeTarget ? (
+          <div style={{ marginTop: 8, fontSize: 12, color: "#334155" }}>Pick target card or island. (Esc to cancel)</div>
+        ) : null}
       </section>
       {selectedIsland ? (
         <>

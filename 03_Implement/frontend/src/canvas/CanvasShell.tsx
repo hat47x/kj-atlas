@@ -37,6 +37,7 @@ type CanvasShellProps = {
   activeMatchedCardId?: string | null;
   focusCardId?: string | null;
   focusRequestSeq?: number;
+  isPickingEdgeTarget?: boolean;
   children?: ReactNode;
 };
 
@@ -79,6 +80,7 @@ export function CanvasShell({
   activeMatchedCardId,
   focusCardId,
   focusRequestSeq = 0,
+  isPickingEdgeTarget = false,
   children,
 }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -399,6 +401,7 @@ export function CanvasShell({
               searchQuery={searchQuery}
               isSearchMatch={matchedCardIds?.has(card.id) ?? false}
               isActiveSearchMatch={activeMatchedCardId === card.id}
+              isPickingEdgeTarget={isPickingEdgeTarget}
             />
           );
         })}

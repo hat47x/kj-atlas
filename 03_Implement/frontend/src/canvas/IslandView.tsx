@@ -15,6 +15,7 @@ type IslandViewProps = {
   cards: Card[];
   isSelected: boolean;
   onSelect: (islandId: string) => void;
+  isPickingEdgeTarget?: boolean;
 };
 
 type EdgeHitbox = {
@@ -94,7 +95,13 @@ function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () =
   }
 }
 
-function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandViewProps) {
+function IslandViewComponent({
+  island,
+  cards,
+  isSelected,
+  onSelect,
+  isPickingEdgeTarget = false,
+}: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const islandBackgroundImage = island.imageUrl
@@ -137,7 +144,7 @@ function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandView
             border: "none",
             backgroundColor: "transparent",
             padding: 0,
-            cursor: "pointer",
+            cursor: isPickingEdgeTarget ? "crosshair" : "pointer",
             zIndex: 2,
           }}
           aria-label={`Select island ${island.id}`}
@@ -206,7 +213,7 @@ function IslandViewComponent({ island, cards, isSelected, onSelect }: IslandView
           borderRadius: 6,
           border: "1px solid #bae6fd",
           zIndex: 3,
-          cursor: "pointer",
+          cursor: isPickingEdgeTarget ? "crosshair" : "pointer",
           display: "flex",
           alignItems: "center",
           gap: 6,
