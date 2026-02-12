@@ -13,6 +13,14 @@ type SidePanelProps = {
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
+  isGridSnapEnabled: boolean;
+  onGridSnapToggle: (value: boolean) => void;
+  onAlignLeft: () => void;
+  onAlignRight: () => void;
+  onAlignTop: () => void;
+  onAlignBottom: () => void;
+  onDistributeHorizontally: () => void;
+  onDistributeVertically: () => void;
   topContent?: ReactNode;
 };
 
@@ -27,6 +35,14 @@ export function SidePanel({
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
+  isGridSnapEnabled,
+  onGridSnapToggle,
+  onAlignLeft,
+  onAlignRight,
+  onAlignTop,
+  onAlignBottom,
+  onDistributeHorizontally,
+  onDistributeVertically,
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
@@ -36,6 +52,8 @@ export function SidePanel({
   }, [selectedIsland?.id, selectedIsland?.imageUrl]);
 
   const hasCardSelection = selectedCardCount > 0;
+  const canAlign = selectedCardCount >= 2;
+  const canDistribute = selectedCardCount >= 3;
   const selectedCardLabel = useMemo(() => {
     if (selectedCardCount === 1) {
       return "1 card selected";
@@ -85,6 +103,60 @@ export function SidePanel({
       }}
     >
       {topContent}
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Layout</div>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "#334155",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={isGridSnapEnabled}
+            onChange={(event) => {
+              onGridSnapToggle(event.target.checked);
+            }}
+          />
+          Grid Snap (10)
+        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+          <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
+            Align Left
+          </button>
+          <button type="button" onClick={onAlignRight} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
+            Align Right
+          </button>
+          <button type="button" onClick={onAlignTop} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
+            Align Top
+          </button>
+          <button type="button" onClick={onAlignBottom} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
+            Align Bottom
+          </button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+          <button
+            type="button"
+            onClick={onDistributeHorizontally}
+            disabled={!canDistribute}
+            style={{ cursor: canDistribute ? "pointer" : "not-allowed" }}
+          >
+            Distribute Horizontally
+          </button>
+          <button
+            type="button"
+            onClick={onDistributeVertically}
+            disabled={!canDistribute}
+            style={{ cursor: canDistribute ? "pointer" : "not-allowed" }}
+          >
+            Distribute Vertically
+          </button>
+        </div>
+      </section>
       {selectedIsland ? (
         <>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
