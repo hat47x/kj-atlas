@@ -2,11 +2,14 @@ type SuggestionPanelProps = {
   instruction: string;
   onInstructionChange: (value: string) => void;
   onSuggest: () => void;
+  onResuggest: () => void;
   onApply: () => void;
   onDiscard: () => void;
   hasSuggestion: boolean;
   isPreviewEnabled: boolean;
   onPreviewToggle: (enabled: boolean) => void;
+  isAnnotateOverlayEnabled: boolean;
+  onAnnotateOverlayToggle: (enabled: boolean) => void;
   isSuggesting: boolean;
   errorMessage: string | null;
   notes: string | null;
@@ -16,11 +19,14 @@ export function SuggestionPanel({
   instruction,
   onInstructionChange,
   onSuggest,
+  onResuggest,
   onApply,
   onDiscard,
   hasSuggestion,
   isPreviewEnabled,
   onPreviewToggle,
+  isAnnotateOverlayEnabled,
+  onAnnotateOverlayToggle,
   isSuggesting,
   errorMessage,
   notes,
@@ -60,24 +66,53 @@ export function SuggestionPanel({
         <button type="button" onClick={onSuggest} disabled={isSuggesting}>
           {isSuggesting ? "Suggesting..." : "Suggest layout"}
         </button>
-        <button type="button" onClick={onApply} disabled={!hasSuggestion}>
-          Apply suggestion
-        </button>
-        <button type="button" onClick={onDiscard} disabled={!hasSuggestion}>
-          Discard
-        </button>
       </div>
       {hasSuggestion ? (
-        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <input
-            type="checkbox"
-            checked={isPreviewEnabled}
-            onChange={(event) => {
-              onPreviewToggle(event.target.checked);
+        <>
+          <section
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 6,
+              padding: 8,
+              marginBottom: 8,
+              backgroundColor: "#f8fafc",
             }}
-          />
-          Preview suggestion
-        </label>
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Iteration</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  onAnnotateOverlayToggle(!isAnnotateOverlayEnabled);
+                }}
+              >
+                {isAnnotateOverlayEnabled ? "Stop annotating" : "Annotate critiques"}
+              </button>
+              <button type="button" onClick={onResuggest} disabled={isSuggesting}>
+                {isSuggesting ? "Re-suggesting..." : "Re-suggest"}
+              </button>
+              <button type="button" onClick={onApply}>
+                Apply suggestion
+              </button>
+              <button type="button" onClick={onDiscard}>
+                Discard
+              </button>
+            </div>
+            <div style={{ fontSize: 11, color: "#475569" }}>
+              Critiques are saved in your document; suggestions are temporary until applied.
+            </div>
+          </section>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <input
+              type="checkbox"
+              checked={isPreviewEnabled}
+              onChange={(event) => {
+                onPreviewToggle(event.target.checked);
+              }}
+            />
+            Preview suggestion
+          </label>
+        </>
       ) : null}
       {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>Notes: {notes}</div> : null}
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c" }}>{errorMessage}</div> : null}

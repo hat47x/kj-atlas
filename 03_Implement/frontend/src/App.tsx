@@ -235,6 +235,7 @@ export default function App() {
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSuggestionPreviewEnabled, setIsSuggestionPreviewEnabled] = useState(true);
+  const [isAnnotateOverlayEnabled, setIsAnnotateOverlayEnabled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
@@ -410,28 +411,40 @@ export default function App() {
     };
   }, [loadDocument]);
 
-  const applyDocumentChange = useCallback((nextDocument: DocumentV2, nextStatusMessage?: string) => {
-    pendingCardDragSnapshotRef.current = null;
-
-    setHistory((previousHistory) => {
-      if (!previousHistory) {
-        return previousHistory;
+  const applyDocumentChange = useCallback(
+    (
+      nextDocument: DocumentV2,
+      nextStatusMessage?: string,
+      options?: {
+        preserveSuggestionPreview?: boolean;
       }
+    ) => {
+      pendingCardDragSnapshotRef.current = null;
 
-      return pushHistorySnapshot(previousHistory, nextDocument);
-    });
-    setIsDirty(true);
-    setSuggestedDocument(null);
-    setSuggestionId(null);
-    setSuggestionNotes(null);
-    setSuggestionError(null);
-    setMergeSuggestions([]);
-    setMergeSuggestionError(null);
-    setHasSaveConflict(false);
-    if (nextStatusMessage) {
-      setStatusMessage(nextStatusMessage);
-    }
-  }, []);
+      setHistory((previousHistory) => {
+        if (!previousHistory) {
+          return previousHistory;
+        }
+
+        return pushHistorySnapshot(previousHistory, nextDocument);
+      });
+      setIsDirty(true);
+      if (!options?.preserveSuggestionPreview) {
+        setSuggestedDocument(null);
+        setSuggestionId(null);
+        setSuggestionNotes(null);
+        setSuggestionError(null);
+        setIsAnnotateOverlayEnabled(false);
+      }
+      setMergeSuggestions([]);
+      setMergeSuggestionError(null);
+      setHasSaveConflict(false);
+      if (nextStatusMessage) {
+        setStatusMessage(nextStatusMessage);
+      }
+    },
+    []
+  );
 
 
   useEffect(() => {
@@ -741,6 +754,7 @@ export default function App() {
       setSuggestionNotes(result.notes ?? null);
       setSuggestionError(null);
       setIsSuggestionPreviewEnabled(true);
+      setIsAnnotateOverlayEnabled(false);
       setStatusMessage("Draft suggestion ready for preview");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to get suggestion";
@@ -768,6 +782,7 @@ export default function App() {
     setSuggestionNotes(null);
     setSuggestionError(null);
     setIsSuggestionPreviewEnabled(true);
+    setIsAnnotateOverlayEnabled(false);
     setStatusMessage("Discarded draft suggestion");
   }, []);
 
@@ -987,6 +1002,10 @@ export default function App() {
       return;
     }
 
+    if (isPreviewingSuggestion && !isAnnotateOverlayEnabled) {
+      return;
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (isShiftPressed) {
         const isAlreadySelected = previousSelectedCardIds.includes(cardId);
@@ -1003,7 +1022,19 @@ export default function App() {
 
       return [cardId];
     });
-  }, [applyDocumentChange, connectEdgeType, document, isPickingEdgeTarget, selectedCardIds, selectedIslandId]);
+    if (isPreviewingSuggestion && isAnnotateOverlayEnabled) {
+      setSelectedIslandId(null);
+    }
+  }, [
+    applyDocumentChange,
+    connectEdgeType,
+    document,
+    isAnnotateOverlayEnabled,
+    isPickingEdgeTarget,
+    isPreviewingSuggestion,
+    selectedCardIds,
+    selectedIslandId,
+  ]);
 
   const handleCanvasBackgroundClick = useCallback(() => {
     if (isPickingEdgeTarget) {
@@ -1250,7 +1281,8 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card critique"
+        "Updated card critique",
+        { preserveSuggestionPreview: true }
       );
     },
     [applyDocumentChange, document]
@@ -1291,7 +1323,8 @@ export default function App() {
           ...document,
           cards: nextCards,
         },
-        "Updated card critique tags"
+        "Updated card critique tags",
+        { preserveSuggestionPreview: true }
       );
     },
     [applyDocumentChange, document]
@@ -1329,7 +1362,8 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique"
+        "Updated island critique",
+        { preserveSuggestionPreview: true }
       );
     },
     [applyDocumentChange, document]
@@ -1371,7 +1405,8 @@ export default function App() {
           ...document,
           islands: nextIslands,
         },
-        "Updated island critique tags"
+        "Updated island critique tags",
+        { preserveSuggestionPreview: true }
       );
     },
     [applyDocumentChange, document]
@@ -1573,10 +1608,13 @@ export default function App() {
     }
   }, [selectedIslandId, uniqueIslands]);
 
-  const selectedIsland = useMemo(
-    () => uniqueIslands.find((island) => island.id === selectedIslandId) ?? null,
-    [selectedIslandId, uniqueIslands]
-  );
+  const selectedIsland = useMemo(() => {
+    if (!document || !selectedIslandId) {
+      return null;
+    }
+
+    return document.islands.find((island) => island.id === selectedIslandId) ?? null;
+  }, [document, selectedIslandId]);
   const selectedCard = useMemo(() => {
     if (!document || selectedCardIds.length !== 1) {
       return null;
@@ -1591,8 +1629,15 @@ export default function App() {
       return;
     }
 
+    if (isPreviewingSuggestion && !isAnnotateOverlayEnabled) {
+      return;
+    }
+
     setSelectedIslandId(islandId);
-  }, [handleConnectToTarget, isPickingEdgeTarget]);
+    if (isPreviewingSuggestion && isAnnotateOverlayEnabled) {
+      setSelectedCardIds([]);
+    }
+  }, [handleConnectToTarget, isAnnotateOverlayEnabled, isPickingEdgeTarget, isPreviewingSuggestion]);
 
   const islandViews = useMemo(() => {
     if (!visibleDocument) {
@@ -2121,11 +2166,16 @@ export default function App() {
                 onSuggest={() => {
                   void handleSuggestLayout();
                 }}
+                onResuggest={() => {
+                  void handleSuggestLayout();
+                }}
                 onApply={handleApplySuggestion}
                 onDiscard={handleDiscardSuggestion}
                 hasSuggestion={Boolean(suggestedDocument && suggestionId)}
                 isPreviewEnabled={isSuggestionPreviewEnabled}
                 onPreviewToggle={setIsSuggestionPreviewEnabled}
+                isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
+                onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
                 isSuggesting={isSuggesting}
                 errorMessage={suggestionError}
                 notes={suggestionNotes}
