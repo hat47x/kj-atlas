@@ -1,0 +1,24 @@
+[project]
+name = "kj-atlas-backend"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "pydantic",
+  "pydantic-settings",
+  "sqlalchemy",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "httpx",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src",
+]
+markers = [
+  "postgres: tests that require PostgreSQL",
+]
