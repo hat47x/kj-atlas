@@ -25,6 +25,9 @@ type SidePanelProps = {
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
+  isFocusActive: boolean;
+  onFocusIsland: () => void;
+  onClearFocus: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
   onAlignLeft: () => void;
@@ -64,6 +67,9 @@ export function SidePanel({
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
+  isFocusActive,
+  onFocusIsland,
+  onClearFocus,
   isGridSnapEnabled,
   onGridSnapToggle,
   onAlignLeft,
@@ -545,6 +551,38 @@ export function SidePanel({
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Selection: {selectedCardLabel}</div>
+            <button
+              type="button"
+              onClick={onFocusIsland}
+              style={{
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: "#0f172a",
+                borderRadius: 6,
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Focus
+            </button>
+            {isFocusActive ? (
+              <button
+                type="button"
+                onClick={onClearFocus}
+                style={{
+                  border: "1px solid #bae6fd",
+                  backgroundColor: "#f0f9ff",
+                  color: "#0c4a6e",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Clear focus
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onAddSelectedCards}
