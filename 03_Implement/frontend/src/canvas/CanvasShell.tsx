@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
+import { getEdgesToRender } from "../domain/edge_aggregate";
 import { isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
@@ -293,34 +294,30 @@ export function CanvasShell({
     return Array.from(grouped.values());
   }, [document.cards, document.edges]);
 
-  const visibleEdges = useMemo<RenderEdge[]>(() => {
+  const visibleEdges = useMemo(() => {
+    let edges = getEdgesToRender(document, hideSourceCards === true).filter((edge) => {
+      const isFromVisible = edge.fromKind === "island" || visibleCardIdSet.has(edge.fromId);
+      const isToVisible = edge.toKind === "island" || visibleCardIdSet.has(edge.toId);
+      return isFromVisible && isToVisible;
+    });
+
     if (showCanonicalOnlyEdges) {
-      return aggregatedEdges.filter(
-        (edge) => edge.fromKind === "canonical" && edge.toKind === "canonical" &&
-          visibleCardIdSet.has(edge.fromId) &&
-          visibleCardIdSet.has(edge.toId)
-      ).map((edge) => ({
-        id: edge.id,
-        fromId: edge.fromId,
-        toId: edge.toId,
-        type: edge.type,
-      }));
+      edges = edges.filter((edge) => {
+        return (
+          edge.fromKind === "card" &&
+          edge.toKind === "card" &&
+          canonicalCardIdSet.has(edge.fromId) &&
+          canonicalCardIdSet.has(edge.toId)
+        );
+      });
     }
 
-    return document.edges
-      .filter((edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId))
-      .map((edge) => ({
-        id: edge.id,
-        fromId: edge.fromId,
-        toId: edge.toId,
-        type: edge.type,
-      }));
-  }, [aggregatedEdges, document.edges, showCanonicalOnlyEdges, visibleCardIdSet]);
+    return edges;
+  }, [canonicalCardIdSet, document, hideSourceCards, showCanonicalOnlyEdges, visibleCardIdSet]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(aggregatedEdges);
   }, [aggregatedEdges, onAggregatedEdgesChange]);
-
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
     return diffs.filter((diff) => !isCardHidden(diff.cardId));
@@ -546,10 +543,9 @@ export function CanvasShell({
       >
         <EdgeLayer
           cards={visibleCards}
+          islands={document.islands}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
-          selectedEdgeId={selectedEdgeId}
-          onEdgeSelect={onEdgeSelect}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}

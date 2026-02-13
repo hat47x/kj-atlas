@@ -114,6 +114,8 @@ function parseEdges(value: unknown): DocumentV2["edges"] {
       id: item.id,
       fromId: item.fromId,
       toId: item.toId,
+      fromKind: item.fromKind === "island" ? "island" : "card",
+      toKind: item.toKind === "island" ? "island" : "card",
       type: item.type,
     });
   }
