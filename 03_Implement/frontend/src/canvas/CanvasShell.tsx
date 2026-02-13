@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
-import { isSourceCard, type DocumentV2, type Transform } from "../domain/types";
+import { isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
@@ -47,7 +47,26 @@ type CanvasShellProps = {
   focusRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
+  selectedEdgeId?: string | null;
+  onEdgeSelect?: (edgeId: string) => void;
+  onAggregatedEdgesChange?: (edges: AggregatedEdgeMeta[]) => void;
   children?: ReactNode;
+};
+
+export type AggregatedEdgeSource = {
+  sourceFromCardId: string;
+  sourceToId: string;
+  sourceToKind: "card" | "island";
+};
+
+export type AggregatedEdgeMeta = {
+  id: string;
+  fromId: string;
+  toId: string;
+  fromKind: "canonical" | "island";
+  toKind: "canonical" | "island";
+  type: EdgeType;
+  sources: AggregatedEdgeSource[];
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -96,6 +115,9 @@ export function CanvasShell({
   focusRequestSeq = 0,
   isPickingEdgeTarget = false,
   suggestionMoveDiffs,
+  selectedEdgeId,
+  onEdgeSelect,
+  onAggregatedEdgesChange,
   children,
 }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -201,14 +223,6 @@ export function CanvasShell({
   }, [document.cards, hideSourceCards, emptyIdSet]);
   const revealedCardIdSet = revealCardIds ?? peekCardIds ?? emptyIdSet;
 
-  const canonicalCardIdSet = useMemo(() => {
-    return new Set(
-      document.cards
-        .filter((card) => !isSourceCard(card))
-        .map((card) => card.id)
-    );
-  }, [document.cards]);
-
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
   const isCardHidden = useCallback(
     (cardId: string) => hiddenCardIdSet.has(cardId) || (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
@@ -225,21 +239,75 @@ export function CanvasShell({
   }, [document.cards, isCardHidden]);
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
 
-  const visibleEdges = useMemo(() => {
-    // hidden + source の両方を反映（isCardHidden がそれらを内包している前提）
-    let edges = document.edges.filter(
-      (edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId)
-    );
+  const aggregatedEdges = useMemo(() => {
+    const cardsById = new Map(document.cards.map((card) => [card.id, card]));
+    const grouped = new Map<string, AggregatedEdgeMeta>();
 
-    // canonical-only edge 表示（feature 仕様）
+    for (const edge of document.edges) {
+      const edgeWithKinds = edge as typeof edge & { fromKind?: "card" | "island"; toKind?: "card" | "island" };
+      const sourceFromKind = edgeWithKinds.fromKind ?? "card";
+      const sourceToKind = edgeWithKinds.toKind ?? "card";
+
+      const fromCard = sourceFromKind === "card" ? cardsById.get(edge.fromId) : undefined;
+      const toCard = sourceToKind === "card" ? cardsById.get(edge.toId) : undefined;
+      const resolvedFromId = sourceFromKind === "card" ? fromCard?.canonicalId ?? edge.fromId : edge.fromId;
+      const resolvedToId = sourceToKind === "card" ? toCard?.canonicalId ?? edge.toId : edge.toId;
+      const resolvedFromKind = sourceFromKind === "island" ? "island" : "canonical";
+      const resolvedToKind = sourceToKind === "island" ? "island" : "canonical";
+
+      if (resolvedFromId === resolvedToId && resolvedFromKind === resolvedToKind) {
+        continue;
+      }
+
+      const key = `${resolvedFromKind}:${resolvedFromId}->${resolvedToKind}:${resolvedToId}:${edge.type}`;
+      const current = grouped.get(key);
+      const nextSource: AggregatedEdgeSource = {
+        sourceFromCardId: edge.fromId,
+        sourceToId: edge.toId,
+        sourceToKind: sourceToKind,
+      };
+
+      if (current) {
+        current.sources.push(nextSource);
+        continue;
+      }
+
+      grouped.set(key, {
+        id: key,
+        fromId: resolvedFromId,
+        toId: resolvedToId,
+        fromKind: resolvedFromKind,
+        toKind: resolvedToKind,
+        type: edge.type,
+        sources: [nextSource],
+      });
+    }
+
+    return Array.from(grouped.values());
+  }, [document.cards, document.edges]);
+
+  const visibleEdges = useMemo(() => {
     if (showCanonicalOnlyEdges) {
-      edges = edges.filter(
-        (edge) => canonicalCardIdSet.has(edge.fromId) && canonicalCardIdSet.has(edge.toId)
+      return aggregatedEdges.filter(
+        (edge) => edge.fromKind === "canonical" && edge.toKind === "canonical" &&
+          visibleCardIdSet.has(edge.fromId) &&
+          visibleCardIdSet.has(edge.toId)
       );
     }
 
-    return edges;
-  }, [document.edges, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
+    return document.edges
+      .filter((edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId))
+      .map((edge) => ({
+        id: edge.id,
+        fromId: edge.fromId,
+        toId: edge.toId,
+        type: edge.type,
+      }));
+  }, [aggregatedEdges, document.edges, showCanonicalOnlyEdges, visibleCardIdSet]);
+
+  useEffect(() => {
+    onAggregatedEdgesChange?.(aggregatedEdges);
+  }, [aggregatedEdges, onAggregatedEdgesChange]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
@@ -464,7 +532,13 @@ export function CanvasShell({
           transformOrigin: "0 0",
         }}
       >
-        <EdgeLayer cards={visibleCards} edges={visibleEdges} hiddenCardIds={hiddenEndpointIdSet} />
+        <EdgeLayer
+          cards={visibleCards}
+          edges={visibleEdges}
+          hiddenCardIds={hiddenEndpointIdSet}
+          selectedEdgeId={selectedEdgeId}
+          onEdgeSelect={onEdgeSelect}
+        />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
         {visibleCards.map((card) => {
