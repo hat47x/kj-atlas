@@ -314,10 +314,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
+  const [hideSourceCards, setHideSourceCards] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
@@ -408,38 +410,75 @@ export default function App() {
     );
   }, [focusedVisibleDocument, islandDepthById, maxDepth]);
   const hiddenCardIdSet = useMemo(() => {
-    const hiddenCardIds = new Set<string>();
+    const collapsedHiddenCardIds = new Set<string>();
+    const depthHiddenCardIds = new Set<string>();
+    const searchHiddenCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
+      // 1) collapseで隠れるカード
       for (const island of focusedVisibleDocument.islands) {
         if (!collapsedIslandIdSet.has(island.id)) {
           continue;
         }
-
         for (const cardId of island.cardIds) {
-          hiddenCardIds.add(cardId);
+          collapsedHiddenCardIds.add(cardId);
         }
       }
 
+      // 2) depth制限で隠れるカード
       if (maxDepth !== "all") {
         for (const card of focusedVisibleDocument.cards) {
           if ((cardMinDepthById.get(card.id) ?? 0) > maxDepth) {
-            hiddenCardIds.add(card.id);
+            depthHiddenCardIds.add(card.id);
           }
         }
       }
     }
 
+    // 3) 検索非一致を隠す
     if (hideNonMatches && normalizedSearchQuery.length > 0 && focusedVisibleDocument) {
       for (const card of focusedVisibleDocument.cards) {
         if (!matchedCardIdSet.has(card.id)) {
-          hiddenCardIds.add(card.id);
+          searchHiddenCardIds.add(card.id);
         }
       }
     }
 
+    // 4) peek中の島のカードは collapse 隠しから除外
+    if (peekIslandId && focusedVisibleDocument) {
+      const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
+      if (peekIsland) {
+        for (const cardId of peekIsland.cardIds) {
+          collapsedHiddenCardIds.delete(cardId);
+        }
+      }
+    }
+
+    // merge
+    const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
+    for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
+
     return hiddenCardIds;
-  }, [cardMinDepthById, collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, maxDepth, normalizedSearchQuery]);
+  }, [
+    cardMinDepthById,
+    collapsedIslandIdSet,
+    focusedVisibleDocument,
+    hideNonMatches,
+    matchedCardIdSet,
+    maxDepth,
+    normalizedSearchQuery,
+    peekIslandId,
+  ]);
+
+  const peekCardIdSet = useMemo(() => {
+    if (!peekIslandId || !focusedVisibleDocument) {
+      return undefined;
+    }
+
+    const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
+    return peekIsland ? new Set(peekIsland.cardIds) : undefined;
+  }, [focusedVisibleDocument, peekIslandId]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -1744,6 +1783,17 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (!peekIslandId || !focusedVisibleDocument) {
+      return;
+    }
+
+    const hasPeekTarget = focusedVisibleDocument.islands.some((island) => island.id === peekIslandId);
+    if (!hasPeekTarget) {
+      setPeekIslandId(undefined);
+    }
+  }, [focusedVisibleDocument, peekIslandId]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
       if (!usesShortcut || !canCreateIsland) {
@@ -1989,19 +2039,37 @@ export default function App() {
       return null;
     }
 
-    return visibleIslands.map((island, index) => (
+  return uniqueIslands
+    .filter((island) => !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId))
+    .map((island, index) => (
       <IslandView
         key={island.id}
         island={island}
         cards={focusedVisibleDocument.cards}
         isSelected={selectedIslandId === island.id}
+        isPeeking={peekIslandId === island.id}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
+        onPeekStart={(islandId) => {
+          setPeekIslandId(islandId);
+        }}
+        onPeekEnd={() => {
+          setPeekIslandId(undefined);
+        }}
         isPickingEdgeTarget={isPickingEdgeTarget}
       />
     ));
-  }, [focusedVisibleDocument, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, selectedIslandId, visibleIslands]);
+  }, [
+    collapsedIslandIdSet,
+    focusedVisibleDocument,
+    handleIslandCollapsedChange,
+    handleIslandSelect,
+    isPickingEdgeTarget,
+    peekIslandId,
+    selectedIslandId,
+    uniqueIslands,
+  ]);
 
   const readingOrderItems = useMemo(() => {
     if (!document) {
@@ -2618,6 +2686,8 @@ export default function App() {
           maxDepth={maxDepth}
           maxAvailableDepth={maxAvailableDepth}
           onMaxDepthChange={setMaxDepth}
+          hideSourceCards={hideSourceCards}
+          onHideSourceCardsChange={setHideSourceCards}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -2685,6 +2755,8 @@ export default function App() {
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
+            hideSourceCards={hideSourceCards}
+            peekCardIds={peekCardIdSet}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}

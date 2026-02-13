@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
-import type { DocumentV2, Transform } from "../domain/types";
+import { isSourceCard, type DocumentV2, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
@@ -34,6 +34,8 @@ type CanvasShellProps = {
   onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
+  hideSourceCards?: boolean;
+  peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -79,6 +81,8 @@ export function CanvasShell({
   onMarqueeSelect,
   onTransformChange,
   hiddenCardIds,
+  hideSourceCards = false,
+  peekCardIds,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -178,31 +182,47 @@ export function CanvasShell({
   }, [document.cards, focusCardId, focusRequestSeq, focusWorldPoint]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
-  const hiddenCardIdSet = hiddenCardIds ?? new Set<string>();
+  const emptyIdSet = useMemo(() => new Set<string>(), []);
+
+  const sourceCardIdSet = useMemo(() => {
+    if (!hideSourceCards) {
+      return emptyIdSet;
+    }
+    return new Set(document.cards.filter((card) => isSourceCard(card)).map((card) => card.id));
+  }, [document.cards, hideSourceCards, emptyIdSet]);
+
+  const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
+
+  const isCardHidden = useCallback(
+    (cardId: string) => hiddenCardIdSet.has(cardId) || sourceCardIdSet.has(cardId),
+    [hiddenCardIdSet, sourceCardIdSet]
+  );
+
   const visibleCards = useMemo(() => {
-    if (hiddenCardIdSet.size === 0) {
-      return document.cards;
-    }
+    return document.cards.filter((card) => !isCardHidden(card.id));
+  }, [document.cards, isCardHidden]);
 
-    return document.cards.filter((card) => !hiddenCardIdSet.has(card.id));
-  }, [document.cards, hiddenCardIdSet]);
   const visibleEdges = useMemo(() => {
-    if (hiddenCardIdSet.size === 0) {
-      return document.edges;
+    // hidden + source の両方を反映
+    let edges = document.edges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId));
+
+    // peek がある場合は、peek 同士のエッジだけ残す（main 仕様）
+    if (peekCardIds && peekCardIds.size > 0) {
+      edges = edges.filter((edge) => {
+        const fromIsPeekCard = peekCardIds.has(edge.fromId);
+        const toIsPeekCard = peekCardIds.has(edge.toId);
+        return (!fromIsPeekCard && !toIsPeekCard) || (fromIsPeekCard && toIsPeekCard);
+      });
     }
 
-    return document.edges.filter((edge) => !hiddenCardIdSet.has(edge.fromId) && !hiddenCardIdSet.has(edge.toId));
-  }, [document.edges, hiddenCardIdSet]);
+    return edges;
+  }, [document.edges, isCardHidden, peekCardIds]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
-    if (hiddenCardIdSet.size === 0) {
-      return diffs;
-    }
-
-    return diffs.filter((diff) => !hiddenCardIdSet.has(diff.cardId));
-  }, [hiddenCardIdSet, suggestionMoveDiffs]);
-
+    return diffs.filter((diff) => !isCardHidden(diff.cardId));
+  }, [isCardHidden, suggestionMoveDiffs]);
+  
   const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
     setDragMode("none");

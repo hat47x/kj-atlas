@@ -34,6 +34,8 @@ type SidePanelProps = {
   maxDepth: number | "all";
   maxAvailableDepth: number;
   onMaxDepthChange: (value: number | "all") => void;
+  hideSourceCards: boolean;
+  onHideSourceCardsChange: (value: boolean) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -80,6 +82,8 @@ export function SidePanel({
   maxDepth,
   maxAvailableDepth,
   onMaxDepthChange,
+  hideSourceCards,
+  onHideSourceCardsChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -189,6 +193,26 @@ export function SidePanel({
           />
           Grid Snap (10)
         </label>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "#334155",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={hideSourceCards}
+            onChange={(event) => {
+              onHideSourceCardsChange(event.target.checked);
+            }}
+          />
+          Hide source cards
+        </label>
+
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Depth view</label>
         <select
           value={maxDepth === "all" ? "all" : String(maxDepth)}
@@ -693,6 +717,21 @@ export function SidePanel({
           ) : (
             <>
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{selectedCardLabel}</div>
+              {selectedCard.canonicalId ? (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    fontSize: 12,
+                    color: "#334155",
+                    backgroundColor: "#f8fafc",
+                  }}
+                >
+                  canonicalId: {selectedCard.canonicalId}
+                </div>
+              ) : null}
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note
               </label>

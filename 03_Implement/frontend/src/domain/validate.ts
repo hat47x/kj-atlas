@@ -74,6 +74,11 @@ function parseCards(value: unknown): Card[] | null {
       text: item.text,
       x,
       y,
+      canonicalId: typeof item.canonicalId === "string" ? item.canonicalId : undefined,
+      sources:
+        Array.isArray(item.sources) && item.sources.every((sourceId) => typeof sourceId === "string")
+          ? item.sources
+          : undefined,
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
       textReviewed: typeof item.textReviewed === "boolean" ? item.textReviewed : undefined,
