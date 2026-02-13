@@ -255,16 +255,6 @@ function IslandViewComponent({
                 { once: true },
               );
             }}
-            onPointerUp={(event) => {
-              event.stopPropagation();
-              onPeekEnd?.();
-            }}
-            onPointerLeave={() => {
-              onPeekEnd?.();
-            }}
-            onPointerCancel={() => {
-              onPeekEnd?.();
-            }}
             onDoubleClick={(event) => {
               event.stopPropagation();
             }}
