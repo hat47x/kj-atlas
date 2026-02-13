@@ -32,7 +32,7 @@ type NarrativesPanelProps = {
   generatedNarratives: NarrativeEntry[];
   onReferenceClick: (reference: NarrativeIssueReference) => void;
   readingOrderSnippets?: ReadingOrderSnippetMap;
-  document: DocumentV2;
+  document: DocumentV2 | null;
   hideSourceCards: boolean;
 };
 
@@ -45,7 +45,7 @@ const severityColorMap: Record<NarrativeIssue["severity"], string> = {
 function sanitizeFileStem(value: string): string {
   const trimmed = value.trim().toLowerCase();
   const normalized = trimmed.length > 0 ? trimmed : "narrative";
-  const sanitized = normalized.replaceAll(/[^a-z0-9-_]+/g, "-").replaceAll(/^-+|-+$/g, "");
+  const sanitized = normalized.replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
   return sanitized.length > 0 ? sanitized : "narrative";
 }
 
@@ -80,7 +80,7 @@ export function NarrativesPanel({
   }, [generatedNarratives, selectedNarrativeId]);
 
   const groundingEntries = useMemo(() => {
-    if (!selectedNarrative) {
+    if (!selectedNarrative || !document) {
       return [];
     }
 
@@ -91,7 +91,7 @@ export function NarrativesPanel({
   }, [document, hideSourceCards, selectedNarrative]);
 
   const handleExportMarkdown = () => {
-    if (!selectedNarrative) {
+    if (!selectedNarrative || !document) {
       return;
     }
 
@@ -101,7 +101,7 @@ export function NarrativesPanel({
   };
 
   const handleExportHtml = () => {
-    if (!selectedNarrative) {
+    if (!selectedNarrative || !document) {
       return;
     }
 
