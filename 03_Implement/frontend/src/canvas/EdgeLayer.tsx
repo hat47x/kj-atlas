@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
+import type { MouseEvent } from "react";
 
-import type { Card, Edge } from "../domain/types";
+import type { Card, EdgeType } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
@@ -10,8 +11,15 @@ const WORLD_SIZE = WORLD_HALF_SIZE * 2;
 
 type EdgeLayerProps = {
   cards: Card[];
-  edges: Edge[];
+  edges: Array<{
+    id: string;
+    fromId: string;
+    toId: string;
+    type: EdgeType;
+  }>;
   hiddenCardIds?: Set<string>;
+  selectedEdgeId?: string | null;
+  onEdgeSelect?: (edgeId: string) => void;
 };
 
 type CardCenter = {
@@ -26,7 +34,7 @@ function getCardCenter(card: Card): CardCenter {
   };
 }
 
-function EdgeLayerComponent({ cards, edges, hiddenCardIds }: EdgeLayerProps) {
+function EdgeLayerComponent({ cards, edges, hiddenCardIds, selectedEdgeId, onEdgeSelect }: EdgeLayerProps) {
   const cardCenterById = useMemo(() => {
     const nextCardCenterById = new Map<string, CardCenter>();
 
@@ -59,7 +67,7 @@ function EdgeLayerComponent({ cards, edges, hiddenCardIds }: EdgeLayerProps) {
       style={{
         position: "absolute",
         inset: 0,
-        pointerEvents: "none",
+        pointerEvents: "auto",
       }}
     >
       {drawableEdges.map((edge) => {
@@ -70,6 +78,13 @@ function EdgeLayerComponent({ cards, edges, hiddenCardIds }: EdgeLayerProps) {
           return null;
         }
 
+        const isSelected = selectedEdgeId === edge.id;
+
+        const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
+          event.stopPropagation();
+          onEdgeSelect?.(edge.id);
+        };
+
         return (
           <line
             key={edge.id}
@@ -77,11 +92,16 @@ function EdgeLayerComponent({ cards, edges, hiddenCardIds }: EdgeLayerProps) {
             y1={fromCenter.y}
             x2={toCenter.x}
             y2={toCenter.y}
-            stroke="#64748b"
-            strokeWidth={2}
+            stroke={isSelected ? "#2563eb" : "#64748b"}
+            strokeWidth={isSelected ? 3 : 2}
             vectorEffect="non-scaling-stroke"
             strokeLinecap="round"
             strokeDasharray={edge.type === "negate" ? "6 4" : undefined}
+            pointerEvents="stroke"
+            onPointerDown={(event) => {
+              event.stopPropagation();
+            }}
+            onClick={handleEdgeClick}
           />
         );
       })}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { CRITIQUE_TAGS } from "../domain/types";
+import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import type { Card, CritiqueTag, Island } from "../domain/types";
 
 type ReadingOrderItem = {
@@ -42,6 +43,8 @@ type SidePanelProps = {
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onSourceCardInspect: (cardId: string) => void;
   onShowAllSourcesChange: (value: boolean) => void;
+  selectedAggregatedEdge: AggregatedEdgeMeta | null;
+  onRevealSelectedEdgeSources: () => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -96,6 +99,8 @@ export function SidePanel({
   onShowCanonicalOnlyEdgesChange,
   onSourceCardInspect,
   onShowAllSourcesChange,
+  selectedAggregatedEdge,
+  onRevealSelectedEdgeSources,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -747,6 +752,43 @@ export function SidePanel({
               Delete island
             </button>
           </div>
+        </>
+      ) : selectedAggregatedEdge ? (
+        <>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Edge Inspector</div>
+          <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>
+            Endpoint: {selectedAggregatedEdge.fromId} ({selectedAggregatedEdge.fromKind}) → {selectedAggregatedEdge.toId} ({selectedAggregatedEdge.toKind})
+          </div>
+          <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>Type: {selectedAggregatedEdge.type}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+            Contributing source edges ({selectedAggregatedEdge.sources.length})
+          </div>
+          <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
+            {selectedAggregatedEdge.sources.slice(0, 20).map((source, index) => (
+              <div key={`${source.sourceFromCardId}-${source.sourceToId}-${index}`} style={{ fontSize: 12, color: "#334155" }}>
+                {source.sourceFromCardId} → {source.sourceToId} ({source.sourceToKind})
+              </div>
+            ))}
+            {selectedAggregatedEdge.sources.length > 20 ? (
+              <div style={{ fontSize: 12, color: "#64748b" }}>+more</div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onRevealSelectedEdgeSources}
+            style={{
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 10px",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Reveal involved source cards
+          </button>
         </>
       ) : hasCardSelection ? (
         <>
