@@ -35,6 +35,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  revealCardIds?: Set<string>;
   showCanonicalOnlyEdges?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -82,6 +83,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = true,
+  revealCardIds,
   showCanonicalOnlyEdges = false,
   searchQuery = "",
   matchedCardIds,
@@ -194,6 +196,7 @@ export function CanvasShell({
         .map((card) => card.id)
     );
   }, [document.cards, hideSourceCards, emptyIdSet]);
+  const revealedCardIdSet = revealCardIds ?? emptyIdSet;
 
   const canonicalCardIdSet = useMemo(() => {
     return new Set(
@@ -205,11 +208,14 @@ export function CanvasShell({
 
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
   const isCardHidden = useCallback(
-    (cardId: string) => hiddenCardIdSet.has(cardId) || sourceCardIdSet.has(cardId),
-    [hiddenCardIdSet, sourceCardIdSet]
+    (cardId: string) => hiddenCardIdSet.has(cardId) || (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
+    [hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]
   );
 
-  const hiddenEndpointIdSet = useMemo(() => new Set([...hiddenCardIdSet, ...sourceCardIdSet]), [hiddenCardIdSet, sourceCardIdSet]);
+  const hiddenEndpointIdSet = useMemo(() => {
+    const hiddenSourceCardIds = Array.from(sourceCardIdSet).filter((cardId) => !revealedCardIdSet.has(cardId));
+    return new Set([...hiddenCardIdSet, ...hiddenSourceCardIds]);
+  }, [hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]);
 
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
