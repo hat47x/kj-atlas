@@ -35,6 +35,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  showCanonicalOnlyEdges?: boolean;
   peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -82,6 +83,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = false,
+  showCanonicalOnlyEdges = false,
   peekCardIds,
   searchQuery = "",
   matchedCardIds,
@@ -188,11 +190,22 @@ export function CanvasShell({
     if (!hideSourceCards) {
       return emptyIdSet;
     }
-    return new Set(document.cards.filter((card) => isSourceCard(card)).map((card) => card.id));
+    return new Set(
+      document.cards
+        .filter((card) => isSourceCard(card))
+        .map((card) => card.id)
+    );
   }, [document.cards, hideSourceCards, emptyIdSet]);
 
-  const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
+  const canonicalCardIdSet = useMemo(() => {
+    return new Set(
+      document.cards
+        .filter((card) => !isSourceCard(card))
+        .map((card) => card.id)
+    );
+  }, [document.cards]);
 
+  const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
   const isCardHidden = useCallback(
     (cardId: string) => hiddenCardIdSet.has(cardId) || sourceCardIdSet.has(cardId),
     [hiddenCardIdSet, sourceCardIdSet]
@@ -203,8 +216,17 @@ export function CanvasShell({
   }, [document.cards, isCardHidden]);
 
   const visibleEdges = useMemo(() => {
-    // hidden + source の両方を反映
-    let edges = document.edges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId));
+    // hidden + source の両方を反映（isCardHidden がそれらを内包している前提）
+    let edges = document.edges.filter(
+      (edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId)
+    );
+
+    // canonical-only edge 表示（feature 仕様）
+    if (showCanonicalOnlyEdges) {
+      edges = edges.filter(
+        (edge) => canonicalCardIdSet.has(edge.fromId) && canonicalCardIdSet.has(edge.toId)
+      );
+    }
 
     // peek がある場合は、peek 同士のエッジだけ残す（main 仕様）
     if (peekCardIds && peekCardIds.size > 0) {
@@ -216,7 +238,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [document.edges, isCardHidden, peekCardIds]);
+  }, [document.edges, isCardHidden, peekCardIds, showCanonicalOnlyEdges, canonicalCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];

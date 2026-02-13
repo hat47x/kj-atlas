@@ -36,6 +36,8 @@ type SidePanelProps = {
   onMaxDepthChange: (value: number | "all") => void;
   hideSourceCards: boolean;
   onHideSourceCardsChange: (value: boolean) => void;
+  showCanonicalOnlyEdges: boolean;
+  onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -84,6 +86,8 @@ export function SidePanel({
   onMaxDepthChange,
   hideSourceCards,
   onHideSourceCardsChange,
+  showCanonicalOnlyEdges,
+  onShowCanonicalOnlyEdgesChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -210,7 +214,31 @@ export function SidePanel({
               onHideSourceCardsChange(event.target.checked);
             }}
           />
-          Hide source cards
+          Bird's-eye by canonical (hide source cards)
+        </label>
+        {hideSourceCards ? (
+          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 10 }}>
+            Source cards are hidden to keep board manageable.
+          </div>
+        ) : null}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "#334155",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showCanonicalOnlyEdges}
+            onChange={(event) => {
+              onShowCanonicalOnlyEdgesChange(event.target.checked);
+            }}
+          />
+          Show canonical-only edges
         </label>
 
         <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Depth view</label>

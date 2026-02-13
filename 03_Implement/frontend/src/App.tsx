@@ -315,6 +315,7 @@ export default function App() {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(false);
+  const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -2688,6 +2689,8 @@ export default function App() {
           onMaxDepthChange={setMaxDepth}
           hideSourceCards={hideSourceCards}
           onHideSourceCardsChange={setHideSourceCards}
+          showCanonicalOnlyEdges={showCanonicalOnlyEdges}
+          onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -2756,6 +2759,7 @@ export default function App() {
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
             hideSourceCards={hideSourceCards}
+            showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             peekCardIds={peekCardIdSet}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
