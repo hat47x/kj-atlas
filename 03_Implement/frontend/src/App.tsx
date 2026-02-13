@@ -19,7 +19,7 @@ import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
-import type { Document, DocumentV2, Island } from "./domain/types";
+import type { Document, DocumentV2, Island, NarrativeEntry } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -50,15 +50,6 @@ type MergeSuggestionDraft = {
   rationale?: string;
   editedText: string;
   isEdited: boolean;
-};
-
-type NarrativeEntry = {
-  id: string;
-  title: string;
-  text: string;
-  createdAt?: string;
-  basedOnReadingOrder: string[];
-  reviewed: boolean;
 };
 
 type EdgeEndpointKind = "card" | "island";
@@ -111,6 +102,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     edges: [],
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -138,6 +130,7 @@ function createNewDocument(docId: string): DocumentV2 {
     ],
     edges: [],
     islands: [],
+    narratives: [],
   };
 }
 
@@ -157,6 +150,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     return {
       ...document,
       readingOrder: document.readingOrder ?? [],
+      narratives: document.narratives ?? [],
     };
   }
 
@@ -165,6 +159,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     version: 2,
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -417,7 +412,7 @@ export default function App() {
   const [narrativeCheckError, setNarrativeCheckError] = useState<string | null>(null);
   const [isCheckingNarrative, setIsCheckingNarrative] = useState(false);
   const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
-  const [generatedNarratives, setGeneratedNarratives] = useState<NarrativeEntry[]>([]);
+  const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
@@ -590,6 +585,18 @@ export default function App() {
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
+  const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
+  const selectedNarrative = useMemo(() => {
+    if (generatedNarratives.length === 0) {
+      return null;
+    }
+
+    if (selectedNarrativeId) {
+      return generatedNarratives.find((entry) => entry.id === selectedNarrativeId) ?? generatedNarratives[0];
+    }
+
+    return generatedNarratives[0];
+  }, [generatedNarratives, selectedNarrativeId]);
   const selectedAggregatedEdge = useMemo(() => {
     if (!selectedEdgeId) {
       return null;
@@ -627,6 +634,7 @@ export default function App() {
         setDocEtag(loaded.etag ?? null);
         setSelectedCardIds([]);
         setSelectedIslandId(null);
+        setSelectedNarrativeId(null);
         setIsDirty(false);
         setHasSaveConflict(false);
         setSuggestedDocument(null);
@@ -654,6 +662,7 @@ export default function App() {
             setDocEtag(saved.etag ?? null);
             setSelectedCardIds([]);
             setSelectedIslandId(null);
+            setSelectedNarrativeId(null);
             setIsDirty(false);
             setHasSaveConflict(false);
             setSuggestedDocument(null);
@@ -699,6 +708,19 @@ export default function App() {
       isCancelled = true;
     };
   }, [loadDocument]);
+
+  useEffect(() => {
+    if (generatedNarratives.length === 0) {
+      if (selectedNarrativeId !== null) {
+        setSelectedNarrativeId(null);
+      }
+      return;
+    }
+
+    if (!selectedNarrativeId || !generatedNarratives.some((entry) => entry.id === selectedNarrativeId)) {
+      setSelectedNarrativeId(generatedNarratives[0].id);
+    }
+  }, [generatedNarratives, selectedNarrativeId]);
 
   const applyDocumentChange = useCallback(
     (
@@ -988,6 +1010,7 @@ export default function App() {
     setDocEtag(null);
     setSelectedCardIds([]);
     setSelectedIslandId(null);
+    setSelectedNarrativeId(null);
     setIsDirty(true);
     setHasSaveConflict(false);
     setSuggestedDocument(null);
@@ -1015,6 +1038,7 @@ export default function App() {
     setDocEtag(null);
     setSelectedCardIds([]);
     setSelectedIslandId(null);
+    setSelectedNarrativeId(null);
     setIsDirty(true);
     setHasSaveConflict(false);
     setSuggestedDocument(null);
@@ -2246,6 +2270,49 @@ export default function App() {
     try {
       const result = await checkNarrative(document, narrativeText, document.readingOrder);
       setNarrativeIssues(result.issues);
+
+      const newCheck = {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        kind: "consistency" as const,
+        issues: result.issues,
+      };
+
+      if (!selectedNarrative) {
+        const fallbackNarrative: NarrativeEntry = {
+          id: crypto.randomUUID(),
+          title: `Draft ${generatedNarratives.length + 1}`,
+          text: narrativeText,
+          createdAt: new Date().toISOString(),
+          basedOnReadingOrder: document.readingOrder ?? [],
+          reviewed: false,
+          checks: [newCheck],
+        };
+
+        applyDocumentChange(
+          {
+            ...document,
+            narratives: [...generatedNarratives, fallbackNarrative],
+          },
+          "Added consistency check log",
+          { preserveSuggestionPreview: true }
+        );
+        setSelectedNarrativeId(fallbackNarrative.id);
+        return;
+      }
+
+      const nextDocument: DocumentV2 = {
+        ...document,
+        narratives: generatedNarratives.map((entry) =>
+          entry.id === selectedNarrative.id
+            ? {
+                ...entry,
+                checks: [...(entry.checks ?? []), newCheck],
+              }
+            : entry
+        ),
+      };
+      applyDocumentChange(nextDocument, "Added consistency check log", { preserveSuggestionPreview: true });
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
       setNarrativeCheckError(message);
@@ -2253,7 +2320,7 @@ export default function App() {
     } finally {
       setIsCheckingNarrative(false);
     }
-  }, [document, narrativeText]);
+  }, [applyDocumentChange, document, generatedNarratives, narrativeText, selectedNarrative]);
 
   const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
     if (!document) {
@@ -2265,17 +2332,25 @@ export default function App() {
     try {
       const draftIndex = generatedNarratives.length + 1;
       const result = await generateNarrative(document, `Draft ${draftIndex}`);
-      setGeneratedNarratives((previous) => [
-        ...previous,
+      const generatedNarrative: NarrativeEntry = {
+        id: crypto.randomUUID(),
+        title: `Generated Draft ${draftIndex}`,
+        text: result.text,
+        createdAt: new Date().toISOString(),
+        basedOnReadingOrder: result.basedOnReadingOrder,
+        reviewed: false,
+        checks: [],
+      };
+
+      applyDocumentChange(
         {
-          id: crypto.randomUUID(),
-          title: `Generated Draft ${draftIndex}`,
-          text: result.text,
-          createdAt: new Date().toISOString(),
-          basedOnReadingOrder: result.basedOnReadingOrder,
-          reviewed: false,
+          ...document,
+          narratives: [...generatedNarratives, generatedNarrative],
         },
-      ]);
+        "Generated narrative draft",
+        { preserveSuggestionPreview: true }
+      );
+      setSelectedNarrativeId(generatedNarrative.id);
       setNarrativeText(result.text);
       setNarrativeIssues([]);
       if (result.warnings && result.warnings.length > 0) {
@@ -2287,7 +2362,7 @@ export default function App() {
     } finally {
       setIsGeneratingNarrative(false);
     }
-  }, [document, generatedNarratives.length]);
+  }, [applyDocumentChange, document, generatedNarratives]);
 
 
   const readingOrderSnippets = useMemo(() => {
@@ -2959,6 +3034,8 @@ export default function App() {
                 generationErrorMessage={narrativeGenerationError}
                 issues={narrativeIssues}
                 generatedNarratives={generatedNarratives}
+                selectedNarrativeId={selectedNarrative?.id ?? null}
+                onSelectNarrativeId={setSelectedNarrativeId}
                 onReferenceClick={handleNarrativeReferenceFocus}
                 readingOrderSnippets={readingOrderSnippets}
               />
