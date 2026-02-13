@@ -182,55 +182,47 @@ export function CanvasShell({
   }, [document.cards, focusCardId, focusRequestSeq, focusWorldPoint]);
 
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
+  const emptyIdSet = useMemo(() => new Set<string>(), []);
+
   const sourceCardIdSet = useMemo(() => {
     if (!hideSourceCards) {
-      return new Set<string>();
+      return emptyIdSet;
     }
-
     return new Set(document.cards.filter((card) => isSourceCard(card)).map((card) => card.id));
-  }, [document.cards, hideSourceCards]);
+  }, [document.cards, hideSourceCards, emptyIdSet]);
+
+  const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
+
   const isCardHidden = useCallback(
-    (cardId: string) => hiddenCardIds?.has(cardId) === true || sourceCardIdSet.has(cardId),
-    [hiddenCardIds, sourceCardIdSet]
+    (cardId: string) => hiddenCardIdSet.has(cardId) || sourceCardIdSet.has(cardId),
+    [hiddenCardIdSet, sourceCardIdSet]
   );
+
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
+
   const visibleEdges = useMemo(() => {
-    const baseEdges =
-      !hiddenCardIds || hiddenCardIds.size === 0
-        ? document.edges
-        : document.edges.filter(
-            (edge) => !hiddenCardIds.has(edge.fromId) && !hiddenCardIds.has(edge.toId),
-          );
+    // hidden + source の両方を反映
+    let edges = document.edges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId));
 
-    // codex 側のロジック（isCardHidden）も反映：利用可能ならこちらを優先して除外
-    const withHiddenApplied =
-      typeof isCardHidden === "function"
-        ? baseEdges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId))
-        : baseEdges;
-
-    if (!peekCardIds || peekCardIds.size === 0) {
-      return withHiddenApplied;
+    // peek がある場合は、peek 同士のエッジだけ残す（main 仕様）
+    if (peekCardIds && peekCardIds.size > 0) {
+      edges = edges.filter((edge) => {
+        const fromIsPeekCard = peekCardIds.has(edge.fromId);
+        const toIsPeekCard = peekCardIds.has(edge.toId);
+        return (!fromIsPeekCard && !toIsPeekCard) || (fromIsPeekCard && toIsPeekCard);
+      });
     }
 
-    return withHiddenApplied.filter((edge) => {
-      const fromIsPeekCard = peekCardIds.has(edge.fromId);
-      const toIsPeekCard = peekCardIds.has(edge.toId);
-
-      if (!fromIsPeekCard && !toIsPeekCard) {
-        return true;
-      }
-
-      return fromIsPeekCard && toIsPeekCard;
-    });
-  }, [document.edges, hiddenCardIds, peekCardIds, isCardHidden]);
+    return edges;
+  }, [document.edges, isCardHidden, peekCardIds]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
     return diffs.filter((diff) => !isCardHidden(diff.cardId));
   }, [isCardHidden, suggestionMoveDiffs]);
-
+  
   const clearDragState = useCallback((event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
     setDragMode("none");

@@ -48,6 +48,8 @@ type FocusTarget = {
   focusIslandId?: string;
 };
 
+type ViewMaxDepth = number | "all";
+
 function createDefaultDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
 
@@ -257,6 +259,36 @@ function getIslandDepth(island: Island, islandsById: Map<string, Island>): numbe
   return depth;
 }
 
+function getIslandDepthMap(islands: Island[]): Map<string, number> {
+  const islandsById = new Map(islands.map((island) => [island.id, island]));
+  return new Map(islands.map((island) => [island.id, getIslandDepth(island, islandsById)]));
+}
+
+function getCardMinDepthMap(document: DocumentV2, islandDepthById: Map<string, number>): Map<string, number> {
+  const cardDepthById = new Map<string, number>();
+
+  for (const island of document.islands) {
+    const islandDepth = islandDepthById.get(island.id) ?? 0;
+    for (const cardId of island.cardIds) {
+      const currentDepth = cardDepthById.get(cardId);
+      if (currentDepth === undefined || islandDepth < currentDepth) {
+        cardDepthById.set(cardId, islandDepth);
+      }
+    }
+  }
+
+  for (const card of document.cards) {
+    if (cardDepthById.has(card.id)) {
+      continue;
+    }
+
+    // Lone-wolf cards (not contained in any island) are treated as depth=0.
+    cardDepthById.set(card.id, 0);
+  }
+
+  return cardDepthById;
+}
+
 export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -295,6 +327,7 @@ export default function App() {
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
+  const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
@@ -351,22 +384,58 @@ export default function App() {
 
     return collectCollapsedIslandIds(focusedVisibleDocument.islands);
   }, [focusedVisibleDocument]);
+  const islandDepthById = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return new Map<string, number>();
+    }
+
+    return getIslandDepthMap(focusedVisibleDocument.islands);
+  }, [focusedVisibleDocument]);
+  const cardMinDepthById = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return new Map<string, number>();
+    }
+
+    return getCardMinDepthMap(focusedVisibleDocument, islandDepthById);
+  }, [focusedVisibleDocument, islandDepthById]);
+  const depthHiddenIslandIdSet = useMemo(() => {
+    if (!focusedVisibleDocument || maxDepth === "all") {
+      return new Set<string>();
+    }
+
+    return new Set(
+      focusedVisibleDocument.islands
+        .filter((island) => (islandDepthById.get(island.id) ?? 0) > maxDepth)
+        .map((island) => island.id)
+    );
+  }, [focusedVisibleDocument, islandDepthById, maxDepth]);
   const hiddenCardIdSet = useMemo(() => {
     const collapsedHiddenCardIds = new Set<string>();
+    const depthHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
+      // 1) collapseで隠れるカード
       for (const island of focusedVisibleDocument.islands) {
         if (!collapsedIslandIdSet.has(island.id)) {
           continue;
         }
-
         for (const cardId of island.cardIds) {
           collapsedHiddenCardIds.add(cardId);
         }
       }
+
+      // 2) depth制限で隠れるカード
+      if (maxDepth !== "all") {
+        for (const card of focusedVisibleDocument.cards) {
+          if ((cardMinDepthById.get(card.id) ?? 0) > maxDepth) {
+            depthHiddenCardIds.add(card.id);
+          }
+        }
+      }
     }
 
+    // 3) 検索非一致を隠す
     if (hideNonMatches && normalizedSearchQuery.length > 0 && focusedVisibleDocument) {
       for (const card of focusedVisibleDocument.cards) {
         if (!matchedCardIdSet.has(card.id)) {
@@ -375,6 +444,7 @@ export default function App() {
       }
     }
 
+    // 4) peek中の島のカードは collapse 隠しから除外
     if (peekIslandId && focusedVisibleDocument) {
       const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
       if (peekIsland) {
@@ -384,13 +454,23 @@ export default function App() {
       }
     }
 
+    // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
-    for (const cardId of searchHiddenCardIds) {
-      hiddenCardIds.add(cardId);
-    }
+    for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
 
     return hiddenCardIds;
-  }, [collapsedIslandIdSet, focusedVisibleDocument, hideNonMatches, matchedCardIdSet, normalizedSearchQuery, peekIslandId]);
+  }, [
+    cardMinDepthById,
+    collapsedIslandIdSet,
+    focusedVisibleDocument,
+    hideNonMatches,
+    matchedCardIdSet,
+    maxDepth,
+    normalizedSearchQuery,
+    peekIslandId,
+  ]);
+
   const peekCardIdSet = useMemo(() => {
     if (!peekIslandId || !focusedVisibleDocument) {
       return undefined;
@@ -1825,6 +1905,36 @@ export default function App() {
       .map((entry) => entry.island);
   }, [focusedVisibleDocument?.islands]);
 
+  const maxAvailableDepth = useMemo(() => {
+    if (islandDepthById.size === 0) {
+      return 0;
+    }
+
+    return Math.max(...islandDepthById.values());
+  }, [islandDepthById]);
+
+  useEffect(() => {
+    if (maxDepth === "all") {
+      return;
+    }
+
+    if (maxDepth > maxAvailableDepth) {
+      setMaxDepth(maxAvailableDepth);
+    }
+  }, [maxAvailableDepth, maxDepth]);
+
+  const visibleIslands = useMemo(() => {
+    return uniqueIslands.filter((island) => {
+      if (depthHiddenIslandIdSet.has(island.id)) {
+        return false;
+      }
+
+      return !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId);
+    });
+  }, [collapsedIslandIdSet, depthHiddenIslandIdSet, uniqueIslands]);
+
+  const visibleIslandIdSet = useMemo(() => new Set(visibleIslands.map((island) => island.id)), [visibleIslands]);
+
   useEffect(() => {
     if (uniqueIslands.length === 0) {
       setSelectedIslandId(null);
@@ -1835,6 +1945,27 @@ export default function App() {
       setSelectedIslandId(null);
     }
   }, [selectedIslandId, uniqueIslands]);
+
+  useEffect(() => {
+    if (!selectedIslandId) {
+      return;
+    }
+
+    if (!visibleIslandIdSet.has(selectedIslandId)) {
+      setSelectedIslandId(null);
+    }
+  }, [selectedIslandId, visibleIslandIdSet]);
+
+  useEffect(() => {
+    if (!focusTarget.focusIslandId) {
+      return;
+    }
+
+    if (!visibleIslandIdSet.has(focusTarget.focusIslandId)) {
+      setFocusTarget({});
+      setFocusWorldPoint(null);
+    }
+  }, [focusTarget.focusIslandId, visibleIslandIdSet]);
 
   useEffect(() => {
     setFocusTarget({});
@@ -1908,28 +2039,37 @@ export default function App() {
       return null;
     }
 
-    return uniqueIslands
-      .filter((island) => !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId))
-      .map((island, index) => (
-        <IslandView
-          key={island.id}
-          island={island}
-          cards={visibleDocument.cards}
-          isSelected={selectedIslandId === island.id}
-          isPeeking={peekIslandId === island.id}
-          zIndex={index}
-          onSelect={handleIslandSelect}
-          onToggleCollapsed={handleIslandCollapsedChange}
-          onPeekStart={(islandId) => {
-            setPeekIslandId(islandId);
-          }}
-          onPeekEnd={() => {
-            setPeekIslandId(undefined);
-          }}
-          isPickingEdgeTarget={isPickingEdgeTarget}
-        />
-      ));
-  }, [collapsedIslandIdSet, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, peekIslandId, selectedIslandId, uniqueIslands, visibleDocument]);
+  return uniqueIslands
+    .filter((island) => !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId))
+    .map((island, index) => (
+      <IslandView
+        key={island.id}
+        island={island}
+        cards={focusedVisibleDocument.cards}
+        isSelected={selectedIslandId === island.id}
+        isPeeking={peekIslandId === island.id}
+        zIndex={index}
+        onSelect={handleIslandSelect}
+        onToggleCollapsed={handleIslandCollapsedChange}
+        onPeekStart={(islandId) => {
+          setPeekIslandId(islandId);
+        }}
+        onPeekEnd={() => {
+          setPeekIslandId(undefined);
+        }}
+        isPickingEdgeTarget={isPickingEdgeTarget}
+      />
+    ));
+  }, [
+    collapsedIslandIdSet,
+    focusedVisibleDocument,
+    handleIslandCollapsedChange,
+    handleIslandSelect,
+    isPickingEdgeTarget,
+    peekIslandId,
+    selectedIslandId,
+    uniqueIslands,
+  ]);
 
   const readingOrderItems = useMemo(() => {
     if (!document) {
@@ -2543,6 +2683,9 @@ export default function App() {
           onClearFocus={handleClearFocus}
           isGridSnapEnabled={isGridSnapEnabled}
           onGridSnapToggle={setIsGridSnapEnabled}
+          maxDepth={maxDepth}
+          maxAvailableDepth={maxAvailableDepth}
+          onMaxDepthChange={setMaxDepth}
           hideSourceCards={hideSourceCards}
           onHideSourceCardsChange={setHideSourceCards}
           onAlignLeft={() => {
