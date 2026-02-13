@@ -246,6 +246,14 @@ function IslandViewComponent({
             onPointerDown={(event) => {
               event.stopPropagation();
               onPeekStart?.(island.id);
+
+              window.addEventListener(
+                "mouseup",
+                () => {
+                  onPeekEnd?.();
+                },
+                { once: true },
+              );
             }}
             onPointerUp={(event) => {
               event.stopPropagation();
