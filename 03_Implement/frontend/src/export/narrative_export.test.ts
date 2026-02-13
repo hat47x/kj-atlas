@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNarrativeHtml, buildNarrativeMarkdown } from "./narrative_export";
+import type { GroundingEntry } from "../domain/grounding";
+
+
+const groundingEntries: GroundingEntry[] = [
+  {
+    anchor: "#1",
+    sourceId: "island_2",
+    kind: "island",
+    islandTitle: "Island 2",
+    islandSummaryText: "Summary text",
+    islandSummaryReviewed: false,
+    islandMembers: [{ id: "card_1", text: "Card one", kind: "canonical" }],
+  },
+];
 
 describe("narrative_export", () => {
   it("renders unreviewed markdown with draft banner and ordered basedOnReadingOrder list", () => {
@@ -14,7 +28,8 @@ describe("narrative_export", () => {
       },
       {
         card_1: "first card",
-      }
+      },
+      groundingEntries
     );
 
     expect(output).toContain("DRAFT (UNREVIEWED) — Please verify against the diagram.");
@@ -22,6 +37,8 @@ describe("narrative_export", () => {
     expect(output).toContain("1. card_1: first card");
     expect(output).toContain("2. island_2");
     expect(output).toContain("CreatedAt: N/A");
+    expect(output).toContain("## Grounding / Citations");
+    expect(output).toContain("Summary (unreviewed): Summary text");
   });
 
   it("renders reviewed html with reviewed label and escaped content", () => {
@@ -36,7 +53,8 @@ describe("narrative_export", () => {
       },
       {
         card_1: "Snippet <safe>",
-      }
+      },
+      groundingEntries
     );
 
     expect(output).toContain("Reviewed by human");
@@ -45,5 +63,7 @@ describe("narrative_export", () => {
     expect(output).toContain("Alpha &lt;beta&gt;");
     expect(output).toContain("Snippet &lt;safe&gt;");
     expect(output).toContain("<ol>");
+    expect(output).toContain("Grounding / Citations");
+    expect(output).toContain("Summary (unreviewed): Summary text");
   });
 });

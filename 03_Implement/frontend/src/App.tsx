@@ -57,7 +57,7 @@ type NarrativeEntry = {
   title: string;
   text: string;
   createdAt?: string;
-  basedOnReadingOrder: string[];
+  basedOnReadingOrder?: string[];
   reviewed: boolean;
 };
 
@@ -2961,6 +2961,8 @@ export default function App() {
                 generatedNarratives={generatedNarratives}
                 onReferenceClick={handleNarrativeReferenceFocus}
                 readingOrderSnippets={readingOrderSnippets}
+                document={document}
+                hideSourceCards={hideSourceCards}
               />
               <MergeSuggestionsPanel
                 instruction={mergeSuggestionInstruction}
