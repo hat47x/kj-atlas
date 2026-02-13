@@ -228,7 +228,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [document.edges, peekCardIds, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
+  }, [document.edges, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
