@@ -289,6 +289,72 @@ function getCardMinDepthMap(document: DocumentV2, islandDepthById: Map<string, n
   return cardDepthById;
 }
 
+function collectFocusedIslandIds(islands: Island[], focusIslandId: string): Set<string> {
+  const islandsByParentId = new Map<string, Island[]>();
+
+  for (const island of islands) {
+    if (!island.parentIslandId) {
+      continue;
+    }
+
+    const children = islandsByParentId.get(island.parentIslandId) ?? [];
+    children.push(island);
+    islandsByParentId.set(island.parentIslandId, children);
+  }
+
+  const focusedIslandIds = new Set<string>();
+  const stack = [focusIslandId];
+
+  while (stack.length > 0) {
+    const islandId = stack.pop();
+    if (!islandId || focusedIslandIds.has(islandId)) {
+      continue;
+    }
+
+    focusedIslandIds.add(islandId);
+
+    const children = islandsByParentId.get(islandId) ?? [];
+    for (const child of children) {
+      stack.push(child.id);
+    }
+  }
+
+  return focusedIslandIds;
+}
+
+function applyFocusScope(document: DocumentV2, focusTarget: FocusTarget): DocumentV2 {
+  if (!focusTarget.focusIslandId) {
+    return document;
+  }
+
+  const hasFocusIsland = document.islands.some((island) => island.id === focusTarget.focusIslandId);
+  if (!hasFocusIsland) {
+    return document;
+  }
+
+  const focusedIslandIds = collectFocusedIslandIds(document.islands, focusTarget.focusIslandId);
+  const focusedIslands = document.islands.filter((island) => focusedIslandIds.has(island.id));
+  const focusedCardIdSet = new Set<string>();
+
+  for (const island of focusedIslands) {
+    for (const cardId of island.cardIds) {
+      focusedCardIdSet.add(cardId);
+    }
+  }
+
+  return {
+    ...document,
+    cards: document.cards.filter((card) => focusedCardIdSet.has(card.id)),
+    edges: document.edges.filter(
+      (edge) => focusedCardIdSet.has(edge.fromId) && focusedCardIdSet.has(edge.toId)
+    ),
+    islands: focusedIslands,
+    readingOrder: (document.readingOrder ?? []).filter(
+      (entryId) => focusedCardIdSet.has(entryId) || focusedIslandIds.has(entryId)
+    ),
+  };
+}
+
 export default function App() {
   const [history, setHistory] = useState<DocumentHistory | null>(null);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -333,7 +399,13 @@ export default function App() {
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
-  const focusedVisibleDocument = visibleDocument;
+  const focusedVisibleDocument = useMemo(() => {
+    if (!visibleDocument) {
+      return visibleDocument;
+    }
+
+    return applyFocusScope(visibleDocument, focusTarget);
+  }, [focusTarget, visibleDocument]);
   const suggestionMoveDiffs = useMemo(() => {
     if (!document || !suggestedDocument || !isPreviewingSuggestion) {
       return [] as SuggestionMoveDiff[];
@@ -386,19 +458,19 @@ export default function App() {
     return collectCollapsedIslandIds(focusedVisibleDocument.islands);
   }, [focusedVisibleDocument]);
   const islandDepthById = useMemo(() => {
-    if (!focusedVisibleDocument) {
+    if (!visibleDocument) {
       return new Map<string, number>();
     }
 
-    return getIslandDepthMap(focusedVisibleDocument.islands);
-  }, [focusedVisibleDocument]);
+    return getIslandDepthMap(visibleDocument.islands);
+  }, [visibleDocument]);
   const cardMinDepthById = useMemo(() => {
-    if (!focusedVisibleDocument) {
+    if (!visibleDocument) {
       return new Map<string, number>();
     }
 
-    return getCardMinDepthMap(focusedVisibleDocument, islandDepthById);
-  }, [focusedVisibleDocument, islandDepthById]);
+    return getCardMinDepthMap(visibleDocument, islandDepthById);
+  }, [visibleDocument, islandDepthById]);
   const depthHiddenIslandIdSet = useMemo(() => {
     if (!focusedVisibleDocument || maxDepth === "all") {
       return new Set<string>();
@@ -2040,9 +2112,7 @@ export default function App() {
       return null;
     }
 
-  return uniqueIslands
-    .filter((island) => !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId))
-    .map((island, index) => (
+  return visibleIslands.map((island, index) => (
       <IslandView
         key={island.id}
         island={island}
@@ -2062,14 +2132,13 @@ export default function App() {
       />
     ));
   }, [
-    collapsedIslandIdSet,
     focusedVisibleDocument,
     handleIslandCollapsedChange,
     handleIslandSelect,
     isPickingEdgeTarget,
     peekIslandId,
     selectedIslandId,
-    uniqueIslands,
+    visibleIslands,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -2539,10 +2608,47 @@ export default function App() {
     </div>
   );
 
+  const headerViewControls = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <label htmlFor="max-depth-select" style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
+        Depth
+      </label>
+      <select
+        id="max-depth-select"
+        value={maxDepth === "all" ? "all" : String(maxDepth)}
+        onChange={(event) => {
+          if (event.target.value === "all") {
+            setMaxDepth("all");
+            return;
+          }
+
+          setMaxDepth(Number(event.target.value));
+        }}
+        style={{
+          border: "1px solid #cbd5e1",
+          borderRadius: 6,
+          padding: "4px 8px",
+          backgroundColor: "#ffffff",
+          color: "#0f172a",
+          fontSize: 12,
+          fontWeight: 600,
+        }}
+      >
+        <option value="all">All</option>
+        {Array.from({ length: maxAvailableDepth + 1 }, (_, depth) => (
+          <option key={depth} value={depth}>
+            {depth}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
     <Shell
       title="kj-atlas Canvas MVP"
       subtitle={`Document: ${activeDocumentId}`}
+      headerViewControls={headerViewControls}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}

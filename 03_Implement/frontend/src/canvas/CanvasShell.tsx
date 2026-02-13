@@ -214,11 +214,12 @@ export function CanvasShell({
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
+  const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
 
   const visibleEdges = useMemo(() => {
     // hidden + source の両方を反映（isCardHidden がそれらを内包している前提）
     let edges = document.edges.filter(
-      (edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId)
+      (edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId)
     );
 
     // canonical-only edge 表示（feature 仕様）
@@ -238,7 +239,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [document.edges, isCardHidden, peekCardIds, showCanonicalOnlyEdges, canonicalCardIdSet]);
+  }, [document.edges, peekCardIds, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];

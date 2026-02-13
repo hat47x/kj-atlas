@@ -4,6 +4,7 @@ type ShellProps = {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
+  headerViewControls?: ReactNode;
   headerCenter?: ReactNode;
   headerRight?: ReactNode;
   hasUnsavedChanges?: boolean;
@@ -18,6 +19,7 @@ export function Shell({
   title,
   subtitle,
   children,
+  headerViewControls,
   headerCenter,
   headerRight,
   hasUnsavedChanges = false,
@@ -75,6 +77,7 @@ export function Shell({
                 Unsaved changes
               </span>
             ) : null}
+            {headerViewControls}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
