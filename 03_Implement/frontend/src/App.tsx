@@ -381,6 +381,7 @@ export default function App() {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(true);
+  const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -2057,6 +2058,10 @@ export default function App() {
     setFocusWorldPoint(null);
   }, [document?.id]);
 
+  useEffect(() => {
+    setRevealedSourceCardIds(new Set());
+  }, [document?.id]);
+
   const selectedIsland = useMemo(() => {
     if (!document || !selectedIslandId) {
       return null;
@@ -2071,6 +2076,55 @@ export default function App() {
 
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
   }, [document?.cards, selectedCardIds]);
+
+  const sourceCardsForSelectedCanonical = useMemo(() => {
+    if (!document || !selectedCard || selectedCard.canonicalId || (selectedCard.sources ?? []).length === 0) {
+      return [] as DocumentV2["cards"];
+    }
+
+    const cardsById = new Map(document.cards.map((card) => [card.id, card]));
+    return (selectedCard.sources ?? [])
+      .map((sourceId) => cardsById.get(sourceId))
+      .filter((card): card is DocumentV2["cards"][number] => card !== undefined);
+  }, [document, selectedCard]);
+
+  const handleSourceCardInspect = useCallback((sourceCardId: string) => {
+    requestCanvasFocus(sourceCardId);
+    setRevealedSourceCardIds((previousIds) => {
+      if (previousIds.has(sourceCardId)) {
+        return previousIds;
+      }
+
+      const nextIds = new Set(previousIds);
+      nextIds.add(sourceCardId);
+      return nextIds;
+    });
+  }, [requestCanvasFocus]);
+
+  const handleShowAllSourcesChange = useCallback((value: boolean) => {
+    if (!value) {
+      setRevealedSourceCardIds(new Set());
+      return;
+    }
+
+    setRevealedSourceCardIds(new Set(sourceCardsForSelectedCanonical.map((card) => card.id)));
+  }, [sourceCardsForSelectedCanonical]);
+
+  useEffect(() => {
+    if (!selectedCard || selectedCard.canonicalId || sourceCardsForSelectedCanonical.length === 0) {
+      setRevealedSourceCardIds(new Set());
+      return;
+    }
+
+    const allowedSourceIdSet = new Set(sourceCardsForSelectedCanonical.map((card) => card.id));
+    setRevealedSourceCardIds((previousIds) => {
+      const nextIds = new Set(Array.from(previousIds).filter((cardId) => allowedSourceIdSet.has(cardId)));
+      if (nextIds.size === previousIds.size) {
+        return previousIds;
+      }
+      return nextIds;
+    });
+  }, [selectedCard, sourceCardsForSelectedCanonical]);
 
   const handleIslandSelect = useCallback((islandId: string) => {
     if (isPickingEdgeTarget) {
@@ -2699,6 +2753,8 @@ export default function App() {
       sidePanel={
         <SidePanel
           selectedCard={selectedCard}
+          sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
+          revealedSourceCardIds={revealedSourceCardIds}
           topContent={
             <>
               <MergeSuggestionsPanel
@@ -2831,6 +2887,8 @@ export default function App() {
           onHideSourceCardsChange={setHideSourceCards}
           showCanonicalOnlyEdges={showCanonicalOnlyEdges}
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
+          onSourceCardInspect={handleSourceCardInspect}
+          onShowAllSourcesChange={handleShowAllSourcesChange}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -2899,6 +2957,7 @@ export default function App() {
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
             hideSourceCards={hideSourceCards}
+            revealCardIds={revealedSourceCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}

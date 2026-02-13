@@ -10,6 +10,8 @@ type ReadingOrderItem = {
 
 type SidePanelProps = {
   selectedCard: Card | null;
+  sourceCardsForSelectedCanonical: Card[];
+  revealedSourceCardIds: Set<string>;
   selectedIsland: Island | null;
   selectedCardCount: number;
   onCardCritiqueChange: (value: string) => void;
@@ -38,6 +40,8 @@ type SidePanelProps = {
   onHideSourceCardsChange: (value: boolean) => void;
   showCanonicalOnlyEdges: boolean;
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
+  onSourceCardInspect: (cardId: string) => void;
+  onShowAllSourcesChange: (value: boolean) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -60,6 +64,8 @@ type SidePanelProps = {
 
 export function SidePanel({
   selectedCard,
+  sourceCardsForSelectedCanonical,
+  revealedSourceCardIds,
   selectedIsland,
   selectedCardCount,
   onCardCritiqueChange,
@@ -88,6 +94,8 @@ export function SidePanel({
   onHideSourceCardsChange,
   showCanonicalOnlyEdges,
   onShowCanonicalOnlyEdgesChange,
+  onSourceCardInspect,
+  onShowAllSourcesChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -151,6 +159,11 @@ export function SidePanel({
 
     onRemoveSelectedCards();
   };
+
+  const hasSourceCardsForSelectedCanonical = sourceCardsForSelectedCanonical.length > 0;
+  const isShowingAllSources =
+    hasSourceCardsForSelectedCanonical &&
+    sourceCardsForSelectedCanonical.every((card) => revealedSourceCardIds.has(card.id));
 
   const toggleCritiqueTag = (currentTags: string[] | undefined, tag: CritiqueTag): string[] => {
     const currentTagSet = new Set(currentTags ?? []);
@@ -766,6 +779,57 @@ export function SidePanel({
                     }}
                   />
                 </>
+              ) : null}
+              {!selectedCard.canonicalId && hasSourceCardsForSelectedCanonical ? (
+                <div style={{ marginBottom: 12 }}>
+                  <details>
+                    <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                      Sources ({sourceCardsForSelectedCanonical.length})
+                    </summary>
+                    <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                      {sourceCardsForSelectedCanonical.map((sourceCard) => (
+                        <button
+                          key={sourceCard.id}
+                          type="button"
+                          onClick={() => {
+                            onSourceCardInspect(sourceCard.id);
+                          }}
+                          style={{
+                            textAlign: "left",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 6,
+                            padding: "6px 8px",
+                            backgroundColor: revealedSourceCardIds.has(sourceCard.id) ? "#eff6ff" : "#ffffff",
+                            color: "#0f172a",
+                            cursor: "pointer",
+                            fontSize: 12,
+                          }}
+                        >
+                          {sourceCard.text.slice(0, 80)}
+                        </button>
+                      ))}
+                    </div>
+                  </details>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 12,
+                      color: "#334155",
+                      marginTop: 8,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isShowingAllSources}
+                      onChange={(event) => {
+                        onShowAllSourcesChange(event.target.checked);
+                      }}
+                    />
+                    Show all sources
+                  </label>
+                </div>
               ) : null}
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note
