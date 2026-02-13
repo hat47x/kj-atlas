@@ -255,9 +255,6 @@ function IslandViewComponent({
                 { once: true },
               );
             }}
-            onMouseUp={(event) => {
-              event.stopPropagation();
-            }}
             onDoubleClick={(event) => {
               event.stopPropagation();
             }}
