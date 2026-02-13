@@ -246,13 +246,17 @@ function IslandViewComponent({
             onMouseDown={(event) => {
               event.stopPropagation();
               onPeekStart?.(island.id);
+
+              window.addEventListener(
+                "mouseup",
+                () => {
+                  onPeekEnd?.();
+                },
+                { once: true },
+              );
             }}
             onMouseUp={(event) => {
               event.stopPropagation();
-              onPeekEnd?.();
-            }}
-            onMouseLeave={() => {
-              onPeekEnd?.();
             }}
             onDoubleClick={(event) => {
               event.stopPropagation();
