@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
+import { getEdgesToRender } from "../domain/edge_aggregate";
 import { isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
@@ -243,15 +244,19 @@ export function CanvasShell({
     const cardsById = new Map(document.cards.map((card) => [card.id, card]));
     const grouped = new Map<string, AggregatedEdgeMeta>();
 
-    for (const edge of document.edges) {
-      const edgeWithKinds = edge as typeof edge & { fromKind?: "card" | "island"; toKind?: "card" | "island" };
-      const sourceFromKind = edgeWithKinds.fromKind ?? "card";
-      const sourceToKind = edgeWithKinds.toKind ?? "card";
+    // Respect hideSourceCards + include kind info (card/island) if getEdgesToRender provides it
+    const edgesToAggregate = getEdgesToRender(document, hideSourceCards === true);
+
+    for (const edge of edgesToAggregate) {
+      const sourceFromKind = edge.fromKind ?? "card";
+      const sourceToKind = edge.toKind ?? "card";
 
       const fromCard = sourceFromKind === "card" ? cardsById.get(edge.fromId) : undefined;
       const toCard = sourceToKind === "card" ? cardsById.get(edge.toId) : undefined;
+
       const resolvedFromId = sourceFromKind === "card" ? fromCard?.canonicalId ?? edge.fromId : edge.fromId;
       const resolvedToId = sourceToKind === "card" ? toCard?.canonicalId ?? edge.toId : edge.toId;
+
       const resolvedFromKind = sourceFromKind === "island" ? "island" : "canonical";
       const resolvedToKind = sourceToKind === "island" ? "island" : "canonical";
 
@@ -261,6 +266,7 @@ export function CanvasShell({
 
       const key = `${resolvedFromKind}:${resolvedFromId}->${resolvedToKind}:${resolvedToId}:${edge.type}`;
       const current = grouped.get(key);
+
       const nextSource: AggregatedEdgeSource = {
         sourceFromCardId: edge.fromId,
         sourceToId: edge.toId,
@@ -284,26 +290,39 @@ export function CanvasShell({
     }
 
     return Array.from(grouped.values());
-  }, [document.cards, document.edges]);
+  }, [document, hideSourceCards]);
 
   const visibleEdges = useMemo(() => {
-    if (showCanonicalOnlyEdges) {
-      return aggregatedEdges.filter(
-        (edge) => edge.fromKind === "canonical" && edge.toKind === "canonical" &&
-          visibleCardIdSet.has(edge.fromId) &&
-          visibleCardIdSet.has(edge.toId)
-      );
+    // Base visibility: islands are always "visible"; cards must be in visibleCardIdSet
+    const edges = getEdgesToRender(document, hideSourceCards === true).filter((edge) => {
+      const isFromVisible = edge.fromKind === "island" || visibleCardIdSet.has(edge.fromId);
+      const isToVisible = edge.toKind === "island" || visibleCardIdSet.has(edge.toId);
+      return isFromVisible && isToVisible;
+    });
+
+    if (!showCanonicalOnlyEdges) {
+      return edges;
     }
 
-    return document.edges
-      .filter((edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId))
-      .map((edge) => ({
-        id: edge.id,
-        fromId: edge.fromId,
-        toId: edge.toId,
-        type: edge.type,
-      }));
-  }, [aggregatedEdges, document.edges, showCanonicalOnlyEdges, visibleCardIdSet]);
+    // Canonical-only: use aggregated edges and constrain to canonical↔canonical between visible canonical cards
+    return aggregatedEdges.filter((edge) => {
+      return (
+        edge.fromKind === "canonical" &&
+        edge.toKind === "canonical" &&
+        canonicalCardIdSet.has(edge.fromId) &&
+        canonicalCardIdSet.has(edge.toId) &&
+        visibleCardIdSet.has(edge.fromId) &&
+        visibleCardIdSet.has(edge.toId)
+      );
+    });
+  }, [
+    aggregatedEdges,
+    canonicalCardIdSet,
+    document,
+    hideSourceCards,
+    showCanonicalOnlyEdges,
+    visibleCardIdSet,
+  ]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(aggregatedEdges);
@@ -538,6 +557,7 @@ export function CanvasShell({
           hiddenCardIds={hiddenEndpointIdSet}
           selectedEdgeId={selectedEdgeId}
           onEdgeSelect={onEdgeSelect}
+          islands={document.islands}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
