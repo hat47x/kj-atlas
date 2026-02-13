@@ -32,3 +32,18 @@ class CheckNarrativeResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issues: list[NarrativeIssue]
+
+
+class GenerateNarrativeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV2
+    narrativeTitle: str | None = None
+
+
+class GenerateNarrativeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    basedOnReadingOrder: list[str]
+    warnings: list[str] | None = None

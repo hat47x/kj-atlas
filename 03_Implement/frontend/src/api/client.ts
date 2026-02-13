@@ -242,3 +242,35 @@ export async function checkNarrative(
 
   return { issues: body.issues };
 }
+
+
+export type GenerateNarrativeResult = {
+  text: string;
+  basedOnReadingOrder: string[];
+  warnings?: string[];
+};
+
+export async function generateNarrative(doc: DocumentV2, narrativeTitle?: string): Promise<GenerateNarrativeResult> {
+  const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, narrativeTitle }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as GenerateNarrativeResult;
+  if (typeof body.text !== "string" || !Array.isArray(body.basedOnReadingOrder)) {
+    throw new ApiError(500, "Invalid narrative generation response");
+  }
+
+  if (body.warnings !== undefined && !Array.isArray(body.warnings)) {
+    throw new ApiError(500, "Invalid narrative generation warnings");
+  }
+
+  return body;
+}

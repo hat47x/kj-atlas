@@ -115,3 +115,53 @@ def test_parse_narrative_check_response_rejects_extra_fields() -> None:
         assert exc.status_code == 422
     else:
         raise AssertionError("expected HTTPException")
+
+
+from kj_atlas_api.models_ai import GenerateNarrativeRequest
+from kj_atlas_api.routes.ai import _build_generate_narrative_prompt, _parse_generate_narrative_response
+
+
+def test_build_generate_narrative_prompt_mentions_unreviewed_and_reading_order() -> None:
+    payload = GenerateNarrativeRequest(
+        doc=_sample_payload().doc.model_copy(update={"readingOrder": ["i1", "c2"]}),
+        narrativeTitle="Draft title",
+    )
+
+    prompt = _build_generate_narrative_prompt(payload)
+
+    assert "reading order as the narrative spine" in prompt
+    assert "draft and unreviewed" in prompt
+    assert 'island id="i1"' in prompt
+    assert 'card id="c2"' in prompt
+
+
+def test_parse_generate_narrative_response_rejects_non_matching_reading_order() -> None:
+    payload = GenerateNarrativeRequest(
+        doc=_sample_payload().doc.model_copy(update={"readingOrder": ["i1", "c2"]}),
+        narrativeTitle="Draft title",
+    )
+
+    try:
+        _parse_generate_narrative_response(
+            '{"text":"draft (unreviewed)","basedOnReadingOrder":["i1"]}',
+            payload,
+        )
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_parse_generate_narrative_response_accepts_exact_reading_order() -> None:
+    payload = GenerateNarrativeRequest(
+        doc=_sample_payload().doc.model_copy(update={"readingOrder": ["i1", "c2"]}),
+        narrativeTitle="Draft title",
+    )
+
+    parsed = _parse_generate_narrative_response(
+        '{"text":"draft (unreviewed)","basedOnReadingOrder":["i1","c2"]}',
+        payload,
+    )
+
+    assert parsed.text == "draft (unreviewed)"
+    assert parsed.basedOnReadingOrder == ["i1", "c2"]
