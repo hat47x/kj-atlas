@@ -33,6 +33,8 @@ type SidePanelProps = {
   onGridSnapToggle: (value: boolean) => void;
   hideSourceCards: boolean;
   onHideSourceCardsChange: (value: boolean) => void;
+  showCanonicalOnlyEdges: boolean;
+  onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -78,6 +80,8 @@ export function SidePanel({
   onGridSnapToggle,
   hideSourceCards,
   onHideSourceCardsChange,
+  showCanonicalOnlyEdges,
+  onShowCanonicalOnlyEdgesChange,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -204,7 +208,31 @@ export function SidePanel({
               onHideSourceCardsChange(event.target.checked);
             }}
           />
-          Hide source cards
+          Bird's-eye by canonical (hide source cards)
+        </label>
+        {hideSourceCards ? (
+          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 10 }}>
+            Source cards are hidden to keep board manageable.
+          </div>
+        ) : null}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "#334155",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showCanonicalOnlyEdges}
+            onChange={(event) => {
+              onShowCanonicalOnlyEdgesChange(event.target.checked);
+            }}
+          />
+          Show canonical-only edges
         </label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>

@@ -35,6 +35,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  showCanonicalOnlyEdges?: boolean;
   peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -82,6 +83,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = false,
+  showCanonicalOnlyEdges = false,
   peekCardIds,
   searchQuery = "",
   matchedCardIds,
@@ -189,6 +191,9 @@ export function CanvasShell({
 
     return new Set(document.cards.filter((card) => isSourceCard(card)).map((card) => card.id));
   }, [document.cards, hideSourceCards]);
+  const canonicalCardIdSet = useMemo(() => {
+    return new Set(document.cards.filter((card) => !isSourceCard(card)).map((card) => card.id));
+  }, [document.cards]);
   const isCardHidden = useCallback(
     (cardId: string) => hiddenCardIds?.has(cardId) === true || sourceCardIdSet.has(cardId),
     [hiddenCardIds, sourceCardIdSet]
@@ -210,11 +215,17 @@ export function CanvasShell({
         ? baseEdges.filter((edge) => !isCardHidden(edge.fromId) && !isCardHidden(edge.toId))
         : baseEdges;
 
+    const canonicalFilteredEdges = !showCanonicalOnlyEdges
+      ? withHiddenApplied
+      : withHiddenApplied.filter(
+          (edge) => canonicalCardIdSet.has(edge.fromId) && canonicalCardIdSet.has(edge.toId)
+        );
+
     if (!peekCardIds || peekCardIds.size === 0) {
-      return withHiddenApplied;
+      return canonicalFilteredEdges;
     }
 
-    return withHiddenApplied.filter((edge) => {
+    return canonicalFilteredEdges.filter((edge) => {
       const fromIsPeekCard = peekCardIds.has(edge.fromId);
       const toIsPeekCard = peekCardIds.has(edge.toId);
 
@@ -224,7 +235,7 @@ export function CanvasShell({
 
       return fromIsPeekCard && toIsPeekCard;
     });
-  }, [document.edges, hiddenCardIds, peekCardIds, isCardHidden]);
+  }, [canonicalCardIdSet, document.edges, hiddenCardIds, isCardHidden, peekCardIds, showCanonicalOnlyEdges]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];

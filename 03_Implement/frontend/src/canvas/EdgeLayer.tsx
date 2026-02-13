@@ -36,6 +36,10 @@ function EdgeLayerComponent({ cards, edges }: EdgeLayerProps) {
     return nextCardCenterById;
   }, [cards]);
 
+  const drawableEdges = useMemo(() => {
+    return edges.filter((edge) => cardCenterById.has(edge.fromId) && cardCenterById.has(edge.toId));
+  }, [cardCenterById, edges]);
+
   return (
     <svg
       x={-WORLD_HALF_SIZE}
@@ -51,7 +55,7 @@ function EdgeLayerComponent({ cards, edges }: EdgeLayerProps) {
         pointerEvents: "none",
       }}
     >
-      {edges.map((edge) => {
+      {drawableEdges.map((edge) => {
         const fromCenter = cardCenterById.get(edge.fromId);
         const toCenter = cardCenterById.get(edge.toId);
 
