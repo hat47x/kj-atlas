@@ -188,7 +188,7 @@
 
 - `V1/V2/V3 -> W1/W4 -> F-01 非矩形Island（future_backlog）`
 - `W2/W3 -> F-03 Canonical Cards（future_backlog）`
-- `W1/W2 -> F-02 Collapse/Expand（future_backlog）`
+- `V1/V2/V3/W1 -> F-02 Collapse/Expand（future_backlog）`
 
 タスクID接続（固定）:
 
