@@ -60,6 +60,25 @@ canonicalization は、以下の順序で運用する。
 - 差分確認や解釈の再検討が必要なときは、source を再表示して参照する。
 - canonical のみを見て判断が難しい場合、source を確認して意味の取り違えを防ぐ。
 
+### 2.6 Aggregated edges（集約エッジの扱い）
+
+- canonicalization 後に表示される aggregated edge は、**view-only の派生関係**として扱う。
+- これは source card 群が持つ既存 edge を集約表示したものであり、既定では永続データとして確定しない。
+- aggregated edge の表示は「把握を補助するための見え方」であり、正しさを自動保証するものではない。
+
+#### Sources の確認方法
+
+- aggregated edge を確認する際は、対応する canonical/source を開き、どの source edge から導出されたかを追跡する。
+- 必要に応じて source を show に切り替え、元の edge（from/to/type）を個別に確認する。
+- 判断が難しい場合は aggregated edge を前提にせず、source edge の文脈を優先してレビューする。
+
+#### Real edge への昇格（任意）
+
+- aggregated edge を永続的な関係として採用したい場合のみ、人間が明示的に real edge を作成する。
+- 昇格は任意操作であり、自動実行しない。
+- 昇格後も、導出元 source edge の参照経路を確認できる状態を維持する。
+- 「見えているから正しい」とは扱わず、最終的な妥当性判断は利用者が行う。
+
 ---
 
 ## 3. Notes
@@ -91,6 +110,8 @@ canonicalization は手動操作で巻き戻せる。最小手順は次のとお
 
 - **automatic rerouting of edges**
   - canonical 採用時に、既存エッジを自動で付け替える処理は行わない（future）。
+- **automatic persistence of aggregated edges**
+  - 集約表示された edge を real edge として自動保存しない（never by default）。
 - **auto-deletion of sources**
   - source card の自動削除は既定で行わない（never by default）。
 
