@@ -116,11 +116,14 @@ export function MergeSuggestionsPanel({
           ) : null}
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={() => onApply(suggestion.groupId)}>
-              Apply merge
+              Adopt as Canonical
             </button>
             <button type="button" onClick={() => onDismiss(suggestion.groupId)}>
-              Dismiss suggestion
+              Dismiss
             </button>
+          </div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
+            Traceability: Source cards are retained and can be shown via View Controls.
           </div>
         </article>
       ))}

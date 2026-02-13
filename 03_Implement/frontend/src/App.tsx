@@ -6,6 +6,7 @@ import { CanvasShell } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
+import { applyCanonicalization } from "./domain/canonical_ops";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -1098,50 +1099,27 @@ export default function App() {
         return;
       }
 
-      const cardsToMerge = document.cards.filter((card) => suggestion.cardIds.includes(card.id));
-      if (cardsToMerge.length < 2) {
+      const cardsToCanonicalize = document.cards.filter((card) => suggestion.cardIds.includes(card.id));
+      if (cardsToCanonicalize.length < 2) {
         setMergeSuggestionError("Merge suggestion is no longer applicable.");
         return;
       }
+      let canonicalizedResult: ReturnType<typeof applyCanonicalization>;
+      try {
+        canonicalizedResult = applyCanonicalization(document, {
+          sourceCardIds: suggestion.cardIds,
+          mergedText: suggestion.editedText,
+          canonicalIdFactory: () => crypto.randomUUID(),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to adopt canonical suggestion.";
+        setMergeSuggestionError(message);
+        return;
+      }
 
-      const mergedCardIds = new Set(cardsToMerge.map((card) => card.id));
-      const averageX = cardsToMerge.reduce((sum, card) => sum + card.x, 0) / cardsToMerge.length;
-      const averageY = cardsToMerge.reduce((sum, card) => sum + card.y, 0) / cardsToMerge.length;
-      const newCardId = crypto.randomUUID();
-
-      const nextDocument: DocumentV2 = {
-        ...document,
-        cards: [
-          ...document.cards.filter((card) => !mergedCardIds.has(card.id)),
-          {
-            id: newCardId,
-            text: suggestion.editedText,
-            x: averageX,
-            y: averageY,
-            critique: "",
-            textReviewed: suggestion.isEdited,
-          },
-        ],
-        edges: document.edges.filter((edge) => !mergedCardIds.has(edge.fromId) && !mergedCardIds.has(edge.toId)),
-        islands: document.islands.map((island) => {
-          const hasMergedCard = island.cardIds.some((cardId) => mergedCardIds.has(cardId));
-          if (!hasMergedCard) {
-            return island;
-          }
-
-          const preservedIds = island.cardIds.filter((cardId) => !mergedCardIds.has(cardId));
-          return {
-            ...island,
-            cardIds: [...preservedIds, newCardId],
-          };
-        }),
-      };
-
-      applyDocumentChange(nextDocument, "Applied merge suggestion");
+      applyDocumentChange(canonicalizedResult.document, "Adopted merge suggestion as canonical");
       setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((item) => item.groupId !== groupId));
-      setSelectedCardIds((previousCardIds) =>
-        previousCardIds.filter((cardId) => !mergedCardIds.has(cardId)).concat(newCardId)
-      );
+      setSelectedCardIds([canonicalizedResult.canonicalId]);
     },
     [applyDocumentChange, document, mergeSuggestions]
   );
