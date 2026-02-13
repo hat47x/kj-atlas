@@ -36,6 +36,8 @@ export type CritiqueTag = (typeof CRITIQUE_TAGS)[number];
 
 export type EdgeType = "related" | "negate";
 
+export type EdgeEndpointKind = "card" | "island";
+
 export type EdgeV1 = {
   id: string;
   fromId: string;
@@ -47,6 +49,8 @@ export type Edge = {
   id: string;
   fromId: string;
   toId: string;
+  fromKind?: EdgeEndpointKind;
+  toKind?: EdgeEndpointKind;
   type: EdgeType;
 };
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
+import { getEdgesToRender } from "../domain/edge_aggregate";
 import { isSourceCard, type DocumentV2, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
@@ -226,20 +227,25 @@ export function CanvasShell({
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
 
   const visibleEdges = useMemo(() => {
-    // hidden + source の両方を反映（isCardHidden がそれらを内包している前提）
-    let edges = document.edges.filter(
-      (edge) => visibleCardIdSet.has(edge.fromId) && visibleCardIdSet.has(edge.toId)
-    );
+    let edges = getEdgesToRender(document, hideSourceCards === true).filter((edge) => {
+      const isFromVisible = edge.fromKind === "island" || visibleCardIdSet.has(edge.fromId);
+      const isToVisible = edge.toKind === "island" || visibleCardIdSet.has(edge.toId);
+      return isFromVisible && isToVisible;
+    });
 
-    // canonical-only edge 表示（feature 仕様）
     if (showCanonicalOnlyEdges) {
-      edges = edges.filter(
-        (edge) => canonicalCardIdSet.has(edge.fromId) && canonicalCardIdSet.has(edge.toId)
-      );
+      edges = edges.filter((edge) => {
+        return (
+          edge.fromKind === "card" &&
+          edge.toKind === "card" &&
+          canonicalCardIdSet.has(edge.fromId) &&
+          canonicalCardIdSet.has(edge.toId)
+        );
+      });
     }
 
     return edges;
-  }, [document.edges, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
+  }, [canonicalCardIdSet, document, hideSourceCards, showCanonicalOnlyEdges, visibleCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
@@ -464,7 +470,12 @@ export function CanvasShell({
           transformOrigin: "0 0",
         }}
       >
-        <EdgeLayer cards={visibleCards} edges={visibleEdges} hiddenCardIds={hiddenEndpointIdSet} />
+        <EdgeLayer
+          cards={visibleCards}
+          islands={document.islands}
+          edges={visibleEdges}
+          hiddenCardIds={hiddenEndpointIdSet}
+        />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
         {visibleCards.map((card) => {

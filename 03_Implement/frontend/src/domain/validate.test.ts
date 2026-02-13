@@ -63,6 +63,32 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(explicitCollapsedIsland?.collapsed).toBe(true);
   });
 
+  it("preserves edge endpoint kinds from imported v2 JSON", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_edge_kinds",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [
+        { id: "e1", fromId: "c1", toId: "i1", fromKind: "card", toKind: "island", type: "related" },
+      ],
+      islands: [{ id: "i1", cardIds: ["c1"] }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.document.edges[0]).toMatchObject({
+      fromKind: "card",
+      toKind: "island",
+    });
+  });
+
   it("preserves canonical relationship fields from imported cards", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({
