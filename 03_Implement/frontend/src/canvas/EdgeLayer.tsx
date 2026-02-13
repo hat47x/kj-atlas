@@ -148,66 +148,70 @@ function EdgeLayerComponent({
           return null;
         }
 
-const isSelected = selectedEdgeId === edge.id;
+        const isSelected = selectedEdgeId === edge.id;
 
-const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
-  event.stopPropagation();
-  onEdgeSelect?.(edge.id);
-};
+        const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
+          event.stopPropagation();
+          onEdgeSelect?.(edge.id);
+        };
 
-const midX = (fromCenter.x + toCenter.x) / 2;
-const midY = (fromCenter.y + toCenter.y) / 2;
+        const midX = (fromCenter.x + toCenter.x) / 2;
+        const midY = (fromCenter.y + toCenter.y) / 2;
 
-// ベースの線色（main準拠）
-const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
-const selectedStroke = "#2563eb";
+        // ベースの線色（main準拠）
+        const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
+        const selectedStroke = "#2563eb";
 
-return (
-  <g key={edge.id}>
-    {/* 見た目の線 */}
-    <line
-      x1={fromCenter.x}
-      y1={fromCenter.y}
-      x2={toCenter.x}
-      y2={toCenter.y}
-      stroke={isSelected ? selectedStroke : baseStroke}
-      strokeWidth={isSelected ? 3 : edge.isDerived ? 2.5 : 2}
-      vectorEffect="non-scaling-stroke"
-      strokeLinecap="round"
-      strokeDasharray={getDashArray(edge)}
-      pointerEvents="none"
-    />
+        return (
+          <g key={edge.id}>
+            {/* 見た目の線 */}
+            <line
+              x1={fromCenter.x}
+              y1={fromCenter.y}
+              x2={toCenter.x}
+              y2={toCenter.y}
+              stroke={isSelected ? selectedStroke : baseStroke}
+              strokeWidth={isSelected ? 3 : edge.isDerived ? 2.5 : 2}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              strokeDasharray={getDashArray(edge)}
+              pointerEvents="none"
+            />
 
-    {/* クリック/選択用のヒット領域（透明・太め） */}
-    <line
-      x1={fromCenter.x}
-      y1={fromCenter.y}
-      x2={toCenter.x}
-      y2={toCenter.y}
-      stroke="transparent"
-      strokeWidth={10}
-      vectorEffect="non-scaling-stroke"
-      strokeLinecap="round"
-      pointerEvents="stroke"
-      onPointerDown={(event) => {
-        event.stopPropagation();
-      }}
-      onClick={handleEdgeClick}
-    />
+            {/* クリック/選択用のヒット領域（透明・太め） */}
+            <line
+              x1={fromCenter.x}
+              y1={fromCenter.y}
+              x2={toCenter.x}
+              y2={toCenter.y}
+              stroke="transparent"
+              strokeWidth={10}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              pointerEvents="stroke"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={handleEdgeClick}
+            />
 
-    {edge.isDerived && (edge.aggregateCount ?? 0) > 1 ? (
-      <text
-        x={midX}
-        y={midY - 4}
-        fontSize={11}
-        fill="#115e59"
-        textAnchor="middle"
-        vectorEffect="non-scaling-stroke"
-      >
-        ×{edge.aggregateCount}
-      </text>
-    ) : null}
-  </g>
-);
+            {edge.isDerived && (edge.aggregateCount ?? 0) > 1 ? (
+              <text
+                x={midX}
+                y={midY - 4}
+                fontSize={11}
+                fill="#115e59"
+                textAnchor="middle"
+                vectorEffect="non-scaling-stroke"
+              >
+                ×{edge.aggregateCount}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 export const EdgeLayer = memo(EdgeLayerComponent);
