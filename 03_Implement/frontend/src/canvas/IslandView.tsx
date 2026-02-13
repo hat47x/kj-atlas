@@ -243,7 +243,7 @@ function IslandViewComponent({
         {island.collapsed === true ? (
           <button
             type="button"
-            onMouseDown={(event) => {
+            onPointerDown={(event) => {
               event.stopPropagation();
               onPeekStart?.(island.id);
 
@@ -255,8 +255,15 @@ function IslandViewComponent({
                 { once: true },
               );
             }}
-            onMouseUp={(event) => {
+            onPointerUp={(event) => {
               event.stopPropagation();
+              onPeekEnd?.();
+            }}
+            onPointerLeave={() => {
+              onPeekEnd?.();
+            }}
+            onPointerCancel={() => {
+              onPeekEnd?.();
             }}
             onDoubleClick={(event) => {
               event.stopPropagation();
