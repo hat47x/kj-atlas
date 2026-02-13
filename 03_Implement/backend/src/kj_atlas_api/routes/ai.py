@@ -19,6 +19,11 @@ from kj_atlas_api.models import (
     SuggestMergesResponse,
     Transform,
 )
+from kj_atlas_api.models_ai import (
+    GenerateNarrativeRequest,
+    GenerateNarrativeResponse,
+    LLMNarrativeResponse,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -210,6 +215,80 @@ def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) ->
     return parsed_suggestions
 
 
+def _build_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
+    cards_by_id = {card.id: card for card in payload.doc.cards}
+    islands_by_id = {island.id: island for island in payload.doc.islands}
+
+    reading_order_lines: list[str] = []
+    for index, entry_id in enumerate(payload.doc.readingOrder or [], start=1):
+        card = cards_by_id.get(entry_id)
+        if card is not None:
+            reading_order_lines.append(f'{index}. card id="{card.id}" text={json.dumps(card.text)}')
+            continue
+
+        island = islands_by_id.get(entry_id)
+        if island is not None:
+            island_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+            island_card_summaries = [json.dumps(island_card.text) for island_card in island_cards]
+            reading_order_lines.append(
+                (
+                    f'{index}. island id="{island.id}" title={json.dumps(island.title or "")} '
+                    f'containsCardIds={json.dumps(island.cardIds)} containsCardTexts={json.dumps(island_card_summaries)}'
+                )
+            )
+            continue
+
+        reading_order_lines.append(f'{index}. unknown id="{entry_id}"')
+
+    narrative_title = payload.narrativeTitle.strip() if payload.narrativeTitle else "Untitled Draft Narrative"
+
+    return "\n".join(
+        [
+            "You generate a draft narrative from a diagram reading order.",
+            "This is unreviewed draft support text only.",
+            "Do not present any claim as established fact.",
+            "Use phrases such as 'may suggest', 'appears to indicate', or 'could mean'.",
+            "Follow readingOrder strictly as the spine. Keep the same order.",
+            "For each readingOrder item, mention what it contains and what it may mean.",
+            "Include an explicit unreviewed disclaimer in text.",
+            "Return JSON only, no markdown, no extra keys.",
+            "Use this exact schema:",
+            '{"text":string,"basedOnReadingOrder":[string,...],"warnings":[string,...]?}',
+            f"Narrative title: {json.dumps(narrative_title)}",
+            "Reading order items:",
+            *reading_order_lines,
+        ]
+    )
+
+
+def _parse_narrative_response(raw_text: str, source_doc: GenerateNarrativeRequest) -> GenerateNarrativeResponse:
+    try:
+        parsed = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=422, detail="LLM response must be a JSON object")
+
+    try:
+        response = LLMNarrativeResponse.model_validate(parsed)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid narrative response payload") from exc
+
+    source_reading_order = source_doc.doc.readingOrder or []
+    if response.basedOnReadingOrder != source_reading_order:
+        raise HTTPException(status_code=422, detail="Narrative basedOnReadingOrder must exactly match input readingOrder")
+
+    if "unreviewed" not in response.text.lower() and "draft" not in response.text.lower():
+        raise HTTPException(status_code=422, detail="Narrative text must explicitly indicate draft/unreviewed status")
+
+    return GenerateNarrativeResponse(
+        text=response.text,
+        basedOnReadingOrder=response.basedOnReadingOrder,
+        warnings=response.warnings,
+    )
+
+
 @router.post("/suggest-layout", response_model=SuggestLayoutResponse)
 def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     provider = get_provider()
@@ -258,3 +337,21 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
 
     suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
     return SuggestMergesResponse(suggestions=suggestions)
+
+
+@router.post("/generate-narrative", response_model=GenerateNarrativeResponse)
+def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeResponse:
+    provider = get_provider()
+    try:
+        llm_response = provider.generate(
+            LLMRequest(
+                task="generate_narrative",
+                prompt=_build_narrative_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ProviderRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return _parse_narrative_response(llm_response.raw_text, payload)

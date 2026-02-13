@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { ApiError, getDocument, putDocument, suggestLayout, suggestMerges } from "./api/client";
+import { ApiError, generateNarrative, getDocument, putDocument, suggestLayout, suggestMerges } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
 import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
@@ -17,6 +17,8 @@ import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
+import { NarrativesPanel } from "./ui/NarrativesPanel";
+import type { NarrativeEntry } from "./ui/NarrativesPanel";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 
@@ -396,6 +398,9 @@ export default function App() {
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
+  const [narratives, setNarratives] = useState<NarrativeEntry[]>([]);
+  const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
+  const [narrativeError, setNarrativeError] = useState<string | null>(null);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
@@ -448,6 +453,12 @@ export default function App() {
       })
       .filter((diff): diff is SuggestionMoveDiff => diff !== null);
   }, [document, focusTarget, isPreviewingSuggestion, suggestedDocument]);
+
+  useEffect(() => {
+    setNarratives([]);
+    setNarrativeError(null);
+  }, [activeDocumentId]);
+
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const matchedCardIds = useMemo(() => {
     if (!focusedVisibleDocument || normalizedSearchQuery.length === 0) {
@@ -1080,6 +1091,38 @@ export default function App() {
       setIsSuggestingMerges(false);
     }
   }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
+
+  const handleGenerateNarrative = useCallback(async () => {
+    if (!document || isGeneratingNarrative) {
+      return;
+    }
+
+    setIsGeneratingNarrative(true);
+    setNarrativeError(null);
+    setStatusMessage("Generating unreviewed narrative draft...");
+
+    try {
+      const result = await generateNarrative(document, `Narrative ${narratives.length + 1}`);
+      const nextNarrative: NarrativeEntry = {
+        id: crypto.randomUUID(),
+        title: `Narrative ${narratives.length + 1}`,
+        text: result.text,
+        basedOnReadingOrder: result.basedOnReadingOrder,
+        warnings: result.warnings,
+        reviewed: false,
+      };
+
+      setNarratives((previousNarratives) => [...previousNarratives, nextNarrative]);
+      setStatusMessage("Generated unreviewed narrative draft");
+      setNarrativeError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate narrative";
+      setNarrativeError(message);
+      setStatusMessage(message);
+    } finally {
+      setIsGeneratingNarrative(false);
+    }
+  }, [document, isGeneratingNarrative, narratives.length]);
 
   const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
     setMergeSuggestions((previousSuggestions) =>
@@ -3056,6 +3099,15 @@ export default function App() {
           >
             {islandViews}
           </CanvasShell>
+          <NarrativesPanel
+            narratives={narratives}
+            hasReadingOrder={(document?.readingOrder?.length ?? 0) > 0}
+            isGenerating={isGeneratingNarrative}
+            generateError={narrativeError ?? undefined}
+            onGenerateFromReadingOrder={() => {
+              void handleGenerateNarrative();
+            }}
+          />
         </>
       )}
       <div

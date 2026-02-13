@@ -206,3 +206,25 @@ export async function suggestMerges(doc: DocumentV2, instruction?: string): Prom
 
   return { suggestions: body.suggestions };
 }
+
+export type GenerateNarrativeResult = {
+  text: string;
+  basedOnReadingOrder: string[];
+  warnings?: string[];
+};
+
+export async function generateNarrative(doc: DocumentV2, narrativeTitle?: string): Promise<GenerateNarrativeResult> {
+  const response = await fetch(`${API_BASE}/ai/generate-narrative`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, narrativeTitle }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  return (await response.json()) as GenerateNarrativeResult;
+}
