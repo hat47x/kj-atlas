@@ -405,6 +405,7 @@ export default function App() {
   const [hideSourceCards, setHideSourceCards] = useState(true);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
+  const [showReadingOrder, setShowReadingOrder] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -2909,6 +2910,8 @@ export default function App() {
       title="kj-atlas Canvas MVP"
       subtitle={`Document: ${activeDocumentId}`}
       headerViewControls={headerViewControls}
+      showReadingOrder={showReadingOrder}
+      onShowReadingOrderChange={setShowReadingOrder}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
@@ -3160,6 +3163,8 @@ export default function App() {
             selectedEdgeId={selectedEdgeId}
             onEdgeSelect={handleEdgeSelect}
             onAggregatedEdgesChange={setVisibleAggregatedEdges}
+            showReadingOrder={showReadingOrder}
+            visibleIslandIds={visibleIslandIdSet}
           >
             {islandViews}
           </CanvasShell>
