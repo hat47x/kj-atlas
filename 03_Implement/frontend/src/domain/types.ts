@@ -92,7 +92,7 @@ export type NarrativeEntry = {
   title: string;
   text: string;
   createdAt?: string;
-  basedOnReadingOrder: string[];
+  basedOnReadingOrder?: string[];
   reviewed: boolean;
   checks?: NarrativeCheck[];
 };

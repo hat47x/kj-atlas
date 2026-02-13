@@ -124,7 +124,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets);
+    const content = buildNarrativeMarkdown({ ...selectedNarrative, basedOnReadingOrder: selectedNarrative.basedOnReadingOrder ?? [] }, readingOrderSnippets);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.md`, "text/markdown", content);
   };
@@ -134,7 +134,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets);
+    const content = buildNarrativeHtml({ ...selectedNarrative, basedOnReadingOrder: selectedNarrative.basedOnReadingOrder ?? [] }, readingOrderSnippets);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
   };

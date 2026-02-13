@@ -99,7 +99,7 @@ class Narrative(BaseModel):
     title: str
     text: str
     createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
-    basedOnReadingOrder: list[str]
+    basedOnReadingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     reviewed: bool
     checks: list[NarrativeCheck] | None = Field(default=None, exclude_if=lambda value: value is None)
 
