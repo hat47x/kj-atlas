@@ -9,6 +9,11 @@ type ReadingOrderItem = {
   label: string;
 };
 
+type AggregatedEdgeInspectorItem = {
+  id: string;
+  label: string;
+};
+
 type SidePanelProps = {
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
@@ -62,6 +67,8 @@ type SidePanelProps = {
   onAddSelectedItemToReadingOrder: () => void;
   onMoveReadingOrderItem: (index: number, direction: -1 | 1) => void;
   onRemoveReadingOrderItem: (index: number) => void;
+  aggregatedEdgeInspectorItems: AggregatedEdgeInspectorItem[];
+  onPromoteAggregatedEdge: (edgeId: string) => void;
   topContent?: ReactNode;
 };
 
@@ -118,6 +125,8 @@ export function SidePanel({
   onAddSelectedItemToReadingOrder,
   onMoveReadingOrderItem,
   onRemoveReadingOrderItem,
+  aggregatedEdgeInspectorItems,
+  onPromoteAggregatedEdge,
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
@@ -194,6 +203,29 @@ export function SidePanel({
       }}
     >
       {topContent}
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Aggregated edge inspector</div>
+        {aggregatedEdgeInspectorItems.length === 0 ? (
+          <div style={{ fontSize: 12, color: "#64748b" }}>No aggregated edges available.</div>
+        ) : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {aggregatedEdgeInspectorItems.map((item) => (
+              <div key={item.id} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
+                <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{item.label}</div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPromoteAggregatedEdge(item.id);
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  Promote to real edge
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Layout</div>
         <label

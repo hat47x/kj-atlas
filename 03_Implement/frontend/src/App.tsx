@@ -5,6 +5,7 @@ import { ApiError, getDocument, putDocument, suggestLayout, suggestMerges } from
 import { CanvasShell } from "./canvas/CanvasShell";
 import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
+import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
@@ -2250,6 +2251,66 @@ export default function App() {
     });
   }, [document]);
 
+  const aggregatedEdgeInspectorItems = useMemo(() => {
+    if (!document || !hideSourceCards) {
+      return [] as { id: string; label: string }[];
+    }
+
+    const allRenderEdges = getEdgesToRender(document, true);
+
+    return allRenderEdges
+      .filter((edge) => edge.isDerived)
+      .map((edge) => {
+        const fromLabel =
+          edge.fromKind === "island"
+            ? `Island ${edge.fromId}`
+            : (cardsById.get(edge.fromId)?.text ?? edge.fromId);
+        const toLabel =
+          edge.toKind === "island" ? `Island ${edge.toId}` : (cardsById.get(edge.toId)?.text ?? edge.toId);
+
+        return {
+          id: edge.id,
+          label: `${fromLabel} → ${toLabel} (${edge.type})`,
+        };
+      });
+  }, [cardsById, document, hideSourceCards]);
+
+  const handlePromoteAggregatedEdge = useCallback(
+    (aggregateEdgeId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const aggregatedEdge = getEdgesToRender(document, true).find(
+        (edge) => edge.id === aggregateEdgeId && edge.isDerived
+      );
+      if (!aggregatedEdge) {
+        setStatusMessage("Aggregated edge not found");
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          edges: [
+            ...document.edges,
+            {
+              id: crypto.randomUUID(),
+              fromId: aggregatedEdge.fromId,
+              toId: aggregatedEdge.toId,
+              fromKind: aggregatedEdge.fromKind,
+              toKind: aggregatedEdge.toKind,
+              type: aggregatedEdge.type,
+            },
+          ],
+        },
+        "Promoted aggregated edge to real edge"
+      );
+      setStatusMessage("Promoted aggregated edge to real edge");
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleAddSelectedItemToReadingOrder = useCallback(() => {
     if (!document) {
       return;
@@ -2941,6 +3002,8 @@ export default function App() {
           onAddSelectedItemToReadingOrder={handleAddSelectedItemToReadingOrder}
           onMoveReadingOrderItem={handleMoveReadingOrderItem}
           onRemoveReadingOrderItem={handleRemoveReadingOrderItem}
+          aggregatedEdgeInspectorItems={aggregatedEdgeInspectorItems}
+          onPromoteAggregatedEdge={handlePromoteAggregatedEdge}
         />
       }
     >
