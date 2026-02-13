@@ -217,3 +217,39 @@ export async function suggestMerges(doc: DocumentV2, instruction?: string): Prom
 
   return { suggestions: body.suggestions };
 }
+
+export type NarrativeIssueReference = {
+  id: string;
+  kind: "card" | "island";
+};
+
+export type NarrativeIssue = {
+  severity: "info" | "warn" | "error";
+  message: string;
+  references?: NarrativeIssueReference[];
+};
+
+export async function checkNarrative(
+  doc: DocumentV2,
+  narrativeText: string,
+  basedOnReadingOrder?: string[]
+): Promise<{ issues: NarrativeIssue[] }> {
+  const response = await fetch(`${API_BASE}/ai/check-narrative`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, narrativeText, basedOnReadingOrder }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as { issues?: NarrativeIssue[] };
+  if (!Array.isArray(body.issues)) {
+    throw new ApiError(500, "Invalid narrative consistency response");
+  }
+
+  return { issues: body.issues };
+}

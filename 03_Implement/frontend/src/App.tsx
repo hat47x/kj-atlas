@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { ApiError, getDocument, putDocument, suggestLayout, suggestMerges } from "./api/client";
-import { CanvasShell } from "./canvas/CanvasShell";
+import {
+  ApiError,
+  checkNarrative,
+  getDocument,
+  putDocument,
+  suggestLayout,
+  suggestMerges,
+  type NarrativeIssue,
+  type NarrativeIssueReference,
+} from "./api/client";
+import { CanvasShell, getFocusWorldPointForReference } from "./canvas/CanvasShell";
 import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -18,6 +27,7 @@ import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
+import { NarrativesPanel } from "./ui/NarrativesPanel";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 
@@ -395,6 +405,10 @@ export default function App() {
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [narrativeText, setNarrativeText] = useState("");
+  const [narrativeIssues, setNarrativeIssues] = useState<NarrativeIssue[]>([]);
+  const [narrativeCheckError, setNarrativeCheckError] = useState<string | null>(null);
+  const [isCheckingNarrative, setIsCheckingNarrative] = useState(false);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -2182,20 +2196,7 @@ export default function App() {
       return;
     }
 
-    const focusedCards = document.cards.filter((card) => selectedIsland.cardIds.includes(card.id));
-    const nextFocusWorldPoint =
-      focusedCards.length === 0
-        ? null
-        : {
-            x:
-              (Math.min(...focusedCards.map((card) => card.x)) +
-                Math.max(...focusedCards.map((card) => card.x + 220))) /
-              2,
-            y:
-              (Math.min(...focusedCards.map((card) => card.y)) +
-                Math.max(...focusedCards.map((card) => card.y + 80))) /
-              2,
-          };
+    const nextFocusWorldPoint = getFocusWorldPointForReference(document, { id: selectedIsland.id, kind: "island" });
 
     setFocusTarget({ focusIslandId: selectedIsland.id });
     setFocusWorldPoint(nextFocusWorldPoint);
@@ -2207,6 +2208,50 @@ export default function App() {
     setFocusTarget({});
     setFocusWorldPoint(null);
   }, []);
+
+  const handleNarrativeReferenceFocus = useCallback(
+    (reference: NarrativeIssueReference) => {
+      if (!document) {
+        return;
+      }
+
+      const nextFocusWorldPoint = getFocusWorldPointForReference(document, reference);
+      if (!nextFocusWorldPoint) {
+        return;
+      }
+
+      if (reference.kind === "card") {
+        setFocusCardId(reference.id);
+        setFocusTarget({});
+      } else {
+        setFocusCardId(null);
+        setFocusTarget({ focusIslandId: reference.id });
+      }
+      setFocusWorldPoint(nextFocusWorldPoint);
+      suppressNextTransformPersistRef.current = true;
+      setFocusRequestSeq((previousSeq) => previousSeq + 1);
+    },
+    [document]
+  );
+
+  const handleCheckNarrativeConsistency = useCallback(async () => {
+    if (!document || narrativeText.trim().length === 0) {
+      return;
+    }
+
+    setIsCheckingNarrative(true);
+    setNarrativeCheckError(null);
+    try {
+      const result = await checkNarrative(document, narrativeText, document.readingOrder);
+      setNarrativeIssues(result.issues);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+      setNarrativeCheckError(message);
+      setNarrativeIssues([]);
+    } finally {
+      setIsCheckingNarrative(false);
+    }
+  }, [document, narrativeText]);
 
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -2948,6 +2993,17 @@ export default function App() {
           revealedSourceCardIds={revealedSourceCardIds}
           topContent={
             <>
+              <NarrativesPanel
+                narrativeText={narrativeText}
+                onNarrativeTextChange={setNarrativeText}
+                onCheckConsistency={() => {
+                  void handleCheckNarrativeConsistency();
+                }}
+                isChecking={isCheckingNarrative}
+                errorMessage={narrativeCheckError}
+                issues={narrativeIssues}
+                onReferenceClick={handleNarrativeReferenceFocus}
+              />
               <MergeSuggestionsPanel
                 instruction={mergeSuggestionInstruction}
                 onInstructionChange={setMergeSuggestionInstruction}

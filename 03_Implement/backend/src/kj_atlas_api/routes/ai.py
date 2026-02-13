@@ -10,6 +10,10 @@ from kj_atlas_api.llm.provider import (
     ProviderRequestError,
     get_provider,
 )
+from kj_atlas_api.models_ai import (
+    CheckNarrativeRequest,
+    CheckNarrativeResponse,
+)
 from kj_atlas_api.models import (
     Card,
     MergeSuggestion,
@@ -21,6 +25,95 @@ from kj_atlas_api.models import (
 )
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+def _resolve_reading_order(payload: CheckNarrativeRequest) -> list[str]:
+    if payload.basedOnReadingOrder is not None:
+        return payload.basedOnReadingOrder
+    if payload.doc.readingOrder is not None:
+        return payload.doc.readingOrder
+    return []
+
+
+def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
+    cards_by_id = {card.id: card for card in payload.doc.cards}
+    islands_by_id = {island.id: island for island in payload.doc.islands}
+
+    reading_order = _resolve_reading_order(payload)
+    reading_order_lines: list[str] = []
+    for index, item_id in enumerate(reading_order, start=1):
+        if item_id in islands_by_id:
+            island = islands_by_id[item_id]
+            reading_order_lines.append(
+                f'- {index}. island id="{island.id}", title={json.dumps(island.title or "")}, cardIds={json.dumps(island.cardIds)}'
+            )
+        elif item_id in cards_by_id:
+            card = cards_by_id[item_id]
+            reading_order_lines.append(f'- {index}. card id="{card.id}", text={json.dumps(card.text)}')
+        else:
+            reading_order_lines.append(f'- {index}. unknown id="{item_id}"')
+
+    island_lines: list[str] = []
+    for island in payload.doc.islands:
+        island_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+        card_texts = [card.text for card in island_cards]
+        island_lines.append(
+            f'- id="{island.id}", title={json.dumps(island.title or "")}, cardIds={json.dumps(island.cardIds)}, cardTexts={json.dumps(card_texts)}'
+        )
+
+    card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in payload.doc.cards]
+
+    return "\n".join(
+        [
+            "You are performing a best-effort narrative consistency check against a diagram.",
+            "Output is advisory only. Never claim certainty or correctness.",
+            "Return strict JSON only. No markdown. No text outside JSON.",
+            "Identify missing key islands/cards based on reading order.",
+            "Identify contradictions such as reading-order mismatch or narrative claims not supported by any card text.",
+            "Identify ambiguous transitions, e.g. pronouns like it/they/this/that without a clear referent.",
+            "If there are no issues, return {\"issues\":[]}.",
+            "Use this exact schema:",
+            '{"issues":[{"severity":"info|warn|error","message":string,"references":[{"id":string,"kind":"card|island"}]?}]}',
+            "Only include references that exist in the input diagram.",
+            "Narrative text:",
+            payload.narrativeText,
+            "Reading order:",
+            *reading_order_lines,
+            "Islands:",
+            *island_lines,
+            "Cards:",
+            *card_lines,
+        ]
+    )
+
+
+def _parse_narrative_check_response(raw_text: str, source_doc: CheckNarrativeRequest) -> CheckNarrativeResponse:
+    try:
+        parsed = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=422, detail="LLM response must be a JSON object")
+
+    try:
+        response = CheckNarrativeResponse.model_validate(parsed)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid narrative check response payload") from exc
+
+    known_card_ids = {card.id for card in source_doc.doc.cards}
+    known_island_ids = {island.id for island in source_doc.doc.islands}
+
+    for issue in response.issues:
+        if not issue.references:
+            continue
+        for reference in issue.references:
+            if reference.kind == "card" and reference.id not in known_card_ids:
+                raise HTTPException(status_code=422, detail="LLM response included unknown card reference")
+            if reference.kind == "island" and reference.id not in known_island_ids:
+                raise HTTPException(status_code=422, detail="LLM response included unknown island reference")
+
+    return response
 
 
 def _build_prompt(payload: SuggestLayoutRequest) -> str:
@@ -258,3 +351,21 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
 
     suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
     return SuggestMergesResponse(suggestions=suggestions)
+
+
+@router.post("/check-narrative", response_model=CheckNarrativeResponse)
+def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
+    provider = get_provider()
+    try:
+        llm_response = provider.generate(
+            LLMRequest(
+                task="check_narrative",
+                prompt=_build_narrative_check_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ProviderRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return _parse_narrative_check_response(llm_response.raw_text, payload)
