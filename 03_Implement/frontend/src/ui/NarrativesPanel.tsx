@@ -1,9 +1,18 @@
+import { useMemo, useState } from "react";
+
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
+import {
+  buildNarrativeHtml,
+  buildNarrativeMarkdown,
+  downloadTextFile,
+  type ReadingOrderSnippetMap,
+} from "../export/narrative_export";
 
 type NarrativeEntry = {
   id: string;
   title: string;
   text: string;
+  createdAt?: string;
   basedOnReadingOrder: string[];
   reviewed: boolean;
 };
@@ -20,6 +29,7 @@ type NarrativesPanelProps = {
   issues: NarrativeIssue[];
   generatedNarratives: NarrativeEntry[];
   onReferenceClick: (reference: NarrativeIssueReference) => void;
+  readingOrderSnippets?: ReadingOrderSnippetMap;
 };
 
 const severityColorMap: Record<NarrativeIssue["severity"], string> = {
@@ -27,6 +37,13 @@ const severityColorMap: Record<NarrativeIssue["severity"], string> = {
   warn: "#b45309",
   error: "#b91c1c",
 };
+
+function sanitizeFileStem(value: string): string {
+  const trimmed = value.trim().toLowerCase();
+  const normalized = trimmed.length > 0 ? trimmed : "narrative";
+  const sanitized = normalized.replaceAll(/[^a-z0-9-_]+/g, "-").replaceAll(/^-+|-+$/g, "");
+  return sanitized.length > 0 ? sanitized : "narrative";
+}
 
 export function NarrativesPanel({
   narrativeText,
@@ -40,7 +57,42 @@ export function NarrativesPanel({
   issues,
   generatedNarratives,
   onReferenceClick,
+  readingOrderSnippets = {},
 }: NarrativesPanelProps) {
+  const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
+
+  const selectedNarrative = useMemo(() => {
+    if (generatedNarratives.length === 0) {
+      return null;
+    }
+
+    if (selectedNarrativeId) {
+      return generatedNarratives.find((entry) => entry.id === selectedNarrativeId) ?? generatedNarratives[0];
+    }
+
+    return generatedNarratives[0];
+  }, [generatedNarratives, selectedNarrativeId]);
+
+  const handleExportMarkdown = () => {
+    if (!selectedNarrative) {
+      return;
+    }
+
+    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets);
+    const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
+    downloadTextFile(`${fileStem}.md`, "text/markdown", content);
+  };
+
+  const handleExportHtml = () => {
+    if (!selectedNarrative) {
+      return;
+    }
+
+    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets);
+    const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
+    downloadTextFile(`${fileStem}.html`, "text/html", content);
+  };
+
   return (
     <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Narrative (draft)</div>
@@ -73,6 +125,22 @@ export function NarrativesPanel({
         >
           {isGenerating ? "Generating..." : "Generate from Reading Order"}
         </button>
+        <button
+          type="button"
+          onClick={handleExportMarkdown}
+          disabled={!selectedNarrative}
+          style={{ cursor: selectedNarrative ? "pointer" : "not-allowed" }}
+        >
+          Export Markdown
+        </button>
+        <button
+          type="button"
+          onClick={handleExportHtml}
+          disabled={!selectedNarrative}
+          style={{ cursor: selectedNarrative ? "pointer" : "not-allowed" }}
+        >
+          Export HTML
+        </button>
       </div>
       <div style={{ fontSize: 11, color: "#7c2d12", marginBottom: 8 }}>
         Generated draft (unreviewed). Please verify against the diagram.
@@ -80,13 +148,33 @@ export function NarrativesPanel({
       {generationErrorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{generationErrorMessage}</div> : null}
       {generatedNarratives.length > 0 ? (
         <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 8 }}>
-          {generatedNarratives.map((entry) => (
-            <li key={entry.id} style={{ fontSize: 12, color: "#1e293b" }}>
-              <div style={{ fontWeight: 700 }}>{entry.title}</div>
-              <div style={{ fontSize: 11, color: "#b45309" }}>Status: {entry.reviewed ? "reviewed" : "unreviewed"}</div>
-              <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{entry.text}</div>
-            </li>
-          ))}
+          {generatedNarratives.map((entry) => {
+            const isSelected = selectedNarrative?.id === entry.id;
+            return (
+              <li key={entry.id} style={{ fontSize: 12, color: "#1e293b" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNarrativeId(entry.id);
+                  }}
+                  style={{
+                    textAlign: "left",
+                    width: "100%",
+                    border: isSelected ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    background: isSelected ? "#eff6ff" : "#ffffff",
+                    padding: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ fontWeight: 700 }}>{entry.title}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>CreatedAt: {entry.createdAt ?? "(generated at export time)"}</div>
+                  <div style={{ fontSize: 11, color: "#b45309" }}>Status: {entry.reviewed ? "reviewed" : "unreviewed"}</div>
+                  <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{entry.text}</div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}

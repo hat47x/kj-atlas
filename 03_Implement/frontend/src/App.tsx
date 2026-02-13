@@ -21,6 +21,7 @@ import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
 import type { Document, DocumentV2, Island } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
+import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
@@ -55,6 +56,7 @@ type NarrativeEntry = {
   id: string;
   title: string;
   text: string;
+  createdAt?: string;
   basedOnReadingOrder: string[];
   reviewed: boolean;
 };
@@ -2268,6 +2270,7 @@ export default function App() {
           id: crypto.randomUUID(),
           title: `Generated Draft ${draftIndex}`,
           text: result.text,
+          createdAt: new Date().toISOString(),
           basedOnReadingOrder: result.basedOnReadingOrder,
           reviewed: false,
         },
@@ -2284,6 +2287,15 @@ export default function App() {
       setIsGeneratingNarrative(false);
     }
   }, [document, generatedNarratives.length]);
+
+
+  const readingOrderSnippets = useMemo(() => {
+    if (!document) {
+      return {};
+    }
+
+    return buildReadingOrderSnippets(document);
+  }, [document]);
 
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -2945,6 +2957,7 @@ export default function App() {
                 issues={narrativeIssues}
                 generatedNarratives={generatedNarratives}
                 onReferenceClick={handleNarrativeReferenceFocus}
+                readingOrderSnippets={readingOrderSnippets}
               />
               <MergeSuggestionsPanel
                 instruction={mergeSuggestionInstruction}
