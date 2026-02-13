@@ -1,5 +1,14 @@
+from fastapi import HTTPException
+
 from kj_atlas_api.models import CardV2, DocumentV2, EdgeV2, Island, SuggestLayoutRequest, Transform
-from kj_atlas_api.routes.ai import _build_prompt
+from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest
+from kj_atlas_api.routes.ai import (
+    _build_generate_narrative_prompt,
+    _build_narrative_check_prompt,
+    _build_prompt,
+    _parse_generate_narrative_response,
+    _parse_narrative_check_response,
+)
 
 
 def _sample_payload() -> SuggestLayoutRequest:
@@ -58,12 +67,6 @@ def test_build_prompt_omits_critique_when_absent() -> None:
     assert 'id="c1", text="alpha", x=100.0, y=200.0, critique=' not in prompt
     assert 'id="i1", title="group-a", cardIds=["c1", "c2"], bounds=(100.00,200.00)-(260.00,205.00), anchor=(180.00,202.50), critique=' not in prompt
 
-from fastapi import HTTPException
-
-from kj_atlas_api.models_ai import CheckNarrativeRequest
-from kj_atlas_api.routes.ai import _build_narrative_check_prompt, _parse_narrative_check_response
-
-
 def test_build_narrative_check_prompt_includes_required_checks() -> None:
     payload = CheckNarrativeRequest(
         doc=_sample_payload().doc,
@@ -115,11 +118,6 @@ def test_parse_narrative_check_response_rejects_extra_fields() -> None:
         assert exc.status_code == 422
     else:
         raise AssertionError("expected HTTPException")
-
-
-from kj_atlas_api.models_ai import GenerateNarrativeRequest
-from kj_atlas_api.routes.ai import _build_generate_narrative_prompt, _parse_generate_narrative_response
-
 
 def test_build_generate_narrative_prompt_mentions_unreviewed_and_reading_order() -> None:
     payload = GenerateNarrativeRequest(
