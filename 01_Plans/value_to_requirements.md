@@ -142,15 +142,19 @@
 - collapse
   - クラスタ/Island/サブグラフ単位で折りたたみを行えること。
   - 折りたたみ状態はセッション中だけでなく永続化対象として扱うこと。
+  - collapse時に不可視化された要素は削除扱いにせず、表示状態として管理すること。
 - focus
   - 選択対象に対してフォーカスビューへ遷移できること。
   - フォーカス解除で元の俯瞰状態へ可逆に戻れること。
+  - focus中でも元キャンバスの文脈（親クラスタ/近傍関係）へ再接続できる導線を維持すること。
 - depth filter
   - 関係深度（例: 1-hop/2-hop）で表示範囲を制御できること。
   - depth filter は内容を削除せず、表示制御として扱うこと。
+  - depth指定は focus と併用可能で、衝突時の優先順（focus優先）を仕様化すること。
 - peek
   - 折りたたみ中でも要約的なプレビュー（peek）で局所確認できること。
   - peek は確定編集ではなく、文脈確認の軽量操作として定義すること。
+  - peek表示の要約/説明は AI 由来の場合でも `unreviewed` を維持すること。
 
 ### 3.2 Canonicalization requirements（方向性追記）
 
@@ -159,9 +163,11 @@
 - canonical cards
   - canonical card を基準に、候補カードとの対応関係を明示的に保持すること。
   - canonical への採用は常に人間承認ステップを経ること（自動確定禁止）。
+  - canonical/source の両方向参照（canonical→source, source→canonical）を保持すること。
 - source visibility
   - canonical 化後も、元カード（source）の参照経路をUI/データの両面で追跡可能にすること。
   - source 情報の不可視化によって意味差分が失われないよう、差分確認導線を維持すること。
+  - source を非表示にする場合は visibility 状態（visible/hidden/collapsed）を明示保持し、復元可能にすること。
 
 ### 3.3 Non-rect shape requirements（方向性追記）
 
@@ -170,6 +176,7 @@
 - shapes
   - 非矩形（自由形状/丸み/輪郭）を将来型として扱えること。
   - 形状種別追加時に既存矩形データが破壊されないこと。
+  - shape direction（内向き/外向きの輪郭拡張方向）を将来拡張点として予約し、既存保存形式と分離すること。
 - editing
   - 形状の作成・再編集・削除を可逆に行えること。
   - 形状編集はカード内容編集と独立した操作履歴として扱えること。
@@ -179,8 +186,33 @@
 
 ### 3.4 Dependency graph（実装依存の明示）
 
-- `V1/V2/V3 -> W1/W4 -> (future) Non-rect implementation`
-- `W2/W3 -> (future) Merge suggestion workflow`
+- `V1/V2/V3 -> W1/W4 -> F-01 非矩形Island（future_backlog）`
+- `W2/W3 -> F-03 Canonical Cards（future_backlog）`
+- `W1/W2 -> F-02 Collapse/Expand（future_backlog）`
+
+タスクID接続（固定）:
+
+- `V*` は viewpoint controls（collapse/focus/depth/peek）系タスク群を指す。
+- `W*` は canonicalization / merge / visibility 系タスク群を指す。
+- `F-*` は future_backlog 管理ID（`F-01`/`F-02`/`F-03`）に対応する。
+
+#### 3.4.1 V/W → F backlog link matrix（固定）
+
+| Task group | 内容 | Link先 backlog ID |
+|---|---|---|
+| `V1` | collapse 制御 | `F-02` |
+| `V2` | focus 制御 | `F-02` |
+| `V3` | depth/peek 制御 | `F-02` |
+| `W1` | source visibility 制御 | `F-02`, `F-01` |
+| `W2` | merge 提案フロー | `F-03` |
+| `W3` | canonical/source 対応関係保持 | `F-03` |
+| `W4` | 非矩形拡張時の canonical/source 可視性整合 | `F-01` |
+
+#### 3.4.2 運用ルール
+
+- backlog 起票時は、`V*` または `W*` の起点IDと `F-*` の到達IDを同時に記載する。
+- `F-01/F-02/F-03` のいずれかに未接続の `V*`/`W*` タスクは計画未整合として扱う。
+- 依存線を跨ぐスキップ実装（例: `W3` 未完了で `F-03` 実装着手）は禁止する。
 
 上記の依存線を固定し、先行タスク未完了のまま後段機能へ進んで要件が崩れる状態を防ぐ。
 
