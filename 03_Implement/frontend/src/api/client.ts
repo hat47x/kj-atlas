@@ -1,4 +1,4 @@
-import type { Card, Document, DocumentV2, Island } from "../domain/types";
+import type { Card, Document, DocumentV2, Island, Narrative } from "../domain/types";
 
 const API_BASE = "/api";
 
@@ -45,6 +45,16 @@ function normalizeIsland(island: Island): Island {
   };
 }
 
+function normalizeNarrative(narrative: Narrative): Narrative {
+  return {
+    ...narrative,
+    title: typeof narrative.title === "string" ? narrative.title : undefined,
+    basedOnReadingOrder: Array.isArray(narrative.basedOnReadingOrder) ? narrative.basedOnReadingOrder : [],
+    reviewed: typeof narrative.reviewed === "boolean" ? narrative.reviewed : false,
+    notes: typeof narrative.notes === "string" ? narrative.notes : undefined,
+  };
+}
+
 function normalizeDocument(document: Document): Document {
   if (document.version !== 2) {
     return document;
@@ -54,6 +64,7 @@ function normalizeDocument(document: Document): Document {
     ...document,
     cards: document.cards.map(normalizeCard),
     islands: document.islands.map(normalizeIsland),
+    narratives: (document.narratives ?? []).map(normalizeNarrative),
   };
 }
 

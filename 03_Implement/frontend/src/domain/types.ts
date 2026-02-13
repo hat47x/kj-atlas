@@ -91,6 +91,17 @@ export type DocumentV2 = {
   edges: Edge[];
   islands: Island[];
   readingOrder?: string[];
+  narratives?: Narrative[];
+};
+
+export type Narrative = {
+  id: string;
+  title?: string;
+  createdAt: string;
+  basedOnReadingOrder: string[];
+  text: string;
+  reviewed: boolean;
+  notes?: string;
 };
 
 export type Document = DocumentV1 | DocumentV2;

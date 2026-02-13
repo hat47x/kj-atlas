@@ -14,6 +14,7 @@ import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
+import { NarrativesPanel } from "./ui/NarrativesPanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -90,6 +91,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     edges: [],
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -117,6 +119,7 @@ function createNewDocument(docId: string): DocumentV2 {
     ],
     edges: [],
     islands: [],
+    narratives: [],
   };
 }
 
@@ -136,6 +139,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     return {
       ...document,
       readingOrder: document.readingOrder ?? [],
+      narratives: document.narratives ?? [],
     };
   }
 
@@ -144,6 +148,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     version: 2,
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -401,8 +406,16 @@ export default function App() {
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
+  const [isNarrativesPanelOpen, setIsNarrativesPanelOpen] = useState(false);
+  const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
 
   const document = history?.present ?? null;
+  const narratives = document?.narratives ?? [];
+  const selectedNarrative = useMemo(
+    () => narratives.find((narrative) => narrative.id === selectedNarrativeId) ?? narratives[0] ?? null,
+    [narratives, selectedNarrativeId]
+  );
+
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
   const focusedVisibleDocument = useMemo(() => {
@@ -2561,6 +2574,90 @@ export default function App() {
     onNudge: handleNudgeSelection,
   });
 
+
+  const handleCreateNarrative = useCallback(() => {
+    if (!document || isPreviewingSuggestion) {
+      return;
+    }
+
+    const nextNarrative = {
+      id: crypto.randomUUID(),
+      title: `Narrative ${(document.narratives ?? []).length + 1}`,
+      createdAt: new Date().toISOString(),
+      basedOnReadingOrder: [...(document.readingOrder ?? [])],
+      text: "",
+      reviewed: false,
+    };
+
+    applyDocumentChange(
+      {
+        ...document,
+        narratives: [...(document.narratives ?? []), nextNarrative],
+      },
+      "Created narrative"
+    );
+    setSelectedNarrativeId(nextNarrative.id);
+  }, [applyDocumentChange, document, isPreviewingSuggestion]);
+
+  const handleNarrativeTextChange = useCallback(
+    (narrativeId: string, text: string) => {
+      if (!document || isPreviewingSuggestion) {
+        return;
+      }
+
+      const hasTarget = (document.narratives ?? []).some((narrative) => narrative.id === narrativeId);
+      if (!hasTarget) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          narratives: (document.narratives ?? []).map((narrative) =>
+            narrative.id === narrativeId
+              ? {
+                  ...narrative,
+                  text,
+                  reviewed: true,
+                }
+              : narrative
+          ),
+        },
+        "Updated narrative text"
+      );
+    },
+    [applyDocumentChange, document, isPreviewingSuggestion]
+  );
+
+  const handleNarrativeReviewedChange = useCallback(
+    (narrativeId: string, reviewed: boolean) => {
+      if (!document || isPreviewingSuggestion) {
+        return;
+      }
+
+      const hasTarget = (document.narratives ?? []).some((narrative) => narrative.id === narrativeId);
+      if (!hasTarget) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          narratives: (document.narratives ?? []).map((narrative) =>
+            narrative.id === narrativeId
+              ? {
+                  ...narrative,
+                  reviewed,
+                }
+              : narrative
+          ),
+        },
+        "Updated narrative review state"
+      );
+    },
+    [applyDocumentChange, document, isPreviewingSuggestion]
+  );
+
   const headerRight = (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       <button
@@ -2832,7 +2929,19 @@ export default function App() {
       }}
       onExportAfterConflict={handleExport}
       isReloadingAfterConflict={isReloadingDocument}
+      isNarrativesOpen={isNarrativesPanelOpen}
+      onNarrativesOpenChange={setIsNarrativesPanelOpen}
       sidePanel={
+        isNarrativesPanelOpen ? (
+          <NarrativesPanel
+            narratives={narratives}
+            selectedNarrativeId={selectedNarrative?.id ?? null}
+            onSelectNarrative={setSelectedNarrativeId}
+            onNarrativeTextChange={handleNarrativeTextChange}
+            onNarrativeReviewedChange={handleNarrativeReviewedChange}
+            onCreateNarrative={handleCreateNarrative}
+          />
+        ) : (
         <SidePanel
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
@@ -3005,6 +3114,7 @@ export default function App() {
           aggregatedEdgeInspectorItems={aggregatedEdgeInspectorItems}
           onPromoteAggregatedEdge={handlePromoteAggregatedEdge}
         />
+        )
       }
     >
       <input

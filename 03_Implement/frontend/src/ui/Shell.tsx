@@ -13,6 +13,8 @@ type ShellProps = {
   onExportAfterConflict?: () => void;
   isReloadingAfterConflict?: boolean;
   sidePanel?: ReactNode;
+  isNarrativesOpen?: boolean;
+  onNarrativesOpenChange?: (isOpen: boolean) => void;
 };
 
 export function Shell({
@@ -28,6 +30,8 @@ export function Shell({
   onExportAfterConflict,
   isReloadingAfterConflict = false,
   sidePanel,
+  isNarrativesOpen = false,
+  onNarrativesOpenChange,
 }: ShellProps) {
   return (
     <div
@@ -78,6 +82,25 @@ export function Shell({
               </span>
             ) : null}
             {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
+            {onNarrativesOpenChange ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onNarrativesOpenChange(!isNarrativesOpen);
+                }}
+                style={{
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: isNarrativesOpen ? "#e2e8f0" : "#ffffff",
+                  color: "#0f172a",
+                  borderRadius: 6,
+                  padding: "4px 10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {isNarrativesOpen ? "Close Narratives" : "Open Narratives"}
+              </button>
+            ) : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (

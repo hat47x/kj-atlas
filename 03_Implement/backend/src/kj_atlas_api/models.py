@@ -76,6 +76,16 @@ class Island(BaseModel):
         return self
 
 
+class Narrative(BaseModel):
+    id: str
+    title: str | None = None
+    createdAt: datetime
+    basedOnReadingOrder: list[str]
+    text: str
+    reviewed: bool = False
+    notes: str | None = None
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -98,6 +108,7 @@ class DocumentV2(BaseModel):
     edges: list[EdgeV2]
     islands: list[Island]
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

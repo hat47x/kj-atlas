@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Island, Transform } from "./types";
+import type { Card, DocumentV2, Island, Narrative, Transform } from "./types";
 
 type ValidateResult =
   | {
@@ -151,6 +151,40 @@ function parseIslands(value: unknown): Island[] {
   return islands;
 }
 
+function parseNarratives(value: unknown): Narrative[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const narratives: Narrative[] = [];
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    if (typeof item.id !== "string" || typeof item.createdAt !== "string" || typeof item.text !== "string") {
+      continue;
+    }
+
+    const basedOnReadingOrder = Array.isArray(item.basedOnReadingOrder)
+      ? item.basedOnReadingOrder.filter((entry): entry is string => typeof entry === "string")
+      : [];
+
+    narratives.push({
+      id: item.id,
+      title: typeof item.title === "string" ? item.title : undefined,
+      createdAt: parseIsoDate(item.createdAt, new Date().toISOString()),
+      basedOnReadingOrder,
+      text: item.text,
+      reviewed: typeof item.reviewed === "boolean" ? item.reviewed : false,
+      notes: typeof item.notes === "string" ? item.notes : undefined,
+    });
+  }
+
+  return narratives;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -224,6 +258,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       cards,
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
+      narratives: version === 1 ? [] : parseNarratives(value.narratives),
     },
   };
 }
