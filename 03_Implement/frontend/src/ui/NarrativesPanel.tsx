@@ -92,7 +92,7 @@ export function NarrativesPanel({
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Consistency issues (AI-generated, unreviewed)</div>
       {issues.length === 0 ? (
-        <div style={{ fontSize: 12, color: "#64748b" }}>No issues returned.</div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>No issues returned. This is not a correctness guarantee.</div>
       ) : (
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
           {issues.map((issue, index) => (

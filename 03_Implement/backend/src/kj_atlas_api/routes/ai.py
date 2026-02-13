@@ -37,6 +37,19 @@ def _resolve_reading_order(payload: CheckNarrativeRequest) -> list[str]:
     return []
 
 
+def _validate_check_narrative_input(payload: CheckNarrativeRequest) -> None:
+    if payload.narrativeText.strip() == "":
+        raise HTTPException(status_code=422, detail="narrativeText must not be empty")
+
+    if payload.basedOnReadingOrder is None:
+        return
+
+    known_ids = {card.id for card in payload.doc.cards} | {island.id for island in payload.doc.islands}
+    unknown_ids = [item_id for item_id in payload.basedOnReadingOrder if item_id not in known_ids]
+    if unknown_ids:
+        raise HTTPException(status_code=422, detail="basedOnReadingOrder included unknown id")
+
+
 def _build_narrative_check_prompt(payload: CheckNarrativeRequest) -> str:
     cards_by_id = {card.id: card for card in payload.doc.cards}
     islands_by_id = {island.id: island for island in payload.doc.islands}
@@ -450,6 +463,8 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
 
 @router.post("/check-narrative", response_model=CheckNarrativeResponse)
 def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
+    _validate_check_narrative_input(payload)
+
     provider = get_provider()
     try:
         llm_response = provider.generate(

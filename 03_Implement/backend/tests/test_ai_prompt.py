@@ -163,3 +163,53 @@ def test_parse_generate_narrative_response_accepts_exact_reading_order() -> None
 
     assert parsed.text == "draft (unreviewed)"
     assert parsed.basedOnReadingOrder == ["i1", "c2"]
+
+
+def test_validate_check_narrative_input_rejects_blank_text() -> None:
+    from kj_atlas_api.routes.ai import _validate_check_narrative_input
+
+    payload = CheckNarrativeRequest(
+        doc=_sample_payload().doc,
+        narrativeText="ok",
+        basedOnReadingOrder=["i1"],
+    )
+    payload.narrativeText = "   "
+
+    try:
+        _validate_check_narrative_input(payload)
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_validate_check_narrative_input_rejects_unknown_reading_order_id() -> None:
+    from kj_atlas_api.routes.ai import _validate_check_narrative_input
+
+    payload = CheckNarrativeRequest(
+        doc=_sample_payload().doc,
+        narrativeText="text",
+        basedOnReadingOrder=["i1", "unknown"],
+    )
+
+    try:
+        _validate_check_narrative_input(payload)
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_parse_narrative_check_response_rejects_empty_message() -> None:
+    payload = CheckNarrativeRequest(
+        doc=_sample_payload().doc,
+        narrativeText="text",
+        basedOnReadingOrder=["i1"],
+    )
+
+    try:
+        _parse_narrative_check_response('{"issues":[{"severity":"warn","message":""}]}', payload)
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected HTTPException")
