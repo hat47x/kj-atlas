@@ -411,9 +411,14 @@ export default function App() {
       return [] as SuggestionMoveDiff[];
     }
 
-    const baseCardsById = new Map(document.cards.map((card) => [card.id, card]));
+    const scopedBaseDocument = applyFocusScope(document, focusTarget);
+    const scopedSuggestedDocument = applyFocusScope(suggestedDocument, focusTarget);
+    const scopedBaseCardIds = new Set(scopedBaseDocument.cards.map((card) => card.id));
 
-    return suggestedDocument.cards
+    const baseCardsById = new Map(scopedBaseDocument.cards.map((card) => [card.id, card]));
+
+    return scopedSuggestedDocument.cards
+      .filter((card) => scopedBaseCardIds.has(card.id))
       .map((card) => {
         const baseCard = baseCardsById.get(card.id);
         if (!baseCard) {
@@ -436,7 +441,7 @@ export default function App() {
         } satisfies SuggestionMoveDiff;
       })
       .filter((diff): diff is SuggestionMoveDiff => diff !== null);
-  }, [document, isPreviewingSuggestion, suggestedDocument]);
+  }, [document, focusTarget, isPreviewingSuggestion, suggestedDocument]);
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const matchedCardIds = useMemo(() => {
     if (!focusedVisibleDocument || normalizedSearchQuery.length === 0) {

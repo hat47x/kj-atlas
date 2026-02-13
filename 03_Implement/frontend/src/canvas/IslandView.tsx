@@ -243,7 +243,7 @@ function IslandViewComponent({
         {island.collapsed === true ? (
           <button
             type="button"
-            onMouseDown={(event) => {
+            onPointerDown={(event) => {
               event.stopPropagation();
               onPeekStart?.(island.id);
 
