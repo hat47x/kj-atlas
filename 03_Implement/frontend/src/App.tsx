@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 
 import { ApiError, getDocument, putDocument, suggestLayout, suggestMerges } from "./api/client";
 import { CanvasShell } from "./canvas/CanvasShell";
+import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
@@ -397,6 +398,8 @@ export default function App() {
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
 
   const document = history?.present ?? null;
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
@@ -557,6 +560,13 @@ export default function App() {
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
+  const selectedAggregatedEdge = useMemo(() => {
+    if (!selectedEdgeId) {
+      return null;
+    }
+
+    return visibleAggregatedEdges.find((edge) => edge.id === selectedEdgeId) ?? null;
+  }, [selectedEdgeId, visibleAggregatedEdges]);
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(pushRecentDocumentId(docId));
@@ -1196,6 +1206,28 @@ export default function App() {
     importInputRef.current?.click();
   }, []);
 
+  const handleEdgeSelect = useCallback((edgeId: string) => {
+    setSelectedEdgeId(edgeId);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+  }, []);
+
+  const handleRevealSelectedEdgeSources = useCallback(() => {
+    if (!selectedAggregatedEdge) {
+      return;
+    }
+
+    const sourceCardIds = new Set<string>();
+    for (const source of selectedAggregatedEdge.sources) {
+      sourceCardIds.add(source.sourceFromCardId);
+      if (source.sourceToKind === "card") {
+        sourceCardIds.add(source.sourceToId);
+      }
+    }
+
+    setRevealedSourceCardIds(sourceCardIds);
+  }, [selectedAggregatedEdge]);
+
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
       if (!document) {
@@ -1256,6 +1288,7 @@ export default function App() {
     if (isPreviewingSuggestion && isAnnotateOverlayEnabled) {
       setSelectedIslandId(null);
     }
+    setSelectedEdgeId(null);
   }, [
     applyDocumentChange,
     connectEdgeType,
@@ -1280,6 +1313,7 @@ export default function App() {
       return [];
     });
     setSelectedIslandId(null);
+    setSelectedEdgeId(null);
   }, [isPickingEdgeTarget]);
 
   const handleClearSelection = useCallback(() => {
@@ -1297,6 +1331,7 @@ export default function App() {
       return [];
     });
     setSelectedIslandId(null);
+    setSelectedEdgeId(null);
   }, [isPickingEdgeTarget]);
 
   const handleMarqueeSelect = useCallback((cardIds: string[], isShiftPressed: boolean) => {
@@ -1320,6 +1355,7 @@ export default function App() {
 
       return uniqueCardIds;
     });
+    setSelectedEdgeId(null);
   }, [isPickingEdgeTarget]);
 
   const canCreateIsland = selectedCardIds.length > 0;
@@ -2118,7 +2154,14 @@ export default function App() {
     if (isPreviewingSuggestion && isAnnotateOverlayEnabled) {
       setSelectedCardIds([]);
     }
+    setSelectedEdgeId(null);
   }, [handleConnectToTarget, isAnnotateOverlayEnabled, isPickingEdgeTarget, isPreviewingSuggestion]);
+
+  useEffect(() => {
+    if (selectedEdgeId && !visibleAggregatedEdges.some((edge) => edge.id === selectedEdgeId)) {
+      setSelectedEdgeId(null);
+    }
+  }, [selectedEdgeId, visibleAggregatedEdges]);
 
   const handleFocusIsland = useCallback(() => {
     if (!selectedIsland || !document) {
@@ -2867,6 +2910,8 @@ export default function App() {
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
           onSourceCardInspect={handleSourceCardInspect}
           onShowAllSourcesChange={handleShowAllSourcesChange}
+          selectedAggregatedEdge={selectedAggregatedEdge}
+          onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -2942,6 +2987,9 @@ export default function App() {
             focusRequestSeq={focusRequestSeq}
             isPickingEdgeTarget={isPickingEdgeTarget}
             suggestionMoveDiffs={suggestionMoveDiffs}
+            selectedEdgeId={selectedEdgeId}
+            onEdgeSelect={handleEdgeSelect}
+            onAggregatedEdgesChange={setVisibleAggregatedEdges}
           >
             {islandViews}
           </CanvasShell>

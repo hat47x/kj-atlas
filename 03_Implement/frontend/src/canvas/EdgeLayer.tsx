@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import type { MouseEvent } from "react";
 
 import type { RenderEdge } from "../domain/edge_aggregate";
 import type { Card, Island } from "../domain/types";
@@ -14,7 +15,9 @@ type EdgeLayerProps = {
   cards: Card[];
   islands: Island[];
   edges: RenderEdge[];
-  hiddenCardIds?: Set<string>;
+  hiddenCardIds: Set<string>;
+  selectedEdgeId?: string | null;
+  onEdgeSelect?: (edgeId: string) => void;
 };
 
 type CenterPoint = {
@@ -73,7 +76,14 @@ function getDashArray(edge: RenderEdge): string | undefined {
   return undefined;
 }
 
-function EdgeLayerComponent({ cards, islands, edges, hiddenCardIds }: EdgeLayerProps) {
+function EdgeLayerComponent({
+  cards,
+  islands,
+  edges,
+  hiddenCardIds,
+  selectedEdgeId,
+  onEdgeSelect,
+}: EdgeLayerProps) {
   const cardCenterById = useMemo(() => {
     const nextCardCenterById = new Map<string, CenterPoint>();
 
@@ -127,7 +137,7 @@ function EdgeLayerComponent({ cards, islands, edges, hiddenCardIds }: EdgeLayerP
       style={{
         position: "absolute",
         inset: 0,
-        pointerEvents: "none",
+        pointerEvents: "auto",
       }}
     >
       {drawableEdges.map((edge) => {
@@ -138,39 +148,66 @@ function EdgeLayerComponent({ cards, islands, edges, hiddenCardIds }: EdgeLayerP
           return null;
         }
 
-        const midX = (fromCenter.x + toCenter.x) / 2;
-        const midY = (fromCenter.y + toCenter.y) / 2;
+const isSelected = selectedEdgeId === edge.id;
 
-        return (
-          <g key={edge.id}>
-            <line
-              x1={fromCenter.x}
-              y1={fromCenter.y}
-              x2={toCenter.x}
-              y2={toCenter.y}
-              stroke={edge.isDerived ? "#0f766e" : "#64748b"}
-              strokeWidth={edge.isDerived ? 2.5 : 2}
-              vectorEffect="non-scaling-stroke"
-              strokeLinecap="round"
-              strokeDasharray={getDashArray(edge)}
-            />
-            {edge.isDerived && (edge.aggregateCount ?? 0) > 1 ? (
-              <text
-                x={midX}
-                y={midY - 4}
-                fontSize={11}
-                fill="#115e59"
-                textAnchor="middle"
-                vectorEffect="non-scaling-stroke"
-              >
-                ×{edge.aggregateCount}
-              </text>
-            ) : null}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
+const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
+  event.stopPropagation();
+  onEdgeSelect?.(edge.id);
+};
+
+const midX = (fromCenter.x + toCenter.x) / 2;
+const midY = (fromCenter.y + toCenter.y) / 2;
+
+// ベースの線色（main準拠）
+const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
+const selectedStroke = "#2563eb";
+
+return (
+  <g key={edge.id}>
+    {/* 見た目の線 */}
+    <line
+      x1={fromCenter.x}
+      y1={fromCenter.y}
+      x2={toCenter.x}
+      y2={toCenter.y}
+      stroke={isSelected ? selectedStroke : baseStroke}
+      strokeWidth={isSelected ? 3 : edge.isDerived ? 2.5 : 2}
+      vectorEffect="non-scaling-stroke"
+      strokeLinecap="round"
+      strokeDasharray={getDashArray(edge)}
+      pointerEvents="none"
+    />
+
+    {/* クリック/選択用のヒット領域（透明・太め） */}
+    <line
+      x1={fromCenter.x}
+      y1={fromCenter.y}
+      x2={toCenter.x}
+      y2={toCenter.y}
+      stroke="transparent"
+      strokeWidth={10}
+      vectorEffect="non-scaling-stroke"
+      strokeLinecap="round"
+      pointerEvents="stroke"
+      onPointerDown={(event) => {
+        event.stopPropagation();
+      }}
+      onClick={handleEdgeClick}
+    />
+
+    {edge.isDerived && (edge.aggregateCount ?? 0) > 1 ? (
+      <text
+        x={midX}
+        y={midY - 4}
+        fontSize={11}
+        fill="#115e59"
+        textAnchor="middle"
+        vectorEffect="non-scaling-stroke"
+      >
+        ×{edge.aggregateCount}
+      </text>
+    ) : null}
+  </g>
+);
 
 export const EdgeLayer = memo(EdgeLayerComponent);
