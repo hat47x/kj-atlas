@@ -77,7 +77,7 @@ export function Shell({
                 Unsaved changes
               </span>
             ) : null}
-            {headerViewControls}
+            {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
