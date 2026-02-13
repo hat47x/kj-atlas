@@ -7,13 +7,15 @@ import {
   downloadTextFile,
   type ReadingOrderSnippetMap,
 } from "../export/narrative_export";
+import { buildNarrativeGrounding } from "../domain/grounding";
+import type { DocumentV2 } from "../domain/types";
 
 type NarrativeEntry = {
   id: string;
   title: string;
   text: string;
   createdAt?: string;
-  basedOnReadingOrder: string[];
+  basedOnReadingOrder?: string[];
   reviewed: boolean;
 };
 
@@ -30,6 +32,8 @@ type NarrativesPanelProps = {
   generatedNarratives: NarrativeEntry[];
   onReferenceClick: (reference: NarrativeIssueReference) => void;
   readingOrderSnippets?: ReadingOrderSnippetMap;
+  document: DocumentV2;
+  hideSourceCards: boolean;
 };
 
 const severityColorMap: Record<NarrativeIssue["severity"], string> = {
@@ -58,6 +62,8 @@ export function NarrativesPanel({
   generatedNarratives,
   onReferenceClick,
   readingOrderSnippets = {},
+  document,
+  hideSourceCards,
 }: NarrativesPanelProps) {
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
 
@@ -73,12 +79,23 @@ export function NarrativesPanel({
     return generatedNarratives[0];
   }, [generatedNarratives, selectedNarrativeId]);
 
+  const groundingEntries = useMemo(() => {
+    if (!selectedNarrative) {
+      return [];
+    }
+
+    return buildNarrativeGrounding(document, {
+      basedOnReadingOrder: selectedNarrative.basedOnReadingOrder,
+      hideSourceCards,
+    });
+  }, [document, hideSourceCards, selectedNarrative]);
+
   const handleExportMarkdown = () => {
     if (!selectedNarrative) {
       return;
     }
 
-    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets);
+    const content = buildNarrativeMarkdown(selectedNarrative, readingOrderSnippets, groundingEntries);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.md`, "text/markdown", content);
   };
@@ -88,7 +105,7 @@ export function NarrativesPanel({
       return;
     }
 
-    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets);
+    const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
   };
@@ -176,6 +193,51 @@ export function NarrativesPanel({
             );
           })}
         </ul>
+      ) : null}
+      {selectedNarrative ? (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Grounding / Citations</div>
+          {groundingEntries.length === 0 ? (
+            <div style={{ fontSize: 12, color: "#64748b" }}>No grounding entries.</div>
+          ) : (
+            <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+              {groundingEntries.map((entry) => (
+                <li key={`${entry.anchor}-${entry.sourceId}`} style={{ fontSize: 12, color: "#1e293b" }}>
+                  <div style={{ fontWeight: 600 }}>{entry.anchor}</div>
+                  {entry.kind === "missing" ? <div>Missing entry: {entry.sourceId}</div> : null}
+                  {entry.kind === "card" && entry.card ? (
+                    <div>
+                      <div>
+                        Card {entry.card.id} [{entry.card.kind}
+                        {entry.card.kind === "source" ? ` canonicalId: ${entry.card.canonicalId}` : ""}]
+                      </div>
+                      <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || "(empty)"}</div>
+                    </div>
+                  ) : null}
+                  {entry.kind === "island" ? (
+                    <div>
+                      <div>Island: {entry.islandTitle ?? entry.sourceId}</div>
+                      {entry.islandSummaryText ? (
+                        <div style={{ color: "#475569" }}>
+                          Summary{entry.islandSummaryReviewed ? "" : " (unreviewed)"}: {entry.islandSummaryText}
+                        </div>
+                      ) : null}
+                      <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
+                        {(entry.islandMembers ?? []).map((member) => (
+                          <li key={member.id}>
+                            {member.id} [{member.kind}
+                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] — {member.text || "(empty)"}
+                          </li>
+                        ))}
+                        {(entry.islandMembers ?? []).length === 0 ? <li>(no member cards)</li> : null}
+                      </ul>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       ) : null}
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Consistency issues (AI-generated, unreviewed)</div>

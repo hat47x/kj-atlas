@@ -1,10 +1,12 @@
+import type { GroundingEntry } from "../domain/grounding";
+
 export type NarrativeExportItem = {
   id: string;
   title?: string;
   text: string;
   createdAt?: string;
   reviewed: boolean;
-  basedOnReadingOrder: string[];
+  basedOnReadingOrder?: string[];
 };
 
 export type ReadingOrderSnippetMap = Record<string, string | undefined>;
@@ -26,7 +28,7 @@ function formatCreatedAt(createdAt?: string): string {
   return createdAt;
 }
 
-function buildReadingOrderMarkdown(ids: string[], snippets: ReadingOrderSnippetMap): string {
+function buildReadingOrderMarkdown(ids: string[] = [], snippets: ReadingOrderSnippetMap): string {
   if (ids.length === 0) {
     return "_No based-on reading order entries._";
   }
@@ -41,7 +43,7 @@ function buildReadingOrderMarkdown(ids: string[], snippets: ReadingOrderSnippetM
     .join("\n");
 }
 
-function buildReadingOrderHtml(ids: string[], snippets: ReadingOrderSnippetMap): string {
+function buildReadingOrderHtml(ids: string[] = [], snippets: ReadingOrderSnippetMap): string {
   if (ids.length === 0) {
     return "<p><em>No based-on reading order entries.</em></p>";
   }
@@ -60,7 +62,80 @@ function buildReadingOrderHtml(ids: string[], snippets: ReadingOrderSnippetMap):
   return `<ol>\n${items}\n</ol>`;
 }
 
-export function buildNarrativeMarkdown(item: NarrativeExportItem, snippets: ReadingOrderSnippetMap = {}): string {
+function buildGroundingMarkdown(entries: GroundingEntry[]): string {
+  if (entries.length === 0) {
+    return "_No grounding entries._";
+  }
+
+  return entries
+    .map((entry, index) => {
+      if (entry.kind === "missing") {
+        return `${index + 1}. ${entry.anchor} Missing entry: ${entry.sourceId}`;
+      }
+
+      if (entry.kind === "card" && entry.card) {
+        const canonicalLabel = entry.card.kind === "canonical" ? "canonical" : `source (canonicalId: ${entry.card.canonicalId})`;
+        return `${index + 1}. ${entry.anchor} Card ${entry.card.id} [${canonicalLabel}] — ${entry.card.text || "(empty)"}`;
+      }
+
+      const members = (entry.islandMembers ?? [])
+        .map((member) => {
+          const canonicalLabel =
+            member.kind === "canonical" ? "canonical" : `source (canonicalId: ${member.canonicalId})`;
+          return `   - ${member.id} [${canonicalLabel}] — ${member.text || "(empty)"}`;
+        })
+        .join("\n");
+      const summary = entry.islandSummaryText
+        ? `\n   - Summary${entry.islandSummaryReviewed ? "" : " (unreviewed)"}: ${entry.islandSummaryText}`
+        : "";
+
+      return `${index + 1}. ${entry.anchor} Island ${entry.islandTitle}\n${members || "   - (no member cards)"}${summary}`;
+    })
+    .join("\n");
+}
+
+function buildGroundingHtml(entries: GroundingEntry[]): string {
+  if (entries.length === 0) {
+    return "<p><em>No grounding entries.</em></p>";
+  }
+
+  return `<ol>${entries
+    .map((entry) => {
+      if (entry.kind === "missing") {
+        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Missing entry: <code>${escapeHtml(entry.sourceId)}</code></li>`;
+      }
+
+      if (entry.kind === "card" && entry.card) {
+        const canonicalLabel =
+          entry.card.kind === "canonical"
+            ? "canonical"
+            : `source (canonicalId: ${escapeHtml(entry.card.canonicalId ?? "")})`;
+        return `<li><strong>${escapeHtml(entry.anchor)}</strong> Card <code>${escapeHtml(entry.card.id)}</code> [${canonicalLabel}] — ${escapeHtml(entry.card.text || "(empty)")}</li>`;
+      }
+
+      const members = (entry.islandMembers ?? [])
+        .map((member) => {
+          const canonicalLabel =
+            member.kind === "canonical"
+              ? "canonical"
+              : `source (canonicalId: ${escapeHtml(member.canonicalId ?? "")})`;
+          return `<li><code>${escapeHtml(member.id)}</code> [${canonicalLabel}] — ${escapeHtml(member.text || "(empty)")}</li>`;
+        })
+        .join("");
+      const summary = entry.islandSummaryText
+        ? `<div>Summary${entry.islandSummaryReviewed ? "" : " (unreviewed)"}: ${escapeHtml(entry.islandSummaryText)}</div>`
+        : "";
+
+      return `<li><strong>${escapeHtml(entry.anchor)}</strong> Island ${escapeHtml(entry.islandTitle ?? entry.sourceId)}<ul>${members || "<li>(no member cards)</li>"}</ul>${summary}</li>`;
+    })
+    .join("")}</ol>`;
+}
+
+export function buildNarrativeMarkdown(
+  item: NarrativeExportItem,
+  snippets: ReadingOrderSnippetMap = {},
+  groundingEntries: GroundingEntry[] = []
+): string {
   const lines: string[] = [];
 
   if (item.reviewed) {
@@ -76,12 +151,17 @@ export function buildNarrativeMarkdown(item: NarrativeExportItem, snippets: Read
 
   lines.push(`CreatedAt: ${formatCreatedAt(item.createdAt)}`, "");
   lines.push("## Narrative", "", item.text.trim().length > 0 ? item.text : "", "");
-  lines.push("## BasedOnReadingOrder", "", buildReadingOrderMarkdown(item.basedOnReadingOrder, snippets));
+  lines.push("## BasedOnReadingOrder", "", buildReadingOrderMarkdown(item.basedOnReadingOrder ?? [], snippets));
+  lines.push("", "## Grounding / Citations", "", buildGroundingMarkdown(groundingEntries));
 
   return lines.join("\n");
 }
 
-export function buildNarrativeHtml(item: NarrativeExportItem, snippets: ReadingOrderSnippetMap = {}): string {
+export function buildNarrativeHtml(
+  item: NarrativeExportItem,
+  snippets: ReadingOrderSnippetMap = {},
+  groundingEntries: GroundingEntry[] = []
+): string {
   const title = item.title && item.title.trim().length > 0 ? item.title.trim() : "Narrative Export";
   const reviewBlock = item.reviewed
     ? '<div class="reviewed">Reviewed by human</div>'
@@ -111,7 +191,9 @@ export function buildNarrativeHtml(item: NarrativeExportItem, snippets: ReadingO
   <h2>Narrative</h2>
   <div class="narrative">${escapeHtml(item.text)}</div>
   <h2>BasedOnReadingOrder</h2>
-  ${buildReadingOrderHtml(item.basedOnReadingOrder, snippets)}
+  ${buildReadingOrderHtml(item.basedOnReadingOrder ?? [], snippets)}
+  <h2>Grounding / Citations</h2>
+  ${buildGroundingHtml(groundingEntries)}
 </body>
 </html>`;
 }
