@@ -25,6 +25,13 @@ type DragState = {
   mode: "pan" | "marquee";
 };
 
+type RenderEdge = {
+  id: string;
+  fromId: string;
+  toId: string;
+  type: EdgeType;
+};
+
 type CanvasShellProps = {
   document: DocumentV2;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
@@ -286,13 +293,18 @@ export function CanvasShell({
     return Array.from(grouped.values());
   }, [document.cards, document.edges]);
 
-  const visibleEdges = useMemo(() => {
+  const visibleEdges = useMemo<RenderEdge[]>(() => {
     if (showCanonicalOnlyEdges) {
       return aggregatedEdges.filter(
         (edge) => edge.fromKind === "canonical" && edge.toKind === "canonical" &&
           visibleCardIdSet.has(edge.fromId) &&
           visibleCardIdSet.has(edge.toId)
-      );
+      ).map((edge) => ({
+        id: edge.id,
+        fromId: edge.fromId,
+        toId: edge.toId,
+        type: edge.type,
+      }));
     }
 
     return document.edges
