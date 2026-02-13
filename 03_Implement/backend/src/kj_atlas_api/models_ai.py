@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from kj_atlas_api.models import DocumentV2
 
@@ -16,7 +16,7 @@ class NarrativeIssue(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     severity: Literal["info", "warn", "error"]
-    message: str
+    message: str = Field(min_length=1)
     references: list[NarrativeIssueReference] | None = None
 
 
@@ -24,7 +24,7 @@ class CheckNarrativeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     doc: DocumentV2
-    narrativeText: str
+    narrativeText: str = Field(min_length=1)
     basedOnReadingOrder: list[str] | None = None
 
 
