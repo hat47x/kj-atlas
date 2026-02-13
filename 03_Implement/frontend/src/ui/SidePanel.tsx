@@ -746,19 +746,26 @@ export function SidePanel({
             <>
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{selectedCardLabel}</div>
               {selectedCard.canonicalId ? (
-                <div
-                  style={{
-                    marginBottom: 12,
-                    padding: "6px 8px",
-                    borderRadius: 6,
-                    border: "1px solid #cbd5e1",
-                    fontSize: 12,
-                    color: "#334155",
-                    backgroundColor: "#f8fafc",
-                  }}
-                >
-                  canonicalId: {selectedCard.canonicalId}
-                </div>
+                <>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                    canonicalId
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={selectedCard.canonicalId}
+                    style={{
+                      width: "100%",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 6,
+                      padding: "6px 8px",
+                      boxSizing: "border-box",
+                      marginBottom: 12,
+                      backgroundColor: "#f8fafc",
+                      color: "#334155",
+                    }}
+                  />
+                </>
               ) : null}
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note

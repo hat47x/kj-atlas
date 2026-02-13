@@ -243,25 +243,15 @@ function IslandViewComponent({
         {island.collapsed === true ? (
           <button
             type="button"
-            onPointerDown={(event) => {
+            onMouseDown={(event) => {
               event.stopPropagation();
-              event.currentTarget.setPointerCapture(event.pointerId);
               onPeekStart?.(island.id);
             }}
-            onPointerUp={(event) => {
+            onMouseUp={(event) => {
               event.stopPropagation();
-              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }
               onPeekEnd?.();
             }}
-            onPointerCancel={(event) => {
-              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }
-              onPeekEnd?.();
-            }}
-            onLostPointerCapture={() => {
+            onMouseLeave={() => {
               onPeekEnd?.();
             }}
             onDoubleClick={(event) => {

@@ -36,7 +36,6 @@ type CanvasShellProps = {
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
   showCanonicalOnlyEdges?: boolean;
-  peekCardIds?: Set<string>;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -84,7 +83,6 @@ export function CanvasShell({
   hiddenCardIds,
   hideSourceCards = false,
   showCanonicalOnlyEdges = false,
-  peekCardIds,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -227,15 +225,6 @@ export function CanvasShell({
       edges = edges.filter(
         (edge) => canonicalCardIdSet.has(edge.fromId) && canonicalCardIdSet.has(edge.toId)
       );
-    }
-
-    // peek がある場合は、peek 同士のエッジだけ残す（main 仕様）
-    if (peekCardIds && peekCardIds.size > 0) {
-      edges = edges.filter((edge) => {
-        const fromIsPeekCard = peekCardIds.has(edge.fromId);
-        const toIsPeekCard = peekCardIds.has(edge.toId);
-        return (!fromIsPeekCard && !toIsPeekCard) || (fromIsPeekCard && toIsPeekCard);
-      });
     }
 
     return edges;
