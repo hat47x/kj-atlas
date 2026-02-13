@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
 import { getEdgesToRender } from "../domain/edge_aggregate";
-import { isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
+import { isCanonicalCard, isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
@@ -246,6 +246,10 @@ export function CanvasShell({
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
+  const canonicalCardIdSet = useMemo(
+    () => new Set(document.cards.filter((card) => isCanonicalCard(card)).map((card) => card.id)),
+    [document.cards]
+  );
 
   const aggregatedEdges = useMemo(() => {
     const cardsById = new Map(document.cards.map((card) => [card.id, card]));
