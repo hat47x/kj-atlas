@@ -4,6 +4,7 @@ import type { ChangeEvent } from "react";
 import {
   ApiError,
   checkNarrative,
+  generateNarrative,
   getDocument,
   putDocument,
   suggestLayout,
@@ -48,6 +49,14 @@ type MergeSuggestionDraft = {
   rationale?: string;
   editedText: string;
   isEdited: boolean;
+};
+
+type NarrativeEntry = {
+  id: string;
+  title: string;
+  text: string;
+  basedOnReadingOrder: string[];
+  reviewed: boolean;
 };
 
 type EdgeEndpointKind = "card" | "island";
@@ -404,6 +413,9 @@ export default function App() {
   const [narrativeIssues, setNarrativeIssues] = useState<NarrativeIssue[]>([]);
   const [narrativeCheckError, setNarrativeCheckError] = useState<string | null>(null);
   const [isCheckingNarrative, setIsCheckingNarrative] = useState(false);
+  const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
+  const [generatedNarratives, setGeneratedNarratives] = useState<NarrativeEntry[]>([]);
+  const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -2240,6 +2252,39 @@ export default function App() {
     }
   }, [document, narrativeText]);
 
+  const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
+    if (!document) {
+      return;
+    }
+
+    setIsGeneratingNarrative(true);
+    setNarrativeGenerationError(null);
+    try {
+      const draftIndex = generatedNarratives.length + 1;
+      const result = await generateNarrative(document, `Draft ${draftIndex}`);
+      setGeneratedNarratives((previous) => [
+        ...previous,
+        {
+          id: crypto.randomUUID(),
+          title: `Generated Draft ${draftIndex}`,
+          text: result.text,
+          basedOnReadingOrder: result.basedOnReadingOrder,
+          reviewed: false,
+        },
+      ]);
+      setNarrativeText(result.text);
+      setNarrativeIssues([]);
+      if (result.warnings && result.warnings.length > 0) {
+        setNarrativeGenerationError(result.warnings.join(" "));
+      }
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Failed to generate narrative";
+      setNarrativeGenerationError(message);
+    } finally {
+      setIsGeneratingNarrative(false);
+    }
+  }, [document, generatedNarratives.length]);
+
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
       return null;
@@ -2890,9 +2935,15 @@ export default function App() {
                 onCheckConsistency={() => {
                   void handleCheckNarrativeConsistency();
                 }}
+                onGenerateFromReadingOrder={() => {
+                  void handleGenerateNarrativeFromReadingOrder();
+                }}
                 isChecking={isCheckingNarrative}
+                isGenerating={isGeneratingNarrative}
                 errorMessage={narrativeCheckError}
+                generationErrorMessage={narrativeGenerationError}
                 issues={narrativeIssues}
+                generatedNarratives={generatedNarratives}
                 onReferenceClick={handleNarrativeReferenceFocus}
               />
               <MergeSuggestionsPanel
