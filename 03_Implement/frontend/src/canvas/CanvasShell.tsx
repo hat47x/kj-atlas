@@ -7,6 +7,7 @@ import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
 import { Marquee } from "./Marquee";
+import { ReadingOrderLayer } from "./ReadingOrderLayer";
 import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 
@@ -91,6 +92,8 @@ type CanvasShellProps = {
   selectedEdgeId?: string | null;
   onEdgeSelect?: (edgeId: string) => void;
   onAggregatedEdgesChange?: (edges: AggregatedEdgeMeta[]) => void;
+  showReadingOrder?: boolean;
+  visibleIslandIds?: Set<string>;
   children?: ReactNode;
 };
 
@@ -159,6 +162,8 @@ export function CanvasShell({
   selectedEdgeId,
   onEdgeSelect,
   onAggregatedEdgesChange,
+  showReadingOrder = false,
+  visibleIslandIds,
   children,
 }: CanvasShellProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -265,6 +270,7 @@ export function CanvasShell({
   const revealedCardIdSet = revealCardIds ?? peekCardIds ?? emptyIdSet;
 
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
+  const visibleIslandIdSet = visibleIslandIds ?? emptyIdSet;
   const isCardHidden = useCallback(
     (cardId: string) => hiddenCardIdSet.has(cardId) || (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
     [hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]
@@ -585,6 +591,25 @@ export function CanvasShell({
           hiddenCardIds={hiddenEndpointIdSet}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
+        {showReadingOrder ? (
+          <ReadingOrderLayer
+            cards={document.cards}
+            islands={document.islands}
+            readingOrder={document.readingOrder ?? []}
+            visibleCardIdSet={visibleCardIdSet}
+            visibleIslandIdSet={visibleIslandIdSet}
+            onItemFocus={(_entryId, _kind, worldPoint) => {
+              const viewport = viewportRef.current;
+              if (!viewport) {
+                return;
+              }
+
+              setTransform((previousTransform) =>
+                focusTransformAtWorldPoint(previousTransform, worldPoint, viewport.clientWidth, viewport.clientHeight)
+              );
+            }}
+          />
+        ) : null}
         {children}
         {visibleCards.map((card) => {
           return (

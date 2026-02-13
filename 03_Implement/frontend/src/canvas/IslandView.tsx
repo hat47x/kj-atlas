@@ -8,8 +8,8 @@ const CARD_MIN_HEIGHT = 80;
 const ISLAND_PADDING = 24;
 const ISLAND_HEADER_HEIGHT = 24;
 const ISLAND_HEADER_HEIGHT_WITH_SUMMARY = 70;
-const ISLAND_TITLE_MARGIN_LEFT = 10;
-const ISLAND_TITLE_MARGIN_TOP = 6;
+export const ISLAND_TITLE_MARGIN_LEFT = 10;
+export const ISLAND_TITLE_MARGIN_TOP = 6;
 
 type IslandViewProps = {
   island: Island;
@@ -68,7 +68,7 @@ const EDGE_HITBOXES: EdgeHitbox[] = [
   },
 ];
 
-function getIslandBounds(island: Island, cards: Card[]) {
+export function getIslandBounds(island: Island, cards: Card[]) {
   const islandCards = cards.filter((card) => island.cardIds.includes(card.id));
   if (islandCards.length === 0) {
     return null;
