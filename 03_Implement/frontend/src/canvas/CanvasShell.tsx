@@ -35,6 +35,8 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  /** @deprecated Use revealCardIds. */
+  peekCardIds?: Set<string>;
   revealCardIds?: Set<string>;
   showCanonicalOnlyEdges?: boolean;
   searchQuery?: string;
@@ -83,6 +85,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = true,
+  peekCardIds,
   revealCardIds,
   showCanonicalOnlyEdges = false,
   searchQuery = "",
@@ -196,7 +199,7 @@ export function CanvasShell({
         .map((card) => card.id)
     );
   }, [document.cards, hideSourceCards, emptyIdSet]);
-  const revealedCardIdSet = revealCardIds ?? emptyIdSet;
+  const revealedCardIdSet = revealCardIds ?? peekCardIds ?? emptyIdSet;
 
   const canonicalCardIdSet = useMemo(() => {
     return new Set(
