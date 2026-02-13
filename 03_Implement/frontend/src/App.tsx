@@ -380,7 +380,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
-  const [hideSourceCards, setHideSourceCards] = useState(false);
+  const [hideSourceCards, setHideSourceCards] = useState(true);
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -2616,7 +2616,7 @@ export default function App() {
   );
 
   const headerViewControls = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <label htmlFor="max-depth-select" style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
         Depth
       </label>
@@ -2648,6 +2648,28 @@ export default function App() {
           </option>
         ))}
       </select>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 12,
+          color: "#334155",
+          fontWeight: 500,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={hideSourceCards}
+          onChange={(event) => {
+            setHideSourceCards(event.target.checked);
+          }}
+        />
+        Canonical view
+      </label>
+      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>
+        Hide source cards (cards with canonicalId) and their edges.
+      </span>
     </div>
   );
 

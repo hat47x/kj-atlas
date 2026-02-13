@@ -81,7 +81,7 @@ export function CanvasShell({
   onMarqueeSelect,
   onTransformChange,
   hiddenCardIds,
-  hideSourceCards = false,
+  hideSourceCards = true,
   showCanonicalOnlyEdges = false,
   searchQuery = "",
   matchedCardIds,
@@ -209,6 +209,8 @@ export function CanvasShell({
     [hiddenCardIdSet, sourceCardIdSet]
   );
 
+  const hiddenEndpointIdSet = useMemo(() => new Set([...hiddenCardIdSet, ...sourceCardIdSet]), [hiddenCardIdSet, sourceCardIdSet]);
+
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
@@ -228,7 +230,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [document.edges, peekCardIds, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
+  }, [document.edges, showCanonicalOnlyEdges, canonicalCardIdSet, visibleCardIdSet]);
 
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
@@ -453,7 +455,7 @@ export function CanvasShell({
           transformOrigin: "0 0",
         }}
       >
-        <EdgeLayer cards={visibleCards} edges={visibleEdges} />
+        <EdgeLayer cards={visibleCards} edges={visibleEdges} hiddenCardIds={hiddenEndpointIdSet} />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {children}
         {visibleCards.map((card) => {

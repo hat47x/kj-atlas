@@ -11,6 +11,7 @@ const WORLD_SIZE = WORLD_HALF_SIZE * 2;
 type EdgeLayerProps = {
   cards: Card[];
   edges: Edge[];
+  hiddenCardIds?: Set<string>;
 };
 
 type CardCenter = {
@@ -25,7 +26,7 @@ function getCardCenter(card: Card): CardCenter {
   };
 }
 
-function EdgeLayerComponent({ cards, edges }: EdgeLayerProps) {
+function EdgeLayerComponent({ cards, edges, hiddenCardIds }: EdgeLayerProps) {
   const cardCenterById = useMemo(() => {
     const nextCardCenterById = new Map<string, CardCenter>();
 
@@ -37,8 +38,14 @@ function EdgeLayerComponent({ cards, edges }: EdgeLayerProps) {
   }, [cards]);
 
   const drawableEdges = useMemo(() => {
-    return edges.filter((edge) => cardCenterById.has(edge.fromId) && cardCenterById.has(edge.toId));
-  }, [cardCenterById, edges]);
+    return edges.filter((edge) => {
+      if (hiddenCardIds?.has(edge.fromId) || hiddenCardIds?.has(edge.toId)) {
+        return false;
+      }
+
+      return cardCenterById.has(edge.fromId) && cardCenterById.has(edge.toId);
+    });
+  }, [cardCenterById, edges, hiddenCardIds]);
 
   return (
     <svg
