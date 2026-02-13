@@ -472,14 +472,6 @@ export default function App() {
     peekIslandId,
   ]);
 
-  const peekCardIdSet = useMemo(() => {
-    if (!peekIslandId || !focusedVisibleDocument) {
-      return undefined;
-    }
-
-    const peekIsland = focusedVisibleDocument.islands.find((island) => island.id === peekIslandId);
-    return peekIsland ? new Set(peekIsland.cardIds) : undefined;
-  }, [focusedVisibleDocument, peekIslandId]);
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
@@ -1795,6 +1787,21 @@ export default function App() {
   }, [focusedVisibleDocument, peekIslandId]);
 
   useEffect(() => {
+    if (!peekIslandId) {
+      return;
+    }
+
+    const clearPeek = () => {
+      setPeekIslandId(undefined);
+    };
+
+    window.addEventListener("mouseup", clearPeek);
+    return () => {
+      window.removeEventListener("mouseup", clearPeek);
+    };
+  }, [peekIslandId]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const usesShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "g";
       if (!usesShortcut || !canCreateIsland) {
@@ -2760,7 +2767,6 @@ export default function App() {
             hiddenCardIds={hiddenCardIdSet}
             hideSourceCards={hideSourceCards}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
-            peekCardIds={peekCardIdSet}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
