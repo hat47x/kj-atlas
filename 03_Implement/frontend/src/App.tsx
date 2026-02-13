@@ -1993,7 +1993,7 @@ export default function App() {
       <IslandView
         key={island.id}
         island={island}
-        cards={visibleDocument.cards}
+        cards={focusedVisibleDocument.cards}
         isSelected={selectedIslandId === island.id}
         zIndex={index}
         onSelect={handleIslandSelect}
@@ -2001,7 +2001,7 @@ export default function App() {
         isPickingEdgeTarget={isPickingEdgeTarget}
       />
     ));
-  }, [focusedVisibleDocument, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, selectedIslandId, visibleDocument.cards, visibleIslands]);
+  }, [focusedVisibleDocument, handleIslandCollapsedChange, handleIslandSelect, isPickingEdgeTarget, selectedIslandId, visibleIslands]);
 
   const readingOrderItems = useMemo(() => {
     if (!document) {
