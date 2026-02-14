@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { PointerEvent } from "react";
 
@@ -32,6 +32,8 @@ export type ReadingOrderMarker = {
 const CARD_BADGE_OFFSET_X = 8;
 const CARD_BADGE_OFFSET_Y = 8;
 const BADGE_SIZE = 24;
+const DRAG_ACTIVATION_DISTANCE = 4;
+const DROP_NEAR_DISTANCE = 42;
 
 export function buildReadingOrderMarkers(
   cards: Card[],
@@ -98,6 +100,10 @@ export function ReadingOrderLayer({
   onReorderEntry,
 }: ReadingOrderLayerProps) {
   const [draggingEntryId, setDraggingEntryId] = useState<string | null>(null);
+  const dragStartPointRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = useRef(false);
+  const suppressClickRef = useRef(false);
+
   const markers = useMemo(
     () => buildReadingOrderMarkers(cards, islands, readingOrder, visibleCardIdSet, visibleIslandIdSet),
     [cards, islands, readingOrder, visibleCardIdSet, visibleIslandIdSet]
@@ -153,6 +159,8 @@ export function ReadingOrderLayer({
               return;
             }
 
+            dragStartPointRef.current = { x: event.clientX, y: event.clientY };
+            didDragRef.current = false;
             setDraggingEntryId(marker.entryId);
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
@@ -161,6 +169,13 @@ export function ReadingOrderLayer({
               return;
             }
 
+            const dragStart = dragStartPointRef.current;
+            if (dragStart) {
+              const dragDistance = Math.hypot(event.clientX - dragStart.x, event.clientY - dragStart.y);
+              if (dragDistance >= DRAG_ACTIVATION_DISTANCE) {
+                didDragRef.current = true;
+              }
+            }
             event.stopPropagation();
           }}
           onPointerUp={(event: PointerEvent<HTMLButtonElement>) => {
@@ -174,28 +189,60 @@ export function ReadingOrderLayer({
               event.currentTarget.releasePointerCapture(event.pointerId);
             }
 
-            const dropTarget = document
-              .elementFromPoint(event.clientX, event.clientY)
-              ?.closest("[data-reading-order-entry-id]") as HTMLElement | null;
-            const targetEntryId = dropTarget?.dataset.readingOrderEntryId;
+            suppressClickRef.current = didDragRef.current;
 
-            if (targetEntryId && targetEntryId !== marker.entryId) {
-              const targetRect = dropTarget.getBoundingClientRect();
-              const position: ReadingOrderDropPosition =
-                event.clientX < targetRect.left + targetRect.width / 2 ? "before" : "after";
-              onReorderEntry?.(marker.entryId, targetEntryId, position);
+            if (didDragRef.current) {
+              const allBadgeElements = Array.from(
+                document.querySelectorAll<HTMLElement>("[data-reading-order-entry-id]")
+              ).filter((element) => element.dataset.readingOrderEntryId !== marker.entryId);
+
+              let closestBadge: HTMLElement | null = null;
+              let closestDistance = Number.POSITIVE_INFINITY;
+
+              for (const candidate of allBadgeElements) {
+                const rect = candidate.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
+
+                if (distance < closestDistance) {
+                  closestDistance = distance;
+                  closestBadge = candidate;
+                }
+              }
+
+              if (closestBadge && closestDistance <= DROP_NEAR_DISTANCE) {
+                const targetEntryId = closestBadge.dataset.readingOrderEntryId;
+                if (targetEntryId) {
+                  const targetRect = closestBadge.getBoundingClientRect();
+                  const position: ReadingOrderDropPosition =
+                    event.clientX < targetRect.left + targetRect.width / 2 ? "before" : "after";
+                  onReorderEntry?.(marker.entryId, targetEntryId, position);
+                }
+              }
             }
 
+            dragStartPointRef.current = null;
+            didDragRef.current = false;
             setDraggingEntryId(null);
           }}
           onPointerCancel={() => {
+            dragStartPointRef.current = null;
+            didDragRef.current = false;
+            suppressClickRef.current = false;
             setDraggingEntryId(null);
           }}
           onClick={(event) => {
             event.stopPropagation();
 
             if (isEditMode && event.altKey) {
+              suppressClickRef.current = false;
               onRemoveEntry?.(marker.entryId);
+              return;
+            }
+
+            if (isEditMode && suppressClickRef.current) {
+              suppressClickRef.current = false;
               return;
             }
 
