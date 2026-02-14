@@ -59,14 +59,23 @@ export type Point = {
   y: number;
 };
 
-export type IslandShape = {
-  kind: "rect" | "polygon";
-  points?: Point[];
-  generatedFrom?: {
-    cardIds: string[];
-    versionToken: string;
-  };
+export type IslandShapeGeneratedFrom = {
+  cardIds: string[];
+  versionToken: string;
 };
+
+export type RectIslandShape = {
+  kind: "rect";
+  generatedFrom?: IslandShapeGeneratedFrom;
+};
+
+export type PolygonIslandShape = {
+  kind: "polygon";
+  points: Point[];
+  generatedFrom?: IslandShapeGeneratedFrom;
+};
+
+export type IslandShape = RectIslandShape | PolygonIslandShape;
 
 export type Island = {
   id: string;

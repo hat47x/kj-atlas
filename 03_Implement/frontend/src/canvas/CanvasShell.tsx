@@ -2,12 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
 import { getEdgesToRender } from "../domain/edge_aggregate";
-import { isCanonicalCard, isSourceCard, type DocumentV2, type EdgeType, type Transform } from "../domain/types";
+import {
+  isCanonicalCard,
+  isSourceCard,
+  type DocumentV2,
+  type EdgeType,
+  type Point,
+  type Transform,
+} from "../domain/types";
 import { applyPan, applyZoomAtScreenPoint } from "./transform";
 import { CardView } from "./CardView";
 import { EdgeLayer } from "./EdgeLayer";
 import { Marquee } from "./Marquee";
 import { ReadingOrderLayer } from "./ReadingOrderLayer";
+import { PolygonEditLayer } from "./PolygonEditLayer";
 import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
@@ -107,6 +115,8 @@ type CanvasShellProps = {
   onReadingOrderRemove?: (entryId: string) => void;
   onReadingOrderReorder?: (entryId: string, targetEntryId: string, position: ReadingOrderDropPosition) => void;
   visibleIslandIds?: Set<string>;
+  polygonVertexEditIslandId?: string | null;
+  onPolygonVertexMove?: (islandId: string, vertexIndex: number, point: Point) => void;
   children?: ReactNode;
 };
 
@@ -183,6 +193,8 @@ export function CanvasShell({
   onReadingOrderRemove,
   onReadingOrderReorder,
   visibleIslandIds,
+  polygonVertexEditIslandId = null,
+  onPolygonVertexMove,
   children,
 }: CanvasShellProps) {
   const effectiveHideSourceCards = viewState?.hideSourceCards ?? hideSourceCards;
@@ -610,6 +622,19 @@ export function CanvasShell({
     clearDragState(event);
   };
 
+  const polygonVertexEditShape = useMemo(() => {
+    if (!polygonVertexEditIslandId) {
+      return null;
+    }
+
+    const targetIsland = document.islands.find((island) => island.id === polygonVertexEditIslandId);
+    if (!targetIsland || targetIsland.shape?.kind !== "polygon") {
+      return null;
+    }
+
+    return targetIsland.shape;
+  }, [document.islands, polygonVertexEditIslandId]);
+
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault();
 
@@ -697,6 +722,24 @@ export function CanvasShell({
           />
         ) : null}
         {children}
+        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexMove ? (
+          <PolygonEditLayer
+            points={polygonVertexEditShape.points}
+            onVertexMove={(vertexIndex, screenPoint) => {
+              const viewport = viewportRef.current;
+              if (!viewport) {
+                return;
+              }
+
+              const rect = viewport.getBoundingClientRect();
+              const worldPoint = {
+                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
+                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
+              };
+              onPolygonVertexMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+          />
+        ) : null}
         {highlightedIslandBounds ? (
           <div
             aria-hidden="true"
