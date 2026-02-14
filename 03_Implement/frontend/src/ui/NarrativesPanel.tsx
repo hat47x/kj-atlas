@@ -25,6 +25,7 @@ type NarrativesPanelProps = {
   readingOrderSnippets?: ReadingOrderSnippetMap;
   document: DocumentV2 | null;
   hideSourceCards: boolean;
+  onFocusItem: (kind: "card" | "island", id: string) => void;
 };
 
 const severityColorMap: Record<NarrativeIssue["severity"], string> = {
@@ -55,6 +56,7 @@ export function NarrativesPanel({
   readingOrderSnippets = {},
   document,
   hideSourceCards,
+  onFocusItem,
 }: NarrativesPanelProps) {
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
   const [expandedCheckIds, setExpandedCheckIds] = useState<Set<string>>(new Set());
@@ -100,6 +102,22 @@ export function NarrativesPanel({
     const content = buildNarrativeHtml(selectedNarrative, readingOrderSnippets, groundingEntries);
     const fileStem = sanitizeFileStem(selectedNarrative.title || selectedNarrative.id);
     downloadTextFile(`${fileStem}.html`, "text/html", content);
+  };
+
+  const resolveReadingOrderReferenceKind = (entryId: string): "card" | "island" | null => {
+    if (!document) {
+      return null;
+    }
+
+    if (document.cards.some((card) => card.id === entryId)) {
+      return "card";
+    }
+
+    if (document.islands.some((island) => island.id === entryId)) {
+      return "island";
+    }
+
+    return null;
   };
 
   return (
@@ -192,6 +210,33 @@ export function NarrativesPanel({
       ) : null}
       {selectedNarrative ? (
         <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>basedOnReadingOrder</div>
+          {(selectedNarrative.basedOnReadingOrder ?? []).length === 0 ? (
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>(empty)</div>
+          ) : (
+            <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 6 }}>
+              {(selectedNarrative.basedOnReadingOrder ?? []).map((entryId) => {
+                const entryKind = resolveReadingOrderReferenceKind(entryId);
+                return (
+                  <li key={entryId} style={{ fontSize: 12, color: "#1e293b" }}>
+                    {entryKind ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onFocusItem(entryKind, entryId);
+                        }}
+                        style={{ fontSize: 11, cursor: "pointer" }}
+                      >
+                        Focus {entryKind}:{entryId}
+                      </button>
+                    ) : (
+                      <span>{entryId}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Past checks</div>
           {(selectedNarrative.checks ?? []).length === 0 ? (
             <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>No consistency checks yet.</div>
@@ -269,7 +314,19 @@ export function NarrativesPanel({
                   {entry.kind === "card" && entry.card ? (
                     <div>
                       <div>
-                        Card {entry.card.id} [{entry.card.kind}
+                        Card{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (entry.card) {
+                              onFocusItem("card", entry.card.id);
+                            }
+                          }}
+                          style={{ fontSize: 11, cursor: "pointer" }}
+                        >
+                          {entry.card.id}
+                        </button>{" "}
+                        [{entry.card.kind}
                         {entry.card.kind === "source" ? ` canonicalId: ${entry.card.canonicalId}` : ""}]
                       </div>
                       <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || "(empty)"}</div>
@@ -277,7 +334,18 @@ export function NarrativesPanel({
                   ) : null}
                   {entry.kind === "island" ? (
                     <div>
-                      <div>Island: {entry.islandTitle ?? entry.sourceId}</div>
+                      <div>
+                        Island:{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onFocusItem("island", entry.sourceId);
+                          }}
+                          style={{ fontSize: 11, cursor: "pointer" }}
+                        >
+                          {entry.islandTitle ?? entry.sourceId}
+                        </button>
+                      </div>
                       {entry.islandSummaryText ? (
                         <div style={{ color: "#475569" }}>
                           Summary{entry.islandSummaryReviewed ? "" : " (unreviewed)"}: {entry.islandSummaryText}
@@ -286,7 +354,16 @@ export function NarrativesPanel({
                       <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
                         {(entry.islandMembers ?? []).map((member) => (
                           <li key={member.id}>
-                            {member.id} [{member.kind}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onFocusItem("card", member.id);
+                              }}
+                              style={{ fontSize: 11, cursor: "pointer" }}
+                            >
+                              {member.id}
+                            </button>{" "}
+                            [{member.kind}
                             {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] — {member.text || "(empty)"}
                           </li>
                         ))}
