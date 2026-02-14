@@ -23,6 +23,7 @@ import { applyCanonicalization } from "./domain/canonical_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
 import { computeConvexHull } from "./domain/geometry/convex_hull";
 import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
+import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -1934,17 +1935,27 @@ export default function App() {
       }
 
       const polygonPoints = buildIslandPolygonFromCards(document, targetIsland);
+      const generatedFrom = {
+        cardIds: [...targetIsland.cardIds],
+        versionToken: buildVersionTokenForCardIds(document.cards, targetIsland.cardIds, CARD_WIDTH, CARD_HEIGHT),
+      };
       const nextShape =
         polygonPoints.length < 3
           ? {
               kind: "rect" as const,
+              generatedFrom,
             }
           : {
               kind: "polygon" as const,
               points: polygonPoints,
+              generatedFrom,
             };
 
       const currentShape = targetIsland.shape;
+      const generatedFromUnchanged =
+        (currentShape?.generatedFrom?.versionToken ?? null) === generatedFrom.versionToken &&
+        ((currentShape?.generatedFrom?.cardIds?.length ?? 0) === generatedFrom.cardIds.length &&
+          generatedFrom.cardIds.every((cardId, index) => currentShape?.generatedFrom?.cardIds?.[index] === cardId));
       const shapeUnchanged =
         currentShape?.kind === nextShape.kind &&
         (nextShape.kind === "rect" ||
@@ -1952,7 +1963,8 @@ export default function App() {
             nextShape.points.every((point, index) => {
               const currentPoint = currentShape?.points?.[index];
               return currentPoint ? currentPoint.x === point.x && currentPoint.y === point.y : false;
-            })));
+            }))) &&
+        generatedFromUnchanged;
 
       if (shapeUnchanged) {
         setStatusMessage(
@@ -2241,6 +2253,19 @@ export default function App() {
 
     return document.islands.find((island) => island.id === selectedIslandId) ?? null;
   }, [document, selectedIslandId]);
+
+  const stalePolygonIslandIdSet = useMemo(() => {
+    if (!document) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      document.islands
+        .filter((island) => isPolygonShapeStale(island, document.cards, CARD_WIDTH, CARD_HEIGHT))
+        .map((island) => island.id)
+    );
+  }, [document]);
+
   const selectedCard = useMemo(() => {
     if (!document || selectedCardIds.length !== 1) {
       return null;
@@ -2529,6 +2554,7 @@ export default function App() {
         island={island}
         cards={focusedVisibleDocument.cards}
         isSelected={selectedIslandId === island.id}
+        isShapeStale={stalePolygonIslandIdSet.has(island.id)}
         isPeeking={peekIslandId === island.id}
         zIndex={index}
         onSelect={handleIslandSelect}
@@ -2549,6 +2575,7 @@ export default function App() {
     isPickingEdgeTarget,
     peekIslandId,
     selectedIslandId,
+    stalePolygonIslandIdSet,
     visibleIslands,
   ]);
 
@@ -3261,7 +3288,7 @@ export default function App() {
               />
             </>
           }
-          selectedIsland={selectedIsland}
+          selectedIsland={selectedIsland ? { ...selectedIsland, shapeStale: stalePolygonIslandIdSet.has(selectedIsland.id) } : null}
           selectedCardCount={selectedCardIds.length}
           onCardCritiqueChange={(value) => {
             if (!selectedCard) {

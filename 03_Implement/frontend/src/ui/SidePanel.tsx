@@ -659,6 +659,21 @@ export function SidePanel({
             >
               Focus selected island
             </button>
+            {selectedIsland.shapeStale === true ? (
+              <div
+                style={{
+                  border: "1px solid #f59e0b",
+                  backgroundColor: "#fffbeb",
+                  color: "#92400e",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                Shape is stale
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={onGenerateIslandPolygon}
@@ -672,7 +687,7 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Generate polygon from cards
+              Regenerate polygon
             </button>
             <button
               type="button"

@@ -62,6 +62,10 @@ export type Point = {
 export type IslandShape = {
   kind: "rect" | "polygon";
   points?: Point[];
+  generatedFrom?: {
+    cardIds: string[];
+    versionToken: string;
+  };
 };
 
 export type Island = {
@@ -78,6 +82,7 @@ export type Island = {
   critique?: string;
   critiqueTags?: string[];
   shape?: IslandShape;
+  shapeStale?: boolean;
 };
 
 export type NarrativeCheckReference = {
