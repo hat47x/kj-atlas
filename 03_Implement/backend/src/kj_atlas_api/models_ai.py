@@ -47,3 +47,18 @@ class GenerateNarrativeResponse(BaseModel):
     text: str
     basedOnReadingOrder: list[str]
     warnings: list[str] | None = None
+
+
+class SuggestIslandSummaryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV2
+    islandId: str = Field(min_length=1)
+
+
+class SuggestIslandSummaryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    summaryText: str = Field(min_length=1)
+    groundingIds: list[str] = Field(min_length=1)
+    warnings: list[str] | None = None

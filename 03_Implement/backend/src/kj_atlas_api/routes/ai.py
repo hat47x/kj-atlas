@@ -15,6 +15,8 @@ from kj_atlas_api.models_ai import (
     CheckNarrativeResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
+    SuggestIslandSummaryRequest,
+    SuggestIslandSummaryResponse,
 )
 from kj_atlas_api.models import (
     Card,
@@ -131,6 +133,72 @@ def _parse_narrative_check_response(raw_text: str, source_doc: CheckNarrativeReq
     return response
 
 
+
+
+def _build_island_summary_prompt(payload: SuggestIslandSummaryRequest) -> str:
+    cards_by_id = {card.id: card for card in payload.doc.cards}
+    island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
+    if island is None:
+        raise HTTPException(status_code=422, detail="islandId does not exist")
+
+    member_cards = [cards_by_id[card_id] for card_id in island.cardIds if card_id in cards_by_id]
+    if len(member_cards) == 0:
+        raise HTTPException(status_code=422, detail="island has no member cards")
+
+    card_lines = [f'- id="{card.id}", text={json.dumps(card.text)}' for card in member_cards]
+
+    return "\n".join(
+        [
+            "You generate a draft island summary from evidence cards.",
+            "Use only the direct member cards provided below. Ignore nested islands for this MVP.",
+            "Do not add facts beyond the card texts.",
+            "If evidence is weak, sparse, or contradictory, include warnings.",
+            "Return strict JSON only. No markdown. No extra text.",
+            "Use this exact schema:",
+            '{"summaryText":string,"groundingIds":[string,...],"warnings":[string,...]?}',
+            "groundingIds must contain 1-10 unique card ids chosen from the input cards.",
+            "Prefer the strongest supporting card ids.",
+            f'Island id="{island.id}", title={json.dumps(island.title or "")}',
+            "Member cards:",
+            *card_lines,
+        ]
+    )
+
+
+def _parse_island_summary_response(
+    raw_text: str,
+    source_doc: SuggestIslandSummaryRequest,
+) -> SuggestIslandSummaryResponse:
+    try:
+        parsed = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="LLM response is not valid JSON") from exc
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=422, detail="LLM response must be a JSON object")
+
+    try:
+        response = SuggestIslandSummaryResponse.model_validate(parsed)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid island summary response payload") from exc
+
+    target_island = next((item for item in source_doc.doc.islands if item.id == source_doc.islandId), None)
+    if target_island is None:
+        raise HTTPException(status_code=422, detail="islandId does not exist")
+
+    member_card_ids = set(target_island.cardIds)
+    grounding_ids = response.groundingIds
+
+    if len(grounding_ids) > 10:
+        raise HTTPException(status_code=422, detail="LLM response groundingIds must contain at most 10 ids")
+    if len(set(grounding_ids)) != len(grounding_ids):
+        raise HTTPException(status_code=422, detail="LLM response groundingIds must not contain duplicates")
+
+    for card_id in grounding_ids:
+        if card_id not in member_card_ids:
+            raise HTTPException(status_code=422, detail="LLM response groundingIds included non-member card id")
+
+    return response
 
 
 def _build_generate_narrative_prompt(payload: GenerateNarrativeRequest) -> str:
@@ -442,6 +510,24 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     return SuggestMergesResponse(suggestions=suggestions)
 
 
+
+
+@router.post("/suggest-island-summary", response_model=SuggestIslandSummaryResponse)
+def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslandSummaryResponse:
+    provider = get_provider()
+    try:
+        llm_response = provider.generate(
+            LLMRequest(
+                task="suggest_island_summary",
+                prompt=_build_island_summary_prompt(payload),
+            )
+        )
+    except ProviderDisabledError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ProviderRequestError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return _parse_island_summary_response(llm_response.raw_text, payload)
 
 
 @router.post("/generate-narrative", response_model=GenerateNarrativeResponse)

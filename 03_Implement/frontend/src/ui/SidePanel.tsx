@@ -26,6 +26,9 @@ type SidePanelProps = {
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
   onSummaryReviewedChange: (value: boolean) => void;
+  onSuggestIslandSummary: () => void;
+  isSuggestingIslandSummary: boolean;
+  islandSummarySuggestionWarnings: string[];
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCollapsedChange: (value: boolean) => void;
@@ -83,6 +86,9 @@ export function SidePanel({
   onTitleReviewedChange,
   onSummaryTextChange,
   onSummaryReviewedChange,
+  onSuggestIslandSummary,
+  isSuggestingIslandSummary,
+  islandSummarySuggestionWarnings,
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCollapsedChange,
@@ -517,6 +523,39 @@ export function SidePanel({
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Summary
           </label>
+          <button
+            type="button"
+            onClick={onSuggestIslandSummary}
+            disabled={isSuggestingIslandSummary}
+            style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
+          >
+            {isSuggestingIslandSummary ? "Suggesting summary..." : "Suggest summary (AI)"}
+          </button>
+          {selectedIsland.summaryReviewed !== true && typeof selectedIsland.summaryText === "string" && selectedIsland.summaryText.length > 0 ? (
+            <div
+              style={{
+                fontSize: 12,
+                color: "#7c2d12",
+                backgroundColor: "#ffedd5",
+                border: "1px solid #fdba74",
+                borderRadius: 6,
+                padding: "6px 8px",
+                marginBottom: 8,
+              }}
+            >
+              AI draft (unreviewed). Please verify against cards.
+            </div>
+          ) : null}
+          {selectedIsland.summaryGrounding && selectedIsland.summaryGrounding.length > 0 ? (
+            <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
+              Grounding card IDs: {selectedIsland.summaryGrounding.join(", ")}
+            </div>
+          ) : null}
+          {islandSummarySuggestionWarnings.length > 0 ? (
+            <div style={{ fontSize: 12, color: "#92400e", marginBottom: 8 }}>
+              Warnings: {islandSummarySuggestionWarnings.join(" | ")}
+            </div>
+          ) : null}
           <textarea
             value={selectedIsland.summaryText ?? ""}
             onChange={(event) => {

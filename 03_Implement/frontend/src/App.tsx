@@ -7,6 +7,7 @@ import {
   generateNarrative,
   getDocument,
   putDocument,
+  suggestIslandSummary,
   suggestLayout,
   suggestMerges,
   type NarrativeIssue,
@@ -462,6 +463,8 @@ export default function App() {
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
+  const [isSuggestingIslandSummary, setIsSuggestingIslandSummary] = useState(false);
+  const [islandSummarySuggestionWarningsByIslandId, setIslandSummarySuggestionWarningsByIslandId] = useState<Record<string, string[]>>({});
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
@@ -1120,6 +1123,54 @@ export default function App() {
 
     void loadDocument(selectedRecentDocumentId);
   }, [activeDocumentId, loadDocument, selectedRecentDocumentId]);
+
+  const handleSuggestIslandSummary = useCallback(async () => {
+    if (!document || !selectedIslandId || isSuggestingIslandSummary) {
+      return;
+    }
+
+    const targetIsland = document.islands.find((island) => island.id === selectedIslandId);
+    if (!targetIsland) {
+      return;
+    }
+
+    setIsSuggestingIslandSummary(true);
+    setStatusMessage("Requesting island summary suggestion...");
+
+    try {
+      const result = await suggestIslandSummary(document, targetIsland.id);
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== targetIsland.id) {
+          return island;
+        }
+
+        return {
+          ...island,
+          summaryText: result.summaryText,
+          summaryReviewed: false,
+          summaryGrounding: result.groundingIds,
+        };
+      });
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Suggested island summary"
+      );
+      setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
+        ...previousWarnings,
+        [targetIsland.id]: result.warnings ?? [],
+      }));
+      setStatusMessage("Island summary suggestion ready (unreviewed)");
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Failed to suggest island summary";
+      setStatusMessage(message);
+    } finally {
+      setIsSuggestingIslandSummary(false);
+    }
+  }, [applyDocumentChange, document, isSuggestingIslandSummary, selectedIslandId]);
 
   const handleSuggestLayout = useCallback(async () => {
     if (!document || isSuggesting) {
@@ -3629,6 +3680,11 @@ export default function App() {
 
             handleIslandSummaryReviewedChange(selectedIsland.id, value);
           }}
+          onSuggestIslandSummary={() => {
+            void handleSuggestIslandSummary();
+          }}
+          isSuggestingIslandSummary={isSuggestingIslandSummary}
+          islandSummarySuggestionWarnings={selectedIsland ? islandSummarySuggestionWarningsByIslandId[selectedIsland.id] ?? [] : []}
           onImageUrlChange={(value) => {
             if (!selectedIsland) {
               return;
