@@ -35,6 +35,9 @@ type SidePanelProps = {
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
   onFocusIsland: () => void;
+  summaryView: boolean;
+  isSelectedIslandTemporarilyRevealed: boolean;
+  onToggleSelectedIslandTemporaryReveal: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
   onGenerateIslandPolygon: () => void;
@@ -89,6 +92,9 @@ export function SidePanel({
   onRemoveSelectedCards,
   onDeleteIsland,
   onFocusIsland,
+  summaryView,
+  isSelectedIslandTemporarilyRevealed,
+  onToggleSelectedIslandTemporaryReveal,
   isGridSnapEnabled,
   onGridSnapToggle,
   onGenerateIslandPolygon,
@@ -439,6 +445,16 @@ export function SidePanel({
               backgroundColor: "#f8fafc",
             }}
           />
+
+          {summaryView ? (
+            <button
+              type="button"
+              onClick={onToggleSelectedIslandTemporaryReveal}
+              style={{ marginBottom: 10, width: "100%" }}
+            >
+              {isSelectedIslandTemporarilyRevealed ? "Hide members" : "Show members (temporarily)"}
+            </button>
+          ) : null}
 
           <label
             style={{

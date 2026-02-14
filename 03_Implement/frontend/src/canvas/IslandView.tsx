@@ -17,6 +17,8 @@ type IslandViewProps = {
   cards: Card[];
   isSelected: boolean;
   isPeeking?: boolean;
+  summaryView?: boolean;
+  isCollapsedForView?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   isShapeStale?: boolean;
@@ -138,6 +140,8 @@ function IslandViewComponent({
   cards,
   isSelected,
   isPeeking = false,
+  summaryView = false,
+  isCollapsedForView,
   onSelect,
   onToggleCollapsed,
   isShapeStale = false,
@@ -149,6 +153,7 @@ function IslandViewComponent({
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
+  const isCollapsed = isCollapsedForView ?? island.collapsed === true;
   const headerHeight = hasSummary ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
@@ -350,11 +355,11 @@ function IslandViewComponent({
         }}
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
-        {island.collapsed === true ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
         {isShapeStale ? (
           <span style={{ fontWeight: 600, color: "#b45309" }}>(stale)</span>
         ) : null}
-        {island.collapsed === true ? (
+        {isCollapsed ? (
           <button
             type="button"
             onPointerDown={(event) => {
@@ -410,8 +415,9 @@ function IslandViewComponent({
             left: ISLAND_TITLE_MARGIN_LEFT,
             top: ISLAND_TITLE_MARGIN_TOP + 28,
             right: ISLAND_TITLE_MARGIN_LEFT,
-            fontSize: 11,
-            lineHeight: 1.3,
+            fontSize: summaryView ? 12 : 11,
+            fontWeight: summaryView ? 600 : 500,
+            lineHeight: 1.35,
             color: "#0c4a6e",
             zIndex: 3,
             display: "-webkit-box",
@@ -423,6 +429,23 @@ function IslandViewComponent({
           title={island.summaryText}
         >
           {island.summaryText}
+          {island.summaryReviewed === false ? (
+            <span
+              style={{
+                marginLeft: 8,
+                display: "inline-block",
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#92400e",
+                backgroundColor: "#fef3c7",
+                border: "1px solid #fde68a",
+                borderRadius: 999,
+                padding: "1px 6px",
+              }}
+            >
+              unreviewed
+            </span>
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -437,6 +437,7 @@ export default function App() {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(true);
+  const [summaryView, setSummaryView] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
@@ -454,6 +455,7 @@ export default function App() {
   const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
+  const [summaryRevealIslandIds, setSummaryRevealIslandIds] = useState<Set<string>>(new Set());
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -534,6 +536,26 @@ export default function App() {
 
     return collectCollapsedIslandIds(focusedVisibleDocument.islands);
   }, [focusedVisibleDocument]);
+  const effectiveCollapsedIslandIdSet = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return new Set<string>();
+    }
+
+    if (!summaryView) {
+      return collapsedIslandIdSet;
+    }
+
+    const collapsedIds = new Set(focusedVisibleDocument.islands.map((island) => island.id));
+    for (const islandId of summaryRevealIslandIds) {
+      collapsedIds.delete(islandId);
+    }
+
+    if (peekIslandId) {
+      collapsedIds.delete(peekIslandId);
+    }
+
+    return collapsedIds;
+  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView]);
   const islandDepthById = useMemo(() => {
     if (!visibleDocument) {
       return new Map<string, number>();
@@ -562,16 +584,30 @@ export default function App() {
   const hiddenCardIdSet = useMemo(() => {
     const collapsedHiddenCardIds = new Set<string>();
     const depthHiddenCardIds = new Set<string>();
+    const summaryHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
       for (const island of focusedVisibleDocument.islands) {
-        if (!collapsedIslandIdSet.has(island.id)) {
+        if (!effectiveCollapsedIslandIdSet.has(island.id)) {
           continue;
         }
         for (const cardId of island.cardIds) {
           collapsedHiddenCardIds.add(cardId);
+        }
+      }
+
+      if (summaryView && !focusTarget.focusIslandId) {
+        for (const island of focusedVisibleDocument.islands) {
+          const canRevealMembers = summaryRevealIslandIds.has(island.id) || peekIslandId === island.id;
+          if (canRevealMembers) {
+            continue;
+          }
+
+          for (const cardId of island.cardIds) {
+            summaryHiddenCardIds.add(cardId);
+          }
         }
       }
 
@@ -607,18 +643,22 @@ export default function App() {
     // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
 
     return hiddenCardIds;
   }, [
     cardMinDepthById,
-    collapsedIslandIdSet,
+    effectiveCollapsedIslandIdSet,
+    focusTarget.focusIslandId,
     focusedVisibleDocument,
     hideNonMatches,
     matchedCardIdSet,
     maxDepth,
     normalizedSearchQuery,
     peekIslandId,
+    summaryRevealIslandIds,
+    summaryView,
   ]);
 
   const visibleCardIdSet = useMemo(() => {
@@ -2343,9 +2383,9 @@ export default function App() {
         return false;
       }
 
-      return !island.parentIslandId || !collapsedIslandIdSet.has(island.parentIslandId);
+      return !island.parentIslandId || !effectiveCollapsedIslandIdSet.has(island.parentIslandId);
     });
-  }, [collapsedIslandIdSet, depthHiddenIslandIdSet, uniqueIslands]);
+  }, [depthHiddenIslandIdSet, effectiveCollapsedIslandIdSet, uniqueIslands]);
 
   const visibleIslandIdSet = useMemo(() => new Set(visibleIslands.map((island) => island.id)), [visibleIslands]);
 
@@ -2389,6 +2429,29 @@ export default function App() {
   useEffect(() => {
     setRevealedSourceCardIds(new Set());
   }, [document?.id]);
+
+  useEffect(() => {
+    if (!summaryView) {
+      setSummaryRevealIslandIds(new Set());
+      return;
+    }
+
+    if (!focusedVisibleDocument) {
+      return;
+    }
+
+    const visibleIslands = new Set(focusedVisibleDocument.islands.map((island) => island.id));
+    setSummaryRevealIslandIds((previousIds) => {
+      const nextIds = new Set(Array.from(previousIds).filter((islandId) => visibleIslands.has(islandId)));
+      const isUnchanged =
+        nextIds.size === previousIds.size &&
+        Array.from(nextIds).every((islandId) => previousIds.has(islandId));
+      if (isUnchanged) {
+        return previousIds;
+      }
+      return nextIds;
+    });
+  }, [focusedVisibleDocument, summaryView]);
 
   const selectedIsland = useMemo(() => {
     if (!document || !selectedIslandId) {
@@ -2748,6 +2811,25 @@ export default function App() {
     return buildReadingOrderSnippets(document);
   }, [document]);
 
+  const loneWolfCardIdSet = useMemo(() => {
+    if (!focusedVisibleDocument || !summaryView) {
+      return new Set<string>();
+    }
+
+    const islandMemberIds = new Set<string>();
+    for (const island of focusedVisibleDocument.islands) {
+      for (const cardId of island.cardIds) {
+        islandMemberIds.add(cardId);
+      }
+    }
+
+    return new Set(
+      focusedVisibleDocument.cards
+        .map((card) => card.id)
+        .filter((cardId) => !islandMemberIds.has(cardId))
+    );
+  }, [focusedVisibleDocument, summaryView]);
+
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
       return null;
@@ -2761,6 +2843,8 @@ export default function App() {
         isSelected={selectedIslandId === island.id}
         isShapeStale={stalePolygonIslandIdSet.has(island.id)}
         isPeeking={peekIslandId === island.id}
+        summaryView={summaryView}
+        isCollapsedForView={effectiveCollapsedIslandIdSet.has(island.id)}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
@@ -2781,6 +2865,8 @@ export default function App() {
     peekIslandId,
     selectedIslandId,
     stalePolygonIslandIdSet,
+    summaryView,
+    effectiveCollapsedIslandIdSet,
     visibleIslands,
   ]);
 
@@ -3400,6 +3486,8 @@ export default function App() {
             onMaxDepthChange={setMaxDepth}
             hideSourceCards={hideSourceCards}
             onHideSourceCardsChange={setHideSourceCards}
+            summaryView={summaryView}
+            onSummaryViewChange={setSummaryView}
             showReadingOrder={showReadingOrder}
             onShowReadingOrderChange={(nextValue) => {
               setShowReadingOrder(nextValue);
@@ -3580,6 +3668,23 @@ export default function App() {
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
           onDeleteIsland={handleDeleteSelectedIsland}
           onFocusIsland={handleFocusIsland}
+          summaryView={summaryView}
+          isSelectedIslandTemporarilyRevealed={selectedIsland ? summaryRevealIslandIds.has(selectedIsland.id) : false}
+          onToggleSelectedIslandTemporaryReveal={() => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            setSummaryRevealIslandIds((previousIds) => {
+              const nextIds = new Set(previousIds);
+              if (nextIds.has(selectedIsland.id)) {
+                nextIds.delete(selectedIsland.id);
+              } else {
+                nextIds.add(selectedIsland.id);
+              }
+              return nextIds;
+            });
+          }}
           isGridSnapEnabled={isGridSnapEnabled}
           onGridSnapToggle={setIsGridSnapEnabled}
           isPolygonVertexEditEnabled={isPolygonVertexEditEnabled}
@@ -3666,9 +3771,10 @@ export default function App() {
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
-            hideSourceCards={hideSourceCards}
+            hideSourceCards={hideSourceCards || summaryView}
+            deemphasizedCardIds={summaryView ? loneWolfCardIdSet : undefined}
             viewState={{
-              hideSourceCards,
+              hideSourceCards: hideSourceCards || summaryView,
               showCanonicalOnlyEdges,
               showReadingOrder,
             }}

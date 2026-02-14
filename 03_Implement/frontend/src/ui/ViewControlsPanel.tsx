@@ -8,6 +8,8 @@ type ViewControlsPanelProps = {
   onMaxDepthChange: (value: number | "all") => void;
   hideSourceCards: boolean;
   onHideSourceCardsChange: (value: boolean) => void;
+  summaryView: boolean;
+  onSummaryViewChange: (value: boolean) => void;
   showReadingOrder: boolean;
   onShowReadingOrderChange: (value: boolean) => void;
   isReadingOrderEditMode: boolean;
@@ -34,6 +36,8 @@ export function ViewControlsPanel({
   onMaxDepthChange,
   hideSourceCards,
   onHideSourceCardsChange,
+  summaryView,
+  onSummaryViewChange,
   showReadingOrder,
   onShowReadingOrderChange,
   isReadingOrderEditMode,
@@ -116,6 +120,23 @@ export function ViewControlsPanel({
           />
           Hide source cards
         </label>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Summary view</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={summaryView}
+            onChange={(event) => {
+              onSummaryViewChange(event.target.checked);
+            }}
+          />
+          Summary view
+        </label>
+        <div style={{ fontSize: 11, color: "#64748b" }}>
+          Shows island summaries and hides member cards. Use Peek/Focus to inspect details.
+        </div>
       </div>
 
       <div style={sectionStyle}>
