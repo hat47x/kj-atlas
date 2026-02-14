@@ -207,6 +207,50 @@ export async function suggestMerges(doc: DocumentV2, instruction?: string): Prom
   return { suggestions: body.suggestions };
 }
 
+
+export type SuggestIslandSummaryResult = {
+  summaryText: string;
+  groundingIds: string[];
+  warnings?: string[];
+};
+
+export async function suggestIslandSummary(doc: DocumentV2, islandId: string): Promise<SuggestIslandSummaryResult> {
+  const response = await fetch(`${API_BASE}/ai/suggest-island-summary`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, islandId }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as SuggestIslandSummaryResult;
+  if (typeof body.summaryText !== "string" || body.summaryText.trim().length === 0) {
+    throw new ApiError(500, "Invalid island summary suggestion response");
+  }
+
+  if (!Array.isArray(body.groundingIds) || body.groundingIds.length === 0 || body.groundingIds.length > 10) {
+    throw new ApiError(500, "Invalid island summary grounding ids");
+  }
+
+  if (!body.groundingIds.every((id) => typeof id === "string" && id.length > 0)) {
+    throw new ApiError(500, "Invalid island summary grounding ids");
+  }
+
+  if (new Set(body.groundingIds).size !== body.groundingIds.length) {
+    throw new ApiError(500, "Duplicate island summary grounding ids");
+  }
+
+  if (body.warnings !== undefined && !Array.isArray(body.warnings)) {
+    throw new ApiError(500, "Invalid island summary warnings");
+  }
+
+  return body;
+}
+
 export type NarrativeIssueReference = {
   id: string;
   kind: "card" | "island";

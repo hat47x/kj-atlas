@@ -80,6 +80,7 @@ class Island(BaseModel):
     titleReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     summaryText: str | None = None
     summaryReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    summaryGrounding: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None

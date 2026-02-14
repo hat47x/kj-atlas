@@ -86,6 +86,7 @@ export type Island = {
   titleReviewed?: boolean;
   summaryText?: string;
   summaryReviewed?: boolean;
+  summaryGrounding?: string[];
   imageUrl?: string;
   imageReviewed?: boolean;
   critique?: string;
