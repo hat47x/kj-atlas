@@ -19,6 +19,7 @@ import { PolygonEditLayer } from "./PolygonEditLayer";
 import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
+import { findNearestPolygonSegmentIndex } from "../domain/geometry/segment_pick";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -117,6 +118,8 @@ type CanvasShellProps = {
   visibleIslandIds?: Set<string>;
   polygonVertexEditIslandId?: string | null;
   onPolygonVertexMove?: (islandId: string, vertexIndex: number, point: Point) => void;
+  onPolygonVertexAdd?: (islandId: string, segmentStartIndex: number, point: Point) => void;
+  onPolygonVertexRemove?: (islandId: string, vertexIndex: number) => void;
   children?: ReactNode;
 };
 
@@ -195,6 +198,8 @@ export function CanvasShell({
   visibleIslandIds,
   polygonVertexEditIslandId = null,
   onPolygonVertexMove,
+  onPolygonVertexAdd,
+  onPolygonVertexRemove,
   children,
 }: CanvasShellProps) {
   const effectiveHideSourceCards = viewState?.hideSourceCards ?? hideSourceCards;
@@ -487,6 +492,26 @@ export function CanvasShell({
   );
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.altKey && polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexAdd) {
+      const viewport = viewportRef.current;
+      if (!viewport) {
+        return;
+      }
+
+      const rect = viewport.getBoundingClientRect();
+      const worldPoint = {
+        x: (event.clientX - rect.left - transform.panX) / transform.zoom,
+        y: (event.clientY - rect.top - transform.panY) / transform.zoom,
+      };
+      const segmentStartIndex = findNearestPolygonSegmentIndex(polygonVertexEditShape.points, worldPoint, 8 / transform.zoom);
+      if (segmentStartIndex !== null) {
+        event.preventDefault();
+        event.stopPropagation();
+        onPolygonVertexAdd(polygonVertexEditIslandId, segmentStartIndex, worldPoint);
+        return;
+      }
+    }
+
     if (!canStartDrag(event)) {
       return;
     }
@@ -722,7 +747,7 @@ export function CanvasShell({
           />
         ) : null}
         {children}
-        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexMove ? (
+        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexMove && onPolygonVertexRemove ? (
           <PolygonEditLayer
             points={polygonVertexEditShape.points}
             onVertexMove={(vertexIndex, screenPoint) => {
@@ -737,6 +762,9 @@ export function CanvasShell({
                 y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
               };
               onPolygonVertexMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+            onVertexRemove={(vertexIndex) => {
+              onPolygonVertexRemove(polygonVertexEditIslandId, vertexIndex);
             }}
           />
         ) : null}

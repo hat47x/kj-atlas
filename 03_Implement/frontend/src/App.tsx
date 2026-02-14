@@ -2049,6 +2049,100 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handlePolygonVertexAdd = useCallback(
+    (islandId: string, segmentStartIndex: number, point: Point) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId || island.shape?.kind !== "polygon") {
+          return island;
+        }
+
+        if (segmentStartIndex < 0 || segmentStartIndex >= island.shape.points.length) {
+          return island;
+        }
+
+        const nextPoints = [...island.shape.points];
+        nextPoints.splice(segmentStartIndex + 1, 0, { ...point });
+
+        return {
+          ...island,
+          shape: {
+            ...island.shape,
+            points: nextPoints,
+          },
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Added polygon vertex"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handlePolygonVertexRemove = useCallback(
+    (islandId: string, vertexIndex: number) => {
+      if (!document) {
+        return;
+      }
+
+      let blockedByMinimum = false;
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId || island.shape?.kind !== "polygon") {
+          return island;
+        }
+
+        if (vertexIndex < 0 || vertexIndex >= island.shape.points.length) {
+          return island;
+        }
+
+        if (island.shape.points.length <= 3) {
+          blockedByMinimum = true;
+          return island;
+        }
+
+        return {
+          ...island,
+          shape: {
+            ...island.shape,
+            points: island.shape.points.filter((_, index) => index !== vertexIndex),
+          },
+        };
+      });
+
+      if (blockedByMinimum) {
+        setStatusMessage("Polygon needs at least 3 points");
+        return;
+      }
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Removed polygon vertex"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleIslandCollapsedChange = useCallback(
     (islandId: string, collapsed: boolean) => {
       if (!document) {
@@ -3542,6 +3636,8 @@ export default function App() {
               isPolygonVertexEditEnabled && selectedIsland?.shape?.kind === "polygon" ? selectedIsland.id : null
             }
             onPolygonVertexMove={handlePolygonVertexMove}
+            onPolygonVertexAdd={handlePolygonVertexAdd}
+            onPolygonVertexRemove={handlePolygonVertexRemove}
           >
             {islandViews}
           </CanvasShell>
