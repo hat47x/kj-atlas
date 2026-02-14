@@ -34,16 +34,10 @@ type SidePanelProps = {
   onAddSelectedCards: () => void;
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
-  isFocusActive: boolean;
   onFocusIsland: () => void;
-  onClearFocus: () => void;
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
-  maxDepth: number | "all";
-  maxAvailableDepth: number;
-  onMaxDepthChange: (value: number | "all") => void;
-  hideSourceCards: boolean;
-  onHideSourceCardsChange: (value: boolean) => void;
+  onGenerateIslandPolygon: () => void;
   showCanonicalOnlyEdges: boolean;
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onSourceCardInspect: (cardId: string) => void;
@@ -92,16 +86,10 @@ export function SidePanel({
   onAddSelectedCards,
   onRemoveSelectedCards,
   onDeleteIsland,
-  isFocusActive,
   onFocusIsland,
-  onClearFocus,
   isGridSnapEnabled,
   onGridSnapToggle,
-  maxDepth,
-  maxAvailableDepth,
-  onMaxDepthChange,
-  hideSourceCards,
-  onHideSourceCardsChange,
+  onGenerateIslandPolygon,
   showCanonicalOnlyEdges,
   onShowCanonicalOnlyEdgesChange,
   onSourceCardInspect,
@@ -259,30 +247,6 @@ export function SidePanel({
         >
           <input
             type="checkbox"
-            checked={hideSourceCards}
-            onChange={(event) => {
-              onHideSourceCardsChange(event.target.checked);
-            }}
-          />
-          Bird's-eye by canonical (hide source cards)
-        </label>
-        {hideSourceCards ? (
-          <div style={{ fontSize: 11, color: "#64748b", marginBottom: 10 }}>
-            Source cards are hidden to keep board manageable.
-          </div>
-        ) : null}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 12,
-            color: "#334155",
-            marginBottom: 10,
-          }}
-        >
-          <input
-            type="checkbox"
             checked={showCanonicalOnlyEdges}
             onChange={(event) => {
               onShowCanonicalOnlyEdgesChange(event.target.checked);
@@ -290,30 +254,6 @@ export function SidePanel({
           />
           Show canonical-only edges
         </label>
-
-        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Depth view</label>
-        <select
-          value={maxDepth === "all" ? "all" : String(maxDepth)}
-          onChange={(event) => {
-            if (event.target.value === "all") {
-              onMaxDepthChange("all");
-              return;
-            }
-
-            onMaxDepthChange(Number(event.target.value));
-          }}
-          style={{ width: "100%", marginBottom: 10 }}
-        >
-          <option value="all">All depths</option>
-          {Array.from({ length: maxAvailableDepth + 1 }, (_, depth) => (
-            <option key={depth} value={depth}>
-              Depth {depth}
-            </option>
-          ))}
-        </select>
-        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 10 }}>
-          Current: {maxDepth === "all" ? "All depths" : `Depth ${maxDepth}`}
-        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
             Align Left
@@ -717,25 +657,23 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Focus
+              Focus selected island
             </button>
-            {isFocusActive ? (
-              <button
-                type="button"
-                onClick={onClearFocus}
-                style={{
-                  border: "1px solid #bae6fd",
-                  backgroundColor: "#f0f9ff",
-                  color: "#0c4a6e",
-                  borderRadius: 6,
-                  padding: "6px 10px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Clear focus
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={onGenerateIslandPolygon}
+              style={{
+                border: "1px solid #cbd5e1",
+                backgroundColor: "#ffffff",
+                color: "#0f172a",
+                borderRadius: 6,
+                padding: "6px 10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Generate polygon from cards
+            </button>
             <button
               type="button"
               onClick={onAddSelectedCards}

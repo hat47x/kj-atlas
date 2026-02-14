@@ -13,10 +13,6 @@ type ShellProps = {
   onExportAfterConflict?: () => void;
   isReloadingAfterConflict?: boolean;
   sidePanel?: ReactNode;
-  showReadingOrder?: boolean;
-  onShowReadingOrderChange?: (nextValue: boolean) => void;
-  isReadingOrderEditMode?: boolean;
-  onReadingOrderEditModeChange?: (nextValue: boolean) => void;
 };
 
 export function Shell({
@@ -32,10 +28,6 @@ export function Shell({
   onExportAfterConflict,
   isReloadingAfterConflict = false,
   sidePanel,
-  showReadingOrder = false,
-  onShowReadingOrderChange,
-  isReadingOrderEditMode = false,
-  onReadingOrderEditModeChange,
 }: ShellProps) {
   return (
     <div
@@ -86,52 +78,6 @@ export function Shell({
               </span>
             ) : null}
             {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
-            {onShowReadingOrderChange ? (
-              <>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 12,
-                    color: "#334155",
-                    fontWeight: 500,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={showReadingOrder}
-                    onChange={(event) => {
-                      onShowReadingOrderChange(event.target.checked);
-                    }}
-                  />
-                  Show reading order
-                </label>
-                {onReadingOrderEditModeChange ? (
-                  <label
-                    title="Shift+Click card/island to add. Alt+Click badge to remove. Drag badges to reorder."
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: 12,
-                      color: showReadingOrder ? "#334155" : "#94a3b8",
-                      fontWeight: 500,
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isReadingOrderEditMode}
-                      disabled={!showReadingOrder}
-                      onChange={(event) => {
-                        onReadingOrderEditModeChange(event.target.checked);
-                      }}
-                    />
-                    Edit reading order
-                  </label>
-                ) : null}
-              </>
-            ) : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (

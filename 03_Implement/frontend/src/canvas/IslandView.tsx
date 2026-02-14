@@ -1,7 +1,7 @@
 import { memo } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 
-import type { Card, Island } from "../domain/types";
+import type { Card, Island, Point } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
@@ -68,7 +68,37 @@ const EDGE_HITBOXES: EdgeHitbox[] = [
   },
 ];
 
+function getBoundsFromPoints(points: Point[]) {
+  if (points.length === 0) {
+    return null;
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+
+  return {
+    left: minX,
+    top: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
 export function getIslandBounds(island: Island, cards: Card[]) {
+  const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
+  if (polygonPoints.length >= 3) {
+    return getBoundsFromPoints(polygonPoints);
+  }
+
   const islandCards = cards.filter((card) => island.cardIds.includes(card.id));
   if (islandCards.length === 0) {
     return null;
@@ -117,14 +147,17 @@ function IslandViewComponent({
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const headerHeight = hasSummary ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
-  const islandBackgroundImage = island.imageUrl
-    ? `url("${encodeURI(island.imageUrl)}")`
-    : null;
+  const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
+  const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
+  const hasPolygon = polygonPoints.length >= 3;
 
   if (!bounds) {
     return null;
   }
 
+  const polygonPath = hasPolygon
+    ? polygonPoints.map((point) => `${point.x - bounds.left},${point.y - bounds.top}`).join(" ")
+    : null;
 
   return (
     <div
@@ -142,6 +175,25 @@ function IslandViewComponent({
         isolation: "isolate",
       }}
     >
+      {/* TODO: Replace bounding-box hit testing with proper point-in-polygon hit testing for polygon islands. */}
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
+        }}
+        style={{
+          pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+          position: "absolute",
+          inset: 0,
+          border: "none",
+          backgroundColor: "transparent",
+          padding: 0,
+          cursor: isPickingEdgeTarget ? "default" : "pointer",
+          zIndex: 1,
+        }}
+        aria-label={`Select island ${island.id}`}
+      />
       {EDGE_HITBOXES.map((edgeHitbox) => (
         <button
           key={edgeHitbox.key}
@@ -178,17 +230,33 @@ function IslandViewComponent({
           }}
         />
       ) : null}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: isSelected ? "2px solid #0284c7" : "2px solid #0ea5e9",
-          borderRadius: 12,
-          backgroundColor: isSelected ? "rgba(14, 165, 233, 0.12)" : "rgba(14, 165, 233, 0.05)",
-          boxSizing: "border-box",
-          zIndex: 1,
-        }}
-      />
+      {hasPolygon && polygonPath ? (
+        <svg
+          aria-hidden="true"
+          style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
+          viewBox={`0 0 ${Math.max(bounds.width, 1)} ${Math.max(bounds.height, 1)}`}
+        >
+          <polygon
+            points={polygonPath}
+            fill={isSelected ? "rgba(14, 165, 233, 0.12)" : "rgba(14, 165, 233, 0.05)"}
+            stroke={isSelected ? "#0284c7" : "#0ea5e9"}
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            border: isSelected ? "2px solid #0284c7" : "2px solid #0ea5e9",
+            borderRadius: 12,
+            backgroundColor: isSelected ? "rgba(14, 165, 233, 0.12)" : "rgba(14, 165, 233, 0.05)",
+            boxSizing: "border-box",
+            zIndex: 1,
+          }}
+        />
+      )}
       <div
         style={{
           position: "absolute",
@@ -252,7 +320,7 @@ function IslandViewComponent({
                 () => {
                   onPeekEnd?.();
                 },
-                { once: true },
+                { once: true }
               );
             }}
             onDoubleClick={(event) => {

@@ -21,7 +21,9 @@ import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
-import { isSourceCard, Document, DocumentV2, Island, Narrative } from "./domain/types";
+import { computeConvexHull } from "./domain/geometry/convex_hull";
+import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -29,6 +31,7 @@ import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { SearchBar } from "./ui/SearchBar";
+import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
@@ -38,6 +41,9 @@ const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
 const GRID_SNAP_SIZE = 10;
 const SUGGESTION_MOVE_THRESHOLD = 1;
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 80;
+const POLYGON_PADDING = 16;
 
 type DocumentHistory = {
   past: DocumentV2[];
@@ -228,6 +234,33 @@ function createIslandFromSelection(selectedCardIds: string[], existingIslands: I
   };
 }
 
+
+
+function buildIslandPolygonFromCards(document: DocumentV2, island: Island): Point[] {
+  const memberCards = document.cards.filter((card) => island.cardIds.includes(card.id));
+  if (memberCards.length === 0) {
+    return [];
+  }
+
+  const points: Point[] = [];
+  for (const card of memberCards) {
+    const right = card.x + CARD_WIDTH;
+    const bottom = card.y + CARD_HEIGHT;
+    points.push(
+      { x: card.x, y: card.y },
+      { x: right, y: card.y },
+      { x: right, y: bottom },
+      { x: card.x, y: bottom }
+    );
+  }
+
+  const hull = computeConvexHull(points);
+  if (hull.length < 3) {
+    return [];
+  }
+
+  return padPolygonFromCentroid(hull, POLYGON_PADDING);
+}
 
 function collectCollapsedIslandIds(islands: Island[]): Set<string> {
   const islandsByParentId = new Map<string, Island[]>();
@@ -428,6 +461,7 @@ export default function App() {
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
+  const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
 
@@ -1888,6 +1922,45 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleGenerateIslandPolygon = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const targetIsland = document.islands.find((island) => island.id === islandId);
+      if (!targetIsland) {
+        return;
+      }
+
+      const polygonPoints = buildIslandPolygonFromCards(document, targetIsland);
+      if (polygonPoints.length < 3) {
+        setStatusMessage("Unable to generate polygon: need at least 3 unique corners");
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: document.islands.map((island) =>
+            island.id === islandId
+              ? {
+                  ...island,
+                  shape: {
+                    kind: "polygon",
+                    points: polygonPoints,
+                  },
+                }
+              : island
+          ),
+        },
+        "Generated polygon island shape"
+      );
+      setStatusMessage("Generated polygon from member cards");
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleIslandCollapsedChange = useCallback(
     (islandId: string, collapsed: boolean) => {
       if (!document) {
@@ -3036,60 +3109,47 @@ export default function App() {
   );
 
   const headerViewControls = (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <label htmlFor="max-depth-select" style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>
-        Depth
-      </label>
-      <select
-        id="max-depth-select"
-        value={maxDepth === "all" ? "all" : String(maxDepth)}
-        onChange={(event) => {
-          if (event.target.value === "all") {
-            setMaxDepth("all");
-            return;
-          }
-
-          setMaxDepth(Number(event.target.value));
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => {
+          setIsViewControlsOpen((prev) => !prev);
         }}
         style={{
           border: "1px solid #cbd5e1",
-          borderRadius: 6,
-          padding: "4px 8px",
           backgroundColor: "#ffffff",
           color: "#0f172a",
+          borderRadius: 6,
+          padding: "4px 10px",
           fontSize: 12,
           fontWeight: 600,
+          cursor: "pointer",
         }}
       >
-        <option value="all">All</option>
-        {Array.from({ length: maxAvailableDepth + 1 }, (_, depth) => (
-          <option key={depth} value={depth}>
-            {depth}
-          </option>
-        ))}
-      </select>
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 12,
-          color: "#334155",
-          fontWeight: 500,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={hideSourceCards}
-          onChange={(event) => {
-            setHideSourceCards(event.target.checked);
-          }}
-        />
-        Canonical view
-      </label>
-      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>
-        Hide source cards (cards with canonicalId) and their edges.
-      </span>
+        View
+      </button>
+      {isViewControlsOpen ? (
+        <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 20 }}>
+          <ViewControlsPanel
+            focusIslandId={focusTarget.focusIslandId}
+            onClearFocus={handleClearFocus}
+            maxDepth={maxDepth}
+            maxAvailableDepth={maxAvailableDepth}
+            onMaxDepthChange={setMaxDepth}
+            hideSourceCards={hideSourceCards}
+            onHideSourceCardsChange={setHideSourceCards}
+            showReadingOrder={showReadingOrder}
+            onShowReadingOrderChange={(nextValue) => {
+              setShowReadingOrder(nextValue);
+              if (!nextValue) {
+                setIsReadingOrderEditMode(false);
+              }
+            }}
+            isReadingOrderEditMode={isReadingOrderEditMode}
+            onReadingOrderEditModeChange={setIsReadingOrderEditMode}
+          />
+        </div>
+      ) : null}
     </div>
   );
 
@@ -3098,15 +3158,6 @@ export default function App() {
       title="kj-atlas Canvas MVP"
       subtitle={`Document: ${activeDocumentId}`}
       headerViewControls={headerViewControls}
-      showReadingOrder={showReadingOrder}
-      onShowReadingOrderChange={(nextValue) => {
-        setShowReadingOrder(nextValue);
-        if (!nextValue) {
-          setIsReadingOrderEditMode(false);
-        }
-      }}
-      isReadingOrderEditMode={isReadingOrderEditMode}
-      onReadingOrderEditModeChange={setIsReadingOrderEditMode}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
@@ -3266,16 +3317,16 @@ export default function App() {
           onAddSelectedCards={handleAddSelectedCardsToIsland}
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
           onDeleteIsland={handleDeleteSelectedIsland}
-          isFocusActive={Boolean(focusTarget.focusIslandId)}
           onFocusIsland={handleFocusIsland}
-          onClearFocus={handleClearFocus}
           isGridSnapEnabled={isGridSnapEnabled}
           onGridSnapToggle={setIsGridSnapEnabled}
-          maxDepth={maxDepth}
-          maxAvailableDepth={maxAvailableDepth}
-          onMaxDepthChange={setMaxDepth}
-          hideSourceCards={hideSourceCards}
-          onHideSourceCardsChange={setHideSourceCards}
+          onGenerateIslandPolygon={() => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleGenerateIslandPolygon(selectedIsland.id);
+          }}
           showCanonicalOnlyEdges={showCanonicalOnlyEdges}
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
           onSourceCardInspect={handleSourceCardInspect}
@@ -3352,6 +3403,11 @@ export default function App() {
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
             hideSourceCards={hideSourceCards}
+            viewState={{
+              hideSourceCards,
+              showCanonicalOnlyEdges,
+              showReadingOrder,
+            }}
             revealCardIds={revealedSourceCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             focusCardId={focusCardId}

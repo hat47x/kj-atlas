@@ -117,4 +117,44 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(sourceCard?.canonicalId).toBe("c1");
   });
 
+  it("preserves island polygon shape points from imported v2 JSON", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_shapes",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 100, y: 0 },
+              { x: 80, y: 60 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.document.islands[0]?.shape).toEqual({
+      kind: "polygon",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 80, y: 60 },
+      ],
+    });
+  });
 });
