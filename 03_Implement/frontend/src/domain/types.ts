@@ -54,6 +54,16 @@ export type Edge = {
   type: EdgeType;
 };
 
+export type Point = {
+  x: number;
+  y: number;
+};
+
+export type IslandShape = {
+  kind: "rect" | "polygon";
+  points?: Point[];
+};
+
 export type Island = {
   id: string;
   cardIds: string[];
@@ -67,6 +77,7 @@ export type Island = {
   imageReviewed?: boolean;
   critique?: string;
   critiqueTags?: string[];
+  shape?: IslandShape;
 };
 
 export type NarrativeCheckReference = {

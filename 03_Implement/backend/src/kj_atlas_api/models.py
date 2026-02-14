@@ -55,6 +55,16 @@ class EdgeV2(BaseModel):
     type: Literal["related", "negate"]
 
 
+class Point(BaseModel):
+    x: float
+    y: float
+
+
+class IslandShape(BaseModel):
+    kind: Literal["rect", "polygon"]
+    points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class Island(BaseModel):
     id: str
     cardIds: list[str]
@@ -68,6 +78,7 @@ class Island(BaseModel):
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    shape: IslandShape | None = Field(default=None, exclude_if=lambda value: value is None)
 
     @model_validator(mode="after")
     def ensure_summary_review_default(self) -> "Island":

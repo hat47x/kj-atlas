@@ -68,6 +68,12 @@ type RenderEdge = {
   type: EdgeType;
 };
 
+export type CanvasViewState = {
+  hideSourceCards: boolean;
+  showCanonicalOnlyEdges: boolean;
+  showReadingOrder: boolean;
+};
+
 type CanvasShellProps = {
   document: DocumentV2;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
@@ -78,6 +84,7 @@ type CanvasShellProps = {
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
   hideSourceCards?: boolean;
+  viewState?: CanvasViewState;
   /** @deprecated Use revealCardIds. */
   peekCardIds?: Set<string>;
   revealCardIds?: Set<string>;
@@ -154,6 +161,7 @@ export function CanvasShell({
   onTransformChange,
   hiddenCardIds,
   hideSourceCards = true,
+  viewState,
   peekCardIds,
   revealCardIds,
   showCanonicalOnlyEdges = false,
@@ -177,6 +185,10 @@ export function CanvasShell({
   visibleIslandIds,
   children,
 }: CanvasShellProps) {
+  const effectiveHideSourceCards = viewState?.hideSourceCards ?? hideSourceCards;
+  const effectiveShowCanonicalOnlyEdges = viewState?.showCanonicalOnlyEdges ?? showCanonicalOnlyEdges;
+  const effectiveShowReadingOrder = viewState?.showReadingOrder ?? showReadingOrder;
+
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
@@ -293,7 +305,7 @@ export function CanvasShell({
   const emptyIdSet = useMemo(() => new Set<string>(), []);
 
   const sourceCardIdSet = useMemo(() => {
-    if (!hideSourceCards) {
+    if (!effectiveHideSourceCards) {
       return emptyIdSet;
     }
     return new Set(
@@ -301,7 +313,7 @@ export function CanvasShell({
         .filter((card) => isSourceCard(card))
         .map((card) => card.id)
     );
-  }, [document.cards, hideSourceCards, emptyIdSet]);
+  }, [document.cards, effectiveHideSourceCards, emptyIdSet]);
   const revealedCardIdSet = revealCardIds ?? peekCardIds ?? emptyIdSet;
 
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
@@ -409,13 +421,13 @@ export function CanvasShell({
   }, [document.cards, document.edges]);
 
   const visibleEdges = useMemo(() => {
-    let edges = getEdgesToRender(document, hideSourceCards === true).filter((edge) => {
+    let edges = getEdgesToRender(document, effectiveHideSourceCards === true).filter((edge) => {
       const isFromVisible = edge.fromKind === "island" || visibleCardIdSet.has(edge.fromId);
       const isToVisible = edge.toKind === "island" || visibleCardIdSet.has(edge.toId);
       return isFromVisible && isToVisible;
     });
 
-    if (showCanonicalOnlyEdges) {
+    if (effectiveShowCanonicalOnlyEdges) {
       edges = edges.filter((edge) => {
         return (
           edge.fromKind === "card" &&
@@ -427,7 +439,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [canonicalCardIdSet, document, hideSourceCards, showCanonicalOnlyEdges, visibleCardIdSet]);
+  }, [canonicalCardIdSet, document, effectiveHideSourceCards, effectiveShowCanonicalOnlyEdges, visibleCardIdSet]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(aggregatedEdges);
@@ -662,7 +674,7 @@ export function CanvasShell({
           hiddenCardIds={hiddenEndpointIdSet}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
-        {showReadingOrder ? (
+        {effectiveShowReadingOrder ? (
           <ReadingOrderLayer
             cards={document.cards}
             islands={document.islands}
