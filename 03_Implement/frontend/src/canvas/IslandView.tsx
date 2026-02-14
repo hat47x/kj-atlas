@@ -1,6 +1,7 @@
 import { memo } from "react";
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 
+import { isPointInPolygon } from "../domain/geometry/point_in_polygon";
 import type { Card, Island, Point } from "../domain/types";
 
 const CARD_WIDTH = 220;
@@ -159,6 +160,33 @@ function IslandViewComponent({
     ? polygonPoints.map((point) => `${point.x - bounds.left},${point.y - bounds.top}`).join(" ")
     : null;
 
+  const handleIslandPointerSelect = (event: MouseEvent<HTMLElement | SVGSVGElement>) => {
+    event.stopPropagation();
+    if (isPickingEdgeTarget) {
+      return;
+    }
+
+    if (hasPolygon) {
+      const targetRect = event.currentTarget.getBoundingClientRect();
+      if (targetRect.width <= 0 || targetRect.height <= 0) {
+        return;
+      }
+
+      const localX = event.clientX - targetRect.left;
+      const localY = event.clientY - targetRect.top;
+      const clickPoint = {
+        x: bounds.left + localX * (bounds.width / targetRect.width),
+        y: bounds.top + localY * (bounds.height / targetRect.height),
+      };
+
+      if (!isPointInPolygon(clickPoint, polygonPoints)) {
+        return;
+      }
+    }
+
+    onSelect(island.id, event.shiftKey);
+  };
+
   return (
     <div
       style={{
@@ -175,46 +203,59 @@ function IslandViewComponent({
         isolation: "isolate",
       }}
     >
-      {/* TODO: Replace bounding-box hit testing with proper point-in-polygon hit testing for polygon islands. */}
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
-        }}
-        style={{
-          pointerEvents: isPickingEdgeTarget ? "none" : "auto",
-          position: "absolute",
-          inset: 0,
-          border: "none",
-          backgroundColor: "transparent",
-          padding: 0,
-          cursor: isPickingEdgeTarget ? "default" : "pointer",
-          zIndex: 1,
-        }}
-        aria-label={`Select island ${island.id}`}
-      />
-      {EDGE_HITBOXES.map((edgeHitbox) => (
-        <button
-          key={edgeHitbox.key}
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
-          }}
-          style={{
-            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
-            position: "absolute",
-            ...edgeHitbox.style,
-            border: "none",
-            backgroundColor: "transparent",
-            padding: 0,
-            cursor: isPickingEdgeTarget ? "default" : "pointer",
-            zIndex: 2,
-          }}
+      {hasPolygon && polygonPath ? (
+        <svg
           aria-label={`Select island ${island.id}`}
-        />
-      ))}
+          role="button"
+          onClick={handleIslandPointerSelect}
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+            zIndex: 2,
+            cursor: isPickingEdgeTarget ? "default" : "pointer",
+          }}
+          viewBox={`0 0 ${Math.max(bounds.width, 1)} ${Math.max(bounds.height, 1)}`}
+        >
+          <polygon points={polygonPath} fill="rgba(0, 0, 0, 0.001)" stroke="transparent" />
+        </svg>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={handleIslandPointerSelect}
+            style={{
+              pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+              position: "absolute",
+              inset: 0,
+              border: "none",
+              backgroundColor: "transparent",
+              padding: 0,
+              cursor: isPickingEdgeTarget ? "default" : "pointer",
+              zIndex: 1,
+            }}
+            aria-label={`Select island ${island.id}`}
+          />
+          {EDGE_HITBOXES.map((edgeHitbox) => (
+            <button
+              key={edgeHitbox.key}
+              type="button"
+              onClick={handleIslandPointerSelect}
+              style={{
+                pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+                position: "absolute",
+                ...edgeHitbox.style,
+                border: "none",
+                backgroundColor: "transparent",
+                padding: 0,
+                cursor: isPickingEdgeTarget ? "default" : "pointer",
+                zIndex: 2,
+              }}
+              aria-label={`Select island ${island.id}`}
+            />
+          ))}
+        </>
+      )}
       {islandBackgroundImage ? (
         <div
           aria-hidden="true"
