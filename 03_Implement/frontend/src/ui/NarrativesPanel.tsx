@@ -1,35 +1,26 @@
 import { useMemo, useState } from "react";
 
 import type { NarrativeIssue, NarrativeIssueReference } from "../api/client";
+import { buildNarrativeGrounding } from "../domain/grounding";
+import type { DocumentV2, Narrative } from "../domain/types";
 import {
   buildNarrativeHtml,
   buildNarrativeMarkdown,
   downloadTextFile,
   type ReadingOrderSnippetMap,
 } from "../export/narrative_export";
-import { buildNarrativeGrounding } from "../domain/grounding";
-import type { DocumentV2 } from "../domain/types";
-
-type NarrativeEntry = {
-  id: string;
-  title: string;
-  text: string;
-  createdAt?: string;
-  basedOnReadingOrder?: string[];
-  reviewed: boolean;
-};
 
 type NarrativesPanelProps = {
   narrativeText: string;
   onNarrativeTextChange: (value: string) => void;
-  onCheckConsistency: () => void;
+  onCheckConsistency: (selectedNarrativeId: string | null) => void;
   onGenerateFromReadingOrder: () => void;
   isChecking: boolean;
   isGenerating: boolean;
   errorMessage: string | null;
   generationErrorMessage: string | null;
   issues: NarrativeIssue[];
-  generatedNarratives: NarrativeEntry[];
+  generatedNarratives: Narrative[];
   onReferenceClick: (reference: NarrativeIssueReference) => void;
   readingOrderSnippets?: ReadingOrderSnippetMap;
   document: DocumentV2 | null;
@@ -66,6 +57,7 @@ export function NarrativesPanel({
   hideSourceCards,
 }: NarrativesPanelProps) {
   const [selectedNarrativeId, setSelectedNarrativeId] = useState<string | null>(null);
+  const [expandedCheckIds, setExpandedCheckIds] = useState<Set<string>>(new Set());
 
   const selectedNarrative = useMemo(() => {
     if (generatedNarratives.length === 0) {
@@ -128,7 +120,9 @@ export function NarrativesPanel({
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
         <button
           type="button"
-          onClick={onCheckConsistency}
+          onClick={() => {
+            onCheckConsistency(selectedNarrative?.id ?? null);
+          }}
           disabled={isChecking || narrativeText.trim().length === 0}
           style={{ cursor: isChecking || narrativeText.trim().length === 0 ? "not-allowed" : "pointer" }}
         >
@@ -173,6 +167,8 @@ export function NarrativesPanel({
                   type="button"
                   onClick={() => {
                     setSelectedNarrativeId(entry.id);
+                    onNarrativeTextChange(entry.text);
+                    setExpandedCheckIds(new Set());
                   }}
                   style={{
                     textAlign: "left",
@@ -196,6 +192,71 @@ export function NarrativesPanel({
       ) : null}
       {selectedNarrative ? (
         <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Past checks</div>
+          {(selectedNarrative.checks ?? []).length === 0 ? (
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>No consistency checks yet.</div>
+          ) : (
+            <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 6 }}>
+              {(selectedNarrative.checks ?? []).map((check) => {
+                const isExpanded = expandedCheckIds.has(check.id);
+                const counts = {
+                  info: check.issues.filter((issue) => issue.severity === "info").length,
+                  warn: check.issues.filter((issue) => issue.severity === "warn").length,
+                  error: check.issues.filter((issue) => issue.severity === "error").length,
+                };
+
+                return (
+                  <li key={check.id} style={{ fontSize: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedCheckIds((previous) => {
+                          const next = new Set(previous);
+                          if (next.has(check.id)) {
+                            next.delete(check.id);
+                          } else {
+                            next.add(check.id);
+                          }
+                          return next;
+                        });
+                      }}
+                      style={{ fontSize: 12, cursor: "pointer" }}
+                    >
+                      {isExpanded ? "▾" : "▸"} {check.createdAt} ({check.kind}) — issues: {check.issues.length} (error:{counts.error} warn:{counts.warn} info:{counts.info})
+                    </button>
+                    {isExpanded ? (
+                      <ul style={{ margin: "6px 0 0", paddingLeft: 16, display: "grid", gap: 6 }}>
+                        {check.issues.map((issue, issueIndex) => (
+                          <li key={`${check.id}-${issueIndex}`} style={{ color: "#1e293b" }}>
+                            <div>
+                              <span style={{ color: severityColorMap[issue.severity], fontWeight: 700, marginRight: 8 }}>[{issue.severity}]</span>
+                              {issue.message}
+                            </div>
+                            {issue.references && issue.references.length > 0 ? (
+                              <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {issue.references.map((reference) => (
+                                  <button
+                                    key={`${check.id}:${reference.kind}:${reference.id}`}
+                                    type="button"
+                                    onClick={() => {
+                                      onReferenceClick(reference);
+                                    }}
+                                    style={{ fontSize: 11, cursor: "pointer" }}
+                                  >
+                                    Focus {reference.kind}:{reference.id}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Grounding / Citations</div>
           {groundingEntries.length === 0 ? (
             <div style={{ fontSize: 12, color: "#64748b" }}>No grounding entries.</div>

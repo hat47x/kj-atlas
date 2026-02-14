@@ -76,6 +76,34 @@ class Island(BaseModel):
         return self
 
 
+class NarrativeCheckReference(BaseModel):
+    id: str
+    kind: Literal["card", "island"]
+
+
+class NarrativeCheckIssue(BaseModel):
+    severity: Literal["info", "warn", "error"]
+    message: str
+    references: list[NarrativeCheckReference] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class NarrativeCheck(BaseModel):
+    id: str
+    createdAt: datetime
+    kind: Literal["consistency"]
+    issues: list[NarrativeCheckIssue]
+
+
+class Narrative(BaseModel):
+    id: str
+    title: str
+    text: str
+    createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
+    basedOnReadingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    reviewed: bool
+    checks: list[NarrativeCheck] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -98,6 +126,7 @@ class DocumentV2(BaseModel):
     edges: list[EdgeV2]
     islands: list[Island]
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]
