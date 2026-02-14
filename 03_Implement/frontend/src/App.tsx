@@ -2537,7 +2537,60 @@ export default function App() {
   const handleClearFocus = useCallback(() => {
     setFocusTarget({});
     setFocusWorldPoint(null);
+    setFocusCardId(null);
   }, []);
+
+  const applyViewPreset = useCallback(
+    (nextState: {
+      maxDepth: ViewMaxDepth;
+      hideSourceCards: boolean;
+      showReadingOrder: boolean;
+      clearRevealedSources?: boolean;
+    }) => {
+      setFocusTarget({});
+      setFocusWorldPoint(null);
+      setFocusCardId(null);
+      setMaxDepth(nextState.maxDepth);
+      setHideSourceCards(nextState.hideSourceCards);
+      setShowReadingOrder(nextState.showReadingOrder);
+      setIsReadingOrderEditMode(false);
+      if (nextState.clearRevealedSources) {
+        setRevealedSourceCardIds(new Set());
+      }
+    },
+    []
+  );
+
+  const handleApplyBirdsEyePreset = useCallback(() => {
+    applyViewPreset({
+      maxDepth: 0,
+      hideSourceCards: true,
+      showReadingOrder: false,
+      clearRevealedSources: true,
+    });
+  }, [applyViewPreset]);
+
+  const handleApplyMidPreset = useCallback(() => {
+    applyViewPreset({
+      maxDepth: 1,
+      hideSourceCards: true,
+      showReadingOrder: false,
+      clearRevealedSources: true,
+    });
+  }, [applyViewPreset]);
+
+  const handleApplyDetailPreset = useCallback(() => {
+    applyViewPreset({ maxDepth: "all", hideSourceCards: false, showReadingOrder: true });
+  }, [applyViewPreset]);
+
+  const handleResetView = useCallback(() => {
+    applyViewPreset({
+      maxDepth: "all",
+      hideSourceCards: true,
+      showReadingOrder: false,
+      clearRevealedSources: true,
+    });
+  }, [applyViewPreset]);
 
   const focusItem = useCallback((kind: "card" | "island", id: string) => {
     if (!document) {
@@ -3338,6 +3391,10 @@ export default function App() {
           <ViewControlsPanel
             focusIslandId={focusTarget.focusIslandId}
             onClearFocus={handleClearFocus}
+            onApplyBirdsEyePreset={handleApplyBirdsEyePreset}
+            onApplyMidPreset={handleApplyMidPreset}
+            onApplyDetailPreset={handleApplyDetailPreset}
+            onResetView={handleResetView}
             maxDepth={maxDepth}
             maxAvailableDepth={maxAvailableDepth}
             onMaxDepthChange={setMaxDepth}

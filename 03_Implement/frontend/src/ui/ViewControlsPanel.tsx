@@ -12,6 +12,10 @@ type ViewControlsPanelProps = {
   onShowReadingOrderChange: (value: boolean) => void;
   isReadingOrderEditMode: boolean;
   onReadingOrderEditModeChange?: (value: boolean) => void;
+  onApplyBirdsEyePreset: () => void;
+  onApplyMidPreset: () => void;
+  onApplyDetailPreset: () => void;
+  onResetView?: () => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -34,6 +38,10 @@ export function ViewControlsPanel({
   onShowReadingOrderChange,
   isReadingOrderEditMode,
   onReadingOrderEditModeChange,
+  onApplyBirdsEyePreset,
+  onApplyMidPreset,
+  onApplyDetailPreset,
+  onResetView,
 }: ViewControlsPanelProps) {
   return (
     <div
@@ -46,6 +54,26 @@ export function ViewControlsPanel({
         boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
       }}
     >
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Viewpoint presets</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={onApplyBirdsEyePreset} style={{ cursor: "pointer" }}>
+            Bird’s-eye
+          </button>
+          <button type="button" onClick={onApplyMidPreset} style={{ cursor: "pointer" }}>
+            Mid
+          </button>
+          <button type="button" onClick={onApplyDetailPreset} style={{ cursor: "pointer" }}>
+            Detail
+          </button>
+          {onResetView ? (
+            <button type="button" onClick={onResetView} style={{ cursor: "pointer" }}>
+              Reset view
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       <div style={sectionStyle}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Focus</div>
         <div style={{ fontSize: 12, color: "#475569" }}>Current: {focusIslandId ?? "(none)"}</div>
