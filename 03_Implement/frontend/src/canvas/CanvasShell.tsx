@@ -10,6 +10,7 @@ import { Marquee } from "./Marquee";
 import { ReadingOrderLayer } from "./ReadingOrderLayer";
 import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
+import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -93,6 +94,9 @@ type CanvasShellProps = {
   onEdgeSelect?: (edgeId: string) => void;
   onAggregatedEdgesChange?: (edges: AggregatedEdgeMeta[]) => void;
   showReadingOrder?: boolean;
+  readingOrderEditMode?: boolean;
+  onReadingOrderRemove?: (entryId: string) => void;
+  onReadingOrderReorder?: (entryId: string, targetEntryId: string, position: ReadingOrderDropPosition) => void;
   visibleIslandIds?: Set<string>;
   children?: ReactNode;
 };
@@ -163,6 +167,9 @@ export function CanvasShell({
   onEdgeSelect,
   onAggregatedEdgesChange,
   showReadingOrder = false,
+  readingOrderEditMode = false,
+  onReadingOrderRemove,
+  onReadingOrderReorder,
   visibleIslandIds,
   children,
 }: CanvasShellProps) {
@@ -598,6 +605,9 @@ export function CanvasShell({
             readingOrder={document.readingOrder ?? []}
             visibleCardIdSet={visibleCardIdSet}
             visibleIslandIdSet={visibleIslandIdSet}
+            isEditMode={readingOrderEditMode}
+            onRemoveEntry={onReadingOrderRemove}
+            onReorderEntry={onReadingOrderReorder}
             onItemFocus={(_entryId, _kind, worldPoint) => {
               const viewport = viewportRef.current;
               if (!viewport) {

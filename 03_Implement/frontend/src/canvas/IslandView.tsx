@@ -16,7 +16,7 @@ type IslandViewProps = {
   cards: Card[];
   isSelected: boolean;
   isPeeking?: boolean;
-  onSelect: (islandId: string) => void;
+  onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   onPeekStart?: (islandId: string) => void;
   onPeekEnd?: () => void;
@@ -148,7 +148,7 @@ function IslandViewComponent({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            if (!isPickingEdgeTarget) onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
           }}
           style={{
             pointerEvents: isPickingEdgeTarget ? "none" : "auto",
@@ -206,11 +206,11 @@ function IslandViewComponent({
         tabIndex={isPickingEdgeTarget ? -1 : 0}
         onClick={(event) => {
           event.stopPropagation();
-          if (!isPickingEdgeTarget) onSelect(island.id);
+          if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
         }}
         onKeyDown={(event) => {
           handleTitleKeyDown(event, () => {
-            if (!isPickingEdgeTarget) onSelect(island.id);
+            if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
           });
         }}
         onDoubleClick={(event) => {

@@ -1,4 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+
+import type { PointerEvent } from "react";
+
+import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 
 import type { Card, Island } from "../domain/types";
 import { getIslandBounds, ISLAND_TITLE_MARGIN_LEFT, ISLAND_TITLE_MARGIN_TOP } from "./IslandView";
@@ -10,6 +14,9 @@ type ReadingOrderLayerProps = {
   visibleCardIdSet: Set<string>;
   visibleIslandIdSet: Set<string>;
   onItemFocus: (entryId: string, kind: "card" | "island", worldPoint: { x: number; y: number }) => void;
+  isEditMode?: boolean;
+  onRemoveEntry?: (entryId: string) => void;
+  onReorderEntry?: (entryId: string, targetEntryId: string, position: ReadingOrderDropPosition) => void;
 };
 
 export type ReadingOrderMarker = {
@@ -86,7 +93,11 @@ export function ReadingOrderLayer({
   visibleCardIdSet,
   visibleIslandIdSet,
   onItemFocus,
+  isEditMode = false,
+  onRemoveEntry,
+  onReorderEntry,
 }: ReadingOrderLayerProps) {
+  const [draggingEntryId, setDraggingEntryId] = useState<string | null>(null);
   const markers = useMemo(
     () => buildReadingOrderMarkers(cards, islands, readingOrder, visibleCardIdSet, visibleIslandIdSet),
     [cards, islands, readingOrder, visibleCardIdSet, visibleIslandIdSet]
@@ -134,12 +145,60 @@ export function ReadingOrderLayer({
       {markers.map((marker) => (
         <button
           key={`${marker.entryId}-${marker.index}`}
+          data-reading-order-entry-id={marker.entryId}
           type="button"
           onPointerDown={(event) => {
             event.stopPropagation();
+            if (!isEditMode) {
+              return;
+            }
+
+            setDraggingEntryId(marker.entryId);
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event: PointerEvent<HTMLButtonElement>) => {
+            if (!isEditMode || draggingEntryId !== marker.entryId) {
+              return;
+            }
+
+            event.stopPropagation();
+          }}
+          onPointerUp={(event: PointerEvent<HTMLButtonElement>) => {
+            if (!isEditMode || draggingEntryId !== marker.entryId) {
+              return;
+            }
+
+            event.stopPropagation();
+
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }
+
+            const dropTarget = document
+              .elementFromPoint(event.clientX, event.clientY)
+              ?.closest("[data-reading-order-entry-id]") as HTMLElement | null;
+            const targetEntryId = dropTarget?.dataset.readingOrderEntryId;
+
+            if (targetEntryId && targetEntryId !== marker.entryId) {
+              const targetRect = dropTarget.getBoundingClientRect();
+              const position: ReadingOrderDropPosition =
+                event.clientX < targetRect.left + targetRect.width / 2 ? "before" : "after";
+              onReorderEntry?.(marker.entryId, targetEntryId, position);
+            }
+
+            setDraggingEntryId(null);
+          }}
+          onPointerCancel={() => {
+            setDraggingEntryId(null);
           }}
           onClick={(event) => {
             event.stopPropagation();
+
+            if (isEditMode && event.altKey) {
+              onRemoveEntry?.(marker.entryId);
+              return;
+            }
+
             onItemFocus(marker.entryId, marker.kind, { x: marker.focusX, y: marker.focusY });
           }}
           style={{
@@ -156,11 +215,20 @@ export function ReadingOrderLayer({
             fontWeight: 700,
             lineHeight: 1,
             zIndex: 31,
-            cursor: "pointer",
+            cursor: isEditMode ? "grab" : "pointer",
             boxShadow: "0 1px 2px rgba(15, 23, 42, 0.2)",
+            opacity: draggingEntryId === marker.entryId ? 0.75 : 1,
           }}
-          title={`Focus reading order item ${marker.index + 1}`}
-          aria-label={`Focus reading order item ${marker.index + 1}`}
+          title={
+            isEditMode
+              ? `Drag to reorder. Alt+Click to remove item ${marker.index + 1}`
+              : `Focus reading order item ${marker.index + 1}`
+          }
+          aria-label={
+            isEditMode
+              ? `Reading order item ${marker.index + 1}. Drag to reorder or Alt click to remove`
+              : `Focus reading order item ${marker.index + 1}`
+          }
         >
           {marker.index + 1}
         </button>

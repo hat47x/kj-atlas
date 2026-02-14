@@ -19,6 +19,7 @@ import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
+import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
 import type { Document, DocumentV2, Island, Narrative } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -404,6 +405,7 @@ export default function App() {
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
+  const [isReadingOrderEditMode, setIsReadingOrderEditMode] = useState(false);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -579,6 +581,18 @@ export default function App() {
     normalizedSearchQuery,
     peekIslandId,
   ]);
+
+  const visibleCardIdSet = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      focusedVisibleDocument.cards
+        .map((card) => card.id)
+        .filter((cardId) => !hiddenCardIdSet.has(cardId))
+    );
+  }, [focusedVisibleDocument, hiddenCardIdSet]);
 
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
@@ -1295,6 +1309,20 @@ export default function App() {
       return;
     }
 
+    if (document && isReadingOrderEditMode && isShiftPressed) {
+      const nextReadingOrder = appendReadingOrderEntry(document.readingOrder ?? [], cardId, visibleCardIdSet);
+      if (nextReadingOrder !== (document.readingOrder ?? [])) {
+        applyDocumentChange(
+          {
+            ...document,
+            readingOrder: nextReadingOrder,
+          },
+          "Added card to reading order"
+        );
+        return;
+      }
+    }
+
     setSelectedCardIds((previousSelectedCardIds) => {
       if (isShiftPressed) {
         const isAlreadySelected = previousSelectedCardIds.includes(cardId);
@@ -1322,8 +1350,10 @@ export default function App() {
     isAnnotateOverlayEnabled,
     isPickingEdgeTarget,
     isPreviewingSuggestion,
+    isReadingOrderEditMode,
     selectedCardIds,
     selectedIslandId,
+    visibleCardIdSet,
   ]);
 
   const handleCanvasBackgroundClick = useCallback(() => {
@@ -2166,7 +2196,7 @@ export default function App() {
     });
   }, [selectedCard, sourceCardsForSelectedCanonical]);
 
-  const handleIslandSelect = useCallback((islandId: string) => {
+  const handleIslandSelect = useCallback((islandId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
       handleConnectToTarget({ id: islandId, kind: "island" });
       return;
@@ -2176,12 +2206,35 @@ export default function App() {
       return;
     }
 
+    if (document && isReadingOrderEditMode && isShiftPressed && visibleIslandIdSet.has(islandId)) {
+      const nextReadingOrder = appendReadingOrderEntry(document.readingOrder ?? [], islandId, visibleIslandIdSet);
+      if (nextReadingOrder !== (document.readingOrder ?? [])) {
+        applyDocumentChange(
+          {
+            ...document,
+            readingOrder: nextReadingOrder,
+          },
+          "Added island to reading order"
+        );
+        return;
+      }
+    }
+
     setSelectedIslandId(islandId);
     if (isPreviewingSuggestion && isAnnotateOverlayEnabled) {
       setSelectedCardIds([]);
     }
     setSelectedEdgeId(null);
-  }, [handleConnectToTarget, isAnnotateOverlayEnabled, isPickingEdgeTarget, isPreviewingSuggestion]);
+  }, [
+    applyDocumentChange,
+    document,
+    handleConnectToTarget,
+    isAnnotateOverlayEnabled,
+    isPickingEdgeTarget,
+    isPreviewingSuggestion,
+    isReadingOrderEditMode,
+    visibleIslandIdSet,
+  ]);
 
   useEffect(() => {
     if (selectedEdgeId && !visibleAggregatedEdges.some((edge) => edge.id === selectedEdgeId)) {
@@ -2461,14 +2514,20 @@ export default function App() {
       return;
     }
 
+    const visibleEntryIdSet = new Set<string>([...visibleCardIdSet, ...visibleIslandIdSet]);
+    const nextReadingOrder = appendReadingOrderEntry(document.readingOrder ?? [], targetId, visibleEntryIdSet);
+    if (nextReadingOrder === (document.readingOrder ?? [])) {
+      return;
+    }
+
     applyDocumentChange(
       {
         ...document,
-        readingOrder: [...(document.readingOrder ?? []), targetId],
+        readingOrder: nextReadingOrder,
       },
       "Added item to reading order"
     );
-  }, [applyDocumentChange, document, selectedCard?.id, selectedIsland?.id]);
+  }, [applyDocumentChange, document, selectedCard?.id, selectedIsland?.id, visibleCardIdSet, visibleIslandIdSet]);
 
   const handleMoveReadingOrderItem = useCallback(
     (index: number, direction: -1 | 1) => {
@@ -2502,18 +2561,67 @@ export default function App() {
         return;
       }
 
-      const readingOrder = [...(document.readingOrder ?? [])];
-      if (index < 0 || index >= readingOrder.length) {
+      const entryId = (document.readingOrder ?? [])[index];
+      if (!entryId) {
         return;
       }
 
-      readingOrder.splice(index, 1);
+      const nextReadingOrder = removeReadingOrderEntry(document.readingOrder ?? [], entryId);
+      if (nextReadingOrder === (document.readingOrder ?? [])) {
+        return;
+      }
+
       applyDocumentChange(
         {
           ...document,
-          readingOrder,
+          readingOrder: nextReadingOrder,
         },
         "Removed item from reading order"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+
+  const handleRemoveReadingOrderEntry = useCallback(
+    (entryId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextReadingOrder = removeReadingOrderEntry(document.readingOrder ?? [], entryId);
+      if (nextReadingOrder === (document.readingOrder ?? [])) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          readingOrder: nextReadingOrder,
+        },
+        "Removed item from reading order"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleReorderReadingOrderEntry = useCallback(
+    (entryId: string, targetEntryId: string, position: "before" | "after") => {
+      if (!document) {
+        return;
+      }
+
+      const nextReadingOrder = moveReadingOrderEntry(document.readingOrder ?? [], entryId, targetEntryId, position);
+      if (nextReadingOrder === (document.readingOrder ?? [])) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          readingOrder: nextReadingOrder,
+        },
+        "Reordered reading order"
       );
     },
     [applyDocumentChange, document]
@@ -2960,7 +3068,14 @@ export default function App() {
       subtitle={`Document: ${activeDocumentId}`}
       headerViewControls={headerViewControls}
       showReadingOrder={showReadingOrder}
-      onShowReadingOrderChange={setShowReadingOrder}
+      onShowReadingOrderChange={(nextValue) => {
+        setShowReadingOrder(nextValue);
+        if (!nextValue) {
+          setIsReadingOrderEditMode(false);
+        }
+      }}
+      isReadingOrderEditMode={isReadingOrderEditMode}
+      onReadingOrderEditModeChange={setIsReadingOrderEditMode}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
@@ -3216,6 +3331,9 @@ export default function App() {
             onEdgeSelect={handleEdgeSelect}
             onAggregatedEdgesChange={setVisibleAggregatedEdges}
             showReadingOrder={showReadingOrder}
+            readingOrderEditMode={isReadingOrderEditMode}
+            onReadingOrderRemove={handleRemoveReadingOrderEntry}
+            onReadingOrderReorder={handleReorderReadingOrderEntry}
             visibleIslandIds={visibleIslandIdSet}
           >
             {islandViews}
