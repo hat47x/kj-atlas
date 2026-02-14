@@ -92,6 +92,7 @@ type CanvasShellProps = {
   onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
   hiddenCardIds?: Set<string>;
+  deemphasizedCardIds?: Set<string>;
   hideSourceCards?: boolean;
   viewState?: CanvasViewState;
   /** @deprecated Use revealCardIds. */
@@ -173,6 +174,7 @@ export function CanvasShell({
   onMarqueeSelect,
   onTransformChange,
   hiddenCardIds,
+  deemphasizedCardIds,
   hideSourceCards = true,
   viewState,
   peekCardIds,
@@ -334,6 +336,7 @@ export function CanvasShell({
   const revealedCardIdSet = revealCardIds ?? peekCardIds ?? emptyIdSet;
 
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
+  const deemphasizedCardIdSet = deemphasizedCardIds ?? emptyIdSet;
   const visibleIslandIdSet = visibleIslandIds ?? emptyIdSet;
   const isCardHidden = useCallback(
     (cardId: string) => hiddenCardIdSet.has(cardId) || (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
@@ -813,6 +816,7 @@ export function CanvasShell({
               isSearchMatch={matchedCardIds?.has(card.id) ?? false}
               isActiveSearchMatch={activeMatchedCardId === card.id}
               isPickingEdgeTarget={isPickingEdgeTarget}
+              isDeemphasized={deemphasizedCardIdSet.has(card.id)}
             />
           );
         })}
