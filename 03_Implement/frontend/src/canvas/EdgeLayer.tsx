@@ -1,13 +1,14 @@
 import { memo, useMemo } from "react";
 import type { MouseEvent } from "react";
 
+import { polygonCentroid } from "../domain/geometry/polygon_centroid";
+import { rayPolygonBoundaryIntersection } from "../domain/geometry/ray_polygon_intersect";
 import type { RenderEdge } from "../domain/edge_aggregate";
 import type { Card, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
 const ISLAND_PADDING = 24;
-
 const WORLD_HALF_SIZE = 100000;
 const WORLD_SIZE = WORLD_HALF_SIZE * 2;
 
@@ -33,6 +34,10 @@ function getCardCenter(card: Card): CenterPoint {
 }
 
 function getIslandCenter(island: Island, cardsById: Map<string, Card>): CenterPoint | null {
+  if (island.shape?.kind === "polygon" && island.shape.points.length >= 3) {
+    return polygonCentroid(island.shape.points);
+  }
+
   const islandCards = island.cardIds
     .map((cardId) => cardsById.get(cardId))
     .filter((card): card is Card => card !== undefined);
@@ -108,6 +113,8 @@ function EdgeLayerComponent({
     return nextIslandCenterById;
   }, [cards, islands]);
 
+  const islandById = useMemo(() => new Map(islands.map((island) => [island.id, island])), [islands]);
+
   const drawableEdges = useMemo(() => {
     return edges.filter((edge) => {
       if (edge.fromKind === "card" && hiddenCardIds?.has(edge.fromId)) {
@@ -124,6 +131,30 @@ function EdgeLayerComponent({
       return fromCenter !== undefined && toCenter !== undefined;
     });
   }, [cardCenterById, edges, hiddenCardIds, islandCenterById]);
+
+  function getEdgeAnchor(endpointKind: "card" | "island", endpointId: string, oppositePoint: CenterPoint): CenterPoint | null {
+    if (endpointKind === "card") {
+      return cardCenterById.get(endpointId) ?? null;
+    }
+
+    const island = islandById.get(endpointId);
+    const islandCenter = islandCenterById.get(endpointId);
+    if (!island || !islandCenter) {
+      return null;
+    }
+
+    if (island.shape?.kind !== "polygon" || island.shape.points.length < 3) {
+      return islandCenter;
+    }
+
+    const centroid = polygonCentroid(island.shape.points);
+    if (!centroid) {
+      return islandCenter;
+    }
+
+    const intersection = rayPolygonBoundaryIntersection(centroid, oppositePoint, island.shape.points);
+    return intersection ?? centroid;
+  }
 
   return (
     <svg
@@ -148,6 +179,12 @@ function EdgeLayerComponent({
           return null;
         }
 
+        const fromAnchor = getEdgeAnchor(edge.fromKind, edge.fromId, toCenter);
+        const toAnchor = getEdgeAnchor(edge.toKind, edge.toId, fromCenter);
+        if (!fromAnchor || !toAnchor) {
+          return null;
+        }
+
         const isSelected = selectedEdgeId === edge.id;
 
         const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
@@ -155,8 +192,8 @@ function EdgeLayerComponent({
           onEdgeSelect?.(edge.id);
         };
 
-        const midX = (fromCenter.x + toCenter.x) / 2;
-        const midY = (fromCenter.y + toCenter.y) / 2;
+        const midX = (fromAnchor.x + toAnchor.x) / 2;
+        const midY = (fromAnchor.y + toAnchor.y) / 2;
 
         // ベースの線色（main準拠）
         const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
@@ -166,10 +203,10 @@ function EdgeLayerComponent({
           <g key={edge.id}>
             {/* 見た目の線 */}
             <line
-              x1={fromCenter.x}
-              y1={fromCenter.y}
-              x2={toCenter.x}
-              y2={toCenter.y}
+              x1={fromAnchor.x}
+              y1={fromAnchor.y}
+              x2={toAnchor.x}
+              y2={toAnchor.y}
               stroke={isSelected ? selectedStroke : baseStroke}
               strokeWidth={isSelected ? 3 : edge.isDerived ? 2.5 : 2}
               vectorEffect="non-scaling-stroke"
@@ -180,10 +217,10 @@ function EdgeLayerComponent({
 
             {/* クリック/選択用のヒット領域（透明・太め） */}
             <line
-              x1={fromCenter.x}
-              y1={fromCenter.y}
-              x2={toCenter.x}
-              y2={toCenter.y}
+              x1={fromAnchor.x}
+              y1={fromAnchor.y}
+              x2={toAnchor.x}
+              y2={toAnchor.y}
               stroke="transparent"
               strokeWidth={10}
               vectorEffect="non-scaling-stroke"
