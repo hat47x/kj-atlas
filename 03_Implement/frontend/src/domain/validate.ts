@@ -139,8 +139,23 @@ function parseIslands(value: unknown): Island[] {
     let shape: Island["shape"] | undefined;
     if (isRecord(item.shape)) {
       const kind = item.shape.kind;
+      let generatedFrom: { cardIds: string[]; versionToken: string } | undefined;
+
+      if (isRecord(item.shape.generatedFrom) && Array.isArray(item.shape.generatedFrom.cardIds)) {
+        const generatedFromCardIds = item.shape.generatedFrom.cardIds.filter(
+          (cardId): cardId is string => typeof cardId === "string"
+        );
+
+        if (typeof item.shape.generatedFrom.versionToken === "string") {
+          generatedFrom = {
+            cardIds: generatedFromCardIds,
+            versionToken: item.shape.generatedFrom.versionToken,
+          };
+        }
+      }
+
       if (kind === "rect") {
-        shape = { kind: "rect" };
+        shape = { kind: "rect", generatedFrom };
       } else if (kind === "polygon" && Array.isArray(item.shape.points)) {
         const points = item.shape.points
           .filter((point): point is { x: number; y: number } => {
@@ -149,7 +164,7 @@ function parseIslands(value: unknown): Island[] {
           .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
 
         if (points.length > 0) {
-          shape = { kind: "polygon", points };
+          shape = { kind: "polygon", points, generatedFrom };
         }
       }
     }
@@ -164,6 +179,7 @@ function parseIslands(value: unknown): Island[] {
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
       shape,
+      shapeStale: typeof item.shapeStale === "boolean" ? item.shapeStale : undefined,
     });
   }
 

@@ -60,9 +60,15 @@ class Point(BaseModel):
     y: float
 
 
+class ShapeGeneratedFrom(BaseModel):
+    cardIds: list[str]
+    versionToken: str
+
+
 class IslandShape(BaseModel):
     kind: Literal["rect", "polygon"]
     points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
+    generatedFrom: ShapeGeneratedFrom | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class Island(BaseModel):
@@ -79,6 +85,7 @@ class Island(BaseModel):
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     shape: IslandShape | None = Field(default=None, exclude_if=lambda value: value is None)
+    shapeStale: bool | None = Field(default=None, exclude_if=lambda value: value is None)
 
     @model_validator(mode="after")
     def ensure_summary_review_default(self) -> "Island":

@@ -157,4 +157,48 @@ describe("validateAndUpgradeImportedDocument", () => {
       ],
     });
   });
+
+  it("preserves polygon generatedFrom metadata and optional shapeStale flag", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_shape_meta",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          shapeStale: true,
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 100, y: 0 },
+              { x: 80, y: 60 },
+            ],
+            generatedFrom: {
+              cardIds: ["c1"],
+              versionToken: "c1:0,0,220,80",
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.document.islands[0]?.shape?.generatedFrom).toEqual({
+      cardIds: ["c1"],
+      versionToken: "c1:0,0,220,80",
+    });
+    expect(result.document.islands[0]?.shapeStale).toBe(true);
+  });
+
 });

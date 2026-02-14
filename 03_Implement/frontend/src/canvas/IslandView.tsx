@@ -19,6 +19,7 @@ type IslandViewProps = {
   isPeeking?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
+  isShapeStale?: boolean;
   onPeekStart?: (islandId: string) => void;
   onPeekEnd?: () => void;
   isPickingEdgeTarget?: boolean;
@@ -139,6 +140,7 @@ function IslandViewComponent({
   isPeeking = false,
   onSelect,
   onToggleCollapsed,
+  isShapeStale = false,
   onPeekStart,
   onPeekEnd,
   isPickingEdgeTarget = false,
@@ -349,6 +351,9 @@ function IslandViewComponent({
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
         {island.collapsed === true ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        {isShapeStale ? (
+          <span style={{ fontWeight: 600, color: "#b45309" }}>(stale)</span>
+        ) : null}
         {island.collapsed === true ? (
           <button
             type="button"
