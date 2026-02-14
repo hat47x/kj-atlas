@@ -1934,8 +1934,32 @@ export default function App() {
       }
 
       const polygonPoints = buildIslandPolygonFromCards(document, targetIsland);
-      if (polygonPoints.length < 3) {
-        setStatusMessage("Unable to generate polygon: need at least 3 unique corners");
+      const nextShape =
+        polygonPoints.length < 3
+          ? {
+              kind: "rect" as const,
+            }
+          : {
+              kind: "polygon" as const,
+              points: polygonPoints,
+            };
+
+      const currentShape = targetIsland.shape;
+      const shapeUnchanged =
+        currentShape?.kind === nextShape.kind &&
+        (nextShape.kind === "rect" ||
+          ((currentShape?.points?.length ?? 0) === nextShape.points.length &&
+            nextShape.points.every((point, index) => {
+              const currentPoint = currentShape?.points?.[index];
+              return currentPoint ? currentPoint.x === point.x && currentPoint.y === point.y : false;
+            })));
+
+      if (shapeUnchanged) {
+        setStatusMessage(
+          nextShape.kind === "rect"
+            ? "Polygon generation fell back to rect (not enough unique corners)"
+            : "Polygon already up to date"
+        );
         return;
       }
 
@@ -1946,17 +1970,19 @@ export default function App() {
             island.id === islandId
               ? {
                   ...island,
-                  shape: {
-                    kind: "polygon",
-                    points: polygonPoints,
-                  },
+                  shape: nextShape,
                 }
               : island
           ),
         },
-        "Generated polygon island shape"
+        nextShape.kind === "rect" ? "Fell back to rect island shape" : "Generated polygon island shape"
       );
-      setStatusMessage("Generated polygon from member cards");
+
+      setStatusMessage(
+        nextShape.kind === "rect"
+          ? "Polygon generation fell back to rect (not enough unique corners)"
+          : "Generated polygon from member cards"
+      );
     },
     [applyDocumentChange, document]
   );
