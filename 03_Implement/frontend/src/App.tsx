@@ -14,13 +14,14 @@ import {
 } from "./api/client";
 import { CanvasShell, getFocusWorldPointForReference } from "./canvas/CanvasShell";
 import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
+import type { FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
-import type { Document, DocumentV2, Island, Narrative } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -410,6 +411,8 @@ export default function App() {
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [flashReference, setFlashReference] = useState<FocusReference | null>(null);
+  const [flashRequestSeq, setFlashRequestSeq] = useState(0);
   const [narrativeText, setNarrativeText] = useState("");
   const [narrativeIssues, setNarrativeIssues] = useState<NarrativeIssue[]>([]);
   const [narrativeCheckError, setNarrativeCheckError] = useState<string | null>(null);
@@ -2260,29 +2263,57 @@ export default function App() {
     setFocusWorldPoint(null);
   }, []);
 
+  const focusItem = useCallback((kind: "card" | "island", id: string) => {
+    if (!document) {
+      return;
+    }
+
+    if (kind === "card") {
+      const targetCard = document.cards.find((card) => card.id === id);
+      if (!targetCard) {
+        setStatusMessage(`Item not found: ${kind}:${id}`);
+        return;
+      }
+
+      const isHiddenBySourceControl = hideSourceCards && isSourceCard(targetCard) && !revealedSourceCardIds.has(id);
+      if (!focusedVisibleDocument?.cards.some((card) => card.id === id) || hiddenCardIdSet.has(id) || isHiddenBySourceControl) {
+        setStatusMessage("Item is hidden by current view controls");
+        return;
+      }
+    }
+
+    if (kind === "island") {
+      const hasIsland = document.islands.some((island) => island.id === id);
+      if (!hasIsland) {
+        setStatusMessage(`Item not found: ${kind}:${id}`);
+        return;
+      }
+
+      if (!visibleIslandIdSet.has(id)) {
+        setStatusMessage("Item is hidden by current view controls");
+        return;
+      }
+    }
+
+    const nextFocusWorldPoint = getFocusWorldPointForReference(document, { kind, id });
+    if (!nextFocusWorldPoint) {
+      setStatusMessage(`Item not found: ${kind}:${id}`);
+      return;
+    }
+
+    setFocusCardId(kind === "card" ? id : null);
+    setFocusWorldPoint(nextFocusWorldPoint);
+    setFlashReference({ kind, id });
+    setFlashRequestSeq((previousSeq) => previousSeq + 1);
+    suppressNextTransformPersistRef.current = true;
+    setFocusRequestSeq((previousSeq) => previousSeq + 1);
+  }, [document, focusedVisibleDocument?.cards, hiddenCardIdSet, hideSourceCards, revealedSourceCardIds, visibleIslandIdSet]);
+
   const handleNarrativeReferenceFocus = useCallback(
     (reference: NarrativeIssueReference) => {
-      if (!document) {
-        return;
-      }
-
-      const nextFocusWorldPoint = getFocusWorldPointForReference(document, reference);
-      if (!nextFocusWorldPoint) {
-        return;
-      }
-
-      if (reference.kind === "card") {
-        setFocusCardId(reference.id);
-        setFocusTarget({});
-      } else {
-        setFocusCardId(null);
-        setFocusTarget({ focusIslandId: reference.id });
-      }
-      setFocusWorldPoint(nextFocusWorldPoint);
-      suppressNextTransformPersistRef.current = true;
-      setFocusRequestSeq((previousSeq) => previousSeq + 1);
+      focusItem(reference.kind, reference.id);
     },
-    [document]
+    [focusItem]
   );
 
   const handleCheckNarrativeConsistency = useCallback(
@@ -3112,6 +3143,7 @@ export default function App() {
                 issues={narrativeIssues}
                 generatedNarratives={generatedNarratives}
                 onReferenceClick={handleNarrativeReferenceFocus}
+                onFocusItem={focusItem}
                 readingOrderSnippets={readingOrderSnippets}
                 document={document}
                 hideSourceCards={hideSourceCards}
@@ -3325,6 +3357,8 @@ export default function App() {
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
+            flashReference={flashReference}
+            flashRequestSeq={flashRequestSeq}
             isPickingEdgeTarget={isPickingEdgeTarget}
             suggestionMoveDiffs={suggestionMoveDiffs}
             selectedEdgeId={selectedEdgeId}

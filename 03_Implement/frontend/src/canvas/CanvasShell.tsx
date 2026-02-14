@@ -88,6 +88,8 @@ type CanvasShellProps = {
   focusCardId?: string | null;
   focusWorldPoint?: { x: number; y: number } | null;
   focusRequestSeq?: number;
+  flashReference?: FocusReference | null;
+  flashRequestSeq?: number;
   isPickingEdgeTarget?: boolean;
   suggestionMoveDiffs?: SuggestionMoveDiff[];
   selectedEdgeId?: string | null;
@@ -161,6 +163,8 @@ export function CanvasShell({
   focusCardId,
   focusWorldPoint,
   focusRequestSeq = 0,
+  flashReference = null,
+  flashRequestSeq = 0,
   isPickingEdgeTarget = false,
   suggestionMoveDiffs,
   selectedEdgeId,
@@ -186,6 +190,7 @@ export function CanvasShell({
     width: number;
     height: number;
   } | null>(null);
+  const [activeFlashReference, setActiveFlashReference] = useState<FocusReference | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -261,6 +266,29 @@ export function CanvasShell({
     );
   }, [document.cards, focusCardId, focusRequestSeq, focusWorldPoint]);
 
+  useEffect(() => {
+    if (!flashReference) {
+      return;
+    }
+
+    setActiveFlashReference(flashReference);
+    const timeoutId = window.setTimeout(() => {
+      setActiveFlashReference((previousReference) => {
+        if (
+          previousReference?.kind === flashReference.kind &&
+          previousReference.id === flashReference.id
+        ) {
+          return null;
+        }
+        return previousReference;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [flashReference, flashRequestSeq]);
+
   const selectedCardIdSet = useMemo(() => new Set(selectedCardIds), [selectedCardIds]);
   const emptyIdSet = useMemo(() => new Set<string>(), []);
 
@@ -292,6 +320,42 @@ export function CanvasShell({
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
+  const highlightedCard = useMemo(() => {
+    if (activeFlashReference?.kind !== "card") {
+      return null;
+    }
+
+    return visibleCards.find((card) => card.id === activeFlashReference.id) ?? null;
+  }, [activeFlashReference, visibleCards]);
+  const highlightedIsland = useMemo(() => {
+    if (activeFlashReference?.kind !== "island") {
+      return null;
+    }
+
+    return document.islands.find((island) => island.id === activeFlashReference.id) ?? null;
+  }, [activeFlashReference, document.islands]);
+  const highlightedIslandBounds = useMemo(() => {
+    if (!highlightedIsland) {
+      return null;
+    }
+
+    const focusedCards = document.cards.filter((card) => highlightedIsland.cardIds.includes(card.id));
+    if (focusedCards.length === 0) {
+      return null;
+    }
+
+    const minX = Math.min(...focusedCards.map((card) => card.x)) - 24;
+    const minY = Math.min(...focusedCards.map((card) => card.y)) - 24;
+    const maxX = Math.max(...focusedCards.map((card) => card.x + CARD_WIDTH)) + 24;
+    const maxY = Math.max(...focusedCards.map((card) => card.y + CARD_HEIGHT)) + 24;
+
+    return {
+      left: minX,
+      top: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }, [document.cards, highlightedIsland]);
   const canonicalCardIdSet = useMemo(
     () => new Set(document.cards.filter((card) => isCanonicalCard(card)).map((card) => card.id)),
     [document.cards]
@@ -621,6 +685,39 @@ export function CanvasShell({
           />
         ) : null}
         {children}
+        {highlightedIslandBounds ? (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: highlightedIslandBounds.left,
+              top: highlightedIslandBounds.top,
+              width: highlightedIslandBounds.width,
+              height: highlightedIslandBounds.height,
+              border: "3px solid #f59e0b",
+              borderRadius: 14,
+              boxShadow: "0 0 0 4px rgba(245, 158, 11, 0.2)",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+        {highlightedCard ? (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: highlightedCard.x - 4,
+              top: highlightedCard.y - 4,
+              width: CARD_WIDTH + 8,
+              height: CARD_HEIGHT + 8,
+              border: "3px solid #f59e0b",
+              borderRadius: 10,
+              boxShadow: "0 0 0 4px rgba(245, 158, 11, 0.2)",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
+        ) : null}
         {visibleCards.map((card) => {
           return (
             <CardView
