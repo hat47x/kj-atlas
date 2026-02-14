@@ -679,16 +679,21 @@ export function SidePanel({
               </div>
             ) : null}
             {selectedIsland.shape?.kind === "polygon" ? (
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f172a" }}>
-                <input
-                  type="checkbox"
-                  checked={isPolygonVertexEditEnabled}
-                  onChange={(event) => {
-                    onPolygonVertexEditEnabledChange(event.target.checked);
-                  }}
-                />
-                Edit polygon vertices
-              </label>
+              <div style={{ display: "grid", gap: 4 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f172a" }}>
+                  <input
+                    type="checkbox"
+                    checked={isPolygonVertexEditEnabled}
+                    onChange={(event) => {
+                      onPolygonVertexEditEnabledChange(event.target.checked);
+                    }}
+                  />
+                  Edit polygon vertices
+                </label>
+                <div style={{ fontSize: 12, color: "#475569" }}>
+                  Alt+Click edge: add vertex / Alt+Click vertex: remove
+                </div>
+              </div>
             ) : null}
             <button
               type="button"

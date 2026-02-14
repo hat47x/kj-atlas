@@ -5,6 +5,7 @@ import type { Point } from "../domain/types";
 type PolygonEditLayerProps = {
   points: Point[];
   onVertexMove: (vertexIndex: number, point: Point) => void;
+  onVertexRemove: (vertexIndex: number) => void;
 };
 
 type DragState = {
@@ -14,11 +15,18 @@ type DragState = {
 
 const HANDLE_SIZE = 10;
 
-export function PolygonEditLayer({ points, onVertexMove }: PolygonEditLayerProps) {
+export function PolygonEditLayer({ points, onVertexMove, onVertexRemove }: PolygonEditLayerProps) {
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>, vertexIndex: number) => {
+    if (event.altKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      onVertexRemove(vertexIndex);
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -63,6 +71,7 @@ export function PolygonEditLayer({ points, onVertexMove }: PolygonEditLayerProps
           key={index}
           role="button"
           aria-label={`Move polygon vertex ${index + 1}`}
+          title="Drag to move / Alt+Click to remove"
           onPointerDown={(event) => {
             handlePointerDown(event, index);
           }}
