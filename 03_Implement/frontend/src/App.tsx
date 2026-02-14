@@ -455,6 +455,7 @@ export default function App() {
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
+  const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
@@ -1959,9 +1960,9 @@ export default function App() {
       const shapeUnchanged =
         currentShape?.kind === nextShape.kind &&
         (nextShape.kind === "rect" ||
-          ((currentShape?.points?.length ?? 0) === nextShape.points.length &&
+          ((currentShape?.kind === "polygon" ? currentShape.points.length : 0) === nextShape.points.length &&
             nextShape.points.every((point, index) => {
-              const currentPoint = currentShape?.points?.[index];
+              const currentPoint = currentShape?.kind === "polygon" ? currentShape.points[index] : undefined;
               return currentPoint ? currentPoint.x === point.x && currentPoint.y === point.y : false;
             }))) &&
         generatedFromUnchanged;
@@ -1994,6 +1995,55 @@ export default function App() {
         nextShape.kind === "rect"
           ? "Polygon generation fell back to rect (not enough unique corners)"
           : "Generated polygon from member cards"
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handlePolygonVertexMove = useCallback(
+    (islandId: string, vertexIndex: number, point: Point) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId || island.shape?.kind !== "polygon") {
+          return island;
+        }
+
+        if (vertexIndex < 0 || vertexIndex >= island.shape.points.length) {
+          return island;
+        }
+
+        const currentPoint = island.shape.points[vertexIndex];
+        if (currentPoint.x === point.x && currentPoint.y === point.y) {
+          return island;
+        }
+
+        const nextPoints = island.shape.points.map((targetPoint, index) =>
+          index === vertexIndex ? { ...point } : targetPoint
+        );
+
+        return {
+          ...island,
+          shape: {
+            ...island.shape,
+            points: nextPoints,
+          },
+        };
+      });
+
+      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Moved polygon vertex"
       );
     },
     [applyDocumentChange, document]
@@ -2253,6 +2303,14 @@ export default function App() {
 
     return document.islands.find((island) => island.id === selectedIslandId) ?? null;
   }, [document, selectedIslandId]);
+
+  useEffect(() => {
+    if (selectedIsland?.shape?.kind === "polygon") {
+      return;
+    }
+
+    setIsPolygonVertexEditEnabled(false);
+  }, [selectedIsland]);
 
   const stalePolygonIslandIdSet = useMemo(() => {
     if (!document) {
@@ -3373,6 +3431,8 @@ export default function App() {
           onFocusIsland={handleFocusIsland}
           isGridSnapEnabled={isGridSnapEnabled}
           onGridSnapToggle={setIsGridSnapEnabled}
+          isPolygonVertexEditEnabled={isPolygonVertexEditEnabled}
+          onPolygonVertexEditEnabledChange={setIsPolygonVertexEditEnabled}
           onGenerateIslandPolygon={() => {
             if (!selectedIsland) {
               return;
@@ -3478,6 +3538,10 @@ export default function App() {
             onReadingOrderRemove={handleRemoveReadingOrderEntry}
             onReadingOrderReorder={handleReorderReadingOrderEntry}
             visibleIslandIds={visibleIslandIdSet}
+            polygonVertexEditIslandId={
+              isPolygonVertexEditEnabled && selectedIsland?.shape?.kind === "polygon" ? selectedIsland.id : null
+            }
+            onPolygonVertexMove={handlePolygonVertexMove}
           >
             {islandViews}
           </CanvasShell>

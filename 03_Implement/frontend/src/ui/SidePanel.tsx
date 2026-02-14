@@ -38,6 +38,8 @@ type SidePanelProps = {
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
   onGenerateIslandPolygon: () => void;
+  isPolygonVertexEditEnabled: boolean;
+  onPolygonVertexEditEnabledChange: (value: boolean) => void;
   showCanonicalOnlyEdges: boolean;
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onSourceCardInspect: (cardId: string) => void;
@@ -90,6 +92,8 @@ export function SidePanel({
   isGridSnapEnabled,
   onGridSnapToggle,
   onGenerateIslandPolygon,
+  isPolygonVertexEditEnabled,
+  onPolygonVertexEditEnabledChange,
   showCanonicalOnlyEdges,
   onShowCanonicalOnlyEdgesChange,
   onSourceCardInspect,
@@ -674,6 +678,18 @@ export function SidePanel({
                 Shape is stale
               </div>
             ) : null}
+            {selectedIsland.shape?.kind === "polygon" ? (
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f172a" }}>
+                <input
+                  type="checkbox"
+                  checked={isPolygonVertexEditEnabled}
+                  onChange={(event) => {
+                    onPolygonVertexEditEnabledChange(event.target.checked);
+                  }}
+                />
+                Edit polygon vertices
+              </label>
+            ) : null}
             <button
               type="button"
               onClick={onGenerateIslandPolygon}
@@ -687,7 +703,7 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Regenerate polygon
+              {selectedIsland.shape?.generatedFrom ? "Reset to generated polygon" : "Regenerate polygon"}
             </button>
             <button
               type="button"
