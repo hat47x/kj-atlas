@@ -69,6 +69,34 @@ export type Island = {
   critiqueTags?: string[];
 };
 
+export type NarrativeCheckReference = {
+  id: string;
+  kind: "card" | "island";
+};
+
+export type NarrativeCheckIssue = {
+  severity: "info" | "warn" | "error";
+  message: string;
+  references?: NarrativeCheckReference[];
+};
+
+export type NarrativeCheck = {
+  id: string;
+  createdAt: string;
+  kind: "consistency";
+  issues: NarrativeCheckIssue[];
+};
+
+export type Narrative = {
+  id: string;
+  title: string;
+  text: string;
+  createdAt?: string;
+  basedOnReadingOrder?: string[];
+  reviewed: boolean;
+  checks?: NarrativeCheck[];
+};
+
 export type DocumentV1 = {
   version: 1;
   id: string;
@@ -91,6 +119,7 @@ export type DocumentV2 = {
   edges: Edge[];
   islands: Island[];
   readingOrder?: string[];
+  narratives?: Narrative[];
 };
 
 export type Document = DocumentV1 | DocumentV2;

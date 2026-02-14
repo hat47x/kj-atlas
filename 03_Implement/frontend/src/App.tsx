@@ -19,7 +19,7 @@ import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { applyCanonicalization } from "./domain/canonical_ops";
-import type { Document, DocumentV2, Island } from "./domain/types";
+import type { Document, DocumentV2, Island, Narrative } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -52,14 +52,6 @@ type MergeSuggestionDraft = {
   isEdited: boolean;
 };
 
-type NarrativeEntry = {
-  id: string;
-  title: string;
-  text: string;
-  createdAt?: string;
-  basedOnReadingOrder?: string[];
-  reviewed: boolean;
-};
 
 type EdgeEndpointKind = "card" | "island";
 
@@ -111,6 +103,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     edges: [],
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -138,6 +131,7 @@ function createNewDocument(docId: string): DocumentV2 {
     ],
     edges: [],
     islands: [],
+    narratives: [],
   };
 }
 
@@ -157,6 +151,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     return {
       ...document,
       readingOrder: document.readingOrder ?? [],
+      narratives: document.narratives ?? [],
     };
   }
 
@@ -165,6 +160,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     version: 2,
     islands: [],
     readingOrder: [],
+    narratives: [],
   };
 }
 
@@ -417,7 +413,6 @@ export default function App() {
   const [narrativeCheckError, setNarrativeCheckError] = useState<string | null>(null);
   const [isCheckingNarrative, setIsCheckingNarrative] = useState(false);
   const [isGeneratingNarrative, setIsGeneratingNarrative] = useState(false);
-  const [generatedNarratives, setGeneratedNarratives] = useState<NarrativeEntry[]>([]);
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
@@ -432,6 +427,7 @@ export default function App() {
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
 
   const document = history?.present ?? null;
+  const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
   const focusedVisibleDocument = useMemo(() => {
@@ -2236,24 +2232,61 @@ export default function App() {
     [document]
   );
 
-  const handleCheckNarrativeConsistency = useCallback(async () => {
-    if (!document || narrativeText.trim().length === 0) {
-      return;
-    }
+  const handleCheckNarrativeConsistency = useCallback(
+    async (selectedNarrativeId: string | null) => {
+      if (!document || narrativeText.trim().length === 0) {
+        return;
+      }
 
-    setIsCheckingNarrative(true);
-    setNarrativeCheckError(null);
-    try {
-      const result = await checkNarrative(document, narrativeText, document.readingOrder);
-      setNarrativeIssues(result.issues);
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
-      setNarrativeCheckError(message);
-      setNarrativeIssues([]);
-    } finally {
-      setIsCheckingNarrative(false);
-    }
-  }, [document, narrativeText]);
+      setIsCheckingNarrative(true);
+      setNarrativeCheckError(null);
+      try {
+        const result = await checkNarrative(document, narrativeText, document.readingOrder);
+        setNarrativeIssues(result.issues);
+
+        if (!selectedNarrativeId) {
+          return;
+        }
+
+        const selectedNarrative = (document.narratives ?? []).find((entry) => entry.id === selectedNarrativeId);
+        if (!selectedNarrative) {
+          return;
+        }
+
+        const nextCheck = {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          kind: "consistency" as const,
+          issues: result.issues,
+        };
+
+        const nextNarratives = (document.narratives ?? []).map((entry) =>
+          entry.id === selectedNarrativeId
+            ? {
+                ...entry,
+                text: narrativeText,
+                checks: [...(entry.checks ?? []), nextCheck],
+              }
+            : entry
+        );
+
+        applyDocumentChange(
+          withUpdatedTimestamp({
+            ...document,
+            narratives: nextNarratives,
+          }),
+          "Recorded consistency check"
+        );
+      } catch (error) {
+        const message = error instanceof ApiError ? error.message : "Failed to check narrative consistency";
+        setNarrativeCheckError(message);
+        setNarrativeIssues([]);
+      } finally {
+        setIsCheckingNarrative(false);
+      }
+    },
+    [applyDocumentChange, document, narrativeText]
+  );
 
   const handleGenerateNarrativeFromReadingOrder = useCallback(async () => {
     if (!document) {
@@ -2265,17 +2298,21 @@ export default function App() {
     try {
       const draftIndex = generatedNarratives.length + 1;
       const result = await generateNarrative(document, `Draft ${draftIndex}`);
-      setGeneratedNarratives((previous) => [
-        ...previous,
-        {
-          id: crypto.randomUUID(),
-          title: `Generated Draft ${draftIndex}`,
-          text: result.text,
-          createdAt: new Date().toISOString(),
-          basedOnReadingOrder: result.basedOnReadingOrder,
-          reviewed: false,
-        },
-      ]);
+      const nextNarrative: Narrative = {
+        id: crypto.randomUUID(),
+        title: `Generated Draft ${draftIndex}`,
+        text: result.text,
+        createdAt: new Date().toISOString(),
+        basedOnReadingOrder: result.basedOnReadingOrder,
+        reviewed: false,
+      };
+      applyDocumentChange(
+        withUpdatedTimestamp({
+          ...document,
+          narratives: [...(document.narratives ?? []), nextNarrative],
+        }),
+        "Generated narrative draft"
+      );
       setNarrativeText(result.text);
       setNarrativeIssues([]);
       if (result.warnings && result.warnings.length > 0) {
@@ -2287,7 +2324,7 @@ export default function App() {
     } finally {
       setIsGeneratingNarrative(false);
     }
-  }, [document, generatedNarratives.length]);
+  }, [applyDocumentChange, document, generatedNarratives.length]);
 
 
   const readingOrderSnippets = useMemo(() => {
@@ -2947,8 +2984,8 @@ export default function App() {
               <NarrativesPanel
                 narrativeText={narrativeText}
                 onNarrativeTextChange={setNarrativeText}
-                onCheckConsistency={() => {
-                  void handleCheckNarrativeConsistency();
+                onCheckConsistency={(selectedNarrativeId) => {
+                  void handleCheckNarrativeConsistency(selectedNarrativeId);
                 }}
                 onGenerateFromReadingOrder={() => {
                   void handleGenerateNarrativeFromReadingOrder();
