@@ -71,6 +71,18 @@ class IslandShape(BaseModel):
     generatedFrom: ShapeGeneratedFrom | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class SummaryHistoryEntry(BaseModel):
+    id: str
+    createdAt: datetime
+    fromText: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    toText: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    fromReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    toReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    changeKind: Literal["manual", "ai", "import", "unknown"]
+    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    groundingIds: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class Island(BaseModel):
     id: str
     cardIds: list[str]
@@ -81,6 +93,7 @@ class Island(BaseModel):
     summaryText: str | None = None
     summaryReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     summaryGrounding: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    summaryHistory: list[SummaryHistoryEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     imageUrl: str | None = None
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None

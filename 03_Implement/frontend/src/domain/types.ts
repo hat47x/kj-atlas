@@ -77,6 +77,18 @@ export type PolygonIslandShape = {
 
 export type IslandShape = RectIslandShape | PolygonIslandShape;
 
+export type SummaryHistoryEntry = {
+  id: string;
+  createdAt: string;
+  fromText: string | null;
+  toText: string | null;
+  fromReviewed: boolean | null;
+  toReviewed: boolean | null;
+  changeKind: "manual" | "ai" | "import" | "unknown";
+  note?: string;
+  groundingIds?: string[];
+};
+
 export type Island = {
   id: string;
   cardIds: string[];
@@ -87,6 +99,7 @@ export type Island = {
   summaryText?: string;
   summaryReviewed?: boolean;
   summaryGrounding?: string[];
+  summaryHistory?: SummaryHistoryEntry[];
   imageUrl?: string;
   imageReviewed?: boolean;
   critique?: string;

@@ -31,6 +31,8 @@ type SidePanelProps = {
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
+  onRestoreSummaryHistoryEntry: (historyEntryId: string) => void;
+  onShowSummaryHistoryGrounding: (groundingIds: string[]) => void;
   onSummaryReviewedChange: (value: boolean) => void;
   onSuggestIslandSummary: () => void;
   isSuggestingIslandSummary: boolean;
@@ -96,6 +98,8 @@ export function SidePanel({
   onTitleChange,
   onTitleReviewedChange,
   onSummaryTextChange,
+  onRestoreSummaryHistoryEntry,
+  onShowSummaryHistoryGrounding,
   onSummaryReviewedChange,
   onSuggestIslandSummary,
   isSuggestingIslandSummary,
@@ -150,10 +154,31 @@ export function SidePanel({
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState("");
+  const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
+
+  const summaryHistoryEntries = useMemo(() => {
+    const entries = selectedIsland?.summaryHistory ?? [];
+    return [...entries].reverse();
+  }, [selectedIsland?.summaryHistory]);
+
+  const formatSummaryHistoryTimestamp = (createdAt: string) => {
+    const parsedDate = new Date(createdAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return createdAt;
+    }
+
+    return parsedDate.toLocaleString();
+  };
 
   useEffect(() => {
     setHasImagePreviewError(false);
   }, [selectedIsland?.id, selectedIsland?.imageUrl]);
+
+  useEffect(() => {
+    setSummaryDraft(selectedIsland?.summaryText ?? "");
+    setExpandedSummaryHistoryEntryId(null);
+  }, [selectedIsland?.id, selectedIsland?.summaryText]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -627,9 +652,12 @@ export function SidePanel({
             </div>
           ) : null}
           <textarea
-            value={selectedIsland.summaryText ?? ""}
+            value={summaryDraft}
             onChange={(event) => {
-              onSummaryTextChange(event.target.value);
+              setSummaryDraft(event.target.value);
+            }}
+            onBlur={() => {
+              onSummaryTextChange(summaryDraft);
             }}
             placeholder="Optional summary for collapsed view"
             rows={3}
@@ -643,6 +671,101 @@ export function SidePanel({
               resize: "vertical",
             }}
           />
+          <details style={{ marginBottom: 10 }}>
+            <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+              Summary history ({summaryHistoryEntries.length})
+            </summary>
+            <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+              {summaryHistoryEntries.length === 0 ? (
+                <div style={{ fontSize: 12, color: "#64748b" }}>No summary history yet.</div>
+              ) : (
+                summaryHistoryEntries.map((entry) => {
+                  const isExpanded = expandedSummaryHistoryEntryId === entry.id;
+                  const preview = (entry.toText ?? "").slice(0, 80);
+
+                  return (
+                    <div key={entry.id} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpandedSummaryHistoryEntryId(isExpanded ? null : entry.id);
+                        }}
+                        style={{
+                          width: "100%",
+                          textAlign: "left",
+                          border: "none",
+                          background: "transparent",
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "grid",
+                          gap: 4,
+                        }}
+                      >
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span
+                            style={{
+                              borderRadius: 999,
+                              border: "1px solid #cbd5e1",
+                              padding: "1px 7px",
+                              fontSize: 11,
+                              color: "#334155",
+                              backgroundColor: "#f8fafc",
+                              textTransform: "lowercase",
+                            }}
+                          >
+                            {entry.changeKind}
+                          </span>
+                          <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || "(empty)"}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#475569" }}>
+                          reviewed: {entry.toReviewed === null ? "(unchanged)" : entry.toReviewed ? "true" : "false"}
+                        </div>
+                      </button>
+                      {isExpanded ? (
+                        <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                          <div style={{ fontSize: 11, color: "#475569" }}>From</div>
+                          <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
+                            {entry.fromText ?? "(empty)"}
+                          </pre>
+                          <div style={{ fontSize: 11, color: "#475569" }}>To</div>
+                          <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
+                            {entry.toText ?? "(empty)"}
+                          </pre>
+                          {entry.groundingIds && entry.groundingIds.length > 0 ? (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                              <div style={{ fontSize: 11, color: "#475569" }}>
+                                Grounding snapshot: {entry.groundingIds.length}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onShowSummaryHistoryGrounding(entry.groundingIds ?? []);
+                                }}
+                                style={{ fontSize: 11, padding: "2px 6px" }}
+                              >
+                                Show grounding
+                              </button>
+                            </div>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onRestoreSummaryHistoryEntry(entry.id);
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            Restore this version
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </details>
+
           <label
             style={{
               display: "flex",

@@ -26,6 +26,7 @@ import { computeConvexHull } from "./domain/geometry/convex_hull";
 import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { isTemporaryRevealEligible } from "./domain/visibility";
+import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -1171,26 +1172,20 @@ export default function App() {
 
     try {
       const result = await suggestIslandSummary(document, targetIsland.id);
-      const nextIslands = document.islands.map((island) => {
-        if (island.id !== targetIsland.id) {
-          return island;
-        }
-
-        return {
-          ...island,
+      const nextDocument = updateIslandSummaryWithHistory(
+        document,
+        targetIsland.id,
+        {
           summaryText: result.summaryText,
           summaryReviewed: false,
           summaryGrounding: result.groundingIds,
-        };
-      });
-
-      applyDocumentChange(
-        {
-          ...document,
-          islands: nextIslands,
         },
-        "Suggested island summary"
+        {
+          changeKind: "ai",
+        }
       );
+
+      applyDocumentChange(nextDocument, "Suggested island summary");
       setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
         ...previousWarnings,
         [targetIsland.id]: result.warnings ?? [],
@@ -1702,34 +1697,23 @@ export default function App() {
       }
 
       const nextSummaryText = rawSummaryText.length > 0 ? rawSummaryText : undefined;
-      const nextIslands = document.islands.map((island) => {
-        if (island.id !== islandId) {
-          return island;
-        }
-
-        if ((island.summaryText ?? undefined) === nextSummaryText && island.summaryReviewed === true) {
-          return island;
-        }
-
-        return {
-          ...island,
+      const nextDocument = updateIslandSummaryWithHistory(
+        document,
+        islandId,
+        {
           summaryText: nextSummaryText,
           summaryReviewed: true,
-        };
-      });
+        },
+        {
+          changeKind: "manual",
+        }
+      );
 
-      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
-      if (!hasChanges) {
+      if (nextDocument === document) {
         return;
       }
 
-      applyDocumentChange(
-        {
-          ...document,
-          islands: nextIslands,
-        },
-        "Updated island summary"
-      );
+      applyDocumentChange(nextDocument, "Updated island summary");
     },
     [applyDocumentChange, document]
   );
@@ -1969,6 +1953,42 @@ export default function App() {
         },
         "Updated island title reviewed state"
       );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRestoreIslandSummaryVersion = useCallback(
+    (islandId: string, historyEntryId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const island = document.islands.find((item) => item.id === islandId);
+      const historyEntry = island?.summaryHistory?.find((entry) => entry.id === historyEntryId);
+      if (!island || !historyEntry) {
+        return;
+      }
+
+      const restoredSummaryText = historyEntry.toText ?? undefined;
+      const nextDocument = updateIslandSummaryWithHistory(
+        document,
+        islandId,
+        {
+          summaryText: restoredSummaryText,
+          summaryReviewed: historyEntry.toReviewed ?? false,
+        },
+        {
+          changeKind: "manual",
+          note: `rollback:${historyEntry.id}`,
+          forceHistoryEntry: true,
+        }
+      );
+
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(nextDocument, "Restored island summary version");
     },
     [applyDocumentChange, document]
   );
@@ -3806,6 +3826,16 @@ export default function App() {
             }
 
             handleIslandSummaryTextChange(selectedIsland.id, value);
+          }}
+          onRestoreSummaryHistoryEntry={(historyEntryId) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleRestoreIslandSummaryVersion(selectedIsland.id, historyEntryId);
+          }}
+          onShowSummaryHistoryGrounding={(groundingIds) => {
+            revealCardsTemporarily(groundingIds);
           }}
           onSummaryReviewedChange={(value) => {
             if (!selectedIsland) {
