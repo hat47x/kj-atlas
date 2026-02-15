@@ -6,6 +6,9 @@ from sqlalchemy import Integer, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
+RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -158,7 +161,7 @@ class RelationSummary(BaseModel):
     islandBId: str
     relationType: Literal["related", "negate", "unknown"]
     derived: bool
-    text: str
+    text: str = Field(max_length=RELATION_SUMMARY_TEXT_MAX_LENGTH)
     reviewed: bool = False
     groundingCardIds: list[str]
     groundingEdgeIds: list[str]

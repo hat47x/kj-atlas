@@ -8,6 +8,7 @@ import {
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
 import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
+import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 
 type SummaryGroundingItem = {
   id: string;
@@ -1200,8 +1201,12 @@ export function SidePanel({
                   onBlur={() => {
                     onRelationSummaryCommit(relationSummaryDraft);
                   }}
+                  maxLength={RELATION_SUMMARY_TEXT_MAX_LENGTH}
                   style={{ width: "100%", marginTop: 8, minHeight: 110, boxSizing: "border-box" }}
                 />
+                <div style={{ marginTop: 4, fontSize: 11, color: "#64748b" }}>
+                  {relationSummaryDraft.length}/{RELATION_SUMMARY_TEXT_MAX_LENGTH}
+                </div>
                 <label style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                   <input
                     type="checkbox"
