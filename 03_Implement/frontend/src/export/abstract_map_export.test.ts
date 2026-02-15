@@ -87,14 +87,17 @@ describe("abstract map export", () => {
     const doc = createDocument();
     const model = buildAbstractMapExport(doc, { visibleIslandIds: new Set(["i1", "i2"]), abstractMapView: true });
 
-    const markdown = exportAbstractMapMarkdown(model);
-    const html = exportAbstractMapHTML(model);
+    const markdown = exportAbstractMapMarkdown(model, { snapshotFilename: "snapshot.png" });
+    const html = exportAbstractMapHTML(model, { snapshotDataUrl: "data:image/png;base64,abc123" });
 
+    expect(markdown).toContain("![Abstract Map Snapshot](snapshot.png)");
     expect(markdown).toContain("UNREVIEWED");
     expect(markdown).toContain("derived");
     expect(markdown).toContain("Grounding cards:");
     expect(markdown).toContain("Grounding edge IDs:");
     expect(markdown).toContain("Summary (UNREVIEWED draft template)");
+    expect(html).toContain("Abstract Map Snapshot");
+    expect(html).toContain("data:image/png;base64,abc123");
     expect(html).toContain("UNREVIEWED");
     expect(html).toContain("derived");
     expect(html).toContain("Grounding cards:");
