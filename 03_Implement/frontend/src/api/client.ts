@@ -251,6 +251,53 @@ export async function suggestIslandSummary(doc: DocumentV2, islandId: string): P
   return body;
 }
 
+
+export type SummarizeIslandRelationPayload = {
+  doc: DocumentV2;
+  islandAId: string;
+  islandBId: string;
+  relationType: "related" | "negate" | "unknown";
+  derived: boolean;
+  groundingCardIds: string[];
+  groundingEdgeIds: string[];
+  edgeTexts?: { edgeId: string; type: string; from: string; to: string }[];
+  cardTexts: { id: string; text: string }[];
+};
+
+export type SummarizeIslandRelationResult = {
+  text: string;
+  groundingCardIds: string[];
+  groundingEdgeIds: string[];
+  warnings: string[];
+};
+
+export async function summarizeIslandRelation(
+  payload: SummarizeIslandRelationPayload
+): Promise<SummarizeIslandRelationResult> {
+  const response = await fetch(`${API_BASE}/ai/summarize-island-relation`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  const body = (await response.json()) as SummarizeIslandRelationResult;
+  if (typeof body.text !== "string" || body.text.trim().length === 0) {
+    throw new ApiError(500, "Invalid relation summary text");
+  }
+
+  if (!Array.isArray(body.groundingCardIds) || !Array.isArray(body.groundingEdgeIds) || !Array.isArray(body.warnings)) {
+    throw new ApiError(500, "Invalid relation summary response shape");
+  }
+
+  return body;
+}
+
 export type NarrativeIssueReference = {
   id: string;
   kind: "card" | "island";

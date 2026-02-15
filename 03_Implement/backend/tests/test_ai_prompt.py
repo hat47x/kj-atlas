@@ -1,13 +1,19 @@
 from fastapi import HTTPException
 
 from kj_atlas_api.models import CardV2, DocumentV2, EdgeV2, Island, SuggestLayoutRequest, Transform
-from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest
+from kj_atlas_api.models_ai import CheckNarrativeRequest, GenerateNarrativeRequest, SummarizeIslandRelationRequest
 from kj_atlas_api.routes.ai import (
     _build_generate_narrative_prompt,
     _build_narrative_check_prompt,
     _build_prompt,
     _parse_generate_narrative_response,
     _parse_narrative_check_response,
+)
+
+
+from kj_atlas_api.routes.ai_relations import (
+    _build_relation_summary_prompt,
+    _parse_relation_summary_response,
 )
 
 
@@ -213,3 +219,68 @@ def test_parse_narrative_check_response_rejects_empty_message() -> None:
         assert exc.status_code == 422
     else:
         raise AssertionError("expected HTTPException")
+
+
+def test_build_relation_summary_prompt_mentions_uncertainty_and_json_only() -> None:
+    payload = SummarizeIslandRelationRequest(
+        doc=_sample_payload().doc,
+        islandAId="i1",
+        islandBId="i1",
+        relationType="related",
+        derived=False,
+        groundingCardIds=["c1"],
+        groundingEdgeIds=["e1"],
+        cardTexts=[{"id": "c1", "text": "alpha"}],
+        edgeTexts=[{"edgeId": "e1", "type": "related", "from": "c1", "to": "c2"}],
+    )
+
+    prompt = _build_relation_summary_prompt(payload)
+
+    assert "Never present the output as authoritative" in prompt
+    assert "Return strict JSON only" in prompt
+    assert "unsupported claims" in prompt
+
+
+def test_parse_relation_summary_response_rejects_non_subset_grounding_ids() -> None:
+    payload = SummarizeIslandRelationRequest(
+        doc=_sample_payload().doc,
+        islandAId="i1",
+        islandBId="i1",
+        relationType="related",
+        derived=False,
+        groundingCardIds=["c1"],
+        groundingEdgeIds=["e1"],
+        cardTexts=[{"id": "c1", "text": "alpha"}],
+    )
+
+    try:
+        _parse_relation_summary_response(
+            '{"text":"draft","groundingCardIds":["unknown"],"groundingEdgeIds":[],"warnings":[]}',
+            payload,
+        )
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_parse_relation_summary_response_accepts_valid_payload() -> None:
+    payload = SummarizeIslandRelationRequest(
+        doc=_sample_payload().doc,
+        islandAId="i1",
+        islandBId="i1",
+        relationType="related",
+        derived=False,
+        groundingCardIds=["c1"],
+        groundingEdgeIds=["e1"],
+        cardTexts=[{"id": "c1", "text": "alpha"}],
+    )
+
+    parsed = _parse_relation_summary_response(
+        '{"text":"draft","groundingCardIds":["c1"],"groundingEdgeIds":["e1"],"warnings":["missing context"]}',
+        payload,
+    )
+
+    assert parsed.text == "draft"
+    assert parsed.groundingCardIds == ["c1"]
+    assert parsed.warnings == ["missing context"]

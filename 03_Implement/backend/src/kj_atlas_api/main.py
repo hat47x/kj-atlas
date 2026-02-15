@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from kj_atlas_api.db import init_db
 from kj_atlas_api.routes.ai import router as ai_router
+from kj_atlas_api.routes.ai_relations import router as ai_relations_router
 from kj_atlas_api.routes.docs import router as docs_router
 from kj_atlas_api.settings import settings
 
@@ -32,7 +33,7 @@ def on_startup() -> None:
 
 @app.exception_handler(RequestValidationError)
 def handle_validation_error(_, exc: RequestValidationError) -> JSONResponse:
-    return JSONResponse(status_code=400, content={"detail": exc.errors()})
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 @app.get("/healthz")
@@ -42,3 +43,4 @@ def healthz() -> dict[str, str]:
 
 app.include_router(docs_router)
 app.include_router(ai_router)
+app.include_router(ai_relations_router)

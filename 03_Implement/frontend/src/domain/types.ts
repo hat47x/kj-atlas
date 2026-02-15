@@ -126,6 +126,22 @@ export type NarrativeCheck = {
   issues: NarrativeCheckIssue[];
 };
 
+
+export type RelationSummary = {
+  id: string;
+  createdAt: string;
+  islandAId: string;
+  islandBId: string;
+  relationType: "related" | "negate" | "unknown";
+  derived: boolean;
+  text: string;
+  reviewed: boolean;
+  groundingCardIds: string[];
+  groundingEdgeIds: string[];
+  warnings?: string[];
+  sourceSignature: string;
+};
+
 export type Narrative = {
   id: string;
   title: string;
@@ -159,6 +175,7 @@ export type DocumentV2 = {
   islands: Island[];
   readingOrder?: string[];
   narratives?: Narrative[];
+  relationSummaries?: RelationSummary[];
 };
 
 export type Document = DocumentV1 | DocumentV2;
