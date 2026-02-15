@@ -458,7 +458,6 @@ export default function App() {
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [summaryRevealIslandIds, setSummaryRevealIslandIds] = useState<Set<string>>(new Set());
   const [transientRevealCardIds, setTransientRevealCardIds] = useState<Set<string>>(new Set());
-  const [transientRevealIslandIds, setTransientRevealIslandIds] = useState<Set<string>>(new Set());
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -485,6 +484,21 @@ export default function App() {
 
     return applyFocusScope(visibleDocument, focusTarget);
   }, [focusTarget, visibleDocument]);
+  const transientRevealIslandIds = useMemo(() => {
+    if (!document || transientRevealCardIds.size === 0) {
+      return new Set<string>();
+    }
+
+    const revealedIslandIds = new Set<string>();
+    for (const island of document.islands) {
+      if (island.cardIds.some((cardId) => transientRevealCardIds.has(cardId))) {
+        revealedIslandIds.add(island.id);
+      }
+    }
+
+    return revealedIslandIds;
+  }, [document, transientRevealCardIds]);
+  const mergedRevealCardIds = useMemo(() => new Set([...revealedSourceCardIds, ...transientRevealCardIds]), [revealedSourceCardIds, transientRevealCardIds]);
   const suggestionMoveDiffs = useMemo(() => {
     if (!document || !suggestedDocument || !isPreviewingSuggestion) {
       return [] as SuggestionMoveDiff[];
@@ -2604,7 +2618,6 @@ export default function App() {
     }
     transientRevealTimeoutByCardIdRef.current.clear();
     setTransientRevealCardIds(new Set());
-    setTransientRevealIslandIds(new Set());
   }, [document?.id]);
 
   const handleSummaryGroundingCardInspect = useCallback((cardId: string) => {
@@ -2612,28 +2625,13 @@ export default function App() {
       return;
     }
 
-    const targetCard = document.cards.find((card) => card.id === cardId);
-    if (!targetCard) {
+    const hasTargetCard = document.cards.some((card) => card.id === cardId);
+    if (!hasTargetCard) {
       setStatusMessage(`Item not found: card:${cardId}`);
       return;
     }
 
     requestCanvasFocus(cardId);
-    if (isSourceCard(targetCard)) {
-      setRevealedSourceCardIds((previousIds) => {
-        if (previousIds.has(cardId)) {
-          return previousIds;
-        }
-
-        const nextIds = new Set(previousIds);
-        nextIds.add(cardId);
-        return nextIds;
-      });
-    }
-
-    const containerIslandIds = document.islands
-      .filter((island) => island.cardIds.includes(cardId))
-      .map((island) => island.id);
 
     setTransientRevealCardIds((previousIds) => {
       if (previousIds.has(cardId)) {
@@ -2644,17 +2642,6 @@ export default function App() {
       nextIds.add(cardId);
       return nextIds;
     });
-    setTransientRevealIslandIds((previousIds) => {
-      const nextIds = new Set(previousIds);
-      for (const islandId of containerIslandIds) {
-        nextIds.add(islandId);
-      }
-      if (nextIds.size === previousIds.size) {
-        return previousIds;
-      }
-      return nextIds;
-    });
-
     const previousTimeoutId = transientRevealTimeoutByCardIdRef.current.get(cardId);
     if (previousTimeoutId !== undefined) {
       window.clearTimeout(previousTimeoutId);
@@ -2667,20 +2654,6 @@ export default function App() {
         }
         const nextIds = new Set(previousIds);
         nextIds.delete(cardId);
-        return nextIds;
-      });
-      setTransientRevealIslandIds((previousIds) => {
-        if (containerIslandIds.length === 0) {
-          return previousIds;
-        }
-
-        const nextIds = new Set(previousIds);
-        for (const islandId of containerIslandIds) {
-          nextIds.delete(islandId);
-        }
-        if (nextIds.size === previousIds.size) {
-          return previousIds;
-        }
         return nextIds;
       });
       transientRevealTimeoutByCardIdRef.current.delete(cardId);
@@ -3960,7 +3933,7 @@ export default function App() {
               showCanonicalOnlyEdges,
               showReadingOrder,
             }}
-            revealCardIds={new Set([...revealedSourceCardIds, ...transientRevealCardIds])}
+            revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
