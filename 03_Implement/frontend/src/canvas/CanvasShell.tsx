@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, ReactNode, WheelEvent } from "react";
 
 import { getEdgesToRender } from "../domain/edge_aggregate";
+import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import {
   isCanonicalCard,
   isSourceCard,
@@ -99,6 +100,7 @@ type CanvasShellProps = {
   peekCardIds?: Set<string>;
   revealCardIds?: Set<string>;
   showCanonicalOnlyEdges?: boolean;
+  summaryView?: boolean;
   abstractMapView?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -137,8 +139,14 @@ export type AggregatedEdgeMeta = {
   toId: string;
   fromKind: "canonical" | "island";
   toKind: "canonical" | "island";
+  fromLabel?: string;
+  toLabel?: string;
   type: EdgeType;
   sources: AggregatedEdgeSource[];
+  aggregateCount?: number;
+  contributingEdgeIds?: string[];
+  contributingCardIds?: string[];
+  isDerivedIslandEdge?: boolean;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -181,6 +189,7 @@ export function CanvasShell({
   peekCardIds,
   revealCardIds,
   showCanonicalOnlyEdges = false,
+  summaryView = false,
   abstractMapView = false,
   searchQuery = "",
   matchedCardIds,
@@ -463,6 +472,12 @@ export function CanvasShell({
         toId: resolvedToId,
         fromKind: resolvedFromKind,
         toKind: resolvedToKind,
+        fromLabel: resolvedFromKind === "island"
+          ? document.islands.find((island) => island.id === resolvedFromId)?.title?.trim() || resolvedFromId
+          : cardsById.get(resolvedFromId)?.text || resolvedFromId,
+        toLabel: resolvedToKind === "island"
+          ? document.islands.find((island) => island.id === resolvedToId)?.title?.trim() || resolvedToId
+          : cardsById.get(resolvedToId)?.text || resolvedToId,
         type: edge.type,
         sources: [nextSource],
       });
@@ -470,6 +485,32 @@ export function CanvasShell({
 
     return Array.from(grouped.values());
   }, [document.cards, document.edges]);
+
+  const derivedIslandEdges = useMemo(() => {
+    if (!summaryView && !abstractMapView) {
+      return [];
+    }
+
+    return getDerivedIslandEdges(document);
+  }, [abstractMapView, document, summaryView]);
+
+  const derivedIslandEdgeMeta = useMemo<AggregatedEdgeMeta[]>(() => {
+    return derivedIslandEdges.map((edge) => ({
+      id: edge.id,
+      fromId: edge.fromId,
+      toId: edge.toId,
+      fromKind: "island",
+      toKind: "island",
+      fromLabel: document.islands.find((island) => island.id === edge.fromId)?.title?.trim() || edge.fromId,
+      toLabel: document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId,
+      type: edge.type,
+      sources: [],
+      aggregateCount: edge.aggregateCount,
+      contributingEdgeIds: edge.contributingEdgeIds,
+      contributingCardIds: edge.contributingCardIds,
+      isDerivedIslandEdge: true,
+    }));
+  }, [derivedIslandEdges]);
 
   const visibleEdges = useMemo(() => {
     let edges = getEdgesToRender(document, effectiveHideSourceCards === true).filter((edge) => {
@@ -489,12 +530,36 @@ export function CanvasShell({
       });
     }
 
+    if (summaryView || abstractMapView) {
+      edges = [
+        ...edges,
+        ...derivedIslandEdges.filter(
+          (edge) => visibleIslandIdSet.has(edge.fromId) && visibleIslandIdSet.has(edge.toId)
+        ),
+      ];
+    }
+
     return edges;
-  }, [canonicalCardIdSet, document, effectiveHideSourceCards, effectiveShowCanonicalOnlyEdges, visibleCardIdSet, visibleIslandIdSet]);
+  }, [
+    abstractMapView,
+    canonicalCardIdSet,
+    derivedIslandEdges,
+    document,
+    effectiveHideSourceCards,
+    effectiveShowCanonicalOnlyEdges,
+    summaryView,
+    visibleCardIdSet,
+    visibleIslandIdSet,
+  ]);
+
+  const visibleEdgeInspectorMeta = useMemo(() => {
+    const visibleIds = new Set(visibleEdges.map((edge) => edge.id));
+    return [...aggregatedEdges, ...derivedIslandEdgeMeta].filter((edge) => visibleIds.has(edge.id));
+  }, [aggregatedEdges, derivedIslandEdgeMeta, visibleEdges]);
 
   useEffect(() => {
-    onAggregatedEdgesChange?.(aggregatedEdges);
-  }, [aggregatedEdges, onAggregatedEdgesChange]);
+    onAggregatedEdgesChange?.(visibleEdgeInspectorMeta);
+  }, [onAggregatedEdgesChange, visibleEdgeInspectorMeta]);
   const visibleSuggestionMoveDiffs = useMemo(() => {
     const diffs = suggestionMoveDiffs ?? [];
     return diffs.filter((diff) => !isCardHidden(diff.cardId));
@@ -756,6 +821,8 @@ export function CanvasShell({
           islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
+          selectedEdgeId={selectedEdgeId}
+          onEdgeSelect={onEdgeSelect}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />
         {effectiveShowReadingOrder ? (

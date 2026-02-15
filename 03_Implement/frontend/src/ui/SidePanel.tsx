@@ -66,6 +66,7 @@ type SidePanelProps = {
   onShowAllSourcesChange: (value: boolean) => void;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
+  onInspectSelectedEdgeCard: (cardId: string) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -134,6 +135,7 @@ export function SidePanel({
   onShowAllSourcesChange,
   selectedAggregatedEdge,
   onRevealSelectedEdgeSources,
+  onInspectSelectedEdgeCard,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -1014,22 +1016,63 @@ export function SidePanel({
         <>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Edge Inspector</div>
           <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>
-            Endpoint: {selectedAggregatedEdge.fromId} ({selectedAggregatedEdge.fromKind}) → {selectedAggregatedEdge.toId} ({selectedAggregatedEdge.toKind})
+            Endpoint: {selectedAggregatedEdge.fromLabel ?? selectedAggregatedEdge.fromId} ({selectedAggregatedEdge.fromKind}) → {selectedAggregatedEdge.toLabel ?? selectedAggregatedEdge.toId} ({selectedAggregatedEdge.toKind})
           </div>
           <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>Type: {selectedAggregatedEdge.type}</div>
+          {selectedAggregatedEdge.isDerivedIslandEdge ? (
+            <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
+              Count: {selectedAggregatedEdge.aggregateCount ?? selectedAggregatedEdge.sources.length}
+            </div>
+          ) : null}
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-            Contributing source edges ({selectedAggregatedEdge.sources.length})
+            Contributing source edges (
+            {selectedAggregatedEdge.isDerivedIslandEdge
+              ? selectedAggregatedEdge.contributingEdgeIds?.length ?? 0
+              : selectedAggregatedEdge.sources.length}
+            )
           </div>
           <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
-            {selectedAggregatedEdge.sources.slice(0, 20).map((source, index) => (
-              <div key={`${source.sourceFromCardId}-${source.sourceToId}-${index}`} style={{ fontSize: 12, color: "#334155" }}>
-                {source.sourceFromCardId} → {source.sourceToId} ({source.sourceToKind})
-              </div>
-            ))}
-            {selectedAggregatedEdge.sources.length > 20 ? (
+            {(selectedAggregatedEdge.isDerivedIslandEdge
+              ? (selectedAggregatedEdge.contributingEdgeIds ?? []).map((edgeId) => ({
+                  sourceFromCardId: edgeId,
+                  sourceToId: "",
+                  sourceToKind: "card" as const,
+                }))
+              : selectedAggregatedEdge.sources
+            )
+              .slice(0, 20)
+              .map((source, index) => (
+                <div key={`${source.sourceFromCardId}-${source.sourceToId}-${index}`} style={{ fontSize: 12, color: "#334155" }}>
+                  {selectedAggregatedEdge.isDerivedIslandEdge
+                    ? source.sourceFromCardId
+                    : `${source.sourceFromCardId} → ${source.sourceToId} (${source.sourceToKind})`}
+                </div>
+              ))}
+            {(selectedAggregatedEdge.isDerivedIslandEdge
+              ? (selectedAggregatedEdge.contributingEdgeIds?.length ?? 0)
+              : selectedAggregatedEdge.sources.length) > 20 ? (
               <div style={{ fontSize: 12, color: "#64748b" }}>+more</div>
             ) : null}
           </div>
+          {selectedAggregatedEdge.isDerivedIslandEdge && (selectedAggregatedEdge.contributingCardIds?.length ?? 0) > 0 ? (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Contributing cards</div>
+              <div style={{ display: "grid", gap: 4 }}>
+                {selectedAggregatedEdge.contributingCardIds?.map((cardId) => (
+                  <button
+                    key={cardId}
+                    type="button"
+                    onClick={() => {
+                      onInspectSelectedEdgeCard(cardId);
+                    }}
+                    style={{ textAlign: "left", fontSize: 12 }}
+                  >
+                    {cardId}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={onRevealSelectedEdgeSources}
