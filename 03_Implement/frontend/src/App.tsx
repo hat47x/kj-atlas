@@ -38,6 +38,7 @@ import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
+import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 
@@ -738,6 +739,34 @@ export default function App() {
 
     return visibleAggregatedEdges.find((edge) => edge.id === selectedEdgeId) ?? null;
   }, [selectedEdgeId, visibleAggregatedEdges]);
+
+  const selectedIslandRelationEdge = useMemo<IslandRelationEdgeSelection | null>(() => {
+    if (!selectedAggregatedEdge || selectedAggregatedEdge.fromKind !== "island" || selectedAggregatedEdge.toKind !== "island") {
+      return null;
+    }
+
+    if (selectedAggregatedEdge.isDerivedIslandEdge) {
+      return {
+        edgeId: selectedAggregatedEdge.id,
+        fromIslandId: selectedAggregatedEdge.fromId,
+        toIslandId: selectedAggregatedEdge.toId,
+        type: selectedAggregatedEdge.type,
+        isDerived: true,
+        contributingEdgeIds: selectedAggregatedEdge.contributingEdgeIds ?? [],
+        contributingCardIds: selectedAggregatedEdge.contributingCardIds ?? [],
+      };
+    }
+
+    const sourceEdgeId = selectedAggregatedEdge.sources[0]?.sourceEdgeId ?? selectedAggregatedEdge.id;
+
+    return {
+      edgeId: sourceEdgeId,
+      fromIslandId: selectedAggregatedEdge.fromId,
+      toIslandId: selectedAggregatedEdge.toId,
+      type: selectedAggregatedEdge.type,
+      isDerived: false,
+    };
+  }, [selectedAggregatedEdge]);
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(pushRecentDocumentId(docId));
@@ -3985,6 +4014,8 @@ export default function App() {
           onClearTemporaryReveal={clearTemporaryReveal}
           groundingVisibilityMessage={groundingVisibilityMessage}
           onShowAllSourcesChange={handleShowAllSourcesChange}
+          document={document}
+          selectedIslandRelationEdge={selectedIslandRelationEdge}
           selectedAggregatedEdge={selectedAggregatedEdge}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}

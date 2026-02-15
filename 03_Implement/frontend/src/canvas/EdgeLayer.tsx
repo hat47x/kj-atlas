@@ -18,7 +18,7 @@ type EdgeLayerProps = {
   edges: RenderEdge[];
   hiddenCardIds: Set<string>;
   selectedEdgeId?: string | null;
-  onEdgeSelect?: (edgeId: string) => void;
+  onEdgeSelect?: (edgeId: string, edge: RenderEdge) => void;
 };
 
 type CenterPoint = {
@@ -189,7 +189,7 @@ function EdgeLayerComponent({
 
         const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
           event.stopPropagation();
-          onEdgeSelect?.(edge.id);
+          onEdgeSelect?.(edge.id, edge);
         };
 
         const midX = (fromAnchor.x + toAnchor.x) / 2;
@@ -226,6 +226,7 @@ function EdgeLayerComponent({
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               pointerEvents="stroke"
+              style={{ cursor: "pointer" }}
               onPointerDown={(event) => {
                 event.stopPropagation();
               }}

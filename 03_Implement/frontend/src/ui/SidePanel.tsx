@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
-import type { Card, CritiqueTag, Island } from "../domain/types";
+import {
+  buildIslandRelationExplanation,
+  formatIslandRelationExplanationMarkdown,
+  type IslandRelationEdgeSelection,
+} from "../domain/island_relation_explain";
+import type { Card, CritiqueTag, DocumentV2, Island } from "../domain/types";
 
 type SummaryGroundingItem = {
   id: string;
@@ -64,6 +69,8 @@ type SidePanelProps = {
   onClearTemporaryReveal: () => void;
   groundingVisibilityMessage: string | null;
   onShowAllSourcesChange: (value: boolean) => void;
+  document: DocumentV2;
+  selectedIslandRelationEdge: IslandRelationEdgeSelection | null;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
   onInspectSelectedEdgeCard: (cardId: string) => void;
@@ -133,6 +140,8 @@ export function SidePanel({
   onClearTemporaryReveal,
   groundingVisibilityMessage,
   onShowAllSourcesChange,
+  document,
+  selectedIslandRelationEdge,
   selectedAggregatedEdge,
   onRevealSelectedEdgeSources,
   onInspectSelectedEdgeCard,
@@ -160,6 +169,7 @@ export function SidePanel({
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
+  const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -175,6 +185,14 @@ export function SidePanel({
     return parsedDate.toLocaleString();
   };
 
+  const selectedIslandRelationExplanation = useMemo(() => {
+    if (!selectedIslandRelationEdge) {
+      return null;
+    }
+
+    return buildIslandRelationExplanation(document, selectedIslandRelationEdge);
+  }, [document, selectedIslandRelationEdge]);
+
   useEffect(() => {
     setHasImagePreviewError(false);
   }, [selectedIsland?.id, selectedIsland?.imageUrl]);
@@ -183,6 +201,10 @@ export function SidePanel({
     setSummaryDraft(selectedIsland?.summaryText ?? "");
     setExpandedSummaryHistoryEntryId(null);
   }, [selectedIsland?.id, selectedIsland?.summaryText]);
+
+  useEffect(() => {
+    setCopyExplanationFeedback("idle");
+  }, [selectedIslandRelationEdge?.edgeId]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -237,6 +259,19 @@ export function SidePanel({
     }
 
     return CRITIQUE_TAGS.filter((candidateTag) => currentTagSet.has(candidateTag));
+  };
+
+  const handleCopyExplanationClick = async () => {
+    if (!selectedIslandRelationExplanation) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatIslandRelationExplanationMarkdown(selectedIslandRelationExplanation));
+      setCopyExplanationFeedback("copied");
+    } catch {
+      setCopyExplanationFeedback("failed");
+    }
   };
 
   return (
@@ -1089,6 +1124,50 @@ export function SidePanel({
           >
             Reveal involved source cards
           </button>
+          {selectedIslandRelationExplanation ? (
+            <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Explanation (draft)</div>
+              <div
+                style={{
+                  display: "inline-block",
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  color: "#7f1d1d",
+                  backgroundColor: "#fee2e2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 999,
+                  padding: "2px 8px",
+                  marginBottom: 8,
+                }}
+              >
+                Unreviewed (generated)
+              </div>
+              <pre
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  whiteSpace: "pre-wrap",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: 8,
+                  backgroundColor: "#f8fafc",
+                  color: "#0f172a",
+                }}
+              >
+                {`${selectedIslandRelationExplanation.title}\n\n${selectedIslandRelationExplanation.body}\n\nGrounding edge IDs: ${selectedIslandRelationExplanation.groundingEdgeIds.join(", ") || "(none)"}\nGrounding card IDs: ${selectedIslandRelationExplanation.groundingCardIds.join(", ") || "(none)"}`}
+              </pre>
+              <button type="button" onClick={handleCopyExplanationClick} style={{ marginTop: 8, fontSize: 12 }}>
+                Copy Markdown explanation
+              </button>
+              {copyExplanationFeedback === "copied" ? (
+                <div style={{ fontSize: 12, color: "#166534", marginTop: 6 }}>Copied.</div>
+              ) : null}
+              {copyExplanationFeedback === "failed" ? (
+                <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>Copy failed.</div>
+              ) : null}
+            </div>
+          ) : null}
         </>
       ) : hasCardSelection ? (
         <>
