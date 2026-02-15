@@ -69,7 +69,7 @@ type SidePanelProps = {
   onClearTemporaryReveal: () => void;
   groundingVisibilityMessage: string | null;
   onShowAllSourcesChange: (value: boolean) => void;
-  document: DocumentV2;
+  document: DocumentV2 | null;
   selectedIslandRelationEdge: IslandRelationEdgeSelection | null;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
@@ -186,7 +186,7 @@ export function SidePanel({
   };
 
   const selectedIslandRelationExplanation = useMemo(() => {
-    if (!selectedIslandRelationEdge) {
+    if (!document || !selectedIslandRelationEdge) {
       return null;
     }
 
