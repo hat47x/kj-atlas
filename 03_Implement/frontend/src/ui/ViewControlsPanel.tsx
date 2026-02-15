@@ -236,10 +236,10 @@ export function ViewControlsPanel({
           Export PNG (Visible bounds)
         </button>
         <button type="button" onClick={onExportAbstractMapMarkdown} style={{ cursor: "pointer" }}>
-          Export Abstract Map Report (MD + PNG)
+          Export Abstract Map (Markdown)
         </button>
         <button type="button" onClick={onExportAbstractMapHtml} style={{ cursor: "pointer" }}>
-          Export Abstract Map Report (HTML + PNG)
+          Export Abstract Map (HTML)
         </button>
       </div>
     </div>

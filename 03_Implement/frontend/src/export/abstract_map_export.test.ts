@@ -13,7 +13,12 @@ function createDocument(): DocumentV2 {
     updatedAt: "2026-01-03T00:00:00.000Z",
     transform: { panX: 0, panY: 0, zoom: 1 },
     cards: [
-      { id: "c1", text: "Card one text for grounding", x: 0, y: 0 },
+      {
+        id: "c1",
+        text: "Card one text for grounding. ".repeat(12),
+        x: 0,
+        y: 0,
+      },
       { id: "c2", text: "Card two text", x: 0, y: 0 },
       { id: "c3", text: "Card three text", x: 0, y: 0, canonicalId: "c2" },
     ],
@@ -68,7 +73,7 @@ function createDocument(): DocumentV2 {
 }
 
 describe("abstract map export", () => {
-  it("builds deterministic export model with reviewed labels and grounding snippets", () => {
+  it("builds deterministic export model and stays pure", () => {
     const doc = createDocument();
     const viewState = { visibleIslandIds: new Set(["i1", "i2"]), abstractMapView: true };
 
@@ -76,31 +81,57 @@ describe("abstract map export", () => {
     const second = buildAbstractMapExport(doc, viewState);
 
     expect(first).toEqual(second);
-    expect(first.generatedAt).toBe(doc.updatedAt);
-    expect(first.islands[0].summaryReviewed).toBe(false);
-    expect(first.relations.some((item) => item.derived)).toBe(true);
-    const firstGroundedRelation = first.relations.find((item) => (item.groundingCards ?? []).length > 0);
-    expect(firstGroundedRelation?.groundingCards?.[0].snippet).toContain("Card");
+    expect(doc.transform).toEqual({ panX: 0, panY: 0, zoom: 1 });
+    expect(doc.updatedAt).toBe("2026-01-03T00:00:00.000Z");
   });
 
-  it("renders markdown/html with derived and unreviewed labels", () => {
-    const doc = createDocument();
-    const model = buildAbstractMapExport(doc, { visibleIslandIds: new Set(["i1", "i2"]), abstractMapView: true });
+  it("includes reviewed flags, derived labels, and grounding snippets", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: true,
+    });
 
-    const markdown = exportAbstractMapMarkdown(model, { snapshotFilename: "snapshot.png" });
-    const html = exportAbstractMapHTML(model, { snapshotDataUrl: "data:image/png;base64,abc123" });
+    expect(model.islands.find((item) => item.id === "i1")?.summaryReviewed).toBe(false);
+    expect(model.islands.find((item) => item.id === "i2")?.summaryReviewed).toBe(true);
+    expect(model.relations.some((item) => item.derived)).toBe(true);
 
-    expect(markdown).toContain("![Abstract Map Snapshot](snapshot.png)");
+    const snippet = model.relations
+      .flatMap((item) => item.groundingCards ?? [])
+      .find((item) => item.id === "c1")?.snippet;
+    expect(snippet).toBeDefined();
+    expect(snippet?.length).toBeLessThanOrEqual(160);
+  });
+
+  it("does not include derived relations when abstractMapView is off", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: false,
+    });
+
+    expect(model.relations.some((item) => item.derived)).toBe(false);
+  });
+
+  it("renders markdown/html with reviewed semantics and draft template text", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: true,
+    });
+
+    const markdown = exportAbstractMapMarkdown(model);
+    const html = exportAbstractMapHTML(model);
+
+    expect(markdown).toContain("Reviewed semantics");
     expect(markdown).toContain("UNREVIEWED");
     expect(markdown).toContain("derived");
     expect(markdown).toContain("Grounding cards:");
     expect(markdown).toContain("Grounding edge IDs:");
     expect(markdown).toContain("Summary (UNREVIEWED draft template)");
-    expect(html).toContain("Abstract Map Snapshot");
-    expect(html).toContain("data:image/png;base64,abc123");
+
+    expect(html).toContain("Reviewed semantics");
     expect(html).toContain("UNREVIEWED");
     expect(html).toContain("derived");
     expect(html).toContain("Grounding cards:");
     expect(html).toContain("Grounding edge IDs:");
+    expect(html).toContain("Summary (UNREVIEWED draft template)");
   });
 });
