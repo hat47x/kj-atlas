@@ -24,6 +24,10 @@ type ViewControlsPanelProps = {
   onExportAbstractMapHtml: () => void;
   onExportSvgViewport: () => void;
   onExportSvgVisibleBounds: () => void;
+  pngExportScale: 1 | 2;
+  onPngExportScaleChange: (value: 1 | 2) => void;
+  onExportPngViewport: () => void;
+  onExportPngVisibleBounds: () => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -58,6 +62,10 @@ export function ViewControlsPanel({
   onExportAbstractMapHtml,
   onExportSvgViewport,
   onExportSvgVisibleBounds,
+  pngExportScale,
+  onPngExportScaleChange,
+  onExportPngViewport,
+  onExportPngVisibleBounds,
 }: ViewControlsPanelProps) {
   return (
     <div
@@ -208,6 +216,24 @@ export function ViewControlsPanel({
         </button>
         <button type="button" onClick={onExportSvgVisibleBounds} style={{ cursor: "pointer" }}>
           Export SVG (Visible bounds)
+        </button>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          PNG scale
+          <select
+            value={String(pngExportScale)}
+            onChange={(event) => {
+              onPngExportScaleChange(event.target.value === "2" ? 2 : 1);
+            }}
+          >
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+          </select>
+        </label>
+        <button type="button" onClick={onExportPngViewport} style={{ cursor: "pointer" }}>
+          Export PNG (Viewport)
+        </button>
+        <button type="button" onClick={onExportPngVisibleBounds} style={{ cursor: "pointer" }}>
+          Export PNG (Visible bounds)
         </button>
         <button type="button" onClick={onExportAbstractMapMarkdown} style={{ cursor: "pointer" }}>
           Export Abstract Map (Markdown)
