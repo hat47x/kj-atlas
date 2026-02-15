@@ -35,13 +35,14 @@ describe("buildIslandRelationExplanation", () => {
       toIslandId: "island-b",
       type: "related",
       isDerived: false,
+      contributingCardIds: ["card-2", "card-1"],
     };
 
     const explanation = buildIslandRelationExplanation(document, selection);
 
     expect(explanation.title).toBe("Relation: Island A ↔ Island B");
     expect(explanation.groundingEdgeIds).toEqual(["edge-islands"]);
-    expect(explanation.groundingCardIds).toEqual(["card-3", "card-2", "card-1", "card-4"]);
+    expect(explanation.groundingCardIds).toEqual(["card-2", "card-1"]);
     expect(explanation.body).toContain("Type: RELATED");
     expect(explanation.body).toContain("Grounding cards:");
     expect(explanation.body).not.toContain("derived from");
@@ -96,6 +97,7 @@ describe("buildIslandRelationExplanation", () => {
       toIslandId: "island-b",
       type: "related",
       isDerived: false,
+      contributingCardIds: ["card-2", "card-1"],
     });
 
     expect(formatIslandRelationExplanationMarkdown(explanation)).toMatchInlineSnapshot(`
@@ -103,13 +105,11 @@ describe("buildIslandRelationExplanation", () => {
       
       Type: RELATED
       Grounding cards:
-      - card-3: third
       - card-2: second
       - card-1: first
-      - card-4: fourth
       
       Grounding edge IDs: edge-islands
-      Grounding card IDs: card-3, card-2, card-1, card-4"
+      Grounding card IDs: card-2, card-1"
     `);
   });
 });

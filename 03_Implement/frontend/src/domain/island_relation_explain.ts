@@ -87,12 +87,7 @@ export function buildIslandRelationExplanation(
     ? uniqueSortedIds(edgeSelection.contributingEdgeIds ?? [])
     : [edgeSelection.edgeId];
 
-  const groundingCardCandidates = edgeSelection.isDerived
-    ? edgeSelection.contributingCardIds ?? []
-    : [
-        ...(document.islands.find((island) => island.id === edgeSelection.fromIslandId)?.cardIds ?? []),
-        ...(document.islands.find((island) => island.id === edgeSelection.toIslandId)?.cardIds ?? []),
-      ];
+  const groundingCardCandidates = edgeSelection.contributingCardIds ?? [];
 
   const sortedGroundingCardIds = sortCardIdsDeterministically(document, groundingCardCandidates);
   const groundingCardIds = edgeSelection.isDerived ? sortedGroundingCardIds.slice(0, 10) : sortedGroundingCardIds;
