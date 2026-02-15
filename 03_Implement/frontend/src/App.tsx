@@ -25,6 +25,7 @@ import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry
 import { computeConvexHull } from "./domain/geometry/convex_hull";
 import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
+import { isTemporaryRevealEligible } from "./domain/visibility";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -457,7 +458,8 @@ export default function App() {
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [summaryRevealIslandIds, setSummaryRevealIslandIds] = useState<Set<string>>(new Set());
-  const [transientRevealCardIds, setTransientRevealCardIds] = useState<Set<string>>(new Set());
+  const [temporaryRevealCardIds, setTemporaryRevealCardIds] = useState<Set<string>>(new Set());
+  const [groundingVisibilityMessage, setGroundingVisibilityMessage] = useState<string | null>(null);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -484,21 +486,24 @@ export default function App() {
 
     return applyFocusScope(visibleDocument, focusTarget);
   }, [focusTarget, visibleDocument]);
-  const transientRevealIslandIds = useMemo(() => {
-    if (!document || transientRevealCardIds.size === 0) {
+  const temporaryRevealIslandIds = useMemo(() => {
+    if (!document || temporaryRevealCardIds.size === 0) {
       return new Set<string>();
     }
 
     const revealedIslandIds = new Set<string>();
     for (const island of document.islands) {
-      if (island.cardIds.some((cardId) => transientRevealCardIds.has(cardId))) {
+      if (island.cardIds.some((cardId) => temporaryRevealCardIds.has(cardId))) {
         revealedIslandIds.add(island.id);
       }
     }
 
     return revealedIslandIds;
-  }, [document, transientRevealCardIds]);
-  const mergedRevealCardIds = useMemo(() => new Set([...revealedSourceCardIds, ...transientRevealCardIds]), [revealedSourceCardIds, transientRevealCardIds]);
+  }, [document, temporaryRevealCardIds]);
+  const mergedRevealCardIds = useMemo(
+    () => new Set([...revealedSourceCardIds, ...temporaryRevealCardIds]),
+    [revealedSourceCardIds, temporaryRevealCardIds]
+  );
   const suggestionMoveDiffs = useMemo(() => {
     if (!document || !suggestedDocument || !isPreviewingSuggestion) {
       return [] as SuggestionMoveDiff[];
@@ -565,7 +570,7 @@ export default function App() {
     }
 
     const collapsedIds = new Set(focusedVisibleDocument.islands.map((island) => island.id));
-    for (const islandId of transientRevealIslandIds) {
+    for (const islandId of temporaryRevealIslandIds) {
       collapsedIds.delete(islandId);
     }
     for (const islandId of summaryRevealIslandIds) {
@@ -577,7 +582,7 @@ export default function App() {
     }
 
     return collapsedIds;
-  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView, transientRevealIslandIds]);
+  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView, temporaryRevealIslandIds]);
   const islandDepthById = useMemo(() => {
     if (!visibleDocument) {
       return new Map<string, number>();
@@ -623,7 +628,7 @@ export default function App() {
       if (summaryView && !focusTarget.focusIslandId) {
         for (const island of focusedVisibleDocument.islands) {
           const canRevealMembers =
-            summaryRevealIslandIds.has(island.id) || transientRevealIslandIds.has(island.id) || peekIslandId === island.id;
+            summaryRevealIslandIds.has(island.id) || temporaryRevealIslandIds.has(island.id) || peekIslandId === island.id;
           if (canRevealMembers) {
             continue;
           }
@@ -668,7 +673,11 @@ export default function App() {
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
-    for (const cardId of transientRevealCardIds) hiddenCardIds.delete(cardId);
+    for (const cardId of temporaryRevealCardIds) {
+      if (!depthHiddenCardIds.has(cardId)) {
+        hiddenCardIds.delete(cardId);
+      }
+    }
 
     return hiddenCardIds;
   }, [
@@ -683,8 +692,8 @@ export default function App() {
     peekIslandId,
     summaryRevealIslandIds,
     summaryView,
-    transientRevealCardIds,
-    transientRevealIslandIds,
+    temporaryRevealCardIds,
+    temporaryRevealIslandIds,
   ]);
 
   const visibleCardIdSet = useMemo(() => {
@@ -702,7 +711,6 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
-  const transientRevealTimeoutByCardIdRef = useRef<Map<string, number>>(new Map());
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
@@ -2604,21 +2612,43 @@ export default function App() {
   }, [requestCanvasFocus]);
 
   useEffect(() => {
-    return () => {
-      for (const timeoutId of transientRevealTimeoutByCardIdRef.current.values()) {
-        window.clearTimeout(timeoutId);
-      }
-      transientRevealTimeoutByCardIdRef.current.clear();
-    };
-  }, []);
+    setTemporaryRevealCardIds(new Set());
+  }, [document?.id]);
 
   useEffect(() => {
-    for (const timeoutId of transientRevealTimeoutByCardIdRef.current.values()) {
-      window.clearTimeout(timeoutId);
+    if (!groundingVisibilityMessage) {
+      return;
     }
-    transientRevealTimeoutByCardIdRef.current.clear();
-    setTransientRevealCardIds(new Set());
-  }, [document?.id]);
+
+    const timeoutId = window.setTimeout(() => {
+      setGroundingVisibilityMessage(null);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [groundingVisibilityMessage]);
+
+  const revealCardsTemporarily = useCallback((cardIds: string[]) => {
+    if (cardIds.length === 0) {
+      return;
+    }
+
+    setTemporaryRevealCardIds((previousIds) => {
+      const nextIds = new Set(previousIds);
+      for (const cardId of cardIds) {
+        nextIds.add(cardId);
+      }
+      if (nextIds.size === previousIds.size) {
+        return previousIds;
+      }
+      return nextIds;
+    });
+  }, []);
+
+  const clearTemporaryReveal = useCallback(() => {
+    setTemporaryRevealCardIds((previousIds) => (previousIds.size === 0 ? previousIds : new Set()));
+  }, []);
 
   const handleSummaryGroundingCardInspect = useCallback((cardId: string) => {
     if (!document) {
@@ -2631,35 +2661,42 @@ export default function App() {
       return;
     }
 
-    requestCanvasFocus(cardId);
-
-    setTransientRevealCardIds((previousIds) => {
-      if (previousIds.has(cardId)) {
-        return previousIds;
-      }
-
-      const nextIds = new Set(previousIds);
-      nextIds.add(cardId);
-      return nextIds;
-    });
-    const previousTimeoutId = transientRevealTimeoutByCardIdRef.current.get(cardId);
-    if (previousTimeoutId !== undefined) {
-      window.clearTimeout(previousTimeoutId);
+    const isInFocusScope = focusedVisibleDocument?.cards.some((card) => card.id === cardId) ?? false;
+    const isWithinDepth = maxDepth === "all" || (cardMinDepthById.get(cardId) ?? 0) <= maxDepth;
+    if (!isTemporaryRevealEligible({ isInFocusScope, isWithinDepth })) {
+      setGroundingVisibilityMessage("This card is hidden by Focus/Depth view controls.");
+      return;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setTransientRevealCardIds((previousIds) => {
-        if (!previousIds.has(cardId)) {
-          return previousIds;
-        }
-        const nextIds = new Set(previousIds);
-        nextIds.delete(cardId);
-        return nextIds;
-      });
-      transientRevealTimeoutByCardIdRef.current.delete(cardId);
-    }, 2500);
-    transientRevealTimeoutByCardIdRef.current.set(cardId, timeoutId);
-  }, [document, requestCanvasFocus]);
+    requestCanvasFocus(cardId);
+    revealCardsTemporarily([cardId]);
+  }, [cardMinDepthById, document, focusedVisibleDocument?.cards, maxDepth, requestCanvasFocus, revealCardsTemporarily]);
+
+  const handleShowAllSummaryGrounding = useCallback(() => {
+    if (!selectedIsland?.summaryGrounding || selectedIsland.summaryGrounding.length === 0) {
+      return;
+    }
+
+    revealCardsTemporarily(selectedIsland.summaryGrounding);
+    const firstEligibleCardId = selectedIsland.summaryGrounding.find((cardId) => {
+      const isInFocusScope = focusedVisibleDocument?.cards.some((card) => card.id === cardId) ?? false;
+      const isWithinDepth = maxDepth === "all" || (cardMinDepthById.get(cardId) ?? 0) <= maxDepth;
+      return isTemporaryRevealEligible({ isInFocusScope, isWithinDepth });
+    });
+
+    if (firstEligibleCardId) {
+      requestCanvasFocus(firstEligibleCardId);
+    }
+  }, [cardMinDepthById, focusedVisibleDocument?.cards, maxDepth, requestCanvasFocus, revealCardsTemporarily, selectedIsland]);
+
+  /**
+   * Manual test steps:
+   * 1) Enable summary view and hide source cards, then click one grounding item.
+   * 2) Confirm the card is focused/revealed without creating dirty state or undo entries.
+   * 3) Apply focus/depth so the grounding card is out of scope and click again.
+   * 4) Confirm the "hidden by Focus/Depth" message appears and view controls remain unchanged.
+   * 5) Click "Show all grounding on canvas", then "Clear reveal", and verify reveal is session-only after reload.
+   */
 
   const handleShowAllSourcesChange = useCallback((value: boolean) => {
     if (!value) {
@@ -3854,6 +3891,9 @@ export default function App() {
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
           onSourceCardInspect={handleSourceCardInspect}
           onSummaryGroundingCardInspect={handleSummaryGroundingCardInspect}
+          onShowAllSummaryGrounding={handleShowAllSummaryGrounding}
+          onClearTemporaryReveal={clearTemporaryReveal}
+          groundingVisibilityMessage={groundingVisibilityMessage}
           onShowAllSourcesChange={handleShowAllSourcesChange}
           selectedAggregatedEdge={selectedAggregatedEdge}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}

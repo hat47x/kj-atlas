@@ -57,6 +57,9 @@ type SidePanelProps = {
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onSourceCardInspect: (cardId: string) => void;
   onSummaryGroundingCardInspect: (cardId: string) => void;
+  onShowAllSummaryGrounding: () => void;
+  onClearTemporaryReveal: () => void;
+  groundingVisibilityMessage: string | null;
   onShowAllSourcesChange: (value: boolean) => void;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
@@ -119,6 +122,9 @@ export function SidePanel({
   onShowCanonicalOnlyEdgesChange,
   onSourceCardInspect,
   onSummaryGroundingCardInspect,
+  onShowAllSummaryGrounding,
+  onClearTemporaryReveal,
+  groundingVisibilityMessage,
   onShowAllSourcesChange,
   selectedAggregatedEdge,
   onRevealSelectedEdgeSources,
@@ -558,9 +564,15 @@ export function SidePanel({
           ) : null}
           {summaryGroundingItems.length > 0 ? (
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                Grounding cards ({summaryGroundingItems.length})
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding cards ({summaryGroundingItems.length})</div>
+                <button type="button" onClick={onClearTemporaryReveal} style={{ fontSize: 11, padding: "2px 6px" }}>
+                  Clear reveal
+                </button>
               </div>
+              <button type="button" onClick={onShowAllSummaryGrounding} style={{ width: "100%", marginBottom: 8 }}>
+                Show all grounding on canvas
+              </button>
               <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
                 {summaryGroundingItems.map((item) => (
                   <li key={item.id}>
@@ -604,6 +616,9 @@ export function SidePanel({
                   </li>
                 ))}
               </ol>
+              {groundingVisibilityMessage ? (
+                <div style={{ fontSize: 12, color: "#92400e", marginTop: 8 }}>{groundingVisibilityMessage}</div>
+              ) : null}
             </div>
           ) : null}
           {islandSummarySuggestionWarnings.length > 0 ? (
