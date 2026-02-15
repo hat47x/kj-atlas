@@ -20,6 +20,8 @@ type ViewControlsPanelProps = {
   onApplyMidPreset: () => void;
   onApplyDetailPreset: () => void;
   onResetView?: () => void;
+  onExportAbstractMapMarkdown: () => void;
+  onExportAbstractMapHtml: () => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -50,6 +52,8 @@ export function ViewControlsPanel({
   onApplyMidPreset,
   onApplyDetailPreset,
   onResetView,
+  onExportAbstractMapMarkdown,
+  onExportAbstractMapHtml,
 }: ViewControlsPanelProps) {
   return (
     <div
@@ -191,6 +195,16 @@ export function ViewControlsPanel({
 
       <div style={{ fontSize: 12, color: "#64748b" }} title="Hold Peek on a collapsed island to reveal members.">
         Hold Peek on a collapsed island to reveal members.
+      </div>
+
+      <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Export</div>
+        <button type="button" onClick={onExportAbstractMapMarkdown} style={{ cursor: "pointer" }}>
+          Export Abstract Map (Markdown)
+        </button>
+        <button type="button" onClick={onExportAbstractMapHtml} style={{ cursor: "pointer" }}>
+          Export Abstract Map (HTML)
+        </button>
       </div>
     </div>
   );

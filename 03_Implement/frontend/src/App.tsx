@@ -48,6 +48,8 @@ import {
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
+import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
+import { downloadTextFile } from "./export/narrative_export";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -3886,6 +3888,32 @@ export default function App() {
     </div>
   );
 
+  const handleExportAbstractMapMarkdown = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const model = buildAbstractMapExport(document, {
+      visibleIslandIds: visibleIslandIdSet,
+      abstractMapView,
+    });
+    downloadTextFile(`abstract-map-${document.id}.md`, "text/markdown", exportAbstractMapMarkdown(model));
+    setStatusMessage("Exported abstract map as Markdown");
+  }, [abstractMapView, document, visibleIslandIdSet]);
+
+  const handleExportAbstractMapHtml = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    const model = buildAbstractMapExport(document, {
+      visibleIslandIds: visibleIslandIdSet,
+      abstractMapView,
+    });
+    downloadTextFile(`abstract-map-${document.id}.html`, "text/html", exportAbstractMapHTML(model));
+    setStatusMessage("Exported abstract map as HTML");
+  }, [abstractMapView, document, visibleIslandIdSet]);
+
   const headerViewControls = (
     <div style={{ position: "relative" }}>
       <button
@@ -3938,6 +3966,8 @@ export default function App() {
             }}
             isReadingOrderEditMode={isReadingOrderEditMode}
             onReadingOrderEditModeChange={setIsReadingOrderEditMode}
+            onExportAbstractMapMarkdown={handleExportAbstractMapMarkdown}
+            onExportAbstractMapHtml={handleExportAbstractMapHtml}
           />
         </div>
       ) : null}
