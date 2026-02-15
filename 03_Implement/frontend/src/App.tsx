@@ -1425,22 +1425,6 @@ export default function App() {
     setSelectedIslandId(null);
   }, []);
 
-  const handleRevealSelectedEdgeSources = useCallback(() => {
-    if (!selectedAggregatedEdge) {
-      return;
-    }
-
-    const sourceCardIds = new Set<string>();
-    for (const source of selectedAggregatedEdge.sources) {
-      sourceCardIds.add(source.sourceFromCardId);
-      if (source.sourceToKind === "card") {
-        sourceCardIds.add(source.sourceToId);
-      }
-    }
-
-    setRevealedSourceCardIds(sourceCardIds);
-  }, [selectedAggregatedEdge]);
-
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
       if (!document) {
@@ -2725,6 +2709,31 @@ export default function App() {
     }
   }, [cardMinDepthById, focusedVisibleDocument?.cards, maxDepth, requestCanvasFocus, revealCardsTemporarily, selectedIsland]);
 
+  const handleRevealSelectedEdgeSources = useCallback(() => {
+    if (!selectedAggregatedEdge) {
+      return;
+    }
+
+    if (selectedAggregatedEdge.isDerivedIslandEdge) {
+      revealCardsTemporarily(selectedAggregatedEdge.contributingCardIds ?? []);
+      return;
+    }
+
+    const sourceCardIds = new Set<string>();
+    for (const source of selectedAggregatedEdge.sources) {
+      sourceCardIds.add(source.sourceFromCardId);
+      if (source.sourceToKind === "card") {
+        sourceCardIds.add(source.sourceToId);
+      }
+    }
+
+    setRevealedSourceCardIds(sourceCardIds);
+  }, [revealCardsTemporarily, selectedAggregatedEdge]);
+
+  const handleInspectSelectedEdgeCard = useCallback((cardId: string) => {
+    handleSummaryGroundingCardInspect(cardId);
+  }, [handleSummaryGroundingCardInspect]);
+
   /**
    * Manual test steps:
    * 1) Enable summary view and hide source cards, then click one grounding item.
@@ -3978,6 +3987,7 @@ export default function App() {
           onShowAllSourcesChange={handleShowAllSourcesChange}
           selectedAggregatedEdge={selectedAggregatedEdge}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
+          onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}
           onAlignLeft={() => {
             handleAlign("left");
           }}
@@ -4056,6 +4066,7 @@ export default function App() {
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
+            summaryView={summaryView}
             abstractMapView={abstractMapView}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
