@@ -22,6 +22,8 @@ type ViewControlsPanelProps = {
   onResetView?: () => void;
   onExportAbstractMapMarkdown: () => void;
   onExportAbstractMapHtml: () => void;
+  onExportSvgViewport: () => void;
+  onExportSvgVisibleBounds: () => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -54,6 +56,8 @@ export function ViewControlsPanel({
   onResetView,
   onExportAbstractMapMarkdown,
   onExportAbstractMapHtml,
+  onExportSvgViewport,
+  onExportSvgVisibleBounds,
 }: ViewControlsPanelProps) {
   return (
     <div
@@ -199,6 +203,12 @@ export function ViewControlsPanel({
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Export</div>
+        <button type="button" onClick={onExportSvgViewport} style={{ cursor: "pointer" }}>
+          Export SVG (Viewport)
+        </button>
+        <button type="button" onClick={onExportSvgVisibleBounds} style={{ cursor: "pointer" }}>
+          Export SVG (Visible bounds)
+        </button>
         <button type="button" onClick={onExportAbstractMapMarkdown} style={{ cursor: "pointer" }}>
           Export Abstract Map (Markdown)
         </button>
