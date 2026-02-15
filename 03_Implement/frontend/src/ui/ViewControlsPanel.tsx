@@ -10,6 +10,8 @@ type ViewControlsPanelProps = {
   onHideSourceCardsChange: (value: boolean) => void;
   summaryView: boolean;
   onSummaryViewChange: (value: boolean) => void;
+  abstractMapView: boolean;
+  onAbstractMapViewChange: (value: boolean) => void;
   showReadingOrder: boolean;
   onShowReadingOrderChange: (value: boolean) => void;
   isReadingOrderEditMode: boolean;
@@ -38,6 +40,8 @@ export function ViewControlsPanel({
   onHideSourceCardsChange,
   summaryView,
   onSummaryViewChange,
+  abstractMapView,
+  onAbstractMapViewChange,
   showReadingOrder,
   onShowReadingOrderChange,
   isReadingOrderEditMode,
@@ -127,16 +131,35 @@ export function ViewControlsPanel({
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
-            checked={summaryView}
+            checked={summaryView || abstractMapView}
+            disabled={abstractMapView}
             onChange={(event) => {
               onSummaryViewChange(event.target.checked);
             }}
           />
-          Summary view
+          Summary view {abstractMapView ? "(implied by abstract map)" : ""}
         </label>
         <div style={{ fontSize: 11, color: "#64748b" }}>
           Shows island summaries and hides member cards. Use Peek/Focus to inspect details.
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={abstractMapView}
+            onChange={(event) => {
+              onAbstractMapViewChange(event.target.checked);
+            }}
+          />
+          Abstract map view
+        </label>
+        {abstractMapView ? (
+          <>
+            <div style={{ fontSize: 11, color: "#64748b" }}>
+              Abstract view: shows island summaries. Cards are hidden by default. UNREVIEWED summaries are drafts.
+            </div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>Dashed edges are derived from hidden source relations.</div>
+          </>
+        ) : null}
       </div>
 
       <div style={sectionStyle}>

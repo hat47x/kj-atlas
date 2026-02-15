@@ -18,9 +18,11 @@ type IslandViewProps = {
   isSelected: boolean;
   isPeeking?: boolean;
   summaryView?: boolean;
+  abstractMapView?: boolean;
   isCollapsedForView?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
+  onTitleDoubleClick?: (islandId: string) => void;
   isShapeStale?: boolean;
   onPeekStart?: (islandId: string) => void;
   onPeekEnd?: () => void;
@@ -141,9 +143,11 @@ function IslandViewComponent({
   isSelected,
   isPeeking = false,
   summaryView = false,
+  abstractMapView = false,
   isCollapsedForView,
   onSelect,
   onToggleCollapsed,
+  onTitleDoubleClick,
   isShapeStale = false,
   onPeekStart,
   onPeekEnd,
@@ -154,7 +158,7 @@ function IslandViewComponent({
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
-  const headerHeight = hasSummary ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
+  const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
   const hasPolygon = polygonPoints.length >= 3;
@@ -331,17 +335,24 @@ function IslandViewComponent({
         }}
         onDoubleClick={(event) => {
           event.stopPropagation();
-          if (!isPickingEdgeTarget) {
-            onToggleCollapsed?.(island.id, island.collapsed !== true);
+          if (isPickingEdgeTarget) {
+            return;
           }
+
+          if (abstractMapView) {
+            onTitleDoubleClick?.(island.id);
+            return;
+          }
+
+          onToggleCollapsed?.(island.id, island.collapsed !== true);
         }}
         style={{
           pointerEvents: isPickingEdgeTarget ? "none" : "auto",
           position: "absolute",
           left: ISLAND_TITLE_MARGIN_LEFT,
           top: ISLAND_TITLE_MARGIN_TOP,
-          fontSize: 12,
-          fontWeight: 700,
+          fontSize: abstractMapView ? 14 : 12,
+          fontWeight: abstractMapView ? 800 : 700,
           color: "#0c4a6e",
           backgroundColor: "#f0f9ff",
           padding: "2px 6px",
@@ -408,15 +419,15 @@ function IslandViewComponent({
         ) : null}
       </div>
 
-      {hasSummary ? (
+      {hasSummary || abstractMapView ? (
         <div
           style={{
             position: "absolute",
             left: ISLAND_TITLE_MARGIN_LEFT,
             top: ISLAND_TITLE_MARGIN_TOP + 28,
             right: ISLAND_TITLE_MARGIN_LEFT,
-            fontSize: summaryView ? 12 : 11,
-            fontWeight: summaryView ? 600 : 500,
+            fontSize: abstractMapView ? 13 : summaryView ? 12 : 11,
+            fontWeight: abstractMapView ? 700 : summaryView ? 600 : 500,
             lineHeight: 1.35,
             color: "#0c4a6e",
             zIndex: 3,
@@ -426,16 +437,16 @@ function IslandViewComponent({
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
-          title={island.summaryText}
+          title={hasSummary ? island.summaryText : "(no summary)"}
         >
-          {island.summaryText}
-          {island.summaryReviewed === false ? (
+          {hasSummary ? island.summaryText : <span style={{ color: "#64748b" }}>(no summary)</span>}
+          {island.summaryReviewed === false && hasSummary ? (
             <span
               style={{
                 marginLeft: 8,
                 display: "inline-block",
                 fontSize: 10,
-                fontWeight: 700,
+                fontWeight: 800,
                 color: "#92400e",
                 backgroundColor: "#fef3c7",
                 border: "1px solid #fde68a",
@@ -443,7 +454,7 @@ function IslandViewComponent({
                 padding: "1px 6px",
               }}
             >
-              unreviewed
+              UNREVIEWED
             </span>
           ) : null}
         </div>

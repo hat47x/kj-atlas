@@ -441,6 +441,7 @@ export default function App() {
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(true);
   const [summaryView, setSummaryView] = useState(false);
+  const [abstractMapView, setAbstractMapView] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
@@ -640,6 +641,20 @@ export default function App() {
         }
       }
 
+      if (abstractMapView) {
+        for (const island of focusedVisibleDocument.islands) {
+          const canRevealMembers =
+            summaryRevealIslandIds.has(island.id) || temporaryRevealIslandIds.has(island.id) || peekIslandId === island.id;
+          if (canRevealMembers) {
+            continue;
+          }
+
+          for (const cardId of island.cardIds) {
+            summaryHiddenCardIds.add(cardId);
+          }
+        }
+      }
+
       // 2) depth制限で隠れるカード
       if (maxDepth !== "all") {
         for (const card of focusedVisibleDocument.cards) {
@@ -693,6 +708,7 @@ export default function App() {
     peekIslandId,
     summaryRevealIslandIds,
     summaryView,
+    abstractMapView,
     temporaryRevealCardIds,
     temporaryRevealIslandIds,
   ]);
@@ -2554,7 +2570,7 @@ export default function App() {
       }
       return nextIds;
     });
-  }, [focusedVisibleDocument, summaryView]);
+  }, [abstractMapView, focusedVisibleDocument, summaryView]);
 
   const selectedIsland = useMemo(() => {
     if (!document || !selectedIslandId) {
@@ -2808,6 +2824,29 @@ export default function App() {
     setFocusCardId(null);
   }, []);
 
+  const handleToggleIslandFocus = useCallback(
+    (islandId: string) => {
+      if (!document) {
+        return;
+      }
+
+      if (focusTarget.focusIslandId === islandId) {
+        setFocusTarget({});
+        setFocusWorldPoint(null);
+        setFocusCardId(null);
+        return;
+      }
+
+      const nextFocusWorldPoint = getFocusWorldPointForReference(document, { id: islandId, kind: "island" });
+      setFocusTarget({ focusIslandId: islandId });
+      setFocusWorldPoint(nextFocusWorldPoint);
+      suppressNextTransformPersistRef.current = true;
+      setFocusRequestSeq((previousSeq) => previousSeq + 1);
+    },
+    [document, focusTarget.focusIslandId]
+  );
+
+
   const applyViewPreset = useCallback(
     (nextState: {
       maxDepth: ViewMaxDepth;
@@ -3017,7 +3056,7 @@ export default function App() {
   }, [document]);
 
   const loneWolfCardIdSet = useMemo(() => {
-    if (!focusedVisibleDocument || !summaryView) {
+    if (!focusedVisibleDocument || (!summaryView && !abstractMapView)) {
       return new Set<string>();
     }
 
@@ -3033,7 +3072,7 @@ export default function App() {
         .map((card) => card.id)
         .filter((cardId) => !islandMemberIds.has(cardId))
     );
-  }, [focusedVisibleDocument, summaryView]);
+  }, [abstractMapView, focusedVisibleDocument, summaryView]);
 
   const islandViews = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -3048,11 +3087,13 @@ export default function App() {
         isSelected={selectedIslandId === island.id}
         isShapeStale={stalePolygonIslandIdSet.has(island.id)}
         isPeeking={peekIslandId === island.id}
-        summaryView={summaryView}
+        summaryView={summaryView || abstractMapView}
+        abstractMapView={abstractMapView}
         isCollapsedForView={effectiveCollapsedIslandIdSet.has(island.id)}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
+        onTitleDoubleClick={handleToggleIslandFocus}
         onPeekStart={(islandId) => {
           setPeekIslandId(islandId);
         }}
@@ -3071,8 +3112,10 @@ export default function App() {
     selectedIslandId,
     stalePolygonIslandIdSet,
     summaryView,
+    abstractMapView,
     effectiveCollapsedIslandIdSet,
     visibleIslands,
+    handleToggleIslandFocus,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -3693,6 +3736,13 @@ export default function App() {
             onHideSourceCardsChange={setHideSourceCards}
             summaryView={summaryView}
             onSummaryViewChange={setSummaryView}
+            abstractMapView={abstractMapView}
+            onAbstractMapViewChange={(nextValue) => {
+              setAbstractMapView(nextValue);
+              if (nextValue) {
+                setSummaryView(true);
+              }
+            }}
             showReadingOrder={showReadingOrder}
             onShowReadingOrderChange={(nextValue) => {
               setShowReadingOrder(nextValue);
@@ -3890,6 +3940,7 @@ export default function App() {
           onDeleteIsland={handleDeleteSelectedIsland}
           onFocusIsland={handleFocusIsland}
           summaryView={summaryView}
+          abstractMapView={abstractMapView}
           isSelectedIslandTemporarilyRevealed={selectedIsland ? summaryRevealIslandIds.has(selectedIsland.id) : false}
           onToggleSelectedIslandTemporaryReveal={() => {
             if (!selectedIsland) {
@@ -3996,15 +4047,16 @@ export default function App() {
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
             hiddenCardIds={hiddenCardIdSet}
-            hideSourceCards={hideSourceCards || summaryView}
-            deemphasizedCardIds={summaryView ? loneWolfCardIdSet : undefined}
+            hideSourceCards={hideSourceCards || summaryView || abstractMapView}
+            deemphasizedCardIds={summaryView || abstractMapView ? loneWolfCardIdSet : undefined}
             viewState={{
-              hideSourceCards: hideSourceCards || summaryView,
+              hideSourceCards: hideSourceCards || summaryView || abstractMapView,
               showCanonicalOnlyEdges,
               showReadingOrder,
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
+            abstractMapView={abstractMapView}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}

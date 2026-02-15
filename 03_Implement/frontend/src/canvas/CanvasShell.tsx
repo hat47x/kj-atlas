@@ -99,6 +99,7 @@ type CanvasShellProps = {
   peekCardIds?: Set<string>;
   revealCardIds?: Set<string>;
   showCanonicalOnlyEdges?: boolean;
+  abstractMapView?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -180,6 +181,7 @@ export function CanvasShell({
   peekCardIds,
   revealCardIds,
   showCanonicalOnlyEdges = false,
+  abstractMapView = false,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -338,15 +340,44 @@ export function CanvasShell({
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
   const deemphasizedCardIdSet = deemphasizedCardIds ?? emptyIdSet;
   const visibleIslandIdSet = visibleIslandIds ?? emptyIdSet;
+
+  /*
+   * Manual test steps (Abstract Map View):
+   * 1) Turn on Abstract map view from View controls.
+   * 2) Confirm non-lone-wolf cards hide, island summaries stay visible, and UNREVIEWED badges appear for draft summaries.
+   * 3) Select an island and use temporary reveal/focus controls, then reload and confirm reveal state is not persisted.
+   */
+  const abstractMemberCardIdSet = useMemo(() => {
+    if (!abstractMapView) {
+      return emptyIdSet;
+    }
+
+    const memberCardIds = new Set<string>();
+    for (const island of document.islands) {
+      for (const cardId of island.cardIds) {
+        memberCardIds.add(cardId);
+      }
+    }
+
+    return memberCardIds;
+  }, [abstractMapView, document.islands, emptyIdSet]);
+
   const isCardHidden = useCallback(
-    (cardId: string) => hiddenCardIdSet.has(cardId) || (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
-    [hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]
+    (cardId: string) =>
+      hiddenCardIdSet.has(cardId) ||
+      (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)) ||
+      (abstractMapView && abstractMemberCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
+    [abstractMapView, abstractMemberCardIdSet, hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]
   );
 
   const hiddenEndpointIdSet = useMemo(() => {
     const hiddenSourceCardIds = Array.from(sourceCardIdSet).filter((cardId) => !revealedCardIdSet.has(cardId));
-    return new Set([...hiddenCardIdSet, ...hiddenSourceCardIds]);
-  }, [hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]);
+    const hiddenAbstractCardIds =
+      abstractMapView
+        ? Array.from(abstractMemberCardIdSet).filter((cardId) => !revealedCardIdSet.has(cardId))
+        : [];
+    return new Set([...hiddenCardIdSet, ...hiddenSourceCardIds, ...hiddenAbstractCardIds]);
+  }, [abstractMapView, abstractMemberCardIdSet, hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]);
 
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
@@ -442,8 +473,8 @@ export function CanvasShell({
 
   const visibleEdges = useMemo(() => {
     let edges = getEdgesToRender(document, effectiveHideSourceCards === true).filter((edge) => {
-      const isFromVisible = edge.fromKind === "island" || visibleCardIdSet.has(edge.fromId);
-      const isToVisible = edge.toKind === "island" || visibleCardIdSet.has(edge.toId);
+      const isFromVisible = edge.fromKind === "island" ? visibleIslandIdSet.has(edge.fromId) : visibleCardIdSet.has(edge.fromId);
+      const isToVisible = edge.toKind === "island" ? visibleIslandIdSet.has(edge.toId) : visibleCardIdSet.has(edge.toId);
       return isFromVisible && isToVisible;
     });
 
@@ -459,7 +490,7 @@ export function CanvasShell({
     }
 
     return edges;
-  }, [canonicalCardIdSet, document, effectiveHideSourceCards, effectiveShowCanonicalOnlyEdges, visibleCardIdSet]);
+  }, [canonicalCardIdSet, document, effectiveHideSourceCards, effectiveShowCanonicalOnlyEdges, visibleCardIdSet, visibleIslandIdSet]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(aggregatedEdges);
@@ -722,7 +753,7 @@ export function CanvasShell({
       >
         <EdgeLayer
           cards={visibleCards}
-          islands={document.islands}
+          islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
         />
@@ -730,7 +761,7 @@ export function CanvasShell({
         {effectiveShowReadingOrder ? (
           <ReadingOrderLayer
             cards={document.cards}
-            islands={document.islands}
+            islands={document.islands.filter((island) => visibleIslandIdSet.has(island.id))}
             readingOrder={document.readingOrder ?? []}
             visibleCardIdSet={visibleCardIdSet}
             visibleIslandIdSet={visibleIslandIdSet}
