@@ -48,6 +48,7 @@ import {
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
+import { downloadBlobFile, exportSvgToPngBlob, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
@@ -459,6 +460,7 @@ export default function App() {
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
   const [isReadingOrderEditMode, setIsReadingOrderEditMode] = useState(false);
+  const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -3924,6 +3926,15 @@ export default function App() {
     return `kj-atlas-${date}-${mode}.svg`;
   }, []);
 
+  const getPngExportFilename = useCallback(
+    (mode: "viewport" | "visible-bounds", scale: PngExportScale) => {
+      const date = new Date().toISOString().slice(0, 10);
+      const scaleSuffix = scale === 2 ? "@2x" : "";
+      return `kj-atlas-${date}-${mode}${scaleSuffix}.png`;
+    },
+    []
+  );
+
   const handleExportSvgViewport = useCallback(() => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
       setStatusMessage("Nothing to export");
@@ -4022,6 +4033,118 @@ export default function App() {
     visibleIslandIdSet,
   ]);
 
+  const handleExportPngViewport = useCallback(async () => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = {
+      x: (-canvasCamera.panX) / canvasCamera.zoom,
+      y: (-canvasCamera.panY) / canvasCamera.zoom,
+      w: canvasCamera.viewportWidth / canvasCamera.zoom,
+      h: canvasCamera.viewportHeight / canvasCamera.zoom,
+    };
+
+    if (area.w <= 0 || area.h <= 0) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const svg = exportCanvasToSVG({
+      doc: focusedVisibleDocument,
+      viewState: {
+        visibleIslandIds: visibleIslandIdSet,
+        hiddenCardIds: hiddenCardIdSet,
+        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+        summaryView,
+        abstractMapView,
+      },
+      camera: canvasCamera,
+      area,
+    });
+
+    try {
+      const pngBlob = await exportSvgToPngBlob({ svg, width: area.w, height: area.h, scale: pngExportScale });
+      downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
+      setStatusMessage(`Exported PNG (Viewport, ${pngExportScale}x)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "PNG export failed";
+      setStatusMessage(`PNG export failed: ${message}`);
+    }
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getPngExportFilename,
+    hiddenCardIdSet,
+    hideSourceCards,
+    pngExportScale,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
+
+  const handleExportPngVisibleBounds = useCallback(async () => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const visibleBounds = computeVisibleBounds(focusedVisibleDocument, {
+      visibleIslandIds: visibleIslandIdSet,
+      hiddenCardIds: hiddenCardIdSet,
+      hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+      summaryView,
+      abstractMapView,
+    });
+
+    if (!visibleBounds) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = {
+      x: visibleBounds.x - SVG_VISIBLE_BOUNDS_PADDING,
+      y: visibleBounds.y - SVG_VISIBLE_BOUNDS_PADDING,
+      w: visibleBounds.w + SVG_VISIBLE_BOUNDS_PADDING * 2,
+      h: visibleBounds.h + SVG_VISIBLE_BOUNDS_PADDING * 2,
+    };
+
+    const svg = exportCanvasToSVG({
+      doc: focusedVisibleDocument,
+      viewState: {
+        visibleIslandIds: visibleIslandIdSet,
+        hiddenCardIds: hiddenCardIdSet,
+        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+        summaryView,
+        abstractMapView,
+      },
+      camera: canvasCamera,
+      area,
+    });
+
+    try {
+      const pngBlob = await exportSvgToPngBlob({ svg, width: area.w, height: area.h, scale: pngExportScale });
+      downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
+      setStatusMessage(`Exported PNG (Visible bounds, ${pngExportScale}x)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "PNG export failed";
+      setStatusMessage(`PNG export failed: ${message}`);
+    }
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getPngExportFilename,
+    hiddenCardIdSet,
+    hideSourceCards,
+    pngExportScale,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
+
   const headerViewControls = (
     <div style={{ position: "relative" }}>
       <button
@@ -4078,6 +4201,14 @@ export default function App() {
             onExportAbstractMapHtml={handleExportAbstractMapHtml}
             onExportSvgViewport={handleExportSvgViewport}
             onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
+            pngExportScale={pngExportScale}
+            onPngExportScaleChange={setPngExportScale}
+            onExportPngViewport={() => {
+              void handleExportPngViewport();
+            }}
+            onExportPngVisibleBounds={() => {
+              void handleExportPngVisibleBounds();
+            }}
           />
         </div>
       ) : null}
