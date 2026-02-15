@@ -140,6 +140,21 @@ export type RelationSummary = {
   groundingEdgeIds: string[];
   warnings?: string[];
   sourceSignature: string;
+  history?: RelationSummaryHistoryEntry[];
+};
+
+export type RelationSummaryHistoryEntry = {
+  id: string;
+  createdAt: string;
+  changeKind: "ai" | "manual" | "rollback" | "import" | "unknown";
+  fromText: string | null;
+  toText: string | null;
+  fromReviewed: boolean | null;
+  toReviewed: boolean | null;
+  warningsSnapshot?: string[];
+  groundingCardIdsSnapshot?: string[];
+  groundingEdgeIdsSnapshot?: string[];
+  note?: string;
 };
 
 export type Narrative = {

@@ -136,6 +136,21 @@ class Narrative(BaseModel):
     checks: list[NarrativeCheck] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+
+
+class RelationSummaryHistoryEntry(BaseModel):
+    id: str
+    createdAt: datetime
+    changeKind: Literal["ai", "manual", "rollback", "import", "unknown"]
+    fromText: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    toText: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    fromReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    toReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    warningsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    groundingCardIdsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    groundingEdgeIdsSnapshot: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
 class RelationSummary(BaseModel):
     id: str
     createdAt: datetime
@@ -149,6 +164,7 @@ class RelationSummary(BaseModel):
     groundingEdgeIds: list[str]
     warnings: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     sourceSignature: str
+    history: list[RelationSummaryHistoryEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class DocumentV1(BaseModel):

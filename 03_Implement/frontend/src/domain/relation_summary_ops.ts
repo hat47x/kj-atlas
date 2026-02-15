@@ -1,4 +1,4 @@
-import type { DocumentV2, EdgeType, RelationSummary } from "./types";
+import type { DocumentV2, EdgeType, RelationSummary, RelationSummaryHistoryEntry } from "./types";
 import type { IslandRelationEdgeSelection } from "./island_relation_explain";
 
 export type SummarizeIslandRelationPayload = {
@@ -15,6 +15,43 @@ export type SummarizeIslandRelationPayload = {
 
 function dedupe(ids: string[]): string[] {
   return Array.from(new Set(ids));
+}
+
+const RELATION_SUMMARY_HISTORY_LIMIT = 50;
+
+export type RelationSummaryChangeKind = RelationSummaryHistoryEntry["changeKind"];
+
+export type UpsertRelationSummaryWithHistoryPatch = {
+  sourceSignature: string;
+  islandAId: string;
+  islandBId: string;
+  relationType: EdgeType | "unknown";
+  derived: boolean;
+  newText: string;
+  newWarnings?: string[];
+  newGroundingCardIds: string[];
+  newGroundingEdgeIds: string[];
+  changeKind: RelationSummaryChangeKind;
+  note?: string;
+  newReviewed?: boolean;
+};
+
+function createEntryId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `relation-summary-history-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function sameStringList(left?: string[], right?: string[]): boolean {
+  const safeLeft = left ?? [];
+  const safeRight = right ?? [];
+  if (safeLeft.length !== safeRight.length) {
+    return false;
+  }
+
+  return safeLeft.every((value, index) => value === safeRight[index]);
 }
 
 function truncateStableHashInput(input: string): string {
@@ -84,6 +121,101 @@ export function upsertRelationSummary(document: DocumentV2, summary: RelationSum
     next[index] = summary;
   } else {
     next.push(summary);
+  }
+
+  return {
+    ...document,
+    relationSummaries: next,
+  };
+}
+
+export function upsertRelationSummaryWithHistory(
+  document: DocumentV2,
+  patch: UpsertRelationSummaryWithHistoryPatch
+): DocumentV2 {
+  const existing = document.relationSummaries ?? [];
+  const index = existing.findIndex((item) => item.sourceSignature === patch.sourceSignature);
+  const previous = index >= 0 ? existing[index] : null;
+
+  const nextReviewed =
+    patch.changeKind === "ai"
+      ? false
+      : typeof patch.newReviewed === "boolean"
+        ? patch.newReviewed
+        : patch.changeKind === "manual"
+          ? true
+          : previous?.reviewed ?? false;
+
+  const nextWarnings = patch.newWarnings && patch.newWarnings.length > 0 ? [...patch.newWarnings] : undefined;
+  const nextGroundingCardIds = dedupe(patch.newGroundingCardIds);
+  const nextGroundingEdgeIds = dedupe(patch.newGroundingEdgeIds);
+  const now = new Date().toISOString();
+
+  const nextSummary: RelationSummary = {
+    id: previous?.id ?? createEntryId(),
+    createdAt: previous?.createdAt ?? now,
+    islandAId: patch.islandAId,
+    islandBId: patch.islandBId,
+    relationType: patch.relationType,
+    derived: patch.derived,
+    text: patch.newText,
+    reviewed: nextReviewed,
+    groundingCardIds: nextGroundingCardIds,
+    groundingEdgeIds: nextGroundingEdgeIds,
+    warnings: nextWarnings,
+    sourceSignature: patch.sourceSignature,
+    history: previous?.history,
+  };
+
+  const noHistoryChange =
+    previous !== null &&
+    previous.text === nextSummary.text &&
+    previous.reviewed === nextSummary.reviewed &&
+    sameStringList(previous.warnings, nextSummary.warnings);
+
+  const noSummaryChange =
+    previous !== null &&
+    previous.islandAId === nextSummary.islandAId &&
+    previous.islandBId === nextSummary.islandBId &&
+    previous.relationType === nextSummary.relationType &&
+    previous.derived === nextSummary.derived &&
+    previous.text === nextSummary.text &&
+    previous.reviewed === nextSummary.reviewed &&
+    sameStringList(previous.warnings, nextSummary.warnings) &&
+    sameStringList(previous.groundingCardIds, nextSummary.groundingCardIds) &&
+    sameStringList(previous.groundingEdgeIds, nextSummary.groundingEdgeIds);
+
+  if (noSummaryChange && noHistoryChange) {
+    return document;
+  }
+
+  if (!noHistoryChange) {
+    const newHistoryEntry: RelationSummaryHistoryEntry = {
+      id: createEntryId(),
+      createdAt: now,
+      changeKind: patch.changeKind,
+      fromText: previous?.text ?? null,
+      toText: nextSummary.text,
+      fromReviewed: previous?.reviewed ?? null,
+      toReviewed: nextSummary.reviewed,
+      warningsSnapshot: nextSummary.warnings,
+      groundingCardIdsSnapshot: [...nextSummary.groundingCardIds],
+      groundingEdgeIdsSnapshot: [...nextSummary.groundingEdgeIds],
+      note: patch.note,
+    };
+
+    const nextHistory = [...(previous?.history ?? []), newHistoryEntry];
+    nextSummary.history =
+      nextHistory.length > RELATION_SUMMARY_HISTORY_LIMIT
+        ? nextHistory.slice(nextHistory.length - RELATION_SUMMARY_HISTORY_LIMIT)
+        : nextHistory;
+  }
+
+  const next = [...existing];
+  if (index >= 0) {
+    next[index] = nextSummary;
+  } else {
+    next.push(nextSummary);
   }
 
   return {

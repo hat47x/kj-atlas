@@ -77,7 +77,9 @@ type SidePanelProps = {
   selectedRelationSummary: RelationSummary | null;
   isGeneratingRelationSummary: boolean;
   onGenerateRelationSummary: () => void;
-  onRelationSummaryTextChange: (value: string) => void;
+  onRelationSummaryCommit: (value: string) => void;
+  onRestoreRelationSummaryHistoryEntry: (historyEntryId: string) => void;
+  onRelationSummaryReviewedChange: (value: boolean) => void;
   onRelationSummaryGroundingInspect: (cardId: string) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
@@ -153,7 +155,9 @@ export function SidePanel({
   selectedRelationSummary,
   isGeneratingRelationSummary,
   onGenerateRelationSummary,
-  onRelationSummaryTextChange,
+  onRelationSummaryCommit,
+  onRestoreRelationSummaryHistoryEntry,
+  onRelationSummaryReviewedChange,
   onRelationSummaryGroundingInspect,
   onAlignLeft,
   onAlignRight,
@@ -180,12 +184,19 @@ export function SidePanel({
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
+  const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
+  const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
     return [...entries].reverse();
   }, [selectedIsland?.summaryHistory]);
+
+  const relationSummaryHistoryEntries = useMemo(() => {
+    const entries = selectedRelationSummary?.history ?? [];
+    return [...entries].reverse();
+  }, [selectedRelationSummary?.history]);
 
   const formatSummaryHistoryTimestamp = (createdAt: string) => {
     const parsedDate = new Date(createdAt);
@@ -216,6 +227,8 @@ export function SidePanel({
 
   useEffect(() => {
     setRelationSummaryDraft(selectedRelationSummary?.text ?? "");
+    setExpandedRelationSummaryHistoryEntryId(null);
+    setRelationSummaryFeedback(null);
   }, [selectedRelationSummary?.sourceSignature, selectedRelationSummary?.text]);
 
   useEffect(() => {
@@ -1183,13 +1196,23 @@ export function SidePanel({
                   value={relationSummaryDraft}
                   onChange={(event) => {
                     setRelationSummaryDraft(event.target.value);
-                    onRelationSummaryTextChange(event.target.value);
+                  }}
+                  onBlur={() => {
+                    onRelationSummaryCommit(relationSummaryDraft);
                   }}
                   style={{ width: "100%", marginTop: 8, minHeight: 110, boxSizing: "border-box" }}
                 />
-                <div style={{ marginTop: 6, fontSize: 12, color: "#334155" }}>
-                  Reviewed: {selectedRelationSummary.reviewed ? "yes" : "no"}
-                </div>
+                <label style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedRelationSummary.reviewed}
+                    onChange={(event) => {
+                      onRelationSummaryReviewedChange(event.target.checked);
+                    }}
+                  />
+                  Reviewed
+                </label>
+                {relationSummaryFeedback ? <div style={{ marginTop: 6, fontSize: 12, color: "#92400e" }}>{relationSummaryFeedback}</div> : null}
                 {selectedRelationSummary.warnings && selectedRelationSummary.warnings.length > 0 ? (
                   <div style={{ marginTop: 8, border: "1px solid #fca5a5", backgroundColor: "#fef2f2", borderRadius: 6, padding: 8 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#991b1b", marginBottom: 6 }}>
@@ -1210,6 +1233,104 @@ export function SidePanel({
                     </button>
                   ))}
                 </div>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding edges</div>
+                <div style={{ marginTop: 4, fontSize: 12, color: "#334155" }}>
+                  {selectedRelationSummary.groundingEdgeIds.join(", ") || "(none)"}
+                </div>
+                <details style={{ marginTop: 10 }}>
+                  <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                    History ({relationSummaryHistoryEntries.length})
+                  </summary>
+                  <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                    {relationSummaryHistoryEntries.length === 0 ? (
+                      <div style={{ fontSize: 12, color: "#64748b" }}>No relation summary history yet.</div>
+                    ) : (
+                      relationSummaryHistoryEntries.map((entry) => {
+                        const isExpanded = expandedRelationSummaryHistoryEntryId === entry.id;
+                        const preview = (entry.toText ?? "").slice(0, 80);
+
+                        return (
+                          <div key={entry.id} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExpandedRelationSummaryHistoryEntryId(isExpanded ? null : entry.id);
+                              }}
+                              style={{
+                                width: "100%",
+                                textAlign: "left",
+                                border: "none",
+                                background: "transparent",
+                                padding: 0,
+                                cursor: "pointer",
+                                display: "grid",
+                                gap: 4,
+                              }}
+                            >
+                              <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                <span
+                                  style={{
+                                    borderRadius: 999,
+                                    border: "1px solid #cbd5e1",
+                                    padding: "1px 7px",
+                                    fontSize: 11,
+                                    color: "#334155",
+                                    backgroundColor: "#f8fafc",
+                                    textTransform: "lowercase",
+                                  }}
+                                >
+                                  {entry.changeKind}
+                                </span>
+                                <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || "(empty)"}</span>
+                              </div>
+                            </button>
+                            {isExpanded ? (
+                              <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                                <div style={{ fontSize: 11, color: "#475569" }}>From</div>
+                                <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
+                                  {entry.fromText ?? "(empty)"}
+                                </pre>
+                                <div style={{ fontSize: 11, color: "#475569" }}>To</div>
+                                <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
+                                  {entry.toText ?? "(empty)"}
+                                </pre>
+                                <div style={{ fontSize: 11, color: "#475569" }}>
+                                  reviewed: {entry.fromReviewed === null ? "-" : entry.fromReviewed ? "true" : "false"} → {entry.toReviewed === null ? "-" : entry.toReviewed ? "true" : "false"}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#475569" }}>
+                                  warnings snapshot: {(entry.warningsSnapshot ?? []).join(" | ") || "(none)"}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#475569" }}>
+                                  grounding cards snapshot: {(entry.groundingCardIdsSnapshot ?? []).join(", ") || "(none)"}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#475569" }}>
+                                  grounding edges snapshot: {(entry.groundingEdgeIdsSnapshot ?? []).join(", ") || "(none)"}
+                                </div>
+                                {entry.note ? <div style={{ fontSize: 11, color: "#475569" }}>note: {entry.note}</div> : null}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!entry.toText || entry.toText.trim().length === 0) {
+                                      setRelationSummaryFeedback("Cannot restore empty text versions.");
+                                      return;
+                                    }
+
+                                    setRelationSummaryFeedback(null);
+                                    onRestoreRelationSummaryHistoryEntry(entry.id);
+                                  }}
+                                  style={{ width: "100%" }}
+                                >
+                                  Restore this version
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </details>
               </>
             ) : null}
           </div>
