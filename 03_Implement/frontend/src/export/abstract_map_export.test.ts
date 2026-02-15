@@ -134,4 +134,19 @@ describe("abstract map export", () => {
     expect(html).toContain("Grounding edge IDs:");
     expect(html).toContain("Summary (UNREVIEWED draft template)");
   });
+
+  it("embeds snapshot references in markdown/html exports", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: true,
+    });
+
+    const markdown = exportAbstractMapMarkdown(model, { snapshotFilename: "snapshot.png" });
+    const html = exportAbstractMapHTML(model, { snapshotDataUrl: "data:image/png;base64,abc" });
+
+    expect(markdown).toContain("![Abstract Map Snapshot](snapshot.png)");
+    expect(html).toContain('<img src="data:image/png;base64,abc"');
+    expect(html).toContain("Abstract Map Snapshot");
+  });
+
 });

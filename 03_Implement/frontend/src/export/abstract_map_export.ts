@@ -44,6 +44,14 @@ export type AbstractMapExportModel = {
   relations: AbstractMapExportRelation[];
 };
 
+type AbstractMapExportMarkdownOptions = {
+  snapshotFilename?: string;
+};
+
+type AbstractMapExportHtmlOptions = {
+  snapshotDataUrl?: string;
+};
+
 function normalizeTextSnippet(text: string): string {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (normalized.length <= GROUNDING_SNIPPET_LIMIT) {
@@ -238,10 +246,14 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
   };
 }
 
-export function exportAbstractMapMarkdown(model: AbstractMapExportModel): string {
+export function exportAbstractMapMarkdown(model: AbstractMapExportModel, options: AbstractMapExportMarkdownOptions = {}): string {
   const lines: string[] = [];
   lines.push("# Abstract Map Export");
   lines.push("");
+  if (options.snapshotFilename) {
+    lines.push(`![Abstract Map Snapshot](${options.snapshotFilename})`);
+    lines.push("");
+  }
   lines.push(`GeneratedAt: ${model.generatedAt}`);
   lines.push("");
   lines.push("> Reviewed semantics: `reviewed` means human-reviewed text. `UNREVIEWED` means draft and must be verified.");
@@ -308,7 +320,7 @@ export function exportAbstractMapMarkdown(model: AbstractMapExportModel): string
   return lines.join("\n");
 }
 
-export function exportAbstractMapHTML(model: AbstractMapExportModel): string {
+export function exportAbstractMapHTML(model: AbstractMapExportModel, options: AbstractMapExportHtmlOptions = {}): string {
   const relationGroups = new Map<string, AbstractMapExportRelation[]>();
   for (const relation of model.relations) {
     const key = `${relation.islandAId}|${relation.islandBId}`;
@@ -384,6 +396,7 @@ export function exportAbstractMapHTML(model: AbstractMapExportModel): string {
 </head>
 <body>
   <h1>Abstract Map Export</h1>
+  ${options.snapshotDataUrl ? `<div class="block"><img src="${escapeHtml(options.snapshotDataUrl)}" alt="Abstract Map Snapshot" style="max-width: 100%; height: auto; display: block;" /></div>` : ""}
   <div>GeneratedAt: ${escapeHtml(model.generatedAt)}</div>
   <div class="banner">
     <div><strong>Reviewed semantics:</strong> <code>reviewed</code> means human-reviewed text. <code>UNREVIEWED</code> means draft and must be verified.</div>
