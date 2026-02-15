@@ -44,14 +44,6 @@ export type AbstractMapExportModel = {
   relations: AbstractMapExportRelation[];
 };
 
-export type AbstractMapMarkdownExportOptions = {
-  snapshotFilename?: string;
-};
-
-export type AbstractMapHtmlExportOptions = {
-  snapshotDataUrl?: string;
-};
-
 function normalizeTextSnippet(text: string): string {
   const normalized = text.replace(/\s+/g, " ").trim();
   if (normalized.length <= GROUNDING_SNIPPET_LIMIT) {
@@ -246,14 +238,11 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
   };
 }
 
-export function exportAbstractMapMarkdown(model: AbstractMapExportModel, options: AbstractMapMarkdownExportOptions = {}): string {
-  const snapshotFilename = options.snapshotFilename?.trim() || "snapshot.png";
+export function exportAbstractMapMarkdown(model: AbstractMapExportModel): string {
   const lines: string[] = [];
   lines.push("# Abstract Map Export");
   lines.push("");
   lines.push(`GeneratedAt: ${model.generatedAt}`);
-  lines.push("");
-  lines.push(`![Abstract Map Snapshot](${snapshotFilename})`);
   lines.push("");
   lines.push("> Reviewed semantics: `reviewed` means human-reviewed text. `UNREVIEWED` means draft and must be verified.");
   lines.push("> Relation semantics: `derived` entries correspond to dashed/aggregated relations inferred from underlying links.");
@@ -319,8 +308,7 @@ export function exportAbstractMapMarkdown(model: AbstractMapExportModel, options
   return lines.join("\n");
 }
 
-export function exportAbstractMapHTML(model: AbstractMapExportModel, options: AbstractMapHtmlExportOptions = {}): string {
-  const snapshotDataUrl = options.snapshotDataUrl?.trim();
+export function exportAbstractMapHTML(model: AbstractMapExportModel): string {
   const relationGroups = new Map<string, AbstractMapExportRelation[]>();
   for (const relation of model.relations) {
     const key = `${relation.islandAId}|${relation.islandBId}`;
@@ -397,9 +385,6 @@ export function exportAbstractMapHTML(model: AbstractMapExportModel, options: Ab
 <body>
   <h1>Abstract Map Export</h1>
   <div>GeneratedAt: ${escapeHtml(model.generatedAt)}</div>
-  ${snapshotDataUrl
-    ? `<section class="block"><h2>Abstract Map Snapshot</h2><img src="${escapeHtml(snapshotDataUrl)}" alt="Abstract Map Snapshot" style="max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px;" /></section>`
-    : ""}
   <div class="banner">
     <div><strong>Reviewed semantics:</strong> <code>reviewed</code> means human-reviewed text. <code>UNREVIEWED</code> means draft and must be verified.</div>
     <div><strong>Relation semantics:</strong> <code>derived</code> entries correspond to dashed/aggregated relations inferred from underlying links.</div>
