@@ -8,7 +8,7 @@ const CARD_HEIGHT = 80;
 
 type ExportArea = BoundsRect;
 
-type ExportCanvasToSvgInput = {
+export type ExportCanvasToSvgInput = {
   doc: DocumentV2;
   viewState: VisibleBoundsViewState;
   camera: {

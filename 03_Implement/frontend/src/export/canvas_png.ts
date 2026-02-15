@@ -1,3 +1,5 @@
+import { exportCanvasToSVG, type ExportCanvasToSvgInput } from "./canvas_svg";
+
 export type PngExportScale = 1 | 2;
 
 type ExportSvgToPngBlobInput = {
@@ -56,6 +58,15 @@ export async function exportSvgToPngBlob({ svg, width, height, scale = 1 }: Expo
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
+}
+
+type ExportCanvasToPngBlobInput = ExportCanvasToSvgInput & {
+  scale?: PngExportScale;
+};
+
+export async function exportCanvasToPngBlob({ scale = 1, area, ...svgInput }: ExportCanvasToPngBlobInput): Promise<Blob> {
+  const svg = exportCanvasToSVG({ ...svgInput, area });
+  return exportSvgToPngBlob({ svg, width: area.w, height: area.h, scale });
 }
 
 export function downloadBlobFile(filename: string, blob: Blob): void {

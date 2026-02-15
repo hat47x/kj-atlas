@@ -48,7 +48,7 @@ import {
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
-import { downloadBlobFile, exportSvgToPngBlob, type PngExportScale } from "./export/canvas_png";
+import { downloadBlobFile, exportCanvasToPngBlob, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
@@ -4078,21 +4078,21 @@ export default function App() {
       return;
     }
 
-    const svg = exportCanvasToSVG({
-      doc: focusedVisibleDocument,
-      viewState: {
-        visibleIslandIds: visibleIslandIdSet,
-        hiddenCardIds: hiddenCardIdSet,
-        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
-        summaryView,
-        abstractMapView,
-      },
-      camera: canvasCamera,
-      area,
-    });
 
     try {
-      const pngBlob = await exportSvgToPngBlob({ svg, width: area.w, height: area.h, scale: pngExportScale });
+      const pngBlob = await exportCanvasToPngBlob({
+        doc: focusedVisibleDocument,
+        viewState: {
+          visibleIslandIds: visibleIslandIdSet,
+          hiddenCardIds: hiddenCardIdSet,
+          hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+          summaryView,
+          abstractMapView,
+        },
+        camera: canvasCamera,
+        area,
+        scale: pngExportScale,
+      });
       downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
       setStatusMessage(`Exported PNG (Viewport, ${pngExportScale}x)`);
     } catch (error) {
@@ -4138,21 +4138,21 @@ export default function App() {
       h: visibleBounds.h + SVG_VISIBLE_BOUNDS_PADDING * 2,
     };
 
-    const svg = exportCanvasToSVG({
-      doc: focusedVisibleDocument,
-      viewState: {
-        visibleIslandIds: visibleIslandIdSet,
-        hiddenCardIds: hiddenCardIdSet,
-        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
-        summaryView,
-        abstractMapView,
-      },
-      camera: canvasCamera,
-      area,
-    });
 
     try {
-      const pngBlob = await exportSvgToPngBlob({ svg, width: area.w, height: area.h, scale: pngExportScale });
+      const pngBlob = await exportCanvasToPngBlob({
+        doc: focusedVisibleDocument,
+        viewState: {
+          visibleIslandIds: visibleIslandIdSet,
+          hiddenCardIds: hiddenCardIdSet,
+          hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+          summaryView,
+          abstractMapView,
+        },
+        camera: canvasCamera,
+        area,
+        scale: pngExportScale,
+      });
       downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
       setStatusMessage(`Exported PNG (Visible bounds, ${pngExportScale}x)`);
     } catch (error) {
