@@ -48,7 +48,7 @@ import {
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
-import { downloadBlobFile, exportCanvasToPngBlob, type PngExportScale } from "./export/canvas_png";
+import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
@@ -3920,33 +3920,108 @@ export default function App() {
     };
   }, [abstractMapView, canvasCamera, focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, visibleIslandIdSet]);
 
-  const handleExportAbstractMapMarkdown = useCallback(() => {
-    if (!document) {
+  const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
       return;
     }
 
-    const model = buildAbstractMapExport(document, {
-      visibleIslandIds: visibleIslandIdSet,
-      abstractMapView,
-    });
-
-    downloadTextFile("abstract-map-report.md", "text/markdown", exportAbstractMapMarkdown(model));
-    setStatusMessage("Exported abstract map report (Markdown)");
-  }, [abstractMapView, document, visibleIslandIdSet]);
-
-  const handleExportAbstractMapHtml = useCallback(() => {
-    if (!document) {
+    const area = getVisibleBoundsExportArea();
+    if (!area) {
+      setStatusMessage("Nothing to export");
       return;
     }
 
-    const model = buildAbstractMapExport(document, {
-      visibleIslandIds: visibleIslandIdSet,
-      abstractMapView,
-    });
+    try {
+      const pngBlob = await exportCanvasToPngBlob({
+        doc: focusedVisibleDocument,
+        viewState: {
+          visibleIslandIds: visibleIslandIdSet,
+          hiddenCardIds: hiddenCardIdSet,
+          hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+          summaryView,
+          abstractMapView,
+        },
+        camera: canvasCamera,
+        area,
+        scale: 2,
+      });
 
-    downloadTextFile("abstract-map-report.html", "text/html", exportAbstractMapHTML(model));
-    setStatusMessage("Exported abstract map report (HTML)");
-  }, [abstractMapView, document, visibleIslandIdSet]);
+      const model = buildAbstractMapExport(document, {
+        visibleIslandIds: visibleIslandIdSet,
+        abstractMapView,
+      });
+
+      const snapshotFilename = "snapshot.png";
+      downloadBlobFile(snapshotFilename, pngBlob);
+      downloadTextFile("report.md", "text/markdown", exportAbstractMapMarkdown(model, { snapshotFilename }));
+      setStatusMessage("Exported abstract map report (MD + PNG)");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Report export failed";
+      setStatusMessage(`Report export failed: ${message}`);
+    }
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getVisibleBoundsExportArea,
+    hiddenCardIdSet,
+    hideSourceCards,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
+
+  const handleExportAbstractMapHtmlWithPng = useCallback(async () => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = getVisibleBoundsExportArea();
+    if (!area) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    try {
+      const pngBlob = await exportCanvasToPngBlob({
+        doc: focusedVisibleDocument,
+        viewState: {
+          visibleIslandIds: visibleIslandIdSet,
+          hiddenCardIds: hiddenCardIdSet,
+          hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+          summaryView,
+          abstractMapView,
+        },
+        camera: canvasCamera,
+        area,
+        scale: 2,
+      });
+
+      const model = buildAbstractMapExport(document, {
+        visibleIslandIds: visibleIslandIdSet,
+        abstractMapView,
+      });
+
+      const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
+      downloadTextFile("report.html", "text/html", exportAbstractMapHTML(model, { snapshotDataUrl }));
+      setStatusMessage("Exported abstract map report (HTML + PNG)");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Report export failed";
+      setStatusMessage(`Report export failed: ${message}`);
+    }
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getVisibleBoundsExportArea,
+    hiddenCardIdSet,
+    hideSourceCards,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
 
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
     const date = new Date().toISOString().slice(0, 10);
@@ -4224,8 +4299,12 @@ export default function App() {
             }}
             isReadingOrderEditMode={isReadingOrderEditMode}
             onReadingOrderEditModeChange={setIsReadingOrderEditMode}
-            onExportAbstractMapMarkdown={handleExportAbstractMapMarkdown}
-            onExportAbstractMapHtml={handleExportAbstractMapHtml}
+            onExportAbstractMapMarkdownWithPng={() => {
+              void handleExportAbstractMapMarkdownWithPng();
+            }}
+            onExportAbstractMapHtmlWithPng={() => {
+              void handleExportAbstractMapHtmlWithPng();
+            }}
             onExportSvgViewport={handleExportSvgViewport}
             onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
             pngExportScale={pngExportScale}

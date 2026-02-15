@@ -20,8 +20,8 @@ type ViewControlsPanelProps = {
   onApplyMidPreset: () => void;
   onApplyDetailPreset: () => void;
   onResetView?: () => void;
-  onExportAbstractMapMarkdown: () => void;
-  onExportAbstractMapHtml: () => void;
+  onExportAbstractMapMarkdownWithPng: () => void;
+  onExportAbstractMapHtmlWithPng: () => void;
   onExportSvgViewport: () => void;
   onExportSvgVisibleBounds: () => void;
   pngExportScale: 1 | 2;
@@ -58,8 +58,8 @@ export function ViewControlsPanel({
   onApplyMidPreset,
   onApplyDetailPreset,
   onResetView,
-  onExportAbstractMapMarkdown,
-  onExportAbstractMapHtml,
+  onExportAbstractMapMarkdownWithPng,
+  onExportAbstractMapHtmlWithPng,
   onExportSvgViewport,
   onExportSvgVisibleBounds,
   pngExportScale,
@@ -235,11 +235,11 @@ export function ViewControlsPanel({
         <button type="button" onClick={onExportPngVisibleBounds} style={{ cursor: "pointer" }}>
           Export PNG (Visible bounds)
         </button>
-        <button type="button" onClick={onExportAbstractMapMarkdown} style={{ cursor: "pointer" }}>
-          Export Abstract Map (Markdown)
+        <button type="button" onClick={onExportAbstractMapMarkdownWithPng} style={{ cursor: "pointer" }}>
+          Export Abstract Map Report (MD + PNG)
         </button>
-        <button type="button" onClick={onExportAbstractMapHtml} style={{ cursor: "pointer" }}>
-          Export Abstract Map (HTML)
+        <button type="button" onClick={onExportAbstractMapHtmlWithPng} style={{ cursor: "pointer" }}>
+          Export Abstract Map Report (HTML + PNG)
         </button>
       </div>
     </div>
