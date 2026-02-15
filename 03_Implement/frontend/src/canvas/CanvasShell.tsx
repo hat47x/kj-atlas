@@ -84,6 +84,14 @@ export type CanvasViewState = {
   showReadingOrder: boolean;
 };
 
+export type CanvasCamera = {
+  panX: number;
+  panY: number;
+  zoom: number;
+  viewportWidth: number;
+  viewportHeight: number;
+};
+
 type CanvasShellProps = {
   document: DocumentV2;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
@@ -92,6 +100,7 @@ type CanvasShellProps = {
   onCanvasBackgroundClick: () => void;
   onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
+  onCameraChange?: (camera: CanvasCamera) => void;
   hiddenCardIds?: Set<string>;
   deemphasizedCardIds?: Set<string>;
   hideSourceCards?: boolean;
@@ -183,6 +192,7 @@ export function CanvasShell({
   onCanvasBackgroundClick,
   onMarqueeSelect,
   onTransformChange,
+  onCameraChange,
   hiddenCardIds,
   deemphasizedCardIds,
   hideSourceCards = true,
@@ -226,6 +236,7 @@ export function CanvasShell({
   const [transform, setTransform] = useState<Transform>(document.transform);
   const transformRef = useRef<Transform>(document.transform);
   const [dragMode, setDragMode] = useState<"none" | "pan" | "marquee">("none");
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [marqueeRect, setMarqueeRect] = useState<{
     x: number;
@@ -273,6 +284,42 @@ export function CanvasShell({
 
     onTransformChange(transform);
   }, [onTransformChange, transform]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const updateViewportSize = () => {
+      setViewportSize({
+        width: viewport.clientWidth,
+        height: viewport.clientHeight,
+      });
+    };
+
+    updateViewportSize();
+    const observer = new ResizeObserver(updateViewportSize);
+    observer.observe(viewport);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!onCameraChange || viewportSize.width <= 0 || viewportSize.height <= 0) {
+      return;
+    }
+
+    onCameraChange({
+      panX: transform.panX,
+      panY: transform.panY,
+      zoom: transform.zoom,
+      viewportWidth: viewportSize.width,
+      viewportHeight: viewportSize.height,
+    });
+  }, [onCameraChange, transform.panX, transform.panY, transform.zoom, viewportSize.height, viewportSize.width]);
 
   useEffect(() => {
     const viewport = viewportRef.current;

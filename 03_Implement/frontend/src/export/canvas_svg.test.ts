@@ -1,0 +1,145 @@
+import { describe, expect, it } from "vitest";
+
+import { computeVisibleBounds } from "../domain/geometry/bounds";
+import type { DocumentV2 } from "../domain/types";
+import { exportCanvasToSVG } from "./canvas_svg";
+
+function buildDoc(): DocumentV2 {
+  return {
+    version: 2,
+    id: "doc_svg",
+    title: "SVG",
+    createdAt: "2026-02-15T00:00:00.000Z",
+    updatedAt: "2026-02-15T00:00:00.000Z",
+    transform: { panX: -120, panY: -80, zoom: 1.5 },
+    cards: [
+      { id: "c1", text: "Card one", x: 100, y: 100 },
+      { id: "c2", text: "Card two", x: 360, y: 140 },
+      { id: "c3", text: "Source card", x: 620, y: 180, canonicalId: "c2" },
+    ],
+    edges: [
+      { id: "e1", fromId: "c1", toId: "c2", type: "related" },
+      { id: "e2", fromId: "c2", toId: "c3", type: "negate" },
+      { id: "e3", fromId: "c1", toId: "c3", type: "related" },
+    ],
+    islands: [
+      { id: "i1", title: "Island One", summaryText: "Summary", cardIds: ["c1", "c2"] },
+      {
+        id: "i2",
+        title: "Island Two",
+        cardIds: ["c3"],
+        shape: {
+          kind: "polygon",
+          points: [
+            { x: 560, y: 120 },
+            { x: 760, y: 120 },
+            { x: 760, y: 320 },
+            { x: 560, y: 320 },
+          ],
+        },
+      },
+    ],
+  };
+}
+
+describe("canvas_svg export", () => {
+  it("computes visible bounds and exports SVG layers", () => {
+    const doc = buildDoc();
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set<string>(),
+      hideSourceCards: false,
+      summaryView: false,
+      abstractMapView: false,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    expect(bounds).not.toBeNull();
+
+    const svg = exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds!,
+    });
+
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("<rect");
+    expect(svg).toContain("<polygon");
+    expect(svg).toContain("<line");
+    expect(svg).toContain("<text");
+    expect(svg).toContain("Island One");
+  });
+
+  it("renders dashed derived edges in abstract map view", () => {
+    const doc = buildDoc();
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set(["c1", "c2", "c3"]),
+      hideSourceCards: true,
+      summaryView: true,
+      abstractMapView: true,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    expect(bounds).not.toBeNull();
+
+    const svg = exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds!,
+    });
+
+    expect(svg).toContain('stroke-dasharray="4 4"');
+    expect(svg).toContain("Island Two");
+  });
+
+
+  it("hides source cards when hideSourceCards is enabled", () => {
+    const doc = buildDoc();
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set<string>(),
+      hideSourceCards: true,
+      summaryView: false,
+      abstractMapView: false,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    expect(bounds).not.toBeNull();
+
+    const svg = exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds!,
+    });
+
+    expect(svg).not.toContain("Source card");
+    expect(svg).toContain("Card one");
+  });
+
+  it("does not mutate document", () => {
+    const doc = buildDoc();
+    const before = JSON.stringify(doc);
+
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set<string>(),
+      hideSourceCards: false,
+      summaryView: false,
+      abstractMapView: false,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds ?? { x: 0, y: 0, w: 100, h: 100 },
+    });
+
+    expect(JSON.stringify(doc)).toBe(before);
+  });
+});

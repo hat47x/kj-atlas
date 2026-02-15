@@ -15,8 +15,7 @@ import {
   type NarrativeIssueReference,
 } from "./api/client";
 import { CanvasShell, getFocusWorldPointForReference } from "./canvas/CanvasShell";
-import type { AggregatedEdgeMeta } from "./canvas/CanvasShell";
-import type { FocusReference } from "./canvas/CanvasShell";
+import type { AggregatedEdgeMeta, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
@@ -49,7 +48,9 @@ import {
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
+import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
+import { computeVisibleBounds } from "./domain/geometry/bounds";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -58,6 +59,8 @@ const SUGGESTION_MOVE_THRESHOLD = 1;
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
 const POLYGON_PADDING = 16;
+
+const SVG_VISIBLE_BOUNDS_PADDING = 64;
 
 type DocumentHistory = {
   past: DocumentV2[];
@@ -487,6 +490,8 @@ export default function App() {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
+
+  const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
 
   const document = history?.present ?? null;
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
@@ -3914,6 +3919,109 @@ export default function App() {
     setStatusMessage("Exported abstract map as HTML");
   }, [abstractMapView, document, visibleIslandIdSet]);
 
+  const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
+    const date = new Date().toISOString().slice(0, 10);
+    return `kj-atlas-${date}-${mode}.svg`;
+  }, []);
+
+  const handleExportSvgViewport = useCallback(() => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = {
+      x: (-canvasCamera.panX) / canvasCamera.zoom,
+      y: (-canvasCamera.panY) / canvasCamera.zoom,
+      w: canvasCamera.viewportWidth / canvasCamera.zoom,
+      h: canvasCamera.viewportHeight / canvasCamera.zoom,
+    };
+
+    if (area.w <= 0 || area.h <= 0) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const svg = exportCanvasToSVG({
+      doc: focusedVisibleDocument,
+      viewState: {
+        visibleIslandIds: visibleIslandIdSet,
+        hiddenCardIds: hiddenCardIdSet,
+        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+        summaryView,
+        abstractMapView,
+      },
+      camera: canvasCamera,
+      area,
+    });
+
+    downloadTextFile(getSvgExportFilename("viewport"), "image/svg+xml", svg);
+    setStatusMessage("Exported SVG (Viewport)");
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getSvgExportFilename,
+    hiddenCardIdSet,
+    hideSourceCards,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
+
+  const handleExportSvgVisibleBounds = useCallback(() => {
+    if (!document || !focusedVisibleDocument || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const visibleBounds = computeVisibleBounds(focusedVisibleDocument, {
+      visibleIslandIds: visibleIslandIdSet,
+      hiddenCardIds: hiddenCardIdSet,
+      hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+      summaryView,
+      abstractMapView,
+    });
+
+    if (!visibleBounds) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = {
+      x: visibleBounds.x - SVG_VISIBLE_BOUNDS_PADDING,
+      y: visibleBounds.y - SVG_VISIBLE_BOUNDS_PADDING,
+      w: visibleBounds.w + SVG_VISIBLE_BOUNDS_PADDING * 2,
+      h: visibleBounds.h + SVG_VISIBLE_BOUNDS_PADDING * 2,
+    };
+
+    const svg = exportCanvasToSVG({
+      doc: focusedVisibleDocument,
+      viewState: {
+        visibleIslandIds: visibleIslandIdSet,
+        hiddenCardIds: hiddenCardIdSet,
+        hideSourceCards: hideSourceCards || summaryView || abstractMapView,
+        summaryView,
+        abstractMapView,
+      },
+      camera: canvasCamera,
+      area,
+    });
+
+    downloadTextFile(getSvgExportFilename("visible-bounds"), "image/svg+xml", svg);
+    setStatusMessage("Exported SVG (Visible bounds)");
+  }, [
+    abstractMapView,
+    canvasCamera,
+    document,
+    focusedVisibleDocument,
+    getSvgExportFilename,
+    hiddenCardIdSet,
+    hideSourceCards,
+    summaryView,
+    visibleIslandIdSet,
+  ]);
+
   const headerViewControls = (
     <div style={{ position: "relative" }}>
       <button
@@ -3968,6 +4076,8 @@ export default function App() {
             onReadingOrderEditModeChange={setIsReadingOrderEditMode}
             onExportAbstractMapMarkdown={handleExportAbstractMapMarkdown}
             onExportAbstractMapHtml={handleExportAbstractMapHtml}
+            onExportSvgViewport={handleExportSvgViewport}
+            onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
           />
         </div>
       ) : null}
@@ -4267,6 +4377,7 @@ export default function App() {
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}
             onTransformChange={handleTransformChange}
+            onCameraChange={setCanvasCamera}
             selectedCardIds={selectedCardIds}
             onCardSelect={handleCardSelect}
             onCanvasBackgroundClick={handleCanvasBackgroundClick}
