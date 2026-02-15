@@ -44,7 +44,7 @@ import {
   buildRelationSummarySourceSignature,
   buildSummarizeIslandRelationPayload,
   getRelationSummaryBySourceSignature,
-  upsertRelationSummary,
+  upsertRelationSummaryWithHistory,
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
@@ -2793,22 +2793,20 @@ export default function App() {
       const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
       const result = await summarizeIslandRelation(payload);
       const sourceSignature = buildRelationSummarySourceSignature(selectedIslandRelationEdge);
-      const summary: RelationSummary = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
+      const nextDocument = upsertRelationSummaryWithHistory(document, {
+        sourceSignature,
         islandAId: selectedIslandRelationEdge.fromIslandId,
         islandBId: selectedIslandRelationEdge.toIslandId,
         relationType: selectedIslandRelationEdge.type,
         derived: selectedIslandRelationEdge.isDerived,
-        text: result.text,
-        reviewed: false,
-        groundingCardIds: result.groundingCardIds,
-        groundingEdgeIds: result.groundingEdgeIds,
-        warnings: result.warnings,
-        sourceSignature,
-      };
+        newText: result.text,
+        newWarnings: result.warnings,
+        newGroundingCardIds: result.groundingCardIds,
+        newGroundingEdgeIds: result.groundingEdgeIds,
+        changeKind: "ai",
+      });
 
-      applyDocumentChange(upsertRelationSummary(document, summary), "Generated relation summary draft (unreviewed)");
+      applyDocumentChange(nextDocument, "Generated relation summary draft (unreviewed)");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Failed to summarize relation");
     } finally {
@@ -2816,18 +2814,92 @@ export default function App() {
     }
   }, [applyDocumentChange, document, isGeneratingRelationSummary, selectedIslandRelationEdge]);
 
-  const handleRelationSummaryTextChange = useCallback(
+  const handleRelationSummaryCommit = useCallback(
     (value: string) => {
       if (!document || !selectedRelationSummary) {
         return;
       }
 
-      const nextSummary: RelationSummary = {
-        ...selectedRelationSummary,
-        text: value,
-        reviewed: true,
-      };
-      applyDocumentChange(upsertRelationSummary(document, nextSummary), "Updated relation summary");
+      const nextDocument = upsertRelationSummaryWithHistory(document, {
+        sourceSignature: selectedRelationSummary.sourceSignature,
+        islandAId: selectedRelationSummary.islandAId,
+        islandBId: selectedRelationSummary.islandBId,
+        relationType: selectedRelationSummary.relationType,
+        derived: selectedRelationSummary.derived,
+        newText: value,
+        newWarnings: selectedRelationSummary.warnings,
+        newGroundingCardIds: selectedRelationSummary.groundingCardIds,
+        newGroundingEdgeIds: selectedRelationSummary.groundingEdgeIds,
+        changeKind: "manual",
+      });
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(nextDocument, "Updated relation summary");
+    },
+    [applyDocumentChange, document, selectedRelationSummary]
+  );
+
+  const handleRelationSummaryReviewedChange = useCallback(
+    (reviewed: boolean) => {
+      if (!document || !selectedRelationSummary) {
+        return;
+      }
+
+      const nextDocument = upsertRelationSummaryWithHistory(document, {
+        sourceSignature: selectedRelationSummary.sourceSignature,
+        islandAId: selectedRelationSummary.islandAId,
+        islandBId: selectedRelationSummary.islandBId,
+        relationType: selectedRelationSummary.relationType,
+        derived: selectedRelationSummary.derived,
+        newText: selectedRelationSummary.text,
+        newWarnings: selectedRelationSummary.warnings,
+        newGroundingCardIds: selectedRelationSummary.groundingCardIds,
+        newGroundingEdgeIds: selectedRelationSummary.groundingEdgeIds,
+        changeKind: "manual",
+        newReviewed: reviewed,
+      });
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(nextDocument, "Updated relation summary reviewed state");
+    },
+    [applyDocumentChange, document, selectedRelationSummary]
+  );
+
+  const handleRestoreRelationSummaryHistoryEntry = useCallback(
+    (historyEntryId: string) => {
+      if (!document || !selectedRelationSummary) {
+        return;
+      }
+
+      const entry = selectedRelationSummary.history?.find((item) => item.id === historyEntryId);
+      if (!entry || !entry.toText || entry.toText.trim().length === 0) {
+        setStatusMessage("Cannot restore empty relation summary history entry");
+        return;
+      }
+
+      const nextDocument = upsertRelationSummaryWithHistory(document, {
+        sourceSignature: selectedRelationSummary.sourceSignature,
+        islandAId: selectedRelationSummary.islandAId,
+        islandBId: selectedRelationSummary.islandBId,
+        relationType: selectedRelationSummary.relationType,
+        derived: selectedRelationSummary.derived,
+        newText: entry.toText,
+        newWarnings: entry.warningsSnapshot ?? selectedRelationSummary.warnings,
+        newGroundingCardIds: entry.groundingCardIdsSnapshot ?? selectedRelationSummary.groundingCardIds,
+        newGroundingEdgeIds: entry.groundingEdgeIdsSnapshot ?? selectedRelationSummary.groundingEdgeIds,
+        changeKind: "rollback",
+        note: `restore:${entry.id}`,
+        newReviewed: entry.toReviewed ?? selectedRelationSummary.reviewed,
+      });
+      if (nextDocument === document) {
+        return;
+      }
+
+      applyDocumentChange(nextDocument, "Restored relation summary history entry");
     },
     [applyDocumentChange, document, selectedRelationSummary]
   );
@@ -4100,7 +4172,9 @@ export default function App() {
           onGenerateRelationSummary={() => {
             void handleGenerateRelationSummary();
           }}
-          onRelationSummaryTextChange={handleRelationSummaryTextChange}
+          onRelationSummaryCommit={handleRelationSummaryCommit}
+          onRestoreRelationSummaryHistoryEntry={handleRestoreRelationSummaryHistoryEntry}
+          onRelationSummaryReviewedChange={handleRelationSummaryReviewedChange}
           onRelationSummaryGroundingInspect={handleRelationSummaryGroundingInspect}
           onAlignLeft={() => {
             handleAlign("left");
