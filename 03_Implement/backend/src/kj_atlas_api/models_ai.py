@@ -62,3 +62,42 @@ class SuggestIslandSummaryResponse(BaseModel):
     summaryText: str = Field(min_length=1)
     groundingIds: list[str] = Field(min_length=1)
     warnings: list[str] | None = None
+
+
+class RelationEdgeText(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    edgeId: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+    from_: str = Field(min_length=1, alias="from")
+    to: str = Field(min_length=1)
+
+
+class RelationCardText(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+
+
+class SummarizeIslandRelationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV2
+    islandAId: str = Field(min_length=1)
+    islandBId: str = Field(min_length=1)
+    relationType: Literal["related", "negate", "unknown"]
+    derived: bool
+    groundingCardIds: list[str]
+    groundingEdgeIds: list[str]
+    edgeTexts: list[RelationEdgeText] | None = None
+    cardTexts: list[RelationCardText]
+
+
+class SummarizeIslandRelationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1)
+    groundingCardIds: list[str]
+    groundingEdgeIds: list[str]
+    warnings: list[str]

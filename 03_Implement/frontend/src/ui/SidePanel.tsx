@@ -7,7 +7,7 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, Island } from "../domain/types";
+import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
 
 type SummaryGroundingItem = {
   id: string;
@@ -74,6 +74,11 @@ type SidePanelProps = {
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
   onInspectSelectedEdgeCard: (cardId: string) => void;
+  selectedRelationSummary: RelationSummary | null;
+  isGeneratingRelationSummary: boolean;
+  onGenerateRelationSummary: () => void;
+  onRelationSummaryTextChange: (value: string) => void;
+  onRelationSummaryGroundingInspect: (cardId: string) => void;
   onAlignLeft: () => void;
   onAlignRight: () => void;
   onAlignTop: () => void;
@@ -145,6 +150,11 @@ export function SidePanel({
   selectedAggregatedEdge,
   onRevealSelectedEdgeSources,
   onInspectSelectedEdgeCard,
+  selectedRelationSummary,
+  isGeneratingRelationSummary,
+  onGenerateRelationSummary,
+  onRelationSummaryTextChange,
+  onRelationSummaryGroundingInspect,
   onAlignLeft,
   onAlignRight,
   onAlignTop,
@@ -169,6 +179,7 @@ export function SidePanel({
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
+  const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
 
   const summaryHistoryEntries = useMemo(() => {
@@ -184,6 +195,7 @@ export function SidePanel({
 
     return parsedDate.toLocaleString();
   };
+
 
   const selectedIslandRelationExplanation = useMemo(() => {
     if (!document || !selectedIslandRelationEdge) {
@@ -203,6 +215,10 @@ export function SidePanel({
   }, [selectedIsland?.id, selectedIsland?.summaryText]);
 
   useEffect(() => {
+    setRelationSummaryDraft(selectedRelationSummary?.text ?? "");
+  }, [selectedRelationSummary?.sourceSignature, selectedRelationSummary?.text]);
+
+  useEffect(() => {
     setCopyExplanationFeedback("idle");
   }, [selectedIslandRelationEdge?.edgeId]);
 
@@ -216,6 +232,20 @@ export function SidePanel({
 
     return `${selectedCardCount} cards selected`;
   }, [selectedCardCount]);
+
+
+  const handleCopyExplanationClick = async () => {
+    if (!selectedIslandRelationExplanation) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatIslandRelationExplanationMarkdown(selectedIslandRelationExplanation));
+      setCopyExplanationFeedback("copied");
+    } catch {
+      setCopyExplanationFeedback("failed");
+    }
+  };
 
   const handleDeleteIslandClick = () => {
     if (!selectedIsland) {
@@ -259,19 +289,6 @@ export function SidePanel({
     }
 
     return CRITIQUE_TAGS.filter((candidateTag) => currentTagSet.has(candidateTag));
-  };
-
-  const handleCopyExplanationClick = async () => {
-    if (!selectedIslandRelationExplanation) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(formatIslandRelationExplanationMarkdown(selectedIslandRelationExplanation));
-      setCopyExplanationFeedback("copied");
-    } catch {
-      setCopyExplanationFeedback("failed");
-    }
   };
 
   return (
@@ -1126,22 +1143,7 @@ export function SidePanel({
           </button>
           {selectedIslandRelationExplanation ? (
             <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Explanation (draft)</div>
-              <div
-                style={{
-                  display: "inline-block",
-                  fontSize: 11,
-                  lineHeight: 1.4,
-                  color: "#7f1d1d",
-                  backgroundColor: "#fee2e2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 999,
-                  padding: "2px 8px",
-                  marginBottom: 8,
-                }}
-              >
-                Unreviewed (generated)
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Explanation template (draft)</div>
               <pre
                 style={{
                   margin: 0,
@@ -1168,6 +1170,50 @@ export function SidePanel({
               ) : null}
             </div>
           ) : null}
+          <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
+            <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
+              {isGeneratingRelationSummary ? "Generating..." : "Generate AI relation summary"}
+            </button>
+            <div style={{ marginTop: 8, fontSize: 12, color: "#7f1d1d" }}>
+              Draft (unreviewed). Verify against grounding cards.
+            </div>
+            {selectedRelationSummary ? (
+              <>
+                <textarea
+                  value={relationSummaryDraft}
+                  onChange={(event) => {
+                    setRelationSummaryDraft(event.target.value);
+                    onRelationSummaryTextChange(event.target.value);
+                  }}
+                  style={{ width: "100%", marginTop: 8, minHeight: 110, boxSizing: "border-box" }}
+                />
+                <div style={{ marginTop: 6, fontSize: 12, color: "#334155" }}>
+                  Reviewed: {selectedRelationSummary.reviewed ? "yes" : "no"}
+                </div>
+                {selectedRelationSummary.warnings && selectedRelationSummary.warnings.length > 0 ? (
+                  <div style={{ marginTop: 8, border: "1px solid #fca5a5", backgroundColor: "#fef2f2", borderRadius: 6, padding: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#991b1b", marginBottom: 6 }}>
+                      ⚠️ Warnings ({selectedRelationSummary.warnings.length})
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#7f1d1d" }}>
+                      {selectedRelationSummary.warnings.map((warning, index) => (
+                        <li key={`${warning}-${index}`}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding cards</div>
+                <div style={{ display: "grid", gap: 4, marginTop: 4 }}>
+                  {selectedRelationSummary.groundingCardIds.map((cardId) => (
+                    <button key={cardId} type="button" style={{ textAlign: "left", fontSize: 12 }} onClick={() => onRelationSummaryGroundingInspect(cardId)}>
+                      {cardId}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+
         </>
       ) : hasCardSelection ? (
         <>

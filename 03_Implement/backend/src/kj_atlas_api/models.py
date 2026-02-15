@@ -136,6 +136,21 @@ class Narrative(BaseModel):
     checks: list[NarrativeCheck] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+class RelationSummary(BaseModel):
+    id: str
+    createdAt: datetime
+    islandAId: str
+    islandBId: str
+    relationType: Literal["related", "negate", "unknown"]
+    derived: bool
+    text: str
+    reviewed: bool = False
+    groundingCardIds: list[str]
+    groundingEdgeIds: list[str]
+    warnings: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    sourceSignature: str
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -159,6 +174,7 @@ class DocumentV2(BaseModel):
     islands: list[Island]
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
+    relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

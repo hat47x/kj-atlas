@@ -8,6 +8,7 @@ import {
   getDocument,
   putDocument,
   suggestIslandSummary,
+  summarizeIslandRelation,
   suggestLayout,
   suggestMerges,
   type NarrativeIssue,
@@ -27,7 +28,7 @@ import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -39,6 +40,12 @@ import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
+import {
+  buildRelationSummarySourceSignature,
+  buildSummarizeIslandRelationPayload,
+  getRelationSummaryBySourceSignature,
+  upsertRelationSummary,
+} from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 
@@ -477,6 +484,7 @@ export default function App() {
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
+  const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
 
   const document = history?.present ?? null;
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
@@ -767,6 +775,16 @@ export default function App() {
       isDerived: false,
     };
   }, [selectedAggregatedEdge]);
+
+
+  const selectedRelationSummary = useMemo<RelationSummary | null>(() => {
+    if (!document || !selectedIslandRelationEdge) {
+      return null;
+    }
+
+    const sourceSignature = buildRelationSummarySourceSignature(selectedIslandRelationEdge);
+    return getRelationSummaryBySourceSignature(document, sourceSignature);
+  }, [document, selectedIslandRelationEdge]);
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(pushRecentDocumentId(docId));
@@ -2763,6 +2781,64 @@ export default function App() {
     handleSummaryGroundingCardInspect(cardId);
   }, [handleSummaryGroundingCardInspect]);
 
+  const handleGenerateRelationSummary = useCallback(async () => {
+    if (!document || !selectedIslandRelationEdge || isGeneratingRelationSummary) {
+      return;
+    }
+
+    setIsGeneratingRelationSummary(true);
+    setStatusMessage("Requesting AI relation summary draft...");
+
+    try {
+      const payload = buildSummarizeIslandRelationPayload(document, selectedIslandRelationEdge);
+      const result = await summarizeIslandRelation(payload);
+      const sourceSignature = buildRelationSummarySourceSignature(selectedIslandRelationEdge);
+      const summary: RelationSummary = {
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        islandAId: selectedIslandRelationEdge.fromIslandId,
+        islandBId: selectedIslandRelationEdge.toIslandId,
+        relationType: selectedIslandRelationEdge.type,
+        derived: selectedIslandRelationEdge.isDerived,
+        text: result.text,
+        reviewed: false,
+        groundingCardIds: result.groundingCardIds,
+        groundingEdgeIds: result.groundingEdgeIds,
+        warnings: result.warnings,
+        sourceSignature,
+      };
+
+      applyDocumentChange(upsertRelationSummary(document, summary), "Generated relation summary draft (unreviewed)");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Failed to summarize relation");
+    } finally {
+      setIsGeneratingRelationSummary(false);
+    }
+  }, [applyDocumentChange, document, isGeneratingRelationSummary, selectedIslandRelationEdge]);
+
+  const handleRelationSummaryTextChange = useCallback(
+    (value: string) => {
+      if (!document || !selectedRelationSummary) {
+        return;
+      }
+
+      const nextSummary: RelationSummary = {
+        ...selectedRelationSummary,
+        text: value,
+        reviewed: true,
+      };
+      applyDocumentChange(upsertRelationSummary(document, nextSummary), "Updated relation summary");
+    },
+    [applyDocumentChange, document, selectedRelationSummary]
+  );
+
+  const handleRelationSummaryGroundingInspect = useCallback(
+    (cardId: string) => {
+      handleSummaryGroundingCardInspect(cardId);
+    },
+    [handleSummaryGroundingCardInspect]
+  );
+
   /**
    * Manual test steps:
    * 1) Enable summary view and hide source cards, then click one grounding item.
@@ -4019,6 +4095,13 @@ export default function App() {
           selectedAggregatedEdge={selectedAggregatedEdge}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}
+          selectedRelationSummary={selectedRelationSummary}
+          isGeneratingRelationSummary={isGeneratingRelationSummary}
+          onGenerateRelationSummary={() => {
+            void handleGenerateRelationSummary();
+          }}
+          onRelationSummaryTextChange={handleRelationSummaryTextChange}
+          onRelationSummaryGroundingInspect={handleRelationSummaryGroundingInspect}
           onAlignLeft={() => {
             handleAlign("left");
           }}
