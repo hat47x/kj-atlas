@@ -4,6 +4,12 @@ import { CRITIQUE_TAGS } from "../domain/types";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
 import type { Card, CritiqueTag, Island } from "../domain/types";
 
+type SummaryGroundingItem = {
+  id: string;
+  text: string;
+  kind: "canonical" | "source";
+};
+
 type ReadingOrderItem = {
   id: string;
   label: string;
@@ -29,6 +35,7 @@ type SidePanelProps = {
   onSuggestIslandSummary: () => void;
   isSuggestingIslandSummary: boolean;
   islandSummarySuggestionWarnings: string[];
+  summaryGroundingItems: SummaryGroundingItem[];
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCollapsedChange: (value: boolean) => void;
@@ -49,6 +56,7 @@ type SidePanelProps = {
   showCanonicalOnlyEdges: boolean;
   onShowCanonicalOnlyEdgesChange: (value: boolean) => void;
   onSourceCardInspect: (cardId: string) => void;
+  onSummaryGroundingCardInspect: (cardId: string) => void;
   onShowAllSourcesChange: (value: boolean) => void;
   selectedAggregatedEdge: AggregatedEdgeMeta | null;
   onRevealSelectedEdgeSources: () => void;
@@ -89,6 +97,7 @@ export function SidePanel({
   onSuggestIslandSummary,
   isSuggestingIslandSummary,
   islandSummarySuggestionWarnings,
+  summaryGroundingItems,
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCollapsedChange,
@@ -109,6 +118,7 @@ export function SidePanel({
   showCanonicalOnlyEdges,
   onShowCanonicalOnlyEdgesChange,
   onSourceCardInspect,
+  onSummaryGroundingCardInspect,
   onShowAllSourcesChange,
   selectedAggregatedEdge,
   onRevealSelectedEdgeSources,
@@ -546,9 +556,54 @@ export function SidePanel({
               AI draft (unreviewed). Please verify against cards.
             </div>
           ) : null}
-          {selectedIsland.summaryGrounding && selectedIsland.summaryGrounding.length > 0 ? (
-            <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
-              Grounding card IDs: {selectedIsland.summaryGrounding.join(", ")}
+          {summaryGroundingItems.length > 0 ? (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                Grounding cards ({summaryGroundingItems.length})
+              </div>
+              <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+                {summaryGroundingItems.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSummaryGroundingCardInspect(item.id);
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 6,
+                        padding: "6px 8px",
+                        backgroundColor: "#ffffff",
+                        color: "#0f172a",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                      }}
+                    >
+                      <span>{item.text.slice(0, 120)}</span>
+                      <span
+                        style={{
+                          borderRadius: 999,
+                          border: "1px solid #cbd5e1",
+                          padding: "1px 7px",
+                          fontSize: 11,
+                          color: "#334155",
+                          backgroundColor: "#f8fafc",
+                          whiteSpace: "nowrap",
+                          textTransform: "lowercase",
+                        }}
+                      >
+                        {item.kind}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
             </div>
           ) : null}
           {islandSummarySuggestionWarnings.length > 0 ? (

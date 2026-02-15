@@ -457,6 +457,8 @@ export default function App() {
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [summaryRevealIslandIds, setSummaryRevealIslandIds] = useState<Set<string>>(new Set());
+  const [transientRevealCardIds, setTransientRevealCardIds] = useState<Set<string>>(new Set());
+  const [transientRevealIslandIds, setTransientRevealIslandIds] = useState<Set<string>>(new Set());
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
   const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
@@ -549,6 +551,9 @@ export default function App() {
     }
 
     const collapsedIds = new Set(focusedVisibleDocument.islands.map((island) => island.id));
+    for (const islandId of transientRevealIslandIds) {
+      collapsedIds.delete(islandId);
+    }
     for (const islandId of summaryRevealIslandIds) {
       collapsedIds.delete(islandId);
     }
@@ -558,7 +563,7 @@ export default function App() {
     }
 
     return collapsedIds;
-  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView]);
+  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView, transientRevealIslandIds]);
   const islandDepthById = useMemo(() => {
     if (!visibleDocument) {
       return new Map<string, number>();
@@ -603,7 +608,8 @@ export default function App() {
 
       if (summaryView && !focusTarget.focusIslandId) {
         for (const island of focusedVisibleDocument.islands) {
-          const canRevealMembers = summaryRevealIslandIds.has(island.id) || peekIslandId === island.id;
+          const canRevealMembers =
+            summaryRevealIslandIds.has(island.id) || transientRevealIslandIds.has(island.id) || peekIslandId === island.id;
           if (canRevealMembers) {
             continue;
           }
@@ -648,6 +654,7 @@ export default function App() {
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of transientRevealCardIds) hiddenCardIds.delete(cardId);
 
     return hiddenCardIds;
   }, [
@@ -662,6 +669,8 @@ export default function App() {
     peekIslandId,
     summaryRevealIslandIds,
     summaryView,
+    transientRevealCardIds,
+    transientRevealIslandIds,
   ]);
 
   const visibleCardIdSet = useMemo(() => {
@@ -679,6 +688,7 @@ export default function App() {
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
+  const transientRevealTimeoutByCardIdRef = useRef<Map<string, number>>(new Map());
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
@@ -2551,6 +2561,21 @@ export default function App() {
       .filter((card): card is DocumentV2["cards"][number] => card !== undefined);
   }, [document, selectedCard]);
 
+  const summaryGroundingItems = useMemo<Array<{ id: string; text: string; kind: "canonical" | "source" }>>(() => {
+    if (!selectedIsland || !selectedIsland.summaryGrounding || selectedIsland.summaryGrounding.length === 0) {
+      return [] as Array<{ id: string; text: string; kind: "canonical" | "source" }>;
+    }
+
+    return selectedIsland.summaryGrounding
+      .map((groundingCardId) => cardsById.get(groundingCardId))
+      .filter((card): card is DocumentV2["cards"][number] => card !== undefined)
+      .map((card) => ({
+        id: card.id,
+        text: card.text,
+        kind: isSourceCard(card) ? "source" : "canonical",
+      }));
+  }, [cardsById, selectedIsland]);
+
   const handleSourceCardInspect = useCallback((sourceCardId: string) => {
     requestCanvasFocus(sourceCardId);
     setRevealedSourceCardIds((previousIds) => {
@@ -2563,6 +2588,105 @@ export default function App() {
       return nextIds;
     });
   }, [requestCanvasFocus]);
+
+  useEffect(() => {
+    return () => {
+      for (const timeoutId of transientRevealTimeoutByCardIdRef.current.values()) {
+        window.clearTimeout(timeoutId);
+      }
+      transientRevealTimeoutByCardIdRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    for (const timeoutId of transientRevealTimeoutByCardIdRef.current.values()) {
+      window.clearTimeout(timeoutId);
+    }
+    transientRevealTimeoutByCardIdRef.current.clear();
+    setTransientRevealCardIds(new Set());
+    setTransientRevealIslandIds(new Set());
+  }, [document?.id]);
+
+  const handleSummaryGroundingCardInspect = useCallback((cardId: string) => {
+    if (!document) {
+      return;
+    }
+
+    const targetCard = document.cards.find((card) => card.id === cardId);
+    if (!targetCard) {
+      setStatusMessage(`Item not found: card:${cardId}`);
+      return;
+    }
+
+    requestCanvasFocus(cardId);
+    if (isSourceCard(targetCard)) {
+      setRevealedSourceCardIds((previousIds) => {
+        if (previousIds.has(cardId)) {
+          return previousIds;
+        }
+
+        const nextIds = new Set(previousIds);
+        nextIds.add(cardId);
+        return nextIds;
+      });
+    }
+
+    const containerIslandIds = document.islands
+      .filter((island) => island.cardIds.includes(cardId))
+      .map((island) => island.id);
+
+    setTransientRevealCardIds((previousIds) => {
+      if (previousIds.has(cardId)) {
+        return previousIds;
+      }
+
+      const nextIds = new Set(previousIds);
+      nextIds.add(cardId);
+      return nextIds;
+    });
+    setTransientRevealIslandIds((previousIds) => {
+      const nextIds = new Set(previousIds);
+      for (const islandId of containerIslandIds) {
+        nextIds.add(islandId);
+      }
+      if (nextIds.size === previousIds.size) {
+        return previousIds;
+      }
+      return nextIds;
+    });
+
+    const previousTimeoutId = transientRevealTimeoutByCardIdRef.current.get(cardId);
+    if (previousTimeoutId !== undefined) {
+      window.clearTimeout(previousTimeoutId);
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setTransientRevealCardIds((previousIds) => {
+        if (!previousIds.has(cardId)) {
+          return previousIds;
+        }
+        const nextIds = new Set(previousIds);
+        nextIds.delete(cardId);
+        return nextIds;
+      });
+      setTransientRevealIslandIds((previousIds) => {
+        if (containerIslandIds.length === 0) {
+          return previousIds;
+        }
+
+        const nextIds = new Set(previousIds);
+        for (const islandId of containerIslandIds) {
+          nextIds.delete(islandId);
+        }
+        if (nextIds.size === previousIds.size) {
+          return previousIds;
+        }
+        return nextIds;
+      });
+      transientRevealTimeoutByCardIdRef.current.delete(cardId);
+    }, 2500);
+    transientRevealTimeoutByCardIdRef.current.set(cardId, timeoutId);
+  }, [document, requestCanvasFocus]);
 
   const handleShowAllSourcesChange = useCallback((value: boolean) => {
     if (!value) {
@@ -3685,6 +3809,7 @@ export default function App() {
           }}
           isSuggestingIslandSummary={isSuggestingIslandSummary}
           islandSummarySuggestionWarnings={selectedIsland ? islandSummarySuggestionWarningsByIslandId[selectedIsland.id] ?? [] : []}
+          summaryGroundingItems={summaryGroundingItems}
           onImageUrlChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -3755,6 +3880,7 @@ export default function App() {
           showCanonicalOnlyEdges={showCanonicalOnlyEdges}
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
           onSourceCardInspect={handleSourceCardInspect}
+          onSummaryGroundingCardInspect={handleSummaryGroundingCardInspect}
           onShowAllSourcesChange={handleShowAllSourcesChange}
           selectedAggregatedEdge={selectedAggregatedEdge}
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
@@ -3834,7 +3960,7 @@ export default function App() {
               showCanonicalOnlyEdges,
               showReadingOrder,
             }}
-            revealCardIds={revealedSourceCardIds}
+            revealCardIds={new Set([...revealedSourceCardIds, ...transientRevealCardIds])}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
