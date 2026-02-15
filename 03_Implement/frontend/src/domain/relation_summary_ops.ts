@@ -17,7 +17,8 @@ function dedupe(ids: string[]): string[] {
   return Array.from(new Set(ids));
 }
 
-const RELATION_SUMMARY_HISTORY_LIMIT = 50;
+export const RELATION_SUMMARY_HISTORY_LIMIT = 50;
+export const RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000;
 
 export type RelationSummaryChangeKind = RelationSummaryHistoryEntry["changeKind"];
 
@@ -137,6 +138,7 @@ export function upsertRelationSummaryWithHistory(
   const index = existing.findIndex((item) => item.sourceSignature === patch.sourceSignature);
   const previous = index >= 0 ? existing[index] : null;
 
+  const nextText = patch.newText.slice(0, RELATION_SUMMARY_TEXT_MAX_LENGTH);
   const nextReviewed =
     patch.changeKind === "ai"
       ? false
@@ -158,7 +160,7 @@ export function upsertRelationSummaryWithHistory(
     islandBId: patch.islandBId,
     relationType: patch.relationType,
     derived: patch.derived,
-    text: patch.newText,
+    text: nextText,
     reviewed: nextReviewed,
     groundingCardIds: nextGroundingCardIds,
     groundingEdgeIds: nextGroundingEdgeIds,

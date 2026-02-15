@@ -5,6 +5,7 @@ import {
   getGroundingCardIdsForRelationSummary,
   upsertRelationSummary,
   upsertRelationSummaryWithHistory,
+  RELATION_SUMMARY_TEXT_MAX_LENGTH,
 } from "./relation_summary_ops";
 import type { DocumentV2 } from "./types";
 
@@ -171,6 +172,63 @@ describe("relation_summary_ops", () => {
 
     expect(unchanged).toBe(initial);
     expect(unchanged.relationSummaries?.[0].history).toHaveLength(1);
+  });
+
+
+  it("caps relation summary text length before persisting", () => {
+    const longText = "x".repeat(RELATION_SUMMARY_TEXT_MAX_LENGTH + 25);
+    const result = upsertRelationSummaryWithHistory(baseDocument, {
+      sourceSignature: "edge:e1",
+      islandAId: "i1",
+      islandBId: "i2",
+      relationType: "related",
+      derived: false,
+      newText: longText,
+      newWarnings: [],
+      newGroundingCardIds: ["c1", "c2"],
+      newGroundingEdgeIds: ["e1"],
+      changeKind: "ai",
+    });
+
+    const savedText = result.relationSummaries?.[0].text ?? "";
+    expect(savedText.length).toBe(RELATION_SUMMARY_TEXT_MAX_LENGTH);
+    expect(result.relationSummaries?.[0].history?.[0].toText?.length).toBe(RELATION_SUMMARY_TEXT_MAX_LENGTH);
+  });
+
+
+  it("updates grounding metadata without appending history when text/reviewed/warnings are unchanged", () => {
+    const initial = upsertRelationSummaryWithHistory(baseDocument, {
+      sourceSignature: "edge:e1",
+      islandAId: "i1",
+      islandBId: "i2",
+      relationType: "related",
+      derived: false,
+      newText: "Stable",
+      newWarnings: ["warn"],
+      newGroundingCardIds: ["c1", "c2"],
+      newGroundingEdgeIds: ["e1"],
+      changeKind: "ai",
+    });
+
+    const updatedGrounding = upsertRelationSummaryWithHistory(initial, {
+      sourceSignature: "edge:e1",
+      islandAId: "i1",
+      islandBId: "i2",
+      relationType: "related",
+      derived: false,
+      newText: "Stable",
+      newWarnings: ["warn"],
+      newGroundingCardIds: ["c1"],
+      newGroundingEdgeIds: ["e1", "e2"],
+      changeKind: "manual",
+      newReviewed: false,
+    });
+
+    expect(updatedGrounding).not.toBe(initial);
+    expect(updatedGrounding.relationSummaries?.[0].groundingCardIds).toEqual(["c1"]);
+    expect(updatedGrounding.relationSummaries?.[0].groundingEdgeIds).toEqual(["e1", "e2"]);
+    expect(updatedGrounding.relationSummaries?.[0].history).toHaveLength(1);
+    expect(updatedGrounding.relationSummaries?.[0].history?.[0].changeKind).toBe("ai");
   });
 
   it("trims history to max 50 entries", () => {
