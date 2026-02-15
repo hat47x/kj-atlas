@@ -48,6 +48,7 @@ type SidePanelProps = {
   onDeleteIsland: () => void;
   onFocusIsland: () => void;
   summaryView: boolean;
+  abstractMapView: boolean;
   isSelectedIslandTemporarilyRevealed: boolean;
   onToggleSelectedIslandTemporaryReveal: () => void;
   isGridSnapEnabled: boolean;
@@ -115,6 +116,7 @@ export function SidePanel({
   onDeleteIsland,
   onFocusIsland,
   summaryView,
+  abstractMapView,
   isSelectedIslandTemporarilyRevealed,
   onToggleSelectedIslandTemporaryReveal,
   isGridSnapEnabled,
@@ -493,14 +495,15 @@ export function SidePanel({
             }}
           />
 
-          {summaryView ? (
-            <button
-              type="button"
-              onClick={onToggleSelectedIslandTemporaryReveal}
-              style={{ marginBottom: 10, width: "100%" }}
-            >
-              {isSelectedIslandTemporarilyRevealed ? "Hide members" : "Show members (temporarily)"}
-            </button>
+          {summaryView || abstractMapView ? (
+            <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+              <button type="button" onClick={onToggleSelectedIslandTemporaryReveal} style={{ width: "100%" }}>
+                {isSelectedIslandTemporarilyRevealed ? "Hide member cards" : "Reveal member cards temporarily"}
+              </button>
+              <button type="button" onClick={onClearTemporaryReveal} style={{ width: "100%" }}>
+                Clear reveals
+              </button>
+            </div>
           ) : null}
 
           <label
@@ -909,7 +912,7 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Focus selected island
+              Focus this island
             </button>
             {selectedIsland.shapeStale === true ? (
               <div
