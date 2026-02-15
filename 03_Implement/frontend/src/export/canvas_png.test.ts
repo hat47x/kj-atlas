@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { computeVisibleBounds } from "../domain/geometry/bounds";
 import type { DocumentV2 } from "../domain/types";
-import { exportCanvasToSVG } from "./canvas_svg";
-import { exportSvgToPngBlob } from "./canvas_png";
+import { exportCanvasToPngBlob, exportSvgToPngBlob } from "./canvas_png";
 
 class MockImage {
   onload: null | (() => void) = null;
@@ -98,7 +97,32 @@ describe("canvas_png export", () => {
     expect(canvas.height).toBe(100);
   });
 
-  it("supports svg-to-png export for normal and abstract map views without mutating document", async () => {
+  it("exports png via svg pipeline helper", async () => {
+    const doc = buildDoc();
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set<string>(),
+      hideSourceCards: false,
+      summaryView: false,
+      abstractMapView: false,
+    };
+    const area = computeVisibleBounds(doc, viewState);
+    expect(area).not.toBeNull();
+
+    const blob = await exportCanvasToPngBlob({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: area!,
+      scale: 2,
+    });
+
+    expect(blob.type).toBe("image/png");
+    const header = new Uint8Array(await blob.arrayBuffer());
+    expect(Array.from(header)).toEqual([137, 80, 78, 71]);
+  });
+
+  it("exports normal and abstract map views via helper without mutating document", async () => {
     const doc = buildDoc();
     const before = JSON.stringify(doc);
 
@@ -123,21 +147,20 @@ describe("canvas_png export", () => {
     expect(normalBounds).not.toBeNull();
     expect(abstractBounds).not.toBeNull();
 
-    const normalSvg = exportCanvasToSVG({
+    const normalPng = await exportCanvasToPngBlob({
       doc,
       viewState: normalViewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: normalBounds!,
+      scale: 1,
     });
-    const abstractSvg = exportCanvasToSVG({
+    const abstractPng = await exportCanvasToPngBlob({
       doc,
       viewState: abstractMapViewState,
       camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
       area: abstractBounds!,
+      scale: 2,
     });
-
-    const normalPng = await exportSvgToPngBlob({ svg: normalSvg, width: normalBounds!.w, height: normalBounds!.h, scale: 1 });
-    const abstractPng = await exportSvgToPngBlob({ svg: abstractSvg, width: abstractBounds!.w, height: abstractBounds!.h, scale: 2 });
 
     expect(normalPng.type).toBe("image/png");
     expect(abstractPng.type).toBe("image/png");
