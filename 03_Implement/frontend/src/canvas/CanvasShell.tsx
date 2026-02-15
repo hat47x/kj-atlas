@@ -128,6 +128,7 @@ type CanvasShellProps = {
 };
 
 export type AggregatedEdgeSource = {
+  sourceEdgeId?: string;
   sourceFromCardId: string;
   sourceToId: string;
   sourceToKind: "card" | "island";
@@ -456,6 +457,7 @@ export function CanvasShell({
       const key = `${resolvedFromKind}:${resolvedFromId}->${resolvedToKind}:${resolvedToId}:${edge.type}`;
       const current = grouped.get(key);
       const nextSource: AggregatedEdgeSource = {
+        sourceEdgeId: edge.id,
         sourceFromCardId: edge.fromId,
         sourceToId: edge.toId,
         sourceToKind: sourceToKind,
@@ -554,8 +556,41 @@ export function CanvasShell({
 
   const visibleEdgeInspectorMeta = useMemo(() => {
     const visibleIds = new Set(visibleEdges.map((edge) => edge.id));
-    return [...aggregatedEdges, ...derivedIslandEdgeMeta].filter((edge) => visibleIds.has(edge.id));
-  }, [aggregatedEdges, derivedIslandEdgeMeta, visibleEdges]);
+    const edgeMetaById = new Map<string, AggregatedEdgeMeta>();
+
+    for (const edgeMeta of [...aggregatedEdges, ...derivedIslandEdgeMeta]) {
+      if (visibleIds.has(edgeMeta.id)) {
+        edgeMetaById.set(edgeMeta.id, edgeMeta);
+      }
+    }
+
+    for (const edge of visibleEdges) {
+      if (edgeMetaById.has(edge.id) || edge.fromKind !== "island" || edge.toKind !== "island") {
+        continue;
+      }
+
+      edgeMetaById.set(edge.id, {
+        id: edge.id,
+        fromId: edge.fromId,
+        toId: edge.toId,
+        fromKind: "island",
+        toKind: "island",
+        fromLabel: document.islands.find((island) => island.id === edge.fromId)?.title?.trim() || edge.fromId,
+        toLabel: document.islands.find((island) => island.id === edge.toId)?.title?.trim() || edge.toId,
+        type: edge.type,
+        sources: [
+          {
+            sourceEdgeId: edge.id,
+            sourceFromCardId: edge.fromId,
+            sourceToId: edge.toId,
+            sourceToKind: "island",
+          },
+        ],
+      });
+    }
+
+    return Array.from(edgeMetaById.values());
+  }, [aggregatedEdges, derivedIslandEdgeMeta, document.islands, visibleEdges]);
 
   useEffect(() => {
     onAggregatedEdgesChange?.(visibleEdgeInspectorMeta);
