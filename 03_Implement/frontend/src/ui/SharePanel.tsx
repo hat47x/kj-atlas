@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { ChangeEvent, ReactNode } from "react";
+import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -34,6 +35,8 @@ type SharePanelProps = {
   patchFileName: string | null;
   patchImportError: string | null;
   patchConflictWarning: string | null;
+  patchSummary: PatchSummaryModel | null;
+  onCopyPatchSummary: () => void;
   patchPreviewItems: {
     opId: string;
     kind: string;
@@ -91,6 +94,8 @@ export function SharePanel({
   patchFileName,
   patchImportError,
   patchConflictWarning,
+  patchSummary,
+  onCopyPatchSummary,
   patchPreviewItems,
   onPatchItemCheckedChange,
   onConflictResolutionChange,
@@ -338,6 +343,40 @@ export function SharePanel({
             {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Baseline: {patchBaselineFileName}</div> : null}
             {patchImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{patchImportError}</div> : null}
             {patchConflictWarning ? <div style={{ fontSize: 12, color: "#b45309", whiteSpace: "pre-wrap" }}>{patchConflictWarning}</div> : null}
+            {patchSummary ? (
+              <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", display: "grid", gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{patchSummary.headline}</div>
+                <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 2 }}>
+                  <div>
+                    cards +{patchSummary.stats.upsertCards} / -{patchSummary.stats.deleteCards}, islands +{patchSummary.stats.upsertIslands} / -
+                    {patchSummary.stats.deleteIslands}
+                  </div>
+                  <div>
+                    edges +{patchSummary.stats.upsertEdges} / -{patchSummary.stats.deleteEdges}, relations +
+                    {patchSummary.stats.upsertRelationSummaries} / -{patchSummary.stats.deleteRelationSummaries}
+                  </div>
+                </div>
+                {patchSummary.highlights.length > 0 ? (
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11, color: "#334155", display: "grid", gap: 2 }}>
+                    {patchSummary.highlights.map((item, index) => (
+                      <li key={`${item.label}-${index}`}>
+                        <strong>{item.label}:</strong> {item.detail}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {patchSummary.warnings.length > 0 ? (
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11, color: "#b45309", display: "grid", gap: 2 }}>
+                    {patchSummary.warnings.map((warning, index) => (
+                      <li key={`${warning}-${index}`}>{warning}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <button type="button" onClick={onCopyPatchSummary} disabled={isLoading}>
+                  Copy summary (Markdown)
+                </button>
+              </div>
+            ) : null}
             {patchPreviewItems.length > 0 ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 8 }}>
                 {patchPreviewItems.map((item) => (

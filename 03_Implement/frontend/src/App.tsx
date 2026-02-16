@@ -59,6 +59,7 @@ import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutions, getPatchOpEntityKey, parsePatchDocument, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict_detect";
+import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/patch_summary";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -751,6 +752,20 @@ export default function App() {
 
     return `${patchConflictReport.conflicts.length} conflict(s) detected. Default resolution is Skip. Choose resolution to apply.`;
   }, [patchBaselineDoc, patchConflictReport, pendingPatchImport]);
+  const patchBaselineSignatureMatch = useMemo(() => {
+    if (!document || !patchBaselineDoc) {
+      return undefined;
+    }
+
+    return patchBaselineDoc.id === document.id;
+  }, [document, patchBaselineDoc]);
+  const patchSummary = useMemo(() => {
+    if (!pendingPatchImport) {
+      return null;
+    }
+
+    return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch);
+  }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport]);
   const canApplyPatch = Boolean(document && pendingPatchImport && patchSelectedOpIdSet.size > 0);
   const focusedVisibleDocument = useMemo(() => {
     if (!visibleDocument) {
@@ -1938,6 +1953,20 @@ export default function App() {
 
     applyDocumentChange(nextDocument, "Applied patch");
   }, [applyDocumentChange, document, patchBaselineDoc, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+
+  const handleCopyPatchSummary = useCallback(async () => {
+    if (!patchSummary) {
+      setStatusMessage("No patch summary available");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatPatchSummaryMarkdown(patchSummary));
+      setStatusMessage("Copied patch summary (Markdown)");
+    } catch {
+      setStatusMessage("Failed to copy patch summary");
+    }
+  }, [patchSummary]);
 
   const handleReplaceCurrentDocument = useCallback(() => {
     if (!pendingImportedDocument) {
@@ -5017,6 +5046,10 @@ export default function App() {
       patchFileName={pendingPatchImport?.fileName ?? null}
       patchImportError={patchImportError}
       patchConflictWarning={patchConflictWarning}
+      patchSummary={patchSummary}
+      onCopyPatchSummary={() => {
+        void handleCopyPatchSummary();
+      }}
       patchPreviewItems={patchPreviewItems}
       onPatchItemCheckedChange={(opId, checked) => {
         setPatchSelectedOpIdSet((previous) => {
