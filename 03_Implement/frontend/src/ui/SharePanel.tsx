@@ -17,6 +17,15 @@ type SharePanelProps = {
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
   onLoadViewMetadataFile: (file: File) => void;
+  onLoadDocumentFile: (file: File) => void;
+  pendingImportedDocumentSummary: {
+    fileName: string;
+    cardCount: number;
+    islandCount: number;
+    edgeCount: number;
+  } | null;
+  importDocumentError: string | null;
+  onReplaceCurrentDocument: () => void;
   structuralDiffSection: ReactNode;
 };
 
@@ -44,9 +53,14 @@ export function SharePanel({
   onExportViewViewport,
   onExportViewVisibleBounds,
   onLoadViewMetadataFile,
+  onLoadDocumentFile,
+  pendingImportedDocumentSummary,
+  importDocumentError,
+  onReplaceCurrentDocument,
   structuralDiffSection,
 }: SharePanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
+  const importDocumentInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -57,6 +71,17 @@ export function SharePanel({
     }
 
     onLoadViewMetadataFile(selectedFile);
+  };
+
+  const handleDocumentFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    onLoadDocumentFile(selectedFile);
   };
 
   return (
@@ -156,8 +181,54 @@ export function SharePanel({
             />
           </div>
 
+          <div style={sectionStyle}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>3) Load document.json</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Validate DocumentV2 JSON first, then explicitly replace the current document.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                importDocumentInputRef.current?.click();
+              }}
+              disabled={isLoading}
+            >
+              Load document.json
+            </button>
+            <input
+              ref={importDocumentInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleDocumentFileChange}
+              style={{ display: "none" }}
+            />
+            {importDocumentError ? (
+              <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{importDocumentError}</div>
+            ) : null}
+            {pendingImportedDocumentSummary ? (
+              <div
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: 8,
+                  backgroundColor: "#f8fafc",
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 600 }}>{pendingImportedDocumentSummary.fileName}</div>
+                <div style={{ fontSize: 12, color: "#334155" }}>
+                  cards: {pendingImportedDocumentSummary.cardCount} / islands: {pendingImportedDocumentSummary.islandCount} / edges: {pendingImportedDocumentSummary.edgeCount}
+                </div>
+                <button type="button" onClick={onReplaceCurrentDocument} disabled={isLoading}>
+                  Replace current document
+                </button>
+              </div>
+            ) : null}
+          </div>
+
           <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>3) Diff / Verify</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>4) Diff / Verify</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               Structural doc diff (F3). Image diff (G2) and snapshot bundle verify (G3) remain available from legacy tools.
             </div>
