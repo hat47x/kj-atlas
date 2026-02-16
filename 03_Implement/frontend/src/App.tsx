@@ -29,6 +29,7 @@ import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
+import { validateDocumentV2Strict } from "./domain/validate_doc";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
@@ -80,6 +81,11 @@ type MergeSuggestionDraft = {
   rationale?: string;
   editedText: string;
   isEdited: boolean;
+};
+
+type PendingImportedDocument = {
+  fileName: string;
+  document: DocumentV2;
 };
 
 
@@ -602,6 +608,8 @@ export default function App() {
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
   const [comparisonDocument, setComparisonDocument] = useState<DocumentV2 | null>(null);
   const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
+  const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
+  const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
@@ -1552,41 +1560,40 @@ export default function App() {
         return;
       }
 
+      setIsSharePanelOpen(true);
+
       try {
         const rawText = await selectedFile.text();
         const parsedJson: unknown = JSON.parse(rawText);
-        const validateResult = validateAndUpgradeImportedDocument(parsedJson);
+        const validation = validateDocumentV2Strict(parsedJson);
 
-        if (!validateResult.ok) {
-          setStatusMessage(validateResult.error);
+        if (!validation.ok) {
+          const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
+          const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
+          setPendingImportedDocument(null);
+          setImportDocumentError(`Document validation failed:\n${details}${suffix}`);
+          setStatusMessage("Failed to load document JSON");
           return;
         }
 
-        pendingCardDragSnapshotRef.current = null;
-        setHistory({
-          past: [],
-          present: cloneDocument(validateResult.document),
-          future: [],
+        setPendingImportedDocument({
+          fileName: selectedFile.name,
+          document: validation.document,
         });
-        setActiveDocumentId(validateResult.document.id);
-        setSelectedRecentDocumentId("");
-        setDocEtag(null);
-        setSelectedCardIds([]);
-        setSelectedIslandId(null);
-        setIsDirty(true);
-        setHasSaveConflict(false);
-        setSuggestedDocument(null);
-        setSuggestionId(null);
-        setSuggestionNotes(null);
-        setSuggestionError(null);
-        setStatusMessage("Imported document");
+        setImportDocumentError(null);
+        setStatusMessage("Document validated. Review summary, then click Replace current document.");
       } catch (error) {
+        setPendingImportedDocument(null);
+
         if (error instanceof SyntaxError) {
-          setStatusMessage("Failed to parse JSON file");
+          setImportDocumentError("Document validation failed:\n- invalid JSON syntax");
+          setStatusMessage("Failed to parse document JSON file");
           return;
         }
 
-        setStatusMessage(error instanceof Error ? error.message : "Failed to import document");
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setImportDocumentError(`Document validation failed:\n- ${message}`);
+        setStatusMessage("Failed to load document JSON");
       }
     },
     []
@@ -1691,6 +1698,83 @@ export default function App() {
     },
     [document]
   );
+
+  const handleLoadDocumentFile = useCallback(async (selectedFile: File) => {
+    try {
+      const rawText = await selectedFile.text();
+      const parsedJson: unknown = JSON.parse(rawText);
+      const validation = validateDocumentV2Strict(parsedJson);
+
+      if (!validation.ok) {
+        const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
+        const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
+        setPendingImportedDocument(null);
+        setImportDocumentError(`Document validation failed:\n${details}${suffix}`);
+        setStatusMessage("Failed to load document JSON");
+        return;
+      }
+
+      setPendingImportedDocument({
+        fileName: selectedFile.name,
+        document: validation.document,
+      });
+      setImportDocumentError(null);
+      setStatusMessage("Document validated. Review summary, then click Replace current document.");
+    } catch (error) {
+      setPendingImportedDocument(null);
+
+      if (error instanceof SyntaxError) {
+        setImportDocumentError("Document validation failed:\n- invalid JSON syntax");
+        setStatusMessage("Failed to parse document JSON file");
+        return;
+      }
+
+      const message = error instanceof Error ? error.message : "Unknown error";
+      setImportDocumentError(`Document validation failed:\n- ${message}`);
+      setStatusMessage("Failed to load document JSON");
+    }
+  }, []);
+
+  const handleReplaceCurrentDocument = useCallback(() => {
+    if (!pendingImportedDocument) {
+      setStatusMessage("No validated document is pending replacement");
+      return;
+    }
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(pendingImportedDocument.document),
+      future: [],
+    });
+    setActiveDocumentId(pendingImportedDocument.document.id);
+    setSelectedRecentDocumentId("");
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setIsPickingEdgeTarget(false);
+    setFocusCardId(null);
+    setFocusTarget({});
+    setFocusWorldPoint(null);
+    setPeekIslandId(undefined);
+    setFlashReference(null);
+    setTemporaryRevealCardIds(new Set());
+    setSummaryRevealIslandIds(new Set());
+    setRevealedSourceCardIds(new Set());
+    setComparisonDocument(null);
+    setComparisonFileName(null);
+    setGroundingVisibilityMessage(null);
+    setIsDirty(true);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setPendingImportedDocument(null);
+    setImportDocumentError(null);
+    setStatusMessage("Replaced current document");
+  }, [pendingImportedDocument]);
 
   const handleEdgeSelect = useCallback((edgeId: string) => {
     setSelectedEdgeId(edgeId);
@@ -4057,7 +4141,7 @@ export default function App() {
           cursor: isLoading ? "not-allowed" : "pointer",
         }}
       >
-        Import doc JSON (legacy)
+        Import doc JSON (legacy, confirm in Share)
       </button>
       <button
         type="button"
@@ -4675,6 +4759,21 @@ export default function App() {
       onLoadViewMetadataFile={(file) => {
         void handleLoadViewMetadataFile(file);
       }}
+      onLoadDocumentFile={(file) => {
+        void handleLoadDocumentFile(file);
+      }}
+      pendingImportedDocumentSummary={
+        pendingImportedDocument
+          ? {
+              fileName: pendingImportedDocument.fileName,
+              cardCount: pendingImportedDocument.document.cards.length,
+              islandCount: pendingImportedDocument.document.islands.length,
+              edgeCount: pendingImportedDocument.document.edges.length,
+            }
+          : null
+      }
+      importDocumentError={importDocumentError}
+      onReplaceCurrentDocument={handleReplaceCurrentDocument}
       structuralDiffSection={structuralDiffPanel}
     />
   );
