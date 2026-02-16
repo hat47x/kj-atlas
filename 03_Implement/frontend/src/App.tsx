@@ -57,9 +57,10 @@ import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
-import { applyPatchWithResolutions, getPatchOpEntityKey, parsePatchDocument, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
+import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict_detect";
 import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/patch_summary";
+import { appendPatchApplyLog, formatPatchApplyLogEntryMarkdown } from "./domain/patch/patch_apply_log";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -1943,7 +1944,7 @@ export default function App() {
       return;
     }
 
-    const nextDocument = applyPatchWithResolutions(
+    const applyResult = applyPatchWithResolutionsDetailed(
       document,
       pendingPatchImport.patch,
       patchResolutionsByOpId,
@@ -1951,8 +1952,30 @@ export default function App() {
       patchSelectedOpIdSet
     );
 
+    const nextDocument = appendPatchApplyLog(applyResult.document, pendingPatchImport.patch, {
+      ...applyResult.meta,
+      patchTitle: pendingPatchImport.fileName,
+      baseDocSignature: patchBaselineDoc ? `${patchBaselineDoc.id}:${patchBaselineDoc.updatedAt}` : undefined,
+    });
+
     applyDocumentChange(nextDocument, "Applied patch");
   }, [applyDocumentChange, document, patchBaselineDoc, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+
+
+  const handleCopyPatchApplyLogEntry = useCallback(async (entryId: string) => {
+    const entry = document?.patchApplyLog?.find((item) => item.id === entryId);
+    if (!entry) {
+      setStatusMessage("Patch apply log entry not found");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatPatchApplyLogEntryMarkdown(entry));
+      setStatusMessage("Copied patch apply log entry (Markdown)");
+    } catch {
+      setStatusMessage("Failed to copy patch apply log entry");
+    }
+  }, [document]);
 
   const handleCopyPatchSummary = useCallback(async () => {
     if (!patchSummary) {
@@ -5071,6 +5094,10 @@ export default function App() {
       onApplyPatch={handleApplyPatch}
       canApplyPatch={canApplyPatch}
       patchBaselineFileName={patchBaselineFileName}
+      patchApplyLogEntries={document?.patchApplyLog ?? []}
+      onCopyPatchApplyLogEntry={(entryId) => {
+        void handleCopyPatchApplyLogEntry(entryId);
+      }}
       structuralDiffSection={structuralDiffPanel}
     />
   );
