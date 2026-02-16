@@ -1,0 +1,64 @@
+import { describe, expect, it } from "vitest";
+
+import type { DocumentV2 } from "../types";
+import { applyPatchWithResolutions, type PatchDocument } from "./patch_apply";
+
+function makeDoc(text: string): DocumentV2 {
+  return {
+    version: 2,
+    id: "doc-1",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [{ id: "c1", text, x: 0, y: 0 }],
+    edges: [],
+    islands: [],
+    narratives: [],
+  };
+}
+
+describe("applyPatchWithResolutions", () => {
+  it("applies only resolved 'theirs' in conflicts", () => {
+    const baseline = makeDoc("base");
+    const current = makeDoc("yours");
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
+    };
+
+    const withSkip = applyPatchWithResolutions(current, patch, { op1: "skip" }, baseline);
+    expect(withSkip.cards[0]?.text).toBe("yours");
+
+    const withTheirs = applyPatchWithResolutions(current, patch, { op1: "theirs" }, baseline);
+    expect(withTheirs.cards[0]?.text).toBe("theirs");
+  });
+
+  it("applies selected non-conflicting operations", () => {
+    const current = makeDoc("base");
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [
+        { id: "op1", kind: "upsert_card", card: { id: "c1", text: "next", x: 0, y: 0 } },
+        { id: "op2", kind: "upsert_card", card: { id: "c2", text: "new", x: 1, y: 1 } },
+      ],
+    };
+
+    const next = applyPatchWithResolutions(current, patch, {}, undefined, new Set(["op2"]));
+    expect(next.cards.find((card) => card.id === "c1")?.text).toBe("base");
+    expect(next.cards.find((card) => card.id === "c2")?.text).toBe("new");
+  });
+
+  it("falls back to H4 behavior without baseline", () => {
+    const current = makeDoc("base");
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [{ id: "op1", kind: "upsert_card", card: { id: "c1", text: "theirs", x: 0, y: 0 } }],
+    };
+
+    const next = applyPatchWithResolutions(current, patch, { op1: "skip" }, undefined, new Set(["op1"]));
+    expect(next.cards[0]?.text).toBe("theirs");
+  });
+});

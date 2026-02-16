@@ -57,6 +57,8 @@ import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
+import { applyPatchWithResolutions, getPatchOpEntityKey, parsePatchDocument, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
+import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict_detect";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -86,6 +88,25 @@ type MergeSuggestionDraft = {
 type PendingImportedDocument = {
   fileName: string;
   document: DocumentV2;
+};
+
+type PendingPatchImport = {
+  fileName: string;
+  patch: PatchDocument;
+};
+
+type PatchPreviewItem = {
+  opId: string;
+  kind: string;
+  entityKey: string;
+  checked: boolean;
+  canToggle: boolean;
+  conflict: boolean;
+  reason?: string;
+  baseSnippet?: string;
+  yourSnippet?: string;
+  theirSnippet?: string;
+  resolution?: PatchResolution;
 };
 
 
@@ -203,6 +224,69 @@ function extractComparisonDocument(value: unknown): DocumentV2 | null {
         : validated.document.readingOrder ?? [],
     relationSummaries: parseComparisonRelationSummaries(payload.relationSummaries),
   };
+}
+
+
+
+function clipSnippet(value: string | undefined, maxLength = 80): string {
+  const text = (value ?? "").trim();
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength)}…`;
+}
+
+function formatPatchEntitySnippet(value: unknown): string {
+  if (!value || typeof value !== "object") {
+    return "(none)";
+  }
+
+  if ("text" in value && "x" in value && "y" in value) {
+    const card = value as { text?: string; x?: number; y?: number };
+    return `text:${clipSnippet(card.text)} @(${String(card.x ?? "?")}, ${String(card.y ?? "?")})`;
+  }
+
+  if ("cardIds" in value && ("title" in value || "summaryText" in value)) {
+    const island = value as { title?: string; summaryText?: string; cardIds?: string[] };
+    return `title:${clipSnippet(island.title)} / summary:${clipSnippet(island.summaryText)} / members:${island.cardIds?.length ?? 0}`;
+  }
+
+  if ("fromId" in value && "toId" in value && "type" in value) {
+    const edge = value as { fromId?: string; toId?: string; type?: string };
+    return `${edge.fromId ?? "?"} -> ${edge.toId ?? "?"} (${edge.type ?? "?"})`;
+  }
+
+  if ("sourceSignature" in value && "text" in value && "reviewed" in value) {
+    const summary = value as { text?: string; reviewed?: boolean; sourceSignature?: string };
+    return `${summary.sourceSignature ?? "?"} / ${clipSnippet(summary.text)} / reviewed:${String(summary.reviewed)}`;
+  }
+
+  return clipSnippet(JSON.stringify(value));
+}
+
+function buildPatchPreviewItems(
+  patch: PatchDocument,
+  selectedOpIdSet: Set<string>,
+  conflictByOpId: Map<string, ConflictItem>,
+  resolutions: Record<string, PatchResolution>
+): PatchPreviewItem[] {
+  return patch.ops.map((op) => {
+    const conflict = conflictByOpId.get(op.id);
+    return {
+      opId: op.id,
+      kind: op.kind,
+      entityKey: getPatchOpEntityKey(op),
+      checked: selectedOpIdSet.has(op.id),
+      canToggle: !conflict,
+      conflict: Boolean(conflict),
+      reason: conflict?.reason,
+      baseSnippet: conflict ? formatPatchEntitySnippet(conflict.baseValue) : undefined,
+      yourSnippet: conflict ? formatPatchEntitySnippet(conflict.yourValue) : undefined,
+      theirSnippet: conflict ? formatPatchEntitySnippet(conflict.theirValue) : undefined,
+      resolution: conflict ? resolutions[op.id] : undefined,
+    };
+  });
 }
 
 function createDefaultDocument(docId: string): DocumentV2 {
@@ -612,6 +696,12 @@ export default function App() {
   const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
+  const [pendingPatchImport, setPendingPatchImport] = useState<PendingPatchImport | null>(null);
+  const [patchImportError, setPatchImportError] = useState<string | null>(null);
+  const [patchBaselineDoc, setPatchBaselineDoc] = useState<DocumentV2 | null>(null);
+  const [patchBaselineFileName, setPatchBaselineFileName] = useState<string | null>(null);
+  const [patchSelectedOpIdSet, setPatchSelectedOpIdSet] = useState<Set<string>>(new Set());
+  const [patchResolutionsByOpId, setPatchResolutionsByOpId] = useState<Record<string, PatchResolution>>({});
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
@@ -629,6 +719,39 @@ export default function App() {
   }, [comparisonDocument, document]);
   const currentCardIdSet = useMemo(() => new Set((document?.cards ?? []).map((card) => card.id)), [document?.cards]);
   const currentIslandIdSet = useMemo(() => new Set((document?.islands ?? []).map((island) => island.id)), [document?.islands]);
+  const patchConflictReport = useMemo(() => {
+    if (!document || !pendingPatchImport || !patchBaselineDoc) {
+      return null;
+    }
+
+    return detectPatchConflicts(patchBaselineDoc, document, pendingPatchImport.patch);
+  }, [document, patchBaselineDoc, pendingPatchImport]);
+  const patchConflictByOpId = useMemo(() => {
+    return new Map((patchConflictReport?.conflicts ?? []).map((item) => [item.opId, item]));
+  }, [patchConflictReport]);
+  const patchPreviewItems = useMemo(() => {
+    if (!pendingPatchImport) {
+      return [] as PatchPreviewItem[];
+    }
+
+    return buildPatchPreviewItems(pendingPatchImport.patch, patchSelectedOpIdSet, patchConflictByOpId, patchResolutionsByOpId);
+  }, [patchConflictByOpId, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+  const patchConflictWarning = useMemo(() => {
+    if (!pendingPatchImport) {
+      return null;
+    }
+
+    if (!patchBaselineDoc) {
+      return "No baseline loaded. Conflict detection is disabled (H4 behavior).";
+    }
+
+    if (!patchConflictReport || patchConflictReport.conflicts.length === 0) {
+      return null;
+    }
+
+    return `${patchConflictReport.conflicts.length} conflict(s) detected. Default resolution is Skip. Choose resolution to apply.`;
+  }, [patchBaselineDoc, patchConflictReport, pendingPatchImport]);
+  const canApplyPatch = Boolean(document && pendingPatchImport && patchSelectedOpIdSet.size > 0);
   const focusedVisibleDocument = useMemo(() => {
     if (!visibleDocument) {
       return visibleDocument;
@@ -1738,6 +1861,83 @@ export default function App() {
       setStatusMessage("Failed to load document JSON");
     }
   }, []);
+
+  const handleLoadPatchFile = useCallback(async (selectedFile: File) => {
+    try {
+      const rawText = await selectedFile.text();
+      const parsedJson: unknown = JSON.parse(rawText);
+      const parsedPatch = parsePatchDocument(parsedJson);
+
+      if (!parsedPatch) {
+        setPendingPatchImport(null);
+        setPatchImportError("Patch validation failed:\n- invalid patch schema");
+        setStatusMessage("Failed to load patch JSON");
+        return;
+      }
+
+      setPendingPatchImport({
+        fileName: selectedFile.name,
+        patch: parsedPatch,
+      });
+      setPatchSelectedOpIdSet(new Set(parsedPatch.ops.map((op) => op.id)));
+      const nextResolutions: Record<string, PatchResolution> = {};
+      for (const op of parsedPatch.ops) {
+        nextResolutions[op.id] = "skip";
+      }
+      setPatchResolutionsByOpId(nextResolutions);
+      setPatchImportError(null);
+      setStatusMessage("Patch loaded");
+    } catch (error) {
+      setPendingPatchImport(null);
+      if (error instanceof SyntaxError) {
+        setPatchImportError("Patch validation failed:\n- invalid JSON syntax");
+      } else {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setPatchImportError(`Patch validation failed:\n- ${message}`);
+      }
+      setStatusMessage("Failed to load patch JSON");
+    }
+  }, []);
+
+  const handleLoadPatchBaselineFile = useCallback(async (selectedFile: File) => {
+    try {
+      const rawText = await selectedFile.text();
+      const parsedJson: unknown = JSON.parse(rawText);
+      const validation = validateDocumentV2Strict(parsedJson);
+
+      if (!validation.ok) {
+        setPatchBaselineDoc(null);
+        setPatchBaselineFileName(null);
+        setStatusMessage("Failed to load baseline document JSON");
+        return;
+      }
+
+      setPatchBaselineDoc(validation.document);
+      setPatchBaselineFileName(selectedFile.name);
+      setStatusMessage("Loaded baseline for patch conflict detection");
+    } catch {
+      setPatchBaselineDoc(null);
+      setPatchBaselineFileName(null);
+      setStatusMessage("Failed to load baseline document JSON");
+    }
+  }, []);
+
+  const handleApplyPatch = useCallback(() => {
+    if (!document || !pendingPatchImport) {
+      setStatusMessage("No patch loaded");
+      return;
+    }
+
+    const nextDocument = applyPatchWithResolutions(
+      document,
+      pendingPatchImport.patch,
+      patchResolutionsByOpId,
+      patchBaselineDoc ?? undefined,
+      patchSelectedOpIdSet
+    );
+
+    applyDocumentChange(nextDocument, "Applied patch");
+  }, [applyDocumentChange, document, patchBaselineDoc, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
 
   const handleReplaceCurrentDocument = useCallback(() => {
     if (!pendingImportedDocument) {
@@ -4808,6 +5008,36 @@ export default function App() {
       }
       importDocumentError={importDocumentError}
       onReplaceCurrentDocument={handleReplaceCurrentDocument}
+      onLoadPatchFile={(file) => {
+        void handleLoadPatchFile(file);
+      }}
+      onLoadPatchBaselineFile={(file) => {
+        void handleLoadPatchBaselineFile(file);
+      }}
+      patchFileName={pendingPatchImport?.fileName ?? null}
+      patchImportError={patchImportError}
+      patchConflictWarning={patchConflictWarning}
+      patchPreviewItems={patchPreviewItems}
+      onPatchItemCheckedChange={(opId, checked) => {
+        setPatchSelectedOpIdSet((previous) => {
+          const next = new Set(previous);
+          if (checked) {
+            next.add(opId);
+          } else {
+            next.delete(opId);
+          }
+          return next;
+        });
+      }}
+      onConflictResolutionChange={(opId, resolution) => {
+        setPatchResolutionsByOpId((previous) => ({
+          ...previous,
+          [opId]: resolution,
+        }));
+      }}
+      onApplyPatch={handleApplyPatch}
+      canApplyPatch={canApplyPatch}
+      patchBaselineFileName={patchBaselineFileName}
       structuralDiffSection={structuralDiffPanel}
     />
   );
