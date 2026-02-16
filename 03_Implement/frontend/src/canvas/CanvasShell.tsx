@@ -92,6 +92,13 @@ export type CanvasCamera = {
   viewportHeight: number;
 };
 
+export type CameraTransformRequest = {
+  panX: number;
+  panY: number;
+  zoom: number;
+  requestSeq: number;
+};
+
 type CanvasShellProps = {
   document: DocumentV2;
   onCardMove: (cardId: string, deltaWorldX: number, deltaWorldY: number) => void;
@@ -101,6 +108,7 @@ type CanvasShellProps = {
   onMarqueeSelect: (cardIds: string[], isShiftPressed: boolean) => void;
   onTransformChange?: (transform: Transform) => void;
   onCameraChange?: (camera: CanvasCamera) => void;
+  cameraTransformRequest?: CameraTransformRequest | null;
   hiddenCardIds?: Set<string>;
   deemphasizedCardIds?: Set<string>;
   hideSourceCards?: boolean;
@@ -193,6 +201,7 @@ export function CanvasShell({
   onMarqueeSelect,
   onTransformChange,
   onCameraChange,
+  cameraTransformRequest = null,
   hiddenCardIds,
   deemphasizedCardIds,
   hideSourceCards = true,
@@ -284,6 +293,19 @@ export function CanvasShell({
 
     onTransformChange(transform);
   }, [onTransformChange, transform]);
+
+
+  useEffect(() => {
+    if (!cameraTransformRequest) {
+      return;
+    }
+
+    setTransform({
+      panX: cameraTransformRequest.panX,
+      panY: cameraTransformRequest.panY,
+      zoom: cameraTransformRequest.zoom,
+    });
+  }, [cameraTransformRequest]);
 
   useEffect(() => {
     const viewport = viewportRef.current;

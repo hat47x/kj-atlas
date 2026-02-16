@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { buildExportViewMetadata } from "./view_metadata";
+import { buildExportViewMetadata, validateImportViewMetadata } from "./view_metadata";
 
 describe("view metadata export", () => {
   afterEach(() => {
@@ -90,5 +90,66 @@ describe("view metadata export", () => {
     });
 
     expect(metadata.generatedAt).toBe("2026-03-02T00:00:00.000Z");
+  });
+
+  it("validates import metadata successfully", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-123", title: "Sample" },
+      camera: { panX: 1, panY: 2, zoom: 1.5 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: true,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: true,
+      },
+      exportMode: "viewport",
+    });
+
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid maxDepth", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: -1,
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: 'viewState.maxDepth must be "all" or a number >= 0' });
+  });
+
+  it("rejects invalid focusIslandId", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: 123,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: "viewState.focusIslandId must be a string or null" });
   });
 });
