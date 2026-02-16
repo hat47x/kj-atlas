@@ -51,6 +51,7 @@ import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdow
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
+import { buildExportViewMetadata } from "./export/view_metadata";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -3920,6 +3921,52 @@ export default function App() {
     };
   }, [abstractMapView, canvasCamera, focusedVisibleDocument, hiddenCardIdSet, hideSourceCards, summaryView, visibleIslandIdSet]);
 
+  const getViewMetadataFilename = useCallback((mode: "viewport" | "bounds", generatedAt: string) => {
+    const date = generatedAt.slice(0, 10);
+    return `kj-atlas-${date}-${mode}.view.json`;
+  }, []);
+
+  const downloadViewMetadata = useCallback(
+    (mode: "viewport" | "bounds", bounds?: { x: number; y: number; w: number; h: number }, padding?: number) => {
+      if (!document || !canvasCamera) {
+        return;
+      }
+
+      const generatedAt = new Date().toISOString();
+      const metadata = buildExportViewMetadata({
+        doc: document,
+        camera: canvasCamera,
+        viewState: {
+          summaryView,
+          abstractMapView,
+          hideSourceCards,
+          maxDepth,
+          focusIslandId: focusTarget.focusIslandId ?? null,
+          showReadingOrder,
+          editReadingOrder: isReadingOrderEditMode,
+        },
+        exportMode: mode,
+        bounds,
+        padding,
+        generatedAt,
+      });
+
+      downloadTextFile(getViewMetadataFilename(mode, generatedAt), "application/json", `${JSON.stringify(metadata, null, 2)}\n`);
+    },
+    [
+      abstractMapView,
+      canvasCamera,
+      document,
+      focusTarget.focusIslandId,
+      getViewMetadataFilename,
+      hideSourceCards,
+      isReadingOrderEditMode,
+      maxDepth,
+      showReadingOrder,
+      summaryView,
+    ]
+  );
+
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
       setStatusMessage("Nothing to export");
@@ -3955,6 +4002,7 @@ export default function App() {
       const snapshotFilename = "snapshot.png";
       downloadBlobFile(snapshotFilename, pngBlob);
       downloadTextFile("report.md", "text/markdown", exportAbstractMapMarkdown(model, { snapshotFilename }));
+      downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage("Exported abstract map report (MD + PNG)");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Report export failed";
@@ -3966,6 +4014,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getVisibleBoundsExportArea,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     summaryView,
@@ -4006,6 +4055,7 @@ export default function App() {
 
       const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
       downloadTextFile("report.html", "text/html", exportAbstractMapHTML(model, { snapshotDataUrl }));
+      downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage("Exported abstract map report (HTML + PNG)");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Report export failed";
@@ -4017,6 +4067,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getVisibleBoundsExportArea,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     summaryView,
@@ -4069,6 +4120,7 @@ export default function App() {
     });
 
     downloadTextFile(getSvgExportFilename("viewport"), "image/svg+xml", svg);
+    downloadViewMetadata("viewport", area);
     setStatusMessage("Exported SVG (Viewport)");
   }, [
     abstractMapView,
@@ -4076,6 +4128,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getSvgExportFilename,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     summaryView,
@@ -4122,6 +4175,7 @@ export default function App() {
     });
 
     downloadTextFile(getSvgExportFilename("visible-bounds"), "image/svg+xml", svg);
+    downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
     setStatusMessage("Exported SVG (Visible bounds)");
   }, [
     abstractMapView,
@@ -4129,6 +4183,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getSvgExportFilename,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     summaryView,
@@ -4169,6 +4224,7 @@ export default function App() {
         scale: pngExportScale,
       });
       downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
+      downloadViewMetadata("viewport", area);
       setStatusMessage(`Exported PNG (Viewport, ${pngExportScale}x)`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "PNG export failed";
@@ -4180,6 +4236,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getPngExportFilename,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     pngExportScale,
@@ -4229,6 +4286,7 @@ export default function App() {
         scale: pngExportScale,
       });
       downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
+      downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
       setStatusMessage(`Exported PNG (Visible bounds, ${pngExportScale}x)`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "PNG export failed";
@@ -4240,6 +4298,7 @@ export default function App() {
     document,
     focusedVisibleDocument,
     getPngExportFilename,
+    downloadViewMetadata,
     hiddenCardIdSet,
     hideSourceCards,
     pngExportScale,
