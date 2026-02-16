@@ -226,7 +226,8 @@ export function ViewControlsPanel({
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Export</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Export (legacy)</div>
+        <div style={{ fontSize: 11, color: "#64748b" }}>Deprecated entry point. Use “Share &amp; Reproduce” for the canonical flow.</div>
         <button type="button" onClick={onExportSvgViewport} style={{ cursor: "pointer" }}>
           Export SVG (Viewport)
         </button>
