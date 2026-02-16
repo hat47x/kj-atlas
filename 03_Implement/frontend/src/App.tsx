@@ -55,6 +55,7 @@ import { buildExportViewMetadata, validateImportViewMetadata } from "./export/vi
 import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import { DiffPanel } from "./ui/DiffPanel";
+import { SharePanel } from "./ui/SharePanel";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -595,6 +596,7 @@ export default function App() {
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
+  const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
@@ -4055,7 +4057,7 @@ export default function App() {
           cursor: isLoading ? "not-allowed" : "pointer",
         }}
       >
-        Import
+        Import doc JSON (legacy)
       </button>
       <button
         type="button"
@@ -4071,7 +4073,7 @@ export default function App() {
           cursor: isLoading || !document ? "not-allowed" : "pointer",
         }}
       >
-        Export
+        Export doc JSON (legacy)
       </button>
       <button
         type="button"
@@ -4520,6 +4522,39 @@ export default function App() {
     visibleIslandIdSet,
   ]);
 
+  const handleExportViewMetadataViewport = useCallback(() => {
+    if (!canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    const area = {
+      x: (-canvasCamera.panX) / canvasCamera.zoom,
+      y: (-canvasCamera.panY) / canvasCamera.zoom,
+      w: canvasCamera.viewportWidth / canvasCamera.zoom,
+      h: canvasCamera.viewportHeight / canvasCamera.zoom,
+    };
+
+    if (area.w <= 0 || area.h <= 0) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    downloadViewMetadata("viewport", area);
+    setStatusMessage("Exported view.json (Viewport)");
+  }, [canvasCamera, downloadViewMetadata]);
+
+  const handleExportViewMetadataVisibleBounds = useCallback(() => {
+    const area = getVisibleBoundsExportArea();
+    if (!area) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
+    setStatusMessage("Exported view.json (Visible bounds)");
+  }, [downloadViewMetadata, getVisibleBoundsExportArea]);
+
   const headerViewControls = (
     <div style={{ position: "relative" }}>
       <button
@@ -4597,11 +4632,59 @@ export default function App() {
     </div>
   );
 
+  const structuralDiffPanel = (
+    <DiffPanel
+      comparisonFileName={comparisonFileName}
+      comparisonDocument={comparisonDocument}
+      diffResult={diffResult}
+      currentCardIdSet={currentCardIdSet}
+      currentIslandIdSet={currentIslandIdSet}
+      onLoadComparisonDocument={handleLoadComparisonDocumentClick}
+      onJumpToItem={(kind, id) => {
+        focusItem(kind, id);
+      }}
+    />
+  );
+
+  const headerShareControls = (
+    <SharePanel
+      isOpen={isSharePanelOpen}
+      onToggleOpen={() => {
+        setIsSharePanelOpen((previousOpen) => !previousOpen);
+      }}
+      hasDocument={Boolean(document)}
+      isLoading={isLoading}
+      onExportSvgViewport={handleExportSvgViewport}
+      onExportSvgVisibleBounds={handleExportSvgVisibleBounds}
+      pngExportScale={pngExportScale}
+      onPngExportScaleChange={setPngExportScale}
+      onExportPngViewport={() => {
+        void handleExportPngViewport();
+      }}
+      onExportPngVisibleBounds={() => {
+        void handleExportPngVisibleBounds();
+      }}
+      onExportAbstractMapMarkdownWithPng={() => {
+        void handleExportAbstractMapMarkdownWithPng();
+      }}
+      onExportAbstractMapHtmlWithPng={() => {
+        void handleExportAbstractMapHtmlWithPng();
+      }}
+      onExportViewViewport={handleExportViewMetadataViewport}
+      onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
+      onLoadViewMetadataFile={(file) => {
+        void handleLoadViewMetadataFile(file);
+      }}
+      structuralDiffSection={structuralDiffPanel}
+    />
+  );
+
   return (
     <Shell
       title="kj-atlas Canvas MVP"
       subtitle={`Document: ${activeDocumentId}`}
       headerViewControls={headerViewControls}
+      headerShareControls={headerShareControls}
       headerCenter={headerCenter}
       headerRight={headerRight}
       hasUnsavedChanges={isDirty}
@@ -4622,17 +4705,20 @@ export default function App() {
           revealedSourceCardIds={revealedSourceCardIds}
           topContent={
             <>
-              <DiffPanel
-                comparisonFileName={comparisonFileName}
-                comparisonDocument={comparisonDocument}
-                diffResult={diffResult}
-                currentCardIdSet={currentCardIdSet}
-                currentIslandIdSet={currentIslandIdSet}
-                onLoadComparisonDocument={handleLoadComparisonDocumentClick}
-                onJumpToItem={(kind, id) => {
-                  focusItem(kind, id);
+              <section
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 8,
+                  padding: 8,
+                  marginBottom: 12,
+                  backgroundColor: "#f8fafc",
                 }}
-              />
+              >
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+                  Legacy entry point. Use “Share &amp; Reproduce” for ordered Diff/Verify flow.
+                </div>
+                {structuralDiffPanel}
+              </section>
               <NarrativesPanel
                 narrativeText={narrativeText}
                 onNarrativeTextChange={setNarrativeText}

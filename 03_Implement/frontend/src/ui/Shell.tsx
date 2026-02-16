@@ -5,6 +5,7 @@ type ShellProps = {
   subtitle?: ReactNode;
   children: ReactNode;
   headerViewControls?: ReactNode;
+  headerShareControls?: ReactNode;
   headerCenter?: ReactNode;
   headerRight?: ReactNode;
   hasUnsavedChanges?: boolean;
@@ -20,6 +21,7 @@ export function Shell({
   subtitle,
   children,
   headerViewControls,
+  headerShareControls,
   headerCenter,
   headerRight,
   hasUnsavedChanges = false,
@@ -78,6 +80,7 @@ export function Shell({
               </span>
             ) : null}
             {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
+            {headerShareControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerShareControls}</div> : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
