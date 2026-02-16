@@ -15,7 +15,7 @@ import {
   type NarrativeIssueReference,
 } from "./api/client";
 import { CanvasShell, getFocusWorldPointForReference } from "./canvas/CanvasShell";
-import type { AggregatedEdgeMeta, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
+import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
@@ -51,7 +51,7 @@ import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdow
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
-import { buildExportViewMetadata } from "./export/view_metadata";
+import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -495,6 +495,7 @@ export default function App() {
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
+  const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
 
   const document = history?.present ?? null;
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
@@ -1475,6 +1476,67 @@ export default function App() {
   const handleImportClick = useCallback(() => {
     importInputRef.current?.click();
   }, []);
+
+  const handleLoadViewMetadataFile = useCallback(
+    async (selectedFile: File) => {
+      if (!document) {
+        setStatusMessage("No document loaded");
+        return;
+      }
+
+      try {
+        const rawText = await selectedFile.text();
+        const parsedJson: unknown = JSON.parse(rawText);
+        const validateResult = validateImportViewMetadata(parsedJson);
+
+        if (!validateResult.ok) {
+          setStatusMessage(`Failed to load view metadata: ${validateResult.error}`);
+          return;
+        }
+
+        const metadata = validateResult.metadata;
+        const hasFocusIsland =
+          metadata.viewState.focusIslandId === null
+            ? false
+            : document.islands.some((island) => island.id === metadata.viewState.focusIslandId);
+
+        setSummaryView(metadata.viewState.summaryView || metadata.viewState.abstractMapView);
+        setAbstractMapView(metadata.viewState.abstractMapView);
+        setHideSourceCards(metadata.viewState.hideSourceCards);
+        setMaxDepth(metadata.viewState.maxDepth);
+        setShowReadingOrder(metadata.viewState.showReadingOrder);
+        setIsReadingOrderEditMode(false);
+        setRevealedSourceCardIds(new Set());
+        setFocusCardId(null);
+        setFocusWorldPoint(null);
+        suppressNextTransformPersistRef.current = true;
+        setCameraTransformRequest((previousRequest) => ({
+          panX: metadata.camera.panX,
+          panY: metadata.camera.panY,
+          zoom: metadata.camera.zoom,
+          requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
+        }));
+
+        if (metadata.viewState.focusIslandId && !hasFocusIsland) {
+          setFocusTarget({});
+          setStatusMessage(`Loaded view metadata; focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
+          return;
+        }
+
+        setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
+        setStatusMessage("Loaded view metadata");
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          setStatusMessage("Failed to load view metadata: invalid JSON");
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setStatusMessage(`Failed to load view metadata: ${message}`);
+      }
+    },
+    [document]
+  );
 
   const handleEdgeSelect = useCallback((edgeId: string) => {
     setSelectedEdgeId(edgeId);
@@ -4374,6 +4436,9 @@ export default function App() {
             onExportPngVisibleBounds={() => {
               void handleExportPngVisibleBounds();
             }}
+            onLoadViewMetadataFile={(file) => {
+              void handleLoadViewMetadataFile(file);
+            }}
           />
         </div>
       ) : null}
@@ -4674,6 +4739,7 @@ export default function App() {
             onCardMove={handleCardMove}
             onTransformChange={handleTransformChange}
             onCameraChange={setCanvasCamera}
+            cameraTransformRequest={cameraTransformRequest}
             selectedCardIds={selectedCardIds}
             onCardSelect={handleCardSelect}
             onCanvasBackgroundClick={handleCanvasBackgroundClick}

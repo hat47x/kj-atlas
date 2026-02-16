@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useRef } from "react";
+import type { CSSProperties, ChangeEvent } from "react";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -28,6 +29,7 @@ type ViewControlsPanelProps = {
   onPngExportScaleChange: (value: 1 | 2) => void;
   onExportPngViewport: () => void;
   onExportPngVisibleBounds: () => void;
+  onLoadViewMetadataFile: (file: File) => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -66,7 +68,21 @@ export function ViewControlsPanel({
   onPngExportScaleChange,
   onExportPngViewport,
   onExportPngVisibleBounds,
+  onLoadViewMetadataFile,
 }: ViewControlsPanelProps) {
+  const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    onLoadViewMetadataFile(selectedFile);
+  };
+
   return (
     <div
       style={{
@@ -241,6 +257,22 @@ export function ViewControlsPanel({
         <button type="button" onClick={onExportAbstractMapHtmlWithPng} style={{ cursor: "pointer" }}>
           Export Abstract Map Report (HTML + PNG)
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            viewMetadataInputRef.current?.click();
+          }}
+          style={{ cursor: "pointer" }}
+        >
+          Load view metadata (JSON)
+        </button>
+        <input
+          ref={viewMetadataInputRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={handleViewMetadataFileChange}
+          style={{ display: "none" }}
+        />
       </div>
     </div>
   );
