@@ -191,6 +191,38 @@ export type DocumentV2 = {
   readingOrder?: string[];
   narratives?: Narrative[];
   relationSummaries?: RelationSummary[];
+  patchApplyLog?: PatchApplyLogEntry[];
+};
+
+export type PatchApplyStats = {
+  upsertCards: number;
+  deleteCards: number;
+  upsertIslands: number;
+  deleteIslands: number;
+  upsertEdges: number;
+  deleteEdges: number;
+  upsertRelationSummaries: number;
+  deleteRelationSummaries: number;
+};
+
+export type PatchConflictMeta = {
+  totalConflicts: number;
+  chosenYours: number;
+  chosenTheirs: number;
+  chosenSkip: number;
+};
+
+export type PatchApplyLogEntry = {
+  id: string;
+  createdAt: string;
+  patchVersion: "1";
+  patchTitle?: string;
+  baseDocSignature?: string;
+  patchSourceSignature?: string;
+  appliedOpIds: string[];
+  stats: PatchApplyStats;
+  conflictMeta?: PatchConflictMeta;
+  note?: string;
 };
 
 export type Document = DocumentV1 | DocumentV2;

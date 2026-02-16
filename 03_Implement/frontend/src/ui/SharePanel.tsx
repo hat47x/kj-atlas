@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
+import type { PatchApplyLogEntry } from "../domain/types";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -55,6 +56,8 @@ type SharePanelProps = {
   onApplyPatch: () => void;
   canApplyPatch: boolean;
   patchBaselineFileName: string | null;
+  patchApplyLogEntries: PatchApplyLogEntry[];
+  onCopyPatchApplyLogEntry: (entryId: string) => void;
   structuralDiffSection: ReactNode;
 };
 
@@ -102,6 +105,8 @@ export function SharePanel({
   onApplyPatch,
   canApplyPatch,
   patchBaselineFileName,
+  patchApplyLogEntries,
+  onCopyPatchApplyLogEntry,
   structuralDiffSection,
 }: SharePanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
@@ -152,6 +157,9 @@ export function SharePanel({
 
     onLoadPatchBaselineFile(selectedFile);
   };
+
+
+  const sortedPatchApplyLogEntries = [...patchApplyLogEntries].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
   return (
     <div style={{ position: "relative" }}>
@@ -453,8 +461,56 @@ export function SharePanel({
             ) : null}
           </div>
 
+
+
+          <div style={sectionStyle}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>5) Apply log ({patchApplyLogEntries.length})</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Persistent patch apply history for this document (newest first).</div>
+            {sortedPatchApplyLogEntries.length === 0 ? (
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>No patch apply log entries yet.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 8 }}>
+                {sortedPatchApplyLogEntries.map((entry) => (
+                  <details key={entry.id} style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8 }}>
+                    <summary style={{ cursor: "pointer", fontSize: 12, color: "#0f172a" }}>
+                      {entry.createdAt} · {entry.patchTitle ?? entry.patchSourceSignature ?? entry.id}
+                    </summary>
+                    <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#334155" }}>
+                      <div>
+                        stats: cards +{entry.stats.upsertCards}/-{entry.stats.deleteCards}, islands +{entry.stats.upsertIslands}/-{entry.stats.deleteIslands},
+                        edges +{entry.stats.upsertEdges}/-{entry.stats.deleteEdges}, relations +{entry.stats.upsertRelationSummaries}/-{entry.stats.deleteRelationSummaries}
+                      </div>
+                      {entry.conflictMeta ? (
+                        <div>
+                          conflicts: total {entry.conflictMeta.totalConflicts}, yours {entry.conflictMeta.chosenYours}, theirs {entry.conflictMeta.chosenTheirs},
+                          skip {entry.conflictMeta.chosenSkip}
+                        </div>
+                      ) : null}
+                      {entry.note ? <div>note: {entry.note}</div> : null}
+                      <details>
+                        <summary style={{ cursor: "pointer" }}>appliedOpIds ({entry.appliedOpIds.length})</summary>
+                        <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                          {entry.appliedOpIds.length === 0 ? <li>(none)</li> : entry.appliedOpIds.map((opId) => <li key={opId}>{opId}</li>)}
+                        </ul>
+                      </details>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onCopyPatchApplyLogEntry(entry.id);
+                        }}
+                        disabled={isLoading}
+                      >
+                        Copy log entry (Markdown)
+                      </button>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>5) Diff / Verify</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>6) Diff / Verify</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               Structural doc diff (F3). Image diff (G2) and snapshot bundle verify (G3) remain available from legacy tools.
             </div>

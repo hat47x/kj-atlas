@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Edge, Island, RelationSummary } from "../types";
+import type { Card, DocumentV2, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
 import { detectPatchConflicts } from "./conflict_detect";
 
 export type PatchOpKind =
@@ -28,6 +28,15 @@ export type PatchDocument = {
 };
 
 export type PatchResolution = "yours" | "theirs" | "skip";
+
+export type ApplyResultMeta = {
+  appliedOpIds: string[];
+  stats: PatchApplyStats;
+  conflictMeta?: PatchConflictMeta;
+  patchTitle?: string;
+  baseDocSignature?: string;
+  note?: string;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -253,11 +262,70 @@ export function applyPatchWithResolutions(
   baselineDoc?: DocumentV2,
   selectedOpIds?: Set<string>
 ): DocumentV2 {
-  const conflictOpIdSet = new Set(
-    baselineDoc ? detectPatchConflicts(baselineDoc, currentDoc, patch).conflicts.map((item) => item.opId) : []
-  );
+  return applyPatchWithResolutionsDetailed(currentDoc, patch, resolutions, baselineDoc, selectedOpIds).document;
+}
+
+function createEmptyApplyStats(): PatchApplyStats {
+  return {
+    upsertCards: 0,
+    deleteCards: 0,
+    upsertIslands: 0,
+    deleteIslands: 0,
+    upsertEdges: 0,
+    deleteEdges: 0,
+    upsertRelationSummaries: 0,
+    deleteRelationSummaries: 0,
+  };
+}
+
+function incrementApplyStats(stats: PatchApplyStats, kind: PatchOpKind): void {
+  switch (kind) {
+    case "upsert_card":
+      stats.upsertCards += 1;
+      break;
+    case "delete_card":
+      stats.deleteCards += 1;
+      break;
+    case "upsert_island":
+      stats.upsertIslands += 1;
+      break;
+    case "delete_island":
+      stats.deleteIslands += 1;
+      break;
+    case "upsert_edge":
+      stats.upsertEdges += 1;
+      break;
+    case "delete_edge":
+      stats.deleteEdges += 1;
+      break;
+    case "upsert_relation_summary":
+      stats.upsertRelationSummaries += 1;
+      break;
+    case "delete_relation_summary":
+      stats.deleteRelationSummaries += 1;
+      break;
+  }
+}
+
+export function applyPatchWithResolutionsDetailed(
+  currentDoc: DocumentV2,
+  patch: PatchDocument,
+  resolutions: Record<string, PatchResolution>,
+  baselineDoc?: DocumentV2,
+  selectedOpIds?: Set<string>
+): { document: DocumentV2; meta: ApplyResultMeta } {
+  const conflictReport = baselineDoc ? detectPatchConflicts(baselineDoc, currentDoc, patch) : null;
+  const conflictOpIdSet = new Set(conflictReport ? conflictReport.conflicts.map((item) => item.opId) : []);
 
   let nextDoc = currentDoc;
+  const appliedOpIds: string[] = [];
+  const stats = createEmptyApplyStats();
+  const chosenConflictCounts: PatchConflictMeta = {
+    totalConflicts: conflictReport?.conflicts.length ?? 0,
+    chosenYours: 0,
+    chosenTheirs: 0,
+    chosenSkip: 0,
+  };
 
   for (const op of patch.ops) {
     if (selectedOpIds && !selectedOpIds.has(op.id)) {
@@ -265,15 +333,33 @@ export function applyPatchWithResolutions(
     }
 
     if (conflictOpIdSet.has(op.id)) {
-      if (resolutions[op.id] !== "theirs") {
+      const resolution = resolutions[op.id] ?? "skip";
+      if (resolution === "theirs") {
+        chosenConflictCounts.chosenTheirs += 1;
+        nextDoc = applyPatchOp(nextDoc, op);
+        appliedOpIds.push(op.id);
+        incrementApplyStats(stats, op.kind);
         continue;
       }
-      nextDoc = applyPatchOp(nextDoc, op);
+      if (resolution === "yours") {
+        chosenConflictCounts.chosenYours += 1;
+      } else {
+        chosenConflictCounts.chosenSkip += 1;
+      }
       continue;
     }
 
     nextDoc = applyPatchOp(nextDoc, op);
+    appliedOpIds.push(op.id);
+    incrementApplyStats(stats, op.kind);
   }
 
-  return nextDoc;
+  return {
+    document: nextDoc,
+    meta: {
+      appliedOpIds,
+      stats,
+      conflictMeta: conflictReport ? chosenConflictCounts : undefined,
+    },
+  };
 }

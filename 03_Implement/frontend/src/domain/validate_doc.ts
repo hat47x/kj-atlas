@@ -1,4 +1,4 @@
-import type { DocumentV2, EdgeType, Island, Narrative, RelationSummary } from "./types";
+import type { DocumentV2, EdgeType, Island, Narrative, PatchApplyLogEntry, RelationSummary } from "./types";
 
 type ValidationSuccess = {
   ok: true;
@@ -371,6 +371,117 @@ function validateRelationSummary(item: unknown, index: number, errors: string[])
   return valid;
 }
 
+
+
+function validatePatchApplyStats(value: unknown, path: string, errors: string[]): boolean {
+  if (!isRecord(value)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(
+    value,
+    [
+      "upsertCards",
+      "deleteCards",
+      "upsertIslands",
+      "deleteIslands",
+      "upsertEdges",
+      "deleteEdges",
+      "upsertRelationSummaries",
+      "deleteRelationSummaries",
+    ],
+    path,
+    errors
+  );
+
+  let valid = true;
+  for (const key of [
+    "upsertCards",
+    "deleteCards",
+    "upsertIslands",
+    "deleteIslands",
+    "upsertEdges",
+    "deleteEdges",
+    "upsertRelationSummaries",
+    "deleteRelationSummaries",
+  ] as const) {
+    if (!isFiniteNumber(value[key])) {
+      errors.push(`${path}.${key}: must be a finite number`);
+      valid = false;
+    }
+  }
+
+  return valid;
+}
+
+function validatePatchApplyLogEntry(item: unknown, index: number, errors: string[]): item is PatchApplyLogEntry {
+  const path = `patchApplyLog[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(
+    item,
+    ["id", "createdAt", "patchVersion", "patchTitle", "baseDocSignature", "patchSourceSignature", "appliedOpIds", "stats", "conflictMeta", "note"],
+    path,
+    errors
+  );
+
+  let valid = true;
+  if (typeof item.id !== "string") {
+    errors.push(`${path}.id: must be a string`);
+    valid = false;
+  }
+  if (typeof item.createdAt !== "string") {
+    errors.push(`${path}.createdAt: must be a string`);
+    valid = false;
+  }
+  if (item.patchVersion !== "1") {
+    errors.push(`${path}.patchVersion: must be '1'`);
+    valid = false;
+  }
+  if (item.patchTitle !== undefined && typeof item.patchTitle !== "string") {
+    errors.push(`${path}.patchTitle: must be a string when provided`);
+    valid = false;
+  }
+  if (item.baseDocSignature !== undefined && typeof item.baseDocSignature !== "string") {
+    errors.push(`${path}.baseDocSignature: must be a string when provided`);
+    valid = false;
+  }
+  if (item.patchSourceSignature !== undefined && typeof item.patchSourceSignature !== "string") {
+    errors.push(`${path}.patchSourceSignature: must be a string when provided`);
+    valid = false;
+  }
+  if (!validateStringArray(item.appliedOpIds, `${path}.appliedOpIds`, errors)) {
+    valid = false;
+  }
+  if (!validatePatchApplyStats(item.stats, `${path}.stats`, errors)) {
+    valid = false;
+  }
+  if (item.conflictMeta !== undefined) {
+    if (!isRecord(item.conflictMeta)) {
+      errors.push(`${path}.conflictMeta: must be an object when provided`);
+      valid = false;
+    } else {
+      hasOnlyKeys(item.conflictMeta, ["totalConflicts", "chosenYours", "chosenTheirs", "chosenSkip"], `${path}.conflictMeta`, errors);
+      for (const key of ["totalConflicts", "chosenYours", "chosenTheirs", "chosenSkip"] as const) {
+        if (!isFiniteNumber(item.conflictMeta[key])) {
+          errors.push(`${path}.conflictMeta.${key}: must be a finite number`);
+          valid = false;
+        }
+      }
+    }
+  }
+  if (item.note !== undefined && typeof item.note !== "string") {
+    errors.push(`${path}.note: must be a string when provided`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -417,7 +528,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
 
   hasOnlyKeys(
     value,
-    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries"],
+    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "patchApplyLog"],
     "document",
     errors
   );
@@ -497,6 +608,16 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.relationSummaries.forEach((item, index) => {
         validateRelationSummary(item, index, errors);
+      });
+    }
+  }
+
+  if (value.patchApplyLog !== undefined) {
+    if (!Array.isArray(value.patchApplyLog)) {
+      errors.push("document.patchApplyLog: must be an array when provided");
+    } else {
+      value.patchApplyLog.forEach((item, index) => {
+        validatePatchApplyLogEntry(item, index, errors);
       });
     }
   }

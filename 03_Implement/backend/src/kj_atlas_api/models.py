@@ -170,6 +170,39 @@ class RelationSummary(BaseModel):
     history: list[RelationSummaryHistoryEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+
+
+class PatchApplyStats(BaseModel):
+    upsertCards: int
+    deleteCards: int
+    upsertIslands: int
+    deleteIslands: int
+    upsertEdges: int
+    deleteEdges: int
+    upsertRelationSummaries: int
+    deleteRelationSummaries: int
+
+
+class PatchApplyConflictMeta(BaseModel):
+    totalConflicts: int
+    chosenYours: int
+    chosenTheirs: int
+    chosenSkip: int
+
+
+class PatchApplyLogEntry(BaseModel):
+    id: str
+    createdAt: datetime
+    patchVersion: Literal["1"]
+    patchTitle: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    baseDocSignature: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    patchSourceSignature: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    appliedOpIds: list[str]
+    stats: PatchApplyStats
+    conflictMeta: PatchApplyConflictMeta | None = Field(default=None, exclude_if=lambda value: value is None)
+    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -194,6 +227,7 @@ class DocumentV2(BaseModel):
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
     relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
+    patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

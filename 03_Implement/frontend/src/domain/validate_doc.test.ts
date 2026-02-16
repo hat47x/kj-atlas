@@ -25,6 +25,41 @@ describe("validateDocumentV2Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts patchApplyLog entries", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      patchApplyLog: [
+        {
+          id: "log-1",
+          createdAt: now,
+          patchVersion: "1",
+          patchTitle: "sample.patch.json",
+          baseDocSignature: "doc_v2:base",
+          patchSourceSignature: "fnv1a:1234abcd",
+          appliedOpIds: ["op-1"],
+          stats: {
+            upsertCards: 1,
+            deleteCards: 0,
+            upsertIslands: 0,
+            deleteIslands: 0,
+            upsertEdges: 0,
+            deleteEdges: 0,
+            upsertRelationSummaries: 0,
+            deleteRelationSummaries: 0,
+          },
+          conflictMeta: {
+            totalConflicts: 1,
+            chosenYours: 0,
+            chosenTheirs: 1,
+            chosenSkip: 0,
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
   it("rejects unknown root fields", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,
