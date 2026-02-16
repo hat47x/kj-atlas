@@ -111,6 +111,51 @@ describe("view metadata export", () => {
     expect(result.ok).toBe(true);
   });
 
+
+  it("persists and validates safeMode when present", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-789", title: "Sample" },
+      camera: { panX: 3, panY: 4, zoom: 1.2 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: true,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        safeMode: true,
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.viewState.safeMode).toBe(true);
+
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid safeMode type", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        safeMode: "yes",
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: "viewState.safeMode must be a boolean when present" });
+  });
+
   it("rejects invalid maxDepth", () => {
     const result = validateImportViewMetadata({
       version: "1",

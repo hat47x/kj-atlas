@@ -17,6 +17,7 @@ export type ExportViewMetadata = {
     focusIslandId: string | null;
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
+    safeMode?: boolean;
   };
   export: {
     mode: "viewport" | "bounds";
@@ -46,6 +47,7 @@ type ExportViewMetadataArgs = {
     focusIslandId: string | null;
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
+    safeMode?: boolean;
   };
   exportMode: "viewport" | "bounds";
   bounds?: {
@@ -102,6 +104,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       focusIslandId: viewState.focusIslandId,
       showReadingOrder: viewState.showReadingOrder,
       ...(viewState.editReadingOrder === undefined ? {} : { editReadingOrder: viewState.editReadingOrder }),
+      ...(viewState.safeMode === undefined ? {} : { safeMode: viewState.safeMode }),
     },
     export: {
       mode: exportMode,
@@ -193,6 +196,10 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.editReadingOrder !== undefined && typeof value.viewState.editReadingOrder !== "boolean") {
     return { ok: false, error: "viewState.editReadingOrder must be a boolean when present" };
+  }
+
+  if (value.viewState.safeMode !== undefined && typeof value.viewState.safeMode !== "boolean") {
+    return { ok: false, error: "viewState.safeMode must be a boolean when present" };
   }
 
   if (!isObject(value.export)) {

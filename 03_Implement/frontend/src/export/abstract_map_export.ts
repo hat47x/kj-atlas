@@ -8,6 +8,7 @@ const GROUNDING_SNIPPET_LIMIT = 160;
 export type AbstractMapExportViewState = {
   visibleIslandIds: Set<string>;
   abstractMapView: boolean;
+  includeUnreviewedDrafts?: boolean;
 };
 
 export type AbstractMapExportIsland = {
@@ -133,6 +134,7 @@ function buildRelationRowBase(
 
 export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapExportViewState): AbstractMapExportModel {
   const visibleIslandIds = viewState.visibleIslandIds;
+  const includeUnreviewedDrafts = viewState.includeUnreviewedDrafts ?? true;
   const visibleIslands = doc.islands
     .filter((island) => visibleIslandIds.has(island.id))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -148,11 +150,15 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
       return isCanonicalCard(card) ? count + 1 : count;
     }, 0);
 
+    const normalizedSummaryText = island.summaryText?.trim() ?? "";
+    const isSummaryReviewed = island.summaryReviewed === true;
+    const shouldIncludeSummary = normalizedSummaryText.length > 0 && (isSummaryReviewed || includeUnreviewedDrafts);
+
     return {
       id: island.id,
       title: island.title?.trim() || island.id,
-      summaryText: island.summaryText?.trim() || "(No summary)",
-      summaryReviewed: island.summaryReviewed === true,
+      summaryText: shouldIncludeSummary ? normalizedSummaryText : normalizedSummaryText.length > 0 ? "UNREVIEWED hidden" : "(No summary)",
+      summaryReviewed: isSummaryReviewed,
       shapeKind: island.shape?.kind ?? "rect",
       memberCanonicalCardCount,
     };
@@ -179,7 +185,7 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
         islandBId,
         type: edge.type,
         derived: false,
-        summaryText: summary?.text,
+        summaryText: summary?.reviewed === true || includeUnreviewedDrafts ? summary?.text : undefined,
         summaryReviewed: summary?.reviewed,
         warnings: summary?.warnings,
         groundingCardIds: summary?.groundingCardIds ?? [],
@@ -211,7 +217,7 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
           islandBId: derivedEdge.toId,
           type: derivedEdge.type,
           derived: true,
-          summaryText: summary?.text,
+          summaryText: summary?.reviewed === true || includeUnreviewedDrafts ? summary?.text : undefined,
           summaryReviewed: summary?.reviewed,
           warnings: summary?.warnings,
           groundingCardIds: summary?.groundingCardIds ?? derivedEdge.contributingCardIds,

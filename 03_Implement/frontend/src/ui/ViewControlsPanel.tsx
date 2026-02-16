@@ -30,6 +30,8 @@ type ViewControlsPanelProps = {
   onExportPngViewport: () => void;
   onExportPngVisibleBounds: () => void;
   onLoadViewMetadataFile: (file: File) => void;
+  safeMode: boolean;
+  onSafeModeChange: (value: boolean) => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -69,6 +71,8 @@ export function ViewControlsPanel({
   onExportPngViewport,
   onExportPngVisibleBounds,
   onLoadViewMetadataFile,
+  safeMode,
+  onSafeModeChange,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -223,6 +227,20 @@ export function ViewControlsPanel({
 
       <div style={{ fontSize: 12, color: "#64748b" }} title="Hold Peek on a collapsed island to reveal members.">
         Hold Peek on a collapsed island to reveal members.
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Safety</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={safeMode}
+            onChange={(event) => {
+              onSafeModeChange(event.target.checked);
+            }}
+          />
+          Safe mode (hide UNREVIEWED drafts)
+        </label>
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>

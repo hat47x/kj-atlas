@@ -14,6 +14,9 @@ type SharePanelProps = {
   onExportPngVisibleBounds: () => void;
   onExportAbstractMapMarkdownWithPng: () => void;
   onExportAbstractMapHtmlWithPng: () => void;
+  safeMode: boolean;
+  includeUnreviewedDrafts: boolean;
+  onIncludeUnreviewedDraftsChange: (value: boolean) => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
   onLoadViewMetadataFile: (file: File) => void;
@@ -50,6 +53,9 @@ export function SharePanel({
   onExportPngVisibleBounds,
   onExportAbstractMapMarkdownWithPng,
   onExportAbstractMapHtmlWithPng,
+  safeMode,
+  includeUnreviewedDrafts,
+  onIncludeUnreviewedDraftsChange,
   onExportViewViewport,
   onExportViewVisibleBounds,
   onLoadViewMetadataFile,
@@ -152,6 +158,18 @@ export function SharePanel({
             <button type="button" onClick={onExportAbstractMapHtmlWithPng} disabled={!hasDocument || isLoading}>
               Export Report (HTML + PNG)
             </button>
+            {safeMode ? (
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <input
+                  type="checkbox"
+                  checked={includeUnreviewedDrafts}
+                  onChange={(event) => {
+                    onIncludeUnreviewedDraftsChange(event.target.checked);
+                  }}
+                />
+                Include unreviewed drafts
+              </label>
+            ) : null}
             <button type="button" onClick={onExportViewViewport} disabled={!hasDocument || isLoading}>
               Export view.json (Viewport)
             </button>
