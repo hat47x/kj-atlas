@@ -53,6 +53,8 @@ import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
+import { diffDocuments } from "./domain/diff/doc_diff";
+import { DiffPanel } from "./ui/DiffPanel";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -92,6 +94,109 @@ type FocusTarget = {
 };
 
 type ViewMaxDepth = number | "all";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function unwrapComparisonPayload(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  if ("document" in value) {
+    return value.document;
+  }
+
+  if ("snapshot" in value && isRecord(value.snapshot) && "document" in value.snapshot) {
+    return value.snapshot.document;
+  }
+
+  return value;
+}
+
+function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationSummaries"] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const relationSummaries: NonNullable<DocumentV2["relationSummaries"]> = [];
+
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.id !== "string") {
+      continue;
+    }
+
+    relationSummaries.push({
+      id: entry.id,
+      createdAt: typeof entry.createdAt === "string" ? entry.createdAt : new Date().toISOString(),
+      islandAId: typeof entry.islandAId === "string" ? entry.islandAId : "",
+      islandBId: typeof entry.islandBId === "string" ? entry.islandBId : "",
+      relationType:
+        entry.relationType === "related" || entry.relationType === "negate" || entry.relationType === "unknown"
+          ? entry.relationType
+          : "unknown",
+      derived: typeof entry.derived === "boolean" ? entry.derived : false,
+      text: typeof entry.text === "string" ? entry.text : "",
+      reviewed: typeof entry.reviewed === "boolean" ? entry.reviewed : false,
+      groundingCardIds:
+        Array.isArray(entry.groundingCardIds) && entry.groundingCardIds.every((item) => typeof item === "string")
+          ? entry.groundingCardIds
+          : [],
+      groundingEdgeIds:
+        Array.isArray(entry.groundingEdgeIds) && entry.groundingEdgeIds.every((item) => typeof item === "string")
+          ? entry.groundingEdgeIds
+          : [],
+      warnings: Array.isArray(entry.warnings) ? entry.warnings.filter((item): item is string => typeof item === "string") : undefined,
+      sourceSignature: typeof entry.sourceSignature === "string" ? entry.sourceSignature : entry.id,
+    });
+  }
+
+  return relationSummaries;
+}
+
+function extractComparisonDocument(value: unknown): DocumentV2 | null {
+  const payload = unwrapComparisonPayload(value);
+  const validated = validateAndUpgradeImportedDocument(payload);
+  if (!validated.ok) {
+    return null;
+  }
+
+  if (!isRecord(payload)) {
+    return validated.document;
+  }
+
+  const islandPatchById = new Map<string, { summaryText?: string; summaryReviewed?: boolean }>();
+  if (Array.isArray(payload.islands)) {
+    for (const island of payload.islands) {
+      if (!isRecord(island) || typeof island.id !== "string") {
+        continue;
+      }
+
+      const patch: { summaryText?: string; summaryReviewed?: boolean } = {};
+      if (typeof island.summaryText === "string") {
+        patch.summaryText = island.summaryText;
+      }
+      if (typeof island.summaryReviewed === "boolean") {
+        patch.summaryReviewed = island.summaryReviewed;
+      }
+      islandPatchById.set(island.id, patch);
+    }
+  }
+
+  return {
+    ...validated.document,
+    islands: validated.document.islands.map((island) => ({
+      ...island,
+      ...(islandPatchById.get(island.id) ?? {}),
+    })),
+    readingOrder:
+      Array.isArray(payload.readingOrder) && payload.readingOrder.every((entryId) => typeof entryId === "string")
+        ? payload.readingOrder
+        : validated.document.readingOrder ?? [],
+    relationSummaries: parseComparisonRelationSummaries(payload.relationSummaries),
+  };
+}
 
 function createDefaultDocument(docId: string): DocumentV2 {
   const now = new Date().toISOString();
@@ -493,6 +598,8 @@ export default function App() {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
+  const [comparisonDocument, setComparisonDocument] = useState<DocumentV2 | null>(null);
+  const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
@@ -501,6 +608,15 @@ export default function App() {
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
+  const diffResult = useMemo(() => {
+    if (!document || !comparisonDocument) {
+      return null;
+    }
+
+    return diffDocuments(document, comparisonDocument);
+  }, [comparisonDocument, document]);
+  const currentCardIdSet = useMemo(() => new Set((document?.cards ?? []).map((card) => card.id)), [document?.cards]);
+  const currentIslandIdSet = useMemo(() => new Set((document?.islands ?? []).map((island) => island.id)), [document?.islands]);
   const focusedVisibleDocument = useMemo(() => {
     if (!visibleDocument) {
       return visibleDocument;
@@ -750,6 +866,7 @@ export default function App() {
   const pendingCardDragSnapshotRef = useRef<DocumentV2 | null>(null);
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const compareImportInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
   const selectedAggregatedEdge = useMemo(() => {
     if (!selectedEdgeId) {
@@ -1475,6 +1592,41 @@ export default function App() {
 
   const handleImportClick = useCallback(() => {
     importInputRef.current?.click();
+  }, []);
+
+  const handleLoadComparisonDocumentClick = useCallback(() => {
+    compareImportInputRef.current?.click();
+  }, []);
+
+  const handleComparisonFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    try {
+      const rawText = await selectedFile.text();
+      const parsedJson: unknown = JSON.parse(rawText);
+      const parsedDocument = extractComparisonDocument(parsedJson);
+
+      if (!parsedDocument) {
+        setStatusMessage("Failed to load comparison file: expected a valid document JSON");
+        return;
+      }
+
+      setComparisonDocument(parsedDocument);
+      setComparisonFileName(selectedFile.name);
+      setStatusMessage("Loaded comparison document (view-only)");
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setStatusMessage("Failed to parse comparison JSON file");
+        return;
+      }
+
+      setStatusMessage(error instanceof Error ? error.message : "Failed to load comparison document");
+    }
   }, []);
 
   const handleLoadViewMetadataFile = useCallback(
@@ -4470,6 +4622,17 @@ export default function App() {
           revealedSourceCardIds={revealedSourceCardIds}
           topContent={
             <>
+              <DiffPanel
+                comparisonFileName={comparisonFileName}
+                comparisonDocument={comparisonDocument}
+                diffResult={diffResult}
+                currentCardIdSet={currentCardIdSet}
+                currentIslandIdSet={currentIslandIdSet}
+                onLoadComparisonDocument={handleLoadComparisonDocumentClick}
+                onJumpToItem={(kind, id) => {
+                  focusItem(kind, id);
+                }}
+              />
               <NarrativesPanel
                 narrativeText={narrativeText}
                 onNarrativeTextChange={setNarrativeText}
@@ -4717,6 +4880,15 @@ export default function App() {
         accept="application/json,.json"
         onChange={(event) => {
           void handleImportFileChange(event);
+        }}
+        style={{ display: "none" }}
+      />
+      <input
+        ref={compareImportInputRef}
+        type="file"
+        accept="application/json,.json"
+        onChange={(event) => {
+          void handleComparisonFileChange(event);
         }}
         style={{ display: "none" }}
       />
