@@ -111,6 +111,18 @@ describe("abstract map export", () => {
     expect(model.relations.some((item) => item.derived)).toBe(false);
   });
 
+
+  it("excludes unreviewed summary drafts when includeUnreviewedDrafts is disabled", () => {
+    const model = buildAbstractMapExport(createDocument(), {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      abstractMapView: true,
+      includeUnreviewedDrafts: false,
+    });
+
+    expect(model.islands.find((item) => item.id === "i1")?.summaryText).toBe("UNREVIEWED hidden");
+    expect(model.relations.some((item) => item.summaryText === "Derived summary")).toBe(false);
+  });
+
   it("renders markdown/html with reviewed semantics and draft template text", () => {
     const model = buildAbstractMapExport(createDocument(), {
       visibleIslandIds: new Set(["i1", "i2"]),

@@ -19,6 +19,7 @@ type IslandViewProps = {
   isPeeking?: boolean;
   summaryView?: boolean;
   abstractMapView?: boolean;
+  safeMode?: boolean;
   isCollapsedForView?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
@@ -144,6 +145,7 @@ function IslandViewComponent({
   isPeeking = false,
   summaryView = false,
   abstractMapView = false,
+  safeMode = false,
   isCollapsedForView,
   onSelect,
   onToggleCollapsed,
@@ -157,6 +159,7 @@ function IslandViewComponent({
   const bounds = getIslandBounds(island, cards);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
+  const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
@@ -437,9 +440,15 @@ function IslandViewComponent({
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
-          title={hasSummary ? island.summaryText : "(no summary)"}
+          title={hideUnreviewedSummary ? "UNREVIEWED hidden" : hasSummary ? island.summaryText : "(no summary)"}
         >
-          {hasSummary ? island.summaryText : <span style={{ color: "#64748b" }}>(no summary)</span>}
+          {hideUnreviewedSummary ? (
+            <span style={{ color: "#92400e", fontWeight: 700 }}>UNREVIEWED hidden</span>
+          ) : hasSummary ? (
+            island.summaryText
+          ) : (
+            <span style={{ color: "#64748b" }}>(no summary)</span>
+          )}
           {island.summaryReviewed === false && hasSummary ? (
             <span
               style={{

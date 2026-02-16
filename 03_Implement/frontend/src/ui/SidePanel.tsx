@@ -76,6 +76,7 @@ type SidePanelProps = {
   onRevealSelectedEdgeSources: () => void;
   onInspectSelectedEdgeCard: (cardId: string) => void;
   selectedRelationSummary: RelationSummary | null;
+  safeMode: boolean;
   isGeneratingRelationSummary: boolean;
   onGenerateRelationSummary: () => void;
   onRelationSummaryCommit: (value: string) => void;
@@ -154,6 +155,7 @@ export function SidePanel({
   onRevealSelectedEdgeSources,
   onInspectSelectedEdgeCard,
   selectedRelationSummary,
+  safeMode,
   isGeneratingRelationSummary,
   onGenerateRelationSummary,
   onRelationSummaryCommit,
@@ -238,6 +240,7 @@ export function SidePanel({
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
+  const hideUnreviewedRelationSummary = safeMode && selectedRelationSummary?.reviewed === false;
   const canDistribute = selectedCardCount >= 3;
   const selectedCardLabel = useMemo(() => {
     if (selectedCardCount === 1) {
@@ -1194,18 +1197,30 @@ export function SidePanel({
             {selectedRelationSummary ? (
               <>
                 <textarea
-                  value={relationSummaryDraft}
+                  value={hideUnreviewedRelationSummary ? "UNREVIEWED hidden" : relationSummaryDraft}
                   onChange={(event) => {
+                    if (hideUnreviewedRelationSummary) {
+                      return;
+                    }
                     setRelationSummaryDraft(event.target.value);
                   }}
                   onBlur={() => {
-                    onRelationSummaryCommit(relationSummaryDraft);
+                    if (!hideUnreviewedRelationSummary) {
+                      onRelationSummaryCommit(relationSummaryDraft);
+                    }
                   }}
                   maxLength={RELATION_SUMMARY_TEXT_MAX_LENGTH}
-                  style={{ width: "100%", marginTop: 8, minHeight: 110, boxSizing: "border-box" }}
+                  readOnly={hideUnreviewedRelationSummary}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    minHeight: 110,
+                    boxSizing: "border-box",
+                    ...(hideUnreviewedRelationSummary ? { color: "#92400e", backgroundColor: "#fff7ed", borderColor: "#fdba74" } : {}),
+                  }}
                 />
                 <div style={{ marginTop: 4, fontSize: 11, color: "#64748b" }}>
-                  {relationSummaryDraft.length}/{RELATION_SUMMARY_TEXT_MAX_LENGTH}
+                  {hideUnreviewedRelationSummary ? "Safe mode: UNREVIEWED hidden" : `${relationSummaryDraft.length}/${RELATION_SUMMARY_TEXT_MAX_LENGTH}`}
                 </div>
                 <label style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                   <input

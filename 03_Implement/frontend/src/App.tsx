@@ -569,6 +569,8 @@ export default function App() {
   const [hideSourceCards, setHideSourceCards] = useState(true);
   const [summaryView, setSummaryView] = useState(false);
   const [abstractMapView, setAbstractMapView] = useState(false);
+  const [safeMode, setSafeMode] = useState(true);
+  const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
@@ -1666,6 +1668,8 @@ export default function App() {
         setHideSourceCards(metadata.viewState.hideSourceCards);
         setMaxDepth(metadata.viewState.maxDepth);
         setShowReadingOrder(metadata.viewState.showReadingOrder);
+        setSafeMode(metadata.viewState.safeMode ?? true);
+        setIncludeUnreviewedDraftsInExport(false);
         setIsReadingOrderEditMode(false);
         setRevealedSourceCardIds(new Set());
         setFocusCardId(null);
@@ -3586,6 +3590,7 @@ export default function App() {
         summaryView={summaryView || abstractMapView}
         abstractMapView={abstractMapView}
         isCollapsedForView={effectiveCollapsedIslandIdSet.has(island.id)}
+        safeMode={safeMode}
         zIndex={index}
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
@@ -3612,6 +3617,7 @@ export default function App() {
     effectiveCollapsedIslandIdSet,
     visibleIslands,
     handleToggleIslandFocus,
+    safeMode,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -4244,6 +4250,7 @@ export default function App() {
           focusIslandId: focusTarget.focusIslandId ?? null,
           showReadingOrder,
           editReadingOrder: isReadingOrderEditMode,
+          safeMode,
         },
         exportMode: mode,
         bounds,
@@ -4264,6 +4271,7 @@ export default function App() {
       maxDepth,
       showReadingOrder,
       summaryView,
+      safeMode,
     ]
   );
 
@@ -4297,6 +4305,7 @@ export default function App() {
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
+        includeUnreviewedDrafts: !safeMode || includeUnreviewedDraftsInExport,
       });
 
       const snapshotFilename = "snapshot.png";
@@ -4319,6 +4328,8 @@ export default function App() {
     hideSourceCards,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const handleExportAbstractMapHtmlWithPng = useCallback(async () => {
@@ -4351,6 +4362,7 @@ export default function App() {
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
+        includeUnreviewedDrafts: !safeMode || includeUnreviewedDraftsInExport,
       });
 
       const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
@@ -4372,6 +4384,8 @@ export default function App() {
     hideSourceCards,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
@@ -4433,6 +4447,8 @@ export default function App() {
     hideSourceCards,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const handleExportSvgVisibleBounds = useCallback(() => {
@@ -4488,6 +4504,8 @@ export default function App() {
     hideSourceCards,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const handleExportPngViewport = useCallback(async () => {
@@ -4542,6 +4560,8 @@ export default function App() {
     pngExportScale,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const handleExportPngVisibleBounds = useCallback(async () => {
@@ -4604,6 +4624,8 @@ export default function App() {
     pngExportScale,
     summaryView,
     visibleIslandIdSet,
+    safeMode,
+    includeUnreviewedDraftsInExport,
   ]);
 
   const handleExportViewMetadataViewport = useCallback(() => {
@@ -4638,6 +4660,13 @@ export default function App() {
     downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
     setStatusMessage("Exported view.json (Visible bounds)");
   }, [downloadViewMetadata, getVisibleBoundsExportArea]);
+
+  const handleSafeModeChange = useCallback((nextValue: boolean) => {
+    setSafeMode(nextValue);
+    if (nextValue) {
+      setIncludeUnreviewedDraftsInExport(false);
+    }
+  }, []);
 
   const headerViewControls = (
     <div style={{ position: "relative" }}>
@@ -4710,6 +4739,8 @@ export default function App() {
             onLoadViewMetadataFile={(file) => {
               void handleLoadViewMetadataFile(file);
             }}
+            safeMode={safeMode}
+            onSafeModeChange={handleSafeModeChange}
           />
         </div>
       ) : null}
@@ -4754,6 +4785,9 @@ export default function App() {
       onExportAbstractMapHtmlWithPng={() => {
         void handleExportAbstractMapHtmlWithPng();
       }}
+      safeMode={safeMode}
+      includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
+      onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
       onExportViewViewport={handleExportViewMetadataViewport}
       onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
       onLoadViewMetadataFile={(file) => {
@@ -5017,6 +5051,7 @@ export default function App() {
           onRevealSelectedEdgeSources={handleRevealSelectedEdgeSources}
           onInspectSelectedEdgeCard={handleInspectSelectedEdgeCard}
           selectedRelationSummary={selectedRelationSummary}
+          safeMode={safeMode}
           isGeneratingRelationSummary={isGeneratingRelationSummary}
           onGenerateRelationSummary={() => {
             void handleGenerateRelationSummary();
