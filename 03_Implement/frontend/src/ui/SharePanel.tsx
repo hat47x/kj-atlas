@@ -29,6 +29,29 @@ type SharePanelProps = {
   } | null;
   importDocumentError: string | null;
   onReplaceCurrentDocument: () => void;
+  onLoadPatchFile: (file: File) => void;
+  onLoadPatchBaselineFile: (file: File) => void;
+  patchFileName: string | null;
+  patchImportError: string | null;
+  patchConflictWarning: string | null;
+  patchPreviewItems: {
+    opId: string;
+    kind: string;
+    entityKey: string;
+    checked: boolean;
+    canToggle: boolean;
+    conflict: boolean;
+    reason?: string;
+    baseSnippet?: string;
+    yourSnippet?: string;
+    theirSnippet?: string;
+    resolution?: "yours" | "theirs" | "skip";
+  }[];
+  onPatchItemCheckedChange: (opId: string, checked: boolean) => void;
+  onConflictResolutionChange: (opId: string, resolution: "yours" | "theirs" | "skip") => void;
+  onApplyPatch: () => void;
+  canApplyPatch: boolean;
+  patchBaselineFileName: string | null;
   structuralDiffSection: ReactNode;
 };
 
@@ -63,10 +86,23 @@ export function SharePanel({
   pendingImportedDocumentSummary,
   importDocumentError,
   onReplaceCurrentDocument,
+  onLoadPatchFile,
+  onLoadPatchBaselineFile,
+  patchFileName,
+  patchImportError,
+  patchConflictWarning,
+  patchPreviewItems,
+  onPatchItemCheckedChange,
+  onConflictResolutionChange,
+  onApplyPatch,
+  canApplyPatch,
+  patchBaselineFileName,
   structuralDiffSection,
 }: SharePanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
   const importDocumentInputRef = useRef<HTMLInputElement | null>(null);
+  const patchInputRef = useRef<HTMLInputElement | null>(null);
+  const patchBaselineInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -88,6 +124,28 @@ export function SharePanel({
     }
 
     onLoadDocumentFile(selectedFile);
+  };
+
+  const handlePatchFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    onLoadPatchFile(selectedFile);
+  };
+
+  const handlePatchBaselineFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!selectedFile) {
+      return;
+    }
+
+    onLoadPatchBaselineFile(selectedFile);
   };
 
   return (
@@ -246,7 +304,118 @@ export function SharePanel({
           </div>
 
           <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>4) Diff / Verify</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>4) Patch</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Import patch JSON and optional baseline JSON for 3-way conflict detection.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                patchInputRef.current?.click();
+              }}
+              disabled={isLoading}
+            >
+              Load patch.json
+            </button>
+            <input ref={patchInputRef} type="file" accept="application/json,.json" onChange={handlePatchFileChange} style={{ display: "none" }} />
+            <button
+              type="button"
+              onClick={() => {
+                patchBaselineInputRef.current?.click();
+              }}
+              disabled={isLoading}
+            >
+              Load baseline document.json (optional)
+            </button>
+            <input
+              ref={patchBaselineInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handlePatchBaselineFileChange}
+              style={{ display: "none" }}
+            />
+            {patchFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Patch: {patchFileName}</div> : null}
+            {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Baseline: {patchBaselineFileName}</div> : null}
+            {patchImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{patchImportError}</div> : null}
+            {patchConflictWarning ? <div style={{ fontSize: 12, color: "#b45309", whiteSpace: "pre-wrap" }}>{patchConflictWarning}</div> : null}
+            {patchPreviewItems.length > 0 ? (
+              <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 8 }}>
+                {patchPreviewItems.map((item) => (
+                  <div key={item.opId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#0f172a" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={item.checked}
+                          disabled={!item.canToggle}
+                          onChange={(event) => {
+                            onPatchItemCheckedChange(item.opId, event.target.checked);
+                          }}
+                        />
+                        {item.kind} · {item.entityKey}
+                      </label>
+                      {item.conflict ? (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#b91c1c", border: "1px solid #fecaca", borderRadius: 9999, padding: "1px 6px" }}>
+                          CONFLICT
+                        </span>
+                      ) : null}
+                    </div>
+                    {item.conflict ? (
+                      <>
+                        <div style={{ fontSize: 11, color: "#b45309" }}>Choose resolution to apply. {item.reason ?? ""}</div>
+                        <div style={{ fontSize: 11, color: "#475569", whiteSpace: "pre-wrap" }}>
+                          base: {item.baseSnippet ?? "(none)"}
+                          {"\n"}
+                          yours: {item.yourSnippet ?? "(none)"}
+                          {"\n"}
+                          theirs: {item.theirSnippet ?? "(none)"}
+                        </div>
+                        <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
+                          <input
+                            type="radio"
+                            name={`resolution-${item.opId}`}
+                            checked={item.resolution === "yours"}
+                            onChange={() => {
+                              onConflictResolutionChange(item.opId, "yours");
+                            }}
+                          />
+                          Use yours
+                        </label>
+                        <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
+                          <input
+                            type="radio"
+                            name={`resolution-${item.opId}`}
+                            checked={item.resolution === "theirs"}
+                            onChange={() => {
+                              onConflictResolutionChange(item.opId, "theirs");
+                            }}
+                          />
+                          Use theirs
+                        </label>
+                        <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
+                          <input
+                            type="radio"
+                            name={`resolution-${item.opId}`}
+                            checked={item.resolution === "skip"}
+                            onChange={() => {
+                              onConflictResolutionChange(item.opId, "skip");
+                            }}
+                          />
+                          Skip
+                        </label>
+                      </>
+                    ) : null}
+                  </div>
+                ))}
+                <button type="button" onClick={onApplyPatch} disabled={!canApplyPatch || isLoading}>
+                  Apply patch
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>5) Diff / Verify</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               Structural doc diff (F3). Image diff (G2) and snapshot bundle verify (G3) remain available from legacy tools.
             </div>
