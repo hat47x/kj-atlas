@@ -347,7 +347,7 @@ function IslandViewComponent({
             return;
           }
 
-          onToggleCollapsed?.(island.id, island.collapsed !== true);
+          onToggleCollapsed?.(island.id, !isCollapsed);
         }}
         style={{
           pointerEvents: isPickingEdgeTarget ? "none" : "auto",
@@ -370,6 +370,30 @@ function IslandViewComponent({
       >
         {island.title && island.title.length > 0 ? island.title : "Island"}
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleCollapsed?.(island.id, !isCollapsed);
+          }}
+          onDoubleClick={(event) => {
+            event.stopPropagation();
+          }}
+          style={{
+            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+            border: "1px solid #7dd3fc",
+            borderRadius: 4,
+            backgroundColor: "#e0f2fe",
+            color: "#075985",
+            fontSize: 10,
+            lineHeight: 1,
+            padding: "3px 6px",
+            cursor: isPickingEdgeTarget ? "default" : "pointer",
+          }}
+          aria-label={`${isCollapsed ? "Expand" : "Collapse"} island ${island.id}`}
+        >
+          {isCollapsed ? "Expand" : "Collapse"}
+        </button>
         {isShapeStale ? (
           <span style={{ fontWeight: 600, color: "#b45309" }}>(stale)</span>
         ) : null}
