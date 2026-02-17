@@ -58,6 +58,9 @@ import { diffDocuments } from "./domain/diff/doc_diff";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
+import { buildPatchForExport } from "./domain/patch/patch_generate";
+import { verifyPatchFingerprint } from "./domain/patch/patch_fingerprint";
+import type { TrustLabel } from "./domain/patch/patch_types";
 import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict_detect";
 import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/patch_summary";
 import { appendPatchApplyLog, formatPatchApplyLogEntryMarkdown } from "./domain/patch/patch_apply_log";
@@ -716,6 +719,10 @@ export default function App() {
   const [patchBaselineFileName, setPatchBaselineFileName] = useState<string | null>(null);
   const [patchSelectedOpIdSet, setPatchSelectedOpIdSet] = useState<Set<string>>(new Set());
   const [patchResolutionsByOpId, setPatchResolutionsByOpId] = useState<Record<string, PatchResolution>>({});
+  const [patchTrustLabel, setPatchTrustLabel] = useState<TrustLabel>("unknown");
+  const [patchFingerprintStatus, setPatchFingerprintStatus] = useState<{ status: string; expected?: string; actual?: string } | null>(null);
+  const [patchExportAuthor, setPatchExportAuthor] = useState("");
+  const [patchExportAuthorNote, setPatchExportAuthorNote] = useState("");
   const [selectedFixProposalIdSet, setSelectedFixProposalIdSet] = useState<Set<string>>(new Set());
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
@@ -1935,9 +1942,31 @@ export default function App() {
 
       if (!parsedPatch) {
         setPendingPatchImport(null);
+        setPatchFingerprintStatus(null);
+        setPatchTrustLabel("unknown");
         setPatchImportError("Patch validation failed:\n- invalid patch schema");
         setStatusMessage("Failed to load patch JSON");
         return;
+      }
+
+      const fingerprintVerification = await verifyPatchFingerprint(parsedPatch);
+      if (!parsedPatch.patchFingerprint) {
+        setPatchFingerprintStatus({ status: "No fingerprint (Unknown)" });
+        setPatchTrustLabel("unknown");
+      } else if (fingerprintVerification.ok) {
+        setPatchFingerprintStatus({
+          status: "Fingerprint OK",
+          expected: fingerprintVerification.expected,
+          actual: fingerprintVerification.actual,
+        });
+        setPatchTrustLabel("unknown");
+      } else {
+        setPatchFingerprintStatus({
+          status: "Fingerprint mismatch (Untrusted)",
+          expected: fingerprintVerification.expected,
+          actual: fingerprintVerification.actual,
+        });
+        setPatchTrustLabel("untrusted");
       }
 
       setPendingPatchImport({
@@ -1956,6 +1985,8 @@ export default function App() {
       setStatusMessage("Patch loaded");
     } catch (error) {
       setPendingPatchImport(null);
+      setPatchFingerprintStatus(null);
+      setPatchTrustLabel("unknown");
       if (error instanceof SyntaxError) {
         setPatchImportError("Patch validation failed:\n- invalid JSON syntax");
       } else {
@@ -2028,6 +2059,22 @@ export default function App() {
 
     setStatusMessage("Patch updated; re-running lint…");
   }, [patchFixProposals, pendingPatchImport, selectedFixProposalIdSet]);
+
+  const handleExportPatchFile = useCallback(async () => {
+    if (!pendingPatchImport) {
+      setStatusMessage("No patch loaded");
+      return;
+    }
+
+    const exportedPatch = await buildPatchForExport(pendingPatchImport.patch, {
+      author: patchExportAuthor,
+      authorNote: patchExportAuthorNote,
+      sourceApp: "kj-atlas",
+    });
+
+    downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
+    setStatusMessage("Exported patch with fingerprint");
+  }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport]);
 
   const handleResetPatchToOriginal = useCallback(() => {
     if (!pendingPatchImport) {
@@ -5182,6 +5229,16 @@ export default function App() {
       onLoadPatchBaselineFile={(file) => {
         void handleLoadPatchBaselineFile(file);
       }}
+      onExportPatchFile={() => {
+        void handleExportPatchFile();
+      }}
+      patchExportAuthor={patchExportAuthor}
+      patchExportAuthorNote={patchExportAuthorNote}
+      onPatchExportAuthorChange={setPatchExportAuthor}
+      onPatchExportAuthorNoteChange={setPatchExportAuthorNote}
+      patchTrustLabel={patchTrustLabel}
+      onPatchTrustLabelChange={setPatchTrustLabel}
+      patchFingerprintStatus={patchFingerprintStatus}
       patchFileName={pendingPatchImport?.fileName ?? null}
       patchImportError={patchImportError}
       patchConflictWarning={patchConflictWarning}

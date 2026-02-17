@@ -1,33 +1,10 @@
 import type { Card, DocumentV2, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
+import type { PatchOp, PatchOpKind, PatchV1 } from "./patch_types";
 import { detectPatchConflicts } from "./conflict_detect";
 import type { PatchLintResult } from "./patch_lint";
 
-export type PatchOpKind =
-  | "upsert_card"
-  | "delete_card"
-  | "upsert_island"
-  | "delete_island"
-  | "upsert_edge"
-  | "delete_edge"
-  | "upsert_relation_summary"
-  | "delete_relation_summary";
-
-export type PatchOp =
-  | { id: string; kind: "upsert_card"; card: Card }
-  | { id: string; kind: "delete_card"; cardId: string }
-  | { id: string; kind: "upsert_island"; island: Island }
-  | { id: string; kind: "delete_island"; islandId: string }
-  | { id: string; kind: "upsert_edge"; edge: Edge }
-  | { id: string; kind: "delete_edge"; edgeId: string }
-  | { id: string; kind: "upsert_relation_summary"; relationSummary: RelationSummary }
-  | { id: string; kind: "delete_relation_summary"; sourceSignature: string };
-
-export type PatchDocument = {
-  kind: "kj-atlas-patch";
-  version: 1;
-  baseDocSignature?: string;
-  ops: PatchOp[];
-};
+export type PatchDocument = PatchV1;
+export type { PatchOp, PatchOpKind } from "./patch_types";
 
 export type PatchResolution = "yours" | "theirs" | "skip";
 
@@ -127,6 +104,12 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
     return null;
   }
 
+  if (value.author !== undefined && typeof value.author !== "string") return null;
+  if (value.authorNote !== undefined && typeof value.authorNote !== "string") return null;
+  if (value.sourceApp !== undefined && typeof value.sourceApp !== "string") return null;
+  if (value.patchFingerprint !== undefined && typeof value.patchFingerprint !== "string") return null;
+  if (value.patchId !== undefined && typeof value.patchId !== "string") return null;
+
   const ops: PatchOp[] = [];
 
   for (const item of value.ops) {
@@ -189,6 +172,11 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
     kind: "kj-atlas-patch",
     version: 1,
     baseDocSignature: typeof value.baseDocSignature === "string" ? value.baseDocSignature : undefined,
+    author: typeof value.author === "string" ? value.author : undefined,
+    authorNote: typeof value.authorNote === "string" ? value.authorNote : undefined,
+    sourceApp: typeof value.sourceApp === "string" ? value.sourceApp : undefined,
+    patchFingerprint: typeof value.patchFingerprint === "string" ? value.patchFingerprint : undefined,
+    patchId: typeof value.patchId === "string" ? value.patchId : undefined,
     ops,
   };
 }
