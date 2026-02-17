@@ -4,6 +4,7 @@ import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
 import type { PatchLintIssue } from "../domain/patch/patch_lint";
 import type { FixProposal } from "../domain/patch/patch_fix";
+import type { TrustLabel } from "../domain/patch/patch_types";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -35,6 +36,14 @@ type SharePanelProps = {
   onReplaceCurrentDocument: () => void;
   onLoadPatchFile: (file: File) => void;
   onLoadPatchBaselineFile: (file: File) => void;
+  onExportPatchFile: () => void;
+  patchExportAuthor: string;
+  patchExportAuthorNote: string;
+  onPatchExportAuthorChange: (value: string) => void;
+  onPatchExportAuthorNoteChange: (value: string) => void;
+  patchTrustLabel: TrustLabel;
+  onPatchTrustLabelChange: (value: TrustLabel) => void;
+  patchFingerprintStatus: { status: string; expected?: string; actual?: string } | null;
   patchFileName: string | null;
   patchImportError: string | null;
   patchConflictWarning: string | null;
@@ -106,6 +115,14 @@ export function SharePanel({
   onReplaceCurrentDocument,
   onLoadPatchFile,
   onLoadPatchBaselineFile,
+  onExportPatchFile,
+  patchExportAuthor,
+  patchExportAuthorNote,
+  onPatchExportAuthorChange,
+  onPatchExportAuthorNoteChange,
+  patchTrustLabel,
+  onPatchTrustLabelChange,
+  patchFingerprintStatus,
   patchFileName,
   patchImportError,
   patchConflictWarning,
@@ -182,6 +199,11 @@ export function SharePanel({
   const lintInfos = patchLintIssues.filter((item) => item.severity === "info");
 
   const sortedPatchApplyLogEntries = [...patchApplyLogEntries].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  const shortFingerprint = (value: string | undefined): string => {
+    if (!value) return "(n/a)";
+    if (value.length <= 20) return value;
+    return `${value.slice(0, 10)}…${value.slice(-6)}`;
+  };
 
   return (
     <div style={{ position: "relative" }}>
@@ -371,6 +393,39 @@ export function SharePanel({
             />
             {patchFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Patch: {patchFileName}</div> : null}
             {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Baseline: {patchBaselineFileName}</div> : null}
+            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+              Trust label (view only)
+              <select
+                value={patchTrustLabel}
+                onChange={(event) => {
+                  onPatchTrustLabelChange(event.target.value as TrustLabel);
+                }}
+                style={{ fontSize: 12 }}
+              >
+                <option value="unknown">Unknown</option>
+                <option value="trusted">Trusted</option>
+                <option value="untrusted">Untrusted</option>
+              </select>
+            </label>
+            {patchFingerprintStatus ? (
+              <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 2 }}>
+                <strong>Integrity: {patchFingerprintStatus.status}</strong>
+                <span>expected: {shortFingerprint(patchFingerprintStatus.expected)}</span>
+                <span>actual: {shortFingerprint(patchFingerprintStatus.actual)}</span>
+              </div>
+            ) : null}
+            <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Export patch.json</div>
+              <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#334155" }}>
+                Author (optional)
+                <input value={patchExportAuthor} onChange={(event) => { onPatchExportAuthorChange(event.target.value); }} />
+              </label>
+              <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#334155" }}>
+                Author note (optional)
+                <input value={patchExportAuthorNote} onChange={(event) => { onPatchExportAuthorNoteChange(event.target.value); }} />
+              </label>
+              <button type="button" onClick={onExportPatchFile} disabled={isLoading || !patchFileName}>Download patch.json (with fingerprint)</button>
+            </div>
             {patchImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{patchImportError}</div> : null}
             {patchConflictWarning ? <div style={{ fontSize: 12, color: "#b45309", whiteSpace: "pre-wrap" }}>{patchConflictWarning}</div> : null}
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
@@ -434,6 +489,7 @@ export function SharePanel({
             {patchSummary ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", display: "grid", gap: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{patchSummary.headline}</div>
+                <div style={{ fontSize: 11, color: "#334155" }}>Trust label: <strong>{patchTrustLabel}</strong></div>
                 <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 2 }}>
                   <div>
                     cards +{patchSummary.stats.upsertCards} / -{patchSummary.stats.deleteCards}, islands +{patchSummary.stats.upsertIslands} / -
