@@ -18,9 +18,11 @@ function createDocument(): DocumentV2 {
         text: "Card one text for grounding. ".repeat(12),
         x: 0,
         y: 0,
+        mergedIntoCardId: "c4",
       },
-      { id: "c2", text: "Card two text", x: 0, y: 0 },
+      { id: "c2", text: "Card two text", x: 0, y: 0, mergedIntoCardId: "c4" },
       { id: "c3", text: "Card three text", x: 0, y: 0, canonicalId: "c2" },
+      { id: "c4", text: "Representative text", x: 0, y: 0, repOf: ["c1", "c2"] },
     ],
     edges: [
       { id: "e1", fromId: "i1", toId: "i2", fromKind: "island", toKind: "island", type: "related" },
@@ -138,6 +140,8 @@ describe("abstract map export", () => {
     expect(markdown).toContain("Grounding cards:");
     expect(markdown).toContain("Grounding edge IDs:");
     expect(markdown).toContain("Summary (UNREVIEWED draft template)");
+    expect(markdown).toContain("## Representative cards");
+    expect(markdown).toContain("Rep count: 2");
 
     expect(html).toContain("Reviewed semantics");
     expect(html).toContain("UNREVIEWED");
@@ -145,6 +149,7 @@ describe("abstract map export", () => {
     expect(html).toContain("Grounding cards:");
     expect(html).toContain("Grounding edge IDs:");
     expect(html).toContain("Summary (UNREVIEWED draft template)");
+    expect(html).toContain("Representative cards");
   });
 
   it("embeds snapshot references in markdown/html exports", () => {

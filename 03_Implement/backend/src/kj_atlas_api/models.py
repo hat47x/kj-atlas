@@ -33,6 +33,8 @@ class Card(BaseModel):
     text: str
     x: float
     y: float
+    mergedIntoCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    repOf: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     canonicalId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     sources: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None

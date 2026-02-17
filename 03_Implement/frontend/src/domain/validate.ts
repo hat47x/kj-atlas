@@ -74,6 +74,11 @@ function parseCards(value: unknown): Card[] | null {
       text: item.text,
       x,
       y,
+      mergedIntoCardId: typeof item.mergedIntoCardId === "string" ? item.mergedIntoCardId : undefined,
+      repOf:
+        Array.isArray(item.repOf) && item.repOf.every((cardId) => typeof cardId === "string")
+          ? item.repOf
+          : undefined,
       canonicalId: typeof item.canonicalId === "string" ? item.canonicalId : undefined,
       sources:
         Array.isArray(item.sources) && item.sources.every((sourceId) => typeof sourceId === "string")

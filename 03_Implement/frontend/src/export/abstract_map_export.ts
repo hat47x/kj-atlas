@@ -39,10 +39,17 @@ export type AbstractMapExportRelation = {
   groundingCards?: AbstractMapExportGroundingCard[];
 };
 
+export type AbstractMapExportRepresentative = {
+  representativeCardId: string;
+  representativeText: string;
+  originalCardIds: string[];
+};
+
 export type AbstractMapExportModel = {
   generatedAt: string;
   islands: AbstractMapExportIsland[];
   relations: AbstractMapExportRelation[];
+  representatives: AbstractMapExportRepresentative[];
 };
 
 type AbstractMapExportMarkdownOptions = {
@@ -245,10 +252,20 @@ export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapEx
     return a.derived ? 1 : -1;
   });
 
+  const representatives = doc.cards
+    .filter((card) => Array.isArray(card.repOf) && card.repOf.length > 0)
+    .map((card) => ({
+      representativeCardId: card.id,
+      representativeText: normalizeTextSnippet(card.text),
+      originalCardIds: card.repOf ?? [],
+    }))
+    .sort((a, b) => a.representativeCardId.localeCompare(b.representativeCardId));
+
   return {
     generatedAt: doc.updatedAt,
     islands,
     relations,
+    representatives,
   };
 }
 
@@ -323,6 +340,20 @@ export function exportAbstractMapMarkdown(model: AbstractMapExportModel, options
     lines.push("");
   }
 
+  lines.push("## Representative cards");
+  lines.push("");
+  if (model.representatives.length === 0) {
+    lines.push("(none)");
+    lines.push("");
+  } else {
+    for (const representative of model.representatives) {
+      lines.push(`- ${representative.representativeCardId}: ${representative.representativeText}`);
+      lines.push(`  - Rep count: ${representative.originalCardIds.length}`);
+      lines.push(`  - Original card IDs: ${representative.originalCardIds.join(", ") || "(none)"}`);
+    }
+    lines.push("");
+  }
+
   return lines.join("\n");
 }
 
@@ -348,6 +379,18 @@ export function exportAbstractMapHTML(model: AbstractMapExportModel, options: Ab
       </section>`
     )
     .join("\n");
+
+  const representativesHtml = model.representatives.length === 0
+    ? "<p>(none)</p>"
+    : `<ul>${model.representatives
+        .map(
+          (representative) => `<li><code>${escapeHtml(representative.representativeCardId)}</code>: ${escapeHtml(
+            representative.representativeText
+          )}<ul><li>Rep count: ${representative.originalCardIds.length}</li><li>Original card IDs: ${representative.originalCardIds
+            .map((cardId) => `<code>${escapeHtml(cardId)}</code>`)
+            .join(", ") || "(none)"}</li></ul></li>`
+        )
+        .join("")}</ul>`;
 
   const relationsHtml = Array.from(relationGroups.entries())
     .map(([pair, groupedRelations]) => {
@@ -412,6 +455,8 @@ export function exportAbstractMapHTML(model: AbstractMapExportModel, options: Ab
   ${islandsHtml}
   <h2>Relations</h2>
   ${relationsHtml}
+  <h2>Representative cards</h2>
+  ${representativesHtml}
 </body>
 </html>`;
 }
