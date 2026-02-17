@@ -47,6 +47,11 @@ type SidePanelProps = {
   onImageUrlChange: (value: string) => void;
   onImageReviewedChange: (value: boolean) => void;
   onIslandCollapsedChange: (value: boolean) => void;
+  isSelectedIslandCollapsed: boolean;
+  hasIslands: boolean;
+  isAnyIslandCollapsed: boolean;
+  onCollapseAllIslands: () => void;
+  onExpandAllIslands: () => void;
   onIslandCritiqueChange: (value: string) => void;
   onIslandCritiqueTagsChange: (value: string[]) => void;
   onAddSelectedCards: () => void;
@@ -126,6 +131,11 @@ export function SidePanel({
   onImageUrlChange,
   onImageReviewedChange,
   onIslandCollapsedChange,
+  isSelectedIslandCollapsed,
+  hasIslands,
+  isAnyIslandCollapsed,
+  onCollapseAllIslands,
+  onExpandAllIslands,
   onIslandCritiqueChange,
   onIslandCritiqueTagsChange,
   onAddSelectedCards,
@@ -589,13 +599,22 @@ export function SidePanel({
           >
             <input
               type="checkbox"
-              checked={selectedIsland.collapsed === true}
+              checked={isSelectedIslandCollapsed}
               onChange={(event) => {
                 onIslandCollapsedChange(event.target.checked);
               }}
             />
             Collapsed
           </label>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <button type="button" onClick={onCollapseAllIslands} disabled={!hasIslands} style={{ width: "100%" }}>
+              Collapse all
+            </button>
+            <button type="button" onClick={onExpandAllIslands} disabled={!isAnyIslandCollapsed} style={{ width: "100%" }}>
+              Expand all
+            </button>
+          </div>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Title

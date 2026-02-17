@@ -527,6 +527,20 @@ function collectCollapsedIslandIds(islands: Island[]): Set<string> {
   return hiddenIslandIds;
 }
 
+function areIdSetsEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const value of a) {
+    if (!b.has(value)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function getIslandDepth(island: Island, islandsById: Map<string, Island>): number {
   let depth = 0;
   let cursor = island;
@@ -691,6 +705,7 @@ export default function App() {
   const [narrativeGenerationError, setNarrativeGenerationError] = useState<string | null>(null);
   const [peekIslandId, setPeekIslandId] = useState<string | undefined>(undefined);
   const [summaryRevealIslandIds, setSummaryRevealIslandIds] = useState<Set<string>>(new Set());
+  const [collapsedIslandIds, setCollapsedIslandIds] = useState<Set<string>>(new Set());
   const [temporaryRevealCardIds, setTemporaryRevealCardIds] = useState<Set<string>>(new Set());
   const [groundingVisibilityMessage, setGroundingVisibilityMessage] = useState<string | null>(null);
   const [isGridSnapEnabled, setIsGridSnapEnabled] = useState(false);
@@ -727,6 +742,7 @@ export default function App() {
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
+  const collapsedStateDocIdRef = useRef<string | null>(null);
 
   const document = history?.present ?? null;
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
@@ -903,18 +919,44 @@ export default function App() {
       return new Set<string>();
     }
 
-    return collectCollapsedIslandIds(focusedVisibleDocument.islands);
-  }, [focusedVisibleDocument]);
+    const islandsByParentId = new Map<string, Island[]>();
+    for (const island of focusedVisibleDocument.islands) {
+      if (!island.parentIslandId) {
+        continue;
+      }
+
+      const siblings = islandsByParentId.get(island.parentIslandId) ?? [];
+      siblings.push(island);
+      islandsByParentId.set(island.parentIslandId, siblings);
+    }
+
+    const hiddenIslandIds = new Set<string>();
+    const stack = focusedVisibleDocument.islands.filter((island) => collapsedIslandIds.has(island.id));
+
+    while (stack.length > 0) {
+      const current = stack.pop();
+      if (!current || hiddenIslandIds.has(current.id)) {
+        continue;
+      }
+
+      hiddenIslandIds.add(current.id);
+      const children = islandsByParentId.get(current.id) ?? [];
+      for (const child of children) {
+        stack.push(child);
+      }
+    }
+
+    return hiddenIslandIds;
+  }, [collapsedIslandIds, focusedVisibleDocument]);
   const effectiveCollapsedIslandIdSet = useMemo(() => {
     if (!focusedVisibleDocument) {
       return new Set<string>();
     }
 
-    if (!summaryView) {
-      return collapsedIslandIdSet;
-    }
+    const collapsedIds = summaryView
+      ? new Set(focusedVisibleDocument.islands.map((island) => island.id))
+      : new Set(collapsedIslandIdSet);
 
-    const collapsedIds = new Set(focusedVisibleDocument.islands.map((island) => island.id));
     for (const islandId of temporaryRevealIslandIds) {
       collapsedIds.delete(islandId);
     }
@@ -3064,41 +3106,75 @@ export default function App() {
 
   const handleIslandCollapsedChange = useCallback(
     (islandId: string, collapsed: boolean) => {
-      if (!document) {
-        return;
-      }
-
-      const nextIslands = document.islands.map((island) => {
-        if (island.id !== islandId) {
-          return island;
+      setCollapsedIslandIds((previous) => {
+        const alreadyCollapsed = previous.has(islandId);
+        if (alreadyCollapsed === collapsed) {
+          return previous;
         }
 
-        const currentCollapsed = island.collapsed === true;
-        if (currentCollapsed === collapsed) {
-          return island;
+        const next = new Set(previous);
+        if (collapsed) {
+          next.add(islandId);
+        } else {
+          next.delete(islandId);
         }
 
-        return {
-          ...island,
-          collapsed,
-        };
+        return next;
       });
+      setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
+    },
+    []
+  );
 
-      const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
-      if (!hasChanges) {
-        return;
+  const handleCollapseAllIslands = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
+    setCollapsedIslandIds(new Set(document.islands.map((island) => island.id)));
+    setStatusMessage("Collapsed all islands");
+  }, [document]);
+
+  const handleExpandAllIslands = useCallback(() => {
+    setCollapsedIslandIds(new Set());
+    setStatusMessage("Expanded all islands");
+  }, []);
+
+  useEffect(() => {
+    if (!document) {
+      collapsedStateDocIdRef.current = null;
+      setCollapsedIslandIds(new Set());
+      return;
+    }
+
+    const isDocumentChanged = collapsedStateDocIdRef.current !== document.id;
+    collapsedStateDocIdRef.current = document.id;
+
+    setCollapsedIslandIds((previous) => {
+      const validIslandIds = new Set(document.islands.map((island) => island.id));
+
+      if (isDocumentChanged) {
+        const fallbackCollapsedIds = collectCollapsedIslandIds(document.islands);
+        const seeded = new Set<string>();
+        for (const islandId of fallbackCollapsedIds) {
+          if (validIslandIds.has(islandId)) {
+            seeded.add(islandId);
+          }
+        }
+
+        return seeded;
       }
 
-      applyDocumentChange(
-        {
-          ...document,
-          islands: nextIslands,
-        },
-        collapsed ? "Collapsed island" : "Expanded island"
-      );
-    },
-    [applyDocumentChange, document]
-  );
+      const next = new Set<string>();
+      for (const islandId of previous) {
+        if (validIslandIds.has(islandId)) {
+          next.add(islandId);
+        }
+      }
+
+      return areIdSetsEqual(previous, next) ? previous : next;
+    });
+  }, [document]);
 
   useEffect(() => {
     if (!peekIslandId || !focusedVisibleDocument) {
@@ -5120,6 +5196,7 @@ export default function App() {
             summaryView={summaryView}
             onSummaryViewChange={setSummaryView}
             abstractMapView={abstractMapView}
+            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
             onAbstractMapViewChange={(nextValue) => {
               setAbstractMapView(nextValue);
               if (nextValue) {
@@ -5460,6 +5537,11 @@ export default function App() {
 
             handleIslandCollapsedChange(selectedIsland.id, value);
           }}
+          isSelectedIslandCollapsed={selectedIsland ? collapsedIslandIds.has(selectedIsland.id) : false}
+          hasIslands={(document?.islands.length ?? 0) > 0}
+          isAnyIslandCollapsed={collapsedIslandIds.size > 0}
+          onCollapseAllIslands={handleCollapseAllIslands}
+          onExpandAllIslands={handleExpandAllIslands}
           onIslandCritiqueChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -5621,6 +5703,7 @@ export default function App() {
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             summaryView={summaryView}
             abstractMapView={abstractMapView}
+            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
