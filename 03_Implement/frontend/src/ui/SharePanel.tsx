@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
+import type { PatchLintIssue } from "../domain/patch/patch_lint";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -45,6 +46,9 @@ type SharePanelProps = {
     checked: boolean;
     canToggle: boolean;
     conflict: boolean;
+    lintIssueCount: number;
+    lintErrorCount: number;
+    lintIssueCodes: string[];
     reason?: string;
     baseSnippet?: string;
     yourSnippet?: string;
@@ -55,6 +59,8 @@ type SharePanelProps = {
   onConflictResolutionChange: (opId: string, resolution: "yours" | "theirs" | "skip") => void;
   onApplyPatch: () => void;
   canApplyPatch: boolean;
+  hasPatchSelection: boolean;
+  patchLintIssues: PatchLintIssue[];
   patchBaselineFileName: string | null;
   patchApplyLogEntries: PatchApplyLogEntry[];
   onCopyPatchApplyLogEntry: (entryId: string) => void;
@@ -104,6 +110,8 @@ export function SharePanel({
   onConflictResolutionChange,
   onApplyPatch,
   canApplyPatch,
+  hasPatchSelection,
+  patchLintIssues,
   patchBaselineFileName,
   patchApplyLogEntries,
   onCopyPatchApplyLogEntry,
@@ -158,6 +166,9 @@ export function SharePanel({
     onLoadPatchBaselineFile(selectedFile);
   };
 
+  const lintErrors = patchLintIssues.filter((item) => item.severity === "error");
+  const lintWarnings = patchLintIssues.filter((item) => item.severity === "warn");
+  const lintInfos = patchLintIssues.filter((item) => item.severity === "info");
 
   const sortedPatchApplyLogEntries = [...patchApplyLogEntries].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
@@ -351,6 +362,31 @@ export function SharePanel({
             {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Baseline: {patchBaselineFileName}</div> : null}
             {patchImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{patchImportError}</div> : null}
             {patchConflictWarning ? <div style={{ fontSize: 12, color: "#b45309", whiteSpace: "pre-wrap" }}>{patchConflictWarning}</div> : null}
+            <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Lint</div>
+              <div style={{ fontSize: 11, color: "#334155" }}>Errors ({lintErrors.length}) / Warnings ({lintWarnings.length}) / Info ({lintInfos.length})</div>
+              <details>
+                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b91c1c" }}>Errors ({lintErrors.length})</summary>
+                <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#7f1d1d", display: "grid", gap: 2 }}>
+                  {lintErrors.length === 0 ? <li>(none)</li> : lintErrors.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
+                </ul>
+              </details>
+              <details>
+                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b45309" }}>Warnings ({lintWarnings.length})</summary>
+                <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#92400e", display: "grid", gap: 2 }}>
+                  {lintWarnings.length === 0 ? <li>(none)</li> : lintWarnings.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
+                </ul>
+              </details>
+              {lintInfos.length > 0 ? (
+                <details>
+                  <summary style={{ cursor: "pointer", fontSize: 11, color: "#475569" }}>Info ({lintInfos.length})</summary>
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#475569", display: "grid", gap: 2 }}>
+                    {lintInfos.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
+                  </ul>
+                </details>
+              ) : null}
+              {lintErrors.length > 0 ? <div style={{ fontSize: 11, color: "#b91c1c" }}>Resolve lint errors first.</div> : null}
+            </div>
             {patchSummary ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", display: "grid", gap: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{patchSummary.headline}</div>
@@ -388,7 +424,7 @@ export function SharePanel({
             {patchPreviewItems.length > 0 ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 8 }}>
                 {patchPreviewItems.map((item) => (
-                  <div key={item.opId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
+                  <div id={`patch-op-${item.opId}`} key={item.opId} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#0f172a" }}>
                       <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <input
@@ -406,7 +442,24 @@ export function SharePanel({
                           CONFLICT
                         </span>
                       ) : null}
+                      {item.lintIssueCount > 0 ? (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: item.lintErrorCount > 0 ? "#b91c1c" : "#92400e",
+                            border: `1px solid ${item.lintErrorCount > 0 ? "#fecaca" : "#fcd34d"}`,
+                            borderRadius: 9999,
+                            padding: "1px 6px",
+                          }}
+                        >
+                          LINT {item.lintIssueCount}
+                        </span>
+                      ) : null}
                     </div>
+                    {item.lintIssueCount > 0 ? (
+                      <div style={{ fontSize: 11, color: item.lintErrorCount > 0 ? "#b91c1c" : "#b45309" }}>Lint: {item.lintIssueCodes.join(", ")}</div>
+                    ) : null}
                     {item.conflict ? (
                       <>
                         <div style={{ fontSize: 11, color: "#b45309" }}>Choose resolution to apply. {item.reason ?? ""}</div>
@@ -455,7 +508,7 @@ export function SharePanel({
                   </div>
                 ))}
                 <button type="button" onClick={onApplyPatch} disabled={!canApplyPatch || isLoading}>
-                  Apply patch
+                  {lintErrors.length > 0 ? "Resolve lint errors first" : hasPatchSelection ? "Apply patch" : "Select operations to apply"}
                 </button>
               </div>
             ) : null}

@@ -57,10 +57,11 @@ import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
-import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
+import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict_detect";
 import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/patch_summary";
 import { appendPatchApplyLog, formatPatchApplyLogEntryMarkdown } from "./domain/patch/patch_apply_log";
+import { lintPatchAgainstCurrentDoc, type PatchLintIssue } from "./domain/patch/patch_lint";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -104,6 +105,9 @@ type PatchPreviewItem = {
   checked: boolean;
   canToggle: boolean;
   conflict: boolean;
+  lintIssueCount: number;
+  lintErrorCount: number;
+  lintIssueCodes: string[];
   reason?: string;
   baseSnippet?: string;
   yourSnippet?: string;
@@ -271,10 +275,13 @@ function buildPatchPreviewItems(
   patch: PatchDocument,
   selectedOpIdSet: Set<string>,
   conflictByOpId: Map<string, ConflictItem>,
-  resolutions: Record<string, PatchResolution>
+  resolutions: Record<string, PatchResolution>,
+  lintIssuesByOpId: Map<string, PatchLintIssue[]>
 ): PatchPreviewItem[] {
   return patch.ops.map((op) => {
     const conflict = conflictByOpId.get(op.id);
+    const lintIssues = lintIssuesByOpId.get(op.id) ?? [];
+
     return {
       opId: op.id,
       kind: op.kind,
@@ -282,6 +289,9 @@ function buildPatchPreviewItems(
       checked: selectedOpIdSet.has(op.id),
       canToggle: !conflict,
       conflict: Boolean(conflict),
+      lintIssueCount: lintIssues.length,
+      lintErrorCount: lintIssues.filter((item) => item.severity === "error").length,
+      lintIssueCodes: lintIssues.map((item) => item.code),
       reason: conflict?.reason,
       baseSnippet: conflict ? formatPatchEntitySnippet(conflict.baseValue) : undefined,
       yourSnippet: conflict ? formatPatchEntitySnippet(conflict.yourValue) : undefined,
@@ -731,13 +741,33 @@ export default function App() {
   const patchConflictByOpId = useMemo(() => {
     return new Map((patchConflictReport?.conflicts ?? []).map((item) => [item.opId, item]));
   }, [patchConflictReport]);
+  const patchLintResult = useMemo(() => {
+    if (!document || !pendingPatchImport) {
+      return null;
+    }
+
+    return lintPatchAgainstCurrentDoc(document, pendingPatchImport.patch);
+  }, [document, pendingPatchImport]);
+  const patchLintIssuesByOpId = useMemo(() => {
+    const next = new Map<string, PatchLintIssue[]>();
+    for (const issue of patchLintResult?.issues ?? []) {
+      if (!issue.opId) {
+        continue;
+      }
+
+      const existing = next.get(issue.opId) ?? [];
+      next.set(issue.opId, [...existing, issue]);
+    }
+
+    return next;
+  }, [patchLintResult]);
   const patchPreviewItems = useMemo(() => {
     if (!pendingPatchImport) {
       return [] as PatchPreviewItem[];
     }
 
-    return buildPatchPreviewItems(pendingPatchImport.patch, patchSelectedOpIdSet, patchConflictByOpId, patchResolutionsByOpId);
-  }, [patchConflictByOpId, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+    return buildPatchPreviewItems(pendingPatchImport.patch, patchSelectedOpIdSet, patchConflictByOpId, patchResolutionsByOpId, patchLintIssuesByOpId);
+  }, [patchConflictByOpId, patchLintIssuesByOpId, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
   const patchConflictWarning = useMemo(() => {
     if (!pendingPatchImport) {
       return null;
@@ -767,7 +797,8 @@ export default function App() {
 
     return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch);
   }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport]);
-  const canApplyPatch = Boolean(document && pendingPatchImport && patchSelectedOpIdSet.size > 0);
+  const hasPatchSelection = patchSelectedOpIdSet.size > 0;
+  const canApplyPatch = Boolean(document && pendingPatchImport && hasPatchSelection) && !shouldBlockPatchApplyByLint(patchLintResult);
   const focusedVisibleDocument = useMemo(() => {
     if (!visibleDocument) {
       return visibleDocument;
@@ -1944,6 +1975,11 @@ export default function App() {
       return;
     }
 
+    if (shouldBlockPatchApplyByLint(patchLintResult)) {
+      setStatusMessage("Resolve lint errors first");
+      return;
+    }
+
     const applyResult = applyPatchWithResolutionsDetailed(
       document,
       pendingPatchImport.patch,
@@ -1959,7 +1995,7 @@ export default function App() {
     });
 
     applyDocumentChange(nextDocument, "Applied patch");
-  }, [applyDocumentChange, document, patchBaselineDoc, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+  }, [applyDocumentChange, document, patchBaselineDoc, patchLintResult, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
 
 
   const handleCopyPatchApplyLogEntry = useCallback(async (entryId: string) => {
@@ -5093,6 +5129,8 @@ export default function App() {
       }}
       onApplyPatch={handleApplyPatch}
       canApplyPatch={canApplyPatch}
+      hasPatchSelection={hasPatchSelection}
+      patchLintIssues={patchLintResult?.issues ?? []}
       patchBaselineFileName={patchBaselineFileName}
       patchApplyLogEntries={document?.patchApplyLog ?? []}
       onCopyPatchApplyLogEntry={(entryId) => {
