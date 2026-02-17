@@ -62,6 +62,7 @@ import { detectPatchConflicts, type ConflictItem } from "./domain/patch/conflict
 import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/patch_summary";
 import { appendPatchApplyLog, formatPatchApplyLogEntryMarkdown } from "./domain/patch/patch_apply_log";
 import { lintPatchAgainstCurrentDoc, type PatchLintIssue } from "./domain/patch/patch_lint";
+import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patch/patch_fix";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -95,6 +96,7 @@ type PendingImportedDocument = {
 
 type PendingPatchImport = {
   fileName: string;
+  originalPatch: PatchDocument;
   patch: PatchDocument;
 };
 
@@ -714,6 +716,7 @@ export default function App() {
   const [patchBaselineFileName, setPatchBaselineFileName] = useState<string | null>(null);
   const [patchSelectedOpIdSet, setPatchSelectedOpIdSet] = useState<Set<string>>(new Set());
   const [patchResolutionsByOpId, setPatchResolutionsByOpId] = useState<Record<string, PatchResolution>>({});
+  const [selectedFixProposalIdSet, setSelectedFixProposalIdSet] = useState<Set<string>>(new Set());
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
@@ -748,6 +751,14 @@ export default function App() {
 
     return lintPatchAgainstCurrentDoc(document, pendingPatchImport.patch);
   }, [document, pendingPatchImport]);
+  const patchFixProposals = useMemo(() => {
+    if (!document || !pendingPatchImport || !patchLintResult) {
+      return [] as FixProposal[];
+    }
+
+    return proposeFixes(document, pendingPatchImport.patch, patchLintResult);
+  }, [document, patchLintResult, pendingPatchImport]);
+
   const patchLintIssuesByOpId = useMemo(() => {
     const next = new Map<string, PatchLintIssue[]>();
     for (const issue of patchLintResult?.issues ?? []) {
@@ -797,6 +808,13 @@ export default function App() {
 
     return buildPatchSummary(pendingPatchImport.patch, patchConflictReport ?? undefined, patchBaselineSignatureMatch);
   }, [patchBaselineSignatureMatch, patchConflictReport, pendingPatchImport]);
+  useEffect(() => {
+    setSelectedFixProposalIdSet((previousSet) => {
+      const nextIds = new Set(patchFixProposals.map((proposal) => proposal.fixId));
+      return new Set([...previousSet].filter((id) => nextIds.has(id)));
+    });
+  }, [patchFixProposals]);
+
   const hasPatchSelection = patchSelectedOpIdSet.size > 0;
   const canApplyPatch = Boolean(document && pendingPatchImport && hasPatchSelection) && !shouldBlockPatchApplyByLint(patchLintResult);
   const focusedVisibleDocument = useMemo(() => {
@@ -1924,6 +1942,7 @@ export default function App() {
 
       setPendingPatchImport({
         fileName: selectedFile.name,
+        originalPatch: parsedPatch,
         patch: parsedPatch,
       });
       setPatchSelectedOpIdSet(new Set(parsedPatch.ops.map((op) => op.id)));
@@ -1933,6 +1952,7 @@ export default function App() {
       }
       setPatchResolutionsByOpId(nextResolutions);
       setPatchImportError(null);
+      setSelectedFixProposalIdSet(new Set());
       setStatusMessage("Patch loaded");
     } catch (error) {
       setPendingPatchImport(null);
@@ -1968,6 +1988,66 @@ export default function App() {
       setStatusMessage("Failed to load baseline document JSON");
     }
   }, []);
+
+  const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
+    setSelectedFixProposalIdSet((previousSet) => {
+      const next = new Set(previousSet);
+      if (checked) {
+        next.add(fixId);
+      } else {
+        next.delete(fixId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleApplySelectedPatchFixes = useCallback(() => {
+    if (!pendingPatchImport || selectedFixProposalIdSet.size === 0) {
+      setStatusMessage("No fix selected");
+      return;
+    }
+
+    const nextPatch = applyFixesToPatch(pendingPatchImport.patch, [...selectedFixProposalIdSet], patchFixProposals);
+    setPendingPatchImport({
+      ...pendingPatchImport,
+      patch: nextPatch,
+    });
+
+    setPatchSelectedOpIdSet((previousSet) => {
+      const nextOpIds = new Set(nextPatch.ops.map((op) => op.id));
+      return new Set([...previousSet].filter((opId) => nextOpIds.has(opId)));
+    });
+
+    setPatchResolutionsByOpId((previousMap) => {
+      const nextMap: Record<string, PatchResolution> = {};
+      for (const op of nextPatch.ops) {
+        nextMap[op.id] = previousMap[op.id] ?? "skip";
+      }
+      return nextMap;
+    });
+
+    setStatusMessage("Patch updated; re-running lint…");
+  }, [patchFixProposals, pendingPatchImport, selectedFixProposalIdSet]);
+
+  const handleResetPatchToOriginal = useCallback(() => {
+    if (!pendingPatchImport) {
+      return;
+    }
+
+    const originalPatch = pendingPatchImport.originalPatch;
+    setPendingPatchImport({
+      ...pendingPatchImport,
+      patch: originalPatch,
+    });
+    setPatchSelectedOpIdSet(new Set(originalPatch.ops.map((op) => op.id)));
+
+    const nextResolutions: Record<string, PatchResolution> = {};
+    for (const op of originalPatch.ops) {
+      nextResolutions[op.id] = "skip";
+    }
+    setPatchResolutionsByOpId(nextResolutions);
+    setStatusMessage("Patch reset to original");
+  }, [pendingPatchImport]);
 
   const handleApplyPatch = useCallback(() => {
     if (!document || !pendingPatchImport) {
@@ -5131,6 +5211,11 @@ export default function App() {
       canApplyPatch={canApplyPatch}
       hasPatchSelection={hasPatchSelection}
       patchLintIssues={patchLintResult?.issues ?? []}
+      fixProposals={patchFixProposals}
+      selectedFixProposalIds={selectedFixProposalIdSet}
+      onFixProposalCheckedChange={handleFixProposalCheckedChange}
+      onApplySelectedFixes={handleApplySelectedPatchFixes}
+      onResetPatchToOriginal={handleResetPatchToOriginal}
       patchBaselineFileName={patchBaselineFileName}
       patchApplyLogEntries={document?.patchApplyLog ?? []}
       onCopyPatchApplyLogEntry={(entryId) => {
