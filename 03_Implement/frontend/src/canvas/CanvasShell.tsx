@@ -119,6 +119,7 @@ type CanvasShellProps = {
   showCanonicalOnlyEdges?: boolean;
   summaryView?: boolean;
   abstractMapView?: boolean;
+  showDerivedIslandEdges?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
   activeMatchedCardId?: string | null;
@@ -211,6 +212,7 @@ export function CanvasShell({
   showCanonicalOnlyEdges = false,
   summaryView = false,
   abstractMapView = false,
+  showDerivedIslandEdges = false,
   searchQuery = "",
   matchedCardIds,
   activeMatchedCardId,
@@ -558,12 +560,12 @@ export function CanvasShell({
   }, [document.cards, document.edges]);
 
   const derivedIslandEdges = useMemo(() => {
-    if (!summaryView && !abstractMapView) {
+    if (!showDerivedIslandEdges) {
       return [];
     }
 
     return getDerivedIslandEdges(document);
-  }, [abstractMapView, document, summaryView]);
+  }, [document, showDerivedIslandEdges]);
 
   const derivedIslandEdgeMeta = useMemo<AggregatedEdgeMeta[]>(() => {
     return derivedIslandEdges.map((edge) => ({
@@ -601,7 +603,7 @@ export function CanvasShell({
       });
     }
 
-    if (summaryView || abstractMapView) {
+    if (showDerivedIslandEdges) {
       edges = [
         ...edges,
         ...derivedIslandEdges.filter(
@@ -612,15 +614,14 @@ export function CanvasShell({
 
     return edges;
   }, [
-    abstractMapView,
     canonicalCardIdSet,
     derivedIslandEdges,
     document,
     effectiveHideSourceCards,
     effectiveShowCanonicalOnlyEdges,
-    summaryView,
     visibleCardIdSet,
     visibleIslandIdSet,
+    showDerivedIslandEdges,
   ]);
 
   const visibleEdgeInspectorMeta = useMemo(() => {

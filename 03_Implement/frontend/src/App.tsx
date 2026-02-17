@@ -742,6 +742,7 @@ export default function App() {
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
+  const collapsedStateDocIdRef = useRef<string | null>(null);
 
   const document = history?.present ?? null;
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
@@ -3126,13 +3127,13 @@ export default function App() {
   );
 
   const handleCollapseAllIslands = useCallback(() => {
-    if (!focusedVisibleDocument) {
+    if (!document) {
       return;
     }
 
-    setCollapsedIslandIds(new Set(focusedVisibleDocument.islands.map((island) => island.id)));
+    setCollapsedIslandIds(new Set(document.islands.map((island) => island.id)));
     setStatusMessage("Collapsed all islands");
-  }, [focusedVisibleDocument]);
+  }, [document]);
 
   const handleExpandAllIslands = useCallback(() => {
     setCollapsedIslandIds(new Set());
@@ -3141,22 +3142,32 @@ export default function App() {
 
   useEffect(() => {
     if (!document) {
+      collapsedStateDocIdRef.current = null;
       setCollapsedIslandIds(new Set());
       return;
     }
 
+    const isDocumentChanged = collapsedStateDocIdRef.current !== document.id;
+    collapsedStateDocIdRef.current = document.id;
+
     setCollapsedIslandIds((previous) => {
       const validIslandIds = new Set(document.islands.map((island) => island.id));
+
+      if (isDocumentChanged) {
+        const fallbackCollapsedIds = collectCollapsedIslandIds(document.islands);
+        const seeded = new Set<string>();
+        for (const islandId of fallbackCollapsedIds) {
+          if (validIslandIds.has(islandId)) {
+            seeded.add(islandId);
+          }
+        }
+
+        return seeded;
+      }
+
       const next = new Set<string>();
       for (const islandId of previous) {
         if (validIslandIds.has(islandId)) {
-          next.add(islandId);
-        }
-      }
-
-      if (previous.size === 0) {
-        const fallbackCollapsedIds = collectCollapsedIslandIds(document.islands);
-        for (const islandId of fallbackCollapsedIds) {
           next.add(islandId);
         }
       }
@@ -5185,6 +5196,7 @@ export default function App() {
             summaryView={summaryView}
             onSummaryViewChange={setSummaryView}
             abstractMapView={abstractMapView}
+            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
             onAbstractMapViewChange={(nextValue) => {
               setAbstractMapView(nextValue);
               if (nextValue) {
@@ -5691,6 +5703,7 @@ export default function App() {
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             summaryView={summaryView}
             abstractMapView={abstractMapView}
+            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
