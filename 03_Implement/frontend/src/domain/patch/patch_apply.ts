@@ -1,5 +1,6 @@
 import type { Card, DocumentV2, Edge, Island, PatchApplyStats, PatchConflictMeta, RelationSummary } from "../types";
 import { detectPatchConflicts } from "./conflict_detect";
+import type { PatchLintResult } from "./patch_lint";
 
 export type PatchOpKind =
   | "upsert_card"
@@ -24,6 +25,7 @@ export type PatchOp =
 export type PatchDocument = {
   kind: "kj-atlas-patch";
   version: 1;
+  baseDocSignature?: string;
   ops: PatchOp[];
 };
 
@@ -186,8 +188,17 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
   return {
     kind: "kj-atlas-patch",
     version: 1,
+    baseDocSignature: typeof value.baseDocSignature === "string" ? value.baseDocSignature : undefined,
     ops,
   };
+}
+
+export function shouldBlockPatchApplyByLint(lintResult: PatchLintResult | null): boolean {
+  if (!lintResult) {
+    return false;
+  }
+
+  return lintResult.issues.some((issue) => issue.severity === "error");
 }
 
 export function getPatchOpEntityKey(op: PatchOp): string {
