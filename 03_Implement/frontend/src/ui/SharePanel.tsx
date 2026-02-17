@@ -3,6 +3,7 @@ import type { ChangeEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
 import type { PatchLintIssue } from "../domain/patch/patch_lint";
+import type { FixProposal } from "../domain/patch/patch_fix";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -61,6 +62,11 @@ type SharePanelProps = {
   canApplyPatch: boolean;
   hasPatchSelection: boolean;
   patchLintIssues: PatchLintIssue[];
+  fixProposals: FixProposal[];
+  selectedFixProposalIds: Set<string>;
+  onFixProposalCheckedChange: (fixId: string, checked: boolean) => void;
+  onApplySelectedFixes: () => void;
+  onResetPatchToOriginal: () => void;
   patchBaselineFileName: string | null;
   patchApplyLogEntries: PatchApplyLogEntry[];
   onCopyPatchApplyLogEntry: (entryId: string) => void;
@@ -112,6 +118,11 @@ export function SharePanel({
   canApplyPatch,
   hasPatchSelection,
   patchLintIssues,
+  fixProposals,
+  selectedFixProposalIds,
+  onFixProposalCheckedChange,
+  onApplySelectedFixes,
+  onResetPatchToOriginal,
   patchBaselineFileName,
   patchApplyLogEntries,
   onCopyPatchApplyLogEntry,
@@ -386,6 +397,39 @@ export function SharePanel({
                 </details>
               ) : null}
               {lintErrors.length > 0 ? <div style={{ fontSize: 11, color: "#b91c1c" }}>Resolve lint errors first.</div> : null}
+            <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Fix suggestions ({fixProposals.length})</div>
+              {fixProposals.length === 0 ? (
+                <div style={{ fontSize: 11, color: "#64748b" }}>No auto-fix proposal for current lint issues.</div>
+              ) : (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {fixProposals.map((proposal) => (
+                    <label key={proposal.fixId} style={{ display: "grid", gap: 2, fontSize: 11, color: "#334155", border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedFixProposalIds.has(proposal.fixId)}
+                          onChange={(event) => {
+                            onFixProposalCheckedChange(proposal.fixId, event.target.checked);
+                          }}
+                        />
+                        <strong>{proposal.title}</strong>
+                      </span>
+                      <span>{proposal.description}</span>
+                      <span style={{ color: "#64748b" }}>affected ops: {proposal.affectedOpIds.length}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={onApplySelectedFixes} disabled={isLoading || selectedFixProposalIds.size === 0}>
+                  Apply selected fixes to patch
+                </button>
+                <button type="button" onClick={onResetPatchToOriginal} disabled={isLoading || !patchFileName}>
+                  Reset patch to original
+                </button>
+              </div>
+            </div>
             </div>
             {patchSummary ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", display: "grid", gap: 6 }}>
