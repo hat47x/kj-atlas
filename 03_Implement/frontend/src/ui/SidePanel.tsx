@@ -32,6 +32,7 @@ type SidePanelProps = {
   revealedSourceCardIds: Set<string>;
   selectedIsland: Island | null;
   selectedCardCount: number;
+  onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
@@ -116,6 +117,7 @@ export function SidePanel({
   revealedSourceCardIds,
   selectedIsland,
   selectedCardCount,
+  onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
   onTitleChange,
@@ -426,6 +428,14 @@ export function SidePanel({
             Distribute Vertically
           </button>
         </div>
+        <button
+          type="button"
+          onClick={onCreateRepresentativeCard}
+          disabled={selectedCardCount < 2}
+          style={{ cursor: selectedCardCount >= 2 ? "pointer" : "not-allowed" }}
+        >
+          Create representative card
+        </button>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Connect</div>

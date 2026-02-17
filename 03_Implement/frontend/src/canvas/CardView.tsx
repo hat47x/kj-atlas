@@ -86,6 +86,7 @@ function CardViewComponent({
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
+  const representativeCount = card.repOf?.length ?? 0;
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -204,6 +205,23 @@ function CardViewComponent({
         cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
     >
+      {representativeCount > 0 ? (
+        <span
+          style={{
+            position: "absolute",
+            top: 6,
+            left: 6,
+            borderRadius: 999,
+            backgroundColor: "#dbeafe",
+            color: "#1d4ed8",
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "2px 8px",
+          }}
+        >
+          Rep ({representativeCount})
+        </span>
+      ) : null}
       {hasCritique ? (
         <span
           aria-label="Card has critique note"

@@ -57,7 +57,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -78,6 +78,13 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   }
   if (item.canonicalId !== undefined && typeof item.canonicalId !== "string") {
     errors.push(`${path}.canonicalId: must be a string when provided`);
+    valid = false;
+  }
+  if (item.mergedIntoCardId !== undefined && typeof item.mergedIntoCardId !== "string") {
+    errors.push(`${path}.mergedIntoCardId: must be a string when provided`);
+    valid = false;
+  }
+  if (item.repOf !== undefined && !validateStringArray(item.repOf, `${path}.repOf`, errors)) {
     valid = false;
   }
   if (item.sources !== undefined && !validateStringArray(item.sources, `${path}.sources`, errors)) {

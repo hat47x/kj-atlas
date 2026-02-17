@@ -58,6 +58,8 @@ export type Card = {
   text: string;
   x: number;
   y: number;
+  mergedIntoCardId?: string;
+  repOf?: string[];
 };
 ```
 

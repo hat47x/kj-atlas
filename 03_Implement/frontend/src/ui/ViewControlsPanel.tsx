@@ -9,6 +9,8 @@ type ViewControlsPanelProps = {
   onMaxDepthChange: (value: number | "all") => void;
   hideSourceCards: boolean;
   onHideSourceCardsChange: (value: boolean) => void;
+  hideMergedOriginals: boolean;
+  onHideMergedOriginalsChange: (value: boolean) => void;
   summaryView: boolean;
   onSummaryViewChange: (value: boolean) => void;
   abstractMapView: boolean;
@@ -50,6 +52,8 @@ export function ViewControlsPanel({
   onMaxDepthChange,
   hideSourceCards,
   onHideSourceCardsChange,
+  hideMergedOriginals,
+  onHideMergedOriginalsChange,
   summaryView,
   onSummaryViewChange,
   abstractMapView,
@@ -159,6 +163,16 @@ export function ViewControlsPanel({
             }}
           />
           Hide source cards
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={hideMergedOriginals}
+            onChange={(event) => {
+              onHideMergedOriginalsChange(event.target.checked);
+            }}
+          />
+          Hide merged originals
         </label>
       </div>
 

@@ -27,6 +27,7 @@ import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
+import { createRepresentativeMerge } from "./domain/representative_merge";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { validateDocumentV2Strict } from "./domain/validate_doc";
@@ -682,6 +683,7 @@ export default function App() {
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [hideNonMatches, setHideNonMatches] = useState(false);
   const [hideSourceCards, setHideSourceCards] = useState(true);
+  const [hideMergedOriginals, setHideMergedOriginals] = useState(false);
   const [summaryView, setSummaryView] = useState(false);
   const [abstractMapView, setAbstractMapView] = useState(false);
   const [safeMode, setSafeMode] = useState(true);
@@ -1000,6 +1002,7 @@ export default function App() {
     const depthHiddenCardIds = new Set<string>();
     const summaryHiddenCardIds = new Set<string>();
     const searchHiddenCardIds = new Set<string>();
+    const mergedHiddenCardIds = new Set<string>();
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
@@ -1069,11 +1072,20 @@ export default function App() {
       }
     }
 
+    if (hideMergedOriginals && focusedVisibleDocument) {
+      for (const card of focusedVisibleDocument.cards) {
+        if (typeof card.mergedIntoCardId === "string" && card.mergedIntoCardId.length > 0) {
+          mergedHiddenCardIds.add(card.id);
+        }
+      }
+    }
+
     // merge
     const hiddenCardIds = new Set<string>(collapsedHiddenCardIds);
     for (const cardId of depthHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of summaryHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of searchHiddenCardIds) hiddenCardIds.add(cardId);
+    for (const cardId of mergedHiddenCardIds) hiddenCardIds.add(cardId);
     for (const cardId of temporaryRevealCardIds) {
       if (!depthHiddenCardIds.has(cardId)) {
         hiddenCardIds.delete(cardId);
@@ -1087,6 +1099,7 @@ export default function App() {
     focusTarget.focusIslandId,
     focusedVisibleDocument,
     hideNonMatches,
+    hideMergedOriginals,
     matchedCardIdSet,
     maxDepth,
     normalizedSearchQuery,
@@ -2467,6 +2480,41 @@ export default function App() {
     });
     setSelectedIslandId(newIsland.id);
     setStatusMessage(`Created island from ${selectedCardIds.length} selected card(s)`);
+  }, [applyDocumentChange, document, selectedCardIds]);
+
+  const handleCreateRepresentativeCard = useCallback(() => {
+    if (!document || selectedCardIds.length < 2) {
+      return;
+    }
+
+    const selectedCards = document.cards.filter((card) => selectedCardIds.includes(card.id));
+    const representativeText = window.prompt("Enter representative card text", selectedCards[0]?.text ?? "");
+    if (representativeText === null) {
+      return;
+    }
+
+    const shouldRewire = window.confirm(
+      "Rewire island membership and card edges to the representative card?"
+    );
+
+    const mergeResult = createRepresentativeMerge(document, selectedCardIds, representativeText, {
+      rewireMembershipAndEdges: shouldRewire,
+    });
+
+    if (!mergeResult) {
+      setStatusMessage("Representative card text is required");
+      return;
+    }
+
+    applyDocumentChange(mergeResult.nextDocument, "Created representative card");
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setSelectedCardIds([mergeResult.representativeCardId]);
+    setStatusMessage(
+      `Created representative card from ${mergeResult.mergedCardCount} originals${
+        shouldRewire ? " (rewired)" : ""
+      }`
+    );
   }, [applyDocumentChange, document, selectedCardIds]);
 
   const handleIslandTitleChange = useCallback(
@@ -5193,10 +5241,11 @@ export default function App() {
             onMaxDepthChange={setMaxDepth}
             hideSourceCards={hideSourceCards}
             onHideSourceCardsChange={setHideSourceCards}
+            hideMergedOriginals={hideMergedOriginals}
+            onHideMergedOriginalsChange={setHideMergedOriginals}
             summaryView={summaryView}
             onSummaryViewChange={setSummaryView}
             abstractMapView={abstractMapView}
-            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
             onAbstractMapViewChange={(nextValue) => {
               setAbstractMapView(nextValue);
               if (nextValue) {
@@ -5458,6 +5507,7 @@ export default function App() {
           }
           selectedIsland={selectedIsland ? { ...selectedIsland, shapeStale: stalePolygonIslandIdSet.has(selectedIsland.id) } : null}
           selectedCardCount={selectedCardIds.length}
+          onCreateRepresentativeCard={handleCreateRepresentativeCard}
           onCardCritiqueChange={(value) => {
             if (!selectedCard) {
               return;
