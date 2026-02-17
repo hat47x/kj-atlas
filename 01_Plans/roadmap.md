@@ -163,3 +163,14 @@ Draft → Critique → 再提案 の最小循環を成立させる。
 - 協調編集・権限管理
 - 外部公開・共有機能
 - 高度な評価・スコアリング
+
+---
+
+## Phase 2拡張計画への参照
+
+Phase 1以降の定性統合（Hierarchy / Similar-card merge / 非矩形Island / viewpoint switching）の要求整理は、
+`01_Plans/phase2_qualitative_integration.md` を参照する。
+
+実装着手時は同ドキュメントの受け入れ基準と phased rollout（2A/2B/2C）を基準にチケット化する。
+バックログ管理は `01_Plans/future_backlog.md` を正とし、要求ID（RQ）と受け入れ基準（AC）を対応づけて運用する。
+フェーズ完了判定は `future_backlog.md` の Gate-2A / Gate-2B / Gate-2C を採用する。
