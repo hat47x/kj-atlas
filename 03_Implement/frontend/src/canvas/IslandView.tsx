@@ -19,6 +19,7 @@ type IslandViewProps = {
   isPeeking?: boolean;
   summaryView?: boolean;
   abstractMapView?: boolean;
+  showSummary?: boolean;
   safeMode?: boolean;
   isCollapsedForView?: boolean;
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
@@ -145,6 +146,7 @@ function IslandViewComponent({
   isPeeking = false,
   summaryView = false,
   abstractMapView = false,
+  showSummary = true,
   safeMode = false,
   isCollapsedForView,
   onSelect,
@@ -446,7 +448,7 @@ function IslandViewComponent({
         ) : null}
       </div>
 
-      {hasSummary || abstractMapView ? (
+      {((hasSummary && showSummary) || abstractMapView) ? (
         <div
           style={{
             position: "absolute",
@@ -490,6 +492,26 @@ function IslandViewComponent({
               UNREVIEWED
             </span>
           ) : null}
+        </div>
+      ) : null}
+      {!showSummary && island.summaryReviewed === false && hasSummary ? (
+        <div
+          style={{
+            position: "absolute",
+            right: ISLAND_TITLE_MARGIN_LEFT,
+            top: ISLAND_TITLE_MARGIN_TOP,
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#92400e",
+            backgroundColor: "#fef3c7",
+            border: "1px solid #fde68a",
+            borderRadius: 999,
+            padding: "1px 6px",
+            zIndex: 3,
+          }}
+          title="Summary is UNREVIEWED"
+        >
+          UNREVIEWED
         </div>
       ) : null}
     </div>

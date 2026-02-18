@@ -197,4 +197,31 @@ describe("view metadata export", () => {
 
     expect(result).toEqual({ ok: false, error: "viewState.focusIslandId must be a string or null" });
   });
+  it("persists lod view state fields", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-lod", title: "LOD" },
+      camera: { panX: 0, panY: 0, zoom: 0.4 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+        lodEnabled: true,
+        lodThresholds: { close: 1, mid: 0.5 },
+        lodLevelOverride: null,
+        lodShowLoneWolvesWhenFar: true,
+        resolvedLodLevel: "far",
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.viewState.lodEnabled).toBe(true);
+    expect(metadata.viewState.lodThresholds).toEqual({ close: 1, mid: 0.5 });
+
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
 });

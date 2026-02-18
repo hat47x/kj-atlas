@@ -21,6 +21,7 @@ import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 import { findNearestPolygonSegmentIndex } from "../domain/geometry/segment_pick";
+import { getLODLevel, type LODConfig, type LODLevel } from "../domain/view/lod";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
@@ -119,6 +120,10 @@ type CanvasShellProps = {
   showCanonicalOnlyEdges?: boolean;
   summaryView?: boolean;
   abstractMapView?: boolean;
+  lodEnabled?: boolean;
+  lodThresholds?: LODConfig["lodThresholds"];
+  lodLevelOverride?: LODLevel | null;
+  lodShowLoneWolvesWhenFar?: boolean;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -212,6 +217,10 @@ export function CanvasShell({
   showCanonicalOnlyEdges = false,
   summaryView = false,
   abstractMapView = false,
+  lodEnabled = false,
+  lodThresholds,
+  lodLevelOverride = null,
+  lodShowLoneWolvesWhenFar = true,
   showDerivedIslandEdges = false,
   searchQuery = "",
   matchedCardIds,
@@ -422,6 +431,14 @@ export function CanvasShell({
   const deemphasizedCardIdSet = deemphasizedCardIds ?? emptyIdSet;
   const visibleIslandIdSet = visibleIslandIds ?? emptyIdSet;
 
+  const lod = useMemo(() => {
+    if (!lodEnabled) {
+      return null;
+    }
+
+    return getLODLevel(transform.zoom, { lodThresholds, lodLevelOverride });
+  }, [lodEnabled, lodLevelOverride, lodThresholds, transform.zoom]);
+
   /*
    * Manual test steps (Abstract Map View):
    * 1) Turn on Abstract map view from View controls.
@@ -443,12 +460,50 @@ export function CanvasShell({
     return memberCardIds;
   }, [abstractMapView, document.islands, emptyIdSet]);
 
+  const loneWolfCardIdSet = useMemo(() => {
+    const islandMemberCardIds = new Set<string>();
+    for (const island of document.islands) {
+      for (const cardId of island.cardIds) {
+        islandMemberCardIds.add(cardId);
+      }
+    }
+
+    return new Set(document.cards.map((card) => card.id).filter((cardId) => !islandMemberCardIds.has(cardId)));
+  }, [document.cards, document.islands]);
+
   const isCardHidden = useCallback(
-    (cardId: string) =>
-      hiddenCardIdSet.has(cardId) ||
-      (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)) ||
-      (abstractMapView && abstractMemberCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)),
-    [abstractMapView, abstractMemberCardIdSet, hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]
+    (cardId: string) => {
+      if (hiddenCardIdSet.has(cardId)) {
+        return true;
+      }
+
+      if (sourceCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)) {
+        return true;
+      }
+
+      if (abstractMapView && abstractMemberCardIdSet.has(cardId) && !revealedCardIdSet.has(cardId)) {
+        return true;
+      }
+
+      if (lod?.rules.showCards === false && !revealedCardIdSet.has(cardId)) {
+        if (lodShowLoneWolvesWhenFar && lod.level === "far" && loneWolfCardIdSet.has(cardId)) {
+          return false;
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [
+      abstractMapView,
+      abstractMemberCardIdSet,
+      hiddenCardIdSet,
+      sourceCardIdSet,
+      revealedCardIdSet,
+      lod,
+      lodShowLoneWolvesWhenFar,
+      loneWolfCardIdSet,
+    ]
   );
 
   const hiddenEndpointIdSet = useMemo(() => {
@@ -457,8 +512,18 @@ export function CanvasShell({
       abstractMapView
         ? Array.from(abstractMemberCardIdSet).filter((cardId) => !revealedCardIdSet.has(cardId))
         : [];
-    return new Set([...hiddenCardIdSet, ...hiddenSourceCardIds, ...hiddenAbstractCardIds]);
-  }, [abstractMapView, abstractMemberCardIdSet, hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet]);
+    const hiddenLodCardIds =
+      lod?.rules.showCards === false
+        ? document.cards
+            .map((card) => card.id)
+            .filter(
+              (cardId) =>
+                !revealedCardIdSet.has(cardId) &&
+                !(lodShowLoneWolvesWhenFar && lod.level === "far" && loneWolfCardIdSet.has(cardId))
+            )
+        : [];
+    return new Set([...hiddenCardIdSet, ...hiddenSourceCardIds, ...hiddenAbstractCardIds, ...hiddenLodCardIds]);
+  }, [abstractMapView, abstractMemberCardIdSet, hiddenCardIdSet, sourceCardIdSet, revealedCardIdSet, lod, document.cards, lodShowLoneWolvesWhenFar, loneWolfCardIdSet]);
 
   const visibleCards = useMemo(() => {
     return document.cards.filter((card) => !isCardHidden(card.id));
@@ -603,7 +668,11 @@ export function CanvasShell({
       });
     }
 
-    if (showDerivedIslandEdges) {
+    if (lod && !lod.rules.showCardEdges) {
+      edges = edges.filter((edge) => edge.fromKind === "island" && edge.toKind === "island");
+    }
+
+    if (showDerivedIslandEdges || (lod?.level === "far" && lod.rules.showIslandEdges)) {
       edges = [
         ...edges,
         ...derivedIslandEdges.filter(
@@ -622,6 +691,7 @@ export function CanvasShell({
     visibleCardIdSet,
     visibleIslandIdSet,
     showDerivedIslandEdges,
+    lod,
   ]);
 
   const visibleEdgeInspectorMeta = useMemo(() => {
@@ -1020,6 +1090,8 @@ export function CanvasShell({
               isActiveSearchMatch={activeMatchedCardId === card.id}
               isPickingEdgeTarget={isPickingEdgeTarget}
               isDeemphasized={deemphasizedCardIdSet.has(card.id)}
+              compactMode={Boolean(lod?.rules.compactCards)}
+              markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
             />
           );
         })}

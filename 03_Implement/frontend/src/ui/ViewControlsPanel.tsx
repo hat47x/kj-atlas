@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
+import type { LODLevel, LODThresholds } from "../domain/view/lod";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -34,6 +35,13 @@ type ViewControlsPanelProps = {
   onLoadViewMetadataFile: (file: File) => void;
   safeMode: boolean;
   onSafeModeChange: (value: boolean) => void;
+  lodEnabled: boolean;
+  onLodEnabledChange: (value: boolean) => void;
+  lodThresholds?: LODThresholds;
+  onLodThresholdsChange?: (value: LODThresholds) => void;
+  currentLodLevel?: LODLevel | null;
+  lodShowLoneWolvesWhenFar: boolean;
+  onLodShowLoneWolvesWhenFarChange: (value: boolean) => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -77,6 +85,13 @@ export function ViewControlsPanel({
   onLoadViewMetadataFile,
   safeMode,
   onSafeModeChange,
+  lodEnabled,
+  onLodEnabledChange,
+  lodThresholds,
+  onLodThresholdsChange,
+  currentLodLevel,
+  lodShowLoneWolvesWhenFar,
+  onLodShowLoneWolvesWhenFarChange,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -241,6 +256,68 @@ export function ViewControlsPanel({
 
       <div style={{ fontSize: 12, color: "#64748b" }} title="Hold Peek on a collapsed island to reveal members.">
         Hold Peek on a collapsed island to reveal members.
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Level of detail (LOD)</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={lodEnabled}
+            onChange={(event) => {
+              onLodEnabledChange(event.target.checked);
+            }}
+          />
+          Auto detail by zoom (LOD)
+        </label>
+        <div style={{ fontSize: 12, color: "#475569" }}>
+          Current detail: {lodEnabled ? currentLodLevel ? currentLodLevel.toUpperCase() : "(calculating...)" : "OFF"}
+        </div>
+        <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
+          Close = full cards, Mid = compact cards, Far = islands and island relations.
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={lodShowLoneWolvesWhenFar}
+            onChange={(event) => {
+              onLodShowLoneWolvesWhenFarChange(event.target.checked);
+            }}
+          />
+          Keep lone wolves when far
+        </label>
+        {lodThresholds && onLodThresholdsChange ? (
+          <>
+            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
+              Close threshold ({lodThresholds.close.toFixed(2)})
+              <input
+                type="range"
+                min={0.6}
+                max={2}
+                step={0.05}
+                value={lodThresholds.close}
+                onChange={(event) => {
+                  const nextClose = Number(event.target.value);
+                  onLodThresholdsChange({ close: Math.max(nextClose, lodThresholds.mid), mid: lodThresholds.mid });
+                }}
+              />
+            </label>
+            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
+              Mid threshold ({lodThresholds.mid.toFixed(2)})
+              <input
+                type="range"
+                min={0.2}
+                max={1.5}
+                step={0.05}
+                value={lodThresholds.mid}
+                onChange={(event) => {
+                  const nextMid = Number(event.target.value);
+                  onLodThresholdsChange({ close: Math.max(lodThresholds.close, nextMid), mid: nextMid });
+                }}
+              />
+            </label>
+          </>
+        ) : null}
       </div>
 
       <div style={sectionStyle}>
