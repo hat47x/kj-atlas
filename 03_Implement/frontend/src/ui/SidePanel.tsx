@@ -1039,7 +1039,7 @@ export function SidePanel({
                       onPolygonVertexEditEnabledChange(event.target.checked);
                     }}
                   />
-                  Edit polygon vertices
+                  Edit island boundary
                 </label>
                 <div style={{ fontSize: 12, color: "#475569" }}>
                   Alt+Click edge: add vertex / Alt+Click vertex: remove

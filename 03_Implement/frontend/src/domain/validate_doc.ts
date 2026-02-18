@@ -159,8 +159,8 @@ function validateIslandShape(value: unknown, path: string, errors: string[]): va
   let valid = true;
 
   if (value.kind === "polygon") {
-    if (!Array.isArray(value.points) || value.points.length === 0) {
-      errors.push(`${path}.points: must be a non-empty array for polygon`);
+    if (!Array.isArray(value.points) || value.points.length < 3) {
+      errors.push(`${path}.points: must contain at least 3 points for polygon`);
       valid = false;
     } else {
       value.points.forEach((point, pointIndex) => {

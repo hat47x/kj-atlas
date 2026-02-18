@@ -87,4 +87,31 @@ describe("validateDocumentV2Strict", () => {
 
     expect(result.errors).toContain("document.version: must be the number 2 (DocumentV2 only)");
   });
+
+  it("rejects polygon shape with fewer than 3 points", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 100, y: 0 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+
+    expect(result.errors).toContain("islands[0].shape.points: must contain at least 3 points for polygon");
+  });
+
 });
