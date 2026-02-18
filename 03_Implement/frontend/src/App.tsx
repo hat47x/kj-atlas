@@ -56,6 +56,7 @@ import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
+import { DEFAULT_LOD_THRESHOLDS, getLODLevel, type LODLevel, type LODThresholds } from "./domain/view/lod";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -686,6 +687,10 @@ export default function App() {
   const [hideMergedOriginals, setHideMergedOriginals] = useState(false);
   const [summaryView, setSummaryView] = useState(false);
   const [abstractMapView, setAbstractMapView] = useState(false);
+  const [lodEnabled, setLodEnabled] = useState(false);
+  const [lodThresholds, setLodThresholds] = useState<LODThresholds>(DEFAULT_LOD_THRESHOLDS);
+  const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
+  const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
@@ -1919,6 +1924,10 @@ export default function App() {
         setMaxDepth(metadata.viewState.maxDepth);
         setShowReadingOrder(metadata.viewState.showReadingOrder);
         setSafeMode(metadata.viewState.safeMode ?? true);
+        setLodEnabled(metadata.viewState.lodEnabled ?? false);
+        setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
+        setLodLevelOverride(metadata.viewState.lodLevelOverride ?? null);
+        setLodShowLoneWolvesWhenFar(metadata.viewState.lodShowLoneWolvesWhenFar ?? true);
         setIncludeUnreviewedDraftsInExport(false);
         setIsReadingOrderEditMode(false);
         setRevealedSourceCardIds(new Set());
@@ -4094,6 +4103,15 @@ export default function App() {
     return buildReadingOrderSnippets(document);
   }, [document]);
 
+  const currentLod = useMemo(() => {
+    if (!lodEnabled) {
+      return null;
+    }
+
+    const zoom = canvasCamera?.zoom ?? 1;
+    return getLODLevel(zoom, { lodThresholds, lodLevelOverride });
+  }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
+
   const loneWolfCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument || (!summaryView && !abstractMapView)) {
       return new Set<string>();
@@ -4126,8 +4144,13 @@ export default function App() {
         isSelected={selectedIslandId === island.id}
         isShapeStale={stalePolygonIslandIdSet.has(island.id)}
         isPeeking={peekIslandId === island.id}
-        summaryView={summaryView || abstractMapView}
-        abstractMapView={abstractMapView}
+        summaryView={summaryView || abstractMapView || currentLod?.level === "mid" || currentLod?.level === "far"}
+        abstractMapView={abstractMapView || currentLod?.level === "far"}
+        showSummary={
+          currentLod?.level === "mid"
+            ? summaryView || island.summaryReviewed !== false
+            : summaryView || abstractMapView || currentLod?.level === "far"
+        }
         isCollapsedForView={effectiveCollapsedIslandIdSet.has(island.id)}
         safeMode={safeMode}
         zIndex={index}
@@ -4157,6 +4180,7 @@ export default function App() {
     visibleIslands,
     handleToggleIslandFocus,
     safeMode,
+    currentLod,
   ]);
 
   const readingOrderItems = useMemo(() => {
@@ -4790,6 +4814,11 @@ export default function App() {
           showReadingOrder,
           editReadingOrder: isReadingOrderEditMode,
           safeMode,
+          lodEnabled,
+          lodThresholds,
+          lodLevelOverride,
+          lodShowLoneWolvesWhenFar,
+          resolvedLodLevel: currentLod?.level,
         },
         exportMode: mode,
         bounds,
@@ -4811,6 +4840,11 @@ export default function App() {
       showReadingOrder,
       summaryView,
       safeMode,
+      lodEnabled,
+      lodThresholds,
+      lodLevelOverride,
+      lodShowLoneWolvesWhenFar,
+      currentLod?.level,
     ]
   );
 
@@ -5282,6 +5316,13 @@ export default function App() {
             }}
             safeMode={safeMode}
             onSafeModeChange={handleSafeModeChange}
+            lodEnabled={lodEnabled}
+            onLodEnabledChange={setLodEnabled}
+            lodThresholds={lodThresholds}
+            onLodThresholdsChange={setLodThresholds}
+            currentLodLevel={currentLod?.level ?? null}
+            lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
+            onLodShowLoneWolvesWhenFarChange={setLodShowLoneWolvesWhenFar}
           />
         </div>
       ) : null}
@@ -5753,7 +5794,11 @@ export default function App() {
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
             summaryView={summaryView}
             abstractMapView={abstractMapView}
-            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0}
+            lodEnabled={lodEnabled}
+            lodThresholds={lodThresholds}
+            lodLevelOverride={lodLevelOverride}
+            lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
+            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}

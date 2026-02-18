@@ -1,4 +1,5 @@
 import type { DocumentV2 } from "../domain/types";
+import type { LODLevel, LODThresholds } from "../domain/view/lod";
 
 export type ExportViewMetadata = {
   version: "1";
@@ -18,6 +19,11 @@ export type ExportViewMetadata = {
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
     safeMode?: boolean;
+    lodEnabled?: boolean;
+    lodThresholds?: LODThresholds;
+    lodLevelOverride?: LODLevel | null;
+    lodShowLoneWolvesWhenFar?: boolean;
+    resolvedLodLevel?: LODLevel;
   };
   export: {
     mode: "viewport" | "bounds";
@@ -48,6 +54,11 @@ type ExportViewMetadataArgs = {
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
     safeMode?: boolean;
+    lodEnabled?: boolean;
+    lodThresholds?: LODThresholds;
+    lodLevelOverride?: LODLevel | null;
+    lodShowLoneWolvesWhenFar?: boolean;
+    resolvedLodLevel?: LODLevel;
   };
   exportMode: "viewport" | "bounds";
   bounds?: {
@@ -105,6 +116,13 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       showReadingOrder: viewState.showReadingOrder,
       ...(viewState.editReadingOrder === undefined ? {} : { editReadingOrder: viewState.editReadingOrder }),
       ...(viewState.safeMode === undefined ? {} : { safeMode: viewState.safeMode }),
+      ...(viewState.lodEnabled === undefined ? {} : { lodEnabled: viewState.lodEnabled }),
+      ...(viewState.lodThresholds === undefined ? {} : { lodThresholds: viewState.lodThresholds }),
+      ...(viewState.lodLevelOverride === undefined ? {} : { lodLevelOverride: viewState.lodLevelOverride }),
+      ...(viewState.lodShowLoneWolvesWhenFar === undefined
+        ? {}
+        : { lodShowLoneWolvesWhenFar: viewState.lodShowLoneWolvesWhenFar }),
+      ...(viewState.resolvedLodLevel === undefined ? {} : { resolvedLodLevel: viewState.resolvedLodLevel }),
     },
     export: {
       mode: exportMode,
@@ -200,6 +218,51 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.safeMode !== undefined && typeof value.viewState.safeMode !== "boolean") {
     return { ok: false, error: "viewState.safeMode must be a boolean when present" };
+  }
+
+  if (value.viewState.lodEnabled !== undefined && typeof value.viewState.lodEnabled !== "boolean") {
+    return { ok: false, error: "viewState.lodEnabled must be a boolean when present" };
+  }
+
+  if (value.viewState.lodThresholds !== undefined) {
+    if (!isObject(value.viewState.lodThresholds)) {
+      return { ok: false, error: "viewState.lodThresholds must be an object when present" };
+    }
+
+    if (
+      typeof value.viewState.lodThresholds.close !== "number" ||
+      !Number.isFinite(value.viewState.lodThresholds.close) ||
+      typeof value.viewState.lodThresholds.mid !== "number" ||
+      !Number.isFinite(value.viewState.lodThresholds.mid)
+    ) {
+      return { ok: false, error: "viewState.lodThresholds.close and .mid must be finite numbers" };
+    }
+  }
+
+  if (
+    value.viewState.lodLevelOverride !== undefined &&
+    value.viewState.lodLevelOverride !== null &&
+    value.viewState.lodLevelOverride !== "close" &&
+    value.viewState.lodLevelOverride !== "mid" &&
+    value.viewState.lodLevelOverride !== "far"
+  ) {
+    return { ok: false, error: 'viewState.lodLevelOverride must be "close" | "mid" | "far" | null when present' };
+  }
+
+  if (
+    value.viewState.lodShowLoneWolvesWhenFar !== undefined &&
+    typeof value.viewState.lodShowLoneWolvesWhenFar !== "boolean"
+  ) {
+    return { ok: false, error: "viewState.lodShowLoneWolvesWhenFar must be a boolean when present" };
+  }
+
+  if (
+    value.viewState.resolvedLodLevel !== undefined &&
+    value.viewState.resolvedLodLevel !== "close" &&
+    value.viewState.resolvedLodLevel !== "mid" &&
+    value.viewState.resolvedLodLevel !== "far"
+  ) {
+    return { ok: false, error: 'viewState.resolvedLodLevel must be "close" | "mid" | "far" when present' };
   }
 
   if (!isObject(value.export)) {

@@ -20,6 +20,8 @@ type CardViewProps = {
   onMove: (cardId: string, deltaScreenX: number, deltaScreenY: number) => void;
   onSelect: (cardId: string, isShiftPressed: boolean) => void;
   isPickingEdgeTarget?: boolean;
+  compactMode?: boolean;
+  markerMode?: boolean;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -82,11 +84,14 @@ function CardViewComponent({
   onSelect,
   isPickingEdgeTarget = false,
   isDeemphasized = false,
+  compactMode = false,
+  markerMode = false,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
   const representativeCount = card.repOf?.length ?? 0;
+  const compactText = card.text.trim().split(/\n+/).join(" ").slice(0, 72);
 
   const clearDragState = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
@@ -181,10 +186,10 @@ function CardViewComponent({
         position: "absolute",
         left: card.x,
         top: card.y,
-        width: 220,
-        minHeight: 80,
-        padding: 12,
-        border: "1px solid #cbd5e1",
+        width: markerMode ? 10 : 220,
+        minHeight: markerMode ? 10 : compactMode ? 52 : 80,
+        padding: markerMode ? 0 : compactMode ? "8px 10px" : 12,
+        border: markerMode ? "1px solid #64748b" : "1px solid #cbd5e1",
         outline: isActiveSearchMatch
           ? "3px solid #f59e0b"
           : isSelected
@@ -193,19 +198,21 @@ function CardViewComponent({
               ? "2px solid #fcd34d"
               : "none",
         outlineOffset: 1,
-        borderRadius: 8,
-        backgroundColor: "#ffffff",
-        opacity: isDeemphasized ? 0.55 : 1,
+        borderRadius: markerMode ? 999 : 8,
+        backgroundColor: markerMode ? "rgba(100, 116, 139, 0.25)" : "#ffffff",
+        opacity: markerMode ? 0.4 : isDeemphasized ? 0.55 : 1,
         boxShadow: isSelected
           ? "0 0 0 2px rgba(37, 99, 235, 0.2), 0 1px 2px rgba(15, 23, 42, 0.08)"
           : "0 1px 2px rgba(15, 23, 42, 0.08)",
         color: "#0f172a",
-        lineHeight: 1.4,
-        whiteSpace: "pre-wrap",
+        lineHeight: compactMode ? 1.25 : 1.4,
+        whiteSpace: compactMode ? "normal" : "pre-wrap",
+        fontSize: compactMode ? 12 : 14,
         cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
+      title={compactMode ? card.text : undefined}
     >
-      {representativeCount > 0 ? (
+      {!markerMode && representativeCount > 0 ? (
         <span
           style={{
             position: "absolute",
@@ -222,7 +229,7 @@ function CardViewComponent({
           Rep ({representativeCount})
         </span>
       ) : null}
-      {hasCritique ? (
+      {!markerMode && hasCritique ? (
         <span
           aria-label="Card has critique note"
           title="Card has critique note"
@@ -237,7 +244,7 @@ function CardViewComponent({
           }}
         />
       ) : null}
-      {renderHighlightedText(card.text, searchQuery)}
+      {!markerMode ? (compactMode ? renderHighlightedText(compactText, searchQuery) : renderHighlightedText(card.text, searchQuery)) : null}
     </div>
   );
 }
