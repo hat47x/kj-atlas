@@ -19,6 +19,18 @@ export type LODRules = {
   showIslandEdges: boolean;
 };
 
+export function isVirtualCollapsedByLOD(lodEnabled: boolean, lodLevel: LODLevel | null | undefined): boolean {
+  return lodEnabled && lodLevel === "far";
+}
+
+export function isEffectivelyCollapsed(
+  userCollapsed: boolean,
+  lodEnabled: boolean,
+  lodLevel: LODLevel | null | undefined
+): boolean {
+  return userCollapsed || isVirtualCollapsedByLOD(lodEnabled, lodLevel);
+}
+
 export const DEFAULT_LOD_THRESHOLDS: LODThresholds = {
   close: 1,
   mid: 0.5,

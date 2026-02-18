@@ -276,6 +276,9 @@ export function ViewControlsPanel({
         <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
           Close = full cards, Mid = compact cards, Far = islands and island relations.
         </div>
+        {lodEnabled && currentLodLevel === "far" ? (
+          <div style={{ fontSize: 11, color: "#475569" }}>LOD Far: islands are virtually collapsed</div>
+        ) : null}
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"

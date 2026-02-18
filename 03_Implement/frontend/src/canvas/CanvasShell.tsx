@@ -124,6 +124,7 @@ type CanvasShellProps = {
   lodThresholds?: LODConfig["lodThresholds"];
   lodLevelOverride?: LODLevel | null;
   lodShowLoneWolvesWhenFar?: boolean;
+  effectiveCollapsedIslandIds?: Set<string>;
   showDerivedIslandEdges?: boolean;
   searchQuery?: string;
   matchedCardIds?: Set<string>;
@@ -221,6 +222,7 @@ export function CanvasShell({
   lodThresholds,
   lodLevelOverride = null,
   lodShowLoneWolvesWhenFar = true,
+  effectiveCollapsedIslandIds,
   showDerivedIslandEdges = false,
   searchQuery = "",
   matchedCardIds,
@@ -430,6 +432,7 @@ export function CanvasShell({
   const hiddenCardIdSet = hiddenCardIds ?? emptyIdSet;
   const deemphasizedCardIdSet = deemphasizedCardIds ?? emptyIdSet;
   const visibleIslandIdSet = visibleIslandIds ?? emptyIdSet;
+  const effectiveCollapsedIslandIdSet = effectiveCollapsedIslandIds ?? emptyIdSet;
 
   const lod = useMemo(() => {
     if (!lodEnabled) {
@@ -650,6 +653,20 @@ export function CanvasShell({
     }));
   }, [derivedIslandEdges]);
 
+  const cardMembershipById = useMemo(() => {
+    const memberships = new Map<string, Set<string>>();
+
+    for (const island of document.islands) {
+      for (const cardId of island.cardIds) {
+        const current = memberships.get(cardId) ?? new Set<string>();
+        current.add(island.id);
+        memberships.set(cardId, current);
+      }
+    }
+
+    return memberships;
+  }, [document.islands]);
+
   const visibleEdges = useMemo(() => {
     let edges = getEdgesToRender(document, effectiveHideSourceCards === true).filter((edge) => {
       const isFromVisible = edge.fromKind === "island" ? visibleIslandIdSet.has(edge.fromId) : visibleCardIdSet.has(edge.fromId);
@@ -668,6 +685,26 @@ export function CanvasShell({
       });
     }
 
+    edges = edges.filter((edge) => {
+      if (edge.fromKind !== "card" || edge.toKind !== "card") {
+        return true;
+      }
+
+      const fromMemberships = cardMembershipById.get(edge.fromId);
+      const toMemberships = cardMembershipById.get(edge.toId);
+      if (!fromMemberships || !toMemberships) {
+        return true;
+      }
+
+      for (const islandId of fromMemberships) {
+        if (effectiveCollapsedIslandIdSet.has(islandId) && toMemberships.has(islandId)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
     if (lod && !lod.rules.showCardEdges) {
       edges = edges.filter((edge) => edge.fromKind === "island" && edge.toKind === "island");
     }
@@ -684,8 +721,10 @@ export function CanvasShell({
     return edges;
   }, [
     canonicalCardIdSet,
+    cardMembershipById,
     derivedIslandEdges,
     document,
+    effectiveCollapsedIslandIdSet,
     effectiveHideSourceCards,
     effectiveShowCanonicalOnlyEdges,
     visibleCardIdSet,

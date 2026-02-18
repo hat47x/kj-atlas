@@ -56,7 +56,13 @@ import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
 import { computeVisibleBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
-import { DEFAULT_LOD_THRESHOLDS, getLODLevel, type LODLevel, type LODThresholds } from "./domain/view/lod";
+import {
+  DEFAULT_LOD_THRESHOLDS,
+  getLODLevel,
+  isEffectivelyCollapsed,
+  type LODLevel,
+  type LODThresholds,
+} from "./domain/view/lod";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -921,6 +927,14 @@ export default function App() {
   const matchedCardIdSet = useMemo(() => new Set(matchedCardIds), [matchedCardIds]);
   const activeMatchIndex = matchedCardIds.length > 0 ? ((currentMatchIndex % matchedCardIds.length) + matchedCardIds.length) % matchedCardIds.length : 0;
   const activeMatchedCardId = matchedCardIds.length > 0 ? matchedCardIds[activeMatchIndex] : null;
+  const collapseLodLevel = useMemo(() => {
+    if (!lodEnabled) {
+      return null;
+    }
+
+    const zoom = canvasCamera?.zoom ?? 1;
+    return getLODLevel(zoom, { lodThresholds, lodLevelOverride }).level;
+  }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
   const collapsedIslandIdSet = useMemo(() => {
     if (!focusedVisibleDocument) {
       return new Set<string>();
@@ -962,7 +976,11 @@ export default function App() {
 
     const collapsedIds = summaryView
       ? new Set(focusedVisibleDocument.islands.map((island) => island.id))
-      : new Set(collapsedIslandIdSet);
+      : new Set(
+          focusedVisibleDocument.islands
+            .filter((island) => isEffectivelyCollapsed(collapsedIslandIdSet.has(island.id), lodEnabled, collapseLodLevel))
+            .map((island) => island.id)
+        );
 
     for (const islandId of temporaryRevealIslandIds) {
       collapsedIds.delete(islandId);
@@ -976,7 +994,7 @@ export default function App() {
     }
 
     return collapsedIds;
-  }, [collapsedIslandIdSet, focusedVisibleDocument, peekIslandId, summaryRevealIslandIds, summaryView, temporaryRevealIslandIds]);
+  }, [collapseLodLevel, collapsedIslandIdSet, focusedVisibleDocument, lodEnabled, peekIslandId, summaryRevealIslandIds, summaryView, temporaryRevealIslandIds]);
   const islandDepthById = useMemo(() => {
     if (!visibleDocument) {
       return new Map<string, number>();
@@ -4151,7 +4169,7 @@ export default function App() {
             ? summaryView || island.summaryReviewed !== false
             : summaryView || abstractMapView || currentLod?.level === "far"
         }
-        isCollapsedForView={effectiveCollapsedIslandIdSet.has(island.id)}
+        isCollapsedForView={(summaryView || abstractMapView) ? effectiveCollapsedIslandIdSet.has(island.id) : collapsedIslandIdSet.has(island.id)}
         safeMode={safeMode}
         zIndex={index}
         onSelect={handleIslandSelect}
@@ -4176,6 +4194,7 @@ export default function App() {
     stalePolygonIslandIdSet,
     summaryView,
     abstractMapView,
+    collapsedIslandIdSet,
     effectiveCollapsedIslandIdSet,
     visibleIslands,
     handleToggleIslandFocus,
@@ -5798,7 +5817,8 @@ export default function App() {
             lodThresholds={lodThresholds}
             lodLevelOverride={lodLevelOverride}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
-            showDerivedIslandEdges={summaryView || abstractMapView || collapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
+            effectiveCollapsedIslandIds={effectiveCollapsedIslandIdSet}
+            showDerivedIslandEdges={summaryView || abstractMapView || effectiveCollapsedIslandIdSet.size > 0 || currentLod?.level === "far"}
             focusCardId={focusCardId}
             focusWorldPoint={focusWorldPoint}
             focusRequestSeq={focusRequestSeq}
