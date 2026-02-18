@@ -102,6 +102,17 @@ type SidePanelProps = {
   onConnectEdgeTypeChange: (value: "related" | "negate") => void;
   onStartConnect: () => void;
   onCancelConnect: () => void;
+  readingNavEnabled: boolean;
+  onReadingNavEnabledChange: (value: boolean) => void;
+  readingMode: "islands" | "islands+cards";
+  onReadingModeChange: (value: "islands" | "islands+cards") => void;
+  reviewedOnly: boolean;
+  onReadingReviewedOnlyToggle: () => void;
+  readingStep: number;
+  readingTotal: number;
+  currentReadingLabel: string | null;
+  onReadingPrev: () => void;
+  onReadingNext: () => void;
   readingOrderItems: ReadingOrderItem[];
   canAddSelectedItemToReadingOrder: boolean;
   onAddSelectedItemToReadingOrder: () => void;
@@ -188,6 +199,17 @@ export function SidePanel({
   onConnectEdgeTypeChange,
   onStartConnect,
   onCancelConnect,
+  readingNavEnabled,
+  onReadingNavEnabledChange,
+  readingMode,
+  onReadingModeChange,
+  reviewedOnly,
+  onReadingReviewedOnlyToggle,
+  readingStep,
+  readingTotal,
+  currentReadingLabel,
+  onReadingPrev,
+  onReadingNext,
   readingOrderItems,
   canAddSelectedItemToReadingOrder,
   onAddSelectedItemToReadingOrder,
@@ -474,6 +496,67 @@ export function SidePanel({
         {isPickingEdgeTarget ? (
           <div style={{ marginTop: 8, fontSize: 12, color: "#334155" }}>Pick target card or island. (Esc to cancel)</div>
         ) : null}
+      </section>
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Reading Path</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            checked={readingNavEnabled}
+            onChange={(event) => {
+              onReadingNavEnabledChange(event.target.checked);
+            }}
+          />
+          Enable
+        </label>
+        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Mode</label>
+        <select
+          value={readingMode}
+          onChange={(event) => {
+            onReadingModeChange(event.target.value === "islands+cards" ? "islands+cards" : "islands");
+          }}
+          disabled={!readingNavEnabled}
+          style={{ width: "100%", marginBottom: 8 }}
+        >
+          <option value="islands">Islands only</option>
+          <option value="islands+cards">Islands + cards</option>
+        </select>
+        <label
+          title="Reviewed only filters islands by summary review status; cards are always included in islands+cards mode."
+          style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}
+        >
+          <input
+            type="checkbox"
+            checked={reviewedOnly}
+            disabled={!readingNavEnabled}
+            onChange={() => {
+              onReadingReviewedOnlyToggle();
+            }}
+          />
+          Reviewed only
+        </label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={onReadingPrev}
+            disabled={!readingNavEnabled || readingTotal === 0 || readingStep <= 1}
+            style={{ cursor: !readingNavEnabled || readingTotal === 0 || readingStep <= 1 ? "not-allowed" : "pointer" }}
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            onClick={onReadingNext}
+            disabled={!readingNavEnabled || readingTotal === 0 || readingStep >= readingTotal}
+            style={{ cursor: !readingNavEnabled || readingTotal === 0 || readingStep >= readingTotal ? "not-allowed" : "pointer" }}
+          >
+            Next
+          </button>
+        </div>
+        <div style={{ fontSize: 12, color: "#334155", marginBottom: 4 }}>
+          {readingTotal === 0 ? "No readable items" : `Step ${readingStep} / ${readingTotal}`}
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? "(none)"}</div>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Reading Order</div>

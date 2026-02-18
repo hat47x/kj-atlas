@@ -22,6 +22,10 @@ describe("view metadata export", () => {
         focusIslandId: "island-1",
         showReadingOrder: true,
         editReadingOrder: false,
+        readingNavEnabled: true,
+        readingIndex: 2,
+        readingMode: "islands+cards",
+        reviewedOnly: true,
       },
       exportMode: "viewport",
       bounds: { x: 10, y: 20, w: 300, h: 400 },
@@ -40,6 +44,10 @@ describe("view metadata export", () => {
         focusIslandId: "island-1",
         showReadingOrder: true,
         editReadingOrder: false,
+        readingNavEnabled: true,
+        readingIndex: 2,
+        readingMode: "islands+cards",
+        reviewedOnly: true,
       },
       export: {
         mode: "viewport",
@@ -154,6 +162,28 @@ describe("view metadata export", () => {
     });
 
     expect(result).toEqual({ ok: false, error: "viewState.safeMode must be a boolean when present" });
+  });
+
+  it("rejects invalid reading mode", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        readingMode: "all",
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: 'viewState.readingMode must be "islands" | "islands+cards" when present' });
   });
 
   it("rejects invalid maxDepth", () => {

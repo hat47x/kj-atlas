@@ -4,6 +4,10 @@ type UseHotkeysOptions = {
   onClearSelection: () => void;
   onDeleteSelection: () => void;
   onNudge: (dx: number, dy: number) => void;
+  onReadingPathNext?: () => void;
+  onReadingPathPrev?: () => void;
+  onReadingPathToggleReviewedOnly?: () => void;
+  onReadingPathDisable?: () => void;
 };
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -19,7 +23,15 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return target.isContentEditable;
 }
 
-export function useHotkeys({ onClearSelection, onDeleteSelection, onNudge }: UseHotkeysOptions) {
+export function useHotkeys({
+  onClearSelection,
+  onDeleteSelection,
+  onNudge,
+  onReadingPathNext,
+  onReadingPathPrev,
+  onReadingPathToggleReviewedOnly,
+  onReadingPathDisable,
+}: UseHotkeysOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target) || event.defaultPrevented) {
@@ -30,9 +42,33 @@ export function useHotkeys({ onClearSelection, onDeleteSelection, onNudge }: Use
         return;
       }
 
+      if (event.key === "Escape" && onReadingPathDisable) {
+        event.preventDefault();
+        onReadingPathDisable();
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
         onClearSelection();
+        return;
+      }
+
+      if (event.key === "n" && onReadingPathNext) {
+        event.preventDefault();
+        onReadingPathNext();
+        return;
+      }
+
+      if (event.key === "p" && onReadingPathPrev) {
+        event.preventDefault();
+        onReadingPathPrev();
+        return;
+      }
+
+      if (event.key === "r" && onReadingPathToggleReviewedOnly) {
+        event.preventDefault();
+        onReadingPathToggleReviewedOnly();
         return;
       }
 
@@ -71,5 +107,13 @@ export function useHotkeys({ onClearSelection, onDeleteSelection, onNudge }: Use
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClearSelection, onDeleteSelection, onNudge]);
+  }, [
+    onClearSelection,
+    onDeleteSelection,
+    onNudge,
+    onReadingPathDisable,
+    onReadingPathNext,
+    onReadingPathPrev,
+    onReadingPathToggleReviewedOnly,
+  ]);
 }

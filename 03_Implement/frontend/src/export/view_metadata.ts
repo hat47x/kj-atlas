@@ -18,6 +18,10 @@ export type ExportViewMetadata = {
     focusIslandId: string | null;
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
+    readingNavEnabled?: boolean;
+    readingIndex?: number;
+    readingMode?: "islands" | "islands+cards";
+    reviewedOnly?: boolean;
     safeMode?: boolean;
     lodEnabled?: boolean;
     lodThresholds?: LODThresholds;
@@ -53,6 +57,10 @@ type ExportViewMetadataArgs = {
     focusIslandId: string | null;
     showReadingOrder: boolean;
     editReadingOrder?: boolean;
+    readingNavEnabled?: boolean;
+    readingIndex?: number;
+    readingMode?: "islands" | "islands+cards";
+    reviewedOnly?: boolean;
     safeMode?: boolean;
     lodEnabled?: boolean;
     lodThresholds?: LODThresholds;
@@ -115,6 +123,10 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       focusIslandId: viewState.focusIslandId,
       showReadingOrder: viewState.showReadingOrder,
       ...(viewState.editReadingOrder === undefined ? {} : { editReadingOrder: viewState.editReadingOrder }),
+      ...(viewState.readingNavEnabled === undefined ? {} : { readingNavEnabled: viewState.readingNavEnabled }),
+      ...(viewState.readingIndex === undefined ? {} : { readingIndex: viewState.readingIndex }),
+      ...(viewState.readingMode === undefined ? {} : { readingMode: viewState.readingMode }),
+      ...(viewState.reviewedOnly === undefined ? {} : { reviewedOnly: viewState.reviewedOnly }),
       ...(viewState.safeMode === undefined ? {} : { safeMode: viewState.safeMode }),
       ...(viewState.lodEnabled === undefined ? {} : { lodEnabled: viewState.lodEnabled }),
       ...(viewState.lodThresholds === undefined ? {} : { lodThresholds: viewState.lodThresholds }),
@@ -214,6 +226,29 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.editReadingOrder !== undefined && typeof value.viewState.editReadingOrder !== "boolean") {
     return { ok: false, error: "viewState.editReadingOrder must be a boolean when present" };
+  }
+
+  if (value.viewState.readingNavEnabled !== undefined && typeof value.viewState.readingNavEnabled !== "boolean") {
+    return { ok: false, error: "viewState.readingNavEnabled must be a boolean when present" };
+  }
+
+  if (
+    value.viewState.readingIndex !== undefined &&
+    (typeof value.viewState.readingIndex !== "number" || !Number.isInteger(value.viewState.readingIndex) || value.viewState.readingIndex < 0)
+  ) {
+    return { ok: false, error: "viewState.readingIndex must be an integer >= 0 when present" };
+  }
+
+  if (
+    value.viewState.readingMode !== undefined &&
+    value.viewState.readingMode !== "islands" &&
+    value.viewState.readingMode !== "islands+cards"
+  ) {
+    return { ok: false, error: 'viewState.readingMode must be "islands" | "islands+cards" when present' };
+  }
+
+  if (value.viewState.reviewedOnly !== undefined && typeof value.viewState.reviewedOnly !== "boolean") {
+    return { ok: false, error: "viewState.reviewedOnly must be a boolean when present" };
   }
 
   if (value.viewState.safeMode !== undefined && typeof value.viewState.safeMode !== "boolean") {
