@@ -59,6 +59,7 @@ type SidePanelProps = {
   onRemoveSelectedCards: () => void;
   onDeleteIsland: () => void;
   onFocusIsland: () => void;
+  onFocusCard: () => void;
   summaryView: boolean;
   abstractMapView: boolean;
   isSelectedIslandTemporarilyRevealed: boolean;
@@ -144,6 +145,7 @@ export function SidePanel({
   onRemoveSelectedCards,
   onDeleteIsland,
   onFocusIsland,
+  onFocusCard,
   summaryView,
   abstractMapView,
   isSelectedIslandTemporarilyRevealed,
@@ -1395,6 +1397,13 @@ export function SidePanel({
           ) : (
             <>
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{selectedCardLabel}</div>
+              <button
+                type="button"
+                onClick={onFocusCard}
+                style={{ width: "100%", marginBottom: 10, fontWeight: 600 }}
+              >
+                Focus this card
+              </button>
               {selectedCard.canonicalId ? (
                 <>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>

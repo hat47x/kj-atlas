@@ -28,6 +28,15 @@ function getCardCenter(card: Card): { x: number; y: number } {
   };
 }
 
+export function getCardWorldBounds(card: Card): BoundsRect {
+  return {
+    x: card.x,
+    y: card.y,
+    w: CARD_WIDTH,
+    h: CARD_HEIGHT,
+  };
+}
+
 export function getIslandWorldBounds(island: Island, cardsById: Map<string, Card>): BoundsRect | null {
   if (island.shape?.kind === "polygon" && island.shape.points.length >= 3) {
     let minX = Infinity;
@@ -63,8 +72,9 @@ export function getIslandWorldBounds(island: Island, cardsById: Map<string, Card
 
     minX = Math.min(minX, card.x);
     minY = Math.min(minY, card.y);
-    maxX = Math.max(maxX, card.x + CARD_WIDTH);
-    maxY = Math.max(maxY, card.y + CARD_HEIGHT);
+    const bounds = getCardWorldBounds(card);
+    maxX = Math.max(maxX, bounds.x + bounds.w);
+    maxY = Math.max(maxY, bounds.y + bounds.h);
   }
 
   if (!Number.isFinite(minX)) {
@@ -136,7 +146,7 @@ export function computeVisibleBounds(doc: DocumentV2, viewState: VisibleBoundsVi
   }
 
   for (const card of visibleCards) {
-    includeRect({ x: card.x, y: card.y, w: CARD_WIDTH, h: CARD_HEIGHT });
+    includeRect(getCardWorldBounds(card));
   }
 
   let edges = getEdgesToRender(doc, viewState.hideSourceCards).filter((edge) => {

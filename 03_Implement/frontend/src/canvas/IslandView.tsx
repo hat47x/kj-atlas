@@ -31,6 +31,7 @@ type IslandViewProps = {
   onSelect: (islandId: string, isShiftPressed: boolean) => void;
   onToggleCollapsed?: (islandId: string, collapsed: boolean) => void;
   onTitleDoubleClick?: (islandId: string) => void;
+  onFocusIsland?: (islandId: string) => void;
   isShapeStale?: boolean;
   onPeekStart?: (islandId: string) => void;
   onPeekEnd?: () => void;
@@ -158,6 +159,7 @@ function IslandViewComponent({
   onSelect,
   onToggleCollapsed,
   onTitleDoubleClick,
+  onFocusIsland,
   isShapeStale = false,
   onPeekStart,
   onPeekEnd,
@@ -387,6 +389,31 @@ function IslandViewComponent({
       >
         {showTitleLabel ? (island.title && island.title.length > 0 ? island.title : "Island") : null}
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onFocusIsland?.(island.id);
+          }}
+          onDoubleClick={(event) => {
+            event.stopPropagation();
+          }}
+          style={{
+            pointerEvents: isPickingEdgeTarget ? "none" : "auto",
+            border: "1px solid #7dd3fc",
+            borderRadius: 4,
+            backgroundColor: "#e0f2fe",
+            color: "#075985",
+            fontSize: 10,
+            lineHeight: 1,
+            padding: "3px 6px",
+            cursor: isPickingEdgeTarget ? "default" : "pointer",
+          }}
+          aria-label={`Focus island ${island.id}`}
+          title="Focus island"
+        >
+          ⤢
+        </button>
         <button
           type="button"
           onClick={(event) => {
