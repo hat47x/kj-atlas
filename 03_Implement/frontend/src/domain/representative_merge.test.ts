@@ -27,30 +27,30 @@ function createDocument(): DocumentV2 {
 
 describe("representative_merge", () => {
   it("marks originals and creates representative card", () => {
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("rep-1");
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-0000-0000-000000000001");
 
     const result = createRepresentativeMerge(createDocument(), ["c1", "c2"], "Representative");
 
     expect(result).not.toBeNull();
-    expect(result?.representativeCardId).toBe("rep-1");
+    expect(result?.representativeCardId).toBe("00000000-0000-0000-0000-000000000001");
     expect(result?.mergedCardCount).toBe(2);
-    expect(result?.nextDocument.cards.find((card) => card.id === "c1")?.mergedIntoCardId).toBe("rep-1");
-    expect(result?.nextDocument.cards.find((card) => card.id === "c2")?.mergedIntoCardId).toBe("rep-1");
-    expect(result?.nextDocument.cards.find((card) => card.id === "rep-1")?.repOf).toEqual(["c1", "c2"]);
+    expect(result?.nextDocument.cards.find((card) => card.id === "c1")?.mergedIntoCardId).toBe("00000000-0000-0000-0000-000000000001");
+    expect(result?.nextDocument.cards.find((card) => card.id === "c2")?.mergedIntoCardId).toBe("00000000-0000-0000-0000-000000000001");
+    expect(result?.nextDocument.cards.find((card) => card.id === "00000000-0000-0000-0000-000000000001")?.repOf).toEqual(["c1", "c2"]);
     expect(result?.nextDocument.islands[0]?.cardIds).toEqual(["c1", "c2"]);
     expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")?.fromId).toBe("c1");
   });
 
   it("optionally rewires membership and card edges to representative", () => {
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("rep-2");
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-0000-0000-000000000002");
 
     const result = createRepresentativeMerge(createDocument(), ["c1", "c2"], "Representative", {
       rewireMembershipAndEdges: true,
     });
 
     expect(result).not.toBeNull();
-    expect(result?.nextDocument.islands[0]?.cardIds).toEqual(["rep-2"]);
-    expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")?.fromId).toBe("rep-2");
-    expect(result?.nextDocument.edges.find((edge) => edge.id === "e2")?.toId).toBe("rep-2");
+    expect(result?.nextDocument.islands[0]?.cardIds).toEqual(["00000000-0000-0000-0000-000000000002"]);
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e1")?.fromId).toBe("00000000-0000-0000-0000-000000000002");
+    expect(result?.nextDocument.edges.find((edge) => edge.id === "e2")?.toId).toBe("00000000-0000-0000-0000-000000000002");
   });
 });

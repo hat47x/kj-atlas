@@ -168,7 +168,7 @@ function parseIslands(value: unknown): Island[] {
           })
           .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
 
-        if (points.length > 0) {
+        if (points.length >= 3) {
           shape = { kind: "polygon", points, generatedFrom };
         }
       }

@@ -75,6 +75,15 @@ class IslandShape(BaseModel):
     points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
     generatedFrom: ShapeGeneratedFrom | None = Field(default=None, exclude_if=lambda value: value is None)
 
+    @model_validator(mode="after")
+    def ensure_shape_points(self) -> "IslandShape":
+        if self.kind == "polygon":
+            if self.points is None or len(self.points) < 3:
+                raise ValueError("polygon shape requires at least 3 points")
+        elif self.points is not None:
+            raise ValueError("rect shape must not include points")
+        return self
+
 
 class SummaryHistoryEntry(BaseModel):
     id: str
