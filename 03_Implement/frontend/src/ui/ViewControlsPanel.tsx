@@ -42,6 +42,8 @@ type ViewControlsPanelProps = {
   currentLodLevel?: LODLevel | null;
   lodShowLoneWolvesWhenFar: boolean;
   onLodShowLoneWolvesWhenFarChange: (value: boolean) => void;
+  showLabelBounds: boolean;
+  onShowLabelBoundsChange: (value: boolean) => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -92,6 +94,8 @@ export function ViewControlsPanel({
   currentLodLevel,
   lodShowLoneWolvesWhenFar,
   onLodShowLoneWolvesWhenFarChange,
+  showLabelBounds,
+  onShowLabelBoundsChange,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -321,6 +325,21 @@ export function ViewControlsPanel({
             </label>
           </>
         ) : null}
+      </div>
+
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Label culling debug</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={showLabelBounds}
+            onChange={(event) => {
+              onShowLabelBoundsChange(event.target.checked);
+            }}
+          />
+          Show label bounds (accepted/culled)
+        </label>
       </div>
 
       <div style={sectionStyle}>

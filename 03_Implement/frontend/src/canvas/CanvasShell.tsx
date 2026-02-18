@@ -22,12 +22,27 @@ import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 import { findNearestPolygonSegmentIndex } from "../domain/geometry/segment_pick";
 import { getLODLevel, type LODConfig, type LODLevel } from "../domain/view/lod";
+import {
+  buildCardLabelId,
+  buildIslandSummaryLabelId,
+  buildIslandTitleLabelId,
+  buildIslandUnreviewedLabelId,
+  cullLabels,
+  LABEL_PRIORITIES,
+  type LabelItem,
+} from "../domain/view/label_culling";
+import { getIslandBounds, ISLAND_TITLE_MARGIN_LEFT, ISLAND_TITLE_MARGIN_TOP } from "./IslandView";
+import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 const ZOOM_SENSITIVITY = 0.0015;
 const CARD_WIDTH = 220;
 const CARD_HEIGHT = 80;
+const CARD_LABEL_PADDING_X = 8;
+const CARD_LABEL_PADDING_Y = 8;
+const LABEL_CHAR_WIDTH = 7;
+const LABEL_LINE_HEIGHT = 14;
 
 export type FocusReference = {
   id: string;
@@ -83,6 +98,7 @@ export type CanvasViewState = {
   hideSourceCards: boolean;
   showCanonicalOnlyEdges: boolean;
   showReadingOrder: boolean;
+  showLabelBounds?: boolean;
 };
 
 export type CanvasCamera = {
@@ -178,6 +194,37 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function toScreenRect(
+  worldRect: { left: number; top: number; width: number; height: number },
+  transform: Transform
+): { x: number; y: number; w: number; h: number } {
+  return {
+    x: worldRect.left * transform.zoom + transform.panX,
+    y: worldRect.top * transform.zoom + transform.panY,
+    w: worldRect.width * transform.zoom,
+    h: worldRect.height * transform.zoom,
+  };
+}
+
+function estimateTextWidth(text: string): number {
+  return Math.max(24, text.length * LABEL_CHAR_WIDTH);
+}
+
+function buildCardLabelRect(card: { x: number; y: number; text: string }, compactMode: boolean, transform: Transform) {
+  const text = compactMode ? card.text.trim().split(/\n+/).join(" ").slice(0, 72) : card.text;
+  const width = Math.min(220 - CARD_LABEL_PADDING_X * 2, estimateTextWidth(text));
+  const height = LABEL_LINE_HEIGHT * (compactMode ? 2 : 3);
+  return toScreenRect(
+    {
+      left: card.x + CARD_LABEL_PADDING_X,
+      top: card.y + CARD_LABEL_PADDING_Y + (compactMode ? 0 : 4),
+      width,
+      height,
+    },
+    transform
+  );
+}
+
 export function focusTransformAtWorldPoint(
   currentTransform: Transform,
   worldPoint: { x: number; y: number },
@@ -251,6 +298,7 @@ export function CanvasShell({
   const effectiveHideSourceCards = viewState?.hideSourceCards ?? hideSourceCards;
   const effectiveShowCanonicalOnlyEdges = viewState?.showCanonicalOnlyEdges ?? showCanonicalOnlyEdges;
   const effectiveShowReadingOrder = viewState?.showReadingOrder ?? showReadingOrder;
+  const showLabelBounds = viewState?.showLabelBounds ?? false;
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -532,6 +580,128 @@ export function CanvasShell({
     return document.cards.filter((card) => !isCardHidden(card.id));
   }, [document.cards, isCardHidden]);
   const visibleCardIdSet = useMemo(() => new Set(visibleCards.map((card) => card.id)), [visibleCards]);
+  const labelCullingResult = useMemo(() => {
+    const candidates: LabelItem[] = [];
+
+    for (const island of document.islands) {
+      if (!visibleIslandIdSet.has(island.id)) {
+        continue;
+      }
+
+      const bounds = getIslandBounds(island, document.cards);
+      if (!bounds) {
+        continue;
+      }
+
+      const islandTitle = island.title && island.title.length > 0 ? island.title : "Island";
+      candidates.push({
+        id: buildIslandTitleLabelId(island.id),
+        kind: "islandTitle",
+        priority: LABEL_PRIORITIES.islandTitle,
+        rect: toScreenRect(
+          {
+            left: bounds.left + ISLAND_TITLE_MARGIN_LEFT,
+            top: bounds.top + ISLAND_TITLE_MARGIN_TOP,
+            width: estimateTextWidth(islandTitle) + 70,
+            height: 20,
+          },
+          transform
+        ),
+        text: islandTitle,
+        payload: { islandId: island.id },
+      });
+
+      const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
+      const shouldShowSummary =
+        lod?.level === "mid"
+          ? summaryView || island.summaryReviewed !== false
+          : summaryView || abstractMapView || lod?.level === "far";
+      const showsSummaryBlock = (hasSummary && shouldShowSummary) || abstractMapView;
+
+      if (showsSummaryBlock) {
+        const summaryText = hasSummary ? island.summaryText ?? "" : "(no summary)";
+        const summaryWidth = Math.min(320, Math.max(120, estimateTextWidth(summaryText)));
+        candidates.push({
+          id: buildIslandSummaryLabelId(island.id),
+          kind: "islandSummary",
+          priority: LABEL_PRIORITIES.islandSummary,
+          rect: toScreenRect(
+            {
+              left: bounds.left + ISLAND_TITLE_MARGIN_LEFT,
+              top: bounds.top + ISLAND_TITLE_MARGIN_TOP + 28,
+              width: summaryWidth,
+              height: LABEL_LINE_HEIGHT * 2 + 4,
+            },
+            transform
+          ),
+          text: summaryText,
+          payload: { islandId: island.id },
+        });
+
+        if (island.summaryReviewed === false && hasSummary) {
+          candidates.push({
+            id: buildIslandUnreviewedLabelId(island.id),
+            kind: "unreviewed",
+            priority: LABEL_PRIORITIES.unreviewed,
+            rect: toScreenRect(
+              {
+                left: bounds.left + Math.max(40, bounds.width - 124),
+                top: bounds.top + ISLAND_TITLE_MARGIN_TOP + 28,
+                width: 96,
+                height: 18,
+              },
+              transform
+            ),
+            text: "UNREVIEWED",
+            payload: { islandId: island.id },
+          });
+        }
+      } else if (island.summaryReviewed === false && hasSummary) {
+        candidates.push({
+          id: buildIslandUnreviewedLabelId(island.id),
+          kind: "unreviewed",
+          priority: LABEL_PRIORITIES.unreviewed,
+          rect: toScreenRect(
+            {
+              left: bounds.left + Math.max(40, bounds.width - 124),
+              top: bounds.top + ISLAND_TITLE_MARGIN_TOP,
+              width: 96,
+              height: 18,
+            },
+            transform
+          ),
+          text: "UNREVIEWED",
+          payload: { islandId: island.id },
+        });
+      }
+    }
+
+    if (lod?.level !== "far") {
+      for (const card of visibleCards) {
+        candidates.push({
+          id: buildCardLabelId(card.id),
+          kind: "card",
+          priority: LABEL_PRIORITIES.card,
+          rect: buildCardLabelRect(card, Boolean(lod?.rules.compactCards), transform),
+          text: card.text,
+          payload: { cardId: card.id },
+        });
+      }
+    }
+
+    return cullLabels(candidates);
+  }, [
+    abstractMapView,
+    document.cards,
+    document.islands,
+    lod,
+    summaryView,
+    transform,
+    visibleCards,
+    visibleIslandIdSet,
+  ]);
+  const acceptedLabelIds = labelCullingResult.acceptedIds;
+
   const highlightedCard = useMemo(() => {
     if (activeFlashReference?.kind !== "card") {
       return null;
@@ -1022,6 +1192,7 @@ export function CanvasShell({
         cursor: dragMode === "pan" ? "grabbing" : isSpacePressed ? "grab" : "default",
       }}
     >
+      <LabelVisibilityContext.Provider value={{ acceptedLabelIds }}>
       <div
         style={{
           position: "absolute",
@@ -1131,10 +1302,35 @@ export function CanvasShell({
               isDeemphasized={deemphasizedCardIdSet.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
+              showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
             />
           );
         })}
       </div>
+      {showLabelBounds
+        ? [...labelCullingResult.accepted, ...labelCullingResult.culled].map((label) => {
+            const accepted = acceptedLabelIds.has(label.id);
+            return (
+              <div
+                key={`label-debug-${label.id}`}
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: label.rect.x,
+                  top: label.rect.y,
+                  width: label.rect.w,
+                  height: label.rect.h,
+                  border: `1px solid ${accepted ? "#16a34a" : "#ef4444"}`,
+                  backgroundColor: accepted ? "rgba(22, 163, 74, 0.08)" : "rgba(239, 68, 68, 0.08)",
+                  pointerEvents: "none",
+                  zIndex: 25,
+                }}
+                title={`${label.kind} (${accepted ? "accepted" : "culled"})`}
+              />
+            );
+          })
+        : null}
+      </LabelVisibilityContext.Provider>
       {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
     </div>
   );

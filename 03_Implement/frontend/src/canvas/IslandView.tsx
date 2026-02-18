@@ -1,8 +1,14 @@
-import { memo } from "react";
+import { memo, useContext } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 
 import { isPointInPolygon } from "../domain/geometry/point_in_polygon";
+import {
+  buildIslandSummaryLabelId,
+  buildIslandTitleLabelId,
+  buildIslandUnreviewedLabelId,
+} from "../domain/view/label_culling";
 import type { Card, Island, Point } from "../domain/types";
+import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
@@ -159,6 +165,7 @@ function IslandViewComponent({
   zIndex = 0,
 }: IslandViewProps) {
   const bounds = getIslandBounds(island, cards);
+  const { acceptedLabelIds } = useContext(LabelVisibilityContext);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
@@ -167,6 +174,14 @@ function IslandViewComponent({
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
   const hasPolygon = polygonPoints.length >= 3;
+  const showTitleLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandTitleLabelId(island.id)) : true;
+  const showSummaryLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandSummaryLabelId(island.id)) : true;
+  const showUnreviewedLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandUnreviewedLabelId(island.id)) : true;
+  const showStandaloneUnreviewed =
+    island.summaryReviewed === false &&
+    hasSummary &&
+    showUnreviewedLabel &&
+    (!showSummary || !showSummaryLabel);
 
   if (!bounds) {
     return null;
@@ -370,7 +385,7 @@ function IslandViewComponent({
           gap: 6,
         }}
       >
-        {island.title && island.title.length > 0 ? island.title : "Island"}
+        {showTitleLabel ? (island.title && island.title.length > 0 ? island.title : "Island") : null}
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
         <button
           type="button"
@@ -448,7 +463,7 @@ function IslandViewComponent({
         ) : null}
       </div>
 
-      {((hasSummary && showSummary) || abstractMapView) ? (
+      {((hasSummary && showSummary) || abstractMapView) && showSummaryLabel ? (
         <div
           style={{
             position: "absolute",
@@ -475,7 +490,7 @@ function IslandViewComponent({
           ) : (
             <span style={{ color: "#64748b" }}>(no summary)</span>
           )}
-          {island.summaryReviewed === false && hasSummary ? (
+          {island.summaryReviewed === false && hasSummary && showUnreviewedLabel ? (
             <span
               style={{
                 marginLeft: 8,
@@ -494,7 +509,7 @@ function IslandViewComponent({
           ) : null}
         </div>
       ) : null}
-      {!showSummary && island.summaryReviewed === false && hasSummary ? (
+      {showStandaloneUnreviewed ? (
         <div
           style={{
             position: "absolute",
