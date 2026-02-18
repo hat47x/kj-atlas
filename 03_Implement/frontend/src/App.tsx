@@ -72,6 +72,7 @@ import {
   pushFocusHistory,
   type FocusSnapshot,
 } from "./domain/view/focus";
+import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -713,6 +714,10 @@ export default function App() {
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
   const [showReadingOrder, setShowReadingOrder] = useState(false);
   const [isReadingOrderEditMode, setIsReadingOrderEditMode] = useState(false);
+  const [readingNavEnabled, setReadingNavEnabled] = useState(false);
+  const [readingIndex, setReadingIndex] = useState(0);
+  const [readingMode, setReadingMode] = useState<ReadingMode>("islands");
+  const [reviewedOnly, setReviewedOnly] = useState(false);
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -1987,6 +1992,10 @@ export default function App() {
         setHideSourceCards(metadata.viewState.hideSourceCards);
         setMaxDepth(metadata.viewState.maxDepth);
         setShowReadingOrder(metadata.viewState.showReadingOrder);
+        setReadingNavEnabled(metadata.viewState.readingNavEnabled ?? false);
+        setReadingMode(metadata.viewState.readingMode ?? "islands");
+        setReviewedOnly(metadata.viewState.reviewedOnly ?? false);
+        setReadingIndex(metadata.viewState.readingIndex ?? 0);
         setSafeMode(metadata.viewState.safeMode ?? true);
         setLodEnabled(metadata.viewState.lodEnabled ?? false);
         setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
@@ -4247,6 +4256,70 @@ export default function App() {
     return buildReadingOrderSnippets(document);
   }, [document]);
 
+  const readingList = useMemo(() => {
+    if (!document || !readingNavEnabled) {
+      return [] as ReadingItem[];
+    }
+
+    return buildReadingList(document, { readingMode, reviewedOnly });
+  }, [document, readingMode, readingNavEnabled, reviewedOnly]);
+
+  useEffect(() => {
+    if (!readingNavEnabled) {
+      return;
+    }
+
+    setReadingIndex((previousIndex) => clampReadingIndex(previousIndex, readingList.length));
+  }, [readingList.length, readingNavEnabled]);
+
+  const currentReadingItem = readingList[clampReadingIndex(readingIndex, readingList.length)] ?? null;
+
+  const handleSetReadingNavEnabled = useCallback((enabled: boolean) => {
+    setReadingNavEnabled(enabled);
+    if (!enabled) {
+      return;
+    }
+
+    setReadingIndex((previousIndex) => clampReadingIndex(previousIndex, readingList.length));
+  }, [readingList.length]);
+
+  const handleSetReadingMode = useCallback((nextMode: ReadingMode) => {
+    setReadingMode(nextMode);
+    setReadingIndex(0);
+  }, []);
+
+  const handleToggleReviewedOnly = useCallback(() => {
+    setReviewedOnly((current) => !current);
+    setReadingIndex(0);
+  }, []);
+
+  const focusReadingItemAtIndex = useCallback((nextIndex: number) => {
+    if (!readingNavEnabled || readingList.length === 0) {
+      return;
+    }
+
+    const clampedIndex = clampReadingIndex(nextIndex, readingList.length);
+    const nextItem = readingList[clampedIndex];
+    if (!nextItem) {
+      return;
+    }
+
+    setReadingIndex(clampedIndex);
+    focusItem(nextItem.kind, nextItem.id);
+  }, [focusItem, readingList, readingNavEnabled]);
+
+  const handleReadingPrev = useCallback(() => {
+    focusReadingItemAtIndex(readingIndex - 1);
+  }, [focusReadingItemAtIndex, readingIndex]);
+
+  const handleReadingNext = useCallback(() => {
+    focusReadingItemAtIndex(readingIndex + 1);
+  }, [focusReadingItemAtIndex, readingIndex]);
+
+  const handleReadingDisable = useCallback(() => {
+    setReadingNavEnabled(false);
+  }, []);
+
   const currentLod = useMemo(() => {
     if (!lodEnabled) {
       return null;
@@ -4715,6 +4788,10 @@ export default function App() {
     onClearSelection: handleClearSelection,
     onDeleteSelection: handleDeleteSelection,
     onNudge: handleNudgeSelection,
+    onReadingPathNext: readingNavEnabled ? handleReadingNext : undefined,
+    onReadingPathPrev: readingNavEnabled ? handleReadingPrev : undefined,
+    onReadingPathToggleReviewedOnly: readingNavEnabled ? handleToggleReviewedOnly : undefined,
+    onReadingPathDisable: readingNavEnabled ? handleReadingDisable : undefined,
   });
 
   const headerRight = (
@@ -4977,6 +5054,10 @@ export default function App() {
           focusIslandId: focusTarget.focusIslandId ?? null,
           showReadingOrder,
           editReadingOrder: isReadingOrderEditMode,
+          readingNavEnabled,
+          readingIndex,
+          readingMode,
+          reviewedOnly,
           safeMode,
           lodEnabled,
           lodThresholds,
@@ -5000,6 +5081,10 @@ export default function App() {
       getViewMetadataFilename,
       hideSourceCards,
       isReadingOrderEditMode,
+      readingNavEnabled,
+      readingIndex,
+      readingMode,
+      reviewedOnly,
       maxDepth,
       showReadingOrder,
       summaryView,
@@ -5900,6 +5985,17 @@ export default function App() {
           onConnectEdgeTypeChange={setConnectEdgeType}
           onStartConnect={handleStartConnect}
           onCancelConnect={handleCancelConnect}
+          readingNavEnabled={readingNavEnabled}
+          onReadingNavEnabledChange={handleSetReadingNavEnabled}
+          readingMode={readingMode}
+          onReadingModeChange={handleSetReadingMode}
+          reviewedOnly={reviewedOnly}
+          onReadingReviewedOnlyToggle={handleToggleReviewedOnly}
+          readingStep={readingList.length === 0 ? 0 : clampReadingIndex(readingIndex, readingList.length) + 1}
+          readingTotal={readingList.length}
+          currentReadingLabel={currentReadingItem?.label ?? null}
+          onReadingPrev={handleReadingPrev}
+          onReadingNext={handleReadingNext}
           readingOrderItems={readingOrderItems}
           canAddSelectedItemToReadingOrder={Boolean(selectedIsland || selectedCard)}
           onAddSelectedItemToReadingOrder={handleAddSelectedItemToReadingOrder}
