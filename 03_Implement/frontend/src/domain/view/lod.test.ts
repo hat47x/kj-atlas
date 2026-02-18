@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_LOD_THRESHOLDS, getLODLevel } from "./lod";
+import { DEFAULT_LOD_THRESHOLDS, getLODLevel, isEffectivelyCollapsed, isVirtualCollapsedByLOD } from "./lod";
 
 describe("getLODLevel", () => {
   it("returns close/mid/far using defaults", () => {
@@ -17,5 +17,20 @@ describe("getLODLevel", () => {
     const resolved = getLODLevel(0.75);
     expect(resolved.rules.compactCards).toBe(true);
     expect(resolved.rules.showCardEdges).toBe(false);
+  });
+});
+
+
+describe("virtual collapse", () => {
+  it("activates only in far LOD when enabled", () => {
+    expect(isVirtualCollapsedByLOD(true, "far")).toBe(true);
+    expect(isVirtualCollapsedByLOD(true, "mid")).toBe(false);
+    expect(isVirtualCollapsedByLOD(false, "far")).toBe(false);
+  });
+
+  it("computes effective collapse from user and virtual states", () => {
+    expect(isEffectivelyCollapsed(false, true, "far")).toBe(true);
+    expect(isEffectivelyCollapsed(true, true, "close")).toBe(true);
+    expect(isEffectivelyCollapsed(false, true, "close")).toBe(false);
   });
 });
