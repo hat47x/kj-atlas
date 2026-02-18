@@ -698,6 +698,7 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
+  const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
   const [showCanonicalOnlyEdges, setShowCanonicalOnlyEdges] = useState(false);
@@ -5342,6 +5343,8 @@ export default function App() {
             currentLodLevel={currentLod?.level ?? null}
             lodShowLoneWolvesWhenFar={lodShowLoneWolvesWhenFar}
             onLodShowLoneWolvesWhenFarChange={setLodShowLoneWolvesWhenFar}
+            showLabelBounds={showLabelBounds}
+            onShowLabelBoundsChange={setShowLabelBounds}
           />
         </div>
       ) : null}
@@ -5808,6 +5811,7 @@ export default function App() {
               hideSourceCards: hideSourceCards || summaryView || abstractMapView,
               showCanonicalOnlyEdges,
               showReadingOrder,
+              showLabelBounds,
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}

@@ -22,6 +22,7 @@ type CardViewProps = {
   isPickingEdgeTarget?: boolean;
   compactMode?: boolean;
   markerMode?: boolean;
+  showLabelText?: boolean;
 };
 
 function canStartDrag(event: PointerEvent<HTMLDivElement>): boolean {
@@ -86,6 +87,7 @@ function CardViewComponent({
   isDeemphasized = false,
   compactMode = false,
   markerMode = false,
+  showLabelText = true,
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -244,7 +246,11 @@ function CardViewComponent({
           }}
         />
       ) : null}
-      {!markerMode ? (compactMode ? renderHighlightedText(compactText, searchQuery) : renderHighlightedText(card.text, searchQuery)) : null}
+      {!markerMode && showLabelText
+        ? compactMode
+          ? renderHighlightedText(compactText, searchQuery)
+          : renderHighlightedText(card.text, searchQuery)
+        : null}
     </div>
   );
 }
