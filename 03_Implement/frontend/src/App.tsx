@@ -14,7 +14,7 @@ import {
   type NarrativeIssue,
   type NarrativeIssueReference,
 } from "./api/client";
-import { CanvasShell, getFocusWorldPointForReference } from "./canvas/CanvasShell";
+import { CanvasShell } from "./canvas/CanvasShell";
 import type { AggregatedEdgeMeta, CameraTransformRequest, CanvasCamera, FocusReference } from "./canvas/CanvasShell";
 import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
@@ -54,7 +54,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
-import { computeVisibleBounds } from "./domain/geometry/bounds";
+import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import {
   DEFAULT_LOD_THRESHOLDS,
@@ -63,6 +63,15 @@ import {
   type LODLevel,
   type LODThresholds,
 } from "./domain/view/lod";
+import {
+  applyIslandLodZoom,
+  enforceMinZoomForBounds,
+  fitToBounds,
+  FOCUS_LOD_EPSILON,
+  popFocusHistory,
+  pushFocusHistory,
+  type FocusSnapshot,
+} from "./domain/view/focus";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -709,6 +718,7 @@ export default function App() {
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
   const [focusWorldPoint, setFocusWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [focusRequestSeq, setFocusRequestSeq] = useState(0);
+  const [focusHistory, setFocusHistory] = useState<FocusSnapshot[]>([]);
   const [flashReference, setFlashReference] = useState<FocusReference | null>(null);
   const [flashRequestSeq, setFlashRequestSeq] = useState(0);
   const [narrativeText, setNarrativeText] = useState("");
@@ -861,6 +871,11 @@ export default function App() {
 
     return applyFocusScope(visibleDocument, focusTarget);
   }, [focusTarget, visibleDocument]);
+
+  useEffect(() => {
+    setFocusHistory([]);
+  }, [document?.id]);
+
   const temporaryRevealIslandIds = useMemo(() => {
     if (!document || temporaryRevealCardIds.size === 0) {
       return new Set<string>();
@@ -1355,6 +1370,36 @@ export default function App() {
     setFocusCardId(cardId);
     setFocusRequestSeq((previousSeq) => previousSeq + 1);
   }, []);
+
+  const requestCameraTransform = useCallback((nextTransform: { panX: number; panY: number; zoom: number }) => {
+    suppressNextTransformPersistRef.current = true;
+    setCameraTransformRequest((previousRequest) => ({
+      panX: nextTransform.panX,
+      panY: nextTransform.panY,
+      zoom: nextTransform.zoom,
+      requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
+    }));
+  }, []);
+
+  const pushCurrentFocusSnapshot = useCallback(() => {
+    if (!canvasCamera) {
+      return;
+    }
+
+    const currentSnapshot: FocusSnapshot = {
+      camera: {
+        panX: canvasCamera.panX,
+        panY: canvasCamera.panY,
+        zoom: canvasCamera.zoom,
+      },
+      viewState: {
+        focusIslandId: focusTarget.focusIslandId,
+        maxDepth,
+      },
+    };
+
+    setFocusHistory((previousHistory) => pushFocusHistory(previousHistory, currentSnapshot));
+  }, [canvasCamera, focusTarget.focusIslandId, maxDepth]);
 
   const handleSearchNext = useCallback(() => {
     if (matchedCardIds.length === 0) {
@@ -3872,18 +3917,83 @@ export default function App() {
     }
   }, [selectedEdgeId, visibleAggregatedEdges]);
 
+  const focusIslandById = useCallback(
+    (islandId: string) => {
+      if (!document || !canvasCamera) {
+        return;
+      }
+
+      const island = document.islands.find((item) => item.id === islandId);
+      if (!island) {
+        setStatusMessage(`Item not found: island:${islandId}`);
+        return;
+      }
+
+      const cardsById = new Map(document.cards.map((card) => [card.id, card]));
+      const islandBounds = getIslandWorldBounds(island, cardsById);
+      if (!islandBounds) {
+        setStatusMessage(`Item not found: island:${islandId}`);
+        return;
+      }
+
+      pushCurrentFocusSnapshot();
+
+      const viewport = {
+        width: canvasCamera.viewportWidth,
+        height: canvasCamera.viewportHeight,
+      };
+      const fitCamera = fitToBounds(islandBounds, viewport, 48);
+      const lodAdjustedCamera = applyIslandLodZoom(fitCamera, lodEnabled, lodThresholds, 4);
+      const nextCamera =
+        lodEnabled && lodAdjustedCamera.zoom > fitCamera.zoom
+          ? enforceMinZoomForBounds(islandBounds, viewport, lodThresholds.close + FOCUS_LOD_EPSILON, 48, { min: 0.2, max: 4 })
+          : fitCamera;
+
+      setFocusCardId(null);
+      setFocusWorldPoint(null);
+      setFocusTarget({ focusIslandId: islandId });
+      requestCameraTransform(nextCamera);
+    },
+    [canvasCamera, document, lodEnabled, lodThresholds, pushCurrentFocusSnapshot, requestCameraTransform]
+  );
+
+  const focusCardById = useCallback(
+    (cardId: string) => {
+      if (!document || !canvasCamera) {
+        return;
+      }
+
+      const card = document.cards.find((item) => item.id === cardId);
+      if (!card) {
+        setStatusMessage(`Item not found: card:${cardId}`);
+        return;
+      }
+
+      pushCurrentFocusSnapshot();
+      const nextCamera = fitToBounds(
+        getCardWorldBounds(card),
+        {
+          width: canvasCamera.viewportWidth,
+          height: canvasCamera.viewportHeight,
+        },
+        120
+      );
+
+      setFocusTarget({});
+      setFocusCardId(null);
+      setFocusWorldPoint(null);
+      requestCameraTransform(nextCamera);
+    },
+    [canvasCamera, document, pushCurrentFocusSnapshot, requestCameraTransform]
+  );
+
   const handleFocusIsland = useCallback(() => {
-    if (!selectedIsland || !document) {
+    if (!selectedIsland) {
       return;
     }
 
-    const nextFocusWorldPoint = getFocusWorldPointForReference(document, { id: selectedIsland.id, kind: "island" });
-
-    setFocusTarget({ focusIslandId: selectedIsland.id });
-    setFocusWorldPoint(nextFocusWorldPoint);
-    suppressNextTransformPersistRef.current = true;
-    setFocusRequestSeq((previousSeq) => previousSeq + 1);
-  }, [document, selectedIsland]);
+    focusIslandById(selectedIsland.id);
+  }, [focusIslandById, selectedIsland]);
 
   const handleClearFocus = useCallback(() => {
     setFocusTarget({});
@@ -3904,14 +4014,24 @@ export default function App() {
         return;
       }
 
-      const nextFocusWorldPoint = getFocusWorldPointForReference(document, { id: islandId, kind: "island" });
-      setFocusTarget({ focusIslandId: islandId });
-      setFocusWorldPoint(nextFocusWorldPoint);
-      suppressNextTransformPersistRef.current = true;
-      setFocusRequestSeq((previousSeq) => previousSeq + 1);
+      focusIslandById(islandId);
     },
-    [document, focusTarget.focusIslandId]
+    [document, focusIslandById, focusTarget.focusIslandId]
   );
+
+  const handleFocusBack = useCallback(() => {
+    const { nextHistory, snapshot } = popFocusHistory(focusHistory);
+    if (!snapshot) {
+      return;
+    }
+
+    setFocusHistory(nextHistory);
+    setFocusTarget(snapshot.viewState?.focusIslandId ? { focusIslandId: snapshot.viewState.focusIslandId } : {});
+    setMaxDepth(snapshot.viewState?.maxDepth ?? "all");
+    setFocusCardId(null);
+    setFocusWorldPoint(null);
+    requestCameraTransform(snapshot.camera);
+  }, [focusHistory, requestCameraTransform]);
 
 
   const applyViewPreset = useCallback(
@@ -3998,19 +4118,24 @@ export default function App() {
       }
     }
 
-    const nextFocusWorldPoint = getFocusWorldPointForReference(document, { kind, id });
-    if (!nextFocusWorldPoint) {
-      setStatusMessage(`Item not found: ${kind}:${id}`);
-      return;
+    if (kind === "card") {
+      focusCardById(id);
+    } else {
+      focusIslandById(id);
     }
 
-    setFocusCardId(kind === "card" ? id : null);
-    setFocusWorldPoint(nextFocusWorldPoint);
     setFlashReference({ kind, id });
     setFlashRequestSeq((previousSeq) => previousSeq + 1);
-    suppressNextTransformPersistRef.current = true;
-    setFocusRequestSeq((previousSeq) => previousSeq + 1);
-  }, [document, focusedVisibleDocument?.cards, hiddenCardIdSet, hideSourceCards, revealedSourceCardIds, visibleIslandIdSet]);
+  }, [
+    document,
+    focusCardById,
+    focusIslandById,
+    focusedVisibleDocument?.cards,
+    hiddenCardIdSet,
+    hideSourceCards,
+    revealedSourceCardIds,
+    visibleIslandIdSet,
+  ]);
 
   const handleNarrativeReferenceFocus = useCallback(
     (reference: NarrativeIssueReference) => {
@@ -4176,6 +4301,7 @@ export default function App() {
         onSelect={handleIslandSelect}
         onToggleCollapsed={handleIslandCollapsedChange}
         onTitleDoubleClick={handleToggleIslandFocus}
+        onFocusIsland={focusIslandById}
         onPeekStart={(islandId) => {
           setPeekIslandId(islandId);
         }}
@@ -4199,6 +4325,7 @@ export default function App() {
     effectiveCollapsedIslandIdSet,
     visibleIslands,
     handleToggleIslandFocus,
+    focusIslandById,
     safeMode,
     currentLod,
   ]);
@@ -4716,6 +4843,23 @@ export default function App() {
       >
         Redo
       </button>
+      {focusHistory.length > 0 ? (
+        <button
+          type="button"
+          onClick={handleFocusBack}
+          style={{
+            border: "1px solid #cbd5e1",
+            backgroundColor: "#ffffff",
+            color: "#0f172a",
+            borderRadius: 6,
+            padding: "6px 12px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Back
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={handleImportClick}
@@ -5673,6 +5817,13 @@ export default function App() {
           onRemoveSelectedCards={handleRemoveSelectedCardsFromIsland}
           onDeleteIsland={handleDeleteSelectedIsland}
           onFocusIsland={handleFocusIsland}
+          onFocusCard={() => {
+            if (!selectedCard) {
+              return;
+            }
+
+            focusCardById(selectedCard.id);
+          }}
           summaryView={summaryView}
           abstractMapView={abstractMapView}
           isSelectedIslandTemporarilyRevealed={selectedIsland ? summaryRevealIslandIds.has(selectedIsland.id) : false}
