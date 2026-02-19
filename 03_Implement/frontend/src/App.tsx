@@ -81,6 +81,7 @@ import { analyzeContradictions, type ContradictionReport, type ContradictionSign
 import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
 import { analyzeClaimTypeMix, type ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
 import { analyzeEvidenceGaps, type EvidenceGapReport } from "./domain/view/evidence_gap_checks";
+import { analyzeDialecticBalance, type BalanceFinding, type DialecticBalanceReport } from "./domain/view/dialectic_balance";
 import {
   buildEvidenceAdjacency,
   getEvidenceNeighborhood,
@@ -774,6 +775,7 @@ export default function App() {
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
   const [claimTypeMixReport, setClaimTypeMixReport] = useState<ClaimTypeMixReport | null>(null);
   const [evidenceGapReport, setEvidenceGapReport] = useState<EvidenceGapReport | null>(null);
+  const [dialecticBalanceReport, setDialecticBalanceReport] = useState<DialecticBalanceReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
   const [evidenceOverlayEnabled, setEvidenceOverlayEnabled] = useState(false);
   const [evidenceOverlayMode, setEvidenceOverlayMode] = useState<EvidenceOverlayMode>("supports");
@@ -4628,15 +4630,17 @@ export default function App() {
     const distribution = analyzeDistribution(document);
     const claimTypeMix = analyzeClaimTypeMix(document);
     const evidenceGaps = analyzeEvidenceGaps(document);
+    const dialecticBalance = analyzeDialecticBalance(document);
     setOutlineQualityReport(report);
     setContradictionReport(contradiction);
     setDistributionReport(distribution);
     setClaimTypeMixReport(claimTypeMix);
     setEvidenceGapReport(evidenceGaps);
+    setDialecticBalanceReport(dialecticBalance);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s), ${dialecticBalance.findings.length} dialectic balance signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
@@ -4645,8 +4649,21 @@ export default function App() {
     setDistributionReport(null);
     setClaimTypeMixReport(null);
     setEvidenceGapReport(null);
+    setDialecticBalanceReport(null);
     setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
+
+  const handleFocusDialecticBalanceFinding = useCallback((finding: BalanceFinding) => {
+    const sampleCardIds = [...(finding.cardIds ?? [])].sort().slice(0, 3);
+    if (sampleCardIds.length === 0) {
+      return;
+    }
+
+    focusCardById(sampleCardIds[0]);
+    if (sampleCardIds.length > 1) {
+      setSelectedCardIds(sampleCardIds);
+    }
+  }, [focusCardById]);
 
   const handleFocusContradictionSignal = useCallback((signal: ContradictionSignal) => {
     const primaryFocusRef = pickPrimaryFocusRef(
@@ -6469,10 +6486,12 @@ export default function App() {
           distributionReport={distributionReport}
           claimTypeMixReport={claimTypeMixReport}
           evidenceGapReport={evidenceGapReport}
+          dialecticBalanceReport={dialecticBalanceReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
           onFocusDistributionIsland={focusIslandById}
+          onFocusDialecticBalanceFinding={handleFocusDialecticBalanceFinding}
           onCopyReadingOutlineMd={() => {
             void handleCopyReadingOutlineMd();
           }}
