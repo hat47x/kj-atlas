@@ -115,6 +115,22 @@ type SidePanelProps = {
   onConnectEdgeTypeChange: (value: "related" | "negate") => void;
   onStartConnect: () => void;
   onCancelConnect: () => void;
+  guidedFlowEnabled: boolean;
+  onGuidedFlowEnabledChange: (value: boolean) => void;
+  guidedFlowStepId: "review" | "classify" | "evidence" | "contradiction";
+  guidedFlowStepIndex: number;
+  guidedFlowTotalSteps: number;
+  guidedFlowStepTitle: string;
+  guidedFlowStepDescription: string;
+  guidedFlowStepOptional: boolean;
+  guidedFlowTargetIndex: number;
+  guidedFlowTargetTotal: number;
+  guidedFlowSuggestedActions: string[];
+  onGuidedFlowPrevStep: () => void;
+  onGuidedFlowNextStep: () => void;
+  onGuidedFlowNextTarget: () => void;
+  onGuidedFlowOpenRelevantEditor: () => void;
+  guidedFlowOpenEditorRequestSeq: number;
   readingNavEnabled: boolean;
   onReadingNavEnabledChange: (value: boolean) => void;
   readingMode: "islands" | "islands+cards";
@@ -244,6 +260,22 @@ export function SidePanel({
   onConnectEdgeTypeChange,
   onStartConnect,
   onCancelConnect,
+  guidedFlowEnabled,
+  onGuidedFlowEnabledChange,
+  guidedFlowStepId,
+  guidedFlowStepIndex,
+  guidedFlowTotalSteps,
+  guidedFlowStepTitle,
+  guidedFlowStepDescription,
+  guidedFlowStepOptional,
+  guidedFlowTargetIndex,
+  guidedFlowTargetTotal,
+  guidedFlowSuggestedActions,
+  onGuidedFlowPrevStep,
+  onGuidedFlowNextStep,
+  onGuidedFlowNextTarget,
+  onGuidedFlowOpenRelevantEditor,
+  guidedFlowOpenEditorRequestSeq,
   readingNavEnabled,
   onReadingNavEnabledChange,
   readingMode,
@@ -338,6 +370,22 @@ export function SidePanel({
   useEffect(() => {
     setHasImagePreviewError(false);
   }, [selectedIsland?.id, selectedIsland?.imageUrl]);
+
+  useEffect(() => {
+    if (guidedFlowOpenEditorRequestSeq <= 0) {
+      return;
+    }
+
+    if (guidedFlowStepId !== "evidence" && guidedFlowStepId !== "contradiction") {
+      return;
+    }
+
+    if (!selectedCard) {
+      return;
+    }
+
+    setIsEvidenceModalOpen(true);
+  }, [guidedFlowOpenEditorRequestSeq, guidedFlowStepId, selectedCard]);
 
   useEffect(() => {
     setSummaryDraft(selectedIsland?.summaryText ?? "");
@@ -757,6 +805,75 @@ export function SidePanel({
       }}
     >
       {topContent}
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Guided Flow</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            checked={guidedFlowEnabled}
+            onChange={(event) => {
+              onGuidedFlowEnabledChange(event.target.checked);
+            }}
+          />
+          Enable
+        </label>
+        <div style={{ fontSize: 12, color: "#334155", marginBottom: 4 }}>
+          Step {guidedFlowStepIndex + 1} / {guidedFlowTotalSteps}
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
+          {guidedFlowStepTitle}
+          {guidedFlowStepOptional ? " (optional)" : ""}
+        </div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{guidedFlowStepDescription}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8, marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={onGuidedFlowPrevStep}
+            disabled={!guidedFlowEnabled || guidedFlowStepIndex <= 0}
+            style={{ cursor: !guidedFlowEnabled || guidedFlowStepIndex <= 0 ? "not-allowed" : "pointer" }}
+          >
+            Prev step
+          </button>
+          <button
+            type="button"
+            onClick={onGuidedFlowNextStep}
+            disabled={!guidedFlowEnabled || guidedFlowStepIndex >= guidedFlowTotalSteps - 1}
+            style={{ cursor: !guidedFlowEnabled || guidedFlowStepIndex >= guidedFlowTotalSteps - 1 ? "not-allowed" : "pointer" }}
+          >
+            Next step
+          </button>
+        </div>
+        <div style={{ display: "grid", gap: 8 }}>
+          <button
+            type="button"
+            onClick={onGuidedFlowNextTarget}
+            disabled={!guidedFlowEnabled || guidedFlowTargetTotal === 0}
+            style={{ cursor: !guidedFlowEnabled || guidedFlowTargetTotal === 0 ? "not-allowed" : "pointer" }}
+          >
+            Next target
+          </button>
+          <button
+            type="button"
+            onClick={onGuidedFlowOpenRelevantEditor}
+            disabled={!guidedFlowEnabled}
+            style={{ cursor: guidedFlowEnabled ? "pointer" : "not-allowed" }}
+          >
+            Open relevant editor
+          </button>
+        </div>
+        <div style={{ fontSize: 11, color: "#334155", marginTop: 8 }}>
+          {guidedFlowTargetTotal === 0
+            ? "No targets"
+            : `Target ${Math.min(guidedFlowTargetIndex + 1, guidedFlowTargetTotal)} / ${guidedFlowTargetTotal}`}
+        </div>
+        {guidedFlowSuggestedActions.length > 0 ? (
+          <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
+            {guidedFlowSuggestedActions.map((action) => (
+              <li key={action}>{action}</li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Aggregated edge inspector</div>
         {aggregatedEdgeInspectorItems.length === 0 ? (
