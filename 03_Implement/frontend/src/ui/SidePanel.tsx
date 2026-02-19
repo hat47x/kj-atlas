@@ -12,6 +12,7 @@ import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
+import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 
 type SummaryGroundingItem = {
   id: string;
@@ -124,9 +125,11 @@ type SidePanelProps = {
   outlineQualityReport: OutlineQualityReport | null;
   outlineRecommendations: Recommendation[];
   contradictionReport: ContradictionReport | null;
+  distributionReport: DistributionReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
+  onFocusDistributionIsland: (islandId: string) => void;
   onCopyReadingOutlineMd: () => void;
   onDownloadReadingOutlineMd: () => void;
   readingStep: number;
@@ -239,9 +242,11 @@ export function SidePanel({
   outlineQualityReport,
   outlineRecommendations,
   contradictionReport,
+  distributionReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
+  onFocusDistributionIsland,
   onCopyReadingOutlineMd,
   onDownloadReadingOutlineMd,
   readingStep,
@@ -355,6 +360,90 @@ export function SidePanel({
       return acc;
     }, { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] });
   }, [contradictionReport]);
+
+  const islandDistributionRows = useMemo(() => {
+    if (!document) {
+      return [] as Array<{ id: string; title: string; cardCount: number; degree: number }>;
+    }
+    const rankings = rankDistributionIslands(document, document.islands.length);
+    const islandById = new Map(document.islands.map((island) => [island.id, island] as const));
+    return rankings.loaded.map((row) => {
+      const island = islandById.get(row.id);
+      return {
+        id: row.id,
+        title: island?.title?.trim() ? island.title : row.id,
+        cardCount: row.cardCount,
+        degree: row.degree,
+      };
+    });
+  }, [document]);
+
+  const loadedIslands = useMemo(() => {
+    return [...islandDistributionRows]
+      .sort((left, right) => (right.cardCount - left.cardCount) || (right.degree - left.degree) || left.id.localeCompare(right.id))
+      .slice(0, 5);
+  }, [islandDistributionRows]);
+
+  const isolatedIslands = useMemo(() => {
+    return islandDistributionRows
+      .filter((island) => island.degree === 0)
+      .sort((left, right) => (right.cardCount - left.cardCount) || left.id.localeCompare(right.id))
+      .slice(0, 5);
+  }, [islandDistributionRows]);
+
+  const distributionSignalsSection = distributionReport ? (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>
+        Distribution signals ({distributionReport.findings.length})
+      </summary>
+      <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
+        islands:{distributionReport.stats.islandCount} · cards:{distributionReport.stats.cardCount} · avg:{distributionReport.stats.avgCardsPerIsland.toFixed(2)} · median:{distributionReport.stats.medianCardsPerIsland.toFixed(2)} · p90:{distributionReport.stats.p90CardsPerIsland.toFixed(2)}
+      </div>
+      {distributionReport.findings.length === 0 ? (
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No distribution signals.</div>
+      ) : (
+        <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+          {distributionReport.findings.map((finding, index) => (
+            <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div>{finding.detail}</div>
+              {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Most loaded islands</div>
+        {loadedIslands.length === 0 ? (
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>No islands.</div>
+        ) : (
+          <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+            {loadedIslands.map((item) => (
+              <li key={`loaded_${item.id}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                <div>{item.title} · cards:{item.cardCount} · degree:{item.degree}</div>
+                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>Focus</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Most isolated islands</div>
+        {isolatedIslands.length === 0 ? (
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>No isolated islands.</div>
+        ) : (
+          <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+            {isolatedIslands.map((item) => (
+              <li key={`isolated_${item.id}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                <div>{item.title} · cards:{item.cardCount} · degree:{item.degree}</div>
+                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>Focus</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </details>
+  ) : null;
 
 
   const handleCopyExplanationClick = async () => {
@@ -637,6 +726,7 @@ export function SidePanel({
                   )}
                 </details>
               ) : null}
+              {distributionSignalsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -954,6 +1044,7 @@ export function SidePanel({
                   )}
                 </details>
               ) : null}
+              {distributionSignalsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
