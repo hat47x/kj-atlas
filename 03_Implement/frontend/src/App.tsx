@@ -55,7 +55,6 @@ import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundle, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
-import { diffDocuments } from "./domain/diff/doc_diff";
 import {
   DEFAULT_LOD_THRESHOLDS,
   getLODLevel,
@@ -95,7 +94,10 @@ import {
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
-import { DiffPanel } from "./ui/DiffPanel";
+import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
+import { buildMergeItems, type MergeItem } from "./diff/merge_items";
+import { applySelectedMergeItemsAtomic } from "./diff/merge_apply";
+import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { buildPatchForExport } from "./domain/patch/patch_generate";
@@ -919,6 +921,10 @@ export default function App() {
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
   const [comparisonDocument, setComparisonDocument] = useState<DocumentV2 | null>(null);
   const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
+  const [reviewDiffBaseSnapshot, setReviewDiffBaseSnapshot] = useState<DocumentV2 | null>(null);
+  const [selectedMergeItemIdSet, setSelectedMergeItemIdSet] = useState<Set<string>>(new Set());
+  const [autoIncludeMergePrerequisites, setAutoIncludeMergePrerequisites] = useState(true);
+  const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV2 | null>(null);
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
   const [packImportError, setPackImportError] = useState<string | null>(null);
@@ -961,15 +967,20 @@ export default function App() {
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
-  const diffResult = useMemo(() => {
-    if (!document || !comparisonDocument) {
-      return null;
+  const mergeItems = useMemo(() => {
+    if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
+      return [] as MergeItem[];
     }
 
-    return diffDocuments(document, comparisonDocument);
-  }, [comparisonDocument, document]);
-  const currentCardIdSet = useMemo(() => new Set((document?.cards ?? []).map((card) => card.id)), [document?.cards]);
-  const currentIslandIdSet = useMemo(() => new Set((document?.islands ?? []).map((island) => island.id)), [document?.islands]);
+    return buildMergeItems(reviewDiffBaseSnapshot, comparisonDocument);
+  }, [comparisonDocument, reviewDiffBaseSnapshot]);
+  const mergeEvaluation = useMemo(() => {
+    if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
+      return { evaluations: [], selectedIdsWithPrerequisites: new Set<string>() };
+    }
+
+    return evaluateMergeSelection(reviewDiffBaseSnapshot, document, comparisonDocument, reviewDiffBaseSnapshot, mergeItems, selectedMergeItemIdSet, autoIncludeMergePrerequisites);
+  }, [autoIncludeMergePrerequisites, comparisonDocument, document, mergeItems, reviewDiffBaseSnapshot, selectedMergeItemIdSet]);
   const patchConflictReport = useMemo(() => {
     if (!document || !pendingPatchImport || !patchBaselineDoc) {
       return null;
@@ -1050,6 +1061,14 @@ export default function App() {
       return new Set([...previousSet].filter((id) => nextIds.has(id)));
     });
   }, [patchFixProposals]);
+
+  useEffect(() => {
+    setSelectedMergeItemIdSet((previousSet) => {
+      const nextIds = new Set(mergeItems.map((item) => item.id));
+      return new Set([...previousSet].filter((id) => nextIds.has(id)));
+    });
+  }, [mergeItems]);
+
 
   const hasPatchSelection = patchSelectedOpIdSet.size > 0;
   const canApplyPatch = Boolean(document && pendingPatchImport && hasPatchSelection) && !shouldBlockPatchApplyByLint(patchLintResult);
@@ -2156,6 +2175,9 @@ export default function App() {
 
       setComparisonDocument(parsedDocument);
       setComparisonFileName(selectedFile.name);
+      setReviewDiffBaseSnapshot(document ? cloneDocument(document) : null);
+      setSelectedMergeItemIdSet(new Set());
+      setLastMergeSnapshot(null);
       setStatusMessage("Loaded comparison document (view-only)");
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -2165,7 +2187,46 @@ export default function App() {
 
       setStatusMessage(error instanceof Error ? error.message : "Failed to load comparison document");
     }
-  }, []);
+  }, [document]);
+
+
+  const handleApplySelectedMergeItems = useCallback(() => {
+    if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
+      setStatusMessage("Load comparison document first");
+      return;
+    }
+
+    const selectedItems = mergeItems.filter((item) => mergeEvaluation.selectedIdsWithPrerequisites.has(item.id));
+    if (selectedItems.length === 0) {
+      setStatusMessage("No merge item selected");
+      return;
+    }
+
+    const hasBlocker = mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok");
+    if (hasBlocker) {
+      setStatusMessage("Resolve merge blockers before applying");
+      return;
+    }
+
+    const applyResult = applySelectedMergeItemsAtomic(document, reviewDiffBaseSnapshot, comparisonDocument, selectedItems);
+    if (!applyResult.ok) {
+      setStatusMessage(applyResult.reason);
+      return;
+    }
+
+    setLastMergeSnapshot(cloneDocument(document));
+    applyDocumentChange(applyResult.document, "Applied selective merge");
+  }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, reviewDiffBaseSnapshot]);
+
+  const handleUndoLastMerge = useCallback(() => {
+    if (!lastMergeSnapshot) {
+      setStatusMessage("No merge snapshot to revert");
+      return;
+    }
+
+    applyDocumentChange(cloneDocument(lastMergeSnapshot), "Reverted selective merge");
+    setLastMergeSnapshot(null);
+  }, [applyDocumentChange, lastMergeSnapshot]);
 
   const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, statusPrefix: string) => {
     const hasFocusIsland =
@@ -6615,16 +6676,45 @@ export default function App() {
   );
 
   const structuralDiffPanel = (
-    <DiffPanel
+    <ReviewDiffPanel
       comparisonFileName={comparisonFileName}
       comparisonDocument={comparisonDocument}
-      diffResult={diffResult}
-      currentCardIdSet={currentCardIdSet}
-      currentIslandIdSet={currentIslandIdSet}
+      mergeItems={mergeItems}
+      evaluations={mergeEvaluation.evaluations}
+      selectedItemIds={selectedMergeItemIdSet}
+      autoIncludePrerequisites={autoIncludeMergePrerequisites}
       onLoadComparisonDocument={handleLoadComparisonDocumentClick}
-      onJumpToItem={(kind, id) => {
-        focusItem(kind, id);
+      onToggleAutoIncludePrerequisites={setAutoIncludeMergePrerequisites}
+      onItemCheckedChange={(itemId, checked) => {
+        setSelectedMergeItemIdSet((previous) => {
+          const next = new Set(previous);
+          if (checked) {
+            next.add(itemId);
+          } else {
+            next.delete(itemId);
+          }
+          return next;
+        });
       }}
+      onGroupCheckedChange={(group, checked) => {
+        setSelectedMergeItemIdSet((previous) => {
+          const next = new Set(previous);
+          for (const item of mergeItems) {
+            if (!item.kind.startsWith(`${group}.`)) {
+              continue;
+            }
+            if (checked) {
+              next.add(item.id);
+            } else {
+              next.delete(item.id);
+            }
+          }
+          return next;
+        });
+      }}
+      onApplySelected={handleApplySelectedMergeItems}
+      onUndoLastMerge={handleUndoLastMerge}
+      canApply={Boolean(document && comparisonDocument && mergeEvaluation.selectedIdsWithPrerequisites.size > 0 && !mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok"))}
     />
   );
 
