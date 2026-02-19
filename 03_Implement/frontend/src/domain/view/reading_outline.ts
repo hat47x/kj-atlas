@@ -12,6 +12,7 @@ export type ReadingOutlineState = {
   reviewedOnly: boolean;
   safeMode: boolean;
   lod?: string | null;
+  generatedAt?: string;
 };
 
 export type ReadingOutlineOptions = {
@@ -98,7 +99,7 @@ function clipSnippet(value: string | undefined, maxLen: number, oneLine: boolean
 
 function formatMetaBlock(state: ReadingOutlineState): string[] {
   const lines = [
-    `- GeneratedAt: ${new Date().toISOString()}`,
+    `- GeneratedAt: ${state.generatedAt ?? new Date().toISOString()}`,
     `- Mode: ${state.readingMode}`,
     `- ReadingNavEnabled: ${state.readingNavEnabled}`,
     `- ReadingIndex: ${state.readingIndex}`,

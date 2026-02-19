@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
@@ -24,6 +24,8 @@ type SharePanelProps = {
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
+  onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean }) => void;
+  canIncludeTraces: boolean;
   onLoadViewMetadataFile: (file: File) => void;
   onLoadDocumentFile: (file: File) => void;
   pendingImportedDocumentSummary: {
@@ -108,6 +110,8 @@ export function SharePanel({
   onIncludeUnreviewedDraftsChange,
   onExportViewViewport,
   onExportViewVisibleBounds,
+  onExportBundleZip,
+  canIncludeTraces,
   onLoadViewMetadataFile,
   onLoadDocumentFile,
   pendingImportedDocumentSummary,
@@ -149,6 +153,11 @@ export function SharePanel({
   const importDocumentInputRef = useRef<HTMLInputElement | null>(null);
   const patchInputRef = useRef<HTMLInputElement | null>(null);
   const patchBaselineInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [bundleIncludeOutline, setBundleIncludeOutline] = useState(true);
+  const [bundleIncludeDiagnostics, setBundleIncludeDiagnostics] = useState(true);
+  const [bundleIncludeSelectedCardTraces, setBundleIncludeSelectedCardTraces] = useState(true);
+
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -291,6 +300,53 @@ export function SharePanel({
             <button type="button" onClick={onExportViewVisibleBounds} disabled={!hasDocument || isLoading}>
               Export view.json (Visible bounds)
             </button>
+            <div style={{ borderTop: "1px dashed #e2e8f0", paddingTop: 8, marginTop: 4, display: "grid", gap: 6 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <input
+                  type="checkbox"
+                  checked={bundleIncludeOutline}
+                  onChange={(event) => {
+                    setBundleIncludeOutline(event.target.checked);
+                  }}
+                />
+                Include outline
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <input
+                  type="checkbox"
+                  checked={bundleIncludeDiagnostics}
+                  onChange={(event) => {
+                    setBundleIncludeDiagnostics(event.target.checked);
+                  }}
+                />
+                Include diagnostics
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canIncludeTraces ? "#334155" : "#94a3b8" }}>
+                <input
+                  type="checkbox"
+                  checked={bundleIncludeSelectedCardTraces}
+                  disabled={!canIncludeTraces}
+                  onChange={(event) => {
+                    setBundleIncludeSelectedCardTraces(event.target.checked);
+                  }}
+                />
+                Include traces for selected card
+              </label>
+              <div style={{ fontSize: 11, color: "#64748b" }}>Traces require a selected card.</div>
+              <button
+                type="button"
+                onClick={() => {
+                  onExportBundleZip({
+                    includeOutline: bundleIncludeOutline,
+                    includeDiagnostics: bundleIncludeDiagnostics,
+                    includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces,
+                  });
+                }}
+                disabled={!hasDocument || isLoading}
+              >
+                Export bundle (.zip)
+              </button>
+            </div>
           </div>
 
           <div style={sectionStyle}>
