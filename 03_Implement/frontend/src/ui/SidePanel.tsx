@@ -15,7 +15,7 @@ import type { ContradictionReport, ContradictionSignal } from "../domain/view/co
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
-import { buildEvidenceTraceMd } from "../domain/view/evidence_trace";
+import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { downloadTextFile } from "../export/narrative_export";
 
 type SummaryGroundingItem = {
@@ -299,12 +299,8 @@ export function SidePanel({
   const [pendingEvidenceType, setPendingEvidenceType] = useState<EvidenceLink["type"]>("supports");
   const [evidenceTargetQuery, setEvidenceTargetQuery] = useState("");
   const [pendingEvidenceTargetId, setPendingEvidenceTargetId] = useState<string>("");
-  const [evidenceTraceDepthLimit, setEvidenceTraceDepthLimit] = useState(3);
-  const [evidenceTraceIncludeFact, setEvidenceTraceIncludeFact] = useState(true);
-  const [evidenceTraceIncludeClaim, setEvidenceTraceIncludeClaim] = useState(true);
-  const [evidenceTraceIncludeHypothesis, setEvidenceTraceIncludeHypothesis] = useState(true);
-  const [evidenceTraceIncludeUnknown, setEvidenceTraceIncludeUnknown] = useState(true);
-  const [evidenceTraceStopAtFacts, setEvidenceTraceStopAtFacts] = useState(false);
+  const [contradictionTraceDepthLimit, setContradictionTraceDepthLimit] = useState(1);
+  const [contradictionTraceIncludeSupports, setContradictionTraceIncludeSupports] = useState(true);
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -401,26 +397,22 @@ export function SidePanel({
     return map;
   }, [evidenceGapReport]);
 
-  const selectedCardSupportsIncomingCount = useMemo(() => {
+  const selectedCardContradictionsCount = useMemo(() => {
     if (!selectedCard || !document) {
       return 0;
     }
 
-    return (document.evidenceLinks ?? []).filter((link) => link.type === "supports" && link.toCardId === selectedCard.id).length;
+    return (document.evidenceLinks ?? []).filter((link) => link.type === "contradicts" && (link.toCardId === selectedCard.id || link.fromCardId === selectedCard.id)).length;
   }, [document, selectedCard]);
 
-  const getEvidenceTraceMarkdown = () => {
+  const getContradictionTraceMarkdown = () => {
     if (!document || !selectedCard) {
       return null;
     }
 
-    const markdown = buildEvidenceTraceMd(document, selectedCard.id, {
-      depthLimit: evidenceTraceDepthLimit,
-      includeFact: evidenceTraceIncludeFact,
-      includeClaim: evidenceTraceIncludeClaim,
-      includeHypothesis: evidenceTraceIncludeHypothesis,
-      includeUnknown: evidenceTraceIncludeUnknown,
-      stopAtFacts: evidenceTraceStopAtFacts,
+    const markdown = buildContradictionTraceMd(document, selectedCard.id, {
+      depthLimit: contradictionTraceDepthLimit,
+      includeSupports: contradictionTraceIncludeSupports,
     });
 
     if (markdown.startsWith("Error:")) {
@@ -431,8 +423,8 @@ export function SidePanel({
     return markdown;
   };
 
-  const handleCopyEvidenceTrace = async () => {
-    const markdown = getEvidenceTraceMarkdown();
+  const handleCopyContradictionTrace = async () => {
+    const markdown = getContradictionTraceMarkdown();
     if (!markdown) {
       return;
     }
@@ -440,17 +432,17 @@ export function SidePanel({
     try {
       await navigator.clipboard.writeText(markdown);
     } catch {
-      onEvidenceTraceError("Failed to copy evidence trace");
+      onEvidenceTraceError("Failed to copy contradiction trace");
     }
   };
 
-  const handleDownloadEvidenceTrace = () => {
-    const markdown = getEvidenceTraceMarkdown();
+  const handleDownloadContradictionTrace = () => {
+    const markdown = getContradictionTraceMarkdown();
     if (!markdown) {
       return;
     }
 
-    downloadTextFile("evidence_trace.md", "text/markdown", markdown);
+    downloadTextFile("contradiction_trace.md", "text/markdown", markdown);
   };
 
   const outlineDiagnosticsCounts = useMemo(() => {
@@ -2437,80 +2429,40 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence trace</div>
                 <div style={{ display: "grid", gap: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Contradiction trace</div>
                   <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                     Depth
                     <select
-                      value={evidenceTraceDepthLimit}
+                      value={contradictionTraceDepthLimit}
                       onChange={(event) => {
-                        setEvidenceTraceDepthLimit(Number(event.target.value));
+                        setContradictionTraceDepthLimit(Number(event.target.value));
                       }}
                     >
-                      {[1, 2, 3, 4, 5].map((depth) => (
+                      {[1, 2, 3].map((depth) => (
                         <option key={depth} value={depth}>
                           {depth}
                         </option>
                       ))}
                     </select>
                   </label>
-                  <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>Include types</div>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                     <input
                       type="checkbox"
-                      checked={evidenceTraceIncludeFact}
+                      checked={contradictionTraceIncludeSupports}
                       onChange={(event) => {
-                        setEvidenceTraceIncludeFact(event.target.checked);
+                        setContradictionTraceIncludeSupports(event.target.checked);
                       }}
                     />
-                    Fact
+                    Include fact supports
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-                    <input
-                      type="checkbox"
-                      checked={evidenceTraceIncludeClaim}
-                      onChange={(event) => {
-                        setEvidenceTraceIncludeClaim(event.target.checked);
-                      }}
-                    />
-                    Claim
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-                    <input
-                      type="checkbox"
-                      checked={evidenceTraceIncludeHypothesis}
-                      onChange={(event) => {
-                        setEvidenceTraceIncludeHypothesis(event.target.checked);
-                      }}
-                    />
-                    Hypothesis
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-                    <input
-                      type="checkbox"
-                      checked={evidenceTraceIncludeUnknown}
-                      onChange={(event) => {
-                        setEvidenceTraceIncludeUnknown(event.target.checked);
-                      }}
-                    />
-                    Unknown
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-                    <input
-                      type="checkbox"
-                      checked={evidenceTraceStopAtFacts}
-                      onChange={(event) => {
-                        setEvidenceTraceStopAtFacts(event.target.checked);
-                      }}
-                    />
-                    Stop at facts
-                  </label>
-                  <button type="button" onClick={() => { void handleCopyEvidenceTrace(); }}>
-                    Copy evidence trace (MD)
+                  <button type="button" onClick={() => { void handleCopyContradictionTrace(); }}>
+                    Copy contradiction trace (MD)
                   </button>
-                  <button type="button" onClick={handleDownloadEvidenceTrace}>
-                    Download evidence_trace.md
+                  <button type="button" onClick={handleDownloadContradictionTrace}>
+                    Download contradiction_trace.md
                   </button>
-                  {selectedCardSupportsIncomingCount === 0 ? (
-                    <div style={{ fontSize: 11, color: "#94a3b8" }}>No supports links found for this card.</div>
+                  {selectedCardContradictionsCount === 0 ? (
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>No contradiction links found.</div>
                   ) : null}
                 </div>
               </div>
