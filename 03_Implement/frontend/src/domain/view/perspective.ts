@@ -11,6 +11,35 @@ export type PerspectiveMode =
   | "contradiction"
   | "review";
 
+export const PERSPECTIVE_MODE_VALUES: PerspectiveMode[] = [
+  "default",
+  "facts",
+  "claims",
+  "hypotheses",
+  "unknown",
+  "evidence",
+  "contradiction",
+  "review",
+];
+
+export type PerspectiveState = {
+  mode: PerspectiveMode;
+  strictFilter: boolean;
+  lodEnabled?: boolean;
+  evidenceOverlayPrefs?: {
+    mode: "supports" | "contradicts" | "both";
+    depth: number;
+    scope: "all" | "selection";
+    dimOthers: boolean;
+  };
+};
+
+export type PerspectivePreset = {
+  id: string;
+  name: string;
+  perspective: PerspectiveState;
+};
+
 export type PerspectiveViewState = {
   perspectiveMode: PerspectiveMode;
   perspectiveStrictFilter?: boolean;

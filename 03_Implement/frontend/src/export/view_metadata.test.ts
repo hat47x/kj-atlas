@@ -48,6 +48,10 @@ describe("view metadata export", () => {
         readingIndex: 2,
         readingMode: "islands+cards",
         reviewedOnly: true,
+        perspective: {
+          mode: "default",
+          strictFilter: false,
+        },
       },
       export: {
         mode: "viewport",
@@ -79,6 +83,7 @@ describe("view metadata export", () => {
     expect(metadata.docSignature).toBe("unknown");
     expect(metadata.export).toEqual({ mode: "bounds", padding: 64 });
     expect(metadata.viewState.editReadingOrder).toBeUndefined();
+    expect(metadata.viewState.perspective).toEqual({ mode: "default", strictFilter: false });
   });
 
   it("uses provided generatedAt when specified", () => {
@@ -257,6 +262,91 @@ describe("view metadata export", () => {
     expect(metadata.viewState.evidenceOverlayMode).toBe("both");
 
     const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
+  it("exports sorted perspective presets", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-persp", title: "Perspective" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+        perspectiveMode: "claims",
+        perspectiveStrictFilter: true,
+        perspectivePresets: [
+          { id: "b", name: "Beta", perspective: { mode: "claims", strictFilter: true } },
+          { id: "a-2", name: "Alpha", perspective: { mode: "facts", strictFilter: false } },
+          { id: "a-1", name: "Alpha", perspective: { mode: "default", strictFilter: false } },
+        ],
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.viewState.perspective).toEqual({ mode: "claims", strictFilter: true });
+    expect(metadata.viewState.perspectivePresets?.map((preset) => `${preset.name}:${preset.id}`)).toEqual([
+      "Alpha:a-1",
+      "Alpha:a-2",
+      "Beta:b",
+    ]);
+  });
+
+
+  it("keeps backward compatibility for old view.json without perspective fields", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-legacy",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: true,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts modern perspective payloads for backward-compatible import", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        perspective: {
+          mode: "unsupported-mode",
+          strictFilter: true,
+          evidenceOverlayPrefs: { mode: "both", depth: 9, scope: "all", dimOthers: false },
+        },
+        perspectivePresets: [
+          {
+            id: "preset-1",
+            name: "My preset",
+            perspective: { mode: "legacy-mode", strictFilter: false },
+          },
+        ],
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
     expect(result.ok).toBe(true);
   });
 

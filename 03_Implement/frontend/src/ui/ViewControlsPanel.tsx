@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
-import type { PerspectiveMode } from "../domain/view/perspective";
+import type { PerspectiveMode, PerspectivePreset } from "../domain/view/perspective";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -59,6 +59,9 @@ type ViewControlsPanelProps = {
   onPerspectiveModeChange: (value: PerspectiveMode) => void;
   perspectiveStrictFilter: boolean;
   onPerspectiveStrictFilterChange: (value: boolean) => void;
+  perspectivePresets: PerspectivePreset[];
+  onSavePerspectivePreset: () => void;
+  onLoadPerspectivePreset: (presetId: string) => void;
   perspectiveHint?: string | null;
 };
 
@@ -126,6 +129,9 @@ export function ViewControlsPanel({
   onPerspectiveModeChange,
   perspectiveStrictFilter,
   onPerspectiveStrictFilterChange,
+  perspectivePresets,
+  onSavePerspectivePreset,
+  onLoadPerspectivePreset,
   perspectiveHint,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
@@ -232,6 +238,32 @@ export function ViewControlsPanel({
           />
           Strict filter
         </label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={onSavePerspectivePreset} style={{ cursor: "pointer" }}>
+            Save preset
+          </button>
+          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+            Load preset
+            <select
+              value=""
+              onChange={(event) => {
+                if (!event.target.value) {
+                  return;
+                }
+
+                onLoadPerspectivePreset(event.target.value);
+                event.target.value = "";
+              }}
+            >
+              <option value="">Select preset…</option>
+              {perspectivePresets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         {perspectiveHint ? <div style={{ fontSize: 11, color: "#475569" }}>{perspectiveHint}</div> : null}
       </div>
 
