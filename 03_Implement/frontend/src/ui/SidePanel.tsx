@@ -18,6 +18,7 @@ import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { downloadTextFile } from "../export/narrative_export";
+import type { MergeAuditEntry } from "../domain/view/audit_log";
 
 type SummaryGroundingItem = {
   id: string;
@@ -180,6 +181,7 @@ type SidePanelProps = {
   topContent?: ReactNode;
   importedPackSnapshotUrl?: string | null;
   importedPackDiagnosticsMd?: string | null;
+  mergeAuditLog: MergeAuditEntry[];
 };
 
 export function SidePanel({
@@ -327,12 +329,14 @@ export function SidePanel({
   topContent,
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
+  mergeAuditLog,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [expandedSummaryHistoryEntryId, setExpandedSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
+  const [expandedMergeAuditEntryId, setExpandedMergeAuditEntryId] = useState<string | null>(null);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
@@ -352,6 +356,10 @@ export function SidePanel({
     const entries = selectedRelationSummary?.history ?? [];
     return [...entries].reverse();
   }, [selectedRelationSummary?.history]);
+
+  const mergeAuditEntries = useMemo(() => {
+    return [...mergeAuditLog].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }, [mergeAuditLog]);
 
   const formatSummaryHistoryTimestamp = (createdAt: string) => {
     const parsedDate = new Date(createdAt);
@@ -831,6 +839,49 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
+      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <details>
+          <summary style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>
+            History ({mergeAuditEntries.length})
+          </summary>
+          <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+            {mergeAuditEntries.length === 0 ? (
+              <div style={{ fontSize: 12, color: "#64748b" }}>No merge history yet.</div>
+            ) : (
+              mergeAuditEntries.map((entry) => {
+                const isExpanded = expandedMergeAuditEntryId === entry.id;
+                const kindSummary = Object.entries(entry.summary.byKind).map(([kind, count]) => `${kind}:${count}`).join(", ");
+                return (
+                  <div key={entry.id} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedMergeAuditEntryId(isExpanded ? null : entry.id);
+                      }}
+                      style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "grid", gap: 4 }}
+                    >
+                      <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
+                      <div style={{ fontSize: 12, color: "#0f172a" }}>{entry.source.fileName ?? entry.source.packId ?? "Unknown source"}</div>
+                      <div style={{ fontSize: 11, color: "#334155" }}>{entry.summary.totalItems} items · {kindSummary || "no kinds"}</div>
+                    </button>
+                    {isExpanded ? (
+                      <div style={{ marginTop: 8, display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
+                        <div>source kind: {entry.source.kind}</div>
+                        <div>by kind: {kindSummary || "(none)"}</div>
+                        <div>item ids: {(entry.details.itemIds ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.itemIds ?? []).length > 6 ? ` +${(entry.details.itemIds ?? []).length - 6} more` : ""}</div>
+                        <div>card ids: {(entry.details.entityIds?.cards ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.cards ?? []).length > 6 ? ` +${(entry.details.entityIds?.cards ?? []).length - 6} more` : ""}</div>
+                        <div>island ids: {(entry.details.entityIds?.islands ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.islands ?? []).length > 6 ? ` +${(entry.details.entityIds?.islands ?? []).length - 6} more` : ""}</div>
+                        <div>evidence ids: {(entry.details.entityIds?.evidence ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.evidence ?? []).length > 6 ? ` +${(entry.details.entityIds?.evidence ?? []).length - 6} more` : ""}</div>
+                        <div style={{ color: "#64748b" }}>Revert not supported yet.</div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </details>
+      </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Guided Flow</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>

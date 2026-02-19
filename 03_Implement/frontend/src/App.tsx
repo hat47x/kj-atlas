@@ -96,7 +96,7 @@ import {
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
 import { buildMergeItems, type MergeItem } from "./diff/merge_items";
-import { applySelectedMergeItemsAtomic } from "./diff/merge_apply";
+import { applySelectedMergeItemsAtomic, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -110,6 +110,7 @@ import { lintPatchAgainstCurrentDoc, type PatchLintIssue } from "./domain/patch/
 import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patch/patch_fix";
 import { parseDocumentJson } from "./import/document_import";
 import { parseViewJson } from "./import/view_import";
+import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -925,6 +926,8 @@ export default function App() {
   const [selectedMergeItemIdSet, setSelectedMergeItemIdSet] = useState<Set<string>>(new Set());
   const [autoIncludeMergePrerequisites, setAutoIncludeMergePrerequisites] = useState(true);
   const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV2 | null>(null);
+  const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
+  const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
   const [packImportError, setPackImportError] = useState<string | null>(null);
@@ -1496,6 +1499,8 @@ export default function App() {
         setSuggestionId(null);
         setSuggestionNotes(null);
         setSuggestionError(null);
+        setMergeAuditLog([]);
+        setMergeSourceInfo({ kind: "unknown" });
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage("Document loaded");
       } catch (error) {
@@ -1523,6 +1528,8 @@ export default function App() {
             setSuggestionId(null);
             setSuggestionNotes(null);
             setSuggestionError(null);
+            setMergeAuditLog([]);
+            setMergeSourceInfo({ kind: "unknown" });
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage("Created a new document");
           } catch (saveError) {
@@ -2175,6 +2182,11 @@ export default function App() {
 
       setComparisonDocument(parsedDocument);
       setComparisonFileName(selectedFile.name);
+      setMergeSourceInfo({
+        kind: selectedFile.name.toLowerCase().endsWith(".zip") ? "zip" : "unknown",
+        fileName: selectedFile.name,
+        packId: parsedDocument.id || undefined,
+      });
       setReviewDiffBaseSnapshot(document ? cloneDocument(document) : null);
       setSelectedMergeItemIdSet(new Set());
       setLastMergeSnapshot(null);
@@ -2214,9 +2226,11 @@ export default function App() {
       return;
     }
 
+    const auditEntry = buildMergeAuditEntry(selectedItems, mergeSourceInfo);
+    setMergeAuditLog((current) => appendMergeAuditLog(current, auditEntry));
     setLastMergeSnapshot(cloneDocument(document));
     applyDocumentChange(applyResult.document, "Applied selective merge");
-  }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, reviewDiffBaseSnapshot]);
+  }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, mergeSourceInfo, reviewDiffBaseSnapshot]);
 
   const handleUndoLastMerge = useCallback(() => {
     if (!lastMergeSnapshot) {
@@ -2270,6 +2284,7 @@ export default function App() {
       setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
     }
     setPerspectivePresets(sanitizePerspectivePresets(metadata.viewState.perspectivePresets));
+    setMergeAuditLog(sanitizeMergeAuditLog(metadata.mergeAuditLog));
     setIncludeUnreviewedDraftsInExport(false);
     setIsReadingOrderEditMode(false);
     setRevealedSourceCardIds(new Set());
@@ -2417,6 +2432,7 @@ export default function App() {
       setRevealedSourceCardIds(new Set());
       setComparisonDocument(null);
       setComparisonFileName(null);
+      setMergeSourceInfo({ kind: "unknown" });
       setGroundingVisibilityMessage(null);
       setIsDirty(true);
       setHasSaveConflict(false);
@@ -2427,6 +2443,7 @@ export default function App() {
       setPendingImportedDocument(null);
       setImportDocumentError(null);
       setPackImportError(null);
+      setMergeSourceInfo({ kind: "zip", fileName: selectedFile.name, packId: selectedFile.name.replace(/\.zip$/i, "") });
       setImportedPackSummary({
         fileName: selectedFile.name,
         cardCount: parsedDocument.document.cards.length,
@@ -5959,11 +5976,13 @@ export default function App() {
         bounds,
         padding,
         generatedAt,
+        mergeAuditLog,
       });
 
       downloadTextFile(getViewMetadataFilename(mode, generatedAt), "application/json", `${JSON.stringify(metadata, null, 2)}\n`);
     },
     [
+      mergeAuditLog,
       abstractMapView,
       canvasCamera,
       document,
@@ -6031,6 +6050,7 @@ export default function App() {
         },
         exportMode: "viewport",
         generatedAt: deterministicNowIso,
+        mergeAuditLog,
       });
 
       const files = buildExportBundle(document, viewMetadata, {
@@ -6110,6 +6130,7 @@ export default function App() {
     readingNavEnabled,
     reviewedOnly,
     safeMode,
+    mergeAuditLog,
     selectedCard?.id,
     showReadingOrder,
     summaryView,
@@ -7216,6 +7237,7 @@ export default function App() {
           onPromoteAggregatedEdge={handlePromoteAggregatedEdge}
           evidenceOverlayEnabled={evidenceOverlayEnabled}
           evidenceOverlayScope={evidenceOverlayScope}
+          mergeAuditLog={mergeAuditLog}
           onEnableEvidenceOverlaySelectionExplore={() => {
             if (!selectedCard) {
               return;
