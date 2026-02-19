@@ -73,6 +73,7 @@ import {
   type FocusSnapshot,
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
+import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -718,6 +719,9 @@ export default function App() {
   const [readingIndex, setReadingIndex] = useState(0);
   const [readingMode, setReadingMode] = useState<ReadingMode>("islands");
   const [reviewedOnly, setReviewedOnly] = useState(false);
+  const [outlineIncludeCardTexts, setOutlineIncludeCardTexts] = useState(false);
+  const [outlineIncludeRelationSummaries, setOutlineIncludeRelationSummaries] = useState(true);
+  const [outlineIncludeUnreviewed, setOutlineIncludeUnreviewed] = useState(false);
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -4274,6 +4278,14 @@ export default function App() {
 
   const currentReadingItem = readingList[clampReadingIndex(readingIndex, readingList.length)] ?? null;
 
+  useEffect(() => {
+    if (!safeMode) {
+      return;
+    }
+
+    setOutlineIncludeUnreviewed(false);
+  }, [safeMode]);
+
   const handleSetReadingNavEnabled = useCallback((enabled: boolean) => {
     setReadingNavEnabled(enabled);
     if (!enabled) {
@@ -4316,10 +4328,6 @@ export default function App() {
     focusReadingItemAtIndex(readingIndex + 1);
   }, [focusReadingItemAtIndex, readingIndex]);
 
-  const handleReadingDisable = useCallback(() => {
-    setReadingNavEnabled(false);
-  }, []);
-
   const currentLod = useMemo(() => {
     if (!lodEnabled) {
       return null;
@@ -4328,6 +4336,69 @@ export default function App() {
     const zoom = canvasCamera?.zoom ?? 1;
     return getLODLevel(zoom, { lodThresholds, lodLevelOverride });
   }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
+
+  const buildReadingOutline = useCallback((): string | null => {
+    if (!document) {
+      setStatusMessage("Nothing to export");
+      return null;
+    }
+
+    return buildReadingOutlineMd(
+      document,
+      {
+        readingNavEnabled,
+        readingIndex,
+        readingMode,
+        reviewedOnly,
+        safeMode,
+        lod: currentLod?.level ?? null,
+      },
+      {
+        includeCardTexts: outlineIncludeCardTexts,
+        includeRelationSummaries: outlineIncludeRelationSummaries,
+        includeUnreviewedSummaries: outlineIncludeUnreviewed,
+      },
+    );
+  }, [
+    document,
+    outlineIncludeCardTexts,
+    outlineIncludeRelationSummaries,
+    outlineIncludeUnreviewed,
+    readingIndex,
+    readingMode,
+    readingNavEnabled,
+    reviewedOnly,
+    safeMode,
+    currentLod?.level,
+  ]);
+
+  const handleCopyReadingOutlineMd = useCallback(async () => {
+    const outline = buildReadingOutline();
+    if (!outline) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(outline);
+      setStatusMessage("Copied reading outline (Markdown)");
+    } catch {
+      setStatusMessage("Failed to copy reading outline");
+    }
+  }, [buildReadingOutline]);
+
+  const handleDownloadReadingOutlineMd = useCallback(() => {
+    const outline = buildReadingOutline();
+    if (!outline) {
+      return;
+    }
+
+    downloadTextFile("outline.md", "text/markdown", outline);
+    setStatusMessage("Downloaded outline.md");
+  }, [buildReadingOutline]);
+
+  const handleReadingDisable = useCallback(() => {
+    setReadingNavEnabled(false);
+  }, []);
 
   const loneWolfCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument || (!summaryView && !abstractMapView)) {
@@ -5093,8 +5164,7 @@ export default function App() {
       lodThresholds,
       lodLevelOverride,
       lodShowLoneWolvesWhenFar,
-      currentLod?.level,
-    ]
+      ]
   );
 
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
@@ -5991,6 +6061,16 @@ export default function App() {
           onReadingModeChange={handleSetReadingMode}
           reviewedOnly={reviewedOnly}
           onReadingReviewedOnlyToggle={handleToggleReviewedOnly}
+          outlineIncludeCardTexts={outlineIncludeCardTexts}
+          onOutlineIncludeCardTextsChange={setOutlineIncludeCardTexts}
+          outlineIncludeRelationSummaries={outlineIncludeRelationSummaries}
+          onOutlineIncludeRelationSummariesChange={setOutlineIncludeRelationSummaries}
+          outlineIncludeUnreviewed={outlineIncludeUnreviewed}
+          onOutlineIncludeUnreviewedChange={setOutlineIncludeUnreviewed}
+          onCopyReadingOutlineMd={() => {
+            void handleCopyReadingOutlineMd();
+          }}
+          onDownloadReadingOutlineMd={handleDownloadReadingOutlineMd}
           readingStep={readingList.length === 0 ? 0 : clampReadingIndex(readingIndex, readingList.length) + 1}
           readingTotal={readingList.length}
           currentReadingLabel={currentReadingItem?.label ?? null}

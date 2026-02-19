@@ -108,6 +108,14 @@ type SidePanelProps = {
   onReadingModeChange: (value: "islands" | "islands+cards") => void;
   reviewedOnly: boolean;
   onReadingReviewedOnlyToggle: () => void;
+  outlineIncludeCardTexts: boolean;
+  onOutlineIncludeCardTextsChange: (value: boolean) => void;
+  outlineIncludeRelationSummaries: boolean;
+  onOutlineIncludeRelationSummariesChange: (value: boolean) => void;
+  outlineIncludeUnreviewed: boolean;
+  onOutlineIncludeUnreviewedChange: (value: boolean) => void;
+  onCopyReadingOutlineMd: () => void;
+  onDownloadReadingOutlineMd: () => void;
   readingStep: number;
   readingTotal: number;
   currentReadingLabel: string | null;
@@ -205,6 +213,14 @@ export function SidePanel({
   onReadingModeChange,
   reviewedOnly,
   onReadingReviewedOnlyToggle,
+  outlineIncludeCardTexts,
+  onOutlineIncludeCardTextsChange,
+  outlineIncludeRelationSummaries,
+  onOutlineIncludeRelationSummariesChange,
+  outlineIncludeUnreviewed,
+  onOutlineIncludeUnreviewedChange,
+  onCopyReadingOutlineMd,
+  onDownloadReadingOutlineMd,
   readingStep,
   readingTotal,
   currentReadingLabel,
@@ -420,6 +436,49 @@ export function SidePanel({
           />
           Show canonical-only edges
         </label>
+        <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeCardTexts}
+              onChange={(event) => {
+                onOutlineIncludeCardTextsChange(event.target.checked);
+              }}
+            />
+            Include card texts
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeRelationSummaries}
+              onChange={(event) => {
+                onOutlineIncludeRelationSummariesChange(event.target.checked);
+              }}
+            />
+            Include relation summaries
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeUnreviewed}
+              disabled={safeMode}
+              onChange={(event) => {
+                onOutlineIncludeUnreviewedChange(event.target.checked);
+              }}
+            />
+            Include unreviewed
+          </label>
+          <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
+          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button type="button" onClick={onCopyReadingOutlineMd}>
+              Copy outline (MD)
+            </button>
+            <button type="button" onClick={onDownloadReadingOutlineMd}>
+              Download outline.md
+            </button>
+          </div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
             Align Left
@@ -535,6 +594,49 @@ export function SidePanel({
           />
           Reviewed only
         </label>
+        <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeCardTexts}
+              onChange={(event) => {
+                onOutlineIncludeCardTextsChange(event.target.checked);
+              }}
+            />
+            Include card texts
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeRelationSummaries}
+              onChange={(event) => {
+                onOutlineIncludeRelationSummariesChange(event.target.checked);
+              }}
+            />
+            Include relation summaries
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineIncludeUnreviewed}
+              disabled={safeMode}
+              onChange={(event) => {
+                onOutlineIncludeUnreviewedChange(event.target.checked);
+              }}
+            />
+            Include unreviewed
+          </label>
+          <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
+          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button type="button" onClick={onCopyReadingOutlineMd}>
+              Copy outline (MD)
+            </button>
+            <button type="button" onClick={onDownloadReadingOutlineMd}>
+              Download outline.md
+            </button>
+          </div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button
             type="button"
