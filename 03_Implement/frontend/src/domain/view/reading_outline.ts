@@ -1,6 +1,7 @@
 import type { Card, DocumentV2, Island, RelationSummary } from "../types";
 import { buildReadingList, type ReadingMode } from "./reading_path";
 import type { OutlineQualityReport } from "./outline_quality";
+import type { Recommendation } from "./recommendations";
 
 const DEFAULT_MAX_SNIPPET_LEN = 140;
 
@@ -20,7 +21,30 @@ export type ReadingOutlineOptions = {
   maxSnippetLen?: number;
   appendDiagnostics?: boolean;
   diagnosticsReport?: OutlineQualityReport | null;
+  appendRecommendations?: boolean;
+  recommendations?: Recommendation[];
 };
+
+function formatRecommendations(recommendations: Recommendation[]): string[] {
+  const lines: string[] = ["## Suggested Next Steps", ""];
+
+  if (recommendations.length === 0) {
+    lines.push("1. No recommendations.", "");
+    return lines;
+  }
+
+  recommendations.forEach((recommendation, index) => {
+    lines.push(`${index + 1}. ${recommendation.title} [${recommendation.impactLevel}]`);
+    lines.push(`   - ${recommendation.description}`);
+    lines.push(`   - Why: ${recommendation.rationaleCodes.join(", ")}`);
+    for (const action of recommendation.suggestedActions) {
+      lines.push(`   - Action: ${action}`);
+    }
+  });
+  lines.push("");
+
+  return lines;
+}
 
 function formatDiagnostics(report: OutlineQualityReport): string[] {
   const lines: string[] = ["## Diagnostics", "", `GeneratedAt: ${report.generatedAt}`, ""];
@@ -143,6 +167,7 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
   const includeCardTexts = options.includeCardTexts ?? false;
   const includeRelationSummaries = options.includeRelationSummaries ?? true;
   const appendDiagnostics = options.appendDiagnostics ?? false;
+  const appendRecommendations = options.appendRecommendations ?? false;
   const maxSnippetLen = options.maxSnippetLen ?? DEFAULT_MAX_SNIPPET_LEN;
   const includeUnreviewed = !readingState.safeMode && (options.includeUnreviewedSummaries ?? false);
 
@@ -209,6 +234,10 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
 
   if (appendDiagnostics && options.diagnosticsReport) {
     lines.push(...formatDiagnostics(options.diagnosticsReport));
+  }
+
+  if (appendRecommendations) {
+    lines.push(...formatRecommendations(options.recommendations ?? []));
   }
 
   return `${lines.join("\n").trimEnd()}\n`;
