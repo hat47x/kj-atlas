@@ -3,6 +3,7 @@ import { lintPatchAgainstCurrentDoc } from "../domain/patch/patch_lint";
 import type { PatchDocument, PatchOp } from "../domain/patch/patch_apply";
 import type { DocumentV2 } from "../domain/types";
 import type { MergeItem } from "./merge_items";
+import { createMergeAuditEntry, type MergeAuditEntry, type MergeAuditSource } from "../domain/view/audit_log";
 
 function sortById<T extends { id: string }>(values: T[]): T[] {
   return [...values].sort((left, right) => left.id.localeCompare(right.id));
@@ -129,6 +130,11 @@ export function buildSelectedPatchFromItems(baseDoc: DocumentV2, incomingDoc: Do
     baseDocSignature: `${baseDoc.id}:${baseDoc.updatedAt}`,
     ops: buildOpList(baseDoc, incomingDoc, selectedItems),
   };
+}
+
+
+export function buildMergeAuditEntry(selectedItems: MergeItem[], source?: MergeAuditSource): MergeAuditEntry {
+  return createMergeAuditEntry(selectedItems, source);
 }
 
 export function applySelectedMergeItemsAtomic(currentDoc: DocumentV2, baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { ok: true; document: DocumentV2 } | { ok: false; reason: string } {

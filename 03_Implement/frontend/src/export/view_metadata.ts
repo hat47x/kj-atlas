@@ -1,6 +1,7 @@
 import type { DocumentV2 } from "../domain/types";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
+import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 
 
 function buildPerspectiveStateFromViewState(viewState: ExportViewMetadataArgs["viewState"]): PerspectiveState {
@@ -89,6 +90,7 @@ export type ExportViewMetadata = {
     padding?: number;
   };
   notes?: string;
+  mergeAuditLog?: MergeAuditEntry[];
 };
 
 type ExportViewMetadataArgs = {
@@ -134,6 +136,7 @@ type ExportViewMetadataArgs = {
   };
   padding?: number;
   generatedAt?: string;
+  mergeAuditLog?: MergeAuditEntry[];
 };
 
 function hashTitle(value: string): string {
@@ -162,7 +165,7 @@ function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): stri
   return `title-${hashTitle(title)}`;
 }
 
-export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bounds, padding, generatedAt }: ExportViewMetadataArgs): ExportViewMetadata {
+export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog }: ExportViewMetadataArgs): ExportViewMetadata {
   return {
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
@@ -208,6 +211,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(padding === undefined ? {} : { padding }),
     },
     notes: "",
+    ...(mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(mergeAuditLog) }),
   };
 }
 
@@ -537,5 +541,12 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
     return { ok: false, error: "metadata.notes must be a string when present" };
   }
 
-  return { ok: true, metadata: value as ExportViewMetadata };
+  if (value.mergeAuditLog !== undefined && !Array.isArray(value.mergeAuditLog)) {
+    return { ok: false, error: "metadata.mergeAuditLog must be an array when present" };
+  }
+
+  return { ok: true, metadata: {
+    ...(value as ExportViewMetadata),
+    ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
+  } };
 }

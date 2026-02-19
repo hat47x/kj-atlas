@@ -372,4 +372,34 @@ describe("view metadata export", () => {
     expect(result).toEqual({ ok: false, error: "viewState.evidenceOverlayDepth must be a number within 1..3 when present" });
   });
 
+
+  it("includes mergeAuditLog in export and import validation", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-audit", title: "Audit" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      exportMode: "viewport",
+      mergeAuditLog: [
+        {
+          id: "merge-1",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          source: { kind: "unknown", fileName: "compare.json" },
+          summary: { totalItems: 1, byKind: { "card.add": 1 } },
+          details: { itemIds: ["card.add:c1"], entityIds: { cards: ["c1"] } },
+        },
+      ],
+    });
+
+    expect(metadata.mergeAuditLog).toHaveLength(1);
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
 });
