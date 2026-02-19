@@ -75,6 +75,7 @@ import {
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/outline_quality";
+import { generateRecommendations } from "./domain/view/recommendations";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -724,7 +725,16 @@ export default function App() {
   const [outlineIncludeRelationSummaries, setOutlineIncludeRelationSummaries] = useState(true);
   const [outlineIncludeUnreviewed, setOutlineIncludeUnreviewed] = useState(false);
   const [outlineAppendDiagnostics, setOutlineAppendDiagnostics] = useState(false);
+  const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
+
+  const outlineRecommendations = useMemo(() => {
+    if (!document || !outlineQualityReport) {
+      return [];
+    }
+
+    return generateRecommendations(outlineQualityReport, document, { readingMode, reviewedOnly });
+  }, [document, outlineQualityReport, readingMode, reviewedOnly]);
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -4384,15 +4394,19 @@ export default function App() {
         includeUnreviewedSummaries: outlineIncludeUnreviewed,
         appendDiagnostics: outlineAppendDiagnostics,
         diagnosticsReport: outlineQualityReport,
+        appendRecommendations: outlineAppendRecommendations,
+        recommendations: outlineRecommendations,
       },
     );
   }, [
     document,
     outlineAppendDiagnostics,
+    outlineAppendRecommendations,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
     outlineIncludeUnreviewed,
     outlineQualityReport,
+    outlineRecommendations,
     readingIndex,
     readingMode,
     readingNavEnabled,
@@ -6098,7 +6112,10 @@ export default function App() {
           onOutlineIncludeUnreviewedChange={setOutlineIncludeUnreviewed}
           outlineAppendDiagnostics={outlineAppendDiagnostics}
           onOutlineAppendDiagnosticsChange={setOutlineAppendDiagnostics}
+          outlineAppendRecommendations={outlineAppendRecommendations}
+          onOutlineAppendRecommendationsChange={setOutlineAppendRecommendations}
           outlineQualityReport={outlineQualityReport}
+          outlineRecommendations={outlineRecommendations}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onCopyReadingOutlineMd={() => {
