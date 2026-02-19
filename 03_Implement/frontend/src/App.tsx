@@ -78,6 +78,7 @@ import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
 import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
+import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -730,6 +731,7 @@ export default function App() {
   const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
+  const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
@@ -4367,17 +4369,20 @@ export default function App() {
       { collapsedIslandIds },
     );
     const contradiction = analyzeContradictions(document);
+    const distribution = analyzeDistribution(document);
     setOutlineQualityReport(report);
     setContradictionReport(contradiction);
+    setDistributionReport(distribution);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
     setContradictionReport(null);
+    setDistributionReport(null);
     setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
 
@@ -6165,9 +6170,11 @@ export default function App() {
           outlineQualityReport={outlineQualityReport}
           outlineRecommendations={outlineRecommendations}
           contradictionReport={contradictionReport}
+          distributionReport={distributionReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
+          onFocusDistributionIsland={focusIslandById}
           onCopyReadingOutlineMd={() => {
             void handleCopyReadingOutlineMd();
           }}
