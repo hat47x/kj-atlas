@@ -94,6 +94,7 @@ import {
   type PerspectivePreset,
   type PerspectiveState,
 } from "./domain/view/perspective";
+import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -873,6 +874,10 @@ export default function App() {
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
   const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>([]);
+  const [guidedFlowEnabled, setGuidedFlowEnabled] = useState(false);
+  const [guidedFlowStepId, setGuidedFlowStepId] = useState<GuidedFlowStepId>("review");
+  const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
+  const [guidedFlowOpenEditorRequestSeq, setGuidedFlowOpenEditorRequestSeq] = useState(0);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
@@ -4427,21 +4432,34 @@ export default function App() {
       }
 
       pushCurrentFocusSnapshot();
-      const nextCamera = fitToBounds(
-        getCardWorldBounds(card),
+      const cardBounds = getCardWorldBounds(card);
+      const fitCamera = fitToBounds(
+        cardBounds,
         {
           width: canvasCamera.viewportWidth,
           height: canvasCamera.viewportHeight,
         },
         120
       );
+      const nextCamera = lodEnabled
+        ? enforceMinZoomForBounds(
+            cardBounds,
+            {
+              width: canvasCamera.viewportWidth,
+              height: canvasCamera.viewportHeight,
+            },
+            lodThresholds.close + FOCUS_LOD_EPSILON,
+            120,
+            { min: 0.2, max: 4 },
+          )
+        : fitCamera;
 
       setFocusTarget({});
       setFocusCardId(null);
       setFocusWorldPoint(null);
       requestCameraTransform(nextCamera);
     },
-    [canvasCamera, document, pushCurrentFocusSnapshot, requestCameraTransform]
+    [canvasCamera, document, lodEnabled, lodThresholds, pushCurrentFocusSnapshot, requestCameraTransform]
   );
 
   const handleFocusIsland = useCallback(() => {
@@ -4719,6 +4737,115 @@ export default function App() {
 
     setReadingIndex((previousIndex) => clampReadingIndex(previousIndex, readingList.length));
   }, [readingList.length, readingNavEnabled]);
+
+  const guidedFlowSteps = useMemo(() => buildDefaultGuidedFlowSteps(evidenceGapReport), [evidenceGapReport]);
+  const guidedFlowStepIndex = getGuidedFlowStepIndex(guidedFlowSteps, guidedFlowStepId);
+  const currentGuidedFlowStep = guidedFlowSteps[guidedFlowStepIndex] ?? guidedFlowSteps[0];
+  const guidedFlowTargets = useMemo(() => {
+    if (!document || !currentGuidedFlowStep) {
+      return [] as string[];
+    }
+
+    return currentGuidedFlowStep.targetSelector(document, {
+      guidedFlowEnabled,
+      guidedFlowStepId,
+      guidedFlowTargetIndex,
+    });
+  }, [currentGuidedFlowStep, document, guidedFlowEnabled, guidedFlowStepId, guidedFlowTargetIndex]);
+
+  useEffect(() => {
+    setGuidedFlowTargetIndex((previousIndex) => {
+      if (guidedFlowTargets.length === 0) {
+        return 0;
+      }
+
+      return Math.min(previousIndex, guidedFlowTargets.length - 1);
+    });
+  }, [guidedFlowTargets]);
+
+  const focusGuidedFlowTarget = useCallback((targetId: string) => {
+    if (!document) {
+      return;
+    }
+
+    const targetIsland = document.islands.find((island) => island.id === targetId);
+    if (targetIsland) {
+      setSelectedIslandId(targetIsland.id);
+      setSelectedCardIds([]);
+      focusItem("island", targetIsland.id);
+      return;
+    }
+
+    const targetCard = document.cards.find((card) => card.id === targetId);
+    if (targetCard) {
+      setSelectedIslandId(null);
+      setSelectedCardIds([targetCard.id]);
+      focusItem("card", targetCard.id);
+    }
+  }, [document, focusItem]);
+
+  const handleGuidedFlowStepChange = useCallback((direction: -1 | 1) => {
+    const nextIndex = Math.max(0, Math.min(guidedFlowSteps.length - 1, guidedFlowStepIndex + direction));
+    const nextStep = guidedFlowSteps[nextIndex];
+    if (!nextStep) {
+      return;
+    }
+
+    setGuidedFlowStepId(nextStep.id);
+    setGuidedFlowTargetIndex(0);
+    setPerspectiveMode(nextStep.perspectiveMode);
+  }, [guidedFlowStepIndex, guidedFlowSteps]);
+
+  const handleGuidedFlowNextTarget = useCallback(() => {
+    if (guidedFlowTargets.length === 0) {
+      setStatusMessage("No targets for this guided step");
+      return;
+    }
+
+    const nextIndex = guidedFlowTargetIndex % guidedFlowTargets.length;
+    const nextTargetId = guidedFlowTargets[nextIndex];
+    if (!nextTargetId) {
+      return;
+    }
+
+    focusGuidedFlowTarget(nextTargetId);
+    setGuidedFlowTargetIndex(nextIndex + 1);
+
+    if (readingNavEnabled) {
+      const readingTargetIndex = readingList.findIndex((item) => item.id === nextTargetId);
+      if (readingTargetIndex >= 0) {
+        setReadingIndex(readingTargetIndex);
+      }
+    }
+  }, [focusGuidedFlowTarget, guidedFlowTargetIndex, guidedFlowTargets, readingList, readingNavEnabled]);
+
+  const handleGuidedFlowOpenRelevantEditor = useCallback(() => {
+    if (currentGuidedFlowStep?.id === "classify") {
+      setStatusMessage("Use Claim Type in the card editor.");
+      return;
+    }
+
+    if (currentGuidedFlowStep?.id === "evidence") {
+      if (selectedCardIds.length === 0 && guidedFlowTargets.length > 0) {
+        const firstCardId = guidedFlowTargets.find((targetId) => document?.cards.some((card) => card.id === targetId));
+        if (firstCardId) {
+          setSelectedIslandId(null);
+          setSelectedCardIds([firstCardId]);
+          focusItem("card", firstCardId);
+        }
+      }
+      setGuidedFlowOpenEditorRequestSeq((previousSeq) => previousSeq + 1);
+      return;
+    }
+
+    if (currentGuidedFlowStep?.id === "review") {
+      setStatusMessage("Use island/card review fields in the side panel.");
+      return;
+    }
+
+    setStatusMessage("Use contradiction links in card evidence editor.");
+    setGuidedFlowOpenEditorRequestSeq((previousSeq) => previousSeq + 1);
+  }, [currentGuidedFlowStep?.id, document?.cards, focusItem, guidedFlowTargets, selectedCardIds.length]);
 
   const currentReadingItem = readingList[clampReadingIndex(readingIndex, readingList.length)] ?? null;
 
@@ -6701,6 +6828,38 @@ export default function App() {
           onConnectEdgeTypeChange={setConnectEdgeType}
           onStartConnect={handleStartConnect}
           onCancelConnect={handleCancelConnect}
+          guidedFlowEnabled={guidedFlowEnabled}
+          onGuidedFlowEnabledChange={(enabled) => {
+            setGuidedFlowEnabled(enabled);
+            if (!enabled) {
+              return;
+            }
+
+            const step = guidedFlowSteps[guidedFlowStepIndex] ?? guidedFlowSteps[0];
+            if (step) {
+              setPerspectiveMode(step.perspectiveMode);
+              setGuidedFlowStepId(step.id);
+              setGuidedFlowTargetIndex(0);
+            }
+          }}
+          guidedFlowStepId={currentGuidedFlowStep?.id ?? "review"}
+          guidedFlowStepIndex={guidedFlowStepIndex}
+          guidedFlowTotalSteps={guidedFlowSteps.length}
+          guidedFlowStepTitle={currentGuidedFlowStep?.title ?? ""}
+          guidedFlowStepDescription={currentGuidedFlowStep?.description ?? ""}
+          guidedFlowStepOptional={currentGuidedFlowStep?.optional ?? false}
+          guidedFlowTargetIndex={guidedFlowTargetIndex}
+          guidedFlowTargetTotal={guidedFlowTargets.length}
+          guidedFlowSuggestedActions={currentGuidedFlowStep?.suggestedActions ?? []}
+          onGuidedFlowPrevStep={() => {
+            handleGuidedFlowStepChange(-1);
+          }}
+          onGuidedFlowNextStep={() => {
+            handleGuidedFlowStepChange(1);
+          }}
+          onGuidedFlowNextTarget={handleGuidedFlowNextTarget}
+          onGuidedFlowOpenRelevantEditor={handleGuidedFlowOpenRelevantEditor}
+          guidedFlowOpenEditorRequestSeq={guidedFlowOpenEditorRequestSeq}
           readingNavEnabled={readingNavEnabled}
           onReadingNavEnabledChange={handleSetReadingNavEnabled}
           readingMode={readingMode}
