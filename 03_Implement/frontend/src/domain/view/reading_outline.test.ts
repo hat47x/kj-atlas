@@ -122,4 +122,41 @@ describe("reading outline", () => {
     expect(markdown).toContain("Q007 Lone cards are present");
     expect(markdown).not.toContain("Bottom draft");
   });
+
+  it("appends suggested next steps when enabled", () => {
+    const doc = buildDoc();
+    const diagnostics = analyzeOutlineQuality(doc, { readingMode: "islands+cards", reviewedOnly: false }, { nowIso: "2026-01-01T01:23:45.000Z" });
+
+    const markdown = buildReadingOutlineMd(
+      doc,
+      {
+        readingNavEnabled: true,
+        readingIndex: 0,
+        readingMode: "islands+cards",
+        reviewedOnly: false,
+        safeMode: true,
+      },
+      {
+        appendRecommendations: true,
+        recommendations: [
+          {
+            id: "rec-1",
+            priority: 1,
+            category: "clarity",
+            title: "島タイトルを整理する",
+            description: "多くの島にタイトルが無く、読解の起点が不明確です。",
+            rationaleCodes: ["Q001"],
+            suggestedActions: ["各島に1行の要約タイトルを付与する"],
+            impactLevel: "high",
+          },
+        ],
+      },
+    );
+
+    expect(markdown).toContain("## Suggested Next Steps");
+    expect(markdown).toContain("1. 島タイトルを整理する [high]");
+    expect(markdown).toContain("Action: 各島に1行の要約タイトルを付与する");
+    expect(markdown).not.toContain("rec-1");
+    expect(diagnostics.findings.length).toBeGreaterThan(0);
+  });
 });

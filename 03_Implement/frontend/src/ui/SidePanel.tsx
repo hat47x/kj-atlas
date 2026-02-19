@@ -10,6 +10,7 @@ import {
 import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
+import type { Recommendation } from "../domain/view/recommendations";
 
 type SummaryGroundingItem = {
   id: string;
@@ -117,7 +118,10 @@ type SidePanelProps = {
   onOutlineIncludeUnreviewedChange: (value: boolean) => void;
   outlineAppendDiagnostics: boolean;
   onOutlineAppendDiagnosticsChange: (value: boolean) => void;
+  outlineAppendRecommendations: boolean;
+  onOutlineAppendRecommendationsChange: (value: boolean) => void;
   outlineQualityReport: OutlineQualityReport | null;
+  outlineRecommendations: Recommendation[];
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onCopyReadingOutlineMd: () => void;
@@ -227,7 +231,10 @@ export function SidePanel({
   onOutlineIncludeUnreviewedChange,
   outlineAppendDiagnostics,
   onOutlineAppendDiagnosticsChange,
+  outlineAppendRecommendations,
+  onOutlineAppendRecommendationsChange,
   outlineQualityReport,
+  outlineRecommendations,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onCopyReadingOutlineMd,
@@ -253,6 +260,7 @@ export function SidePanel({
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
+  const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -312,6 +320,14 @@ export function SidePanel({
 
     return `${selectedCardCount} cards selected`;
   }, [selectedCardCount]);
+
+  const visibleRecommendations = useMemo(() => {
+    if (!showOnlyHighImpactRecommendations) {
+      return outlineRecommendations;
+    }
+
+    return outlineRecommendations.filter((recommendation) => recommendation.impactLevel === "high");
+  }, [outlineRecommendations, showOnlyHighImpactRecommendations]);
 
   const outlineDiagnosticsCounts = useMemo(() => {
     if (!outlineQualityReport) {
@@ -500,6 +516,16 @@ export function SidePanel({
             />
             Append diagnostics
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendRecommendations}
+              onChange={(event) => {
+                onOutlineAppendRecommendationsChange(event.target.checked);
+              }}
+            />
+            Append recommendations
+          </label>
           <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
@@ -548,6 +574,58 @@ export function SidePanel({
                       </li>
                     ))}
                   </ul>
+                )}
+              </details>
+              <details style={{ marginTop: 8 }}>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={showOnlyHighImpactRecommendations}
+                    onChange={(event) => {
+                      setShowOnlyHighImpactRecommendations(event.target.checked);
+                    }}
+                  />
+                  Show only high-impact recommendations
+                </label>
+                {visibleRecommendations.length === 0 ? (
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No recommendations.</div>
+                ) : (
+                  <ol style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
+                    {visibleRecommendations.map((recommendation) => {
+                      const firstTarget = recommendation.targetEntities?.[0];
+                      return (
+                        <li key={recommendation.id} style={{ fontSize: 11, color: "#0f172a" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
+                            <span>{recommendation.title}</span>
+                            <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
+                              {recommendation.impactLevel}
+                            </span>
+                          </div>
+                          <div>{recommendation.description}</div>
+                          <details style={{ marginTop: 4 }}>
+                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>Details</summary>
+                            <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
+                              {recommendation.suggestedActions.map((action) => (
+                                <li key={`${recommendation.id}_${action}`}>{action}</li>
+                              ))}
+                            </ul>
+                            {firstTarget ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onFocusOutlineDiagnosticRef(firstTarget.kind, firstTarget.id);
+                                }}
+                                style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
+                              >
+                                Focus first target
+                              </button>
+                            ) : null}
+                          </details>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 )}
               </details>
             </div>
@@ -710,6 +788,16 @@ export function SidePanel({
             />
             Append diagnostics
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendRecommendations}
+              onChange={(event) => {
+                onOutlineAppendRecommendationsChange(event.target.checked);
+              }}
+            />
+            Append recommendations
+          </label>
           <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
@@ -758,6 +846,58 @@ export function SidePanel({
                       </li>
                     ))}
                   </ul>
+                )}
+              </details>
+              <details style={{ marginTop: 8 }}>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={showOnlyHighImpactRecommendations}
+                    onChange={(event) => {
+                      setShowOnlyHighImpactRecommendations(event.target.checked);
+                    }}
+                  />
+                  Show only high-impact recommendations
+                </label>
+                {visibleRecommendations.length === 0 ? (
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No recommendations.</div>
+                ) : (
+                  <ol style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
+                    {visibleRecommendations.map((recommendation) => {
+                      const firstTarget = recommendation.targetEntities?.[0];
+                      return (
+                        <li key={recommendation.id} style={{ fontSize: 11, color: "#0f172a" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
+                            <span>{recommendation.title}</span>
+                            <span style={{ fontSize: 10, border: "1px solid #cbd5e1", borderRadius: 999, padding: "0 6px", color: "#334155" }}>
+                              {recommendation.impactLevel}
+                            </span>
+                          </div>
+                          <div>{recommendation.description}</div>
+                          <details style={{ marginTop: 4 }}>
+                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>Details</summary>
+                            <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
+                              {recommendation.suggestedActions.map((action) => (
+                                <li key={`${recommendation.id}_${action}`}>{action}</li>
+                              ))}
+                            </ul>
+                            {firstTarget ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onFocusOutlineDiagnosticRef(firstTarget.kind, firstTarget.id);
+                                }}
+                                style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
+                              >
+                                Focus first target
+                              </button>
+                            ) : null}
+                          </details>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 )}
               </details>
             </div>
