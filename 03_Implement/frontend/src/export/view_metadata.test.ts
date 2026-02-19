@@ -243,15 +243,43 @@ describe("view metadata export", () => {
         lodLevelOverride: null,
         lodShowLoneWolvesWhenFar: true,
         resolvedLodLevel: "far",
+        evidenceOverlayEnabled: true,
+        evidenceOverlayMode: "both",
+        evidenceOverlayDepth: 2,
+        evidenceOverlayScope: "selection",
+        evidenceOverlayDimOthers: true,
       },
       exportMode: "viewport",
     });
 
     expect(metadata.viewState.lodEnabled).toBe(true);
     expect(metadata.viewState.lodThresholds).toEqual({ close: 1, mid: 0.5 });
+    expect(metadata.viewState.evidenceOverlayMode).toBe("both");
 
     const result = validateImportViewMetadata(metadata);
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid evidence overlay depth", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        evidenceOverlayDepth: 5,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: "viewState.evidenceOverlayDepth must be a number within 1..3 when present" });
   });
 
 });

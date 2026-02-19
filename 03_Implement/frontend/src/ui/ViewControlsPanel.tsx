@@ -44,6 +44,16 @@ type ViewControlsPanelProps = {
   onLodShowLoneWolvesWhenFarChange: (value: boolean) => void;
   showLabelBounds: boolean;
   onShowLabelBoundsChange: (value: boolean) => void;
+  evidenceOverlayEnabled: boolean;
+  onEvidenceOverlayEnabledChange: (value: boolean) => void;
+  evidenceOverlayMode: "supports" | "contradicts" | "both";
+  onEvidenceOverlayModeChange: (value: "supports" | "contradicts" | "both") => void;
+  evidenceOverlayDepth: number;
+  onEvidenceOverlayDepthChange: (value: number) => void;
+  evidenceOverlayScope: "all" | "selection";
+  onEvidenceOverlayScopeChange: (value: "all" | "selection") => void;
+  evidenceOverlayDimOthers: boolean;
+  onEvidenceOverlayDimOthersChange: (value: boolean) => void;
 };
 
 const sectionStyle: CSSProperties = {
@@ -96,6 +106,16 @@ export function ViewControlsPanel({
   onLodShowLoneWolvesWhenFarChange,
   showLabelBounds,
   onShowLabelBoundsChange,
+  evidenceOverlayEnabled,
+  onEvidenceOverlayEnabledChange,
+  evidenceOverlayMode,
+  onEvidenceOverlayModeChange,
+  evidenceOverlayDepth,
+  onEvidenceOverlayDepthChange,
+  evidenceOverlayScope,
+  onEvidenceOverlayScopeChange,
+  evidenceOverlayDimOthers,
+  onEvidenceOverlayDimOthersChange,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -169,6 +189,68 @@ export function ViewControlsPanel({
             </option>
           ))}
         </select>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Evidence overlay</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={evidenceOverlayEnabled}
+            onChange={(event) => {
+              onEvidenceOverlayEnabledChange(event.target.checked);
+            }}
+          />
+          Enable evidence overlay
+        </label>
+        <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+          Mode
+          <select
+            value={evidenceOverlayMode}
+            onChange={(event) => {
+              onEvidenceOverlayModeChange(event.target.value as "supports" | "contradicts" | "both");
+            }}
+          >
+            <option value="supports">supports</option>
+            <option value="contradicts">contradicts</option>
+            <option value="both">both</option>
+          </select>
+        </label>
+        <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+          Depth
+          <select
+            value={String(Math.max(1, Math.min(3, evidenceOverlayDepth)))}
+            onChange={(event) => {
+              onEvidenceOverlayDepthChange(Number(event.target.value));
+            }}
+          >
+            <option value="1">1 hop</option>
+            <option value="2">2 hops</option>
+            <option value="3">3 hops</option>
+          </select>
+        </label>
+        <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+          Scope
+          <select
+            value={evidenceOverlayScope}
+            onChange={(event) => {
+              onEvidenceOverlayScopeChange(event.target.value as "all" | "selection");
+            }}
+          >
+            <option value="selection">selection</option>
+            <option value="all">all</option>
+          </select>
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={evidenceOverlayDimOthers}
+            onChange={(event) => {
+              onEvidenceOverlayDimOthersChange(event.target.checked);
+            }}
+          />
+          Dim non-participating cards
+        </label>
       </div>
 
       <div style={sectionStyle}>

@@ -152,6 +152,9 @@ type SidePanelProps = {
   onRemoveReadingOrderItem: (index: number) => void;
   aggregatedEdgeInspectorItems: AggregatedEdgeInspectorItem[];
   onPromoteAggregatedEdge: (edgeId: string) => void;
+  evidenceOverlayEnabled: boolean;
+  evidenceOverlayScope: "all" | "selection";
+  onEnableEvidenceOverlaySelectionExplore: () => void;
   topContent?: ReactNode;
 };
 
@@ -275,6 +278,9 @@ export function SidePanel({
   onRemoveReadingOrderItem,
   aggregatedEdgeInspectorItems,
   onPromoteAggregatedEdge,
+  evidenceOverlayEnabled,
+  evidenceOverlayScope,
+  onEnableEvidenceOverlaySelectionExplore,
   topContent,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
@@ -2364,6 +2370,22 @@ export function SidePanel({
                     </div>
                   </div>
                 ) : null}
+              </div>
+
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence overlay</div>
+                <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>
+                  Overlay: {evidenceOverlayEnabled ? "on" : "off"} / scope: {evidenceOverlayScope}
+                </div>
+                <button
+                  type="button"
+                  style={{ width: "100%" }}
+                  onClick={() => {
+                    onEnableEvidenceOverlaySelectionExplore();
+                  }}
+                >
+                  Explore from this card
+                </button>
               </div>
 
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>

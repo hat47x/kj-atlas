@@ -28,6 +28,11 @@ export type ExportViewMetadata = {
     lodLevelOverride?: LODLevel | null;
     lodShowLoneWolvesWhenFar?: boolean;
     resolvedLodLevel?: LODLevel;
+    evidenceOverlayEnabled?: boolean;
+    evidenceOverlayMode?: "supports" | "contradicts" | "both";
+    evidenceOverlayDepth?: number;
+    evidenceOverlayScope?: "all" | "selection";
+    evidenceOverlayDimOthers?: boolean;
   };
   export: {
     mode: "viewport" | "bounds";
@@ -67,6 +72,11 @@ type ExportViewMetadataArgs = {
     lodLevelOverride?: LODLevel | null;
     lodShowLoneWolvesWhenFar?: boolean;
     resolvedLodLevel?: LODLevel;
+    evidenceOverlayEnabled?: boolean;
+    evidenceOverlayMode?: "supports" | "contradicts" | "both";
+    evidenceOverlayDepth?: number;
+    evidenceOverlayScope?: "all" | "selection";
+    evidenceOverlayDimOthers?: boolean;
   };
   exportMode: "viewport" | "bounds";
   bounds?: {
@@ -135,6 +145,11 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
         ? {}
         : { lodShowLoneWolvesWhenFar: viewState.lodShowLoneWolvesWhenFar }),
       ...(viewState.resolvedLodLevel === undefined ? {} : { resolvedLodLevel: viewState.resolvedLodLevel }),
+      ...(viewState.evidenceOverlayEnabled === undefined ? {} : { evidenceOverlayEnabled: viewState.evidenceOverlayEnabled }),
+      ...(viewState.evidenceOverlayMode === undefined ? {} : { evidenceOverlayMode: viewState.evidenceOverlayMode }),
+      ...(viewState.evidenceOverlayDepth === undefined ? {} : { evidenceOverlayDepth: viewState.evidenceOverlayDepth }),
+      ...(viewState.evidenceOverlayScope === undefined ? {} : { evidenceOverlayScope: viewState.evidenceOverlayScope }),
+      ...(viewState.evidenceOverlayDimOthers === undefined ? {} : { evidenceOverlayDimOthers: viewState.evidenceOverlayDimOthers }),
     },
     export: {
       mode: exportMode,
@@ -298,6 +313,41 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
     value.viewState.resolvedLodLevel !== "far"
   ) {
     return { ok: false, error: 'viewState.resolvedLodLevel must be "close" | "mid" | "far" when present' };
+  }
+
+  if (value.viewState.evidenceOverlayEnabled !== undefined && typeof value.viewState.evidenceOverlayEnabled !== "boolean") {
+    return { ok: false, error: "viewState.evidenceOverlayEnabled must be a boolean when present" };
+  }
+
+  if (
+    value.viewState.evidenceOverlayMode !== undefined &&
+    value.viewState.evidenceOverlayMode !== "supports" &&
+    value.viewState.evidenceOverlayMode !== "contradicts" &&
+    value.viewState.evidenceOverlayMode !== "both"
+  ) {
+    return { ok: false, error: 'viewState.evidenceOverlayMode must be "supports" | "contradicts" | "both" when present' };
+  }
+
+  if (
+    value.viewState.evidenceOverlayDepth !== undefined &&
+    (typeof value.viewState.evidenceOverlayDepth !== "number" ||
+      !Number.isFinite(value.viewState.evidenceOverlayDepth) ||
+      value.viewState.evidenceOverlayDepth < 1 ||
+      value.viewState.evidenceOverlayDepth > 3)
+  ) {
+    return { ok: false, error: "viewState.evidenceOverlayDepth must be a number within 1..3 when present" };
+  }
+
+  if (
+    value.viewState.evidenceOverlayScope !== undefined &&
+    value.viewState.evidenceOverlayScope !== "all" &&
+    value.viewState.evidenceOverlayScope !== "selection"
+  ) {
+    return { ok: false, error: 'viewState.evidenceOverlayScope must be "all" | "selection" when present' };
+  }
+
+  if (value.viewState.evidenceOverlayDimOthers !== undefined && typeof value.viewState.evidenceOverlayDimOthers !== "boolean") {
+    return { ok: false, error: "viewState.evidenceOverlayDimOthers must be a boolean when present" };
   }
 
   if (!isObject(value.export)) {
