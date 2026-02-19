@@ -9,6 +9,7 @@ import {
 } from "../domain/island_relation_explain";
 import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
+import type { OutlineQualityReport } from "../domain/view/outline_quality";
 
 type SummaryGroundingItem = {
   id: string;
@@ -114,6 +115,11 @@ type SidePanelProps = {
   onOutlineIncludeRelationSummariesChange: (value: boolean) => void;
   outlineIncludeUnreviewed: boolean;
   onOutlineIncludeUnreviewedChange: (value: boolean) => void;
+  outlineAppendDiagnostics: boolean;
+  onOutlineAppendDiagnosticsChange: (value: boolean) => void;
+  outlineQualityReport: OutlineQualityReport | null;
+  onRunOutlineDiagnostics: () => void;
+  onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onCopyReadingOutlineMd: () => void;
   onDownloadReadingOutlineMd: () => void;
   readingStep: number;
@@ -219,6 +225,11 @@ export function SidePanel({
   onOutlineIncludeRelationSummariesChange,
   outlineIncludeUnreviewed,
   onOutlineIncludeUnreviewedChange,
+  outlineAppendDiagnostics,
+  onOutlineAppendDiagnosticsChange,
+  outlineQualityReport,
+  onRunOutlineDiagnostics,
+  onFocusOutlineDiagnosticRef,
   onCopyReadingOutlineMd,
   onDownloadReadingOutlineMd,
   readingStep,
@@ -301,6 +312,17 @@ export function SidePanel({
 
     return `${selectedCardCount} cards selected`;
   }, [selectedCardCount]);
+
+  const outlineDiagnosticsCounts = useMemo(() => {
+    if (!outlineQualityReport) {
+      return { error: 0, warn: 0, info: 0 };
+    }
+
+    return outlineQualityReport.findings.reduce((acc, finding) => {
+      acc[finding.severity] += 1;
+      return acc;
+    }, { error: 0, warn: 0, info: 0 });
+  }, [outlineQualityReport]);
 
 
   const handleCopyExplanationClick = async () => {
@@ -468,6 +490,17 @@ export function SidePanel({
             />
             Include unreviewed
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendDiagnostics}
+              onChange={(event) => {
+                onOutlineAppendDiagnosticsChange(event.target.checked);
+              }}
+            />
+            Append diagnostics
+          </label>
+          <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -478,6 +511,47 @@ export function SidePanel({
               Download outline.md
             </button>
           </div>
+          {outlineQualityReport ? (
+            <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>Quality report</div>
+              <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
+                Findings: {outlineDiagnosticsCounts.error} errors, {outlineDiagnosticsCounts.warn} warnings, {outlineDiagnosticsCounts.info} infos
+                {outlineQualityReport.health !== undefined ? ` · Health ${outlineQualityReport.health}% (heuristic)` : ""}
+              </div>
+              <details style={{ marginTop: 6 }}>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Show findings</summary>
+                {outlineQualityReport.findings.length === 0 ? (
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No findings.</div>
+                ) : (
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+                    {outlineQualityReport.findings.map((finding, index) => (
+                      <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                        <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+                        <div>{finding.detail}</div>
+                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+                        {finding.entityRefs && finding.entityRefs.length > 0 ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                            {finding.entityRefs.map((ref) => (
+                              <button
+                                key={`${finding.code}_${ref.kind}_${ref.id}`}
+                                type="button"
+                                onClick={() => {
+                                  onFocusOutlineDiagnosticRef(ref.kind, ref.id);
+                                }}
+                                style={{ fontSize: 10, cursor: "pointer" }}
+                              >
+                                Focus {ref.kind}:{ref.id}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
+            </div>
+          ) : null}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
@@ -626,6 +700,17 @@ export function SidePanel({
             />
             Include unreviewed
           </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <input
+              type="checkbox"
+              checked={outlineAppendDiagnostics}
+              onChange={(event) => {
+                onOutlineAppendDiagnosticsChange(event.target.checked);
+              }}
+            />
+            Append diagnostics
+          </label>
+          <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -636,6 +721,47 @@ export function SidePanel({
               Download outline.md
             </button>
           </div>
+          {outlineQualityReport ? (
+            <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>Quality report</div>
+              <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
+                Findings: {outlineDiagnosticsCounts.error} errors, {outlineDiagnosticsCounts.warn} warnings, {outlineDiagnosticsCounts.info} infos
+                {outlineQualityReport.health !== undefined ? ` · Health ${outlineQualityReport.health}% (heuristic)` : ""}
+              </div>
+              <details style={{ marginTop: 6 }}>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Show findings</summary>
+                {outlineQualityReport.findings.length === 0 ? (
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No findings.</div>
+                ) : (
+                  <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+                    {outlineQualityReport.findings.map((finding, index) => (
+                      <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                        <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+                        <div>{finding.detail}</div>
+                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+                        {finding.entityRefs && finding.entityRefs.length > 0 ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                            {finding.entityRefs.map((ref) => (
+                              <button
+                                key={`${finding.code}_${ref.kind}_${ref.id}`}
+                                type="button"
+                                onClick={() => {
+                                  onFocusOutlineDiagnosticRef(ref.kind, ref.id);
+                                }}
+                                style={{ fontSize: 10, cursor: "pointer" }}
+                              >
+                                Focus {ref.kind}:{ref.id}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
+            </div>
+          ) : null}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button

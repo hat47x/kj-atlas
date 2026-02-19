@@ -1,5 +1,6 @@
 import type { Card, DocumentV2, Island, RelationSummary } from "../types";
 import { buildReadingList, type ReadingMode } from "./reading_path";
+import type { OutlineQualityReport } from "./outline_quality";
 
 const DEFAULT_MAX_SNIPPET_LEN = 140;
 
@@ -17,7 +18,45 @@ export type ReadingOutlineOptions = {
   includeUnreviewedSummaries?: boolean;
   includeRelationSummaries?: boolean;
   maxSnippetLen?: number;
+  appendDiagnostics?: boolean;
+  diagnosticsReport?: OutlineQualityReport | null;
 };
+
+function formatDiagnostics(report: OutlineQualityReport): string[] {
+  const lines: string[] = ["## Diagnostics", "", `GeneratedAt: ${report.generatedAt}`, ""];
+
+  lines.push("| Metric | Value |", "| --- | ---: |");
+  lines.push(`| totalIslands | ${report.stats.totalIslands} |`);
+  lines.push(`| totalCardsInPath | ${report.stats.totalCardsInPath} |`);
+  lines.push(`| islandsWithTitleMissing | ${report.stats.islandsWithTitleMissing} |`);
+  lines.push(`| islandsWithSummaryMissing | ${report.stats.islandsWithSummaryMissing} |`);
+  lines.push(`| islandsUnreviewed | ${report.stats.islandsUnreviewed} |`);
+  lines.push(`| relationSummariesTotal | ${report.stats.relationSummariesTotal} |`);
+  lines.push(`| relationSummariesUnreviewed | ${report.stats.relationSummariesUnreviewed} |`);
+  lines.push(`| disconnectedIslands | ${report.stats.disconnectedIslands} |`);
+  lines.push(`| pathLength | ${report.stats.pathLength} |`);
+  lines.push("");
+
+  if (report.findings.length === 0) {
+    lines.push("- No findings.");
+    lines.push("");
+    return lines;
+  }
+
+  for (const finding of report.findings) {
+    lines.push(`- [${finding.severity.toUpperCase()}] ${finding.code} ${finding.title}`);
+    lines.push(`  - ${finding.detail}`);
+    if (finding.suggestedAction) {
+      lines.push(`  - Action: ${finding.suggestedAction}`);
+    }
+    if (finding.entityRefs && finding.entityRefs.length > 0) {
+      lines.push(`  - Refs: ${finding.entityRefs.map((ref) => `${ref.kind}:${ref.id}`).join(", ")}`);
+    }
+  }
+  lines.push("");
+
+  return lines;
+}
 
 function clipSnippet(value: string | undefined, maxLen: number, oneLine: boolean): string {
   const trimmed = (value ?? "").trim();
@@ -103,6 +142,7 @@ function getRelationLabel(summary: RelationSummary, island: Island, islandsById:
 export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutlineState, options: ReadingOutlineOptions = {}): string {
   const includeCardTexts = options.includeCardTexts ?? false;
   const includeRelationSummaries = options.includeRelationSummaries ?? true;
+  const appendDiagnostics = options.appendDiagnostics ?? false;
   const maxSnippetLen = options.maxSnippetLen ?? DEFAULT_MAX_SNIPPET_LEN;
   const includeUnreviewed = !readingState.safeMode && (options.includeUnreviewedSummaries ?? false);
 
@@ -165,6 +205,10 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
       lines.push(clipSnippet(card.text, maxSnippetLen, false));
     }
     lines.push("");
+  }
+
+  if (appendDiagnostics && options.diagnosticsReport) {
+    lines.push(...formatDiagnostics(options.diagnosticsReport));
   }
 
   return `${lines.join("\n").trimEnd()}\n`;
