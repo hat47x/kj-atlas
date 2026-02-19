@@ -79,6 +79,7 @@ import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/
 import { generateRecommendations } from "./domain/view/recommendations";
 import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
 import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
+import { analyzeClaimTypeMix, type ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -732,6 +733,7 @@ export default function App() {
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
+  const [claimTypeMixReport, setClaimTypeMixReport] = useState<ClaimTypeMixReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
@@ -2768,6 +2770,45 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleCardClaimTypeChange = useCallback(
+    (cardId: string, nextClaimType: ClaimType) => {
+      if (!document) {
+        return;
+      }
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        const currentClaimType = card.claimType ?? "unknown";
+        if (currentClaimType === nextClaimType) {
+          return card;
+        }
+
+        return {
+          ...card,
+          claimType: nextClaimType,
+        };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        "Updated card claim type",
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleCardCritiqueTagsChange = useCallback(
     (cardId: string, nextTags: string[]) => {
       if (!document) {
@@ -4370,19 +4411,22 @@ export default function App() {
     );
     const contradiction = analyzeContradictions(document);
     const distribution = analyzeDistribution(document);
+    const claimTypeMix = analyzeClaimTypeMix(document);
     setOutlineQualityReport(report);
     setContradictionReport(contradiction);
     setDistributionReport(distribution);
+    setClaimTypeMixReport(claimTypeMix);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
     setContradictionReport(null);
     setDistributionReport(null);
+    setClaimTypeMixReport(null);
     setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
 
@@ -5980,6 +6024,13 @@ export default function App() {
 
             handleCardCritiqueTagsChange(selectedCard.id, value);
           }}
+          onCardClaimTypeChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardClaimTypeChange(selectedCard.id, value);
+          }}
           onTitleChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -6171,6 +6222,7 @@ export default function App() {
           outlineRecommendations={outlineRecommendations}
           contradictionReport={contradictionReport}
           distributionReport={distributionReport}
+          claimTypeMixReport={claimTypeMixReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}

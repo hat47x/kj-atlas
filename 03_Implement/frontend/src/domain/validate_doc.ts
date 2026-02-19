@@ -50,6 +50,10 @@ function validateEdgeType(value: unknown): value is EdgeType {
   return value === "related" || value === "negate";
 }
 
+function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothesis" | "unknown" {
+  return value === "fact" || value === "claim" || value === "hypothesis" || value === "unknown";
+}
+
 function validateCard(item: unknown, index: number, errors: string[]): item is DocumentV2["cards"][number] {
   const path = `cards[${index}]`;
   if (!isRecord(item)) {
@@ -57,7 +61,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -82,6 +86,10 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   }
   if (item.mergedIntoCardId !== undefined && typeof item.mergedIntoCardId !== "string") {
     errors.push(`${path}.mergedIntoCardId: must be a string when provided`);
+    valid = false;
+  }
+  if (item.claimType !== undefined && !validateClaimType(item.claimType)) {
+    errors.push(`${path}.claimType: must be 'fact' | 'claim' | 'hypothesis' | 'unknown' when provided`);
     valid = false;
   }
   if (item.repOf !== undefined && !validateStringArray(item.repOf, `${path}.repOf`, errors)) {

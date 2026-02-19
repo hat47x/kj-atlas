@@ -88,6 +88,27 @@ describe("validateDocumentV2Strict", () => {
     expect(result.errors).toContain("document.version: must be the number 2 (DocumentV2 only)");
   });
 
+  it("accepts card claimType and rejects invalid values", () => {
+    const accepted = validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, claimType: "fact" }],
+    });
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateDocumentV2Strict({
+      ...validDocument,
+      cards: [{ id: "c1", text: "A", x: 0, y: 0, claimType: "invalid" }],
+    });
+
+    expect(rejected.ok).toBe(false);
+    if (rejected.ok) {
+      return;
+    }
+
+    expect(rejected.errors).toContain("cards[0].claimType: must be 'fact' | 'claim' | 'hypothesis' | 'unknown' when provided");
+  });
+
   it("rejects polygon shape with fewer than 3 points", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,

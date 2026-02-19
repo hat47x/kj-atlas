@@ -9,6 +9,7 @@ export type Card = {
   text: string;
   x: number;
   y: number;
+  claimType?: "fact" | "claim" | "hypothesis" | "unknown";
   mergedIntoCardId?: string;
   repOf?: string[];
   canonicalId?: string;

@@ -13,6 +13,7 @@ import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
+import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 
 type SummaryGroundingItem = {
   id: string;
@@ -39,6 +40,7 @@ type SidePanelProps = {
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
+  onCardClaimTypeChange: (value: ClaimType) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
@@ -126,6 +128,7 @@ type SidePanelProps = {
   outlineRecommendations: Recommendation[];
   contradictionReport: ContradictionReport | null;
   distributionReport: DistributionReport | null;
+  claimTypeMixReport: ClaimTypeMixReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
@@ -156,6 +159,7 @@ export function SidePanel({
   onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
+  onCardClaimTypeChange,
   onTitleChange,
   onTitleReviewedChange,
   onSummaryTextChange,
@@ -243,6 +247,7 @@ export function SidePanel({
   outlineRecommendations,
   contradictionReport,
   distributionReport,
+  claimTypeMixReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
@@ -350,6 +355,21 @@ export function SidePanel({
     }, { error: 0, warn: 0, info: 0 });
   }, [outlineQualityReport]);
 
+
+  const claimTypeLabels: Record<ClaimType, string> = {
+    fact: "Fact (観測/一次情報)",
+    claim: "Claim (主張/解釈)",
+    hypothesis: "Hypothesis (仮説)",
+    unknown: "Unknown (未分類)",
+  };
+
+  const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
+    fact: { backgroundColor: "#dcfce7", color: "#166534" },
+    claim: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
+    hypothesis: { backgroundColor: "#fef3c7", color: "#92400e" },
+    unknown: { backgroundColor: "#e2e8f0", color: "#334155" },
+  };
+
   const contradictionSignalsBySeverity = useMemo(() => {
     if (!contradictionReport) {
       return { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] };
@@ -390,6 +410,42 @@ export function SidePanel({
       .sort((left, right) => (right.cardCount - left.cardCount) || left.id.localeCompare(right.id))
       .slice(0, 5);
   }, [islandDistributionRows]);
+
+  const claimTypeMixSection = claimTypeMixReport ? (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>
+        Claim typing ({claimTypeMixReport.findings.length})
+      </summary>
+      <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
+        cards:{claimTypeMixReport.stats.totalCards} · F/C/H/U:{claimTypeMixReport.stats.countsByType.fact}/{claimTypeMixReport.stats.countsByType.claim}/{claimTypeMixReport.stats.countsByType.hypothesis}/{claimTypeMixReport.stats.countsByType.unknown}
+      </div>
+      <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>
+        checked islands:{claimTypeMixReport.stats.islandsChecked} · mixed:{claimTypeMixReport.stats.islandsMixedCount} · hypothesis-dominant:{claimTypeMixReport.stats.islandsHypothesisDominantCount} · unknown-dominant:{claimTypeMixReport.stats.islandsUnknownDominantCount}
+      </div>
+      {claimTypeMixReport.findings.length === 0 ? (
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No claim typing findings.</div>
+      ) : (
+        <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+          {claimTypeMixReport.findings.map((finding, index) => (
+            <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div>{finding.detail}</div>
+              {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+              {finding.islandIds.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                  {finding.islandIds.map((islandId) => (
+                    <button key={`${finding.code}_${islandId}`} type="button" onClick={() => { onFocusDistributionIsland(islandId); }} style={{ fontSize: 10, cursor: "pointer" }}>
+                      Focus {islandId}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
+  ) : null;
 
   const distributionSignalsSection = distributionReport ? (
     <details style={{ marginTop: 8 }}>
@@ -727,6 +783,7 @@ export function SidePanel({
                 </details>
               ) : null}
               {distributionSignalsSection}
+              {claimTypeMixSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -1045,6 +1102,7 @@ export function SidePanel({
                 </details>
               ) : null}
               {distributionSignalsSection}
+              {claimTypeMixSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -2125,6 +2183,42 @@ export function SidePanel({
                   </label>
                 </div>
               ) : null}
+              <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Claim type</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    ...claimTypeBadgeColors[selectedCard.claimType ?? "unknown"],
+                  }}
+                >
+                  {claimTypeLabels[selectedCard.claimType ?? "unknown"]}
+                </span>
+              </div>
+              <select
+                value={selectedCard.claimType ?? "unknown"}
+                onChange={(event) => {
+                  onCardClaimTypeChange(event.target.value as ClaimType);
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  boxSizing: "border-box",
+                  marginBottom: 12,
+                  backgroundColor: "#ffffff",
+                  color: "#0f172a",
+                }}
+              >
+                <option value="fact">{claimTypeLabels.fact}</option>
+                <option value="claim">{claimTypeLabels.claim}</option>
+                <option value="hypothesis">{claimTypeLabels.hypothesis}</option>
+                <option value="unknown">{claimTypeLabels.unknown}</option>
+              </select>
+
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note
               </label>
