@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Island, Transform } from "./types";
+import type { Card, DocumentV2, EvidenceLink, Island, Transform } from "./types";
 
 type ValidateResult =
   | {
@@ -74,6 +74,7 @@ function parseCards(value: unknown): Card[] | null {
       text: item.text,
       x,
       y,
+      claimType: item.claimType === "hypothesis" || item.claimType === "claim" || item.claimType === "fact" ? item.claimType : undefined,
       mergedIntoCardId: typeof item.mergedIntoCardId === "string" ? item.mergedIntoCardId : undefined,
       repOf:
         Array.isArray(item.repOf) && item.repOf.every((cardId) => typeof cardId === "string")
@@ -191,6 +192,45 @@ function parseIslands(value: unknown): Island[] {
   return islands;
 }
 
+
+function parseEvidenceLinks(value: unknown): EvidenceLink[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seenIds = new Set<string>();
+  const duplicateKeySet = new Set<string>();
+  const evidenceLinks: EvidenceLink[] = [];
+
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.id !== "string" || (item.type !== "supports" && item.type !== "contradicts") || typeof item.fromCardId !== "string" || typeof item.toCardId !== "string") {
+      continue;
+    }
+
+    if (item.fromCardId === item.toCardId || seenIds.has(item.id)) {
+      continue;
+    }
+
+    const duplicateKey = `${item.type}\u0000${item.fromCardId}\u0000${item.toCardId}`;
+    if (duplicateKeySet.has(duplicateKey)) {
+      continue;
+    }
+
+    seenIds.add(item.id);
+    duplicateKeySet.add(duplicateKey);
+    evidenceLinks.push({
+      id: item.id,
+      type: item.type,
+      fromCardId: item.fromCardId,
+      toCardId: item.toCardId,
+      note: typeof item.note === "string" ? item.note : undefined,
+      createdAt: typeof item.createdAt === "string" ? item.createdAt : undefined,
+    });
+  }
+
+  return evidenceLinks;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -264,6 +304,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       cards,
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
+      evidenceLinks: parseEvidenceLinks(value.evidenceLinks),
     },
   };
 }

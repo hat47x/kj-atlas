@@ -7,12 +7,13 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
+import type { Card, CritiqueTag, DocumentV2, EvidenceLinkType, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
+import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 
 type SummaryGroundingItem = {
   id: string;
@@ -39,6 +40,8 @@ type SidePanelProps = {
   onCreateRepresentativeCard: () => void;
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
+  onAddEvidenceLink: (fromCardId: string, toCardId: string, type: EvidenceLinkType) => void;
+  onRemoveEvidenceLink: (linkId: string) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
@@ -126,6 +129,7 @@ type SidePanelProps = {
   outlineRecommendations: Recommendation[];
   contradictionReport: ContradictionReport | null;
   distributionReport: DistributionReport | null;
+  evidenceGapReport: EvidenceGapReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
@@ -156,6 +160,8 @@ export function SidePanel({
   onCreateRepresentativeCard,
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
+  onAddEvidenceLink,
+  onRemoveEvidenceLink,
   onTitleChange,
   onTitleReviewedChange,
   onSummaryTextChange,
@@ -243,6 +249,7 @@ export function SidePanel({
   outlineRecommendations,
   contradictionReport,
   distributionReport,
+  evidenceGapReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
@@ -269,6 +276,10 @@ export function SidePanel({
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
+  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [newEvidenceType, setNewEvidenceType] = useState<EvidenceLinkType>("supports");
+  const [evidenceTargetQuery, setEvidenceTargetQuery] = useState("");
+  const [newEvidenceTargetId, setNewEvidenceTargetId] = useState("");
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
 
@@ -323,6 +334,34 @@ export function SidePanel({
   const canAlign = selectedCardCount >= 2;
   const hideUnreviewedRelationSummary = safeMode && selectedRelationSummary?.reviewed === false;
   const canDistribute = selectedCardCount >= 3;
+  const outgoingEvidenceLinks = useMemo(() => {
+    if (!selectedCard || !document) {
+      return [];
+    }
+
+    return (document.evidenceLinks ?? []).filter((link) => link.fromCardId === selectedCard.id);
+  }, [document, selectedCard]);
+
+  const incomingEvidenceLinks = useMemo(() => {
+    if (!selectedCard || !document) {
+      return [];
+    }
+
+    return (document.evidenceLinks ?? []).filter((link) => link.toCardId === selectedCard.id);
+  }, [document, selectedCard]);
+
+  const evidenceTargetCards = useMemo(() => {
+    if (!selectedCard || !document) {
+      return [];
+    }
+
+    const query = evidenceTargetQuery.trim().toLowerCase();
+    return document.cards
+      .filter((card) => card.id !== selectedCard.id)
+      .filter((card) => query.length === 0 || card.text.toLowerCase().includes(query) || card.id.toLowerCase().includes(query))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }, [document, evidenceTargetQuery, selectedCard]);
+
   const selectedCardLabel = useMemo(() => {
     if (selectedCardCount === 1) {
       return "1 card selected";
@@ -360,6 +399,25 @@ export function SidePanel({
       return acc;
     }, { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] });
   }, [contradictionReport]);
+
+
+  const cardSnippetById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const card of document?.cards ?? []) {
+      map.set(card.id, card.text.slice(0, 80));
+    }
+    return map;
+  }, [document]);
+
+  const evidenceFindingsByCode = useMemo(() => {
+    const findings = evidenceGapReport?.findings ?? [];
+    return {
+      E001: findings.filter((item) => item.code === "E001"),
+      E002: findings.filter((item) => item.code === "E002"),
+      E003: findings.filter((item) => item.code === "E003"),
+      E004: findings.filter((item) => item.code === "E004"),
+    };
+  }, [evidenceGapReport]);
 
   const islandDistributionRows = useMemo(() => {
     if (!document) {
@@ -681,7 +739,59 @@ export function SidePanel({
                   </ul>
                 )}
               </details>
-              {contradictionReport ? (
+              {evidenceGapReport ? (
+                <details style={{ marginTop: 8 }}>
+                  <summary style={{ fontSize: 12, cursor: "pointer", color: "#0f172a", fontWeight: 600 }}>
+                    Evidence gaps ({evidenceGapReport.findings.length})
+                  </summary>
+                  <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>
+                    E001 {evidenceGapReport.stats.hypothesesWithNoFactSupport} · E002 {evidenceGapReport.stats.claimsWithNoFactSupport} · E003 {evidenceGapReport.stats.factsUnusedAsEvidence} · E004 {evidenceGapReport.stats.contradictionsWithoutCounterSupport}
+                  </div>
+
+                  {[
+                    ["E001", "Hypotheses lacking fact support"],
+                    ["E002", "Claims lacking fact support"],
+                    ["E003", "Unused facts"],
+                    ["E004", "Contradictions needing grounding"],
+                  ].map(([code, title]) => {
+                    const items = evidenceFindingsByCode[code as keyof typeof evidenceFindingsByCode];
+                    return (
+                      <details key={code} style={{ marginTop: 6 }}>
+                        <summary style={{ fontSize: 11, cursor: "pointer", color: "#334155" }}>
+                          {title} ({items.length})
+                        </summary>
+                        {items.length === 0 ? (
+                          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>No findings.</div>
+                        ) : (
+                          <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+                            {items.map((finding, index) => (
+                              <li key={`${code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                                <div>{finding.detail}</div>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                                  {finding.cardIds.map((cardId) => (
+                                    <button
+                                      key={`${code}_${index}_${cardId}`}
+                                      type="button"
+                                      onClick={() => {
+                                        onFocusOutlineDiagnosticRef("card", cardId);
+                                      }}
+                                      style={{ fontSize: 10, cursor: "pointer" }}
+                                    >
+                                      Focus {cardSnippetById.get(cardId) ?? cardId}
+                                    </button>
+                                  ))}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </details>
+                    );
+                  })}
+                </details>
+              ) : null}
+
+          {contradictionReport ? (
                 <details style={{ marginTop: 8 }}>
                   <summary style={{ fontSize: 12, cursor: "pointer", color: "#b45309" }}>
                     Contradiction signals ({contradictionReport.stats.signals})
@@ -2125,6 +2235,50 @@ export function SidePanel({
                   </label>
                 </div>
               ) : null}
+              <div style={{ marginBottom: 12, border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence</div>
+                <button type="button" style={{ width: "100%", marginBottom: 8 }} onClick={() => { setIsEvidenceModalOpen(true); }}>
+                  Add evidence link…
+                </button>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Outgoing</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>(none)</div> : outgoingEvidenceLinks.map((link) => {
+                    const target = document?.cards.find((card) => card.id === link.toCardId);
+                    return <div key={link.id} style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 6 }}>
+                      <div style={{ fontSize: 11 }}>{link.type} → {(target?.text ?? link.toCardId).slice(0, 64)}</div>
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <button type="button" onClick={() => { if (target) { onFocusOutlineDiagnosticRef("card", target.id); } }}>Focus</button>
+                        <button type="button" onClick={() => { onRemoveEvidenceLink(link.id); }}>Remove</button>
+                      </div>
+                    </div>;
+                  })}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", marginTop: 8, marginBottom: 4 }}>Incoming</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>(none)</div> : incomingEvidenceLinks.map((link) => {
+                    const source = document?.cards.find((card) => card.id === link.fromCardId);
+                    return <div key={link.id} style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 6, fontSize: 11 }}>
+                      {(source?.text ?? link.fromCardId).slice(0, 64)} {link.type} this
+                    </div>;
+                  })}
+                </div>
+                {isEvidenceModalOpen ? <div style={{ marginTop: 8, borderTop: "1px solid #e2e8f0", paddingTop: 8, display: "grid", gap: 6 }}>
+                  <select value={newEvidenceType} onChange={(event) => { setNewEvidenceType(event.target.value === "contradicts" ? "contradicts" : "supports"); }}>
+                    <option value="supports">supports</option>
+                    <option value="contradicts">contradicts</option>
+                  </select>
+                  <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder="Search target card" />
+                  <select value={newEvidenceTargetId} onChange={(event) => { setNewEvidenceTargetId(event.target.value); }}>
+                    <option value="">Select target…</option>
+                    {evidenceTargetCards.map((card) => <option key={card.id} value={card.id}>{card.text.slice(0, 60)}</option>)}
+                  </select>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button type="button" onClick={() => { if (!selectedCard || !newEvidenceTargetId) return; onAddEvidenceLink(selectedCard.id, newEvidenceTargetId, newEvidenceType); setNewEvidenceTargetId(""); setIsEvidenceModalOpen(false); }}>Create</button>
+                    <button type="button" onClick={() => { setIsEvidenceModalOpen(false); }}>Cancel</button>
+                  </div>
+                </div> : null}
+              </div>
+
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note
               </label>

@@ -57,7 +57,7 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "text", "x", "y", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
+  hasOnlyKeys(item, ["id", "text", "x", "y", "claimType", "mergedIntoCardId", "repOf", "canonicalId", "sources", "critique", "critiqueTags", "textReviewed"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -74,6 +74,10 @@ function validateCard(item: unknown, index: number, errors: string[]): item is D
   }
   if (!isFiniteNumber(item.y)) {
     errors.push(`${path}.y: must be a finite number`);
+    valid = false;
+  }
+  if (item.claimType !== undefined && item.claimType !== "hypothesis" && item.claimType !== "claim" && item.claimType !== "fact") {
+    errors.push(`${path}.claimType: must be 'hypothesis', 'claim', or 'fact' when provided`);
     valid = false;
   }
   if (item.canonicalId !== undefined && typeof item.canonicalId !== "string") {
@@ -489,6 +493,49 @@ function validatePatchApplyLogEntry(item: unknown, index: number, errors: string
   return valid;
 }
 
+
+function validateEvidenceLink(item: unknown, index: number, errors: string[]): boolean {
+  const path = `evidenceLinks[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["id", "type", "fromCardId", "toCardId", "note", "createdAt"], path, errors);
+
+  let valid = true;
+  if (typeof item.id !== "string") {
+    errors.push(`${path}.id: must be a string`);
+    valid = false;
+  }
+  if (item.type !== "supports" && item.type !== "contradicts") {
+    errors.push(`${path}.type: must be 'supports' or 'contradicts'`);
+    valid = false;
+  }
+  if (typeof item.fromCardId !== "string") {
+    errors.push(`${path}.fromCardId: must be a string`);
+    valid = false;
+  }
+  if (typeof item.toCardId !== "string") {
+    errors.push(`${path}.toCardId: must be a string`);
+    valid = false;
+  }
+  if (item.fromCardId === item.toCardId) {
+    errors.push(`${path}: self-link is not allowed`);
+    valid = false;
+  }
+  if (item.note !== undefined && typeof item.note !== "string") {
+    errors.push(`${path}.note: must be a string when provided`);
+    valid = false;
+  }
+  if (item.createdAt !== undefined && typeof item.createdAt !== "string") {
+    errors.push(`${path}.createdAt: must be a string when provided`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -535,7 +582,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
 
   hasOnlyKeys(
     value,
-    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "patchApplyLog"],
+    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "evidenceLinks", "patchApplyLog"],
     "document",
     errors
   );
@@ -615,6 +662,31 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.relationSummaries.forEach((item, index) => {
         validateRelationSummary(item, index, errors);
+      });
+    }
+  }
+
+  if (value.evidenceLinks !== undefined) {
+    if (!Array.isArray(value.evidenceLinks)) {
+      errors.push("document.evidenceLinks: must be an array when provided");
+    } else {
+      const seenIds = new Set<string>();
+      const seenTriples = new Set<string>();
+      value.evidenceLinks.forEach((item, index) => {
+        if (!validateEvidenceLink(item, index, errors) || !isRecord(item)) {
+          return;
+        }
+
+        if (seenIds.has(item.id as string)) {
+          errors.push(`evidenceLinks[${index}].id: duplicate id`);
+        }
+        seenIds.add(item.id as string);
+
+        const triple = `${String(item.type)}\u0000${String(item.fromCardId)}\u0000${String(item.toCardId)}`;
+        if (seenTriples.has(triple)) {
+          errors.push(`evidenceLinks[${index}]: duplicate from/to/type link`);
+        }
+        seenTriples.add(triple);
       });
     }
   }

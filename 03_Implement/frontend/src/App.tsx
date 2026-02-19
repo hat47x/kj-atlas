@@ -28,7 +28,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type EvidenceLinkType, type Point, type RelationSummary } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
 import { validateDocumentV2Strict } from "./domain/validate_doc";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -79,6 +79,7 @@ import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/
 import { generateRecommendations } from "./domain/view/recommendations";
 import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
 import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
+import { analyzeEvidenceGaps, type EvidenceGapReport } from "./domain/view/evidence_gap_checks";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -368,6 +369,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     islands: [],
     readingOrder: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -396,6 +398,7 @@ function createNewDocument(docId: string): DocumentV2 {
     edges: [],
     islands: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -416,6 +419,7 @@ function toDocumentV2(document: Document): DocumentV2 {
       ...document,
       readingOrder: document.readingOrder ?? [],
       narratives: document.narratives ?? [],
+      evidenceLinks: document.evidenceLinks ?? [],
     };
   }
 
@@ -425,6 +429,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     islands: [],
     readingOrder: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -732,6 +737,7 @@ export default function App() {
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
+  const [evidenceGapReport, setEvidenceGapReport] = useState<EvidenceGapReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
@@ -2810,6 +2816,62 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+
+  const handleAddEvidenceLink = useCallback(
+    (fromCardId: string, toCardId: string, type: EvidenceLinkType) => {
+      if (!document || fromCardId === toCardId) {
+        return;
+      }
+
+      const existing = document.evidenceLinks ?? [];
+      if (existing.some((link) => link.fromCardId === fromCardId && link.toCardId === toCardId && link.type === type)) {
+        return;
+      }
+
+      const nextLink = {
+        id: crypto.randomUUID(),
+        fromCardId,
+        toCardId,
+        type,
+        createdAt: new Date().toISOString(),
+      };
+
+      applyDocumentChange(
+        {
+          ...document,
+          evidenceLinks: [...existing, nextLink],
+        },
+        "Added evidence link",
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRemoveEvidenceLink = useCallback(
+    (linkId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const currentLinks = document.evidenceLinks ?? [];
+      const nextLinks = currentLinks.filter((link) => link.id !== linkId);
+      if (nextLinks.length === currentLinks.length) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          evidenceLinks: nextLinks,
+        },
+        "Removed evidence link",
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleIslandCritiqueChange = useCallback(
     (islandId: string, rawCritique: string) => {
       if (!document) {
@@ -4370,19 +4432,22 @@ export default function App() {
     );
     const contradiction = analyzeContradictions(document);
     const distribution = analyzeDistribution(document);
+    const evidence = analyzeEvidenceGaps(document);
     setOutlineQualityReport(report);
     setContradictionReport(contradiction);
     setDistributionReport(distribution);
+    setEvidenceGapReport(evidence);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${evidence.findings.length} evidence gap signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
     setContradictionReport(null);
     setDistributionReport(null);
+    setEvidenceGapReport(null);
     setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
 
@@ -4884,6 +4949,7 @@ export default function App() {
           cards: nextCards,
           edges: nextEdges,
           islands: nextIslands,
+          evidenceLinks: (document.evidenceLinks ?? []).filter((link) => !selectedCardIdSet.has(link.fromCardId) && !selectedCardIdSet.has(link.toCardId)),
           readingOrder: (document.readingOrder ?? []).filter((entryId) => {
             if (selectedCardIdSet.has(entryId)) {
               return false;
@@ -5980,6 +6046,12 @@ export default function App() {
 
             handleCardCritiqueTagsChange(selectedCard.id, value);
           }}
+          onAddEvidenceLink={(fromCardId, toCardId, type) => {
+            handleAddEvidenceLink(fromCardId, toCardId, type);
+          }}
+          onRemoveEvidenceLink={(linkId) => {
+            handleRemoveEvidenceLink(linkId);
+          }}
           onTitleChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -6171,6 +6243,7 @@ export default function App() {
           outlineRecommendations={outlineRecommendations}
           contradictionReport={contradictionReport}
           distributionReport={distributionReport}
+          evidenceGapReport={evidenceGapReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}

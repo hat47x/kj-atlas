@@ -9,6 +9,7 @@ export type Card = {
   text: string;
   x: number;
   y: number;
+  claimType?: "hypothesis" | "claim" | "fact";
   mergedIntoCardId?: string;
   repOf?: string[];
   canonicalId?: string;
@@ -128,6 +129,17 @@ export type NarrativeCheck = {
   issues: NarrativeCheckIssue[];
 };
 
+export type EvidenceLinkType = "supports" | "contradicts";
+
+export type EvidenceLink = {
+  id: string;
+  type: EvidenceLinkType;
+  fromCardId: string;
+  toCardId: string;
+  note?: string;
+  createdAt?: string;
+};
+
 
 export type RelationSummary = {
   id: string;
@@ -193,6 +205,7 @@ export type DocumentV2 = {
   readingOrder?: string[];
   narratives?: Narrative[];
   relationSummaries?: RelationSummary[];
+  evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
 };
 

@@ -14,6 +14,7 @@ function makeDoc(text: string): DocumentV2 {
     edges: [],
     islands: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -84,6 +85,27 @@ describe("applyPatchWithResolutions", () => {
       chosenTheirs: 0,
       chosenSkip: 0,
     });
+  });
+
+
+  it("removes evidence links when deleting a card", () => {
+    const current: DocumentV2 = {
+      ...makeDoc("base"),
+      cards: [
+        { id: "c1", text: "a", x: 0, y: 0 },
+        { id: "c2", text: "b", x: 0, y: 0 },
+      ],
+      evidenceLinks: [{ id: "l1", type: "supports", fromCardId: "c1", toCardId: "c2" }],
+    };
+
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [{ id: "op-delete", kind: "delete_card", cardId: "c1" }],
+    };
+
+    const next = applyPatchWithResolutions(current, patch, {});
+    expect(next.evidenceLinks ?? []).toHaveLength(0);
   });
 
 });
