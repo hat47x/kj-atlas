@@ -728,13 +728,6 @@ export default function App() {
   const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
 
-  const outlineRecommendations = useMemo(() => {
-    if (!document || !outlineQualityReport) {
-      return [];
-    }
-
-    return generateRecommendations(outlineQualityReport, document, { readingMode, reviewedOnly });
-  }, [document, outlineQualityReport, readingMode, reviewedOnly]);
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -791,6 +784,13 @@ export default function App() {
   const collapsedStateDocIdRef = useRef<string | null>(null);
 
   const document = history?.present ?? null;
+  const outlineRecommendations = useMemo(() => {
+    if (!document || !outlineQualityReport) {
+      return [];
+    }
+
+    return generateRecommendations(outlineQualityReport, document, { readingMode, reviewedOnly });
+  }, [document, outlineQualityReport, readingMode, reviewedOnly]);
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
