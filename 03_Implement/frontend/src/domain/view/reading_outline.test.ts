@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { DocumentV2 } from "../types";
 import { buildReadingOutlineMd } from "./reading_outline";
+import { analyzeOutlineQuality } from "./outline_quality";
 
 function buildDoc(): DocumentV2 {
   return {
@@ -98,5 +99,27 @@ describe("reading outline", () => {
 
     expect(markdown).toContain("### [Card] Top card line");
     expect(markdown).toContain("### [Card] Lone card");
+  });
+
+  it("appends diagnostics section when enabled", () => {
+    const doc = buildDoc();
+    const diagnostics = analyzeOutlineQuality(doc, { readingMode: "islands+cards", reviewedOnly: false }, { nowIso: "2026-01-01T01:23:45.000Z" });
+
+    const markdown = buildReadingOutlineMd(
+      doc,
+      {
+        readingNavEnabled: true,
+        readingIndex: 0,
+        readingMode: "islands+cards",
+        reviewedOnly: false,
+        safeMode: true,
+      },
+      { appendDiagnostics: true, diagnosticsReport: diagnostics },
+    );
+
+    expect(markdown).toContain("## Diagnostics");
+    expect(markdown).toContain("| totalIslands | 2 |");
+    expect(markdown).toContain("Q007 Lone cards are present");
+    expect(markdown).not.toContain("Bottom draft");
   });
 });

@@ -74,6 +74,7 @@ import {
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
+import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/outline_quality";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -722,6 +723,8 @@ export default function App() {
   const [outlineIncludeCardTexts, setOutlineIncludeCardTexts] = useState(false);
   const [outlineIncludeRelationSummaries, setOutlineIncludeRelationSummaries] = useState(true);
   const [outlineIncludeUnreviewed, setOutlineIncludeUnreviewed] = useState(false);
+  const [outlineAppendDiagnostics, setOutlineAppendDiagnostics] = useState(false);
+  const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget>({});
@@ -4337,6 +4340,28 @@ export default function App() {
     return getLODLevel(zoom, { lodThresholds, lodLevelOverride });
   }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
 
+  const handleRunOutlineDiagnostics = useCallback(() => {
+    if (!document) {
+      setStatusMessage("Nothing to analyze");
+      return;
+    }
+
+    const report = analyzeOutlineQuality(
+      document,
+      { readingMode, reviewedOnly },
+      { collapsedIslandIds },
+    );
+    setOutlineQualityReport(report);
+
+    const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
+    const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s)`);
+  }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
+
+  useEffect(() => {
+    setOutlineQualityReport(null);
+  }, [document?.id, readingMode, reviewedOnly]);
+
   const buildReadingOutline = useCallback((): string | null => {
     if (!document) {
       setStatusMessage("Nothing to export");
@@ -4357,13 +4382,17 @@ export default function App() {
         includeCardTexts: outlineIncludeCardTexts,
         includeRelationSummaries: outlineIncludeRelationSummaries,
         includeUnreviewedSummaries: outlineIncludeUnreviewed,
+        appendDiagnostics: outlineAppendDiagnostics,
+        diagnosticsReport: outlineQualityReport,
       },
     );
   }, [
     document,
+    outlineAppendDiagnostics,
     outlineIncludeCardTexts,
     outlineIncludeRelationSummaries,
     outlineIncludeUnreviewed,
+    outlineQualityReport,
     readingIndex,
     readingMode,
     readingNavEnabled,
@@ -6067,6 +6096,11 @@ export default function App() {
           onOutlineIncludeRelationSummariesChange={setOutlineIncludeRelationSummaries}
           outlineIncludeUnreviewed={outlineIncludeUnreviewed}
           onOutlineIncludeUnreviewedChange={setOutlineIncludeUnreviewed}
+          outlineAppendDiagnostics={outlineAppendDiagnostics}
+          onOutlineAppendDiagnosticsChange={setOutlineAppendDiagnostics}
+          outlineQualityReport={outlineQualityReport}
+          onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
+          onFocusOutlineDiagnosticRef={focusItem}
           onCopyReadingOutlineMd={() => {
             void handleCopyReadingOutlineMd();
           }}
