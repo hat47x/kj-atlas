@@ -1,5 +1,45 @@
 import type { DocumentV2 } from "../domain/types";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
+import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
+
+
+function buildPerspectiveStateFromViewState(viewState: ExportViewMetadataArgs["viewState"]): PerspectiveState {
+  const perspective: PerspectiveState = {
+    mode: viewState.perspectiveMode ?? "default",
+    strictFilter: viewState.perspectiveStrictFilter ?? false,
+  };
+
+  if (viewState.lodEnabled !== undefined) {
+    perspective.lodEnabled = viewState.lodEnabled;
+  }
+
+  if (
+    viewState.evidenceOverlayMode !== undefined
+    && viewState.evidenceOverlayDepth !== undefined
+    && viewState.evidenceOverlayScope !== undefined
+    && viewState.evidenceOverlayDimOthers !== undefined
+  ) {
+    perspective.evidenceOverlayPrefs = {
+      mode: viewState.evidenceOverlayMode,
+      depth: viewState.evidenceOverlayDepth,
+      scope: viewState.evidenceOverlayScope,
+      dimOthers: viewState.evidenceOverlayDimOthers,
+    };
+  }
+
+  return perspective;
+}
+
+function sortPerspectivePresets(presets: PerspectivePreset[]): PerspectivePreset[] {
+  return [...presets].sort((left, right) => {
+    const nameCompared = left.name.localeCompare(right.name);
+    if (nameCompared !== 0) {
+      return nameCompared;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+}
 
 export type ExportViewMetadata = {
   version: "1";
@@ -35,7 +75,10 @@ export type ExportViewMetadata = {
     evidenceOverlayDimOthers?: boolean;
     perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
     perspectiveStrictFilter?: boolean;
-  };  export: {
+    perspective?: PerspectiveState;
+    perspectivePresets?: PerspectivePreset[];
+  };
+  export: {
     mode: "viewport" | "bounds";
     bounds?: {
       x: number;
@@ -80,7 +123,9 @@ type ExportViewMetadataArgs = {
     evidenceOverlayDimOthers?: boolean;
     perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
     perspectiveStrictFilter?: boolean;
-  };  exportMode: "viewport" | "bounds";
+    perspectivePresets?: PerspectivePreset[];
+  };
+  exportMode: "viewport" | "bounds";
   bounds?: {
     x: number;
     y: number;
@@ -154,6 +199,8 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(viewState.evidenceOverlayDimOthers === undefined ? {} : { evidenceOverlayDimOthers: viewState.evidenceOverlayDimOthers }),
       ...(viewState.perspectiveMode === undefined ? {} : { perspectiveMode: viewState.perspectiveMode }),
       ...(viewState.perspectiveStrictFilter === undefined ? {} : { perspectiveStrictFilter: viewState.perspectiveStrictFilter }),
+      perspective: buildPerspectiveStateFromViewState(viewState),
+      ...(viewState.perspectivePresets === undefined ? {} : { perspectivePresets: sortPerspectivePresets(viewState.perspectivePresets) }),
     },
     export: {
       mode: exportMode,
@@ -174,6 +221,34 @@ function readRequiredBoolean(value: Record<string, unknown>, key: string): { ok:
   }
 
   return { ok: true, value: value[key] };
+}
+
+function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
+  return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
+}
+
+function validateEvidenceOverlayPrefs(value: unknown, path: string): { ok: true } | { ok: false; error: string } {
+  if (!isObject(value)) {
+    return { ok: false, error: `${path} must be an object` };
+  }
+
+  if (value.mode !== "supports" && value.mode !== "contradicts" && value.mode !== "both") {
+    return { ok: false, error: `${path}.mode must be "supports" | "contradicts" | "both"` };
+  }
+
+  if (typeof value.depth !== "number" || !Number.isFinite(value.depth)) {
+    return { ok: false, error: `${path}.depth must be a finite number` };
+  }
+
+  if (value.scope !== "all" && value.scope !== "selection") {
+    return { ok: false, error: `${path}.scope must be "all" | "selection"` };
+  }
+
+  if (typeof value.dimOthers !== "boolean") {
+    return { ok: false, error: `${path}.dimOthers must be a boolean` };
+  }
+
+  return { ok: true };
 }
 
 export function validateImportViewMetadata(value: unknown): { ok: true; metadata: ExportViewMetadata } | { ok: false; error: string } {
@@ -358,20 +433,73 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
     return { ok: false, error: "viewState.perspectiveStrictFilter must be a boolean" };
   }
 
-  if (
-    value.viewState.perspectiveMode !== undefined &&
-    ![
-      "default",
-      "facts",
-      "claims",
-      "hypotheses",
-      "unknown",
-      "evidence",
-      "contradiction",
-      "review",
-    ].includes(String(value.viewState.perspectiveMode))
-  ) {
+  if (value.viewState.perspectiveMode !== undefined && !isPerspectiveModeValue(value.viewState.perspectiveMode)) {
     return { ok: false, error: "viewState.perspectiveMode must be a supported perspective mode" };
+  }
+
+  if (value.viewState.perspective !== undefined) {
+    if (!isObject(value.viewState.perspective)) {
+      return { ok: false, error: "viewState.perspective must be an object" };
+    }
+
+    if (typeof value.viewState.perspective.mode !== "string") {
+      return { ok: false, error: "viewState.perspective.mode must be a string" };
+    }
+
+    if (typeof value.viewState.perspective.strictFilter !== "boolean") {
+      return { ok: false, error: "viewState.perspective.strictFilter must be a boolean" };
+    }
+
+    if (value.viewState.perspective.lodEnabled !== undefined && typeof value.viewState.perspective.lodEnabled !== "boolean") {
+      return { ok: false, error: "viewState.perspective.lodEnabled must be a boolean when present" };
+    }
+
+    if (value.viewState.perspective.evidenceOverlayPrefs !== undefined) {
+      const result = validateEvidenceOverlayPrefs(value.viewState.perspective.evidenceOverlayPrefs, "viewState.perspective.evidenceOverlayPrefs");
+      if (!result.ok) {
+        return result;
+      }
+    }
+  }
+
+  if (value.viewState.perspectivePresets !== undefined) {
+    if (!Array.isArray(value.viewState.perspectivePresets)) {
+      return { ok: false, error: "viewState.perspectivePresets must be an array when present" };
+    }
+
+    for (let index = 0; index < value.viewState.perspectivePresets.length; index += 1) {
+      const preset = value.viewState.perspectivePresets[index];
+      if (!isObject(preset)) {
+        return { ok: false, error: `viewState.perspectivePresets[${index}] must be an object` };
+      }
+      if (typeof preset.id !== "string") {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].id must be a string` };
+      }
+      if (typeof preset.name !== "string") {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].name must be a string` };
+      }
+      if (!isObject(preset.perspective)) {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].perspective must be an object` };
+      }
+      if (typeof preset.perspective.mode !== "string") {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].perspective.mode must be a string` };
+      }
+      if (typeof preset.perspective.strictFilter !== "boolean") {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].perspective.strictFilter must be a boolean` };
+      }
+      if (preset.perspective.lodEnabled !== undefined && typeof preset.perspective.lodEnabled !== "boolean") {
+        return { ok: false, error: `viewState.perspectivePresets[${index}].perspective.lodEnabled must be a boolean when present` };
+      }
+      if (preset.perspective.evidenceOverlayPrefs !== undefined) {
+        const result = validateEvidenceOverlayPrefs(
+          preset.perspective.evidenceOverlayPrefs,
+          `viewState.perspectivePresets[${index}].perspective.evidenceOverlayPrefs`
+        );
+        if (!result.ok) {
+          return result;
+        }
+      }
+    }
   }
 
   if (!isObject(value.export)) {

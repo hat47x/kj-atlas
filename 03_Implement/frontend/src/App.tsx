@@ -87,7 +87,13 @@ import {
   getEvidenceNeighborhood,
   type EvidenceOverlayMode,
 } from "./domain/view/evidence_overlay";
-import { computePerspectiveRendering, type PerspectiveMode } from "./domain/view/perspective";
+import {
+  computePerspectiveRendering,
+  PERSPECTIVE_MODE_VALUES,
+  type PerspectiveMode,
+  type PerspectivePreset,
+  type PerspectiveState,
+} from "./domain/view/perspective";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -109,6 +115,87 @@ const CARD_HEIGHT = 80;
 const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
+
+function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
+  return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
+}
+
+function clampEvidenceOverlayDepth(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(3, Math.floor(value)));
+}
+
+function sanitizePerspectiveState(
+  perspective: unknown,
+  fallback: PerspectiveState,
+): PerspectiveState {
+  if (!perspective || typeof perspective !== "object") {
+    return fallback;
+  }
+
+  const candidate = perspective as Record<string, unknown>;
+  const mode = isPerspectiveModeValue(candidate.mode) ? candidate.mode : fallback.mode;
+  const strictFilter = typeof candidate.strictFilter === "boolean" ? candidate.strictFilter : fallback.strictFilter;
+  const next: PerspectiveState = { mode, strictFilter };
+
+  if (typeof candidate.lodEnabled === "boolean") {
+    next.lodEnabled = candidate.lodEnabled;
+  }
+
+  const prefs = candidate.evidenceOverlayPrefs;
+  if (prefs && typeof prefs === "object") {
+    const prefsRecord = prefs as Record<string, unknown>;
+    const modeValue = prefsRecord.mode;
+    const scopeValue = prefsRecord.scope;
+    if (
+      (modeValue === "supports" || modeValue === "contradicts" || modeValue === "both")
+      && (scopeValue === "all" || scopeValue === "selection")
+      && typeof prefsRecord.dimOthers === "boolean"
+    ) {
+      next.evidenceOverlayPrefs = {
+        mode: modeValue,
+        scope: scopeValue,
+        dimOthers: prefsRecord.dimOthers,
+        depth: clampEvidenceOverlayDepth(prefsRecord.depth),
+      };
+    }
+  }
+
+  return next;
+}
+
+function sanitizePerspectivePresets(value: unknown): PerspectivePreset[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const valid: PerspectivePreset[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const candidate = item as Record<string, unknown>;
+    if (typeof candidate.id !== "string" || typeof candidate.name !== "string") {
+      continue;
+    }
+
+    const perspective = sanitizePerspectiveState(candidate.perspective, { mode: "default", strictFilter: false });
+    valid.push({ id: candidate.id, name: candidate.name, perspective });
+  }
+
+  return valid.sort((left, right) => {
+    const byName = left.name.localeCompare(right.name);
+    if (byName !== 0) {
+      return byName;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+}
 
 type DocumentHistory = {
   past: DocumentV2[];
@@ -785,6 +872,7 @@ export default function App() {
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
+  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
@@ -2117,11 +2205,26 @@ export default function App() {
         setLodShowLoneWolvesWhenFar(metadata.viewState.lodShowLoneWolvesWhenFar ?? true);
         setEvidenceOverlayEnabled(metadata.viewState.evidenceOverlayEnabled ?? false);
         setEvidenceOverlayMode(metadata.viewState.evidenceOverlayMode ?? "supports");
-        setEvidenceOverlayDepth(Math.max(1, Math.min(3, Math.floor(metadata.viewState.evidenceOverlayDepth ?? 1))));
+        setEvidenceOverlayDepth(clampEvidenceOverlayDepth(metadata.viewState.evidenceOverlayDepth ?? 1));
         setEvidenceOverlayScope(metadata.viewState.evidenceOverlayScope ?? "selection");
         setEvidenceOverlayDimOthers(metadata.viewState.evidenceOverlayDimOthers ?? true);
-        setPerspectiveMode(metadata.viewState.perspectiveMode ?? "default");
-        setPerspectiveStrictFilter(metadata.viewState.perspectiveStrictFilter ?? false);
+        const fallbackPerspective: PerspectiveState = {
+          mode: metadata.viewState.perspectiveMode ?? "default",
+          strictFilter: metadata.viewState.perspectiveStrictFilter ?? false,
+        };
+        const importedPerspective = sanitizePerspectiveState(metadata.viewState.perspective, fallbackPerspective);
+        setPerspectiveMode(importedPerspective.mode);
+        setPerspectiveStrictFilter(importedPerspective.strictFilter);
+        if (importedPerspective.lodEnabled !== undefined) {
+          setLodEnabled(importedPerspective.lodEnabled);
+        }
+        if (importedPerspective.evidenceOverlayPrefs) {
+          setEvidenceOverlayMode(importedPerspective.evidenceOverlayPrefs.mode);
+          setEvidenceOverlayDepth(clampEvidenceOverlayDepth(importedPerspective.evidenceOverlayPrefs.depth));
+          setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
+          setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
+        }
+        setPerspectivePresets(sanitizePerspectivePresets(metadata.viewState.perspectivePresets));
         setIncludeUnreviewedDraftsInExport(false);
         setIsReadingOrderEditMode(false);
         setRevealedSourceCardIds(new Set());
@@ -5581,6 +5684,7 @@ export default function App() {
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          perspectivePresets,
         },
         exportMode: mode,
         bounds,
@@ -5612,6 +5716,7 @@ export default function App() {
       lodShowLoneWolvesWhenFar,
       perspectiveMode,
       perspectiveStrictFilter,
+      perspectivePresets,
       ]
   );
 
@@ -6008,6 +6113,63 @@ export default function App() {
     }
   }, []);
 
+  const handleSavePerspectivePreset = useCallback(() => {
+    const name = window.prompt("Preset name", "My preset")?.trim();
+    if (!name) {
+      return;
+    }
+
+    const perspective: PerspectiveState = {
+      mode: perspectiveMode,
+      strictFilter: perspectiveStrictFilter,
+      lodEnabled,
+      evidenceOverlayPrefs: {
+        mode: evidenceOverlayMode,
+        depth: clampEvidenceOverlayDepth(evidenceOverlayDepth),
+        scope: evidenceOverlayScope,
+        dimOthers: evidenceOverlayDimOthers,
+      },
+    };
+
+    const nextPreset: PerspectivePreset = {
+      id: `preset-${Date.now().toString(36)}`,
+      name,
+      perspective,
+    };
+
+    setPerspectivePresets((previous) => sanitizePerspectivePresets([...previous, nextPreset]));
+    setStatusMessage(`Saved perspective preset: ${name}`);
+  }, [
+    evidenceOverlayDepth,
+    evidenceOverlayDimOthers,
+    evidenceOverlayMode,
+    evidenceOverlayScope,
+    lodEnabled,
+    perspectiveMode,
+    perspectiveStrictFilter,
+  ]);
+
+  const handleLoadPerspectivePreset = useCallback((presetId: string) => {
+    const preset = perspectivePresets.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    const perspective = sanitizePerspectiveState(preset.perspective, { mode: "default", strictFilter: false });
+    setPerspectiveMode(perspective.mode);
+    setPerspectiveStrictFilter(perspective.strictFilter);
+    if (perspective.lodEnabled !== undefined) {
+      setLodEnabled(perspective.lodEnabled);
+    }
+    if (perspective.evidenceOverlayPrefs) {
+      setEvidenceOverlayMode(perspective.evidenceOverlayPrefs.mode);
+      setEvidenceOverlayDepth(clampEvidenceOverlayDepth(perspective.evidenceOverlayPrefs.depth));
+      setEvidenceOverlayScope(perspective.evidenceOverlayPrefs.scope);
+      setEvidenceOverlayDimOthers(perspective.evidenceOverlayPrefs.dimOthers);
+    }
+    setStatusMessage(`Loaded perspective preset: ${preset.name}`);
+  }, [perspectivePresets]);
+
   const headerViewControls = (
     <div style={{ position: "relative" }}>
       <button
@@ -6108,6 +6270,9 @@ export default function App() {
             onPerspectiveModeChange={setPerspectiveMode}
             perspectiveStrictFilter={perspectiveStrictFilter}
             onPerspectiveStrictFilterChange={setPerspectiveStrictFilter}
+            perspectivePresets={perspectivePresets}
+            onSavePerspectivePreset={handleSavePerspectivePreset}
+            onLoadPerspectivePreset={handleLoadPerspectivePreset}
             perspectiveHint={perspectiveHint}
           />
         </div>
