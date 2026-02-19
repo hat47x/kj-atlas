@@ -37,6 +37,15 @@ function parseTransform(value: unknown): Transform | null {
 }
 
 
+
+function parseClaimType(value: unknown): "fact" | "claim" | "hypothesis" | "unknown" | undefined {
+  if (value === "fact" || value === "claim" || value === "hypothesis" || value === "unknown") {
+    return value;
+  }
+
+  return undefined;
+}
+
 function parseCritiqueTags(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -76,6 +85,7 @@ function parseCards(value: unknown): Card[] | null {
       y,
       claimType: item.claimType === "hypothesis" || item.claimType === "claim" || item.claimType === "fact" ? item.claimType : undefined,
       mergedIntoCardId: typeof item.mergedIntoCardId === "string" ? item.mergedIntoCardId : undefined,
+      claimType: parseClaimType(item.claimType),
       repOf:
         Array.isArray(item.repOf) && item.repOf.every((cardId) => typeof cardId === "string")
           ? item.repOf
