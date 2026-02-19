@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
+import type { PerspectiveMode } from "../domain/view/perspective";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -54,6 +55,11 @@ type ViewControlsPanelProps = {
   onEvidenceOverlayScopeChange: (value: "all" | "selection") => void;
   evidenceOverlayDimOthers: boolean;
   onEvidenceOverlayDimOthersChange: (value: boolean) => void;
+  perspectiveMode: PerspectiveMode;
+  onPerspectiveModeChange: (value: PerspectiveMode) => void;
+  perspectiveStrictFilter: boolean;
+  onPerspectiveStrictFilterChange: (value: boolean) => void;
+  perspectiveHint?: string | null;
 };
 
 const sectionStyle: CSSProperties = {
@@ -116,6 +122,11 @@ export function ViewControlsPanel({
   onEvidenceOverlayScopeChange,
   evidenceOverlayDimOthers,
   onEvidenceOverlayDimOthersChange,
+  perspectiveMode,
+  onPerspectiveModeChange,
+  perspectiveStrictFilter,
+  onPerspectiveStrictFilterChange,
+  perspectiveHint,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -189,6 +200,39 @@ export function ViewControlsPanel({
             </option>
           ))}
         </select>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Perspective</div>
+        <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+          Mode
+          <select
+            value={perspectiveMode}
+            onChange={(event) => {
+              onPerspectiveModeChange(event.target.value as PerspectiveMode);
+            }}
+          >
+            <option value="default">Default</option>
+            <option value="facts">Facts view</option>
+            <option value="claims">Claims view</option>
+            <option value="hypotheses">Hypotheses view</option>
+            <option value="unknown">Unknown view</option>
+            <option value="evidence">Evidence view</option>
+            <option value="contradiction">Contradiction view</option>
+            <option value="review">Review view</option>
+          </select>
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+          <input
+            type="checkbox"
+            checked={perspectiveStrictFilter}
+            onChange={(event) => {
+              onPerspectiveStrictFilterChange(event.target.checked);
+            }}
+          />
+          Strict filter
+        </label>
+        {perspectiveHint ? <div style={{ fontSize: 11, color: "#475569" }}>{perspectiveHint}</div> : null}
       </div>
 
       <div style={sectionStyle}>

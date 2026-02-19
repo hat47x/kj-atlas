@@ -105,6 +105,8 @@ export type CanvasViewState = {
   evidenceOverlayEdges?: EvidenceLink[];
   evidenceOverlayDimCardIds?: Set<string>;
   evidenceOverlayHint?: string | null;
+  highlightCardIds?: Set<string>;
+  perspectiveHint?: string | null;
 };
 
 export type CanvasCamera = {
@@ -309,6 +311,8 @@ export function CanvasShell({
   const evidenceOverlayEdges = viewState?.evidenceOverlayEdges ?? [];
   const evidenceOverlayDimCardIds = viewState?.evidenceOverlayDimCardIds ?? new Set<string>();
   const evidenceOverlayHint = viewState?.evidenceOverlayHint ?? null;
+  const highlightCardIds = viewState?.highlightCardIds ?? new Set<string>();
+  const perspectiveHint = viewState?.perspectiveHint ?? null;
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -1312,6 +1316,7 @@ export function CanvasShell({
               isActiveSearchMatch={activeMatchedCardId === card.id}
               isPickingEdgeTarget={isPickingEdgeTarget}
               isDeemphasized={deemphasizedCardIdSet.has(card.id) || evidenceOverlayDimCardIds.has(card.id)}
+              isHighlighted={highlightCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
@@ -1344,7 +1349,7 @@ export function CanvasShell({
         : null}
       </LabelVisibilityContext.Provider>
       {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
-      {evidenceOverlayHint ? (
+      {evidenceOverlayHint || perspectiveHint ? (
         <div
           style={{
             position: "absolute",
@@ -1358,7 +1363,7 @@ export function CanvasShell({
             pointerEvents: "none",
           }}
         >
-          {evidenceOverlayHint}
+          {evidenceOverlayHint ?? perspectiveHint}
         </div>
       ) : null}
     </div>

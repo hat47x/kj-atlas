@@ -14,6 +14,7 @@ type CardViewProps = {
   card: Card;
   isSelected: boolean;
   isDeemphasized?: boolean;
+  isHighlighted?: boolean;
   searchQuery?: string;
   isSearchMatch?: boolean;
   isActiveSearchMatch?: boolean;
@@ -85,6 +86,7 @@ function CardViewComponent({
   onSelect,
   isPickingEdgeTarget = false,
   isDeemphasized = false,
+  isHighlighted = false,
   compactMode = false,
   markerMode = false,
   showLabelText = true,
@@ -203,9 +205,11 @@ function CardViewComponent({
         borderRadius: markerMode ? 999 : 8,
         backgroundColor: markerMode ? "rgba(100, 116, 139, 0.25)" : "#ffffff",
         opacity: markerMode ? 0.4 : isDeemphasized ? 0.55 : 1,
-        boxShadow: isSelected
-          ? "0 0 0 2px rgba(37, 99, 235, 0.2), 0 1px 2px rgba(15, 23, 42, 0.08)"
-          : "0 1px 2px rgba(15, 23, 42, 0.08)",
+        boxShadow: isHighlighted
+          ? "0 0 0 3px rgba(245, 158, 11, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.9), 0 1px 2px rgba(15, 23, 42, 0.08)"
+          : isSelected
+            ? "0 0 0 2px rgba(37, 99, 235, 0.2), 0 1px 2px rgba(15, 23, 42, 0.08)"
+            : "0 1px 2px rgba(15, 23, 42, 0.08)",
         color: "#0f172a",
         lineHeight: compactMode ? 1.25 : 1.4,
         whiteSpace: compactMode ? "normal" : "pre-wrap",
