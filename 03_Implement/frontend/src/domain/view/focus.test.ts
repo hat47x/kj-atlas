@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCardWorldBounds, getIslandWorldBounds } from "../geometry/bounds";
-import { enforceMinZoomForBounds, fitToBounds, popFocusHistory, pushFocusHistory } from "./focus";
+import { enforceMinZoomForBounds, fitToBounds, pickPrimaryFocusRef, popFocusHistory, pushFocusHistory } from "./focus";
 
 describe("focus view helpers", () => {
   it("fits bounds into viewport with padding", () => {
@@ -47,5 +47,20 @@ describe("focus view helpers", () => {
     const centerY = 120 + 160 / 2;
     expect(transform.panX).toBeCloseTo(800 / 2 - centerX * transform.zoom);
     expect(transform.panY).toBeCloseTo(600 / 2 - centerY * transform.zoom);
+  });
+
+  it("picks island as primary focus ref before card", () => {
+    expect(
+      pickPrimaryFocusRef([
+        { kind: "card", idOrSignature: "card-1" },
+        { kind: "island", idOrSignature: "island-1" },
+      ])
+    ).toEqual({ kind: "island", idOrSignature: "island-1" });
+
+    expect(pickPrimaryFocusRef([{ kind: "card", idOrSignature: "card-1" }])).toEqual({
+      kind: "card",
+      idOrSignature: "card-1",
+    });
+    expect(pickPrimaryFocusRef([])).toBeNull();
   });
 });

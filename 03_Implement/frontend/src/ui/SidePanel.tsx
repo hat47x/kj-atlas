@@ -11,6 +11,7 @@ import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
+import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 
 type SummaryGroundingItem = {
   id: string;
@@ -122,8 +123,10 @@ type SidePanelProps = {
   onOutlineAppendRecommendationsChange: (value: boolean) => void;
   outlineQualityReport: OutlineQualityReport | null;
   outlineRecommendations: Recommendation[];
+  contradictionReport: ContradictionReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
+  onFocusContradictionSignal: (signal: ContradictionSignal) => void;
   onCopyReadingOutlineMd: () => void;
   onDownloadReadingOutlineMd: () => void;
   readingStep: number;
@@ -235,8 +238,10 @@ export function SidePanel({
   onOutlineAppendRecommendationsChange,
   outlineQualityReport,
   outlineRecommendations,
+  contradictionReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
+  onFocusContradictionSignal,
   onCopyReadingOutlineMd,
   onDownloadReadingOutlineMd,
   readingStep,
@@ -339,6 +344,17 @@ export function SidePanel({
       return acc;
     }, { error: 0, warn: 0, info: 0 });
   }, [outlineQualityReport]);
+
+  const contradictionSignalsBySeverity = useMemo(() => {
+    if (!contradictionReport) {
+      return { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] };
+    }
+
+    return contradictionReport.signals.reduce((acc, signal) => {
+      acc[signal.severity].push(signal);
+      return acc;
+    }, { warn: [] as ContradictionSignal[], info: [] as ContradictionSignal[] });
+  }, [contradictionReport]);
 
 
   const handleCopyExplanationClick = async () => {
@@ -576,6 +592,51 @@ export function SidePanel({
                   </ul>
                 )}
               </details>
+              {contradictionReport ? (
+                <details style={{ marginTop: 8 }}>
+                  <summary style={{ fontSize: 12, cursor: "pointer", color: "#b45309" }}>
+                    Contradiction signals ({contradictionReport.stats.signals})
+                  </summary>
+                  {contradictionReport.signals.length === 0 ? (
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No contradiction signals.</div>
+                  ) : (
+                    <div style={{ marginTop: 6, display: "grid", gap: 8 }}>
+                      {["warn", "info"].map((severity) => {
+                        const signals = contradictionSignalsBySeverity[severity as "warn" | "info"];
+                        if (signals.length === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <div key={severity}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: severity === "warn" ? "#b45309" : "#334155" }}>
+                              {severity.toUpperCase()} ({signals.length})
+                            </div>
+                            <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+                              {signals.map((signal, index) => (
+                                <li key={`${signal.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                                  <div style={{ fontWeight: 600 }}>[{signal.code}] {signal.title}</div>
+                                  <div>{signal.detail}</div>
+                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>Action: {signal.suggestedAction}</div> : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onFocusContradictionSignal(signal);
+                                    }}
+                                    style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
+                                  >
+                                    Focus
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </details>
+              ) : null}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -848,6 +909,51 @@ export function SidePanel({
                   </ul>
                 )}
               </details>
+              {contradictionReport ? (
+                <details style={{ marginTop: 8 }}>
+                  <summary style={{ fontSize: 12, cursor: "pointer", color: "#b45309" }}>
+                    Contradiction signals ({contradictionReport.stats.signals})
+                  </summary>
+                  {contradictionReport.signals.length === 0 ? (
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No contradiction signals.</div>
+                  ) : (
+                    <div style={{ marginTop: 6, display: "grid", gap: 8 }}>
+                      {["warn", "info"].map((severity) => {
+                        const signals = contradictionSignalsBySeverity[severity as "warn" | "info"];
+                        if (signals.length === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <div key={severity}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: severity === "warn" ? "#b45309" : "#334155" }}>
+                              {severity.toUpperCase()} ({signals.length})
+                            </div>
+                            <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+                              {signals.map((signal, index) => (
+                                <li key={`${signal.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                                  <div style={{ fontWeight: 600 }}>[{signal.code}] {signal.title}</div>
+                                  <div>{signal.detail}</div>
+                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>Action: {signal.suggestedAction}</div> : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      onFocusContradictionSignal(signal);
+                                    }}
+                                    style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
+                                  >
+                                    Focus
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </details>
+              ) : null}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>

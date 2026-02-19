@@ -18,6 +18,7 @@ type EdgeLayerProps = {
   edges: RenderEdge[];
   hiddenCardIds: Set<string>;
   selectedEdgeId?: string | null;
+  highlightedEdgeIds?: string[];
   onEdgeSelect?: (edgeId: string, edge: RenderEdge) => void;
 };
 
@@ -87,6 +88,7 @@ function EdgeLayerComponent({
   edges,
   hiddenCardIds,
   selectedEdgeId,
+  highlightedEdgeIds,
   onEdgeSelect,
 }: EdgeLayerProps) {
   const cardCenterById = useMemo(() => {
@@ -114,6 +116,7 @@ function EdgeLayerComponent({
   }, [cards, islands]);
 
   const islandById = useMemo(() => new Map(islands.map((island) => [island.id, island])), [islands]);
+  const highlightedEdgeIdSet = useMemo(() => new Set(highlightedEdgeIds ?? []), [highlightedEdgeIds]);
 
   const drawableEdges = useMemo(() => {
     return edges.filter((edge) => {
@@ -186,6 +189,7 @@ function EdgeLayerComponent({
         }
 
         const isSelected = selectedEdgeId === edge.id;
+        const isHighlighted = highlightedEdgeIdSet.has(edge.id);
 
         const handleEdgeClick = (event: MouseEvent<SVGLineElement>) => {
           event.stopPropagation();
@@ -198,6 +202,7 @@ function EdgeLayerComponent({
         // ベースの線色（main準拠）
         const baseStroke = edge.isDerived ? "#0f766e" : "#64748b";
         const selectedStroke = "#2563eb";
+        const highlightedStroke = "#f59e0b";
 
         return (
           <g key={edge.id}>
@@ -207,8 +212,8 @@ function EdgeLayerComponent({
               y1={fromAnchor.y}
               x2={toAnchor.x}
               y2={toAnchor.y}
-              stroke={isSelected ? selectedStroke : baseStroke}
-              strokeWidth={isSelected ? 3 : edge.isDerived ? 2.5 : 2}
+              stroke={isSelected ? selectedStroke : isHighlighted ? highlightedStroke : baseStroke}
+              strokeWidth={isSelected ? 3 : isHighlighted ? 3.5 : edge.isDerived ? 2.5 : 2}
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
               strokeDasharray={getDashArray(edge)}

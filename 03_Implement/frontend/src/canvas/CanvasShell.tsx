@@ -99,6 +99,7 @@ export type CanvasViewState = {
   showCanonicalOnlyEdges: boolean;
   showReadingOrder: boolean;
   showLabelBounds?: boolean;
+  highlightEdgeIds?: string[];
 };
 
 export type CanvasCamera = {
@@ -299,6 +300,7 @@ export function CanvasShell({
   const effectiveShowCanonicalOnlyEdges = viewState?.showCanonicalOnlyEdges ?? showCanonicalOnlyEdges;
   const effectiveShowReadingOrder = viewState?.showReadingOrder ?? showReadingOrder;
   const showLabelBounds = viewState?.showLabelBounds ?? false;
+  const highlightEdgeIds = viewState?.highlightEdgeIds ?? [];
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -1207,6 +1209,7 @@ export function CanvasShell({
           edges={visibleEdges}
           hiddenCardIds={hiddenEndpointIdSet}
           selectedEdgeId={selectedEdgeId}
+          highlightedEdgeIds={highlightEdgeIds}
           onEdgeSelect={onEdgeSelect}
         />
         <SuggestionDiffLayer diffs={visibleSuggestionMoveDiffs} cardWidth={CARD_WIDTH} cardHeight={CARD_HEIGHT} />

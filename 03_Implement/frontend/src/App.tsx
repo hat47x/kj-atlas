@@ -69,6 +69,7 @@ import {
   fitToBounds,
   FOCUS_LOD_EPSILON,
   popFocusHistory,
+  pickPrimaryFocusRef,
   pushFocusHistory,
   type FocusSnapshot,
 } from "./domain/view/focus";
@@ -76,6 +77,7 @@ import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
+import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -727,6 +729,8 @@ export default function App() {
   const [outlineAppendDiagnostics, setOutlineAppendDiagnostics] = useState(false);
   const [outlineAppendRecommendations, setOutlineAppendRecommendations] = useState(false);
   const [outlineQualityReport, setOutlineQualityReport] = useState<OutlineQualityReport | null>(null);
+  const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
+  const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
@@ -782,6 +786,7 @@ export default function App() {
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
   const collapsedStateDocIdRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
 
   const document = history?.present ?? null;
   const outlineRecommendations = useMemo(() => {
@@ -4361,16 +4366,59 @@ export default function App() {
       { readingMode, reviewedOnly },
       { collapsedIslandIds },
     );
+    const contradiction = analyzeContradictions(document);
     setOutlineQualityReport(report);
+    setContradictionReport(contradiction);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
     setOutlineQualityReport(null);
+    setContradictionReport(null);
+    setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
+
+  const handleFocusContradictionSignal = useCallback((signal: ContradictionSignal) => {
+    const primaryFocusRef = pickPrimaryFocusRef(
+      signal.entityRefs
+        .filter((entityRef): entityRef is { kind: "island" | "card"; idOrSignature: string } =>
+          entityRef.kind === "island" || entityRef.kind === "card"
+        )
+    );
+    if (primaryFocusRef) {
+      focusItem(primaryFocusRef.kind, primaryFocusRef.idOrSignature);
+    }
+
+    const edgeIds = signal.entityRefs
+      .filter((entityRef) => entityRef.kind === "edge")
+      .map((entityRef) => entityRef.idOrSignature);
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = null;
+    }
+
+    if (edgeIds.length === 0) {
+      setHighlightEdgeIds([]);
+      return;
+    }
+
+    setHighlightEdgeIds(edgeIds);
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightEdgeIds([]);
+      highlightTimeoutRef.current = null;
+    }, 3000);
+  }, [focusItem]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const buildReadingOutline = useCallback((): string | null => {
     if (!document) {
@@ -6116,8 +6164,10 @@ export default function App() {
           onOutlineAppendRecommendationsChange={setOutlineAppendRecommendations}
           outlineQualityReport={outlineQualityReport}
           outlineRecommendations={outlineRecommendations}
+          contradictionReport={contradictionReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
+          onFocusContradictionSignal={handleFocusContradictionSignal}
           onCopyReadingOutlineMd={() => {
             void handleCopyReadingOutlineMd();
           }}
@@ -6190,6 +6240,7 @@ export default function App() {
               showCanonicalOnlyEdges,
               showReadingOrder,
               showLabelBounds,
+              highlightEdgeIds,
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
