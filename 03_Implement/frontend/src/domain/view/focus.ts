@@ -19,6 +19,21 @@ export type ViewportSize = {
   height: number;
 };
 
+export type FocusEntityRef = {
+  kind: "island" | "card";
+  idOrSignature: string;
+};
+
+export function pickPrimaryFocusRef(refs: FocusEntityRef[]): FocusEntityRef | null {
+  const islandRef = refs.find((ref) => ref.kind === "island");
+  if (islandRef) {
+    return islandRef;
+  }
+
+  const cardRef = refs.find((ref) => ref.kind === "card");
+  return cardRef ?? null;
+}
+
 export function panTo(camera: Transform, panX: number, panY: number): Transform {
   return {
     ...camera,
