@@ -15,6 +15,7 @@ import type { ContradictionReport, ContradictionSignal } from "../domain/view/co
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
+import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { downloadTextFile } from "../export/narrative_export";
 
@@ -136,10 +137,12 @@ type SidePanelProps = {
   distributionReport: DistributionReport | null;
   claimTypeMixReport: ClaimTypeMixReport | null;
   evidenceGapReport: EvidenceGapReport | null;
+  dialecticBalanceReport: DialecticBalanceReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
   onFocusDistributionIsland: (islandId: string) => void;
+  onFocusDialecticBalanceFinding: (finding: BalanceFinding) => void;
   onCopyReadingOutlineMd: () => void;
   onDownloadReadingOutlineMd: () => void;
   onEvidenceTraceError: (message: string) => void;
@@ -263,10 +266,12 @@ export function SidePanel({
   distributionReport,
   claimTypeMixReport,
   evidenceGapReport,
+  dialecticBalanceReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
   onFocusDistributionIsland,
+  onFocusDialecticBalanceFinding,
   onCopyReadingOutlineMd,
   onDownloadReadingOutlineMd,
   onEvidenceTraceError,
@@ -645,6 +650,42 @@ export function SidePanel({
     </details>
   ) : null;
 
+  const dialecticBalanceSection = dialecticBalanceReport ? (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Dialectic balance ({dialecticBalanceReport.findings.length})</summary>
+      <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
+        <div>hypotheses: {dialecticBalanceReport.stats.hypothesisCount} (supported: {dialecticBalanceReport.stats.hypothesisWithSupportCount}, contradicted: {dialecticBalanceReport.stats.hypothesisWithContradictionCount})</div>
+        <div>claims: {dialecticBalanceReport.stats.claimCount} (supported: {dialecticBalanceReport.stats.claimWithSupportCount}, contradicted: {dialecticBalanceReport.stats.claimWithContradictionCount})</div>
+        <div>facts: {dialecticBalanceReport.stats.factCount}</div>
+        <div>links: supports {dialecticBalanceReport.stats.supportsCount}, contradicts {dialecticBalanceReport.stats.contradictsCount}</div>
+      </div>
+      {dialecticBalanceReport.findings.length === 0 ? (
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No dialectic balance findings.</div>
+      ) : (
+        <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+          {dialecticBalanceReport.findings.map((finding, index) => (
+            <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+              <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
+              <div>{finding.detail}</div>
+              <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div>
+              {finding.cardIds && finding.cardIds.length > 0 ? (
+                <button
+                  type="button"
+                  style={{ fontSize: 10, marginTop: 4, cursor: "pointer" }}
+                  onClick={() => {
+                    onFocusDialecticBalanceFinding(finding);
+                  }}
+                >
+                  Focus sample
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
+  ) : null;
+
 
   const handleCopyExplanationClick = async () => {
     if (!selectedIslandRelationExplanation) {
@@ -929,6 +970,7 @@ export function SidePanel({
               {distributionSignalsSection}
               {claimTypeMixSection}
               {evidenceGapSection}
+              {dialecticBalanceSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -1249,6 +1291,7 @@ export function SidePanel({
               {distributionSignalsSection}
               {claimTypeMixSection}
               {evidenceGapSection}
+              {dialecticBalanceSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
