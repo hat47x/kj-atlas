@@ -54,6 +54,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
+import { buildBundleZipBlob, buildExportBundle, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
 import {
@@ -5847,6 +5848,132 @@ export default function App() {
       ]
   );
 
+  const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean }) => {
+    if (!document || !canvasCamera) {
+      setStatusMessage("Nothing to export");
+      return;
+    }
+
+    try {
+      const exportTimestamp = formatBundleTimestamp(new Date());
+      const rootFolderPath = `kj-atlas-export-${exportTimestamp}`;
+      const deterministicNowIso = document.updatedAt || document.createdAt;
+      const viewMetadata = buildExportViewMetadata({
+        doc: document,
+        camera: canvasCamera,
+        viewState: {
+          summaryView,
+          abstractMapView,
+          hideSourceCards,
+          maxDepth,
+          focusIslandId: focusTarget.focusIslandId ?? null,
+          showReadingOrder,
+          editReadingOrder: isReadingOrderEditMode,
+          readingNavEnabled,
+          readingIndex,
+          readingMode,
+          reviewedOnly,
+          safeMode,
+          lodEnabled,
+          lodThresholds,
+          lodLevelOverride,
+          lodShowLoneWolvesWhenFar,
+          resolvedLodLevel: currentLod?.level,
+          evidenceOverlayEnabled,
+          evidenceOverlayMode,
+          evidenceOverlayDepth,
+          evidenceOverlayScope,
+          evidenceOverlayDimOthers,
+          perspectiveMode,
+          perspectiveStrictFilter,
+          perspectivePresets,
+        },
+        exportMode: "viewport",
+        generatedAt: deterministicNowIso,
+      });
+
+      const files = buildExportBundle(document, viewMetadata, {
+        rootFolderPath,
+        safeMode,
+        includeOutline: options.includeOutline,
+        includeDiagnostics: options.includeDiagnostics,
+        includeSelectedCardTraces: options.includeSelectedCardTraces,
+        selectedCardId: selectedCard?.id ?? null,
+        deterministicNowIso,
+        readingMode,
+        reviewedOnly,
+        readingState: {
+          readingNavEnabled,
+          readingIndex,
+          readingMode,
+          reviewedOnly,
+          safeMode,
+          lod: currentLod?.level ?? null,
+          generatedAt: deterministicNowIso,
+        },
+        outlineOptions: {
+          includeCardTexts: outlineIncludeCardTexts,
+          includeRelationSummaries: outlineIncludeRelationSummaries,
+          includeUnreviewedSummaries: safeMode ? false : outlineIncludeUnreviewed,
+          appendDiagnostics: outlineAppendDiagnostics,
+          diagnosticsReport: outlineQualityReport,
+          appendRecommendations: outlineAppendRecommendations,
+          recommendations: outlineRecommendations,
+        },
+        outlineQualityReport,
+        contradictionReport,
+        distributionReport,
+        dialecticBalanceReport,
+      });
+
+      const zipBlob = await buildBundleZipBlob(files);
+      downloadBlobAsFile(`${rootFolderPath}.zip`, zipBlob);
+      setStatusMessage(`Exported bundle (${files.length} files)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Bundle export failed";
+      setStatusMessage(`Bundle export failed: ${message}`);
+    }
+  }, [
+    abstractMapView,
+    canvasCamera,
+    contradictionReport,
+    currentLod?.level,
+    dialecticBalanceReport,
+    distributionReport,
+    document,
+    evidenceOverlayDepth,
+    evidenceOverlayDimOthers,
+    evidenceOverlayEnabled,
+    evidenceOverlayMode,
+    evidenceOverlayScope,
+    focusTarget.focusIslandId,
+    hideSourceCards,
+    isReadingOrderEditMode,
+    lodEnabled,
+    lodLevelOverride,
+    lodShowLoneWolvesWhenFar,
+    lodThresholds,
+    maxDepth,
+    outlineAppendDiagnostics,
+    outlineAppendRecommendations,
+    outlineIncludeCardTexts,
+    outlineIncludeRelationSummaries,
+    outlineIncludeUnreviewed,
+    outlineQualityReport,
+    outlineRecommendations,
+    perspectiveMode,
+    perspectivePresets,
+    perspectiveStrictFilter,
+    readingIndex,
+    readingMode,
+    readingNavEnabled,
+    reviewedOnly,
+    safeMode,
+    selectedCard?.id,
+    showReadingOrder,
+    summaryView,
+  ]);
+
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
       setStatusMessage("Nothing to export");
@@ -6450,6 +6577,10 @@ export default function App() {
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
       onExportViewViewport={handleExportViewMetadataViewport}
       onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
+      onExportBundleZip={(options) => {
+        void handleExportBundleZip(options);
+      }}
+      canIncludeTraces={Boolean(selectedCard)}
       onLoadViewMetadataFile={(file) => {
         void handleLoadViewMetadataFile(file);
       }}
