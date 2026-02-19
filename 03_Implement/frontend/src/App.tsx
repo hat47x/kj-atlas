@@ -30,7 +30,6 @@ import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateAndUpgradeImportedDocument } from "./domain/validate";
-import { validateDocumentV2Strict } from "./domain/validate_doc";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
@@ -53,7 +52,7 @@ import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdow
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
-import { buildExportViewMetadata, validateImportViewMetadata } from "./export/view_metadata";
+import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
 import { buildBundleZipBlob, buildExportBundle, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import { diffDocuments } from "./domain/diff/doc_diff";
@@ -107,6 +106,9 @@ import { buildPatchSummary, formatPatchSummaryMarkdown } from "./domain/patch/pa
 import { appendPatchApplyLog, formatPatchApplyLogEntryMarkdown } from "./domain/patch/patch_apply_log";
 import { lintPatchAgainstCurrentDoc, type PatchLintIssue } from "./domain/patch/patch_lint";
 import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patch/patch_fix";
+import { parseDocumentJson } from "./import/document_import";
+import { parseViewJson } from "./import/view_import";
+import { detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -919,6 +921,10 @@ export default function App() {
   const [comparisonFileName, setComparisonFileName] = useState<string | null>(null);
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
+  const [packImportError, setPackImportError] = useState<string | null>(null);
+  const [importedPackSummary, setImportedPackSummary] = useState<{ fileName: string; cardCount: number; islandCount: number; perspectiveMode: string } | null>(null);
+  const [importedPackSnapshotUrl, setImportedPackSnapshotUrl] = useState<string | null>(null);
+  const [importedPackDiagnosticsMd, setImportedPackDiagnosticsMd] = useState<string | null>(null);
   const [pendingPatchImport, setPendingPatchImport] = useState<PendingPatchImport | null>(null);
   const [patchImportError, setPatchImportError] = useState<string | null>(null);
   const [patchBaselineDoc, setPatchBaselineDoc] = useState<DocumentV2 | null>(null);
@@ -935,6 +941,14 @@ export default function App() {
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
   const collapsedStateDocIdRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (importedPackSnapshotUrl) {
+        URL.revokeObjectURL(importedPackSnapshotUrl);
+      }
+    };
+  }, [importedPackSnapshotUrl]);
 
   const document = history?.present ?? null;
   const outlineRecommendations = useMemo(() => {
@@ -2096,39 +2110,20 @@ export default function App() {
 
       setIsSharePanelOpen(true);
 
-      try {
-        const rawText = await selectedFile.text();
-        const parsedJson: unknown = JSON.parse(rawText);
-        const validation = validateDocumentV2Strict(parsedJson);
-
-        if (!validation.ok) {
-          const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
-          const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
-          setPendingImportedDocument(null);
-          setImportDocumentError(`Document validation failed:\n${details}${suffix}`);
-          setStatusMessage("Failed to load document JSON");
-          return;
-        }
-
-        setPendingImportedDocument({
-          fileName: selectedFile.name,
-          document: validation.document,
-        });
-        setImportDocumentError(null);
-        setStatusMessage("Document validated. Review summary, then click Replace current document.");
-      } catch (error) {
+      const parseResult = parseDocumentJson(await selectedFile.text());
+      if (!parseResult.ok) {
         setPendingImportedDocument(null);
-
-        if (error instanceof SyntaxError) {
-          setImportDocumentError("Document validation failed:\n- invalid JSON syntax");
-          setStatusMessage("Failed to parse document JSON file");
-          return;
-        }
-
-        const message = error instanceof Error ? error.message : "Unknown error";
-        setImportDocumentError(`Document validation failed:\n- ${message}`);
+        setImportDocumentError(parseResult.error);
         setStatusMessage("Failed to load document JSON");
+        return;
       }
+
+      setPendingImportedDocument({
+        fileName: selectedFile.name,
+        document: parseResult.document,
+      });
+      setImportDocumentError(null);
+      setStatusMessage("Document validated. Review summary, then click Replace current document.");
     },
     []
   );
@@ -2172,6 +2167,71 @@ export default function App() {
     }
   }, []);
 
+  const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, statusPrefix: string) => {
+    const hasFocusIsland =
+      metadata.viewState.focusIslandId === null
+        ? false
+        : targetDocument.islands.some((island) => island.id === metadata.viewState.focusIslandId);
+
+    setSummaryView(metadata.viewState.summaryView || metadata.viewState.abstractMapView);
+    setAbstractMapView(metadata.viewState.abstractMapView);
+    setHideSourceCards(metadata.viewState.hideSourceCards);
+    setMaxDepth(metadata.viewState.maxDepth);
+    setShowReadingOrder(metadata.viewState.showReadingOrder);
+    setReadingNavEnabled(metadata.viewState.readingNavEnabled ?? false);
+    setReadingMode(metadata.viewState.readingMode ?? "islands");
+    setReviewedOnly(metadata.viewState.reviewedOnly ?? false);
+    setReadingIndex(metadata.viewState.readingIndex ?? 0);
+    setSafeMode(metadata.viewState.safeMode ?? true);
+    setLodEnabled(metadata.viewState.lodEnabled ?? false);
+    setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
+    setLodLevelOverride(metadata.viewState.lodLevelOverride ?? null);
+    setLodShowLoneWolvesWhenFar(metadata.viewState.lodShowLoneWolvesWhenFar ?? true);
+    setEvidenceOverlayEnabled(metadata.viewState.evidenceOverlayEnabled ?? false);
+    setEvidenceOverlayMode(metadata.viewState.evidenceOverlayMode ?? "supports");
+    setEvidenceOverlayDepth(clampEvidenceOverlayDepth(metadata.viewState.evidenceOverlayDepth ?? 1));
+    setEvidenceOverlayScope(metadata.viewState.evidenceOverlayScope ?? "selection");
+    setEvidenceOverlayDimOthers(metadata.viewState.evidenceOverlayDimOthers ?? true);
+    const fallbackPerspective: PerspectiveState = {
+      mode: metadata.viewState.perspectiveMode ?? "default",
+      strictFilter: metadata.viewState.perspectiveStrictFilter ?? false,
+    };
+    const importedPerspective = sanitizePerspectiveState(metadata.viewState.perspective, fallbackPerspective);
+    setPerspectiveMode(importedPerspective.mode);
+    setPerspectiveStrictFilter(importedPerspective.strictFilter);
+    if (importedPerspective.lodEnabled !== undefined) {
+      setLodEnabled(importedPerspective.lodEnabled);
+    }
+    if (importedPerspective.evidenceOverlayPrefs) {
+      setEvidenceOverlayMode(importedPerspective.evidenceOverlayPrefs.mode);
+      setEvidenceOverlayDepth(clampEvidenceOverlayDepth(importedPerspective.evidenceOverlayPrefs.depth));
+      setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
+      setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
+    }
+    setPerspectivePresets(sanitizePerspectivePresets(metadata.viewState.perspectivePresets));
+    setIncludeUnreviewedDraftsInExport(false);
+    setIsReadingOrderEditMode(false);
+    setRevealedSourceCardIds(new Set());
+    setFocusCardId(null);
+    setFocusWorldPoint(null);
+    suppressNextTransformPersistRef.current = true;
+    setCameraTransformRequest((previousRequest) => ({
+      panX: metadata.camera.panX,
+      panY: metadata.camera.panY,
+      zoom: metadata.camera.zoom,
+      requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
+    }));
+
+    if (metadata.viewState.focusIslandId && !hasFocusIsland) {
+      setFocusTarget({});
+      setStatusMessage(`${statusPrefix}; focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
+      return;
+    }
+
+    setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
+    setStatusMessage(statusPrefix);
+  }, []);
+
   const handleLoadViewMetadataFile = useCallback(
     async (selectedFile: File) => {
       if (!document) {
@@ -2179,127 +2239,156 @@ export default function App() {
         return;
       }
 
-      try {
-        const rawText = await selectedFile.text();
-        const parsedJson: unknown = JSON.parse(rawText);
-        const validateResult = validateImportViewMetadata(parsedJson);
-
-        if (!validateResult.ok) {
-          setStatusMessage(`Failed to load view metadata: ${validateResult.error}`);
-          return;
-        }
-
-        const metadata = validateResult.metadata;
-        const hasFocusIsland =
-          metadata.viewState.focusIslandId === null
-            ? false
-            : document.islands.some((island) => island.id === metadata.viewState.focusIslandId);
-
-        setSummaryView(metadata.viewState.summaryView || metadata.viewState.abstractMapView);
-        setAbstractMapView(metadata.viewState.abstractMapView);
-        setHideSourceCards(metadata.viewState.hideSourceCards);
-        setMaxDepth(metadata.viewState.maxDepth);
-        setShowReadingOrder(metadata.viewState.showReadingOrder);
-        setReadingNavEnabled(metadata.viewState.readingNavEnabled ?? false);
-        setReadingMode(metadata.viewState.readingMode ?? "islands");
-        setReviewedOnly(metadata.viewState.reviewedOnly ?? false);
-        setReadingIndex(metadata.viewState.readingIndex ?? 0);
-        setSafeMode(metadata.viewState.safeMode ?? true);
-        setLodEnabled(metadata.viewState.lodEnabled ?? false);
-        setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
-        setLodLevelOverride(metadata.viewState.lodLevelOverride ?? null);
-        setLodShowLoneWolvesWhenFar(metadata.viewState.lodShowLoneWolvesWhenFar ?? true);
-        setEvidenceOverlayEnabled(metadata.viewState.evidenceOverlayEnabled ?? false);
-        setEvidenceOverlayMode(metadata.viewState.evidenceOverlayMode ?? "supports");
-        setEvidenceOverlayDepth(clampEvidenceOverlayDepth(metadata.viewState.evidenceOverlayDepth ?? 1));
-        setEvidenceOverlayScope(metadata.viewState.evidenceOverlayScope ?? "selection");
-        setEvidenceOverlayDimOthers(metadata.viewState.evidenceOverlayDimOthers ?? true);
-        const fallbackPerspective: PerspectiveState = {
-          mode: metadata.viewState.perspectiveMode ?? "default",
-          strictFilter: metadata.viewState.perspectiveStrictFilter ?? false,
-        };
-        const importedPerspective = sanitizePerspectiveState(metadata.viewState.perspective, fallbackPerspective);
-        setPerspectiveMode(importedPerspective.mode);
-        setPerspectiveStrictFilter(importedPerspective.strictFilter);
-        if (importedPerspective.lodEnabled !== undefined) {
-          setLodEnabled(importedPerspective.lodEnabled);
-        }
-        if (importedPerspective.evidenceOverlayPrefs) {
-          setEvidenceOverlayMode(importedPerspective.evidenceOverlayPrefs.mode);
-          setEvidenceOverlayDepth(clampEvidenceOverlayDepth(importedPerspective.evidenceOverlayPrefs.depth));
-          setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
-          setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
-        }
-        setPerspectivePresets(sanitizePerspectivePresets(metadata.viewState.perspectivePresets));
-        setIncludeUnreviewedDraftsInExport(false);
-        setIsReadingOrderEditMode(false);
-        setRevealedSourceCardIds(new Set());
-        setFocusCardId(null);
-        setFocusWorldPoint(null);
-        suppressNextTransformPersistRef.current = true;
-        setCameraTransformRequest((previousRequest) => ({
-          panX: metadata.camera.panX,
-          panY: metadata.camera.panY,
-          zoom: metadata.camera.zoom,
-          requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
-        }));
-
-        if (metadata.viewState.focusIslandId && !hasFocusIsland) {
-          setFocusTarget({});
-          setStatusMessage(`Loaded view metadata; focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
-          return;
-        }
-
-        setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
-        setStatusMessage("Loaded view metadata");
-      } catch (error) {
-        if (error instanceof SyntaxError) {
-          setStatusMessage("Failed to load view metadata: invalid JSON");
-          return;
-        }
-
-        const message = error instanceof Error ? error.message : "Unknown error";
-        setStatusMessage(`Failed to load view metadata: ${message}`);
+      const parseResult = parseViewJson(await selectedFile.text());
+      if (!parseResult.ok) {
+        setStatusMessage(`Failed to load view metadata: ${parseResult.error}`);
+        return;
       }
+
+      applyImportedViewMetadata(parseResult.metadata, document, "Loaded view metadata");
     },
-    [document]
+    [applyImportedViewMetadata, document]
   );
 
   const handleLoadDocumentFile = useCallback(async (selectedFile: File) => {
-    try {
-      const rawText = await selectedFile.text();
-      const parsedJson: unknown = JSON.parse(rawText);
-      const validation = validateDocumentV2Strict(parsedJson);
-
-      if (!validation.ok) {
-        const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
-        const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
-        setPendingImportedDocument(null);
-        setImportDocumentError(`Document validation failed:\n${details}${suffix}`);
-        setStatusMessage("Failed to load document JSON");
-        return;
-      }
-
-      setPendingImportedDocument({
-        fileName: selectedFile.name,
-        document: validation.document,
-      });
-      setImportDocumentError(null);
-      setStatusMessage("Document validated. Review summary, then click Replace current document.");
-    } catch (error) {
+    const parseResult = parseDocumentJson(await selectedFile.text());
+    if (!parseResult.ok) {
       setPendingImportedDocument(null);
+      setImportDocumentError(parseResult.error);
+      setStatusMessage("Failed to load document JSON");
+      return;
+    }
 
-      if (error instanceof SyntaxError) {
-        setImportDocumentError("Document validation failed:\n- invalid JSON syntax");
-        setStatusMessage("Failed to parse document JSON file");
+    setPendingImportedDocument({
+      fileName: selectedFile.name,
+      document: parseResult.document,
+    });
+    setImportDocumentError(null);
+    setStatusMessage("Document validated. Review summary, then click Replace current document.");
+  }, []);
+
+  const handleInvalidReviewPackFileType = useCallback(() => {
+    setPackImportError("Please upload a .zip review pack.");
+    setStatusMessage("Please upload a .zip review pack.");
+  }, []);
+
+  const handleImportReviewPackFile = useCallback(async (selectedFile: File) => {
+    setPackImportError(null);
+    if (!selectedFile.name.toLowerCase().endsWith(".zip")) {
+      setPackImportError("Please upload a .zip review pack.");
+      setStatusMessage("Please upload a .zip review pack.");
+      return;
+    }
+
+    try {
+      const entries = await readZipFiles(selectedFile);
+      const paths = detectReviewPackFiles(entries);
+      if (!paths.documentPath) {
+        setPackImportError("document.json not found in zip");
+        setStatusMessage("document.json not found in zip");
+        return;
+      }
+      if (!paths.viewPath) {
+        setPackImportError("view.json not found in zip");
+        setStatusMessage("view.json not found in zip");
         return;
       }
 
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setImportDocumentError(`Document validation failed:\n- ${message}`);
-      setStatusMessage("Failed to load document JSON");
+      const documentRaw = entries.get(paths.documentPath);
+      const viewRaw = entries.get(paths.viewPath);
+      if (typeof documentRaw !== "string") {
+        setPackImportError("Unsupported format");
+        setStatusMessage("Unsupported format");
+        return;
+      }
+      if (typeof viewRaw !== "string") {
+        setPackImportError("Unsupported format");
+        setStatusMessage("Unsupported format");
+        return;
+      }
+
+      const parsedDocument = parseDocumentJson(documentRaw);
+      if (!parsedDocument.ok) {
+        setPackImportError(parsedDocument.error);
+        setStatusMessage(parsedDocument.error);
+        return;
+      }
+
+      const parsedView = parseViewJson(viewRaw);
+      if (!parsedView.ok) {
+        setPackImportError(parsedView.error.includes("Invalid JSON") ? "Invalid JSON in view.json" : parsedView.error);
+        setStatusMessage("Failed to load view metadata");
+        return;
+      }
+
+      const previousSnapshotUrl = importedPackSnapshotUrl;
+      let nextSnapshotUrl: string | null = null;
+      if (paths.snapshotPath) {
+        const snapshotRaw = entries.get(paths.snapshotPath);
+        if (snapshotRaw instanceof Uint8Array) {
+          nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
+        }
+      }
+
+      const diagnosticsRaw = paths.diagnosticsPath ? entries.get(paths.diagnosticsPath) : undefined;
+      const diagnosticsText = typeof diagnosticsRaw === "string" ? diagnosticsRaw : null;
+
+      pendingCardDragSnapshotRef.current = null;
+      setHistory({
+        past: [],
+        present: cloneDocument(parsedDocument.document),
+        future: [],
+      });
+      setActiveDocumentId(parsedDocument.document.id);
+      setSelectedRecentDocumentId("");
+      setDocEtag(null);
+      setSelectedCardIds([]);
+      setSelectedIslandId(null);
+      setSelectedEdgeId(null);
+      setIsPickingEdgeTarget(false);
+      setFocusCardId(null);
+      setFocusTarget({});
+      setFocusWorldPoint(null);
+      setPeekIslandId(undefined);
+      setFlashReference(null);
+      setTemporaryRevealCardIds(new Set());
+      setSummaryRevealIslandIds(new Set());
+      setRevealedSourceCardIds(new Set());
+      setComparisonDocument(null);
+      setComparisonFileName(null);
+      setGroundingVisibilityMessage(null);
+      setIsDirty(true);
+      setHasSaveConflict(false);
+      setSuggestedDocument(null);
+      setSuggestionId(null);
+      setSuggestionNotes(null);
+      setSuggestionError(null);
+      setPendingImportedDocument(null);
+      setImportDocumentError(null);
+      setPackImportError(null);
+      setImportedPackSummary({
+        fileName: selectedFile.name,
+        cardCount: parsedDocument.document.cards.length,
+        islandCount: parsedDocument.document.islands.length,
+        perspectiveMode: parsedView.metadata.viewState.perspectiveMode ?? "default",
+      });
+      setImportedPackDiagnosticsMd(diagnosticsText);
+      setImportedPackSnapshotUrl(nextSnapshotUrl);
+      if (previousSnapshotUrl) {
+        URL.revokeObjectURL(previousSnapshotUrl);
+      }
+      applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, "Review pack imported");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unsupported format";
+      if (message.includes("Zip too large")) {
+        setPackImportError("Zip too large / exceeds limit");
+        setStatusMessage("Zip too large / exceeds limit");
+      } else {
+        setPackImportError(message);
+        setStatusMessage(message);
+      }
     }
-  }, []);
+  }, [applyImportedViewMetadata, importedPackSnapshotUrl]);
 
   const handleLoadPatchFile = useCallback(async (selectedFile: File) => {
     try {
@@ -2365,26 +2454,17 @@ export default function App() {
   }, []);
 
   const handleLoadPatchBaselineFile = useCallback(async (selectedFile: File) => {
-    try {
-      const rawText = await selectedFile.text();
-      const parsedJson: unknown = JSON.parse(rawText);
-      const validation = validateDocumentV2Strict(parsedJson);
-
-      if (!validation.ok) {
-        setPatchBaselineDoc(null);
-        setPatchBaselineFileName(null);
-        setStatusMessage("Failed to load baseline document JSON");
-        return;
-      }
-
-      setPatchBaselineDoc(validation.document);
-      setPatchBaselineFileName(selectedFile.name);
-      setStatusMessage("Loaded baseline for patch conflict detection");
-    } catch {
+    const parseResult = parseDocumentJson(await selectedFile.text());
+    if (!parseResult.ok) {
       setPatchBaselineDoc(null);
       setPatchBaselineFileName(null);
       setStatusMessage("Failed to load baseline document JSON");
+      return;
     }
+
+    setPatchBaselineDoc(parseResult.document);
+    setPatchBaselineFileName(selectedFile.name);
+    setStatusMessage("Loaded baseline for patch conflict detection");
   }, []);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
@@ -6587,6 +6667,12 @@ export default function App() {
       onLoadDocumentFile={(file) => {
         void handleLoadDocumentFile(file);
       }}
+      onImportReviewPackFile={(file) => {
+        void handleImportReviewPackFile(file);
+      }}
+      onInvalidReviewPackFileType={handleInvalidReviewPackFileType}
+      packImportError={packImportError}
+      importedPackSummary={importedPackSummary}
       pendingImportedDocumentSummary={
         pendingImportedDocument
           ? {
@@ -6682,6 +6768,8 @@ export default function App() {
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
           revealedSourceCardIds={revealedSourceCardIds}
+          importedPackSnapshotUrl={importedPackSnapshotUrl}
+          importedPackDiagnosticsMd={importedPackDiagnosticsMd}
           topContent={
             <>
               <section

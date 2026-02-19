@@ -1,0 +1,21 @@
+import { validateDocumentV2Strict } from "../domain/validate_doc";
+import type { DocumentV2 } from "../domain/types";
+
+export function parseDocumentJson(rawText: string): { ok: true; document: DocumentV2 } | { ok: false; error: string } {
+  try {
+    const parsedJson: unknown = JSON.parse(rawText);
+    const validation = validateDocumentV2Strict(parsedJson);
+    if (!validation.ok) {
+      const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
+      const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
+      return { ok: false, error: `Document validation failed:\n${details}${suffix}` };
+    }
+
+    return { ok: true, document: validation.document };
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return { ok: false, error: "Invalid JSON in document.json" };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Unknown document parse error" };
+  }
+}

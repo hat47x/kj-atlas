@@ -178,6 +178,8 @@ type SidePanelProps = {
   evidenceOverlayScope: "all" | "selection";
   onEnableEvidenceOverlaySelectionExplore: () => void;
   topContent?: ReactNode;
+  importedPackSnapshotUrl?: string | null;
+  importedPackDiagnosticsMd?: string | null;
 };
 
 export function SidePanel({
@@ -323,6 +325,8 @@ export function SidePanel({
   evidenceOverlayScope,
   onEnableEvidenceOverlaySelectionExplore,
   topContent,
+  importedPackSnapshotUrl,
+  importedPackDiagnosticsMd,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
@@ -805,6 +809,28 @@ export function SidePanel({
       }}
     >
       {topContent}
+      {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
+        <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Pack Assets</div>
+          {importedPackSnapshotUrl ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Snapshot</div>
+              <img src={importedPackSnapshotUrl} alt="Imported review pack snapshot" style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 6 }} />
+              <a href={importedPackSnapshotUrl} download="snapshot.png" style={{ fontSize: 12, color: "#1d4ed8" }}>
+                Download snapshot
+              </a>
+            </div>
+          ) : null}
+          {importedPackDiagnosticsMd ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Diagnostics</div>
+              <pre style={{ margin: 0, maxHeight: 220, overflow: "auto", whiteSpace: "pre-wrap", fontSize: 11, backgroundColor: "#f8fafc", padding: 8, borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                {importedPackDiagnosticsMd}
+              </pre>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Guided Flow</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
