@@ -5,6 +5,7 @@ import type { PatchApplyLogEntry } from "../domain/types";
 import type { PatchLintIssue } from "../domain/patch/patch_lint";
 import type { FixProposal } from "../domain/patch/patch_fix";
 import type { TrustLabel } from "../domain/patch/patch_types";
+import { ImportPanel } from "./ImportPanel";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -28,6 +29,15 @@ type SharePanelProps = {
   canIncludeTraces: boolean;
   onLoadViewMetadataFile: (file: File) => void;
   onLoadDocumentFile: (file: File) => void;
+  onImportReviewPackFile: (file: File) => void;
+  onInvalidReviewPackFileType: () => void;
+  packImportError: string | null;
+  importedPackSummary: {
+    fileName: string;
+    cardCount: number;
+    islandCount: number;
+    perspectiveMode: string;
+  } | null;
   pendingImportedDocumentSummary: {
     fileName: string;
     cardCount: number;
@@ -114,6 +124,10 @@ export function SharePanel({
   canIncludeTraces,
   onLoadViewMetadataFile,
   onLoadDocumentFile,
+  onImportReviewPackFile,
+  onInvalidReviewPackFileType,
+  packImportError,
+  importedPackSummary,
   pendingImportedDocumentSummary,
   importDocumentError,
   onReplaceCurrentDocument,
@@ -247,6 +261,16 @@ export function SharePanel({
             boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
           }}
         >
+          <div style={sectionStyle}>
+            <ImportPanel
+              isLoading={isLoading}
+              onImportZip={onImportReviewPackFile}
+              onInvalidFileType={onInvalidReviewPackFileType}
+              packImportError={packImportError}
+              importedPackSummary={importedPackSummary}
+            />
+          </div>
+
           <div style={sectionStyle}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>1) Export package</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
