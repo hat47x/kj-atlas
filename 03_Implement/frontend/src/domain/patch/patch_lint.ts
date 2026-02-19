@@ -1,4 +1,4 @@
-import type { DocumentV2, Edge, Island, RelationSummary } from "../types";
+import type { DocumentV2, Edge, EvidenceLink, Island, RelationSummary } from "../types";
 import type { PatchDocument, PatchOp } from "./patch_apply";
 
 export type PatchLintSeverity = "error" | "warn" | "info";
@@ -21,6 +21,7 @@ type EntityMaps = {
   islands: Map<string, Island>;
   edges: Map<string, Edge>;
   relationSummaries: Map<string, RelationSummary>;
+  evidenceLinks: Map<string, EvidenceLink>;
 };
 
 function buildCurrentSignature(doc: DocumentV2): string {
@@ -39,6 +40,7 @@ function applyPatchToMaps(currentDoc: DocumentV2, patch: PatchDocument): {
     islands: new Map(currentDoc.islands.map((island) => [island.id, island])),
     edges: new Map(currentDoc.edges.map((edge) => [edge.id, edge])),
     relationSummaries: new Map((currentDoc.relationSummaries ?? []).map((summary) => [summary.sourceSignature, summary])),
+    evidenceLinks: new Map((currentDoc.evidenceLinks ?? []).map((link) => [link.id, link])),
   };
 
   const lastOpByEntityKey = new Map<string, string>();
@@ -83,6 +85,14 @@ function applyPatchToMaps(currentDoc: DocumentV2, patch: PatchDocument): {
         maps.relationSummaries.delete(op.sourceSignature);
         lastOpByEntityKey.set(`relSummary:${op.sourceSignature}`, op.id);
         break;
+      case "upsert_evidence_link":
+        maps.evidenceLinks.set(op.evidenceLink.id, op.evidenceLink);
+        lastOpByEntityKey.set(`evidenceLink:${op.evidenceLink.id}`, op.id);
+        break;
+      case "delete_evidence_link":
+        maps.evidenceLinks.delete(op.evidenceLinkId);
+        lastOpByEntityKey.set(`evidenceLink:${op.evidenceLinkId}`, op.id);
+        break;
     }
   }
 
@@ -99,6 +109,8 @@ function findUpsertEntityKey(op: PatchOp): string | null {
       return `edge:${op.edge.id}`;
     case "upsert_relation_summary":
       return `relSummary:${op.relationSummary.sourceSignature}`;
+    case "upsert_evidence_link":
+      return `evidenceLink:${op.evidenceLink.id}`;
     default:
       return null;
   }
@@ -228,6 +240,33 @@ export function lintPatchAgainstCurrentDoc(currentDoc: DocumentV2, patch: PatchD
         relatedIds,
       });
     }
+  }
+
+  for (const evidenceLink of maps.evidenceLinks.values()) {
+    const missing: string[] = [];
+    if (!maps.cards.has(evidenceLink.fromCardId)) {
+      missing.push(evidenceLink.fromCardId);
+    }
+    if (!maps.cards.has(evidenceLink.toCardId)) {
+      missing.push(evidenceLink.toCardId);
+    }
+
+    if (missing.length === 0) {
+      continue;
+    }
+
+    const opId =
+      lastOpByEntityKey.get(`evidenceLink:${evidenceLink.id}`) ??
+      deleteCardOpById.get(missing[0] ?? "");
+
+    issues.push({
+      severity: "error",
+      code: "P009",
+      message: `EvidenceLink ${evidenceLink.id} references missing cardId(s): ${missing.join(", ")}`,
+      opId,
+      entityKey: `evidenceLink:${evidenceLink.id}`,
+      relatedIds: missing,
+    });
   }
 
   for (const op of patch.ops) {

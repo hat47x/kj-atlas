@@ -1,13 +1,13 @@
-import type { Card, DocumentV2, Edge, Island, RelationSummary } from "../types";
+import type { Card, DocumentV2, Edge, EvidenceLink, Island, RelationSummary } from "../types";
 import type { PatchDocument, PatchOp, PatchOpKind } from "./patch_apply";
 
 export type ConflictItem = {
   opId: string;
   kind: PatchOpKind;
   entityKey: string;
-  baseValue: Card | Island | Edge | RelationSummary | null;
-  yourValue: Card | Island | Edge | RelationSummary | null;
-  theirValue: Card | Island | Edge | RelationSummary | null;
+  baseValue: Card | Island | Edge | RelationSummary | EvidenceLink | null;
+  yourValue: Card | Island | Edge | RelationSummary | EvidenceLink | null;
+  theirValue: Card | Island | Edge | RelationSummary | EvidenceLink | null;
   reason: string;
 };
 
@@ -34,6 +34,10 @@ function getPatchOpEntityKey(op: PatchOp): string {
       return `relSummary:${op.relationSummary.sourceSignature}`;
     case "delete_relation_summary":
       return `relSummary:${op.sourceSignature}`;
+    case "upsert_evidence_link":
+      return `evidenceLink:${op.evidenceLink.id}`;
+    case "delete_evidence_link":
+      return `evidenceLink:${op.evidenceLinkId}`;
   }
 }
 
@@ -54,7 +58,7 @@ function isEqual(left: unknown, right: unknown): boolean {
   return stableSerialize(left) === stableSerialize(right);
 }
 
-function getDocEntityByOp(doc: DocumentV2, op: PatchOp): Card | Island | Edge | RelationSummary | null {
+function getDocEntityByOp(doc: DocumentV2, op: PatchOp): Card | Island | Edge | RelationSummary | EvidenceLink | null {
   switch (op.kind) {
     case "upsert_card":
     case "delete_card":
@@ -70,10 +74,15 @@ function getDocEntityByOp(doc: DocumentV2, op: PatchOp): Card | Island | Edge | 
       const signature = op.kind === "upsert_relation_summary" ? op.relationSummary.sourceSignature : op.sourceSignature;
       return (doc.relationSummaries ?? []).find((summary) => summary.sourceSignature === signature) ?? null;
     }
+    case "upsert_evidence_link":
+    case "delete_evidence_link": {
+      const evidenceLinkId = op.kind === "upsert_evidence_link" ? op.evidenceLink.id : op.evidenceLinkId;
+      return (doc.evidenceLinks ?? []).find((link) => link.id === evidenceLinkId) ?? null;
+    }
   }
 }
 
-function getTheirValue(op: PatchOp): Card | Island | Edge | RelationSummary | null {
+function getTheirValue(op: PatchOp): Card | Island | Edge | RelationSummary | EvidenceLink | null {
   switch (op.kind) {
     case "upsert_card":
       return op.card;
@@ -90,6 +99,10 @@ function getTheirValue(op: PatchOp): Card | Island | Edge | RelationSummary | nu
     case "upsert_relation_summary":
       return op.relationSummary;
     case "delete_relation_summary":
+      return null;
+    case "upsert_evidence_link":
+      return op.evidenceLink;
+    case "delete_evidence_link":
       return null;
   }
 }

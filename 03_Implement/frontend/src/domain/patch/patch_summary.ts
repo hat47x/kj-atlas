@@ -12,6 +12,8 @@ export type PatchSummaryModel = {
     deleteEdges: number;
     upsertRelationSummaries: number;
     deleteRelationSummaries: number;
+    upsertEvidenceLinks: number;
+    deleteEvidenceLinks: number;
   };
   highlights: { label: string; detail: string }[];
   warnings: string[];
@@ -93,6 +95,8 @@ export function buildPatchSummary(
     deleteEdges: 0,
     upsertRelationSummaries: 0,
     deleteRelationSummaries: 0,
+    upsertEvidenceLinks: 0,
+    deleteEvidenceLinks: 0,
   };
 
   const highlightItems: HighlightItem[] = [];

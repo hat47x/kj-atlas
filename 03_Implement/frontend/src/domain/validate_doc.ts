@@ -1,4 +1,4 @@
-import type { DocumentV2, EdgeType, Island, Narrative, PatchApplyLogEntry, RelationSummary } from "./types";
+import type { DocumentV2, EdgeType, EvidenceLink, Island, Narrative, PatchApplyLogEntry, RelationSummary } from "./types";
 
 type ValidationSuccess = {
   ok: true;
@@ -405,6 +405,8 @@ function validatePatchApplyStats(value: unknown, path: string, errors: string[])
       "deleteEdges",
       "upsertRelationSummaries",
       "deleteRelationSummaries",
+      "upsertEvidenceLinks",
+      "deleteEvidenceLinks",
     ],
     path,
     errors
@@ -420,6 +422,8 @@ function validatePatchApplyStats(value: unknown, path: string, errors: string[])
     "deleteEdges",
     "upsertRelationSummaries",
     "deleteRelationSummaries",
+    "upsertEvidenceLinks",
+    "deleteEvidenceLinks",
   ] as const) {
     if (!isFiniteNumber(value[key])) {
       errors.push(`${path}.${key}: must be a finite number`);
@@ -497,6 +501,49 @@ function validatePatchApplyLogEntry(item: unknown, index: number, errors: string
   return valid;
 }
 
+
+function validateEvidenceLink(item: unknown, index: number, errors: string[]): item is EvidenceLink {
+  const path = `evidenceLinks[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["id", "type", "fromCardId", "toCardId", "note", "createdAt"], path, errors);
+
+  let valid = true;
+  if (typeof item.id !== "string") {
+    errors.push(`${path}.id: must be a string`);
+    valid = false;
+  }
+  if (item.type !== "supports" && item.type !== "contradicts") {
+    errors.push(`${path}.type: must be 'supports' or 'contradicts'`);
+    valid = false;
+  }
+  if (typeof item.fromCardId !== "string") {
+    errors.push(`${path}.fromCardId: must be a string`);
+    valid = false;
+  }
+  if (typeof item.toCardId !== "string") {
+    errors.push(`${path}.toCardId: must be a string`);
+    valid = false;
+  }
+  if (item.fromCardId === item.toCardId) {
+    errors.push(`${path}: self-link is not allowed`);
+    valid = false;
+  }
+  if (item.note !== undefined && typeof item.note !== "string") {
+    errors.push(`${path}.note: must be a string when provided`);
+    valid = false;
+  }
+  if (item.createdAt !== undefined && typeof item.createdAt !== "string") {
+    errors.push(`${path}.createdAt: must be a string when provided`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -543,7 +590,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
 
   hasOnlyKeys(
     value,
-    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "patchApplyLog"],
+    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "evidenceLinks", "patchApplyLog"],
     "document",
     errors
   );
@@ -623,6 +670,32 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.relationSummaries.forEach((item, index) => {
         validateRelationSummary(item, index, errors);
+      });
+    }
+  }
+
+
+  if (value.evidenceLinks !== undefined) {
+    if (!Array.isArray(value.evidenceLinks)) {
+      errors.push("document.evidenceLinks: must be an array when provided");
+    } else {
+      const seenEvidenceIds = new Set<string>();
+      const seenTuples = new Set<string>();
+      value.evidenceLinks.forEach((item, index) => {
+        if (!validateEvidenceLink(item, index, errors)) {
+          return;
+        }
+
+        if (seenEvidenceIds.has(item.id)) {
+          errors.push(`evidenceLinks[${index}].id: duplicate id '${item.id}'`);
+        }
+        seenEvidenceIds.add(item.id);
+
+        const tupleKey = `${item.fromCardId}:${item.toCardId}:${item.type}`;
+        if (seenTuples.has(tupleKey)) {
+          errors.push(`evidenceLinks[${index}]: duplicate link tuple '${tupleKey}'`);
+        }
+        seenTuples.add(tupleKey);
       });
     }
   }

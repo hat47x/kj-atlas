@@ -59,6 +59,8 @@ describe("patch_summary", () => {
         deleteEdges: 0,
         upsertRelationSummaries: 0,
         deleteRelationSummaries: 0,
+        upsertEvidenceLinks: 0,
+        deleteEvidenceLinks: 0,
       },
       highlights: [],
       warnings: [],

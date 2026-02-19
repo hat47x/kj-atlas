@@ -1,4 +1,4 @@
-import type { Card, DocumentV2, Island, Transform } from "./types";
+import type { Card, DocumentV2, EvidenceLink, Island, Transform } from "./types";
 
 type ValidateResult =
   | {
@@ -201,6 +201,53 @@ function parseIslands(value: unknown): Island[] {
   return islands;
 }
 
+
+function parseEvidenceLinks(value: unknown): EvidenceLink[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const evidenceLinks: EvidenceLink[] = [];
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    if (typeof item.id !== "string" || typeof item.fromCardId !== "string" || typeof item.toCardId !== "string") {
+      continue;
+    }
+
+    if (item.type !== "supports" && item.type !== "contradicts") {
+      continue;
+    }
+
+    if (item.fromCardId === item.toCardId || seenIds.has(item.id)) {
+      continue;
+    }
+
+    const duplicateKey = `${item.fromCardId}:${item.toCardId}:${item.type}`;
+    if (seenKeys.has(duplicateKey)) {
+      continue;
+    }
+
+    seenIds.add(item.id);
+    seenKeys.add(duplicateKey);
+    evidenceLinks.push({
+      id: item.id,
+      type: item.type,
+      fromCardId: item.fromCardId,
+      toCardId: item.toCardId,
+      note: typeof item.note === "string" ? item.note : undefined,
+      createdAt: typeof item.createdAt === "string" ? item.createdAt : undefined,
+    });
+  }
+
+  return evidenceLinks;
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -274,6 +321,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       cards,
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
+      evidenceLinks: parseEvidenceLinks(value.evidenceLinks) ?? [],
     },
   };
 }
