@@ -8,6 +8,7 @@ import {
   isSourceCard,
   type DocumentV2,
   type EdgeType,
+  type EvidenceLink,
   type Point,
   type Transform,
 } from "../domain/types";
@@ -18,6 +19,7 @@ import { Marquee } from "./Marquee";
 import { ReadingOrderLayer } from "./ReadingOrderLayer";
 import { PolygonEditLayer } from "./PolygonEditLayer";
 import { SuggestionDiffLayer } from "./SuggestionDiffLayer";
+import { EvidenceOverlayLayer } from "./EvidenceOverlayLayer";
 import type { SuggestionMoveDiff } from "./SuggestionDiffLayer";
 import type { ReadingOrderDropPosition } from "../domain/reading_order_ops";
 import { findNearestPolygonSegmentIndex } from "../domain/geometry/segment_pick";
@@ -100,6 +102,9 @@ export type CanvasViewState = {
   showReadingOrder: boolean;
   showLabelBounds?: boolean;
   highlightEdgeIds?: string[];
+  evidenceOverlayEdges?: EvidenceLink[];
+  evidenceOverlayDimCardIds?: Set<string>;
+  evidenceOverlayHint?: string | null;
 };
 
 export type CanvasCamera = {
@@ -301,6 +306,9 @@ export function CanvasShell({
   const effectiveShowReadingOrder = viewState?.showReadingOrder ?? showReadingOrder;
   const showLabelBounds = viewState?.showLabelBounds ?? false;
   const highlightEdgeIds = viewState?.highlightEdgeIds ?? [];
+  const evidenceOverlayEdges = viewState?.evidenceOverlayEdges ?? [];
+  const evidenceOverlayDimCardIds = viewState?.evidenceOverlayDimCardIds ?? new Set<string>();
+  const evidenceOverlayHint = viewState?.evidenceOverlayHint ?? null;
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -1290,6 +1298,7 @@ export function CanvasShell({
             }}
           />
         ) : null}
+        {evidenceOverlayEdges.length > 0 ? <EvidenceOverlayLayer cards={visibleCards} edges={evidenceOverlayEdges} /> : null}
         {visibleCards.map((card) => {
           return (
             <CardView
@@ -1302,7 +1311,7 @@ export function CanvasShell({
               isSearchMatch={matchedCardIds?.has(card.id) ?? false}
               isActiveSearchMatch={activeMatchedCardId === card.id}
               isPickingEdgeTarget={isPickingEdgeTarget}
-              isDeemphasized={deemphasizedCardIdSet.has(card.id)}
+              isDeemphasized={deemphasizedCardIdSet.has(card.id) || evidenceOverlayDimCardIds.has(card.id)}
               compactMode={Boolean(lod?.rules.compactCards)}
               markerMode={Boolean(lod && lod.level === "far" && lodShowLoneWolvesWhenFar && loneWolfCardIdSet.has(card.id))}
               showLabelText={acceptedLabelIds.has(buildCardLabelId(card.id))}
@@ -1335,6 +1344,23 @@ export function CanvasShell({
         : null}
       </LabelVisibilityContext.Provider>
       {marqueeRect && dragMode === "marquee" ? <Marquee rect={marqueeRect} /> : null}
+      {evidenceOverlayHint ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            top: 12,
+            backgroundColor: "rgba(15, 23, 42, 0.78)",
+            color: "#f8fafc",
+            padding: "6px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            pointerEvents: "none",
+          }}
+        >
+          {evidenceOverlayHint}
+        </div>
+      ) : null}
     </div>
   );
 }

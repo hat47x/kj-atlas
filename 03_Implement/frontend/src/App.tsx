@@ -81,6 +81,11 @@ import { analyzeContradictions, type ContradictionReport, type ContradictionSign
 import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
 import { analyzeClaimTypeMix, type ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
 import { analyzeEvidenceGaps, type EvidenceGapReport } from "./domain/view/evidence_gap_checks";
+import {
+  buildEvidenceAdjacency,
+  getEvidenceNeighborhood,
+  type EvidenceOverlayMode,
+} from "./domain/view/evidence_overlay";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -770,6 +775,11 @@ export default function App() {
   const [claimTypeMixReport, setClaimTypeMixReport] = useState<ClaimTypeMixReport | null>(null);
   const [evidenceGapReport, setEvidenceGapReport] = useState<EvidenceGapReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
+  const [evidenceOverlayEnabled, setEvidenceOverlayEnabled] = useState(false);
+  const [evidenceOverlayMode, setEvidenceOverlayMode] = useState<EvidenceOverlayMode>("supports");
+  const [evidenceOverlayDepth, setEvidenceOverlayDepth] = useState(1);
+  const [evidenceOverlayScope, setEvidenceOverlayScope] = useState<"all" | "selection">("selection");
+  const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
@@ -2062,6 +2072,11 @@ export default function App() {
         setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
         setLodLevelOverride(metadata.viewState.lodLevelOverride ?? null);
         setLodShowLoneWolvesWhenFar(metadata.viewState.lodShowLoneWolvesWhenFar ?? true);
+        setEvidenceOverlayEnabled(metadata.viewState.evidenceOverlayEnabled ?? false);
+        setEvidenceOverlayMode(metadata.viewState.evidenceOverlayMode ?? "supports");
+        setEvidenceOverlayDepth(Math.max(1, Math.min(3, Math.floor(metadata.viewState.evidenceOverlayDepth ?? 1))));
+        setEvidenceOverlayScope(metadata.viewState.evidenceOverlayScope ?? "selection");
+        setEvidenceOverlayDimOthers(metadata.viewState.evidenceOverlayDimOthers ?? true);
         setIncludeUnreviewedDraftsInExport(false);
         setIsReadingOrderEditMode(false);
         setRevealedSourceCardIds(new Set());
@@ -3731,6 +3746,114 @@ export default function App() {
     return document.cards.find((card) => card.id === selectedCardIds[0]) ?? null;
   }, [document?.cards, selectedCardIds]);
 
+  const evidenceAdjacency = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return buildEvidenceAdjacency({ evidenceLinks: [] });
+    }
+
+    return buildEvidenceAdjacency(focusedVisibleDocument);
+  }, [focusedVisibleDocument]);
+
+  const evidenceOverlayEdgesFilteredByMode = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return [];
+    }
+
+    return [...(focusedVisibleDocument.evidenceLinks ?? [])]
+      .filter((link) => evidenceOverlayMode === "both" || link.type === evidenceOverlayMode)
+      .sort((left, right) => left.id.localeCompare(right.id));
+  }, [evidenceOverlayMode, focusedVisibleDocument]);
+
+  const evidenceNeighborhood = useMemo(() => {
+    if (!selectedCard) {
+      return null;
+    }
+
+    return getEvidenceNeighborhood(selectedCard.id, evidenceAdjacency, evidenceOverlayMode, evidenceOverlayDepth);
+  }, [selectedCard, evidenceAdjacency, evidenceOverlayMode, evidenceOverlayDepth]);
+
+  const evidenceOverlayEdgeIds = useMemo(() => {
+    if (evidenceOverlayScope === "all") {
+      return new Set(evidenceOverlayEdgesFilteredByMode.map((edge) => edge.id));
+    }
+
+    if (!evidenceNeighborhood) {
+      return new Set<string>();
+    }
+
+    return evidenceNeighborhood.edges;
+  }, [evidenceNeighborhood, evidenceOverlayEdgesFilteredByMode, evidenceOverlayScope]);
+
+  const evidenceOverlayEdges = useMemo(() => {
+    if (!evidenceOverlayEnabled) {
+      return [];
+    }
+
+    return evidenceOverlayEdgesFilteredByMode.filter((edge) => evidenceOverlayEdgeIds.has(edge.id));
+  }, [evidenceOverlayEdgeIds, evidenceOverlayEdgesFilteredByMode, evidenceOverlayEnabled]);
+
+  const evidenceOverlayDimCardIds = useMemo(() => {
+    if (!evidenceOverlayEnabled || !evidenceOverlayDimOthers || !focusedVisibleDocument) {
+      return new Set<string>();
+    }
+
+    if (evidenceOverlayScope === "selection" && !evidenceNeighborhood) {
+      return new Set<string>();
+    }
+
+    const participatingIds = new Set<string>();
+    if (evidenceOverlayScope === "selection" && evidenceNeighborhood) {
+      for (const cardId of evidenceNeighborhood.nodes) {
+        participatingIds.add(cardId);
+      }
+    } else {
+      for (const edge of evidenceOverlayEdges) {
+        participatingIds.add(edge.fromCardId);
+        participatingIds.add(edge.toCardId);
+      }
+    }
+
+    return new Set(
+      focusedVisibleDocument.cards
+        .map((card) => card.id)
+        .filter((cardId) => !participatingIds.has(cardId))
+        .sort((left, right) => left.localeCompare(right)),
+    );
+  }, [
+    evidenceNeighborhood,
+    evidenceOverlayDimOthers,
+    evidenceOverlayEdges,
+    evidenceOverlayEnabled,
+    evidenceOverlayScope,
+    focusedVisibleDocument,
+  ]);
+
+  const evidenceOverlayLodLevel = useMemo(() => {
+    if (!lodEnabled) {
+      return null;
+    }
+
+    return getLODLevel(canvasCamera?.zoom ?? 1, { lodThresholds, lodLevelOverride }).level;
+  }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
+
+  const evidenceOverlayHint = useMemo(() => {
+    if (!evidenceOverlayEnabled) {
+      return null;
+    }
+
+    if (evidenceOverlayLodLevel === "far") {
+      return "Zoom in to view evidence overlay";
+    }
+
+    if (evidenceOverlayScope === "selection" && !selectedCard) {
+      return "Select a card to explore evidence links";
+    }
+
+    return null;
+  }, [evidenceOverlayEnabled, evidenceOverlayLodLevel, evidenceOverlayScope, selectedCard]);
+
+  const shouldRenderEvidenceOverlay = evidenceOverlayEnabled && evidenceOverlayLodLevel !== "far";
+
   const sourceCardsForSelectedCanonical = useMemo(() => {
     if (!document || !selectedCard || selectedCard.canonicalId || (selectedCard.sources ?? []).length === 0) {
       return [] as DocumentV2["cards"];
@@ -5371,6 +5494,11 @@ export default function App() {
           lodLevelOverride,
           lodShowLoneWolvesWhenFar,
           resolvedLodLevel: currentLod?.level,
+          evidenceOverlayEnabled,
+          evidenceOverlayMode,
+          evidenceOverlayDepth,
+          evidenceOverlayScope,
+          evidenceOverlayDimOthers,
         },
         exportMode: mode,
         bounds,
@@ -5880,6 +6008,18 @@ export default function App() {
             onLodShowLoneWolvesWhenFarChange={setLodShowLoneWolvesWhenFar}
             showLabelBounds={showLabelBounds}
             onShowLabelBoundsChange={setShowLabelBounds}
+            evidenceOverlayEnabled={evidenceOverlayEnabled}
+            onEvidenceOverlayEnabledChange={setEvidenceOverlayEnabled}
+            evidenceOverlayMode={evidenceOverlayMode}
+            onEvidenceOverlayModeChange={setEvidenceOverlayMode}
+            evidenceOverlayDepth={evidenceOverlayDepth}
+            onEvidenceOverlayDepthChange={(value) => {
+              setEvidenceOverlayDepth(Math.max(1, Math.min(3, Math.floor(value))));
+            }}
+            evidenceOverlayScope={evidenceOverlayScope}
+            onEvidenceOverlayScopeChange={setEvidenceOverlayScope}
+            evidenceOverlayDimOthers={evidenceOverlayDimOthers}
+            onEvidenceOverlayDimOthersChange={setEvidenceOverlayDimOthers}
           />
         </div>
       ) : null}
@@ -6349,6 +6489,15 @@ export default function App() {
           onRemoveReadingOrderItem={handleRemoveReadingOrderItem}
           aggregatedEdgeInspectorItems={aggregatedEdgeInspectorItems}
           onPromoteAggregatedEdge={handlePromoteAggregatedEdge}
+          evidenceOverlayEnabled={evidenceOverlayEnabled}
+          evidenceOverlayScope={evidenceOverlayScope}
+          onEnableEvidenceOverlaySelectionExplore={() => {
+            if (!selectedCard) {
+              return;
+            }
+            setEvidenceOverlayEnabled(true);
+            setEvidenceOverlayScope("selection");
+          }}
         />
       }
     >
@@ -6406,6 +6555,9 @@ export default function App() {
               showReadingOrder,
               showLabelBounds,
               highlightEdgeIds,
+              evidenceOverlayEdges: shouldRenderEvidenceOverlay ? evidenceOverlayEdges : [],
+              evidenceOverlayDimCardIds: shouldRenderEvidenceOverlay ? evidenceOverlayDimCardIds : new Set<string>(),
+              evidenceOverlayHint,
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}
