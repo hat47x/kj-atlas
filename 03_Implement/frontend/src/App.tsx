@@ -6477,6 +6477,7 @@ export default function App() {
             void handleCopyReadingOutlineMd();
           }}
           onDownloadReadingOutlineMd={handleDownloadReadingOutlineMd}
+          onEvidenceTraceError={setStatusMessage}
           readingStep={readingList.length === 0 ? 0 : clampReadingIndex(readingIndex, readingList.length) + 1}
           readingTotal={readingList.length}
           currentReadingLabel={currentReadingItem?.label ?? null}

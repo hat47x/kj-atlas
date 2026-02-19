@@ -15,6 +15,8 @@ import type { ContradictionReport, ContradictionSignal } from "../domain/view/co
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
+import { buildEvidenceTraceMd } from "../domain/view/evidence_trace";
+import { downloadTextFile } from "../export/narrative_export";
 
 type SummaryGroundingItem = {
   id: string;
@@ -140,6 +142,7 @@ type SidePanelProps = {
   onFocusDistributionIsland: (islandId: string) => void;
   onCopyReadingOutlineMd: () => void;
   onDownloadReadingOutlineMd: () => void;
+  onEvidenceTraceError: (message: string) => void;
   readingStep: number;
   readingTotal: number;
   currentReadingLabel: string | null;
@@ -266,6 +269,7 @@ export function SidePanel({
   onFocusDistributionIsland,
   onCopyReadingOutlineMd,
   onDownloadReadingOutlineMd,
+  onEvidenceTraceError,
   readingStep,
   readingTotal,
   currentReadingLabel,
@@ -295,6 +299,12 @@ export function SidePanel({
   const [pendingEvidenceType, setPendingEvidenceType] = useState<EvidenceLink["type"]>("supports");
   const [evidenceTargetQuery, setEvidenceTargetQuery] = useState("");
   const [pendingEvidenceTargetId, setPendingEvidenceTargetId] = useState<string>("");
+  const [evidenceTraceDepthLimit, setEvidenceTraceDepthLimit] = useState(3);
+  const [evidenceTraceIncludeFact, setEvidenceTraceIncludeFact] = useState(true);
+  const [evidenceTraceIncludeClaim, setEvidenceTraceIncludeClaim] = useState(true);
+  const [evidenceTraceIncludeHypothesis, setEvidenceTraceIncludeHypothesis] = useState(true);
+  const [evidenceTraceIncludeUnknown, setEvidenceTraceIncludeUnknown] = useState(true);
+  const [evidenceTraceStopAtFacts, setEvidenceTraceStopAtFacts] = useState(false);
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -390,6 +400,58 @@ export function SidePanel({
     }
     return map;
   }, [evidenceGapReport]);
+
+  const selectedCardSupportsIncomingCount = useMemo(() => {
+    if (!selectedCard || !document) {
+      return 0;
+    }
+
+    return (document.evidenceLinks ?? []).filter((link) => link.type === "supports" && link.toCardId === selectedCard.id).length;
+  }, [document, selectedCard]);
+
+  const getEvidenceTraceMarkdown = () => {
+    if (!document || !selectedCard) {
+      return null;
+    }
+
+    const markdown = buildEvidenceTraceMd(document, selectedCard.id, {
+      depthLimit: evidenceTraceDepthLimit,
+      includeFact: evidenceTraceIncludeFact,
+      includeClaim: evidenceTraceIncludeClaim,
+      includeHypothesis: evidenceTraceIncludeHypothesis,
+      includeUnknown: evidenceTraceIncludeUnknown,
+      stopAtFacts: evidenceTraceStopAtFacts,
+    });
+
+    if (markdown.startsWith("Error:")) {
+      onEvidenceTraceError(markdown);
+      return null;
+    }
+
+    return markdown;
+  };
+
+  const handleCopyEvidenceTrace = async () => {
+    const markdown = getEvidenceTraceMarkdown();
+    if (!markdown) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+    } catch {
+      onEvidenceTraceError("Failed to copy evidence trace");
+    }
+  };
+
+  const handleDownloadEvidenceTrace = () => {
+    const markdown = getEvidenceTraceMarkdown();
+    if (!markdown) {
+      return;
+    }
+
+    downloadTextFile("evidence_trace.md", "text/markdown", markdown);
+  };
 
   const outlineDiagnosticsCounts = useMemo(() => {
     if (!outlineQualityReport) {
@@ -2370,6 +2432,87 @@ export function SidePanel({
                     </div>
                   </div>
                 ) : null}
+              </div>
+
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence trace</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+                    Depth
+                    <select
+                      value={evidenceTraceDepthLimit}
+                      onChange={(event) => {
+                        setEvidenceTraceDepthLimit(Number(event.target.value));
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5].map((depth) => (
+                        <option key={depth} value={depth}>
+                          {depth}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div style={{ fontSize: 12, color: "#334155", fontWeight: 600 }}>Include types</div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={evidenceTraceIncludeFact}
+                      onChange={(event) => {
+                        setEvidenceTraceIncludeFact(event.target.checked);
+                      }}
+                    />
+                    Fact
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={evidenceTraceIncludeClaim}
+                      onChange={(event) => {
+                        setEvidenceTraceIncludeClaim(event.target.checked);
+                      }}
+                    />
+                    Claim
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={evidenceTraceIncludeHypothesis}
+                      onChange={(event) => {
+                        setEvidenceTraceIncludeHypothesis(event.target.checked);
+                      }}
+                    />
+                    Hypothesis
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={evidenceTraceIncludeUnknown}
+                      onChange={(event) => {
+                        setEvidenceTraceIncludeUnknown(event.target.checked);
+                      }}
+                    />
+                    Unknown
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                    <input
+                      type="checkbox"
+                      checked={evidenceTraceStopAtFacts}
+                      onChange={(event) => {
+                        setEvidenceTraceStopAtFacts(event.target.checked);
+                      }}
+                    />
+                    Stop at facts
+                  </label>
+                  <button type="button" onClick={() => { void handleCopyEvidenceTrace(); }}>
+                    Copy evidence trace (MD)
+                  </button>
+                  <button type="button" onClick={handleDownloadEvidenceTrace}>
+                    Download evidence_trace.md
+                  </button>
+                  {selectedCardSupportsIncomingCount === 0 ? (
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>No supports links found for this card.</div>
+                  ) : null}
+                </div>
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
