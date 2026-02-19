@@ -87,6 +87,7 @@ import {
   getEvidenceNeighborhood,
   type EvidenceOverlayMode,
 } from "./domain/view/evidence_overlay";
+import { computePerspectiveRendering, type PerspectiveMode } from "./domain/view/perspective";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -782,6 +783,8 @@ export default function App() {
   const [evidenceOverlayDepth, setEvidenceOverlayDepth] = useState(1);
   const [evidenceOverlayScope, setEvidenceOverlayScope] = useState<"all" | "selection">("selection");
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
+  const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
+  const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
   const [focusCardId, setFocusCardId] = useState<string | null>(null);
@@ -1114,6 +1117,23 @@ export default function App() {
         .map((island) => island.id)
     );
   }, [focusedVisibleDocument, islandDepthById, maxDepth]);
+  const selectedPerspectiveCardId = selectedCardIds.length === 1 ? selectedCardIds[0] : null;
+  const perspectiveRendering = useMemo(() => {
+    if (!focusedVisibleDocument) {
+      return null;
+    }
+
+    return computePerspectiveRendering(
+      focusedVisibleDocument,
+      {
+        perspectiveMode,
+        perspectiveStrictFilter,
+      },
+      {
+        selectedCardId: selectedPerspectiveCardId,
+      },
+    );
+  }, [focusedVisibleDocument, perspectiveMode, perspectiveStrictFilter, selectedPerspectiveCardId]);
   const hiddenCardIdSet = useMemo(() => {
     const collapsedHiddenCardIds = new Set<string>();
     const depthHiddenCardIds = new Set<string>();
@@ -1228,6 +1248,27 @@ export default function App() {
     temporaryRevealIslandIds,
   ]);
 
+  const perspectiveHiddenCardIdSet = useMemo(() => {
+    if (!focusedVisibleDocument || !perspectiveRendering?.visibleCardIds) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      focusedVisibleDocument.cards
+        .map((card) => card.id)
+        .filter((cardId) => !perspectiveRendering.visibleCardIds?.has(cardId))
+        .sort((left, right) => left.localeCompare(right)),
+    );
+  }, [focusedVisibleDocument, perspectiveRendering]);
+
+  const effectiveHiddenCardIdSet = useMemo(() => {
+    if (perspectiveHiddenCardIdSet.size === 0) {
+      return hiddenCardIdSet;
+    }
+
+    return new Set([...hiddenCardIdSet, ...perspectiveHiddenCardIdSet]);
+  }, [hiddenCardIdSet, perspectiveHiddenCardIdSet]);
+
   const visibleCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument) {
       return new Set<string>();
@@ -1236,9 +1277,9 @@ export default function App() {
     return new Set(
       focusedVisibleDocument.cards
         .map((card) => card.id)
-        .filter((cardId) => !hiddenCardIdSet.has(cardId))
+        .filter((cardId) => !effectiveHiddenCardIdSet.has(cardId))
     );
-  }, [focusedVisibleDocument, hiddenCardIdSet]);
+  }, [effectiveHiddenCardIdSet, focusedVisibleDocument]);
 
   const canUndo = (history?.past.length ?? 0) > 0;
   const canRedo = (history?.future.length ?? 0) > 0;
@@ -2079,6 +2120,8 @@ export default function App() {
         setEvidenceOverlayDepth(Math.max(1, Math.min(3, Math.floor(metadata.viewState.evidenceOverlayDepth ?? 1))));
         setEvidenceOverlayScope(metadata.viewState.evidenceOverlayScope ?? "selection");
         setEvidenceOverlayDimOthers(metadata.viewState.evidenceOverlayDimOthers ?? true);
+        setPerspectiveMode(metadata.viewState.perspectiveMode ?? "default");
+        setPerspectiveStrictFilter(metadata.viewState.perspectiveStrictFilter ?? false);
         setIncludeUnreviewedDraftsInExport(false);
         setIsReadingOrderEditMode(false);
         setRevealedSourceCardIds(new Set());
@@ -3756,26 +3799,30 @@ export default function App() {
     return buildEvidenceAdjacency(focusedVisibleDocument);
   }, [focusedVisibleDocument]);
 
+  const effectiveEvidenceOverlayEnabled = perspectiveRendering?.overlay.evidenceEnabled ? true : evidenceOverlayEnabled;
+  const effectiveEvidenceOverlayMode = perspectiveRendering?.overlay.mode ?? evidenceOverlayMode;
+  const effectiveEvidenceOverlayScope = perspectiveRendering?.overlay.scope ?? evidenceOverlayScope;
+
   const evidenceOverlayEdgesFilteredByMode = useMemo(() => {
     if (!focusedVisibleDocument) {
       return [];
     }
 
     return [...(focusedVisibleDocument.evidenceLinks ?? [])]
-      .filter((link) => evidenceOverlayMode === "both" || link.type === evidenceOverlayMode)
+      .filter((link) => effectiveEvidenceOverlayMode === "both" || link.type === effectiveEvidenceOverlayMode)
       .sort((left, right) => left.id.localeCompare(right.id));
-  }, [evidenceOverlayMode, focusedVisibleDocument]);
+  }, [effectiveEvidenceOverlayMode, focusedVisibleDocument]);
 
   const evidenceNeighborhood = useMemo(() => {
     if (!selectedCard) {
       return null;
     }
 
-    return getEvidenceNeighborhood(selectedCard.id, evidenceAdjacency, evidenceOverlayMode, evidenceOverlayDepth);
-  }, [selectedCard, evidenceAdjacency, evidenceOverlayMode, evidenceOverlayDepth]);
+    return getEvidenceNeighborhood(selectedCard.id, evidenceAdjacency, effectiveEvidenceOverlayMode, evidenceOverlayDepth);
+  }, [selectedCard, evidenceAdjacency, effectiveEvidenceOverlayMode, evidenceOverlayDepth]);
 
   const evidenceOverlayEdgeIds = useMemo(() => {
-    if (evidenceOverlayScope === "all") {
+    if (effectiveEvidenceOverlayScope === "all") {
       return new Set(evidenceOverlayEdgesFilteredByMode.map((edge) => edge.id));
     }
 
@@ -3784,27 +3831,27 @@ export default function App() {
     }
 
     return evidenceNeighborhood.edges;
-  }, [evidenceNeighborhood, evidenceOverlayEdgesFilteredByMode, evidenceOverlayScope]);
+  }, [effectiveEvidenceOverlayScope, evidenceNeighborhood, evidenceOverlayEdgesFilteredByMode]);
 
   const evidenceOverlayEdges = useMemo(() => {
-    if (!evidenceOverlayEnabled) {
+    if (!effectiveEvidenceOverlayEnabled) {
       return [];
     }
 
     return evidenceOverlayEdgesFilteredByMode.filter((edge) => evidenceOverlayEdgeIds.has(edge.id));
-  }, [evidenceOverlayEdgeIds, evidenceOverlayEdgesFilteredByMode, evidenceOverlayEnabled]);
+  }, [effectiveEvidenceOverlayEnabled, evidenceOverlayEdgeIds, evidenceOverlayEdgesFilteredByMode]);
 
   const evidenceOverlayDimCardIds = useMemo(() => {
-    if (!evidenceOverlayEnabled || !evidenceOverlayDimOthers || !focusedVisibleDocument) {
+    if (!effectiveEvidenceOverlayEnabled || !evidenceOverlayDimOthers || !focusedVisibleDocument) {
       return new Set<string>();
     }
 
-    if (evidenceOverlayScope === "selection" && !evidenceNeighborhood) {
+    if (effectiveEvidenceOverlayScope === "selection" && !evidenceNeighborhood) {
       return new Set<string>();
     }
 
     const participatingIds = new Set<string>();
-    if (evidenceOverlayScope === "selection" && evidenceNeighborhood) {
+    if (effectiveEvidenceOverlayScope === "selection" && evidenceNeighborhood) {
       for (const cardId of evidenceNeighborhood.nodes) {
         participatingIds.add(cardId);
       }
@@ -3825,8 +3872,8 @@ export default function App() {
     evidenceNeighborhood,
     evidenceOverlayDimOthers,
     evidenceOverlayEdges,
-    evidenceOverlayEnabled,
-    evidenceOverlayScope,
+    effectiveEvidenceOverlayEnabled,
+    effectiveEvidenceOverlayScope,
     focusedVisibleDocument,
   ]);
 
@@ -3839,7 +3886,7 @@ export default function App() {
   }, [canvasCamera?.zoom, lodEnabled, lodLevelOverride, lodThresholds]);
 
   const evidenceOverlayHint = useMemo(() => {
-    if (!evidenceOverlayEnabled) {
+    if (!effectiveEvidenceOverlayEnabled) {
       return null;
     }
 
@@ -3847,14 +3894,30 @@ export default function App() {
       return "Zoom in to view evidence overlay";
     }
 
-    if (evidenceOverlayScope === "selection" && !selectedCard) {
+    if (effectiveEvidenceOverlayScope === "selection" && !selectedCard) {
       return "Select a card to explore evidence links";
     }
 
     return null;
-  }, [evidenceOverlayEnabled, evidenceOverlayLodLevel, evidenceOverlayScope, selectedCard]);
+  }, [effectiveEvidenceOverlayEnabled, evidenceOverlayLodLevel, effectiveEvidenceOverlayScope, selectedCard]);
 
-  const shouldRenderEvidenceOverlay = evidenceOverlayEnabled && evidenceOverlayLodLevel !== "far";
+  const shouldRenderEvidenceOverlay = effectiveEvidenceOverlayEnabled && evidenceOverlayLodLevel !== "far";
+
+  const perspectiveHint = useMemo(() => {
+    if (!perspectiveRendering || perspectiveMode === "default") {
+      return null;
+    }
+
+    if (evidenceOverlayLodLevel === "far") {
+      return "Zoom in to use perspective filters";
+    }
+
+    if (perspectiveRendering.notes.length === 0) {
+      return null;
+    }
+
+    return perspectiveRendering.notes[0];
+  }, [evidenceOverlayLodLevel, perspectiveMode, perspectiveRendering]);
 
   const sourceCardsForSelectedCanonical = useMemo(() => {
     if (!document || !selectedCard || selectedCard.canonicalId || (selectedCard.sources ?? []).length === 0) {
@@ -5516,6 +5579,8 @@ export default function App() {
           evidenceOverlayDepth,
           evidenceOverlayScope,
           evidenceOverlayDimOthers,
+          perspectiveMode,
+          perspectiveStrictFilter,
         },
         exportMode: mode,
         bounds,
@@ -5545,6 +5610,8 @@ export default function App() {
       lodThresholds,
       lodLevelOverride,
       lodShowLoneWolvesWhenFar,
+      perspectiveMode,
+      perspectiveStrictFilter,
       ]
   );
 
@@ -6037,6 +6104,11 @@ export default function App() {
             onEvidenceOverlayScopeChange={setEvidenceOverlayScope}
             evidenceOverlayDimOthers={evidenceOverlayDimOthers}
             onEvidenceOverlayDimOthersChange={setEvidenceOverlayDimOthers}
+            perspectiveMode={perspectiveMode}
+            onPerspectiveModeChange={setPerspectiveMode}
+            perspectiveStrictFilter={perspectiveStrictFilter}
+            onPerspectiveStrictFilterChange={setPerspectiveStrictFilter}
+            perspectiveHint={perspectiveHint}
           />
         </div>
       ) : null}
@@ -6566,9 +6638,9 @@ export default function App() {
             searchQuery={normalizedSearchQuery}
             matchedCardIds={matchedCardIdSet}
             activeMatchedCardId={activeMatchedCardId}
-            hiddenCardIds={hiddenCardIdSet}
+            hiddenCardIds={effectiveHiddenCardIdSet}
             hideSourceCards={hideSourceCards || summaryView || abstractMapView}
-            deemphasizedCardIds={summaryView || abstractMapView ? loneWolfCardIdSet : undefined}
+            deemphasizedCardIds={new Set([...(summaryView || abstractMapView ? loneWolfCardIdSet : new Set<string>()), ...(perspectiveRendering?.dimCardIds ?? new Set<string>())])}
             viewState={{
               hideSourceCards: hideSourceCards || summaryView || abstractMapView,
               showCanonicalOnlyEdges,
@@ -6578,6 +6650,8 @@ export default function App() {
               evidenceOverlayEdges: shouldRenderEvidenceOverlay ? evidenceOverlayEdges : [],
               evidenceOverlayDimCardIds: shouldRenderEvidenceOverlay ? evidenceOverlayDimCardIds : new Set<string>(),
               evidenceOverlayHint,
+              highlightCardIds: perspectiveRendering?.highlightCardIds,
+              perspectiveHint,
             }}
             revealCardIds={mergedRevealCardIds}
             showCanonicalOnlyEdges={showCanonicalOnlyEdges}

@@ -33,8 +33,9 @@ export type ExportViewMetadata = {
     evidenceOverlayDepth?: number;
     evidenceOverlayScope?: "all" | "selection";
     evidenceOverlayDimOthers?: boolean;
-  };
-  export: {
+    perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
+    perspectiveStrictFilter?: boolean;
+  };  export: {
     mode: "viewport" | "bounds";
     bounds?: {
       x: number;
@@ -77,8 +78,9 @@ type ExportViewMetadataArgs = {
     evidenceOverlayDepth?: number;
     evidenceOverlayScope?: "all" | "selection";
     evidenceOverlayDimOthers?: boolean;
-  };
-  exportMode: "viewport" | "bounds";
+    perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
+    perspectiveStrictFilter?: boolean;
+  };  exportMode: "viewport" | "bounds";
   bounds?: {
     x: number;
     y: number;
@@ -150,6 +152,8 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(viewState.evidenceOverlayDepth === undefined ? {} : { evidenceOverlayDepth: viewState.evidenceOverlayDepth }),
       ...(viewState.evidenceOverlayScope === undefined ? {} : { evidenceOverlayScope: viewState.evidenceOverlayScope }),
       ...(viewState.evidenceOverlayDimOthers === undefined ? {} : { evidenceOverlayDimOthers: viewState.evidenceOverlayDimOthers }),
+      ...(viewState.perspectiveMode === undefined ? {} : { perspectiveMode: viewState.perspectiveMode }),
+      ...(viewState.perspectiveStrictFilter === undefined ? {} : { perspectiveStrictFilter: viewState.perspectiveStrictFilter }),
     },
     export: {
       mode: exportMode,
@@ -348,6 +352,26 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.evidenceOverlayDimOthers !== undefined && typeof value.viewState.evidenceOverlayDimOthers !== "boolean") {
     return { ok: false, error: "viewState.evidenceOverlayDimOthers must be a boolean when present" };
+  }
+
+  if (value.viewState.perspectiveStrictFilter !== undefined && typeof value.viewState.perspectiveStrictFilter !== "boolean") {
+    return { ok: false, error: "viewState.perspectiveStrictFilter must be a boolean" };
+  }
+
+  if (
+    value.viewState.perspectiveMode !== undefined &&
+    ![
+      "default",
+      "facts",
+      "claims",
+      "hypotheses",
+      "unknown",
+      "evidence",
+      "contradiction",
+      "review",
+    ].includes(String(value.viewState.perspectiveMode))
+  ) {
+    return { ok: false, error: "viewState.perspectiveMode must be a supported perspective mode" };
   }
 
   if (!isObject(value.export)) {
