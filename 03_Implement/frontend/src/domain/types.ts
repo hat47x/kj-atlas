@@ -111,6 +111,15 @@ export type Island = {
   shapeStale?: boolean;
 };
 
+export type EvidenceLink = {
+  id: string;
+  type: "supports" | "contradicts";
+  fromCardId: string;
+  toCardId: string;
+  note?: string;
+  createdAt?: string;
+};
+
 export type NarrativeCheckReference = {
   id: string;
   kind: "card" | "island";
@@ -194,6 +203,7 @@ export type DocumentV2 = {
   readingOrder?: string[];
   narratives?: Narrative[];
   relationSummaries?: RelationSummary[];
+  evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
 };
 
@@ -206,6 +216,8 @@ export type PatchApplyStats = {
   deleteEdges: number;
   upsertRelationSummaries: number;
   deleteRelationSummaries: number;
+  upsertEvidenceLinks: number;
+  deleteEvidenceLinks: number;
 };
 
 export type PatchConflictMeta = {

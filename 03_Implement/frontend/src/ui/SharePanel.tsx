@@ -631,7 +631,7 @@ export function SharePanel({
                     <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#334155" }}>
                       <div>
                         stats: cards +{entry.stats.upsertCards}/-{entry.stats.deleteCards}, islands +{entry.stats.upsertIslands}/-{entry.stats.deleteIslands},
-                        edges +{entry.stats.upsertEdges}/-{entry.stats.deleteEdges}, relations +{entry.stats.upsertRelationSummaries}/-{entry.stats.deleteRelationSummaries}
+                        edges +{entry.stats.upsertEdges}/-{entry.stats.deleteEdges}, relations +{entry.stats.upsertRelationSummaries}/-{entry.stats.deleteRelationSummaries}, evidence +{entry.stats.upsertEvidenceLinks}/-{entry.stats.deleteEvidenceLinks}
                       </div>
                       {entry.conflictMeta ? (
                         <div>

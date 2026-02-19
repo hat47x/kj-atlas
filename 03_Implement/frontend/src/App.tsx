@@ -80,6 +80,7 @@ import { generateRecommendations } from "./domain/view/recommendations";
 import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
 import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
 import { analyzeClaimTypeMix, type ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
+import { analyzeEvidenceGaps, type EvidenceGapReport } from "./domain/view/evidence_gap_checks";
 import { DiffPanel } from "./ui/DiffPanel";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -219,6 +220,34 @@ function parseComparisonRelationSummaries(value: unknown): DocumentV2["relationS
   return relationSummaries;
 }
 
+function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks"] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const links: NonNullable<DocumentV2["evidenceLinks"]> = [];
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.id !== "string" || typeof entry.fromCardId !== "string" || typeof entry.toCardId !== "string") {
+      continue;
+    }
+
+    if (entry.type !== "supports" && entry.type !== "contradicts") {
+      continue;
+    }
+
+    links.push({
+      id: entry.id,
+      type: entry.type,
+      fromCardId: entry.fromCardId,
+      toCardId: entry.toCardId,
+      note: typeof entry.note === "string" ? entry.note : undefined,
+      createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+    });
+  }
+
+  return links;
+}
+
 function extractComparisonDocument(value: unknown): DocumentV2 | null {
   const payload = unwrapComparisonPayload(value);
   const validated = validateAndUpgradeImportedDocument(payload);
@@ -259,6 +288,7 @@ function extractComparisonDocument(value: unknown): DocumentV2 | null {
         ? payload.readingOrder
         : validated.document.readingOrder ?? [],
     relationSummaries: parseComparisonRelationSummaries(payload.relationSummaries),
+    evidenceLinks: parseComparisonEvidenceLinks(payload.evidenceLinks),
   };
 }
 
@@ -369,6 +399,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     islands: [],
     readingOrder: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -397,6 +428,7 @@ function createNewDocument(docId: string): DocumentV2 {
     edges: [],
     islands: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -417,6 +449,7 @@ function toDocumentV2(document: Document): DocumentV2 {
       ...document,
       readingOrder: document.readingOrder ?? [],
       narratives: document.narratives ?? [],
+      evidenceLinks: document.evidenceLinks ?? [],
     };
   }
 
@@ -426,6 +459,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     islands: [],
     readingOrder: [],
     narratives: [],
+    evidenceLinks: [],
   };
 }
 
@@ -734,6 +768,7 @@ export default function App() {
   const [contradictionReport, setContradictionReport] = useState<ContradictionReport | null>(null);
   const [distributionReport, setDistributionReport] = useState<DistributionReport | null>(null);
   const [claimTypeMixReport, setClaimTypeMixReport] = useState<ClaimTypeMixReport | null>(null);
+  const [evidenceGapReport, setEvidenceGapReport] = useState<EvidenceGapReport | null>(null);
   const [highlightEdgeIds, setHighlightEdgeIds] = useState<string[]>([]);
 
   const [pngExportScale, setPngExportScale] = useState<PngExportScale>(1);
@@ -2809,6 +2844,63 @@ export default function App() {
     [applyDocumentChange, document]
   );
 
+  const handleAddEvidenceLink = useCallback(
+    (fromCardId: string, payload: { toCardId: string; type: "supports" | "contradicts" }) => {
+      if (!document || fromCardId === payload.toCardId) {
+        return;
+      }
+
+      const hasDuplicate = (document.evidenceLinks ?? []).some((link) =>
+        link.fromCardId === fromCardId && link.toCardId === payload.toCardId && link.type === payload.type
+      );
+      if (hasDuplicate) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          evidenceLinks: [
+            ...(document.evidenceLinks ?? []),
+            {
+              id: crypto.randomUUID(),
+              type: payload.type,
+              fromCardId,
+              toCardId: payload.toCardId,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        },
+        "Added evidence link",
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleRemoveEvidenceLink = useCallback(
+    (evidenceLinkId: string) => {
+      if (!document) {
+        return;
+      }
+
+      const nextEvidenceLinks = (document.evidenceLinks ?? []).filter((link) => link.id !== evidenceLinkId);
+      if (nextEvidenceLinks.length === (document.evidenceLinks ?? []).length) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          evidenceLinks: nextEvidenceLinks,
+        },
+        "Removed evidence link",
+        { preserveSuggestionPreview: true }
+      );
+    },
+    [applyDocumentChange, document]
+  );
+
   const handleCardCritiqueTagsChange = useCallback(
     (cardId: string, nextTags: string[]) => {
       if (!document) {
@@ -4412,14 +4504,16 @@ export default function App() {
     const contradiction = analyzeContradictions(document);
     const distribution = analyzeDistribution(document);
     const claimTypeMix = analyzeClaimTypeMix(document);
+    const evidenceGaps = analyzeEvidenceGaps(document);
     setOutlineQualityReport(report);
     setContradictionReport(contradiction);
     setDistributionReport(distribution);
     setClaimTypeMixReport(claimTypeMix);
+    setEvidenceGapReport(evidenceGaps);
 
     const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
     const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s)`);
+    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s)`);
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
@@ -4427,6 +4521,7 @@ export default function App() {
     setContradictionReport(null);
     setDistributionReport(null);
     setClaimTypeMixReport(null);
+    setEvidenceGapReport(null);
     setHighlightEdgeIds([]);
   }, [document?.id, readingMode, reviewedOnly]);
 
@@ -4928,6 +5023,7 @@ export default function App() {
           cards: nextCards,
           edges: nextEdges,
           islands: nextIslands,
+          evidenceLinks: (document.evidenceLinks ?? []).filter((link) => !selectedCardIdSet.has(link.fromCardId) && !selectedCardIdSet.has(link.toCardId)),
           readingOrder: (document.readingOrder ?? []).filter((entryId) => {
             if (selectedCardIdSet.has(entryId)) {
               return false;
@@ -6031,6 +6127,15 @@ export default function App() {
 
             handleCardClaimTypeChange(selectedCard.id, value);
           }}
+          onAddEvidenceLink={(payload) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleAddEvidenceLink(selectedCard.id, payload);
+          }}
+          onRemoveEvidenceLink={handleRemoveEvidenceLink}
+          onFocusCardById={focusCardById}
           onTitleChange={(value) => {
             if (!selectedIsland) {
               return;
@@ -6223,6 +6328,7 @@ export default function App() {
           contradictionReport={contradictionReport}
           distributionReport={distributionReport}
           claimTypeMixReport={claimTypeMixReport}
+          evidenceGapReport={evidenceGapReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}

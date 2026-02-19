@@ -66,7 +66,7 @@ export function formatPatchApplyLogEntryMarkdown(entry: PatchApplyLogEntry): str
     `- baseDocSignature: ${entry.baseDocSignature ?? "(none)"}`,
     `- patchSourceSignature: ${entry.patchSourceSignature ?? "(none)"}`,
     `- appliedOpCount: ${entry.appliedOpIds.length}`,
-    `- stats: cards +${entry.stats.upsertCards}/-${entry.stats.deleteCards}, islands +${entry.stats.upsertIslands}/-${entry.stats.deleteIslands}, edges +${entry.stats.upsertEdges}/-${entry.stats.deleteEdges}, relations +${entry.stats.upsertRelationSummaries}/-${entry.stats.deleteRelationSummaries}`,
+    `- stats: cards +${entry.stats.upsertCards}/-${entry.stats.deleteCards}, islands +${entry.stats.upsertIslands}/-${entry.stats.deleteIslands}, edges +${entry.stats.upsertEdges}/-${entry.stats.deleteEdges}, relations +${entry.stats.upsertRelationSummaries}/-${entry.stats.deleteRelationSummaries}, evidence +${entry.stats.upsertEvidenceLinks}/-${entry.stats.deleteEvidenceLinks}`,
   ];
 
   if (entry.conflictMeta) {

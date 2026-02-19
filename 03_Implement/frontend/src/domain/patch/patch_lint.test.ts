@@ -15,6 +15,7 @@ function makeDoc(): DocumentV2 {
     islands: [{ id: "i1", cardIds: ["c1"] }],
     edges: [],
     relationSummaries: [],
+    evidenceLinks: [],
   };
 }
 
@@ -70,4 +71,22 @@ describe("lintPatchAgainstCurrentDoc", () => {
     expect(result.issues.some((issue) => issue.code === "P003" && issue.severity === "warn" && issue.opId === "op-delete")).toBe(true);
     expect(result.issues.some((issue) => issue.code === "P001" && issue.severity === "error")).toBe(true);
   });
+
+  it("returns P009 for evidence links referencing missing cards", () => {
+    const patch: PatchDocument = {
+      kind: "kj-atlas-patch",
+      version: 1,
+      ops: [
+        {
+          id: "op-evidence",
+          kind: "upsert_evidence_link",
+          evidenceLink: { id: "el-1", type: "supports", fromCardId: "c1", toCardId: "missing" },
+        },
+      ],
+    };
+
+    const result = lintPatchAgainstCurrentDoc(makeDoc(), patch);
+    expect(result.issues.some((issue) => issue.code === "P009" && issue.severity === "error" && issue.opId === "op-evidence")).toBe(true);
+  });
+
 });

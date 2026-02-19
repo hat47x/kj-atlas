@@ -7,13 +7,14 @@ import {
   formatIslandRelationExplanationMarkdown,
   type IslandRelationEdgeSelection,
 } from "../domain/island_relation_explain";
-import type { Card, CritiqueTag, DocumentV2, Island, RelationSummary } from "../domain/types";
+import type { Card, CritiqueTag, DocumentV2, EvidenceLink, Island, RelationSummary } from "../domain/types";
 import { RELATION_SUMMARY_TEXT_MAX_LENGTH } from "../domain/relation_summary_ops";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "../domain/view/contradiction_checks";
 import { rankDistributionIslands, type DistributionReport } from "../domain/view/distribution_checks";
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
+import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 
 type SummaryGroundingItem = {
   id: string;
@@ -41,6 +42,9 @@ type SidePanelProps = {
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
+  onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
+  onRemoveEvidenceLink: (evidenceLinkId: string) => void;
+  onFocusCardById: (cardId: string) => void;
   onTitleChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
@@ -129,6 +133,7 @@ type SidePanelProps = {
   contradictionReport: ContradictionReport | null;
   distributionReport: DistributionReport | null;
   claimTypeMixReport: ClaimTypeMixReport | null;
+  evidenceGapReport: EvidenceGapReport | null;
   onRunOutlineDiagnostics: () => void;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
@@ -160,6 +165,9 @@ export function SidePanel({
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
+  onAddEvidenceLink,
+  onRemoveEvidenceLink,
+  onFocusCardById,
   onTitleChange,
   onTitleReviewedChange,
   onSummaryTextChange,
@@ -248,6 +256,7 @@ export function SidePanel({
   contradictionReport,
   distributionReport,
   claimTypeMixReport,
+  evidenceGapReport,
   onRunOutlineDiagnostics,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
@@ -276,6 +285,10 @@ export function SidePanel({
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
+  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [pendingEvidenceType, setPendingEvidenceType] = useState<EvidenceLink["type"]>("supports");
+  const [evidenceTargetQuery, setEvidenceTargetQuery] = useState("");
+  const [pendingEvidenceTargetId, setPendingEvidenceTargetId] = useState<string>("");
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -343,6 +356,34 @@ export function SidePanel({
 
     return outlineRecommendations.filter((recommendation) => recommendation.impactLevel === "high");
   }, [outlineRecommendations, showOnlyHighImpactRecommendations]);
+
+  const outgoingEvidenceLinks = useMemo(() => {
+    if (!document || !selectedCard) return [];
+    return (document.evidenceLinks ?? []).filter((link) => link.fromCardId === selectedCard.id);
+  }, [document, selectedCard]);
+
+  const incomingEvidenceLinks = useMemo(() => {
+    if (!document || !selectedCard) return [];
+    return (document.evidenceLinks ?? []).filter((link) => link.toCardId === selectedCard.id);
+  }, [document, selectedCard]);
+
+  const availableEvidenceTargets = useMemo(() => {
+    if (!document || !selectedCard) return [];
+    const query = evidenceTargetQuery.trim().toLowerCase();
+    return document.cards
+      .filter((card) => card.id !== selectedCard.id)
+      .filter((card) => (query.length === 0 ? true : card.text.toLowerCase().includes(query) || card.id.toLowerCase().includes(query)))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }, [document, evidenceTargetQuery, selectedCard]);
+
+  const evidenceGapFindingsByCode = useMemo(() => {
+    const map: Record<"E001" | "E002" | "E003" | "E004", EvidenceGapReport["findings"]> = { E001: [], E002: [], E003: [], E004: [] };
+    if (!evidenceGapReport) return map;
+    for (const finding of evidenceGapReport.findings) {
+      map[finding.code] = [...map[finding.code], finding];
+    }
+    return map;
+  }, [evidenceGapReport]);
 
   const outlineDiagnosticsCounts = useMemo(() => {
     if (!outlineQualityReport) {
@@ -444,6 +485,49 @@ export function SidePanel({
           ))}
         </ul>
       )}
+    </details>
+  ) : null;
+
+  const evidenceGapSection = evidenceGapReport ? (
+    <details style={{ marginTop: 8 }}>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Evidence gaps ({evidenceGapReport.findings.length})</summary>
+      <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
+        <div>Links: {evidenceGapReport.stats.totalLinks} (supports {evidenceGapReport.stats.supportsLinks}, contradicts {evidenceGapReport.stats.contradictsLinks})</div>
+        <div>Hypotheses no fact support: {evidenceGapReport.stats.hypothesesWithNoFactSupport}</div>
+        <div>Claims no fact support: {evidenceGapReport.stats.claimsWithNoFactSupport}</div>
+        <div>Unused facts: {evidenceGapReport.stats.factsUnusedAsEvidence}</div>
+        <div>Contradictions needing grounding: {evidenceGapReport.stats.contradictionsWithoutCounterSupport}</div>
+      </div>
+      {(["E001", "E002", "E003", "E004"] as const).map((code) => {
+        const findings = evidenceGapFindingsByCode[code] ?? [];
+        if (findings.length === 0) return null;
+        const titleByCode: Record<string, string> = {
+          E001: "Hypotheses lacking fact support",
+          E002: "Claims lacking fact support",
+          E003: "Unused facts",
+          E004: "Contradictions needing grounding",
+        };
+
+        return (
+          <details key={code} style={{ marginTop: 6 }}>
+            <summary style={{ fontSize: 11, cursor: "pointer", color: "#1f2937" }}>{titleByCode[code]} ({findings.length})</summary>
+            <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
+              {findings.map((finding, index) => (
+                <li key={`${code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                  <div>{finding.detail}</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                    {finding.cardIds.map((cardId) => (
+                      <button key={`${code}_${index}_${cardId}`} type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(cardId); }}>
+                        Focus card:{cardId}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
     </details>
   ) : null;
 
@@ -784,6 +868,7 @@ export function SidePanel({
               ) : null}
               {distributionSignalsSection}
               {claimTypeMixSection}
+              {evidenceGapSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -1103,6 +1188,7 @@ export function SidePanel({
               ) : null}
               {distributionSignalsSection}
               {claimTypeMixSection}
+              {evidenceGapSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -2218,6 +2304,67 @@ export function SidePanel({
                 <option value="hypothesis">{claimTypeLabels.hypothesis}</option>
                 <option value="unknown">{claimTypeLabels.unknown}</option>
               </select>
+
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence</div>
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>Outgoing</div>
+                {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                  <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
+                    {outgoingEvidenceLinks.map((link) => {
+                      const target = document?.cards.find((card) => card.id === link.toCardId);
+                      return (
+                        <div key={link.id} style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
+                          <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
+                          <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>Focus</button>
+                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>Remove</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>Incoming (read-only)</div>
+                {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
+                  <div style={{ display: "grid", gap: 4 }}>
+                    {incomingEvidenceLinks.map((link) => {
+                      const source = document?.cards.find((card) => card.id === link.fromCardId);
+                      return <div key={link.id} style={{ fontSize: 11 }}>{source ? source.text.slice(0, 60) : link.fromCardId} {link.type} this</div>;
+                    })}
+                  </div>
+                )}
+                <button type="button" style={{ marginTop: 8, width: "100%" }} onClick={() => {
+                  setIsEvidenceModalOpen(true);
+                  setPendingEvidenceType("supports");
+                  setEvidenceTargetQuery("");
+                  setPendingEvidenceTargetId("");
+                }}>
+                  Add evidence link…
+                </button>
+                {isEvidenceModalOpen ? (
+                  <div style={{ marginTop: 8, border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6, backgroundColor: "#f8fafc" }}>
+                    <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
+                      <option value="supports">supports</option>
+                      <option value="contradicts">contradicts</option>
+                    </select>
+                    <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder="Search target card" />
+                    <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
+                      <option value="">Select target</option>
+                      {availableEvidenceTargets.map((card) => (
+                        <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
+                      ))}
+                    </select>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button type="button" disabled={!pendingEvidenceTargetId} onClick={() => {
+                        if (!pendingEvidenceTargetId) return;
+                        onAddEvidenceLink({ toCardId: pendingEvidenceTargetId, type: pendingEvidenceType });
+                        setIsEvidenceModalOpen(false);
+                      }}>Confirm</button>
+                      <button type="button" onClick={() => { setIsEvidenceModalOpen(false); }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
 
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                 Critique note

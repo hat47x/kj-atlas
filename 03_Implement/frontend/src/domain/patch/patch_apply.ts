@@ -165,6 +165,18 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
       continue;
     }
 
+    if (item.kind === "upsert_evidence_link") {
+      const evidenceLink = parseEvidenceLink(item.evidenceLink);
+      if (!evidenceLink) return null;
+      ops.push({ id: item.id, kind: item.kind, evidenceLink });
+      continue;
+    }
+
+    if (item.kind === "delete_evidence_link" && typeof item.evidenceLinkId === "string") {
+      ops.push({ id: item.id, kind: item.kind, evidenceLinkId: item.evidenceLinkId });
+      continue;
+    }
+
     return null;
   }
 
@@ -178,6 +190,22 @@ export function parsePatchDocument(value: unknown): PatchDocument | null {
     patchFingerprint: typeof value.patchFingerprint === "string" ? value.patchFingerprint : undefined,
     patchId: typeof value.patchId === "string" ? value.patchId : undefined,
     ops,
+  };
+}
+
+function parseEvidenceLink(value: unknown): NonNullable<DocumentV2["evidenceLinks"]>[number] | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.id !== "string" || typeof value.fromCardId !== "string" || typeof value.toCardId !== "string") return null;
+  if (value.type !== "supports" && value.type !== "contradicts") return null;
+  if (value.fromCardId === value.toCardId) return null;
+
+  return {
+    id: value.id,
+    type: value.type,
+    fromCardId: value.fromCardId,
+    toCardId: value.toCardId,
+    note: typeof value.note === "string" ? value.note : undefined,
+    createdAt: typeof value.createdAt === "string" ? value.createdAt : undefined,
   };
 }
 
@@ -207,6 +235,10 @@ export function getPatchOpEntityKey(op: PatchOp): string {
       return `relSummary:${op.relationSummary.sourceSignature}`;
     case "delete_relation_summary":
       return `relSummary:${op.sourceSignature}`;
+    case "upsert_evidence_link":
+      return `evidenceLink:${op.evidenceLink.id}`;
+    case "delete_evidence_link":
+      return `evidenceLink:${op.evidenceLinkId}`;
   }
 }
 
@@ -226,7 +258,11 @@ function applyPatchOp(currentDoc: DocumentV2, op: PatchOp): DocumentV2 {
     case "upsert_card":
       return { ...currentDoc, cards: upsertById(currentDoc.cards, op.card) };
     case "delete_card":
-      return { ...currentDoc, cards: currentDoc.cards.filter((card) => card.id !== op.cardId) };
+      return {
+        ...currentDoc,
+        cards: currentDoc.cards.filter((card) => card.id !== op.cardId),
+        evidenceLinks: (currentDoc.evidenceLinks ?? []).filter((link) => link.fromCardId !== op.cardId && link.toCardId !== op.cardId),
+      };
     case "upsert_island":
       return { ...currentDoc, islands: upsertById(currentDoc.islands, op.island) };
     case "delete_island":
@@ -251,6 +287,10 @@ function applyPatchOp(currentDoc: DocumentV2, op: PatchOp): DocumentV2 {
         ...currentDoc,
         relationSummaries: (currentDoc.relationSummaries ?? []).filter((summary) => summary.sourceSignature !== op.sourceSignature),
       };
+    case "upsert_evidence_link":
+      return { ...currentDoc, evidenceLinks: upsertById(currentDoc.evidenceLinks ?? [], op.evidenceLink) };
+    case "delete_evidence_link":
+      return { ...currentDoc, evidenceLinks: (currentDoc.evidenceLinks ?? []).filter((link) => link.id !== op.evidenceLinkId) };
   }
 }
 
@@ -274,6 +314,8 @@ function createEmptyApplyStats(): PatchApplyStats {
     deleteEdges: 0,
     upsertRelationSummaries: 0,
     deleteRelationSummaries: 0,
+    upsertEvidenceLinks: 0,
+    deleteEvidenceLinks: 0,
   };
 }
 
@@ -302,6 +344,12 @@ function incrementApplyStats(stats: PatchApplyStats, kind: PatchOpKind): void {
       break;
     case "delete_relation_summary":
       stats.deleteRelationSummaries += 1;
+      break;
+    case "upsert_evidence_link":
+      stats.upsertEvidenceLinks += 1;
+      break;
+    case "delete_evidence_link":
+      stats.deleteEvidenceLinks += 1;
       break;
   }
 }

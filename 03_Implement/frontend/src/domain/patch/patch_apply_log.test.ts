@@ -37,6 +37,8 @@ describe("appendPatchApplyLog", () => {
         deleteEdges: 0,
         upsertRelationSummaries: 0,
         deleteRelationSummaries: 0,
+        upsertEvidenceLinks: 0,
+        deleteEvidenceLinks: 0,
       },
       patchTitle: "sample.patch.json",
       baseDocSignature: "doc-1:2024-01-01T00:00:00.000Z",
@@ -66,6 +68,8 @@ describe("appendPatchApplyLog", () => {
         deleteEdges: 0,
         upsertRelationSummaries: 0,
         deleteRelationSummaries: 0,
+        upsertEvidenceLinks: 0,
+        deleteEvidenceLinks: 0,
       },
     });
 
