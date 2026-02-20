@@ -3,14 +3,114 @@ import { lintPatchAgainstCurrentDoc } from "../domain/patch/patch_lint";
 import type { PatchDocument, PatchOp } from "../domain/patch/patch_apply";
 import type { DocumentV2 } from "../domain/types";
 import { validateDocument } from "../import/schema_validation";
-import type { MergeItem } from "./merge_items";
+import type { MergeItem, MergeItemRef } from "./merge_items";
 import { createMergeAuditEntry, type MergeAuditEntry, type MergeAuditSource } from "../domain/view/audit_log";
+import { detectPatchConflicts } from "../domain/patch/conflict_detect";
+
+const MERGE_SELECTED_ITEMS_SOFT_LIMIT = 200;
+const MERGE_SELECTED_ITEMS_HARD_LIMIT = 1000;
+
+type MergeDiagnostic = {
+  code: string;
+  message: string;
+};
+
+export type MergePreflightResult =
+  | {
+      ok: true;
+      patchOrPlan: PatchDocument;
+      warnings: MergeDiagnostic[];
+      selectedItems: MergeItem[];
+    }
+  | {
+      ok: false;
+      errors: MergeDiagnostic[];
+    };
+
+export type MergeTransactionResult = { ok: true; document: DocumentV2; warnings: MergeDiagnostic[] } | { ok: false; errors: MergeDiagnostic[] };
 
 function sortById<T extends { id: string }>(values: T[]): T[] {
   return [...values].sort((left, right) => left.id.localeCompare(right.id));
 }
 
-function buildOpList(baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): PatchOp[] {
+function makeSyntheticItem(kind: "card.add" | "evidence.remove", id: string): MergeItem {
+  return {
+    id: `auto:${kind}:${id}`,
+    kind,
+    entityRef: { kind: kind === "card.add" ? "card" : "evidence", id },
+    prerequisites: [],
+  };
+}
+
+function toRefKey(ref: MergeItemRef): string {
+  return `${ref.kind}:${ref.id}`;
+}
+
+function selectWithAutoPrerequisites(baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { selectedItems: MergeItem[]; warnings: MergeDiagnostic[]; errors: MergeDiagnostic[] } {
+  const warnings: MergeDiagnostic[] = [];
+  const errors: MergeDiagnostic[] = [];
+  const selectedMap = new Map(selectedItems.map((item) => [item.id, item]));
+  const selectedRefKeys = new Set(selectedItems.map((item) => toRefKey(item.entityRef)));
+
+  for (const item of selectedItems) {
+    if (item.kind === "evidence.add") {
+      const link = (incomingDoc.evidenceLinks ?? []).find((entry) => entry.id === item.entityRef.id);
+      if (!link) {
+        errors.push({ code: "M001", message: `Selected evidence.add ${item.entityRef.id} does not exist in incoming document.` });
+        continue;
+      }
+
+      for (const cardId of [link.fromCardId, link.toCardId]) {
+        if (selectedRefKeys.has(`card:${cardId}`) || baseDoc.cards.some((card) => card.id === cardId)) {
+          continue;
+        }
+
+        const incomingCard = incomingDoc.cards.find((card) => card.id === cardId);
+        if (!incomingCard) {
+          errors.push({ code: "M002", message: `evidence.add ${item.entityRef.id} depends on missing card ${cardId}.` });
+          continue;
+        }
+
+        const synthetic = makeSyntheticItem("card.add", cardId);
+        if (!selectedMap.has(synthetic.id)) {
+          selectedMap.set(synthetic.id, synthetic);
+          selectedRefKeys.add(`card:${cardId}`);
+          warnings.push({ code: "M101", message: `Auto-included prerequisite card.add ${cardId} for evidence.add ${item.entityRef.id}.` });
+        }
+      }
+    }
+
+    if (item.kind === "card.remove") {
+      const dependentEvidence = (baseDoc.evidenceLinks ?? []).filter((link) => link.fromCardId === item.entityRef.id || link.toCardId === item.entityRef.id);
+      for (const link of dependentEvidence) {
+        const evidenceRefKey = `evidence:${link.id}`;
+        if (selectedRefKeys.has(evidenceRefKey)) {
+          continue;
+        }
+
+        const incomingHasLink = (incomingDoc.evidenceLinks ?? []).some((incomingLink) => incomingLink.id === link.id);
+        if (incomingHasLink) {
+          errors.push({
+            code: "M003",
+            message: `card.remove ${item.entityRef.id} requires dependent evidence.remove ${link.id} (still present in incoming document).`,
+          });
+          continue;
+        }
+
+        const synthetic = makeSyntheticItem("evidence.remove", link.id);
+        if (!selectedMap.has(synthetic.id)) {
+          selectedMap.set(synthetic.id, synthetic);
+          selectedRefKeys.add(evidenceRefKey);
+          warnings.push({ code: "M102", message: `Auto-included evidence.remove ${link.id} for card.remove ${item.entityRef.id}.` });
+        }
+      }
+    }
+  }
+
+  return { selectedItems: [...selectedMap.values()], warnings, errors };
+}
+
+function buildOpList(incomingDoc: DocumentV2, selectedItems: MergeItem[]): PatchOp[] {
   const selectedCardUpserts = new Set<string>();
   const selectedCardDeletes = new Set<string>();
   const selectedIslandUpserts = new Set<string>();
@@ -129,40 +229,116 @@ export function buildSelectedPatchFromItems(baseDoc: DocumentV2, incomingDoc: Do
     kind: "kj-atlas-patch",
     version: 1,
     baseDocSignature: `${baseDoc.id}:${baseDoc.updatedAt}`,
-    ops: buildOpList(baseDoc, incomingDoc, selectedItems),
+    ops: buildOpList(incomingDoc, selectedItems),
   };
 }
 
+export function preflightMerge(baseDoc: DocumentV2, selectedItems: MergeItem[], incomingDoc: DocumentV2): MergePreflightResult {
+  const preflightDocs = [
+    { label: "base", value: baseDoc },
+    { label: "incoming", value: incomingDoc },
+  ] as const;
+
+  const errors: MergeDiagnostic[] = [];
+  for (const entry of preflightDocs) {
+    const validation = validateDocument(entry.value, { evidenceEndpointSeverity: "error" });
+    if (!validation.ok) {
+      errors.push(
+        ...validation.errors.map((error) => ({
+          code: `SCHEMA:${entry.label}`,
+          message: `[${error.code}] ${error.path}: ${error.message}`,
+        }))
+      );
+    }
+  }
+
+  if (selectedItems.length > MERGE_SELECTED_ITEMS_HARD_LIMIT) {
+    errors.push({ code: "M004", message: `Selected merge items (${selectedItems.length}) exceed hard limit (${MERGE_SELECTED_ITEMS_HARD_LIMIT}).` });
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  const prereqPlan = selectWithAutoPrerequisites(baseDoc, incomingDoc, selectedItems);
+  if (prereqPlan.errors.length > 0) {
+    return { ok: false, errors: prereqPlan.errors };
+  }
+
+  const patch = buildSelectedPatchFromItems(baseDoc, incomingDoc, prereqPlan.selectedItems);
+  const lint = lintPatchAgainstCurrentDoc(baseDoc, patch);
+  const lintErrors = lint.issues.filter((issue) => issue.severity === "error").map((issue) => ({ code: issue.code, message: issue.message }));
+  if (lintErrors.length > 0) {
+    return { ok: false, errors: lintErrors };
+  }
+
+  const warnings: MergeDiagnostic[] = [...prereqPlan.warnings, ...lint.issues.filter((issue) => issue.severity !== "error").map((issue) => ({ code: issue.code, message: issue.message }))];
+  if (selectedItems.length > MERGE_SELECTED_ITEMS_SOFT_LIMIT) {
+    warnings.push({ code: "M103", message: `Large merge selection (${selectedItems.length} items). Review carefully before applying.` });
+  }
+
+  return { ok: true, patchOrPlan: patch, warnings, selectedItems: prereqPlan.selectedItems };
+}
 
 export function buildMergeAuditEntry(selectedItems: MergeItem[], source?: MergeAuditSource): MergeAuditEntry {
   return createMergeAuditEntry(selectedItems, source);
 }
 
-export function applySelectedMergeItemsAtomic(currentDoc: DocumentV2, baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { ok: true; document: DocumentV2 } | { ok: false; reason: string } {
-  const preflightDocs = [
-    { label: "current", value: currentDoc },
-    { label: "base", value: baseDoc },
-    { label: "incoming", value: incomingDoc },
-  ] as const;
-
-  for (const entry of preflightDocs) {
-    const validation = validateDocument(entry.value, { evidenceEndpointSeverity: "error" });
-    if (!validation.ok) {
-      const formatted = validation.errors.map((error) => `[${error.code}] ${error.path}: ${error.message}`).join("\n");
-      return { ok: false, reason: `Merge preflight failed (${entry.label} document):\n${formatted}` };
-    }
-  }
-  const patch = buildSelectedPatchFromItems(baseDoc, incomingDoc, selectedItems);
-  const lint = lintPatchAgainstCurrentDoc(currentDoc, patch);
-  if (lint.issues.some((issue) => issue.severity === "error")) {
-    return { ok: false, reason: lint.issues.map((issue) => issue.message).join("\n") };
+export function applyMergeTransaction(
+  currentDoc: DocumentV2,
+  snapshotDoc: DocumentV2,
+  baseDoc: DocumentV2,
+  incomingDoc: DocumentV2,
+  selectedItems: MergeItem[],
+  options?: { allowWarnings?: boolean }
+): MergeTransactionResult {
+  const preflight = preflightMerge(baseDoc, selectedItems, incomingDoc);
+  if (!preflight.ok) {
+    return { ok: false, errors: preflight.errors };
   }
 
-  const applied = applyPatchWithResolutionsDetailed(currentDoc, patch, {}, undefined, new Set(patch.ops.map((op) => op.id)));
+  if (preflight.warnings.length > 0 && !options?.allowWarnings) {
+    return { ok: false, errors: [{ code: "M105", message: "Merge preflight has warnings. Explicit confirmation required." }, ...preflight.warnings] };
+  }
+
+  const conflicts = detectPatchConflicts(snapshotDoc, currentDoc, preflight.patchOrPlan);
+  if (conflicts.conflicts.length > 0) {
+    return {
+      ok: false,
+      errors: conflicts.conflicts.map((conflict) => ({ code: "M006", message: `Conflict on ${conflict.entityKey}: ${conflict.reason}` })),
+    };
+  }
+
+  const currentLint = lintPatchAgainstCurrentDoc(currentDoc, preflight.patchOrPlan);
+  const currentLintErrors = currentLint.issues
+    .filter((issue) => issue.severity === "error")
+    .map((issue) => ({ code: `CUR:${issue.code}`, message: issue.message }));
+  if (currentLintErrors.length > 0) {
+    return { ok: false, errors: currentLintErrors };
+  }
+
+  const applied = applyPatchWithResolutionsDetailed(currentDoc, preflight.patchOrPlan, {}, undefined, new Set(preflight.patchOrPlan.ops.map((op) => op.id)));
   const nextDoc: DocumentV2 = {
     ...applied.document,
-    readingOrder: selectedItems.some((item) => item.kind === "view.field" && item.field === "readingOrder") ? (incomingDoc.readingOrder ?? []) : applied.document.readingOrder,
+    readingOrder: preflight.selectedItems.some((item) => item.kind === "view.field" && item.field === "readingOrder") ? (incomingDoc.readingOrder ?? []) : applied.document.readingOrder,
   };
 
-  return { ok: true, document: nextDoc };
+  const postValidation = validateDocument(nextDoc, { evidenceEndpointSeverity: "error" });
+  if (!postValidation.ok) {
+    return {
+      ok: false,
+      errors: postValidation.errors.map((error) => ({ code: `POST:${error.code}`, message: `${error.path}: ${error.message}` })),
+    };
+  }
+
+  return { ok: true, document: nextDoc, warnings: preflight.warnings };
+}
+
+export function applySelectedMergeItemsAtomic(currentDoc: DocumentV2, baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { ok: true; document: DocumentV2 } | { ok: false; reason: string } {
+  const result = applyMergeTransaction(currentDoc, baseDoc, baseDoc, incomingDoc, selectedItems, { allowWarnings: true });
+  if (!result.ok) {
+    return { ok: false, reason: result.errors.map((error) => `[${error.code}] ${error.message}`).join("\n") };
+  }
+
+  return { ok: true, document: result.document };
 }
