@@ -37,6 +37,7 @@ type SharePanelProps = {
     cardCount: number;
     islandCount: number;
     perspectiveMode: string;
+    warningCount: number;
   } | null;
   pendingImportedDocumentSummary: {
     fileName: string;
