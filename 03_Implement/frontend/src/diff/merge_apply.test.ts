@@ -70,6 +70,20 @@ describe("selective merge", () => {
     }
   });
 
+
+  it("fails merge preflight when incoming document is invalid", () => {
+    const base = doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }] });
+    const incoming = {
+      ...doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }] }),
+      cards: [{ id: "c1", text: 42, x: 0, y: 0 }],
+    } as unknown as DocumentV2;
+    const result = applySelectedMergeItemsAtomic(base, base, incoming, []);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toContain("Merge preflight failed");
+    }
+  });
+
   it("deduplicates entity upsert ops when selecting multiple field items", () => {
     const base = doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }] });
     const incoming = doc({ cards: [{ id: "c1", text: "A2", x: 10, y: 20 }] });

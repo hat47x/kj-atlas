@@ -29,7 +29,7 @@ import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
-import { validateAndUpgradeImportedDocument } from "./domain/validate";
+import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
@@ -349,15 +349,16 @@ function parseComparisonEvidenceLinks(value: unknown): DocumentV2["evidenceLinks
   return links;
 }
 
-function extractComparisonDocument(value: unknown): DocumentV2 | null {
+function extractComparisonDocument(value: unknown): { ok: true; document: DocumentV2 } | { ok: false; error: string } {
   const payload = unwrapComparisonPayload(value);
-  const validated = validateAndUpgradeImportedDocument(payload);
+  const validated = validateDocument(payload);
   if (!validated.ok) {
-    return null;
+    const message = validated.errors.map((error) => `[${error.code}] ${error.path}: ${error.message}`).join("\n");
+    return { ok: false, error: message };
   }
 
   if (!isRecord(payload)) {
-    return validated.document;
+    return { ok: true, document: validated.value };
   }
 
   const islandPatchById = new Map<string, { summaryText?: string; summaryReviewed?: boolean }>();
@@ -379,17 +380,20 @@ function extractComparisonDocument(value: unknown): DocumentV2 | null {
   }
 
   return {
-    ...validated.document,
-    islands: validated.document.islands.map((island) => ({
+    ok: true,
+    document: {
+    ...validated.value,
+    islands: validated.value.islands.map((island) => ({
       ...island,
       ...(islandPatchById.get(island.id) ?? {}),
     })),
     readingOrder:
       Array.isArray(payload.readingOrder) && payload.readingOrder.every((entryId) => typeof entryId === "string")
         ? payload.readingOrder
-        : validated.document.readingOrder ?? [],
+        : validated.value.readingOrder ?? [],
     relationSummaries: parseComparisonRelationSummaries(payload.relationSummaries),
     evidenceLinks: parseComparisonEvidenceLinks(payload.evidenceLinks),
+  },
   };
 }
 
@@ -2175,17 +2179,18 @@ export default function App() {
       const parsedJson: unknown = JSON.parse(rawText);
       const parsedDocument = extractComparisonDocument(parsedJson);
 
-      if (!parsedDocument) {
-        setStatusMessage("Failed to load comparison file: expected a valid document JSON");
+      if (!parsedDocument.ok) {
+        setStatusMessage(`Failed to load comparison file:
+${parsedDocument.error}`);
         return;
       }
 
-      setComparisonDocument(parsedDocument);
+      setComparisonDocument(parsedDocument.document);
       setComparisonFileName(selectedFile.name);
       setMergeSourceInfo({
         kind: selectedFile.name.toLowerCase().endsWith(".zip") ? "zip" : "unknown",
         fileName: selectedFile.name,
-        packId: parsedDocument.id || undefined,
+        packId: parsedDocument.document.id || undefined,
       });
       setReviewDiffBaseSnapshot(document ? cloneDocument(document) : null);
       setSelectedMergeItemIdSet(new Set());
