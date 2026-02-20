@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DocumentV2 } from "../domain/types";
 import { buildMergeItems } from "./merge_items";
 import { evaluateMergeSelection } from "./merge_dependencies";
-import { applySelectedMergeItemsAtomic } from "./merge_apply";
+import { applyMergeTransaction, applySelectedMergeItemsAtomic, preflightMerge } from "./merge_apply";
 
 function doc(overrides: Partial<DocumentV2>): DocumentV2 {
   return {
@@ -80,8 +80,73 @@ describe("selective merge", () => {
     const result = applySelectedMergeItemsAtomic(base, base, incoming, []);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.reason).toContain("Merge preflight failed");
+      expect(result.reason).toContain("[SCHEMA:incoming]");
     }
+  });
+
+
+  it("returns warnings and requires explicit confirmation", () => {
+    const base = doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }], evidenceLinks: [{ id: "e1", type: "supports", fromCardId: "c1", toCardId: "c1" }] });
+    const incoming = doc({ cards: [], evidenceLinks: [] });
+    const items = buildMergeItems(base, incoming);
+    const selected = items.filter((item) => item.kind === "card.remove" && item.entityRef.id === "c1");
+
+    const first = applyMergeTransaction(base, base, base, incoming, selected);
+    expect(first.ok).toBe(false);
+    if (!first.ok) {
+      expect(first.errors.some((error) => error.code === "M105")).toBe(true);
+    }
+
+    const second = applyMergeTransaction(base, base, base, incoming, selected, { allowWarnings: true });
+    expect(second.ok).toBe(true);
+  });
+
+  it("preflight auto-includes prerequisites for evidence.add", () => {
+    const base = doc({});
+    const incoming = doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }, { id: "c2", text: "B", x: 1, y: 1 }], evidenceLinks: [{ id: "e1", type: "supports", fromCardId: "c1", toCardId: "c2" }] });
+    const items = buildMergeItems(base, incoming);
+    const evidence = items.find((item) => item.kind === "evidence.add" && item.entityRef.id === "e1");
+    expect(evidence).toBeTruthy();
+
+    const preflight = preflightMerge(base, [evidence!], incoming);
+    expect(preflight.ok).toBe(true);
+    if (preflight.ok) {
+      expect(preflight.patchOrPlan.ops.some((op) => op.kind === "upsert_card" && op.card.id === "c1")).toBe(true);
+      expect(preflight.patchOrPlan.ops.some((op) => op.kind === "upsert_card" && op.card.id === "c2")).toBe(true);
+    }
+  });
+
+  it("does not mutate current document when merge transaction fails", () => {
+    const snapshot = doc({ cards: [{ id: "c1", text: "old", x: 0, y: 0 }] });
+    const current = doc({ updatedAt: "2025-01-01T00:00:01.000Z", cards: [{ id: "c1", text: "current", x: 0, y: 0 }] });
+    const incoming = doc({ cards: [{ id: "c1", text: "incoming", x: 0, y: 0 }] });
+    const items = buildMergeItems(snapshot, incoming);
+    const selected = items.filter((item) => item.kind === "card.field");
+
+    const before = JSON.stringify(current);
+    const result = applyMergeTransaction(current, snapshot, snapshot, incoming, selected, { allowWarnings: true });
+    expect(result.ok).toBe(false);
+    expect(JSON.stringify(current)).toBe(before);
+  });
+
+  it("blocks transaction when patch is valid on base but invalid on current", () => {
+    const snapshot = doc({ cards: [{ id: "c1", text: "A", x: 0, y: 0 }] });
+    const current = doc({
+      updatedAt: "2025-01-01T00:00:01.000Z",
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      islands: [{ id: "i1", title: "Island", cardIds: ["c1"] }],
+    });
+    const incoming = doc({ cards: [] });
+    const items = buildMergeItems(snapshot, incoming);
+    const selected = items.filter((item) => item.kind === "card.remove" && item.entityRef.id === "c1");
+
+    const before = JSON.stringify(current);
+    const result = applyMergeTransaction(current, snapshot, snapshot, incoming, selected, { allowWarnings: true });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((error) => error.code.startsWith("CUR:"))).toBe(true);
+    }
+    expect(JSON.stringify(current)).toBe(before);
   });
 
   it("deduplicates entity upsert ops when selecting multiple field items", () => {

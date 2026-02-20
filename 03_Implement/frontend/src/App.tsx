@@ -96,7 +96,7 @@ import {
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
 import { buildMergeItems, type MergeItem } from "./diff/merge_items";
-import { applySelectedMergeItemsAtomic, buildMergeAuditEntry } from "./diff/merge_apply";
+import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
@@ -930,6 +930,7 @@ export default function App() {
   const [selectedMergeItemIdSet, setSelectedMergeItemIdSet] = useState<Set<string>>(new Set());
   const [autoIncludeMergePrerequisites, setAutoIncludeMergePrerequisites] = useState(true);
   const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV2 | null>(null);
+  const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
   const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
@@ -2195,6 +2196,7 @@ ${parsedDocument.error}`);
       setReviewDiffBaseSnapshot(document ? cloneDocument(document) : null);
       setSelectedMergeItemIdSet(new Set());
       setLastMergeSnapshot(null);
+      setMergeWarningConfirmationKey(null);
       setStatusMessage("Loaded comparison document (view-only)");
     } catch (error) {
       if (error instanceof SyntaxError) {
@@ -2225,17 +2227,25 @@ ${parsedDocument.error}`);
       return;
     }
 
-    const applyResult = applySelectedMergeItemsAtomic(document, reviewDiffBaseSnapshot, comparisonDocument, selectedItems);
+    const mergeSelectionKey = selectedItems.map((item) => item.id).sort().join("|");
+    const applyResult = applyMergeTransaction(document, reviewDiffBaseSnapshot, reviewDiffBaseSnapshot, comparisonDocument, selectedItems, {
+      allowWarnings: mergeWarningConfirmationKey === mergeSelectionKey,
+    });
     if (!applyResult.ok) {
-      setStatusMessage(applyResult.reason);
+      const requiresExplicitConfirm = applyResult.errors.some((error) => error.code === "M105");
+      if (requiresExplicitConfirm) {
+        setMergeWarningConfirmationKey(mergeSelectionKey);
+      }
+      setStatusMessage(applyResult.errors.map((error) => `[${error.code}] ${error.message}`).join("\n"));
       return;
     }
 
+    setMergeWarningConfirmationKey(null);
     const auditEntry = buildMergeAuditEntry(selectedItems, mergeSourceInfo);
     setMergeAuditLog((current) => appendMergeAuditLog(current, auditEntry));
     setLastMergeSnapshot(cloneDocument(document));
     applyDocumentChange(applyResult.document, "Applied selective merge");
-  }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, mergeSourceInfo, reviewDiffBaseSnapshot]);
+  }, [applyDocumentChange, comparisonDocument, document, mergeEvaluation.evaluations, mergeEvaluation.selectedIdsWithPrerequisites, mergeItems, mergeSourceInfo, mergeWarningConfirmationKey, reviewDiffBaseSnapshot]);
 
   const handleUndoLastMerge = useCallback(() => {
     if (!lastMergeSnapshot) {
@@ -2245,6 +2255,7 @@ ${parsedDocument.error}`);
 
     applyDocumentChange(cloneDocument(lastMergeSnapshot), "Reverted selective merge");
     setLastMergeSnapshot(null);
+    setMergeWarningConfirmationKey(null);
   }, [applyDocumentChange, lastMergeSnapshot]);
 
   const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, statusPrefix: string) => {
