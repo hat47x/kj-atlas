@@ -1,17 +1,24 @@
-import { validateDocumentV2Strict } from "../domain/validate_doc";
 import type { DocumentV2 } from "../domain/types";
+import { validateDocument, type ValidationError } from "./schema_validation";
+
+function formatValidationErrors(errors: ValidationError[]): string {
+  const details = errors
+    .slice(0, 6)
+    .map((error) => `- [${error.code}] ${error.path}: ${error.message}`)
+    .join("\n");
+  const suffix = errors.length > 6 ? `\n- ...and ${errors.length - 6} more` : "";
+  return `Document validation failed:\n${details}${suffix}`;
+}
 
 export function parseDocumentJson(rawText: string): { ok: true; document: DocumentV2 } | { ok: false; error: string } {
   try {
     const parsedJson: unknown = JSON.parse(rawText);
-    const validation = validateDocumentV2Strict(parsedJson);
+    const validation = validateDocument(parsedJson);
     if (!validation.ok) {
-      const details = validation.errors.slice(0, 6).map((error) => `- ${error}`).join("\n");
-      const suffix = validation.errors.length > 6 ? `\n- ...and ${validation.errors.length - 6} more` : "";
-      return { ok: false, error: `Document validation failed:\n${details}${suffix}` };
+      return { ok: false, error: formatValidationErrors(validation.errors) };
     }
 
-    return { ok: true, document: validation.document };
+    return { ok: true, document: validation.value };
   } catch (error) {
     if (error instanceof SyntaxError) {
       return { ok: false, error: "Invalid JSON in document.json" };

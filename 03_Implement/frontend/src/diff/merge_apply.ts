@@ -2,6 +2,7 @@ import { applyPatchWithResolutionsDetailed } from "../domain/patch/patch_apply";
 import { lintPatchAgainstCurrentDoc } from "../domain/patch/patch_lint";
 import type { PatchDocument, PatchOp } from "../domain/patch/patch_apply";
 import type { DocumentV2 } from "../domain/types";
+import { validateDocument } from "../import/schema_validation";
 import type { MergeItem } from "./merge_items";
 import { createMergeAuditEntry, type MergeAuditEntry, type MergeAuditSource } from "../domain/view/audit_log";
 
@@ -138,6 +139,19 @@ export function buildMergeAuditEntry(selectedItems: MergeItem[], source?: MergeA
 }
 
 export function applySelectedMergeItemsAtomic(currentDoc: DocumentV2, baseDoc: DocumentV2, incomingDoc: DocumentV2, selectedItems: MergeItem[]): { ok: true; document: DocumentV2 } | { ok: false; reason: string } {
+  const preflightDocs = [
+    { label: "current", value: currentDoc },
+    { label: "base", value: baseDoc },
+    { label: "incoming", value: incomingDoc },
+  ] as const;
+
+  for (const entry of preflightDocs) {
+    const validation = validateDocument(entry.value, { evidenceEndpointSeverity: "error" });
+    if (!validation.ok) {
+      const formatted = validation.errors.map((error) => `[${error.code}] ${error.path}: ${error.message}`).join("\n");
+      return { ok: false, reason: `Merge preflight failed (${entry.label} document):\n${formatted}` };
+    }
+  }
   const patch = buildSelectedPatchFromItems(baseDoc, incomingDoc, selectedItems);
   const lint = lintPatchAgainstCurrentDoc(currentDoc, patch);
   if (lint.issues.some((issue) => issue.severity === "error")) {
