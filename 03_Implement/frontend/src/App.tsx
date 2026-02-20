@@ -111,7 +111,8 @@ import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patc
 import { parseDocumentJson } from "./import/document_import";
 import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
-import { detectReviewPackFiles, readZipFiles } from "./import/zip_import";
+import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
+import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -936,7 +937,7 @@ export default function App() {
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
   const [packImportError, setPackImportError] = useState<string | null>(null);
-  const [importedPackSummary, setImportedPackSummary] = useState<{ fileName: string; cardCount: number; islandCount: number; perspectiveMode: string } | null>(null);
+  const [importedPackSummary, setImportedPackSummary] = useState<{ fileName: string; cardCount: number; islandCount: number; perspectiveMode: string; warningCount: number } | null>(null);
   const [importedPackSnapshotUrl, setImportedPackSnapshotUrl] = useState<string | null>(null);
   const [importedPackDiagnosticsMd, setImportedPackDiagnosticsMd] = useState<string | null>(null);
   const [pendingPatchImport, setPendingPatchImport] = useState<PendingPatchImport | null>(null);
@@ -2373,7 +2374,8 @@ ${parsedDocument.error}`);
     }
 
     try {
-      const entries = await readZipFiles(selectedFile);
+      const zipImportResult = await readZipFiles(selectedFile);
+      const entries = zipImportResult.entries;
       const paths = detectReviewPackFiles(entries);
       if (!paths.documentPath) {
         setPackImportError("document.json not found in zip");
@@ -2423,7 +2425,7 @@ ${parsedDocument.error}`);
       }
 
       const diagnosticsRaw = paths.diagnosticsPath ? entries.get(paths.diagnosticsPath) : undefined;
-      const diagnosticsText = typeof diagnosticsRaw === "string" ? diagnosticsRaw : null;
+      const diagnosticsText = typeof diagnosticsRaw === "string" ? sanitizeMarkdownForDisplay(diagnosticsRaw) : null;
 
       pendingCardDragSnapshotRef.current = null;
       setHistory({
@@ -2465,6 +2467,7 @@ ${parsedDocument.error}`);
         cardCount: parsedDocument.document.cards.length,
         islandCount: parsedDocument.document.islands.length,
         perspectiveMode: parsedView.metadata.viewState.perspectiveMode ?? "default",
+        warningCount: zipImportResult.skippedUnsupportedCount + paths.ignoredFileCount,
       });
       setImportedPackDiagnosticsMd(diagnosticsText);
       setImportedPackSnapshotUrl(nextSnapshotUrl);
@@ -2474,9 +2477,12 @@ ${parsedDocument.error}`);
       applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, "Review pack imported");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unsupported format";
-      if (message.includes("Zip too large")) {
-        setPackImportError("Zip too large / exceeds limit");
-        setStatusMessage("Zip too large / exceeds limit");
+      if (error instanceof ZipImportError) {
+        setPackImportError(message);
+        setStatusMessage(message);
+      } else if (message.includes("Zip too large")) {
+        setPackImportError("Z001: Zip too large / exceeds limit");
+        setStatusMessage("Z001: Zip too large / exceeds limit");
       } else {
         setPackImportError(message);
         setStatusMessage(message);

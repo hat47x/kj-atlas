@@ -11,6 +11,7 @@ type ImportPanelProps = {
         cardCount: number;
         islandCount: number;
         perspectiveMode: string;
+        warningCount: number;
       }
     | null;
 };
@@ -79,8 +80,11 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
       </button>
       <input ref={inputRef} type="file" accept=".zip,application/zip" onChange={handleInputChange} style={{ display: "none" }} />
       {importedPackSummary ? (
-        <div style={{ fontSize: 12, color: "#334155" }}>
-          Imported {importedPackSummary.fileName}: cards {importedPackSummary.cardCount}, islands {importedPackSummary.islandCount}, perspective {importedPackSummary.perspectiveMode}
+        <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 4 }}>
+          <div>Imported {importedPackSummary.fileName}: cards {importedPackSummary.cardCount}, islands {importedPackSummary.islandCount}, perspective {importedPackSummary.perspectiveMode}</div>
+          {importedPackSummary.warningCount > 0 ? (
+            <div style={{ color: "#92400e" }}>Ignored {importedPackSummary.warningCount} unsupported or non-core file(s).</div>
+          ) : null}
         </div>
       ) : null}
       {packImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{packImportError}</div> : null}

@@ -4,17 +4,40 @@ const ALLOWED_EXTENSIONS = [".json", ".md", ".png"] as const;
 const STRIPPABLE_ROOT_PREFIXES = ["kj-atlas-review-pack-"] as const;
 
 export const ZIP_MAX_UNCOMPRESSED_BYTES = 20 * 1024 * 1024;
+export const ZIP_MAX_FILE_COUNT = 200;
+export const ZIP_MAX_FILE_UNCOMPRESSED_BYTES = 10 * 1024 * 1024;
+export const ZIP_MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024;
+export const ZIP_MAX_PNG_FILE_BYTES = 10 * 1024 * 1024;
+export const ZIP_MAX_PNG_DIMENSION = 8000;
+
+export class ZipImportError extends Error {
+  readonly code: "Z001" | "Z002" | "Z003";
+
+  constructor(code: "Z001" | "Z002" | "Z003", detail: string) {
+    super(`${code}: ${detail}`);
+    this.code = code;
+    this.name = "ZipImportError";
+  }
+}
+
+export type ZipImportResult = {
+  entries: Map<string, Uint8Array | string>;
+  skippedUnsupportedCount: number;
+};
 
 function hasAllowedExtension(path: string): boolean {
   const lowerPath = path.toLowerCase();
   return ALLOWED_EXTENSIONS.some((extension) => lowerPath.endsWith(extension));
 }
 
-function normalizeZipPath(path: string, shouldStripCommonRoot: boolean): string | null {
-  const normalized = path.replace(/\\/g, "/").replace(/^\/+/, "");
+export function normalizeZipPath(path: string, shouldStripCommonRoot: boolean): string | null {
+  const normalized = path.replace(/\\/g, "/").replace(/^\/+/, "").replace(/^(\.\/)+/, "");
   const rawSegments = normalized.split("/").filter((segment) => segment.length > 0 && segment !== ".");
-  if (rawSegments.length === 0 || rawSegments.some((segment) => segment === "..")) {
+  if (rawSegments.length === 0) {
     return null;
+  }
+  if (rawSegments.some((segment) => segment === "..")) {
+    throw new ZipImportError("Z002", `Path traversal is not allowed: ${path}`);
   }
 
   const segments = shouldStripCommonRoot && rawSegments.length > 1 ? rawSegments.slice(1) : rawSegments;
@@ -36,19 +59,50 @@ function findCommonRootFolder(paths: string[]): string | null {
     return null;
   }
 
-  const byPrefix = STRIPPABLE_ROOT_PREFIXES.some((prefix) => candidate.startsWith(prefix));
-  if (byPrefix) {
-    return candidate;
-  }
-
-  return firstSegments.length > 1 ? candidate : null;
+  return STRIPPABLE_ROOT_PREFIXES.some((prefix) => candidate.startsWith(prefix)) ? candidate : null;
 }
 
-export async function readZipFiles(file: File): Promise<Map<string, Uint8Array | string>> {
+function ensureWithinMaxSize(size: number, maxSize: number, detail: string): void {
+  if (size > maxSize) {
+    throw new ZipImportError("Z001", detail);
+  }
+}
+
+function decodePngDimensions(content: Uint8Array): { width: number; height: number } {
+  const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (content.byteLength < 24) {
+    throw new ZipImportError("Z003", "Invalid PNG format");
+  }
+
+  for (let index = 0; index < PNG_SIGNATURE.length; index += 1) {
+    if (content[index] !== PNG_SIGNATURE[index]) {
+      throw new ZipImportError("Z003", "Invalid PNG signature");
+    }
+  }
+
+  const dataView = new DataView(content.buffer, content.byteOffset, content.byteLength);
+  const chunkType = String.fromCharCode(content[12], content[13], content[14], content[15]);
+  if (chunkType !== "IHDR") {
+    throw new ZipImportError("Z003", "PNG missing IHDR header");
+  }
+  const width = dataView.getUint32(16);
+  const height = dataView.getUint32(20);
+  return { width, height };
+}
+
+function readEntryUncompressedSize(entry: JSZip.JSZipObject): number | null {
+  const maybeCompressedObject = entry as JSZip.JSZipObject & { _data?: { uncompressedSize?: number } };
+  const uncompressedSize = maybeCompressedObject._data?.uncompressedSize;
+  return typeof uncompressedSize === "number" && Number.isFinite(uncompressedSize) ? uncompressedSize : null;
+}
+
+export async function readZipFiles(file: File): Promise<ZipImportResult> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const result = new Map<string, Uint8Array | string>();
   let totalSize = 0;
+  let skippedUnsupportedCount = 0;
   const archivePaths = Object.values(zip.files).filter((entry) => !entry.dir).map((entry) => entry.name);
+  ensureWithinMaxSize(archivePaths.length, ZIP_MAX_FILE_COUNT, `Archive contains too many files (${archivePaths.length}/${ZIP_MAX_FILE_COUNT})`);
   const commonRootFolder = findCommonRootFolder(archivePaths);
 
   for (const entry of Object.values(zip.files)) {
@@ -61,30 +115,48 @@ export async function readZipFiles(file: File): Promise<Map<string, Uint8Array |
       continue;
     }
     if (!hasAllowedExtension(normalizedPath)) {
+      skippedUnsupportedCount += 1;
       continue;
     }
 
     const lowerPath = normalizedPath.toLowerCase();
+    const estimatedSize = readEntryUncompressedSize(entry);
+    if (estimatedSize !== null) {
+      ensureWithinMaxSize(estimatedSize, ZIP_MAX_FILE_UNCOMPRESSED_BYTES, `${normalizedPath} exceeds per-file size limit`);
+      if (lowerPath.endsWith(".png")) {
+        ensureWithinMaxSize(estimatedSize, ZIP_MAX_PNG_FILE_BYTES, `${normalizedPath} exceeds png size limit`);
+      }
+      if (lowerPath.endsWith(".json") || lowerPath.endsWith(".md")) {
+        ensureWithinMaxSize(estimatedSize, ZIP_MAX_TEXT_FILE_BYTES, `${normalizedPath} exceeds text size limit`);
+      }
+      ensureWithinMaxSize(totalSize + estimatedSize, ZIP_MAX_UNCOMPRESSED_BYTES, "Zip too large / exceeds total uncompressed limit");
+    }
+
     const isTextFile = lowerPath.endsWith(".json") || lowerPath.endsWith(".md");
     if (isTextFile) {
       const content = await entry.async("string");
-      totalSize += new TextEncoder().encode(content).byteLength;
-      if (totalSize > ZIP_MAX_UNCOMPRESSED_BYTES) {
-        throw new Error("Zip too large / exceeds limit");
-      }
+      const textSize = new TextEncoder().encode(content).byteLength;
+      ensureWithinMaxSize(textSize, ZIP_MAX_TEXT_FILE_BYTES, `${normalizedPath} exceeds text size limit`);
+      ensureWithinMaxSize(textSize, ZIP_MAX_FILE_UNCOMPRESSED_BYTES, `${normalizedPath} exceeds per-file size limit`);
+      totalSize += textSize;
+      ensureWithinMaxSize(totalSize, ZIP_MAX_UNCOMPRESSED_BYTES, "Zip too large / exceeds total uncompressed limit");
       result.set(normalizedPath, content);
       continue;
     }
 
     const content = await entry.async("uint8array");
-    totalSize += content.byteLength;
-    if (totalSize > ZIP_MAX_UNCOMPRESSED_BYTES) {
-      throw new Error("Zip too large / exceeds limit");
+    ensureWithinMaxSize(content.byteLength, ZIP_MAX_FILE_UNCOMPRESSED_BYTES, `${normalizedPath} exceeds per-file size limit`);
+    ensureWithinMaxSize(content.byteLength, ZIP_MAX_PNG_FILE_BYTES, `${normalizedPath} exceeds png size limit`);
+    const { width, height } = decodePngDimensions(content);
+    if (width > ZIP_MAX_PNG_DIMENSION || height > ZIP_MAX_PNG_DIMENSION) {
+      throw new ZipImportError("Z003", `${normalizedPath} dimensions ${width}x${height} exceed ${ZIP_MAX_PNG_DIMENSION}x${ZIP_MAX_PNG_DIMENSION}`);
     }
+    totalSize += content.byteLength;
+    ensureWithinMaxSize(totalSize, ZIP_MAX_UNCOMPRESSED_BYTES, "Zip too large / exceeds total uncompressed limit");
     result.set(normalizedPath, content);
   }
 
-  return result;
+  return { entries: result, skippedUnsupportedCount };
 }
 
 export type ReviewPackPaths = {
