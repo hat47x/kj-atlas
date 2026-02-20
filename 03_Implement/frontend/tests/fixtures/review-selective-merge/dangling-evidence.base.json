@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "id": "doc-review-merge",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "transform": { "panX": 0, "panY": 0, "zoom": 1 },
+  "cards": [
+    { "id": "c1", "text": "Only base card", "x": 0, "y": 0 }
+  ],
+  "edges": [],
+  "islands": [],
+  "relationSummaries": [],
+  "evidenceLinks": []
+}
