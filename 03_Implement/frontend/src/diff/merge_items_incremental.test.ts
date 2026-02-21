@@ -5,8 +5,11 @@ import { createCancelableTaskRunner } from "../utils/compute_scheduler";
 
 function makeDoc(prefix: string): DocumentV2 {
   return {
+    version: 2,
     id: prefix,
     title: prefix,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
     cards: Array.from({ length: 20 }, (_, i) => ({ id: `${prefix}-c${i}`, text: `t${i}`, x: 0, y: 0 })),
     islands: [{ id: `${prefix}-i`, title: "is", cardIds: [] }],
     edges: [],

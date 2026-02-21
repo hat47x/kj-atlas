@@ -26,7 +26,7 @@ export type DiagnosticsRunResult = {
 
 export async function runDiagnosticsIncremental(
   doc: DocumentV2,
-  opts: { readingMode: ReadingMode; reviewedOnly: boolean; collapsedIslandIds: string[] },
+  opts: { readingMode: ReadingMode; reviewedOnly: boolean; collapsedIslandIds: ReadonlySet<string> },
   ctx: ComputeTaskContext,
   guardrails: DiagnosticsGuardrails = {}
 ): Promise<DiagnosticsRunResult> {

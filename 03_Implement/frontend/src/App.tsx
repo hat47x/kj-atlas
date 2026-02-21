@@ -76,11 +76,11 @@ import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import type { OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
-import type { ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
+import type { ContradictionReport, ContradictionSignal } from "./domain/view/contradiction_checks";
 import type { DistributionReport } from "./domain/view/distribution_checks";
-import type { ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
+import type { ClaimType, ClaimTypeMixReport } from "./domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "./domain/view/evidence_gap_checks";
-import type { BalanceFinding, type DialecticBalanceReport } from "./domain/view/dialectic_balance";
+import type { BalanceFinding, DialecticBalanceReport } from "./domain/view/dialectic_balance";
 import {
   buildEvidenceAdjacency,
   getEvidenceNeighborhood,
