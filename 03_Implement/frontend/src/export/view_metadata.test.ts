@@ -373,7 +373,7 @@ describe("view metadata export", () => {
   });
 
 
-  it("includes mergeAuditLog in export and import validation", () => {
+  it("includes mergeAuditLog in export/import roundtrip", () => {
     const metadata = buildExportViewMetadata({
       doc: { id: "doc-audit", title: "Audit" },
       camera: { panX: 0, panY: 0, zoom: 1 },
@@ -392,7 +392,7 @@ describe("view metadata export", () => {
           createdAt: "2026-01-01T00:00:00.000Z",
           source: { kind: "unknown", fileName: "compare.json" },
           summary: { totalItems: 1, byKind: { "card.add": 1 } },
-          details: { itemIds: ["card.add:c1"], entityIds: { cards: ["c1"] } },
+          details: { itemIds: { ids: ["card.add:c1"] }, entityIds: { cards: { ids: ["c1"] } } },
         },
       ],
     });
@@ -400,6 +400,66 @@ describe("view metadata export", () => {
     expect(metadata.mergeAuditLog).toHaveLength(1);
     const result = validateImportViewMetadata(metadata);
     expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.mergeAuditLog).toHaveLength(1);
+      expect(result.metadata.mergeAuditLog?.[0]?.details.itemIds?.ids).toEqual(["card.add:c1"]);
+    }
   });
+
+  it("accepts legacy mergeAuditLog array-id format", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-legacy-audit",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      mergeAuditLog: [
+        {
+          id: "legacy-1",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          source: { kind: "unknown" },
+          summary: { totalItems: 1, byKind: { "card.add": 1 } },
+          details: { itemIds: ["card.add:c1"], entityIds: { cards: ["c1"] } },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.mergeAuditLog?.[0]?.details.itemIds?.ids).toEqual(["card.add:c1"]);
+    }
+  });
+
+  it("keeps backward compatibility when mergeAuditLog is missing", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-no-audit",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.mergeAuditLog).toBeUndefined();
+    }
+  });
+
 
 });

@@ -3,16 +3,23 @@ import type { MergeItem } from "../../diff/merge_items";
 export const MERGE_AUDIT_LOG_LIMIT = 50;
 export const MERGE_AUDIT_DETAILS_LIMIT = 200;
 
+type MergeAuditWarning = "stripped_disallowed_fields";
+
 export type MergeAuditSource = {
   kind: "zip" | "unknown";
   fileName?: string;
   packId?: string;
 };
 
+export type MergeAuditIdList = {
+  ids: string[];
+  truncatedCount?: number;
+};
+
 export type MergeAuditEntityIds = {
-  cards?: string[];
-  islands?: string[];
-  evidence?: string[];
+  cards?: MergeAuditIdList;
+  islands?: MergeAuditIdList;
+  evidence?: MergeAuditIdList;
 };
 
 export type MergeAuditEntry = {
@@ -22,29 +29,209 @@ export type MergeAuditEntry = {
   summary: {
     totalItems: number;
     byKind: Record<string, number>;
+    warnings?: MergeAuditWarning[];
   };
   details: {
-    itemIds?: string[];
+    itemIds?: MergeAuditIdList;
     entityIds?: MergeAuditEntityIds;
   };
-  notes?: string;
 };
 
-function toLimitedUnique(values: string[], limit: number): string[] {
+export type MergeAuditAppendOptions = {
+  maxEntries?: number;
+  maxIdsPerEntry?: number;
+};
+
+const DISALLOWED_FIELD_NAMES = new Set(["text", "body", "content", "summarytext"]);
+
+function isDisallowedFieldName(value: string): boolean {
+  const normalized = value.toLowerCase().replace(/[^a-z]/g, "");
+  if (DISALLOWED_FIELD_NAMES.has(normalized)) {
+    return true;
+  }
+
+  return normalized.endsWith("text") || normalized.endsWith("body") || normalized.endsWith("content") || normalized.endsWith("summarytext");
+}
+
+function assertNoDisallowedText(value: unknown, path: string): void {
+  if (!import.meta.env.DEV || !value || typeof value !== "object") {
+    return;
+  }
+
+  for (const [key, nextValue] of Object.entries(value as Record<string, unknown>)) {
+    if (isDisallowedFieldName(key)) {
+      throw new Error(`merge audit privacy guard rejected \"${path}.${key}\"`);
+    }
+
+    assertNoDisallowedText(nextValue, `${path}.${key}`);
+  }
+}
+
+function dedupe(values: string[]): string[] {
   const next: string[] = [];
   const seen = new Set<string>();
   for (const value of values) {
     if (seen.has(value)) {
       continue;
     }
+
     seen.add(value);
     next.push(value);
-    if (next.length >= limit) {
-      break;
-    }
   }
 
   return next;
+}
+
+function toLimitedIdList(values: string[], limit: number): MergeAuditIdList | undefined {
+  const unique = dedupe(values);
+  if (unique.length === 0) {
+    return undefined;
+  }
+
+  const ids = unique.slice(0, limit);
+  const truncatedCount = unique.length - ids.length;
+  return {
+    ids,
+    ...(truncatedCount > 0 ? { truncatedCount } : {}),
+  };
+}
+
+function hasAnyEntityIds(value: MergeAuditEntityIds): boolean {
+  return Boolean(value.cards || value.islands || value.evidence);
+}
+
+function addWarning(summary: MergeAuditEntry["summary"], warning: MergeAuditWarning): MergeAuditEntry["summary"] {
+  const warnings = summary.warnings ?? [];
+  if (warnings.includes(warning)) {
+    return summary;
+  }
+
+  return { ...summary, warnings: [...warnings, warning] };
+}
+
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+function sanitizeEntry(input: unknown, maxIdsPerEntry: number): MergeAuditEntry | null {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const candidate = input as Record<string, unknown>;
+  if (typeof candidate.id !== "string" || typeof candidate.createdAt !== "string") {
+    return null;
+  }
+
+  const sourceRaw = candidate.source;
+  if (!sourceRaw || typeof sourceRaw !== "object") {
+    return null;
+  }
+
+  const source = sourceRaw as Record<string, unknown>;
+  if (source.kind !== "zip" && source.kind !== "unknown") {
+    return null;
+  }
+
+  const summaryRaw = candidate.summary;
+  if (!summaryRaw || typeof summaryRaw !== "object") {
+    return null;
+  }
+
+  const summaryInput = summaryRaw as Record<string, unknown>;
+  if (typeof summaryInput.totalItems !== "number" || !Number.isFinite(summaryInput.totalItems)) {
+    return null;
+  }
+
+  if (!summaryInput.byKind || typeof summaryInput.byKind !== "object" || Array.isArray(summaryInput.byKind)) {
+    return null;
+  }
+
+  const byKind: Record<string, number> = {};
+  for (const [kind, count] of Object.entries(summaryInput.byKind as Record<string, unknown>)) {
+    if (typeof count !== "number" || !Number.isFinite(count)) {
+      return null;
+    }
+
+    byKind[kind] = count;
+  }
+
+  let summary: MergeAuditEntry["summary"] = {
+    totalItems: summaryInput.totalItems,
+    byKind,
+  };
+
+  const detailsInput = candidate.details && typeof candidate.details === "object" ? (candidate.details as Record<string, unknown>) : {};
+  const entityInput = detailsInput.entityIds && typeof detailsInput.entityIds === "object"
+    ? (detailsInput.entityIds as Record<string, unknown>)
+    : {};
+
+  const itemIds = Array.isArray(detailsInput.itemIds)
+    ? toLimitedIdList(readStringArray(detailsInput.itemIds), maxIdsPerEntry)
+    : toLimitedIdList(readStringArray((detailsInput.itemIds as Record<string, unknown> | undefined)?.ids), maxIdsPerEntry);
+  const cards = Array.isArray(entityInput.cards)
+    ? toLimitedIdList(readStringArray(entityInput.cards), maxIdsPerEntry)
+    : toLimitedIdList(readStringArray((entityInput.cards as Record<string, unknown> | undefined)?.ids), maxIdsPerEntry);
+  const islands = Array.isArray(entityInput.islands)
+    ? toLimitedIdList(readStringArray(entityInput.islands), maxIdsPerEntry)
+    : toLimitedIdList(readStringArray((entityInput.islands as Record<string, unknown> | undefined)?.ids), maxIdsPerEntry);
+  const evidence = Array.isArray(entityInput.evidence)
+    ? toLimitedIdList(readStringArray(entityInput.evidence), maxIdsPerEntry)
+    : toLimitedIdList(readStringArray((entityInput.evidence as Record<string, unknown> | undefined)?.ids), maxIdsPerEntry);
+
+  const entityIds: MergeAuditEntityIds = {
+    ...(cards ? { cards } : {}),
+    ...(islands ? { islands } : {}),
+    ...(evidence ? { evidence } : {}),
+  };
+
+  const hasDisallowedFields = (() => {
+    const check = (value: unknown): boolean => {
+      if (!value || typeof value !== "object") {
+        return false;
+      }
+
+      for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        if (isDisallowedFieldName(key)) {
+          return true;
+        }
+
+        if (check(child)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
+    return check(candidate);
+  })();
+
+  if (hasDisallowedFields) {
+    summary = addWarning(summary, "stripped_disallowed_fields");
+  }
+
+  const sanitized: MergeAuditEntry = {
+    id: candidate.id,
+    createdAt: candidate.createdAt,
+    source: {
+      kind: source.kind,
+      ...(typeof source.fileName === "string" ? { fileName: source.fileName } : {}),
+      ...(typeof source.packId === "string" ? { packId: source.packId } : {}),
+    },
+    summary,
+    details: {
+      ...(itemIds ? { itemIds } : {}),
+      ...(hasAnyEntityIds(entityIds) ? { entityIds } : {}),
+    },
+  };
+
+  assertNoDisallowedText(sanitized, "mergeAuditEntry");
+  return sanitized;
 }
 
 export function createMergeAuditEntry(selectedItems: MergeItem[], source?: MergeAuditSource, createdAt?: string): MergeAuditEntry {
@@ -66,14 +253,9 @@ export function createMergeAuditEntry(selectedItems: MergeItem[], source?: Merge
     }
   }
 
-  const itemIds = toLimitedUnique(selectedItems.map((item) => item.id), MERGE_AUDIT_DETAILS_LIMIT);
-  const cards = toLimitedUnique(cardIds, MERGE_AUDIT_DETAILS_LIMIT);
-  const islands = toLimitedUnique(islandIds, MERGE_AUDIT_DETAILS_LIMIT);
-  const evidence = toLimitedUnique(evidenceIds, MERGE_AUDIT_DETAILS_LIMIT);
-
   const timestamp = createdAt ?? new Date().toISOString();
 
-  return {
+  return sanitizeEntry({
     id: `merge-${timestamp}-${Math.random().toString(16).slice(2, 10)}`,
     createdAt: timestamp,
     source: source ?? { kind: "unknown" },
@@ -82,125 +264,57 @@ export function createMergeAuditEntry(selectedItems: MergeItem[], source?: Merge
       byKind,
     },
     details: {
-      itemIds,
+      itemIds: selectedItems.map((item) => item.id),
       entityIds: {
-        ...(cards.length > 0 ? { cards } : {}),
-        ...(islands.length > 0 ? { islands } : {}),
-        ...(evidence.length > 0 ? { evidence } : {}),
+        cards: cardIds,
+        islands: islandIds,
+        evidence: evidenceIds,
       },
     },
+  }, MERGE_AUDIT_DETAILS_LIMIT) as MergeAuditEntry;
+}
+
+export function appendMergeAuditEntry<T extends { mergeAuditLog?: MergeAuditEntry[] }>(
+  viewState: T,
+  entry: MergeAuditEntry,
+  options?: MergeAuditAppendOptions,
+): T {
+  const maxEntries = options?.maxEntries ?? MERGE_AUDIT_LOG_LIMIT;
+  const maxIdsPerEntry = options?.maxIdsPerEntry ?? MERGE_AUDIT_DETAILS_LIMIT;
+  const current = sanitizeMergeAuditLog(viewState.mergeAuditLog, { maxEntries, maxIdsPerEntry });
+  const safeEntry = sanitizeEntry(entry, maxIdsPerEntry);
+  if (!safeEntry) {
+    return { ...viewState, mergeAuditLog: current };
+  }
+
+  const nextEntries = [...current, safeEntry];
+  return {
+    ...viewState,
+    mergeAuditLog: nextEntries.length > maxEntries ? nextEntries.slice(nextEntries.length - maxEntries) : nextEntries,
   };
 }
 
 export function appendMergeAuditLog(current: MergeAuditEntry[] | undefined, entry: MergeAuditEntry): MergeAuditEntry[] {
-  const base = current ?? [];
-  const next = [...base, entry];
-  if (next.length <= MERGE_AUDIT_LOG_LIMIT) {
-    return next;
-  }
-
-  return next.slice(next.length - MERGE_AUDIT_LOG_LIMIT);
+  return appendMergeAuditEntry({ mergeAuditLog: current }, entry).mergeAuditLog ?? [];
 }
 
-export function sanitizeMergeAuditLog(value: unknown): MergeAuditEntry[] {
+export function sanitizeMergeAuditLog(value: unknown, options?: MergeAuditAppendOptions): MergeAuditEntry[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
+  const maxEntries = options?.maxEntries ?? MERGE_AUDIT_LOG_LIMIT;
+  const maxIdsPerEntry = options?.maxIdsPerEntry ?? MERGE_AUDIT_DETAILS_LIMIT;
+
   const entries: MergeAuditEntry[] = [];
   for (const item of value) {
-    if (!item || typeof item !== "object") {
+    const sanitized = sanitizeEntry(item, maxIdsPerEntry);
+    if (!sanitized) {
       continue;
     }
 
-    const candidate = item as Record<string, unknown>;
-    if (typeof candidate.id !== "string" || typeof candidate.createdAt !== "string") {
-      continue;
-    }
-
-    const sourceRaw = candidate.source;
-    if (!sourceRaw || typeof sourceRaw !== "object") {
-      continue;
-    }
-    const source = sourceRaw as Record<string, unknown>;
-    if (source.kind !== "zip" && source.kind !== "unknown") {
-      continue;
-    }
-
-    const summaryRaw = candidate.summary;
-    if (!summaryRaw || typeof summaryRaw !== "object") {
-      continue;
-    }
-    const summary = summaryRaw as Record<string, unknown>;
-    if (typeof summary.totalItems !== "number" || !Number.isFinite(summary.totalItems)) {
-      continue;
-    }
-    if (!summary.byKind || typeof summary.byKind !== "object" || Array.isArray(summary.byKind)) {
-      continue;
-    }
-
-    const byKind: Record<string, number> = {};
-    let byKindValid = true;
-    for (const [key, count] of Object.entries(summary.byKind as Record<string, unknown>)) {
-      if (typeof count !== "number" || !Number.isFinite(count)) {
-        byKindValid = false;
-        break;
-      }
-      byKind[key] = count;
-    }
-    if (!byKindValid) {
-      continue;
-    }
-
-    const detailsRaw = candidate.details;
-    const details = detailsRaw && typeof detailsRaw === "object" ? (detailsRaw as Record<string, unknown>) : {};
-    const itemIds = Array.isArray(details.itemIds)
-      ? toLimitedUnique(details.itemIds.filter((entry): entry is string => typeof entry === "string"), MERGE_AUDIT_DETAILS_LIMIT)
-      : undefined;
-
-    const entityIdsRaw = details.entityIds;
-    const entityIdsRecord = entityIdsRaw && typeof entityIdsRaw === "object" ? (entityIdsRaw as Record<string, unknown>) : {};
-    const cards = Array.isArray(entityIdsRecord.cards)
-      ? toLimitedUnique(entityIdsRecord.cards.filter((entry): entry is string => typeof entry === "string"), MERGE_AUDIT_DETAILS_LIMIT)
-      : undefined;
-    const islands = Array.isArray(entityIdsRecord.islands)
-      ? toLimitedUnique(entityIdsRecord.islands.filter((entry): entry is string => typeof entry === "string"), MERGE_AUDIT_DETAILS_LIMIT)
-      : undefined;
-    const evidence = Array.isArray(entityIdsRecord.evidence)
-      ? toLimitedUnique(entityIdsRecord.evidence.filter((entry): entry is string => typeof entry === "string"), MERGE_AUDIT_DETAILS_LIMIT)
-      : undefined;
-
-    entries.push({
-      id: candidate.id,
-      createdAt: candidate.createdAt,
-      source: {
-        kind: source.kind,
-        ...(typeof source.fileName === "string" ? { fileName: source.fileName } : {}),
-        ...(typeof source.packId === "string" ? { packId: source.packId } : {}),
-      },
-      summary: {
-        totalItems: summary.totalItems,
-        byKind,
-      },
-      details: {
-        ...(itemIds && itemIds.length > 0 ? { itemIds } : {}),
-        ...((cards && cards.length > 0) || (islands && islands.length > 0) || (evidence && evidence.length > 0)
-          ? {
-            entityIds: {
-              ...(cards && cards.length > 0 ? { cards } : {}),
-              ...(islands && islands.length > 0 ? { islands } : {}),
-              ...(evidence && evidence.length > 0 ? { evidence } : {}),
-            },
-          }
-          : {}),
-      },
-      ...(typeof candidate.notes === "string" ? { notes: candidate.notes } : {}),
-    });
+    entries.push(sanitized);
   }
 
-  if (entries.length <= MERGE_AUDIT_LOG_LIMIT) {
-    return entries;
-  }
-
-  return entries.slice(entries.length - MERGE_AUDIT_LOG_LIMIT);
+  return entries.length > maxEntries ? entries.slice(entries.length - maxEntries) : entries;
 }
