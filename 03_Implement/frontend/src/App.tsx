@@ -413,7 +413,10 @@ function clipSnippet(value: string | undefined, maxLength = 80): string {
   return `${text.slice(0, maxLength)}…`;
 }
 
-function formatPatchEntitySnippet(value: unknown): string {
+function formatPatchEntitySnippet(value: unknown, safeMode: boolean): string {
+  if (safeMode) {
+    return "[REDACTED]";
+  }
   if (!value || typeof value !== "object") {
     return "(none)";
   }
@@ -446,7 +449,8 @@ function buildPatchPreviewItems(
   selectedOpIdSet: Set<string>,
   conflictByOpId: Map<string, ConflictItem>,
   resolutions: Record<string, PatchResolution>,
-  lintIssuesByOpId: Map<string, PatchLintIssue[]>
+  lintIssuesByOpId: Map<string, PatchLintIssue[]>,
+  safeMode: boolean
 ): PatchPreviewItem[] {
   return patch.ops.map((op) => {
     const conflict = conflictByOpId.get(op.id);
@@ -463,9 +467,9 @@ function buildPatchPreviewItems(
       lintErrorCount: lintIssues.filter((item) => item.severity === "error").length,
       lintIssueCodes: lintIssues.map((item) => item.code),
       reason: conflict?.reason,
-      baseSnippet: conflict ? formatPatchEntitySnippet(conflict.baseValue) : undefined,
-      yourSnippet: conflict ? formatPatchEntitySnippet(conflict.yourValue) : undefined,
-      theirSnippet: conflict ? formatPatchEntitySnippet(conflict.theirValue) : undefined,
+      baseSnippet: conflict ? formatPatchEntitySnippet(conflict.baseValue, safeMode) : undefined,
+      yourSnippet: conflict ? formatPatchEntitySnippet(conflict.yourValue, safeMode) : undefined,
+      theirSnippet: conflict ? formatPatchEntitySnippet(conflict.theirValue, safeMode) : undefined,
       resolution: conflict ? resolutions[op.id] : undefined,
     };
   });
@@ -1118,8 +1122,8 @@ export default function App() {
       return [] as PatchPreviewItem[];
     }
 
-    return buildPatchPreviewItems(pendingPatchImport.patch, patchSelectedOpIdSet, patchConflictByOpId, patchResolutionsByOpId, patchLintIssuesByOpId);
-  }, [patchConflictByOpId, patchLintIssuesByOpId, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport]);
+    return buildPatchPreviewItems(pendingPatchImport.patch, patchSelectedOpIdSet, patchConflictByOpId, patchResolutionsByOpId, patchLintIssuesByOpId, safeMode);
+  }, [patchConflictByOpId, patchLintIssuesByOpId, patchResolutionsByOpId, patchSelectedOpIdSet, pendingPatchImport, safeMode]);
   const patchConflictWarning = useMemo(() => {
     if (!pendingPatchImport) {
       return null;
@@ -2560,6 +2564,7 @@ ${parsedDocument.error}`);
         URL.revokeObjectURL(previousSnapshotUrl);
       }
       applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, "Review pack imported");
+      setSafeMode(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unsupported format";
       if (error instanceof ZipImportError) {
@@ -5296,6 +5301,7 @@ ${parsedDocument.error}`);
         lod: currentLod?.level ?? null,
       },
       {
+        context: "share",
         includeCardTexts: outlineIncludeCardTexts,
         includeRelationSummaries: outlineIncludeRelationSummaries,
         includeUnreviewedSummaries: outlineIncludeUnreviewed,
@@ -5329,7 +5335,8 @@ ${parsedDocument.error}`);
     }
 
     try {
-      await navigator.clipboard.writeText(outline);
+      const safeText = safeMode ? outline : outline;
+      await navigator.clipboard.writeText(safeText);
       setStatusMessage("Copied reading outline (Markdown)");
     } catch {
       setStatusMessage("Failed to copy reading outline");
@@ -6080,7 +6087,7 @@ ${parsedDocument.error}`);
           readingIndex,
           readingMode,
           reviewedOnly,
-          safeMode,
+          safeMode: safeMode ?? true,
           lodEnabled,
           lodThresholds,
           lodLevelOverride,
@@ -6157,7 +6164,7 @@ ${parsedDocument.error}`);
           readingIndex,
           readingMode,
           reviewedOnly,
-          safeMode,
+          safeMode: safeMode ?? true,
           lodEnabled,
           lodThresholds,
           lodLevelOverride,
@@ -6185,7 +6192,7 @@ ${parsedDocument.error}`);
         await ctx.yieldToMainThread();
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
           rootFolderPath,
-          safeMode,
+          safeMode: safeMode ?? true,
           includeOutline: options.includeOutline,
           includeDiagnostics: options.includeDiagnostics,
           includeSelectedCardTraces: options.includeSelectedCardTraces,
@@ -6198,7 +6205,7 @@ ${parsedDocument.error}`);
             readingIndex,
             readingMode,
             reviewedOnly,
-            safeMode,
+            safeMode: safeMode ?? true,
             lod: currentLod?.level ?? null,
             generatedAt: deterministicNowIso,
           },
@@ -6673,6 +6680,13 @@ ${parsedDocument.error}`);
   }, [downloadViewMetadata, getVisibleBoundsExportArea]);
 
   const handleSafeModeChange = useCallback((nextValue: boolean) => {
+    if (!nextValue) {
+      const confirmed = window.confirm("May include draft/unreviewed text. Do you want to proceed?");
+      if (!confirmed) {
+        return;
+      }
+    }
+
     setSafeMode(nextValue);
     if (nextValue) {
       setIncludeUnreviewedDraftsInExport(false);
@@ -6926,6 +6940,7 @@ ${parsedDocument.error}`);
         void handleExportAbstractMapHtmlWithPng();
       }}
       safeMode={safeMode}
+      onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
       onExportViewViewport={handleExportViewMetadataViewport}

@@ -1,3 +1,4 @@
+import { SafeModePolicy } from "../domain/policy/safe_mode";
 import { analyzeContradictions } from "../domain/view/contradiction_checks";
 import { analyzeDialecticBalance } from "../domain/view/dialectic_balance";
 import { analyzeDistribution } from "../domain/view/distribution_checks";
@@ -8,7 +9,10 @@ import type { DiagnosticsData, DiagnosticsRequestPayload } from "./diagnostics_p
 function toSafeOutline(data: DiagnosticsData["outlineReport"]): DiagnosticsData["outlineReport"] {
   return {
     ...data,
-    findings: data.findings.map((finding) => ({ ...finding, detail: "" })),
+    findings: data.findings.map((finding) => ({
+      ...finding,
+      detail: SafeModePolicy.redactText(finding.detail, true),
+    })),
   };
 }
 
@@ -21,6 +25,9 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
   for (const finding of data.outlineReport.findings) {
     const refs = (finding.entityRefs ?? []).map((ref) => `${ref.kind}:${ref.id}`).sort();
     lines.push(`- [${finding.severity.toUpperCase()}] ${finding.code}: ${finding.title}`);
+    if (finding.detail.trim().length > 0 && SafeModePolicy.canExposeText("diagnostics.detail", "ui", false)) {
+      lines.push(`  - detail: ${finding.detail}`);
+    }
     if (refs.length > 0) {
       lines.push(`  - refs: ${refs.join(", ")}`);
     }

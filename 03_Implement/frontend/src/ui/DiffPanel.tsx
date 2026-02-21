@@ -1,3 +1,4 @@
+import { SafeModePolicy } from "../domain/policy/safe_mode";
 import type { DiffResult } from "../domain/diff/doc_diff";
 import type { DocumentV2 } from "../domain/types";
 
@@ -9,9 +10,13 @@ type DiffPanelProps = {
   currentIslandIdSet: Set<string>;
   onLoadComparisonDocument: () => void;
   onJumpToItem: (kind: "card" | "island", id: string) => void;
+  safeMode: boolean;
 };
 
-function formatPreview(value: string | undefined): string {
+function formatPreview(value: string | undefined, safeMode: boolean): string {
+  if (safeMode && !SafeModePolicy.canExposeText("card.text", "diff", true)) {
+    return SafeModePolicy.redactText(value ?? "", true);
+  }
   const text = value ?? "";
   if (text.length <= 120) {
     return text;
@@ -58,6 +63,7 @@ export function DiffPanel({
   currentIslandIdSet,
   onLoadComparisonDocument,
   onJumpToItem,
+  safeMode,
 }: DiffPanelProps) {
   const hasComparisonDocument = Boolean(comparisonDocument);
 
@@ -115,15 +121,15 @@ export function DiffPanel({
                   text changed: {renderItemReference("card", entry.id, currentCardIdSet.has(entry.id), onJumpToItem)}
                   <details>
                     <summary>
-                      <span style={{ color: "#475569" }}>A:</span> {formatPreview(entry.aText)} <span style={{ color: "#475569" }}>B:</span>{" "}
-                      {formatPreview(entry.bText)}
+                      <span style={{ color: "#475569" }}>A:</span> {formatPreview(entry.aText, safeMode)} <span style={{ color: "#475569" }}>B:</span>{" "}
+                      {formatPreview(entry.bText, safeMode)}
                     </summary>
                     <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>
                       <div>
-                        <strong>A</strong>: {entry.aText}
+                        <strong>A</strong>: {safeMode ? SafeModePolicy.redactText(entry.aText, true) : entry.aText}
                       </div>
                       <div>
-                        <strong>B</strong>: {entry.bText}
+                        <strong>B</strong>: {safeMode ? SafeModePolicy.redactText(entry.bText, true) : entry.bText}
                       </div>
                     </div>
                   </details>
@@ -171,14 +177,14 @@ export function DiffPanel({
                   summary changed: {renderItemReference("island", entry.id, currentIslandIdSet.has(entry.id), onJumpToItem)}
                   <details>
                     <summary>
-                      A[{String(entry.aReviewed)}]: {formatPreview(entry.aSummary)} / B[{String(entry.bReviewed)}]: {formatPreview(entry.bSummary)}
+                      A[{String(entry.aReviewed)}]: {formatPreview(entry.aSummary, safeMode)} / B[{String(entry.bReviewed)}]: {formatPreview(entry.bSummary, safeMode)}
                     </summary>
                     <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>
                       <div>
-                        <strong>A</strong> [{String(entry.aReviewed)}]: {entry.aSummary ?? ""}
+                        <strong>A</strong> [{String(entry.aReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.aSummary ?? "", true) : entry.aSummary ?? ""}
                       </div>
                       <div>
-                        <strong>B</strong> [{String(entry.bReviewed)}]: {entry.bSummary ?? ""}
+                        <strong>B</strong> [{String(entry.bReviewed)}]: {safeMode ? SafeModePolicy.redactText(entry.bSummary ?? "", true) : entry.bSummary ?? ""}
                       </div>
                     </div>
                   </details>
@@ -201,15 +207,15 @@ export function DiffPanel({
                   text changed: {entry.id}
                   <details>
                     <summary>
-                      <span style={{ color: "#475569" }}>A:</span> {formatPreview(entry.aText)} <span style={{ color: "#475569" }}>B:</span>{" "}
-                      {formatPreview(entry.bText)}
+                      <span style={{ color: "#475569" }}>A:</span> {formatPreview(entry.aText, safeMode)} <span style={{ color: "#475569" }}>B:</span>{" "}
+                      {formatPreview(entry.bText, safeMode)}
                     </summary>
                     <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>
                       <div>
-                        <strong>A</strong>: {entry.aText}
+                        <strong>A</strong>: {safeMode ? SafeModePolicy.redactText(entry.aText, true) : entry.aText}
                       </div>
                       <div>
-                        <strong>B</strong>: {entry.bText}
+                        <strong>B</strong>: {safeMode ? SafeModePolicy.redactText(entry.bText, true) : entry.bText}
                       </div>
                     </div>
                   </details>

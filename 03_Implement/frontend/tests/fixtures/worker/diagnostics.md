@@ -7,10 +7,13 @@
 - pathLength: 4
 - findings: 3
 - [WARN] Q002: Many islands are missing summaries
+  - detail: [REDACTED] (len:51)
   - refs: island:i1
 - [WARN] Q003: Unreviewed summaries dominate
+  - detail: [REDACTED] (len:54)
   - refs: island:i1
 - [WARN] Q005: Many islands are disconnected
+  - detail: [REDACTED] (len:67)
   - refs: island:i1
 
 ## Recommendations (I11)

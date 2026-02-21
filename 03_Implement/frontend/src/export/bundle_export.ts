@@ -20,7 +20,7 @@ export type BundleFile = {
 
 export type BundleExportContext = {
   rootFolderPath: string;
-  safeMode: boolean;
+  safeMode?: boolean;
   includeOutline: boolean;
   includeDiagnostics: boolean;
   includeSelectedCardTraces: boolean;
@@ -148,13 +148,14 @@ function summarizeDialecticBalance(report: DialecticBalanceReport): string[] {
 }
 
 function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): string {
+  const safeMode = context.safeMode ?? true;
   const outlineReport = context.outlineQualityReport ?? analyzeOutlineQuality(doc, { readingMode: context.readingMode, reviewedOnly: context.reviewedOnly }, { nowIso: context.deterministicNowIso });
   const contradictionReport = context.contradictionReport ?? analyzeContradictions(doc, context.deterministicNowIso);
   const distributionReport = context.distributionReport ?? analyzeDistribution(doc, context.deterministicNowIso);
   const dialecticBalanceReport = context.dialecticBalanceReport ?? analyzeDialecticBalance(doc, context.deterministicNowIso);
 
   const lines: string[] = ["# Diagnostics", ""];
-  lines.push(...summarizeOutlineQuality(outlineReport, context.safeMode));
+  lines.push(...summarizeOutlineQuality(outlineReport, safeMode));
   lines.push(...summarizeRecommendations(doc, outlineReport, context.readingMode, context.reviewedOnly));
   lines.push(...summarizeContradictions(contradictionReport));
   lines.push(...summarizeDistribution(distributionReport));
@@ -163,6 +164,7 @@ function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): stri
 }
 
 export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: BundleExportContext): BundleFile[] {
+  const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/document.json`, doc),
@@ -172,7 +174,8 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(doc, context.readingState, {
       ...context.outlineOptions,
-      includeUnreviewedSummaries: context.safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
+      context: "share",
+      includeUnreviewedSummaries: safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
     });
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
@@ -186,7 +189,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
   }
 
   if (context.includeSelectedCardTraces && context.selectedCardId) {
-    const evidenceTrace = buildEvidenceTraceMd(doc, context.selectedCardId);
+    const evidenceTrace = buildEvidenceTraceMd(doc, context.selectedCardId, { safeMode });
     if (!evidenceTrace.startsWith("Error:")) {
       bundleFiles.push({
         path: `${root}/evidence_trace_${context.selectedCardId}.md`,
@@ -195,7 +198,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
       });
     }
 
-    const contradictionTrace = buildContradictionTraceMd(doc, context.selectedCardId);
+    const contradictionTrace = buildContradictionTraceMd(doc, context.selectedCardId, { safeMode });
     if (!contradictionTrace.startsWith("Error:")) {
       bundleFiles.push({
         path: `${root}/contradiction_trace_${context.selectedCardId}.md`,
@@ -213,7 +216,8 @@ export async function buildExportBundleWithWorkers(
   viewState: unknown,
   context: BundleExportContext,
   options: { signal?: AbortSignal; onProgress?: (message: string) => void } = {}
-): Promise<BundleFile[]> {
+ ): Promise<BundleFile[]> {
+  const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/document.json`, doc),
@@ -222,7 +226,8 @@ export async function buildExportBundleWithWorkers(
   if (context.includeOutline) {
     const outline = buildReadingOutlineMd(doc, context.readingState, {
       ...context.outlineOptions,
-      includeUnreviewedSummaries: context.safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
+      context: "share",
+      includeUnreviewedSummaries: safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
     });
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
@@ -239,7 +244,7 @@ export async function buildExportBundleWithWorkers(
           reviewedOnly: context.reviewedOnly,
           collapsedIslandIds: [],
         },
-        options: { safeMode: context.safeMode, deterministicNowIso: context.deterministicNowIso },
+        options: { safeMode, deterministicNowIso: context.deterministicNowIso },
       }, { signal: options.signal });
       if (diagnosticsOutcome.status === "cancelled") {
         throw new Error("Diagnostics generation cancelled");
@@ -252,7 +257,7 @@ export async function buildExportBundleWithWorkers(
         startCardId: context.selectedCardId,
         maxHops: 4,
         maxNodes: 80,
-        safeMode: context.safeMode,
+        safeMode,
         includeRationale: false,
       };
       options.onProgress?.("Generating evidence trace...");
