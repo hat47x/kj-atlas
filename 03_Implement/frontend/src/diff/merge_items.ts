@@ -1,4 +1,5 @@
 import type { Card, DocumentV2, Edge, EvidenceLink, Island, RelationSummary } from "../domain/types";
+import type { ComputeTaskContext } from "../utils/compute_scheduler";
 
 export type MergeEntityKind = "card" | "island" | "edge" | "evidence" | "view" | "relationSummary";
 export type MergeItemKind =
@@ -152,4 +153,66 @@ export function buildMergeItems(baseDoc: DocumentV2, incomingDoc: DocumentV2): M
       : [{ id: "view.field:readingOrder", kind: "view.field", entityRef: { kind: "view", id: "document" }, field: "readingOrder", before: readingOrderBefore, after: readingOrderAfter, prerequisites: [] }];
 
   return attachPrerequisites(baseDoc, [...cardItems, ...islandItems, ...edgeItems, ...evidenceItems, ...relationItems, ...viewItems]);
+}
+
+export async function buildMergeItemsIncremental(
+  baseDoc: DocumentV2,
+  incomingDoc: DocumentV2,
+  ctx: ComputeTaskContext,
+  guardrails: { maxNodes?: number; maxMs?: number } = {}
+): Promise<{ items: MergeItem[]; truncated: boolean; notes: string[] }> {
+  const maxNodes = Math.max(1, Math.floor(guardrails.maxNodes ?? 5000));
+  const maxMs = Math.max(1, Math.floor(guardrails.maxMs ?? 2000));
+  const startedAt = Date.now();
+  const notes: string[] = [];
+
+  const groups: Array<{ label: string; compute: () => MergeItem[] }> = [
+    { label: "cards", compute: () => buildEntityItems("card", byId(baseDoc.cards), byId(incomingDoc.cards), "card", "card.add", "card.remove", "card.field") },
+    { label: "islands", compute: () => buildEntityItems("island", byId(baseDoc.islands), byId(incomingDoc.islands), "island", "island.add", "island.remove", "island.field") },
+    { label: "edges", compute: () => buildEntityItems("edge", byId(baseDoc.edges), byId(incomingDoc.edges), "edge", "edge.add", "edge.remove") },
+    {
+      label: "evidenceLinks",
+      compute: () => buildEntityItems("evidence", byId(baseDoc.evidenceLinks ?? []), byId(incomingDoc.evidenceLinks ?? []), "evidence", "evidence.add", "evidence.remove"),
+    },
+  ];
+
+  const items: MergeItem[] = [];
+  for (let index = 0; index < groups.length; index += 1) {
+    if (ctx.isCancelled()) {
+      return { items: [], truncated: true, notes: ["Cancelled"] };
+    }
+
+    const group = groups[index];
+    ctx.reportProgress({ message: `Computing diff: ${group.label}`, completed: index + 1, total: groups.length + 2 });
+    items.push(...group.compute());
+    if (items.length > maxNodes) {
+      notes.push(`Truncated due to node limit (${items.length}/${maxNodes}).`);
+      return { items: attachPrerequisites(baseDoc, items.slice(0, maxNodes)), truncated: true, notes };
+    }
+    await ctx.yieldToMainThread();
+  }
+
+  const relationItems = buildEntityItems(
+    "relationSummary",
+    relationSummaryBySignature(baseDoc.relationSummaries ?? []),
+    relationSummaryBySignature(incomingDoc.relationSummaries ?? []),
+    "relationSummary",
+    "relationSummary.field",
+    "relationSummary.field",
+    "relationSummary.field"
+  );
+  items.push(...relationItems);
+
+  const readingOrderBefore = baseDoc.readingOrder ?? [];
+  const readingOrderAfter = incomingDoc.readingOrder ?? [];
+  if (stableSerialize(readingOrderBefore) !== stableSerialize(readingOrderAfter)) {
+    items.push({ id: "view.field:readingOrder", kind: "view.field", entityRef: { kind: "view", id: "document" }, field: "readingOrder", before: readingOrderBefore, after: readingOrderAfter, prerequisites: [] });
+  }
+
+  const elapsedMs = Date.now() - startedAt;
+  if (elapsedMs > maxMs) {
+    notes.push(`Truncated due to time limit (${maxMs}ms).`);
+  }
+
+  return { items: attachPrerequisites(baseDoc, items), truncated: notes.length > 0, notes };
 }

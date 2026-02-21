@@ -16,6 +16,9 @@ type ReviewDiffPanelProps = {
   onApplySelected: () => void;
   onUndoLastMerge: () => void;
   canApply: boolean;
+  isComputingDiff: boolean;
+  onCancelDiff: () => void;
+  computeProgressMessage: string | null;
 };
 
 const statusStyleByCode = {
@@ -28,7 +31,7 @@ function groupOf(kind: MergeItem["kind"]): string {
   return kind.split(".")[0] ?? kind;
 }
 
-export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeItems, evaluations, selectedItemIds, autoIncludePrerequisites, onLoadComparisonDocument, onToggleAutoIncludePrerequisites, onItemCheckedChange, onGroupCheckedChange, onApplySelected, onUndoLastMerge, canApply }: ReviewDiffPanelProps) {
+export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeItems, evaluations, selectedItemIds, autoIncludePrerequisites, onLoadComparisonDocument, onToggleAutoIncludePrerequisites, onItemCheckedChange, onGroupCheckedChange, onApplySelected, onUndoLastMerge, canApply, isComputingDiff, onCancelDiff, computeProgressMessage }: ReviewDiffPanelProps) {
   const evaluationById = new Map(evaluations.map((entry) => [entry.item.id, entry]));
   const groups = [...new Set(mergeItems.map((item) => groupOf(item.kind)))];
 
@@ -39,7 +42,7 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
         Load comparison document (JSON)
       </button>
       {comparisonFileName ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>File: {comparisonFileName}</div> : null}
-      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>Items: {mergeItems.length}</div> : null}
+      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>Items: {mergeItems.length}{isComputingDiff ? " · Working..." : ""}</div> : null}{isComputingDiff ? <button type="button" onClick={onCancelDiff}>Cancel</button> : null}{isComputingDiff && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
 
       <label style={{ display: "block", fontSize: 12, marginBottom: 8 }}>
         <input type="checkbox" checked={autoIncludePrerequisites} onChange={(event) => onToggleAutoIncludePrerequisites(event.target.checked)} /> Auto-include prerequisites

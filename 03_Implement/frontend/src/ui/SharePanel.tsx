@@ -26,6 +26,9 @@ type SharePanelProps = {
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
   onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean }) => void;
+  isBundleExportRunning: boolean;
+  onCancelBundleExport: () => void;
+  computeProgressMessage: string | null;
   canIncludeTraces: boolean;
   onLoadViewMetadataFile: (file: File) => void;
   onLoadDocumentFile: (file: File) => void;
@@ -122,6 +125,9 @@ export function SharePanel({
   onExportViewViewport,
   onExportViewVisibleBounds,
   onExportBundleZip,
+  isBundleExportRunning,
+  onCancelBundleExport,
+  computeProgressMessage,
   canIncludeTraces,
   onLoadViewMetadataFile,
   onLoadDocumentFile,
@@ -367,10 +373,12 @@ export function SharePanel({
                     includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces,
                   });
                 }}
-                disabled={!hasDocument || isLoading}
+                disabled={!hasDocument || isLoading || isBundleExportRunning}
               >
-                Export bundle (.zip)
+                {isBundleExportRunning ? "Working..." : "Export bundle (.zip)"}
               </button>
+              {isBundleExportRunning ? <button type="button" onClick={onCancelBundleExport}>Cancel</button> : null}
+              {isBundleExportRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
             </div>
           </div>
 

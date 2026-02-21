@@ -74,13 +74,13 @@ import {
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
-import { analyzeOutlineQuality, type OutlineQualityReport } from "./domain/view/outline_quality";
+import type { OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
-import { analyzeContradictions, type ContradictionReport, type ContradictionSignal } from "./domain/view/contradiction_checks";
-import { analyzeDistribution, type DistributionReport } from "./domain/view/distribution_checks";
-import { analyzeClaimTypeMix, type ClaimType, type ClaimTypeMixReport } from "./domain/view/claim_type_checks";
-import { analyzeEvidenceGaps, type EvidenceGapReport } from "./domain/view/evidence_gap_checks";
-import { analyzeDialecticBalance, type BalanceFinding, type DialecticBalanceReport } from "./domain/view/dialectic_balance";
+import type { ContradictionReport, ContradictionSignal } from "./domain/view/contradiction_checks";
+import type { DistributionReport } from "./domain/view/distribution_checks";
+import type { ClaimType, ClaimTypeMixReport } from "./domain/view/claim_type_checks";
+import type { EvidenceGapReport } from "./domain/view/evidence_gap_checks";
+import type { BalanceFinding, DialecticBalanceReport } from "./domain/view/dialectic_balance";
 import {
   buildEvidenceAdjacency,
   getEvidenceNeighborhood,
@@ -95,7 +95,7 @@ import {
 } from "./domain/view/perspective";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
-import { buildMergeItems, type MergeItem } from "./diff/merge_items";
+import { buildMergeItemsIncremental, type MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
@@ -113,6 +113,8 @@ import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
+import { runDiagnosticsIncremental } from "./domain/view/diagnostics_runner";
+import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -951,11 +953,18 @@ export default function App() {
   const [patchExportAuthor, setPatchExportAuthor] = useState("");
   const [patchExportAuthorNote, setPatchExportAuthorNote] = useState("");
   const [selectedFixProposalIdSet, setSelectedFixProposalIdSet] = useState<Set<string>>(new Set());
+  const [isDiagnosticsRunning, setIsDiagnosticsRunning] = useState(false);
+  const [isBundleExportRunning, setIsBundleExportRunning] = useState(false);
+  const [isDiffComputing, setIsDiffComputing] = useState(false);
+  const [computeProgressMessage, setComputeProgressMessage] = useState<string | null>(null);
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
   const collapsedStateDocIdRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
+  const diagnosticsRunnerRef = useRef(createCancelableTaskRunner());
+  const bundleRunnerRef = useRef(createCancelableTaskRunner());
+  const diffRunnerRef = useRef(createCancelableTaskRunner());
 
   useEffect(() => {
     return () => {
@@ -976,12 +985,37 @@ export default function App() {
   const generatedNarratives = useMemo(() => document?.narratives ?? [], [document]);
   const isPreviewingSuggestion = Boolean(suggestedDocument) && isSuggestionPreviewEnabled;
   const visibleDocument = isPreviewingSuggestion && suggestedDocument ? suggestedDocument : document;
-  const mergeItems = useMemo(() => {
-    if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
-      return [] as MergeItem[];
+  const [mergeItems, setMergeItems] = useState<MergeItem[]>([]);
+
+  useEffect(() => {
+    if (!comparisonDocument || !reviewDiffBaseSnapshot) {
+      setMergeItems([]);
+      setIsDiffComputing(false);
+      return;
     }
 
-    return buildMergeItems(reviewDiffBaseSnapshot, comparisonDocument);
+    setIsDiffComputing(true);
+    const unsubscribe = diffRunnerRef.current.onProgress((progress) => {
+      setComputeProgressMessage(progress.message);
+    });
+    void diffRunnerRef.current.run(async (ctx) => {
+      const result = await buildMergeItemsIncremental(reviewDiffBaseSnapshot, comparisonDocument, ctx, { maxNodes: 5000, maxMs: 2000 });
+      return result;
+    }).then((outcome) => {
+      if (outcome.status === "cancelled") {
+        setStatusMessage("Diff computation cancelled");
+        return;
+      }
+
+      setMergeItems(outcome.result.items);
+      if (outcome.result.truncated) {
+        setStatusMessage(outcome.result.notes.join(" "));
+      }
+    }).finally(() => {
+      unsubscribe();
+      setIsDiffComputing(false);
+      setComputeProgressMessage(null);
+    });
   }, [comparisonDocument, reviewDiffBaseSnapshot]);
   const mergeEvaluation = useMemo(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
@@ -5095,26 +5129,34 @@ ${parsedDocument.error}`);
       return;
     }
 
-    const report = analyzeOutlineQuality(
-      document,
-      { readingMode, reviewedOnly },
-      { collapsedIslandIds },
-    );
-    const contradiction = analyzeContradictions(document);
-    const distribution = analyzeDistribution(document);
-    const claimTypeMix = analyzeClaimTypeMix(document);
-    const evidenceGaps = analyzeEvidenceGaps(document);
-    const dialecticBalance = analyzeDialecticBalance(document);
-    setOutlineQualityReport(report);
-    setContradictionReport(contradiction);
-    setDistributionReport(distribution);
-    setClaimTypeMixReport(claimTypeMix);
-    setEvidenceGapReport(evidenceGaps);
-    setDialecticBalanceReport(dialecticBalance);
+    setIsDiagnosticsRunning(true);
+    const unsubscribe = diagnosticsRunnerRef.current.onProgress((progress) => {
+      setComputeProgressMessage(progress.message);
+    });
 
-    const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
-    const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-    setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s), ${dialecticBalance.findings.length} dialectic balance signal(s)`);
+    void diagnosticsRunnerRef.current.run(async (ctx) => runDiagnosticsIncremental(document, { readingMode, reviewedOnly, collapsedIslandIds }, ctx, { maxNodes: 1000, maxMs: 2000 })).then((outcome) => {
+      if (outcome.status === "cancelled") {
+        setStatusMessage("Diagnostics cancelled");
+        return;
+      }
+
+      const { report, contradiction, distribution, claimTypeMix, evidenceGaps, dialecticBalance, truncated, notes } = outcome.result;
+      setOutlineQualityReport(report);
+      setContradictionReport(contradiction);
+      setDistributionReport(distribution);
+      setClaimTypeMixReport(claimTypeMix);
+      setEvidenceGapReport(evidenceGaps);
+      setDialecticBalanceReport(dialecticBalance);
+
+      const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
+      const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
+      const suffix = truncated ? ` (${notes.join(" ")})` : "";
+      setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s), ${dialecticBalance.findings.length} dialectic balance signal(s)${suffix}`);
+    }).finally(() => {
+      unsubscribe();
+      setIsDiagnosticsRunning(false);
+      setComputeProgressMessage(null);
+    });
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
   useEffect(() => {
@@ -6037,6 +6079,7 @@ ${parsedDocument.error}`);
     }
 
     try {
+      setIsBundleExportRunning(true);
       const exportTimestamp = formatBundleTimestamp(new Date());
       const rootFolderPath = `kj-atlas-export-${exportTimestamp}`;
       const deterministicNowIso = document.updatedAt || document.createdAt;
@@ -6075,7 +6118,11 @@ ${parsedDocument.error}`);
         mergeAuditLog,
       });
 
-      const files = buildExportBundle(document, viewMetadata, {
+      const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
+      const outcome = await bundleRunnerRef.current.run(async (ctx) => {
+        ctx.reportProgress({ message: "Working... building bundle", completed: 1, total: 3 });
+        await ctx.yieldToMainThread();
+        const files = buildExportBundle(document, viewMetadata, {
         rootFolderPath,
         safeMode,
         includeOutline: options.includeOutline,
@@ -6108,13 +6155,26 @@ ${parsedDocument.error}`);
         distributionReport,
         dialecticBalanceReport,
       });
-
-      const zipBlob = await buildBundleZipBlob(files);
+        ctx.reportProgress({ message: "Working... zipping bundle", completed: 2, total: 3 });
+        await ctx.yieldToMainThread();
+        const zipBlob = await buildBundleZipBlob(files);
+        return { files, zipBlob };
+      });
+      unsubscribe();
+      if (outcome.status === "cancelled") {
+        setStatusMessage("Bundle export cancelled");
+        return;
+      }
+      const { files, zipBlob } = outcome.result;
       downloadBlobAsFile(`${rootFolderPath}.zip`, zipBlob);
       setStatusMessage(`Exported bundle (${files.length} files)`);
+
     } catch (error) {
       const message = error instanceof Error ? error.message : "Bundle export failed";
       setStatusMessage(`Bundle export failed: ${message}`);
+    } finally {
+      setIsBundleExportRunning(false);
+      setComputeProgressMessage(null);
     }
   }, [
     abstractMapView,
@@ -6758,6 +6818,9 @@ ${parsedDocument.error}`);
       onApplySelected={handleApplySelectedMergeItems}
       onUndoLastMerge={handleUndoLastMerge}
       canApply={Boolean(document && comparisonDocument && mergeEvaluation.selectedIdsWithPrerequisites.size > 0 && !mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok"))}
+      isComputingDiff={isDiffComputing}
+      onCancelDiff={() => diffRunnerRef.current.cancel()}
+      computeProgressMessage={computeProgressMessage}
     />
   );
 
@@ -6793,6 +6856,9 @@ ${parsedDocument.error}`);
       onExportBundleZip={(options) => {
         void handleExportBundleZip(options);
       }}
+      isBundleExportRunning={isBundleExportRunning}
+      onCancelBundleExport={() => bundleRunnerRef.current.cancel()}
+      computeProgressMessage={computeProgressMessage}
       canIncludeTraces={Boolean(selectedCard)}
       onLoadViewMetadataFile={(file) => {
         void handleLoadViewMetadataFile(file);
@@ -7236,6 +7302,9 @@ ${parsedDocument.error}`);
           evidenceGapReport={evidenceGapReport}
           dialecticBalanceReport={dialecticBalanceReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
+          isDiagnosticsRunning={isDiagnosticsRunning}
+          onCancelDiagnostics={() => diagnosticsRunnerRef.current.cancel()}
+          computeProgressMessage={computeProgressMessage}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
           onFocusDistributionIsland={focusIslandById}

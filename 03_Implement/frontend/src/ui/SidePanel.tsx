@@ -156,6 +156,9 @@ type SidePanelProps = {
   evidenceGapReport: EvidenceGapReport | null;
   dialecticBalanceReport: DialecticBalanceReport | null;
   onRunOutlineDiagnostics: () => void;
+  isDiagnosticsRunning: boolean;
+  onCancelDiagnostics: () => void;
+  computeProgressMessage: string | null;
   onFocusOutlineDiagnosticRef: (kind: "island" | "card", id: string) => void;
   onFocusContradictionSignal: (signal: ContradictionSignal) => void;
   onFocusDistributionIsland: (islandId: string) => void;
@@ -304,6 +307,9 @@ export function SidePanel({
   evidenceGapReport,
   dialecticBalanceReport,
   onRunOutlineDiagnostics,
+  isDiagnosticsRunning,
+  onCancelDiagnostics,
+  computeProgressMessage,
   onFocusOutlineDiagnosticRef,
   onFocusContradictionSignal,
   onFocusDistributionIsland,
@@ -1127,7 +1133,7 @@ export function SidePanel({
             />
             Append recommendations
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
+          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? "Working..." : "Run diagnostics"}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>Cancel</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1448,7 +1454,7 @@ export function SidePanel({
             />
             Append recommendations
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics}>Run diagnostics</button>
+          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? "Working..." : "Run diagnostics"}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>Cancel</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
