@@ -19,6 +19,8 @@ type ReviewDiffPanelProps = {
   isComputingDiff: boolean;
   onCancelDiff: () => void;
   computeProgressMessage: string | null;
+  computeProgressPercent: number;
+  isFallbackMode: boolean;
 };
 
 const statusStyleByCode = {
@@ -31,7 +33,7 @@ function groupOf(kind: MergeItem["kind"]): string {
   return kind.split(".")[0] ?? kind;
 }
 
-export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeItems, evaluations, selectedItemIds, autoIncludePrerequisites, onLoadComparisonDocument, onToggleAutoIncludePrerequisites, onItemCheckedChange, onGroupCheckedChange, onApplySelected, onUndoLastMerge, canApply, isComputingDiff, onCancelDiff, computeProgressMessage }: ReviewDiffPanelProps) {
+export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeItems, evaluations, selectedItemIds, autoIncludePrerequisites, onLoadComparisonDocument, onToggleAutoIncludePrerequisites, onItemCheckedChange, onGroupCheckedChange, onApplySelected, onUndoLastMerge, canApply, isComputingDiff, onCancelDiff, computeProgressMessage, computeProgressPercent, isFallbackMode }: ReviewDiffPanelProps) {
   const evaluationById = new Map(evaluations.map((entry) => [entry.item.id, entry]));
   const groups = [...new Set(mergeItems.map((item) => groupOf(item.kind)))];
 
@@ -42,7 +44,11 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
         Load comparison document (JSON)
       </button>
       {comparisonFileName ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>File: {comparisonFileName}</div> : null}
-      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>Items: {mergeItems.length}{isComputingDiff ? " · Working..." : ""}</div> : null}{isComputingDiff ? <button type="button" onClick={onCancelDiff}>Cancel</button> : null}{isComputingDiff && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>Items: {mergeItems.length}{isComputingDiff ? " · Working..." : ""}{isFallbackMode ? " · Fallback mode" : ""}</div> : null}
+      {isFallbackMode ? <span style={{ fontSize: 11, border: "1px solid #f59e0b", color: "#92400e", borderRadius: 999, padding: "1px 6px", marginRight: 8 }}>fallback mode</span> : null}
+      {isComputingDiff ? <button type="button" onClick={onCancelDiff}>Cancel</button> : null}
+      {isComputingDiff && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+      {isComputingDiff ? <div style={{ marginTop: 4, height: 6, borderRadius: 999, background: "#e2e8f0", overflow: "hidden" }}><div style={{ width: `${Math.max(0, Math.min(100, computeProgressPercent))}%`, height: "100%", background: "#2563eb" }} /></div> : null}
 
       <label style={{ display: "block", fontSize: 12, marginBottom: 8 }}>
         <input type="checkbox" checked={autoIncludePrerequisites} onChange={(event) => onToggleAutoIncludePrerequisites(event.target.checked)} /> Auto-include prerequisites

@@ -95,7 +95,7 @@ import {
 } from "./domain/view/perspective";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
-import { buildMergeItemsIncremental, type MergeItem } from "./diff/merge_items";
+import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
@@ -115,6 +115,8 @@ import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zi
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { runDiagnosticsIncremental } from "./domain/view/diagnostics_runner";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
+import { DiffWorkerClient } from "./worker/diff_client";
+import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
 const HISTORY_LIMIT = 50;
@@ -957,6 +959,8 @@ export default function App() {
   const [isBundleExportRunning, setIsBundleExportRunning] = useState(false);
   const [isDiffComputing, setIsDiffComputing] = useState(false);
   const [computeProgressMessage, setComputeProgressMessage] = useState<string | null>(null);
+  const [computeProgressPercent, setComputeProgressPercent] = useState(0);
+  const [isDiffFallbackMode, setIsDiffFallbackMode] = useState(false);
 
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
@@ -964,7 +968,8 @@ export default function App() {
   const highlightTimeoutRef = useRef<number | null>(null);
   const diagnosticsRunnerRef = useRef(createCancelableTaskRunner());
   const bundleRunnerRef = useRef(createCancelableTaskRunner());
-  const diffRunnerRef = useRef(createCancelableTaskRunner());
+  const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
+  const diffAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     return () => {
@@ -988,34 +993,74 @@ export default function App() {
   const [mergeItems, setMergeItems] = useState<MergeItem[]>([]);
 
   useEffect(() => {
+    if (!diffWorkerClientRef.current) {
+      diffWorkerClientRef.current = new DiffWorkerClient();
+    }
+
+    return () => {
+      diffWorkerClientRef.current?.dispose();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!comparisonDocument || !reviewDiffBaseSnapshot) {
       setMergeItems([]);
       setIsDiffComputing(false);
+      setComputeProgressPercent(0);
+      setIsDiffFallbackMode(false);
       return;
     }
 
     setIsDiffComputing(true);
-    const unsubscribe = diffRunnerRef.current.onProgress((progress) => {
-      setComputeProgressMessage(progress.message);
-    });
-    void diffRunnerRef.current.run(async (ctx) => {
-      const result = await buildMergeItemsIncremental(reviewDiffBaseSnapshot, comparisonDocument, ctx, { maxNodes: 5000, maxMs: 2000 });
-      return result;
-    }).then((outcome) => {
-      if (outcome.status === "cancelled") {
+    setIsDiffFallbackMode(false);
+    const controller = new AbortController();
+    diffAbortRef.current = controller;
+    const stageLabel: Record<DiffProgressStage, string> = { cards: "cards", islands: "islands", edges: "edges", evidence: "evidence", view: "view" };
+
+    if (!diffWorkerClientRef.current) {
+      diffWorkerClientRef.current = new DiffWorkerClient();
+    }
+
+    void diffWorkerClientRef.current.computeDiff(
+      {
+        baseDoc: reviewDiffBaseSnapshot,
+        baseView: { readingOrder: reviewDiffBaseSnapshot.readingOrder },
+        incomingDoc: comparisonDocument,
+        incomingView: { readingOrder: comparisonDocument.readingOrder },
+        options: { maxNodes: 5000, maxMs: 2000 },
+      },
+      {
+        signal: controller.signal,
+        onProgress: (progress) => {
+          setComputeProgressPercent(progress.percent);
+          setComputeProgressMessage(`Computing diff: ${stageLabel[progress.stage]} (${progress.percent}%)`);
+        },
+      },
+    ).then((outcome) => {
+      if (controller.signal.aborted || outcome?.status === "cancelled") {
         setStatusMessage("Diff computation cancelled");
         return;
       }
 
-      setMergeItems(outcome.result.items);
-      if (outcome.result.truncated) {
-        setStatusMessage(outcome.result.notes.join(" "));
+      if (!outcome || outcome.status !== "completed") {
+        return;
       }
+
+      setIsDiffFallbackMode(outcome.usedFallback);
+      const next = [...outcome.result.documentDiff, ...outcome.result.viewDiff];
+      setMergeItems(next);
     }).finally(() => {
-      unsubscribe();
       setIsDiffComputing(false);
       setComputeProgressMessage(null);
+      setComputeProgressPercent(0);
     });
+
+    return () => {
+      controller.abort();
+      if (diffAbortRef.current === controller) {
+        diffAbortRef.current = null;
+      }
+    };
   }, [comparisonDocument, reviewDiffBaseSnapshot]);
   const mergeEvaluation = useMemo(() => {
     if (!document || !comparisonDocument || !reviewDiffBaseSnapshot) {
@@ -6778,6 +6823,13 @@ ${parsedDocument.error}`);
     </div>
   );
 
+  const controllerAbortDiff = () => {
+    const controller = diffAbortRef.current;
+    if (controller) {
+      controller.abort();
+    }
+  };
+
   const structuralDiffPanel = (
     <ReviewDiffPanel
       comparisonFileName={comparisonFileName}
@@ -6819,8 +6871,10 @@ ${parsedDocument.error}`);
       onUndoLastMerge={handleUndoLastMerge}
       canApply={Boolean(document && comparisonDocument && mergeEvaluation.selectedIdsWithPrerequisites.size > 0 && !mergeEvaluation.evaluations.some((entry) => mergeEvaluation.selectedIdsWithPrerequisites.has(entry.item.id) && entry.status !== "ok"))}
       isComputingDiff={isDiffComputing}
-      onCancelDiff={() => diffRunnerRef.current.cancel()}
+      onCancelDiff={() => controllerAbortDiff()}
       computeProgressMessage={computeProgressMessage}
+      computeProgressPercent={computeProgressPercent}
+      isFallbackMode={isDiffFallbackMode}
     />
   );
 
