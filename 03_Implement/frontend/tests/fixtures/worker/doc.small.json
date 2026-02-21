@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "id": "doc-small",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "transform": { "panX": 0, "panY": 0, "zoom": 1 },
+  "cards": [
+    { "id": "c1", "text": "SECRET root claim", "x": 0, "y": 0, "claimType": "claim" },
+    { "id": "c2", "text": "SECRET fact", "x": 100, "y": 0, "claimType": "fact" },
+    { "id": "c3", "text": "SECRET contradictor", "x": 200, "y": 0, "claimType": "claim" }
+  ],
+  "edges": [],
+  "islands": [
+    { "id": "i1", "title": "Island 1", "cardIds": ["c1", "c2", "c3"], "x": 0, "y": 0, "w": 320, "h": 120 }
+  ],
+  "relationSummaries": [],
+  "evidenceLinks": [
+    { "id": "e1", "fromCardId": "c2", "toCardId": "c1", "type": "supports" },
+    { "id": "e2", "fromCardId": "c3", "toCardId": "c1", "type": "contradicts" }
+  ],
+  "readingOrder": [
+    { "kind": "island", "id": "i1" },
+    { "kind": "card", "id": "c1" },
+    { "kind": "card", "id": "c2" },
+    { "kind": "card", "id": "c3" }
+  ]
+}

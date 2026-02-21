@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
@@ -16,8 +16,8 @@ import { rankDistributionIslands, type DistributionReport } from "../domain/view
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
-import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { downloadTextFile } from "../export/narrative_export";
+import { TraceWorkerClient } from "../worker/trace_client";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
 
 type SummaryGroundingItem = {
@@ -352,6 +352,10 @@ export function SidePanel({
   const [pendingEvidenceTargetId, setPendingEvidenceTargetId] = useState<string>("");
   const [contradictionTraceDepthLimit, setContradictionTraceDepthLimit] = useState(1);
   const [contradictionTraceIncludeSupports, setContradictionTraceIncludeSupports] = useState(true);
+  const [isTraceRunning, setIsTraceRunning] = useState(false);
+  const [traceProgressMessage, setTraceProgressMessage] = useState<string | null>(null);
+  const traceClientRef = useRef<TraceWorkerClient | null>(null);
+  const traceAbortRef = useRef<AbortController | null>(null);
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -459,6 +463,13 @@ export function SidePanel({
     setCopyExplanationFeedback("idle");
   }, [selectedIslandRelationEdge?.edgeId]);
 
+  useEffect(() => {
+    return () => {
+      traceAbortRef.current?.abort();
+      traceClientRef.current?.dispose();
+    };
+  }, []);
+
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
   const hideUnreviewedRelationSummary = safeMode && selectedRelationSummary?.reviewed === false;
@@ -515,26 +526,51 @@ export function SidePanel({
     return (document.evidenceLinks ?? []).filter((link) => link.type === "contradicts" && (link.toCardId === selectedCard.id || link.fromCardId === selectedCard.id)).length;
   }, [document, selectedCard]);
 
-  const getContradictionTraceMarkdown = () => {
+  const computeTraceMarkdown = async (kind: "evidence" | "contradiction") => {
     if (!document || !selectedCard) {
       return null;
     }
+    if (!traceClientRef.current) {
+      traceClientRef.current = new TraceWorkerClient();
+    }
 
-    const markdown = buildContradictionTraceMd(document, selectedCard.id, {
-      depthLimit: contradictionTraceDepthLimit,
-      includeSupports: contradictionTraceIncludeSupports,
+    const controller = new AbortController();
+    traceAbortRef.current = controller;
+    setIsTraceRunning(true);
+
+    const outcome = await traceClientRef.current.computeTrace({
+      doc: document,
+      options: {
+        kind,
+        startCardId: selectedCard.id,
+        maxHops: contradictionTraceDepthLimit,
+        maxNodes: 80,
+        safeMode: true,
+        includeRationale: contradictionTraceIncludeSupports,
+      },
+    }, {
+      signal: controller.signal,
+      onProgress: (progress) => setTraceProgressMessage(`${kind === "evidence" ? "Evidence" : "Contradiction"} trace: ${progress.stage} (${progress.percent}%)`),
     });
 
-    if (markdown.startsWith("Error:")) {
-      onEvidenceTraceError(markdown);
+    setIsTraceRunning(false);
+    setTraceProgressMessage(null);
+    traceAbortRef.current = null;
+
+    if (outcome.status === "cancelled") {
+      onEvidenceTraceError("Trace cancelled");
+      return null;
+    }
+    if (outcome.result.traceMd.startsWith("Error:")) {
+      onEvidenceTraceError(outcome.result.traceMd);
       return null;
     }
 
-    return markdown;
+    return outcome.result.traceMd;
   };
 
   const handleCopyContradictionTrace = async () => {
-    const markdown = getContradictionTraceMarkdown();
+    const markdown = await computeTraceMarkdown("contradiction");
     if (!markdown) {
       return;
     }
@@ -547,12 +583,34 @@ export function SidePanel({
   };
 
   const handleDownloadContradictionTrace = () => {
-    const markdown = getContradictionTraceMarkdown();
+    void computeTraceMarkdown("contradiction").then((markdown) => {
+      if (!markdown) {
+        return;
+      }
+      downloadTextFile("contradiction_trace.md", "text/markdown", markdown);
+    });
+  };
+
+  const handleCopyEvidenceTrace = async () => {
+    const markdown = await computeTraceMarkdown("evidence");
     if (!markdown) {
       return;
     }
 
-    downloadTextFile("contradiction_trace.md", "text/markdown", markdown);
+    try {
+      await navigator.clipboard.writeText(markdown);
+    } catch {
+      onEvidenceTraceError("Failed to copy evidence trace");
+    }
+  };
+
+  const handleDownloadEvidenceTrace = () => {
+    void computeTraceMarkdown("evidence").then((markdown) => {
+      if (!markdown) {
+        return;
+      }
+      downloadTextFile("evidence_trace.md", "text/markdown", markdown);
+    });
   };
 
   const outlineDiagnosticsCounts = useMemo(() => {
@@ -2733,7 +2791,15 @@ export function SidePanel({
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence trace</div>
                 <div style={{ display: "grid", gap: 6 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Contradiction trace</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Evidence trace</div>
+                  <button type="button" disabled={!selectedCard || isTraceRunning} onClick={() => { void handleCopyEvidenceTrace(); }}>
+                    {isTraceRunning ? "Working..." : "Copy evidence trace (MD)"}
+                  </button>
+                  <button type="button" disabled={!selectedCard || isTraceRunning} onClick={handleDownloadEvidenceTrace}>
+                    Download evidence_trace.md
+                  </button>
+
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>Contradiction trace</div>
                   <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                     Depth
                     <select
@@ -2759,12 +2825,14 @@ export function SidePanel({
                     />
                     Include fact supports
                   </label>
-                  <button type="button" onClick={() => { void handleCopyContradictionTrace(); }}>
-                    Copy contradiction trace (MD)
+                  <button type="button" disabled={!selectedCard || isTraceRunning} onClick={() => { void handleCopyContradictionTrace(); }}>
+                    {isTraceRunning ? "Working..." : "Copy contradiction trace (MD)"}
                   </button>
-                  <button type="button" onClick={handleDownloadContradictionTrace}>
+                  <button type="button" disabled={!selectedCard || isTraceRunning} onClick={handleDownloadContradictionTrace}>
                     Download contradiction_trace.md
                   </button>
+                  {isTraceRunning ? <button type="button" onClick={() => traceAbortRef.current?.abort()}>Cancel trace</button> : null}
+                  {traceProgressMessage ? <div style={{ fontSize: 11, color: "#334155" }}>{traceProgressMessage}</div> : null}
                   {selectedCardContradictionsCount === 0 ? (
                     <div style={{ fontSize: 11, color: "#94a3b8" }}>No contradiction links found.</div>
                   ) : null}

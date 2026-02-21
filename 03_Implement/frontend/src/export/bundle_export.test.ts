@@ -1,7 +1,13 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import type { DocumentV2 } from "../domain/types";
 import JSZip from "jszip";
-import { buildBundleZipBlob, buildExportBundle } from "./bundle_export";
+import { buildBundleZipBlob, buildExportBundle, buildExportBundleWithWorkers } from "./bundle_export";
+
+
+const originalWorker = globalThis.Worker;
+afterEach(() => {
+  globalThis.Worker = originalWorker;
+});
 
 const baseDoc: DocumentV2 = {
   version: 2,
@@ -150,5 +156,39 @@ describe("buildExportBundle", () => {
     expect(outline).not.toContain("SECRET_UNREVIEWED_SUMMARY");
     expect(diagnostics).not.toContain("SECRET_DIAGNOSTIC_DETAIL");
   });
+  test("falls back when worker init fails and still emits diagnostics/traces", async () => {
+    globalThis.Worker = class {
+      constructor() {
+        throw new Error("worker unavailable");
+      }
+    } as unknown as typeof Worker;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const files = await buildExportBundleWithWorkers(baseDoc, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: true,
+      selectedCardId: "c2",
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/diagnostics.md");
+    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
+    expect(warn).toHaveBeenCalled();
+  });
+
 
 });
