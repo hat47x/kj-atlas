@@ -9,6 +9,8 @@ import { analyzeOutlineQuality, type OutlineQualityReport } from "../domain/view
 import { buildReadingOutlineMd, type ReadingOutlineOptions, type ReadingOutlineState } from "../domain/view/reading_outline";
 import { generateRecommendations } from "../domain/view/recommendations";
 import type { ReadingMode } from "../domain/view/reading_path";
+import { DiagnosticsWorkerClient } from "../worker/diagnostics_client";
+import { TraceWorkerClient } from "../worker/trace_client";
 
 export type BundleFile = {
   path: string;
@@ -201,6 +203,79 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
         mime: "text/markdown",
       });
     }
+  }
+
+  return [...bundleFiles].sort((left, right) => left.path.localeCompare(right.path));
+}
+
+export async function buildExportBundleWithWorkers(
+  doc: DocumentV2,
+  viewState: unknown,
+  context: BundleExportContext,
+  options: { signal?: AbortSignal; onProgress?: (message: string) => void } = {}
+): Promise<BundleFile[]> {
+  const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
+  const bundleFiles: BundleFile[] = [
+    toJsonFile(`${root}/document.json`, doc),
+    toJsonFile(`${root}/view.json`, viewState),
+  ];
+  if (context.includeOutline) {
+    const outline = buildReadingOutlineMd(doc, context.readingState, {
+      ...context.outlineOptions,
+      includeUnreviewedSummaries: context.safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
+    });
+    bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
+  }
+
+  const diagnosticsClient = new DiagnosticsWorkerClient();
+  const traceClient = new TraceWorkerClient();
+  try {
+    if (context.includeDiagnostics) {
+      options.onProgress?.("Generating diagnostics...");
+      const diagnosticsOutcome = await diagnosticsClient.computeDiagnostics({
+        doc,
+        view: {
+          readingMode: context.readingMode,
+          reviewedOnly: context.reviewedOnly,
+          collapsedIslandIds: [],
+        },
+        options: { safeMode: context.safeMode, deterministicNowIso: context.deterministicNowIso },
+      }, { signal: options.signal });
+      if (diagnosticsOutcome.status === "cancelled") {
+        throw new Error("Diagnostics generation cancelled");
+      }
+      bundleFiles.push({ path: `${root}/diagnostics.md`, content: diagnosticsOutcome.result.diagnosticsMd, mime: "text/markdown" });
+    }
+
+    if (context.includeSelectedCardTraces && context.selectedCardId) {
+      const sharedOptions = {
+        startCardId: context.selectedCardId,
+        maxHops: 4,
+        maxNodes: 80,
+        safeMode: context.safeMode,
+        includeRationale: false,
+      };
+      options.onProgress?.("Generating evidence trace...");
+      const evidenceOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "evidence" } }, { signal: options.signal });
+      if (evidenceOutcome.status === "cancelled") {
+        throw new Error("Trace generation cancelled");
+      }
+      if (!evidenceOutcome.result.traceMd.startsWith("Error:")) {
+        bundleFiles.push({ path: `${root}/evidence_trace_${context.selectedCardId}.md`, content: evidenceOutcome.result.traceMd, mime: "text/markdown" });
+      }
+
+      options.onProgress?.("Generating contradiction trace...");
+      const contradictionOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "contradiction" } }, { signal: options.signal });
+      if (contradictionOutcome.status === "cancelled") {
+        throw new Error("Trace generation cancelled");
+      }
+      if (!contradictionOutcome.result.traceMd.startsWith("Error:")) {
+        bundleFiles.push({ path: `${root}/contradiction_trace_${context.selectedCardId}.md`, content: contradictionOutcome.result.traceMd, mime: "text/markdown" });
+      }
+    }
+  } finally {
+    diagnosticsClient.dispose();
+    traceClient.dispose();
   }
 
   return [...bundleFiles].sort((left, right) => left.path.localeCompare(right.path));

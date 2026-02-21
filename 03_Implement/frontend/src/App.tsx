@@ -53,7 +53,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
-import { buildBundleZipBlob, buildExportBundle, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
+import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import {
   DEFAULT_LOD_THRESHOLDS,
@@ -113,9 +113,9 @@ import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
-import { runDiagnosticsIncremental } from "./domain/view/diagnostics_runner";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
+import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -966,9 +966,11 @@ export default function App() {
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
   const collapsedStateDocIdRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
-  const diagnosticsRunnerRef = useRef(createCancelableTaskRunner());
+  const diagnosticsAbortRef = useRef<AbortController | null>(null);
   const bundleRunnerRef = useRef(createCancelableTaskRunner());
+  const bundleAbortRef = useRef<AbortController | null>(null);
   const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
+  const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -996,9 +998,13 @@ export default function App() {
     if (!diffWorkerClientRef.current) {
       diffWorkerClientRef.current = new DiffWorkerClient();
     }
+    if (!diagnosticsWorkerClientRef.current) {
+      diagnosticsWorkerClientRef.current = new DiagnosticsWorkerClient();
+    }
 
     return () => {
       diffWorkerClientRef.current?.dispose();
+      diagnosticsWorkerClientRef.current?.dispose();
     };
   }, []);
 
@@ -5173,34 +5179,42 @@ ${parsedDocument.error}`);
       setStatusMessage("Nothing to analyze");
       return;
     }
+    if (!diagnosticsWorkerClientRef.current) {
+      diagnosticsWorkerClientRef.current = new DiagnosticsWorkerClient();
+    }
 
+    const controller = new AbortController();
+    diagnosticsAbortRef.current = controller;
     setIsDiagnosticsRunning(true);
-    const unsubscribe = diagnosticsRunnerRef.current.onProgress((progress) => {
-      setComputeProgressMessage(progress.message);
-    });
-
-    void diagnosticsRunnerRef.current.run(async (ctx) => runDiagnosticsIncremental(document, { readingMode, reviewedOnly, collapsedIslandIds }, ctx, { maxNodes: 1000, maxMs: 2000 })).then((outcome) => {
+    void diagnosticsWorkerClientRef.current.computeDiagnostics({
+      doc: document,
+      view: { readingMode, reviewedOnly, collapsedIslandIds: [...collapsedIslandIds].sort() },
+      options: { safeMode: true, deterministicNowIso: document.updatedAt || document.createdAt },
+    }, {
+      signal: controller.signal,
+      onProgress: (progress) => {
+        setComputeProgressMessage(`Diagnostics: ${progress.stage} (${progress.percent}%)`);
+      },
+    }).then((outcome) => {
       if (outcome.status === "cancelled") {
         setStatusMessage("Diagnostics cancelled");
         return;
       }
+      const { outlineReport, contradictionReport, distributionReport, dialecticBalanceReport } = outcome.result.diagnosticsData;
+      setOutlineQualityReport(outlineReport);
+      setContradictionReport(contradictionReport);
+      setDistributionReport(distributionReport);
+      setClaimTypeMixReport(null);
+      setEvidenceGapReport(null);
+      setDialecticBalanceReport(dialecticBalanceReport);
 
-      const { report, contradiction, distribution, claimTypeMix, evidenceGaps, dialecticBalance, truncated, notes } = outcome.result;
-      setOutlineQualityReport(report);
-      setContradictionReport(contradiction);
-      setDistributionReport(distribution);
-      setClaimTypeMixReport(claimTypeMix);
-      setEvidenceGapReport(evidenceGaps);
-      setDialecticBalanceReport(dialecticBalance);
-
-      const errorCount = report.findings.filter((finding) => finding.severity === "error").length;
-      const warnCount = report.findings.filter((finding) => finding.severity === "warn").length;
-      const suffix = truncated ? ` (${notes.join(" ")})` : "";
-      setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradiction.stats.signals} contradiction signal(s), ${distribution.findings.length} distribution signal(s), ${claimTypeMix.findings.length} claim typing signal(s), ${evidenceGaps.findings.length} evidence gap signal(s), ${dialecticBalance.findings.length} dialectic balance signal(s)${suffix}`);
+      const errorCount = outlineReport.findings.filter((finding) => finding.severity === "error").length;
+      const warnCount = outlineReport.findings.filter((finding) => finding.severity === "warn").length;
+      setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradictionReport.stats.signals} contradiction signal(s), ${distributionReport.findings.length} distribution signal(s), ${dialecticBalanceReport.findings.length} dialectic balance signal(s)`);
     }).finally(() => {
-      unsubscribe();
       setIsDiagnosticsRunning(false);
       setComputeProgressMessage(null);
+      diagnosticsAbortRef.current = null;
     });
   }, [collapsedIslandIds, document, readingMode, reviewedOnly]);
 
@@ -6163,50 +6177,58 @@ ${parsedDocument.error}`);
         mergeAuditLog,
       });
 
+      const controller = new AbortController();
+      bundleAbortRef.current = controller;
       const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
       const outcome = await bundleRunnerRef.current.run(async (ctx) => {
         ctx.reportProgress({ message: "Working... building bundle", completed: 1, total: 3 });
         await ctx.yieldToMainThread();
-        const files = buildExportBundle(document, viewMetadata, {
-        rootFolderPath,
-        safeMode,
-        includeOutline: options.includeOutline,
-        includeDiagnostics: options.includeDiagnostics,
-        includeSelectedCardTraces: options.includeSelectedCardTraces,
-        selectedCardId: selectedCard?.id ?? null,
-        deterministicNowIso,
-        readingMode,
-        reviewedOnly,
-        readingState: {
-          readingNavEnabled,
-          readingIndex,
+        const files = await buildExportBundleWithWorkers(document, viewMetadata, {
+          rootFolderPath,
+          safeMode,
+          includeOutline: options.includeOutline,
+          includeDiagnostics: options.includeDiagnostics,
+          includeSelectedCardTraces: options.includeSelectedCardTraces,
+          selectedCardId: selectedCard?.id ?? null,
+          deterministicNowIso,
           readingMode,
           reviewedOnly,
-          safeMode,
-          lod: currentLod?.level ?? null,
-          generatedAt: deterministicNowIso,
-        },
-        outlineOptions: {
-          includeCardTexts: outlineIncludeCardTexts,
-          includeRelationSummaries: outlineIncludeRelationSummaries,
-          includeUnreviewedSummaries: safeMode ? false : outlineIncludeUnreviewed,
-          appendDiagnostics: outlineAppendDiagnostics,
-          diagnosticsReport: outlineQualityReport,
-          appendRecommendations: outlineAppendRecommendations,
-          recommendations: outlineRecommendations,
-        },
-        outlineQualityReport,
-        contradictionReport,
-        distributionReport,
-        dialecticBalanceReport,
-      });
-        ctx.reportProgress({ message: "Working... zipping bundle", completed: 2, total: 3 });
+          readingState: {
+            readingNavEnabled,
+            readingIndex,
+            readingMode,
+            reviewedOnly,
+            safeMode,
+            lod: currentLod?.level ?? null,
+            generatedAt: deterministicNowIso,
+          },
+          outlineOptions: {
+            includeCardTexts: outlineIncludeCardTexts,
+            includeRelationSummaries: outlineIncludeRelationSummaries,
+            includeUnreviewedSummaries: safeMode ? false : outlineIncludeUnreviewed,
+            appendDiagnostics: outlineAppendDiagnostics,
+            diagnosticsReport: outlineQualityReport,
+            appendRecommendations: outlineAppendRecommendations,
+            recommendations: outlineRecommendations,
+          },
+          outlineQualityReport,
+          contradictionReport,
+          distributionReport,
+          dialecticBalanceReport,
+        }, {
+          signal: controller.signal,
+          onProgress: (message) => ctx.reportProgress({ message, completed: 2, total: 3 }),
+        });
+        if (controller.signal.aborted || ctx.isCancelled()) {
+          return null;
+        }
+        ctx.reportProgress({ message: "Working... zipping bundle", completed: 3, total: 3 });
         await ctx.yieldToMainThread();
         const zipBlob = await buildBundleZipBlob(files);
         return { files, zipBlob };
       });
       unsubscribe();
-      if (outcome.status === "cancelled") {
+      if (outcome.status === "cancelled" || outcome.result === null) {
         setStatusMessage("Bundle export cancelled");
         return;
       }
@@ -6220,6 +6242,7 @@ ${parsedDocument.error}`);
     } finally {
       setIsBundleExportRunning(false);
       setComputeProgressMessage(null);
+      bundleAbortRef.current = null;
     }
   }, [
     abstractMapView,
@@ -6911,7 +6934,7 @@ ${parsedDocument.error}`);
         void handleExportBundleZip(options);
       }}
       isBundleExportRunning={isBundleExportRunning}
-      onCancelBundleExport={() => bundleRunnerRef.current.cancel()}
+      onCancelBundleExport={() => { bundleRunnerRef.current.cancel(); bundleAbortRef.current?.abort(); }}
       computeProgressMessage={computeProgressMessage}
       canIncludeTraces={Boolean(selectedCard)}
       onLoadViewMetadataFile={(file) => {
@@ -7357,7 +7380,7 @@ ${parsedDocument.error}`);
           dialecticBalanceReport={dialecticBalanceReport}
           onRunOutlineDiagnostics={handleRunOutlineDiagnostics}
           isDiagnosticsRunning={isDiagnosticsRunning}
-          onCancelDiagnostics={() => diagnosticsRunnerRef.current.cancel()}
+          onCancelDiagnostics={() => diagnosticsAbortRef.current?.abort()}
           computeProgressMessage={computeProgressMessage}
           onFocusOutlineDiagnosticRef={focusItem}
           onFocusContradictionSignal={handleFocusContradictionSignal}
