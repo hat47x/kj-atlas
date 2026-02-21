@@ -371,6 +371,45 @@ export function SidePanel({
   };
 
 
+  const copyText = async (value: string): Promise<boolean> => {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const buildMergeSummaryMarkdown = (entry: MergeAuditEntry): string => {
+    const byKind = Object.entries(entry.summary.byKind)
+      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .map(([kind, count]) => `- ${kind}: ${count}`)
+      .join("\n");
+    return [
+      `- timestamp: ${entry.createdAt}`,
+      `- source: ${entry.source.fileName ?? entry.source.packId ?? "unknown"}`,
+      `- source kind: ${entry.source.kind}`,
+      `- total items: ${entry.summary.totalItems}`,
+      "- by kind:",
+      byKind || "- (none)",
+      `- item ids: ${(entry.details.itemIds?.ids ?? []).join(", ") || "(none)"}`,
+      `- card ids: ${(entry.details.entityIds?.cards?.ids ?? []).join(", ") || "(none)"}`,
+      `- island ids: ${(entry.details.entityIds?.islands?.ids ?? []).join(", ") || "(none)"}`,
+      `- evidence ids: ${(entry.details.entityIds?.evidence?.ids ?? []).join(", ") || "(none)"}`,
+    ].join("\n");
+  };
+
+  const renderIdList = (label: string, value?: { ids: string[]; truncatedCount?: number }) => {
+    const listed = value?.ids ?? [];
+    const truncated = value?.truncatedCount ?? 0;
+    return (
+      <div>
+        {label}: {listed.join(", ") || "(none)"}
+        {truncated > 0 ? ` (+${truncated} truncated)` : ""}
+      </div>
+    );
+  };
+
   const selectedIslandRelationExplanation = useMemo(() => {
     if (!document || !selectedIslandRelationEdge) {
       return null;
@@ -850,7 +889,9 @@ export function SidePanel({
             ) : (
               mergeAuditEntries.map((entry) => {
                 const isExpanded = expandedMergeAuditEntryId === entry.id;
-                const kindSummary = Object.entries(entry.summary.byKind).map(([kind, count]) => `${kind}:${count}`).join(", ");
+                const kindPairs = Object.entries(entry.summary.byKind).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
+                const topKinds = kindPairs.slice(0, 3).map(([kind, count]) => `${kind}:${count}`).join(", ");
+                const fullKinds = kindPairs.map(([kind, count]) => `${kind}:${count}`).join(", ");
                 return (
                   <div key={entry.id} style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8 }}>
                     <button
@@ -862,17 +903,37 @@ export function SidePanel({
                     >
                       <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
                       <div style={{ fontSize: 12, color: "#0f172a" }}>{entry.source.fileName ?? entry.source.packId ?? "Unknown source"}</div>
-                      <div style={{ fontSize: 11, color: "#334155" }}>{entry.summary.totalItems} items · {kindSummary || "no kinds"}</div>
+                      <div style={{ fontSize: 11, color: "#334155" }}>{entry.summary.totalItems} items · {topKinds || "no kinds"}</div>
                     </button>
                     {isExpanded ? (
-                      <div style={{ marginTop: 8, display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
+                      <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#475569" }}>
                         <div>source kind: {entry.source.kind}</div>
-                        <div>by kind: {kindSummary || "(none)"}</div>
-                        <div>item ids: {(entry.details.itemIds ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.itemIds ?? []).length > 6 ? ` +${(entry.details.itemIds ?? []).length - 6} more` : ""}</div>
-                        <div>card ids: {(entry.details.entityIds?.cards ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.cards ?? []).length > 6 ? ` +${(entry.details.entityIds?.cards ?? []).length - 6} more` : ""}</div>
-                        <div>island ids: {(entry.details.entityIds?.islands ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.islands ?? []).length > 6 ? ` +${(entry.details.entityIds?.islands ?? []).length - 6} more` : ""}</div>
-                        <div>evidence ids: {(entry.details.entityIds?.evidence ?? []).slice(0, 6).join(", ") || "(none)"}{(entry.details.entityIds?.evidence ?? []).length > 6 ? ` +${(entry.details.entityIds?.evidence ?? []).length - 6} more` : ""}</div>
-                        <div style={{ color: "#64748b" }}>Revert not supported yet.</div>
+                        <div>by kind: {fullKinds || "(none)"}</div>
+                        {renderIdList("item ids", entry.details.itemIds)}
+                        {renderIdList("card ids", entry.details.entityIds?.cards)}
+                        {renderIdList("island ids", entry.details.entityIds?.islands)}
+                        {renderIdList("evidence ids", entry.details.entityIds?.evidence)}
+                        {entry.summary.warnings && entry.summary.warnings.length > 0 ? (
+                          <div>warnings: {entry.summary.warnings.join(", ")}</div>
+                        ) : null}
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await copyText(JSON.stringify(entry, null, 2));
+                            }}
+                          >
+                            Copy entry JSON
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await copyText(buildMergeSummaryMarkdown(entry));
+                            }}
+                          >
+                            Copy summary MD
+                          </button>
+                        </div>
                       </div>
                     ) : null}
                   </div>
