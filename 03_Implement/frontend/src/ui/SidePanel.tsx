@@ -545,7 +545,7 @@ export function SidePanel({
         startCardId: selectedCard.id,
         maxHops: contradictionTraceDepthLimit,
         maxNodes: 80,
-        safeMode: true,
+        safeMode,
         includeRationale: contradictionTraceIncludeSupports,
       },
     }, {

@@ -1,4 +1,5 @@
 import type { Card, DocumentV2, Island, RelationSummary } from "../types";
+import { SafeModePolicy, type SafeModeContext } from "../policy/safe_mode";
 import { buildReadingList, type ReadingMode } from "./reading_path";
 import type { OutlineQualityReport } from "./outline_quality";
 import type { Recommendation } from "./recommendations";
@@ -16,6 +17,7 @@ export type ReadingOutlineState = {
 };
 
 export type ReadingOutlineOptions = {
+  context?: SafeModeContext;
   includeCardTexts?: boolean;
   includeUnreviewedSummaries?: boolean;
   includeRelationSummaries?: boolean;
@@ -165,6 +167,7 @@ function getRelationLabel(summary: RelationSummary, island: Island, islandsById:
 }
 
 export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutlineState, options: ReadingOutlineOptions = {}): string {
+  const context = options.context ?? "ui";
   const includeCardTexts = options.includeCardTexts ?? false;
   const includeRelationSummaries = options.includeRelationSummaries ?? true;
   const appendDiagnostics = options.appendDiagnostics ?? false;
@@ -194,7 +197,10 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
       const summaryText = island.summaryText?.trim() ?? "";
       if (summaryText.length > 0) {
         const summaryReviewed = island.summaryReviewed === true;
-        lines.push(...formatSummaryBlock(summaryText, summaryReviewed, includeUnreviewed));
+        const summaryValue = SafeModePolicy.canExposeText("island.summary", context, readingState.safeMode)
+          ? summaryText
+          : SafeModePolicy.summarizeForSafeMode(summaryText);
+        lines.push(...formatSummaryBlock(summaryValue, summaryReviewed, includeUnreviewed));
       }
 
       if (includeRelationSummaries) {
@@ -206,9 +212,12 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
 
         for (const relation of related) {
           lines.push(getRelationLabel(relation, island, islandsById));
+          const relationText = SafeModePolicy.canExposeText("relation.summary", context, readingState.safeMode)
+            ? relation.text
+            : SafeModePolicy.summarizeForSafeMode(relation.text);
           lines.push(
             ...formatSummaryBlock(
-              relation.text,
+              relationText,
               relation.reviewed,
               includeUnreviewed,
             ).map((line) => `  ${line}`),
@@ -225,9 +234,11 @@ export function buildReadingOutlineMd(doc: DocumentV2, readingState: ReadingOutl
       continue;
     }
 
-    const cardSnippet = clipSnippet(card.text, maxSnippetLen, true);
+    const cardSnippet = SafeModePolicy.canExposeText("card.text", context, readingState.safeMode)
+      ? clipSnippet(card.text, maxSnippetLen, true)
+      : `card:${card.id}`;
     lines.push(`### [Card] ${cardSnippet}`);
-    if (includeCardTexts) {
+    if (includeCardTexts && SafeModePolicy.canExposeText("card.text", context, readingState.safeMode)) {
       lines.push(clipSnippet(card.text, maxSnippetLen, false));
     }
     lines.push("");

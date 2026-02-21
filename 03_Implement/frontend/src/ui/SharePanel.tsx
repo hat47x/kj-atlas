@@ -21,6 +21,7 @@ type SharePanelProps = {
   onExportAbstractMapMarkdownWithPng: () => void;
   onExportAbstractMapHtmlWithPng: () => void;
   safeMode: boolean;
+  onSafeModeChange: (value: boolean) => void;
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
   onExportViewViewport: () => void;
@@ -120,6 +121,7 @@ export function SharePanel({
   onExportAbstractMapMarkdownWithPng,
   onExportAbstractMapHtmlWithPng,
   safeMode,
+  onSafeModeChange,
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
   onExportViewViewport,
@@ -283,6 +285,16 @@ export function SharePanel({
             <div style={{ fontSize: 12, color: "#64748b" }}>
               Export reproducible artifacts first (SVG/PNG/report + view.json metadata).
             </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <input
+                type="checkbox"
+                checked={safeMode}
+                onChange={(event) => {
+                  onSafeModeChange(event.target.checked);
+                }}
+              />
+              Safe mode
+            </label>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
               Export SVG (Viewport)
             </button>

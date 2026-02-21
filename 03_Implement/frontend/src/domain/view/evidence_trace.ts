@@ -1,8 +1,10 @@
 import type { Card, DocumentV2 } from "../types";
+import { SafeModePolicy } from "../policy/safe_mode";
 
 type ClaimType = "fact" | "claim" | "hypothesis" | "unknown";
 
 export type EvidenceTraceOptions = {
+  safeMode?: boolean;
   depthLimit?: number;
   includeContradictions?: boolean;
   includeUnknown?: boolean;
@@ -60,7 +62,7 @@ function buildSnippet(text: string | undefined): string {
   return `${oneLine.slice(0, 120)}…`;
 }
 
-function buildLine(card: Card, options: { seeAbove?: boolean; cycle?: boolean }): string {
+function buildLine(card: Card, options: { seeAbove?: boolean; cycle?: boolean; safeMode: boolean }): string {
   const claimType = resolveClaimType(card);
   const markers: string[] = [];
 
@@ -85,7 +87,10 @@ function buildLine(card: Card, options: { seeAbove?: boolean; cycle?: boolean })
   }
 
   const markerSuffix = markers.length > 0 ? ` ${markers.join(" ")}` : "";
-  return `- [${claimType}] ${buildSnippet(card.text)} (id: ${card.id})${markerSuffix}`;
+  const body = options.safeMode
+    ? `card:${card.id}`
+    : buildSnippet(card.text);
+  return `- [${claimType}] ${body} (id: ${card.id})${markerSuffix}`;
 }
 
 function shouldIncludeType(claimType: ClaimType, options: EvidenceTraceOptions): boolean {
@@ -108,6 +113,7 @@ export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, opti
   const depthLimit = clampDepthLimit(options.depthLimit);
   const stopAtFacts = options.stopAtFacts ?? false;
   const maxNodes = clampMaxNodes(options.maxNodes);
+  const safeMode = options.safeMode ?? false;
 
   const cardsById = new Map(doc.cards.map((card) => [card.id, card] as const));
   const targetCard = cardsById.get(targetCardId);
@@ -154,7 +160,7 @@ export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, opti
     "# Evidence Trace",
     "",
     "## Target",
-    buildLine(targetCard, {}),
+    buildLine(targetCard, { safeMode }),
     "",
     `## Supports (up to depth ${depthLimit})`,
   ];
@@ -181,12 +187,12 @@ export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, opti
     const indent = "  ".repeat(indentLevel);
 
     if (path.has(cardId)) {
-      lines.push(`${indent}${buildLine(card, { cycle: true })}`);
+      lines.push(`${indent}${buildLine(card, { cycle: true, safeMode })}`);
       return;
     }
 
     if (globalSeen.has(cardId)) {
-      lines.push(`${indent}${buildLine(card, { seeAbove: true })}`);
+      lines.push(`${indent}${buildLine(card, { seeAbove: true, safeMode })}`);
       return;
     }
 
@@ -196,7 +202,7 @@ export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, opti
     }
 
     expandedNodeCount += 1;
-    lines.push(`${indent}${buildLine(card, {})}`);
+    lines.push(`${indent}${buildLine(card, { safeMode })}`);
     globalSeen.add(cardId);
 
     if (depth >= depthLimit) {
@@ -230,6 +236,9 @@ export function buildEvidenceTraceMd(doc: DocumentV2, targetCardId: string, opti
     lines.push("- …truncated (maxNodes reached)");
   }
 
+  if (safeMode && !SafeModePolicy.canExposeText("trace.text", "share", true)) {
+    lines.push("- Safe mode enforced: text content redacted.");
+  }
   lines.push("", "## Notes", "- This is an extracted structure, not an AI-generated argument.");
 
   return lines.join("\n");

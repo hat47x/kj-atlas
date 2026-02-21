@@ -1,4 +1,5 @@
 import type { Card, DocumentV2 } from "../types";
+import { SafeModePolicy } from "../policy/safe_mode";
 
 type ClaimType = "fact" | "claim" | "hypothesis" | "unknown";
 
@@ -6,6 +7,7 @@ export type ContradictionTraceOptions = {
   depthLimit?: number;
   includeSupports?: boolean;
   maxNodes?: number;
+  safeMode?: boolean;
 };
 
 const CLAIM_TYPE_PRIORITY: Record<ClaimType, number> = {
@@ -68,8 +70,9 @@ function sortCardIds(ids: Iterable<string>, cardsById: Map<string, Card>): strin
   });
 }
 
-function buildCardLine(card: Card): string {
-  return `- [${resolveClaimType(card)}] ${buildSnippet(card.text)} (id: ${card.id})`;
+function buildCardLine(card: Card, safeMode: boolean): string {
+  const body = safeMode ? `card:${card.id}` : buildSnippet(card.text);
+  return `- [${resolveClaimType(card)}] ${body} (id: ${card.id})`;
 }
 
 function buildContradictorMarkers(card: Card, hasFactSupport: boolean): string[] {
@@ -95,6 +98,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
   const depthLimit = clampDepthLimit(options.depthLimit);
   const includeSupports = options.includeSupports ?? true;
   const maxNodes = clampMaxNodes(options.maxNodes);
+  const safeMode = options.safeMode ?? false;
 
   const cardsById = new Map(doc.cards.map((card) => [card.id, card] as const));
   const targetCard = cardsById.get(targetCardId);
@@ -140,7 +144,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
     "# Contradiction Trace",
     "",
     "## Target",
-    buildCardLine(targetCard),
+    buildCardLine(targetCard, safeMode),
   ];
 
   if (includeSupports) {
@@ -154,7 +158,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
           continue;
         }
 
-        lines.push(`  - ${buildSnippet(support.text)} (id: ${support.id})`);
+        lines.push(`  - ${safeMode ? `card:${support.id}` : buildSnippet(support.text)} (id: ${support.id})`);
       }
     }
   }
@@ -170,7 +174,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
     const supportIds = factSupportIdsFor(cardId);
     const markers = buildContradictorMarkers(card, supportIds.length > 0);
     const markerSuffix = markers.length > 0 ? ` ${markers.join(" ")}` : "";
-    lines.push(`${buildCardLine(card)}${markerSuffix}`);
+    lines.push(`${buildCardLine(card, safeMode)}${markerSuffix}`);
 
     if (!includeSupports) {
       return;
@@ -186,7 +190,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
           continue;
         }
 
-        lines.push(`    - ${buildSnippet(support.text)} (id: ${support.id})`);
+        lines.push(`    - ${safeMode ? `card:${support.id}` : buildSnippet(support.text)} (id: ${support.id})`);
       }
     }
 
@@ -200,7 +204,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
           continue;
         }
 
-        lines.push(`    - ${buildSnippet(support.text)} (id: ${support.id})`);
+        lines.push(`    - ${safeMode ? `card:${support.id}` : buildSnippet(support.text)} (id: ${support.id})`);
       }
     }
   };
@@ -225,7 +229,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
 
   if (depthLimit > 1) {
     lines.push("", `## Contradiction network (depth ${depthLimit})`);
-    lines.push(buildCardLine(targetCard));
+    lines.push(buildCardLine(targetCard, safeMode));
 
     const queue: Array<{ id: string; depth: number }> = [{ id: targetCardId, depth: 0 }];
     const depthById = new Map<string, number>([[targetCardId, 0]]);
@@ -286,7 +290,7 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
           continue;
         }
 
-        lines.push(`${"  ".repeat(indent)}- [${resolveClaimType(child)}] ${buildSnippet(child.text)} (id: ${child.id})`);
+        lines.push(`${"  ".repeat(indent)}- [${resolveClaimType(child)}] ${safeMode ? `card:${child.id}` : buildSnippet(child.text)} (id: ${child.id})`);
 
         const childNeighbors = sortCardIds(neighbors.get(childId) ?? [], cardsById).filter((id) => cardsById.has(id));
         const treeNeighbors = new Set<string>([...(childrenByParent.get(childId) ?? []), parentById.get(childId) ?? ""]);
@@ -304,6 +308,10 @@ export function buildContradictionTraceMd(doc: DocumentV2, targetCardId: string,
     if (truncated) {
       lines.push("- ... truncated");
     }
+  }
+
+  if (safeMode && !SafeModePolicy.canExposeText("trace.text", "share", true)) {
+    lines.push("- Safe mode enforced: text content redacted.");
   }
 
   lines.push(

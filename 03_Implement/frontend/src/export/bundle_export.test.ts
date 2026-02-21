@@ -156,6 +156,39 @@ describe("buildExportBundle", () => {
     expect(outline).not.toContain("SECRET_UNREVIEWED_SUMMARY");
     expect(diagnostics).not.toContain("SECRET_DIAGNOSTIC_DETAIL");
   });
+  test("defaults to safe mode for exports when context.safeMode is omitted", () => {
+    const docWithSecret: DocumentV2 = {
+      ...baseDoc,
+      cards: baseDoc.cards.map((card) => ({ ...card, text: card.id === "c2" ? "SECRET_TEXT_DO_NOT_LEAK" : card.text })),
+      islands: [{ ...baseDoc.islands[0], summaryReviewed: false, summaryText: "SECRET_TEXT_DO_NOT_LEAK" }],
+    };
+
+    const files = buildExportBundle(docWithSecret, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      includeOutline: true,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: true,
+      selectedCardId: "c2",
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const markdownJoined = files
+      .filter((file) => file.mime === "text/markdown")
+      .map((file) => String(file.content))
+      .join("\n");
+    expect(markdownJoined).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
+  });
+
   test("falls back when worker init fails and still emits diagnostics/traces", async () => {
     globalThis.Worker = class {
       constructor() {

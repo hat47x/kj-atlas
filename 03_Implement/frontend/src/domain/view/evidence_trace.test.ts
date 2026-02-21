@@ -96,6 +96,15 @@ describe("buildEvidenceTraceMd", () => {
     expect(buildEvidenceTraceMd(makeDoc(), "missing")).toBe("Error: target card not found (id: missing)");
   });
 
+  it("redacts card text in safe mode", () => {
+    const doc = makeDoc();
+    doc.cards = doc.cards.map((card) => ({ ...card, text: card.id === "target" ? "SECRET_TEXT_DO_NOT_LEAK" : card.text }));
+    const md = buildEvidenceTraceMd(doc, "target", { safeMode: true });
+
+    expect(md).toContain("card:target");
+    expect(md).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
+  });
+
   it("is deterministic for same input", () => {
     const doc = makeDoc();
     const a = buildEvidenceTraceMd(doc, "target", { depthLimit: 4, includeUnknown: true });
