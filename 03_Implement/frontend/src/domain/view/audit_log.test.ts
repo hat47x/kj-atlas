@@ -104,7 +104,7 @@ describe("merge audit log", () => {
   });
 
   it("appendMergeAuditEntry updates viewState with sanitized log", () => {
-    const next = appendMergeAuditEntry({ mergeAuditLog: [] }, entry("a"));
+    const next = appendMergeAuditEntry({ mergeAuditLog: [] as MergeAuditEntry[] }, entry("a"));
     expect(next.mergeAuditLog).toHaveLength(1);
     expect(next.mergeAuditLog?.[0]?.details.itemIds?.ids).toEqual(["a"]);
   });
