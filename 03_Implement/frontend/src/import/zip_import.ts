@@ -110,7 +110,8 @@ export async function readZipFiles(file: File): Promise<ZipImportResult> {
       continue;
     }
 
-    const normalizedPath = normalizeZipPath(entry.name, Boolean(commonRootFolder));
+    const rawEntryName = ((entry as JSZip.JSZipObject & { unsafeOriginalName?: string }).unsafeOriginalName ?? entry.name);
+    const normalizedPath = normalizeZipPath(rawEntryName, Boolean(commonRootFolder));
     if (!normalizedPath) {
       continue;
     }
