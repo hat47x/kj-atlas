@@ -164,3 +164,11 @@ kj-atlas は、
 - **README**：日本語（将来、英語版を追加予定）
 
 思考速度とニュアンス保持を最優先します。
+
+---
+
+## Project communication / 公開コミュニケーション
+
+- [ROADMAP.md](ROADMAP.md): 今後の開発方針（短期・中期・長期）
+- [DISCUSSIONS.md](DISCUSSIONS.md): GitHub Discussions の使い方
+- [SUPPORT.md](SUPPORT.md): 問い合わせ・サポート窓口
