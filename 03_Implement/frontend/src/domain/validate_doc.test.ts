@@ -111,6 +111,30 @@ describe("validateDocumentV2Strict", () => {
     expect(rejected.errors).toContain("cards[0].claimType: must be 'fact' | 'claim' | 'hypothesis' | 'unknown' when provided");
   });
 
+
+  it("accepts polygon geometry", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          geometry: {
+            type: "polygon",
+            polygon: {
+              points: [
+                { x: 0, y: 0 },
+                { x: 100, y: 0 },
+                { x: 100, y: 100 },
+              ],
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+  });
   it("rejects polygon shape with fewer than 3 points", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,

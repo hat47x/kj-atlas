@@ -151,6 +151,54 @@ function validateEdge(item: unknown, index: number, errors: string[]): item is D
   return valid;
 }
 
+
+function validateIslandGeometry(value: unknown, path: string, errors: string[]): value is Island["geometry"] {
+  if (!isRecord(value)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(value, ["type", "polygon"], path, errors);
+
+  if (value.type !== "rect" && value.type !== "polygon") {
+    errors.push(`${path}.type: must be 'rect' or 'polygon'`);
+    return false;
+  }
+
+  if (value.type === "polygon") {
+    if (!isRecord(value.polygon) || !Array.isArray(value.polygon.points) || value.polygon.points.length < 3) {
+      errors.push(`${path}.polygon.points: must contain at least 3 points for polygon`);
+      return false;
+    }
+
+    let valid = true;
+    value.polygon.points.forEach((point, index) => {
+      const pointPath = `${path}.polygon.points[${index}]`;
+      if (!isRecord(point)) {
+        errors.push(`${pointPath}: must be an object`);
+        valid = false;
+        return;
+      }
+      hasOnlyKeys(point, ["x", "y"], pointPath, errors);
+      if (!isFiniteNumber(point.x)) {
+        errors.push(`${pointPath}.x: must be a finite number`);
+        valid = false;
+      }
+      if (!isFiniteNumber(point.y)) {
+        errors.push(`${pointPath}.y: must be a finite number`);
+        valid = false;
+      }
+    });
+    return valid;
+  }
+
+  if (value.polygon !== undefined) {
+    errors.push(`${path}.polygon: rect geometry must not include polygon`);
+    return false;
+  }
+
+  return true;
+}
 function validateIslandShape(value: unknown, path: string, errors: string[]): value is Island["shape"] {
   if (!isRecord(value)) {
     errors.push(`${path}: must be an object`);
@@ -240,6 +288,7 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
       "imageReviewed",
       "critique",
       "critiqueTags",
+      "geometry",
       "shape",
       "shapeStale",
     ],
@@ -295,6 +344,9 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
     valid = false;
   }
   if (item.critiqueTags !== undefined && !validateStringArray(item.critiqueTags, `${path}.critiqueTags`, errors)) {
+    valid = false;
+  }
+  if (item.geometry !== undefined && !validateIslandGeometry(item.geometry, `${path}.geometry`, errors)) {
     valid = false;
   }
   if (item.shape !== undefined && !validateIslandShape(item.shape, `${path}.shape`, errors)) {

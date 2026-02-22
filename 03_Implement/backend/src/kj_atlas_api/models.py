@@ -85,6 +85,21 @@ class IslandShape(BaseModel):
         return self
 
 
+class IslandGeometry(BaseModel):
+    type: Literal["rect", "polygon"]
+    polygon: dict[str, list[Point]] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @model_validator(mode="after")
+    def ensure_geometry_polygon(self) -> "IslandGeometry":
+        if self.type == "polygon":
+            points = self.polygon.get("points") if self.polygon else None
+            if points is None or len(points) < 3:
+                raise ValueError("polygon geometry requires at least 3 points")
+        elif self.polygon is not None:
+            raise ValueError("rect geometry must not include polygon")
+        return self
+
+
 class SummaryHistoryEntry(BaseModel):
     id: str
     createdAt: datetime
@@ -112,8 +127,25 @@ class Island(BaseModel):
     imageReviewed: bool | None = Field(default=None, exclude_if=lambda value: value is None)
     critique: str | None = None
     critiqueTags: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+    geometry: IslandGeometry | None = Field(default=None, exclude_if=lambda value: value is None)
     shape: IslandShape | None = Field(default=None, exclude_if=lambda value: value is None)
     shapeStale: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @model_validator(mode="after")
+    def normalize_geometry_shape(self) -> "Island":
+        if self.geometry is None and self.shape is not None:
+            if self.shape.kind == "polygon" and self.shape.points is not None:
+                self.geometry = IslandGeometry(type="polygon", polygon={"points": self.shape.points})
+            elif self.shape.kind == "rect":
+                self.geometry = IslandGeometry(type="rect")
+        elif self.shape is None and self.geometry is not None:
+            if self.geometry.type == "polygon":
+                points = self.geometry.polygon.get("points") if self.geometry.polygon else None
+                if points is not None:
+                    self.shape = IslandShape(kind="polygon", points=points)
+            else:
+                self.shape = IslandShape(kind="rect")
+        return self
 
     @model_validator(mode="after")
     def ensure_summary_review_default(self) -> "Island":
