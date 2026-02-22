@@ -1,6 +1,7 @@
 import { validateAndUpgradeImportedDocument } from "../domain/validate";
 import type { DocumentV2 } from "../domain/types";
 import { validateImportViewMetadata, type ExportViewMetadata } from "../export/view_metadata";
+import { DEFAULT_VIEW_PRESETS } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES } from "../domain/view/perspective";
 
 export type ValidationError = {
@@ -210,6 +211,8 @@ function buildDefaultViewMetadata(input: Record<string, unknown>): ExportViewMet
       showReadingOrder: rawViewState.showReadingOrder === true,
       perspectiveMode,
       perspectiveStrictFilter: rawViewState.perspectiveStrictFilter === true,
+      presets: Array.isArray(rawViewState.presets) ? (rawViewState.presets as ExportViewMetadata["viewState"]["presets"]) : DEFAULT_VIEW_PRESETS,
+      activePresetId: typeof rawViewState.activePresetId === "string" ? rawViewState.activePresetId : undefined,
     },
     export: {
       ...(rawExport as ExportViewMetadata["export"]),

@@ -1,5 +1,6 @@
 import type { DocumentV2 } from "../domain/types";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
+import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 
@@ -79,6 +80,8 @@ export type ExportViewMetadata = {
     perspectiveStrictFilter?: boolean;
     perspective?: PerspectiveState;
     perspectivePresets?: PerspectivePreset[];
+    presets?: ViewPreset[];
+    activePresetId?: string;
   };
   export: {
     mode: "viewport" | "bounds";
@@ -128,6 +131,8 @@ type ExportViewMetadataArgs = {
     perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
     perspectiveStrictFilter?: boolean;
     perspectivePresets?: PerspectivePreset[];
+    presets?: ViewPreset[];
+    activePresetId?: string;
   };
   exportMode: "viewport" | "bounds";
   bounds?: {
@@ -207,6 +212,8 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(viewState.perspectiveStrictFilter === undefined ? {} : { perspectiveStrictFilter: viewState.perspectiveStrictFilter }),
       perspective: buildPerspectiveStateFromViewState(viewState),
       ...(viewState.perspectivePresets === undefined ? {} : { perspectivePresets: sortPerspectivePresets(viewState.perspectivePresets) }),
+      ...(viewState.presets === undefined ? {} : { presets: viewState.presets }),
+      ...(viewState.activePresetId === undefined ? {} : { activePresetId: viewState.activePresetId }),
     },
     export: {
       mode: exportMode,
@@ -519,6 +526,31 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
         }
       }
     }
+  }
+
+  if (value.viewState.presets !== undefined) {
+    if (!Array.isArray(value.viewState.presets)) {
+      return { ok: false, error: "viewState.presets must be an array when present" };
+    }
+    for (let index = 0; index < value.viewState.presets.length; index += 1) {
+      const preset = value.viewState.presets[index];
+      if (!isObject(preset)) {
+        return { ok: false, error: `viewState.presets[${index}] must be an object` };
+      }
+      if (typeof preset.id !== "string" || typeof preset.name !== "string") {
+        return { ok: false, error: `viewState.presets[${index}] id/name must be strings` };
+      }
+      if (!isObject(preset.viewPatch)) {
+        return { ok: false, error: `viewState.presets[${index}].viewPatch must be an object` };
+      }
+      if (typeof preset.createdAt !== "string" || typeof preset.updatedAt !== "string") {
+        return { ok: false, error: `viewState.presets[${index}] createdAt/updatedAt must be strings` };
+      }
+    }
+  }
+
+  if (value.viewState.activePresetId !== undefined && typeof value.viewState.activePresetId !== "string") {
+    return { ok: false, error: "viewState.activePresetId must be a string when present" };
   }
 
   if (!isObject(value.export)) {

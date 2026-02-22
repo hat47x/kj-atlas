@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
-import { isDefaultPerspectivePresetId, type PerspectiveMode, type PerspectivePreset } from "../domain/view/perspective";
+import type { PerspectiveMode } from "../domain/view/perspective";
+import type { ViewPreset } from "../domain/view/presets";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -59,12 +60,12 @@ type ViewControlsPanelProps = {
   onPerspectiveModeChange: (value: PerspectiveMode) => void;
   perspectiveStrictFilter: boolean;
   onPerspectiveStrictFilterChange: (value: boolean) => void;
-  perspectivePresets: PerspectivePreset[];
-  currentPerspectivePresetId: string | null;
-  onSavePerspectivePreset: () => void;
-  onLoadPerspectivePreset: (presetId: string) => void;
-  onRenamePerspectivePreset: (presetId: string) => void;
-  onDeletePerspectivePreset: (presetId: string) => void;
+  viewPresets: ViewPreset[];
+  activePresetId: string | null;
+  onSaveViewPreset: () => void;
+  onApplyViewPreset: (presetId: string) => void;
+  onRenameViewPreset: (presetId: string) => void;
+  onDeleteViewPreset: (presetId: string) => void;
   perspectiveHint?: string | null;
 };
 
@@ -132,12 +133,12 @@ export function ViewControlsPanel({
   onPerspectiveModeChange,
   perspectiveStrictFilter,
   onPerspectiveStrictFilterChange,
-  perspectivePresets,
-  currentPerspectivePresetId,
-  onSavePerspectivePreset,
-  onLoadPerspectivePreset,
-  onRenamePerspectivePreset,
-  onDeletePerspectivePreset,
+  viewPresets,
+  activePresetId,
+  onSaveViewPreset,
+  onApplyViewPreset,
+  onRenameViewPreset,
+  onDeleteViewPreset,
   perspectiveHint,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
@@ -215,7 +216,7 @@ export function ViewControlsPanel({
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Perspective</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Perspective presets</div>
         <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
           Mode
           <select
@@ -245,16 +246,16 @@ export function ViewControlsPanel({
           Strict filter
         </label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={onSavePerspectivePreset} style={{ cursor: "pointer" }}>
+          <button type="button" onClick={onSaveViewPreset} style={{ cursor: "pointer" }}>
             Save current as preset
           </button>
         </div>
         <div style={{ fontSize: 11, color: "#475569" }}>
-          Current preset: {perspectivePresets.find((preset) => preset.id === currentPerspectivePresetId)?.name ?? "Custom"}
+          Current preset: {viewPresets.find((preset) => preset.id === activePresetId)?.name ?? "Custom"}
         </div>
         <div style={{ display: "grid", gap: 6 }}>
-          {perspectivePresets.map((preset) => {
-            const isCurrent = preset.id === currentPerspectivePresetId;
+          {viewPresets.map((preset) => {
+            const isCurrent = preset.id === activePresetId;
             return (
               <div
                 key={preset.id}
@@ -272,13 +273,13 @@ export function ViewControlsPanel({
                   {preset.name} {isCurrent ? "(current)" : ""}
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
-                  <button type="button" onClick={() => onLoadPerspectivePreset(preset.id)}>Apply</button>
-                  <button type="button" onClick={() => onRenamePerspectivePreset(preset.id)}>Rename</button>
+                  <button type="button" onClick={() => onApplyViewPreset(preset.id)}>Apply</button>
+                  <button type="button" onClick={() => onRenameViewPreset(preset.id)}>Rename</button>
                   <button
                     type="button"
-                    onClick={() => onDeletePerspectivePreset(preset.id)}
-                    disabled={isDefaultPerspectivePresetId(preset.id)}
-                    title={isDefaultPerspectivePresetId(preset.id) ? "Default presets cannot be deleted" : undefined}
+                    onClick={() => onDeleteViewPreset(preset.id)}
+                    disabled={preset.id.startsWith("default-")}
+                    title={preset.id.startsWith("default-") ? "Default presets cannot be deleted" : undefined}
                   >
                     Delete
                   </button>

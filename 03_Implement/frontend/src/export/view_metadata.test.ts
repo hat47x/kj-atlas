@@ -536,3 +536,36 @@ describe("view metadata export", () => {
 
 
 });
+
+it("preserves presets and activePresetId across export/import validation", () => {
+  const metadata = buildExportViewMetadata({
+    doc: { id: "doc-321", title: "Preset" },
+    camera: { panX: 1, panY: 2, zoom: 1 },
+    viewState: {
+      summaryView: false,
+      abstractMapView: false,
+      hideSourceCards: false,
+      maxDepth: "all",
+      focusIslandId: null,
+      showReadingOrder: false,
+      presets: [
+        {
+          id: "preset-1",
+          name: "Review",
+          viewPatch: { perspectiveMode: "review", safeMode: true },
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+      activePresetId: "preset-1",
+    },
+    exportMode: "viewport",
+  });
+
+  const result = validateImportViewMetadata(metadata);
+  expect(result.ok).toBe(true);
+  if (result.ok) {
+    expect(result.metadata.viewState.presets?.[0].id).toBe("preset-1");
+    expect(result.metadata.viewState.activePresetId).toBe("preset-1");
+  }
+});
