@@ -1,0 +1,55 @@
+name: "🐛 Bug report"
+description: "不具合報告 / Report a reproducible bug"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        不具合報告ありがとうございます。再現性の高い情報をお願いします。
+  - type: input
+    id: version
+    attributes:
+      label: "対象バージョン / Commit"
+      description: "タグ名・ブランチ名・コミットSHA"
+      placeholder: "例: main@abc1234"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: "環境 / Environment"
+      options:
+        - Browser (frontend)
+        - Docker Compose
+        - Local backend (Python)
+        - CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "再現手順 / Steps to reproduce"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "期待した動作 / Expected behavior"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: "実際の動作 / Actual behavior"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "ログ・スクリーンショット / Logs & screenshots"
+      description: "エラーログ、スタックトレース、画面キャプチャなど"

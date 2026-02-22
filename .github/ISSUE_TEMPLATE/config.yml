@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Security vulnerability report"
+    about: "脆弱性報告は公開Issueを作成せず、まず SECURITY.md の手順を確認して private advisory を利用してください。"
+    url: "https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities"
