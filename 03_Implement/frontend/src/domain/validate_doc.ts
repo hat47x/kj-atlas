@@ -158,7 +158,7 @@ function validateIslandGeometry(value: unknown, path: string, errors: string[]):
     return false;
   }
 
-  hasOnlyKeys(value, ["type", "polygon"], path, errors);
+  hasOnlyKeys(value, ["type", "x", "y", "w", "h", "points", "polygon"], path, errors);
 
   if (value.type !== "rect" && value.type !== "polygon") {
     errors.push(`${path}.type: must be 'rect' or 'polygon'`);
@@ -166,14 +166,20 @@ function validateIslandGeometry(value: unknown, path: string, errors: string[]):
   }
 
   if (value.type === "polygon") {
-    if (!isRecord(value.polygon) || !Array.isArray(value.polygon.points) || value.polygon.points.length < 3) {
-      errors.push(`${path}.polygon.points: must contain at least 3 points for polygon`);
+    const points = Array.isArray(value.points)
+      ? value.points
+      : isRecord(value.polygon) && Array.isArray(value.polygon.points)
+        ? value.polygon.points
+        : null;
+
+    if (!points || points.length < 3) {
+      errors.push(`${path}.points: must contain at least 3 points for polygon`);
       return false;
     }
 
     let valid = true;
-    value.polygon.points.forEach((point, index) => {
-      const pointPath = `${path}.polygon.points[${index}]`;
+    points.forEach((point, index) => {
+      const pointPath = `${path}.points[${index}]`;
       if (!isRecord(point)) {
         errors.push(`${pointPath}: must be an object`);
         valid = false;
@@ -192,12 +198,20 @@ function validateIslandGeometry(value: unknown, path: string, errors: string[]):
     return valid;
   }
 
-  if (value.polygon !== undefined) {
-    errors.push(`${path}.polygon: rect geometry must not include polygon`);
-    return false;
+  let valid = true;
+  if (value.points !== undefined || value.polygon !== undefined) {
+    errors.push(`${path}.points: rect geometry must not include polygon points`);
+    valid = false;
   }
 
-  return true;
+  for (const [key, entry] of Object.entries({ x: value.x, y: value.y, w: value.w, h: value.h })) {
+    if (entry !== undefined && !isFiniteNumber(entry)) {
+      errors.push(`${path}.${key}: must be a finite number when provided`);
+      valid = false;
+    }
+  }
+
+  return valid;
 }
 function validateIslandShape(value: unknown, path: string, errors: string[]): value is Island["shape"] {
   if (!isRecord(value)) {

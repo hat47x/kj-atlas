@@ -144,16 +144,32 @@ function parseIslandGeometry(value: unknown): Island["geometry"] | undefined {
   }
 
   if (value.type === "rect") {
-    return { type: "rect" };
+    const x = toNumber(value.x);
+    const y = toNumber(value.y);
+    const w = toNumber(value.w);
+    const h = toNumber(value.h);
+    return {
+      type: "rect",
+      x: x ?? undefined,
+      y: y ?? undefined,
+      w: w ?? undefined,
+      h: h ?? undefined,
+    };
   }
 
-  if (value.type === "polygon" && isRecord(value.polygon) && Array.isArray(value.polygon.points)) {
-    const points = value.polygon.points
+  if (value.type === "polygon") {
+    const rawPoints = Array.isArray(value.points)
+      ? value.points
+      : isRecord(value.polygon) && Array.isArray(value.polygon.points)
+        ? value.polygon.points
+        : [];
+
+    const points = rawPoints
       .filter((point): point is { x: number; y: number } => isRecord(point) && toNumber(point.x) !== null && toNumber(point.y) !== null)
       .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
 
     if (points.length >= 3) {
-      return { type: "polygon", polygon: { points } };
+      return { type: "polygon", points };
     }
   }
 
@@ -207,7 +223,7 @@ function parseIslands(value: unknown): Island[] {
       }
     }
 
-    const normalizedGeometry = geometry ?? (shape?.kind === "polygon" ? { type: "polygon", polygon: { points: shape.points } } : shape?.kind === "rect" ? { type: "rect" } : undefined);
+    const normalizedGeometry = geometry ?? (shape?.kind === "polygon" ? { type: "polygon", points: shape.points } : shape?.kind === "rect" ? { type: "rect" } : undefined);
     islands.push({
       id: item.id,
       cardIds,

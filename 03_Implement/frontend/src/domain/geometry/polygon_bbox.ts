@@ -31,3 +31,5 @@ export function getPolygonBoundingBox(points: Point[]): PolygonBoundsRect | null
     h: Math.max(1, maxY - minY),
   };
 }
+
+export const bboxFromPolygon = getPolygonBoundingBox;

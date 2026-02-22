@@ -326,6 +326,46 @@ def _assert_v2_relation_summary_without_history_roundtrip(client: TestClient) ->
     assert "history" not in get_relation_summary
 
 
+
+
+def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-polygon"
+    payload = {
+        "version": 2,
+        "id": doc_id,
+        "title": "polygon-roundtrip",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "card-1", "text": "alpha", "x": 12.5, "y": -9.0}],
+        "edges": [],
+        "islands": [
+            {
+                "id": "poly-island",
+                "cardIds": ["card-1"],
+                "geometry": {
+                    "type": "polygon",
+                    "points": [
+                        {"x": 0, "y": 0},
+                        {"x": 100, "y": 0},
+                        {"x": 80, "y": 70},
+                    ],
+                },
+            }
+        ],
+    }
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_island = put_response.json()["islands"][0]
+    assert put_island["geometry"] == payload["islands"][0]["geometry"]
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_island = get_response.json()["islands"][0]
+    assert get_island["geometry"] == payload["islands"][0]["geometry"]
+
+
 def _assert_put_get_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip"
     payload = _sample_payload(doc_id)
@@ -416,6 +456,15 @@ def test_docs_v2_relation_summary_without_history_roundtrip_sqlite(sqlite_client
     _assert_v2_relation_summary_without_history_roundtrip(sqlite_client)
 
 
+def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_polygon_geometry_roundtrip(sqlite_client)
+
+
 @pytest.mark.postgres
 def test_docs_v2_relation_summary_without_history_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_relation_summary_without_history_roundtrip(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_polygon_geometry_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_polygon_geometry_roundtrip(postgres_client)

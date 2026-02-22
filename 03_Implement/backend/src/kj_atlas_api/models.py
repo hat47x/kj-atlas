@@ -87,16 +87,25 @@ class IslandShape(BaseModel):
 
 class IslandGeometry(BaseModel):
     type: Literal["rect", "polygon"]
+    x: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    y: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    w: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    h: float | None = Field(default=None, exclude_if=lambda value: value is None)
+    points: list[Point] | None = Field(default=None, exclude_if=lambda value: value is None)
     polygon: dict[str, list[Point]] | None = Field(default=None, exclude_if=lambda value: value is None)
 
     @model_validator(mode="after")
     def ensure_geometry_polygon(self) -> "IslandGeometry":
         if self.type == "polygon":
-            points = self.polygon.get("points") if self.polygon else None
-            if points is None or len(points) < 3:
+            legacy_points = self.polygon.get("points") if self.polygon else None
+            resolved_points = self.points if self.points is not None else legacy_points
+            if resolved_points is None or len(resolved_points) < 3:
                 raise ValueError("polygon geometry requires at least 3 points")
-        elif self.polygon is not None:
-            raise ValueError("rect geometry must not include polygon")
+            self.points = resolved_points
+            self.polygon = None
+        else:
+            if self.points is not None or self.polygon is not None:
+                raise ValueError("rect geometry must not include polygon points")
         return self
 
 
@@ -135,12 +144,12 @@ class Island(BaseModel):
     def normalize_geometry_shape(self) -> "Island":
         if self.geometry is None and self.shape is not None:
             if self.shape.kind == "polygon" and self.shape.points is not None:
-                self.geometry = IslandGeometry(type="polygon", polygon={"points": self.shape.points})
+                self.geometry = IslandGeometry(type="polygon", points=self.shape.points)
             elif self.shape.kind == "rect":
                 self.geometry = IslandGeometry(type="rect")
         elif self.shape is None and self.geometry is not None:
             if self.geometry.type == "polygon":
-                points = self.geometry.polygon.get("points") if self.geometry.polygon else None
+                points = self.geometry.points
                 if points is not None:
                     self.shape = IslandShape(kind="polygon", points=points)
             else:
