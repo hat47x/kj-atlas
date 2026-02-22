@@ -88,7 +88,14 @@ import {
 } from "./domain/view/evidence_overlay";
 import {
   computePerspectiveRendering,
+  DEFAULT_PERSPECTIVE_PRESETS,
   PERSPECTIVE_MODE_VALUES,
+  mergeWithDefaultPerspectivePresets,
+  isDefaultPerspectivePresetId,
+  removePerspectivePreset,
+  renamePerspectivePreset,
+  replacePerspectivePreset,
+  resolveCurrentPerspectivePresetId,
   type PerspectiveMode,
   type PerspectivePreset,
   type PerspectiveState,
@@ -196,17 +203,15 @@ function sanitizePerspectivePresets(value: unknown): PerspectivePreset[] {
     }
 
     const perspective = sanitizePerspectiveState(candidate.perspective, { mode: "default", strictFilter: false });
-    valid.push({ id: candidate.id, name: candidate.name, perspective });
+    valid.push({
+      id: candidate.id,
+      name: candidate.name,
+      perspective,
+      forceSafeModeOnShare: candidate.forceSafeModeOnShare === true,
+    });
   }
 
-  return valid.sort((left, right) => {
-    const byName = left.name.localeCompare(right.name);
-    if (byName !== 0) {
-      return byName;
-    }
-
-    return left.id.localeCompare(right.id);
-  });
+  return mergeWithDefaultPerspectivePresets(valid);
 }
 
 type DocumentHistory = {
@@ -892,7 +897,7 @@ export default function App() {
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
-  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>([]);
+  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS);
   const [guidedFlowEnabled, setGuidedFlowEnabled] = useState(false);
   const [guidedFlowStepId, setGuidedFlowStepId] = useState<GuidedFlowStepId>("review");
   const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
@@ -6260,6 +6265,7 @@ ${parsedDocument.error}`);
     distributionReport,
     document,
     evidenceOverlayDepth,
+    evidenceOverlayEnabled,
     evidenceOverlayDimOthers,
     evidenceOverlayEnabled,
     evidenceOverlayMode,
@@ -6717,10 +6723,11 @@ ${parsedDocument.error}`);
       perspective,
     };
 
-    setPerspectivePresets((previous) => sanitizePerspectivePresets([...previous, nextPreset]));
+    setPerspectivePresets((previous) => mergeWithDefaultPerspectivePresets(replacePerspectivePreset(previous, nextPreset)));
     setStatusMessage(`Saved perspective preset: ${name}`);
   }, [
     evidenceOverlayDepth,
+    evidenceOverlayEnabled,
     evidenceOverlayDimOthers,
     evidenceOverlayMode,
     evidenceOverlayScope,
@@ -6747,7 +6754,71 @@ ${parsedDocument.error}`);
       setEvidenceOverlayScope(perspective.evidenceOverlayPrefs.scope);
       setEvidenceOverlayDimOthers(perspective.evidenceOverlayPrefs.dimOthers);
     }
+    if (preset.forceSafeModeOnShare) {
+      setSafeMode(true);
+      setIncludeUnreviewedDraftsInExport(false);
+    }
     setStatusMessage(`Loaded perspective preset: ${preset.name}`);
+  }, [perspectivePresets]);
+
+  const currentPerspectivePresetId = useMemo(() => resolveCurrentPerspectivePresetId(perspectivePresets, {
+    mode: perspectiveMode,
+    strictFilter: perspectiveStrictFilter,
+    lodEnabled,
+    ...(evidenceOverlayEnabled
+      ? {
+        evidenceOverlayPrefs: {
+          mode: evidenceOverlayMode,
+          depth: clampEvidenceOverlayDepth(evidenceOverlayDepth),
+          scope: evidenceOverlayScope,
+          dimOthers: evidenceOverlayDimOthers,
+        },
+      }
+      : {}),
+  }), [
+    evidenceOverlayDepth,
+    evidenceOverlayEnabled,
+    evidenceOverlayDimOthers,
+    evidenceOverlayMode,
+    evidenceOverlayScope,
+    lodEnabled,
+    perspectiveMode,
+    perspectivePresets,
+    perspectiveStrictFilter,
+  ]);
+
+  const handleRenamePerspectivePreset = useCallback((presetId: string) => {
+    const target = perspectivePresets.find((preset) => preset.id === presetId);
+    if (!target) {
+      return;
+    }
+
+    const nextName = window.prompt("Rename preset", target.name)?.trim();
+    if (!nextName) {
+      return;
+    }
+
+    setPerspectivePresets((previous) => renamePerspectivePreset(previous, presetId, nextName));
+    setStatusMessage(`Renamed perspective preset: ${nextName}`);
+  }, [perspectivePresets]);
+
+  const handleDeletePerspectivePreset = useCallback((presetId: string) => {
+    const target = perspectivePresets.find((preset) => preset.id === presetId);
+    if (!target) {
+      return;
+    }
+
+    if (isDefaultPerspectivePresetId(presetId)) {
+      setStatusMessage(`Default preset cannot be deleted: ${target.name}`);
+      return;
+    }
+
+    if (!window.confirm(`Delete preset "${target.name}"?`)) {
+      return;
+    }
+
+    setPerspectivePresets((previous) => removePerspectivePreset(previous, presetId));
+    setStatusMessage(`Deleted perspective preset: ${target.name}`);
   }, [perspectivePresets]);
 
   const headerViewControls = (
@@ -6851,8 +6922,11 @@ ${parsedDocument.error}`);
             perspectiveStrictFilter={perspectiveStrictFilter}
             onPerspectiveStrictFilterChange={setPerspectiveStrictFilter}
             perspectivePresets={perspectivePresets}
+            currentPerspectivePresetId={currentPerspectivePresetId}
             onSavePerspectivePreset={handleSavePerspectivePreset}
             onLoadPerspectivePreset={handleLoadPerspectivePreset}
+            onRenamePerspectivePreset={handleRenamePerspectivePreset}
+            onDeletePerspectivePreset={handleDeletePerspectivePreset}
             perspectiveHint={perspectiveHint}
           />
         </div>

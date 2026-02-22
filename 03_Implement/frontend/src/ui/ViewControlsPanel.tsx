@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
-import type { PerspectiveMode, PerspectivePreset } from "../domain/view/perspective";
+import { isDefaultPerspectivePresetId, type PerspectiveMode, type PerspectivePreset } from "../domain/view/perspective";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -60,8 +60,11 @@ type ViewControlsPanelProps = {
   perspectiveStrictFilter: boolean;
   onPerspectiveStrictFilterChange: (value: boolean) => void;
   perspectivePresets: PerspectivePreset[];
+  currentPerspectivePresetId: string | null;
   onSavePerspectivePreset: () => void;
   onLoadPerspectivePreset: (presetId: string) => void;
+  onRenamePerspectivePreset: (presetId: string) => void;
+  onDeletePerspectivePreset: (presetId: string) => void;
   perspectiveHint?: string | null;
 };
 
@@ -130,8 +133,11 @@ export function ViewControlsPanel({
   perspectiveStrictFilter,
   onPerspectiveStrictFilterChange,
   perspectivePresets,
+  currentPerspectivePresetId,
   onSavePerspectivePreset,
   onLoadPerspectivePreset,
+  onRenamePerspectivePreset,
+  onDeletePerspectivePreset,
   perspectiveHint,
 }: ViewControlsPanelProps) {
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
@@ -240,29 +246,46 @@ export function ViewControlsPanel({
         </label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={onSavePerspectivePreset} style={{ cursor: "pointer" }}>
-            Save preset
+            Save current as preset
           </button>
-          <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-            Load preset
-            <select
-              value=""
-              onChange={(event) => {
-                if (!event.target.value) {
-                  return;
-                }
-
-                onLoadPerspectivePreset(event.target.value);
-                event.target.value = "";
-              }}
-            >
-              <option value="">Select preset…</option>
-              {perspectivePresets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.name}
-                </option>
-              ))}
-            </select>
-          </label>
+        </div>
+        <div style={{ fontSize: 11, color: "#475569" }}>
+          Current preset: {perspectivePresets.find((preset) => preset.id === currentPerspectivePresetId)?.name ?? "Custom"}
+        </div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {perspectivePresets.map((preset) => {
+            const isCurrent = preset.id === currentPerspectivePresetId;
+            return (
+              <div
+                key={preset.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "6px 8px",
+                  border: `1px solid ${isCurrent ? "#2563eb" : "#cbd5e1"}`,
+                  borderRadius: 6,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: isCurrent ? 700 : 500, color: "#0f172a" }}>
+                  {preset.name} {isCurrent ? "(current)" : ""}
+                </div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button type="button" onClick={() => onLoadPerspectivePreset(preset.id)}>Apply</button>
+                  <button type="button" onClick={() => onRenamePerspectivePreset(preset.id)}>Rename</button>
+                  <button
+                    type="button"
+                    onClick={() => onDeletePerspectivePreset(preset.id)}
+                    disabled={isDefaultPerspectivePresetId(preset.id)}
+                    title={isDefaultPerspectivePresetId(preset.id) ? "Default presets cannot be deleted" : undefined}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
         {perspectiveHint ? <div style={{ fontSize: 11, color: "#475569" }}>{perspectiveHint}</div> : null}
       </div>

@@ -38,7 +38,99 @@ export type PerspectivePreset = {
   id: string;
   name: string;
   perspective: PerspectiveState;
+  forceSafeModeOnShare?: boolean;
 };
+
+export const DEFAULT_PERSPECTIVE_PRESETS: PerspectivePreset[] = [
+  {
+    id: "default-explore",
+    name: "Explore",
+    perspective: { mode: "default", strictFilter: false, evidenceOverlayPrefs: { mode: "supports", depth: 1, scope: "selection", dimOthers: true } },
+  },
+  {
+    id: "default-review",
+    name: "Review",
+    perspective: { mode: "review", strictFilter: false, evidenceOverlayPrefs: { mode: "supports", depth: 1, scope: "selection", dimOthers: true } },
+    forceSafeModeOnShare: true,
+  },
+  {
+    id: "default-summary",
+    name: "Summary",
+    perspective: { mode: "default", strictFilter: false, lodEnabled: true, evidenceOverlayPrefs: { mode: "supports", depth: 1, scope: "selection", dimOthers: true } },
+  },
+];
+
+export function isDefaultPerspectivePresetId(presetId: string): boolean {
+  return DEFAULT_PERSPECTIVE_PRESETS.some((preset) => preset.id === presetId);
+}
+
+function sortPresets(presets: PerspectivePreset[]): PerspectivePreset[] {
+  return [...presets].sort((left, right) => {
+    const byName = left.name.localeCompare(right.name);
+    if (byName !== 0) {
+      return byName;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+}
+
+function normalizePerspectiveState(state: PerspectiveState): PerspectiveState {
+  const next: PerspectiveState = {
+    mode: state.mode,
+    strictFilter: state.strictFilter,
+  };
+
+  if (state.lodEnabled !== undefined) {
+    next.lodEnabled = state.lodEnabled;
+  }
+
+  const prefs = state.evidenceOverlayPrefs;
+  next.evidenceOverlayPrefs = {
+    mode: prefs?.mode ?? "supports",
+    depth: Math.max(1, Math.min(3, Math.floor(prefs?.depth ?? 1))),
+    scope: prefs?.scope ?? "selection",
+    dimOthers: prefs?.dimOthers ?? true,
+  };
+
+  return next;
+}
+
+export function mergeWithDefaultPerspectivePresets(presets: PerspectivePreset[]): PerspectivePreset[] {
+  const byId = new Map<string, PerspectivePreset>();
+  for (const preset of DEFAULT_PERSPECTIVE_PRESETS) {
+    byId.set(preset.id, preset);
+  }
+  for (const preset of presets) {
+    byId.set(preset.id, preset);
+  }
+
+  return sortPresets([...byId.values()]);
+}
+
+export function replacePerspectivePreset(presets: PerspectivePreset[], nextPreset: PerspectivePreset): PerspectivePreset[] {
+  const remaining = presets.filter((preset) => preset.id !== nextPreset.id);
+  return sortPresets([...remaining, nextPreset]);
+}
+
+export function renamePerspectivePreset(presets: PerspectivePreset[], presetId: string, nextName: string): PerspectivePreset[] {
+  return sortPresets(
+    presets.map((preset) => (preset.id === presetId ? { ...preset, name: nextName } : preset)),
+  );
+}
+
+export function removePerspectivePreset(presets: PerspectivePreset[], presetId: string): PerspectivePreset[] {
+  return sortPresets(presets.filter((preset) => preset.id !== presetId));
+}
+
+export function resolveCurrentPerspectivePresetId(
+  presets: PerspectivePreset[],
+  perspective: PerspectiveState,
+): string | null {
+  const current = JSON.stringify(normalizePerspectiveState(perspective));
+  const matched = presets.find((preset) => JSON.stringify(normalizePerspectiveState(preset.perspective)) === current);
+  return matched?.id ?? null;
+}
 
 export type PerspectiveViewState = {
   perspectiveMode: PerspectiveMode;

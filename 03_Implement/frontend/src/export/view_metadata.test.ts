@@ -295,6 +295,34 @@ describe("view metadata export", () => {
     ]);
   });
 
+  it("preserves perspective presets on export/import roundtrip", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-presets", title: "Presets" },
+      camera: { panX: 10, panY: 20, zoom: 1.2 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+        perspectiveMode: "review",
+        perspectiveStrictFilter: false,
+        perspectivePresets: [
+          { id: "default-review", name: "Review", perspective: { mode: "review", strictFilter: false }, forceSafeModeOnShare: true },
+          { id: "custom-1", name: "Custom", perspective: { mode: "claims", strictFilter: true } },
+        ],
+      },
+      exportMode: "viewport",
+    });
+
+    const validated = validateImportViewMetadata(metadata);
+    expect(validated.ok).toBe(true);
+    if (validated.ok) {
+      expect(validated.metadata.viewState.perspectivePresets).toEqual(metadata.viewState.perspectivePresets);
+    }
+  });
+
 
   it("keeps backward compatibility for old view.json without perspective fields", () => {
     const result = validateImportViewMetadata({

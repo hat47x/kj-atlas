@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import type { DocumentV2 } from "../types";
-import { computePerspectiveRendering } from "./perspective";
+import {
+  computePerspectiveRendering,
+  isDefaultPerspectivePresetId,
+  DEFAULT_PERSPECTIVE_PRESETS,
+  mergeWithDefaultPerspectivePresets,
+  removePerspectivePreset,
+  renamePerspectivePreset,
+  replacePerspectivePreset,
+  resolveCurrentPerspectivePresetId,
+} from "./perspective";
 
 const baseDoc: DocumentV2 = {
   version: 2,
@@ -72,5 +81,35 @@ describe("computePerspectiveRendering", () => {
     );
 
     expect([...result.highlightCardIds]).toEqual(["c-claim", "c-u"]);
+  });
+});
+
+describe("perspective preset CRUD", () => {
+  it("keeps default presets and supports create/rename/delete", () => {
+    const created = replacePerspectivePreset(DEFAULT_PERSPECTIVE_PRESETS, {
+      id: "preset-custom",
+      name: "Team",
+      perspective: { mode: "claims", strictFilter: true },
+    });
+
+    const renamed = renamePerspectivePreset(created, "preset-custom", "Team Review");
+    const removed = removePerspectivePreset(renamed, "preset-custom");
+
+    expect(created.some((preset) => preset.id === "preset-custom")).toBe(true);
+    expect(renamed.find((preset) => preset.id === "preset-custom")?.name).toBe("Team Review");
+    expect(removed).toEqual(DEFAULT_PERSPECTIVE_PRESETS);
+  });
+
+  it("resolves current preset id from perspective state", () => {
+    const presets = mergeWithDefaultPerspectivePresets([]);
+
+    expect(resolveCurrentPerspectivePresetId(presets, { mode: "review", strictFilter: false })).toBe("default-review");
+    expect(resolveCurrentPerspectivePresetId(presets, { mode: "claims", strictFilter: true })).toBeNull();
+  });
+
+
+  it("identifies default preset ids", () => {
+    expect(isDefaultPerspectivePresetId("default-review")).toBe(true);
+    expect(isDefaultPerspectivePresetId("custom")).toBe(false);
   });
 });
