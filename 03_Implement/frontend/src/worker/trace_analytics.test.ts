@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { DocumentV2 } from "../domain/types";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
 
-const doc: DocumentV2 = {
+const fixtureDoc: DocumentV2 = {
   version: 2,
   id: "doc",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   transform: { panX: 0, panY: 0, zoom: 1 },
   cards: [
-    { id: "c1", text: "A", x: 0, y: 0 },
-    { id: "c2", text: "B", x: 0, y: 0 },
-    { id: "c3", text: "C", x: 0, y: 0 },
-    { id: "c4", text: "D", x: 0, y: 0 },
+    { id: "c1", text: "SECRET_TEXT_DO_NOT_LEAK root", x: 0, y: 0 },
+    { id: "c2", text: "node 2", x: 0, y: 0 },
+    { id: "c3", text: "node 3", x: 0, y: 0 },
+    { id: "c4", text: "node 4", x: 0, y: 0 },
   ],
   edges: [],
   islands: [],
@@ -26,29 +26,40 @@ const doc: DocumentV2 = {
 };
 
 describe("computeTraceAnalytics", () => {
-  it("computes deterministic analytics including cycle count", () => {
-    const run1 = computeTraceAnalytics(doc, "c1", { maxHops: 3, includeCycleDetection: true, safeMode: true });
-    const run2 = computeTraceAnalytics(doc, "c1", { maxHops: 3, includeCycleDetection: true, safeMode: true });
+  it("computes deterministic analytics for both traces", () => {
+    const run1 = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", maxHops: 3, includeCycleDetection: true, safeMode: true });
+    const run2 = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", maxHops: 3, includeCycleDetection: true, safeMode: true });
 
     expect(run1).toEqual(run2);
-    expect(run1.evidenceLinkCountsByType).toEqual({ supports: 2, contradicts: 2 });
-    expect(run1.depthDistribution).toEqual([
-      { depth: 0, count: 1 },
-      { depth: 1, count: 2 },
-      { depth: 2, count: 1 },
-    ]);
+    expect(run1.byRelationType).toEqual({ supports: 2, contradicts: 2 });
+    expect(run1.depthHistogram).toEqual({ 0: 1, 1: 2, 2: 1 });
     expect(run1.topHubs[0]).toEqual({ cardId: "c3", degree: 3 });
-    expect(run1.cycleCount).toBe(1);
+    expect(run1.cycles?.count).toBe(1);
   });
 
-  it("builds markdown with ids/counts only and safe mode note", () => {
-    const analytics = computeTraceAnalytics(doc, "c1", { safeMode: true });
+  it("supports evidence-only and contradiction-only modes", () => {
+    const evidence = computeTraceAnalytics(fixtureDoc, "c1", { kind: "evidence", safeMode: true });
+    const contradiction = computeTraceAnalytics(fixtureDoc, "c1", { kind: "contradiction", safeMode: true });
+
+    expect(evidence.byRelationType).toEqual({ supports: 2 });
+    expect(contradiction.byRelationType).toEqual({ contradicts: 2 });
+  });
+
+
+  it("orders equal-degree hubs by card id", () => {
+    const analytics = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", topHubCount: 4, safeMode: true });
+    const degreeTwo = analytics.topHubs.filter((hub) => hub.degree === 2).map((hub) => hub.cardId);
+    expect(degreeTwo).toEqual(["c1", "c2"]);
+  });
+
+  it("builds safe markdown with ids/counts only", () => {
+    const analytics = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", safeMode: true });
     const markdown = buildTraceAnalyticsMd(analytics);
 
     expect(markdown).toContain("# Trace Analytics");
     expect(markdown).toContain("supports: 2");
     expect(markdown).toContain("card:c3 degree:3");
     expect(markdown).toContain("Safe mode enforced: ids/counts only.");
-    expect(markdown).not.toContain("\nA\n");
+    expect(markdown).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
   });
 });

@@ -1,14 +1,15 @@
 # Trace Analytics
 
 - startCardId: c1
+- kind: both
 - maxHops: 4
 - maxNodes: 80
 - visitedCards: 3
-- visitedRelations: 2
+- visitedLinks: 2
 
 ## Evidence links by type
-- supports: 1
 - contradicts: 1
+- supports: 1
 
 ## Depth distribution
 - depth:0 count:1
