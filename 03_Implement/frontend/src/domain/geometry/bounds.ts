@@ -75,6 +75,11 @@ export function getIslandWorldBounds(island: Island, cardsById: Map<string, Card
   };
 }
 
+
+export function islandBounds(island: Island, cardsById: Map<string, Card>): BoundsRect | null {
+  return getIslandWorldBounds(island, cardsById);
+}
+
 export function getIslandCenter(island: Island, cardsById: Map<string, Card>): { x: number; y: number } | null {
   const bounds = getIslandWorldBounds(island, cardsById);
   if (!bounds) {

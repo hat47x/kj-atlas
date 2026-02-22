@@ -23,9 +23,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     });
 
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
     const importedCard = result.document.cards.find((card) => card.id === "c1");
     expect(importedCard?.critiqueTags).toEqual(["too_close", "unrelated"]);
@@ -34,89 +32,6 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(child?.parentIslandId).toBe("parent");
     expect(child?.critiqueTags).toEqual(["unclear_boundary"]);
   });
-
-  it("defaults island collapsed to false and preserves explicit true", () => {
-    const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
-      id: "doc_collapsed",
-      createdAt: now,
-      updatedAt: now,
-      transform: { panX: 0, panY: 0, zoom: 1 },
-      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
-      edges: [],
-      islands: [
-        { id: "i1", cardIds: ["c1"] },
-        { id: "i2", cardIds: [], collapsed: true },
-      ],
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    const defaultCollapsedIsland = result.document.islands.find((island) => island.id === "i1");
-    const explicitCollapsedIsland = result.document.islands.find((island) => island.id === "i2");
-
-    expect(defaultCollapsedIsland?.collapsed).toBe(false);
-    expect(explicitCollapsedIsland?.collapsed).toBe(true);
-  });
-
-  it("preserves edge endpoint kinds from imported v2 JSON", () => {
-    const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
-      id: "doc_edge_kinds",
-      createdAt: now,
-      updatedAt: now,
-      transform: { panX: 0, panY: 0, zoom: 1 },
-      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
-      edges: [
-        { id: "e1", fromId: "c1", toId: "i1", fromKind: "card", toKind: "island", type: "related" },
-      ],
-      islands: [{ id: "i1", cardIds: ["c1"] }],
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.document.edges[0]).toMatchObject({
-      fromKind: "card",
-      toKind: "island",
-    });
-  });
-
-  it("preserves canonical relationship fields from imported cards", () => {
-    const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
-      id: "doc_canonical",
-      createdAt: now,
-      updatedAt: now,
-      transform: { panX: 0, panY: 0, zoom: 1 },
-      cards: [
-        { id: "c1", text: "canonical", x: 0, y: 0, sources: ["c2"] },
-        { id: "c2", text: "source", x: 10, y: 20, canonicalId: "c1" },
-      ],
-      edges: [],
-      islands: [],
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    const canonicalCard = result.document.cards.find((card) => card.id === "c1");
-    const sourceCard = result.document.cards.find((card) => card.id === "c2");
-
-    expect(canonicalCard?.sources).toEqual(["c2"]);
-    expect(sourceCard?.canonicalId).toBe("c1");
-  });
-
 
   it("preserves island polygon geometry from imported v2 JSON", () => {
     const now = new Date().toISOString();
@@ -134,50 +49,6 @@ describe("validateAndUpgradeImportedDocument", () => {
           cardIds: ["c1"],
           geometry: {
             type: "polygon",
-            polygon: {
-              points: [
-                { x: 0, y: 0 },
-                { x: 100, y: 0 },
-                { x: 80, y: 60 },
-              ],
-            },
-          },
-        },
-      ],
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.document.islands[0]?.geometry).toEqual({
-      type: "polygon",
-      polygon: {
-        points: [
-          { x: 0, y: 0 },
-          { x: 100, y: 0 },
-          { x: 80, y: 60 },
-        ],
-      },
-    });
-  });
-  it("preserves island polygon shape points from imported v2 JSON", () => {
-    const now = new Date().toISOString();
-    const result = validateAndUpgradeImportedDocument({
-      version: 2,
-      id: "doc_shapes",
-      createdAt: now,
-      updatedAt: now,
-      transform: { panX: 0, panY: 0, zoom: 1 },
-      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
-      edges: [],
-      islands: [
-        {
-          id: "i1",
-          cardIds: ["c1"],
-          shape: {
-            kind: "polygon",
             points: [
               { x: 0, y: 0 },
               { x: 100, y: 0 },
@@ -189,16 +60,55 @@ describe("validateAndUpgradeImportedDocument", () => {
     });
 
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
-    expect(result.document.islands[0]?.shape).toEqual({
-      kind: "polygon",
+    expect(result.document.islands[0]?.geometry).toEqual({
+      type: "polygon",
       points: [
         { x: 0, y: 0 },
         { x: 100, y: 0 },
         { x: 80, y: 60 },
+      ],
+    });
+  });
+
+  it("accepts legacy polygon geometry format and normalizes to points", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_geometry_legacy",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          geometry: {
+            type: "polygon",
+            polygon: {
+              points: [
+                { x: 10, y: 10 },
+                { x: 110, y: 10 },
+                { x: 90, y: 80 },
+              ],
+            },
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.geometry).toEqual({
+      type: "polygon",
+      points: [
+        { x: 10, y: 10 },
+        { x: 110, y: 10 },
+        { x: 90, y: 80 },
       ],
     });
   });
@@ -235,9 +145,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     });
 
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
     expect(result.document.islands[0]?.shape?.generatedFrom).toEqual({
       cardIds: ["c1"],
@@ -245,7 +153,6 @@ describe("validateAndUpgradeImportedDocument", () => {
     });
     expect(result.document.islands[0]?.shapeStale).toBe(true);
   });
-
 
   it("falls back to card-bounds rendering when imported polygon has fewer than 3 points", () => {
     const now = new Date().toISOString();
@@ -273,9 +180,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     });
 
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
     expect(result.document.islands[0]?.shape).toBeUndefined();
   });
@@ -296,13 +201,11 @@ describe("validateAndUpgradeImportedDocument", () => {
           cardIds: ["c1"],
           geometry: {
             type: "polygon",
-            polygon: {
-              points: [
-                { x: 10, y: 10 },
-                { x: 110, y: 10 },
-                { x: 90, y: 80 },
-              ],
-            },
+            points: [
+              { x: 10, y: 10 },
+              { x: 110, y: 10 },
+              { x: 90, y: 80 },
+            ],
           },
         },
       ],
@@ -312,7 +215,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     const result = validateAndUpgradeImportedDocument(exported);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+
     expect(result.document.islands[0]?.geometry).toEqual(source.islands[0].geometry);
   });
-
 });

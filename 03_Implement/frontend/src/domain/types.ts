@@ -83,12 +83,14 @@ export type IslandShape = RectIslandShape | PolygonIslandShape;
 export type IslandGeometry =
   | {
       type: "rect";
+      x?: number;
+      y?: number;
+      w?: number;
+      h?: number;
     }
   | {
       type: "polygon";
-      polygon: {
-        points: Point[];
-      };
+      points: Point[];
     };
 
 export type SummaryHistoryEntry = {

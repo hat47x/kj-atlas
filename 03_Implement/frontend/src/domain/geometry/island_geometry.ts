@@ -1,7 +1,7 @@
 import type { Island, Point } from "../types";
 
 export function getIslandPolygonPoints(island: Island): Point[] {
-  const geometryPolygon = island.geometry?.type === "polygon" ? island.geometry.polygon?.points ?? [] : [];
+  const geometryPolygon = island.geometry?.type === "polygon" ? island.geometry.points ?? [] : [];
   if (geometryPolygon.length >= 3) {
     return geometryPolygon;
   }
