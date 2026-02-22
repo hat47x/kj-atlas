@@ -1,29 +1,39 @@
 # ROADMAP
 
-本ロードマップは、公開中の方針を短く共有するためのものです。詳細な設計・実装順序は `01_Plans/` 配下を参照してください。
-
-## 近距離（次の 1〜2 リリース） / Near-term (next 1-2 releases)
-
-- **U1: 探索UXの深化**
-  - カード移動・グルーピング時の認知負荷を下げる操作改善
-- **U2: 保留と見直しの循環を強化**
-  - 「未確定」「要再検討」を保持しやすいレビュー導線の改善
-- **U3: 共有時の読み解き体験を改善**
-  - 図の意図・文脈を伝えるビューと注釈表現の整理
-
-## 中期 / Mid-term
-
-- **ローカルLLMアダプタの整備**
-  - 外部依存を減らし、ローカル実行環境でも対話支援を利用しやすくする
-- **KJワークフローの標準化**
-  - 収集→配置→再配置→要約の反復を、テンプレート化して再利用可能にする
-
-## 長期 / Long-term
-
-- **階層的な定性的統合（hierarchical qualitative synthesis）への対応**
-  - 複数のマップ・視点・時間軸を重ね、上位概念へ統合しつつ根拠へ戻れる構造を提供する
-
----
-
 **English summary (short):**
-Near-term focuses on UX deepening (U1/U2/U3), mid-term adds a local LLM adapter and reusable KJ workflows, and long-term targets hierarchical qualitative synthesis across multiple maps and perspectives.
+This roadmap shares public priorities for kj-atlas.
+Near-term covers U1/U2/U3 and SafeMode hardening.
+Mid-term targets consolidation, hierarchical synthesis, and an optional local LLM adapter.
+Long-term explores advanced island shapes, collaboration, and optional signing/audit hardening.
+
+このロードマップは、公開向けに優先度を短く共有するための文書です。
+詳細な実装タスクは `01_Plans/` を参照してください。
+
+## 近距離（次の 1〜2 リリース）
+
+- **U1 presets**
+  - 代表的な探索開始パターンをプリセットとして選べるようにする。
+- **U2 collapse**
+  - 情報密度が高い場面でも読みやすくするため、折りたたみ操作を強化する。
+- **U3 polygon islands**
+  - ポリゴン島を前提とした配置・編集体験を安定化する。
+- **SafeMode enforcement hardening**
+  - safeMode 制約の強制をより堅牢化し、共有時の安全性を高める。
+
+## 中期
+
+- **Similar-card consolidation support**
+  - 類似カードの統合（consolidation）を支援する機能を追加する（既知の将来タスク）。
+- **Hierarchical synthesis（質的統合）**
+  - 複数クラスタを段階的に束ね、上位概念へ統合できる流れを整備する。
+- **Local LLM adapter interface（任意）**
+  - プライベート運用向けに、任意で使えるローカル LLM アダプタ I/F を整える。
+
+## 長期
+
+- **Non-rect island shapes beyond polygon（splines）**
+  - ポリゴンを超える非矩形島（例: スプライン）を検討する。
+- **Multi-user collaboration（現時点ではスコープ外）**
+  - 複数人同時編集は将来候補とし、当面は単一ユーザー前提を維持する。
+- **Optional signing/audit hardening**
+  - 必要に応じて署名・監査の強化オプションを提供する。
