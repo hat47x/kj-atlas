@@ -19,6 +19,7 @@ import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dial
 import { computeDiagramStructuralMetrics } from "../domain/view/structural_metrics";
 import { downloadTextFile } from "../export/narrative_export";
 import { TraceWorkerClient } from "../worker/trace_client";
+import type { TraceAnalytics } from "../worker/trace_analytics";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
 
 type SummaryGroundingItem = {
@@ -356,10 +357,12 @@ export function SidePanel({
   const [isTraceRunning, setIsTraceRunning] = useState(false);
   const [traceProgressMessage, setTraceProgressMessage] = useState<string | null>(null);
   const [isAnalyticsRunning, setIsAnalyticsRunning] = useState(false);
+  const [traceAnalyticsMode, setTraceAnalyticsMode] = useState<"evidence" | "contradiction" | "both">("both");
   const [traceAnalyticsMd, setTraceAnalyticsMd] = useState<string | null>(null);
-  const [traceAnalytics, setTraceAnalytics] = useState<{ evidenceLinkCountsByType: { supports: number; contradicts: number }; depthDistribution: Array<{ depth: number; count: number }>; topHubs: Array<{ cardId: string; degree: number }>; cycleCount: number | null } | null>(null);
+  const [traceAnalytics, setTraceAnalytics] = useState<TraceAnalytics | null>(null);
   const traceClientRef = useRef<TraceWorkerClient | null>(null);
   const traceAbortRef = useRef<AbortController | null>(null);
+  const analyticsAbortRef = useRef<AbortController | null>(null);
 
   const summaryHistoryEntries = useMemo(() => {
     const entries = selectedIsland?.summaryHistory ?? [];
@@ -470,6 +473,7 @@ export function SidePanel({
   useEffect(() => {
     return () => {
       traceAbortRef.current?.abort();
+      analyticsAbortRef.current?.abort();
       traceClientRef.current?.dispose();
     };
   }, []);
@@ -486,7 +490,9 @@ export function SidePanel({
       traceClientRef.current = new TraceWorkerClient();
     }
 
+    analyticsAbortRef.current?.abort();
     const controller = new AbortController();
+    analyticsAbortRef.current = controller;
     setIsAnalyticsRunning(true);
     void traceClientRef.current.computeTraceAnalytics({
       doc: document,
@@ -494,12 +500,13 @@ export function SidePanel({
         startCardId: selectedCard.id,
         maxHops: 4,
         maxNodes: 80,
+        kind: traceAnalyticsMode,
         safeMode,
         includeCycleDetection: true,
       },
     }, {
       signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(`Trace analytics: ${progress.stage} (${progress.percent}%)`),
+      onProgress: (progress) => setTraceProgressMessage(`Trace analytics (${traceAnalyticsMode}): ${progress.stage} (${progress.percent}%)`),
     }).then((outcome) => {
       if (outcome.status !== "completed") {
         return;
@@ -509,14 +516,20 @@ export function SidePanel({
     }).catch(() => {
       onEvidenceTraceError("Failed to compute trace analytics");
     }).finally(() => {
+      if (analyticsAbortRef.current === controller) {
+        analyticsAbortRef.current = null;
+      }
       setIsAnalyticsRunning(false);
       setTraceProgressMessage(null);
     });
 
     return () => {
       controller.abort();
+      if (analyticsAbortRef.current === controller) {
+        analyticsAbortRef.current = null;
+      }
     };
-  }, [document, onEvidenceTraceError, safeMode, selectedCard]);
+  }, [document, onEvidenceTraceError, safeMode, selectedCard, traceAnalyticsMode]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -662,10 +675,10 @@ export function SidePanel({
   };
 
   const handleDownloadTraceAnalytics = () => {
-    if (!traceAnalyticsMd) {
+    if (!traceAnalyticsMd || !selectedCard) {
       return;
     }
-    downloadTextFile("trace_analytics.md", "text/markdown", traceAnalyticsMd);
+    downloadTextFile(`trace_analytics_${selectedCard.id}.md`, "text/markdown", traceAnalyticsMd);
   };
 
   const outlineDiagnosticsCounts = useMemo(() => {
@@ -2929,17 +2942,27 @@ export function SidePanel({
                   {traceProgressMessage ? <div style={{ fontSize: 11, color: "#334155" }}>{traceProgressMessage}</div> : null}
 
                   <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>Trace Analytics</div>
+                  <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+                    Mode
+                    <select value={traceAnalyticsMode} onChange={(event) => setTraceAnalyticsMode(event.target.value as "evidence" | "contradiction" | "both") }>
+                      <option value="both">both</option>
+                      <option value="evidence">evidence</option>
+                      <option value="contradiction">contradiction</option>
+                    </select>
+                  </label>
                   {isAnalyticsRunning ? <div style={{ fontSize: 11, color: "#64748b" }}>Computing analytics…</div> : null}
+                  {isAnalyticsRunning ? <button type="button" onClick={() => analyticsAbortRef.current?.abort()}>Cancel analytics</button> : null}
                   {traceAnalytics ? (
                     <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
-                      <div>Evidence links: supports {traceAnalytics.evidenceLinkCountsByType.supports}, contradicts {traceAnalytics.evidenceLinkCountsByType.contradicts}</div>
-                      <div>Depth distribution: {traceAnalytics.depthDistribution.map((entry) => `d${entry.depth}:${entry.count}`).join(", ") || "(none)"}</div>
+                      <div>Visited cards: {traceAnalytics.visitedCardIds.length} / Visited links: {traceAnalytics.visitedLinkIds.length}</div>
+                      <div>Relation counts: {Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || "(none)"}</div>
+                      <div>Depth histogram: {Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || "(none)"}</div>
                       <div>Top hubs: {traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || "(none)"}</div>
-                      <div>Cycle count: {traceAnalytics.cycleCount === null ? "skipped" : traceAnalytics.cycleCount}</div>
+                      <div>Cycle count: {traceAnalytics.cycles ? traceAnalytics.cycles.count : "skipped"}</div>
                     </div>
                   ) : null}
                   <button type="button" disabled={!traceAnalyticsMd || isAnalyticsRunning} onClick={handleDownloadTraceAnalytics}>
-                    Download trace_analytics.md
+                    Export Trace Analytics
                   </button>
 
                   {selectedCardContradictionsCount === 0 ? (

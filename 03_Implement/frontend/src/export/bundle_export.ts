@@ -208,7 +208,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
       });
     }
 
-    const analytics = computeTraceAnalytics(doc, context.selectedCardId, { safeMode, maxHops: 4, maxNodes: 80, includeCycleDetection: true });
+    const analytics = computeTraceAnalytics(doc, context.selectedCardId, { kind: "both", safeMode, maxHops: 4, maxNodes: 80, includeCycleDetection: true });
     bundleFiles.push({
       path: `${root}/trace_analytics_${context.selectedCardId}.md`,
       content: buildTraceAnalyticsMd(analytics),
@@ -291,6 +291,7 @@ export async function buildExportBundleWithWorkers(
         doc,
         options: {
           startCardId: context.selectedCardId,
+          kind: "both",
           maxHops: sharedOptions.maxHops,
           maxNodes: sharedOptions.maxNodes,
           safeMode,

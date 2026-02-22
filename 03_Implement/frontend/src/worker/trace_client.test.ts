@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV2, EvidenceLink } from "../domain/types";
 import { TraceWorkerClient } from "./trace_client";
 
 const originalWorker = globalThis.Worker;
@@ -34,5 +34,30 @@ describe("TraceWorkerClient", () => {
     }
     expect(result.usedFallback).toBe(true);
     expect(warn).toHaveBeenCalled();
+  });
+
+  it("computes analytics for ~150 cards via fallback without leaking text", async () => {
+    globalThis.Worker = class { constructor() { throw new Error("worker unavailable"); } } as unknown as typeof Worker;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const cards = Array.from({ length: 150 }, (_, index) => ({ id: `c${index + 1}`, text: `SECRET_TEXT_DO_NOT_LEAK_${index + 1}`, x: index, y: 0 }));
+    const evidenceLinks: EvidenceLink[] = Array.from({ length: 149 }, (_, index) => ({
+      id: `e${index + 1}`,
+      fromCardId: `c${index + 1}`,
+      toCardId: `c${index + 2}`,
+      type: index % 2 === 0 ? "supports" : "contradicts",
+    }));
+    const largeDoc: DocumentV2 = { ...doc, cards, evidenceLinks };
+
+    const client = new TraceWorkerClient();
+    const result = await client.computeTraceAnalytics({ doc: largeDoc, options: { startCardId: "c1", kind: "both", maxHops: 4, maxNodes: 80, safeMode: true } });
+
+    expect(result.status).toBe("completed");
+    expect(result.usedFallback).toBe(true);
+    if (result.status === "completed") {
+      expect(result.result.analytics.visitedCardIds.length).toBeLessThanOrEqual(80);
+      expect(result.result.analyticsMd).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
+    }
+    expect(warn).toHaveBeenCalled();
+    client.dispose();
   });
 });
