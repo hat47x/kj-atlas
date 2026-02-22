@@ -209,6 +209,9 @@ function buildDefaultViewMetadata(input: Record<string, unknown>): ExportViewMet
       maxDepth: typeof rawViewState.maxDepth === "number" || rawViewState.maxDepth === "all" ? rawViewState.maxDepth : "all",
       focusIslandId: typeof rawViewState.focusIslandId === "string" ? rawViewState.focusIslandId : null,
       showReadingOrder: rawViewState.showReadingOrder === true,
+      collapsedIslandIds: Array.isArray(rawViewState.collapsedIslandIds)
+        ? rawViewState.collapsedIslandIds.filter((value): value is string => typeof value === "string")
+        : [],
       perspectiveMode,
       perspectiveStrictFilter: rawViewState.perspectiveStrictFilter === true,
       presets: Array.isArray(rawViewState.presets) ? (rawViewState.presets as ExportViewMetadata["viewState"]["presets"]) : DEFAULT_VIEW_PRESETS,

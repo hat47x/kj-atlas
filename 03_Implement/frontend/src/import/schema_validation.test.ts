@@ -48,6 +48,15 @@ describe("schema_validation", () => {
     if (result.ok) {
       expect(result.value.camera).toEqual({ panX: 0, panY: 0, zoom: 1 });
       expect(result.value.viewState.perspectiveMode).toBe("default");
+      expect(result.value.viewState.collapsedIslandIds).toEqual([]);
+    }
+  });
+
+  it("normalizes collapsedIslandIds to string ids", () => {
+    const result = validateView({ viewState: { collapsedIslandIds: ["island-a", 123, "island-b"] } });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
     }
   });
 });

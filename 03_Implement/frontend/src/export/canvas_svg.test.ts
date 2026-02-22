@@ -96,6 +96,30 @@ describe("canvas_svg export", () => {
   });
 
 
+  it("hides edges when either endpoint card is hidden", () => {
+    const doc = buildDoc();
+    const viewState = {
+      visibleIslandIds: new Set(["i1", "i2"]),
+      hiddenCardIds: new Set(["c2"]),
+      hideSourceCards: false,
+      summaryView: false,
+      abstractMapView: false,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    expect(bounds).not.toBeNull();
+
+    const svg = exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds!,
+    });
+
+    const lineCount = (svg.match(/<line /g) ?? []).length;
+    expect(lineCount).toBe(1);
+  });
+
   it("hides source cards when hideSourceCards is enabled", () => {
     const doc = buildDoc();
     const viewState = {
