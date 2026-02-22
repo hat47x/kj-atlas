@@ -4,7 +4,7 @@ import { analyzeDialecticBalance } from "../domain/view/dialectic_balance";
 import { analyzeDistribution } from "../domain/view/distribution_checks";
 import { analyzeOutlineQuality } from "../domain/view/outline_quality";
 import { generateRecommendations } from "../domain/view/recommendations";
-import { computeDiagramStructuralMetrics } from "../domain/view/structural_metrics";
+import { computeStructureMetrics } from "../domain/view/structural_metrics";
 import type { DiagnosticsData, DiagnosticsRequestPayload } from "./diagnostics_protocol";
 
 function toSafeOutline(data: DiagnosticsData["outlineReport"]): DiagnosticsData["outlineReport"] {
@@ -64,14 +64,25 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
     if (cardIds.length > 0) lines.push(`  - cards: ${cardIds.join(", ")}`);
   }
 
-  lines.push("", "## Metrics", "", `- cardCount: ${data.structuralMetrics.cardCount}`, `- islandCount: ${data.structuralMetrics.islandCount}`, `- evidenceLinkDensity: ${data.structuralMetrics.evidenceLinkDensity}`, `- isolatedCardsCount: ${data.structuralMetrics.isolatedCardsCount}`);
-  lines.push(`- contradictionRatio: ${data.structuralMetrics.contradictionRatio === null ? "n/a" : data.structuralMetrics.contradictionRatio}`);
-  lines.push("- islandSizeDistribution:");
+  lines.push("", "## Metrics", "", "| metric | value |", "| --- | ---: |");
+  lines.push(`| cardCount | ${data.structuralMetrics.cardCount} |`);
+  lines.push(`| islandCount | ${data.structuralMetrics.islandCount} |`);
+  lines.push(`| evidenceLinkCount | ${data.structuralMetrics.evidenceLinkCount} |`);
+  lines.push(`| evidenceLinkDensity | ${data.structuralMetrics.evidenceLinkDensity} |`);
+  lines.push(`| isolatedCardCount | ${data.structuralMetrics.isolatedCardCount} |`);
+  if (data.structuralMetrics.contradictionRatio !== null) {
+    lines.push(`| contradictionRatio | ${data.structuralMetrics.contradictionRatio} |`);
+  }
+  if (data.structuralMetrics.reviewedCoverage !== null) {
+    lines.push(`| reviewedCoverage | ${data.structuralMetrics.reviewedCoverage} |`);
+  }
+
+  lines.push("", "### islandSizeDistribution", "", "| size | islands |", "| ---: | ---: |");
   if (data.structuralMetrics.islandSizeDistribution.length === 0) {
-    lines.push("  - (none)");
+    lines.push("| (none) | 0 |");
   } else {
     for (const bin of data.structuralMetrics.islandSizeDistribution) {
-      lines.push(`  - size ${bin.size}: ${bin.islands} island(s)`);
+      lines.push(`| ${bin.size} | ${bin.islands} |`);
     }
   }
 
@@ -86,7 +97,7 @@ export function computeDiagnostics(payload: DiagnosticsRequestPayload): { diagno
   const contradiction = analyzeContradictions(payload.doc, nowIso);
   const distribution = analyzeDistribution(payload.doc, nowIso);
   const dialectic = analyzeDialecticBalance(payload.doc, nowIso);
-  const structuralMetrics = computeDiagramStructuralMetrics(payload.doc);
+  const structuralMetrics = computeStructureMetrics(payload.doc, payload.view);
 
   const diagnosticsData: DiagnosticsData = {
     outlineReport: safeMode ? toSafeOutline(outline) : outline,

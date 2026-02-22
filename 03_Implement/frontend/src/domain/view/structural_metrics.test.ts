@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DocumentV2 } from "../types";
-import { computeDiagramStructuralMetrics } from "./structural_metrics";
+import { computeStructureMetrics } from "./structural_metrics";
 
 function makeDoc(partial: Partial<DocumentV2>): DocumentV2 {
   return {
@@ -16,14 +16,14 @@ function makeDoc(partial: Partial<DocumentV2>): DocumentV2 {
   };
 }
 
-describe("computeDiagramStructuralMetrics", () => {
+describe("computeStructureMetrics", () => {
   it("computes whole-diagram structural metrics deterministically", () => {
     const doc = makeDoc({
       cards: [
-        { id: "c1", text: "1", x: 0, y: 0 },
-        { id: "c2", text: "2", x: 1, y: 0 },
-        { id: "c3", text: "3", x: 2, y: 0 },
-        { id: "c4", text: "4", x: 3, y: 0 },
+        { id: "c1", text: "SECRET-1", x: 0, y: 0, textReviewed: true },
+        { id: "c2", text: "SECRET-2", x: 1, y: 0, textReviewed: false },
+        { id: "c3", text: "SECRET-3", x: 2, y: 0 },
+        { id: "c4", text: "SECRET-4", x: 3, y: 0 },
       ],
       islands: [
         { id: "i1", cardIds: ["c1", "c2"], shape: { kind: "rect" } },
@@ -40,42 +40,45 @@ describe("computeDiagramStructuralMetrics", () => {
       ],
     });
 
-    expect(computeDiagramStructuralMetrics(doc)).toEqual({
+    expect(computeStructureMetrics(doc)).toEqual({
       cardCount: 4,
       islandCount: 3,
-      evidenceLinkDensity: 0.1667,
-      isolatedCardsCount: 1,
+      evidenceLinkCount: 2,
+      evidenceLinkDensity: 0.5,
+      isolatedCardCount: 0,
       islandSizeDistribution: [
         { size: 1, islands: 2 },
         { size: 2, islands: 1 },
       ],
       contradictionRatio: 0.5,
+      reviewedCoverage: 0.25,
     });
   });
 
-  it("sets contradictionRatio to null when typed relations are unavailable", () => {
+  it("omits optional ratios when typed relations and reviewed flags are unavailable", () => {
     const doc = makeDoc({
       cards: [{ id: "c1", text: "1", x: 0, y: 0 }],
       islands: [{ id: "i1", cardIds: ["c1"], shape: { kind: "rect" } }],
     });
 
-    expect(computeDiagramStructuralMetrics(doc).contradictionRatio).toBeNull();
+    const metrics = computeStructureMetrics(doc);
+    expect(metrics.contradictionRatio).toBeNull();
+    expect(metrics.reviewedCoverage).toBeNull();
   });
 
-  it("derives contradictionRatio from edge relation types when evidence links are absent", () => {
+  it("is unchanged by export/import round-trip", () => {
     const doc = makeDoc({
       cards: [
-        { id: "c1", text: "1", x: 0, y: 0 },
-        { id: "c2", text: "2", x: 1, y: 0 },
-      ],
-      edges: [
-        { id: "e1", fromId: "c1", toId: "c2", type: "related" },
-        { id: "e2", fromId: "c2", toId: "c1", type: "negate" },
+        { id: "c1", text: "Alpha", x: 0, y: 0, textReviewed: true },
+        { id: "c2", text: "Beta", x: 1, y: 0, textReviewed: false },
       ],
       islands: [{ id: "i1", cardIds: ["c1", "c2"], shape: { kind: "rect" } }],
+      evidenceLinks: [{ id: "e1", fromCardId: "c1", toCardId: "c2", type: "supports" }],
     });
 
-    expect(computeDiagramStructuralMetrics(doc).contradictionRatio).toBe(0.5);
+    const before = computeStructureMetrics(doc);
+    const roundTrip = JSON.parse(JSON.stringify(doc)) as DocumentV2;
+    const after = computeStructureMetrics(roundTrip);
+    expect(after).toEqual(before);
   });
-
 });
