@@ -125,6 +125,51 @@ describe("view metadata export", () => {
   });
 
 
+
+
+  it("persists collapsedIslandIds when present", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-123", title: "Sample" },
+      camera: { panX: 1, panY: 2, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+        collapsedIslandIds: ["island-b", "island-a"],
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid collapsedIslandIds", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        collapsedIslandIds: ["island-1", 2],
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: "viewState.collapsedIslandIds[1] must be a string" });
+  });
+
   it("persists and validates safeMode when present", () => {
     const metadata = buildExportViewMetadata({
       doc: { id: "doc-789", title: "Sample" },

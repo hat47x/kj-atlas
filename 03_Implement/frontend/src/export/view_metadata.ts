@@ -63,6 +63,7 @@ export type ExportViewMetadata = {
     readingIndex?: number;
     readingMode?: "islands" | "islands+cards";
     reviewedOnly?: boolean;
+    collapsedIslandIds?: string[];
     safeMode?: boolean;
     lodEnabled?: boolean;
     lodThresholds?: LODThresholds;
@@ -112,6 +113,7 @@ type ExportViewMetadataArgs = {
     readingIndex?: number;
     readingMode?: "islands" | "islands+cards";
     reviewedOnly?: boolean;
+    collapsedIslandIds?: string[];
     safeMode?: boolean;
     lodEnabled?: boolean;
     lodThresholds?: LODThresholds;
@@ -187,6 +189,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(viewState.readingIndex === undefined ? {} : { readingIndex: viewState.readingIndex }),
       ...(viewState.readingMode === undefined ? {} : { readingMode: viewState.readingMode }),
       ...(viewState.reviewedOnly === undefined ? {} : { reviewedOnly: viewState.reviewedOnly }),
+      ...(viewState.collapsedIslandIds === undefined ? {} : { collapsedIslandIds: [...viewState.collapsedIslandIds].sort() }),
       ...(viewState.safeMode === undefined ? {} : { safeMode: viewState.safeMode }),
       ...(viewState.lodEnabled === undefined ? {} : { lodEnabled: viewState.lodEnabled }),
       ...(viewState.lodThresholds === undefined ? {} : { lodThresholds: viewState.lodThresholds }),
@@ -347,6 +350,18 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.reviewedOnly !== undefined && typeof value.viewState.reviewedOnly !== "boolean") {
     return { ok: false, error: "viewState.reviewedOnly must be a boolean when present" };
+  }
+
+  if (value.viewState.collapsedIslandIds !== undefined) {
+    if (!Array.isArray(value.viewState.collapsedIslandIds)) {
+      return { ok: false, error: "viewState.collapsedIslandIds must be an array when present" };
+    }
+
+    for (let index = 0; index < value.viewState.collapsedIslandIds.length; index += 1) {
+      if (typeof value.viewState.collapsedIslandIds[index] !== "string") {
+        return { ok: false, error: `viewState.collapsedIslandIds[${index}] must be a string` };
+      }
+    }
   }
 
   if (value.viewState.safeMode !== undefined && typeof value.viewState.safeMode !== "boolean") {
