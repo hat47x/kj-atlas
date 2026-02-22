@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV2, EvidenceLink } from "../domain/types";
 import { TraceWorkerClient } from "./trace_client";
 
 const originalWorker = globalThis.Worker;
@@ -40,7 +40,12 @@ describe("TraceWorkerClient", () => {
     globalThis.Worker = class { constructor() { throw new Error("worker unavailable"); } } as unknown as typeof Worker;
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const cards = Array.from({ length: 150 }, (_, index) => ({ id: `c${index + 1}`, text: `SECRET_TEXT_DO_NOT_LEAK_${index + 1}`, x: index, y: 0 }));
-    const evidenceLinks = Array.from({ length: 149 }, (_, index) => ({ id: `e${index + 1}`, fromCardId: `c${index + 1}`, toCardId: `c${index + 2}`, type: (index % 2 === 0 ? "supports" : "contradicts") as const }));
+    const evidenceLinks: EvidenceLink[] = Array.from({ length: 149 }, (_, index) => ({
+      id: `e${index + 1}`,
+      fromCardId: `c${index + 1}`,
+      toCardId: `c${index + 2}`,
+      type: index % 2 === 0 ? "supports" : "contradicts",
+    }));
     const largeDoc: DocumentV2 = { ...doc, cards, evidenceLinks };
 
     const client = new TraceWorkerClient();
