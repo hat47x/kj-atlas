@@ -5,6 +5,7 @@ import type { DialecticBalanceReport } from "../domain/view/dialectic_balance";
 import type { DistributionReport } from "../domain/view/distribution_checks";
 import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
+import type { DiagramStructuralMetrics } from "../domain/view/structural_metrics";
 
 export type DiagnosticsRequestPayload = {
   doc: DocumentV2;
@@ -25,6 +26,7 @@ export type DiagnosticsData = {
   contradictionReport: ContradictionReport;
   distributionReport: DistributionReport;
   dialecticBalanceReport: DialecticBalanceReport;
+  structuralMetrics: DiagramStructuralMetrics;
 };
 
 export type DiagnosticsWorkerRequestMessage =
