@@ -1,9 +1,14 @@
 import { createCancelableTaskRunner } from "../utils/compute_scheduler";
 import { computeTrace } from "./trace_compute";
-import type { TraceRequestPayload, TraceWorkerRequestMessage, TraceWorkerResponseMessage } from "./trace_protocol";
+import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
+import type { TraceAnalyticsRequestPayload, TraceRequestPayload, TraceWorkerRequestMessage, TraceWorkerResponseMessage } from "./trace_protocol";
 
 export type TraceComputeResult =
   | { status: "completed"; result: ReturnType<typeof computeTrace>; usedFallback: boolean }
+  | { status: "cancelled"; usedFallback: boolean };
+
+export type TraceAnalyticsComputeResult =
+  | { status: "completed"; result: { analyticsMd: string; analytics: ReturnType<typeof computeTraceAnalytics> }; usedFallback: boolean }
   | { status: "cancelled"; usedFallback: boolean };
 
 let requestCounter = 0;
@@ -24,6 +29,15 @@ export class TraceWorkerClient {
     } catch (error) {
       console.warn("Trace worker unavailable. Falling back to main-thread scheduler.", error);
       return this.computeViaFallback(payload, options);
+    }
+  }
+
+  async computeTraceAnalytics(payload: TraceAnalyticsRequestPayload, options: { onProgress?: (progress: { stage: string; percent: number }) => void; signal?: AbortSignal } = {}): Promise<TraceAnalyticsComputeResult> {
+    try {
+      return await this.computeAnalyticsViaWorker(payload, options);
+    } catch (error) {
+      console.warn("Trace analytics worker unavailable. Falling back to main-thread scheduler.", error);
+      return this.computeAnalyticsViaFallback(payload, options);
     }
   }
 
@@ -88,6 +102,81 @@ export class TraceWorkerClient {
         }
       }
       return computeTrace({ ...payload, options: { ...payload.options, safeMode: payload.options.safeMode ?? true } });
+    });
+
+    unsubscribe();
+    options.signal?.removeEventListener("abort", abortListener);
+    if (outcome.status === "cancelled" || outcome.result === null) {
+      return { status: "cancelled", usedFallback: true };
+    }
+    return { status: "completed", result: outcome.result, usedFallback: true };
+  }
+
+  private computeAnalyticsViaWorker(payload: TraceAnalyticsRequestPayload, options: { onProgress?: (progress: { stage: string; percent: number }) => void; signal?: AbortSignal }): Promise<TraceAnalyticsComputeResult> {
+    const worker = this.ensureWorker();
+    requestCounter += 1;
+    const requestId = `trace-analytics-${requestCounter}`;
+
+    return new Promise<TraceAnalyticsComputeResult>((resolve, reject) => {
+      const onMessage = (event: MessageEvent<TraceWorkerResponseMessage>) => {
+        const message = event.data;
+        if (message.requestId !== requestId) return;
+        if (message.type === "trace.progress") {
+          options.onProgress?.({ stage: message.stage, percent: message.percent });
+          return;
+        }
+        cleanup();
+        if (message.type === "trace.analytics.result") {
+          resolve({ status: "completed", result: message.result, usedFallback: false });
+          return;
+        }
+        if (message.type === "trace.cancelled") {
+          resolve({ status: "cancelled", usedFallback: false });
+          return;
+        }
+        if (message.type === "trace.error") {
+          reject(new Error(message.error.message));
+        }
+      };
+
+      const onAbort = () => {
+        this.cancel(requestId);
+        cleanup();
+        resolve({ status: "cancelled", usedFallback: false });
+      };
+
+      const cleanup = () => {
+        worker.removeEventListener("message", onMessage);
+        options.signal?.removeEventListener("abort", onAbort);
+      };
+
+      worker.addEventListener("message", onMessage);
+      options.signal?.addEventListener("abort", onAbort, { once: true });
+      worker.postMessage({ type: "trace.analytics.request", requestId, payload } as TraceWorkerRequestMessage);
+    });
+  }
+
+  private async computeAnalyticsViaFallback(payload: TraceAnalyticsRequestPayload, options: { onProgress?: (progress: { stage: string; percent: number }) => void; signal?: AbortSignal }): Promise<TraceAnalyticsComputeResult> {
+    const stages = ["collect", "traverse", "render"];
+    const unsubscribe = this.fallbackRunner.onProgress((progress) => {
+      options.onProgress?.({ stage: stages[progress.completed - 1] ?? "render", percent: Math.round((progress.completed / progress.total) * 100) });
+    });
+    const abortListener = () => this.fallbackRunner.cancel();
+    options.signal?.addEventListener("abort", abortListener, { once: true });
+
+    const outcome = await this.fallbackRunner.run(async (ctx) => {
+      for (let i = 0; i < stages.length; i += 1) {
+        ctx.reportProgress({ message: stages[i] ?? "render", completed: i + 1, total: stages.length });
+        await ctx.yieldToMainThread();
+        if (ctx.isCancelled()) {
+          return null;
+        }
+      }
+      const analytics = computeTraceAnalytics(payload.doc, payload.options.startCardId, {
+        ...payload.options,
+        safeMode: payload.options.safeMode ?? true,
+      });
+      return { analyticsMd: buildTraceAnalyticsMd(analytics), analytics };
     });
 
     unsubscribe();

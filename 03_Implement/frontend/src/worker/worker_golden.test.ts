@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { DocumentV2 } from "../domain/types";
 import { computeDiagnostics } from "./diagnostics_compute";
 import { computeTrace } from "./trace_compute";
+import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
 
 const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/worker");
 const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.small.json"), "utf8")) as DocumentV2;
@@ -19,6 +20,13 @@ describe("worker compute goldens", () => {
     const expected = fs.readFileSync(path.join(fixturesDir, "contradiction_trace_c1.md"), "utf8");
     const output = computeTrace({ doc: fixtureDoc, options: { kind: "contradiction", startCardId: "c1", safeMode: true } });
     expect(output.traceMd).toBe(expected);
+  });
+
+
+  it("trace analytics output matches golden fixture", () => {
+    const expected = fs.readFileSync(path.join(fixturesDir, "trace_analytics_c1.md"), "utf8");
+    const output = buildTraceAnalyticsMd(computeTraceAnalytics(fixtureDoc, "c1", { safeMode: true }));
+    expect(output).toBe(expected);
   });
 
   it("diagnostics output matches golden fixture and is deterministic", () => {

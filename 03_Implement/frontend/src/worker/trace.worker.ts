@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import { computeTrace } from "./trace_compute";
+import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics";
 import type { TraceWorkerRequestMessage, TraceWorkerResponseMessage } from "./trace_protocol";
 
 const cancelledRequestIds = new Set<string>();
@@ -23,7 +24,7 @@ self.onmessage = (event: MessageEvent<TraceWorkerRequestMessage>) => {
     return;
   }
 
-  const { requestId, payload } = message;
+  const { requestId } = message;
   activeRequestIds.add(requestId);
   cancelledRequestIds.delete(requestId);
 
@@ -42,13 +43,36 @@ self.onmessage = (event: MessageEvent<TraceWorkerRequestMessage>) => {
       postMessageSafe({ type: "trace.progress", requestId, stage: stage.stage, percent: stage.percent });
     }
 
-    const result = computeTrace({ ...payload, options: { ...payload.options, safeMode: payload.options.safeMode ?? true } });
-    if (shouldCancel(requestId)) {
-      postMessageSafe({ type: "trace.cancelled", requestId });
+    if (message.type === "trace.analytics.request") {
+      const payload = message.payload;
+      const analytics = computeTraceAnalytics(payload.doc, payload.options.startCardId, {
+        ...payload.options,
+        safeMode: payload.options.safeMode ?? true,
+      });
+      const analyticsMd = buildTraceAnalyticsMd(analytics);
+      if (shouldCancel(requestId)) {
+        postMessageSafe({ type: "trace.cancelled", requestId });
+        return;
+      }
+      postMessageSafe({ type: "trace.progress", requestId, stage: "render", percent: 100 });
+      postMessageSafe({ type: "trace.analytics.result", requestId, result: { analyticsMd, analytics } });
       return;
     }
-    postMessageSafe({ type: "trace.progress", requestId, stage: "render", percent: 100 });
-    postMessageSafe({ type: "trace.result", requestId, result });
+
+    if (message.type === "trace.request") {
+      const payload = message.payload;
+      const result = computeTrace({
+        ...payload,
+        options: { ...payload.options, safeMode: payload.options.safeMode ?? true },
+      });
+      if (shouldCancel(requestId)) {
+        postMessageSafe({ type: "trace.cancelled", requestId });
+        return;
+      }
+      postMessageSafe({ type: "trace.progress", requestId, stage: "render", percent: 100 });
+      postMessageSafe({ type: "trace.result", requestId, result });
+      return;
+    }
   } catch (error) {
     const messageText = error instanceof Error ? error.message : "Unknown trace worker error";
     postMessageSafe({ type: "trace.error", requestId, error: { code: "TRACE_WORKER_ERROR", message: messageText } });

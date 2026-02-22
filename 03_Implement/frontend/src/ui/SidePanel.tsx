@@ -354,6 +354,9 @@ export function SidePanel({
   const [contradictionTraceIncludeSupports, setContradictionTraceIncludeSupports] = useState(true);
   const [isTraceRunning, setIsTraceRunning] = useState(false);
   const [traceProgressMessage, setTraceProgressMessage] = useState<string | null>(null);
+  const [isAnalyticsRunning, setIsAnalyticsRunning] = useState(false);
+  const [traceAnalyticsMd, setTraceAnalyticsMd] = useState<string | null>(null);
+  const [traceAnalytics, setTraceAnalytics] = useState<{ evidenceLinkCountsByType: { supports: number; contradicts: number }; depthDistribution: Array<{ depth: number; count: number }>; topHubs: Array<{ cardId: string; degree: number }>; cycleCount: number | null } | null>(null);
   const traceClientRef = useRef<TraceWorkerClient | null>(null);
   const traceAbortRef = useRef<AbortController | null>(null);
 
@@ -469,6 +472,50 @@ export function SidePanel({
       traceClientRef.current?.dispose();
     };
   }, []);
+
+
+  useEffect(() => {
+    if (!document || !selectedCard) {
+      setTraceAnalytics(null);
+      setTraceAnalyticsMd(null);
+      return;
+    }
+
+    if (!traceClientRef.current) {
+      traceClientRef.current = new TraceWorkerClient();
+    }
+
+    const controller = new AbortController();
+    setIsAnalyticsRunning(true);
+    void traceClientRef.current.computeTraceAnalytics({
+      doc: document,
+      options: {
+        startCardId: selectedCard.id,
+        maxHops: 4,
+        maxNodes: 80,
+        safeMode,
+        includeCycleDetection: true,
+      },
+    }, {
+      signal: controller.signal,
+      onProgress: (progress) => setTraceProgressMessage(`Trace analytics: ${progress.stage} (${progress.percent}%)`),
+    }).then((outcome) => {
+      if (outcome.status !== "completed") {
+        return;
+      }
+      setTraceAnalytics(outcome.result.analytics);
+      setTraceAnalyticsMd(outcome.result.analyticsMd);
+    }).catch(() => {
+      onEvidenceTraceError("Failed to compute trace analytics");
+    }).finally(() => {
+      setIsAnalyticsRunning(false);
+      setTraceProgressMessage(null);
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, [document, onEvidenceTraceError, safeMode, selectedCard]);
 
   const hasCardSelection = selectedCardCount > 0;
   const canAlign = selectedCardCount >= 2;
@@ -611,6 +658,13 @@ export function SidePanel({
       }
       downloadTextFile("evidence_trace.md", "text/markdown", markdown);
     });
+  };
+
+  const handleDownloadTraceAnalytics = () => {
+    if (!traceAnalyticsMd) {
+      return;
+    }
+    downloadTextFile("trace_analytics.md", "text/markdown", traceAnalyticsMd);
   };
 
   const outlineDiagnosticsCounts = useMemo(() => {
@@ -2835,6 +2889,21 @@ export function SidePanel({
                   </button>
                   {isTraceRunning ? <button type="button" onClick={() => traceAbortRef.current?.abort()}>Cancel trace</button> : null}
                   {traceProgressMessage ? <div style={{ fontSize: 11, color: "#334155" }}>{traceProgressMessage}</div> : null}
+
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>Trace Analytics</div>
+                  {isAnalyticsRunning ? <div style={{ fontSize: 11, color: "#64748b" }}>Computing analytics…</div> : null}
+                  {traceAnalytics ? (
+                    <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
+                      <div>Evidence links: supports {traceAnalytics.evidenceLinkCountsByType.supports}, contradicts {traceAnalytics.evidenceLinkCountsByType.contradicts}</div>
+                      <div>Depth distribution: {traceAnalytics.depthDistribution.map((entry) => `d${entry.depth}:${entry.count}`).join(", ") || "(none)"}</div>
+                      <div>Top hubs: {traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || "(none)"}</div>
+                      <div>Cycle count: {traceAnalytics.cycleCount === null ? "skipped" : traceAnalytics.cycleCount}</div>
+                    </div>
+                  ) : null}
+                  <button type="button" disabled={!traceAnalyticsMd || isAnalyticsRunning} onClick={handleDownloadTraceAnalytics}>
+                    Download trace_analytics.md
+                  </button>
+
                   {selectedCardContradictionsCount === 0 ? (
                     <div style={{ fontSize: 11, color: "#94a3b8" }}>No contradiction links found.</div>
                   ) : null}

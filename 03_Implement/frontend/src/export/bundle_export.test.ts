@@ -78,6 +78,7 @@ describe("buildExportBundle", () => {
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/diagnostics.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
   });
   test("creates a readable zip archive", async () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
@@ -220,6 +221,7 @@ describe("buildExportBundle", () => {
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/diagnostics.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
     expect(warn).toHaveBeenCalled();
   });
 
