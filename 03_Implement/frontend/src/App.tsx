@@ -88,18 +88,11 @@ import {
 } from "./domain/view/evidence_overlay";
 import {
   computePerspectiveRendering,
-  DEFAULT_PERSPECTIVE_PRESETS,
   PERSPECTIVE_MODE_VALUES,
-  mergeWithDefaultPerspectivePresets,
-  isDefaultPerspectivePresetId,
-  removePerspectivePreset,
-  renamePerspectivePreset,
-  replacePerspectivePreset,
-  resolveCurrentPerspectivePresetId,
   type PerspectiveMode,
-  type PerspectivePreset,
   type PerspectiveState,
 } from "./domain/view/perspective";
+import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { getCollapsedHiddenCardIds } from "./domain/view/collapse_visibility";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
@@ -187,12 +180,37 @@ function sanitizePerspectiveState(
   return next;
 }
 
-function sanitizePerspectivePresets(value: unknown): PerspectivePreset[] {
-  if (!Array.isArray(value)) {
-    return [];
+function sanitizeViewPatch(value: unknown): ViewPatch {
+  if (!value || typeof value !== "object") {
+    return {};
   }
 
-  const valid: PerspectivePreset[] = [];
+  const candidate = value as Record<string, unknown>;
+  const viewPatch: ViewPatch = {};
+  if (typeof candidate.summaryView === "boolean") viewPatch.summaryView = candidate.summaryView;
+  if (typeof candidate.abstractMapView === "boolean") viewPatch.abstractMapView = candidate.abstractMapView;
+  if (typeof candidate.hideSourceCards === "boolean") viewPatch.hideSourceCards = candidate.hideSourceCards;
+  if (candidate.maxDepth === "all" || typeof candidate.maxDepth === "number") viewPatch.maxDepth = candidate.maxDepth;
+  if (candidate.focusIslandId === null || typeof candidate.focusIslandId === "string") viewPatch.focusIslandId = candidate.focusIslandId;
+  if (typeof candidate.showReadingOrder === "boolean") viewPatch.showReadingOrder = candidate.showReadingOrder;
+  if (typeof candidate.readingNavEnabled === "boolean") viewPatch.readingNavEnabled = candidate.readingNavEnabled;
+  if (candidate.readingMode === "islands" || candidate.readingMode === "islands+cards") viewPatch.readingMode = candidate.readingMode;
+  if (typeof candidate.reviewedOnly === "boolean") viewPatch.reviewedOnly = candidate.reviewedOnly;
+  if (Array.isArray(candidate.collapsedIslandIds) && candidate.collapsedIslandIds.every((item) => typeof item === "string")) viewPatch.collapsedIslandIds = [...candidate.collapsedIslandIds];
+  if (typeof candidate.safeMode === "boolean") viewPatch.safeMode = candidate.safeMode;
+  if (typeof candidate.lodEnabled === "boolean") viewPatch.lodEnabled = candidate.lodEnabled;
+  if (isPerspectiveModeValue(candidate.perspectiveMode)) viewPatch.perspectiveMode = candidate.perspectiveMode;
+  if (typeof candidate.perspectiveStrictFilter === "boolean") viewPatch.perspectiveStrictFilter = candidate.perspectiveStrictFilter;
+
+  return viewPatch;
+}
+
+function sanitizeViewPresets(value: unknown): ViewPreset[] {
+  if (!Array.isArray(value)) {
+    return migrateViewPresets([]);
+  }
+
+  const valid: ViewPreset[] = [];
   for (const item of value) {
     if (!item || typeof item !== "object") {
       continue;
@@ -203,16 +221,16 @@ function sanitizePerspectivePresets(value: unknown): PerspectivePreset[] {
       continue;
     }
 
-    const perspective = sanitizePerspectiveState(candidate.perspective, { mode: "default", strictFilter: false });
     valid.push({
       id: candidate.id,
       name: candidate.name,
-      perspective,
-      forceSafeModeOnShare: candidate.forceSafeModeOnShare === true,
+      viewPatch: sanitizeViewPatch(candidate.viewPatch),
+      createdAt: typeof candidate.createdAt === "string" ? candidate.createdAt : new Date().toISOString(),
+      updatedAt: typeof candidate.updatedAt === "string" ? candidate.updatedAt : new Date().toISOString(),
     });
   }
 
-  return mergeWithDefaultPerspectivePresets(valid);
+  return migrateViewPresets(valid);
 }
 
 type DocumentHistory = {
@@ -898,7 +916,8 @@ export default function App() {
   const [evidenceOverlayDimOthers, setEvidenceOverlayDimOthers] = useState(true);
   const [perspectiveMode, setPerspectiveMode] = useState<PerspectiveMode>("default");
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
-  const [perspectivePresets, setPerspectivePresets] = useState<PerspectivePreset[]>(DEFAULT_PERSPECTIVE_PRESETS);
+  const [viewPresets, setViewPresets] = useState<ViewPreset[]>(DEFAULT_VIEW_PRESETS);
+  const [activePresetId, setActivePresetId] = useState<string | null>("default-explore");
   const [guidedFlowEnabled, setGuidedFlowEnabled] = useState(false);
   const [guidedFlowStepId, setGuidedFlowStepId] = useState<GuidedFlowStepId>("review");
   const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
@@ -1017,7 +1036,7 @@ export default function App() {
       diffWorkerClientRef.current?.dispose();
       diagnosticsWorkerClientRef.current?.dispose();
     };
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   useEffect(() => {
     if (!comparisonDocument || !reviewDiffBaseSnapshot) {
@@ -1564,7 +1583,7 @@ export default function App() {
 
   const rememberRecentDocumentId = useCallback((docId: string) => {
     setRecentDocumentIds(pushRecentDocumentId(docId));
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const loadDocument = useCallback(
     async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
@@ -1720,7 +1739,7 @@ export default function App() {
   const requestCanvasFocus = useCallback((cardId: string) => {
     setFocusCardId(cardId);
     setFocusRequestSeq((previousSeq) => previousSeq + 1);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const requestCameraTransform = useCallback((nextTransform: { panX: number; panY: number; zoom: number }) => {
     suppressNextTransformPersistRef.current = true;
@@ -1730,7 +1749,7 @@ export default function App() {
       zoom: nextTransform.zoom,
       requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
     }));
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const pushCurrentFocusSnapshot = useCallback(() => {
     if (!canvasCamera) {
@@ -1932,7 +1951,7 @@ export default function App() {
       window.removeEventListener("pointerup", commitCardDragSnapshot);
       window.removeEventListener("pointercancel", commitCardDragSnapshot);
     };
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleSave = async () => {
     if (!document || isSaving || !isDirty) {
@@ -1993,7 +2012,7 @@ export default function App() {
     setSuggestionNotes(null);
     setSuggestionError(null);
     setStatusMessage("Created a new local document");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleDuplicateDocument = useCallback(() => {
     if (!document) {
@@ -2118,7 +2137,7 @@ export default function App() {
     setIsSuggestionPreviewEnabled(true);
     setIsAnnotateOverlayEnabled(false);
     setStatusMessage("Discarded draft suggestion");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleSuggestMerges = useCallback(async () => {
     if (!document || isSuggestingMerges) {
@@ -2162,11 +2181,11 @@ export default function App() {
           : suggestion
       )
     );
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleDismissMergeSuggestion = useCallback((groupId: string) => {
     setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((suggestion) => suggestion.groupId !== groupId));
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleApplyMergeSuggestion = useCallback(
     (groupId: string) => {
@@ -2254,11 +2273,11 @@ export default function App() {
 
   const handleImportClick = useCallback(() => {
     importInputRef.current?.click();
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleLoadComparisonDocumentClick = useCallback(() => {
     compareImportInputRef.current?.click();
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleComparisonFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -2402,7 +2421,8 @@ ${parsedDocument.error}`);
       setEvidenceOverlayScope(importedPerspective.evidenceOverlayPrefs.scope);
       setEvidenceOverlayDimOthers(importedPerspective.evidenceOverlayPrefs.dimOthers);
     }
-    setPerspectivePresets(sanitizePerspectivePresets(metadata.viewState.perspectivePresets));
+    setViewPresets(sanitizeViewPresets(metadata.viewState.presets));
+    setActivePresetId(typeof metadata.viewState.activePresetId === "string" ? metadata.viewState.activePresetId : null);
     setMergeAuditLog(sanitizeMergeAuditLog(metadata.mergeAuditLog));
     setIncludeUnreviewedDraftsInExport(false);
     setIsReadingOrderEditMode(false);
@@ -2425,7 +2445,7 @@ ${parsedDocument.error}`);
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
     setStatusMessage(statusPrefix);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleLoadViewMetadataFile = useCallback(
     async (selectedFile: File) => {
@@ -2460,12 +2480,12 @@ ${parsedDocument.error}`);
     });
     setImportDocumentError(null);
     setStatusMessage("Document validated. Review summary, then click Replace current document.");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
     setPackImportError("Please upload a .zip review pack.");
     setStatusMessage("Please upload a .zip review pack.");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleImportReviewPackFile = useCallback(async (selectedFile: File) => {
     setPackImportError(null);
@@ -2654,7 +2674,7 @@ ${parsedDocument.error}`);
       }
       setStatusMessage("Failed to load patch JSON");
     }
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleLoadPatchBaselineFile = useCallback(async (selectedFile: File) => {
     const parseResult = parseDocumentJson(await selectedFile.text());
@@ -2668,7 +2688,7 @@ ${parsedDocument.error}`);
     setPatchBaselineDoc(parseResult.document);
     setPatchBaselineFileName(selectedFile.name);
     setStatusMessage("Loaded baseline for patch conflict detection");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleFixProposalCheckedChange = useCallback((fixId: string, checked: boolean) => {
     setSelectedFixProposalIdSet((previousSet) => {
@@ -2680,7 +2700,7 @@ ${parsedDocument.error}`);
       }
       return next;
     });
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleApplySelectedPatchFixes = useCallback(() => {
     if (!pendingPatchImport || selectedFixProposalIdSet.size === 0) {
@@ -2849,7 +2869,7 @@ ${parsedDocument.error}`);
     setSelectedEdgeId(edgeId);
     setSelectedCardIds([]);
     setSelectedIslandId(null);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleCardSelect = useCallback((cardId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
@@ -3877,7 +3897,7 @@ ${parsedDocument.error}`);
   const handleExpandAllIslands = useCallback(() => {
     setCollapsedIslandIds(new Set());
     setStatusMessage("Expanded all islands");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   useEffect(() => {
     if (!document) {
@@ -3989,7 +4009,7 @@ ${parsedDocument.error}`);
     });
     setIsDirty(true);
     setStatusMessage("Undo");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleRedo = useCallback(() => {
     pendingCardDragSnapshotRef.current = null;
@@ -4012,7 +4032,7 @@ ${parsedDocument.error}`);
     });
     setIsDirty(true);
     setStatusMessage("Redo");
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -4397,11 +4417,11 @@ ${parsedDocument.error}`);
       }
       return nextIds;
     });
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const clearTemporaryReveal = useCallback(() => {
     setTemporaryRevealCardIds((previousIds) => (previousIds.size === 0 ? previousIds : new Set()));
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleSummaryGroundingCardInspect = useCallback((cardId: string) => {
     if (!document) {
@@ -4772,7 +4792,7 @@ ${parsedDocument.error}`);
     setFocusTarget({});
     setFocusWorldPoint(null);
     setFocusCardId(null);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleToggleIslandFocus = useCallback(
     (islandId: string) => {
@@ -5167,12 +5187,12 @@ ${parsedDocument.error}`);
   const handleSetReadingMode = useCallback((nextMode: ReadingMode) => {
     setReadingMode(nextMode);
     setReadingIndex(0);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const handleToggleReviewedOnly = useCallback(() => {
     setReviewedOnly((current) => !current);
     setReadingIndex(0);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const focusReadingItemAtIndex = useCallback((nextIndex: number) => {
     if (!readingNavEnabled || readingList.length === 0) {
@@ -5309,7 +5329,7 @@ ${parsedDocument.error}`);
         window.clearTimeout(highlightTimeoutRef.current);
       }
     };
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const buildReadingOutline = useCallback((): string | null => {
     if (!document) {
@@ -5383,7 +5403,7 @@ ${parsedDocument.error}`);
 
   const handleReadingDisable = useCallback(() => {
     setReadingNavEnabled(false);
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const loneWolfCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument || (!summaryView && !abstractMapView)) {
@@ -6091,7 +6111,7 @@ ${parsedDocument.error}`);
   const getViewMetadataFilename = useCallback((mode: "viewport" | "bounds", generatedAt: string) => {
     const date = generatedAt.slice(0, 10);
     return `kj-atlas-${date}-${mode}.view.json`;
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const downloadViewMetadata = useCallback(
     (mode: "viewport" | "bounds", bounds?: { x: number; y: number; w: number; h: number }, padding?: number) => {
@@ -6129,7 +6149,8 @@ ${parsedDocument.error}`);
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
-          perspectivePresets,
+          presets: viewPresets,
+          activePresetId: activePresetId ?? undefined,
         },
         exportMode: mode,
         bounds,
@@ -6164,7 +6185,8 @@ ${parsedDocument.error}`);
       lodShowLoneWolvesWhenFar,
       perspectiveMode,
       perspectiveStrictFilter,
-      perspectivePresets,
+      viewPresets,
+      activePresetId,
       ]
   );
 
@@ -6208,7 +6230,8 @@ ${parsedDocument.error}`);
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
-          perspectivePresets,
+          presets: viewPresets,
+          activePresetId: activePresetId ?? undefined,
         },
         exportMode: "viewport",
         generatedAt: deterministicNowIso,
@@ -6312,7 +6335,8 @@ ${parsedDocument.error}`);
     outlineQualityReport,
     outlineRecommendations,
     perspectiveMode,
-    perspectivePresets,
+    viewPresets,
+          activePresetId,
     perspectiveStrictFilter,
     readingIndex,
     readingMode,
@@ -6441,7 +6465,7 @@ ${parsedDocument.error}`);
   const getSvgExportFilename = useCallback((mode: "viewport" | "visible-bounds") => {
     const date = new Date().toISOString().slice(0, 10);
     return `kj-atlas-${date}-${mode}.svg`;
-  }, []);
+  }, [abstractMapView, summaryView]);
 
   const getPngExportFilename = useCallback(
     (mode: "viewport" | "visible-bounds", scale: PngExportScale) => {
@@ -6723,129 +6747,113 @@ ${parsedDocument.error}`);
     if (nextValue) {
       setIncludeUnreviewedDraftsInExport(false);
     }
-  }, []);
+  }, [abstractMapView, summaryView]);
 
-  const handleSavePerspectivePreset = useCallback(() => {
-    const name = window.prompt("Preset name", "My preset")?.trim();
-    if (!name) {
-      return;
-    }
-
-    const perspective: PerspectiveState = {
-      mode: perspectiveMode,
-      strictFilter: perspectiveStrictFilter,
-      lodEnabled,
-      evidenceOverlayPrefs: {
-        mode: evidenceOverlayMode,
-        depth: clampEvidenceOverlayDepth(evidenceOverlayDepth),
-        scope: evidenceOverlayScope,
-        dimOthers: evidenceOverlayDimOthers,
-      },
-    };
-
-    const nextPreset: PerspectivePreset = {
-      id: `preset-${Date.now().toString(36)}`,
-      name,
-      perspective,
-    };
-
-    setPerspectivePresets((previous) => mergeWithDefaultPerspectivePresets(replacePerspectivePreset(previous, nextPreset)));
-    setStatusMessage(`Saved perspective preset: ${name}`);
-  }, [
-    evidenceOverlayDepth,
-    evidenceOverlayEnabled,
-    evidenceOverlayDimOthers,
-    evidenceOverlayMode,
-    evidenceOverlayScope,
+  const captureCurrentViewPatch = useCallback((): ViewPatch => ({
+    summaryView,
+    abstractMapView,
+    hideSourceCards,
+    maxDepth,
+    focusIslandId: focusTarget.focusIslandId ?? null,
+    showReadingOrder,
+    readingNavEnabled,
+    readingMode,
+    reviewedOnly,
+    collapsedIslandIds: [...collapsedIslandIds].sort(),
+    safeMode,
     lodEnabled,
     perspectiveMode,
     perspectiveStrictFilter,
+  }), [
+    abstractMapView,
+    collapsedIslandIds,
+    focusTarget.focusIslandId,
+    hideSourceCards,
+    lodEnabled,
+    maxDepth,
+    perspectiveMode,
+    perspectiveStrictFilter,
+    readingMode,
+    readingNavEnabled,
+    reviewedOnly,
+    safeMode,
+    showReadingOrder,
+    summaryView,
   ]);
 
-  const handleLoadPerspectivePreset = useCallback((presetId: string) => {
-    const preset = perspectivePresets.find((item) => item.id === presetId);
-    if (!preset) {
-      return;
-    }
+  const applyViewPatch = useCallback((viewPatch: ViewPatch) => {
+    const nextVisibility = resolveSummaryAbstractFromPatch({ summaryView, abstractMapView }, viewPatch);
+    setSummaryView(nextVisibility.summaryView);
+    setAbstractMapView(nextVisibility.abstractMapView);
 
-    const perspective = sanitizePerspectiveState(preset.perspective, { mode: "default", strictFilter: false });
-    setPerspectiveMode(perspective.mode);
-    setPerspectiveStrictFilter(perspective.strictFilter);
-    if (perspective.lodEnabled !== undefined) {
-      setLodEnabled(perspective.lodEnabled);
+    if (viewPatch.hideSourceCards !== undefined) setHideSourceCards(viewPatch.hideSourceCards);
+    if (viewPatch.maxDepth !== undefined) setMaxDepth(viewPatch.maxDepth);
+    if (viewPatch.focusIslandId !== undefined) setFocusTarget(viewPatch.focusIslandId ? { focusIslandId: viewPatch.focusIslandId } : {});
+    if (viewPatch.showReadingOrder !== undefined) setShowReadingOrder(viewPatch.showReadingOrder);
+    if (viewPatch.readingNavEnabled !== undefined) setReadingNavEnabled(viewPatch.readingNavEnabled);
+    if (viewPatch.readingMode !== undefined) setReadingMode(viewPatch.readingMode);
+    if (viewPatch.reviewedOnly !== undefined) setReviewedOnly(viewPatch.reviewedOnly);
+    if (viewPatch.collapsedIslandIds !== undefined) setCollapsedIslandIds(new Set(viewPatch.collapsedIslandIds));
+    if (viewPatch.safeMode !== undefined) {
+      setSafeMode(viewPatch.safeMode);
+      if (viewPatch.safeMode) {
+        setIncludeUnreviewedDraftsInExport(false);
+      }
     }
-    if (perspective.evidenceOverlayPrefs) {
-      setEvidenceOverlayMode(perspective.evidenceOverlayPrefs.mode);
-      setEvidenceOverlayDepth(clampEvidenceOverlayDepth(perspective.evidenceOverlayPrefs.depth));
-      setEvidenceOverlayScope(perspective.evidenceOverlayPrefs.scope);
-      setEvidenceOverlayDimOthers(perspective.evidenceOverlayPrefs.dimOthers);
-    }
-    if (preset.forceSafeModeOnShare) {
+    if (viewPatch.lodEnabled !== undefined) setLodEnabled(viewPatch.lodEnabled);
+    if (viewPatch.perspectiveMode !== undefined) setPerspectiveMode(viewPatch.perspectiveMode);
+    if (viewPatch.perspectiveStrictFilter !== undefined) setPerspectiveStrictFilter(viewPatch.perspectiveStrictFilter);
+  }, [abstractMapView, summaryView]);
+
+  const handleSaveViewPreset = useCallback(() => {
+    const name = window.prompt("Preset name", "My preset")?.trim();
+    if (!name) return;
+    const now = new Date().toISOString();
+    const nextPreset: ViewPreset = {
+      id: `preset-${Date.now().toString(36)}`,
+      name,
+      viewPatch: captureCurrentViewPatch(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setViewPresets((previous) => migrateViewPresets(replaceViewPreset(previous, nextPreset)));
+    setActivePresetId(nextPreset.id);
+    setStatusMessage(`Saved preset: ${name}`);
+  }, [captureCurrentViewPatch]);
+
+  const handleApplyViewPreset = useCallback((presetId: string) => {
+    const preset = viewPresets.find((item) => item.id === presetId);
+    if (!preset) return;
+    applyViewPatch(preset.viewPatch);
+    setActivePresetId(preset.id);
+    if (preset.id === "default-review") {
       setSafeMode(true);
       setIncludeUnreviewedDraftsInExport(false);
     }
-    setStatusMessage(`Loaded perspective preset: ${preset.name}`);
-  }, [perspectivePresets]);
+    setStatusMessage(`Applied preset: ${preset.name}`);
+  }, [applyViewPatch, viewPresets]);
 
-  const currentPerspectivePresetId = useMemo(() => resolveCurrentPerspectivePresetId(perspectivePresets, {
-    mode: perspectiveMode,
-    strictFilter: perspectiveStrictFilter,
-    lodEnabled,
-    ...(evidenceOverlayEnabled
-      ? {
-        evidenceOverlayPrefs: {
-          mode: evidenceOverlayMode,
-          depth: clampEvidenceOverlayDepth(evidenceOverlayDepth),
-          scope: evidenceOverlayScope,
-          dimOthers: evidenceOverlayDimOthers,
-        },
-      }
-      : {}),
-  }), [
-    evidenceOverlayDepth,
-    evidenceOverlayEnabled,
-    evidenceOverlayDimOthers,
-    evidenceOverlayMode,
-    evidenceOverlayScope,
-    lodEnabled,
-    perspectiveMode,
-    perspectivePresets,
-    perspectiveStrictFilter,
-  ]);
-
-  const handleRenamePerspectivePreset = useCallback((presetId: string) => {
-    const target = perspectivePresets.find((preset) => preset.id === presetId);
-    if (!target) {
-      return;
-    }
-
+  const handleRenameViewPreset = useCallback((presetId: string) => {
+    const target = viewPresets.find((preset) => preset.id === presetId);
+    if (!target) return;
     const nextName = window.prompt("Rename preset", target.name)?.trim();
-    if (!nextName) {
-      return;
-    }
+    if (!nextName) return;
+    setViewPresets((previous) => renameViewPreset(previous, presetId, nextName, new Date().toISOString()));
+    setStatusMessage(`Renamed preset: ${nextName}`);
+  }, [viewPresets]);
 
-    setPerspectivePresets((previous) => renamePerspectivePreset(previous, presetId, nextName));
-    setStatusMessage(`Renamed perspective preset: ${nextName}`);
-  }, [perspectivePresets]);
-
-  const handleDeletePerspectivePreset = useCallback((presetId: string) => {
-    const target = perspectivePresets.find((preset) => preset.id === presetId);
-    if (!target) {
-      return;
-    }
-
-    if (isDefaultPerspectivePresetId(presetId)) {
+  const handleDeleteViewPreset = useCallback((presetId: string) => {
+    const target = viewPresets.find((preset) => preset.id === presetId);
+    if (!target) return;
+    if (presetId.startsWith("default-")) {
       setStatusMessage(`Default preset cannot be deleted: ${target.name}`);
       return;
     }
-
-    if (!window.confirm(`Delete preset "${target.name}"?`)) {
-      return;
-    }
-
-    setPerspectivePresets((previous) => removePerspectivePreset(previous, presetId));
-    setStatusMessage(`Deleted perspective preset: ${target.name}`);
-  }, [perspectivePresets]);
+    if (!window.confirm(`Delete preset "${target.name}"?`)) return;
+    setViewPresets((previous) => removeViewPreset(previous, presetId));
+    setActivePresetId((current) => (current === presetId ? null : current));
+    setStatusMessage(`Deleted preset: ${target.name}`);
+  }, [viewPresets]);
 
   const headerViewControls = (
     <div style={{ position: "relative" }}>
@@ -6947,12 +6955,12 @@ ${parsedDocument.error}`);
             onPerspectiveModeChange={setPerspectiveMode}
             perspectiveStrictFilter={perspectiveStrictFilter}
             onPerspectiveStrictFilterChange={setPerspectiveStrictFilter}
-            perspectivePresets={perspectivePresets}
-            currentPerspectivePresetId={currentPerspectivePresetId}
-            onSavePerspectivePreset={handleSavePerspectivePreset}
-            onLoadPerspectivePreset={handleLoadPerspectivePreset}
-            onRenamePerspectivePreset={handleRenamePerspectivePreset}
-            onDeletePerspectivePreset={handleDeletePerspectivePreset}
+            viewPresets={viewPresets}
+            activePresetId={activePresetId}
+            onSaveViewPreset={handleSaveViewPreset}
+            onApplyViewPreset={handleApplyViewPreset}
+            onRenameViewPreset={handleRenameViewPreset}
+            onDeleteViewPreset={handleDeleteViewPreset}
             perspectiveHint={perspectiveHint}
           />
         </div>
