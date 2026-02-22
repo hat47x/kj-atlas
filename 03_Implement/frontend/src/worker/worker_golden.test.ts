@@ -37,4 +37,29 @@ describe("worker compute goldens", () => {
     expect(run1.diagnosticsMd).toBe(run2.diagnosticsMd);
     expect(run1.diagnosticsMd).not.toContain("SECRET");
   });
+
+
+  it("diagnostics metrics remain safe and omit unavailable optional rows", () => {
+    const doc: DocumentV2 = {
+      version: 2,
+      id: "doc-safe",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "SECRET-A", x: 0, y: 0 },
+        { id: "c2", text: "SECRET-B", x: 1, y: 0 },
+      ],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1", "c2"], shape: { kind: "rect" } }],
+    };
+
+    const output = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false }, options: { safeMode: true } });
+    expect(output.diagnosticsMd).toContain("## Metrics");
+    expect(output.diagnosticsMd).toContain("| evidenceLinkCount | 0 |");
+    expect(output.diagnosticsMd).not.toContain("reviewedCoverage");
+    expect(output.diagnosticsMd).not.toContain("contradictionRatio");
+    expect(output.diagnosticsMd).not.toContain("SECRET-A");
+    expect(output.diagnosticsMd).not.toContain("SECRET-B");
+  });
 });

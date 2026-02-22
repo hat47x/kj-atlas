@@ -1,12 +1,14 @@
 import type { DocumentV2, EdgeType, EvidenceLink } from "../types";
 
-export type DiagramStructuralMetrics = {
+export type StructureMetrics = {
   cardCount: number;
   islandCount: number;
+  evidenceLinkCount: number;
   evidenceLinkDensity: number;
-  isolatedCardsCount: number;
+  isolatedCardCount: number;
   islandSizeDistribution: Array<{ size: number; islands: number }>;
   contradictionRatio: number | null;
+  reviewedCoverage: number | null;
 };
 
 function isTypedEvidenceLinkType(value: unknown): value is EvidenceLink["type"] {
@@ -22,7 +24,7 @@ function isTypedEdgeType(value: unknown): value is EdgeType {
   return value === "related" || value === "negate";
 }
 
-export function computeDiagramStructuralMetrics(doc: DocumentV2): DiagramStructuralMetrics {
+export function computeStructureMetrics(doc: DocumentV2, _view?: { collapsedIslandIds?: string[] }): StructureMetrics {
   const cardCount = doc.cards.length;
   const islandCount = doc.islands.length;
   const knownCardIds = new Set(doc.cards.map((card) => card.id));
@@ -31,16 +33,34 @@ export function computeDiagramStructuralMetrics(doc: DocumentV2): DiagramStructu
     (link) => knownCardIds.has(link.fromCardId) && knownCardIds.has(link.toCardId),
   );
 
+  const evidenceLinkCount = evidenceLinks.length;
+
+  const cardEdgePairs = doc.edges.filter((edge) => {
+    if (!knownCardIds.has(edge.fromId) || !knownCardIds.has(edge.toId)) {
+      return false;
+    }
+    if (edge.fromKind !== undefined && edge.fromKind !== "card") {
+      return false;
+    }
+    if (edge.toKind !== undefined && edge.toKind !== "card") {
+      return false;
+    }
+    return true;
+  });
+
   const incidentCardIds = new Set<string>();
   for (const link of evidenceLinks) {
     incidentCardIds.add(link.fromCardId);
     incidentCardIds.add(link.toCardId);
   }
+  for (const edge of cardEdgePairs) {
+    incidentCardIds.add(edge.fromId);
+    incidentCardIds.add(edge.toId);
+  }
 
-  const isolatedCardsCount = doc.cards.reduce((count, card) => (incidentCardIds.has(card.id) ? count : count + 1), 0);
+  const isolatedCardCount = doc.cards.reduce((count, card) => (incidentCardIds.has(card.id) ? count : count + 1), 0);
 
-  const maxDirectedLinks = cardCount > 1 ? cardCount * (cardCount - 1) : 0;
-  const evidenceLinkDensity = maxDirectedLinks === 0 ? 0 : roundTo4(evidenceLinks.length / maxDirectedLinks);
+  const evidenceLinkDensity = roundTo4(evidenceLinkCount / Math.max(1, cardCount));
 
   const islandSizeCounter = new Map<number, number>();
   for (const island of doc.islands) {
@@ -54,17 +74,8 @@ export function computeDiagramStructuralMetrics(doc: DocumentV2): DiagramStructu
     .sort((left, right) => left.size - right.size);
 
   const typedEvidenceLinks = evidenceLinks.filter((link) => isTypedEvidenceLinkType((link as { type?: unknown }).type));
-  const typedEdges = doc.edges.filter((edge) => {
-    if (!knownCardIds.has(edge.fromId) || !knownCardIds.has(edge.toId)) {
-      return false;
-    }
+  const typedEdges = cardEdgePairs.filter((edge) => {
     if (!isTypedEdgeType((edge as { type?: unknown }).type)) {
-      return false;
-    }
-    if (edge.fromKind !== undefined && edge.fromKind !== "card") {
-      return false;
-    }
-    if (edge.toKind !== undefined && edge.toKind !== "card") {
       return false;
     }
     return true;
@@ -75,12 +86,22 @@ export function computeDiagramStructuralMetrics(doc: DocumentV2): DiagramStructu
     + typedEdges.filter((edge) => edge.type === "negate").length;
   const contradictionRatio = relationCount > 0 ? roundTo4(contradictionLinks / relationCount) : null;
 
+  const hasReviewedFlag = doc.cards.some((card) => typeof card.textReviewed === "boolean");
+  const reviewedCount = doc.cards.filter((card) => card.textReviewed === true).length;
+  const reviewedCoverage = hasReviewedFlag ? roundTo4(reviewedCount / Math.max(1, cardCount)) : null;
+
   return {
     cardCount,
     islandCount,
+    evidenceLinkCount,
     evidenceLinkDensity,
-    isolatedCardsCount,
+    isolatedCardCount,
     islandSizeDistribution,
     contradictionRatio,
+    reviewedCoverage,
   };
 }
+
+export type DiagramStructuralMetrics = StructureMetrics;
+
+export const computeDiagramStructuralMetrics = computeStructureMetrics;

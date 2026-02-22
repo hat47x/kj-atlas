@@ -16,7 +16,7 @@ import { rankDistributionIslands, type DistributionReport } from "../domain/view
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
-import { computeDiagramStructuralMetrics } from "../domain/view/structural_metrics";
+import { computeStructureMetrics } from "../domain/view/structural_metrics";
 import { downloadTextFile } from "../export/narrative_export";
 import { TraceWorkerClient } from "../worker/trace_client";
 import type { TraceAnalytics } from "../worker/trace_analytics";
@@ -886,7 +886,7 @@ export function SidePanel({
     if (!document) {
       return null;
     }
-    return computeDiagramStructuralMetrics(document);
+    return computeStructureMetrics(document);
   }, [document]);
 
   const metricsSection = structuralMetrics ? (
@@ -895,9 +895,11 @@ export function SidePanel({
       <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
         <div>card count: {structuralMetrics.cardCount}</div>
         <div>island count: {structuralMetrics.islandCount}</div>
+        <div>evidence link count: {structuralMetrics.evidenceLinkCount}</div>
         <div>evidence link density: {structuralMetrics.evidenceLinkDensity.toFixed(4)}</div>
-        <div>isolated cards: {structuralMetrics.isolatedCardsCount}</div>
-        <div>contradiction ratio: {structuralMetrics.contradictionRatio === null ? "n/a" : structuralMetrics.contradictionRatio.toFixed(4)}</div>
+        <div>isolated cards: {structuralMetrics.isolatedCardCount}</div>
+        {structuralMetrics.contradictionRatio === null ? null : <div>contradiction ratio: {structuralMetrics.contradictionRatio.toFixed(4)}</div>}
+        {structuralMetrics.reviewedCoverage === null ? null : <div>reviewed coverage: {structuralMetrics.reviewedCoverage.toFixed(4)}</div>}
       </div>
       <div style={{ marginTop: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Island size distribution</div>

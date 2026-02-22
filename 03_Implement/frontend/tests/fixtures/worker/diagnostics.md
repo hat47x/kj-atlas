@@ -45,10 +45,17 @@
 
 ## Metrics
 
-- cardCount: 3
-- islandCount: 1
-- evidenceLinkDensity: 0.3333
-- isolatedCardsCount: 0
-- contradictionRatio: 0.5
-- islandSizeDistribution:
-  - size 3: 1 island(s)
+| metric | value |
+| --- | ---: |
+| cardCount | 3 |
+| islandCount | 1 |
+| evidenceLinkCount | 2 |
+| evidenceLinkDensity | 0.6667 |
+| isolatedCardCount | 0 |
+| contradictionRatio | 0.5 |
+
+### islandSizeDistribution
+
+| size | islands |
+| ---: | ---: |
+| 3 | 1 |
