@@ -974,6 +974,7 @@ export default function App() {
   const [canvasCamera, setCanvasCamera] = useState<CanvasCamera | null>(null);
   const [cameraTransformRequest, setCameraTransformRequest] = useState<CameraTransformRequest | null>(null);
   const collapsedStateDocIdRef = useRef<string | null>(null);
+  const importedCollapsedStateRef = useRef<{ docId: string; islandIds: Set<string> } | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
   const diagnosticsAbortRef = useRef<AbortController | null>(null);
   const bundleRunnerRef = useRef(createCancelableTaskRunner());
@@ -1373,13 +1374,9 @@ export default function App() {
 
     if (focusedVisibleDocument) {
       // 1) collapseで隠れるカード
-      for (const island of focusedVisibleDocument.islands) {
-        if (!effectiveCollapsedIslandIdSet.has(island.id)) {
-          continue;
-        }
-        for (const cardId of island.cardIds) {
-          collapsedHiddenCardIds.add(cardId);
-        }
+      const collapsedHidden = getCollapsedHiddenCardIds(focusedVisibleDocument, effectiveCollapsedIslandIdSet);
+      for (const cardId of collapsedHidden) {
+        collapsedHiddenCardIds.add(cardId);
       }
 
       if (summaryView && !focusTarget.focusIslandId) {
@@ -2367,6 +2364,16 @@ ${parsedDocument.error}`);
     setReadingNavEnabled(metadata.viewState.readingNavEnabled ?? false);
     setReadingMode(metadata.viewState.readingMode ?? "islands");
     setReviewedOnly(metadata.viewState.reviewedOnly ?? false);
+    const importedCollapsedIslandIds = new Set(
+      (metadata.viewState.collapsedIslandIds ?? []).filter((islandId) =>
+        targetDocument.islands.some((island) => island.id === islandId)
+      )
+    );
+    importedCollapsedStateRef.current = {
+      docId: targetDocument.id,
+      islandIds: importedCollapsedIslandIds,
+    };
+    setCollapsedIslandIds(importedCollapsedIslandIds);
     setReadingIndex(metadata.viewState.readingIndex ?? 0);
     setSafeMode(metadata.viewState.safeMode ?? true);
     setLodEnabled(metadata.viewState.lodEnabled ?? false);
@@ -3874,6 +3881,7 @@ ${parsedDocument.error}`);
   useEffect(() => {
     if (!document) {
       collapsedStateDocIdRef.current = null;
+      importedCollapsedStateRef.current = null;
       setCollapsedIslandIds(new Set());
       return;
     }
@@ -3885,6 +3893,19 @@ ${parsedDocument.error}`);
       const validIslandIds = new Set(document.islands.map((island) => island.id));
 
       if (isDocumentChanged) {
+        const imported = importedCollapsedStateRef.current;
+        if (imported?.docId === document.id) {
+          importedCollapsedStateRef.current = null;
+          const seededImported = new Set<string>();
+          for (const islandId of imported.islandIds) {
+            if (validIslandIds.has(islandId)) {
+              seededImported.add(islandId);
+            }
+          }
+
+          return seededImported;
+        }
+
         const fallbackCollapsedIds = collectCollapsedIslandIds(document.islands);
         const seeded = new Set<string>();
         for (const islandId of fallbackCollapsedIds) {
@@ -5329,6 +5350,7 @@ ${parsedDocument.error}`);
     readingMode,
     readingNavEnabled,
     reviewedOnly,
+    collapsedIslandIds,
     safeMode,
     currentLod?.level,
   ]);
@@ -6092,6 +6114,7 @@ ${parsedDocument.error}`);
           readingIndex,
           readingMode,
           reviewedOnly,
+          collapsedIslandIds: [...collapsedIslandIds].sort(),
           safeMode: safeMode ?? true,
           lodEnabled,
           lodThresholds,
@@ -6129,6 +6152,7 @@ ${parsedDocument.error}`);
       readingIndex,
       readingMode,
       reviewedOnly,
+      collapsedIslandIds,
       maxDepth,
       showReadingOrder,
       summaryView,
@@ -6169,6 +6193,7 @@ ${parsedDocument.error}`);
           readingIndex,
           readingMode,
           reviewedOnly,
+          collapsedIslandIds: [...collapsedIslandIds].sort(),
           safeMode: safeMode ?? true,
           lodEnabled,
           lodThresholds,

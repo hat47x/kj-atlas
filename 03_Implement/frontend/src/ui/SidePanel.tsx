@@ -1761,6 +1761,17 @@ export function SidePanel({
           </div>
         )}
       </section>
+      <section style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Island visibility</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <button type="button" onClick={onCollapseAllIslands} disabled={!hasIslands} style={{ width: "100%" }}>
+            Collapse all
+          </button>
+          <button type="button" onClick={onExpandAllIslands} disabled={!isAnyIslandCollapsed} style={{ width: "100%" }}>
+            Expand all
+          </button>
+        </div>
+      </section>
       {selectedIsland ? (
         <>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
@@ -1832,15 +1843,6 @@ export function SidePanel({
             />
             Collapsed
           </label>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-            <button type="button" onClick={onCollapseAllIslands} disabled={!hasIslands} style={{ width: "100%" }}>
-              Collapse all
-            </button>
-            <button type="button" onClick={onExpandAllIslands} disabled={!isAnyIslandCollapsed} style={{ width: "100%" }}>
-              Expand all
-            </button>
-          </div>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             Title

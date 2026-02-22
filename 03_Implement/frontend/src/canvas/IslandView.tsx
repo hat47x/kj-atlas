@@ -388,6 +388,20 @@ function IslandViewComponent({
         }}
       >
         {showTitleLabel ? (island.title && island.title.length > 0 ? island.title : "Island") : null}
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#0c4a6e",
+            backgroundColor: "#e0f2fe",
+            border: "1px solid #bae6fd",
+            borderRadius: 999,
+            padding: "1px 6px",
+          }}
+          title={`${island.cardIds.length} cards in island`}
+        >
+          #{island.cardIds.length}
+        </span>
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
         <button
           type="button"
