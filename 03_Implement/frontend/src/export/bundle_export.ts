@@ -11,6 +11,7 @@ import { generateRecommendations } from "../domain/view/recommendations";
 import type { ReadingMode } from "../domain/view/reading_path";
 import { DiagnosticsWorkerClient } from "../worker/diagnostics_client";
 import { TraceWorkerClient } from "../worker/trace_client";
+import { buildTraceAnalyticsMd, computeTraceAnalytics } from "../worker/trace_analytics";
 
 export type BundleFile = {
   path: string;
@@ -206,6 +207,13 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
         mime: "text/markdown",
       });
     }
+
+    const analytics = computeTraceAnalytics(doc, context.selectedCardId, { safeMode, maxHops: 4, maxNodes: 80, includeCycleDetection: true });
+    bundleFiles.push({
+      path: `${root}/trace_analytics_${context.selectedCardId}.md`,
+      content: buildTraceAnalyticsMd(analytics),
+      mime: "text/markdown",
+    });
   }
 
   return [...bundleFiles].sort((left, right) => left.path.localeCompare(right.path));
@@ -277,6 +285,22 @@ export async function buildExportBundleWithWorkers(
       if (!contradictionOutcome.result.traceMd.startsWith("Error:")) {
         bundleFiles.push({ path: `${root}/contradiction_trace_${context.selectedCardId}.md`, content: contradictionOutcome.result.traceMd, mime: "text/markdown" });
       }
+
+      options.onProgress?.("Generating trace analytics...");
+      const analyticsOutcome = await traceClient.computeTraceAnalytics({
+        doc,
+        options: {
+          startCardId: context.selectedCardId,
+          maxHops: sharedOptions.maxHops,
+          maxNodes: sharedOptions.maxNodes,
+          safeMode,
+          includeCycleDetection: true,
+        },
+      }, { signal: options.signal });
+      if (analyticsOutcome.status === "cancelled") {
+        throw new Error("Trace analytics generation cancelled");
+      }
+      bundleFiles.push({ path: `${root}/trace_analytics_${context.selectedCardId}.md`, content: analyticsOutcome.result.analyticsMd, mime: "text/markdown" });
     }
   } finally {
     diagnosticsClient.dispose();
