@@ -16,6 +16,7 @@ import { rankDistributionIslands, type DistributionReport } from "../domain/view
 import type { ClaimType, ClaimTypeMixReport } from "../domain/view/claim_type_checks";
 import type { EvidenceGapReport } from "../domain/view/evidence_gap_checks";
 import type { BalanceFinding, DialecticBalanceReport } from "../domain/view/dialectic_balance";
+import { computeDiagramStructuralMetrics } from "../domain/view/structural_metrics";
 import { downloadTextFile } from "../export/narrative_export";
 import { TraceWorkerClient } from "../worker/trace_client";
 import type { MergeAuditEntry } from "../domain/view/audit_log";
@@ -867,6 +868,41 @@ export function SidePanel({
     </details>
   ) : null;
 
+
+  const structuralMetrics = useMemo(() => {
+    if (!document) {
+      return null;
+    }
+    return computeDiagramStructuralMetrics(document);
+  }, [document]);
+
+  const metricsSection = structuralMetrics ? (
+    <details style={{ marginTop: 8 }} open>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Metrics</summary>
+      <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
+        <div>card count: {structuralMetrics.cardCount}</div>
+        <div>island count: {structuralMetrics.islandCount}</div>
+        <div>evidence link density: {structuralMetrics.evidenceLinkDensity.toFixed(4)}</div>
+        <div>isolated cards: {structuralMetrics.isolatedCardsCount}</div>
+        <div>contradiction ratio: {structuralMetrics.contradictionRatio === null ? "n/a" : structuralMetrics.contradictionRatio.toFixed(4)}</div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Island size distribution</div>
+        {structuralMetrics.islandSizeDistribution.length === 0 ? (
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>(none)</div>
+        ) : (
+          <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 4 }}>
+            {structuralMetrics.islandSizeDistribution.map((bin) => (
+              <li key={`size_${bin.size}`} style={{ fontSize: 11, color: "#0f172a" }}>
+                size {bin.size}: {bin.islands} island(s)
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </details>
+  ) : null;
+
   const dialecticBalanceSection = dialecticBalanceReport ? (
     <details style={{ marginTop: 8 }}>
       <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Dialectic balance ({dialecticBalanceReport.findings.length})</summary>
@@ -1344,6 +1380,7 @@ export function SidePanel({
               {claimTypeMixSection}
               {evidenceGapSection}
               {dialecticBalanceSection}
+              {metricsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
@@ -1665,6 +1702,7 @@ export function SidePanel({
               {claimTypeMixSection}
               {evidenceGapSection}
               {dialecticBalanceSection}
+              {metricsSection}
               <details style={{ marginTop: 8 }}>
                 <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
