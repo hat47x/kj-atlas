@@ -101,6 +101,7 @@ import {
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
+import { getCollapsedHiddenCardIds } from "./domain/view/collapse_visibility";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";

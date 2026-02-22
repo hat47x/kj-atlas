@@ -87,13 +87,14 @@ function collectDocumentPreflightErrors(input: Record<string, unknown>): Validat
         }
 
         const hasShape = isRecord(island.shape);
+        const hasGeometry = isRecord(island.geometry);
         const hasBbox = isRecord(island.bbox)
           && typeof island.bbox.x === "number"
           && typeof island.bbox.y === "number"
           && typeof island.bbox.w === "number"
           && typeof island.bbox.h === "number";
 
-        if (!hasShape && !hasBbox) {
+        if (!hasShape && !hasGeometry && !hasBbox) {
           errors.push({
             code: "V003",
             path: `islands[${index}]`,

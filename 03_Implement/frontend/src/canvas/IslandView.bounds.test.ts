@@ -31,6 +31,31 @@ describe("getIslandBounds", () => {
     });
   });
 
+
+  it("uses geometry polygon points when island geometry is polygon", () => {
+    const island: Island = {
+      id: "i1",
+      cardIds: ["c1"],
+      geometry: {
+        type: "polygon",
+        polygon: {
+          points: [
+            { x: 10, y: 20 },
+            { x: 80, y: 40 },
+            { x: 60, y: 120 },
+          ],
+        },
+      },
+    };
+
+    const cards: Card[] = [{ id: "c1", text: "a", x: 0, y: 0 }];
+    expect(getIslandBounds(island, cards)).toEqual({
+      left: 10,
+      top: 20,
+      width: 70,
+      height: 100,
+    });
+  });
   it("falls back to card bounds when shape is missing", () => {
     const island: Island = {
       id: "i1",

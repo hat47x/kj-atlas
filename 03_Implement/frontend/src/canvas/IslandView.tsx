@@ -1,6 +1,7 @@
 import { memo, useContext } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 
+import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
 import { isPointInPolygon } from "../domain/geometry/point_in_polygon";
 import {
   buildIslandSummaryLabelId,
@@ -109,7 +110,7 @@ function getBoundsFromPoints(points: Point[]) {
 }
 
 export function getIslandBounds(island: Island, cards: Card[]) {
-  const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
+  const polygonPoints = getIslandPolygonPoints(island);
   if (polygonPoints.length >= 3) {
     return getBoundsFromPoints(polygonPoints);
   }
@@ -174,7 +175,7 @@ function IslandViewComponent({
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
-  const polygonPoints = island.shape?.kind === "polygon" ? island.shape.points ?? [] : [];
+  const polygonPoints = getIslandPolygonPoints(island);
   const hasPolygon = polygonPoints.length >= 3;
   const showTitleLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandTitleLabelId(island.id)) : true;
   const showSummaryLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandSummaryLabelId(island.id)) : true;

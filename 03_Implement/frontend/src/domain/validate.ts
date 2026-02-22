@@ -138,6 +138,28 @@ function parseEdges(value: unknown): DocumentV2["edges"] {
   return edges;
 }
 
+function parseIslandGeometry(value: unknown): Island["geometry"] | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (value.type === "rect") {
+    return { type: "rect" };
+  }
+
+  if (value.type === "polygon" && isRecord(value.polygon) && Array.isArray(value.polygon.points)) {
+    const points = value.polygon.points
+      .filter((point): point is { x: number; y: number } => isRecord(point) && toNumber(point.x) !== null && toNumber(point.y) !== null)
+      .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
+
+    if (points.length >= 3) {
+      return { type: "polygon", polygon: { points } };
+    }
+  }
+
+  return undefined;
+}
+
 function parseIslands(value: unknown): Island[] {
   if (!Array.isArray(value)) {
     return [];
@@ -152,6 +174,7 @@ function parseIslands(value: unknown): Island[] {
 
     const cardIds = item.cardIds.filter((cardId): cardId is string => typeof cardId === "string");
     let shape: Island["shape"] | undefined;
+    const geometry = parseIslandGeometry(item.geometry);
     if (isRecord(item.shape)) {
       const kind = item.shape.kind;
       let generatedFrom: { cardIds: string[]; versionToken: string } | undefined;
@@ -184,6 +207,7 @@ function parseIslands(value: unknown): Island[] {
       }
     }
 
+    const normalizedGeometry = geometry ?? (shape?.kind === "polygon" ? { type: "polygon", polygon: { points: shape.points } } : shape?.kind === "rect" ? { type: "rect" } : undefined);
     islands.push({
       id: item.id,
       cardIds,
@@ -193,6 +217,7 @@ function parseIslands(value: unknown): Island[] {
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,
       critique: typeof item.critique === "string" ? item.critique : undefined,
       critiqueTags: parseCritiqueTags(item.critiqueTags),
+      geometry: normalizedGeometry,
       shape,
       shapeStale: typeof item.shapeStale === "boolean" ? item.shapeStale : undefined,
     });

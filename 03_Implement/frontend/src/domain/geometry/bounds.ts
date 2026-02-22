@@ -1,3 +1,5 @@
+import { getIslandPolygonPoints } from "./island_geometry";
+import { getPolygonBoundingBox } from "./polygon_bbox";
 import { getEdgesToRender } from "../edge_aggregate";
 import { getDerivedIslandEdges } from "../island_edge_aggregate";
 import { isSourceCard, type Card, type DocumentV2, type Island } from "../types";
@@ -38,25 +40,9 @@ export function getCardWorldBounds(card: Card): BoundsRect {
 }
 
 export function getIslandWorldBounds(island: Island, cardsById: Map<string, Card>): BoundsRect | null {
-  if (island.shape?.kind === "polygon" && island.shape.points.length >= 3) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    for (const point of island.shape.points) {
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-    }
-
-    return {
-      x: minX,
-      y: minY,
-      w: Math.max(1, maxX - minX),
-      h: Math.max(1, maxY - minY),
-    };
+  const polygonBounds = getPolygonBoundingBox(getIslandPolygonPoints(island));
+  if (polygonBounds) {
+    return polygonBounds;
   }
 
   let minX = Infinity;

@@ -80,6 +80,17 @@ export type PolygonIslandShape = {
 
 export type IslandShape = RectIslandShape | PolygonIslandShape;
 
+export type IslandGeometry =
+  | {
+      type: "rect";
+    }
+  | {
+      type: "polygon";
+      polygon: {
+        points: Point[];
+      };
+    };
+
 export type SummaryHistoryEntry = {
   id: string;
   createdAt: string;
@@ -107,6 +118,7 @@ export type Island = {
   imageReviewed?: boolean;
   critique?: string;
   critiqueTags?: string[];
+  geometry?: IslandGeometry;
   shape?: IslandShape;
   shapeStale?: boolean;
 };
