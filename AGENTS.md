@@ -47,6 +47,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `THREAT_MODEL.md`：脅威モデル（zip import / markdown / supply chain / safeMode）。
 - `SECURITY.md`：脆弱性報告方針。
 - `SUPPORT.md`：利用者サポート導線。
+- `DISCUSSIONS.md`：GitHub Discussions の運用窓口。
 - `CONTRIBUTING.md`：開発参加の手引き。
 - `GOVERNANCE.md`：運営方針。
 - `CODE_OF_CONDUCT.md`：行動規範。
@@ -189,4 +190,3 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - 新しい主要ドキュメントやディレクトリが増えたら **必ず Project Map を更新**。
 - ファイル名変更・統合が発生したら Read Order と Project Map を同期。
 - 長文の仕様本文はここに書かず、適切なドキュメントへ置き、ここから参照する。
-
