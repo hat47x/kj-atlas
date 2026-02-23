@@ -194,7 +194,7 @@
 
 - `V*` は viewpoint controls（collapse/focus/depth/peek）系タスク群を指す。
 - `W*` は canonicalization / merge / visibility 系タスク群を指す。
-- `F-*` は future_backlog 管理ID（`F-01`/`F-02`/`F-03`）に対応する。
+- `F-*` は phaseX_future_backlog 管理ID（`F-01`/`F-02`/`F-03`）に対応する。
 
 #### 3.4.1 V/W → F backlog link matrix（固定）
 

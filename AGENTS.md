@@ -77,11 +77,11 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 - `01_Plans/roadmap.md`：開発内部向けロードマップ（公開版は直下 `ROADMAP.md`）。
 - `01_Plans/value_to_requirements.md`：価値観→要件の変換（判断基準）。
-- `01_Plans/future_backlog.md`：将来課題の保管庫。
 - `01_Plans/phase0_bootstrap.md`：初期立ち上げ・環境。
 - `01_Plans/phase1_canvas_mvp.md`：Canvas MVP。
 - `01_Plans/phase2_qualitative_integration.md`：質的統合（KJ的機能拡張）。
 - `01_Plans/phase3_review_governance.md`：レビュー・監査・統治。
+- `01_Plans/phaseX_future_backlog.md`：将来課題の保管庫。
 - `01_Plans/phaseX_cli_tool.md`：CLI導入計画（運用・統治・自動化）。
 - `01_Plans/phaseX_local_llm_integration.md`：ローカルLLM統合（抽象化・運用）。
 

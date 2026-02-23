@@ -182,7 +182,7 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 **Exit criteria（全て必須）**
 - AC-2A-1〜5 を満たす
 - AC-V-1,3,4 を満たす
-- `future_backlog.md` の FB-P2A-01〜04 が DoD 完了
+- `phaseX_future_backlog.md` の FB-P2A-01〜04 が DoD 完了
 
 ### Phase 2B: Similar-card merge MVP（manual assisted）
 
@@ -197,7 +197,7 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 
 **Exit criteria（全て必須）**
 - AC-2B-1〜5 を満たす
-- `future_backlog.md` の FB-P2B-01〜04 が DoD 完了
+- `phaseX_future_backlog.md` の FB-P2B-01〜04 が DoD 完了
 
 ### Phase 2C: Freeform island boundary（polygon tools + auto fit）
 
@@ -212,7 +212,7 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 
 **Exit criteria（全て必須）**
 - AC-2C-1〜5 を満たす
-- `future_backlog.md` の FB-P2C-01〜03 が DoD 完了
+- `phaseX_future_backlog.md` の FB-P2C-01〜03 が DoD 完了
 
 ---
 

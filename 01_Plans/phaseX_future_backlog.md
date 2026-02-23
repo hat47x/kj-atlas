@@ -1,4 +1,4 @@
-# future_backlog
+# phaseX_future_backlog
 
 本ドキュメントは、Phase 1以降の未着手項目を優先度付きで管理する。
 `phase2_qualitative_integration.md` の要求ID（RQ）・受け入れ基準（AC）にトレース可能であることを必須とする。
@@ -50,7 +50,7 @@
 
 ## Roadmap統合バックログ（公開ROADMAPの実装分解）
 
-本セクションは、ルート `ROADMAP.md` の各項目を、既存バックログ体系（`future_backlog.md`）へ統合したものである。  
+本セクションは、ルート `ROADMAP.md` の各項目を、既存バックログ体系（`phaseX_future_backlog.md`）へ統合したものである。  
 方針は `ROADMAP.md` を正とし、ここでは **実装アクション / DoD / 状態** を管理する。
 
 状態定義:

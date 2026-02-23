@@ -162,7 +162,7 @@ Draft → Critique → 再提案 の最小循環を成立させる。
 公開向けの非目標（Out of Scope）はルート `ROADMAP.md` を正本とし、
 本ドキュメントでは重複列挙しない。
 
-実装計画として扱う必要が生じた場合のみ、`future_backlog.md` に **アクション + DoD** 形式で起票する。
+実装計画として扱う必要が生じた場合のみ、`phaseX_future_backlog.md` に **アクション + DoD** 形式で起票する。
 
 ---
 
@@ -172,16 +172,16 @@ Phase 1以降の定性統合（Hierarchy / Similar-card merge / 非矩形Island 
 `01_Plans/phase2_qualitative_integration.md` を参照する。
 
 実装着手時は同ドキュメントの受け入れ基準と phased rollout（2A/2B/2C）を基準にチケット化する。
-バックログ管理は `01_Plans/future_backlog.md` を正とし、要求ID（RQ）と受け入れ基準（AC）を対応づけて運用する。
-フェーズ完了判定は `future_backlog.md` の Gate-2A / Gate-2B / Gate-2C を採用する。
+バックログ管理は `01_Plans/phaseX_future_backlog.md` を正とし、要求ID（RQ）と受け入れ基準（AC）を対応づけて運用する。
+フェーズ完了判定は `phaseX_future_backlog.md` の Gate-2A / Gate-2B / Gate-2C を採用する。
 
 
 ## ROADMAP詳細項目の移管先
 
 ルート `ROADMAP.md` から分解した詳細項目（UX深化、研究用途強化、セキュリティ維持、
-ローカライゼーション、公開運用）は `01_Plans/future_backlog.md` の
+ローカライゼーション、公開運用）は `01_Plans/phaseX_future_backlog.md` の
 「Roadmap統合バックログ（公開ROADMAPの実装分解）」で管理する。
 
 - 方針レベル: `ROADMAP.md`
-- 実装分解（Action/DoD/状態）: `future_backlog.md`
-- スプリント投入順・Gate判定: `future_backlog.md`（既存 Phase 2 backlog と同一運用）
+- 実装分解（Action/DoD/状態）: `phaseX_future_backlog.md`
+- スプリント投入順・Gate判定: `phaseX_future_backlog.md`（既存 Phase 2 backlog と同一運用）
