@@ -20,6 +20,20 @@
 
 ---
 
+## 0.1 進捗記入（2026-02-23 確認）
+
+- 状態サマリ: **2A/2B/2C すべて Done（実装 + テスト確認ベース）**
+- 根拠メモ:
+  - 2A（階層 / collapse）: backend roundtrip test と frontend collapse visibility test を確認。
+  - 2B（similar-card merge）: merge suggestions UI・domain test・API route が存在し、テスト通過。
+  - 2C（polygon）: polygon shape/geometry の保存復元・検証ロジックを backend/frontend 双方で確認。
+
+| ワークストリーム | 進捗 | 補足 |
+|---|---|---|
+| Phase 2A: Hierarchy + collapse/expand | ✅ Done | `parentIslandId` / `collapsed` の保存復元、表示制御、undo/redo運用を実装済み。 |
+| Phase 2B: Similar-card merge MVP | ✅ Done | 候補提示、承認フロー、代表カード、origin link を実装済み。 |
+| Phase 2C: Freeform island boundary | ✅ Done | polygon auto-fit、shape切替、自己交差バリデーション、互換読込を実装済み。 |
+
 ## 1. 問題定義（Problem statements）
 
 ### PS-01 非矩形境界不足
