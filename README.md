@@ -27,121 +27,61 @@ kj-atlas の目的は、
 
 ---
 
-## 重要：本プロジェクトの開発方法論について（必読）
+## ドキュメント導線（人間向け / AI向け）
 
-本ツールは、
-**生成AIのコンテキストウィンドウ（記憶容量）と推論能力の限界**を前提にした、
-**階層化されたAI支援開発手法**によって開発されます。
+この README は **人間向けの入口**です。詳細な運用規約やAI向けの読み順は、役割に応じて次を参照してください。
 
-### 基本原則
+- **AIエージェント向けの入口**: [`AGENTS.md`](AGENTS.md)
+- **コントリビューション手順**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- **実装ガイド（実行方法）**: [`03_Implement/README.md`](03_Implement/README.md)
 
-> **プロジェクトの知識は階層化される。**  
-> **上流は下流を定義するが、下流は上流を上書きしてはならない。**
-
-AI（Codex / Devin 等）には、
-**常に「今のフェーズに必要な最小限の情報のみ」を与えます。**
-
-リポジトリ全体を一度に読ませることは想定していません。
+> 開発レイヤ（`00_Prompt`〜`04_Documentation`）の詳細な説明・Read Order・Project Map は `AGENTS.md` に集約しています。
 
 ---
 
-## プロジェクト知識の5階層
 
+## はじめに（人間向けクイックスタート）
+
+### 1) まず把握すること
+
+- このプロジェクトは **探索と思考整理のためのツール** であり、結論自動化ツールではありません。
+- 現在は開発中で、運用時には **人間のレビューと検証** を前提にしてください。
+- セキュリティ・安全設計（safeMode 含む）は機能追加より優先されます。
+
+### 2) 利用者として最初に読む文書
+
+- 導入・セットアップ: [`04_Documentation/installation.md`](04_Documentation/installation.md)
+- 設定値と環境変数: [`04_Documentation/configuration.md`](04_Documentation/configuration.md)
+- 日常運用: [`04_Documentation/operations.md`](04_Documentation/operations.md)
+- セキュリティ運用: [`04_Documentation/security.md`](04_Documentation/security.md)
+
+### 3) 開発者として最初に実行すること
+
+```bash
+cd 03_Implement/deploy
+docker compose up --build
 ```
-/project-root
-  ├── 00_Prompt/        # AIへの指令・役割定義（Why / What）
-  ├── 01_Plans/         # 実装計画・タスク分割（How / Process）
-  ├── 02_Architecture/ # 構造・データモデル・I/F定義（Structure）
-  ├── 03_Implement/    # 実装コード（Code）
-  └── 04_Documentation/# 利用者・開発者向け説明（Guide）
-```
 
-### 依存関係ルール（厳守）
+- 詳細な実行方法（Frontend / Backend 個別起動、環境変数）は [`03_Implement/README.md`](03_Implement/README.md) を参照してください。
 
-- `00_Prompt` は **プロジェクトの憲法（Single Source of Truth）**
-- `01_Plans` は `00_Prompt` に従う
-- `02_Architecture` は `00_Prompt` と `01_Plans` に従う
-- `03_Implement` は `02_Architecture` に従う
-- `04_Documentation` は `03_Implement` を説明する
+### 4) このリポジトリでの相談・報告窓口
 
-**いかなる層も、上位層を暗黙に書き換えてはなりません。**
+- バグ・機能提案: [`CONTRIBUTING.md`](CONTRIBUTING.md) の手順に沿って Issue / PR を作成
+- 相談・運用知見の共有: [`DISCUSSIONS.md`](DISCUSSIONS.md)
+- 脆弱性報告: [`SECURITY.md`](SECURITY.md)
+- 一般的なサポート導線: [`SUPPORT.md`](SUPPORT.md)
 
 ---
 
-## 各階層の役割
+## 現在の文書体系（人間向け要約）
 
-### 00_Prompt（指令・役割・絶対制約）
+- **公開向け文書（ルート直下）**: プロジェクト方針・参加方法・公開ルール
+- **`01_Plans/`**: 開発計画とフェーズ
+- **`02_Architecture/`**: API・スキーマ・構成設計の正本
+- **`03_Implement/`**: 実装本体（frontend / backend / deploy）
+- **`04_Documentation/`**: 導入・設定・運用ガイド
 
-**「なぜ作るのか」「何をしてはいけないか」**を定義します。
-
-- AIの役割（Persona）定義
-- 機能要件・非機能要件
-- 技術的・思想的な禁止事項
-
-この層は、**最初に人間が書き、頻繁には変更しません。**
-
----
-
-### 01_Plans（実装計画・タスク）
-
-**「どの順番で作るか」**を定義します。
-
-- フェーズ分割（小さく、再開可能に）
-- Markdownチェックリストによる進捗管理
-- AIセッションが切れても再開できる粒度
-
----
-
-### 02_Architecture（構造・I/F定義）
-
-**本プロジェクトで最も重要な層です。**
-
-- データ構造・スキーマの厳密定義（YAML / JSON Schema 等）
-- モジュール境界・責務分離
-- ディレクトリ・ファイル配置の事前定義
-
-AIは **この層に反する構造を勝手に発明してはいけません。**
-
----
-
-### 03_Implement（実装コード）
-
-実際のソースコードを配置します。
-
-- 決定論的ロジックと、ヒューリスティック／LLM依存ロジックの分離
-- 単体テストの同梱
-- 差分が追える、可逆的な実装
-
----
-
-### 04_Documentation（ドキュメント）
-
-**利用者・開発者が「どう理解し、どう直すか」**を説明します。
-
-- 利用ガイド
-- エラー・違和感への対処方法
-- 入力ルール・スタイルガイド
-
-※ ドキュメントは **コード確定後に生成**します。
-
----
-
-## AI支援開発の基本フロー
-
-1. **Define**  
-   人間が `00_Prompt` と `02_Architecture` を記述
-
-2. **Plan**  
-   人間＋AIで `01_Plans` を整理
-
-3. **Code**  
-   AIに対し「特定タスクのみ」を実装させる
-
-4. **Review**  
-   人間が挙動・構造を確認
-
-5. **Document**  
-   安定後に AI が `04_Documentation` を生成
+> AIエージェント向けの詳細な Read Order / Project Map は `AGENTS.md` に集約しています。
 
 ---
 
