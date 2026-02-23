@@ -1,0 +1,192 @@
+# AGENTS.md
+
+> **目的 / Purpose**  
+> **このファイルは生成AIエージェント（Codex等）のための最短航路（Project Map）です。**  
+> 人間向けの入口は `README.md`。AIはまず本書を読み、必要な文書へ自律的に辿ってください。
+
+**English summary**  
+This file is the navigation index for AI agents (Codex, etc.). Start here, then follow the read order to locate the single sources of truth for requirements, architecture, plans, implementation, and ops.
+
+---
+
+## 0. ゴールデンルール（最重要）
+
+1. **作業開始時は必ず後述の `Read Order` を上から順に読む。**
+2. **単一の変更タスクは“範囲を絞って”実施する。**（Docsのみ / Frontendのみ 等）
+3. **仕様・設計は 00〜02 が上流。実装 03 は下流。** 上流に矛盾があれば上流を直してから下流を直す。
+4. **安全設計が最優先。** SafeMode の既定ONと漏洩防止（share/export）が破られる変更は禁止。
+5. **完遂条件を満たすまで継続して作業する。**（テスト・受入条件・回帰なし）
+
+---
+
+## 1. Read Order（AIが読む順序）
+
+作業に入る前に、必ずこの順に参照：
+
+1) **AI行動規範**: `00_Prompt/system_prompt.md`  
+2) **用語・概念**: `00_Prompt/domain.md`  
+3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`  
+4) **価値→要件**: `01_Plans/value_to_requirements.md`  
+5) **全体アーキテクチャ**: `02_Architecture/architecture.md`  
+6) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+7) **該当フェーズ計画**: `01_Plans/phase*.md`（例: `phase1_canvas_mvp.md`）
+8) **実装（03_Implement）**: 対象領域のソースへ
+9) **運用・手順**: `04_Documentation/*`（必要に応じて）
+
+---
+
+## 2. Project Map（ファイル構造インデックス）
+
+> **ここがAGENTS.mdの中核です。**  
+> AIはこのマップを使って「どこに何があるか」を迷わず辿ってください。
+
+### 2.1 リポジトリ直下（Public / OSS）
+
+- `README.md`：人間向け入口（目的・導入・概要）。AIは必要時に参照。
+- `ROADMAP.md`：公開ロードマップ（将来課題含む）。
+- `THREAT_MODEL.md`：脅威モデル（zip import / markdown / supply chain / safeMode）。
+- `SECURITY.md`：脆弱性報告方針。
+- `SUPPORT.md`：利用者サポート導線。
+- `CONTRIBUTING.md`：開発参加の手引き。
+- `GOVERNANCE.md`：運営方針。
+- `CODE_OF_CONDUCT.md`：行動規範。
+- `LICENSE`：ライセンス。
+- `CHANGELOG.md`：変更履歴。
+
+### 2.2 `.github/`（CI / テンプレ）
+
+- `.github/workflows/ci.yml`：CI（lint/test/build）。
+- `.github/workflows/release.yml`：リリース補助。
+- `.github/ISSUE_TEMPLATE/*`：Issueテンプレ。
+- `.github/pull_request_template.md`：PRテンプレ。
+
+---
+
+## 3. 00〜04 レイヤ構造（AI開発スタイル）
+
+### 3.1 `00_Prompt/`（Why & Rules：AIへの指令・憲法）
+
+- `00_Prompt/system_prompt.md`：**AIエージェントの行動規範（最優先）**。
+- `00_Prompt/domain.md`：ドメイン用語・概念定義（KJ法概念、safeMode、レビュー等）。
+- `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
+
+**注意**：AIの挙動規範は原則ここに集約。READMEには最小限の誘導のみ。
+
+### 3.2 `01_Plans/`（How to Process：計画・タスク分割）
+
+- `01_Plans/roadmap.md`：開発内部向けロードマップ（公開版は直下 `ROADMAP.md`）。
+- `01_Plans/value_to_requirements.md`：価値観→要件の変換（判断基準）。
+- `01_Plans/future_backlog.md`：将来課題の保管庫。
+- `01_Plans/phase0_bootstrap.md`：初期立ち上げ・環境。
+- `01_Plans/phase1_canvas_mvp.md`：Canvas MVP。
+- `01_Plans/phase2_qualitative_integration.md`：質的統合（KJ的機能拡張）。
+- `01_Plans/phase3_review_governance.md`：レビュー・監査・統治。
+- `01_Plans/phaseX_local_llm_integration.md`：ローカルLLM統合（抽象化・運用）。
+
+### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
+
+- `02_Architecture/architecture.md`：全体構成（最上位）。
+- `02_Architecture/schemas.md`：データスキーマ（document/view/pack等）。
+- `02_Architecture/api.md`：API設計。
+- `02_Architecture/deployment.md`：デプロイ構成（コンテナ・DB等）。
+- `02_Architecture/enterprise_architecture.md`：企業・行政運用（SSO/ACL/公開方式含む）。
+- `02_Architecture/review_attribution.md`：レビュー帰属（人間レビュー済みフラグ等）。
+- `02_Architecture/schemas_review_attribution.md`：上記のスキーマ詳細。
+- `02_Architecture/island_shapes.md`：島形状（rect/polygon等）。
+
+**LLM関連（設計・制約・品質）**
+- `02_Architecture/llm_provider_spec.md`：Provider抽象仕様。
+- `02_Architecture/llm_provider.md`：Provider実装方針（補足）。
+- `02_Architecture/llm_runtime_constraints.md`：実行制約（IPC/fixture/CI）。
+- `02_Architecture/llm_quality_strategy.md`：品質戦略（二段評価・回帰）。
+- `02_Architecture/llm_escalation_policy.md`：Local-first + escalation方針。
+
+### 3.4 `03_Implement/`（Code：実装）
+
+#### Backend（Python）
+- `03_Implement/backend/src/kj_atlas_api/main.py`：APIエントリ。
+- `03_Implement/backend/src/kj_atlas_api/routes/`：ルーティング（docs/ai等）。
+- `03_Implement/backend/src/kj_atlas_api/models*.py`：DB/AIモデル。
+- `03_Implement/backend/src/kj_atlas_api/llm/provider.py`：LLM Provider抽象/実装。
+- `03_Implement/backend/alembic/`：DBマイグレーション。
+- `03_Implement/backend/tests/`：バックエンドテスト。
+
+#### Frontend（React + TS）
+- `03_Implement/frontend/src/App.tsx`：アプリルート。
+- `03_Implement/frontend/src/ui/`：UIパネル（Import/Diff/Share/Side等）。
+- `03_Implement/frontend/src/canvas/`：Canvas描画（cards/islands/edges/reading order）。
+- `03_Implement/frontend/src/domain/`：ドメインロジック（差分/検証/メトリクス/ポリシー）。
+- `03_Implement/frontend/src/export/`：エクスポート（bundle/png/svg/narratives等）。
+- `03_Implement/frontend/src/import/`：インポート（zip/markdown sanitize/schema validate）。
+- `03_Implement/frontend/src/worker/`：Web Workers（diff/diagnostics/trace）。
+- `03_Implement/frontend/tests/fixtures/`：golden fixtures。
+
+#### Deploy（compose）
+- `03_Implement/deploy/docker-compose.yml`：統合起動。
+- `03_Implement/deploy/nginx.conf`：リバプロ例。
+
+### 3.5 `04_Documentation/`（Guide：運用・利用者向け）
+
+- `04_Documentation/installation.md`：導入手順。
+- `04_Documentation/configuration.md`：設定。
+- `04_Documentation/operations.md`：運用。
+- `04_Documentation/security.md`：運用上のセキュリティ。
+- `04_Documentation/release.md`：リリース。
+- `04_Documentation/narratives.md`：文章化/要約出力。
+- `04_Documentation/canonicalization.md`：正規化/決定論。
+- `04_Documentation/local_llm_ops_guide.md`：ローカルLLM運用。
+
+---
+
+## 4. AIエージェントの作業プロトコル
+
+### 4.1 作業開始テンプレ
+
+- 変更対象を明確化（Docs / Frontend / Backend / Schema）。
+- `Read Order` に従い、必要な設計文書を先に読む。
+- 受入条件（Acceptance criteria）を先に書き出す。
+- 実装/修正 → テスト → 受入確認 → ドキュメント整合。
+
+### 4.2 変更範囲の原則
+
+- Docsのみタスクでは **コードを変更しない**。
+- Schema変更時は：
+  - `02_Architecture/schemas.md` を先に更新
+  - import/export/validate/tests を追随
+- SafeModeに影響する変更は：
+  - `03_Implement/frontend/src/domain/policy/safe_mode.ts` と関連テストを必ず更新
+  - share/export の既定ONを破らない
+
+### 4.3 典型タスクの入口
+
+- **Canvas/UIの変更**：`03_Implement/frontend/src/ui/` と `src/canvas/`
+- **差分・レビュー**：`03_Implement/frontend/src/diff/` と `src/domain/patch/`
+- **インポート/エクスポート**：`src/import/` と `src/export/`
+- **Worker化**：`src/worker/`（protocol/client/compute を分離）
+- **SSO/公開方式（企業・行政）**：`02_Architecture/enterprise_architecture.md`
+- **LLM統合**：`02_Architecture/llm_*` と `backend/src/kj_atlas_api/llm/provider.py`
+
+---
+
+## 5. README.mdとの関係
+
+- **人間向け入口**：`README.md`
+- **AI向け入口**：`AGENTS.md`
+
+---
+
+## 6. 迷ったときの判断基準
+
+1) 価値・判断軸：`01_Plans/value_to_requirements.md`
+2) 安全：`THREAT_MODEL.md` と SafeModeポリシー
+3) 企業・行政要件：`02_Architecture/enterprise_architecture.md`
+4) 後方互換：`02_Architecture/schemas.md`
+
+---
+
+## 7. このファイルの更新ルール
+
+- 新しい主要ドキュメントやディレクトリが増えたら **必ず Project Map を更新**。
+- ファイル名変更・統合が発生したら Read Order と Project Map を同期。
+- 長文の仕様本文はここに書かず、適切なドキュメントへ置き、ここから参照する。
+
