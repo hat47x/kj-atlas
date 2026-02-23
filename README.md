@@ -171,6 +171,21 @@ kj-atlas は、
 
 ## Project communication / 公開コミュニケーション
 
-- [ROADMAP.md](ROADMAP.md): 今後の開発方針（短期・中期・長期）
-- [DISCUSSIONS.md](DISCUSSIONS.md): GitHub Discussions の使い方
-- [SUPPORT.md](SUPPORT.md): 問い合わせ・サポート窓口
+ルートディレクトリ直下の文書は、**開発コミュニティ（利用者・コントリビュータ・運用担当）との対外コミュニケーション**を目的とした公開ドキュメントです。  
+生成AIが更新時機を判断できるよう、以下を運用ルールとします。
+
+| 文書 | 位置づけ | 主な更新タイミング |
+|---|---|---|
+| [README.md](README.md) | プロジェクト概要・開発原則・文書案内の入口 | 方針変更、文書構成変更、初見利用者向け導線変更時 |
+| [ROADMAP.md](ROADMAP.md) | 今後の開発方針（短期・中期・長期）を示す公開計画 | リリース計画変更、優先度見直し、非目標更新時 |
+| [DISCUSSIONS.md](DISCUSSIONS.md) | GitHub Discussions の運用窓口 | 議論カテゴリや運用ルール変更時 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 貢献フロー・レビュー基準 | 開発フロー・レビュー要件更新時 |
+| [SECURITY.md](SECURITY.md) | 脆弱性報告と対応ポリシー | 報告窓口やSLA変更時 |
+| [SUPPORT.md](SUPPORT.md) | 問い合わせ・サポート窓口 | 連絡経路や対応範囲変更時 |
+| [CHANGELOG.md](CHANGELOG.md) | リリース差分の履歴 | リリース確定時（毎リリース更新） |
+
+### 更新運用（AI/人間共通）
+
+- 実装仕様の詳細は `01_Plans/` `02_Architecture/` `03_Implement/` を優先し、ルート文書はその要約・公開説明として更新する。  
+- ルート文書同士で矛盾が出る場合は、同一PR/同一コミットで同時修正する。  
+- リリース前には最低限 `README.md` `ROADMAP.md` `CHANGELOG.md` の整合を確認する。
