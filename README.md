@@ -1,5 +1,7 @@
 # kj-atlas
 
+** NOTICE: 本ツールは生成AIを用いた開発中であり、現時点では人的レビュー・利用を伴っていないことをここに明示します。 **
+
 A tool for keeping ambiguous meanings suspended, not for finding a single correct answer.
 
 **kj-atlas** は、LLM（大規模言語モデル）を伴走者として用い、
