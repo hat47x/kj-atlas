@@ -37,3 +37,33 @@ Long-term explores advanced island shapes, collaboration, and optional signing/a
   - 複数人同時編集は将来候補とし、当面は単一ユーザー前提を維持する。
 - **Optional signing/audit hardening**
   - 必要に応じて署名・監査の強化オプションを提供する。
+
+---
+
+# 企業・行政運用の公開要件（Publishing & Access Control）
+
+## 背景
+本アプリケーションは「市民・一般職員などの未ログインユーザへの公開」から、
+「秘匿性が高く文書ごとにロール/グループ単位で厳格に制御」まで、両極の要件を想定する。
+
+## 運用方式（選べることが重要）
+### 方式A：静的配信（広域公開向け）
+- Export（Bundle/Review Pack）を定期連携し、S3 + CDN 等の静的配信へ載せる
+- SafeMode 強制（既定ON、解除不可の公開モードを用意）
+- 公開に必要な最小ファイル（index + assets + packs）を生成する “Static Publish” モード
+
+### 方式B：認証付き配信（限定公開向け）
+- 統合認証（OIDC/SAML）でユーザ識別
+- API層で認可（RBAC/ABAC）を実施し、文書単位の公開範囲を制御
+- 監査ログと連動（閲覧/エクスポートのイベント記録は外部ログ基盤に送れる導線）
+
+### 方式C：ハイブリッド（現実解）
+- 内部は方式Bで厳格管理
+- 市民向けは方式Aで低コスト公開
+- “公開版生成”をエクスポートパイプラインで担保（匿名化・伏字・SafeMode強制）
+
+## 優先実装（Mid-term）
+- visibility（Public / Unlisted / Org / Restricted）を pack/view メタに導入
+- isReadOnly を受け取ってUIを制御（アプリ内RBACは持たない）
+- Static Publish 出力（S3/静的Web向け）を公式サポート
+- DocumentACL 抽象I/F（roles/groups/policyRef）を定義し、実装は外部に委譲
