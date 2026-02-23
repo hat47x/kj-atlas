@@ -3,7 +3,7 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 
 # phaseX_local_llm_integration — ローカルLLM統合計画（チェックリスト）
 
-本書は、LFM2.5等の軽量ローカルLLMを主軸にした開発・運用へ移行するための計画書である。  
+本書は、LFM2.5等の軽量ローカルLLMを主軸にした運用へ移行するための計画書である。  
 実装コードは含まず、完了条件を明示した進行管理チェックリストとして扱う。
 
 ---
