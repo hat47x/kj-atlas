@@ -29,11 +29,18 @@ Phase 0 の目的は「機能を作ること」ではありません。
 
 Phase 0 は、以下をすべて満たした時点で完了とします。
 
-- [ ] バックエンドが `uvicorn` で起動する
-- [ ] `GET /healthz` が HTTP 200 を返す
-- [ ] フロントエンドが `npm run dev` で起動する
-- [ ] ブラウザに kj-atlas の最小UI（ヘッダ等）が表示される
-- [ ] （任意）`docker compose up` で API + DB が起動する
+- [x] バックエンドが `uvicorn` で起動する
+- [x] `GET /healthz` が HTTP 200 を返す
+- [x] フロントエンドが `npm run dev` で起動する
+- [x] ブラウザに kj-atlas の最小UI（ヘッダ等）が表示される
+- [x] （任意）`docker compose up` で API + DB が起動する
+
+### 2.1 進捗記入（2026-02-23 確認）
+
+- 状態: **完了（Done）**
+- 確認メモ:
+  - backend の `/healthz` と docs API の回帰テストが通過。
+  - frontend のテストスイートが通過し、Vite + React 基盤が継続運用されている。
 
 ---
 
@@ -173,4 +180,3 @@ Phase 0 完了後、次に進むのは **Phase 1（Canvas MVP）** です。
 
 本書は Phase 0 専用であり、
 Phase 1 以降は新しい計画書を `01_Plans/` に追加します。
-

@@ -3,6 +3,22 @@
 本フェーズは MVP 後の拡張であり、レビュー運用（責任所在・共有・監査）を整える。  
 実装は段階的に進める。セキュリティ/プライバシを優先する。
 
+## Progress update（2026-02-23 確認）
+
+- Overall: **In Progress（部分着手）**
+- 判定方針: 03_Implement の実装有無とテスト有無を基準に判定。
+
+| Milestone | Status | 根拠 |
+|---|---|---|
+| M1: Current reviewer (local) | ⏳ Not started | `reviewerRef` / `Current reviewer` の実装痕跡は未確認。 |
+| M2: ReviewEvent append on review toggle | ⏳ Not started | `reviewEvents` データモデル/保存/export-import経路は未確認。 |
+| M3: Export redaction | ⏳ Not started | review向け redaction モード（strip-identities / strip-all）は未確認。 |
+| M4: Merge audit log integration | 🟡 Partial | `mergeAuditLog` の保存・上限管理は実装済みだが、`reviewEvents` との統合は未実装。 |
+| M5: Org deployment hooks (optional) | ⏳ Not started | reviewerRef adapter / SSO subject 連携は未確認。 |
+| M6: Optional signing (non-MVP) | ⏳ Not started | detached signature 設計・検証UIは未確認。 |
+
+> 注記: M4 の「部分着手」は `mergeAuditLog` 単体の実装確認に基づく。Phase 3 の DoD 充足には `reviewEvents` 実装と export/import 連携が必要。
+
 ## Objectives
 - “人間がレビューしたか”を確実に区別できる
 - 誰がレビューしたかはオプトイン（匿名ID既定）
