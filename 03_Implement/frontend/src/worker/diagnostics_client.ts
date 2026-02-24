@@ -1,5 +1,6 @@
 import { createCancelableTaskRunner } from "../utils/compute_scheduler";
 import { computeDiagnostics } from "./diagnostics_compute";
+import { normalizeDiagnosticsData } from "./diagnostics_protocol";
 import type { DiagnosticsProgressStage, DiagnosticsRequestPayload, DiagnosticsWorkerRequestMessage, DiagnosticsWorkerResponseMessage } from "./diagnostics_protocol";
 
 export type DiagnosticsComputeProgress = { stage: DiagnosticsProgressStage; percent: number };
@@ -9,6 +10,11 @@ export type DiagnosticsComputeResult =
   | { status: "cancelled"; usedFallback: boolean };
 
 let requestCounter = 0;
+const VALID_PROGRESS_STAGES: DiagnosticsProgressStage[] = ["outline", "recommendations", "contradictions", "distribution", "dialectic", "render"];
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
 
 export class DiagnosticsWorkerClient {
   private worker: Worker | null = null;
@@ -37,23 +43,70 @@ export class DiagnosticsWorkerClient {
     return new Promise<DiagnosticsComputeResult>((resolve, reject) => {
       const onMessage = (event: MessageEvent<DiagnosticsWorkerResponseMessage>) => {
         const message = event.data;
+        if (!isObjectRecord(message)) return;
         if (message.requestId !== requestId) return;
-        if (message.type === "diagnostics.progress") {
+
+        if (typeof message.type !== "string") {
+          cleanup();
+          reject(new Error("Invalid diagnostics payload: message type must be a string"));
+          return;
+        }
+        const messageType = message.type;
+
+        if (messageType === "diagnostics.progress") {
+          if (!VALID_PROGRESS_STAGES.includes(message.stage) || typeof message.percent !== "number" || !Number.isFinite(message.percent) || message.percent < 0 || message.percent > 100) {
+            cleanup();
+            reject(new Error("Invalid diagnostics payload: progress message is malformed"));
+            return;
+          }
           options.onProgress?.({ stage: message.stage, percent: message.percent });
           return;
         }
         cleanup();
-        if (message.type === "diagnostics.result") {
-          resolve({ status: "completed", result: message.result, usedFallback: false });
+        if (messageType === "diagnostics.result") {
+          if (!isObjectRecord(message.result)) {
+            reject(new Error("Invalid diagnostics payload: result envelope must be an object"));
+            return;
+          }
+
+          const diagnosticsMd = message.result.diagnosticsMd;
+          if (typeof diagnosticsMd !== "string") {
+            reject(new Error("Invalid diagnostics payload: diagnosticsMd must be a string"));
+            return;
+          }
+
+          let diagnosticsData;
+          try {
+            diagnosticsData = normalizeDiagnosticsData(message.result.diagnosticsData);
+          } catch (error) {
+            reject(error);
+            return;
+          }
+
+          resolve({
+            status: "completed",
+            result: {
+              diagnosticsMd,
+              diagnosticsData,
+            },
+            usedFallback: false,
+          });
           return;
         }
-        if (message.type === "diagnostics.cancelled") {
+        if (messageType === "diagnostics.cancelled") {
           resolve({ status: "cancelled", usedFallback: false });
           return;
         }
-        if (message.type === "diagnostics.error") {
+        if (messageType === "diagnostics.error") {
+          if (!isObjectRecord(message.error) || typeof message.error.message !== "string") {
+            reject(new Error("Invalid diagnostics payload: diagnostics.error must include a string message"));
+            return;
+          }
           reject(new Error(message.error.message));
+          return;
         }
+
+        reject(new Error(`Invalid diagnostics payload: unknown message type ${String(messageType)}`));
       };
 
       const onAbort = () => {
@@ -98,7 +151,14 @@ export class DiagnosticsWorkerClient {
     if (outcome.status === "cancelled" || outcome.result === null) {
       return { status: "cancelled", usedFallback: true };
     }
-    return { status: "completed", usedFallback: true, result: outcome.result };
+    return {
+      status: "completed",
+      usedFallback: true,
+      result: {
+        diagnosticsMd: outcome.result.diagnosticsMd,
+        diagnosticsData: normalizeDiagnosticsData(outcome.result.diagnosticsData),
+      },
+    };
   }
 
   cancel(requestId: string): void {

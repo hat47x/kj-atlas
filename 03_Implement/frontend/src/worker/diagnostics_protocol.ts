@@ -7,6 +7,9 @@ import type { OutlineQualityReport } from "../domain/view/outline_quality";
 import type { Recommendation } from "../domain/view/recommendations";
 import type { DiagramStructuralMetrics } from "../domain/view/structural_metrics";
 
+export const DIAGNOSTICS_DATA_SCHEMA_VERSION = 1 as const;
+export type DiagnosticsDataSchemaVersion = typeof DIAGNOSTICS_DATA_SCHEMA_VERSION;
+
 export type DiagnosticsRequestPayload = {
   doc: DocumentV2;
   view: {
@@ -21,6 +24,7 @@ export type DiagnosticsRequestPayload = {
 };
 
 export type DiagnosticsData = {
+  schemaVersion: DiagnosticsDataSchemaVersion;
   outlineReport: OutlineQualityReport;
   recommendations: Recommendation[];
   contradictionReport: ContradictionReport;
@@ -28,6 +32,61 @@ export type DiagnosticsData = {
   dialecticBalanceReport: DialecticBalanceReport;
   structuralMetrics: DiagramStructuralMetrics;
 };
+
+export type LegacyDiagnosticsData = Omit<DiagnosticsData, "schemaVersion">;
+export type VersionedDiagnosticsData = Omit<DiagnosticsData, "schemaVersion"> & { schemaVersion: number };
+export const REQUIRED_DIAGNOSTICS_OBJECT_FIELDS = [
+  "outlineReport",
+  "contradictionReport",
+  "distributionReport",
+  "dialecticBalanceReport",
+  "structuralMetrics",
+] as const;
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function assertDiagnosticsShape(data: Record<string, unknown>): void {
+  for (const field of REQUIRED_DIAGNOSTICS_OBJECT_FIELDS) {
+    if (!isObjectRecord(data[field])) {
+      throw new Error(`Invalid diagnostics payload: missing ${field}`);
+    }
+  }
+
+  if (!Array.isArray(data.recommendations)) {
+    throw new Error("Invalid diagnostics payload: missing recommendations");
+  }
+}
+
+export function normalizeDiagnosticsData(data: unknown): DiagnosticsData {
+  if (!isObjectRecord(data)) {
+    throw new Error("Invalid diagnostics payload: expected object");
+  }
+
+  assertDiagnosticsShape(data);
+
+  if ("schemaVersion" in data) {
+    const schemaVersion = data.schemaVersion;
+    if (typeof schemaVersion !== "number" || !Number.isInteger(schemaVersion) || schemaVersion <= 0) {
+      throw new Error(`Invalid diagnostics schema version: ${String(schemaVersion)}`);
+    }
+
+    if (schemaVersion === DIAGNOSTICS_DATA_SCHEMA_VERSION) {
+      return {
+        ...(data as LegacyDiagnosticsData),
+        schemaVersion: DIAGNOSTICS_DATA_SCHEMA_VERSION,
+      };
+    }
+
+    throw new Error(`Unsupported diagnostics schema version: ${String(schemaVersion)}`);
+  }
+
+  return {
+    schemaVersion: DIAGNOSTICS_DATA_SCHEMA_VERSION,
+    ...(data as LegacyDiagnosticsData),
+  };
+}
 
 export type DiagnosticsWorkerRequestMessage =
   | { type: "diagnostics.request"; requestId: string; payload: DiagnosticsRequestPayload }

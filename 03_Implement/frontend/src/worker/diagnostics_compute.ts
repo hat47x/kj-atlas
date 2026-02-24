@@ -5,6 +5,7 @@ import { analyzeDistribution } from "../domain/view/distribution_checks";
 import { analyzeOutlineQuality } from "../domain/view/outline_quality";
 import { generateRecommendations } from "../domain/view/recommendations";
 import { computeStructureMetrics } from "../domain/view/structural_metrics";
+import { DIAGNOSTICS_DATA_SCHEMA_VERSION } from "./diagnostics_protocol";
 import type { DiagnosticsData, DiagnosticsRequestPayload } from "./diagnostics_protocol";
 
 function toSafeOutline(data: DiagnosticsData["outlineReport"]): DiagnosticsData["outlineReport"] {
@@ -19,6 +20,7 @@ function toSafeOutline(data: DiagnosticsData["outlineReport"]): DiagnosticsData[
 
 function buildDiagnosticsMd(data: DiagnosticsData): string {
   const lines: string[] = ["# Diagnostics", "", "## Outline quality report (I10)", ""];
+  lines.push(`- schemaVersion: ${data.schemaVersion}`);
   lines.push(`- totalIslands: ${data.outlineReport.stats.totalIslands}`);
   lines.push(`- totalCardsInPath: ${data.outlineReport.stats.totalCardsInPath}`);
   lines.push(`- pathLength: ${data.outlineReport.stats.pathLength}`);
@@ -100,6 +102,7 @@ export function computeDiagnostics(payload: DiagnosticsRequestPayload): { diagno
   const structuralMetrics = computeStructureMetrics(payload.doc, payload.view);
 
   const diagnosticsData: DiagnosticsData = {
+    schemaVersion: DIAGNOSTICS_DATA_SCHEMA_VERSION,
     outlineReport: safeMode ? toSafeOutline(outline) : outline,
     recommendations,
     contradictionReport: contradiction,

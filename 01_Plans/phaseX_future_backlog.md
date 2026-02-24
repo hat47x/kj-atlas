@@ -68,7 +68,7 @@
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Planned | SafeMode状態バッジ・解除不可モード表記・export警告を統一 | 閲覧者が現在モードを1クリック以内で確認できる | 新規Issue化 |
 | FB-RM-RS-01 | Trace Analytics | P1 | Planned | 根拠リンク本数・孤立ノード・出典密度の集計を追加 | deterministicに同一入力で同一統計値を返す | 新規Issue化 |
 | FB-RM-RS-02 | 構造メトリクス | P1 | Planned | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | 新規Issue化 |
-| FB-RM-RS-03 | Diagnostics安定化 | P1 | Planned | diagnostics出力schemaを固定し、後方互換バージョンを付与 | 旧バージョン読込時に互換変換で失敗しない | 新規Issue化 |
+| FB-RM-RS-03 | Diagnostics安定化 | P1 | In Progress | diagnostics出力schemaを固定し、後方互換バージョンを付与（unsupported/invalid version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type/diagnostics.error不正・必須フィールド欠落/型不正（recommendations・diagnosticsMd等）の検知とfallback導線、diagnostics.md への schemaVersion 明記を追加） | 旧バージョン読込時に互換変換で失敗しない | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
 | FB-RM-SEC-01 | ZIP hardening | P0 | Planned | import時の path traversal / zip bomb / 拡張子偽装対策を追加 | 悪性fixtureで拒否・通常fixtureで成功する | 新規Issue化 |
 | FB-RM-SEC-02 | Worker安定化 | P1 | Planned | 長時間処理を worker/off-main-thread へ寄せる | UIスレッドblockの再現ケースが解消される | 新規Issue化 |
 | FB-RM-SEC-03 | CI回帰防止 | P0 | Planned | import/serialization/shape互換の回帰テストをCI必須化 | main branch で required check 化される | 新規Issue化 |
