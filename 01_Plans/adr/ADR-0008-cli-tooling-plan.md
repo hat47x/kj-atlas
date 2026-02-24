@@ -1,3 +1,23 @@
+# ADR-0008-cli-tooling-plan: CLI導入計画
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phaseX_cli_tool.md`
+
+## Context
+
+`phaseX_cli_tool.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
+
+> Granularity split: 本ADRの内容は `ADR-0015`（対象範囲・フェーズ）/ `ADR-0016`（コマンド契約）/ `ADR-0017`（運用・受入）に分割管理する。
+> CLIの実装レビュー時は分割ADRを優先参照する。
+
 # TODO: 下記のドキュメントは要件定義として作成されましたが、現時点では要件としての精度が低く、またMVP未完成の現状においては優先度も高くありません。そのため、フェーズが進んだ段階で、改めてこれをたたき台として、01_Plans配下の計画書の位置づけとして書き直したうえで、仕様検討の土台に載せるものとします。
 
 # Phase X CLI Tool Plan (Draft)
@@ -28,7 +48,7 @@ This document defines a planning draft for scope, non-scope, phased adoption, an
 
 ## 0.2 上位文書とのトレーサビリティ（現時点）
 
-- 価値判断の基準：`01_Plans/value_to_requirements.md`
+- 価値判断の基準：`01_Plans/adr/ADR-0001-value-to-requirements.md`
 - API・スキーマ整合：`02_Architecture/api.md` / `02_Architecture/schemas.md`
 - セキュリティ整合：`THREAT_MODEL.md` / `04_Documentation/security.md`
 - 運用整合：`04_Documentation/operations.md`
@@ -328,3 +348,14 @@ CLI名は `kj` とする。
     - PERT的整理へ移行する条件や、KJ法+PERTに適したカード配置ルールなどの設計が必要
     - ひとまずは一方向の連携のみを想定するが、双方向の同期によるフィードバックループの有用性も検討する
   - ただし優先度は高くないため、CLI実装後に別途議論とする
+
+
+## Consequences
+
+- 旧文書 `phaseX_cli_tool.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0008-cli-tooling-plan.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phaseX_cli_tool.md`
+- Supersedes: `01_Plans/phaseX_cli_tool.md`

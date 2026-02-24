@@ -5,8 +5,8 @@
 
 上位整合:
 - `00_Prompt/system_prompt.md`（階層遵守）
-- `01_Plans/roadmap.md`（A型図解優先 / 段階導入）
-- `01_Plans/value_to_requirements.md`（反スコアリング / review flags）
+- `01_Plans/adr/ADR-0002-internal-roadmap.md`（A型図解優先 / 段階導入）
+- `01_Plans/adr/ADR-0001-value-to-requirements.md`（反スコアリング / review flags）
 - `02_Architecture/schemas.md` / `02_Architecture/api.md`（DocumentV1互換）
 
 ---

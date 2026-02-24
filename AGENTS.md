@@ -26,10 +26,10 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 1) **AI行動規範**: `00_Prompt/system_prompt.md`  
 2) **用語・概念**: `00_Prompt/domain.md`  
 3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`  
-4) **価値→要件**: `01_Plans/value_to_requirements.md`  
+4) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`  
 5) **全体アーキテクチャ**: `02_Architecture/architecture.md`  
 6) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-7) **該当フェーズ計画**: `01_Plans/phase*.md`（例: `phase1_canvas_mvp.md`）
+7) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0017`
 8) **実装（03_Implement）**: 対象領域のソースへ
 9) **運用・手順**: `04_Documentation/*`（必要に応じて）
 
@@ -75,15 +75,18 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 ### 3.2 `01_Plans/`（How to Process：計画・タスク分割）
 
-- `01_Plans/roadmap.md`：開発内部向けロードマップ（公開版は直下 `ROADMAP.md`）。
-- `01_Plans/value_to_requirements.md`：価値観→要件の変換（判断基準）。
-- `01_Plans/phase0_bootstrap.md`：初期立ち上げ・環境。
-- `01_Plans/phase1_canvas_mvp.md`：Canvas MVP。
-- `01_Plans/phase2_qualitative_integration.md`：質的統合（KJ的機能拡張）。
-- `01_Plans/phase3_review_governance.md`：レビュー・監査・統治。
-- `01_Plans/phaseX_future_backlog.md`：将来課題の保管庫。
-- `01_Plans/phaseX_cli_tool.md`：CLI導入計画（運用・統治・自動化）。
-- `01_Plans/phaseX_local_llm_integration.md`：ローカルLLM統合（抽象化・運用）。
+- `01_Plans/adr/ADR-0000-adr-governance.md`：ADR運用方針（採番・更新規約）。
+
+- `01_Plans/adr/ADR-0002-internal-roadmap.md`：開発内部向けロードマップ（公開版は直下 `ROADMAP.md`）。
+- `01_Plans/adr/ADR-0001-value-to-requirements.md`：価値観→要件の変換（判断基準）。
+- `01_Plans/adr/ADR-0003-phase0-bootstrap.md`：初期立ち上げ・環境。
+- `01_Plans/adr/ADR-0004-phase1-canvas-mvp.md`：Canvas MVP。
+- `01_Plans/adr/ADR-0005-phase2-qualitative-integration.md`：質的統合（KJ的機能拡張）。
+- `01_Plans/adr/ADR-0006-phase3-review-governance.md`：レビュー・監査・統治。
+- `01_Plans/adr/ADR-0007-future-backlog.md`：将来課題の保管庫。
+- `01_Plans/adr/ADR-0008-cli-tooling-plan.md`：CLI導入計画（運用・統治・自動化）。
+- `01_Plans/adr/ADR-0009-local-llm-integration.md`：ローカルLLM統合（抽象化・運用）。
+- `01_Plans/adr/ADR-0010-ADR-0017*.md`：粗粒度ADRを分割した詳細ADR群（価値/要件/Phase2/CLI）。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
@@ -179,7 +182,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 ## 6. 迷ったときの判断基準
 
-1) 価値・判断軸：`01_Plans/value_to_requirements.md`
+1) 価値・判断軸：`01_Plans/adr/ADR-0001-value-to-requirements.md`
 2) 安全：`THREAT_MODEL.md` と SafeModeポリシー
 3) 企業・行政要件：`02_Architecture/enterprise_architecture.md`
 4) 後方互換：`02_Architecture/schemas.md`
