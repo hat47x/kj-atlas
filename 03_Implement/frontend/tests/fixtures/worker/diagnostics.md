@@ -2,6 +2,7 @@
 
 ## Outline quality report (I10)
 
+- schemaVersion: 1
 - totalIslands: 1
 - totalCardsInPath: 3
 - pathLength: 4
