@@ -1,3 +1,19 @@
+# ADR-0009-local-llm-integration: ローカルLLM統合計画
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phaseX_local_llm_integration.md`
+
+## Context
+
+`phaseX_local_llm_integration.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
 # English Summary
 This is a phased checklist plan for local LLM integration in kj-atlas, covering provider abstraction, runtime constraints, evaluation gates, escalation, and operations readiness without introducing code.
 
@@ -81,3 +97,14 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 - [ ] safeMode既定ONの原則が全関連文書で一貫している。  
 - [ ] 添付入力は「構造化テキストのみ」で統一されている。
 
+
+
+## Consequences
+
+- 旧文書 `phaseX_local_llm_integration.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0009-local-llm-integration.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phaseX_local_llm_integration.md`
+- Supersedes: `01_Plans/phaseX_local_llm_integration.md`

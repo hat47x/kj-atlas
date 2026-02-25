@@ -1,3 +1,23 @@
+# ADR-0001-value-to-requirements: 価値→要件変換の判断基準
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/value_to_requirements.md`
+
+## Context
+
+`value_to_requirements.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
+
+> Granularity split: 本ADRの内容は `ADR-0010`（価値原則）/ `ADR-0011`（要求マッピング）/ `ADR-0012`（計画・起票規則）でも管理する。
+> 詳細更新は分割ADRを優先し、本ADRは統合ビューとして保持する。
+
 # 価値観→要求マッピング設計（価値整合ドキュメント）
 
 本ドキュメントは、kj-atlas の価値観（思想）を、Issue/Epicへ分解可能な要求に変換するための設計資料である。  
@@ -267,3 +287,14 @@
   - 最終判断が人間操作に残っているか。
 
 この運用により、価値観を仕様へ接続したまま段階実装を進める。
+
+
+## Consequences
+
+- 旧文書 `value_to_requirements.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0001-value-to-requirements.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/value_to_requirements.md`
+- Supersedes: `01_Plans/value_to_requirements.md`

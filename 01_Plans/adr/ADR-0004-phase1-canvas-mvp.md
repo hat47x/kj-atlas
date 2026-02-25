@@ -1,6 +1,22 @@
+# ADR-0004-phase1-canvas-mvp: Phase 1: Canvas MVP
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phase1_canvas_mvp.md`
+
+## Context
+
+`phase1_canvas_mvp.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
 # Phase 1（Canvas MVP）計画書
 
-このドキュメントは、`01_Plans/roadmap.md` に基づき、**Phase 1：Canvas MVP** を実行するための
+このドキュメントは、`01_Plans/adr/ADR-0002-internal-roadmap.md` に基づき、**Phase 1：Canvas MVP** を実行するための
 **実装計画書**です。
 
 Phase 0 で整えた足場の上に、kj-atlas の核となる **A型図解（Canvas）** を最小構成で成立させます。
@@ -139,3 +155,14 @@ Phase 1 が完了したら、次は Phase 2（関係・構造の導入）に進�
 を扱う予定とする。
 
 Phase 1 では、それらを **後付けできる余白** を残すことが重要である。
+
+
+## Consequences
+
+- 旧文書 `phase1_canvas_mvp.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0004-phase1-canvas-mvp.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phase1_canvas_mvp.md`
+- Supersedes: `01_Plans/phase1_canvas_mvp.md`

@@ -1,3 +1,23 @@
+# ADR-0005-phase2-qualitative-integration: Phase 2: 質的統合
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phase2_qualitative_integration.md`
+
+## Context
+
+`phase2_qualitative_integration.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
+
+> Granularity split: 本ADRの内容は `ADR-0013`（要求・影響）と `ADR-0014`（受入・rollout）に分割管理する。
+> 本ADRはPhase2の統合参照として維持する。
+
 # Phase 2 定性統合計画（phase2_qualitative_integration）
 
 本書は、Phase 1（Canvas MVP）後に導入する定性統合機能の要求仕様である。対象は **kj-atlas の A型図解** に限定し、B型文章化は対象外とする。
@@ -12,8 +32,8 @@
 
 - `00_Prompt/system_prompt.md`
 - `00_Prompt/domain.md`
-- `01_Plans/value_to_requirements.md`
-- `01_Plans/roadmap.md`
+- `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- `01_Plans/adr/ADR-0002-internal-roadmap.md`
 - `02_Architecture/architecture.md`
 - `02_Architecture/schemas.md`
 - `02_Architecture/island_shapes.md`
@@ -252,3 +272,14 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 - C-05: overview/detail が表示状態に限定され、Document本体を暗黙変更しないか。
 - C-06: 各 backlog item が `RQ` と `AC` に一意対応するか。
 
+
+
+## Consequences
+
+- 旧文書 `phase2_qualitative_integration.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0005-phase2-qualitative-integration.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phase2_qualitative_integration.md`
+- Supersedes: `01_Plans/phase2_qualitative_integration.md`

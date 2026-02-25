@@ -1,3 +1,19 @@
+# ADR-0007-future-backlog: 将来バックログ管理
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phaseX_future_backlog.md`
+
+## Context
+
+`phaseX_future_backlog.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
 # phaseX_future_backlog
 
 本ドキュメントは、Phase 1以降の未着手項目を優先度付きで管理する。
@@ -111,3 +127,14 @@
 |---|---|---|---|
 | FB-RM-DOC-01 | Done | ルート文書の位置づけ（公開コミュニケーション）と更新タイミングの明確化 | `README.md` に文書役割マトリクスが存在し、更新運用ルールが定義済み |
 | FB-RM-DOC-02 | Done | ROADMAPのLLM方針を共通アダプタ（local/large-scale）へ更新 | `ROADMAP.md` と `01_Plans` 側の対応項目が整合している |
+
+
+## Consequences
+
+- 旧文書 `phaseX_future_backlog.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0007-future-backlog.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phaseX_future_backlog.md`
+- Supersedes: `01_Plans/phaseX_future_backlog.md`

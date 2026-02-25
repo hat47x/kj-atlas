@@ -1,3 +1,19 @@
+# ADR-0006-phase3-review-governance: Phase 3: レビュー・統治
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phase3_review_governance.md`
+
+## Context
+
+`phase3_review_governance.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
 # Phase 3: Review Governance (Plan)
 
 本フェーズは MVP 後の拡張であり、レビュー運用（責任所在・共有・監査）を整える。  
@@ -65,3 +81,14 @@
 ## Risk notes
 - doxxing/個人情報流出は最大リスク。storePII=false を既定にする。
 - 改ざん可能性は残るため、“監査証跡”用途は署名まで到達してから。
+
+
+## Consequences
+
+- 旧文書 `phase3_review_governance.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0006-phase3-review-governance.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phase3_review_governance.md`
+- Supersedes: `01_Plans/phase3_review_governance.md`

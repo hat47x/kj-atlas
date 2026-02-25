@@ -1,6 +1,22 @@
+# ADR-0003-phase0-bootstrap: Phase 0: プロジェクト骨格
+
+- Status: Accepted
+- Date: 2026-02-24
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`
+- Migrated-from: `01_Plans/phase0_bootstrap.md`
+
+## Context
+
+`phase0_bootstrap.md` で管理していた計画・要件・受入条件を、ADR運用へ移管する。
+
+## Decision
+
+以下を本ADRの正本として採用する。
+
 # Phase 0 実装ブートストラップ
 
-このドキュメントは、`01_Plans/roadmap.md` に定義された **Phase 0（プロジェクト骨格の確立）** を実行するための
+このドキュメントは、`01_Plans/adr/ADR-0002-internal-roadmap.md` に定義された **Phase 0（プロジェクト骨格の確立）** を実行するための
 **実装ブートストラップ手順書**です。
 
 - 本リポジトリは **00〜04 の5階層構造を厳守**します
@@ -180,3 +196,14 @@ Phase 0 完了後、次に進むのは **Phase 1（Canvas MVP）** です。
 
 本書は Phase 0 専用であり、
 Phase 1 以降は新しい計画書を `01_Plans/` に追加します。
+
+
+## Consequences
+
+- 旧文書 `phase0_bootstrap.md` は廃止し、本ADRへ参照を統一する。
+- 既存リンクは `01_Plans/adr/ADR-0003-phase0-bootstrap.md` へ更新する。
+
+## Traceability
+
+- Source: `01_Plans/phase0_bootstrap.md`
+- Supersedes: `01_Plans/phase0_bootstrap.md`
