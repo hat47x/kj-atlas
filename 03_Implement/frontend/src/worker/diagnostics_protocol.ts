@@ -33,8 +33,6 @@ export type DiagnosticsData = {
   structuralMetrics: DiagramStructuralMetrics;
 };
 
-export type LegacyDiagnosticsData = Omit<DiagnosticsData, "schemaVersion">;
-export type VersionedDiagnosticsData = Omit<DiagnosticsData, "schemaVersion"> & { schemaVersion: number };
 export const REQUIRED_DIAGNOSTICS_OBJECT_FIELDS = [
   "outlineReport",
   "contradictionReport",
@@ -66,26 +64,16 @@ export function normalizeDiagnosticsData(data: unknown): DiagnosticsData {
 
   assertDiagnosticsShape(data);
 
-  if ("schemaVersion" in data) {
-    const schemaVersion = data.schemaVersion;
-    if (typeof schemaVersion !== "number" || !Number.isInteger(schemaVersion) || schemaVersion <= 0) {
-      throw new Error(`Invalid diagnostics schema version: ${String(schemaVersion)}`);
-    }
+  const schemaVersion = data.schemaVersion;
+  if (typeof schemaVersion !== "number" || !Number.isInteger(schemaVersion) || schemaVersion <= 0) {
+    throw new Error(`Invalid diagnostics schema version: ${String(schemaVersion)}`);
+  }
 
-    if (schemaVersion === DIAGNOSTICS_DATA_SCHEMA_VERSION) {
-      return {
-        ...(data as LegacyDiagnosticsData),
-        schemaVersion: DIAGNOSTICS_DATA_SCHEMA_VERSION,
-      };
-    }
-
+  if (schemaVersion !== DIAGNOSTICS_DATA_SCHEMA_VERSION) {
     throw new Error(`Unsupported diagnostics schema version: ${String(schemaVersion)}`);
   }
 
-  return {
-    schemaVersion: DIAGNOSTICS_DATA_SCHEMA_VERSION,
-    ...(data as LegacyDiagnosticsData),
-  };
+  return data as DiagnosticsData;
 }
 
 export type DiagnosticsWorkerRequestMessage =

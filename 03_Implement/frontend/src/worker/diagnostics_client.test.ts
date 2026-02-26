@@ -85,16 +85,18 @@ describe("DiagnosticsWorkerClient", () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it("normalizes legacy diagnostics data returned from worker", async () => {
+  it("falls back when worker returns diagnostics data without schemaVersion", async () => {
     const diagnostics = computeDiagnostics({ doc: fixtureDoc(), view: { readingMode: "islands+cards", reviewedOnly: false } });
-    const { schemaVersion: _, ...legacyData } = diagnostics.diagnosticsData;
-    installFakeWorkerWithDiagnostics(legacyData, diagnostics.diagnosticsMd);
+    const { schemaVersion: _, ...withoutSchemaVersion } = diagnostics.diagnosticsData;
+    installFakeWorkerWithDiagnostics(withoutSchemaVersion, diagnostics.diagnosticsMd);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const client = new DiagnosticsWorkerClient();
     const result = await client.computeDiagnostics({ doc: fixtureDoc(), view: { readingMode: "islands+cards", reviewedOnly: false } });
 
     expect(result.status).toBe("completed");
-    expect(result.usedFallback).toBe(false);
+    expect(result.usedFallback).toBe(true);
+    expect(warn).toHaveBeenCalled();
     if (result.status === "completed") {
       expect(result.result.diagnosticsData.schemaVersion).toBe(DIAGNOSTICS_DATA_SCHEMA_VERSION);
     }
@@ -186,6 +188,18 @@ describe("DiagnosticsWorkerClient", () => {
     expect(result.usedFallback).toBe(true);
     expect(warn).toHaveBeenCalled();
   });
+
+  it("falls back when worker returns array-shaped result envelope", async () => {
+    installFakeWorkerWithResultEnvelope([]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const client = new DiagnosticsWorkerClient();
+
+    const result = await client.computeDiagnostics({ doc: fixtureDoc(), view: { readingMode: "islands+cards", reviewedOnly: false } });
+    expect(result.status).toBe("completed");
+    expect(result.usedFallback).toBe(true);
+    expect(warn).toHaveBeenCalled();
+  });
+
 
   it("ignores non-object worker messages and keeps processing", async () => {
     const diagnostics = computeDiagnostics({ doc: fixtureDoc(), view: { readingMode: "islands+cards", reviewedOnly: false } });

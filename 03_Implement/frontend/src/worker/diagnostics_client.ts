@@ -13,7 +13,7 @@ let requestCounter = 0;
 const VALID_PROGRESS_STAGES: DiagnosticsProgressStage[] = ["outline", "recommendations", "contradictions", "distribution", "dialectic", "render"];
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object";
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 export class DiagnosticsWorkerClient {

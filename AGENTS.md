@@ -138,6 +138,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/installation.md`：導入手順。
 - `04_Documentation/configuration.md`：設定。
 - `04_Documentation/operations.md`：運用。
+- `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
 - `04_Documentation/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
 - `04_Documentation/release.md`：リリース。
