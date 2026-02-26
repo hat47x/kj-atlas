@@ -21,18 +21,17 @@ const doc: DocumentV2 = {
 };
 
 describe("normalizeDiagnosticsData", () => {
-  it("fills schemaVersion for legacy diagnostics payload", () => {
+  it("accepts current schema payload", () => {
     const computed = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false } }).diagnosticsData;
-    const { schemaVersion: _, ...legacy } = computed;
-    const normalized = normalizeDiagnosticsData(legacy);
+    const normalized = normalizeDiagnosticsData(computed);
     expect(normalized.schemaVersion).toBe(DIAGNOSTICS_DATA_SCHEMA_VERSION);
     expect(normalized.outlineReport).toEqual(computed.outlineReport);
   });
 
-  it("keeps schemaVersion when already present", () => {
+  it("throws when schemaVersion is missing", () => {
     const computed = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false } }).diagnosticsData;
-    const normalized = normalizeDiagnosticsData(computed);
-    expect(normalized.schemaVersion).toBe(computed.schemaVersion);
+    const { schemaVersion: _, ...withoutVersion } = computed;
+    expect(() => normalizeDiagnosticsData(withoutVersion)).toThrow("Invalid diagnostics schema version");
   });
 
   it("throws for unsupported schemaVersion", () => {
