@@ -43,3 +43,67 @@ docker compose down
 - 既定で `web` / `api` / `db`（PostgreSQL）の3サービスが起動します。
 - 既定値は `LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
 - 画面から JSON Export / Import が利用できます。
+
+
+## API/DB連動を含むE2E確認（推奨チェック）
+
+Compose起動後、最低限次を確認してください。
+
+```bash
+cd /path/to/kj-atlas/03_Implement/deploy
+docker compose ps
+docker compose logs api --tail=100
+curl -fsS http://localhost:8080/api/health
+```
+
+確認ポイント:
+- `db` が `healthy` になっている
+- `api` ログで `alembic upgrade head` が成功している
+- `curl` が HTTP 200 を返す
+- `http://localhost:8080` で画面が表示され、保存/読込など主要操作が1往復できる
+
+## Docker未導入時の代替E2E手順（SQLite）
+
+Dockerが使えない環境では、以下の2プロセス起動で `web + api + db(SQLite)` を代替できます。
+
+1. API（SQLite）
+
+```bash
+cd /path/to/kj-atlas/03_Implement/backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[test]"
+pip install alembic uvicorn
+export PYTHONPATH=src
+export DATABASE_URL="sqlite:///./kj_atlas.db"
+alembic upgrade head
+uvicorn kj_atlas_api.main:app --host 0.0.0.0 --port 8000
+```
+
+2. Frontend（別ターミナル）
+
+```bash
+cd /path/to/kj-atlas/03_Implement/frontend
+npm install
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
+3. 連動確認
+
+```bash
+curl -fsS http://localhost:8000/healthz
+curl -fsS http://localhost:4173/api/healthz
+```
+
+必要に応じて `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` を往復し、SQLite永続化を確認してください。
+
+## トラブルシュート（環境要因）
+
+### `docker: command not found`
+
+Docker Engine / Docker Compose が未導入です。
+- Linux: Docker Engine + Compose Plugin を導入
+- macOS/Windows: Docker Desktop を導入
+
+ただし、導入前でも本書の「Docker未導入時の代替E2E手順（SQLite）」で連動確認は可能です。
+PRには実施手順と結果を必ず記載してください。
