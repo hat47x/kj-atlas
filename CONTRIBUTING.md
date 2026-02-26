@@ -43,7 +43,7 @@ pytest
 
 ## コーディング規約 / Coding Conventions
 
-詳細規約は [`04_Documentation/coding_standards.md`](04_Documentation/coding_standards.md) を正本として参照してください。
+詳細規約は [`01_Plans/coding_standards.md`](01_Plans/coding_standards.md) を正本として参照してください。
 
 最低限の必須ルール:
 

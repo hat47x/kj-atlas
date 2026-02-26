@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-02-25
 - Deciders: Project Maintainers
-- Scope: `03_Implement/frontend`, `03_Implement/backend`, `04_Documentation/coding_standards.md`
+- Scope: `03_Implement/frontend`, `03_Implement/backend`, `01_Plans/coding_standards.md`
 - Derived-from: コードベース観測（2026-02-25）
 
 ## Context
@@ -21,7 +21,7 @@
 ## Decision
 
 1. **バッドスメルの管理先を ADR + 規約へ一本化**する。
-   - 観測事項は本ADRに記録し、実務ルールは `04_Documentation/coding_standards.md` に集約する。
+   - 観測事項は本ADRに記録し、実務ルールは `01_Plans/coding_standards.md` に集約する。
    - 規約文書からは「現在のコードの観測一覧」を削除し、ルール本文に集中させる。
 
 2. **是正方針を以下に固定**する。
@@ -41,11 +41,11 @@
 
 ## Follow-up Actions
 
-- [ ] Frontend lint 強化案（ESLint導入方針）を `ADR-0002-internal-roadmap.md` へ反映する。
+- [x] Frontend lint 強化案（ESLint導入方針）を `ADR-0002-internal-roadmap.md` へ反映する。（2026-02-26 完了）
 - [ ] `App.tsx` 分割の優先順（状態管理 / 描画 / import-export）を別ADRまたはIssueで計画化する。
 - [ ] Backend の `except Exception` 使用箇所を段階的に解消する。
 
 ## Traceability
 
-- Implements: `04_Documentation/coding_standards.md`
+- Implements: `01_Plans/coding_standards.md`
 - Related: `.github/workflows/ci.yml`, `CONTRIBUTING.md`

@@ -90,6 +90,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0009-local-llm-integration.md`：ローカルLLM統合（抽象化・運用）。
 - `01_Plans/adr/ADR-0010-ADR-0017*.md`：粗粒度ADRを分割した詳細ADR群（価値/要件/Phase2/CLI）。
 - `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`：バッドスメル是正と規約運用方針。
+- `01_Plans/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
@@ -140,7 +141,6 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/operations.md`：運用。
 - `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
-- `04_Documentation/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
 - `04_Documentation/release.md`：リリース。
 - `04_Documentation/narratives.md`：文章化/要約出力。
 - `04_Documentation/canonicalization.md`：正規化/決定論。

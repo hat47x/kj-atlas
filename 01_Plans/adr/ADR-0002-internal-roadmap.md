@@ -203,6 +203,43 @@ Phase 1以降の定性統合（Hierarchy / Similar-card merge / 非矩形Island 
 - スプリント投入順・Gate判定: `phaseX_future_backlog.md`（既存 Phase 2 backlog と同一運用）
 
 
+
+## ADR-0018 Follow-up: Frontend lint 強化（ESLint）段階導入計画
+
+**目的**
+Frontend の可読性・安全性ルールを CI で継続的に検知し、`ADR-0018` で定義した
+バッドスメル再発防止（巨大ファイル化 / スタイル重複 / 複雑化）を実運用へ接続する。
+
+**導入方針（段階導入）**
+- **Phase A: ベースライン構築（warn中心）**
+  - ESLint を Frontend に導入し、既存コード停止を避けるため warning 中心で開始する。
+  - 最低限のルール（未使用変数、危険なany、import順、hooks基本）を有効化する。
+  - `npm run lint` をローカル実行可能にし、開発者の早期検知を優先する。
+- **Phase B: CIゲート化（error昇格）**
+  - 新規/変更コードに対する違反は error 扱いとし、CI fail 条件へ昇格する。
+  - 既存負債は段階是正対象として管理し、一括修正を必須化しない。
+- **Phase C: smell是正ルール拡張**
+  - `ADR-0018` の観測課題に対応するルールを追加する（巨大ファイル抑制、重複スタイル抑制）。
+  - 必要に応じて custom rule または補助スクリプトを導入し、規約逸脱を機械検知する。
+
+**CI統合ポリシー**
+- CIには `frontend lint` ジョブを追加し、Phase B 以降は必須ゲートとして扱う。
+- 型検査・テストとlintを分離し、失敗原因を即時特定できる構成を維持する。
+- 破壊的変更回避のため、導入初期は段階ロールアウト（warn→error）を厳守する。
+
+**受入条件（DoD）**
+- Frontend で `npm run lint`（または同等コマンド）が定義され、ローカル実行できる。
+- CIでlint結果が可視化され、Phase B 到達時点で fail-on-error が有効になる。
+- 規約文書（`01_Plans/coding_standards.md`）と運用導線（`CONTRIBUTING.md`）に
+  lint実行手順と運用ルールが同期される。
+- SafeMode 既定ON・漏えい防止の既存ポリシーに影響を与えない。
+
+**トレーサビリティ**
+- Source ADR: `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`
+- Related: `.github/workflows/ci.yml`, `01_Plans/coding_standards.md`, `CONTRIBUTING.md`
+
+---
+
 ## Consequences
 
 - 旧文書 `roadmap.md` は廃止し、本ADRへ参照を統一する。
