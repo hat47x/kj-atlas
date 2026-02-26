@@ -60,6 +60,16 @@ pytest
   - diff / merge
   - import（ZIP / markdown / schema validation）
 - 既存テストを壊す変更は、意図と移行方針をPRに明記してください。
+- `03_Implement/*` 変更時は、原則として `docker compose` によるE2E確認（`web + api + db`）を実施してください。
+  - `docker compose up --build -d`
+  - `docker compose ps`
+  - `curl -fsS http://localhost:8080/api/health`
+- Docker未導入の場合は、SQLite代替E2E（`backend:8000` + `frontend:4173`）を実施してください。
+  - `curl -fsS http://localhost:8000/healthz`
+  - `curl -fsS http://localhost:4173/api/healthz`
+  - `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` 往復確認
+- それでもE2E実行不能な場合のみ、PR本文に「ブロッカー」「代替検証」「後続手順」を必ず記載してください。
+- UI変更を含む場合は、原則として Playwright E2E テストの追加/更新（最低1ケース）を行ってください。
 
 ## コミット規約（軽量） / Commit Convention
 

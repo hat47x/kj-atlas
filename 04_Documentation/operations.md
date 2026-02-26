@@ -50,3 +50,46 @@ docker compose logs api --tail=100
 - 定期バックアップとパッチ適用を運用手順に含めてください。
 
 詳細は [security.md](./security.md) を参照してください。
+
+
+## 5. E2E動作確認ポリシー（運用必須）
+
+`03_Implement/*` に変更が入る場合は、原則として `docker compose` による
+`web + api + db` の連動確認を実施します（詳細は `ADR-0019` / `e2e_testing.md`）。
+
+最小手順:
+
+```bash
+cd /path/to/kj-atlas/03_Implement/deploy
+docker compose up --build -d
+docker compose ps
+curl -fsS http://localhost:8080/api/health
+```
+
+- 実行不能時（Docker未導入等）は、ブロッカー/代替検証/後続手順をPRに明記してください。
+- 本運用は「テストが通っていてもE2E未確認ならリスクを明示する」ことを目的とします。
+
+## 6. Docker未導入時の代替運用（SQLite + ローカル起動）
+
+Composeが利用できない場合、以下で運用確認できます。
+
+```bash
+# terminal A: backend
+cd /path/to/kj-atlas/03_Implement/backend
+source .venv/bin/activate
+export PYTHONPATH=src
+export DATABASE_URL="sqlite:///./kj_atlas.db"
+alembic upgrade head
+uvicorn kj_atlas_api.main:app --host 0.0.0.0 --port 8000
+
+# terminal B: frontend
+cd /path/to/kj-atlas/03_Implement/frontend
+npm run dev -- --host 0.0.0.0 --port 4173
+
+# terminal C: checks
+curl -fsS http://localhost:8000/healthz
+curl -fsS http://localhost:4173/api/healthz
+```
+
+- `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` を往復し、SQLite永続化も確認してください。
+- この代替手順を利用した場合も、PR本文に実施コマンドと結果を記載します。

@@ -96,7 +96,12 @@ import {
 import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
 import { getPresetIdForViewMode, getViewModeForPresetId, getViewModeLabel, type ViewMode } from "./domain/view/view_mode";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
-import { getCollapsedHiddenCardIds } from "./domain/view/collapse_visibility";
+import {
+  collectCollapsedIslandIds,
+  collectInitiallyCollapsedIslandIds,
+  getCollapsedHiddenCardIds,
+} from "./domain/view/collapse_visibility";
+import { setAllIslandsCollapsed, setIslandCollapsed } from "./domain/view/collapse_state";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
@@ -709,39 +714,6 @@ function buildIslandPolygonFromCards(document: DocumentV2, island: Island): Poin
   return padPolygonFromCentroid(hull, POLYGON_PADDING);
 }
 
-function collectCollapsedIslandIds(islands: Island[]): Set<string> {
-  const islandsByParentId = new Map<string, Island[]>();
-
-  for (const island of islands) {
-    if (!island.parentIslandId) {
-      continue;
-    }
-
-    const siblings = islandsByParentId.get(island.parentIslandId) ?? [];
-    siblings.push(island);
-    islandsByParentId.set(island.parentIslandId, siblings);
-  }
-
-  const hiddenIslandIds = new Set<string>();
-  const stack = islands.filter((island) => island.collapsed === true);
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current || hiddenIslandIds.has(current.id)) {
-      continue;
-    }
-
-    hiddenIslandIds.add(current.id);
-
-    const children = islandsByParentId.get(current.id) ?? [];
-    for (const child of children) {
-      stack.push(child);
-    }
-  }
-
-  return hiddenIslandIds;
-}
-
 function areIdSetsEqual(a: Set<string>, b: Set<string>): boolean {
   if (a.size !== b.size) {
     return false;
@@ -1308,34 +1280,7 @@ export default function App() {
       return new Set<string>();
     }
 
-    const islandsByParentId = new Map<string, Island[]>();
-    for (const island of focusedVisibleDocument.islands) {
-      if (!island.parentIslandId) {
-        continue;
-      }
-
-      const siblings = islandsByParentId.get(island.parentIslandId) ?? [];
-      siblings.push(island);
-      islandsByParentId.set(island.parentIslandId, siblings);
-    }
-
-    const hiddenIslandIds = new Set<string>();
-    const stack = focusedVisibleDocument.islands.filter((island) => collapsedIslandIds.has(island.id));
-
-    while (stack.length > 0) {
-      const current = stack.pop();
-      if (!current || hiddenIslandIds.has(current.id)) {
-        continue;
-      }
-
-      hiddenIslandIds.add(current.id);
-      const children = islandsByParentId.get(current.id) ?? [];
-      for (const child of children) {
-        stack.push(child);
-      }
-    }
-
-    return hiddenIslandIds;
+    return collectCollapsedIslandIds(focusedVisibleDocument.islands, collapsedIslandIds);
   }, [collapsedIslandIds, focusedVisibleDocument]);
   const effectiveCollapsedIslandIdSet = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -3948,24 +3893,32 @@ ${parsedDocument.error}`);
 
   const handleIslandCollapsedChange = useCallback(
     (islandId: string, collapsed: boolean) => {
-      setCollapsedIslandIds((previous) => {
-        const alreadyCollapsed = previous.has(islandId);
-        if (alreadyCollapsed === collapsed) {
-          return previous;
-        }
+      if (!document) {
+        return;
+      }
 
+      const alreadyCollapsed = collapsedIslandIds.has(islandId);
+      setCollapsedIslandIds((previous) => {
         const next = new Set(previous);
         if (collapsed) {
           next.add(islandId);
         } else {
           next.delete(islandId);
         }
-
         return next;
       });
-      setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
+
+      const { changed, nextDocument } = setIslandCollapsed(document, islandId, collapsed);
+      if (!changed) {
+        if (alreadyCollapsed !== collapsed) {
+          setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
+        }
+        return;
+      }
+
+      applyDocumentChange(nextDocument, collapsed ? "Collapsed island" : "Expanded island");
     },
-    []
+    [applyDocumentChange, collapsedIslandIds, document]
   );
 
   const handleCollapseAllIslands = useCallback(() => {
@@ -3973,14 +3926,33 @@ ${parsedDocument.error}`);
       return;
     }
 
-    setCollapsedIslandIds(new Set(document.islands.map((island) => island.id)));
-    setStatusMessage("Collapsed all islands");
-  }, [document]);
+    const islandIds = document.islands.map((island) => island.id);
+    setCollapsedIslandIds(new Set(islandIds));
+
+    const { changed, nextDocument } = setAllIslandsCollapsed(document, true);
+    if (!changed) {
+      setStatusMessage("Collapsed all islands");
+      return;
+    }
+
+    applyDocumentChange(nextDocument, "Collapsed all islands");
+  }, [applyDocumentChange, document]);
 
   const handleExpandAllIslands = useCallback(() => {
+    if (!document) {
+      return;
+    }
+
     setCollapsedIslandIds(new Set());
-    setStatusMessage("Expanded all islands");
-  }, [abstractMapView, summaryView]);
+
+    const { changed, nextDocument } = setAllIslandsCollapsed(document, false);
+    if (!changed) {
+      setStatusMessage("Expanded all islands");
+      return;
+    }
+
+    applyDocumentChange(nextDocument, "Expanded all islands");
+  }, [applyDocumentChange, document]);
 
   useEffect(() => {
     if (!document) {
@@ -4010,7 +3982,7 @@ ${parsedDocument.error}`);
           return seededImported;
         }
 
-        const fallbackCollapsedIds = collectCollapsedIslandIds(document.islands);
+        const fallbackCollapsedIds = collectInitiallyCollapsedIslandIds(document.islands);
         const seeded = new Set<string>();
         for (const islandId of fallbackCollapsedIds) {
           if (validIslandIds.has(islandId)) {

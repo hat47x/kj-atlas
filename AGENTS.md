@@ -33,6 +33,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0018`
 9) **実装（03_Implement）**: 対象領域のソースへ
 10) **運用・手順**: `04_Documentation/*`（必要に応じて）
+11) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -90,6 +91,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0009-local-llm-integration.md`：ローカルLLM統合（抽象化・運用）。
 - `01_Plans/adr/ADR-0010-ADR-0017*.md`：粗粒度ADRを分割した詳細ADR群（価値/要件/Phase2/CLI）。
 - `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`：バッドスメル是正と規約運用方針。
+- `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`：E2E確認方針とCompose運用。
 - `01_Plans/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
@@ -139,6 +141,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/installation.md`：導入手順。
 - `04_Documentation/configuration.md`：設定。
 - `04_Documentation/operations.md`：運用。
+- `04_Documentation/e2e_testing.md`：PlaywrightベースE2E方針。
 - `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
 - `04_Documentation/release.md`：リリース。
