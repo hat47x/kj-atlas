@@ -48,6 +48,7 @@ type SidePanelProps = {
   onCardCritiqueChange: (value: string) => void;
   onCardCritiqueTagsChange: (value: string[]) => void;
   onCardClaimTypeChange: (value: ClaimType) => void;
+  onCardTextReviewedChange: (value: boolean) => void;
   onAddEvidenceLink: (payload: { toCardId: string; type: EvidenceLink["type"] }) => void;
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
   onFocusCardById: (cardId: string) => void;
@@ -199,6 +200,7 @@ export function SidePanel({
   onCardCritiqueChange,
   onCardCritiqueTagsChange,
   onCardClaimTypeChange,
+  onCardTextReviewedChange,
   onAddEvidenceLink,
   onRemoveEvidenceLink,
   onFocusCardById,
@@ -2835,6 +2837,26 @@ export function SidePanel({
                 <option value="hypothesis">{claimTypeLabels.hypothesis}</option>
                 <option value="unknown">{claimTypeLabels.unknown}</option>
               </select>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 12,
+                  color: "#334155",
+                  marginBottom: 12,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCard.textReviewed === true}
+                  onChange={(event) => {
+                    onCardTextReviewedChange(event.target.checked);
+                  }}
+                />
+                Card text reviewed
+              </label>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence</div>

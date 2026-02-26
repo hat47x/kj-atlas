@@ -511,6 +511,99 @@ describe("view metadata export", () => {
     }
   });
 
+
+  it("includes reviewEvents in export/import roundtrip", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-review", title: "Review" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      exportMode: "viewport",
+      reviewEvents: [
+        {
+          id: "review-1",
+          target: { kind: "summary", id: "summary-1" },
+          action: "markReviewed",
+          createdAt: "2026-03-01T00:00:00.000Z",
+          contextLabel: "relation.summary",
+        },
+      ],
+    });
+
+    expect(metadata.reviewEvents).toHaveLength(1);
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.reviewEvents).toHaveLength(1);
+      expect(result.metadata.reviewEvents?.[0]?.target).toEqual({ kind: "summary", id: "summary-1" });
+    }
+  });
+
+  it("sanitizes invalid reviewEvents entries on import", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-review-events",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      reviewEvents: [
+        {
+          id: "review-valid",
+          target: { kind: "island", id: "island-1" },
+          action: "unreview",
+          createdAt: "2026-03-01T00:00:00.000Z",
+        },
+        {
+          id: "review-invalid",
+          target: { kind: "island", id: "island-2" },
+          action: "approve",
+          createdAt: "2026-03-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.reviewEvents).toHaveLength(1);
+      expect(result.metadata.reviewEvents?.[0]?.id).toBe("review-valid");
+    }
+  });
+
+  it("rejects non-array reviewEvents payload", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-review-events-invalid",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      reviewEvents: "invalid",
+    });
+
+    expect(result).toEqual({ ok: false, error: "metadata.reviewEvents must be an array when present" });
+  });
+
   it("keeps backward compatibility when mergeAuditLog is missing", () => {
     const result = validateImportViewMetadata({
       version: "1",

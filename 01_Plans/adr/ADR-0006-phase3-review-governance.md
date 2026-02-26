@@ -27,7 +27,7 @@
 | Milestone | Status | 根拠 |
 |---|---|---|
 | M1: Current reviewer (local) | ⏳ Not started | `reviewerRef` / `Current reviewer` の実装痕跡は未確認。 |
-| M2: ReviewEvent append on review toggle | ⏳ Not started | `reviewEvents` データモデル/保存/export-import経路は未確認。 |
+| M2: ReviewEvent append on review toggle | ✅ Done (2026-02-26) | `reviewEvents` データモデル・reviewed toggle連動・view metadata export/import保持を実装。 |
 | M3: Export redaction | ⏳ Not started | review向け redaction モード（strip-identities / strip-all）は未確認。 |
 | M4: Merge audit log integration | 🟡 Partial | `mergeAuditLog` の保存・上限管理は実装済みだが、`reviewEvents` との統合は未実装。 |
 | M5: Org deployment hooks (optional) | ⏳ Not started | reviewerRef adapter / SSO subject 連携は未確認。 |
@@ -50,10 +50,15 @@
   - 設定した reviewerRef が再起動後も維持される
 
 ### M2: ReviewEvent append on review toggle
-- [ ] island/card/summary の reviewed を切り替える操作時に ReviewEvent を追記
-- [ ] reviewerRef（あれば）と createdAt を記録
+- [x] island/card/summary の reviewed を切り替える操作時に ReviewEvent を追記
+- [x] reviewerRef（あれば）と createdAt を記録
 - Done criteria:
-  - reviewEvents が view.json export/import で保持される
+  - [x] reviewEvents が view.json export/import で保持される
+
+- 実装メモ（2026-02-26）:
+  - `reviewEvents` を view metadata に追加し、import時は sanitize して後方互換（欠損許容）を維持。
+  - reviewed toggle連動対象: card text / island title / island summary / island image / relation summary。
+  - retention上限は `2000` 件で古いイベントからトリム。
 
 ### M3: Export redaction
 - [ ] view.json export に redaction モードを実装

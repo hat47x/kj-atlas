@@ -114,6 +114,7 @@ import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patc
 import { parseDocumentJson } from "./import/document_import";
 import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
+import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
@@ -983,6 +984,7 @@ export default function App() {
   const [lastMergeSnapshot, setLastMergeSnapshot] = useState<DocumentV2 | null>(null);
   const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
+  const [reviewEvents, setReviewEvents] = useState<ReviewEvent[]>([]);
   const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
@@ -1635,6 +1637,7 @@ export default function App() {
         setSuggestionNotes(null);
         setSuggestionError(null);
         setMergeAuditLog([]);
+      setReviewEvents([]);
         setMergeSourceInfo({ kind: "unknown" });
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage("Document loaded");
@@ -1665,6 +1668,7 @@ export default function App() {
             setSuggestionNotes(null);
             setSuggestionError(null);
             setMergeAuditLog([]);
+      setReviewEvents([]);
             setMergeSourceInfo({ kind: "unknown" });
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage("Created a new document");
@@ -2443,6 +2447,7 @@ ${parsedDocument.error}`);
     setViewPresets(sanitizeViewPresets(metadata.viewState.presets));
     setActivePresetId(typeof metadata.viewState.activePresetId === "string" ? metadata.viewState.activePresetId : null);
     setMergeAuditLog(sanitizeMergeAuditLog(metadata.mergeAuditLog));
+    setReviewEvents(sanitizeReviewEvents(metadata.reviewEvents));
     setIncludeUnreviewedDraftsInExport(false);
     setIsReadingOrderEditMode(false);
     setRevealedSourceCardIds(new Set());
@@ -3335,6 +3340,49 @@ ${parsedDocument.error}`);
     [applyDocumentChange, document]
   );
 
+  const handleCardTextReviewedChange = useCallback(
+    (cardId: string, reviewed: boolean) => {
+      if (!document) {
+        return;
+      }
+
+      const nextCards = document.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card;
+        }
+
+        if ((card.textReviewed ?? false) === reviewed) {
+          return card;
+        }
+
+        return {
+          ...card,
+          textReviewed: reviewed,
+        };
+      });
+
+      const hasChanges = nextCards.some((card, index) => card !== document.cards[index]);
+      if (!hasChanges) {
+        return;
+      }
+
+      applyDocumentChange(
+        {
+          ...document,
+          cards: nextCards,
+        },
+        "Updated card reviewed state",
+        { preserveSuggestionPreview: true }
+      );
+      setReviewEvents((previous) => appendReviewEvent(previous, {
+        target: { kind: "card", id: cardId },
+        reviewed,
+        contextLabel: "card.text",
+      }));
+    },
+    [applyDocumentChange, document, setReviewEvents]
+  );
+
   const handleAddEvidenceLink = useCallback(
     (fromCardId: string, payload: { toCardId: string; type: "supports" | "contradicts" }) => {
       if (!document || fromCardId === payload.toCardId) {
@@ -3549,8 +3597,13 @@ ${parsedDocument.error}`);
         },
         "Updated island title reviewed state"
       );
+      setReviewEvents((previous) => appendReviewEvent(previous, {
+        target: { kind: "island", id: islandId },
+        reviewed,
+        contextLabel: "island.title",
+      }));
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, setReviewEvents]
   );
 
   const handleRestoreIslandSummaryVersion = useCallback(
@@ -3622,8 +3675,13 @@ ${parsedDocument.error}`);
         },
         "Updated island summary reviewed state"
       );
+      setReviewEvents((previous) => appendReviewEvent(previous, {
+        target: { kind: "summary", id: islandId },
+        reviewed,
+        contextLabel: "island.summary",
+      }));
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, setReviewEvents]
   );
 
   const handleIslandImageReviewedChange = useCallback(
@@ -3659,8 +3717,13 @@ ${parsedDocument.error}`);
         },
         "Updated island image reviewed state"
       );
+      setReviewEvents((previous) => appendReviewEvent(previous, {
+        target: { kind: "island", id: islandId },
+        reviewed,
+        contextLabel: "island.image",
+      }));
     },
-    [applyDocumentChange, document]
+    [applyDocumentChange, document, setReviewEvents]
   );
 
   const handleGenerateIslandPolygon = useCallback(
@@ -4590,8 +4653,13 @@ ${parsedDocument.error}`);
       }
 
       applyDocumentChange(nextDocument, "Updated relation summary reviewed state");
+      setReviewEvents((previous) => appendReviewEvent(previous, {
+        target: { kind: "summary", id: selectedRelationSummary.id },
+        reviewed,
+        contextLabel: "relation.summary",
+      }));
     },
-    [applyDocumentChange, document, selectedRelationSummary]
+    [applyDocumentChange, document, selectedRelationSummary, setReviewEvents]
   );
 
   const handleRestoreRelationSummaryHistoryEntry = useCallback(
@@ -6176,6 +6244,7 @@ ${parsedDocument.error}`);
         padding,
         generatedAt,
         mergeAuditLog,
+        reviewEvents,
       });
 
       downloadTextFile(getViewMetadataFilename(mode, generatedAt), "application/json", `${JSON.stringify(metadata, null, 2)}\n`);
@@ -6206,6 +6275,7 @@ ${parsedDocument.error}`);
       perspectiveStrictFilter,
       viewPresets,
       activePresetId,
+      reviewEvents,
       ]
   );
 
@@ -6255,6 +6325,7 @@ ${parsedDocument.error}`);
         exportMode: "viewport",
         generatedAt: deterministicNowIso,
         mergeAuditLog,
+        reviewEvents,
       });
 
       const controller = new AbortController();
@@ -7377,6 +7448,13 @@ ${parsedDocument.error}`);
             }
 
             handleCardClaimTypeChange(selectedCard.id, value);
+          }}
+          onCardTextReviewedChange={(value) => {
+            if (!selectedCard) {
+              return;
+            }
+
+            handleCardTextReviewedChange(selectedCard.id, value);
           }}
           onAddEvidenceLink={(payload) => {
             if (!selectedCard) {
