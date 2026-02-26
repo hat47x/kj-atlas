@@ -41,7 +41,7 @@
 
 ## Follow-up Actions
 
-- [ ] Frontend lint 強化案（ESLint導入方針）を `ADR-0002-internal-roadmap.md` へ反映する。
+- [x] Frontend lint 強化案（ESLint導入方針）を `ADR-0002-internal-roadmap.md` へ反映する。（2026-02-26 完了）
 - [ ] `App.tsx` 分割の優先順（状態管理 / 描画 / import-export）を別ADRまたはIssueで計画化する。
 - [ ] Backend の `except Exception` 使用箇所を段階的に解消する。
 
