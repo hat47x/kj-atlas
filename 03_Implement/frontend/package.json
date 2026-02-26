@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test": "vitest run",
+    "test:regression-guards": "vitest run src/import/zip_import.test.ts src/import/schema_validation.test.ts src/import/document_import.test.ts src/import/view_import.test.ts src/diff/review_pack_workflow.integration.test.ts src/export/bundle_export.test.ts src/export/view_metadata.test.ts src/domain/validate_doc.test.ts src/export/canvas_svg.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

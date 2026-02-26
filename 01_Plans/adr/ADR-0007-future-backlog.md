@@ -87,7 +87,7 @@
 | FB-RM-RS-03 | Diagnostics安定化 | P1 | Done (2026-02-26) | diagnostics出力schemaVersionを固定し、pre-release方針として `schemaVersion===1` のみ受理。invalid/unsupported version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type・diagnostics.error不正・必須フィールド欠落/型不正を検知してfallbackするテストを整備。`04_Documentation/diagnostics.md` を追加。 | current version以外はfallbackで安全に処理継続できる（unit testで固定） | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
 | FB-RM-SEC-01 | ZIP hardening | P0 | Done (2026-02-26) | import時の path traversal（相対/絶対/UNC/NUL）・zip bomb（総量/件数/単体サイズ/圧縮率）・許可拡張子制限を強化し、Z001/Z002で拒否。`zip_import.test.ts` と review-pack workflow 統合テストで回帰固定。 | 悪性fixtureで拒否・通常fixtureで成功する | `03_Implement/frontend/src/import/zip_import.ts` |
 | FB-RM-SEC-02 | Worker安定化 | P1 | Planned | 長時間処理を worker/off-main-thread へ寄せる | UIスレッドblockの再現ケースが解消される | 新規Issue化 |
-| FB-RM-SEC-03 | CI回帰防止 | P0 | Planned | import/serialization/shape互換の回帰テストをCI必須化 | main branch で required check 化される | 新規Issue化 |
+| FB-RM-SEC-03 | CI回帰防止 | P0 | Done (2026-02-26) | import/serialization/shape互換の回帰テスト群を `test:regression-guards` として固定し、CIに専用ジョブ `Frontend regression guards (import/serialization/shape)` を追加。branch protection に required check として設定する手順を運用ドキュメントに明記。 | import/serialization/shape互換の回帰テストがCI専用ジョブで常時実行され、required check設定手順が文書化されている | `.github/workflows/ci.yml` |
 
 ### Mid-term Vision（統合）
 
@@ -159,3 +159,14 @@
 - [x] Extension policy: `.json/.md/.png` 以外を取り込み対象から除外（警告件数に加算）。
 - [x] Tests: `src/import/zip_import.test.ts` に悪性ケース（絶対パス・圧縮率・サイズ上限）を追加。
 - [x] Integration: `src/diff/review_pack_workflow.integration.test.ts` の悪性ZIP拒否を維持。
+
+
+
+#### FB-RM-SEC-03 実装TODO（完了ログ）
+
+- [x] Frontend向けに import/serialization/shape互換の回帰テスト対象を選定。
+- [x] `03_Implement/frontend/package.json` に `test:regression-guards` スクリプトを追加。
+- [x] `.github/workflows/ci.yml` に専用ジョブ `Frontend regression guards (import/serialization/shape)` を追加。
+- [x] CIジョブ名を branch protection の required check に設定可能な安定名に固定。
+- [x] `04_Documentation/release.md` に required check 設定手順（GitHub UI）を追記。
+- [x] ローカルで `test:regression-guards` を実行し、通過を確認。
