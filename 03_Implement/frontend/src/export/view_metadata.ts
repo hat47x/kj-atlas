@@ -3,6 +3,7 @@ import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
+import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
 
 
 function buildPerspectiveStateFromViewState(viewState: ExportViewMetadataArgs["viewState"]): PerspectiveState {
@@ -95,6 +96,7 @@ export type ExportViewMetadata = {
   };
   notes?: string;
   mergeAuditLog?: MergeAuditEntry[];
+  reviewEvents?: ReviewEvent[];
 };
 
 type ExportViewMetadataArgs = {
@@ -144,6 +146,7 @@ type ExportViewMetadataArgs = {
   padding?: number;
   generatedAt?: string;
   mergeAuditLog?: MergeAuditEntry[];
+  reviewEvents?: ReviewEvent[];
 };
 
 function hashTitle(value: string): string {
@@ -172,7 +175,7 @@ function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): stri
   return `title-${hashTitle(title)}`;
 }
 
-export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog }: ExportViewMetadataArgs): ExportViewMetadata {
+export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog, reviewEvents }: ExportViewMetadataArgs): ExportViewMetadata {
   return {
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
@@ -222,6 +225,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
     },
     notes: "",
     ...(mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(mergeAuditLog) }),
+    ...(reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(reviewEvents) }),
   };
 }
 
@@ -592,8 +596,13 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
     return { ok: false, error: "metadata.mergeAuditLog must be an array when present" };
   }
 
+  if (value.reviewEvents !== undefined && !Array.isArray(value.reviewEvents)) {
+    return { ok: false, error: "metadata.reviewEvents must be an array when present" };
+  }
+
   return { ok: true, metadata: {
     ...(value as ExportViewMetadata),
     ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
+    ...(value.reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(value.reviewEvents) }),
   } };
 }
