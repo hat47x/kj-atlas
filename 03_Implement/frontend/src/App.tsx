@@ -48,6 +48,7 @@ import {
 } from "./domain/relation_summary_ops";
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
+import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
@@ -93,6 +94,7 @@ import {
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
+import { getPresetIdForViewMode, getViewModeForPresetId, getViewModeLabel, type ViewMode } from "./domain/view/view_mode";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import { getCollapsedHiddenCardIds } from "./domain/view/collapse_visibility";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
@@ -139,6 +141,20 @@ function clampEvidenceOverlayDepth(value: unknown): number {
   }
 
   return Math.max(1, Math.min(3, Math.floor(value)));
+}
+
+
+function isEditableHotkeyTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+  if (tagName === "input" || tagName === "textarea" || tagName === "select") {
+    return true;
+  }
+
+  return target.isContentEditable;
 }
 
 function sanitizePerspectiveState(
@@ -918,6 +934,7 @@ export default function App() {
   const [perspectiveStrictFilter, setPerspectiveStrictFilter] = useState(false);
   const [viewPresets, setViewPresets] = useState<ViewPreset[]>(DEFAULT_VIEW_PRESETS);
   const [activePresetId, setActivePresetId] = useState<string | null>("default-explore");
+  const [viewMode, setViewMode] = useState<ViewMode>("explore");
   const [guidedFlowEnabled, setGuidedFlowEnabled] = useState(false);
   const [guidedFlowStepId, setGuidedFlowStepId] = useState<GuidedFlowStepId>("review");
   const [guidedFlowTargetIndex, setGuidedFlowTargetIndex] = useState(0);
@@ -1605,6 +1622,7 @@ export default function App() {
           future: [],
         });
         setActiveDocumentId(loadedDocument.id);
+        setViewMode(loadViewModeForDocument(loadedDocument.id) ?? "explore");
         rememberRecentDocumentId(loadedDocument.id);
         setSelectedRecentDocumentId(loadedDocument.id);
         setDocEtag(loaded.etag ?? null);
@@ -1634,6 +1652,7 @@ export default function App() {
               future: [],
             });
             setActiveDocumentId(savedDocument.id);
+            setViewMode(loadViewModeForDocument(savedDocument.id) ?? "explore");
             rememberRecentDocumentId(savedDocument.id);
             setSelectedRecentDocumentId(savedDocument.id);
             setDocEtag(saved.etag ?? null);
@@ -6805,6 +6824,25 @@ ${parsedDocument.error}`);
     if (viewPatch.perspectiveStrictFilter !== undefined) setPerspectiveStrictFilter(viewPatch.perspectiveStrictFilter);
   }, [abstractMapView, summaryView]);
 
+  const handleApplyViewMode = useCallback((mode: ViewMode, options?: { announce?: boolean }) => {
+    const presetId = getPresetIdForViewMode(mode);
+    const preset = viewPresets.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+
+    applyViewPatch(preset.viewPatch);
+    setViewMode(mode);
+    setActivePresetId(preset.id);
+    if (preset.id === "default-review") {
+      setSafeMode(true);
+      setIncludeUnreviewedDraftsInExport(false);
+    }
+    if (options?.announce ?? true) {
+      setStatusMessage(`Applied mode: ${getViewModeLabel(mode)}`);
+    }
+  }, [applyViewPatch, viewPresets]);
+
   const handleSaveViewPreset = useCallback(() => {
     const name = window.prompt("Preset name", "My preset")?.trim();
     if (!name) return;
@@ -6826,6 +6864,10 @@ ${parsedDocument.error}`);
     if (!preset) return;
     applyViewPatch(preset.viewPatch);
     setActivePresetId(preset.id);
+    const mode = getViewModeForPresetId(preset.id);
+    if (mode) {
+      setViewMode(mode);
+    }
     if (preset.id === "default-review") {
       setSafeMode(true);
       setIncludeUnreviewedDraftsInExport(false);
@@ -6855,8 +6897,78 @@ ${parsedDocument.error}`);
     setStatusMessage(`Deleted preset: ${target.name}`);
   }, [viewPresets]);
 
+  useEffect(() => {
+    handleApplyViewMode(viewMode, { announce: false });
+  }, [handleApplyViewMode, viewMode]);
+
+  useEffect(() => {
+    saveViewModeForDocument(activeDocumentId, viewMode);
+  }, [activeDocumentId, viewMode]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) {
+        return;
+      }
+
+      if (event.key === "1") {
+        event.preventDefault();
+        handleApplyViewMode("explore");
+        return;
+      }
+
+      if (event.key === "2") {
+        event.preventDefault();
+        handleApplyViewMode("review");
+        return;
+      }
+
+      if (event.key === "3") {
+        event.preventDefault();
+        handleApplyViewMode("summary");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleApplyViewMode]);
+
   const headerViewControls = (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "inline-flex", border: "1px solid #cbd5e1", borderRadius: 6, overflow: "hidden", backgroundColor: "#ffffff" }}>
+        {(["explore", "review", "summary"] as const).map((mode) => {
+          const isActive = viewMode === mode;
+          const shortcutLabel = mode === "explore" ? "⌘/Ctrl+1" : mode === "review" ? "⌘/Ctrl+2" : "⌘/Ctrl+3";
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                handleApplyViewMode(mode);
+              }}
+              title={`${getViewModeLabel(mode)} (${shortcutLabel})`}
+              style={{
+                border: "none",
+                borderRight: mode === "summary" ? "none" : "1px solid #cbd5e1",
+                backgroundColor: isActive ? "#e0e7ff" : "#ffffff",
+                color: isActive ? "#1d4ed8" : "#0f172a",
+                padding: "4px 10px",
+                fontSize: 12,
+                fontWeight: isActive ? 700 : 600,
+                cursor: "pointer",
+              }}
+            >
+              {getViewModeLabel(mode)}
+            </button>
+          );
+        })}
+      </div>
       <button
         type="button"
         onClick={() => {

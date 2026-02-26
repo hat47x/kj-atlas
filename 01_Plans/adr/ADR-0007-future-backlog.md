@@ -78,7 +78,7 @@
 
 | ID | テーマ | 優先度 | 状態 | 具体アクション | DoD（完了条件） | 参照 |
 |---|---|---|---|---|---|---|
-| FB-RM-UX-01 | 視座プリセット | P0 | Planned | Explore / Review / Summary を view mode として定義し、保存・復元可能にする | 同一Document再読込時に mode が再現される | `RQ-V-01` 系 |
+| FB-RM-UX-01 | 視座プリセット | P0 | Done (2026-02-26) | Explore / Review / Summary を view mode として定義し、ヘッダーのモードトグルと `⌘/Ctrl+1..3` ショートカットで共通導線化。document単位のlocalStorage保存（`kj-atlas/view-mode-by-doc`）を導入し、再読込時に既存modeを復元する。`view_mode.ts` / `view_mode.test.ts` / `storage/view_mode.test.ts` を追加し、mode↔preset対応・保存値パースを回帰固定。 | 同一Document再読込時に mode が再現され、UIトグルとショートカットの双方で同一presetへ到達できる | `RQ-V-01` 系 |
 | FB-RM-UX-02 | 島の折りたたみ | P0 | Planned | 階層Islandの collapse/expand と hit-test 制御を実装 | collapse時に配下要素が描画・選択対象から外れる | `FB-P2A-02` |
 | FB-RM-UX-03 | Polygon islands | P1 | Planned | polygon shape の保存・再読込・互換読込を統合実装 | 欠損shapeで `rect` フォールバックしつつ編集継続できる | `FB-P2C-01..03` |
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Planned | SafeMode状態バッジ・解除不可モード表記・export警告を統一 | 閲覧者が現在モードを1クリック以内で確認できる | 新規Issue化 |
@@ -139,6 +139,15 @@
 - Source: `01_Plans/phaseX_future_backlog.md`
 - Supersedes: `01_Plans/phaseX_future_backlog.md`
 
+
+#### FB-RM-UX-01 実装TODO（完了ログ）
+
+- [x] Explore / Review / Summary を `ViewMode` として型定義し、default preset との対応を固定。
+- [x] ヘッダーに view mode トグル（3分割）を追加。
+- [x] `⌘/Ctrl+1..3` で mode 切替ショートカットを実装。
+- [x] `kj-atlas/view-mode-by-doc` に document単位で mode を保存。
+- [x] document読込時に保存済み mode を復元。
+- [x] `view_mode.test.ts` / `storage/view_mode.test.ts` で mode変換・保存値検証を追加。
 
 #### FB-RM-RS-03 実装TODO（完了ログ）
 
