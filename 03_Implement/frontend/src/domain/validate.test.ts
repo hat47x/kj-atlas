@@ -185,6 +185,40 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(result.document.islands[0]?.shape).toBeUndefined();
   });
 
+  it("falls back to card-bounds rendering when imported polygon self-intersects", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_invalid_self_intersection",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 120, y: 120 },
+              { x: 120, y: 0 },
+              { x: 0, y: 120 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.shape).toBeUndefined();
+    expect(result.document.islands[0]?.geometry).toBeUndefined();
+  });
+
   it("keeps polygon geometry through export/import roundtrip", () => {
     const now = new Date().toISOString();
     const source = {

@@ -80,7 +80,7 @@
 |---|---|---|---|---|---|---|
 | FB-RM-UX-01 | 視座プリセット | P0 | Done (2026-02-26) | Explore / Review / Summary を view mode として定義し、ヘッダーのモードトグルと `⌘/Ctrl+1..3` ショートカットで共通導線化。document単位のlocalStorage保存（`kj-atlas/view-mode-by-doc`）を導入し、再読込時に既存modeを復元する。`view_mode.ts` / `view_mode.test.ts` / `storage/view_mode.test.ts` を追加し、mode↔preset対応・保存値パースを回帰固定。 | 同一Document再読込時に mode が再現され、UIトグルとショートカットの双方で同一presetへ到達できる | `RQ-V-01` 系 |
 | FB-RM-UX-02 | 島の折りたたみ | P0 | Done (2026-02-26) | 階層Islandの collapse/expand と hit-test 制御を実装。collapse状態を island.collapsed と viewState の双方で保持し、descendant連鎖を共通ヘルパーへ統合。Collapse/Expand all を永続値へ同期。 | collapse時に配下要素が描画・選択対象から外れ、expandと再読込で復帰する | `FB-P2A-02` |
-| FB-RM-UX-03 | Polygon islands | P1 | Planned | polygon shape の保存・再読込・互換読込を統合実装 | 欠損shapeで `rect` フォールバックしつつ編集継続できる | `FB-P2C-01..03` |
+| FB-RM-UX-03 | Polygon islands | P1 | Done (2026-02-26) | polygon shape の保存・再読込・互換読込を統合実装。`validateAndUpgradeImportedDocument` で自己交差polygonを自動破棄して card-bounds フォールバックへ退避し、`validateDocumentV2Strict` では自己交差を検証エラーとして拒否。polygon自己交差判定ユーティリティと回帰テストを追加。 | 欠損shapeで `rect` フォールバックしつつ編集継続でき、自己交差polygonが保存・厳格検証で受理されない | `FB-P2C-01..03` |
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Done (2026-02-26) | ヘッダー常設のSafeMode状態バッジ（ON/OFF）を追加し、クリックでShareパネルを開いて詳細を確認できる導線へ統一。Share & Reproduce内でSafeMode説明・export警告・「Share/Review Packでは赤字化が解除不可」の文言を共通ヘルパーで集約。`safe_mode_status.ts` / `safe_mode_status.test.ts` / `SharePanel.test.tsx` を追加し、文言と状態分岐を回帰固定。 | 閲覧者がヘッダーからSafeMode状態を即時確認でき、Share/export警告と解除不可モード表記が矛盾なく統一される | `03_Implement/frontend/src/ui/safe_mode_status.ts` |
 | FB-RM-RS-01 | Trace Analytics | P1 | Planned | 根拠リンク本数・孤立ノード・出典密度の集計を追加 | deterministicに同一入力で同一統計値を返す | 新規Issue化 |
 | FB-RM-RS-02 | 構造メトリクス | P1 | Planned | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | 新規Issue化 |
@@ -197,3 +197,13 @@
 - [x] Collapse all / Expand all 操作で UI状態と永続状態が乖離しないよう同期した。
 - [x] `npm run test -- src/domain/view/collapse_visibility.test.ts` / `npm run typecheck` / `npm test` の通過を確認した。
 - [x] collapse永続更新ロジックを `collapse_state.ts` に分離し、単体/全体collapse更新の純粋関数テストを追加した。
+
+
+#### FB-RM-UX-03 実装TODO（完了ログ）
+
+- [x] `validateDocumentV2Strict` に polygon 自己交差検証を追加し、保存時バリデーションで拒否するようにした。
+- [x] `validateAndUpgradeImportedDocument` に自己交差polygon除外を追加し、互換読込時は card-bounds フォールバックで編集継続可能にした。
+- [x] `polygon_self_intersection.ts` を追加して判定ロジックを共通化し、幾何判定を再利用可能にした。
+- [x] `validate_doc.test.ts` / `validate.test.ts` / `polygon_self_intersection.test.ts` を追加・更新し、自己交差ケースの回帰を固定した。
+- [x] E2E追加有無を確認し、本改修は Domain validation（非UI導線）中心で Playwright シナリオ追加対象外だったため、PRに未追加理由と代替検証（unit + regression-guards）を明記する運用へ修正した（ADR-0018連携）。
+- [x] Playwright E2E `e2e/polygon_import_validation.spec.ts` を追加し、自己交差polygonを含む document.json の取込→置換→bundle export で shape が除去されることを実動作で確認した。
