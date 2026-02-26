@@ -6,6 +6,7 @@ import type { PatchLintIssue } from "../domain/patch/patch_lint";
 import type { FixProposal } from "../domain/patch/patch_fix";
 import type { TrustLabel } from "../domain/patch/patch_types";
 import { ImportPanel } from "./ImportPanel";
+import { getExportSafetyWarning, getSafeModeIndicator, getSafeModeLockedContextLabel } from "./safe_mode_status";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -231,6 +232,9 @@ export function SharePanel({
   const lintInfos = patchLintIssues.filter((item) => item.severity === "info");
 
   const sortedPatchApplyLogEntries = [...patchApplyLogEntries].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  const safeModeIndicator = getSafeModeIndicator(safeMode);
+  const safeModeWarning = getExportSafetyWarning(safeMode);
+
   const shortFingerprint = (value: string | undefined): string => {
     if (!value) return "(n/a)";
     if (value.length <= 20) return value;
@@ -285,16 +289,35 @@ export function SharePanel({
             <div style={{ fontSize: 12, color: "#64748b" }}>
               Export reproducible artifacts first (SVG/PNG/report + view.json metadata).
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-              <input
-                type="checkbox"
-                checked={safeMode}
-                onChange={(event) => {
-                  onSafeModeChange(event.target.checked);
-                }}
-              />
-              Safe mode
-            </label>
+            <div
+              style={{
+                border: safeModeIndicator.tone === "safe" ? "1px solid #86efac" : "1px solid #fdba74",
+                backgroundColor: safeModeIndicator.tone === "safe" ? "#f0fdf4" : "#fff7ed",
+                borderRadius: 8,
+                padding: 8,
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <strong style={{ fontSize: 12, color: "#0f172a" }}>{safeModeIndicator.label}</strong>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                  <input
+                    type="checkbox"
+                    checked={safeMode}
+                    onChange={(event) => {
+                      onSafeModeChange(event.target.checked);
+                    }}
+                  />
+                  Enable SafeMode
+                </label>
+              </div>
+              <div style={{ fontSize: 11, color: "#475569" }}>{safeModeIndicator.detail}</div>
+              <div style={{ fontSize: 11, color: safeModeIndicator.tone === "safe" ? "#166534" : "#9a3412", fontWeight: 600 }}>
+                {safeModeWarning}
+              </div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
+            </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
               Export SVG (Viewport)
             </button>

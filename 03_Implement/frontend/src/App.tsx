@@ -102,6 +102,7 @@ import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
 import { SharePanel } from "./ui/SharePanel";
+import { getSafeModeIndicator } from "./ui/safe_mode_status";
 import { applyPatchWithResolutionsDetailed, getPatchOpEntityKey, parsePatchDocument, shouldBlockPatchApplyByLint, type PatchDocument, type PatchResolution } from "./domain/patch/patch_apply";
 import { buildPatchForExport } from "./domain/patch/patch_generate";
 import { verifyPatchFingerprint } from "./domain/patch/patch_fingerprint";
@@ -7010,8 +7011,29 @@ ${parsedDocument.error}`);
     };
   }, [handleApplyViewMode]);
 
+  const safeModeIndicator = getSafeModeIndicator(safeMode);
+
   const headerViewControls = (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <button
+        type="button"
+        onClick={() => {
+          setIsSharePanelOpen(true);
+        }}
+        title={safeModeIndicator.detail}
+        style={{
+          border: safeModeIndicator.tone === "safe" ? "1px solid #86efac" : "1px solid #fdba74",
+          backgroundColor: safeModeIndicator.tone === "safe" ? "#f0fdf4" : "#fff7ed",
+          color: safeModeIndicator.tone === "safe" ? "#166534" : "#9a3412",
+          borderRadius: 999,
+          padding: "4px 10px",
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        {safeModeIndicator.label}
+      </button>
       <div style={{ display: "inline-flex", border: "1px solid #cbd5e1", borderRadius: 6, overflow: "hidden", backgroundColor: "#ffffff" }}>
         {(["explore", "review", "summary"] as const).map((mode) => {
           const isActive = viewMode === mode;

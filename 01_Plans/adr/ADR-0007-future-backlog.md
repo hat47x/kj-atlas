@@ -81,7 +81,7 @@
 | FB-RM-UX-01 | 視座プリセット | P0 | Done (2026-02-26) | Explore / Review / Summary を view mode として定義し、ヘッダーのモードトグルと `⌘/Ctrl+1..3` ショートカットで共通導線化。document単位のlocalStorage保存（`kj-atlas/view-mode-by-doc`）を導入し、再読込時に既存modeを復元する。`view_mode.ts` / `view_mode.test.ts` / `storage/view_mode.test.ts` を追加し、mode↔preset対応・保存値パースを回帰固定。 | 同一Document再読込時に mode が再現され、UIトグルとショートカットの双方で同一presetへ到達できる | `RQ-V-01` 系 |
 | FB-RM-UX-02 | 島の折りたたみ | P0 | Planned | 階層Islandの collapse/expand と hit-test 制御を実装 | collapse時に配下要素が描画・選択対象から外れる | `FB-P2A-02` |
 | FB-RM-UX-03 | Polygon islands | P1 | Planned | polygon shape の保存・再読込・互換読込を統合実装 | 欠損shapeで `rect` フォールバックしつつ編集継続できる | `FB-P2C-01..03` |
-| FB-RM-UX-04 | SafeMode UI明示 | P1 | Planned | SafeMode状態バッジ・解除不可モード表記・export警告を統一 | 閲覧者が現在モードを1クリック以内で確認できる | 新規Issue化 |
+| FB-RM-UX-04 | SafeMode UI明示 | P1 | Done (2026-02-26) | ヘッダー常設のSafeMode状態バッジ（ON/OFF）を追加し、クリックでShareパネルを開いて詳細を確認できる導線へ統一。Share & Reproduce内でSafeMode説明・export警告・「Share/Review Packでは赤字化が解除不可」の文言を共通ヘルパーで集約。`safe_mode_status.ts` / `safe_mode_status.test.ts` / `SharePanel.test.tsx` を追加し、文言と状態分岐を回帰固定。 | 閲覧者がヘッダーからSafeMode状態を即時確認でき、Share/export警告と解除不可モード表記が矛盾なく統一される | `03_Implement/frontend/src/ui/safe_mode_status.ts` |
 | FB-RM-RS-01 | Trace Analytics | P1 | Planned | 根拠リンク本数・孤立ノード・出典密度の集計を追加 | deterministicに同一入力で同一統計値を返す | 新規Issue化 |
 | FB-RM-RS-02 | 構造メトリクス | P1 | Planned | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | 新規Issue化 |
 | FB-RM-RS-03 | Diagnostics安定化 | P1 | Done (2026-02-26) | diagnostics出力schemaVersionを固定し、pre-release方針として `schemaVersion===1` のみ受理。invalid/unsupported version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type・diagnostics.error不正・必須フィールド欠落/型不正を検知してfallbackするテストを整備。`04_Documentation/diagnostics.md` を追加。 | current version以外はfallbackで安全に処理継続できる（unit testで固定） | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
@@ -179,3 +179,11 @@
 - [x] CIジョブ名を branch protection の required check に設定可能な安定名に固定。
 - [x] `04_Documentation/release.md` に required check 設定手順（GitHub UI）を追記。
 - [x] ローカルで `test:regression-guards` を実行し、通過を確認。
+
+
+#### FB-RM-UX-04 実装TODO（完了ログ）
+
+- [x] ヘッダーに SafeMode 状態バッジ（ON/OFF）を常設し、1クリックで Share パネルへ遷移できるようにした。
+- [x] Share & Reproduce 内の SafeMode 説明・export警告・解除不可モード表記を共通ヘルパーで統一した。
+- [x] SafeMode ON/OFF の文言分岐を `safe_mode_status.test.ts` で固定した。
+- [x] `SharePanel.test.tsx` で SafeMode 表示の回帰テストを追加した。
