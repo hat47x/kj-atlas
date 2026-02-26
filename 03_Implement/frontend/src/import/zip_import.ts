@@ -9,6 +9,7 @@ export const ZIP_MAX_FILE_UNCOMPRESSED_BYTES = 10 * 1024 * 1024;
 export const ZIP_MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024;
 export const ZIP_MAX_PNG_FILE_BYTES = 10 * 1024 * 1024;
 export const ZIP_MAX_PNG_DIMENSION = 8000;
+export const ZIP_MAX_COMPRESSION_RATIO = 120;
 
 export class ZipImportError extends Error {
   readonly code: "Z001" | "Z002" | "Z003";
@@ -31,7 +32,17 @@ function hasAllowedExtension(path: string): boolean {
 }
 
 export function normalizeZipPath(path: string, shouldStripCommonRoot: boolean): string | null {
+  const hasWindowsDrivePrefix = /^[a-zA-Z]:[\\/]/.test(path);
+  const hasUncPrefix = /^\\\\/.test(path);
+  const hasPosixAbsolutePrefix = /^\//.test(path);
+  if (hasWindowsDrivePrefix || hasUncPrefix || hasPosixAbsolutePrefix) {
+    throw new ZipImportError("Z002", `Absolute paths are not allowed: ${path}`);
+  }
+
   const normalized = path.replace(/\\/g, "/").replace(/^\/+/, "").replace(/^(\.\/)+/, "");
+  if (normalized.includes("\u0000")) {
+    throw new ZipImportError("Z002", `NUL byte in path is not allowed: ${path}`);
+  }
   const rawSegments = normalized.split("/").filter((segment) => segment.length > 0 && segment !== ".");
   if (rawSegments.length === 0) {
     return null;
@@ -96,6 +107,12 @@ function readEntryUncompressedSize(entry: JSZip.JSZipObject): number | null {
   return typeof uncompressedSize === "number" && Number.isFinite(uncompressedSize) ? uncompressedSize : null;
 }
 
+function readEntryCompressedSize(entry: JSZip.JSZipObject): number | null {
+  const maybeCompressedObject = entry as JSZip.JSZipObject & { _data?: { compressedSize?: number } };
+  const compressedSize = maybeCompressedObject._data?.compressedSize;
+  return typeof compressedSize === "number" && Number.isFinite(compressedSize) ? compressedSize : null;
+}
+
 export async function readZipFiles(file: File): Promise<ZipImportResult> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const result = new Map<string, Uint8Array | string>();
@@ -122,6 +139,11 @@ export async function readZipFiles(file: File): Promise<ZipImportResult> {
 
     const lowerPath = normalizedPath.toLowerCase();
     const estimatedSize = readEntryUncompressedSize(entry);
+    const compressedSize = readEntryCompressedSize(entry);
+    if (estimatedSize !== null && compressedSize !== null && compressedSize > 0) {
+      const compressionRatio = estimatedSize / compressedSize;
+      ensureWithinMaxSize(compressionRatio, ZIP_MAX_COMPRESSION_RATIO, `${normalizedPath} exceeds compression ratio limit`);
+    }
     if (estimatedSize !== null) {
       ensureWithinMaxSize(estimatedSize, ZIP_MAX_FILE_UNCOMPRESSED_BYTES, `${normalizedPath} exceeds per-file size limit`);
       if (lowerPath.endsWith(".png")) {

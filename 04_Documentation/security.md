@@ -53,3 +53,16 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 ```
 
 > 注意: これはMVP向けの簡易ガードです。強い認証基盤の代替ではありません。
+
+## 6. ZIP import hardening（フロントエンド）
+
+`03_Implement/frontend/src/import/zip_import.ts` では、review pack ZIP 取り込み時に以下を既定で適用します。
+
+- パス検証: `../`、絶対パス、Windows drive path（`C:/...`）、UNC path（`\\server\share`）、NUL byte を拒否
+- サイズ上限: 総展開サイズ / 1ファイル展開サイズ / テキストサイズ / PNGサイズの上限を適用
+- 件数上限: アーカイブ内ファイル数に上限を適用
+- 圧縮率上限: 異常な高圧縮（zip bomb疑い）を拒否
+- 拡張子制限: `.json/.md/.png` のみを取り込み対象とし、それ以外は無視して警告件数へ加算
+
+運用上、上限値を緩める場合は DoS 耐性と UX のトレードオフをレビューで明示してください。
+

@@ -1,6 +1,14 @@
 import { describe, expect, test } from "vitest";
 import JSZip from "jszip";
-import { ZIP_MAX_FILE_COUNT, ZIP_MAX_TEXT_FILE_BYTES, detectReviewPackFiles, normalizeZipPath, readZipFiles } from "./zip_import";
+import {
+  ZIP_MAX_COMPRESSION_RATIO,
+  ZIP_MAX_FILE_COUNT,
+  ZIP_MAX_FILE_UNCOMPRESSED_BYTES,
+  ZIP_MAX_TEXT_FILE_BYTES,
+  detectReviewPackFiles,
+  normalizeZipPath,
+  readZipFiles,
+} from "./zip_import";
 
 async function buildZipFile(files: Record<string, string | Uint8Array>, name = "pack.zip"): Promise<File> {
   const zip = new JSZip();
@@ -78,6 +86,10 @@ describe("zip review pack import", () => {
   test("rejects parent traversal paths", () => {
     expect(() => normalizeZipPath("../document.json", false)).toThrow(/Z002/);
     expect(() => normalizeZipPath("safe/../../document.json", false)).toThrow(/Z002/);
+    expect(() => normalizeZipPath("/absolute/document.json", false)).toThrow(/Z002/);
+    expect(() => normalizeZipPath("C:/absolute/document.json", false)).toThrow(/Z002/);
+    expect(() => normalizeZipPath("\\\\network\\share\\document.json", false)).toThrow(/Z002/);
+    expect(() => normalizeZipPath("safe/\u0000/document.json", false)).toThrow(/Z002/);
   });
 
   test("rejects zip bombs by file count", async () => {
@@ -97,6 +109,39 @@ describe("zip review pack import", () => {
     });
 
     await expect(readZipFiles(zipFile)).rejects.toThrow(/Z001/);
+  });
+
+  test("rejects oversized per-file uncompressed payloads", async () => {
+    const zipFile = await buildZipFile({
+      "snapshot.png": new Uint8Array(ZIP_MAX_FILE_UNCOMPRESSED_BYTES + 1),
+    });
+
+    await expect(readZipFiles(zipFile)).rejects.toThrow(/Z001/);
+  });
+
+  test("rejects suspicious compression ratio", async () => {
+    const zip = new JSZip();
+    const content = "a".repeat(Math.min(1_000_000, ZIP_MAX_TEXT_FILE_BYTES - 10));
+    zip.file("document.json", content);
+    const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 9 } });
+    const zipFile = new File([blob], "ratio.zip", { type: "application/zip" });
+    const compressedBytes = zipFile.size;
+    const expectedRatio = content.length / Math.max(compressedBytes, 1);
+    expect(expectedRatio).toBeGreaterThan(ZIP_MAX_COMPRESSION_RATIO);
+
+    await expect(readZipFiles(zipFile)).rejects.toThrow(/Z001/);
+  });
+
+  test("rejects unsupported executable extension", async () => {
+    const zipFile = await buildZipFile({
+      "document.json": "{}",
+      "view.json": "{}",
+      "payload.exe": "MZ",
+    });
+
+    const imported = await readZipFiles(zipFile);
+    expect(imported.entries.has("payload.exe")).toBe(false);
+    expect(imported.skippedUnsupportedCount).toBe(1);
   });
 
   test("rejects oversized png dimensions", async () => {
