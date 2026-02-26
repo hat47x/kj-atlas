@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-02-25
 - Deciders: Project Maintainers
-- Scope: `03_Implement/frontend`, `03_Implement/backend`, `04_Documentation/coding_standards.md`
+- Scope: `03_Implement/frontend`, `03_Implement/backend`, `01_Plans/coding_standards.md`
 - Derived-from: コードベース観測（2026-02-25）
 
 ## Context
@@ -21,7 +21,7 @@
 ## Decision
 
 1. **バッドスメルの管理先を ADR + 規約へ一本化**する。
-   - 観測事項は本ADRに記録し、実務ルールは `04_Documentation/coding_standards.md` に集約する。
+   - 観測事項は本ADRに記録し、実務ルールは `01_Plans/coding_standards.md` に集約する。
    - 規約文書からは「現在のコードの観測一覧」を削除し、ルール本文に集中させる。
 
 2. **是正方針を以下に固定**する。
@@ -47,5 +47,5 @@
 
 ## Traceability
 
-- Implements: `04_Documentation/coding_standards.md`
+- Implements: `01_Plans/coding_standards.md`
 - Related: `.github/workflows/ci.yml`, `CONTRIBUTING.md`
