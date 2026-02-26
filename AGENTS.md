@@ -1,10 +1,10 @@
 # AGENTS.md
 
-> **目的 / Purpose**  
-> **このファイルは生成AIエージェント（Codex等）のための最短航路（Project Map）です。**  
+> **目的 / Purpose**
+> **このファイルは生成AIエージェント（Codex等）のための最短航路（Project Map）です。**
 > 人間向けの入口は `README.md`。AIはまず本書を読み、必要な文書へ自律的に辿ってください。
 
-**English summary**  
+**English summary**
 This file is the navigation index for AI agents (Codex, etc.). Start here, then follow the read order to locate the single sources of truth for requirements, architecture, plans, implementation, and ops.
 
 ---
@@ -23,21 +23,22 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 作業に入る前に、必ずこの順に参照：
 
-1) **AI行動規範**: `00_Prompt/system_prompt.md`  
-2) **用語・概念**: `00_Prompt/domain.md`  
-3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`  
-4) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`  
-5) **全体アーキテクチャ**: `02_Architecture/architecture.md`  
-6) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-7) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0018`
-8) **実装（03_Implement）**: 対象領域のソースへ
-9) **運用・手順**: `04_Documentation/*`（必要に応じて）
+1) **AI行動規範**: `00_Prompt/system_prompt.md`
+2) **用語・概念**: `00_Prompt/domain.md`
+3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
+4) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
+5) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+6) **全体アーキテクチャ**: `02_Architecture/architecture.md`
+7) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0018`
+9) **実装（03_Implement）**: 対象領域のソースへ
+10) **運用・手順**: `04_Documentation/*`（必要に応じて）
 
 ---
 
 ## 2. Project Map（ファイル構造インデックス）
 
-> **ここがAGENTS.mdの中核です。**  
+> **ここがAGENTS.mdの中核です。**
 > AIはこのマップを使って「どこに何があるか」を迷わず辿ってください。
 
 ### 2.1 リポジトリ直下（Public / OSS）
@@ -70,6 +71,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/system_prompt.md`：**AIエージェントの行動規範（最優先）**。
 - `00_Prompt/domain.md`：ドメイン用語・概念定義（KJ法概念、safeMode、レビュー等）。
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
+- `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 
 **注意**：AIの挙動規範は原則ここに集約。READMEには最小限の誘導のみ。
 
