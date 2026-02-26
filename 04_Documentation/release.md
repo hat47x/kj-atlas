@@ -83,3 +83,21 @@ git push origin v0.1.1
 - `Backend Docker build (no push)` が成功していること
 - `Frontend dist build + artifact` が成功していること
 - Artifacts に `frontend-dist-vX.Y.Z` が生成されていること
+
+## 8. main ブランチの Required checks 設定（回帰防止）
+
+`FB-RM-SEC-03` の運用として、GitHub の Branch protection rules で以下を **Required** に設定します。
+
+- `Frontend regression guards (import/serialization/shape)`
+- `Frontend lint + test`
+- `Backend lint + test`
+
+設定手順（GitHub UI）:
+
+1. `Settings` → `Branches` → `Branch protection rules`
+2. `main` 向けルールを作成/編集
+3. `Require status checks to pass before merging` を有効化
+4. 上記3ジョブ名を Required checks に追加して保存
+
+> ジョブ名を変更した場合、Required checks の設定も更新が必要です。
+
