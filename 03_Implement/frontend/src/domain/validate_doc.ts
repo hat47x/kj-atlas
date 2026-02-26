@@ -1,4 +1,5 @@
 import type { DocumentV2, EdgeType, EvidenceLink, Island, Narrative, PatchApplyLogEntry, RelationSummary } from "./types";
+import { isSelfIntersectingPolygon } from "./geometry/polygon_self_intersection";
 
 type ValidationSuccess = {
   ok: true;
@@ -195,6 +196,11 @@ function validateIslandGeometry(value: unknown, path: string, errors: string[]):
         valid = false;
       }
     });
+    if (valid && isSelfIntersectingPolygon(points as { x: number; y: number }[])) {
+      errors.push(`${path}.points: polygon must not self-intersect`);
+      return false;
+    }
+
     return valid;
   }
 
@@ -252,6 +258,11 @@ function validateIslandShape(value: unknown, path: string, errors: string[]): va
           valid = false;
         }
       });
+
+      if (valid && isSelfIntersectingPolygon(value.points as { x: number; y: number }[])) {
+        errors.push(`${path}.points: polygon must not self-intersect`);
+        valid = false;
+      }
     }
   } else if (value.points !== undefined) {
     errors.push(`${path}.points: rect shape must not include points`);

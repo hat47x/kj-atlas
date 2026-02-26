@@ -65,6 +65,7 @@
 - `e2e/smoke.spec.ts`
 - `e2e/collapse_persistence.spec.ts`
 - `e2e/safe_mode_export_guard.spec.ts`
+- `e2e/polygon_import_validation.spec.ts`（自己交差polygon importのフォールバック確認）
 
 ---
 
@@ -80,6 +81,7 @@ PR本文には最低限以下を記載する。
 例:
 
 - `npm run e2e`（Playwright）
+- `npm run e2e -- e2e/polygon_import_validation.spec.ts`
 - `curl http://localhost:8000/healthz`
 - `curl http://localhost:4173/api/healthz`
 

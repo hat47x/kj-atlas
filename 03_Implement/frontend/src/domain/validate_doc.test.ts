@@ -106,4 +106,30 @@ describe("validateDocumentV2Strict", () => {
 
     expect(result.errors).toContain("islands[0].shape.points: must contain at least 3 points for polygon");
   });
+
+  it("rejects self-intersecting polygon shape", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 120, y: 120 },
+              { x: 120, y: 0 },
+              { x: 0, y: 120 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain("islands[0].shape.points: polygon must not self-intersect");
+  });
 });
