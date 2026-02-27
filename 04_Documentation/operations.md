@@ -68,6 +68,7 @@ curl -fsS http://localhost:8080/api/health
 
 - 実行不能時（Docker未導入等）は、ブロッカー/代替検証/後続手順をPRに明記してください。
 - 本運用は「テストが通っていてもE2E未確認ならリスクを明示する」ことを目的とします。
+- 本節の内容は `04_Documentation/e2e_testing.md`（正本）と常に一致させます。
 
 ## 6. Docker未導入時の代替運用（SQLite + ローカル起動）
 
