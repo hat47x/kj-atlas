@@ -61,6 +61,7 @@ curl -fsS http://localhost:8080/api/health
 - `api` ログで `alembic upgrade head` が成功している
 - `curl` が HTTP 200 を返す
 - `http://localhost:8080` で画面が表示され、保存/読込など主要操作が1往復できる
+- E2E詳細手順の正本は `04_Documentation/e2e_testing.md` です。コマンド/受入基準は同書と一致させて運用してください。
 
 ## Docker未導入時の代替E2E手順（SQLite）
 

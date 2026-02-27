@@ -41,14 +41,7 @@
 - バッドスメルの再発時に「既知課題か」「新規課題か」をADR単位で追跡できる。
 - 将来の規約改定時は、本ADRを起点に更新履歴を残せる。
 
-## Follow-up Actions
-
-- [x] Frontend lint 強化案（ESLint導入方針）を `ADR-0002-internal-roadmap.md` へ反映する。（2026-02-26 完了）
-- [ ] `App.tsx` 分割の優先順（状態管理 / 描画 / import-export）を別ADRまたはIssueで計画化する。
-- [ ] Backend の `except Exception` 使用箇所を段階的に解消する。
-- [x] E2E確認漏れ再発防止として `coding_standards.md` のPRチェックリストへ E2E証跡確認項目を追加する。（2026-02-26 完了）
-
 ## Traceability
 
 - Implements: `01_Plans/coding_standards.md`
-- Related: `.github/workflows/ci.yml`, `CONTRIBUTING.md`
+- Related: `.github/workflows/ci.yml`, `CONTRIBUTING.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
