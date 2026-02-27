@@ -34,10 +34,15 @@
 
 ### 3.2 Phase2 分割
 
+
 - `01_Plans/adr/ADR-0013-phase2-requirements-split.md`（要求・データ/UI影響）
 - `01_Plans/adr/ADR-0014-phase2-acceptance-rollout-split.md`（受入基準・段階導入）
 
-### 3.3 CLI 分割
+### 3.3 運用分割
+
+- `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`（E2E確認方針）
+
+### 3.4 CLI 分割
 
 - `01_Plans/adr/ADR-0015-cli-scope-phasing.md`（対象範囲・段階導入）
 - `01_Plans/adr/ADR-0016-cli-command-contract.md`（コマンド体系・共通I/F）
