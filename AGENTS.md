@@ -30,7 +30,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 5) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 6) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 7) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0018`
+8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0019`
 9) **実装（03_Implement）**: 対象領域のソースへ
 10) **運用・手順**: `04_Documentation/*`（必要に応じて）
 11) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`

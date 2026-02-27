@@ -51,6 +51,23 @@
 17. `01_Plans` 配下の issue 記述は AIエージェントのコンテキスト保持（再開性向上）の補助用途に限定する。
 
 
+### 01_Plans issue補助メモのライフサイクル（2026-02-27 追記）
+
+18. `01_Plans` 配下の issue 補助メモは、**完了時に削除（garbage collection）** を標準とし、archive の常時蓄積は行わない。
+19. 完了時は次の順で処理する。
+    1) GitHub Issue を Close（Actionの完了）
+    2) 永続的に残す判断は ADR へ昇格（Decision/Context）
+    3) 完了事実は `CHANGELOG.md` 等へ要約（What）
+    4) 補助メモは `git rm` で削除
+20. 例外的に archive 保存を許可するのは、以下の一次データ保持が必要な場合のみ。
+    - 再発障害調査用の生ログ（例: stack trace, 時系列観測）
+    - 将来比較に必要な検証生データ（例: 性能測定）
+    - 監査/コンプライアンス上の記録保持
+21. archive 保存時はファイル冒頭に `Retention Reason` / `Review Due` / `Source Issue` を必須記載し、四半期棚卸しで不要化した記録を削除する。
+22. AIエージェントは補助メモを短命ドキュメントとして扱い、仕様判断が含まれる内容は補助メモへ滞留させず ADR 化を提案する。
+
+
+
 ## Consequences
 
 - どの判断が、どの要件・設計・実装に影響するかを追跡しやすくなる。
@@ -64,3 +81,4 @@
   `01_Plans/phase2_qualitative_integration.md`, `01_Plans/phase3_review_governance.md`,
   `01_Plans/phaseX_future_backlog.md`, `01_Plans/phaseX_cli_tool.md`,
   `01_Plans/phaseX_local_llm_integration.md`
+- Supersedes: `01_Plans/adr/ADR-0020-issue-context-lifecycle.md`
