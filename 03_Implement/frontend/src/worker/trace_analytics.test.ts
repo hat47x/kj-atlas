@@ -52,6 +52,33 @@ describe("computeTraceAnalytics", () => {
     expect(degreeTwo).toEqual(["c1", "c2"]);
   });
 
+  it("includes evidence link count, isolated nodes, and source density deterministically", () => {
+    const analytics = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", safeMode: true });
+
+    expect(analytics.evidenceLinkCount).toBe(4);
+    expect(analytics.isolatedNodeCount).toBe(0);
+    expect(analytics.isolatedNodeIds).toEqual([]);
+    expect(analytics.sourceDensity).toBe(1);
+  });
+
+  it("detects isolated nodes and keeps deterministic ordering", () => {
+    const docWithIsolated: DocumentV2 = {
+      ...fixtureDoc,
+      cards: [...fixtureDoc.cards, { id: "c0", text: "isolated", x: 0, y: 0 }, { id: "c5", text: "isolated2", x: 0, y: 0 }],
+    };
+    const analytics = computeTraceAnalytics(docWithIsolated, "c1", { kind: "both", safeMode: true });
+
+    expect(analytics.evidenceLinkCount).toBe(4);
+    expect(analytics.isolatedNodeCount).toBe(2);
+    expect(analytics.isolatedNodeIds).toEqual(["c0", "c5"]);
+    expect(analytics.sourceDensity).toBe(0.6667);
+
+    const markdown = buildTraceAnalyticsMd(analytics);
+    expect(markdown).toContain("## Isolated nodes");
+    expect(markdown).toContain("- card:c0");
+    expect(markdown).toContain("- card:c5");
+  });
+
   it("builds safe markdown with ids/counts only", () => {
     const analytics = computeTraceAnalytics(fixtureDoc, "c1", { kind: "both", safeMode: true });
     const markdown = buildTraceAnalyticsMd(analytics);
@@ -59,6 +86,9 @@ describe("computeTraceAnalytics", () => {
     expect(markdown).toContain("# Trace Analytics");
     expect(markdown).toContain("supports: 2");
     expect(markdown).toContain("card:c3 degree:3");
+    expect(markdown).toContain("- evidenceLinkCount: 4");
+    expect(markdown).toContain("- isolatedNodeCount: 0");
+    expect(markdown).toContain("- sourceDensity: 1");
     expect(markdown).toContain("Safe mode enforced: ids/counts only.");
     expect(markdown).not.toContain("SECRET_TEXT_DO_NOT_LEAK");
   });

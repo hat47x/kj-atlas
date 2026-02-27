@@ -27,7 +27,15 @@ export type TraceAnalytics = {
   evidenceLinkCountsByType: Record<EvidenceLink["type"], number>;
   depthDistribution: Array<{ depth: number; count: number }>;
   cycleCount: number | null;
+  evidenceLinkCount: number;
+  isolatedNodeCount: number;
+  isolatedNodeIds: string[];
+  sourceDensity: number;
 };
+
+function roundTo4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
 
 export function computeTraceAnalytics(doc: DocumentV2, startCardId: string, options: TraceAnalyticsOptions = {}): TraceAnalytics {
   const safeMode = options.safeMode ?? true;
@@ -57,12 +65,26 @@ export function computeTraceAnalytics(doc: DocumentV2, startCardId: string, opti
       evidenceLinkCountsByType: { supports: 0, contradicts: 0 },
       depthDistribution: [],
       cycleCount: includeCycleDetection ? 0 : null,
+      evidenceLinkCount: 0,
+      isolatedNodeCount: 0,
+      isolatedNodeIds: [],
+      sourceDensity: 0,
     };
   }
 
   const links = [...(doc.evidenceLinks ?? [])]
     .filter((link) => (kind === "both" ? true : kind === "evidence" ? link.type === "supports" : link.type === "contradicts"))
     .sort((left, right) => left.id.localeCompare(right.id));
+
+  const evidenceLinkCount = links.length;
+  const connectedCardIds = new Set<string>();
+  for (const link of links) {
+    connectedCardIds.add(link.fromCardId);
+    connectedCardIds.add(link.toCardId);
+  }
+  const isolatedNodeIds = [...cardsById.keys()].filter((cardId) => !connectedCardIds.has(cardId)).sort((left, right) => left.localeCompare(right));
+  const isolatedNodeCount = isolatedNodeIds.length;
+  const sourceDensity = roundTo4(evidenceLinkCount / Math.max(1, cardsById.size));
 
   const adjacency = new Map<string, Array<{ neighborId: string; linkId: string }>>();
   for (const link of links) {
@@ -160,6 +182,10 @@ export function computeTraceAnalytics(doc: DocumentV2, startCardId: string, opti
       .map(([depth, count]) => ({ depth: Number(depth), count }))
       .sort((left, right) => left.depth - right.depth),
     cycleCount,
+    evidenceLinkCount,
+    isolatedNodeCount,
+    isolatedNodeIds,
+    sourceDensity,
   };
 }
 
@@ -209,6 +235,9 @@ export function buildTraceAnalyticsMd(analytics: TraceAnalytics): string {
     `- maxNodes: ${analytics.maxNodes}`,
     `- visitedCards: ${analytics.visitedCardIds.length}`,
     `- visitedLinks: ${analytics.visitedLinkIds.length}`,
+    `- evidenceLinkCount: ${analytics.evidenceLinkCount}`,
+    `- isolatedNodeCount: ${analytics.isolatedNodeCount}`,
+    `- sourceDensity: ${analytics.sourceDensity}`,
     "",
     "## Evidence links by type",
     ...(relationEntries.length === 0 ? ["- (none)"] : relationEntries.map(([type, count]) => `- ${type}: ${count}`)),
@@ -225,6 +254,10 @@ export function buildTraceAnalyticsMd(analytics: TraceAnalytics): string {
     "## Notes",
     ...(analytics.notes.length === 0 ? ["- none"] : analytics.notes.map((note) => `- ${note}`)),
   ];
+
+  if (analytics.isolatedNodeIds.length > 0) {
+    lines.push("", "## Isolated nodes", ...analytics.isolatedNodeIds.map((cardId) => `- card:${cardId}`));
+  }
 
   return `${lines.join("\n")}\n`;
 }

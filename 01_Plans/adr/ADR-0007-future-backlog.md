@@ -82,7 +82,7 @@
 | FB-RM-UX-02 | 島の折りたたみ | P0 | Done (2026-02-26) | 階層Islandの collapse/expand と hit-test 制御を実装。collapse状態を island.collapsed と viewState の双方で保持し、descendant連鎖を共通ヘルパーへ統合。Collapse/Expand all を永続値へ同期。 | collapse時に配下要素が描画・選択対象から外れ、expandと再読込で復帰する | `FB-P2A-02` |
 | FB-RM-UX-03 | Polygon islands | P1 | Done (2026-02-26) | polygon shape の保存・再読込・互換読込を統合実装。`validateAndUpgradeImportedDocument` で自己交差polygonを自動破棄して card-bounds フォールバックへ退避し、`validateDocumentV2Strict` では自己交差を検証エラーとして拒否。polygon自己交差判定ユーティリティと回帰テストを追加。 | 欠損shapeで `rect` フォールバックしつつ編集継続でき、自己交差polygonが保存・厳格検証で受理されない | `FB-P2C-01..03` |
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Done (2026-02-26) | ヘッダー常設のSafeMode状態バッジ（ON/OFF）を追加し、クリックでShareパネルを開いて詳細を確認できる導線へ統一。Share & Reproduce内でSafeMode説明・export警告・「Share/Review Packでは赤字化が解除不可」の文言を共通ヘルパーで集約。`safe_mode_status.ts` / `safe_mode_status.test.ts` / `SharePanel.test.tsx` を追加し、文言と状態分岐を回帰固定。 | 閲覧者がヘッダーからSafeMode状態を即時確認でき、Share/export警告と解除不可モード表記が矛盾なく統一される | `03_Implement/frontend/src/ui/safe_mode_status.ts` |
-| FB-RM-RS-01 | Trace Analytics | P1 | Planned | 根拠リンク本数・孤立ノード・出典密度の集計を追加 | deterministicに同一入力で同一統計値を返す | 新規Issue化 |
+| FB-RM-RS-01 | Trace Analytics | P1 | Done (2026-02-27) | Trace Analytics に根拠リンク本数・孤立ノード・出典密度を追加し、UI/Export/Worker golden で同一集計値を参照できるよう統合。Map/Set→配列化時のソート順固定と roundTo4 により決定論を担保。 | 同一入力で同一統計値を返し、追加指標が markdown/export/UI で一貫表示される | `03_Implement/frontend/src/worker/trace_analytics.ts` |
 | FB-RM-RS-02 | 構造メトリクス | P1 | Planned | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | 新規Issue化 |
 | FB-RM-RS-03 | Diagnostics安定化 | P1 | Done (2026-02-26) | diagnostics出力schemaVersionを固定し、pre-release方針として `schemaVersion===1` のみ受理。invalid/unsupported version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type・diagnostics.error不正・必須フィールド欠落/型不正を検知してfallbackするテストを整備。`04_Documentation/diagnostics.md` を追加。 | current version以外はfallbackで安全に処理継続できる（unit testで固定） | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
 | FB-RM-SEC-01 | ZIP hardening | P0 | Done (2026-02-26) | import時の path traversal（相対/絶対/UNC/NUL）・zip bomb（総量/件数/単体サイズ/圧縮率）・許可拡張子制限を強化し、Z001/Z002で拒否。`zip_import.test.ts` と review-pack workflow 統合テストで回帰固定。 | 悪性fixtureで拒否・通常fixtureで成功する | `03_Implement/frontend/src/import/zip_import.ts` |
@@ -148,6 +148,17 @@
 - [x] `kj-atlas/view-mode-by-doc` に document単位で mode を保存。
 - [x] document読込時に保存済み mode を復元。
 - [x] `view_mode.test.ts` / `storage/view_mode.test.ts` で mode変換・保存値検証を追加。
+
+
+
+#### FB-RM-RS-01 実装TODO（完了ログ）
+
+- [x] `TraceAnalytics` 型へ `evidenceLinkCount` / `isolatedNodeCount` / `isolatedNodeIds` / `sourceDensity` を追加し、互換フィールドを維持した。
+- [x] `computeTraceAnalytics` で根拠リンク本数・孤立ノード・出典密度を決定論ソート（ID昇順）で算出するようにした。
+- [x] `buildTraceAnalyticsMd` に追加指標を出力し、孤立ノードがある場合のみ `## Isolated nodes` セクションを生成するようにした。
+- [x] `trace_analytics.test.ts` で追加指標・孤立ノード順序・決定論・markdown出力の回帰テストを先行追加して固定した。
+- [x] `worker_golden.test.ts` と fixture `trace_analytics_c1.md` を同期し、worker経路でも追加指標の出力を固定した。
+- [x] SidePanel の Trace Analytics 表示へ追加指標（Evidence links / Isolated nodes / Source density）を反映した。
 
 #### FB-RM-RS-03 実装TODO（完了ログ）
 
