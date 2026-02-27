@@ -2979,6 +2979,9 @@ export function SidePanel({
                   {traceAnalytics ? (
                     <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
                       <div>Visited cards: {traceAnalytics.visitedCardIds.length} / Visited links: {traceAnalytics.visitedLinkIds.length}</div>
+                      <div>Evidence links (doc): {traceAnalytics.evidenceLinkCount}</div>
+                      <div>Isolated nodes (doc): {traceAnalytics.isolatedNodeCount}</div>
+                      <div>Source density (doc): {traceAnalytics.sourceDensity.toFixed(4)}</div>
                       <div>Relation counts: {Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || "(none)"}</div>
                       <div>Depth histogram: {Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || "(none)"}</div>
                       <div>Top hubs: {traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || "(none)"}</div>

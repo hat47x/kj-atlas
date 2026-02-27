@@ -6,6 +6,9 @@
 - maxNodes: 80
 - visitedCards: 3
 - visitedLinks: 2
+- evidenceLinkCount: 2
+- isolatedNodeCount: 0
+- sourceDensity: 0.6667
 
 ## Evidence links by type
 - contradicts: 1
