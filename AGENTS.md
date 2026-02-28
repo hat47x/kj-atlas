@@ -80,6 +80,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 - `01_Plans/adr/ADR-0000-adr-governance.md`：ADR運用方針（採番・更新規約）。
 
+- `01_Plans/adr/TEMPLATE.md`：ADR標準テンプレート（人間/生成AI共通）。
+
 - `01_Plans/adr/ADR-0002-internal-roadmap.md`：開発内部向けロードマップ（公開版は直下 `ROADMAP.md`）。
 - `01_Plans/adr/ADR-0001-value-to-requirements.md`：価値観→要件の変換（判断基準）。
 - `01_Plans/adr/ADR-0003-phase0-bootstrap.md`：初期立ち上げ・環境。
@@ -93,6 +95,9 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`：バッドスメル是正と規約運用方針。
 - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`：E2E確認方針とCompose運用。
 - `01_Plans/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
+- `01_Plans/issues/README.md`：Issue補助メモのActive一覧（Draft/Open/In Progress）。
+- `01_Plans/issues/*.md`：GitHub Issue運用を補助する短命メモ（Done時は原則削除）。
+- `01_Plans/issues/TEMPLATE.md`：Issue補助メモの標準記述テンプレ（人間/生成AI共通）。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 

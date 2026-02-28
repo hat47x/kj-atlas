@@ -6,7 +6,7 @@ This roadmap prioritizes UX refinement, structural analysis tools, localization 
 
 この文書は、**開発コミュニティ向けの公開コミュニケーション文書**です。  
 詳細な実装順序・個別タスクは `01_Plans/` を参照してください。
-特に、ロードマップ項目を実装アクションへ分解した管理は `01_Plans/future_backlog.md` の「Roadmap統合バックログ」を正とします。
+特に、ロードマップ項目を実装アクションへ分解した管理は `01_Plans/adr/ADR-0007-future-backlog.md` の「Roadmap統合バックログ」を正とします。
 
 ## 基本方針
 

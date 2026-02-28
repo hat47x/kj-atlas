@@ -68,6 +68,25 @@
 
 
 
+
+### 01_Plans issue補助メモの配置・管理規約（2026-02-27 追記）
+
+23. `01_Plans` 配下の issue 補助メモは **`01_Plans/issues/` に配置**し、ルート直下へは置かない。
+24. 命名規則は `issue-<BacklogID>-<short-title>.md` を推奨し、Backlog/ADR/Issue の相互参照を先頭メタ情報へ明記する。
+25. `01_Plans/issues/README.md` を **index正本** とし、Active（Draft/Open/In Progress）のみを一覧化する。
+26. GitHub Issue が Done/Closed になった補助メモは、`README.md` の Active 一覧から外し、原則 `git rm` で削除する。
+27. 例外保存（Retention Reason あり）の場合のみ `01_Plans/issues/archive/` へ移動し、`Review Due` を設定する。
+28. `01_Plans/README.md` には個別 issue の固定一覧を持たず、`01_Plans/issues/README.md` への導線のみを置く（一覧の二重管理を避ける）。
+
+29. issue補助メモの本文構成は `01_Plans/issues/TEMPLATE.md` を標準とし、必須項目（Meta/Traceability/Acceptance criteria/Validation plan）を省略しない。
+30. `Source Issue`（GitHub URL）は Open化時に必須入力とし、Draft段階のみ `TBD` を許可する。
+31. 受入条件には、少なくとも「安全影響」「後方互換」「検証手順（コマンド）」の3要素を含める。
+32. 人間と生成AIの双方が再利用できるよう、issue補助メモは見出し固定（1)課題〜10)追加文脈）で記述する。
+
+33. 新規ADRは `01_Plans/adr/TEMPLATE.md` を雛形として作成し、必須ヘッダ/必須章の欠落を禁止する。
+34. ADRの初期Statusは原則 `Proposed` とし、合意時に `Accepted` へ更新する。
+35. ADR本文へ実装進捗（チェックボックス等）は記載せず、進捗管理はIssueへ分離する。
+
 ## Consequences
 
 - どの判断が、どの要件・設計・実装に影響するかを追跡しやすくなる。
