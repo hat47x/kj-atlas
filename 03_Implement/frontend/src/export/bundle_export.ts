@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import type { DocumentV2 } from "../domain/types";
 import { buildContradictionTraceMd } from "../domain/view/contradiction_trace";
 import { analyzeContradictions, type ContradictionReport } from "../domain/view/contradiction_checks";
@@ -12,6 +11,7 @@ import type { ReadingMode } from "../domain/view/reading_path";
 import { DiagnosticsWorkerClient } from "../worker/diagnostics_client";
 import { TraceWorkerClient } from "../worker/trace_client";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "../worker/trace_analytics";
+import { BundleZipWorkerClient } from "../worker/bundle_zip_client";
 
 export type BundleFile = {
   path: string;
@@ -311,13 +311,20 @@ export async function buildExportBundleWithWorkers(
   return [...bundleFiles].sort((left, right) => left.path.localeCompare(right.path));
 }
 
-export async function buildBundleZipBlob(files: BundleFile[]): Promise<Blob> {
-  const zip = new JSZip();
-  for (const file of [...files].sort((left, right) => left.path.localeCompare(right.path))) {
-    zip.file(file.path, file.content);
+export async function buildBundleZipBlob(
+  files: BundleFile[],
+  options: { signal?: AbortSignal; onProgress?: (percent: number) => void } = {},
+): Promise<Blob> {
+  const bundleZipClient = new BundleZipWorkerClient();
+  try {
+    const outcome = await bundleZipClient.buildZip({ files }, options);
+    if (outcome.status === "cancelled") {
+      throw new Error("Bundle zip cancelled");
+    }
+    return new Blob([outcome.result.zipBuffer], { type: "application/zip" });
+  } finally {
+    bundleZipClient.dispose();
   }
-
-  return zip.generateAsync({ type: "blob" });
 }
 
 export function downloadBlobAsFile(filename: string, blob: Blob): void {
