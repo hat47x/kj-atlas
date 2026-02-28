@@ -23,16 +23,40 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
     def test_parse_active_rows_extracts_table_entries(self) -> None:
         readme = textwrap.dedent(
             """
+            ## Active issue memos
             | Backlog ID | Memo | Status | Source Issue |
             |---|---|---|---|
             | FB-1 | `issue-fb-1.md` | Draft | TBD |
             | DOC-1 | `issue-doc-1.md` | Open | https://example.com/1 |
+
+            ## Completed locally (Source Issue pending)
+            | Backlog ID | Memo | Status | Source Issue | Notes |
+            |---|---|---|---|---|
+            | FB-2 | `issue-fb-2.md` | Done (Local) | TBD | note |
             """
         )
         rows = parse_active_rows(readme)
         self.assertEqual(2, len(rows))
         self.assertEqual("issue-fb-1.md", rows[0].memo)
         self.assertEqual("Open", rows[1].status)
+
+
+    def test_parse_active_rows_ignores_non_active_sections(self) -> None:
+        readme = textwrap.dedent(
+            """
+            ## Active issue memos
+            | Backlog ID | Memo | Status | Source Issue |
+            |---|---|---|---|
+            | DOC-1 | `issue-doc-1.md` | Draft | TBD |
+
+            ## Completed locally (Source Issue pending)
+            | Backlog ID | Memo | Status | Source Issue | Notes |
+            |---|---|---|---|---|
+            | DOC-2 | `issue-doc-2.md` | Done (Local) | TBD | note |
+            """
+        )
+        rows = parse_active_rows(readme)
+        self.assertEqual(["issue-doc-1.md"], [row.memo for row in rows])
 
     def test_extract_verification_level(self) -> None:
         memo = "- Expected verification level: `integration`\n"
@@ -44,6 +68,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             (root / "README.md").write_text(
                 textwrap.dedent(
                     """
+                    ## Active issue memos
                     | Backlog ID | Memo | Status | Source Issue |
                     |---|---|---|---|
                     | DOC-REL-01 | `issue-doc.md` | In Progress | TBD |
@@ -75,6 +100,7 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             (root / "README.md").write_text(
                 textwrap.dedent(
                     """
+                    ## Active issue memos
                     | Backlog ID | Memo | Status | Source Issue |
                     |---|---|---|---|
                     | DOC-REL-01 | `issue-doc.md` | Draft | TBD |

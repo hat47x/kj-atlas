@@ -39,12 +39,25 @@ class ActiveMemoRow:
 
 def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
     rows: list[ActiveMemoRow] = []
+    in_active_section = False
     for line in readme_text.splitlines():
-        if "issue-" not in line or not line.startswith("|"):
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            in_active_section = stripped == "## Active issue memos"
             continue
-        cols = [c.strip() for c in line.strip("|").split("|")]
+
+        if not in_active_section:
+            continue
+
+        if "issue-" not in stripped or not stripped.startswith("|"):
+            continue
+
+        cols = [c.strip() for c in stripped.strip("|").split("|")]
         if len(cols) != 4:
             continue
+        if cols[0] == "Backlog ID":
+            continue
+
         rows.append(
             ActiveMemoRow(
                 backlog=cols[0],

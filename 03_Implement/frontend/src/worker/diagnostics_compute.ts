@@ -72,6 +72,10 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
   lines.push(`| evidenceLinkCount | ${data.structuralMetrics.evidenceLinkCount} |`);
   lines.push(`| evidenceLinkDensity | ${data.structuralMetrics.evidenceLinkDensity} |`);
   lines.push(`| isolatedCardCount | ${data.structuralMetrics.isolatedCardCount} |`);
+  lines.push(`| connectedComponentCount | ${data.structuralMetrics.connectedComponentCount} |`);
+  lines.push(`| largestComponentRatio | ${data.structuralMetrics.largestComponentRatio} |`);
+  lines.push(`| degreeP95 | ${data.structuralMetrics.degreeP95} |`);
+  lines.push(`| bridgeEdgeCount | ${data.structuralMetrics.bridgeEdgeCount} |`);
   if (data.structuralMetrics.contradictionRatio !== null) {
     lines.push(`| contradictionRatio | ${data.structuralMetrics.contradictionRatio} |`);
   }

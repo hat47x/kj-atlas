@@ -39,6 +39,36 @@ describe("worker compute goldens", () => {
   });
 
 
+  it("diagnostics metrics flag disconnected and bottleneck structures", () => {
+    const doc: DocumentV2 = {
+      version: 2,
+      id: "doc-bridge",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0 },
+        { id: "c2", text: "B", x: 1, y: 0 },
+        { id: "c3", text: "C", x: 2, y: 0 },
+        { id: "c4", text: "D", x: 3, y: 0 },
+      ],
+      edges: [
+        { id: "r1", fromId: "c1", toId: "c2", type: "related" },
+        { id: "r2", fromId: "c2", toId: "c3", type: "related" },
+      ],
+      islands: [
+        { id: "i1", cardIds: ["c1", "c2", "c3"], shape: { kind: "rect" } },
+        { id: "i2", cardIds: ["c4"], shape: { kind: "rect" } },
+      ],
+    };
+
+    const output = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false }, options: { safeMode: true } });
+    expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
+    expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.75 |");
+    expect(output.diagnosticsMd).toContain("| degreeP95 | 2 |");
+    expect(output.diagnosticsMd).toContain("| bridgeEdgeCount | 2 |");
+  });
+
   it("diagnostics metrics remain safe and omit unavailable optional rows", () => {
     const doc: DocumentV2 = {
       version: 2,
@@ -57,6 +87,10 @@ describe("worker compute goldens", () => {
     const output = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false }, options: { safeMode: true } });
     expect(output.diagnosticsMd).toContain("## Metrics");
     expect(output.diagnosticsMd).toContain("| evidenceLinkCount | 0 |");
+    expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
+    expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.5 |");
+    expect(output.diagnosticsMd).toContain("| degreeP95 | 0 |");
+    expect(output.diagnosticsMd).toContain("| bridgeEdgeCount | 0 |");
     expect(output.diagnosticsMd).not.toContain("reviewedCoverage");
     expect(output.diagnosticsMd).not.toContain("contradictionRatio");
     expect(output.diagnosticsMd).not.toContain("SECRET-A");

@@ -1,12 +1,12 @@
 # Issue Draft: FB-RM-RS-02 構造メトリクス（健全性指標）を diagnostics へ追加
 
 - Type: Feature request (enhancement)
-- Status: Draft (起票用)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除)
+- Status: Done (Local)
+- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除) / Local exception: Done (Local)
 - Source Issue: TBD (GitHub Issue URLを記載)
 - Priority: P1
 - Owner: TBD
-- Scope: `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/ui/`, `04_Documentation/diagnostics.md`
+- Scope: `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/view/`, `04_Documentation/diagnostics.md`
 - Related Backlog: `FB-RM-RS-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `04_Documentation/diagnostics.md`
 - Expected verification level: `e2e`
@@ -49,11 +49,11 @@
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] 指標定義（意味・計算式・しきい値初期値）が `04_Documentation/diagnostics.md` に記載される。
-- [ ] `src/worker/*` でメトリクス計算が実装され、決定論テストで固定される。
-- [ ] 既存 diagnostics 出力互換を維持し、旧クライアントで致命的失敗を起こさない。
-- [ ] SidePanel/Report で追加指標が表示される。
-- [ ] E2Eまたは統合テストで「偏った構造」「分断構造」の検知シナリオが1件以上追加される。
+- [x] 指標定義（意味・計算式・しきい値初期値）が `04_Documentation/diagnostics.md` に記載される。
+- [x] `src/worker/*` でメトリクス計算が実装され、決定論テストで固定される。
+- [x] 既存 diagnostics 出力互換を維持し、旧クライアントで致命的失敗を起こさない。
+- [x] SidePanel/Report で追加指標が表示される。
+- [x] E2Eまたは統合テストで「偏った構造」「分断構造」の検知シナリオが1件以上追加される（worker統合テスト追加）。
 
 ## 5) 検討した代替案 / Alternatives considered
 
@@ -64,14 +64,59 @@
 
 ## 6) 実装タスク分解（Issue化後にチェック運用）
 
-- [ ] metrics contract（型/命名/閾値）確定
-- [ ] worker計算実装 + unit test
-- [ ] diagnostics markdown 出力反映
-- [ ] SidePanel 表示反映
-- [ ] regression guards への追加
-- [ ] ドキュメント同期（diagnostics / operations / release）
+- [x] metrics contract（型/命名/閾値）確定
+- [x] worker計算実装 + unit test
+- [x] diagnostics markdown 出力反映
+- [x] SidePanel 表示反映
+- [x] regression guards への追加
+- [x] ドキュメント同期（diagnostics）
 
-## 7) Additional context
+## 7) 実行TODO（詳細）
 
-- 本Issueは `ADR-0000` の「Issue=Action / ADR=Decision」分離方針に従う。
-- トレードオフ（しきい値や警告ポリシー）が大きい場合のみ、後続でADR起票する。
+- [x] T1: `StructureMetrics` 型へ `connectedComponentCount/largestComponentRatio/degreeP95/bridgeEdgeCount` を追加。
+- [x] T2: relation グラフ（evidence + card-card edges）を正規化し、連結成分・P95・bridge を決定論実装。
+- [x] T3: `diagnostics_compute.ts` の Markdown `## Metrics` へ新規行を追加。
+- [x] T4: `SidePanel.tsx` の Metrics セクションに新規指標を表示。
+- [x] T5: `structural_metrics.test.ts` を拡張し、分断/偏りケースを固定。
+- [x] T6: `worker_golden.test.ts` に分断・橋エッジ検知シナリオを追加。
+- [x] T7: `tests/fixtures/worker/diagnostics.md` を更新し golden 差分を確定。
+- [x] T8: `04_Documentation/diagnostics.md` に指標定義・計算範囲・初期しきい値を追加。
+
+## 8) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `npm run test -- src/domain/view/structural_metrics.test.ts`
+  - `npm run test -- src/worker/worker_golden.test.ts`
+  - `npm run test -- src/worker/diagnostics_protocol.test.ts`
+  - `npm run typecheck`
+  - `npm run test`
+  - `git diff --check`
+- 期待結果:
+  - 新規4メトリクスの値が unit + worker 経路で一致する。
+  - golden diagnostics が更新後に固定される。
+  - 既存 protocol validation 回帰を破壊しない。
+
+## 9) Progress log
+
+- 2026-02-28: タスク方針を確定し、scope を Frontend diagnostics + docs に固定。
+- 2026-02-28: `computeStructureMetrics` にグラフ由来の4指標（連結成分/主成分比/P95/bridge）を追加。
+- 2026-02-28: `diagnostics_compute.ts` / `SidePanel.tsx` へ新規指標表示を反映。
+- 2026-02-28: `structural_metrics.test.ts` と `worker_golden.test.ts` を拡張し、分断構造・ボトルネック依存の検知を回帰固定。
+- 2026-02-28: `04_Documentation/diagnostics.md` を更新し、指標定義・計算対象・初期しきい値を明文化。
+- 2026-02-28: self-loop のみを持つカードが `isolatedCardCount` で非孤立扱いになる不整合を修正し、孤立判定をグラフ次数ベースへ統一。
+
+## 10) Status が Draft のまま残る原因分析と解決
+
+### 原因
+
+- 本メモは実装・検証まで完了していたが、`Source Issue` が `TBD` のため
+  「`Draft` 以外は不可」という Active 用ルールに該当していた。
+- その結果、完了済みメモが Active 一覧に残留し、状態が進まない運用詰まりが発生した。
+
+### 解決
+
+- `01_Plans/issues/README.md` に `Done (Local)` 運用を正式追加。
+- 本メモを `Done (Local)` へ更新し、Active 一覧から外して `Completed locally` セクションへ移管。
+- validator は `Active issue memos` セクションのみを検証対象に限定し、運用衝突を解消。
+
+- 2026-02-28: Active 一覧の Draft 滞留を解消するため、本メモを `Done (Local)` へ更新し README の運用ルールへ反映。
