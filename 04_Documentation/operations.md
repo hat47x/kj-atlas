@@ -41,6 +41,12 @@ docker compose logs api --tail=100
 - ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
+### Bundle export の監査ファイル
+
+- `Export bundle (.zip)` には `merge_decision_audit.json` が同梱されます。
+- 本ファイルには merge decision の監査最小情報（`decisionId` / `groupId` / `decisionType` / `actorType` / `decidedAt` / `representativeCardId` / `sourceCardIds`）を含みます。
+- 同一入力で同一出力となるよう、decision と cardIds は決定論順序で出力されます。
+
 ## 4. セキュリティ運用メモ（MVP）
 
 - 公開時は API を直接公開せず、Nginx / Traefik などのリバースプロキシ配下で TLS 終端してください。

@@ -8,6 +8,7 @@ import { analyzeOutlineQuality, type OutlineQualityReport } from "../domain/view
 import { buildReadingOutlineMd, type ReadingOutlineOptions, type ReadingOutlineState } from "../domain/view/reading_outline";
 import { generateRecommendations } from "../domain/view/recommendations";
 import type { ReadingMode } from "../domain/view/reading_path";
+import { buildMergeDecisionAuditEntries } from "../domain/merge_decision_audit";
 import { DiagnosticsWorkerClient } from "../worker/diagnostics_client";
 import { TraceWorkerClient } from "../worker/trace_client";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "../worker/trace_analytics";
@@ -169,6 +170,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/document.json`, doc),
+    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
 
@@ -229,6 +231,7 @@ export async function buildExportBundleWithWorkers(
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
     toJsonFile(`${root}/document.json`, doc),
+    toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
   if (context.includeOutline) {

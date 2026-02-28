@@ -95,7 +95,7 @@
 |---|---|---|---|---|---|---|
 | FB-RM-MID-01 | 類似度検出 | P1 | Done (2026-02-28) | `collectMergeCandidates` を導入し、normalized-text / token-signature の2段 heuristic で merge candidate をローカル生成。source/merged済み card を除外し、group/card順序を安定ソートで固定。UI導線は API 呼び出しから deterministic local batch へ置換。 | 同一入力で candidate group と group内 card 順が一致し、候補一覧で対象Cardを確認できる（AC-2B-1整合） | `FB-P2B-01` |
 | FB-RM-MID-02 | 統合候補提示 | P1 | Done (2026-02-28) | Merge Suggestions を4アクション（accept/partial/reject/defer）へ更新し、decision log (`mergeSuggestionDecisions`) を document に保存。候補再収集時に latest decision と編集済みテキストを復元し、自動 canonical merge を無効化。Frontend strict validation / backend roundtrip を同期。 | 自動確定なしで人間承認履歴が残り、保存再読込後も decision 状態を再現できる | `FB-P2B-02` |
-| FB-RM-MID-03 | 統合ログ監査 | P2 | Planned | merge decision log を監査用にエクスポート可能化 | representative と source の追跡が可能 | `FB-P2B-03..04` |
+| FB-RM-MID-03 | 統合ログ監査 | P2 | Done (2026-02-28) | bundle export に `merge_decision_audit.json` を追加し、decisionId/groupId/decisionType/actorType/decidedAt と representative-source 追跡情報を決定論で出力。 | 同一入力で同一監査ログを出力でき、representative と source の追跡が可能 | `FB-P2B-03..04` |
 | FB-RM-MID-04 | 階層質的統合 | P1 | Planned | sub-island + 表札（見出し）カード + レベル切替UIを段階導入 | level切替で表示粒度のみ変化しデータ欠落しない | `FB-P2A-*` |
 | FB-RM-MID-05 | 構造レベル別export | P2 | Planned | overview/detail の2階層出力をサポート | 同一Documentから複数粒度でexport可能 | 新規Issue化 |
 | FB-RM-MID-06 | 共通LLM adapter | P1 | Planned | provider abstraction（none/local/large-scale）を定義し、同一枠組みで切替可能にする | decision確定APIを提供せず、provider切替でUI/監査仕様が一貫する | `P-07`, `AI-07-*` |
@@ -239,3 +239,12 @@
 - [x] 候補再収集時に latest decision / edited text を復元するよう `App.tsx` を更新。
 - [x] Frontend strict validator (`validate_doc.ts`) に decision schema 検証を追加。
 - [x] Backend `DocumentV2` モデルと docs roundtrip test を更新し、PUT/GETで decision log 保持を確認。
+
+
+#### FB-RM-MID-03 実装TODO（完了ログ）
+
+- [x] `src/domain/merge_decision_audit.ts` を追加し、merge decision から監査エントリ（decisionType/actorType/representative/source）を生成する決定論ロジックを実装。
+- [x] `src/export/bundle_export.ts` を更新し、bundle に `merge_decision_audit.json` を常時同梱。
+- [x] `src/domain/merge_decision_audit.test.ts` を追加し、代表カード解決と source 追跡・時系列安定ソートを回帰固定。
+- [x] `src/export/bundle_export.test.ts` を拡張し、bundle出力に監査JSONが含まれることと payload 内容を回帰固定。
+- [x] `04_Documentation/operations.md` に bundle監査ファイルの運用メモを追加。
