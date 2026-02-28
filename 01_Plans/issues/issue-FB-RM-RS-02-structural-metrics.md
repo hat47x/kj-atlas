@@ -6,8 +6,10 @@
 - Source Issue: TBD (GitHub Issue URLを記載)
 - Priority: P1
 - Owner: TBD
+- Scope: `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/ui/`, `04_Documentation/diagnostics.md`
 - Related Backlog: `FB-RM-RS-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `04_Documentation/diagnostics.md`
+- Expected verification level: `e2e`
 - Related Principles: `P-03` (レビュー追跡), `P-06` (視点制御), `P-07` (privacy-by-default)
 
 ## 1) 課題 / Problem statement

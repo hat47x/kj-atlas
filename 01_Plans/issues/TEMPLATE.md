@@ -9,6 +9,17 @@
 - Scope: `<directory_or_docs>`
 - Related Backlog: `<FB-...>` (なければ `N/A`)
 - Related ADR/Spec: `<ADR-xxxx ...>`
+- Expected verification level: `<docs-check / unit / integration / e2e>`
+
+
+## Expected verification level values
+
+- `docs-check`: ドキュメント整合性のみを確認（リンク/参照/必須メタ/体裁）。
+- `unit`: docs-checkに加えて、対象ロジックの単体テストを実施。
+- `integration`: unitに加えて、境界I/Fを含む結合テストを実施。
+- `e2e`: integrationに加えて、ユーザーフロー（UI/API連動）を検証。
+
+> 宣言したレベル未満の検証で完了扱いにしない。未実施時は理由と代替検証を `Validation plan` に明記する。
 
 ## 1) 課題 / Problem statement
 
@@ -41,7 +52,7 @@
 - [ ] 利用者視点の完了条件
 - [ ] 実装/ドキュメント整合条件
 - [ ] 安全性/互換性条件
-- [ ] 必要な検証（unit/integration/e2e/docs-check）
+- [ ] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
