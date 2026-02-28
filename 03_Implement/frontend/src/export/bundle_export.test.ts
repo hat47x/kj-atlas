@@ -226,4 +226,102 @@ describe("buildExportBundle", () => {
   });
 
 
+test("uses bundle zip worker progress/result when available", async () => {
+  const postMessage = vi.fn();
+  globalThis.Worker = class {
+    private readonly listeners = new Set<(event: MessageEvent) => void>();
+
+    constructor() {}
+
+    addEventListener(_type: string, listener: (event: MessageEvent) => void): void {
+      this.listeners.add(listener);
+    }
+
+    removeEventListener(_type: string, listener: (event: MessageEvent) => void): void {
+      this.listeners.delete(listener);
+    }
+
+    postMessage(message: { requestId: string }): void {
+      postMessage(message);
+      const zip = new JSZip();
+      zip.file("a.txt", "a");
+      void zip.generateAsync({ type: "arraybuffer" }).then((buffer) => {
+        for (const listener of this.listeners) {
+          listener({ data: { type: "bundle.zip.progress", requestId: message.requestId, percent: 55 } } as MessageEvent);
+          listener({ data: { type: "bundle.zip.result", requestId: message.requestId, result: { zipBuffer: buffer } } } as MessageEvent);
+        }
+      });
+    }
+
+    terminate(): void {}
+  } as unknown as typeof Worker;
+
+  const progress: number[] = [];
+  const blob = await buildBundleZipBlob([{ path: "a.txt", content: "a", mime: "text/plain" }], {
+    onProgress: (percent) => progress.push(percent),
+  });
+
+  expect(postMessage).toHaveBeenCalledOnce();
+  expect(progress).toContain(55);
+  const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+  expect(Object.keys(zip.files)).toContain("a.txt");
+});
+
+test("falls back to main-thread zip when bundle worker init fails", async () => {
+  globalThis.Worker = class {
+    constructor() {
+      throw new Error("worker unavailable");
+    }
+  } as unknown as typeof Worker;
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+  const blob = await buildBundleZipBlob([{ path: "b.txt", content: "b", mime: "text/plain" }]);
+  const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+
+  expect(Object.keys(zip.files)).toContain("b.txt");
+  expect(warn).toHaveBeenCalled();
+});
+
+test("returns cancellation error when bundle zip is aborted", async () => {
+  let capturedRequestId = "";
+  globalThis.Worker = class {
+    private readonly listeners = new Set<(event: MessageEvent) => void>();
+
+    constructor() {}
+
+    addEventListener(_type: string, listener: (event: MessageEvent) => void): void {
+      this.listeners.add(listener);
+    }
+
+    removeEventListener(_type: string, listener: (event: MessageEvent) => void): void {
+      this.listeners.delete(listener);
+    }
+
+    postMessage(message: { type: string; requestId: string }): void {
+      if (message.type === "bundle.zip.request") {
+        capturedRequestId = message.requestId;
+        return;
+      }
+
+      if (message.type === "bundle.zip.cancel") {
+        for (const listener of this.listeners) {
+          listener({ data: { type: "bundle.zip.cancelled", requestId: capturedRequestId } } as MessageEvent);
+        }
+      }
+    }
+
+    terminate(): void {}
+  } as unknown as typeof Worker;
+
+  const controller = new AbortController();
+  const promise = buildBundleZipBlob([{ path: "c.txt", content: "c", mime: "text/plain" }], {
+    signal: controller.signal,
+  });
+
+  controller.abort();
+
+  await expect(promise).rejects.toThrow("Bundle zip cancelled");
+});
+
+
 });

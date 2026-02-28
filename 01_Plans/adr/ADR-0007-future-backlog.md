@@ -86,7 +86,7 @@
 | FB-RM-RS-02 | 構造メトリクス | P1 | Planned (Issue draft: 2026-02-27) | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | `01_Plans/issues/issue-FB-RM-RS-02-structural-metrics.md` |
 | FB-RM-RS-03 | Diagnostics安定化 | P1 | Done (2026-02-26) | diagnostics出力schemaVersionを固定し、pre-release方針として `schemaVersion===1` のみ受理。invalid/unsupported version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type・diagnostics.error不正・必須フィールド欠落/型不正を検知してfallbackするテストを整備。`04_Documentation/diagnostics.md` を追加。 | current version以外はfallbackで安全に処理継続できる（unit testで固定） | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
 | FB-RM-SEC-01 | ZIP hardening | P0 | Done (2026-02-26) | import時の path traversal（相対/絶対/UNC/NUL）・zip bomb（総量/件数/単体サイズ/圧縮率）・許可拡張子制限を強化し、Z001/Z002で拒否。`zip_import.test.ts` と review-pack workflow 統合テストで回帰固定。 | 悪性fixtureで拒否・通常fixtureで成功する | `03_Implement/frontend/src/import/zip_import.ts` |
-| FB-RM-SEC-02 | Worker安定化 | P1 | Planned | 長時間処理を worker/off-main-thread へ寄せる | UIスレッドblockの再現ケースが解消される | 新規Issue化 |
+| FB-RM-SEC-02 | Worker安定化 | P1 | Done (2026-02-28) | Bundle export の zip 生成を `bundle_zip.worker.ts` + `bundle_zip_client.ts` へ移管し、worker unavailable 時は scheduler fallback を維持。`buildBundleZipBlob` に cancellation/progress を接続し、`bundle_export.test.ts` で worker/fallback/cancel を回帰固定。 | 大規模 export でも zip 圧縮で UI 応答が阻害されず、abort 時は cancelled として終了できる | `03_Implement/frontend/src/worker/bundle_zip_client.ts` |
 | FB-RM-SEC-03 | CI回帰防止 | P0 | Done (2026-02-26) | import/serialization/shape互換の回帰テスト群を `test:regression-guards` として固定し、CIに専用ジョブ `Frontend regression guards (import/serialization/shape)` を追加。branch protection に required check として設定する手順を運用ドキュメントに明記。 | import/serialization/shape互換の回帰テストがCI専用ジョブで常時実行され、required check設定手順が文書化されている | `.github/workflows/ci.yml` |
 
 ### Mid-term Vision（統合）
@@ -181,6 +181,17 @@
 - [x] Integration: `src/diff/review_pack_workflow.integration.test.ts` の悪性ZIP拒否を維持。
 
 
+
+
+
+#### FB-RM-SEC-02 実装TODO（完了ログ）
+
+- [x] `bundle_zip_protocol.ts` を追加し request/progress/result/cancel/error のメッセージ契約を定義した。
+- [x] `bundle_zip.worker.ts` を追加し、zip圧縮を off-main-thread で実行する経路を実装した。
+- [x] `bundle_zip_client.ts` を追加し、worker unavailable 時は main-thread scheduler fallback へ退避するようにした。
+- [x] `buildBundleZipBlob` を worker client 経由へ置換し、abort signal/progress 連携を実装した。
+- [x] `App.tsx` の bundle export で zip progress を表示し、cancelled を失敗扱いしないようにした。
+- [x] `bundle_export.test.ts` に worker/fallback/cancel 回帰を追加し、`test:regression-guards` で通過確認した。
 
 #### FB-RM-SEC-03 実装TODO（完了ログ）
 

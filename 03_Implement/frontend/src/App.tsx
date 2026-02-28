@@ -6348,7 +6348,10 @@ ${parsedDocument.error}`);
         }
         ctx.reportProgress({ message: "Working... zipping bundle", completed: 3, total: 3 });
         await ctx.yieldToMainThread();
-        const zipBlob = await buildBundleZipBlob(files);
+        const zipBlob = await buildBundleZipBlob(files, {
+          signal: controller.signal,
+          onProgress: (percent) => ctx.reportProgress({ message: `Working... zipping bundle (${percent}%)`, completed: 3, total: 3 }),
+        });
         return { files, zipBlob };
       });
       unsubscribe();
@@ -6362,7 +6365,11 @@ ${parsedDocument.error}`);
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Bundle export failed";
-      setStatusMessage(`Bundle export failed: ${message}`);
+      if (message.toLowerCase().includes("cancelled")) {
+        setStatusMessage("Bundle export cancelled");
+      } else {
+        setStatusMessage(`Bundle export failed: ${message}`);
+      }
     } finally {
       setIsBundleExportRunning(false);
       setComputeProgressMessage(null);

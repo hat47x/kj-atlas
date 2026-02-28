@@ -79,6 +79,7 @@ issue補助メモには、最低でも次の項目を含める。
 |---|---|---|---|---|
 | FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done (Local) | TBD | 実装/検証は完了。GitHub Issue 起票後に Source Issue を追記する。 |
 | DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done (Local) | TBD | Source Issue 未確定のためローカル完了として管理。URL確定時に `Done` へ更新する。 |
+| FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done (Local) | TBD | zip生成を worker/off-main-thread 化し、fallback/cancel/progress を回帰テストで固定。 |
 
 ## Done (Local) 運用ルール
 
