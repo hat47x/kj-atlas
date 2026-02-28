@@ -63,7 +63,8 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Draft | TBD |
+
+現在、Active issue memos はありません。
 
 ## Rules
 
@@ -77,6 +78,7 @@ issue補助メモには、最低でも次の項目を含める。
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
 | FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done (Local) | TBD | 実装/検証は完了。GitHub Issue 起票後に Source Issue を追記する。 |
+| DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done (Local) | TBD | Source Issue 未確定のためローカル完了として管理。URL確定時に `Done` へ更新する。 |
 
 ## Done (Local) 運用ルール
 

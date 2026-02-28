@@ -69,6 +69,16 @@ def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
     return rows
 
 
+
+
+def extract_field_value(memo_text: str, field_name: str) -> str | None:
+    pattern = rf"^- {re.escape(field_name)}:\s*(.+)$"
+    match = re.search(pattern, memo_text, re.M)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
 def extract_verification_level(memo_text: str) -> str | None:
     match = re.search(r"^- Expected verification level:\s*`([^`]+)`", memo_text, re.M)
     if not match:
@@ -96,10 +106,20 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
                 f"(allowed: {sorted(ALLOWED_VERIFICATION_LEVELS)})"
             )
 
+        memo_status = extract_field_value(text, "Status")
+        memo_source = extract_field_value(text, "Source Issue")
+
         if row.status != "Draft" and row.source == "TBD":
             errors.append(
                 f"{row.memo}: status is {row.status} but Source Issue is TBD in index"
             )
+
+        if memo_status and memo_source:
+            if memo_status != row.status or memo_source != row.source:
+                errors.append(
+                    f"{row.memo}: index status/source mismatch "
+                    f"(index=({row.status}, {row.source}), memo=({memo_status}, {memo_source}))"
+                )
 
     return errors
 

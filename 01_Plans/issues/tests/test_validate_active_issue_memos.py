@@ -126,6 +126,91 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertTrue(any("invalid Expected verification level" in err for err in errors))
 
+    def test_validate_detects_index_and_memo_status_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    ## Active issue memos
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | In Progress | https://example.com/1 |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: Open
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: https://example.com/1
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("index status/source mismatch" in err for err in errors))
+
+    def test_validate_detects_index_and_memo_source_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    ## Active issue memos
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | Open | https://example.com/1 |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: Open
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: https://example.com/2
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("index status/source mismatch" in err for err in errors))
+
+    def test_validate_allows_empty_active_table(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    ## Active issue memos
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+
+                    ## Completed locally (Source Issue pending)
+                    | Backlog ID | Memo | Status | Source Issue | Notes |
+                    |---|---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | Done (Local) | TBD | note |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertEqual([], errors)
+
 
 if __name__ == "__main__":
     unittest.main()
