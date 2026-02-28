@@ -23,10 +23,21 @@ const baseDoc: DocumentV2 = {
   edges: [],
   islands: [{ id: "i1", cardIds: ["c1", "c2"], title: "Island", summaryText: "Summary", summaryReviewed: true }],
   evidenceLinks: [{ id: "e1", type: "supports", fromCardId: "c1", toCardId: "c2" }],
+  mergeSuggestionDecisions: [
+    {
+      id: "decision-1",
+      groupId: "group-1",
+      decision: "accept",
+      decidedAt: "2026-01-02T00:00:00.000Z",
+      cardIds: ["c2", "c1"],
+      mergedTextDraft: "fact+claim",
+      editedText: "fact claim",
+    },
+  ],
 };
 
 describe("buildExportBundle", () => {
-  test("always includes document.json and view.json and sorted by path", () => {
+  test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
       rootFolderPath: "kj-atlas-export-20260101-010203",
       safeMode: true,
@@ -49,7 +60,54 @@ describe("buildExportBundle", () => {
 
     expect(files.map((file) => file.path)).toEqual([
       "kj-atlas-export-20260101-010203/document.json",
+      "kj-atlas-export-20260101-010203/merge_decision_audit.json",
       "kj-atlas-export-20260101-010203/view.json",
+    ]);
+  });
+
+  test("merge decision audit json contains representative-source traceability", () => {
+    const docWithRepresentative: DocumentV2 = {
+      ...baseDoc,
+      cards: [
+        { id: "c1", text: "fact", x: 0, y: 0, claimType: "fact", textReviewed: true, mergedIntoCardId: "c-rep" },
+        { id: "c2", text: "claim", x: 10, y: 10, claimType: "claim", textReviewed: true, mergedIntoCardId: "c-rep" },
+        { id: "c-rep", text: "rep", x: 20, y: 20, repOf: ["c1", "c2"] },
+      ],
+    };
+    const files = buildExportBundle(docWithRepresentative, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const auditRaw = files.find((file) => file.path.endsWith("/merge_decision_audit.json"));
+    expect(auditRaw).toBeDefined();
+    const parsed = JSON.parse(String(auditRaw?.content)) as { entries: Array<Record<string, unknown>> };
+    expect(parsed.entries).toEqual([
+      {
+        actorType: "human",
+        cardIds: ["c1", "c2"],
+        decisionId: "decision-1",
+        decisionType: "accept",
+        decidedAt: "2026-01-02T00:00:00.000Z",
+        groupId: "group-1",
+        representativeCardId: "c-rep",
+        sourceCardIds: ["c1", "c2"],
+      },
     ]);
   });
 
