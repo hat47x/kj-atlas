@@ -1,9 +1,12 @@
 import type { Card } from "../domain/types";
 import type { MergeSuggestion } from "../api/client";
+import type { MergeSuggestionDecision } from "../domain/merge_suggestion_decisions";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
   isEdited: boolean;
+  latestDecision?: MergeSuggestionDecision;
+  latestDecidedAt?: string;
 };
 
 type MergeSuggestionsPanelProps = {
@@ -15,8 +18,7 @@ type MergeSuggestionsPanelProps = {
   suggestions: MergeSuggestionDraft[];
   cardsById: Map<string, Card>;
   onMergedTextChange: (groupId: string, value: string) => void;
-  onApply: (groupId: string) => void;
-  onDismiss: (groupId: string) => void;
+  onDecide: (groupId: string, decision: MergeSuggestionDecision) => void;
 };
 
 function snippet(text: string): string {
@@ -25,6 +27,21 @@ function snippet(text: string): string {
     return trimmed;
   }
   return `${trimmed.slice(0, 80)}...`;
+}
+
+function decisionLabel(decision: MergeSuggestionDecision | undefined): string {
+  switch (decision) {
+    case "accept":
+      return "Accepted";
+    case "partial":
+      return "Partially accepted";
+    case "reject":
+      return "Rejected";
+    case "defer":
+      return "Deferred";
+    default:
+      return "Not reviewed";
+  }
 }
 
 export function MergeSuggestionsPanel({
@@ -36,8 +53,7 @@ export function MergeSuggestionsPanel({
   suggestions,
   cardsById,
   onMergedTextChange,
-  onApply,
-  onDismiss,
+  onDecide,
 }: MergeSuggestionsPanelProps) {
   return (
     <section
@@ -76,7 +92,13 @@ export function MergeSuggestionsPanel({
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       {suggestions.map((suggestion) => (
         <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Cards in candidate group</div>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>Cards in candidate group</div>
+            <div style={{ fontSize: 11, color: "#334155" }}>
+              Decision: {decisionLabel(suggestion.latestDecision)}
+              {suggestion.latestDecidedAt ? ` (${new Date(suggestion.latestDecidedAt).toLocaleString()})` : ""}
+            </div>
+          </div>
           <ul style={{ margin: "0 0 8px", paddingLeft: 18 }}>
             {suggestion.cardIds.map((cardId) => {
               const card = cardsById.get(cardId);
@@ -114,16 +136,14 @@ export function MergeSuggestionsPanel({
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Rationale: {suggestion.rationale}</div>
           ) : null}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={() => onApply(suggestion.groupId)}>
-              Adopt as Canonical
-            </button>
-            <button type="button" onClick={() => onDismiss(suggestion.groupId)}>
-              Dismiss
-            </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" onClick={() => onDecide(suggestion.groupId, "accept")}>Accept</button>
+            <button type="button" onClick={() => onDecide(suggestion.groupId, "partial")}>Partially accept</button>
+            <button type="button" onClick={() => onDecide(suggestion.groupId, "reject")}>Reject</button>
+            <button type="button" onClick={() => onDecide(suggestion.groupId, "defer")}>Defer</button>
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
-            Traceability: Source cards are retained and can be shown via View Controls.
+            Decisions are recorded only; no automatic canonical merge is executed.
           </div>
         </article>
       ))}

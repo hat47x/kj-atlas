@@ -18,6 +18,8 @@ function buildProps() {
         editedText: "Risk mitigation",
         isEdited: false,
         rationale: "heuristic:normalized-text",
+        latestDecision: "defer" as const,
+        latestDecidedAt: "2026-02-28T10:00:00.000Z",
       },
     ],
     cardsById: new Map([
@@ -25,20 +27,25 @@ function buildProps() {
       ["b", { id: "b", text: "risk mitigation", x: 10, y: 0 }],
     ]),
     onMergedTextChange: vi.fn(),
-    onApply: vi.fn(),
-    onDismiss: vi.fn(),
+    onDecide: vi.fn(),
   };
 }
 
 describe("MergeSuggestionsPanel", () => {
-  it("shows deterministic-heuristic guidance and candidate cards", () => {
+  it("shows deterministic-heuristic guidance, decision status, and four decision actions", () => {
     const html = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, buildProps()));
 
     expect(html).toContain("Similar card merge candidates");
     expect(html).toContain("Deterministic heuristic only (no AI decision)");
     expect(html).toContain("Cards in candidate group");
+    expect(html).toContain("Decision: Deferred");
     expect(html).toContain("a: Risk mitigation");
     expect(html).toContain("b: risk mitigation");
     expect(html).toContain("Rationale: heuristic:normalized-text");
+    expect(html).toContain("Accept");
+    expect(html).toContain("Partially accept");
+    expect(html).toContain("Reject");
+    expect(html).toContain("Defer");
+    expect(html).toContain("no automatic canonical merge is executed");
   });
 });

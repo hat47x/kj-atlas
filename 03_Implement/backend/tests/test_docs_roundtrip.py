@@ -173,6 +173,37 @@ def _sample_payload_v2_with_canonical(doc_id: str) -> dict:
 
 
 
+
+
+def _sample_payload_v2_with_merge_suggestion_decisions(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-merge-decisions",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {"id": "card-1", "text": "alpha", "x": 12.5, "y": -9.0},
+            {"id": "card-2", "text": "Alpha", "x": 212.5, "y": 91.0},
+        ],
+        "edges": [],
+        "islands": [],
+        "mergeSuggestionDecisions": [
+            {
+                "id": "decision-1",
+                "groupId": "heuristic-alpha-card-1-card-2",
+                "decision": "defer",
+                "decidedAt": "2026-02-11T00:03:00Z",
+                "cardIds": ["card-1", "card-2"],
+                "mergedTextDraft": "alpha",
+                "editedText": "alpha",
+                "rationale": "heuristic:normalized-text",
+            }
+        ],
+    }
+
+
 def _sample_payload_v2_with_relation_summaries(doc_id: str) -> dict:
     return {
         "version": 2,
@@ -284,6 +315,24 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     assert get_islands_by_id["parent-island"]["collapsed"] is True
     assert get_islands_by_id["child-island"]["collapsed"] is False
 
+
+
+
+
+def _assert_v2_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-merge-decisions"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    assert put_json["mergeSuggestionDecisions"][0]["decision"] == "defer"
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+    assert get_json["mergeSuggestionDecisions"][0]["id"] == "decision-1"
+    assert get_json["mergeSuggestionDecisions"][0]["groupId"] == "heuristic-alpha-card-1-card-2"
 
 
 def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
@@ -442,6 +491,16 @@ def test_docs_v2_canonical_roundtrip_sqlite(sqlite_client: TestClient) -> None:
 def test_docs_v2_canonical_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_canonical_roundtrip(postgres_client)
 
+
+
+
+def test_docs_v2_merge_suggestion_decisions_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_merge_suggestion_decisions_roundtrip(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_merge_suggestion_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_merge_suggestion_decisions_roundtrip(postgres_client)
 
 def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_relation_summary_roundtrip(sqlite_client)

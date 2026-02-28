@@ -266,6 +266,18 @@ class DocumentV1(BaseModel):
     edges: list[EdgeV1]
 
 
+
+
+class MergeSuggestionDecision(BaseModel):
+    id: str
+    groupId: str
+    decision: Literal["accept", "partial", "reject", "defer"]
+    decidedAt: datetime
+    cardIds: list[str]
+    mergedTextDraft: str
+    editedText: str
+    rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -280,6 +292,7 @@ class DocumentV2(BaseModel):
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
     relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
+    mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

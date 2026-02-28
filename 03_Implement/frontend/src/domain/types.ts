@@ -219,6 +219,20 @@ export type DocumentV2 = {
   relationSummaries?: RelationSummary[];
   evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
+  mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+};
+
+export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";
+
+export type MergeSuggestionDecisionEntry = {
+  id: string;
+  groupId: string;
+  decision: MergeSuggestionDecision;
+  decidedAt: string;
+  cardIds: string[];
+  mergedTextDraft: string;
+  editedText: string;
+  rationale?: string;
 };
 
 export type PatchApplyStats = {

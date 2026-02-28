@@ -1,4 +1,14 @@
-import type { DocumentV2, EdgeType, EvidenceLink, Island, Narrative, PatchApplyLogEntry, RelationSummary } from "./types";
+import type {
+  DocumentV2,
+  EdgeType,
+  EvidenceLink,
+  Island,
+  MergeSuggestionDecision,
+  MergeSuggestionDecisionEntry,
+  Narrative,
+  PatchApplyLogEntry,
+  RelationSummary,
+} from "./types";
 import { isSelfIntersectingPolygon } from "./geometry/polygon_self_intersection";
 
 type ValidationSuccess = {
@@ -621,6 +631,60 @@ function validateEvidenceLink(item: unknown, index: number, errors: string[]): i
   return valid;
 }
 
+
+function validateMergeSuggestionDecision(value: unknown): value is MergeSuggestionDecision {
+  return value === "accept" || value === "partial" || value === "reject" || value === "defer";
+}
+
+function validateMergeSuggestionDecisionEntry(
+  item: unknown,
+  index: number,
+  errors: string[]
+): item is MergeSuggestionDecisionEntry {
+  const path = `mergeSuggestionDecisions[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["id", "groupId", "decision", "decidedAt", "cardIds", "mergedTextDraft", "editedText", "rationale"], path, errors);
+
+  let valid = true;
+  if (typeof item.id !== "string") {
+    errors.push(`${path}.id: must be a string`);
+    valid = false;
+  }
+  if (typeof item.groupId !== "string") {
+    errors.push(`${path}.groupId: must be a string`);
+    valid = false;
+  }
+  if (!validateMergeSuggestionDecision(item.decision)) {
+    errors.push(`${path}.decision: must be 'accept' | 'partial' | 'reject' | 'defer'`);
+    valid = false;
+  }
+  if (typeof item.decidedAt !== "string") {
+    errors.push(`${path}.decidedAt: must be a string`);
+    valid = false;
+  }
+  if (!validateStringArray(item.cardIds, `${path}.cardIds`, errors)) {
+    valid = false;
+  }
+  if (typeof item.mergedTextDraft !== "string") {
+    errors.push(`${path}.mergedTextDraft: must be a string`);
+    valid = false;
+  }
+  if (typeof item.editedText !== "string") {
+    errors.push(`${path}.editedText: must be a string`);
+    valid = false;
+  }
+  if (item.rationale !== undefined && typeof item.rationale !== "string") {
+    errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+
+  return valid;
+}
+
 function validateNarrative(item: unknown, index: number, errors: string[]): item is Narrative {
   const path = `narratives[${index}]`;
   if (!isRecord(item)) {
@@ -667,7 +731,7 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
 
   hasOnlyKeys(
     value,
-    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "evidenceLinks", "patchApplyLog"],
+    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "evidenceLinks", "patchApplyLog", "mergeSuggestionDecisions"],
     "document",
     errors
   );
@@ -783,6 +847,16 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
     } else {
       value.patchApplyLog.forEach((item, index) => {
         validatePatchApplyLogEntry(item, index, errors);
+      });
+    }
+  }
+
+  if (value.mergeSuggestionDecisions !== undefined) {
+    if (!Array.isArray(value.mergeSuggestionDecisions)) {
+      errors.push("document.mergeSuggestionDecisions: must be an array when provided");
+    } else {
+      value.mergeSuggestionDecisions.forEach((item, index) => {
+        validateMergeSuggestionDecisionEntry(item, index, errors);
       });
     }
   }

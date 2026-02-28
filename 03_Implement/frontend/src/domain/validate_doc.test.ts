@@ -132,4 +132,49 @@ describe("validateDocumentV2Strict", () => {
 
     expect(result.errors).toContain("islands[0].shape.points: polygon must not self-intersect");
   });
+
+
+  it("accepts merge suggestion decisions", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      mergeSuggestionDecisions: [
+        {
+          id: "decision-1",
+          groupId: "heuristic-a-b",
+          decision: "defer",
+          decidedAt: now,
+          cardIds: ["c1", "c2"],
+          mergedTextDraft: "A",
+          editedText: "A",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects merge suggestion decisions with invalid status", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      mergeSuggestionDecisions: [
+        {
+          id: "decision-1",
+          groupId: "heuristic-a-b",
+          decision: "approved",
+          decidedAt: now,
+          cardIds: ["c1", "c2"],
+          mergedTextDraft: "A",
+          editedText: "A",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain(
+      "mergeSuggestionDecisions[0].decision: must be 'accept' | 'partial' | 'reject' | 'defer'"
+    );
+  });
+
 });
