@@ -900,6 +900,10 @@ export function SidePanel({
         <div>evidence link count: {structuralMetrics.evidenceLinkCount}</div>
         <div>evidence link density: {structuralMetrics.evidenceLinkDensity.toFixed(4)}</div>
         <div>isolated cards: {structuralMetrics.isolatedCardCount}</div>
+        <div>connected components: {structuralMetrics.connectedComponentCount}</div>
+        <div>largest component ratio: {structuralMetrics.largestComponentRatio.toFixed(4)}</div>
+        <div>degree p95: {structuralMetrics.degreeP95}</div>
+        <div>bridge edges: {structuralMetrics.bridgeEdgeCount}</div>
         {structuralMetrics.contradictionRatio === null ? null : <div>contradiction ratio: {structuralMetrics.contradictionRatio.toFixed(4)}</div>}
         {structuralMetrics.reviewedCoverage === null ? null : <div>reviewed coverage: {structuralMetrics.reviewedCoverage.toFixed(4)}</div>}
       </div>

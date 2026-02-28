@@ -6,6 +6,7 @@ Decisionは ADR、Action は GitHub Issue で管理し、本ディレクトリ�
 ## Scope
 
 - 対象: Active な issue 補助メモ（Draft / Open / In Progress）
+- 例外: Source Issue 未発行でも実装完了を記録する `Done (Local)`
 - 正本: GitHub Issues
 - ライフサイクル: Draft -> Open -> In Progress -> Done -> GC(削除)
 
@@ -62,7 +63,6 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Draft | TBD |
 | DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Draft | TBD |
 
 ## Rules
@@ -71,3 +71,18 @@ issue補助メモには、最低でも次の項目を含める。
 2. ファイル名は `issue-<BacklogID>-<short-title>.md` を推奨。
 3. Done/Close 後は `git rm` を標準とし、一覧から削除する。
 4. 例外保存が必要な場合のみ `archive/` へ移し、`Retention Reason` / `Review Due` / `Source Issue` を先頭に記載する。
+
+## Completed locally (Source Issue pending)
+
+| Backlog ID | Memo | Status | Source Issue | Notes |
+|---|---|---|---|---|
+| FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done (Local) | TBD | 実装/検証は完了。GitHub Issue 起票後に Source Issue を追記する。 |
+
+## Done (Local) 運用ルール
+
+`Done (Local)` は、**実装と検証は完了しているが GitHub Issue URL が未発行**のときだけ使う補助ステータス。
+
+1. `Done (Local)` は Active issue memos には載せない。
+2. `Done (Local)` は `Completed locally` セクションで管理する。
+3. `Source Issue` が確定したら、メモへURLを追記し、必要に応じて `Done` へ更新する。
+4. validator の機械検証対象は `Active issue memos` のみとし、`Completed locally` は対象外とする。

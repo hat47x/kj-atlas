@@ -53,6 +53,10 @@
 | evidenceLinkCount | 2 |
 | evidenceLinkDensity | 0.6667 |
 | isolatedCardCount | 0 |
+| connectedComponentCount | 1 |
+| largestComponentRatio | 1 |
+| degreeP95 | 2 |
+| bridgeEdgeCount | 2 |
 | contradictionRatio | 0.5 |
 
 ### islandSizeDistribution
