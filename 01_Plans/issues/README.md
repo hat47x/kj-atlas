@@ -13,17 +13,35 @@ Decisionは ADR、Action は GitHub Issue で管理し、本ディレクトリ�
 
 1. `TEMPLATE.md` をコピーして起票草案を作成する。
 2. `Type / Priority / Scope / Related ADR` を先に埋める。
-3. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
-4. `Source Issue` に GitHub Issue URL を記入してから実装着手する。
+3. `Expected verification level`（`docs-check` / `unit` / `integration` / `e2e`）を先に宣言する。
+4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
+5. `Source Issue` に GitHub Issue URL を記入してから実装着手する。
 
 ## Required fields（最低必須）
 
 issue補助メモには、最低でも次の項目を含める。
 
 - Meta: `Type`, `Status`, `Lifecycle`, `Source Issue`, `Priority`, `Scope`
+- Quality gate: `Expected verification level`
 - Traceability: `Related Backlog`, `Related ADR/Spec`
 - Execution: `Proposed solution`, `Acceptance criteria`, `Task breakdown`, `Validation plan`
 - Safety/Compatibility: 安全影響・互換影響・非目標
+
+
+## Expected verification level（運用ガイド）
+
+`Expected verification level` は「最低限どこまで検証するか」の宣言です。
+上位レベルを選んだ場合は、下位レベルの検証を内包して実施します。
+
+| Level | 最低実施内容 | 代表コマンド例 |
+|---|---|---|
+| `docs-check` | 参照リンク・整形・必須メタ検査 | `rg -n ...` / `git diff --check` |
+| `unit` | `docs-check` + 対象モジュール単体テスト | `pytest <target>` / `npm test -- <target>` |
+| `integration` | `unit` + サービス間結合検証 | `docker compose ...` / API結合テスト |
+| `e2e` | `integration` + ユーザーフロー検証 | `playwright test ...` |
+
+> 詳細なE2E運用は `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` と
+> `04_Documentation/e2e_testing.md` を正本とする。
 
 ## Quality checklist（レビュー観点）
 
@@ -31,11 +49,14 @@ issue補助メモには、最低でも次の項目を含める。
 - AGENTS.mdの4判断軸（価値/安全/企業行政/後方互換）で優先度を説明できるか。
 - 実装者が「次の1手」を迷わない粒度（再開可能タスク）になっているか。
 - テスト・検証がコマンド単位で書かれているか。
+- `Expected verification level` と `Validation plan` が矛盾していないか。
 - Done時に削除/ADR昇格/CHANGELOG反映の出口条件が明記されているか。
 
 ## Template
 
 - 作成雛形: `01_Plans/issues/TEMPLATE.md`
+- 機械検証: `python 01_Plans/issues/validate_active_issue_memos.py`
+- ユニットテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 
 ## Active issue memos
 

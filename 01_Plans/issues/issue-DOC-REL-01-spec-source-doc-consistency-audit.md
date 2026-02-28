@@ -8,6 +8,7 @@
 - Owner: TBD
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related ADR/Spec: `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement
 
@@ -18,7 +19,7 @@
 - 実装済み/未実装の判定に余計なレビューコストがかかる。
 - AIエージェントが誤った参照先を追って変更範囲を誤る。
 
-## 2) 現時点で確認された主要ギャップ（2026-02-27）
+## 2) 現時点で確認された主要ギャップ（2026-02-27, 監査時点の記録）
 
 ### A. 参照整合性ギャップ（Doc -> Doc）
 
@@ -59,19 +60,50 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `ROADMAP.md` の正本参照が `ADR-0007` へ一致している。
-- [ ] issue運用導線（ADR-0000 / 01_Plans/README / issues/README）の役割分担が重複なく説明される。
-- [ ] Active issue memo すべてに `Lifecycle` と `Source Issue` が存在する。
-- [ ] 新規 issue memo テンプレ（命名・必須メタ情報）が文書化される。
+- [x] `ROADMAP.md` の正本参照が `ADR-0007` へ一致している。
+- [x] issue運用導線（ADR-0000 / 01_Plans/README / issues/README）の役割分担が重複なく説明される。
+- [x] Active issue memo すべてに `Lifecycle` と `Source Issue` が存在する。
+- [x] 新規 issue memo テンプレ（命名・必須メタ情報）が文書化される。
 
 ## 6) 実装タスク分解（Issue化後にチェック運用）
 
-- [ ] stale参照検査（docsリンク監査）
-- [ ] issue memoテンプレート（最小雛形）追加
-- [ ] backlog -> issue memo -> GitHub Issue の追跡確認手順を定義
-- [ ] 四半期棚卸しチェックリストを運用文書へ反映
+- [x] stale参照検査（docsリンク監査）
+- [x] issue memoテンプレート（最小雛形）追加
+- [x] backlog -> issue memo -> GitHub Issue の追跡確認手順を定義
+- [x] 四半期棚卸しチェックリストを運用文書へ反映
 
 ## 7) Additional context
 
 - 本Issueは「実装機能追加」ではなく、設計・運用・実装の関係性を維持するための品質管理Issue。
 - トレードオフが大きい運用変更（例: 例外保存ポリシー変更）は、必要に応じて別ADR化する。
+
+
+## 8) 実行TODO（詳細）
+
+- [x] T1: stale参照を棚卸しし、`ROADMAP.md` の正本リンク一致を再確認する。
+- [x] T2: issue運用の起点を `01_Plans/issues/README.md` に明文化し、`01_Plans/README.md` とADR-0000の導線重複を解消する。
+- [x] T3: `01_Plans/issues/TEMPLATE.md` に検証レベル（docs-check/unit/integration/e2e）を必須メタとして追加する。
+- [x] T4: Active issue memo のメタ情報（Lifecycle/Source Issue）を機械検証する。
+- [x] T5: 監査結果を本メモへ反映し、完了条件チェックを更新する。
+- [x] T6: `validate_active_issue_memos.py` を関数分割し、検証レベルの妥当値チェックを追加する。
+- [x] T7: validator のユニットテストを追加し、status/source 整合と validation level 異常系を固定する。
+
+## 9) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `rg -n "01_Plans/future_backlog\.md|ADR-0007-future-backlog" ROADMAP.md 01_Plans/README.md 01_Plans/issues/README.md 01_Plans/issues/TEMPLATE.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 期待結果:
+  - stale参照が運用正本（ROADMAP/01_Plans README群）で検出されない。
+  - Active issue memo が required fields を満たす。
+  - Markdown差分に whitespace error がない。
+
+## 10) Progress log
+
+- 2026-02-28: 参照整合性の監査を実施。ROADMAPの正本参照は `ADR-0007` で整合済みであることを確認。
+- 2026-02-28: issue運用導線の重複を整理し、`Expected verification level` をテンプレート/READMEへ反映。
+- 2026-02-28: Active issue memo 必須メタ項目の機械検証手順を追加。
+- 2026-02-28: `Source Issue` が `TBD` のため、運用規約に合わせて本メモの `Status` は Draft を維持。進行中扱いは Source Issue URL 記載後に更新する。
+- 2026-02-28: validator の仕様を強化（allowed verification level 判定）し、ユニットテストを追加して回帰防止を導入。

@@ -75,6 +75,7 @@
 
 ## 7. Issue補助メモ運用（Action管理）
 
-- `01_Plans/issues/README.md` を issue補助メモ一覧の正本とする。
+- `01_Plans/issues/README.md` を issue補助メモ一覧と作業開始手順の正本とする。
+- `01_Plans/README.md` は導線のみを保持し、個別Issue運用ルールの本文は `01_Plans/issues/README.md` に集約する。
 - Active（Draft/Open/In Progress）のみ `01_Plans/issues/README.md` に掲載し、Done は削除（必要時のみ archive）する。
 - 運用ルールの詳細は `01_Plans/adr/ADR-0000-adr-governance.md` の「Issue補助メモのライフサイクル／配置・管理規約」を参照する。

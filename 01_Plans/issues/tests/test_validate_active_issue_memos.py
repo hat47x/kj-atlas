@@ -1,0 +1,105 @@
+from __future__ import annotations
+
+import importlib.util
+import sys
+import tempfile
+import textwrap
+import unittest
+from pathlib import Path
+
+MODULE_PATH = Path(__file__).resolve().parents[1] / "validate_active_issue_memos.py"
+SPEC = importlib.util.spec_from_file_location("validate_active_issue_memos", MODULE_PATH)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+sys.modules[SPEC.name] = MODULE
+SPEC.loader.exec_module(MODULE)
+
+extract_verification_level = MODULE.extract_verification_level
+parse_active_rows = MODULE.parse_active_rows
+validate = MODULE.validate
+
+
+class ValidateActiveIssueMemosTest(unittest.TestCase):
+    def test_parse_active_rows_extracts_table_entries(self) -> None:
+        readme = textwrap.dedent(
+            """
+            | Backlog ID | Memo | Status | Source Issue |
+            |---|---|---|---|
+            | FB-1 | `issue-fb-1.md` | Draft | TBD |
+            | DOC-1 | `issue-doc-1.md` | Open | https://example.com/1 |
+            """
+        )
+        rows = parse_active_rows(readme)
+        self.assertEqual(2, len(rows))
+        self.assertEqual("issue-fb-1.md", rows[0].memo)
+        self.assertEqual("Open", rows[1].status)
+
+    def test_extract_verification_level(self) -> None:
+        memo = "- Expected verification level: `integration`\n"
+        self.assertEqual("integration", extract_verification_level(memo))
+
+    def test_validate_detects_status_source_inconsistency(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | In Progress | TBD |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: In Progress
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: TBD
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("Source Issue is TBD" in err for err in errors))
+
+    def test_validate_detects_invalid_verification_level(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | Draft | TBD |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: Draft
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: TBD
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `smoke`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("invalid Expected verification level" in err for err in errors))
+
+
+if __name__ == "__main__":
+    unittest.main()
