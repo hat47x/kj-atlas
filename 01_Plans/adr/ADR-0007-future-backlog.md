@@ -94,7 +94,7 @@
 | ID | テーマ | 優先度 | 状態 | 具体アクション | DoD（完了条件） | 参照 |
 |---|---|---|---|---|---|---|
 | FB-RM-MID-01 | 類似度検出 | P1 | Done (2026-02-28) | `collectMergeCandidates` を導入し、normalized-text / token-signature の2段 heuristic で merge candidate をローカル生成。source/merged済み card を除外し、group/card順序を安定ソートで固定。UI導線は API 呼び出しから deterministic local batch へ置換。 | 同一入力で candidate group と group内 card 順が一致し、候補一覧で対象Cardを確認できる（AC-2B-1整合） | `FB-P2B-01` |
-| FB-RM-MID-02 | 統合候補提示 | P1 | Planned | 採用/部分採用/却下/後で を記録できるUI | 自動確定なしで人間承認履歴が残る | `FB-P2B-02` |
+| FB-RM-MID-02 | 統合候補提示 | P1 | Done (2026-02-28) | Merge Suggestions を4アクション（accept/partial/reject/defer）へ更新し、decision log (`mergeSuggestionDecisions`) を document に保存。候補再収集時に latest decision と編集済みテキストを復元し、自動 canonical merge を無効化。Frontend strict validation / backend roundtrip を同期。 | 自動確定なしで人間承認履歴が残り、保存再読込後も decision 状態を再現できる | `FB-P2B-02` |
 | FB-RM-MID-03 | 統合ログ監査 | P2 | Planned | merge decision log を監査用にエクスポート可能化 | representative と source の追跡が可能 | `FB-P2B-03..04` |
 | FB-RM-MID-04 | 階層質的統合 | P1 | Planned | sub-island + 表札（見出し）カード + レベル切替UIを段階導入 | level切替で表示粒度のみ変化しデータ欠落しない | `FB-P2A-*` |
 | FB-RM-MID-05 | 構造レベル別export | P2 | Planned | overview/detail の2階層出力をサポート | 同一Documentから複数粒度でexport可能 | 新規Issue化 |
@@ -229,3 +229,13 @@
 - [x] `validate_doc.test.ts` / `validate.test.ts` / `polygon_self_intersection.test.ts` を追加・更新し、自己交差ケースの回帰を固定した。
 - [x] E2E追加有無を確認し、本改修は Domain validation（非UI導線）中心で Playwright シナリオ追加対象外だったため、PRに未追加理由と代替検証（unit + regression-guards）を明記する運用へ修正した（ADR-0018連携）。
 - [x] Playwright E2E `e2e/polygon_import_validation.spec.ts` を追加し、自己交差polygonを含む document.json の取込→置換→bundle export で shape が除去されることを実動作で確認した。
+
+
+#### FB-RM-MID-02 実装TODO（完了ログ）
+
+- [x] `MergeSuggestionsPanel` を accept/partial/reject/defer の4アクションに更新。
+- [x] `mergeSuggestionDecisions` を `DocumentV2` に追加し、decision append log を保存可能化。
+- [x] decision記録時に自動 canonical merge を実行しないフローへ変更。
+- [x] 候補再収集時に latest decision / edited text を復元するよう `App.tsx` を更新。
+- [x] Frontend strict validator (`validate_doc.ts`) に decision schema 検証を追加。
+- [x] Backend `DocumentV2` モデルと docs roundtrip test を更新し、PUT/GETで decision log 保持を確認。

@@ -19,7 +19,6 @@ import { IslandView } from "./canvas/IslandView";
 import { getEdgesToRender } from "./domain/edge_aggregate";
 import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./domain/layout_ops";
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
-import { applyCanonicalization } from "./domain/canonical_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
 import { computeConvexHull } from "./domain/geometry/convex_hull";
 import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
@@ -28,6 +27,11 @@ import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
 import { collectMergeCandidates } from "./domain/merge_candidates";
+import {
+  appendMergeSuggestionDecision,
+  getLatestMergeSuggestionDecisionByGroup,
+  type MergeSuggestionDecision,
+} from "./domain/merge_suggestion_decisions";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -269,6 +273,8 @@ type MergeSuggestionDraft = {
   rationale?: string;
   editedText: string;
   isEdited: boolean;
+  latestDecision?: MergeSuggestionDecision;
+  latestDecidedAt?: string;
 };
 
 type PendingImportedDocument = {
@@ -561,6 +567,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     readingOrder: [],
     narratives: [],
     evidenceLinks: [],
+    mergeSuggestionDecisions: [],
   };
 }
 
@@ -590,6 +597,7 @@ function createNewDocument(docId: string): DocumentV2 {
     islands: [],
     narratives: [],
     evidenceLinks: [],
+    mergeSuggestionDecisions: [],
   };
 }
 
@@ -611,6 +619,7 @@ function toDocumentV2(document: Document): DocumentV2 {
       readingOrder: document.readingOrder ?? [],
       narratives: document.narratives ?? [],
       evidenceLinks: document.evidenceLinks ?? [],
+      mergeSuggestionDecisions: document.mergeSuggestionDecisions ?? [],
     };
   }
 
@@ -621,6 +630,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     readingOrder: [],
     narratives: [],
     evidenceLinks: [],
+    mergeSuggestionDecisions: [],
   };
 }
 
@@ -2119,12 +2129,18 @@ export default function App() {
 
     try {
       const result = { suggestions: collectMergeCandidates(document) };
+      const latestDecisionByGroup = getLatestMergeSuggestionDecisionByGroup(document.mergeSuggestionDecisions);
       setMergeSuggestions(
-        result.suggestions.map((suggestion) => ({
-          ...suggestion,
-          editedText: suggestion.mergedTextDraft,
-          isEdited: false,
-        }))
+        result.suggestions.map((suggestion) => {
+          const latestDecision = latestDecisionByGroup.get(suggestion.groupId);
+          return {
+            ...suggestion,
+            editedText: latestDecision?.editedText ?? suggestion.mergedTextDraft,
+            isEdited: (latestDecision?.editedText ?? suggestion.mergedTextDraft) !== suggestion.mergedTextDraft,
+            latestDecision: latestDecision?.decision,
+            latestDecidedAt: latestDecision?.decidedAt,
+          };
+        })
       );
       setMergeSuggestionError(null);
       setStatusMessage(
@@ -2154,14 +2170,10 @@ export default function App() {
           : suggestion
       )
     );
-  }, [abstractMapView, summaryView]);
+  }, []);
 
-  const handleDismissMergeSuggestion = useCallback((groupId: string) => {
-    setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((suggestion) => suggestion.groupId !== groupId));
-  }, [abstractMapView, summaryView]);
-
-  const handleApplyMergeSuggestion = useCallback(
-    (groupId: string) => {
+  const handleRecordMergeSuggestionDecision = useCallback(
+    (groupId: string, decision: MergeSuggestionDecision) => {
       if (!document) {
         return;
       }
@@ -2171,27 +2183,36 @@ export default function App() {
         return;
       }
 
-      const cardsToCanonicalize = document.cards.filter((card) => suggestion.cardIds.includes(card.id));
-      if (cardsToCanonicalize.length < 2) {
+      const availableCardCount = document.cards.filter((card) => suggestion.cardIds.includes(card.id)).length;
+      if (availableCardCount < 2) {
         setMergeSuggestionError("Merge suggestion is no longer applicable.");
         return;
       }
-      let canonicalizedResult: ReturnType<typeof applyCanonicalization>;
-      try {
-        canonicalizedResult = applyCanonicalization(document, {
-          sourceCardIds: suggestion.cardIds,
-          mergedText: suggestion.editedText,
-          canonicalIdFactory: () => crypto.randomUUID(),
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to adopt canonical suggestion.";
-        setMergeSuggestionError(message);
-        return;
-      }
 
-      applyDocumentChange(canonicalizedResult.document, "Adopted merge suggestion as canonical");
-      setMergeSuggestions((previousSuggestions) => previousSuggestions.filter((item) => item.groupId !== groupId));
-      setSelectedCardIds([canonicalizedResult.canonicalId]);
+      const nextDocument = appendMergeSuggestionDecision(document, {
+        groupId: suggestion.groupId,
+        decision,
+        cardIds: suggestion.cardIds,
+        mergedTextDraft: suggestion.mergedTextDraft,
+        editedText: suggestion.editedText,
+        rationale: suggestion.rationale,
+      });
+      applyDocumentChange(nextDocument, `Recorded merge decision: ${decision}`);
+
+      const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
+      setMergeSuggestions((previousSuggestions) =>
+        previousSuggestions.map((item) =>
+          item.groupId === groupId
+            ? {
+                ...item,
+                latestDecision: decision,
+                latestDecidedAt: decidedAt,
+              }
+            : item
+        )
+      );
+      setMergeSuggestionError(null);
+      setStatusMessage(`Merge decision recorded (${decision})`);
     },
     [applyDocumentChange, document, mergeSuggestions]
   );
@@ -7405,8 +7426,7 @@ ${parsedDocument.error}`);
                 suggestions={mergeSuggestions}
                 cardsById={cardsById}
                 onMergedTextChange={handleMergeSuggestionTextChange}
-                onApply={handleApplyMergeSuggestion}
-                onDismiss={handleDismissMergeSuggestion}
+                onDecide={handleRecordMergeSuggestionDecision}
               />
               <SuggestionPanel
                 instruction={suggestionInstruction}
