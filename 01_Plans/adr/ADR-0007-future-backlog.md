@@ -93,7 +93,7 @@
 
 | ID | テーマ | 優先度 | 状態 | 具体アクション | DoD（完了条件） | 参照 |
 |---|---|---|---|---|---|---|
-| FB-RM-MID-01 | 類似度検出 | P1 | Planned | 非AI heuristic による候補生成をバッチ化 | 同一入力で候補順序が安定する | `FB-P2B-01` |
+| FB-RM-MID-01 | 類似度検出 | P1 | Done (2026-02-28) | `collectMergeCandidates` を導入し、normalized-text / token-signature の2段 heuristic で merge candidate をローカル生成。source/merged済み card を除外し、group/card順序を安定ソートで固定。UI導線は API 呼び出しから deterministic local batch へ置換。 | 同一入力で candidate group と group内 card 順が一致し、候補一覧で対象Cardを確認できる（AC-2B-1整合） | `FB-P2B-01` |
 | FB-RM-MID-02 | 統合候補提示 | P1 | Planned | 採用/部分採用/却下/後で を記録できるUI | 自動確定なしで人間承認履歴が残る | `FB-P2B-02` |
 | FB-RM-MID-03 | 統合ログ監査 | P2 | Planned | merge decision log を監査用にエクスポート可能化 | representative と source の追跡が可能 | `FB-P2B-03..04` |
 | FB-RM-MID-04 | 階層質的統合 | P1 | Planned | sub-island + 表札（見出し）カード + レベル切替UIを段階導入 | level切替で表示粒度のみ変化しデータ欠落しない | `FB-P2A-*` |

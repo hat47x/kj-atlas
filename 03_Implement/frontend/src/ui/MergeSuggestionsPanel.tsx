@@ -49,13 +49,13 @@ export function MergeSuggestionsPanel({
         backgroundColor: "#ffffff",
       }}
     >
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>Similar card merge suggestions</div>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>Similar card merge candidates</div>
       <textarea
         value={instruction}
         onChange={(event) => {
           onInstructionChange(event.target.value);
         }}
-        placeholder="Optional instruction for merge suggestions"
+        placeholder="Optional note (kept locally for manual review)"
         rows={2}
         style={{
           width: "100%",
@@ -68,15 +68,15 @@ export function MergeSuggestionsPanel({
         }}
       />
       <button type="button" onClick={onSuggest} disabled={isSuggesting} style={{ marginBottom: 8 }}>
-        {isSuggesting ? "Suggesting..." : "Suggest merges"}
+        {isSuggesting ? "Collecting..." : "Collect candidates"}
       </button>
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
-        AI suggestions are drafts only. Review before applying.
+        Deterministic heuristic only (no AI decision). Final merge decision remains human-in-the-loop.
       </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       {suggestions.map((suggestion) => (
         <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Cards in suggestion</div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Cards in candidate group</div>
           <ul style={{ margin: "0 0 8px", paddingLeft: 18 }}>
             {suggestion.cardIds.map((cardId) => {
               const card = cardsById.get(cardId);
