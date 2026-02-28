@@ -10,7 +10,6 @@ import {
   suggestIslandSummary,
   summarizeIslandRelation,
   suggestLayout,
-  suggestMerges,
   type NarrativeIssue,
   type NarrativeIssueReference,
 } from "./api/client";
@@ -28,6 +27,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
+import { collectMergeCandidates } from "./domain/merge_candidates";
 import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
@@ -2115,10 +2115,10 @@ export default function App() {
 
     setIsSuggestingMerges(true);
     setMergeSuggestionError(null);
-    setStatusMessage("Requesting merge suggestions...");
+    setStatusMessage("Collecting merge candidates...");
 
     try {
-      const result = await suggestMerges(document, mergeSuggestionInstruction.trim() || undefined);
+      const result = { suggestions: collectMergeCandidates(document) };
       setMergeSuggestions(
         result.suggestions.map((suggestion) => ({
           ...suggestion,
@@ -2127,16 +2127,20 @@ export default function App() {
         }))
       );
       setMergeSuggestionError(null);
-      setStatusMessage("Merge suggestions ready");
+      setStatusMessage(
+        result.suggestions.length > 0
+          ? `Merge candidates ready (${result.suggestions.length})`
+          : "No deterministic merge candidates found"
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to get merge suggestions";
+      const message = error instanceof Error ? error.message : "Failed to collect merge candidates";
       setMergeSuggestionError(message);
       setMergeSuggestions([]);
       setStatusMessage(message);
     } finally {
       setIsSuggestingMerges(false);
     }
-  }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
+  }, [document, isSuggestingMerges]);
 
   const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
     setMergeSuggestions((previousSuggestions) =>
