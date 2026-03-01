@@ -119,6 +119,34 @@ describe("computeStructureMetrics", () => {
     expect(metrics.bridgeEdgeCount).toBe(0);
   });
 
+  it("ignores malformed relation endpoints and non-card edges for graph metrics", () => {
+    const doc = makeDoc({
+      cards: [
+        { id: "c1", text: "1", x: 0, y: 0 },
+        { id: "c2", text: "2", x: 1, y: 0 },
+        { id: "c3", text: "3", x: 2, y: 0 },
+      ],
+      edges: [
+        { id: "r1", fromId: "c1", toId: "c2", type: "related" },
+        { id: "r2", fromId: "c1", toId: "unknown", type: "related" },
+        { id: "r3", fromId: "c2", toId: "c3", type: "related", toKind: "island" },
+      ],
+      evidenceLinks: [
+        { id: "e1", fromCardId: "c2", toCardId: "c2", type: "supports" },
+        { id: "e2", fromCardId: "c2", toCardId: "missing", type: "supports" },
+      ],
+      islands: [{ id: "i1", cardIds: ["c1", "c2", "c3"], shape: { kind: "rect" } }],
+    });
+
+    const metrics = computeStructureMetrics(doc);
+    expect(metrics.evidenceLinkCount).toBe(1);
+    expect(metrics.connectedComponentCount).toBe(2);
+    expect(metrics.largestComponentRatio).toBe(0.6667);
+    expect(metrics.degreeP95).toBe(1);
+    expect(metrics.bridgeEdgeCount).toBe(1);
+    expect(metrics.isolatedCardCount).toBe(1);
+  });
+
   it("is deterministic regardless of evidence/edge input order", () => {
     const baseDoc = makeDoc({
       cards: [

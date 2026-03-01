@@ -84,6 +84,38 @@
 - 自己ループは除外する。
 - bridge 判定は正規化済み無向単純グラフで実施する。
 
+### Metric definitions and formulas (FB-RM-RS-02)
+
+集合を次のように定義する。
+
+- `C`: 全カードID集合（`|C| = cardCount`）
+- `E_evidence`: `evidenceLinks` のうち両端が `C` に含まれる link 集合
+- `E_edge`: `edges` のうち card-card 関係（`fromKind/toKind` が `card` または未指定）かつ両端が `C` に含まれる集合
+- `E`: `E_evidence ∪ E_edge` を無向単純グラフへ正規化した edge 集合（自己ループ除外・重複除去）
+- `deg(v)`: 無向グラフ `G=(C,E)` における card `v` の次数
+
+計算式:
+
+- `connectedComponentCount = cc(G)`
+- `largestComponentRatio = largestComponentSize(G) / max(1, |C|)`
+- `degreeP95 = percentile_nearest_rank({deg(v) | v ∈ C}, 95)`
+  - nearest-rank: `rank = ceil(0.95 * n)`（`n=|C|`, 1-indexed）
+- `bridgeEdgeCount = |{ e ∈ E | cc(C, E \ {e}) > cc(G) }|`
+
+意図:
+
+- `connectedComponentCount`: 分断された島/論点群の多さを検知
+- `largestComponentRatio`: 全体の一体性（最大連結塊への集中）を検知
+- `degreeP95`: 局所ハブ偏重（過密接続）を検知
+- `bridgeEdgeCount`: 単一関係に依存する脆弱な接続（ボトルネック）を検知
+
+決定論ルール:
+
+- graph 正規化時に undirected pair をソートし、重複排除後も安定順序を維持する。
+- bridge 判定 DFS は隣接ノードをID昇順で走査する。
+- 小数は `round(value * 10_000) / 10_000` で丸める。
+- これにより同一入力で同一 `diagnosticsData.structuralMetrics` を返す。
+
 ### Initial threshold hints (warning defaults)
 
 - `connectedComponentCount >= 3`
