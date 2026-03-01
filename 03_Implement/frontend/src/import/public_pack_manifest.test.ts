@@ -40,6 +40,20 @@ describe("parsePublicPackManifest", () => {
     ]);
   });
 
+
+  it("preserves visibility across serialize/parse reload", () => {
+    const savedManifest = {
+      defaultPackId: "org-main",
+      packs: [
+        { id: "org-main", documentPath: "org-main.document.json", viewPath: "org-main.view.json", visibility: "Org" },
+      ],
+    };
+
+    const reloaded = parsePublicPackManifest(JSON.parse(JSON.stringify(savedManifest)));
+
+    expect(reloaded).toEqual(savedManifest);
+  });
+
   it("accepts all supported visibility enum values", () => {
     const manifest = parsePublicPackManifest({
       packs: [
