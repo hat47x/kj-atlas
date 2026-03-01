@@ -16,6 +16,18 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger(__name__)
 
 
+def _raise_llm_http_error(exc: ProviderDisabledError | ProviderRequestError) -> None:
+    if isinstance(exc, ProviderDisabledError):
+        raise HTTPException(status_code=503, detail=exc.to_contract()) from exc
+
+    status_map = {
+        "provider_timeout": 504,
+        "provider_validation": 422,
+        "provider_unavailable": 503,
+    }
+    raise HTTPException(status_code=status_map.get(exc.code, 503), detail=exc.to_contract()) from exc
+
+
 def _validate_relation_summary_input(payload: SummarizeIslandRelationRequest) -> None:
     island_ids = {island.id for island in payload.doc.islands}
     if payload.islandAId not in island_ids or payload.islandBId not in island_ids:
@@ -109,9 +121,9 @@ def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> Summar
             LLMRequest(task="summarize_island_relation", prompt=_build_relation_summary_prompt(payload))
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     logger.info(
         "llm_generate",

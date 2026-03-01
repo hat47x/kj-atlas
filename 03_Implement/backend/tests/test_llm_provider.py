@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import socket
 from urllib import error
 
 import pytest
@@ -118,6 +119,40 @@ def test_local_provider_handles_http_errors(monkeypatch: pytest.MonkeyPatch) -> 
     finally:
         settings.local_llm_base_url = original_url
 
+
+
+def test_local_provider_maps_timeout_error_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_url = settings.local_llm_base_url
+    settings.local_llm_base_url = "http://local-llm.test"
+
+    def _fake_urlopen(req, timeout=60):
+        raise error.URLError(socket.timeout("timed out"))
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LocalProvider().generate(LLMRequest(task="check_narrative", prompt="prompt"))
+        assert exc_info.value.code == "provider_timeout"
+    finally:
+        settings.local_llm_base_url = original_url
+
+
+def test_local_provider_maps_validation_error_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_url = settings.local_llm_base_url
+    settings.local_llm_base_url = "http://local-llm.test"
+
+    def _fake_urlopen(req, timeout=60):
+        return _StubHTTPResponse('{"text":123}')
+
+    monkeypatch.setattr("kj_atlas_api.llm.provider.request.urlopen", _fake_urlopen)
+
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LocalProvider().generate(LLMRequest(task="check_narrative", prompt="prompt"))
+        assert exc_info.value.code == "provider_validation"
+    finally:
+        settings.local_llm_base_url = original_url
 
 def test_generate_with_fallback_to_none_when_enabled() -> None:
     original_provider = settings.llm_provider
@@ -274,3 +309,22 @@ def test_response_audit_fields_include_provider_and_execution_metadata() -> None
         "fallback_to_none": False,
         "trace_id": "llm-trace",
     }
+
+
+def test_provider_error_contract_mapping_is_consistent() -> None:
+    metadata = LLMCallMetadata(
+        provider_kind="local",
+        provider_name="local",
+        model_id="model-a",
+        transport="http",
+        requested_at="2026-01-01T00:00:00+00:00",
+        trace_id="llm-trace",
+        fallback_to_none=False,
+    )
+    timeout_error = ProviderRequestError.timeout("timeout", metadata)
+    validation_error = ProviderRequestError.validation("invalid", metadata)
+    unavailable_error = ProviderRequestError.unavailable("down", metadata)
+
+    assert timeout_error.to_contract()["code"] == "provider_timeout"
+    assert validation_error.to_contract()["code"] == "provider_validation"
+    assert unavailable_error.to_contract()["code"] == "provider_unavailable"
