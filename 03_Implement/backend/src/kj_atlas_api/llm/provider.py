@@ -4,6 +4,7 @@ import json
 import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from typing import Callable, Literal, Protocol
 from urllib import error, request
 from uuid import uuid4
@@ -28,6 +29,7 @@ class LLMCallMetadata:
     requested_at: str
     trace_id: str
     fallback_to_none: bool = False
+    execution_path: str = "primary"
 
     def as_audit_fields(self) -> dict[str, object]:
         return {
@@ -37,6 +39,7 @@ class LLMCallMetadata:
             "transport": self.transport,
             "requested_at": self.requested_at,
             "fallback_to_none": self.fallback_to_none,
+            "execution_path": self.execution_path,
             "trace_id": self.trace_id,
         }
 
@@ -83,6 +86,7 @@ class ProviderError(RuntimeError):
             "provider_kind": self.metadata.provider_kind,
             "trace_id": self.metadata.trace_id,
             "fallback_to_none": self.metadata.fallback_to_none,
+            "execution_path": self.metadata.execution_path,
         }
 
 
@@ -106,6 +110,7 @@ class ProviderRequestError(ProviderError):
             "provider_kind": self.metadata.provider_kind,
             "trace_id": self.metadata.trace_id,
             "fallback_to_none": self.metadata.fallback_to_none,
+            "execution_path": self.metadata.execution_path,
         }
 
     @classmethod
@@ -159,57 +164,15 @@ class LocalProvider:
     provider_kind = "local"
 
     def generate(self, req: LLMRequest) -> LLMResponse:
-        base_url = settings.local_llm_base_url
-        model_id = settings.local_llm_model or "unknown"
-        metadata = _new_metadata(
+        return _generate_via_http(
+            req,
+            base_url=settings.local_llm_base_url,
+            model_id=settings.local_llm_model,
             provider_kind=self.provider_kind,
             provider_name=self.provider_name,
-            model_id=model_id,
-            transport="http",
+            missing_base_url_message="LOCAL_LLM_BASE_URL is not set",
+            missing_model_message=None,
         )
-
-        if not base_url:
-            raise ProviderRequestError.unavailable("LOCAL_LLM_BASE_URL is not set", metadata)
-
-        endpoint = f"{base_url.rstrip('/')}/generate"
-        payload = {
-            "task": req.task,
-            "prompt": req.prompt,
-            "temperature": req.temperature,
-            "max_tokens": req.max_tokens,
-            "model": settings.local_llm_model,
-        }
-
-        req_obj = request.Request(
-            endpoint,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        try:
-            with request.urlopen(req_obj, timeout=60) as resp:
-                raw_body = resp.read().decode("utf-8")
-        except error.HTTPError as exc:
-            if exc.code in (408, 504):
-                raise ProviderRequestError.timeout(f"Local LLM request timed out with status {exc.code}", metadata) from exc
-            raise ProviderRequestError.unavailable(f"Local LLM request failed with status {exc.code}", metadata) from exc
-        except error.URLError as exc:
-            reason = exc.reason
-            if isinstance(reason, socket.timeout):
-                raise ProviderRequestError.timeout("Local LLM request timed out", metadata) from exc
-            raise ProviderRequestError.unavailable(f"Local LLM request failed: {reason}", metadata) from exc
-
-        try:
-            body = json.loads(raw_body)
-        except json.JSONDecodeError as exc:
-            raise ProviderRequestError.validation("Local LLM response was not valid JSON", metadata) from exc
-
-        text = body.get("text")
-        if not isinstance(text, str):
-            raise ProviderRequestError.validation("Local LLM response missing text field", metadata)
-
-        return LLMResponse(raw_text=text, metadata=metadata)
 
 
 class LargeScaleProvider:
@@ -217,20 +180,113 @@ class LargeScaleProvider:
     provider_kind = "large-scale"
 
     def generate(self, req: LLMRequest) -> LLMResponse:
-        model_id = settings.large_scale_llm_model or "unknown"
-        metadata = _new_metadata(
+        if not settings.llm_escalation_enabled:
+            metadata = _new_metadata(
+                provider_kind=self.provider_kind,
+                provider_name=self.provider_name,
+                model_id=settings.large_scale_llm_model or "unknown",
+                transport="http",
+            )
+            raise ProviderRequestError.unavailable("Large-scale provider disabled by local-first policy", metadata)
+
+        _ensure_large_scale_allowlist()
+        return _generate_via_http(
+            req,
+            base_url=settings.large_scale_llm_base_url,
+            model_id=settings.large_scale_llm_model,
             provider_kind=self.provider_kind,
             provider_name=self.provider_name,
-            model_id=model_id,
-            transport="http",
+            missing_base_url_message="LARGE_SCALE_LLM_BASE_URL is not set",
+            missing_model_message="LARGE_SCALE_LLM_MODEL is not set",
         )
 
-        if not settings.large_scale_llm_base_url:
-            raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_BASE_URL is not set", metadata)
-        if not settings.large_scale_llm_model:
-            raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_MODEL is not set", metadata)
 
-        raise ProviderRequestError.unavailable("Large-scale LLM provider is not implemented", metadata)
+def _normalize_allowlist(raw_allowlist: str | None) -> set[str]:
+    if not raw_allowlist:
+        return set()
+    return {item.strip().lower() for item in raw_allowlist.split(",") if item.strip()}
+
+
+def _ensure_large_scale_allowlist() -> None:
+    base_url = settings.large_scale_llm_base_url
+    allowlist = _normalize_allowlist(settings.large_scale_llm_allowlist)
+    metadata = _new_metadata(
+        provider_kind="large-scale",
+        provider_name="large-scale",
+        model_id=settings.large_scale_llm_model or "unknown",
+        transport="http",
+    )
+
+    if not base_url:
+        raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_BASE_URL is not set", metadata)
+
+    hostname = (urlparse(base_url).hostname or "").lower()
+    if hostname == "":
+        raise ProviderRequestError.validation("LARGE_SCALE_LLM_BASE_URL is invalid", metadata)
+    if hostname not in allowlist:
+        raise ProviderRequestError.unavailable("Large-scale destination is not allowlisted", metadata)
+
+
+def _generate_via_http(
+    req: LLMRequest,
+    *,
+    base_url: str | None,
+    model_id: str | None,
+    provider_kind: str,
+    provider_name: str,
+    missing_base_url_message: str,
+    missing_model_message: str | None,
+) -> LLMResponse:
+    resolved_model = model_id or "unknown"
+    metadata = _new_metadata(
+        provider_kind=provider_kind,
+        provider_name=provider_name,
+        model_id=resolved_model,
+        transport="http",
+    )
+
+    if not base_url:
+        raise ProviderRequestError.unavailable(missing_base_url_message, metadata)
+    if missing_model_message is not None and not model_id:
+        raise ProviderRequestError.unavailable(missing_model_message, metadata)
+
+    endpoint = f"{base_url.rstrip('/')}/generate"
+    payload = {
+        "task": req.task,
+        "prompt": req.prompt,
+        "temperature": req.temperature,
+        "max_tokens": req.max_tokens,
+        "model": model_id,
+    }
+    req_obj = request.Request(
+        endpoint,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req_obj, timeout=60) as resp:
+            raw_body = resp.read().decode("utf-8")
+    except error.HTTPError as exc:
+        if exc.code in (408, 504):
+            raise ProviderRequestError.timeout(f"{provider_name} request timed out with status {exc.code}", metadata) from exc
+        raise ProviderRequestError.unavailable(f"{provider_name} request failed with status {exc.code}", metadata) from exc
+    except error.URLError as exc:
+        reason = exc.reason
+        if isinstance(reason, socket.timeout):
+            raise ProviderRequestError.timeout(f"{provider_name} request timed out", metadata) from exc
+        raise ProviderRequestError.unavailable(f"{provider_name} request failed: {reason}", metadata) from exc
+
+    try:
+        body = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise ProviderRequestError.validation(f"{provider_name} response was not valid JSON", metadata) from exc
+
+    text = body.get("text")
+    if not isinstance(text, str):
+        raise ProviderRequestError.validation(f"{provider_name} response missing text field", metadata)
+    return LLMResponse(raw_text=text, metadata=metadata)
 
 
 class NoOpProvider(NoneProvider):
@@ -291,6 +347,7 @@ def build_audit_fields(llm_response: object) -> dict[str, object]:
         "transport": getattr(llm_response, "transport", getattr(metadata, "transport", "unknown")),
         "requested_at": getattr(metadata, "requested_at", "unknown"),
         "fallback_to_none": getattr(metadata, "fallback_to_none", False),
+        "execution_path": getattr(metadata, "execution_path", "primary"),
         "trace_id": getattr(llm_response, "trace_id", getattr(metadata, "trace_id", "unknown")),
     }
 
@@ -314,6 +371,7 @@ def generate_with_fallback(req: LLMRequest) -> LLMResponse:
             requested_at=_now_utc_iso(),
             trace_id=exc.metadata.trace_id,
             fallback_to_none=True,
+            execution_path=f"{exc.metadata.provider_name}->none",
         )
         raise ProviderDisabledError(
             f"LLM provider '{exc.metadata.provider_name}' failed and fallbacked to none: {exc}",
