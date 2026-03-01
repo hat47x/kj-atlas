@@ -1,3 +1,5 @@
+import { t } from "../../i18n/translate";
+
 const READ_ONLY_KEYS = ["readonly", "readOnly", "isReadOnly"] as const;
 
 function normalizeFlagValue(value: string | null): string {
@@ -31,9 +33,8 @@ export function resolveReadOnlyFromSearch(search: string): boolean {
 
 export function buildReadOnlyBlockedMessage(actionLabel?: string): string {
   if (!actionLabel) {
-    return "Read-only mode: editing is disabled.";
+    return t("read_only.blocked.generic");
   }
 
-  return `Read-only mode: ${actionLabel} is disabled.`;
+  return t("read_only.blocked.with_action", { actionLabel });
 }
-

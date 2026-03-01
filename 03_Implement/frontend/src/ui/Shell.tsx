@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { t } from "../i18n/translate";
 
 type ShellProps = {
   title: string;
@@ -76,7 +77,7 @@ export function Shell({
                   fontWeight: 600,
                 }}
               >
-                Unsaved changes
+                {t("shell.unsaved_changes")}
               </span>
             ) : null}
             {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
@@ -112,7 +113,7 @@ export function Shell({
                     cursor: isReloadingAfterConflict ? "not-allowed" : "pointer",
                   }}
                 >
-                  {isReloadingAfterConflict ? "Reloading..." : "Reload"}
+                  {isReloadingAfterConflict ? t("shell.reloading") : t("shell.reload")}
                 </button>
               ) : null}
               {onExportAfterConflict ? (
@@ -129,7 +130,7 @@ export function Shell({
                     cursor: "pointer",
                   }}
                 >
-                  Export JSON
+                  {t("shell.export_json")}
                 </button>
               ) : null}
             </div>

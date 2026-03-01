@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "publish:static": "node ./scripts/build_static_publish.mjs"
+    "publish:static": "node ./scripts/build_static_publish.mjs",
+    "test:i18n": "vitest run src/i18n/translate.test.ts src/i18n/key_consistency.test.ts"
   },
   "dependencies": {
     "jszip": "3.10.1",

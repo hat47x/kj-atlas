@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { t } from "../i18n/translate";
 
 import { CRITIQUE_TAGS } from "../domain/types";
 import type { AggregatedEdgeMeta } from "../canvas/CanvasShell";
@@ -1040,7 +1041,7 @@ export function SidePanel({
     >
       {isReadOnly ? (
         <div style={{ fontSize: 12, color: "#9a3412", backgroundColor: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, padding: 8, marginBottom: 12 }}>
-          Read-only mode is active. Editing actions are disabled.
+          {t("read_only.banner.active")}
         </div>
       ) : null}
       {topContent}

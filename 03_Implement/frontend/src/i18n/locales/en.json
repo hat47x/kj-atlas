@@ -43,5 +43,12 @@
   "share.panel.load_document.load": "Load document.json",
   "share.panel.load_document.summary": "cards: {cardCount} / islands: {islandCount} / edges: {edgeCount}",
   "share.panel.load_document.replace": "Replace current document",
-  "safe_mode.indicator.on.label": "SafeMode: ON"
+  "safe_mode.indicator.on.label": "SafeMode: ON",
+  "read_only.blocked.generic": "Read-only mode: editing actions are disabled.",
+  "read_only.blocked.with_action": "Read-only mode: {actionLabel} is disabled.",
+  "read_only.banner.active": "Read-only mode is active. Editing actions are disabled.",
+  "shell.unsaved_changes": "Unsaved changes",
+  "shell.reload": "Reload",
+  "shell.reloading": "Reloading...",
+  "shell.export_json": "Export JSON"
 }

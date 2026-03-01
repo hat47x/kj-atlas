@@ -43,5 +43,12 @@
   "share.panel.load_document.section_hint": "最初に DocumentV2 JSON を検証し、その後に現在の document を明示的に置換します。",
   "share.panel.load_document.load": "document.json を読み込む",
   "share.panel.load_document.summary": "cards: {cardCount} / islands: {islandCount} / edges: {edgeCount}",
-  "share.panel.load_document.replace": "現在の document を置換"
+  "share.panel.load_document.replace": "現在の document を置換",
+  "read_only.blocked.generic": "読み取り専用モード: 編集操作は無効です。",
+  "read_only.blocked.with_action": "読み取り専用モード: {actionLabel} は無効です。",
+  "read_only.banner.active": "読み取り専用モードが有効です。編集操作は無効です。",
+  "shell.unsaved_changes": "未保存の変更",
+  "shell.reload": "再読み込み",
+  "shell.reloading": "再読み込み中...",
+  "shell.export_json": "JSONをエクスポート"
 }
