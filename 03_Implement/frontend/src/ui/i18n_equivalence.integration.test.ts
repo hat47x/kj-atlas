@@ -9,6 +9,22 @@ import { DiffPanel } from "./DiffPanel";
 import { setActiveLocale } from "../i18n/translate";
 import { t } from "../i18n/translate";
 import { buildReadOnlyBlockedMessage } from "../domain/policy/read_only";
+import type { DocumentV2 } from "../domain/types";
+
+
+function buildDocumentFixture(): DocumentV2 {
+  return {
+    version: 2,
+    id: "doc-i18n-equivalence",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [],
+    islands: [],
+    edges: [],
+    relationSummaries: [],
+  };
+}
 
 function buildShareProps() {
   return {
@@ -89,7 +105,7 @@ function metrics(html: string) {
 function buildReviewProps() {
   return {
     comparisonFileName: "baseline.json",
-    comparisonDocument: { cards: [], islands: [], edges: [], schemaVersion: "2.0", relationSummaries: [] },
+    comparisonDocument: buildDocumentFixture(),
     mergeItems: [],
     evaluations: [],
     selectedItemIds: new Set<string>(),
@@ -112,7 +128,7 @@ function buildReviewProps() {
 function buildDiffProps() {
   return {
     comparisonFileName: "baseline.json",
-    comparisonDocument: { cards: [], islands: [], edges: [], schemaVersion: "2.0", relationSummaries: [] },
+    comparisonDocument: buildDocumentFixture(),
     diffResult: null,
     currentCardIdSet: new Set<string>(),
     currentIslandIdSet: new Set<string>(),
