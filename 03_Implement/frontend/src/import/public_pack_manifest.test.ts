@@ -39,4 +39,17 @@ describe("parsePublicPackManifest", () => {
       },
     ]);
   });
+
+  it("accepts all supported visibility enum values", () => {
+    const manifest = parsePublicPackManifest({
+      packs: [
+        { id: "public", documentPath: "public.document.json", visibility: "Public" },
+        { id: "unlisted", documentPath: "unlisted.document.json", visibility: "Unlisted" },
+        { id: "org", documentPath: "org.document.json", visibility: "Org" },
+        { id: "restricted", documentPath: "restricted.document.json", visibility: "Restricted" },
+      ],
+    });
+
+    expect(manifest.packs.map((entry) => entry.visibility)).toEqual(["Public", "Unlisted", "Org", "Restricted"]);
+  });
 });
