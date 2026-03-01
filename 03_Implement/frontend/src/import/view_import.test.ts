@@ -33,6 +33,7 @@ describe("parseViewJson", () => {
     if (result.ok) {
       expect(result.metadata.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
       expect(result.metadata.viewState.hierarchyLevel).toBe("mid");
+      expect(result.metadata.visibility).toBe("Restricted");
     }
   });
 

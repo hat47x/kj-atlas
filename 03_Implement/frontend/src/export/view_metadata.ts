@@ -5,6 +5,7 @@ import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
+import { normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
 
 
 function buildPerspectiveStateFromViewState(viewState: ExportViewMetadataArgs["viewState"]): PerspectiveState {
@@ -49,6 +50,7 @@ export type ExportViewMetadata = {
   version: "1";
   generatedAt: string;
   docSignature: string;
+  visibility: PublishVisibility;
   camera: {
     panX: number;
     panY: number;
@@ -183,6 +185,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
     docSignature: resolveDocSignature(doc),
+    visibility: "Restricted",
     camera: {
       panX: camera.panX,
       panY: camera.panY,
@@ -288,6 +291,10 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (typeof value.docSignature !== "string") {
     return { ok: false, error: "metadata.docSignature must be a string" };
+  }
+
+  if (value.visibility !== undefined && value.visibility !== "Public" && value.visibility !== "Unlisted" && value.visibility !== "Org" && value.visibility !== "Restricted") {
+    return { ok: false, error: 'metadata.visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present' };
   }
 
   if (!isObject(value.camera)) {
@@ -615,6 +622,7 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   return { ok: true, metadata: {
     ...(value as ExportViewMetadata),
+    visibility: normalizeViewVisibility(value.visibility),
     ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
     ...(value.reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(value.reviewEvents) }),
   } };

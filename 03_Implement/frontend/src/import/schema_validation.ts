@@ -3,6 +3,7 @@ import type { DocumentV2 } from "../domain/types";
 import { validateImportViewMetadata, type ExportViewMetadata } from "../export/view_metadata";
 import { DEFAULT_VIEW_PRESETS } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES } from "../domain/view/perspective";
+import { DEFAULT_VIEW_VISIBILITY } from "../domain/policy/publish_visibility";
 
 export type ValidationError = {
   code: `V${string}`;
@@ -195,6 +196,7 @@ function buildDefaultViewMetadata(input: Record<string, unknown>): ExportViewMet
     version: "1",
     generatedAt: typeof input.generatedAt === "string" ? input.generatedAt : new Date().toISOString(),
     docSignature: typeof input.docSignature === "string" ? input.docSignature : "unknown",
+    visibility: input.visibility === undefined ? DEFAULT_VIEW_VISIBILITY : (input.visibility as ExportViewMetadata["visibility"]),
     camera: {
       ...(rawCamera as ExportViewMetadata["camera"]),
       panX: typeof rawCamera.panX === "number" && Number.isFinite(rawCamera.panX) ? rawCamera.panX : 0,
