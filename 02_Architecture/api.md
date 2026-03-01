@@ -155,6 +155,12 @@ roles/groups/policyRef に基づく認可判定は、API本体ではなく `Acce
 - `safeMode`: ルート側のsafeMode（export-auditではpayload.safeMode）
 - `readOnly`: `X-Read-Only` ヘッダ（`1`/`true`）
 
+正規化ルール:
+
+- `x-auth-roles` / `x-auth-groups` が未指定・空文字・`null` 相当値のときは `[]` として扱う。
+- `x-policy-ref` は trim 後に空文字なら `null` として扱う。
+- API本体は roles/groups/policyRef の意味解釈を行わない（外部委譲）。
+
 ### 8.2 出力（adapter/hook → API）
 
 ```ts
@@ -176,11 +182,23 @@ type AccessDecision = {
 - オプション `deny`: 全アクション `403`。
 - 実装パラメータ: `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
 
+追加条件:
+
+- `policyRef` 不達（接続失敗/timeout）・無効（形式不正/失効）・adapter例外でも fail-safe を適用する。
+- 上記時の `reason` は `policy_ref_unreachable | policy_ref_invalid | adapter_error` の定義済みコードを使う。
+- `visibility` が `Public/Unlisted` の場合は強制fail-safe対象外。
+
 ### 8.4 監査イベント連携点
 
 - `GET /docs/{doc_id}` でアクセス許可後に `eventType=view` を送信。
 - `POST /docs/{doc_id}/export-audit` でアクセス許可後に `eventType=export` を送信。
 - 監査送信は既存の fail-open dispatcher 方針を維持する（監査送信失敗で本体機能は停止しない）。
+
+最小記録項目（PII非保存）:
+
+- 必須: `eventType`, `eventVersion`, `occurredAt`, `docId`, `action`, `decision.allow`, `policyRefPresent`
+- 任意: `decision.readOnly`, `decision.reason`, `visibility`, `adapterName`, `traceId`
+- 非保存: `policyRef` 生値、`roles/groups` 生値、ドキュメント本文
 
 ### 8.5 互換性
 
