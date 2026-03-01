@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Callable, Protocol
 from urllib import error, request
 from uuid import uuid4
 
@@ -28,6 +28,17 @@ class LLMCallMetadata:
     trace_id: str
     fallback_to_none: bool = False
 
+    def as_audit_fields(self) -> dict[str, object]:
+        return {
+            "provider": self.provider_name,
+            "provider_kind": self.provider_kind,
+            "model_id": self.model_id,
+            "transport": self.transport,
+            "requested_at": self.requested_at,
+            "fallback_to_none": self.fallback_to_none,
+            "trace_id": self.trace_id,
+        }
+
 
 @dataclass(frozen=True)
 class LLMResponse:
@@ -45,6 +56,9 @@ class LLMResponse:
     @property
     def trace_id(self) -> str:
         return self.metadata.trace_id
+
+    def as_audit_fields(self) -> dict[str, object]:
+        return self.metadata.as_audit_fields()
 
 
 class LLMProvider(Protocol):
@@ -176,34 +190,70 @@ class LargeScaleProvider:
         raise ProviderRequestError("Large-scale LLM provider is not implemented", metadata)
 
 
-_PROVIDER_ALIASES = {
-    "none": "none",
-    "local": "local",
-    "local_http": "local",
-    "large-scale": "large-scale",
-    "large_scale": "large-scale",
-    "external": "large-scale",
-}
+class NoOpProvider(NoneProvider):
+    """Explicit no-op provider for adapter registry wiring."""
+
+
+ProviderFactory = Callable[[], LLMProvider]
+
+
+class ProviderRegistry:
+    def __init__(self) -> None:
+        self._providers: dict[str, ProviderFactory] = {}
+        self._aliases: dict[str, str] = {}
+
+    def register(self, provider_name: str, factory: ProviderFactory, *, aliases: tuple[str, ...] = ()) -> None:
+        normalized_name = provider_name.lower().strip()
+        self._providers[normalized_name] = factory
+        self._aliases[normalized_name] = normalized_name
+        for alias in aliases:
+            self._aliases[alias.lower().strip()] = normalized_name
+
+    def resolve(self, raw_provider_name: str) -> LLMProvider:
+        normalized = raw_provider_name.lower().strip()
+        provider_name = self._aliases.get(normalized)
+        if provider_name is None:
+            metadata = _new_metadata(
+                provider_kind="unknown",
+                provider_name=normalized or "unknown",
+                model_id="unknown",
+                transport="none",
+            )
+            raise ProviderRequestError(f"Unsupported LLM_PROVIDER: {raw_provider_name}", metadata)
+        return self._providers[provider_name]()
+
+
+def _build_default_registry() -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register("none", NoOpProvider)
+    registry.register("local", LocalProvider, aliases=("local_http",))
+    registry.register("large-scale", LargeScaleProvider, aliases=("large_scale", "external"))
+    return registry
+
+
+_DEFAULT_REGISTRY = _build_default_registry()
+
+
+
+
+def build_audit_fields(llm_response: object) -> dict[str, object]:
+    if hasattr(llm_response, "as_audit_fields"):
+        return getattr(llm_response, "as_audit_fields")()
+
+    metadata = getattr(llm_response, "metadata", None)
+    return {
+        "provider": getattr(llm_response, "provider", getattr(metadata, "provider_name", "unknown")),
+        "provider_kind": getattr(metadata, "provider_kind", "unknown"),
+        "model_id": getattr(metadata, "model_id", "unknown"),
+        "transport": getattr(llm_response, "transport", getattr(metadata, "transport", "unknown")),
+        "requested_at": getattr(metadata, "requested_at", "unknown"),
+        "fallback_to_none": getattr(metadata, "fallback_to_none", False),
+        "trace_id": getattr(llm_response, "trace_id", getattr(metadata, "trace_id", "unknown")),
+    }
 
 
 def get_provider() -> LLMProvider:
-    normalized = settings.llm_provider.lower().strip()
-    provider_name = _PROVIDER_ALIASES.get(normalized)
-
-    if provider_name == "none":
-        return NoneProvider()
-    if provider_name == "local":
-        return LocalProvider()
-    if provider_name == "large-scale":
-        return LargeScaleProvider()
-
-    metadata = _new_metadata(
-        provider_kind="unknown",
-        provider_name=normalized or "unknown",
-        model_id="unknown",
-        transport="none",
-    )
-    raise ProviderRequestError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}", metadata)
+    return _DEFAULT_REGISTRY.resolve(settings.llm_provider)
 
 
 def generate_with_fallback(req: LLMRequest) -> LLMResponse:

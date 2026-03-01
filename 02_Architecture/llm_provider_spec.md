@@ -42,27 +42,47 @@ evaluate(prompt, rubric, output) -> score
 
 > `evaluate` は任意機能であり、未実装プロバイダでは deterministic rule checks のみで品質ゲートを通す。
 
+### 2.3 監査データ契約（全provider共通）
+
+`generate(...)` の成否にかかわらず、以下の監査メタを同一キーで記録できること。
+
+```json
+{
+  "provider": "none|local|large-scale",
+  "provider_kind": "none|local|large-scale",
+  "model_id": "string",
+  "transport": "none|http|...",
+  "requested_at": "ISO-8601",
+  "fallback_to_none": false,
+  "trace_id": "llm-..."
+}
+```
+
+- `trace_id` は1実行単位で一意。
+- `fallback_to_none=true` は実行失敗から no-op へ退避した場合のみ。
+- 監査ログに payload 本文や秘匿情報を含めない。
+
 ---
 
 ## 3. サポート対象プロバイダ
 
-### 3.1 OpenAIProvider（任意）
+### 3.1 none（NoOpProvider / 既定）
 
-- 用途: 高難度ケースの統合評価、定期的品質監査。
-- 位置付け: **Optional**（必須依存にしない）。
-- 注意: 外部通信は明示許可時のみ。
+- 用途: SafeMode前提でAI機能を明示的に無効化する。
+- 挙動: 呼び出し時は「AI disabled」を返し、意思決定の自動確定を行わない。
+- 位置付け: **default**。外部送信は発生しない。
 
-### 3.2 LocalProvider（標準）
+### 3.2 local（LocalProvider / 標準）
 
 - 用途: 開発・CI・本番のデフォルト推論。
 - 想定実装例: LFM2.5 / llama.cpp系などのローカル実行基盤。
 - 要件: オフライン/閉域環境でも動作可能であること。
 
-### 3.3 FixtureProvider（必須）
+### 3.3 large-scale（LargeScaleProvider / 任意）
 
-- 用途: 回帰試験の決定性確保。
-- 挙動: 入力キー（prompt+inputs+schemaハッシュ等）に対応する録画レスポンスを返す。
-- 利点: ネットワーク不要・コストゼロ・CIで常時利用可。
+- 用途: 高難度ケースの統合評価、定期的品質監査。
+- 位置付け: **Optional**（必須依存にしない）。
+- 注意: 外部通信は明示許可時のみ。
 
 ---
 
@@ -165,3 +185,10 @@ LLMが受け取るIRは厳格JSONスキーマを持つ。以下はアウトラ�
 - 監査容易性のため、プロバイダ選択・評価結果・エスカレーション理由は構造化ログに残す（内容は最小限・秘匿情報は除去）。
 - スキーマ不一致時は fail-fast し、後段で救済しない。
 
+---
+
+## 8. Human-in-the-loop 制約
+
+- Provider層は「提案生成」のみを扱い、**decision確定APIは提供しない**。
+- 最終確定は必ず人間操作で実施する（AI自動確定経路を実装しない）。
+- SafeMode 既定ONを前提とし、外部送信の既定ON化は禁止。

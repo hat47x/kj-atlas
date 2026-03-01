@@ -9,6 +9,7 @@ from kj_atlas_api.llm.provider import (
     LLMRequest,
     ProviderDisabledError,
     ProviderRequestError,
+    build_audit_fields,
     generate_with_fallback,
 )
 from kj_atlas_api.models_ai import (
@@ -36,16 +37,7 @@ logger = logging.getLogger(__name__)
 def _audit_llm_trace(task: str, llm_response) -> None:
     logger.info(
         "llm_generate",
-        extra={
-            "task": task,
-            "provider": getattr(llm_response, "provider", "unknown"),
-            "provider_kind": getattr(getattr(llm_response, "metadata", None), "provider_kind", "unknown"),
-            "model_id": getattr(getattr(llm_response, "metadata", None), "model_id", "unknown"),
-            "transport": getattr(llm_response, "transport", "unknown"),
-            "requested_at": getattr(getattr(llm_response, "metadata", None), "requested_at", "unknown"),
-            "fallback_to_none": getattr(getattr(llm_response, "metadata", None), "fallback_to_none", False),
-            "trace_id": getattr(llm_response, "trace_id", "unknown"),
-        },
+        extra={"task": task, **build_audit_fields(llm_response)},
     )
 
 
