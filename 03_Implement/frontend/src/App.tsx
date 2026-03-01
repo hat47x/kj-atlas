@@ -128,6 +128,7 @@ import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./dom
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
+import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
@@ -142,6 +143,17 @@ const CARD_HEIGHT = 80;
 const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
+
+type PublicPackManifestEntry = {
+  id: string;
+  documentPath: string;
+  viewPath?: string;
+};
+
+type PublicPackManifest = {
+  defaultPackId?: string;
+  packs: PublicPackManifestEntry[];
+};
 
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
   return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
@@ -1650,12 +1662,102 @@ export default function App() {
     []
   );
 
+  const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
+    const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
+    if (!manifestResponse.ok) {
+      return false;
+    }
+
+    const manifest = (await manifestResponse.json()) as PublicPackManifest;
+    const packs = Array.isArray(manifest.packs) ? manifest.packs : [];
+    const targetPack = packs.find((pack) => pack.id === (requestedPackId ?? manifest.defaultPackId ?? "")) ?? null;
+    if (!targetPack) {
+      throw new Error(`Pack not found: ${requestedPackId ?? manifest.defaultPackId ?? "(default)"}`);
+    }
+
+    const documentResponse = await fetch(`./packs/${targetPack.documentPath}`, { cache: "no-store" });
+    if (!documentResponse.ok) {
+      throw new Error(`Failed to fetch pack document: ${targetPack.documentPath}`);
+    }
+    const documentParseResult = parseDocumentJson(await documentResponse.text());
+    if (!documentParseResult.ok) {
+      throw new Error(`Invalid pack document: ${documentParseResult.error}`);
+    }
+
+    pendingCardDragSnapshotRef.current = null;
+    setHistory({
+      past: [],
+      present: cloneDocument(documentParseResult.document),
+      future: [],
+    });
+    setActiveDocumentId(documentParseResult.document.id);
+    setViewMode(loadViewModeForDocument(documentParseResult.document.id) ?? "explore");
+    setSelectedRecentDocumentId("");
+    setDocEtag(null);
+    setSelectedCardIds([]);
+    setSelectedIslandId(null);
+    setSelectedEdgeId(null);
+    setIsPickingEdgeTarget(false);
+    setFocusCardId(null);
+    setFocusTarget({});
+    setFocusWorldPoint(null);
+    setPeekIslandId(undefined);
+    setFlashReference(null);
+    setTemporaryRevealCardIds(new Set());
+    setSummaryRevealIslandIds(new Set());
+    setRevealedSourceCardIds(new Set());
+    setComparisonDocument(null);
+    setComparisonFileName(null);
+    setGroundingVisibilityMessage(null);
+    setIsDirty(false);
+    setHasSaveConflict(false);
+    setSuggestedDocument(null);
+    setSuggestionId(null);
+    setSuggestionNotes(null);
+    setSuggestionError(null);
+    setPendingImportedDocument(null);
+    setImportDocumentError(null);
+    setPackImportError(null);
+    setMergeSourceInfo({ kind: "zip", fileName: targetPack.id, packId: targetPack.id });
+    setImportedPackSummary(null);
+    setImportedPackDiagnosticsMd(null);
+    setImportedPackSnapshotUrl(null);
+
+    if (targetPack.viewPath) {
+      const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
+      if (!viewResponse.ok) {
+        throw new Error(`Failed to fetch pack view metadata: ${targetPack.viewPath}`);
+      }
+      const viewParseResult = parseViewJson(await viewResponse.text());
+      if (!viewParseResult.ok) {
+        throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
+      }
+      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, "Public pack loaded");
+    }
+
+    setSafeMode(true);
+    setStatusMessage(`Public pack loaded: ${targetPack.id}`);
+    return true;
+  }, [applyImportedViewMetadata]);
+
   useEffect(() => {
     let isCancelled = false;
 
     const loadForMount = async () => {
       if (isCancelled) {
         return;
+      }
+
+      const requestedPackId = resolvePublicPackIdFromSearch(window.location.search);
+
+      try {
+        const loadedFromPack = await loadPublicPack(requestedPackId);
+        if (loadedFromPack) {
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        setStatusMessage(error instanceof Error ? error.message : "Failed to load public pack");
       }
 
       await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
@@ -1666,7 +1768,7 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [loadDocument]);
+  }, [loadDocument, loadPublicPack]);
 
   const applyDocumentChange = useCallback(
     (

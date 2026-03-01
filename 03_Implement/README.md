@@ -34,3 +34,27 @@ cd 03_Implement/frontend
 npm ci
 npm run build
 ```
+
+## Static publish artifact (index/assets/packs)
+
+```bash
+cd 03_Implement/frontend
+npm ci
+npm run publish:static -- \
+  --document ./tests/fixtures/worker/doc.small.json \
+  --out ../deploy/public \
+  --pack-id public-main
+```
+
+Output:
+
+- `03_Implement/deploy/public/index.html`
+- `03_Implement/deploy/public/assets/*`
+- `03_Implement/deploy/public/packs/*`
+
+Serve with a static file server:
+
+```bash
+cd 03_Implement/deploy/public
+python3 -m http.server 4173
+```
