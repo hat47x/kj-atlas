@@ -255,3 +255,50 @@ npm run test:i18n-security
 3. 直近変更で翻訳 adapter / telemetry / audit dispatch の呼び出し位置が SafeMode 判定より先行していないかを確認。
 4. 必要なら一時的に翻訳機能を feature flag で停止し、`SafeMode=ON` 時の外部送信 0 件を復旧条件にする。
 5. 復旧後に CI の `Frontend i18n safe-mode leakage guards` を required check として再確認する。
+
+## i18n document hash 不変検証（FB-RM-I18N-05）
+
+### 1. テスト観点（ハッシュ対象と分離保証）
+
+- ハッシュ対象は **`document.json` のみ**。`view.json` や UI state は対象外。
+- ハッシュ計算前に canonicalize（オブジェクトキー順序正規化）を適用し、順序差分を排除。
+- 言語切替時の期待値は2系統で検証する。
+  - `document hash` は常に不変。
+  - `view metadata`（`viewState.locale` / 解決ソースなど）はシナリオに応じて変化。
+- 差分検知時は `ui-state` / `view-metadata` / `document-payload` の層別診断ログで切り分ける。
+
+### 2. ケース表（前提 / 操作 / 期待）
+
+| ケースID | 前提 | 操作 | 期待値 |
+|---|---|---|---|
+| I18N05-01 | 同一 `document.json`、view locale=ja | `ja -> en -> ja` の順で bundle export | `document.json` hash が3回とも一致。`view.json` は locale 変化に追随 |
+| I18N05-02 | metadata=ja, persisted=ja | URL `?locale=en` を付けて locale 解決 | locale source は `url`。`document.json` hash は URL なしケースと一致 |
+| I18N05-03 | metadata=en, persisted=ja, read-only=true | locale 解決後に bundle export | `shouldPersist=false`。`document.json` hash は read-write ケースと一致 |
+
+### 3. 失敗時の切り分け手順（層別診断ログ）
+
+1. `npm run test:i18n-regression` を再実行し、失敗ケースIDを特定する。
+2. テスト出力の層別診断を確認する。
+   - `document-payload`: `document.json` canonical payload が変化（重大）。
+   - `view-metadata`: `view.json` の locale など表示メタのみ差分（想定内）。
+   - `ui-state`: locale 遷移事実のログ（想定内、ただし document 変化と同時発生なら要調査）。
+3. `document-payload` が出た場合は、`buildExportBundle` へ渡す `doc` と `viewState` の境界を確認し、UI状態混入を除去する。
+4. 併せて `resolveViewLocale` の source/shouldPersist 判定が read-only と URL 優先規約を満たしているかを再確認する。
+
+### 4. CI組込要件
+
+1. Frontend script:
+
+```bash
+npm run test:i18n-regression
+```
+
+2. GitHub Actions `CI` に専用ジョブ `Frontend i18n document hash regression` を追加済み。
+3. branch protection の required check に同ジョブを設定し、hash不変テスト未通過のマージを禁止する。
+
+### 5. 完了条件（DoD）
+
+- `ja -> en -> ja`、URL優先、read-only の3シナリオで `document.json` hash が不変。
+- 期待値を `document hash` と `view metadata` に分離して検証している。
+- 差分発生時に、漏洩層（ui-state/view-metadata/document-payload）を診断ログで一意に特定できる。
+- CIで deterministic 実行（固定時刻・canonicalize・乱数未使用）が維持される。
