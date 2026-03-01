@@ -6286,7 +6286,7 @@ ${parsedDocument.error}`);
       ]
   );
 
-  const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean }) => {
+  const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: "overview" | "detail" }) => {
     if (!document || !canvasCamera) {
       setStatusMessage("Nothing to export");
       return;
@@ -6348,6 +6348,7 @@ ${parsedDocument.error}`);
           includeDiagnostics: options.includeDiagnostics,
           includeSelectedCardTraces: options.includeSelectedCardTraces,
           selectedCardId: selectedCard?.id ?? null,
+          exportGranularity: options.exportGranularity,
           deterministicNowIso,
           readingMode,
           reviewedOnly,

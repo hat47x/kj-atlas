@@ -54,6 +54,10 @@ docker compose logs api --tail=100
 - 本ファイルには merge decision の監査最小情報（`decisionId` / `groupId` / `decisionType` / `actorType` / `decidedAt` / `representativeCardId` / `sourceCardIds`）を含みます。
 - 同一入力で同一出力となるよう、decision と cardIds は決定論順序で出力されます。
 
+- `bundle_manifest.json` には `exportGranularity`（`overview` / `detail`）と `generatedAt` を記録します。
+- `overview` は俯瞰用に selected-card trace（`evidence_trace_*` / `contradiction_trace_*` / `trace_analytics_*`）を同梱しません。
+- `detail` は従来どおり selected-card trace を同梱できます（カード選択時）。
+
 ## 4. セキュリティ運用メモ（MVP）
 
 - 公開時は API を直接公開せず、Nginx / Traefik などのリバースプロキシ配下で TLS 終端してください。

@@ -85,6 +85,7 @@ issue補助メモには、最低でも次の項目を含める。
 | FB-RM-MID-01 | `issue-FB-RM-MID-01-deterministic-similar-card-candidates.md` | Done (Local) | TBD | 非AI deterministic heuristic による merge candidate 生成と順序安定テストを追加。 |
 | FB-RM-MID-03 | `issue-FB-RM-MID-03-merge-decision-audit-export.md` | Done (Local) | TBD | bundle export に `merge_decision_audit.json` を追加し、representative/source 追跡情報を監査用に出力。 |
 | FB-RM-I18N-02 | `issue-FB-RM-I18N-02-locale-json-fallback-order.md` | Done (Local) | TBD | locale JSON契約と fallback順序（requested->ja->key）を実装し、unit/typecheckで固定。 |
+| FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done (Local) | TBD | bundle export に overview/detail 粒度選択と manifest 出力を追加し、overview時のtrace抑止を unit test で固定。 |
 
 ## Done (Local) 運用ルール
 

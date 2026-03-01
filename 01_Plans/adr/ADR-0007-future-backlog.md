@@ -97,7 +97,7 @@
 | FB-RM-MID-02 | 統合候補提示 | P1 | Done (2026-02-28) | Merge Suggestions を4アクション（accept/partial/reject/defer）へ更新し、decision log (`mergeSuggestionDecisions`) を document に保存。候補再収集時に latest decision と編集済みテキストを復元し、自動 canonical merge を無効化。Frontend strict validation / backend roundtrip を同期。 | 自動確定なしで人間承認履歴が残り、保存再読込後も decision 状態を再現できる | `FB-P2B-02` |
 | FB-RM-MID-03 | 統合ログ監査 | P2 | Done (2026-02-28) | bundle export に `merge_decision_audit.json` を追加し、decisionId/groupId/decisionType/actorType/decidedAt と representative-source 追跡情報を決定論で出力。 | 同一入力で同一監査ログを出力でき、representative と source の追跡が可能 | `FB-P2B-03..04` |
 | FB-RM-MID-04 | 階層質的統合 | P1 | Planned | sub-island + 表札（見出し）カード + レベル切替UIを段階導入 | level切替で表示粒度のみ変化しデータ欠落しない | `FB-P2A-*` |
-| FB-RM-MID-05 | 構造レベル別export | P2 | Planned | overview/detail の2階層出力をサポート | 同一Documentから複数粒度でexport可能 | 新規Issue化 |
+| FB-RM-MID-05 | 構造レベル別export | P2 | Done (2026-03-01) | bundle export に `overview/detail` 粒度を追加。`bundle_manifest.json` へ粒度を記録し、overview時は selected-card trace を抑止。SharePanel で粒度選択ラジオを提供。 | 同一Documentから粒度別bundleを再現可能に生成でき、overviewではtraceを含めず俯瞰用途に固定される | `01_Plans/issues/issue-FB-RM-MID-05-structural-granularity-export.md` |
 | FB-RM-MID-06 | 共通LLM adapter | P1 | Planned | provider abstraction（none/local/large-scale）を定義し、同一枠組みで切替可能にする | decision確定APIを提供せず、provider切替でUI/監査仕様が一貫する | `P-07`, `AI-07-*` |
 
 ### Localization Strategy（統合）
@@ -275,3 +275,13 @@
 - [x] `App.tsx` の `applyDocumentChange` に read-only ガードを追加し、編集更新を一括拒否するよう統合。
 - [x] `SuggestionPanel` / `MergeSuggestionsPanel` の編集導線を read-only 時に disabled 化。
 - [x] `SidePanel` とヘッダー subtitle に read-only 状態表示を追加。
+
+
+#### FB-RM-MID-05 実装TODO（完了ログ）
+
+- [x] `bundle_export.ts` に `exportGranularity`（overview/detail）を導入し、`bundle_manifest.json` 出力を追加。
+- [x] overview時は selected-card trace の生成を抑止し、detail時のみ trace を出力。
+- [x] SharePanel の bundle export セクションに granularity 選択UI（radio）を追加。
+- [x] `App.tsx` から bundle export context へ granularity を伝搬。
+- [x] `bundle_export.test.ts` / `SharePanel.test.ts` を更新し、manifest/trace抑止/UI文言を回帰固定。
+- [x] `04_Documentation/operations.md` に運用メモを追記。

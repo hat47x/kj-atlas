@@ -20,6 +20,8 @@ export type BundleFile = {
   mime: string;
 };
 
+export type ExportGranularity = "overview" | "detail";
+
 export type BundleExportContext = {
   rootFolderPath: string;
   safeMode?: boolean;
@@ -27,6 +29,7 @@ export type BundleExportContext = {
   includeDiagnostics: boolean;
   includeSelectedCardTraces: boolean;
   selectedCardId: string | null;
+  exportGranularity?: ExportGranularity;
   deterministicNowIso: string;
   readingState: ReadingOutlineState;
   readingMode: ReadingMode;
@@ -149,6 +152,41 @@ function summarizeDialecticBalance(report: DialecticBalanceReport): string[] {
   return lines;
 }
 
+
+function resolveExportGranularity(context: BundleExportContext): ExportGranularity {
+  return context.exportGranularity ?? "detail";
+}
+
+function shouldIncludeSelectedCardTraces(context: BundleExportContext): boolean {
+  return resolveExportGranularity(context) === "detail" && context.includeSelectedCardTraces;
+}
+
+function resolveOutlineOptions(context: BundleExportContext, safeMode: boolean): ReadingOutlineOptions {
+  const granularity = resolveExportGranularity(context);
+  if (granularity === "overview") {
+    return {
+      ...context.outlineOptions,
+      includeCardTexts: false,
+      includeRelationSummaries: true,
+      includeUnreviewedSummaries: false,
+      context: "share",
+    };
+  }
+
+  return {
+    ...context.outlineOptions,
+    context: "share",
+    includeUnreviewedSummaries: safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
+  };
+}
+
+function buildBundleManifest(context: BundleExportContext): { exportGranularity: ExportGranularity; generatedAt: string } {
+  return {
+    exportGranularity: resolveExportGranularity(context),
+    generatedAt: context.deterministicNowIso,
+  };
+}
+
 function buildDiagnosticsMd(doc: DocumentV2, context: BundleExportContext): string {
   const safeMode = context.safeMode ?? true;
   const outlineReport = context.outlineQualityReport ?? analyzeOutlineQuality(doc, { readingMode: context.readingMode, reviewedOnly: context.reviewedOnly }, { nowIso: context.deterministicNowIso });
@@ -169,17 +207,14 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
+    toJsonFile(`${root}/bundle_manifest.json`, buildBundleManifest(context)),
     toJsonFile(`${root}/document.json`, doc),
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
 
   if (context.includeOutline) {
-    const outline = buildReadingOutlineMd(doc, context.readingState, {
-      ...context.outlineOptions,
-      context: "share",
-      includeUnreviewedSummaries: safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
-    });
+    const outline = buildReadingOutlineMd(doc, context.readingState, resolveOutlineOptions(context, safeMode));
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
 
@@ -191,7 +226,7 @@ export function buildExportBundle(doc: DocumentV2, viewState: unknown, context: 
     });
   }
 
-  if (context.includeSelectedCardTraces && context.selectedCardId) {
+  if (shouldIncludeSelectedCardTraces(context) && context.selectedCardId) {
     const evidenceTrace = buildEvidenceTraceMd(doc, context.selectedCardId, { safeMode });
     if (!evidenceTrace.startsWith("Error:")) {
       bundleFiles.push({
@@ -230,16 +265,14 @@ export async function buildExportBundleWithWorkers(
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
   const bundleFiles: BundleFile[] = [
+    toJsonFile(`${root}/bundle_manifest.json`, buildBundleManifest(context)),
     toJsonFile(`${root}/document.json`, doc),
     toJsonFile(`${root}/merge_decision_audit.json`, { entries: buildMergeDecisionAuditEntries(doc) }),
     toJsonFile(`${root}/view.json`, viewState),
   ];
+
   if (context.includeOutline) {
-    const outline = buildReadingOutlineMd(doc, context.readingState, {
-      ...context.outlineOptions,
-      context: "share",
-      includeUnreviewedSummaries: safeMode ? false : context.outlineOptions?.includeUnreviewedSummaries,
-    });
+    const outline = buildReadingOutlineMd(doc, context.readingState, resolveOutlineOptions(context, safeMode));
     bundleFiles.push({ path: `${root}/outline.md`, content: outline, mime: "text/markdown" });
   }
 
@@ -263,7 +296,7 @@ export async function buildExportBundleWithWorkers(
       bundleFiles.push({ path: `${root}/diagnostics.md`, content: diagnosticsOutcome.result.diagnosticsMd, mime: "text/markdown" });
     }
 
-    if (context.includeSelectedCardTraces && context.selectedCardId) {
+    if (shouldIncludeSelectedCardTraces(context) && context.selectedCardId) {
       const sharedOptions = {
         startCardId: context.selectedCardId,
         maxHops: 4,
