@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Protocol
 from urllib import error, request
+from uuid import uuid4
 
 from kj_atlas_api.settings import settings
 
@@ -19,9 +20,14 @@ class LLMRequest:
 @dataclass
 class LLMResponse:
     raw_text: str
+    provider: str
+    transport: str
+    trace_id: str
 
 
 class LLMProvider(Protocol):
+    provider_name: str
+
     def generate(self, req: LLMRequest) -> LLMResponse:
         ...
 
@@ -35,11 +41,15 @@ class ProviderRequestError(RuntimeError):
 
 
 class NoneProvider:
+    provider_name = "none"
+
     def generate(self, req: LLMRequest) -> LLMResponse:
-        raise ProviderDisabledError("AI is disabled. Set LLM_PROVIDER to local_http or external.")
+        raise ProviderDisabledError("AI is disabled. Set LLM_PROVIDER to local or large-scale.")
 
 
-class LocalHTTPProvider:
+class LocalProvider:
+    provider_name = "local"
+
     def generate(self, req: LLMRequest) -> LLMResponse:
         base_url = settings.local_llm_base_url
         if not base_url:
@@ -78,22 +88,45 @@ class LocalHTTPProvider:
         if not isinstance(text, str):
             raise ProviderRequestError("Local LLM response missing text field")
 
-        return LLMResponse(raw_text=text)
+        return LLMResponse(
+            raw_text=text,
+            provider=self.provider_name,
+            transport="http",
+            trace_id=f"llm-{uuid4()}",
+        )
 
 
-class ExternalProvider:
+class LargeScaleProvider:
+    provider_name = "large-scale"
+
     def generate(self, req: LLMRequest) -> LLMResponse:
-        raise ProviderRequestError("External LLM provider is not implemented")
+        if not settings.large_scale_llm_base_url:
+            raise ProviderRequestError("LARGE_SCALE_LLM_BASE_URL is not set")
+        if not settings.large_scale_llm_model:
+            raise ProviderRequestError("LARGE_SCALE_LLM_MODEL is not set")
+
+        raise ProviderRequestError("Large-scale LLM provider is not implemented")
+
+
+_PROVIDER_ALIASES = {
+    "none": "none",
+    "local": "local",
+    "local_http": "local",
+    "large-scale": "large-scale",
+    "large_scale": "large-scale",
+    "external": "large-scale",
+}
 
 
 def get_provider() -> LLMProvider:
-    provider_name = settings.llm_provider.lower().strip()
+    normalized = settings.llm_provider.lower().strip()
+    provider_name = _PROVIDER_ALIASES.get(normalized)
 
     if provider_name == "none":
         return NoneProvider()
-    if provider_name == "local_http":
-        return LocalHTTPProvider()
-    if provider_name == "external":
-        return ExternalProvider()
+    if provider_name == "local":
+        return LocalProvider()
+    if provider_name == "large-scale":
+        return LargeScaleProvider()
 
     raise ProviderRequestError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}")
