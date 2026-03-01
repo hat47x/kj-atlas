@@ -66,26 +66,29 @@ Frontend lint は開発フローの急停止を避けるため、Phase A→B→C
 - 目的: `npm run lint` を日常運用へ定着させ、既存負債を可視化する。
 - ローカル: `npm run lint` を実行し、警告/失敗をPR本文へ記録する。
 - CI: `frontend-lint` ジョブを **warning運用**（失敗を許容）で実行する。
-- Exit criteria:
-  - [ ] `npm run lint` の実行手順が `CONTRIBUTING.md` に明記されている。
-  - [ ] CI Summary に lint phase と結果が出力される。
-  - [ ] 期限付き例外（後述）以外の新規lint違反を増やさない。
+- Exit criteria（Phase B へ進む条件）:
+  - [ ] `CONTRIBUTING.md` に `npm run lint` 実行手順・失敗時対処・期限付き例外運用が明記されている。
+  - [ ] CI Summary に `FRONTEND_LINT_PHASE` と lint outcome が毎回出力される。
+  - [ ] 期限付き例外Issueテンプレ（理由/担当/期限）を使い、期限切れ例外が 0 件である。
+  - [ ] 2週連続で「新規lint違反の純増 0」を達成している。
 
 #### Phase B（Fail-on-error / 品質ゲート化フェーズ）
 - 目的: lint失敗をPR段階で確実に止める。
 - ローカル: `npm run lint` 失敗時は修正完了までマージ不可。
 - CI: `FRONTEND_LINT_PHASE=B` に切り替え、`frontend-lint` 失敗を必ず fail とする。
-- Exit criteria:
-  - [ ] CI設定（`.github/workflows/ci.yml`）と規約文書の fail 条件が一致している。
-  - [ ] 例外Issueの期限切れが0件である。
-  - [ ] `frontend-typecheck` / `frontend-test` と責務重複なく運用されている。
+- Exit criteria（Phase C へ進む条件）:
+  - [ ] `.github/workflows/ci.yml` で `frontend-lint` / `frontend-typecheck` / `frontend-test` が分離され、責務と fail-on-error 条件がコメントまたはSummaryで明示されている。
+  - [ ] `FRONTEND_LINT_PHASE=B` 運用開始後、連続10PR以上で lint 失敗の見逃し（誤pass）が 0 件である。
+  - [ ] 期限切れ例外Issueが 0 件であり、期限延長時は理由を履歴化している。
+  - [ ] PR差分監査コマンドで docs/CI の不一致が検知された場合、同一PRで是正されている。
 
 #### Phase C（Tighten rules / 継続改善フェーズ）
 - 目的: ルール追加時も段階導入を維持し、回帰を抑止する。
 - 運用: 追加ルールは `warn` で短期観測した後、期限を切って `error` へ移行する。
-- Exit criteria:
-  - [ ] 新規ルールごとに「warn期間」と「error化日」が記録されている。
-  - [ ] 期限超過の暫定例外が残っていない。
+- Exit criteria（運用完了の維持条件）:
+  - [ ] 新規ルールごとに「warn開始日 / error化予定日 / 実施日 / 例外Issue」を記録している。
+  - [ ] 期限超過の暫定例外が 0 件である。
+  - [ ] 四半期レビューで lint ルール棚卸し（追加・削除・厳格化）を実施し、`CONTRIBUTING.md` と CI設定を同一PRで同期している。
 
 #### `npm run lint` 運用手順（開発者向け）
 1. `cd 03_Implement/frontend && npm ci`
