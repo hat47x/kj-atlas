@@ -53,9 +53,12 @@
 | evidenceLinkCount | 2 |
 | evidenceLinkDensity | 0.6667 |
 | isolatedCardCount | 0 |
+| isolationRate | 0 |
 | connectedComponentCount | 1 |
 | largestComponentRatio | 1 |
+| connectivityScore | 1 |
 | degreeP95 | 2 |
+| degreeSkewRatio | 1.5 |
 | bridgeEdgeCount | 2 |
 | contradictionRatio | 0.5 |
 

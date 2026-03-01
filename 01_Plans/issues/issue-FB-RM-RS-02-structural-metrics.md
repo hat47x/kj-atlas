@@ -120,3 +120,5 @@
 - validator は `Active issue memos` セクションのみを検証対象に限定し、運用衝突を解消。
 
 - 2026-02-28: Active 一覧の Draft 滞留を解消するため、本メモを `Done (Local)` へ更新し README の運用ルールへ反映。
+
+- 2026-03-01: 指摘対応として Playwright E2E `e2e/diagnostics_structural_metrics.spec.ts` を追加し、Share Panel 経由 export の diagnostics で新規指標行と決定論（同一入力2回一致）を検証した。初回でE2Eが欠けた理由は unit/worker 回帰のみで十分と誤判断したためで、`04_Documentation/e2e_testing.md` に原因分析と再発防止を追記した。

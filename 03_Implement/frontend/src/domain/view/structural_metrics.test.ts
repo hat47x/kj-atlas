@@ -46,9 +46,12 @@ describe("computeStructureMetrics", () => {
       evidenceLinkCount: 2,
       evidenceLinkDensity: 0.5,
       isolatedCardCount: 0,
+      isolationRate: 0,
       connectedComponentCount: 1,
       largestComponentRatio: 1,
+      connectivityScore: 1,
       degreeP95: 3,
+      degreeSkewRatio: 2,
       bridgeEdgeCount: 3,
       islandSizeDistribution: [
         { size: 1, islands: 2 },
@@ -69,8 +72,11 @@ describe("computeStructureMetrics", () => {
     expect(metrics.contradictionRatio).toBeNull();
     expect(metrics.reviewedCoverage).toBeNull();
     expect(metrics.connectedComponentCount).toBe(1);
+    expect(metrics.isolationRate).toBe(1);
     expect(metrics.largestComponentRatio).toBe(1);
+    expect(metrics.connectivityScore).toBe(1);
     expect(metrics.degreeP95).toBe(0);
+    expect(metrics.degreeSkewRatio).toBe(0);
     expect(metrics.bridgeEdgeCount).toBe(0);
   });
 
@@ -99,9 +105,12 @@ describe("computeStructureMetrics", () => {
     const metrics = computeStructureMetrics(doc);
     expect(metrics.connectedComponentCount).toBe(2);
     expect(metrics.largestComponentRatio).toBe(0.8333);
+    expect(metrics.connectivityScore).toBe(0.8);
     expect(metrics.degreeP95).toBe(4);
+    expect(metrics.degreeSkewRatio).toBe(3);
     expect(metrics.bridgeEdgeCount).toBe(4);
     expect(metrics.isolatedCardCount).toBe(1);
+    expect(metrics.isolationRate).toBe(0.1667);
   });
 
   it("treats self-loop-only cards as isolated", () => {
@@ -114,8 +123,11 @@ describe("computeStructureMetrics", () => {
     const metrics = computeStructureMetrics(doc);
     expect(metrics.evidenceLinkCount).toBe(1);
     expect(metrics.isolatedCardCount).toBe(1);
+    expect(metrics.isolationRate).toBe(1);
     expect(metrics.connectedComponentCount).toBe(1);
+    expect(metrics.connectivityScore).toBe(1);
     expect(metrics.degreeP95).toBe(0);
+    expect(metrics.degreeSkewRatio).toBe(0);
     expect(metrics.bridgeEdgeCount).toBe(0);
   });
 
@@ -142,9 +154,12 @@ describe("computeStructureMetrics", () => {
     expect(metrics.evidenceLinkCount).toBe(1);
     expect(metrics.connectedComponentCount).toBe(2);
     expect(metrics.largestComponentRatio).toBe(0.6667);
+    expect(metrics.connectivityScore).toBe(0.5);
     expect(metrics.degreeP95).toBe(1);
+    expect(metrics.degreeSkewRatio).toBe(1);
     expect(metrics.bridgeEdgeCount).toBe(1);
     expect(metrics.isolatedCardCount).toBe(1);
+    expect(metrics.isolationRate).toBe(0.3333);
   });
 
   it("is deterministic regardless of evidence/edge input order", () => {

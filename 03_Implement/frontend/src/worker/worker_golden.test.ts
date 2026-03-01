@@ -65,7 +65,10 @@ describe("worker compute goldens", () => {
     const output = computeDiagnostics({ doc, view: { readingMode: "islands+cards", reviewedOnly: false }, options: { safeMode: true } });
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.75 |");
+    expect(output.diagnosticsMd).toContain("| connectivityScore | 0.6667 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 2 |");
+    expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 2 |");
+    expect(output.diagnosticsMd).toContain("| isolationRate | 0.25 |");
     expect(output.diagnosticsMd).toContain("| bridgeEdgeCount | 2 |");
   });
 
@@ -89,7 +92,10 @@ describe("worker compute goldens", () => {
     expect(output.diagnosticsMd).toContain("| evidenceLinkCount | 0 |");
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.5 |");
+    expect(output.diagnosticsMd).toContain("| connectivityScore | 0 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 0 |");
+    expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 0 |");
+    expect(output.diagnosticsMd).toContain("| isolationRate | 1 |");
     expect(output.diagnosticsMd).toContain("| bridgeEdgeCount | 0 |");
     expect(output.diagnosticsMd).not.toContain("reviewedCoverage");
     expect(output.diagnosticsMd).not.toContain("contradictionRatio");

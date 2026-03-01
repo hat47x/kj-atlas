@@ -62,10 +62,8 @@
 
 命名例:
 
-- `e2e/smoke.spec.ts`
-- `e2e/collapse_persistence.spec.ts`
-- `e2e/safe_mode_export_guard.spec.ts`
 - `e2e/polygon_import_validation.spec.ts`（自己交差polygon importのフォールバック確認）
+- `e2e/diagnostics_structural_metrics.spec.ts`（構造メトリクスがbundle diagnosticsへ反映され、連続exportで決定論を維持することを確認）
 
 ---
 
@@ -82,6 +80,7 @@ PR本文には最低限以下を記載する。
 
 - `npm run e2e`（Playwright）
 - `npm run e2e -- e2e/polygon_import_validation.spec.ts`
+- `npm run e2e -- e2e/diagnostics_structural_metrics.spec.ts`
 - `curl http://localhost:8000/healthz`
 - `curl http://localhost:4173/api/healthz`
 
@@ -103,3 +102,22 @@ E2Eはアプリケーション動作に関する利用者向けドキュメン�
 5. 利用者向けドキュメントとの間で不足・不整合が見つかった場合は、まず「あるべき状態（期待挙動・受入基準・コマンド）」を明文化し、正本に合わせて同期更新する。
 6. どちらが正かを容易に判断できない場合は、Issueを起票して論点・候補案・影響範囲を管理し、合意後に文書を更新する。
 
+
+
+## 8. FB-RM-RS-02 追記（E2E未実装理由の分析と是正）
+
+### 8.1 未実装だった理由
+
+- FB-RM-RS-02 初回実装では、`structural_metrics.test.ts` と `worker_golden.test.ts` で計算式・決定論を固定できたため、レビュー時に「worker/unit で十分」と判断してしまった。
+- 一方で実際のユーザーフロー（Share Panel から bundle export → `diagnostics.md` 取得）を通す E2E が欠けており、`04_Documentation/e2e_testing.md` の「UIを伴う変更はE2E追加」を満たしていなかった。
+
+### 8.2 是正内容
+
+- `e2e/diagnostics_structural_metrics.spec.ts` を追加し、以下をブラウザ経路で検証する。
+  1. `document.json` 差し替え後の bundle export に新規構造メトリクス行（`isolationRate`, `connectivityScore`, `degreeSkewRatio`）が含まれる。
+  2. 同一入力で 2 回 export した `diagnostics.md` が一致する（決定論）。
+
+### 8.3 再発防止
+
+- diagnostics の表示/出力へ新規指標を追加するPRでは、unit/workerテストに加え、export経路を通すE2Eを必須チェック項目とする。
+- PR本文の「未実施項目」に E2E省略理由を記載する場合は、次回是正タスク（Issueまたは同PR内追補）を必ず紐づける。

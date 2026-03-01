@@ -83,7 +83,7 @@
 | FB-RM-UX-03 | Polygon islands | P1 | Done (2026-02-26) | polygon shape の保存・再読込・互換読込を統合実装。`validateAndUpgradeImportedDocument` で自己交差polygonを自動破棄して card-bounds フォールバックへ退避し、`validateDocumentV2Strict` では自己交差を検証エラーとして拒否。polygon自己交差判定ユーティリティと回帰テストを追加。 | 欠損shapeで `rect` フォールバックしつつ編集継続でき、自己交差polygonが保存・厳格検証で受理されない | `FB-P2C-01..03` |
 | FB-RM-UX-04 | SafeMode UI明示 | P1 | Done (2026-02-26) | ヘッダー常設のSafeMode状態バッジ（ON/OFF）を追加し、クリックでShareパネルを開いて詳細を確認できる導線へ統一。Share & Reproduce内でSafeMode説明・export警告・「Share/Review Packでは赤字化が解除不可」の文言を共通ヘルパーで集約。`safe_mode_status.ts` / `safe_mode_status.test.ts` / `SharePanel.test.tsx` を追加し、文言と状態分岐を回帰固定。 | 閲覧者がヘッダーからSafeMode状態を即時確認でき、Share/export警告と解除不可モード表記が矛盾なく統一される | `03_Implement/frontend/src/ui/safe_mode_status.ts` |
 | FB-RM-RS-01 | Trace Analytics | P1 | Done (2026-02-27) | Trace Analytics に根拠リンク本数・孤立ノード・出典密度を追加し、UI/Export/Worker golden で同一集計値を参照できるよう統合。Map/Set→配列化時のソート順固定と roundTo4 により決定論を担保。 | 同一入力で同一統計値を返し、追加指標が markdown/export/UI で一貫表示される | `03_Implement/frontend/src/worker/trace_analytics.ts` |
-| FB-RM-RS-02 | 構造メトリクス | P1 | Planned (Issue draft: 2026-02-27) | 健全性指標（例: 連結性/偏り）を diagnostics へ追加 | 指標定義と計算式が文書化されテストで固定される | `01_Plans/issues/issue-FB-RM-RS-02-structural-metrics.md` |
+| FB-RM-RS-02 | 構造メトリクス | P1 | Done (2026-03-01) | diagnostics に構造健全性指標（connected components / largest component ratio / degreeP95 / bridge edges / isolation rate / connectivity score / degree skew ratio）を追加し、UI・worker・exportを同一集計経路へ統合。Playwright E2E で Share Panel 経由 export の diagnostics 行と決定論（同一入力2回一致）を確認。 | 指標定義と計算式が `04_Documentation/diagnostics.md` に文書化され、unit/worker/E2E で決定論が固定される | `03_Implement/frontend/src/domain/view/structural_metrics.ts`, `03_Implement/frontend/e2e/diagnostics_structural_metrics.spec.ts`, `04_Documentation/diagnostics.md` |
 | FB-RM-RS-03 | Diagnostics安定化 | P1 | Done (2026-02-26) | diagnostics出力schemaVersionを固定し、pre-release方針として `schemaVersion===1` のみ受理。invalid/unsupported version・malformed/array payload・worker message/result envelope不正（他request無視含む）・progress不正・unknown type・diagnostics.error不正・必須フィールド欠落/型不正を検知してfallbackするテストを整備。`04_Documentation/diagnostics.md` を追加。 | current version以外はfallbackで安全に処理継続できる（unit testで固定） | `03_Implement/frontend/src/worker/diagnostics_protocol.ts` |
 | FB-RM-SEC-01 | ZIP hardening | P0 | Done (2026-02-26) | import時の path traversal（相対/絶対/UNC/NUL）・zip bomb（総量/件数/単体サイズ/圧縮率）・許可拡張子制限を強化し、Z001/Z002で拒否。`zip_import.test.ts` と review-pack workflow 統合テストで回帰固定。 | 悪性fixtureで拒否・通常fixtureで成功する | `03_Implement/frontend/src/import/zip_import.ts` |
 | FB-RM-SEC-02 | Worker安定化 | P1 | Done (2026-02-28) | Bundle export の zip 生成を `bundle_zip.worker.ts` + `bundle_zip_client.ts` へ移管し、worker unavailable 時は scheduler fallback を維持。`buildBundleZipBlob` に cancellation/progress を接続し、`bundle_export.test.ts` で worker/fallback/cancel を回帰固定。 | 大規模 export でも zip 圧縮で UI 応答が阻害されず、abort 時は cancelled として終了できる | `03_Implement/frontend/src/worker/bundle_zip_client.ts` |
@@ -159,6 +159,15 @@
 - [x] `trace_analytics.test.ts` で追加指標・孤立ノード順序・決定論・markdown出力の回帰テストを先行追加して固定した。
 - [x] `worker_golden.test.ts` と fixture `trace_analytics_c1.md` を同期し、worker経路でも追加指標の出力を固定した。
 - [x] SidePanel の Trace Analytics 表示へ追加指標（Evidence links / Isolated nodes / Source density）を反映した。
+
+#### FB-RM-RS-02 実装TODO（完了ログ）
+
+- [x] `StructureMetrics` に `connectedComponentCount` / `largestComponentRatio` / `degreeP95` / `bridgeEdgeCount` / `isolationRate` / `connectivityScore` / `degreeSkewRatio` を追加した。
+- [x] `computeStructureMetrics` で無向単純グラフの正規化（自己ループ除外・重複排除・ID昇順ソート）を導入し、丸め規則 `round(value * 10_000) / 10_000` を固定した。
+- [x] `diagnostics_compute.ts` と `SidePanel.tsx` を更新し、worker/export/UI のすべてで同一構造メトリクス値を表示するよう統一した。
+- [x] `structural_metrics.test.ts` / `worker_golden.test.ts` / fixture `tests/fixtures/worker/diagnostics.md` を更新し、追加指標と決定論を回帰固定した。
+- [x] Playwright E2E `e2e/diagnostics_structural_metrics.spec.ts` を追加し、Share Panel 経由 export の `diagnostics.md` に追加指標が含まれること、および同一入力2回で出力一致することを固定した。
+- [x] E2E未実装だった原因分析と再発防止を `04_Documentation/e2e_testing.md` に反映した（issueメモ依存を解消）。
 
 #### FB-RM-RS-03 実装TODO（完了ログ）
 
