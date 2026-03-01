@@ -527,3 +527,39 @@ def test_docs_v2_relation_summary_without_history_roundtrip_postgres(postgres_cl
 @pytest.mark.postgres
 def test_docs_v2_polygon_geometry_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_polygon_geometry_roundtrip(postgres_client)
+
+
+def test_docs_v2_metadata_visibility_default_sqlite(sqlite_client: TestClient) -> None:
+    doc_id = "doc-v2-visibility-default"
+    payload = _sample_payload_v2_with_collapsed(doc_id)
+
+    put_response = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    assert put_response.json()["metadata"]["visibility"] == "restricted"
+
+    get_response = sqlite_client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["metadata"]["visibility"] == "restricted"
+
+
+def test_docs_v2_metadata_visibility_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    doc_id = "doc-v2-visibility-unlisted"
+    payload = _sample_payload_v2_with_collapsed(doc_id)
+    payload["metadata"] = {"visibility": "unlisted"}
+
+    put_response = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    assert put_response.json()["metadata"]["visibility"] == "unlisted"
+
+    get_response = sqlite_client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["metadata"]["visibility"] == "unlisted"
+
+
+def test_docs_v2_metadata_visibility_rejects_invalid_sqlite(sqlite_client: TestClient) -> None:
+    doc_id = "doc-v2-visibility-invalid"
+    payload = _sample_payload_v2_with_collapsed(doc_id)
+    payload["metadata"] = {"visibility": "team"}
+
+    put_response = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 422

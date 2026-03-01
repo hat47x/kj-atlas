@@ -23,6 +23,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+
+function isVisibility(value: unknown): value is "public" | "unlisted" | "org" | "restricted" {
+  return value === "public" || value === "unlisted" || value === "org" || value === "restricted";
+}
+
 function toCardArray(rawCards: unknown): unknown {
   if (Array.isArray(rawCards)) {
     return rawCards;
@@ -71,6 +76,19 @@ function collectDocumentPreflightErrors(input: Record<string, unknown>): Validat
         errors.push({ code: "V002", path: `cards[${index}].text`, message: "Card text must be a string.", severity: "error" });
       }
     });
+  }
+
+  if (input.metadata !== undefined) {
+    if (!isRecord(input.metadata)) {
+      errors.push({ code: "V006", path: "metadata", message: "metadata must be an object when provided.", severity: "error" });
+    } else if (input.metadata.visibility !== undefined && !isVisibility(input.metadata.visibility)) {
+      errors.push({
+        code: "V006",
+        path: "metadata.visibility",
+        message: 'metadata.visibility must be "public" | "unlisted" | "org" | "restricted" when provided.',
+        severity: "error",
+      });
+    }
   }
 
   if (input.islands !== undefined) {
@@ -195,6 +213,7 @@ function buildDefaultViewMetadata(input: Record<string, unknown>): ExportViewMet
     version: "1",
     generatedAt: typeof input.generatedAt === "string" ? input.generatedAt : new Date().toISOString(),
     docSignature: typeof input.docSignature === "string" ? input.docSignature : "unknown",
+    visibility: isVisibility(input.visibility) ? input.visibility : "restricted",
     camera: {
       ...(rawCamera as ExportViewMetadata["camera"]),
       panX: typeof rawCamera.panX === "number" && Number.isFinite(rawCamera.panX) ? rawCamera.panX : 0,

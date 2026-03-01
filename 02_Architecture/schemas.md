@@ -133,3 +133,60 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `02_Architecture/llm_provider.md`：将来AI用のProvider抽象（枠のみ）
 - `02_Architecture/deployment.md`：Docker Compose案
 
+---
+
+## 8. 公開/アクセス制御メタデータ（FB-RM-PUB-01）
+
+公開配布（pack）および view metadata に、次の可視性区分を持たせる。
+
+```ts
+export type Visibility = "public" | "unlisted" | "org" | "restricted";
+```
+
+### 8.1 pack metadata
+
+`packs/index.json` の各 pack エントリは次を持つ。
+
+```ts
+type PublicPackManifestEntry = {
+  id: string;
+  documentPath: string;
+  viewPath?: string;
+  visibility?: Visibility; // 未設定時は "restricted" として解釈
+};
+```
+
+### 8.2 view metadata
+
+`view.json` は export/import 往復の対象として次を持つ。
+
+```ts
+type ExportViewMetadata = {
+  version: "1";
+  generatedAt: string;
+  docSignature: string;
+  visibility?: Visibility; // 未設定時は "restricted" として解釈
+  // ... existing fields
+};
+```
+
+### 8.3 document metadata
+
+`DocumentV2` はアクセス制御メタデータを保持する。
+
+```ts
+type DocumentV2 = {
+  version: 2;
+  id: string;
+  // ... existing fields
+  metadata?: {
+    visibility?: Visibility; // 未設定時は "restricted" として解釈
+  };
+};
+```
+
+### 8.4 後方互換の扱い
+
+- 既存データ（`visibility` 未設定）は **必ず `restricted`** として扱う。
+- validator は enum 外の値（例: `"team"`）を reject する。
+- SafeMode 既定 ON / 漏えい防止の既存ポリシーは変更しない。

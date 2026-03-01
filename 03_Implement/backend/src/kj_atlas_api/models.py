@@ -255,6 +255,11 @@ class PatchApplyLogEntry(BaseModel):
     note: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
+
+class DocumentMetadata(BaseModel):
+    visibility: Literal["public", "unlisted", "org", "restricted"] = "restricted"
+
+
 class DocumentV1(BaseModel):
     version: Literal[1]
     id: str
@@ -293,6 +298,7 @@ class DocumentV2(BaseModel):
     relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
+    metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

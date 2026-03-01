@@ -35,6 +35,7 @@ describe("view metadata export", () => {
       version: "1",
       generatedAt: "2026-03-01T12:34:56.000Z",
       docSignature: "doc-123",
+      visibility: "restricted",
       camera: { panX: 100, panY: 200, zoom: 1.5 },
       viewState: {
         summaryView: true,
@@ -627,6 +628,48 @@ describe("view metadata export", () => {
     }
   });
 
+
+
+  it("sets and validates visibility metadata", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-visible", title: "Visible", metadata: { visibility: "unlisted" } },
+      camera: { panX: 1, panY: 2, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.visibility).toBe("unlisted");
+    expect(validateImportViewMetadata(metadata)).toEqual({ ok: true, metadata });
+  });
+
+  it("rejects invalid visibility metadata", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      visibility: "team",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: 'metadata.visibility must be "public" | "unlisted" | "org" | "restricted" when present' });
+  });
 
 });
 

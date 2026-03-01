@@ -59,4 +59,46 @@ describe("schema_validation", () => {
       expect(result.value.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
     }
   });
+
+  it("applies restricted visibility when metadata is missing", () => {
+    const result = validateDocument({
+      version: 2,
+      id: "doc-1",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.metadata?.visibility).toBe("restricted");
+    }
+  });
+
+  it("rejects invalid document metadata.visibility", () => {
+    const result = validateDocument({
+      version: 2,
+      id: "doc-1",
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [],
+      metadata: { visibility: "team" },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]).toMatchObject({ code: "V006", path: "metadata.visibility" });
+    }
+  });
+
+  it("applies restricted visibility default to view metadata", () => {
+    const result = validateView({ viewState: {} });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.visibility).toBe("restricted");
+    }
+  });
+
 });

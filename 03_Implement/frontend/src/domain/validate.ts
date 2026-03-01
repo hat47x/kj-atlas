@@ -303,6 +303,23 @@ function normalizeVersion(value: unknown): 1 | 2 | null {
   return null;
 }
 
+
+function parseVisibility(value: unknown): DocumentV2["metadata"]["visibility"] {
+  if (value === "public" || value === "unlisted" || value === "org" || value === "restricted") {
+    return value;
+  }
+
+  return "restricted";
+}
+
+function parseMetadata(value: unknown): DocumentV2["metadata"] {
+  if (!isRecord(value)) {
+    return { visibility: "restricted" };
+  }
+
+  return { visibility: parseVisibility(value.visibility) };
+}
+
 function parseIsoDate(value: unknown, fallback: string): string {
   if (typeof value !== "string") {
     return fallback;
@@ -365,6 +382,7 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
       evidenceLinks: parseEvidenceLinks(value.evidenceLinks) ?? [],
+      metadata: parseMetadata(value.metadata),
     },
   };
 }

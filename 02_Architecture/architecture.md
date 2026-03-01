@@ -119,6 +119,13 @@ AI処理は同一サービスに実装しても良いし、
 
 DB依存をAPI層の末端に隔離し、上位のユースケースはDB種別を意識しません。
 
+### 5.4 公開可視性メタデータ（FB-RM-PUB-01）
+
+- pack/view/document の metadata には `visibility` を持たせる。
+- `visibility` は `public | unlisted | org | restricted` の enum とする。
+- 未設定データは後方互換として `restricted` 扱いに正規化する。
+- 本フェーズでは表示/保持のみを対象とし、RBAC 判定ロジックは導入しない（PUB-04 範囲外）。
+
 ---
 
 ## 6. APIのI/F方針（MVP）

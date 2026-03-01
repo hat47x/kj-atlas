@@ -95,6 +95,8 @@ python3 -m http.server 4173
 - 公開packを読み込んだときは Frontend 側で `safeMode=true` を強制します。
 - 生成された `index.html` は `readonly=1` 付きURLへ遷移するため、公開配布物は編集不可の閲覧モードを既定にします。
 - `packs/index.json` には `enforceSafeMode: true` / `readOnly: true` を記録し、公開配布の意図を明示します。
+- `packs/index.json` / `view.json` / `document.metadata` の `visibility` は `public | unlisted | org | restricted` を使います。
+- `visibility` が未設定の既存データは、後方互換として `restricted` として扱います。
 
 ## 4. セキュリティ運用メモ（MVP）
 

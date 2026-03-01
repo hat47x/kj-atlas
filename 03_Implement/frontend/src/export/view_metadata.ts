@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "../domain/types";
+import type { DocumentV2, Visibility } from "../domain/types";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
@@ -48,6 +48,7 @@ export type ExportViewMetadata = {
   version: "1";
   generatedAt: string;
   docSignature: string;
+  visibility?: Visibility;
   camera: {
     panX: number;
     panY: number;
@@ -100,7 +101,7 @@ export type ExportViewMetadata = {
 };
 
 type ExportViewMetadataArgs = {
-  doc: Pick<DocumentV2, "id" | "title"> | null;
+  doc: Pick<DocumentV2, "id" | "title" | "metadata"> | null;
   camera: {
     panX: number;
     panY: number;
@@ -158,7 +159,7 @@ function hashTitle(value: string): string {
   return hash.toString(16).padStart(8, "0");
 }
 
-function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): string {
+function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title" | "metadata"> | null): string {
   if (!doc) {
     return "unknown";
   }
@@ -180,6 +181,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
     docSignature: resolveDocSignature(doc),
+    visibility: doc?.metadata?.visibility ?? "restricted",
     camera: {
       panX: camera.panX,
       panY: camera.panY,
@@ -284,6 +286,16 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (typeof value.docSignature !== "string") {
     return { ok: false, error: "metadata.docSignature must be a string" };
+  }
+
+  if (
+    value.visibility !== undefined
+    && value.visibility !== "public"
+    && value.visibility !== "unlisted"
+    && value.visibility !== "org"
+    && value.visibility !== "restricted"
+  ) {
+    return { ok: false, error: 'metadata.visibility must be "public" | "unlisted" | "org" | "restricted" when present' };
   }
 
   if (!isObject(value.camera)) {
@@ -602,6 +614,7 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   return { ok: true, metadata: {
     ...(value as ExportViewMetadata),
+    visibility: (value as ExportViewMetadata).visibility ?? "restricted",
     ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
     ...(value.reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(value.reviewEvents) }),
   } };

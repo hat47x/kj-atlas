@@ -205,6 +205,8 @@ export type DocumentV1 = {
   edges: EdgeV1[];
 };
 
+export type Visibility = "public" | "unlisted" | "org" | "restricted";
+
 export type DocumentV2 = {
   version: 2;
   id: string;
@@ -221,6 +223,9 @@ export type DocumentV2 = {
   evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
   mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+  metadata?: {
+    visibility?: Visibility;
+  };
 };
 
 export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";

@@ -32,7 +32,7 @@ import {
   getLatestMergeSuggestionDecisionByGroup,
   type MergeSuggestionDecision,
 } from "./domain/merge_suggestion_decisions";
-import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary } from "./domain/types";
+import { isSourceCard, Document, DocumentV2, Island, Narrative, type Point, type RelationSummary, type Visibility } from "./domain/types";
 import { validateDocument } from "./import/schema_validation";
 import { buildReadingOrderSnippets } from "./domain/snippet";
 import { useHotkeys } from "./hooks/useHotkeys";
@@ -149,6 +149,7 @@ type PublicPackManifestEntry = {
   id: string;
   documentPath: string;
   viewPath?: string;
+  visibility?: Visibility;
 };
 
 type PublicPackManifest = {
@@ -158,6 +159,15 @@ type PublicPackManifest = {
 
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
   return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
+}
+
+
+function sanitizeVisibility(value: unknown): Visibility {
+  if (value === "public" || value === "unlisted" || value === "org" || value === "restricted") {
+    return value;
+  }
+
+  return "restricted";
 }
 
 function clampEvidenceOverlayDepth(value: unknown): number {
@@ -582,6 +592,7 @@ function createDefaultDocument(docId: string): DocumentV2 {
     narratives: [],
     evidenceLinks: [],
     mergeSuggestionDecisions: [],
+    metadata: { visibility: "restricted" },
   };
 }
 
@@ -612,6 +623,7 @@ function createNewDocument(docId: string): DocumentV2 {
     narratives: [],
     evidenceLinks: [],
     mergeSuggestionDecisions: [],
+    metadata: { visibility: "restricted" },
   };
 }
 
@@ -634,6 +646,7 @@ function toDocumentV2(document: Document): DocumentV2 {
       narratives: document.narratives ?? [],
       evidenceLinks: document.evidenceLinks ?? [],
       mergeSuggestionDecisions: document.mergeSuggestionDecisions ?? [],
+      metadata: { visibility: document.metadata?.visibility ?? "restricted" },
     };
   }
 
@@ -645,6 +658,7 @@ function toDocumentV2(document: Document): DocumentV2 {
     narratives: [],
     evidenceLinks: [],
     mergeSuggestionDecisions: [],
+    metadata: { visibility: "restricted" },
   };
 }
 
@@ -2497,14 +2511,21 @@ ${parsedDocument.error}`);
       throw new Error(`Invalid pack document: ${documentParseResult.error}`);
     }
 
+    const normalizedDocument: DocumentV2 = {
+      ...documentParseResult.document,
+      metadata: {
+        visibility: sanitizeVisibility(documentParseResult.document.metadata?.visibility ?? targetPack.visibility),
+      },
+    };
+
     pendingCardDragSnapshotRef.current = null;
     setHistory({
       past: [],
-      present: cloneDocument(documentParseResult.document),
+      present: cloneDocument(normalizedDocument),
       future: [],
     });
-    setActiveDocumentId(documentParseResult.document.id);
-    setViewMode(loadViewModeForDocument(documentParseResult.document.id) ?? "explore");
+    setActiveDocumentId(normalizedDocument.id);
+    setViewMode(loadViewModeForDocument(normalizedDocument.id) ?? "explore");
     setSelectedRecentDocumentId("");
     setDocEtag(null);
     setSelectedCardIds([]);
@@ -2545,7 +2566,7 @@ ${parsedDocument.error}`);
       if (!viewParseResult.ok) {
         throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
       }
-      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, "Public pack loaded");
+      applyImportedViewMetadata(viewParseResult.metadata, normalizedDocument, "Public pack loaded");
     }
 
     setSafeMode(true);
