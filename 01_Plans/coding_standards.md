@@ -58,6 +58,63 @@
    - 正本の判断が難しい不足・不整合は、あるべき状態を整理したIssueを起票してから同期する（ADRに作業トラッキングを混在させない）。
    - それでも実行不能な環境のみ、未実施理由・代替検証・後続確認手順をPRに記載する。
 
+### 1.4 Frontend lint 段階導入（ADR-0018 Follow-up）
+
+Frontend lint は開発フローの急停止を避けるため、Phase A→B→C で導入する。
+
+#### Phase A（Warn-only / 可視化フェーズ）
+- 目的: `npm run lint` を日常運用へ定着させ、既存負債を可視化する。
+- ローカル: `npm run lint` を実行し、警告/失敗をPR本文へ記録する。
+- CI: `frontend-lint` ジョブを **warning運用**（失敗を許容）で実行する。
+- Exit criteria:
+  - [ ] `npm run lint` の実行手順が `CONTRIBUTING.md` に明記されている。
+  - [ ] CI Summary に lint phase と結果が出力される。
+  - [ ] 期限付き例外（後述）以外の新規lint違反を増やさない。
+
+#### Phase B（Fail-on-error / 品質ゲート化フェーズ）
+- 目的: lint失敗をPR段階で確実に止める。
+- ローカル: `npm run lint` 失敗時は修正完了までマージ不可。
+- CI: `FRONTEND_LINT_PHASE=B` に切り替え、`frontend-lint` 失敗を必ず fail とする。
+- Exit criteria:
+  - [ ] CI設定（`.github/workflows/ci.yml`）と規約文書の fail 条件が一致している。
+  - [ ] 例外Issueの期限切れが0件である。
+  - [ ] `frontend-typecheck` / `frontend-test` と責務重複なく運用されている。
+
+#### Phase C（Tighten rules / 継続改善フェーズ）
+- 目的: ルール追加時も段階導入を維持し、回帰を抑止する。
+- 運用: 追加ルールは `warn` で短期観測した後、期限を切って `error` へ移行する。
+- Exit criteria:
+  - [ ] 新規ルールごとに「warn期間」と「error化日」が記録されている。
+  - [ ] 期限超過の暫定例外が残っていない。
+
+#### `npm run lint` 運用手順（開発者向け）
+1. `cd 03_Implement/frontend && npm ci`
+2. `npm run lint` を実行する。
+3. 失敗時は以下の順で対処する。
+   - (a) ルール違反箇所を修正
+   - (b) 影響テスト（`npm run typecheck && npm run test`）を再実行
+   - (c) 修正不能な正当理由がある場合のみ期限付き例外を申請
+
+#### 期限付き例外の運用（必須）
+- 例外は恒久化しない。必ずIssue化し、`理由 / 解消担当 / 期限` を記載する。
+- 期限の初期値は **14日以内** とし、延長時はPRまたはIssueコメントで理由を明示する。
+- Phase B 以降で期限切れ例外がある場合、原則としてマージを停止する。
+
+#### CI責務分離と fail 条件（保守者向け）
+- `frontend-lint`: lint段階導入のゲート。
+  - Phase A: warning（ジョブ継続）
+  - Phase B/C: fail-on-error（ジョブ失敗）
+- `frontend-typecheck`: 型整合の検証（常時 fail-on-error）
+- `frontend-test`: 単体テストとビルド検証（常時 fail-on-error）
+
+#### 差分監査手順（規約 / CONTRIBUTING / CI の同期確認）
+1. 規約更新時に `01_Plans/coding_standards.md` のPhase定義を先に更新する。
+2. `CONTRIBUTING.md` の開発者手順（lint実行・失敗時対処・例外申請）を同一PRで同期する。
+3. `.github/workflows/ci.yml` のジョブ名・fail条件・phase切替手段が文書と一致するか確認する。
+4. 最終確認として以下を実行する。
+   - `rg -n "frontend-lint|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" 01_Plans/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml`
+   - 差異があれば、文書と実装のどちらを正本にするかをPR本文で明示して修正する。
+
 ---
 
 ## 2. レビュー時チェックリスト（PR貼り付け推奨）

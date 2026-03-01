@@ -35,6 +35,16 @@
 3. **PRレビューでの統制**を明文化する。
    - 規約チェックリストにより、複雑性・安全性・テスト有無を毎回確認する。
 
+
+## ADR-0018 Follow-up（Frontend lint 段階導入）
+
+本ADRの「静的検知を段階導入する」決定に対する運用実装として、以下を必須化する。
+
+- Phase A/B/C のチェックリストと exit criteria を `01_Plans/coding_standards.md` に定義する。
+- 開発者向けの `npm run lint` 実行手順・失敗時対処・期限付き例外運用を `CONTRIBUTING.md` に定義する。
+- CIは `frontend-lint` / `frontend-typecheck` / `frontend-test` に責務分離し、Phase B 以降の fail-on-error 条件を明示する。
+- 文書とCIの同期確認は、同一PR内の差分監査コマンドで検証する。
+
 ## Consequences
 
 - ルールと背景の責務分離により、規約文書は短く運用可能になる。
