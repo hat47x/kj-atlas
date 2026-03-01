@@ -41,5 +41,34 @@ describe("hierarchy_visibility", () => {
     expect(collectHierarchyPlacardHiddenCardIds(documentFixture, "mid")).toEqual(new Set());
     expect(collectHierarchyPlacardHiddenCardIds(documentFixture, "detail")).toEqual(new Set());
   });
+
+  it("keeps underlying cards intact while switching hierarchy levels", () => {
+    const originalCardIds = documentFixture.cards.map((card) => card.id);
+
+    const overviewHidden = collectHierarchyPlacardHiddenCardIds(documentFixture, "overview");
+    expect(overviewHidden).toEqual(new Set(["c-root-member", "c-child-member"]));
+
+    expect(documentFixture.cards.map((card) => card.id)).toEqual(originalCardIds);
+    expect(collectHierarchyPlacardHiddenCardIds(documentFixture, "detail")).toEqual(new Set());
+    expect(documentFixture.cards.map((card) => card.id)).toEqual(originalCardIds);
+  });
+
+  it("falls back safely when placardCardId is missing or outside island membership", () => {
+    const fallbackDocument: DocumentV2 = {
+      ...documentFixture,
+      islands: [
+        { id: "i-root", cardIds: ["c-root", "c-root-member"], placardCardId: "missing-card" },
+        { id: "i-child", cardIds: ["c-child", "c-child-member"] },
+      ],
+    };
+
+    expect(collectHierarchyPlacardHiddenCardIds(fallbackDocument, "overview")).toEqual(new Set([
+      "c-root",
+      "c-root-member",
+      "c-child",
+      "c-child-member",
+    ]));
+  });
+
 });
 

@@ -126,6 +126,7 @@ def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
             {
                 "id": "parent-island",
                 "cardIds": ["card-1"],
+                "placardCardId": "card-1",
                 "collapsed": True,
                 "title": "Parent",
             },
@@ -133,6 +134,7 @@ def _sample_payload_v2_with_collapsed(doc_id: str) -> dict:
                 "id": "child-island",
                 "cardIds": ["card-2"],
                 "parentIslandId": "parent-island",
+                "placardCardId": "card-2",
                 "collapsed": False,
                 "title": "Child",
             },
@@ -306,6 +308,9 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     put_islands_by_id = {island["id"]: island for island in put_json["islands"]}
     assert put_islands_by_id["parent-island"]["collapsed"] is True
     assert put_islands_by_id["child-island"]["collapsed"] is False
+    assert put_islands_by_id["child-island"]["parentIslandId"] == "parent-island"
+    assert put_islands_by_id["parent-island"]["placardCardId"] == "card-1"
+    assert put_islands_by_id["child-island"]["placardCardId"] == "card-2"
 
     get_response = client.get(f"/docs/{doc_id}")
     assert get_response.status_code == 200
@@ -314,6 +319,9 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     get_islands_by_id = {island["id"]: island for island in get_json["islands"]}
     assert get_islands_by_id["parent-island"]["collapsed"] is True
     assert get_islands_by_id["child-island"]["collapsed"] is False
+    assert get_islands_by_id["child-island"]["parentIslandId"] == "parent-island"
+    assert get_islands_by_id["parent-island"]["placardCardId"] == "card-1"
+    assert get_islands_by_id["child-island"]["placardCardId"] == "card-2"
 
 
 
