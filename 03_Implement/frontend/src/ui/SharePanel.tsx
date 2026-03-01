@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
@@ -8,6 +8,7 @@ import type { TrustLabel } from "../domain/patch/patch_types";
 import { ImportPanel } from "./ImportPanel";
 import { getExportSafetyWarning, getSafeModeIndicator, getSafeModeLockedContextLabel } from "./safe_mode_status";
 import { t } from "../i18n/translate";
+import type { ExportGranularity } from "../export/bundle_export";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -28,7 +29,7 @@ type SharePanelProps = {
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
-  onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean }) => void;
+  onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: ExportGranularity }) => void;
   isBundleExportRunning: boolean;
   onCancelBundleExport: () => void;
   computeProgressMessage: string | null;
@@ -182,6 +183,8 @@ export function SharePanel({
   const [bundleIncludeOutline, setBundleIncludeOutline] = useState(true);
   const [bundleIncludeDiagnostics, setBundleIncludeDiagnostics] = useState(true);
   const [bundleIncludeSelectedCardTraces, setBundleIncludeSelectedCardTraces] = useState(true);
+  const [bundleExportGranularity, setBundleExportGranularity] = useState<ExportGranularity>("detail");
+  const bundleGranularityFieldName = useId();
 
 
   const handleViewMetadataFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -400,6 +403,29 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_traces")}
               </label>
+              <div style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("share.panel.export.bundle_granularity")}</div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                  <input
+                    type="radio"
+                    name={bundleGranularityFieldName}
+                    value="detail"
+                    checked={bundleExportGranularity === "detail"}
+                    onChange={() => setBundleExportGranularity("detail")}
+                  />
+                  {t("share.panel.export.bundle_granularity_detail")}
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                  <input
+                    type="radio"
+                    name={bundleGranularityFieldName}
+                    value="overview"
+                    checked={bundleExportGranularity === "overview"}
+                    onChange={() => setBundleExportGranularity("overview")}
+                  />
+                  {t("share.panel.export.bundle_granularity_overview")}
+                </label>
+              </div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.export.bundle_trace_hint")}</div>
               <button
                 type="button"
@@ -408,6 +434,7 @@ export function SharePanel({
                     includeOutline: bundleIncludeOutline,
                     includeDiagnostics: bundleIncludeDiagnostics,
                     includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces,
+                    exportGranularity: bundleExportGranularity,
                   });
                 }}
                 disabled={!hasDocument || isLoading || isBundleExportRunning}

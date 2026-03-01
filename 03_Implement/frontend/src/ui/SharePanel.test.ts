@@ -86,3 +86,12 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("Locked redaction contexts: Share / Review Pack (cannot be disabled).");
   });
 });
+
+describe("SharePanel bundle granularity", () => {
+  it("renders granularity options in export section", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("Export granularity");
+    expect(html).toContain("Detail (full trace exports)");
+    expect(html).toContain("Overview (high-level summary)");
+  });
+});

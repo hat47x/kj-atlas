@@ -37,6 +37,35 @@ const baseDoc: DocumentV2 = {
 };
 
 describe("buildExportBundle", () => {
+  test("writes bundle manifest with selected export granularity", () => {
+    const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: true,
+      selectedCardId: "c2",
+      exportGranularity: "overview",
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    const manifestRaw = files.find((file) => file.path.endsWith("/bundle_manifest.json"));
+    expect(manifestRaw).toBeDefined();
+    const manifest = JSON.parse(String(manifestRaw?.content)) as { exportGranularity: string; generatedAt: string };
+    expect(manifest.exportGranularity).toBe("overview");
+    expect(manifest.generatedAt).toBe("2026-01-02T00:00:00.000Z");
+  });
+
   test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
       rootFolderPath: "kj-atlas-export-20260101-010203",
@@ -59,6 +88,7 @@ describe("buildExportBundle", () => {
     });
 
     expect(files.map((file) => file.path)).toEqual([
+      "kj-atlas-export-20260101-010203/bundle_manifest.json",
       "kj-atlas-export-20260101-010203/document.json",
       "kj-atlas-export-20260101-010203/merge_decision_audit.json",
       "kj-atlas-export-20260101-010203/view.json",
@@ -137,6 +167,33 @@ describe("buildExportBundle", () => {
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
     expect(files.map((file) => file.path)).toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
+  });
+
+  test("overview granularity suppresses selected-card traces", () => {
+    const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: true,
+      includeDiagnostics: true,
+      includeSelectedCardTraces: true,
+      selectedCardId: "c2",
+      exportGranularity: "overview",
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+
+    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/evidence_trace_c2.md");
+    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/contradiction_trace_c2.md");
+    expect(files.map((file) => file.path)).not.toContain("kj-atlas-export-20260101-010203/trace_analytics_c2.md");
   });
   test("creates a readable zip archive", async () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
