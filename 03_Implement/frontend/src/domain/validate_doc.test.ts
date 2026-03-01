@@ -59,6 +59,35 @@ describe("validateDocumentV2Strict", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("keeps shape compatibility for rect and polygon islands", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      islands: [
+        {
+          id: "i_rect",
+          cardIds: ["c1"],
+          shape: {
+            kind: "rect",
+          },
+        },
+        {
+          id: "i_polygon",
+          cardIds: ["c1"],
+          shape: {
+            kind: "polygon",
+            points: [
+              { x: 0, y: 0 },
+              { x: 100, y: 0 },
+              { x: 100, y: 100 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
   it("accepts legacy polygon geometry payload", () => {
     const result = validateDocumentV2Strict({
       ...validDocument,
