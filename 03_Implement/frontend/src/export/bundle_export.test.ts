@@ -2,6 +2,11 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import type { DocumentV2 } from "../domain/types";
 import JSZip from "jszip";
 import { buildBundleZipBlob, buildExportBundle, buildExportBundleWithWorkers } from "./bundle_export";
+import { canonicalizeJson } from "../domain/patch/patch_fingerprint";
+import evidenceAddBaseRaw from "../../tests/fixtures/review-selective-merge/evidence-add.base.json?raw";
+import evidenceAddIncomingRaw from "../../tests/fixtures/review-selective-merge/evidence-add.incoming.json?raw";
+import claimTypeBaseRaw from "../../tests/fixtures/review-selective-merge/claim-type.base.json?raw";
+import claimTypeIncomingRaw from "../../tests/fixtures/review-selective-merge/claim-type.incoming.json?raw";
 
 
 const originalWorker = globalThis.Worker;
@@ -36,7 +41,105 @@ const baseDoc: DocumentV2 = {
   ],
 };
 
+async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function documentJsonHashFromBundle(doc: DocumentV2, viewState: unknown): Promise<string> {
+  const files = buildExportBundle(doc, viewState, {
+    rootFolderPath: "kj-atlas-export-20260101-010203",
+    safeMode: true,
+    includeOutline: false,
+    includeDiagnostics: false,
+    includeSelectedCardTraces: false,
+    selectedCardId: null,
+    deterministicNowIso: "2026-01-02T00:00:00.000Z",
+    readingMode: "islands",
+    reviewedOnly: false,
+    readingState: {
+      readingNavEnabled: false,
+      readingIndex: 0,
+      readingMode: "islands",
+      reviewedOnly: false,
+      safeMode: true,
+      generatedAt: "2026-01-02T00:00:00.000Z",
+    },
+  });
+
+  const documentFile = files.find((file) => file.path.endsWith("/document.json"));
+  if (!documentFile || typeof documentFile.content !== "string") {
+    throw new Error("document.json not found in bundle output");
+  }
+
+  const canonical = canonicalizeJson(JSON.parse(documentFile.content));
+  return sha256Hex(canonical);
+}
+
+function parseFixture(raw: string): DocumentV2 {
+  return JSON.parse(raw) as DocumentV2;
+}
+
 describe("buildExportBundle", () => {
+  test("keeps document.json hash stable across ja/en locale switch", async () => {
+    const jaViewState = {
+      camera: { zoom: 1 },
+      ui: { locale: "ja", labels: { exportButton: "エクスポート" } },
+    };
+    const enViewState = {
+      camera: { zoom: 1 },
+      ui: { locale: "en", labels: { exportButton: "Export" } },
+    };
+
+    const jaHash = await documentJsonHashFromBundle(baseDoc, jaViewState);
+    const enHash = await documentJsonHashFromBundle(baseDoc, enViewState);
+
+    expect(jaHash).toBe(enHash);
+
+    const files = buildExportBundle(baseDoc, enViewState, {
+      rootFolderPath: "kj-atlas-export-20260101-010203",
+      safeMode: true,
+      includeOutline: false,
+      includeDiagnostics: false,
+      includeSelectedCardTraces: false,
+      selectedCardId: null,
+      deterministicNowIso: "2026-01-02T00:00:00.000Z",
+      readingMode: "islands",
+      reviewedOnly: false,
+      readingState: {
+        readingNavEnabled: false,
+        readingIndex: 0,
+        readingMode: "islands",
+        reviewedOnly: false,
+        safeMode: true,
+        generatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+    const documentFile = files.find((file) => file.path.endsWith("/document.json"));
+    expect(documentFile).toBeDefined();
+    const documentJson = JSON.parse(String(documentFile?.content)) as Record<string, unknown>;
+    expect(documentJson).not.toHaveProperty("ui");
+    expect(documentJson).not.toHaveProperty("locale");
+  });
+
+  test("fixture documents keep deterministic document.json hash regardless of locale-specific view state", async () => {
+    const fixtures = [
+      parseFixture(evidenceAddBaseRaw),
+      parseFixture(evidenceAddIncomingRaw),
+      parseFixture(claimTypeBaseRaw),
+      parseFixture(claimTypeIncomingRaw),
+    ];
+
+    for (const fixture of fixtures) {
+      const jaHash = await documentJsonHashFromBundle(fixture, { locale: "ja", sidePanel: { tab: "share" } });
+      const enHash = await documentJsonHashFromBundle(fixture, { locale: "en", sidePanel: { tab: "share" } });
+      expect(jaHash).toBe(enHash);
+    }
+  });
+
   test("writes bundle manifest with selected export granularity", () => {
     const files = buildExportBundle(baseDoc, { camera: { zoom: 1 } }, {
       rootFolderPath: "kj-atlas-export-20260101-010203",
