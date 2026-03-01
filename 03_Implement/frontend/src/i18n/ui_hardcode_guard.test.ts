@@ -19,6 +19,15 @@ const guardCases: GuardCase[] = [
     ],
   },
   {
+    file: "ui/SuggestionPanel.tsx",
+    forbiddenLiterals: [
+      "Draft suggestion",
+      "Suggest layout",
+      "Apply suggestion",
+      "Preview suggestion",
+    ],
+  },
+  {
     file: "ui/ReviewDiffPanel.tsx",
     forbiddenLiterals: [
       "Review Diff (Selective Merge)",
