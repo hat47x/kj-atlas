@@ -249,7 +249,7 @@ function parseIslands(value: unknown): Island[] {
     }
 
     const visited = new Set<string>([islandId]);
-    let cursor = parentIslandId;
+    let cursor: string | undefined = parentIslandId;
 
     while (cursor) {
       if (visited.has(cursor)) {
