@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
+import { afterEach } from "vitest";
+import { setActiveLocale } from "../../i18n/translate";
 
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./read_only";
+
+afterEach(() => {
+  setActiveLocale("ja");
+});
 
 describe("resolveReadOnlyFromSearch", () => {
   test("returns false when no readonly flags are provided", () => {
@@ -29,10 +35,16 @@ describe("resolveReadOnlyFromSearch", () => {
 
 describe("buildReadOnlyBlockedMessage", () => {
   test("builds generic message when no action label is supplied", () => {
-    expect(buildReadOnlyBlockedMessage()).toBe("Read-only mode: editing is disabled.");
+    expect(buildReadOnlyBlockedMessage()).toBe("読み取り専用モード: 編集操作は無効です。");
   });
 
   test("builds action specific message", () => {
+    expect(buildReadOnlyBlockedMessage("card update")).toBe("読み取り専用モード: card update は無効です。");
+  });
+
+  test("returns english messages when locale is switched", () => {
+    setActiveLocale("en");
+    expect(buildReadOnlyBlockedMessage()).toBe("Read-only mode: editing actions are disabled.");
     expect(buildReadOnlyBlockedMessage("card update")).toBe("Read-only mode: card update is disabled.");
   });
 });
