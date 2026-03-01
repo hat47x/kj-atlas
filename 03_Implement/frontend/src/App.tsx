@@ -127,6 +127,7 @@ import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type 
 import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
+import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
@@ -864,6 +865,7 @@ export default function App() {
   const [docEtag, setDocEtag] = useState<string | null>(null);
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(window.location.search), []);
   const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
   const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
   const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
@@ -1673,7 +1675,12 @@ export default function App() {
       options?: {
         preserveSuggestionPreview?: boolean;
       }
-    ) => {
+    ): boolean => {
+      if (isReadOnly) {
+        setStatusMessage(buildReadOnlyBlockedMessage(nextStatusMessage));
+        return false;
+      }
+
       pendingCardDragSnapshotRef.current = null;
 
       setHistory((previousHistory) => {
@@ -1697,8 +1704,10 @@ export default function App() {
       if (nextStatusMessage) {
         setStatusMessage(nextStatusMessage);
       }
+
+      return true;
     },
-    []
+    [isReadOnly]
   );
 
 
@@ -6037,7 +6046,7 @@ ${parsedDocument.error}`);
         onClick={() => {
           void handleSuggestLayout();
         }}
-        disabled={isLoading || !document || isSuggesting}
+        disabled={isReadOnly || isLoading || !document || isSuggesting}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6045,7 +6054,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
         }}
       >
         {isSuggesting ? "Suggesting..." : "Suggest layout"}
@@ -6053,7 +6062,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleUndo}
-        disabled={isLoading || !document || !canUndo}
+        disabled={isReadOnly || isLoading || !document || !canUndo}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6061,7 +6070,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || !canUndo ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || !canUndo ? "not-allowed" : "pointer",
         }}
       >
         Undo
@@ -6069,7 +6078,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={handleRedo}
-        disabled={isLoading || !document || !canRedo}
+        disabled={isReadOnly || isLoading || !document || !canRedo}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6077,7 +6086,7 @@ ${parsedDocument.error}`);
           borderRadius: 6,
           padding: "6px 12px",
           fontWeight: 600,
-          cursor: isLoading || !document || !canRedo ? "not-allowed" : "pointer",
+          cursor: isReadOnly || isLoading || !document || !canRedo ? "not-allowed" : "pointer",
         }}
       >
         Redo
@@ -7355,7 +7364,7 @@ ${parsedDocument.error}`);
   return (
     <Shell
       title="kj-atlas Canvas MVP"
-      subtitle={`Document: ${activeDocumentId}`}
+      subtitle={`Document: ${activeDocumentId}${isReadOnly ? " • Read-only" : ""}`}
       headerViewControls={headerViewControls}
       headerShareControls={headerShareControls}
       headerCenter={headerCenter}
@@ -7373,6 +7382,7 @@ ${parsedDocument.error}`);
       isReloadingAfterConflict={isReloadingDocument}
       sidePanel={
         <SidePanel
+          isReadOnly={isReadOnly}
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
           revealedSourceCardIds={revealedSourceCardIds}
@@ -7416,6 +7426,7 @@ ${parsedDocument.error}`);
                 hideSourceCards={hideSourceCards}
               />
               <MergeSuggestionsPanel
+                isReadOnly={isReadOnly}
                 instruction={mergeSuggestionInstruction}
                 onInstructionChange={setMergeSuggestionInstruction}
                 onSuggest={() => {
@@ -7429,6 +7440,7 @@ ${parsedDocument.error}`);
                 onDecide={handleRecordMergeSuggestionDecision}
               />
               <SuggestionPanel
+                isReadOnly={isReadOnly}
                 instruction={suggestionInstruction}
                 onInstructionChange={setSuggestionInstruction}
                 onSuggest={() => {
@@ -7835,12 +7847,12 @@ ${parsedDocument.error}`);
             onEdgeSelect={handleEdgeSelect}
             onAggregatedEdgesChange={setVisibleAggregatedEdges}
             showReadingOrder={showReadingOrder}
-            readingOrderEditMode={isReadingOrderEditMode}
+            readingOrderEditMode={!isReadOnly && isReadingOrderEditMode}
             onReadingOrderRemove={handleRemoveReadingOrderEntry}
             onReadingOrderReorder={handleReorderReadingOrderEntry}
             visibleIslandIds={visibleIslandIdSet}
             polygonVertexEditIslandId={
-              isPolygonVertexEditEnabled && selectedIsland?.shape?.kind === "polygon" ? selectedIsland.id : null
+              !isReadOnly && isPolygonVertexEditEnabled && selectedIsland?.shape?.kind === "polygon" ? selectedIsland.id : null
             }
             onPolygonVertexMove={handlePolygonVertexMove}
             onPolygonVertexAdd={handlePolygonVertexAdd}
