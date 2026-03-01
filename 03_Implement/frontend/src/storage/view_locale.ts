@@ -1,0 +1,74 @@
+import { isLocale, type Locale } from "../i18n/translate";
+import { isViewMode, type ViewMode } from "../domain/view/view_mode";
+
+const VIEW_LOCALE_STORAGE_KEY = "kj-atlas/view-locale-by-doc-view";
+
+type ViewLocaleByDoc = Record<string, Partial<Record<ViewMode, Locale>>>;
+
+function isStorageAvailable(): boolean {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+export function parseViewLocaleByDoc(rawValue: string | null | undefined): ViewLocaleByDoc {
+  if (!rawValue) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const next: ViewLocaleByDoc = {};
+    for (const [docId, localesByView] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof docId !== "string" || docId.length === 0) {
+        continue;
+      }
+      if (!localesByView || typeof localesByView !== "object" || Array.isArray(localesByView)) {
+        continue;
+      }
+
+      const validLocalesByView: Partial<Record<ViewMode, Locale>> = {};
+      for (const [viewMode, locale] of Object.entries(localesByView as Record<string, unknown>)) {
+        if (!isViewMode(viewMode) || typeof locale !== "string" || !isLocale(locale)) {
+          continue;
+        }
+
+        validLocalesByView[viewMode] = locale;
+      }
+
+      if (Object.keys(validLocalesByView).length > 0) {
+        next[docId] = validLocalesByView;
+      }
+    }
+
+    return next;
+  } catch {
+    return {};
+  }
+}
+
+export function loadViewLocaleForDocumentView(docId: string, viewMode: ViewMode): Locale | null {
+  if (!docId || !isStorageAvailable()) {
+    return null;
+  }
+
+  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(VIEW_LOCALE_STORAGE_KEY));
+  return byDoc[docId]?.[viewMode] ?? null;
+}
+
+export function saveViewLocaleForDocumentView(docId: string, viewMode: ViewMode, locale: string): void {
+  if (!docId || !isLocale(locale) || !isStorageAvailable()) {
+    return;
+  }
+
+  const byDoc = parseViewLocaleByDoc(window.localStorage.getItem(VIEW_LOCALE_STORAGE_KEY));
+  const previousByView = byDoc[docId] ?? {};
+  byDoc[docId] = {
+    ...previousByView,
+    [viewMode]: locale,
+  };
+
+  window.localStorage.setItem(VIEW_LOCALE_STORAGE_KEY, JSON.stringify(byDoc));
+}

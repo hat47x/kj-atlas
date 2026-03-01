@@ -6,6 +6,7 @@ import {
   resolveTemplate,
   resolveTemplateFromCatalogs,
   setActiveLocale,
+  subscribeActiveLocaleChange,
   t,
   validateLocaleMessages,
   type Locale,
@@ -85,5 +86,19 @@ describe("translate", () => {
 
   it("resolves explicit locale via resolveTemplate", () => {
     expect(resolveTemplate("safe_mode.indicator.on.label", "en")).toBe("SafeMode: ON");
+  });
+
+  it("notifies listeners when active locale changes", () => {
+    const calls: string[] = [];
+    const unsubscribe = subscribeActiveLocaleChange((locale) => {
+      calls.push(locale);
+    });
+
+    setActiveLocale("en");
+    setActiveLocale("ja");
+    unsubscribe();
+    setActiveLocale("en");
+
+    expect(calls).toEqual(["en", "ja"]);
   });
 });

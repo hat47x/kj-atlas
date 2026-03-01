@@ -12,6 +12,7 @@ export { DEFAULT_LOCALE, type Locale } from "./messages";
 type TranslateValues = Record<string, string | number>;
 
 let activeLocale: Locale = DEFAULT_LOCALE;
+const localeListeners = new Set<(locale: Locale) => void>();
 
 type LocaleValidationResult = {
   ok: boolean;
@@ -28,6 +29,16 @@ export function getActiveLocale(): Locale {
 
 export function setActiveLocale(locale: string): void {
   activeLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+  for (const listener of localeListeners) {
+    listener(activeLocale);
+  }
+}
+
+export function subscribeActiveLocaleChange(listener: (locale: Locale) => void): () => void {
+  localeListeners.add(listener);
+  return () => {
+    localeListeners.delete(listener);
+  };
 }
 
 export function validateLocaleMessages(payload: unknown): LocaleValidationResult {

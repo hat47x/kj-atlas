@@ -53,6 +53,7 @@ import {
 import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
+import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
@@ -130,6 +131,7 @@ import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./dom
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
+import { DEFAULT_LOCALE, getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
@@ -1604,7 +1606,9 @@ export default function App() {
           future: [],
         });
         setActiveDocumentId(loadedDocument.id);
-        setViewMode(loadViewModeForDocument(loadedDocument.id) ?? "explore");
+        const loadedViewMode = loadViewModeForDocument(loadedDocument.id) ?? "explore";
+        setViewMode(loadedViewMode);
+        setActiveLocale(loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode) ?? DEFAULT_LOCALE);
         rememberRecentDocumentId(loadedDocument.id);
         setSelectedRecentDocumentId(loadedDocument.id);
         setDocEtag(loaded.etag ?? null);
@@ -1635,7 +1639,9 @@ export default function App() {
               future: [],
             });
             setActiveDocumentId(savedDocument.id);
-            setViewMode(loadViewModeForDocument(savedDocument.id) ?? "explore");
+            const loadedViewMode = loadViewModeForDocument(savedDocument.id) ?? "explore";
+            setViewMode(loadedViewMode);
+            setActiveLocale(loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode) ?? DEFAULT_LOCALE);
             rememberRecentDocumentId(savedDocument.id);
             setSelectedRecentDocumentId(savedDocument.id);
             setDocEtag(saved.etag ?? null);
@@ -2485,7 +2491,9 @@ ${parsedDocument.error}`);
       future: [],
     });
     setActiveDocumentId(documentParseResult.document.id);
-    setViewMode(loadViewModeForDocument(documentParseResult.document.id) ?? "explore");
+    const importedViewMode = loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
+    setViewMode(importedViewMode);
+    setActiveLocale(loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode) ?? DEFAULT_LOCALE);
     setSelectedRecentDocumentId("");
     setDocEtag(null);
     setSelectedCardIds([]);
@@ -7114,7 +7122,10 @@ ${parsedDocument.error}`);
     }
 
     applyViewPatch(preset.viewPatch);
+    const currentLocale = getActiveLocale();
+    saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
     setViewMode(mode);
+    setActiveLocale(loadViewLocaleForDocumentView(activeDocumentId, mode) ?? currentLocale);
     setActivePresetId(preset.id);
     if (preset.id === "default-review") {
       setSafeMode(true);
@@ -7123,7 +7134,7 @@ ${parsedDocument.error}`);
     if (options?.announce ?? true) {
       setStatusMessage(`Applied mode: ${getViewModeLabel(mode)}`);
     }
-  }, [applyViewPatch, viewPresets]);
+  }, [activeDocumentId, applyViewPatch, viewMode, viewPresets]);
 
   const handleSaveViewPreset = useCallback(() => {
     const name = window.prompt("Preset name", "My preset")?.trim();
@@ -7185,6 +7196,14 @@ ${parsedDocument.error}`);
 
   useEffect(() => {
     saveViewModeForDocument(activeDocumentId, viewMode);
+  }, [activeDocumentId, viewMode]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeActiveLocaleChange((locale) => {
+      saveViewLocaleForDocumentView(activeDocumentId, viewMode, locale);
+    });
+
+    return unsubscribe;
   }, [activeDocumentId, viewMode]);
 
   useEffect(() => {
