@@ -11,6 +11,8 @@ export { DEFAULT_LOCALE, type Locale } from "./messages";
 
 type TranslateValues = Record<string, string | number>;
 
+let activeLocale: Locale = DEFAULT_LOCALE;
+
 type LocaleValidationResult = {
   ok: boolean;
   errors: string[];
@@ -18,6 +20,14 @@ type LocaleValidationResult = {
 
 export function isLocale(value: string): value is Locale {
   return SUPPORTED_LOCALES.includes(value as Locale);
+}
+
+export function getActiveLocale(): Locale {
+  return activeLocale;
+}
+
+export function setActiveLocale(locale: string): void {
+  activeLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
 }
 
 export function validateLocaleMessages(payload: unknown): LocaleValidationResult {
@@ -59,7 +69,7 @@ export function resolveTemplate(key: MessageKey, locale?: string): string {
 }
 
 export function t(key: MessageKey | string, values?: TranslateValues, locale?: string): string {
-  const template = resolveTemplate(key, locale);
+  const template = resolveTemplate(key, locale ?? activeLocale);
   if (!values) {
     return template;
   }

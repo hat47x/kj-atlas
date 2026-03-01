@@ -42,5 +42,6 @@
   "share.panel.load_document.section_hint": "Validate DocumentV2 JSON first, then explicitly replace the current document.",
   "share.panel.load_document.load": "Load document.json",
   "share.panel.load_document.summary": "cards: {cardCount} / islands: {islandCount} / edges: {edgeCount}",
-  "share.panel.load_document.replace": "Replace current document"
+  "share.panel.load_document.replace": "Replace current document",
+  "safe_mode.indicator.on.label": "SafeMode: ON"
 }
