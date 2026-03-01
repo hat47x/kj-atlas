@@ -116,7 +116,7 @@
 | ID | 優先度 | 状態 | 具体アクション | DoD（完了条件） |
 |---|---|---|---|---|
 | FB-RM-PUB-01 | P1 | Planned | Public / Unlisted / Org / Restricted を pack/view metadataへ追加 | schema検証と既存データ互換を両立 |
-| FB-RM-PUB-02 | P1 | Planned | `isReadOnly` で編集系UIを一括制御 | 直編集操作が抑止される |
+| FB-RM-PUB-02 | P1 | Done (2026-03-01) | URL query (`readonly/readOnly/isReadOnly/mode=readonly`) から read-only モードを解決し、`applyDocumentChange` ガードで編集系更新を一括抑止。Suggestion / Merge Suggestions の編集導線をdisabled化し、サイドパネルとヘッダーに read-only 状態を明示。 | 読み取り専用時に編集系更新が保存されず、UIで状態が明示される |
 | FB-RM-PUB-03 | P1 | Planned | index/assets/packs の最小公開アーティファクトを出力 | 静的ホスティングで閲覧成立 |
 | FB-RM-PUB-04 | P2 | Planned | roles/groups/policyRef 抽象I/Fを定義し実装を外部委譲 | アプリ本体にRBACロジックを持ち込まない |
 | FB-RM-PUB-05 | P2 | Planned | 閲覧/エクスポートイベントを外部監査基盤へ送信可能化 | 監査連携のON/OFFを設定で切替できる |
@@ -266,3 +266,12 @@
 - [x] `validateLocaleMessages` で JSON object + string value 契約を検証。
 - [x] `translate.test.ts` に locale fallback / unknown key / 契約検証テストを追加。
 - [x] Import/Share/SafeMode 文言の回帰テストを再実行し互換を確認。
+
+
+#### FB-RM-PUB-02 実装TODO（完了ログ）
+
+- [x] `src/domain/policy/read_only.ts` を追加し、queryパラメータから read-only 判定を行う共通ロジックを実装。
+- [x] `src/domain/policy/read_only.test.ts` を追加し、truthy/falsy と mode 指定の判定を回帰固定。
+- [x] `App.tsx` の `applyDocumentChange` に read-only ガードを追加し、編集更新を一括拒否するよう統合。
+- [x] `SuggestionPanel` / `MergeSuggestionsPanel` の編集導線を read-only 時に disabled 化。
+- [x] `SidePanel` とヘッダー subtitle に read-only 状態表示を追加。

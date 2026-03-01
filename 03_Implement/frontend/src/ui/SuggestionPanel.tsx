@@ -1,4 +1,5 @@
 type SuggestionPanelProps = {
+  isReadOnly?: boolean;
   instruction: string;
   onInstructionChange: (value: string) => void;
   onSuggest: () => void;
@@ -30,6 +31,7 @@ export function SuggestionPanel({
   isSuggesting,
   errorMessage,
   notes,
+  isReadOnly = false,
 }: SuggestionPanelProps) {
   return (
     <section
@@ -47,6 +49,7 @@ export function SuggestionPanel({
       </div>
       <textarea
         value={instruction}
+        disabled={isReadOnly}
         onChange={(event) => {
           onInstructionChange(event.target.value);
         }}
@@ -63,7 +66,7 @@ export function SuggestionPanel({
         }}
       />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <button type="button" onClick={onSuggest} disabled={isSuggesting}>
+        <button type="button" onClick={onSuggest} disabled={isReadOnly || isSuggesting}>
           {isSuggesting ? "Suggesting..." : "Suggest layout"}
         </button>
       </div>
@@ -82,19 +85,20 @@ export function SuggestionPanel({
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
               <button
                 type="button"
+                disabled={isReadOnly}
                 onClick={() => {
                   onAnnotateOverlayToggle(!isAnnotateOverlayEnabled);
                 }}
               >
                 {isAnnotateOverlayEnabled ? "Stop annotating" : "Annotate critiques"}
               </button>
-              <button type="button" onClick={onResuggest} disabled={isSuggesting}>
+              <button type="button" onClick={onResuggest} disabled={isReadOnly || isSuggesting}>
                 {isSuggesting ? "Re-suggesting..." : "Re-suggest"}
               </button>
-              <button type="button" onClick={onApply}>
+              <button type="button" disabled={isReadOnly} onClick={onApply}>
                 Apply suggestion
               </button>
-              <button type="button" onClick={onDiscard}>
+              <button type="button" disabled={isReadOnly} onClick={onDiscard}>
                 Discard
               </button>
             </div>
@@ -106,6 +110,7 @@ export function SuggestionPanel({
             <input
               type="checkbox"
               checked={isPreviewEnabled}
+              disabled={isReadOnly}
               onChange={(event) => {
                 onPreviewToggle(event.target.checked);
               }}

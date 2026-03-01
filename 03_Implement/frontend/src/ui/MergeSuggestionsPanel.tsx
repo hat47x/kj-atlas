@@ -10,6 +10,7 @@ type MergeSuggestionDraft = MergeSuggestion & {
 };
 
 type MergeSuggestionsPanelProps = {
+  isReadOnly?: boolean;
   instruction: string;
   onInstructionChange: (value: string) => void;
   onSuggest: () => void;
@@ -54,6 +55,7 @@ export function MergeSuggestionsPanel({
   cardsById,
   onMergedTextChange,
   onDecide,
+  isReadOnly = false,
 }: MergeSuggestionsPanelProps) {
   return (
     <section
@@ -68,6 +70,7 @@ export function MergeSuggestionsPanel({
       <div style={{ fontWeight: 700, marginBottom: 8 }}>Similar card merge candidates</div>
       <textarea
         value={instruction}
+        disabled={isReadOnly}
         onChange={(event) => {
           onInstructionChange(event.target.value);
         }}
@@ -83,7 +86,7 @@ export function MergeSuggestionsPanel({
           boxSizing: "border-box",
         }}
       />
-      <button type="button" onClick={onSuggest} disabled={isSuggesting} style={{ marginBottom: 8 }}>
+      <button type="button" onClick={onSuggest} disabled={isReadOnly || isSuggesting} style={{ marginBottom: 8 }}>
         {isSuggesting ? "Collecting..." : "Collect candidates"}
       </button>
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
@@ -119,6 +122,7 @@ export function MergeSuggestionsPanel({
           </ul>
           <textarea
             value={suggestion.editedText}
+            disabled={isReadOnly}
             onChange={(event) => {
               onMergedTextChange(suggestion.groupId, event.target.value);
             }}
@@ -137,10 +141,10 @@ export function MergeSuggestionsPanel({
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Rationale: {suggestion.rationale}</div>
           ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => onDecide(suggestion.groupId, "accept")}>Accept</button>
-            <button type="button" onClick={() => onDecide(suggestion.groupId, "partial")}>Partially accept</button>
-            <button type="button" onClick={() => onDecide(suggestion.groupId, "reject")}>Reject</button>
-            <button type="button" onClick={() => onDecide(suggestion.groupId, "defer")}>Defer</button>
+            <button type="button" disabled={isReadOnly} onClick={() => onDecide(suggestion.groupId, "accept")}>Accept</button>
+            <button type="button" disabled={isReadOnly} onClick={() => onDecide(suggestion.groupId, "partial")}>Partially accept</button>
+            <button type="button" disabled={isReadOnly} onClick={() => onDecide(suggestion.groupId, "reject")}>Reject</button>
+            <button type="button" disabled={isReadOnly} onClick={() => onDecide(suggestion.groupId, "defer")}>Defer</button>
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
             Decisions are recorded only; no automatic canonical merge is executed.

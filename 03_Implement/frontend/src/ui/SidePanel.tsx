@@ -39,6 +39,7 @@ type AggregatedEdgeInspectorItem = {
 };
 
 type SidePanelProps = {
+  isReadOnly?: boolean;
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
   revealedSourceCardIds: Set<string>;
@@ -340,6 +341,7 @@ export function SidePanel({
   importedPackSnapshotUrl,
   importedPackDiagnosticsMd,
   mergeAuditLog,
+  isReadOnly = false,
 }: SidePanelProps) {
   const [hasImagePreviewError, setHasImagePreviewError] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
@@ -1030,6 +1032,11 @@ export function SidePanel({
         overflowY: "auto",
       }}
     >
+      {isReadOnly ? (
+        <div style={{ fontSize: 12, color: "#9a3412", backgroundColor: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 6, padding: 8, marginBottom: 12 }}>
+          Read-only mode is active. Editing actions are disabled.
+        </div>
+      ) : null}
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>

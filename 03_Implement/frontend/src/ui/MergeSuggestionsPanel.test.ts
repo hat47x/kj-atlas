@@ -48,4 +48,11 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Defer");
     expect(html).toContain("no automatic canonical merge is executed");
   });
+
+  it("disables merge-decision editing controls in read-only mode", () => {
+    const html = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, { ...buildProps(), isReadOnly: true }));
+
+    expect(html).toContain("Collect candidates");
+    expect(html).toContain("disabled");
+  });
 });

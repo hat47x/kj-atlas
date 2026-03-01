@@ -41,6 +41,13 @@ docker compose logs api --tail=100
 - ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
+
+### Read-only 表示モード
+
+- URL query で `readonly=true`（同義: `readOnly=1`, `isReadOnly=yes`, `mode=readonly`）を指定すると、Frontend は read-only モードで起動します。
+- read-only モードでは編集系更新（カード/島/関係の更新、提案適用など）は保存されず、UI上でも編集操作は disabled 表示になります。
+- 閲覧操作（パン/ズーム/検索/参照）は継続可能です。
+
 ### Bundle export の監査ファイル
 
 - `Export bundle (.zip)` には `merge_decision_audit.json` が同梱されます。
