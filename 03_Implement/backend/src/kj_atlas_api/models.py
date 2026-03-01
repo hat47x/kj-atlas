@@ -124,7 +124,7 @@ class SummaryHistoryEntry(BaseModel):
 class Island(BaseModel):
     id: str
     cardIds: list[str]
-    parentIslandId: str | None = None
+    parentIslandId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     placardCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     collapsed: bool = False
     title: str | None = None
