@@ -152,6 +152,7 @@ export type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
 | --- | --- | --- | --- | --- |
 | `view.json` | `visibility` | `Restricted` を補完 | reject（strict validator） | 常に enum を明示 |
 | `packs/index.json` | `packs[*].visibility` | `Public` を補完 | reject（strict validator） | 常に enum を明示 |
+| `document.json` | （対象外） | 変更なし（`visibility` を持たない） | N/A | N/A |
 
 ### 8.1 view metadata（`view.json`）
 
@@ -232,6 +233,12 @@ export type PublicPackManifest = {
   - 再export時: 各 entry に `visibility` を明示出力する。
 - 旧データに `visibility` が存在しても enum 外値の場合は **互換読込対象にしない**（strict validator で拒否）。
 
+#### 8.3.1 既存 document の欠損解釈（明示）
+
+- `document.json` は FB-RM-PUB-01 の適用対象外であり、`visibility` 欠損という状態自体を扱わない。
+- 互換読込で default 補完を行うのは `view.json` / `packs/index.json` のみ。
+- 既存 `document.json` をそのまま読めること（非破壊）を互換要件とする。
+
 ### 8.4 失敗ケース（拒否すべき入力）
 
 - `visibility` が文字列以外（`null`, number, object）
@@ -262,3 +269,9 @@ export type PublicPackManifest = {
 - exporter（再出力明示）:
   - 互換補完で読んだ旧データは再出力時に `visibility` を必ず明示。
   - `visibility` 追加後も SafeMode/readOnly の拒否優先順は不変。
+
+### 8.7 トレーサビリティ（FB-RM-PUB-01）
+
+- 要求元: `01_Plans/adr/ADR-0007-future-backlog.md` の `FB-RM-PUB-01`（schema検証と既存データ互換）。
+- 上位整合: `02_Architecture/architecture.md` §11（visibility enum / default補完 / SafeMode優先）。
+- 本節（schemas.md）は、実装者向けの単一契約として default/fallback/strict validation/I/F境界を具体化する。
