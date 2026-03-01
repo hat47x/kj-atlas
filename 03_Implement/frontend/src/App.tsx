@@ -130,7 +130,7 @@ import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
-import { parsePublicPackManifest } from "./import/public_pack_manifest";
+import { validatePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
 import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
@@ -2499,7 +2499,12 @@ ${parsedDocument.error}`);
       return false;
     }
 
-    const manifest = parsePublicPackManifest(await manifestResponse.json());
+    const manifestValidation = validatePublicPackManifest(await manifestResponse.json());
+    if (!manifestValidation.ok) {
+      const detail = manifestValidation.errors.map((error) => `${error.path}: ${error.message}`).join("; ");
+      throw new Error(`Invalid packs/index.json: ${detail}`);
+    }
+    const manifest = manifestValidation.manifest;
     const packs = manifest.packs;
     const targetPack = packs.find((pack) => pack.id === (requestedPackId ?? manifest.defaultPackId ?? "")) ?? null;
     if (!targetPack) {
