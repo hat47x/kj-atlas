@@ -1,5 +1,5 @@
 import type { Card, DocumentV2, EvidenceLink, Island, Transform } from "./types";
-import { isSelfIntersectingPolygon } from "./geometry/polygon_self_intersection";
+import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidateResult =
   | {
@@ -169,7 +169,7 @@ function parseIslandGeometry(value: unknown): Island["geometry"] | undefined {
       .filter((point): point is { x: number; y: number } => isRecord(point) && toNumber(point.x) !== null && toNumber(point.y) !== null)
       .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
 
-    if (points.length >= 3 && !isSelfIntersectingPolygon(points)) {
+    if (canUsePolygonPoints(points)) {
       return { type: "polygon", points };
     }
   }
@@ -218,7 +218,7 @@ function parseIslands(value: unknown): Island[] {
           })
           .map((point) => ({ x: Number(point.x), y: Number(point.y) }));
 
-        if (points.length >= 3 && !isSelfIntersectingPolygon(points)) {
+        if (canUsePolygonPoints(points)) {
           shape = { kind: "polygon", points, generatedFrom };
         }
       }
