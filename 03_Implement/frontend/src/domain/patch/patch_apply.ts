@@ -61,6 +61,7 @@ function parseIsland(value: unknown): Island | null {
   }
 
   if (value.parentIslandId !== undefined && typeof value.parentIslandId !== "string") return null;
+  if (value.placardCardId !== undefined && typeof value.placardCardId !== "string") return null;
   if (value.collapsed !== undefined && typeof value.collapsed !== "boolean") return null;
   if (value.title !== undefined && typeof value.title !== "string") return null;
   if (value.titleReviewed !== undefined && typeof value.titleReviewed !== "boolean") return null;

@@ -229,6 +229,7 @@ function parseIslands(value: unknown): Island[] {
       id: item.id,
       cardIds,
       parentIslandId: typeof item.parentIslandId === "string" ? item.parentIslandId : undefined,
+      placardCardId: typeof item.placardCardId === "string" ? item.placardCardId : undefined,
       collapsed: typeof item.collapsed === "boolean" ? item.collapsed : false,
       title: typeof item.title === "string" ? item.title : undefined,
       imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : undefined,

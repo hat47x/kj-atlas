@@ -109,6 +109,7 @@ export type Island = {
   id: string;
   cardIds: string[];
   parentIslandId?: string;
+  placardCardId?: string;
   collapsed?: boolean;
   title?: string;
   titleReviewed?: boolean;

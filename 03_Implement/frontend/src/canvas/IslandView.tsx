@@ -170,6 +170,8 @@ function IslandViewComponent({
   const bounds = getIslandBounds(island, cards);
   const { acceptedLabelIds } = useContext(LabelVisibilityContext);
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
+  const placardCard = island.placardCardId ? cards.find((card) => card.id === island.placardCardId) : undefined;
+  const placardText = placardCard?.text?.trim() ?? "";
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
@@ -403,6 +405,26 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
+        {placardText ? (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#1d4ed8",
+              backgroundColor: "#dbeafe",
+              border: "1px solid #93c5fd",
+              borderRadius: 999,
+              padding: "1px 6px",
+              maxWidth: 150,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={placardText}
+          >
+            {placardText}
+          </span>
+        ) : null}
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
         <button
           type="button"
