@@ -54,6 +54,9 @@ type SidePanelProps = {
   onRemoveEvidenceLink: (evidenceLinkId: string) => void;
   onFocusCardById: (cardId: string) => void;
   onTitleChange: (value: string) => void;
+  onParentIslandChange: (value: string | undefined) => void;
+  onPlacardCardChange: (value: string | undefined) => void;
+  onPlacardCardTextChange: (value: string) => void;
   onTitleReviewedChange: (value: boolean) => void;
   onSummaryTextChange: (value: string) => void;
   onRestoreSummaryHistoryEntry: (historyEntryId: string) => void;
@@ -206,6 +209,9 @@ export function SidePanel({
   onRemoveEvidenceLink,
   onFocusCardById,
   onTitleChange,
+  onParentIslandChange,
+  onPlacardCardChange,
+  onPlacardCardTextChange,
   onTitleReviewedChange,
   onSummaryTextChange,
   onRestoreSummaryHistoryEntry,
@@ -1915,13 +1921,14 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Parent island ID
+            Parent island
           </label>
-          <input
-            type="text"
-            readOnly
+          <select
             value={selectedIsland.parentIslandId ?? ""}
-            placeholder="(none)"
+            onChange={(event) => {
+              const nextValue = event.target.value.trim();
+              onParentIslandChange(nextValue.length > 0 ? nextValue : undefined);
+            }}
             style={{
               width: "100%",
               border: "1px solid #cbd5e1",
@@ -1929,9 +1936,18 @@ export function SidePanel({
               padding: "6px 8px",
               boxSizing: "border-box",
               marginBottom: 10,
-              backgroundColor: "#f8fafc",
+              backgroundColor: "#ffffff",
             }}
-          />
+          >
+            <option value="">(none)</option>
+            {(document?.islands ?? [])
+              .filter((island) => island.id !== selectedIsland.id)
+              .map((island) => (
+                <option key={island.id} value={island.id}>
+                  {island.title?.trim() ? `${island.title} (${island.id})` : island.id}
+                </option>
+              ))}
+          </select>
 
           {summaryView || abstractMapView ? (
             <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
@@ -1982,6 +1998,57 @@ export function SidePanel({
               marginBottom: 10,
             }}
           />
+
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+            Placard card
+          </label>
+          <select
+            value={selectedIsland.placardCardId ?? ""}
+            onChange={(event) => {
+              const nextValue = event.target.value.trim();
+              onPlacardCardChange(nextValue.length > 0 ? nextValue : undefined);
+            }}
+            style={{
+              width: "100%",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 8px",
+              boxSizing: "border-box",
+              marginBottom: 8,
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <option value="">(none)</option>
+            {selectedIsland.cardIds.map((cardId) => {
+              const card = document?.cards.find((entry) => entry.id === cardId);
+              const text = card?.text.trim() ?? "";
+              const label = text.length > 0 ? `${text.slice(0, 28)}${text.length > 28 ? "…" : ""} (${cardId})` : cardId;
+
+              return (
+                <option key={cardId} value={cardId}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+          {selectedIsland.placardCardId ? (
+            <input
+              type="text"
+              value={document?.cards.find((card) => card.id === selectedIsland.placardCardId)?.text ?? ""}
+              onChange={(event) => {
+                onPlacardCardTextChange(event.target.value);
+              }}
+              placeholder="Placard card text"
+              style={{
+                width: "100%",
+                border: "1px solid #cbd5e1",
+                borderRadius: 6,
+                padding: "6px 8px",
+                boxSizing: "border-box",
+                marginBottom: 10,
+              }}
+            />
+          ) : null}
           <label
             style={{
               display: "flex",

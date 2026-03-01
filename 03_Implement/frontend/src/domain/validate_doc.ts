@@ -312,6 +312,7 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
       "id",
       "cardIds",
       "parentIslandId",
+      "placardCardId",
       "collapsed",
       "title",
       "titleReviewed",
@@ -341,6 +342,10 @@ function validateIsland(item: unknown, index: number, errors: string[]): item is
   }
   if (item.parentIslandId !== undefined && typeof item.parentIslandId !== "string") {
     errors.push(`${path}.parentIslandId: must be a string when provided`);
+    valid = false;
+  }
+  if (item.placardCardId !== undefined && typeof item.placardCardId !== "string") {
+    errors.push(`${path}.placardCardId: must be a string when provided`);
     valid = false;
   }
   if (item.collapsed !== undefined && typeof item.collapsed !== "boolean") {

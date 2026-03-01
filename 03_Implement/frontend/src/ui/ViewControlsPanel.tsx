@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { CSSProperties, ChangeEvent } from "react";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
+import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { PerspectiveMode } from "../domain/view/perspective";
 import type { ViewPreset } from "../domain/view/presets";
 
@@ -25,6 +26,8 @@ type ViewControlsPanelProps = {
   onApplyBirdsEyePreset: () => void;
   onApplyMidPreset: () => void;
   onApplyDetailPreset: () => void;
+  hierarchyLevel: HierarchyLevel;
+  onHierarchyLevelChange: (value: HierarchyLevel) => void;
   onResetView?: () => void;
   onExportAbstractMapMarkdownWithPng: () => void;
   onExportAbstractMapHtmlWithPng: () => void;
@@ -98,6 +101,8 @@ export function ViewControlsPanel({
   onApplyBirdsEyePreset,
   onApplyMidPreset,
   onApplyDetailPreset,
+  hierarchyLevel,
+  onHierarchyLevelChange,
   onResetView,
   onExportAbstractMapMarkdownWithPng,
   onExportAbstractMapHtmlWithPng,
@@ -177,6 +182,20 @@ export function ViewControlsPanel({
           <button type="button" onClick={onApplyDetailPreset} style={{ cursor: "pointer" }}>
             Detail
           </button>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
+            Structure level
+            <select
+              value={hierarchyLevel}
+              onChange={(event) => {
+                onHierarchyLevelChange(event.target.value as HierarchyLevel);
+              }}
+              style={{ fontSize: 12 }}
+            >
+              <option value="overview">Overview</option>
+              <option value="mid">Mid</option>
+              <option value="detail">Detail</option>
+            </select>
+          </label>
           {onResetView ? (
             <button type="button" onClick={onResetView} style={{ cursor: "pointer" }}>
               Reset view

@@ -79,6 +79,7 @@ import {
 } from "./domain/view/focus";
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
+import { maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
 import type { OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "./domain/view/contradiction_checks";
@@ -956,6 +957,7 @@ export default function App() {
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
+  const hierarchyLevel = useMemo(() => resolveHierarchyLevel(maxDepth), [maxDepth]);
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -1472,6 +1474,34 @@ export default function App() {
     temporaryRevealIslandIds,
   ]);
 
+  const hierarchyHiddenCardIdSet = useMemo(() => {
+    if (!focusedVisibleDocument || hierarchyLevel !== "overview") {
+      return new Set<string>();
+    }
+
+    const placardCardIds = new Set<string>();
+    for (const island of focusedVisibleDocument.islands) {
+      if (!island.placardCardId) {
+        continue;
+      }
+
+      if (island.cardIds.includes(island.placardCardId)) {
+        placardCardIds.add(island.placardCardId);
+      }
+    }
+
+    const hidden = new Set<string>();
+    for (const island of focusedVisibleDocument.islands) {
+      for (const cardId of island.cardIds) {
+        if (!placardCardIds.has(cardId)) {
+          hidden.add(cardId);
+        }
+      }
+    }
+
+    return hidden;
+  }, [focusedVisibleDocument, hierarchyLevel]);
+
   const perspectiveHiddenCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument || !perspectiveRendering?.visibleCardIds) {
       return new Set<string>();
@@ -1486,12 +1516,12 @@ export default function App() {
   }, [focusedVisibleDocument, perspectiveRendering]);
 
   const effectiveHiddenCardIdSet = useMemo(() => {
-    if (perspectiveHiddenCardIdSet.size === 0) {
+    if (perspectiveHiddenCardIdSet.size === 0 && hierarchyHiddenCardIdSet.size === 0) {
       return hiddenCardIdSet;
     }
 
-    return new Set([...hiddenCardIdSet, ...perspectiveHiddenCardIdSet]);
-  }, [hiddenCardIdSet, perspectiveHiddenCardIdSet]);
+    return new Set([...hiddenCardIdSet, ...perspectiveHiddenCardIdSet, ...hierarchyHiddenCardIdSet]);
+  }, [hiddenCardIdSet, perspectiveHiddenCardIdSet, hierarchyHiddenCardIdSet]);
 
   const visibleCardIdSet = useMemo(() => {
     if (!focusedVisibleDocument) {
@@ -3171,6 +3201,73 @@ ${parsedDocument.error}`);
         },
         "Updated island title"
       );
+    },
+    [applyDocumentChange, document]
+  );
+
+
+  const handleIslandParentChange = useCallback(
+    (islandId: string, parentIslandId: string | undefined) => {
+      if (!document) {
+        return;
+      }
+
+      const islandsById = new Map(document.islands.map((island) => [island.id, island]));
+      if (parentIslandId) {
+        if (parentIslandId === islandId || !islandsById.has(parentIslandId)) {
+          return;
+        }
+
+        const visited = new Set<string>([islandId]);
+        let cursor = islandsById.get(parentIslandId);
+        while (cursor?.parentIslandId) {
+          if (visited.has(cursor.id)) {
+            return;
+          }
+          visited.add(cursor.id);
+          if (cursor.parentIslandId === islandId) {
+            return;
+          }
+          cursor = islandsById.get(cursor.parentIslandId);
+        }
+      }
+
+      const nextIslands = document.islands.map((island) =>
+        island.id === islandId
+          ? {
+              ...island,
+              parentIslandId,
+            }
+          : island
+      );
+
+      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island hierarchy");
+    },
+    [applyDocumentChange, document]
+  );
+
+  const handleIslandPlacardCardChange = useCallback(
+    (islandId: string, placardCardId: string | undefined) => {
+      if (!document) {
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        if (placardCardId && !island.cardIds.includes(placardCardId)) {
+          return island;
+        }
+
+        return {
+          ...island,
+          placardCardId,
+        };
+      });
+
+      applyDocumentChange({ ...document, islands: nextIslands }, "Updated island placard");
     },
     [applyDocumentChange, document]
   );
@@ -4963,6 +5060,10 @@ ${parsedDocument.error}`);
   const handleApplyDetailPreset = useCallback(() => {
     applyViewPreset({ maxDepth: "all", hideSourceCards: false, showReadingOrder: true });
   }, [applyViewPreset]);
+
+  const handleHierarchyLevelChange = useCallback((level: HierarchyLevel) => {
+    setMaxDepth(maxDepthForHierarchyLevel(level));
+  }, []);
 
   const handleResetView = useCallback(() => {
     applyViewPreset({
@@ -7102,6 +7203,8 @@ ${parsedDocument.error}`);
             onApplyBirdsEyePreset={handleApplyBirdsEyePreset}
             onApplyMidPreset={handleApplyMidPreset}
             onApplyDetailPreset={handleApplyDetailPreset}
+            hierarchyLevel={hierarchyLevel}
+            onHierarchyLevelChange={handleHierarchyLevelChange}
             onResetView={handleResetView}
             maxDepth={maxDepth}
             maxAvailableDepth={maxAvailableDepth}
@@ -7509,6 +7612,37 @@ ${parsedDocument.error}`);
             }
 
             handleIslandTitleChange(selectedIsland.id, value);
+          }}
+          onParentIslandChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandParentChange(selectedIsland.id, value);
+          }}
+          onPlacardCardChange={(value) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandPlacardCardChange(selectedIsland.id, value);
+          }}
+          onPlacardCardTextChange={(value) => {
+            if (!selectedIsland?.placardCardId || !document) {
+              return;
+            }
+
+            const nextCards = document.cards.map((card) =>
+              card.id === selectedIsland.placardCardId
+                ? {
+                    ...card,
+                    text: value,
+                    textReviewed: true,
+                  }
+                : card
+            );
+
+            applyDocumentChange({ ...document, cards: nextCards }, "Updated island placard card");
           }}
           onTitleReviewedChange={(value) => {
             if (!selectedIsland) {

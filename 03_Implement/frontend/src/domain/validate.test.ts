@@ -33,6 +33,28 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(child?.critiqueTags).toEqual(["unclear_boundary"]);
   });
 
+
+  it("keeps island placardCardId from imported v2 JSON", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_placard",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "Placard", x: 0, y: 0 },
+        { id: "c2", text: "Body", x: 120, y: 0 },
+      ],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1", "c2"], placardCardId: "c1" }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.placardCardId).toBe("c1");
+  });
   it("preserves island polygon geometry from imported v2 JSON", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({
