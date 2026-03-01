@@ -230,3 +230,15 @@ export type PublicPackManifest = {
 3. **回帰観点**
    - SafeMode既定ON・share/export漏えい防止の既存テストが通る。
    - `visibility` 追加により readOnly/SafeMode の拒否挙動が緩まない。
+
+### 8.6 importer / validator / exporter テスト観点
+
+- importer（互換補完）:
+  - `view.json` の `visibility` 欠損時は `Restricted` を補完して読込成功。
+  - `packs/index.json` の `packs[*].visibility` 欠損時は `Public` を補完して読込成功。
+- strict validator（不正拒否）:
+  - `visibility` が enum 外または型不正（number/null/object/空文字）は失敗として拒否。
+  - `packs/index.json` は entry 単位で黙って破棄せず、manifest 全体を失敗扱いにする。
+- exporter（再出力明示）:
+  - 互換補完で読んだ旧データは再出力時に `visibility` を必ず明示。
+  - `visibility` 追加後も SafeMode/readOnly の拒否優先順は不変。
