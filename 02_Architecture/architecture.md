@@ -151,16 +151,19 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 
 `LLMProvider` は「どのLLMを叩くか」を隠蔽します。
 
-- `LocalHTTPProvider`（社内LLM / OpenAI互換API / 独自API）
-- `ExternalProvider`（将来用：必要な場合のみ）
+- `NoOpProvider`（`none` / 既定・AI無効）
+- `LocalProvider`（`local` / 社内LLM）
+- `LargeScaleProvider`（`large-scale` / 任意の強モデル）
 
 選択は環境変数で行います。
 
-- `LLM_PROVIDER=local_http`
-- `LOCAL_LLM_BASE_URL=http://...`
-- `LOCAL_LLM_MODEL=...`
+- `LLM_PROVIDER=none|local|large-scale`
+- `LOCAL_LLM_BASE_URL=http://...`（local時）
+- `LOCAL_LLM_MODEL=...`（local時）
 
 MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
+
+実装では `ProviderRegistry` を用いて、alias互換（例: `local_http` -> `local`、`external` -> `large-scale`）を維持する。
 
 ---
 

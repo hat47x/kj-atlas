@@ -13,6 +13,7 @@ from kj_atlas_api.llm.provider import (
     LLMResponse,
     LargeScaleProvider,
     LocalProvider,
+    NoOpProvider,
     NoneProvider,
     ProviderDisabledError,
     ProviderRequestError,
@@ -241,3 +242,35 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
         settings.llm_provider = original_provider
         settings.local_llm_base_url = original_local_url
         settings.local_llm_model = original_local_model
+
+
+def test_default_registry_maps_none_to_noop_provider() -> None:
+    original = settings.llm_provider
+    try:
+        settings.llm_provider = "none"
+        assert isinstance(get_provider(), NoOpProvider)
+    finally:
+        settings.llm_provider = original
+
+
+def test_response_audit_fields_include_provider_and_execution_metadata() -> None:
+    metadata = LLMCallMetadata(
+        provider_kind="local",
+        provider_name="local",
+        model_id="model-a",
+        transport="http",
+        requested_at="2026-01-01T00:00:00+00:00",
+        trace_id="llm-trace",
+        fallback_to_none=False,
+    )
+    response = LLMResponse(raw_text="{}", metadata=metadata)
+
+    assert response.as_audit_fields() == {
+        "provider": "local",
+        "provider_kind": "local",
+        "model_id": "model-a",
+        "transport": "http",
+        "requested_at": "2026-01-01T00:00:00+00:00",
+        "fallback_to_none": False,
+        "trace_id": "llm-trace",
+    }
