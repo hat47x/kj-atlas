@@ -172,7 +172,7 @@ jobs:
     name: Frontend lint (staged rollout)
     runs-on: ubuntu-latest
     env:
-      FRONTEND_LINT_PHASE: ${{ vars.FRONTEND_LINT_PHASE || 'A' }}
+      FRONTEND_LINT_PHASE: ${{ vars.FRONTEND_LINT_PHASE || 'B' }}
     defaults:
       run:
         working-directory: 03_Implement/frontend
@@ -241,6 +241,7 @@ jobs:
         run: |
           echo "frontend lint phase: ${FRONTEND_LINT_PHASE}" >> "$GITHUB_STEP_SUMMARY"
           echo "lint step outcome: ${{ steps.lint.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "lint fail-on-error policy: A=warn-only, B/C=fail" >> "$GITHUB_STEP_SUMMARY"
 
           if [ "${FRONTEND_LINT_PHASE}" = "A" ] && [ "${{ steps.lint.outcome }}" != "success" ]; then
             echo "Phase A: warning-only mode. Lint failures are reported but do not fail CI." >> "$GITHUB_STEP_SUMMARY"
@@ -251,6 +252,8 @@ jobs:
             echo "Phase ${FRONTEND_LINT_PHASE}: fail-on-error mode. Fix lint violations before merge." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+
+          echo "Phase ${FRONTEND_LINT_PHASE}: lint gate passed." >> "$GITHUB_STEP_SUMMARY"
 
   frontend-typecheck:
     name: Frontend typecheck
