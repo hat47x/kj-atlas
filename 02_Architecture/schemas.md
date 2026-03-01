@@ -230,3 +230,49 @@ export type PublicPackManifest = {
 3. **回帰観点**
    - SafeMode既定ON・share/export漏えい防止の既存テストが通る。
    - `visibility` 追加により readOnly/SafeMode の拒否挙動が緩まない。
+
+
+## 9. AccessControl metadata（FB-RM-PUB-04）
+
+`roles/groups/policyRef` は外部委譲認可の入力メタデータとして保持する。
+アプリ本体はこの値を評価しない。
+
+```ts
+export type AccessControlMetadata = {
+  roles?: string[];
+  groups?: string[];
+  policyRef?: string;
+};
+```
+
+### 9.1 view metadata 追加
+
+```ts
+export type ViewMetadataV1 = {
+  // ...existing fields
+  visibility: Visibility;
+  accessControl?: AccessControlMetadata;
+};
+```
+
+### 9.2 public pack manifest 追加
+
+```ts
+export type PublicPackManifestEntry = {
+  // ...existing fields
+  visibility: Visibility;
+  accessControl?: AccessControlMetadata;
+};
+```
+
+### 9.3 型/必須性/互換
+
+- `accessControl` は optional（未設定時は互換維持）。
+- `roles/groups` は文字列配列のみ許容、空文字と `"null"` は import 時に除去。
+- `policyRef` は文字列のみ許容し、trim 後の空文字・`"null"` は未設定として扱う。
+- export では正規化済み値を透過保存し、未知キーは保持しない。
+
+### 9.4 監査との接続
+
+- 監査イベントには `policyRefPresent: boolean` のみを渡す。
+- `policyRef` 生値、`roles/groups` 生値、個人情報は監査ペイロードへ含めない。

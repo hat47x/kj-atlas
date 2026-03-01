@@ -211,6 +211,39 @@ curl -fsS http://localhost:4173/api/healthz
 - いずれの設定でも payload は最小化・マスキング済みを維持します。
 
 
+
+
+## Access Control 外部委譲運用（FB-RM-PUB-04）
+
+### 1. 設計意図（本体非保持）
+
+- `roles/groups/policyRef` は `view.json` / `packs/index.json` / API header で保持・受け渡しのみ行います。
+- `kj-atlas` 本体は role/group の意味解釈やポリシー評価を実装しません。
+- 認可判定は `AccessControlAdapter`（`noop` / `mock` / `http`）を通じて外部委譲します。
+
+### 2. 障害時方針
+
+- adapter 未接続 (`ACCESS_CONTROL_ADAPTER=noop`) は既存挙動を維持します。
+- `Org` / `Restricted` で adapter 障害（`policy_ref_unreachable` / `policy_ref_invalid` / `adapter_error`）時は `ACCESS_CONTROL_FAIL_SAFE_MODE` を適用。
+  - `read_only`: read のみ許可、write/export/share は拒否
+  - `deny`: すべて拒否
+- `Public` / `Unlisted` は fail-open で継続し、既存の read-only/static publish 運用を壊しません。
+
+### 3. 設定チェックリスト（運用チーム向け）
+
+1. `ACCESS_CONTROL_ADAPTER` を `noop | mock | http` から選択。
+2. `http` 利用時は `ACCESS_CONTROL_HTTP_ENDPOINT` を設定（必要なら `ACCESS_CONTROL_HTTP_API_KEY`）。
+3. `ACCESS_CONTROL_HTTP_TIMEOUT_SECONDS` は短め（2秒目安）を維持。
+4. `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny` を公開ポリシーに合わせて固定。
+5. 監査連携時は `policyRefPresent` のみを扱い、`policyRef` / `roles` / `groups` 生値を保存しないことを確認。
+6. リリース前に `Restricted` + adapter障害ケースで fail-safe 動作を検証。
+
+### 4. 監査最小項目
+
+- 記録対象: `eventType`, `docId`, `action`, `decisionAllow`, `policyRefPresent`, `visibility`。
+- 非記録対象: `policyRef` 生値、`roles/groups` 生値、本文データ、個人情報。
+
+
 ## i18n SafeMode 漏洩防止検証（FB-RM-I18N-06）
 
 ### 1. テストマトリクス（経路 × モード × 期待値）

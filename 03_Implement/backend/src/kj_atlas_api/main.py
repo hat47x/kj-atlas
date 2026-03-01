@@ -32,7 +32,14 @@ async def require_api_key(request: Request, call_next):
 def on_startup() -> None:
     init_db()
     app.state.audit_dispatcher = build_audit_dispatcher()
-    app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
+    app.state.access_control_adapter = build_access_control_adapter(
+        adapter_name=settings.access_control_adapter,
+        http_endpoint=settings.access_control_http_endpoint,
+        http_api_key=settings.access_control_http_api_key,
+        http_timeout_seconds=settings.access_control_http_timeout_seconds,
+        mock_allow=settings.access_control_mock_allow,
+        mock_reason=settings.access_control_mock_reason,
+    )
     app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
 
 

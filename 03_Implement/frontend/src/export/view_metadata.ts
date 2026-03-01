@@ -6,6 +6,7 @@ import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, 
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
 import { normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
+import { normalizeAccessControlMetadata, validateAccessControlMetadata, type AccessControlMetadata } from "../domain/policy/access_control_metadata";
 import { isLocale, type Locale } from "../i18n/translate";
 
 
@@ -52,6 +53,7 @@ export type ExportViewMetadata = {
   generatedAt: string;
   docSignature: string;
   visibility: PublishVisibility;
+  accessControl?: AccessControlMetadata;
   camera: {
     panX: number;
     panY: number;
@@ -299,6 +301,11 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.visibility !== undefined && value.visibility !== "Public" && value.visibility !== "Unlisted" && value.visibility !== "Org" && value.visibility !== "Restricted") {
     return { ok: false, error: 'metadata.visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present' };
+  }
+
+  const accessControlError = validateAccessControlMetadata(value.accessControl, "metadata.accessControl");
+  if (accessControlError) {
+    return { ok: false, error: accessControlError };
   }
 
   if (!isObject(value.camera)) {
@@ -631,6 +638,7 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
   return { ok: true, metadata: {
     ...(value as ExportViewMetadata),
     visibility: normalizeViewVisibility(value.visibility),
+    ...(normalizeAccessControlMetadata(value.accessControl) ? { accessControl: normalizeAccessControlMetadata(value.accessControl) } : {}),
     ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
     ...(value.reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(value.reviewEvents) }),
   } };

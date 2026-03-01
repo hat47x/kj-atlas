@@ -27,6 +27,16 @@ class AllowAllAdapter:
         return AccessDecision(allow=True)
 
 
+class ErrorAdapter:
+    name = "error"
+
+    def __init__(self, message: str):
+        self._message = message
+
+    def authorize(self, request):  # noqa: ANN001
+        raise RuntimeError(self._message)
+
+
 @contextmanager
 def _sqlite_client(tmp_path) -> Iterator[TestClient]:
     db_path = tmp_path / "docs_access_control.sqlite3"
@@ -133,3 +143,38 @@ def test_adapter_denial_prevents_role_header_privilege_escalation(tmp_path) -> N
 
     assert response.status_code == 403
     assert "blocked:write" in response.json()["detail"]
+
+
+def test_adapter_runtime_error_enforces_fail_safe_for_restricted_visibility(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = ErrorAdapter("policy_ref_unreachable:timeout")
+        client.app.state.access_control_fail_safe_mode = "read_only"
+        client.put("/docs/doc-fs", json=_sample_payload("doc-fs"))
+
+        read_resp = client.get(
+            "/docs/doc-fs",
+            headers={"x-doc-visibility": "Restricted", "x-policy-ref": "policy-1"},
+        )
+        write_resp = client.put(
+            "/docs/doc-fs",
+            json=_sample_payload("doc-fs"),
+            headers={"x-doc-visibility": "Restricted", "x-policy-ref": "policy-1"},
+        )
+
+    assert read_resp.status_code == 200
+    assert write_resp.status_code == 403
+    assert write_resp.json()["detail"] == "Access denied: policy_ref_unreachable"
+
+
+def test_adapter_runtime_error_is_fail_open_for_public_visibility(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = ErrorAdapter("adapter exploded")
+        client.app.state.access_control_fail_safe_mode = "deny"
+
+        response = client.put(
+            "/docs/doc-public",
+            json=_sample_payload("doc-public"),
+            headers={"x-doc-visibility": "Public"},
+        )
+
+    assert response.status_code == 200

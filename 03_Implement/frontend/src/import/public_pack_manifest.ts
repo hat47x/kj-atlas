@@ -1,4 +1,5 @@
 import { DEFAULT_PACK_VISIBILITY, isPublishVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
+import { normalizeAccessControlMetadata, validateAccessControlMetadata, type AccessControlMetadata } from "../domain/policy/access_control_metadata";
 
 export type PublicPackManifestEntry = {
   id: string;
@@ -8,6 +9,7 @@ export type PublicPackManifestEntry = {
   enforceSafeMode?: boolean;
   readOnly?: boolean;
   visibility: PublishVisibility;
+  accessControl?: AccessControlMetadata;
 };
 
 export type PublicPackManifest = {
@@ -34,6 +36,11 @@ function parseEntry(value: unknown): PublicPackManifestEntry | null {
     return null;
   }
 
+  const accessControlError = validateAccessControlMetadata(value.accessControl, "packs[*].accessControl");
+  if (accessControlError) {
+    return null;
+  }
+
   return {
     id: value.id,
     ...(typeof value.title === "string" ? { title: value.title } : {}),
@@ -42,6 +49,7 @@ function parseEntry(value: unknown): PublicPackManifestEntry | null {
     ...(typeof value.enforceSafeMode === "boolean" ? { enforceSafeMode: value.enforceSafeMode } : {}),
     ...(typeof value.readOnly === "boolean" ? { readOnly: value.readOnly } : {}),
     visibility: value.visibility === undefined ? DEFAULT_PACK_VISIBILITY : value.visibility,
+    ...(normalizeAccessControlMetadata(value.accessControl) ? { accessControl: normalizeAccessControlMetadata(value.accessControl) } : {}),
   };
 }
 

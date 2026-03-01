@@ -221,3 +221,52 @@ MVPでは高度な権限管理は後回し。
 - `visibility` は表示/配布メタデータであり、MVP時点ではRBAC判定ロジックを担わない。
 - SafeMode既定ONとshare/export漏えい防止ポリシーを優先し、`visibility` 導入で既存安全制御を弱めない。
 
+
+
+## 12. Access Control Integration境界（FB-RM-PUB-04）
+
+roles/groups/policyRef は**権限判定ロジック**ではなく、外部認可基盤へ渡すための抽象メタデータとして扱う。
+
+```text
+[Frontend / Bundle / API headers]
+  └─ accessControl: { roles[], groups[], policyRef }
+                │ (passthrough only)
+                ▼
+         [kj-atlas Core]
+  - 保存/読込/表示/送信を担当
+  - RBAC評価規則は保持しない
+                │ adapter boundary
+                ▼
+ [AccessControlAdapter (noop/mock/http)]
+                │
+                ▼
+   [External IAM / Policy Engine]
+```
+
+責務境界:
+
+- **App本体（Frontend/Backend）**
+  - `roles/groups/policyRef` の保持・正規化・受け渡しのみ実施。
+  - `AccessDecision.allow/readOnly/reason` の結果解釈のみ行う。
+- **外部adapter**
+  - roles/groups/policyRef の意味解釈、組織ポリシー、属性ベース判定を実施。
+- **禁止事項**
+  - アプリ本体へ role 名、group 名、policyRef 接頭辞などの判定分岐を実装しない。
+
+統合ポリシー（既存制御との優先順位）:
+
+1. SafeMode / share-export 漏えい防止
+2. read-only
+3. AccessControlAdapter decision
+4. visibility / accessControl metadata（監査・表示ラベル）
+
+障害時方針:
+
+- adapter 未接続 (`noop`) は既存挙動を維持。
+- adapter 接続失敗・policyRef不達/不正時は `Org/Restricted` のみ fail-safe (`read_only` または `deny`) を適用。
+- `Public/Unlisted` は fail-open 継続（既存公開運用を維持）。
+
+監査接続点（最小）:
+
+- 記録は `policyRefPresent` 真偽値のみ（生の `policyRef` / roles / groups は保存禁止）。
+- `decision.allow`, `decision.reason`, `visibility`, `action` を最小監査項目として扱う。

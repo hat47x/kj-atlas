@@ -9,8 +9,10 @@ from kj_atlas_api.access_control import (
     AccessRequest,
     AccessResource,
     AccessSubject,
+    apply_adapter_error_failsafe,
     apply_local_failsafe,
     enforce_access,
+    normalize_policy_ref,
     parse_csv_header,
 )
 from kj_atlas_api.audit import build_event
@@ -35,7 +37,7 @@ def _authorize_request(
         return
 
     visibility = request.headers.get("x-doc-visibility")
-    policy_ref = request.headers.get("x-policy-ref")
+    policy_ref = normalize_policy_ref(request.headers.get("x-policy-ref"))
     access_request = AccessRequest(
         action=action,
         safe_mode=safe_mode,
@@ -61,14 +63,43 @@ def _authorize_request(
         enforce_access(fail_safe_decision, action=action)
         return
 
-    if access_request.read_only and action in {"write", "export", "share"}:
-        enforce_access(
-            decision=adapter.authorize(access_request),
-            action=action,
+    try:
+        decision = adapter.authorize(access_request)
+    except RuntimeError as exc:
+        raw_reason = str(exc)
+        if raw_reason.startswith("policy_ref_unreachable"):
+            reason_code = "policy_ref_unreachable"
+        elif raw_reason.startswith("policy_ref_invalid"):
+            reason_code = "policy_ref_invalid"
+        else:
+            reason_code = "adapter_error"
+
+        fail_safe_decision = apply_adapter_error_failsafe(
+            access_request,
+            mode=fail_safe_mode,
+            reason_code=reason_code,
         )
+        if fail_safe_decision is None:
+            return
+
+        enforce_access(fail_safe_decision, action=action)
+        return
+    except Exception:
+        fail_safe_decision = apply_adapter_error_failsafe(
+            access_request,
+            mode=fail_safe_mode,
+            reason_code="adapter_error",
+        )
+        if fail_safe_decision is None:
+            return
+
+        enforce_access(fail_safe_decision, action=action)
+        return
+
+    if access_request.read_only and action in {"write", "export", "share"}:
+        enforce_access(decision=decision, action=action)
         raise HTTPException(status_code=403, detail="Access denied: read_only")
 
-    decision = adapter.authorize(access_request)
     enforce_access(decision, action=action)
 
 
@@ -121,6 +152,10 @@ def get_document(
                 metadata={
                     "route": f"/docs/{doc_id}",
                     "method": "GET",
+                    "action": "read",
+                    "decisionAllow": True,
+                    "policyRefPresent": normalize_policy_ref(request.headers.get("x-policy-ref")) is not None,
+                    "visibility": request.headers.get("x-doc-visibility"),
                 },
             )
         )
@@ -197,6 +232,10 @@ def post_export_audit(
                 metadata={
                     "route": f"/docs/{doc_id}/export-audit",
                     "method": "POST",
+                    "action": "export",
+                    "decisionAllow": True,
+                    "policyRefPresent": normalize_policy_ref(request.headers.get("x-policy-ref")) is not None,
+                    "visibility": request.headers.get("x-doc-visibility"),
                     "exportKind": payload.exportKind,
                 },
             )
