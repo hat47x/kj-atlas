@@ -778,7 +778,7 @@ export function SidePanel({
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
               <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
-              {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+              {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
               {finding.islandIds.length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                   {finding.islandIds.map((islandId) => (
@@ -854,7 +854,7 @@ export function SidePanel({
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
               <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
-              {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+              {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
             </li>
           ))}
         </ul>
@@ -953,7 +953,7 @@ export function SidePanel({
             <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
               <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
               <div>{finding.detail}</div>
-              <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div>
+              <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div>
               {finding.cardIds && finding.cardIds.length > 0 ? (
                 <button
                   type="button"
@@ -1145,7 +1145,7 @@ export function SidePanel({
               onGuidedFlowEnabledChange(event.target.checked);
             }}
           />
-          Enable
+          {t("side_panel.reading_path.enable")}
         </label>
         <div style={{ fontSize: 12, color: "#334155", marginBottom: 4 }}>
           Step {guidedFlowStepIndex + 1} / {guidedFlowTotalSteps}
@@ -1276,7 +1276,7 @@ export function SidePanel({
                 onOutlineIncludeCardTextsChange(event.target.checked);
               }}
             />
-            Include card texts
+            {t("side_panel.reading_path.include_card_texts")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1286,7 +1286,7 @@ export function SidePanel({
                 onOutlineIncludeRelationSummariesChange(event.target.checked);
               }}
             />
-            Include relation summaries
+            {t("side_panel.reading_path.include_relation_summaries")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1297,7 +1297,7 @@ export function SidePanel({
                 onOutlineIncludeUnreviewedChange(event.target.checked);
               }}
             />
-            Include unreviewed
+            {t("side_panel.reading_path.include_unreviewed")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1320,34 +1320,34 @@ export function SidePanel({
             {t("side_panel.outline.append_recommendations")}
           </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
-          <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
-          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
+          <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
+          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <button type="button" onClick={onCopyReadingOutlineMd}>
-              Copy outline (MD)
+              {t("side_panel.outline.copy_md")}
             </button>
             <button type="button" onClick={onDownloadReadingOutlineMd}>
-              Download outline.md
+              {t("side_panel.outline.download_md")}
             </button>
           </div>
           {outlineQualityReport ? (
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>Quality report</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
-                Findings: {outlineDiagnosticsCounts.error} errors, {outlineDiagnosticsCounts.warn} warnings, {outlineDiagnosticsCounts.info} infos
-                {outlineQualityReport.health !== undefined ? ` · Health ${outlineQualityReport.health}% (heuristic)` : ""}
+                {t("side_panel.outline.findings_summary", { errors: outlineDiagnosticsCounts.error, warnings: outlineDiagnosticsCounts.warn, infos: outlineDiagnosticsCounts.info })}
+                {outlineQualityReport.health !== undefined ? t("side_panel.outline.health", { health: outlineQualityReport.health }) : ""}
               </div>
               <details style={{ marginTop: 6 }}>
-                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Show findings</summary>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.show_findings")}</summary>
                 {outlineQualityReport.findings.length === 0 ? (
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No findings.</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_findings")}</div>
                 ) : (
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                     {outlineQualityReport.findings.map((finding, index) => (
                       <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
                         <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
                         <div>{finding.detail}</div>
-                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
                         {finding.entityRefs && finding.entityRefs.length > 0 ? (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                             {finding.entityRefs.map((ref) => (
@@ -1372,10 +1372,10 @@ export function SidePanel({
               {contradictionReport ? (
                 <details style={{ marginTop: 8 }}>
                   <summary style={{ fontSize: 12, cursor: "pointer", color: "#b45309" }}>
-                    Contradiction signals ({contradictionReport.stats.signals})
+                    {t("side_panel.outline.contradiction_signals", { count: contradictionReport.stats.signals })}
                   </summary>
                   {contradictionReport.signals.length === 0 ? (
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No contradiction signals.</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_contradiction_signals")}</div>
                   ) : (
                     <div style={{ marginTop: 6, display: "grid", gap: 8 }}>
                       {["warn", "info"].map((severity) => {
@@ -1394,7 +1394,7 @@ export function SidePanel({
                                 <li key={`${signal.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
                                   <div style={{ fontWeight: 600 }}>[{signal.code}] {signal.title}</div>
                                   <div>{signal.detail}</div>
-                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>Action: {signal.suggestedAction}</div> : null}
+                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: signal.suggestedAction })}</div> : null}
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -1420,7 +1420,7 @@ export function SidePanel({
               {dialecticBalanceSection}
               {metricsSection}
               <details style={{ marginTop: 8 }}>
-                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.suggested_next_steps")}</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
                   <input
                     type="checkbox"
@@ -1429,10 +1429,10 @@ export function SidePanel({
                       setShowOnlyHighImpactRecommendations(event.target.checked);
                     }}
                   />
-                  Show only high-impact recommendations
+                  {t("side_panel.outline.high_impact_only")}
                 </label>
                 {visibleRecommendations.length === 0 ? (
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No recommendations.</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_recommendations")}</div>
                 ) : (
                   <ol style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
                     {visibleRecommendations.map((recommendation) => {
@@ -1447,7 +1447,7 @@ export function SidePanel({
                           </div>
                           <div>{recommendation.description}</div>
                           <details style={{ marginTop: 4 }}>
-                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>Details</summary>
+                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.details")}</summary>
                             <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
                               {recommendation.suggestedActions.map((action) => (
                                 <li key={`${recommendation.id}_${action}`}>{action}</li>
@@ -1461,7 +1461,7 @@ export function SidePanel({
                                 }}
                                 style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
                               >
-                                Focus first target
+                                {t("side_panel.outline.focus_first_target")}
                               </button>
                             ) : null}
                           </details>
@@ -1516,8 +1516,8 @@ export function SidePanel({
         </button>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Connect</div>
-        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Edge type</label>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.connect.title")}</div>
+        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.connect.edge_type")}</label>
         <select
           value={connectEdgeType}
           onChange={(event) => {
@@ -1526,8 +1526,8 @@ export function SidePanel({
           disabled={isPickingEdgeTarget}
           style={{ width: "100%", marginBottom: 8 }}
         >
-          <option value="related">related</option>
-          <option value="negate">negate</option>
+          <option value="related">{t("side_panel.connect.related")}</option>
+          <option value="negate">{t("side_panel.connect.negate")}</option>
         </select>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
@@ -1548,11 +1548,11 @@ export function SidePanel({
           </button>
         </div>
         {isPickingEdgeTarget ? (
-          <div style={{ marginTop: 8, fontSize: 12, color: "#334155" }}>Pick target card or island. (Esc to cancel)</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: "#334155" }}>{t("side_panel.connect.pick_target_hint")}</div>
         ) : null}
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Reading Path</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.reading_path.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
           <input
             type="checkbox"
@@ -1561,9 +1561,9 @@ export function SidePanel({
               onReadingNavEnabledChange(event.target.checked);
             }}
           />
-          Enable
+          {t("side_panel.reading_path.enable")}
         </label>
-        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>Mode</label>
+        <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>{t("side_panel.reading_path.mode")}</label>
         <select
           value={readingMode}
           onChange={(event) => {
@@ -1572,11 +1572,11 @@ export function SidePanel({
           disabled={!readingNavEnabled}
           style={{ width: "100%", marginBottom: 8 }}
         >
-          <option value="islands">Islands only</option>
-          <option value="islands+cards">Islands + cards</option>
+          <option value="islands">{t("side_panel.reading_path.mode_islands_only")}</option>
+          <option value="islands+cards">{t("side_panel.reading_path.mode_islands_cards")}</option>
         </select>
         <label
-          title="Reviewed only filters islands by summary review status; cards are always included in islands+cards mode."
+          title={t("side_panel.reading_path.reviewed_only_hint")}
           style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}
         >
           <input
@@ -1587,7 +1587,7 @@ export function SidePanel({
               onReadingReviewedOnlyToggle();
             }}
           />
-          Reviewed only
+          {t("side_panel.reading_path.reviewed_only")}
         </label>
         <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -1598,7 +1598,7 @@ export function SidePanel({
                 onOutlineIncludeCardTextsChange(event.target.checked);
               }}
             />
-            Include card texts
+            {t("side_panel.reading_path.include_card_texts")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1608,7 +1608,7 @@ export function SidePanel({
                 onOutlineIncludeRelationSummariesChange(event.target.checked);
               }}
             />
-            Include relation summaries
+            {t("side_panel.reading_path.include_relation_summaries")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1619,7 +1619,7 @@ export function SidePanel({
                 onOutlineIncludeUnreviewedChange(event.target.checked);
               }}
             />
-            Include unreviewed
+            {t("side_panel.reading_path.include_unreviewed")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1642,34 +1642,34 @@ export function SidePanel({
             {t("side_panel.outline.append_recommendations")}
           </label>
           <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
-          <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
-          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
+          <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.unreviewed_draft_warning")}</div>
+          {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>{t("side_panel.outline.safe_mode_excluded")}</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <button type="button" onClick={onCopyReadingOutlineMd}>
-              Copy outline (MD)
+              {t("side_panel.outline.copy_md")}
             </button>
             <button type="button" onClick={onDownloadReadingOutlineMd}>
-              Download outline.md
+              {t("side_panel.outline.download_md")}
             </button>
           </div>
           {outlineQualityReport ? (
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", marginTop: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>Quality report</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>{t("side_panel.outline.quality_report")}</div>
               <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
-                Findings: {outlineDiagnosticsCounts.error} errors, {outlineDiagnosticsCounts.warn} warnings, {outlineDiagnosticsCounts.info} infos
-                {outlineQualityReport.health !== undefined ? ` · Health ${outlineQualityReport.health}% (heuristic)` : ""}
+                {t("side_panel.outline.findings_summary", { errors: outlineDiagnosticsCounts.error, warnings: outlineDiagnosticsCounts.warn, infos: outlineDiagnosticsCounts.info })}
+                {outlineQualityReport.health !== undefined ? t("side_panel.outline.health", { health: outlineQualityReport.health }) : ""}
               </div>
               <details style={{ marginTop: 6 }}>
-                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Show findings</summary>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.show_findings")}</summary>
                 {outlineQualityReport.findings.length === 0 ? (
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No findings.</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_findings")}</div>
                 ) : (
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
                     {outlineQualityReport.findings.map((finding, index) => (
                       <li key={`${finding.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
                         <div style={{ fontWeight: 600 }}>[{finding.severity.toUpperCase()}] {finding.code} {finding.title}</div>
                         <div>{finding.detail}</div>
-                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>Action: {finding.suggestedAction}</div> : null}
+                        {finding.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: finding.suggestedAction })}</div> : null}
                         {finding.entityRefs && finding.entityRefs.length > 0 ? (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                             {finding.entityRefs.map((ref) => (
@@ -1694,10 +1694,10 @@ export function SidePanel({
               {contradictionReport ? (
                 <details style={{ marginTop: 8 }}>
                   <summary style={{ fontSize: 12, cursor: "pointer", color: "#b45309" }}>
-                    Contradiction signals ({contradictionReport.stats.signals})
+                    {t("side_panel.outline.contradiction_signals", { count: contradictionReport.stats.signals })}
                   </summary>
                   {contradictionReport.signals.length === 0 ? (
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No contradiction signals.</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_contradiction_signals")}</div>
                   ) : (
                     <div style={{ marginTop: 6, display: "grid", gap: 8 }}>
                       {["warn", "info"].map((severity) => {
@@ -1716,7 +1716,7 @@ export function SidePanel({
                                 <li key={`${signal.code}_${index}`} style={{ fontSize: 11, color: "#0f172a" }}>
                                   <div style={{ fontWeight: 600 }}>[{signal.code}] {signal.title}</div>
                                   <div>{signal.detail}</div>
-                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>Action: {signal.suggestedAction}</div> : null}
+                                  {signal.suggestedAction ? <div style={{ color: "#334155" }}>{t("side_panel.outline.action", { suggestedAction: signal.suggestedAction })}</div> : null}
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -1742,7 +1742,7 @@ export function SidePanel({
               {dialecticBalanceSection}
               {metricsSection}
               <details style={{ marginTop: 8 }}>
-                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>Suggested next steps</summary>
+                <summary style={{ fontSize: 12, cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.suggested_next_steps")}</summary>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#334155" }}>
                   <input
                     type="checkbox"
@@ -1751,10 +1751,10 @@ export function SidePanel({
                       setShowOnlyHighImpactRecommendations(event.target.checked);
                     }}
                   />
-                  Show only high-impact recommendations
+                  {t("side_panel.outline.high_impact_only")}
                 </label>
                 {visibleRecommendations.length === 0 ? (
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No recommendations.</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.outline.no_recommendations")}</div>
                 ) : (
                   <ol style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 8 }}>
                     {visibleRecommendations.map((recommendation) => {
@@ -1769,7 +1769,7 @@ export function SidePanel({
                           </div>
                           <div>{recommendation.description}</div>
                           <details style={{ marginTop: 4 }}>
-                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>Details</summary>
+                            <summary style={{ cursor: "pointer", color: "#1d4ed8" }}>{t("side_panel.outline.details")}</summary>
                             <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
                               {recommendation.suggestedActions.map((action) => (
                                 <li key={`${recommendation.id}_${action}`}>{action}</li>
@@ -1783,7 +1783,7 @@ export function SidePanel({
                                 }}
                                 style={{ fontSize: 10, cursor: "pointer", marginTop: 4 }}
                               >
-                                Focus first target
+                                {t("side_panel.outline.focus_first_target")}
                               </button>
                             ) : null}
                           </details>
@@ -2995,7 +2995,7 @@ export function SidePanel({
                         onAddEvidenceLink({ toCardId: pendingEvidenceTargetId, type: pendingEvidenceType });
                         setIsEvidenceModalOpen(false);
                       }}>Confirm</button>
-                      <button type="button" onClick={() => { setIsEvidenceModalOpen(false); }}>Cancel</button>
+                      <button type="button" onClick={() => { setIsEvidenceModalOpen(false); }}>{t("side_panel.connect.cancel")}</button>
                     </div>
                   </div>
                 ) : null}
