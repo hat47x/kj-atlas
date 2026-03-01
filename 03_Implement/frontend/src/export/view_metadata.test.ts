@@ -135,6 +135,7 @@ describe("view metadata export", () => {
         summaryView: false,
         abstractMapView: false,
         hideSourceCards: false,
+        hierarchyLevel: "overview",
         maxDepth: "all",
         focusIslandId: null,
         showReadingOrder: false,
@@ -144,8 +145,31 @@ describe("view metadata export", () => {
     });
 
     expect(metadata.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
+    expect(metadata.viewState.hierarchyLevel).toBe("overview");
     const result = validateImportViewMetadata(metadata);
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid hierarchyLevel", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        hierarchyLevel: "deep",
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+      notes: "",
+    });
+
+    expect(result).toEqual({ ok: false, error: 'viewState.hierarchyLevel must be "overview" | "mid" | "detail" when present' });
   });
 
   it("rejects invalid collapsedIslandIds", () => {

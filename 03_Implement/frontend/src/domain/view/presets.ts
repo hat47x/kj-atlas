@@ -1,4 +1,5 @@
 export type ViewPatch = {
+  hierarchyLevel?: "overview" | "mid" | "detail";
   summaryView?: boolean;
   abstractMapView?: boolean;
   hideSourceCards?: boolean;

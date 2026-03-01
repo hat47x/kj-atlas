@@ -21,10 +21,10 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 
 test("importing a self-intersecting polygon document falls back to shape-less island", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Share & Reproduce" }).click();
+  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "Load document.json" }).click();
+  await page.getByRole("button", { name: /Load document\.json|document\.json を読み込む/ }).click();
   const fileChooser = await fileChooserPromise;
 
   const now = new Date().toISOString();
@@ -62,12 +62,13 @@ test("importing a self-intersecting polygon document falls back to shape-less is
     buffer: Buffer.from(JSON.stringify(invalidPolygonDoc), "utf-8"),
   });
 
-  await expect(page.getByText("Document validated. Review summary, then click Replace current document.")).toBeVisible();
-  await page.getByRole("button", { name: "Replace current document" }).click();
+  const replaceButton = page.getByRole("button", { name: /Replace current document|現在の document を置換/ });
+  await expect(replaceButton).toBeEnabled();
+  await replaceButton.click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export bundle (.zip)" }).click();
+  await page.getByRole("button", { name: /Export bundle \(\.zip\)|bundle をエクスポート \(.zip\)/ }).click();
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
 

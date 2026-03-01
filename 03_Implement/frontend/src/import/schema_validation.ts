@@ -206,6 +206,10 @@ function buildDefaultViewMetadata(input: Record<string, unknown>): ExportViewMet
       summaryView: rawViewState.summaryView === true,
       abstractMapView: rawViewState.abstractMapView === true,
       hideSourceCards: rawViewState.hideSourceCards === true,
+      hierarchyLevel:
+        rawViewState.hierarchyLevel === "overview" || rawViewState.hierarchyLevel === "mid" || rawViewState.hierarchyLevel === "detail"
+          ? rawViewState.hierarchyLevel
+          : undefined,
       maxDepth: typeof rawViewState.maxDepth === "number" || rawViewState.maxDepth === "all" ? rawViewState.maxDepth : "all",
       focusIslandId: typeof rawViewState.focusIslandId === "string" ? rawViewState.focusIslandId : null,
       showReadingOrder: rawViewState.showReadingOrder === true,

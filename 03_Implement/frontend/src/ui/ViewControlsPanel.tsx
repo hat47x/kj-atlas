@@ -196,6 +196,36 @@ export function ViewControlsPanel({
               <option value="detail">Detail</option>
             </select>
           </label>
+          <div style={{ display: "grid", gap: 4, minWidth: 240 }}>
+            <div style={{ display: "inline-flex", border: "1px solid #cbd5e1", borderRadius: 6, overflow: "hidden" }}>
+              {([
+                { id: "overview", label: "Overview" },
+                { id: "mid", label: "Mid" },
+                { id: "detail", label: "Detail" },
+              ] as const).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    onHierarchyLevelChange(item.id);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    border: "none",
+                    borderRight: item.id === "detail" ? "none" : "1px solid #cbd5e1",
+                    padding: "4px 8px",
+                    backgroundColor: hierarchyLevel === item.id ? "#e2e8f0" : "#ffffff",
+                    color: hierarchyLevel === item.id ? "#0f172a" : "#334155",
+                    fontWeight: hierarchyLevel === item.id ? 700 : 500,
+                    fontSize: 12,
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>Shortcut: Alt+Shift+1/2/3</div>
+          </div>
           {onResetView ? (
             <button type="button" onClick={onResetView} style={{ cursor: "pointer" }}>
               Reset view
