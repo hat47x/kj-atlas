@@ -240,7 +240,7 @@ export function SharePanel({
   const safeModeWarning = getExportSafetyWarning(safeMode);
 
   const shortFingerprint = (value: string | undefined): string => {
-    if (!value) return "(n/a)";
+    if (!value) return t("share.panel.patch.not_available");
     if (value.length <= 20) return value;
     return `${value.slice(0, 10)}…${value.slice(-6)}`;
   };
@@ -514,9 +514,9 @@ export function SharePanel({
           </div>
 
           <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>4) Patch</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Import patch JSON and optional baseline JSON for 3-way conflict detection.
+              {t("share.panel.patch.section_hint")}
             </div>
             <button
               type="button"
@@ -525,7 +525,7 @@ export function SharePanel({
               }}
               disabled={isLoading}
             >
-              Load patch.json
+              {t("share.panel.patch.load_patch")}
             </button>
             <input ref={patchInputRef} type="file" accept="application/json,.json" onChange={handlePatchFileChange} style={{ display: "none" }} />
             <button
@@ -535,7 +535,7 @@ export function SharePanel({
               }}
               disabled={isLoading}
             >
-              Load baseline document.json (optional)
+              {t("share.panel.patch.load_baseline")}
             </button>
             <input
               ref={patchBaselineInputRef}
@@ -544,10 +544,10 @@ export function SharePanel({
               onChange={handlePatchBaselineFileChange}
               style={{ display: "none" }}
             />
-            {patchFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Patch: {patchFileName}</div> : null}
-            {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>Baseline: {patchBaselineFileName}</div> : null}
+            {patchFileName ? <div style={{ fontSize: 12, color: "#334155" }}>{t("share.panel.patch.file", { fileName: patchFileName })}</div> : null}
+            {patchBaselineFileName ? <div style={{ fontSize: 12, color: "#334155" }}>{t("share.panel.patch.baseline", { fileName: patchBaselineFileName })}</div> : null}
             <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-              Trust label (view only)
+              {t("share.panel.patch.trust_label")}
               <select
                 value={patchTrustLabel}
                 onChange={(event) => {
@@ -555,60 +555,60 @@ export function SharePanel({
                 }}
                 style={{ fontSize: 12 }}
               >
-                <option value="unknown">Unknown</option>
-                <option value="trusted">Trusted</option>
-                <option value="untrusted">Untrusted</option>
+                <option value="unknown">{t("share.panel.patch.trust.unknown")}</option>
+                <option value="trusted">{t("share.panel.patch.trust.trusted")}</option>
+                <option value="untrusted">{t("share.panel.patch.trust.untrusted")}</option>
               </select>
             </label>
             {patchFingerprintStatus ? (
               <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 2 }}>
-                <strong>Integrity: {patchFingerprintStatus.status}</strong>
-                <span>expected: {shortFingerprint(patchFingerprintStatus.expected)}</span>
-                <span>actual: {shortFingerprint(patchFingerprintStatus.actual)}</span>
+                <strong>{t("share.panel.patch.integrity", { status: patchFingerprintStatus.status })}</strong>
+                <span>{t("share.panel.patch.expected", { value: shortFingerprint(patchFingerprintStatus.expected) })}</span>
+                <span>{t("share.panel.patch.actual", { value: shortFingerprint(patchFingerprintStatus.actual) })}</span>
               </div>
             ) : null}
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Export patch.json</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.export.title")}</div>
               <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#334155" }}>
-                Author (optional)
+                {t("share.panel.patch.export.author")}
                 <input value={patchExportAuthor} onChange={(event) => { onPatchExportAuthorChange(event.target.value); }} />
               </label>
               <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#334155" }}>
-                Author note (optional)
+                {t("share.panel.patch.export.author_note")}
                 <input value={patchExportAuthorNote} onChange={(event) => { onPatchExportAuthorNoteChange(event.target.value); }} />
               </label>
-              <button type="button" onClick={onExportPatchFile} disabled={isLoading || !patchFileName}>Download patch.json (with fingerprint)</button>
+              <button type="button" onClick={onExportPatchFile} disabled={isLoading || !patchFileName}>{t("share.panel.patch.export.download")}</button>
             </div>
             {patchImportError ? <div style={{ fontSize: 12, color: "#b91c1c", whiteSpace: "pre-wrap" }}>{patchImportError}</div> : null}
             {patchConflictWarning ? <div style={{ fontSize: 12, color: "#b45309", whiteSpace: "pre-wrap" }}>{patchConflictWarning}</div> : null}
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Lint</div>
-              <div style={{ fontSize: 11, color: "#334155" }}>Errors ({lintErrors.length}) / Warnings ({lintWarnings.length}) / Info ({lintInfos.length})</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.lint.title")}</div>
+              <div style={{ fontSize: 11, color: "#334155" }}>{t("share.panel.patch.lint.summary", { errors: lintErrors.length, warnings: lintWarnings.length, info: lintInfos.length })}</div>
               <details>
-                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b91c1c" }}>Errors ({lintErrors.length})</summary>
+                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b91c1c" }}>{t("share.panel.patch.lint.errors", { count: lintErrors.length })}</summary>
                 <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#7f1d1d", display: "grid", gap: 2 }}>
-                  {lintErrors.length === 0 ? <li>(none)</li> : lintErrors.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
+                  {lintErrors.length === 0 ? <li>{t("share.panel.patch.none")}</li> : lintErrors.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
                 </ul>
               </details>
               <details>
-                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b45309" }}>Warnings ({lintWarnings.length})</summary>
+                <summary style={{ cursor: "pointer", fontSize: 11, color: "#b45309" }}>{t("share.panel.patch.lint.warnings", { count: lintWarnings.length })}</summary>
                 <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#92400e", display: "grid", gap: 2 }}>
-                  {lintWarnings.length === 0 ? <li>(none)</li> : lintWarnings.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
+                  {lintWarnings.length === 0 ? <li>{t("share.panel.patch.none")}</li> : lintWarnings.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
                 </ul>
               </details>
               {lintInfos.length > 0 ? (
                 <details>
-                  <summary style={{ cursor: "pointer", fontSize: 11, color: "#475569" }}>Info ({lintInfos.length})</summary>
+                  <summary style={{ cursor: "pointer", fontSize: 11, color: "#475569" }}>{t("share.panel.patch.lint.info", { count: lintInfos.length })}</summary>
                   <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#475569", display: "grid", gap: 2 }}>
                     {lintInfos.map((issue, index) => <li key={`${issue.code}-${issue.opId ?? "global"}-${index}`}>{issue.code}: {issue.message}{issue.opId ? <> (<a href={`#patch-op-${issue.opId}`}>op:{issue.opId}</a>)</> : ""}</li>)}
                   </ul>
                 </details>
               ) : null}
-              {lintErrors.length > 0 ? <div style={{ fontSize: 11, color: "#b91c1c" }}>Resolve lint errors first.</div> : null}
+              {lintErrors.length > 0 ? <div style={{ fontSize: 11, color: "#b91c1c" }}>{t("share.panel.patch.resolve_lint_first")}</div> : null}
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>Fix suggestions ({fixProposals.length})</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.fix_suggestions", { count: fixProposals.length })}</div>
               {fixProposals.length === 0 ? (
-                <div style={{ fontSize: 11, color: "#64748b" }}>No auto-fix proposal for current lint issues.</div>
+                <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.patch.fix_none")}</div>
               ) : (
                 <div style={{ display: "grid", gap: 6 }}>
                   {fixProposals.map((proposal) => (
@@ -624,17 +624,17 @@ export function SharePanel({
                         <strong>{proposal.title}</strong>
                       </span>
                       <span>{proposal.description}</span>
-                      <span style={{ color: "#64748b" }}>affected ops: {proposal.affectedOpIds.length}</span>
+                      <span style={{ color: "#64748b" }}>{t("share.panel.patch.fix_affected_ops", { count: proposal.affectedOpIds.length })}</span>
                     </label>
                   ))}
                 </div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" onClick={onApplySelectedFixes} disabled={isLoading || selectedFixProposalIds.size === 0}>
-                  Apply selected fixes to patch
+                  {t("share.panel.patch.fix_apply_selected")}
                 </button>
                 <button type="button" onClick={onResetPatchToOriginal} disabled={isLoading || !patchFileName}>
-                  Reset patch to original
+                  {t("share.panel.patch.fix_reset")}
                 </button>
               </div>
             </div>
@@ -642,7 +642,7 @@ export function SharePanel({
             {patchSummary ? (
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, backgroundColor: "#f8fafc", display: "grid", gap: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{patchSummary.headline}</div>
-                <div style={{ fontSize: 11, color: "#334155" }}>Trust label: <strong>{patchTrustLabel}</strong></div>
+                <div style={{ fontSize: 11, color: "#334155" }}>{t("share.panel.patch.summary.trust_label")} <strong>{patchTrustLabel}</strong></div>
                 <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 2 }}>
                   <div>
                     cards +{patchSummary.stats.upsertCards} / -{patchSummary.stats.deleteCards}, islands +{patchSummary.stats.upsertIslands} / -
@@ -670,7 +670,7 @@ export function SharePanel({
                   </ul>
                 ) : null}
                 <button type="button" onClick={onCopyPatchSummary} disabled={isLoading}>
-                  Copy summary (Markdown)
+                  {t("share.panel.patch.summary.copy")}
                 </button>
               </div>
             ) : null}
@@ -692,7 +692,7 @@ export function SharePanel({
                       </label>
                       {item.conflict ? (
                         <span style={{ fontSize: 10, fontWeight: 700, color: "#b91c1c", border: "1px solid #fecaca", borderRadius: 9999, padding: "1px 6px" }}>
-                          CONFLICT
+                          {t("share.panel.patch.conflict_badge")}
                         </span>
                       ) : null}
                       {item.lintIssueCount > 0 ? (
@@ -706,22 +706,22 @@ export function SharePanel({
                             padding: "1px 6px",
                           }}
                         >
-                          LINT {item.lintIssueCount}
+                          {t("share.panel.patch.lint_badge", { count: item.lintIssueCount })}
                         </span>
                       ) : null}
                     </div>
                     {item.lintIssueCount > 0 ? (
-                      <div style={{ fontSize: 11, color: item.lintErrorCount > 0 ? "#b91c1c" : "#b45309" }}>Lint: {item.lintIssueCodes.join(", ")}</div>
+                      <div style={{ fontSize: 11, color: item.lintErrorCount > 0 ? "#b91c1c" : "#b45309" }}>{t("share.panel.patch.lint.codes", { codes: item.lintIssueCodes.join(", ") })}</div>
                     ) : null}
                     {item.conflict ? (
                       <>
-                        <div style={{ fontSize: 11, color: "#b45309" }}>Choose resolution to apply. {item.reason ?? ""}</div>
+                        <div style={{ fontSize: 11, color: "#b45309" }}>{t("share.panel.patch.conflict.choose_resolution", { reason: item.reason ?? "" })}</div>
                         <div style={{ fontSize: 11, color: "#475569", whiteSpace: "pre-wrap" }}>
-                          base: {item.baseSnippet ?? "(none)"}
+                          {t("share.panel.patch.conflict.base", { value: item.baseSnippet ?? t("share.panel.patch.none") })}
                           {"\n"}
-                          yours: {item.yourSnippet ?? "(none)"}
+                          {t("share.panel.patch.conflict.yours", { value: item.yourSnippet ?? t("share.panel.patch.none") })}
                           {"\n"}
-                          theirs: {item.theirSnippet ?? "(none)"}
+                          {t("share.panel.patch.conflict.theirs", { value: item.theirSnippet ?? t("share.panel.patch.none") })}
                         </div>
                         <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
                           <input
@@ -732,7 +732,7 @@ export function SharePanel({
                               onConflictResolutionChange(item.opId, "yours");
                             }}
                           />
-                          Use yours
+                          {t("share.panel.patch.conflict.use_yours")}
                         </label>
                         <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
                           <input
@@ -743,7 +743,7 @@ export function SharePanel({
                               onConflictResolutionChange(item.opId, "theirs");
                             }}
                           />
-                          Use theirs
+                          {t("share.panel.patch.conflict.use_theirs")}
                         </label>
                         <label style={{ display: "flex", gap: 6, fontSize: 12, color: "#334155" }}>
                           <input
@@ -754,14 +754,14 @@ export function SharePanel({
                               onConflictResolutionChange(item.opId, "skip");
                             }}
                           />
-                          Skip
+                          {t("share.panel.patch.conflict.skip")}
                         </label>
                       </>
                     ) : null}
                   </div>
                 ))}
                 <button type="button" onClick={onApplyPatch} disabled={!canApplyPatch || isLoading}>
-                  {lintErrors.length > 0 ? "Resolve lint errors first" : hasPatchSelection ? "Apply patch" : "Select operations to apply"}
+                  {lintErrors.length > 0 ? t("share.panel.patch.resolve_lint_first") : hasPatchSelection ? t("share.panel.patch.apply") : t("share.panel.patch.select_operations")}
                 </button>
               </div>
             ) : null}
@@ -770,10 +770,10 @@ export function SharePanel({
 
 
           <div style={sectionStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>5) Apply log ({patchApplyLogEntries.length})</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Persistent patch apply history for this document (newest first).</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.apply_log.title", { count: patchApplyLogEntries.length })}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{t("share.panel.patch.apply_log.hint")}</div>
             {sortedPatchApplyLogEntries.length === 0 ? (
-              <div style={{ fontSize: 12, color: "#94a3b8" }}>No patch apply log entries yet.</div>
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>{t("share.panel.patch.apply_log.empty")}</div>
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
                 {sortedPatchApplyLogEntries.map((entry) => (
@@ -783,20 +783,19 @@ export function SharePanel({
                     </summary>
                     <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#334155" }}>
                       <div>
-                        stats: cards +{entry.stats.upsertCards}/-{entry.stats.deleteCards}, islands +{entry.stats.upsertIslands}/-{entry.stats.deleteIslands},
+                        {t("share.panel.patch.apply_log.stats_prefix")} cards +{entry.stats.upsertCards}/-{entry.stats.deleteCards}, islands +{entry.stats.upsertIslands}/-{entry.stats.deleteIslands},
                         edges +{entry.stats.upsertEdges}/-{entry.stats.deleteEdges}, relations +{entry.stats.upsertRelationSummaries}/-{entry.stats.deleteRelationSummaries}, evidence +{entry.stats.upsertEvidenceLinks}/-{entry.stats.deleteEvidenceLinks}
                       </div>
                       {entry.conflictMeta ? (
                         <div>
-                          conflicts: total {entry.conflictMeta.totalConflicts}, yours {entry.conflictMeta.chosenYours}, theirs {entry.conflictMeta.chosenTheirs},
-                          skip {entry.conflictMeta.chosenSkip}
+                          {t("share.panel.patch.apply_log.conflicts", { total: entry.conflictMeta.totalConflicts, yours: entry.conflictMeta.chosenYours, theirs: entry.conflictMeta.chosenTheirs, skip: entry.conflictMeta.chosenSkip })}
                         </div>
                       ) : null}
-                      {entry.note ? <div>note: {entry.note}</div> : null}
+                      {entry.note ? <div>{t("share.panel.patch.apply_log.note", { note: entry.note })}</div> : null}
                       <details>
-                        <summary style={{ cursor: "pointer" }}>appliedOpIds ({entry.appliedOpIds.length})</summary>
+                        <summary style={{ cursor: "pointer" }}>{t("share.panel.patch.apply_log.applied_op_ids", { count: entry.appliedOpIds.length })}</summary>
                         <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-                          {entry.appliedOpIds.length === 0 ? <li>(none)</li> : entry.appliedOpIds.map((opId) => <li key={opId}>{opId}</li>)}
+                          {entry.appliedOpIds.length === 0 ? <li>{t("share.panel.patch.none")}</li> : entry.appliedOpIds.map((opId) => <li key={opId}>{opId}</li>)}
                         </ul>
                       </details>
                       <button
@@ -806,7 +805,7 @@ export function SharePanel({
                         }}
                         disabled={isLoading}
                       >
-                        Copy log entry (Markdown)
+                        {t("share.panel.patch.apply_log.copy")}
                       </button>
                     </div>
                   </details>
@@ -816,9 +815,9 @@ export function SharePanel({
           </div>
 
           <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>6) Diff / Verify</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.diff.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Structural doc diff (F3). Image diff (G2) and snapshot bundle verify (G3) remain available from legacy tools.
+              {t("share.panel.diff.section_hint")}
             </div>
             {structuralDiffSection}
           </div>

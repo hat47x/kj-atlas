@@ -335,3 +335,19 @@ npm run test:i18n-regression
 - 期待値を `document hash` と `view metadata` に分離して検証している。
 - 差分発生時に、漏洩層（ui-state/view-metadata/document-payload）を診断ログで一意に特定できる。
 - CIで deterministic 実行（固定時刻・canonicalize・乱数未使用）が維持される。
+
+## i18n辞書更新ルール（FB-RM-I18N-03 運用）
+
+新しい UI 文言キーを追加したときは、以下を同一PRで実施します。
+
+1. `03_Implement/frontend/src/i18n/locales/ja.json` と `en.json` に同じキーを追加する。
+2. 変数展開を使う場合は、`{name}` プレースホルダ名を ja/en で一致させる。
+3. 追加後に次の検証を実行し、キー欠損・プレースホルダ不整合・機能回帰を検出する。
+
+```bash
+cd 03_Implement/frontend
+pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.test.ts src/ui/i18n_equivalence.integration.test.ts
+```
+
+4. 表示言語の切替が document payload に影響しないことを `document_locale_invariance.test.ts` で確認する。
+5. SafeMode の漏洩防止回帰（`locale_conversion_guard.test.ts` 等）を必ず再実行する。

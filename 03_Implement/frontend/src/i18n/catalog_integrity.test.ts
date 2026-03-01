@@ -1,57 +1,56 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { globSync } from "node:fs";
 
-const localesDir = join(import.meta.dirname, "locales");
+import en from "./locales/en.json";
+import ja from "./locales/ja.json";
 
-type MessageCatalog = Record<string, string>;
+function collectTranslationKeysFromSource(): Set<string> {
+  const files = globSync("src/**/*.{ts,tsx}", {
+    cwd: process.cwd(),
+    exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/i18n/locales/*.json"],
+  });
 
-function loadCatalog(localeFileName: string): MessageCatalog {
-  const filePath = join(localesDir, localeFileName);
-  return JSON.parse(readFileSync(filePath, "utf-8")) as MessageCatalog;
+  const keys = new Set<string>();
+  const directCallPattern = /\bt\(\s*["']([^"']+)["']/g;
+
+  for (const relativePath of files) {
+    const source = readFileSync(relativePath, "utf8");
+    for (const match of source.matchAll(directCallPattern)) {
+      keys.add(match[1]);
+    }
+  }
+
+  return keys;
 }
 
-function listLocaleFiles(): string[] {
-  return readdirSync(localesDir)
-    .filter((name) => name.endsWith(".json"))
-    .sort();
-}
-
-function diffKeys(left: string[], right: string[]): string[] {
-  const rightSet = new Set(right);
-  return left.filter((key) => !rightSet.has(key));
+function extractPlaceholders(template: string): string[] {
+  const placeholders = template.match(/\{([a-zA-Z0-9_]+)\}/g) ?? [];
+  return placeholders.map((token) => token.slice(1, -1)).sort();
 }
 
 describe("i18n catalog integrity", () => {
-  it("keeps key parity across all locale catalogs", () => {
-    const localeFiles = listLocaleFiles();
-    expect(localeFiles.length).toBeGreaterThan(0);
+  it("contains dictionary entries for all statically referenced translation keys", () => {
+    const usedKeys = [...collectTranslationKeysFromSource()].sort();
+    const jaKeys = new Set(Object.keys(ja));
+    const enKeys = new Set(Object.keys(en));
 
-    const catalogs = localeFiles.map((fileName) => ({
-      fileName,
-      locale: fileName.replace(/\.json$/, ""),
-      catalog: loadCatalog(fileName),
-    }));
+    const missingInJa = usedKeys.filter((key) => !jaKeys.has(key));
+    const missingInEn = usedKeys.filter((key) => !enKeys.has(key));
 
-    const baseline = catalogs[0];
-    const baselineKeys = Object.keys(baseline.catalog).sort();
+    expect({ missingInJa, missingInEn }).toEqual({ missingInJa: [], missingInEn: [] });
+  });
 
-    for (const current of catalogs.slice(1)) {
-      const currentKeys = Object.keys(current.catalog).sort();
-      const missingInCurrent = diffKeys(baselineKeys, currentKeys);
-      const extraInCurrent = diffKeys(currentKeys, baselineKeys);
+  it("keeps ja/en placeholder sets aligned for each shared key", () => {
+    const sharedKeys = Object.keys(ja).filter((key) => key in en).sort();
+    const placeholderDiffs = sharedKeys
+      .map((key) => ({
+        key,
+        jaPlaceholders: extractPlaceholders(ja[key]),
+        enPlaceholders: extractPlaceholders(en[key]),
+      }))
+      .filter((entry) => entry.jaPlaceholders.join(",") !== entry.enPlaceholders.join(","));
 
-      expect({
-        baseline: baseline.locale,
-        current: current.locale,
-        missingInCurrent,
-        extraInCurrent,
-      }).toEqual({
-        baseline: baseline.locale,
-        current: current.locale,
-        missingInCurrent: [],
-        extraInCurrent: [],
-      });
-    }
+    expect(placeholderDiffs).toEqual([]);
   });
 });
