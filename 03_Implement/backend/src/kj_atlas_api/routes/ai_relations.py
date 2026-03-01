@@ -3,7 +3,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from kj_atlas_api.llm.provider import LLMRequest, ProviderDisabledError, ProviderRequestError, get_provider
+from kj_atlas_api.llm.provider import LLMRequest, ProviderDisabledError, ProviderRequestError, generate_with_fallback
 from kj_atlas_api.models_ai import SummarizeIslandRelationRequest, SummarizeIslandRelationResponse
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -98,9 +98,8 @@ def _parse_relation_summary_response(
 def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> SummarizeIslandRelationResponse:
     _validate_relation_summary_input(payload)
 
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(task="summarize_island_relation", prompt=_build_relation_summary_prompt(payload))
         )
     except ProviderDisabledError as exc:
@@ -113,7 +112,11 @@ def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> Summar
         extra={
             "task": "summarize_island_relation",
             "provider": getattr(llm_response, "provider", "unknown"),
+            "provider_kind": getattr(getattr(llm_response, "metadata", None), "provider_kind", "unknown"),
+            "model_id": getattr(getattr(llm_response, "metadata", None), "model_id", "unknown"),
             "transport": getattr(llm_response, "transport", "unknown"),
+            "requested_at": getattr(getattr(llm_response, "metadata", None), "requested_at", "unknown"),
+            "fallback_to_none": getattr(getattr(llm_response, "metadata", None), "fallback_to_none", False),
             "trace_id": getattr(llm_response, "trace_id", "unknown"),
         },
     )

@@ -60,16 +60,16 @@ def test_summarize_relation_rejects_invalid_request_with_422() -> None:
 
 def test_summarize_relation_rejects_non_subset_grounding_ids_with_422() -> None:
     original_api_key = settings.api_key
-    original_get_provider = ai_relations.get_provider
+    original_generate = ai_relations.generate_with_fallback
     settings.api_key = None
-    ai_relations.get_provider = lambda: _StubProvider(
+    ai_relations.generate_with_fallback = lambda req: _StubProvider(
         '{"text":"draft","groundingCardIds":["not-allowed"],"groundingEdgeIds":[],"warnings":[]}'
-    )
+    ).generate(req)
 
     try:
         with TestClient(app) as client:
             response = client.post("/ai/summarize-island-relation", json=_payload())
             assert response.status_code == 422
     finally:
-        ai_relations.get_provider = original_get_provider
+        ai_relations.generate_with_fallback = original_generate
         settings.api_key = original_api_key

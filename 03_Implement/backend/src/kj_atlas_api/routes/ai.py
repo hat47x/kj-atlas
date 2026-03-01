@@ -9,7 +9,7 @@ from kj_atlas_api.llm.provider import (
     LLMRequest,
     ProviderDisabledError,
     ProviderRequestError,
-    get_provider,
+    generate_with_fallback,
 )
 from kj_atlas_api.models_ai import (
     CheckNarrativeRequest,
@@ -39,7 +39,11 @@ def _audit_llm_trace(task: str, llm_response) -> None:
         extra={
             "task": task,
             "provider": getattr(llm_response, "provider", "unknown"),
+            "provider_kind": getattr(getattr(llm_response, "metadata", None), "provider_kind", "unknown"),
+            "model_id": getattr(getattr(llm_response, "metadata", None), "model_id", "unknown"),
             "transport": getattr(llm_response, "transport", "unknown"),
+            "requested_at": getattr(getattr(llm_response, "metadata", None), "requested_at", "unknown"),
+            "fallback_to_none": getattr(getattr(llm_response, "metadata", None), "fallback_to_none", False),
             "trace_id": getattr(llm_response, "trace_id", "unknown"),
         },
     )
@@ -476,9 +480,8 @@ def _parse_merge_suggestions(raw_text: str, source_doc: SuggestMergesRequest) ->
 
 @router.post("/suggest-layout", response_model=SuggestLayoutResponse)
 def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(
                 task="re_layout",
                 prompt=_build_prompt(payload),
@@ -509,9 +512,8 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
 
 @router.post("/suggest-merges", response_model=SuggestMergesResponse)
 def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_merges",
                 prompt=_build_merge_prompt(payload),
@@ -532,9 +534,8 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
 
 @router.post("/suggest-island-summary", response_model=SuggestIslandSummaryResponse)
 def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslandSummaryResponse:
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(
                 task="suggest_island_summary",
                 prompt=_build_island_summary_prompt(payload),
@@ -552,9 +553,8 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
 
 @router.post("/generate-narrative", response_model=GenerateNarrativeResponse)
 def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeResponse:
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(
                 task="generate_narrative",
                 prompt=_build_generate_narrative_prompt(payload),
@@ -573,9 +573,8 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
 def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
     _validate_check_narrative_input(payload)
 
-    provider = get_provider()
     try:
-        llm_response = provider.generate(
+        llm_response = generate_with_fallback(
             LLMRequest(
                 task="check_narrative",
                 prompt=_build_narrative_check_prompt(payload),

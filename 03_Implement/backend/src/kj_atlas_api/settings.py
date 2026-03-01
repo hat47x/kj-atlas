@@ -27,6 +27,10 @@ class Settings(BaseSettings):
         default=None,
         alias="LARGE_SCALE_LLM_MODEL",
     )
+    llm_fallback_to_none: bool = Field(
+        default=True,
+        alias="LLM_FALLBACK_TO_NONE",
+    )
     api_key: str | None = Field(
         default=None,
         alias="API_KEY",
