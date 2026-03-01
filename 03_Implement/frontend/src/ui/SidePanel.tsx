@@ -705,10 +705,10 @@ export function SidePanel({
 
 
   const claimTypeLabels: Record<ClaimType, string> = {
-    fact: "Fact (観測/一次情報)",
-    claim: "Claim (主張/解釈)",
-    hypothesis: "Hypothesis (仮説)",
-    unknown: "Unknown (未分類)",
+    fact: t("side_panel.claim_type.fact"),
+    claim: t("side_panel.claim_type.claim"),
+    hypothesis: t("side_panel.claim_type.hypothesis"),
+    unknown: t("side_panel.claim_type.unknown"),
   };
 
   const claimTypeBadgeColors: Record<ClaimType, { backgroundColor: string; color: string }> = {
@@ -771,7 +771,7 @@ export function SidePanel({
         checked islands:{claimTypeMixReport.stats.islandsChecked} · mixed:{claimTypeMixReport.stats.islandsMixedCount} · hypothesis-dominant:{claimTypeMixReport.stats.islandsHypothesisDominantCount} · unknown-dominant:{claimTypeMixReport.stats.islandsUnknownDominantCount}
       </div>
       {claimTypeMixReport.findings.length === 0 ? (
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No claim typing findings.</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.claim_type.no_findings")}</div>
       ) : (
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {claimTypeMixReport.findings.map((finding, index) => (
@@ -1307,7 +1307,7 @@ export function SidePanel({
                 onOutlineAppendDiagnosticsChange(event.target.checked);
               }}
             />
-            Append diagnostics
+            {t("side_panel.outline.append_diagnostics")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1317,9 +1317,9 @@ export function SidePanel({
                 onOutlineAppendRecommendationsChange(event.target.checked);
               }}
             />
-            Append recommendations
+            {t("side_panel.outline.append_recommendations")}
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? "Working..." : "Run diagnostics"}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>Cancel</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -1629,7 +1629,7 @@ export function SidePanel({
                 onOutlineAppendDiagnosticsChange(event.target.checked);
               }}
             />
-            Append diagnostics
+            {t("side_panel.outline.append_diagnostics")}
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
             <input
@@ -1639,9 +1639,9 @@ export function SidePanel({
                 onOutlineAppendRecommendationsChange(event.target.checked);
               }}
             />
-            Append recommendations
+            {t("side_panel.outline.append_recommendations")}
           </label>
-          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? "Working..." : "Run diagnostics"}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>Cancel</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
+          <button type="button" onClick={onRunOutlineDiagnostics} disabled={isDiagnosticsRunning}>{isDiagnosticsRunning ? t("side_panel.action.working") : t("side_panel.outline.run_diagnostics")}</button>{isDiagnosticsRunning ? <button type="button" onClick={onCancelDiagnostics}>{t("side_panel.action.cancel")}</button> : null}{isDiagnosticsRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
           <div style={{ fontSize: 11, color: "#b45309" }}>Unreviewed content is draft; do not treat as confirmed.</div>
           {safeMode ? <div style={{ fontSize: 11, color: "#b45309" }}>Safe mode: unreviewed drafts are excluded.</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
