@@ -9,7 +9,7 @@ import type {
   PatchApplyLogEntry,
   RelationSummary,
 } from "./types";
-import { isSelfIntersectingPolygon } from "./geometry/polygon_self_intersection";
+import { canUsePolygonPoints } from "./geometry/polygon_edit";
 
 type ValidationSuccess = {
   ok: true;
@@ -206,7 +206,7 @@ function validateIslandGeometry(value: unknown, path: string, errors: string[]):
         valid = false;
       }
     });
-    if (valid && isSelfIntersectingPolygon(points as { x: number; y: number }[])) {
+    if (valid && !canUsePolygonPoints(points as { x: number; y: number }[])) {
       errors.push(`${path}.points: polygon must not self-intersect`);
       return false;
     }
@@ -269,7 +269,7 @@ function validateIslandShape(value: unknown, path: string, errors: string[]): va
         }
       });
 
-      if (valid && isSelfIntersectingPolygon(value.points as { x: number; y: number }[])) {
+      if (valid && !canUsePolygonPoints(value.points as { x: number; y: number }[])) {
         errors.push(`${path}.points: polygon must not self-intersect`);
         valid = false;
       }

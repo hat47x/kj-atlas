@@ -21,6 +21,11 @@ import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./
 import type { AlignDirection, DistributeDirection } from "./domain/layout_ops";
 import { appendReadingOrderEntry, moveReadingOrderEntry, removeReadingOrderEntry } from "./domain/reading_order_ops";
 import { computeConvexHull } from "./domain/geometry/convex_hull";
+import {
+  addPolygonVertex,
+  movePolygonVertex,
+  removePolygonVertex,
+} from "./domain/geometry/polygon_edit";
 import { padPolygonFromCentroid } from "./domain/geometry/polygon_pad";
 import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geometry/polygon_stale";
 import { isTemporaryRevealEligible } from "./domain/visibility";
@@ -4018,35 +4023,40 @@ ${parsedDocument.error}`);
         return;
       }
 
+      let statusMessage: string | null = null;
       const nextIslands = document.islands.map((island) => {
         if (island.id !== islandId || island.shape?.kind !== "polygon") {
           return island;
         }
 
-        if (vertexIndex < 0 || vertexIndex >= island.shape.points.length) {
+        const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
+        if (!nextPolygon.ok) {
+          if (nextPolygon.error === "self_intersection") {
+            statusMessage = "Polygon must not self-intersect";
+          }
           return island;
         }
 
         const currentPoint = island.shape.points[vertexIndex];
-        if (currentPoint.x === point.x && currentPoint.y === point.y) {
+        const nextPoint = nextPolygon.points[vertexIndex];
+        if (currentPoint && currentPoint.x === nextPoint.x && currentPoint.y === nextPoint.y) {
           return island;
         }
-
-        const nextPoints = island.shape.points.map((targetPoint, index) =>
-          index === vertexIndex ? { ...point } : targetPoint
-        );
 
         return {
           ...island,
           shape: {
             ...island.shape,
-            points: nextPoints,
+            points: nextPolygon.points,
           },
         };
       });
 
       const hasChanges = nextIslands.some((island, index) => island !== document.islands[index]);
       if (!hasChanges) {
+        if (statusMessage) {
+          setStatusMessage(statusMessage);
+        }
         return;
       }
 
@@ -4072,18 +4082,19 @@ ${parsedDocument.error}`);
           return island;
         }
 
-        if (segmentStartIndex < 0 || segmentStartIndex >= island.shape.points.length) {
+        const nextPolygon = addPolygonVertex(island.shape.points, segmentStartIndex, point);
+        if (!nextPolygon.ok) {
+          if (nextPolygon.error === "self_intersection") {
+            setStatusMessage("Polygon must not self-intersect");
+          }
           return island;
         }
-
-        const nextPoints = [...island.shape.points];
-        nextPoints.splice(segmentStartIndex + 1, 0, { ...point });
 
         return {
           ...island,
           shape: {
             ...island.shape,
-            points: nextPoints,
+            points: nextPolygon.points,
           },
         };
       });
@@ -4110,18 +4121,19 @@ ${parsedDocument.error}`);
         return;
       }
 
-      let blockedByMinimum = false;
+      let statusMessage: string | null = null;
       const nextIslands = document.islands.map((island) => {
         if (island.id !== islandId || island.shape?.kind !== "polygon") {
           return island;
         }
 
-        if (vertexIndex < 0 || vertexIndex >= island.shape.points.length) {
-          return island;
-        }
-
-        if (island.shape.points.length <= 3) {
-          blockedByMinimum = true;
+        const nextPolygon = removePolygonVertex(island.shape.points, vertexIndex);
+        if (!nextPolygon.ok) {
+          if (nextPolygon.error === "min_vertex_count") {
+            statusMessage = "Polygon needs at least 3 points";
+          } else if (nextPolygon.error === "self_intersection") {
+            statusMessage = "Polygon must not self-intersect";
+          }
           return island;
         }
 
@@ -4129,13 +4141,13 @@ ${parsedDocument.error}`);
           ...island,
           shape: {
             ...island.shape,
-            points: island.shape.points.filter((_, index) => index !== vertexIndex),
+            points: nextPolygon.points,
           },
         };
       });
 
-      if (blockedByMinimum) {
-        setStatusMessage("Polygon needs at least 3 points");
+      if (statusMessage) {
+        setStatusMessage(statusMessage);
         return;
       }
 
