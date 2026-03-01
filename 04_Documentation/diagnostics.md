@@ -57,6 +57,7 @@
 - `evidenceLinkCount`: 妥当なカード参照を持つ evidenceLinks 件数
 - `evidenceLinkDensity`: `evidenceLinkCount / max(1, cardCount)`
 - `isolatedCardCount`: relation（evidenceLinks + card-card edges）に接続していないカード数
+- `isolationRate`: `isolatedCardCount / max(1, cardCount)`
 - `contradictionRatio`（optional）: 型付き relation における否定系比率
 - `reviewedCoverage`（optional）: `textReviewed === true` の割合
 - `islandSizeDistribution`: 島ごとの有効カード数分布
@@ -69,9 +70,15 @@
 - `largestComponentRatio`:
   - 意味: `largestConnectedComponentSize / max(1, cardCount)`
   - 期待: 1.0 に近いほど全体が連結、低いほど断片化
+- `connectivityScore`:
+  - 意味: `1 - (max(0, connectedComponentCount - 1) / max(1, cardCount - 1))`
+  - 期待: 1.0 に近いほど一体、0.0 に近いほど分断
 - `degreeP95`:
   - 意味: card degree 分布の95パーセンタイル（nearest-rank）
   - 期待: 局所ハブの過密検知に利用
+- `degreeSkewRatio`:
+  - 意味: `degreeP95 / max(1, averageDegree)`
+  - 期待: 1.0超で局所ハブ偏重の兆候
 - `bridgeEdgeCount`:
   - 意味: 削除すると連結成分数が増える bridge edge 数（無向グラフ）
   - 期待: 値が高いほどボトルネック依存が高い
@@ -98,15 +105,22 @@
 
 - `connectedComponentCount = cc(G)`
 - `largestComponentRatio = largestComponentSize(G) / max(1, |C|)`
+- `connectivityScore = 1 - (max(0, connectedComponentCount - 1) / max(1, |C| - 1))`
+- `isolationRate = isolatedCardCount / max(1, |C|)`
 - `degreeP95 = percentile_nearest_rank({deg(v) | v ∈ C}, 95)`
   - nearest-rank: `rank = ceil(0.95 * n)`（`n=|C|`, 1-indexed）
+- `degreeSkewRatio = degreeP95 / max(1, averageDegree)`
+  - `averageDegree = 2 * |E| / max(1, |C|)`
 - `bridgeEdgeCount = |{ e ∈ E | cc(C, E \ {e}) > cc(G) }|`
 
 意図:
 
 - `connectedComponentCount`: 分断された島/論点群の多さを検知
 - `largestComponentRatio`: 全体の一体性（最大連結塊への集中）を検知
+- `connectivityScore`: 連結性の健全度を 0.0〜1.0 で比較
+- `isolationRate`: 孤立カードの割合（孤立率）を比較
 - `degreeP95`: 局所ハブ偏重（過密接続）を検知
+- `degreeSkewRatio`: 平均次数に対する偏り（ハブ偏重）を比較
 - `bridgeEdgeCount`: 単一関係に依存する脆弱な接続（ボトルネック）を検知
 
 決定論ルール:
@@ -115,6 +129,14 @@
 - bridge 判定 DFS は隣接ノードをID昇順で走査する。
 - 小数は `round(value * 10_000) / 10_000` で丸める。
 - これにより同一入力で同一 `diagnosticsData.structuralMetrics` を返す。
+
+## E2E verification (FB-RM-RS-02)
+
+- Playwright: `03_Implement/frontend/e2e/diagnostics_structural_metrics.spec.ts`
+- Scope:
+  - Share Panel から `document.json` を置換し、bundle export を実行する。
+  - export された `diagnostics.md` に構造メトリクス行（`connectedComponentCount`, `largestComponentRatio`, `bridgeEdgeCount`, `isolationRate`, `connectivityScore`, `degreeSkewRatio`）が含まれることを確認する。
+  - 同一入力で 2 回 export した `diagnostics.md` が一致すること（決定論）を確認する。
 
 ### Initial threshold hints (warning defaults)
 

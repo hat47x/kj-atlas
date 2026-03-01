@@ -72,9 +72,12 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
   lines.push(`| evidenceLinkCount | ${data.structuralMetrics.evidenceLinkCount} |`);
   lines.push(`| evidenceLinkDensity | ${data.structuralMetrics.evidenceLinkDensity} |`);
   lines.push(`| isolatedCardCount | ${data.structuralMetrics.isolatedCardCount} |`);
+  lines.push(`| isolationRate | ${data.structuralMetrics.isolationRate} |`);
   lines.push(`| connectedComponentCount | ${data.structuralMetrics.connectedComponentCount} |`);
   lines.push(`| largestComponentRatio | ${data.structuralMetrics.largestComponentRatio} |`);
+  lines.push(`| connectivityScore | ${data.structuralMetrics.connectivityScore} |`);
   lines.push(`| degreeP95 | ${data.structuralMetrics.degreeP95} |`);
+  lines.push(`| degreeSkewRatio | ${data.structuralMetrics.degreeSkewRatio} |`);
   lines.push(`| bridgeEdgeCount | ${data.structuralMetrics.bridgeEdgeCount} |`);
   if (data.structuralMetrics.contradictionRatio !== null) {
     lines.push(`| contradictionRatio | ${data.structuralMetrics.contradictionRatio} |`);

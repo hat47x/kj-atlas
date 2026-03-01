@@ -6,9 +6,12 @@ export type StructureMetrics = {
   evidenceLinkCount: number;
   evidenceLinkDensity: number;
   isolatedCardCount: number;
+  isolationRate: number;
   connectedComponentCount: number;
   largestComponentRatio: number;
+  connectivityScore: number;
   degreeP95: number;
+  degreeSkewRatio: number;
   bridgeEdgeCount: number;
   islandSizeDistribution: Array<{ size: number; islands: number }>;
   contradictionRatio: number | null;
@@ -203,10 +206,14 @@ export function computeStructureMetrics(doc: DocumentV2, _view?: { collapsedIsla
     (count, cardId) => ((graph.get(cardId)?.size ?? 0) === 0 ? count + 1 : count),
     0,
   );
+  const isolationRate = roundTo4(isolatedCardCount / Math.max(1, cardCount));
 
   const { count: connectedComponentCount, largestSize } = countConnectedComponents(allCardIds, graph);
   const largestComponentRatio = roundTo4(largestSize / Math.max(1, cardCount));
+  const connectivityScore = roundTo4(1 - (Math.max(0, connectedComponentCount - 1) / Math.max(1, cardCount - 1)));
   const degreeP95 = percentile95(allCardIds.map((cardId) => graph.get(cardId)?.size ?? 0));
+  const averageDegree = cardCount > 0 ? (normalizedPairs.length * 2) / cardCount : 0;
+  const degreeSkewRatio = roundTo4(degreeP95 / Math.max(1, averageDegree));
   const bridgeEdgeCount = countBridgeEdges(allCardIds, graph);
 
   const evidenceLinkDensity = roundTo4(evidenceLinkCount / Math.max(1, cardCount));
@@ -245,9 +252,12 @@ export function computeStructureMetrics(doc: DocumentV2, _view?: { collapsedIsla
     evidenceLinkCount,
     evidenceLinkDensity,
     isolatedCardCount,
+    isolationRate,
     connectedComponentCount,
     largestComponentRatio,
+    connectivityScore,
     degreeP95,
+    degreeSkewRatio,
     bridgeEdgeCount,
     islandSizeDistribution,
     contradictionRatio,
