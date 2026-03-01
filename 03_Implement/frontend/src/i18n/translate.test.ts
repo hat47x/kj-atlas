@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LOCALE,
+  getActiveLocale,
   isLocale,
   resolveTemplate,
+  resolveTemplateFromCatalogs,
+  setActiveLocale,
   t,
   validateLocaleMessages,
   type Locale,
 } from "./translate";
+import type { MessageCatalog } from "./messages";
+import en from "./locales/en.json";
+import ja from "./locales/ja.json";
 
 describe("translate", () => {
   it("resolves known keys in default locale", () => {
-    expect(t("share.panel.trigger")).toBe("Share & Reproduce");
+    expect(t("share.panel.trigger")).toBe("共有と再現");
   });
 
   it("interpolates placeholder values", () => {
@@ -21,11 +27,15 @@ describe("translate", () => {
         islandCount: 3,
         perspectiveMode: "default",
       }),
-    ).toBe("Imported sample.zip: cards 12, islands 3, perspective default");
+    ).toBe("sample.zip を取り込みました: cards 12, islands 3, perspective default");
   });
 
   it("falls back to default locale when requested locale misses a key", () => {
-    expect(resolveTemplate("safe_mode.indicator.on.label", "en")).toBe("SafeMode: ON");
+    const catalogs = {
+      ja: { "safe_mode.indicator.on.label": "セーフモード: ON" },
+      en: {} as MessageCatalog,
+    };
+    expect(resolveTemplateFromCatalogs("safe_mode.indicator.on.label", "en", catalogs)).toBe("セーフモード: ON");
   });
 
   it("falls back to key string when key is unknown in all locales", () => {
@@ -36,6 +46,16 @@ describe("translate", () => {
     expect(t("share.panel.export.bundle_cancel", undefined, "en")).toBe("Cancel");
   });
 
+  it("supports active locale switch without per-call locale argument", () => {
+    setActiveLocale("en");
+    expect(getActiveLocale()).toBe("en");
+    expect(t("share.panel.trigger")).toBe("Share & Reproduce");
+
+    setActiveLocale("ja");
+    expect(getActiveLocale()).toBe("ja");
+    expect(t("share.panel.trigger")).toBe("共有と再現");
+  });
+
   it("normalizes unknown locale to default", () => {
     expect(isLocale("ja")).toBe(true);
     expect(isLocale("en")).toBe(true);
@@ -43,6 +63,9 @@ describe("translate", () => {
 
     const locale: Locale = DEFAULT_LOCALE;
     expect(locale).toBe("ja");
+
+    setActiveLocale("fr");
+    expect(getActiveLocale()).toBe("ja");
   });
 
   it("validates locale message payload contract", () => {
@@ -52,5 +75,15 @@ describe("translate", () => {
       ok: false,
       errors: ["Locale message value for key \"hello\" must be a string."],
     });
+  });
+
+  it("keeps ja/en dictionaries key-equivalent", () => {
+    const jaKeys = Object.keys(ja).sort();
+    const enKeys = Object.keys(en).sort();
+    expect(enKeys).toEqual(jaKeys);
+  });
+
+  it("resolves explicit locale via resolveTemplate", () => {
+    expect(resolveTemplate("safe_mode.indicator.on.label", "en")).toBe("SafeMode: ON");
   });
 });

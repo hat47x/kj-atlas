@@ -1,10 +1,33 @@
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ImportPanel } from "./ImportPanel";
+import { setActiveLocale } from "../i18n/translate";
+
+afterEach(() => {
+  setActiveLocale("ja");
+});
 
 describe("ImportPanel copy", () => {
-  it("renders dictionary-backed static labels", () => {
+  it("renders Japanese dictionary labels by default", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ImportPanel, {
+        isLoading: false,
+        onImportZip: vi.fn(),
+        onInvalidFileType: vi.fn(),
+        packImportError: null,
+        importedPackSummary: null,
+      }),
+    );
+
+    expect(html).toContain("レビューパックを取り込む (.zip)");
+    expect(html).toContain("review-pack .zip をここにドラッグ");
+    expect(html).toContain("ZIPを選択…");
+  });
+
+  it("renders English labels with locale switch", () => {
+    setActiveLocale("en");
+
     const html = renderToStaticMarkup(
       React.createElement(ImportPanel, {
         isLoading: false,
@@ -20,7 +43,9 @@ describe("ImportPanel copy", () => {
     expect(html).toContain("Choose ZIP…");
   });
 
-  it("renders interpolated summary and warning", () => {
+  it("renders interpolated summary and warning in English", () => {
+    setActiveLocale("en");
+
     const html = renderToStaticMarkup(
       React.createElement(ImportPanel, {
         isLoading: false,

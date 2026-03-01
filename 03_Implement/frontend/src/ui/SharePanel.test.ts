@@ -1,7 +1,8 @@
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SharePanel } from "./SharePanel";
+import { setActiveLocale } from "../i18n/translate";
 
 function buildProps(safeMode: boolean) {
   return {
@@ -71,15 +72,20 @@ function buildProps(safeMode: boolean) {
   };
 }
 
+afterEach(() => {
+  setActiveLocale("ja");
+});
+
 describe("SharePanel safe mode copy", () => {
-  it("shows consistent safe-mode-on messages", () => {
+  it("shows consistent Japanese safe-mode-on messages", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
-    expect(html).toContain("SafeMode: ON");
-    expect(html).toContain("SafeMode is ON. Exported summaries stay privacy-first by default.");
-    expect(html).toContain("Locked redaction contexts: Share / Review Pack (cannot be disabled).");
+    expect(html).toContain("セーフモード: ON");
+    expect(html).toContain("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
+    expect(html).toContain("固定マスク対象: Share / Review Pack（無効化できません）。");
   });
 
-  it("shows consistent safe-mode-off warnings", () => {
+  it("shows consistent English safe-mode-off warnings", () => {
+    setActiveLocale("en");
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(false)));
     expect(html).toContain("SafeMode: OFF");
     expect(html).toContain("SafeMode is OFF. Exports may include raw text. Re-enable SafeMode before external sharing.");
@@ -88,7 +94,15 @@ describe("SharePanel safe mode copy", () => {
 });
 
 describe("SharePanel bundle granularity", () => {
-  it("renders granularity options in export section", () => {
+  it("renders Japanese granularity options in export section", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("エクスポート粒度");
+    expect(html).toContain("Detail（完全な trace を出力）");
+    expect(html).toContain("Overview（高レベル要約）");
+  });
+
+  it("renders English granularity options in export section", () => {
+    setActiveLocale("en");
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("Export granularity");
     expect(html).toContain("Detail (full trace exports)");
