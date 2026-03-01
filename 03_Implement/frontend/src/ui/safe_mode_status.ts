@@ -1,3 +1,5 @@
+import { t } from "../i18n/translate";
+
 export type SafeModeIndicatorTone = "safe" | "warning";
 
 export type SafeModeIndicator = {
@@ -9,27 +11,27 @@ export type SafeModeIndicator = {
 export function getSafeModeIndicator(safeMode: boolean): SafeModeIndicator {
   if (safeMode) {
     return {
-      label: "SafeMode: ON",
-      detail: "Sensitive text is redacted in export/share contexts.",
+      label: t("safe_mode.indicator.on.label"),
+      detail: t("safe_mode.indicator.on.detail"),
       tone: "safe",
     };
   }
 
   return {
-    label: "SafeMode: OFF",
-    detail: "Raw text can be exported; verify before sharing.",
+    label: t("safe_mode.indicator.off.label"),
+    detail: t("safe_mode.indicator.off.detail"),
     tone: "warning",
   };
 }
 
 export function getSafeModeLockedContextLabel(): string {
-  return "Locked redaction contexts: Share / Review Pack (cannot be disabled).";
+  return t("safe_mode.locked_contexts");
 }
 
 export function getExportSafetyWarning(safeMode: boolean): string {
   if (safeMode) {
-    return "SafeMode is ON. Exported summaries stay privacy-first by default.";
+    return t("safe_mode.export_warning.on");
   }
 
-  return "SafeMode is OFF. Exports may include raw text. Re-enable SafeMode before external sharing.";
+  return t("safe_mode.export_warning.off");
 }
