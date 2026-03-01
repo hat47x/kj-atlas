@@ -105,6 +105,36 @@ npm run test
 - 直ちに解消不能な場合のみ、**期限付き例外Issue**（理由・担当・期限）を登録し、PR本文へリンクします。
 - 期限の目安は14日以内。期限切れ例外が残るPRは原則マージしません。
 
+### 期限付き例外の運用（必須）
+
+例外申請時は、以下をIssue本文に必ず記載してください。
+
+- 対象ルール（例: `@typescript-eslint/no-explicit-any`）
+- 発生箇所（ファイル/行）
+- 直ちに解消できない理由
+- 解消担当者
+- 解消期限（原則14日以内）
+- 解消PR（後追いで追記可）
+
+運用ルール:
+
+1. 期限切れ例外が1件でも残る場合、Phase B/Cではマージ停止。
+2. 期限延長は1回ごとに理由をIssueコメントで明記。
+3. 恒久除外（eslint-disable固定化）は禁止。必要ならADR/Issueで方針決定を行う。
+
+### 失敗時の切り分け（CI / ローカル共通）
+
+1. **`frontend-lint` のみ失敗**
+   - `npm run lint` を再実行し、ルール違反を修正。
+2. **`frontend-typecheck` のみ失敗**
+   - `npm run typecheck` で型エラーを特定し、型定義や呼び出し側を修正。
+3. **`frontend-test` のみ失敗**
+   - `npm run test` と `npm run build` を分けて再実行し、テスト不安定かビルド破壊かを切り分け。
+4. **複数ジョブ失敗**
+   - lint → typecheck → test/build の順で修正（上流の静的エラーから潰す）。
+
+CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Repository Variables を修正してください。
+
 ### CI責務分離（保守者向け）
 
 - `frontend-lint`: lintポリシー適用（Phase Aは警告、Phase B/Cは失敗）。
@@ -118,6 +148,7 @@ npm run test
 1. `01_Plans/coding_standards.md` にPhaseとexit criteriaがある。
 2. 本書に `npm run lint` 手順・失敗時対処・例外運用がある。
 3. `.github/workflows/ci.yml` のジョブ責務とfail条件が文書記述と一致する。
+4. `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md` の Follow-up 要件と矛盾がない。
 
 確認コマンド:
 

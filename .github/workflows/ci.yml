@@ -221,18 +221,35 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.pm.outputs.install }}
 
-      - name: Lint (Phase A=warn, Phase B/C=fail)
+      - name: Validate lint phase value
+        run: |
+          case "${FRONTEND_LINT_PHASE}" in
+            A|B|C) ;;
+            *)
+              echo "Invalid FRONTEND_LINT_PHASE=${FRONTEND_LINT_PHASE}. Use A, B, or C." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Lint (run and capture outcome)
         id: lint
-        continue-on-error: ${{ env.FRONTEND_LINT_PHASE == 'A' }}
+        continue-on-error: true
         run: ${{ steps.pm.outputs.run }} lint
 
-      - name: Record lint policy summary
+      - name: Enforce lint gate by phase
         if: always()
         run: |
           echo "frontend lint phase: ${FRONTEND_LINT_PHASE}" >> "$GITHUB_STEP_SUMMARY"
           echo "lint step outcome: ${{ steps.lint.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+
           if [ "${FRONTEND_LINT_PHASE}" = "A" ] && [ "${{ steps.lint.outcome }}" != "success" ]; then
-            echo "Phase A allows warning-only lint failures. Promote to Phase B when outstanding issues are reduced." >> "$GITHUB_STEP_SUMMARY"
+            echo "Phase A: warning-only mode. Lint failures are reported but do not fail CI." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "${{ steps.lint.outcome }}" != "success" ]; then
+            echo "Phase ${FRONTEND_LINT_PHASE}: fail-on-error mode. Fix lint violations before merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
   frontend-typecheck:
@@ -288,6 +305,11 @@ jobs:
 
       - name: Typecheck
         run: ${{ steps.pm.outputs.run }} typecheck
+
+      - name: Record typecheck responsibility
+        if: always()
+        run: |
+          echo "frontend-typecheck: fail-on-error (always)" >> "$GITHUB_STEP_SUMMARY"
 
   frontend-test:
     name: Frontend test + build
@@ -345,6 +367,11 @@ jobs:
 
       - name: Build
         run: ${{ steps.pm.outputs.run }} build
+
+      - name: Record test/build responsibility
+        if: always()
+        run: |
+          echo "frontend-test: fail-on-error (always)" >> "$GITHUB_STEP_SUMMARY"
 
   backend:
     name: Backend lint + test
