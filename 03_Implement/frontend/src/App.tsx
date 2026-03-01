@@ -80,6 +80,7 @@ import {
 import { buildReadingList, clampReadingIndex, type ReadingItem, type ReadingMode } from "./domain/view/reading_path";
 import { buildReadingOutlineMd } from "./domain/view/reading_outline";
 import { maxDepthForHierarchyLevel, resolveHierarchyLevel, type HierarchyLevel } from "./domain/view/hierarchy_level";
+import { collectHierarchyHiddenIslandIds, collectHierarchyPlacardHiddenCardIds } from "./domain/view/hierarchy_visibility";
 import type { OutlineQualityReport } from "./domain/view/outline_quality";
 import { generateRecommendations } from "./domain/view/recommendations";
 import type { ContradictionReport, ContradictionSignal } from "./domain/view/contradiction_checks";
@@ -231,6 +232,9 @@ function sanitizeViewPatch(value: unknown): ViewPatch {
   if (typeof candidate.summaryView === "boolean") viewPatch.summaryView = candidate.summaryView;
   if (typeof candidate.abstractMapView === "boolean") viewPatch.abstractMapView = candidate.abstractMapView;
   if (typeof candidate.hideSourceCards === "boolean") viewPatch.hideSourceCards = candidate.hideSourceCards;
+  if (candidate.hierarchyLevel === "overview" || candidate.hierarchyLevel === "mid" || candidate.hierarchyLevel === "detail") {
+    viewPatch.hierarchyLevel = candidate.hierarchyLevel;
+  }
   if (candidate.maxDepth === "all" || typeof candidate.maxDepth === "number") viewPatch.maxDepth = candidate.maxDepth;
   if (candidate.focusIslandId === null || typeof candidate.focusIslandId === "string") viewPatch.focusIslandId = candidate.focusIslandId;
   if (typeof candidate.showReadingOrder === "boolean") viewPatch.showReadingOrder = candidate.showReadingOrder;
@@ -969,7 +973,7 @@ export default function App() {
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
-  const hierarchyLevel = useMemo(() => resolveHierarchyLevel(maxDepth), [maxDepth]);
+  const [hierarchyLevel, setHierarchyLevel] = useState<HierarchyLevel>("detail");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -1353,11 +1357,7 @@ export default function App() {
       return new Set<string>();
     }
 
-    return new Set(
-      focusedVisibleDocument.islands
-        .filter((island) => (islandDepthById.get(island.id) ?? 0) > maxDepth)
-        .map((island) => island.id)
-    );
+    return collectHierarchyHiddenIslandIds(focusedVisibleDocument.islands, islandDepthById, maxDepth);
   }, [focusedVisibleDocument, islandDepthById, maxDepth]);
   const selectedPerspectiveCardId = selectedCardIds.length === 1 ? selectedCardIds[0] : null;
   const perspectiveRendering = useMemo(() => {
@@ -1491,27 +1491,7 @@ export default function App() {
       return new Set<string>();
     }
 
-    const placardCardIds = new Set<string>();
-    for (const island of focusedVisibleDocument.islands) {
-      if (!island.placardCardId) {
-        continue;
-      }
-
-      if (island.cardIds.includes(island.placardCardId)) {
-        placardCardIds.add(island.placardCardId);
-      }
-    }
-
-    const hidden = new Set<string>();
-    for (const island of focusedVisibleDocument.islands) {
-      for (const cardId of island.cardIds) {
-        if (!placardCardIds.has(cardId)) {
-          hidden.add(cardId);
-        }
-      }
-    }
-
-    return hidden;
+    return collectHierarchyPlacardHiddenCardIds(focusedVisibleDocument, hierarchyLevel);
   }, [focusedVisibleDocument, hierarchyLevel]);
 
   const perspectiveHiddenCardIdSet = useMemo(() => {
@@ -2406,6 +2386,7 @@ ${parsedDocument.error}`);
     setSummaryView(metadata.viewState.summaryView || metadata.viewState.abstractMapView);
     setAbstractMapView(metadata.viewState.abstractMapView);
     setHideSourceCards(metadata.viewState.hideSourceCards);
+    setHierarchyLevel(metadata.viewState.hierarchyLevel ?? resolveHierarchyLevel(metadata.viewState.maxDepth));
     setMaxDepth(metadata.viewState.maxDepth);
     setShowReadingOrder(metadata.viewState.showReadingOrder);
     setReadingNavEnabled(metadata.viewState.readingNavEnabled ?? false);
@@ -4393,6 +4374,10 @@ ${parsedDocument.error}`);
     }
   }, [maxAvailableDepth, maxDepth]);
 
+  useEffect(() => {
+    setHierarchyLevel(resolveHierarchyLevel(maxDepth));
+  }, [maxDepth]);
+
   const visibleIslands = useMemo(() => {
     return uniqueIslands.filter((island) => {
       if (depthHiddenIslandIdSet.has(island.id)) {
@@ -5164,6 +5149,7 @@ ${parsedDocument.error}`);
   }, [applyViewPreset]);
 
   const handleHierarchyLevelChange = useCallback((level: HierarchyLevel) => {
+    setHierarchyLevel(level);
     setMaxDepth(maxDepthForHierarchyLevel(level));
   }, []);
 
@@ -6424,6 +6410,7 @@ ${parsedDocument.error}`);
           summaryView,
           abstractMapView,
           hideSourceCards,
+          hierarchyLevel,
           maxDepth,
           focusIslandId: focusTarget.focusIslandId ?? null,
           showReadingOrder,
@@ -6467,6 +6454,7 @@ ${parsedDocument.error}`);
       focusTarget.focusIslandId,
       getViewMetadataFilename,
       hideSourceCards,
+      hierarchyLevel,
       isReadingOrderEditMode,
       readingNavEnabled,
       readingIndex,
@@ -6507,6 +6495,7 @@ ${parsedDocument.error}`);
           summaryView,
           abstractMapView,
           hideSourceCards,
+          hierarchyLevel,
           maxDepth,
           focusIslandId: focusTarget.focusIslandId ?? null,
           showReadingOrder,
@@ -6629,6 +6618,7 @@ ${parsedDocument.error}`);
     evidenceOverlayScope,
     focusTarget.focusIslandId,
     hideSourceCards,
+    hierarchyLevel,
     isReadingOrderEditMode,
     lodEnabled,
     lodLevelOverride,
@@ -7058,6 +7048,7 @@ ${parsedDocument.error}`);
   }, [abstractMapView, summaryView]);
 
   const captureCurrentViewPatch = useCallback((): ViewPatch => ({
+    hierarchyLevel,
     summaryView,
     abstractMapView,
     hideSourceCards,
@@ -7077,6 +7068,7 @@ ${parsedDocument.error}`);
     collapsedIslandIds,
     focusTarget.focusIslandId,
     hideSourceCards,
+    hierarchyLevel,
     lodEnabled,
     maxDepth,
     perspectiveMode,
@@ -7095,6 +7087,7 @@ ${parsedDocument.error}`);
     setAbstractMapView(nextVisibility.abstractMapView);
 
     if (viewPatch.hideSourceCards !== undefined) setHideSourceCards(viewPatch.hideSourceCards);
+    if (viewPatch.hierarchyLevel !== undefined) handleHierarchyLevelChange(viewPatch.hierarchyLevel);
     if (viewPatch.maxDepth !== undefined) setMaxDepth(viewPatch.maxDepth);
     if (viewPatch.focusIslandId !== undefined) setFocusTarget(viewPatch.focusIslandId ? { focusIslandId: viewPatch.focusIslandId } : {});
     if (viewPatch.showReadingOrder !== undefined) setShowReadingOrder(viewPatch.showReadingOrder);
@@ -7111,7 +7104,7 @@ ${parsedDocument.error}`);
     if (viewPatch.lodEnabled !== undefined) setLodEnabled(viewPatch.lodEnabled);
     if (viewPatch.perspectiveMode !== undefined) setPerspectiveMode(viewPatch.perspectiveMode);
     if (viewPatch.perspectiveStrictFilter !== undefined) setPerspectiveStrictFilter(viewPatch.perspectiveStrictFilter);
-  }, [abstractMapView, summaryView]);
+  }, [abstractMapView, handleHierarchyLevelChange, summaryView]);
 
   const handleApplyViewMode = useCallback((mode: ViewMode, options?: { announce?: boolean }) => {
     const presetId = getPresetIdForViewMode(mode);
@@ -7227,6 +7220,40 @@ ${parsedDocument.error}`);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleApplyViewMode]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isEditableHotkeyTarget(event.target)) {
+        return;
+      }
+
+      if (!event.altKey || !event.shiftKey || event.metaKey || event.ctrlKey) {
+        return;
+      }
+
+      if (event.key === "1") {
+        event.preventDefault();
+        handleHierarchyLevelChange("overview");
+        return;
+      }
+
+      if (event.key === "2") {
+        event.preventDefault();
+        handleHierarchyLevelChange("mid");
+        return;
+      }
+
+      if (event.key === "3") {
+        event.preventDefault();
+        handleHierarchyLevelChange("detail");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleHierarchyLevelChange]);
 
   const safeModeIndicator = getSafeModeIndicator(safeMode);
 

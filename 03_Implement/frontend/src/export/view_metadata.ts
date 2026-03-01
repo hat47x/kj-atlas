@@ -1,4 +1,5 @@
 import type { DocumentV2 } from "../domain/types";
+import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
@@ -57,6 +58,7 @@ export type ExportViewMetadata = {
     summaryView: boolean;
     abstractMapView: boolean;
     hideSourceCards: boolean;
+    hierarchyLevel?: HierarchyLevel;
     maxDepth: number | "all";
     focusIslandId: string | null;
     showReadingOrder: boolean;
@@ -110,6 +112,7 @@ type ExportViewMetadataArgs = {
     summaryView: boolean;
     abstractMapView: boolean;
     hideSourceCards: boolean;
+    hierarchyLevel?: HierarchyLevel;
     maxDepth: number | "all";
     focusIslandId: string | null;
     showReadingOrder: boolean;
@@ -189,6 +192,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       summaryView: viewState.summaryView,
       abstractMapView: viewState.abstractMapView,
       hideSourceCards: viewState.hideSourceCards,
+      ...(viewState.hierarchyLevel === undefined ? {} : { hierarchyLevel: viewState.hierarchyLevel }),
       maxDepth: viewState.maxDepth,
       focusIslandId: viewState.focusIslandId,
       showReadingOrder: viewState.showReadingOrder,
@@ -324,6 +328,15 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
   const showReadingOrderResult = readRequiredBoolean(value.viewState, "showReadingOrder");
   if (!showReadingOrderResult.ok) {
     return showReadingOrderResult;
+  }
+
+  if (
+    value.viewState.hierarchyLevel !== undefined
+    && value.viewState.hierarchyLevel !== "overview"
+    && value.viewState.hierarchyLevel !== "mid"
+    && value.viewState.hierarchyLevel !== "detail"
+  ) {
+    return { ok: false, error: 'viewState.hierarchyLevel must be "overview" | "mid" | "detail" when present' };
   }
 
   const maxDepth = value.viewState.maxDepth;

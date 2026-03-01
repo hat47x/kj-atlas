@@ -19,6 +19,7 @@ describe("parseViewJson", () => {
         summaryView: false,
         abstractMapView: false,
         hideSourceCards: false,
+        hierarchyLevel: "mid",
         maxDepth: "all",
         focusIslandId: null,
         showReadingOrder: false,
@@ -31,6 +32,7 @@ describe("parseViewJson", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.metadata.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
+      expect(result.metadata.viewState.hierarchyLevel).toBe("mid");
     }
   });
 
