@@ -27,6 +27,14 @@ class Settings(BaseSettings):
         default=None,
         alias="LARGE_SCALE_LLM_MODEL",
     )
+    llm_escalation_enabled: bool = Field(
+        default=False,
+        alias="LLM_ESCALATION_ENABLED",
+    )
+    large_scale_llm_allowlist: str | None = Field(
+        default=None,
+        alias="LARGE_SCALE_LLM_ALLOWLIST",
+    )
     llm_fallback_to_none: bool = Field(
         default=True,
         alias="LLM_FALLBACK_TO_NONE",

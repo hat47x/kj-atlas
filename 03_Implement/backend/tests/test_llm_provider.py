@@ -167,6 +167,7 @@ def test_generate_with_fallback_to_none_when_enabled() -> None:
             generate_with_fallback(LLMRequest(task="check_narrative", prompt="prompt"))
         assert exc_info.value.metadata.provider_name == "none"
         assert exc_info.value.metadata.fallback_to_none is True
+        assert exc_info.value.metadata.execution_path == "local->none"
     finally:
         settings.llm_provider = original_provider
         settings.llm_fallback_to_none = original_fallback
@@ -204,6 +205,47 @@ def test_large_scale_provider_fails_closed_without_endpoint() -> None:
         settings.large_scale_llm_model = original_model
 
 
+def test_large_scale_provider_requires_escalation_opt_in() -> None:
+    original_enabled = settings.llm_escalation_enabled
+    original_base_url = settings.large_scale_llm_base_url
+    original_model = settings.large_scale_llm_model
+
+    settings.llm_escalation_enabled = False
+    settings.large_scale_llm_base_url = "https://allowed.example/api"
+    settings.large_scale_llm_model = "gpt-x"
+
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LargeScaleProvider().generate(LLMRequest(task="generate_narrative", prompt="prompt"))
+        assert exc_info.value.code == "provider_unavailable"
+    finally:
+        settings.llm_escalation_enabled = original_enabled
+        settings.large_scale_llm_base_url = original_base_url
+        settings.large_scale_llm_model = original_model
+
+
+def test_large_scale_provider_rejects_non_allowlisted_destination() -> None:
+    original_enabled = settings.llm_escalation_enabled
+    original_base_url = settings.large_scale_llm_base_url
+    original_model = settings.large_scale_llm_model
+    original_allowlist = settings.large_scale_llm_allowlist
+
+    settings.llm_escalation_enabled = True
+    settings.large_scale_llm_base_url = "https://blocked.example/api"
+    settings.large_scale_llm_model = "gpt-x"
+    settings.large_scale_llm_allowlist = "allowed.example"
+
+    try:
+        with pytest.raises(ProviderRequestError) as exc_info:
+            LargeScaleProvider().generate(LLMRequest(task="generate_narrative", prompt="prompt"))
+        assert exc_info.value.code == "provider_unavailable"
+    finally:
+        settings.llm_escalation_enabled = original_enabled
+        settings.large_scale_llm_base_url = original_base_url
+        settings.large_scale_llm_model = original_model
+        settings.large_scale_llm_allowlist = original_allowlist
+
+
 def test_api_does_not_expose_decision_finalization_routes() -> None:
     forbidden_paths = {"/ai/decision", "/ai/decisions", "/ai/finalize-decision", "/ai/confirm-decision"}
     defined_paths = {route.path for route in app.routes}
@@ -231,6 +273,10 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
     original_provider = settings.llm_provider
     original_local_url = settings.local_llm_base_url
     original_local_model = settings.local_llm_model
+    original_escalation = settings.llm_escalation_enabled
+    original_allowlist = settings.large_scale_llm_allowlist
+    original_large_url = settings.large_scale_llm_base_url
+    original_large_model = settings.large_scale_llm_model
 
     def _fake_local_urlopen(req, timeout=60):
         body = json.dumps(
@@ -267,6 +313,10 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
             assert local_response.status_code == 200
 
             settings.llm_provider = "large-scale"
+            settings.llm_escalation_enabled = True
+            settings.large_scale_llm_allowlist = "allowed.example"
+            settings.large_scale_llm_base_url = "https://allowed.example/api"
+            settings.large_scale_llm_model = "mock-large"
             large_response = client.post("/ai/suggest-merges", json=payload)
             assert large_response.status_code == 200
 
@@ -277,6 +327,10 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
         settings.llm_provider = original_provider
         settings.local_llm_base_url = original_local_url
         settings.local_llm_model = original_local_model
+        settings.llm_escalation_enabled = original_escalation
+        settings.large_scale_llm_allowlist = original_allowlist
+        settings.large_scale_llm_base_url = original_large_url
+        settings.large_scale_llm_model = original_large_model
 
 
 def test_default_registry_maps_none_to_noop_provider() -> None:
@@ -307,6 +361,7 @@ def test_response_audit_fields_include_provider_and_execution_metadata() -> None
         "transport": "http",
         "requested_at": "2026-01-01T00:00:00+00:00",
         "fallback_to_none": False,
+        "execution_path": "primary",
         "trace_id": "llm-trace",
     }
 
