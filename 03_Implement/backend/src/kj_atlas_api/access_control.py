@@ -77,6 +77,25 @@ class NoopAccessControlAdapter:
         return AccessDecision(allow=True)
 
 
+class MockAccessControlAdapter:
+    """Deterministic adapter for contract/integration tests.
+
+    This adapter is intentionally simple and only exists to validate the
+    AccessControlAdapter I/F wiring. Production RBAC/ABAC logic must remain
+    external.
+    """
+
+    name = "mock"
+
+    def authorize(self, request: AccessRequest) -> AccessDecision:
+        token = request.resource.policy_ref
+        if token == "mock:deny":
+            return AccessDecision(allow=False, reason="mock_deny")
+        if token == "mock:read_only":
+            return AccessDecision(allow=True, read_only=True, reason="mock_read_only")
+        return AccessDecision(allow=True)
+
+
 def _read_only_fallback(reason: FailSafeReason, *, action: AccessAction) -> AccessDecision:
     if action == "read":
         return AccessDecision(allow=True, read_only=True, reason=reason)
@@ -178,4 +197,6 @@ def parse_visibility(value: str | None) -> Visibility | None:
 def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
     if adapter_name == "noop":
         return NoopAccessControlAdapter()
+    if adapter_name == "mock":
+        return MockAccessControlAdapter()
     return NoopAccessControlAdapter()

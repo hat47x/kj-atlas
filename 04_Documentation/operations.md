@@ -161,6 +161,36 @@ curl -fsS http://localhost:4173/api/healthz
 
 
 
+
+## Access Control Adapter 運用境界（FB-RM-PUB-04）
+
+### 1. 責務境界（何を本体で実装しないか）
+
+- KJ Atlas本体は `roles/groups/policyRef` を **入力として受け渡すのみ** で、RBAC/ABACの評価式を実装しません。
+- 認可判定（allow/deny/readOnly/reason）の生成は外部 policy adapter（IdP/Policy Engine 側）の責務です。
+- `visibility` は公開範囲ラベル用途であり、単独で認可可否を確定しません。
+
+### 2. 環境変数
+
+- `ACCESS_CONTROL_ADAPTER=noop|mock|<custom>`（既定: `noop`）
+  - `noop`: 後方互換のため既定許可。
+  - `mock`: 契約検証用。`x-policy-ref: mock:deny` / `mock:read_only` で決定論テストが可能。
+  - 未知の値は `noop` へフォールバック（既存挙動維持）。
+- `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`（既定: `read_only`）
+  - `Org/Restricted` で `policyRef` 欠損・不達・無効・adapter例外時に fail-safe を適用。
+
+### 3. 最小監査記録（PII非保存）
+
+- 記録対象（最小）: `eventType`, `eventVersion`, `occurredAt`, `docId`, `action`, `decision_allow`, `policyRefPresent`。
+- 任意記録: `decision_readOnly`, `decision_reason`, `visibility`, `adapterName`, `traceId`。
+- 非保存: `roles/groups` 生値, `policyRef` 生値, ドキュメント本文。
+
+### 4. SafeMode/read-only 優先
+
+- 判定順は常に `safeMode` → `readOnly` → adapter判定。
+- adapterが許可を返しても、SafeMode/read-only拒否は上書きできません。
+- adapter未設定/無効時でも `noop` にフォールバックし、既存運用を阻害しません。
+
 ## 監査連携（view/export）運用
 
 ### 1. 基本方針
