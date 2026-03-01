@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Callable, Protocol
+from typing import Callable, Literal, Protocol
 from urllib import error, request
 from uuid import uuid4
 
@@ -74,13 +75,50 @@ class ProviderError(RuntimeError):
         super().__init__(message)
         self.metadata = metadata
 
+    def to_contract(self) -> dict[str, object]:
+        return {
+            "code": "provider_unavailable",
+            "message": str(self),
+            "provider": self.metadata.provider_name,
+            "provider_kind": self.metadata.provider_kind,
+            "trace_id": self.metadata.trace_id,
+            "fallback_to_none": self.metadata.fallback_to_none,
+        }
+
 
 class ProviderDisabledError(ProviderError):
     pass
 
 
+ProviderErrorCode = Literal["provider_timeout", "provider_validation", "provider_unavailable"]
+
+
 class ProviderRequestError(ProviderError):
-    pass
+    def __init__(self, message: str, metadata: LLMCallMetadata, *, code: ProviderErrorCode):
+        super().__init__(message, metadata)
+        self.code = code
+
+    def to_contract(self) -> dict[str, object]:
+        return {
+            "code": self.code,
+            "message": str(self),
+            "provider": self.metadata.provider_name,
+            "provider_kind": self.metadata.provider_kind,
+            "trace_id": self.metadata.trace_id,
+            "fallback_to_none": self.metadata.fallback_to_none,
+        }
+
+    @classmethod
+    def unavailable(cls, message: str, metadata: LLMCallMetadata) -> "ProviderRequestError":
+        return cls(message, metadata, code="provider_unavailable")
+
+    @classmethod
+    def timeout(cls, message: str, metadata: LLMCallMetadata) -> "ProviderRequestError":
+        return cls(message, metadata, code="provider_timeout")
+
+    @classmethod
+    def validation(cls, message: str, metadata: LLMCallMetadata) -> "ProviderRequestError":
+        return cls(message, metadata, code="provider_validation")
 
 
 def _now_utc_iso() -> str:
@@ -131,7 +169,7 @@ class LocalProvider:
         )
 
         if not base_url:
-            raise ProviderRequestError("LOCAL_LLM_BASE_URL is not set", metadata)
+            raise ProviderRequestError.unavailable("LOCAL_LLM_BASE_URL is not set", metadata)
 
         endpoint = f"{base_url.rstrip('/')}/generate"
         payload = {
@@ -153,18 +191,23 @@ class LocalProvider:
             with request.urlopen(req_obj, timeout=60) as resp:
                 raw_body = resp.read().decode("utf-8")
         except error.HTTPError as exc:
-            raise ProviderRequestError(f"Local LLM request failed with status {exc.code}", metadata) from exc
+            if exc.code in (408, 504):
+                raise ProviderRequestError.timeout(f"Local LLM request timed out with status {exc.code}", metadata) from exc
+            raise ProviderRequestError.unavailable(f"Local LLM request failed with status {exc.code}", metadata) from exc
         except error.URLError as exc:
-            raise ProviderRequestError(f"Local LLM request failed: {exc.reason}", metadata) from exc
+            reason = exc.reason
+            if isinstance(reason, socket.timeout):
+                raise ProviderRequestError.timeout("Local LLM request timed out", metadata) from exc
+            raise ProviderRequestError.unavailable(f"Local LLM request failed: {reason}", metadata) from exc
 
         try:
             body = json.loads(raw_body)
         except json.JSONDecodeError as exc:
-            raise ProviderRequestError("Local LLM response was not valid JSON", metadata) from exc
+            raise ProviderRequestError.validation("Local LLM response was not valid JSON", metadata) from exc
 
         text = body.get("text")
         if not isinstance(text, str):
-            raise ProviderRequestError("Local LLM response missing text field", metadata)
+            raise ProviderRequestError.validation("Local LLM response missing text field", metadata)
 
         return LLMResponse(raw_text=text, metadata=metadata)
 
@@ -183,11 +226,11 @@ class LargeScaleProvider:
         )
 
         if not settings.large_scale_llm_base_url:
-            raise ProviderRequestError("LARGE_SCALE_LLM_BASE_URL is not set", metadata)
+            raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_BASE_URL is not set", metadata)
         if not settings.large_scale_llm_model:
-            raise ProviderRequestError("LARGE_SCALE_LLM_MODEL is not set", metadata)
+            raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_MODEL is not set", metadata)
 
-        raise ProviderRequestError("Large-scale LLM provider is not implemented", metadata)
+        raise ProviderRequestError.unavailable("Large-scale LLM provider is not implemented", metadata)
 
 
 class NoOpProvider(NoneProvider):
@@ -219,7 +262,7 @@ class ProviderRegistry:
                 model_id="unknown",
                 transport="none",
             )
-            raise ProviderRequestError(f"Unsupported LLM_PROVIDER: {raw_provider_name}", metadata)
+            raise ProviderRequestError.unavailable(f"Unsupported LLM_PROVIDER: {raw_provider_name}", metadata)
         return self._providers[provider_name]()
 
 

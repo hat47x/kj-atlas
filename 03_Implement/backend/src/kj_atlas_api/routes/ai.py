@@ -41,6 +41,18 @@ def _audit_llm_trace(task: str, llm_response) -> None:
     )
 
 
+def _raise_llm_http_error(exc: ProviderDisabledError | ProviderRequestError) -> None:
+    if isinstance(exc, ProviderDisabledError):
+        raise HTTPException(status_code=503, detail=exc.to_contract()) from exc
+
+    status_map = {
+        "provider_timeout": 504,
+        "provider_validation": 422,
+        "provider_unavailable": 503,
+    }
+    raise HTTPException(status_code=status_map.get(exc.code, 503), detail=exc.to_contract()) from exc
+
+
 def _resolve_reading_order(payload: CheckNarrativeRequest) -> list[str]:
     if payload.basedOnReadingOrder is not None:
         return payload.basedOnReadingOrder
@@ -480,9 +492,9 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
             )
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     _audit_llm_trace("re_layout", llm_response)
 
@@ -512,9 +524,9 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
             )
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     _audit_llm_trace("suggest_merges", llm_response)
 
@@ -534,9 +546,9 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
             )
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     _audit_llm_trace("suggest_island_summary", llm_response)
 
@@ -553,9 +565,9 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
             )
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     _audit_llm_trace("generate_narrative", llm_response)
 
@@ -573,9 +585,9 @@ def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
             )
         )
     except ProviderDisabledError as exc:
-        raise HTTPException(status_code=501, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
     except ProviderRequestError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        _raise_llm_http_error(exc)
 
     _audit_llm_trace("check_narrative", llm_response)
 
