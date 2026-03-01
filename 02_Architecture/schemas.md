@@ -148,6 +148,11 @@ export type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
   - `packs/index.json`: `visibility` 未定義時は `Public` を補完。
 - fallback は **import読込時に正規化して内部モデルへ反映** し、export時は常に enum を明示出力する。
 
+| Artifact | Field | 欠損時 default（互換読込） | enum外値 | export時 |
+| --- | --- | --- | --- | --- |
+| `view.json` | `visibility` | `Restricted` を補完 | reject（strict validator） | 常に enum を明示 |
+| `packs/index.json` | `packs[*].visibility` | `Public` を補完 | reject（strict validator） | 常に enum を明示 |
+
 ### 8.1 view metadata（`view.json`）
 
 ```ts
@@ -201,6 +206,21 @@ export type PublicPackManifest = {
 - strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - import/export/validate は上記 enum を単一契約として扱う。
 - 運用解釈：pack の `visibility` も配布上の分類情報として扱い、SafeMode 既定ONおよび漏洩防止ポリシーとは分離する。
+
+### 8.2.1 I/F 境界（実装者向け）
+
+- **Schema契約（本書）**
+  - `Visibility` の値域、default/fallback、不正値拒否条件の単一正本。
+- **Importer / Loader（Backend/Frontend 共通責務）**
+  - 欠損時 default 補完（`view.json` は `Restricted`、`packs/index.json` は `Public`）。
+  - 補完後の内部モデルは `visibility` 必須状態で保持する。
+- **Validator（Backend/Frontend 共通責務）**
+  - enum外値・型不正は互換対象にせず reject する。
+  - `packs/index.json` は entry 単位で黙って救済せず、manifest 全体を失敗扱いにする。
+- **Exporter（Backend/Frontend 共通責務）**
+  - 互換補完で受理した旧データを含め、再出力時は必ず `visibility` を明示する。
+- **Policy層（Non-Goalの明確化）**
+  - `visibility` は分類メタデータであり、RBAC/認可/SafeMode 判定ロジックそのものは本タスクの対象外（FB-RM-PUB-01 のスコープ外）。
 
 ### 8.3 旧データ互換（旧→新）
 
