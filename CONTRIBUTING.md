@@ -76,6 +76,7 @@ pytest
 ## Frontend lint 段階導入ガイド（ADR-0018 Follow-up）
 
 Frontend lint は Phase A/B/C で段階導入します。
+既定運用は **Phase B（fail-on-error）** です。
 
 ### Phase別チェックリストと完了条件
 
@@ -141,6 +142,12 @@ CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Reposit
 - `frontend-typecheck`: TypeScript型検査。
 - `frontend-test`: Frontendテストとbuild検証。
 
+fail-on-error条件:
+
+- `frontend-lint`: `FRONTEND_LINT_PHASE=A` のみ警告継続。それ以外（B/C）は失敗でPRを停止。
+- `frontend-typecheck`: 常に失敗でPRを停止。
+- `frontend-test`: 常に失敗でPRを停止。
+
 ### 差分監査（規約 / CONTRIBUTING / CI）
 
 同一PRで次を確認してください。
@@ -156,6 +163,13 @@ CIの `FRONTEND_LINT_PHASE` が `A/B/C` 以外なら設定不正です。Reposit
 rg -n "frontend-lint|frontend-typecheck|frontend-test|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" \
   01_Plans/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml
 ```
+
+サンプルPR自己レビュー（推奨）:
+
+1. `FRONTEND_LINT_PHASE` の値が想定（通常は `B`）か。
+2. `frontend-lint` 失敗時にCI Summaryへ phase と outcome が出るか。
+3. lint/typecheck/test のどのジョブが失敗したかを1行で説明できるか。
+4. 規約・本書・CIの記述差分が残っていないか（上記 `rg` で確認）。
 
 ## Issue と ADR の使い分け（必須）
 

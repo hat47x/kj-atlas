@@ -62,6 +62,10 @@
 
 Frontend lint は開発フローの急停止を避けるため、Phase A→B→C で導入する。
 
+運用基準:
+- CI既定値は `FRONTEND_LINT_PHASE=B` とし、lintを通常ゲートとして扱う。
+- Phase移行判定は、PR内で「証跡（CI Summary/例外Issue/差分監査ログ）」を提示したうえで行う。
+
 #### Phase A（Warn-only / 可視化フェーズ）
 - 目的: `npm run lint` を日常運用へ定着させ、既存負債を可視化する。
 - ローカル: `npm run lint` を実行し、警告/失敗をPR本文へ記録する。
@@ -89,6 +93,13 @@ Frontend lint は開発フローの急停止を避けるため、Phase A→B→C
   - [ ] 新規ルールごとに「warn開始日 / error化予定日 / 実施日 / 例外Issue」を記録している。
   - [ ] 期限超過の暫定例外が 0 件である。
   - [ ] 四半期レビューで lint ルール棚卸し（追加・削除・厳格化）を実施し、`CONTRIBUTING.md` と CI設定を同一PRで同期している。
+
+#### Phase移行の判定証跡（必須）
+- 判定時は次をPR本文に貼り付ける。
+  1. `frontend-lint` / `frontend-typecheck` / `frontend-test` の直近実行結果
+  2. `FRONTEND_LINT_PHASE` 値と fail-on-error 条件
+  3. 期限付き例外Issue一覧（0件なら「0件」と明記）
+  4. 差分監査コマンドの実行結果
 
 #### `npm run lint` 運用手順（開発者向け）
 1. `cd 03_Implement/frontend && npm ci`
