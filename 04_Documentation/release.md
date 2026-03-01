@@ -101,3 +101,14 @@ git push origin v0.1.1
 
 > ジョブ名を変更した場合、Required checks の設定も更新が必要です。
 
+## 9. Publishing metadata リリース注意（FB-RM-PUB-01）
+
+- `view.json` / `packs/index.json` の `visibility` は `Public | Unlisted | Org | Restricted` のみを許容します。
+- 互換読込では欠損値を次の既定値で補完します。
+  - `view.json`: `Restricted`
+  - `packs/index.json` の各 pack entry: `Public`
+- enum 外値（例: `FriendsOnly`）は互換対象にせず、validator が拒否することをリリース前テストで確認してください。
+- `visibility` は公開範囲のメタデータであり、権限制御の切替スイッチではありません。SafeMode 既定ON / read-only 公開 / share-export 制御は従来通り優先されます。
+- 運用責務の境界:
+  - 製品側: metadata 正規化・検証（import/export/validate）と既定値補完。
+  - 運用側: `visibility` の意味づけ（公開ポリシー）を組織ルールへマッピングし、配布先アクセス制御（CDN/SSO/ネットワーク境界）を別途担保。
