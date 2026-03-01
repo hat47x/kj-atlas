@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from kj_atlas_api.access_control import build_access_control_adapter
 from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import init_db
 from kj_atlas_api.routes.ai import router as ai_router
@@ -31,6 +32,8 @@ async def require_api_key(request: Request, call_next):
 def on_startup() -> None:
     init_db()
     app.state.audit_dispatcher = build_audit_dispatcher()
+    app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
+    app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
 
 
 @app.exception_handler(RequestValidationError)

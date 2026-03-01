@@ -63,6 +63,14 @@ class Settings(BaseSettings):
         default=False,
         alias="AUDIT_ALLOW_IN_SAFE_MODE",
     )
+    access_control_adapter: str = Field(
+        default="noop",
+        alias="ACCESS_CONTROL_ADAPTER",
+    )
+    access_control_fail_safe_mode: str = Field(
+        default="read_only",
+        alias="ACCESS_CONTROL_FAIL_SAFE_MODE",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

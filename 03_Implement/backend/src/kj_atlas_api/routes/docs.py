@@ -5,12 +5,71 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.access_control import (
+    AccessRequest,
+    AccessResource,
+    AccessSubject,
+    apply_local_failsafe,
+    enforce_access,
+    parse_csv_header,
+)
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import DocumentPayload, DocumentRow
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter = TypeAdapter(DocumentPayload)
+
+
+
+def _authorize_request(
+    request: Request,
+    *,
+    action: str,
+    doc_id: str,
+    safe_mode: bool,
+    read_only: bool,
+) -> None:
+    adapter = getattr(request.app.state, "access_control_adapter", None)
+    if adapter is None:
+        return
+
+    visibility = request.headers.get("x-doc-visibility")
+    policy_ref = request.headers.get("x-policy-ref")
+    access_request = AccessRequest(
+        action=action,
+        safe_mode=safe_mode,
+        read_only=read_only,
+        subject=AccessSubject(
+            actor_ref=request.headers.get("x-actor-ref"),
+            roles=parse_csv_header(request.headers.get("x-auth-roles")),
+            groups=parse_csv_header(request.headers.get("x-auth-groups")),
+        ),
+        resource=AccessResource(
+            doc_id=doc_id,
+            visibility=visibility if visibility in {"Public", "Unlisted", "Org", "Restricted"} else None,
+            policy_ref=policy_ref,
+        ),
+    )
+
+    fail_safe_mode = getattr(request.app.state, "access_control_fail_safe_mode", "read_only")
+    if fail_safe_mode not in {"deny", "read_only"}:
+        fail_safe_mode = "read_only"
+
+    fail_safe_decision = apply_local_failsafe(access_request, fail_safe_mode)
+    if fail_safe_decision is not None:
+        enforce_access(fail_safe_decision, action=action)
+        return
+
+    if access_request.read_only and action in {"write", "export", "share"}:
+        enforce_access(
+            decision=adapter.authorize(access_request),
+            action=action,
+        )
+        raise HTTPException(status_code=403, detail="Access denied: read_only")
+
+    decision = adapter.authorize(access_request)
+    enforce_access(decision, action=action)
 
 
 def _compute_etag(payload_json: str) -> str:
@@ -35,7 +94,15 @@ def _parse_if_match(if_match: str) -> set[str]:
 
 
 @router.get("/{doc_id}", response_model=DocumentPayload)
-def get_document(doc_id: str, response: Response, request: Request, db: Session = Depends(get_db)) -> DocumentPayload:
+def get_document(
+    doc_id: str,
+    response: Response,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> DocumentPayload:
+    _authorize_request(request, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
     doc_row = db.get(DocumentRow, doc_id)
     if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -66,9 +133,13 @@ def put_document(
     doc_id: str,
     document: DocumentPayload,
     response: Response,
+    request: Request,
     if_match: str | None = Header(default=None, alias="If-Match"),
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
+    _authorize_request(request, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
 
@@ -108,7 +179,13 @@ class ExportAuditPayload(BaseModel):
 
 
 @router.post("/{doc_id}/export-audit")
-def post_export_audit(doc_id: str, payload: ExportAuditPayload, request: Request) -> dict[str, str]:
+def post_export_audit(
+    doc_id: str,
+    payload: ExportAuditPayload,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+) -> dict[str, str]:
+    _authorize_request(request, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(
