@@ -20,7 +20,11 @@ Phase 1 では `DocumentV1` のスナップショット保存/読込のみを実
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
 - `LLM_PROVIDER`
-  - 既定値: `none`（Phase 1では未使用だが設定としては保持）
+  - 既定値: `none`
+  - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）
+- `LLM_FALLBACK_TO_NONE`
+  - 既定値: `true`
+  - `true` の場合、`local`/`large-scale` 呼び出し失敗時は `none` 退避として fail-closed（HTTP 501）
 
 ## Run
 
@@ -88,3 +92,15 @@ export RUN_PG_TESTS=1
 alembic upgrade head
 pytest -m postgres
 ```
+
+
+## LLM provider audit metadata
+
+`/ai/*` エンドポイントでは、監査可能性のために以下の項目を構造化ログへ記録します。
+
+- `provider` / `provider_kind`
+- `model_id`
+- `requested_at`（UTC ISO8601）
+- `transport`
+- `trace_id`
+- `fallback_to_none`
