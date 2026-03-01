@@ -15,14 +15,12 @@ def test_view_metadata_visibility_fallback_for_legacy_payload() -> None:
     assert metadata.visibility == "Restricted"
 
 
-def test_public_pack_manifest_visibility_fallback_and_filtering() -> None:
+def test_public_pack_manifest_visibility_fallback_for_legacy_payload() -> None:
     manifest = PublicPackManifest.model_validate(
         {
             "defaultPackId": "main",
             "packs": [
                 {"id": "main", "documentPath": "main.document.json", "viewPath": "main.view.json"},
-                {"id": "", "documentPath": "skip.document.json"},
-                {"id": "broken", "documentPath": 123},
             ],
         }
     )
@@ -45,6 +43,20 @@ def test_view_metadata_rejects_invalid_visibility() -> None:
         )
 
     assert "visibility" in str(excinfo.value)
+
+
+def test_public_pack_manifest_rejects_invalid_entry_instead_of_filtering() -> None:
+    with pytest.raises(Exception) as excinfo:
+        PublicPackManifest.model_validate(
+            {
+                "packs": [
+                    {"id": "ok", "documentPath": "ok.document.json"},
+                    {"id": "broken", "documentPath": 123},
+                ]
+            }
+        )
+
+    assert "documentPath" in str(excinfo.value)
 
 
 def test_public_pack_manifest_accepts_all_visibility_enum_values() -> None:
