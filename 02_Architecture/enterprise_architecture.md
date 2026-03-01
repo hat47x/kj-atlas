@@ -172,6 +172,71 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 - 監査ログ連動
   - 「誰が何を閲覧/エクスポートしたか」を外部ログ基盤に送れる導線（オプション）
 
+### FB-RM-PUB-04: AccessControlAdapter 抽象I/F（roles/groups/policyRef 外部委譲）
+
+> 目的: `roles` / `groups` / `policyRef` を使った判定は **必ず外部アダプタへ委譲**し、アプリ本体にRBACロジックを持ち込まない。
+
+#### I/F仕様（入力・出力・失敗時）
+
+```ts
+type AccessAction = "read" | "write" | "export" | "share";
+type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
+
+type AuthContext = {
+  actorRef?: string;
+  roles?: string[];
+  groups?: string[];
+};
+
+type AccessResource = {
+  docId: string;
+  visibility?: Visibility;
+  policyRef?: string;
+};
+
+type AccessRequest = {
+  action: AccessAction;
+  subject: AuthContext;
+  resource: AccessResource;
+  safeMode: boolean;
+  readOnly: boolean;
+};
+
+type AccessDecision = {
+  allow: boolean;
+  readOnly?: boolean;
+  reason?: string;
+};
+
+interface AccessControlAdapter {
+  name: string;
+  authorize(request: AccessRequest): AccessDecision;
+}
+```
+
+- 入力責務: アプリ本体は `AuthContext` / `visibility` / `policyRef` を収集して `AccessRequest` を作るだけ。
+- 出力責務: `allow/readOnly/reason` を返す。ロール評価規則はアダプタ外部責務。
+- 失敗時: アダプタ応答不能は運用層で扱い、アプリ本体は `reason` 付き拒否または既定fail-safeを適用する。
+
+#### 本体側の最小ガード（RBAC非実装）
+
+- `readOnly=true` のとき `write/export/share` を拒否する。
+- `safeMode` は既存の share/export 制約を維持し、AccessControlAdapter はその制約を緩和しない。
+- `visibility` は公開ラベルとして扱い、詳細認可条件（roles/groups）は解釈しない。
+
+#### `policyRef` 未設定時の fail-safe
+
+- 対象: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
+- 既定: `read_only`（readのみ許可、write/export/share拒否）。
+- 厳格運用オプション: `deny`（read含めて拒否）。
+- `visibility` が未指定または `Public/Unlisted` のときは fail-safe を適用しない。
+
+#### 監査イベントとの接続点
+
+- `action=read` は閲覧監査イベント（`eventType=view`）へ接続。
+- `action=export` はエクスポート監査イベント（`eventType=export`）へ接続。
+- AccessDecisionの `reason` / `policyRef` 有無は監査メタデータへ付加可能（PII非保存・既存マスキング規則準拠）。
+
 ## 4.4 方式C：ハイブリッド（現実解）
 
 - 内部は方式B（厳格管理）

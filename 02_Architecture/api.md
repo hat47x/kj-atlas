@@ -138,3 +138,51 @@ MVPでは、エラーを過度に作り込まない。
 - `visibility` の値は `Public | Unlisted | Org | Restricted` を採用し、不正値は validator で拒否する。
 - 後方互換として、`view.json` 欠損時は `Restricted`、`packs/index.json` 欠損時は `Public` を補完する。
 - `visibility` は APIの送信可否判定を上書きしない。外部送信制御は引き続き SafeMode / share/export policy を正本とする。
+
+
+## 8. AccessControlAdapter API契約（FB-RM-PUB-04）
+
+roles/groups/policyRef に基づく認可判定は、API本体ではなく `AccessControlAdapter` へ外部委譲する。
+
+### 8.1 入力（API → adapter/hook）
+
+- `action`: `read | write | export | share`
+- `subject.actorRef`: `x-actor-ref` ヘッダ（任意）
+- `subject.roles`: `x-auth-roles` ヘッダ（`,` 区切り、任意）
+- `subject.groups`: `x-auth-groups` ヘッダ（`,` 区切り、任意）
+- `resource.visibility`: `x-doc-visibility` ヘッダ（`Public | Unlisted | Org | Restricted`）
+- `resource.policyRef`: `x-policy-ref` ヘッダ（任意）
+- `safeMode`: ルート側のsafeMode（export-auditではpayload.safeMode）
+- `readOnly`: `X-Read-Only` ヘッダ（`1`/`true`）
+
+### 8.2 出力（adapter/hook → API）
+
+```ts
+type AccessDecision = {
+  allow: boolean;
+  readOnly?: boolean;
+  reason?: string;
+};
+```
+
+- `allow=false` の場合は API は `403` を返す。
+- `reason` は `Access denied: <reason>` として観測可能。
+- 本体は decision の解釈のみを行い、roles/groups の評価規則は持たない。
+
+### 8.3 fail-safe
+
+- 条件: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
+- 既定 `read_only`: `read` のみ許可、`write/export/share` は `403`。
+- オプション `deny`: 全アクション `403`。
+- 実装パラメータ: `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
+
+### 8.4 監査イベント連携点
+
+- `GET /docs/{doc_id}` でアクセス許可後に `eventType=view` を送信。
+- `POST /docs/{doc_id}/export-audit` でアクセス許可後に `eventType=export` を送信。
+- 監査送信は既存の fail-open dispatcher 方針を維持する（監査送信失敗で本体機能は停止しない）。
+
+### 8.5 互換性
+
+- adapter未設定（`noop`）では既存挙動を維持する。
+- API本体にRBACエンジンは実装しない（非目標）。
