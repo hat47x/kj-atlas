@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import workerFixtureRaw from "../../tests/fixtures/worker/doc.small.json?raw";
 
 import { validateAndUpgradeImportedDocument } from "./validate";
 
@@ -55,6 +56,64 @@ describe("validateAndUpgradeImportedDocument", () => {
 
     expect(result.document.islands[0]?.placardCardId).toBe("c1");
   });
+
+  it("falls back to root island when parentIslandId points to missing island", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_missing_parent",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [{ id: "child", cardIds: ["c1"], parentIslandId: "unknown" }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.parentIslandId).toBeUndefined();
+  });
+
+  it("falls back to root islands when parentIslandId creates a cycle", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_parent_cycle",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [
+        { id: "c1", text: "A", x: 0, y: 0 },
+        { id: "c2", text: "B", x: 200, y: 0 },
+      ],
+      edges: [],
+      islands: [
+        { id: "a", cardIds: ["c1"], parentIslandId: "b" },
+        { id: "b", cardIds: ["c2"], parentIslandId: "a" },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const islandsById = new Map(result.document.islands.map((island) => [island.id, island]));
+    expect(islandsById.get("a")?.parentIslandId).toBeUndefined();
+    expect(islandsById.get("b")?.parentIslandId).toBeUndefined();
+  });
+
+  it("keeps backward compatibility for existing fixture without parentIslandId", () => {
+    const parsed = JSON.parse(workerFixtureRaw) as unknown;
+    const result = validateAndUpgradeImportedDocument(parsed);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.id).toBe("doc-small");
+    expect(result.document.islands[0]?.parentIslandId).toBeUndefined();
+  });
+
   it("preserves island polygon geometry from imported v2 JSON", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({

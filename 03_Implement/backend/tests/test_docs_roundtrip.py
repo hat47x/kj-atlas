@@ -309,6 +309,7 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     assert put_islands_by_id["parent-island"]["collapsed"] is True
     assert put_islands_by_id["child-island"]["collapsed"] is False
     assert put_islands_by_id["child-island"]["parentIslandId"] == "parent-island"
+    assert "parentIslandId" not in put_islands_by_id["parent-island"]
     assert put_islands_by_id["parent-island"]["placardCardId"] == "card-1"
     assert put_islands_by_id["child-island"]["placardCardId"] == "card-2"
 
@@ -320,6 +321,7 @@ def _assert_v2_collapsed_roundtrip(client: TestClient) -> None:
     assert get_islands_by_id["parent-island"]["collapsed"] is True
     assert get_islands_by_id["child-island"]["collapsed"] is False
     assert get_islands_by_id["child-island"]["parentIslandId"] == "parent-island"
+    assert "parentIslandId" not in get_islands_by_id["parent-island"]
     assert get_islands_by_id["parent-island"]["placardCardId"] == "card-1"
     assert get_islands_by_id["child-island"]["placardCardId"] == "card-2"
 

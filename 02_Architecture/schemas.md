@@ -275,3 +275,22 @@ export type PublicPackManifest = {
 - 要求元: `01_Plans/adr/ADR-0007-future-backlog.md` の `FB-RM-PUB-01`（schema検証と既存データ互換）。
 - 上位整合: `02_Architecture/architecture.md` §11（visibility enum / default補完 / SafeMode優先）。
 - 本節（schemas.md）は、実装者向けの単一契約として default/fallback/strict validation/I/F境界を具体化する。
+
+
+## 9. Island hierarchy compatibility contract（FB-P2A-01）
+
+`DocumentV2.islands[*]` では、階層表現を次で扱う。
+
+```ts
+export type Island = {
+  id: string;
+  cardIds: string[];
+  parentIslandId?: string;
+};
+```
+
+- `parentIslandId` は任意（未設定時はルート島として扱う）。
+- 既存データ互換のため、`parentIslandId` が欠損していても読み込みを失敗させない。
+- `parentIslandId` が存在しない島を参照する場合は、import 正規化で `undefined` にフォールバックする。
+- 循環参照（self-parent 含む）は import 正規化で `undefined` にフォールバックする。
+- save/reload では有効な `parentIslandId` を欠落させず往復保持する。

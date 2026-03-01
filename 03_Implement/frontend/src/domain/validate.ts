@@ -241,7 +241,44 @@ function parseIslands(value: unknown): Island[] {
     });
   }
 
-  return islands;
+  const islandsById = new Map(islands.map((island) => [island.id, island]));
+
+  const resolveParentIslandId = (islandId: string, parentIslandId: string | undefined): string | undefined => {
+    if (!parentIslandId) {
+      return undefined;
+    }
+
+    const visited = new Set<string>([islandId]);
+    let cursor = parentIslandId;
+
+    while (cursor) {
+      if (visited.has(cursor)) {
+        return undefined;
+      }
+
+      const parent = islandsById.get(cursor);
+      if (!parent) {
+        return undefined;
+      }
+
+      visited.add(cursor);
+      cursor = parent.parentIslandId;
+    }
+
+    return parentIslandId;
+  };
+
+  return islands.map((island) => {
+    const parentIslandId = resolveParentIslandId(island.id, island.parentIslandId);
+    if (parentIslandId === island.parentIslandId) {
+      return island;
+    }
+
+    return {
+      ...island,
+      parentIslandId,
+    };
+  });
 }
 
 
