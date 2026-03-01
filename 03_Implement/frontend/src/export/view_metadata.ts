@@ -5,7 +5,7 @@ import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
-import { normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
+import { DEFAULT_VIEW_VISIBILITY, isPublishVisibility, normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
 import { isLocale, type Locale } from "../i18n/translate";
 
 
@@ -188,7 +188,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
     docSignature: resolveDocSignature(doc),
-    visibility: "Restricted",
+    visibility: DEFAULT_VIEW_VISIBILITY,
     camera: {
       panX: camera.panX,
       panY: camera.panY,
@@ -297,7 +297,7 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
     return { ok: false, error: "metadata.docSignature must be a string" };
   }
 
-  if (value.visibility !== undefined && value.visibility !== "Public" && value.visibility !== "Unlisted" && value.visibility !== "Org" && value.visibility !== "Restricted") {
+  if (value.visibility !== undefined && !isPublishVisibility(value.visibility)) {
     return { ok: false, error: 'metadata.visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present' };
   }
 
