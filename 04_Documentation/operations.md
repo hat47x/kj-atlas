@@ -158,3 +158,55 @@ curl -fsS http://localhost:4173/api/healthz
 
 - `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` を往復し、SQLite永続化も確認してください。
 - この代替手順を利用した場合も、PR本文に実施コマンドと結果を記載します。
+
+
+
+## 監査連携（view/export）運用
+
+### 1. 基本方針
+
+- 監査連携は `AUDIT_EXPORT_ENABLED=false`（既定）で **完全ローカル動作**。
+- 有効化時のみ、`view` / `export` の最小イベントを外部送信。
+- 送信データは最小化され、`docId` / `eventType` / `safeMode` / 最小メタデータのみ送信します。
+- `x-actor-ref` は平文保存せず、SHA-256短縮ハッシュ (`actorRefHash`) に変換します。
+
+### 2. 最小イベントスキーマ
+
+```json
+{
+  "schemaVersion": 1,
+  "eventId": "audit-<uuid>",
+  "occurredAt": "2026-03-01T12:34:56.000000+00:00",
+  "eventType": "view | export",
+  "docId": "<document-id>",
+  "safeMode": true,
+  "actorRefHash": "<optional-24hex>",
+  "metadata": {
+    "route": "...",
+    "method": "...",
+    "exportKind": "..."
+  }
+}
+```
+
+### 3. 障害時ポリシー（fail-open / queue / drop）
+
+- 監査送信失敗時も、閲覧/エクスポート本体は継続（**fail-open**）。
+- 失敗イベントはメモリキューへ退避し、次回送信時に best-effort flush。
+- キュー上限 (`AUDIT_QUEUE_SIZE`) 超過時は最古イベントを drop（ログ警告のみ）。
+- 送信障害は運用監視（ログ収集）で検知し、アプリの可用性を優先。
+
+### 4. 鍵・エンドポイント設定
+
+1. `AUDIT_EXPORT_ENABLED=true`
+2. `AUDIT_TRANSPORT=http`
+3. `AUDIT_HTTP_ENDPOINT=https://<audit-gateway>/events`
+4. 必要なら `AUDIT_HTTP_API_KEY=<secret>` を設定（Bearer送信）
+5. `AUDIT_HTTP_TIMEOUT_SECONDS` を短め（例: 2.0）に維持
+
+### 5. SafeModeポリシー
+
+- 既定は `AUDIT_ALLOW_IN_SAFE_MODE=false`（SafeMode時は外部送信しない）。
+- 組織要件でSafeMode中の監査送信が必要な場合のみ明示的に `true` を設定。
+- いずれの設定でも payload は最小化・マスキング済みを維持します。
+

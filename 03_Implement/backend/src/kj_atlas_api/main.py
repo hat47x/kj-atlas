@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from kj_atlas_api.audit import build_audit_dispatcher
 from kj_atlas_api.db import init_db
 from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.ai_relations import router as ai_relations_router
@@ -29,6 +30,7 @@ async def require_api_key(request: Request, call_next):
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    app.state.audit_dispatcher = build_audit_dispatcher()
 
 
 @app.exception_handler(RequestValidationError)

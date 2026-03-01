@@ -26,6 +26,23 @@ LLM連携方式を指定します。
 - `external`（将来向け・現状未実装）
 
 
+
+### `AUDIT_EXPORT_ENABLED` / `AUDIT_TRANSPORT`
+
+閲覧/エクスポート監査イベントの外部送信を制御します。
+
+- `AUDIT_EXPORT_ENABLED=false`（既定）: 監査外部送信を完全無効化（no-op）
+- `AUDIT_EXPORT_ENABLED=true` + `AUDIT_TRANSPORT=noop`: 送信処理は有効だが外部送信はしない（疎通試験向け）
+- `AUDIT_EXPORT_ENABLED=true` + `AUDIT_TRANSPORT=http`: `AUDIT_HTTP_ENDPOINT` へ POST 送信
+
+補助設定:
+
+- `AUDIT_HTTP_ENDPOINT`（`AUDIT_TRANSPORT=http` 時に必須）
+- `AUDIT_HTTP_API_KEY`（任意、Bearer トークン）
+- `AUDIT_HTTP_TIMEOUT_SECONDS`（既定 2.0）
+- `AUDIT_QUEUE_SIZE`（既定 100、失敗時メモリキュー上限）
+- `AUDIT_ALLOW_IN_SAFE_MODE`（既定 `false`。SafeMode時送信を許可する場合のみ `true`）
+
 ### `API_KEY`（任意）
 
 簡易なAPI保護キーです。

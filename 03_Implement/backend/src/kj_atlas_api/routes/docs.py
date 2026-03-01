@@ -1,10 +1,11 @@
 import json
 from hashlib import sha256
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
-from pydantic import TypeAdapter
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
+from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.orm import Session
 
+from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import DocumentPayload, DocumentRow
 
@@ -34,13 +35,29 @@ def _parse_if_match(if_match: str) -> set[str]:
 
 
 @router.get("/{doc_id}", response_model=DocumentPayload)
-def get_document(doc_id: str, response: Response, db: Session = Depends(get_db)) -> DocumentPayload:
+def get_document(doc_id: str, response: Response, request: Request, db: Session = Depends(get_db)) -> DocumentPayload:
     doc_row = db.get(DocumentRow, doc_id)
     if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     response.headers["ETag"] = _format_etag(_compute_etag(doc_row.payload_json))
     payload = json.loads(doc_row.payload_json)
+
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="view",
+                doc_id=doc_id,
+                safe_mode=True,
+                actor_ref=request.headers.get("x-actor-ref"),
+                metadata={
+                    "route": f"/docs/{doc_id}",
+                    "method": "GET",
+                },
+            )
+        )
+
     return document_payload_adapter.validate_python(payload)
 
 
@@ -83,3 +100,29 @@ def put_document(
     db.commit()
     response.headers["ETag"] = _format_etag(_compute_etag(payload_json))
     return document
+
+
+class ExportAuditPayload(BaseModel):
+    safeMode: bool = True
+    exportKind: str = "bundle"
+
+
+@router.post("/{doc_id}/export-audit")
+def post_export_audit(doc_id: str, payload: ExportAuditPayload, request: Request) -> dict[str, str]:
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type="export",
+                doc_id=doc_id,
+                safe_mode=payload.safeMode,
+                actor_ref=request.headers.get("x-actor-ref"),
+                metadata={
+                    "route": f"/docs/{doc_id}/export-audit",
+                    "method": "POST",
+                    "exportKind": payload.exportKind,
+                },
+            )
+        )
+
+    return {"status": "accepted"}
