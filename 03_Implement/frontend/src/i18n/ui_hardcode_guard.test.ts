@@ -9,6 +9,26 @@ type GuardCase = {
 
 const guardCases: GuardCase[] = [
   {
+    file: "ui/ImportPanel.tsx",
+    forbiddenLiterals: [
+      "Import Review Pack (.zip)",
+      "Drop .zip file here",
+      "Choose .zip",
+      "Ignored warnings:",
+    ],
+  },
+  {
+    file: "ui/SharePanel.tsx",
+    forbiddenLiterals: [
+      "Share / Export",
+      "Export",
+      "Enable SafeMode",
+      "Export SVG (Viewport)",
+      "Export bundle (.zip)",
+      "Replace current document",
+    ],
+  },
+  {
     file: "ui/DiffPanel.tsx",
     forbiddenLiterals: [
       "Load comparison document (JSON)",
@@ -36,6 +56,13 @@ const guardCases: GuardCase[] = [
       "Auto-include prerequisites",
       "Select all",
       "Select none",
+    ],
+  },
+  {
+    file: "domain/policy/read_only.ts",
+    forbiddenLiterals: [
+      "Read-only mode: editing actions are disabled.",
+      "Read-only mode:",
     ],
   },
 ];
