@@ -61,9 +61,10 @@ llm:
 ### 2.3 環境変数例（プレースホルダ）
 
 ```text
-KJ_LLM_PROVIDER=local
-KJ_LLM_ESCALATION_ENABLED=false
-KJ_LLM_MODE=offline
+LLM_PROVIDER=none
+LLM_LARGE_SCALE_OPT_IN=false
+LLM_ESCALATION_ENABLED=false
+LLM_MODE=offline
 ```
 
 ---

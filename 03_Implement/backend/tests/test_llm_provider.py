@@ -22,7 +22,7 @@ from kj_atlas_api.llm.provider import (
     get_provider,
 )
 from kj_atlas_api.main import app
-from kj_atlas_api.settings import settings
+from kj_atlas_api.settings import Settings, settings
 
 
 class _StubHTTPResponse:
@@ -207,9 +207,11 @@ def test_large_scale_provider_fails_closed_without_endpoint() -> None:
 
 def test_large_scale_provider_requires_escalation_opt_in() -> None:
     original_enabled = settings.llm_escalation_enabled
+    original_opt_in = settings.llm_large_scale_opt_in
     original_base_url = settings.large_scale_llm_base_url
     original_model = settings.large_scale_llm_model
 
+    settings.llm_large_scale_opt_in = True
     settings.llm_escalation_enabled = False
     settings.large_scale_llm_base_url = "https://allowed.example/api"
     settings.large_scale_llm_model = "gpt-x"
@@ -220,16 +222,19 @@ def test_large_scale_provider_requires_escalation_opt_in() -> None:
         assert exc_info.value.code == "provider_unavailable"
     finally:
         settings.llm_escalation_enabled = original_enabled
+        settings.llm_large_scale_opt_in = original_opt_in
         settings.large_scale_llm_base_url = original_base_url
         settings.large_scale_llm_model = original_model
 
 
 def test_large_scale_provider_rejects_non_allowlisted_destination() -> None:
     original_enabled = settings.llm_escalation_enabled
+    original_opt_in = settings.llm_large_scale_opt_in
     original_base_url = settings.large_scale_llm_base_url
     original_model = settings.large_scale_llm_model
     original_allowlist = settings.large_scale_llm_allowlist
 
+    settings.llm_large_scale_opt_in = True
     settings.llm_escalation_enabled = True
     settings.large_scale_llm_base_url = "https://blocked.example/api"
     settings.large_scale_llm_model = "gpt-x"
@@ -241,6 +246,7 @@ def test_large_scale_provider_rejects_non_allowlisted_destination() -> None:
         assert exc_info.value.code == "provider_unavailable"
     finally:
         settings.llm_escalation_enabled = original_enabled
+        settings.llm_large_scale_opt_in = original_opt_in
         settings.large_scale_llm_base_url = original_base_url
         settings.large_scale_llm_model = original_model
         settings.large_scale_llm_allowlist = original_allowlist
@@ -274,6 +280,7 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
     original_local_url = settings.local_llm_base_url
     original_local_model = settings.local_llm_model
     original_escalation = settings.llm_escalation_enabled
+    original_opt_in = settings.llm_large_scale_opt_in
     original_allowlist = settings.large_scale_llm_allowlist
     original_large_url = settings.large_scale_llm_base_url
     original_large_model = settings.large_scale_llm_model
@@ -313,6 +320,7 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
             assert local_response.status_code == 200
 
             settings.llm_provider = "large-scale"
+            settings.llm_large_scale_opt_in = True
             settings.llm_escalation_enabled = True
             settings.large_scale_llm_allowlist = "allowed.example"
             settings.large_scale_llm_base_url = "https://allowed.example/api"
@@ -328,6 +336,7 @@ def test_suggest_merges_contract_is_stable_across_provider_switch(monkeypatch: p
         settings.local_llm_base_url = original_local_url
         settings.local_llm_model = original_local_model
         settings.llm_escalation_enabled = original_escalation
+        settings.llm_large_scale_opt_in = original_opt_in
         settings.large_scale_llm_allowlist = original_allowlist
         settings.large_scale_llm_base_url = original_large_url
         settings.large_scale_llm_model = original_large_model
@@ -383,3 +392,19 @@ def test_provider_error_contract_mapping_is_consistent() -> None:
     assert timeout_error.to_contract()["code"] == "provider_timeout"
     assert validation_error.to_contract()["code"] == "provider_validation"
     assert unavailable_error.to_contract()["code"] == "provider_unavailable"
+
+
+def test_settings_reject_large_scale_without_explicit_opt_in() -> None:
+    with pytest.raises(ValueError, match="LLM_LARGE_SCALE_OPT_IN"):
+        Settings(LLM_PROVIDER="large-scale", LLM_ESCALATION_ENABLED="true")
+
+
+def test_settings_accept_large_scale_with_opt_in_and_escalation() -> None:
+    loaded = Settings(
+        LLM_PROVIDER="large-scale",
+        LLM_LARGE_SCALE_OPT_IN="true",
+        LLM_ESCALATION_ENABLED="true",
+    )
+    assert loaded.llm_provider == "large-scale"
+    assert loaded.llm_large_scale_opt_in is True
+    assert loaded.llm_escalation_enabled is True

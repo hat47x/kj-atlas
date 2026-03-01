@@ -192,3 +192,79 @@ LLMが受け取るIRは厳格JSONスキーマを持つ。以下はアウトラ�
 - Provider層は「提案生成」のみを扱い、**decision確定APIは提供しない**。
 - 最終確定は必ず人間操作で実施する（AI自動確定経路を実装しない）。
 - SafeMode 既定ONを前提とし、外部送信の既定ON化は禁止。
+
+
+## 9. FB-RM-MID-06 固定仕様（安全デフォルト + 監査一貫性）
+
+### 9.1 I/F定義（メソッド / 戻り値 / エラー型）
+
+```python
+class LLMProvider(Protocol):
+    provider_name: str  # none | local | large-scale
+    provider_kind: str  # none | local | large-scale
+
+    def generate(req: LLMRequest) -> LLMResponse: ...
+```
+
+- `LLMRequest`: `{task, prompt, temperature, max_tokens}`
+- `LLMResponse`: `{raw_text, metadata}`
+- `metadata`: `LLMCallMetadata`（監査用共通フィールド）
+
+共通エラー型:
+
+- `ProviderDisabledError`: none既定/明示無効化時の標準応答。
+- `ProviderRequestError(code=provider_timeout|provider_validation|provider_unavailable)`: 通信失敗・timeout・schema不一致・allowlist違反を統一。
+
+### 9.2 none時の標準挙動
+
+- `LLM_PROVIDER=none` を既定値とする。
+- `NoneProvider.generate` は提案を生成せず、説明可能な `ProviderDisabledError` を返す。
+- APIは `code=provider_unavailable` + `disabled_reason=provider_disabled_or_none_default` を返却し、UI契約を変えない。
+
+### 9.3 設定マトリクス（default / allowed / disallowed）
+
+| 設定 | default | allowed | disallowed |
+|---|---|---|---|
+| `LLM_PROVIDER` | `none` | `none`, `local`, `large-scale` | その他文字列 |
+| `LLM_LARGE_SCALE_OPT_IN` | `false` | `true`（large-scale使用時に必須） | `false` で `LLM_PROVIDER=large-scale` |
+| `LLM_ESCALATION_ENABLED` | `false` | `true`（large-scale使用時に必須） | `false` で `LLM_PROVIDER=large-scale` |
+| `LARGE_SCALE_LLM_ALLOWLIST` | `None` | 宛先hostnameを含むCSV | allowlist未一致 |
+| `LLM_FALLBACK_TO_NONE` | `true` | `true/false` | - |
+
+### 9.4 監査イベント最小スキーマ
+
+```json
+{
+  "provider": "none|local|large-scale",
+  "provider_kind": "none|local|large-scale",
+  "model_id": "string",
+  "transport": "none|http|mock|...",
+  "requested_at": "ISO-8601",
+  "trace_id": "llm-*",
+  "fallback_to_none": false,
+  "execution_path": "primary|<provider>->none"
+}
+```
+
+- 監査キーは provider 切替時も固定し、UIや後段集計の契約を変更しない。
+- payload本文・秘密情報は記録しない。
+
+### 9.5 timeout / error / 部分失敗フォールバック
+
+1. `provider_timeout` → HTTP 504
+2. `provider_validation` → HTTP 422
+3. `provider_unavailable` → HTTP 503
+4. `LLM_FALLBACK_TO_NONE=true` の場合は `execution_path=<provider>->none` を付けて no-op に退避
+5. 退避時も `trace_id` を維持して監査トレースを連結
+
+### 9.6 fixtureベース回帰テスト方針（非決定性隔離）
+
+- Unit: Providerエラー契約、allowlist、opt-inガード、fallbackメタを固定。
+- Integration: API契約（status/detail schema）を provider 切替で同一確認。
+- E2E: fixture応答の golden 比較を中心にし、外部強モデルは定期ジョブのみ。
+- 非決定性は fixture / mock transport に閉じ込め、PR必須ゲートは決定論テストで構成する。
+
+### 9.7 非許可機能
+
+- Provider層は「提案のみ」。
+- decision確定API（finalize/confirm）は提供しない。
