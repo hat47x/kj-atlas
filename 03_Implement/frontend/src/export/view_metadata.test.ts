@@ -731,3 +731,45 @@ it("preserves presets and activePresetId across export/import validation", () =>
     expect(result.metadata.viewState.activePresetId).toBe("preset-1");
   }
 });
+
+  it("persists and validates locale in view metadata", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-locale", title: "Locale" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+        locale: "en",
+      },
+      exportMode: "viewport",
+    });
+
+    expect(metadata.viewState.locale).toBe("en");
+    const result = validateImportViewMetadata(metadata);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects unsupported locale in view metadata", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+        locale: "fr",
+      },
+      export: { mode: "viewport" },
+    });
+
+    expect(result).toEqual({ ok: false, error: "viewState.locale must be a supported locale when present" });
+  });

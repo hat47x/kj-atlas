@@ -6,6 +6,7 @@ import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, 
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
 import { normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
+import { isLocale, type Locale } from "../i18n/translate";
 
 
 function buildPerspectiveStateFromViewState(viewState: ExportViewMetadataArgs["viewState"]): PerspectiveState {
@@ -83,6 +84,7 @@ export type ExportViewMetadata = {
     evidenceOverlayDimOthers?: boolean;
     perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
     perspectiveStrictFilter?: boolean;
+    locale?: Locale;
     perspective?: PerspectiveState;
     perspectivePresets?: PerspectivePreset[];
     presets?: ViewPreset[];
@@ -137,6 +139,7 @@ type ExportViewMetadataArgs = {
     evidenceOverlayDimOthers?: boolean;
     perspectiveMode?: "default" | "facts" | "claims" | "hypotheses" | "unknown" | "evidence" | "contradiction" | "review";
     perspectiveStrictFilter?: boolean;
+    locale?: Locale;
     perspectivePresets?: PerspectivePreset[];
     presets?: ViewPreset[];
     activePresetId?: string;
@@ -220,6 +223,7 @@ export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bo
       ...(viewState.evidenceOverlayDimOthers === undefined ? {} : { evidenceOverlayDimOthers: viewState.evidenceOverlayDimOthers }),
       ...(viewState.perspectiveMode === undefined ? {} : { perspectiveMode: viewState.perspectiveMode }),
       ...(viewState.perspectiveStrictFilter === undefined ? {} : { perspectiveStrictFilter: viewState.perspectiveStrictFilter }),
+      ...(viewState.locale === undefined ? {} : { locale: viewState.locale }),
       perspective: buildPerspectiveStateFromViewState(viewState),
       ...(viewState.perspectivePresets === undefined ? {} : { perspectivePresets: sortPerspectivePresets(viewState.perspectivePresets) }),
       ...(viewState.presets === undefined ? {} : { presets: viewState.presets }),
@@ -485,6 +489,10 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
 
   if (value.viewState.perspectiveMode !== undefined && !isPerspectiveModeValue(value.viewState.perspectiveMode)) {
     return { ok: false, error: "viewState.perspectiveMode must be a supported perspective mode" };
+  }
+
+  if (value.viewState.locale !== undefined && (typeof value.viewState.locale !== "string" || !isLocale(value.viewState.locale))) {
+    return { ok: false, error: "viewState.locale must be a supported locale when present" };
   }
 
   if (value.viewState.perspective !== undefined) {

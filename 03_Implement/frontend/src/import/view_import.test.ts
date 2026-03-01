@@ -87,3 +87,26 @@ describe("parseViewJson", () => {
     }
   });
 });
+
+test("preserves locale from view metadata", () => {
+  const metadata = buildExportViewMetadata({
+    doc: { id: "doc-locale", title: "Doc Locale" },
+    camera: { panX: 0, panY: 0, zoom: 1 },
+    viewState: {
+      summaryView: false,
+      abstractMapView: false,
+      hideSourceCards: false,
+      maxDepth: "all",
+      focusIslandId: null,
+      showReadingOrder: false,
+      locale: "en",
+    },
+    exportMode: "viewport",
+  });
+
+  const result = parseViewJson(JSON.stringify(metadata));
+  expect(result.ok).toBe(true);
+  if (result.ok) {
+    expect(result.metadata.viewState.locale).toBe("en");
+  }
+});
