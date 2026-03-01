@@ -4,7 +4,10 @@ import type { Point } from "../domain/types";
 
 type PolygonEditLayerProps = {
   points: Point[];
-  onVertexMove: (vertexIndex: number, point: Point) => void;
+  onVertexDragStart?: (vertexIndex: number) => void;
+  onVertexDragMove?: (vertexIndex: number, point: Point) => void;
+  onVertexDragCommit: (vertexIndex: number, point: Point) => void;
+  onVertexDragCancel?: (vertexIndex: number) => void;
   onVertexRemove: (vertexIndex: number) => void;
 };
 
@@ -15,8 +18,16 @@ type DragState = {
 
 const HANDLE_SIZE = 10;
 
-export function PolygonEditLayer({ points, onVertexMove, onVertexRemove }: PolygonEditLayerProps) {
+export function PolygonEditLayer({
+  points,
+  onVertexDragStart,
+  onVertexDragMove,
+  onVertexDragCommit,
+  onVertexDragCancel,
+  onVertexRemove,
+}: PolygonEditLayerProps) {
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
+  const [dragPreviewPoint, setDragPreviewPoint] = useState<Point | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>, vertexIndex: number) => {
@@ -35,6 +46,8 @@ export function PolygonEditLayer({ points, onVertexMove, onVertexRemove }: Polyg
       vertexIndex,
     };
     setDraggingVertexIndex(vertexIndex);
+    setDragPreviewPoint(points[vertexIndex] ?? null);
+    onVertexDragStart?.(vertexIndex);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -45,10 +58,12 @@ export function PolygonEditLayer({ points, onVertexMove, onVertexRemove }: Polyg
 
     event.preventDefault();
     event.stopPropagation();
-    onVertexMove(dragState.vertexIndex, { x: event.clientX, y: event.clientY });
+    const nextPoint = { x: event.clientX, y: event.clientY };
+    setDragPreviewPoint(nextPoint);
+    onVertexDragMove?.(dragState.vertexIndex, nextPoint);
   };
 
-  const clearDrag = (event: PointerEvent<HTMLDivElement>) => {
+  const clearDrag = (event: PointerEvent<HTMLDivElement>, canceled: boolean) => {
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) {
       return;
@@ -60,39 +75,66 @@ export function PolygonEditLayer({ points, onVertexMove, onVertexRemove }: Polyg
 
     event.preventDefault();
     event.stopPropagation();
+    const commitPoint = dragPreviewPoint;
     dragStateRef.current = null;
     setDraggingVertexIndex(null);
+    setDragPreviewPoint(null);
+
+    if (canceled) {
+      onVertexDragCancel?.(dragState.vertexIndex);
+      return;
+    }
+
+    if (commitPoint) {
+      onVertexDragCommit(dragState.vertexIndex, commitPoint);
+    }
+  };
+
+  const getDisplayPoint = (point: Point, index: number): Point => {
+    if (index === draggingVertexIndex && dragPreviewPoint) {
+      return dragPreviewPoint;
+    }
+
+    return point;
   };
 
   return (
     <>
-      {points.map((point, index) => (
-        <div
-          key={index}
-          role="button"
-          aria-label={`Move polygon vertex ${index + 1}`}
-          title="Drag to move / Alt+Click to remove"
-          onPointerDown={(event) => {
-            handlePointerDown(event, index);
-          }}
-          onPointerMove={handlePointerMove}
-          onPointerUp={clearDrag}
-          onPointerCancel={clearDrag}
-          style={{
-            position: "absolute",
-            left: point.x - HANDLE_SIZE / 2,
-            top: point.y - HANDLE_SIZE / 2,
-            width: HANDLE_SIZE,
-            height: HANDLE_SIZE,
-            borderRadius: HANDLE_SIZE / 2,
-            border: "1px solid #1d4ed8",
-            backgroundColor: draggingVertexIndex === index ? "#2563eb" : "#93c5fd",
-            boxShadow: "0 0 0 1px #ffffff",
-            cursor: draggingVertexIndex === index ? "grabbing" : "grab",
-            zIndex: 1000,
-          }}
-        />
-      ))}
+      {points.map((point, index) => {
+        const displayPoint = getDisplayPoint(point, index);
+
+        return (
+          <div
+            key={index}
+            role="button"
+            aria-label={`Move polygon vertex ${index + 1}`}
+            title="Drag to move / Alt+Click to remove"
+            onPointerDown={(event) => {
+              handlePointerDown(event, index);
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={(event) => {
+              clearDrag(event, false);
+            }}
+            onPointerCancel={(event) => {
+              clearDrag(event, true);
+            }}
+            style={{
+              position: "absolute",
+              left: displayPoint.x - HANDLE_SIZE / 2,
+              top: displayPoint.y - HANDLE_SIZE / 2,
+              width: HANDLE_SIZE,
+              height: HANDLE_SIZE,
+              borderRadius: HANDLE_SIZE / 2,
+              border: "1px solid #1d4ed8",
+              backgroundColor: draggingVertexIndex === index ? "#2563eb" : "#93c5fd",
+              boxShadow: "0 0 0 1px #ffffff",
+              cursor: draggingVertexIndex === index ? "grabbing" : "grab",
+              zIndex: 1000,
+            }}
+          />
+        );
+      })}
     </>
   );
 }

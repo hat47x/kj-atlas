@@ -63,4 +63,27 @@ describe("polygon_edit", () => {
       ])
     ).toBe(true);
   });
+
+  it("is deterministic for identical vertex move inputs", () => {
+    const basePolygon = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ];
+
+    const first = movePolygonVertex(basePolygon, 2, { x: 80.12345, y: 120.67891 });
+    const second = movePolygonVertex(basePolygon, 2, { x: 80.12345, y: 120.67891 });
+
+    expect(first).toEqual(second);
+    expect(first).toEqual({
+      ok: true,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 80.12, y: 120.68 },
+        { x: 0, y: 100 },
+      ],
+    });
+  });
 });

@@ -4032,7 +4032,30 @@ ${parsedDocument.error}`);
     [applyDocumentChange, document]
   );
 
-  const handlePolygonVertexMove = useCallback(
+  const handlePolygonVertexDragStart = useCallback((_islandId: string, _vertexIndex: number) => {
+    setStatusMessage("Polygon vertex drag started");
+  }, []);
+
+  const handlePolygonVertexDragMove = useCallback(
+    (islandId: string, vertexIndex: number, point: Point) => {
+      if (!document) {
+        return;
+      }
+
+      const island = document.islands.find((candidate) => candidate.id === islandId);
+      if (!island || island.shape?.kind !== "polygon") {
+        return;
+      }
+
+      const nextPolygon = movePolygonVertex(island.shape.points, vertexIndex, point);
+      if (!nextPolygon.ok && nextPolygon.error === "self_intersection") {
+        setStatusMessage("Polygon must not self-intersect");
+      }
+    },
+    [document]
+  );
+
+  const handlePolygonVertexDragCommit = useCallback(
     (islandId: string, vertexIndex: number, point: Point) => {
       if (!document) {
         return;
@@ -4085,6 +4108,10 @@ ${parsedDocument.error}`);
     },
     [applyDocumentChange, document]
   );
+
+  const handlePolygonVertexDragCancel = useCallback((_islandId: string, _vertexIndex: number) => {
+    setStatusMessage("Polygon vertex drag canceled");
+  }, []);
 
   const handlePolygonVertexAdd = useCallback(
     (islandId: string, segmentStartIndex: number, point: Point) => {
@@ -8229,7 +8256,10 @@ ${parsedDocument.error}`);
             polygonVertexEditIslandId={
               !isReadOnly && isPolygonVertexEditEnabled && selectedIsland?.shape?.kind === "polygon" ? selectedIsland.id : null
             }
-            onPolygonVertexMove={handlePolygonVertexMove}
+            onPolygonVertexDragStart={handlePolygonVertexDragStart}
+            onPolygonVertexDragMove={handlePolygonVertexDragMove}
+            onPolygonVertexDragCommit={handlePolygonVertexDragCommit}
+            onPolygonVertexDragCancel={handlePolygonVertexDragCancel}
             onPolygonVertexAdd={handlePolygonVertexAdd}
             onPolygonVertexRemove={handlePolygonVertexRemove}
           >

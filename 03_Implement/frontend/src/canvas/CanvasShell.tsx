@@ -169,7 +169,10 @@ type CanvasShellProps = {
   onReadingOrderReorder?: (entryId: string, targetEntryId: string, position: ReadingOrderDropPosition) => void;
   visibleIslandIds?: Set<string>;
   polygonVertexEditIslandId?: string | null;
-  onPolygonVertexMove?: (islandId: string, vertexIndex: number, point: Point) => void;
+  onPolygonVertexDragStart?: (islandId: string, vertexIndex: number) => void;
+  onPolygonVertexDragMove?: (islandId: string, vertexIndex: number, point: Point) => void;
+  onPolygonVertexDragCommit?: (islandId: string, vertexIndex: number, point: Point) => void;
+  onPolygonVertexDragCancel?: (islandId: string, vertexIndex: number) => void;
   onPolygonVertexAdd?: (islandId: string, segmentStartIndex: number, point: Point) => void;
   onPolygonVertexRemove?: (islandId: string, vertexIndex: number) => void;
   children?: ReactNode;
@@ -298,7 +301,10 @@ export function CanvasShell({
   onReadingOrderReorder,
   visibleIslandIds,
   polygonVertexEditIslandId = null,
-  onPolygonVertexMove,
+  onPolygonVertexDragStart,
+  onPolygonVertexDragMove,
+  onPolygonVertexDragCommit,
+  onPolygonVertexDragCancel,
   onPolygonVertexAdd,
   onPolygonVertexRemove,
   children,
@@ -1248,10 +1254,17 @@ export function CanvasShell({
           />
         ) : null}
         {children}
-        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexMove && onPolygonVertexRemove ? (
+        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexDragCommit && onPolygonVertexRemove ? (
           <PolygonEditLayer
             points={polygonVertexEditShape.points}
-            onVertexMove={(vertexIndex, screenPoint) => {
+            onVertexDragStart={(vertexIndex) => {
+              onPolygonVertexDragStart?.(polygonVertexEditIslandId, vertexIndex);
+            }}
+            onVertexDragMove={(vertexIndex, screenPoint) => {
+              if (!onPolygonVertexDragMove) {
+                return;
+              }
+
               const viewport = viewportRef.current;
               if (!viewport) {
                 return;
@@ -1262,7 +1275,23 @@ export function CanvasShell({
                 x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
                 y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
               };
-              onPolygonVertexMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
+              onPolygonVertexDragMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+            onVertexDragCommit={(vertexIndex, screenPoint) => {
+              const viewport = viewportRef.current;
+              if (!viewport) {
+                return;
+              }
+
+              const rect = viewport.getBoundingClientRect();
+              const worldPoint = {
+                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
+                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
+              };
+              onPolygonVertexDragCommit(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+            onVertexDragCancel={(vertexIndex) => {
+              onPolygonVertexDragCancel?.(polygonVertexEditIslandId, vertexIndex);
             }}
             onVertexRemove={(vertexIndex) => {
               onPolygonVertexRemove(polygonVertexEditIslandId, vertexIndex);
