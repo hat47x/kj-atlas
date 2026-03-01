@@ -129,6 +129,7 @@ import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
+import { parsePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
 import { DEFAULT_LOCALE, getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
@@ -148,16 +149,6 @@ const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
 
-type PublicPackManifestEntry = {
-  id: string;
-  documentPath: string;
-  viewPath?: string;
-};
-
-type PublicPackManifest = {
-  defaultPackId?: string;
-  packs: PublicPackManifestEntry[];
-};
 
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
   return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
@@ -2468,8 +2459,8 @@ ${parsedDocument.error}`);
       return false;
     }
 
-    const manifest = (await manifestResponse.json()) as PublicPackManifest;
-    const packs = Array.isArray(manifest.packs) ? manifest.packs : [];
+    const manifest = parsePublicPackManifest(await manifestResponse.json());
+    const packs = manifest.packs;
     const targetPack = packs.find((pack) => pack.id === (requestedPackId ?? manifest.defaultPackId ?? "")) ?? null;
     if (!targetPack) {
       throw new Error(`Pack not found: ${requestedPackId ?? manifest.defaultPackId ?? "(default)"}`);

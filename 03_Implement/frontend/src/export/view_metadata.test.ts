@@ -35,6 +35,7 @@ describe("view metadata export", () => {
       version: "1",
       generatedAt: "2026-03-01T12:34:56.000Z",
       docSignature: "doc-123",
+      visibility: "Restricted",
       camera: { panX: 100, panY: 200, zoom: 1.5 },
       viewState: {
         summaryView: true,
@@ -105,6 +106,50 @@ describe("view metadata export", () => {
     expect(metadata.generatedAt).toBe("2026-03-02T00:00:00.000Z");
   });
 
+
+  it("falls back to Restricted visibility for legacy metadata", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-legacy",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.visibility).toBe("Restricted");
+    }
+  });
+
+  it("rejects invalid visibility value", () => {
+    const result = validateImportViewMetadata({
+      version: "1",
+      generatedAt: "2026-03-01T12:34:56.000Z",
+      docSignature: "doc-123",
+      visibility: "FriendsOnly",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: true,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: 1,
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+    });
+
+    expect(result).toEqual({ ok: false, error: 'metadata.visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present' });
+  });
   it("validates import metadata successfully", () => {
     const metadata = buildExportViewMetadata({
       doc: { id: "doc-123", title: "Sample" },

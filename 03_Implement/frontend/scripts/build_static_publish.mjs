@@ -78,6 +78,7 @@ async function run() {
         viewPath: viewFileName,
         enforceSafeMode: true,
         readOnly: true,
+        visibility: "Public",
       },
     ],
   };

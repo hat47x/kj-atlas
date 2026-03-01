@@ -133,3 +133,49 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `02_Architecture/llm_provider.md`：将来AI用のProvider抽象（枠のみ）
 - `02_Architecture/deployment.md`：Docker Compose案
 
+
+
+## 8. Publishing / Access metadata（FB-RM-PUB-01）
+
+公開配布（pack）および表示状態（view metadata）では、以下の visibility enum を共通契約として使う。
+
+```ts
+export type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
+```
+
+### 8.1 view metadata（`view.json`）
+
+```ts
+export type ViewMetadataV1 = {
+  version: "1";
+  generatedAt: string;
+  docSignature: string;
+  visibility: Visibility; // 互換読込時の既定: "Restricted"
+  camera: { panX: number; panY: number; zoom: number };
+  viewState: { /* 既存定義 */ };
+  export: { mode: "viewport" | "bounds"; bounds?: { x: number; y: number; w: number; h: number }; padding?: number };
+};
+```
+
+- 互換方針：旧データで `visibility` が無い場合は `Restricted` を補完する。
+- 安全方針：`visibility` の有無に関わらず SafeMode 既定ON・share/export 制約の既存ポリシーを維持する。
+
+### 8.2 public pack manifest（`packs/index.json`）
+
+```ts
+export type PublicPackManifest = {
+  defaultPackId?: string;
+  packs: Array<{
+    id: string;
+    documentPath: string;
+    viewPath?: string;
+    title?: string;
+    enforceSafeMode?: boolean;
+    readOnly?: boolean;
+    visibility: Visibility; // 互換読込時の既定: "Public"
+  }>;
+};
+```
+
+- 互換方針：既存 manifest で `visibility` が無い場合は `Public` を補完する（公開配布の既存運用を維持）。
+- import/export/validate は上記 enum を単一契約として扱う。

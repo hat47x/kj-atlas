@@ -49,6 +49,7 @@ describe("schema_validation", () => {
       expect(result.value.camera).toEqual({ panX: 0, panY: 0, zoom: 1 });
       expect(result.value.viewState.perspectiveMode).toBe("default");
       expect(result.value.viewState.collapsedIslandIds).toEqual([]);
+      expect(result.value.visibility).toBe("Restricted");
     }
   });
 
@@ -57,6 +58,25 @@ describe("schema_validation", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.viewState.collapsedIslandIds).toEqual(["island-a", "island-b"]);
+    }
+  });
+
+  it("rejects invalid visibility value", () => {
+    const result = validateView({
+      visibility: "FriendsOnly",
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.message).toContain("metadata.visibility must be");
     }
   });
 });
