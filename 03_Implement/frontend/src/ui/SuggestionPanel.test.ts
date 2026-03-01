@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { SuggestionPanel } from "./SuggestionPanel";
+import { setActiveLocale } from "../i18n/translate";
 
 function buildProps() {
   return {
@@ -24,16 +25,21 @@ function buildProps() {
 }
 
 describe("SuggestionPanel", () => {
-  it("renders draft suggestion controls", () => {
-    const html = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
+  it("renders localized draft suggestion controls", () => {
+    setActiveLocale("ja");
+    const jaHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
 
-    expect(html).toContain("Draft suggestion");
-    expect(html).toContain("Suggest layout");
-    expect(html).toContain("Apply suggestion");
-    expect(html).toContain("Discard");
+    setActiveLocale("en");
+    const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, buildProps()));
+
+    expect(jaHtml).toContain("ドラフト提案");
+    expect(enHtml).toContain("Draft suggestion");
+    expect(jaHtml).not.toContain("Apply suggestion");
+    expect(enHtml).toContain("Apply suggestion");
   });
 
   it("disables edit actions in read-only mode", () => {
+    setActiveLocale("en");
     const html = renderToStaticMarkup(React.createElement(SuggestionPanel, { ...buildProps(), isReadOnly: true }));
 
     expect(html).toContain("Suggest layout");

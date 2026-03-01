@@ -1,3 +1,5 @@
+import { t } from "../i18n/translate";
+
 type SuggestionPanelProps = {
   isReadOnly?: boolean;
   instruction: string;
@@ -43,9 +45,9 @@ export function SuggestionPanel({
         backgroundColor: "#ffffff",
       }}
     >
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>Draft suggestion</div>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("suggestion.panel.title")}</div>
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
-        This is an unreviewed suggestion. Apply only if it feels right.
+        {t("suggestion.panel.unreviewed_hint")}
       </div>
       <textarea
         value={instruction}
@@ -53,7 +55,7 @@ export function SuggestionPanel({
         onChange={(event) => {
           onInstructionChange(event.target.value);
         }}
-        placeholder="Optional instruction for draft layout"
+        placeholder={t("suggestion.panel.instruction_placeholder")}
         rows={3}
         style={{
           width: "100%",
@@ -67,7 +69,7 @@ export function SuggestionPanel({
       />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         <button type="button" onClick={onSuggest} disabled={isReadOnly || isSuggesting}>
-          {isSuggesting ? "Suggesting..." : "Suggest layout"}
+          {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
         </button>
       </div>
       {hasSuggestion ? (
@@ -81,7 +83,7 @@ export function SuggestionPanel({
               backgroundColor: "#f8fafc",
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Iteration</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>{t("suggestion.panel.iteration")}</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
               <button
                 type="button"
@@ -90,20 +92,20 @@ export function SuggestionPanel({
                   onAnnotateOverlayToggle(!isAnnotateOverlayEnabled);
                 }}
               >
-                {isAnnotateOverlayEnabled ? "Stop annotating" : "Annotate critiques"}
+                {isAnnotateOverlayEnabled ? t("suggestion.panel.stop_annotating") : t("suggestion.panel.annotate_critiques")}
               </button>
               <button type="button" onClick={onResuggest} disabled={isReadOnly || isSuggesting}>
-                {isSuggesting ? "Re-suggesting..." : "Re-suggest"}
+                {isSuggesting ? t("suggestion.panel.resuggesting") : t("suggestion.panel.resuggest")}
               </button>
               <button type="button" disabled={isReadOnly} onClick={onApply}>
-                Apply suggestion
+                {t("suggestion.panel.apply")}
               </button>
               <button type="button" disabled={isReadOnly} onClick={onDiscard}>
-                Discard
+                {t("suggestion.panel.discard")}
               </button>
             </div>
             <div style={{ fontSize: 11, color: "#475569" }}>
-              Critiques are saved in your document; suggestions are temporary until applied.
+              {t("suggestion.panel.critiques_hint")}
             </div>
           </section>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -115,11 +117,11 @@ export function SuggestionPanel({
                 onPreviewToggle(event.target.checked);
               }}
             />
-            Preview suggestion
+            {t("suggestion.panel.preview")}
           </label>
         </>
       ) : null}
-      {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>Notes: {notes}</div> : null}
+      {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{t("suggestion.panel.notes", { notes })}</div> : null}
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c" }}>{errorMessage}</div> : null}
     </section>
   );

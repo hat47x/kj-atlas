@@ -6,6 +6,7 @@ import { ImportPanel } from "./ImportPanel";
 import { SharePanel } from "./SharePanel";
 import { ReviewDiffPanel } from "./ReviewDiffPanel";
 import { DiffPanel } from "./DiffPanel";
+import { SuggestionPanel } from "./SuggestionPanel";
 import { setActiveLocale } from "../i18n/translate";
 import { t } from "../i18n/translate";
 import { buildReadOnlyBlockedMessage } from "../domain/policy/read_only";
@@ -125,6 +126,26 @@ function buildReviewProps() {
   };
 }
 
+
+function buildSuggestionProps() {
+  return {
+    instruction: "layout hints",
+    onInstructionChange: vi.fn(),
+    onSuggest: vi.fn(),
+    onResuggest: vi.fn(),
+    onApply: vi.fn(),
+    onDiscard: vi.fn(),
+    hasSuggestion: true,
+    isPreviewEnabled: true,
+    onPreviewToggle: vi.fn(),
+    isAnnotateOverlayEnabled: false,
+    onAnnotateOverlayToggle: vi.fn(),
+    isSuggesting: false,
+    errorMessage: null,
+    notes: "memo",
+  };
+}
+
 function buildDiffProps() {
   return {
     comparisonFileName: "baseline.json",
@@ -195,6 +216,19 @@ describe("i18n functional equivalence", () => {
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
     expect(jaHtml).not.toContain("Load comparison document (JSON)");
     expect(enHtml).toContain("Load comparison document (JSON)");
+  });
+
+  it("keeps SuggestionPanel structure equivalent between ja/en", () => {
+    const props = buildSuggestionProps();
+
+    setActiveLocale("ja");
+    const jaHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
+    setActiveLocale("en");
+    const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
+
+    expect(metrics(enHtml)).toEqual(metrics(jaHtml));
+    expect(jaHtml).not.toContain("Apply suggestion");
+    expect(enHtml).toContain("Apply suggestion");
   });
 
   it("keeps read-only blocking behavior locale-independent", () => {
