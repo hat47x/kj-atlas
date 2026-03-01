@@ -58,6 +58,44 @@ docker compose logs api --tail=100
 - `overview` は俯瞰用に selected-card trace（`evidence_trace_*` / `contradiction_trace_*` / `trace_analytics_*`）を同梱しません。
 - `detail` は従来どおり selected-card trace を同梱できます（カード選択時）。
 
+### 静的公開アーティファクト（FB-RM-PUB-03）
+
+`index.html + assets + packs` の最小公開物を生成し、静的ホスティングだけで閲覧できる配布物を作成できます。
+
+1. 生成コマンドを実行
+
+```bash
+cd 03_Implement/frontend
+npm ci
+npm run publish:static -- \
+  --document ./tests/fixtures/worker/doc.small.json \
+  --out ../deploy/public \
+  --pack-id public-main \
+  --title "Public sample"
+```
+
+2. 出力物を確認（最小構成）
+
+- `03_Implement/deploy/public/index.html`
+- `03_Implement/deploy/public/assets/*`
+- `03_Implement/deploy/public/packs/index.json`
+- `03_Implement/deploy/public/packs/public-main.document.json`
+
+3. ローカル静的サーバで確認
+
+```bash
+cd 03_Implement/deploy/public
+python3 -m http.server 4173
+```
+
+ブラウザで `http://localhost:4173/` を開くと、`pack=public-main&readonly=1` へ自動遷移して閲覧モードで表示されます。
+
+#### SafeMode / 公開モード整合
+
+- 公開packを読み込んだときは Frontend 側で `safeMode=true` を強制します。
+- 生成された `index.html` は `readonly=1` 付きURLへ遷移するため、公開配布物は編集不可の閲覧モードを既定にします。
+- `packs/index.json` には `enforceSafeMode: true` / `readOnly: true` を記録し、公開配布の意図を明示します。
+
 ## 4. セキュリティ運用メモ（MVP）
 
 - 公開時は API を直接公開せず、Nginx / Traefik などのリバースプロキシ配下で TLS 終端してください。
