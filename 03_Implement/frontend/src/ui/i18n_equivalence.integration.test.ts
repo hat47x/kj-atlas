@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ImportPanel } from "./ImportPanel";
 import { SharePanel } from "./SharePanel";
 import { setActiveLocale } from "../i18n/translate";
+import { t } from "../i18n/translate";
 import { buildReadOnlyBlockedMessage } from "../domain/policy/read_only";
 
 function buildShareProps() {
@@ -125,5 +126,20 @@ describe("i18n functional equivalence", () => {
     expect(ja.includes("save")).toBe(true);
     expect(en.includes("save")).toBe(true);
     expect(ja).not.toBe(en);
+  });
+
+  it("keeps diagnostics controls and claim-type labels localized in ja/en", () => {
+    setActiveLocale("ja");
+    const jaDiagnosticsRun = t("side_panel.outline.run_diagnostics");
+    const jaClaimTypeUnknown = t("side_panel.claim_type.unknown");
+
+    setActiveLocale("en");
+    const enDiagnosticsRun = t("side_panel.outline.run_diagnostics");
+    const enClaimTypeUnknown = t("side_panel.claim_type.unknown");
+
+    expect(jaDiagnosticsRun).toBe("diagnostics を実行");
+    expect(enDiagnosticsRun).toBe("Run diagnostics");
+    expect(jaClaimTypeUnknown).toBe("Unknown (未分類)");
+    expect(enClaimTypeUnknown).toBe("Unknown");
   });
 });

@@ -104,5 +104,15 @@
   "shell.export_json": "Export JSON",
   "shell.reload": "Reload",
   "shell.reloading": "Reloading...",
-  "shell.unsaved_changes": "Unsaved changes"
+  "shell.unsaved_changes": "Unsaved changes",
+  "side_panel.action.cancel": "Cancel",
+  "side_panel.action.working": "Working...",
+  "side_panel.claim_type.claim": "Claim",
+  "side_panel.claim_type.fact": "Fact",
+  "side_panel.claim_type.hypothesis": "Hypothesis",
+  "side_panel.claim_type.no_findings": "No claim typing findings.",
+  "side_panel.claim_type.unknown": "Unknown",
+  "side_panel.outline.append_diagnostics": "Append diagnostics",
+  "side_panel.outline.append_recommendations": "Append recommendations",
+  "side_panel.outline.run_diagnostics": "Run diagnostics"
 }

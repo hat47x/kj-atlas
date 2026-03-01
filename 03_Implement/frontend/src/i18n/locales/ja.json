@@ -104,5 +104,15 @@
   "shell.export_json": "JSONをエクスポート",
   "shell.reload": "再読み込み",
   "shell.reloading": "再読み込み中...",
-  "shell.unsaved_changes": "未保存の変更"
+  "shell.unsaved_changes": "未保存の変更",
+  "side_panel.action.cancel": "キャンセル",
+  "side_panel.action.working": "処理中...",
+  "side_panel.claim_type.claim": "Claim (主張/解釈)",
+  "side_panel.claim_type.fact": "Fact (観測/一次情報)",
+  "side_panel.claim_type.hypothesis": "Hypothesis (仮説)",
+  "side_panel.claim_type.no_findings": "Claim type の指摘はありません。",
+  "side_panel.claim_type.unknown": "Unknown (未分類)",
+  "side_panel.outline.append_diagnostics": "diagnostics を追加",
+  "side_panel.outline.append_recommendations": "recommendations を追加",
+  "side_panel.outline.run_diagnostics": "diagnostics を実行"
 }
