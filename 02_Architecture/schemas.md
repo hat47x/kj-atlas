@@ -143,6 +143,11 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 export type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
 ```
 
+- 既定値（default）:
+  - `view.json`: `visibility` 未定義時は `Restricted` を補完。
+  - `packs/index.json`: `visibility` 未定義時は `Public` を補完。
+- fallback は **import読込時に正規化して内部モデルへ反映** し、export時は常に enum を明示出力する。
+
 ### 8.1 view metadata（`view.json`）
 
 ```ts
@@ -161,6 +166,19 @@ export type ViewMetadataV1 = {
 - strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - 安全方針：`visibility` の有無に関わらず SafeMode 既定ON・share/export 制約の既存ポリシーを維持する。
 - 運用解釈：`visibility` は公開範囲の意図を示すメタデータであり、外部送信可否（SafeMode や export制御）を直接変更しない。
+
+### 8.1.1 SafeMode / readOnly / visibility の評価優先順位
+
+競合時の評価順は次で固定する（上位が優先）。
+
+1. **SafeMode / share-export policy**（既定ON、漏えい防止）
+2. **readOnly**（書込・共有・export など破壊/外部送信系を抑止）
+3. **visibility**（公開範囲ラベル。UI表示・監査ラベル用途）
+
+補足:
+- `visibility=Public` でも SafeMode により export/share が拒否され得る。
+- `visibility=Restricted` でも readOnly=false かつ SafeMode許可条件を満たす操作は、既存ポリシーに従って評価する。
+- `visibility` は判定入力にはなり得るが、SafeMode/readOnly の拒否結果を上書きしてはならない。
 
 ### 8.2 public pack manifest（`packs/index.json`）
 
@@ -183,3 +201,32 @@ export type PublicPackManifest = {
 - strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - import/export/validate は上記 enum を単一契約として扱う。
 - 運用解釈：pack の `visibility` も配布上の分類情報として扱い、SafeMode 既定ONおよび漏洩防止ポリシーとは分離する。
+
+### 8.3 旧データ互換（旧→新）
+
+- 旧 `view.json`（`visibility` 欠損）
+  - 読込時: `Restricted` を補完して `ViewMetadataV1` として扱う。
+  - 再export時: `visibility: "Restricted"` を明示出力する。
+- 旧 `packs/index.json`（entry の `visibility` 欠損）
+  - 読込時: `Public` を補完して `PublicPackManifest` として扱う。
+  - 再export時: 各 entry に `visibility` を明示出力する。
+- 旧データに `visibility` が存在しても enum 外値の場合は **互換読込対象にしない**（strict validator で拒否）。
+
+### 8.4 失敗ケース（拒否すべき入力）
+
+- `visibility` が文字列以外（`null`, number, object）
+- `visibility` が enum 外（例: `"FriendsOnly"`, `"private"`）
+- pack manifest で `packs[*].visibility` が欠損以外の不正（例: `""` や空白のみ）
+- view metadata で `visibility` が空文字または大文字小文字違い（例: `"public"`）
+
+### 8.5 Definition of Done（FB-RM-PUB-01）
+
+1. **schema検証**
+   - `view.json` / `packs/index.json` が enum 制約（`Public | Unlisted | Org | Restricted`）を満たす。
+   - 不正値は import/export validator が拒否する。
+2. **互換読込**
+   - `visibility` 欠損の旧 `view.json` が `Restricted` として読める。
+   - `visibility` 欠損の旧 `packs/index.json` が `Public` として読める。
+3. **回帰観点**
+   - SafeMode既定ON・share/export漏えい防止の既存テストが通る。
+   - `visibility` 追加により readOnly/SafeMode の拒否挙動が緩まない。
