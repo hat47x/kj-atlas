@@ -104,7 +104,7 @@
 
 | ID | 優先度 | 状態 | 具体アクション | DoD（完了条件） |
 |---|---|---|---|---|
-| FB-RM-I18N-01 | P1 | Planned | UI文言をkey化し、ハードコード文言を削減 | 主要画面の表示文言が辞書経由になる |
+| FB-RM-I18N-01 | P1 | Done (2026-02-28) | `src/i18n/messages.ts` と `src/i18n/translate.ts` を追加し、ImportPanel / SharePanel（Export〜Load document） / safe_mode_status の主要文言を辞書キー経由へ移行。placeholder補間と unknown-key fallback を実装し、UI回帰テストを追加。 | 主要画面の表示文言が辞書経由で解決され、既存コピー互換とfallback挙動がテストで固定される |
 | FB-RM-I18N-02 | P1 | Planned | 翻訳JSONフォーマットとfallback順序を固定 | 欠損キー時に既定言語へフォールバック |
 | FB-RM-I18N-03 | P2 | Planned | 英語UIを機能等価で提供 | 日本語/英語で機能差がない |
 | FB-RM-I18N-04 | P2 | Planned | view単位言語設定を保存 | view切替後も表示言語が保持される |
@@ -239,6 +239,15 @@
 - [x] 候補再収集時に latest decision / edited text を復元するよう `App.tsx` を更新。
 - [x] Frontend strict validator (`validate_doc.ts`) に decision schema 検証を追加。
 - [x] Backend `DocumentV2` モデルと docs roundtrip test を更新し、PUT/GETで decision log 保持を確認。
+
+
+#### FB-RM-I18N-01 実装TODO（完了ログ）
+
+- [x] `src/i18n/messages.ts` を追加し、UI文言キーと既定辞書（ja）を定義。
+- [x] `src/i18n/translate.ts` を追加し、placeholder補間と unknown-key fallback を実装。
+- [x] `ImportPanel.tsx` の表示文言を辞書キー参照へ置換。
+- [x] `safe_mode_status.ts` / `SharePanel.tsx`（Export〜Load document）を辞書キー参照へ置換。
+- [x] `translate.test.ts` / `ImportPanel.test.ts` / 既存 safe_mode_status・SharePanel テストで回帰を固定。
 
 
 #### FB-RM-MID-03 実装TODO（完了ログ）

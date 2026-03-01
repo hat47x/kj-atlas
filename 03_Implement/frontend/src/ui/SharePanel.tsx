@@ -7,6 +7,7 @@ import type { FixProposal } from "../domain/patch/patch_fix";
 import type { TrustLabel } from "../domain/patch/patch_types";
 import { ImportPanel } from "./ImportPanel";
 import { getExportSafetyWarning, getSafeModeIndicator, getSafeModeLockedContextLabel } from "./safe_mode_status";
+import { t } from "../i18n/translate";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -257,7 +258,7 @@ export function SharePanel({
           cursor: "pointer",
         }}
       >
-        Share &amp; Reproduce
+        {t("share.panel.trigger")}
       </button>
       {isOpen ? (
         <section
@@ -285,9 +286,9 @@ export function SharePanel({
           </div>
 
           <div style={sectionStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>1) Export package</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.export.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Export reproducible artifacts first (SVG/PNG/report + view.json metadata).
+              {t("share.panel.export.section_hint")}
             </div>
             <div
               style={{
@@ -309,7 +310,7 @@ export function SharePanel({
                       onSafeModeChange(event.target.checked);
                     }}
                   />
-                  Enable SafeMode
+                  {t("share.panel.export.enable_safe_mode")}
                 </label>
               </div>
               <div style={{ fontSize: 11, color: "#475569" }}>{safeModeIndicator.detail}</div>
@@ -319,13 +320,13 @@ export function SharePanel({
               <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
-              Export SVG (Viewport)
+              {t("share.panel.export.svg_viewport")}
             </button>
             <button type="button" onClick={onExportSvgVisibleBounds} disabled={!hasDocument || isLoading}>
-              Export SVG (Visible bounds)
+              {t("share.panel.export.svg_visible")}
             </button>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-              PNG scale
+              {t("share.panel.export.png_scale")}
               <select
                 value={String(pngExportScale)}
                 onChange={(event) => {
@@ -337,16 +338,16 @@ export function SharePanel({
               </select>
             </label>
             <button type="button" onClick={onExportPngViewport} disabled={!hasDocument || isLoading}>
-              Export PNG (Viewport)
+              {t("share.panel.export.png_viewport")}
             </button>
             <button type="button" onClick={onExportPngVisibleBounds} disabled={!hasDocument || isLoading}>
-              Export PNG (Visible bounds)
+              {t("share.panel.export.png_visible")}
             </button>
             <button type="button" onClick={onExportAbstractMapMarkdownWithPng} disabled={!hasDocument || isLoading}>
-              Export Report (MD + PNG)
+              {t("share.panel.export.abstract_md")}
             </button>
             <button type="button" onClick={onExportAbstractMapHtmlWithPng} disabled={!hasDocument || isLoading}>
-              Export Report (HTML + PNG)
+              {t("share.panel.export.abstract_html")}
             </button>
             {safeMode ? (
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -357,16 +358,17 @@ export function SharePanel({
                     onIncludeUnreviewedDraftsChange(event.target.checked);
                   }}
                 />
-                Include unreviewed drafts
+                {t("share.panel.export.include_drafts")}
               </label>
             ) : null}
             <button type="button" onClick={onExportViewViewport} disabled={!hasDocument || isLoading}>
-              Export view.json (Viewport)
+              {t("share.panel.export.view_viewport")}
             </button>
             <button type="button" onClick={onExportViewVisibleBounds} disabled={!hasDocument || isLoading}>
-              Export view.json (Visible bounds)
+              {t("share.panel.export.view_visible")}
             </button>
             <div style={{ borderTop: "1px dashed #e2e8f0", paddingTop: 8, marginTop: 4, display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.export.bundle_title")}</div>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                 <input
                   type="checkbox"
@@ -375,7 +377,7 @@ export function SharePanel({
                     setBundleIncludeOutline(event.target.checked);
                   }}
                 />
-                Include outline
+                {t("share.panel.export.bundle_include_outline")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                 <input
@@ -385,7 +387,7 @@ export function SharePanel({
                     setBundleIncludeDiagnostics(event.target.checked);
                   }}
                 />
-                Include diagnostics
+                {t("share.panel.export.bundle_include_diagnostics")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canIncludeTraces ? "#334155" : "#94a3b8" }}>
                 <input
@@ -396,9 +398,9 @@ export function SharePanel({
                     setBundleIncludeSelectedCardTraces(event.target.checked);
                   }}
                 />
-                Include traces for selected card
+                {t("share.panel.export.bundle_include_traces")}
               </label>
-              <div style={{ fontSize: 11, color: "#64748b" }}>Traces require a selected card.</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.export.bundle_trace_hint")}</div>
               <button
                 type="button"
                 onClick={() => {
@@ -410,16 +412,16 @@ export function SharePanel({
                 }}
                 disabled={!hasDocument || isLoading || isBundleExportRunning}
               >
-                {isBundleExportRunning ? "Working..." : "Export bundle (.zip)"}
+                {isBundleExportRunning ? t("share.panel.export.bundle_working") : t("share.panel.export.bundle_export")}
               </button>
-              {isBundleExportRunning ? <button type="button" onClick={onCancelBundleExport}>Cancel</button> : null}
+              {isBundleExportRunning ? <button type="button" onClick={onCancelBundleExport}>{t("share.panel.export.bundle_cancel")}</button> : null}
               {isBundleExportRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
             </div>
           </div>
 
           <div style={sectionStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>2) Restore view</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Load view.json to restore camera and view toggles only.</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.restore.section_title")}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{t("share.panel.restore.section_hint")}</div>
             <button
               type="button"
               onClick={() => {
@@ -427,7 +429,7 @@ export function SharePanel({
               }}
               disabled={isLoading}
             >
-              Import view.json
+              {t("share.panel.restore.import_view")}
             </button>
             <input
               ref={viewMetadataInputRef}
@@ -439,9 +441,9 @@ export function SharePanel({
           </div>
 
           <div style={sectionStyle}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>3) Load document.json</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.load_document.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Validate DocumentV2 JSON first, then explicitly replace the current document.
+              {t("share.panel.load_document.section_hint")}
             </div>
             <button
               type="button"
@@ -450,7 +452,7 @@ export function SharePanel({
               }}
               disabled={isLoading}
             >
-              Load document.json
+              {t("share.panel.load_document.load")}
             </button>
             <input
               ref={importDocumentInputRef}
@@ -475,10 +477,10 @@ export function SharePanel({
               >
                 <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 600 }}>{pendingImportedDocumentSummary.fileName}</div>
                 <div style={{ fontSize: 12, color: "#334155" }}>
-                  cards: {pendingImportedDocumentSummary.cardCount} / islands: {pendingImportedDocumentSummary.islandCount} / edges: {pendingImportedDocumentSummary.edgeCount}
+                  {t("share.panel.load_document.summary", { cardCount: pendingImportedDocumentSummary.cardCount, islandCount: pendingImportedDocumentSummary.islandCount, edgeCount: pendingImportedDocumentSummary.edgeCount })}
                 </div>
                 <button type="button" onClick={onReplaceCurrentDocument} disabled={isLoading}>
-                  Replace current document
+                  {t("share.panel.load_document.replace")}
                 </button>
               </div>
             ) : null}

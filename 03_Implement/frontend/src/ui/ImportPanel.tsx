@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { t } from "../i18n/translate";
 
 type ImportPanelProps = {
   isLoading: boolean;
@@ -47,7 +48,7 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
 
   return (
     <section style={{ border: "1px solid #cbd5e1", borderRadius: 8, padding: 10, display: "grid", gap: 8 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Import review pack (.zip)</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("import.panel.title")}</div>
       <div
         onDragOver={(event) => {
           event.preventDefault();
@@ -67,7 +68,7 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
           textAlign: "center",
         }}
       >
-        Drag &amp; drop review-pack .zip here
+        {t("import.panel.dropzone")}
       </div>
       <button
         type="button"
@@ -76,14 +77,14 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
         }}
         disabled={isLoading}
       >
-        Choose ZIP…
+        {t("import.panel.choose_zip")}
       </button>
       <input ref={inputRef} type="file" accept=".zip,application/zip" onChange={handleInputChange} style={{ display: "none" }} />
       {importedPackSummary ? (
         <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 4 }}>
-          <div>Imported {importedPackSummary.fileName}: cards {importedPackSummary.cardCount}, islands {importedPackSummary.islandCount}, perspective {importedPackSummary.perspectiveMode}</div>
+          <div>{t("import.panel.summary", { fileName: importedPackSummary.fileName, cardCount: importedPackSummary.cardCount, islandCount: importedPackSummary.islandCount, perspectiveMode: importedPackSummary.perspectiveMode })}</div>
           {importedPackSummary.warningCount > 0 ? (
-            <div style={{ color: "#92400e" }}>Ignored {importedPackSummary.warningCount} unsupported or non-core file(s).</div>
+            <div style={{ color: "#92400e" }}>{t("import.panel.ignored_warning", { warningCount: importedPackSummary.warningCount })}</div>
           ) : null}
         </div>
       ) : null}
