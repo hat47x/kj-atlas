@@ -168,8 +168,75 @@ jobs:
       - name: Test i18n document hash regression guards
         run: ${{ steps.pm.outputs.run }} test:i18n-regression
 
-  frontend:
-    name: Frontend lint + test
+  frontend-lint:
+    name: Frontend lint (staged rollout)
+    runs-on: ubuntu-latest
+    env:
+      FRONTEND_LINT_PHASE: ${{ vars.FRONTEND_LINT_PHASE || 'A' }}
+    defaults:
+      run:
+        working-directory: 03_Implement/frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Node version
+        id: node
+        run: |
+          if [ -f .nvmrc ]; then
+            echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=lts/*" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "run=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+            echo "install=yarn install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "run=yarn" >> "$GITHUB_OUTPUT"
+          elif [ -f package-lock.json ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install=npm ci" >> "$GITHUB_OUTPUT"
+            echo "run=npm run" >> "$GITHUB_OUTPUT"
+          else
+            echo "No supported lockfile found" >&2
+            exit 1
+          fi
+
+      - name: Enable corepack (pnpm/yarn)
+        if: steps.pm.outputs.manager != 'npm'
+        run: corepack enable
+
+      - name: Install dependencies
+        run: ${{ steps.pm.outputs.install }}
+
+      - name: Lint (Phase A=warn, Phase B/C=fail)
+        id: lint
+        continue-on-error: ${{ env.FRONTEND_LINT_PHASE == 'A' }}
+        run: ${{ steps.pm.outputs.run }} lint
+
+      - name: Record lint policy summary
+        if: always()
+        run: |
+          echo "frontend lint phase: ${FRONTEND_LINT_PHASE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "lint step outcome: ${{ steps.lint.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${FRONTEND_LINT_PHASE}" = "A" ] && [ "${{ steps.lint.outcome }}" != "success" ]; then
+            echo "Phase A allows warning-only lint failures. Promote to Phase B when outstanding issues are reduced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  frontend-typecheck:
+    name: Frontend typecheck
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -219,8 +286,59 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.pm.outputs.install }}
 
-      - name: Lint (typecheck as minimal lint)
+      - name: Typecheck
         run: ${{ steps.pm.outputs.run }} typecheck
+
+  frontend-test:
+    name: Frontend test + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03_Implement/frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Node version
+        id: node
+        run: |
+          if [ -f .nvmrc ]; then
+            echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=lts/*" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "run=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+            echo "install=yarn install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "run=yarn" >> "$GITHUB_OUTPUT"
+          elif [ -f package-lock.json ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install=npm ci" >> "$GITHUB_OUTPUT"
+            echo "run=npm run" >> "$GITHUB_OUTPUT"
+          else
+            echo "No supported lockfile found" >&2
+            exit 1
+          fi
+
+      - name: Enable corepack (pnpm/yarn)
+        if: steps.pm.outputs.manager != 'npm'
+        run: corepack enable
+
+      - name: Install dependencies
+        run: ${{ steps.pm.outputs.install }}
 
       - name: Test
         run: ${{ steps.pm.outputs.run }} test

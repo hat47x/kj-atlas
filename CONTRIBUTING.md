@@ -73,6 +73,59 @@ pytest
 
 
 
+## Frontend lint 段階導入ガイド（ADR-0018 Follow-up）
+
+Frontend lint は Phase A/B/C で段階導入します。
+
+### Phase別チェックリストと完了条件
+
+- **Phase A（warn-only）**
+  - [ ] ローカルで `npm run lint` を実行し、結果を確認した。
+  - [ ] CI `frontend-lint` が warning可視化として動作している。
+  - [ ] lint例外は期限付きIssueで管理している。
+- **Phase B（fail-on-error）**
+  - [ ] `FRONTEND_LINT_PHASE=B` がCIに設定済み。
+  - [ ] `frontend-lint` 失敗時にPRがfailになる。
+  - [ ] 期限切れ例外を解消済み。
+- **Phase C（tighten）**
+  - [ ] 新規ルールは warn期間を経て error 化している。
+  - [ ] ルール追加時に規約・CI・本ガイドを同一PRで同期している。
+
+### 開発者の実行手順（`npm run lint`）
+
+```bash
+cd 03_Implement/frontend
+npm ci
+npm run lint
+npm run typecheck
+npm run test
+```
+
+- `npm run lint` が失敗した場合は、違反修正を優先してください。
+- 直ちに解消不能な場合のみ、**期限付き例外Issue**（理由・担当・期限）を登録し、PR本文へリンクします。
+- 期限の目安は14日以内。期限切れ例外が残るPRは原則マージしません。
+
+### CI責務分離（保守者向け）
+
+- `frontend-lint`: lintポリシー適用（Phase Aは警告、Phase B/Cは失敗）。
+- `frontend-typecheck`: TypeScript型検査。
+- `frontend-test`: Frontendテストとbuild検証。
+
+### 差分監査（規約 / CONTRIBUTING / CI）
+
+同一PRで次を確認してください。
+
+1. `01_Plans/coding_standards.md` にPhaseとexit criteriaがある。
+2. 本書に `npm run lint` 手順・失敗時対処・例外運用がある。
+3. `.github/workflows/ci.yml` のジョブ責務とfail条件が文書記述と一致する。
+
+確認コマンド:
+
+```bash
+rg -n "frontend-lint|frontend-typecheck|frontend-test|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" \
+  01_Plans/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml
+```
+
 ## Issue と ADR の使い分け（必須）
 
 IssueとADRは混在させず、次の基準で分離して運用します。
