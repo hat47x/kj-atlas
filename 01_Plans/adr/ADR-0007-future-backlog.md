@@ -107,7 +107,7 @@
 | FB-RM-I18N-01 | P1 | Done (2026-02-28) | `src/i18n/messages.ts` と `src/i18n/translate.ts` を追加し、ImportPanel / SharePanel（Export〜Load document） / safe_mode_status の主要文言を辞書キー経由へ移行。placeholder補間と unknown-key fallback を実装し、UI回帰テストを追加。 | 主要画面の表示文言が辞書経由で解決され、既存コピー互換とfallback挙動がテストで固定される |
 | FB-RM-I18N-02 | P1 | Done (2026-03-01) | `src/i18n/locales/{ja,en}.json` を導入し、`t()` を `requested locale -> default locale (ja) -> key` 順で解決する契約へ更新。`validateLocaleMessages` / `resolveTemplate` を追加し、欠損キー時に既定言語へ復元するテストを固定。 | JSON辞書契約とfallback順序がコード/テストで固定され、locale欠損時でもUI文言が既定言語で解決される |
 | FB-RM-I18N-03 | P2 | Planned | 英語UIを機能等価で提供 | 日本語/英語で機能差がない |
-| FB-RM-I18N-04 | P2 | Planned | view単位言語設定を保存 | view切替後も表示言語が保持される |
+| FB-RM-I18N-04 | P2 | Done (2026-03-01) | view単位言語設定を保存（view metadata + localStorage + URL/read-only優先） | view切替・再読込後も表示言語が決定論で復元される |
 | FB-RM-I18N-05 | P2 | Planned | `document.json` 言語非依存を検証する互換テストを追加 | 言語変更前後でdocument hashが不変 |
 | FB-RM-I18N-06 | P2 | Planned | SafeMode下の言語変換時データ漏洩チェックを追加 | 外部送信なし・ログマスキングを満たす |
 
@@ -303,3 +303,12 @@
 - [x] 構造レベル切替（overview/mid/detail）を View Controls とショートカット（Alt+Shift+1/2/3）で提供し、表示粒度のみを切り替える挙動を実装した。
 - [x] overview で placard 以外カードを非表示化する可視性ヘルパーとテストを追加し、データ本体を破壊しないことを回帰固定した。
 - [x] collapse_visibility/hierarchy_visibility/hierarchy_level の既存回帰を維持し、backend docs roundtrip に parent/placard 永続化アサーションを追加した。
+
+
+#### FB-RM-I18N-04 実装TODO（完了ログ）
+
+- [x] view locale 解決順序を `URL(locale/lang/uiLocale) -> view metadata -> localStorage(doc+view) -> default(ja)` に固定。
+- [x] read-only 時は locale 永続化を抑止し、URL 指定時は上書き保存しない責務を明確化。
+- [x] `viewState.locale` を view metadata schema/export/import に追加し、不正 locale を validation で拒否。
+- [x] App 初期化・view切替・pack/view import で同一 resolver を使用し、race condition を回避。
+- [x] `view_locale_resolution.test.ts` で view切替・再読込・欠損時fallback を回帰固定。

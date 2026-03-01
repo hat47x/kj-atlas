@@ -133,7 +133,8 @@ import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zi
 import { parsePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
-import { DEFAULT_LOCALE, getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
+import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
+import { resolveViewLocale } from "./i18n/view_locale_resolution";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
@@ -876,7 +877,8 @@ export default function App() {
   const [docEtag, setDocEtag] = useState<string | null>(null);
   const [hasSaveConflict, setHasSaveConflict] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(window.location.search), []);
+  const locationSearch = window.location.search;
+  const isReadOnly = useMemo(() => resolveReadOnlyFromSearch(locationSearch), [locationSearch]);
   const [activeDocumentId, setActiveDocumentId] = useState(DEFAULT_DOCUMENT_ID);
   const [recentDocumentIds, setRecentDocumentIds] = useState<string[]>(() => loadRecentDocumentIds());
   const [selectedRecentDocumentId, setSelectedRecentDocumentId] = useState("");
@@ -1018,7 +1020,7 @@ export default function App() {
   const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
-  const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore" }));
+  const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore", allowPersistence: true }));
 
   useEffect(() => {
     return () => {
@@ -1579,6 +1581,27 @@ export default function App() {
     setRecentDocumentIds(pushRecentDocumentId(docId));
   }, [abstractMapView, summaryView]);
 
+  const applyResolvedLocaleForView = useCallback((args: {
+    docId: string;
+    viewMode: ViewMode;
+    metadataLocale?: string | null;
+    persistedLocale?: string | null;
+  }) => {
+    const resolved = resolveViewLocale({
+      search: locationSearch,
+      isReadOnly,
+      metadataLocale: args.metadataLocale,
+      persistedLocale: args.persistedLocale,
+    });
+
+    viewLocalePersistenceScopeRef.current.updateScope({
+      docId: args.docId,
+      viewMode: args.viewMode,
+      allowPersistence: resolved.shouldPersist,
+    });
+    setActiveLocale(resolved.locale);
+  }, [isReadOnly, locationSearch]);
+
   const loadDocument = useCallback(
     async (docId: string, options?: { allowCreateOnNotFound?: boolean; isReload?: boolean }) => {
       const allowCreateOnNotFound = options?.allowCreateOnNotFound ?? false;
@@ -1601,7 +1624,11 @@ export default function App() {
         setActiveDocumentId(loadedDocument.id);
         const loadedViewMode = loadViewModeForDocument(loadedDocument.id) ?? "explore";
         setViewMode(loadedViewMode);
-        setActiveLocale(loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode) ?? DEFAULT_LOCALE);
+        applyResolvedLocaleForView({
+          docId: loadedDocument.id,
+          viewMode: loadedViewMode,
+          persistedLocale: loadViewLocaleForDocumentView(loadedDocument.id, loadedViewMode),
+        });
         rememberRecentDocumentId(loadedDocument.id);
         setSelectedRecentDocumentId(loadedDocument.id);
         setDocEtag(loaded.etag ?? null);
@@ -1634,7 +1661,11 @@ export default function App() {
             setActiveDocumentId(savedDocument.id);
             const loadedViewMode = loadViewModeForDocument(savedDocument.id) ?? "explore";
             setViewMode(loadedViewMode);
-            setActiveLocale(loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode) ?? DEFAULT_LOCALE);
+            applyResolvedLocaleForView({
+              docId: savedDocument.id,
+              viewMode: loadedViewMode,
+              persistedLocale: loadViewLocaleForDocumentView(savedDocument.id, loadedViewMode),
+            });
             rememberRecentDocumentId(savedDocument.id);
             setSelectedRecentDocumentId(savedDocument.id);
             setDocEtag(saved.etag ?? null);
@@ -1668,7 +1699,7 @@ export default function App() {
         }
       }
     },
-    []
+    [applyResolvedLocaleForView]
   );
 
   const applyDocumentChange = useCallback(
@@ -2376,7 +2407,7 @@ ${parsedDocument.error}`);
     setMergeWarningConfirmationKey(null);
   }, [applyDocumentChange, lastMergeSnapshot]);
 
-  const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, statusPrefix: string) => {
+  const applyImportedViewMetadata = useCallback((metadata: ExportViewMetadata, targetDocument: DocumentV2, viewMode: ViewMode, statusPrefix: string) => {
     const hasFocusIsland =
       metadata.viewState.focusIslandId === null
         ? false
@@ -2445,6 +2476,13 @@ ${parsedDocument.error}`);
       requestSeq: (previousRequest?.requestSeq ?? 0) + 1,
     }));
 
+    applyResolvedLocaleForView({
+      docId: targetDocument.id,
+      viewMode,
+      metadataLocale: metadata.viewState.locale,
+      persistedLocale: loadViewLocaleForDocumentView(targetDocument.id, viewMode),
+    });
+
     if (metadata.viewState.focusIslandId && !hasFocusIsland) {
       setFocusTarget({});
       setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility}); focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
@@ -2453,7 +2491,7 @@ ${parsedDocument.error}`);
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
     setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility})`);
-  }, [abstractMapView, summaryView]);
+  }, [applyResolvedLocaleForView]);
 
   const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
     const manifestResponse = await fetch("./packs/index.json", { cache: "no-store" });
@@ -2486,7 +2524,11 @@ ${parsedDocument.error}`);
     setActiveDocumentId(documentParseResult.document.id);
     const importedViewMode = loadViewModeForDocument(documentParseResult.document.id) ?? "explore";
     setViewMode(importedViewMode);
-    setActiveLocale(loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode) ?? DEFAULT_LOCALE);
+    applyResolvedLocaleForView({
+      docId: documentParseResult.document.id,
+      viewMode: importedViewMode,
+      persistedLocale: loadViewLocaleForDocumentView(documentParseResult.document.id, importedViewMode),
+    });
     setSelectedRecentDocumentId("");
     setDocEtag(null);
     setSelectedCardIds([]);
@@ -2527,7 +2569,7 @@ ${parsedDocument.error}`);
       if (!viewParseResult.ok) {
         throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
       }
-      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, "Public pack loaded");
+      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, "Public pack loaded");
     }
 
     setSafeMode(true);
@@ -2578,7 +2620,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyImportedViewMetadata(parseResult.metadata, document, "Loaded view metadata");
+      applyImportedViewMetadata(parseResult.metadata, document, viewMode, "Loaded view metadata");
     },
     [applyImportedViewMetadata, document]
   );
@@ -2674,6 +2716,8 @@ ${parsedDocument.error}`);
         future: [],
       });
       setActiveDocumentId(parsedDocument.document.id);
+      const importedViewMode = loadViewModeForDocument(parsedDocument.document.id) ?? "explore";
+      setViewMode(importedViewMode);
       setSelectedRecentDocumentId("");
       setDocEtag(null);
       setSelectedCardIds([]);
@@ -2714,7 +2758,7 @@ ${parsedDocument.error}`);
       if (previousSnapshotUrl) {
         URL.revokeObjectURL(previousSnapshotUrl);
       }
-      applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, "Review pack imported");
+      applyImportedViewMetadata(parsedView.metadata, parsedDocument.document, importedViewMode, "Review pack imported");
       setSafeMode(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unsupported format";
@@ -6434,6 +6478,7 @@ ${parsedDocument.error}`);
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
         },
@@ -6519,6 +6564,7 @@ ${parsedDocument.error}`);
           evidenceOverlayDimOthers,
           perspectiveMode,
           perspectiveStrictFilter,
+          locale: getActiveLocale(),
           presets: viewPresets,
           activePresetId: activePresetId ?? undefined,
         },
@@ -7116,10 +7162,15 @@ ${parsedDocument.error}`);
 
     applyViewPatch(preset.viewPatch);
     const currentLocale = getActiveLocale();
-    saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
-    viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode: mode });
+    if (!isReadOnly) {
+      saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
+    }
     setViewMode(mode);
-    setActiveLocale(loadViewLocaleForDocumentView(activeDocumentId, mode) ?? currentLocale);
+    applyResolvedLocaleForView({
+      docId: activeDocumentId,
+      viewMode: mode,
+      persistedLocale: loadViewLocaleForDocumentView(activeDocumentId, mode),
+    });
     setActivePresetId(preset.id);
     if (preset.id === "default-review") {
       setSafeMode(true);
@@ -7128,7 +7179,7 @@ ${parsedDocument.error}`);
     if (options?.announce ?? true) {
       setStatusMessage(`Applied mode: ${getViewModeLabel(mode)}`);
     }
-  }, [activeDocumentId, applyViewPatch, viewMode, viewPresets]);
+  }, [activeDocumentId, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
 
   const handleSaveViewPreset = useCallback(() => {
     const name = window.prompt("Preset name", "My preset")?.trim();
@@ -7193,12 +7244,16 @@ ${parsedDocument.error}`);
   }, [activeDocumentId, viewMode]);
 
   useEffect(() => {
-    viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode });
-  }, [activeDocumentId, viewMode]);
+    viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode, allowPersistence: !isReadOnly });
+  }, [activeDocumentId, isReadOnly, viewMode]);
 
   useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
       const scope = viewLocalePersistenceScopeRef.current.getScope();
+      if (!scope.allowPersistence) {
+        return;
+      }
+
       saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
     });
 
