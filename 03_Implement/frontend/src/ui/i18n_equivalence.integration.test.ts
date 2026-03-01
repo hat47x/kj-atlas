@@ -4,9 +4,27 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { ImportPanel } from "./ImportPanel";
 import { SharePanel } from "./SharePanel";
+import { ReviewDiffPanel } from "./ReviewDiffPanel";
+import { DiffPanel } from "./DiffPanel";
 import { setActiveLocale } from "../i18n/translate";
 import { t } from "../i18n/translate";
 import { buildReadOnlyBlockedMessage } from "../domain/policy/read_only";
+import type { DocumentV2 } from "../domain/types";
+
+
+function buildDocumentFixture(): DocumentV2 {
+  return {
+    version: 2,
+    id: "doc-i18n-equivalence",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [],
+    islands: [],
+    edges: [],
+    relationSummaries: [],
+  };
+}
 
 function buildShareProps() {
   return {
@@ -84,6 +102,42 @@ function metrics(html: string) {
   };
 }
 
+function buildReviewProps() {
+  return {
+    comparisonFileName: "baseline.json",
+    comparisonDocument: buildDocumentFixture(),
+    mergeItems: [],
+    evaluations: [],
+    selectedItemIds: new Set<string>(),
+    autoIncludePrerequisites: false,
+    onLoadComparisonDocument: vi.fn(),
+    onToggleAutoIncludePrerequisites: vi.fn(),
+    onItemCheckedChange: vi.fn(),
+    onGroupCheckedChange: vi.fn(),
+    onApplySelected: vi.fn(),
+    onUndoLastMerge: vi.fn(),
+    canApply: false,
+    isComputingDiff: true,
+    onCancelDiff: vi.fn(),
+    computeProgressMessage: "working",
+    computeProgressPercent: 25,
+    isFallbackMode: true,
+  };
+}
+
+function buildDiffProps() {
+  return {
+    comparisonFileName: "baseline.json",
+    comparisonDocument: buildDocumentFixture(),
+    diffResult: null,
+    currentCardIdSet: new Set<string>(),
+    currentIslandIdSet: new Set<string>(),
+    onLoadComparisonDocument: vi.fn(),
+    onJumpToItem: vi.fn(),
+    safeMode: true,
+  };
+}
+
 afterEach(() => {
   setActiveLocale("ja");
 });
@@ -115,6 +169,32 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SharePanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
+  });
+
+  it("keeps ReviewDiffPanel structure equivalent between ja/en", () => {
+    const props = buildReviewProps();
+
+    setActiveLocale("ja");
+    const jaHtml = renderToStaticMarkup(React.createElement(ReviewDiffPanel, props));
+    setActiveLocale("en");
+    const enHtml = renderToStaticMarkup(React.createElement(ReviewDiffPanel, props));
+
+    expect(metrics(enHtml)).toEqual(metrics(jaHtml));
+    expect(jaHtml).not.toContain("Apply selected merge");
+    expect(enHtml).toContain("Apply selected merge");
+  });
+
+  it("keeps DiffPanel structure equivalent between ja/en", () => {
+    const props = buildDiffProps();
+
+    setActiveLocale("ja");
+    const jaHtml = renderToStaticMarkup(React.createElement(DiffPanel, props));
+    setActiveLocale("en");
+    const enHtml = renderToStaticMarkup(React.createElement(DiffPanel, props));
+
+    expect(metrics(enHtml)).toEqual(metrics(jaHtml));
+    expect(jaHtml).not.toContain("Load comparison document (JSON)");
+    expect(enHtml).toContain("Load comparison document (JSON)");
   });
 
   it("keeps read-only blocking behavior locale-independent", () => {

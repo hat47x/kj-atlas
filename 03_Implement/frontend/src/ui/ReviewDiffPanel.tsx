@@ -1,6 +1,7 @@
 import type { DocumentV2 } from "../domain/types";
 import type { MergeItem } from "../diff/merge_items";
 import type { MergeItemEvaluation } from "../diff/merge_dependencies";
+import { t } from "../i18n/translate";
 
 type ReviewDiffPanelProps = {
   comparisonFileName: string | null;
@@ -24,9 +25,9 @@ type ReviewDiffPanelProps = {
 };
 
 const statusStyleByCode = {
-  ok: { color: "#166534", border: "#86efac", label: "OK" },
-  missing_prerequisites: { color: "#92400e", border: "#fcd34d", label: "Missing prerequisites" },
-  conflict: { color: "#991b1b", border: "#fca5a5", label: "Conflicts" },
+  ok: { color: "#166534", border: "#86efac", labelKey: "review.panel.status.ok" },
+  missing_prerequisites: { color: "#92400e", border: "#fcd34d", labelKey: "review.panel.status.missing_prerequisites" },
+  conflict: { color: "#991b1b", border: "#fca5a5", labelKey: "review.panel.status.conflict" },
 };
 
 function groupOf(kind: MergeItem["kind"]): string {
@@ -39,19 +40,19 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
 
   return (
     <section style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: "#ffffff" }}>
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>Review Diff (Selective Merge)</div>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>{t("review.panel.title")}</div>
       <button type="button" onClick={onLoadComparisonDocument} style={{ marginBottom: 8 }}>
-        Load comparison document (JSON)
+        {t("review.panel.load_document")}
       </button>
-      {comparisonFileName ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>File: {comparisonFileName}</div> : null}
-      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>Items: {mergeItems.length}{isComputingDiff ? " · Working..." : ""}{isFallbackMode ? " · Fallback mode" : ""}</div> : null}
-      {isFallbackMode ? <span style={{ fontSize: 11, border: "1px solid #f59e0b", color: "#92400e", borderRadius: 999, padding: "1px 6px", marginRight: 8 }}>fallback mode</span> : null}
-      {isComputingDiff ? <button type="button" onClick={onCancelDiff}>Cancel</button> : null}
+      {comparisonFileName ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{t("review.panel.file", { fileName: comparisonFileName })}</div> : null}
+      {comparisonDocument ? <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>{t("review.panel.items", { count: mergeItems.length })}{isComputingDiff ? ` · ${t("review.panel.working")}` : ""}{isFallbackMode ? ` · ${t("review.panel.fallback_mode")}` : ""}</div> : null}
+      {isFallbackMode ? <span style={{ fontSize: 11, border: "1px solid #f59e0b", color: "#92400e", borderRadius: 999, padding: "1px 6px", marginRight: 8 }}>{t("review.panel.fallback_mode")}</span> : null}
+      {isComputingDiff ? <button type="button" onClick={onCancelDiff}>{t("review.panel.cancel")}</button> : null}
       {isComputingDiff && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
       {isComputingDiff ? <div style={{ marginTop: 4, height: 6, borderRadius: 999, background: "#e2e8f0", overflow: "hidden" }}><div style={{ width: `${Math.max(0, Math.min(100, computeProgressPercent))}%`, height: "100%", background: "#2563eb" }} /></div> : null}
 
       <label style={{ display: "block", fontSize: 12, marginBottom: 8 }}>
-        <input type="checkbox" checked={autoIncludePrerequisites} onChange={(event) => onToggleAutoIncludePrerequisites(event.target.checked)} /> Auto-include prerequisites
+        <input type="checkbox" checked={autoIncludePrerequisites} onChange={(event) => onToggleAutoIncludePrerequisites(event.target.checked)} /> {t("review.panel.auto_include_prerequisites")}
       </label>
 
       {groups.map((group) => {
@@ -61,10 +62,10 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
             <summary>
               {group} ({inGroup.length}){" "}
               <button type="button" onClick={() => onGroupCheckedChange(group, true)} style={{ marginLeft: 8 }}>
-                Select all
+                {t("review.panel.select_all")}
               </button>
               <button type="button" onClick={() => onGroupCheckedChange(group, false)} style={{ marginLeft: 4 }}>
-                Select none
+                {t("review.panel.select_none")}
               </button>
             </summary>
             <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 6 }}>
@@ -77,11 +78,11 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
                       <input type="checkbox" checked={selectedItemIds.has(item.id)} onChange={(event) => onItemCheckedChange(item.id, event.target.checked)} /> {item.kind} {item.entityRef.id}
                       {item.field ? `.${item.field}` : ""}
                     </label>
-                    <span style={{ marginLeft: 8, border: `1px solid ${status.border}`, color: status.color, borderRadius: 999, padding: "1px 6px" }}>{status.label}</span>
+                    <span style={{ marginLeft: 8, border: `1px solid ${status.border}`, color: status.color, borderRadius: 999, padding: "1px 6px" }}>{t(status.labelKey)}</span>
                     {evaluation && evaluation.missingPrerequisites.length > 0 ? (
                       <details style={{ marginTop: 4 }}>
-                        <summary>Explain why blocked</summary>
-                        <div>Missing: {evaluation.missingPrerequisites.map((entry) => `${entry.kind}:${entry.id}`).join(", ")}</div>
+                        <summary>{t("review.panel.explain_blocked")}</summary>
+                        <div>{t("review.panel.missing", { value: evaluation.missingPrerequisites.map((entry) => `${entry.kind}:${entry.id}`).join(", ") })}</div>
                       </details>
                     ) : null}
                   </li>
@@ -93,8 +94,8 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
       })}
 
       <div style={{ marginTop: 8 }}>
-        <button type="button" onClick={onApplySelected} disabled={!canApply}>Apply selected merge</button>
-        <button type="button" onClick={onUndoLastMerge} style={{ marginLeft: 8 }}>Revert last merge</button>
+        <button type="button" onClick={onApplySelected} disabled={!canApply}>{t("review.panel.apply_selected")}</button>
+        <button type="button" onClick={onUndoLastMerge} style={{ marginLeft: 8 }}>{t("review.panel.revert_last")}</button>
       </div>
     </section>
   );
