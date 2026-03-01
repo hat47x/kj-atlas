@@ -37,6 +37,30 @@ describe("parseViewJson", () => {
     }
   });
 
+
+  test("loads legacy metadata without visibility using Restricted fallback", () => {
+    const result = parseViewJson(JSON.stringify({
+      version: "1",
+      generatedAt: "2026-01-01T00:00:00.000Z",
+      docSignature: "legacy",
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      export: { mode: "viewport" },
+    }));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metadata.visibility).toBe("Restricted");
+    }
+  });
+
   test("preserves each supported visibility value via export/import roundtrip", () => {
     const visibilities = ["Public", "Unlisted", "Org", "Restricted"] as const;
 

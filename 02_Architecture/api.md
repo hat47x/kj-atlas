@@ -130,3 +130,11 @@ MVPでは、エラーを過度に作り込まない。
 - `02_Architecture/llm_provider.md`
 - `02_Architecture/deployment.md`
 
+---
+
+## 7. Publishing metadata の扱い（FB-RM-PUB-01）
+
+- `view.json` / `packs/index.json` の `visibility` は **公開範囲ラベル用メタデータ** として扱う。
+- `visibility` の値は `Public | Unlisted | Org | Restricted` を採用し、不正値は validator で拒否する。
+- 後方互換として、`view.json` 欠損時は `Restricted`、`packs/index.json` 欠損時は `Public` を補完する。
+- `visibility` は APIの送信可否判定を上書きしない。外部送信制御は引き続き SafeMode / share/export policy を正本とする。
