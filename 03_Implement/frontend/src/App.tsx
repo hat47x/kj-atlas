@@ -54,6 +54,7 @@ import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
+import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
 import { exportCanvasToSVG } from "./export/canvas_svg";
@@ -1017,6 +1018,7 @@ export default function App() {
   const diffWorkerClientRef = useRef<DiffWorkerClient | null>(null);
   const diagnosticsWorkerClientRef = useRef<DiagnosticsWorkerClient | null>(null);
   const diffAbortRef = useRef<AbortController | null>(null);
+  const viewLocalePersistenceScopeRef = useRef(createViewLocalePersistenceScope({ docId: "", viewMode: "explore" }));
 
   useEffect(() => {
     return () => {
@@ -7115,6 +7117,7 @@ ${parsedDocument.error}`);
     applyViewPatch(preset.viewPatch);
     const currentLocale = getActiveLocale();
     saveViewLocaleForDocumentView(activeDocumentId, viewMode, currentLocale);
+    viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode: mode });
     setViewMode(mode);
     setActiveLocale(loadViewLocaleForDocumentView(activeDocumentId, mode) ?? currentLocale);
     setActivePresetId(preset.id);
@@ -7190,12 +7193,17 @@ ${parsedDocument.error}`);
   }, [activeDocumentId, viewMode]);
 
   useEffect(() => {
+    viewLocalePersistenceScopeRef.current.updateScope({ docId: activeDocumentId, viewMode });
+  }, [activeDocumentId, viewMode]);
+
+  useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
-      saveViewLocaleForDocumentView(activeDocumentId, viewMode, locale);
+      const scope = viewLocalePersistenceScopeRef.current.getScope();
+      saveViewLocaleForDocumentView(scope.docId, scope.viewMode, locale);
     });
 
     return unsubscribe;
-  }, [activeDocumentId, viewMode]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
