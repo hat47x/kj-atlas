@@ -158,6 +158,7 @@ export type ViewMetadataV1 = {
 ```
 
 - 互換方針：旧データで `visibility` が無い場合は `Restricted` を補完する。
+- strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - 安全方針：`visibility` の有無に関わらず SafeMode 既定ON・share/export 制約の既存ポリシーを維持する。
 
 ### 8.2 public pack manifest（`packs/index.json`）
@@ -178,4 +179,5 @@ export type PublicPackManifest = {
 ```
 
 - 互換方針：既存 manifest で `visibility` が無い場合は `Public` を補完する（公開配布の既存運用を維持）。
+- strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - import/export/validate は上記 enum を単一契約として扱う。

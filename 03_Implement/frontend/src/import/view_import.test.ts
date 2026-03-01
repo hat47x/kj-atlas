@@ -37,4 +37,29 @@ describe("parseViewJson", () => {
     }
   });
 
+  test("preserves each supported visibility value via export/import roundtrip", () => {
+    const visibilities = ["Public", "Unlisted", "Org", "Restricted"] as const;
+
+    for (const visibility of visibilities) {
+      const metadata = buildExportViewMetadata({
+        doc: { id: `doc-${visibility.toLowerCase()}`, title: "Doc" },
+        camera: { panX: 0, panY: 0, zoom: 1 },
+        viewState: {
+          summaryView: false,
+          abstractMapView: false,
+          hideSourceCards: false,
+          maxDepth: "all",
+          focusIslandId: null,
+          showReadingOrder: false,
+        },
+        exportMode: "viewport",
+      });
+
+      const result = parseViewJson(JSON.stringify({ ...metadata, visibility }));
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.metadata.visibility).toBe(visibility);
+      }
+    }
+  });
 });
