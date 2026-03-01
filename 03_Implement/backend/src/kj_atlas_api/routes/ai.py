@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from uuid import uuid4
 
@@ -29,6 +30,19 @@ from kj_atlas_api.models import (
 )
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+logger = logging.getLogger(__name__)
+
+
+def _audit_llm_trace(task: str, llm_response) -> None:
+    logger.info(
+        "llm_generate",
+        extra={
+            "task": task,
+            "provider": getattr(llm_response, "provider", "unknown"),
+            "transport": getattr(llm_response, "transport", "unknown"),
+            "trace_id": getattr(llm_response, "trace_id", "unknown"),
+        },
+    )
 
 
 def _resolve_reading_order(payload: CheckNarrativeRequest) -> list[str]:
@@ -475,6 +489,8 @@ def suggest_layout(payload: SuggestLayoutRequest) -> SuggestLayoutResponse:
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    _audit_llm_trace("re_layout", llm_response)
+
     transform, cards, notes = _parse_suggestion(llm_response.raw_text, payload)
 
     suggested_doc = payload.doc.model_copy(
@@ -506,6 +522,8 @@ def suggest_merges(payload: SuggestMergesRequest) -> SuggestMergesResponse:
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    _audit_llm_trace("suggest_merges", llm_response)
+
     suggestions = _parse_merge_suggestions(llm_response.raw_text, payload)
     return SuggestMergesResponse(suggestions=suggestions)
 
@@ -527,6 +545,8 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    _audit_llm_trace("suggest_island_summary", llm_response)
+
     return _parse_island_summary_response(llm_response.raw_text, payload)
 
 
@@ -544,6 +564,8 @@ def generate_narrative(payload: GenerateNarrativeRequest) -> GenerateNarrativeRe
         raise HTTPException(status_code=501, detail=str(exc)) from exc
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    _audit_llm_trace("generate_narrative", llm_response)
 
     return _parse_generate_narrative_response(llm_response.raw_text, payload)
 
@@ -563,5 +585,7 @@ def check_narrative(payload: CheckNarrativeRequest) -> CheckNarrativeResponse:
         raise HTTPException(status_code=501, detail=str(exc)) from exc
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    _audit_llm_trace("check_narrative", llm_response)
 
     return _parse_narrative_check_response(llm_response.raw_text, payload)

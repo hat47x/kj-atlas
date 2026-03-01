@@ -19,6 +19,14 @@ class Settings(BaseSettings):
         default=None,
         alias="LOCAL_LLM_MODEL",
     )
+    large_scale_llm_base_url: str | None = Field(
+        default=None,
+        alias="LARGE_SCALE_LLM_BASE_URL",
+    )
+    large_scale_llm_model: str | None = Field(
+        default=None,
+        alias="LARGE_SCALE_LLM_MODEL",
+    )
     api_key: str | None = Field(
         default=None,
         alias="API_KEY",

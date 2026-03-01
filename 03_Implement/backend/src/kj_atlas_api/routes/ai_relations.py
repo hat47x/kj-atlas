@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, HTTPException
 
@@ -6,6 +7,7 @@ from kj_atlas_api.llm.provider import LLMRequest, ProviderDisabledError, Provide
 from kj_atlas_api.models_ai import SummarizeIslandRelationRequest, SummarizeIslandRelationResponse
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+logger = logging.getLogger(__name__)
 
 
 def _validate_relation_summary_input(payload: SummarizeIslandRelationRequest) -> None:
@@ -105,5 +107,15 @@ def summarize_island_relation(payload: SummarizeIslandRelationRequest) -> Summar
         raise HTTPException(status_code=501, detail=str(exc)) from exc
     except ProviderRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    logger.info(
+        "llm_generate",
+        extra={
+            "task": "summarize_island_relation",
+            "provider": getattr(llm_response, "provider", "unknown"),
+            "transport": getattr(llm_response, "transport", "unknown"),
+            "trace_id": getattr(llm_response, "trace_id", "unknown"),
+        },
+    )
 
     return _parse_relation_summary_response(llm_response.raw_text, payload)
