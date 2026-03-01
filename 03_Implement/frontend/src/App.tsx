@@ -2445,12 +2445,12 @@ ${parsedDocument.error}`);
 
     if (metadata.viewState.focusIslandId && !hasFocusIsland) {
       setFocusTarget({});
-      setStatusMessage(`${statusPrefix}; focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
+      setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility}); focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
       return;
     }
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
-    setStatusMessage(statusPrefix);
+    setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility})`);
   }, [abstractMapView, summaryView]);
 
   const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
@@ -2529,7 +2529,7 @@ ${parsedDocument.error}`);
     }
 
     setSafeMode(true);
-    setStatusMessage(`Public pack loaded: ${targetPack.id}`);
+    setStatusMessage(`Public pack loaded: ${targetPack.id} (visibility: ${targetPack.visibility})`);
     return true;
   }, [applyImportedViewMetadata]);
 

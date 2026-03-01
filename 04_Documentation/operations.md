@@ -90,6 +90,15 @@ python3 -m http.server 4173
 
 ブラウザで `http://localhost:4173/` を開くと、`pack=public-main&readonly=1` へ自動遷移して閲覧モードで表示されます。
 
+
+#### Visibility metadata 運用（FB-RM-PUB-01）
+
+- `view.json` の `visibility` は `Public | Unlisted | Org | Restricted` のみ許可されます。
+- 既存互換のため、`view.json` で未設定なら `Restricted` として読み込みます。
+- `packs/index.json` の各packでも同じ enum を使い、未設定なら `Public` を補完します。
+- invalid値（例: `FriendsOnly`）を含む `view.json` は検証エラーとして拒否されます。
+- これらの metadata は公開意図の表示用途であり、SafeMode既定ON・read-only公開の既存制御は継続されます。
+
 #### SafeMode / 公開モード整合
 
 - 公開packを読み込んだときは Frontend 側で `safeMode=true` を強制します。

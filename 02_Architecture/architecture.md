@@ -205,3 +205,19 @@ MVPでは高度な権限管理は後回し。
 - 差分同期（リアルタイム）
 - B型文章化（要約・説明文生成）
 - 自動最適配置（正解クラスタ提示）
+
+---
+
+## 11. 公開/アクセス可視性メタデータ（FB-RM-PUB-01）
+
+公開pack（`packs/index.json`）とview metadata（`view.json`）は、共通の `visibility` 列挙値を持つ。
+
+- `"Public" | "Unlisted" | "Org" | "Restricted"`
+
+互換性と安全性の原則:
+
+- 旧 `view.json` で `visibility` 未設定時は `Restricted` として解釈する。
+- 旧 `packs/index.json` で `visibility` 未設定時は `Public` として解釈する。
+- `visibility` は表示/配布メタデータであり、MVP時点ではRBAC判定ロジックを担わない。
+- SafeMode既定ONとshare/export漏えい防止ポリシーを優先し、`visibility` 導入で既存安全制御を弱めない。
+
