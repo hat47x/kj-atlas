@@ -96,7 +96,7 @@
 | FB-RM-MID-01 | 類似度検出 | P1 | Done (2026-02-28) | `collectMergeCandidates` を導入し、normalized-text / token-signature の2段 heuristic で merge candidate をローカル生成。source/merged済み card を除外し、group/card順序を安定ソートで固定。UI導線は API 呼び出しから deterministic local batch へ置換。 | 同一入力で candidate group と group内 card 順が一致し、候補一覧で対象Cardを確認できる（AC-2B-1整合） | `FB-P2B-01` |
 | FB-RM-MID-02 | 統合候補提示 | P1 | Done (2026-02-28) | Merge Suggestions を4アクション（accept/partial/reject/defer）へ更新し、decision log (`mergeSuggestionDecisions`) を document に保存。候補再収集時に latest decision と編集済みテキストを復元し、自動 canonical merge を無効化。Frontend strict validation / backend roundtrip を同期。 | 自動確定なしで人間承認履歴が残り、保存再読込後も decision 状態を再現できる | `FB-P2B-02` |
 | FB-RM-MID-03 | 統合ログ監査 | P2 | Done (2026-02-28) | bundle export に `merge_decision_audit.json` を追加し、decisionId/groupId/decisionType/actorType/decidedAt と representative-source 追跡情報を決定論で出力。 | 同一入力で同一監査ログを出力でき、representative と source の追跡が可能 | `FB-P2B-03..04` |
-| FB-RM-MID-04 | 階層質的統合 | P1 | Planned | sub-island + 表札（見出し）カード + レベル切替UIを段階導入 | level切替で表示粒度のみ変化しデータ欠落しない | `FB-P2A-*` |
+| FB-RM-MID-04 | 階層質的統合 | P1 | Done (2026-03-01) | sub-island（`parentIslandId`）+ 表札（`placardCardId`）+ レベル切替UI（overview/mid/detail）を最小垂直スライスとして導入。missing field fallback を維持しつつ、overviewでは表札カードのみ表示、mid/detailでは全カード表示の制御を実装。collapse/hit-test/selection 回帰テストを維持し、backend roundtrip でも parent/placard 永続化を固定。 | level切替で表示粒度のみ変化し、sub-island/表札カードが保存・再読込で欠落しない | `FB-P2A-*` |
 | FB-RM-MID-05 | 構造レベル別export | P2 | Done (2026-03-01) | bundle export に `overview/detail` 粒度を追加。`bundle_manifest.json` へ粒度を記録し、overview時は selected-card trace を抑止。SharePanel で粒度選択ラジオを提供。 | 同一Documentから粒度別bundleを再現可能に生成でき、overviewではtraceを含めず俯瞰用途に固定される | `01_Plans/issues/issue-FB-RM-MID-05-structural-granularity-export.md` |
 | FB-RM-MID-06 | 共通LLM adapter | P1 | Planned | provider abstraction（none/local/large-scale）を定義し、同一枠組みで切替可能にする | decision確定APIを提供せず、provider切替でUI/監査仕様が一貫する | `P-07`, `AI-07-*` |
 
@@ -285,3 +285,12 @@
 - [x] `App.tsx` から bundle export context へ granularity を伝搬。
 - [x] `bundle_export.test.ts` / `SharePanel.test.ts` を更新し、manifest/trace抑止/UI文言を回帰固定。
 - [x] `04_Documentation/operations.md` に運用メモを追記。
+
+
+#### FB-RM-MID-04 実装TODO（完了ログ）
+
+- [x] Island に `parentIslandId` / `placardCardId` を保持する互換実装（missing field fallback）を frontend import/validation で維持した。
+- [x] SidePanel から parent island / placard card を編集可能にし、保存後の再読込で復元される導線を実装した。
+- [x] 構造レベル切替（overview/mid/detail）を View Controls とショートカット（Alt+Shift+1/2/3）で提供し、表示粒度のみを切り替える挙動を実装した。
+- [x] overview で placard 以外カードを非表示化する可視性ヘルパーとテストを追加し、データ本体を破壊しないことを回帰固定した。
+- [x] collapse_visibility/hierarchy_visibility/hierarchy_level の既存回帰を維持し、backend docs roundtrip に parent/placard 永続化アサーションを追加した。
