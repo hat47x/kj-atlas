@@ -84,6 +84,9 @@ class ProviderError(RuntimeError):
             "message": str(self),
             "provider": self.metadata.provider_name,
             "provider_kind": self.metadata.provider_kind,
+            "model_id": self.metadata.model_id,
+            "transport": self.metadata.transport,
+            "requested_at": self.metadata.requested_at,
             "trace_id": self.metadata.trace_id,
             "fallback_to_none": self.metadata.fallback_to_none,
             "execution_path": self.metadata.execution_path,
@@ -91,7 +94,10 @@ class ProviderError(RuntimeError):
 
 
 class ProviderDisabledError(ProviderError):
-    pass
+    def to_contract(self) -> dict[str, object]:
+        base = super().to_contract()
+        base["disabled_reason"] = "provider_disabled_or_none_default"
+        return base
 
 
 ProviderErrorCode = Literal["provider_timeout", "provider_validation", "provider_unavailable"]
@@ -108,6 +114,9 @@ class ProviderRequestError(ProviderError):
             "message": str(self),
             "provider": self.metadata.provider_name,
             "provider_kind": self.metadata.provider_kind,
+            "model_id": self.metadata.model_id,
+            "transport": self.metadata.transport,
+            "requested_at": self.metadata.requested_at,
             "trace_id": self.metadata.trace_id,
             "fallback_to_none": self.metadata.fallback_to_none,
             "execution_path": self.metadata.execution_path,
@@ -180,6 +189,15 @@ class LargeScaleProvider:
     provider_kind = "large-scale"
 
     def generate(self, req: LLMRequest) -> LLMResponse:
+        if not settings.llm_large_scale_opt_in:
+            metadata = _new_metadata(
+                provider_kind=self.provider_kind,
+                provider_name=self.provider_name,
+                model_id=settings.large_scale_llm_model or "unknown",
+                transport="http",
+            )
+            raise ProviderRequestError.unavailable("Large-scale provider requires explicit opt-in", metadata)
+
         if not settings.llm_escalation_enabled:
             metadata = _new_metadata(
                 provider_kind=self.provider_kind,

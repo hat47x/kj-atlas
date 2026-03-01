@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     llm_escalation_enabled: bool = Field(
         default=False,
         alias="LLM_ESCALATION_ENABLED",
+    )
+    llm_large_scale_opt_in: bool = Field(
+        default=False,
+        alias="LLM_LARGE_SCALE_OPT_IN",
     )
     large_scale_llm_allowlist: str | None = Field(
         default=None,
@@ -85,6 +89,20 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
+
+    @model_validator(mode="after")
+    def validate_llm_provider_guards(self) -> "Settings":
+        provider = self.llm_provider.strip().lower()
+        if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
+            raise ValueError(f"Unsupported LLM_PROVIDER: {self.llm_provider}")
+
+        if provider in {"large-scale", "large_scale", "external"}:
+            if not self.llm_large_scale_opt_in:
+                raise ValueError("LLM_PROVIDER=large-scale requires LLM_LARGE_SCALE_OPT_IN=true")
+            if not self.llm_escalation_enabled:
+                raise ValueError("LLM_PROVIDER=large-scale requires LLM_ESCALATION_ENABLED=true")
+
+        return self
 
 
 settings = Settings()

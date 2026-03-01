@@ -81,7 +81,10 @@ def test_ai_routes_map_provider_timeout_to_504_with_common_contract() -> None:
         with TestClient(app) as client:
             response = client.post("/ai/suggest-merges", json=_merge_payload())
         assert response.status_code == 504
-        assert response.json()["detail"]["code"] == "provider_timeout"
+        detail = response.json()["detail"]
+        assert detail["code"] == "provider_timeout"
+        assert detail["model_id"] == "model-a"
+        assert detail["transport"] == "http"
     finally:
         settings.api_key = original_api_key
         ai.generate_with_fallback = original_generate
@@ -101,7 +104,10 @@ def test_ai_relations_route_maps_provider_unavailable_to_503_with_common_contrac
         with TestClient(app) as client:
             response = client.post("/ai/summarize-island-relation", json=_relation_payload())
         assert response.status_code == 503
-        assert response.json()["detail"]["code"] == "provider_unavailable"
+        detail = response.json()["detail"]
+        assert detail["code"] == "provider_unavailable"
+        assert detail["model_id"] == "model-a"
+        assert detail["transport"] == "http"
     finally:
         settings.api_key = original_api_key
         ai_relations.generate_with_fallback = original_generate
@@ -121,7 +127,9 @@ def test_ai_routes_map_provider_disabled_to_503_with_common_contract() -> None:
         with TestClient(app) as client:
             response = client.post("/ai/suggest-merges", json=_merge_payload())
         assert response.status_code == 503
-        assert response.json()["detail"]["code"] == "provider_unavailable"
+        detail = response.json()["detail"]
+        assert detail["code"] == "provider_unavailable"
+        assert detail["disabled_reason"] == "provider_disabled_or_none_default"
     finally:
         settings.api_key = original_api_key
         ai.generate_with_fallback = original_generate
