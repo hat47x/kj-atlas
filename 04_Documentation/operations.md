@@ -210,3 +210,48 @@ curl -fsS http://localhost:4173/api/healthz
 - 組織要件でSafeMode中の監査送信が必要な場合のみ明示的に `true` を設定。
 - いずれの設定でも payload は最小化・マスキング済みを維持します。
 
+
+## i18n SafeMode 漏洩防止検証（FB-RM-I18N-06）
+
+### 1. テストマトリクス（経路 × モード × 期待値）
+
+| 経路 | モード | シナリオ | 期待値 |
+|---|---|---|---|
+| fetch/XHR/Worker | SafeMode=ON | 翻訳アダプタが外部送信を試みる実装でも、ガード経由実行 | アダプタ未実行・送信試行 0 件・`translation.safe_mode_blocked` を記録 |
+| telemetry/audit dispatch | SafeMode=ON | telemetry/audit 有効化フラグあり | dispatch 未実行（fail-safe block） |
+| telemetry dispatch | SafeMode=OFF | telemetry dispatch が例外を返す | 翻訳処理を fail-safe で停止（adapter 未実行）、`fail_safe_dispatch` を返す |
+| adapter timeout | SafeMode=OFF | タイムアウト到達 | `timeout` 返却、返却文とログが `[REDACTED]` のみ |
+| adapter error | SafeMode=OFF | adapter error | `adapter_error` 返却、ログに生テキストを含めない |
+| 正常系 | SafeMode=OFF | adapter 成功 + telemetry/audit 有効 | `success` 返却、dispatch payload は digest のみ（原文なし） |
+
+### 2. 追加ガード一覧
+
+- `runLocaleConversionWithGuard`:
+  - SafeMode 時は翻訳処理・telemetry・audit dispatch を即時遮断。
+  - telemetry/audit 送信で例外が出た場合は fail-safe（変換停止）に倒す。
+  - timeout/adapter error 時は原文ではなく `SafeModePolicy.redactText` を返す。
+  - ログは `SafeModePolicy.summarizeForSafeMode` の digest のみを記録。
+- `installNetworkLeakMonitor`:
+  - `fetch` / `XMLHttpRequest` / `Worker` をテスト時にフックし、送信経路を網羅監視。
+  - 送信試行を即時例外化して漏洩を検出可能にする。
+
+### 3. CI 組み込み方法
+
+1. Frontend の script に以下を追加済み:
+
+```bash
+npm run test:i18n-security
+```
+
+2. GitHub Actions `CI` に専用ジョブ `Frontend i18n safe-mode leakage guards` を追加済み。
+
+3. branch protection の required check に同ジョブを追加し、
+   SafeMode 漏洩テスト未通過のマージを禁止する。
+
+### 4. インシデント時手順（漏洩疑い）
+
+1. `npm run test:i18n-security` をローカルで再実行し、どの経路（fetch/XHR/worker/dispatch）で失敗したかを確認。
+2. 失敗ケースのログに原文（機微情報）が含まれていないかを確認（digestのみ許容）。
+3. 直近変更で翻訳 adapter / telemetry / audit dispatch の呼び出し位置が SafeMode 判定より先行していないかを確認。
+4. 必要なら一時的に翻訳機能を feature flag で停止し、`SafeMode=ON` 時の外部送信 0 件を復旧条件にする。
+5. 復旧後に CI の `Frontend i18n safe-mode leakage guards` を required check として再確認する。
