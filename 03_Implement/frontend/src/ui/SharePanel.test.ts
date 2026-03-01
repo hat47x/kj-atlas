@@ -109,3 +109,21 @@ describe("SharePanel bundle granularity", () => {
     expect(html).toContain("Overview (high-level summary)");
   });
 });
+
+
+describe("SharePanel patch section localization", () => {
+  it("renders Japanese patch controls", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("4) パッチ");
+    expect(html).toContain("patch.json を読み込む");
+    expect(html).toContain("6) Diff / Verify");
+  });
+
+  it("renders English patch controls", () => {
+    setActiveLocale("en");
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("4) Patch");
+    expect(html).toContain("Load patch.json");
+    expect(html).toContain("6) Diff / Verify");
+  });
+});
