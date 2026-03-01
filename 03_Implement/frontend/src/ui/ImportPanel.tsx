@@ -12,6 +12,7 @@ type ImportPanelProps = {
         cardCount: number;
         islandCount: number;
         perspectiveMode: string;
+        visibility: string;
         warningCount: number;
       }
     | null;
@@ -83,6 +84,7 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
       {importedPackSummary ? (
         <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 4 }}>
           <div>{t("import.panel.summary", { fileName: importedPackSummary.fileName, cardCount: importedPackSummary.cardCount, islandCount: importedPackSummary.islandCount, perspectiveMode: importedPackSummary.perspectiveMode })}</div>
+          <div>{`visibility: ${importedPackSummary.visibility}`}</div>
           {importedPackSummary.warningCount > 0 ? (
             <div style={{ color: "#92400e" }}>{t("import.panel.ignored_warning", { warningCount: importedPackSummary.warningCount })}</div>
           ) : null}

@@ -5,7 +5,7 @@ import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
 import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
 import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
-import { DEFAULT_VIEW_VISIBILITY, isPublishVisibility, normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
+import { isPublishVisibility, normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
 import { isLocale, type Locale } from "../i18n/translate";
 
 
@@ -107,6 +107,7 @@ export type ExportViewMetadata = {
 
 type ExportViewMetadataArgs = {
   doc: Pick<DocumentV2, "id" | "title"> | null;
+  visibility?: PublishVisibility;
   camera: {
     panX: number;
     panY: number;
@@ -183,12 +184,12 @@ function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): stri
   return `title-${hashTitle(title)}`;
 }
 
-export function buildExportViewMetadata({ doc, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog, reviewEvents }: ExportViewMetadataArgs): ExportViewMetadata {
+export function buildExportViewMetadata({ doc, visibility, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog, reviewEvents }: ExportViewMetadataArgs): ExportViewMetadata {
   return {
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
     docSignature: resolveDocSignature(doc),
-    visibility: DEFAULT_VIEW_VISIBILITY,
+    visibility: normalizeViewVisibility(visibility),
     camera: {
       panX: camera.panX,
       panY: camera.panY,
