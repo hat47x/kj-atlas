@@ -136,6 +136,10 @@ describe("SharePanel visibility controls", () => {
   it("renders visibility selector, fallback copy, and loaded pack visibility", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("View visibility");
+    expect(html).toContain('option value="Public"');
+    expect(html).toContain('option value="Unlisted"');
+    expect(html).toContain('option value="Org"');
+    expect(html).toContain('option value="Restricted"');
     expect(html).toContain("Fallback: when view visibility is missing, Restricted is applied.");
     expect(html).toContain("Loaded pack visibility: Public");
   });
