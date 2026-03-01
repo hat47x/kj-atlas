@@ -9,6 +9,7 @@ import { ImportPanel } from "./ImportPanel";
 import { getExportSafetyWarning, getSafeModeIndicator, getSafeModeLockedContextLabel } from "./safe_mode_status";
 import { t } from "../i18n/translate";
 import type { ExportGranularity } from "../export/bundle_export";
+import { PUBLISH_VISIBILITY_VALUES, type PublishVisibility } from "../domain/policy/publish_visibility";
 
 type SharePanelProps = {
   isOpen: boolean;
@@ -24,6 +25,9 @@ type SharePanelProps = {
   onExportAbstractMapMarkdownWithPng: () => void;
   onExportAbstractMapHtmlWithPng: () => void;
   safeMode: boolean;
+  viewVisibility: PublishVisibility;
+  packVisibility: PublishVisibility | null;
+  onViewVisibilityChange: (value: PublishVisibility) => void;
   onSafeModeChange: (value: boolean) => void;
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
@@ -44,6 +48,7 @@ type SharePanelProps = {
     cardCount: number;
     islandCount: number;
     perspectiveMode: string;
+    visibility: string;
     warningCount: number;
   } | null;
   pendingImportedDocumentSummary: {
@@ -124,6 +129,9 @@ export function SharePanel({
   onExportAbstractMapMarkdownWithPng,
   onExportAbstractMapHtmlWithPng,
   safeMode,
+  viewVisibility,
+  packVisibility,
+  onViewVisibilityChange,
   onSafeModeChange,
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
@@ -321,6 +329,25 @@ export function SharePanel({
                 {safeModeWarning}
               </div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
+            </div>
+            <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8 }}>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>View visibility</span>
+                <select
+                  value={viewVisibility}
+                  onChange={(event) => {
+                    if (PUBLISH_VISIBILITY_VALUES.includes(event.target.value as PublishVisibility)) {
+                      onViewVisibilityChange(event.target.value as PublishVisibility);
+                    }
+                  }}
+                >
+                  {PUBLISH_VISIBILITY_VALUES.map((value) => (
+                    <option key={value} value={value}>{value}</option>
+                  ))}
+                </select>
+              </label>
+              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when view visibility is missing, Restricted is applied.</div>
+              {packVisibility ? <div style={{ fontSize: 11, color: "#334155" }}>{`Loaded pack visibility: ${packVisibility}`}</div> : null}
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
               {t("share.panel.export.svg_viewport")}

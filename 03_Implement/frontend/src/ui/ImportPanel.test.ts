@@ -57,12 +57,14 @@ describe("ImportPanel copy", () => {
           cardCount: 2,
           islandCount: 1,
           perspectiveMode: "default",
+          visibility: "Restricted",
           warningCount: 3,
         },
       }),
     );
 
     expect(html).toContain("Imported sample.zip: cards 2, islands 1, perspective default");
+    expect(html).toContain("visibility: Restricted");
     expect(html).toContain("Ignored 3 unsupported or non-core file(s).");
   });
 });

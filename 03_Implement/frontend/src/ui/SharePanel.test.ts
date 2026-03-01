@@ -19,6 +19,9 @@ function buildProps(safeMode: boolean) {
     onExportAbstractMapMarkdownWithPng: vi.fn(),
     onExportAbstractMapHtmlWithPng: vi.fn(),
     safeMode,
+    viewVisibility: "Restricted" as const,
+    packVisibility: "Public" as const,
+    onViewVisibilityChange: vi.fn(),
     onSafeModeChange: vi.fn(),
     includeUnreviewedDrafts: false,
     onIncludeUnreviewedDraftsChange: vi.fn(),
@@ -125,5 +128,15 @@ describe("SharePanel patch section localization", () => {
     expect(html).toContain("4) Patch");
     expect(html).toContain("Load patch.json");
     expect(html).toContain("6) Diff / Verify");
+  });
+});
+
+
+describe("SharePanel visibility controls", () => {
+  it("renders visibility selector, fallback copy, and loaded pack visibility", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("View visibility");
+    expect(html).toContain("Fallback: when view visibility is missing, Restricted is applied.");
+    expect(html).toContain("Loaded pack visibility: Public");
   });
 });

@@ -133,6 +133,7 @@ import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zi
 import { validatePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
+import { DEFAULT_VIEW_VISIBILITY, type PublishVisibility } from "./domain/policy/publish_visibility";
 import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
 import { resolveViewLocale } from "./i18n/view_locale_resolution";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
@@ -902,6 +903,8 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
+  const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(DEFAULT_VIEW_VISIBILITY);
+  const [packVisibility, setPackVisibility] = useState<PublishVisibility | null>(null);
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
@@ -988,7 +991,7 @@ export default function App() {
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
   const [packImportError, setPackImportError] = useState<string | null>(null);
-  const [importedPackSummary, setImportedPackSummary] = useState<{ fileName: string; cardCount: number; islandCount: number; perspectiveMode: string; warningCount: number } | null>(null);
+  const [importedPackSummary, setImportedPackSummary] = useState<{ fileName: string; cardCount: number; islandCount: number; perspectiveMode: string; visibility: PublishVisibility; warningCount: number } | null>(null);
   const [importedPackSnapshotUrl, setImportedPackSnapshotUrl] = useState<string | null>(null);
   const [importedPackDiagnosticsMd, setImportedPackDiagnosticsMd] = useState<string | null>(null);
   const [pendingPatchImport, setPendingPatchImport] = useState<PendingPatchImport | null>(null);
@@ -1643,6 +1646,8 @@ export default function App() {
         setMergeAuditLog([]);
       setReviewEvents([]);
         setMergeSourceInfo({ kind: "unknown" });
+        setViewVisibility(DEFAULT_VIEW_VISIBILITY);
+        setPackVisibility(null);
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage("Document loaded");
       } catch (error) {
@@ -1680,6 +1685,8 @@ export default function App() {
             setMergeAuditLog([]);
       setReviewEvents([]);
             setMergeSourceInfo({ kind: "unknown" });
+            setViewVisibility(DEFAULT_VIEW_VISIBILITY);
+            setPackVisibility(null);
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage("Created a new document");
           } catch (saveError) {
@@ -2434,6 +2441,7 @@ ${parsedDocument.error}`);
     setCollapsedIslandIds(importedCollapsedIslandIds);
     setReadingIndex(metadata.viewState.readingIndex ?? 0);
     setSafeMode(metadata.viewState.safeMode ?? true);
+    setViewVisibility(metadata.visibility);
     setLodEnabled(metadata.viewState.lodEnabled ?? false);
     setLodThresholds(metadata.viewState.lodThresholds ?? DEFAULT_LOD_THRESHOLDS);
     setLodLevelOverride(metadata.viewState.lodLevelOverride ?? null);
@@ -2565,6 +2573,8 @@ ${parsedDocument.error}`);
     setImportedPackDiagnosticsMd(null);
     setImportedPackSnapshotUrl(null);
 
+    setPackVisibility(targetPack.visibility);
+
     if (targetPack.viewPath) {
       const viewResponse = await fetch(`./packs/${targetPack.viewPath}`, { cache: "no-store" });
       if (!viewResponse.ok) {
@@ -2578,6 +2588,9 @@ ${parsedDocument.error}`);
     }
 
     setSafeMode(true);
+    if (!targetPack.viewPath) {
+      setViewVisibility(DEFAULT_VIEW_VISIBILITY);
+    }
     setStatusMessage(`Public pack loaded: ${targetPack.id} (visibility: ${targetPack.visibility})`);
     return true;
   }, [applyImportedViewMetadata]);
@@ -2751,11 +2764,13 @@ ${parsedDocument.error}`);
       setImportDocumentError(null);
       setPackImportError(null);
       setMergeSourceInfo({ kind: "zip", fileName: selectedFile.name, packId: selectedFile.name.replace(/\.zip$/i, "") });
+      setPackVisibility(null);
       setImportedPackSummary({
         fileName: selectedFile.name,
         cardCount: parsedDocument.document.cards.length,
         islandCount: parsedDocument.document.islands.length,
         perspectiveMode: parsedView.metadata.viewState.perspectiveMode ?? "default",
+        visibility: parsedView.metadata.visibility,
         warningCount: zipImportResult.skippedUnsupportedCount + paths.ignoredFileCount,
       });
       setImportedPackDiagnosticsMd(diagnosticsText);
@@ -6455,6 +6470,7 @@ ${parsedDocument.error}`);
       const generatedAt = new Date().toISOString();
       const metadata = buildExportViewMetadata({
         doc: document,
+        visibility: viewVisibility,
         camera: canvasCamera,
         viewState: {
           summaryView,
@@ -6516,6 +6532,7 @@ ${parsedDocument.error}`);
       showReadingOrder,
       summaryView,
       safeMode,
+      viewVisibility,
       lodEnabled,
       lodThresholds,
       lodLevelOverride,
@@ -6541,6 +6558,7 @@ ${parsedDocument.error}`);
       const deterministicNowIso = document.updatedAt || document.createdAt;
       const viewMetadata = buildExportViewMetadata({
         doc: document,
+        visibility: viewVisibility,
         camera: canvasCamera,
         viewState: {
           summaryView,
@@ -7577,6 +7595,9 @@ ${parsedDocument.error}`);
         void handleExportAbstractMapHtmlWithPng();
       }}
       safeMode={safeMode}
+      viewVisibility={viewVisibility}
+      packVisibility={packVisibility}
+      onViewVisibilityChange={setViewVisibility}
       onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
