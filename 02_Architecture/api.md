@@ -75,6 +75,15 @@ MVPではまず LWW とし、将来 ETag を追加できる形にする。
 
 イントラ想定では一覧があると便利だが、MVPでは必須ではない。
 
+
+### 2.5 Export監査イベント（FB-RM-PUB-05）
+
+**POST** `/docs/{doc_id}/export-audit`
+
+- Request body: `{ "safeMode": boolean, "exportKind": string }`
+- Response: `{ "status": "accepted" }`
+- 目的: export完了通知を監査連携アダプタへ委譲（監査送信失敗でも本体機能を阻害しない）
+
 ---
 
 ## 3. レスポンス例（概要）
