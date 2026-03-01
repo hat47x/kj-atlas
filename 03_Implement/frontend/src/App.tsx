@@ -31,6 +31,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
+import { resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
   appendMergeSuggestionDecision,
@@ -4722,16 +4723,30 @@ ${parsedDocument.error}`);
     return perspectiveRendering.notes[0];
   }, [evidenceOverlayLodLevel, perspectiveMode, perspectiveRendering]);
 
+  const representativeOriginTraceForSelectedCard = useMemo(() => {
+    if (!document || !selectedCard || selectedCard.canonicalId) {
+      return {
+        representativeCardId: selectedCard?.id ?? "",
+        sourceCardIds: [] as string[],
+        missingSourceCardIds: [] as string[],
+      };
+    }
+
+    return resolveRepresentativeOriginTrace(document, selectedCard.id);
+  }, [document, selectedCard]);
+
   const sourceCardsForSelectedCanonical = useMemo(() => {
-    if (!document || !selectedCard || selectedCard.canonicalId || (selectedCard.sources ?? []).length === 0) {
+    if (!document || !selectedCard || selectedCard.canonicalId) {
       return [] as DocumentV2["cards"];
     }
 
     const cardsById = new Map(document.cards.map((card) => [card.id, card]));
-    return (selectedCard.sources ?? [])
+    return representativeOriginTraceForSelectedCard.sourceCardIds
       .map((sourceId) => cardsById.get(sourceId))
       .filter((card): card is DocumentV2["cards"][number] => card !== undefined);
-  }, [document, selectedCard]);
+  }, [document, representativeOriginTraceForSelectedCard.sourceCardIds, selectedCard]);
+
+  const missingSourceCardIdsForSelectedCanonical = representativeOriginTraceForSelectedCard.missingSourceCardIds;
 
   const summaryGroundingItems = useMemo<Array<{ id: string; text: string; kind: "canonical" | "source" }>>(() => {
     if (!selectedIsland || !selectedIsland.summaryGrounding || selectedIsland.summaryGrounding.length === 0) {
@@ -5018,7 +5033,7 @@ ${parsedDocument.error}`);
   }, [sourceCardsForSelectedCanonical]);
 
   useEffect(() => {
-    if (!selectedCard || selectedCard.canonicalId || sourceCardsForSelectedCanonical.length === 0) {
+    if (!selectedCard || selectedCard.canonicalId || (sourceCardsForSelectedCanonical.length === 0 && missingSourceCardIdsForSelectedCanonical.length === 0)) {
       setRevealedSourceCardIds(new Set());
       return;
     }
@@ -5031,7 +5046,7 @@ ${parsedDocument.error}`);
       }
       return nextIds;
     });
-  }, [selectedCard, sourceCardsForSelectedCanonical]);
+  }, [missingSourceCardIdsForSelectedCanonical.length, selectedCard, sourceCardsForSelectedCanonical]);
 
   const handleIslandSelect = useCallback((islandId: string, isShiftPressed: boolean) => {
     if (isPickingEdgeTarget) {
@@ -7756,6 +7771,7 @@ ${parsedDocument.error}`);
           isReadOnly={isReadOnly}
           selectedCard={selectedCard}
           sourceCardsForSelectedCanonical={sourceCardsForSelectedCanonical}
+          missingSourceCardIdsForSelectedCanonical={missingSourceCardIdsForSelectedCanonical}
           revealedSourceCardIds={revealedSourceCardIds}
           importedPackSnapshotUrl={importedPackSnapshotUrl}
           importedPackDiagnosticsMd={importedPackDiagnosticsMd}

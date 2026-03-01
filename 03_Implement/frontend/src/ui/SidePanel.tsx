@@ -43,6 +43,7 @@ type SidePanelProps = {
   isReadOnly?: boolean;
   selectedCard: Card | null;
   sourceCardsForSelectedCanonical: Card[];
+  missingSourceCardIdsForSelectedCanonical: string[];
   revealedSourceCardIds: Set<string>;
   selectedIsland: Island | null;
   selectedCardCount: number;
@@ -198,6 +199,7 @@ type SidePanelProps = {
 export function SidePanel({
   selectedCard,
   sourceCardsForSelectedCanonical,
+  missingSourceCardIdsForSelectedCanonical,
   revealedSourceCardIds,
   selectedIsland,
   selectedCardCount,
@@ -1015,6 +1017,7 @@ export function SidePanel({
   };
 
   const hasSourceCardsForSelectedCanonical = sourceCardsForSelectedCanonical.length > 0;
+  const hasMissingSourceCardsForSelectedCanonical = missingSourceCardIdsForSelectedCanonical.length > 0;
   const isShowingAllSources =
     hasSourceCardsForSelectedCanonical &&
     sourceCardsForSelectedCanonical.every((card) => revealedSourceCardIds.has(card.id));
@@ -2833,11 +2836,11 @@ export function SidePanel({
                   />
                 </>
               ) : null}
-              {!selectedCard.canonicalId && hasSourceCardsForSelectedCanonical ? (
+              {!selectedCard.canonicalId && (hasSourceCardsForSelectedCanonical || hasMissingSourceCardsForSelectedCanonical) ? (
                 <div style={{ marginBottom: 12 }}>
                   <details>
                     <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-                      Sources ({sourceCardsForSelectedCanonical.length})
+                      Origins ({sourceCardsForSelectedCanonical.length + missingSourceCardIdsForSelectedCanonical.length})
                     </summary>
                     <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
                       {sourceCardsForSelectedCanonical.map((sourceCard) => (
@@ -2860,6 +2863,23 @@ export function SidePanel({
                         >
                           {sourceCard.text.slice(0, 80)}
                         </button>
+                      ))}
+
+                      {missingSourceCardIdsForSelectedCanonical.map((sourceCardId) => (
+                        <div
+                          key={sourceCardId}
+                          style={{
+                            textAlign: "left",
+                            border: "1px dashed #fca5a5",
+                            borderRadius: 6,
+                            padding: "6px 8px",
+                            backgroundColor: "#fef2f2",
+                            color: "#991b1b",
+                            fontSize: 12,
+                          }}
+                        >
+                          {sourceCardId} (deleted source)
+                        </div>
                       ))}
                     </div>
                   </details>

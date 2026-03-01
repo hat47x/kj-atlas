@@ -51,7 +51,7 @@ docker compose logs api --tail=100
 ### Bundle export の監査ファイル
 
 - `Export bundle (.zip)` には `merge_decision_audit.json` が同梱されます。
-- 本ファイルには merge decision の監査最小情報（`decisionId` / `groupId` / `decisionType` / `actorType` / `decidedAt` / `representativeCardId` / `sourceCardIds`）を含みます。
+- 本ファイルには merge decision の監査最小情報（`decisionId` / `groupId` / `decisionType` / `actorType` / `decidedAt` / `representativeCardId` / `sourceCardIds` / `missingSourceCardIds`）を含みます。
 - 同一入力で同一出力となるよう、decision と cardIds は決定論順序で出力されます。
 
 - `bundle_manifest.json` には `exportGranularity`（`overview` / `detail`）と `generatedAt` を記録します。

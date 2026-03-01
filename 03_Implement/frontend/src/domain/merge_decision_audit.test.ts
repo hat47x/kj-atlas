@@ -58,6 +58,7 @@ describe("merge_decision_audit", () => {
         groupId: "group-2",
         representativeCardId: "c-y",
         sourceCardIds: ["c-z"],
+        missingSourceCardIds: [],
       },
       {
         actorType: "human",
@@ -69,9 +70,45 @@ describe("merge_decision_audit", () => {
         rationale: "same meaning",
         representativeCardId: "c-rep",
         sourceCardIds: ["c-a", "c-b"],
+        missingSourceCardIds: [],
       },
     ]);
   });
+
+  it("keeps missing source ids in audit entries when representative source was deleted", () => {
+    const doc = createDocument({
+      cards: [
+        { id: "c-rep", text: "canonical", x: 0, y: 0, repOf: ["c-live", "c-deleted"] },
+        { id: "c-live", text: "source live", x: 100, y: 0, mergedIntoCardId: "c-rep" },
+      ],
+      mergeSuggestionDecisions: [
+        {
+          id: "d-1",
+          groupId: "group-1",
+          decision: "accept",
+          decidedAt: "2026-01-03T00:00:00.000Z",
+          cardIds: ["c-live"],
+          mergedTextDraft: "merged",
+          editedText: "merged",
+        },
+      ],
+    });
+
+    expect(buildMergeDecisionAuditEntries(doc)).toEqual([
+      {
+        actorType: "human",
+        cardIds: ["c-live"],
+        decisionId: "d-1",
+        decisionType: "accept",
+        decidedAt: "2026-01-03T00:00:00.000Z",
+        groupId: "group-1",
+        representativeCardId: "c-rep",
+        sourceCardIds: ["c-live"],
+        missingSourceCardIds: ["c-deleted"],
+      },
+    ]);
+  });
+
 
   it("returns empty entries when no decisions are recorded", () => {
     expect(buildMergeDecisionAuditEntries(createDocument())).toEqual([]);

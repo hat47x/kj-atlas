@@ -240,6 +240,7 @@ describe("buildExportBundle", () => {
         groupId: "group-1",
         representativeCardId: "c-rep",
         sourceCardIds: ["c1", "c2"],
+        missingSourceCardIds: [],
       },
     ]);
   });

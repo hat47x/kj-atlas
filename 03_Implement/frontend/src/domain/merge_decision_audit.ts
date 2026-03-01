@@ -1,4 +1,5 @@
 import type { DocumentV2, MergeSuggestionDecisionEntry } from "./types";
+import { resolveDecisionOriginTrace } from "./merge_traceability";
 
 export type MergeDecisionAuditEntry = {
   decisionId: string;
@@ -8,35 +9,13 @@ export type MergeDecisionAuditEntry = {
   decidedAt: string;
   representativeCardId: string;
   sourceCardIds: string[];
+  missingSourceCardIds: string[];
   cardIds: string[];
   rationale?: string;
 };
 
 function sortCardIds(cardIds: string[]): string[] {
   return [...new Set(cardIds)].sort((left, right) => left.localeCompare(right));
-}
-
-function resolveRepresentativeCardId(document: DocumentV2, decisionCardIds: string[]): string {
-  const decisionSet = new Set(decisionCardIds);
-  const representativeFromRepOf = document.cards.find((card) => {
-    if (!card.repOf || card.repOf.length === 0) {
-      return false;
-    }
-    return card.repOf.some((sourceId) => decisionSet.has(sourceId));
-  });
-  if (representativeFromRepOf) {
-    return representativeFromRepOf.id;
-  }
-
-  return decisionCardIds[0] ?? "";
-}
-
-function resolveSourceCardIds(document: DocumentV2, representativeCardId: string, decisionCardIds: string[]): string[] {
-  const representative = document.cards.find((card) => card.id === representativeCardId);
-  if (representative?.repOf && representative.repOf.length > 0) {
-    return sortCardIds(representative.repOf);
-  }
-  return sortCardIds(decisionCardIds.filter((cardId) => cardId !== representativeCardId));
 }
 
 export function buildMergeDecisionAuditEntries(document: DocumentV2): MergeDecisionAuditEntry[] {
@@ -50,7 +29,7 @@ export function buildMergeDecisionAuditEntries(document: DocumentV2): MergeDecis
 
   return decisions.map((decision) => {
     const cardIds = sortCardIds(decision.cardIds);
-    const representativeCardId = resolveRepresentativeCardId(document, cardIds);
+    const originTrace = resolveDecisionOriginTrace(document, cardIds);
 
     return {
       decisionId: decision.id,
@@ -58,8 +37,9 @@ export function buildMergeDecisionAuditEntries(document: DocumentV2): MergeDecis
       decisionType: decision.decision,
       actorType: "human",
       decidedAt: decision.decidedAt,
-      representativeCardId,
-      sourceCardIds: resolveSourceCardIds(document, representativeCardId, cardIds),
+      representativeCardId: originTrace.representativeCardId,
+      sourceCardIds: originTrace.sourceCardIds,
+      missingSourceCardIds: originTrace.missingSourceCardIds,
       cardIds,
       rationale: decision.rationale,
     };
