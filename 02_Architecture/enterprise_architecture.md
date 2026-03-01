@@ -176,22 +176,24 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 
 > 目的: `roles` / `groups` / `policyRef` を使った判定は **必ず外部アダプタへ委譲**し、アプリ本体にRBACロジックを持ち込まない。
 
-#### I/F仕様（入力・出力・失敗時）
+#### インターフェース定義（実装可能仕様）
+
+##### 1) 型契約（roles/groups/policyRef の必須/任意/null許容を明示）
 
 ```ts
 type AccessAction = "read" | "write" | "export" | "share";
 type Visibility = "Public" | "Unlisted" | "Org" | "Restricted";
 
 type AuthContext = {
-  actorRef?: string;
-  roles?: string[];
-  groups?: string[];
+  actorRef?: string | null;
+  roles?: string[] | null;
+  groups?: string[] | null;
 };
 
 type AccessResource = {
   docId: string;
-  visibility?: Visibility;
-  policyRef?: string;
+  visibility?: Visibility | null;
+  policyRef?: string | null;
 };
 
 type AccessRequest = {
@@ -210,7 +212,46 @@ type AccessDecision = {
 
 interface AccessControlAdapter {
   name: string;
-  authorize(request: AccessRequest): AccessDecision;
+  authorize(request: AccessRequest): AccessDecision | Promise<AccessDecision>;
+}
+```
+
+| フィールド | 型 | 必須 | null許容 | 正規化ルール |
+|---|---|---:|---:|---|
+| `subject.roles` | `string[]` | 任意 | 許容 | API層で `null` を `[]` に正規化してアダプタへ渡す |
+| `subject.groups` | `string[]` | 任意 | 許容 | API層で `null` を `[]` に正規化してアダプタへ渡す |
+| `resource.policyRef` | `string` | 任意 | 許容 | trim後に空文字なら `null` 扱い |
+
+補足:
+
+- `roles/groups/policyRef` は **判定入力の運搬専用** であり、アプリ本体は意味解釈をしない。
+- ヘッダ入力（`x-auth-roles`/`x-auth-groups`/`x-policy-ref`）と内部DTOの差分吸収（trim, split, null補完）は API境界の責務。
+
+##### 2) JSON例（API → AccessControlAdapter）
+
+```json
+{
+  "action": "export",
+  "subject": {
+    "actorRef": "user:7f2f2e26",
+    "roles": ["editor", "risk-reviewer"],
+    "groups": ["org:policy-team"]
+  },
+  "resource": {
+    "docId": "doc_01JX6J6C2QW",
+    "visibility": "Org",
+    "policyRef": "opa://kj-atlas/org-default/v3"
+  },
+  "safeMode": true,
+  "readOnly": false
+}
+```
+
+```json
+{
+  "allow": false,
+  "readOnly": true,
+  "reason": "policy_ref_unreachable"
 }
 ```
 
@@ -218,24 +259,83 @@ interface AccessControlAdapter {
 - 出力責務: `allow/readOnly/reason` を返す。ロール評価規則はアダプタ外部責務。
 - 失敗時: アダプタ応答不能は運用層で扱い、アプリ本体は `reason` 付き拒否または既定fail-safeを適用する。
 
+#### 責務境界マトリクス（アプリ内責務 / 外部責務）
+
+| 領域 | アプリ内責務（KJ Atlas） | 外部責務（IdP/Policy Engine/Audit基盤） |
+|---|---|---|
+| 判定入力の組み立て | `action/subject/resource/safeMode/readOnly` を収集・正規化 | なし |
+| 認可判定 | `AccessDecision` を解釈して allow/deny/readOnly を反映 | roles/groups/policyRef を評価して判定を返す |
+| 拒否理由 | `reason` をUI/レスポンス/監査メタへ受け渡し | 理由コードの生成・粒度管理 |
+| 監査イベント | 最小監査イベントを生成し送信（fail-open方針） | 集約・保管・相関分析・アラート |
+| ポリシー配布 | `policyRef` を透過的に保持 | policyRef解決、版管理、失効、検証 |
+
 #### 本体側の最小ガード（RBAC非実装）
 
 - `readOnly=true` のとき `write/export/share` を拒否する。
 - `safeMode` は既存の share/export 制約を維持し、AccessControlAdapter はその制約を緩和しない。
 - `visibility` は公開ラベルとして扱い、詳細認可条件（roles/groups）は解釈しない。
 
-#### `policyRef` 未設定時の fail-safe
+#### フォールバック仕様（policyRef不達・無効時 fail-safe）
 
-- 対象: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
-- 既定: `read_only`（readのみ許可、write/export/share拒否）。
-- 厳格運用オプション: `deny`（read含めて拒否）。
-- `visibility` が未指定または `Public/Unlisted` のときは fail-safe を適用しない。
+| 条件 | 既定挙動（`ACCESS_CONTROL_FAIL_SAFE_MODE=read_only`） | 厳格挙動（`deny`） | `reason` |
+|---|---|---|---|
+| `visibility in {Org, Restricted}` かつ `policyRef` 欠損/空 | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `policy_ref_missing` |
+| `policyRef` 解決不能（DNS/接続/timeout） | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `policy_ref_unreachable` |
+| `policyRef` 形式不正・署名不正・失効 | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `policy_ref_invalid` |
+| アダプタ内部例外/想定外レスポンス | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `adapter_error` |
 
-#### 監査イベントとの接続点
+- `visibility` が未指定または `Public/Unlisted` のときは上表の強制fail-safeを適用しない。
+- SafeMode既定ONは常に優先し、fail-safe経路でも export/share 制約を緩和しない。
+
+#### visibility（PUB-01）との整合ルール
+
+1. `visibility` は公開範囲ラベルであり、**単独で認可可否を確定しない**。
+2. 判定優先順位は `SafeMode` → `readOnly` → `AccessDecision` → `visibilityラベル`。
+3. `visibility=Public` でも SafeMode/readOnly/外部判定で拒否され得る。
+4. `visibility=Org|Restricted` は policyRef連携の前提を強めるが、評価ロジック自体は外部委譲のまま維持する。
+5. `view.json` / `packs/index.json` の互換既定値（Restricted/Public）は既存仕様を維持する。
+
+#### 監査イベント最小情報（PII非保存）
+
+| 項目 | 必須 | 内容 | PII方針 |
+|---|---:|---|---|
+| `eventType` | 必須 | `view` / `export` / `access_denied` | PIIなし |
+| `eventVersion` | 必須 | 監査スキーマ版（例: `1`） | PIIなし |
+| `occurredAt` | 必須 | ISO-8601 UTC時刻 | PIIなし |
+| `docId` | 必須 | 文書識別子 | 本文・タイトル非保存 |
+| `action` | 必須 | `read|write|export|share` | PIIなし |
+| `decision.allow` | 必須 | true/false | PIIなし |
+| `decision.readOnly` | 任意 | true/false | PIIなし |
+| `decision.reason` | 任意 | 理由コード（定義済み語彙のみ） | 自由入力禁止 |
+| `visibility` | 任意 | `Public|Unlisted|Org|Restricted` | PIIなし |
+| `policyRefPresent` | 必須 | boolean（値自体は保存しない） | policyRef生値非保存 |
+| `adapterName` | 任意 | adapter識別子 | PIIなし |
+| `traceId` | 任意 | 相関ID | actor個人情報と分離 |
 
 - `action=read` は閲覧監査イベント（`eventType=view`）へ接続。
 - `action=export` はエクスポート監査イベント（`eventType=export`）へ接続。
-- AccessDecisionの `reason` / `policyRef` 有無は監査メタデータへ付加可能（PII非保存・既存マスキング規則準拠）。
+- `policyRef` 生値・`roles/groups` 生値・ドキュメント本文は監査に保存しない。
+
+#### セキュリティ観点チェックリスト
+
+- [ ] アプリ本体に role/group 評価式（`if role == ...`）を実装していない。
+- [ ] `AccessControlAdapter` 未設定時でも SafeMode既定ONが維持される。
+- [ ] `policyRef` の空文字/空白/不正形式を `invalid or missing` として fail-safe へ倒せる。
+- [ ] deny理由はコード化された語彙のみを返し、内部例外文字列を露出しない。
+- [ ] 監査イベントに PII（氏名/メール/本文/roles/groups生値）を残さない。
+- [ ] 監査送信失敗時に本体機能を停止しない（fail-open）一方、失敗件数は運用監視で観測できる。
+- [ ] `visibility` 追加によって readOnly/SafeMode の拒否強度が弱まらない。
+- [ ] `ACCESS_CONTROL_FAIL_SAFE_MODE` の既定値が `read_only` である。
+
+#### 受入基準（DoD）
+
+1. `roles/groups/policyRef` の型契約（必須/任意/null許容）が API仕様と実装で一致している。
+2. AccessControlAdapter を無効化/差し替えしても、アプリ本体にRBAC判定分岐が追加されない。
+3. `policyRef` 欠損・不達・無効・adapter例外の4系統で、fail-safe (`read_only` or `deny`) が再現できる。
+4. `visibility` と認可の整合（PUB-01）が満たされ、SafeMode/readOnly優先の判定順が崩れない。
+5. 監査イベントが最小情報のみを記録し、PII非保存要件を満たす。
+6. 403レスポンスと監査イベントの `reason` が同一コード語彙で照合できる。
+7. ドキュメント（`enterprise_architecture.md` と `api.md`）の契約記述が同期している。
 
 ## 4.4 方式C：ハイブリッド（現実解）
 
@@ -331,4 +431,3 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 という前提を明確にし、
 
 “組み込まれるOSS” として成立させる。
-
