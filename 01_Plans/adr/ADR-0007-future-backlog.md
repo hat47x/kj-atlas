@@ -105,7 +105,7 @@
 | ID | 優先度 | 状態 | 具体アクション | DoD（完了条件） |
 |---|---|---|---|---|
 | FB-RM-I18N-01 | P1 | Done (2026-02-28) | `src/i18n/messages.ts` と `src/i18n/translate.ts` を追加し、ImportPanel / SharePanel（Export〜Load document） / safe_mode_status の主要文言を辞書キー経由へ移行。placeholder補間と unknown-key fallback を実装し、UI回帰テストを追加。 | 主要画面の表示文言が辞書経由で解決され、既存コピー互換とfallback挙動がテストで固定される |
-| FB-RM-I18N-02 | P1 | Planned | 翻訳JSONフォーマットとfallback順序を固定 | 欠損キー時に既定言語へフォールバック |
+| FB-RM-I18N-02 | P1 | Done (2026-03-01) | `src/i18n/locales/{ja,en}.json` を導入し、`t()` を `requested locale -> default locale (ja) -> key` 順で解決する契約へ更新。`validateLocaleMessages` / `resolveTemplate` を追加し、欠損キー時に既定言語へ復元するテストを固定。 | JSON辞書契約とfallback順序がコード/テストで固定され、locale欠損時でもUI文言が既定言語で解決される |
 | FB-RM-I18N-03 | P2 | Planned | 英語UIを機能等価で提供 | 日本語/英語で機能差がない |
 | FB-RM-I18N-04 | P2 | Planned | view単位言語設定を保存 | view切替後も表示言語が保持される |
 | FB-RM-I18N-05 | P2 | Planned | `document.json` 言語非依存を検証する互換テストを追加 | 言語変更前後でdocument hashが不変 |
@@ -257,3 +257,12 @@
 - [x] `src/domain/merge_decision_audit.test.ts` を追加し、代表カード解決と source 追跡・時系列安定ソートを回帰固定。
 - [x] `src/export/bundle_export.test.ts` を拡張し、bundle出力に監査JSONが含まれることと payload 内容を回帰固定。
 - [x] `04_Documentation/operations.md` に bundle監査ファイルの運用メモを追加。
+
+
+#### FB-RM-I18N-02 実装TODO（完了ログ）
+
+- [x] locale JSONフォーマット（`src/i18n/locales/ja.json`, `en.json`）を追加。
+- [x] `t()` の解決順序を `requested locale -> default locale (ja) -> key` へ固定。
+- [x] `validateLocaleMessages` で JSON object + string value 契約を検証。
+- [x] `translate.test.ts` に locale fallback / unknown key / 契約検証テストを追加。
+- [x] Import/Share/SafeMode 文言の回帰テストを再実行し互換を確認。

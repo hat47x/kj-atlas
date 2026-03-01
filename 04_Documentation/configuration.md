@@ -91,3 +91,15 @@ docker compose up -d
 
 最小運用の保護策（リバースプロキシ/TLS、IP制限、Basic認証、API_KEY など）は
 [security.md](./security.md) を参照してください。
+
+
+## 6. フロントエンドi18n辞書契約（FB-RM-I18N-02）
+
+翻訳辞書は `03_Implement/frontend/src/i18n/locales/*.json` を正本とします。
+
+- フォーマット: `{"<message.key>": "<localized string>"}` の JSON object
+- 値型: すべて string（`validateLocaleMessages` で検証）
+- 解決順序: `requested locale -> default locale (ja) -> key literal`
+
+この順序により、要求locale側でキー欠損があっても既定言語（ja）へ復元され、
+ja側にも存在しないキーのみ最終的に key 文字列を返します。
