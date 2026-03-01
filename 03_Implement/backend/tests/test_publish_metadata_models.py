@@ -75,6 +75,58 @@ def test_public_pack_manifest_accepts_all_visibility_enum_values() -> None:
     assert [entry.visibility for entry in manifest.packs] == ["Public", "Unlisted", "Org", "Restricted"]
 
 
+def test_view_metadata_accepts_all_visibility_enum_values() -> None:
+    visibilities = ["Public", "Unlisted", "Org", "Restricted"]
+
+    loaded = [
+        ViewMetadata.model_validate(
+            {
+                "version": "1",
+                "generatedAt": "2026-03-01T00:00:00.000Z",
+                "docSignature": f"doc-{visibility.lower()}",
+                "visibility": visibility,
+            }
+        )
+        for visibility in visibilities
+    ]
+
+    assert [metadata.visibility for metadata in loaded] == visibilities
+
+
+@pytest.mark.parametrize("invalid_visibility", ["public", "", None, 1, {"value": "Org"}])
+def test_view_metadata_rejects_non_enum_visibility_types(invalid_visibility: object) -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        ViewMetadata.model_validate(
+            {
+                "version": "1",
+                "generatedAt": "2026-03-01T00:00:00.000Z",
+                "docSignature": "doc-invalid-typed",
+                "visibility": invalid_visibility,
+            }
+        )
+
+    assert "visibility" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("invalid_visibility", ["private", "", None, 1, {"value": "Org"}])
+def test_public_pack_manifest_rejects_non_enum_visibility_types(invalid_visibility: object) -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        PublicPackManifest.model_validate(
+            {
+                "packs": [
+                    {
+                        "id": "main",
+                        "documentPath": "main.document.json",
+                        "viewPath": "main.view.json",
+                        "visibility": invalid_visibility,
+                    }
+                ]
+            }
+        )
+
+    assert "visibility" in str(excinfo.value)
+
+
 def test_view_metadata_roundtrip_keeps_visibility_after_put_get_cycle() -> None:
     put_payload = {
         "version": "1",
