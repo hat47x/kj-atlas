@@ -19,6 +19,21 @@ type LocaleValidationResult = {
   errors: string[];
 };
 
+function isTemplateWellFormed(template: string): boolean {
+  if (template.includes("{") !== template.includes("}")) {
+    return false;
+  }
+
+  const openings = template.match(/\{/g)?.length ?? 0;
+  const closings = template.match(/\}/g)?.length ?? 0;
+  if (openings !== closings) {
+    return false;
+  }
+
+  const stripped = template.replace(/\{[a-zA-Z0-9_]+\}/g, "");
+  return !stripped.includes("{") && !stripped.includes("}");
+}
+
 export function isLocale(value: string): value is Locale {
   return SUPPORTED_LOCALES.includes(value as Locale);
 }
@@ -62,12 +77,12 @@ export function resolveTemplateFromCatalogs(
   catalogs: Record<Locale, MessageCatalog>,
 ): string {
   const requestedTemplate = catalogs[requestedLocale]?.[key];
-  if (typeof requestedTemplate === "string") {
+  if (typeof requestedTemplate === "string" && isTemplateWellFormed(requestedTemplate)) {
     return requestedTemplate;
   }
 
   const defaultTemplate = catalogs[DEFAULT_LOCALE]?.[key];
-  if (typeof defaultTemplate === "string") {
+  if (typeof defaultTemplate === "string" && isTemplateWellFormed(defaultTemplate)) {
     return defaultTemplate;
   }
 
