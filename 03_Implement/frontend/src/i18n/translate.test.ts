@@ -43,6 +43,24 @@ describe("translate", () => {
     expect(t("unknown.key" as string, undefined, "en")).toBe("unknown.key");
   });
 
+  it("falls back to default locale when requested locale template is broken", () => {
+    const catalogs = {
+      ja: { "sample.template": "値: {value}" },
+      en: { "sample.template": "Value: {value" },
+    };
+
+    expect(resolveTemplateFromCatalogs("sample.template", "en", catalogs)).toBe("値: {value}");
+  });
+
+  it("falls back to key when all locale templates are broken", () => {
+    const catalogs = {
+      ja: { "sample.template": "値: {value" },
+      en: { "sample.template": "Value: {value" },
+    };
+
+    expect(resolveTemplateFromCatalogs("sample.template", "en", catalogs)).toBe("sample.template");
+  });
+
   it("supports locale override for known locale", () => {
     expect(t("share.panel.export.bundle_cancel", undefined, "en")).toBe("Cancel");
   });
