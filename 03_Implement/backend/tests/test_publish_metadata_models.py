@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from kj_atlas_api.models_publish import PublicPackManifest, ViewMetadata
 
@@ -32,7 +33,7 @@ def test_public_pack_manifest_visibility_fallback_for_legacy_payload() -> None:
 
 
 def test_view_metadata_rejects_invalid_visibility() -> None:
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         ViewMetadata.model_validate(
             {
                 "version": "1",
@@ -46,7 +47,7 @@ def test_view_metadata_rejects_invalid_visibility() -> None:
 
 
 def test_public_pack_manifest_rejects_invalid_entry_instead_of_filtering() -> None:
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValidationError) as excinfo:
         PublicPackManifest.model_validate(
             {
                 "packs": [
@@ -72,3 +73,50 @@ def test_public_pack_manifest_accepts_all_visibility_enum_values() -> None:
     )
 
     assert [entry.visibility for entry in manifest.packs] == ["Public", "Unlisted", "Org", "Restricted"]
+
+
+def test_view_metadata_roundtrip_keeps_visibility_after_put_get_cycle() -> None:
+    put_payload = {
+        "version": "1",
+        "generatedAt": "2026-03-01T00:00:00.000Z",
+        "docSignature": "doc-roundtrip",
+        "visibility": "Org",
+    }
+
+    stored = ViewMetadata.model_validate(put_payload)
+    get_payload = stored.model_dump(mode="json")
+    loaded = ViewMetadata.model_validate(get_payload)
+
+    assert loaded.visibility == "Org"
+    assert get_payload["visibility"] == "Org"
+
+
+def test_view_metadata_roundtrip_fills_missing_visibility_and_emits_it() -> None:
+    legacy_put_payload = {
+        "version": "1",
+        "generatedAt": "2026-03-01T00:00:00.000Z",
+        "docSignature": "doc-legacy-roundtrip",
+    }
+
+    stored = ViewMetadata.model_validate(legacy_put_payload)
+    get_payload = stored.model_dump(mode="json")
+
+    assert stored.visibility == "Restricted"
+    assert get_payload["visibility"] == "Restricted"
+
+
+def test_public_pack_manifest_roundtrip_fills_missing_visibility_and_emits_it() -> None:
+    legacy_manifest = {
+        "defaultPackId": "main",
+        "packs": [
+            {"id": "main", "documentPath": "main.document.json", "viewPath": "main.view.json"},
+        ],
+    }
+
+    stored = PublicPackManifest.model_validate(legacy_manifest)
+    get_payload = stored.model_dump(mode="json")
+    loaded = PublicPackManifest.model_validate(get_payload)
+
+    assert stored.packs[0].visibility == "Public"
+    assert get_payload["packs"][0]["visibility"] == "Public"
+    assert loaded.packs[0].visibility == "Public"
