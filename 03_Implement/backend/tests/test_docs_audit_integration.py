@@ -70,13 +70,31 @@ def test_get_document_emits_view_audit_event(tmp_path) -> None:
         put_resp = client.put("/docs/doc-view", json=payload)
         assert put_resp.status_code == 200
 
-        get_resp = client.get("/docs/doc-view", headers={"x-actor-ref": "user-1"})
+        get_resp = client.get(
+            "/docs/doc-view",
+            headers={
+                "x-actor-ref": "user-1",
+                "x-auth-roles": "admin",
+                "x-auth-groups": "team-a",
+                "x-policy-ref": "secret-policy-v1",
+                "x-doc-visibility": "Org",
+                "x-trace-id": "trace-view-1",
+            },
+        )
         assert get_resp.status_code == 200
 
     assert len(spy.events) == 1
     event = spy.events[0]
     assert event.eventType == "view"
     assert event.docId == "doc-view"
+    assert event.metadata["decision_allow"] is True
+    assert event.metadata["policyRefPresent"] is True
+    assert event.metadata["visibility"] == "Org"
+    assert event.metadata["traceId"] == "trace-view-1"
+    metadata_json = str(event.metadata)
+    assert "secret-policy-v1" not in metadata_json
+    assert "team-a" not in metadata_json
+    assert "admin" not in metadata_json
 
 
 
@@ -87,7 +105,7 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
         response = client.post(
             "/docs/doc-export/export-audit",
             json={"safeMode": False, "exportKind": "bundle"},
-            headers={"x-actor-ref": "user-2"},
+            headers={"x-actor-ref": "user-2", "x-trace-id": "trace-export-1"},
         )
         assert response.status_code == 200
         assert response.json() == {"status": "accepted"}
@@ -97,3 +115,5 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.eventType == "export"
     assert event.docId == "doc-export"
     assert event.safeMode is False
+    assert event.metadata["action"] == "export"
+    assert event.metadata["traceId"] == "trace-export-1"

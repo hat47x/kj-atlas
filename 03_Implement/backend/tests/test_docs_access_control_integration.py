@@ -7,7 +7,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from kj_atlas_api.access_control import AccessDecision
+from kj_atlas_api.access_control import (
+    AccessControlInvalidPolicyError,
+    AccessControlUnreachableError,
+    AccessDecision,
+)
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
@@ -25,6 +29,27 @@ class AllowAllAdapter:
 
     def authorize(self, request):  # noqa: ANN001
         return AccessDecision(allow=True)
+
+
+class UnreachableAdapter:
+    name = "unreachable"
+
+    def authorize(self, request):  # noqa: ANN001
+        raise AccessControlUnreachableError("timeout")
+
+
+class InvalidPolicyAdapter:
+    name = "invalid-policy"
+
+    def authorize(self, request):  # noqa: ANN001
+        raise AccessControlInvalidPolicyError("bad signature")
+
+
+class CrashAdapter:
+    name = "crash"
+
+    def authorize(self, request):  # noqa: ANN001
+        raise RuntimeError("unexpected adapter exception")
 
 
 @contextmanager
@@ -113,6 +138,80 @@ def test_fail_safe_read_only_blocks_write_export_but_allows_read(tmp_path) -> No
     assert read_resp.status_code == 200
     assert write_resp.status_code == 403
     assert export_resp.status_code == 403
+
+
+def test_fail_safe_unreachable_policy_ref_blocks_export_with_reason(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = UnreachableAdapter()
+        client.app.state.access_control_fail_safe_mode = "deny"
+
+        response = client.post(
+            "/docs/doc-unreachable/export-audit",
+            json={"safeMode": False, "exportKind": "bundle"},
+            headers={"x-doc-visibility": "Restricted", "x-policy-ref": "org-policy-v1"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: policy_ref_unreachable"
+
+
+def test_fail_safe_invalid_policy_ref_blocks_write_with_reason(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = InvalidPolicyAdapter()
+        client.app.state.access_control_fail_safe_mode = "deny"
+
+        response = client.put(
+            "/docs/doc-invalid",
+            json=_sample_payload("doc-invalid"),
+            headers={"x-doc-visibility": "Org", "x-policy-ref": "org-policy-v1"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: policy_ref_invalid"
+
+
+def test_fail_safe_adapter_exception_blocks_read_with_reason(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = CrashAdapter()
+        client.app.state.access_control_fail_safe_mode = "deny"
+
+        response = client.get(
+            "/docs/doc-crash",
+            headers={"x-doc-visibility": "Org", "x-policy-ref": "org-policy-v1"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: adapter_error"
+
+
+def test_safe_mode_priority_blocks_export_before_adapter_allow(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+
+        response = client.post(
+            "/docs/doc-safe-mode/export-audit",
+            json={"safeMode": True, "exportKind": "bundle"},
+            headers={"x-doc-visibility": "Public", "x-policy-ref": "public-policy-v1"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: safe_mode"
+
+
+def test_read_only_priority_blocks_write_before_adapter_allow(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+
+        response = client.put(
+            "/docs/doc-read-only",
+            json=_sample_payload("doc-read-only"),
+            headers={"x-read-only": "true", "x-doc-visibility": "Public", "x-policy-ref": "public-policy-v1"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: read_only"
 
 
 def test_adapter_denial_prevents_role_header_privilege_escalation(tmp_path) -> None:

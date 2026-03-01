@@ -147,9 +147,10 @@ roles/groups/policyRef に基づく認可判定は、API本体ではなく `Acce
 ### 8.1 入力（API → adapter/hook）
 
 - `action`: `read | write | export | share`
-- `subject.actorRef`: `x-actor-ref` ヘッダ（任意）
-- `subject.roles`: `x-auth-roles` ヘッダ（`,` 区切り、任意）
-- `subject.groups`: `x-auth-groups` ヘッダ（`,` 区切り、任意）
+- `auth.actorRef`: `x-actor-ref` ヘッダ（任意）
+- `auth.roles`: `x-auth-roles` ヘッダ（`,` 区切り、任意）
+- `auth.groups`: `x-auth-groups` ヘッダ（`,` 区切り、任意）
+- `auth.traceId`: `x-trace-id` ヘッダ（任意）
 - `resource.visibility`: `x-doc-visibility` ヘッダ（`Public | Unlisted | Org | Restricted`）
 - `resource.policyRef`: `x-policy-ref` ヘッダ（任意）
 - `safeMode`: ルート側のsafeMode（export-auditではpayload.safeMode）
@@ -177,16 +178,26 @@ type AccessDecision = {
 
 ### 8.3 fail-safe
 
+SafeMode/readOnly 優先順:
+
+1. `safeMode=true` かつ `action in {export, share}` は常に拒否（`reason=safe_mode`）
+2. `readOnly=true` かつ `action in {write, export, share}` は常に拒否（`reason=read_only`）
+3. その後に adapter判定と policyRef fail-safe を評価
+
+
 - 条件: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
 - 既定 `read_only`: `read` のみ許可、`write/export/share` は `403`。
 - オプション `deny`: 全アクション `403`。
 - 実装パラメータ: `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
 
-追加条件:
+fail-safe マトリクス:
 
-- `policyRef` 不達（接続失敗/timeout）・無効（形式不正/失効）・adapter例外でも fail-safe を適用する。
-- 上記時の `reason` は `policy_ref_unreachable | policy_ref_invalid | adapter_error` の定義済みコードを使う。
-- `visibility` が `Public/Unlisted` の場合は強制fail-safe対象外。
+- `policyRef` 欠損/空白（`visibility in {Org, Restricted}`）: `policy_ref_missing`
+- `policyRef` 不達（接続失敗/timeout）: `policy_ref_unreachable`
+- `policyRef` 無効（形式不正/失効/署名不正）: `policy_ref_invalid`
+- adapter例外/想定外応答: `adapter_error`
+
+上記4系統は `ACCESS_CONTROL_FAIL_SAFE_MODE` に従い `read_only` または `deny` へ倒す。`visibility` が `Public/Unlisted` の場合は欠損系の強制fail-safe対象外。
 
 ### 8.4 監査イベント連携点
 

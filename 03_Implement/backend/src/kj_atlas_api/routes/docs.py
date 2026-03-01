@@ -6,12 +6,15 @@ from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import (
+    AccessDecision,
     AccessRequest,
     AccessResource,
-    AccessSubject,
-    apply_local_failsafe,
+    AuthContext,
     enforce_access,
+    normalize_policy_ref,
     parse_csv_header,
+    parse_visibility,
+    resolve_access_decision,
 )
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.db import get_db
@@ -29,26 +32,37 @@ def _authorize_request(
     doc_id: str,
     safe_mode: bool,
     read_only: bool,
-) -> None:
+) -> tuple[AccessRequest, AccessDecision]:
     adapter = getattr(request.app.state, "access_control_adapter", None)
     if adapter is None:
-        return
+        access_request = AccessRequest(
+            action=action,
+            safe_mode=safe_mode,
+            read_only=read_only,
+            auth=AuthContext(actor_ref=request.headers.get("x-actor-ref"), trace_id=request.headers.get("x-trace-id")),
+            resource=AccessResource(
+                doc_id=doc_id,
+                visibility=parse_visibility(request.headers.get("x-doc-visibility")),
+                policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
+            ),
+        )
+        decision = AccessDecision(allow=True)
+        return access_request, decision
 
-    visibility = request.headers.get("x-doc-visibility")
-    policy_ref = request.headers.get("x-policy-ref")
     access_request = AccessRequest(
         action=action,
         safe_mode=safe_mode,
         read_only=read_only,
-        subject=AccessSubject(
+        auth=AuthContext(
             actor_ref=request.headers.get("x-actor-ref"),
             roles=parse_csv_header(request.headers.get("x-auth-roles")),
             groups=parse_csv_header(request.headers.get("x-auth-groups")),
+            trace_id=request.headers.get("x-trace-id"),
         ),
         resource=AccessResource(
             doc_id=doc_id,
-            visibility=visibility if visibility in {"Public", "Unlisted", "Org", "Restricted"} else None,
-            policy_ref=policy_ref,
+            visibility=parse_visibility(request.headers.get("x-doc-visibility")),
+            policy_ref=normalize_policy_ref(request.headers.get("x-policy-ref")),
         ),
     )
 
@@ -56,20 +70,9 @@ def _authorize_request(
     if fail_safe_mode not in {"deny", "read_only"}:
         fail_safe_mode = "read_only"
 
-    fail_safe_decision = apply_local_failsafe(access_request, fail_safe_mode)
-    if fail_safe_decision is not None:
-        enforce_access(fail_safe_decision, action=action)
-        return
-
-    if access_request.read_only and action in {"write", "export", "share"}:
-        enforce_access(
-            decision=adapter.authorize(access_request),
-            action=action,
-        )
-        raise HTTPException(status_code=403, detail="Access denied: read_only")
-
-    decision = adapter.authorize(access_request)
+    decision = resolve_access_decision(adapter=adapter, request=access_request, fail_safe_mode=fail_safe_mode)
     enforce_access(decision, action=action)
+    return access_request, decision
 
 
 def _compute_etag(payload_json: str) -> str:
@@ -101,7 +104,7 @@ def get_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    _authorize_request(request, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision = _authorize_request(request, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     doc_row = db.get(DocumentRow, doc_id)
     if doc_row is None:
@@ -121,6 +124,14 @@ def get_document(
                 metadata={
                     "route": f"/docs/{doc_id}",
                     "method": "GET",
+                    "action": access_request.action,
+                    "decision_allow": decision.allow,
+                    "decision_read_only": decision.read_only,
+                    "decision_reason": decision.reason,
+                    "visibility": access_request.resource.visibility,
+                    "policyRefPresent": access_request.resource.policy_ref is not None,
+                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "traceId": access_request.auth.trace_id,
                 },
             )
         )
@@ -185,7 +196,7 @@ def post_export_audit(
     request: Request,
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
 ) -> dict[str, str]:
-    _authorize_request(request, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision = _authorize_request(request, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(
@@ -198,6 +209,14 @@ def post_export_audit(
                     "route": f"/docs/{doc_id}/export-audit",
                     "method": "POST",
                     "exportKind": payload.exportKind,
+                    "action": access_request.action,
+                    "decision_allow": decision.allow,
+                    "decision_read_only": decision.read_only,
+                    "decision_reason": decision.reason,
+                    "visibility": access_request.resource.visibility,
+                    "policyRefPresent": access_request.resource.policy_ref is not None,
+                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "traceId": access_request.auth.trace_id,
                 },
             )
         )
