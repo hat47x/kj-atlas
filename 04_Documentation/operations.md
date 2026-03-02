@@ -96,6 +96,8 @@ python3 -m http.server 4173
 - `view.json` の `visibility` は `Public | Unlisted | Org | Restricted` のみ許可されます。
 - 既存互換のため、`view.json` で未設定なら `Restricted` として読み込みます。
 - `packs/index.json` の各packでも同じ enum を使い、未設定なら `Public` を補完します。
+- `visibility` が存在する場合、enum外値（例: `FriendsOnly`）や型不正（`null`/number/object）は strict validation で拒否されます。
+- 互換fallback（欠損時補完）と strict validation（不正値拒否）は責務を分離し、補完後に再exportすると `visibility` は必ず明示されます。
 - invalid値（例: `FriendsOnly`）を含む `view.json` は検証エラーとして拒否されます。
 - これらの metadata は公開意図の表示用途であり、SafeMode既定ON・read-only公開の既存制御は継続されます。
 

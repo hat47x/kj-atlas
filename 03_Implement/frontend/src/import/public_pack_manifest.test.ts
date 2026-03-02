@@ -49,6 +49,24 @@ describe("validatePublicPackManifest", () => {
     });
   });
 
+
+
+  it.each(["", "public", null, 1, { value: "Org" }])("rejects non-enum visibility values: %p", (visibility) => {
+    const result = validatePublicPackManifest({
+      packs: [{ id: "invalid", documentPath: "invalid.document.json", visibility }],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [
+        {
+          path: "packs[0].visibility",
+          message: 'visibility must be "Public" | "Unlisted" | "Org" | "Restricted" when present.',
+        },
+      ],
+    });
+  });
+
   it("accepts all supported visibility enum values", () => {
     const result = validatePublicPackManifest({
       packs: [
