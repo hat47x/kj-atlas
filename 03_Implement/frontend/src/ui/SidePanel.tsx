@@ -3091,7 +3091,7 @@ export function SidePanel({
                     </div>
                   ) : null}
                   <button type="button" disabled={!traceAnalyticsMd || isAnalyticsRunning} onClick={handleDownloadTraceAnalytics}>
-                    Export Trace Analytics
+                    {t("side_panel.trace.export_analytics")}
                   </button>
 
                   {selectedCardContradictionsCount === 0 ? (

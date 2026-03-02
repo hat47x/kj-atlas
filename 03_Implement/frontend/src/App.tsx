@@ -140,7 +140,7 @@ import { validatePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
 import { DEFAULT_VIEW_VISIBILITY, type PublishVisibility } from "./domain/policy/publish_visibility";
-import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange } from "./i18n/translate";
+import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange, t } from "./i18n/translate";
 import { resolveViewLocale } from "./i18n/view_locale_resolution";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
@@ -6430,7 +6430,7 @@ ${parsedDocument.error}`);
           cursor: isLoading ? "not-allowed" : "pointer",
         }}
       >
-        Import doc JSON (legacy, confirm in Share)
+        {t("app.toolbar.import_doc_json_legacy")}
       </button>
       <button
         type="button"
@@ -6446,7 +6446,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || !document ? "not-allowed" : "pointer",
         }}
       >
-        Export doc JSON (legacy)
+        {t("app.toolbar.export_doc_json_legacy")}
       </button>
       <button
         type="button"
@@ -7787,7 +7787,7 @@ ${parsedDocument.error}`);
                 }}
               >
                 <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
-                  Legacy entry point. Use “Share &amp; Reproduce” for ordered Diff/Verify flow.
+                  {t("app.legacy.share_reproduce_hint")}
                 </div>
                 {structuralDiffPanel}
               </section>

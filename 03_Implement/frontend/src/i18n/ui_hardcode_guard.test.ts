@@ -65,6 +65,29 @@ const guardCases: GuardCase[] = [
       "Read-only mode:",
     ],
   },
+  {
+    file: "App.tsx",
+    forbiddenLiterals: [
+      "Import doc JSON (legacy, confirm in Share)",
+      "Export doc JSON (legacy)",
+      "Legacy entry point. Use “Share &amp; Reproduce” for ordered Diff/Verify flow.",
+    ],
+  },
+  {
+    file: "ui/ViewControlsPanel.tsx",
+    forbiddenLiterals: [
+      "Export (legacy)",
+      "Deprecated entry point. Use “Share &amp; Reproduce” for the canonical flow.",
+      "Export SVG (Viewport)",
+      "Export Abstract Map Report (HTML + PNG)",
+      "Load view metadata (JSON)",
+      "Review view",
+    ],
+  },
+  {
+    file: "ui/SidePanel.tsx",
+    forbiddenLiterals: ["Export Trace Analytics"],
+  },
 ];
 
 describe("i18n UI hardcoded text guard", () => {

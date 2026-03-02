@@ -4,6 +4,7 @@ import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { PerspectiveMode } from "../domain/view/perspective";
 import type { ViewPreset } from "../domain/view/presets";
+import { t } from "../i18n/translate";
 
 type ViewControlsPanelProps = {
   focusIslandId?: string;
@@ -281,7 +282,7 @@ export function ViewControlsPanel({
             <option value="unknown">Unknown view</option>
             <option value="evidence">Evidence view</option>
             <option value="contradiction">Contradiction view</option>
-            <option value="review">Review view</option>
+            <option value="review">{t("view_controls.perspective.review_view")}</option>
           </select>
         </label>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -588,16 +589,16 @@ export function ViewControlsPanel({
       </div>
 
       <div style={{ ...sectionStyle, marginTop: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Export (legacy)</div>
-        <div style={{ fontSize: 11, color: "#64748b" }}>Deprecated entry point. Use “Share &amp; Reproduce” for the canonical flow.</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.export_legacy.title")}</div>
+        <div style={{ fontSize: 11, color: "#64748b" }}>{t("view_controls.export_legacy.hint")}</div>
         <button type="button" onClick={onExportSvgViewport} style={{ cursor: "pointer" }}>
-          Export SVG (Viewport)
+          {t("view_controls.export_legacy.svg_viewport")}
         </button>
         <button type="button" onClick={onExportSvgVisibleBounds} style={{ cursor: "pointer" }}>
-          Export SVG (Visible bounds)
+          {t("view_controls.export_legacy.svg_visible")}
         </button>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-          PNG scale
+          {t("view_controls.export_legacy.png_scale")}
           <select
             value={String(pngExportScale)}
             onChange={(event) => {
@@ -609,16 +610,16 @@ export function ViewControlsPanel({
           </select>
         </label>
         <button type="button" onClick={onExportPngViewport} style={{ cursor: "pointer" }}>
-          Export PNG (Viewport)
+          {t("view_controls.export_legacy.png_viewport")}
         </button>
         <button type="button" onClick={onExportPngVisibleBounds} style={{ cursor: "pointer" }}>
-          Export PNG (Visible bounds)
+          {t("view_controls.export_legacy.png_visible")}
         </button>
         <button type="button" onClick={onExportAbstractMapMarkdownWithPng} style={{ cursor: "pointer" }}>
-          Export Abstract Map Report (MD + PNG)
+          {t("view_controls.export_legacy.abstract_map_md")}
         </button>
         <button type="button" onClick={onExportAbstractMapHtmlWithPng} style={{ cursor: "pointer" }}>
-          Export Abstract Map Report (HTML + PNG)
+          {t("view_controls.export_legacy.abstract_map_html")}
         </button>
         <button
           type="button"
@@ -627,7 +628,7 @@ export function ViewControlsPanel({
           }}
           style={{ cursor: "pointer" }}
         >
-          Load view metadata (JSON)
+          {t("view_controls.export_legacy.load_view_metadata")}
         </button>
         <input
           ref={viewMetadataInputRef}
