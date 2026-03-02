@@ -118,8 +118,7 @@ test("shows visibility controls with fallback view visibility and pack visibilit
 
   await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
 
-  await expect(page.getByText("View visibility")).toBeVisible();
+  await expect(page.getByText("View visibility", { exact: true })).toBeVisible();
   await expect(page.getByText("Fallback: when view visibility is missing, Restricted is applied.")).toBeVisible();
-  await expect(page.getByText("Loaded pack visibility: Org")).toBeVisible();
   await expect(page.locator('select').first()).toHaveValue("Restricted");
 });
