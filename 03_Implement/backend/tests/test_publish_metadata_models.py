@@ -1,7 +1,12 @@
 import pytest
 from pydantic import ValidationError
 
-from kj_atlas_api.models_publish import PublicPackManifest, ViewMetadata
+from kj_atlas_api.models_publish import (
+    PublicPackManifest,
+    ViewMetadata,
+    validate_public_pack_manifest,
+    validate_view_metadata,
+)
 
 
 def test_view_metadata_visibility_fallback_for_legacy_payload() -> None:
@@ -157,6 +162,33 @@ def test_view_metadata_roundtrip_fills_missing_visibility_and_emits_it() -> None
     assert get_payload["visibility"] == "Restricted"
 
 
+def test_view_metadata_strict_validation_rejects_missing_visibility() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        validate_view_metadata(
+            {
+                "version": "1",
+                "generatedAt": "2026-03-01T00:00:00.000Z",
+                "docSignature": "doc-strict",
+            },
+            strict=True,
+        )
+
+    assert "visibility" in str(excinfo.value)
+
+
+def test_view_metadata_compat_validation_accepts_missing_visibility() -> None:
+    metadata = validate_view_metadata(
+        {
+            "version": "1",
+            "generatedAt": "2026-03-01T00:00:00.000Z",
+            "docSignature": "doc-compat",
+        },
+        strict=False,
+    )
+
+    assert metadata.visibility == "Restricted"
+
+
 def test_public_pack_manifest_roundtrip_fills_missing_visibility_and_emits_it() -> None:
     legacy_manifest = {
         "defaultPackId": "main",
@@ -172,3 +204,38 @@ def test_public_pack_manifest_roundtrip_fills_missing_visibility_and_emits_it() 
     assert stored.packs[0].visibility == "Public"
     assert get_payload["packs"][0]["visibility"] == "Public"
     assert loaded.packs[0].visibility == "Public"
+
+
+def test_public_pack_manifest_strict_validation_rejects_missing_visibility() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        validate_public_pack_manifest(
+            {
+                "defaultPackId": "main",
+                "packs": [
+                    {
+                        "id": "main",
+                        "documentPath": "main.document.json",
+                    }
+                ],
+            },
+            strict=True,
+        )
+
+    assert "visibility" in str(excinfo.value)
+
+
+def test_public_pack_manifest_compat_validation_accepts_missing_visibility() -> None:
+    manifest = validate_public_pack_manifest(
+        {
+            "defaultPackId": "main",
+            "packs": [
+                {
+                    "id": "main",
+                    "documentPath": "main.document.json",
+                }
+            ],
+        },
+        strict=False,
+    )
+
+    assert manifest.packs[0].visibility == "Public"
