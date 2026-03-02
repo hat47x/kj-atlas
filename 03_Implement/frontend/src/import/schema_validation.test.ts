@@ -61,6 +61,27 @@ describe("schema_validation", () => {
     }
   });
 
+
+
+  it.each(["", "public", null, 1, { value: "Org" }])("rejects non-enum visibility values: %p", (visibility) => {
+    const result = validateView({
+      visibility,
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors[0]?.message).toContain("metadata.visibility must be");
+    }
+  });
+
   it("rejects invalid visibility value", () => {
     const result = validateView({
       visibility: "FriendsOnly",
