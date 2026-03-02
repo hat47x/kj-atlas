@@ -1,6 +1,8 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { ImportPanel } from "./ImportPanel";
 import { SharePanel } from "./SharePanel";
@@ -168,6 +170,31 @@ afterEach(() => {
 });
 
 describe("i18n functional equivalence", () => {
+  it("keeps major workflow labels translatable in English without raw key fallback", () => {
+    const keyPattern = /\bt\(\s*["']([^"']+)["']/g;
+    const majorFlowFiles = [
+      "ImportPanel.tsx",
+      "SharePanel.tsx",
+      "ReviewDiffPanel.tsx",
+      "DiffPanel.tsx",
+      "SuggestionPanel.tsx",
+      "safe_mode_status.ts",
+    ] as const;
+
+    const majorFlowKeys = new Set<string>();
+    for (const fileName of majorFlowFiles) {
+      const source = readFileSync(join(process.cwd(), "src", "ui", fileName), "utf-8");
+      for (const match of source.matchAll(keyPattern)) {
+        majorFlowKeys.add(match[1]);
+      }
+    }
+
+    for (const key of majorFlowKeys) {
+      const translated = t(key, undefined, "en");
+      expect(translated, `${key} must not fallback to raw key in en locale`).not.toBe(key);
+    }
+  });
+
   it("keeps ImportPanel structure equivalent between ja/en", () => {
     const props = {
       isLoading: false,
