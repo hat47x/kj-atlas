@@ -26,8 +26,9 @@ type SharePanelProps = {
   onExportAbstractMapHtmlWithPng: () => void;
   safeMode: boolean;
   viewVisibility: PublishVisibility;
-  packVisibility: PublishVisibility | null;
+  packVisibility: PublishVisibility;
   onViewVisibilityChange: (value: PublishVisibility) => void;
+  onPackVisibilityChange: (value: PublishVisibility) => void;
   onSafeModeChange: (value: boolean) => void;
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
@@ -132,6 +133,7 @@ export function SharePanel({
   viewVisibility,
   packVisibility,
   onViewVisibilityChange,
+  onPackVisibilityChange,
   onSafeModeChange,
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
@@ -346,8 +348,23 @@ export function SharePanel({
                   ))}
                 </select>
               </label>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>Pack visibility</span>
+                <select
+                  value={packVisibility}
+                  onChange={(event) => {
+                    if (PUBLISH_VISIBILITY_VALUES.includes(event.target.value as PublishVisibility)) {
+                      onPackVisibilityChange(event.target.value as PublishVisibility);
+                    }
+                  }}
+                >
+                  {PUBLISH_VISIBILITY_VALUES.map((value) => (
+                    <option key={`pack-${value}`} value={value}>{value}</option>
+                  ))}
+                </select>
+              </label>
               <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when view visibility is missing, Restricted is applied.</div>
-              {packVisibility ? <div style={{ fontSize: 11, color: "#334155" }}>{`Loaded pack visibility: ${packVisibility}`}</div> : null}
+              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when pack visibility is missing, Public is applied.</div>
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
               {t("share.panel.export.svg_viewport")}

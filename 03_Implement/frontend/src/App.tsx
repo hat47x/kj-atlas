@@ -60,6 +60,7 @@ import type { SuggestionMoveDiff } from "./canvas/SuggestionDiffLayer";
 import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
+import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -139,7 +140,7 @@ import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zi
 import { validatePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
-import { DEFAULT_VIEW_VISIBILITY, type PublishVisibility } from "./domain/policy/publish_visibility";
+import { DEFAULT_PACK_VISIBILITY, DEFAULT_VIEW_VISIBILITY, type PublishVisibility } from "./domain/policy/publish_visibility";
 import { getActiveLocale, setActiveLocale, subscribeActiveLocaleChange, t } from "./i18n/translate";
 import { resolveViewLocale } from "./i18n/view_locale_resolution";
 import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
@@ -910,7 +911,7 @@ export default function App() {
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
   const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(DEFAULT_VIEW_VISIBILITY);
-  const [packVisibility, setPackVisibility] = useState<PublishVisibility | null>(null);
+  const [packVisibility, setPackVisibility] = useState<PublishVisibility>(DEFAULT_PACK_VISIBILITY);
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
@@ -1652,8 +1653,9 @@ export default function App() {
         setMergeAuditLog([]);
       setReviewEvents([]);
         setMergeSourceInfo({ kind: "unknown" });
-        setViewVisibility(DEFAULT_VIEW_VISIBILITY);
-        setPackVisibility(null);
+        const persistedVisibility = loadViewVisibilityForDocument(loadedDocument.id);
+        setViewVisibility(persistedVisibility.viewVisibility);
+        setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
         setStatusMessage("Document loaded");
       } catch (error) {
@@ -1691,8 +1693,9 @@ export default function App() {
             setMergeAuditLog([]);
       setReviewEvents([]);
             setMergeSourceInfo({ kind: "unknown" });
-            setViewVisibility(DEFAULT_VIEW_VISIBILITY);
-            setPackVisibility(null);
+            const persistedVisibility = loadViewVisibilityForDocument(savedDocument.id);
+            setViewVisibility(persistedVisibility.viewVisibility);
+            setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage("Created a new document");
           } catch (saveError) {
@@ -2595,7 +2598,8 @@ ${parsedDocument.error}`);
 
     setSafeMode(true);
     if (!targetPack.viewPath) {
-      setViewVisibility(DEFAULT_VIEW_VISIBILITY);
+      const persistedVisibility = loadViewVisibilityForDocument(documentParseResult.document.id);
+      setViewVisibility(persistedVisibility.viewVisibility);
     }
     setStatusMessage(`Public pack loaded: ${targetPack.id} (visibility: ${targetPack.visibility})`);
     return true;
@@ -2770,7 +2774,7 @@ ${parsedDocument.error}`);
       setImportDocumentError(null);
       setPackImportError(null);
       setMergeSourceInfo({ kind: "zip", fileName: selectedFile.name, packId: selectedFile.name.replace(/\.zip$/i, "") });
-      setPackVisibility(null);
+      setPackVisibility(DEFAULT_PACK_VISIBILITY);
       setImportedPackSummary({
         fileName: selectedFile.name,
         cardCount: parsedDocument.document.cards.length,
@@ -6690,6 +6694,8 @@ ${parsedDocument.error}`);
           contradictionReport,
           distributionReport,
           dialecticBalanceReport,
+          viewVisibility,
+          packVisibility,
         }, {
           signal: controller.signal,
           onProgress: (message) => ctx.reportProgress({ message, completed: 2, total: 3 }),
@@ -6757,6 +6763,7 @@ ${parsedDocument.error}`);
     outlineQualityReport,
     outlineRecommendations,
     perspectiveMode,
+    packVisibility,
     viewPresets,
           activePresetId,
     perspectiveStrictFilter,
@@ -6769,6 +6776,7 @@ ${parsedDocument.error}`);
     selectedCard?.id,
     showReadingOrder,
     summaryView,
+    viewVisibility,
   ]);
 
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
@@ -7325,6 +7333,17 @@ ${parsedDocument.error}`);
   }, [activeDocumentId, isReadOnly, viewMode]);
 
   useEffect(() => {
+    if (!document) {
+      return;
+    }
+
+    saveViewVisibilityForDocument(document.id, {
+      viewVisibility,
+      packVisibility,
+    });
+  }, [document, packVisibility, viewVisibility]);
+
+  useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
       const scope = viewLocalePersistenceScopeRef.current.getScope();
       if (!scope.allowPersistence) {
@@ -7652,6 +7671,7 @@ ${parsedDocument.error}`);
       viewVisibility={viewVisibility}
       packVisibility={packVisibility}
       onViewVisibilityChange={setViewVisibility}
+      onPackVisibilityChange={setPackVisibility}
       onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}

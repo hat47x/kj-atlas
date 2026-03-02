@@ -149,6 +149,8 @@ describe("buildExportBundle", () => {
       includeSelectedCardTraces: true,
       selectedCardId: "c2",
       exportGranularity: "overview",
+      viewVisibility: "Unlisted",
+      packVisibility: "Org",
       deterministicNowIso: "2026-01-02T00:00:00.000Z",
       readingMode: "islands",
       reviewedOnly: false,
@@ -164,9 +166,14 @@ describe("buildExportBundle", () => {
 
     const manifestRaw = files.find((file) => file.path.endsWith("/bundle_manifest.json"));
     expect(manifestRaw).toBeDefined();
-    const manifest = JSON.parse(String(manifestRaw?.content)) as { exportGranularity: string; generatedAt: string };
+    const manifest = JSON.parse(String(manifestRaw?.content)) as {
+      exportGranularity: string;
+      generatedAt: string;
+      visibility?: { view?: string; pack?: string };
+    };
     expect(manifest.exportGranularity).toBe("overview");
     expect(manifest.generatedAt).toBe("2026-01-02T00:00:00.000Z");
+    expect(manifest.visibility).toEqual({ view: "Unlisted", pack: "Org" });
   });
 
   test("always includes document.json, merge_decision_audit.json and view.json sorted by path", () => {

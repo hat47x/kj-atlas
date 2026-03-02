@@ -22,6 +22,7 @@ function buildProps(safeMode: boolean) {
     viewVisibility: "Restricted" as const,
     packVisibility: "Public" as const,
     onViewVisibilityChange: vi.fn(),
+    onPackVisibilityChange: vi.fn(),
     onSafeModeChange: vi.fn(),
     includeUnreviewedDrafts: false,
     onIncludeUnreviewedDraftsChange: vi.fn(),
@@ -133,14 +134,15 @@ describe("SharePanel patch section localization", () => {
 
 
 describe("SharePanel visibility controls", () => {
-  it("renders visibility selector, fallback copy, and loaded pack visibility", () => {
+  it("renders view/pack visibility selectors with fallback copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("View visibility");
+    expect(html).toContain("Pack visibility");
     expect(html).toContain('option value="Public"');
     expect(html).toContain('option value="Unlisted"');
     expect(html).toContain('option value="Org"');
     expect(html).toContain('option value="Restricted"');
     expect(html).toContain("Fallback: when view visibility is missing, Restricted is applied.");
-    expect(html).toContain("Loaded pack visibility: Public");
+    expect(html).toContain("Fallback: when pack visibility is missing, Public is applied.");
   });
 });
