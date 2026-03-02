@@ -8,17 +8,80 @@
 
 ## Context
 
-CLI計画は対象ユーザー、非対象、Phase X-0〜X-4が同居し、導入判断が複雑化している。
+CLI計画の実装着手条件が曖昧なままでは、MVP後に「何を確定済みとして進めるか」が揺れやすい。
+本ADRは、対象範囲と導入フェーズだけを責務として固定し、コマンド詳細（ADR-0016）と安全運用（ADR-0017）を分離する。
 
 ## Decision
 
-CLIの対象範囲（対象/非対象）とフェーズ導入計画のみを本ADRに分離する。
+### 1) 本ADRで **今決めること（確定）**
+
+1. CLIは **APIクライアント** として振る舞い、CLI独自ドメインロジックを持たない。
+2. 対象ユーザーは「管理者 / 運用担当 / パワーユーザー / CI利用開発者」に限定する。
+3. フェーズ順序は `X-0 -> X-1 -> X-2 -> X-3 -> X-4` を固定する。
+4. 実装着手の判定は、各フェーズの Exit Gate を満たした場合のみ許可する。
+
+### 2) 本ADRで **後で決めること（保留）**
+
+- 各フェーズ内で提供する個別コマンドの完全一覧。
+- APIキー/プリンシパルモデルの最終スキーマ。
+- MCP連携の適用範囲（allow-list具体値、監査帰属の最終設計）。
+
+### 3) フェーズ責務（重複排除済）
+
+- **Phase X-0（仕様固定）**: 依存関係・前提・Gate定義の合意（実装禁止）。
+- **Phase X-1（最低限Ops）**: import/export/validate など最小運用導線。
+- **Phase X-2（権限/監査）**: 認証主体・監査ログ最小要件の導入。
+- **Phase X-3（自動化拡張）**: バッチ/CIの再実行安全性を含む運用拡張。
+- **Phase X-4（MCP連携）**: CLI利用範囲を統制したAI連携。
+
+## Gate（判定可能条件）
+
+### Gate-A: Architecture整合（ADR-0001 / 02_Architecture整合）
+
+- 判定対象:
+  - `02_Architecture/schemas.md` に未定義の概念をCLI計画で確定扱いしていない。
+  - `02_Architecture/api.md` に存在しないI/Fを必須コマンドとして宣言していない。
+- 判定方法（Docsレビュー）:
+  - CLI ADR群内の「確定事項」節をレビューし、上記2条件の逸脱が0件。
+
+### Gate-B: Safety整合（THREAT_MODEL / SafeMode整合）
+
+- 判定対象:
+  - SafeMode既定ON・漏洩防止方針と矛盾する運用を要求していない。
+- 判定方法（Docsレビュー）:
+  - ADR-0017の「禁止事項」に反する記述がADR-0015内にないこと。
+
+### Gate-C: Ops整合（04_Documentation整合）
+
+- 判定対象:
+  - `04_Documentation/operations.md` と矛盾する運用前提を追加していない。
+- 判定方法（Docsレビュー）:
+  - 運用手順に影響する差分がある場合、同一PRで関連文書更新が列挙されていること。
+
+## DoD（Definition of Done）
+
+1. フェーズごとに Entry/Exit が明記され、次の1手が単文で説明できる。
+2. 「確定」と「保留」が見出しで分離され、混在しない。
+3. Gate-A/B/C の判定者（設計レビュー）が同じ基準で合否判定できる。
+
+## Non-Goals
+
+- CLIの実装技術（言語・配布形式）の確定。
+- API仕様の拡張提案そのものの確定。
+- 運用ポリシーの新規追加。
 
 ## Consequences
 
-- どこまでCLI化するかの合意形成が容易になる。
-- コマンド仕様は `ADR-0016` へ委譲。
+- 実装前レビューで「範囲の合意不在」による手戻りを減らせる。
+- フェーズ進行の可否が Gate で判定可能になり、premature commit を抑制できる。
 
 ## Traceability
 
-- Derived sections: `ADR-0008` の「2章」「3章（Phase計画）」
+- Parent: `01_Plans/adr/ADR-0008-cli-tooling-plan.md`
+- Related: `01_Plans/adr/ADR-0016-cli-command-contract.md`
+- Related: `01_Plans/adr/ADR-0017-cli-security-ops-checks.md`
+- Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- Related: `02_Architecture/api.md`
+- Related: `02_Architecture/schemas.md`
+- Related: `THREAT_MODEL.md`
+- Related: `04_Documentation/operations.md`

@@ -1,4 +1,4 @@
-# ADR-0017: CLI セキュリティ/運用受入チェック（ADR-0008分割）
+# ADR-0017: CLI セキュリティ/運用 Gate と受入チェック（ADR-0008分割）
 
 - Status: Accepted
 - Date: 2026-02-24
@@ -8,17 +8,76 @@
 
 ## Context
 
-CLI計画の後半（機密情報マスク、TODO維持条件、受入チェック）が実装仕様と混在していた。
+CLI導入では、機能追加より先に「漏洩しない・監査できる・運用手順が崩れない」を満たす必要がある。
+本ADRは安全・運用の判定軸だけを独立し、仕様検討と混線しないようにする。
 
 ## Decision
 
-セキュリティ要件、直近タスク、受入チェックリストを本ADRで分離管理する。
+### 1) 今決めること（固定）
+
+1. 秘密情報（APIキー/トークン/認証ヘッダ）は `--debug` を含めログ出力禁止。
+2. CLI設定の優先順位は `CLI引数 > 環境変数 > 設定ファイル > デフォルト`。
+3. CLIの実行はAPI監査ログに帰属可能であることを前提要件とする。
+4. SafeModeと矛盾する共有/公開導線をCLIで標準化しない。
+
+### 2) 後で決めること（保留）
+
+- 鍵ローテーションの運用周期。
+- principal識別子のマスキング方式（可逆/不可逆の選択）。
+- MCP連携時の監査帰属フォーマット詳細。
+
+## Security/Ops Gate（判定可能条件）
+
+### Gate-S1: Secret Handling
+
+- 判定条件:
+  - 機密情報がログ・エラー出力・監査エクスポートに平文露出しない。
+- 検証粒度（実装後）:
+  - `pytest 03_Implement/backend/tests/cli_security/test_secret_redaction.py`
+
+### Gate-S2: Audit Attribution
+
+- 判定条件:
+  - CLI起点実行が principal/request-id と紐づいて追跡可能。
+- 検証粒度（実装後）:
+  - `pytest 03_Implement/backend/tests/cli_security/test_audit_attribution.py`
+
+### Gate-S3: SafeMode Alignment
+
+- 判定条件:
+  - SafeMode既定ONに反する操作フローをデフォルト動線にしない。
+- 検証粒度（実装後）:
+  - `pytest 03_Implement/frontend/tests/safe_mode/test_cli_alignment_policy.py`
+
+### Gate-O1: Operations Consistency
+
+- 判定条件:
+  - CLI運用手順の変更が `04_Documentation/operations.md` に同期される。
+- 検証粒度（Docs運用）:
+  - PRチェックリストで「CLI運用変更時の同時更新」を必須項目化。
+
+## DoD
+
+1. Gate-S1/S2/S3/O1 の合否判定が Yes/No で記録できる。
+2. 各Gateに最低1つの検証コマンドまたは運用チェック項目が紐づく。
+3. セキュリティ要件と機能仕様の責務が分離される（機能詳細はADR-0016へ委譲）。
+
+## Non-Goals
+
+- 認証方式（OAuth/API key）の最終選定。
+- 監査基盤そのものの実装方式確定。
 
 ## Consequences
 
-- 監査観点のレビューを独立実施できる。
-- 仕様変更と運用チェックの更新サイクルを分離できる。
+- CLIの機能検討より前に、安全/運用の不成立を検出できる。
+- 監査観点レビューを独立実施でき、レビュー抜けを減らせる。
 
 ## Traceability
 
-- Derived sections: `ADR-0008` の「6章」「7章」
+- Parent: `01_Plans/adr/ADR-0008-cli-tooling-plan.md`
+- Related: `01_Plans/adr/ADR-0015-cli-scope-phasing.md`
+- Related: `01_Plans/adr/ADR-0016-cli-command-contract.md`
+- Related: `THREAT_MODEL.md`
+- Related: `04_Documentation/security.md`
+- Related: `04_Documentation/operations.md`
+- Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
