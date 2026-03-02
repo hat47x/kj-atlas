@@ -220,5 +220,20 @@
   "side_panel.reading_path.reviewed_only_hint": "Reviewed only は島の summary レビュー状態で絞り込みます。islands+cards モードではカードは常に含まれます。",
   "side_panel.reading_path.include_card_texts": "カード本文を含める",
   "side_panel.reading_path.include_relation_summaries": "関係サマリーを含める",
-  "side_panel.reading_path.include_unreviewed": "未レビューを含める"
+  "side_panel.reading_path.include_unreviewed": "未レビューを含める",
+  "app.toolbar.import_doc_json_legacy": "ドキュメントJSONを取り込む（legacy、Share で確認）",
+  "app.toolbar.export_doc_json_legacy": "ドキュメントJSONを書き出す（legacy）",
+  "app.legacy.share_reproduce_hint": "レガシー導線です。順序化された Diff/Verify フローには「共有と再現」を使用してください。",
+  "view_controls.perspective.review_view": "レビュー表示",
+  "view_controls.export_legacy.title": "エクスポート（legacy）",
+  "view_controls.export_legacy.hint": "非推奨の導線です。正規フローには「共有と再現」を使用してください。",
+  "view_controls.export_legacy.svg_viewport": "SVGを書き出す（Viewport）",
+  "view_controls.export_legacy.svg_visible": "SVGを書き出す（Visible bounds）",
+  "view_controls.export_legacy.png_scale": "PNG スケール",
+  "view_controls.export_legacy.png_viewport": "PNGを書き出す（Viewport）",
+  "view_controls.export_legacy.png_visible": "PNGを書き出す（Visible bounds）",
+  "view_controls.export_legacy.abstract_map_md": "Abstract Map レポートを書き出す（MD + PNG）",
+  "view_controls.export_legacy.abstract_map_html": "Abstract Map レポートを書き出す（HTML + PNG）",
+  "view_controls.export_legacy.load_view_metadata": "view metadata（JSON）を読み込む",
+  "side_panel.trace.export_analytics": "Trace Analytics をエクスポート"
 }

@@ -220,5 +220,20 @@
   "side_panel.reading_path.reviewed_only_hint": "Reviewed only filters islands by summary review status; cards are always included in islands+cards mode.",
   "side_panel.reading_path.include_card_texts": "Include card texts",
   "side_panel.reading_path.include_relation_summaries": "Include relation summaries",
-  "side_panel.reading_path.include_unreviewed": "Include unreviewed"
+  "side_panel.reading_path.include_unreviewed": "Include unreviewed",
+  "app.toolbar.import_doc_json_legacy": "Import doc JSON (legacy, confirm in Share)",
+  "app.toolbar.export_doc_json_legacy": "Export doc JSON (legacy)",
+  "app.legacy.share_reproduce_hint": "Legacy entry point. Use “Share & Reproduce” for ordered Diff/Verify flow.",
+  "view_controls.perspective.review_view": "Review view",
+  "view_controls.export_legacy.title": "Export (legacy)",
+  "view_controls.export_legacy.hint": "Deprecated entry point. Use “Share & Reproduce” for the canonical flow.",
+  "view_controls.export_legacy.svg_viewport": "Export SVG (Viewport)",
+  "view_controls.export_legacy.svg_visible": "Export SVG (Visible bounds)",
+  "view_controls.export_legacy.png_scale": "PNG scale",
+  "view_controls.export_legacy.png_viewport": "Export PNG (Viewport)",
+  "view_controls.export_legacy.png_visible": "Export PNG (Visible bounds)",
+  "view_controls.export_legacy.abstract_map_md": "Export Abstract Map Report (MD + PNG)",
+  "view_controls.export_legacy.abstract_map_html": "Export Abstract Map Report (HTML + PNG)",
+  "view_controls.export_legacy.load_view_metadata": "Load view metadata (JSON)",
+  "side_panel.trace.export_analytics": "Export Trace Analytics"
 }

@@ -259,4 +259,23 @@ describe("i18n functional equivalence", () => {
     expect(jaClaimTypeUnknown).toBe("Unknown (未分類)");
     expect(enClaimTypeUnknown).toBe("Unknown");
   });
+
+  it("localizes legacy toolbar/export labels and trace analytics export action", () => {
+    setActiveLocale("ja");
+    const jaImportLegacy = t("app.toolbar.import_doc_json_legacy");
+    const jaExportLegacy = t("view_controls.export_legacy.title");
+    const jaTraceAnalytics = t("side_panel.trace.export_analytics");
+
+    setActiveLocale("en");
+    const enImportLegacy = t("app.toolbar.import_doc_json_legacy");
+    const enExportLegacy = t("view_controls.export_legacy.title");
+    const enTraceAnalytics = t("side_panel.trace.export_analytics");
+
+    expect(jaImportLegacy).toContain("legacy");
+    expect(enImportLegacy).toContain("Import doc JSON");
+    expect(jaExportLegacy).toBe("エクスポート（legacy）");
+    expect(enExportLegacy).toBe("Export (legacy)");
+    expect(jaTraceAnalytics).toContain("エクスポート");
+    expect(enTraceAnalytics).toBe("Export Trace Analytics");
+  });
 });
