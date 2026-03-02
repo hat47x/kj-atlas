@@ -45,6 +45,7 @@ function buildShareProps() {
     viewVisibility: "Restricted" as const,
     packVisibility: "Public" as const,
     onViewVisibilityChange: vi.fn(),
+    onPackVisibilityChange: vi.fn(),
     onSafeModeChange: vi.fn(),
     includeUnreviewedDrafts: false,
     onIncludeUnreviewedDraftsChange: vi.fn(),

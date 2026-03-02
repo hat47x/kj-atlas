@@ -13,6 +13,7 @@ import { DiagnosticsWorkerClient } from "../worker/diagnostics_client";
 import { TraceWorkerClient } from "../worker/trace_client";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "../worker/trace_analytics";
 import { BundleZipWorkerClient } from "../worker/bundle_zip_client";
+import type { PublishVisibility } from "../domain/policy/publish_visibility";
 
 export type BundleFile = {
   path: string;
@@ -39,6 +40,8 @@ export type BundleExportContext = {
   contradictionReport?: ContradictionReport | null;
   distributionReport?: DistributionReport | null;
   dialecticBalanceReport?: DialecticBalanceReport | null;
+  viewVisibility?: PublishVisibility;
+  packVisibility?: PublishVisibility;
 };
 
 function sortObjectKeys<T>(value: T): T {
@@ -180,10 +183,18 @@ function resolveOutlineOptions(context: BundleExportContext, safeMode: boolean):
   };
 }
 
-function buildBundleManifest(context: BundleExportContext): { exportGranularity: ExportGranularity; generatedAt: string } {
+function buildBundleManifest(context: BundleExportContext): { exportGranularity: ExportGranularity; generatedAt: string; visibility?: { view?: PublishVisibility; pack?: PublishVisibility } } {
   return {
     exportGranularity: resolveExportGranularity(context),
     generatedAt: context.deterministicNowIso,
+    ...(context.viewVisibility || context.packVisibility
+      ? {
+          visibility: {
+            ...(context.viewVisibility ? { view: context.viewVisibility } : {}),
+            ...(context.packVisibility ? { pack: context.packVisibility } : {}),
+          },
+        }
+      : {}),
   };
 }
 
