@@ -94,6 +94,17 @@ pytest -m postgres
 ```
 
 
+Auth Level2（Mock SP/IdP、境界変更PR向け）:
+
+```bash
+cd 03_Implement/backend
+tests/scripts/run_auth_level2.sh
+```
+
+- provider profile fixture: `tests/federation/profiles/*.json`
+- 失敗時ログ: `.artifacts/auth-level2/`
+
+
 ## LLM provider audit metadata
 
 `/ai/*` エンドポイントでは、監査可能性のために以下の項目を構造化ログへ記録します。

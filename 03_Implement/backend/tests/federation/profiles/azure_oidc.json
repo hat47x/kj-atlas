@@ -1,0 +1,21 @@
+{
+  "profile": "azure_oidc",
+  "provider": "azuread-oidc",
+  "idp": {
+    "claims": {
+      "oid": "azure-user-987",
+      "upn": "bob@example.com",
+      "displayName": "Bob",
+      "groups": "ops,sec"
+    }
+  },
+  "mapping": {
+    "subject": "oid",
+    "email": "upn",
+    "name": "displayName",
+    "groups": "groups",
+    "groups_format": "csv",
+    "amr": null,
+    "acr": null
+  }
+}

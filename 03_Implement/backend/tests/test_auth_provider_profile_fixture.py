@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import create_engine
@@ -14,6 +16,7 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
 from kj_atlas_api.settings import settings
+from tests.federation.profile_loader import profile_names
 
 
 @contextmanager
@@ -73,3 +76,19 @@ def test_provider_profile_fixture_google_oidc_roundtrip(tmp_path) -> None:
             assert get_resp.status_code == 200
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level2
+@pytest.mark.parametrize("profile_name", profile_names())
+def test_provider_profile_fixture_via_mock_sp(profile_name: str) -> None:
+    base_url = os.getenv("AUTH_LEVEL2_SP_BASE_URL", "http://127.0.0.1:18080")
+    payload = _sample_payload(f"doc-{profile_name}")
+
+    with httpx.Client(timeout=10.0) as client:
+        response = client.post(f"{base_url}/sp/profile/{profile_name}/docs/doc-{profile_name}", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["put_status"] == 200
+    assert body["get_status"] == 200
+    assert body["provider"]

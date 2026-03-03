@@ -1,0 +1,23 @@
+{
+  "profile": "google_oidc",
+  "provider": "google-oidc",
+  "idp": {
+    "claims": {
+      "sub": "google-user-123",
+      "email": "alice@example.com",
+      "name": "Alice",
+      "groups": ["eng", "qa"],
+      "amr": ["pwd", "otp"],
+      "acr": "urn:mace:incommon:iap:silver"
+    }
+  },
+  "mapping": {
+    "subject": "sub",
+    "email": "email",
+    "name": "name",
+    "groups": "groups",
+    "groups_format": "array",
+    "amr": "amr",
+    "acr": "acr"
+  }
+}
