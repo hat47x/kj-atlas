@@ -53,6 +53,30 @@ Level 2（Mock SP/IdP）を実施する。
   - `e2e/auth_provider_profile_cloud_iap.spec.ts`
   - `e2e/auth_provider_profile_aws_alb.spec.ts`
 
+#### Level 2 実行の標準手順（Mock SP/IdP）
+
+`03_Implement/backend/tests/scripts/run_auth_level2.sh` を **ローカル/CI 共通の正本コマンド** とする。
+
+- 実行コマンド
+  - `cd 03_Implement/backend`
+  - `tests/scripts/run_auth_level2.sh`
+- 起動されるプロセス
+  - backend: `uvicorn kj_atlas_api.main:app --port 18000`
+  - mock_idp: `uvicorn tests.federation.mock_idp:app --port 18081`
+  - mock_sp: `uvicorn tests.federation.mock_sp:app --port 18080`
+- provider profile fixture の切替
+  - 既定ディレクトリ: `03_Implement/backend/tests/federation/profiles/*.json`
+  - 差し替え時: `AUTH_PROVIDER_PROFILE_DIR=/path/to/profiles tests/scripts/run_auth_level2.sh`
+
+fixture では以下の主要差異を再現する。
+
+- ヘッダー名/subject claim 名の差異（`sub`/`oid`/`nameid`）
+- claim 名差異（`email`/`upn`/`mail`, `name`/`displayName`/`cn`）
+- groups 形式差異（配列 / CSV）
+- `amr` / `acr` の有無
+
+失敗時は `03_Implement/backend/.artifacts/auth-level2/` にログが残る（`backend.log`, `mock-idp.log`, `mock-sp.log`, `pytest-auth-level2.log`）。
+
 ---
 
 ## 3. 実行プロファイル

@@ -408,7 +408,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[test]" ruff alembic psycopg[binary]
+          pip install -e ".[test]" ruff alembic psycopg[binary] uvicorn
 
       - name: Lint (ruff)
         run: ruff check src tests
@@ -423,6 +423,24 @@ jobs:
               - "03_Implement/backend/src/kj_atlas_api/settings.py"
               - "03_Implement/backend/tests/test_auth_provider_profile_fixture.py"
               - "03_Implement/backend/tests/fixtures/provider_profile_*.json"
+              - "03_Implement/backend/tests/federation/**"
+              - "03_Implement/backend/tests/scripts/run_auth_level2.sh"
+
+      - name: Resolve Auth Level2 requirement flag
+        id: auth_level2
+        run: |
+          required="${{ steps.auth_changes.outputs.idp_boundary }}"
+          reason="paths-filter"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "${{ contains(github.event.pull_request.labels.*.name, 'auth-level2-required') }}" = "true" ]; then
+              required="true"
+              reason="pr-label"
+            fi
+          fi
+
+          echo "required=${required}" >> "$GITHUB_OUTPUT"
+          echo "reason=${reason}" >> "$GITHUB_OUTPUT"
 
       - name: Test (SQLite except auth level suites)
         env:
@@ -435,16 +453,25 @@ jobs:
         run: pytest -m auth_level1
 
       - name: Test (Auth Level2 conditional)
-        if: steps.auth_changes.outputs.idp_boundary == 'true'
+        if: steps.auth_level2.outputs.required == 'true'
         env:
           DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m auth_level2
+        run: tests/scripts/run_auth_level2.sh
+
+      - name: Upload Auth Level2 diagnostics
+        if: always() && steps.auth_level2.outputs.required == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-level2-diagnostics
+          path: 03_Implement/backend/.artifacts/auth-level2/
+          if-no-files-found: warn
 
       - name: Record Auth Level2 necessity
         if: always()
         run: |
-          if [ "${{ steps.auth_changes.outputs.idp_boundary }}" = "true" ]; then
-            echo "Auth Level2: required (IdP境界変更あり)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.auth_level2.outputs.required }}" = "true" ]; then
+            echo "Auth Level2: required (reason=${{ steps.auth_level2.outputs.reason }})" >> "$GITHUB_STEP_SUMMARY"
+            echo "Auth Level2 diagnostics: artifact auth-level2-diagnostics" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Auth Level2: not required (IdP境界変更なし)" >> "$GITHUB_STEP_SUMMARY"
           fi

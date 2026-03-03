@@ -1,0 +1,22 @@
+{
+  "profile": "keycloak_saml_like",
+  "provider": "keycloak-saml",
+  "idp": {
+    "claims": {
+      "nameid": "kc-user-555",
+      "mail": "carol@example.com",
+      "cn": "Carol",
+      "memberOf": ["grp-research", "grp-ops"],
+      "acr": "loa2"
+    }
+  },
+  "mapping": {
+    "subject": "nameid",
+    "email": "mail",
+    "name": "cn",
+    "groups": "memberOf",
+    "groups_format": "array",
+    "amr": null,
+    "acr": "acr"
+  }
+}
