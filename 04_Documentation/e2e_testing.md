@@ -243,7 +243,7 @@ PR本文には最低限以下を記載する。
 E2Eはアプリケーション動作に関する利用者向けドキュメントと**完全整合**していなければなりません。
 
 1. `04_Documentation/e2e_testing.md` をE2E手順の正本（single source of truth）とする。
-2. `04_Documentation/installation.md` / `04_Documentation/operations.md` / `CONTRIBUTING.md` / `01_Plans/coding_standards.md` にあるE2E関連記述は、本書と同じコマンド・同じ受入基準・同じ代替経路を保つ。
+2. `04_Documentation/installation.md` / `04_Documentation/operations.md` / `CONTRIBUTING.md` / `02_Architecture/coding_standards.md` にあるE2E関連記述は、本書と同じコマンド・同じ受入基準・同じ代替経路を保つ。
 3. E2Eの実行方法・受入基準・対象フローを変更したPRでは、上記文書を同一PRで更新する。
 4. PR本文に、更新したE2E関連文書一覧を明記する。
 5. 利用者向けドキュメントとの間で不足・不整合が見つかった場合は、まず「あるべき状態（期待挙動・受入基準・コマンド）」を明文化し、正本に合わせて同期更新する。

@@ -54,7 +54,7 @@ kj-atlas の目的は、
 - 設定値と環境変数: [`04_Documentation/configuration.md`](04_Documentation/configuration.md)
 - 日常運用: [`04_Documentation/operations.md`](04_Documentation/operations.md)
 - セキュリティ運用: [`04_Documentation/security.md`](04_Documentation/security.md)
-- 開発コーディング規約: [`01_Plans/coding_standards.md`](01_Plans/coding_standards.md)
+- 開発コーディング規約: [`02_Architecture/coding_standards.md`](02_Architecture/coding_standards.md)
 
 ### 3) 開発者として最初に実行すること
 

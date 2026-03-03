@@ -43,7 +43,7 @@ pytest
 
 ## コーディング規約 / Coding Conventions
 
-詳細規約は [`01_Plans/coding_standards.md`](01_Plans/coding_standards.md) を正本として参照してください。
+詳細規約は [`02_Architecture/coding_standards.md`](02_Architecture/coding_standards.md) を正本として参照してください。
 
 最低限の必須ルール:
 
@@ -155,7 +155,7 @@ fail-on-error条件:
 
 同一PRで次を確認してください。
 
-1. `01_Plans/coding_standards.md` にPhaseとexit criteriaがある。
+1. `02_Architecture/coding_standards.md` にPhaseとexit criteriaがある。
 2. 本書に `npm run lint` 手順・失敗時対処・例外運用がある。
 3. `.github/workflows/ci.yml` のジョブ責務とfail条件が文書記述と一致する。
 4. `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md` の Follow-up 要件と矛盾がない。
@@ -164,7 +164,7 @@ fail-on-error条件:
 
 ```bash
 rg -n "frontend-lint|frontend-typecheck|frontend-test|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" \
-  01_Plans/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml
+  02_Architecture/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml
 ```
 
 サンプルPR自己レビュー（推奨）:
