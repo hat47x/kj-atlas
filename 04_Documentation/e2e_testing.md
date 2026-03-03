@@ -125,6 +125,18 @@ Playwright 実行不能環境（例: browser binary 未導入）では、以下�
 - trusted proxy境界、JWT claim mapping、step-up(amr/acr/aal)の処理を変更
 - `ALLOW_JIT_PROVISIONING` 挙動または `/admin/provision/users` 契約を変更
 
+##### AUTH-IMPL-01 / AUTH-API-02 向け Level 2 必須化判定表
+
+| 変更チケット | 具体的な変更内容（PR差分での判定キー） | Level 2 判定 | 判定理由 |
+|---|---|---|---|
+| AUTH-IMPL-01 | `users` / `user_identities` migration のみ（DDL/backfill/dual-write）で、AuthContext header/JWT mapping と provisioning API 契約に変更なし | 任意（推奨） | 永続層の整合が主目的であり、IdP境界互換の破壊可能性は相対的に低い。Level 1 で strict provisioning 契約を担保する。 |
+| AUTH-IMPL-01 | identity migration に伴って `AuthContextAdapter`、subject 解決順、provider 判定、trusted proxy 判定ロジックを変更 | **必須** | DB変更であっても認証境界の入力解釈に波及し、IdPプロファイル差異で破綻し得るため。 |
+| AUTH-API-02 | `/admin/provision/users` の入力/出力契約、拒否コード、`ALLOW_JIT_PROVISIONING` の意味論を変更 | **必須** | strict provisioning 契約そのものの変更であり、Level 2 fixture による境界回帰確認が必要。 |
+| AUTH-API-02 | header/JWT claim mapping（`sub`/`oid`/`nameid`, groups形式, `amr/acr/aal`）を変更 | **必須** | IdP差異の吸収責務に直接影響するため、Mock SP/IdPでの差異再現が必須。 |
+| AUTH-API-02 | 認証無関係（ログ整形、コメント、auth外module限定） | 不要 | 認証連携境界へ影響がないため。ただしPR本文で「境界非影響」を明記する。 |
+
+判定に迷う場合は **安全側（Level 2 実施）** を採用し、レビュー時に「境界非影響」の根拠を差分行番号つきで提示する。
+
 最低1件の fixture を回帰対象として固定する。
 
 - **固定fixture（最低1件）**: `tests/federation/profiles/google_oidc.json`
@@ -146,12 +158,22 @@ Playwright 実行不能環境（例: browser binary 未導入）では、以下�
 
 - Level 2 (conditional): pass | fail | skipped
   - trigger matched: yes | no
+  - trigger reason (required):
+    - `AUTH-IMPL-01: <schema only | auth boundary changed>`
+    - `AUTH-API-02: <contract changed | boundary unchanged | not in scope>`
   - command:
     - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
   - fixture (required when executed): `tests/federation/profiles/google_oidc.json`
   - result:
   - skip reason (if skipped):
 ```
+
+#### `playwright test -g "auth"` 実行前提（後続AUTH実装PR向け）
+
+- Frontend依存が解決済みであること（`cd 03_Implement/frontend && npm ci`）。
+- Playwright browser binary が導入済みであること（`cd 03_Implement/frontend && npx playwright install --with-deps chromium`）。
+- backend/frontend の health endpoint が応答すること（本書 3.1 / 3.2 のヘルス確認）。
+- 上記が満たせない場合、PRには **阻害要因・代替検証・再実行条件** を同時記載する。
 
 ---
 
