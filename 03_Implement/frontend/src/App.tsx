@@ -138,6 +138,7 @@ import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
 import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
+import { parseIntegrityManifest, verifyIntegrityManifest } from "./security/artifact_integrity";
 import { validatePublicPackManifest } from "./import/public_pack_manifest";
 import { sanitizeMarkdownForDisplay } from "./import/markdown_sanitize";
 import { buildReadOnlyBlockedMessage, resolveReadOnlyFromSearch } from "./domain/policy/read_only";
@@ -2737,6 +2738,35 @@ ${parsedDocument.error}`);
         const snapshotRaw = entries.get(paths.snapshotPath);
         if (snapshotRaw instanceof Uint8Array) {
           nextSnapshotUrl = URL.createObjectURL(new Blob([new Uint8Array(snapshotRaw)], { type: "image/png" }));
+        }
+      }
+
+      if (paths.integrityPath) {
+        const integrityRaw = entries.get(paths.integrityPath);
+        if (typeof integrityRaw !== "string") {
+          setPackImportError("integrity.json must be UTF-8 JSON text");
+          setStatusMessage("integrity.json must be UTF-8 JSON text");
+          return;
+        }
+        let parsedIntegrityJson: unknown;
+        try {
+          parsedIntegrityJson = JSON.parse(integrityRaw);
+        } catch {
+          setPackImportError("Invalid JSON in integrity.json");
+          setStatusMessage("Invalid JSON in integrity.json");
+          return;
+        }
+        const parsedIntegrity = parseIntegrityManifest(parsedIntegrityJson);
+        if (!parsedIntegrity.ok) {
+          setPackImportError(parsedIntegrity.error);
+          setStatusMessage(parsedIntegrity.error);
+          return;
+        }
+        const verification = await verifyIntegrityManifest(parsedIntegrity.manifest, entries);
+        if (!verification.ok) {
+          setPackImportError(`Integrity verification failed: ${verification.error}`);
+          setStatusMessage(`Integrity verification failed: ${verification.error}`);
+          return;
         }
       }
 

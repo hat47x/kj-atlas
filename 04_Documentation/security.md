@@ -66,3 +66,30 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 
 運用上、上限値を緩める場合は DoS 耐性と UX のトレードオフをレビューで明示してください。
 
+
+
+## 7. 配信物の改ざん検知（static publish / review pack）
+
+- `static publish` 生成物には `integrity.json`（SHA-256 digests）を同梱します。
+- `--signing-key` + `--key-id` を指定した場合、`integrity.json.signature` に detached signature（`rsa-sha256`）を付与します。
+- `scripts/verify_artifact_integrity.mjs` は hash / signature / key-id を検証し、失敗時は終了コード1で停止します（fail-safe）。
+- review pack import は `integrity.json` が含まれている場合、import前に hash 検証を実施し、不一致時は読み込みを拒否します。
+
+### 7.1 鍵管理（運用最小手順）
+
+1. 署名鍵ペアは公開配布サーバと分離した安全な保管領域で管理する（private keyをリポジトリに置かない）。
+2. `key-id` はローテーション単位（例: `ops-2026q1`）で採番し、配布ログに記録する。
+3. CI/CDでは private key をシークレット注入し、`publish:static` 実行時のみ利用する。
+
+### 7.2 ローテーション
+
+1. 新鍵ペアを発行し、新しい `key-id` を割り当てる。
+2. 新鍵で再署名した配信物を生成し、`verify_artifact_integrity` で検証する。
+3. 運用側の許可済み公開鍵を新 `key-id` へ切替後、旧鍵を失効する。
+
+### 7.3 障害時対応（改ざん疑い / 鍵不一致）
+
+- 症状: `Hash mismatch` / `Signature verification failed` / `Signing key mismatch`。
+- 初動: 配布停止、当該artifact隔離、直近の正当artifactとの差分比較。
+- 復旧: 正常鍵で再生成・再検証し、再配布。
+- 事後: 鍵漏えい可能性がある場合は即時ローテーションし、該当 `key-id` を失効扱いにする。

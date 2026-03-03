@@ -188,6 +188,7 @@ export type ReviewPackPaths = {
   snapshotPath: string | null;
   diagnosticsPath: string | null;
   outlinePath: string | null;
+  integrityPath: string | null;
   ignoredFileCount: number;
 };
 
@@ -209,8 +210,9 @@ export function detectReviewPackFiles(entries: Map<string, Uint8Array | string>)
   const snapshotPath = findFilePath(paths, "snapshot.png");
   const diagnosticsPath = findFilePath(paths, "diagnostics.md");
   const outlinePath = findFilePath(paths, "outline.md");
+  const integrityPath = findFilePath(paths, "integrity.json");
 
-  const knownPathSet = new Set([documentPath, viewPath, snapshotPath, diagnosticsPath, outlinePath].filter(Boolean));
+  const knownPathSet = new Set([documentPath, viewPath, snapshotPath, diagnosticsPath, outlinePath, integrityPath].filter(Boolean));
 
   return {
     documentPath,
@@ -218,6 +220,7 @@ export function detectReviewPackFiles(entries: Map<string, Uint8Array | string>)
     snapshotPath,
     diagnosticsPath,
     outlinePath,
+    integrityPath,
     ignoredFileCount: paths.filter((path) => !knownPathSet.has(path)).length,
   };
 }

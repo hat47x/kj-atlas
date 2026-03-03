@@ -1,4 +1,5 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { createHash, createSign } from "node:crypto";
 import path from "node:path";
 
 const frontendRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
@@ -9,6 +10,7 @@ function parseArgs(argv) {
     outDir: path.resolve(repoRoot, "03_Implement", "deploy", "public"),
     packId: "default",
     title: "Public Pack",
+    keyId: "",
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -28,14 +30,78 @@ function parseArgs(argv) {
     } else if (value === "--title") {
       options.title = argv[index + 1];
       index += 1;
+    } else if (value === "--signing-key") {
+      options.signingKeyPath = path.resolve(process.cwd(), argv[index + 1]);
+      index += 1;
+    } else if (value === "--key-id") {
+      options.keyId = argv[index + 1];
+      index += 1;
     }
   }
 
   if (!options.document) {
     throw new Error("Missing required --document argument");
   }
+  if (options.signingKeyPath && !options.keyId) {
+    throw new Error("--key-id is required when --signing-key is provided");
+  }
 
   return options;
+}
+
+function sha256Hex(content) {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+async function listFilesRecursively(rootDir, relativeDir = "") {
+  const entries = await readdir(path.resolve(rootDir, relativeDir), { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const rel = relativeDir ? `${relativeDir}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      files.push(...(await listFilesRecursively(rootDir, rel)));
+    } else if (entry.isFile()) {
+      files.push(rel);
+    }
+  }
+  return files;
+}
+
+async function buildIntegrityManifest(outDir) {
+  const files = (await listFilesRecursively(outDir))
+    .map((rel) => rel.replace(/\\/g, "/"))
+    .filter((rel) => rel !== "integrity.json")
+    .sort((a, b) => a.localeCompare(b));
+
+  const hashes = [];
+  for (const rel of files) {
+    const content = await readFile(path.resolve(outDir, rel));
+    hashes.push({ path: rel, sha256: sha256Hex(content) });
+  }
+
+  return {
+    version: "1",
+    hashAlgorithm: "sha256",
+    generatedAt: new Date().toISOString(),
+    files: hashes,
+  };
+}
+
+async function signManifestPayload(manifest, signingKeyPath, keyId) {
+  const signingKeyPem = await readFile(signingKeyPath, "utf-8");
+  const payload = JSON.stringify({
+    version: manifest.version,
+    hashAlgorithm: manifest.hashAlgorithm,
+    files: manifest.files,
+  });
+  const signer = createSign("RSA-SHA256");
+  signer.update(payload);
+  signer.end();
+  return {
+    keyId,
+    algorithm: "rsa-sha256",
+    value: signer.sign(signingKeyPem).toString("base64"),
+  };
 }
 
 async function run() {
@@ -93,6 +159,7 @@ async function run() {
     "- `index.html`: app entry",
     "- `assets/`: hashed static files",
     "- `packs/index.json`: public pack manifest",
+    "- `integrity.json`: SHA-256 digest list (+ optional signature)",
     "",
     `Default URL: ./index.html?pack=${encodeURIComponent(options.packId)}&readonly=1`,
   ].join("\n");
@@ -103,6 +170,12 @@ async function run() {
   const indexHtml = await readFile(indexHtmlPath, "utf-8");
   const redirectScript = `<script>if(!location.search.includes('pack=')){location.replace('./index.html?pack=${encodeURIComponent(options.packId)}&readonly=1');}</script>`;
   await writeFile(indexHtmlPath, indexHtml.replace("<head>", `<head>${redirectScript}`), "utf-8");
+
+  const integrity = await buildIntegrityManifest(options.outDir);
+  if (options.signingKeyPath) {
+    integrity.signature = await signManifestPayload(integrity, options.signingKeyPath, options.keyId);
+  }
+  await writeFile(path.resolve(options.outDir, "integrity.json"), `${JSON.stringify(integrity, null, 2)}\n`, "utf-8");
 
   console.log(`Generated static publish artifact at: ${options.outDir}`);
 }
