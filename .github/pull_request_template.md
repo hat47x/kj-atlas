@@ -20,6 +20,29 @@ npm run test
 pytest
 ```
 
+### AUTH verification log（AUTH関連変更時は必須）
+
+```md
+- classification: Smoke | Core | Safety
+
+- Level 1 (required): pass | fail
+  - command:
+    - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
+    - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+  - result:
+
+- Level 2 (conditional): pass | fail | skipped
+  - trigger matched: yes | no
+  - trigger reason:
+    - `AUTH-IMPL-01: <schema only | auth boundary changed>`
+    - `AUTH-API-02: <contract changed | boundary unchanged | not in scope>`
+  - command:
+    - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+  - fixture (required when executed): `tests/federation/profiles/google_oidc.json`
+  - result:
+  - skip reason (if skipped):
+```
+
 ## チェックリスト / Checklist
 
 - [ ] 関連Issueをリンクした
