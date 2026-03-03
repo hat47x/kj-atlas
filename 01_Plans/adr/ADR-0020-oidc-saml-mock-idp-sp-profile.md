@@ -1,0 +1,163 @@
+# ADR-0020: OIDC/SAML 対応における認証アーキテクチャ（IAPヘッダー認証 + Mock SP/IdP 検証プロファイル）
+
+- Status: Proposed
+- Date: 2026-03-03
+- Deciders: Project Maintainers
+- Scope: `01_Plans/adr/`
+
+## Context
+
+`kj-atlas` は enterprise/government 運用を想定しつつ、OSS として軽量性・安全性・再現性を維持する必要がある。
+既存方針では、アプリ本体は認証機構を内包せず、外部基盤（リバースプロキシ / IdP）へ委譲する。`02_Architecture/enterprise_architecture.md`
+
+一方で、OIDC/SAML 連携の実装～検証を AI エージェント主体で継続するには、次の論点を同時に解く必要がある。
+
+- 本番運用での最適解（自前SP/RP実装 vs リバースプロキシ + OSS製品）
+- ローカル開発での簡易認証導線（開発者体験）
+- E2Eでの再現可能な検証導線（Docker-in-Docker 非依存）
+- ユーザー情報（JIT Provisioning で作る最小属性）のデータ設計整合
+
+## Decision
+
+### 1) 本番運用アーキテクチャの採用方針
+
+本番/準本番は **「完全ヘッダー認証方式（Identity-Aware Proxy モデル）」** を第一選択とする。
+
+- 認証（OIDC/SAML）とセッション管理は前段SP/IAPにオフロードする。
+- `kj-atlas` Backend は、信頼されたプロキシから渡される認証済みヘッダーを受け取って `AuthContext` を構築する。
+- アプリ本体はパスワード・秘密情報・認証セッションを保持しない。
+
+この判断は、`enterprise_architecture.md` の「認証は外部責務」「アプリは署名済みユーザコンテキストを受け取る」方針を具体化するものである。
+
+### 2) 方式比較（意思決定根拠）
+
+#### A. 自前で SAML SP / OIDC RP をアプリ内実装する方式
+
+利点:
+
+- アプリ単体で完結し、PoC 立ち上げが速い。
+- UI/業務ロジックとの密結合が容易。
+
+課題:
+
+- 認証プロトコル実装責務（署名検証、証明書更新、脆弱性追随）がアプリ側に集中する。
+- 企業・行政監査で「なぜ標準IAPを使わないか」の説明コストが高い。
+- セキュリティレビュー対象が広がり、OSS保守負荷が増える。
+
+#### B. リバースプロキシ + OSS IAP（推奨方式）
+
+利点:
+
+- 認証責務を分離し、アプリ本体の攻撃面を縮小できる。
+- 企業・行政で一般的な統制（IdP連携、証明書運用、監査）と親和性が高い。
+- `kj-atlas` はヘッダー契約に集中でき、後方互換維持が容易。
+
+課題:
+
+- 配備時にプロキシ設定（trusted proxy, header contract）が必須。
+- ローカル開発では簡易導線（Basic認証等）を別途準備する必要がある。
+
+**結論**: `kj-atlas` の価値軸（軽量・安全・外部統合）を優先し、B を採用する。
+
+### 3) Backend（kj-atlas 本体）必須契約
+
+FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以下を満たす。
+
+1. ヘッダー取得
+   - 例: `X-Forwarded-User`（必須）, `X-Forwarded-Email`（任意）, `X-Forwarded-Name`（任意）
+2. Trust Proxy 強制
+   - `TRUSTED_PROXIES`（CIDR/IP）で許可元を制限する。
+   - 非許可信頼元 + 認証ヘッダー付き要求は拒否（401/403）。
+3. リクエストコンテキスト
+   - 正規化した `AuthContext` をAPIで参照可能にする。
+4. JIT Provisioning（最小）
+   - 未知ユーザーアクセス時に最小属性を登録（userId / displayName / email 等）。
+   - パスワード・ハッシュは保持しない。
+
+### 4) Frontend 必須契約
+
+- フロントエンドは「自前ログイン画面」を正本導線にしない。
+- 認証状態は backend の `AuthContext` 反映結果で表示する。
+- ログアウトは前段SP/IAPへリダイレクトする終端（RP-Initiated logout）を使う。
+
+### 5) ローカル開発プロファイル（簡易裏口）
+
+開発者向けに `docker-compose.local.yml` を用意し、前段プロキシ（推奨: Caddy）で次を提供する。
+
+- Basic認証は **local/dev 限定** とし、本番/準本番では無効を既定とする。
+- Basic認証は明示的な環境変数（例: `DEV_BASIC_AUTH_ENABLED=true`）が指定された場合のみ有効化する。
+- 環境ごとの有効/無効は compose ファイルで制御する（例: `docker-compose.local.yml` でのみ指定）。
+
+- Basic認証（固定管理者資格情報）
+- 認証成功時ヘッダー付与（例: `X-Forwarded-User: admin`）
+- backend への reverse proxy
+
+これにより、本体コードの認証仕様を変えずに開発導線を確保する。
+
+### 6) テスト専用プロファイル（Mock SP + Mock IdP）
+
+E2E では本番IAPを代替するため、FastAPI製モック群を採用する。
+
+- `mock_idp`:
+  - SAML（`pysaml2`）: IdP/SP Initiated SSO/SLO
+  - OIDC（`Authlib`）: Authorization Code Flow + RP-Initiated Logout
+- `mock_sp`:
+  - IdPへのリダイレクト / コールバック処理
+  - 認証成功時に `X-Forwarded-User` 等を付与して `kj-atlas` backend へフォワード
+- セッション/状態は In-Memory（DB/Redis 非依存）
+- 実行例（Docker非依存）:
+  - `uvicorn mock_idp:app --port 8081`
+  - `uvicorn mock_sp:app --port 8080`
+  - `uvicorn kj_atlas_backend.main:app --port 8000`
+
+### 7) 暗号素材と依存
+
+- SAML署名/OIDC JWKS はテスト起動時に動的生成する。
+- 鍵素材は平文コミット禁止。
+- `pysaml2` 実行要件として `xmlsec1` を導入する（ローカル手順 + Dockerfile）。
+
+### 8) 受入基準（最小）
+
+1. trusted proxy 外からのヘッダー偽装要求を拒否できる。
+2. trusted proxy 経由時に `AuthContext` が構築される。
+3. JIT Provisioning で最小ユーザーレコードが作成される（パスワード列なし）。
+4. E2Eで以下を通過する。
+   - SAML SP-Initiated SSO → backend で認証済み状態
+   - SAML SP-Initiated SLO → セッション破棄
+   - OIDC login → backend で認証済み状態
+   - OIDC logout → セッション破棄
+
+### 9) 未決事項（TODO / Issue化）
+
+以下は本ADRで結論固定しない。
+
+- ユーザー最小属性スキーマ（永続保存する項目、PII最小化、表示名の扱い）
+- reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則
+- 組織向け roles/groups/policyRef の永続境界（アプリ内保存 vs 外部照会）
+
+上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
+
+### 非目標
+
+- 本ADRは「本番IdP製品選定（Keycloak/Authentik/Cloud IAP等）」を固定しない。
+- 本ADRはアプリ内パスワード認証機能を追加しない。
+- 本ADRは全RBAC実装を完了条件にしない（I/F整備を優先）。
+
+## Consequences
+
+- `kj-atlas` は認証実装責務を最小化し、OSSとしての安全運用性を高める。
+- 企業・行政で要求される監査/統制との整合が取りやすくなる。
+- 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、E2E・運用手順の整備が必須。
+- ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
+
+## Traceability
+
+- Related: `02_Architecture/enterprise_architecture.md`
+- Related: `02_Architecture/schemas.md`
+- Related: `02_Architecture/review_attribution.md`
+- Related: `04_Documentation/security.md`
+- Related: `04_Documentation/e2e_testing.md`
+- Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Follow-up: `01_Plans/issues/issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`
+- Replaces: `04_Documentation/auth_oidc_saml_mock_idp.md`

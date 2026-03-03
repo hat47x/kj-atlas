@@ -30,7 +30,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 5) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 6) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 7) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0019`
+8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0020`
 9) **実装（03_Implement）**: 対象領域のソースへ
 10) **運用・手順**: `04_Documentation/*`（必要に応じて）
 11) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -94,6 +94,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0010-ADR-0017*.md`：粗粒度ADRを分割した詳細ADR群（価値/要件/Phase2/CLI）。
 - `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`：バッドスメル是正と規約運用方針。
 - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`：E2E確認方針とCompose運用。
+- `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`：OIDC/SAMLのMock IdP + SP実装/検証プロファイル。
 - `01_Plans/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
 - `01_Plans/issues/README.md`：Issue補助メモのActive一覧（Draft/Open/In Progress）。
 - `01_Plans/issues/*.md`：GitHub Issue運用を補助する短命メモ（Done時は原則削除）。
