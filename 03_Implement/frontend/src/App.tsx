@@ -911,8 +911,12 @@ export default function App() {
   const [lodLevelOverride, setLodLevelOverride] = useState<LODLevel | null>(null);
   const [lodShowLoneWolvesWhenFar, setLodShowLoneWolvesWhenFar] = useState(true);
   const [safeMode, setSafeMode] = useState(true);
-  const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(DEFAULT_VIEW_VISIBILITY);
-  const [packVisibility, setPackVisibility] = useState<PublishVisibility>(DEFAULT_PACK_VISIBILITY);
+  const [viewVisibility, setViewVisibility] = useState<PublishVisibility>(
+    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).viewVisibility
+  );
+  const [packVisibility, setPackVisibility] = useState<PublishVisibility>(
+    () => loadViewVisibilityForDocument(DEFAULT_DOCUMENT_ID).packVisibility
+  );
   const [showLabelBounds, setShowLabelBounds] = useState(false);
   const [includeUnreviewedDraftsInExport, setIncludeUnreviewedDraftsInExport] = useState(false);
   const [revealedSourceCardIds, setRevealedSourceCardIds] = useState<Set<string>>(new Set());
@@ -7342,15 +7346,15 @@ ${parsedDocument.error}`);
   }, [activeDocumentId, isReadOnly, viewMode]);
 
   useEffect(() => {
-    if (!document) {
+    if (!activeDocumentId) {
       return;
     }
 
-    saveViewVisibilityForDocument(document.id, {
+    saveViewVisibilityForDocument(activeDocumentId, {
       viewVisibility,
       packVisibility,
     });
-  }, [document, packVisibility, viewVisibility]);
+  }, [activeDocumentId, packVisibility, viewVisibility]);
 
   useEffect(() => {
     const unsubscribe = subscribeActiveLocaleChange((locale) => {
