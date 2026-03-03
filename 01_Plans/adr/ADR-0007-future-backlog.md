@@ -42,7 +42,7 @@
 | FB-P2C-01 | Polygon auto-fit | P0 | 2C | RQ-2C-02 | AC-2C-2, AC-2C-3 | 同一入力で同一polygonを生成し、padding制約を満たす。 |
 | FB-P2C-02 | Shape切替UI | P1 | 2C | RQ-2C-01 | AC-2C-1 | `rect/rounded_rect/polygon` の表示・保存・再読込が成立する。 |
 | FB-P2C-03 | Polygon検証と互換読み込み | P1 | 2C | RQ-2C-03 | AC-2C-4, AC-2C-5 | 自己交差保存を拒否し、shape欠損Documentを `rect` 解釈で表示する。 |
-| FB-P2C-04 | Polygon手動編集（頂点移動） | P2 | 2C+ | （拡張） | （将来AC） | 最低3点制約を維持して頂点移動できる（将来導入）。 |
+| FB-P2C-04 | Polygon手動編集（頂点移動） | P1 | 2C+ | RQ-2C-03 | AC-2C-6, AC-2C-7, AC-2C-8, AC-2C-9 | 頂点ドラッグ/追加/削除で編集できる。最小3点と自己交差禁止を常時維持し、不正操作は直前確定状態へロールバックされる。 |
 
 ---
 
@@ -50,7 +50,7 @@
 
 - Gate-2A: FB-P2A-01〜04 完了で 2A 終了。
 - Gate-2B: FB-P2B-01〜04 完了で 2B 終了。
-- Gate-2C: FB-P2C-01〜03 完了で 2C 終了（FB-P2C-04 は次段）。
+- Gate-2C: FB-P2C-01〜04 完了で 2C 終了（manual polygon edit 含む）。
 
 ---
 

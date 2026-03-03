@@ -48,6 +48,16 @@ docker compose logs api --tail=100
 - read-only モードでは編集系更新（カード/島/関係の更新、提案適用など）は保存されず、UI上でも編集操作は disabled 表示になります。
 - 閲覧操作（パン/ズーム/検索/参照）は継続可能です。
 
+### Polygon手動編集（FB-P2C-04）
+
+- 対象: `shape.kind = "polygon"` の island。
+- 操作: Side Panel の **Edit island boundary** をONにすると、頂点ハンドルを表示できます。
+- 頂点移動: ハンドルをドラッグして移動（保存は pointer up 時に1回だけ確定）。
+- 頂点追加: `Alt+Click` で辺上に頂点を追加。
+- 頂点削除: `Alt+Click` で頂点を削除（ただし最小3点制約を維持）。
+- 制約違反時（自己交差/最小頂点数未満）は操作を拒否し、直前の確定済み polygon を維持します。
+- read-only モードでは編集チェックボックスは disabled となり、頂点ハンドルは表示されません。
+
 ### Bundle export の監査ファイル
 
 - `Export bundle (.zip)` には `merge_decision_audit.json` が同梱されます。
