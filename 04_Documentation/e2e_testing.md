@@ -39,6 +39,20 @@
 - import（正常/異常）
 - export（意図しない漏えい防止）
 
+### 2.4 Auth Federation Flow（認証連携変更時に必須）
+
+`ADR-0020` に従い、認証連携境界（header/JWT mapping, provider preset, logout/step-up）を変更する場合は
+Level 2（Mock SP/IdP）を実施する。
+
+- 目的: 主要IdP製品・サービスのデータ連携仕様/様式を fixture で再現し、設定互換を回帰保証する。
+- 追加観点: `ALLOW_JIT_PROVISIONING=false`（事前プロビジョニング）時に、未登録IDが `403` で拒否されること。
+- 最低要件:
+  - provider profile fixture を1つ以上使ったE2Eを含める。
+  - 差異観点（ヘッダー名、claim名、groups形式、`amr/acr` 有無）のいずれかを検証する。
+- 例:
+  - `e2e/auth_provider_profile_cloud_iap.spec.ts`
+  - `e2e/auth_provider_profile_aws_alb.spec.ts`
+
 ---
 
 ## 3. 実行プロファイル
