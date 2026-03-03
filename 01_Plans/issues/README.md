@@ -85,6 +85,7 @@ issue補助メモには、最低でも次の項目を含める。
 | FB-RM-MID-01 | `issue-FB-RM-MID-01-deterministic-similar-card-candidates.md` | Done (Local) | TBD | 非AI deterministic heuristic による merge candidate 生成と順序安定テストを追加。 |
 | FB-RM-MID-03 | `issue-FB-RM-MID-03-merge-decision-audit-export.md` | Done (Local) | TBD | bundle export に `merge_decision_audit.json` を追加し、representative/source 追跡情報を監査用に出力。 |
 | FB-RM-I18N-02 | `issue-FB-RM-I18N-02-locale-json-fallback-order.md` | Done (Local) | TBD | locale JSON契約と fallback順序（requested->ja->key）を実装し、unit/typecheckで固定。 |
+| FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done (Local) | TBD | 英語UI等価のsmoke/flow E2Eを追加し、SQLite代替経路で再実行を含む通過ログを記録。 |
 | FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done (Local) | TBD | bundle export に overview/detail 粒度選択と manifest 出力を追加し、overview時のtrace抑止を unit test で固定。 |
 
 ## Done (Local) 運用ルール
@@ -95,3 +96,46 @@ issue補助メモには、最低でも次の項目を含める。
 2. `Done (Local)` は `Completed locally` セクションで管理する。
 3. `Source Issue` が確定したら、メモへURLを追記し、必要に応じて `Done` へ更新する。
 4. validator の機械検証対象は `Active issue memos` のみとし、`Completed locally` は対象外とする。
+
+
+## ADR-0007 × issue memo 整合性突合（2026-03-03）
+
+### Task Brief（固定）
+
+- Scope:
+  - `01_Plans/adr/ADR-0007-future-backlog.md` の `Roadmap統合バックログ` 状態と、`01_Plans/issues/*.md` の `Status` / 実績ログ（Done Local）を照合する。
+  - 「実際に未完了のタスク」と「記録遅延タスク（実装完了だが記録未同期）」を分離して可視化する。
+- Non-Goals:
+  - 実装コードの有無を推測で断定しない。
+  - Source Issue 未発行のまま `Done` へ強制変更しない。
+- Acceptance:
+  - 不整合を ID 単位で列挙し、各行に `status更新` / `根拠追記` / `別Issue化` のいずれかの必要アクションを付与する。
+  - Verify で「次に誰が何を編集すれば閉じるか」を 1 行ずつ示す。
+- Checks:
+  - `rg -n '^| FB-RM-' 01_Plans/adr/ADR-0007-future-backlog.md`
+  - `rg -n 'Status:|Related Backlog|Done \(Local\)' 01_Plans/issues/issue-*.md`
+  - `rg -n 'Completed locally|FB-RM-' 01_Plans/issues/README.md`
+
+### 不整合一覧（ADR-0007 vs issue memos）
+
+| Backlog ID | ADR-0007 状態 | issue memo 状態/実績 | 判定 | 必要アクション | 備考 |
+|---|---|---|---|---|---|
+| FB-RM-I18N-03 | Planned | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md`: Done (Local), E2E実行ログあり | 要確認（状態衝突） | **根拠追記**: ADR-0007 側へ「Done(Local)根拠リンク or 未達理由」を追記。**status更新**は根拠確認後のみ実施。 | 実装完了は断定せず、記録衝突として停止。 |
+| FB-RM-PUB-01 | Planned | 対応 issue memo なし（本ディレクトリ内） | 実際に未完了（要起票） | **別Issue化**: `issue-FB-RM-PUB-01-*.md` を起票し、受入条件/検証計画を先に固定。 | 未着手タスクを可視化するための最小アクション。 |
+| DOC-REL-01 | ADR-0007管理外 | `Completed locally` に Done(Local) として掲載 | 要確認（管理面） | **別Issue化**: ADR-0007 対象外で継続管理するなら、専用トラッキング（別ADR/issue index）へ分離。 | ADR-0007との突合対象外を明示する。 |
+
+### 分離結果（可視化）
+
+- 実際に未完了のタスク:
+  - `FB-RM-PUB-01`（Planned かつ issue memo 不在）
+- 記録遅延タスク:
+  - `FB-RM-I18N-03`（ADR: Planned / issue memo: Done(Local) の衝突）
+- 管理境界の要確認:
+  - `DOC-REL-01`（ADR-0007対象外タスクが Completed locally に混在）
+
+### Verify（次に誰が何を編集すれば閉じるか）
+
+- **Backlog Owner（I18N）**: `ADR-0007` の `FB-RM-I18N-03` 行に、E2E実績を根拠として `Done` へ更新するか、未達DoDを追記して `Planned` 維持理由を明文化する。
+- **Planning Maintainer**: `01_Plans/issues/README.md` の `Completed locally` と個別memoの `Status` を定期突合し、同種ドリフトの再発を防ぐ。
+- **Planning Maintainer**: `FB-RM-PUB-01` の issue memo を新規作成し、`Source Issue`・受入条件・検証計画を先に固定する。
+- **Docs/Planning Owner**: `DOC-REL-01` を ADR-0007突合対象から除外する運用注記（または別トラッキング先）を README に追記する。
