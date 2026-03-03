@@ -230,13 +230,13 @@ Frontend の可読性・安全性ルールを CI で継続的に検知し、`ADR
 **受入条件（DoD）**
 - Frontend で `npm run lint`（または同等コマンド）が定義され、ローカル実行できる。
 - CIでlint結果が可視化され、Phase B 到達時点で fail-on-error が有効になる。
-- 規約文書（`01_Plans/coding_standards.md`）と運用導線（`CONTRIBUTING.md`）に
+- 規約文書（`02_Architecture/coding_standards.md`）と運用導線（`CONTRIBUTING.md`）に
   lint実行手順と運用ルールが同期される。
 - SafeMode 既定ON・漏えい防止の既存ポリシーに影響を与えない。
 
 **トレーサビリティ**
 - Source ADR: `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`
-- Related: `.github/workflows/ci.yml`, `01_Plans/coding_standards.md`, `CONTRIBUTING.md`
+- Related: `.github/workflows/ci.yml`, `02_Architecture/coding_standards.md`, `CONTRIBUTING.md`
 
 ---
 

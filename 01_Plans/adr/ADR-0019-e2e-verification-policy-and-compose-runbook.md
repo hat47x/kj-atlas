@@ -83,14 +83,14 @@
   - `04_Documentation/operations.md`
   - `04_Documentation/e2e_testing.md`
   - `CONTRIBUTING.md`
-  - `01_Plans/coding_standards.md`
+  - `02_Architecture/coding_standards.md`
 
 ### 7. 利用者向けドキュメントとの完全整合ルール
 
 1. **E2E手順の正本**
    - `04_Documentation/e2e_testing.md` をE2E実施手順の正本（single source of truth）とする。
 2. **完全整合の対象**
-   - `installation.md` / `operations.md` / `CONTRIBUTING.md` / `coding_standards.md` に記載する
+   - `installation.md` / `operations.md` / `CONTRIBUTING.md` / `02_Architecture/coding_standards.md` に記載する
      E2Eコマンド、受入基準、代替経路（Docker未導入時）は、正本と同一意味で記述する。
 3. **同一PR更新の義務**
    - E2E関連のコマンド・判定基準・対象フローを変更した場合は、上記文書を同一PRで同期更新する。
@@ -118,5 +118,5 @@
 - Related: `04_Documentation/operations.md`
 - Related: `04_Documentation/e2e_testing.md`
 - Related: `CONTRIBUTING.md`
-- Related: `01_Plans/coding_standards.md`
+- Related: `02_Architecture/coding_standards.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`

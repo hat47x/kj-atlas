@@ -24,6 +24,15 @@
 4. **命名**
    - 識別子は英語で、意図が読める名前にする（略語はドメイン既知のみ）。
 
+5. **長期保守性を最優先する**
+   - 本プロジェクトは長期運用を前提とし、短期的な場当たり修正より、変更容易性と回帰耐性を優先する。
+   - 設計判断では **疎結合・高凝集** を優先し、依存方向を明確に保つ。
+6. **設計原則の実践**
+   - SOLID / DRY / KISS / YAGNI / 単一抽象度（SLAP）を実装判断の基準として使う。
+   - 汎用化の根拠がない抽象化を追加しない（将来予測だけで拡張ポイントを作らない）。
+7. **自己説明的なコードを優先**
+   - 命名と構造で意図が読める実装を優先し、コメントは「何をしているか」ではなく「なぜそうしたか」を補足する。
+
 ### 1.2 セキュリティ（安全な実装）
 
 1. **入力検証を先に行う**
@@ -40,8 +49,17 @@
 5. **機密情報の直書き禁止**
    - APIキーやトークンはコード・fixture・ログへ保存しない。
    - 設定は環境変数から注入する。
+6. **型安全性を維持する**
+   - TypeScript では `any` と安易な型アサーション（`as any` / `!`）を原則禁止する。
+   - 例外的に型緩和が必要な場合は、境界を局所化し理由をコメントまたはPRで明示する。
 
-### 1.3 テスト・検証
+### 1.3 ドキュメンテーションとコメント
+
+1. **ドキュメンテーションの最小要件**
+   - 公開API・複雑な分岐・セキュリティ境界では、実装理由（Why）を簡潔に残す。
+   - コメントは最新状態を保ち、実装と矛盾する説明を残さない。
+
+### 1.4 テスト・検証
 
 1. **変更に対応するテストを同時追加**
    - バグ修正時は再現テストを先に書く（または同時に追加）。
@@ -58,7 +76,7 @@
    - 正本の判断が難しい不足・不整合は、あるべき状態を整理したIssueを起票してから同期する（ADRに作業トラッキングを混在させない）。
    - それでも実行不能な環境のみ、未実施理由・代替検証・後続確認手順・Compose未確認リスク差分をPRに記載する。
 
-### 1.4 Frontend lint 段階導入（ADR-0018 Follow-up）
+### 1.5 Frontend lint 段階導入（ADR-0018 Follow-up）
 
 Frontend lint は開発フローの急停止を避けるため、Phase A→B→C で導入する。
 
@@ -122,11 +140,11 @@ Frontend lint は開発フローの急停止を避けるため、Phase A→B→C
 - `frontend-test`: 単体テストとビルド検証（常時 fail-on-error）
 
 #### 差分監査手順（規約 / CONTRIBUTING / CI の同期確認）
-1. 規約更新時に `01_Plans/coding_standards.md` のPhase定義を先に更新する。
+1. 規約更新時に `02_Architecture/coding_standards.md` のPhase定義を先に更新する。
 2. `CONTRIBUTING.md` の開発者手順（lint実行・失敗時対処・例外申請）を同一PRで同期する。
 3. `.github/workflows/ci.yml` のジョブ名・fail条件・phase切替手段が文書と一致するか確認する。
 4. 最終確認として以下を実行する。
-   - `rg -n "frontend-lint|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" 01_Plans/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml`
+   - `rg -n "frontend-lint|FRONTEND_LINT_PHASE|npm run lint|Phase A|Phase B|Phase C" 02_Architecture/coding_standards.md CONTRIBUTING.md .github/workflows/ci.yml`
    - 差異があれば、文書と実装のどちらを正本にするかをPR本文で明示して修正する。
 
 ---

@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-02-25
 - Deciders: Project Maintainers
-- Scope: `03_Implement/frontend`, `03_Implement/backend`, `01_Plans/coding_standards.md`
+- Scope: `03_Implement/frontend`, `03_Implement/backend`, `02_Architecture/coding_standards.md`
 - Derived-from: コードベース観測（2026-02-25）
 
 ## Context
@@ -22,7 +22,7 @@
 ## Decision
 
 1. **バッドスメルの管理先を ADR + 規約へ一本化**する。
-   - 観測事項は本ADRに記録し、実務ルールは `01_Plans/coding_standards.md` に集約する。
+   - 観測事項は本ADRに記録し、実務ルールは `02_Architecture/coding_standards.md` に集約する。
    - 規約文書からは「現在のコードの観測一覧」を削除し、ルール本文に集中させる。
 
 2. **是正方針を以下に固定**する。
@@ -40,7 +40,7 @@
 
 本ADRの「静的検知を段階導入する」決定に対する運用実装として、以下を必須化する。
 
-- Phase A/B/C のチェックリストと exit criteria を `01_Plans/coding_standards.md` に定義する。
+- Phase A/B/C のチェックリストと exit criteria を `02_Architecture/coding_standards.md` に定義する。
 - 開発者向けの `npm run lint` 実行手順・失敗時対処・期限付き例外運用を `CONTRIBUTING.md` に定義する。
 - CIは `frontend-lint` / `frontend-typecheck` / `frontend-test` に責務分離し、Phase B 以降の fail-on-error 条件を明示する。
 - 文書とCIの同期確認は、同一PR内の差分監査コマンドで検証する。
@@ -53,5 +53,5 @@
 
 ## Traceability
 
-- Implements: `01_Plans/coding_standards.md`
+- Implements: `02_Architecture/coding_standards.md`
 - Related: `.github/workflows/ci.yml`, `CONTRIBUTING.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
