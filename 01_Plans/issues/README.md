@@ -100,8 +100,6 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Open | N/A |
-| AUTH-SCHEMA-01 | `issue-AUTH-SCHEMA-01-identity-schema-planning.md` | Open | N/A |
 
 ## AUTH-ARCH-01 / AUTH-SCHEMA-01 実行比較（1ページ）
 
@@ -161,6 +159,8 @@ AUTH-SCHEMA-01 (identity schema 反映・同期)
 
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
+| AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Done | N/A | AuthContext/JIT境界、strict責務、承認記録を確定。 |
+| AUTH-SCHEMA-01 | `issue-AUTH-SCHEMA-01-identity-schema-planning.md` | Done | N/A | identity schema比較、403契約、expand/contract前提を確定。 |
 | FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done | N/A | 実装/検証完了済み。 |
 | DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done | N/A | 文書整合監査完了。 |
 | FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done | N/A | worker化・fallback/cancel/progress 回帰固定済み。 |
