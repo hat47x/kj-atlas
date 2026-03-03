@@ -56,6 +56,27 @@ type ViewMetadata = {
   reviewers?: ReviewerProfile[];
   reviewEvents?: ReviewEvent[];
 };
+
+type ReviewSignatureEnvelope = {
+  version: "1";
+  keyId: string;
+  algorithm: "rsa-sha256";
+  signedAt: string; // ISO
+  payload: {
+    documentDigest: string; // sha256:<hex>
+    viewDigest: string; // sha256:<hex>
+    reviewEventDigest: string; // sha256:<hex>
+    attributionPolicyDigest: string; // sha256:<hex>
+  };
+  signature: string; // base64 detached signature
+};
+
+type ReviewSignatureVerification = {
+  verifiedAt: string; // ISO
+  result: "passed" | "not_provided" | "failed";
+  reasonCode?: "digest_mismatch" | "key_not_found" | "signature_invalid";
+  keyId?: string;
+};
 ```
 
 ## Defaults
@@ -97,4 +118,39 @@ ReviewerRef 推奨フォーマット（例）:
 - reviewEvents は暗号署名されない前提であり、監査証跡としての強度は限定的。
 - 将来拡張で detached signature を追加する場合も、上記構造を壊さず付加情報として実装する。
 
+## Optional signing additions (Phase3 M6)
+
+### File placement
+- `review-signature.json`（新規、任意）
+  - `ReviewSignatureEnvelope` を保存する detached signature ファイル
+  - `document.json` / `view.json` を変更せず同梱する
+
+### Verification status model
+- 署名検証結果は監査ログ側で `ReviewSignatureVerification` として扱う。
+- `reviewEvents` へ混在させない（レビュー操作ログの意味境界を維持）。
+
+### Validation rules for envelope
+- `keyId` は空文字不可
+- `algorithm` は当面 `rsa-sha256` のみ許可（将来列挙拡張）
+- `payload.*Digest` は `sha256:<hex>` 形式
+- `signedAt` は ISO 8601 文字列
+- `signature` は base64 文字列（空文字不可）
+
+### Verification behavior
+- 署名ファイル欠損:
+  - `result=not_provided`
+  - import / view / review 操作は継続（non-blocking default）
+- 署名ファイルあり + 検証成功:
+  - `result=passed`
+- 署名ファイルあり + 検証失敗:
+  - `result=failed` + `reasonCode`
+  - 既定では read-only で閲覧継続可、share/export で追加確認
+
+### Policy override (org optional)
+- 組織運用で fail-closed が必要な場合のみ `requireSignature=true` を別途 policy で指定する。
+- 既定は `requireSignature=false` とし、無署名をエラー扱いにしない。
+
+### Backward compatibility
+- 署名情報は sidecar 追加のため、既存 `ViewMetadata` スキーマ version を変更しない。
+- 旧クライアントは `review-signature.json` を読まなくても動作可能。
 
