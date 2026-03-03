@@ -1,0 +1,97 @@
+# Issue Draft: AUTH-API-02 strict provisioning contract and admin API implementation
+
+- Type: Feature request
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P1
+- Owner: Auth Architecture Lead（Security/Identity）
+- Scope: `03_Implement/backend/src/kj_atlas_api/routes/`, `02_Architecture/api.md`, `04_Documentation/security.md`
+- Related Backlog: N/A
+- Related ADR/Spec: `ADR-0020`, `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`, `02_Architecture/api.md`, `02_Architecture/review_attribution.md`
+- Expected verification level: `integration`
+
+## RACI（簡易）
+
+| 区分 | Role |
+|---|---|
+| R (Responsible) | Auth Architecture Lead（Security/Identity） |
+| A (Accountable) | Platform Architecture Owner |
+| C (Consulted) | Backend Lead, Compliance/Security Officer |
+| I (Informed) | PM/Triage, QA Lead |
+
+## 1) 課題 / Problem statement
+
+- strict mode（`ALLOW_JIT_PROVISIONING=false`）時の `403 + code=identity_not_provisioned` 契約が実装追跡されていない。
+- `POST /admin/provision/users` を正本契約として定義したが、実装/運用ドキュメントの紐付けが不足。
+- 運用者が「拒否時に何を実行すれば解消できるか」を迷う状態。
+
+## 2) 背景 / Context
+
+- AUTH-ARCH-01 で strict mode の責務境界（API正本、CLIはラッパ）を決裁済み。
+- AUTH-SCHEMA-01 で 403 エラーコード最小契約を決裁済み。
+- API設計と backend route 実装、運用ドキュメントを同一粒度で追跡する必要がある。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: 認証失敗時の回復導線が明確でないと導入障壁が高い。
+- 安全（THREAT_MODEL / SafeMode）: 未登録主体を許可しない strict 動作は最重要の安全境界。
+- 企業・行政要件（enterprise_architecture）: 事前プロビジョニング運用は監査可能な管理導線が前提。
+- 後方互換（schemas）: 既定ON/OFF切替時の API 応答契約を破らず段階導入が必要。
+
+## 4) 提案する解決策 / Proposed solution
+
+- 変更対象: Backend API + Architecture/Ops docs 同期。
+- 最小単位:
+  - strict拒否ハンドラの実装
+  - `POST /admin/provision/users` の最小契約実装
+  - 監査ログ/エラーコード整備
+- 非目標:
+  - フルSCIM実装
+  - 管理UI実装
+  - IdP製品固有ロジックの追加
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] strict mode + 未登録subject で `403` と `identity_not_provisioned` を返す。
+- [ ] `POST /admin/provision/users` の最小入力/応答/冪等性が文書と実装で一致する。
+- [ ] CLI（存在する場合）はAPIラッパとして同一契約を使用し、独自分岐を持たない。
+- [ ] integration レベルのテストで許可経路・拒否経路・再試行経路を確認する。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1: strict mode 判定ロジックとエラーコード（`identity_not_provisioned`）を実装する。
+- [ ] T2: 管理者プロビジョニング API の request/response schema を固定する。
+- [ ] T3: API route test（403/200/409 等の境界）を追加する。
+- [ ] T4: `02_Architecture/api.md` と `04_Documentation/security.md` を同期更新する。
+- [ ] T5: RACI-I 通知テンプレを PR本文へ適用し、Status変更トリガーを記録する。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`
+  - `curl -fsS http://localhost:8000/healthz`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/kj_atlas_api`
+- 期待結果:
+  - strict拒否契約と管理導線が docs/API実装/テストで一致する。
+- 未実施時の理由・代替検証:
+  - ローカルAPI起動不能時は test double で route 単体テストを先行し、未実施理由をPRに残す。
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: strict mode でも未登録subjectを自動作成する。
+  - 却下理由: 決裁済み安全境界に反する。
+- 代替案B: 管理導線をCLI専用にする。
+  - 却下理由: API正本方針と監査一貫性を損なう。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: 誤判定により正当ユーザーを拒否、または未登録ユーザーを許可。
+- 影響範囲: backend auth route, 運用手順, 監査証跡。
+- ロールバック手順: feature flag (`ALLOW_JIT_PROVISIONING`) により運用回避し、直前安定版へ戻す。
+
+## 10) Additional context
+
+- 関連Issue/PR/議論ログ: N/A
+- ADR化が必要になる条件: strict mode の拒否コード体系を複数化する等、外部契約へ互換影響が出る場合。
