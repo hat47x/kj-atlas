@@ -211,6 +211,19 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - `users` / `user_identities` の正式スキーマ（一意制約・移行手順・監査列）
 - `ALLOW_JIT_PROVISIONING` 無効時の管理者API/CLI最小契約（将来SCIM含む）
 
+#### 2026-03-03 update（AUTH-ARCH-01 確定）
+
+- AuthContext/JIT 属性境界を固定:
+  - persist: `provider`, `external_uid`, `display_name`, `email`
+  - transient: `amr/acr/aal/auth_time`, `roles/groups`, `trace_id`
+  - forbidden: password/hash/secret, WebAuthn credential id, raw policy token
+- 正規マッピングを固定:
+  - `AuthContext.userId = users.id`
+  - `reviewerRef = ownerRef = user:<users.id>`
+- strict mode 契約を固定:
+  - `ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
+  - 事前プロビジョニング `POST /admin/provision/users`（将来SCIM置換点）
+
 上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
 
 ### 10) IdP がパスキー（FIDO2/WebAuthn）を提供する場合の考慮事項

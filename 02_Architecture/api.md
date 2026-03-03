@@ -223,3 +223,33 @@ fail-safe マトリクス:
 
 - adapter未設定（`noop`）では既存挙動を維持する。
 - API本体にRBACエンジンは実装しない（非目標）。
+
+## 9. AUTH-SCHEMA-01 API契約（JIT / strict provisioning）
+
+### 9.1 AuthContext 正規化
+
+- 入力ヘッダ（設定差し替え可）:
+  - `AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
+  - `AUTH_USER_FIELD`（既定 `x-forwarded-user`）
+  - `AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
+  - `AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
+  - `AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
+- 正規化後:
+  - `AuthContext.userId`: `users.id`
+  - `AuthContext.actorRef`: `user:<users.id>`
+  - `AuthContext.provider` / `AuthContext.externalUid`
+
+### 9.2 strict mode 拒否契約
+
+- 条件: `ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
+- 応答: `403 Forbidden`
+- エラー文言（最小契約）: `Identity not provisioned. Pre-provision via /admin/provision/users before access.`
+
+### 9.3 事前プロビジョニング API（最小）
+
+- `POST /admin/provision/users`
+  - request: `{ provider, externalUid, displayName?, email? }`
+  - response: `{ userId, reviewerRef, ownerRef }`
+  - 冪等: 同一 `provider+externalUid` は既存 `userId` を返す
+
+本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。

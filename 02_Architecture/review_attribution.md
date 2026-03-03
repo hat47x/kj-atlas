@@ -166,3 +166,13 @@ kj-atlas は OSS として、多様な環境で利用される：
 ## Notes
 - 本機能は「責任所在を明確化し、レビュー運用を回す」ための補助である。
 - 生成AIの要約/文章化が入る場合でも、“人間がレビューしたか”の区別ができることを優先する。
+
+## 8. AUTH-ARCH-01: AuthContext/JIT 境界と表示責務
+
+- 永続境界:
+  - 永続化: `userId`, `reviewerRef=user:<userId>`, `ownerRef=user:<userId>`
+  - 非永続（揮発）: `displayName`, `amr/acr/aal/auth_time`, `roles/groups`
+- PII最小化:
+  - document/view/review event には `reviewerRef` のみ残し、表示名は必要時に外部ディレクトリ照会または一時ヘッダーで補完する。
+- strict mode:
+  - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。

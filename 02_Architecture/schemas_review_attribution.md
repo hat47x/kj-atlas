@@ -154,3 +154,12 @@ ReviewerRef 推奨フォーマット（例）:
 - 署名情報は sidecar 追加のため、既存 `ViewMetadata` スキーマ version を変更しない。
 - 旧クライアントは `review-signature.json` を読まなくても動作可能。
 
+
+## 7. AUTH-SCHEMA-01 連携: reviewerRef / ownerRef 正規マッピング
+
+- 正規キーは `AuthContext.userId`（内部 `users.id`）とする。
+- `reviewerRef` / `ownerRef` は派生値 `user:<users.id>` を採用する。
+- `provider` や `external_uid` は attribution payload へ直保存しない。
+- strict mode（`ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
+
+これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。

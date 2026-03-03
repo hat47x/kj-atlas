@@ -24,9 +24,16 @@ FailSafeReason = Literal[
 @dataclass(frozen=True)
 class AuthContext:
     actor_ref: str | None
+    user_id: str | None = None
+    provider: str | None = None
+    external_uid: str | None = None
     roles: tuple[str, ...] = ()
     groups: tuple[str, ...] = ()
     trace_id: str | None = None
+    amr: str | None = None
+    acr: str | None = None
+    aal: str | None = None
+    auth_time: str | None = None
 
 
 @dataclass(frozen=True)
@@ -124,14 +131,30 @@ class ExternalPolicyAccessControlAdapter:
         self._config = config
 
     def authorize(self, request: AccessRequest) -> AccessDecision:
+        auth_payload: dict[str, object] = {
+            "actorRef": request.auth.actor_ref,
+            "roles": list(request.auth.roles),
+            "groups": list(request.auth.groups),
+            "traceId": request.auth.trace_id,
+        }
+        if request.auth.user_id is not None:
+            auth_payload["userId"] = request.auth.user_id
+        if request.auth.provider is not None:
+            auth_payload["provider"] = request.auth.provider
+        if request.auth.external_uid is not None:
+            auth_payload["externalUid"] = request.auth.external_uid
+        if request.auth.amr is not None:
+            auth_payload["amr"] = request.auth.amr
+        if request.auth.acr is not None:
+            auth_payload["acr"] = request.auth.acr
+        if request.auth.aal is not None:
+            auth_payload["aal"] = request.auth.aal
+        if request.auth.auth_time is not None:
+            auth_payload["authTime"] = request.auth.auth_time
+
         payload = {
             "action": request.action,
-            "auth": {
-                "actorRef": request.auth.actor_ref,
-                "roles": list(request.auth.roles),
-                "groups": list(request.auth.groups),
-                "traceId": request.auth.trace_id,
-            },
+            "auth": auth_payload,
             "resource": {
                 "docId": request.resource.doc_id,
                 "visibility": request.resource.visibility,
