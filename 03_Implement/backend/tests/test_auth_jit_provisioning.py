@@ -87,12 +87,27 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
                 headers={"x-forwarded-user": "bob", "x-auth-provider": "saml"},
             )
             assert denied.status_code == 403
+            assert denied.json()["detail"]["code"] == "identity_not_provisioned"
 
             provision = client.post(
                 "/admin/provision/users",
                 json={"provider": "saml", "externalUid": "bob", "displayName": "Bob"},
             )
-            assert provision.status_code == 200
+            assert provision.status_code == 201
+            assert provision.json()["provisioned"] is True
+
+            retry = client.post(
+                "/admin/provision/users",
+                json={"provider": "saml", "externalUid": "bob", "displayName": "Bob"},
+            )
+            assert retry.status_code == 201
+            assert retry.json()["provisioned"] is False
+
+            conflict = client.post(
+                "/admin/provision/users",
+                json={"provider": "saml", "externalUid": "bob", "displayName": "Not Bob"},
+            )
+            assert conflict.status_code == 409
 
             allowed = client.put(
                 "/docs/doc-auth-strict",

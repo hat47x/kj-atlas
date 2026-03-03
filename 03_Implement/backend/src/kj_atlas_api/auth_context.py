@@ -70,7 +70,10 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         if not settings.allow_jit_provisioning:
             raise HTTPException(
                 status_code=403,
-                detail="Identity not provisioned. Pre-provision via /admin/provision/users before access.",
+                detail={
+                    "code": "identity_not_provisioned",
+                    "message": "Identity not provisioned. Pre-provision via /admin/provision/users before access.",
+                },
             )
 
         user_id = str(uuid4())

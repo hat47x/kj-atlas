@@ -161,6 +161,7 @@ ReviewerRef 推奨フォーマット（例）:
 - `reviewerRef` / `ownerRef` は派生値 `user:<users.id>` を採用する。
 - `provider` や `external_uid` は attribution payload へ直保存しない。
 - strict mode（`ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
+- backfill時は `reviewerRef` / `ownerRef` のみを書換対象とし、`provider` / `external_uid` は attribution payload へ新規保存しない。
 
 これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。
 - `internal_user_id` は実体として `users.id` を指し、`reviewerRef` / `ownerRef` は表示・交換用の派生参照（`user:<users.id>`）とする。

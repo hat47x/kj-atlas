@@ -95,3 +95,17 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 - 初動: 配布停止、当該artifact隔離、直近の正当artifactとの差分比較。
 - 復旧: 正常鍵で再生成・再検証し、再配布。
 - 事後: 鍵漏えい可能性がある場合は即時ローテーションし、該当 `key-id` を失効扱いにする。
+
+
+## 8. Strict provisioning 運用（AUTH-API-02）
+
+`ALLOW_JIT_PROVISIONING=false` の strict mode では、未登録subjectを必ず拒否します。
+
+- 拒否契約: `403` + `{"code":"identity_not_provisioned","message":"Identity not provisioned. Pre-provision via /admin/provision/users before access."}`
+- 回復導線: `POST /admin/provision/users`
+  - request: `{ "provider": "saml", "externalUid": "alice", "displayName": "Alice" }`
+  - create時: `201` + `provisioned=true`
+  - 再試行: `201` + `provisioned=false`
+  - 既存identityに矛盾する `displayName/email` は `409 identity_already_provisioned_conflict`
+
+運用上、strict緩和（`ALLOW_JIT_PROVISIONING=true` への切替）は承認フローを経て記録してください。
