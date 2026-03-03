@@ -84,6 +84,50 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
    - 未知ユーザーアクセス時に最小属性を登録（userId / displayName / email 等）。
    - パスワード・ハッシュは保持しない。
 
+### 3.5) ユーザー識別・保持モデル（認証情報なし前提）
+
+認証情報（password/MFA secret）を保持しない場合でも、`kj-atlas` 側の **ユーザーマスタは必須** とする。
+理由は、認可判定・データ所有権・レビュー帰属をアプリ内部で安定参照するためである。
+
+- 原則:
+  - 認証は外部（IdP/IAP）責務、`kj-atlas` は認証結果を受ける。
+  - ただしアプリ内部では `internal_user_id`（不変キー）を保持し、データはこの内部IDに紐づける。
+- 推奨データモデル（将来のschema更新方針）:
+  - `users`（内部主体）
+    - `id`（UUID等, immutable）, `display_name`, `role`, lifecycle metadata
+  - `user_identities`（外部識別子との紐付け）
+    - `user_id` (FK), `provider`, `external_uid`, attributes metadata
+  - 関係: `users` 1 : N `user_identities`
+- 標準挙動（JIT有効時）:
+  - 受信 `provider + external_uid` を `user_identities` で検索。
+  - ヒット: 対応する `users.id` を利用。
+  - ミス: `users` と `user_identities` を同時作成（JIT provisioning）。
+
+### 3.6) 複数認証経路（Google/社内SSO/学認等）の扱い
+
+- 基本方針:
+  - アプリUIとしてのアカウントリンク機能は持たない（複雑性/脆弱性増加を回避）。
+  - 可能な限り前段IdPで統合し、`kj-atlas` には単一安定IDを渡す。
+- 例外対応（必要時のみ）:
+  - IdP移行・メール/所属変更等で識別子が変わる場合に備え、
+    管理者API/CLIで `user_identities` の付替え・追加を可能にする設計余地を持つ。
+  - これにより、データ本体（cards/workspaces/review帰属）を内部 `users.id` へ固定したまま救済できる。
+
+### 3.7) JIT と事前プロビジョニングの運用モード
+
+`kj-atlas` は OSS普及性と enterprise統制の両立のため、**ハイブリッド運用** を採用する。
+
+- 既定（OSS向け）: `ALLOW_JIT_PROVISIONING=true`
+  - 未登録アイデンティティ到達時に動的作成を許可。
+  - 導入障壁を下げ、Time-to-Valueを優先。
+- 厳格運用（enterprise/government向け）: `ALLOW_JIT_PROVISIONING=false`
+  - 未登録アイデンティティは `403 Forbidden`。
+  - 事前プロビジョニング（管理者API/CLI、将来的SCIM連携）で登録済ユーザーのみ許可。
+
+補足:
+- JITを無効化しても認証は外部責務のまま維持する。
+- deprovisioning や事前権限付与を厳密運用する場合は、事前プロビジョニングモードを推奨する。
+
 ### 4) Frontend 必須契約
 
 - フロントエンドは「自前ログイン画面」を正本導線にしない。
@@ -164,6 +208,8 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則
 - 組織向け roles/groups/policyRef の永続境界（アプリ内保存 vs 外部照会）
 - `amr/acr/aal/auth_time` を AuthContext にどこまで保持・表示・監査出力するか
+- `users` / `user_identities` の正式スキーマ（一意制約・移行手順・監査列）
+- `ALLOW_JIT_PROVISIONING` 無効時の管理者API/CLI最小契約（将来SCIM含む）
 
 上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
 

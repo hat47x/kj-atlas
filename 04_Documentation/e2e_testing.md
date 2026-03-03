@@ -45,6 +45,7 @@
 Level 2（Mock SP/IdP）を実施する。
 
 - 目的: 主要IdP製品・サービスのデータ連携仕様/様式を fixture で再現し、設定互換を回帰保証する。
+- 追加観点: `ALLOW_JIT_PROVISIONING=false`（事前プロビジョニング）時に、未登録IDが `403` で拒否されること。
 - 最低要件:
   - provider profile fixture を1つ以上使ったE2Eを含める。
   - 差異観点（ヘッダー名、claim名、groups形式、`amr/acr` 有無）のいずれかを検証する。
