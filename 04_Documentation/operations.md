@@ -241,6 +241,22 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - 任意記録: `decision_readOnly`, `decision_reason`, `visibility`, `adapterName`, `traceId`。
 - 非保存: `roles/groups` 生値, `policyRef` 生値, ドキュメント本文。
 
+### 3.1 AuthContext属性の監査取扱い（PII最小化）
+
+- `amr/acr/aal/auth_time` はアプリDBへ保存しない。
+- 監査へ出力する場合も生値は使用せず、次の正規化のみ許可する。
+  - `hasStepUp`（boolean）
+  - `assuranceLevel`（`low|substantial|high|unknown`）
+  - `authAgeBucket`（`fresh|stale|unknown`）
+- `roles/groups/policyRef` は外部照会入力であり、監査では `policyRefPresent` など存在フラグのみ扱う。
+
+### 3.2 strict mode の例外承認責任
+
+- `ALLOW_JIT_PROVISIONING=false` は本番標準（strict）とする。
+- 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
+- Platform Operator は実施時刻・理由・承認者を変更台帳へ記録し、承認記録がない変更を禁止する。
+- backend 開発者はコードで一時バイパスを実装してはならない。
+
 ### 4. SafeMode/read-only 優先
 
 - 判定順は常に `safeMode` → `readOnly` → adapter判定。

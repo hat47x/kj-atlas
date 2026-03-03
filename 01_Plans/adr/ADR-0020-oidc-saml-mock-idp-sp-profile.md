@@ -214,7 +214,6 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 
 #### 9.2 継続検討（後続Issueで扱う）
 
-- `amr/acr/aal/auth_time` の監査出力粒度（保持期間・可観測性UI）
 - 管理導線の将来置換（SCIM/企業ID管理連携）の運用詳細
 
 #### 2026-03-03 update（AUTH-ARCH-01 確定）
@@ -229,6 +228,11 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 - strict mode 契約を固定:
   - `ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
   - 事前プロビジョニング `POST /admin/provision/users`（将来SCIM置換点）
+- 監査最小化契約を固定:
+  - `amr/acr/aal/auth_time` の生値永続化を禁止し、監査は正規化指標（`hasStepUp`/`assuranceLevel`/`authAgeBucket`）のみ許可
+- strict mode 運用責任を固定:
+  - 例外緩和は Security Officer + System Owner の2者承認
+  - Platform Operator が実行記録（時刻/理由/承認者）を保持
 
 上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
 
