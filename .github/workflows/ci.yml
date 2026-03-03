@@ -377,7 +377,7 @@ jobs:
           echo "frontend-test: fail-on-error (always)" >> "$GITHUB_STEP_SUMMARY"
 
   backend:
-    name: Backend lint + test
+    name: Backend lint + Level1 test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -416,7 +416,7 @@ jobs:
       - name: Test (SQLite)
         env:
           DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m "not postgres"
+        run: pytest -m "not postgres and not level2"
 
       - name: Migrate PostgreSQL schema
         env:
@@ -428,3 +428,63 @@ jobs:
           RUN_PG_TESTS: "1"
           DATABASE_URL: postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas
         run: pytest -m postgres
+
+  auth-boundary-requirement:
+    name: Detect auth federation boundary changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      require_level2: ${{ steps.detect.outputs.require_level2 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Level2 requirement from changed files
+        id: detect
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          require_level2="$(.github/scripts/detect_auth_boundary.sh "$BASE_SHA" "$HEAD_SHA")"
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:auth-boundary') }}" == "true" ]]; then
+            require_level2="true"
+          fi
+          echo "require_level2=$require_level2" >> "$GITHUB_OUTPUT"
+          echo "Auth Level2 required: $require_level2" >> "$GITHUB_STEP_SUMMARY"
+
+  backend-auth-level2:
+    name: Backend auth federation Level2 (mock SP/IdP)
+    needs: auth-boundary-requirement
+    if: github.event_name == 'pull_request' && needs.auth-boundary-requirement.outputs.require_level2 == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03_Implement/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]" ruff alembic psycopg[binary]
+
+      - name: Run Level2 auth federation tests
+        env:
+          LEVEL2_DIAG_DIR: .tmp/level2-diagnostics
+        run: ./scripts/run_auth_level2.sh
+
+      - name: Upload Level2 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-level2-diagnostics
+          path: 03_Implement/backend/.tmp/level2-diagnostics
+          if-no-files-found: warn

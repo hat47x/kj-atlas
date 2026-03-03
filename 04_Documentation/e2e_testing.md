@@ -53,6 +53,25 @@ Level 2（Mock SP/IdP）を実施する。
   - `e2e/auth_provider_profile_cloud_iap.spec.ts`
   - `e2e/auth_provider_profile_aws_alb.spec.ts`
 
+- CI判定フラグ運用（標準）:
+  - 通常PR: Level 1（`backend` job）を実行する。
+  - 境界変更PR: `ci:auth-boundary` ラベル、または境界ファイル差分の自動検知で Level 2 を必須化する。
+  - 自動検知スクリプト: `.github/scripts/detect_auth_boundary.sh`
+- Level 2 の標準実行（ローカル/CI共通）:
+
+```bash
+cd /path/to/kj-atlas/03_Implement/backend
+export PYTHONPATH=src
+export LEVEL2_DIAG_DIR=.tmp/level2-diagnostics
+./scripts/run_auth_level2.sh
+```
+
+- provider profile fixture は `tests/level2/fixtures/provider_profile_*.json` を切り替えて差異再現する。
+  - 差異観点: ヘッダー名、claim名、`groups` 形式、`amr/acr` 有無。
+- 失敗時の診断導線:
+  - ローカル: `LEVEL2_DIAG_DIR` 配下の JSON（forwarded headers / token claims / API status）をQAへ共有する。
+  - CI: `auth-level2-diagnostics` artifact をダウンロードして同一入力で再実行する。
+
 ---
 
 ## 3. 実行プロファイル
