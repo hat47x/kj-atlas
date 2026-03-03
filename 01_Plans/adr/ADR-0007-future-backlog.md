@@ -115,7 +115,7 @@
 
 | ID | 優先度 | 状態 | 具体アクション | DoD（完了条件） |
 |---|---|---|---|---|
-| FB-RM-PUB-01 | P1 | Planned | Public / Unlisted / Org / Restricted を pack/view metadataへ追加 | schema検証と既存データ互換を両立 |
+| FB-RM-PUB-01 | P1 | Done (2026-03-03) | Public / Unlisted / Org / Restricted を pack/view metadataへ追加し、viewは `Restricted`・packは `Public` の欠損fallback、enum外値のstrict reject、SafeMode/readOnly優先順を architecture/schema/API/実装/テストで固定。 | schema検証と既存データ互換を両立し、安全優先順位を維持したまま保存/再読込を回帰固定 |
 | FB-RM-PUB-02 | P1 | Done (2026-03-01) | URL query (`readonly/readOnly/isReadOnly/mode=readonly`) から read-only モードを解決し、`applyDocumentChange` ガードで編集系更新を一括抑止。Suggestion / Merge Suggestions の編集導線をdisabled化し、サイドパネルとヘッダーに read-only 状態を明示。 | 読み取り専用時に編集系更新が保存されず、UIで状態が明示される |
 | FB-RM-PUB-03 | P1 | Done (2026-03-01) | `publish:static` パイプラインを追加し、`index.html + assets + packs` の最小公開物を生成。`packs/index.json` から公開packを自動読込し、`safeMode=true` を強制。生成済み `index.html` は `readonly=1` URLへ自動遷移。運用手順を `operations.md` / `03_Implement/README.md` に追記。 | 生成物のみで静的サーバ閲覧が成立し、SafeMode既定ON + read-only 公開モードで再現手順が文書化される |
 | FB-RM-PUB-04 | P2 | Done (2026-03-01) | `AccessControlAdapter` 抽象I/F（roles/groups/policyRef）を追加し、API本体は `resolve_access_decision` 呼び出しへ限定。`noop` 既定 + `mock` 契約アダプタを導入し、fail-safe（safeMode/readOnly/policyRef）と監査最小項目をテストで固定。 | 本体にRBAC評価ロジックを埋め込まず、adapter未設定時も既存挙動を維持したまま外部委譲契約で運用できる |
