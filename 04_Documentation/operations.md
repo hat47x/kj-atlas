@@ -217,12 +217,23 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 ### 2. 環境変数
 
-- `ACCESS_CONTROL_ADAPTER=noop|mock|<custom>`（既定: `noop`）
+- `ACCESS_CONTROL_ADAPTER=noop|mock|external_http|<custom>`（既定: `noop`）
   - `noop`: 後方互換のため既定許可。
   - `mock`: 契約検証用。`x-policy-ref: mock:deny` / `mock:read_only` で決定論テストが可能。
+  - `external_http`: OIDC/SAML運用環境の policy engine（PDP）へ POST 委譲。
   - 未知の値は `noop` へフォールバック（既存挙動維持）。
 - `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`（既定: `read_only`）
   - `Org/Restricted` で `policyRef` 欠損・不達・無効・adapter例外時に fail-safe を適用。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT`（任意）
+  - `external_http` 選択時の委譲先URL。未設定時は `noop` へフォールバック。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS`（既定: `1.5`）
+  - 外部 policy adapter 呼び出しの timeout 秒数。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE=none|oidc|saml`（既定: `none`）
+  - adapter が policy engine へ通知する認証モード。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN`（任意）
+  - PDP 経路で静的トークンが必要な環境向け。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER`（任意）
+  - OIDC/SAML の issuer/entity ID を `x-idp-issuer` ヘッダで引き渡す。
 
 ### 3. 最小監査記録（PII非保存）
 
@@ -234,6 +245,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 - 判定順は常に `safeMode` → `readOnly` → adapter判定。
 - adapterが許可を返しても、SafeMode/read-only拒否は上書きできません。
+- `external_http` は HTTP 4xx(400/401/403/422)・不正JSON・契約不整合を `policy_ref_invalid` に、接続障害/timeout/5xx を `policy_ref_unreachable` に正規化します。
 - adapter未設定/無効時でも `noop` にフォールバックし、既存運用を阻害しません。
 
 ## 監査連携（view/export）運用

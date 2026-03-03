@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
@@ -19,6 +20,13 @@ class SpyAuditDispatcher:
     def emit(self, event: object):
         self.events.append(event)
         return None
+
+
+class AllowAllAdapter:
+    name = "allow-all"
+
+    def authorize(self, request):  # noqa: ANN001
+        return AccessDecision(allow=True)
 
 
 
@@ -66,6 +74,7 @@ def test_get_document_emits_view_audit_event(tmp_path) -> None:
     spy = SpyAuditDispatcher()
     with _sqlite_client(tmp_path) as client:
         client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
         payload = _sample_payload("doc-view")
         put_resp = client.put("/docs/doc-view", json=payload)
         assert put_resp.status_code == 200
@@ -88,7 +97,10 @@ def test_get_document_emits_view_audit_event(tmp_path) -> None:
     assert event.eventType == "view"
     assert event.docId == "doc-view"
     assert event.metadata["decision_allow"] is True
+    assert event.metadata["decision_read_only"] is False
+    assert event.metadata["decision_reason"] is None
     assert event.metadata["policyRefPresent"] is True
+    assert event.metadata["adapterName"] == "allow-all"
     assert event.metadata["visibility"] == "Org"
     assert event.metadata["traceId"] == "trace-view-1"
     metadata_json = str(event.metadata)
@@ -102,6 +114,7 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     spy = SpyAuditDispatcher()
     with _sqlite_client(tmp_path) as client:
         client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
         response = client.post(
             "/docs/doc-export/export-audit",
             json={"safeMode": False, "exportKind": "bundle"},
@@ -116,4 +129,8 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.docId == "doc-export"
     assert event.safeMode is False
     assert event.metadata["action"] == "export"
+    assert event.metadata["decision_allow"] is True
+    assert event.metadata["decision_read_only"] is False
+    assert event.metadata["decision_reason"] is None
+    assert event.metadata["adapterName"] == "allow-all"
     assert event.metadata["traceId"] == "trace-export-1"

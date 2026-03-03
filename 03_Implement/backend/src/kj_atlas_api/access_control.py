@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Literal, Protocol
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from fastapi import HTTPException
 
@@ -94,6 +97,100 @@ class MockAccessControlAdapter:
         if token == "mock:read_only":
             return AccessDecision(allow=True, read_only=True, reason="mock_read_only")
         return AccessDecision(allow=True)
+
+
+AdapterAuthMode = Literal["none", "oidc", "saml"]
+
+
+@dataclass(frozen=True)
+class ExternalPolicyAdapterConfig:
+    endpoint: str
+    timeout_seconds: float = 1.5
+    auth_mode: AdapterAuthMode = "none"
+    static_bearer_token: str | None = None
+    idp_issuer: str | None = None
+
+
+class ExternalPolicyAccessControlAdapter:
+    """HTTP bridge to enterprise policy engines behind OIDC/SAML SSO.
+
+    RBAC/ABAC evaluation remains external; this adapter only forwards
+    AccessRequest and validates the AccessDecision contract.
+    """
+
+    name = "external_http"
+
+    def __init__(self, *, config: ExternalPolicyAdapterConfig):
+        self._config = config
+
+    def authorize(self, request: AccessRequest) -> AccessDecision:
+        payload = {
+            "action": request.action,
+            "auth": {
+                "actorRef": request.auth.actor_ref,
+                "roles": list(request.auth.roles),
+                "groups": list(request.auth.groups),
+                "traceId": request.auth.trace_id,
+            },
+            "resource": {
+                "docId": request.resource.doc_id,
+                "visibility": request.resource.visibility,
+                "policyRef": request.resource.policy_ref,
+            },
+            "safeMode": request.safe_mode,
+            "readOnly": request.read_only,
+        }
+        body = json.dumps(payload).encode("utf-8")
+
+        headers = {
+            "content-type": "application/json",
+            "accept": "application/json",
+            "x-acl-auth-mode": self._config.auth_mode,
+        }
+        if request.auth.trace_id:
+            headers["x-trace-id"] = request.auth.trace_id
+        if self._config.idp_issuer:
+            headers["x-idp-issuer"] = self._config.idp_issuer
+        if self._config.static_bearer_token:
+            headers["authorization"] = f"Bearer {self._config.static_bearer_token}"
+
+        outbound = urllib_request.Request(
+            self._config.endpoint,
+            data=body,
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            with urllib_request.urlopen(outbound, timeout=self._config.timeout_seconds) as response:  # noqa: S310
+                response_text = response.read().decode("utf-8")
+        except urllib_error.HTTPError as exc:
+            if exc.code in {400, 401, 403, 422}:
+                raise AccessControlInvalidPolicyError("policy adapter rejected request") from exc
+            raise AccessControlUnreachableError("policy adapter returned retryable error") from exc
+        except urllib_error.URLError as exc:
+            raise AccessControlUnreachableError("policy adapter unreachable") from exc
+        except TimeoutError as exc:
+            raise AccessControlUnreachableError("policy adapter timeout") from exc
+
+        try:
+            decoded = json.loads(response_text)
+        except json.JSONDecodeError as exc:
+            raise AccessControlInvalidPolicyError("policy adapter response is not json") from exc
+
+        allow = decoded.get("allow")
+        if not isinstance(allow, bool):
+            raise AccessControlInvalidPolicyError("policy adapter response missing boolean allow")
+
+        read_only = decoded.get("readOnly", False)
+        if not isinstance(read_only, bool):
+            raise AccessControlInvalidPolicyError("policy adapter readOnly must be boolean")
+
+        reason = decoded.get("reason")
+        if reason is not None and not isinstance(reason, str):
+            raise AccessControlInvalidPolicyError("policy adapter reason must be string")
+
+        return AccessDecision(allow=allow, read_only=read_only, reason=reason)
 
 
 def _read_only_fallback(reason: FailSafeReason, *, action: AccessAction) -> AccessDecision:
@@ -199,4 +296,18 @@ def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
         return NoopAccessControlAdapter()
     if adapter_name == "mock":
         return MockAccessControlAdapter()
+    if adapter_name == "external_http":
+        from kj_atlas_api.settings import settings
+
+        endpoint = settings.access_control_external_http_endpoint
+        if endpoint:
+            return ExternalPolicyAccessControlAdapter(
+                config=ExternalPolicyAdapterConfig(
+                    endpoint=endpoint,
+                    timeout_seconds=settings.access_control_external_http_timeout_seconds,
+                    auth_mode=settings.access_control_external_http_auth_mode,
+                    static_bearer_token=settings.access_control_external_http_static_bearer_token,
+                    idp_issuer=settings.access_control_external_http_idp_issuer,
+                )
+            )
     return NoopAccessControlAdapter()

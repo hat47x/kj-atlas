@@ -211,7 +211,15 @@ fail-safe マトリクス:
 - 任意: `decision.readOnly`, `decision.reason`, `visibility`, `adapterName`, `traceId`
 - 非保存: `policyRef` 生値、`roles/groups` 生値、ドキュメント本文
 
-### 8.5 互換性
+### 8.5 実運用アダプタ設定（OIDC/SAML接続）
+
+- `ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy endpoint へ `POST` 委譲する。
+- request body は `AccessRequest` 契約そのまま（`auth.roles/groups` と `resource.policyRef` を透過転送）とし、意味解釈は行わない。
+- request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
+- 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。契約不整合は `policy_ref_invalid` として fail-safe を適用する。
+- `ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` 指定でも `noop` へフォールバックする（可用性優先）。
+
+### 8.6 互換性
 
 - adapter未設定（`noop`）では既存挙動を維持する。
 - API本体にRBACエンジンは実装しない（非目標）。
