@@ -105,3 +105,51 @@ apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0
 5. `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`
 
 上記を実行し、本ログの R-01〜R-04 をクローズする。
+
+## 5) Compose復帰後アクションの再実行（本タスク: QA Lead運用確認）
+
+- 実施日時: 2026-03-03（本セッション）
+- 判定: **Blocked（環境制約）**
+
+### 5.1 手順1) docker利用可否確認
+
+実行コマンド:
+
+```bash
+docker --version && docker compose version
+```
+
+結果:
+
+```text
+bash: command not found: docker
+```
+
+判定:
+
+- `docker` バイナリ未導入のため、Compose経路の後続手順（2)〜5) は実行不能。
+
+### 5.2 手順2)〜5) の実行可否
+
+| 手順 | コマンド/内容 | 状態 | 理由 |
+|---|---|---|---|
+| 2 | `docker compose up --build -d` | blocked | `docker` コマンド不在 |
+| 3 | `docker compose ps` | blocked | 2) 未実行かつ `docker` コマンド不在 |
+| 4 | health/docs roundtrip 再実行 | blocked | Composeスタック未起動（`web:8080` 不成立） |
+| 5 | Playwright 再実行（Compose経路） | blocked | Compose経路未起動のため受入対象外 |
+
+### 5.3 R-01〜R-04 判定（pass/fail/blocked）
+
+| Risk | 状態 | 状態遷移理由 |
+|---|---|---|
+| R-01 PostgreSQL固有差分 | blocked（継続） | Compose + PostgreSQL 経路を起動できず、SQLite代替では同等確認不可 |
+| R-02 web(Nginx)経由 `/api` 差分 | blocked（継続） | `web:80` コンテナ未起動のため `/api` rewrite/CORS を再検証不可 |
+| R-03 Composeヘルス連鎖 | blocked（継続） | `docker compose ps` / `logs` を取得できず、`depends_on: service_healthy` 連鎖未観測 |
+| R-04 Composeネットワーク境界 | blocked（継続） | web↔api↔db のコンテナ間接続試験を実施できない |
+
+### 5.4 Blocked解除条件
+
+1. 実行ホストに Docker Engine + Docker Compose v2 を導入する。
+2. `docker --version` と `docker compose version` が成功することを確認する。
+3. 本ログ「4) 後続アクション（Compose復帰後）」の5手順を順に再実行し、結果を追記する。
+4. 5手順の結果に基づいて R-01〜R-04 を `pass` / `fail` に更新する（推測で `pass` 化しない）。
