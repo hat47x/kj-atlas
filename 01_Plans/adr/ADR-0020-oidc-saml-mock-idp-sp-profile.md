@@ -122,6 +122,10 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - 方式: FastAPI製モック群（`mock_sp` + `mock_idp`）を起動して検証する。
   - `mock_idp`: SAML（`pysaml2`）, OIDC（`Authlib`）
   - `mock_sp`: 認証成功後に `X-Forwarded-User` 等を付与して backend へフォワード
+- 目標: 主要なIdP製品/サービスで観測されるデータ連携仕様・様式を、
+  **テストコード上の provider profile fixtures** として再現・検証する。
+  - 例: ヘッダー名差異、JWT claim 名差異、`groups` 形式、`amr/acr` の有無。
+  - 方針: 製品別に実装分岐を増やさず、preset + fixture 差し替えで吸収する。
 - 実行例（Docker非依存）:
   - `uvicorn mock_idp:app --port 8081`
   - `uvicorn mock_sp:app --port 8080`
@@ -130,6 +134,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 #### Mock SP/IdP を実施すべき条件
 
 - `AuthContextAdapter` の入力モードや provider preset の仕様変更。
+- provider profile fixtures（主要IdP連携様式）の追加/変更。
 - logout / step-up / `amr` 等、IdP連携境界に関わる仕様変更。
 - 依存ライブラリ更新（`pysaml2`, `Authlib`, `xmlsec1`）で連携回帰リスクが高い場合。
 
@@ -149,6 +154,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 4. E2E受入基準:
    - **必須**: Level 1（AuthContext 契約E2E）を通過する。
    - **条件付き必須**: IdP連携境界を変更するPRでは Level 2（Mock SP/IdP）も通過する。
+   - **Level 2実施時**: 少なくとも1つ以上の provider profile fixture（主要IdP様式）を使った回帰を含める。
 
 ### 9) 未決事項（TODO / Issue化）
 
@@ -191,6 +197,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - 企業・行政で要求される監査/統制との整合が取りやすくなる。
 - 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、Level 1 E2Eを常時維持する必要がある。
 - Mock SP/IdP は「常時必須」ではなく、IdP連携境界変更時の拡張ゲートとして運用する。
+- Level 2 は主要IdPのデータ連携様式をfixture化して再現し、設定互換の回帰保証を担う。
 - 入力方式の差異（header/JWT、各IAPのヘッダー名差異）は設定テンプレートで吸収し、実装分岐の増殖を抑制する。
 - ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
 
