@@ -14,6 +14,7 @@ import { TraceWorkerClient } from "../worker/trace_client";
 import { buildTraceAnalyticsMd, computeTraceAnalytics } from "../worker/trace_analytics";
 import { BundleZipWorkerClient } from "../worker/bundle_zip_client";
 import type { PublishVisibility } from "../domain/policy/publish_visibility";
+import { buildIntegrityManifest } from "../security/artifact_integrity";
 
 export type BundleFile = {
   path: string;
@@ -355,6 +356,8 @@ export async function buildExportBundleWithWorkers(
     traceClient.dispose();
   }
 
+  const integrityManifest = await buildIntegrityManifest(bundleFiles, context.deterministicNowIso);
+  bundleFiles.push(toJsonFile(`${root}/integrity.json`, integrityManifest));
   return [...bundleFiles].sort((left, right) => left.path.localeCompare(right.path));
 }
 

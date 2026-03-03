@@ -90,6 +90,29 @@ python3 -m http.server 4173
 
 ブラウザで `http://localhost:4173/` を開くと、`pack=public-main&readonly=1` へ自動遷移して閲覧モードで表示されます。
 
+4. 改ざん検知（SHA-256 + 署名）
+
+- `publish:static` は `integrity.json` を自動生成し、公開物のハッシュ一覧を記録します。
+- 署名を付与する場合は `--signing-key`（RSA private key PEM）と `--key-id` を指定します。
+
+```bash
+cd 03_Implement/frontend
+npm run publish:static -- \
+  --document ./tests/fixtures/worker/doc.small.json \
+  --out ../deploy/public \
+  --pack-id public-main \
+  --title "Public sample" \
+  --signing-key ./keys/publish-private.pem \
+  --key-id ops-2026q1
+
+node ./scripts/verify_artifact_integrity.mjs \
+  --root ../deploy/public \
+  --public-key ./keys/publish-public.pem \
+  --key-id ops-2026q1
+```
+
+- 検証失敗時（hash mismatch / signature mismatch / key-id mismatch）は **配布停止（fail-safe）** し、再生成または鍵ローテーション手順へ進みます。
+
 
 #### Visibility metadata 運用（FB-RM-PUB-01）
 
