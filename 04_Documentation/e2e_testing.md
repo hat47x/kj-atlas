@@ -65,6 +65,7 @@
 命名例:
 
 - `e2e/polygon_import_validation.spec.ts`（自己交差polygon importのフォールバック確認）
+- `e2e/polygon_vertex_edit.spec.ts`（polygon頂点ドラッグ編集の保存・制約維持確認）
 - `e2e/diagnostics_structural_metrics.spec.ts`（構造メトリクスがbundle diagnosticsへ反映され、連続exportで決定論を維持することを確認）
 
 ---
@@ -82,6 +83,7 @@ PR本文には最低限以下を記載する。
 
 - `npm run e2e`（Playwright）
 - `npm run e2e -- e2e/polygon_import_validation.spec.ts`
+- `npm run e2e -- e2e/polygon_vertex_edit.spec.ts`
 - `npm run e2e -- e2e/diagnostics_structural_metrics.spec.ts`
 - `npm run e2e -- e2e/pub_visibility_i18n_readonly_flow.spec.ts`
 - `curl http://localhost:8000/healthz`

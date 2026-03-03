@@ -130,6 +130,16 @@ Polygon 形状では、最小UIとして頂点ハンドルによる編集を許�
 - 自己交差を禁止
 - 不正形状操作時は保存拒否（安全フォールバック: 直前状態を維持）
 
+FB-P2C-04 受入条件（固定）:
+- AC-2C-6: polygon 編集中はドラッグ確定時のみ `shape.points` を永続化し、drag move はプレビュー専用とする。
+- AC-2C-7: `points.length < 3` になる操作は拒否し、直前の確定済み `shape.points` を保持する。
+- AC-2C-8: 自己交差 polygon になる操作は拒否し、直前の確定済み `shape.points` を保持する。
+- AC-2C-9: 同一入力（同一点群 + 同一移動量）で同一保存結果になるよう、座標は小数第2位で丸めて決定論を維持する。
+
+互換/保存時バリデーション:
+- import 互換読込では不正 polygon をフォールバック可能だが、保存系（strict validate / export）は不正 polygon を受理しない。
+- manual edit の拒否動作は `save時エラーに依存せず` UI時点で成立させる（保存時にも二重で拒否される）。
+
 ---
 
 ## 5. Hit-testing & rendering notes

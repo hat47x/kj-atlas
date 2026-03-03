@@ -2447,6 +2447,7 @@ export function SidePanel({
                   <input
                     type="checkbox"
                     checked={isPolygonVertexEditEnabled}
+                    disabled={isReadOnly}
                     onChange={(event) => {
                       onPolygonVertexEditEnabledChange(event.target.checked);
                     }}

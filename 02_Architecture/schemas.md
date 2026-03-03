@@ -135,6 +135,21 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 
 
+## 7A. Island polygon edit constraints（FB-P2C-04）
+
+`DocumentV2.islands[*].shape.kind === "polygon"` の場合、保存対象の `shape.points` は次を満たす。
+
+- `points` は `Point[]`（`x: number`, `y: number`）
+- 最小頂点数は 3（`points.length >= 3`）
+- 自己交差禁止
+- 座標は UI 編集時に小数第2位へ正規化（決定論維持）
+
+互換読込と保存経路の扱い:
+
+- 互換読込（import upgrade）: 不正 polygon はフォールバック（shape除去または rect解釈）を許可。
+- 保存/厳格検証（strict validate / export）: 不正 polygon を reject し、document を成功扱いにしない。
+- UI手動編集（vertex drag/add/remove）: 不正操作は即時拒否し、直前の確定済み polygon を保持。
+
 ## 8. Publishing / Access metadata（FB-RM-PUB-01）
 
 公開配布（pack）および表示状態（view metadata）では、以下の visibility enum を共通契約として使う。

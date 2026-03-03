@@ -147,6 +147,10 @@ normal PC display で overview/detail の往復時、文脈保持と編集集中
 - AC-2C-3: padding は `island_shapes.md` の制約範囲で調整できる。
 - AC-2C-4: 自己交差 polygon の保存は失敗し、既存状態を保持する。
 - AC-2C-5: `shape` 欠損の旧 Document は `rect` として表示できる。
+- AC-2C-6: polygon 頂点ドラッグは pointer up 時のみ確定保存し、drag move はプレビューに限定する。
+- AC-2C-7: polygon 編集で `points.length < 3` になる操作は拒否し、確定済み shape を保持する。
+- AC-2C-8: polygon 編集で自己交差になる操作は拒否し、確定済み shape を保持する。
+- AC-2C-9: 同一入力の頂点編集は小数第2位丸めで決定論結果を維持する。
 
 ### AC-V Viewpoint switching（overview ↔ detail）
 - AC-V-1: overview は hierarchy 前提で collapsed 単位の低密度表示になる。
