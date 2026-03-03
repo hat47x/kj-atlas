@@ -100,7 +100,7 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
                 "/admin/provision/users",
                 json={"provider": "saml", "externalUid": "bob", "displayName": "Bob"},
             )
-            assert retry.status_code == 201
+            assert retry.status_code == 200
             assert retry.json()["provisioned"] is False
 
             conflict = client.post(

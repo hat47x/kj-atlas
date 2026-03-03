@@ -265,7 +265,8 @@ fail-safe マトリクス:
 
 - `POST /admin/provision/users`
   - request: `{ provider, externalUid, displayName?, email? }`
-  - `201` response: `{ userId, reviewerRef, ownerRef, provisioned }`
+  - `201` response (created): `{ userId, reviewerRef, ownerRef, provisioned=true }`
+  - `200` response (idempotent retry): `{ userId, reviewerRef, ownerRef, provisioned=false }`
   - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す
   - `409` response: 既存subjectへ矛盾する `displayName` / `email` を再投入した場合は `identity_already_provisioned_conflict`
 
