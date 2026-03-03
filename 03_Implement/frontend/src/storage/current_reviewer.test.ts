@@ -43,14 +43,14 @@ describe("current_reviewer storage", () => {
   });
 
   it("initializes reviewerRef once and keeps it for reload", () => {
-    const randomUuidSpy = vi.spyOn(crypto, "randomUUID").mockReturnValue("abc-123");
+    const randomUuidSpy = vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000001");
 
     const initialized = initializeCurrentReviewerRef();
-    expect(initialized).toBe("user:local:abc-123");
-    expect(loadCurrentReviewerRef()).toBe("user:local:abc-123");
+    expect(initialized).toBe("user:local:00000000-0000-4000-8000-000000000001");
+    expect(loadCurrentReviewerRef()).toBe("user:local:00000000-0000-4000-8000-000000000001");
 
     const second = initializeCurrentReviewerRef();
-    expect(second).toBe("user:local:abc-123");
+    expect(second).toBe("user:local:00000000-0000-4000-8000-000000000001");
     expect(randomUuidSpy).toHaveBeenCalledTimes(1);
   });
 
