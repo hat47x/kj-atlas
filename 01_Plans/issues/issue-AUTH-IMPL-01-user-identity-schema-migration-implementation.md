@@ -1,7 +1,7 @@
 # Issue Draft: AUTH-IMPL-01 users / user_identities schema migration implementation
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -54,18 +54,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `users` / `user_identities` の migration が expand/contract 手順で定義され、ロールバック手順を含む。
-- [ ] `reviewerRef/ownerRef` の既存データが `user:<users.id>` へ backfill できる。
-- [ ] 旧経路と新経路の dual-read/write 期間を検証できるテストがある。
-- [ ] integration レベルの検証（docs-check + unit + DB/API結合）が実施される。
+- [x] `users` / `user_identities` の migration が expand/contract 手順で定義され、ロールバック手順を含む。
+- [x] `reviewerRef/ownerRef` の既存データが `user:<users.id>` へ backfill できる。
+- [x] 旧経路と新経路の dual-read/write 期間を検証できるテストがある。
+- [x] integration レベルの検証（docs-check + unit + DB/API結合）が実施される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: alembic で `users` / `user_identities` と制約（`UNIQUE(provider, external_uid)`）を追加する。
-- [ ] T2: backend model/repository を dual-read/write 対応にする。
-- [ ] T3: `reviewerRef/ownerRef` backfill 手順（dry-run付き）を追加する。
-- [ ] T4: integration test（identity 解決 + attribution 往復）を追加/更新する。
-- [ ] T5: contract 段階で旧参照経路の除去条件をドキュメント化する。
+- [x] T1: alembic で `users` / `user_identities` と制約（`UNIQUE(provider, external_uid)`）を追加する。
+- [x] T2: backend model/repository を dual-read/write 対応にする。
+- [x] T3: `reviewerRef/ownerRef` backfill 手順（dry-run付き）を追加する。
+- [x] T4: integration test（identity 解決 + attribution 往復）を追加/更新する。
+- [x] T5: contract 段階で旧参照経路の除去条件をドキュメント化する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -95,3 +95,27 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件: tenant境界を一意制約へ含める等、互換影響を伴う仕様変更が発生した場合。
+
+## 11) Phase execution record（2026-03-03）
+
+### Plan
+
+- expand → dual-read/write → backfill → contract を固定順で実施し、contract前は旧経路へ復帰可能なことを維持。
+- AC 対応表:
+  - migration + rollback: `alembic/versions/20260303_0002_create_users_identities.py`
+  - backfill: `kj_atlas_api/backfill_identity_refs.py`
+  - dual-read/write: `auth_context.py`（旧 `x-actor-ref` と新 identity 解決の併存）
+  - integration: `test_auth_jit_provisioning.py` / `test_backfill_identity_refs.py`
+
+### Verify
+
+- 実行コマンド:
+  - `pytest 03_Implement/backend/tests -k "identity or attribution"`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+- 判定:
+  - AC / Task breakdown は全件達成。
+  - contract 前ロールバック条件（dual-read/write 維持 + migration downgrade）を満たす。
+
+### Proceed
+
+- Phase 1 完了判定: **完了**。
