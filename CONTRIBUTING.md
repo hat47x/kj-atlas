@@ -64,11 +64,14 @@ pytest
   - `docker compose up --build -d`
   - `docker compose ps`
   - `curl -fsS http://localhost:8080/api/health`
+  - `PUT /api/docs/{doc_id}` と `GET /api/docs/{doc_id}` 往復確認
+  - `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`（smoke + document replace）
 - Docker未導入の場合は、SQLite代替E2E（`backend:8000` + `frontend:4173`）を実施してください。
   - `curl -fsS http://localhost:8000/healthz`
   - `curl -fsS http://localhost:4173/api/healthz`
   - `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` 往復確認
-- それでもE2E実行不能な場合のみ、PR本文に「ブロッカー」「代替検証」「後続手順」を必ず記載してください。
+  - `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`（smoke + document replace）
+- それでもE2E実行不能な場合のみ、PR本文に「ブロッカー」「代替検証」「後続手順」と「Compose未確認リスク（PostgreSQL/web proxy/depends_on health）」を必ず記載してください。
 - UI変更を含む場合は、原則として Playwright E2E テストの追加/更新（最低1ケース）を行ってください。
 
 

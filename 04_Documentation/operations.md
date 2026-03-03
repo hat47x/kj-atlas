@@ -130,6 +130,11 @@ cd /path/to/kj-atlas/03_Implement/deploy
 docker compose up --build -d
 docker compose ps
 curl -fsS http://localhost:8080/api/health
+curl -fsS -X PUT http://localhost:8080/api/docs/<doc_id> -H 'content-type: application/json' --data-binary @/tmp/e2e_doc.json
+curl -fsS http://localhost:8080/api/docs/<doc_id>
+
+cd /path/to/kj-atlas/03_Implement/frontend
+npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 ```
 
 - 実行不能時（Docker未導入等）は、ブロッカー/代替検証/後続手順をPRに明記してください。
@@ -156,6 +161,11 @@ npm run dev -- --host 0.0.0.0 --port 4173
 # terminal C: checks
 curl -fsS http://localhost:8000/healthz
 curl -fsS http://localhost:4173/api/healthz
+curl -fsS -X PUT http://localhost:8000/docs/<doc_id> -H 'content-type: application/json' --data-binary @/tmp/e2e_doc.json
+curl -fsS http://localhost:8000/docs/<doc_id>
+
+cd /path/to/kj-atlas/03_Implement/frontend
+npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 ```
 
 - `PUT /docs/{doc_id}` と `GET /docs/{doc_id}` を往復し、SQLite永続化も確認してください。
