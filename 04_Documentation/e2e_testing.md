@@ -47,12 +47,40 @@
 
 `web + api + db` を起動した状態で Playwright を実行する。
 
+最小実行コマンド（PR転記対象）:
+
+```bash
+cd /path/to/kj-atlas/03_Implement/deploy
+docker compose up --build -d
+docker compose ps
+curl -fsS http://localhost:8080/api/health
+curl -fsS -X PUT http://localhost:8080/api/docs/<doc_id> -H 'content-type: application/json' --data-binary @/tmp/e2e_doc.json
+curl -fsS http://localhost:8080/api/docs/<doc_id>
+
+cd /path/to/kj-atlas/03_Implement/frontend
+npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
+```
+
+- `i18n_locale_query_equivalence.spec.ts` は smoke（起動/表示）+ 変更フロー（document replace）を同時確認できる最小セット。
+
 ### 3.2 Docker未導入時（代替）
 
 `backend(SQLite) + frontend dev server` 構成で Playwright を実行する。
 
 - backend: `:8000`
 - frontend: `:4173`（`/api` proxy 経由）
+
+最小実行コマンド（PR転記対象）:
+
+```bash
+curl -fsS http://localhost:8000/healthz
+curl -fsS http://localhost:4173/api/healthz
+curl -fsS -X PUT http://localhost:8000/docs/<doc_id> -H 'content-type: application/json' --data-binary @/tmp/e2e_doc.json
+curl -fsS http://localhost:8000/docs/<doc_id>
+
+cd /path/to/kj-atlas/03_Implement/frontend
+npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
+```
 
 ---
 
@@ -107,22 +135,64 @@ E2Eはアプリケーション動作に関する利用者向けドキュメン�
 5. 利用者向けドキュメントとの間で不足・不整合が見つかった場合は、まず「あるべき状態（期待挙動・受入基準・コマンド）」を明文化し、正本に合わせて同期更新する。
 6. どちらが正かを容易に判断できない場合は、Issueを起票して論点・候補案・影響範囲を管理し、合意後に文書を更新する。
 
+## 8. Compose経路検証ログの記録フォーマット（PR貼り付け用）
+
+本節は、ADR-0019 の「第三選択: 例外記録」を実務運用できる形に固定する。
+
+```md
+### E2E verification log
+- Preferred path (Compose): pass | blocked
+  - command:
+    - `docker compose up --build -d`
+    - `docker compose ps`
+    - `curl -fsS http://localhost:8080/api/health`
+    - `PUT /api/docs/{doc_id}` + `GET /api/docs/{doc_id}`
+    - `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`
+  - result:
+  - blocker (if blocked):
+
+- Fallback path (SQLite): pass | fail | skipped
+  - command:
+    - `curl -fsS http://localhost:8000/healthz`
+    - `curl -fsS http://localhost:4173/api/healthz`
+    - `PUT /docs/{doc_id}` + `GET /docs/{doc_id}`
+    - `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`
+  - result:
+
+### Unverified risk delta (Compose vs SQLite)
+- R-01: PostgreSQL固有差分（型/制約/接続プール）
+- R-02: web(Nginx)経由差分（/api リライトルール・CORS・圧縮）
+- R-03: Composeヘルス連鎖（db healthy → api 起動）
+- Mitigation / next action:
+```
+
+## 9. SQLite代替経路との差分リスク（可視化）
+
+Compose未実行時は、以下を「未確認リスク」としてPRに残す。
+
+| Risk ID | Composeでしか確認できない境界 | SQLite代替での状態 | 推奨フォローアップ |
+| --- | --- | --- | --- |
+| R-01 | PostgreSQL方言・マイグレーション適用差分 | 未確認 | Composeで docs roundtrip を再実行 |
+| R-02 | `web(80)` 経由 `/api` ルーティング | 未確認 | `curl http://localhost:8080/api/health` を再実行 |
+| R-03 | `depends_on: service_healthy` の起動順保証 | 未確認 | `docker compose ps` と `docker compose logs api` を取得 |
+| R-04 | Composeネットワーク上の接続性（web↔api↔db） | 部分確認（ローカル2プロセスのみ） | Compose経路のPlaywright smoke+変更フローを再実行 |
 
 
-## 8. FB-RM-RS-02 追記（E2E未実装理由の分析と是正）
 
-### 8.1 未実装だった理由
+## 10. FB-RM-RS-02 追記（E2E未実装理由の分析と是正）
+
+### 10.1 未実装だった理由
 
 - FB-RM-RS-02 初回実装では、`structural_metrics.test.ts` と `worker_golden.test.ts` で計算式・決定論を固定できたため、レビュー時に「worker/unit で十分」と判断してしまった。
 - 一方で実際のユーザーフロー（Share Panel から bundle export → `diagnostics.md` 取得）を通す E2E が欠けており、`04_Documentation/e2e_testing.md` の「UIを伴う変更はE2E追加」を満たしていなかった。
 
-### 8.2 是正内容
+### 10.2 是正内容
 
 - `e2e/diagnostics_structural_metrics.spec.ts` を追加し、以下をブラウザ経路で検証する。
   1. `document.json` 差し替え後の bundle export に新規構造メトリクス行（`isolationRate`, `connectivityScore`, `degreeSkewRatio`）が含まれる。
   2. 同一入力で 2 回 export した `diagnostics.md` が一致する（決定論）。
 
-### 8.3 再発防止
+### 10.3 再発防止
 
 - diagnostics の表示/出力へ新規指標を追加するPRでは、unit/workerテストに加え、export経路を通すE2Eを必須チェック項目とする。
 - PR本文の「未実施項目」に E2E省略理由を記載する場合は、次回是正タスク（Issueまたは同PR内追補）を必ず紐づける。
