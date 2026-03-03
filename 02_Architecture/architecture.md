@@ -221,3 +221,8 @@ MVPでは高度な権限管理は後回し。
 - `visibility` は表示/配布メタデータであり、MVP時点ではRBAC判定ロジックを担わない。
 - SafeMode既定ONとshare/export漏えい防止ポリシーを優先し、`visibility` 導入で既存安全制御を弱めない。
 
+## 12. AUTH-ARCH-01 境界（AuthContext / JIT / strict）
+
+- 認証境界の正本は `ADR-0020` とし、実装契約は `schemas.md` / `api.md` / `review_attribution.md` を同一論点で同期する。
+- `ALLOW_JIT_PROVISIONING=true` では未登録subjectをJITで `users` + `user_identities` 作成、`false` では `403` 拒否して事前プロビジョニング導線へ誘導する。
+- attribution の正規キーは `users.id` で、外部subjectは `user_identities` でのみ解決する。

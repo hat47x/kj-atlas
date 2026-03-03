@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -52,6 +53,7 @@ def _sample_payload(doc_id: str) -> dict:
     }
 
 
+@pytest.mark.auth_level2
 def test_provider_profile_fixture_google_oidc_roundtrip(tmp_path) -> None:
     fixture_path = Path(__file__).parent / "fixtures" / "provider_profile_google_oidc.json"
     fixture = json.loads(fixture_path.read_text())

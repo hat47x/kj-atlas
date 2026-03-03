@@ -163,3 +163,7 @@ ReviewerRef 推奨フォーマット（例）:
 - strict mode（`ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
 
 これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。
+- `internal_user_id` は実体として `users.id` を指し、`reviewerRef` / `ownerRef` は表示・交換用の派生参照（`user:<users.id>`）とする。
+- attribution の永続層では `provider` / `external_uid` を保持せず、参照逆引きは `user_identities` に委譲する。
+
+これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。

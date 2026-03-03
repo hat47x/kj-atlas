@@ -333,6 +333,15 @@ export type Island = {
 - `ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
 - `ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
 
+移行前提（expand/contract）:
+
+- expand:
+  1) `users` / `user_identities` を追加し、`UNIQUE(provider, external_uid)` を先に適用する。
+  2) 既存 attribution は互換維持しつつ、新規書込は `AuthContext.userId=users.id` 経由へ切替える。
+- contract:
+  3) 旧来の外部識別子直参照を段階的に廃止し、`reviewerRef` / `ownerRef` は `user:<users.id>` のみ許可する。
+  4) strict 運用では未登録 subject を `403` とし、管理導線（`POST /admin/provision/users`）を必須化する。
+
 属性境界（persist/transient/forbidden）:
 
 - persist: `provider`, `external_uid`, `display_name`, `email`（最小）
