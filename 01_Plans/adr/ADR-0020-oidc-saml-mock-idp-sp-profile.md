@@ -134,8 +134,27 @@ E2E では本番IAPを代替するため、FastAPI製モック群を採用する
 - ユーザー最小属性スキーマ（永続保存する項目、PII最小化、表示名の扱い）
 - reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則
 - 組織向け roles/groups/policyRef の永続境界（アプリ内保存 vs 外部照会）
+- `amr/acr/aal/auth_time` を AuthContext にどこまで保持・表示・監査出力するか
 
 上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
+
+### 10) IdP がパスキー（FIDO2/WebAuthn）を提供する場合の考慮事項
+
+前段 IdP/SP 側がパスキー認証を採用しても、`kj-atlas` 本体の基本原則（認証情報を保持しない）は維持する。
+
+- 位置づけ:
+  - パスキーは IdP 側の認証手段（Authenticator）であり、`kj-atlas` は直接 WebAuthn 検証を実装しない。
+  - `kj-atlas` が信頼するのは最終的な認証済みコンテキスト（ヘッダー/トークン検証結果）のみ。
+- 最低限の受信属性（将来拡張を含む）:
+  - 必須: `userId`（`X-Forwarded-User` 相当）
+  - 任意: `amr`（認証手段, 例: `pwd`, `webauthn`）, `acr`/`aal`（保証レベル）, `auth_time`（認証時刻）
+- 運用上の必須ルール:
+  - 高リスク操作（将来の export/share/admin 相当）は `amr/acr/aal` に基づく追加制御が可能なI/Fで設計する（値が無い場合は保守的に拒否/read-only）。
+  - `amr` 等の属性は監査目的で扱うが、端末固有情報や公開鍵クレデンシャルIDなど識別子の過剰保存は避ける。
+  - セッション長・再認証要求（step-up）は IAP 側ポリシーで実施し、アプリ本体は結果のみ受け取る。
+- テスト観点:
+  - Mock SP/IdP で `amr=webauthn` を模擬できるようにし、属性有無の両ケースをE2Eで確認する。
+  - 「パスキー利用時でもヘッダー契約が不変であること」を回帰条件に含める。
 
 ### 非目標
 

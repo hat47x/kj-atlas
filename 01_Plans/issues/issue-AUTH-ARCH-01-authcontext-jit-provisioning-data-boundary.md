@@ -14,6 +14,7 @@
 ## 1) 課題 / Problem statement
 
 - `ADR-0020` でヘッダー認証 + JIT Provisioning 方針は固定したが、永続化するユーザー属性の最小集合が未確定。
+- IdP がパスキー対応した場合の `amr/acr/aal/auth_time` の扱い（保存/表示/監査）が未確定。
 - reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則が曖昧で、後続実装で互換破壊リスクがある。
 - 企業・行政運用時の PII 最小化と監査要件の境界が未整理。
 
@@ -36,7 +37,8 @@
 - 最小単位:
   1. 永続化候補属性の棚卸し（must/optional/forbidden）
   2. reviewerRef/ownerRef とのマッピング規則草案
-  3. 保存しない属性（non-goals）明文化
+  3. `amr/acr/aal/auth_time` の取り扱い方針（persist/transient/forbidden）
+  4. 保存しない属性（non-goals）明文化
 - 非目標: 本Issue内で backend 実装を完了しない。
 
 ## 5) 受入条件 / Acceptance criteria
@@ -44,6 +46,7 @@
 - [ ] AuthContext/JIT Provisioning の属性境界（保存する/しない）が文書化されている。
 - [ ] reviewerRef/ownerRef と userId の対応方針が明文化されている。
 - [ ] PII最小化・監査要件・後方互換の観点が明示されている。
+- [ ] パスキー関連属性（`amr/acr/aal/auth_time`）の扱いが明文化されている。
 - [ ] 後続実装に必要なタスク（ADR更新 / schema更新 / migration）が分解されている。
 
 ## 6) 実装タスク分解 / Task breakdown
