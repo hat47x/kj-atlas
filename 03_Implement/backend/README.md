@@ -95,6 +95,18 @@ alembic upgrade head
 pytest -m postgres
 ```
 
+Auth federation Level2（Mock SP/IdP）を実行する場合:
+
+```bash
+cd 03_Implement/backend
+export PYTHONPATH=src
+export LEVEL2_DIAG_DIR=.tmp/level2-diagnostics
+./scripts/run_auth_level2.sh
+```
+
+- provider profile fixture: `tests/level2/fixtures/provider_profile_*.json`
+- 差異再現観点: ヘッダー名 / claim名 / groups形式 / amr-acr有無
+- 失敗時の診断ログは `LEVEL2_DIAG_DIR` にJSON出力されるため、QA再現時は同じfixtureを指定して再実行する。
 
 Auth Level2（Mock SP/IdP、境界変更PR向け）:
 

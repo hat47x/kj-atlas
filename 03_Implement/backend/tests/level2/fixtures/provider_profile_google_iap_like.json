@@ -1,0 +1,37 @@
+{
+  "name": "google_iap_like",
+  "provider": "oidc-google",
+  "settingsOverride": {
+    "auth_user_field": "x-goog-authenticated-user-email",
+    "auth_provider_field": "x-auth-provider",
+    "auth_email_field": "x-goog-authenticated-user-email",
+    "auth_name_field": "x-goog-authenticated-user-name",
+    "auth_subject_field": "x-auth-subject"
+  },
+  "headerMap": {
+    "user": "x-goog-authenticated-user-email",
+    "provider": "x-auth-provider",
+    "email": "x-goog-authenticated-user-email",
+    "name": "x-goog-authenticated-user-name",
+    "groups": "x-auth-groups",
+    "amr": "x-auth-amr",
+    "acr": "x-auth-acr"
+  },
+  "claimMap": {
+    "subject": "email",
+    "email": "email",
+    "name": "name",
+    "groups": "groups",
+    "amr": "amr",
+    "acr": "acr"
+  },
+  "groupsFormat": "csv",
+  "includeAmrAcr": true,
+  "claims": {
+    "email": "accounts.google.com:alice@example.com",
+    "name": "Alice Example",
+    "groups": ["team-platform", "ops"],
+    "amr": "webauthn",
+    "acr": "urn:mace:incommon:iap:silver"
+  }
+}

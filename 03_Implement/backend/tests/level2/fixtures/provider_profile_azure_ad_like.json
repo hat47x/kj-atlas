@@ -1,0 +1,34 @@
+{
+  "name": "azure_ad_like",
+  "provider": "oidc-azure",
+  "settingsOverride": {
+    "auth_user_field": "x-ms-client-principal-name",
+    "auth_provider_field": "x-auth-provider",
+    "auth_email_field": "x-ms-client-principal-name",
+    "auth_name_field": "x-ms-client-principal-name",
+    "auth_subject_field": "x-auth-subject"
+  },
+  "headerMap": {
+    "user": "x-ms-client-principal-name",
+    "provider": "x-auth-provider",
+    "email": "x-ms-client-principal-name",
+    "name": "x-ms-client-principal-name",
+    "groups": "x-auth-groups",
+    "amr": "x-auth-amr",
+    "acr": "x-auth-acr"
+  },
+  "claimMap": {
+    "subject": "upn",
+    "email": "upn",
+    "name": "upn",
+    "groups": "roles",
+    "amr": "amr",
+    "acr": "acr"
+  },
+  "groupsFormat": "space",
+  "includeAmrAcr": false,
+  "claims": {
+    "upn": "bob@example.com",
+    "roles": ["project-alpha", "project-beta"]
+  }
+}
