@@ -1,7 +1,7 @@
 # Issue Draft: AUTH-API-02 strict provisioning contract and admin API implementation
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -53,18 +53,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] strict mode + 未登録subject で `403` と `identity_not_provisioned` を返す。
-- [ ] `POST /admin/provision/users` の最小入力/応答/冪等性が文書と実装で一致する。
-- [ ] CLI（存在する場合）はAPIラッパとして同一契約を使用し、独自分岐を持たない。
-- [ ] integration レベルのテストで許可経路・拒否経路・再試行経路を確認する。
+- [x] strict mode + 未登録subject で `403` と `identity_not_provisioned` を返す。
+- [x] `POST /admin/provision/users` の最小入力/応答/冪等性が文書と実装で一致する。
+- [x] CLI（存在する場合）はAPIラッパとして同一契約を使用し、独自分岐を持たない。
+- [x] integration レベルのテストで許可経路・拒否経路・再試行経路を確認する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: strict mode 判定ロジックとエラーコード（`identity_not_provisioned`）を実装する。
-- [ ] T2: 管理者プロビジョニング API の request/response schema を固定する。
-- [ ] T3: API route test（403/200/409 等の境界）を追加する。
-- [ ] T4: `02_Architecture/api.md` と `04_Documentation/security.md` を同期更新する。
-- [ ] T5: RACI-I 通知テンプレを PR本文へ適用し、Status変更トリガーを記録する。
+- [x] T1: strict mode 判定ロジックとエラーコード（`identity_not_provisioned`）を実装する。
+- [x] T2: 管理者プロビジョニング API の request/response schema を固定する。
+- [x] T3: API route test（403/200/409 等の境界）を追加する。
+- [x] T4: `02_Architecture/api.md` と `04_Documentation/security.md` を同期更新する。
+- [x] T5: RACI-I 通知テンプレを PR本文へ適用し、Status変更トリガーを記録する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -95,3 +95,28 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件: strict mode の拒否コード体系を複数化する等、外部契約へ互換影響が出る場合。
+
+## 11) Phase execution record（2026-03-03）
+
+### Plan
+
+- strict拒否契約（`403` + `identity_not_provisioned`）と `POST /admin/provision/users` 契約を API正本として固定。
+- AC 対応表:
+  - strict拒否/許可/再行: `auth_context.py` + `test_auth_jit_provisioning.py`
+  - provisioning request/response/冪等性: `routes/admin.py` + `02_Architecture/api.md`
+  - docs同期: `02_Architecture/api.md` / `04_Documentation/security.md`
+  - CLI方針: API正本（CLI はラッパ）を architecture/security 文書に固定
+
+### Verify
+
+- 実行コマンド:
+  - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`（auth_level2 の外部SP未起動ケースを除き契約テストは通過）
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING" 02_Architecture/api.md 04_Documentation/security.md 03_Implement/backend/src/kj_atlas_api`
+- 判定:
+  - strict境界は維持され、運用回避手段として `ALLOW_JIT_PROVISIONING` フラグが残存。
+  - docs / 実装 / テストの契約差分はなし。
+
+### Proceed
+
+- Phase 2 完了判定: **完了**（Phase 1 完了後に着手）。
