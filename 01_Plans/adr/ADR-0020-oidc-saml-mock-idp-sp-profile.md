@@ -231,6 +231,21 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
   - Mock SP/IdP で `amr=webauthn` を模擬できるようにし、属性有無の両ケースをE2Eで確認する。
   - 「パスキー利用時でもヘッダー契約が不変であること」を回帰条件に含める。
 
+### 11) スキーマ定義として連動して深掘りすべき文書
+
+本ADRの実装議論を進める際、次の文書を **同一論点で同期更新** する。
+
+1. `02_Architecture/schemas.md`
+   - `users` / `user_identities` の論理スキーマ、必須列、一意制約、状態遷移。
+2. `02_Architecture/schemas_review_attribution.md`
+   - `reviewerRef` / `ownerRef` と `internal_user_id` の参照整合。
+3. `02_Architecture/review_attribution.md`
+   - レビュー帰属の運用契約（表示名の揮発性、監査向け識別子）。
+4. `02_Architecture/api.md`
+   - `ALLOW_JIT_PROVISIONING=false` 時の拒否契約（403）と、管理者API/CLI（将来SCIM含む）のI/F。
+
+本論点は `issue-AUTH-ARCH-01-*` に加えて、スキーマ計画専用 issue で追跡する。
+
 ### 非目標
 
 - 本ADRは「本番IdP製品選定（Keycloak/Authentik/Cloud IAP等）」を固定しない。
@@ -258,4 +273,5 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Follow-up: `01_Plans/issues/issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`
+- Follow-up: `01_Plans/issues/issue-AUTH-SCHEMA-01-identity-schema-planning.md`
 - Replaces: `04_Documentation/auth_oidc_saml_mock_idp.md`

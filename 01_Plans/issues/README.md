@@ -67,6 +67,7 @@ issue補助メモには、最低でも次の項目を含める。
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
 | AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Open | N/A |
+| AUTH-SCHEMA-01 | `issue-AUTH-SCHEMA-01-identity-schema-planning.md` | Open | N/A |
 
 ## Rules
 
