@@ -347,3 +347,47 @@ export type Island = {
 - persist: `provider`, `external_uid`, `display_name`, `email`（最小）
 - transient: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `trace_id`
 - forbidden: password/hash/secret, WebAuthn credential id, raw policy tokens
+
+### 10.1 監査観点での固定ルール（実装向け決裁）
+
+実装判断のブレをなくすため、AuthContext/identity 属性を次の3分類で固定する。
+
+#### persist（DB永続化を許可）
+
+- 許可: `users.display_name`, `users.email`, `user_identities.provider`, `user_identities.external_uid`
+- 目的: 同一人物の再識別（`provider+external_uid`）と最低限の運用表示。
+- 制約: `display_name`/`email` は nullable かつ最小利用に限定し、認可判定条件としては使用しない。
+
+#### transient（リクエスト内/監査最小メタのみ）
+
+- 対象: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `policyRef`, `trace_id`
+- DB保存: 禁止（`users` / `user_identities` / document / review attribution のいずれにも保存しない）。
+- 監査出力: 直接値ではなく、後述 10.2 の「presence/level 正規化」のみ許可。
+
+#### forbidden（受信しても保存・再出力を禁止）
+
+- `password`/`password_hash`/`secret` 全般
+- WebAuthn credential id / authenticator AAGUID 等の端末識別子
+- 生の policy token / assertion / id token / access token
+- `roles`/`groups`/`policyRef` の生値ログ出力
+
+上記 forbidden は debug ログ・監査ログ・エクスポートファイルを含め **全面禁止** とする。
+
+### 10.2 `amr/acr/aal/auth_time` の保存・表示・監査出力
+
+- 保存（DB）: 全て禁止。
+- UI表示: セッション診断表示に限定し、document/view へ埋め込まない。
+- 監査出力（許可範囲）:
+  - `amr`: 生値禁止。`hasStepUp`（boolean）または `amrClass`（`single_factor|multi_factor|unknown`）へ正規化。
+  - `acr` / `aal`: 生値禁止。`assuranceLevel`（`low|substantial|high|unknown`）へ正規化。
+  - `auth_time`: 生値禁止。`authAgeBucket`（`fresh(<=15m)|stale(>15m)|unknown`）へ正規化。
+- 監査目的で詳細が必要な場合も、保存期間は短期運用ログに限定し、アプリDBへ逆流させない。
+
+### 10.3 `roles/groups/policyRef` の永続境界
+
+- `roles` / `groups`: 認可問い合わせ入力としてのみ利用し、アプリDBに保存しない。
+- `policyRef`: リクエスト時の外部PDP参照子としてのみ扱い、生値は保存しない。
+- 永続許可されるのは `policyRefPresent` のような存在フラグのみ。
+- fail-safe 判定（`policy_ref_missing|policy_ref_unreachable|policy_ref_invalid`）は保存可。
+
+この境界により、組織属性の最新性は外部IdP/PDPを正本とし、アプリ側の属性陳腐化リスクを回避する。

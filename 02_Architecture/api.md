@@ -249,6 +249,18 @@ fail-safe マトリクス:
 - 応答: `403 Forbidden`
 - エラー文言（最小契約）: `Identity not provisioned. Pre-provision via /admin/provision/users before access.`
 
+### 9.2.1 strict mode の運用責任境界（承認フロー固定）
+
+- backend 実装責務:
+  - strict mode 条件に一致した要求を例外なく `403` で拒否する。
+  - 緊急時でもアプリ内の一時バイパス（特定ユーザー許可など）を実装しない。
+- 例外承認責務:
+  - `ALLOW_JIT_PROVISIONING` の切替承認は **Security Officer + System Owner の2者承認** を必須とする。
+  - 実行（環境変数変更/再起動）は Platform Operator が行い、変更記録（時刻・理由・承認者）を監査証跡に残す。
+- 承認なき例外は不許可:
+  - 開発者判断のみで strict mode を緩和してはならない。
+  - 監査時は「承認記録がない緩和設定」を設定不備として扱う。
+
 ### 9.3 事前プロビジョニング API（最小）
 
 - `POST /admin/provision/users`

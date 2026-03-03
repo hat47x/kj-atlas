@@ -171,9 +171,21 @@ kj-atlas は OSS として、多様な環境で利用される：
 
 - 永続境界:
   - 永続化: `userId`, `reviewerRef=user:<userId>`, `ownerRef=user:<userId>`
-  - 非永続（揮発）: `displayName`, `amr/acr/aal/auth_time`, `roles/groups`
+  - 非永続（揮発）: `displayName`, `amr/acr/aal/auth_time`, `roles/groups`, `policyRef`
 - PII最小化:
   - document/view/review event には `reviewerRef` のみ残し、表示名は必要時に外部ディレクトリ照会または一時ヘッダーで補完する。
+  - `amr/acr/aal/auth_time` は reviewer attribution へ保存しない。
+  - `roles/groups/policyRef` の生値は attribution 監査にも残さない。
 - strict mode:
   - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
   - 管理導線の責務分担: backend は拒否契約 (`403`) と最小API (`POST /admin/provision/users`) を提供し、運用管理者は事前登録・再紐付けを実施する。
+  - strict 緩和（`ALLOW_JIT_PROVISIONING=true` への変更）は Security Officer + System Owner の2者承認を必須とし、承認記録なき変更を禁止する。
+
+### 8.1 `amr/acr/aal/auth_time` の表示・監査の固定方針
+
+- 表示:
+  - Review履歴UIでは値を直接表示しない（review attribution は人間レビュー責任の表示に限定）。
+  - 必要時はセッション診断画面でのみ揮発表示する。
+- 監査:
+  - 生値は保存せず、`hasStepUp` / `assuranceLevel` / `authAgeBucket` の正規化指標のみ出力可能。
+  - 監査ログは safeMode/漏洩防止原則に従い、再識別性を増やす詳細属性を追加しない。
