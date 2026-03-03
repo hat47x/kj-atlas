@@ -34,6 +34,8 @@
 ### 2.3 Security/Safety Flow（変更影響時に必須）
 
 - SafeMode ON時の表示/制約
+- readOnly + SafeMode の安全境界（編集抑止と表示ラベル）
+- visibility（view/pack）の編集・再読込保持
 - import（正常/異常）
 - export（意図しない漏えい防止）
 
@@ -81,6 +83,7 @@ PR本文には最低限以下を記載する。
 - `npm run e2e`（Playwright）
 - `npm run e2e -- e2e/polygon_import_validation.spec.ts`
 - `npm run e2e -- e2e/diagnostics_structural_metrics.spec.ts`
+- `npm run e2e -- e2e/pub_visibility_i18n_readonly_flow.spec.ts`
 - `curl http://localhost:8000/healthz`
 - `curl http://localhost:4173/api/healthz`
 
