@@ -1,9 +1,8 @@
 # Issue Draft: FB-RM-SEC-02 Worker安定化（bundle zip を off-main-thread へ移管）
 
 - Type: Security / Process
-- Status: Done (Local)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除) / Local exception: Done (Local)
-- Source Issue: TBD (GitHub Issue URL)
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P1
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/export/*.test.ts`, `01_Plans/adr/ADR-0007-future-backlog.md`, `01_Plans/issues/README.md`

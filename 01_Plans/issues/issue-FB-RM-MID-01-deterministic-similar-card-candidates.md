@@ -1,9 +1,8 @@
 # Issue Draft: FB-RM-MID-01 類似度検出（deterministic heuristic）
 
 - Type: Feature request (enhancement)
-- Status: Done (Local)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除) / Local exception: Done (Local)
-- Source Issue: TBD (GitHub Issue URLを記載)
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P1
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/App.tsx`, `01_Plans/`

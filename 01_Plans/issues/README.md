@@ -1,14 +1,17 @@
 # 01_Plans Issue Memo Index
 
 このディレクトリは、GitHub Issue（正本）を補助する **短命メモ** を管理する。
-Decisionは ADR、Action は GitHub Issue で管理し、本ディレクトリは再開性の補助に限定する。
+Decisionは ADR、Action は issue memo で管理し、本ディレクトリは再開性の補助に限定する。
+
+> Performance note for AI agents: issue memo が増えても全件を都度読む必要はない。対象Backlog ID/関連ADR/作業スコープに一致するメモのみ参照する。
 
 ## Scope
 
 - 対象: Active な issue 補助メモ（Draft / Open / In Progress）
-- 例外: Source Issue 未発行でも実装完了を記録する `Done (Local)`
-- 正本: GitHub Issues
-- ライフサイクル: Draft -> Open -> In Progress -> Done -> GC(削除)
+- 正本: 現在運用では issue memo を正本として扱う（GitHub Issues は未運用、将来再開は可能）
+- ライフサイクル: Draft -> Open -> In Progress -> Done（Done (Local) は廃止）
+- ライフサイクル定義は本READMEのみを正とする。個別issue memoには記載しない。
+- Done メモは自動GCしない（手動削除のみ）
 
 ## Start here（人間 / 生成AI 共通）
 
@@ -16,13 +19,13 @@ Decisionは ADR、Action は GitHub Issue で管理し、本ディレクトリ�
 2. `Type / Priority / Scope / Related ADR` を先に埋める。
 3. `Expected verification level`（`docs-check` / `unit` / `integration` / `e2e`）を先に宣言する。
 4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
-5. `Source Issue` に GitHub Issue URL を記入してから実装着手する。
+5. `Source Issue` は運用状態に応じて記載する（未運用時は `N/A`、GitHub Issues運用時はURL）。
 
 ## Required fields（最低必須）
 
 issue補助メモには、最低でも次の項目を含める。
 
-- Meta: `Type`, `Status`, `Lifecycle`, `Source Issue`, `Priority`, `Scope`
+- Meta: `Type`, `Status`, `Source Issue`, `Priority`, `Scope`
 - Quality gate: `Expected verification level`
 - Traceability: `Related Backlog`, `Related ADR/Spec`
 - Execution: `Proposed solution`, `Acceptance criteria`, `Task breakdown`, `Validation plan`
@@ -65,152 +68,30 @@ issue補助メモには、最低でも次の項目を含める。
 |---|---|---|---|
 現在、Active issue memos はありません。
 
-
-
 ## Rules
 
 1. 新規作成先は必ず `01_Plans/issues/`。
 2. ファイル名は `issue-<BacklogID>-<short-title>.md` を推奨。
-3. Done/Close 後は `git rm` を標準とし、一覧から削除する。
-4. 例外保存が必要な場合のみ `archive/` へ移し、`Retention Reason` / `Review Due` / `Source Issue` を先頭に記載する。
+3. Done は本ディレクトリに継続保管し、自動削除しない。
+4. 削除/アーカイブは人間の手動判断、または人間の明示指示がある場合のみ実施する。
 
-## Completed locally (Source Issue pending)
+## Completed issue memos
 
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
-| FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done (Local) | TBD | 実装/検証は完了。GitHub Issue 起票後に Source Issue を追記する。 |
-| DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done (Local) | TBD | Source Issue 未確定のためローカル完了として管理。URL確定時に `Done` へ更新する。 |
-| FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done (Local) | TBD | zip生成を worker/off-main-thread 化し、fallback/cancel/progress を回帰テストで固定。 |
-| FB-RM-MID-02 | `issue-FB-RM-MID-02-manual-assisted-merge-decisions.md` | Done (Local) | TBD | merge候補ごとの accept/partial/reject/defer 記録と保存再読込を実装。 |
-| FB-RM-MID-01 | `issue-FB-RM-MID-01-deterministic-similar-card-candidates.md` | Done (Local) | TBD | 非AI deterministic heuristic による merge candidate 生成と順序安定テストを追加。 |
-| FB-RM-MID-03 | `issue-FB-RM-MID-03-merge-decision-audit-export.md` | Done (Local) | TBD | bundle export に `merge_decision_audit.json` を追加し、representative/source 追跡情報を監査用に出力。 |
-| FB-RM-I18N-02 | `issue-FB-RM-I18N-02-locale-json-fallback-order.md` | Done (Local) | TBD | locale JSON契約と fallback順序（requested->ja->key）を実装し、unit/typecheckで固定。 |
-| FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done (Local) | TBD | 英語UI等価のsmoke/flow E2Eを追加し、SQLite代替経路で再実行を含む通過ログを記録。 |
-| FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done (Local) | TBD | bundle export に overview/detail 粒度選択と manifest 出力を追加し、overview時のtrace抑止を unit test で固定。 |
+| FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done | N/A | 実装/検証完了済み。 |
+| DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done | N/A | 文書整合監査完了。 |
+| FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done | N/A | worker化・fallback/cancel/progress 回帰固定済み。 |
+| FB-RM-MID-02 | `issue-FB-RM-MID-02-manual-assisted-merge-decisions.md` | Done | N/A | merge判断記録の保存/再読込を実装済み。 |
+| FB-RM-MID-01 | `issue-FB-RM-MID-01-deterministic-similar-card-candidates.md` | Done | N/A | deterministic候補生成と順序安定化を実装済み。 |
+| FB-RM-MID-03 | `issue-FB-RM-MID-03-merge-decision-audit-export.md` | Done | N/A | merge監査エクスポートを実装済み。 |
+| FB-RM-I18N-02 | `issue-FB-RM-I18N-02-locale-json-fallback-order.md` | Done | N/A | locale fallback順序を固定済み。 |
+| FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done | N/A | 英語UI等価 E2E smoke/flow を記録済み。 |
+| FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done | N/A | export粒度とmanifest出力を実装済み。 |
 
+## Status sync note (2026-03-03)
 
-## Done(Local) Source Issue TBD 解消 実行計画
-
-### 1) Task Brief（固定）
-
-- **Scope**: `Completed locally (Source Issue pending)` に掲載された8件の issue補助メモのみを対象とし、`Source Issue: TBD` を解消する。コード実装や仕様変更は行わない。
-- **Acceptance**:
-  1. 対象8件すべてで、既存GitHub Issueの有無が確認される。
-  2. 未存在のものは新規GitHub Issueを起票し、URLを確定する。
-  3. 各メモの `Source Issue` をURLへ更新し、`Status` / `Lifecycle` と矛盾しない状態遷移を実施する。
-  4. `Completed locally` 表の `Source Issue` が全件URL化される。
-- **Checks**:
-  - `Source Issue` に推測URLを書かない（確認できたURLのみ記載）。
-  - 命名規則（`issue-<BacklogID>-<short-title>.md`）またはLifecycle規則（Draft -> Open -> In Progress -> Done -> GC、Local exception含む）と矛盾を検知した場合は、その時点で更新を停止し、確認依頼を行う。
-  - 更新後に `git diff --check` で文書整合を確認する。
-
-### 2) 対象一覧と3段階手順
-
-以下の各メモについて、必ず **A. 既存Issue探索 → B. 未存在なら起票 → C. URL反映と状態遷移** の順で処理する。
-
-1. `FB-RM-SEC-02` (`issue-FB-RM-SEC-02-worker-stabilization.md`)
-2. `FB-RM-MID-03` (`issue-FB-RM-MID-03-merge-decision-audit-export.md`)
-3. `FB-RM-MID-05` (`issue-FB-RM-MID-05-structural-granularity-export.md`)
-4. `FB-RM-RS-02` (`issue-FB-RM-RS-02-structural-metrics.md`)
-5. `FB-RM-I18N-02` (`issue-FB-RM-I18N-02-locale-json-fallback-order.md`)
-6. `FB-RM-MID-02` (`issue-FB-RM-MID-02-manual-assisted-merge-decisions.md`)
-7. `FB-RM-MID-01` (`issue-FB-RM-MID-01-deterministic-similar-card-candidates.md`)
-8. `DOC-REL-01` (`issue-DOC-REL-01-spec-source-doc-consistency-audit.md`)
-
-#### A. 既存 GitHub Issue 探索（共通）
-
-- 検索キー: `Backlog ID`、メモタイトル主要語、関連ADR番号。
-- 一致条件:
-  - Issue本文またはタイトルに同一Backlog IDがある。
-  - 受入条件/スコープがメモと実質一致する。
-- 一致しない場合: 「未特定」と記録し、Bへ進む。
-
-#### B. 未存在なら新規 Issue 起票（共通）
-
-- 起票元: 当該メモを正本下書きとして使用。
-- タイトル規約: `<Backlog ID>: <short title>`。
-- 本文最小要素: Problem / Proposed solution / Acceptance criteria / Validation plan / Related ADR。
-- 起票後: 発行されたIssue URLを取得して記録。
-
-#### C. URL反映後の状態遷移（共通）
-
-- 各メモの `Source Issue` を `TBD` から確定URLへ更新。
-- 実装と検証が完了済みであるため、`Status` は原則 `Done` に更新（`Done (Local)` 例外を終了）。
-- `01_Plans/issues/README.md` の `Completed locally` から該当行を除去し、必要に応じて `Done` 扱いの記録（archive/CHANGELOG運用）へ引き渡す。
-
-### 3) Verification（完了条件）
-
-- 完了判定は次を全て満たすこと。
-  1. `Completed locally (Source Issue pending)` の全行で `Source Issue != TBD`。
-  2. 対象8メモの `Source Issue` がすべて有効なGitHub Issue URL。
-  3. `Done (Local)` が残る場合は、URL未確定ではなく運用上の例外理由が明示されている。
-  4. Lifecycle矛盾（`Done (Local)` のままURL確定済み等）がない。
-
-### 4) Record（優先度・担当ロール）
-
-安全影響が高い順で以下の担当を割り当てる。
-
-| Priority Order | Backlog ID | Safety impact rationale | Primary role | Support role |
-|---|---|---|---|---|
-| 1 | FB-RM-SEC-02 | worker化・fallback/cancel/progressの回帰固定は安全運用に直結 | Security Owner | Frontend Owner |
-| 2 | FB-RM-MID-03 | 監査エクスポートは説明責任/漏えい統制に影響 | Governance Reviewer | Frontend Owner |
-| 3 | FB-RM-MID-05 | export粒度とtrace抑止は漏えい最小化に関与 | Frontend Owner | Security Owner |
-| 4 | FB-RM-RS-02 | diagnostics健全性指標は運用上の早期異常検知に寄与 | Frontend Owner | QA |
-| 5 | FB-RM-I18N-02 | locale fallback不備は誤表示リスク（中） | Frontend Owner | QA |
-| 6 | FB-RM-MID-02 | merge判断記録は監査補助（中） | Product/Review Ops | Frontend Owner |
-| 7 | FB-RM-MID-01 | deterministic候補は品質改善寄り（中〜低） | Product/Review Ops | QA |
-| 8 | DOC-REL-01 | 文書整合監査は直接の安全影響は低い | Docs Owner | Governance Reviewer |
-
-> 実行中に命名規則・Lifecycle・メモ内容とIssueの対応関係で矛盾を検知した場合は、誤った紐付けを防ぐため即時停止し、確認後に再開する。
-
-## Done (Local) 運用ルール
-
-`Done (Local)` は、**実装と検証は完了しているが GitHub Issue URL が未発行**のときだけ使う補助ステータス。
-
-1. `Done (Local)` は Active issue memos には載せない。
-2. `Done (Local)` は `Completed locally` セクションで管理する。
-3. `Source Issue` が確定したら、メモへURLを追記し、必要に応じて `Done` へ更新する。
-4. validator の機械検証対象は `Active issue memos` のみとし、`Completed locally` は対象外とする。
-
-
-## ADR-0007 × issue memo 整合性突合（2026-03-03）
-
-### Task Brief（固定）
-
-- Scope:
-  - `01_Plans/adr/ADR-0007-future-backlog.md` の `Roadmap統合バックログ` 状態と、`01_Plans/issues/*.md` の `Status` / 実績ログ（Done Local）を照合する。
-  - 「実際に未完了のタスク」と「記録遅延タスク（実装完了だが記録未同期）」を分離して可視化する。
-- Non-Goals:
-  - 実装コードの有無を推測で断定しない。
-  - Source Issue 未発行のまま `Done` へ強制変更しない。
-- Acceptance:
-  - 不整合を ID 単位で列挙し、各行に `status更新` / `根拠追記` / `別Issue化` のいずれかの必要アクションを付与する。
-  - Verify で「次に誰が何を編集すれば閉じるか」を 1 行ずつ示す。
-- Checks:
-  - `rg -n '^| FB-RM-' 01_Plans/adr/ADR-0007-future-backlog.md`
-  - `rg -n 'Status:|Related Backlog|Done \(Local\)' 01_Plans/issues/issue-*.md`
-  - `rg -n 'Completed locally|FB-RM-' 01_Plans/issues/README.md`
-
-### 不整合一覧（ADR-0007 vs issue memos）
-
-| Backlog ID | ADR-0007 状態 | issue memo 状態/実績 | 判定 | 必要アクション | 備考 |
-|---|---|---|---|---|---|
-| FB-RM-I18N-03 | Planned | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md`: Done (Local), E2E実行ログあり | 要確認（状態衝突） | **根拠追記**: ADR-0007 側へ「Done(Local)根拠リンク or 未達理由」を追記。**status更新**は根拠確認後のみ実施。 | 実装完了は断定せず、記録衝突として停止。 |
-| FB-RM-PUB-01 | Planned | 対応 issue memo なし（本ディレクトリ内） | 実際に未完了（要起票） | **別Issue化**: `issue-FB-RM-PUB-01-*.md` を起票し、受入条件/検証計画を先に固定。 | 未着手タスクを可視化するための最小アクション。 |
-| DOC-REL-01 | ADR-0007管理外 | `Completed locally` に Done(Local) として掲載 | 要確認（管理面） | **別Issue化**: ADR-0007 対象外で継続管理するなら、専用トラッキング（別ADR/issue index）へ分離。 | ADR-0007との突合対象外を明示する。 |
-
-### 分離結果（可視化）
-
-- 実際に未完了のタスク:
-  - `FB-RM-PUB-01`（Planned かつ issue memo 不在）
-- 記録遅延タスク:
-  - `FB-RM-I18N-03`（ADR: Planned / issue memo: Done(Local) の衝突）
-- 管理境界の要確認:
-  - `DOC-REL-01`（ADR-0007対象外タスクが Completed locally に混在）
-
-### Verify（次に誰が何を編集すれば閉じるか）
-
-- **Backlog Owner（I18N）**: `ADR-0007` の `FB-RM-I18N-03` 行に、E2E実績を根拠として `Done` へ更新するか、未達DoDを追記して `Planned` 維持理由を明文化する。
-- **Planning Maintainer**: `01_Plans/issues/README.md` の `Completed locally` と個別memoの `Status` を定期突合し、同種ドリフトの再発を防ぐ。
-- **Planning Maintainer**: `FB-RM-PUB-01` の issue memo を新規作成し、`Source Issue`・受入条件・検証計画を先に固定する。
-- **Docs/Planning Owner**: `DOC-REL-01` を ADR-0007突合対象から除外する運用注記（または別トラッキング先）を README に追記する。
+- 旧 `Done (Local)` は廃止し、完了はすべて `Done` として扱う。
+- GitHub Issues 未運用時は `Source Issue: N/A`、運用開始後はURL記載へ切替える。
+- Done メモは自動GCせず、量が増えた場合も人間判断でのみ削除/整理する。
+- ADR 側ステータス（例: `FB-RM-I18N-03`）は issue memo の実績に同期する。
