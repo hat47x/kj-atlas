@@ -35,6 +35,20 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - 既存 `Open / In Progress` メモを更新するタイミングで、`Source Issue` を対応するURLへ置換する。
 - 新規メモは起票時からGitHub Issue URLを必須とし、`N/A` は使用しない。
 
+### 運用手順（N/A維持 / URL移行）
+
+1. **N/A維持フェーズ（現行）**
+   - 新規 issue memo は `Source Issue: N/A` で作成する。
+   - `Status` は `Draft/Open/In Progress` のみを使用し、`Active issue memos` 表と一致させる。
+   - 外部トラッカー参照が必要になった時点で、`Additional context` に移行要求を記録する。
+2. **URL移行フェーズ（将来）**
+   - PM/Triage の運用開始宣言日を `README.md` に追記する。
+   - Active な全 memo について、`Source Issue: N/A` を対応URLへ同一PRで置換する。
+   - 置換PRでは `Status` を変えず、`Source Issue` だけを更新して監査差分を最小化する。
+3. **移行完了判定**
+   - `Active issue memos` 表に `N/A` が残っていないこと。
+   - `python 01_Plans/issues/validate_active_issue_memos.py` が成功すること。
+
 > 安全装置: 運用開始時期や移行責任者が未確定な場合、`N/A` のまま固定しない。該当メモの `Additional context` に確認事項として記録し、`Status` は `Draft` または `Open` で停止する。
 
 ## ステータス更新責任（Open → In Progress → Done）
@@ -51,9 +65,14 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 ## RACI-I 通知ルール（PM/Triage, QA Lead）
 
 - 通知対象（I）: `PM/Triage`, `QA Lead`。
-- 通知トリガー: `Status` 変更時（Open化 / In Progress化 / Done化）と、`Source Issue` の `N/A ↔ URL` 切替時。
-- 通知内容（最小）: `Backlog ID` / 新ステータス / 更新者 / 参照リンク（issue memo + Source Issue）。
+- 通知トリガー（固定）:
+  - `Status` 変更時（Open化 / In Progress化 / Done化）
+  - `Source Issue` の `N/A ↔ URL` 切替時
+  - `Owner` または `Expected verification level` を変更した時
+- 通知内容（最小）: `Backlog ID` / 変更項目（StatusまたはSource Issue等）/ 更新者 / 参照リンク（issue memo + Source Issue）。
 - 通知手段: PR本文または関連スレッドに同一フォーマットで1回記録し、重複通知しない。
+- 記録フォーマット（推奨）:
+  - `[RACI-I] Backlog=<ID> / Change=<Status Open→In Progress> / By=<name> / Memo=<path> / Source=<N/A or URL>`
 
 ## Required fields（最低必須）
 
@@ -100,53 +119,9 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-
-## AUTH-ARCH-01 / AUTH-SCHEMA-01 実行比較（1ページ）
-
-### RACI（簡易）
-
-| Issue | R | A | C | I |
-|---|---|---|---|---|
-| AUTH-ARCH-01 | Auth Architecture Lead（Security/Identity） | Platform Architecture Owner | Backend Lead, Compliance/Security Officer | PM/Triage, QA Lead |
-| AUTH-SCHEMA-01 | Data Schema Lead（Backend/DB） | Platform Architecture Owner | Auth Architecture Lead, Backend Lead, Compliance/Security Officer | PM/Triage, QA Lead |
-
-### 着手条件 / ブロッカー / 完了条件 比較
-
-| Issue | 着手条件（Start） | ブロッカー（Blockers） | 完了条件（DoD） |
-|---|---|---|---|
-| AUTH-ARCH-01 | ADR-0020基準化、現行差分棚卸し、RACI合意 | 監査属性保存要否、IAP差異preset、strict時の管理導線責任 | 属性境界文書化、マッピング規則収束、AUTH-SCHEMA-01へ前提引き渡し |
-| AUTH-SCHEMA-01 | AUTH-ARCH-01境界定義レビュー済み、対象章確定、RACI合意 | マッピング未確定、strict運用責任未承認、移行ポリシー未承認 | `02_Architecture/*` 同期更新、ADR-0020参照整合、migration前提明文化 |
-
-### Expected verification level と Validation plan の整合
-
-| Issue | Expected verification level | Validation plan | 判定 |
-|---|---|---|---|
-| AUTH-ARCH-01 | `docs-check` | `rg` による参照整合確認 + `validate_active_issue_memos.py` | 整合（コード実装を要求していない） |
-| AUTH-SCHEMA-01 | `docs-check` | `rg` による参照整合確認 + `validate_active_issue_memos.py` | 整合（Architecture同期確認に一致） |
-
-### 依存関係グラフ（実行順）
-
-```text
-AUTH-ARCH-01 (AuthContext/JIT 境界定義)
-    └─理由: 保存属性境界・マッピング規則が未確定だと
-           AUTH-SCHEMA-01 で一意制約/API契約を固定できない
-        ↓
-AUTH-SCHEMA-01 (identity schema 反映・同期)
-```
-
-### 実行順（1日以内タスク / 決裁待ちタスク）
-
-1. **即着手（1日以内）**
-   - AUTH-ARCH-01: T1 `reviewerRef/ownerRef/AuthContext` 参照棚卸し。
-   - AUTH-ARCH-01: T2 属性分類表（persist/transient/forbidden）草案。
-   - AUTH-SCHEMA-01: T1 `02_Architecture/*` の identity 記述差分抽出。
-2. **決裁待ち（承認が必要）**
-   - AUTH-ARCH-01: `amr/acr/aal/auth_time` 保存方針の最終承認（Compliance含む）。
-   - AUTH-ARCH-01: `ALLOW_JIT_PROVISIONING=false` 時の管理導線（API/CLI）責任境界承認。
-   - AUTH-SCHEMA-01: provider+subject 一意制約への tenant 境界含有と移行ポリシー承認。
-3. **承認後に実施**
-   - AUTH-ARCH-01: T3/T4 マッピング案収束 + ADR追記要否判定。
-   - AUTH-SCHEMA-01: T2/T3/T4 スキーマ案確定 + architecture 同期PR。
+| AUTH-IMPL-01 | `issue-AUTH-IMPL-01-user-identity-schema-migration-implementation.md` | Open | N/A |
+| AUTH-API-02 | `issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md` | Open | N/A |
+| AUTH-E2E-01 | `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md` | Open | N/A |
 
 ## Rules
 
