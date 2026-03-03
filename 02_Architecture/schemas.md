@@ -335,6 +335,16 @@ export type Island = {
 
 属性境界（persist/transient/forbidden）:
 
-- persist: `provider`, `external_uid`, `display_name`, `email`（最小）
-- transient: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `trace_id`
-- forbidden: password/hash/secret, WebAuthn credential id, raw policy tokens
+- persist（DB永続）: `users.id`, `provider`, `external_uid`, `display_name?`, `email?`
+- transient（リクエスト内）: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `trace_id`
+- forbidden（保存/出力禁止）:
+  - password/hash/secret
+  - WebAuthn credential id（credentialId / publicKeyCredentialId）
+  - raw policy token / bearer token / assertion 本文
+  - IdP発行JWT/SAMLの生ペイロード
+
+監査出力制約（実装必須）:
+
+- `amr/acr/aal/auth_time` は業務DBへ保存せず、監査イベントへの最小出力のみ許可する。
+- `roles/groups` の生値は監査イベントに出力しない（必要時は `rolesPresent` / `groupsPresent` の真偽のみ）。
+- `policyRef` は document/view 参照値として保存可だが、監査イベントには `policyRefPresent` と理由コードのみを出力し、生値は出力しない。

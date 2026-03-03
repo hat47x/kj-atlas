@@ -169,10 +169,17 @@ kj-atlas は OSS として、多様な環境で利用される：
 
 ## 8. AUTH-ARCH-01: AuthContext/JIT 境界と表示責務
 
-- 永続境界:
+- 永続境界（review attribution 観点）:
   - 永続化: `userId`, `reviewerRef=user:<userId>`, `ownerRef=user:<userId>`
-  - 非永続（揮発）: `displayName`, `amr/acr/aal/auth_time`, `roles/groups`
+  - 非永続（揮発）: `amr/acr/aal/auth_time`, `roles/groups`, `trace_id`
+  - 例外（identity台帳のみ保存可）: `display_name`, `email`
 - PII最小化:
-  - document/view/review event には `reviewerRef` のみ残し、表示名は必要時に外部ディレクトリ照会または一時ヘッダーで補完する。
+  - document/view/review event には `reviewerRef` のみ残す。
+  - 表示名/メールは review event へ複写しない。必要時のみ identity台帳または外部ディレクトリ照会で補完する。
+- 監査出力制約:
+  - `amr/acr/aal/auth_time` は監査イベントの最小属性として任意出力可（欠損許容）。
+  - `roles/groups` と `policyRef` は生値出力禁止。`rolesPresent/groupsPresent/policyRefPresent` のフラグと理由コードのみ許可。
+  - トークン原文・WebAuthn credential id・IdP assertion 本文の出力は禁止。
 - strict mode:
-  - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
+  - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、`POST /admin/provision/users` を唯一の事前登録導線とする。
+  - strict mode の例外承認者は Platform Architecture Owner、審査責任は Compliance/Security Officer と Auth Architecture Lead。

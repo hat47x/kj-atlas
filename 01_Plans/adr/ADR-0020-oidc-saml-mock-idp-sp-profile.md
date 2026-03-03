@@ -200,29 +200,69 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
    - **条件付き必須**: IdP連携境界を変更するPRでは Level 2（Mock SP/IdP）も通過する。
    - **Level 2実施時**: 少なくとも1つ以上の provider profile fixture（主要IdP様式）を使った回帰を含める。
 
-### 9) 未決事項（TODO / Issue化）
+### 9) 決裁事項（AUTH-ARCH-01 完了）
 
-以下は本ADRで結論固定しない。
+本節は Compliance/Security Officer と Platform Architecture Owner の承認済み方針であり、
+Data Schema / Backend は本記載をそのまま実装契約として扱う。
 
-- ユーザー最小属性スキーマ（永続保存する項目、PII最小化、表示名の扱い）
-- reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則
-- 組織向け roles/groups/policyRef の永続境界（アプリ内保存 vs 外部照会）
-- `amr/acr/aal/auth_time` を AuthContext にどこまで保持・表示・監査出力するか
-- `users` / `user_identities` の正式スキーマ（一意制約・移行手順・監査列）
-- `ALLOW_JIT_PROVISIONING` 無効時の管理者API/CLI最小契約（将来SCIM含む）
+#### 9.1 属性分類（persist / transient / forbidden）
 
-#### 2026-03-03 update（AUTH-ARCH-01 確定）
+- persist（DB永続）:
+  - `users.id`（内部識別子）
+  - `user_identities.provider`
+  - `user_identities.external_uid`
+  - `users.display_name`（nullable, 任意）
+  - `users.email`（nullable, 任意）
+- transient（リクエスト内のみ）:
+  - `amr`, `acr`, `aal`, `auth_time`
+  - `roles`, `groups`
+  - `trace_id`
+- forbidden（保存・出力とも禁止）:
+  - password/hash/secret
+  - WebAuthn credential id（credentialId / publicKeyCredentialId 含む）
+  - raw policy token / bearer token / assertion 本文
+  - IdP発行JWT/SAMLの生ペイロード
 
-- AuthContext/JIT 属性境界を固定:
-  - persist: `provider`, `external_uid`, `display_name`, `email`
-  - transient: `amr/acr/aal/auth_time`, `roles/groups`, `trace_id`
-  - forbidden: password/hash/secret, WebAuthn credential id, raw policy token
-- 正規マッピングを固定:
-  - `AuthContext.userId = users.id`
-  - `reviewerRef = ownerRef = user:<users.id>`
-- strict mode 契約を固定:
-  - `ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
-  - 事前プロビジョニング `POST /admin/provision/users`（将来SCIM置換点）
+#### 9.2 `amr/acr/aal/auth_time` のリスクベース方針
+
+- 保存:
+  - `users` / `user_identities` / document系テーブルへ永続保存しない。
+- 表示:
+  - UI常設表示はしない（運用者向け恒常表示は禁止）。
+  - 例外として管理者向け診断画面で「現在リクエストの値のみ」表示可（再読込で消える）。
+- 監査出力:
+  - 監査イベントには「必要最小限」を出力する。
+  - 許可項目: `amr`, `acr`, `aal`, `auth_time`（いずれも任意、欠損許容）。
+  - 禁止項目: トークン原文、署名値、端末固有識別子。
+  - 保持期間: 既定90日（組織ポリシーで短縮/延長可）。
+
+#### 9.3 roles/groups/policyRef の永続境界
+
+- roles/groups:
+  - 認可判定入力としてリクエスト時のみ利用する。
+  - API本体DBには保存しない。
+  - 監査イベントへの出力は生値禁止。必要時は `rolesPresent` / `groupsPresent` の真偽のみ。
+- policyRef:
+  - 業務データ（document/view）には保存可（参照ポインタとして扱う）。
+  - 監査イベントには `policyRefPresent` と失敗理由コードのみ出力し、`policyRef` 生値は出力しない。
+  - policy本文・policy token・外部判定レスポンス本文は保存しない。
+
+#### 9.4 strict mode 運用責任境界
+
+- 判定条件:
+  - `ALLOW_JIT_PROVISIONING=false` かつ未登録 `provider+external_uid` は `403`。
+- 承認責任:
+  - 例外承認者（Accountable）: Platform Architecture Owner。
+  - 例外審査/実施責任（Responsible）: Compliance/Security Officer と Auth Architecture Lead。
+- 実施経路:
+  - 正本: `POST /admin/provision/users`（監査証跡をAPIに集約）。
+  - CLIはAPIラッパとしてのみ提供し、独自の例外経路を持たない。
+
+#### 9.5 正規マッピング（確定）
+
+- `AuthContext.userId = users.id`
+- `AuthContext.actorRef = user:<users.id>`
+- `reviewerRef = ownerRef = user:<users.id>`
 
 上記は issue memo `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` で管理する。
 
@@ -273,7 +313,7 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 - Mock SP/IdP は「常時必須」ではなく、IdP連携境界変更時の拡張ゲートとして運用する。
 - Level 2 は主要IdPのデータ連携様式をfixture化して再現し、設定互換の回帰保証を担う。
 - 入力方式の差異（header/JWT、各IAPのヘッダー名差異）は設定テンプレートで吸収し、実装分岐の増殖を抑制する。
-- ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
+- ユーザーデータ境界は確定したため、Schema/API/Review Attribution 文書を同一契約で同期維持する必要がある。
 
 ## Traceability
 
