@@ -172,19 +172,19 @@ export function ViewControlsPanel({
       }}
     >
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Viewpoint presets</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.viewpoint_presets.title")}</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={onApplyBirdsEyePreset} style={{ cursor: "pointer" }}>
-            Bird’s-eye
+            {t("view_controls.viewpoint_presets.birds_eye")}
           </button>
           <button type="button" onClick={onApplyMidPreset} style={{ cursor: "pointer" }}>
-            Mid
+            {t("view_controls.viewpoint_presets.mid")}
           </button>
           <button type="button" onClick={onApplyDetailPreset} style={{ cursor: "pointer" }}>
-            Detail
+            {t("view_controls.viewpoint_presets.detail")}
           </button>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
-            Structure level
+            {t("view_controls.viewpoint_presets.structure_level")}
             <select
               value={hierarchyLevel}
               onChange={(event) => {
@@ -192,17 +192,17 @@ export function ViewControlsPanel({
               }}
               style={{ fontSize: 12 }}
             >
-              <option value="overview">Overview</option>
-              <option value="mid">Mid</option>
-              <option value="detail">Detail</option>
+              <option value="overview">{t("view_controls.hierarchy.overview")}</option>
+              <option value="mid">{t("view_controls.hierarchy.mid")}</option>
+              <option value="detail">{t("view_controls.hierarchy.detail")}</option>
             </select>
           </label>
           <div style={{ display: "grid", gap: 4, minWidth: 240 }}>
             <div style={{ display: "inline-flex", border: "1px solid #cbd5e1", borderRadius: 6, overflow: "hidden" }}>
               {([
-                { id: "overview", label: "Overview" },
-                { id: "mid", label: "Mid" },
-                { id: "detail", label: "Detail" },
+                { id: "overview", label: t("view_controls.hierarchy.overview") },
+                { id: "mid", label: t("view_controls.hierarchy.mid") },
+                { id: "detail", label: t("view_controls.hierarchy.detail") },
               ] as const).map((item) => (
                 <button
                   key={item.id}
@@ -225,26 +225,26 @@ export function ViewControlsPanel({
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>Shortcut: Alt+Shift+1/2/3</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{t("view_controls.viewpoint_presets.shortcut")}</div>
           </div>
           {onResetView ? (
             <button type="button" onClick={onResetView} style={{ cursor: "pointer" }}>
-              Reset view
+              {t("view_controls.viewpoint_presets.reset")}
             </button>
           ) : null}
         </div>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Focus</div>
-        <div style={{ fontSize: 12, color: "#475569" }}>Current: {focusIslandId ?? "(none)"}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.focus.title")}</div>
+        <div style={{ fontSize: 12, color: "#475569" }}>{t("view_controls.focus.current", { id: focusIslandId ?? t("view_controls.focus.none") })}</div>
         <button type="button" onClick={onClearFocus} disabled={!focusIslandId} style={{ cursor: focusIslandId ? "pointer" : "not-allowed" }}>
-          Clear focus
+          {t("view_controls.focus.clear")}
         </button>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Depth</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.depth.title")}</div>
         <select
           value={maxDepth === "all" ? "all" : String(maxDepth)}
           onChange={(event) => {
@@ -256,32 +256,32 @@ export function ViewControlsPanel({
             onMaxDepthChange(Number(event.target.value));
           }}
         >
-          <option value="all">All</option>
+          <option value="all">{t("view_controls.depth.all")}</option>
           {Array.from({ length: maxAvailableDepth + 1 }, (_, depth) => (
             <option key={depth} value={depth}>
-              Depth {depth}
+              {t("view_controls.depth.level", { depth })}
             </option>
           ))}
         </select>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Perspective presets</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.perspective.title")}</div>
         <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-          Mode
+          {t("view_controls.perspective.mode")}
           <select
             value={perspectiveMode}
             onChange={(event) => {
               onPerspectiveModeChange(event.target.value as PerspectiveMode);
             }}
           >
-            <option value="default">Default</option>
-            <option value="facts">Facts view</option>
-            <option value="claims">Claims view</option>
-            <option value="hypotheses">Hypotheses view</option>
-            <option value="unknown">Unknown view</option>
-            <option value="evidence">Evidence view</option>
-            <option value="contradiction">Contradiction view</option>
+            <option value="default">{t("view_controls.perspective.default")}</option>
+            <option value="facts">{t("view_controls.perspective.facts")}</option>
+            <option value="claims">{t("view_controls.perspective.claims")}</option>
+            <option value="hypotheses">{t("view_controls.perspective.hypotheses")}</option>
+            <option value="unknown">{t("view_controls.perspective.unknown")}</option>
+            <option value="evidence">{t("view_controls.perspective.evidence")}</option>
+            <option value="contradiction">{t("view_controls.perspective.contradiction")}</option>
             <option value="review">{t("view_controls.perspective.review_view")}</option>
           </select>
         </label>
@@ -293,15 +293,15 @@ export function ViewControlsPanel({
               onPerspectiveStrictFilterChange(event.target.checked);
             }}
           />
-          Strict filter
+          {t("view_controls.perspective.strict_filter")}
         </label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={onSaveViewPreset} style={{ cursor: "pointer" }}>
-            Save current as preset
+            {t("view_controls.perspective.save_preset")}
           </button>
         </div>
         <div style={{ fontSize: 11, color: "#475569" }}>
-          Current preset: {viewPresets.find((preset) => preset.id === activePresetId)?.name ?? "Custom"}
+          {t("view_controls.perspective.current_preset", { name: viewPresets.find((preset) => preset.id === activePresetId)?.name ?? t("view_controls.perspective.custom") })}
         </div>
         <div style={{ display: "grid", gap: 6 }}>
           {viewPresets.map((preset) => {
@@ -320,18 +320,18 @@ export function ViewControlsPanel({
                 }}
               >
                 <div style={{ fontSize: 12, fontWeight: isCurrent ? 700 : 500, color: "#0f172a" }}>
-                  {preset.name} {isCurrent ? "(current)" : ""}
+                  {preset.name} {isCurrent ? t("view_controls.perspective.current_suffix") : ""}
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
-                  <button type="button" onClick={() => onApplyViewPreset(preset.id)}>Apply</button>
-                  <button type="button" onClick={() => onRenameViewPreset(preset.id)}>Rename</button>
+                  <button type="button" onClick={() => onApplyViewPreset(preset.id)}>{t("view_controls.perspective.apply")}</button>
+                  <button type="button" onClick={() => onRenameViewPreset(preset.id)}>{t("view_controls.perspective.rename")}</button>
                   <button
                     type="button"
                     onClick={() => onDeleteViewPreset(preset.id)}
                     disabled={preset.id.startsWith("default-")}
-                    title={preset.id.startsWith("default-") ? "Default presets cannot be deleted" : undefined}
+                    title={preset.id.startsWith("default-") ? t("view_controls.perspective.default_cannot_delete") : undefined}
                   >
-                    Delete
+                    {t("view_controls.perspective.delete")}
                   </button>
                 </div>
               </div>
@@ -342,7 +342,7 @@ export function ViewControlsPanel({
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Evidence overlay</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.evidence.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -351,44 +351,44 @@ export function ViewControlsPanel({
               onEvidenceOverlayEnabledChange(event.target.checked);
             }}
           />
-          Enable evidence overlay
+          {t("view_controls.evidence.enable")}
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-          Mode
+          {t("view_controls.evidence.mode")}
           <select
             value={evidenceOverlayMode}
             onChange={(event) => {
               onEvidenceOverlayModeChange(event.target.value as "supports" | "contradicts" | "both");
             }}
           >
-            <option value="supports">supports</option>
-            <option value="contradicts">contradicts</option>
-            <option value="both">both</option>
+            <option value="supports">{t("view_controls.evidence.supports")}</option>
+            <option value="contradicts">{t("view_controls.evidence.contradicts")}</option>
+            <option value="both">{t("view_controls.evidence.both")}</option>
           </select>
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-          Depth
+          {t("view_controls.evidence.depth")}
           <select
             value={String(Math.max(1, Math.min(3, evidenceOverlayDepth)))}
             onChange={(event) => {
               onEvidenceOverlayDepthChange(Number(event.target.value));
             }}
           >
-            <option value="1">1 hop</option>
-            <option value="2">2 hops</option>
-            <option value="3">3 hops</option>
+            <option value="1">{t("view_controls.evidence.hops", { count: 1 })}</option>
+            <option value="2">{t("view_controls.evidence.hops", { count: 2 })}</option>
+            <option value="3">{t("view_controls.evidence.hops", { count: 3 })}</option>
           </select>
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-          Scope
+          {t("view_controls.evidence.scope")}
           <select
             value={evidenceOverlayScope}
             onChange={(event) => {
               onEvidenceOverlayScopeChange(event.target.value as "all" | "selection");
             }}
           >
-            <option value="selection">selection</option>
-            <option value="all">all</option>
+            <option value="selection">{t("view_controls.evidence.selection")}</option>
+            <option value="all">{t("view_controls.evidence.all")}</option>
           </select>
         </label>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -399,12 +399,12 @@ export function ViewControlsPanel({
               onEvidenceOverlayDimOthersChange(event.target.checked);
             }}
           />
-          Dim non-participating cards
+          {t("view_controls.evidence.dim_non_participating")}
         </label>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Canonical view</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.canonical.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -413,7 +413,7 @@ export function ViewControlsPanel({
               onHideSourceCardsChange(event.target.checked);
             }}
           />
-          Hide source cards
+          {t("view_controls.canonical.hide_source_cards")}
         </label>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
@@ -423,12 +423,12 @@ export function ViewControlsPanel({
               onHideMergedOriginalsChange(event.target.checked);
             }}
           />
-          Hide merged originals
+          {t("view_controls.canonical.hide_merged_originals")}
         </label>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Summary view</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.summary.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -438,10 +438,10 @@ export function ViewControlsPanel({
               onSummaryViewChange(event.target.checked);
             }}
           />
-          Summary view {abstractMapView ? "(implied by abstract map)" : ""}
+          {t("view_controls.summary.toggle")} {abstractMapView ? t("view_controls.summary.implied") : ""}
         </label>
         <div style={{ fontSize: 11, color: "#64748b" }}>
-          Shows island summaries and hides member cards. Use Peek/Focus to inspect details.
+          {t("view_controls.summary.help")}
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
@@ -451,20 +451,20 @@ export function ViewControlsPanel({
               onAbstractMapViewChange(event.target.checked);
             }}
           />
-          Abstract map view
+          {t("view_controls.summary.abstract_map")}
         </label>
         {abstractMapView ? (
           <>
             <div style={{ fontSize: 11, color: "#64748b" }}>
-              Abstract view: shows island summaries. Cards are hidden by default. UNREVIEWED summaries are drafts.
+              {t("view_controls.summary.abstract_help")}
             </div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>Dashed edges are derived from hidden source relations.</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{t("view_controls.summary.abstract_edges")}</div>
           </>
         ) : null}
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Reading order overlay</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.reading_order.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -473,10 +473,10 @@ export function ViewControlsPanel({
               onShowReadingOrderChange(event.target.checked);
             }}
           />
-          Show reading order
+          {t("view_controls.reading_order.show")}
         </label>
         {onReadingOrderEditModeChange ? (
-          <label title="Shift+Click card/island to add. Alt+Click badge to remove. Drag badges to reorder." style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: showReadingOrder ? "#334155" : "#94a3b8" }}>
+          <label title={t("view_controls.reading_order.edit_help")} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: showReadingOrder ? "#334155" : "#94a3b8" }}>
             <input
               type="checkbox"
               checked={isReadingOrderEditMode}
@@ -485,17 +485,17 @@ export function ViewControlsPanel({
                 onReadingOrderEditModeChange(event.target.checked);
               }}
             />
-            Edit reading order
+            {t("view_controls.reading_order.edit")}
           </label>
         ) : null}
       </div>
 
-      <div style={{ fontSize: 12, color: "#64748b" }} title="Hold Peek on a collapsed island to reveal members.">
-        Hold Peek on a collapsed island to reveal members.
+      <div style={{ fontSize: 12, color: "#64748b" }} title={t("view_controls.peek_help")}>
+        {t("view_controls.peek_help")}
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Level of detail (LOD)</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.lod.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -504,16 +504,16 @@ export function ViewControlsPanel({
               onLodEnabledChange(event.target.checked);
             }}
           />
-          Auto detail by zoom (LOD)
+          {t("view_controls.lod.auto")}
         </label>
         <div style={{ fontSize: 12, color: "#475569" }}>
-          Current detail: {lodEnabled ? currentLodLevel ? currentLodLevel.toUpperCase() : "(calculating...)" : "OFF"}
+          {t("view_controls.lod.current", { value: lodEnabled ? currentLodLevel ? currentLodLevel.toUpperCase() : t("view_controls.lod.calculating") : t("view_controls.lod.off") })}
         </div>
         <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4 }}>
-          Close = full cards, Mid = compact cards, Far = islands and island relations.
+          {t("view_controls.lod.legend")}
         </div>
         {lodEnabled && currentLodLevel === "far" ? (
-          <div style={{ fontSize: 11, color: "#475569" }}>LOD Far: islands are virtually collapsed</div>
+          <div style={{ fontSize: 11, color: "#475569" }}>{t("view_controls.lod.far_hint")}</div>
         ) : null}
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
@@ -523,12 +523,12 @@ export function ViewControlsPanel({
               onLodShowLoneWolvesWhenFarChange(event.target.checked);
             }}
           />
-          Keep lone wolves when far
+          {t("view_controls.lod.keep_lone_wolves")}
         </label>
         {lodThresholds && onLodThresholdsChange ? (
           <>
             <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
-              Close threshold ({lodThresholds.close.toFixed(2)})
+              {t("view_controls.lod.close_threshold", { value: lodThresholds.close.toFixed(2) })}
               <input
                 type="range"
                 min={0.6}
@@ -542,7 +542,7 @@ export function ViewControlsPanel({
               />
             </label>
             <label style={{ display: "grid", gap: 4, fontSize: 11, color: "#475569" }}>
-              Mid threshold ({lodThresholds.mid.toFixed(2)})
+              {t("view_controls.lod.mid_threshold", { value: lodThresholds.mid.toFixed(2) })}
               <input
                 type="range"
                 min={0.2}
@@ -561,7 +561,7 @@ export function ViewControlsPanel({
 
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Label culling debug</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.label_culling.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -570,12 +570,12 @@ export function ViewControlsPanel({
               onShowLabelBoundsChange(event.target.checked);
             }}
           />
-          Show label bounds (accepted/culled)
+          {t("view_controls.label_culling.show_bounds")}
         </label>
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Safety</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("view_controls.safety.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
           <input
             type="checkbox"
@@ -584,7 +584,7 @@ export function ViewControlsPanel({
               onSafeModeChange(event.target.checked);
             }}
           />
-          Safe mode (hide UNREVIEWED drafts)
+          {t("view_controls.safety.safe_mode")}
         </label>
       </div>
 
@@ -605,8 +605,8 @@ export function ViewControlsPanel({
               onPngExportScaleChange(event.target.value === "2" ? 2 : 1);
             }}
           >
-            <option value="1">1x</option>
-            <option value="2">2x</option>
+            <option value="1">{t("view_controls.export_legacy.png_scale_1x")}</option>
+            <option value="2">{t("view_controls.export_legacy.png_scale_2x")}</option>
           </select>
         </label>
         <button type="button" onClick={onExportPngViewport} style={{ cursor: "pointer" }}>
