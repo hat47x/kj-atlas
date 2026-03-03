@@ -26,10 +26,10 @@
 
 | Milestone | Status | 根拠 |
 |---|---|---|
-| M1: Current reviewer (local) | ⏳ Not started | `reviewerRef` / `Current reviewer` の実装痕跡は未確認。 |
+| M1: Current reviewer (local) | ✅ Done (2026-03-06) | `reviewerRef` の localStorage保持と UI導線を実装。 |
 | M2: ReviewEvent append on review toggle | ✅ Done (2026-02-26) | `reviewEvents` データモデル・reviewed toggle連動・view metadata export/import保持を実装。 |
-| M3: Export redaction | ⏳ Not started | review向け redaction モード（strip-identities / strip-all）は未確認。 |
-| M4: Merge audit log integration | 🟡 Partial | `mergeAuditLog` の保存・上限管理は実装済みだが、`reviewEvents` との統合は未実装。 |
+| M3: Export redaction | ✅ Done (2026-03-06) | `view.json` に redaction モードを追加し、bundle は既定 strip-identities。 |
+| M4: Merge audit log integration | ✅ Done (2026-03-06) | `mergeAuditLog` / `reviewEvents` を同居トリム（決定論）で統一。 |
 | M5: Org deployment hooks (optional) | ⏳ Not started | reviewerRef adapter / SSO subject 連携は未確認。 |
 | M6: Optional signing (non-MVP) | ⏳ Not started | detached signature 設計・検証UIは未確認。 |
 
@@ -44,8 +44,8 @@
 ## Milestones
 
 ### M1: Current reviewer (local)
-- [ ] ローカル環境で reviewerRef を生成・保持（localStorage等）
-- [ ] UIで “Current reviewer” を設定可能（displayNameは既定OFF）
+- [x] ローカル環境で reviewerRef を生成・保持（localStorage等）
+- [x] UIで “Current reviewer” を設定可能（displayNameは既定OFF）
 - Done criteria:
   - 設定した reviewerRef が再起動後も維持される
 
@@ -61,13 +61,13 @@
   - retention上限は `2000` 件で古いイベントからトリム。
 
 ### M3: Export redaction
-- [ ] view.json export に redaction モードを実装
-- [ ] review pack / bundle export で既定 strip-identities
+- [x] view.json export に redaction モードを実装
+- [x] review pack / bundle export で既定 strip-identities
 - Done criteria:
   - 公開用に strip-all を選ぶとレビュー履歴が消える
 
 ### M4: Merge audit log integration
-- [ ] I29 の mergeAuditLog と reviewEvents の整合（同居・保持上限）
+- [x] I29 の mergeAuditLog と reviewEvents の整合（同居・保持上限）
 - Done criteria:
   - レビュー運用ログが肥大化しない
 

@@ -3,8 +3,9 @@ import type { HierarchyLevel } from "../domain/view/hierarchy_level";
 import type { LODLevel, LODThresholds } from "../domain/view/lod";
 import type { ViewPreset } from "../domain/view/presets";
 import { PERSPECTIVE_MODE_VALUES, type PerspectiveMode, type PerspectivePreset, type PerspectiveState } from "../domain/view/perspective";
-import { sanitizeMergeAuditLog, type MergeAuditEntry } from "../domain/view/audit_log";
-import { sanitizeReviewEvents, type ReviewEvent } from "../domain/view/review_events";
+import { type MergeAuditEntry } from "../domain/view/audit_log";
+import { type ReviewEvent } from "../domain/view/review_events";
+import { normalizeReviewGovernanceLogs, type ReviewRedactionMode } from "../domain/view/review_governance_log";
 import { isPublishVisibility, normalizeViewVisibility, type PublishVisibility } from "../domain/policy/publish_visibility";
 import { isLocale, type Locale } from "../i18n/translate";
 
@@ -156,6 +157,7 @@ type ExportViewMetadataArgs = {
   generatedAt?: string;
   mergeAuditLog?: MergeAuditEntry[];
   reviewEvents?: ReviewEvent[];
+  reviewRedactionMode?: ReviewRedactionMode;
 };
 
 function hashTitle(value: string): string {
@@ -184,7 +186,13 @@ function resolveDocSignature(doc: Pick<DocumentV2, "id" | "title"> | null): stri
   return `title-${hashTitle(title)}`;
 }
 
-export function buildExportViewMetadata({ doc, visibility, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog, reviewEvents }: ExportViewMetadataArgs): ExportViewMetadata {
+export function buildExportViewMetadata({ doc, visibility, camera, viewState, exportMode, bounds, padding, generatedAt, mergeAuditLog, reviewEvents, reviewRedactionMode }: ExportViewMetadataArgs): ExportViewMetadata {
+  const normalizedGovernanceLogs = normalizeReviewGovernanceLogs({
+    mergeAuditLog,
+    reviewEvents,
+    redactionMode: reviewRedactionMode,
+  });
+
   return {
     version: "1",
     generatedAt: generatedAt ?? new Date().toISOString(),
@@ -236,8 +244,8 @@ export function buildExportViewMetadata({ doc, visibility, camera, viewState, ex
       ...(padding === undefined ? {} : { padding }),
     },
     notes: "",
-    ...(mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(mergeAuditLog) }),
-    ...(reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(reviewEvents) }),
+    ...(normalizedGovernanceLogs.mergeAuditLog === undefined ? {} : { mergeAuditLog: normalizedGovernanceLogs.mergeAuditLog }),
+    ...(normalizedGovernanceLogs.reviewEvents === undefined ? {} : { reviewEvents: normalizedGovernanceLogs.reviewEvents }),
   };
 }
 
@@ -632,7 +640,9 @@ export function validateImportViewMetadata(value: unknown): { ok: true; metadata
   return { ok: true, metadata: {
     ...(value as ExportViewMetadata),
     visibility: normalizeViewVisibility(value.visibility),
-    ...(value.mergeAuditLog === undefined ? {} : { mergeAuditLog: sanitizeMergeAuditLog(value.mergeAuditLog) }),
-    ...(value.reviewEvents === undefined ? {} : { reviewEvents: sanitizeReviewEvents(value.reviewEvents) }),
+    ...normalizeReviewGovernanceLogs({
+      mergeAuditLog: value.mergeAuditLog,
+      reviewEvents: value.reviewEvents,
+    }),
   } };
 }

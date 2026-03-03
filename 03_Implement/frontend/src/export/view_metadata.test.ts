@@ -614,6 +614,66 @@ describe("view metadata export", () => {
     }
   });
 
+  it("strips reviewerRef when review redaction mode is strip-identities", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-review", title: "Review" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      exportMode: "viewport",
+      reviewRedactionMode: "strip-identities",
+      reviewEvents: [
+        {
+          id: "review-1",
+          target: { kind: "summary", id: "summary-1" },
+          action: "markReviewed",
+          createdAt: "2026-03-01T00:00:00.000Z",
+          reviewerRef: "user:local:abc",
+        },
+      ],
+    });
+
+    expect(metadata.reviewEvents?.[0]).toEqual({
+      id: "review-1",
+      target: { kind: "summary", id: "summary-1" },
+      action: "markReviewed",
+      createdAt: "2026-03-01T00:00:00.000Z",
+    });
+  });
+
+  it("removes reviewEvents when review redaction mode is strip-all", () => {
+    const metadata = buildExportViewMetadata({
+      doc: { id: "doc-review", title: "Review" },
+      camera: { panX: 0, panY: 0, zoom: 1 },
+      viewState: {
+        summaryView: false,
+        abstractMapView: false,
+        hideSourceCards: false,
+        maxDepth: "all",
+        focusIslandId: null,
+        showReadingOrder: false,
+      },
+      exportMode: "viewport",
+      reviewRedactionMode: "strip-all",
+      reviewEvents: [
+        {
+          id: "review-1",
+          target: { kind: "summary", id: "summary-1" },
+          action: "markReviewed",
+          createdAt: "2026-03-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(metadata.reviewEvents).toBeUndefined();
+  });
+
   it("sanitizes invalid reviewEvents entries on import", () => {
     const result = validateImportViewMetadata({
       version: "1",

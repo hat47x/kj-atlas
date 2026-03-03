@@ -61,6 +61,7 @@ import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
+import { buildLocalReviewerRef, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -994,6 +995,7 @@ export default function App() {
   const [mergeWarningConfirmationKey, setMergeWarningConfirmationKey] = useState<string | null>(null);
   const [mergeAuditLog, setMergeAuditLog] = useState<MergeAuditEntry[]>([]);
   const [reviewEvents, setReviewEvents] = useState<ReviewEvent[]>([]);
+  const [currentReviewerRef, setCurrentReviewerRef] = useState<string>(() => initializeCurrentReviewerRef());
   const [mergeSourceInfo, setMergeSourceInfo] = useState<MergeAuditSource>({ kind: "unknown" });
   const [pendingImportedDocument, setPendingImportedDocument] = useState<PendingImportedDocument | null>(null);
   const [importDocumentError, setImportDocumentError] = useState<string | null>(null);
@@ -3612,10 +3614,11 @@ ${parsedDocument.error}`);
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "card", id: cardId },
         reviewed,
+        reviewerRef: currentReviewerRef,
         contextLabel: "card.text",
       }));
     },
-    [applyDocumentChange, document, setReviewEvents]
+    [applyDocumentChange, currentReviewerRef, document, setReviewEvents]
   );
 
   const handleAddEvidenceLink = useCallback(
@@ -3835,10 +3838,11 @@ ${parsedDocument.error}`);
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
         reviewed,
+        reviewerRef: currentReviewerRef,
         contextLabel: "island.title",
       }));
     },
-    [applyDocumentChange, document, setReviewEvents]
+    [applyDocumentChange, currentReviewerRef, document, setReviewEvents]
   );
 
   const handleRestoreIslandSummaryVersion = useCallback(
@@ -3913,10 +3917,11 @@ ${parsedDocument.error}`);
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: islandId },
         reviewed,
+        reviewerRef: currentReviewerRef,
         contextLabel: "island.summary",
       }));
     },
-    [applyDocumentChange, document, setReviewEvents]
+    [applyDocumentChange, currentReviewerRef, document, setReviewEvents]
   );
 
   const handleIslandImageReviewedChange = useCallback(
@@ -3955,10 +3960,11 @@ ${parsedDocument.error}`);
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "island", id: islandId },
         reviewed,
+        reviewerRef: currentReviewerRef,
         contextLabel: "island.image",
       }));
     },
-    [applyDocumentChange, document, setReviewEvents]
+    [applyDocumentChange, currentReviewerRef, document, setReviewEvents]
   );
 
   const handleGenerateIslandPolygon = useCallback(
@@ -4970,10 +4976,11 @@ ${parsedDocument.error}`);
       setReviewEvents((previous) => appendReviewEvent(previous, {
         target: { kind: "summary", id: selectedRelationSummary.id },
         reviewed,
+        reviewerRef: currentReviewerRef,
         contextLabel: "relation.summary",
       }));
     },
-    [applyDocumentChange, document, selectedRelationSummary, setReviewEvents]
+    [applyDocumentChange, currentReviewerRef, document, selectedRelationSummary, setReviewEvents]
   );
 
   const handleRestoreRelationSummaryHistoryEntry = useCallback(
@@ -6567,6 +6574,7 @@ ${parsedDocument.error}`);
         generatedAt,
         mergeAuditLog,
         reviewEvents,
+        reviewRedactionMode: "none",
       });
 
       downloadTextFile(getViewMetadataFilename(mode, generatedAt), "application/json", `${JSON.stringify(metadata, null, 2)}\n`);
@@ -6653,6 +6661,7 @@ ${parsedDocument.error}`);
         generatedAt: deterministicNowIso,
         mergeAuditLog,
         reviewEvents,
+        reviewRedactionMode: "strip-identities",
       });
 
       const controller = new AbortController();
@@ -7675,6 +7684,15 @@ ${parsedDocument.error}`);
       onSafeModeChange={handleSafeModeChange}
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
+      currentReviewerRef={currentReviewerRef}
+      onCurrentReviewerRefChange={(value) => {
+        const next = saveCurrentReviewerRef(value);
+        setCurrentReviewerRef(next);
+      }}
+      onResetCurrentReviewerRef={() => {
+        const next = saveCurrentReviewerRef(buildLocalReviewerRef());
+        setCurrentReviewerRef(next);
+      }}
       onExportViewViewport={handleExportViewMetadataViewport}
       onExportViewVisibleBounds={handleExportViewMetadataVisibleBounds}
       onExportBundleZip={(options) => {
