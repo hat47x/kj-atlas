@@ -21,6 +21,40 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
 5. `Source Issue` は運用状態に応じて記載する（未運用時は `N/A`、GitHub Issues運用時はURL）。
 
+## Source Issue 運用基準（Traceability）
+
+### `Source Issue: N/A` を継続できる条件
+
+- GitHub Issues を正本としてまだ運用開始していない（本READMEの `Scope` と一致）。
+- 対象タスクが issue memo 内で完結し、外部トラッカー参照を必須としていない。
+- `Active issue memos` 表の `Source Issue` 列が `N/A` で統一管理されている。
+
+### GitHub Issues URL に移行する条件
+
+- PM/Triage が「GitHub Issues を正本として運用開始」と明示した時点。
+- 既存 `Open / In Progress` メモを更新するタイミングで、`Source Issue` を対応するURLへ置換する。
+- 新規メモは起票時からGitHub Issue URLを必須とし、`N/A` は使用しない。
+
+> 安全装置: 運用開始時期や移行責任者が未確定な場合、`N/A` のまま固定しない。該当メモの `Additional context` に確認事項として記録し、`Status` は `Draft` または `Open` で停止する。
+
+## ステータス更新責任（Open → In Progress → Done）
+
+| 遷移 | 更新責任者 | 更新タイミング（固定） |
+|---|---|---|
+| Draft → Open | **A**（Platform Architecture Owner） | 受入条件・Validation plan・RACIが揃い、着手可能と判断した時 |
+| Open → In Progress | **R**（各Issueの実行Lead） | 最初の実作業コミット/PR/文書差分を開始する直前 |
+| In Progress → Done | **A**（Platform Architecture Owner） | `Acceptance criteria` 完了と `Validation plan` 実施結果が確認できた時 |
+
+- R は更新提案（ステータス変更PR/コミット）を行い、A が最終確定する。
+- 責任者が未確定（R/Aの指名なし）の場合は遷移させず、確認事項として停止する（推測で確定しない）。
+
+## RACI-I 通知ルール（PM/Triage, QA Lead）
+
+- 通知対象（I）: `PM/Triage`, `QA Lead`。
+- 通知トリガー: `Status` 変更時（Open化 / In Progress化 / Done化）と、`Source Issue` の `N/A ↔ URL` 切替時。
+- 通知内容（最小）: `Backlog ID` / 新ステータス / 更新者 / 参照リンク（issue memo + Source Issue）。
+- 通知手段: PR本文または関連スレッドに同一フォーマットで1回記録し、重複通知しない。
+
 ## Required fields（最低必須）
 
 issue補助メモには、最低でも次の項目を含める。
