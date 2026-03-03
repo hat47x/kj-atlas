@@ -63,14 +63,24 @@
 
 FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以下を満たす。
 
-1. ヘッダー取得
-   - 例: `X-Forwarded-User`（必須）, `X-Forwarded-Email`（任意）, `X-Forwarded-Name`（任意）
-2. Trust Proxy 強制
+1. Trust Proxy 強制
    - `TRUSTED_PROXIES`（CIDR/IP）で許可元を制限する。
    - 非許可信頼元 + 認証ヘッダー付き要求は拒否（401/403）。
-3. リクエストコンテキスト
+2. 汎用 `AuthContextAdapter`（設定駆動）
+   - 認証情報の受け取り方式は **設定で切替可能** とする（実装追加なしで吸収）。
+   - 最低限サポートする入力モード:
+     - `header`（`X-Forwarded-*` 等のHTTPヘッダー群）
+     - `jwt_header`（例: `Authorization: Bearer <JWT>` または `X-Auth-Token`）
+   - いずれのモードでも、最終的に同一の `AuthContext` へ正規化する。
+3. クレーム/ヘッダーのマッピング規則
+   - `AUTH_USER_FIELD`, `AUTH_EMAIL_FIELD`, `AUTH_NAME_FIELD`, `AUTH_GROUPS_FIELD` などの設定キーで、
+     受信元フィールド名を差し替え可能にする。
+   - 既定値は標準的な `X-Forwarded-User` などを採用するが、AWS ALB / Cloud IAP 等の差異は
+     **provider preset（設定テンプレート）** で吸収し、サービス別の個別実装を避ける。
+   - `X-Forwarded-For` は認証IDではなく、`TRUSTED_PROXIES` 判定と監査補助にのみ利用する。
+4. リクエストコンテキスト
    - 正規化した `AuthContext` をAPIで参照可能にする。
-4. JIT Provisioning（最小）
+5. JIT Provisioning（最小）
    - 未知ユーザーアクセス時に最小属性を登録（userId / displayName / email 等）。
    - パスワード・ハッシュは保持しない。
 
@@ -167,12 +177,14 @@ E2E では本番IAPを代替するため、FastAPI製モック群を採用する
 - `kj-atlas` は認証実装責務を最小化し、OSSとしての安全運用性を高める。
 - 企業・行政で要求される監査/統制との整合が取りやすくなる。
 - 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、E2E・運用手順の整備が必須。
+- 入力方式の差異（header/JWT、各IAPのヘッダー名差異）は設定テンプレートで吸収し、実装分岐の増殖を抑制する。
 - ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
 
 ## Traceability
 
 - Related: `02_Architecture/enterprise_architecture.md`
 - Related: `02_Architecture/schemas.md`
+- Related: `02_Architecture/api.md`
 - Related: `02_Architecture/review_attribution.md`
 - Related: `04_Documentation/security.md`
 - Related: `04_Documentation/e2e_testing.md`
