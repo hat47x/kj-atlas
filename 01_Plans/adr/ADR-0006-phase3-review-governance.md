@@ -31,7 +31,7 @@
 | M3: Export redaction | ✅ Done (2026-03-06) | `view.json` に redaction モードを追加し、bundle は既定 strip-identities。 |
 | M4: Merge audit log integration | ✅ Done (2026-03-06) | `mergeAuditLog` / `reviewEvents` を同居トリム（決定論）で統一。 |
 | M5: Org deployment hooks (optional) | ⏳ Not started | reviewerRef adapter / SSO subject 連携は未確認。 |
-| M6: Optional signing (non-MVP) | ⏳ Not started | detached signature 設計・検証UIは未確認。 |
+| M6: Optional signing (non-MVP) | ✅ Done (2026-03-03) | detached signature のデータモデル、検証フロー、無署名時 non-blocking UI/運用、鍵管理・監査ログ・互換方針を設計文書へ反映。 |
 
 > 注記: M4 の「部分着手」は `mergeAuditLog` 単体の実装確認に基づく。Phase 3 の DoD 充足には `reviewEvents` 実装と export/import 連携が必要。
 
@@ -78,10 +78,44 @@
   - 認証があっても無くても動く
 
 ### M6: Optional signing (non-MVP)
-- [ ] detached signature を設計（ファイル単位署名）
-- [ ] 署名検証UI（任意）
+- [x] detached signature を設計（ファイル単位署名）
+- [x] 署名検証UI（任意）
 - Done criteria:
-  - 署名が無い場合も通常利用を阻害しない
+  - [x] 署名が無い場合も通常利用を阻害しない
+
+### M6 Detailed spec (decision record)
+
+#### 1) Detached signature 設計
+- sidecar 方式を採用し、`review-signature.json`（任意）に detached signature を格納する。
+- 署名対象は `document.json` / `view.json` と review attribution 正規化データから生成した digest 集合。
+- `ReviewSignatureEnvelope` は `version`, `keyId`, `algorithm`, `signedAt`, `payload`, `signature` を必須とする。
+
+#### 2) 検証フロー / 失敗時挙動
+- 署名ファイル欠損: `not_provided`（情報表示のみ、通常利用継続）。
+- 署名あり検証成功: `passed`。
+- 署名あり検証失敗: `failed`（既定では閲覧継続可、share/export 時に追加確認）。
+- fail-closed が必要な組織運用のみ policy override（`requireSignature=true`）で拒否可能。
+
+#### 3) UI/運用仕様（non-blocking）
+- UIの署名状態は `Unsigned` / `Verified` / `Verification failed` を表示。
+- `Unsigned` は warning ではなく info 扱い。
+- `Verification failed` は直ちに編集停止しないが、外部共有系操作にガードを追加。
+
+#### 4) 監査ログ・鍵管理・後方互換
+- 署名検証結果は `reviewEvents` と分離し、監査ログ系列へ記録（`verifiedAt`, `result`, `reasonCode`, `keyId`）。
+- private key はアプリ外（CI/CD or signing service）で管理し、`keyId` によるローテーション前提で運用。
+- 既存 `document.json` / `view.json` は変更しない。未対応クライアントは署名ファイルを無視可能。
+
+#### 5) AC / DoD（M6）
+- AC-1: detached signature のデータモデルが architecture + schema 文書で定義済み。
+- AC-2: 署名対象（document/view/review policy+events digest）と canonical化要件が記載済み。
+- AC-3: 検証フロー（成功/未提供/失敗）と UI 表示要件が定義済み。
+- AC-4: 無署名 non-blocking 既定と fail-closed optional policy が定義済み。
+- AC-5: 監査ログ分離、鍵管理（key rotation）、後方互換（sidecar追加）方針が明記済み。
+
+DoD:
+- `02_Architecture/review_attribution.md` と `02_Architecture/schemas_review_attribution.md` が本仕様と整合。
+- docs-check（リンク/整合/体裁）を実行し、エラーなし。
 
 ## Risk notes
 - doxxing/個人情報流出は最大リスク。storePII=false を既定にする。

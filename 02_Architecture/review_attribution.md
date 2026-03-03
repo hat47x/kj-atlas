@@ -98,12 +98,70 @@ kj-atlas は OSS として、多様な環境で利用される：
 - “証拠”ではなく“主張（claim）”として扱う
 - 将来拡張で署名（detached signature）を検討
 
+## Optional signing (Phase3 M6, non-MVP)
+
+### Scope and goals
+- detached signature は **review attribution を含む配布単位の完全性確認** を目的とする。
+- 署名はオプションであり、未署名データでも既存の閲覧・編集・レビュー運用は継続できる。
+- SafeMode と PII 最小化（`storePII=false` 既定、redaction 既定 `strip-identities`）を優先し、署名導入で既定値を緩めない。
+
+### Signing target
+- 対象は `view.json` 単体ではなく、`document.json` + `view.json` の組み合わせを表す `review-attribution digest` とする。
+- digest 生成時は次を必須入力にする。
+  - `documentDigest`（`document.json` の SHA-256）
+  - `viewDigest`（`view.json` の SHA-256。redaction 後の実ファイルを対象）
+  - `reviewEventDigest`（`reviewEvents` 正規化 JSON の SHA-256）
+  - `attributionPolicyDigest`（`reviewAttributionPolicy` 正規化 JSON の SHA-256）
+- 署名対象は上記 digest 群を含む `ReviewSignatureEnvelope` の canonical JSON とし、署名方式は `detached` を前提にする。
+
+### Verification flow
+1. 署名ファイル（例: `review-signature.json`）がある場合のみ検証処理を開始する。
+2. `document.json` / `view.json` から digest を再計算し、envelope 内の値と比較する。
+3. `keyId` で公開鍵を解決し、`signature` を検証する。
+4. 成功時は監査ログに `verification=passed` を追記する。
+5. 失敗時は監査ログに失敗理由（`digest_mismatch` / `key_not_found` / `signature_invalid`）を残す。
+
+### Failure behavior (non-blocking default)
+- **署名がない場合**: `verification=not_provided` として扱い、通常利用は継続する。
+- **署名検証失敗**: 既定では read-only で継続可能とし、破壊的操作（share/export）のみ追加確認を要求する。
+- 組織運用で fail-closed が必要な場合は policy で `requireSignature=true` を明示し、未署名/失敗を拒否できる。
+- 既定値は `requireSignature=false` とし、ローカル利用・OSS利用を阻害しない。
+
+### UI / operations policy
+- UI には「署名状態」を 3 値で表示する。
+  - `Unsigned`（未署名）
+  - `Verified`（署名検証成功）
+  - `Verification failed`（署名不正または鍵不一致）
+- 未署名は warning ではなく info 扱いにし、通常フローをブロックしない。
+- `Verification failed` では操作を即時停止せず、share/export 前に確認ダイアログを出す。
+- 運用では「公開配布時のみ署名必須」「内部下書きは任意」を標準とし、署名必須範囲を deployment policy で管理する。
+
+### Audit log relation
+- 署名検証結果は review attribution 本体（`reviewEvents`）とは別系列で記録する。
+- 監査ログには以下を残す。
+  - `verifiedAt`
+  - `result`（`passed` / `not_provided` / `failed`）
+  - `reasonCode`（失敗時のみ）
+  - `keyId`（解決できた場合）
+- `reviewEvents` の意味を変更しない（レビュー操作ログと検証ログを混在させない）。
+
+### Key management policy
+- private key はアプリ実行環境に持ち込まず、CI/CD か専用署名基盤で管理する。
+- key rotation を前提に `keyId` 必須、検証側は複数公開鍵を保持可能にする。
+- 失効した鍵は deny-list で明示し、過去成果物再検証時は「当時有効だった鍵」を参照できる運用記録を残す。
+
+### Backward compatibility policy
+- `review-signature.json` は追加ファイル扱いとし、既存の `document.json` / `view.json` 形式を変更しない。
+- 未対応クライアントは署名ファイルを無視して従来通り動作できることを互換要件とする。
+- 将来アルゴリズム追加時は `algorithm` 列挙を拡張し、既存 `rsa-sha256`（初期値）を後方互換で維持する。
+
 ## Future Milestones (Phase 3+)
 - M1: “現在のレビュア”設定（ローカルID発行）
 - M2: reviewedフラグ変更時に ReviewEvent を追記
 - M3: エクスポート時の redaction 実装（strip-identities / strip-all）
-- M4: 組織向け署名（オプション、detached）
+- M4: Merge audit log integration
 - M5: SSOアダプタ（ReviewerRef生成規約の差し替え）
+- M6: Optional signing（detached signature + verification UI）
 
 ## Notes
 - 本機能は「責任所在を明確化し、レビュー運用を回す」ための補助である。
