@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -35,7 +35,11 @@ def _normalize_optional_field(raw: str | None) -> str | None:
 
 
 @router.post("/users", response_model=ProvisionUserResponse, status_code=201)
-def provision_user(payload: ProvisionUserRequest, db: Session = Depends(get_db)) -> ProvisionUserResponse:
+def provision_user(
+    payload: ProvisionUserRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> ProvisionUserResponse:
     provider = payload.provider.strip()
     external_uid = payload.externalUid.strip()
     display_name = _normalize_optional_field(payload.displayName)
@@ -60,6 +64,7 @@ def provision_user(payload: ProvisionUserRequest, db: Session = Depends(get_db))
 
         user_id = user_row.id
         reviewer_ref = f"user:{user_id}"
+        response.status_code = 200
         return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref, provisioned=False)
 
     user_id = str(uuid4())

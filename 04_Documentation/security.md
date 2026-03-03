@@ -105,7 +105,7 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 - 回復導線: `POST /admin/provision/users`
   - request: `{ "provider": "saml", "externalUid": "alice", "displayName": "Alice" }`
   - create時: `201` + `provisioned=true`
-  - 再試行: `201` + `provisioned=false`
+  - 再試行: `200` + `provisioned=false`
   - 既存identityに矛盾する `displayName/email` は `409 identity_already_provisioned_conflict`
 
 運用上、strict緩和（`ALLOW_JIT_PROVISIONING=true` への切替）は承認フローを経て記録してください。
