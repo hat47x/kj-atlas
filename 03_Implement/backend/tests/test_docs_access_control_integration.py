@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -212,6 +213,29 @@ def test_read_only_priority_blocks_write_before_adapter_allow(tmp_path) -> None:
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Access denied: read_only"
+
+
+@pytest.mark.parametrize("visibility", ["Public", "Unlisted", "Org", "Restricted"])
+def test_safe_mode_and_read_only_priority_remains_stronger_than_visibility_label(tmp_path, visibility: str) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "read_only"
+
+        export_resp = client.post(
+            "/docs/doc-priority/export-audit",
+            json={"safeMode": True, "exportKind": "bundle"},
+            headers={"x-doc-visibility": visibility, "x-policy-ref": "policy-v1"},
+        )
+        write_resp = client.put(
+            "/docs/doc-priority",
+            json=_sample_payload("doc-priority"),
+            headers={"x-read-only": "true", "x-doc-visibility": visibility, "x-policy-ref": "policy-v1"},
+        )
+
+    assert export_resp.status_code == 403
+    assert export_resp.json()["detail"] == "Access denied: safe_mode"
+    assert write_resp.status_code == 403
+    assert write_resp.json()["detail"] == "Access denied: read_only"
 
 
 def test_adapter_denial_prevents_role_header_privilege_escalation(tmp_path) -> None:
