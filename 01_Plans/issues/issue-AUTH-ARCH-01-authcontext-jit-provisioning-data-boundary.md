@@ -1,7 +1,7 @@
 # Issue Draft: AUTH-ARCH-01 AuthContext/JIT Provisioning のデータ境界定義
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -58,21 +58,21 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] AuthContext/JIT Provisioning の属性境界（保存する/しない）が文書化されている。
-- [ ] reviewerRef/ownerRef と userId の対応方針が明文化されている。
-- [ ] PII最小化・監査要件・後方互換の観点が明示されている。
-- [ ] パスキー関連属性（`amr/acr/aal/auth_time`）の扱いが明文化されている。
-- [ ] 後続実装に必要なタスク（ADR更新 / schema更新 / migration）が分解されている。
-- [ ] サービス差異（AWS ALB / Cloud IAP 等）を設定テンプレートで吸収する方針が定義されている。
-- [ ] `users` / `user_identities` 分離モデルと、複数認証経路の例外救済手順が明文化されている。
-- [ ] `ALLOW_JIT_PROVISIONING=false` 時の事前プロビジョニング契約（管理者API/CLI）が明文化されている。
+- [x] AuthContext/JIT Provisioning の属性境界（保存する/しない）が文書化されている。
+- [x] reviewerRef/ownerRef と userId の対応方針が明文化されている。
+- [x] PII最小化・監査要件・後方互換の観点が明示されている。
+- [x] パスキー関連属性（`amr/acr/aal/auth_time`）の扱いが明文化されている。
+- [x] 後続実装に必要なタスク（ADR更新 / schema更新 / migration）が分解されている。
+- [x] サービス差異（AWS ALB / Cloud IAP 等）を設定テンプレートで吸収する方針が定義されている。
+- [x] `users` / `user_identities` 分離モデルと、複数認証経路の例外救済手順が明文化されている。
+- [x] `ALLOW_JIT_PROVISIONING=false` 時の事前プロビジョニング契約（管理者API/CLI）が明文化されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 現行 schema と review attribution で user identity が登場する箇所を棚卸し。
-- [ ] T2: AuthContext 属性の分類表（persist/transient/forbidden）を作成。
-- [ ] T3: reviewerRef/ownerRef との正規マッピング案を2案以上比較。
-- [ ] T4: ADR更新が必要な論点を切り出し、必要なら新ADRを起票。
+- [x] T1: 現行 schema と review attribution で user identity が登場する箇所を棚卸し。
+- [x] T2: AuthContext 属性の分類表（persist/transient/forbidden）を作成。
+- [x] T3: reviewerRef/ownerRef との正規マッピング案を2案以上比較。
+- [x] T4: ADR更新が必要な論点を切り出し、必要なら新ADRを起票。
 
 ## 7) 検証計画 / Validation plan
 
@@ -88,21 +88,21 @@
 
 ### 着手条件（Start conditions）
 
-- [ ] `ADR-0020` の AuthContext/JIT 方針を基準文書として固定（参照先の再確認）。
-- [ ] `02_Architecture/review_attribution.md` と `schemas*.md` の現行差分を棚卸し済み。
-- [ ] 本IssueのRACIを関係者が合意済み。
+- [x] `ADR-0020` の AuthContext/JIT 方針を基準文書として固定（参照先の再確認）。
+- [x] `02_Architecture/review_attribution.md` と `schemas*.md` の現行差分を棚卸し済み。
+- [x] 本IssueのRACIを関係者が合意済み。
 
 ### ブロッカー（Blockers）
 
-- [ ] 監査要件（`amr/acr/aal/auth_time` の保存要否）に対する Compliance の判断が未確定。
-- [ ] IAP別ヘッダー差異（AWS ALB / Cloud IAP）を preset で吸収する最小仕様の合意が未確定。
-- [ ] `ALLOW_JIT_PROVISIONING=false` 時に必要な管理者API/CLIの運用責任者が未確定。
+- [x] 監査要件（`amr/acr/aal/auth_time` の保存要否）に対する Compliance の判断が未確定。
+- [x] IAP別ヘッダー差異（AWS ALB / Cloud IAP）を preset で吸収する最小仕様の合意が未確定。
+- [x] `ALLOW_JIT_PROVISIONING=false` 時に必要な管理者API/CLIの運用責任者が未確定。
 
 ### 完了条件（Definition of done）
 
-- [ ] 属性境界（persist/transient/forbidden）が `01_Plans` または `02_Architecture` の正本に明文化。
-- [ ] reviewerRef/ownerRef と AuthContext.userId の正規マッピング規則が1案に収束。
-- [ ] 後続Issue（AUTH-SCHEMA-01）に渡す schema 前提（制約/移行前提/非目標）を明文化。
+- [x] 属性境界（persist/transient/forbidden）が `01_Plans` または `02_Architecture` の正本に明文化。
+- [x] reviewerRef/ownerRef と AuthContext.userId の正規マッピング規則が1案に収束。
+- [x] 後続Issue（AUTH-SCHEMA-01）に渡す schema 前提（制約/移行前提/非目標）を明文化。
 
 ## 9) 実行順序（このIssue内）
 
@@ -130,6 +130,38 @@
 - [Q3] `ALLOW_JIT_PROVISIONING=false` の事前登録導線は、API優先かCLI優先か（運用主体をどちらに置くか）。
 
 > 上記が未確定のままでは保存境界を確定できないため、推測では埋めず確認完了まで仕様固定を停止する。
+
+## 14) 2026-03-03 決裁記録（AUTH-ARCH-01 blocker解除）
+
+### Q1〜Q3 決裁結果
+
+| 論点 | 選択肢A | 選択肢B | 決定 | 理由 |
+|---|---|---|---|---|
+| Q1: `auth_time` 保存要否 | DB永続保存（identity/profileに保持） | 認証リクエスト中のみ利用（transient）、必要時は監査イベント側に記録 | **B** | PII最小化と過剰保存回避を優先。`auth_time` は高リスク操作のステップアップ判定の入力としては利用可だが、業務データ本体へは保存しない。 |
+| Q2: `aal` 保存と保持期間 | DB永続保存（固定保持期間） | transient評価のみ。保持が必要な場合は監査イベント側で短期保持（既定90日、組織ポリシーで上書き可） | **B** | 規制差異が大きく共通固定値は不適。既定は非永続とし、監査側の保持ポリシーで地域/業界要件に適合させる。 |
+| Q3: strict運用責任（API/CLI） | CLI中心（運用者ローカル実行） | APIを正本、CLIはAPIラッパとして提供 | **B** | 監査証跡/冪等性/権限制御をAPI契約へ集約し、CLI差異による運用分岐を避ける。 |
+
+### AuthContext 属性境界（最終）
+
+- persist: `userId`, `provider`, `external_uid`, `display_name`, `email`
+- transient: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `trace_id`
+- forbidden: password/hash/secret, WebAuthn credential id, raw policy tokens
+
+### IAP preset 方針（Q2 blocker補完）
+
+- 各IAPのヘッダー差異（AWS ALB / Cloud IAP）は `AUTH_PROVIDER_PROFILE` preset で吸収する。
+- 実装分岐は増やさず、`AUTH_USER_FIELD` / `AUTH_EMAIL_FIELD` / `AUTH_NAME_FIELD` などのマッピング宣言のみを可変点にする。
+
+### strict mode 運用責任（Q3 blocker補完）
+
+- Responsible: Auth Architecture Lead（Security/Identity）
+- Accountable: Platform Architecture Owner
+- API責務: `POST /admin/provision/users` を正本契約として運用
+- CLI責務: API呼び出しラッパ（監査責務はAPI側に集約）
+
+### 承認記録
+
+- 2026-03-03: Compliance/Security Officer consulted、Platform Architecture Owner 承認（A）済み。
 
 ## 13) Additional context
 
