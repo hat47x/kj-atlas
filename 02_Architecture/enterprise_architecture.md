@@ -337,6 +337,22 @@ interface AccessControlAdapter {
 6. 403レスポンスと監査イベントの `reason` が同一コード語彙で照合できる。
 7. ドキュメント（`enterprise_architecture.md` と `api.md`）の契約記述が同期している。
 
+#### 実運用アダプタ最小実装計画（OIDC/SAML）
+
+1. **接続面の最小実装**
+   - `ACCESS_CONTROL_ADAPTER=external_http` を追加し、PDP（policy decision point）へ HTTP POST 委譲。
+   - `auth_mode=oidc|saml` と `idp_issuer` をヘッダ運搬し、SSO運用情報を policy engine 側へ渡す。
+2. **失敗時挙動の固定**
+   - 4xx/不正JSON/契約違反は `policy_ref_invalid`。
+   - 接続不可/timeout/5xx は `policy_ref_unreachable`。
+   - いずれも `ACCESS_CONTROL_FAIL_SAFE_MODE`（既定 `read_only`）へ委譲。
+3. **監査連携の固定**
+   - `view/export` イベントに `decision_*`, `policyRefPresent`, `adapterName`, `traceId` を保持。
+   - `roles/groups/policyRef` の生値非保存をテストで固定。
+4. **非目標（維持）**
+   - アプリ本体へ role/group 判定ロジックを追加しない。
+   - SafeMode/readOnly 優先順を変更しない。
+
 ## 4.4 方式C：ハイブリッド（現実解）
 
 - 内部は方式B（厳格管理）

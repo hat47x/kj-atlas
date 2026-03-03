@@ -83,6 +83,26 @@ class Settings(BaseSettings):
         default="read_only",
         alias="ACCESS_CONTROL_FAIL_SAFE_MODE",
     )
+    access_control_external_http_endpoint: str | None = Field(
+        default=None,
+        alias="ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+    )
+    access_control_external_http_timeout_seconds: float = Field(
+        default=1.5,
+        alias="ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS",
+    )
+    access_control_external_http_auth_mode: str = Field(
+        default="none",
+        alias="ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE",
+    )
+    access_control_external_http_static_bearer_token: str | None = Field(
+        default=None,
+        alias="ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN",
+    )
+    access_control_external_http_idp_issuer: str | None = Field(
+        default=None,
+        alias="ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -101,6 +121,11 @@ class Settings(BaseSettings):
                 raise ValueError("LLM_PROVIDER=large-scale requires LLM_LARGE_SCALE_OPT_IN=true")
             if not self.llm_escalation_enabled:
                 raise ValueError("LLM_PROVIDER=large-scale requires LLM_ESCALATION_ENABLED=true")
+
+        if self.access_control_external_http_auth_mode not in {"none", "oidc", "saml"}:
+            raise ValueError(
+                "ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE must be one of none|oidc|saml"
+            )
 
         return self
 
