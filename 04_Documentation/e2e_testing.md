@@ -77,6 +77,48 @@ fixture では以下の主要差異を再現する。
 
 失敗時は `03_Implement/backend/.artifacts/auth-level2/` にログが残る（`backend.log`, `mock-idp.log`, `mock-sp.log`, `pytest-auth-level2.log`）。
 
+### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
+
+本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
+`issue-AUTH-IMPL-01`（identity schema migration）と `issue-AUTH-API-02`（strict provisioning contract）。
+
+#### Level 1（毎回必須）
+
+- `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+- 受入条件:
+  - strict mode未登録subjectが `403` かつ `identity_not_provisioned` を返す
+  - `POST /admin/provision/users` 後の再試行で docs write が `200`
+
+#### Level 2（条件付き必須）
+
+以下のいずれかに該当するPRでは Level 2 を必須化する。
+
+- `AuthContextAdapter` / provider preset / header mapping を変更
+- trusted proxy境界、JWT claim mapping、step-up(amr/acr/aal)の処理を変更
+- `ALLOW_JIT_PROVISIONING` 挙動または `/admin/provision/users` 契約を変更
+
+最低1件の fixture を回帰対象として固定する。
+
+- `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+
+#### 実施記録テンプレ（PR転記）
+
+```md
+### AUTH verification log
+- Level 1 (required): pass | fail
+  - command:
+    - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+  - result:
+
+- Level 2 (conditional): pass | fail | skipped
+  - trigger matched: yes | no
+  - command:
+    - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+  - fixture:
+  - result:
+  - skip reason (if skipped):
+```
+
 ---
 
 ## 3. 実行プロファイル

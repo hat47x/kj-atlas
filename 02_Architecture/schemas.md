@@ -341,6 +341,9 @@ export type Island = {
 - contract:
   3) 旧来の外部識別子直参照を段階的に廃止し、`reviewerRef` / `ownerRef` は `user:<users.id>` のみ許可する。
   4) strict 運用では未登録 subject を `403` とし、管理導線（`POST /admin/provision/users`）を必須化する。
+- backfill運用: 旧 `reviewerRef` / `ownerRef`（例: `user:sso:sub:<subject>`）は mapping JSON を使って `user:<users.id>` へ変換する。
+  - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <DATABASE_URL> --mapping-json mapping.json --dry-run`
+  - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <DATABASE_URL> --mapping-json mapping.json`
 
 属性境界（persist/transient/forbidden）:
 

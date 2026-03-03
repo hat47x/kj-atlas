@@ -24,12 +24,22 @@ class ProvisionUserResponse(BaseModel):
     userId: str
     reviewerRef: str
     ownerRef: str
+    provisioned: bool
 
 
-@router.post("/users", response_model=ProvisionUserResponse)
+def _normalize_optional_field(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    normalized = raw.strip()
+    return normalized or None
+
+
+@router.post("/users", response_model=ProvisionUserResponse, status_code=201)
 def provision_user(payload: ProvisionUserRequest, db: Session = Depends(get_db)) -> ProvisionUserResponse:
     provider = payload.provider.strip()
     external_uid = payload.externalUid.strip()
+    display_name = _normalize_optional_field(payload.displayName)
+    email = _normalize_optional_field(payload.email)
     if not provider or not external_uid:
         raise HTTPException(status_code=400, detail="provider and externalUid must be non-empty")
 
@@ -39,16 +49,25 @@ def provision_user(payload: ProvisionUserRequest, db: Session = Depends(get_db))
         .one_or_none()
     )
     if identity is not None:
-        user_id = identity.user_id
+        user_row = db.get(UserRow, identity.user_id)
+        if user_row is None:
+            raise HTTPException(status_code=409, detail={"code": "identity_user_not_found"})
+
+        if display_name is not None and user_row.display_name not in {None, display_name}:
+            raise HTTPException(status_code=409, detail={"code": "identity_already_provisioned_conflict"})
+        if email is not None and user_row.email not in {None, email}:
+            raise HTTPException(status_code=409, detail={"code": "identity_already_provisioned_conflict"})
+
+        user_id = user_row.id
         reviewer_ref = f"user:{user_id}"
-        return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref)
+        return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref, provisioned=False)
 
     user_id = str(uuid4())
     now_iso = datetime.now(timezone.utc).isoformat()
     user_row = UserRow(
         id=user_id,
-        display_name=payload.displayName.strip() if payload.displayName else None,
-        email=payload.email.strip() if payload.email else None,
+        display_name=display_name,
+        email=email,
         lifecycle_state="active",
         created_at=now_iso,
         updated_at=now_iso,
@@ -65,4 +84,4 @@ def provision_user(payload: ProvisionUserRequest, db: Session = Depends(get_db))
     db.commit()
 
     reviewer_ref = f"user:{user_id}"
-    return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref)
+    return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref, provisioned=True)

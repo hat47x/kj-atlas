@@ -247,7 +247,7 @@ fail-safe マトリクス:
 
 - 条件: `ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
 - 応答: `403 Forbidden`
-- エラー文言（最小契約）: `Identity not provisioned. Pre-provision via /admin/provision/users before access.`
+- エラーボディ（最小契約）: `{ "code": "identity_not_provisioned", "message": "Identity not provisioned. Pre-provision via /admin/provision/users before access." }`
 
 ### 9.2.1 strict mode の運用責任境界（承認フロー固定）
 
@@ -265,8 +265,9 @@ fail-safe マトリクス:
 
 - `POST /admin/provision/users`
   - request: `{ provider, externalUid, displayName?, email? }`
-  - response: `{ userId, reviewerRef, ownerRef }`
-  - 冪等: 同一 `provider+externalUid` は既存 `userId` を返す
+  - `201` response: `{ userId, reviewerRef, ownerRef, provisioned }`
+  - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す
+  - `409` response: 既存subjectへ矛盾する `displayName` / `email` を再投入した場合は `identity_already_provisioned_conflict`
 
 本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。
 
