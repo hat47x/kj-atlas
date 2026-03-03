@@ -1,5 +1,5 @@
 # English Summary
-This document defines a provider-agnostic LLM abstraction for kj-atlas, including LocalProvider-first operation, optional strong-model provider, and deterministic FixtureProvider for regression testing.
+This document defines a provider-agnostic LLM abstraction for kj-atlas, including default-disabled operation (`none`), optional LocalProvider opt-in, optional strong-model escalation provider, and deterministic FixtureProvider for regression testing.
 
 # llm_provider_spec — LLMプロバイダ抽象仕様（02_Architecture）
 
@@ -10,7 +10,9 @@ This document defines a provider-agnostic LLM abstraction for kj-atlas, includin
 
 ## 1. 目的と前提
 
-- 本プロジェクトは、コスト抑制と開発再現性の観点から **LocalProvider を第一選択** とする。
+- 本プロジェクトは、safeMode既定ONと漏えい防止を優先し、**defaultは `none`（LLM無効）** とする。
+- 既定値は設定キーとして `llm.provider = none` を使用する。
+- 通常運用でLLMを使う場合は、`local` を明示opt-inしたうえで第一選択とする。
 - 高性能モデル（外部/強モデル）は、常用ではなく任意の統合検証または明示的エスカレーション経路で扱う。
 - テスト再現性確保のため、**FixtureProvider（録画応答）**を正式サポートする。
 - 添付データは本MVPでは画像を扱わず、**構造化テキストのみ**を対象とする。
@@ -48,8 +50,8 @@ evaluate(prompt, rubric, output) -> score
 
 ```json
 {
-  "provider": "none|local|large-scale",
-  "provider_kind": "none|local|large-scale",
+  "provider": "none|fixture|local|external",
+  "provider_kind": "none|fixture|local|external",
   "model_id": "string",
   "transport": "none|http|...",
   "requested_at": "ISO-8601",
@@ -72,17 +74,22 @@ evaluate(prompt, rubric, output) -> score
 - 挙動: 呼び出し時は「AI disabled」を返し、意思決定の自動確定を行わない。
 - 位置付け: **default**。外部送信は発生しない。
 
-### 3.2 local（LocalProvider / 標準）
+### 3.2 fixture（FixtureProvider / 回帰検証）
+
+- 用途: 回帰テストの決定論的実行（golden/fixture比較）。
+- 挙動: 事前記録レスポンスを返し、ネットワーク送信を発生させない。
+
+### 3.3 local（LocalProvider / 標準）
 
 - 用途: 開発・CI・本番のデフォルト推論。
 - 想定実装例: LFM2.5 / llama.cpp系などのローカル実行基盤。
 - 要件: オフライン/閉域環境でも動作可能であること。
 
-### 3.3 large-scale（LargeScaleProvider / 任意）
+### 3.4 external（ExternalProvider / 任意）
 
 - 用途: 高難度ケースの統合評価、定期的品質監査。
 - 位置付け: **Optional**（必須依存にしない）。
-- 注意: 外部通信は明示許可時のみ。
+- 注意: 外部通信は `escalation.enabled=true` かつ allowlist-only outbound の明示許可時のみ。
 
 ---
 
@@ -94,12 +101,15 @@ evaluate(prompt, rubric, output) -> score
 
 ```yaml
 llm:
-  provider: local # local | openai | fixture
+  provider: none # none | fixture | local | external
   local:
     engine: "<local_engine_name>"
     model: "<local_model_id>"
-  openai:
+  escalation:
     enabled: false
+  external:
+    enabled: false
+    endpoint: "<allowlisted_endpoint>"
     model: "<strong_model_id>"
   fixture:
     dataset: "<fixture_dataset_path>"
@@ -108,8 +118,9 @@ llm:
 ### 4.2 例: 環境変数（プレースホルダ）
 
 ```text
-KJ_LLM_PROVIDER=local
-KJ_LLM_OPENAI_ENABLED=false
+KJ_LLM_PROVIDER=none
+KJ_LLM_ESCALATION_ENABLED=false
+KJ_LLM_EXTERNAL_ENABLED=false
 KJ_LLM_FIXTURE_DATASET=<fixture_dataset_path>
 ```
 
@@ -200,8 +211,8 @@ LLMが受け取るIRは厳格JSONスキーマを持つ。以下はアウトラ�
 
 ```python
 class LLMProvider(Protocol):
-    provider_name: str  # none | local | large-scale
-    provider_kind: str  # none | local | large-scale
+    provider_name: str  # none | fixture | local | external
+    provider_kind: str  # none | fixture | local | external
 
     def generate(req: LLMRequest) -> LLMResponse: ...
 ```
@@ -225,18 +236,18 @@ class LLMProvider(Protocol):
 
 | 設定 | default | allowed | disallowed |
 |---|---|---|---|
-| `LLM_PROVIDER` | `none` | `none`, `local`, `large-scale` | その他文字列 |
-| `LLM_LARGE_SCALE_OPT_IN` | `false` | `true`（large-scale使用時に必須） | `false` で `LLM_PROVIDER=large-scale` |
-| `LLM_ESCALATION_ENABLED` | `false` | `true`（large-scale使用時に必須） | `false` で `LLM_PROVIDER=large-scale` |
-| `LARGE_SCALE_LLM_ALLOWLIST` | `None` | 宛先hostnameを含むCSV | allowlist未一致 |
+| `LLM_PROVIDER` | `none` | `none`, `fixture`, `local`, `external` | その他文字列 |
+| `LLM_EXTERNAL_OPT_IN` | `false` | `true`（external使用時に必須） | `false` で `LLM_PROVIDER=external` |
+| `LLM_ESCALATION_ENABLED` | `false` | `true`（external使用時に必須） | `false` で `LLM_PROVIDER=external` |
+| `EXTERNAL_LLM_ALLOWLIST` | `None` | 宛先hostnameを含むCSV | allowlist未一致 |
 | `LLM_FALLBACK_TO_NONE` | `true` | `true/false` | - |
 
 ### 9.4 監査イベント最小スキーマ
 
 ```json
 {
-  "provider": "none|local|large-scale",
-  "provider_kind": "none|local|large-scale",
+  "provider": "none|fixture|local|external",
+  "provider_kind": "none|fixture|local|external",
   "model_id": "string",
   "transport": "none|http|mock|...",
   "requested_at": "ISO-8601",

@@ -35,10 +35,10 @@ This is a phased checklist plan for local LLM integration in kj-atlas, covering 
 
 ## 1. Phase A: 仕様固定
 
-- [ ] `llm_provider_spec.md` のI/F定義をレビュー確定。  
-- [ ] `llm_runtime_constraints.md` の通信制約（in-process/IPC優先）をレビュー確定。  
-- [ ] `llm_quality_strategy.md` の二層評価基準をレビュー確定。  
-- [ ] `llm_escalation_policy.md` の既定無効・opt-in条件をレビュー確定。
+- [x] `llm_provider_spec.md` のI/F定義をレビュー確定。  
+- [x] `llm_runtime_constraints.md` の通信制約（in-process/IPC優先）をレビュー確定。  
+- [x] `llm_quality_strategy.md` の二層評価基準をレビュー確定。  
+- [x] `llm_escalation_policy.md` の既定無効・opt-in条件をレビュー確定。
 
 **完了条件**
 - 4文書の用語整合（provider, safeMode, escalation）に矛盾がない。
