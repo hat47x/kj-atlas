@@ -309,3 +309,32 @@ export type Island = {
 - `parentIslandId` が存在しない島を参照する場合は、import 正規化で `undefined` にフォールバックする。
 - 循環参照（self-parent 含む）は import 正規化で `undefined` にフォールバックする。
 - save/reload では有効な `parentIslandId` を欠落させず往復保持する。
+
+## 10. AUTH-SCHEMA-01: Identity schema (`users` / `user_identities`)
+
+`ADR-0020` の AUTH-ARCH-01 決定を受け、認証情報を保持しない前提で次を正本とする。
+
+- `users`
+  - `id` (UUID, immutable, PK)
+  - `display_name` (nullable, 最小PII)
+  - `email` (nullable, 最小PII)
+  - `lifecycle_state` (`active|suspended|deprovisioned`)
+  - `created_at`, `updated_at`
+- `user_identities`
+  - `id` (PK)
+  - `user_id` (FK -> `users.id`)
+  - `provider` (例: `oidc` / `saml` / `header`)
+  - `external_uid` (IdP subject 等)
+  - `created_at`
+  - 一意制約: `UNIQUE(provider, external_uid)`
+
+運用モード:
+
+- `ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
+- `ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
+
+属性境界（persist/transient/forbidden）:
+
+- persist: `provider`, `external_uid`, `display_name`, `email`（最小）
+- transient: `amr`, `acr`, `aal`, `auth_time`, `roles`, `groups`, `trace_id`
+- forbidden: password/hash/secret, WebAuthn credential id, raw policy tokens

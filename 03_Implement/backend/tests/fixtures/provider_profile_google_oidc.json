@@ -1,0 +1,11 @@
+{
+  "provider": "oidc",
+  "headers": {
+    "x-auth-provider": "oidc",
+    "x-auth-subject": "google-sub-123",
+    "x-forwarded-user": "google-user",
+    "x-forwarded-email": "user@example.com",
+    "x-forwarded-name": "Google User",
+    "x-auth-amr": "webauthn"
+  }
+}

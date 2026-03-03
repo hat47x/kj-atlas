@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import Integer, Text
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -20,6 +21,28 @@ class DocumentRow(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
     payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class UserRow(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    email: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifecycle_state: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class UserIdentityRow(Base):
+    __tablename__ = "user_identities"
+    __table_args__ = (UniqueConstraint("provider", "external_uid", name="uq_user_identities_provider_external_uid"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
+    external_uid: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
 class Transform(BaseModel):

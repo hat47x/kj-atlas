@@ -17,6 +17,7 @@ from kj_atlas_api.access_control import (
     resolve_access_decision,
 )
 from kj_atlas_api.audit import build_event
+from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import DocumentPayload, DocumentRow
 
@@ -27,19 +28,21 @@ document_payload_adapter = TypeAdapter(DocumentPayload)
 
 def _authorize_request(
     request: Request,
+    db: Session,
     *,
     action: str,
     doc_id: str,
     safe_mode: bool,
     read_only: bool,
 ) -> tuple[AccessRequest, AccessDecision]:
+    identity = resolve_identity_context(db=db, request=request)
     adapter = getattr(request.app.state, "access_control_adapter", None)
     if adapter is None:
         access_request = AccessRequest(
             action=action,
             safe_mode=safe_mode,
             read_only=read_only,
-            auth=AuthContext(actor_ref=request.headers.get("x-actor-ref"), trace_id=request.headers.get("x-trace-id")),
+            auth=identity.auth_context,
             resource=AccessResource(
                 doc_id=doc_id,
                 visibility=parse_visibility(request.headers.get("x-doc-visibility")),
@@ -54,10 +57,17 @@ def _authorize_request(
         safe_mode=safe_mode,
         read_only=read_only,
         auth=AuthContext(
-            actor_ref=request.headers.get("x-actor-ref"),
+            actor_ref=identity.auth_context.actor_ref,
+            user_id=identity.auth_context.user_id,
+            provider=identity.auth_context.provider,
+            external_uid=identity.auth_context.external_uid,
             roles=parse_csv_header(request.headers.get("x-auth-roles")),
             groups=parse_csv_header(request.headers.get("x-auth-groups")),
             trace_id=request.headers.get("x-trace-id"),
+            amr=identity.auth_context.amr,
+            acr=identity.auth_context.acr,
+            aal=identity.auth_context.aal,
+            auth_time=identity.auth_context.auth_time,
         ),
         resource=AccessResource(
             doc_id=doc_id,
@@ -104,7 +114,7 @@ def get_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    access_request, decision = _authorize_request(request, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision = _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     doc_row = db.get(DocumentRow, doc_id)
     if doc_row is None:
@@ -149,7 +159,7 @@ def put_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    _authorize_request(request, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
@@ -195,8 +205,9 @@ def post_export_audit(
     payload: ExportAuditPayload,
     request: Request,
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    access_request, decision = _authorize_request(request, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, decision = _authorize_request(request, db, action="export", doc_id=doc_id, safe_mode=payload.safeMode, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
     dispatcher = getattr(request.app.state, "audit_dispatcher", None)
     if dispatcher is not None:
         dispatcher.emit(

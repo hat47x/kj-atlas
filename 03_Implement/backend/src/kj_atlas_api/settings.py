@@ -103,6 +103,30 @@ class Settings(BaseSettings):
         default=None,
         alias="ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER",
     )
+    allow_jit_provisioning: bool = Field(
+        default=True,
+        alias="ALLOW_JIT_PROVISIONING",
+    )
+    auth_provider_field: str = Field(
+        default="x-auth-provider",
+        alias="AUTH_PROVIDER_FIELD",
+    )
+    auth_user_field: str = Field(
+        default="x-forwarded-user",
+        alias="AUTH_USER_FIELD",
+    )
+    auth_email_field: str = Field(
+        default="x-forwarded-email",
+        alias="AUTH_EMAIL_FIELD",
+    )
+    auth_name_field: str = Field(
+        default="x-forwarded-name",
+        alias="AUTH_NAME_FIELD",
+    )
+    auth_subject_field: str = Field(
+        default="x-auth-subject",
+        alias="AUTH_SUBJECT_FIELD",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
