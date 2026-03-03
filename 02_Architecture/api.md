@@ -586,8 +586,8 @@ fail-safe マトリクス:
 最小記録項目（PII非保存）:
 
 - 必須: `eventType`, `eventVersion`, `occurredAt`, `docId`, `action`, `decision.allow`, `policyRefPresent`
-- 任意: `decision.readOnly`, `decision.reason`, `visibility`, `adapterName`, `traceId`
-- 非保存: `policyRef` 生値、`roles/groups` 生値、ドキュメント本文
+- 任意: `decision.readOnly`, `decision.reason`, `visibility`, `adapterName`, `traceId`, `amr`, `acr`, `aal`, `authTime`
+- 非保存: `policyRef` 生値、`roles/groups` 生値、token/assertion 生値、WebAuthn credential id、ドキュメント本文
 
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
