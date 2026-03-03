@@ -1,9 +1,8 @@
 # Issue Memo: FB-RM-MID-05 structural granularity export
 
 - Type: Feature
-- Status: Done (Local)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除) / Local exception: Done (Local)
-- Source Issue: TBD
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P2
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `01_Plans/adr/ADR-0007-future-backlog.md`, `04_Documentation/operations.md`

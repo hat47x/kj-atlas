@@ -1,7 +1,8 @@
 # Issue Memo: FB-RM-I18N-03 UI equivalence E2E smoke gate
 
 - Type: QA/E2E
-- Status: Done (Local)
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Scope: `03_Implement/frontend/e2e/`, `01_Plans/issues/`
 - Related Backlog: `FB-RM-I18N-03` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `e2e`

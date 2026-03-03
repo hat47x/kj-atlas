@@ -1,9 +1,8 @@
 # Issue Memo: FB-RM-MID-02 manual assisted merge decisions
 
 - Type: Feature
-- Status: Done (Local)
-- Lifecycle: Done (Local)
-- Source Issue: TBD
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P1
 - Scope: Frontend, Backend, Docs
 - Expected verification level: unit

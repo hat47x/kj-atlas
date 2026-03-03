@@ -106,7 +106,7 @@
 |---|---|---|---|---|
 | FB-RM-I18N-01 | P1 | Done (2026-02-28) | `src/i18n/messages.ts` と `src/i18n/translate.ts` を追加し、ImportPanel / SharePanel（Export〜Load document） / safe_mode_status の主要文言を辞書キー経由へ移行。placeholder補間と unknown-key fallback を実装し、UI回帰テストを追加。 | 主要画面の表示文言が辞書経由で解決され、既存コピー互換とfallback挙動がテストで固定される |
 | FB-RM-I18N-02 | P1 | Done (2026-03-01) | `src/i18n/locales/{ja,en}.json` を導入し、`t()` を `requested locale -> default locale (ja) -> key` 順で解決する契約へ更新。`validateLocaleMessages` / `resolveTemplate` を追加し、欠損キー時に既定言語へ復元するテストを固定。 | JSON辞書契約とfallback順序がコード/テストで固定され、locale欠損時でもUI文言が既定言語で解決される |
-| FB-RM-I18N-03 | P2 | Planned | 英語UIを機能等価で提供 | 日本語/英語で機能差がない |
+| FB-RM-I18N-03 | P2 | Done (2026-03-02) | 英語UI等価のsmoke/flow E2Eを追加し、SQLite代替経路で再実行を含む通過ログを記録。 | 日本語/英語で機能差がなく、E2E smoke + flow が再実行でも通過する |
 | FB-RM-I18N-04 | P2 | Done (2026-03-01) | view単位言語設定を保存（view metadata + localStorage + URL/read-only優先） | view切替・再読込後も表示言語が決定論で復元される |
 | FB-RM-I18N-05 | P2 | Done (2026-03-01) | `src/i18n/document_locale_invariance.test.ts` を追加し、hash対象を `document.json` の canonical JSON のみに固定。`ja→en→ja`・URL優先・read-only の各シナリオで `document hash 不変` と `view metadata のみ変化` を分離検証し、漏洩時の層別診断（ui-state/view-metadata/document-payload）をログ化。CIジョブ `Frontend i18n document hash regression` と `npm run test:i18n-regression` を追加。 | 言語変更前後でdocument hashが不変、差分発生時は漏洩レイヤを特定できる |
 | FB-RM-I18N-06 | P2 | Done (2026-03-01) | `locale_conversion_guard` と `locale_conversion_guard.test.ts` を追加し、SafeMode中の翻訳遮断・fetch/XHR/Worker監視・telemetry/audit fail-safe・timeout/adapter error時のログ秘匿を回帰固定。CIジョブ `Frontend i18n safe-mode leakage guards` と `npm run test:i18n-security` を追加。 | SafeMode ONで外部送信ゼロ、ログマスキング違反を検知、CIで再発防止できる |

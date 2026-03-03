@@ -1,9 +1,8 @@
 # Issue Memo: DOC-REL-01 仕様・実装・ドキュメント整合性監査（cross-layer consistency audit）
 
 - Type: Process / Documentation quality
-- Status: Done (Local)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done / Done (Local) -> GC(削除)
-- Source Issue: TBD (GitHub Issue URL未確定。確定後に追記)
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P1
 - Owner: TBD
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
@@ -80,7 +79,7 @@
 
 ## 8) 実行TODO（詳細）
 
-- [x] T0: DOC-REL-01 の終了条件を「Source Issue確定または Done(Local)移管」に明確化する。
+- [x] T0: DOC-REL-01 の終了条件を「Done移管」に明確化する。
 - [x] T1: stale参照を棚卸しし、`ROADMAP.md` の正本リンク一致を再確認する。
 - [x] T2: issue運用の起点を `01_Plans/issues/README.md` に明文化し、`01_Plans/README.md` とADR-0000の導線重複を解消する。
 - [x] T3: `01_Plans/issues/TEMPLATE.md` に検証レベル（docs-check/unit/integration/e2e）を必須メタとして追加する。
@@ -89,7 +88,7 @@
 - [x] T6: `validate_active_issue_memos.py` を関数分割し、検証レベルの妥当値チェックを追加する。
 - [x] T7: validator のユニットテストを追加し、status/source 整合と validation level 異常系を固定する。
 - [x] T8: validator に index と memo の `Status` / `Source Issue` 一致検証を追加し、差分ドリフトを防止する。
-- [x] T9: Source Issue 未確定のため、運用ルールに従って本メモを `Done (Local)` に移管し Active 一覧から除外する。
+- [x] T9: Source Issue 未確定のため、運用ルールに従って本メモを `Done` に移管し Active 一覧から除外する。
 
 ## 9) 検証計画 / Validation plan
 
@@ -111,5 +110,5 @@
 - 2026-02-28: Active issue memo 必須メタ項目の機械検証手順を追加。
 - 2026-02-28: `Source Issue` が `TBD` のため、運用規約に合わせて本メモの `Status` は Draft を維持。進行中扱いは Source Issue URL 記載後に更新する。
 - 2026-02-28: validator の仕様を強化（allowed verification level 判定）し、ユニットテストを追加して回帰防止を導入。
-- 2026-02-28: Source Issue 未確定でも完了済みタスクを滞留させないため、本メモを `Done (Local)` へ移管し、`01_Plans/issues/README.md` の Active 一覧から除外。
+- 2026-02-28: Source Issue 未確定でも完了済みタスクを滞留させないため、本メモを `Done` へ移管し、`01_Plans/issues/README.md` の Active 一覧から除外。
 - 2026-02-28: validator に index/memo 間の `Status` と `Source Issue` 一致検証を追加し、ユニットテストで mismatch 検知を固定。

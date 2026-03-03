@@ -1,9 +1,8 @@
 # Issue Draft: FB-RM-I18N-02 locale JSON format and fallback order contract
 
 - Type: Feature request (enhancement)
-- Status: Done (Local)
-- Lifecycle: Draft -> Open (GitHub) -> In Progress -> Done -> GC(削除)
-- Source Issue: TBD (GitHub Issue URL)
+- Status: Done
+- Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P1
 - Owner: Codex (local execution)
 - Scope: `03_Implement/frontend/src/i18n/`, `03_Implement/frontend/src/ui/`, `04_Documentation/configuration.md`
@@ -88,4 +87,4 @@
 - 2026-03-01: locale JSON (`ja`,`en`) と `t()` fallback順序を実装。
 - 2026-03-01: `validateLocaleMessages` を追加し、JSON object/string value 契約を固定。
 - 2026-03-01: Import/Share/SafeMode 回帰テスト + typecheck で互換を確認。
-- 2026-03-01: 本メモを `Done (Local)` に更新し、Completed locally へ移管。
+- 2026-03-01: 本メモを `Done` に更新し、Completed issue memos へ移管。
