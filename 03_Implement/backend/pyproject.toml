@@ -22,6 +22,8 @@ pythonpath = [
 ]
 markers = [
   "postgres: tests that require PostgreSQL",
+  "auth_level1: required AuthContext contract coverage",
+  "auth_level2: conditional federation fixture coverage",
 ]
 
 [tool.ruff]

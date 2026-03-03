@@ -202,14 +202,20 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 ### 9) 未決事項（TODO / Issue化）
 
-以下は本ADRで結論固定しない。
+AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 
-- ユーザー最小属性スキーマ（永続保存する項目、PII最小化、表示名の扱い）
-- reviewerRef / ownerRef と AuthContext.userId の正規マッピング規則
-- 組織向け roles/groups/policyRef の永続境界（アプリ内保存 vs 外部照会）
-- `amr/acr/aal/auth_time` を AuthContext にどこまで保持・表示・監査出力するか
-- `users` / `user_identities` の正式スキーマ（一意制約・移行手順・監査列）
-- `ALLOW_JIT_PROVISIONING` 無効時の管理者API/CLI最小契約（将来SCIM含む）
+#### 9.1 固定済み（本ADRの決定として扱う）
+
+- ユーザー最小属性スキーマ（永続項目とPII最小化）
+- reviewerRef / ownerRef と AuthContext.userId の正規マッピング
+- `users` / `user_identities` の正式スキーマ骨子（`provider+external_uid` 一意制約、strict/JIT分岐）
+- `ALLOW_JIT_PROVISIONING=false` 時の 403 拒否契約と最小管理導線（`POST /admin/provision/users`）
+- 組織属性境界: `roles/groups/policyRef` は transient（外部照会）で扱い、アプリDBには永続化しない
+
+#### 9.2 継続検討（後続Issueで扱う）
+
+- `amr/acr/aal/auth_time` の監査出力粒度（保持期間・可観測性UI）
+- 管理導線の将来置換（SCIM/企業ID管理連携）の運用詳細
 
 #### 2026-03-03 update（AUTH-ARCH-01 確定）
 

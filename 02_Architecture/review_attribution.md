@@ -176,3 +176,4 @@ kj-atlas は OSS として、多様な環境で利用される：
   - document/view/review event には `reviewerRef` のみ残し、表示名は必要時に外部ディレクトリ照会または一時ヘッダーで補完する。
 - strict mode:
   - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
+  - 管理導線の責務分担: backend は拒否契約 (`403`) と最小API (`POST /admin/provision/users`) を提供し、運用管理者は事前登録・再紐付けを実施する。

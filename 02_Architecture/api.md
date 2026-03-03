@@ -238,6 +238,10 @@ fail-safe マトリクス:
   - `AuthContext.userId`: `users.id`
   - `AuthContext.actorRef`: `user:<users.id>`
   - `AuthContext.provider` / `AuthContext.externalUid`
+- 属性境界:
+  - persist: `provider`, `external_uid`, `display_name`, `email`
+  - transient only: `roles`, `groups`, `policyRef`, `amr`, `acr`, `aal`, `auth_time`, `trace_id`
+  - forbidden: password/hash/secret, WebAuthn credential id, raw policy token
 
 ### 9.2 strict mode 拒否契約
 
@@ -253,3 +257,9 @@ fail-safe マトリクス:
   - 冪等: 同一 `provider+externalUid` は既存 `userId` を返す
 
 本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。
+
+### 9.4 移行契約（expand/contract）
+
+- expand: `users` / `user_identities` 追加後、APIは `provider+external_uid` で `users.id` を解決する。
+- contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
+- strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。

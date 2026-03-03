@@ -413,10 +413,41 @@ jobs:
       - name: Lint (ruff)
         run: ruff check src tests
 
-      - name: Test (SQLite)
+      - name: Detect auth boundary changes (Level2判定)
+        id: auth_changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            idp_boundary:
+              - "03_Implement/backend/src/kj_atlas_api/auth_context.py"
+              - "03_Implement/backend/src/kj_atlas_api/settings.py"
+              - "03_Implement/backend/tests/test_auth_provider_profile_fixture.py"
+              - "03_Implement/backend/tests/fixtures/provider_profile_*.json"
+
+      - name: Test (SQLite except auth level suites)
         env:
           DATABASE_URL: sqlite:///./kj_atlas.db
-        run: pytest -m "not postgres"
+        run: pytest -m "not postgres and not auth_level1 and not auth_level2"
+
+      - name: Test (Auth Level1 required)
+        env:
+          DATABASE_URL: sqlite:///./kj_atlas.db
+        run: pytest -m auth_level1
+
+      - name: Test (Auth Level2 conditional)
+        if: steps.auth_changes.outputs.idp_boundary == 'true'
+        env:
+          DATABASE_URL: sqlite:///./kj_atlas.db
+        run: pytest -m auth_level2
+
+      - name: Record Auth Level2 necessity
+        if: always()
+        run: |
+          if [ "${{ steps.auth_changes.outputs.idp_boundary }}" = "true" ]; then
+            echo "Auth Level2: required (IdP境界変更あり)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Auth Level2: not required (IdP境界変更なし)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Migrate PostgreSQL schema
         env:

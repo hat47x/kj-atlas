@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from collections.abc import Iterator
 
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -50,6 +51,7 @@ def _sample_payload(doc_id: str) -> dict:
     }
 
 
+@pytest.mark.auth_level1
 def test_jit_provisioning_creates_users_and_identities(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = True
@@ -72,6 +74,7 @@ def test_jit_provisioning_creates_users_and_identities(tmp_path) -> None:
         settings.allow_jit_provisioning = original_allow_jit
 
 
+@pytest.mark.auth_level1
 def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
