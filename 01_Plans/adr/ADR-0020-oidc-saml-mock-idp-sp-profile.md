@@ -104,21 +104,36 @@ FastAPI 側に「ヘッダー認証 Dependency / Middleware」を実装し、以
 
 これにより、本体コードの認証仕様を変えずに開発導線を確保する。
 
-### 6) テスト専用プロファイル（Mock SP + Mock IdP）
+### 6) E2E検証プロファイル（Mock SP/IdP の必要性を含む再整理）
 
-E2E では本番IAPを代替するため、FastAPI製モック群を採用する。
+結論として、`kj-atlas` の主契約は「IAP/プロキシ -> AuthContext 正規化」であり、
+**常に Mock SP/IdP を必須化しない**。検証は次の2層で運用する。
 
-- `mock_idp`:
-  - SAML（`pysaml2`）: IdP/SP Initiated SSO/SLO
-  - OIDC（`Authlib`）: Authorization Code Flow + RP-Initiated Logout
-- `mock_sp`:
-  - IdPへのリダイレクト / コールバック処理
-  - 認証成功時に `X-Forwarded-User` 等を付与して `kj-atlas` backend へフォワード
-- セッション/状態は In-Memory（DB/Redis 非依存）
+#### Level 1: 既定（必須）— AuthContext 契約E2E
+
+- 対象: `TRUSTED_PROXIES`、header/JWTマッピング、JIT Provisioning、拒否/許可制御。
+- 方式: 軽量プロキシ（またはテストハーネス）から認証済みコンテキストを注入し、
+  `kj-atlas` 側の契約を直接検証する。
+- 目的: 本プロジェクトの本質価値（アプリ境界の安全性・互換性）を最短経路で回帰保証する。
+
+#### Level 2: 拡張（条件付き）— Federation フローE2E
+
+- 対象: OIDC/SAML フロー全体（redirect/callback/logout、署名検証、`xmlsec1` 依存など）。
+- 方式: FastAPI製モック群（`mock_sp` + `mock_idp`）を起動して検証する。
+  - `mock_idp`: SAML（`pysaml2`）, OIDC（`Authlib`）
+  - `mock_sp`: 認証成功後に `X-Forwarded-User` 等を付与して backend へフォワード
 - 実行例（Docker非依存）:
   - `uvicorn mock_idp:app --port 8081`
   - `uvicorn mock_sp:app --port 8080`
   - `uvicorn kj_atlas_backend.main:app --port 8000`
+
+#### Mock SP/IdP を実施すべき条件
+
+- `AuthContextAdapter` の入力モードや provider preset の仕様変更。
+- logout / step-up / `amr` 等、IdP連携境界に関わる仕様変更。
+- 依存ライブラリ更新（`pysaml2`, `Authlib`, `xmlsec1`）で連携回帰リスクが高い場合。
+
+上記条件に該当しないPRでは、Level 1 を満たせば受入可能とする。
 
 ### 7) 暗号素材と依存
 
@@ -131,11 +146,9 @@ E2E では本番IAPを代替するため、FastAPI製モック群を採用する
 1. trusted proxy 外からのヘッダー偽装要求を拒否できる。
 2. trusted proxy 経由時に `AuthContext` が構築される。
 3. JIT Provisioning で最小ユーザーレコードが作成される（パスワード列なし）。
-4. E2Eで以下を通過する。
-   - SAML SP-Initiated SSO → backend で認証済み状態
-   - SAML SP-Initiated SLO → セッション破棄
-   - OIDC login → backend で認証済み状態
-   - OIDC logout → セッション破棄
+4. E2E受入基準:
+   - **必須**: Level 1（AuthContext 契約E2E）を通過する。
+   - **条件付き必須**: IdP連携境界を変更するPRでは Level 2（Mock SP/IdP）も通過する。
 
 ### 9) 未決事項（TODO / Issue化）
 
@@ -176,7 +189,8 @@ E2E では本番IAPを代替するため、FastAPI製モック群を採用する
 
 - `kj-atlas` は認証実装責務を最小化し、OSSとしての安全運用性を高める。
 - 企業・行政で要求される監査/統制との整合が取りやすくなる。
-- 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、E2E・運用手順の整備が必須。
+- 一方で、プロキシ設定ミス（trusted proxy, header mapping）が主要リスクとなるため、Level 1 E2Eを常時維持する必要がある。
+- Mock SP/IdP は「常時必須」ではなく、IdP連携境界変更時の拡張ゲートとして運用する。
 - 入力方式の差異（header/JWT、各IAPのヘッダー名差異）は設定テンプレートで吸収し、実装分岐の増殖を抑制する。
 - ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
 
