@@ -32,6 +32,9 @@ type SharePanelProps = {
   onSafeModeChange: (value: boolean) => void;
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
+  currentReviewerRef: string;
+  onCurrentReviewerRefChange: (value: string) => void;
+  onResetCurrentReviewerRef: () => void;
   onExportViewViewport: () => void;
   onExportViewVisibleBounds: () => void;
   onExportBundleZip: (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: ExportGranularity }) => void;
@@ -137,6 +140,9 @@ export function SharePanel({
   onSafeModeChange,
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
+  currentReviewerRef,
+  onCurrentReviewerRefChange,
+  onResetCurrentReviewerRef,
   onExportViewViewport,
   onExportViewVisibleBounds,
   onExportBundleZip,
@@ -333,6 +339,18 @@ export function SharePanel({
               <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
             </div>
             <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8 }}>
+              <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>Current reviewer (local)</span>
+                <input
+                  type="text"
+                  value={currentReviewerRef}
+                  onChange={(event) => {
+                    onCurrentReviewerRefChange(event.target.value);
+                  }}
+                  placeholder="user:local:..."
+                />
+              </label>
+              <button type="button" onClick={onResetCurrentReviewerRef}>Generate reviewerRef</button>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                 <span style={{ fontWeight: 600, color: "#0f172a" }}>View visibility</span>
                 <select
