@@ -1,5 +1,5 @@
 # English Summary
-This document defines runtime constraints for LLM usage in Codex-like sandboxed environments, preferring in-process/IPC paths over localhost HTTP and specifying CI-safe provider patterns.
+This document defines runtime constraints for LLM usage in Codex-like sandboxed environments, with default-disabled (`none`) operation, opt-in `local`/`fixture` usage, and explicit controls for outbound escalation.
 
 # llm_runtime_constraints — LLM実行時制約とサンドボックス前提（02_Architecture）
 
@@ -33,32 +33,37 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ## 3. CIで許容する実行パターン
 
+前提: `llm.provider = none` は全環境で許容される既定状態（LLM無効）。
+
 ### 3.1 常時利用可能（必須）
 
-- **FixtureProvider**: 常時有効。ネットワーク不要で決定論的。
+- **FixtureProvider**: 明示選択時に有効。ネットワーク不要で決定論的。
 
 ### 3.2 任意利用（環境依存）
 
-- **LocalProvider**: 実行ホストにローカルモデル基盤がある場合のみ有効。
+- **LocalProvider**: 明示opt-inかつ、実行ホストにローカルモデル基盤がある場合のみ有効。
 
 ### 3.3 定期実行のみ（通常PRでは非必須）
 
-- **External strong-model provider**: 夜間/定期統合テストでのみ実行。
+- **External provider（strong model）**: `escalation.enabled=true` の明示設定下で夜間/定期統合テストのみ実行。
 - PRごと必須にしない（コストと接続可用性のため）。
 
 ---
 
 ## 4. 実行モード定義
 
-- `offline`: fixture + local のみ。外部送信禁止。
+- `offline`: none | fixture | local。外部送信禁止。
 - `intranet`: local中心、必要時に社内ゲートウェイ経由。
-- `scheduled-integration`: 外部強モデルによる小規模評価セット実行。
+- `scheduled-integration`: `escalation.enabled=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
+
+safeModeは全モードで既定ONとし、外部送信可否と独立して漏えい防止ルールを適用する。
 
 ---
 
 ## 5. 失敗時ポリシー
 
 - LocalProvider未起動時は FixtureProvider へフォールバック可能とする。
+- `escalation.enabled=false` 時は、external provider へフォールバックしない（fail-safe）。
 - 外部通信不能はテスト警告扱い（ただし通常CIの必須判定から除外）。
 - スキーマ検証失敗は通信可否に関わらず失敗扱い（品質ゲート優先）。
 
@@ -69,4 +74,3 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 - プロバイダ実装は transport を抽象化し、上位ロジックにHTTP依存を漏らさない。
 - テストは transport差し替え可能であること（in-process / IPC / fixture）。
 - 監査ログには「どの通信経路を使用したか」を記録する。
-

@@ -1,5 +1,5 @@
 # English Summary
-This document specifies a deterministic Local-first escalation policy: local generation is default, escalation is opt-in and disabled by default, with explicit trigger conditions and outbound allowlist controls.
+This document specifies a deterministic Local-first escalation policy: system default is `none` (LLM disabled), `local` is opt-in standard path, and `external` escalation is opt-in + disabled by default with outbound allowlist controls.
 
 # llm_escalation_policy — Local-first + Escalation方針（02_Architecture）
 
@@ -9,7 +9,8 @@ This document specifies a deterministic Local-first escalation policy: local gen
 
 ## 1. 運用原則
 
-- デフォルト経路は **LocalProvider**。
+- システム既定は **`none`（LLM無効）**。
+- LLM利用を有効化する場合の標準経路は **LocalProvider**。
 - エスカレーションは例外処理であり、常用経路にしない。
 - 外部強モデルへの送信は、明示設定がある場合のみ許可する。
 
@@ -18,6 +19,7 @@ This document specifies a deterministic Local-first escalation policy: local gen
 ## 2. デフォルト設定
 
 - `escalation.enabled = false`（既定: 無効）
+- `llm.provider = none`（既定: 無効）
 - 明示的に `true` へ変更しない限り、外部送信は行わない。
 - 設定変更には運用責任者の承認と監査ログ記録を要する。
 
@@ -65,4 +67,3 @@ This document specifies a deterministic Local-first escalation policy: local gen
 - safeMode ON時は、禁止対象の生カード文面を外部送信しない。
 - エスカレーションログは理由コードを保持し、本文は最小化またはハッシュ化する。
 - 送信経路・承認履歴・モデル識別子を監査可能にする。
-
