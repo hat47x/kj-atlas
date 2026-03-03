@@ -69,6 +69,53 @@ issue補助メモには、最低でも次の項目を含める。
 | AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Open | N/A |
 | AUTH-SCHEMA-01 | `issue-AUTH-SCHEMA-01-identity-schema-planning.md` | Open | N/A |
 
+## AUTH-ARCH-01 / AUTH-SCHEMA-01 実行比較（1ページ）
+
+### RACI（簡易）
+
+| Issue | R | A | C | I |
+|---|---|---|---|---|
+| AUTH-ARCH-01 | Auth Architecture Lead（Security/Identity） | Platform Architecture Owner | Backend Lead, Compliance/Security Officer | PM/Triage, QA Lead |
+| AUTH-SCHEMA-01 | Data Schema Lead（Backend/DB） | Platform Architecture Owner | Auth Architecture Lead, Backend Lead, Compliance/Security Officer | PM/Triage, QA Lead |
+
+### 着手条件 / ブロッカー / 完了条件 比較
+
+| Issue | 着手条件（Start） | ブロッカー（Blockers） | 完了条件（DoD） |
+|---|---|---|---|
+| AUTH-ARCH-01 | ADR-0020基準化、現行差分棚卸し、RACI合意 | 監査属性保存要否、IAP差異preset、strict時の管理導線責任 | 属性境界文書化、マッピング規則収束、AUTH-SCHEMA-01へ前提引き渡し |
+| AUTH-SCHEMA-01 | AUTH-ARCH-01境界定義レビュー済み、対象章確定、RACI合意 | マッピング未確定、strict運用責任未承認、移行ポリシー未承認 | `02_Architecture/*` 同期更新、ADR-0020参照整合、migration前提明文化 |
+
+### Expected verification level と Validation plan の整合
+
+| Issue | Expected verification level | Validation plan | 判定 |
+|---|---|---|---|
+| AUTH-ARCH-01 | `docs-check` | `rg` による参照整合確認 + `validate_active_issue_memos.py` | 整合（コード実装を要求していない） |
+| AUTH-SCHEMA-01 | `docs-check` | `rg` による参照整合確認 + `validate_active_issue_memos.py` | 整合（Architecture同期確認に一致） |
+
+### 依存関係グラフ（実行順）
+
+```text
+AUTH-ARCH-01 (AuthContext/JIT 境界定義)
+    └─理由: 保存属性境界・マッピング規則が未確定だと
+           AUTH-SCHEMA-01 で一意制約/API契約を固定できない
+        ↓
+AUTH-SCHEMA-01 (identity schema 反映・同期)
+```
+
+### 実行順（1日以内タスク / 決裁待ちタスク）
+
+1. **即着手（1日以内）**
+   - AUTH-ARCH-01: T1 `reviewerRef/ownerRef/AuthContext` 参照棚卸し。
+   - AUTH-ARCH-01: T2 属性分類表（persist/transient/forbidden）草案。
+   - AUTH-SCHEMA-01: T1 `02_Architecture/*` の identity 記述差分抽出。
+2. **決裁待ち（承認が必要）**
+   - AUTH-ARCH-01: `amr/acr/aal/auth_time` 保存方針の最終承認（Compliance含む）。
+   - AUTH-ARCH-01: `ALLOW_JIT_PROVISIONING=false` 時の管理導線（API/CLI）責任境界承認。
+   - AUTH-SCHEMA-01: provider+subject 一意制約への tenant 境界含有と移行ポリシー承認。
+3. **承認後に実施**
+   - AUTH-ARCH-01: T3/T4 マッピング案収束 + ADR追記要否判定。
+   - AUTH-SCHEMA-01: T2/T3/T4 スキーマ案確定 + architecture 同期PR。
+
 ## Rules
 
 1. 新規作成先は必ず `01_Plans/issues/`。
