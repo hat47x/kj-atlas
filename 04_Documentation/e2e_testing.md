@@ -50,8 +50,8 @@ Level 2（Mock SP/IdP）を実施する。
   - provider profile fixture を1つ以上使ったE2Eを含める。
   - 差異観点（ヘッダー名、claim名、groups形式、`amr/acr` 有無）のいずれかを検証する。
 - 例:
-  - `e2e/auth_provider_profile_cloud_iap.spec.ts`
-  - `e2e/auth_provider_profile_aws_alb.spec.ts`
+  - `e2e/auth_context_level1_smoke.spec.ts`（Frontend Playwright smoke）
+  - `tests/test_auth_provider_profile_fixture.py`（Backend fixture contract）
 
 #### Level 2 実行の標準手順（Mock SP/IdP）
 
@@ -82,12 +82,40 @@ fixture では以下の主要差異を再現する。
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
 `issue-AUTH-IMPL-01`（identity schema migration）と `issue-AUTH-API-02`（strict provisioning contract）。
 
+#### AC（AUTH-E2E-01で固定する受入条件）
+
+- **Level 1必須シナリオと実行コマンド** を固定する。
+- **Level 2必須化トリガー（IdP連携境界変更時）** を固定する。
+- **PR記録テンプレ（pass/fail/未実施理由）** を固定する。
+- 変更分類（Smoke/Core/Safety）をPR本文へ明記する。
+
+#### 変更分類（Smoke/Core/Safety）
+
+- **Smoke**: 認証状態に依存せず、AuthContext前提のUI起動確認を維持する。
+  - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
+- **Core**: AuthContext契約（strict provisioning / allow list / JIT）を回帰確認する。
+  - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+- **Safety**: trusted proxy外からの偽装拒否、strict mode 403、監査境界を守る。
+  - `cd 03_Implement/backend && pytest tests/test_auth_provider_profile_fixture.py`
+
 #### Level 1（毎回必須）
 
-- `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+- Frontend smoke（AuthContext前提導線）
+  - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
+- Backend contract（strict provisioning）
+  - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+
 - 受入条件:
+  - Playwright `-g "auth"` が pass し、AuthContext前提導線の最低動作を確認できる
   - strict mode未登録subjectが `403` かつ `identity_not_provisioned` を返す
   - `POST /admin/provision/users` 後の再試行で docs write が `200`
+
+Playwright 実行不能環境（例: browser binary 未導入）では、以下を**代替必須**とする。
+
+- `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
+- `cd 03_Implement/backend && pytest tests/test_auth_provider_profile_fixture.py::test_provider_profile_fixture_google_oidc_roundtrip`
+
+この場合、PRには「Playwright不能理由」と「後続実施条件（例: `npx playwright install` 完了後に再実行）」を必ず記載する。
 
 #### Level 2（条件付き必須）
 
@@ -99,14 +127,20 @@ fixture では以下の主要差異を再現する。
 
 最低1件の fixture を回帰対象として固定する。
 
+- **固定fixture（最低1件）**: `tests/federation/profiles/google_oidc.json`
+- 推奨追加fixture: `tests/federation/profiles/azure_oidc.json` / `tests/federation/profiles/keycloak_saml_like.json`
+
 - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
 
 #### 実施記録テンプレ（PR転記）
 
 ```md
 ### AUTH verification log
+- classification: Smoke | Core | Safety
+
 - Level 1 (required): pass | fail
   - command:
+    - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
     - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`
   - result:
 
@@ -114,7 +148,7 @@ fixture では以下の主要差異を再現する。
   - trigger matched: yes | no
   - command:
     - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
-  - fixture:
+  - fixture (required when executed): `tests/federation/profiles/google_oidc.json`
   - result:
   - skip reason (if skipped):
 ```
