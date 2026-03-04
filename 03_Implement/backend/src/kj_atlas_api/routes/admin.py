@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import UserIdentityRow, UserRow
+from kj_atlas_api.reviewer_ref import ReviewerRefResolutionInput, build_reviewer_ref_resolver_adapter
+from kj_atlas_api.settings import settings
 
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
 
@@ -40,6 +42,10 @@ def provision_user(
     response: Response,
     db: Session = Depends(get_db),
 ) -> ProvisionUserResponse:
+    reviewer_ref_adapter = build_reviewer_ref_resolver_adapter(
+        adapter_name=settings.reviewer_ref_resolver_adapter
+    )
+
     provider = payload.provider.strip()
     external_uid = payload.externalUid.strip()
     display_name = _normalize_optional_field(payload.displayName)
@@ -63,9 +69,21 @@ def provision_user(
             raise HTTPException(status_code=409, detail={"code": "identity_already_provisioned_conflict"})
 
         user_id = user_row.id
-        reviewer_ref = f"user:{user_id}"
+        resolution = reviewer_ref_adapter.resolve(
+            ReviewerRefResolutionInput(
+                user_id=user_id,
+                provider=provider,
+                external_uid=external_uid,
+                actor_ref=None,
+            )
+        )
         response.status_code = 200
-        return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref, provisioned=False)
+        return ProvisionUserResponse(
+            userId=user_id,
+            reviewerRef=resolution.reviewer_ref or f"user:{user_id}",
+            ownerRef=resolution.owner_ref or f"user:{user_id}",
+            provisioned=False,
+        )
 
     user_id = str(uuid4())
     now_iso = datetime.now(timezone.utc).isoformat()
@@ -88,5 +106,17 @@ def provision_user(
     )
     db.commit()
 
-    reviewer_ref = f"user:{user_id}"
-    return ProvisionUserResponse(userId=user_id, reviewerRef=reviewer_ref, ownerRef=reviewer_ref, provisioned=True)
+    resolution = reviewer_ref_adapter.resolve(
+        ReviewerRefResolutionInput(
+            user_id=user_id,
+            provider=provider,
+            external_uid=external_uid,
+            actor_ref=None,
+        )
+    )
+    return ProvisionUserResponse(
+        userId=user_id,
+        reviewerRef=resolution.reviewer_ref or f"user:{user_id}",
+        ownerRef=resolution.owner_ref or f"user:{user_id}",
+        provisioned=True,
+    )

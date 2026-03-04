@@ -9,6 +9,10 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import AuthContext
 from kj_atlas_api.models import UserIdentityRow, UserRow
+from kj_atlas_api.reviewer_ref import (
+    ReviewerRefResolutionInput,
+    build_reviewer_ref_resolver_adapter,
+)
 from kj_atlas_api.settings import settings
 
 
@@ -33,6 +37,9 @@ def _now_iso() -> str:
 
 
 def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdentity:
+    reviewer_ref_adapter = build_reviewer_ref_resolver_adapter(
+        adapter_name=settings.reviewer_ref_resolver_adapter
+    )
     provider = _header(request, settings.auth_provider_field) or "header"
     external_uid = _header(request, settings.auth_subject_field) or _header(request, settings.auth_user_field)
     display_name = _header(request, settings.auth_name_field)
@@ -58,7 +65,20 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
             aal=aal,
             auth_time=auth_time,
         )
-        return ResolvedIdentity(user_id=None, reviewer_ref=actor_ref, owner_ref=actor_ref, auth_context=auth)
+        resolution = reviewer_ref_adapter.resolve(
+            ReviewerRefResolutionInput(
+                user_id=None,
+                provider=None,
+                external_uid=None,
+                actor_ref=actor_ref,
+            )
+        )
+        return ResolvedIdentity(
+            user_id=None,
+            reviewer_ref=resolution.reviewer_ref,
+            owner_ref=resolution.owner_ref,
+            auth_context=auth,
+        )
 
     identity = (
         db.query(UserIdentityRow)
@@ -98,9 +118,17 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
     else:
         user_id = identity.user_id
 
-    reviewer_ref = f"user:{user_id}"
+    resolution = reviewer_ref_adapter.resolve(
+        ReviewerRefResolutionInput(
+            user_id=user_id,
+            provider=provider,
+            external_uid=external_uid,
+            actor_ref=None,
+        )
+    )
+
     auth = AuthContext(
-        actor_ref=reviewer_ref,
+        actor_ref=resolution.reviewer_ref,
         user_id=user_id,
         provider=provider,
         external_uid=external_uid,
@@ -112,4 +140,9 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
         aal=aal,
         auth_time=auth_time,
     )
-    return ResolvedIdentity(user_id=user_id, reviewer_ref=reviewer_ref, owner_ref=reviewer_ref, auth_context=auth)
+    return ResolvedIdentity(
+        user_id=user_id,
+        reviewer_ref=resolution.reviewer_ref,
+        owner_ref=resolution.owner_ref,
+        auth_context=auth,
+    )

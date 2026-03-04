@@ -238,6 +238,12 @@ fail-safe マトリクス:
   - `AuthContext.userId`: `users.id`
   - `AuthContext.actorRef`: `user:<users.id>`
   - `AuthContext.provider` / `AuthContext.externalUid`
+- reviewerRef解決:
+  - `REVIEWER_REF_RESOLVER_ADAPTER`（既定: `user_id`）で `reviewerRef/ownerRef` を解決する。
+  - adapter実装は `resolve(auth_context) -> { reviewerRef, ownerRef }` 契約を満たす。
+  - profile:
+    - `user_id`: `user:<users.id>`（未認証は `actorRef` → `null`）
+    - `sso_subject`: `user:sso:<provider>:<externalUid>`（不足時は `user_id` フォールバック）
 - 属性境界:
   - persist: `provider`, `external_uid`, `display_name`, `email`
   - transient only: `roles`, `groups`, `policyRef`, `amr`, `acr`, `aal`, `auth_time`, `trace_id`
