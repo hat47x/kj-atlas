@@ -163,6 +163,35 @@ kj-atlas は OSS として、多様な環境で利用される：
 - M5: SSOアダプタ（ReviewerRef生成規約の差し替え）
 - M6: Optional signing（detached signature + verification UI）
 
+## 9. M5 ReviewerRef Resolver Adapter 契約
+
+### 9.1 Interface（差し替え可能）
+
+- `ReviewerRefResolverAdapter` は reviewer attribution 用の `reviewerRef` / `ownerRef` を解決する唯一の境界とする。
+- 入力（最小契約）:
+  - `AuthContext.userId`（内部 `users.id`、未認証時は `null`）
+  - `AuthContext.provider` / `AuthContext.externalUid`（認証経路のsubject）
+  - `AuthContext.actorRef`（未認証時フォールバックに利用可能）
+- 出力（最小契約）:
+  - `reviewerRef: string | null`
+  - `ownerRef: string | null`
+  - いずれも「不透明ID（opaque）」として扱い、UI/監査は値の構造へ依存しない。
+
+### 9.2 規定プロファイル
+
+- `user_id`（既定）
+  - `reviewerRef = ownerRef = user:<users.id>`
+  - `AuthContext.userId` が無い場合は `AuthContext.actorRef` をフォールバックとして利用し、未設定なら `null`。
+- `sso_subject`（M5）
+  - 認証済み（`provider` + `externalUid` が存在）なら `reviewerRef = ownerRef = user:sso:<provider>:<externalUid>`。
+  - 認証情報が不足する場合は `user_id` と同じフォールバック（`actorRef` → `null`）を適用。
+
+### 9.3 Non-Goals（M5時点）
+
+- 本番IdP製品（Keycloak/Authentik/Cloud IAP等）の固定。
+- アプリ内RBACエンジン本体の実装完了。
+- reviewerRef から表示名を永続復元する機能の追加（表示名は引き続き揮発補完）。
+
 ## Notes
 - 本機能は「責任所在を明確化し、レビュー運用を回す」ための補助である。
 - 生成AIの要約/文章化が入る場合でも、“人間がレビューしたか”の区別ができることを優先する。

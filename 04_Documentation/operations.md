@@ -234,6 +234,9 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - PDP 経路で静的トークンが必要な環境向け。
 - `ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER`（任意）
   - OIDC/SAML の issuer/entity ID を `x-idp-issuer` ヘッダで引き渡す。
+- `REVIEWER_REF_RESOLVER_ADAPTER=user_id|sso_subject`（既定: `user_id`）
+  - `user_id`: `reviewerRef/ownerRef = user:<users.id>`（既存互換）。
+  - `sso_subject`: `reviewerRef/ownerRef = user:sso:<provider>:<externalUid>`。subject欠損時は `actorRef` フォールバック。
 
 ### 3. 最小監査記録（PII非保存）
 

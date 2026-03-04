@@ -415,7 +415,7 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 # 8. OSSとして整備すべき最低ライン
 
 1. AuthContext抽象インタフェース
-2. reviewerRef外部マッピング対応
+2. reviewerRef外部マッピング対応（`ReviewerRefResolverAdapter` により `user_id` / `sso_subject` を差し替え可能）
 3. readOnlyモード対応
 4. versionメタデータ構造
 5. スキーマ安定性保証（後方互換）

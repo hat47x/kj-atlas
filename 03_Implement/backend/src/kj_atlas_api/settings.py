@@ -127,6 +127,10 @@ class Settings(BaseSettings):
         default="x-auth-subject",
         alias="AUTH_SUBJECT_FIELD",
     )
+    reviewer_ref_resolver_adapter: str = Field(
+        default="user_id",
+        alias="REVIEWER_REF_RESOLVER_ADAPTER",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -149,6 +153,11 @@ class Settings(BaseSettings):
         if self.access_control_external_http_auth_mode not in {"none", "oidc", "saml"}:
             raise ValueError(
                 "ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE must be one of none|oidc|saml"
+            )
+
+        if self.reviewer_ref_resolver_adapter not in {"user_id", "sso_subject"}:
+            raise ValueError(
+                "REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject"
             )
 
         return self

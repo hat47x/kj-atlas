@@ -117,3 +117,45 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
             assert allowed.status_code == 200
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_sso_subject_reviewer_ref_profile_on_provision(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    original_adapter = settings.reviewer_ref_resolver_adapter
+    settings.allow_jit_provisioning = False
+    settings.reviewer_ref_resolver_adapter = "sso_subject"
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            provision = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "sub-alice", "displayName": "Alice"},
+            )
+            assert provision.status_code == 201
+            payload = provision.json()
+            assert payload["reviewerRef"] == "user:sso:oidc:sub-alice"
+            assert payload["ownerRef"] == "user:sso:oidc:sub-alice"
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+        settings.reviewer_ref_resolver_adapter = original_adapter
+
+
+@pytest.mark.auth_level1
+def test_unauthenticated_path_keeps_actor_ref_fallback(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    original_adapter = settings.reviewer_ref_resolver_adapter
+    settings.allow_jit_provisioning = True
+    settings.reviewer_ref_resolver_adapter = "sso_subject"
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            response = client.put(
+                "/docs/doc-auth-fallback",
+                json=_sample_payload("doc-auth-fallback"),
+                headers={"x-actor-ref": "actor:manual-reviewer"},
+            )
+            assert response.status_code == 200
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+        settings.reviewer_ref_resolver_adapter = original_adapter
