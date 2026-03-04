@@ -130,7 +130,8 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 ## 7. 次に作るもの
 
 - `02_Architecture/api.md`：DocumentV1 のCRUD I/F
-- `02_Architecture/llm_provider.md`：将来AI用のProvider抽象（枠のみ）
+- `02_Architecture/llm_provider_spec.md`：将来AI用のProvider抽象（正本）
+- `02_Architecture/llm_input_ir_spec.md`：LLM入力IR仕様（正規化/前処理/schema）
 - `02_Architecture/deployment.md`：Docker Compose案
 
 

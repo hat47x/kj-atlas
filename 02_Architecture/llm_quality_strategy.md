@@ -12,7 +12,7 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 - 生成出力は多様性を持つため、完全一致判定のみでは品質を適切に表現できない。
 - そのため本プロジェクトでは、**二層評価（deterministic + optional LLM self-check）**を採用する。
 - 合否は「利用可能性」「安全性」「構造整合性」を中心に判定する。
-- 本戦略は `llm.provider = none`（既定無効）を前提に、opt-in時も同一ゲートを適用する。
+- 本戦略は `KJ_LLM_PROVIDER=none`（既定無効）を前提に、opt-in時も同一ゲートを適用する。
 - `none`（LLM無効）/`fixture`/`local`/`external` の各providerで、同一ゲート基準を適用する。
 
 ---
@@ -26,7 +26,7 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 3. citation数・coverage閾値を満たすこと（根拠カード参照不足を防止）。  
 4. length/verbosity境界（最小・最大）に収まること。  
 5. safeMode要件に適合すること（禁止領域への生テキスト漏えいがないこと）。
-6. `escalation.enabled=false` 時は external provider を使わないこと（fail-safe）。
+6. `KJ_LLM_ESCALATION_ENABLED=false` 時は external provider を使わないこと（fail-safe）。
 
 ---
 
@@ -73,3 +73,8 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 - KJ法の構造から導く要約は、単一正解に収束しない。
 - したがって「正しいか」より「業務で利用可能か」を重視する。
 - 具体的には、構造整合（schema/section/citation）と安全整合（safeMode）を最低基準とし、解釈品質は定期統合テストで補完する。
+
+## 6. IR準拠条件（Phase B連携）
+
+- Layer A の schema validation は `LLMRequest.inputs` が `02_Architecture/llm_input_ir_spec.md` に準拠することを含む。
+- `structured_text_only=true` を満たさないIRは品質評価対象に進めない。

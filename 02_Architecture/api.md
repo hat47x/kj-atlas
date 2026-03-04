@@ -127,7 +127,8 @@ MVPでは、エラーを過度に作り込まない。
 
 ## 6. 次に作るもの
 
-- `02_Architecture/llm_provider.md`
+- `02_Architecture/llm_provider_spec.md`
+- `02_Architecture/llm_input_ir_spec.md`
 - `02_Architecture/deployment.md`
 
 ---

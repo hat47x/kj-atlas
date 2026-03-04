@@ -20,8 +20,8 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 
 ## 3. データ取り扱いの既定値
 
-- 既定は `LLM_PROVIDER=none` です（外部送信なし）
-- ローカルLLM / 社内LLM利用時のみ `LLM_PROVIDER=local_http` を設定します
+- 既定は `KJ_LLM_PROVIDER=none` です（外部送信なし）
+- ローカルLLM / 社内LLM利用時のみ `KJ_LLM_PROVIDER=local` を設定します
 - 外部送信が必要な場合は、組織側のポリシーに従って明示的に判断してください
 
 ## 4. 実施しやすい最小コントロール

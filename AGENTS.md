@@ -113,7 +113,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 **LLM関連（設計・制約・品質）**
 - `02_Architecture/llm_provider_spec.md`：Provider抽象仕様。
-- `02_Architecture/llm_provider.md`：Provider実装方針（補足）。
+- `02_Architecture/llm_input_ir_spec.md`：LLM投入IR（正規化・前処理・schema・切り詰め）。
 - `02_Architecture/llm_runtime_constraints.md`：実行制約（IPC/fixture/CI）。
 - `02_Architecture/llm_quality_strategy.md`：品質戦略（二段評価・回帰）。
 - `02_Architecture/llm_escalation_policy.md`：Local-first + escalation方針。

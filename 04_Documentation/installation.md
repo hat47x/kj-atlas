@@ -41,7 +41,7 @@ docker compose down
 ## 補足
 
 - 既定で `web` / `api` / `db`（PostgreSQL）の3サービスが起動します。
-- 既定値は `LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
+- 既定値は `KJ_LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
 - 画面から JSON Export / Import が利用できます。
 
 

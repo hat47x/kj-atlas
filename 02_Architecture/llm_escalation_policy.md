@@ -18,8 +18,9 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ## 2. デフォルト設定
 
-- `escalation.enabled = false`（既定: 無効）
-- `llm.provider = none`（既定: 無効）
+- `KJ_LLM_ESCALATION_ENABLED=false`（既定: 無効）
+- `KJ_LLM_PROVIDER=none`（既定: 無効）
+- `KJ_LLM_PROVIDER=none|fixture|local|external` の列挙を前提とする（fixtureは回帰専用でエスカレーション対象外）。
 - 明示的に `true` へ変更しない限り、外部送信は行わない。
 - 設定変更には運用責任者の承認と監査ログ記録を要する。
 
@@ -67,3 +68,9 @@ This document specifies a deterministic Local-first escalation policy: system de
 - safeMode ON時は、禁止対象の生カード文面を外部送信しない。
 - エスカレーションログは理由コードを保持し、本文は最小化またはハッシュ化する。
 - 送信経路・承認履歴・モデル識別子を監査可能にする。
+
+
+## 7. 設定キー整合
+
+- 本仕様の設定キーは `KJ_LLM_*` に統一する。
+- 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。

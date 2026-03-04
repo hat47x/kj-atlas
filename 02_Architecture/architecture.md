@@ -157,13 +157,14 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 
 選択は環境変数で行います。
 
-- `LLM_PROVIDER=none|local|large-scale`
-- `LOCAL_LLM_BASE_URL=http://...`（local時）
-- `LOCAL_LLM_MODEL=...`（local時）
+- `KJ_LLM_PROVIDER=none|fixture|local|external`
+- `KJ_LLM_LOCAL_ENDPOINT=...`（local時）
+- `KJ_LLM_LOCAL_MODEL=...`（local時）
+- `KJ_LLM_ESCALATION_ENABLED=false`（既定）
 
 MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
-実装では `ProviderRegistry` を用いて、alias互換（例: `local_http` -> `local`、`external` -> `large-scale`）を維持する。
+Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `KJ_LLM_TRANSPORT`（in_process/ipc/http）で分離する。
 
 ---
 
