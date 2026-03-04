@@ -41,6 +41,92 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - 既存 `Open / In Progress` メモを更新するタイミングで、`Source Issue` を対応するURLへ置換する。
 - 新規メモは起票時からGitHub Issue URLを必須とし、`N/A` は使用しない。
 
+### GitHub Issues 正本運用の開始宣言ドラフト（PM/Triage）
+
+> 本節はドラフトであり、実際の宣言時に日時とリンクを確定して使用する。
+
+```md
+[開始宣言] GitHub Issues 正本運用を開始します
+
+- 宣言日時（JST）: 2026-03-XX XX:XX
+- A（Accountable）: Platform Architecture Owner
+- R（Responsible）: PM/Triage
+- 告知先:
+  1. `01_Plans/issues/README.md`（本ファイル）
+  2. GitHub Discussions: `#project-ops`（運用告知スレッド）
+  3. 対象移行PR本文（RACI-I記録付き）
+
+本宣言以降、Active issue memo の `Source Issue: N/A` は次回更新PRで GitHub Issue URL へ移行する。
+```
+
+> 停止条件: A または R が未確定（役割が未割当）の場合、宣言を出さずに `N/A` を維持し、未確定項目を `Additional context` に記録して停止する。
+
+### Active memo `Source Issue: N/A` → URL 移行Runbook（手順1〜6）
+
+1. **開始宣言の確定**
+   - 上記ドラフトの `宣言日時` を確定して README に追記し、RACI-I通知を1回記録する。
+2. **URL対応表の作成**
+   - Active issue memo ごとに `Backlog ID -> GitHub Issue URL` の1:1対応表を作成する。
+3. **置換コミット（memo本体）**
+   - Active memo の `Source Issue: N/A` を URL に置換する。
+   - 同一コミットで `Status` / `Owner` / `Acceptance criteria` / 本文タスクは変更しない。
+4. **置換コミット（index同期）**
+   - `Active issue memos` 表の `Source Issue` 列を同一URLへ同期する。
+5. **検証コマンド実行**
+   - `python 01_Plans/issues/validate_active_issue_memos.py`
+   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+   - `rg -n "^- Source Issue: N/A$|\|[^|]*\|[^|]*\|[^|]*\| N/A \|" 01_Plans/issues`
+6. **完了記録と通知**
+   - 完了判定（`N/A`残存ゼロ + validator成功）をPR本文に記録し、RACI-I通知を確定する。
+
+### RACI-I通知テンプレートと実施順序（誰がいつ通知するか）
+
+- **A（Accountable）**: Platform Architecture Owner（最終承認・開始宣言確定）
+- **R（Responsible）**: PM/Triage（実作業実行・通知送信）
+- **C（Consulted）**: 各Issueの実行Lead
+- **I（Informed）**: QA Lead
+
+通知テンプレート（固定）:
+
+```md
+[RACI-I] Backlog=<Backlog ID> / Change=<Source Issue N/A→URL または開始宣言> / By=<role> / Memo=<memo path> / Source=<issue URL>
+```
+
+実施順序（固定）:
+
+1. **R（PM/Triage）** が開始宣言案を作成して A に提示する（宣言前）。
+2. **A（Platform Architecture Owner）** が開始宣言を確定し、READMEへ反映する（宣言時点）。
+3. **R（PM/Triage）** が `Source Issue` 置換PRを作成し、テンプレで I（QA Lead）へ通知する（置換コミット作成時）。
+4. **A（Platform Architecture Owner）** が検証結果と監査チェックを承認し、最終通知を確定する（マージ直前）。
+
+### 置換コミット監査ルール（`Source Issue` 以外を変更しない）
+
+チェックリスト:
+
+- [ ] 置換対象ファイルは Active issue memo と `01_Plans/issues/README.md` の `Active issue memos` 表のみ。
+- [ ] `git diff --word-diff` で `Source Issue` 行以外に差分がない。
+- [ ] `Status` / `Owner` / `Priority` / `Acceptance criteria` / `Task breakdown` の差分が0件。
+- [ ] 置換後URLは `https://github.com/<org>/<repo>/issues/<number>` 形式。
+- [ ] validator と unit test が成功している。
+
+監査コマンド（例）:
+
+- `git diff -- 01_Plans/issues/README.md 01_Plans/issues/issue-*.md`
+- `git diff --word-diff -- 01_Plans/issues/README.md 01_Plans/issues/issue-*.md | rg -n "Source Issue|Status|Owner|Priority|Acceptance criteria|Task breakdown"`
+
+### ロールバック条件（宣言延期時の N/A 維持ルール）
+
+- A または R が未確定（役割が未割当）の場合、開始宣言を延期し、`Source Issue: N/A` を維持する。
+- URL対応表が Active memo と1:1対応しない場合、置換を中断して `N/A` 維持へ戻す。
+- validator 失敗または監査チェック未達の場合、置換コミットをrevertし `N/A` を維持する。
+- 延期時は理由・未確定項目・次回確認期限を `Additional context` またはPR本文に残す。
+
+### 移行完了判定（Done条件）
+
+- Active issue memos と対象memo本体の `Source Issue: N/A` が **残存ゼロ** である。
+- `python 01_Plans/issues/validate_active_issue_memos.py` が成功する。
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` が成功する。
+
 ### URL移行の実施手順（運用開始後）
 
 1. PM/Triage が「GitHub Issues 正本運用開始」を宣言し、開始日と告知先を本READMEへ追記する。
