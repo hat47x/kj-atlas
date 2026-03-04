@@ -46,6 +46,19 @@ kj-atlas は以下の3要素で構成します。
 
 ---
 
+
+## 2.5 採用技術スタック（正本）
+
+本プロジェクトの実装スタックは以下を基準とする。
+
+- Frontend: React 18 + Vite + TypeScript
+- Backend: Python 3.10+ + FastAPI + SQLAlchemy + Alembic
+- DB: SQLite（ローカル）/ PostgreSQL（推奨）
+- E2E: Playwright
+- 単体テスト: Vitest（Frontend）/ Pytest（Backend）
+
+---
+
 ## 3. フロントエンド（Web）
 
 ### 3.1 技術
