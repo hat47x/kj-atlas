@@ -1,7 +1,7 @@
 # Issue Draft: AUTH-E2E-01 AuthContext contract Level1/Level2 regression track
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -53,18 +53,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Level1（AuthContext契約E2E）の必須シナリオと実行コマンドが固定される。
-- [ ] Level2（Mock SP/IdP）は「IdP連携境界変更時に必須」の判定チェックリストを持つ。
-- [ ] PRテンプレまたは運用文書に、実施/未実施理由の記録フォーマットが追加される。
-- [ ] e2e レベルの検証（integration含む）を実施し、結果を追跡できる。
+- [x] Level1（AuthContext契約E2E）の必須シナリオと実行コマンドが固定される。
+- [x] Level2（Mock SP/IdP）は「IdP連携境界変更時に必須」の判定チェックリストを持つ。
+- [x] PRテンプレまたは運用文書に、実施/未実施理由の記録フォーマットが追加される。
+- [x] e2e レベルの検証（integration含む）を実施し、結果を追跡できる。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: `04_Documentation/e2e_testing.md` に AUTH向け Level1/Level2 実行基準を追記する。
-- [ ] T2: Playwright（または既存E2E基盤）で Level1 smoke フローを固定する。
-- [ ] T3: Level2 fixture（主要IdP様式）を1つ以上回帰対象として定義する。
-- [ ] T4: PR記録テンプレ（pass/fail/未実施理由）を整備する。
-- [ ] T5: AUTH-API-02 / AUTH-IMPL-01 へ検証依存をリンクする。
+- [x] T1: `04_Documentation/e2e_testing.md` に AUTH向け Level1/Level2 実行基準を追記する。
+- [x] T2: Playwright（または既存E2E基盤）で Level1 smoke フローを固定する。
+- [x] T3: Level2 fixture（主要IdP様式）を1つ以上回帰対象として定義する。
+- [x] T4: PR記録テンプレ（pass/fail/未実施理由）を整備する。
+- [x] T5: AUTH-API-02 / AUTH-IMPL-01 へ検証依存をリンクする。
 
 ## 7) 検証計画 / Validation plan
 
@@ -96,3 +96,121 @@
 - 関連Issue/PR/議論ログ: N/A
 - Source Issue記載方針: GitHub Issues正本運用の開始宣言までは `N/A` を維持し、開始宣言後の次回更新PRで対応URLへ切替する。
 - ADR化が必要になる条件: Level2常時必須化など、E2Eポリシー自体を変更する場合。
+
+
+## 11) Phase execution record（2026-03-03）
+
+### Phase 1: Level1/Level2実行基準の文書固定（T1）
+
+#### Plan
+
+- 達成目標: `04_Documentation/e2e_testing.md` に Level 1必須シナリオ / Level 2必須化トリガー / 実行コマンドを固定し、`ADR-0019` / `ADR-0020` と整合を確認する。
+- 編集対象: `04_Documentation/e2e_testing.md`（既存固定節の採用確認）
+- AC/DoD 対応表:
+  - AC(1): Level 1必須シナリオ + コマンド
+  - AC(2): Level 2判定表 + Trigger
+
+#### Execute
+
+- `2.5 AUTH-E2E-01 固定運用` 節（Level 1 / Level 2）を正本として採用し、運用基準を固定。
+
+#### Verify
+
+- `rg -n "Level 1|Level 2|AuthContext|Mock SP/IdP|AUTH-IMPL-01|AUTH-API-02" 01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md 04_Documentation/e2e_testing.md`
+- 判定: AC(1)(2) を満たす。
+
+#### Proceed
+
+- 文書基準が固定され、Phase 2へ進行可能。
+
+### Phase 2: Level1 smokeフロー固定（T2）
+
+#### Plan
+
+- 達成目標: Level 1 smoke を Playwright + backend contract で再実行可能に固定。
+- 編集対象: `03_Implement/frontend/e2e/auth_context_level1_smoke.spec.ts`（既存仕様の採用確認）
+- AC/DoD 対応表:
+  - AC(1): Playwright `-g "auth"` + backend `auth_level1`
+
+#### Execute
+
+- 既存 `auth_context_level1_smoke.spec.ts` を Level 1 smoke 正本として採用（命名: `auth:` プレフィックス、実行タグ: `-g "auth"`）。
+
+#### Verify
+
+- `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`（2回連続実行で同一pass）
+- `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`（browser導入後にpass）
+- 判定: 再実行で同一結果。flakiness は許容範囲。
+
+#### Proceed
+
+- Level 1 smoke を固定できたため、Phase 3へ進行。
+
+### Phase 3: Level2 fixture回帰定義（T3）
+
+#### Plan
+
+- 達成目標: 主要IdP様式 fixture を1件以上固定し、Level 2実行導線を確認。
+- 編集対象: `04_Documentation/e2e_testing.md` と backend fixture群（既存導線の採用確認）
+- AC/DoD 対応表:
+  - AC(2): 条件付き必須時に fixture 回帰が実行可能
+
+#### Execute
+
+- 固定fixtureを `tests/federation/profiles/google_oidc.json` として採用。
+- `tests/scripts/run_auth_level2.sh` を実行正本として利用。
+
+#### Verify
+
+- `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+- 判定: `tests/test_auth_provider_profile_fixture.py` が 4件 pass し、Level 2実行可能。
+
+#### Proceed
+
+- Level 2回帰導線を確認できたため、Phase 4へ進行。
+
+### Phase 4: PR記録テンプレ整備（T4）
+
+#### Plan
+
+- 達成目標: pass/fail/skipped と未実施理由を最小項目で記録できるテンプレを固定。
+- 編集対象: `.github/pull_request_template.md` と `04_Documentation/e2e_testing.md`（既存テンプレの採用確認）
+- AC/DoD 対応表:
+  - AC(3): PR記録フォーマット追加
+
+#### Execute
+
+- `AUTH verification log` テンプレ（Level 1 required / Level 2 conditional / skip reason）を正本として固定。
+
+#### Verify
+
+- `rg -n "AUTH verification log|skip reason|Level 1 \(required\)|Level 2 \(conditional\)" .github/pull_request_template.md 04_Documentation/e2e_testing.md`
+- 判定: AC(3) を満たす。
+
+#### Proceed
+
+- 記録テンプレが整備済みのため、Phase 5へ進行。
+
+### Phase 5: 依存リンク整理と完了判定（T5）
+
+#### Plan
+
+- 達成目標: AUTH-API-02 / AUTH-IMPL-01 との検証依存リンクを明示し、完了判定を確定。
+- 編集対象: 本issue memo、および `01_Plans/issues/README.md` の状態同期
+- AC/DoD 対応表:
+  - AC(4): e2eレベル検証の追跡可能性
+
+#### Execute
+
+- `Additional context` に依存issueリンクを追加。
+- 本issueの `Status: Done` 化、および AC/T1-T5 を全件完了へ更新。
+
+#### Verify
+
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- 判定: index/memo整合が取れれば Done 条件を満たす。
+
+#### Proceed
+
+- 全AC達成のため `Done` へ移行。
