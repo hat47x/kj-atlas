@@ -94,4 +94,5 @@
 ## 10) Additional context
 
 - 関連Issue/PR/議論ログ: N/A
+- Source Issue記載方針: GitHub Issues正本運用の開始宣言までは `N/A` を維持し、開始宣言後の次回更新PRで対応URLへ切替する。
 - ADR化が必要になる条件: Level2常時必須化など、E2Eポリシー自体を変更する場合。

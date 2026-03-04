@@ -94,6 +94,7 @@
 ## 10) Additional context
 
 - 関連Issue/PR/議論ログ: N/A
+- Source Issue記載方針: GitHub Issues正本運用の開始宣言までは `N/A` を維持し、開始宣言後の次回更新PRで対応URLへ切替する。
 - ADR化が必要になる条件: strict mode の拒否コード体系を複数化する等、外部契約へ互換影響が出る場合。
 
 ## 11) Phase execution record（2026-03-03）
