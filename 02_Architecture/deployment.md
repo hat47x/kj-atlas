@@ -34,7 +34,7 @@ MVPでは、以下の3要素で十分です。
   - dev: `sqlite+aiosqlite:///./data/kj_atlas.db`
   - prod: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`
 
-- `LLM_PROVIDER`：`none | local_http | external`
+- `KJ_LLM_PROVIDER`：`none | fixture | local | external`
 
 ### 3.2 DB
 
@@ -67,7 +67,7 @@ services:
       context: ./03_Implement/backend
     environment:
       - DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
-      - LLM_PROVIDER=none
+      - KJ_LLM_PROVIDER=none
     ports:
       - "8000:8000"
     depends_on:
@@ -93,7 +93,7 @@ volumes:
 ## 5. イントラ運用（想定）
 
 - `web` と `api` は社内ネットワーク内に閉じる
-- `LLM_PROVIDER=local_http` の場合、`LOCAL_LLM_BASE_URL` を社内URLに向ける
+- `KJ_LLM_PROVIDER=local` の場合、`KJ_LLM_LOCAL_ENDPOINT` を社内URLに向ける
 - 外部送信（external provider）は無効化をデフォルトにする
 
 ---

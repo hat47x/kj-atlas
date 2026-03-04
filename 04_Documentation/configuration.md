@@ -4,9 +4,9 @@
 
 ## 1. 基本方針（デフォルトは外部送信なし）
 
-- `LLM_PROVIDER=none` が既定です。
+- `KJ_LLM_PROVIDER=none` が既定です。
 - 既定のままでは外部LLMへのデータ送信は行いません。
-- ローカル/社内LLMを使う場合のみ `LLM_PROVIDER=local_http` を明示設定します。
+- ローカル/社内LLMを使う場合のみ `KJ_LLM_PROVIDER=local` を明示設定します。
 
 ## 2. 主要環境変数
 
@@ -17,12 +17,12 @@
 - SQLite 例: `sqlite:///./kj_atlas.db`
 - PostgreSQL 例: `postgresql+asyncpg://<user>:<password>@<host>:5432/<db>`
 
-### `LLM_PROVIDER`
+### `KJ_LLM_PROVIDER`
 
 LLM連携方式を指定します。
 
 - `none`（既定）
-- `local_http`
+- `local`
 - `external`（将来向け・現状未実装）
 
 
@@ -52,16 +52,16 @@ LLM連携方式を指定します。
 
 > 本機能はMVP向けの簡易ガードです。完全な認証/認可の代替ではありません。
 
-## 3. `local_http` 設定（ローカル/社内LLM）
+## 3. `local` 設定（ローカル/社内LLM）
 
-`LLM_PROVIDER=local_http` のときは以下を設定します。
+`KJ_LLM_PROVIDER=local` のときは以下を設定します。
 
-- `LOCAL_LLM_BASE_URL`（必須）
+- `KJ_LLM_LOCAL_ENDPOINT`（必須）
   - 例: `http://localhost:8001`
-- `LOCAL_LLM_MODEL`（任意）
+- `KJ_LLM_LOCAL_MODEL`（任意）
   - 例: `local-model-name`
 
-バックエンドは `LOCAL_LLM_BASE_URL + /generate` へ HTTP POST します。
+バックエンドは `KJ_LLM_LOCAL_ENDPOINT + /generate` へ HTTP POST します。
 
 ## 4. Docker Composeでの設定例
 
@@ -72,7 +72,7 @@ LLM連携方式を指定します。
 ```bash
 cd /path/to/kj-atlas/03_Implement/deploy
 export DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
-export LLM_PROVIDER='none'
+export KJ_LLM_PROVIDER='none'
 docker compose up -d
 ```
 
@@ -80,9 +80,9 @@ docker compose up -d
 
 ```bash
 cd /path/to/kj-atlas/03_Implement/deploy
-export LLM_PROVIDER='local_http'
-export LOCAL_LLM_BASE_URL='http://localhost:8001'
-export LOCAL_LLM_MODEL='local-model-name'
+export KJ_LLM_PROVIDER='local'
+export KJ_LLM_LOCAL_ENDPOINT='http://localhost:8001'
+export KJ_LLM_LOCAL_MODEL='local-model-name'
 docker compose up -d
 ```
 

@@ -105,7 +105,7 @@ Phase 0 は、以下をすべて満たした時点で完了とします。
 
 - `FastAPI()` アプリケーションが起動すること
 - `GET /healthz` が常に 200 を返すこと
-- `DATABASE_URL` / `LLM_PROVIDER` を設定ファイル経由で読めること
+- `DATABASE_URL` / `KJ_LLM_PROVIDER` を設定ファイル経由で読めること
 - DB未接続でも起動できること
 
 > **注意**：CRUD・ORM・マイグレーションは Phase 1 以降

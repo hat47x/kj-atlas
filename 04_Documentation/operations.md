@@ -37,8 +37,8 @@ docker compose logs api --tail=100
 
 ## 3. 運用上の注意
 
-- 既定の `LLM_PROVIDER=none` では外部送信は行いません。
-- ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
+- 既定の `KJ_LLM_PROVIDER=none` では外部送信は行いません。
+- ローカル/社内LLM利用時は `KJ_LLM_LOCAL_ENDPOINT` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
 
