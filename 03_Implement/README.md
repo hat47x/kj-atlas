@@ -1,5 +1,18 @@
 # 03_Implement run guide
 
+
+## 主要コマンド（本リポジトリ準拠）
+
+| アクション | コマンド | 用途 |
+|---|---|---|
+| Frontend 開発サーバ | `cd 03_Implement/frontend && npm run dev` | UIのローカル確認 |
+| Frontend 検証 | `cd 03_Implement/frontend && npm run typecheck && npm run test` | 型・単体テスト確認 |
+| Backend 検証 | `cd 03_Implement/backend && ruff check src tests && pytest` | Lint・単体テスト確認 |
+| E2E（UI変更時） | `cd 03_Implement/frontend && npx playwright test` | UIを含む結合確認 |
+| 統合起動（推奨） | `cd 03_Implement/deploy && docker compose up --build` | web+api+db の統合動作確認 |
+
+> 注: `pnpm` / `supabase` / `.kiro` 系コマンドは本リポジトリの標準手順ではありません。
+
 ## Build frontend and run full stack with Docker Compose
 
 ```bash
