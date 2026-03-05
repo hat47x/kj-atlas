@@ -112,6 +112,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `02_Architecture/schemas_review_attribution.md`：上記のスキーマ詳細。
 - `02_Architecture/island_shapes.md`：島形状（rect/polygon等）。
 - `02_Architecture/coding_standards.md`：シンプル・セキュア開発のコーディング規約。
+- `02_Architecture/strict_mode_exception_approval_flow.md`：strict mode例外緩和の承認フロー仕様（AUTH-OPS-03）。
 
 **LLM関連（設計・制約・品質）**
 - `02_Architecture/llm_provider_spec.md`：Provider抽象仕様。
@@ -152,6 +153,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/e2e_testing.md`：PlaywrightベースE2E方針。
 - `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
+- `04_Documentation/security_operational_guidelines.md`：セキュリティ運用ガイドライン（プロファイル選択時の判断補助）。
 - `04_Documentation/release.md`：リリース。
 - `04_Documentation/narratives.md`：文章化/要約出力。
 - `04_Documentation/canonicalization.md`：正規化/決定論。

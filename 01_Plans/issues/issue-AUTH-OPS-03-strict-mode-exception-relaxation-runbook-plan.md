@@ -58,6 +58,7 @@
 - [x] T3: PII最小化/監査最小化/SafeMode整合の事前・事後チェック項目を作成する。
 - [x] T4: 不明承認フローの確認質問リストを定義し、未解決時の停止ルールを明文化する。
 - [x] T5: `operations.md` と `security.md` の参照導線を同期する。
+- [ ] T6: `04_Documentation/security_operational_guidelines.md` を追加し、必須化ではなく運用ガイドラインとして提示する。
 
 ## 7) 検証計画 / Validation plan
 
