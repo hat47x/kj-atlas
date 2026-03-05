@@ -211,6 +211,7 @@ MVPでは高度な権限管理は後回し。
 
 - 外部送信（LLM含む）は設定で無効化できる
 - LLMの接続先は明示設定（デフォルトで外部へ送らない）
+- strict mode例外承認フローは `strict_mode_exception_approval_flow.md` を正本とする
 
 ---
 

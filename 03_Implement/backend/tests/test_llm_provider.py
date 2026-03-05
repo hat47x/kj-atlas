@@ -394,17 +394,20 @@ def test_provider_error_contract_mapping_is_consistent() -> None:
     assert unavailable_error.to_contract()["code"] == "provider_unavailable"
 
 
-def test_settings_reject_large_scale_without_explicit_opt_in() -> None:
-    with pytest.raises(ValueError, match="LARGE_SCALE_OPT_IN"):
-        Settings(LLM_PROVIDER="large-scale", LLM_ESCALATION_ENABLED="true")
+def test_settings_reject_large_scale_without_explicit_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "large-scale")
+    monkeypatch.setenv("KJ_ATLAS_LLM_ESCALATION_ENABLED", "true")
+
+    with pytest.raises(ValueError, match="KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN"):
+        Settings()
 
 
-def test_settings_accept_large_scale_with_opt_in_and_escalation() -> None:
-    loaded = Settings(
-        LLM_PROVIDER="large-scale",
-        LLM_LARGE_SCALE_OPT_IN="true",
-        LLM_ESCALATION_ENABLED="true",
-    )
+def test_settings_accept_large_scale_with_opt_in_and_escalation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KJ_ATLAS_LLM_PROVIDER", "large-scale")
+    monkeypatch.setenv("KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN", "true")
+    monkeypatch.setenv("KJ_ATLAS_LLM_ESCALATION_ENABLED", "true")
+
+    loaded = Settings()
     assert loaded.llm_provider == "large-scale"
     assert loaded.llm_large_scale_opt_in is True
     assert loaded.llm_escalation_enabled is True

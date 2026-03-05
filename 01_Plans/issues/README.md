@@ -222,12 +222,19 @@ issue補助メモには、最低でも次の項目を含める。
 - 機械検証: `python 01_Plans/issues/validate_active_issue_memos.py`
 - ユニットテスト: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 
+
+## Human decision support
+
+- `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
+
 ## Active issue memos
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
 | AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | Draft | N/A |
-| ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Draft | N/A |
+| ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Open | N/A |
+| DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Draft | N/A |
+| DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Open | N/A |
 
 ## Rules
 

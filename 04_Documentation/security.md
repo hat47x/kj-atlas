@@ -99,6 +99,11 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 - 事後: 鍵漏えい可能性がある場合は即時ローテーションし、該当 `key-id` を失効扱いにする。
 
 
+## 7.9 運用ガイドライン参照
+
+strict / non-strict いずれの運用プロファイルでも、組織ごとの採否判断は
+`04_Documentation/security_operational_guidelines.md` を参照してください。
+
 ## 8. Strict provisioning 運用（AUTH-API-02）
 
 `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING`）の strict mode では、未登録subjectを必ず拒否します。
@@ -111,6 +116,173 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
   - 既存identityに矛盾する `displayName/email` は `409 identity_already_provisioned_conflict`
 
 運用上、strict緩和（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（旧: `ALLOW_JIT_PROVISIONING=true`） への切替）は承認フローを経て記録してください。
+
+### 8.0.0 この節の登場人物
+
+- **Security Officer**: セキュリティ妥当性を確認する責任者。
+- **System Owner**: 業務継続・提供責任を持つ責任者。
+- **Platform Operator**: 設定変更と運用記録を担当する実行者。
+
+### 8.0 strict mode とは何か（セキュリティ観点 / 初学者向け詳細）
+
+ここでは認証の専門用語を最小限にし、strict mode を「なぜ必要か」から順に説明します。
+
+まず結論として、strict mode は次の制御です。
+
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を有効化する
+- **未登録の利用者は、自動でユーザー作成せず拒否する**
+- 利用を許可するには、管理者が先に登録する
+
+---
+
+#### 8.0.1 前提知識ミニ用語集（3つだけ）
+
+- **認証（Authentication）**: 「あなたは誰か」を確認すること（例: SSOログイン）。
+- **認可（Authorization）**: 「その人にこの操作を許すか」を決めること。
+- **JIT Provisioning**: 初回アクセス時に、その場でユーザーを自動作成する方式。
+
+strict mode は、このうち **JIT Provisioning を止める設定**です。
+
+---
+
+#### 8.0.2 strict mode で実際に何が起こるか
+
+1. 利用者がSSOでログインし、認証は成功する。
+2. しかしアプリ内に未登録なら、APIは `403 identity_not_provisioned` を返す。
+3. 管理者が `/admin/provision/users` で事前登録する。
+4. その後のアクセスで初めて利用可能になる。
+
+重要なのは、**「ログインできた」だけでは使えない**という点です。
+これにより、誤って到達した主体をその場で受け入れない設計になります。
+
+---
+
+#### 8.0.3 strict mode を使わない場合に起きやすい問題
+
+1. **IdP設定ミスの受け入れ事故**
+   - 例: IdPの属性マッピングが誤り、想定外の `externalUid` が到達する。
+   - JIT有効時: 到達した時点で自動作成され、意図せず利用可能になる。
+   - strict mode: 未登録として拒否されるため、被害が初回で止まる。
+
+2. **なりすまし・誤同定の早期侵入**
+   - 例: `provider/externalUid` の連携ミスや重複。
+   - JIT有効時: 最初のアクセスでアカウント生成 → 事後調査まで露出が続く。
+   - strict mode: 自動生成が起こらず、調査前のアクセス成立を防げる。
+
+3. **障害対応中のフェイルオープン拡大**
+   - 例: 夜間障害で緩和設定を急いで適用し、誰を許可したか追跡不能になる。
+   - strict mode + 承認フロー: 2者承認・記録・復旧が必須となり、拡大を抑えられる。
+
+---
+
+#### 8.0.4 セキュリティ効果を平易に言うと
+
+- **Attack Surface（攻撃面）縮小**
+  - 「認証に通った全員」ではなく「登録済みの人だけ」を受け入れる。
+- **Blast Radius（影響範囲）抑制**
+  - 誤設定があっても、自動受け入れされないため被害が連鎖しにくい。
+- **監査しやすい運用**
+  - 「誰を、いつ、なぜ許可したか」を追える。
+- **単独ミスの抑止**
+  - 承認者と実行者を分離し、1人の判断ミスで恒常緩和しにくくする。
+
+---
+
+#### 8.0.5 実装・運用で守る最小ルール
+
+- 本番標準プロファイルは `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（strict）とする。
+- `true` を使う場合は、次のどちらかを明確に選ぶ。
+  - **例外プロファイル**: 期限付き・承認付きで一時的に利用し、終了時に `false` へ戻す。
+  - **公開運用プロファイル**: 組織方針として `true` を継続利用する（後述 8.0.6）。
+- どちらのプロファイルでも、監査ログにPII（subject生値、roles/groups/policyRef生値など）を残さない。
+
+---
+
+#### 8.0.6 公開運用プロファイル（`true` を継続利用する場合）
+
+SNS的な多ユーザ閲覧など、
+「未登録ユーザを都度受け入れる」運用を選ぶケースは現実にあり得る。
+その場合、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` の恒常運用を**禁止しない**。
+ただし、strictよりリスクが広がるため、次の補完統制を推奨ガイドラインとして明示する。
+
+- **アクセス境界**: 認証強制（OIDC/SAML）+ 必要最小限の公開範囲設計。
+- **権限分離**: 閲覧中心（read）と編集権限（write/share/export）を明確に分離。
+- **観測性**: 初回作成件数・異常増加・短時間大量作成を監視し、閾値超過でアラート。
+- **自動抑止**: 不審パターン時に `read_only` へフェイルセーフ、または一時的に strictへ戻せる運用手順を準備。
+- **審査**: 恒常 `true` 採用時は、運用ポリシー（対象環境/対象テナント/責任者/SLA）を文書化し、定期レビューする。
+
+---
+
+#### 8.0.7 よくある誤解
+
+- 誤解1: 「strict mode = 認証を強くする機能」
+  - 実際: 認証の強度そのものより、**受け入れ条件（事前登録必須）**を強化する機能。
+
+- 誤解2: 「開発効率が落ちるだけ」
+  - 実際: 事前登録の手間は増えるが、誤受け入れ事故の対応コストを下げる。
+
+- 誤解3: 「一度緩和したらそのままでも問題ない」
+  - 実際: 補完統制なしの緩和常態化は管理境界を崩す。継続運用する場合は 8.0.6 の公開運用プロファイル要件を満たす。
+
+#### 8.0.8 事前ユーザ登録の実務パターン（具体例）
+
+strict mode では「アクセス時に自動作成しない」ため、
+本アプリ外で事前登録フローを持つか、組織イベントと連携して登録する運用が必要になる。
+
+**パターンA: 本アプリ外の承認プロセスで事前登録する**
+
+- 想定: 情報システム部門がチケット/ワークフロー（ServiceNow/Jira/社内申請）で利用申請を受ける。
+- 最低手順:
+  1. 申請者の所属・利用目的・権限レベルを承認者が確認。
+  2. 承認後、運用担当が `/admin/provision/users` を実行。
+  3. 実行結果（`201` or `200`）をチケットへ記録してクローズ。
+- メリット: 既存の社内統制（職務分離・監査証跡）をそのまま使える。
+
+例（手動登録API呼び出し）:
+
+```bash
+curl -X POST http://localhost:8000/admin/provision/users \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: <admin-api-key>' \
+  -d '{
+    "provider": "saml",
+    "externalUid": "a12345",
+    "displayName": "Taro Example",
+    "email": "taro@example.co.jp"
+  }'
+```
+
+**パターンB: 組織の異動イベントと連携して自動事前登録する**
+
+- 想定: 人事異動・入社イベント（HRIS/IdM）をトリガに、連携バッチやWebhookで本APIを呼ぶ。
+- 最低手順:
+  1. 人事イベント（入社/異動/兼務開始）を受信。
+  2. 対象ユーザの `provider/externalUid` を解決。
+  3. `/admin/provision/users` を冪等で実行（重複時 `200` を許容）。
+  4. 成功/失敗を運用監視へ通知し、失敗は再実行キューへ入れる。
+- メリット: 初回ログイン前に登録が完了し、オンボーディング遅延を減らせる。
+
+例（疑似コード）:
+
+```python
+for event in hr_events:
+    if event.type in {"hire", "transfer", "assignment_start"}:
+        payload = {
+            "provider": "saml",
+            "externalUid": event.employee_id,
+            "displayName": event.display_name,
+            "email": event.email,
+        }
+        resp = post("/admin/provision/users", json=payload)
+        assert resp.status_code in {200, 201}
+```
+
+**どちらのパターンでも必須の注意点**
+
+- `provider` と `externalUid` の正規化規則を固定する（前後空白・大文字小文字・文字種）。
+- 失敗時（`409` など）の運用フローを先に決める（手動確認担当、SLA、再試行回数）。
+- APIキー/トークンをチケット本文やログに残さない。
+- 退職・権限剥奪イベント時の無効化手順（別API/別運用）を合わせて定義する。
 
 ### 8.1 strict mode例外時の安全性チェック（AUTH-OPS-03 / T3）
 

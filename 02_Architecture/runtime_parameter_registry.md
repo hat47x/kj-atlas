@@ -1,17 +1,12 @@
 # Runtime Parameter Registry（環境変数・実行パラメータ正本）
 
-この文書は、kj-atlas の**環境変数 / 実行パラメータの単一正本（SSOT）**です。
+本書は、kj-atlas の環境変数/実行パラメータに関する **単一正本（SSOT）** です。
 
-- 実装正本: `03_Implement/backend/src/kj_atlas_api/settings.py`
-- 運用正本（Compose）: `03_Implement/deploy/docker-compose.yml`
-- 方針正本: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`
-- 本文書の目的: 命名規約の統一、既定値の一元管理、移行期限の単一管理
+## 1. 基本ルール
 
-## 1. 命名規約（現行）
-
-1. すべて `UPPER_SNAKE_CASE`。
-2. **正規キーは `KJ_ATLAS_*` プレフィックスを必須**とする。
-3. レガシー旧キー（プレフィックスなし）は受理しない。
+1. 全ランタイムキーは `KJ_ATLAS_*` プレフィックスを必須とする。
+2. プレフィックスなし旧キーは受理しない。
+3. 新旧キーの混在指定は不正設定として扱う。
 4. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
 
 ## 2. バックエンド設定キー（`settings.py`）
@@ -52,8 +47,8 @@
 | `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決方式 |
 
 補足:
-- `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理します。
-- `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須です。
+- `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
+- `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
 
 ## 3. Compose/デプロイ層パラメータ
 
@@ -65,14 +60,12 @@
 | `WEB_PORT` | `8080` | web公開ポート |
 | `VITE_API_BASE` | `/api` | frontend APIベースパス |
 
-## 4. ENV-ARCH-01 契約（正規キーのみ）
+## 4. ENV-ARCH-01 契約（一括移行）
 
-- 正規化開始日: `2026-03-05`
-- 正規キー: `KJ_ATLAS_*`
-- 契約:
-  - 旧キー（プレフィックスなし）は受理しない。
-  - 新キーのみを設定対象とする。
-  - 旧キーが残存しても設定解決には利用されない（運用で削除する）。
+- 切替方式: 一括移行（E1: Option B）
+- 旧キー互換: なし（旧キーは受理しない）
+- 移行痕跡: 追加しない（E2: Option C）
+- 期限運用: 採用しない（E3: 考慮外）
 
 ## 5. strict mode 例外運用（AUTH-OPS-03）
 
@@ -82,7 +75,7 @@
 
 ## 6. 運用ルール（集約管理）
 
-1. 環境変数・パラメータの追加/改名/削除時は、**先に本書を更新**する。
+1. 環境変数・パラメータの追加/改名/削除時は、先に本書を更新する。
 2. 他文書は値の列挙を最小化し、本書への参照を記載する。
 3. 実装（`settings.py` / `docker-compose.yml`）との差分が出た場合、PRで同時に整合を取る。
-4. キー体系を変更する場合は、`ADR-0021` と本書を同一PRで更新する。
+4. ENV移行方針を変更する場合は `ADR-0021` と本書を同一PRで更新する。

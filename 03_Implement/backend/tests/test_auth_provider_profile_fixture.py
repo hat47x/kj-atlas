@@ -43,6 +43,21 @@ def _sqlite_client(tmp_path) -> Iterator[TestClient]:
         engine.dispose()
 
 
+def _require_auth_level2_mock_sp(base_url: str) -> None:
+    try:
+        with httpx.Client(timeout=2.0) as client:
+            response = client.get(f"{base_url}/health")
+    except httpx.HTTPError:
+        pytest.skip(
+            "auth_level2 mock SP is not reachable; run tests/scripts/run_auth_level2.sh or set AUTH_LEVEL2_SP_BASE_URL"
+        )
+
+    if response.status_code != 200:
+        pytest.skip(
+            f"auth_level2 mock SP health check failed ({response.status_code}); check AUTH_LEVEL2_SP_BASE_URL={base_url}"
+        )
+
+
 def _sample_payload(doc_id: str) -> dict:
     return {
         "version": 1,
@@ -83,6 +98,7 @@ def test_provider_profile_fixture_google_oidc_roundtrip(tmp_path) -> None:
 def test_provider_profile_fixture_via_mock_sp(profile_name: str) -> None:
     base_url = os.getenv("AUTH_LEVEL2_SP_BASE_URL", "http://127.0.0.1:18080")
     payload = _sample_payload(f"doc-{profile_name}")
+    _require_auth_level2_mock_sp(base_url)
 
     with httpx.Client(timeout=10.0) as client:
         response = client.post(f"{base_url}/sp/profile/{profile_name}/docs/doc-{profile_name}", json=payload)
