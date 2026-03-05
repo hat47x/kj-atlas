@@ -1,5 +1,7 @@
 # 運用（最小）
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。
@@ -37,8 +39,8 @@ docker compose logs api --tail=100
 
 ## 3. 運用上の注意
 
-- 既定の `KJ_LLM_PROVIDER=none` では外部送信は行いません。
-- ローカル/社内LLM利用時は `KJ_LLM_LOCAL_ENDPOINT` を到達可能な内部URLに設定してください。
+- 既定の `LLM_PROVIDER=none` では外部送信は行いません。
+- ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
 

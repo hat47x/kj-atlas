@@ -1,4 +1,6 @@
 # English Summary
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This document defines a two-layer quality gate strategy: deterministic rule checks first, then optional low-cost local self-evaluation, with default-disabled (`none`) behavior and clear escalation handoff criteria.
 
 # llm_quality_strategy — LLM品質戦略（02_Architecture）
@@ -12,7 +14,7 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 - 生成出力は多様性を持つため、完全一致判定のみでは品質を適切に表現できない。
 - そのため本プロジェクトでは、**二層評価（deterministic + optional LLM self-check）**を採用する。
 - 合否は「利用可能性」「安全性」「構造整合性」を中心に判定する。
-- 本戦略は `KJ_LLM_PROVIDER=none`（既定無効）を前提に、opt-in時も同一ゲートを適用する。
+- 本戦略は `LLM_PROVIDER=none`（既定無効）を前提に、opt-in時も同一ゲートを適用する。
 - `none`（LLM無効）/`fixture`/`local`/`external` の各providerで、同一ゲート基準を適用する。
 
 ---
@@ -26,7 +28,7 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 3. citation数・coverage閾値を満たすこと（根拠カード参照不足を防止）。  
 4. length/verbosity境界（最小・最大）に収まること。  
 5. safeMode要件に適合すること（禁止領域への生テキスト漏えいがないこと）。
-6. `KJ_LLM_ESCALATION_ENABLED=false` 時は external provider を使わないこと（fail-safe）。
+6. `LLM_ESCALATION_ENABLED=false` 時は external provider を使わないこと（fail-safe）。
 
 ---
 

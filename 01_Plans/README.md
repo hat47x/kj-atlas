@@ -41,6 +41,7 @@
 ### 3.3 運用分割
 
 - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`（E2E確認方針）
+- `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`（環境変数プレフィックス移行方針）
 
 ### 3.4 CLI 分割
 

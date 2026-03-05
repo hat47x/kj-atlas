@@ -1,5 +1,7 @@
 # Enterprise / Government Deployment Architecture
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 **English summary**  
 This document defines the minimum OSS-level capabilities required for kj-atlas to be deployable in enterprise and government environments.  
 The focus is integration readiness, not SaaS transformation.
@@ -171,6 +173,36 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
   - read / write / export / share の権限制御
 - 監査ログ連動
   - 「誰が何を閲覧/エクスポートしたか」を外部ログ基盤に送れる導線（オプション）
+
+### strict mode 例外運用の責務境界（AUTH-OPS-03 T1/T4）
+
+`ALLOW_JIT_PROVISIONING` は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
+
+- **本番標準（strict mode）**: `ALLOW_JIT_PROVISIONING=false`
+  - 未登録ユーザは作成せず、アクセス拒否または read-only 制約を優先する。
+  - SafeMode既定ON・read-only優先を崩さない。
+- **例外運用**: `ALLOW_JIT_PROVISIONING=true`
+  - 障害時や移行時など、期限付きで許可する例外モードに限定する。
+  - 例外運用時でも share/export の抑止を含む SafeMode 制約を緩和しない。
+
+責務境界は次のとおり固定する。
+
+- アプリ本体（KJ Atlas）はフラグ値の受領とガード適用のみを担当し、承認ワークフロー本体は実装しない。
+- 例外の発行・失効・記録は外部運用基盤（IdP/運用台帳/監査基盤）責務とする。
+- 監査イベントは最小情報のみを記録し、PII最小化（氏名/メール/roles/groups生値非保存）を維持する。
+- strict mode / 例外 mode いずれでも「SafeMode → read-only → AccessDecision」の優先順位は不変とする。
+
+#### strict mode 例外運用で未定義のまま保持する事項（要ユーザー確認）
+
+以下は現時点で **未定義** とし、本ドキュメントでは推測仕様を置かない。
+
+- 例外承認の順序（申請→承認→有効化のワークフロー詳細）
+- 例外の TTL（有効期限）の既定値・上限・自動失効条件
+- 代理承認（緊急時の代行承認者）の可否と条件
+- 運用 SLA（承認応答時間、失効反映時間、監査反映時間）
+- 例外運用の同時許可数上限・対象組織/対象文書のスコープ制約
+- 例外解除後の既存セッション/トークン無効化の厳密手順
+- 監査アラート閾値（例外利用回数・連続利用時間）
 
 ### FB-RM-PUB-04: AccessControlAdapter 抽象I/F（roles/groups/policyRef 外部委譲）
 

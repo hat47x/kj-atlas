@@ -1,4 +1,6 @@
 # English Summary
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This operator guide explains how to run and switch LLM providers for kj-atlas across offline, intranet, and enterprise environments, including safety defaults, escalation controls, and minimal observability.
 
 # local_llm_ops_guide — ローカルLLM運用ガイド（04_Documentation）
@@ -61,10 +63,10 @@ llm:
 ### 2.3 環境変数例（プレースホルダ）
 
 ```text
-KJ_LLM_PROVIDER=none
-KJ_LLM_EXTERNAL_ENABLED=false
-KJ_LLM_ESCALATION_ENABLED=false
-KJ_LLM_TRANSPORT=in_process
+LLM_PROVIDER=none
+LLM_EXTERNAL_ENABLED=false
+LLM_ESCALATION_ENABLED=false
+LLM_TRANSPORT=in_process
 ```
 
 ---

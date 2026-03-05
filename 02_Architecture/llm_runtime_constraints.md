@@ -1,4 +1,6 @@
 # English Summary
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This document defines runtime constraints for LLM usage in Codex-like sandboxed environments, with default-disabled (`none`) operation, opt-in `local`/`fixture` usage, and explicit controls for outbound escalation.
 
 # llm_runtime_constraints — LLM実行時制約とサンドボックス前提（02_Architecture）
@@ -33,7 +35,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ## 3. CIで許容する実行パターン
 
-前提: `KJ_LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
+前提: `LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
 
 ### 3.1 常時利用可能（必須）
 
@@ -45,7 +47,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ### 3.3 定期実行のみ（通常PRでは非必須）
 
-- **External provider（strong model）**: `KJ_LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
+- **External provider（strong model）**: `LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
 - PRごと必須にしない（コストと接続可用性のため）。
 
 ---
@@ -54,7 +56,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 - `offline`: none | fixture | local。外部送信禁止。
 - `intranet`: local中心、必要時に社内ゲートウェイ経由。
-- `scheduled-integration`: `KJ_LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
+- `scheduled-integration`: `LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
 
 safeModeは全モードで既定ONとし、外部送信可否と独立して漏えい防止ルールを適用する。
 
@@ -63,7 +65,7 @@ safeModeは全モードで既定ONとし、外部送信可否と独立して漏�
 ## 5. 失敗時ポリシー
 
 - LocalProvider未起動時は FixtureProvider へフォールバック可能とする。
-- `KJ_LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
+- `LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
 - 外部通信不能はテスト警告扱い（ただし通常CIの必須判定から除外）。
 - スキーマ検証失敗は通信可否に関わらず失敗扱い（品質ゲート優先）。
 
@@ -79,5 +81,5 @@ safeModeは全モードで既定ONとし、外部送信可否と独立して漏�
 
 ## 7. 設定キー整合
 
-- 本仕様の設定キーは `KJ_LLM_*` に統一する。
+- 本仕様の設定キーは `LLM_*` に統一する。
 - 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。

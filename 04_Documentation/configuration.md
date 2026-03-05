@@ -1,12 +1,14 @@
 # 設定（OSS / イントラ・自前ホスト向け）
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 このドキュメントは、最小運用に必要な設定のみを記載します。
 
 ## 1. 基本方針（デフォルトは外部送信なし）
 
-- `KJ_LLM_PROVIDER=none` が既定です。
+- `LLM_PROVIDER=none` が既定です。
 - 既定のままでは外部LLMへのデータ送信は行いません。
-- ローカル/社内LLMを使う場合のみ `KJ_LLM_PROVIDER=local` を明示設定します。
+- ローカル/社内LLMを使う場合のみ `LLM_PROVIDER=local` を明示設定します。
 
 ## 2. 主要環境変数
 
@@ -17,7 +19,7 @@
 - SQLite 例: `sqlite:///./kj_atlas.db`
 - PostgreSQL 例: `postgresql+asyncpg://<user>:<password>@<host>:5432/<db>`
 
-### `KJ_LLM_PROVIDER`
+### `LLM_PROVIDER`
 
 LLM連携方式を指定します。
 
@@ -54,14 +56,14 @@ LLM連携方式を指定します。
 
 ## 3. `local` 設定（ローカル/社内LLM）
 
-`KJ_LLM_PROVIDER=local` のときは以下を設定します。
+`LLM_PROVIDER=local` のときは以下を設定します。
 
-- `KJ_LLM_LOCAL_ENDPOINT`（必須）
+- `LOCAL_LLM_BASE_URL`（必須）
   - 例: `http://localhost:8001`
-- `KJ_LLM_LOCAL_MODEL`（任意）
+- `LOCAL_LLM_MODEL`（任意）
   - 例: `local-model-name`
 
-バックエンドは `KJ_LLM_LOCAL_ENDPOINT + /generate` へ HTTP POST します。
+バックエンドは `LOCAL_LLM_BASE_URL + /generate` へ HTTP POST します。
 
 ## 4. Docker Composeでの設定例
 
@@ -72,7 +74,7 @@ LLM連携方式を指定します。
 ```bash
 cd /path/to/kj-atlas/03_Implement/deploy
 export DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
-export KJ_LLM_PROVIDER='none'
+export LLM_PROVIDER='none'
 docker compose up -d
 ```
 
@@ -80,9 +82,9 @@ docker compose up -d
 
 ```bash
 cd /path/to/kj-atlas/03_Implement/deploy
-export KJ_LLM_PROVIDER='local'
-export KJ_LLM_LOCAL_ENDPOINT='http://localhost:8001'
-export KJ_LLM_LOCAL_MODEL='local-model-name'
+export LLM_PROVIDER='local'
+export LOCAL_LLM_BASE_URL='http://localhost:8001'
+export LOCAL_LLM_MODEL='local-model-name'
 docker compose up -d
 ```
 

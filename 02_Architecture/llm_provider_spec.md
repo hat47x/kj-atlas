@@ -1,5 +1,7 @@
 # English Summary
-This document is the single source of truth for provider abstraction in kj-atlas. It standardizes provider enum, `KJ_LLM_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
+This document is the single source of truth for provider abstraction in kj-atlas. It standardizes provider enum, `LLM_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
 
 # llm_provider_spec — LLMプロバイダ抽象仕様（正本）
 
@@ -36,24 +38,24 @@ This document is the single source of truth for provider abstraction in kj-atlas
 
 ---
 
-## 3. 設定キー（`KJ_LLM_*` に完全統一）
+## 3. 設定キー（`LLM_*` に完全統一）
 
 互換aliasは持たない。旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は非対応とする。
 
 ```text
-KJ_LLM_PROVIDER=none|fixture|local|external
-KJ_LLM_ESCALATION_ENABLED=false
-KJ_LLM_EXTERNAL_ENABLED=false
-KJ_LLM_TRANSPORT=in_process|ipc|http
-KJ_LLM_LOCAL_ENDPOINT=<url-or-socket>
-KJ_LLM_LOCAL_MODEL=<model_id>
-KJ_LLM_EXTERNAL_ENDPOINT=<allowlisted_endpoint>
-KJ_LLM_EXTERNAL_MODEL=<model_id>
-KJ_LLM_FIXTURE_DATASET=<fixture_dataset_path>
+LLM_PROVIDER=none|fixture|local|external
+LLM_ESCALATION_ENABLED=false
+LLM_EXTERNAL_ENABLED=false
+LLM_TRANSPORT=in_process|ipc|http
+LOCAL_LLM_BASE_URL=<url-or-socket>
+LOCAL_LLM_MODEL=<model_id>
+LLM_EXTERNAL_ENDPOINT=<allowlisted_endpoint>
+LLM_EXTERNAL_MODEL=<model_id>
+LLM_FIXTURE_DATASET=<fixture_dataset_path>
 ```
 
-- `KJ_LLM_PROVIDER=none` を既定値とする。
-- `KJ_LLM_PROVIDER=external` は `KJ_LLM_ESCALATION_ENABLED=true` かつ `KJ_LLM_EXTERNAL_ENABLED=true` を必須とする。
+- `LLM_PROVIDER=none` を既定値とする。
+- `LLM_PROVIDER=external` は `LLM_ESCALATION_ENABLED=true` かつ `LLM_EXTERNAL_ENABLED=true` を必須とする。
 
 ---
 
