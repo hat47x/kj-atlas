@@ -182,7 +182,8 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
   - 未登録ユーザは作成せず、アクセス拒否または read-only 制約を優先する。
   - SafeMode既定ON・read-only優先を崩さない。
 - **例外運用**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`
-  - 障害時や移行時など、期限付きで許可する例外モードに限定する。
+  - 原則は障害時や移行時など、期限付きで許可する例外モードとする。
+  - ただしデータ機密性/公開要件に応じて、`true` 継続運用プロファイルを選択可能（補完統制と定期審査のガイドラインを併記）。
   - 例外運用時でも share/export の抑止を含む SafeMode 制約を緩和しない。
 
 責務境界は次のとおり固定する。
@@ -399,6 +400,8 @@ interface AccessControlAdapter {
 
 
 ## 4.5 strict mode例外緩和の責務境界（AUTH-OPS-03）
+
+> 詳細な承認フロー仕様（状態遷移・Q1〜Q10の選択肢・停止/復旧条件）は `02_Architecture/strict_mode_exception_approval_flow.md` を正本とする。
 
 ### 目的
 

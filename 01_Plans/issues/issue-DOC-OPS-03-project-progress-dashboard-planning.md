@@ -1,0 +1,88 @@
+# Issue Draft: DOC-OPS-03 意思決定支援の進捗ダッシュボード作成計画
+
+- Type: Process
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P1
+- Owner: Platform Architecture Owner + PM/Triage
+- Scope: `01_Plans/`
+- Related Backlog: N/A
+- Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0007`, `01_Plans/issues/README.md`
+- Expected verification level: `docs-check`
+
+## 1) 課題 / Problem statement
+
+- 現状は複数文書を横断しないと「今どこまで進んだか」「どの判断が必要か」を直感的に把握しづらい。
+- 人間の意思決定を支援する「単一ダッシュボード」需要が明確化した。
+- 人間の意思決定を支援するため、`01_Plans/` 配下にダッシュボード本体を作成して運用を開始する。
+
+## 2) 背景 / Context
+
+- 直近の意思決定（ENV-ARCH-01 / AUTH-OPS-03）で、進捗と判断待ちの可視化ニーズが増大。
+- `DOC-OPS-02` は文書横断改善計画だが、体感的な進捗把握に特化した単一ファイル要件は未実装。
+- `01_Plans/` 配下にダッシュボードを1ファイルで管理し、今後の意思決定と進捗確認の入口とする。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: 意思決定の速度と再現性を向上する。
+- 安全（THREAT_MODEL / SafeMode）: 直接的な仕様変更は伴わないが、判断遅延による運用ミスを予防する。
+- 企業・行政要件（enterprise_architecture）: 承認主体・判断待ち項目の可視化は監査説明性を補助する。
+- 後方互換（schemas）: スキーマ影響なし（docs-only）。
+
+## 4) 提案する解決策 / Proposed solution
+
+- 本Issueで実施すること:
+  - `01_Plans/` 配下にダッシュボード本体ファイルを1つ作成する。
+  - 最小要件（進捗・判断待ち・決定ログ・次の1手）を実装する。
+- 本Issueで実施しないこと（非目標）:
+  - backend/frontend 実装コードの変更。
+  - ADRやスキーマの仕様変更。
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] `01_Plans/` 配下にダッシュボード本体ファイルが1つ作成される。
+- [ ] ダッシュボードに「進捗サマリ」「Active issue集約」「人間判断待ち」「決定ログ」「次の1手」が含まれる。
+- [ ] 期待検証レベルを `docs-check` として満たす。
+- [ ] 参照導線（README or issues index）からダッシュボードへ辿れる。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1: ダッシュボード本体ファイルを `01_Plans/` に1つ作成。
+- [ ] T2: 最小要件5項目を反映。
+- [ ] T3: Active issue / decision pack /関連ADRへのリンクを配置。
+- [ ] T4: docs-check 検証を実行し結果を記録。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `rg -n "DOC-OPS-03|ダッシュボード|進捗サマリ|人間判断待ち" 01_Plans`
+- 期待結果:
+  - issue memo 検証が成功し、ダッシュボード要件キーワードが検索可能。
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: issue memoだけを更新し、ダッシュボード作成は延期する。
+  - 却下理由: 意思決定支援の即効性が得られない。
+- 代替案B: 既存READMEに進捗表を追記して代替する。
+  - 却下理由: 「01_Plansに1つだけのダッシュボード」要件と分離管理方針に合わない。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: ダッシュボード項目が不足し意思決定支援にならない。
+- 影響範囲: 運用判断の遅延、参照文書の往復コスト。
+- ロールバック手順: 最小要件5項目に絞って再構成し、リンク導線を優先して復旧する。
+
+## 10) Additional context
+
+### ダッシュボードの最小要件
+
+- プロジェクト状況サマリ（フェーズ別進捗）
+- Active issue のステータス集約（Draft/Open/In Progress）
+- 人間判断待ち項目（意思決定キュー）
+- 直近の決定ログ（何が決まり、何が未決か）
+- 次の1手（再開コマンド/編集対象）
+
+
