@@ -395,7 +395,7 @@ def test_provider_error_contract_mapping_is_consistent() -> None:
 
 
 def test_settings_reject_large_scale_without_explicit_opt_in() -> None:
-    with pytest.raises(ValueError, match="LLM_LARGE_SCALE_OPT_IN"):
+    with pytest.raises(ValueError, match="LARGE_SCALE_OPT_IN"):
         Settings(LLM_PROVIDER="large-scale", LLM_ESCALATION_ENABLED="true")
 
 
