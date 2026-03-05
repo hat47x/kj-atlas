@@ -144,6 +144,83 @@ Playwright 実行不能環境（例: browser binary 未導入）では、以下�
 
 - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
 
+#### Level 2 最小回帰テストパック設計（Mock SP/IdP）
+
+IdP連携境界変更PRに対して、QA Lead が即時適用できる最小パックを以下で固定する。
+本節は **設計（実行計画）** であり、実装追加時は本節を正本として追随する。
+
+##### A. Level 2 実施トリガー（明文化）
+
+次のいずれか1つでも該当したら Level 2 を実施する（`OR` 判定）。
+
+1. `AuthContextAdapter` 変更
+   - 例: 入力モード、subject解決順、provider判定、trusted proxy判定の変更。
+2. provider preset / provider profile fixture 変更
+   - 例: preset定義の追加・削除・既存キー意味変更、fixture JSON更新。
+3. logout / step-up / `amr`/`acr`/`aal` 関連変更
+   - 例: RP-Initiated logout経路、step-up必須条件、`amr` 正規化。
+4. 認証境界のmapping変更
+   - 例: header名、JWT claim名、groups形式（array/CSV）、`ALLOW_JIT_PROVISIONING` 契約。
+5. 依存ライブラリ更新
+   - 対象: `pysaml2` / `Authlib` / `xmlsec1`（SAML/OIDC境界に影響する更新）。
+
+判定に迷う場合は安全側として Level 2 を実施する。
+
+##### B. provider profile fixture 最小セット
+
+最低セットは「主要差分1系統」を担保するため、次の2件を **必須最小** とする。
+
+- `tests/federation/profiles/google_oidc.json`
+  - ベースライン（OIDC標準寄り、既存固定fixture）。
+- `tests/federation/profiles/azure_oidc.json`
+  - 主要差分系統（claim/subject/groups差異）を1系統追加で担保。
+
+任意拡張（SAML-like差分の追加確認）:
+
+- `tests/federation/profiles/keycloak_saml_like.json`
+
+##### C. 成否判定（Level 1整合）
+
+Level 2 の pass 条件は、Level 1受入基準と矛盾しないよう次で統一する。
+
+1. Level 1 の必須条件が先に pass していること。
+2. Level 2 では fixture ごとに以下を満たすこと。
+   - docs write/read roundtrip 成功（`put_status=200` かつ `get_status=200`）。
+   - provider識別値が応答に存在する（空でない）。
+3. strict provisioning 契約を破らないこと。
+   - `ALLOW_JIT_PROVISIONING=false` 時の未登録subject拒否（`403`）意味論が維持されること。
+4. 失敗時は `.artifacts/auth-level2/*.log` を添付し、境界破壊か環境要因かを切り分けること。
+
+##### D. 実行コスト最適化（常時実行 / 条件付き実行の分離）
+
+| 区分 | 目的 | 実行コマンド | 実行タイミング |
+|---|---|---|---|
+| 常時実行（Level 1） | 契約の高速回帰 | `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1` | 全PR |
+| 常時実行（Level 1） | UIのAuth導線smoke | `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line` | 全PR（不可時は代替記録必須） |
+| 条件付き（Level 2最小） | Mock SP/IdP境界回帰 | `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh` | 上記トリガー該当PR |
+| 条件付き（Level 2最小） | fixture契約の高速確認 | `cd 03_Implement/backend && pytest tests/test_auth_provider_profile_fixture.py -m auth_level2` | 上記トリガー該当PR |
+
+##### E. 不足fixture / 環境制約への対応（暫定代替 / 正式対応）
+
+1. fixture不足（新規IdP差分が未追加）
+   - 暫定代替案:
+     - 既存2件（google + azure）で最も近い差分を選択し、PRに「未再現差分」を明記する。
+     - 必要に応じて `tests/fixtures/provider_profile_google_oidc.json` を境界確認の補助に使う。
+   - 正式対応案:
+     - `tests/federation/profiles/<provider>.json` を追加し、`run_auth_level2.sh` 対象へ編入する。
+
+2. 環境制約（`xmlsec1` 未導入 / Playwright browser 未導入）
+   - 暫定代替案:
+     - backend側 contract test（`auth_level1`, `auth_level2` マーカー）を先行実施し、PRで不足理由と再実行条件を宣言。
+   - 正式対応案:
+     - CIイメージへ `xmlsec1` を同梱、Frontend CIに `npx playwright install --with-deps chromium` を固定し再現性を恒久化。
+
+3. mock起動不可（ポート競合/ローカル制約）
+   - 暫定代替案:
+     - `AUTH_LEVEL2_SP_BASE_URL` を変更して空きポートで再実行し、不可なら fixture単体契約テストまで実施。
+   - 正式対応案:
+     - CIのLevel 2専用ジョブでポート予約・artifact保存を標準化し、ローカル差異依存を縮小する。
+
 #### 実施記録テンプレ（PR転記）
 
 ```md
