@@ -1,5 +1,7 @@
 # インストール（Docker Compose / イントラ向け最小手順）
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 この手順は、`kj-atlas` をイントラネット・自前ホスト環境で最小構成起動するためのものです。
 
 ## 前提条件
@@ -41,7 +43,7 @@ docker compose down
 ## 補足
 
 - 既定で `web` / `api` / `db`（PostgreSQL）の3サービスが起動します。
-- 既定値は `KJ_LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
+- 既定値は `LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
 - 画面から JSON Export / Import が利用できます。
 
 

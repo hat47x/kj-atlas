@@ -1,5 +1,7 @@
 # 全体アーキテクチャ
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 このドキュメントは、kj-atlas の**全体アーキテクチャ（構成要素・責務境界・デプロイ形態）**を定義します。
 
 - 上位層（README / 00_Prompt / 01_Plans）を前提とします
@@ -170,14 +172,14 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 
 選択は環境変数で行います。
 
-- `KJ_LLM_PROVIDER=none|fixture|local|external`
-- `KJ_LLM_LOCAL_ENDPOINT=...`（local時）
-- `KJ_LLM_LOCAL_MODEL=...`（local時）
-- `KJ_LLM_ESCALATION_ENABLED=false`（既定）
+- `LLM_PROVIDER=none|fixture|local|external`
+- `LOCAL_LLM_BASE_URL=...`（local時）
+- `LOCAL_LLM_MODEL=...`（local時）
+- `LLM_ESCALATION_ENABLED=false`（既定）
 
 MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
-Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `KJ_LLM_TRANSPORT`（in_process/ipc/http）で分離する。
+Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `LLM_TRANSPORT`（in_process/ipc/http）で分離する。
 
 ---
 

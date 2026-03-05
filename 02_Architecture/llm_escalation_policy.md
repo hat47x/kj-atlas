@@ -1,4 +1,6 @@
 # English Summary
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This document specifies a deterministic Local-first escalation policy: system default is `none` (LLM disabled), `local` is opt-in standard path, and `external` escalation is opt-in + disabled by default with outbound allowlist controls.
 
 # llm_escalation_policy — Local-first + Escalation方針（02_Architecture）
@@ -18,9 +20,9 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ## 2. デフォルト設定
 
-- `KJ_LLM_ESCALATION_ENABLED=false`（既定: 無効）
-- `KJ_LLM_PROVIDER=none`（既定: 無効）
-- `KJ_LLM_PROVIDER=none|fixture|local|external` の列挙を前提とする（fixtureは回帰専用でエスカレーション対象外）。
+- `LLM_ESCALATION_ENABLED=false`（既定: 無効）
+- `LLM_PROVIDER=none`（既定: 無効）
+- `LLM_PROVIDER=none|fixture|local|external` の列挙を前提とする（fixtureは回帰専用でエスカレーション対象外）。
 - 明示的に `true` へ変更しない限り、外部送信は行わない。
 - 設定変更には運用責任者の承認と監査ログ記録を要する。
 
@@ -72,5 +74,5 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ## 7. 設定キー整合
 
-- 本仕様の設定キーは `KJ_LLM_*` に統一する。
+- 本仕様の設定キーは `LLM_*` に統一する。
 - 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。

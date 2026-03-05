@@ -1,5 +1,7 @@
 # デプロイ方針と Docker Compose
 
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 本ドキュメントは、kj-atlas を **多様な環境（ローカル／クラウド／イントラ）** で動かすための
 デプロイ方針と、最小の Docker Compose 構成案を定義します。
 
@@ -34,7 +36,7 @@ MVPでは、以下の3要素で十分です。
   - dev: `sqlite+aiosqlite:///./data/kj_atlas.db`
   - prod: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`
 
-- `KJ_LLM_PROVIDER`：`none | fixture | local | external`
+- `LLM_PROVIDER`：`none | fixture | local | external`
 
 ### 3.2 DB
 
@@ -67,7 +69,7 @@ services:
       context: ./03_Implement/backend
     environment:
       - DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
-      - KJ_LLM_PROVIDER=none
+      - LLM_PROVIDER=none
     ports:
       - "8000:8000"
     depends_on:
@@ -93,7 +95,7 @@ volumes:
 ## 5. イントラ運用（想定）
 
 - `web` と `api` は社内ネットワーク内に閉じる
-- `KJ_LLM_PROVIDER=local` の場合、`KJ_LLM_LOCAL_ENDPOINT` を社内URLに向ける
+- `LLM_PROVIDER=local` の場合、`LOCAL_LLM_BASE_URL` を社内URLに向ける
 - 外部送信（external provider）は無効化をデフォルトにする
 
 ---

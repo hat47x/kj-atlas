@@ -1,4 +1,6 @@
 # English Summary
+
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This document finalizes ADR-0009 Phase B by defining deterministic KJ input normalization, non-LLM graph preprocessing, the strict LLM input IR schema, truncation behavior, fixture generation verification steps, and safety/privacy consistency checks.
 
 # llm_input_ir_spec — LLM投入IR仕様（ADR-0009 Phase B 完了）
@@ -387,7 +389,7 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 検証成功条件:
 
 - 同一 `document.json` から常に同一 `llm_ir.json` が生成される。
-- provider未起動（`KJ_LLM_PROVIDER=fixture`）でも回帰が成立する。
+- provider未起動（`LLM_PROVIDER=fixture`）でも回帰が成立する。
 
 ---
 

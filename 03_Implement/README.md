@@ -1,6 +1,8 @@
 # 03_Implement run guide
 
 
+> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
+
 ## 主要コマンド（本リポジトリ準拠）
 
 | アクション | コマンド | 用途 |
