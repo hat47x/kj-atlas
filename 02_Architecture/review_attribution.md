@@ -176,6 +176,15 @@ kj-atlas は OSS として、多様な環境で利用される：
   - `reviewerRef: string | null`
   - `ownerRef: string | null`
   - いずれも「不透明ID（opaque）」として扱い、UI/監査は値の構造へ依存しない。
+- fallback順序（固定）:
+  1. adapter profile の主解決（`user_id` または `sso_subject`）
+  2. `actorRef`（未認証ローカル運用）
+  3. `null`（reviewer未設定）
+
+責務境界:
+- resolver adapter は `reviewerRef` / `ownerRef` の生成のみを担当する。
+- reviewEvents/export/import の schema・永続化ルールは既存契約（opaque string, optional）を維持し、adapter はこれを変更しない。
+- 認可判定（roles/groups/policyRef）や表示名復元は resolver の責務外とする。
 
 ### 9.2 規定プロファイル
 
@@ -191,6 +200,12 @@ kj-atlas は OSS として、多様な環境で利用される：
 - 本番IdP製品（Keycloak/Authentik/Cloud IAP等）の固定。
 - アプリ内RBACエンジン本体の実装完了。
 - reviewerRef から表示名を永続復元する機能の追加（表示名は引き続き揮発補完）。
+
+### 9.4 Privacy境界（PII最小化）
+
+- `sso_subject` profile は `provider` / `externalUid` を **派生ID構築にのみ使用**し、review attribution payload へ生値保存しない。
+- `reviewerRef` は UI上で source 表示（local/SSO）に利用可能だが、source判定不能な unknown 値を許容する。
+- export redaction（`strip-identities` / `strip-all`）契約は M5 でも変更しない。
 
 ## Notes
 - 本機能は「責任所在を明確化し、レビュー運用を回す」ための補助である。

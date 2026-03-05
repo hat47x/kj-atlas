@@ -142,6 +142,37 @@ def test_sso_subject_reviewer_ref_profile_on_provision(tmp_path) -> None:
 
 
 @pytest.mark.auth_level1
+
+
+@pytest.mark.auth_level1
+def test_sso_subject_header_preferred_over_forwarded_user(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    original_adapter = settings.reviewer_ref_resolver_adapter
+    settings.allow_jit_provisioning = True
+    settings.reviewer_ref_resolver_adapter = "sso_subject"
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            provision = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "subject-header", "displayName": "Alice"},
+            )
+            assert provision.status_code == 201
+
+            response = client.put(
+                "/docs/doc-auth-subject-priority",
+                json=_sample_payload("doc-auth-subject-priority"),
+                headers={
+                    "x-auth-provider": "oidc",
+                    "x-auth-subject": "subject-header",
+                    "x-forwarded-user": "legacy-user-header",
+                },
+            )
+            assert response.status_code == 200
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+        settings.reviewer_ref_resolver_adapter = original_adapter
+
 def test_unauthenticated_path_keeps_actor_ref_fallback(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     original_adapter = settings.reviewer_ref_resolver_adapter

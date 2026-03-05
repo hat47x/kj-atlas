@@ -61,7 +61,7 @@ import { loadRecentDocumentIds, pushRecentDocumentId } from "./storage/recent";
 import { loadViewModeForDocument, saveViewModeForDocument } from "./storage/view_mode";
 import { loadViewLocaleForDocumentView, saveViewLocaleForDocumentView } from "./storage/view_locale";
 import { loadViewVisibilityForDocument, saveViewVisibilityForDocument } from "./storage/view_visibility";
-import { buildLocalReviewerRef, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
+import { buildLocalReviewerRef, inferReviewerRefSource, initializeCurrentReviewerRef, saveCurrentReviewerRef } from "./storage/current_reviewer";
 import { createViewLocalePersistenceScope } from "./storage/view_locale_scope";
 import { buildAbstractMapExport, exportAbstractMapHTML, exportAbstractMapMarkdown } from "./export/abstract_map_export";
 import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExportScale } from "./export/canvas_png";
@@ -1048,6 +1048,7 @@ export default function App() {
   }, [importedPackSnapshotUrl]);
 
   const document = history?.present ?? null;
+  const currentReviewerRefSource = inferReviewerRefSource(currentReviewerRef);
   const outlineRecommendations = useMemo(() => {
     if (!document || !outlineQualityReport) {
       return [];
@@ -7719,6 +7720,7 @@ ${parsedDocument.error}`);
       includeUnreviewedDrafts={includeUnreviewedDraftsInExport}
       onIncludeUnreviewedDraftsChange={setIncludeUnreviewedDraftsInExport}
       currentReviewerRef={currentReviewerRef}
+      currentReviewerRefSource={currentReviewerRefSource}
       onCurrentReviewerRefChange={(value) => {
         const next = saveCurrentReviewerRef(value);
         setCurrentReviewerRef(next);

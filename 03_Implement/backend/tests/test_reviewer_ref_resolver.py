@@ -52,3 +52,19 @@ def test_sso_subject_adapter_fallback_without_auth_subject() -> None:
 
     assert resolved.reviewer_ref == "actor:legacy"
     assert resolved.owner_ref == "actor:legacy"
+
+
+def test_unknown_adapter_name_falls_back_to_user_id_profile() -> None:
+    adapter = build_reviewer_ref_resolver_adapter(adapter_name="not-configured")
+
+    resolved = adapter.resolve(
+        ReviewerRefResolutionInput(
+            user_id="u-9",
+            provider="oidc",
+            external_uid="sub-999",
+            actor_ref="actor:legacy",
+        )
+    )
+
+    assert resolved.reviewer_ref == "user:u-9"
+    assert resolved.owner_ref == "user:u-9"

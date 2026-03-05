@@ -245,6 +245,8 @@ fail-safe マトリクス:
   - profile:
     - `user_id`: `user:<users.id>`（未認証は `actorRef` → `null`）
     - `sso_subject`: `user:sso:<provider>:<externalUid>`（不足時は `user_id` フォールバック）
+  - 責務境界: resolverは reviewerRef/ownerRef生成のみを行い、reviewEvents/export/import schemaを変更しない（opaque string互換維持）。
+  - adapter未設定/不正値時は `user_id` フォールバック（既存 local運用維持）。
 - 属性境界:
   - persist: `provider`, `external_uid`, `display_name`, `email`
   - transient only: `roles`, `groups`, `policyRef`, `amr`, `acr`, `aal`, `auth_time`, `trace_id`

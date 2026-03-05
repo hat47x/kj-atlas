@@ -33,6 +33,7 @@ type SharePanelProps = {
   includeUnreviewedDrafts: boolean;
   onIncludeUnreviewedDraftsChange: (value: boolean) => void;
   currentReviewerRef: string;
+  currentReviewerRefSource: "local" | "sso" | "unknown";
   onCurrentReviewerRefChange: (value: string) => void;
   onResetCurrentReviewerRef: () => void;
   onExportViewViewport: () => void;
@@ -141,6 +142,7 @@ export function SharePanel({
   includeUnreviewedDrafts,
   onIncludeUnreviewedDraftsChange,
   currentReviewerRef,
+  currentReviewerRefSource,
   onCurrentReviewerRefChange,
   onResetCurrentReviewerRef,
   onExportViewViewport,
@@ -340,17 +342,21 @@ export function SharePanel({
             </div>
             <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8 }}>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                <span style={{ fontWeight: 600, color: "#0f172a" }}>Current reviewer (local)</span>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                  Current reviewer ({currentReviewerRefSource === "sso" ? "SSO" : currentReviewerRefSource})
+                </span>
                 <input
                   type="text"
                   value={currentReviewerRef}
                   onChange={(event) => {
                     onCurrentReviewerRefChange(event.target.value);
                   }}
-                  placeholder="user:local:..."
+                  placeholder={currentReviewerRefSource === "sso" ? "user:sso:<provider>:<subject>" : "user:local:..."}
+                  readOnly={currentReviewerRefSource === "sso"}
                 />
               </label>
-              <button type="button" onClick={onResetCurrentReviewerRef}>Generate reviewerRef</button>
+              <button type="button" onClick={onResetCurrentReviewerRef} disabled={currentReviewerRefSource === "sso"}>Generate reviewerRef</button>
+              <div style={{ fontSize: 11, color: "#64748b" }}>SSO source is read-only and keeps IdP provided reviewerRef.</div>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                 <span style={{ fontWeight: 600, color: "#0f172a" }}>View visibility</span>
                 <select
