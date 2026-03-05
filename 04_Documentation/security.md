@@ -109,3 +109,27 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
   - 既存identityに矛盾する `displayName/email` は `409 identity_already_provisioned_conflict`
 
 運用上、strict緩和（`ALLOW_JIT_PROVISIONING=true` への切替）は承認フローを経て記録してください。
+
+### 8.1 strict mode例外時の安全性チェック（Runbook連携）
+
+- 参照正本: `04_Documentation/operations.md` の「3.3 strict mode例外 Runbookテンプレート」「3.4 strict mode例外 事前/事後チェックリスト」。
+- 以下の契約を**同時に**満たせない場合、例外適用を停止する。
+
+#### 事前チェック（必須）
+
+- [ ] 2者承認（Security Officer + System Owner）が確認できる。
+- [ ] 必須記録5項目（時刻/理由/承認者/対象環境/復旧条件）が埋まっている。
+- [ ] SafeMode既定ONを弱める設定変更（share/export制約緩和）が含まれていない。
+- [ ] 監査最小化契約（最小項目のみ、PII非保存）を満たす記録計画になっている。
+
+#### 事後チェック（必須）
+
+- [ ] `ALLOW_JIT_PROVISIONING=false` へ復帰済み。
+- [ ] 復旧時刻と復旧条件の充足を記録済み。
+- [ ] 記録に `roles/groups/policyRef` 生値・subject生値・本文等のPIIが含まれていない。
+- [ ] 未確定項目（承認順序/TTL/代理承認/エスカレーション等）が残る場合、「要確認」で停止扱いのまま管理している。
+
+#### 停止条件（推測禁止）
+
+- 承認順序・承認有効期限・代理承認・違反時SLAなどの未確定フローを決めないと運用できない場合、推測で確定せず停止する。
+- 停止時は質問リストを更新し、回答が得られるまで strict 例外の実行を禁止する。

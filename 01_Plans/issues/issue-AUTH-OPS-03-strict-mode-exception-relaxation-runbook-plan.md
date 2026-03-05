@@ -45,26 +45,26 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 例外緩和の発動条件と通常運用条件が、互いに排他的に定義されている。
-- [ ] 2者承認（Security Officer + System Owner）の必須承認項目が固定されている。
-- [ ] Platform Operator の実行記録に `時刻/理由/承認者/対象環境/復旧条件` が必須である。
-- [ ] Runbookが SafeMode既定ON・PII最小化・監査最小化契約に反しないことを、チェックリストで検証できる。
-- [ ] 不明な承認フローは推測せず、確認質問が明示され、回答前は「停止」状態である。
+- [x] 例外緩和の発動条件と通常運用条件が、互いに排他的に定義されている。
+- [x] 2者承認（Security Officer + System Owner）の必須承認項目が固定されている。
+- [x] Platform Operator の実行記録に `時刻/理由/承認者/対象環境/復旧条件` が必須である。
+- [x] Runbookが SafeMode既定ON・PII最小化・監査最小化契約に反しないことを、チェックリストで検証できる。
+- [x] 不明な承認フローは推測せず、確認質問が明示され、回答前は「停止」状態である。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: strict mode例外の「通常/例外」判定基準と境界条件を定義する。
-- [ ] T2: 承認テンプレート（2者承認）と実行記録テンプレート（Operator記録）を作成する。
-- [ ] T3: PII最小化/監査最小化/SafeMode整合の事前・事後チェック項目を作成する。
-- [ ] T4: 不明承認フローの確認質問リストを定義し、未解決時の停止ルールを明文化する。
-- [ ] T5: `operations.md` と `security.md` の参照導線を同期する。
+- [x] T1: strict mode例外の「通常/例外」判定基準と境界条件を定義する。
+- [x] T2: 承認テンプレート（2者承認）と実行記録テンプレート（Operator記録）を作成する。
+- [x] T3: PII最小化/監査最小化/SafeMode整合の事前・事後チェック項目を作成する。
+- [x] T4: 不明承認フローの確認質問リストを定義し、未解決時の停止ルールを明文化する。
+- [x] T5: `operations.md` と `security.md` の参照導線を同期する。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "strict mode の例外承認責任|最小監査記録|SafeMode/read-only 優先" 04_Documentation/operations.md 02_Architecture/enterprise_architecture.md`
+  - `rg -n "strict mode|例外|最小監査|SafeMode/read-only|PII" 04_Documentation/operations.md 04_Documentation/security.md 02_Architecture/enterprise_architecture.md`
 - 期待結果:
   - 参照契約（strict mode責任、監査最小化、SafeMode優先）と実行計画の整合が確認できる。
 - 未実施時の理由・代替検証:
@@ -102,3 +102,56 @@
 8. 承認却下時の再申請ルール（再提出要件/クールダウン）はあるか？
 9. 例外終了後の事後レビュー（post-incident review）期限は固定か？
 10. 違反時（未承認実行）のエスカレーション先とSLAは何か？
+
+## 12) Phase 1 前提同期ログ（Q1〜Q10 確定/未確定）
+
+### 12.1 文書横断Gap（現行の矛盾/不足）
+
+- `operations.md` / `security.md` / `enterprise_architecture.md` は strict mode 例外時の2者承認責務を要求しているが、承認順序・TTL・代理承認などの運用境界は未定義。
+- `operations.md` は変更台帳への記録責務を定義しているが、保存先システムの固定（チケット/監査基盤/台帳種別）は未定義。
+- `enterprise_architecture.md` は PII最小化・監査最小化・SafeMode/read-only 優先を固定しているが、strict mode 例外運用の停止条件/復旧条件を分離記述していない。
+
+### 12.2 Q1〜Q10 判定表（推測補完なし）
+
+| Q | 内容 | 判定 | 根拠 | 停止要否 |
+|---|---|---|---|---|
+| Q1 | 2者承認の順序 | 未確定 | 既存文書は「2者承認必須」のみ定義し順序規約なし | 停止 |
+| Q2 | 承認有効期限 | 未確定 | 承認TTLの規定なし | 停止 |
+| Q3 | 対象環境粒度 | 未確定 | tenant/cluster/region 粒度の定義なし | 停止 |
+| Q4 | 例外最大継続時間/自動復旧 | 未確定 | 継続時間上限・自動復旧の規定なし | 停止 |
+| Q5 | 復旧条件の判定者 | 未確定 | 判定主体の固定なし | 停止 |
+| Q6 | 緊急時の代理承認 | 未確定 | 代理承認ポリシー記述なし | 停止 |
+| Q7 | 承認・実行記録保存先 | 一部確定（保存義務のみ） | 変更台帳記録義務はあるが保存先種別は未定義 | 停止 |
+| Q8 | 却下時の再申請ルール | 未確定 | 再申請規約なし | 停止 |
+| Q9 | 事後レビュー期限 | 未確定 | post-incident review 期限規定なし | 停止 |
+| Q10 | 違反時のエスカレーション/SLA | 未確定 | エスカレーション先・SLA未定義 | 停止 |
+
+### 12.3 実装可能範囲（確定情報のみ）
+
+- 実装可能: 排他的条件（通常=`ALLOW_JIT_PROVISIONING=false`、例外=`true`）、2者承認責務、Operator記録の必須5項目、SafeMode既定ON/PII最小化/監査最小化の整合チェック。
+- 実装停止: 承認順序/期限/代理承認/エスカレーション等、Q1〜Q10で未確定なワークフロー固定。
+
+## 13) Phase 2 境界条件（T1/T4）
+
+### 13.1 通常/例外の排他条件
+
+- 通常運用: `ALLOW_JIT_PROVISIONING=false`（strict）。
+- 例外運用: `ALLOW_JIT_PROVISIONING=true` を「期間限定の明示承認」下でのみ許可。
+- 排他原則: 同一対象環境に対して strict と例外を同時成立させない（単一時点でどちらか一方のみ有効）。
+
+### 13.2 停止条件（未確定事項による作業停止）
+
+- Q1〜Q10の未確定項目が1つでも「実施判断に必須」の場合、例外適用作業は停止する。
+- 停止時は `Status` を Draft 維持とし、質問リストに未解決ID（Q番号）を残す。
+- 停止中に推測で承認フローを補完しない。
+
+### 13.3 復旧条件（確定済み範囲）
+
+- 復旧の最小条件: `ALLOW_JIT_PROVISIONING=false` へ戻した事実を記録し、例外記録に復旧時刻と復旧条件充足を追記。
+- 復旧判定者の役割分担は未確定のため、Q5解決まで「要確認」扱いで停止する。
+
+
+## 14) Phase 4 完了判定
+
+- Task/ACは完了。ただし Q1〜Q10 の未確定事項が残るため、`Status: Draft` を維持する。
+- 判定: **未確定質問により停止（推測確定なし）**。

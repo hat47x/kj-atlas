@@ -260,6 +260,54 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - Platform Operator は実施時刻・理由・承認者を変更台帳へ記録し、承認記録がない変更を禁止する。
 - backend 開発者はコードで一時バイパスを実装してはならない。
 
+### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
+
+> 未確定事項（承認順序/TTL/代理承認など）が残る場合は、テンプレートを埋めずに「要確認」として停止する。
+
+#### A. 2者承認テンプレート（Security Officer + System Owner）
+
+```markdown
+- Request ID:
+- Requested at (UTC):
+- Reason (業務/障害文脈):
+- Target environment:
+- Requested change: ALLOW_JIT_PROVISIONING false -> true
+- Planned rollback condition:
+- Planned rollback by (UTC):
+- Security Officer approval: [Approved/Rejected] / Name / Timestamp(UTC)
+- System Owner approval: [Approved/Rejected] / Name / Timestamp(UTC)
+- Open questions (Q1-Q10):
+```
+
+#### B. Platform Operator 実行記録テンプレート
+
+```markdown
+- Executed at (UTC):
+- Reason:
+- Approvers (Security Officer + System Owner):
+- Target environment:
+- Rollback condition:
+- Rollback executed at (UTC):
+- Rollback verification result:
+- Evidence links (ticket/change ledger):
+- PII minimization check result:
+- SafeMode/read-only integrity check result:
+```
+
+### 3.4 strict mode例外 事前/事後チェックリスト
+
+- 事前チェック（実行前）
+  - [ ] 2者承認が揃っている（Security Officer + System Owner）。
+  - [ ] 必須記録5項目（時刻/理由/承認者/対象環境/復旧条件）をテンプレートに記入済み。
+  - [ ] `ALLOW_JIT_PROVISIONING=true` を適用する対象環境を明示済み。
+  - [ ] 未確定事項（Q1〜Q10）で実施判断に必要な項目が残る場合、「停止」と記録した。
+  - [ ] SafeMode既定ONを弱める変更（share/export制約緩和）が含まれていない。
+- 事後チェック（復旧後）
+  - [ ] `ALLOW_JIT_PROVISIONING=false` へ復帰済み。
+  - [ ] 復旧時刻と復旧条件充足を記録済み。
+  - [ ] 監査記録が最小化契約（PII非保存・最小項目）を満たす。
+  - [ ] `04_Documentation/security.md` の「8.1 strict mode例外時の安全性チェック」と整合している。
+
 ### 4. SafeMode/read-only 優先
 
 - 判定順は常に `safeMode` → `readOnly` → adapter判定。
