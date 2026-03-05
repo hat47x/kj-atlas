@@ -4,27 +4,20 @@
 
 - 実装正本: `03_Implement/backend/src/kj_atlas_api/settings.py`
 - 運用正本（Compose）: `03_Implement/deploy/docker-compose.yml`
-- 本文書の目的: 命名規約の統一、既定値の一元管理、他文書の参照先集約
+- 方針正本: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`
+- 本文書の目的: 命名規約の統一、既定値の一元管理、移行期限の単一管理
 
 ## 1. 命名規約（現行）
 
-現行実装で採用している命名規約は次のとおりです。
-
 1. すべて `UPPER_SNAKE_CASE`。
-2. すべてのランタイム環境変数は `KJ_ATLAS_*` を正規キーとして採用する。
-3. 旧キー（プレフィックス無し）は互換期間のみ受理し、**新キー優先**で評価する。
-4. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
+2. **正規キーは `KJ_ATLAS_*` プレフィックスを必須**とする。
+3. 互換期間中のみ旧キー（プレフィックスなし）を受理する。
+4. 互換期間中は **新キー優先**（同時指定時は `KJ_ATLAS_*` を採用）とする。
+5. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
 
 ## 2. 互換期限（Deprecation Window）
 
-- 旧キー互換受理の期限: **2026-12-31 (UTC)**
-- 期限後の挙動:
-  - 旧キーのみ設定され、新キーが未設定の場合は設定エラー（fail-fast）。
-  - 新旧が同時設定されている場合は新キーを採用。
-
-## 3. バックエンド設定キー（`settings.py`）
-
-| 正規キー (`KJ_ATLAS_*`) | 旧キー（互換） | 既定値 | 役割 |
+| 正規キー（新） | 旧キー（互換） | 既定値 | 役割 |
 |---|---|---|---|
 | `KJ_ATLAS_DATABASE_URL` | `DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化DB接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `LLM_PROVIDER` | `none` | LLMプロバイダ種別 |
@@ -63,7 +56,6 @@
 - `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理します。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須です。
 
-
 ## 4. Compose/デプロイ層パラメータ
 
 | キー | 既定値 | 役割 |
@@ -73,6 +65,17 @@
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | DBパスワード |
 | `KJ_ATLAS_WEB_PORT` | `8080` | web公開ポート |
 | `KJ_ATLAS_VITE_API_BASE` | `/api` | frontend APIベースパス |
+
+## 4. ENV-ARCH-01 移行契約（旧→新）
+
+- 正規化開始日: `2026-03-05`
+- 旧キー互換受理の終了期限（deprecation）: `2026-09-30 23:59:59 UTC`
+- 期限内の契約:
+  - 旧キー単独指定: 受理
+  - 新旧同時指定: **新キー優先**
+  - 旧キーの警告出力: 実装側ログポリシーに従う（本レジストリでは値契約のみ管理）
+- 期限到来後の契約:
+  - 旧キー受理を廃止（起動時に失敗させる実装へ移行予定）
 
 ## 5. strict mode 例外運用（AUTH-OPS-03）
 
@@ -85,3 +88,4 @@
 1. 環境変数・パラメータの追加/改名/削除時は、**先に本書を更新**する。
 2. 他文書は値の列挙を最小化し、本書への参照を記載する。
 3. 実装（`settings.py` / `docker-compose.yml`）との差分が出た場合、PRで同時に整合を取る。
+4. 旧キー廃止日時を変更する場合は、`ADR-0021` と本書を同一PRで更新する。

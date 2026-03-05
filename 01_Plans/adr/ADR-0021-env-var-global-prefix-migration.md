@@ -1,6 +1,6 @@
 # ADR-0021: 環境変数のグローバルプレフィックス移行方針
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-05
 - Deciders: Project Maintainers
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/deploy/`, `04_Documentation/`
@@ -21,26 +21,32 @@
 
 1. **現状維持**（プレフィックスなし）
 2. **新規キーのみプレフィックス**（既存キーは据え置き）
-3. **全ランタイムキーをプレフィックスへ段階移行**（推奨）
+3. **全ランタイムキーをプレフィックスへ段階移行**（採用）
 
 ## Decision
 
 **全ランタイム環境変数を `KJ_ATLAS_*` プレフィックスへ段階移行する。**
 
-採用理由:
+### 判定可能な移行契約（ENV-ARCH-01の着手前提）
 
-- 共存環境での衝突回避を設計で保証できる。
-- デプロイ/監査でアプリ識別が明確になる。
-- 段階移行（alias許容期間 + 最終撤去）により運用中断リスクを下げられる。
+1. 正規キーは `KJ_ATLAS_*` とする。
+2. 旧キー（プレフィックスなし）は互換aliasとして受理する。
+3. **新旧同時指定時は新キー優先**とする。
+4. 旧キー互換の終了期限（deprecation）は **`2026-09-30 23:59:59 UTC`** とする。
+5. 移行表（旧→新）と期限管理は `runtime_parameter_registry.md` をSSOTとする。
 
-設計原則:
+### 実装・運用の適用範囲
 
-1. 最終正規キーは `KJ_ATLAS_*` とする。
-2. 移行期間は「旧キー + 新キー」の二重受理を許容し、新キー優先で評価する。
-3. 期限到来後に旧キー受理を廃止する（deprecation期限を明示）。
-4. `runtime_parameter_registry.md` を正本として、移行表（旧→新）と期限を一元管理する。
+- settings: `03_Implement/backend/src/kj_atlas_api/settings.py`
+  - 新キー受理 + 旧キー互換受理 + 新キー優先。
+- deploy: `03_Implement/deploy/docker-compose.yml`
+  - 例示キーを新キーへ統一。
+- docs: `02_Architecture/*`, `04_Documentation/*`, `03_Implement/backend/README.md`
+  - 参照キーを新キーへ統一し、互換期限を記載。
+- tests:
+  - 新キー優先・旧キー互換を単体/結合テストで固定。
 
-非目標:
+### 非目標
 
 - 本ADR単体で即時に全実装を置換しない。
 - プレフィックス以外の設定体系再設計（設定ファイル方式全面変更など）は扱わない。
@@ -60,17 +66,21 @@
 - 実装・ドキュメント・Compose・テストの同時更新が必要。
 - 旧キー依存の外部運用スクリプトに影響が出るため、告知と移行猶予が必須。
 
-移行で必要な対応:
+ENV-ARCH-01着手判定チェックリスト:
 
-1. 実装: `settings.py` で新キー受理 + 旧キー互換受理（期限付き）。
-2. デプロイ: `docker-compose.yml` / サンプル `.env` を新キーへ更新。
-3. 文書: Architecture / Ops / Installation / Security の参照キー更新。
-4. 検証: 単体テストで優先順位（新キー優先）と互換期限を固定。
+- [x] `Context / Decision / Consequences` が判定可能な文で明記されている。
+- [x] 旧→新キー移行表とdeprecation期限の正本が `runtime_parameter_registry.md` に存在する。
+- [x] 下流で必要な契約（settings / compose / docs / tests）がTraceabilityで追跡できる。
 
 ## Traceability
 
 - Related: `02_Architecture/runtime_parameter_registry.md`
-- Related: `02_Architecture/deployment.md`
 - Related: `03_Implement/backend/src/kj_atlas_api/settings.py`
+- Related: `03_Implement/deploy/docker-compose.yml`
+- Related: `03_Implement/backend/tests/test_settings_env_prefix_migration.py`
+- Related: `03_Implement/backend/README.md`
+- Related: `04_Documentation/operations.md`
+- Related: `04_Documentation/security.md`
+- Related: `02_Architecture/enterprise_architecture.md`
 - Related: `THREAT_MODEL.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`

@@ -18,13 +18,13 @@ Phase 1 では `DocumentV1` のスナップショット保存/読込のみを実
 
 ## Environment variables
 
-- `DATABASE_URL`
+- `KJ_ATLAS_DATABASE_URL`（旧: `DATABASE_URL`）
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
-- `LLM_PROVIDER`
+- `KJ_ATLAS_LLM_PROVIDER`（旧: `LLM_PROVIDER`）
   - 既定値: `none`
   - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）
-- `LLM_FALLBACK_TO_NONE`
+- `KJ_ATLAS_LLM_FALLBACK_TO_NONE`（旧: `LLM_FALLBACK_TO_NONE`）
   - 既定値: `true`
   - `true` の場合、`local`/`large-scale` 呼び出し失敗時は `none` 退避として fail-closed（HTTP 501）
 
@@ -36,13 +36,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install fastapi uvicorn sqlalchemy alembic pydantic pydantic-settings psycopg[binary]
 export PYTHONPATH=src
-export DATABASE_URL="sqlite:///./kj_atlas.db"
-export LLM_PROVIDER="none"
+export KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
+export KJ_ATLAS_LLM_PROVIDER="none"
 alembic upgrade head
 uvicorn kj_atlas_api.main:app --reload
 ```
 
-PostgreSQL を使う場合は `DATABASE_URL` を PostgreSQL の URL に変更してください。
+PostgreSQL を使う場合は `KJ_ATLAS_DATABASE_URL`（旧: `DATABASE_URL`） を PostgreSQL の URL に変更してください。
 
 ## Minimal backup / restore
 
@@ -50,7 +50,7 @@ PostgreSQL を使う場合は `DATABASE_URL` を PostgreSQL の URL に変更し
 
 ### SQLite
 
-- DB ファイル場所（既定）: `03_Implement/backend/kj_atlas.db`（`DATABASE_URL=sqlite:///./kj_atlas.db` の場合）
+- DB ファイル場所（既定）: `03_Implement/backend/kj_atlas.db`（`KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db` の場合）
 - バックアップ: API 停止中にファイルをそのままコピー
 
 ```bash
@@ -68,13 +68,13 @@ cp 03_Implement/backend/kj_atlas.db.bak 03_Implement/backend/kj_atlas.db
 - バックアップ（最小例: custom format）
 
 ```bash
-pg_dump -Fc "$DATABASE_URL" -f kj_atlas_pg.dump
+pg_dump -Fc "$KJ_ATLAS_DATABASE_URL" -f kj_atlas_pg.dump
 ```
 
 - リストア（最小例）
 
 ```bash
-pg_restore -d "$DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
+pg_restore -d "$KJ_ATLAS_DATABASE_URL" --clean --if-exists kj_atlas_pg.dump
 ```
 
 
@@ -89,7 +89,7 @@ pytest
 PostgreSQL roundtrip test を実行する場合:
 
 ```bash
-export DATABASE_URL="postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas"
+export KJ_ATLAS_DATABASE_URL="postgresql+psycopg://kj_atlas:kj_atlas@localhost:5432/kj_atlas"
 export RUN_PG_TESTS=1
 alembic upgrade head
 pytest -m postgres
