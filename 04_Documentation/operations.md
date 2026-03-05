@@ -39,8 +39,8 @@ docker compose logs api --tail=100
 
 ## 3. 運用上の注意
 
-- 既定の `LLM_PROVIDER=none` では外部送信は行いません。
-- ローカル/社内LLM利用時は `LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
+- 既定の `KJ_ATLAS_LLM_PROVIDER=none` では外部送信は行いません。
+- ローカル/社内LLM利用時は `KJ_ATLAS_LOCAL_LLM_BASE_URL`（旧: `LOCAL_LLM_BASE_URL`） を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
 
@@ -185,7 +185,7 @@ Composeが利用できない場合、以下で運用確認できます。
 cd /path/to/kj-atlas/03_Implement/backend
 source .venv/bin/activate
 export PYTHONPATH=src
-export DATABASE_URL="sqlite:///./kj_atlas.db"
+export KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
 alembic upgrade head
 uvicorn kj_atlas_api.main:app --host 0.0.0.0 --port 8000
 
@@ -236,7 +236,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - PDP 経路で静的トークンが必要な環境向け。
 - `ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER`（任意）
   - OIDC/SAML の issuer/entity ID を `x-idp-issuer` ヘッダで引き渡す。
-- `REVIEWER_REF_RESOLVER_ADAPTER=user_id|sso_subject`（既定: `user_id`）
+- `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER=user_id|sso_subject`（旧: `REVIEWER_REF_RESOLVER_ADAPTER`）（既定: `user_id`）
   - `user_id`: `reviewerRef/ownerRef = user:<users.id>`（既存互換）。
   - `sso_subject`: `reviewerRef/ownerRef = user:sso:<provider>:<externalUid>`。subject欠損時は `actorRef` フォールバック。
 
@@ -255,11 +255,13 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - `authAgeBucket`（`fresh|stale|unknown`）
 - `roles/groups/policyRef` は外部照会入力であり、監査では `policyRefPresent` など存在フラグのみ扱う。
 
-### 3.2 strict mode の例外承認責任
+### 3.2 strict mode の例外承認責任（発動条件 / 停止条件 / 復旧条件）
 
-- `ALLOW_JIT_PROVISIONING=false` は本番標準（strict）とする。
-- 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
-- Platform Operator は実施時刻・理由・承認者を変更台帳へ記録し、承認記録がない変更を禁止する。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING`）は本番標準（strict）とする。
+- 例外発動条件: 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
+- 停止条件: 承認順序/TTL/代理承認など未確定項目が実施判断に必要な場合は、Platform Operator は「確認待ちで停止」を記録し、適用を禁止する。
+- Platform Operator 記録必須項目: 実施時刻・理由・承認者・対象環境・復旧条件。承認記録がない変更を禁止する。
+- 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、復旧時刻と検証結果を記録する。
 - backend 開発者はコードで一時バイパスを実装してはならない。
 
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
@@ -273,7 +275,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - Requested at (UTC):
 - Reason (業務/障害文脈):
 - Target environment:
-- Requested change: ALLOW_JIT_PROVISIONING false -> true
+- Requested change: KJ_ATLAS_ALLOW_JIT_PROVISIONING false -> true
 - Planned rollback condition:
 - Planned rollback by (UTC):
 - Security Officer approval: [Approved/Rejected] / Name / Timestamp(UTC)
@@ -301,11 +303,11 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - 事前チェック（実行前）
   - [ ] 2者承認が揃っている（Security Officer + System Owner）。
   - [ ] 必須記録5項目（時刻/理由/承認者/対象環境/復旧条件）をテンプレートに記入済み。
-  - [ ] `ALLOW_JIT_PROVISIONING=true` を適用する対象環境を明示済み。
+  - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用する対象環境を明示済み。
   - [ ] 未確定事項（Q1〜Q10）で実施判断に必要な項目が残る場合、「停止」と記録した。
   - [ ] SafeMode既定ONを弱める変更（share/export制約緩和）が含まれていない。
 - 事後チェック（復旧後）
-  - [ ] `ALLOW_JIT_PROVISIONING=false` へ復帰済み。
+  - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰済み。
   - [ ] 復旧時刻と復旧条件充足を記録済み。
   - [ ] 監査記録が最小化契約（PII非保存・最小項目）を満たす。
   - [ ] `04_Documentation/security.md` の「8.1 strict mode例外時の安全性チェック」と整合している。

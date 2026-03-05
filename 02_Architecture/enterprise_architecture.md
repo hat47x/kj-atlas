@@ -176,12 +176,12 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 
 ### strict mode 例外運用の責務境界（AUTH-OPS-03 T1/T4）
 
-`ALLOW_JIT_PROVISIONING` は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
+`KJ_ATLAS_ALLOW_JIT_PROVISIONING`（旧: `ALLOW_JIT_PROVISIONING`）は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
 
-- **本番標準（strict mode）**: `ALLOW_JIT_PROVISIONING=false`
+- **本番標準（strict mode）**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
   - 未登録ユーザは作成せず、アクセス拒否または read-only 制約を優先する。
   - SafeMode既定ON・read-only優先を崩さない。
-- **例外運用**: `ALLOW_JIT_PROVISIONING=true`
+- **例外運用**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`
   - 障害時や移行時など、期限付きで許可する例外モードに限定する。
   - 例外運用時でも share/export の抑止を含む SafeMode 制約を緩和しない。
 
@@ -191,6 +191,9 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 - 例外の発行・失効・記録は外部運用基盤（IdP/運用台帳/監査基盤）責務とする。
 - 監査イベントは最小情報のみを記録し、PII最小化（氏名/メール/roles/groups生値非保存）を維持する。
 - strict mode / 例外 mode いずれでも「SafeMode → read-only → AccessDecision」の優先順位は不変とする。
+- 発動条件: 2者承認（Security Officer + System Owner）と復旧条件が台帳に確定した場合のみ例外を有効化する。
+- 停止条件: 承認順序/TTL/代理承認など実施に必要な未確定事項が1つでも残る場合は「確認待ちで停止」とする。
+- 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰し、復旧時刻・判定根拠を記録する。
 
 #### strict mode 例外運用で未定義のまま保持する事項（要ユーザー確認）
 
@@ -399,13 +402,13 @@ interface AccessControlAdapter {
 
 ### 目的
 
-- `ALLOW_JIT_PROVISIONING=false`（strict）を本番既定とし、例外緩和（`true`）時の責務境界を文書で固定する。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`）（strict）を本番既定とし、例外緩和（`true`）時の責務境界を文書で固定する。
 - SafeMode既定ON / PII最小化 / 監査最小化契約を維持したまま、運用Runbookの停止条件を明示する。
 
 ### 通常/例外の排他条件
 
-- 通常運用: `ALLOW_JIT_PROVISIONING=false`。
-- 例外運用: `ALLOW_JIT_PROVISIONING=true` を明示承認下で一時適用。
+- 通常運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`）。
+- 例外運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（旧: `ALLOW_JIT_PROVISIONING=true`） を明示承認下で一時適用。
 - 排他原則: 同一対象環境で strict/例外を同時に有効化しない（単一時点で一方のみ）。
 
 ### 責務分離（固定）
@@ -424,7 +427,7 @@ interface AccessControlAdapter {
 
 ### 復旧条件（最小）
 
-- 例外終了時は `ALLOW_JIT_PROVISIONING=false` に復帰する。
+- 例外終了時は `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`） に復帰する。
 - 復帰記録にも最小監査契約（PII非保存）を適用し、復旧条件充足を記録する。
 - 復旧判定者の最終確定は未確定事項（Q5）として扱い、確定まで運用停止条件を維持する。
 
