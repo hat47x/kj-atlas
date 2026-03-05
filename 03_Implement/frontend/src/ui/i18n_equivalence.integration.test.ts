@@ -52,6 +52,7 @@ function buildShareProps() {
     includeUnreviewedDrafts: false,
     onIncludeUnreviewedDraftsChange: vi.fn(),
     currentReviewerRef: "user:local:test",
+    currentReviewerRefSource: "local" as const,
     onCurrentReviewerRefChange: vi.fn(),
     onResetCurrentReviewerRef: vi.fn(),
     onExportViewViewport: vi.fn(),

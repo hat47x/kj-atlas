@@ -1,5 +1,7 @@
 const CURRENT_REVIEWER_STORAGE_KEY = "kj-atlas/current-reviewer-ref";
 
+export type ReviewerRefSource = "local" | "sso" | "unknown";
+
 function isStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
@@ -46,4 +48,16 @@ export function saveCurrentReviewerRef(value: string): string {
   }
 
   return sanitized;
+}
+
+
+export function inferReviewerRefSource(value: string): ReviewerRefSource {
+  const reviewerRef = sanitizeReviewerRef(value);
+  if (reviewerRef.startsWith("user:local:")) {
+    return "local";
+  }
+  if (reviewerRef.startsWith("user:sso:")) {
+    return "sso";
+  }
+  return "unknown";
 }

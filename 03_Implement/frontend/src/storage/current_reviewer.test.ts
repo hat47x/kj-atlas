@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  inferReviewerRefSource,
   initializeCurrentReviewerRef,
   loadCurrentReviewerRef,
   sanitizeReviewerRef,
@@ -57,5 +58,11 @@ describe("current_reviewer storage", () => {
   it("saves explicit reviewerRef", () => {
     saveCurrentReviewerRef(" user:local:manual ");
     expect(loadCurrentReviewerRef()).toBe("user:local:manual");
+  });
+
+  it("infers source from reviewerRef prefix", () => {
+    expect(inferReviewerRefSource("user:local:abc")).toBe("local");
+    expect(inferReviewerRefSource("user:sso:oidc:sub-1")).toBe("sso");
+    expect(inferReviewerRefSource("actor:legacy")).toBe("unknown");
   });
 });

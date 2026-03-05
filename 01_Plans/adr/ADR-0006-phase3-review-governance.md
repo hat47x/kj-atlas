@@ -30,7 +30,7 @@
 | M2: ReviewEvent append on review toggle | ✅ Done (2026-02-26) | `reviewEvents` データモデル・reviewed toggle連動・view metadata export/import保持を実装。 |
 | M3: Export redaction | ✅ Done (2026-03-06) | `view.json` に redaction モードを追加し、bundle は既定 strip-identities。 |
 | M4: Merge audit log integration | ✅ Done (2026-03-06) | `mergeAuditLog` / `reviewEvents` を同居トリム（決定論）で統一。 |
-| M5: Org deployment hooks (optional) | ⏳ Not started | reviewerRef adapter / SSO subject 連携は未確認。 |
+| M5: Org deployment hooks (optional) | ✅ Done (2026-03-07) | reviewerRef adapter I/F と SSO subject→reviewerRef 正規化契約を architecture/api/schema と同期。 |
 | M6: Optional signing (non-MVP) | ✅ Done (2026-03-03) | detached signature のデータモデル、検証フロー、無署名時 non-blocking UI/運用、鍵管理・監査ログ・互換方針を設計文書へ反映。 |
 
 > 注記: M4 の「部分着手」は `mergeAuditLog` 単体の実装確認に基づく。Phase 3 の DoD 充足には `reviewEvents` 実装と export/import 連携が必要。
@@ -72,10 +72,16 @@
   - レビュー運用ログが肥大化しない
 
 ### M5: Org deployment hooks (optional)
-- [ ] reviewerRef 生成規約の差し替え（adapter interface）
-- [ ] SSO subject を reviewerRef にできる
+- [x] reviewerRef 生成規約の差し替え（adapter interface）
+- [x] SSO subject を reviewerRef にできる
 - Done criteria:
-  - 認証があっても無くても動く
+  - [x] 認証があっても無くても動く
+
+実装メモ（2026-03-07）:
+- `ReviewerRefResolverAdapter` の責務を「`AuthContext` から `reviewerRef/ownerRef` を解決する一点」に固定。
+- profile は `user_id`（既定）/`sso_subject`（任意）を提供し、`sso_subject` は入力不足時に `user_id` フォールバックを適用。
+- 永続 payload（reviewEvents/view export/import）は `reviewerRef` の opaque string 契約を維持し、既存互換を壊さない。
+- PII最小化として、`provider` / `external_uid` の生値は attribution payload へ保存せず、resolver内部の派生ID生成のみに使用。
 
 ### M6: Optional signing (non-MVP)
 - [x] detached signature を設計（ファイル単位署名）
