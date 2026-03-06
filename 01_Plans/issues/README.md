@@ -236,6 +236,7 @@ issue補助メモには、最低でも次の項目を含める。
 | ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Open | N/A |
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Open | N/A |
 | DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Open | N/A |
+| DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Open | N/A |
 
 ## Rules
 
