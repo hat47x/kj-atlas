@@ -15,7 +15,7 @@ from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
 
 RUN_PG_TESTS_ENV = "RUN_PG_TESTS"
-DATABASE_URL_ENV = "DATABASE_URL"
+DATABASE_URL_ENV = "KJ_ATLAS_DATABASE_URL"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 

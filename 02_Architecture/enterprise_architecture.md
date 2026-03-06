@@ -176,7 +176,7 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 
 ### strict mode 例外運用の責務境界（AUTH-OPS-03 T1/T4）
 
-`KJ_ATLAS_ALLOW_JIT_PROVISIONING`（旧: `ALLOW_JIT_PROVISIONING`）は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
+`KJ_ATLAS_ALLOW_JIT_PROVISIONING` は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
 
 - **本番標準（strict mode）**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
   - 未登録ユーザは作成せず、アクセス拒否または read-only 制約を優先する。
@@ -405,13 +405,13 @@ interface AccessControlAdapter {
 
 ### 目的
 
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`）（strict）を本番既定とし、例外緩和（`true`）時の責務境界を文書で固定する。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（strict）を本番既定とし、例外緩和（`true`）時の責務境界を文書で固定する。
 - SafeMode既定ON / PII最小化 / 監査最小化契約を維持したまま、運用Runbookの停止条件を明示する。
 
 ### 通常/例外の排他条件
 
-- 通常運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`）。
-- 例外運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（旧: `ALLOW_JIT_PROVISIONING=true`） を明示承認下で一時適用。
+- 通常運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`。
+- 例外運用: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を明示承認下で一時適用。
 - 排他原則: 同一対象環境で strict/例外を同時に有効化しない（単一時点で一方のみ）。
 
 ### 責務分離（固定）
@@ -422,17 +422,18 @@ interface AccessControlAdapter {
 | System Owner | 業務継続上の必要性を承認する | 安全審査を単独で代替すること |
 | Platform Operator | 承認済み変更の実行と記録（時刻/理由/承認者/対象環境/復旧条件） | 未承認実行、承認不備の補完 |
 
-### 停止条件（未確定事項）
+### 停止条件（確定値からの逸脱）
 
-- 以下が未確定な場合、例外緩和のRunbook確定を停止する。
-  - 承認順序、承認有効期限、対象環境粒度、TTL/自動復旧、復旧判定者、代理承認、保存先、再申請、事後レビュー期限、違反時SLA。
-- 停止時は「要確認」ラベルで質問を維持し、推測で承認フローを決定しない。
+- 次のいずれかに該当する場合、`StoppedForClarification` として例外緩和を停止する。
+  - Runbook が Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たさない。
+  - 2者承認（Security Officer + System Owner）情報が欠損している。
+  - 台帳保存先または監査ID相互参照が欠損している。
 
 ### 復旧条件（最小）
 
-- 例外終了時は `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`） に復帰する。
+- 例外終了時は `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` に復帰する。
 - 復帰記録にも最小監査契約（PII非保存）を適用し、復旧条件充足を記録する。
-- 復旧判定者の最終確定は未確定事項（Q5）として扱い、確定まで運用停止条件を維持する。
+- 復旧判定は Security Officer + System Owner の2者共同判定を必須とする（代理承認なし）。
 
 ---
 

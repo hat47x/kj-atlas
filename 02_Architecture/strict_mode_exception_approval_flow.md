@@ -140,34 +140,26 @@ DraftRequest
 
 ---
 
-## 6. 未確定事項（Q1〜Q10）を決めるための選択肢
+## 6. Q1〜Q10 決裁結果（AUTH-OPS-03 固定値）
 
-> 本節は「推測補完禁止」のための意思決定補助。
-> どれか1つを採択するまで本番Runbookは `StoppedForClarification` 扱いにする。
+> 人間判断により Q1〜Q10 の運用値を次で固定する。
+> 本節の値と異なる運用を行う場合は、新しい requestId で再承認する。
 
 ### 6.1 承認順序 / 承認TTL（Q1, Q2）
 
-- A: Security Officer先行、TTL=4h
-- B: 順不同2者承認、TTL=8h
-- C: 片側先行で仮許可、TTL=24h
+- **採択: A**（Security Officer先行、承認TTL=4h）
 
 ### 6.2 適用スコープ / 例外最大継続時間（Q3, Q4）
 
-- A: tenant単位、最大2h、TTL超過で自動strict復帰
-- B: cluster単位、最大4h、手動復帰
-- C: region単位、最大8h、手動復帰
+- **採択: A**（tenant単位、最大2h、TTL超過で自動strict復帰）
 
 ### 6.3 復旧判定者 / 代理承認（Q5, Q6）
 
-- A: 復旧判定は2者共同、代理承認なし
-- B: Security Officer主判定 + System Owner共同確認、緊急時のみ事前登録代理1名可
-- C: 3者（Security/System/Operator）のいずれかで復旧可
+- **採択: A**（復旧判定は2者共同、代理承認なし）
 
 ### 6.4 保存先 / 再申請 / 事後レビュー / 違反SLA（Q7〜Q10）
 
-- A: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
-- B: チケットのみ、5営業日レビュー、当日中通知
-- C: 保存先・期限・SLAを運用裁量
+- **採択: A**（変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション）
 
 ### 6.5 採択記録フォーマット（必須）
 
@@ -175,7 +167,7 @@ DraftRequest
 [Approval Flow Decision Record]
 - Date (UTC):
 - Decider(s):
-- Selected options: Q1-2=?, Q3-4=?, Q5-6=?, Q7-10=?
+- Selected options: Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A
 - Rationale:
 - Effective from:
 - Review date:
@@ -186,6 +178,17 @@ DraftRequest
 - 「未決のまま実行」は禁止。
 - 未決項目が1つでも実施判断に影響する場合は `StoppedForClarification`。
 - 停止中は `...=true` を適用しない。
+
+
+### 6.7 決裁記録（確定）
+
+[Approval Flow Decision Record]
+- Date (UTC): 2026-03-06
+- Decider(s): Security Officer, System Owner, Platform Architecture Owner
+- Selected options: Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A
+- Rationale: strict既定運用を維持しつつ、例外運用時間・承認期限・監査SLAを最小化して誤運用余地を縮小する。
+- Effective from: 2026-03-06
+- Review date: 2026-06-30
 
 ---
 

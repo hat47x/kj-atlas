@@ -1,6 +1,42 @@
 from pydantic import Field, model_validator
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
+LEGACY_ENV_KEYS = {
+    "DATABASE_URL",
+    "LLM_PROVIDER",
+    "LOCAL_LLM_BASE_URL",
+    "LOCAL_LLM_MODEL",
+    "LARGE_SCALE_LLM_BASE_URL",
+    "LARGE_SCALE_LLM_MODEL",
+    "LLM_ESCALATION_ENABLED",
+    "LLM_LARGE_SCALE_OPT_IN",
+    "LARGE_SCALE_LLM_ALLOWLIST",
+    "LLM_FALLBACK_TO_NONE",
+    "API_KEY",
+    "AUDIT_EXPORT_ENABLED",
+    "AUDIT_TRANSPORT",
+    "AUDIT_HTTP_ENDPOINT",
+    "AUDIT_HTTP_API_KEY",
+    "AUDIT_HTTP_TIMEOUT_SECONDS",
+    "AUDIT_QUEUE_SIZE",
+    "AUDIT_ALLOW_IN_SAFE_MODE",
+    "ACCESS_CONTROL_ADAPTER",
+    "ACCESS_CONTROL_FAIL_SAFE_MODE",
+    "ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT",
+    "ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS",
+    "ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE",
+    "ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN",
+    "ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER",
+    "ALLOW_JIT_PROVISIONING",
+    "AUTH_PROVIDER_FIELD",
+    "AUTH_USER_FIELD",
+    "AUTH_EMAIL_FIELD",
+    "AUTH_NAME_FIELD",
+    "AUTH_SUBJECT_FIELD",
+    "REVIEWER_REF_RESOLVER_ADAPTER",
+}
 
 
 class Settings(BaseSettings):
@@ -141,6 +177,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
+        legacy_keys_in_use = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
+        if legacy_keys_in_use:
+            raise ValueError(
+                "Legacy environment keys are not supported. Use KJ_ATLAS_* only: "
+                + ", ".join(legacy_keys_in_use)
+            )
+
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
             raise ValueError(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {self.llm_provider}")

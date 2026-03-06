@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-02 人間意思決定知見に基づく文書横断改善計画
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -53,11 +53,21 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 横断対象文書（01/02/04/AGENTS）を確定し、改善観点マトリクスを作成する。
-- [ ] T2: 登場人物定義の先出し方針を文書別に適用し、重複/矛盾を解消する。
-- [ ] T3: strict/non-strict 記述を「ガイドライン参照」へ統一する。
-- [ ] T4: 参照導線（相互リンク）を監査し、不足リンクを補完する。
-- [ ] T5: 横断レビュー用チェックリストを本issueの Additional context に固定する。
+- [x] T1: 横断対象文書（01/02/04/AGENTS）を確定し、改善観点マトリクスを作成する。
+- [x] T2: 登場人物定義の先出し方針を文書別に適用し、重複/矛盾を解消する。
+- [x] T3: strict/non-strict 記述を「ガイドライン参照」へ統一する。
+- [x] T4: 参照導線（相互リンク）を監査し、不足リンクを補完する。
+- [x] T5: 横断レビュー用チェックリストを本issueの Additional context に固定する。
+
+
+### Improvement matrix（確定）
+
+| 対象 | 観点 | 更新方針 |
+|---|---|---|
+| `01_Plans/issues/*` | 運用DoD/停止条件 | Q1〜Q10確定値を明記し、停止条件を「固定値逸脱」に統一 |
+| `02_Architecture/*` | 責務境界/役割 | IAP委譲・AuthContext正規化・RACI境界を明示 |
+| `04_Documentation/*` | strict/non-strict運用粒度 | ガイドライン参照と必須チェック項目を統一 |
+| `AGENTS.md` | 横断導線 | Read Order/Project Map の参照先を維持しドリフト監視 |
 
 ## 7) 検証計画 / Validation plan
 
@@ -94,3 +104,5 @@
 - [ ] 「必須」「推奨」「参考」のレベルが明確で、文書間で矛盾しない。
 - [ ] 02の設計文書と04の運用文書が相互参照で辿れる。
 - [ ] issue側のタスク分解が、実際の文書更新順序に対応している。
+- [x] Q1〜Q10固定値（AUTH-OPS-03）と strict/non-strict 記述が矛盾しない。
+- [x] 環境変数記述が `KJ_ATLAS_*` 契約のみを参照している。

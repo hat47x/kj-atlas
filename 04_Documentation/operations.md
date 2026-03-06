@@ -40,7 +40,7 @@ docker compose logs api --tail=100
 ## 3. 運用上の注意
 
 - 既定の `KJ_ATLAS_LLM_PROVIDER=none` では外部送信は行いません。
-- ローカル/社内LLM利用時は `KJ_ATLAS_LOCAL_LLM_BASE_URL`（旧: `LOCAL_LLM_BASE_URL`） を到達可能な内部URLに設定してください。
+- ローカル/社内LLM利用時は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
 
@@ -236,7 +236,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - PDP 経路で静的トークンが必要な環境向け。
 - `ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER`（任意）
   - OIDC/SAML の issuer/entity ID を `x-idp-issuer` ヘッダで引き渡す。
-- `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER=user_id|sso_subject`（旧: `REVIEWER_REF_RESOLVER_ADAPTER`）（既定: `user_id`）
+- `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER=user_id|sso_subject`（既定: `user_id`）
   - `user_id`: `reviewerRef/ownerRef = user:<users.id>`（既存互換）。
   - `sso_subject`: `reviewerRef/ownerRef = user:sso:<provider>:<externalUid>`。subject欠損時は `actorRef` フォールバック。
 
@@ -257,16 +257,16 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 ### 3.2 strict mode の例外承認責任（発動条件 / 停止条件 / 復旧条件）
 
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING`）は本番標準（strict）とする。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`は本番標準（strict）とする。
 - 例外発動条件: 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
-- 停止条件: 承認順序/TTL/代理承認など未確定項目が実施判断に必要な場合は、Platform Operator は「確認待ちで停止」を記録し、適用を禁止する。
+- 停止条件: Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たせない場合は、Platform Operator は「確認待ちで停止」を記録し、適用を禁止する。
 - Platform Operator 記録必須項目: 実施時刻・理由・承認者・対象環境・復旧条件。承認記録がない変更を禁止する。
 - 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、復旧時刻と検証結果を記録する。
 - backend 開発者はコードで一時バイパスを実装してはならない。
 
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
 
-> 未確定事項（承認順序/TTL/代理承認など）が残る場合は、テンプレートを埋めずに「要確認」として停止する。
+> 本テンプレートは Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）で運用する。逸脱時は「要確認」で停止する。
 
 #### A. 2者承認テンプレート（Security Officer + System Owner）
 
@@ -280,7 +280,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - Planned rollback by (UTC):
 - Security Officer approval: [Approved/Rejected] / Name / Timestamp(UTC)
 - System Owner approval: [Approved/Rejected] / Name / Timestamp(UTC)
-- Open questions (Q1-Q10):
+- Decision profile: Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A
 ```
 
 #### B. Platform Operator 実行記録テンプレート
@@ -304,7 +304,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - [ ] 2者承認が揃っている（Security Officer + System Owner）。
   - [ ] 必須記録5項目（時刻/理由/承認者/対象環境/復旧条件）をテンプレートに記入済み。
   - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用する対象環境を明示済み。
-  - [ ] 未確定事項（Q1〜Q10）で実施判断に必要な項目が残る場合、「停止」と記録した。
+  - [ ] Q1〜Q10 固定値を満たせない項目がある場合、「停止」と記録した。
   - [ ] SafeMode既定ONを弱める変更（share/export制約緩和）が含まれていない。
 - 事後チェック（復旧後）
   - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰済み。
@@ -323,7 +323,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 ### 1. 基本方針
 
-- 監査連携は `AUDIT_EXPORT_ENABLED=false`（既定）で **完全ローカル動作**。
+- 監査連携は `KJ_ATLAS_AUDIT_EXPORT_ENABLED=false`（既定）で **完全ローカル動作**。
 - 有効化時のみ、`view` / `export` の最小イベントを外部送信。
 - 送信データは最小化され、`docId` / `eventType` / `safeMode` / 最小メタデータのみ送信します。
 - `x-actor-ref` は平文保存せず、SHA-256短縮ハッシュ (`actorRefHash`) に変換します。
@@ -351,13 +351,13 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 - 監査送信失敗時も、閲覧/エクスポート本体は継続（**fail-open**）。
 - 失敗イベントはメモリキューへ退避し、次回送信時に best-effort flush。
-- キュー上限 (`AUDIT_QUEUE_SIZE`) 超過時は最古イベントを drop（ログ警告のみ）。
+- キュー上限 (`KJ_ATLAS_AUDIT_QUEUE_SIZE`) 超過時は最古イベントを drop（ログ警告のみ）。
 - 送信障害は運用監視（ログ収集）で検知し、アプリの可用性を優先。
 
 ### 4. 鍵・エンドポイント設定
 
-1. `AUDIT_EXPORT_ENABLED=true`
-2. `AUDIT_TRANSPORT=http`
+1. `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true`
+2. `KJ_ATLAS_AUDIT_TRANSPORT=http`
 3. `AUDIT_HTTP_ENDPOINT=https://<audit-gateway>/events`
 4. 必要なら `AUDIT_HTTP_API_KEY=<secret>` を設定（Bearer送信）
 5. `AUDIT_HTTP_TIMEOUT_SECONDS` を短め（例: 2.0）に維持

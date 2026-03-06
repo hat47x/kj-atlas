@@ -1,7 +1,7 @@
 # ADR-0020: OIDC/SAML 対応における認証アーキテクチャ（IAPヘッダー認証 + Mock SP/IdP 検証プロファイル）
 
-- Status: Proposed
-- Date: 2026-03-03
+- Status: Accepted
+- Date: 2026-03-06
 - Deciders: Project Maintainers
 - Scope: `01_Plans/adr/`
 
@@ -28,6 +28,20 @@
 - アプリ本体はパスワード・秘密情報・認証セッションを保持しない。
 
 この判断は、`enterprise_architecture.md` の「認証は外部責務」「アプリは署名済みユーザコンテキストを受け取る」方針を具体化するものである。
+
+
+### 1.1) 認証責務境界（固定）
+
+- 認証・セッション・再認証（step-up）の責務は前段 IAP / SP に委譲し、`kj-atlas` 本体は保持しない。
+- Backend の責務は「信頼境界の検証（trusted proxy）」「入力ヘッダー/JWT の検証」「`AuthContext` 正規化」の3点に限定する。
+- `AuthContext` 正規化後の契約（`userId`/`provider`/`subject`）のみをアプリ内部の認可・帰属判定に使用し、生のヘッダー差異を下流へ漏らさない。
+
+### 1.2) `enterprise_architecture.md` との整合項目
+
+1. 認証外部委譲（IdP/IAP）とアプリ非保持原則を維持する。
+2. `AuthContext` はアプリ内部I/Fの唯一契約とし、provider依存分岐を実装へ持ち込まない。
+3. strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）を本番既定とし、例外緩和は承認付き一時運用に限定する。
+4. SafeMode既定ON・PII最小化・監査最小化の上位契約を破らない。
 
 ### 2) 方式比較（意思決定根拠）
 
@@ -226,7 +240,7 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
   - `AuthContext.userId = users.id`
   - `reviewerRef = ownerRef = user:<users.id>`
 - strict mode 契約を固定:
-  - `ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
+  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` かつ未登録 subject は `403`
   - 事前プロビジョニング `POST /admin/provision/users`（将来SCIM置換点）
 - 監査最小化契約を固定:
   - `amr/acr/aal/auth_time` の生値永続化を禁止し、監査は正規化指標（`hasStepUp`/`assuranceLevel`/`authAgeBucket`）のみ許可
@@ -283,7 +297,7 @@ AUTH-ARCH-01 で固定した論点と、継続検討論点を分離する。
 - Mock SP/IdP は「常時必須」ではなく、IdP連携境界変更時の拡張ゲートとして運用する。
 - Level 2 は主要IdPのデータ連携様式をfixture化して再現し、設定互換の回帰保証を担う。
 - 入力方式の差異（header/JWT、各IAPのヘッダー名差異）は設定テンプレートで吸収し、実装分岐の増殖を抑制する。
-- ユーザーデータ境界は未確定のため、スキーマ更新を伴う後続タスク管理が必要。
+- ユーザーデータ境界は AUTH-ARCH-01 / AUTH-SCHEMA-01 の決裁結果と同期済みであり、変更時は follow-up issue から再度ADRへ昇格する。
 
 ## Traceability
 

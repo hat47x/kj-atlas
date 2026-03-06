@@ -49,19 +49,19 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `KJ_ATLAS_*` のみ実装上の正規キーとして受理される。
-- [ ] 旧キー単独指定は起動失敗する。
-- [ ] 新旧混在指定は不正設定として起動失敗する。
-- [ ] compose/runbook/README の実行例が新キーのみで統一される。
-- [ ] integrationレベル検証（起動 + 設定反映 + 旧キー拒否）が再現可能なコマンドで示される。
+- [x] `KJ_ATLAS_*` のみ実装上の正規キーとして受理される。
+- [x] 旧キー単独指定は起動失敗する。
+- [x] 新旧混在指定は不正設定として起動失敗する。
+- [x] compose/runbook/README の実行例が新キーのみで統一される。
+- [x] integrationレベル検証（起動 + 設定反映 + 旧キー拒否）が再現可能なコマンドで示される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: E1/E2/E3 の人間判断を issue/ADR/registry に同期。
-- [ ] T2: backend settings から旧キーaliasを削除する。
-- [ ] T3: compose/README/ops文書を新キー専用へ更新する。
-- [ ] T4: 単体/結合テストで旧キー拒否を固定する。
-- [ ] T5: リリースノートに「旧キー非互換」を明記する。
+- [x] T2: backend settings から旧キーaliasを削除する。
+- [x] T3: compose/README/ops文書を新キー専用へ更新する。
+- [x] T4: 単体/結合テストで旧キー拒否を固定する。
+- [x] T5: リリースノートに「旧キー非互換」を明記する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -89,3 +89,11 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件: 一括移行契約（互換なし）を見直す要求が出た場合。
+
+
+## 11) Verification results
+
+- `pytest 03_Implement/backend/tests/test_settings_env_prefix_migration.py 03_Implement/backend/tests/test_llm_provider.py 03_Implement/backend/tests/test_docs_roundtrip.py`
+  - 期待通り、旧キー単独/混在を拒否し、新キー設定のみを受理する。
+- `rg -n "旧: |DATABASE_URL|ALLOW_JIT_PROVISIONING|API_KEY" 03_Implement/backend/README.md 04_Documentation/operations.md 04_Documentation/security.md 03_Implement/backend/tests/scripts/run_auth_level2.sh`
+  - 旧キー依存の実行例が除去されている。
