@@ -1,5 +1,4 @@
 from pydantic import Field, model_validator
-import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -177,13 +176,6 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_llm_provider_guards(self) -> "Settings":
-        legacy_keys_in_use = sorted(key for key in LEGACY_ENV_KEYS if key in os.environ)
-        if legacy_keys_in_use:
-            raise ValueError(
-                "Legacy environment keys are not supported. Use KJ_ATLAS_* only: "
-                + ", ".join(legacy_keys_in_use)
-            )
-
         provider = self.llm_provider.strip().lower()
         if provider not in {"none", "local", "local_http", "large-scale", "large_scale", "external"}:
             raise ValueError(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {self.llm_provider}")
