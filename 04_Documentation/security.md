@@ -38,10 +38,10 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 
 ## 5. 任意: APIキーによる簡易保護（バックエンド）
 
-バックエンドは `KJ_ATLAS_API_KEY`（旧: `API_KEY`） を設定した場合のみ、簡易なヘッダ認証を有効化できます。
+バックエンドは `KJ_ATLAS_API_KEY` を設定した場合のみ、簡易なヘッダ認証を有効化できます。
 
-- 環境変数 `KJ_ATLAS_API_KEY`（旧: `API_KEY`） が **未設定**: 現在と同じく全APIを許可
-- 環境変数 `KJ_ATLAS_API_KEY`（旧: `API_KEY`） が **設定済み**: `/healthz` 以外で `X-API-Key: <KJ_ATLAS_API_KEY>` を必須化
+- 環境変数 `KJ_ATLAS_API_KEY` が **未設定**: 現在と同じく全APIを許可
+- 環境変数 `KJ_ATLAS_API_KEY` が **設定済み**: `/healthz` 以外で `X-API-Key: <KJ_ATLAS_API_KEY>` を必須化
 - 不一致 / 未指定時は `401 Unauthorized`
 
 例:
@@ -106,7 +106,7 @@ strict / non-strict いずれの運用プロファイルでも、組織ごとの
 
 ## 8. Strict provisioning 運用（AUTH-API-02）
 
-`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING`）の strict mode では、未登録subjectを必ず拒否します。
+`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`の strict mode では、未登録subjectを必ず拒否します。
 
 - 拒否契約: `403` + `{"code":"identity_not_provisioned","message":"Identity not provisioned. Pre-provision via /admin/provision/users before access."}`
 - 回復導線: `POST /admin/provision/users`
@@ -115,7 +115,7 @@ strict / non-strict いずれの運用プロファイルでも、組織ごとの
   - 再試行: `200` + `provisioned=false`
   - 既存identityに矛盾する `displayName/email` は `409 identity_already_provisioned_conflict`
 
-運用上、strict緩和（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（旧: `ALLOW_JIT_PROVISIONING=true`） への切替）は承認フローを経て記録してください。
+運用上、strict緩和（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` への切替）は承認フローを経て記録してください。
 
 ### 8.0.0 この節の登場人物
 
@@ -301,7 +301,7 @@ for event in hr_events:
 - [ ] 復旧条件: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰済み。
 - [ ] 復旧時刻と復旧条件の充足を記録済み。
 - [ ] 記録に `roles/groups/policyRef` 生値・subject生値・本文等のPIIが含まれていない（下記 8.2 の禁止項目準拠）。
-- [ ] 未確定項目（承認順序/TTL/代理承認/エスカレーション等）が残る場合、**TODO化せず「確認待ちで停止」**として扱っている。
+- [ ] Q1〜Q10 固定値から逸脱する項目がある場合、**TODO化せず「確認待ちで停止」**として扱っている。
 
 ### 8.2 監査最小化・PII最小化ルール（strict mode例外ログ）
 
@@ -311,7 +311,7 @@ strict mode例外ログは、以下の5項目のみを最低監査項目とし�
 - [ ] 例外理由（定型カテゴリ + 短文理由）
 - [ ] 承認者（Security Officer / System Owner の識別子）
 - [ ] 対象環境（prod/stg/dev など）
-- [ ] 復旧条件（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（旧: `ALLOW_JIT_PROVISIONING=false`） へ戻す判定条件）
+- [ ] 復旧条件（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻す判定条件）
 
 PII非保存ルール:
 

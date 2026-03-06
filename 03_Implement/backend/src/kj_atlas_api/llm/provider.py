@@ -163,7 +163,7 @@ class NoneProvider:
             transport="none",
         )
         raise ProviderDisabledError(
-            "AI is disabled. Set LLM_PROVIDER to local or large-scale.",
+            "AI is disabled. Set KJ_ATLAS_LLM_PROVIDER to local or large-scale.",
             metadata,
         )
 
@@ -179,7 +179,7 @@ class LocalProvider:
             model_id=settings.local_llm_model,
             provider_kind=self.provider_kind,
             provider_name=self.provider_name,
-            missing_base_url_message="LOCAL_LLM_BASE_URL is not set",
+            missing_base_url_message="KJ_ATLAS_LOCAL_LLM_BASE_URL is not set",
             missing_model_message=None,
         )
 
@@ -214,8 +214,8 @@ class LargeScaleProvider:
             model_id=settings.large_scale_llm_model,
             provider_kind=self.provider_kind,
             provider_name=self.provider_name,
-            missing_base_url_message="LARGE_SCALE_LLM_BASE_URL is not set",
-            missing_model_message="LARGE_SCALE_LLM_MODEL is not set",
+            missing_base_url_message="KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL is not set",
+            missing_model_message="KJ_ATLAS_LARGE_SCALE_LLM_MODEL is not set",
         )
 
 
@@ -336,7 +336,7 @@ class ProviderRegistry:
                 model_id="unknown",
                 transport="none",
             )
-            raise ProviderRequestError.unavailable(f"Unsupported LLM_PROVIDER: {raw_provider_name}", metadata)
+            raise ProviderRequestError.unavailable(f"Unsupported KJ_ATLAS_LLM_PROVIDER: {raw_provider_name}", metadata)
         return self._providers[provider_name]()
 
 

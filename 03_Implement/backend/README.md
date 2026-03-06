@@ -18,13 +18,13 @@ Phase 1 では `DocumentV1` のスナップショット保存/読込のみを実
 
 ## Environment variables
 
-- `KJ_ATLAS_DATABASE_URL`（旧: `DATABASE_URL`）
+- `KJ_ATLAS_DATABASE_URL`
   - 既定値: `sqlite:///./kj_atlas.db`
   - `sqlite+aiosqlite://...` / `postgresql+asyncpg://...` が与えられた場合は、Phase 1 の同期SQLAlchemy実装で扱えるよう内部で同期ドライバURLへ正規化して利用
-- `KJ_ATLAS_LLM_PROVIDER`（旧: `LLM_PROVIDER`）
+- `KJ_ATLAS_LLM_PROVIDER`
   - 既定値: `none`
   - 値: `none | local | large-scale`（後方互換エイリアス: `local_http`, `external`）
-- `KJ_ATLAS_LLM_FALLBACK_TO_NONE`（旧: `LLM_FALLBACK_TO_NONE`）
+- `KJ_ATLAS_LLM_FALLBACK_TO_NONE`
   - 既定値: `true`
   - `true` の場合、`local`/`large-scale` 呼び出し失敗時は `none` 退避として fail-closed（HTTP 501）
 
@@ -42,7 +42,7 @@ alembic upgrade head
 uvicorn kj_atlas_api.main:app --reload
 ```
 
-PostgreSQL を使う場合は `KJ_ATLAS_DATABASE_URL`（旧: `DATABASE_URL`） を PostgreSQL の URL に変更してください。
+PostgreSQL を使う場合は `KJ_ATLAS_DATABASE_URL` を PostgreSQL の URL に変更してください。
 
 ## Minimal backup / restore
 
