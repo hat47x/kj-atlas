@@ -225,6 +225,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 ## Human decision support
 
+- `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
 
 ## Active issue memos
