@@ -17,9 +17,9 @@
 - RequirementID
 - RequirementStatement
 - PriorityClass（Must / Should / Could）
-- RACI（A/R/C/I）
-- ContractImpact（schema / api / policy / ops : あり / なし）
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
+- GoNoGoGate（Required / Optional / N/A）
+- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）
 - VerificationLevel（docs-check / unit / integration / e2e）
 - DecisionStatus（Fixed / Pending）
 - DecisionQueueRef（未確定時の参照先）
@@ -44,7 +44,7 @@
 ### Plan → Execute → Verify / 自己修復3回 / フェイルセーフ停止
 
 - Plan: Issue作成時に要求粒度（R0〜R3）と `Expected verification level` を同時宣言する。
-- Execute: 1Issue 1検証責務（主責務）を原則化し、例外時は理由を明記する。
+- Execute: 1Issue 1検証責務（主責務）を原則化し、例外は「統合境界が2つ以上で分割不能」の場合のみ許容し理由を明記する。
 - Verify: 宣言したレベル未満の検証で完了扱いにしない。未実施時は理由と代替検証を `Validation plan` に明記する。
 - 自己修復: 検証不一致が出た場合、原因切り分け→最小修正→再検証を最大3回まで実施する。
 - フェイルセーフ停止: 3回で収束しない場合はスコープを広げず停止し、未達条件と次アクションを記録する。
@@ -81,6 +81,9 @@
 - [ ] 実装/ドキュメント整合条件
 - [ ] 安全性/互換性条件
 - [ ] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
+- [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
+- [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
+- [ ] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
 
 ## 6) 実装タスク分解 / Task breakdown
 

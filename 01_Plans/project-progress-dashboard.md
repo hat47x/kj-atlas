@@ -18,7 +18,7 @@
 
 | 観点 | 状態 | 根拠 |
 |---|---|---|
-| 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01` は Done、`REQ-DEF-02/03` は Open。 |
+| 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
 | 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
 | 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Open、decision packで方針は人間判断済み。 |
 
@@ -29,21 +29,19 @@
 | Backlog ID | Status | 要点 | メモ |
 |---|---|---|---|
 | DOC-OPS-04 | Open | 文書可視性・可読性ガバナンスの整備を進行。 | `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` |
-| REQ-DEF-02 | Open | 共通Requirement meta I/Fを前提に、RACI/契約境界を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` |
-| REQ-DEF-03 | Open | 共通Requirement meta I/Fを前提に、受入シナリオ/検証粒度を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` |
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
 
-- Gate判定: **Blocked (Pending Human Approval)**
+- Gate判定: **Open (Phase 2/3 Proceed Enabled)**
 - 分岐条件: DR-REQ-DEF-02 と DR-REQ-DEF-03 の Approval status が双方 `Approved` の場合のみ Phase 2 へ進行。
-- 現在値: 両DRとも `Pending Human Approval` のため、Phase 2/3 は停止。
+- 現在値: DR-REQ-DEF-02/03 ともに `Approved (mixed outcomes)`。Phase 2/3 の着手条件を充足。
 
 ## 3) 人間判断待ち（Decision Queue）
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
 |---|---|---|---|
-| P1 | REQ-DEF-02 | 責任分界点の固定粒度 | R2-P1〜P3（RACI/ContractImpact/Go-No-Go必須化範囲）※承認待ち |
-| P1 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | R3-P1〜P3（粒度マッピング/例外閾値/テンプレ必須化範囲）※承認待ち |
+| P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 決定済み（R2-P1 Reject / R2-P2 Conditional Approve / R2-P3 Conditional Approve） |
+| P2 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 決定済み（R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve） |
 
 補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 
@@ -51,16 +49,16 @@
 
 | Date | Backlog ID | 決定内容 | 状態 |
 |---|---|---|---|
+| 2026-03-08 | REQ-DEF-03 | R3-P1 Approve、R3-P2/R3-P3 Conditional Approve。 | 決定済み |
+| 2026-03-08 | REQ-DEF-02 | R2-P1 Reject、R2-P2/R2-P3 Conditional Approve。 | 決定済み |
 | 2026-03-05 | ENV-ARCH-01 | Option B/C 採択（旧キー互換なし・監査痕跡追加なし）。 | 決定済み |
 | 2026-03-06 | AUTH-OPS-03 | D1〜D4（承認順序/TTL、scope、代理承認、SLA）を固定。 | 決定済み |
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. REQ-DEF-02/03 の Decision Record（DR-REQ-DEF-02/03）を人間承認する。
-2. 未承認の間は TEMPLATE/README へ必須化ルールを反映しない（停止条件）。
-3. DOC-OPS-04 のADR候補は「承認後適用範囲」と「暫定メモ範囲」を分離維持する。
-4. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
-5. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
+1. DOC-OPS-04 のADR候補は「承認後適用範囲」と「暫定メモ範囲」を分離維持する。
+2. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
+3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
 ## 6) 再開コマンド（docs-check）
 

@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-03 受入シナリオ先行型のIssue分割ルール整備
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -155,8 +155,8 @@
 | Issue | 現在状態 | 適用優先度 | 適用理由（1Issue 1検証責務観点） |
 | --- | --- | --- | --- |
 | `issue-REQ-DEF-01-requirement-metadata-schema.md` | Open | High | REQ-DEF共通I/Fの定義源であり、R0（docs-check）責務を先に固定する必要がある。 |
-| `issue-REQ-DEF-02-requirement-traceability-and-contract-impact.md` | Open | High | 契約影響（schema/api/policy/ops）を扱うため、R1〜R2境界の分割規約適用が必須。 |
-| `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Open | High | 本文自体が規約正本のため、R0責務で完結させる適用サンプルとして機能する。 |
+| `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Done | High | 契約影響（schema/api/policy/ops）を扱うため、R1〜R2境界の分割規約適用を実施済み。 |
+| `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Done | High | 本文自体が規約正本のため、R0責務で完結させる適用サンプルとして機能する。 |
 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Draft | Medium | T1〜T4のdocs中心タスクが多く、複合検証を回避する分割基準の適用余地が大きい。 |
 
 ## 7) 検証計画 / Validation plan
@@ -192,15 +192,29 @@
   2. 受入シナリオテンプレをCI検証対象にする場合。
 
 
-## Decision Queue（残る未確定 / R3系）
+## Decision Queue（R3系 / 決定済み）
 
-- R3-P1 (Pending): 要求粒度↔検証粒度マッピングを全Issue必須にする適用開始時期。
-- R3-P2 (Pending): 1Issue1検証責務ルールの例外許容条件（統合検証を許す閾値）。
-- R3-P3 (Pending): 受入シナリオ最小テンプレを `01_Plans/issues/TEMPLATE.md` へ必須昇格する範囲。
+- R3-P1 (**Approved**): 要求粒度↔検証粒度マッピングを新規Issueで必須化（既存Activeは段階適用）。
+- R3-P2 (**Approved Conditional**): 1Issue1検証責務を原則化し、例外は統合境界が2つ以上で分割不能の場合のみ許容。
+- R3-P3 (**Approved Conditional**): 受入シナリオ最小テンプレは Process/実装系Issueで必須、Docs-onlyは任意（推奨）。
 
-### Decision Record（承認待ち）
+### R3-P1〜P3 補足説明と推奨
 
-- Context: REQ-DEF-03本体の検証規約はFixedだが、テンプレ必須化範囲と例外閾値は未承認。
-- Decision (Proposal): R3-P1〜P3を新規Issue必須化し、例外は統合境界が2つ以上のケースに限定。
-- Consequences: 承認時は分割粒度の再現性が向上。未承認時はIssue個別運用を継続しテンプレ反映を停止。
-- Approval status: Pending Human Approval
+- R3-P1 推奨: **Approve（新規Issue必須）**
+  - 背景: 要求粒度↔検証粒度が未固定だと完了判定が揺れる。
+  - 効果: docs-check/unit/integration/e2e の過不足を抑制できる。
+- R3-P2 推奨: **Approve（条件付き）**
+  - 背景: 複合検証Issueは失敗時の切り分けが難しい。
+  - 条件: 「統合境界が2つ以上で分割不能」の場合のみ例外許容し、理由を `Validation plan` と `Decision Queue` に記録。
+- R3-P3 推奨: **Approve（条件付き）**
+  - 背景: 受入シナリオの前提/操作/期待結果/除外の欠落を防ぐため。
+  - 条件: Process/実装系は必須、Docs-onlyは任意（推奨）とする。
+
+### Decision Record（確定）
+
+- Context: REQ-DEF-03本体の検証規約はFixedであり、テンプレ必須化範囲と例外閾値の最終承認を実施した。
+- Decision (Final): R3-P1をApprove、R3-P2/R3-P3をConditional Approveとして採択。
+- Consequences: 分割粒度と検証責務の再現性が向上し、テンプレ/READMEへ制度化反映が可能。
+- Approval status: Approved (mixed outcomes: Approve/Conditional Approve)
+
+- Approval log: 2026-03-08 JST / Human decider / R3-P1 Approve, R3-P2 Conditional Approve, R3-P3 Conditional Approve
