@@ -38,33 +38,55 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 2. 必須メタの最小集合を固定することで、可読性と保守負荷のバランスを取れる。
 3. docs-check との接続点を明確化し、運用で回る最小規約として継続可能性を高める。
 
-### 1) Readability Baseline（最低要件）
+### 1) Interface Vocabulary（A系I/F語彙準拠）
+
+本ADRで扱う可読性I/F語彙は、文書種別を横断して次を標準語彙として扱う。
+
+- **Audience**: 想定読者（Maintainer / Operator / Contributor / AI Agent）
+- **Goal**: 文書が決めること・達成させること
+- **Non-goal**: 本文書で決めないこと
+- **Outcome**: 読了後に判断・実行可能になる到達状態
+- **Upstream Reference**: 判断根拠となる上流文書（Prompt / ADR / Architecture）
+- **Downstream Apply**: 適用先となる下流文書（Implementation / Operations / Runbook）
+- **Verification**: docs-check 相当での検証観点
+
+### 2) Readability Baseline（最低要件）
 
 文書新規作成・大幅改訂時は、少なくとも次を満たす。
 
-- **RBL-1: 読者前提**
-  - 想定読者（例: Maintainer / Operator / Contributor / AI Agent）を冒頭または導入で明示する。
-- **RBL-2: 目的と非目標**
+- **RBL-1: Audience（読者前提）**
+  - 想定読者を冒頭または導入で明示する。
+- **RBL-2: Goal / Non-goal（目的と非目標）**
   - 「この文書が決めること」と「この文書で決めないこと」を区別して記載する。
-- **RBL-3: 到達目標（完了状態）**
+- **RBL-3: Outcome（到達目標）**
   - 読了後に何を判断・実行できるべきかを1〜3項目で示す。
-- **RBL-4: 参照導線**
+- **RBL-4: Upstream / Downstream（参照導線）**
   - 上流根拠（ADR/Architecture/Prompt）と下流適用先（実装/運用文書）を最低1件ずつ示す。
-- **RBL-5: 用語整合**
+- **RBL-5: Terminology Consistency（用語整合）**
   - 役割名・状態名・判定語彙を既存正本（`00_Prompt/domain.md` など）と矛盾させない。
 
-### 2) 適用境界
+### 3) 適用境界
 
 - 本ベースラインは **記述品質の最低線** を定義する。
 - 文書種別（ADR、運用手順、Issue補助メモ、Architecture Spec）の章構成そのものは、各テンプレ規約を優先する。
 - 既存文書を一括改修する義務は課さず、**差分が発生した文書から段階適用**する。
 
-### 3) 検証接続（docs-check相当）
+### 4) 検証接続（docs-check相当）
 
 - 必須メタ・見出し整合・用語整合は docs-check の対象とする。
 - docs-check が未自動化の観点は、PRまたは作業ログで実行コマンドと期待結果を明示する。
 
-### 4) 非目標
+### 5) Acceptance Criteria / Definition of Done（補完）
+
+本ADR適用タスクは、以下を満たした時点で完了とする。
+
+- **AC-1**: 対象文書に Audience / Goal / Non-goal / Outcome が明示されている。
+- **AC-2**: 対象文書に Upstream Reference と Downstream Apply が各1件以上ある。
+- **AC-3**: 用語が `00_Prompt/domain.md` と矛盾しない（役割名・判定語彙を含む）。
+- **DoD-1**: docs-check（または同等手順）で必須メタ欠落が検知されない。
+- **DoD-2**: 手動確認項目がある場合、実行コマンドと確認結果が作業ログ/PRに記録される。
+
+### 6) 非目標
 
 - 本ADRで新しい機能要件・実装要件を追加しない。
 - 本ADRで全既存文書の章構成統一を強制しない。
@@ -72,16 +94,19 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 
 ## Consequences
 
-- 初読時の理解コストが下がり、文書更新時の差分レビュー観点（何が目的で何が非目標か）が明確になる。
+- 初読時の理解コストが下がり、文書更新時の差分レビュー観点（Goal / Non-goal / Outcome）が明確になる。
 - 文書横断ドリフト（用語ゆれ・導線欠落）を早期に検知しやすくなる。
+- docs-check 連携により、可読性規約の運用実効性が上がる。
 - 一方で、執筆時に最小メタ確認が増えるため、短期的には文書作成コストがわずかに上がる。
 - 適用を段階導入とするため、移行期は「適用済み文書」と「未適用文書」が混在する。
 
 ## Traceability
 
-- Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
-- Related: `00_Prompt/domain.md`
-- Related: `00_Prompt/agent_handover.md`
-- Related: `01_Plans/adr/ADR-0000-adr-governance.md`
-- Related: `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`
-- Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Related (Upstream): `00_Prompt/domain.md`
+- Related (Upstream): `00_Prompt/agent_handover.md`
+- Related (Upstream): `01_Plans/adr/ADR-0000-adr-governance.md`
+- Related (Upstream): `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`
+- Related (Upstream): `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Related (Source): `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- Related (Downstream): `02_Architecture/architecture.md`
+- Related (Downstream): `04_Documentation/operations.md`
