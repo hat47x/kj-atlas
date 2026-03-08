@@ -124,6 +124,15 @@
 - Proceed条件:
   - AのStatusが `Accepted` になるまで、B/C/Dの実編集は開始しない。
 
+
+### 3.2.4 状態同期確認（Phase 2）
+
+- 同期対象: Active issue / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md`
+- 同期結果（2026-03-08 JST）:
+  1. `A承認待ち`（`ADR-0022=Proposed`）を3文書で一致させた。
+  2. B/C/D開始条件（A=`Accepted`、編集境界、統合ファイル同時更新禁止）を3文書で一致させた。
+  3. 不一致検出時は self-correction を最大3回まで許容し、未解消時は停止する運用を確認した。
+
 ### 3.3 Verify
 
 - 検証1: docs-check相当として、必須メタ項目と見出し整合をコマンドで確認する。
