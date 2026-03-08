@@ -168,3 +168,24 @@
 
 - P0ボトルネック（AUTH-OPS-03 D1〜D4未確定）は解消。
 - DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01/02/03 は Done へ遷移。REQ-DEF系のDecision Queueは解消済み。
+
+
+## 4. P1: DOC-OPS-04（新規 / A承認待ち）
+
+### 4-1. 現在のゲート状態
+
+- 判定: **Blocked (ADR-A承認待ち)**
+- 分岐条件: `ADR-0022-doc-ops-04-documentation-information-interface.md` の Status が `Accepted` であること。
+- 現在値: `ADR-0022` は `Proposed`。
+
+### 4-2. B/C/D開始条件（固定）
+
+1. A=`Accepted`
+2. 編集境界（ADR-0023/0024/0025のみ編集）が有効
+3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効
+
+### 4-3. 承認依頼（Proceed）
+
+- 依頼先: Platform Architecture Owner / Plan Owner / Architecture Owner
+- 依頼内容: ADR-A（`ADR-0022`）を `Accepted` へ遷移させる可否
+- 停止条件: 承認が得られるまで B/C/D の実編集を開始しない

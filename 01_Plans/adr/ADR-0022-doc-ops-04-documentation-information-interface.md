@@ -21,7 +21,7 @@ DOC-OPS-04 で扱う ADR 候補 B/C/D（可読性ベースライン、品質ゲ�
 
 ## Decision
 
-DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する。
+DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認審査の固定入力**）。
 
 1. **用語I/F（固定語彙）**
    - 正本（source of truth）
@@ -68,6 +68,24 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する。
 - 移行時対応:
   - 後続ADR-B/C/D起票時に、本ADR準拠チェックを Verify 項目へ追加する。
   - 統合フェーズでのみ README/dashboard の状態同期を行う。
+
+
+## Verify (Phase 1)
+
+- 判定: **Ready for approval / Not accepted yet**
+- 根拠:
+  1. `Context / Decision / Consequences / Traceability` の4要素を記載済み。
+  2. 用語I/F・見出しI/F・判定メタI/Fを固定語彙として明示済み。
+  3. B/C/D拘束条件（逸脱時理由明文化・統合ファイル同時更新禁止）を明文化済み。
+- 未充足:
+  - `Status: Proposed` のため、Deciders承認待ち。
+
+## Proceed (Gate)
+
+- 承認依頼先: Platform Architecture Owner / Plan Owner / Architecture Owner
+- 承認完了までの運用:
+  - B/C/D（ADR-0023〜0025）は起票準備のみ実施し、実編集を開始しない。
+  - 統合ファイル更新が必要な場合は、統合フェーズ専用PRへ切り出す。
 
 ## Approval request
 

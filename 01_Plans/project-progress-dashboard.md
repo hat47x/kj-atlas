@@ -53,7 +53,7 @@
 | P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 決定済み（R2-P1 Reject / R2-P2 Conditional Approve / R2-P3 Conditional Approve） |
 | P2 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 決定済み（R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve） |
 
-補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`（DOC-OPS-04のA承認待ち状態を同期済み）
 
 ## 4) 決定ログ（Recent Decisions）
 
