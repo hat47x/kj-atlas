@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-03 意思決定支援の進捗ダッシュボード作成計画
 
 - Type: Process
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -39,21 +39,32 @@
   - backend/frontend 実装コードの変更。
   - ADRやスキーマの仕様変更。
 
-## 5) 受入条件 / Acceptance criteria
+## 5) AC/DoD不足の先行提案（着手前）
 
-- [ ] `01_Plans/` 配下にダッシュボード本体ファイルが1つ作成される。
-- [ ] ダッシュボードに「進捗サマリ」「Active issue集約」「人間判断待ち」「決定ログ」「次の1手」が含まれる。
-- [ ] 期待検証レベルを `docs-check` として満たす。
-- [ ] 参照導線（README or issues index）からダッシュボードへ辿れる。
+- 不足1: 実行プロトコル（Plan→Execute→Verify→Proceed）が受入条件に明示されていない。
+  - 提案: ダッシュボード本文に4段階運用手順を追加し、各段階の出力（計画・差分・検証結果・次アクション）を固定する。
+- 不足2: 自己修正上限（Self-Correction最大3回）が受入条件に未反映。
+  - 提案: 検証セクションに「不一致時は最大3回まで修正し、それでも解消しない場合は停止」を明記する。
+- 不足3: 競合検知時の停止条件が明文化されていない。
+  - 提案: Active issue状態やDecision Queueに矛盾がある場合は、更新停止と人間判断待ちへ遷移する条件を追加する。
 
-## 6) 実装タスク分解 / Task breakdown
+## 6) 受入条件 / Acceptance criteria
 
-- [ ] T1: ダッシュボード本体ファイルを `01_Plans/` に1つ作成。
-- [ ] T2: 最小要件5項目を反映。
-- [ ] T3: Active issue / decision pack /関連ADRへのリンクを配置。
-- [ ] T4: docs-check 検証を実行し結果を記録。
+- [x] `01_Plans/` 配下にダッシュボード本体ファイルが1つ作成される。
+- [x] ダッシュボードに「進捗サマリ」「Active issue集約」「人間判断待ち」「決定ログ」「次の1手」が含まれる。
+- [x] ダッシュボードに `Plan→Execute→Verify→Proceed` の運用手順が追記される。
+- [x] 検証セクションに「Self-Correction最大3回」「競合検知時は停止」が明記される。
+- [x] 期待検証レベルを `docs-check` として満たす。
+- [x] `01_Plans/issues/README.md` からダッシュボードへ辿れる。
 
-## 7) 検証計画 / Validation plan
+## 7) 実装タスク分解 / Task breakdown
+
+- [x] T1: ダッシュボード本体ファイルへ運用プロトコルを追記。
+- [x] T2: AC/DoD不足を先行提案として issue memo に記録。
+- [x] T3: Active issue index（`01_Plans/issues/README.md`）の導線文言を同期。
+- [x] T4: docs-check 検証を実行し結果を記録。
+
+## 8) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
@@ -62,20 +73,20 @@
 - 期待結果:
   - issue memo 検証が成功し、ダッシュボード要件キーワードが検索可能。
 
-## 8) 代替案 / Alternatives considered
+## 9) 代替案 / Alternatives considered
 
 - 代替案A: issue memoだけを更新し、ダッシュボード作成は延期する。
   - 却下理由: 意思決定支援の即効性が得られない。
 - 代替案B: 既存READMEに進捗表を追記して代替する。
   - 却下理由: 「01_Plansに1つだけのダッシュボード」要件と分離管理方針に合わない。
 
-## 9) リスクとロールバック / Risks & rollback
+## 10) リスクとロールバック / Risks & rollback
 
 - 失敗モード: ダッシュボード項目が不足し意思決定支援にならない。
 - 影響範囲: 運用判断の遅延、参照文書の往復コスト。
 - ロールバック手順: 最小要件5項目に絞って再構成し、リンク導線を優先して復旧する。
 
-## 10) Additional context
+## 11) Additional context
 
 ### ダッシュボードの最小要件
 
