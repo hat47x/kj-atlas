@@ -88,6 +88,10 @@
 - Decision: 起票順序は **A → (B/C/D)** とし、B/C/DはAのI/F語彙を前提に審査する（暫定）。
 - Consequences: 先行I/Fにより後続ADRの差分比較が容易化する一方、Aの承認遅延が全体着手順序のクリティカルパスになる。
 
+> 状態同期注記（Phase 2）:
+> - **A承認待ち**: `ADR-0022` が `Accepted` へ遷移するまで、B/C/Dは起票準備のみ実施する。
+> - **B/C/D開始条件**: A=`Accepted`、編集境界ルールが有効、かつ統合ファイル同時更新禁止が維持されていること。
+
 2) **レビュー責任体制（暫定）**
 - Context: DOC-OPS系は `01_Plans` / `02_Architecture` / `04_Documentation` の横断影響があり、単独レビューでは見落としが出る。
 - Decision: 一次レビューを Plan Owner、二次レビューを Architecture Owner、最終承認を Platform Architecture Owner とする三層レビュー案を審査入力として記録する（暫定）。
@@ -133,6 +137,7 @@
 - ADR起票可否判断材料:
   1. 未解決論点: A承認後のB/C/D同時着手可否、承認SLA、例外期限の監査方式。
   2. 承認依頼事項: Phase 2の暫定4論点をADR本文へ昇格する際の採否判定。
+  3. ゲート確認事項: Aが `Accepted` へ遷移するまでB/C/D実編集を停止する。
 
 ## 4) 受入条件 / Acceptance criteria（前処理監査限定）
 
