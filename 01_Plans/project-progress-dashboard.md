@@ -20,7 +20,7 @@
 |---|---|---|
 | 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
 | 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
-| 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Open、decision packで方針は人間判断済み。 |
+| 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Done、decision packでの方針採択を反映済み。 |
 
 ## 2) Active issue 集約（Draft / Open / In Progress）
 
@@ -56,7 +56,7 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 のADR候補は「承認後適用範囲」と「暫定メモ範囲」を分離維持する。
+1. DOC-OPS-04 は ADR-A（`ADR-0022`）承認後に B/C/D を並列起票し、統合フェーズで状態同期する。
 2. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
