@@ -30,7 +30,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 5) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 6) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 7) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0021`
+8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0022`
 9) **実装（03_Implement）**: 対象領域のソースへ
 10) **運用・手順**: `04_Documentation/*`（必要に応じて）
 11) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -96,6 +96,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`：E2E確認方針とCompose運用。
 - `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`：OIDC/SAMLのMock IdP + SP実装/検証プロファイル。
 - `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`：環境変数のグローバルプレフィックス移行方針。
+- `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`：DOC-OPS-04後続ADRの共通I/F（用語・見出し・判定メタ）先行定義。
 - `01_Plans/issues/README.md`：Issue補助メモのActive一覧（Draft/Open/In Progress）。
 - `01_Plans/issues/*.md`：GitHub Issue運用を補助する短命メモ（Done時は原則削除）。
 - `01_Plans/issues/TEMPLATE.md`：Issue補助メモの標準記述テンプレ（人間/生成AI共通）。

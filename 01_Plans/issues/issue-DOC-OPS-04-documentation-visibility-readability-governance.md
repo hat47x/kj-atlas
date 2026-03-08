@@ -6,9 +6,9 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: DOC-OPS-04 監査専任エージェント
-- Scope: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` のみ（本Issue更新に限定）
+- Scope: `01_Plans/issues/` / `01_Plans/adr/` / `01_Plans/project-progress-dashboard.md`（計画レイヤ同期のみ）
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0018`, `ADR-0019`
+- Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0018`, `ADR-0019`, `ADR-0022`
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement
@@ -79,6 +79,47 @@
 - Decision: 本Issueでは「ガバナンス論点の棚卸し」に留め、責務分離と承認段階はADRで審査・確定する（暫定）。
 - Consequences: 採用時は説明責任と停止基準の明確化が期待できる。非採用時は運用判断の属人化が残る。
 
+#### 3.2.3 ADR起票前の決裁情報（暫定固定: Phase 2）
+
+> 注記: 本節は **ADR起票前の審査入力** を記録する。恒久ルールの断定はADR本文でのみ行う。
+
+1) **ADR起票順序（暫定）**
+- Context: A（情報設計I/F）が未確定だと、B/C/Dの用語・判定メタ参照先が分岐しやすい。
+- Decision: 起票順序は **A → (B/C/D)** とし、B/C/DはAのI/F語彙を前提に審査する（暫定）。
+- Consequences: 先行I/Fにより後続ADRの差分比較が容易化する一方、Aの承認遅延が全体着手順序のクリティカルパスになる。
+
+2) **レビュー責任体制（暫定）**
+- Context: DOC-OPS系は `01_Plans` / `02_Architecture` / `04_Documentation` の横断影響があり、単独レビューでは見落としが出る。
+- Decision: 一次レビューを Plan Owner、二次レビューを Architecture Owner、最終承認を Platform Architecture Owner とする三層レビュー案を審査入力として記録する（暫定）。
+- Consequences: 監査可能性は上がるが、レビュー待機時間が増えるため、各ADRで承認SLAの要否判断が必要になる。
+
+3) **docs-check/CI必須化境界（暫定）**
+- Context: 文書更新の全件で同一ゲートを課すと、軽微修正の待機コストが増える可能性がある。
+- Decision: `01_Plans` の Decision文書（ADR/issue meta）と `project-progress-dashboard.md` 更新は docs-check必須、CI拡張（link/metadata strict）はCで判断する前提を記録する（暫定）。
+- Consequences: 最低限の回帰防止を維持しつつ、CI強制境界はCへ分離できる。
+
+4) **例外承認条件（暫定）**
+- Context: docs-check失敗時に即時停止しかないと、復旧作業の優先順序が曖昧になる。
+- Decision: 例外は「緊急復旧」「依存ツール障害」「上位判断待ち」の3類型のみ候補とし、適用時は理由・期限・フォローアップIssueを必須記録する案を審査入力として保持する（暫定）。
+- Consequences: 例外乱発を抑制できる一方、期限管理が未実装だと形骸化するためDで統治責務を確定する必要がある。
+
+
+
+
+#### 3.2.4 次段並列化準備（Phase 4 出力）
+
+- 編集許可スコープ（ファイル単位）:
+  - ADR-B: `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`（新規のみ）
+  - ADR-C: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`（新規のみ）
+  - ADR-D: `01_Plans/adr/ADR-0025-doc-ops-04-change-governance.md`（新規のみ）
+  - 統合フェーズ専用: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+- 競合禁止ルール:
+  1. B/C/D実行中は `README.md` と dashboard を更新しない（統合フェーズ1本化）。
+  2. B/C/Dは相互ADR本文を直接編集しない（参照はTraceabilityリンクのみ）。
+  3. Aの用語I/F変更が発生した場合は、B/C/Dを停止しA再承認を先行する。
+- Proceed条件:
+  - AのStatusが `Accepted` になるまで、B/C/Dの実編集は開始しない。
+
 ### 3.3 Verify
 
 - 検証1: docs-check相当として、必須メタ項目と見出し整合をコマンドで確認する。
@@ -90,8 +131,8 @@
 - 現在状態: ADR候補A〜Dの前処理監査ログを作成済み。
 - 停止理由: 本タスク範囲は暫定メモ整備までであり、恒久化判断はADR審査の責務。
 - ADR起票可否判断材料:
-  1. 未解決論点: 起票順序、レビュー体制、CI必須化境界、例外承認条件。
-  2. 承認依頼事項: 4論点の優先順位と審査責任者の確定。
+  1. 未解決論点: A承認後のB/C/D同時着手可否、承認SLA、例外期限の監査方式。
+  2. 承認依頼事項: Phase 2の暫定4論点をADR本文へ昇格する際の採否判定。
 
 ## 4) 受入条件 / Acceptance criteria（前処理監査限定）
 
@@ -100,6 +141,8 @@
 - [x] AC-3: 承認後適用範囲と暫定メモ範囲を分離して記述した。
 - [x] AC-4: Issue本文で恒久ルールを固定していないことを検証項目として明示した。
 - [x] AC-5: ADR起票可否の判断材料（未解決論点・承認依頼事項）を残して停止条件を明記した。
+- [x] AC-6: ADR起票前の4論点（順序/責任体制/CI境界/例外条件）を暫定記録として固定した。
+- [x] AC-7: B/C/D並列化に向けた編集境界と競合禁止ルールを記録した。
 
 ## 5) Definition of Done（DoD: 前処理監査）
 
@@ -108,6 +151,7 @@
 - [x] DoD-3: 恒久ルールをIssue本文で固定していないことを明示検証している。
 - [x] DoD-4: 承認待ち停止時の未解決論点と承認依頼事項を記録している。
 - [x] DoD-5: Self-Correction上限（3回）と未解消時の停止方針を記載している。
+- [x] DoD-6: ADR-A承認チェックポイント（承認待ち時は次Phase停止）を明示している。
 
 ## 6) Self-Correction / Fail-safe
 
@@ -132,7 +176,7 @@
 ## 8) Additional context
 
 - 承認待ち論点:
-  1. ADR候補A〜Dの分離起票順序。
-  2. ADRレビュー体制（審査責任者・承認段階）。
-  3. docs-check必須化境界と例外承認条件。
+  1. ADR-A（`ADR-0022`）の承認可否と承認日時。
+  2. A承認後のB/C/D並列着手の承認SLA。
+  3. docs-check必須化境界と例外承認条件の恒久化（ADR-C/D審査対象）。
 - フェイルセーフ記録: 競合兆候・上位方針矛盾・恒久化境界の曖昧さが検出された場合は、推測実装せず停止する。
