@@ -200,8 +200,15 @@
 - [x] REQ-DEF-01の共通I/F（canonical key / Pending時のみ `DecisionQueueRef` 必須）と不整合がない。
 
 
-## Decision Queue（残る未確定）
+## Decision Queue（残る未確定 / R2系）
 
-- Pending-1: `01_Plans/issues/TEMPLATE.md` へ共通I/Fキー（RACI/Contract impact）を必須化する範囲。
-- Pending-2: `Go/No-Go` 判定欄を全Issue共通必須にする適用開始時期。
-- Pending-3: 監査境界（SafeMode/漏えい防止）をレビューゲートへ接続する運用レベル。
+- R2-P1 (Pending): `01_Plans/issues/TEMPLATE.md` へ共通I/Fキー（RACI/ContractImpact）を必須化する範囲。
+- R2-P2 (Pending): `Go/No-Go` 判定欄を全Issue共通必須にする適用開始時期。
+- R2-P3 (Pending): 監査境界（SafeMode/漏えい防止）をレビューゲートへ接続する運用レベル。
+
+### Decision Record（承認待ち）
+
+- Context: REQ-DEF-02本体（R1〜R3）はFixedだが、テンプレ反映範囲は未承認。
+- Decision (Proposal): R2-P1〜P3を新規Issue必須 + 既存Activeは次スプリントで追補。
+- Consequences: 承認時は責任分界の欠落を抑制。未承認時は本Issue内固定のままとし、テンプレ反映を停止。
+- Approval status: Pending Human Approval

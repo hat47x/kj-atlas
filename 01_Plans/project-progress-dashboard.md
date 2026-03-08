@@ -36,8 +36,8 @@
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
 |---|---|---|---|
-| P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 役割RACIと契約変更判定欄の必須化範囲 |
-| P1 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 要求粒度↔検証粒度マッピングを必須化するか |
+| P1 | REQ-DEF-02 | 責任分界点の固定粒度 | R2-P1〜P3（RACI/ContractImpact/Go-No-Go必須化範囲）※承認待ち |
+| P1 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | R3-P1〜P3（粒度マッピング/例外閾値/テンプレ必須化範囲）※承認待ち |
 
 補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 
@@ -50,10 +50,11 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. REQ-DEF-02/03 の未確定項目（テンプレ必須化範囲）を Decision Queue で決裁する。
-2. DOC-OPS-04 の可視性改善を Active issue として継続し、dashboardへ反映する。
-3. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
-4. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
+1. REQ-DEF-02/03 の Decision Record（DR-REQ-DEF-02/03）を人間承認する。
+2. 未承認の間は TEMPLATE/README へ必須化ルールを反映しない（停止条件）。
+3. DOC-OPS-04 のADR候補は「承認後適用範囲」と「暫定メモ範囲」を分離維持する。
+4. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
+5. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
 ## 6) 再開コマンド（docs-check）
 
