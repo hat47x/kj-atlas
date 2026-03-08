@@ -16,29 +16,35 @@
 
 > REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
 
-- RequirementID
-- RequirementStatement
-- PriorityClass（Must / Should / Could）
-- RACI（A/R/C/I）
-- ContractImpact（schema / api / policy / ops : あり / なし）
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
-- VerificationLevel（docs-check / unit / integration / e2e）
-- DecisionStatus（Fixed / Pending）
-- DecisionQueueRef（未確定時の参照先）
+- `RequirementID`
+- `RequirementStatement`
+- `PriorityClass`（Must / Should / Could）
+- `RACI`（A/R/C/I）
+- `ContractImpact`（schema / api / policy / ops : あり / なし）
+- `AcceptanceScenario`（前提 / 操作 / 期待結果 / 除外）
+- `VerificationLevel`（docs-check / unit / integration / e2e）
+- `DecisionStatus`（Fixed / Pending）
+- `DecisionQueueRef`（`DecisionStatus=Pending` の場合のみ必須）
 
 ### B-3. I/Fキー実装（本Issueの独立実行範囲）
 
 > 独立実行可能理由: B-3のI/Fキーに RACI / Contract impact 判定を埋める専任タスクとして切り出し可能。
 
-| Key | このIssueでの確定値 | 備考 |
+| Canonical key | このIssueでの確定値 | 備考 |
 |---|---|---|
-| Requirement ID | `REQ-DEF-02` | 固定 |
-| Priority class | `Must` | 監査説明責任の成立条件 |
-| RACI（A/R/C/I） | **A:** Platform Architecture Owner / **R:** Security Officer / **C:** Product Owner, Implementer / **I:** Reviewer, Operations | RACIを要求定義時点で先に固定 |
-| Contract impact | **schema:** なし / **api:** なし / **policy:** あり / **ops:** あり | 契約判定を明示 |
-| Verification level | `docs-check` | ドキュメント整合のみ |
-| Decision status | `Fixed` | B-3は本Issueで確定 |
-| Decision queue ref | `Pending-2`, `Pending-3` | 全Issue必須化は別判断 |
+| `RequirementID` | `REQ-DEF-02` | 固定 |
+| `PriorityClass` | `Must` | 監査説明責任の成立条件 |
+| `RACI` | **A:** Platform Architecture Owner / **R:** Security Officer / **C:** Product Owner, Implementer / **I:** Reviewer, Operations | 要求定義時点で先に固定 |
+| `ContractImpact` | **schema:** なし / **api:** なし / **policy:** あり / **ops:** あり | 契約判定を明示 |
+| `VerificationLevel` | `docs-check` | 主検証責務は docs-check 固定 |
+| `DecisionStatus` | `Fixed` | B-3は本Issueで確定 |
+| `DecisionQueueRef` | N/A | `DecisionStatus=Fixed` のため不要 |
+
+### AC/DoD補完提案（実施前確認）
+
+- 不足候補1: `DecisionStatus=Fixed` なのに `DecisionQueueRef` を記載していたため、REQ-DEF-01の共通I/F条件（Pending時のみ必須）に合わせて補正する。
+- 不足候補2: B-3独立実行の完了判定を明確化するため、DoDに「REQ-DEF-01共通I/Fとの整合確認」を追加する。
+- 不足候補3: 主検証責務を `docs-check` 固定とし、validator + 文言追跡コマンドを必須ログ化する。
 
 ## 要求定義の固定（RACI / ContractImpact / Go-No-Go）
 
@@ -139,6 +145,13 @@
    - Go/No-Go matrix を適用し、No-Goゼロ時のみ後続Issueへ進行する。
    - No-Go検出時は Decision Queue に登録して停止する。
 
+### Execute確定ログ（B-3独立実行）
+
+- RACI を `REQ-DEF-02-R1` へ固定し、A/R/C/I を本文に単一表記で統一。
+- ContractImpact を `REQ-DEF-02-R2` へ固定し、`schema/api/policy/ops` の4面を「あり/なし」で確定。
+- Go/No-Go を `REQ-DEF-02-R3` へ固定し、No-Go時の停止条件とエスカレーション先を維持。
+- Decision Queue は「未確定事項のみ」へ限定し、B-3本体の `DecisionStatus=Fixed` と衝突しない状態へ補正。
+
 ### 自己修復ログ（最大3回）
 
 - Attempt 1: validator実行（失敗時は不足項目を修正）。
@@ -184,6 +197,7 @@
 - [x] Go/No-Go 判定が RequirementStatement（REQ-DEF-02-R3）として固定されている。
 - [x] Plan → Execute → Verify → Proceed が本文ログとして追跡できる。
 - [x] 未確定項目が Decision Queue（Pending-2 / Pending-3）へ接続されている。
+- [x] REQ-DEF-01の共通I/F（canonical key / Pending時のみ `DecisionQueueRef` 必須）と不整合がない。
 
 
 ## Decision Queue（残る未確定）
