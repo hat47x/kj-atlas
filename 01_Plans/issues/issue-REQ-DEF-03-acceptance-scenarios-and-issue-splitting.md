@@ -56,6 +56,16 @@
   - Playwrightテストや実装コードの追加。
   - CIワークフローの変更。
 
+### 4.0 Plan（AC/DoD補完提案）
+
+- AC補完提案:
+  - AC-8: 各要求粒度（R0〜R3）に対して「許容される主検証責務」を1つに固定し、Issue分割基準と紐付ける。
+  - AC-9: 複合検証が必要な場合の例外条件（契約境界を跨ぐ不可分変更のみ）と、分割不能理由の記録必須化を定義する。
+- DoD補完提案:
+  - DoD-1: `Requirement meta I/F` の `Verification level` が R0〜R3 の定義と矛盾しない。
+  - DoD-2: `Validation plan` に主検証責務・未実施時の代替検証・残課題が記載される。
+  - DoD-3: 1Issue 1検証責務を満たさない場合、`Decision Queue` に例外理由と解除条件を登録する。
+
 ### 4.1 Plan → Execute → Verify（独立実行プロトコル）
 
 - Plan:
@@ -77,6 +87,18 @@
 | R2: 境界I/Fを跨ぐ仕様差分 | API/DB/worker/外部連携境界 | `integration` | unitに加え、境界契約の接続性を確認。 |
 | R3: 利用者フロー到達性の保証 | UI/API連動、権限/公開導線 | `e2e` | integrationに加え、利用者視点の完遂フローを確認。 |
 
+### 4.2.1 1Issue 1検証責務の運用境界
+
+| 条件 | 判定 | 運用ルール |
+| --- | --- | --- |
+| 受入条件が単一の要求粒度（R0/R1/R2/R3）に収まる | 分割不要 | 主検証責務を1つだけ宣言して起票する。 |
+| 受入条件が隣接粒度を跨ぐ（例: R1+R2） | 原則分割 | 上位粒度側を別Issueへ分離し、依存リンクで接続する。 |
+| 境界契約が不可分で分割不能（例: API契約変更と最小統合確認が不可分） | 例外許容 | 主検証責務を高い方に固定し、低い方は補助検証として `Validation plan` に明記する。 |
+| E2E要件（R3）とdocs-only要件（R0）が同時に存在 | 必ず分割 | R0は docs-check Issue、R3は e2e Issue として分離する。 |
+
+- 補助検証は許可されるが、完了判定は主検証責務の達成をもって行う。
+- 主検証責務が未達の場合、他レベルが完了していてもDoneに遷移しない。
+
 ### 4.3 自己修復（最大3回）とフェイルセーフ停止
 
 - 自己修復ループ（最大3回）:
@@ -92,10 +114,18 @@
 - [x] 受入シナリオ記述の最小テンプレ（前提/操作/期待結果/除外）が定義される。
 - [x] 要求粒度と `Expected verification level` の対応ルールが定義される。
 - [x] 1Issueあたりの検証責務上限（複合しすぎない）が明文化される。
-- [ ] 安全境界と互換境界の確認項目が受入シナリオに含まれる。
-- [ ] docs-check コマンドで規約文書の整合を再現確認できる。
+- [x] 安全境界と互換境界の確認項目が受入シナリオに含まれる。
+- [x] docs-check コマンドで規約文書の整合を再現確認できる。
 - [x] 要求粒度↔検証粒度マッピング（R0〜R3）が定義される。
 - [x] Plan→Execute→Verify と自己修復3回/フェイルセーフ停止条件が明文化される。
+- [x] 1Issue 1検証責務の運用境界（分割必須/例外許容）が定義される。
+
+## 5.1 Definition of Done（REQ-DEF-03）
+
+- [x] R0〜R3ごとに主検証責務（docs-check/unit/integration/e2e）が一意に定義されている。
+- [x] 例外的に複合検証を許容する条件と記録先（`Validation plan` / `Decision Queue`）が定義されている。
+- [x] Plan→Execute→Verify の実行手順と、自己修復最大3回・フェイルセーフ停止条件が本文に明記されている。
+- [x] 本Issue本文のみの変更で完結し、他Issue・コード・CIを変更していない。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -109,7 +139,7 @@
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "REQ-DEF-03|受入シナリオ|Expected verification level|分割基準" 01_Plans 04_Documentation`
+  - `rg -n "REQ-DEF-03|要求粒度|Verification level|1Issue 1検証責務|自己修復" 01_Plans/issues/issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md`
 - 期待結果:
   - issue memo validator が成功し、受入シナリオ規約の記述が追跡可能である。
 - 未実施時の理由・代替検証:
