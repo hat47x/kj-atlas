@@ -41,6 +41,11 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する。
    - ADR-B/C/D は本ADRを `Related` に明記し、上記I/Fを逸脱する場合は逸脱理由を明文化する。
    - B/C/D並列作業中は、統合対象（`01_Plans/issues/README.md`、`01_Plans/project-progress-dashboard.md`）を更新しない。
 
+5. **B/C/D拘束条件（逸脱・統合更新の明文化）**
+   - 逸脱許可条件: B/C/DでI/F項目を追加・削除・改名する場合は、各ADRの `Decision` と `Consequences` に「逸脱理由」「影響範囲」「復帰方針」を必須記録する。
+   - 統合ファイル更新禁止: B/C/Dの個別ADR起票・審査中は、統合ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）を同時更新しない。
+   - 例外処理: 統合ファイルの修正が必要になった場合は、B/C/Dを停止し、統合フェーズ専用PRへ切り出す。
+
 採用理由:
 - 並列化前に比較軸を揃えることで、差分レビューの粒度を一定化できる。
 - 実装ルール（03_Implement）へ踏み込まず、計画・設計文書の競合だけを先に抑制できる。
@@ -63,6 +68,12 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する。
 - 移行時対応:
   - 後続ADR-B/C/D起票時に、本ADR準拠チェックを Verify 項目へ追加する。
   - 統合フェーズでのみ README/dashboard の状態同期を行う。
+
+## Approval request
+
+- Request: ADR-A（本ADR）を `Accepted` に変更する可否を、Deciders（Platform Architecture Owner / Plan Owner / Architecture Owner）へ承認依頼する。
+- Required evidence: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` の `Proceed条件` と `Additional context` が本ADRの拘束条件と整合していること。
+- Gate rule: 承認が得られるまで、ADR-B/C/D（ADR-0023〜0025）の実編集を開始しない。
 
 ## Traceability
 

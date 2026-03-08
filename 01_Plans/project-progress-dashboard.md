@@ -36,6 +36,16 @@
 - 分岐条件: DR-REQ-DEF-02 と DR-REQ-DEF-03 の Approval status が双方 `Approved` の場合のみ Phase 2 へ進行。
 - 現在値: DR-REQ-DEF-02/03 ともに `Approved (mixed outcomes)`。Phase 2/3 の着手条件を充足。
 
+## 2.2) DOC-OPS-04 Gate 状態（ADR-A依存）
+
+- Gate判定: **Blocked (A承認待ち)**
+- 分岐条件: `ADR-0022` の Status が `Accepted` であること。
+- B/C/D開始条件:
+  1. A=`Accepted`
+  2. 編集境界（ADR-0023/0024/0025のみ編集）が維持されていること
+  3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効であること
+- 現在値: `ADR-0022` は `Proposed` のため、B/C/D実編集は未開始（起票準備のみ）。
+
 ## 3) 人間判断待ち（Decision Queue）
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
@@ -56,7 +66,7 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 は ADR-A（`ADR-0022`）承認後に B/C/D を並列起票し、統合フェーズで状態同期する。
+1. DOC-OPS-04 は ADR-A（`ADR-0022`）承認依頼を継続し、`Accepted` まで B/C/D実編集を開始しない。
 2. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
