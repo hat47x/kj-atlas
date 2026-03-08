@@ -12,19 +12,36 @@
 - Expected verification level: `docs-check`
 
 
-## Requirement meta I/F（REQ-DEF共通キー）
+## Requirement meta I/F（REQ-DEF共通キー：最終固定）
 
-> REQ-DEF-01/02/03 の編集分離用に、本文より先にこのキーセットを固定する。
+> REQ-DEF-01/02/03 の編集分離用に、本文より先にこのキーセットを最終固定する。  
+> **本Issueを正本（canonical source）** とし、他REQは下記キー名へ準拠する。
 
-- RequirementID
-- RequirementStatement
-- PriorityClass（Must / Should / Could）
-- RACI（A/R/C/I）
-- ContractImpact（schema / api / policy / ops : あり / なし）
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
-- VerificationLevel（docs-check / unit / integration / e2e）
-- DecisionStatus（Fixed / Pending）
-- DecisionQueueRef（未確定時の参照先）
+| Canonical key | Value / Enum | 必須 | I/F上の扱い |
+| --- | --- | --- | --- |
+| `RequirementID` | `REQ-DEF-xx` | Yes | 変更禁止（要求識別子） |
+| `RequirementStatement` | 要求本文（1要求1文を推奨） | Yes | レビュー/実装が参照する主文 |
+| `PriorityClass` | `Must` / `Should` / `Could` | Yes | 優先固定対象の判定キー |
+| `RACI` | `A/R/C/I` の役割割当 | Yes | 責任分界点の正規表現 |
+| `ContractImpact` | `schema/api/policy/ops` ごとに `あり/なし` | Yes | 変更契約の影響面を明示 |
+| `AcceptanceScenario` | `前提/操作/期待結果/除外` | Yes | 受入判定の最小単位 |
+| `VerificationLevel` | `docs-check` / `unit` / `integration` / `e2e` | Yes | 検証粒度の宣言 |
+| `DecisionStatus` | `Fixed` / `Pending` | Yes | 確定/未確定の状態管理 |
+| `DecisionQueueRef` | `Pending-<n>`（未確定時のみ） | Conditional | `DecisionStatus=Pending` のとき必須 |
+
+### REQ依存（REQ-DEF-02/03）向け互換ルール
+
+- 許容する表記ゆれ（例: `Requirement ID`, `Priority class`）は、レビュー時に**上記canonical keyへ読み替えて評価**する。
+- 本Issue完了条件は、REQ-DEF-02/03の本文修正ではなく、**依存先が参照可能な正規キー定義を確定**すること。
+- したがって本タスクでは REQ-DEF-02/03 本文を編集しない（スコープ外）。
+
+### DecisionQueue運用（REQ-DEF共通）
+
+1. `DecisionStatus=Pending` を設定した時点で `DecisionQueueRef` を必須記入する。
+2. `DecisionQueueRef` は `Pending-<連番>` 形式で、同一Issue内で一意とする。
+3. Pending項目には「未確定理由 / 解除条件 / 次判断者」を1行で添える。
+4. `VerificationLevel` が宣言済みでも、`DecisionStatus=Pending` の要求は「検証完了」扱いにしない。
+5. 他REQへ依存する未確定事項は「参照のみ」で連携し、依存先本文の直接編集は行わない。
 
 ## 1) 課題 / Problem statement
 
@@ -64,6 +81,8 @@
 - [x] 未確定要求をDecision Queueへ送る判定条件（いつ止めるか）が定義される。
 - [x] SafeMode既定ONと漏えい防止（share/export）を弱めない非改変条件が明文化される。
 - [x] docs-check の検証コマンドと期待結果が記録される。
+- [x] Requirement meta I/F の正規キーが camel-case で最終固定され、他REQが参照できる。
+- [x] `DecisionStatus` と `DecisionQueueRef` の相互必須条件（Pending時必須）が明文化される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -102,12 +121,22 @@
 - [x] ACに「安全（SafeMode既定ON/漏えい防止）」「検証（docs-check）」が含まれ、チェック状態が整合している。
 - [x] 非目標に `REQ-DEF-02/03` 直接編集禁止が反映され、スコープ逸脱を防いでいる。
 - [x] Decision Queueの未確定項目が `DecisionStatus=Pending` と対応づけ可能である。
+- [x] REQ-DEF-02/03 のI/F依存を満たすため、正規キーと表記ゆれの読み替え規則を本Issueで固定した。
 
 ## Self-Correction Log（最大3回）
 
 1. 修正1: 共通I/Fキーの命名をスペース区切りから固定キー（`PriorityClass` 等）へ統一。
 2. 修正2: 受入条件へ SafeMode既定ON/漏えい防止の非改変条件を明示。
 3. 修正3: タスクT4へ禁止スコープ（REQ-DEF-02/03本文編集禁止）を追記して逸脱を防止。
+
+### Plan / Execute / Verify（この改訂での実施）
+
+1. Plan
+   - AC/DoD不足として「正規キー最終固定」「Pending運用必須条件」を補強対象に設定。
+2. Execute
+   - 本Issue内のみを更新し、canonical key表・DecisionQueue運用ルール・互換読み替え規則を追記。
+3. Verify
+   - docs-check相当（validator / unit test / `rg`）で文書整合と検索可能性を確認。
 
 ## 10) Additional context
 
