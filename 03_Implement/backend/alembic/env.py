@@ -1,7 +1,12 @@
 from logging.config import fileConfig
+import os
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+# CI may export legacy DATABASE_URL for unrelated services.
+# ENV-ARCH-01 enforces KJ_ATLAS_* only, so remove legacy key before importing app settings.
+os.environ.pop("DATABASE_URL", None)
 
 from kj_atlas_api.db import _normalize_database_url
 from kj_atlas_api.models import Base
