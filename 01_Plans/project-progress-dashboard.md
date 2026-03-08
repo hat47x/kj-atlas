@@ -18,8 +18,8 @@
 
 | 観点 | 状態 | 根拠 |
 |---|---|---|
-| 計画整備（DOC-OPS系） | 進行中 | `DOC-OPS-02`/`DOC-OPS-04` が Open、`DOC-OPS-03` は In Progress。`REQ-DEF-01〜03` は Open。 |
-| 認証運用（AUTH-OPS） | 判断待ちを含む進行中 | `AUTH-OPS-03` は D1〜D4決定固定済み。運用文書同期と進捗同期を実施中。 |
+| 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01` は Done、`REQ-DEF-02/03` は Open。 |
+| 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
 | 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Open、decision packで方針は人間判断済み。 |
 
 ## 2) Active issue 集約（Draft / Open / In Progress）
@@ -28,12 +28,7 @@
 
 | Backlog ID | Status | 要点 | メモ |
 |---|---|---|---|
-| AUTH-OPS-03 | In Progress | D1〜D4固定済み。operations/security/enterpriseへの反映と整合確認を継続。 | `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` |
-| ENV-ARCH-01 | Open | `KJ_ATLAS_*` への移行方針に沿った実装追従が必要。 | `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md` |
-| DOC-OPS-02 | Open | 文書横断改善計画の整理と優先度確定が必要。 | `01_Plans/issues/issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` |
-| DOC-OPS-03 | In Progress | 本ダッシュボード整備と導線追加を実施中。 | `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md` |
 | DOC-OPS-04 | Open | 文書可視性・可読性ガバナンスの整備を進行。 | `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` |
-| REQ-DEF-01 | Open | 共通Requirement meta I/Fを前提に、優先分類を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-01-value-realization-requirements-baseline.md` |
 | REQ-DEF-02 | Open | 共通Requirement meta I/Fを前提に、RACI/契約境界を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` |
 | REQ-DEF-03 | Open | 共通Requirement meta I/Fを前提に、受入シナリオ/検証粒度を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` |
 
@@ -41,9 +36,6 @@
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
 |---|---|---|---|
-| P0 | AUTH-OPS-03 | strict mode例外緩和 runbook の反映完了判定 | 3文書同期完了、停止条件/復旧条件の非矛盾確認、dashboard/decision-pack整合 |
-| P1 | DOC-OPS-02 | 文書横断改善の適用順序 | 先行適用文書と同期順序の最終決定 |
-| P1 | REQ-DEF-01 | 価値→要求の優先固定範囲 | P-01〜P-07のMust/Should/Could分類の承認 |
 | P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 役割RACIと契約変更判定欄の必須化範囲 |
 | P1 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 要求粒度↔検証粒度マッピングを必須化するか |
 
@@ -58,12 +50,10 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. AUTH-OPS-03の固定値を `operations/security/enterprise` へ同期し、Done判定エビデンスを確定。
-2. DOC-OPS-02 の改善マトリクスと実施順序を01/02/04/AGENTSへ固定。
-3. REQ-DEF-01〜03 を共通I/Fで揃え、Decision Queue残項目を明示してOpen化。
-4. `issues/README.md` と decision-pack の状態表示を同期。
-5. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
-6. 最終1ページ要約で残課題を固定。
+1. REQ-DEF-02/03 の未確定項目（テンプレ必須化範囲）を Decision Queue で決裁する。
+2. DOC-OPS-04 の可視性改善を Active issue として継続し、dashboardへ反映する。
+3. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
+4. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
 ## 6) 再開コマンド（docs-check）
 
