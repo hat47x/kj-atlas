@@ -227,6 +227,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 - `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
+- REQ-DEF承認待ち: R2-P1〜P3 / R3-P1〜P3 が Pending の間は、`TEMPLATE.md` への追加必須化を凍結する（承認後に反映）。
 
 ## Active issue memos
 

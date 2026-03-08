@@ -185,8 +185,15 @@
   2. 受入シナリオテンプレをCI検証対象にする場合。
 
 
-## Decision Queue（残る未確定）
+## Decision Queue（残る未確定 / R3系）
 
-- Pending-1: 要求粒度↔検証粒度マッピングを全Issue必須にする適用開始時期。
-- Pending-2: 1Issue1検証責務ルールの例外許容条件（統合検証を許す閾値）。
-- Pending-3: 受入シナリオ最小テンプレを `01_Plans/issues/TEMPLATE.md` へ必須昇格する範囲。
+- R3-P1 (Pending): 要求粒度↔検証粒度マッピングを全Issue必須にする適用開始時期。
+- R3-P2 (Pending): 1Issue1検証責務ルールの例外許容条件（統合検証を許す閾値）。
+- R3-P3 (Pending): 受入シナリオ最小テンプレを `01_Plans/issues/TEMPLATE.md` へ必須昇格する範囲。
+
+### Decision Record（承認待ち）
+
+- Context: REQ-DEF-03本体の検証規約はFixedだが、テンプレ必須化範囲と例外閾値は未承認。
+- Decision (Proposal): R3-P1〜P3を新規Issue必須化し、例外は統合境界が2つ以上のケースに限定。
+- Consequences: 承認時は分割粒度の再現性が向上。未承認時はIssue個別運用を継続しテンプレ反映を停止。
+- Approval status: Pending Human Approval
