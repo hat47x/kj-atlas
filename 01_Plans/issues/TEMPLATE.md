@@ -10,6 +10,20 @@
 - Related ADR/Spec: `<ADR-xxxx ...>`
 - Expected verification level: `<docs-check / unit / integration / e2e>`
 
+## Requirement meta I/F（共通キー）
+
+> REQ-DEF系Issueで編集分離するため、先頭でこのキーセットを固定してから本文へ進む。
+
+- RequirementID
+- RequirementStatement
+- PriorityClass（Must / Should / Could）
+- RACI（A/R/C/I）
+- ContractImpact（schema / api / policy / ops : あり / なし）
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
+- VerificationLevel（docs-check / unit / integration / e2e）
+- DecisionStatus（Fixed / Pending）
+- DecisionQueueRef（未確定時の参照先）
+
 
 ## Expected verification level values
 
