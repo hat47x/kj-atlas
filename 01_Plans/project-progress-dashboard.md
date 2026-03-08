@@ -1,14 +1,24 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-06 (JST)
+最終更新: 2026-03-08 (JST)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
+
+## 0) 運用プロトコル（DOC-OPS-03）
+
+1. **Plan**: 変更対象と受入条件（AC）/完遂条件（DoD）を先に固定する。
+2. **Execute**: 許可スコープ内の差分だけを実装し、非対象ファイルは変更しない。
+3. **Verify**: `docs-check` を実行し、期待結果との差分を確認する。
+4. **Proceed**: 問題なければ次のBacklogへ進む。問題があれば自己修正する。
+
+- Self-Correction は **最大3回** とし、4回目が必要な場合は人間判断待ちへ切り替える。
+- Active issue / Decision Queue / decision-pack の状態に矛盾を検知した場合は更新を停止し、競合として記録する。
 
 ## 1) 進捗サマリ（Phase / Backlog）
 
 | 観点 | 状態 | 根拠 |
 |---|---|---|
-| 計画整備（DOC-OPS系） | 進行中 | `DOC-OPS-02`/`DOC-OPS-03`/`DOC-OPS-04` が Open、`REQ-DEF-01〜03` が Draft。 |
+| 計画整備（DOC-OPS系） | 進行中 | `DOC-OPS-02`/`DOC-OPS-04` が Open、`DOC-OPS-03` は In Progress。`REQ-DEF-01〜03` は Open。 |
 | 認証運用（AUTH-OPS） | 判断待ちを含む進行中 | `AUTH-OPS-03` は D1〜D4決定固定済み。運用文書同期と進捗同期を実施中。 |
 | 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Open、decision packで方針は人間判断済み。 |
 
@@ -21,7 +31,7 @@
 | AUTH-OPS-03 | In Progress | D1〜D4固定済み。operations/security/enterpriseへの反映と整合確認を継続。 | `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` |
 | ENV-ARCH-01 | Open | `KJ_ATLAS_*` への移行方針に沿った実装追従が必要。 | `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md` |
 | DOC-OPS-02 | Open | 文書横断改善計画の整理と優先度確定が必要。 | `01_Plans/issues/issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` |
-| DOC-OPS-03 | Open | 本ダッシュボード整備と導線追加を実施中。 | `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md` |
+| DOC-OPS-03 | In Progress | 本ダッシュボード整備と導線追加を実施中。 | `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md` |
 | DOC-OPS-04 | Open | 文書可視性・可読性ガバナンスの整備を進行。 | `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` |
 | REQ-DEF-01 | Open | 共通Requirement meta I/Fを前提に、優先分類を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-01-value-realization-requirements-baseline.md` |
 | REQ-DEF-02 | Open | 共通Requirement meta I/Fを前提に、RACI/契約境界を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` |
@@ -46,13 +56,14 @@
 | 2026-03-05 | ENV-ARCH-01 | Option B/C 採択（旧キー互換なし・監査痕跡追加なし）。 | 決定済み |
 | 2026-03-06 | AUTH-OPS-03 | D1〜D4（承認順序/TTL、scope、代理承認、SLA）を固定。 | 決定済み |
 
-## 5) 次の1手（実行チェックリスト）
+## 5) 次の1手（実行チェックリスト / Proceed）
 
 1. AUTH-OPS-03の固定値を `operations/security/enterprise` へ同期し、Done判定エビデンスを確定。
 2. DOC-OPS-02 の改善マトリクスと実施順序を01/02/04/AGENTSへ固定。
 3. REQ-DEF-01〜03 を共通I/Fで揃え、Decision Queue残項目を明示してOpen化。
 4. `issues/README.md` と decision-pack の状態表示を同期。
-5. 最終1ページ要約で残課題を固定。
+5. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
+6. 最終1ページ要約で残課題を固定。
 
 ## 6) 再開コマンド（docs-check）
 

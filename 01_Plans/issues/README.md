@@ -225,7 +225,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 ## Human decision support
 
-- `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード。
+- `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
 
 ## Active issue memos
@@ -235,7 +235,7 @@ issue補助メモには、最低でも次の項目を含める。
 | AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | In Progress | N/A |
 | ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Open | N/A |
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Open | N/A |
-| DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Open | N/A |
+| DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | In Progress | N/A |
 | DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Open | N/A |
 | REQ-DEF-01 | `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Open | N/A |
 | REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Open | N/A |
