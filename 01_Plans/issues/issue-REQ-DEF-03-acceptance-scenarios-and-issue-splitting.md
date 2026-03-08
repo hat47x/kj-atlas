@@ -68,6 +68,12 @@
   - DoD-3: 1Issue 1検証責務を満たさない場合、`Decision Queue` に例外理由と解除条件を登録する。
   - DoD-4: T1〜T4の完了条件が事前定義され、実行後は全タスクが本文内証跡付きで完了に更新される。
 
+### 4.0.1 AC/DoD不足の先出し確認（合意凍結）
+
+- 合意事項A: AC-8〜AC-10 を REQ-DEF-03 の不足補完として採用し、Execute開始前に固定する。
+- 合意事項B: DoD-1〜DoD-4 を Done判定の必須条件として採用し、後工程で緩和しない。
+- 合意事項C: 本Issueは R0（docs-check）責務で完結させ、R1以上は派生Issueへ分割する。
+
 ### 4.1 Plan → Execute → Verify（独立実行プロトコル）
 
 - Plan:
@@ -95,7 +101,7 @@
 | --- | --- | --- |
 | 受入条件が単一の要求粒度（R0/R1/R2/R3）に収まる | 分割不要 | 主検証責務を1つだけ宣言して起票する。 |
 | 受入条件が隣接粒度を跨ぐ（例: R1+R2） | 原則分割 | 上位粒度側を別Issueへ分離し、依存リンクで接続する。 |
-| 境界契約が不可分で分割不能（例: API契約変更と最小統合確認が不可分） | 例外許容 | 主検証責務を高い方に固定し、低い方は補助検証として `Validation plan` に明記する。 |
+| 境界契約が不可分で分割不能（例: API契約変更と最小統合確認が不可分） | 例外許容 | 主検証責務を高い方に固定し、低い方は補助検証として `Validation plan` に明記し、例外理由と解除条件を `Decision Queue` に登録する。 |
 | E2E要件（R3）とdocs-only要件（R0）が同時に存在 | 必ず分割 | R0は docs-check Issue、R3は e2e Issue として分離する。 |
 
 - 補助検証は許可されるが、完了判定は主検証責務の達成をもって行う。
@@ -161,6 +167,7 @@
   - `rg -n "REQ-DEF-03|要求粒度|Verification level|1Issue 1検証責務|自己修復" 01_Plans/issues/issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md`
 - 期待結果:
   - issue memo validator が成功し、受入シナリオ規約の記述が追跡可能である。
+  - 宣言した `Expected verification level=docs-check` と、本文のR0主責務定義が矛盾しない。
 - 未実施時の理由・代替検証:
   - Python未導入時は `rg` と目視で代替し、未実施理由を記録する。
 
