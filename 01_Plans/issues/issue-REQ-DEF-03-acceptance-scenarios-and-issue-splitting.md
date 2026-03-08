@@ -61,10 +61,12 @@
 - AC補完提案:
   - AC-8: 各要求粒度（R0〜R3）に対して「許容される主検証責務」を1つに固定し、Issue分割基準と紐付ける。
   - AC-9: 複合検証が必要な場合の例外条件（契約境界を跨ぐ不可分変更のみ）と、分割不能理由の記録必須化を定義する。
+  - AC-10: T1〜T4ごとに「完了条件」と「本文内の根拠節」を先に固定し、実行前にDone判定基準を凍結する。
 - DoD補完提案:
   - DoD-1: `Requirement meta I/F` の `Verification level` が R0〜R3 の定義と矛盾しない。
   - DoD-2: `Validation plan` に主検証責務・未実施時の代替検証・残課題が記載される。
   - DoD-3: 1Issue 1検証責務を満たさない場合、`Decision Queue` に例外理由と解除条件を登録する。
+  - DoD-4: T1〜T4の完了条件が事前定義され、実行後は全タスクが本文内証跡付きで完了に更新される。
 
 ### 4.1 Plan → Execute → Verify（独立実行プロトコル）
 
@@ -129,10 +131,27 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 受入シナリオ記述テンプレを作成する。
-- [ ] T2: 要求粒度↔検証粒度マトリクスを作成する。
-- [ ] T3: Issue分割基準（分割/統合の閾値）を定義する。
-- [ ] T4: 既存Draft/Open issueの適用対象を棚卸しする。
+- [x] T1: 受入シナリオ記述テンプレを作成する。
+  - 完了条件: 「前提/操作/期待結果/除外」の最小テンプレが本文で独立参照可能である。
+  - 証跡: `Requirement meta I/F` の `Acceptance scenario` 定義、および 4.1 Plan節のテンプレ明記。
+- [x] T2: 要求粒度↔検証粒度マトリクスを作成する。
+  - 完了条件: R0〜R3すべてが最小検証レベル付きで表形式に定義される。
+  - 証跡: 4.2 要求粒度 ↔ Verification level マッピング。
+- [x] T3: Issue分割基準（分割/統合の閾値）を定義する。
+  - 完了条件: 1Issue 1検証責務の原則、分割必須条件、例外許容条件が表形式で定義される。
+  - 証跡: 4.2.1 1Issue 1検証責務の運用境界。
+- [x] T4: 既存Draft/Open issueの適用対象を棚卸しする。
+  - 完了条件: Active issue群から「REQ-DEF-03規約を先行適用すべき対象」を本文に列挙し、適用理由を記載する。
+  - 証跡: 6.1 適用対象棚卸し（Draft/Open）。
+
+### 6.1 適用対象棚卸し（Draft/Open）
+
+| Issue | 現在状態 | 適用優先度 | 適用理由（1Issue 1検証責務観点） |
+| --- | --- | --- | --- |
+| `issue-REQ-DEF-01-requirement-metadata-schema.md` | Open | High | REQ-DEF共通I/Fの定義源であり、R0（docs-check）責務を先に固定する必要がある。 |
+| `issue-REQ-DEF-02-requirement-traceability-and-contract-impact.md` | Open | High | 契約影響（schema/api/policy/ops）を扱うため、R1〜R2境界の分割規約適用が必須。 |
+| `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Open | High | 本文自体が規約正本のため、R0責務で完結させる適用サンプルとして機能する。 |
+| `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Draft | Medium | T1〜T4のdocs中心タスクが多く、複合検証を回避する分割基準の適用余地が大きい。 |
 
 ## 7) 検証計画 / Validation plan
 
