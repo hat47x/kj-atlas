@@ -108,6 +108,27 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - 一方で、執筆時に最小メタ確認が増えるため、短期的には文書作成コストがわずかに上がる。
 - 適用を段階導入とするため、移行期は「適用済み文書」と「未適用文書」が混在する。
 
+## Verify (docs-check 観点の自己検証)
+
+- 判定: **Ready for approval / Not accepted yet**
+- 検証観点:
+  1. ADR必須見出しI/F（Context / Decision / Consequences / Traceability）を保持している。
+  2. DOC-OPS-04 A-I/F で要求される固定語彙（Audience / Goal / Non-goal / Outcome / Upstream Reference / Downstream Apply / Verification）を Decision 配下で定義している。
+  3. AC/DoD補完として、適用対象と非目標境界（AC-4）および手動確認ログ要件（DoD-2/DoD-3）を明示している。
+  4. 編集対象は本ADR本文のみであり、統合ファイル（README/dashboard/issue-DOC-OPS-04）を更新していない。
+- 未充足:
+  - `Status: Proposed` のため、Deciders 承認待ち。
+
+## Proceed (承認依頼)
+
+- 承認依頼先: Project Maintainers
+- 依頼内容:
+  1. 本ADRを `Accepted` へ更新する可否の判断。
+  2. Readability Baseline（RBL-1〜RBL-5）を DOC-OPS-04 文書整備タスクの最小判定軸として採用すること。
+- 承認までの運用:
+  - 本ADRの規約適用は「差分が発生した文書から段階適用」を維持し、一括改修は実施しない。
+  - docs-check 未自動化観点は、作業ログ/PRへ実行コマンドと判定理由を記録する。
+
 ## Traceability
 
 - Related (Upstream): `00_Prompt/domain.md`
@@ -118,4 +139,5 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - Related (Upstream): `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
 - Related (Source): `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related (Downstream): `02_Architecture/architecture.md`
+- Related (Downstream): `04_Documentation/security.md`
 - Related (Downstream): `04_Documentation/operations.md`
