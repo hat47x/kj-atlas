@@ -14,17 +14,17 @@
 
 ## Requirement meta I/F（REQ-DEF共通キー）
 
-> REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
+> REQ-DEF-01/02/03 の編集分離用に、本文より先にこのキーセットを固定する。
 
-- Requirement ID
-- Requirement statement
-- Priority class（Must / Should / Could）
+- RequirementID
+- RequirementStatement
+- PriorityClass（Must / Should / Could）
 - RACI（A/R/C/I）
-- Contract impact（schema/api/policy/ops: あり/なし）
-- Acceptance scenario（前提/操作/期待結果/除外）
-- Verification level（docs-check / unit / integration / e2e）
-- Decision status（Fixed / Pending）
-- Decision queue ref（未確定時の参照先）
+- ContractImpact（schema / api / policy / ops : あり / なし）
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
+- VerificationLevel（docs-check / unit / integration / e2e）
+- DecisionStatus（Fixed / Pending）
+- DecisionQueueRef（未確定時の参照先）
 
 ## 1) 課題 / Problem statement
 
@@ -55,21 +55,22 @@
 - 非目標:
   - Frontend/Backend/Schema の実装変更。
   - 新規価値原則の追加。
+  - REQ-DEF-02/03 本文の直接編集。
 
 ## 5) 受入条件 / Acceptance criteria
 
 - [x] 価値原則P-01〜P-07に対して、優先固定対象要求（UX/DATA/AI）が明示される。
 - [x] 各要求に責任分界点（決定者/実装者/検証者）が紐づく。
 - [x] 未確定要求をDecision Queueへ送る判定条件（いつ止めるか）が定義される。
-- [ ] SafeMode既定ONと漏えい防止を弱めないことが明文化される。
-- [ ] docs-check の検証コマンドと期待結果が記録される。
+- [x] SafeMode既定ONと漏えい防止（share/export）を弱めない非改変条件が明文化される。
+- [x] docs-check の検証コマンドと期待結果が記録される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 価値原則ごとの要求優先度（Must/Should/Could）を策定する。
-- [ ] T2: 要求ごとのRACI草案を作成する。
-- [ ] T3: 未確定要求の停止基準とエスカレーション条件を策定する。
-- [ ] T4: 固定済み要求を具体Issueへ分割する。
+- [x] T1: 価値原則ごとの要求優先度（Must/Should/Could）を策定する。
+- [x] T2: 要求ごとのRACI草案を作成する。
+- [x] T3: 未確定要求の停止基準とエスカレーション条件を策定する。
+- [ ] T4: 固定済み要求を具体Issueへ分割する（REQ-DEF-02/03本文編集は本Issueの禁止範囲）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -94,6 +95,19 @@
 - 失敗モード: 要求の粒度が粗すぎて、具体Issueに落とせない。
 - 影響範囲: `01_Plans/` と関連するArchitecture文書の参照整合。
 - ロールバック手順: 追加した要求優先度の分類を撤回し、既存ADR参照のみへ戻す。
+
+## Definition of Done（DoD）
+
+- [x] 共通I/Fキーが本Issue先頭と `01_Plans/issues/TEMPLATE.md` の双方で同一表記になっている。
+- [x] ACに「安全（SafeMode既定ON/漏えい防止）」「検証（docs-check）」が含まれ、チェック状態が整合している。
+- [x] 非目標に `REQ-DEF-02/03` 直接編集禁止が反映され、スコープ逸脱を防いでいる。
+- [x] Decision Queueの未確定項目が `DecisionStatus=Pending` と対応づけ可能である。
+
+## Self-Correction Log（最大3回）
+
+1. 修正1: 共通I/Fキーの命名をスペース区切りから固定キー（`PriorityClass` 等）へ統一。
+2. 修正2: 受入条件へ SafeMode既定ON/漏えい防止の非改変条件を明示。
+3. 修正3: タスクT4へ禁止スコープ（REQ-DEF-02/03本文編集禁止）を追記して逸脱を防止。
 
 ## 10) Additional context
 
