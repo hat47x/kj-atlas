@@ -23,21 +23,53 @@
 - `02_Architecture/` は単一文書ごとの正本性が高い一方、文書間の依存関係（先に読むべき章、同時参照すべき契約、更新同期単位）が暗黙知化しやすい。
 - `01_Plans/issues/` には文書改善タスクが散在しており、短期修正は進むが、中長期の文書情報設計（Information Architecture）としての統制計画が未固定。
 
-## 2.5) ADR候補化要否の一次判定（Context / Decision / Consequences）
+## 2.5) ADR候補化前処理（DOC-OPS-04限定）
 
-DOC-OPS-04 の着手前に、ADR候補化が必要かを **Context / Decision / Consequences** で一次判定する。
+本Issueでは、DOC-OPS-04 全体実装には進まず、**ADR候補化の前処理のみ**を実施する。
+
+### 2.5.1) 一次判定（Context / Decision / Consequences）
 
 | 観点 | 要約 | 判定への影響 |
 |---|---|---|
 | Context | 対象は `AGENTS.md` / `01_Plans` / `02_Architecture` / `04_Documentation` を横断し、Read Order・正本導線・更新責務を再設計する。 | 既存運用を跨ぐ恒久ルール化が発生しうるため、ADR候補化の必要性が高い。 |
-| Decision | **一次判定: ADR候補化を必須（Yes）**。ただし本Issue内で最終固定せず、候補論点を `Context / Decision / Consequences` 形式で整理して `ADR-0000` の運用に従って分離起票する。 | Issue本文のみで恒久方針を凍結しない。DecisionはADRへ昇格して確定する。 |
+| Decision | **一次判定: ADR候補化を必須（Yes）**。ただし本Issue内で恒久ルールを固定せず、候補論点を `Context / Decision / Consequences` 形式で分離起票準備する。 | Issue本文のみで恒久方針を凍結しない。DecisionはADRへ昇格して確定する。 |
 | Consequences | 先にADR候補化することで、上位統合文書の責務・品質ゲート・例外運用の固定範囲が監査可能になる。未実施の場合、Issueメモが実質ADR化し重複正本を生みやすい。 | ADR未分離のまま恒久ルールを追記する変更を禁止する。 |
 
-ADR候補化の最小出口（このIssueで必須）:
+### 2.5.2) AC/DoD不足の提案（ADR候補化前処理向け）
 
-1. 候補ごとに `Context / Decision / Consequences` の3点を1段落ずつ記録する。
-2. `Decision` に「Issueで暫定運用する範囲」と「ADRで固定する範囲」を分離明記する。
-3. `Consequences` に採用時/非採用時の影響を少なくとも1件ずつ記載する。
+以下を **追加提案（合意対象）** とし、前処理の受入条件に限定して扱う。
+
+- AC提案A: ADR候補A〜Dそれぞれに `Context / Decision / Consequences` を独立記述する。
+- AC提案B: 各 `Decision` に「Issue内の暫定扱い」と「ADRで固定すべき範囲」を分離して明記する。
+- AC提案C: 各 `Consequences` に採用時・非採用時の影響を最低1件ずつ記載する。
+- DoD提案A: docs-check（メタ必須項目、リンク、候補間の一貫性）を再現可能コマンドで記録する。
+- DoD提案B: 本更新で恒久運用ルールを増設しない（Issue本文で固定しない）ことを差分で確認する。
+
+### 2.5.3) ADR候補A-D（Context / Decision / Consequences）
+
+#### ADR候補A: Documentation Information Architecture
+
+- Context: 文書の正本/解説/索引責務が分散し、参照開始点と契約正本への導線が読者依存になっている。
+- Decision: Issue内では「責務分離が必要」という論点定義に留める。正本/解説/索引の恒久定義と配置規約はADRで固定する。
+- Consequences: 採用時は文書責務が監査可能になり、正本重複を抑止できる。非採用時は文書追加時に責務競合が再発し、DOC-OPS系Issueで都度再解釈が必要になる。
+
+#### ADR候補B: Documentation Readability Baseline
+
+- Context: 対象読者・前提・非目標・到達目標の記載粒度が文書ごとに不均一で、読み順と理解負荷が安定しない。
+- Decision: Issue内では「可読性ベースライン項目の候補列挙」に限定する。必須項目セットと適用範囲（全体/一部）はADRで固定する。
+- Consequences: 採用時は新規参画者の読解開始コストを下げ、レビュー観点を定型化できる。非採用時は文書品質が執筆者依存のままとなり、更新時の判断再現性が低下する。
+
+#### ADR候補C: Documentation Quality Gates
+
+- Context: docs-checkの運用は存在するが、lint/link/metadata validator の必須化レベルと適用境界が未統一である。
+- Decision: Issue内では「品質ゲート対象の候補」を整理する。CI必須化の範囲・失敗時ポリシー・例外承認条件はADRで固定する。
+- Consequences: 採用時は文書変更の回帰検知が機械化され、差分レビューの検査漏れを抑制できる。非採用時は目視依存が継続し、リンク切れやメタ欠落の検出が遅延する。
+
+#### ADR候補D: Documentation Change Governance
+
+- Context: 文書更新DoD、同期対象、レビュー責務、例外承認の境界がIssue単位で都度定義されやすい。
+- Decision: Issue内では「ガバナンス論点の棚卸し」に留め、恒久運用フロー（責務分離・承認段階・監査証跡）はADRで固定する。
+- Consequences: 採用時は変更時の説明責任と停止基準が明確化し、ドキュメントドリフトを抑制できる。非採用時は運用判断が属人化し、重大変更時に合意形成コストが上がる。
 
 ## 3) 判断基準による優先度評価
 
@@ -232,7 +264,7 @@ ADR候補化の最小出口（このIssueで必須）:
 
 ### ADR候補（起票予備リスト）
 
-- ADR候補A: Documentation Information Architecture（文書の正本/解説/索引責務分離）。
-- ADR候補B: Documentation Readability Baseline（対象読者、章テンプレ、要点先出しの標準化）。
-- ADR候補C: Documentation Quality Gates（lint/link/metadata validator の導入範囲と必須化レベル）。
-- ADR候補D: Documentation Change Governance（文書更新DoD、同期対象、レビュー責務、例外承認）。
+- ADR候補A: Documentation Information Architecture（前処理済み: Context/Decision/Consequences 記載）。
+- ADR候補B: Documentation Readability Baseline（前処理済み: Context/Decision/Consequences 記載）。
+- ADR候補C: Documentation Quality Gates（前処理済み: Context/Decision/Consequences 記載）。
+- ADR候補D: Documentation Change Governance（前処理済み: Context/Decision/Consequences 記載）。
