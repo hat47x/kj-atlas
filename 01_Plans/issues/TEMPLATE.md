@@ -32,7 +32,22 @@
 - `integration`: unitに加えて、境界I/Fを含む結合テストを実施。
 - `e2e`: integrationに加えて、ユーザーフロー（UI/API連動）を検証。
 
-> 宣言したレベル未満の検証で完了扱いにしない。未実施時は理由と代替検証を `Validation plan` に明記する。
+### Verification granularity mapping（要求粒度↔検証粒度）
+
+| 要求粒度 | 想定変更 | Expected verification level（最小） |
+| --- | --- | --- |
+| R0 | 記述規約/運用手順/Issueテンプレ整備 | `docs-check` |
+| R1 | ロジック単位の仕様差分 | `unit` |
+| R2 | 境界I/Fを跨ぐ仕様差分 | `integration` |
+| R3 | 利用者フロー完遂性を問う仕様差分 | `e2e` |
+
+### Plan → Execute → Verify / 自己修復3回 / フェイルセーフ停止
+
+- Plan: Issue作成時に要求粒度（R0〜R3）と `Expected verification level` を同時宣言する。
+- Execute: 1Issue 1検証責務（主責務）を原則化し、例外時は理由を明記する。
+- Verify: 宣言したレベル未満の検証で完了扱いにしない。未実施時は理由と代替検証を `Validation plan` に明記する。
+- 自己修復: 検証不一致が出た場合、原因切り分け→最小修正→再検証を最大3回まで実施する。
+- フェイルセーフ停止: 3回で収束しない場合はスコープを広げず停止し、未達条件と次アクションを記録する。
 
 ## 1) 課題 / Problem statement
 
