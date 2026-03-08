@@ -1,7 +1,7 @@
 # Issue Draft: ENV-ARCH-01 グローバル環境変数プレフィックス移行計画
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1

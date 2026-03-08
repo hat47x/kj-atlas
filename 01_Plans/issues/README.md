@@ -233,7 +233,6 @@ issue補助メモには、最低でも次の項目を含める。
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
 | AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | In Progress | N/A |
-| ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Open | N/A |
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Open | N/A |
 | DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | In Progress | N/A |
 | DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Open | N/A |
@@ -258,6 +257,7 @@ issue補助メモには、最低でも次の項目を含める。
 | AUTH-API-02 | `issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md` | Done | N/A | strict provisioning 契約と admin API 実装・検証を完了。 |
 | FB-RM-RS-02 | `issue-FB-RM-RS-02-structural-metrics.md` | Done | N/A | 実装/検証完了済み。 |
 | DOC-REL-01 | `issue-DOC-REL-01-spec-source-doc-consistency-audit.md` | Done | N/A | 文書整合監査完了。 |
+| ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Done | N/A | 一括移行（Option B/C）の実装・検証を完了し、旧キー非互換を確定。 |
 | FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done | N/A | worker化・fallback/cancel/progress 回帰固定済み。 |
 | FB-RM-MID-02 | `issue-FB-RM-MID-02-manual-assisted-merge-decisions.md` | Done | N/A | merge判断記録の保存/再読込を実装済み。 |
 | FB-RM-MID-01 | `issue-FB-RM-MID-01-deterministic-similar-card-candidates.md` | Done | N/A | deterministic候補生成と順序安定化を実装済み。 |
