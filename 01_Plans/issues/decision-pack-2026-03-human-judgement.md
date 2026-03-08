@@ -10,25 +10,25 @@
 
 ---
 
-## 1. P0: AUTH-OPS-03（継続して判断待ち）
+## 1. P0: AUTH-OPS-03（決定固定済み / 反映フェーズ）
 
-### 1-1. 止まっている理由
+### 1-1. 決定結果（2026-03-06）
 
-- 2者承認責務は確定済みだが、承認順序/TTL/代理承認/違反時SLA などの最終決裁が未完了。
-- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として決裁を記録する必要がある。
+- D1〜D4 を確定: 承認順序/TTL=4h、scope=tenant/最大2h、代理承認なし、48hレビュー+15m/60mエスカレーション。
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として決裁を記録済み。
 
-### 1-2. 必須決定セット
+### 1-2. 確定済み決定セット
 
 - D1: 承認順序 + 承認TTL
 - D2: 適用スコープ + 例外最大継続時間
 - D3: 復旧判定者 + 緊急時代理承認
 - D4: 保存先 + 事後レビュー期限 + 違反時SLA
 
-### 1-3. 決定後アクション
+### 1-3. 残アクション
 
-1. AUTH-OPS-03へ採択結果を追記。
-2. `operations.md` / `security.md` へ同期。
-3. `Status: Draft -> Open/In Progress` へ移行。
+1. `enterprise_architecture.md` / `operations.md` / `security.md` の相互リンクを固定。
+2. dashboard と `issues/README.md` の状態を `In Progress` に同期。
+3. 整合確認後に AUTH-OPS-03 を Done 判定する。
 
 ---
 
@@ -86,3 +86,23 @@
 - Effective from:
 - Follow-up tasks:
 ```
+
+
+## 5. 統合確認サマリ（1ページ）
+
+### 整合点検結果
+
+- `project-progress-dashboard.md`: AUTH-OPS-03=In Progress、REQ-DEF-01〜03=Open を反映。
+- `issues/README.md`: Active memo の AUTH-OPS-03 状態を In Progress へ同期。
+- decision-pack 本書: AUTH-OPS-03 を「決定固定済み/反映フェーズ」へ更新。
+
+### 残課題（次スプリント持越し）
+
+1. AUTH-OPS-03 の Done 判定エビデンス（3文書同期確認ログ）を最終添付する。
+2. REQ-DEF共通キーを `01_Plans/issues/TEMPLATE.md` へ必須反映するかを人間判断する。
+3. DOC-OPS-02 ドリフト検知を定期運用（レビュー時チェック項目）へ組み込む。
+
+### 判定
+
+- P0ボトルネック（AUTH-OPS-03 D1〜D4未確定）は解消。
+- P1（DOC-OPS-02 / REQ-DEF-01〜03）は Open/In Progress に移行し、後続更新の競合源を縮減。

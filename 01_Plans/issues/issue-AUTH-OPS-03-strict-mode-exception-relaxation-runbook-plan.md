@@ -1,7 +1,7 @@
 # Issue Draft: AUTH-OPS-03 strict mode例外緩和Runbook化 実行計画
 
 - Type: Process
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
@@ -85,6 +85,9 @@
 - ロールバック手順: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ即時復旧し、未承認変更または固定値逸脱としてインシデント記録・再承認フローへ戻す。
 
 ## 10) Additional context
+
+- D1〜D4（承認順序/TTL、適用スコープ、代理承認、SLA）は `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節で固定済み。
+- 本Issueの残作業は文書同期（operations/security/enterprise）と進捗同期（dashboard/decision-pack/README）に限定する。
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件: 2者承認の職務分掌、または監査最小項目の語彙を変更する必要が発生した場合。

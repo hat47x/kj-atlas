@@ -1,6 +1,6 @@
 # strict mode例外緩和 承認フロー仕様（AUTH-OPS-03）
 
-- Status: Proposed (Human decision required)
+- Status: Accepted (2026-03-06, D1〜D4 fixed)
 - Owner: Security Officer / System Owner / Platform Operator
 - Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`
 - Related: `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md`
@@ -190,6 +190,15 @@ DraftRequest
 - Effective from: 2026-03-06
 - Review date: 2026-06-30
 
+### 6.8 D1〜D4 決定固定（実務で参照する要約）
+
+| Decision ID | 決定テーマ | 固定値 | 実務メモ |
+|---|---|---|---|
+| D1 | 承認順序 / 承認TTL | Security Officer先行、承認TTL=4h | 4h以内に2者承認が揃わない申請は失効。 |
+| D2 | 適用スコープ / 例外最大継続時間 | tenant単位、最大2h | 2h経過時は自動で strict 復帰へ遷移。 |
+| D3 | 復旧判定者 / 代理承認 | 2者共同判定、代理承認なし | 代理承認は常に不可（緊急時も再申請）。 |
+| D4 | 保存先 / 事後レビュー / 違反時SLA | 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション | SLA違反はインシデント管理へ接続。 |
+
 ---
 
 ## 7. 最小データ契約（実行記録）
@@ -242,6 +251,12 @@ DraftRequest
 - `endedAt` と復旧理由が記録済み。
 - 事後レビューの期限と担当が記録済み。
 
+### 8.4 停止条件と復旧条件の非矛盾ルール
+
+- 停止条件は「例外を有効化してよいか」の判定にのみ使用し、1つでも成立した時点で `ActiveException` へ遷移しない。
+- 復旧条件は「すでに有効な例外を strict に戻す」判定にのみ使用し、1つでも成立した時点で `RollbackPending` へ遷移する。
+- 停止条件と復旧条件の両方が同時に成立した場合、優先順位は `復旧実行 > 停止記録` とする（先に strict 復帰を完了させる）。
+
 ---
 
 ## 9. 実装/文書反映トレース
@@ -251,3 +266,14 @@ DraftRequest
 3. `04_Documentation/operations.md` のRunbookテンプレへ採択値を反映する。
 4. `04_Documentation/security.md` の停止条件・監査項目へ採択値を反映する。
 5. `01_Plans/issues/issue-AUTH-OPS-03-...` を `Draft -> Open` へ更新する。
+
+## 10. AUTH-OPS-03 状態更新方針（Issue/Dashboard共通）
+
+| 状態 | 移行条件 | 必須エビデンス |
+|---|---|---|
+| Draft | D1〜D4 のうち1つでも未確定 | 未確定項目の列挙 |
+| Open | D1〜D4確定、反映先未同期 | 本書6.8節の固定値 |
+| In Progress | `enterprise_architecture.md` / `operations.md` / `security.md` へ同期開始 | 同期差分への参照 |
+| Done | 3文書同期 + dashboard/issue README/decision-pack が整合 | docs-check結果と最終要約 |
+
+本方針により、AUTH-OPS-03 は「決定固定だけでDoneにしない」。運用文書同期と進捗管理同期の両方が完了した時点で Done とする。

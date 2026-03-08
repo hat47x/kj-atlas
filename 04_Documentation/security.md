@@ -286,6 +286,8 @@ for event in hr_events:
 
 ### 8.1 strict mode例外時の安全性チェック（AUTH-OPS-03 / T3）
 
+参照正本: `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節（D1〜D4固定）、`04_Documentation/operations.md` 3.2〜3.4（Runbook運用）。
+
 - 本節を strict mode 例外運用の**最小チェックリスト正本**として扱う。
 - 以下の契約を**同時に**満たせない場合、例外適用を停止する。
 
@@ -321,6 +323,8 @@ PII非保存ルール:
 - [ ] 診断に必要な場合でも、PIIを含む原文は監査ログへ転記せず、別系統のアクセス制御下で管理する。
 
 ### 8.3 未確定事項の扱い（停止条件）
+
+固定値再掲（D1〜D4）: 承認順序=Security Officer先行・承認TTL=4h、scope=tenant/最大2h、代理承認なし、48hレビュー+15m/60mエスカレーション。
 
 - 未確定事項は TODO として先送りしない（停止条件）。
 - strict mode例外の実行可否に関わる未確定事項が1つでもある場合、状態を**「確認待ちで停止」**と明記する。

@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-03 受入シナリオ先行型のIssue分割ルール整備
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,6 +10,21 @@
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0012`, `ADR-0019`, `04_Documentation/e2e_testing.md`, `01_Plans/issues/README.md`
 - Expected verification level: `docs-check`
+
+
+## Requirement meta I/F（REQ-DEF共通キー）
+
+> REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
+
+- Requirement ID
+- Requirement statement
+- Priority class（Must / Should / Could）
+- RACI（A/R/C/I）
+- Contract impact（schema/api/policy/ops: あり/なし）
+- Acceptance scenario（前提/操作/期待結果/除外）
+- Verification level（docs-check / unit / integration / e2e）
+- Decision status（Fixed / Pending）
+- Decision queue ref（未確定時の参照先）
 
 ## 1) 課題 / Problem statement
 
@@ -43,9 +58,9 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 受入シナリオ記述の最小テンプレ（前提/操作/期待結果/除外）が定義される。
-- [ ] 要求粒度と `Expected verification level` の対応ルールが定義される。
-- [ ] 1Issueあたりの検証責務上限（複合しすぎない）が明文化される。
+- [x] 受入シナリオ記述の最小テンプレ（前提/操作/期待結果/除外）が定義される。
+- [x] 要求粒度と `Expected verification level` の対応ルールが定義される。
+- [x] 1Issueあたりの検証責務上限（複合しすぎない）が明文化される。
 - [ ] 安全境界と互換境界の確認項目が受入シナリオに含まれる。
 - [ ] docs-check コマンドで規約文書の整合を再現確認できる。
 
@@ -86,3 +101,10 @@
 - ADR化が必要になる条件（トレードオフ閾値）:
   1. 検証粒度マッピングを全プロジェクト標準へ昇格する場合。
   2. 受入シナリオテンプレをCI検証対象にする場合。
+
+
+## Decision Queue（残る未確定）
+
+- Pending-1: 要求粒度↔検証粒度マッピングを全Issue必須にする適用開始時期。
+- Pending-2: 1Issue1検証責務ルールの例外許容条件（統合検証を許す閾値）。
+- Pending-3: 受入シナリオ最小テンプレを `01_Plans/issues/TEMPLATE.md` へ必須昇格する範囲。

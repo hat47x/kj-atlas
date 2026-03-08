@@ -196,17 +196,16 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 - 停止条件: 承認順序/TTL/代理承認など実施に必要な未確定事項が1つでも残る場合は「確認待ちで停止」とする。
 - 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰し、復旧時刻・判定根拠を記録する。
 
-#### strict mode 例外運用で未定義のまま保持する事項（要ユーザー確認）
+#### strict mode 例外運用の固定値（AUTH-OPS-03 D1〜D4）
 
-以下は現時点で **未定義** とし、本ドキュメントでは推測仕様を置かない。
+本章は `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節を参照し、次の固定値を適用する。
 
-- 例外承認の順序（申請→承認→有効化のワークフロー詳細）
-- 例外の TTL（有効期限）の既定値・上限・自動失効条件
-- 代理承認（緊急時の代行承認者）の可否と条件
-- 運用 SLA（承認応答時間、失効反映時間、監査反映時間）
-- 例外運用の同時許可数上限・対象組織/対象文書のスコープ制約
-- 例外解除後の既存セッション/トークン無効化の厳密手順
-- 監査アラート閾値（例外利用回数・連続利用時間）
+- D1: 承認順序=Security Officer先行、承認TTL=4h
+- D2: 適用スコープ=tenant単位、最大継続時間=2h
+- D3: 復旧判定=Security Officer + System Owner の共同判定、代理承認なし
+- D4: 保存先=変更台帳+監査ID相互参照、事後レビュー=48h以内、違反SLA=15m一次/60m二次エスカレーション
+
+相違運用が必要な場合は、既存requestIdの上書きを禁止し、新規requestIdで再承認する。
 
 ### FB-RM-PUB-04: AccessControlAdapter 抽象I/F（roles/groups/policyRef 外部委譲）
 
@@ -401,7 +400,7 @@ interface AccessControlAdapter {
 
 ## 4.5 strict mode例外緩和の責務境界（AUTH-OPS-03）
 
-> 詳細な承認フロー仕様（状態遷移・Q1〜Q10の選択肢・停止/復旧条件）は `02_Architecture/strict_mode_exception_approval_flow.md` を正本とする。
+> 詳細な承認フロー仕様（状態遷移・Q1〜Q10の選択肢・停止/復旧条件）は `02_Architecture/strict_mode_exception_approval_flow.md` を正本とする。運用手順は `04_Documentation/operations.md`、セキュリティ検証は `04_Documentation/security.md` を正本とする。
 
 ### 目的
 

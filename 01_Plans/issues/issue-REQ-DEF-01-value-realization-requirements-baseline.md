@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-01 価値実現に向けた要求ベースライン定義
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,6 +10,21 @@
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0010`, `ADR-0011`, `ADR-0012`, `02_Architecture/architecture.md`
 - Expected verification level: `docs-check`
+
+
+## Requirement meta I/F（REQ-DEF共通キー）
+
+> REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
+
+- Requirement ID
+- Requirement statement
+- Priority class（Must / Should / Could）
+- RACI（A/R/C/I）
+- Contract impact（schema/api/policy/ops: あり/なし）
+- Acceptance scenario（前提/操作/期待結果/除外）
+- Verification level（docs-check / unit / integration / e2e）
+- Decision status（Fixed / Pending）
+- Decision queue ref（未確定時の参照先）
 
 ## 1) 課題 / Problem statement
 
@@ -43,9 +58,9 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 価値原則P-01〜P-07に対して、優先固定対象要求（UX/DATA/AI）が明示される。
-- [ ] 各要求に責任分界点（決定者/実装者/検証者）が紐づく。
-- [ ] 未確定要求をDecision Queueへ送る判定条件（いつ止めるか）が定義される。
+- [x] 価値原則P-01〜P-07に対して、優先固定対象要求（UX/DATA/AI）が明示される。
+- [x] 各要求に責任分界点（決定者/実装者/検証者）が紐づく。
+- [x] 未確定要求をDecision Queueへ送る判定条件（いつ止めるか）が定義される。
 - [ ] SafeMode既定ONと漏えい防止を弱めないことが明文化される。
 - [ ] docs-check の検証コマンドと期待結果が記録される。
 
@@ -86,3 +101,10 @@
 - ADR化が必要になる条件（トレードオフ閾値）:
   1. 要求優先度分類をプロジェクト恒久ルールへ昇格する場合。
   2. RACI定義を全Backlog共通ルールとして適用する場合。
+
+
+## Decision Queue（残る未確定）
+
+- Pending-1: Must/Should/Could のレビュー承認を全Issue必須化する範囲（全Backlog適用かREQ-DEF限定か）。
+- Pending-2: RACI/Contract impact を `01_Plans/issues/TEMPLATE.md` に必須昇格する時期。
+- Pending-3: 要求粒度↔検証粒度マッピングを「必須」へ引き上げる運用開始日。
