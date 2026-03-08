@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-01 価値実現に向けた要求ベースライン定義
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -176,3 +176,11 @@
 - Pending-1: Must/Should/Could のレビュー承認を全Issue必須化する範囲（全Backlog適用かREQ-DEF限定か）。
 - Pending-2: RACI/Contract impact を `01_Plans/issues/TEMPLATE.md` に必須昇格する時期。
 - Pending-3: 要求粒度↔検証粒度マッピングを「必須」へ引き上げる運用開始日。
+
+- Pending-4: REQ-DEF-02/03 の適用時に canonical key 以外の派生キー導入提案が出た場合、Decision Queue で事前承認する。
+
+
+## Decision status sync (2026-03-08)
+
+- REQ-DEF共通I/Fは本Issueを正本として固定し、REQ-DEF-02/03 は参照専用とする。
+- 禁止範囲（REQ-DEF-02/03本文の先行編集禁止）を維持し、未確定は Decision Queue に集約する。

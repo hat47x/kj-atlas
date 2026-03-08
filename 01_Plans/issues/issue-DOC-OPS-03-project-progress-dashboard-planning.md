@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-03 意思決定支援の進捗ダッシュボード作成計画
 
 - Type: Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -97,3 +97,10 @@
 - 次の1手（再開コマンド/編集対象）
 
 
+
+
+## 12) 状態整合ログ（2026-03-08）
+
+- `project-progress-dashboard.md` / `issues/README.md` / `decision-pack-2026-03-human-judgement.md` の Active・Decision Queue・次の1手を同期。
+- 競合停止条件（3回自己修正超過、前提崩壊、未定義競合）をダッシュボード本文へ固定。
+- Active一覧と実態が一致することを docs-check で確認。

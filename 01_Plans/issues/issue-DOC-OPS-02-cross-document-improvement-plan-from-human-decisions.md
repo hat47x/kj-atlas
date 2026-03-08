@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-02 人間意思決定知見に基づく文書横断改善計画
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -45,11 +45,11 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 役割定義の参照元が `04_Documentation/security_operational_guidelines.md` を起点に統一される。
-- [ ] strict/non-strict の表現で「強制」ではなく「ガイドライン参照」であることが 01/02/04 の対象文書に反映される。
-- [ ] `enterprise_architecture.md` / `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` の参照リンク整合が確認できる。
-- [ ] 文書横断レビューのチェックリスト（用語、役割、導線、表現）を本issueに保持できる。
-- [ ] docs-check 検証結果が再現可能なコマンドで記録される。
+- [x] 役割定義の参照元が `04_Documentation/security_operational_guidelines.md` を起点に統一される。
+- [x] strict/non-strict の表現で「強制」ではなく「ガイドライン参照」であることが 01/02/04 の対象文書に反映される。
+- [x] `enterprise_architecture.md` / `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` の参照リンク整合が確認できる。
+- [x] 文書横断レビューのチェックリスト（用語、役割、導線、表現）を本issueに保持できる。
+- [x] docs-check 検証結果が再現可能なコマンドで記録される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -122,3 +122,10 @@
 - [ ] 役割ドリフト: 2者承認責務と実行責務分離が一致している。
 - [ ] 導線ドリフト: 02→04→01 の相互リンクが有効。
 - [ ] 運用値ドリフト: D1〜D4 固定値（4h, tenant/2h, 代理承認なし, 48h+15m/60m）が一致している。
+
+
+## 12) 完了報告（2026-03-08）
+
+- 実施順序（固定）: `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`。
+- ドリフト検知4観点（用語/役割/導線/固定値D1〜D4）をゼロ差分で確認。
+- AGENTS の 4.4 節へ同期順序と固定値確認観点を保持し、再発防止の入口を維持。

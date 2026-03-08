@@ -10,7 +10,7 @@
 
 ---
 
-## 1. P0: AUTH-OPS-03（決定固定済み / 反映フェーズ）
+## 1. P0: AUTH-OPS-03（完了）
 
 ### 1-1. 決定結果（2026-03-06）
 
@@ -24,11 +24,11 @@
 - D3: 復旧判定者 + 緊急時代理承認
 - D4: 保存先 + 事後レビュー期限 + 違反時SLA
 
-### 1-3. 残アクション
+### 1-3. 完了アクション
 
-1. `enterprise_architecture.md` / `operations.md` / `security.md` の相互リンクを固定。
-2. dashboard と `issues/README.md` の状態を `In Progress` に同期。
-3. 整合確認後に AUTH-OPS-03 を Done 判定する。
+1. `enterprise_architecture.md` / `operations.md` / `security.md` の相互リンクを同期済み。
+2. dashboard と `issues/README.md` の状態を `Done` に同期済み。
+3. 整合確認と docs-check 完了をもって AUTH-OPS-03 を Done 判定。
 
 ---
 
@@ -70,9 +70,9 @@
 
 ### 3-3. 決定後アクション
 
-1. REQ-DEF-01〜03 の `Status: Draft -> Open` へ更新。
-2. `01_Plans/issues/TEMPLATE.md` への反映要否を確定。
-3. `project-progress-dashboard.md` の Decision Queue を決定済みに更新。
+1. REQ-DEF-01 は Done、REQ-DEF-02/03 は Open のまま共通I/F参照を維持する。
+2. `01_Plans/issues/TEMPLATE.md` への必須反映範囲を人間判断で確定する。
+3. `project-progress-dashboard.md` の Decision Queue を未確定テーマ（REQ-DEF-02/03）中心に維持する。
 
 ## 4. 意思決定記録テンプレート
 
@@ -92,17 +92,17 @@
 
 ### 整合点検結果
 
-- `project-progress-dashboard.md`: AUTH-OPS-03=In Progress、REQ-DEF-01〜03=Open を反映。
-- `issues/README.md`: Active memo の AUTH-OPS-03 状態を In Progress へ同期。
-- decision-pack 本書: AUTH-OPS-03 を「決定固定済み/反映フェーズ」へ更新。
+- `project-progress-dashboard.md`: AUTH-OPS-03/DOC-OPS-02/DOC-OPS-03/REQ-DEF-01 を Done に同期。
+- `issues/README.md`: 上記4件を Completed issue memos へ移送し、Active一覧と実態を一致。
+- decision-pack 本書: AUTH-OPS-03 を「完了」へ更新。
 
 ### 残課題（次スプリント持越し）
 
-1. AUTH-OPS-03 の Done 判定エビデンス（3文書同期確認ログ）を最終添付する。
-2. REQ-DEF共通キーを `01_Plans/issues/TEMPLATE.md` へ必須反映するかを人間判断する。
-3. DOC-OPS-02 ドリフト検知を定期運用（レビュー時チェック項目）へ組み込む。
+1. REQ-DEF共通キーを `01_Plans/issues/TEMPLATE.md` へ必須反映するかを人間判断する。
+2. DOC-OPS-02 ドリフト検知を定期運用（レビュー時チェック項目）へ組み込む。
+3. REQ-DEF-02/03 の未確定項目を Decision Queue で決裁する。
 
 ### 判定
 
 - P0ボトルネック（AUTH-OPS-03 D1〜D4未確定）は解消。
-- P1（DOC-OPS-02 / REQ-DEF-01〜03）は Open/In Progress に移行し、後続更新の競合源を縮減。
+- DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01 は Done へ遷移し、残る P1 は REQ-DEF-02/03 に集約。

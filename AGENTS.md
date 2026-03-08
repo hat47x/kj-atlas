@@ -216,7 +216,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 ### 4.4 文書横断ドリフト検知（DOC-OPS-02）
 
-- AUTH-OPS-03 の更新時は、`02_Architecture/strict_mode_exception_approval_flow.md` を起点に `02_Architecture/enterprise_architecture.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の順で同期する。
+- AUTH-OPS-03 / DOC-OPS-02 の更新時は、`02_Architecture/strict_mode_exception_approval_flow.md` を起点に **`02_Architecture` → `04_Documentation` → `01_Plans` → `AGENTS.md`** の固定順序で同期する（`02_Architecture/enterprise_architecture.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）。
 - 同期時は次の4観点を必ず確認する。
   1) 用語（Security Officer / System Owner / Platform Operator）
   2) 役割（2者承認と実行責務分離）
