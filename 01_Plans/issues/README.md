@@ -227,15 +227,13 @@ issue補助メモには、最低でも次の項目を含める。
 
 - `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
-- REQ-DEF承認待ち: R2-P1〜P3 / R3-P1〜P3 が Pending の間は、`TEMPLATE.md` への追加必須化を凍結する（承認後に反映）。
+- REQ-DEF運用状態: R2-P1〜P3 / R3-P1〜P3 は決定済み。`TEMPLATE.md` の必須化ルール（R3-P1必須、R3-P2/R3-P3条件付き）を適用する。
 
 ## Active issue memos
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
 | DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Open | N/A |
-| REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Open | N/A |
-| REQ-DEF-03 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Open | N/A |
 
 ## Rules
 
@@ -258,6 +256,8 @@ issue補助メモには、最低でも次の項目を含める。
 | AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | Done | N/A | strict mode例外運用の固定値・責務・停止条件を01/02/04で同期完了。 |
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Done | N/A | 文書横断ドリフト（用語/役割/導線/D1〜D4）を解消。 |
 | DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Done | N/A | dashboard運用プロトコルと競合停止条件を固定。 |
+| REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Done | N/A | R2-P1 Reject, R2-P2/R2-P3 Conditional Approve を確定し運用方針へ反映。 |
+| REQ-DEF-03 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Done | N/A | R3-P1 Approve, R3-P2/R3-P3 Conditional Approve を確定しテンプレ運用へ反映。 |
 | REQ-DEF-01 | `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Done | N/A | REQ-DEF共通I/F正本とDecision Queue連携を最終固定。 |
 | FB-RM-SEC-02 | `issue-FB-RM-SEC-02-worker-stabilization.md` | Done | N/A | worker化・fallback/cancel/progress 回帰固定済み。 |
 | FB-RM-MID-02 | `issue-FB-RM-MID-02-manual-assisted-merge-decisions.md` | Done | N/A | merge判断記録の保存/再読込を実装済み。 |

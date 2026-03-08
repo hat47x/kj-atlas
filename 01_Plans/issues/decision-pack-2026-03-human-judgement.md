@@ -59,67 +59,82 @@
 
 ### 3-1. 止まっている理由
 
-- 要件定義フェーズの壁打ち結果をIssue化したが、Must/Should/Could分類と責任分界の拘束力をどこまで必須化するか未決定。
+- 要件定義フェーズの壁打ち結果をIssue化したが、Must/Should/Could分類と受入規約の拘束力をどこまで必須化するか未決定。
 - 受入シナリオ規約を「推奨」に留めるか「必須」に引き上げるかで、後続Issue分割基準が変わる。
 
 ### 3-2. 必須決定セット（現況）
 
 - R1: `REQ-DEF-01` の要求優先度分類（P-01〜P-07）をレビュー承認必須にするか。**→ 決定済み（Done）**
-- R2: `REQ-DEF-02` のRACI/契約判定欄を全Issue必須項目にするか。**→ 未承認（Pending）**
-- R3: `REQ-DEF-03` の要求粒度↔検証粒度マッピングをテンプレ必須にするか。**→ 未承認（Pending）**
+- R2: `REQ-DEF-02` のテンプレ反映方針（RACI削除、Go/No-Go条件適用、安全ゲート条件適用）。**→ 決定済み（Done）**
+- R3: `REQ-DEF-03` の要求粒度↔検証粒度マッピングをテンプレ必須にするか。**→ 決定済み（Done）**
 
-### 3-3. Pending項目一覧（R2/R3系のみ）
+### 3-3. 決定項目（R2/R3確定）
 
 #### 3-3-1) 「決めるべきこと」（Decision）
 
 | Decision ID | Backlog | 論点 | 提案案 |
 |---|---|---|---|
-| R2-P1 | REQ-DEF-02 | `RACI` / `ContractImpact` を全Issueで必須化するか | 新規Issueは必須、既存Activeは移行期限付きで段階適用 |
-| R2-P2 | REQ-DEF-02 | `Go/No-Go` 判定欄の適用開始時期 | 承認日から+1スプリントで全Openへ適用 |
-| R2-P3 | REQ-DEF-02 | SafeMode/漏えい防止をレビューゲートへ接続する運用レベル | docs-check必須 + レビュー時チェックリスト必須 |
+| R2-P1 | REQ-DEF-02 | `RACI` / `ContractImpact` を全Issueで必須化するか | **Reject**: RACI/責任分界点要件は削除（AIエージェント主体運用のため） |
+| R2-P2 | REQ-DEF-02 | `Go/No-Go` 判定欄の適用開始時期 | **Approve (Conditional)**: 合理的に必要なIssueに限定して設置 |
+| R2-P3 | REQ-DEF-02 | SafeMode/漏えい防止をレビューゲートへ接続する運用レベル | **Approve (Conditional)**: セキュリティ境界に影響するIssueのみ必須 |
 | R3-P1 | REQ-DEF-03 | 要求粒度↔検証粒度マッピングをテンプレ必須化するか | R0〜R3のマッピング記述を新規Issueで必須 |
 | R3-P2 | REQ-DEF-03 | 1Issue1検証責務の例外閾値 | 例外は「統合境界が2つ以上」の場合のみ許容 |
 | R3-P3 | REQ-DEF-03 | 受入シナリオ最小テンプレの必須化範囲 | Process/Docs以外は必須、Docs-onlyは任意 |
 
 #### 3-3-2) 「決めないと止まる後続作業」（Blocked work）
 
-1. `01_Plans/issues/TEMPLATE.md` の必須項目固定（RACI/ContractImpact/検証粒度/受入シナリオ）。
+1. `01_Plans/issues/TEMPLATE.md` の必須項目固定（検証粒度/受入シナリオ + 条件付きGo/No-Go + 条件付きセキュリティゲート）。
 2. `01_Plans/issues/README.md` の Active issue 起票手順（必須メタ定義）更新。
 3. REQ-DEF-02/03 を参照する新規Issueのレビュー判定（Go/No-Go）自動化条件定義。
+
+#### 3-3-3) R3-P1〜P3 詳細説明と推奨対応
+
+| Decision ID | 背景（なぜ必要か） | 推奨対応 | 採用時の効果 / 非採用時のリスク |
+|---|---|---|---|
+| R3-P1 | 要求粒度（R0〜R3）と検証粒度（docs-check/unit/integration/e2e）の対応がIssueごとに揺れると、完了判定が人依存化する。 | **Approve（新規Issue必須）**: 新規Issueでは `要求粒度↔検証粒度` の明示を必須。既存Activeは段階適用。 | 採用時: 検証不足/過剰の両方を抑制。非採用時: 「どこまで検証すればDoneか」が再燃。 |
+| R3-P2 | 1Issueに複数検証責務を混在させると、失敗時の原因切り分けと再開性が低下する。 | **Approve（条件付き）**: 原則は1Issue1検証責務。例外は「統合境界が2つ以上で分割不能」時のみ許容し、理由を `Validation plan` / `Decision Queue` に記録。 | 採用時: Issue分割の再現性と復旧性が向上。非採用時: 複合Issueが増え、レビュー工数が増大。 |
+| R3-P3 | 受入シナリオの最小テンプレがないと、前提/操作/期待結果/除外の欠落が起きやすい。 | **Approve（条件付き）**: Process/実装系Issueは必須、Docs-onlyは任意（推奨）として運用。 | 採用時: 受入記述の欠落を抑制し起票品質が安定。非採用時: 受入観点のばらつきが残る。 |
+
+> 推奨理由（総括）: R3は「人を増やすための管理」ではなく「AI主体運用でもDone判定を機械的に揃えるための検証規約」である。過剰拘束を避けるため、**R3-P1は必須化、R3-P2/R3-P3は条件付き必須**を推奨する。
 
 ### 3-4. Decision Record（確定案 / 承認待ち）
 
 #### DR-REQ-DEF-02 (R2系)
 
-- Context: REQ-DEF-02では責任分界と契約影響の記載は固定済みだが、テンプレ全体への必須化範囲が未承認。
-- Decision (Proposal): `RACI` / `ContractImpact` / `Go-No-Go` を「新規Issue必須」「既存Activeは次スプリント末までに追補」とする。
+- Context: REQ-DEF-02のテンプレ反映範囲（RACI/Go-No-Go/安全ゲート）をどう制度化するかが未確定だった。
+- Decision (Final):
+  - **R2-P1 = Reject**: RACI/責任分界点（ContractImpactを含む）を全Issue必須化しない。関連要件は削除する。
+  - **R2-P2 = Approve (Conditional)**: Go/No-Go判定欄は合理的必要性があるIssueに限定して設置する。
+  - **R2-P3 = Approve (Conditional)**: SafeMode/漏えい防止レビューゲートは、セキュリティ境界（SafeMode/share/export/import sanitize/公開設定）に影響するIssueのみ必須化する。
 - Consequences:
-  - 採用時: 起票品質のばらつきが減り、契約判断の漏れを抑制できる。
-  - 非採用時: Issueごとの責任境界解釈差が残り、レビュー再作業が発生する。
-- Approval status: **Pending Human Approval**
-- Approval request (for human decider):
-  - `Approve` または `Reject` を R2-P1/R2-P2/R2-P3 ごとに明示してください。
-  - 期限提案: 2026-03-12 JST（未回答時は「未承認」のまま Phase 2 へ進まない）。
-  - 記録先: 本ファイルの Decision Record と `project-progress-dashboard.md` の Decision Queue を同時更新。
+  - R2-P1反映により、責務境界の形式管理コストを削減し、AIエージェント主体運用に合わせる。
+  - R2-P2/R2-P3を条件付き必須にすることで、過剰なテンプレ拘束を避けつつ高リスク変更の安全ゲートを維持する。
+- Approval status: **Approved (with mixed outcomes: Reject/Approve Conditional)**
+- Approval log:
+  - Date (JST): 2026-03-08
+  - Decider: Human (repository operator)
+  - Source statement: 「R2-P1削除」「R2-P2は必要Issueのみ」「R2-P3は条件付きApprove」
 
 #### DR-REQ-DEF-03 (R3系)
 
-- Context: REQ-DEF-03では検証粒度の考え方は固定済みだが、テンプレ必須化/例外閾値が未承認。
+- Context: REQ-DEF-03では検証粒度の考え方は固定済みで、テンプレ必須化/例外閾値の最終承認を行う段階だった。
 - Decision (Proposal): `要求粒度↔検証粒度` と `AcceptanceScenario最小テンプレ` を新規Issue必須化し、例外は統合境界2つ以上のみ許容する。
 - Consequences:
   - 採用時: 分割粒度と検証責務が明確になり、後続Issueの衝突を抑制できる。
   - 非採用時: docs-check対象の粒度判断が人依存で残り、分割ルールの再議論が継続する。
-- Approval status: **Pending Human Approval**
-- Approval request (for human decider):
-  - `Approve` または `Reject` を R3-P1/R3-P2/R3-P3 ごとに明示してください。
-  - 期限提案: 2026-03-12 JST（未回答時は「未承認」のまま Phase 2 へ進まない）。
-  - 記録先: 本ファイルの Decision Record と `project-progress-dashboard.md` の Decision Queue を同時更新。
+- Approval status: **Approved (R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve)**
+- Approval log:
+  - Date (JST): 2026-03-08
+  - Decider: Human (repository operator)
+  - Selected options: R3-P1 Approve / R3-P2 Approve (Conditional) / R3-P3 Approve (Conditional)
+  - Effective from: 2026-03-08 JST
+  - Notes: R3-P2/R3-P3 の条件は `TEMPLATE.md` と `issues/README.md` へ同日反映する。
 
 ### 3-5. 決定後アクション（承認後のみ実施）
 
-1. REQ-DEF-01 は Done、REQ-DEF-02/03 は Open のまま共通I/F参照を維持する。
-2. `01_Plans/issues/TEMPLATE.md` への必須反映範囲を人間判断で確定する。
-3. `project-progress-dashboard.md` の Decision Queue を未確定テーマ（REQ-DEF-02/03）中心に維持する。
+1. REQ-DEF-01/02/03 は Done とし、共通I/F参照を維持する。
+2. `01_Plans/issues/TEMPLATE.md` への必須反映範囲（R3-P1必須、R3-P2/R3-P3条件付き）を維持する。
+3. `project-progress-dashboard.md` / `issues/README.md` / `TEMPLATE.md` の状態表示と必須項目定義を同日同期する。
 
 ## 4. 意思決定記録テンプレート
 
@@ -139,17 +154,17 @@
 
 ### 整合点検結果
 
-- `project-progress-dashboard.md`: AUTH-OPS-03/DOC-OPS-02/DOC-OPS-03/REQ-DEF-01 を Done に同期。
+- `project-progress-dashboard.md`: AUTH-OPS-03/DOC-OPS-02/DOC-OPS-03/REQ-DEF-01/02/03 を Done に同期。
 - `issues/README.md`: 上記4件を Completed issue memos へ移送し、Active一覧と実態を一致。
 - decision-pack 本書: AUTH-OPS-03 を「完了」へ更新。
 
 ### 残課題（次スプリント持越し）
 
-1. REQ-DEF共通キーを `01_Plans/issues/TEMPLATE.md` へ必須反映するかを人間判断する。
+1. REQ-DEF-03決定内容（R3-P1〜P3）の運用定着をレビュー時に監査する。
 2. DOC-OPS-02 ドリフト検知を定期運用（レビュー時チェック項目）へ組み込む。
-3. REQ-DEF-02/03 の未確定項目を Decision Queue で決裁する。
+3. REQ-DEF-02/03 の決定事項に基づくテンプレ運用の逸脱を検知した場合は是正Issueを起票する。
 
 ### 判定
 
 - P0ボトルネック（AUTH-OPS-03 D1〜D4未確定）は解消。
-- DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01 は Done へ遷移し、残る P1 は REQ-DEF-02/03 に集約。
+- DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01/02/03 は Done へ遷移。REQ-DEF系のDecision Queueは解消済み。

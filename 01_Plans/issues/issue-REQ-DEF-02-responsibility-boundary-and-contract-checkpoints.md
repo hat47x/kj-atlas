@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-02 責任分界点と契約チェックポイントの要求定義
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -213,15 +213,19 @@
 - [x] REQ-DEF-01の共通I/F（canonical key / Pending時のみ `DecisionQueueRef` 必須）と不整合がない。
 
 
-## Decision Queue（残る未確定 / R2系）
+## Decision Queue（R2系 / 決定済み）
 
-- R2-P1 (Pending): `01_Plans/issues/TEMPLATE.md` へ共通I/Fキー（RACI/ContractImpact）を必須化する範囲。
-- R2-P2 (Pending): `Go/No-Go` 判定欄を全Issue共通必須にする適用開始時期。
-- R2-P3 (Pending): 監査境界（SafeMode/漏えい防止）をレビューゲートへ接続する運用レベル。
+- R2-P1 (**Rejected**): `01_Plans/issues/TEMPLATE.md` へのRACI/責任分界点必須化は実施しない（要件削除）。
+- R2-P2 (**Approved Conditional**): `Go/No-Go` 判定欄は合理的必要性があるIssueに限定して設置。
+- R2-P3 (**Approved Conditional**): SafeMode/漏えい防止レビューゲートはセキュリティ境界影響Issueに限定して必須。
 
-### Decision Record（承認待ち）
+### Decision Record（確定）
 
-- Context: REQ-DEF-02本体（R1〜R3）はFixedだが、テンプレ反映範囲は未承認。
-- Decision (Proposal): R2-P1〜P3を新規Issue必須 + 既存Activeは次スプリントで追補。
-- Consequences: 承認時は責任分界の欠落を抑制。未承認時は本Issue内固定のままとし、テンプレ反映を停止。
-- Approval status: Pending Human Approval
+- Context: REQ-DEF-02本体はFixedだが、テンプレ反映範囲（RACI/Go-No-Go/安全ゲート）の拘束度合いが未承認だった。
+- Decision (Final):
+  - R2-P1はReject（RACI・責任分界点要件は削除）。
+  - R2-P2はApprove Conditional（必要IssueのみGo/No-Go欄を設置）。
+  - R2-P3はApprove Conditional（セキュリティ境界影響Issueのみ安全ゲート必須）。
+- Consequences: 低リスクIssueの運用負荷を抑えつつ、高リスクIssueに限定した安全レビュー導線を維持する。
+- Approval status: Approved (mixed outcomes)
+- Approval log: 2026-03-08 JST / Human decider
