@@ -257,11 +257,14 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 ### 3.2 strict mode の例外承認責任（発動条件 / 停止条件 / 復旧条件）
 
+参照正本: `02_Architecture/strict_mode_exception_approval_flow.md`（決定）、`04_Documentation/security.md` 8.1〜8.3（安全性チェック）。
+
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`は本番標準（strict）とする。
 - 例外発動条件: 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
 - 停止条件: Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たせない場合は、Platform Operator は「確認待ちで停止」を記録し、適用を禁止する。
 - Platform Operator 記録必須項目: 実施時刻・理由・承認者・対象環境・復旧条件。承認記録がない変更を禁止する。
 - 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、復旧時刻と検証結果を記録する。
+- 違反時SLA: 15m以内に一次エスカレーション、60m以内に二次エスカレーションを実施する。
 - backend 開発者はコードで一時バイパスを実装してはならない。
 
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）

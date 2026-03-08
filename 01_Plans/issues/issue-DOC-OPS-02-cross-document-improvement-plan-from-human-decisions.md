@@ -106,3 +106,19 @@
 - [ ] issue側のタスク分解が、実際の文書更新順序に対応している。
 - [x] Q1〜Q10固定値（AUTH-OPS-03）と strict/non-strict 記述が矛盾しない。
 - [x] 環境変数記述が `KJ_ATLAS_*` 契約のみを参照している。
+
+
+### 実施順序（固定）
+
+1. AUTH-OPS-03 正本（`strict_mode_exception_approval_flow.md`）の固定値を参照基準にする。
+2. 02（`enterprise_architecture.md`）へ責務境界/停止条件/復旧条件を同期する。
+3. 04（`operations.md` / `security.md`）へRunbookと最小監査項目を同期する。
+4. 01（dashboard/decision-pack/issues README）へ状態遷移とDecision Queue反映を同期する。
+5. AGENTS.md の導線・ドリフト検知項目を更新し、以後の再発を防止する。
+
+### ドリフト検知項目（固定）
+
+- [ ] 用語ドリフト: Security Officer / System Owner / Platform Operator の定義が一致している。
+- [ ] 役割ドリフト: 2者承認責務と実行責務分離が一致している。
+- [ ] 導線ドリフト: 02→04→01 の相互リンクが有効。
+- [ ] 運用値ドリフト: D1〜D4 固定値（4h, tenant/2h, 代理承認なし, 48h+15m/60m）が一致している。

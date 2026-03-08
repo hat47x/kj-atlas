@@ -232,14 +232,14 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | Open | N/A |
+| AUTH-OPS-03 | `issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md` | In Progress | N/A |
 | ENV-ARCH-01 | `issue-ENV-ARCH-01-global-env-prefix-migration.md` | Open | N/A |
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Open | N/A |
 | DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Open | N/A |
 | DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Open | N/A |
-| REQ-DEF-01 | `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Draft | N/A |
-| REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Draft | N/A |
-| REQ-DEF-03 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Draft | N/A |
+| REQ-DEF-01 | `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Open | N/A |
+| REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Open | N/A |
+| REQ-DEF-03 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Open | N/A |
 
 ## Rules
 

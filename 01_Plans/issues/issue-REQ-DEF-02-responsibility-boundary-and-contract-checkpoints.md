@@ -1,7 +1,7 @@
 # Issue Draft: REQ-DEF-02 責任分界点と契約チェックポイントの要求定義
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -10,6 +10,21 @@
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0011`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `02_Architecture/enterprise_architecture.md`
 - Expected verification level: `docs-check`
+
+
+## Requirement meta I/F（REQ-DEF共通キー）
+
+> REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
+
+- Requirement ID
+- Requirement statement
+- Priority class（Must / Should / Could）
+- RACI（A/R/C/I）
+- Contract impact（schema/api/policy/ops: あり/なし）
+- Acceptance scenario（前提/操作/期待結果/除外）
+- Verification level（docs-check / unit / integration / e2e）
+- Decision status（Fixed / Pending）
+- Decision queue ref（未確定時の参照先）
 
 ## 1) 課題 / Problem statement
 
@@ -43,9 +58,9 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 役割ごとの決定責務と承認責務が要求文書で判読可能になる。
-- [ ] 契約チェックポイント（schema/API/policy/ops）が要求定義テンプレに追加される。
-- [ ] 各要求に「契約変更あり/なし」の判定欄がある。
+- [x] 役割ごとの決定責務と承認責務が要求文書で判読可能になる。
+- [x] 契約チェックポイント（schema/API/policy/ops）が要求定義テンプレに追加される。
+- [x] 各要求に「契約変更あり/なし」の判定欄がある。
 - [ ] SafeMode・漏えい防止・監査要件の境界が必須項目として保持される。
 - [ ] docs-check でメタ情報と参照整合を確認できる。
 
@@ -86,3 +101,10 @@
 - ADR化が必要になる条件（トレードオフ閾値）:
   1. RACIを全フェーズ必須ルールとして固定する場合。
   2. 契約チェックポイントをCIゲートへ接続する場合。
+
+
+## Decision Queue（残る未確定）
+
+- Pending-1: `01_Plans/issues/TEMPLATE.md` へ共通I/Fキー（RACI/Contract impact）を必須化する範囲。
+- Pending-2: `Go/No-Go` 判定欄を全Issue共通必須にする適用開始時期。
+- Pending-3: 監査境界（SafeMode/漏えい防止）をレビューゲートへ接続する運用レベル。
