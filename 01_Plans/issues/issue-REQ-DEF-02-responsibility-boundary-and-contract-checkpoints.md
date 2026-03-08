@@ -26,6 +26,20 @@
 - Decision status（Fixed / Pending）
 - Decision queue ref（未確定時の参照先）
 
+### B-3. I/Fキー実装（本Issueの独立実行範囲）
+
+> 独立実行可能理由: B-3のI/Fキーに RACI / Contract impact 判定を埋める専任タスクとして切り出し可能。
+
+| Key | このIssueでの確定値 | 備考 |
+|---|---|---|
+| Requirement ID | `REQ-DEF-02` | 固定 |
+| Priority class | `Must` | 監査説明責任の成立条件 |
+| RACI（A/R/C/I） | **A:** Platform Architecture Owner / **R:** Security Officer / **C:** Product Owner, Implementer / **I:** Reviewer, Operations | RACIを要求定義時点で先に固定 |
+| Contract impact | **schema:** なし / **api:** なし / **policy:** あり / **ops:** あり | 契約判定を明示 |
+| Verification level | `docs-check` | ドキュメント整合のみ |
+| Decision status | `Fixed` | B-3は本Issueで確定 |
+| Decision queue ref | `Pending-2`, `Pending-3` | 全Issue必須化は別判断 |
+
 ## 1) 課題 / Problem statement
 
 - 要件定義フェーズで「誰がどこまで決めるか（責務境界）」が明示されないと、実装Issueで設計判断が再燃する。
@@ -66,10 +80,29 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 責任分界点のRACI表（要求定義向け）を作成する。
-- [ ] T2: 契約チェックポイントの定義表を作成する。
-- [ ] T3: 要件未確定時の停止基準（Go/No-Go）を作成する。
+- [x] T1: 責任分界点のRACI表（要求定義向け）を作成する。
+- [x] T2: 契約チェックポイントの定義表を作成する。
+- [x] T3: 要件未確定時の停止基準（Go/No-Go）を作成する。
 - [ ] T4: 後続Issueテンプレへ責任分界点項目を反映する。
+
+### Plan → Execute → Verify（本実施ログ）
+
+1. **Plan**
+   - B-3のI/Fキーに `RACI` と `Contract impact` の確定値を埋める。
+   - 許可スコープ外（REQ-DEF-01/03本文、運用文書）へは変更を拡張しない。
+2. **Execute**
+   - 本Issue内に B-3専用セクションを追加し、RACI/契約判定を表形式で固定。
+   - T1〜T3の完了をこのIssue内でチェック済みに更新。
+3. **Verify**
+   - `validate_active_issue_memos.py` と unit test で体裁・必須項目整合を確認。
+   - 文言追跡は `rg` で確認。
+
+### 自己修復ログ（最大3回）
+
+- Attempt 1: validator実行（失敗時は不足項目を修正）。
+- Attempt 2: unit test実行（失敗時はフォーマット/期待値差分を修正）。
+- Attempt 3: `rg` によるキーワード存在確認（不足時は追記）。
+- **Fail-safe停止条件**: 3回の自己修復で整合が回復しない場合は、変更を最小化して停止し未解決点を `Decision Queue` に記録する。
 
 ## 7) 検証計画 / Validation plan
 
