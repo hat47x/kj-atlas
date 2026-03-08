@@ -20,20 +20,26 @@ def test_settings_uses_prefixed_key(monkeypatch) -> None:  # type: ignore[no-unt
     assert loaded.database_url == "sqlite:///./canonical.db"
 
 
-def test_settings_ignores_legacy_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_settings_rejects_legacy_key_only(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./legacy.db")
 
-    loaded = Settings()
+    try:
+        Settings()
+        assert False, "Expected legacy-only env to be rejected"
+    except ValueError as exc:
+        assert "Legacy env keys are no longer supported" in str(exc)
+        assert "DATABASE_URL" in str(exc)
 
-    assert loaded.database_url == "sqlite:///./kj_atlas.db"
 
-
-def test_settings_prefers_prefixed_key_over_legacy_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_settings_rejects_mixed_prefixed_and_legacy_keys(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_DATABASE_URL", "sqlite:///./canonical.db")
     monkeypatch.setenv("DATABASE_URL", "sqlite:///./legacy.db")
 
-    loaded = Settings()
-
-    assert loaded.database_url == "sqlite:///./canonical.db"
+    try:
+        Settings()
+        assert False, "Expected mixed env keys to be rejected"
+    except ValueError as exc:
+        assert "Legacy env keys are no longer supported" in str(exc)
+        assert "DATABASE_URL" in str(exc)
