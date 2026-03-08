@@ -1,51 +1,46 @@
-# Issue Draft: DOC-OPS-04 設計文書の俯瞰統合アーキテクチャと可読性改善プログラム
+# Issue Draft: DOC-OPS-04 設計文書の俯瞰統合アーキテクチャと可読性改善プログラム（ADR候補化前処理監査）
 
 - Type: Documentation quality
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Platform Architecture Owner + Documentation Maintainers
-- Scope: `AGENTS.md`, `01_Plans/`, `02_Architecture/`, `04_Documentation/`
+- Owner: DOC-OPS-04 監査専任エージェント
+- Scope: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` のみ（本Issue更新に限定）
 - Related Backlog: N/A
-- Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0008`, `ADR-0018`, `ADR-0019`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
+- Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0018`, `ADR-0019`
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement
 
-- プロジェクト規模拡大に伴い、設計文書の参照経路が多段化し、初見読者・新規実装者が「どの文書をどの順で読めば判断できるか」を即時把握しにくくなっている。
-- 00〜04階層の規律はあるが、意思決定を横断的に俯瞰する「上位統合ビュー」が不足し、仕様の全体像・依存関係・優先順位が分断されて見える。
-- 個別文書ごとに求められる前提知識レベルが高く、読解コストが高止まりしている。結果として、設計判断の再現性・オンボーディング速度・レビュー効率が低下しうる。
+- DOC-OPS-04 は本来、複数レイヤ文書へ跨る恒久運用の検討論点を含むため、Issue本文だけで恒久ルールを固定すると「実質ADR化」が発生する。
+- 本タスクは「ADR候補化前処理」の監査に限定されるため、実装計画・横断反映・運用固定の切り分けを明確化する必要がある。
 
 ## 2) 背景 / Context
 
-- 現状は `AGENTS.md` の Read Order と Project Map が入口として機能しているが、「読んだあとにどう統合理解するか」を担う文書が不足している。
-- `02_Architecture/` は単一文書ごとの正本性が高い一方、文書間の依存関係（先に読むべき章、同時参照すべき契約、更新同期単位）が暗黙知化しやすい。
-- `01_Plans/issues/` には文書改善タスクが散在しており、短期修正は進むが、中長期の文書情報設計（Information Architecture）としての統制計画が未固定。
+- 既存のDOC-OPS-04論点（Information Architecture / Readability / Quality Gates / Governance）は、いずれも恒久ルール化の可能性を含む。
+- したがって本Issueで行うべき作業は、ADR候補化に必要な監査記録（Context / Decision / Consequences）を整える前処理までに限定する。
 
-## 2.5) ADR候補化前処理（DOC-OPS-04限定）
+## 3) 必須ワークフロー実施ログ（本監査タスク）
 
-本Issueでは、DOC-OPS-04 全体実装には進まず、**ADR候補化の前処理のみ**を実施する。
+### 3.1 Plan: AC/DoD不足点の抽出と補完案
 
-### 2.5.1) 一次判定（Context / Decision / Consequences）
+**不足点（監査観点）**
 
-| 観点 | 要約 | 判定への影響 |
-|---|---|---|
-| Context | 対象は `AGENTS.md` / `01_Plans` / `02_Architecture` / `04_Documentation` を横断し、Read Order・正本導線・更新責務を再設計する。 | 既存運用を跨ぐ恒久ルール化が発生しうるため、ADR候補化の必要性が高い。 |
-| Decision | **一次判定: ADR候補化を必須（Yes）**。ただし本Issue内で恒久ルールを固定せず、候補論点を `Context / Decision / Consequences` 形式で分離起票準備する。 | Issue本文のみで恒久方針を凍結しない。DecisionはADRへ昇格して確定する。 |
-| Consequences | 先にADR候補化することで、上位統合文書の責務・品質ゲート・例外運用の固定範囲が監査可能になる。未実施の場合、Issueメモが実質ADR化し重複正本を生みやすい。 | ADR未分離のまま恒久ルールを追記する変更を禁止する。 |
+- AC不足1: 「前処理タスクの完了条件」が恒久運用条件と混在し、監査終了判定が曖昧。
+- AC不足2: 「Decisionにおける暫定/恒久の境界」が明文化されないとIssue本文での固定化リスクが残る。
+- DoD不足1: 「Issue本文で恒久ルールを固定していないこと」の明示検証項目が必要。
+- DoD不足2: 「承認待ちで停止する状態」の記録フォーマットが必要。
 
-### 2.5.2) AC/DoD不足の提案（ADR候補化前処理向け）
+**補完案（本Issueでの合意対象）**
 
-以下を **追加提案（合意対象）** とし、前処理の受入条件に限定して扱う。
+- AC補完A: ADR候補A〜Dの各項目に `Context / Decision / Consequences` を独立記述する。
+- AC補完B: 各 `Decision` に「Issue内の暫定扱い」と「ADRで確定すべき範囲」を併記する。
+- AC補完C: 各 `Consequences` に採用時/非採用時の影響を最低1件ずつ記録する。
+- DoD補完A: docs-check観点（メタ必須項目・見出し整合・監査ログ再現）をコマンドで確認する。
+- DoD補完B: 「恒久ルール不固定」を差分・文面の両方で確認し、承認待ち状態を明記する。
 
-- AC提案A: ADR候補A〜Dそれぞれに `Context / Decision / Consequences` を独立記述する。
-- AC提案B: 各 `Decision` に「Issue内の暫定扱い」と「ADRで固定すべき範囲」を分離して明記する。
-- AC提案C: 各 `Consequences` に採用時・非採用時の影響を最低1件ずつ記載する。
-- DoD提案A: docs-check（メタ必須項目、リンク、候補間の一貫性）を再現可能コマンドで記録する。
-- DoD提案B: 本更新で恒久運用ルールを増設しない（Issue本文で固定しない）ことを差分で確認する。
-
-### 2.5.3) ADR候補A-D（Context / Decision / Consequences）
+### 3.2 Execute: ADR候補A〜Dの監査記録（Context / Decision / Consequences）
 
 ### 2.5.4) 適用境界（承認後のみ適用 vs 暫定メモ）
 
@@ -55,69 +50,49 @@
 
 #### ADR候補A: Documentation Information Architecture
 
-- Context: 文書の正本/解説/索引責務が分散し、参照開始点と契約正本への導線が読者依存になっている。
-- Decision: Issue内では「責務分離が必要」という論点定義に留める。正本/解説/索引の恒久定義と配置規約はADRで固定する。
-- Consequences: 採用時は文書責務が監査可能になり、正本重複を抑止できる。非採用時は文書追加時に責務競合が再発し、DOC-OPS系Issueで都度再解釈が必要になる。
+- Context: 正本/解説/索引の責務分離が未確定で、文書追加時の重複正本リスクが残る。
+- Decision: 本Issueでは「責務分離が必要」という監査所見のみを記録し、責務定義・配置規約はADRで確定する（暫定扱い）。
+- Consequences: 採用時は責務境界の監査可能性が向上する。非採用時は文書増加に伴う責務競合が再発する。
 
 #### ADR候補B: Documentation Readability Baseline
 
-- Context: 対象読者・前提・非目標・到達目標の記載粒度が文書ごとに不均一で、読み順と理解負荷が安定しない。
-- Decision: Issue内では「可読性ベースライン項目の候補列挙」に限定する。必須項目セットと適用範囲（全体/一部）はADRで固定する。
-- Consequences: 採用時は新規参画者の読解開始コストを下げ、レビュー観点を定型化できる。非採用時は文書品質が執筆者依存のままとなり、更新時の判断再現性が低下する。
+- Context: 読者前提・非目標・到達目標の記載粒度が文書ごとにばらついている。
+- Decision: 本Issueでは「ベースライン候補の棚卸し」に限定し、必須項目セットと適用範囲はADRで確定する（暫定扱い）。
+- Consequences: 採用時は読解開始コストとレビューばらつきが低減する。非採用時は品質の属人化が継続する。
 
 #### ADR候補C: Documentation Quality Gates
 
-- Context: docs-checkの運用は存在するが、lint/link/metadata validator の必須化レベルと適用境界が未統一である。
-- Decision: Issue内では「品質ゲート対象の候補」を整理する。CI必須化の範囲・失敗時ポリシー・例外承認条件はADRで固定する。
-- Consequences: 採用時は文書変更の回帰検知が機械化され、差分レビューの検査漏れを抑制できる。非採用時は目視依存が継続し、リンク切れやメタ欠落の検出が遅延する。
+- Context: docs-check運用はあるが、lint/link/metadata検査の必須化境界が統一されていない。
+- Decision: 本Issueでは「候補ゲートの監査記録」に留め、CI必須化範囲・例外承認条件はADRで確定する（暫定扱い）。
+- Consequences: 採用時は回帰検知が機械化される。非採用時は目視依存で欠陥検知が遅延する。
 
 #### ADR候補D: Documentation Change Governance
 
-- Context: 文書更新DoD、同期対象、レビュー責務、例外承認の境界がIssue単位で都度定義されやすい。
-- Decision: Issue内では「ガバナンス論点の棚卸し」に留め、恒久運用フロー（責務分離・承認段階・監査証跡）はADRで固定する。
-- Consequences: 採用時は変更時の説明責任と停止基準が明確化し、ドキュメントドリフトを抑制できる。非採用時は運用判断が属人化し、重大変更時に合意形成コストが上がる。
+- Context: 更新DoD、同期責務、承認責務の境界がIssueごとに再定義されやすい。
+- Decision: 本Issueでは「ガバナンス論点の棚卸し」までに限定し、責務分離・承認段階・監査証跡はADRで確定する（暫定扱い）。
+- Consequences: 採用時は説明責任と停止基準が明確化する。非採用時は運用判断の属人化が継続する。
 
-## 3) 判断基準による優先度評価
+### 3.3 Verify: 恒久ルール不固定の確認
 
-- 価値・判断軸（ADR-0001）: 仕様判断を人間中心で追跡可能にするため、文書間の意味接続（Context -> Decision -> Implementation）を明示する必要がある。
-- 安全（THREAT_MODEL / SafeMode）: 読解ミスで SafeMode や漏えい防止ポリシーの優先順位を誤ると、実装・運用の安全逸脱が発生する。
-- 企業・行政要件（enterprise_architecture）: 監査説明責任が要求される環境では、参照可能な設計トレーサビリティと判断経路の明確化が必須。
-- 後方互換（schemas）: 文書構造改編時に契約正本（schemas/api/runtime parameter）の所在が曖昧になると、互換運用が破綻するため明示的ガードが必要。
+- 確認結果: 本Issue本文では、いずれの候補でも「確定」「必須化」「標準運用化」を宣言していない。
+- 確認結果: すべてのDecisionは「暫定扱い」として記載し、恒久化はADR分離後の承認に委譲している。
+- 判定: **Issue本文で恒久ルールを固定していない（適合）**。
 
-## 4) 提案する解決策 / Proposed solution
+### 3.4 Proceed: 承認待ち記録
 
-- 変更対象: Docs only（設計文書の情報設計・可読性・運用規約を再編）。
-- 変更の最小単位（再開可能タスク）:
-  - 文書レイヤA（俯瞰）: 全体像・依存関係・更新責務を定義する上位統合文書（仮称: `02_Architecture/documentation_architecture.md`）を新設。
-  - 文書レイヤB（個別品質）: 各設計文書に「対象読者 / 先に読む文書 / 本文の到達目標 / 非目標 / 更新トリガー」をテンプレ化して追記。
-  - 文書レイヤC（運用）: 変更時チェックリスト（構造・可読性・難易度・リンク整合）を `01_Plans/issues/README.md` か `04_Documentation/operations.md` に固定。
-  - 文書レイヤD（継続監査）: docs lint（メタ項目欠落・リンク切れ・必須セクション欠落）を段階導入する。
-- 非目標:
-  - アプリ機能仕様そのものの変更。
-  - API/Schema の契約変更。
-  - Frontend/Backend 実装変更。
+- 現在状態: ADR候補A〜Dの前処理監査を完了。
+- 次アクション: Human reviewer による ADR候補化可否の承認待ち。
+- 停止理由: 本タスクは「前処理監査」に限定されるため、広域文書反映は実施しない。
 
-### 4.0 事前設計ドキュメント作成方針（Pre-coding gate）
+## 4) 受入条件 / Acceptance criteria（前処理監査限定）
 
-実装（03_Implement）へ着手する前に、対象機能に応じて次の設計文書を `02_Architecture/` 配下へ先行作成する。
+- [x] AC-1: AC/DoD不足点を抽出し、補完案を明記している。
+- [x] AC-2: ADR候補A〜Dそれぞれに `Context / Decision / Consequences` の監査記録がある。
+- [x] AC-3: 各Decisionに暫定/恒久の境界が明記されている。
+- [x] AC-4: 恒久ルールをIssue本文で固定していないことを明示確認している。
+- [x] AC-5: 承認待ち記録を残し、前処理範囲で停止している。
 
-- ER図（必要なデータモデル変更がある場合）
-- 業務フロー（利用者・運用者の主要フロー）
-- 画面遷移図（UI変更がある場合）
-- 機能一覧（対象スコープの機能境界）
-- ファイル定義（永続化・import/exportファイル）
-- 入出力定義（API/Worker/CLIを含むI/F契約）
-
-作図・表現ルール:
-
-- GitHubでレンダリング可能な Markdown + Mermaid.js のみを使用する。
-- 図だけで完結させず、各図の直後に「目的」「前提」「非目標」「更新トリガー」を明記する。
-- 仕様正本は図単体ではなく本文契約（schema/api/parameter registry）であり、図は理解支援と依存可視化を担う。
-
-
-### 4.0A 上流工程ドキュメントの詳細評価（取り込み判断）
-
-上流工程で候補となる設計ドキュメントを評価し、DOC-OPS-04 の対象に **取り込む / 段階導入 / 今回は対象外** を明確化する。
+## 5) Definition of Done（DoD: 前処理監査）
 
 | 区分 | ドキュメント | 判断 | 理由 / 適用条件 |
 |---|---|---|---|
@@ -199,78 +174,30 @@
 - [ ] DoD-4: ADR候補化が必要な論点は `Context / Decision / Consequences` 形式で切り出し済みである。
 - [ ] DoD-5: SafeMode・漏えい防止・契約正本優先の3原則を弱める変更がない。
 
-## 5.6) 自己修復プロトコル（最大3回）とフェイルセーフ停止
+## 6) Self-Correction / Fail-safe
 
-文書変更中に検証不一致・重複正本・リンク不整合を検出した場合は、次の順序を固定する。
-
-1. **自己修復1回目**: 不整合箇所を最小修正し、docs-checkを再実行。
-2. **自己修復2回目**: 依存文書を含めて同期修正し、docs-checkを再実行。
-3. **自己修復3回目**: 章構成を縮退（索引化/要約化）して再検証。
-
-停止条件（フェイルセーフ）:
-
-- 3回目終了時点で不整合が残る場合は **それ以上の拡張編集を禁止** し、未解消論点・影響範囲・暫定回避策を `Additional context` へ記録して停止する。
-- フェイルセーフ停止時は「正本側を変更しない」「新規正本を作らない」を必須条件とする。
-
-## 6) 実装タスク分解 / Task breakdown
-
-- [ ] T1: 現行設計文書の情報設計監査（重複、欠落、依存不明、読者不一致）を実施し、監査結果を残す。
-- [ ] T2: 上位統合文書（仮称 `documentation_architecture.md`）の章立て・責務境界・正本参照ルールを草案化する。
-- [ ] T3: 個別文書テンプレ（対象読者/前提/非目標/更新トリガー）を定義し、主要文書へ段階適用する。
-- [ ] T3.5: pre-coding設計成果物テンプレ（ER/業務フロー/画面遷移/機能一覧/ファイル定義/入出力定義）と Mermaid記法ガイドを作成する。
-- [ ] T3.6: 上流工程ドキュメントの詳細評価結果（必須/条件付き/対象外）を運用ルール化し、適用判断チェック項目を追加する。
-- [ ] T4: 難易度緩和施策（3層ガイド、読む順の短縮導線）を AGENTS.md と関連文書へ反映する。
-- [ ] T5: docs-check 自動検証の拡張方針（lint/validator/link checker）を確定する。
-- [ ] T6: 上記実施中に仕様決定が必要な論点を ADR 候補として切り出す。
-- [ ] T7: 上位統合文書に対する「正本重複禁止ガード」チェック項目を docs-check 手順へ追加する。
-- [ ] T8: 自己修復3回プロトコルとフェイルセーフ停止条件を運用手順として明文化する。
+- 自律修正上限: 最大3回。
+- 修正ルール:
+  1. 1回目: 文面不整合の最小修正。
+  2. 2回目: 監査ログ構造（Plan/Execute/Verify/Proceed）の再整列。
+  3. 3回目: 暫定/恒久境界表現の縮退修正。
+- フェイルセーフ停止条件:
+  - 競合兆候（既存規約との衝突）または未定義ルールを検知した場合、推測実装を行わず停止する。
+  - 停止時は「判断待ち」へ遷移し、未解消論点を `Additional context` に記録する。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "^# |^- (Type|Status|Lifecycle|Source Issue|Priority|Scope|Related ADR/Spec|Expected verification level):" 01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
+  - `rg -n "^(#|##|###)|^- (Type|Status|Lifecycle|Source Issue|Priority|Scope|Related ADR/Spec|Expected verification level):" 01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - 期待結果:
-  - issue memo の必須メタが欠落なく、active index と整合している。
-  - docs-check レベルの検証が再現可能である。
-- 未実施時の理由・代替検証:
-  - Python実行不可環境では `rg` + 目視レビューで代替し、未実施理由を記録する。
+  - issue memo 必須メタの欠落なし。
+  - 監査用セクション（Plan/Execute/Verify/Proceed）の存在確認。
 
-## 8) 代替案 / Alternatives considered
+## 8) Additional context
 
-- 代替案A: 既存文書を都度改善し、上位統合文書を作らない。
-  - 却下理由: 改善の局所最適化が続き、全体整合と学習コスト低減が進まない。
-- 代替案B: 新規文書だけ作り、既存文書へメタ情報を追加しない。
-  - 却下理由: 実際に参照される個別文書の理解負荷が残り、効果が限定的。
-- 代替案C: 図表を外部ツールで管理し、リポジトリには画像のみ置く。
-  - 却下理由: 差分追跡・レビュー再現性・テキストベース保守性が低下する。
-
-## 9) リスクとロールバック / Risks & rollback
-
-- 失敗モード:
-  - 俯瞰文書が重複正本化し、逆に矛盾源になる。
-  - 可読性改善の名目で文書が冗長化し、保守負荷が増える。
-- 影響範囲:
-  - `AGENTS.md`, `01_Plans/adr/*`, `02_Architecture/*`, `04_Documentation/*` の参照関係。
-- ロールバック手順:
-  - 上位統合文書を「索引・依存図」に限定し、仕様本文は既存正本へ戻す。
-  - 過剰メタ項目は最小セット（対象読者/非目標/更新トリガー）に縮退する。
-
-## 10) Additional context
-
-- 関連Issue/PR/議論ログ: `DOC-OPS-02`, `DOC-OPS-03`。
-- 上流工程ドキュメント評価は、特定手法名を記載せずに「実務上の必要成果物」として統合管理する。
-- ADR化が必要になる条件（トレードオフ閾値）:
-  1. 文書情報設計（正本/解説分離、上位統合文書の責務）を恒久ルールとして固定する必要がある場合。
-  2. 文書品質ゲート（lint/validator）をCI必須化し、プロジェクト標準運用へ格上げする場合。
-  3. AGENTS Read Order を段階読書モデルへ変更し、開発フローの標準手順を更新する場合。
-  4. `02_Architecture` の分割・再編に伴い、文書ID/参照ポリシーの互換契約を定義する必要がある場合。
-  5. Mermaid/Markdown 図表標準を組織ルールとして固定し、例外条件（画像埋め込み許容範囲）を決裁する必要がある場合。
-
-### ADR候補（起票予備リスト）
-
-- ADR候補A: Documentation Information Architecture（前処理済み: Context/Decision/Consequences 記載）。
-- ADR候補B: Documentation Readability Baseline（前処理済み: Context/Decision/Consequences 記載）。
-- ADR候補C: Documentation Quality Gates（前処理済み: Context/Decision/Consequences 記載）。
-- ADR候補D: Documentation Change Governance（前処理済み: Context/Decision/Consequences 記載）。
+- 承認待ち論点:
+  1. ADR候補A〜Dを分離起票する順序。
+  2. 候補ごとの暫定DecisionをADRへ昇格する際のレビュー体制。
+- フェイルセーフ記録: 現時点で競合兆候は未検出。未定義ルールの新規固定は実施していない。
