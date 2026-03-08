@@ -89,7 +89,32 @@
 - [x] T1: 価値原則ごとの要求優先度（Must/Should/Could）を策定する。
 - [x] T2: 要求ごとのRACI草案を作成する。
 - [x] T3: 未確定要求の停止基準とエスカレーション条件を策定する。
-- [x] T4: 固定済み要求を具体Issueへ分割する（REQ-DEF-02/03本文編集は本Issueの禁止範囲）。
+- [x] T4: 固定済み要求を具体Issueへ分割するための計画を明文化する（REQ-DEF-02/03本文編集は本Issueの禁止範囲）。
+
+### T4 分割計画（明文化）
+
+#### Plan（分割対象・依存先宣言）
+
+- 分割対象A（REQ-DEF-02依存）: `RACI` / `ContractImpact` を中心に、責任分界点と契約境界チェックポイントを受け渡す。
+- 分割対象B（REQ-DEF-03依存）: `AcceptanceScenario` / `VerificationLevel` / `DecisionStatus` を中心に、受入シナリオとIssue分割運用を受け渡す。
+- 依存順序: 先に本Issueの canonical key を固定し、その後に REQ-DEF-02（責任境界）→ REQ-DEF-03（受入と分割運用）で展開する。
+- AC/DoD不足の補完提案（本Issue内で先行反映済み）:
+  1. ACに「共通I/Fキー最終固定」「Pending時の `DecisionQueueRef` 必須」を保持する。
+  2. DoDに「REQ-DEF-02/03 が参照可能な互換読み替え規則」を保持する。
+
+#### Execute（分割基準・引き渡しI/F・停止条件）
+
+- 分割基準:
+  1. `PriorityClass` は本Issueで固定し、優先分類の再解釈を下流Issueへ持ち込まない。
+  2. `RACI` / `ContractImpact` は REQ-DEF-02 で具体化するが、キー定義の追加・改名は行わない。
+  3. `AcceptanceScenario` / `VerificationLevel` は REQ-DEF-03 で具体化するが、`DecisionStatus` 運用と矛盾させない。
+- 引き渡しI/F:
+  - REQ-DEF-02/03 は本Issueの「Requirement meta I/F（REQ-DEF共通キー：最終固定）」を唯一の参照元として扱う。
+  - 受け渡し時の必須項目は `RequirementID` / `RequirementStatement` / `PriorityClass` / `DecisionStatus` の4点を最低セットとする。
+- 停止条件（Fail-safe）:
+  1. REQ-DEF-02/03本文の直接編集が必要になった時点で本Issueでの作業を停止し、理由を記録する。
+  2. canonical key の再定義が必要と判明した時点で停止し、上流（ADR/Template）改訂提案へ切り替える。
+  3. Self-Correction が3回を超える見込みになった時点で停止し、未完了理由を報告する。
 
 ## 7) 検証計画 / Validation plan
 
