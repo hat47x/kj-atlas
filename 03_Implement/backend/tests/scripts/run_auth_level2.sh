@@ -18,6 +18,9 @@ export BACKEND_BASE_URL="http://127.0.0.1:${BACKEND_PORT}"
 export MOCK_IDP_BASE_URL="http://127.0.0.1:${IDP_PORT}"
 export AUTH_LEVEL2_SP_BASE_URL="http://127.0.0.1:${SP_PORT}"
 
+# CI may inject legacy key for unrelated jobs; ENV-ARCH-01 forbids legacy keys.
+unset DATABASE_URL || true
+
 alembic upgrade head >"${LOG_DIR}/alembic.log" 2>&1
 
 cleanup() {
