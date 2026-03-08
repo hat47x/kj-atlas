@@ -93,6 +93,28 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 - Required evidence: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` の `Proceed条件` と `Additional context` が本ADRの拘束条件と整合していること。
 - Gate rule: 承認が得られるまで、ADR-B/C/D（ADR-0023〜0025）の実編集を開始しない。
 
+### Approval input（Deciders向け固定入力）
+
+- 対象ADR: `ADR-0022`（DOC-OPS-04 情報設計I/F）
+- 判定依頼: `Accept / Reject / Needs revision`
+- 判定対象:
+  1. `Context` が DOC-OPS-04 の競合（用語・見出し・判定メタ）を過不足なく定義しているか。
+  2. `Decision` が A承認後にB/C/Dを拘束する条件（I/F逸脱時の理由明記、統合ファイル同時更新禁止）を明示しているか。
+  3. `Consequences` が遅延リスクと統合フェーズ切り出し要件を明示しているか。
+- 受理条件（Accepted化の前提）:
+  - Platform Architecture Owner / Plan Owner / Architecture Owner の3者が同一版へ承認記録すること。
+  - `Reject` または `Needs revision` が1件でもある場合は `Status: Proposed` を維持すること。
+
+### Approval log（取得可能形式）
+
+| Role | Decision | Decider | Timestamp (UTC) | Evidence / Comment |
+| --- | --- | --- | --- | --- |
+| Platform Architecture Owner | Pending | TBD | TBD | TBD |
+| Plan Owner | Pending | TBD | TBD | TBD |
+| Architecture Owner | Pending | TBD | TBD | TBD |
+
+> 運用ルール: 上表が3者 `Accept` で埋まるまでは `Status` を `Proposed` のまま維持し、Phase 2 へ進まない。
+
 ## Traceability
 
 - Related: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
