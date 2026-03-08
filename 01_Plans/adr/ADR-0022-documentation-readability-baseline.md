@@ -14,6 +14,11 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - 同一概念でも表記ゆれ（役割名・運用語彙・DoD表現）があり、文書横断で判断基準がぶれやすい。
 - docs-check は運用されているが、可読性の最低線（何を最低限書くべきか）が共通規約として固定されていない。
 
+加えて、以下の AC/DoD 不足がある。
+
+- AC不足: 可読性タスクごとに「適用対象（どの文書へ適用するか）」と「非目標（今回触らない文書）」の境界が曖昧になりやすい。
+- DoD不足: docs-check 未自動化項目の手動確認結果が、再現可能な形で残らないケースがある。
+
 本ADRは、実装仕様を増やすためではなく、既存仕様を「読み違えにくく再開しやすい」形で維持するための可読性ベースラインを定義する。
 
 比較した主要選択肢は以下。
@@ -40,7 +45,8 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 
 ### 1) Interface Vocabulary（A系I/F語彙準拠）
 
-本ADRで扱う可読性I/F語彙は、文書種別を横断して次を標準語彙として扱う。
+本ADRで扱う可読性I/F語彙は、`ADR-0022-doc-ops-04-documentation-information-interface.md` の固定語彙
+（正本 / 暫定メモ / 決裁入力 / 例外承認）と整合する形で、文書種別を横断して次を標準語彙として扱う。
 
 - **Audience**: 想定読者（Maintainer / Operator / Contributor / AI Agent）
 - **Goal**: 文書が決めること・達成させること
@@ -78,13 +84,15 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 
 ### 5) Acceptance Criteria / Definition of Done（補完）
 
-本ADR適用タスクは、以下を満たした時点で完了とする。
+本ADR適用タスクは、以下を満たした時点で完了とする（Plan段階で合意対象として明示する）。
 
 - **AC-1**: 対象文書に Audience / Goal / Non-goal / Outcome が明示されている。
 - **AC-2**: 対象文書に Upstream Reference と Downstream Apply が各1件以上ある。
 - **AC-3**: 用語が `00_Prompt/domain.md` と矛盾しない（役割名・判定語彙を含む）。
+- **AC-4**: 適用対象文書と非目標文書（今回更新しない範囲）が明示され、レビュー時に境界が判別できる。
 - **DoD-1**: docs-check（または同等手順）で必須メタ欠落が検知されない。
 - **DoD-2**: 手動確認項目がある場合、実行コマンドと確認結果が作業ログ/PRに記録される。
+- **DoD-3**: docs-check 未自動化観点は、判定理由（pass/fail）を再実行可能な粒度で記録する。
 
 ### 6) 非目標
 
@@ -107,6 +115,7 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - Related (Upstream): `01_Plans/adr/ADR-0000-adr-governance.md`
 - Related (Upstream): `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`
 - Related (Upstream): `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Related (Upstream): `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`
 - Related (Source): `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related (Downstream): `02_Architecture/architecture.md`
 - Related (Downstream): `04_Documentation/operations.md`
