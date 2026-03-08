@@ -16,15 +16,15 @@
 
 > REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
 
-- Requirement ID
-- Requirement statement
-- Priority class（Must / Should / Could）
+- RequirementID
+- RequirementStatement
+- PriorityClass（Must / Should / Could）
 - RACI（A/R/C/I）
-- Contract impact（schema/api/policy/ops: あり/なし）
-- Acceptance scenario（前提/操作/期待結果/除外）
-- Verification level（docs-check / unit / integration / e2e）
-- Decision status（Fixed / Pending）
-- Decision queue ref（未確定時の参照先）
+- ContractImpact（schema / api / policy / ops : あり / なし）
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）
+- VerificationLevel（docs-check / unit / integration / e2e）
+- DecisionStatus（Fixed / Pending）
+- DecisionQueueRef（未確定時の参照先）
 
 ### B-3. I/Fキー実装（本Issueの独立実行範囲）
 
@@ -39,6 +39,45 @@
 | Verification level | `docs-check` | ドキュメント整合のみ |
 | Decision status | `Fixed` | B-3は本Issueで確定 |
 | Decision queue ref | `Pending-2`, `Pending-3` | 全Issue必須化は別判断 |
+
+## 要求定義の固定（RACI / ContractImpact / Go-No-Go）
+
+### R-1: RACI固定（RequirementStatement）
+
+- RequirementID: `REQ-DEF-02-R1`
+- RequirementStatement: 要求定義時点で決定責務と承認責務を分離し、各要求に RACI を必須記載する。
+- PriorityClass: `Must`
+- RACI: **A:** Platform Architecture Owner / **R:** Security Officer / **C:** Product Owner, Implementer / **I:** Reviewer, Operations
+- VerificationLevel: `docs-check`
+- DecisionStatus: `Fixed`
+
+### R-2: ContractImpact判定固定（RequirementStatement）
+
+- RequirementID: `REQ-DEF-02-R2`
+- RequirementStatement: 各要求に対し schema/api/policy/ops の契約影響有無を「あり/なし」で明示する。
+- PriorityClass: `Must`
+- ContractImpact: **schema:** なし / **api:** なし / **policy:** あり / **ops:** あり
+- VerificationLevel: `docs-check`
+- DecisionStatus: `Fixed`
+
+### R-3: Go/No-Go判定固定（RequirementStatement）
+
+- RequirementID: `REQ-DEF-02-R3`
+- RequirementStatement: 要件未確定のまま実装Issueへ進まない停止条件を必須化する。
+- PriorityClass: `Must`
+- VerificationLevel: `docs-check`
+- DecisionStatus: `Fixed`
+
+#### Go/No-Go matrix（要求定義ゲート）
+
+| 判定項目 | Go条件 | No-Go条件 | エスカレーション先 |
+|---|---|---|---|
+| RACI | A/R/C/I が全要求に記載済み | 役割未記載または責務重複が未解消 | Platform Architecture Owner |
+| ContractImpact | schema/api/policy/ops が「あり/なし」で判定済み | 1項目でも未判定 | Security Officer |
+| 安全境界 | SafeMode既定ON・漏えい防止非改変が明記済み | 境界が未記載または緩和案のみ記載 | Product Owner + Security Officer |
+| 検証計画 | docs-check コマンドと期待結果が記録済み | コマンドまたは期待結果が欠落 | Implementer |
+
+> 判定ルール: **1つでも No-Go がある場合は Proceed せず停止**し、Decision Queueへ未確定項目を登録してから再判定する。
 
 ## 1) 課題 / Problem statement
 
@@ -75,8 +114,8 @@
 - [x] 役割ごとの決定責務と承認責務が要求文書で判読可能になる。
 - [x] 契約チェックポイント（schema/API/policy/ops）が要求定義テンプレに追加される。
 - [x] 各要求に「契約変更あり/なし」の判定欄がある。
-- [ ] SafeMode・漏えい防止・監査要件の境界が必須項目として保持される。
-- [ ] docs-check でメタ情報と参照整合を確認できる。
+- [x] SafeMode・漏えい防止・監査要件の境界が必須項目として保持される。
+- [x] docs-check でメタ情報と参照整合を確認できる。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -96,6 +135,9 @@
 3. **Verify**
    - `validate_active_issue_memos.py` と unit test で体裁・必須項目整合を確認。
    - 文言追跡は `rg` で確認。
+4. **Proceed**
+   - Go/No-Go matrix を適用し、No-Goゼロ時のみ後続Issueへ進行する。
+   - No-Go検出時は Decision Queue に登録して停止する。
 
 ### 自己修復ログ（最大3回）
 
@@ -134,6 +176,14 @@
 - ADR化が必要になる条件（トレードオフ閾値）:
   1. RACIを全フェーズ必須ルールとして固定する場合。
   2. 契約チェックポイントをCIゲートへ接続する場合。
+
+## Definition of Done（DoD）
+
+- [x] RACI が RequirementStatement（REQ-DEF-02-R1）として固定されている。
+- [x] ContractImpact が RequirementStatement（REQ-DEF-02-R2）として固定されている。
+- [x] Go/No-Go 判定が RequirementStatement（REQ-DEF-02-R3）として固定されている。
+- [x] Plan → Execute → Verify → Proceed が本文ログとして追跡できる。
+- [x] 未確定項目が Decision Queue（Pending-2 / Pending-3）へ接続されている。
 
 
 ## Decision Queue（残る未確定）
