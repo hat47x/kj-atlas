@@ -45,6 +45,8 @@
 - 不足候補1: `DecisionStatus=Fixed` なのに `DecisionQueueRef` を記載していたため、REQ-DEF-01の共通I/F条件（Pending時のみ必須）に合わせて補正する。
 - 不足候補2: B-3独立実行の完了判定を明確化するため、DoDに「REQ-DEF-01共通I/Fとの整合確認」を追加する。
 - 不足候補3: 主検証責務を `docs-check` 固定とし、validator + 文言追跡コマンドを必須ログ化する。
+- 補完ドラフトA（AC）: RACI/ContractImpact/Go-No-Go の3項目が、RequirementStatement（R1/R2/R3）として相互参照なしで単独判読できる状態を合格条件とする。
+- 補完ドラフトB（DoD）: Proceed宣言は「No-Goゼロ」かつ「docs-check相当コマンド成功ログあり」の同時充足時のみ可能とする。
 
 ## 要求定義の固定（RACI / ContractImpact / Go-No-Go）
 
@@ -144,6 +146,17 @@
 4. **Proceed**
    - Go/No-Go matrix を適用し、No-Goゼロ時のみ後続Issueへ進行する。
    - No-Go検出時は Decision Queue に登録して停止する。
+
+### Verify結果（docs-check相当）
+
+- `python 01_Plans/issues/validate_active_issue_memos.py` => `ok: validated 3 active issue memos`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => `Ran 8 tests ... OK`
+- `rg -n "REQ-DEF-02|責任分界|契約チェックポイント|Go/No-Go" 01_Plans/issues/issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` => R1/R2/R3 と Go/No-Go matrix の本文存在を確認
+
+### Proceed判定（合格時のみ終了）
+
+- 判定結果: **Proceed（合格）**
+- 根拠: Go/No-Go matrix の No-Go 条件に該当なし、かつ docs-check相当の自己検証コマンドが全件成功。
 
 ### Execute確定ログ（B-3独立実行）
 
