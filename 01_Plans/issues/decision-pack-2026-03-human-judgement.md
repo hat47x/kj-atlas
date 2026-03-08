@@ -97,6 +97,10 @@
   - 採用時: 起票品質のばらつきが減り、契約判断の漏れを抑制できる。
   - 非採用時: Issueごとの責任境界解釈差が残り、レビュー再作業が発生する。
 - Approval status: **Pending Human Approval**
+- Approval request (for human decider):
+  - `Approve` または `Reject` を R2-P1/R2-P2/R2-P3 ごとに明示してください。
+  - 期限提案: 2026-03-12 JST（未回答時は「未承認」のまま Phase 2 へ進まない）。
+  - 記録先: 本ファイルの Decision Record と `project-progress-dashboard.md` の Decision Queue を同時更新。
 
 #### DR-REQ-DEF-03 (R3系)
 
@@ -106,6 +110,10 @@
   - 採用時: 分割粒度と検証責務が明確になり、後続Issueの衝突を抑制できる。
   - 非採用時: docs-check対象の粒度判断が人依存で残り、分割ルールの再議論が継続する。
 - Approval status: **Pending Human Approval**
+- Approval request (for human decider):
+  - `Approve` または `Reject` を R3-P1/R3-P2/R3-P3 ごとに明示してください。
+  - 期限提案: 2026-03-12 JST（未回答時は「未承認」のまま Phase 2 へ進まない）。
+  - 記録先: 本ファイルの Decision Record と `project-progress-dashboard.md` の Decision Queue を同時更新。
 
 ### 3-5. 決定後アクション（承認後のみ実施）
 

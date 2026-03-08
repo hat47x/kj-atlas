@@ -32,6 +32,12 @@
 | REQ-DEF-02 | Open | 共通Requirement meta I/Fを前提に、RACI/契約境界を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` |
 | REQ-DEF-03 | Open | 共通Requirement meta I/Fを前提に、受入シナリオ/検証粒度を固定してOpen化。 | `01_Plans/issues/issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` |
 
+## 2.1) Phase Gate 状態（REQ-DEF-02/03）
+
+- Gate判定: **Blocked (Pending Human Approval)**
+- 分岐条件: DR-REQ-DEF-02 と DR-REQ-DEF-03 の Approval status が双方 `Approved` の場合のみ Phase 2 へ進行。
+- 現在値: 両DRとも `Pending Human Approval` のため、Phase 2/3 は停止。
+
 ## 3) 人間判断待ち（Decision Queue）
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
