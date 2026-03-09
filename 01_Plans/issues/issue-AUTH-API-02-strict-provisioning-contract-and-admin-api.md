@@ -121,3 +121,23 @@
 ### Proceed
 
 - Phase 2 完了判定: **完了**（Phase 1 完了後に着手）。
+
+## 12) Follow-up execution record（API/Schema contract refinement, docs-only）
+
+### Plan（AC/DoD補完ドラフト）
+
+- AC-1: `02_Architecture/api.md` に strict拒否と admin provisioning の **型契約**（request/success/conflict）を明示する。
+- AC-2: `02_Architecture/schemas.md` に上記契約と整合する **最小分岐キー**（status/code/provisioned）を明示する。
+- AC-3: 依存先実装が mock 追従可能な最小契約（必須キー最小・追加キー許容）を定義する。
+- DoD: 実装変更なしで、API正本とSchema正本の I/F 記述が相互参照なしで解釈可能。
+
+### Execute
+
+- docsのみ更新（`02_Architecture/api.md`, `02_Architecture/schemas.md`）。
+- 実装ファイル（`03_Implement/*`）の変更は行わない。
+
+### Verify
+
+- `rg` で `identity_not_provisioned` / `identity_already_provisioned_conflict` / `provisioned` の3軸が API+Schema 双方に存在することを確認。
+- mock観点: 分岐に必要なキーを `status` + `code` + `provisioned` に限定したため、test double での追従が可能。
+

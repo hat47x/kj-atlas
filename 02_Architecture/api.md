@@ -260,6 +260,21 @@ fail-safe マトリクス:
 - 応答: `403 Forbidden`
 - エラーボディ（最小契約）: `{ "code": "identity_not_provisioned", "message": "Identity not provisioned. Pre-provision via /admin/provision/users before access." }`
 
+型契約（モック互換のための最小）:
+
+```ts
+export type StrictProvisioningError = {
+  code: "identity_not_provisioned";
+  message: string;
+  requestId?: string;
+};
+```
+
+- `code` は固定値。
+- `message` は可読文（文言変更は許容、意味は固定）。
+- `requestId` は任意（監査/追跡用途）。
+- 追加フィールドは許容するが、依存実装は上記3項目のみで判定可能であること。
+
 ### 9.2.1 strict mode の運用責任境界（承認フロー固定）
 
 - backend 実装責務:
@@ -280,6 +295,32 @@ fail-safe マトリクス:
   - `200` response (idempotent retry): `{ userId, reviewerRef, ownerRef, provisioned=false }`
   - 冪等: 同一 `provider+externalUid` の再試行は `provisioned=false` を返す
   - `409` response: 既存subjectへ矛盾する `displayName` / `email` を再投入した場合は `identity_already_provisioned_conflict`
+
+型契約（I/F固定）:
+
+```ts
+export type AdminProvisionUserRequest = {
+  provider: string;
+  externalUid: string;
+  displayName?: string;
+  email?: string;
+};
+
+export type AdminProvisionUserResponse = {
+  userId: string;
+  reviewerRef: `user:${string}`;
+  ownerRef: `user:${string}`;
+  provisioned: boolean;
+};
+
+export type AdminProvisionUserConflictError = {
+  code: "identity_already_provisioned_conflict";
+  message: string;
+};
+```
+
+- 判定規約: クライアントは `2xx + provisioned`、`403 + code=identity_not_provisioned`、`409 + code=identity_already_provisioned_conflict` の3分岐のみを必須サポートとする。
+- 非目標: 本契約ではページング・検索・一括削除・SCIM互換項目は定義しない。
 
 本APIは将来の管理者CLI/SCIM連携の最小置換点として扱う。
 
