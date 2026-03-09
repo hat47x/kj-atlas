@@ -42,4 +42,17 @@ describe("BundleZipWorkerClient", () => {
     expect(warn).toHaveBeenCalledOnce();
     expect(info).not.toHaveBeenCalled();
   });
+
+  test("returns cancelled without worker setup when signal is already aborted", async () => {
+    const workerCtor = vi.fn();
+    vi.stubGlobal("Worker", workerCtor as unknown as typeof Worker);
+    const client = new BundleZipWorkerClient();
+    const controller = new AbortController();
+    controller.abort();
+
+    const result = await client.buildZip(payload, { signal: controller.signal });
+
+    expect(result).toEqual({ status: "cancelled", usedFallback: false });
+    expect(workerCtor).not.toHaveBeenCalled();
+  });
 });
