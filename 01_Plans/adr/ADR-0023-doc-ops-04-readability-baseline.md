@@ -1,6 +1,6 @@
 # ADR-0023: DOC-OPS-04 Readability Baseline
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-09
 - Deciders: Plan Owner, Documentation Owner, Architecture Owner
 - Scope: `01_Plans/` / `02_Architecture/` / `04_Documentation/`（文書可読性の最小基線のみ）
@@ -90,11 +90,14 @@ issue-DOC-OPS-04（ADR候補B）で確認された主要課題は以下。
 
 ## Proceed
 
-- 状態: **完了（ADR-0023案として起票可能）**
-- 未完了項目:
-  - Deciders承認による `Status: Accepted` への遷移。
-- 阻害要因:
-  - なし（現時点でA I/F不一致なし、範囲外編集要求なし）。
+- 状態: **完了（ADR-0023 Accepted）**
+- 未解決点:
+  - なし。
+- 次Phase開始条件（ADR-0024）:
+  1. ADR-0022のI/F語彙に変更兆候がないこと。
+  2. ADR-0023で定義したRBL-1〜RBL-5と矛盾しないこと。
+- 変更影響:
+  - 品質ゲート境界（ADR-0024）は、Audience/Goal/Non-goal/Outcome を前提に判定する。
 
 ## Traceability
 

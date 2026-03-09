@@ -1,6 +1,6 @@
 # ADR-0025: DOC-OPS-04 変更統治と例外承認の責務境界
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-09
 - Deciders: Platform Architecture Owner, Plan Owner, Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
@@ -22,7 +22,7 @@
 
 - 合意A（取得済み）: ADR-0025 は「変更統治・例外承認の責務境界」のみを定義し、品質ゲート実装境界は扱わない。
 - 合意B（取得済み）: 統合ファイル3点（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）は本ADR作業中に更新しない。
-- 合意C（承認待ち）: 例外承認の恒久運用は Deciders の受理後にのみ有効化する。
+- 合意C（取得済み）: 例外承認の恒久運用は Deciders の受理後にのみ有効化する。
 
 ## Context
 
@@ -115,15 +115,15 @@ DOC-OPS-04 の候補D（Documentation Change Governance）では、Issueごと�
 
 ## Proceed
 
-- 完了報告（ADR-0025ドラフト）:
+- 完了報告（ADR-0025 Accepted）:
   - 変更統治・例外承認の責務境界を定義完了。
   - 役割分離・停止条件・再開条件を定義完了。
   - 品質ゲート境界を ADR-0024 領域として分離済み。
 
 - 統合フェーズ引き渡し情報:
-  1. 引き渡し前提: `Status: Proposed` のまま Deciders 審査へ投入する。
-  2. 必須確認: ADR-0022 との差分逸脱有無、統合ファイル非更新、SoD検証ログ。
-  3. 統合時アクション: B/C/D の最終整合レビューで停止/再開条件を横断一致させる。
+  1. 引き渡し前提: B/C/D がすべて `Accepted` であること。
+  2. 必須確認: ADR-0022 との差分逸脱有無、統合ファイル更新はPhase 4のみ、SoD検証ログ。
+  3. 統合時アクション: README / dashboard / issue-DOC-OPS-04 の状態を Done 同期し、validator/unittest を実行する。
 
 ## Traceability
 
