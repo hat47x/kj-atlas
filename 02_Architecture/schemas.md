@@ -336,6 +336,25 @@ export type Island = {
 - `ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
 - `ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
 
+API I/F 整合用の最小型（実装依存を避ける境界）:
+
+```ts
+export type IdentityProvisioningContract = {
+  strictReject: {
+    status: 403;
+    code: "identity_not_provisioned";
+  };
+  adminProvision: {
+    request: { provider: string; externalUid: string; displayName?: string; email?: string };
+    success: { userId: string; reviewerRef: `user:${string}`; ownerRef: `user:${string}`; provisioned: boolean };
+    conflict: { status: 409; code: "identity_already_provisioned_conflict" };
+  };
+};
+```
+
+- 依存実装（mock/test double含む）は `status` と `code`、および `success.provisioned` のみで分岐可能であること。
+- 追加メタデータは許容（forward-compatible）だが、上記キーの意味を変更してはならない。
+
 移行前提（expand/contract）:
 
 - expand:
