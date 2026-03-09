@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-09 (JST)
+最終更新: 2026-03-08 (JST, 全Issue俯瞰を反映)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -21,6 +21,15 @@
 | 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
 | 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
 | 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Done、decision packでの方針採択を反映済み。 |
+
+## 1.1) 全Issueサマリ（Active/Done）
+
+- issue memo 総数: **23**
+- Active: **1**（`DOC-OPS-04` のみ）
+- Done: **22**（AUTH / FB-RM / DOC / REQ / ENV / QA 系を含む）
+- 優先度上のクリティカルパス: **DOC-OPS-04（P1）→ ADR-A承認待ち解除**
+
+根拠: `01_Plans/issues/README.md` の Active issue memos と Completed issue memos 集計。
 
 ## 2) Active issue 集約（Draft / Open / In Progress）
 
@@ -45,6 +54,20 @@
   2. 編集境界（ADR-0023/0024/0025のみ編集）が維持されていること
   3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効であること
 - 現在値: `ADR-0022` は `Accepted`。B/C/Dは編集境界・同時更新禁止ルールを維持したうえで並列実行可能。
+
+## 2.3) 未解決ADRサマリ（DOC-OPS-04系）
+
+未解決（`Status: Proposed`）のADRは以下4件。
+
+1. `ADR-0022-doc-ops-04-documentation-information-interface.md`（ADR-A / I/F基線）
+2. `ADR-0022-documentation-readability-baseline.md`（ADR-B）
+3. `ADR-0022-documentation-quality-gates.md`（ADR-C）
+4. `ADR-0022-documentation-change-governance.md`（ADR-D）
+
+依存関係:
+
+- **Aが `Accepted` になるまで、B/C/Dは実編集を開始しない。**
+- B/C/D は編集境界を分離し、統合ファイル（README/dashboard/issue-DOC-OPS-04）は統合フェーズ以外で同時更新しない。
 
 ## 3) 人間判断待ち（Decision Queue）
 
