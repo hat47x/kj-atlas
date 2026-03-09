@@ -93,6 +93,32 @@ Context/Decision/Consequences を通じて同一解釈にするため、境界�
 - 例外承認は「必須ゲートを恒久的に免除する仕組み」ではなく、期限付きの暫定通過のみを許可する。
 - 警告ゲートは上表のGo/No-Go判定に直接影響しないが、再発時に必須化候補へ昇格しうる。
 
+### 1.3 判定境界の機械可読プロファイル（固定値）
+
+判定境界を実装・監査で再利用可能にするため、以下の固定値を **Gate Boundary Profile v1** として定義する。
+
+```yaml
+gate_boundary_profile:
+  version: 1
+  mandatory_gate:
+    id: GATE-MANDATORY
+    fail_threshold: 1      # fail件数が1以上でNo-Go
+    decision_if_triggered: reject_unless_exception
+  warning_gate:
+    id: GATE-WARNING
+    escalation_threshold: 3 # 同一種別の連続再発回数
+    decision_if_triggered: keep_mergeable_and_register_monthly_agenda
+  exception_gate:
+    id: GATE-EXCEPTION
+    applies_when: mandatory_gate=fail
+    required_fields: [reason, due_date, owner, followup_issue]
+    hard_expiry: true
+    decision_if_missing_required_field: reject
+```
+
+- 本ADRで使う数値境界は `mandatory fail >= 1` と `warning recurrence >= 3` に固定する。
+- `required_fields` の4項目は例外承認の最小監査項目であり、1件でも欠落した場合は例外不成立とする。
+
 ### 2. 運用原則
 
 - 必須ゲートは CI 上で自動実行し、失敗時は merge しない。
@@ -112,6 +138,27 @@ Context/Decision/Consequences を通じて同一解釈にするため、境界�
 - 解消Issue（追補PRのトラッキング先）
 
 上記のうち1項目でも欠落した場合は、例外承認を成立させない。
+
+監査時の転記揺れを避けるため、例外承認は次の固定フォーマットで記録する。
+
+```yaml
+exception_approval_record:
+  exception_id: EX-YYYYMMDD-<seq>
+  target_ref: <PR URL or commit SHA>
+  failed_mandatory_gates:
+    - <gate_id>
+  reason: <external_dependency|emergency_fix|other>
+  approved_by: <role/handle>
+  owner: <role/handle>
+  approved_at: <ISO8601>
+  due_date: <YYYY-MM-DD>
+  followup_issue: <Issue URL/ID>
+  status: approved|expired|resolved
+  resolution_ref: <PR URL/commit SHA or N/A>
+```
+
+- `status=expired` かつ `resolution_ref=N/A` の記録は、その時点で `decision=reject` とする。
+- `approved_by` と `owner` は同一人物でも記録可能だが、運用上は分離を推奨する。
 
 ### 3. 導入方針
 
@@ -181,6 +228,21 @@ followup_issue: <Issue URL/ID or N/A>
 
 - `decision=conditional_merge` は「必須ゲートfailかつ例外承認成立」の場合にのみ使用できる。
 - `evidence_commands` が空の場合は Verify 不成立（`result=blocked`）として扱う。
+
+### 3.6 停止条件の判定式（Fail-safe固定化）
+
+Fail-safeの解釈を固定するため、停止条件を次の判定式で定義する。
+
+```text
+stop_if:
+  self_correction_attempts > 3
+  OR mandatory_gate = fail AND exception_record = absent
+  OR mandatory_gate = fail AND exception_record = present AND exception_status = expired
+  OR evidence_commands = empty
+```
+
+- `stop_if` が真になった時点で Proceed は `decision=reject` 固定とし、追加修正は新しい指示があるまで停止する。
+- 停止ログには `attempts`, `blocking_gate`, `exception_id(or N/A)`, `next_action` を必須記録する。
 
 ### 4. 非目標（このADRで扱わない範囲）
 
