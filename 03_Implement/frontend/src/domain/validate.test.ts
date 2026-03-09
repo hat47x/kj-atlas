@@ -114,6 +114,65 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(result.document.islands[0]?.parentIslandId).toBeUndefined();
   });
 
+
+  it("defaults imported island shape to rect when shape and geometry are missing", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_default_rect_shape",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [{ id: "i1", cardIds: ["c1"] }],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.shape).toEqual({ kind: "rect" });
+    expect(result.document.islands[0]?.geometry).toEqual({ type: "rect" });
+  });
+
+  it("derives polygon shape from imported polygon geometry for compatibility", () => {
+    const now = new Date().toISOString();
+    const result = validateAndUpgradeImportedDocument({
+      version: 2,
+      id: "doc_shape_from_geometry",
+      createdAt: now,
+      updatedAt: now,
+      transform: { panX: 0, panY: 0, zoom: 1 },
+      cards: [{ id: "c1", text: "A", x: 0, y: 0 }],
+      edges: [],
+      islands: [
+        {
+          id: "i1",
+          cardIds: ["c1"],
+          geometry: {
+            type: "polygon",
+            points: [
+              { x: 10, y: 10 },
+              { x: 120, y: 10 },
+              { x: 90, y: 90 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.document.islands[0]?.shape).toEqual({
+      kind: "polygon",
+      points: [
+        { x: 10, y: 10 },
+        { x: 120, y: 10 },
+        { x: 90, y: 90 },
+      ],
+    });
+  });
   it("preserves island polygon geometry from imported v2 JSON", () => {
     const now = new Date().toISOString();
     const result = validateAndUpgradeImportedDocument({
@@ -263,7 +322,7 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.document.islands[0]?.shape).toBeUndefined();
+    expect(result.document.islands[0]?.shape).toEqual({ kind: "rect" });
   });
 
   it("falls back to card-bounds rendering when imported polygon self-intersects", () => {
@@ -296,8 +355,8 @@ describe("validateAndUpgradeImportedDocument", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.document.islands[0]?.shape).toBeUndefined();
-    expect(result.document.islands[0]?.geometry).toBeUndefined();
+    expect(result.document.islands[0]?.shape).toEqual({ kind: "rect" });
+    expect(result.document.islands[0]?.geometry).toEqual({ type: "rect" });
   });
 
   it("keeps polygon geometry through export/import roundtrip", () => {

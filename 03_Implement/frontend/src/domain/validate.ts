@@ -224,7 +224,27 @@ function parseIslands(value: unknown): Island[] {
       }
     }
 
-    const normalizedGeometry = geometry ?? (shape?.kind === "polygon" ? { type: "polygon", points: shape.points } : shape?.kind === "rect" ? { type: "rect" } : undefined);
+    if (!shape && geometry?.type === "polygon") {
+      shape = {
+        kind: "polygon",
+        points: geometry.points,
+      };
+    }
+
+    if (!shape && geometry?.type === "rect") {
+      shape = { kind: "rect" };
+    }
+
+    if (!shape && !geometry) {
+      shape = { kind: "rect" };
+    }
+
+    const normalizedGeometry = geometry
+      ?? (shape?.kind === "polygon"
+        ? { type: "polygon", points: shape.points }
+        : shape?.kind === "rect"
+          ? { type: "rect" }
+          : undefined);
     islands.push({
       id: item.id,
       cardIds,
