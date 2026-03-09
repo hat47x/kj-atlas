@@ -65,6 +65,7 @@ docker compose logs api --tail=100
 - `Export bundle (.zip)` には `merge_decision_audit.json` が同梱されます。
 - 本ファイルには merge decision の監査最小情報（`decisionId` / `groupId` / `decisionType` / `actorType` / `decidedAt` / `representativeCardId` / `sourceCardIds` / `missingSourceCardIds`）を含みます。
 - 同一入力で同一出力となるよう、decision と cardIds は決定論順序で出力されます。
+- `view.json` の `mergeAuditLog` / `reviewEvents` は export 前に `id` 単位で重複排除され、同一 `id` が複数ある場合は `createdAt` が新しいイベントのみ残します。
 
 - `bundle_manifest.json` には `exportGranularity`（`overview` / `detail`）と `generatedAt` を記録します。
 - `overview` は俯瞰用に selected-card trace（`evidence_trace_*` / `contradiction_trace_*` / `trace_analytics_*`）を同梱しません。
