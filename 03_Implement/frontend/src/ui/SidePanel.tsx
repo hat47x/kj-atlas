@@ -915,6 +915,7 @@ export function SidePanel({
         <div>connected components: {structuralMetrics.connectedComponentCount}</div>
         <div>largest component ratio: {structuralMetrics.largestComponentRatio.toFixed(4)}</div>
         <div>connectivity score: {structuralMetrics.connectivityScore.toFixed(4)}</div>
+        <div>average degree: {structuralMetrics.averageDegree.toFixed(4)}</div>
         <div>degree p95: {structuralMetrics.degreeP95}</div>
         <div>degree skew ratio: {structuralMetrics.degreeSkewRatio.toFixed(4)}</div>
         <div>bridge edges: {structuralMetrics.bridgeEdgeCount}</div>

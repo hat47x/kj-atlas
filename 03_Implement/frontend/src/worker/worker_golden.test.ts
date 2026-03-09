@@ -66,6 +66,7 @@ describe("worker compute goldens", () => {
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.75 |");
     expect(output.diagnosticsMd).toContain("| connectivityScore | 0.6667 |");
+    expect(output.diagnosticsMd).toContain("| averageDegree | 1 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 2 |");
     expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 2 |");
     expect(output.diagnosticsMd).toContain("| isolationRate | 0.25 |");
@@ -93,6 +94,7 @@ describe("worker compute goldens", () => {
     expect(output.diagnosticsMd).toContain("| connectedComponentCount | 2 |");
     expect(output.diagnosticsMd).toContain("| largestComponentRatio | 0.5 |");
     expect(output.diagnosticsMd).toContain("| connectivityScore | 0 |");
+    expect(output.diagnosticsMd).toContain("| averageDegree | 0 |");
     expect(output.diagnosticsMd).toContain("| degreeP95 | 0 |");
     expect(output.diagnosticsMd).toContain("| degreeSkewRatio | 0 |");
     expect(output.diagnosticsMd).toContain("| isolationRate | 1 |");
