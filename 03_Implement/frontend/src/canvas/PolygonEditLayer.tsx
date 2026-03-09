@@ -29,6 +29,7 @@ export function PolygonEditLayer({
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
   const [dragPreviewPoint, setDragPreviewPoint] = useState<Point | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const dragPreviewPointRef = useRef<Point | null>(null);
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>, vertexIndex: number) => {
     if (event.altKey) {
@@ -45,8 +46,10 @@ export function PolygonEditLayer({
       pointerId: event.pointerId,
       vertexIndex,
     };
+    const startPoint = points[vertexIndex] ?? null;
     setDraggingVertexIndex(vertexIndex);
-    setDragPreviewPoint(points[vertexIndex] ?? null);
+    setDragPreviewPoint(startPoint);
+    dragPreviewPointRef.current = startPoint;
     onVertexDragStart?.(vertexIndex);
   };
 
@@ -60,6 +63,7 @@ export function PolygonEditLayer({
     event.stopPropagation();
     const nextPoint = { x: event.clientX, y: event.clientY };
     setDragPreviewPoint(nextPoint);
+    dragPreviewPointRef.current = nextPoint;
     onVertexDragMove?.(dragState.vertexIndex, nextPoint);
   };
 
@@ -75,8 +79,9 @@ export function PolygonEditLayer({
 
     event.preventDefault();
     event.stopPropagation();
-    const commitPoint = dragPreviewPoint;
+    const commitPoint = dragPreviewPointRef.current;
     dragStateRef.current = null;
+    dragPreviewPointRef.current = null;
     setDraggingVertexIndex(null);
     setDragPreviewPoint(null);
 
