@@ -7,6 +7,9 @@ type MergeSuggestionDraft = MergeSuggestion & {
   isEdited: boolean;
   latestDecision?: MergeSuggestionDecision;
   latestDecidedAt?: string;
+  representativeCardId?: string;
+  representativeResolvedBy?: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
+  representativeSourceCount?: number;
 };
 
 type MergeSuggestionsPanelProps = {
@@ -42,6 +45,23 @@ function decisionLabel(decision: MergeSuggestionDecision | undefined): string {
       return "Deferred";
     default:
       return "Not reviewed";
+  }
+}
+
+function representativeResolvedLabel(
+  resolvedBy: MergeSuggestionDraft["representativeResolvedBy"]
+): string {
+  switch (resolvedBy) {
+    case "repOf":
+      return "repOf";
+    case "mergedIntoCardId":
+      return "mergedIntoCardId";
+    case "fallback":
+      return "fallback";
+    case "unresolved":
+      return "unresolved";
+    default:
+      return "unresolved";
   }
 }
 
@@ -137,6 +157,13 @@ export function MergeSuggestionsPanel({
               boxSizing: "border-box",
             }}
           />
+          <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+            Representative: {suggestion.representativeCardId ?? "(not resolved)"}
+            {` [${representativeResolvedLabel(suggestion.representativeResolvedBy)}]`}
+            {typeof suggestion.representativeSourceCount === "number"
+              ? `, source count: ${suggestion.representativeSourceCount}`
+              : ""}
+          </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Rationale: {suggestion.rationale}</div>
           ) : null}

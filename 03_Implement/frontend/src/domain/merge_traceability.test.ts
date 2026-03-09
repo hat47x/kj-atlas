@@ -31,6 +31,7 @@ describe("merge_traceability", () => {
       representativeCardId: "rep",
       sourceCardIds: ["c1", "c2"],
       missingSourceCardIds: [],
+      representativeResolvedBy: "repOf",
     });
   });
 
@@ -46,6 +47,7 @@ describe("merge_traceability", () => {
       representativeCardId: "rep",
       sourceCardIds: ["c-live"],
       missingSourceCardIds: ["c-deleted"],
+      representativeResolvedBy: "repOf",
     });
   });
 
@@ -61,6 +63,25 @@ describe("merge_traceability", () => {
       representativeCardId: "a",
       sourceCardIds: ["b"],
       missingSourceCardIds: [],
+      representativeResolvedBy: "fallback",
+    });
+  });
+
+  it("selects representative by highest repOf overlap before fallback", () => {
+    const document = createDocument({
+      cards: [
+        { id: "rep-z", text: "rep z", x: 0, y: 0, repOf: ["a"] },
+        { id: "rep-a", text: "rep a", x: 0, y: 0, repOf: ["a", "b"] },
+        { id: "a", text: "a", x: 0, y: 0 },
+        { id: "b", text: "b", x: 0, y: 0 },
+      ],
+    });
+
+    expect(resolveDecisionOriginTrace(document, ["b", "a"])).toEqual({
+      representativeCardId: "rep-a",
+      sourceCardIds: ["a", "b"],
+      missingSourceCardIds: [],
+      representativeResolvedBy: "repOf",
     });
   });
 });

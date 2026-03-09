@@ -20,6 +20,9 @@ function buildProps() {
         rationale: "heuristic:normalized-text",
         latestDecision: "defer" as const,
         latestDecidedAt: "2026-02-28T10:00:00.000Z",
+        representativeCardId: "a",
+        representativeResolvedBy: "fallback" as const,
+        representativeSourceCount: 1,
       },
     ],
     cardsById: new Map([
@@ -41,6 +44,7 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Decision: Deferred");
     expect(html).toContain("a: Risk mitigation");
     expect(html).toContain("b: risk mitigation");
+    expect(html).toContain("Representative: a [fallback], source count: 1");
     expect(html).toContain("Rationale: heuristic:normalized-text");
     expect(html).toContain("Accept");
     expect(html).toContain("Partially accept");
