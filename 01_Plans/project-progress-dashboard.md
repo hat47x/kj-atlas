@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-08 (JST)
+最終更新: 2026-03-09 (JST)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -38,13 +38,13 @@
 
 ## 2.2) DOC-OPS-04 Gate 状態（ADR-A依存）
 
-- Gate判定: **Blocked (A承認待ち)**
-- 分岐条件: `ADR-0022` の Status が `Accepted` であること。
+- Gate判定: **Open (A承認済み / B/C/D並列開始可能)**
+- 分岐条件: `ADR-0022` の Status が `Accepted` であること（充足済み）。
 - B/C/D開始条件:
   1. A=`Accepted`
   2. 編集境界（ADR-0023/0024/0025のみ編集）が維持されていること
   3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効であること
-- 現在値: `ADR-0022` は `Proposed` のため、B/C/D実編集は未開始（起票準備のみ）。
+- 現在値: `ADR-0022` は `Accepted`。B/C/Dは編集境界・同時更新禁止ルールを維持したうえで並列実行可能。
 
 ## 3) 人間判断待ち（Decision Queue）
 
@@ -53,7 +53,7 @@
 | P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 決定済み（R2-P1 Reject / R2-P2 Conditional Approve / R2-P3 Conditional Approve） |
 | P2 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 決定済み（R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve） |
 
-補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`（DOC-OPS-04のA承認待ち状態を同期済み）
+補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`（DOC-OPS-04の判断履歴参照用。現行ゲート状態は本dashboardを正本とする）
 
 ## 4) 決定ログ（Recent Decisions）
 
@@ -66,7 +66,7 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 は ADR-A（`ADR-0022`）承認依頼を継続し、`Accepted` まで B/C/D実編集を開始しない。
+1. DOC-OPS-04 は A=`Accepted` を前提に、B/C/Dを編集境界（ADR-0023/0024/0025のみ）で並列開始する。
 2. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 

@@ -228,6 +228,7 @@ issue補助メモには、最低でも次の項目を含める。
 - `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
 - REQ-DEF運用状態: R2-P1〜P3 / R3-P1〜P3 は決定済み。`TEMPLATE.md` の必須化ルール（R3-P1必須、R3-P2/R3-P3条件付き）を適用する。
+- DOC-OPS-04ゲート状態: ADR-A（`ADR-0022`）は `Accepted`。B/C/D は編集境界（ADR-0023/0024/0025）と統合ファイル同時更新禁止を維持して並列実行可能。
 
 ## Active issue memos
 

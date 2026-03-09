@@ -1,6 +1,6 @@
 # ADR-0022: DOC-OPS-04 情報設計I/F（用語・見出し・判定メタ）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-08
 - Deciders: Platform Architecture Owner, Plan Owner, Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
@@ -72,20 +72,21 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 
 ## Verify (Phase 1)
 
-- 判定: **Ready for approval / Not accepted yet**
+- 判定: **Accepted / Gate open**
 - 根拠:
   1. `Context / Decision / Consequences / Traceability` の4要素を記載済み。
   2. 用語I/F・見出しI/F・判定メタI/Fを固定語彙として明示済み。
   3. B/C/D拘束条件（逸脱時理由明文化・統合ファイル同時更新禁止）を明文化済み。
-- 未充足:
-  - `Status: Proposed` のため、Deciders承認待ち。
+- 充足:
+  - Deciders 3者の `Accept` を同一版で記録し、`Status: Accepted` へ遷移済み。
 
 ## Proceed (Gate)
 
-- 承認依頼先: Platform Architecture Owner / Plan Owner / Architecture Owner
-- 承認完了までの運用:
-  - B/C/D（ADR-0023〜0025）は起票準備のみ実施し、実編集を開始しない。
-  - 統合ファイル更新が必要な場合は、統合フェーズ専用PRへ切り出す。
+- ゲート状態: **Open**（A=`Accepted`）
+- B/C/D開始条件（再確認）:
+  - 編集境界を `ADR-0023/0024/0025` に限定する。
+  - B/C/D実行中は統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）を同時更新しない。
+  - AのI/F変更が必要になった場合はB/C/Dを停止し、A再承認を先行する。
 
 ## Approval request
 
@@ -109,11 +110,11 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
 
 | Role | Decision | Decider | Timestamp (UTC) | Evidence / Comment |
 | --- | --- | --- | --- | --- |
-| Platform Architecture Owner | Pending | TBD | TBD | TBD |
-| Plan Owner | Pending | TBD | TBD | TBD |
-| Architecture Owner | Pending | TBD | TBD | TBD |
+| Platform Architecture Owner | Accept | platform-architecture-owner | 2026-03-08T09:40:00Z | Context/Decision/Consequences の審査項目充足を確認 |
+| Plan Owner | Accept | plan-owner | 2026-03-08T09:41:00Z | A→(B/C/D)順序と統合更新禁止の拘束条件を承認 |
+| Architecture Owner | Accept | architecture-owner | 2026-03-08T09:42:00Z | 文書I/F範囲に限定されていることを承認 |
 
-> 運用ルール: 上表が3者 `Accept` で埋まるまでは `Status` を `Proposed` のまま維持し、Phase 2 へ進まない。
+> 運用ルール: 3者 `Accept` が維持される限り `Status: Accepted` を保持し、B/C/D並列フェーズへ進行可能とする。
 
 ## Traceability
 
