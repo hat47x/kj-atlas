@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getIslandBounds } from "./IslandView";
+import { getIslandBounds, resolveIslandRepresentativeTitle } from "./IslandView";
 import type { Card, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
@@ -94,5 +94,28 @@ describe("getIslandBounds", () => {
       width: CARD_WIDTH + ISLAND_PADDING * 2,
       height: CARD_MIN_HEIGHT + ISLAND_PADDING * 2,
     });
+  });
+});
+
+
+describe("resolveIslandRepresentativeTitle", () => {
+  it("prefers placard card text when present", () => {
+    const island: Island = { id: "i1", cardIds: ["c1"], placardCardId: "c1", title: "Fallback" };
+    const cards: Card[] = [{ id: "c1", text: " Placard title ", x: 0, y: 0 }];
+
+    expect(resolveIslandRepresentativeTitle(island, cards)).toBe("Placard title");
+  });
+
+  it("falls back to island title when placard text is missing", () => {
+    const island: Island = { id: "i1", cardIds: ["c1"], placardCardId: "c1", title: " Island name " };
+    const cards: Card[] = [{ id: "c1", text: "   ", x: 0, y: 0 }];
+
+    expect(resolveIslandRepresentativeTitle(island, cards)).toBe("Island name");
+  });
+
+  it("uses default label when both placard and title are absent", () => {
+    const island: Island = { id: "i1", cardIds: [] };
+
+    expect(resolveIslandRepresentativeTitle(island, [])).toBe("Island");
   });
 });

@@ -183,6 +183,35 @@ export function ViewControlsPanel({
           <button type="button" onClick={onApplyDetailPreset} style={{ cursor: "pointer" }}>
             {t("view_controls.viewpoint_presets.detail")}
           </button>
+          <div style={{ display: "grid", gap: 4 }}>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{t("view_controls.viewpoint_presets.structure_level")}</div>
+            <div style={{ display: "inline-flex", border: "1px solid #cbd5e1", borderRadius: 6, overflow: "hidden" }}>
+              {([
+                { id: "overview", label: t("view_controls.hierarchy.overview") },
+                { id: "detail", label: t("view_controls.hierarchy.detail") },
+              ] as const).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    onHierarchyLevelChange(item.id);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    border: "none",
+                    borderRight: item.id === "detail" ? "none" : "1px solid #cbd5e1",
+                    padding: "4px 8px",
+                    backgroundColor: hierarchyLevel === item.id ? "#e2e8f0" : "#ffffff",
+                    color: hierarchyLevel === item.id ? "#0f172a" : "#334155",
+                    fontWeight: hierarchyLevel === item.id ? 700 : 500,
+                    fontSize: 12,
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
             {t("view_controls.viewpoint_presets.structure_level")}
             <select

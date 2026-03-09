@@ -45,6 +45,14 @@ type EdgeHitbox = {
   style: CSSProperties;
 };
 
+export function resolveIslandRepresentativeTitle(island: Island, cards: Card[]): string {
+  const placardText = island.placardCardId
+    ? cards.find((card) => card.id === island.placardCardId)?.text?.trim() ?? ""
+    : "";
+
+  return placardText || island.title?.trim() || "Island";
+}
+
 const EDGE_HITBOXES: EdgeHitbox[] = [
   {
     key: "top",
@@ -172,6 +180,7 @@ function IslandViewComponent({
   const hasCritique = typeof island.critique === "string" && island.critique.trim().length > 0;
   const placardCard = island.placardCardId ? cards.find((card) => card.id === island.placardCardId) : undefined;
   const placardText = placardCard?.text?.trim() ?? "";
+  const representativeTitle = resolveIslandRepresentativeTitle(island, cards);
   const hasSummary = typeof island.summaryText === "string" && island.summaryText.trim().length > 0;
   const hideUnreviewedSummary = safeMode && island.summaryReviewed === false && hasSummary;
   const isCollapsed = isCollapsedForView ?? island.collapsed === true;
@@ -390,7 +399,7 @@ function IslandViewComponent({
           gap: 6,
         }}
       >
-        {showTitleLabel ? (island.title && island.title.length > 0 ? island.title : "Island") : null}
+        {showTitleLabel ? (isCollapsed ? representativeTitle : island.title && island.title.length > 0 ? island.title : "Island") : null}
         <span
           style={{
             fontSize: 10,
@@ -405,7 +414,7 @@ function IslandViewComponent({
         >
           #{island.cardIds.length}
         </span>
-        {placardText ? (
+        {placardText && !isCollapsed ? (
           <span
             style={{
               fontSize: 10,
@@ -423,6 +432,26 @@ function IslandViewComponent({
             title={placardText}
           >
             {placardText}
+          </span>
+        ) : null}
+        {isCollapsed ? (
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#1d4ed8",
+              backgroundColor: "#dbeafe",
+              border: "1px solid #93c5fd",
+              borderRadius: 999,
+              padding: "1px 6px",
+              maxWidth: 180,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={representativeTitle}
+          >
+            Rep: {representativeTitle}
           </span>
         ) : null}
         {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
