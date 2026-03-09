@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-08 (JST, 全Issue俯瞰を反映)
+最終更新: 2026-03-09 (JST, DOC-OPS-04統合フェーズ反映)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -47,17 +47,17 @@
 
 ## 2.2) DOC-OPS-04 Gate 状態（ADR-A依存）
 
-- Gate判定: **Open (A承認済み / B/C/D並列開始可能)**
+- Gate判定: **Open (A承認維持 / B/C/D承認統合を反映済み)**
 - 分岐条件: `ADR-0022` の Status が `Accepted` であること（充足済み）。
 - B/C/D開始条件:
   1. A=`Accepted`
   2. 編集境界（ADR-0023/0024/0025のみ編集）が維持されていること
   3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効であること
-- 現在値: `ADR-0022` は `Accepted`。B/C/Dは編集境界・同時更新禁止ルールを維持したうえで並列実行可能。
+- 現在値: `ADR-0022` は `Accepted` を維持。B/C/D承認統合のContext / Decision / Consequencesは統合フェーズで反映済み。
 
 ## 2.3) 未解決ADRサマリ（DOC-OPS-04系）
 
-未解決（`Status: Proposed`）のADRは以下3件。
+未解決（起票待ち）のADRは以下3件。
 
 1. `ADR-0023-doc-ops-04-readability-baseline.md`（ADR-B）
 2. `ADR-0024-doc-ops-04-quality-gates-boundary.md`（ADR-C）
@@ -98,8 +98,8 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 は A=`Accepted` を前提に、B/C/Dを編集境界（ADR-0023/0024/0025のみ）で並列開始する。
-2. `issues/README.md` と decision-pack の状態表示を毎更新で同期する。
+1. DOC-OPS-04 は A=`Accepted` 維持下で、承認統合済み入力をもとに `ADR-0023/0024/0025` の起票と審査を直列実行する。
+2. `issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md` の状態表示を同期し、ドリフトを残さない。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
 ## 6) 再開コマンド（docs-check）

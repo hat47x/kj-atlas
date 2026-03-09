@@ -125,7 +125,7 @@
   - A=`Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を停止し、A再承認後に再開する。
 
 
-### 3.2.5 状態同期確認（Phase 2）
+### 3.2.5 状態同期確認（Phase 2 / 統合前）
 
 - 同期対象: Active issue / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md`
 - 同期結果（2026-03-09 JST）:
@@ -167,6 +167,17 @@
 - 運用指示: B/C/DのADR実編集前に、各ADRで `Context / Decision / Consequences` の3要素を承認プロトコルとして明文化する。
 - 固定ルール: 上記テンプレートの Non-editable region は統合フェーズまで改変しない。
 
+
+
+### 3.2.7 統合フェーズ実行ログ（Phase 3）
+
+- 対象共有リソース: `issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`
+- 実施内容:
+  1. Active/Done と Gate状態の同期を3文書で再確認した。
+  2. B/C/D承認統合入力（Context / Decision / Consequences）を「統合済み・起票待ち」状態へ更新した。
+  3. 停止/再開条件と次アクション（ADR-0023/0024/0025直列起票）を明記した。
+- 判定: A=`Accepted` 維持、競合シグナルなし、統合ファイル同時更新禁止は統合フェーズ内でのみ解除して適用。
+
 ### 3.3 Verify
 
 - 検証1: docs-check相当として、必須メタ項目と見出し整合をコマンドで確認する。
@@ -175,12 +186,12 @@
 
 ### 3.4 Proceed
 
-- 現在状態: ADR候補A〜Dの前処理監査ログを作成済み。
-- 停止理由: 本タスク範囲は暫定メモ整備までであり、恒久化判断はADR審査の責務。
-- ADR起票可否判断材料:
-  1. 未解決論点: A承認後のB/C/D同時着手可否、承認SLA、例外期限の監査方式。
-  2. 承認依頼事項: Phase 2の暫定4論点をADR本文へ昇格する際の採否判定。
-  3. ゲート確認事項: A=`Accepted` を維持し、B/C/Dは編集境界と統合ファイル同時更新禁止を守って並列開始する。
+- 現在状態: ADR候補A〜Dの前処理監査ログに加えて、統合フェーズでの状態同期を完了。
+- 停止条件（維持）: A I/F語彙変更兆候、統合ファイル同時更新の必要発生、想定外競合。
+- 次アクション:
+  1. `ADR-0023`（B）を起票し、Context / Decision / Consequences を承認審査へ投入。
+  2. `ADR-0024`（C）を起票し、docs-check/CI境界を承認審査へ投入。
+  3. `ADR-0025`（D）を起票し、変更統治・例外承認を承認審査へ投入。
 
 ## 4) 受入条件 / Acceptance criteria（前処理監査限定）
 
