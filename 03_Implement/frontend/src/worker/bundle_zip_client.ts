@@ -11,9 +11,17 @@ let requestCounter = 0;
 export class BundleZipWorkerClient {
   private worker: Worker | null = null;
   private readonly fallbackRunner = createCancelableTaskRunner();
+  private runtimeFallbackNotified = false;
+
+  private canUseWorkerRuntime(): boolean {
+    return typeof Worker !== "undefined";
+  }
 
   private ensureWorker(): Worker {
     if (this.worker) return this.worker;
+    if (!this.canUseWorkerRuntime()) {
+      throw new Error("Worker runtime unavailable");
+    }
     this.worker = new Worker(new URL("./bundle_zip.worker.ts", import.meta.url), { type: "module" });
     return this.worker;
   }
@@ -25,7 +33,12 @@ export class BundleZipWorkerClient {
     try {
       return await this.buildZipViaWorker(payload, options);
     } catch (error) {
-      console.warn("Bundle zip worker unavailable. Falling back to main-thread scheduler.", error);
+      if (this.canUseWorkerRuntime()) {
+        console.warn("Bundle zip worker unavailable. Falling back to main-thread scheduler.", error);
+      } else if (!this.runtimeFallbackNotified) {
+        this.runtimeFallbackNotified = true;
+        console.info("Bundle zip worker runtime unavailable. Using main-thread scheduler.");
+      }
       return this.buildZipViaFallback(payload, options);
     }
   }
