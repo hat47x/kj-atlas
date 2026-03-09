@@ -57,6 +57,7 @@
 | connectedComponentCount | 1 |
 | largestComponentRatio | 1 |
 | connectivityScore | 1 |
+| averageDegree | 1.3333 |
 | degreeP95 | 2 |
 | degreeSkewRatio | 1.5 |
 | bridgeEdgeCount | 2 |

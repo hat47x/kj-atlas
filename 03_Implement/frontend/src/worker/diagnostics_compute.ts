@@ -76,6 +76,7 @@ function buildDiagnosticsMd(data: DiagnosticsData): string {
   lines.push(`| connectedComponentCount | ${data.structuralMetrics.connectedComponentCount} |`);
   lines.push(`| largestComponentRatio | ${data.structuralMetrics.largestComponentRatio} |`);
   lines.push(`| connectivityScore | ${data.structuralMetrics.connectivityScore} |`);
+  lines.push(`| averageDegree | ${data.structuralMetrics.averageDegree} |`);
   lines.push(`| degreeP95 | ${data.structuralMetrics.degreeP95} |`);
   lines.push(`| degreeSkewRatio | ${data.structuralMetrics.degreeSkewRatio} |`);
   lines.push(`| bridgeEdgeCount | ${data.structuralMetrics.bridgeEdgeCount} |`);

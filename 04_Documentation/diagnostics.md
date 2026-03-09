@@ -73,6 +73,9 @@
 - `connectivityScore`:
   - 意味: `1 - (max(0, connectedComponentCount - 1) / max(1, cardCount - 1))`
   - 期待: 1.0 に近いほど一体、0.0 に近いほど分断
+- `averageDegree`:
+  - 意味: relation グラフの平均次数（`2 * |E| / max(1, cardCount)`）
+  - 期待: 全体の接続密度の基準値として利用
 - `degreeP95`:
   - 意味: card degree 分布の95パーセンタイル（nearest-rank）
   - 期待: 局所ハブの過密検知に利用
@@ -107,10 +110,10 @@
 - `largestComponentRatio = largestComponentSize(G) / max(1, |C|)`
 - `connectivityScore = 1 - (max(0, connectedComponentCount - 1) / max(1, |C| - 1))`
 - `isolationRate = isolatedCardCount / max(1, |C|)`
+- `averageDegree = 2 * |E| / max(1, |C|)`
 - `degreeP95 = percentile_nearest_rank({deg(v) | v ∈ C}, 95)`
   - nearest-rank: `rank = ceil(0.95 * n)`（`n=|C|`, 1-indexed）
 - `degreeSkewRatio = degreeP95 / max(1, averageDegree)`
-  - `averageDegree = 2 * |E| / max(1, |C|)`
 - `bridgeEdgeCount = |{ e ∈ E | cc(C, E \ {e}) > cc(G) }|`
 
 意図:
@@ -119,6 +122,7 @@
 - `largestComponentRatio`: 全体の一体性（最大連結塊への集中）を検知
 - `connectivityScore`: 連結性の健全度を 0.0〜1.0 で比較
 - `isolationRate`: 孤立カードの割合（孤立率）を比較
+- `averageDegree`: 全体接続密度（平均的な結合度）を比較
 - `degreeP95`: 局所ハブ偏重（過密接続）を検知
 - `degreeSkewRatio`: 平均次数に対する偏り（ハブ偏重）を比較
 - `bridgeEdgeCount`: 単一関係に依存する脆弱な接続（ボトルネック）を検知
