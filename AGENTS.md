@@ -75,9 +75,11 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
-- `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義。
+- `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
 
 **注意**：AIの挙動規範は原則ここに集約。READMEには最小限の誘導のみ。
+
+**補足**：Codex の実行時スキルは `/opt/codex/skills/.system` または `$CODEX_HOME/skills`（既定 `~/.codex/skills`）から読み込まれる。リポジトリ内 `00_Prompt/skills/*` は配布元（テンプレート）として扱う。
 
 ### 3.2 `01_Plans/`（How to Process：計画・タスク分割）
 
