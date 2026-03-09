@@ -98,3 +98,39 @@ GSD 運用が過剰に重くなった場合は、
 
 GSD の導入自体を停止する場合も、
 `00_Prompt/agent_handover.md` の DoD と安全ゲートは維持する。
+
+## 6. 追加導入する補助 skill（2026-03）
+
+GSD 運用を中核にしつつ、以下の curated skill を併用する。
+
+- `doc`: docs-only / docs+code タスクで、差分説明と同期漏れ検知を補助。
+- `security-threat-model`: SafeMode・公開境界・漏えい防止の脅威観点レビューを補助。
+- `playwright`: UI変更時の検証フロー補助（E2E / screenshot）。
+
+### 6.1 導入コマンド（curated）
+
+```bash
+python /opt/codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo openai/skills \
+  --path skills/.curated/doc \
+  --path skills/.curated/security-threat-model \
+  --path skills/.curated/playwright
+```
+
+### 6.2 適用境界
+
+- 仕様決定は従来どおり `00_Prompt` / `01_Plans` / `02_Architecture` が正本。
+- 補助skillは「実施品質と検証密度の向上」のみに使う。
+
+## 7. Markdown + Mermaid.js 文書整備への適用
+
+- 文書タスクで Mermaid 図を伴う場合は `markdown-mermaid-docops` を併用し、
+  `Scope / Non-Goals / Acceptance / Checks` を固定したうえで図表検証を行う。
+- 視覚確認は MCP（browser/playwright）を優先し、不可時は Mermaid CLI のSVG生成ログを代替証跡とする。
+
+### 7.1 導入コマンド（project template skill）
+
+```bash
+mkdir -p "$HOME/.codex/skills"
+cp -R 00_Prompt/skills/markdown-mermaid-docops "$HOME/.codex/skills/markdown-mermaid-docops"
+```
