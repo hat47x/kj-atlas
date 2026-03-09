@@ -236,11 +236,11 @@ def _ensure_large_scale_allowlist() -> None:
     )
 
     if not base_url:
-        raise ProviderRequestError.unavailable("LARGE_SCALE_LLM_BASE_URL is not set", metadata)
+        raise ProviderRequestError.unavailable("KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL is not set", metadata)
 
     hostname = (urlparse(base_url).hostname or "").lower()
     if hostname == "":
-        raise ProviderRequestError.validation("LARGE_SCALE_LLM_BASE_URL is invalid", metadata)
+        raise ProviderRequestError.validation("KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL is invalid", metadata)
     if hostname not in allowlist:
         raise ProviderRequestError.unavailable("Large-scale destination is not allowlisted", metadata)
 

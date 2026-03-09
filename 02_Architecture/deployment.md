@@ -32,11 +32,11 @@ MVPでは、以下の3要素で十分です。
 
 ### 3.1 API
 
-- `KJ_ATLAS_DATABASE_URL`（旧: `DATABASE_URL`）：
+- `KJ_ATLAS_DATABASE_URL`：
   - dev: `sqlite+aiosqlite:///./data/kj_atlas.db`
   - prod: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`
 
-- `KJ_ATLAS_LLM_PROVIDER`（旧: `LLM_PROVIDER`）：`none | fixture | local | external`
+- `KJ_ATLAS_LLM_PROVIDER`：`none | local | local_http | large-scale | large_scale | external`
 
 ### 3.2 DB
 
@@ -95,7 +95,7 @@ volumes:
 ## 5. イントラ運用（想定）
 
 - `web` と `api` は社内ネットワーク内に閉じる
-- `KJ_ATLAS_LLM_PROVIDER=local` の場合、`KJ_ATLAS_LOCAL_LLM_BASE_URL`（旧: `LOCAL_LLM_BASE_URL`） を社内URLに向ける
+- `KJ_ATLAS_LLM_PROVIDER=local` の場合、`KJ_ATLAS_LOCAL_LLM_BASE_URL` を社内URLに向ける
 - 外部送信（external provider）は無効化をデフォルトにする
 
 ---
@@ -119,4 +119,3 @@ volumes:
 
 - `03_Implement` の雛形（backend/frontend）
 - CI（最低限：lint/test/build）
-

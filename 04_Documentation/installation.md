@@ -43,7 +43,7 @@ docker compose down
 ## 補足
 
 - 既定で `web` / `api` / `db`（PostgreSQL）の3サービスが起動します。
-- 既定値は `LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
+- 既定値は `KJ_ATLAS_LLM_PROVIDER=none` で、外部LLMへの送信は行いません。
 - 画面から JSON Export / Import が利用できます。
 
 
@@ -84,7 +84,7 @@ source .venv/bin/activate
 pip install -e ".[test]"
 pip install alembic uvicorn
 export PYTHONPATH=src
-export DATABASE_URL="sqlite:///./kj_atlas.db"
+export KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
 alembic upgrade head
 uvicorn kj_atlas_api.main:app --host 0.0.0.0 --port 8000
 ```

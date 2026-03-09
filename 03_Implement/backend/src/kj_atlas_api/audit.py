@@ -228,7 +228,7 @@ def build_audit_dispatcher() -> AuditDispatcher:
     if settings.audit_transport == "http":
         endpoint = settings.audit_http_endpoint
         if not endpoint:
-            logger.warning("AUDIT_TRANSPORT=http but AUDIT_HTTP_ENDPOINT missing; fallback noop")
+            logger.warning("KJ_ATLAS_AUDIT_TRANSPORT=http but KJ_ATLAS_AUDIT_HTTP_ENDPOINT missing; fallback noop")
             transport: AuditTransport = NoopAuditTransport()
         else:
             transport = HttpAuditTransport(
