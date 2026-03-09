@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-09 (JST, DOC-OPS-04統合フェーズ反映)
+最終更新: 2026-03-09 (JST, DOC-OPS-04完了同期)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -18,16 +18,16 @@
 
 | 観点 | 状態 | 根拠 |
 |---|---|---|
-| 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03` は Done、`DOC-OPS-04` は Open。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
+| 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03`/`DOC-OPS-04` は Done。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
 | 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
 | 環境変数移行（ENV-ARCH） | 実装フェーズへ移行準備 | `ENV-ARCH-01` は Done、decision packでの方針採択を反映済み。 |
 
 ## 1.1) 全Issueサマリ（Active/Done）
 
 - issue memo 総数: **23**
-- Active: **1**（`DOC-OPS-04` のみ）
-- Done: **22**（AUTH / FB-RM / DOC / REQ / ENV / QA 系を含む）
-- 優先度上のクリティカルパス: **DOC-OPS-04（P1）→ ADR-B/C/D承認統合**
+- Active: **0**
+- Done: **23**（AUTH / FB-RM / DOC / REQ / ENV / QA 系を含む）
+- 優先度上のクリティカルパス: **なし（DOC-OPS-04完了）**
 
 根拠: `01_Plans/issues/README.md` の Active issue memos と Completed issue memos 集計。
 
@@ -37,7 +37,6 @@
 
 | Backlog ID | Status | 要点 | メモ |
 |---|---|---|---|
-| DOC-OPS-04 | Open | 文書可視性・可読性ガバナンスの整備を進行。 | `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md` |
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
 
@@ -47,17 +46,17 @@
 
 ## 2.2) DOC-OPS-04 Gate 状態（ADR-A依存）
 
-- Gate判定: **Open (A承認維持 / B/C/D承認統合を反映済み)**
-- 分岐条件: `ADR-0022` の Status が `Accepted` であること（充足済み）。
-- B/C/D開始条件:
-  1. A=`Accepted`
-  2. 編集境界（ADR-0023/0024/0025のみ編集）が維持されていること
-  3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効であること
-- 現在値: `ADR-0022` は `Accepted` を維持。B/C/D承認統合のContext / Decision / Consequencesは統合フェーズで反映済み。
+- Gate判定: **Closed (A/B/C/D Accepted で完了同期済み)**
+- 分岐条件: `ADR-0022/0023/0024/0025` の Status が `Accepted` であること（充足済み）。
+- 完了条件:
+  1. A=`Accepted` を維持
+  2. B/C/D（`ADR-0023/0024/0025`）がすべて `Accepted`
+  3. 統合ファイル3点の状態同期と検証が完了
+- 現在値: A/B/C/D すべて `Accepted`。統合ファイル同期と validator/unittest 成功を確認済み。
 
-## 2.3) 未解決ADRサマリ（DOC-OPS-04系）
+## 2.3) ADR完了サマリ（DOC-OPS-04系）
 
-未解決（起票待ち）のADRは以下3件。
+完了（Accepted）のADRは以下3件。
 
 1. `ADR-0023-doc-ops-04-readability-baseline.md`（ADR-B）
 2. `ADR-0024-doc-ops-04-quality-gates-boundary.md`（ADR-C）
@@ -98,8 +97,8 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 は A=`Accepted` 維持下で、承認統合済み入力をもとに `ADR-0023/0024/0025` の起票と審査を直列実行する。
-2. `issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md` の状態表示を同期し、ドリフトを残さない。
+1. DOC-OPS-04 は A/B/C/D（`ADR-0022/0023/0024/0025`）Accepted を維持監視する。
+2. 追加変更が発生した場合は、統合ファイル3点の同期を単一フェーズで実施する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
 ## 6) 再開コマンド（docs-check）

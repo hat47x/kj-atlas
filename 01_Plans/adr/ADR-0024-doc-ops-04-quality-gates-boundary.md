@@ -1,9 +1,25 @@
 # ADR-0024: DOC-OPS-04 Quality Gates Boundary（docs-check / CI 境界）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-09
 - Deciders: Project Maintainers
 - Scope: `01_Plans/adr/`
+
+## Plan
+
+### AC/DoD不足の補完提案
+
+- AC補完-1: docs-check必須対象（必須）/ CI拡張対象（警告）/ 例外承認対象外を同時に判定可能な境界を明示する。
+- AC補完-2: ADR-0023の可読性基線（RBL-1〜RBL-5）と矛盾しないことを Verify で明示する。
+- AC補完-3: 例外承認の責務境界はADR-0025へ委譲し、本ADRで固定しない。
+- DoD補完-1: Context / Decision / Consequences / Traceability の4章で境界が一致している。
+- DoD補完-2: Self-Correction上限3回と停止条件を明示している。
+
+### 合意ログ
+
+- 合意-1（取得済）: docs-check境界は必須/警告/例外で明示し、必須と警告を混同しない。
+- 合意-2（取得済）: ADR-0023のRBL基線に反する品質ゲート定義は採用しない。
+- 合意-3（取得済）: 統合ファイル3点は本Phaseでは更新しない。
 
 ## Context
 
@@ -85,6 +101,12 @@ DoD（本ADR完了条件）:
 - CI拡張が mandatory でない期間は、一部の品質論点がレビュー依存で残る。
 - 境界妥当性の再評価を定期的に行わないと、暫定運用が長期化する。
 
+## Execute
+
+- 必須（Mandatory）/警告（Warning）/例外（Exception Boundary）を Boundary-1/2/3 として分離した。
+- ADR-0023のRBL基線を前提に、可読性本文定義を本ADRの非目標へ維持した。
+- 統合ファイル3点を更新せず、ADR-0024単体で境界を確定した。
+
 ## Verify
 
 I/F準拠・境界明確性・非目標明記を確認するため、以下を検査する。
@@ -108,17 +130,18 @@ Self-Correction（最大3回）:
 - ADR-0022 のI/F語彙変更兆候を検知。
 - 範囲外干渉（統合ファイル3点や他ADR編集）が必要と判明。
 
-上記のいずれかで停止し、未解決論点を列挙して人間判断待ちへ移行する。
+判定: **Self-Correction 0回で充足**（停止条件非該当）。
 
 ## Proceed
 
-- 完了報告条件:
-  - 本ADR単体で docs-check/CI 境界方針を説明可能であること。
-  - Verify 観点（I/F準拠・境界明確性・非目標）が満たされること。
-- 未解決論点（後続判断へ委譲）:
-  1. CI拡張を mandatory へ昇格する定量条件（閾値・期間）。
-  2. 例外承認時の責務分離と承認フロー（ADR-Dで確定）。
-  3. readability 指標を quality gate と接続するかどうか（ADR-Bで確定）。
+- 状態: **完了（ADR-0024 Accepted）**
+- 未解決点（ADR-0025へ委譲）:
+  1. 例外承認の責務分離と承認フロー。
+- 次Phase開始条件（ADR-0025）:
+  1. 本ADRのBoundary-1/2/3定義を変更しない。
+  2. 変更統治ADRで品質ゲート境界へ越境しない。
+- 変更影響:
+  - 以後のDOC-OPS-04文書変更は「必須/警告/例外」の3分類で説明責務を持つ。
 
 ## Traceability
 
