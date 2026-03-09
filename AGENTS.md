@@ -76,6 +76,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
 - `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
+- `00_Prompt/skills/markdown-mermaid-docops/SKILL.md`：Markdown + Mermaid.js 文書整備とMCP確認の補助スキル（配布テンプレート）。
 
 **注意**：AIの挙動規範は原則ここに集約。READMEには最小限の誘導のみ。
 
@@ -164,6 +165,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/narratives.md`：文章化/要約出力。
 - `04_Documentation/canonicalization.md`：正規化/決定論。
 - `04_Documentation/local_llm_ops_guide.md`：ローカルLLM運用。
+- `04_Documentation/codex_skill_operations.md`：Codex skill 導入・運用手順。
 
 ---
 

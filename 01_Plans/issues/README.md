@@ -245,6 +245,8 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
+| DX-CODEX-01 | `issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` | Open | N/A |
+| DX-CODEX-02 | `issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` | Open | N/A |
 
 ## Rules
 
