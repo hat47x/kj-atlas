@@ -122,7 +122,7 @@
   2. B/C/Dは相互ADR本文を直接編集しない（参照はTraceabilityリンクのみ）。
   3. Aの用語I/F変更が発生した場合は、B/C/Dを停止しA再承認を先行する。
 - Proceed条件:
-  - AのStatusが `Accepted` になるまで、B/C/Dの実編集は開始しない。
+  - A=`Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を停止し、A再承認後に再開する。
 
 
 ### 3.2.5 状態同期確認（Phase 2）
@@ -132,6 +132,40 @@
   1. `A承認済み`（`ADR-0022=Accepted`）を3文書で一致させた。
   2. B/C/D開始条件（A=`Accepted`、編集境界、統合ファイル同時更新禁止）を3文書で一致させた。
   3. 不一致検出時は self-correction を最大3回まで許容し、未解消時は停止する運用を確認した。
+
+### 3.2.6 ADR承認運用の最終ゲート（Phase 3: 実装前合意）
+
+- 共通テンプレート（並列プロンプト引き渡し用・改変禁止領域を含む）:
+
+```md
+[DOC-OPS-04 ADR Parallel Handover Template / Locked]
+- Target ADR: <ADR-0023|ADR-0024|ADR-0025>
+- Scope Lock: このテンプレートは `Context / Decision / Consequences / Verify` の見出し名を変更しない。
+- Non-editable region:
+  1) A（ADR-0022）I/F語彙定義
+  2) 統合ファイル同時更新禁止ルール
+  3) 停止/再開条件（A再承認必須）
+
+## Context
+- A I/Fとの差分理由（逸脱有無）
+- 影響範囲（01/02/04）
+
+## Decision
+- 採用案（1つ）
+- 非採用案（理由付き）
+
+## Consequences
+- 採用時の効果
+- 非採用時のリスク
+
+## Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- docs-check相当（見出し/メタ/参照整合）
+```
+
+- 運用指示: B/C/DのADR実編集前に、各ADRで `Context / Decision / Consequences` の3要素を承認プロトコルとして明文化する。
+- 固定ルール: 上記テンプレートの Non-editable region は統合フェーズまで改変しない。
 
 ### 3.3 Verify
 
@@ -165,7 +199,7 @@
 - [x] DoD-3: 恒久ルールをIssue本文で固定していないことを明示検証している。
 - [x] DoD-4: 承認待ち停止時の未解決論点と承認依頼事項を記録している。
 - [x] DoD-5: Self-Correction上限（3回）と未解消時の停止方針を記載している。
-- [x] DoD-6: ADR-A承認チェックポイント（承認待ち時は次Phase停止）を明示している。
+- [x] DoD-6: ADR-A承認チェックポイント（A逸脱時は次Phase停止）を明示している。
 
 ## 6) Self-Correction / Fail-safe
 
