@@ -63,9 +63,9 @@ llm:
 ### 2.3 環境変数例（プレースホルダ）
 
 ```text
-LLM_PROVIDER=none
+KJ_ATLAS_LLM_PROVIDER=none
 LLM_EXTERNAL_ENABLED=false
-LLM_ESCALATION_ENABLED=false
+KJ_ATLAS_LLM_ESCALATION_ENABLED=false
 LLM_TRANSPORT=in_process
 ```
 
