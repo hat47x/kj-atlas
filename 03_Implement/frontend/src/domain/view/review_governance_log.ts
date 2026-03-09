@@ -25,6 +25,24 @@ function sortRefs(left: GovernanceEntryRef, right: GovernanceEntryRef): number {
   return left.id.localeCompare(right.id);
 }
 
+function sortByCreatedAtThenId<T extends { createdAt: string; id: string }>(left: T, right: T): number {
+  const createdCompared = left.createdAt.localeCompare(right.createdAt);
+  if (createdCompared !== 0) {
+    return createdCompared;
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+function dedupeByIdKeepingLatest<T extends { id: string; createdAt: string }>(entries: T[]): T[] {
+  const byId = new Map<string, T>();
+  for (const entry of [...entries].sort(sortByCreatedAtThenId)) {
+    byId.set(entry.id, entry);
+  }
+
+  return [...byId.values()].sort(sortByCreatedAtThenId);
+}
+
 export function normalizeReviewGovernanceLogs(input: {
   mergeAuditLog?: unknown;
   reviewEvents?: unknown;
@@ -35,8 +53,8 @@ export function normalizeReviewGovernanceLogs(input: {
   const redactionMode = input.redactionMode ?? "none";
   const hasMergeAuditLog = input.mergeAuditLog !== undefined;
   const hasReviewEvents = input.reviewEvents !== undefined;
-  const mergeAuditLog = hasMergeAuditLog ? sanitizeMergeAuditLog(input.mergeAuditLog, { maxEntries }) : [];
-  const reviewEvents = hasReviewEvents ? sanitizeReviewEvents(input.reviewEvents, { maxEvents: maxEntries }) : [];
+  const mergeAuditLog = hasMergeAuditLog ? dedupeByIdKeepingLatest(sanitizeMergeAuditLog(input.mergeAuditLog, { maxEntries })) : [];
+  const reviewEvents = hasReviewEvents ? dedupeByIdKeepingLatest(sanitizeReviewEvents(input.reviewEvents, { maxEvents: maxEntries })) : [];
 
   const refs: GovernanceEntryRef[] = [
     ...mergeAuditLog.map((entry, index) => ({ kind: "merge" as const, index, createdAt: entry.createdAt, id: entry.id })),

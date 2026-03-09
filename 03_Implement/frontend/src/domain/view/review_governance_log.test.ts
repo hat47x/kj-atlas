@@ -52,4 +52,35 @@ describe("review_governance_log", () => {
     expect(result.mergeAuditLog).toEqual([]);
     expect(result.reviewEvents?.map((entry) => entry.id)).toEqual(["review-1", "review-2"]);
   });
+
+  it("deduplicates same-id entries and keeps the latest timestamp", () => {
+    const result = normalizeReviewGovernanceLogs({
+      mergeAuditLog: [
+        {
+          id: "merge-dup",
+          createdAt: "2026-03-06T00:00:00.000Z",
+          source: { kind: "unknown" },
+          summary: { totalItems: 1, byKind: { card: 1 } },
+          details: { itemIds: { ids: ["old"] } },
+        },
+        {
+          id: "merge-dup",
+          createdAt: "2026-03-06T00:00:03.000Z",
+          source: { kind: "unknown" },
+          summary: { totalItems: 2, byKind: { card: 2 } },
+          details: { itemIds: { ids: ["new"] } },
+        },
+      ],
+      reviewEvents: [
+        { id: "review-dup", target: { kind: "card", id: "c-1" }, action: "markReviewed", createdAt: "2026-03-06T00:00:01.000Z" },
+        { id: "review-dup", target: { kind: "card", id: "c-2" }, action: "unreview", createdAt: "2026-03-06T00:00:04.000Z" },
+      ],
+    });
+
+    expect(result.mergeAuditLog).toHaveLength(1);
+    expect(result.mergeAuditLog?.[0]?.details.itemIds?.ids).toEqual(["new"]);
+    expect(result.reviewEvents).toHaveLength(1);
+    expect(result.reviewEvents?.[0]).toMatchObject({ id: "review-dup", action: "unreview", target: { id: "c-2" } });
+  });
+
 });
