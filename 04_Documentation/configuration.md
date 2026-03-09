@@ -122,3 +122,7 @@ docker compose up -d
 
 この順序により、要求locale側でキー欠損があっても既定言語（ja）へ復元され、
 ja側にも存在しないキーのみ最終的に key 文字列を返します。
+
+i18n表示差分を追加する場合は、UIコンポーネントの生文字列を直接変更せず、
+`src/i18n/locales/ja.json` と `src/i18n/locales/en.json` に同一キーを追加して
+`t("...")` 経由で参照してください（例: `search_bar.*`）。
