@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { t } from "../i18n/translate";
 
 type SearchBarProps = {
   query: string;
@@ -34,7 +35,7 @@ export function SearchBar({
         type="text"
         value={query}
         onChange={handleInputChange}
-        placeholder="Search cards"
+        placeholder={t("search_bar.placeholder")}
         style={{
           width: 220,
           height: 32,
@@ -59,7 +60,7 @@ export function SearchBar({
           cursor: hasMatches ? "pointer" : "not-allowed",
         }}
       >
-        Prev
+        {t("search_bar.prev")}
       </button>
       <button
         type="button"
@@ -73,7 +74,7 @@ export function SearchBar({
           cursor: hasMatches ? "pointer" : "not-allowed",
         }}
       >
-        Next
+        {t("search_bar.next")}
       </button>
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
         <input
@@ -83,7 +84,7 @@ export function SearchBar({
             onHideNonMatchesChange(event.target.checked);
           }}
         />
-        Hide non-matches
+        {t("search_bar.hide_non_matches")}
       </label>
     </div>
   );

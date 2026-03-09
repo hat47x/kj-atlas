@@ -313,5 +313,9 @@
   "view_controls.safety.title": "安全",
   "view_controls.safety.safe_mode": "セーフモード（未レビューのドラフトを隠す）",
   "view_controls.export_legacy.png_scale_1x": "1倍",
-  "view_controls.export_legacy.png_scale_2x": "2倍"
+  "view_controls.export_legacy.png_scale_2x": "2倍",
+  "search_bar.placeholder": "カードを検索",
+  "search_bar.prev": "前へ",
+  "search_bar.next": "次へ",
+  "search_bar.hide_non_matches": "非一致を非表示"
 }
