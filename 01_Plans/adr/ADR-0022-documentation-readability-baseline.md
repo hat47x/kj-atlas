@@ -33,6 +33,18 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
    - 長所: 可読性の最低線を揃えつつ、文書特性ごとの表現自由度を維持できる。
    - 短所: 最小必須メタの運用監査（docs-check相当）が必要。
 
+## Plan（AC/DoD不足の補完提案）
+
+- 受入条件の不足（適用境界の曖昧さ）を AC-4 として明文化し、レビュー時に「今回触る文書」と「触らない文書」を判別可能にする。
+- 完了条件の不足（未自動化確認ログの再現性欠如）を DoD-2 / DoD-3 として補完し、手動確認の実行コマンドと判定理由を追跡可能にする。
+- 適用は段階導入（差分発生文書のみ）とし、一括改修は行わない。
+
+## Execute（本ADRで実施した具体化）
+
+- Readability Baseline（RBL-1〜RBL-5）を定義し、最低限の記述要件を固定した。
+- DOC-OPS-04 A-I/F の固定語彙（Audience / Goal / Non-goal / Outcome / Upstream Reference / Downstream Apply / Verification）との整合を明示した。
+- docs-check 連携時の検証観点と、未自動化領域の運用要件（コマンド・判定理由の記録）を明記した。
+
 ## Decision
 
 **採用方針**: Documentation Readability Baseline として、全レイヤ文書に共通する「最小必須記述」と「用語整合ルール」を固定し、本文構成は文書目的に応じて柔軟に運用する。
