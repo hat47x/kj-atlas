@@ -21,6 +21,14 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 4. 受入条件（Acceptance criteria）と検証計画（Validation plan）を先に確定する。
 5. `Source Issue` は運用状態に応じて記載する（未運用時は `N/A`、GitHub Issues運用時はURL）。
 
+
+## DOC-OPS-02 同期チェック（実行前に確認）
+
+- 用語: `正本 / 暫定メモ / 決裁入力 / 例外承認` を `ADR-0022` と一致させる。
+- 役割: AUTH系（`Security Officer / System Owner / Platform Operator`）と DOC系（`Platform Architecture Owner / Plan Owner / Architecture Owner`）の責務境界を分離する。
+- 導線: `02_Architecture/strict_mode_exception_approval_flow.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` の順に同期する。
+- 固定値（D1〜D4）: `承認順序=Security Officer先行 + 承認TTL=4h / scope=tenant最大2h / 代理承認なし / 48hレビュー + 15m一次 + 60m二次` を変更しない。
+
 ## Source Issue 運用基準（Traceability）
 
 ### 現在の運用判定（2026-03-03 時点）
@@ -230,7 +238,7 @@ issue補助メモには、最低でも次の項目を含める。
 - REQ-DEF運用状態: R2-P1〜P3 / R3-P1〜P3 は決定済み。`TEMPLATE.md` の必須化ルール（R3-P1必須、R3-P2/R3-P3条件付き）を適用する。
 - DOC-OPS-04ゲート状態: ADR-A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）と ADR-B/C/D（`ADR-0023/0024/0025`）は `Accepted`。旧 `ADR-0022-documentation-*` 3件は `Superseded`。
 - DOC-OPS-04統合境界: B/C/D作業中は統合ファイル3点（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新を禁止し、必要時はB/C/Dを停止して統合フェーズ専用コミットへ切り出す。
-- DOC-OPS-04停止/再開条件: 停止= A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）I/F語彙の変更兆候または統合ファイル同時更新の必要発生。再開= A再承認完了 + 統合フェーズ修正完了 + validator/unittest成功。
+- DOC-OPS-04停止/再開条件: 停止= A不整合 / 統合ファイル更新必要 / SoD違反 / Self-Correction 3回超過。再開= A再承認+Deciders再確認完了 + 統合フェーズ修正完了 + 役割分離再検証ログ追記 + validator/unittest成功。
 - DOC-OPS-04次アクション: 後続改訂は ADR-0023/0024/0025 の境界を維持し、必要時のみ追加ADRを起票する。
 
 ## Active issue memos
@@ -271,8 +279,6 @@ issue補助メモには、最低でも次の項目を含める。
 | FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done | N/A | 英語UI等価 E2E smoke/flow を記録済み。 |
 | FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done | N/A | export粒度とmanifest出力を実装済み。 |
 
-| AUTH-IMPL-01 | `issue-AUTH-IMPL-01-user-identity-schema-migration-implementation.md` | Done | N/A | users/user_identities migration と段階移行検証を完了。 |
-| AUTH-API-02 | `issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md` | Done | N/A | strict provisioning契約と管理APIの統合検証を完了。 |
 | AUTH-E2E-01 | `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md` | Done | N/A | Level1/Level2運用固定、fixture回帰、PR記録テンプレを確定。 |
 
 ## Status sync note (2026-03-03)

@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-09 (JST, DOC-OPS-04整流化: ADR-0022ドラフト群Superseded同期)
+最終更新: 2026-03-09 (JST, DOC-OPS-04統治同期: 用語/役割/導線/D1〜D4)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -13,6 +13,19 @@
 
 - Self-Correction は **最大3回** とし、4回目が必要な場合は人間判断待ちへ切り替える。
 - Active issue / Decision Queue / decision-pack の状態に矛盾を検知した場合は更新を停止し、競合として記録する。
+
+### 0.1) AC/DoDドラフト補完（Plan）
+
+- AC最小セット: 変更対象、非対象、検証コマンド、停止条件を先に明記する。
+- DoD最小セット: docs-check（validator/unittest）成功、統合ファイル整合、再開手順を記録する。
+- 合意ログ: 未確定項目が残る場合は `Proceed` へ進まず、`Decision Queue` へ戻す。
+
+### 0.2) DOC-OPS-02 同期チェック（用語・役割・導線・固定値）
+
+- 用語: `正本 / 暫定メモ / 決裁入力 / 例外承認` を `ADR-0022` と一致させる。
+- 役割: `Security Officer / System Owner / Platform Operator`（AUTH-OPS-03）と、`Platform Architecture Owner / Plan Owner / Architecture Owner`（DOC-OPS-04審査）を混同しない。
+- 導線: `02_Architecture/strict_mode_exception_approval_flow.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/*` の順で同期する。
+- 固定値（D1〜D4）: `承認順序=Security Officer先行 + 承認TTL=4h / scope=tenant最大2h / 代理承認なし / 48hレビュー + 15m一次 + 60m二次` を変更しない。
 
 ## 1) 進捗サマリ（Phase / Backlog）
 
@@ -83,15 +96,17 @@
 - **Aは `Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を即停止し、A再承認後に再開する。**
 - B/C/D は編集境界を分離し、統合ファイル（README/dashboard/issue-DOC-OPS-04）は統合フェーズ以外で同時更新しない。
 
-停止/再開条件（統合フェーズ固定）:
+停止/再開条件（統合フェーズ固定 / ADR-0025 D3連動）:
 
 - 停止条件:
-  1. A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）のI/F語彙に追加・削除・改名の変更兆候が出た場合
-  2. B/C/D作業中に統合ファイル3点（README/dashboard/issue-DOC-OPS-04）の同時更新が必要になった場合
+  1. A不整合: A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）のI/F語彙に追加・削除・改名の変更兆候が出た場合
+  2. 統合ファイル更新必要: B/C/D作業中に統合ファイル3点（README/dashboard/issue-DOC-OPS-04）の同時更新が必要になった場合
+  3. SoD違反: 承認者と実行者の兼務が検出された場合
+  4. Self-Correction 3回超過: 修正ループで未解消のまま4回目が必要になった場合
 - 再開条件:
-  1. Aの再承認が完了していること
-  2. 統合ファイル修正を統合フェーズ専用コミットで完了していること
-  3. `validate_active_issue_memos.py` と unittest が成功していること
+  1. Aの再承認と Deciders 再確認が完了していること
+  2. 統合ファイル修正を統合フェーズ専用コミット（または専用PR）で完了していること
+  3. 役割分離の再検証ログを追記し、`validate_active_issue_memos.py` と unittest が成功していること
 
 ## 3) 人間判断待ち（Decision Queue）
 
