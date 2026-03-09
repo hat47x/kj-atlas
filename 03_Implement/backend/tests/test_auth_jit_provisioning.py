@@ -88,6 +88,7 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
             )
             assert denied.status_code == 403
             assert denied.json()["detail"]["code"] == "identity_not_provisioned"
+            assert "Pre-provision via /admin/provision/users" in denied.json()["detail"]["message"]
 
             provision = client.post(
                 "/admin/provision/users",
@@ -108,6 +109,8 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
                 json={"provider": "saml", "externalUid": "bob", "displayName": "Not Bob"},
             )
             assert conflict.status_code == 409
+            assert conflict.json()["detail"]["code"] == "identity_already_provisioned_conflict"
+            assert "conflicting profile attributes" in conflict.json()["detail"]["message"]
 
             allowed = client.put(
                 "/docs/doc-auth-strict",

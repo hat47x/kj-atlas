@@ -14,6 +14,11 @@ from kj_atlas_api.settings import settings
 
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
 
+_IDENTITY_CONFLICT_CODE = "identity_already_provisioned_conflict"
+_IDENTITY_CONFLICT_MESSAGE = (
+    "Identity already provisioned with conflicting profile attributes."
+)
+
 
 class ProvisionUserRequest(BaseModel):
     provider: str
@@ -61,12 +66,24 @@ def provision_user(
     if identity is not None:
         user_row = db.get(UserRow, identity.user_id)
         if user_row is None:
-            raise HTTPException(status_code=409, detail={"code": "identity_user_not_found"})
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "identity_user_not_found",
+                    "message": "Identity mapping exists but linked user record is missing.",
+                },
+            )
 
         if display_name is not None and user_row.display_name not in {None, display_name}:
-            raise HTTPException(status_code=409, detail={"code": "identity_already_provisioned_conflict"})
+            raise HTTPException(
+                status_code=409,
+                detail={"code": _IDENTITY_CONFLICT_CODE, "message": _IDENTITY_CONFLICT_MESSAGE},
+            )
         if email is not None and user_row.email not in {None, email}:
-            raise HTTPException(status_code=409, detail={"code": "identity_already_provisioned_conflict"})
+            raise HTTPException(
+                status_code=409,
+                detail={"code": _IDENTITY_CONFLICT_CODE, "message": _IDENTITY_CONFLICT_MESSAGE},
+            )
 
         user_id = user_row.id
         resolution = reviewer_ref_adapter.resolve(

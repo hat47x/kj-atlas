@@ -347,7 +347,7 @@ export type IdentityProvisioningContract = {
   adminProvision: {
     request: { provider: string; externalUid: string; displayName?: string; email?: string };
     success: { userId: string; reviewerRef: `user:${string}`; ownerRef: `user:${string}`; provisioned: boolean };
-    conflict: { status: 409; code: "identity_already_provisioned_conflict" };
+    conflict: { status: 409; code: "identity_already_provisioned_conflict"; message: string };
   };
 };
 ```
