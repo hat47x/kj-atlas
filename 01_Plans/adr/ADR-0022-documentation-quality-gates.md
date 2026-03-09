@@ -282,6 +282,17 @@ stop_if:
 
 ## Verify
 
+### Verify-1: 再現可能コマンド実行記録（ADR本文自己整合チェック）
+
+- 実行コマンド（例）:
+  1. `test -f 01_Plans/adr/ADR-0022-documentation-quality-gates.md`
+  2. `rg -n "^## (Context|Decision|Consequences|Verify|Proceed|Traceability)$" 01_Plans/adr/ADR-0022-documentation-quality-gates.md`
+  3. `rg -n "^#### 0\.1 AC/DoD不足への補完提案（Plan）$|^### 3\.1 運用シーケンス（Plan → Execute → Verify → Proceed）$|^### 3\.4 Verify用の再現可能コマンド要件$|^### 3\.3 Self-Correction と停止条件$|^### 3\.6 停止条件の判定式（Fail-safe固定化）$" 01_Plans/adr/ADR-0022-documentation-quality-gates.md`
+- 判定根拠:
+  - 1 が true なら対象ADR存在を確認。
+  - 2 が全章ヒットすれば、ADR-A I/F前提の必須章が揃っている。
+  - 3 が全章ヒットすれば、本ADR-C要求（Plan/Execute/Verify/Proceed、Self-Correction、Fail-safe）の見出し構造が揃っている。
+
 - A-I/F準拠確認:
   1. ADR必須章（Context / Decision / Consequences / Traceability）を維持。
   2. DOC-OPS-04 I/F（判定比較可能性）に合わせ、Verify観点とProceed条件を明文化。
@@ -295,11 +306,13 @@ stop_if:
 
 - 承認依頼先: Project Maintainers
 - 依頼内容:
-  1. AC/DoD補完提案（0.1）の採用可否
+  1. AC/DoD補完提案（0.1）の採用可否（採用時はAC-4として「再現可能コマンド記録の必須化」を追加するかを含む）
   2. 必須/例外境界の固定表現（1.2）の採用可否
   3. Verify用再現可能コマンド要件（3.4）の採用可否
+  4. Self-Correction停止条件（3.3/3.6）の運用境界（A I/F不整合時の即時停止を含む）
 - 停止条件:
   - 承認完了までは本ADR以外（統合文書・実装・他ADR）を更新しない。
+  - A I/Fとの不整合、または競合ファイル編集要求が発生した場合は本ADR更新も停止し、差分を報告する。
 
 ## Traceability
 
