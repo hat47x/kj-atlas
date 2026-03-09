@@ -30,6 +30,10 @@ export class BundleZipWorkerClient {
     payload: BundleZipRequestPayload,
     options: { onProgress?: (percent: number) => void; signal?: AbortSignal } = {},
   ): Promise<BundleZipComputeResult> {
+    if (options.signal?.aborted) {
+      return { status: "cancelled", usedFallback: false };
+    }
+
     try {
       return await this.buildZipViaWorker(payload, options);
     } catch (error) {
