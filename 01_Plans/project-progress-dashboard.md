@@ -31,6 +31,22 @@
 
 根拠: `01_Plans/issues/README.md` の Active issue memos と Completed issue memos 集計。
 
+## 1.2) ADRステータス監査（Accepted以外）
+
+- `ADR-0022-documentation-readability-baseline.md`: `Superseded`（後継: `ADR-0023`）
+- `ADR-0022-documentation-quality-gates.md`: `Superseded`（後継: `ADR-0024`）
+- `ADR-0022-documentation-change-governance.md`: `Superseded`（後継: `ADR-0025`）
+
+判定: **未解決ADR（Accepted以外）は存在するが、いずれも `Superseded` のため実装待ちタスクは発生していない。**
+
+
+## 1.3) 依存グラフ（ADR→Issue / Issue→Issue / 共有リソース）
+
+- ADR-0022旧3件（Superseded）→ 後継 ADR-0023/0024/0025（Accepted）
+- ADR-0023/0024/0025 → Active Issue 依存: なし（`Active: 0`）
+- Issue→Issue 依存: なし（Active Issue が存在しないため）
+- 共有リソース: `01_Plans/issues/README.md`（Active index 正本）, `01_Plans/project-progress-dashboard.md`（進捗正本）
+
 ## 2) Active issue 集約（Draft / Open / In Progress）
 
 参照元: `01_Plans/issues/README.md` の Active issue memos。
