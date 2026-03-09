@@ -90,6 +90,7 @@ type SidePanelProps = {
   isGridSnapEnabled: boolean;
   onGridSnapToggle: (value: boolean) => void;
   onGenerateIslandPolygon: () => void;
+  onIslandShapeKindChange: (kind: "rect" | "polygon") => void;
   isPolygonVertexEditEnabled: boolean;
   onPolygonVertexEditEnabledChange: (value: boolean) => void;
   showCanonicalOnlyEdges: boolean;
@@ -246,6 +247,7 @@ export function SidePanel({
   isGridSnapEnabled,
   onGridSnapToggle,
   onGenerateIslandPolygon,
+  onIslandShapeKindChange,
   isPolygonVertexEditEnabled,
   onPolygonVertexEditEnabledChange,
   showCanonicalOnlyEdges,
@@ -2442,6 +2444,27 @@ export function SidePanel({
                 Shape is stale
               </div>
             ) : null}
+            <div style={{ display: "grid", gap: 6 }}>
+              <label style={{ fontSize: 12, color: "#475569" }}>Shape</label>
+              <select
+                value={selectedIsland.shape?.kind === "polygon" ? "polygon" : "rect"}
+                disabled={isReadOnly}
+                onChange={(event) => {
+                  onIslandShapeKindChange(event.target.value === "polygon" ? "polygon" : "rect");
+                }}
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  padding: "6px 8px",
+                  fontSize: 13,
+                  backgroundColor: isReadOnly ? "#f8fafc" : "#ffffff",
+                  color: "#0f172a",
+                }}
+              >
+                <option value="rect">Rect</option>
+                <option value="polygon">Polygon</option>
+              </select>
+            </div>
             {selectedIsland.shape?.kind === "polygon" ? (
               <div style={{ display: "grid", gap: 4 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f172a" }}>

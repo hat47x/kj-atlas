@@ -4078,6 +4078,55 @@ ${parsedDocument.error}`);
     [applyDocumentChange, document]
   );
 
+
+  const handleIslandShapeKindChange = useCallback(
+    (islandId: string, kind: "rect" | "polygon") => {
+      if (!document) {
+        return;
+      }
+
+      const targetIsland = document.islands.find((island) => island.id === islandId);
+      if (!targetIsland) {
+        return;
+      }
+
+      const currentKind = targetIsland.shape?.kind ?? (targetIsland.geometry?.type === "polygon" ? "polygon" : "rect");
+      if (currentKind === kind) {
+        return;
+      }
+
+      if (kind === "polygon") {
+        handleGenerateIslandPolygon(islandId);
+        return;
+      }
+
+      const nextIslands = document.islands.map((island) => {
+        if (island.id !== islandId) {
+          return island;
+        }
+
+        return {
+          ...island,
+          shape: {
+            kind: "rect" as const,
+            generatedFrom: island.shape?.generatedFrom,
+          },
+          geometry: { type: "rect" as const },
+        };
+      });
+
+      applyDocumentChange(
+        {
+          ...document,
+          islands: nextIslands,
+        },
+        "Switched island shape to rect"
+      );
+      setStatusMessage("Switched island shape to rect");
+    },
+    [applyDocumentChange, document, handleGenerateIslandPolygon]
+  );
+
   const handlePolygonVertexDragStart = useCallback((_islandId: string, _vertexIndex: number) => {
     setStatusMessage("Polygon vertex drag started");
   }, []);
@@ -8117,6 +8166,13 @@ ${parsedDocument.error}`);
             }
 
             handleGenerateIslandPolygon(selectedIsland.id);
+          }}
+          onIslandShapeKindChange={(kind) => {
+            if (!selectedIsland) {
+              return;
+            }
+
+            handleIslandShapeKindChange(selectedIsland.id, kind);
           }}
           showCanonicalOnlyEdges={showCanonicalOnlyEdges}
           onShowCanonicalOnlyEdgesChange={setShowCanonicalOnlyEdges}
