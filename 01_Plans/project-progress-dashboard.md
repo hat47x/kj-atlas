@@ -27,7 +27,7 @@
 - issue memo 総数: **23**
 - Active: **1**（`DOC-OPS-04` のみ）
 - Done: **22**（AUTH / FB-RM / DOC / REQ / ENV / QA 系を含む）
-- 優先度上のクリティカルパス: **DOC-OPS-04（P1）→ ADR-A承認待ち解除**
+- 優先度上のクリティカルパス: **DOC-OPS-04（P1）→ ADR-B/C/D承認統合**
 
 根拠: `01_Plans/issues/README.md` の Active issue memos と Completed issue memos 集計。
 
@@ -57,17 +57,26 @@
 
 ## 2.3) 未解決ADRサマリ（DOC-OPS-04系）
 
-未解決（`Status: Proposed`）のADRは以下4件。
+未解決（`Status: Proposed`）のADRは以下3件。
 
-1. `ADR-0022-doc-ops-04-documentation-information-interface.md`（ADR-A / I/F基線）
-2. `ADR-0022-documentation-readability-baseline.md`（ADR-B）
-3. `ADR-0022-documentation-quality-gates.md`（ADR-C）
-4. `ADR-0022-documentation-change-governance.md`（ADR-D）
+1. `ADR-0023-doc-ops-04-readability-baseline.md`（ADR-B）
+2. `ADR-0024-doc-ops-04-quality-gates-boundary.md`（ADR-C）
+3. `ADR-0025-doc-ops-04-change-governance.md`（ADR-D）
 
 依存関係:
 
-- **Aが `Accepted` になるまで、B/C/Dは実編集を開始しない。**
+- **Aは `Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を即停止し、A再承認後に再開する。**
 - B/C/D は編集境界を分離し、統合ファイル（README/dashboard/issue-DOC-OPS-04）は統合フェーズ以外で同時更新しない。
+
+停止/再開条件（統合フェーズ固定）:
+
+- 停止条件:
+  1. A（`ADR-0022`）のI/F語彙に追加・削除・改名の変更兆候が出た場合
+  2. B/C/D作業中に統合ファイル3点（README/dashboard/issue-DOC-OPS-04）の同時更新が必要になった場合
+- 再開条件:
+  1. Aの再承認が完了していること
+  2. 統合ファイル修正を統合フェーズ専用コミットで完了していること
+  3. `validate_active_issue_memos.py` と unittest が成功していること
 
 ## 3) 人間判断待ち（Decision Queue）
 

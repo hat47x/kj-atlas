@@ -170,13 +170,13 @@
 - DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01/02/03 は Done へ遷移。REQ-DEF系のDecision Queueは解消済み。
 
 
-## 4. P1: DOC-OPS-04（新規 / A承認待ち）
+## 4. P1: DOC-OPS-04（新規 / A承認済み）
 
 ### 4-1. 現在のゲート状態
 
-- 判定: **Blocked (ADR-A承認待ち)**
+- 判定: **Open (A承認済み / B/C/D並列開始可能)**
 - 分岐条件: `ADR-0022-doc-ops-04-documentation-information-interface.md` の Status が `Accepted` であること。
-- 現在値: `ADR-0022` は `Proposed`。
+- 現在値: `ADR-0022` は `Accepted`。
 
 ### 4-2. B/C/D開始条件（固定）
 
@@ -187,5 +187,5 @@
 ### 4-3. 承認依頼（Proceed）
 
 - 依頼先: Platform Architecture Owner / Plan Owner / Architecture Owner
-- 依頼内容: ADR-A（`ADR-0022`）を `Accepted` へ遷移させる可否
-- 停止条件: 承認が得られるまで B/C/D の実編集を開始しない
+- 依頼内容: A=`Accepted` 維持下で B/C/D の承認統合順序と停止/再開条件の最終確認
+- 停止条件: AのI/F語彙変更兆候または統合ファイル同時更新必要時は B/C/D を停止し、A再承認まで再開しない
