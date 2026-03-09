@@ -89,8 +89,8 @@
 - Consequences: 先行I/Fにより後続ADRの差分比較が容易化する一方、Aの承認遅延が全体着手順序のクリティカルパスになる。
 
 > 状態同期注記（Phase 2）:
-> - **A承認済み**: `ADR-0022=Accepted`。B/C/Dは編集境界と同時更新禁止を維持して実編集可能。
-> - **B/C/D開始条件**: A=`Accepted`、編集境界ルールが有効、かつ統合ファイル同時更新禁止が維持されていること。
+> - **A承認済み**: `ADR-0022-doc-ops-04-documentation-information-interface.md=Accepted`。旧 `ADR-0022-documentation-*` 3件は `Superseded`。B/C/Dは編集境界と同時更新禁止を維持して実編集可能。
+> - **B/C/D開始条件**: A（情報I/F ADR）=`Accepted`、編集境界ルールが有効、かつ統合ファイル同時更新禁止が維持されていること。
 
 2) **レビュー責任体制（暫定）**
 - Context: DOC-OPS系は `01_Plans` / `02_Architecture` / `04_Documentation` の横断影響があり、単独レビューでは見落としが出る。
@@ -122,15 +122,15 @@
   2. B/C/Dは相互ADR本文を直接編集しない（参照はTraceabilityリンクのみ）。
   3. Aの用語I/F変更が発生した場合は、B/C/Dを停止しA再承認を先行する。
 - Proceed条件:
-  - A=`Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を停止し、A再承認後に再開する。
+  - A（情報I/F ADR）=`Accepted` を維持する。AのI/F語彙に変更兆候が出た場合は B/C/D を停止し、A再承認後に再開する。
 
 
 ### 3.2.5 状態同期確認（Phase 2 / 統合前）
 
 - 同期対象: Active issue / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md`
 - 同期結果（2026-03-09 JST）:
-  1. `A承認済み`（`ADR-0022=Accepted`）を3文書で一致させた。
-  2. B/C/D開始条件（A=`Accepted`、編集境界、統合ファイル同時更新禁止）を3文書で一致させた。
+  1. `A承認済み`（`ADR-0022-doc-ops-04-documentation-information-interface.md=Accepted`）を3文書で一致させた。
+  2. B/C/D開始条件（A（情報I/F ADR）=`Accepted`、編集境界、統合ファイル同時更新禁止）を3文書で一致させた。
   3. 不一致検出時は self-correction を最大3回まで許容し、未解消時は停止する運用を確認した。
 
 ### 3.2.6 ADR承認運用の最終ゲート（Phase 3: 実装前合意）
@@ -142,7 +142,7 @@
 - Target ADR: <ADR-0023|ADR-0024|ADR-0025>
 - Scope Lock: このテンプレートは `Context / Decision / Consequences / Verify` の見出し名を変更しない。
 - Non-editable region:
-  1) A（ADR-0022）I/F語彙定義
+  1) A（ADR-0022-doc-ops-04-documentation-information-interface.md）I/F語彙定義
   2) 統合ファイル同時更新禁止ルール
   3) 停止/再開条件（A再承認必須）
 
@@ -181,16 +181,16 @@
 ### 3.2.8 直列実行エージェント監査ログ（2026-03-09）
 
 - Plan:
-  1. Phase 1で A（`ADR-0022`）の `Accepted` 維持とI/F固定語彙を再監査する。
+  1. Phase 1で A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）の `Accepted` 維持とI/F固定語彙を再監査する。
   2. Phase 2で B/C/D 実行境界（個別ADRのみ編集、統合ファイル更新禁止）を再固定する。
   3. Phase 3で統合ファイル3点の状態同期を最小差分で確認する。
 - Execute:
-  - 監査対象を `ADR-0022` / `project-progress-dashboard.md` / `issues/README.md` / 本Issueに限定し、B/C/D個別ADR本文は未着手のままとした。
+  - 監査対象を `ADR-0022-doc-ops-04-documentation-information-interface.md` / `project-progress-dashboard.md` / `issues/README.md` / 本Issueに限定し、B/C/D個別ADR本文は未着手のままとした。
   - B/C/D 実行順序を `ADR-0023 → ADR-0024 → ADR-0025` の直列キューとして再配布し、統合ファイル更新は統合フェーズ専用コミットへ切り出す運用を確認した。
   - AC/DoD不足の有無を再点検し、追加ドラフトは不要（既存AC/DoDでゲート判定可能）と記録した。
 - Verify:
   - Phase 1ゲート判定チェック:
-    - [x] A=`Accepted`（`ADR-0022`）
+    - [x] A=`Accepted`（`ADR-0022-doc-ops-04-documentation-information-interface.md`）
     - [x] 固定I/F（用語/見出し/判定メタ）を契約として再確認
     - [x] 停止/再開条件を統合ファイル3点で一致確認
   - Phase 2境界チェック:
@@ -258,7 +258,7 @@
 ## 8) Additional context
 
 - 承認待ち論点:
-  1. ADR-A（`ADR-0022`）のAccepted維持と、I/F変更時の再承認要否。
+  1. ADR-A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）のAccepted維持と、I/F変更時の再承認要否。
   2. B/C/D並列着手後の承認SLA監視と統合タイミング。
   3. docs-check必須化境界と例外承認条件の恒久化（ADR-C/D審査対象）。
 - フェイルセーフ記録: 競合兆候・上位方針矛盾・恒久化境界の曖昧さが検出された場合は、推測実装せず停止する。
@@ -268,7 +268,7 @@
 
 ### Phase 0: 前提確認
 
-- ADR-A（`ADR-0022`）が `Accepted` 維持であることを確認。
+- ADR-A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）が `Accepted` 維持であることを確認。
 - B/C/D作業中の統合ファイル3点同時更新禁止を再確認。
 - 停止条件（A語彙I/F変更兆候、統合ファイル同時更新必要化）を明示。
 

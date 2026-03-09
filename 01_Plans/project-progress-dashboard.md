@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-09 (JST, DOC-OPS-04完了同期)
+最終更新: 2026-03-09 (JST, DOC-OPS-04整流化: ADR-0022ドラフト群Superseded同期)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -47,12 +47,12 @@
 ## 2.2) DOC-OPS-04 Gate 状態（ADR-A依存）
 
 - Gate判定: **Closed (A/B/C/D Accepted で完了同期済み)**
-- 分岐条件: `ADR-0022/0023/0024/0025` の Status が `Accepted` であること（充足済み）。
+- 分岐条件: A=`ADR-0022-doc-ops-04-documentation-information-interface.md` が `Accepted`、かつ B/C/D=`ADR-0023/0024/0025` が `Accepted` であること（充足済み）。
 - 完了条件:
-  1. A=`Accepted` を維持
+  1. A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）=`Accepted` を維持
   2. B/C/D（`ADR-0023/0024/0025`）がすべて `Accepted`
   3. 統合ファイル3点の状態同期と検証が完了
-- 現在値: A/B/C/D すべて `Accepted`。統合ファイル同期と validator/unittest 成功を確認済み。
+- 現在値: A（情報I/F ADR）と B/C/D（ADR-0023/0024/0025）は `Accepted`。旧 `ADR-0022-documentation-*` 3件は `Superseded` へ整流化済み。
 
 ## 2.3) ADR完了サマリ（DOC-OPS-04系）
 
@@ -70,7 +70,7 @@
 停止/再開条件（統合フェーズ固定）:
 
 - 停止条件:
-  1. A（`ADR-0022`）のI/F語彙に追加・削除・改名の変更兆候が出た場合
+  1. A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）のI/F語彙に追加・削除・改名の変更兆候が出た場合
   2. B/C/D作業中に統合ファイル3点（README/dashboard/issue-DOC-OPS-04）の同時更新が必要になった場合
 - 再開条件:
   1. Aの再承認が完了していること
@@ -97,7 +97,7 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. DOC-OPS-04 は A/B/C/D（`ADR-0022/0023/0024/0025`）Accepted を維持監視する。
+1. DOC-OPS-04 は A（情報I/F ADR）`Accepted`、B/C/D（`ADR-0023/0024/0025`）`Accepted`、旧 `ADR-0022-documentation-*` 3件 `Superseded` の整合を維持監視する。
 2. 追加変更が発生した場合は、統合ファイル3点の同期を単一フェーズで実施する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 

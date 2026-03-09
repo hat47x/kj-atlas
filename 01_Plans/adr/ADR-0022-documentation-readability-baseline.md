@@ -1,10 +1,15 @@
 # ADR-0022: Documentation Readability Baseline
 
-- Status: Proposed
+- Status: Superseded
 - Date: 2026-03-08
 - Deciders: Project Maintainers
 - Scope: `01_Plans/` + `02_Architecture/` + `04_Documentation/`（文書記述規約に限定）
+- Superseded-by: `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md`
 - Derived-from: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`（ADR候補B）
+
+## Supersession Note
+
+本ドラフトは採択せず、意思決定は `01_Plans/adr/ADR-0023-doc-ops-04-readability-baseline.md` へ移管済み。以後の正本は置換先ADRを参照する。
 
 ## Context
 

@@ -1,9 +1,13 @@
 # ADR-0022: Documentation Change Governance（文書変更ガバナンス）
 
-- Status: Proposed
+- Status: Superseded
 - Date: 2026-03-08
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`, `AGENTS.md`
+
+## Supersession Note
+
+本ドラフトは採択せず、意思決定は `01_Plans/adr/ADR-0025-doc-ops-04-change-governance.md` へ移管済み。以後の正本は置換先ADRを参照する。
 
 ## Context
 
@@ -238,5 +242,6 @@ Self-Correction（最大3回）:
 - Related: `04_Documentation/operations.md`
 - Related: `04_Documentation/security.md`
 - Related: `01_Plans/project-progress-dashboard.md`
+- Superseded-by: `01_Plans/adr/ADR-0025-doc-ops-04-change-governance.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Derived-from: `AGENTS.md`
