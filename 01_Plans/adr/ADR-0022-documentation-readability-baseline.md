@@ -19,6 +19,12 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - AC不足: 可読性タスクごとに「適用対象（どの文書へ適用するか）」と「非目標（今回触らない文書）」の境界が曖昧になりやすい。
 - DoD不足: docs-check 未自動化項目の手動確認結果が、再現可能な形で残らないケースがある。
 
+確定候補化に向けた追加論点として、以下も明示対象とする。
+
+- 適用境界は「文書種別」ではなく「今回変更されたファイル単位」で判定する。
+- 非目標は「今回は更新しないが将来同期対象になり得る文書」を含めて列挙し、見落としと意図的除外を区別する。
+- 再現可能な検証ログは「第三者が同一コマンドで同一判定に到達できる粒度」を最低要件とする。
+
 本ADRは、実装仕様を増やすためではなく、既存仕様を「読み違えにくく再開しやすい」形で維持するための可読性ベースラインを定義する。
 
 比較した主要選択肢は以下。
@@ -89,10 +95,24 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - 文書種別（ADR、運用手順、Issue補助メモ、Architecture Spec）の章構成そのものは、各テンプレ規約を優先する。
 - 既存文書を一括改修する義務は課さず、**差分が発生した文書から段階適用**する。
 
+適用境界の判定は次のルールで固定する。
+
+1. **In-Scope**: 当該PR/作業で実際に編集した文書。
+2. **Out-of-Scope（Non-goal）**: 同一テーマでも今回編集していない文書。
+3. **Deferred Sync**: 今回は非目標だが、次回差分発生時にRBL適用対象となる文書。
+
+これにより、AC-4 の「適用境界の判別」を、レビュー時に機械的に確認可能にする。
+
 ### 4) 検証接続（docs-check相当）
 
 - 必須メタ・見出し整合・用語整合は docs-check の対象とする。
 - docs-check が未自動化の観点は、PRまたは作業ログで実行コマンドと期待結果を明示する。
+
+未自動化観点のログは、次の3点を必須記録項目とする。
+
+1. 実行コマンド（コピー&ペーストで再実行可能な完全形）。
+2. 判定結果（pass/fail）と根拠（該当行または該当見出し）。
+3. 実行対象ファイル（今回編集対象であることが分かるパス）。
 
 ### 5) Acceptance Criteria / Definition of Done（補完）
 
@@ -104,7 +124,7 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - **AC-4**: 適用対象文書と非目標文書（今回更新しない範囲）が明示され、レビュー時に境界が判別できる。
 - **DoD-1**: docs-check（または同等手順）で必須メタ欠落が検知されない。
 - **DoD-2**: 手動確認項目がある場合、実行コマンドと確認結果が作業ログ/PRに記録される。
-- **DoD-3**: docs-check 未自動化観点は、判定理由（pass/fail）を再実行可能な粒度で記録する。
+- **DoD-3**: docs-check 未自動化観点は、判定理由（pass/fail）を再実行可能な粒度で記録する（コマンド/根拠/対象ファイルを含む）。
 
 ### 6) 非目標
 
@@ -123,6 +143,9 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 ## Verify (docs-check 観点の自己検証)
 
 - 判定: **Ready for approval / Not accepted yet**
+- 実行ログ（再現可能性の担保）:
+  1. `rg -n "^# ADR-0022|^## (Context|Decision|Consequences|Traceability)|Audience|Goal|Non-goal|Outcome|Upstream Reference|Downstream Apply|Verification|AC-4|DoD-2|DoD-3" 01_Plans/adr/ADR-0022-documentation-readability-baseline.md`
+  2. `git diff --check -- 01_Plans/adr/ADR-0022-documentation-readability-baseline.md`
 - 検証観点:
   1. ADR必須見出しI/F（Context / Decision / Consequences / Traceability）を保持している。
   2. DOC-OPS-04 A-I/F で要求される固定語彙（Audience / Goal / Non-goal / Outcome / Upstream Reference / Downstream Apply / Verification）を Decision 配下で定義している。
