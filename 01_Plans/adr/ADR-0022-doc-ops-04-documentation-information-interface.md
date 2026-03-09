@@ -46,6 +46,12 @@ DOC-OPS-04 系 ADR 群の共通I/Fとして、次を採用する（**ADR-A承認
    - 統合ファイル更新禁止: B/C/Dの個別ADR起票・審査中は、統合ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`）を同時更新しない。
    - 例外処理: 統合ファイルの修正が必要になった場合は、B/C/Dを停止し、統合フェーズ専用PRへ切り出す。
 
+6. **DOC-OPS-02 同期観点（固定4点）**
+   - 用語: `正本 / 暫定メモ / 決裁入力 / 例外承認` を固定語彙とする。
+   - 役割: AUTH運用ロール（Security Officer / System Owner / Platform Operator）と DOC-OPS審査ロール（Platform Architecture Owner / Plan Owner / Architecture Owner）を責務分離して記載する。
+   - 導線: `02_Architecture` → `04_Documentation` → `01_Plans` → `AGENTS.md` の順で同期する。
+   - 固定値: AUTH-OPS-03 の D1〜D4（承認順序・TTL・scope・代理承認・レビューSLA）を変更対象に含めない。
+
 採用理由:
 - 並列化前に比較軸を揃えることで、差分レビューの粒度を一定化できる。
 - 実装ルール（03_Implement）へ踏み込まず、計画・設計文書の競合だけを先に抑制できる。
