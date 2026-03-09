@@ -501,7 +501,7 @@ export function SharePanel({
                   onExportBundleZip({
                     includeOutline: bundleIncludeOutline,
                     includeDiagnostics: bundleIncludeDiagnostics,
-                    includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces,
+                    includeSelectedCardTraces: bundleIncludeSelectedCardTraces && canIncludeTraces && bundleExportGranularity === "detail",
                     exportGranularity: bundleExportGranularity,
                   });
                 }}
