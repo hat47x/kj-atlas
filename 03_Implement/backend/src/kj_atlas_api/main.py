@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from secrets import compare_digest
 
 from fastapi import FastAPI, Request
@@ -13,7 +14,17 @@ from kj_atlas_api.routes.admin import router as admin_router
 from kj_atlas_api.routes.docs import router as docs_router
 from kj_atlas_api.settings import settings
 
-app = FastAPI(title="kj-atlas API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    app.state.audit_dispatcher = build_audit_dispatcher()
+    app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
+    app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
+    yield
+
+
+app = FastAPI(title="kj-atlas API", lifespan=lifespan)
 
 
 @app.middleware("http")
@@ -27,14 +38,6 @@ async def require_api_key(request: Request, call_next):
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
 
     return await call_next(request)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    init_db()
-    app.state.audit_dispatcher = build_audit_dispatcher()
-    app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)
-    app.state.access_control_fail_safe_mode = settings.access_control_fail_safe_mode
 
 
 @app.exception_handler(RequestValidationError)
