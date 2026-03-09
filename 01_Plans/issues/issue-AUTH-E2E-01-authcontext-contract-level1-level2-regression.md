@@ -214,3 +214,46 @@
 #### Proceed
 
 - 全AC達成のため `Done` へ移行。
+
+## 12) 2026-03-09 直列フェーズ再検証ログ（Plan → Execute → Verify → Proceed）
+
+### Phase 1: ADR/契約の再確認（AUTH-ARCH-01 / AUTH-SCHEMA-01）
+
+- Plan: `issue-AUTH-ARCH-01` / `issue-AUTH-SCHEMA-01` を再読し、Context / Decision / Consequences と I/F（型・エラー契約・IDマッピング）明示状態を確認する。
+- Execute: 関連 issue memo と architecture 正本（`schemas.md` / `api.md`）の参照整合を点検。
+- Verify: `rg -n "identity_not_provisioned|user:<users.id>|UNIQUE\(provider, external_uid\)|ALLOW_JIT_PROVISIONING" 01_Plans/issues/issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md 01_Plans/issues/issue-AUTH-SCHEMA-01-identity-schema-planning.md 02_Architecture/schemas.md 02_Architecture/api.md`
+- Proceed: 実装依存の契約（IDマッピング、strict 403、一意制約）が維持されていることを確認。
+
+### Phase 2: Schema/Migration（AUTH-IMPL-01）
+
+- Plan: expand/contract 手順と migration rollback 契約の回帰確認。
+- Execute: backend identity 系テストを実行し、backfill / dual-read-write の回帰を確認。
+- Verify: `pytest 03_Implement/backend/tests -k "identity or attribution or auth"`
+- Proceed: migration 適用後の互換経路（identity 解決・backfill）がテスト上で維持されていることを確認。
+
+### Phase 3: API/運用契約（AUTH-API-02）
+
+- Plan: strict provisioning 契約（403 + code）と admin 導線の回帰を確認。
+- Execute: AUTH-API-02 に紐づく integration テスト群を Phase 2 と同一ランで検証。
+- Verify: `pytest 03_Implement/backend/tests -k "identity or attribution or auth"`
+- Proceed: API/運用契約の破壊的差分なしを確認。
+
+### Phase 4: E2E回帰（AUTH-E2E-01）
+
+- Plan: Level 1/Level 2 契約回帰を再実行し、fixture 差分有無を確認。
+- Execute:
+  - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`
+  - `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh`
+- Verify:
+  - Level 1 は Playwright browser binary 未導入のため環境警告で停止（契約テスト自体は未実行）。
+  - Level 2 は `tests/test_auth_provider_profile_fixture.py` が pass（fixture 破壊なし）。
+- Proceed: Level 1 は CI/browser 導入済み環境で再検証を継続条件として保持。
+
+### Phase 5: DOC統合境界チェック
+
+- Plan: `issues/README.md` / `project-progress-dashboard.md` / validator 系の整合を確認し、統合ファイル同時更新禁止ルール抵触の有無を確認。
+- Execute: 参照監査 + validator/unittest を実行。
+- Verify:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- Proceed: validator/unittest は pass、統合ファイル競合は検出されず。
