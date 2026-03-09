@@ -27,13 +27,14 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 2) **用語・概念**: `00_Prompt/domain.md`
 3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
 4) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
-5) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
-6) **全体アーキテクチャ**: `02_Architecture/architecture.md`
-7) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-8) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0022`
-9) **実装（03_Implement）**: 対象領域のソースへ
-10) **運用・手順**: `04_Documentation/*`（必要に応じて）
-11) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+5) **Codex+GSD運用ルール**: `00_Prompt/codex_gsd_skill_ops.md`
+6) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+7) **全体アーキテクチャ**: `02_Architecture/architecture.md`
+8) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+9) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0022`
+10) **実装（03_Implement）**: 対象領域のソースへ
+11) **運用・手順**: `04_Documentation/*`（必要に応じて）
+12) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -73,8 +74,12 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/domain.md`：ドメイン用語・概念定義（KJ法概念、safeMode、レビュー等）。
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
+- `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
+- `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
 
 **注意**：AIの挙動規範は原則ここに集約。READMEには最小限の誘導のみ。
+
+**補足**：Codex の実行時スキルは `/opt/codex/skills/.system` または `$CODEX_HOME/skills`（既定 `~/.codex/skills`）から読み込まれる。リポジトリ内 `00_Prompt/skills/*` は配布元（テンプレート）として扱う。
 
 ### 3.2 `01_Plans/`（How to Process：計画・タスク分割）
 
