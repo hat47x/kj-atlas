@@ -1,9 +1,13 @@
 # ADR-0022: Documentation Quality Gates
 
-- Status: Proposed
+- Status: Superseded
 - Date: 2026-03-08
 - Deciders: Project Maintainers
 - Scope: `01_Plans/adr/`, `04_Documentation/`, `.github/workflows/`
+
+## Supersession Note
+
+本ドラフトは採択せず、意思決定は `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md` へ移管済み。以後の正本は置換先ADRを参照する。
 
 ## Context
 
@@ -316,6 +320,7 @@ stop_if:
 
 ## Traceability
 
+- Superseded-by: `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`
 - Derived-from: `01_Plans/issues/issue-DOC-OPS-04-documentation-visibility-readability-governance.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `01_Plans/adr/ADR-0018-coding-standards-and-smell-remediation.md`

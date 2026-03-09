@@ -228,9 +228,9 @@ issue補助メモには、最低でも次の項目を含める。
 - `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
 - REQ-DEF運用状態: R2-P1〜P3 / R3-P1〜P3 は決定済み。`TEMPLATE.md` の必須化ルール（R3-P1必須、R3-P2/R3-P3条件付き）を適用する。
-- DOC-OPS-04ゲート状態: ADR-A（`ADR-0022`）と ADR-B/C/D（`ADR-0023/0024/0025`）はすべて `Accepted`。
+- DOC-OPS-04ゲート状態: ADR-A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）と ADR-B/C/D（`ADR-0023/0024/0025`）は `Accepted`。旧 `ADR-0022-documentation-*` 3件は `Superseded`。
 - DOC-OPS-04統合境界: B/C/D作業中は統合ファイル3点（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新を禁止し、必要時はB/C/Dを停止して統合フェーズ専用コミットへ切り出す。
-- DOC-OPS-04停止/再開条件: 停止= A（`ADR-0022`）I/F語彙の変更兆候または統合ファイル同時更新の必要発生。再開= A再承認完了 + 統合フェーズ修正完了 + validator/unittest成功。
+- DOC-OPS-04停止/再開条件: 停止= A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）I/F語彙の変更兆候または統合ファイル同時更新の必要発生。再開= A再承認完了 + 統合フェーズ修正完了 + validator/unittest成功。
 - DOC-OPS-04次アクション: 後続改訂は ADR-0023/0024/0025 の境界を維持し、必要時のみ追加ADRを起票する。
 
 ## Active issue memos
