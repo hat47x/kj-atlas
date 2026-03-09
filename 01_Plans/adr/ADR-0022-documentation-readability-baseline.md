@@ -107,6 +107,8 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 
 - 必須メタ・見出し整合・用語整合は docs-check の対象とする。
 - docs-check が未自動化の観点は、PRまたは作業ログで実行コマンドと期待結果を明示する。
+- `01_Plans/issues/` の運用整合は、`validate_active_issue_memos.py` と対応 unittest を併走実行し、
+  可読性ベースラインのメタ運用（Status / Source Issue / Expected verification level）との矛盾を検知する。
 
 未自動化観点のログは、次の3点を必須記録項目とする。
 
@@ -146,11 +148,14 @@ DOC-OPS-04 の前処理監査では、ADR候補B（Documentation Readability Bas
 - 実行ログ（再現可能性の担保）:
   1. `rg -n "^# ADR-0022|^## (Context|Decision|Consequences|Traceability)|Audience|Goal|Non-goal|Outcome|Upstream Reference|Downstream Apply|Verification|AC-4|DoD-2|DoD-3" 01_Plans/adr/ADR-0022-documentation-readability-baseline.md`
   2. `git diff --check -- 01_Plans/adr/ADR-0022-documentation-readability-baseline.md`
+  3. `python 01_Plans/issues/validate_active_issue_memos.py`
+  4. `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - 検証観点:
   1. ADR必須見出しI/F（Context / Decision / Consequences / Traceability）を保持している。
   2. DOC-OPS-04 A-I/F で要求される固定語彙（Audience / Goal / Non-goal / Outcome / Upstream Reference / Downstream Apply / Verification）を Decision 配下で定義している。
   3. AC/DoD補完として、適用対象と非目標境界（AC-4）および手動確認ログ要件（DoD-2/DoD-3）を明示している。
   4. 編集対象は本ADR本文のみであり、統合ファイル（README/dashboard/issue-DOC-OPS-04）を更新していない。
+  5. issue memo validator/unittest が成功し、可読性ベースラインが要求するメタ運用と矛盾しない。
 - 未充足:
   - `Status: Proposed` のため、Deciders 承認待ち。
 
