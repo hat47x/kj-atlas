@@ -246,6 +246,7 @@ describe("buildExportBundle", () => {
         decidedAt: "2026-01-02T00:00:00.000Z",
         groupId: "group-1",
         representativeCardId: "c-rep",
+        representativeResolvedBy: "repOf",
         sourceCardIds: ["c1", "c2"],
         missingSourceCardIds: [],
       },

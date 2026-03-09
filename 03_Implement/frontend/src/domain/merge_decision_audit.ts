@@ -8,6 +8,7 @@ export type MergeDecisionAuditEntry = {
   actorType: "human";
   decidedAt: string;
   representativeCardId: string;
+  representativeResolvedBy: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
   sourceCardIds: string[];
   missingSourceCardIds: string[];
   cardIds: string[];
@@ -38,6 +39,7 @@ export function buildMergeDecisionAuditEntries(document: DocumentV2): MergeDecis
       actorType: "human",
       decidedAt: decision.decidedAt,
       representativeCardId: originTrace.representativeCardId,
+      representativeResolvedBy: originTrace.representativeResolvedBy,
       sourceCardIds: originTrace.sourceCardIds,
       missingSourceCardIds: originTrace.missingSourceCardIds,
       cardIds,

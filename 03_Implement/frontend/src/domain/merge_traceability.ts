@@ -4,45 +4,69 @@ export type RepresentativeOriginTrace = {
   representativeCardId: string;
   sourceCardIds: string[];
   missingSourceCardIds: string[];
+  representativeResolvedBy: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
 };
 
 function sortIds(ids: Iterable<string>): string[] {
   return [...new Set(ids)].sort((left, right) => left.localeCompare(right));
 }
 
-function resolveRepresentativeCard(document: DocumentV2, cardIds: string[]): Card | undefined {
+function resolveRepresentativeCard(
+  document: DocumentV2,
+  cardIds: string[]
+): { card?: Card; resolvedBy: RepresentativeOriginTrace["representativeResolvedBy"] } {
   const decisionCardIdSet = new Set(cardIds);
+  const normalizedDecisionCardIds = sortIds(cardIds);
 
-  const representativeByRepOf = document.cards.find((card) => {
-    if (!Array.isArray(card.repOf) || card.repOf.length === 0) {
-      return false;
-    }
-    return card.repOf.some((sourceCardId) => decisionCardIdSet.has(sourceCardId));
-  });
+  const representativeByRepOf = document.cards
+    .filter((card) => Array.isArray(card.repOf) && card.repOf.length > 0)
+    .map((card) => ({
+      card,
+      overlapCount: card.repOf?.filter((sourceCardId) => decisionCardIdSet.has(sourceCardId)).length ?? 0,
+    }))
+    .filter((candidate) => candidate.overlapCount > 0)
+    .sort((left, right) => {
+      if (left.overlapCount !== right.overlapCount) {
+        return right.overlapCount - left.overlapCount;
+      }
+      return left.card.id.localeCompare(right.card.id);
+    })[0]?.card;
   if (representativeByRepOf) {
-    return representativeByRepOf;
+    return {
+      card: representativeByRepOf,
+      resolvedBy: "repOf",
+    };
   }
 
-  const representativeByMergedInto = document.cards.find((card) => {
-    if (!card.mergedIntoCardId) {
-      return false;
-    }
-    return decisionCardIdSet.has(card.id);
-  });
-  if (representativeByMergedInto?.mergedIntoCardId) {
-    return document.cards.find((card) => card.id === representativeByMergedInto.mergedIntoCardId);
+  const representativeByMergedInto = document.cards
+    .filter((card) => decisionCardIdSet.has(card.id) && typeof card.mergedIntoCardId === "string")
+    .map((card) => card.mergedIntoCardId as string)
+    .sort((left, right) => left.localeCompare(right))[0];
+  if (representativeByMergedInto) {
+    return {
+      card: document.cards.find((card) => card.id === representativeByMergedInto) ?? {
+        id: representativeByMergedInto,
+        text: "",
+        x: 0,
+        y: 0,
+      },
+      resolvedBy: "mergedIntoCardId",
+    };
   }
 
-  const representativeFallbackId = cardIds[0];
+  const representativeFallbackId = normalizedDecisionCardIds[0];
   if (!representativeFallbackId) {
-    return undefined;
+    return { resolvedBy: "unresolved" };
   }
 
-  return document.cards.find((card) => card.id === representativeFallbackId) ?? {
-    id: representativeFallbackId,
-    text: "",
-    x: 0,
-    y: 0,
+  return {
+    card: document.cards.find((card) => card.id === representativeFallbackId) ?? {
+      id: representativeFallbackId,
+      text: "",
+      x: 0,
+      y: 0,
+    },
+    resolvedBy: "fallback",
   };
 }
 
@@ -84,30 +108,35 @@ export function resolveRepresentativeOriginTrace(document: DocumentV2, represent
     representativeCardId,
     sourceCardIds,
     missingSourceCardIds,
+    representativeResolvedBy: "repOf",
   };
 }
 
 export function resolveDecisionOriginTrace(document: DocumentV2, cardIds: string[]): RepresentativeOriginTrace {
   const sortedCardIds = sortIds(cardIds);
   const representative = resolveRepresentativeCard(document, sortedCardIds);
-  const representativeCardId = representative?.id ?? "";
+  const representativeCardId = representative.card?.id ?? "";
   if (!representativeCardId) {
     return {
       representativeCardId: "",
       sourceCardIds: [],
       missingSourceCardIds: [],
+      representativeResolvedBy: "unresolved",
     };
   }
 
   const representativeTrace = resolveRepresentativeOriginTrace(document, representativeCardId);
   if (representativeTrace.sourceCardIds.length > 0 || representativeTrace.missingSourceCardIds.length > 0) {
-    return representativeTrace;
+    return {
+      ...representativeTrace,
+      representativeResolvedBy: representative.resolvedBy,
+    };
   }
 
   return {
     representativeCardId,
     sourceCardIds: sortIds(sortedCardIds.filter((cardId) => cardId !== representativeCardId)),
     missingSourceCardIds: [],
+    representativeResolvedBy: representative.resolvedBy,
   };
 }
-

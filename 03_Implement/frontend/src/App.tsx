@@ -31,7 +31,7 @@ import { buildVersionTokenForCardIds, isPolygonShapeStale } from "./domain/geome
 import { isTemporaryRevealEligible } from "./domain/visibility";
 import { updateIslandSummaryWithHistory } from "./domain/summary_history_ops";
 import { createRepresentativeMerge } from "./domain/representative_merge";
-import { resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
+import { resolveDecisionOriginTrace, resolveRepresentativeOriginTrace } from "./domain/merge_traceability";
 import { collectMergeCandidates } from "./domain/merge_candidates";
 import {
   appendMergeSuggestionDecision,
@@ -298,6 +298,9 @@ type MergeSuggestionDraft = {
   isEdited: boolean;
   latestDecision?: MergeSuggestionDecision;
   latestDecidedAt?: string;
+  representativeCardId?: string;
+  representativeResolvedBy?: "repOf" | "mergedIntoCardId" | "fallback" | "unresolved";
+  representativeSourceCount?: number;
 };
 
 type PendingImportedDocument = {
@@ -2200,12 +2203,17 @@ export default function App() {
       setMergeSuggestions(
         result.suggestions.map((suggestion) => {
           const latestDecision = latestDecisionByGroup.get(suggestion.groupId);
+          const representativeTrace = resolveDecisionOriginTrace(document, suggestion.cardIds);
           return {
             ...suggestion,
             editedText: latestDecision?.editedText ?? suggestion.mergedTextDraft,
             isEdited: (latestDecision?.editedText ?? suggestion.mergedTextDraft) !== suggestion.mergedTextDraft,
             latestDecision: latestDecision?.decision,
             latestDecidedAt: latestDecision?.decidedAt,
+            representativeCardId: representativeTrace.representativeCardId || undefined,
+            representativeResolvedBy: representativeTrace.representativeResolvedBy,
+            representativeSourceCount:
+              representativeTrace.sourceCardIds.length + representativeTrace.missingSourceCardIds.length,
           };
         })
       );
