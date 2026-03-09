@@ -117,10 +117,42 @@
 2. 追加変更が発生した場合は、統合ファイル3点の同期を単一フェーズで実施する。
 3. 不一致が出た場合は self-correction（最大3回）で修正し、未解消なら停止して判断待ちに戻す。
 
+### 5.1) 直列クリティカルパス固定（監査→同期→検証）
+
+再開時の最優先シーケンスは次の3段階を固定する。
+
+1. **ADR整合監査**（`Superseded` / `Accepted` の整流維持）
+2. **Issue index整合監査**（`01_Plans/issues/README.md` の Active/Done 集計）
+3. **Dashboard整合監査**（本ファイルの反映）
+
+競合停止条件（固定）:
+
+- `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` を同一時刻に別作業で編集しない。
+- 共有リソース更新が重なった場合は、先行作業を停止して統合フェーズへ集約する。
+
+### 5.2) 再開時の並列化ガード（契約先行 + モック吸収）
+
+Active issue が再発生した場合のみ、次の条件を満たすタスクを並列化する。
+
+- 並列条件:
+  1. 依存関係が解消済み、または API/Schema 契約を先に固定済みである。
+  2. 実装側は fixture / stub を使い、契約差分をモック層で吸収できる。
+  3. Auth系（backend contract）と Frontend系（export/worker/ui）の編集境界が分離されている。
+- 禁止条件:
+  1. 同一リソース（`issues/README.md`, `project-progress-dashboard.md`）の同時編集。
+  2. 契約未固定のまま本実装を先行させる変更。
+
+実装順テンプレ（固定）:
+
+1. 契約先行（APIシグネチャ / 型 / schema）
+2. モック実装（fixture / stub）
+3. 本実装へ差し替え
+4. 統合フェーズで共有リソースを一括同期
+
 ## 6) 再開コマンド（docs-check）
 
 ```bash
 python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
-rg -n "DOC-OPS-03|Project Progress Dashboard|進捗サマリ|人間判断待ち" 01_Plans
+rg -n "Active issue memos|Completed issue memos|Superseded|Accepted" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/adr
 ```
