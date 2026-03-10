@@ -281,6 +281,7 @@ issue補助メモには、最低でも次の項目を含める。
 | FB-RM-I18N-02 | `issue-FB-RM-I18N-02-locale-json-fallback-order.md` | Done | N/A | locale fallback順序を固定済み。 |
 | FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done | N/A | 英語UI等価 E2E smoke/flow を記録済み。 |
 | FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done | N/A | export粒度とmanifest出力を実装済み。 |
+| QA-PUB-01 | `issue-QA-PUB-01-I18N-03-e2e-boundary.md` | Done (SQLite fallback path) | N/A | SQLite fallback の E2E 境界検証ログを固定し、将来の本番同等検証との差分前提を明文化。 |
 
 | AUTH-E2E-01 | `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md` | Done | N/A | Level1/Level2運用固定、fixture回帰、PR記録テンプレを確定。 |
 
