@@ -107,6 +107,16 @@ python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
 ### MCP usage / evidence policy
 
 - 図やUI導線の視覚確認は MCP の browser/playwright ツールを優先する。
-- MCP利用時は screenshot artifact path をIssue/PRに記録する。
-- MCPが使えない場合は、Mermaid CLIのSVG生成ログを代替証跡として記録する。
-- 証跡には最低限、対象ファイル・実行コマンド・成否・生成物パス・再試行回数を含める。
+- 画像証跡が必要な場合は artifact path を記録し、Issue/PRへ添付する。
+- ブラウザ利用不可時は代替として Mermaid CLI のSVG生成ログを検証記録に残す。
+
+
+## DX-CODEX-01 scoped execution notes
+
+- この運用更新は docs-only で実施し、編集対象を以下の3ファイルへ限定する。
+  - `00_Prompt/codex_gsd_skill_ops.md`
+  - `04_Documentation/codex_skill_operations.md`
+  - `01_Plans/issues/issue-DX-CODEX-01-codex-skill-adoption-and-validation.md`
+- `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は本タスクの更新対象外。
+- docs-check は validator / unittest の2本を実行し、Issue memo に結果を記録する。
+

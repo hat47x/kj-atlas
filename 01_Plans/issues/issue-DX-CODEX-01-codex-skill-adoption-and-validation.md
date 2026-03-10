@@ -47,12 +47,27 @@
 - [ ] `Expected verification level=docs-check` に一致する検証ログを記録する。
 - [ ] 試行運用の記録（最低3タスク）を本Issueへ追記できる状態にする。
 
+### AC補完ドラフト（DX-CODEX-01 専任スコープ）
+
+- [ ] 変更対象は次の3ファイルに限定される。
+  - `00_Prompt/codex_gsd_skill_ops.md`
+  - `04_Documentation/codex_skill_operations.md`
+  - `01_Plans/issues/issue-DX-CODEX-01-codex-skill-adoption-and-validation.md`
+- [ ] `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` は更新しない。
+- [ ] docs-check（validator/unittest）を実行し、結果を本Issueに記録する。
+
+### DoD補完ドラフト
+
+- [ ] 3ファイル間で用語（skill配置先・責務境界・検証手順）が矛盾しない。
+- [ ] 実行コマンドと結果（pass/fail）をこのIssueに追記済み。
+- [ ] 変更差分が最小（対象外ファイルの編集なし）であることを確認済み。
+
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: skill導入ガイド文書を追加する。
-- [ ] T2: GSD運用文書へ curated skill 併用方針を追記する。
-- [ ] T3: Active issue index へ本Issueを登録する。
-- [ ] T4: 試行運用記録テンプレート（タスク名/使ったskill/結果/課題）を本Issueへ追加する。
+- [x] T1: skill導入ガイド文書の記述を専任スコープ向けに更新する。
+- [x] T2: GSD運用文書へ AC/DoD と docs-check 手順を明記する。
+- [x] T3: 試行運用記録テンプレート（タスク名/使ったskill/結果/課題）を本Issueへ維持する。
+- [x] T4: docs-check 実行結果を本Issueへ追記する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -85,3 +100,8 @@
 - Outcome:
 - Follow-up:
 ```
+
+## 11) Verification log (DX-CODEX-01)
+
+- `python 01_Plans/issues/validate_active_issue_memos.py` -> `ok: validated 2 active issue memos`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> `Ran 8 tests ... OK`
