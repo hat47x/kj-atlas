@@ -1,7 +1,7 @@
 # Issue Draft: DX-CODEX-02 Markdown + Mermaid.js / MCP 文書整備運用の導入検証
 
 - Type: Developer Experience
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -41,17 +41,17 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Mermaid図付き文書タスクに適用できる skill template が存在する。
-- [ ] Mermaid構文検証コマンドが運用ガイドに記載される。
-- [ ] MCP利用時と非利用時の証跡方針が明記される。
-- [ ] `docs-check` レベルの検証（issue validator / unittest）が通る。
+- [x] Mermaid図付き文書タスクに適用できる skill template が存在する。
+- [x] Mermaid構文検証コマンドが運用ガイドに記載される。
+- [x] MCP利用時と非利用時の証跡方針が明記される。
+- [x] `docs-check` レベルの検証（issue validator / unittest）が通る。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: skill template を追加。
-- [ ] T2: 運用ガイド追記。
-- [ ] T3: Active issue へ登録。
-- [ ] T4: 試行ログテンプレートを追記。
+- [x] T1: skill template を追加。
+- [x] T2: 運用ガイド追記。
+- [x] T3: Active issue へ登録。
+- [x] T4: 試行ログテンプレートを追記。
 
 ## 7) 検証計画 / Validation plan
 
@@ -83,3 +83,13 @@
 - Validation evidence:
 - Follow-up:
 ```
+
+
+## 11) Execution log (Phase 3)
+
+- Plan: Phase 2で確定した正本/補助境界との矛盾がないことを `00_Prompt/codex_gsd_skill_ops.md` と `04_Documentation/codex_skill_operations.md` で確認。
+- Execute: `00_Prompt/skills/markdown-mermaid-docops/SKILL.md` と運用ガイドのMermaid/MCP方針の整合を確認し、Issue状態をDoneへ更新。
+- Verify:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- Proceed: AC/DoDを満たしたため `Status: Done`。

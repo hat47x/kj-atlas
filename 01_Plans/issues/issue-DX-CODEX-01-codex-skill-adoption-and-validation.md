@@ -1,7 +1,7 @@
 # Issue Draft: DX-CODEX-01 Codex skill 導入と運用妥当性検証
 
 - Type: Developer Experience
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -41,18 +41,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Codex skill 導入手順（配置先/コマンド/再起動要件）が1文書で参照できる。
-- [ ] `gsd-kj-atlas` と curated skill の役割分担が明記される。
-- [ ] 仕様正本（00〜02）と skill 補助の責務境界が明記される。
-- [ ] `Expected verification level=docs-check` に一致する検証ログを記録する。
-- [ ] 試行運用の記録（最低3タスク）を本Issueへ追記できる状態にする。
+- [x] Codex skill 導入手順（配置先/コマンド/再起動要件）が1文書で参照できる。
+- [x] `gsd-kj-atlas` と curated skill の役割分担が明記される。
+- [x] 仕様正本（00〜02）と skill 補助の責務境界が明記される。
+- [x] `Expected verification level=docs-check` に一致する検証ログを記録する。
+- [x] 試行運用の記録（最低3タスク）を本Issueへ追記できる状態にする。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: skill導入ガイド文書を追加する。
-- [ ] T2: GSD運用文書へ curated skill 併用方針を追記する。
-- [ ] T3: Active issue index へ本Issueを登録する。
-- [ ] T4: 試行運用記録テンプレート（タスク名/使ったskill/結果/課題）を本Issueへ追加する。
+- [x] T1: skill導入ガイド文書を追加する。
+- [x] T2: GSD運用文書へ curated skill 併用方針を追記する。
+- [x] T3: Active issue index へ本Issueを登録する。
+- [x] T4: 試行運用記録テンプレート（タスク名/使ったskill/結果/課題）を本Issueへ追加する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -84,4 +84,31 @@
 - Applied skills:
 - Outcome:
 - Follow-up:
+```
+
+
+## 11) Execution log (Phase 2)
+
+- Plan: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `00_Prompt/codex_gsd_skill_ops.md` / `04_Documentation/codex_skill_operations.md` を再読し、ACと差分を確認。
+- Execute: Codex skill導入手順・役割分担・正本/補助境界・試行運用テンプレートの充足状態を確認し、Issue状態をDoneへ更新。
+- Verify:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- Proceed: AC/DoDを満たしたため `Status: Done`。
+
+試行運用ログテンプレート（3タスク分）:
+
+```md
+- Task-1:
+  - Applied skills:
+  - Outcome:
+  - Follow-up:
+- Task-2:
+  - Applied skills:
+  - Outcome:
+  - Follow-up:
+- Task-3:
+  - Applied skills:
+  - Outcome:
+  - Follow-up:
 ```
