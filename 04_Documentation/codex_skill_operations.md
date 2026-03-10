@@ -80,6 +80,15 @@ mkdir -p "$HOME/.codex/skills"
 cp -R 00_Prompt/skills/markdown-mermaid-docops "$HOME/.codex/skills/markdown-mermaid-docops"
 ```
 
+### Plan / Execute / Verify protocol (Mermaid docs task)
+
+Mermaidを含む docs タスクは次の順序を固定する。
+
+1. **Plan**: Scope / Non-Goals / Acceptance / Checks（DoD）を先に確定。
+2. **Execute**: Mermaid block・本文・見出し導線を同時更新。
+3. **Verify**: docs-check と Mermaid構文検証を実施。
+4. **Self-correction**: 修正→再検証を最大3回。3回超過時は停止し、前提崩壊/競合を報告。
+
 ### Mermaid validation command (recommended)
 
 Mermaid図を含むドキュメント変更では、次のコマンドで構文検証する。
@@ -88,8 +97,16 @@ Mermaid図を含むドキュメント変更では、次のコマンドで構文�
 npx -y @mermaid-js/mermaid-cli -i /tmp/diagram.mmd -o /tmp/diagram.svg
 ```
 
-### MCP usage policy
+### docs-check commands (issue memo)
+
+```bash
+python 01_Plans/issues/validate_active_issue_memos.py
+python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
+```
+
+### MCP usage / evidence policy
 
 - 図やUI導線の視覚確認は MCP の browser/playwright ツールを優先する。
-- 画像証跡が必要な場合は artifact path を記録し、Issue/PRへ添付する。
-- ブラウザ利用不可時は代替として Mermaid CLI のSVG生成ログを検証記録に残す。
+- MCP利用時は screenshot artifact path をIssue/PRに記録する。
+- MCPが使えない場合は、Mermaid CLIのSVG生成ログを代替証跡として記録する。
+- 証跡には最低限、対象ファイル・実行コマンド・成否・生成物パス・再試行回数を含める。

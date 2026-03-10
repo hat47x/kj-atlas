@@ -41,17 +41,17 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Mermaid図付き文書タスクに適用できる skill template が存在する。
-- [ ] Mermaid構文検証コマンドが運用ガイドに記載される。
-- [ ] MCP利用時と非利用時の証跡方針が明記される。
-- [ ] `docs-check` レベルの検証（issue validator / unittest）が通る。
+- [x] Mermaid図付き文書タスクに適用できる skill template が存在する。
+- [x] Mermaid構文検証コマンドが運用ガイドに記載される。
+- [x] MCP利用時と非利用時の証跡方針が明記される。
+- [x] `docs-check` レベルの検証（issue validator / unittest）が通る。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: skill template を追加。
-- [ ] T2: 運用ガイド追記。
+- [x] T1: skill template を追加。
+- [x] T2: 運用ガイド追記。
 - [ ] T3: Active issue へ登録。
-- [ ] T4: 試行ログテンプレートを追記。
+- [x] T4: 試行ログテンプレートを追記。
 
 ## 7) 検証計画 / Validation plan
 
@@ -82,4 +82,27 @@
 - Applied skills/MCP:
 - Validation evidence:
 - Follow-up:
+```
+
+
+## 11) AC/DoD補完ドラフト（DX-CODEX-02）
+
+- AC補完:
+  - Plan/Execute/Verify/Self-correction（最大3回）を文書化する。
+  - MCP優先・CLI代替の証跡要件を最小項目で固定する。
+- DoD補完:
+  - 対象3ファイルのみ差分であること。
+  - docs-check（validator + unittest）が成功すること。
+  - Mermaid検証コマンドが運用ガイドとskillの双方に記載されること。
+
+## 12) 実行ログ（trial）
+
+```md
+- Task: DX-CODEX-02 Mermaid/MCP evidence policy implementation
+- Mermaid blocks changed: no (policy/protocol text update)
+- Applied skills/MCP: markdown-mermaid-docops (template update), MCP not required for this non-visual docs change
+- Validation evidence:
+  - python 01_Plans/issues/validate_active_issue_memos.py => pass
+  - python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py => pass
+- Follow-up: T3（Active issue index更新）は本タスクの禁止範囲のため未実施
 ```
