@@ -134,3 +134,18 @@ python /opt/codex/skills/.system/skill-installer/scripts/install-skill-from-gith
 mkdir -p "$HOME/.codex/skills"
 cp -R 00_Prompt/skills/markdown-mermaid-docops "$HOME/.codex/skills/markdown-mermaid-docops"
 ```
+
+
+## 8. DX-CODEX-01 専任運用メモ（限定スコープ）
+
+- 本タスクでは編集対象を次の3ファイルに限定する。
+  - `00_Prompt/codex_gsd_skill_ops.md`
+  - `04_Documentation/codex_skill_operations.md`
+  - `01_Plans/issues/issue-DX-CODEX-01-codex-skill-adoption-and-validation.md`
+- 次のファイルは更新しない。
+  - `01_Plans/issues/README.md`
+  - `01_Plans/project-progress-dashboard.md`
+- docs-check は以下を必須実行する。
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+
