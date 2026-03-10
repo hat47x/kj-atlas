@@ -85,11 +85,24 @@
 ```
 
 
-## 11) Execution log (Phase 3)
+## 11) AC/DoD補完ドラフト（DX-CODEX-02）
 
-- Plan: Phase 2で確定した正本/補助境界との矛盾がないことを `00_Prompt/codex_gsd_skill_ops.md` と `04_Documentation/codex_skill_operations.md` で確認。
-- Execute: `00_Prompt/skills/markdown-mermaid-docops/SKILL.md` と運用ガイドのMermaid/MCP方針の整合を確認し、Issue状態をDoneへ更新。
-- Verify:
-  - `python 01_Plans/issues/validate_active_issue_memos.py`
-  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-- Proceed: AC/DoDを満たしたため `Status: Done`。
+- AC補完:
+  - Plan/Execute/Verify/Self-correction（最大3回）を文書化する。
+  - MCP優先・CLI代替の証跡要件を最小項目で固定する。
+- DoD補完:
+  - 対象3ファイルのみ差分であること。
+  - docs-check（validator + unittest）が成功すること。
+  - Mermaid検証コマンドが運用ガイドとskillの双方に記載されること。
+
+## 12) 実行ログ（trial）
+
+```md
+- Task: DX-CODEX-02 Mermaid/MCP evidence policy implementation
+- Mermaid blocks changed: no (policy/protocol text update)
+- Applied skills/MCP: markdown-mermaid-docops (template update), MCP not required for this non-visual docs change
+- Validation evidence:
+  - python 01_Plans/issues/validate_active_issue_memos.py => pass
+  - python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py => pass
+- Follow-up: T3（Active issue index更新）は本タスクの禁止範囲のため未実施
+```

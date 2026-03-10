@@ -47,6 +47,21 @@
 - [x] `Expected verification level=docs-check` に一致する検証ログを記録する。
 - [x] 試行運用の記録（最低3タスク）を本Issueへ追記できる状態にする。
 
+### AC補完ドラフト（DX-CODEX-01 専任スコープ）
+
+- [ ] 変更対象は次の3ファイルに限定される。
+  - `00_Prompt/codex_gsd_skill_ops.md`
+  - `04_Documentation/codex_skill_operations.md`
+  - `01_Plans/issues/issue-DX-CODEX-01-codex-skill-adoption-and-validation.md`
+- [ ] `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` は更新しない。
+- [ ] docs-check（validator/unittest）を実行し、結果を本Issueに記録する。
+
+### DoD補完ドラフト
+
+- [ ] 3ファイル間で用語（skill配置先・責務境界・検証手順）が矛盾しない。
+- [ ] 実行コマンドと結果（pass/fail）をこのIssueに追記済み。
+- [ ] 変更差分が最小（対象外ファイルの編集なし）であることを確認済み。
+
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: skill導入ガイド文書を追加する。
