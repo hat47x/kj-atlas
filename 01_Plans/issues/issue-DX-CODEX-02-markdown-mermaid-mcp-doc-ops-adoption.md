@@ -1,7 +1,7 @@
 # Issue Draft: DX-CODEX-02 Markdown + Mermaid.js / MCP 文書整備運用の導入検証
 
 - Type: Developer Experience
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -50,7 +50,7 @@
 
 - [x] T1: skill template を追加。
 - [x] T2: 運用ガイド追記。
-- [ ] T3: Active issue へ登録。
+- [x] T3: Active issue へ登録。
 - [x] T4: 試行ログテンプレートを追記。
 
 ## 7) 検証計画 / Validation plan

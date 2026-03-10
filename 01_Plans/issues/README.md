@@ -245,8 +245,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| DX-CODEX-01 | `issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` | Open | N/A |
-| DX-CODEX-02 | `issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` | Open | N/A |
+（Active issue なし）
 
 ## Rules
 
@@ -259,6 +258,8 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue | Notes |
 |---|---|---|---|---|
+| DX-CODEX-01 | `issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` | Done | N/A | Codex skill導入手順・役割分担・正本/補助境界・試行ログテンプレートを整備。 |
+| DX-CODEX-02 | `issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` | Done | N/A | markdown-mermaid-docops skill運用とMermaid/MCP証跡方針を標準化。 |
 | AUTH-ARCH-01 | `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md` | Done | N/A | AuthContext/JIT境界、strict責務、承認記録を確定。 |
 | AUTH-SCHEMA-01 | `issue-AUTH-SCHEMA-01-identity-schema-planning.md` | Done | N/A | identity schema比較、403契約、expand/contract前提を確定。 |
 | AUTH-IMPL-01 | `issue-AUTH-IMPL-01-user-identity-schema-migration-implementation.md` | Done | N/A | users / user_identities migration 実装・検証を完了。 |

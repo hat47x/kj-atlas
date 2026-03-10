@@ -37,10 +37,10 @@
 
 ## 1.1) 全Issueサマリ（Active/Done）
 
-- issue memo 総数: **23**
+- issue memo 総数: **25**
 - Active: **0**
-- Done: **23**（AUTH / FB-RM / DOC / REQ / ENV / QA 系を含む）
-- 優先度上のクリティカルパス: **なし（DOC-OPS-04完了）**
+- Done: **25**（AUTH / FB-RM / DOC / REQ / ENV / QA / DX-CODEX 系を含む）
+- 優先度上のクリティカルパス: **なし（DX-CODEX-01/02完了）**
 
 根拠: `01_Plans/issues/README.md` の Active issue memos と Completed issue memos 集計。
 
@@ -66,6 +66,14 @@
 
 | Backlog ID | Status | 要点 | メモ |
 |---|---|---|---|
+
+（Active issue なし）
+
+## 2.0) 状態同期監査ログ（DX-CODEX-01/02）
+
+- 監査結果: `README.md` の Active=2（DX-CODEX-01/02）に対し、dashboardの旧集計が Active=0 で不一致を確認。
+- 原因: DX-CODEX-01/02 を Active index に追加後、dashboard集計の更新が未反映。
+- 修正方針: Phase 1で不一致原因を記録し、Phase 2/3 完了後は Active=0 / Done=25 へ再同期。
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
 
