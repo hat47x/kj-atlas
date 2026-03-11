@@ -255,6 +255,13 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
+### Stream D 統合スナップショット（2026-03-11 JST）
+
+- 件数: issue memo 総数=27（Active=2 / Done=25）。
+- Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
+- 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
+- Decision Queue: 人間判断待ちの未解決項目=0件（`HIL-RS-01-A1` は 2026-03-11 に案Aで決定済み）。
+
 ## Rules
 
 1. 新規作成先は必ず `01_Plans/issues/`。
