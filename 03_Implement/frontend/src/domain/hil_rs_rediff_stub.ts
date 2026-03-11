@@ -9,10 +9,6 @@ type BuildHilRsRediffStubOptions = {
 };
 
 function buildTraceKey(critiqueInputs: readonly HilRsCritiqueInput[]): string {
-  if (critiqueInputs.length === 0) {
-    return "trace:none";
-  }
-
   return `trace:${critiqueInputs.map((input) => input.critiqueId).join("+")}`;
 }
 
@@ -22,6 +18,9 @@ export function buildHilRsRediffStub(
   options: BuildHilRsRediffStubOptions,
 ): HilRsRediffPayload | null {
   if (!Number.isInteger(options.iteration) || options.iteration < 1 || options.suggestionId.trim().length === 0) {
+    return null;
+  }
+  if (options.critiqueInputs.length === 0) {
     return null;
   }
 
