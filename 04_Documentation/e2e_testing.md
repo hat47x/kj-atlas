@@ -411,3 +411,21 @@ Compose未実行時は、以下を「未確認リスク」としてPRに残す�
 
 - diagnostics の表示/出力へ新規指標を追加するPRでは、unit/workerテストに加え、export経路を通すE2Eを必須チェック項目とする。
 - PR本文の「未実施項目」に E2E省略理由を記載する場合は、次回是正タスク（Issueまたは同PR内追補）を必ず紐づける。
+
+## 11. HIL-RS-01 ドキュメント同期検証（A3 docs-check）
+
+A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで確認する。
+
+```bash
+python 01_Plans/issues/validate_active_issue_memos.py
+python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
+rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
+```
+
+期待値:
+- issue memo validator と unit test が成功する。
+- `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 の同期記述が存在する。
+
+注記:
+- `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
+
