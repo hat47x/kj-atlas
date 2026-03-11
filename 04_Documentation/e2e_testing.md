@@ -416,6 +416,9 @@ Compose未実行時は、以下を「未確認リスク」としてPRに残す�
 
 A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで確認する。
 
+> A2 UI確定点 handoff が未受領の場合、本節は docs-check を中心とした同期確認を優先する。
+> UI文言/導線の厳密一致チェックは handoff 受領後の再検証で確定する。
+
 前提（A1/A2整合）:
 - RequirementID `HIL-RS-01-A1` の契約境界（Critique入力 / 再提案差分 / レビュー帰属）を参照済みであること。
 - Contract Keys（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）が運用文書側に明記されていること。
