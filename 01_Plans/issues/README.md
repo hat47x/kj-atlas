@@ -246,6 +246,7 @@ issue補助メモには、最低でも次の項目を含める。
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
 | HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Open | N/A |
+| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Open | N/A |
 
 ## Rules
 

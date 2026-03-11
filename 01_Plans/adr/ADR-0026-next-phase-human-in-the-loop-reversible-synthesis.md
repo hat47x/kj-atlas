@@ -1,6 +1,6 @@
 # ADR-0026: 次フェーズ計画（HIL-RS-01）Human-in-the-loop可逆統合ループ
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-03-11
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
@@ -20,6 +20,9 @@
 3. **Human-in-the-loop 反復**（Critique→再提案）とレビュー追跡（P-04/P-03）。
 
 上記を満たすため、次フェーズは大規模一括実装ではなく、契約先行で可逆統合ループを段階導入する計画へ固定する。
+
+また、`HIL-RS-01` の停止条件（SafeMode後退禁止、共有リソース競合回避、上位層優先）を満たしたまま
+下流（A1/A2/A3）へ進めるためには、ADR採否を Proposed のまま残さず Decider判断で確定する必要がある。
 
 ## Decision
 
@@ -62,6 +65,14 @@
 - 副作用/制約:
   - 短期の機能追加速度は抑制される。
   - 01/02/03/04 の同期運用コストが増える。
+
+## Approval Log
+
+- 2026-03-11: Deciders（Project Maintainers）が `Accepted` を確定。
+- 判断根拠:
+  1. `HIL-RS-01` の目的（保留維持・可逆性・HIL反復）が `domain.md` / `ADR-0001` と整合している。
+  2. 非目標（単一正解示唆UI、SafeMode後退、LLM全面再設計）が明示され、スコープ逸脱を抑制できる。
+  3. 停止条件（上位層矛盾・SafeMode契約後退・共有リソース競合）を維持したまま A1着手に進行可能。
 
 ## Verify
 
