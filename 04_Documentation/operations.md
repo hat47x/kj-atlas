@@ -490,7 +490,8 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 - RequirementID: `HIL-RS-01-A1`
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
-- 契約参照先: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 補助参照（Issueメモ）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ### 1. 実行順序（A1 → A2 → A3）
 
@@ -499,9 +500,9 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
    - 再提案差分
    - レビュー帰属
 2. A2（Frontend実装）で UI 導線を分離して実装する。
-   - 候補比較
-   - 人間入力
-   - 差分可視
+   - A2-1 Candidate comparison
+   - A2-2 Critique input
+   - A2-3 Diff visualization
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
 
@@ -509,9 +510,9 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 | A2挙動（実装意図） | A3で固定する運用文言 | 逸脱時の扱い |
 | --- | --- | --- |
-| 候補比較は意思決定補助であり確定操作ではない | 「候補提示」と「確定操作（人間のみ）」を明記する | 自動確定へ拡張する提案は停止して上位合意へ戻す |
-| 人間入力（Critique）は文書本体へ保存される | 入力は可逆編集前提、監査はPII最小化で記録する | subject生値や自由記述PIIの監査転記は禁止 |
-| 差分可視は再提案の比較導線として使う | 差分は可逆操作で追跡可能であることを維持する | 一方向適用のみの導線は非目標として却下 |
+| A2-1 Candidate comparison は意思決定補助であり確定操作ではない | 「候補提示」と「確定操作（人間のみ）」を明記する | 自動確定へ拡張する提案は停止して上位合意へ戻す |
+| A2-2 Critique input は反復改善の入力導線である | 入力は可逆編集前提、監査はPII最小化で記録する | subject生値や自由記述PIIの監査転記は禁止 |
+| A2-3 Diff visualization は再提案の比較導線として使う | 差分は可逆操作で追跡可能であることを維持する | 一方向適用のみの導線は非目標として却下 |
 
 ### 2. 制約（非目標と停止条件）
 
@@ -530,5 +531,6 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+- `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts`
 
 上記3コマンドの結果を PR/作業記録に残し、再現可能性を担保します。

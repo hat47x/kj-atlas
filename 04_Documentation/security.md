@@ -343,7 +343,8 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 
 - RequirementID: `HIL-RS-01-A1`
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
-- 契約参照先: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 補助参照（Issueメモ）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 - SafeMode既定ON、および share/export 漏えい防止の既存制約を変更しない。
 - Critique→再提案の反復は候補提示として扱い、確定操作は人間操作のみで実施する。
@@ -363,4 +364,3 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - SafeMode既定ONの緩和
 
 上記に抵触する変更が必要な場合は、実装を停止し `ADR-0026` と上位層（00〜02）で先に合意する。
-
