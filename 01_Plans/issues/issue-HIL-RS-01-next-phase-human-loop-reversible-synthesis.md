@@ -131,3 +131,13 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件: 安全制約または保留/可逆性の定義変更が必要になった場合。
+
+
+## 10) Stream B進捗メモ（A2実装）
+
+- 参照契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`（参照先: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）。
+- 実装済み（frontend scope）:
+  - `hil_rs_rediff_stub` を追加し、`proposalId`/`basedOnIteration`/`diffOps`/`traceKey` を満たすモック差分payloadを生成。
+  - `HilRsRediffPreview` を追加し、A2-3で再提案差分の可視化スタブを表示。
+  - `App.tsx` で critique入力収集→rediffスタブ生成→UI表示を接続。
+- 未解決: backend連携の実データ化（現状は契約準拠stub/fixture）。
