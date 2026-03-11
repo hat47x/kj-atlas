@@ -74,6 +74,7 @@ export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiq
   if (input.comment !== undefined && typeof input.comment !== "string") return false;
   if (input.constraintHints !== undefined && !Array.isArray(input.constraintHints)) return false;
   if (Array.isArray(input.constraintHints) && input.constraintHints.some((item) => typeof item !== "string")) return false;
+  if ("reviewed" in input || "reviewState" in input || "reviewedAt" in input || "reviewerRef" in input) return false;
   if (hasPiiLikeIdentityFields(input)) return false;
 
   return true;
