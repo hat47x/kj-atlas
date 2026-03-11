@@ -170,22 +170,22 @@
 - DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01/02/03 は Done へ遷移。REQ-DEF系のDecision Queueは解消済み。
 
 
-## 4. P1: DOC-OPS-04（新規 / A承認済み）
+## 6. P1: DOC-OPS-04（完了 / 参照記録）
 
-### 4-1. 現在のゲート状態
+### 6-1. 現在のゲート状態
 
-- 判定: **Open (A承認済み / B/C/D並列開始可能)**
-- 分岐条件: `ADR-0022-doc-ops-04-documentation-information-interface.md` の Status が `Accepted` であること。
-- 現在値: `ADR-0022` は `Accepted`。
+- 判定: **Closed（A/B/C/D Accepted + 統合同期完了）**
+- 分岐条件: `ADR-0022-doc-ops-04-documentation-information-interface.md`（A）と `ADR-0023/0024/0025`（B/C/D）がすべて `Accepted` であること。
+- 現在値: 条件を満たし、`project-progress-dashboard.md` / `issues/README.md` / issue memo の同期を完了。
 
-### 4-2. B/C/D開始条件（固定）
+### 6-2. Stream D 最終同期メモ（2026-03-11）
 
-1. A=`Accepted`
-2. 編集境界（ADR-0023/0024/0025のみ編集）が有効
-3. 統合ファイル（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新禁止が有効
+1. Stream A/B/C の完了報告受領後に共有リソース同期を実施。
+2. Active/Done件数、Decision Queue、Next actions の整合を再監査。
+3. 本decision-packは履歴参照専用とし、現行ゲート状態の正本は `project-progress-dashboard.md` とする。
 
-### 4-3. 承認依頼（Proceed）
+### 6-3. 次フェーズ開始条件（HIL-RS-01）
 
-- 依頼先: Platform Architecture Owner / Plan Owner / Architecture Owner
-- 依頼内容: A=`Accepted` 維持下で B/C/D の承認統合順序と停止/再開条件の最終確認
-- 停止条件: AのI/F語彙変更兆候または統合ファイル同時更新必要時は B/C/D を停止し、A再承認まで再開しない
+- `HIL-RS-01-A1` で最小I/F契約の未固定箇所を0件化する。
+- A2/A3 は A1 の契約リンクを参照専用で固定し、共有リソース更新は統合フェーズへ集約する。
+- validator / unittest / 同期監査（README vs dashboard）が成功した時点で Proceed とする。
