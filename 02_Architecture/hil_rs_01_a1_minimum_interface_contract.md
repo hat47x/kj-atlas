@@ -93,10 +93,22 @@
 
 ## 4. ADR更新要否判定
 
+### Context
+
+- `ADR-0026` D2は「A1で最小I/F契約を先に固定し、A2/A3が参照のみで着手できる状態」を要求している。
+- 本書の変更範囲はA1契約の明文化に限定され、上位の価値判断・方針変更は含まない。
+
+### Decision
+
 - 判定: **ADR更新不要**。
 - 理由:
   - 本書は `ADR-0026` D2で要求された「最小I/F契約の固定」を具体化する下位仕様であり、意思決定の追加・変更を含まない。
   - 既存 `review_attribution` 契約（opaque reviewerRef / PII最小化）を踏襲し、上位方針を変更しない。
+
+### Consequences
+
+- A1はArchitecture文書の更新のみで完了可能となり、A2/A3は契約待ちを発生させず着手できる。
+- 今後、契約ID/安全制約/可逆要件そのものを変更する場合は、`ADR-0026` への追記または後続ADR起票を必須とする。
 
 ## 5. 契約未固定箇所チェック（A1完了判定）
 
@@ -104,6 +116,14 @@
 - `A1-REDIFF-IF`: 0件（固定済み）
 - `A1-ATTR-IF`: 0件（固定済み）
 - A2/A3参照先未定: 0件（本ファイルを単一参照先として固定）
+
+### 5.1 単一定義検証（Phase 1/4 記録）
+
+- 検証対象: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `hil_rs_01_a1_minimum_interface_contract.md`
+- 検証方法: `rg` による3ファイル横断検査（A1 issue / HIL-RS-01親issue / 本契約）
+- 判定:
+  - 契約ID 3件は意図した参照箇所のみで検出され、競合する別IDは未検出。
+  - 参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみを single reference として固定。
 
 
 ## 6. A2/A3 handoff固定情報（Proceed）
@@ -129,4 +149,3 @@
 - [x] A2/A3の単一参照先が本ファイルで固定されている。
 - [x] SafeMode既定ON・share/export漏えい防止後退禁止が明記されている。
 - [x] A2/A3の禁止境界（編集スコープ分離・共有リソース更新禁止）が明記されている。
-

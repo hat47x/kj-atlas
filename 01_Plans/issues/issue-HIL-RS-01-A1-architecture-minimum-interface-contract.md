@@ -47,6 +47,20 @@
   - 安全条件（SafeMode既定ON・漏えい防止）および価値軸（保留・可逆・HIL反復）を変更しない。
 
 
+### Phase 3: Contract Fix（必須/任意/禁止の固定）
+
+- `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約を、必須/任意/禁止で分解して固定済み。
+- A2/A3は単一参照先 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみを参照し、独自I/Fを追加しない。
+- 禁止事項（SafeMode後退、share/export漏えい防止の弱化、PII生値保存）は3契約の共通境界として固定。
+
+### Phase 4: Verify（Plan → Execute → Verify → Proceed）
+
+- Plan: 契約ID3件と単一参照先1件の単一定義を3ファイル横断で検証する。
+- Execute: `rg` により契約ID/参照先の出現箇所を収集し、重複定義の有無を確認する。
+- Verify: 契約ID3件の重複定義なし、単一参照先の複線化なしを確認する。
+- Proceed: A2/A3着手条件（契約ID固定・禁止境界固定）を満たしたため、handoff可能と判定する。
+
+
 ## 0.1) Plan宣言（対象/非対象・停止条件）
 
 - 変更対象ファイル:
@@ -60,6 +74,7 @@
 - 停止条件:
   - ADR更新が必要と判定された場合は実装を停止し、承認待ちとする。
   - 契約IDと参照先が単一化できない場合はA2/A3着手不可として停止する。
+  - Self-Correctionは最大3回とし、4回目が必要な場合は前提崩れとして停止する。
 
 
 ## 0.2) Proceed固定handoff（A2/A3向け）
