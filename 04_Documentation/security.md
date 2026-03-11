@@ -339,8 +339,6 @@ PII非保存ルール:
 
 A1契約・A2仕様の文書同期として、次フェーズ運用時の最小境界を固定する。
 
-> A2 UI確定点 handoff が未受領の間は、本節を「セキュリティ運用骨子（暫定）」として扱う。
-> UI表現に依存する確定文言は handoff 受領後に同期し、推測で固定しない。
 
 参照契約（A1）:
 
@@ -355,7 +353,14 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - 単一スコア/ランキング等、単一正解を示唆する運用を追加しない。
 - 可逆性を損なう一方向の自動確定フローを導入しない。
 
-責務分離（A2挙動との整合・暫定骨子）:
+
+実装整合メモ（B handoff反映済み）:
+
+- `HilRsWorkflowPanel` の3導線（Candidate comparison / Critique input / Diff visualization）をセキュリティ境界の操作単位として扱う。
+- Critique / attribution payload は `provider` / `external_uid` / `email` 等のPII-like identity fieldsを許可しない。
+- 再提案差分は `before/after` を必須にして逆操作不能データを拒否する。
+
+責務分離（A2挙動との整合）:
 
 - Security Officer / System Owner は運用境界と停止条件の妥当性を承認する。
 - Platform Operator は承認済み境界のみを実行し、推測で運用拡張しない。

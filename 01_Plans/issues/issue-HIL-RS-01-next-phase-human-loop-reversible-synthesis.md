@@ -94,12 +94,18 @@
   - 契約ID/参照先の複線化が検出された場合は停止し、A2/A3着手を保留する。
   - SafeMode既定ONまたはshare/export漏えい防止の後退が示唆される場合は停止する。
 
+## 4.3) Stream C 進捗ログ（Documentation同期）
+
+- 実施内容: `04_Documentation/operations.md` / `security.md` / `e2e_testing.md` を A1 契約 + B 実装確定内容に同期。
+- 同期点: UI導線名（A2-1/2/3）確定、validator制約（PII最小化・可逆差分・人間レビュー帰属）を運用制約へ反映。
+- 検証: docs-check 3件 + HIL-RS関連 vitest 3件のコマンドを運用文書へ記録。
+
 ## 5) 実装タスク分解 / Task breakdown
 
 - [x] T1: `ADR-0026` の status を Decider判断に応じて確定（Proposed→Accepted/Rejected）する。
 - [x] T2: A1用 issue（Architecture最小I/F定義）を作成し、契約境界を固定する。
 - [ ] T3: A2用 issue（Frontend分割実装）を作成し、UI変更時の screenshot方針を含む検証計画を付与する。
-- [ ] T4: A3用 issue（Documentation同期）を作成し、運用手順と制約を更新する。
+- [x] T4: A3用 issue（Documentation同期）を作成し、運用手順と制約を更新する。
 - [ ] T5: `phase-exit-evaluation-HIL-RS-01-<date>.md` の評価テンプレを用意する。
 
 ## 6) 検証計画 / Validation plan
