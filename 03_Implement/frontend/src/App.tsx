@@ -120,6 +120,9 @@ import {
 } from "./domain/view/collapse_visibility";
 import { setAllIslandsCollapsed, setIslandCollapsed } from "./domain/view/collapse_state";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
+import { buildHilRsCritiqueInputs } from "./domain/hil_rs_payload";
+import { buildHilRsRediffStub } from "./domain/hil_rs_rediff_stub";
+import { HilRsRediffPreview } from "./ui/HilRsRediffPreview";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
@@ -899,6 +902,7 @@ export default function App() {
   const [suggestionInstruction, setSuggestionInstruction] = useState("");
   const [suggestedDocument, setSuggestedDocument] = useState<DocumentV2 | null>(null);
   const [suggestionId, setSuggestionId] = useState<string | null>(null);
+  const [suggestionIteration, setSuggestionIteration] = useState(1);
   const [suggestionNotes, setSuggestionNotes] = useState<string | null>(null);
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -2152,6 +2156,7 @@ export default function App() {
 
     try {
       const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
+      setSuggestionIteration((previous) => previous + 1);
       setSuggestionId(result.suggestionId);
       setSuggestedDocument(markSuggestedFieldsUnreviewed(cloneDocument(result.suggestedDoc), document));
       setSuggestionNotes(result.notes ?? null);
@@ -2177,6 +2182,7 @@ export default function App() {
     }
 
     applyDocumentChange(cloneDocument(suggestedDocument), "Applied draft suggestion");
+    setSuggestionIteration(1);
   }, [applyDocumentChange, document, suggestedDocument]);
 
   const handleDiscardSuggestion = useCallback(() => {
@@ -2184,6 +2190,7 @@ export default function App() {
     setSuggestionId(null);
     setSuggestionNotes(null);
     setSuggestionError(null);
+    setSuggestionIteration(1);
     setIsSuggestionPreviewEnabled(true);
     setIsAnnotateOverlayEnabled(false);
     setStatusMessage("Discarded draft suggestion");
@@ -7745,6 +7752,29 @@ ${parsedDocument.error}`);
     />
   );
 
+  const hilRsCritiqueInputs = useMemo(() => {
+    if (!document) {
+      return [];
+    }
+
+    return buildHilRsCritiqueInputs(document, {
+      iteration: suggestionIteration,
+      createdAt: new Date().toISOString(),
+    });
+  }, [document, suggestionIteration]);
+
+  const hilRsRediffPreviewPayload = useMemo(() => {
+    if (!document || !suggestedDocument || !suggestionId) {
+      return null;
+    }
+
+    return buildHilRsRediffStub(document, suggestedDocument, {
+      suggestionId,
+      iteration: suggestionIteration,
+      critiqueInputs: hilRsCritiqueInputs,
+    });
+  }, [document, hilRsCritiqueInputs, suggestedDocument, suggestionId, suggestionIteration]);
+
   const headerShareControls = (
     <SharePanel
       isOpen={isSharePanelOpen}
@@ -7984,7 +8014,10 @@ ${parsedDocument.error}`);
                     notes={suggestionNotes}
                   />
                 }
-                diffVisualization={structuralDiffPanel}
+                diffVisualization={<>
+                  <HilRsRediffPreview payload={hilRsRediffPreviewPayload} />
+                  {structuralDiffPanel}
+                </>}
               />
             </>
           }

@@ -4,13 +4,14 @@ import type { DocumentV2 } from "./types";
 
 const BASE_DOC: DocumentV2 = {
   version: 2,
+  id: "doc",
+  transform: { panX: 0, panY: 0, zoom: 1 },
   cards: [
     { id: "c1", text: "alpha", x: 0, y: 0, critique: "too close", critiqueTags: ["too_close"] },
     { id: "c2", text: "beta", x: 10, y: 10, critiqueTags: ["unclear_boundary"] },
   ],
   islands: [{ id: "i1", title: "island", cardIds: ["c1"], critique: "needs split", critiqueTags: ["not_the_same"] }],
   edges: [],
-  reviewEvents: [],
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
