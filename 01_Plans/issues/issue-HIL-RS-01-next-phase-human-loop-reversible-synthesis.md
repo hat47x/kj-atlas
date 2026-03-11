@@ -42,11 +42,28 @@
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] `ADR-0026` と本issueで、目的/非目標/停止条件が一致している。
-- [ ] A1→A2→A3 の依存順序が明示され、各タスクが再開可能粒度で定義されている。
-- [ ] 安全制約（SafeMode既定ON、share/export漏えい防止を弱めない）が明記されている。
-- [ ] docs-check の結果が再現可能コマンドで記録される。
-- [ ] `issues/README.md` と `project-progress-dashboard.md` の Active 状態が同期される。
+- [x] `ADR-0026` と本issueで、目的/非目標/停止条件が一致している。
+- [x] A1→A2→A3 の依存順序が明示され、各タスクが再開可能粒度で定義されている。
+- [x] 安全制約（SafeMode既定ON、share/export漏えい防止を弱めない）が明記されている。
+- [x] docs-check の結果が再現可能コマンドで記録される。
+- [ ] `issues/README.md` と `project-progress-dashboard.md` の Active 状態が同期される（統合フェーズで実施）。
+
+## 4.1) Stream A 合意ログ（Context / Decision / Consequences）
+
+### Context
+
+- Stream A は A1 契約の固定を担当し、共有リソース更新（`issues/README.md` / `project-progress-dashboard.md`）は編集禁止。
+- A2/A3 が待ちなく着手するには、契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）と単一参照先を先に固定する必要がある。
+
+### Decision
+
+- A1契約の単一正本を `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定する。
+- 本issueでは依存順序・非目標・停止条件・検証コマンドのみ確定し、共有リソース同期は統合フェーズへ移譲する。
+
+### Consequences
+
+- A2/A3 は契約解釈待ちなしで作業開始できる。
+- Active一覧同期は未完タスクとして残るため、統合フェーズでの追実施が必須となる。
 
 ## 5) 実装タスク分解 / Task breakdown
 

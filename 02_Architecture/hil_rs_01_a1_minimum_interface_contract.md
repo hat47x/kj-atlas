@@ -104,3 +104,21 @@
 - `A1-REDIFF-IF`: 0件（固定済み）
 - `A1-ATTR-IF`: 0件（固定済み）
 - A2/A3参照先未定: 0件（本ファイルを単一参照先として固定）
+
+
+## 6. A2/A3 handoff固定情報（Proceed）
+
+- Contract IDs（固定）:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- Single Reference（固定）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 非目標（A2/A3共通）:
+  - 単一スコア/ランキングによる自動確定を導入しない。
+  - SafeMode既定ONとshare/export漏えい防止を弱めない。
+  - provider/external_uid/email等の生IDをpayloadへ保存しない。
+- 禁止事項（A2/A3共通）:
+  - 契約本文を参照せず独自I/Fを追加すること。
+  - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）をストリーム内で更新すること。
+  - A2で`04_Documentation/**`、A3で`03_Implement/**`を同時に変更すること。

@@ -46,6 +46,21 @@
   - `ADR-0026` D2（契約先行）を具体化する下位契約化であり、意思決定追加を伴わない。
   - 安全条件（SafeMode既定ON・漏えい防止）および価値軸（保留・可逆・HIL反復）を変更しない。
 
+
+## 0.1) Plan宣言（対象/非対象・停止条件）
+
+- 変更対象ファイル:
+  - `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 非対象ファイル:
+  - `01_Plans/issues/README.md`
+  - `01_Plans/project-progress-dashboard.md`
+  - 実装コード（`03_Implement/**`）
+- 停止条件:
+  - ADR更新が必要と判定された場合は実装を停止し、承認待ちとする。
+  - 契約IDと参照先が単一化できない場合はA2/A3着手不可として停止する。
+
 ## 1) 課題 / Problem statement
 
 - HIL-RS-01の実行順でA1契約が未固定だと、A2（Frontend実装）とA3（Documentation同期）が同一論点を重複解釈して競合する。
@@ -72,11 +87,11 @@
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] Critique入力/再提案差分/レビュー帰属の3契約が、必須/任意/禁止を含めて記述されている。
-- [ ] 安全条件（SafeMode既定ON、share/export漏えい防止の後退禁止）が契約制約として明記されている。
-- [ ] A2/A3が参照する契約IDと参照先ファイルを明示し、契約未固定箇所が0件である。
-- [ ] A2/A3の並列可能条件（編集境界分離、共有リソース同時編集禁止）が明文化されている。
-- [ ] Validation planにdocs-check 3コマンドが記載され、再現可能である。
+- [x] Critique入力/再提案差分/レビュー帰属の3契約が、必須/任意/禁止を含めて記述されている。
+- [x] 安全条件（SafeMode既定ON、share/export漏えい防止の後退禁止）が契約制約として明記されている。
+- [x] A2/A3が参照する契約IDと参照先ファイルを明示し、契約未固定箇所が0件である。
+- [x] A2/A3の並列可能条件（編集境界分離、共有リソース同時編集禁止）が明文化されている。
+- [x] Validation planにdocs-check 3コマンドが記載され、再現可能である。
 
 ### AC判定メモ
 
@@ -91,17 +106,17 @@
 
 ## 5) DoD（Definition of Done）
 
-- [ ] A1 issue本文にAC/非目標/停止条件/検証計画が揃っている。
-- [ ] docs-check（validator + unittest + rg確認）が成功している。
+- [x] A1 issue本文にAC/非目標/停止条件/検証計画が揃っている。
+- [x] docs-check（validator + unittest + rg確認）が成功している。
 
 > 注: `issues/README.md` / `project-progress-dashboard.md` は本ストリーム編集禁止のため、同期は統合フェーズへ移譲する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: A1 issue本文に契約3点の境界定義を記述する。
-- [ ] T2: A2/A3並列条件（可能条件/禁止条件）を本文に固定する。
-- [ ] T3: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に契約IDと必須/任意/禁止を固定する。
-- [ ] T4: docs-checkを実行し、結果を記録する。
+- [x] T1: A1 issue本文に契約3点の境界定義を記述する。
+- [x] T2: A2/A3並列条件（可能条件/禁止条件）を本文に固定する。
+- [x] T3: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に契約IDと必須/任意/禁止を固定する。
+- [x] T4: docs-checkを実行し、結果を記録する。
 
 ## 7) 検証計画 / Validation plan
 
