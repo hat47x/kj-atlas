@@ -480,3 +480,35 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 4. 表示言語の切替が document payload に影響しないことを `document_locale_invariance.test.ts` で確認する。
 5. SafeMode の漏洩防止回帰（`locale_conversion_guard.test.ts` 等）を必ず再実行する。
+
+## HIL-RS-01 運用同期（A3）
+
+`ADR-0026` の D1〜D4 および HIL-RS-01 issue の A1/A2 定義に合わせ、
+次フェーズの運用手順は以下を最小セットとして固定します。
+
+### 1. 実行順序（A1 → A2 → A3）
+
+1. A1（Architecture契約）で固定された境界を先に確認する。
+   - Critique入力
+   - 再提案差分
+   - レビュー帰属
+2. A2（Frontend実装）で UI 導線を分離して実装する。
+   - 候補比較
+   - 人間入力
+   - 差分可視
+3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
+   手順と制約を同期し、検証コマンドを記録する。
+
+### 2. 制約（非目標と停止条件）
+
+- SafeMode 既定ONと share/export 漏えい防止を弱める変更は不可。
+- 単一スコア・ランキングなど「単一正解」を示唆する運用は禁止。
+- `domain.md` の保留/可逆性と矛盾する場合は、実装を進めず上位文書（00〜02）を先に修正提案する。
+
+### 3. docs-check 記録
+
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+
+上記3コマンドの結果を PR/作業記録に残し、再現可能性を担保します。
