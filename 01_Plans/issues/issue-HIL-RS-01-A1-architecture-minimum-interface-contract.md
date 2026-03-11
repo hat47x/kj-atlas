@@ -8,7 +8,7 @@
 - Owner: Architecture Owner
 - Scope: `01_Plans/`, `02_Architecture/`
 - Related Backlog: `HIL-RS-01`
-- Related ADR/Spec: `ADR-0026`, `ADR-0001`, `00_Prompt/domain.md`, `02_Architecture/review_attribution.md`, `02_Architecture/schemas_review_attribution.md`
+- Related ADR/Spec: `ADR-0026`, `ADR-0001`, `00_Prompt/domain.md`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`, `02_Architecture/review_attribution.md`, `02_Architecture/schemas_review_attribution.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -22,6 +22,29 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: N/A
+
+## 0) Phase進行ログ（Plan → Execute → Verify）
+
+### Phase 1: Read & Baseline
+
+- Read対象（再確認済み）:
+  - `ADR-0026`
+  - `ADR-0001`
+  - `02_Architecture/review_attribution.md`
+  - `02_Architecture/schemas_review_attribution.md`
+  - 本issue本文
+- 未固定箇所（baseline）:
+  1. Critique入力I/Fの必須/任意/禁止が未分離。
+  2. 再提案差分I/Fの可逆操作（before/after）とtraceKeyが未固定。
+  3. レビュー帰属I/FのA1最小境界と既存review_attributionとの接続が未固定。
+  4. A2/A3参照先契約ファイルが未固定。
+
+### Phase 2: ADR明文化・合意判定
+
+- 判定: **ADR追加/更新は不要**。
+- 根拠:
+  - `ADR-0026` D2（契約先行）を具体化する下位契約化であり、意思決定追加を伴わない。
+  - 安全条件（SafeMode既定ON・漏えい防止）および価値軸（保留・可逆・HIL反復）を変更しない。
 
 ## 1) 課題 / Problem statement
 
@@ -37,6 +60,7 @@
 ## 3) 提案する解決策 / Proposed solution
 
 - 変更対象: Docs/Architecture（契約定義のみ）
+- 参照先契約（固定）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 契約最小単位:
   1. Critique入力I/F（入力必須項目、任意項目、禁止事項）
   2. 再提案差分I/F（差分単位、可逆操作、トレースキー）
@@ -54,18 +78,29 @@
 - [ ] A2/A3の並列可能条件（編集境界分離、共有リソース同時編集禁止）が明文化されている。
 - [ ] Validation planにdocs-check 3コマンドが記載され、再現可能である。
 
+### AC判定メモ
+
+- 契約ID:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- 参照先:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 契約未固定箇所:
+  - 0件（A1契約本文で固定済み）
+
 ## 5) DoD（Definition of Done）
 
 - [ ] A1 issue本文にAC/非目標/停止条件/検証計画が揃っている。
-- [ ] `issues/README.md` Active issue memosにA1が追加されている。
-- [ ] `project-progress-dashboard.md` の Active/Decision Queue/Next actionsにA1が反映されている。
 - [ ] docs-check（validator + unittest + rg確認）が成功している。
+
+> 注: `issues/README.md` / `project-progress-dashboard.md` は本ストリーム編集禁止のため、同期は統合フェーズへ移譲する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [ ] T1: A1 issue本文に契約3点の境界定義を記述する。
 - [ ] T2: A2/A3並列条件（可能条件/禁止条件）を本文に固定する。
-- [ ] T3: 共有リソース同期（README/dashboard）を単一フェーズで実施する。
+- [ ] T3: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に契約IDと必須/任意/禁止を固定する。
 - [ ] T4: docs-checkを実行し、結果を記録する。
 
 ## 7) 検証計画 / Validation plan
@@ -73,9 +108,9 @@
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "HIL-RS-01|ADR-0026|A1|Active issue memos|Decision Queue" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+  - `rg -n "HIL-RS-01-A1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|ADR-0026" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
 - 期待結果:
-  - A1がActive issueとしてREADME/dashboardに反映され、ADR-0026 Acceptedとの整合が確認できる。
+  - A1契約ID 3件と参照先1件が検出され、ADR-0026との整合が確認できる。
 - 未実施時の理由・代替検証:
   - 実行環境制約でpython実行不可の場合、`rg`出力と差分レビューで同期状態を手動確認する。
 
@@ -95,6 +130,10 @@
 ## 10) Additional context
 
 - 関連Issue: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- Stream B/C handoff（契約ID・参照先固定）:
+  - `A1-CRITIQUE-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `A1-REDIFF-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `A1-ATTR-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - A2/A3並列可能条件:
   1. A2はA1契約IDのみ参照し、共有ファイル（README/dashboard）を編集しない。
   2. A3は運用文書更新に限定し、A2と同一ファイルを編集しない。
