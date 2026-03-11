@@ -67,6 +67,18 @@
 
 ## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
 
+
+### A1依存の固定文言（A2/A3着手前に必須確認）
+
+- 参照先ファイル: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（単一正本）
+- 契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- 禁止境界:
+  1. A2は `03_Implement/**` 以外を編集しない。
+  2. A3は `04_Documentation/**` 以外を編集しない。
+  3. `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
+- 停止条件: 契約IDまたは参照先の複線化が検出された場合、A2/A3は着手停止。
+
+
 - Contract IDs（固定）:
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
