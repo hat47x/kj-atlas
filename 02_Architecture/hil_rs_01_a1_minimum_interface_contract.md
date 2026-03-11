@@ -87,7 +87,7 @@
 - critique は否定・留保データとして保持し、削除による履歴欠落を既定動作にしない。
 
 ### 3.3 A2/A3並列実行境界
-- A2は `03_Implement/frontend/**` のみ編集し、契約本文は参照専用。
+- A2は `03_Implement/**` のみ編集し、契約本文は参照専用。
 - A3は `04_Documentation/**` のみ編集し、実装コードを変更しない。
 - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）更新は統合フェーズへ分離する。
 
