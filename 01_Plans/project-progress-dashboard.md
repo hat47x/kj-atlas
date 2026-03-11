@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-11 (JST, HIL-RS-01 計画改善を反映)
+最終更新: 2026-03-11 (JST, HIL-RS-01 A1契約起票を反映)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -34,12 +34,12 @@
 | 計画整備（DOC-OPS系） | 部分完了 | `DOC-OPS-02`/`DOC-OPS-03`/`DOC-OPS-04` は Done。`REQ-DEF-01/02/03` は Done。R2/R3 Decision Queueは解消済み。 |
 | 認証運用（AUTH-OPS） | 完了 | `AUTH-OPS-03` は D1〜D4固定値と停止条件を 01/02/04 で同期し Done。 |
 | 環境変数移行（ENV-ARCH） | 完了 | `ENV-ARCH-01` は phase exit評価で Close 判定済み。 |
-| 次フェーズ計画（HIL-RS） | 着手準備完了 | `ADR-0026`（Proposed）と `HIL-RS-01`（Open）を起点に、契約先行で着手する。 |
+| 次フェーズ計画（HIL-RS） | 実行中（A1） | `ADR-0026` は Accepted。`HIL-RS-01` と `HIL-RS-01-A1`（Open）を起点に、契約先行でA2/A3着手条件を固定する。 |
 
 ## 1.1) 全Issueサマリ（Active/Done）
 
-- issue memo 総数: **26**
-- Active: **1**（`HIL-RS-01`）
+- issue memo 総数: **27**
+- Active: **2**（`HIL-RS-01`, `HIL-RS-01-A1`）
 - Done: **25**（AUTH / FB-RM / DOC / REQ / ENV / QA / DX-CODEX 系を含む）
 - 優先度上のクリティカルパス: **HIL-RS-01（次フェーズ起点）**
 
@@ -58,7 +58,7 @@
 
 - ADR-0022旧3件（Superseded）→ 後継 ADR-0023/0024/0025（Accepted）
 - ADR-0023/0024/0025 → Active Issue 依存: なし（`HIL-RS-01` は次フェーズ計画起点であり DOC-OPS-04 系依存なし）
-- Issue→Issue 依存: `HIL-RS-01` は単独起票（現時点で issue 間依存なし）
+- Issue→Issue 依存: `HIL-RS-01-A1` は `HIL-RS-01` に従属。A2/A3 は A1契約固定後に契約参照で独立着手。
 - 共有リソース: `01_Plans/issues/README.md`（Active index 正本）, `01_Plans/project-progress-dashboard.md`（進捗正本）
 
 ## 2) Active issue 集約（Draft / Open / In Progress）
@@ -67,12 +67,13 @@
 
 | Backlog ID | Status | 要点 | メモ |
 |---|---|---|---|
-| HIL-RS-01 | Open | 次フェーズ（Human-in-the-loop可逆統合）計画を起票。ADR-0026と連動して契約先行で着手する。 | P1 / docs-check |
+| HIL-RS-01 | Open | 次フェーズ（Human-in-the-loop可逆統合）計画。ADR-0026 Accepted と連動し、A1/A2/A3の実行順を管理する。 | P1 / docs-check |
+| HIL-RS-01-A1 | Open | Architecture最小I/F（Critique入力/再提案差分/レビュー帰属）を固定し、A2/A3並列可能条件を明文化する。 | P1 / docs-check |
 
 ## 2.0) 状態同期監査ログ（2026-03-11）
 
-- 監査結果: `issues/README.md` と本dashboardで `HIL-RS-01` の Active 状態が一致していることを確認。
-- 同期値: issue memo 総数=26 / Active=1 / Done=25。
+- 監査結果: `issues/README.md` と本dashboardで `HIL-RS-01` / `HIL-RS-01-A1` の Active 状態が一致していることを確認。
+- 同期値: issue memo 総数=27 / Active=2 / Done=25。
 - 補足: 共有リソース更新は単一フェーズで実施し、同時編集競合を回避する。
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
@@ -120,7 +121,7 @@
 
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
 |---|---|---|---|
-| P0 | HIL-RS-01 | ADR-0026 の採否（Proposed→Accepted/Rejected） | Deciders による status確定 |
+| P1 | HIL-RS-01-A1 | A2/A3着手前のI/F契約未固定箇所の有無確認 | A1 AC達成（未固定箇所0件） |
 | P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 決定済み（R2-P1 Reject / R2-P2 Conditional Approve / R2-P3 Conditional Approve） |
 | P2 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 決定済み（R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve） |
 
@@ -130,7 +131,8 @@
 
 | Date | Backlog ID | 決定内容 | 状態 |
 |---|---|---|---|
-| 2026-03-11 | HIL-RS-01 | 次フェーズBacklogをOpen化し、ADR-0026（Proposed）で目的/非目標/ゲートを固定。 | 進行中 |
+| 2026-03-11 | HIL-RS-01 | 次フェーズBacklogをOpen化し、ADR-0026（Accepted）で目的/非目標/ゲートを確定。 | 決定済み |
+| 2026-03-11 | HIL-RS-01-A1 | Architecture最小I/F契約（Critique/差分/帰属）をOpen起票し、A2/A3並列可能条件を明文化。 | 進行中 |
 | 2026-03-08 | REQ-DEF-03 | R3-P1 Approve、R3-P2/R3-P3 Conditional Approve。 | 決定済み |
 | 2026-03-08 | REQ-DEF-02 | R2-P1 Reject、R2-P2/R2-P3 Conditional Approve。 | 決定済み |
 | 2026-03-05 | ENV-ARCH-01 | Option B/C 採択（旧キー互換なし・監査痕跡追加なし）。 | 決定済み |
@@ -138,8 +140,8 @@
 
 ## 5) 次の1手（実行チェックリスト / Proceed）
 
-1. `HIL-RS-01` を In Progress へ進める前に、`ADR-0026` の Decider 判断（Accepted/Rejected）を確定する。
-2. A1（Architecture最小I/F定義）を最初の実行タスクとして issue 化する。
+1. `HIL-RS-01-A1` で契約未固定箇所を0件化し、A2/A3並列着手条件（契約参照・共有リソース分離）を確定する。
+2. A2（Frontend）/A3（Documentation）をA1契約参照で起票し、共有リソース更新は統合フェーズへ集約する。
 3. docs-check（validator/unittest + 同期確認）を各フェーズ完了時に再実行し、dashboardへ反映する。
 
 ### 5.1) 直列クリティカルパス固定（監査→同期→検証）
