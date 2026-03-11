@@ -234,6 +234,7 @@ issue補助メモには、最低でも次の項目を含める。
 ## Human decision support
 
 - `../project-progress-dashboard.md`: プロジェクト進捗サマリ / Active issue集約 / 判断待ちキューの単一ダッシュボード（Plan→Execute→Verify→Proceed と Self-Correction上限を含む運用入口）。
+- ダッシュボード更新原則: `project-progress-dashboard.md` は ADR / issue memo の決定事項を統合表示する参照レイヤとし、直接更新を起点にしない。必ず先に ADR または issue memo の正本を更新してから統合反映する。
 - `decision-pack-2026-03-human-judgement.md`: ActiveなDraft issueのうち、人間判断待ちの高優先項目と選択肢を集約。
 - REQ-DEF運用状態: R2-P1〜P3 / R3-P1〜P3 は決定済み。`TEMPLATE.md` の必須化ルール（R3-P1必須、R3-P2/R3-P3条件付き）を適用する。
 - DOC-OPS-04ゲート状態: ADR-A（`ADR-0022-doc-ops-04-documentation-information-interface.md`）と ADR-B/C/D（`ADR-0023/0024/0025`）は `Accepted`。旧 `ADR-0022-documentation-*` 3件は `Superseded`。
@@ -260,9 +261,9 @@ issue補助メモには、最低でも次の項目を含める。
 - 件数: issue memo 総数=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
-- Decision Queue: 人間判断待ちの未解決項目=2件（`DQ-HIL-A1-01`, `DQ-HIL-A1-02`。詳細は `project-progress-dashboard.md` を参照）。
+- Decision Queue: 人間判断待ちの未解決項目=0件（`DQ-HIL-A1-01`, `DQ-HIL-A1-02` はいずれも案Aで確定済み。詳細は `project-progress-dashboard.md` を参照）。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
-- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue=2、A1→A2→A3）を再確認。
+- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue=0、A1→A2→A3）を再確認。
 
 ## Rules
 

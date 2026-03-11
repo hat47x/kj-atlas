@@ -21,7 +21,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- DecisionQueueRef: N/A
+- DecisionQueueRef: `DQ-HIL-A1-01`, `DQ-HIL-A1-02`（いずれも案Aで確定済み）
 
 ## 0) Phase進行ログ（Plan → Execute → Verify）
 
@@ -96,6 +96,13 @@
   1. A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみを編集する。
   2. 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）は統合フェーズまで更新しない。
   3. SafeMode既定ONとshare/export漏えい防止を弱める変更を行わない。
+
+
+## 0.3) Human decision fix（DQ確定記録）
+
+- DQ-HIL-A1-01: **案Aで確定**（`intent/evidenceRefs/riskClass` を必須化、schemaVersion `v1.0` 凍結）。
+- DQ-HIL-A1-02: **案Aで確定**（`reviewerId/reviewStage/approvedAt/overrideReason` を必須化、`overridePolicy=two-person` 固定）。
+- 反映方針: 本issueを正本として確定内容を保持し、`project-progress-dashboard.md` は本issueとADRの確定情報を統合表示する参照レイヤとして同期する。
 
 ## 1) 課題 / Problem statement
 
