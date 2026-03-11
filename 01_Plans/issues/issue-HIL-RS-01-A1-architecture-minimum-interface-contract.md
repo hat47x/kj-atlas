@@ -175,6 +175,6 @@
   - `A1-REDIFF-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
   - `A1-ATTR-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - A2/A3並列可能条件:
-  1. A2はA1契約IDのみ参照し、共有ファイル（README/dashboard）を編集しない。
+  1. A2は `03_Implement/**` の範囲でA1契約IDのみ参照し、共有ファイル（README/dashboard）を編集しない。
   2. A3は運用文書更新に限定し、A2と同一ファイルを編集しない。
   3. 共有リソース更新は統合フェーズ専用コミットに集約する。

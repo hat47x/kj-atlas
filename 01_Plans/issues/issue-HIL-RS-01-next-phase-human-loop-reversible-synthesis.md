@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
+- Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: HIL-RS-01
 - Related ADR/Spec: `ADR-0026`, `ADR-0001`, `00_Prompt/domain.md`, `02_Architecture/review_attribution.md`
 - Expected verification level: `docs-check`
@@ -59,6 +59,7 @@
 
 - A1契約の単一正本を `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定する。
 - 本issueでは依存順序・非目標・停止条件・検証コマンドのみ確定し、共有リソース同期は統合フェーズへ移譲する。
+- ADR追加/更新の判定は「不要」とし、A1で上位方針変更が必要になった場合のみ承認待ち停止に移行する。
 
 ### Consequences
 
