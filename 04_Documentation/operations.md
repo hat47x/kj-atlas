@@ -546,7 +546,8 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-- `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+- `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+- `rg -n "A2-1 Candidate comparison|A2-2 Critique input|A2-3 Diff visualization|Collect and compare merge/layout candidates before any commit.|Capture critique and re-suggest iteratively while keeping human final approval.|Review deterministic diffs before apply/discard to keep the workflow reversible." 03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx 04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md`
 - `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts`
 
 判定メモ:
