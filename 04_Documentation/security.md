@@ -346,7 +346,6 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
 - Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- 補助参照（Issueメモ）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 - SafeMode既定ON、および share/export 漏えい防止の既存制約を変更しない。
 - Critique→再提案の反復は候補提示として扱い、確定操作は人間操作のみで実施する。
