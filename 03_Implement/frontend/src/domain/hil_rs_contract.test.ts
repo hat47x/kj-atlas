@@ -104,5 +104,24 @@ describe("hil_rs_contract validators", () => {
         reviewerRef: "user:local:abc",
       }),
     ).toBe(false);
+
+    expect(
+      validateHilRsReviewAttribution({
+        reviewState: "unreviewed",
+        reviewerRef: "user:local:abc",
+        reviewedAt: "2026-03-11T09:00:00.000Z",
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects review attribution payload containing PII-like identity fields", () => {
+    expect(
+      validateHilRsReviewAttribution({
+        reviewState: "human_reviewed",
+        reviewerRef: "user:local:abc",
+        reviewedAt: "2026-03-11T09:00:00.000Z",
+        email: "reviewer@example.com",
+      }),
+    ).toBe(false);
   });
 });

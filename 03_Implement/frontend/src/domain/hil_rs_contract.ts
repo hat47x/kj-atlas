@@ -114,6 +114,7 @@ export function validateHilRsReviewAttribution(value: unknown): value is HilRsRe
     return false;
   }
   if (attribution.reviewState === "human_reviewed" && !isNonEmptyString(attribution.reviewedAt)) return false;
+  if (attribution.reviewState === "unreviewed" && attribution.reviewedAt !== undefined) return false;
   if (hasPiiLikeIdentityFields(attribution)) return false;
 
   return true;
