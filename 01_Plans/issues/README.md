@@ -261,6 +261,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
 - Decision Queue: 人間判断待ちの未解決項目=0件（`HIL-RS-01-A1` は 2026-03-11 に案Aで決定済み）。
+- 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
 
 ## Rules
 
