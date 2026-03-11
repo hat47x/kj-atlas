@@ -64,6 +64,19 @@
 - A2/A3は単一参照先 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみを参照し、独自I/Fを追加しない。
 - 禁止事項（SafeMode後退、share/export漏えい防止の弱化、PII生値保存）は3契約の共通境界として固定。
 
+
+### Phase 3追記: Contract Fix確定値（Decision Queue解消）
+
+- CritiqueInputContract
+  - `schemaVersion`: `"1.0.0"`
+  - `requiredFields`: `critiqueId | targetRef | critiqueType | createdAt | iteration`
+- ReviewAttributionContract
+  - `schemaVersion`: `"1.0.0"`
+  - `auditFields`: `reviewState | reviewedAt | reviewerRef | auditRecordedAt`
+  - `overridePolicy`: `human_dual_control_only`（`ai_only_override` / `safemode_relaxation` / `share_export_leakage_relaxation` を禁止、承認は `SecurityOfficer+SystemOwner`）
+
+- Decision Queue: `DQ-A1-01..04` は上記固定により **Resolved**。
+
 ### Phase 4: Verify（Plan → Execute → Verify → Proceed）
 
 - Plan: 契約ID3件と単一参照先1件の単一定義を3ファイル横断で検証する。
