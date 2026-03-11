@@ -486,6 +486,12 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 `ADR-0026` の D1〜D4 および HIL-RS-01 issue の A1/A2 定義に合わせ、
 次フェーズの運用手順は以下を最小セットとして固定します。
 
+参照契約（A1）:
+
+- RequirementID: `HIL-RS-01-A1`
+- 契約境界: Critique入力 / 再提案差分 / レビュー帰属
+- 契約参照先: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
 ### 1. 実行順序（A1 → A2 → A3）
 
 1. A1（Architecture契約）で固定された境界を先に確認する。
@@ -499,11 +505,25 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
 
+### 1.1 A2挙動との対応表（A3同期対象）
+
+| A2挙動（実装意図） | A3で固定する運用文言 | 逸脱時の扱い |
+| --- | --- | --- |
+| 候補比較は意思決定補助であり確定操作ではない | 「候補提示」と「確定操作（人間のみ）」を明記する | 自動確定へ拡張する提案は停止して上位合意へ戻す |
+| 人間入力（Critique）は文書本体へ保存される | 入力は可逆編集前提、監査はPII最小化で記録する | subject生値や自由記述PIIの監査転記は禁止 |
+| 差分可視は再提案の比較導線として使う | 差分は可逆操作で追跡可能であることを維持する | 一方向適用のみの導線は非目標として却下 |
+
 ### 2. 制約（非目標と停止条件）
 
 - SafeMode 既定ONと share/export 漏えい防止を弱める変更は不可。
 - 単一スコア・ランキングなど「単一正解」を示唆する運用は禁止。
 - `domain.md` の保留/可逆性と矛盾する場合は、実装を進めず上位文書（00〜02）を先に修正提案する。
+
+非目標（A3では扱わない）:
+
+- LLM Provider 再設計
+- Frontend コンポーネント実装
+- SafeMode 既定ON の緩和
 
 ### 3. docs-check 記録
 

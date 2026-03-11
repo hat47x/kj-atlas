@@ -416,15 +416,20 @@ Compose未実行時は、以下を「未確認リスク」としてPRに残す�
 
 A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで確認する。
 
+前提（A1/A2整合）:
+- RequirementID `HIL-RS-01-A1` の契約境界（Critique入力 / 再提案差分 / レビュー帰属）を参照済みであること。
+- A2挙動（候補比較 / 人間入力 / 差分可視）と A3文書記述の対応表が `operations.md` に記録済みであること。
+
 ```bash
 python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
-rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
+rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
 ```
 
 期待値:
 - issue memo validator と unit test が成功する。
-- `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 の同期記述が存在する。
+- `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 / Critique / レビュー帰属 の同期記述が存在する。
+- A3の非目標（SafeMode後退禁止・自動確定導線禁止）が文書内で確認できる。
 
 注記:
 - `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
