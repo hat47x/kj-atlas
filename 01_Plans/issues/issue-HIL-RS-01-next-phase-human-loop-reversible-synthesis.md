@@ -137,6 +137,21 @@
   - Proceed: A2/A3着手可（契約先行維持）を判定。
   - Self-correction: 0/3回（追加修復不要）。
 
+## 4.5) Phase 5: Proceed / Handoff（A2/A3固定）
+
+- Contract IDs（handoff固定）:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- Single Reference（handoff固定）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 禁止境界（handoff固定）:
+  1. A2は `03_Implement/**` 以外を編集しない。
+  2. A3は `04_Documentation/**` 以外を編集しない。
+  3. `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
+- Fail-safe:
+  - Self-correctionが3回を超える場合、前提崩れまたは未定義競合として即停止し、推測実行を行わない。
+
 ## 4.3) Stream C 進捗ログ（Documentation同期）
 
 - 実施内容: `04_Documentation/operations.md` / `security.md` / `e2e_testing.md` を A1 契約 + B 実装確定内容に同期。
