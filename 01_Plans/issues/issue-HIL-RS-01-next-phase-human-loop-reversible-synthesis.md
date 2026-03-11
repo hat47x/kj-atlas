@@ -66,6 +66,35 @@
 - A2/A3 は契約解釈待ちなしで作業開始できる。
 - Active一覧同期は未完タスクとして残るため、統合フェーズでの追実施が必須となる。
 
+## 4.1.1) Phase 1: Read/Baseline（Stream A記録）
+
+- Read対象（対象3ファイル）:
+  1. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Baseline確認結果:
+  - 契約ID3点（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）は3ファイルに整合して存在。
+  - 単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定済み。
+- 事前想定との差分:
+  - 契約未固定は検出されず、差分は「未固定箇所なし（0件）」。
+
+## 4.1.2) Phase 2: ADR明文化（要否判定）
+
+### Context
+
+- Stream A の作業は既存 `ADR-0026` D2（A1契約先行）を文書レベルで固定する範囲に限定される。
+- 上位方針（価値軸・安全制約・停止条件）の変更要求は発生していない。
+
+### Decision
+
+- 判定: **ADR追加不要**。
+- 運用: 上位方針変更が新たに発生した場合のみ、承認取得までA2/A3着手を停止する。
+
+### Consequences
+
+- Stream A は契約IDと単一参照先の固定に集中し、A2/A3の待ちを解消できる。
+- ADR起票コストを増やさず、既存ADRへの整合を維持できる。
+
 ## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
 
 
@@ -94,6 +123,19 @@
 - 停止条件:
   - 契約ID/参照先の複線化が検出された場合は停止し、A2/A3着手を保留する。
   - SafeMode既定ONまたはshare/export漏えい防止の後退が示唆される場合は停止する。
+
+## 4.4) Phase 3/4 Execute記録（Contract Fix → Verify）
+
+- Phase 3: Contract Fix
+  - 契約ID3点と単一参照先を再確認し、複線化を禁止境界として固定。
+  - SafeMode既定ON・share/export漏えい防止後退禁止を維持。
+  - A2編集境界=`03_Implement/**`、A3編集境界=`04_Documentation/**`を固定。
+- Phase 4: Verify（Plan → Execute → Verify → Proceed）
+  - Plan: 3ファイル横断で契約IDと単一参照先の重複有無を検証。
+  - Execute: `rg` で契約ID/参照先の出現箇所を抽出。
+  - Verify: 複線化なし、共有リソース編集要求なしを確認。
+  - Proceed: A2/A3着手可（契約先行維持）を判定。
+  - Self-correction: 0/3回（追加修復不要）。
 
 ## 4.3) Stream C 進捗ログ（Documentation同期）
 
@@ -139,11 +181,7 @@
 - ADR化が必要になる条件: 安全制約または保留/可逆性の定義変更が必要になった場合。
 
 
-## 10) Stream B進捗メモ（A2実装）
+## 10) Stream B/C連携メモ（参照のみ）
 
-- 参照契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`（参照先: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）。
-- 実装済み（frontend scope）:
-  - `hil_rs_rediff_stub` を追加し、`proposalId`/`basedOnIteration`/`diffOps`/`traceKey` を満たすモック差分payloadを生成。
-  - `HilRsRediffPreview` を追加し、A2-3で再提案差分の可視化スタブを表示。
-  - `App.tsx` で critique入力収集→rediffスタブ生成→UI表示を接続。
-- 未解決: backend連携の実データ化（現状は契約準拠stub/fixture）。
+- Stream A は契約固定のみを担当し、A2/A3の実装詳細は本Issueで管理しない。
+- A2は `03_Implement/**`、A3は `04_Documentation/**` の境界を維持して別ストリームで実施する。
