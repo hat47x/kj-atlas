@@ -248,6 +248,12 @@ issue補助メモには、最低でも次の項目を含める。
 | HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Open | N/A |
 | HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Open | N/A |
 
+### HIL-RS-01 実行順序と競合回避（Stream D 統合基準）
+
+- 依存順は **A1 → A2 → A3** の直列を固定し、A1完了報告が揃うまで A2/A3 は着手しない。
+- Stream A/B/C の完了報告が揃うまで、共有リソース（`issues/README.md` / `project-progress-dashboard.md`）は更新しない。
+- 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
+
 ## Rules
 
 1. 新規作成先は必ず `01_Plans/issues/`。

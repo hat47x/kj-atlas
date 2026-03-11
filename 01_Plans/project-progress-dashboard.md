@@ -74,7 +74,8 @@
 
 - 監査結果: `issues/README.md` と本dashboardで `HIL-RS-01` / `HIL-RS-01-A1` の Active 状態が一致していることを確認。
 - 同期値: issue memo 総数=27 / Active=2 / Done=25。
-- 補足: 共有リソース更新は単一フェーズで実施し、同時編集競合を回避する。
+- 依存順: **A1→A2→A3** を固定し、A1完了報告が揃うまで A2/A3 は着手しない。
+- 競合回避: Stream A/B/C の完了報告受領後に Stream D が共有リソース（README/dashboard）を統合同期する。
 - Stream D最終同期: Active/Done集計、Decision Queue、Next actions を再監査し、矛盾ゼロを確認。
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
