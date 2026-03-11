@@ -122,3 +122,11 @@
   - 契約本文を参照せず独自I/Fを追加すること。
   - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）をストリーム内で更新すること。
   - A2で`04_Documentation/**`、A3で`03_Implement/**`を同時に変更すること。
+
+## 7. AC/DoD自己検証（Stream A）
+
+- [x] `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約IDが固定されている。
+- [x] A2/A3の単一参照先が本ファイルで固定されている。
+- [x] SafeMode既定ON・share/export漏えい防止後退禁止が明記されている。
+- [x] A2/A3の禁止境界（編集スコープ分離・共有リソース更新禁止）が明記されている。
+
