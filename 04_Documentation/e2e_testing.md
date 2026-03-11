@@ -416,24 +416,24 @@ Compose未実行時は、以下を「未確認リスク」としてPRに残す�
 
 A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで確認する。
 
-> A2 UI確定点 handoff が未受領の場合、本節は docs-check を中心とした同期確認を優先する。
-> UI文言/導線の厳密一致チェックは handoff 受領後の再検証で確定する。
-
 前提（A1/A2整合）:
 - RequirementID `HIL-RS-01-A1` の契約境界（Critique入力 / 再提案差分 / レビュー帰属）を参照済みであること。
 - Contract Keys（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）が運用文書側に明記されていること。
 - 契約正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を参照し、Issueメモとの差分がないこと。
 - A2挙動（候補比較 / 人間入力 / 差分可視）と A3文書記述の対応表が `operations.md` に記録済みであること。
+- `HilRsWorkflowPanel` の3導線ラベル/説明文と、運用文書の手順文言に差分がないこと。
 
 ```bash
 python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
 rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
+cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts
 ```
 
 期待値:
 - issue memo validator と unit test が成功する。
 - `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 / Critique / レビュー帰属 の同期記述が存在する。
+- HIL-RS workflow 関連の vitest（UI/contract/payload）が成功し、文書化した運用制約と実装の差分がない。
 - A3の非目標（SafeMode後退禁止・自動確定導線禁止）が文書内で確認できる。
 
 注記:

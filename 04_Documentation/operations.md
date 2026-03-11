@@ -483,11 +483,8 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 ## HIL-RS-01 運用同期（A3）
 
-`ADR-0026` の D1〜D4 および HIL-RS-01 issue の A1 定義に合わせ、
+`ADR-0026` の D1〜D4、および HIL-RS-01 issue の A1 契約と B 実装確定内容に合わせ、
 次フェーズの運用手順は以下を最小セットとして固定します。
-
-> A2 UI確定点 handoff が未受領の間は、本節を「運用骨子（暫定）」として扱います。
-> UIラベル/コンポーネント名などの確定文言は handoff 受領後に更新し、推測で固定しません。
 
 参照契約（A1）:
 
@@ -507,7 +504,10 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
    - A2-1 Candidate comparison
    - A2-2 Critique input
    - A2-3 Diff visualization
-   - 導線名/表示ラベルは A2 handoff 受領後に同期する（暫定段階では機能名のみ固定）。
+   - `HilRsWorkflowPanel` 上の表示ラベルと説明文を運用文言として固定する。
+     - A2-1: `Collect and compare merge/layout candidates before any commit.`
+     - A2-2: `Capture critique and re-suggest iteratively while keeping human final approval.`
+     - A2-3: `Review deterministic diffs before apply/discard to keep the workflow reversible.`
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
 
@@ -519,11 +519,10 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 | A2-2 Critique input は反復改善の入力導線である | 入力は可逆編集前提、監査はPII最小化で記録する | subject生値や自由記述PIIの監査転記は禁止 |
 | A2-3 Diff visualization は再提案の比較導線として使う | 差分は可逆操作で追跡可能であることを維持する | 一方向適用のみの導線は非目標として却下 |
 
-注記（A2 handoff未受領時）:
+実装整合メモ（B handoff反映済み）:
 
-- 本表の「A2挙動」は機能境界の骨子のみを示す。
-- 表示文言・導線名・UI配置順は確定文言として扱わない。
-- handoff受領後は本節を更新し、受領日と反映差分を作業記録へ残す。
+- UI導線名は `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx` の見出しを正として同期済み。
+- 運用上の制約は `03_Implement/frontend/src/domain/hil_rs_contract.ts` の validator 制約（PII-like field拒否、可逆差分必須、人間レビュー帰属）と一致させる。
 
 ### 2. 制約（非目標と停止条件）
 
@@ -542,6 +541,6 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
-- `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts`
+- `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts`
 
 上記コマンドの結果を PR/作業記録に残し、再現可能性を担保します。
