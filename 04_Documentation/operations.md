@@ -483,7 +483,7 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 ## HIL-RS-01 運用同期（A3）
 
-`ADR-0026` の D1〜D4、および HIL-RS-01 issue の A1 契約と B 実装確定内容に合わせ、
+`ADR-0026` の D1〜D4、および A1 契約と B 実装確定内容に合わせ、
 次フェーズの運用手順は以下を最小セットとして固定します。
 
 参照契約（A1）:
@@ -492,7 +492,6 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
 - Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- 補助参照（Issueメモ）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ### 1. 実行順序（A1 → A2 → A3）
 
@@ -510,6 +509,13 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
      - A2-3: `Review deterministic diffs before apply/discard to keep the workflow reversible.`
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
+
+### 1.2 A3運用固定（再現手順）
+
+1. `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約を、運用手順・検証手順・停止条件のすべてで同一表記に揃える。
+2. `HilRsWorkflowPanel` の3導線ラベルと説明文を、運用文言の固定値として扱う。
+3. `hil_rs_contract.ts` の検証制約（PII-like field拒否 / reversible diff必須 / human review帰属必須）と矛盾する運用記述を禁止する。
+4. 契約未固定（ID未記載・契約境界の欠落）を検知した場合は、推測補完せず更新を停止する。
 
 ### 1.1 A2挙動との対応表（A3同期対象）
 
@@ -542,5 +548,10 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
 - `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts`
+
+判定メモ:
+
+- `rg` で `HIL-RS-01-A1` と 3 Contract Key の同時出現を確認し、表記揺れを禁止する。
+- vitest は文書固定値（3導線ラベル）と validator 制約の整合確認として扱う。
 
 上記コマンドの結果を PR/作業記録に残し、再現可能性を担保します。
