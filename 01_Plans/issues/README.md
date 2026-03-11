@@ -293,3 +293,4 @@ issue補助メモには、最低でも次の項目を含める。
 - AUTH系 issue memo は、開始宣言までは `N/A` を正とし、宣言後は次回更新PRでURLへ同期する（Active対象は `AUTH-E2E-01`、Done対象は次回メタ更新時に追随）。
 - Done メモは自動GCせず、量が増えた場合も人間判断でのみ削除/整理する。
 - ADR 側ステータス（例: `FB-RM-I18N-03`）は issue memo の実績に同期する。
+- 2026-03-11 Stream D統合フェーズで Active/Done 集計と dashboard の Decision Queue / Next actions を再監査し、不整合ゼロを確認。

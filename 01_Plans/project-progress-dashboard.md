@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-11 (JST, HIL-RS-01 A1契約起票を反映)
+最終更新: 2026-03-11 (JST, Stream D 統合フェーズ最終同期を反映)
 
 このダッシュボードは、`01_Plans/` 配下の進捗と意思決定待ちを1ファイルで確認するための運用入口。
 
@@ -75,6 +75,7 @@
 - 監査結果: `issues/README.md` と本dashboardで `HIL-RS-01` / `HIL-RS-01-A1` の Active 状態が一致していることを確認。
 - 同期値: issue memo 総数=27 / Active=2 / Done=25。
 - 補足: 共有リソース更新は単一フェーズで実施し、同時編集競合を回避する。
+- Stream D最終同期: Active/Done集計、Decision Queue、Next actions を再監査し、矛盾ゼロを確認。
 
 ## 2.1) Phase Gate 状態（REQ-DEF-02/03）
 
@@ -122,8 +123,8 @@
 | Priority | Backlog ID | 判断テーマ | 必要な決定 |
 |---|---|---|---|
 | P1 | HIL-RS-01-A1 | A2/A3着手前のI/F契約未固定箇所の有無確認 | A1 AC達成（未固定箇所0件） |
-| P1 | REQ-DEF-02 | 責任分界点の固定粒度 | 決定済み（R2-P1 Reject / R2-P2 Conditional Approve / R2-P3 Conditional Approve） |
-| P2 | REQ-DEF-03 | 受入シナリオ規約の拘束力 | 決定済み（R3-P1 Approve / R3-P2 Conditional Approve / R3-P3 Conditional Approve） |
+
+注記: `REQ-DEF-02/03` は決定ログで `決定済み` を維持し、Decision Queue（人間判断待ち）には再掲しない。
 
 補助資料: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`（DOC-OPS-04の判断履歴参照用。現行ゲート状態は本dashboardを正本とする）
 
