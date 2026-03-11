@@ -45,6 +45,25 @@ describe("buildHilRsRediffStub", () => {
     expect(payload?.diffOps.map((op) => op.opType).sort()).toEqual(["add", "move", "remove"]);
   });
 
+
+  it("returns null when critique inputs are missing", () => {
+    const suggested: DocumentV2 = {
+      ...CURRENT_DOC,
+      cards: [
+        { id: "c1", text: "alpha", x: 2, y: 3 },
+        { id: "c3", text: "gamma", x: 20, y: 20 },
+      ],
+    };
+
+    const payload = buildHilRsRediffStub(CURRENT_DOC, suggested, {
+      suggestionId: "proposal-1",
+      iteration: 2,
+      critiqueInputs: [],
+    });
+
+    expect(payload).toBeNull();
+  });
+
   it("returns null when there are no structural changes", () => {
     const payload = buildHilRsRediffStub(CURRENT_DOC, CURRENT_DOC, {
       suggestionId: "proposal-1",
