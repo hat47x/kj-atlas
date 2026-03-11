@@ -45,6 +45,7 @@ import { useHotkeys } from "./hooks/useHotkeys";
 import { Shell } from "./ui/Shell";
 import { SidePanel } from "./ui/SidePanel";
 import { SuggestionPanel } from "./ui/SuggestionPanel";
+import { HilRsWorkflowPanel } from "./ui/HilRsWorkflowPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
@@ -7943,40 +7944,47 @@ ${parsedDocument.error}`);
                 document={document}
                 hideSourceCards={hideSourceCards}
               />
-              <MergeSuggestionsPanel
-                isReadOnly={isReadOnly}
-                instruction={mergeSuggestionInstruction}
-                onInstructionChange={setMergeSuggestionInstruction}
-                onSuggest={() => {
-                  void handleSuggestMerges();
-                }}
-                isSuggesting={isSuggestingMerges}
-                errorMessage={mergeSuggestionError}
-                suggestions={mergeSuggestions}
-                cardsById={cardsById}
-                onMergedTextChange={handleMergeSuggestionTextChange}
-                onDecide={handleRecordMergeSuggestionDecision}
-              />
-              <SuggestionPanel
-                isReadOnly={isReadOnly}
-                instruction={suggestionInstruction}
-                onInstructionChange={setSuggestionInstruction}
-                onSuggest={() => {
-                  void handleSuggestLayout();
-                }}
-                onResuggest={() => {
-                  void handleSuggestLayout();
-                }}
-                onApply={handleApplySuggestion}
-                onDiscard={handleDiscardSuggestion}
-                hasSuggestion={Boolean(suggestedDocument && suggestionId)}
-                isPreviewEnabled={isSuggestionPreviewEnabled}
-                onPreviewToggle={setIsSuggestionPreviewEnabled}
-                isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
-                onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
-                isSuggesting={isSuggesting}
-                errorMessage={suggestionError}
-                notes={suggestionNotes}
+              <HilRsWorkflowPanel
+                candidateComparison={
+                  <MergeSuggestionsPanel
+                    isReadOnly={isReadOnly}
+                    instruction={mergeSuggestionInstruction}
+                    onInstructionChange={setMergeSuggestionInstruction}
+                    onSuggest={() => {
+                      void handleSuggestMerges();
+                    }}
+                    isSuggesting={isSuggestingMerges}
+                    errorMessage={mergeSuggestionError}
+                    suggestions={mergeSuggestions}
+                    cardsById={cardsById}
+                    onMergedTextChange={handleMergeSuggestionTextChange}
+                    onDecide={handleRecordMergeSuggestionDecision}
+                  />
+                }
+                critiqueInput={
+                  <SuggestionPanel
+                    isReadOnly={isReadOnly}
+                    instruction={suggestionInstruction}
+                    onInstructionChange={setSuggestionInstruction}
+                    onSuggest={() => {
+                      void handleSuggestLayout();
+                    }}
+                    onResuggest={() => {
+                      void handleSuggestLayout();
+                    }}
+                    onApply={handleApplySuggestion}
+                    onDiscard={handleDiscardSuggestion}
+                    hasSuggestion={Boolean(suggestedDocument && suggestionId)}
+                    isPreviewEnabled={isSuggestionPreviewEnabled}
+                    onPreviewToggle={setIsSuggestionPreviewEnabled}
+                    isAnnotateOverlayEnabled={isAnnotateOverlayEnabled}
+                    onAnnotateOverlayToggle={setIsAnnotateOverlayEnabled}
+                    isSuggesting={isSuggesting}
+                    errorMessage={suggestionError}
+                    notes={suggestionNotes}
+                  />
+                }
+                diffVisualization={structuralDiffPanel}
               />
             </>
           }
