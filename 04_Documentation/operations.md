@@ -510,14 +510,14 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
 
-### 1.2 A3運用固定（再現手順）
+### 1.1 A3運用固定（再現手順）
 
 1. `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約を、運用手順・検証手順・停止条件のすべてで同一表記に揃える。
 2. `HilRsWorkflowPanel` の3導線ラベルと説明文を、運用文言の固定値として扱う。
 3. `hil_rs_contract.ts` の検証制約（PII-like field拒否 / reversible diff必須 / human review帰属必須）と矛盾する運用記述を禁止する。
 4. 契約未固定（ID未記載・契約境界の欠落）を検知した場合は、推測補完せず更新を停止する。
 
-### 1.1 A2挙動との対応表（A3同期対象）
+### 1.2 A2挙動との対応表（A3同期対象）
 
 | A2挙動（実装意図） | A3で固定する運用文言 | 逸脱時の扱い |
 | --- | --- | --- |
