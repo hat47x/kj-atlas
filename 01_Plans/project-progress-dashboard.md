@@ -181,6 +181,13 @@
 2. A2（Frontend）/A3（Documentation）をA1契約参照で起票し、共有リソース更新は統合フェーズへ集約する。
 3. docs-check（validator/unittest + 同期確認）を各フェーズ完了時に再実行し、dashboardへ反映する。
 
+### 5.0) Stream D 統合更新宣言（2026-03-11 JST）
+
+- 更新対象: `01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md` のみ。
+- 同期内容: 件数（27/2/25）、Active一覧（`HIL-RS-01`, `HIL-RS-01-A1`）、Decision Queue（未解決0件）、次アクション（A1→A2→A3）を再監査。
+- 判定: Active/Done件数、Status、依存順序、Decision Queue の不整合は **0件**。
+- 反映条件: Stream A/B/C の完了報告受領後に Stream D が単一コミットで同期（受領確認済み）。
+
 ### 5.1) 直列クリティカルパス固定（監査→同期→検証）
 
 再開時の最優先シーケンスは次の3段階を固定する。
