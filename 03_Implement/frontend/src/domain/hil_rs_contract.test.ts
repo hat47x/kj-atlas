@@ -44,6 +44,20 @@ describe("hil_rs_contract validators", () => {
     ).toBe(false);
   });
 
+
+  it("rejects critique payload that attempts review state mutation fields", () => {
+    expect(
+      validateHilRsCritiqueInput({
+        critiqueId: "crit-4",
+        targetRef: "card:c4",
+        critiqueType: "too_far",
+        createdAt: "2026-03-11T09:00:00.000Z",
+        iteration: 1,
+        reviewState: "human_reviewed",
+      }),
+    ).toBe(false);
+  });
+
   it("accepts reversible rediff payload and rejects irreversible ops", () => {
     expect(
       validateHilRsRediffPayload({
