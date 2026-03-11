@@ -490,6 +490,7 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 - RequirementID: `HIL-RS-01-A1`
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
+- Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 補助参照（Issueメモ）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
@@ -503,6 +504,7 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
    - A2-1 Candidate comparison
    - A2-2 Critique input
    - A2-3 Diff visualization
+   - 導線名は `HilRsWorkflowPanel` の見出し文字列と一致させる（運用文書での別名化を禁止）。
 3. A3（Documentation同期）で本書・`security.md`・`e2e_testing.md` の
    手順と制約を同期し、検証コマンドを記録する。
 
