@@ -120,8 +120,7 @@ import {
 } from "./domain/view/collapse_visibility";
 import { setAllIslandsCollapsed, setIslandCollapsed } from "./domain/view/collapse_state";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
-import { buildHilRsCritiqueInputs } from "./domain/hil_rs_payload";
-import { buildHilRsRediffStub } from "./domain/hil_rs_rediff_stub";
+import { createHilRsStubClient } from "./domain/hil_rs_stub_client";
 import { HilRsRediffPreview } from "./ui/HilRsRediffPreview";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
@@ -7752,28 +7751,33 @@ ${parsedDocument.error}`);
     />
   );
 
+  const hilRsStubClient = useMemo(() => createHilRsStubClient(), []);
+
   const hilRsCritiqueInputs = useMemo(() => {
     if (!document) {
       return [];
     }
 
-    return buildHilRsCritiqueInputs(document, {
+    return hilRsStubClient.collectCritiqueInputs({
+      document,
       iteration: suggestionIteration,
       createdAt: new Date().toISOString(),
     });
-  }, [document, suggestionIteration]);
+  }, [document, hilRsStubClient, suggestionIteration]);
 
   const hilRsRediffPreviewPayload = useMemo(() => {
     if (!document || !suggestedDocument || !suggestionId) {
       return null;
     }
 
-    return buildHilRsRediffStub(document, suggestedDocument, {
+    return hilRsStubClient.previewRediff({
+      currentDocument: document,
+      suggestedDocument,
       suggestionId,
       iteration: suggestionIteration,
       critiqueInputs: hilRsCritiqueInputs,
     });
-  }, [document, hilRsCritiqueInputs, suggestedDocument, suggestionId, suggestionIteration]);
+  }, [document, hilRsCritiqueInputs, hilRsStubClient, suggestedDocument, suggestionId, suggestionIteration]);
 
   const headerShareControls = (
     <SharePanel

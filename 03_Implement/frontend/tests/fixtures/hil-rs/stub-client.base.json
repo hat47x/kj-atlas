@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "id": "doc-hil-rs-fixture",
+  "transform": { "panX": 0, "panY": 0, "zoom": 1 },
+  "cards": [
+    { "id": "c1", "text": "alpha", "x": 0, "y": 0, "critique": "too close", "critiqueTags": ["too_close"] },
+    { "id": "c2", "text": "beta", "x": 10, "y": 20 }
+  ],
+  "islands": [
+    { "id": "i1", "title": "grp", "cardIds": ["c1"], "critique": "separate", "critiqueTags": ["not_the_same"] }
+  ],
+  "edges": [],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}
