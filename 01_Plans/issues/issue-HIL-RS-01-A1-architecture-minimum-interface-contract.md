@@ -61,6 +61,16 @@
   - ADR更新が必要と判定された場合は実装を停止し、承認待ちとする。
   - 契約IDと参照先が単一化できない場合はA2/A3着手不可として停止する。
 
+
+## 0.2) Proceed固定handoff（A2/A3向け）
+
+- Contract IDs（固定）: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Single Reference（固定）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 禁止境界（固定）:
+  1. A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみを編集する。
+  2. 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）は統合フェーズまで更新しない。
+  3. SafeMode既定ONとshare/export漏えい防止を弱める変更を行わない。
+
 ## 1) 課題 / Problem statement
 
 - HIL-RS-01の実行順でA1契約が未固定だと、A2（Frontend実装）とA3（Documentation同期）が同一論点を重複解釈して競合する。

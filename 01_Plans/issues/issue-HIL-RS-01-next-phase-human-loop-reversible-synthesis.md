@@ -65,6 +65,23 @@
 - A2/A3 は契約解釈待ちなしで作業開始できる。
 - Active一覧同期は未完タスクとして残るため、統合フェーズでの追実施が必須となる。
 
+## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
+
+- Contract IDs（固定）:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- Single Reference（固定）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 対象:
+  - A1契約IDと参照先の単一化、およびA2/A3の禁止境界（編集スコープ分離）固定。
+- 非対象:
+  - 共有リソース更新（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）
+  - `03_Implement/**`, `04_Documentation/**` の変更
+- 停止条件:
+  - 契約ID/参照先の複線化が検出された場合は停止し、A2/A3着手を保留する。
+  - SafeMode既定ONまたはshare/export漏えい防止の後退が示唆される場合は停止する。
+
 ## 5) 実装タスク分解 / Task breakdown
 
 - [x] T1: `ADR-0026` の status を Decider判断に応じて確定（Proposed→Accepted/Rejected）する。
@@ -78,11 +95,11 @@
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-  - `rg -n "HIL-RS-01|ADR-0026|Active:|次フェーズ" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+  - `rg -n "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|hil_rs_01_a1_minimum_interface_contract" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 期待結果:
-  - HIL-RS-01 が Active issue として index / dashboard の双方で確認できる。
+  - A1契約ID 3件と単一参照先 1件が3ファイルで整合して検出される。
 - 未実施時の理由・代替検証:
-  - docs-check が実行不能な場合は `rg` 出力で同期箇所を手動照合する。
+  - docs-check が実行不能な場合は `rg` 出力で契約IDと参照先の単一性を手動照合する。
 
 ## 7) 代替案 / Alternatives considered
 
