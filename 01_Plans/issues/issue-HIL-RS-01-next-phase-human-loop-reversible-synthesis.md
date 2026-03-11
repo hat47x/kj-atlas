@@ -95,6 +95,14 @@
 - Stream A は契約IDと単一参照先の固定に集中し、A2/A3の待ちを解消できる。
 - ADR起票コストを増やさず、既存ADRへの整合を維持できる。
 
+
+### 4.1.3) Phase 3: Contract Fix（Stream A確定）
+
+- 単一正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` にて、以下を固定。
+  - CritiqueInputContract: `schemaVersion=1.0.0`、`requiredFields=critiqueId|targetRef|critiqueType|createdAt|iteration`
+  - ReviewAttributionContract: `schemaVersion=1.0.0`、`auditFields=reviewState|reviewedAt|reviewerRef|auditRecordedAt`、`overridePolicy=human_dual_control_only`
+- Decision Queue（A1）: `DQ-A1-01..04` を解消済みとし、A2/A3は参照専用で利用する。
+
 ## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
 
 

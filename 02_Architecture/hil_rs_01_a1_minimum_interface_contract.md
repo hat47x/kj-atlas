@@ -19,6 +19,37 @@
 
 ## 2. 契約一覧（必須/任意/禁止）
 
+### 2.0 正規I/F署名（A2/A3参照専用）
+
+- Single Reference（SSOT）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+
+#### CritiqueInputContract（固定）
+
+- `schemaVersion`: `"1.0.0"`（固定）
+- `requiredFields`（固定）:
+  - `critiqueId`
+  - `targetRef`
+  - `critiqueType`
+  - `createdAt`
+  - `iteration`
+
+#### ReviewAttributionContract（固定）
+
+- `schemaVersion`: `"1.0.0"`（固定）
+- `auditFields`（固定）:
+  - `reviewState`
+  - `reviewedAt`
+  - `reviewerRef`
+  - `auditRecordedAt`
+- `overridePolicy`（固定）:
+  - `allowed`: `"human_dual_control_only"`
+  - `prohibited`:
+    - `"ai_only_override"`
+    - `"safemode_relaxation"`
+    - `"share_export_leakage_relaxation"`
+  - `requiredApproval`: `"SecurityOfficer+SystemOwner"`
+
 ### 2.1 Critique入力I/F（Contract Key: `A1-CRITIQUE-IF`）
 
 #### 必須
@@ -116,6 +147,13 @@
 - `A1-REDIFF-IF`: 0件（固定済み）
 - `A1-ATTR-IF`: 0件（固定済み）
 - A2/A3参照先未定: 0件（本ファイルを単一参照先として固定）
+
+### 5.2 Decision Queue解消（A1）
+
+- `DQ-A1-01` CritiqueInputContract.requiredFields 未固定 → **Resolved**（2.0で固定）。
+- `DQ-A1-02` CritiqueInputContract.schemaVersion 未固定 → **Resolved**（`1.0.0`固定）。
+- `DQ-A1-03` ReviewAttribution.auditFields 未固定 → **Resolved**（2.0で固定）。
+- `DQ-A1-04` ReviewAttribution.overridePolicy 未固定 → **Resolved**（2.0で固定）。
 
 ### 5.1 単一定義検証（Phase 1/4 記録）
 
