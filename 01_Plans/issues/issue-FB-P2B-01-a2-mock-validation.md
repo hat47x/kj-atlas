@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-01-A2 Similar-card候補提示 / モック検証
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream C
@@ -13,12 +13,12 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2B-01`
-- RequirementStatement: `Similar-card候補提示` を モック検証 の責務で前進させる。
+- RequirementStatement: A1契約に基づく候補group提示をmockで検証可能状態にする。
 - PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）:
-  - 前提: `FB-P2B-01` のDoDを満たすための計画段階である。
-  - 操作: モック検証 に限定して成果物を作成する。
-  - 期待結果: 下流段階へ引き渡せる判断材料が揃う。
+  - 前提: A1契約がFixedである。
+  - 操作: mock candidate groupsを投入し、表示/再読込の期待値を検証する。
+  - 期待結果: 非自動確定かつ再読込復元の契約がテスト化される。
   - 除外: 実コード変更（`03_Implement/**`）と運用文書更新（`04_Documentation/**`）。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
@@ -28,62 +28,64 @@
 
 ## 1) 課題 / Problem statement
 
-- ADR-0007のP0 `FB-P2B-01` はDoDが定義済みだが、着手順と境界I/Fが未分解のままでは他レーンと衝突しやすい。
-- 本Issueは3段分割のうち **モック検証 専用** とし、責務を単一化する。
+- A1契約を実装前に検証しないと、A3で「表示できるが復元できない」等の結合欠陥が顕在化する。
 
 ## 2) 背景 / Context
 
-- Backlog基準: `FB-P2B-01` / AC-2B-1 / DoD: candidate group 一覧と対象Cardを確認できる。
-- DoD依存: domain deterministic candidate contract, UI表示I/F
+- Backlog基準: `FB-P2B-01` / AC-2B-1。
+- A2では mock 検証のみ実施し、実装判断はA3に限定する。
 
 ## 3) 判断基準による優先度評価
 
-- 価値・判断軸（ADR-0001）: 仕様評価前に判断境界を固定し、レビュー認知負荷を下げる。
-- 安全（THREAT_MODEL / SafeMode）: 計画段階では既定ポリシーを不変更。
-- 企業・行政要件（enterprise_architecture）: 本Issueでは対象外（N/A）だが、契約明文化により後続監査性を確保。
-- 後方互換（schemas）: 互換破壊の有無を段階ごとに明記して実装段階へ引き継ぐ。
+- 価値・判断軸（ADR-0001）: 実装前に結合失敗を潰し、レビュー負荷を低減する。
+- 安全（THREAT_MODEL / SafeMode）: 候補提示で自動確定を禁止し、人手判断を維持する。
+- 企業・行政要件（enterprise_architecture）: 判断ログ復元の検証可能性を確保。
+- 後方互換（schemas）: A1フィールド欠損時の扱いをA2でテスト条件化する。
 
 ## 4) 提案する解決策 / Proposed solution
 
-- 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-*.md`）。
-- 変更の最小単位: 1 Issue = 1段階 = 1検証責務。
-- 非目標: 実コード変更、README/ダッシュボード更新、リリース判断。
+- 変更対象: Docs/Plans only（本issue memo）。
+- A2検証契約:
+  - mock入力: `CandidateListViewModel` with 2 groups / 1 target card each。
+  - 期待表示: group順序と `targetCardId` が一致。
+  - 非自動確定: 候補提示のみで merge state は未確定のまま。
+  - 再読込復元: 同一 `snapshotVersion` を再投入すると同一group構造が再現される。
+- 非目標: 候補計算アルゴリズム・永続層実装。
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `FB-P2B-01` のモック検証責務と次段引き継ぎ条件が明文化される。
-- [ ] AC/DoDギャップがあれば補完ドラフトを記録する。
-- [ ] セキュリティ境界を変更しないことを明記する。
-- [ ] 検証レベル `integration` が宣言・整合している。
-- [ ] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
+- [x] 非自動確定（候補提示のみ）を契約として明記。
+- [x] 再読込復元の期待値（snapshotVersion一致時の復元）を明記。
+- [x] A1契約の逸脱禁止を明記。
+- [x] `integration` 検証レベルと計画が整合。
+- [x] 編集対象が本ファイルのみ。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: `FB-P2B-01` のDoD依存を段階責務へ分解する。
-- [ ] T2: モック検証 のAC補完ドラフト（不足時）を作成する。
-- [ ] T3: 次段Issue（A1→A2→A3）の入出力契約を明示する。
+- [x] T1: mock入力データセット条件を定義。
+- [x] T2: 非自動確定の判定条件を定義。
+- [x] T3: 再読込復元の一致条件を定義。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 期待結果:
-  - issue memo命名・メタ項目が整合し、検証スクリプトが成功する。
+  - issue memo必須メタが整合し、検証スクリプトが成功する。
 - 未実施時の理由・代替検証:
   - N/A
 
 ## 8) 代替案 / Alternatives considered
 
-- 代替案A: 1Issueに3段を混在 → 却下（責務混線）。
-- 代替案B: いきなり実装Issueのみ作成 → 却下（契約未固定）。
+- 代替案A: A2を省略しA3へ直行 → 却下（契約未検証）。
+- 代替案B: A2で実装を開始 → 却下（フェーズ境界違反）。
 
 ## 9) リスクとロールバック / Risks & rollback
 
-- 失敗モード: 段階間契約が曖昧で再作業が発生。
-- 影響範囲: `FB-P2B-01` の着手順遅延。
-- ロールバック手順: 当該IssueをDraft維持し、上流ADR判断に戻す。
+- 失敗モード: 再読込復元条件が曖昧で、A3で解釈分岐が発生。
+- 影響範囲: `FB-P2B-01` の結合テスト計画全体。
+- ロールバック手順: A2をOpen維持し、A1契約への差し戻しを記録。
 
 ## 10) Additional context
 
-- 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2B-01-a2-mock-validation.md` のみ。
-- 競合回避メモ: Stream Cは `issue-FB-P2*-*.md` 新規作成のみを担当し、既存issue/実装ファイルへ非接触。
+- Fail-safe: 未定義競合・前提崩れ・自己修復3回超過時は停止。

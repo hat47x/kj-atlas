@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-01-A1 Similar-card候補提示 / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream C
@@ -13,12 +13,12 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2B-01`
-- RequirementStatement: `Similar-card候補提示` を インターフェース先行（型/契約） の責務で前進させる。
+- RequirementStatement: `Similar-card候補提示` の候補group構造と境界I/Fを固定する。
 - PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）:
-  - 前提: `FB-P2B-01` のDoDを満たすための計画段階である。
-  - 操作: インターフェース先行（型/契約） に限定して成果物を作成する。
-  - 期待結果: 下流段階へ引き渡せる判断材料が揃う。
+  - 前提: `FB-P2B-01` を A1→A2→A3 で分割実行する。
+  - 操作: A1で候補group構造・契約型・I/O境界のみを定義する。
+  - 期待結果: A2/A3が参照すべき単一契約が固定される。
   - 除外: 実コード変更（`03_Implement/**`）と運用文書更新（`04_Documentation/**`）。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
@@ -28,62 +28,72 @@
 
 ## 1) 課題 / Problem statement
 
-- ADR-0007のP0 `FB-P2B-01` はDoDが定義済みだが、着手順と境界I/Fが未分解のままでは他レーンと衝突しやすい。
-- 本Issueは3段分割のうち **インターフェース先行（型/契約） 専用** とし、責務を単一化する。
+- `FB-P2B-01` のDoD（candidate group 一覧と対象Card確認）を達成するための最小契約が未固定だと、A2/A3で再定義競合が起こる。
 
 ## 2) 背景 / Context
 
 - Backlog基準: `FB-P2B-01` / AC-2B-1 / DoD: candidate group 一覧と対象Cardを確認できる。
-- DoD依存: domain deterministic candidate contract, UI表示I/F
+- Stream C担当境界: FB-P2B系 issue memo のみ編集。
 
 ## 3) 判断基準による優先度評価
 
-- 価値・判断軸（ADR-0001）: 仕様評価前に判断境界を固定し、レビュー認知負荷を下げる。
-- 安全（THREAT_MODEL / SafeMode）: 計画段階では既定ポリシーを不変更。
-- 企業・行政要件（enterprise_architecture）: 本Issueでは対象外（N/A）だが、契約明文化により後続監査性を確保。
-- 後方互換（schemas）: 互換破壊の有無を段階ごとに明記して実装段階へ引き継ぐ。
+- 価値・判断軸（ADR-0001）: 先に契約固定し、後続検証の判断揺れを排除する。
+- 安全（THREAT_MODEL / SafeMode）: SafeMode既定やshare/export方針は不変更。
+- 企業・行政要件（enterprise_architecture）: 監査可能なI/F定義を先行固定する。
+- 後方互換（schemas）: 破壊変更の可能性をA1段階で明示してA3へ伝播する。
 
 ## 4) 提案する解決策 / Proposed solution
 
-- 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-*.md`）。
-- 変更の最小単位: 1 Issue = 1段階 = 1検証責務。
-- 非目標: 実コード変更、README/ダッシュボード更新、リリース判断。
+- 変更対象: Docs/Plans only（本issue memo）。
+- 固定契約（A1成果物）:
+  - `SimilarCandidateGroup`:
+    - `groupId: string`
+    - `targetCardId: string`
+    - `candidateCardIds: string[]`
+    - `scoreSummary: { min: number; max: number; avg: number }`
+    - `reasonCodes: string[]`
+    - `snapshotVersion: string`
+  - `CandidateListViewModel`:
+    - `generatedAt: string`
+    - `groups: SimilarCandidateGroup[]`
+    - `totalGroupCount: number`
+- 非目標: 候補抽出ロジック実装、UI描画、永続化実装。
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `FB-P2B-01` のインターフェース先行（型/契約）責務と次段引き継ぎ条件が明文化される。
-- [ ] AC/DoDギャップがあれば補完ドラフトを記録する。
-- [ ] セキュリティ境界を変更しないことを明記する。
-- [ ] 検証レベル `docs-check` が宣言・整合している。
-- [ ] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
+- [x] A2/A3が参照する候補groupの必須フィールドが固定されている。
+- [x] 入出力境界（候補計算→UI表示）を1契約として明示している。
+- [x] セキュリティ境界（SafeMode/share/export）を変更しない。
+- [x] `docs-check` の検証レベル宣言と整合している。
+- [x] 編集対象が本ファイルのみに限定されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: `FB-P2B-01` のDoD依存を段階責務へ分解する。
-- [ ] T2: インターフェース先行（型/契約） のAC補完ドラフト（不足時）を作成する。
-- [ ] T3: 次段Issue（A1→A2→A3）の入出力契約を明示する。
+- [x] T1: candidate group構造のキーと型を固定。
+- [x] T2: A2への引き渡し条件（mock入力/期待出力）を定義。
+- [x] T3: A3への契約逸脱禁止条件を明記。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 期待結果:
-  - issue memo命名・メタ項目が整合し、検証スクリプトが成功する。
+  - issue memo必須メタが整合し、検証スクリプトが成功する。
 - 未実施時の理由・代替検証:
   - N/A
 
 ## 8) 代替案 / Alternatives considered
 
-- 代替案A: 1Issueに3段を混在 → 却下（責務混線）。
-- 代替案B: いきなり実装Issueのみ作成 → 却下（契約未固定）。
+- 代替案A: A1でUIまで定義 → 却下（A1実装禁止に抵触）。
+- 代替案B: A2で契約同時定義 → 却下（契約揺れリスク増）。
 
 ## 9) リスクとロールバック / Risks & rollback
 
-- 失敗モード: 段階間契約が曖昧で再作業が発生。
-- 影響範囲: `FB-P2B-01` の着手順遅延。
-- ロールバック手順: 当該IssueをDraft維持し、上流ADR判断に戻す。
+- 失敗モード: A2で追加フィールド要求が発生し契約が揺れる。
+- 影響範囲: `FB-P2B-01` 全体の再検証増加。
+- ロールバック手順: A1へ差し戻し、Context/Decision/Consequences を先に追記して再固定。
 
 ## 10) Additional context
 
-- 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2B-01-a1-interface-contract.md` のみ。
-- 競合回避メモ: Stream Cは `issue-FB-P2*-*.md` 新規作成のみを担当し、既存issue/実装ファイルへ非接触。
+- フェーズ運用: Read → Plan → Execute → Verify（自己修復3回まで）→ Proceed。
+- ADR要否発生時は本IssueでDecisionを確定せず停止する。
