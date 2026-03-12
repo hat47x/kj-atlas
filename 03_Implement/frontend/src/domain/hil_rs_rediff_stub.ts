@@ -9,7 +9,8 @@ type BuildHilRsRediffStubOptions = {
 };
 
 function buildTraceKey(critiqueInputs: readonly HilRsCritiqueInput[]): string {
-  return `trace:${critiqueInputs.map((input) => input.critiqueId).join("+")}`;
+  const canonicalCritiqueIds = [...new Set(critiqueInputs.map((input) => input.critiqueId))].sort();
+  return `trace:${canonicalCritiqueIds.join("+")}`;
 }
 
 export function buildHilRsRediffStub(

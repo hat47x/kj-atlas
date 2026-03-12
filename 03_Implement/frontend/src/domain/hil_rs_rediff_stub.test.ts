@@ -47,6 +47,48 @@ describe("buildHilRsRediffStub", () => {
   });
 
 
+  it("normalizes traceKey ordering and deduplicates critique IDs", () => {
+    const suggested: DocumentV2 = {
+      ...CURRENT_DOC,
+      cards: [{ id: "c1", text: "alpha", x: 2, y: 3 }],
+    };
+
+    const payload = buildHilRsRediffStub(CURRENT_DOC, suggested, {
+      suggestionId: "proposal-2",
+      iteration: 2,
+      critiqueInputs: [
+        {
+          schemaVersion: "1.0.0",
+          critiqueId: "island:i1:2",
+          targetRef: "island:i1",
+          critiqueType: "feels_off",
+          createdAt: "2026-03-11T00:00:00.000Z",
+          iteration: 2,
+        },
+        {
+          schemaVersion: "1.0.0",
+          critiqueId: "card:c1:2",
+          targetRef: "card:c1",
+          critiqueType: "too_close",
+          createdAt: "2026-03-11T00:00:00.000Z",
+          iteration: 2,
+        },
+        {
+          schemaVersion: "1.0.0",
+          critiqueId: "card:c1:2",
+          targetRef: "card:c1",
+          critiqueType: "too_close",
+          createdAt: "2026-03-11T00:00:00.000Z",
+          iteration: 2,
+        },
+      ],
+    });
+
+    expect(payload).not.toBeNull();
+    expect(payload?.traceKey).toBe("trace:card:c1:2+island:i1:2");
+  });
+
+
   it("returns null when critique inputs are missing", () => {
     const suggested: DocumentV2 = {
       ...CURRENT_DOC,
