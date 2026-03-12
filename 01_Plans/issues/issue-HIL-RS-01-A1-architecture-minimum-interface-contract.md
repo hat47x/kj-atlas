@@ -21,7 +21,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- DecisionQueueRef: `DQ-HIL-A1-01`, `DQ-HIL-A1-02`（いずれも案Aで確定済み）
+- DecisionQueueRef: `DQ-A1-01`, `DQ-A1-02`, `DQ-A1-03`, `DQ-A1-04`（Resolved）
 
 ## 0) Phase進行ログ（Plan → Execute → Verify）
 
@@ -42,6 +42,17 @@
   2. 再提案差分I/Fの可逆操作（before/after）とtraceKeyが未固定。
   3. レビュー帰属I/FのA1最小境界と既存review_attributionとの接続が未固定。
   4. A2/A3参照先契約ファイルが未固定。
+
+### Phase 1.1: 事前想定との差分（今回Read時点）
+
+- 差分1: `0.3) Human decision fix` が旧確定値（`schemaVersion=v1.0`, `overridePolicy=two-person`）のままで、
+  A1契約正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の確定値（`1.0.0`, `human_dual_control_only`）と不一致。
+- 差分2: Decision Queue参照が `DQ-HIL-A1-*` 表記のままで、`DQ-A1-01..04` のResolved記録と一致しない。
+
+#### Phase 2進行前の修正方針
+
+- 方針1: A1契約の確定値は Architecture正本に統一する。
+- 方針2: Decision Queueは `DQ-A1-01..04` のResolved表記へ揃える。
 
 ### Phase 2: ADR明文化・合意判定
 
@@ -117,9 +128,11 @@
 
 ## 0.3) Human decision fix（DQ確定記録）
 
-- DQ-HIL-A1-01: **案Aで確定**（`intent/evidenceRefs/riskClass` を必須化、schemaVersion `v1.0` 凍結）。
-- DQ-HIL-A1-02: **案Aで確定**（`reviewerId/reviewStage/approvedAt/overrideReason` を必須化、`overridePolicy=two-person` 固定）。
-- 反映方針: 本issueを正本として確定内容を保持し、`project-progress-dashboard.md` は本issueとADRの確定情報を統合表示する参照レイヤとして同期する。
+- `DQ-A1-01`: **Resolved**（CritiqueInputContract.requiredFields 固定）。
+- `DQ-A1-02`: **Resolved**（CritiqueInputContract.schemaVersion=`1.0.0` 固定）。
+- `DQ-A1-03`: **Resolved**（ReviewAttributionContract.auditFields 固定）。
+- `DQ-A1-04`: **Resolved**（ReviewAttributionContract.overridePolicy=`human_dual_control_only` 固定）。
+- 反映方針: A1契約の単一正本は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` とし、本issueは実行管理ログを保持する。
 
 ## 1) 課題 / Problem statement
 
