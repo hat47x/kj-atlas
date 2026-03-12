@@ -356,6 +356,10 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 実装整合メモ（B handoff反映済み）:
 
 - `HilRsWorkflowPanel` の3導線（Candidate comparison / Critique input / Diff visualization）をセキュリティ境界の操作単位として扱う。
+- UI固定文言（A2実装との一致を維持）:
+  - `A2-1 Candidate comparison` → `Collect and compare merge/layout candidates before any commit.`
+  - `A2-2 Critique input` → `Capture critique and re-suggest iteratively while keeping human final approval.`
+  - `A2-3 Diff visualization` → `Review deterministic diffs before apply/discard to keep the workflow reversible.`
 - Critique / attribution payload は `provider` / `external_uid` / `email` 等のPII-like identity fieldsを許可しない。
 - 再提案差分は `before/after` を必須にして逆操作不能データを拒否する。
 
