@@ -178,6 +178,13 @@
 - 分岐条件: `ADR-0022-doc-ops-04-documentation-information-interface.md`（A）と `ADR-0023/0024/0025`（B/C/D）がすべて `Accepted` であること。
 - 現在値: 条件を満たし、`project-progress-dashboard.md` / `issues/README.md` / issue memo の同期を完了。
 
+### 6-4. Stream D 追補監査（2026-03-12, Phase 1-4）
+
+- Phase 1（Read同期）: Stream A/B/C完了報告の存在と決定リンク（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認。
+- Phase 2（相互整合）: Active issue / Decision Queue / 決定ログ / 次の1手を再照合し、重複再掲・未承認決定の確定扱い・未定義競合の混入がないことを確認。
+- Phase 3（件数監査）: issue memo総数43件、Open=8 / Draft=7 / Done系=25、Decision Queue残件=3、停止条件違反0件を再計算。
+- Phase 4（公開）: 再開判定チェックリストを1行確定（未固定箇所=0件 / 依存タスク契約リンク確定 / Queue3件限定管理 / 停止条件違反なし）。
+
 ### 6-2. Stream D 最終同期メモ（2026-03-11）
 
 1. Stream A/B/C の完了報告受領後に共有リソース同期を実施。

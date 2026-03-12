@@ -206,3 +206,30 @@
 3. DQ-OPS-SOURCE-01 を2026-03-18 JSTまでに採否決定し、採用時はRunbook手順1〜6、見送り時は期限再設定を記録する。
 
 再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / 停止条件違反なし。
+
+## Stream D 実行ログ（2026-03-12, Phase 1-4）
+
+### Phase 1: Read同期（A/B/C完了報告 + 決定リンク確認）
+
+- A完了報告の確認: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` の Stream A Phase 1〜4 記録と、`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の固定を確認。
+- B/C完了報告の確認: 同issueの Stream C同期ログと、統合フェーズ移譲条件（共有リソース更新禁止→Stream D集約）を確認。
+- 決定リンクの存在確認: `DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` と `DR-REQ-DEF-02` / `DR-REQ-DEF-03` が本ダッシュボードの決定ログに存在することを確認。
+
+### Phase 2: 相互整合更新（Active / Decision Queue / 決定ログ / 次の1手）
+
+- Active issue運用値を `issues/README.md` と再照合し、運用上のActiveは `HIL-RS-01` / `HIL-RS-01-A1` の2件で一致を維持。
+- Decision Queue残件を `DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の3件に固定し、決定済み項目の重複再掲がないことを確認。
+- 決定ログは既存IDのみを維持し、未承認決定を「確定扱い」していないことを確認。
+- 「次の1手」はQueue 3件の期限管理に限定し、未定義競合を新規導入しない。
+
+### Phase 3: 件数監査（再計算）
+
+- issue memo総数: 43
+- Open: 8 / Draft: 7 / Done系: 25（Done=24 + Done(SQLite fallback path)=1）
+- In Progress: 1 / Blocked: 2
+- Decision Queue残件: 3
+- 停止条件違反: 0（契約リンク未固定 / shared resource更新衝突 / Self-Correction 3回超過の検出なし）
+
+### Phase 4: 公開（再開判定チェックリスト1行確定）
+
+- **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は3件へ限定管理 / 停止条件違反なし。
