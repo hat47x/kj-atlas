@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: In Progress (Stream D)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -18,23 +18,25 @@
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）:
   - 前提: `FB-P2C-01` のDoDを満たすための計画段階である。
   - 操作: インターフェース先行（型/契約） に限定して成果物を作成する。
-  - 期待結果: 下流段階へ引き渡せる判断材料が揃う。
+  - 期待結果: A2/A3が契約逸脱なしで進行できる判断材料が揃う。
   - 除外: 実コード変更（`03_Implement/**`）と運用文書更新（`04_Documentation/**`）。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: Stream D escalation candidate: polygon padding deterministic tie-break rule (Context/Decision/Consequences attached below)
+- DecisionStatus（Fixed / Pending）: Fixed（A1内で固定、A2/A3着手条件として承認待ち）
+- DecisionQueueRef（未確定時の参照先）: Human Decision Gate 0（deterministicTieBreakOrder approval）
 
 ## 1) 課題 / Problem statement
 
 - ADR-0007のP0 `FB-P2C-01` はDoDが定義済みだが、着手順と境界I/Fが未分解のままでは他レーンと衝突しやすい。
 - 本Issueは3段分割のうち **インターフェース先行（型/契約） 専用** とし、責務を単一化する。
+- Gate 0（人間判断）完了前にA2/A3へ進めないため、A1でtie-break契約を明文化して承認対象を固定する。
 
 ## 2) 背景 / Context
 
 - Backlog基準: `FB-P2C-01` / AC-2C-2, AC-2C-3 / DoD: 同一入力で同一polygonを生成し、padding制約を満たす。
-- DoD依存: 02_Architecture/island_shapes.md deterministic geometry contract
+- DoD依存: `02_Architecture/island_shapes.md` deterministic geometry contract。
+- 競合点: padding制約と頂点簡約が衝突した際の deterministic tie-break order が未承認。
 
 ## 3) 判断基準による優先度評価
 
@@ -45,23 +47,45 @@
 
 ## 4) 提案する解決策 / Proposed solution
 
-- 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-*.md`）。
+- 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-P2C-01-*.md`）。
 - 変更の最小単位: 1 Issue = 1段階 = 1検証責務。
 - 非目標: 実コード変更、README/ダッシュボード更新、リリース判断。
 
+### 4.1 Interface Contract（A1確定対象）
+
+- ContractKey: `deterministicTieBreakOrder`
+- FixedOrder (proposal for Gate 0 approval):
+  1. `padding遵守`
+  2. `自己交差回避`
+  3. `面積最小変動`
+  4. `頂点数最小`
+- ContractRule: A2 mock / A3 implementation は上記順序を厳守し、順序の入替・省略・追加を禁止する。
+- ContractRule: 同一入力では同一順序評価を適用し、同一出力を生成できること。
+
+### 4.2 Context / Decision / Consequences（Gate 0提出パケット）
+
+- Context:
+  - polygon auto-fit は「同一入力で同一polygon」を要求する。
+  - padding制約と頂点簡約が競合するケースで判定順が揺れると非決定的挙動が生じる。
+- Decision:
+  - deterministicTieBreakOrder を `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` に固定する。
+- Consequences:
+  - A2/A3で同一入力同一出力の検証軸が明確化され、レビュー容易性が向上する。
+  - 既存近似ロジックの自由度は低下するが、契約順序逸脱を防止できる。
+
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `FB-P2C-01` のインターフェース先行（型/契約）責務と次段引き継ぎ条件が明文化される。
-- [ ] AC/DoDギャップがあれば補完ドラフトを記録する。
-- [ ] セキュリティ境界を変更しないことを明記する。
-- [ ] 検証レベル `docs-check` が宣言・整合している。
-- [ ] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
+- [x] `FB-P2C-01` のインターフェース先行（型/契約）責務と次段引き継ぎ条件が明文化される。
+- [x] AC/DoDギャップとして deterministic tie-break を補完ドラフト化する。
+- [x] セキュリティ境界を変更しないことを明記する。
+- [x] 検証レベル `docs-check` が宣言・整合している。
+- [x] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: `FB-P2C-01` のDoD依存を段階責務へ分解する。
-- [ ] T2: インターフェース先行（型/契約） のAC補完ドラフト（不足時）を作成する。
-- [ ] T3: 次段Issue（A1→A2→A3）の入出力契約を明示する。
+- [x] T1: `FB-P2C-01` のDoD依存を段階責務へ分解する。
+- [x] T2: インターフェース先行（型/契約） のAC補完ドラフトを作成する。
+- [x] T3: 次段Issue（A1→A2→A3）の入出力契約を明示する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -86,11 +110,5 @@
 ## 10) Additional context
 
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md` のみ。
-- 競合回避メモ: Stream Cは `issue-FB-P2*-*.md` 新規作成のみを担当し、既存issue/実装ファイルへ非接触。
-
-### Pending Decision Packet（ADR判定用）
-
-- Context: polygon auto-fit は「同一入力で同一polygon」を要求するが、padding制約と頂点簡約が競合した場合のtie-breakが未定義。
-- Decision (proposal): tie-break順を `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` とし、契約I/Fに固定する。
-- Consequences: 実装・テストの決定論が上がる一方、既存近似ロジックの自由度は下がる。
-- Escalation rule: HIL系共有リソース調整が必要になった場合はStream Dへ移管する。
+- 競合回避メモ: Stream D は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
+- Phase運用: Plan → Execute → Verify → Proceed。
