@@ -220,3 +220,21 @@
 
 - Stream A は契約固定のみを担当し、A2/A3の実装詳細は本Issueで管理しない。
 - A2は `03_Implement/**`、A3は `04_Documentation/**` の境界を維持して別ストリームで実施する。
+
+## 11) Stream A I/F固定 受け渡しパケット（凍結宣言）
+
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+- Fixed Link: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Fixed Contract IDs:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- Fixed Values:
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+- Freeze Declaration:
+  - A2/A3はFixed Link/Fixed Valuesを参照専用とし、変更を禁止する。
+  - 変更要否が生じた場合は統合フェーズで人間判断へエスカレーションする。
+

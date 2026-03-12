@@ -134,6 +134,41 @@
 - `DQ-A1-04`: **Resolved**（ReviewAttributionContract.overridePolicy=`human_dual_control_only` 固定）。
 - 反映方針: A1契約の単一正本は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` とし、本issueは実行管理ログを保持する。
 
+
+## 0.4) Phase 1 未確定I/F項目の再判定（項目名/判定条件）
+
+- 判定対象:
+  1. `CritiqueInputContract.requiredFields`
+  2. `CritiqueInputContract.schemaVersion`
+  3. `ReviewAttributionContract.auditFields`
+  4. `ReviewAttributionContract.overridePolicy`
+  5. `contractLinkLocked`
+  6. `sharedResourceFreeze`
+- 判定条件:
+  - 各項目が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定値として存在すること。
+  - `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` を更新しないことが明文化されていること。
+- 判定結果:
+  - 1〜4: **Fixed**（`DQ-A1-01..04` Resolved）
+  - 5〜6: **Fixed**（Phase 3で証跡テンプレを追加し、Proceed条件へ昇格）
+  - 未確定I/F項目: **0件**
+
+## 0.5) Phase 2 ADR記述（承認待ち状態）
+
+### Context
+
+- Stream Aの変更は契約固定に限定され、上位方針（ADR-0026のDecision）を変更しない。
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` は運用固定値の明文化であり、新規アーキ判断の追加ではない。
+
+### Decision
+
+- ADR追加/更新は不要とする。
+- ただし、**承認待ち状態**として「契約固定値の変更要求が発生した場合のみ人間判断にエスカレーションする」ガードを維持する。
+
+### Consequences
+
+- A2/A3は本A1契約を参照して着手可能。
+- 契約固定値の変更は統合フェーズの人間承認を必須とし、ストリーム内の推測変更を禁止する。
+
 ## 1) 課題 / Problem statement
 
 - HIL-RS-01の実行順でA1契約が未固定だと、A2（Frontend実装）とA3（Documentation同期）が同一論点を重複解釈して競合する。
@@ -226,3 +261,30 @@
   1. A2は `03_Implement/**` の範囲でA1契約IDのみ参照し、共有ファイル（README/dashboard）を編集しない。
   2. A3は運用文書更新に限定し、A2と同一ファイルを編集しない。
   3. 共有リソース更新は統合フェーズ専用コミットに集約する。
+
+
+## 11) Phase 3/4 固定証跡と受け渡し（Stream A）
+
+### 11.1 Contract Freeze Evidence
+
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+- single reference: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- locked contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+
+### 11.2 A2/A3固定リンク・固定値一覧
+
+- Fixed Link:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Fixed Values:
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `CritiqueInputContract.requiredFields=critiqueId|targetRef|critiqueType|createdAt|iteration`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.auditFields=reviewState|reviewedAt|reviewerRef|auditRecordedAt`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+
+### 11.3 変更凍結宣言
+
+- A2/A3実行中は、上記Fixed Link/Fixed Valuesの変更を凍結する。
+- 変更が必要な場合は統合フェーズへ移管し、人間判断（Security Officer + System Owner）を必須とする。
+

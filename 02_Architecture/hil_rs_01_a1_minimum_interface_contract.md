@@ -182,6 +182,51 @@
   - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）をストリーム内で更新すること。
   - A2で`04_Documentation/**`、A3で`03_Implement/**`を同時に変更すること。
 
+## 8. Contract Freeze Evidence Template（Stream A 固定）
+
+### 8.1 Freeze Flags
+
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### 8.2 Evidence Record Template
+
+```yaml
+freezeRecord:
+  stream: "A"
+  phase: "Phase 3 Contract Fix"
+  contractLinkLocked: true
+  sharedResourceFreeze: true
+  singleReference:
+    - "02_Architecture/hil_rs_01_a1_minimum_interface_contract.md"
+  lockedContractIds:
+    - "A1-CRITIQUE-IF"
+    - "A1-REDIFF-IF"
+    - "A1-ATTR-IF"
+  fixedValues:
+    critiqueSchemaVersion: "1.0.0"
+    critiqueRequiredFields:
+      - critiqueId
+      - targetRef
+      - critiqueType
+      - createdAt
+      - iteration
+    reviewSchemaVersion: "1.0.0"
+    reviewAuditFields:
+      - reviewState
+      - reviewedAt
+      - reviewerRef
+      - auditRecordedAt
+    reviewOverridePolicy: "human_dual_control_only"
+  freezeDeclaration: "A2/A3開始後は本契約の本文変更を禁止し、変更は統合フェーズの人間判断でのみ実施する"
+```
+
+### 8.3 判定条件（AC/DoDチェック用）
+
+- `contractLinkLocked=true` は、A2/A3の参照先が単一正本1件であることを示す。
+- `sharedResourceFreeze=true` は、`01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` を統合フェーズまで更新しない宣言を示す。
+- 両フラグが true でない場合、A2/A3へのProceedを禁止する。
+
 ## 7. AC/DoD自己検証（Stream A）
 
 - [x] `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約IDが固定されている。
