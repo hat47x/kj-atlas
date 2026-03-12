@@ -52,8 +52,11 @@ describe("hil_rs_payload", () => {
   it("creates review attribution only when A1-ATTR-IF is valid", () => {
     expect(
       createHilRsReviewAttribution({
+        schemaVersion: "1.0.0",
         reviewState: "human_reviewed",
         reviewedAt: "2026-03-11T00:00:00.000Z",
+        auditRecordedAt: "2026-03-11T00:01:00.000Z",
+        overridePolicy: "human_dual_control_only",
         reviewerRef: "reviewer-1",
         reviewContext: "internal",
       }),
@@ -61,7 +64,11 @@ describe("hil_rs_payload", () => {
 
     expect(
       createHilRsReviewAttribution({
+        schemaVersion: "1.0.0",
         reviewState: "human_reviewed",
+        reviewedAt: null,
+        auditRecordedAt: "2026-03-11T00:01:00.000Z",
+        overridePolicy: "human_dual_control_only",
         reviewerRef: "reviewer-1",
       }),
     ).toBeNull();

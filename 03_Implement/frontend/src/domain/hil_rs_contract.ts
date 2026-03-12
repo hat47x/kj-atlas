@@ -9,6 +9,7 @@ export const HIL_RS_CRITIQUE_TYPES = [
 export type HilRsCritiqueType = (typeof HIL_RS_CRITIQUE_TYPES)[number];
 
 export type HilRsCritiqueInput = {
+  schemaVersion: "1.0.0";
   critiqueId: string;
   targetRef: string;
   critiqueType: HilRsCritiqueType;
@@ -43,9 +44,12 @@ export const HIL_RS_REVIEW_STATES = ["unreviewed", "human_reviewed"] as const;
 export type HilRsReviewState = (typeof HIL_RS_REVIEW_STATES)[number];
 
 export type HilRsReviewAttribution = {
+  schemaVersion: "1.0.0";
   reviewState: HilRsReviewState;
-  reviewedAt?: string;
+  reviewedAt: string | null;
   reviewerRef: string;
+  auditRecordedAt: string;
+  overridePolicy: "human_dual_control_only";
   reviewContext?: string;
   ownerRef?: string;
 };
@@ -66,6 +70,7 @@ export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiq
   if (typeof value !== "object" || value === null) return false;
   const input = value as Record<string, unknown>;
 
+  if (input.schemaVersion !== "1.0.0") return false;
   if (!isNonEmptyString(input.critiqueId)) return false;
   if (!isNonEmptyString(input.targetRef)) return false;
   if (!isNonEmptyString(input.createdAt) || !isIsoTimestamp(input.createdAt)) return false;
@@ -107,15 +112,17 @@ export function validateHilRsReviewAttribution(value: unknown): value is HilRsRe
   if (typeof value !== "object" || value === null) return false;
   const attribution = value as Record<string, unknown>;
 
+  if (attribution.schemaVersion !== "1.0.0") return false;
   if (!HIL_RS_REVIEW_STATES.includes(attribution.reviewState as HilRsReviewState)) return false;
   if (!isNonEmptyString(attribution.reviewerRef)) return false;
+  if (!isNonEmptyString(attribution.auditRecordedAt) || !isIsoTimestamp(attribution.auditRecordedAt)) return false;
+  if (attribution.overridePolicy !== "human_dual_control_only") return false;
   if (attribution.reviewContext !== undefined && typeof attribution.reviewContext !== "string") return false;
   if (attribution.ownerRef !== undefined && typeof attribution.ownerRef !== "string") return false;
-  if (attribution.reviewedAt !== undefined && (!isNonEmptyString(attribution.reviewedAt) || !isIsoTimestamp(attribution.reviewedAt))) {
-    return false;
-  }
+  if (!(typeof attribution.reviewedAt === "string" || attribution.reviewedAt === null)) return false;
+  if (typeof attribution.reviewedAt === "string" && !isIsoTimestamp(attribution.reviewedAt)) return false;
   if (attribution.reviewState === "human_reviewed" && !isNonEmptyString(attribution.reviewedAt)) return false;
-  if (attribution.reviewState === "unreviewed" && attribution.reviewedAt !== undefined) return false;
+  if (attribution.reviewState === "unreviewed" && attribution.reviewedAt !== null) return false;
   if (hasPiiLikeIdentityFields(attribution)) return false;
 
   return true;

@@ -51,6 +51,7 @@ function pushCritiqueInput(
   }
 
   const candidate: HilRsCritiqueInput = {
+    schemaVersion: "1.0.0",
     critiqueId: `${targetRef}:${options.iteration}`,
     targetRef,
     critiqueType: resolveCritiqueTypeFromTags(normalizedTags),
