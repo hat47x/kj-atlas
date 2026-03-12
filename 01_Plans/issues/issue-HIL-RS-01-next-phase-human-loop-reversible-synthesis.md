@@ -103,6 +103,18 @@
   - ReviewAttributionContract: `schemaVersion=1.0.0`、`auditFields=reviewState|reviewedAt|reviewerRef|auditRecordedAt`、`overridePolicy=human_dual_control_only`
 - Decision Queue（A1）: `DQ-A1-01..04` を解消済みとし、A2/A3は参照専用で利用する。
 
+### 4.1.4) Phase 4: Verify / Proceed（Stream A再検証）
+
+- Verify（対象3ファイル再Read + docs-check）:
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` は対象3ファイルで一致。
+  - 単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみ。
+  - `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg ...` を再実行して整合を確認。
+- Proceed（A2/A3 handoff条件固定）:
+  1. A2は `03_Implement/**` のみ編集し、A1契約IDを参照専用で利用する。
+  2. A3は `04_Documentation/**` のみ編集し、契約本文を変更しない。
+  3. 共有リソース（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md`）は統合フェーズまで更新しない。
+  4. Self-Correctionは0/3回で完了（追加修正不要）。
+
 ## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
 
 
