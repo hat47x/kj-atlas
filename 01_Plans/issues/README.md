@@ -261,11 +261,12 @@ issue補助メモには、最低でも次の項目を含める。
 - 件数: issue memo 総数=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
-- Decision Queue: 人間判断待ちの未解決項目=0件（`DQ-HIL-A1-01`, `DQ-HIL-A1-02` はいずれも案Aで確定済み。詳細は `project-progress-dashboard.md` を参照）。
+- Decision Queue: 人間判断待ちの未解決項目=3件（`DQ-HIL-EXEC-01`, `DQ-FB-P2C-01`, `DQ-OPS-SOURCE-01`）。
+- 決定済み項目の扱い: `DQ-HIL-A1-01` / `DQ-HIL-A1-02` は `project-progress-dashboard.md` の決定ログ（`DR-HIL-A1-01` / `DR-HIL-A1-02`）へ集約し、Queueから除外済み。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
-- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue=0、A1→A2→A3）を再確認。
-- Stream D再同期（2026-03-12）: validator/unittest/rg を再実行し、件数・状態・依存順の整合維持を確認。
-- Stream D Phase 2 Proceed（2026-03-12）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue=0 / A1→A2→A3）を更新不要でクローズ。
+- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue=3、A1→A2→A3）を再確認。
+- Stream D再同期（2026-03-12）: validator/unittest/rg を再実行し、件数・状態・依存順に加えて Decision Queue（3件）と決定ログ集約済み項目の整合維持を確認。
+- Stream D Phase 2 Proceed（2026-03-12）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue=3 / A1→A2→A3）を更新不要でクローズ。
 
 ## Rules
 
