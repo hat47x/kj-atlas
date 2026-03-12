@@ -530,6 +530,20 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - UI導線名は `03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx` の見出しを正として同期済み。
 - 運用上の制約は `03_Implement/frontend/src/domain/hil_rs_contract.ts` の validator 制約（PII-like field拒否、可逆差分必須、人間レビュー帰属）と一致させる。
 
+### 1.3 A2 payload 正規化ルール（A3で固定する実装整合）
+
+`03_Implement/frontend/src/domain/hil_rs_payload.ts` の挙動に合わせ、運用手順でも次の固定値を保持する。
+
+1. Critique tags 正規化:
+   - 既知タグ（`too_close` / `too_far` / `not_the_same` / `feels_off`）のみ Critique type へ写像する。
+   - tags未指定、または未知タグのみの場合は `no_articulable_reason` を採用する。
+2. Critique入力の最小発行条件:
+   - コメントと tags がともに空の場合は payload を発行しない。
+   - `iteration` は 1 以上の整数のみ許可し、条件を満たさない場合は空配列で fail-fast する。
+3. レビュー帰属の生成条件:
+   - `createHilRsReviewAttribution` は validator 成功時のみ attribution を返し、失敗時は `null` を返す。
+   - 不正な帰属値を運用で補完しない（再入力または再承認を要求する）。
+
 ### 2. 制約（非目標と停止条件）
 
 - SafeMode 既定ONと share/export 漏えい防止を弱める変更は不可。
@@ -548,7 +562,8 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
 - `rg -n "A2-1 Candidate comparison|A2-2 Critique input|A2-3 Diff visualization|Collect and compare merge/layout candidates before any commit.|Capture critique and re-suggest iteratively while keeping human final approval.|Review deterministic diffs before apply/discard to keep the workflow reversible." 03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx 04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md`
-- `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts`
+- `rg -n "no_articulable_reason|createHilRsReviewAttribution|iteration" 03_Implement/frontend/src/domain/hil_rs_payload.ts 04_Documentation/operations.md`
+- `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts src/domain/hil_rs_rediff_stub.test.ts`
 
 判定メモ:
 
