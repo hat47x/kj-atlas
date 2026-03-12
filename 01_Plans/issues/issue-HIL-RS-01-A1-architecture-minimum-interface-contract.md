@@ -103,7 +103,6 @@
 ## 0.1) Plan宣言（対象/非対象・停止条件）
 
 - 変更対象ファイル:
-  - `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
   - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 非対象ファイル:
@@ -288,3 +287,9 @@
 - A2/A3実行中は、上記Fixed Link/Fixed Valuesの変更を凍結する。
 - 変更が必要な場合は統合フェーズへ移管し、人間判断（Security Officer + System Owner）を必須とする。
 
+### 11.4 Blocked解除条件（Stream B/C/D handoff）
+
+- Stream B（A2実装）は、`contractLinkLocked=true` かつ `DQ-A1-01..04=Resolved` の両条件を満たした場合のみ着手可能。
+- Stream C（A3文書同期）は、Single Reference が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の1件に固定されている場合のみ着手可能。
+- Stream D（統合判定）は、`sharedResourceFreeze=true` を維持したまま A2/A3 の成果を受領し、共有リソース更新を統合フェーズへ集約する。
+- いずれか1条件でも未達の場合、Blocked継続とし人間判断へエスカレーションする。
