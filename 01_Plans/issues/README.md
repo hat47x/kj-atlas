@@ -264,6 +264,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Decision Queue: 人間判断待ちの未解決項目=0件（`DQ-HIL-A1-01`, `DQ-HIL-A1-02` はいずれも案Aで確定済み。詳細は `project-progress-dashboard.md` を参照）。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
 - Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue=0、A1→A2→A3）を再確認。
+- Stream D再同期（2026-03-12）: validator/unittest/rg を再実行し、件数・状態・依存順の整合維持を確認。
 
 ## Rules
 
