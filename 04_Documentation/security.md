@@ -361,6 +361,7 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
   - `A2-2 Critique input` → `Capture critique and re-suggest iteratively while keeping human final approval.`
   - `A2-3 Diff visualization` → `Review deterministic diffs before apply/discard to keep the workflow reversible.`
 - Critique / attribution payload は `provider` / `external_uid` / `email` 等のPII-like identity fieldsを許可しない。
+- Critique payload は既知タグのみ型変換し、未知タグのみ・tags未指定時は `no_articulable_reason` を採用する（空コメント+空tagsは監査入力を発行しない）。
 - 再提案差分は `before/after` を必須にして逆操作不能データを拒否する。
 
 責務分離（A2挙動との整合）:
