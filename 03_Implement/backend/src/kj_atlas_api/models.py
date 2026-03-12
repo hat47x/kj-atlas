@@ -302,6 +302,58 @@ class MergeSuggestionDecision(BaseModel):
     editedText: str
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
+
+class CritiqueInput(BaseModel):
+    schemaVersion: Literal["1.0.0"]
+    critiqueId: str
+    targetRef: str
+    critiqueType: Literal["too_close", "too_far", "not_the_same", "feels_off", "no_articulable_reason"]
+    createdAt: datetime
+    iteration: int = Field(ge=1)
+    comment: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    constraintHints: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class ReproposalDiffOp(BaseModel):
+    opId: str
+    opType: Literal["add", "remove", "move", "regroup", "relabel"]
+    targetRef: str
+    before: dict[str, object] | None = None
+    after: dict[str, object] | None = None
+
+    @model_validator(mode="after")
+    def validate_reversible_payload(self) -> "ReproposalDiffOp":
+        if self.before is None and self.after is None:
+            raise ValueError("before or after must be provided")
+        return self
+
+
+class ReproposalDiff(BaseModel):
+    proposalId: str
+    basedOnIteration: int = Field(ge=1)
+    diffOps: list[ReproposalDiffOp] = Field(min_length=1)
+    traceKey: str
+    rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class ReviewAttribution(BaseModel):
+    schemaVersion: Literal["1.0.0"]
+    reviewState: Literal["unreviewed", "human_reviewed"]
+    reviewedAt: datetime | None = None
+    reviewerRef: str | None = Field(default=None, min_length=1)
+    auditRecordedAt: datetime
+    reviewContext: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    ownerRef: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @model_validator(mode="after")
+    def validate_human_review_transition(self) -> "ReviewAttribution":
+        if self.reviewState == "human_reviewed":
+            if self.reviewedAt is None:
+                raise ValueError("reviewedAt is required when reviewState=human_reviewed")
+            if self.reviewerRef is None:
+                raise ValueError("reviewerRef is required when reviewState=human_reviewed")
+        return self
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -317,6 +369,9 @@ class DocumentV2(BaseModel):
     relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
+    critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
+    reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
+    reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]

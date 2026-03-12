@@ -537,3 +537,74 @@ def test_docs_v2_relation_summary_without_history_roundtrip_postgres(postgres_cl
 @pytest.mark.postgres
 def test_docs_v2_polygon_geometry_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_polygon_geometry_roundtrip(postgres_client)
+
+
+def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-hil-rs",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [{"id": "card-1", "text": "alpha", "x": 0, "y": 0}],
+        "edges": [],
+        "islands": [{"id": "island-1", "cardIds": ["card-1"]}],
+        "critiqueInputs": [
+            {
+                "schemaVersion": "1.0.0",
+                "critiqueId": "crit-1",
+                "targetRef": "card:card-1",
+                "critiqueType": "too_close",
+                "createdAt": "2026-02-11T00:01:00Z",
+                "iteration": 1,
+            }
+        ],
+        "reproposalDiffs": [
+            {
+                "proposalId": "proposal-1",
+                "basedOnIteration": 1,
+                "traceKey": "crit-1:proposal-1",
+                "diffOps": [
+                    {
+                        "opId": "op-1",
+                        "opType": "move",
+                        "targetRef": "card:card-1",
+                        "before": {"x": 0, "y": 0},
+                        "after": {"x": 12.5, "y": 9.0},
+                    }
+                ],
+            }
+        ],
+        "reviewAttribution": {
+            "schemaVersion": "1.0.0",
+            "reviewState": "human_reviewed",
+            "reviewedAt": "2026-02-11T00:02:00Z",
+            "reviewerRef": "user:u-1",
+            "auditRecordedAt": "2026-02-11T00:02:00Z",
+        },
+    }
+
+
+def _assert_v2_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-hil-rs"
+    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    assert put_json["critiqueInputs"][0]["schemaVersion"] == "1.0.0"
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+    assert get_json["reproposalDiffs"][0]["traceKey"] == "crit-1:proposal-1"
+    assert get_json["reviewAttribution"]["reviewState"] == "human_reviewed"
+
+
+def test_docs_v2_hil_rs_contract_fields_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_hil_rs_contract_fields_roundtrip(sqlite_client)
+
+
+def test_docs_v2_hil_rs_contract_fields_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_hil_rs_contract_fields_roundtrip(postgres_client)
