@@ -1,6 +1,6 @@
 import type { DocumentV2 } from "./types";
 import type { HilRsCritiqueInput, HilRsRediffPayload } from "./hil_rs_contract";
-import { validateHilRsRediffPayload } from "./hil_rs_contract";
+import { validateHilRsCritiqueInput, validateHilRsRediffPayload } from "./hil_rs_contract";
 
 type BuildHilRsRediffStubOptions = {
   suggestionId: string;
@@ -22,6 +22,13 @@ export function buildHilRsRediffStub(
     return null;
   }
   if (options.critiqueInputs.length === 0) {
+    return null;
+  }
+  if (
+    options.critiqueInputs.some(
+      (input) => !validateHilRsCritiqueInput(input) || input.iteration !== options.iteration,
+    )
+  ) {
     return null;
   }
 
