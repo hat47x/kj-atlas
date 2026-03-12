@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import Integer, Text
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -304,6 +304,8 @@ class MergeSuggestionDecision(BaseModel):
 
 
 class CritiqueInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schemaVersion: Literal["1.0.0"]
     critiqueId: str
     targetRef: str
@@ -315,6 +317,8 @@ class CritiqueInput(BaseModel):
 
 
 class ReproposalDiffOp(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     opId: str
     opType: Literal["add", "remove", "move", "regroup", "relabel"]
     targetRef: str
@@ -329,6 +333,8 @@ class ReproposalDiffOp(BaseModel):
 
 
 class ReproposalDiff(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     proposalId: str
     basedOnIteration: int = Field(ge=1)
     diffOps: list[ReproposalDiffOp] = Field(min_length=1)
@@ -337,6 +343,8 @@ class ReproposalDiff(BaseModel):
 
 
 class ReviewAttribution(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schemaVersion: Literal["1.0.0"]
     reviewState: Literal["unreviewed", "human_reviewed"]
     reviewedAt: datetime | None = None
