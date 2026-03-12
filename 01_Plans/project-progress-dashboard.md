@@ -12,6 +12,14 @@
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
 - Decision Queueは3件（HIL再開ゲート / FB-P2C tie-break / Source Issue切替）に限定し、決定済み項目は決定ログへ集約済み。
 
+### 未完Issue全件（18件）とレーン割当
+
+- **Stream A（契約/I-F固定）**: `HIL-RS-01`, `HIL-RS-01-A1`, `FB-P2C-01-A1`, `FB-P2B-01-A1`, `FB-P2B-02-A1`, `FB-P2A-01-A1`, `FB-P2A-02-A1`。
+- **Stream B（Frontend A2/A3）**: `FB-P2B-01-A2/A3`, `FB-P2B-02-A2/A3`, `FB-P2C-01-A2/A3`, `FB-P2A-01-A2/A3`, `FB-P2A-02-A2/A3`。
+- **Stream C（Backend/Auth/Schema）**: `FB-P0-2A2B2C-stream-c-planning-baseline`（Draft）を先頭に、A契約確定後のAPI/schema実装へ接続。
+- **Stream D（統合ドキュメント）**: 共有更新は `project-progress-dashboard.md` / `issues/README.md` / `decision-pack` のみを単一コミットで同期。
+- **競合回避ルール**: `*_a1_*` はA専有、`*_a2_*`/`*_a3_*` はB/C専有、共有統合ファイルはD専有。交差編集を禁止する。
+
 ### 1) 計画分析と実行戦略のサマリー（優先度・依存・競合）
 
 - **優先度根拠**: P0かつ契約未固定のI/F（`HIL-RS-01-A1`, `FB-P2C-01-A1`）を最優先。次にA2モック検証、最後にA3実装へ進める。
