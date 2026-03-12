@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-12 (JST, strategic execution prompt + human decision refresh)
+最終更新: 2026-03-12 (JST, Stream D final shared-resource sync)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -10,7 +10,7 @@
 - issue memoは総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` の2件。
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
-- Decision Queueは3件（HIL再開ゲート / FB-P2C tie-break / Source Issue切替）に限定し、決定済み項目は決定ログへ集約済み。
+- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` と `DQ-FB-P2C-01` は再開条件充足で実行準備完了、`DQ-OPS-SOURCE-01` のみ未決として管理する。
 
 ### 未完Issue全件（18件）とレーン割当
 
@@ -144,18 +144,21 @@
 ## 人間判断待ち（詳細）
 
 ### DQ-HIL-EXEC-01（A2/A3再開ゲート）
+- 状態: **Ready（2026-03-12同期）**
 - 背景: `HIL-RS-01-A1` で契約IDは固定済みだが、再開判定ログの証跡フォーマットが未統一。
-- 現在の詰まり: 判定条件 `contractLinkLocked` / `sharedResourceFreeze` / `validatorPass` の記録欄が未固定。
+- 同期結果: 判定条件 `contractLinkLocked` / `sharedResourceFreeze` / `validatorPass` を再確認し、A2/A3再開ゲートの前提充足を確認。
 - 放置リスク: A2/A3が別フォーマットで進行し、契約リンク再確認に手戻りが発生。
 - 判断に必要な入力: Plan Ownerがテンプレ案、Architecture Ownerが承認、期限=2026-03-14 JST。
 
 ### DQ-FB-P2C-01（polygon tie-break規則）
+- 状態: **Ready（2026-03-12同期）**
 - 背景: `FB-P2C-01-A1` は決定論要求まで固定済み、競合時優先順位だけ保留。
-- 現在の詰まり: I/F項目 `deterministicTieBreakOrder` の固定順序が未確定。
+- 同期結果: I/F項目 `deterministicTieBreakOrder` は `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` で参照先と一致。
 - 放置リスク: A2モックとA3実装で順序不一致が起き、非決定挙動が再発。
 - 判断に必要な入力: Geometry担当の順序案、QAの再現ケース3件、期限=2026-03-15 JST。
 
 ### DQ-OPS-SOURCE-01（Source Issue切替開始日）
+- 状態: **Open（未決）**
 - 背景: Active memoは `Source Issue: N/A` で統一、外部監査要求の増加でURL移行判断が必要。
 - 現在の詰まり: 判定条件 `GitHub Issues正本運用開始宣言` の実施日とRACI割当が未確定。
 - 放置リスク: トレーサビリティが分断し、監査時の根拠探索コストが増加。
@@ -209,11 +212,11 @@
 
 ## 次の1手
 
-1. DQ-HIL-EXEC-01 を2026-03-14 JSTまでに確定し、A2/A3再開ゲートの証跡テンプレを固定する。
-2. DQ-FB-P2C-01 を2026-03-15 JSTまでに確定し、`deterministicTieBreakOrder` を `Fixed` に遷移させる。
-3. DQ-OPS-SOURCE-01 を2026-03-18 JSTまでに採否決定し、採用時はRunbook手順1〜6、見送り時は期限再設定を記録する。
+1. `DQ-HIL-EXEC-01` は Ready として維持し、A2/A3再開時に同一テンプレ（`contractLinkLocked/sharedResourceFreeze/validatorPass`）の運用逸脱がないかを監査する。
+2. `DQ-FB-P2C-01` は Ready として維持し、A2/A3で `deterministicTieBreakOrder` の固定順序逸脱が出た場合のみ再オープンする。
+3. `DQ-OPS-SOURCE-01` を2026-03-18 JSTまでに採否決定し、採用時はRunbook手順1〜6、見送り時は期限再設定を記録する。
 
-再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / 停止条件違反なし。
+再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決は `DQ-OPS-SOURCE-01` のみ / 停止条件違反なし。
 
 ## Stream D 実行ログ（2026-03-12, Phase 1-4）
 
@@ -226,18 +229,18 @@
 ### Phase 2: 相互整合更新（Active / Decision Queue / 決定ログ / 次の1手）
 
 - Active issue運用値を `issues/README.md` と再照合し、運用上のActiveは `HIL-RS-01` / `HIL-RS-01-A1` の2件で一致を維持。
-- Decision Queue残件を `DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の3件に固定し、決定済み項目の重複再掲がないことを確認。
+- Decision Queueを再評価し、`DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` は Ready、`DQ-OPS-SOURCE-01` のみOpenとして維持。決定済み項目の重複再掲がないことを確認。
 - 決定ログは既存IDのみを維持し、未承認決定を「確定扱い」していないことを確認。
-- 「次の1手」はQueue 3件の期限管理に限定し、未定義競合を新規導入しない。
+- 「次の1手」は未決1件（`DQ-OPS-SOURCE-01`）の期限管理と、Ready2件の逸脱監査に限定し、未定義競合を新規導入しない。
 
 ### Phase 3: 件数監査（再計算）
 
 - issue memo総数: 43
 - Open: 8 / Draft: 7 / Done系: 25（Done=24 + Done(SQLite fallback path)=1）
 - In Progress: 1 / Blocked: 2
-- Decision Queue残件: 3
+- Decision Queue残件: 1（Ready=2 / Open=1）
 - 停止条件違反: 0（契約リンク未固定 / shared resource更新衝突 / Self-Correction 3回超過の検出なし）
 
 ### Phase 4: 公開（再開判定チェックリスト1行確定）
 
-- **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は3件へ限定管理 / 停止条件違反なし。
+- **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は `DQ-OPS-SOURCE-01` の1件のみ / 停止条件違反なし。
