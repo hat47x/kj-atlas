@@ -55,3 +55,44 @@ def test_review_attribution_allows_unreviewed_without_reviewer_ref() -> None:
     )
     assert validated.reviewerRef is None
     assert validated.reviewedAt is None
+
+
+def test_critique_input_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        CritiqueInput(
+            schemaVersion="1.0.0",
+            critiqueId="crit-2",
+            targetRef="card:c2",
+            critiqueType="too_far",
+            createdAt=_now(),
+            iteration=2,
+            unexpectedField="not-allowed",
+        )
+
+
+def test_reproposal_diff_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        ReproposalDiff(
+            proposalId="p2",
+            basedOnIteration=2,
+            traceKey="crit-2:p2",
+            diffOps=[
+                {
+                    "opId": "op-2",
+                    "opType": "add",
+                    "targetRef": "card:c2",
+                    "after": {"x": 10, "y": 20},
+                }
+            ],
+            unexpectedField="not-allowed",
+        )
+
+
+def test_review_attribution_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        ReviewAttribution(
+            schemaVersion="1.0.0",
+            reviewState="unreviewed",
+            auditRecordedAt=_now(),
+            unexpectedField="not-allowed",
+        )
