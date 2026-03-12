@@ -27,6 +27,10 @@
 
 ### Phase 1: Read & Baseline
 
+- 対象3ファイル再Read（Phase開始同期）:
+  1. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Read対象（再確認済み）:
   - `ADR-0026`
   - `ADR-0001`

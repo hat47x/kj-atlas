@@ -157,6 +157,7 @@
 
 ### 5.1 単一定義検証（Phase 1/4 記録）
 
+- Phase開始時の対象3ファイル再Read: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `hil_rs_01_a1_minimum_interface_contract.md`。
 - 検証対象: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `hil_rs_01_a1_minimum_interface_contract.md`
 - 検証方法: `rg` による3ファイル横断検査（A1 issue / HIL-RS-01親issue / 本契約）
 - 判定:
