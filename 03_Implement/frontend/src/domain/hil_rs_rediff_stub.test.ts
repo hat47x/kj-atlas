@@ -31,6 +31,7 @@ describe("buildHilRsRediffStub", () => {
       iteration: 2,
       critiqueInputs: [
         {
+          schemaVersion: "1.0.0",
           critiqueId: "card:c1:2",
           targetRef: "card:c1",
           critiqueType: "too_close",
