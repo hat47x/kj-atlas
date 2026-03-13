@@ -201,3 +201,9 @@
 - `HIL-RS-01-A1` で最小I/F契約の未固定箇所を0件化する。
 - A2/A3 は A1 の契約リンクを参照専用で固定し、共有リソース更新は統合フェーズへ集約する。
 - validator / unittest / 同期監査（README vs dashboard）が成功した時点で Proceed とする。
+
+### 6-5. Stream D Proceed更新（2026-03-13 rerun-3）
+
+- Phase 1-4の再監査結果を維持し、Phase 5で次の1手を `DQ-HIL-EXEC-01`（Ready監査）/ `DQ-FB-P2C-01`（Open継続）/ `DQ-OPS-SOURCE-01`（Open継続）へ再同期。
+- A1→A2→A3依存と停止条件（共有リソース同時更新違反・未承認決定の確定扱い・自己修復3回超過）は変更なし。
+- Verify追補（rerun-3）として validator/unittest/rg 成功ログを反映し、dashboard/README/decision-pack のQueue・件数・再開判定チェックリスト一致を維持。

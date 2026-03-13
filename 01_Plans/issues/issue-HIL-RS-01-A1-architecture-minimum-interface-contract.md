@@ -335,3 +335,20 @@
 - Stream C（A3文書同期）は、Single Reference が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の1件に固定されている場合のみ着手可能。
 - Stream D（統合判定）は、`sharedResourceFreeze=true` を維持したまま A2/A3 の成果を受領し、共有リソース更新を統合フェーズへ集約する。
 - いずれか1条件でも未達の場合、Blocked継続とし人間判断へエスカレーションする。
+
+## 9) Stream D受入監査ログ（2026-03-13 rerun-3）
+
+### Context
+
+- Stream Dで対象5ファイル再読（Phase 1-5）を実施し、A/B/C完了報告受領済み状態とA1契約リンク固定状態を再確認した。
+- `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約IDと単一参照先 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の複線化は検出されなかった。
+
+### Decision
+
+- A1契約は既存確定値を維持し、追加の契約変更・ADR更新は不要と判断する。
+- Stream D統合では A1→A2→A3 依存を保持し、Gate 0未承認時のA2/A3 Block継続を明示する。
+
+### Consequences
+
+- A2/A3は「契約参照のみ」の前提を維持したまま再開判定を行える。
+- Decision Queueの解消済み項目（`DQ-A1-01..04`）と未決項目（`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01`）の境界が明確に維持される。
