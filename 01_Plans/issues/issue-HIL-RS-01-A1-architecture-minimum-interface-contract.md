@@ -194,6 +194,22 @@
 - A2/A3は本A1契約を参照して着手可能。
 - 契約固定値の変更は統合フェーズの人間承認を必須とし、ストリーム内の推測変更を禁止する。
 
+
+
+## 0.6) Phase 4 Handoff固定（A2/A3向け最終宣言）
+
+- Single Reference（固定）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Contract IDs（固定）: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Fixed Values（固定）:
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+- Freeze Flags（固定）:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 変更凍結宣言:
+  - A1契約本文は凍結済みとし、変更は統合フェーズの人間判断でのみ実施する。
+
 ## 1) 課題 / Problem statement
 
 - HIL-RS-01の実行順でA1契約が未固定だと、A2（Frontend実装）とA3（Documentation同期）が同一論点を重複解釈して競合する。
