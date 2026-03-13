@@ -184,6 +184,23 @@
 - Fail-safe:
   - Self-correctionが3回を超える場合、前提崩れまたは未定義競合として即停止し、推測実行を行わない。
 
+## 4.6) Stream A 引き渡し固定パケット（再掲・最終）
+
+- 固定値一覧:
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- 禁止変更一覧:
+  - 契約ID、`schemaVersion`、`requiredFields`、`overridePolicy` の変更禁止。
+  - 単一参照先（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）の複線化禁止。
+  - 共有リソース（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md`）更新禁止。
+- 開始条件（A2/A3）:
+  - `DQ-A1-01..04` が Resolved であること。
+  - 契約ID3点と単一参照先がA1 issue/Architecture正本で一致していること。
+  - 未定義競合（`schemaVersion` / `requiredFields` / `overridePolicy`）が0件であること。
+
 ## 4.3) Stream C 進捗ログ（Documentation同期）
 
 - 実施内容: `04_Documentation/operations.md` / `security.md` / `e2e_testing.md` を A1 契約 + B 実装確定内容に同期。
@@ -295,4 +312,3 @@
 - 配布固定I/F: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder`
 - Freeze条件: `contractLinkLocked=true`, `sharedResourceFreeze=true`
 - 変更禁止: **A2/A3は契約変更禁止**。
-
