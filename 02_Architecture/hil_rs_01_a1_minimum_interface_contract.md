@@ -182,6 +182,17 @@
   - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）をストリーム内で更新すること。
   - A2で`04_Documentation/**`、A3で`03_Implement/**`を同時に変更すること。
 
+### 6.1 A2 mock前提（fixture/stub契約）
+
+- A2は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約IDを fixture 名にそのまま使用し、別名aliasを禁止する。
+- fixture schemaVersion 固定値:
+  - critique fixture: `1.0.0`
+  - review attribution fixture: `1.0.0`
+- stub判定前提:
+  - `reviewOverridePolicy` は `human_dual_control_only` 以外を返してはならない。
+  - `reviewerRef` は opaque ID 形式を前提とし、email/provider/external_uid を返してはならない。
+- A2のモック検証は「同一fixture入力→同一出力」を必須とし、未定義フィールドの自動補完を禁止する。
+
 ## 8. Contract Freeze Evidence Template（Stream A 固定）
 
 ### 8.1 Freeze Flags
