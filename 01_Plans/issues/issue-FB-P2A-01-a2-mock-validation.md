@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-01-A2 Island階層モデル導入 / モック検証
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -54,6 +54,25 @@
   - `mockCaseId`
   - `validationResult`
   - `ownerOfFix`（`A1` / `A2` / `A3`）
+
+
+## Contract freeze confirmation
+
+- FixedContractRef: `issue-FB-P2A-01-a1-interface-contract.md#contract-definitiona1成果物`
+- FreezeRule: A2では `IslandHierarchyContractV1` のRequired fields / Invariantsを変更しない。
+- DriftCheck:
+  - ContractLinks（A1→A2→A3）が全て到達可能であること。
+  - Invariants（存在参照 / DAG / roundtrip不変）を判定表にそのまま転写すること。
+
+## Validation log schema（A3引き継ぎ必須）
+
+| field | type | description |
+|---|---|---|
+| `contractVersion` | string | `IslandHierarchyContractV1` 固定値 |
+| `mockCaseId` | string | `M1`〜`M4` |
+| `validationResult` | enum(`pass`,`fail`) | モック判定結果 |
+| `ownerOfFix` | enum(`A1`,`A2`,`A3`) | 失敗時の修正責務 |
+| `evidence` | string | 判定根拠（Invariant IDまたは期待値） |
 
 ## State sync / conflict check
 

@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-01-A3 Island階層モデル導入 / 実装計画接続
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -41,6 +41,27 @@
 - [ ] A1/A2の契約ID・ケースIDを使って実装計画へトレース可能。
 - [ ] Plan→Execute→Verify→Proceedがチェックリスト化されている。
 - [ ] AC/DoD不足のドラフト提案手順が明文化されている。
+
+
+## A2→A3 接続条件（確定）
+
+- ContractLock: `IslandHierarchyContractV1`（A1定義から変更禁止）
+- Required input from A2:
+  - `contractVersion=IslandHierarchyContractV1`
+  - `mockCaseId in {M1,M2,M3,M4}`
+  - `validationResult`
+  - `ownerOfFix`
+- GoNoGo判定:
+  - Go: `M1/M2=pass` かつ `M3/M4=fail` で責務が確定している。
+  - NoGo: 上記を満たさない、または責務未確定。
+
+## 実装トレース最小単位
+
+| traceKey | source | destination |
+|---|---|---|
+| `RQ-2A-01` | A1 RequirementID | A3 task grouping key |
+| `M1..M4` | A2 mockCaseId | A3 verification checklist |
+| `ownerOfFix` | A2 failure routing | A3 backlog split (A1/A2/A3) |
 
 ## State sync / conflict check
 
