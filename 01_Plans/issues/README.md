@@ -270,6 +270,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 2 Proceed（2026-03-13）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue: Ready=2/Open=1 / A1→A2→A3）を更新してクローズ。
 - Stream D Phase 3監査（2026-03-13）: issue memo総数43件（Open=8 / Draft=7 / Done系=25 / In Progress=1 / Blocked=2）を再計算し、Decision Queue未決=1（Ready=2）・停止条件違反0件を確認。
 - Stream D Phase 4公開（2026-03-13）: 再開判定チェックリストを1行確定（未固定箇所=0 / 契約リンク確定 / Queue未決は`DQ-OPS-SOURCE-01`のみ / 停止条件違反なし）。
+- Stream D Phase 3 Verify追補（2026-03-13）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-packの件数・Queue・再開判定の整合維持を確認。
 
 ## Rules
 
