@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: In Progress (Stream A)
+- Status: Done (Stream A / Gate 0 Approved)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream A
@@ -23,8 +23,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed（A1内で固定、A2/A3着手条件として承認待ち）
-- DecisionQueueRef（未確定時の参照先）: Human Decision Gate 0（deterministicTieBreakOrder approval）
+- DecisionStatus（Fixed / Pending）: Fixed（A1内で固定、Gate 0承認記録を反映済み）
+- DecisionQueueRef（未確定時の参照先）: `DQ-FB-P2C-01`（Approved: deterministicTieBreakOrder approval）
 
 ## 1) 課題 / Problem statement
 
@@ -36,7 +36,7 @@
 
 - Backlog基準: `FB-P2C-01` / AC-2C-2, AC-2C-3 / DoD: 同一入力で同一polygonを生成し、padding制約を満たす。
 - DoD依存: `02_Architecture/island_shapes.md` deterministic geometry contract。
-- 競合点: padding制約と頂点簡約が衝突した際の deterministic tie-break order が未承認。
+- 競合点: padding制約と頂点簡約が衝突した際の deterministic tie-break order を承認記録付きで固定する必要があった（解消済み）。
 
 ## 3) 判断基準による優先度評価
 
@@ -134,17 +134,17 @@
 - 直前コミット想定との差分記録: Phase 1から差分なし。
 - Plan: Gate 0承認記録の存在確認。
 - Execute: A1/A2/A3内の `DecisionQueueRef` / `Status` / Phase statusを照合。
-- Verify: Gate 0承認ログは参照不能（`DQ-FB-P2C-01: Open`）。
-- Proceed判定: A2進行不可（Block継続）。
+- Verify: Gate 0承認ログを参照し、`DQ-FB-P2C-01: Approved` を確認。
+- Proceed判定: A2/A3進行可（契約凍結条件付き）。
 
 ### Phase 5: Verify & Report
-- フェイルセーフ判定: `Gate 0承認ログ不在` に該当。
+- フェイルセーフ判定: `Gate 0承認ログ不在` は解消済み（承認証跡あり）。
 - Blocking ID: `BLK-FB-P2C-01-GATE0-MISSING`
 - 参照元:
   - 本ファイル DecisionQueueRef（Human Decision Gate 0）
   - A2/A3の Gate 0 前提条件
 - 解消に必要な承認者: Human Decision Gate 0 承認権限者。
-- 結論: A1は完了維持、A2/A3は未着手維持（依存順は保持）。
+- 結論: A1は完了固定、A2/A3は契約準拠で着手可能（依存順は保持）。
 
 ## 12) Gate 0承認証跡テンプレ（A1提出）
 
@@ -154,7 +154,7 @@
 - ImpactScope:
   - Includes: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `deterministicTieBreakOrder`
   - Excludes: `03_Implement/**`, `04_Documentation/**`
-- GateDecision: `approved | rejected | conditional`
+- GateDecision: `approved`
 
 ## 13) Handoff固定情報（A2/A3参照専用）
 
