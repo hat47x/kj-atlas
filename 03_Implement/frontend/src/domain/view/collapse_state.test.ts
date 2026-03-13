@@ -29,11 +29,12 @@ describe("setIslandCollapsed", () => {
     expect(result.nextDocument.islands.find((island) => island.id === "i-2")?.collapsed).toBe(true);
   });
 
-  it("returns unchanged result for unknown island id", () => {
+  it("returns fail-fast metadata for unknown island id", () => {
     const doc = makeDocument();
     const result = setIslandCollapsed(doc, "missing", true);
 
     expect(result.changed).toBe(false);
+    expect(result.rejectedReason).toBe("island-not-found");
     expect(result.nextDocument).toBe(doc);
   });
 
@@ -42,6 +43,7 @@ describe("setIslandCollapsed", () => {
     const result = setIslandCollapsed(doc, "i-1", false);
 
     expect(result.changed).toBe(false);
+    expect(result.rejectedReason).toBeUndefined();
     expect(result.nextDocument).toBe(doc);
   });
 });
