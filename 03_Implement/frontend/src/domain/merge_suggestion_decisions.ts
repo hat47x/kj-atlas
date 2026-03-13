@@ -35,15 +35,29 @@ function sortCardIds(cardIds: string[]): string[] {
   return [...new Set(cardIds)].sort((left, right) => left.localeCompare(right));
 }
 
+function assertNonEmptyString(value: string, field: string): void {
+  if (value.trim().length === 0) {
+    throw new Error(`${field} must be a non-empty string`);
+  }
+}
+
 export function appendMergeSuggestionDecision(
   document: DocumentV2,
   input: AppendMergeSuggestionDecisionInput,
   options?: { idFactory?: () => string; now?: string }
 ): DocumentV2 {
+  assertNonEmptyString(input.groupId, "groupId");
+  assertNonEmptyString(input.mergedTextDraft, "mergedTextDraft");
+  assertNonEmptyString(input.editedText, "editedText");
+
   const idFactory = options?.idFactory ?? (() => crypto.randomUUID());
   const now = options?.now ?? new Date().toISOString();
 
   const sortedCardIds = sortCardIds(input.cardIds);
+  if (sortedCardIds.length === 0) {
+    throw new Error("cardIds must contain at least one id");
+  }
+
   const decisionId = idFactory();
   const entry: MergeSuggestionDecisionEntry = {
     id: decisionId,

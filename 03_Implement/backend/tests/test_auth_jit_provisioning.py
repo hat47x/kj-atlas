@@ -145,9 +145,6 @@ def test_sso_subject_reviewer_ref_profile_on_provision(tmp_path) -> None:
 
 
 @pytest.mark.auth_level1
-
-
-@pytest.mark.auth_level1
 def test_sso_subject_header_preferred_over_forwarded_user(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     original_adapter = settings.reviewer_ref_resolver_adapter
@@ -231,5 +228,38 @@ def test_admin_provision_contract_reviewer_and_owner_ref_prefix(tmp_path) -> Non
             payload = response.json()
             assert payload["reviewerRef"].startswith("user:")
             assert payload["ownerRef"].startswith("user:")
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_contract_response_shape_is_stable_for_create_and_retry(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            create = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "shape-check", "displayName": "Shape"},
+            )
+            assert create.status_code == 201
+            created_payload = create.json()
+            assert set(created_payload.keys()) == {"userId", "reviewerRef", "ownerRef", "provisioned"}
+            assert isinstance(created_payload["userId"], str)
+            assert isinstance(created_payload["reviewerRef"], str)
+            assert isinstance(created_payload["ownerRef"], str)
+            assert isinstance(created_payload["provisioned"], bool)
+            assert created_payload["provisioned"] is True
+
+            retry = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "shape-check", "displayName": "Shape"},
+            )
+            assert retry.status_code == 200
+            retried_payload = retry.json()
+            assert set(retried_payload.keys()) == {"userId", "reviewerRef", "ownerRef", "provisioned"}
+            assert retried_payload["userId"] == created_payload["userId"]
+            assert retried_payload["provisioned"] is False
     finally:
         settings.allow_jit_provisioning = original_allow_jit
