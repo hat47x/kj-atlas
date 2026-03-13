@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
@@ -21,6 +21,8 @@ _IDENTITY_CONFLICT_MESSAGE = (
 
 
 class ProvisionUserRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     provider: str
     externalUid: str
     displayName: str | None = None
@@ -28,9 +30,11 @@ class ProvisionUserRequest(BaseModel):
 
 
 class ProvisionUserResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     userId: str
-    reviewerRef: str
-    ownerRef: str
+    reviewerRef: str = Field(min_length=1, pattern=r"^user:")
+    ownerRef: str = Field(min_length=1, pattern=r"^user:")
     provisioned: bool
 
 
