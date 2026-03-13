@@ -6,7 +6,10 @@ type CandidateReason = "normalized-text" | "token-signature";
 type CandidateGroup = {
   reason: CandidateReason;
   cards: Card[];
+  score: number;
 };
+
+const CANDIDATE_CONTRACT_SNAPSHOT_VERSION = "CTR-2B-01-CANDIDATE-GROUP-V1";
 
 const TOKEN_SPLIT = /[^a-z0-9]+/g;
 
@@ -51,8 +54,19 @@ function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
         .map((card) => card.text.trim())
         .sort((left, right) => right.length - left.length || left.localeCompare(right))[0] ?? "";
       const cardIds = sortedCards.map((card) => card.id);
+      const targetCardId = cardIds[0] ?? "";
+      const candidateCardIds = cardIds.filter((cardId) => cardId !== targetCardId);
       return {
         groupId: `heuristic-${normalizeText(mergedTextDraft).replace(/[^a-z0-9]+/g, "-")}-${cardIds.join("-")}`,
+        targetCardId,
+        candidateCardIds,
+        scoreSummary: {
+          min: group.score,
+          max: group.score,
+          avg: group.score,
+        },
+        reasonCodes: [`heuristic:${group.reason}`],
+        snapshotVersion: CANDIDATE_CONTRACT_SNAPSHOT_VERSION,
         cardIds,
         mergedTextDraft,
         rationale: `heuristic:${group.reason}`,
@@ -93,7 +107,7 @@ export function collectMergeCandidates(document: DocumentV2): MergeSuggestion[] 
       continue;
     }
     cards.forEach((card) => assigned.add(card.id));
-    groups.push({ reason: "normalized-text", cards });
+    groups.push({ reason: "normalized-text", cards, score: 1 });
   }
 
   const tokenBuckets = new Map<string, Card[]>();
@@ -117,7 +131,7 @@ export function collectMergeCandidates(document: DocumentV2): MergeSuggestion[] 
     if (cards.length < 2) {
       continue;
     }
-    groups.push({ reason: "token-signature", cards });
+    groups.push({ reason: "token-signature", cards, score: 0.75 });
   }
 
   return toSuggestions(groups);
