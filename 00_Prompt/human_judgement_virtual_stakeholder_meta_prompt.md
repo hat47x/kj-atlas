@@ -16,7 +16,7 @@
 - 可逆性（High / Medium / Low）
 - 根拠参照（ADR / Architecture / Issue / Theme-ID）
 
-## Preflight（たせない場合は停止）
+## Preflight（満たせない場合は停止）
 以下を満たさない場合、実行せず「不足項目のみ列挙」して停止すること。
 1. 入力必須項目が全件埋まっている
 2. 根拠参照が上流文書（00〜02）または既存Theme-IDへ解決できる
