@@ -652,7 +652,7 @@ function validateMergeSuggestionDecisionEntry(
     return false;
   }
 
-  hasOnlyKeys(item, ["id", "groupId", "decision", "decidedAt", "cardIds", "mergedTextDraft", "editedText", "rationale"], path, errors);
+  hasOnlyKeys(item, ["id", "decisionId", "groupId", "decision", "action", "decidedAt", "decidedBy", "cardIds", "selectedCardIds", "mergedTextDraft", "editedText", "note", "snapshotVersion", "rationale"], path, errors);
 
   let valid = true;
   if (typeof item.id !== "string") {
@@ -663,15 +663,31 @@ function validateMergeSuggestionDecisionEntry(
     errors.push(`${path}.groupId: must be a string`);
     valid = false;
   }
+
+  if (item.decisionId !== undefined && typeof item.decisionId !== "string") {
+    errors.push(`${path}.decisionId: must be a string when provided`);
+    valid = false;
+  }
   if (!validateMergeSuggestionDecision(item.decision)) {
     errors.push(`${path}.decision: must be 'accept' | 'partial' | 'reject' | 'defer'`);
+    valid = false;
+  }
+  if (item.action !== undefined && !validateMergeSuggestionDecision(item.action)) {
+    errors.push(`${path}.action: must be 'accept' | 'partial' | 'reject' | 'defer' when provided`);
     valid = false;
   }
   if (typeof item.decidedAt !== "string") {
     errors.push(`${path}.decidedAt: must be a string`);
     valid = false;
   }
+  if (item.decidedBy !== undefined && typeof item.decidedBy !== "string") {
+    errors.push(`${path}.decidedBy: must be a string when provided`);
+    valid = false;
+  }
   if (!validateStringArray(item.cardIds, `${path}.cardIds`, errors)) {
+    valid = false;
+  }
+  if (item.selectedCardIds !== undefined && !validateStringArray(item.selectedCardIds, `${path}.selectedCardIds`, errors)) {
     valid = false;
   }
   if (typeof item.mergedTextDraft !== "string") {
@@ -680,6 +696,14 @@ function validateMergeSuggestionDecisionEntry(
   }
   if (typeof item.editedText !== "string") {
     errors.push(`${path}.editedText: must be a string`);
+    valid = false;
+  }
+  if (item.note !== undefined && typeof item.note !== "string") {
+    errors.push(`${path}.note: must be a string when provided`);
+    valid = false;
+  }
+  if (item.snapshotVersion !== undefined && typeof item.snapshotVersion !== "string") {
+    errors.push(`${path}.snapshotVersion: must be a string when provided`);
     valid = false;
   }
   if (item.rationale !== undefined && typeof item.rationale !== "string") {

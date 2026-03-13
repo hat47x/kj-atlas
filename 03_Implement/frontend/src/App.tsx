@@ -10,6 +10,7 @@ import {
   suggestIslandSummary,
   summarizeIslandRelation,
   suggestLayout,
+  type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
 } from "./api/client";
@@ -292,11 +293,7 @@ type DocumentHistory = {
   future: DocumentV2[];
 };
 
-type MergeSuggestionDraft = {
-  groupId: string;
-  cardIds: string[];
-  mergedTextDraft: string;
-  rationale?: string;
+type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
   isEdited: boolean;
   latestDecision?: MergeSuggestionDecision;

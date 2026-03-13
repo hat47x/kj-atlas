@@ -13,6 +13,11 @@ function buildProps() {
     suggestions: [
       {
         groupId: "heuristic-risk-a-b",
+        targetCardId: "a",
+        candidateCardIds: ["b"],
+        scoreSummary: { min: 1, max: 1, avg: 1 },
+        reasonCodes: ["heuristic:normalized-text"],
+        snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
         cardIds: ["a", "b"],
         mergedTextDraft: "Risk mitigation",
         editedText: "Risk mitigation",

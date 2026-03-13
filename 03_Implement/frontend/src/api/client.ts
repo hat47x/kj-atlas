@@ -181,6 +181,15 @@ export async function suggestLayout(doc: DocumentV2, instruction?: string): Prom
 
 export type MergeSuggestion = {
   groupId: string;
+  targetCardId: string;
+  candidateCardIds: string[];
+  scoreSummary: {
+    min: number;
+    max: number;
+    avg: number;
+  };
+  reasonCodes: string[];
+  snapshotVersion: string;
   cardIds: string[];
   mergedTextDraft: string;
   rationale?: string;

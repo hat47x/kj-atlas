@@ -227,12 +227,18 @@ export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";
 
 export type MergeSuggestionDecisionEntry = {
   id: string;
+  decisionId?: string;
   groupId: string;
   decision: MergeSuggestionDecision;
+  action?: MergeSuggestionDecision;
   decidedAt: string;
+  decidedBy?: string;
   cardIds: string[];
+  selectedCardIds?: string[];
   mergedTextDraft: string;
   editedText: string;
+  note?: string;
+  snapshotVersion?: string;
   rationale?: string;
 };
 
