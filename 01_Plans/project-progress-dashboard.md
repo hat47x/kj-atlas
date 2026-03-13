@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-13 (JST, Stream D final shared-resource sync, rerun-2)
+最終更新: 2026-03-13 (JST, Stream D final shared-resource sync, rerun-4)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -11,6 +11,7 @@
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
 - Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` は再開条件充足でReady、`DQ-FB-P2C-01` はGate 0未承認でOpen、`DQ-OPS-SOURCE-01` もOpenとして管理する。
+- Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
 
 ### 未完Issue全件（18件）とレーン割当
 
@@ -215,6 +216,7 @@
 1. `DQ-HIL-EXEC-01` は Ready として維持し、A2/A3再開時に同一テンプレ（`contractLinkLocked/sharedResourceFreeze/validatorPass`）の運用逸脱がないかを監査する。
 2. `DQ-FB-P2C-01` は Open を維持し、Gate 0承認記録が確定するまでA2/A3 Blockを継続する。
 3. `DQ-OPS-SOURCE-01` を2026-03-18 JSTまでに採否決定し、採用時はRunbook手順1〜6、見送り時は期限再設定を記録する。
+4. Stream D rerun-4 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=1/Open=2 の一致を次回同期開始条件に固定する。
 
 再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決は `DQ-FB-P2C-01` と `DQ-OPS-SOURCE-01` の2件 / 停止条件違反なし。
 

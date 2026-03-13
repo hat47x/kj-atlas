@@ -256,7 +256,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream D 統合スナップショット（2026-03-13 JST, final）
+### Stream D 統合スナップショット（2026-03-13 JST, final rerun-4）
 
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
@@ -273,6 +273,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 3 Verify追補（2026-03-13）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-packの件数・Queue・再開判定の整合維持を確認。
 - Stream D Phase 3 Verify追補（2026-03-13 rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を前提に、3共有ファイル同時同期後の validator/unittest/rg 成功を再確認。
 - Stream D Phase 2 Gate判定（2026-03-13, FB-P2C下流）: Gate 0未承認を再確認し、`FB-P2C-01-A2` / `A3` は Blocked 維持、Decision Queue は `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` に同期。
+- Stream D Phase 4 Proceed（2026-03-13 rerun-4）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を再確定。
 
 ## Rules
 
