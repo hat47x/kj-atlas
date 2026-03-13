@@ -29,6 +29,11 @@
 
 ## Phase 2（A2）: Plan → Execute → Verify → Proceed
 
+- State Sync Check（Phase開始時）:
+  - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+  - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
+  - 判定: Pass（契約ID不整合なし）
+
 - Plan:
   - A1契約のみに依存し、実装に踏み込まずmock検証条件を固定する。
 - Execute:
@@ -50,6 +55,15 @@
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 期待結果:
   - issue memo必須メタが整合し、検証スクリプトが成功する。
+
+## Reproducible verification record
+
+- Command:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Output:
+  - `ok: validated 2 active issue memos`
+- Self-Correction:
+  - 0/3（修復ループ不要）
 
 ## Fail-safe
 
