@@ -1,15 +1,18 @@
 import json
 from hashlib import sha256
+from typing import cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, TypeAdapter
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import (
+    AccessAction,
     AccessDecision,
     AccessRequest,
     AccessResource,
     AuthContext,
+    FailSafeMode,
     enforce_access,
     normalize_policy_ref,
     parse_csv_header,
@@ -22,7 +25,7 @@ from kj_atlas_api.db import get_db
 from kj_atlas_api.models import DocumentPayload, DocumentRow
 
 router = APIRouter(prefix="/docs", tags=["docs"])
-document_payload_adapter = TypeAdapter(DocumentPayload)
+document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
 
 
 
@@ -30,7 +33,7 @@ def _authorize_request(
     request: Request,
     db: Session,
     *,
-    action: str,
+    action: AccessAction,
     doc_id: str,
     safe_mode: bool,
     read_only: bool,
@@ -79,8 +82,9 @@ def _authorize_request(
     fail_safe_mode = getattr(request.app.state, "access_control_fail_safe_mode", "read_only")
     if fail_safe_mode not in {"deny", "read_only"}:
         fail_safe_mode = "read_only"
+    typed_fail_safe_mode = cast(FailSafeMode, fail_safe_mode)
 
-    decision = resolve_access_decision(adapter=adapter, request=access_request, fail_safe_mode=fail_safe_mode)
+    decision = resolve_access_decision(adapter=adapter, request=access_request, fail_safe_mode=typed_fail_safe_mode)
     enforce_access(decision, action=action)
     return access_request, decision
 

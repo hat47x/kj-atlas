@@ -44,7 +44,6 @@ def validate_view_metadata(payload: object, *, strict: bool = False) -> ViewMeta
                 {
                     "type": "missing",
                     "loc": ("visibility",),
-                    "msg": "Field required",
                     "input": payload,
                 }
             ],
@@ -71,7 +70,6 @@ def validate_public_pack_manifest(payload: object, *, strict: bool = False) -> P
                             {
                                 "type": "missing",
                                 "loc": ("packs", index, "visibility"),
-                                "msg": "Field required",
                                 "input": entry,
                             }
                         ],
