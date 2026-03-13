@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { appendMergeSuggestionDecision, getLatestMergeSuggestionDecisionByGroup } from "./merge_suggestion_decisions";
+import {
+  appendMergeSuggestionDecision,
+  getLatestMergeSuggestionDecisionByGroup,
+  listMergeSuggestionDecisionsByGroup,
+  restoreMergeSuggestionDecisionsBySnapshot,
+} from "./merge_suggestion_decisions";
 import type { DocumentV2 } from "./types";
 
 function createBaseDocument(): DocumentV2 {
@@ -136,5 +141,106 @@ describe("merge_suggestion_decisions", () => {
         { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
       )
     ).toThrowError("editedText must be a non-empty string");
+  });
+
+  it("lists decision history by group without auto-confirming representative merge", () => {
+    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+      {
+        id: "d1",
+        groupId: "g1",
+        decision: "accept",
+        action: "accept",
+        decidedAt: "2026-01-02T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+      {
+        id: "d2",
+        groupId: "g1",
+        decision: "defer",
+        action: "defer",
+        decidedAt: "2026-01-03T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha pending",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+      {
+        id: "d3",
+        groupId: "g2",
+        decision: "reject",
+        action: "reject",
+        decidedAt: "2026-01-04T00:00:00.000Z",
+        cardIds: ["c3", "c4"],
+        selectedCardIds: ["c3", "c4"],
+        mergedTextDraft: "beta",
+        editedText: "beta",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+    ];
+
+    expect(listMergeSuggestionDecisionsByGroup(decisions, "g1").map((entry) => entry.id)).toEqual(["d1", "d2"]);
+  });
+
+  it("restores only contract-valid actions for a given snapshot version", () => {
+    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+      {
+        id: "d1",
+        groupId: "g1",
+        decision: "accept",
+        action: "accept",
+        decidedAt: "2026-01-02T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+      {
+        id: "d2",
+        groupId: "g1",
+        decision: "partial",
+        action: "partial",
+        decidedAt: "2026-01-03T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha pending",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+      {
+        id: "d3",
+        groupId: "g1",
+        decision: "reject",
+        action: "invalid" as unknown as "reject",
+        decidedAt: "2026-01-04T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha no",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+      {
+        id: "d4",
+        groupId: "g1",
+        decision: "defer",
+        action: "defer",
+        decidedAt: "2026-01-05T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha defer",
+        snapshotVersion: "OTHER-SNAPSHOT",
+      },
+    ];
+
+    expect(restoreMergeSuggestionDecisionsBySnapshot(decisions, "CTR-2B-02-DECISION-LOG-V1").map((entry) => entry.id)).toEqual([
+      "d1",
+      "d2",
+    ]);
   });
 });
