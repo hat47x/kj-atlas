@@ -54,6 +54,32 @@ export type HilRsReviewAttribution = {
   ownerRef?: string;
 };
 
+const HIL_RS_CRITIQUE_ALLOWED_KEYS = new Set([
+  "schemaVersion",
+  "critiqueId",
+  "targetRef",
+  "critiqueType",
+  "createdAt",
+  "iteration",
+  "comment",
+  "constraintHints",
+]);
+
+const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["proposalId", "basedOnIteration", "diffOps", "traceKey"]);
+
+const HIL_RS_DIFF_OP_ALLOWED_KEYS = new Set(["opId", "opType", "targetRef", "before", "after", "rationale"]);
+
+const HIL_RS_ATTRIBUTION_ALLOWED_KEYS = new Set([
+  "schemaVersion",
+  "reviewState",
+  "reviewedAt",
+  "reviewerRef",
+  "auditRecordedAt",
+  "overridePolicy",
+  "reviewContext",
+  "ownerRef",
+]);
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -66,10 +92,15 @@ function hasPiiLikeIdentityFields(value: Record<string, unknown>): boolean {
   return ["provider", "external_uid", "email"].some((key) => key in value);
 }
 
+function hasOnlyAllowedKeys(value: Record<string, unknown>, allowedKeys: ReadonlySet<string>): boolean {
+  return Object.keys(value).every((key) => allowedKeys.has(key));
+}
+
 export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiqueInput {
   if (typeof value !== "object" || value === null) return false;
   const input = value as Record<string, unknown>;
 
+  if (!hasOnlyAllowedKeys(input, HIL_RS_CRITIQUE_ALLOWED_KEYS)) return false;
   if (input.schemaVersion !== "1.0.0") return false;
   if (!isNonEmptyString(input.critiqueId)) return false;
   if (!isNonEmptyString(input.targetRef)) return false;
@@ -89,6 +120,7 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
   if (typeof value !== "object" || value === null) return false;
   const payload = value as Record<string, unknown>;
 
+  if (!hasOnlyAllowedKeys(payload, HIL_RS_REDIFF_ALLOWED_KEYS)) return false;
   if (!isNonEmptyString(payload.proposalId)) return false;
   if (!Number.isInteger(payload.basedOnIteration) || (payload.basedOnIteration as number) < 1) return false;
   if (!isNonEmptyString(payload.traceKey)) return false;
@@ -97,6 +129,7 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
   for (const op of payload.diffOps) {
     if (typeof op !== "object" || op === null) return false;
     const parsed = op as Record<string, unknown>;
+    if (!hasOnlyAllowedKeys(parsed, HIL_RS_DIFF_OP_ALLOWED_KEYS)) return false;
     if (!isNonEmptyString(parsed.opId)) return false;
     if (!HIL_RS_DIFF_OP_TYPES.includes(parsed.opType as HilRsDiffOpType)) return false;
     if (!isNonEmptyString(parsed.targetRef)) return false;
@@ -112,6 +145,7 @@ export function validateHilRsReviewAttribution(value: unknown): value is HilRsRe
   if (typeof value !== "object" || value === null) return false;
   const attribution = value as Record<string, unknown>;
 
+  if (!hasOnlyAllowedKeys(attribution, HIL_RS_ATTRIBUTION_ALLOWED_KEYS)) return false;
   if (attribution.schemaVersion !== "1.0.0") return false;
   if (!HIL_RS_REVIEW_STATES.includes(attribution.reviewState as HilRsReviewState)) return false;
   if (!isNonEmptyString(attribution.reviewerRef)) return false;

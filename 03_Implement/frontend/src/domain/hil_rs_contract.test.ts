@@ -48,6 +48,21 @@ describe("hil_rs_contract validators", () => {
   });
 
 
+
+  it("rejects critique payload with extra non-contract fields (A1-CRITIQUE-IF)", () => {
+    expect(
+      validateHilRsCritiqueInput({
+        schemaVersion: "1.0.0",
+        critiqueId: "crit-extra-1",
+        targetRef: "card:c6",
+        critiqueType: "too_close",
+        createdAt: "2026-03-11T09:00:00.000Z",
+        iteration: 1,
+        unexpected: "not-allowed",
+      }),
+    ).toBe(false);
+  });
+
   it("rejects critique payload that attempts review state mutation fields", () => {
     expect(
       validateHilRsCritiqueInput({
@@ -106,6 +121,27 @@ describe("hil_rs_contract validators", () => {
     ).toBe(false);
   });
 
+
+  it("rejects rediff payload with extra top-level fields (A1-REDIFF-IF)", () => {
+    expect(
+      validateHilRsRediffPayload({
+        proposalId: "proposal-extra-1",
+        basedOnIteration: 2,
+        traceKey: "trace-extra-1",
+        extra: true,
+        diffOps: [
+          {
+            opId: "op-extra-1",
+            opType: "move",
+            targetRef: "card:c2",
+            before: { x: 0, y: 0 },
+            after: { x: 1, y: 1 },
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
   it("enforces review attribution state transition requirements", () => {
     expect(
       validateHilRsReviewAttribution({
@@ -151,6 +187,21 @@ describe("hil_rs_contract validators", () => {
         reviewerRef: "user:local:abc",
       }),
     ).toBe(true);
+  });
+
+
+  it("rejects review attribution payload with extra fields (A1-ATTR-IF)", () => {
+    expect(
+      validateHilRsReviewAttribution({
+        schemaVersion: "1.0.0",
+        reviewState: "human_reviewed",
+        reviewedAt: "2026-03-11T09:00:00.000Z",
+        auditRecordedAt: "2026-03-11T09:01:00.000Z",
+        overridePolicy: "human_dual_control_only",
+        reviewerRef: "user:local:abc",
+        extraAuditFlag: true,
+      }),
+    ).toBe(false);
   });
 
   it("rejects review attribution payload containing PII-like identity fields", () => {
