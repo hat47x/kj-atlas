@@ -256,3 +256,83 @@
 - `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open 維持（未承認決定の確定扱いを禁止）。
 - Next actions は「Ready 1件の監査 + Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
 - Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
+
+## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-13）
+
+### 0. Preflight
+- 入力必須項目: 充足（Theme-ID/背景/I-F/期限/担当/依存/影響/可逆性/根拠）。
+- 根拠解決: `00_Prompt`/`01_Plans` の既存文書へ解決。
+- 循環依存: なし（`FB-P2C-01-A1 -> A2 -> A3` の直列）。
+- 最優先制約: 「監査」のみを宣言。
+
+### 1. 実行サマリ（目的 / 対象範囲 / 参照文書）
+- 目的: Gate 0未承認で停止中の `DQ-FB-P2C-01` をYes/No裁定可能な2案へ圧縮する。
+- 対象範囲: `01_Plans` の判断整理のみ（実装コード変更なし）。
+- 参照: `human_judgement_virtual_stakeholder_meta_prompt.md` / 本dashboard / `issue-FB-P2C-01-a1-interface-contract.md`。
+
+### 2. 仮想ステークホルダー会議ログ
+- Product/Value: 決定論維持を優先し、A2/A3の再開条件をGate 0承認記録へ集約。
+- Architecture: 契約順序 `padding > self-intersection > area delta > vertex count` はA1と一致。
+- Security/Governance: SafeMode/公開境界の変更提案なし、監査証跡はDecision Queueに限定。
+- Operations/Delivery: 期限内にYes/No裁定できない場合はOpen維持でA2/A3 Block継続。
+- QA/Verification: 承認後に再現ケース3件で衝突0を再確認してProceed判定。
+
+### 3. 人間判断待ち（詳細）
+- Theme-ID: `DQ-FB-P2C-01`。
+- 未確定点: `Gate0ApprovalRecord` の有無とA2開始可否。
+- 期限: 2026-03-15 JST。
+- 担当ロール: Human Decision Gate 0 Approver / Plan Owner / QA Owner。
+
+### 4. 対応案（3案）
+- 案A: A1契約順序をそのまま承認しA2を再開（推奨）。
+- 案B: 最優先のみ `自己交差回避` に変更しA1差分更新後に再審査。
+- 案C: Gate 0結論を延期し、A2/A3 Blockを継続。
+
+### 5. 判定ログ（Theme: DQ-FB-P2C-01）
+1) 判定ゲート: **Gate-2**（依存波及あり、2案圧縮可能、期限拘束あり）。
+2) 結論: **未確定**（人間承認待ち）。
+3) 判定理由: A1契約は固定済みだがGate 0証跡欠落のためAI単独で採用確定不可。
+4) 条件: 採用=Gate 0記録 + QA3件Pass / 見送り=期限超過 / ロールバック=A2停止維持。
+5) 反証ログ: 案Cは安全だが停滞長期化、案Bは再審査コスト増で期限リスク。
+6) 根拠: 本dashboard DQ節、`issue-FB-P2C-01-a1-interface-contract.md` Phase 2 Verify。
+
+### 6. 決定ログ（既決のみ）
+- 既決参照: `DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01`（変更なし）。
+- 新規決定: なし（Gate 0未承認のため）。
+
+### 7. 未確定在庫
+- `UNC-DQ-FB-P2C-01-01`: Gate 0承認記録ID未付与。
+- 解消条件: ApproverがYes/Noを記録し、採否条件を満たすこと。
+- 担当/期限/依存: Human Approver / 2026-03-15 JST / `FB-P2C-01-A1`。
+
+### 8. 次の1手（依存順）
+1. Gate 0 Approverが案A/BのYes/Noを記録する。
+2. Plan OwnerがDecision Queue状態をOpen→Ready/Blockedへ同期する。
+3. QA Ownerが承認案に応じた再現ケース3件を実施する。
+
+### 9. 人間承認キュー（Yes/No裁定）
+- Q1: 案Aを採用してA2を再開するか（Yes条件: QA3件Pass、No時: 案Bへ）。
+- Q2: 案Bを採用してA1差分更新を先行するか（Yes条件: 期限延長許容、No時: 案Cへ）。
+- 期限: 2026-03-15 JST。
+- 未採用時ロールバック: A2/A3 Block維持、`DQ-FB-P2C-01` Open継続。
+
+### 10. 検証結果（実行コマンドと結果）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行予定（本更新後に実施）。
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` を実行予定（本更新後に実施）。
+
+### 11. 再開可能性パッケージ
+- 依存順トポロジ: `FB-P2C-01-A1 -> DQ-FB-P2C-01 -> FB-P2C-01-A2 -> FB-P2C-01-A3`。
+- 現在の詰まり箇所: `UNC-DQ-FB-P2C-01-01`（Gate 0承認記録欠落）。
+- 承認待ちキュー: Q1/Q2（Yes/No文面固定）。
+- 再開トリガー: Gate 0の採否記録 + Plan/QA同期完了。
+
+### 12. 再開判定
+- **未再開**（承認待ち）。Gate 0記録が追加され次第、A2再開可否を再判定する。
+
+### 提出前3ステップ（メタプロンプト準拠）
+- Step1: Theme 1件（`DQ-FB-P2C-01`）で結論/根拠/未確定/次の1手を出力済み。
+- Step2: Yes/No 4問 = Yes, Yes, Yes, Yes。
+- Step3: No項目なしのため修正ログ追加なし。
+
+ここでの未決事項は「未確定」として追跡し、推測で固定しない。
+人間承認が必要な論点は、最終2案・採否条件・期限・未採用時ロールバックを添えて提出する。
