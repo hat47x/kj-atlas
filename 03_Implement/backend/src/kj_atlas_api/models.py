@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import Integer, Text
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -315,6 +315,14 @@ class CritiqueInput(BaseModel):
     comment: str | None = Field(default=None, exclude_if=lambda value: value is None)
     constraintHints: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
 
+    @field_validator("targetRef")
+    @classmethod
+    def validate_target_ref_kind(cls, value: str) -> str:
+        allowed_prefixes = ("card:", "cluster:", "edge:", "proposal:")
+        if not value.startswith(allowed_prefixes):
+            raise ValueError("targetRef must start with card:, cluster:, edge:, or proposal:")
+        return value
+
 
 class ReproposalDiffOp(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -352,6 +360,15 @@ class ReviewAttribution(BaseModel):
     auditRecordedAt: datetime
     reviewContext: str | None = Field(default=None, exclude_if=lambda value: value is None)
     ownerRef: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @field_validator("reviewerRef")
+    @classmethod
+    def validate_reviewer_ref_opaque(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if "@" in value:
+            raise ValueError("reviewerRef must be opaque and must not contain email-like identifiers")
+        return value
 
     @model_validator(mode="after")
     def validate_human_review_transition(self) -> "ReviewAttribution":
