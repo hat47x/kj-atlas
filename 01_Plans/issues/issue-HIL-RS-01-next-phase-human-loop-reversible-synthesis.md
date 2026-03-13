@@ -184,7 +184,7 @@
 - [x] T2: A1用 issue（Architecture最小I/F定義）を作成し、契約境界を固定する。
 - [ ] T3: A2用 issue（Frontend分割実装）を作成し、UI変更時の screenshot方針を含む検証計画を付与する。
 - [x] T4: A3用 issue（Documentation同期）を作成し、運用手順と制約を更新する。
-- [ ] T5: `phase-exit-evaluation-HIL-RS-01-<date>.md` の評価テンプレを用意する。
+- [x] T5: `phase-exit-evaluation-HIL-RS-01-<date>.md` の評価テンプレを用意する（`01_Plans/phase-exit-evaluation-HIL-RS-01-2026-03-13.md`）。
 
 ## 6) 検証計画 / Validation plan
 
