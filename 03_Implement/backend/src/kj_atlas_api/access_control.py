@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -310,7 +310,7 @@ def normalize_policy_ref(value: str | None) -> str | None:
 
 def parse_visibility(value: str | None) -> Visibility | None:
     if value in {"Public", "Unlisted", "Org", "Restricted"}:
-        return value
+        return cast(Visibility, value)
     return None
 
 
@@ -328,7 +328,7 @@ def build_access_control_adapter(*, adapter_name: str) -> AccessControlAdapter:
                 config=ExternalPolicyAdapterConfig(
                     endpoint=endpoint,
                     timeout_seconds=settings.access_control_external_http_timeout_seconds,
-                    auth_mode=settings.access_control_external_http_auth_mode,
+                    auth_mode=cast(AdapterAuthMode, settings.access_control_external_http_auth_mode),
                     static_bearer_token=settings.access_control_external_http_static_bearer_token,
                     idp_issuer=settings.access_control_external_http_idp_issuer,
                 )
