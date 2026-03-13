@@ -86,6 +86,40 @@ MVPではまず LWW とし、将来 ETag を追加できる形にする。
 - Response: `{ "status": "accepted" }`
 - 目的: export完了通知を監査連携アダプタへ委譲（監査送信失敗でも本体機能を阻害しない）
 
+
+### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）
+
+Manual assisted merge の意思決定ログを、Document 本体とは分離して append/list/restore する。
+
+**POST** `/docs/{doc_id}/merge-decision-logs`
+
+- Request body:
+  - `{ "record": MergeDecisionRecord }`
+- Response: `MergeDecisionRecord`（201）
+- Error:
+  - 404: `doc_id` が存在しない
+  - 409: 同一 `decisionId`（同一 `doc_id` 内）の重複
+  - 422: `action` enum などの契約違反
+
+**GET** `/docs/{doc_id}/merge-decision-logs/by-group/{group_id}`
+
+- Response: `MergeDecisionRecord[]`（append 順）
+
+**GET** `/docs/{doc_id}/merge-decision-logs/restore/{snapshot_version}`
+
+- Response: `MergeDecisionRecord[]`（append 順）
+
+`MergeDecisionRecord`:
+
+- `decisionId: string`
+- `groupId: string`
+- `action: "accept" | "partial" | "reject" | "defer"`
+- `selectedCardIds: string[]`
+- `note: string`
+- `decidedBy: string`
+- `decidedAt: string (ISO 8601)`
+- `snapshotVersion: string`
+
 ---
 
 ## 3. レスポンス例（概要）

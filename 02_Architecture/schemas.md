@@ -355,6 +355,28 @@ export type IdentityProvisioningContract = {
 - 依存実装（mock/test double含む）は `status` と `code`、および `success.provisioned` のみで分岐可能であること。
 - 追加メタデータは許容（forward-compatible）だが、上記キーの意味を変更してはならない。
 
+## 11. FB-P2B-02 Decision Log schema contract（CTR-2B-02-DECISION-LOG-V1）
+
+Manual assisted merge の意思決定ログは、`DocumentV2` 本体とは独立した append-only ストアとして扱う。
+
+```ts
+export type MergeDecisionRecord = {
+  decisionId: string;
+  groupId: string;
+  action: "accept" | "partial" | "reject" | "defer";
+  selectedCardIds: string[];
+  note: string;
+  decidedBy: string;
+  decidedAt: string; // ISO 8601
+  snapshotVersion: string;
+};
+```
+
+- `action` は4値固定（契約拡張禁止）。
+- `restore(snapshotVersion)` は同一 `snapshotVersion` に紐づく記録を append 順で返す。
+- `listByGroup(groupId)` は同一 `groupId` の記録を append 順で返す。
+- 非自動確定を守るため、本契約は `accept` でも代表カード確定を暗黙実行しない。
+
 移行前提（expand/contract）:
 
 - expand:

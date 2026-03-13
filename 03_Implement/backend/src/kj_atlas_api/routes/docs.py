@@ -4,6 +4,8 @@ from typing import cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, TypeAdapter
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import (
@@ -22,7 +24,7 @@ from kj_atlas_api.access_control import (
 from kj_atlas_api.audit import build_event
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
-from kj_atlas_api.models import DocumentPayload, DocumentRow
+from kj_atlas_api.models import DocumentPayload, DocumentRow, MergeDecisionLogRow, MergeDecisionRecord
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -237,3 +239,83 @@ def post_export_audit(
         )
 
     return {"status": "accepted"}
+
+
+class MergeDecisionLogAppendPayload(BaseModel):
+    record: MergeDecisionRecord
+
+
+@router.post("/{doc_id}/merge-decision-logs", response_model=MergeDecisionRecord, status_code=201)
+def append_merge_decision_log(
+    doc_id: str,
+    payload: MergeDecisionLogAppendPayload,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> MergeDecisionRecord:
+    _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
+    if db.get(DocumentRow, doc_id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    record = payload.record
+    row = MergeDecisionLogRow(
+        doc_id=doc_id,
+        decision_id=record.decisionId,
+        group_id=record.groupId,
+        snapshot_version=record.snapshotVersion,
+        decided_at=record.decidedAt.isoformat(),
+        payload_json=record.model_dump_json(),
+    )
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Merge decision already exists") from exc
+
+    return record
+
+
+@router.get("/{doc_id}/merge-decision-logs/by-group/{group_id}", response_model=list[MergeDecisionRecord])
+def list_merge_decision_logs_by_group(
+    doc_id: str,
+    group_id: str,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> list[MergeDecisionRecord]:
+    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
+    if db.get(DocumentRow, doc_id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    rows = db.scalars(
+        select(MergeDecisionLogRow)
+        .where(MergeDecisionLogRow.doc_id == doc_id)
+        .where(MergeDecisionLogRow.group_id == group_id)
+        .order_by(MergeDecisionLogRow.id.asc())
+    ).all()
+    return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]
+
+
+@router.get("/{doc_id}/merge-decision-logs/restore/{snapshot_version}", response_model=list[MergeDecisionRecord])
+def restore_merge_decision_logs(
+    doc_id: str,
+    snapshot_version: str,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> list[MergeDecisionRecord]:
+    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
+    if db.get(DocumentRow, doc_id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    rows = db.scalars(
+        select(MergeDecisionLogRow)
+        .where(MergeDecisionLogRow.doc_id == doc_id)
+        .where(MergeDecisionLogRow.snapshot_version == snapshot_version)
+        .order_by(MergeDecisionLogRow.id.asc())
+    ).all()
+    return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]

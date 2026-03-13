@@ -45,6 +45,21 @@ class UserIdentityRow(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class MergeDecisionLogRow(Base):
+    __tablename__ = "merge_decision_logs"
+    __table_args__ = (
+        UniqueConstraint("doc_id", "decision_id", name="uq_merge_decision_logs_doc_decision"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    doc_id: Mapped[str] = mapped_column(Text, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    decision_id: Mapped[str] = mapped_column(Text, nullable=False)
+    group_id: Mapped[str] = mapped_column(Text, nullable=False)
+    snapshot_version: Mapped[str] = mapped_column(Text, nullable=False)
+    decided_at: Mapped[str] = mapped_column(Text, nullable=False)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class Transform(BaseModel):
     panX: float
     panY: float
@@ -301,6 +316,19 @@ class MergeSuggestionDecision(BaseModel):
     mergedTextDraft: str
     editedText: str
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class MergeDecisionRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decisionId: str
+    groupId: str
+    action: Literal["accept", "partial", "reject", "defer"]
+    selectedCardIds: list[str]
+    note: str
+    decidedBy: str
+    decidedAt: datetime
+    snapshotVersion: str
 
 
 class CritiqueInput(BaseModel):
