@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import Integer, Text
+from sqlalchemy import Index, Integer, Text
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -49,6 +49,8 @@ class MergeDecisionLogRow(Base):
     __tablename__ = "merge_decision_logs"
     __table_args__ = (
         UniqueConstraint("doc_id", "decision_id", name="uq_merge_decision_logs_doc_decision"),
+        Index("ix_merge_decision_logs_doc_group_id", "doc_id", "group_id", "id"),
+        Index("ix_merge_decision_logs_doc_snapshot_id", "doc_id", "snapshot_version", "id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
