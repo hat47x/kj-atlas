@@ -352,3 +352,21 @@
 
 - A2/A3は「契約参照のみ」の前提を維持したまま再開判定を行える。
 - Decision Queueの解消済み項目（`DQ-A1-01..04`）と未決項目（`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01`）の境界が明確に維持される。
+
+## Phase 4 Handoff（A2/A3固定配布）
+
+- 固定I/F一覧:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `deterministicTieBreakOrder`（`FB-P2C-01` Gate 0提出パケット）
+- Single Reference（契約本文SSOT）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Freeze条件:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 変更禁止条件:
+  - A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみを編集対象とする。
+  - A2/A3は契約ID、schemaVersion、requiredFields、overridePolicy、deterministicTieBreakOrder を変更してはならない。
+  - **A2/A3は契約変更禁止**。
+
