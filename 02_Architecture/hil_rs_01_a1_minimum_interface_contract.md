@@ -258,6 +258,31 @@ freezeRecord:
       - auditRecordedAt
     reviewOverridePolicy: "human_dual_control_only"
   freezeDeclaration: "A2/A3開始後は本契約の本文変更を禁止し、変更は統合フェーズの人間判断でのみ実施する"
+
+gate0ApprovalEvidence:
+  approvalId: "GATE0-HIL-RS-01-A1-YYYYMMDD-001"
+  approvers:
+    - role: "SecurityOfficer"
+      approvedBy: "<name-or-opaque-id>"
+      approvedAt: "<ISO-8601 timestamp>"
+    - role: "SystemOwner"
+      approvedBy: "<name-or-opaque-id>"
+      approvedAt: "<ISO-8601 timestamp>"
+  decisionStatement: "deterministicTieBreakOrderおよびA1契約ID固定を承認し、A2/A3着手を許可する"
+  impactScope:
+    includes:
+      - "A1-CRITIQUE-IF"
+      - "A1-REDIFF-IF"
+      - "A1-ATTR-IF"
+      - "deterministicTieBreakOrder"
+    excludes:
+      - "03_Implement/** への実装変更"
+      - "04_Documentation/** への運用文書変更"
+  gateDecision: "approved | rejected | conditional"
+  followUpAction:
+    onApproved: "A2/A3へProceed（契約本文変更は禁止）"
+    onRejected: "Stream Aへ差し戻し（A2/A3は停止継続）"
+    onConditional: "条件充足までA2/A3を停止"
 ```
 
 ### 8.3 判定条件（AC/DoDチェック用）

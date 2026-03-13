@@ -146,3 +146,24 @@
 - 解消に必要な承認者: Human Decision Gate 0 承認権限者。
 - 結論: A1は完了維持、A2/A3は未着手維持（依存順は保持）。
 
+## 12) Gate 0承認証跡テンプレ（A1提出）
+
+- Approver(s): `SecurityOfficer`, `SystemOwner`
+- ApprovedAt: `ISO-8601 timestamp`
+- DecisionStatement: `deterministicTieBreakOrder を承認し、A2/A3着手を許可する`
+- ImpactScope:
+  - Includes: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `deterministicTieBreakOrder`
+  - Excludes: `03_Implement/**`, `04_Documentation/**`
+- GateDecision: `approved | rejected | conditional`
+
+## 13) Handoff固定情報（A2/A3参照専用）
+
+- Fixed I/F list（Single Reference）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Freeze条件:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 変更禁止条件:
+  - A2/A3 は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder` の契約値を変更してはならない。
+  - A2/A3 は契約本文変更を提案せず、必要時は統合フェーズへ人間エスカレーションする。
+  - **A2/A3は契約変更禁止**。
+

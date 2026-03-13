@@ -268,3 +268,31 @@
 - 共有リソース3点（README/dashboard/decision-pack）の相互整合が維持され、未承認決定の確定扱いは発生しない。
 - Gate 0未承認の間はA2/A3 Block条件を保持し、誤Proceedを防止できる。
 - Stream D側の再開判定チェックリスト（未固定箇所0件 / 契約リンク固定 / Queue未決2件 / 停止条件違反0件）を継続利用できる。
+
+## 4.2) Stream A Critical Path 固定宣言（Gate解除準備）
+
+### Phase 1 Read同期（差分列挙）
+- Read対象:
+  - `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 再確認結果:
+  - HIL契約ID `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` は固定済み。
+  - 単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定。
+  - 差分: deterministicTieBreakOrder の Gate 0 証跡テンプレが不足（本対応で補完）。
+
+### Phase 2 ADR要否判定
+- Context: A1作業は既存 `ADR-0026` D2 の下位具体化に限定。
+- Decision: ADR追加/更新は不要。
+- Consequences: 下流A2/A3は契約参照のみで着手可能。
+
+### Phase 3 契約固定
+- `FB-P2C-01` の `deterministicTieBreakOrder` を Gate 0提出パケットとして固定。
+- Gate 0 承認証跡テンプレ（承認者/日時/決定文/影響範囲）を Architecture SSOTへ追加。
+
+### Phase 4 Handoff
+- 配布固定I/F: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder`
+- Freeze条件: `contractLinkLocked=true`, `sharedResourceFreeze=true`
+- 変更禁止: **A2/A3は契約変更禁止**。
+
