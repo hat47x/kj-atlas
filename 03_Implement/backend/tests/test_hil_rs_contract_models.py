@@ -96,3 +96,26 @@ def test_review_attribution_rejects_unknown_fields() -> None:
             auditRecordedAt=_now(),
             unexpectedField="not-allowed",
         )
+
+
+def test_critique_input_rejects_unknown_target_ref_kind() -> None:
+    with pytest.raises(ValidationError):
+        CritiqueInput(
+            schemaVersion="1.0.0",
+            critiqueId="crit-3",
+            targetRef="island:i1",
+            critiqueType="feels_off",
+            createdAt=_now(),
+            iteration=1,
+        )
+
+
+def test_review_attribution_rejects_email_like_reviewer_ref() -> None:
+    with pytest.raises(ValidationError):
+        ReviewAttribution(
+            schemaVersion="1.0.0",
+            reviewState="human_reviewed",
+            reviewedAt=_now(),
+            reviewerRef="alice@example.com",
+            auditRecordedAt=_now(),
+        )
