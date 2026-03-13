@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-13 (JST, Stream D final shared-resource sync, rerun-4)
+最終更新: 2026-03-13 (JST, Stream D final shared-resource sync, rerun-5)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -256,6 +256,7 @@
 - `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open 維持（未承認決定の確定扱いを禁止）。
 - Next actions は「Ready 1件の監査 + Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
 - Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
+- Verify追補（rerun-5）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認したうえで validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 
 ## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-13）
 
