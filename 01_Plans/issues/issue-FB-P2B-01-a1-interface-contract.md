@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -13,11 +13,12 @@
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2B-01`
+- ContractID: `CTR-2B-01-CANDIDATE-GROUP-V1`
 - RequirementStatement: `Similar-card候補提示` の候補group構造と境界I/Fを固定する。
 - PriorityClass（Must / Should / Could）: Must
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）:
-  - 前提: `FB-P2B-01` を A1→A2→A3 で分割実行する。
-  - 操作: A1で候補group構造・契約型・I/O境界のみを定義する。
+  - 前提: `FB-P2B-01` を A1→A2→A3 直列で実施する。
+  - 操作: A1で候補group構造・契約型・I/O境界のみ定義する。
   - 期待結果: A2/A3が参照すべき単一契約が固定される。
   - 除外: 実コード変更（`03_Implement/**`）と運用文書更新（`04_Documentation/**`）。
 - GoNoGoGate（Required / Optional / N/A）: Required
@@ -26,74 +27,52 @@
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
-## 1) 課題 / Problem statement
+## Context / Decision / Consequences
 
-- `FB-P2B-01` のDoD（candidate group 一覧と対象Card確認）を達成するための最小契約が未固定だと、A2/A3で再定義競合が起こる。
+- Context:
+  - `FB-P2B-01` のDoD（candidate group一覧 + 対象Card確認）を満たす前提として、候補データ契約の先行固定が必要。
+  - A2/A3で再定義が起きると、検証資産の互換性が崩れる。
+- Decision:
+  - 契約ID `CTR-2B-01-CANDIDATE-GROUP-V1` を固定し、A2/A3はこの契約IDのみ参照する。
+  - 自動確定ロジックは契約外（禁止）として扱う。
+- Consequences:
+  - A2はmock検証を即開始可能になる。
+  - A3は契約追従のみ許可され、追加フィールド要求はA1差し戻しを必須とする。
 
-## 2) 背景 / Context
+## 固定契約（A1成果物）
 
-- Backlog基準: `FB-P2B-01` / AC-2B-1 / DoD: candidate group 一覧と対象Cardを確認できる。
-- Stream C担当境界: FB-P2B系 issue memo のみ編集。
+- `SimilarCandidateGroup`:
+  - `groupId: string`
+  - `targetCardId: string`
+  - `candidateCardIds: string[]`
+  - `scoreSummary: { min: number; max: number; avg: number }`
+  - `reasonCodes: string[]`
+  - `snapshotVersion: string`
+- `CandidateListViewModel`:
+  - `generatedAt: string`
+  - `groups: SimilarCandidateGroup[]`
+  - `totalGroupCount: number`
 
-## 3) 判断基準による優先度評価
+## Phase 1（A1）: Plan → Execute → Verify → Proceed
 
-- 価値・判断軸（ADR-0001）: 先に契約固定し、後続検証の判断揺れを排除する。
-- 安全（THREAT_MODEL / SafeMode）: SafeMode既定やshare/export方針は不変更。
-- 企業・行政要件（enterprise_architecture）: 監査可能なI/F定義を先行固定する。
-- 後方互換（schemas）: 破壊変更の可能性をA1段階で明示してA3へ伝播する。
+- Plan:
+  - 候補group契約とI/O境界のみ固定し、実装要素は除外する。
+- Execute:
+  - 上記契約を `CTR-2B-01-CANDIDATE-GROUP-V1` として定義。
+- Verify:
+  - [x] 契約IDが明示されている。
+  - [x] 必須フィールドが固定されている。
+  - [x] 非自動確定（実装禁止）が保持されている。
+- Proceed:
+  - A2は本契約IDのみに依存してmock検証へ進む。
 
-## 4) 提案する解決策 / Proposed solution
-
-- 変更対象: Docs/Plans only（本issue memo）。
-- 固定契約（A1成果物）:
-  - `SimilarCandidateGroup`:
-    - `groupId: string`
-    - `targetCardId: string`
-    - `candidateCardIds: string[]`
-    - `scoreSummary: { min: number; max: number; avg: number }`
-    - `reasonCodes: string[]`
-    - `snapshotVersion: string`
-  - `CandidateListViewModel`:
-    - `generatedAt: string`
-    - `groups: SimilarCandidateGroup[]`
-    - `totalGroupCount: number`
-- 非目標: 候補抽出ロジック実装、UI描画、永続化実装。
-
-## 5) 受入条件 / Acceptance criteria
-
-- [x] A2/A3が参照する候補groupの必須フィールドが固定されている。
-- [x] 入出力境界（候補計算→UI表示）を1契約として明示している。
-- [x] セキュリティ境界（SafeMode/share/export）を変更しない。
-- [x] `docs-check` の検証レベル宣言と整合している。
-- [x] 編集対象が本ファイルのみに限定されている。
-
-## 6) 実装タスク分解 / Task breakdown
-
-- [x] T1: candidate group構造のキーと型を固定。
-- [x] T2: A2への引き渡し条件（mock入力/期待出力）を定義。
-- [x] T3: A3への契約逸脱禁止条件を明記。
-
-## 7) 検証計画 / Validation plan
+## Validation plan
 
 - 実行コマンド:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 期待結果:
   - issue memo必須メタが整合し、検証スクリプトが成功する。
-- 未実施時の理由・代替検証:
-  - N/A
 
-## 8) 代替案 / Alternatives considered
+## Fail-safe
 
-- 代替案A: A1でUIまで定義 → 却下（A1実装禁止に抵触）。
-- 代替案B: A2で契約同時定義 → 却下（契約揺れリスク増）。
-
-## 9) リスクとロールバック / Risks & rollback
-
-- 失敗モード: A2で追加フィールド要求が発生し契約が揺れる。
-- 影響範囲: `FB-P2B-01` 全体の再検証増加。
-- ロールバック手順: A1へ差し戻し、Context/Decision/Consequences を先に追記して再固定。
-
-## 10) Additional context
-
-- フェーズ運用: Read → Plan → Execute → Verify（自己修復3回まで）→ Proceed。
-- ADR要否発生時は本IssueでDecisionを確定せず停止する。
+- A1契約不整合、またはStream C/D管轄との競合検知時は即停止し人間判断依頼。
