@@ -249,3 +249,22 @@
 - Freeze Declaration:
   - A2/A3はFixed Link/Fixed Valuesを参照専用とし、変更を禁止する。
   - 変更要否が生じた場合は統合フェーズで人間判断へエスカレーションする。
+
+## 12) Stream D Phase 1-5 同期ログ（2026-03-13 rerun-3）
+
+### Context
+
+- 対象5ファイル（本issue / `HIL-RS-01-A1` / `issues/README.md` / `project-progress-dashboard.md` / `decision-pack`）をPhase開始ごとに再読し、A/B/C完了報告・契約リンク・Decision Queueの整合を再点検した。
+- `ADR-0026` の既定（A1契約先行、A1→A2→A3直列、安全制約維持）からの逸脱要求は検出されなかった。
+
+### Decision
+
+- HIL方針の変更は不要と判定し、ADR明文化の追加は行わない。
+- Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` を維持する。
+- 次の1手は「Ready 1件の運用逸脱監査」と「Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件を維持する。
+
+### Consequences
+
+- 共有リソース3点（README/dashboard/decision-pack）の相互整合が維持され、未承認決定の確定扱いは発生しない。
+- Gate 0未承認の間はA2/A3 Block条件を保持し、誤Proceedを防止できる。
+- Stream D側の再開判定チェックリスト（未固定箇所0件 / 契約リンク固定 / Queue未決2件 / 停止条件違反0件）を継続利用できる。
