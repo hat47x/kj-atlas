@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-13 (JST, Stream D final shared-resource sync)
+最終更新: 2026-03-13 (JST, Stream D final shared-resource sync, rerun-2)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -245,4 +245,5 @@
 
 - **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は `DQ-OPS-SOURCE-01` の1件のみ / 停止条件違反なし。
 - 2026-03-13再同期: validator/unittest/rg を再実行し、件数（43/8/1/2/7/25）・Decision Queue（Ready=2/Open=1）・依存順（A1→A2→A3）の一致を再確認。
+- 2026-03-13再同期（rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を維持したまま、3共有ファイル同時同期と Verify（validator/unittest/rg）成功を再確認。
 - 2026-03-13 Phase 3 Verify追補: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` 監査を再実行し、共有統合2ファイル（dashboard/README）と decision-pack の整合を維持。

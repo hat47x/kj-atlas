@@ -186,6 +186,7 @@
 - Phase 4（公開）: 再開判定チェックリストを1行確定（未固定箇所=0件 / 依存タスク契約リンク確定 / Queue未決は`DQ-OPS-SOURCE-01`のみ / 停止条件違反なし）。
 - Phase 5（再同期追記）: 2026-03-13に validator/unittest/rg を再実行し、件数・Decision Queue・再開判定チェックリストの一致を維持。
 - Phase 3 Verify追補（再同期）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-pack の相互整合（件数43、Queue Ready=2/Open=1）を再確認。
+- Phase 3 Verify追補（rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）維持下で3共有ファイルを再同期し、validator/unittest/rg の成功で件数・Queue・再開判定の一致を再確認。
 
 ### 6-2. Stream D 最終同期メモ（2026-03-11）
 
