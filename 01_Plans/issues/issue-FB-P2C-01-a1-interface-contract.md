@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: In Progress (Stream D)
+- Status: In Progress (Stream A)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream A
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -110,5 +110,39 @@
 ## 10) Additional context
 
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md` のみ。
-- 競合回避メモ: Stream D は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
+- 競合回避メモ: Stream A は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
 - Phase運用: Plan → Execute → Verify → Proceed。
+
+## 11) Stream A Phase status（2026-03-13 実行ログ）
+
+### Phase 1: A1 Interface Contract
+- Read同期（必須3ファイル再読込）:
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- 直前コミット想定との差分記録: 3ファイルとも差分なし（開始時点）。
+- Plan（AC/DoD）:
+  - 対象: A1契約の固定化（`deterministicTieBreakOrder`）
+  - AC: A2/A3への順序拘束が明文化されていること
+  - DoD: Gate 0提出に必要な Context / Decision / Consequences が揃うこと
+- Execute（最小差分）: 既存A1内容を維持（追加変更不要）。
+- Verify: A1のAC/DoD充足を自己確認（Pass / Self-Correction 0回）。
+- Proceed判定: Gate 0判定フェーズへ進行可。
+
+### Phase 2: Gate 0 判定
+- Read同期（必須3ファイル再読込）: 実施済み。
+- 直前コミット想定との差分記録: Phase 1から差分なし。
+- Plan: Gate 0承認記録の存在確認。
+- Execute: A1/A2/A3内の `DecisionQueueRef` / `Status` / Phase statusを照合。
+- Verify: Gate 0承認ログは参照不能（`DQ-FB-P2C-01: Open`）。
+- Proceed判定: A2進行不可（Block継続）。
+
+### Phase 5: Verify & Report
+- フェイルセーフ判定: `Gate 0承認ログ不在` に該当。
+- Blocking ID: `BLK-FB-P2C-01-GATE0-MISSING`
+- 参照元:
+  - 本ファイル DecisionQueueRef（Human Decision Gate 0）
+  - A2/A3の Gate 0 前提条件
+- 解消に必要な承認者: Human Decision Gate 0 承認権限者。
+- 結論: A1は完了維持、A2/A3は未着手維持（依存順は保持）。
+

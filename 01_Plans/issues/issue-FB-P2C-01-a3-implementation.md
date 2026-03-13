@@ -4,7 +4,7 @@
 - Status: Blocked (A2完了待ち)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream A
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -87,12 +87,31 @@
 ## 10) Additional context
 
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a3-implementation.md` のみ。
-- 競合回避メモ: Stream D は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
+- 競合回避メモ: Stream A は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
 - Workflow: Plan → Execute → Verify → Proceed（Verify失敗時は最大3回自己修復）。
 
-## 11) Stream D Phase status（2026-03-13 再確認）
+## 11) Stream A Phase status（2026-03-13 実行ログ）
 
-- Phase 1 (Read同期): 共有3ファイルを再読し、依存順 A1→A2→A3 を再確認。
-- Phase 2 (Gate判定): A2が Gate 0未承認で Blocked のため、A3は Blocked 継続。
-- Phase 3 (A3進行): A2 Verify pass 未受領のため実装接続は未着手。
-- Phase 4 (統合同期): dashboard/README/decision-pack の Decision Queue を `DQ-FB-P2C-01: Open` へ同期し、Proceed条件の未充足を明示。
+### Phase 1: A1 Interface Contract / Phase 2: Gate 0 判定 参照同期
+- Read同期（必須3ファイル再読込）: 実施済み。
+- 直前コミット想定との差分記録: 3ファイルとも差分なし（開始時点）。
+- Verify: A3開始条件が `Gate 0承認 + A2 Verify pass` であることを再確認。
+
+### Phase 3: A2 Mock Validation 依存確認
+- Read同期（必須3ファイル再読込）: 実施済み。
+- 直前コミット想定との差分記録: 依存条件に差分なし。
+- Proceed判定: A2 Verify pass 未受領のためA3は進行不可。
+
+### Phase 4: A3 Implementation Planning Link
+- Plan: A2 Verify通過後にのみ実装接続条件を確定。
+- Execute: 未実施（A2 Blocked継続）。
+- Verify: 未実施（Fail-safe準拠）。
+- Proceed判定: 停止。
+
+### Phase 5: Verify & Report
+- フェイルセーフ判定: `Gate 0承認ログ不在` に起因する連鎖Block。
+- Blocking ID: `BLK-FB-P2C-01-GATE0-MISSING`
+- 参照元:
+  - A2 `Status: Blocked (Gate 0待ち)`
+  - 本ファイル `Status: Blocked (A2完了待ち)`
+- 解消に必要な承認者: Human Decision Gate 0 承認権限者（承認後、A2 Verify実施担当）。
