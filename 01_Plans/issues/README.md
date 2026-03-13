@@ -256,7 +256,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream D 統合スナップショット（2026-03-12 JST, final）
+### Stream D 統合スナップショット（2026-03-13 JST, final）
 
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
@@ -265,10 +265,11 @@ issue補助メモには、最低でも次の項目を含める。
 - 決定済み項目の扱い: `DQ-HIL-A1-01` / `DQ-HIL-A1-02` は `project-progress-dashboard.md` の決定ログ（`DR-HIL-A1-01` / `DR-HIL-A1-02`）へ集約し、Queueから除外済み。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
 - Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue: Ready=2/Open=1、A1→A2→A3）を再確認。
-- Stream D再同期（2026-03-12）: validator/unittest/rg を再実行し、件数・状態・依存順に加えて Decision Queue（Ready=2 / Open=1）と決定ログ集約済み項目の整合維持を確認。
-- Stream D Phase 2 Proceed（2026-03-12）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue: Ready=2/Open=1 / A1→A2→A3）を更新してクローズ。
-- Stream D Phase 3監査（2026-03-12）: issue memo総数43件（Open=8 / Draft=7 / Done系=25 / In Progress=1 / Blocked=2）を再計算し、Decision Queue未決=1（Ready=2）・停止条件違反0件を確認。
-- Stream D Phase 4公開（2026-03-12）: 再開判定チェックリストを1行確定（未固定箇所=0 / 契約リンク確定 / Queue未決は`DQ-OPS-SOURCE-01`のみ / 停止条件違反なし）。
+- Stream D Phase 1再確認（2026-03-13）: Stream A/B/C 完了報告受領済み・契約リンク固定済み・共有リソース更新範囲3ファイル固定を再確認。
+- Stream D再同期（2026-03-13）: validator/unittest/rg を再実行し、件数・状態・依存順に加えて Decision Queue（Ready=2 / Open=1）と決定ログ集約済み項目の整合維持を確認。
+- Stream D Phase 2 Proceed（2026-03-13）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue: Ready=2/Open=1 / A1→A2→A3）を更新してクローズ。
+- Stream D Phase 3監査（2026-03-13）: issue memo総数43件（Open=8 / Draft=7 / Done系=25 / In Progress=1 / Blocked=2）を再計算し、Decision Queue未決=1（Ready=2）・停止条件違反0件を確認。
+- Stream D Phase 4公開（2026-03-13）: 再開判定チェックリストを1行確定（未固定箇所=0 / 契約リンク確定 / Queue未決は`DQ-OPS-SOURCE-01`のみ / 停止条件違反なし）。
 
 ## Rules
 

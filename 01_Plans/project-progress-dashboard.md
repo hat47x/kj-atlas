@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-12 (JST, Stream D final shared-resource sync)
+最終更新: 2026-03-13 (JST, Stream D final shared-resource sync)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -144,14 +144,14 @@
 ## 人間判断待ち（詳細）
 
 ### DQ-HIL-EXEC-01（A2/A3再開ゲート）
-- 状態: **Ready（2026-03-12同期）**
+- 状態: **Ready（2026-03-13同期）**
 - 背景: `HIL-RS-01-A1` で契約IDは固定済みだが、再開判定ログの証跡フォーマットが未統一。
 - 同期結果: 判定条件 `contractLinkLocked` / `sharedResourceFreeze` / `validatorPass` を再確認し、A2/A3再開ゲートの前提充足を確認。
 - 放置リスク: A2/A3が別フォーマットで進行し、契約リンク再確認に手戻りが発生。
 - 判断に必要な入力: Plan Ownerがテンプレ案、Architecture Ownerが承認、期限=2026-03-14 JST。
 
 ### DQ-FB-P2C-01（polygon tie-break規則）
-- 状態: **Ready（2026-03-12同期）**
+- 状態: **Ready（2026-03-13同期）**
 - 背景: `FB-P2C-01-A1` は決定論要求まで固定済み、競合時優先順位だけ保留。
 - 同期結果: I/F項目 `deterministicTieBreakOrder` は `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` で参照先と一致。
 - 放置リスク: A2モックとA3実装で順序不一致が起き、非決定挙動が再発。
@@ -218,7 +218,7 @@
 
 再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決は `DQ-OPS-SOURCE-01` のみ / 停止条件違反なし。
 
-## Stream D 実行ログ（2026-03-12, Phase 1-4）
+## Stream D 実行ログ（2026-03-13, Phase 1-4）
 
 ### Phase 1: Read同期（A/B/C完了報告 + 決定リンク確認）
 
@@ -244,3 +244,4 @@
 ### Phase 4: 公開（再開判定チェックリスト1行確定）
 
 - **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は `DQ-OPS-SOURCE-01` の1件のみ / 停止条件違反なし。
+- 2026-03-13再同期: validator/unittest/rg を再実行し、件数（43/8/1/2/7/25）・Decision Queue（Ready=2/Open=1）・依存順（A1→A2→A3）の一致を再確認。
