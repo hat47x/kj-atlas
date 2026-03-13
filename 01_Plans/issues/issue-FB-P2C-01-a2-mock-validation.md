@@ -89,3 +89,10 @@
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a2-mock-validation.md` のみ。
 - 競合回避メモ: Stream D は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
 - Workflow: Plan → Execute → Verify → Proceed（Verify失敗時は最大3回自己修復）。
+
+## 11) Stream D Phase status（2026-03-13 再確認）
+
+- Phase 1 (Read同期): `issues/README.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` を再読し、A1→A2→A3依存を再確認。
+- Phase 2 (Gate判定): Gate 0承認記録未確認のため、A2はBlocked継続（Execute/Verify未着手）。
+- Phase 3 (A2進行): 条件未充足のため未実行。モック検証ログ固定はGate 0承認後に実施。
+- Phase 4 (統合同期): 共有3ファイルへ Gate未充足（`DQ-FB-P2C-01: Open`）を同一PRで反映。

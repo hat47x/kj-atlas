@@ -89,3 +89,10 @@
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a3-implementation.md` のみ。
 - 競合回避メモ: Stream D は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
 - Workflow: Plan → Execute → Verify → Proceed（Verify失敗時は最大3回自己修復）。
+
+## 11) Stream D Phase status（2026-03-13 再確認）
+
+- Phase 1 (Read同期): 共有3ファイルを再読し、依存順 A1→A2→A3 を再確認。
+- Phase 2 (Gate判定): A2が Gate 0未承認で Blocked のため、A3は Blocked 継続。
+- Phase 3 (A3進行): A2 Verify pass 未受領のため実装接続は未着手。
+- Phase 4 (統合同期): dashboard/README/decision-pack の Decision Queue を `DQ-FB-P2C-01: Open` へ同期し、Proceed条件の未充足を明示。
