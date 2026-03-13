@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (起票用)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -36,6 +36,16 @@
   - `isCollapsed=true` の親配下は描画・ヒットテスト対象外。
   - `isCollapsed=false` で直近状態から復帰可能。
   - collapse/expand操作はdocument構造を破壊しない（view stateのみ変更）。
+
+## Context / Decision / Consequences
+
+- Context:
+  - collapse/expandはUI挙動だが、表示・ヒットテスト境界を誤ると誤操作を誘発する。
+- Decision:
+  - `IslandVisibilityContractV1` をA1で固定し、A2/A3は契約の参照のみ許可する。
+- Consequences:
+  - A2で冪等性・異常系（未存在island）を機械的に検証できる。
+  - A3で state transition -> render filter -> hit-test filter の責務分離が明確になる。
 
 ## ADR要否判定（Phase 1要件）
 

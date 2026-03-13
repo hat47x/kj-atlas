@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (起票用)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`
@@ -29,6 +29,12 @@
 - 期待判定:
   - M1/M2/M3は契約適合。
   - M4はFail Fastで拒否。
+
+## Fail Fast boundary（明文化）
+
+- 不正対象IDは state transition 実行前に拒否する。
+- M4は `validationResult=Rejected` を固定し、描画系ロジックへ入力しない。
+- 判定不能（仕様不備）の場合のみ `ownerOfFix=A1` とし、それ以外はA2で即時修正する。
 
 ## Responsibility split（失敗時責務分離）
 

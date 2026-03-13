@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (起票用)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -36,6 +36,16 @@
   - `parentIslandId` が存在する場合、参照先islandは同一document内に存在。
   - 親子関係は有向非巡回（DAG）を維持。
   - save/load roundtripで階層情報が不変。
+
+## Context / Decision / Consequences
+
+- Context:
+  - A2/A3で契約の再解釈が起こると、階層整合（親参照・循環禁止）の責務境界が崩れる。
+- Decision:
+  - `IslandHierarchyContractV1` をA1の単一正本として固定し、A2/A3は参照専用とする。
+- Consequences:
+  - A2はモック妥当性検証に集中できる。
+  - A3は `schema -> domain model -> persistence roundtrip` へ直列接続できる。
 
 ## ADR要否判定（Phase 1要件）
 

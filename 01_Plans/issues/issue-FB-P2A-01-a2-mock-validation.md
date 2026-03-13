@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (起票用)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -30,6 +30,12 @@
 - 期待判定:
   - M1/M2は契約適合。
   - M3/M4はFail Fastで拒否。
+
+## Fail Fast boundary（明文化）
+
+- 境界外入力は検証初期で即時失敗させる（遅延評価しない）。
+- M3: 未定義 `parentIslandId` は `ownerOfFix=A2` でモック誤りとして即時返却。
+- M4: 循環参照検出は `ownerOfFix=A1 or A3` を切り分ける前に、まず契約違反として停止。
 
 ## Responsibility split（失敗時責務分離）
 

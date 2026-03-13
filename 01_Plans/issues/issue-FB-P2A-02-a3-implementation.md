@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (起票用)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
@@ -36,11 +36,23 @@
 - A2 Failケースを未解決のまま先送りしない。
 - AC/DoD不足を検知した場合は、先にドラフト提案を追記して合意後に進行する。
 
+## Phase 4 Verify/Handoff
+
+- AC/DoD達成判定:
+  - A1契約項目とA2モック結果がA3手順へトレース可能であること。
+- 未達記録:
+  - `mockCaseId`, `failurePoint`, `ownerOfFix`, `nextAction` を残す。
+- ロールバック条件:
+  - collapse/expandでdocument構造改変が発生した場合は実装接続を停止し巻き戻す。
+- 次Phase入力:
+  - `render/hit-test regression targets`, `remaining edge cases`, `handoff risks` を引き継ぐ。
+
 ## Acceptance criteria
 
 - [ ] A1/A2契約IDで実装計画トレースが可能。
 - [ ] Plan→Execute→Verify→Proceedの順序が固定される。
 - [ ] AC/DoD不足時のドラフト提案手順が明文化される。
+- [ ] Verify/Handoff（達成判定・未達・ロールバック・次入力）が記録される。
 
 ## State sync / conflict check
 
