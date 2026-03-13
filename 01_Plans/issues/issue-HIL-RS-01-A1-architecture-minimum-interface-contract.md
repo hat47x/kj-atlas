@@ -49,10 +49,36 @@
   A1契約正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の確定値（`1.0.0`, `human_dual_control_only`）と不一致。
 - 差分2: Decision Queue参照が `DQ-HIL-A1-*` 表記のままで、`DQ-A1-01..04` のResolved記録と一致しない。
 
+### Phase 1.2: 未確定契約項目の列挙（必須/任意/禁止・schemaVersion・tie-break）
+
+- `A1-CRITIQUE-IF`
+  - 必須: `critiqueId | targetRef | critiqueType | createdAt | iteration`
+  - 任意: `comment | constraintHints`
+  - 禁止: 単一正解への自動確定、`reviewed`自動更新、PII生値保存
+  - `schemaVersion=1.0.0`
+- `A1-REDIFF-IF`
+  - 必須: `proposalId | basedOnIteration | diffOps[] | traceKey`
+  - 任意: `rationale`
+  - 禁止: 逆操作不能な片方向差分、trace欠落、SafeMode違反を誘発する暗黙実行
+  - `schemaVersion`: N/A（構造契約として `diffOps` 最小単位を固定）
+- `A1-ATTR-IF`
+  - 必須: `reviewState | reviewedAt | reviewerRef`
+  - 任意: `reviewContext | ownerRef`
+  - 禁止: AIのみで`human_reviewed`遷移、生ID保存、`reviewEvents`欠如時の閲覧不可化
+  - `schemaVersion=1.0.0`
+- tie-break順序:
+  - 本A1契約では未定義（N/A）。順序規約は `issue-FB-P2C-01-a1-interface-contract.md` の `deterministicTieBreakOrder` に分離管理。
+
 #### Phase 2進行前の修正方針
 
 - 方針1: A1契約の確定値は Architecture正本に統一する。
 - 方針2: Decision Queueは `DQ-A1-01..04` のResolved表記へ揃える。
+
+#### Phase 2進行前の修正結果
+
+- 結果1: `schemaVersion` は `1.0.0` へ統一済み。
+- 結果2: `overridePolicy` は `human_dual_control_only` へ統一済み。
+- 結果3: Decision Queue参照は `DQ-A1-01..04` で統一済み。
 
 ### Phase 2: ADR明文化・合意判定
 
