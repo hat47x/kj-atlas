@@ -40,6 +40,29 @@ describe("hil_rs_payload", () => {
     });
   });
 
+
+
+  it("normalizes critique tags by trimming whitespace before mapping critiqueType", () => {
+    const result = buildHilRsCritiqueInputs(
+      {
+        ...BASE_DOC,
+        cards: [{ id: "c9", text: "delta", x: 0, y: 0, critiqueTags: ["  too_far  "] }],
+        islands: [],
+      },
+      {
+        iteration: 1,
+        createdAt: "2026-03-11T00:00:00.000Z",
+      },
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      targetRef: "card:c9",
+      critiqueType: "too_far",
+      constraintHints: ["too_far"],
+    });
+  });
+
   it("returns empty list for invalid iteration", () => {
     const result = buildHilRsCritiqueInputs(BASE_DOC, {
       iteration: 0,

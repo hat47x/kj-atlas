@@ -43,7 +43,10 @@ function pushCritiqueInput(
 ): void {
   const normalizedComment = typeof critique === "string" && critique.trim().length > 0 ? critique.trim() : undefined;
   const normalizedTags = Array.isArray(critiqueTags)
-    ? critiqueTags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+    ? critiqueTags
+        .filter((tag): tag is string => typeof tag === "string")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
     : [];
 
   if (!normalizedComment && normalizedTags.length === 0) {
