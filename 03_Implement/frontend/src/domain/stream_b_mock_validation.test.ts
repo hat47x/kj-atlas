@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { collectMergeCandidates } from "./merge_candidates";
-import { appendMergeSuggestionDecision } from "./merge_suggestion_decisions";
+import { appendMergeSuggestionDecision, restoreMergeSuggestionDecisionsBySnapshot } from "./merge_suggestion_decisions";
 import type { DocumentV2 } from "./types";
 
 type ValidationLog = {
@@ -56,40 +56,50 @@ describe("Stream B A2 mock validation", () => {
     expect(first?.reasonCodes).toEqual(log.expected.reasonCodes);
   });
 
-  it("validates CTR-2B-02-DECISION-LOG-V1 append contract with stub", () => {
-    const next = appendMergeSuggestionDecision(
-      createDocument(),
-      {
-        groupId: "g1",
-        decision: "partial",
-        cardIds: ["c2", "c1"],
-        mergedTextDraft: "risk mitigation",
-        editedText: "risk mitigation (reviewed)",
-      },
-      { idFactory: () => "decision-1", now: "2026-03-01T10:00:00.000Z" }
-    );
+  it("validates CTR-2B-02-DECISION-LOG-V1 append and restore flow with stub fixtures", () => {
+    const orderedActions = ["accept", "partial", "reject", "defer"] as const;
+    const decidedAtByAction: Record<(typeof orderedActions)[number], string> = {
+      accept: "2026-03-01T10:00:00.000Z",
+      partial: "2026-03-01T10:01:00.000Z",
+      reject: "2026-03-01T10:02:00.000Z",
+      defer: "2026-03-01T10:03:00.000Z",
+    };
 
-    const entry = next.mergeSuggestionDecisions?.[0];
+    const next = orderedActions.reduce((current, action) => {
+      return appendMergeSuggestionDecision(
+        current,
+        {
+          groupId: "g1",
+          decision: action,
+          cardIds: ["c2", "c1"],
+          mergedTextDraft: "risk mitigation",
+          editedText: `risk mitigation (${action})`,
+        },
+        { idFactory: () => `decision-${action}`, now: decidedAtByAction[action] }
+      );
+    }, createDocument());
+
+    const restored = restoreMergeSuggestionDecisionsBySnapshot(next.mergeSuggestionDecisions, "CTR-2B-02-DECISION-LOG-V1");
+
     const log: ValidationLog = {
       contractId: "CTR-2B-02-DECISION-LOG-V1",
-      responsibility: "A3-Implementation",
-      input: { action: "partial", cardIds: ["c2", "c1"] },
+      responsibility: "A2-Mock",
+      input: { appendOrder: orderedActions, snapshotVersion: "CTR-2B-02-DECISION-LOG-V1" },
       expected: {
-        action: "partial",
-        decisionId: "decision-1",
-        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        restoredActionsInOrder: orderedActions,
+        restoredCount: orderedActions.length,
+        noAutoRepresentativeCommit: true,
       },
       result: {
-        action: entry?.action,
-        decisionId: entry?.decisionId,
-        snapshotVersion: entry?.snapshotVersion,
+        restoredActionsInOrder: restored.map((entry) => entry.action),
+        restoredCount: restored.length,
+        noAutoRepresentativeCommit: restored.every((entry) => entry.decidedBy === "human"),
       },
     };
 
-    expect(entry?.action).toBe(log.expected.action);
-    expect(entry?.decisionId).toBe(log.expected.decisionId);
-    expect(entry?.selectedCardIds).toEqual(["c1", "c2"]);
-    expect(entry?.snapshotVersion).toBe(log.expected.snapshotVersion);
-    expect(entry?.decidedBy).toBe("human");
+    expect(restored.map((entry) => entry.action)).toEqual(log.expected.restoredActionsInOrder);
+    expect(restored.length).toBe(log.expected.restoredCount);
+    expect(restored.every((entry) => entry.selectedCardIds?.join(",") === "c1,c2")).toBe(true);
+    expect(restored.every((entry) => entry.decidedBy === "human")).toBe(log.expected.noAutoRepresentativeCommit);
   });
 });

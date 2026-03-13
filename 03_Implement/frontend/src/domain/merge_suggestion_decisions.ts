@@ -41,6 +41,10 @@ function assertNonEmptyString(value: string, field: string): void {
   }
 }
 
+function isMergeSuggestionDecision(value: unknown): value is MergeSuggestionDecision {
+  return typeof value === "string" && MERGE_SUGGESTION_DECISIONS.includes(value as MergeSuggestionDecision);
+}
+
 export function appendMergeSuggestionDecision(
   document: DocumentV2,
   input: AppendMergeSuggestionDecisionInput,
@@ -93,4 +97,22 @@ export function getLatestMergeSuggestionDecisionByGroup(
     }
   }
   return latest;
+}
+
+export function listMergeSuggestionDecisionsByGroup(
+  decisions: DocumentV2["mergeSuggestionDecisions"],
+  groupId: string
+): MergeSuggestionDecisionEntry[] {
+  assertNonEmptyString(groupId, "groupId");
+  return (decisions ?? []).filter((decision) => decision.groupId === groupId);
+}
+
+export function restoreMergeSuggestionDecisionsBySnapshot(
+  decisions: DocumentV2["mergeSuggestionDecisions"],
+  snapshotVersion: string
+): MergeSuggestionDecisionEntry[] {
+  assertNonEmptyString(snapshotVersion, "snapshotVersion");
+  return (decisions ?? []).filter(
+    (decision) => decision.snapshotVersion === snapshotVersion && isMergeSuggestionDecision(decision.action)
+  );
 }
