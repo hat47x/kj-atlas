@@ -115,6 +115,18 @@
   3. 共有リソース（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md`）は統合フェーズまで更新しない。
   4. Self-Correctionは0/3回で完了（追加修正不要）。
 
+### 4.1.5) Stream A Final Pass（Plan → Execute → Verify → Proceed）
+
+- Plan:
+  - 確認対象を `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / 単一参照先 / freeze flags に限定。
+- Execute:
+  - 対象3ファイルを再Readし、契約ID・固定値・禁止境界を照合。
+- Verify:
+  - 事前想定との差分: **0件**（契約ID・`schemaVersion`・`overridePolicy`・single reference の不一致なし）。
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true` を維持確認。
+- Proceed:
+  - A1契約本文は凍結継続とし、変更要求は統合フェーズの人間判断へエスカレーションする。
+
 ## 4.2) Stream A Critical Path Gate（A2/A3着手条件）
 
 
@@ -237,4 +249,3 @@
 - Freeze Declaration:
   - A2/A3はFixed Link/Fixed Valuesを参照専用とし、変更を禁止する。
   - 変更要否が生じた場合は統合フェーズで人間判断へエスカレーションする。
-

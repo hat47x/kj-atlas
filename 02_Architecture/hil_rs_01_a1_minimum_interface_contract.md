@@ -272,3 +272,11 @@ freezeRecord:
 - [x] A2/A3の単一参照先が本ファイルで固定されている。
 - [x] SafeMode既定ON・share/export漏えい防止後退禁止が明記されている。
 - [x] A2/A3の禁止境界（編集スコープ分離・共有リソース更新禁止）が明記されている。
+
+
+## 9. Stream A Final Lock Record（2026-03-13）
+
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+- 単一参照先は本ファイルのみ（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）。
+- 契約固定値（`schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`）は変更凍結とし、改訂要求は統合フェーズで人間承認を必須とする。
