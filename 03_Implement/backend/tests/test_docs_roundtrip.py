@@ -206,6 +206,19 @@ def _sample_payload_v2_with_merge_suggestion_decisions(doc_id: str) -> dict:
     }
 
 
+def _sample_merge_decision_record(*, decision_id: str, group_id: str, snapshot_version: str, action: str = "defer") -> dict:
+    return {
+        "decisionId": decision_id,
+        "groupId": group_id,
+        "action": action,
+        "selectedCardIds": ["card-1", "card-2"],
+        "note": "manual assisted decision",
+        "decidedBy": "reviewer:opaque-1",
+        "decidedAt": "2026-02-11T00:03:00Z",
+        "snapshotVersion": snapshot_version,
+    }
+
+
 def _sample_payload_v2_with_relation_summaries(doc_id: str) -> dict:
     return {
         "version": 2,
@@ -343,6 +356,76 @@ def _assert_v2_merge_suggestion_decisions_roundtrip(client: TestClient) -> None:
     get_json = get_response.json()
     assert get_json["mergeSuggestionDecisions"][0]["id"] == "decision-1"
     assert get_json["mergeSuggestionDecisions"][0]["groupId"] == "heuristic-alpha-card-1-card-2"
+
+
+def _assert_merge_decision_logs_contract_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-merge-decision-log"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+
+    first_record = _sample_merge_decision_record(
+        decision_id="decision-1",
+        group_id="group-1",
+        snapshot_version="snap-1",
+        action="accept",
+    )
+    second_record = _sample_merge_decision_record(
+        decision_id="decision-2",
+        group_id="group-1",
+        snapshot_version="snap-1",
+        action="partial",
+    )
+
+    append_first = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": first_record})
+    assert append_first.status_code == 201
+    assert append_first.json()["action"] == "accept"
+
+    append_second = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record})
+    assert append_second.status_code == 201
+    assert append_second.json()["action"] == "partial"
+
+    by_group_response = client.get(f"/docs/{doc_id}/merge-decision-logs/by-group/group-1")
+    assert by_group_response.status_code == 200
+    by_group_json = by_group_response.json()
+    assert [entry["decisionId"] for entry in by_group_json] == ["decision-1", "decision-2"]
+
+    restore_response = client.get(f"/docs/{doc_id}/merge-decision-logs/restore/snap-1")
+    assert restore_response.status_code == 200
+    restore_json = restore_response.json()
+    assert [entry["action"] for entry in restore_json] == ["accept", "partial"]
+
+
+def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
+    doc_id = "doc-merge-decision-log-validation"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+
+    invalid_record = _sample_merge_decision_record(
+        decision_id="decision-invalid",
+        group_id="group-invalid",
+        snapshot_version="snap-invalid",
+        action="auto",
+    )
+    invalid_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": invalid_record})
+    assert invalid_response.status_code == 422
+
+    first_record = _sample_merge_decision_record(
+        decision_id="decision-dup",
+        group_id="group-dup",
+        snapshot_version="snap-dup",
+    )
+    second_record = _sample_merge_decision_record(
+        decision_id="decision-dup",
+        group_id="group-dup",
+        snapshot_version="snap-dup-2",
+    )
+    first_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": first_record})
+    assert first_response.status_code == 201
+    duplicate_response = client.post(f"/docs/{doc_id}/merge-decision-logs", json={"record": second_record})
+    assert duplicate_response.status_code == 409
 
 
 def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
@@ -508,9 +591,25 @@ def test_docs_v2_merge_suggestion_decisions_roundtrip_sqlite(sqlite_client: Test
     _assert_v2_merge_suggestion_decisions_roundtrip(sqlite_client)
 
 
+def test_docs_merge_decision_logs_contract_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_merge_decision_logs_contract_roundtrip(sqlite_client)
+
+
+def test_docs_merge_decision_logs_contract_validation_sqlite(sqlite_client: TestClient) -> None:
+    _assert_merge_decision_logs_contract_validation(sqlite_client)
+
+
 @pytest.mark.postgres
 def test_docs_v2_merge_suggestion_decisions_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_merge_suggestion_decisions_roundtrip(postgres_client)
+
+
+def test_docs_merge_decision_logs_contract_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_merge_decision_logs_contract_roundtrip(postgres_client)
+
+
+def test_docs_merge_decision_logs_contract_validation_postgres(postgres_client: TestClient) -> None:
+    _assert_merge_decision_logs_contract_validation(postgres_client)
 
 def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_relation_summary_roundtrip(sqlite_client)
