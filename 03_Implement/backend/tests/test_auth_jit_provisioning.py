@@ -193,3 +193,43 @@ def test_unauthenticated_path_keeps_actor_ref_fallback(tmp_path) -> None:
     finally:
         settings.allow_jit_provisioning = original_allow_jit
         settings.reviewer_ref_resolver_adapter = original_adapter
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_contract_rejects_extra_fields(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            response = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "extra-field-case",
+                    "displayName": "Extra",
+                    "unexpectedField": "not-allowed",
+                },
+            )
+            assert response.status_code == 422
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_contract_reviewer_and_owner_ref_prefix(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            response = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "prefix-check", "displayName": "Prefix"},
+            )
+            assert response.status_code == 201
+            payload = response.json()
+            assert payload["reviewerRef"].startswith("user:")
+            assert payload["ownerRef"].startswith("user:")
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
