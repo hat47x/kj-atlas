@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-02-A2 Collapse/Expand操作 / モック検証
 
 - Type: Feature request
-- Status: Draft (起票用)
+- Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`
@@ -52,6 +52,25 @@
   - `mockCaseId`
   - `validationResult`
   - `ownerOfFix`
+
+
+## Contract freeze confirmation
+
+- FixedContractRef: `issue-FB-P2A-02-a1-interface-contract.md#contract-definitiona1成果物`
+- FreezeRule: A2では `IslandVisibilityContractV1` のRequired fields / Invariantsを変更しない。
+- DriftCheck:
+  - ContractLinks（A1→A2→A3）の到達性を維持する。
+  - `isCollapsed` / `hiddenDescendantIslandIds` / `hiddenCardIds` の意味を再定義しない。
+
+## Validation log schema（A3引き継ぎ必須）
+
+| field | type | description |
+|---|---|---|
+| `contractVersion` | string | `IslandVisibilityContractV1` 固定値 |
+| `mockCaseId` | string | `M1`〜`M4` |
+| `validationResult` | enum(`pass`,`fail`) | モック判定結果 |
+| `ownerOfFix` | enum(`A1`,`A2`,`A3`) | 失敗時の修正責務 |
+| `evidence` | string | 判定根拠（表示/非表示・冪等・拒否） |
 
 ## State sync / conflict check
 
