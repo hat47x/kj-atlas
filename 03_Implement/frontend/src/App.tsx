@@ -4336,8 +4336,13 @@ ${parsedDocument.error}`);
         return next;
       });
 
-      const { changed, nextDocument } = setIslandCollapsed(document, islandId, collapsed);
+      const { changed, nextDocument, rejectedReason } = setIslandCollapsed(document, islandId, collapsed);
       if (!changed) {
+        if (rejectedReason === "island-not-found") {
+          setStatusMessage("Failed to toggle collapse: island not found");
+          return;
+        }
+
         if (alreadyCollapsed !== collapsed) {
           setStatusMessage(collapsed ? "Collapsed island" : "Expanded island");
         }

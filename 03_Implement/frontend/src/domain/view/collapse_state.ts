@@ -1,5 +1,11 @@
 import type { DocumentV2, Island } from "../types";
 
+export type SetIslandCollapsedResult = {
+  changed: boolean;
+  nextDocument: DocumentV2;
+  rejectedReason?: "island-not-found";
+};
+
 function updateIslandCollapsed(island: Island, islandId: string, collapsed: boolean): Island {
   if (island.id !== islandId || island.collapsed === collapsed) {
     return island;
@@ -11,7 +17,7 @@ function updateIslandCollapsed(island: Island, islandId: string, collapsed: bool
   };
 }
 
-export function setIslandCollapsed(document: DocumentV2, islandId: string, collapsed: boolean): { changed: boolean; nextDocument: DocumentV2 } {
+export function setIslandCollapsed(document: DocumentV2, islandId: string, collapsed: boolean): SetIslandCollapsedResult {
   let found = false;
   let changed = false;
 
@@ -29,6 +35,10 @@ export function setIslandCollapsed(document: DocumentV2, islandId: string, colla
   });
 
   if (!found || !changed) {
+    if (!found) {
+      return { changed: false, nextDocument: document, rejectedReason: "island-not-found" };
+    }
+
     return { changed: false, nextDocument: document };
   }
 
