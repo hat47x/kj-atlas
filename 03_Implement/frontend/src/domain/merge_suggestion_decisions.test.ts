@@ -89,4 +89,52 @@ describe("merge_suggestion_decisions", () => {
     expect(latest.get("g1")?.id).toBe("d2");
     expect(latest.get("g2")?.id).toBe("d3");
   });
+
+  it("fails fast when groupId is empty", () => {
+    expect(() =>
+      appendMergeSuggestionDecision(
+        createBaseDocument(),
+        {
+          groupId: "   ",
+          decision: "accept",
+          cardIds: ["c1"],
+          mergedTextDraft: "alpha",
+          editedText: "alpha",
+        },
+        { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
+      )
+    ).toThrowError("groupId must be a non-empty string");
+  });
+
+  it("fails fast when cardIds are empty after normalization", () => {
+    expect(() =>
+      appendMergeSuggestionDecision(
+        createBaseDocument(),
+        {
+          groupId: "g1",
+          decision: "accept",
+          cardIds: [],
+          mergedTextDraft: "alpha",
+          editedText: "alpha",
+        },
+        { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
+      )
+    ).toThrowError("cardIds must contain at least one id");
+  });
+
+  it("fails fast when editedText is empty", () => {
+    expect(() =>
+      appendMergeSuggestionDecision(
+        createBaseDocument(),
+        {
+          groupId: "g1",
+          decision: "partial",
+          cardIds: ["c1"],
+          mergedTextDraft: "alpha",
+          editedText: " ",
+        },
+        { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
+      )
+    ).toThrowError("editedText must be a non-empty string");
+  });
 });
