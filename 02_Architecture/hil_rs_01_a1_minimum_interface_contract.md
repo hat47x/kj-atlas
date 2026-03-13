@@ -182,6 +182,34 @@
   - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）をストリーム内で更新すること。
   - A2で`04_Documentation/**`、A3で`03_Implement/**`を同時に変更すること。
 
+### 6.2 Stream B/C向け受け渡しパケット（A1契約/I-F固定）
+
+- 受け渡し先:
+  - Stream B（A2: Frontend実装）
+  - Stream C（A3: Documentation同期）
+- 契約ID（固定・参照専用）:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+- 単一参照先（固定）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 固定値（変更禁止）:
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 禁止境界:
+  - Stream B は `03_Implement/**` 以外を変更しない。
+  - Stream C は `04_Documentation/**` 以外を変更しない。
+  - 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）を更新しない。
+- 停止条件（B/C共通）:
+  - 契約IDの複線化、または単一参照先の不一致を検出した場合。
+  - SafeMode既定ON / share-export漏えい防止の後退を示唆する変更を検出した場合。
+  - 未定義競合（schemaVersion・requiredFields・overridePolicy）を検出した場合。
+- 変更凍結宣言:
+  - A1契約本文は凍結済みとし、変更要否は統合フェーズでの人間判断にエスカレーションする。
+
 ### 6.1 A2 mock前提（fixture/stub契約）
 
 - A2は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約IDを fixture 名にそのまま使用し、別名aliasを禁止する。
