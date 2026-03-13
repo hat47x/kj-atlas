@@ -277,13 +277,13 @@
 ### Decision
 
 - HIL方針の変更は不要と判定し、ADR明文化の追加は行わない。
-- Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` を維持する。
+- Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Approved` / `DQ-OPS-SOURCE-01=Open` を維持する。
 - 次の1手は「Ready 1件の運用逸脱監査」と「Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件を維持する。
 
 ### Consequences
 
 - 共有リソース3点（README/dashboard/decision-pack）の相互整合が維持され、未承認決定の確定扱いは発生しない。
-- Gate 0未承認の間はA2/A3 Block条件を保持し、誤Proceedを防止できる。
+- Gate 0承認記録反映後はA2/A3をProceed可能とし、契約本文変更禁止で誤差分を防止する。
 - Stream D側の再開判定チェックリスト（未固定箇所0件 / 契約リンク固定 / Queue未決2件 / 停止条件違反0件）を継続利用できる。
 
 ## 4.2) Stream A Critical Path 固定宣言（Gate解除準備）

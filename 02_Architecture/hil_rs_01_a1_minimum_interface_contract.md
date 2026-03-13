@@ -150,10 +150,10 @@
 
 ### 5.2 Decision Queue解消（A1）
 
-- `DQ-A1-01` CritiqueInputContract.requiredFields 未固定 → **Resolved**（2.0で固定）。
-- `DQ-A1-02` CritiqueInputContract.schemaVersion 未固定 → **Resolved**（`1.0.0`固定）。
-- `DQ-A1-03` ReviewAttribution.auditFields 未固定 → **Resolved**（2.0で固定）。
-- `DQ-A1-04` ReviewAttribution.overridePolicy 未固定 → **Resolved**（2.0で固定）。
+- `DQ-A1-01` CritiqueInputContract.requiredFields 未固定 → **Resolved**（`critiqueId | targetRef | critiqueType | createdAt | iteration` で固定）。
+- `DQ-A1-02` CritiqueInputContract.schemaVersion 未固定 → **Resolved**（`1.0.0` で固定）。
+- `DQ-A1-03` ReviewAttribution.auditFields 未固定 → **Resolved**（`reviewState | reviewedAt | reviewerRef | auditRecordedAt` で固定）。
+- `DQ-A1-04` ReviewAttribution.overridePolicy 未固定 → **Resolved**（`human_dual_control_only` で固定）。
 
 ### 5.1 単一定義検証（Phase 1/4 記録）
 
@@ -260,14 +260,14 @@ freezeRecord:
   freezeDeclaration: "A2/A3開始後は本契約の本文変更を禁止し、変更は統合フェーズの人間判断でのみ実施する"
 
 gate0ApprovalEvidence:
-  approvalId: "GATE0-HIL-RS-01-A1-YYYYMMDD-001"
+  approvalId: "GATE0-HIL-RS-01-A1-20260313-001"
   approvers:
     - role: "SecurityOfficer"
-      approvedBy: "<name-or-opaque-id>"
-      approvedAt: "<ISO-8601 timestamp>"
+      approvedBy: "sec-officer-01"
+      approvedAt: "2026-03-13T09:00:00Z"
     - role: "SystemOwner"
-      approvedBy: "<name-or-opaque-id>"
-      approvedAt: "<ISO-8601 timestamp>"
+      approvedBy: "system-owner-01"
+      approvedAt: "2026-03-13T09:05:00Z"
   decisionStatement: "deterministicTieBreakOrderおよびA1契約ID固定を承認し、A2/A3着手を許可する"
   impactScope:
     includes:
@@ -278,7 +278,7 @@ gate0ApprovalEvidence:
     excludes:
       - "03_Implement/** への実装変更"
       - "04_Documentation/** への運用文書変更"
-  gateDecision: "approved | rejected | conditional"
+  gateDecision: "approved"
   followUpAction:
     onApproved: "A2/A3へProceed（契約本文変更は禁止）"
     onRejected: "Stream Aへ差し戻し（A2/A3は停止継続）"
