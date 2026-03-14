@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Human-judgement meta-prompt rerun-7)
+最終更新: 2026-03-14 (JST, Stream D final shared-resource sync, rerun-8)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -275,7 +275,9 @@
 - 2026-03-13再同期（rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を維持したまま、3共有ファイル同時同期と Verify（validator/unittest/rg）成功を再確認。
 - 2026-03-13 Phase 3 Verify追補: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` 監査を再実行し、共有統合2ファイル（dashboard/README）と decision-pack の整合を維持。
 
-- 2026-03-14再同期（rerun-7）: Human-judgement meta-prompt入力をコンソール整理後、Decision Queue再判定を反映し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=2/Open=1・再開判定1行の一致を維持。
+- 2026-03-13再同期（rerun-6）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- 2026-03-14再同期（rerun-7）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- 2026-03-14再同期（rerun-8）: Phase 1 Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を再確認後、共有統合3ファイルを同時更新し、validator/unittest/rg 監査で件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 
 ### Phase 5: Proceed（2026-03-13 rerun-3）
 
