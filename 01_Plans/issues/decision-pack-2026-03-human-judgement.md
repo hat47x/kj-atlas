@@ -216,4 +216,20 @@
 - Verify追補（rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-11, Stream F）: Phase 1 Read Sync（3共有ファイル再読）→Phase 2 同期反映（件数/状態/依存/判断キュー）→Phase 3 validator/unittest/`rg` 検証→Phase 4 Closeout を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を再確定。
-- Verify追補（rerun-12, Stream F）: Phase 1 ReadでA/B/C完了報告・Decision Queue・件数集計を再確認し、Phase 2で同期項目（Active表/Queue/次アクション/件数）を宣言、Phase 3で3共有ファイル単一変更セット同期、Phase 4で validator/unittest/`rg` を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を維持。
+
+### 6-6. Stream G 監査ログ（Source Issue運用方針, 2026-03-14）
+
+- Phase 1 Read: `README.md` と `01_Plans/issues/README.md` を再読し、`Source Issue` 運用は「GitHub Issues未運用の間は `N/A` 維持」「開始宣言確定後にURL移行」の方針を確認。
+- Phase 2 Plan（イベント駆動の再判定条件）:
+  1. **開始宣言イベント**: PM/Triage による「GitHub Issues正本運用開始」宣言（日時/RACI-I通知）が確定した時。
+  2. **正本不整合イベント**: `Active issue memos` の `Source Issue` 列で `N/A` とURLが混在し、README運用規定と不整合が検知された時。
+  3. **検証失敗イベント**: `validate_active_issue_memos.py` / unittest / `rg` により `Source Issue` 規約違反が検出された時。
+  4. **運用境界変更イベント**: `01_Plans/issues/README.md` の Scope または Source Issue運用基準が改訂された時。
+- AC/DoD ドラフト（Stream G提案）:
+  - AC-1: 開始宣言未確定の間、Active memo の `Source Issue` は `N/A` のみである。
+  - AC-2: 再判定時は「イベント種別 / 判定結果 / 根拠ファイル / 次アクション」を本decision-packへ1レコード追記する。
+  - DoD-1: `README.md` と `01_Plans/issues/README.md` の双方と矛盾しない判定文である。
+  - DoD-2: Fail-safe（開始宣言未確定でURL化しない）を満たし、Self-Correction上限（3回）を超えない。
+- Phase 3 Execute: 現時点は **`Source Issue: N/A` 維持** とし、URL化は未実施（開始宣言未確定のため）。
+- Phase 4 Verify: 運用方針との矛盾なし（README系記述と整合）。Self-Correction発生なし（0/3）。
+- Phase 5 Proceed（Fレーン通知）: **反映要否=不要（No update required）**。理由: 判定はN/A維持継続であり、README本文更新を要する新事実なし。
