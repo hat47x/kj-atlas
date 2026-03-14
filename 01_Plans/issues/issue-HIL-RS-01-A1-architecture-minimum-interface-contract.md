@@ -405,3 +405,39 @@
   - A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみを編集対象とする。
   - A2/A3は契約ID、schemaVersion、requiredFields、overridePolicy、deterministicTieBreakOrder を変更してはならない。
   - **A2/A3は契約変更禁止**。
+
+
+## 14) Stream A Finalization Record（2026-03-14）
+
+### Phase 1: Read/Baseline（Plan → Execute → Verify → Proceed）
+- Plan: 契約ID・`schemaVersion`・判定順序（対象外/N/A）・単一参照先を再抽出する。
+- Execute: `issue-HIL-RS-01*` 2件と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読込。
+- Verify: 差分判定は **差分0**（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only` が一致）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR要否判定（Plan → Execute → Verify → Proceed）
+- Plan: 上位方針変更の有無を `ADR-0026` D2 と照合する。
+- Execute: 変更対象をA1契約文面の固定化に限定。
+- Verify: **ADR追加不要**（上位方針の追加/変更なし、既存方針の具体化のみ）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: 契約固定（Plan → Execute → Verify → Proceed）
+- Plan: 単一参照先・契約ID・互換条件を固定リンクとして再宣言する。
+- Execute: 以下をA2/A3向け固定リンクとしてロック。
+  - `A1-CRITIQUE-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#21-critique入力ifcontract-key-a1-critique-if`
+  - `A1-REDIFF-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#22-再提案差分ifcontract-key-a1-rediff-if`
+  - `A1-ATTR-IF` → `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#23-レビュー帰属ifcontract-key-a1-attr-if`
+- Verify: 固定リンクの参照先は1件（SSOT）で複線化なし。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Verify/Handoff（Plan → Execute → Verify → Proceed）
+- Plan: AC/DoD・契約一貫性・境界外編集ゼロを確認して下流入力を確定する。
+- Execute: `rg` による契約ID照合、編集ファイル境界照合。
+- Verify:
+  - AC/DoD: Pass
+  - 契約ID一貫性: Pass
+  - 境界外編集: 0件
+- Proceed（A2/A3入力契約）:
+  - 入力契約: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`（上記固定リンクのみ参照）。
+  - 禁止事項: 契約ID・`schemaVersion`・`requiredFields`・`overridePolicy` の変更、SSOT複線化、共有リソース更新。
+  - 差し戻し条件: 契約ID衝突、`schemaVersion` 不一致、SafeMode/漏えい防止後退、境界外編集発生。
