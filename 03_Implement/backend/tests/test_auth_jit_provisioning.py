@@ -372,3 +372,116 @@ def test_docs_resolve_identity_accepts_provider_case_variant_under_strict_mode(
             assert response.status_code == 200
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_rejects_ambiguous_identity_mapping(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, session_local = fixture
+            with session_local() as db:
+                user_1 = UserRow(
+                    id="user-ambiguous-1",
+                    display_name="Ambiguous One",
+                    email=None,
+                    lifecycle_state="active",
+                    created_at="2026-03-14T00:00:00Z",
+                    updated_at="2026-03-14T00:00:00Z",
+                )
+                user_2 = UserRow(
+                    id="user-ambiguous-2",
+                    display_name="Ambiguous Two",
+                    email=None,
+                    lifecycle_state="active",
+                    created_at="2026-03-14T00:00:00Z",
+                    updated_at="2026-03-14T00:00:00Z",
+                )
+                db.add_all([user_1, user_2])
+                db.add_all(
+                    [
+                        UserIdentityRow(
+                            user_id=user_1.id,
+                            provider="oidc",
+                            external_uid="ambiguous-sub",
+                            created_at="2026-03-14T00:00:00Z",
+                        ),
+                        UserIdentityRow(
+                            user_id=user_2.id,
+                            provider="OIDC",
+                            external_uid="ambiguous-sub",
+                            created_at="2026-03-14T00:00:00Z",
+                        ),
+                    ]
+                )
+                db.commit()
+
+            response = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "ambiguous-sub",
+                    "displayName": "Ambiguous",
+                },
+            )
+            assert response.status_code == 409
+            payload = response.json()
+            assert payload["detail"]["code"] == "identity_mapping_conflict"
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_docs_strict_mode_rejects_ambiguous_identity_mapping(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, session_local = fixture
+            with session_local() as db:
+                user_1 = UserRow(
+                    id="user-doc-ambiguous-1",
+                    display_name="Doc Ambiguous One",
+                    email=None,
+                    lifecycle_state="active",
+                    created_at="2026-03-14T00:00:00Z",
+                    updated_at="2026-03-14T00:00:00Z",
+                )
+                user_2 = UserRow(
+                    id="user-doc-ambiguous-2",
+                    display_name="Doc Ambiguous Two",
+                    email=None,
+                    lifecycle_state="active",
+                    created_at="2026-03-14T00:00:00Z",
+                    updated_at="2026-03-14T00:00:00Z",
+                )
+                db.add_all([user_1, user_2])
+                db.add_all(
+                    [
+                        UserIdentityRow(
+                            user_id=user_1.id,
+                            provider="saml",
+                            external_uid="ambiguous-strict",
+                            created_at="2026-03-14T00:00:00Z",
+                        ),
+                        UserIdentityRow(
+                            user_id=user_2.id,
+                            provider="SAML",
+                            external_uid="ambiguous-strict",
+                            created_at="2026-03-14T00:00:00Z",
+                        ),
+                    ]
+                )
+                db.commit()
+
+            response = client.put(
+                "/docs/doc-auth-ambiguous-strict",
+                json=_sample_payload("doc-auth-ambiguous-strict"),
+                headers={"x-forwarded-user": "ambiguous-strict", "x-auth-provider": "saml"},
+            )
+            assert response.status_code == 409
+            payload = response.json()
+            assert payload["detail"]["code"] == "identity_mapping_conflict"
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
