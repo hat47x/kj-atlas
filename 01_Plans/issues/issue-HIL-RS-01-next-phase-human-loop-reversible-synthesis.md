@@ -212,3 +212,20 @@
   - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
   - SSOT複線化（契約参照先が2件以上）。
   - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
+
+## 14) A1契約凍結マトリクス（変更許可/禁止/停止条件）
+
+- 変更禁止（A2/A3で不可）:
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の契約ID
+  - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
+  - `overridePolicy=human_dual_control_only`
+  - tie-break順序（`padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`）
+  - 固定エラーコード5件（`A1_SCHEMA_VERSION_MISMATCH` 等）
+- 変更許可（A2/A3で可）:
+  - 実装内マッピング注記
+  - fixture名の運用上の別名管理（契約値そのものの変更は不可）
+  - 契約に影響しない検証ケース追加
+- 停止条件（即停止してA1差し戻し）:
+  - 契約値の再解釈要求（ID/version/requiredFields/overridePolicy/tie-break）
+  - SSOT複線化要求（参照先を複数化する提案）
+  - `sharedResourceFreeze=true` を破る更新要求

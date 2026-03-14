@@ -165,3 +165,16 @@
 - 根拠: 契約IDと必須フィールドが固定、Decision Queueの未処理項目なし。
 - 残リスク: tie時ソートキーの名称揺れ（実装詳細）。A1契約変更なしでA2/A3注記で吸収。
 
+
+
+## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
+
+- Fixed signature:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Verification keys:
+  - `ContractID`（または `InterfaceName`）
+  - `schemaVersion`（定義がある契約）
+  - 必須フィールド一覧
+- Rule:
+  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。

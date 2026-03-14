@@ -256,3 +256,14 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - A2/A3で fixture 名称差異が発生する可能性（契約値ではなく運用名の揺れ）。
   - 対策: fixture 名称差異は A1契約変更ではなく、A2/A3側のマッピング注記で吸収。
 
+
+
+## 14) Shared resource freeze（Stream A固定）
+
+- freezeFlag: `sharedResourceFreeze=true`
+- 凍結対象（A1完了まで更新禁止）:
+  - `01_Plans/issues/README.md`
+  - `01_Plans/project-progress-dashboard.md`
+- 解除条件:
+  - A1契約変更要求のDecision Queueが0件であること
+  - 人間承認つきの統合フェーズ開始が宣言されること

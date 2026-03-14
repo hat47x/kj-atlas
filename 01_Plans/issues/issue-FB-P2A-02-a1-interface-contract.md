@@ -163,3 +163,16 @@
 - 根拠: 契約ID・判定順・停止条件をA1メモで固定済み。
 - 残リスク: 境界ケース（循環参照データ）でのfixture追加要求。契約改定ではなく検証ケース追加で対応。
 
+
+
+## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
+
+- Fixed signature:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Verification keys:
+  - `ContractID`（または `InterfaceName`）
+  - `schemaVersion`（定義がある契約）
+  - 必須フィールド一覧
+- Rule:
+  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。

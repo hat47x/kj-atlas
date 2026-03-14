@@ -163,3 +163,16 @@
 - 根拠: 契約IDとmanual merge境界が固定、Decision Queue残件なし。
 - 残リスク: 競合種類の分類粒度差。分類追加要求はA1差し戻しで統制。
 
+
+
+## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
+
+- Fixed signature:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Verification keys:
+  - `ContractID`（または `InterfaceName`）
+  - `schemaVersion`（定義がある契約）
+  - 必須フィールド一覧
+- Rule:
+  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。
