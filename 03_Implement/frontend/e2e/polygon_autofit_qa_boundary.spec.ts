@@ -73,7 +73,7 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
   expect(secondBuffer.toString("utf-8")).toBe(firstBuffer.toString("utf-8"));
 });
 
-test("QA-2: importing self-intersecting polygon falls back to shape-less island", async ({ page }) => {
+test("QA-2: importing self-intersecting polygon falls back to rect island shape", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
 
@@ -129,7 +129,7 @@ test("QA-2: importing self-intersecting polygon falls back to shape-less island"
     islands: Array<{ id: string; shape?: unknown }>;
   };
 
-  expect(exportedDocument.islands.find((item) => item.id === "i1")?.shape).toBeUndefined();
+  expect(exportedDocument.islands.find((item) => item.id === "i1")?.shape).toEqual({ kind: "rect" });
 });
 
 test("QA-3: self-intersection edit is rejected and last valid polygon is kept", async ({ page }) => {
