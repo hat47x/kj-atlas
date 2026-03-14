@@ -282,6 +282,8 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 4 Publish（2026-03-14 rerun-8）: Plan→Execute→Verify→Proceed を再完了し、共有統合3ファイルを単一コミット対象で同期。未解決Queueは `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の2件を維持、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / 停止条件違反なし）を確定。
 
 - Stream A Phase 1-4同期（2026-03-14）: Read Gate再読で A1→A2→A3依存・Queue（Ready=1/Open=2）・停止条件違反0件を確認し、A1契約レビュー（ADR追加不要）→DQ運用点検（`DQ-HIL-EXEC-01` Ready維持、`DQ-FB-P2C-01`/`DQ-OPS-SOURCE-01` Open期限管理）→共有2ファイル同期を同一コミットで実施。
+- Stream D Phase 4 Publish（2026-03-14 rerun-11）: human_judgementメタプロンプト再適用で Decision Queue 3件をGate再判定し、`DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をReady運用へ統一（人間承認待ち=0件）。
+- Stream D Phase 3 Verify追補（2026-03-14 rerun-11）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md` を再実行し、Queue表示の同期を確認。
 
 ## Rules
 
