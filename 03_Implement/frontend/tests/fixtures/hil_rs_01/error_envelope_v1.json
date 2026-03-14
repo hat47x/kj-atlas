@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.0.0",
+  "errorCode": "A1_REQUIRED_FIELD_MISSING",
+  "message": "required field missing",
+  "contractId": "A1-CRITIQUE-IF",
+  "retryable": false,
+  "occurredAt": "2026-03-14T00:00:01.000Z"
+}

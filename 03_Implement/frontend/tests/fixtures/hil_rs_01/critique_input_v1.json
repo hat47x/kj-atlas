@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "critiqueId": "card:c1:1",
+  "targetRef": "card:c1",
+  "critiqueType": "too_close",
+  "createdAt": "2026-03-14T00:00:00.000Z",
+  "iteration": 1,
+  "comment": "too close to adjacent card",
+  "constraintHints": ["too_close"]
+}

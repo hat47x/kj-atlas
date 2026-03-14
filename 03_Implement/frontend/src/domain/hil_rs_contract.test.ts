@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  validateHilRsContractErrorEnvelope,
   validateHilRsCritiqueInput,
   validateHilRsRediffPayload,
   validateHilRsReviewAttribution,
@@ -80,6 +81,7 @@ describe("hil_rs_contract validators", () => {
   it("accepts reversible rediff payload and rejects irreversible ops", () => {
     expect(
       validateHilRsRediffPayload({
+        schemaVersion: "1.0.0",
         proposalId: "proposal-1",
         basedOnIteration: 1,
         traceKey: "trace-crit-1",
@@ -105,6 +107,7 @@ describe("hil_rs_contract validators", () => {
 
     expect(
       validateHilRsRediffPayload({
+        schemaVersion: "1.0.0",
         proposalId: "proposal-2",
         basedOnIteration: 2,
         traceKey: "trace-crit-2",
@@ -125,6 +128,7 @@ describe("hil_rs_contract validators", () => {
   it("rejects rediff payload with extra top-level fields (A1-REDIFF-IF)", () => {
     expect(
       validateHilRsRediffPayload({
+        schemaVersion: "1.0.0",
         proposalId: "proposal-extra-1",
         basedOnIteration: 2,
         traceKey: "trace-extra-1",
@@ -242,4 +246,29 @@ describe("hil_rs_contract validators", () => {
       }),
     ).toBe(false);
   });
+
+  it("validates A1-ERROR-IF envelope", () => {
+    expect(
+      validateHilRsContractErrorEnvelope({
+        schemaVersion: "1.0.0",
+        errorCode: "A1_TRACE_KEY_MISSING",
+        message: "traceKey is required",
+        contractId: "A1-REDIFF-IF",
+        retryable: false,
+        occurredAt: "2026-03-11T09:01:00.000Z",
+      }),
+    ).toBe(true);
+
+    expect(
+      validateHilRsContractErrorEnvelope({
+        schemaVersion: "1.0.0",
+        errorCode: "A1_TRACE_KEY_MISSING",
+        message: "contact reviewer@example.com",
+        contractId: "A1-REDIFF-IF",
+        retryable: false,
+        occurredAt: "2026-03-11T09:01:00.000Z",
+      }),
+    ).toBe(false);
+  });
+
 });

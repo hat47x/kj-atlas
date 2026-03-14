@@ -13,6 +13,7 @@ describe("HilRsRediffPreview", () => {
     const html = renderToStaticMarkup(
       React.createElement(HilRsRediffPreview, {
         payload: {
+          schemaVersion: "1.0.0",
           proposalId: "proposal-1",
           basedOnIteration: 2,
           traceKey: "trace:card:c1:2",

@@ -4,7 +4,11 @@ import { createHilRsClient } from "./hil_rs_client";
 import type { DocumentV2 } from "./types";
 
 const BASE_DOCUMENT: DocumentV2 = {
-  schemaVersion: "2.0",
+  version: 2,
+  id: "doc-base",
+  createdAt: "2026-03-14T00:00:00.000Z",
+  updatedAt: "2026-03-14T00:00:00.000Z",
+  transform: { panX: 0, panY: 0, zoom: 1 },
   cards: [
     {
       id: "c1",
@@ -13,18 +17,14 @@ const BASE_DOCUMENT: DocumentV2 = {
       y: 0,
       critique: "",
       critiqueTags: [],
-      links: [],
-      evidenceRefs: [],
       textReviewed: false,
       claimType: "fact",
-      sourceCardId: null,
-      relationTypeToSource: null,
     },
   ],
   islands: [],
   edges: [],
-  view: { viewport: { x: 0, y: 0, zoom: 1 }, basisId: null },
 };
+
 
 describe("hil_rs_client", () => {
   it("uses the stub output when provider is not specified", () => {
@@ -86,7 +86,7 @@ describe("hil_rs_client", () => {
 
   it("falls back to stub payload when provider returns an invalid payload", () => {
     const provider = {
-      proposeReDiff: vi.fn().mockReturnValue({ proposalId: "", basedOnIteration: 1, diffOps: [], traceKey: "" }),
+      proposeReDiff: vi.fn().mockReturnValue({ schemaVersion: "1.0.0", proposalId: "", basedOnIteration: 1, diffOps: [], traceKey: "" }),
     };
 
     const client = createHilRsClient({ rediffProvider: provider });
