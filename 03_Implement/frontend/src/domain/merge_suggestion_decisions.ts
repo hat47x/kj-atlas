@@ -54,6 +54,9 @@ export function appendMergeSuggestionDecision(
   assertNonEmptyString(input.groupId, "groupId");
   assertNonEmptyString(input.mergedTextDraft, "mergedTextDraft");
   assertNonEmptyString(input.editedText, "editedText");
+  if (!isMergeSuggestionDecision(input.decision)) {
+    throw new Error("decision must be one of accept|partial|reject|defer");
+  }
 
   const idFactory = options?.idFactory ?? (() => crypto.randomUUID());
   const now = options?.now ?? new Date().toISOString();
@@ -113,10 +116,18 @@ export function restoreMergeSuggestionDecisionsBySnapshot(
   snapshotVersion: string
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(snapshotVersion, "snapshotVersion");
-  return (decisions ?? []).filter(
-    (decision) =>
-      decision.snapshotVersion === snapshotVersion
-      && isMergeSuggestionDecision(decision.action)
-      && decision.decidedBy === "human"
-  );
+  return (decisions ?? [])
+    .filter(
+      (decision) =>
+        decision.snapshotVersion === snapshotVersion
+        && isMergeSuggestionDecision(decision.action)
+        && decision.decidedBy === "human"
+    )
+    .sort((left, right) => {
+      const decidedAtCompare = left.decidedAt.localeCompare(right.decidedAt);
+      if (decidedAtCompare !== 0) {
+        return decidedAtCompare;
+      }
+      return left.id.localeCompare(right.id);
+    });
 }
