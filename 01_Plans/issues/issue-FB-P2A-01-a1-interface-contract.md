@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -41,6 +41,29 @@
   - `parentIslandId` が存在する場合、参照先islandは同一document内に存在。
   - 親子関係は有向非巡回（DAG）を維持。
   - save/load roundtripで階層情報が不変。
+
+## A1 contract audit（Stream B / Phase 2）
+
+- 契約項目確定:
+  - InterfaceName=`IslandHierarchyContractV1`
+  - Required fields / Invariants / ContractLinks を固定対象として継続維持。
+- I/F境界確定:
+  - A2へは `contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence` を受け渡す。
+  - A3は上記I/Fを受信専用で扱い、A1契約本文を再定義しない。
+- 非目標（Non-goals）:
+  - 永続スキーマ昇格判断、UI仕様追加、03_Implement配下の実装変更は本Issueの対象外。
+  - SafeMode/share-export既定値の変更は対象外。
+
+## ADR起票要否（Phase 2判定）
+
+- 判定: **起票不要（No ADR proposal）**
+- Context:
+  - 既存 `ADR-0007` のDoD具体化であり、新規設計方針の導入ではない。
+- Decision:
+  - A1契約はIssue内固定で管理し、ADR改定は行わない。
+- Consequences:
+  - A2/A3は契約固定前提で直列進行可能。
+  - 価値判断変更が発生した場合のみADR追加トリガへ遷移する。
 
 ## Phase execution log（A1）
 

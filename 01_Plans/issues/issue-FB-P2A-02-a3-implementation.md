@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream F
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
@@ -125,3 +125,29 @@
 ### Proceed
 - A2→A3接続I/F（`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`）で欠損なし。
 - 未定義依存なし、A1契約 (`IslandVisibilityContractV1`) の再解釈なし。
+
+
+## A3 implementation connection guard（Stream B / Phase 4）
+
+- 着手条件（Start）:
+  - `IslandVisibilityContractV1` がA1で固定され、A2ログがM1〜M4全件で存在する。
+  - handoff I/F（`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）に欠損なし。
+- 停止条件（Stop）:
+  - `M1/M2/M3=pass` かつ `M4=fail` が崩れた場合。
+  - `ownerOfFix` がA2責務分離と矛盾した場合。
+  - AC/DoD不足で `agreementStatus=agreed` が未達の場合。
+- ロールバック条件（Rollback）:
+  - A3で追加した前提・タスク分割を破棄し、A2確定ログを唯一の入力へ戻す。
+  - 契約I/F変更要求はA1へ差し戻し、A3での再解釈を禁止する。
+
+## Stream B one-page handoff（Phase 5）
+
+- 固定I/F（Fixed Interface）:
+  - `contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
+  - ContractLock: `IslandVisibilityContractV1`
+- 許容差分（Allowed Delta）:
+  - A3内の実装順序・タスク分割・検証手順の最適化（契約意味を変えない範囲）。
+- 禁止変更（Forbidden Changes）:
+  - A1 Required fields / Invariants / ContractLinks の改変。
+  - GoNoGo条件（`M1/M2/M3=pass`, `M4=fail`）の変更。
+  - SafeMode/share-export既定挙動に影響する仕様変更。
