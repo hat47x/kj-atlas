@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream F
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
@@ -29,6 +29,7 @@
    - A2 mockCaseを使って遷移前後の整合をチェック。
 4. **Proceed**
    - GoNoGoを満たした観点のみ次タスクへ進行。
+   - 次タスク開始時はA1/A2/A3の3ファイルを再Readしてから着手する。
 
 ## Non-deviation rules
 
@@ -42,6 +43,27 @@
 - [ ] Plan→Execute→Verify→Proceedの順序が固定される。
 - [ ] AC/DoD不足時のドラフト提案手順が明文化される。
 
+
+
+## AC/DoD不足の事前提案I/F（合意前提）
+
+- Required fields:
+  - `gapId`
+  - `gapType`（`AC` / `DoD`）
+  - `phaseDetected`（`A1` / `A2` / `A3`）
+  - `proposalDelta`
+  - `agreementStatus`（`pending` / `agreed` / `rejected`）
+- Proceed rule:
+  - `agreementStatus=agreed` 以外はNoGo。
+
+## Serial execution gate（A1→A2→A3）
+
+- A3開始条件:
+  - A2 handoff payload（`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`）が全件揃っている。
+- A3停止条件:
+  - 未定義競合を検出した場合は推測継続禁止、停止・報告。
+- Self-repair上限:
+  - 自己修復は最大3回。超過時は作業停止して報告。
 
 ## A2→A3 接続条件（確定）
 
@@ -69,6 +91,8 @@
   - `issue-FB-P2A-02-a1-interface-contract.md`
   - `issue-FB-P2A-02-a2-mock-validation.md`
   - `issue-FB-P2A-02-a3-implementation.md`
+- Rule:
+  - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
 
 ## Validation plan
 
