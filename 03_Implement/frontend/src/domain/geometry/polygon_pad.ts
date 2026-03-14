@@ -4,6 +4,14 @@ import { isSelfIntersectingPolygon } from "./polygon_self_intersection";
 const PADDING_EPSILON = 1e-6;
 const TIE_BREAK_EPSILON = 1e-6;
 
+export const POLYGON_TIE_BREAK_SCHEMA_VERSION = "1.0.0" as const;
+export const POLYGON_TIE_BREAK_ORDER = [
+  "paddingViolationCount",
+  "selfIntersection",
+  "areaDeltaAbs",
+  "vertexCount",
+] as const;
+
 type PolygonCandidate = {
   points: Point[];
   paddingViolationCount: number;
@@ -74,6 +82,15 @@ function compareCandidates(a: PolygonCandidate, b: PolygonCandidate): number {
   return serializedA.localeCompare(serializedB);
 }
 
+export type PolygonTieBreakMetrics = Omit<PolygonCandidate, "points">;
+
+export function selectPolygonCandidateByTieBreak(candidates: PolygonCandidate[]): PolygonCandidate {
+  if (candidates.length === 0) {
+    throw new Error("candidates must contain at least one polygon");
+  }
+  return [...candidates].sort(compareCandidates)[0]!;
+}
+
 export function padPolygonFromCentroid(points: Point[], padding: number): Point[] {
   if (points.length < 3 || padding <= 0) {
     return points;
@@ -105,6 +122,6 @@ export function padPolygonFromCentroid(points: Point[], padding: number): Point[
     vertexCount: candidatePoints.length,
   }));
 
-  const selected = [...candidates].sort(compareCandidates)[0]!;
+  const selected = selectPolygonCandidateByTieBreak(candidates);
   return selected.points;
 }
