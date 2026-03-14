@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -36,6 +36,38 @@
   - `parentIslandId` が存在する場合、参照先islandは同一document内に存在。
   - 親子関係は有向非巡回（DAG）を維持。
   - save/load roundtripで階層情報が不変。
+
+## Phase execution log（A1）
+
+### Read sync（Phase開始時）
+
+- `issue-FB-P2A-01-a1-interface-contract.md`
+- `issue-FB-P2A-01-a2-mock-validation.md`
+- `issue-FB-P2A-01-a3-implementation.md`
+
+### Plan
+
+- `IslandHierarchyContractV1` の固定対象（Required fields / Invariants / ContractLinks）を確定する。
+- A2/A3で契約変更を禁止する freeze 条件を明記する。
+
+### Execute
+
+- Required fields と Invariants をA1成果物として記述し、A2/A3リンクを固定。
+- SafeMode・share/export既定挙動に非影響であることを明記。
+
+### Verify
+
+- ContractLinks が A1→A2→A3 で到達可能であることを確認。
+- A2/A3で参照する固定契約名が `IslandHierarchyContractV1` で一致することを確認。
+
+### Proceed
+
+- A2へ引き渡す固定契約として `IslandHierarchyContractV1` を採用し、A1を完了状態とする。
+
+## ADR change handling
+
+- ADR change involved: **No**（本タスクは既存 `ADR-0007` の具体化であり、新規ADR改定は不要）
+- C/D/C + approval: **N/A**
 
 ## ADR要否判定（Phase 1要件）
 

@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -55,6 +55,38 @@
   - `validationResult`
   - `ownerOfFix`（`A1` / `A2` / `A3`）
 
+
+## Phase execution log（A2）
+
+### Read sync（Phase開始時）
+
+- `issue-FB-P2A-01-a1-interface-contract.md`
+- `issue-FB-P2A-01-a2-mock-validation.md`
+- `issue-FB-P2A-01-a3-implementation.md`
+
+### Plan
+
+- A1固定契約を変更せず、M1〜M4の判定表を準備する。
+- 失敗時の責務分離（A1/A2/A3）とA3引き継ぎログ項目を固定する。
+
+### Execute
+
+- M1/M2を正常系、M3/M4を異常系として契約Invariantに対応付ける。
+- `contractVersion` / `mockCaseId` / `validationResult` / `ownerOfFix` を引き継ぎI/Fとして定義する。
+
+### Verify
+
+- A1の Required fields / Invariants を変更していないことを確認する。
+- 判定結果が `M1/M2=pass`・`M3/M4=fail` のGoNoGo条件へ接続可能であることを確認する。
+
+### Proceed
+
+- A3へ handoff payload をそのまま渡し、実装接続条件の評価へ進む。
+
+## ADR change handling
+
+- ADR change involved: **No**（A2は契約の妥当性検証のみで、ADR改定は不要）
+- C/D/C + approval: **N/A**
 
 ## Contract freeze confirmation
 
