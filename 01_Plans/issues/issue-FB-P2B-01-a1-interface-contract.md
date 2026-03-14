@@ -161,3 +161,16 @@
 - 根拠: 契約ID/必須フィールド/非目標（自動確定禁止）を固定済み。
 - 残リスク: 同点候補の順序決定ロジックの実装解釈差。A2のfixture順序期待値で拘束。
 
+
+
+## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
+
+- Fixed signature:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Verification keys:
+  - `ContractID`（または `InterfaceName`）
+  - `schemaVersion`（定義がある契約）
+  - 必須フィールド一覧
+- Rule:
+  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。

@@ -239,3 +239,20 @@ Validation rules:
 - A2/A3は本書を参照専用で利用し、契約本文の改訂を行ってはならない。
 - 契約変更要求はA1 issueへ差し戻し、人間承認完了まで実装に反映しない。
 - A2/A3で許可される変更は、実装内マッピング・テストfixture適合・文書注記のみ。
+
+
+## 14. Downstream interface manifest（A2/A3 fixed handoff）
+
+- A2/A3へ引き渡す固定I/F一覧（変更不可）:
+  - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
+  - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
+  - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
+  - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
+- 検証キー（A2/A3共通）:
+  - `contractId`
+  - `schemaVersion`
+  - `traceKey`
+  - `snapshotVersion`
+- freeze宣言:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
