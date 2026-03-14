@@ -180,7 +180,7 @@
 
 ### 6-4. Stream D 追補監査（2026-03-14, Phase 1-4）
 
-- Phase 2.5（FB-P2C Gate判定）: Gate 0承認未確認のため `FB-P2C-01-A2` は Blocked、`A3` は A2未完了依存で Blocked を維持。
+- Phase 2.5（FB-P2C Gate判定）: Gate 0承認Yes反映済みのため `FB-P2C-01-A2` は 再開、`A3` は A2結果同期後にProceed判定とする。
 
 - Phase 1（Read同期）: Stream A/B/C完了報告の存在と決定リンク（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認。
 - Phase 2（相互整合）: Active issue / Decision Queue / 決定ログ / 次の1手を再照合し、`DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01` をReady、`DQ-FB-P2C-01` をOpenとして更新。重複再掲・未承認決定の確定扱い・未定義競合の混入がないことを確認。
@@ -193,7 +193,7 @@
 ### 6-2. Stream D 最終同期メモ（2026-03-11）
 
 1. Stream A/B/C の完了報告受領後に共有リソース同期を実施。
-2. Active/Done件数、Decision Queue（Ready=2/Open=1）、Next actions の整合を再監査。
+2. Active/Done件数、Decision Queue（Ready=3/Open=0）、Next actions の整合を再監査。
 3. 本decision-packは履歴参照専用とし、現行ゲート状態の正本は `project-progress-dashboard.md` とする。
 
 ### 6-3. 次フェーズ開始条件（HIL-RS-01）

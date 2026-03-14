@@ -326,4 +326,4 @@ issue補助メモには、最低でも次の項目を含める。
 - Done メモは自動GCせず、量が増えた場合も人間判断でのみ削除/整理する。
 - ADR 側ステータス（例: `FB-RM-I18N-03`）は issue memo の実績に同期する。
 - 2026-03-11 Stream D統合フェーズで Active/Done 集計と dashboard の Decision Queue / Next actions を再監査し、不整合ゼロを確認。
-- Stream D Phase 5 Proceed（2026-03-13 rerun-3）: 5ファイル再読→共有リソース同期→Verifyを再実施し、Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-OPS-SOURCE-01=Ready` / `DQ-FB-P2C-01=Open`、依存順序は A1→A2→A3 を維持。
+- Stream D Phase 5 Proceed（2026-03-13 rerun-3）: 5ファイル再読→共有リソース同期→Verifyを再実施し、Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Ready` / `DQ-OPS-SOURCE-01=Ready`、依存順序は A1→A2→A3 を維持。
