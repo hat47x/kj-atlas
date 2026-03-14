@@ -64,6 +64,27 @@ kj-atlas は OSS として、多様な環境で利用される：
 - レビューの記録は **reviewEvents** として append-only に近い形で残す
 - “誰が”は **ReviewerRef（匿名ID）** とし、実名等はオプトイン
 
+## HIL-RS-01-A1 最小I/F契約（固定参照）
+
+- SSOT（唯一参照先）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Contract ID（固定）: `A1-ATTR-IF`
+- schemaVersion（固定）: `1.0.0`
+- required fields（固定）:
+  - `reviewState` (`unreviewed | human_reviewed`)
+  - `reviewedAt`
+  - `reviewerRef`（opaque string）
+  - `auditRecordedAt`
+- overridePolicy（固定）:
+  - allowed: `human_dual_control_only`
+  - prohibited: `ai_only_override`, `safemode_relaxation`, `share_export_leakage_relaxation`
+  - requiredApproval: `SecurityOfficer+SystemOwner`
+- 禁止事項（固定）:
+  - AIのみで `human_reviewed` へ遷移しない
+  - 実名 / email / external_uid / provider など生IDを保存しない
+  - SafeMode既定ONおよびshare/export漏えい防止を後退させない
+
+> 注記: 本書は設計解説であり、契約値の最終決定は常にSSOTを優先する。A2/A3は本節を改訂せずA1へ差し戻す。
+
 ### Concepts
 - **ReviewerRef**: 文字列ID（例: `user:local:4f9c...` / `user:sso:sub:...`）
 - **ReviewEvent**: いつ、何に対して、どんなレビューアクションが起きたか
