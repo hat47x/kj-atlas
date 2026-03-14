@@ -140,3 +140,50 @@
 - 理由:
   - 本更新はA1で承認済みの `deterministicTieBreakOrder` を再利用し、Context/Decision/Consequences の新規追加を要しない。
   - 契約値変更や上位方針変更を伴わないため、実装前ADR改訂トリガーは発生しない。
+
+
+## 13) Stream D 実行ログ（2026-03-14）
+
+### Phase 1: Read同期（A1/A2契約再確認）
+- Plan:
+  - A1/A2/A3の契約順序（`padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`）とGate状態を再確認する。
+- Execute:
+  - Read Orderに従って上位文書を再読し、A2 Verify pass・A3開始条件を照合。
+- Verify:
+  - 前提不整合なし（Pass / Self-Correction 0回）。
+- Proceed:
+  - A2モック検証結果の実装境界（自己交差ガード）反映へ進行。
+
+### Phase 2: A2モック検証（幾何契約・境界条件）
+- Plan:
+  - 自己交差polygonを有効polygonとして扱わない境界条件を実装対象へ反映する。
+- Execute:
+  - `canvas` / `export` で polygon採用判定に自己交差チェックを追加。
+  - `IslandView.bounds` / `canvas_svg` のテストに自己交差フォールバックケースを追加。
+- Verify:
+  - 対象テストで境界条件の期待挙動を確認（Pass）。
+- Proceed:
+  - 回帰確認フェーズへ進行。
+
+### Phase 3: A3実装（auto-fit本体への安全接続）
+- Plan:
+  - 既存auto-fit結果の表示/出力で、不正polygonをrectフォールバックに統一する。
+- Execute:
+  - `IslandView.tsx`: polygon bounds/hit対象の前提に自己交差禁止を導入。
+  - `canvas_svg.ts`: SVG exportのpolygon描画条件に自己交差禁止を導入。
+- Verify:
+  - 正常polygonの描画互換を維持しつつ、自己交差polygonはrect経路へ遷移（Pass）。
+- Proceed:
+  - Verify（回帰）へ進行。
+
+### Phase 4: Verify（回帰/安全境界）
+- 実行:
+  - `pnpm -s vitest run src/canvas/IslandView.bounds.test.ts src/export/canvas_svg.test.ts src/domain/stream_d_p2c_mock_validation.test.ts`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 結果:
+  - すべてPass（Self-Correction: 2回、上限3回以内）。
+
+### Phase 5: Proceed（監査ログ整理）
+- 実施内容:
+  - 本節へ実行ログを追記し、Plan→Execute→Verify→Proceedのトレースを固定。
+  - 失敗→修復履歴（import名不一致、テスト文字列エスケープ）を明示し監査可能化。

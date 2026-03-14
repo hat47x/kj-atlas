@@ -95,6 +95,31 @@ describe("getIslandBounds", () => {
       height: CARD_MIN_HEIGHT + ISLAND_PADDING * 2,
     });
   });
+  it("falls back to card bounds when polygon self-intersects", () => {
+    const island: Island = {
+      id: "i1",
+      cardIds: ["c1"],
+      shape: {
+        kind: "polygon",
+        points: [
+          { x: 0, y: 0 },
+          { x: 120, y: 120 },
+          { x: 120, y: 0 },
+          { x: 0, y: 120 },
+        ],
+      },
+    };
+
+    const cards: Card[] = [{ id: "c1", text: "a", x: 10, y: 20 }];
+
+    expect(getIslandBounds(island, cards)).toEqual({
+      left: 10 - ISLAND_PADDING,
+      top: 20 - ISLAND_PADDING,
+      width: CARD_WIDTH + ISLAND_PADDING * 2,
+      height: CARD_MIN_HEIGHT + ISLAND_PADDING * 2,
+    });
+  });
+
 });
 
 

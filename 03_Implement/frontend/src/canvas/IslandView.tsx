@@ -2,6 +2,7 @@ import { memo, useContext } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 
 import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
+import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
 import { isPointInPolygon } from "../domain/geometry/point_in_polygon";
 import {
   buildIslandSummaryLabelId,
@@ -119,7 +120,7 @@ function getBoundsFromPoints(points: Point[]) {
 
 export function getIslandBounds(island: Island, cards: Card[]) {
   const polygonPoints = getIslandPolygonPoints(island);
-  if (polygonPoints.length >= 3) {
+  if (polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints)) {
     return getBoundsFromPoints(polygonPoints);
   }
 
@@ -187,7 +188,7 @@ function IslandViewComponent({
   const headerHeight = hasSummary || abstractMapView ? ISLAND_HEADER_HEIGHT_WITH_SUMMARY : ISLAND_HEADER_HEIGHT;
   const islandBackgroundImage = island.imageUrl ? `url("${encodeURI(island.imageUrl)}")` : null;
   const polygonPoints = getIslandPolygonPoints(island);
-  const hasPolygon = polygonPoints.length >= 3;
+  const hasPolygon = polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints);
   const showTitleLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandTitleLabelId(island.id)) : true;
   const showSummaryLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandSummaryLabelId(island.id)) : true;
   const showUnreviewedLabel = acceptedLabelIds ? acceptedLabelIds.has(buildIslandUnreviewedLabelId(island.id)) : true;
