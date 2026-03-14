@@ -256,7 +256,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream D 統合スナップショット（2026-03-14 JST, final rerun-9）
+### Stream D 統合スナップショット（2026-03-14 JST, final rerun-10）
 
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
@@ -278,6 +278,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 4 Proceed（2026-03-13 rerun-6）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を再確定し、共有3ファイルの同期をクローズ。
 - Stream D Phase 3 Verify追補（2026-03-13 rerun-6）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Stream D Phase 3 Verify追補（2026-03-14 rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Stream D Phase 3 Verify追補（2026-03-14 rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Stream D Phase 4 Publish（2026-03-14 rerun-8）: Plan→Execute→Verify→Proceed を再完了し、共有統合3ファイルを単一コミット対象で同期。未解決Queueは `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の2件を維持、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / 停止条件違反なし）を確定。
 
 ## Rules
