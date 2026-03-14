@@ -1,4 +1,5 @@
 import type { DocumentV2, Island } from "../types";
+import { validateIslandVisibilityContractV1, type ContractValidationResult, type IslandVisibilityContractV1 } from "../contracts/island_contracts";
 
 function buildIslandsByParentId(islands: Island[]): Map<string, Island[]> {
   const islandsByParentId = new Map<string, Island[]>();
@@ -45,10 +46,11 @@ export function collectInitiallyCollapsedIslandIds(islands: Island[]): Set<strin
 }
 
 export function getCollapsedHiddenCardIds(doc: Pick<DocumentV2, "islands">, collapsedIslandIds: ReadonlySet<string>): Set<string> {
+  const hiddenDescendantIslandIds = collectHiddenDescendantIslandIds(doc.islands, collapsedIslandIds);
   const hiddenCardIds = new Set<string>();
 
   for (const island of doc.islands) {
-    if (!collapsedIslandIds.has(island.id)) {
+    if (!collapsedIslandIds.has(island.id) && !hiddenDescendantIslandIds.has(island.id)) {
       continue;
     }
 
@@ -58,4 +60,50 @@ export function getCollapsedHiddenCardIds(doc: Pick<DocumentV2, "islands">, coll
   }
 
   return hiddenCardIds;
+}
+
+export function collectHiddenDescendantIslandIds(islands: Island[], collapsedIslandIds: ReadonlySet<string>): Set<string> {
+  const islandsByParentId = buildIslandsByParentId(islands);
+  const hiddenDescendantIslandIds = new Set<string>();
+
+  for (const islandId of collapsedIslandIds) {
+    const stack = [...(islandsByParentId.get(islandId) ?? [])];
+    while (stack.length > 0) {
+      const current = stack.pop();
+      if (!current || hiddenDescendantIslandIds.has(current.id)) {
+        continue;
+      }
+
+      hiddenDescendantIslandIds.add(current.id);
+      for (const child of islandsByParentId.get(current.id) ?? []) {
+        stack.push(child);
+      }
+    }
+  }
+
+  return hiddenDescendantIslandIds;
+}
+
+export function buildIslandVisibilityContractPayload(
+  doc: Pick<DocumentV2, "islands">,
+  collapsedIslandIds: ReadonlySet<string>,
+  islandId: string,
+): ContractValidationResult<IslandVisibilityContractV1> {
+  if (!doc.islands.some((island) => island.id === islandId)) {
+    return { ok: false, error: "island.id is required" };
+  }
+
+  const hiddenDescendantIslandIds = [...collectHiddenDescendantIslandIds(doc.islands, collapsedIslandIds)].sort();
+  const hiddenCardIds = [...getCollapsedHiddenCardIds(doc, collapsedIslandIds)].sort();
+
+  return validateIslandVisibilityContractV1({
+    island: {
+      id: islandId,
+      isCollapsed: collapsedIslandIds.has(islandId),
+    },
+    view: {
+      hiddenDescendantIslandIds,
+      hiddenCardIds,
+    },
+  });
 }

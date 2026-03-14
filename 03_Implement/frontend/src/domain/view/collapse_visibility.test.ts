@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildIslandVisibilityContractPayload,
   collectCollapsedIslandIds,
+  collectHiddenDescendantIslandIds,
   collectInitiallyCollapsedIslandIds,
   getCollapsedHiddenCardIds,
 } from "./collapse_visibility";
@@ -70,5 +72,55 @@ describe("getCollapsedHiddenCardIds", () => {
     );
 
     expect([...hidden].sort()).toEqual(["a", "b", "c"]);
+  });
+});
+
+
+describe("collectHiddenDescendantIslandIds", () => {
+  it("collects descendants only (excluding the collapsed island itself)", () => {
+    const hidden = collectHiddenDescendantIslandIds(
+      [
+        { id: "root", cardIds: ["c-root"] },
+        { id: "child", cardIds: ["c-child"], parentIslandId: "root" },
+        { id: "grand", cardIds: ["c-grand"], parentIslandId: "child" },
+      ],
+      new Set(["root"])
+    );
+
+    expect([...hidden].sort()).toEqual(["child", "grand"]);
+  });
+});
+
+describe("buildIslandVisibilityContractPayload", () => {
+  it("M1/M2/M3: builds valid contract payload for collapse/expand/idempotent cases", () => {
+    const doc = {
+      islands: [
+        { id: "root", cardIds: ["c-root"] },
+        { id: "child", cardIds: ["c-child"], parentIslandId: "root" },
+        { id: "grand", cardIds: ["c-grand"], parentIslandId: "child" },
+      ],
+    };
+
+    const collapse = buildIslandVisibilityContractPayload(doc, new Set(["root"]), "root");
+    const expand = buildIslandVisibilityContractPayload(doc, new Set(), "root");
+    const idempotent = buildIslandVisibilityContractPayload(doc, new Set(["root"]), "root");
+
+    expect(collapse.ok).toBe(true);
+    expect(expand.ok).toBe(true);
+    expect(idempotent.ok).toBe(true);
+
+    if (collapse.ok) {
+      expect(collapse.value.view.hiddenDescendantIslandIds).toEqual(["child", "grand"]);
+      expect(collapse.value.view.hiddenCardIds).toEqual(["c-child", "c-grand", "c-root"]);
+    }
+    if (expand.ok) {
+      expect(expand.value.view.hiddenDescendantIslandIds).toEqual([]);
+      expect(expand.value.view.hiddenCardIds).toEqual([]);
+    }
+  });
+
+  it("M4: returns fail-fast when target island does not exist", () => {
+    const result = buildIslandVisibilityContractPayload({ islands: [{ id: "root", cardIds: ["c-root"] }] }, new Set(["missing"]), "missing");
+    expect(result).toEqual({ ok: false, error: "island.id is required" });
   });
 });
