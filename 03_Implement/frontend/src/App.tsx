@@ -115,6 +115,7 @@ import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewP
 import { getPresetIdForViewMode, getViewModeForPresetId, getViewModeLabel, type ViewMode } from "./domain/view/view_mode";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import {
+  buildIslandVisibilityContractPayload,
   collectCollapsedIslandIds,
   collectInitiallyCollapsedIslandIds,
   getCollapsedHiddenCardIds,
@@ -4322,16 +4323,21 @@ ${parsedDocument.error}`);
         return;
       }
 
+      const nextCollapsedIslandIds = new Set(collapsedIslandIds);
+      if (collapsed) {
+        nextCollapsedIslandIds.add(islandId);
+      } else {
+        nextCollapsedIslandIds.delete(islandId);
+      }
+
+      const visibilityContract = buildIslandVisibilityContractPayload(document, nextCollapsedIslandIds, islandId);
+      if (!visibilityContract.ok) {
+        setStatusMessage(`Failed to toggle collapse: ${visibilityContract.error}`);
+        return;
+      }
+
       const alreadyCollapsed = collapsedIslandIds.has(islandId);
-      setCollapsedIslandIds((previous) => {
-        const next = new Set(previous);
-        if (collapsed) {
-          next.add(islandId);
-        } else {
-          next.delete(islandId);
-        }
-        return next;
-      });
+      setCollapsedIslandIds(nextCollapsedIslandIds);
 
       const { changed, nextDocument, rejectedReason } = setIslandCollapsed(document, islandId, collapsed);
       if (!changed) {
