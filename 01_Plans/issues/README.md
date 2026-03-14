@@ -295,6 +295,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream E Phase 4-5 Verify/Proceed（2026-03-14 final）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` 成功を確認し、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を公開ログ化。
 - Stream F Phase 1-5 最終同期（2026-03-14 rerun-14）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）・shared resource freeze解除をRead Gateで再確認し、共有3ファイルの同期対象（件数43 / Active=2 / Done=25 / 次アクション=Ready監査1件+Open期限管理2件）を宣言後に単一変更セットで反映した。
 - Stream F Phase 4 Verify（2026-03-14 rerun-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数43・Queue Ready=1/Open=2・再開判定1行・停止条件違反0件の一致を再確定。
+- Stream F Phase 1-5 再同期（2026-03-14 rerun-15）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）をRead Gateで再確認し、shared resource 3ファイルの単一変更セット更新後に validator/unittest/rg を再実行して件数43・Active2・Done25・再開判定1行・停止条件違反0件の一致を維持。
 
 ## Rules
 
@@ -343,3 +344,4 @@ issue補助メモには、最低でも次の項目を含める。
 - ADR 側ステータス（例: `FB-RM-I18N-03`）は issue memo の実績に同期する。
 - 2026-03-11 Stream D統合フェーズで Active/Done 集計と dashboard の Decision Queue / Next actions を再監査し、不整合ゼロを確認。
 - Stream D Phase 5 Proceed（2026-03-13 rerun-3）: 5ファイル再読→共有リソース同期→Verifyを再実施し、Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open`、依存順序は A1→A2→A3 を維持。
+- Stream F Phase 5 Proceed（2026-03-14 rerun-15）: 再開判定チェックリスト公開値を `未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし` で再確認し、再開判定を維持。
