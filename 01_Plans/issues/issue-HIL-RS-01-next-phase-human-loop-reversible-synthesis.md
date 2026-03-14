@@ -191,6 +191,8 @@
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
   - `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 禁止変更一覧:
   - 契約ID、`schemaVersion`、`requiredFields`、`overridePolicy` の変更禁止。
@@ -263,6 +265,8 @@
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
 - Freeze Declaration:
   - A2/A3はFixed Link/Fixed Valuesを参照専用とし、変更を禁止する。
   - 変更要否が生じた場合は統合フェーズで人間判断へエスカレーションする。
@@ -317,12 +321,14 @@
 ## 12) Stream A Critical Path Completion（2026-03-14）
 
 - Completion: `契約/I-F固定` は完了。A2/A3は待ちなしで着手可能。
-- Fixed Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Fixed Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder`
 - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Compatibility lock:
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
 - Downstream input contract:
   - A2: 実装時に上記固定値を読み取り専用で使用する。
   - A3: 運用文書に上記固定値を転記し、追加解釈を導入しない。
