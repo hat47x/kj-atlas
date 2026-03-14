@@ -787,6 +787,7 @@ def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref:
         ],
         "reproposalDiffs": [
             {
+                "schemaVersion": "1.0.0",
                 "proposalId": "proposal-1",
                 "basedOnIteration": 1,
                 "traceKey": "crit-1:proposal-1",
