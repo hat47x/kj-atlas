@@ -120,6 +120,29 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 - `decidedAt: string (ISO 8601)`
 - `snapshotVersion: string`
 
+### 2.7 Polygon Handoff Contract Verify（FB-P0-2A2B2C）
+
+Polygon auto-fit の backend接続準備として、A2比較キーの最小契約を検証する。
+
+**POST** `/docs/{doc_id}/polygon-handoff/verify-contract`
+
+- Request body:
+  - `input.gateApprovalRef: string`
+  - `input.a2VerifyRef: string`
+  - `input.inputHash: string`（sha256 hex / 64桁）
+  - `input.deterministicTieBreakOrder: ["padding_compliance", "self_intersection_avoidance", "minimum_area_delta", "minimum_vertex_count"]`
+  - `expectedOutput.outputPolygonHash: string`（sha256 hex / 64桁）
+  - `expectedOutput.paddingViolationCount: number`（>=0）
+  - `expectedOutput.tieBreakOrderChanged: boolean`
+- Response:
+  - `status: "ok" | "rollback_required"`
+  - `rollbackRequired: boolean`
+  - `failureReasons: string[]`
+  - `verificationKey: string`（`sha256(inputHash + ":" + outputPolygonHash)`）
+- Error:
+  - 404: `doc_id` が存在しない
+  - 422: hash format などの契約違反
+
 ---
 
 ## 3. レスポンス例（概要）
