@@ -22,9 +22,10 @@ def test_critique_input_requires_schema_version_1_0_0() -> None:
         )
 
 
-def test_reproposal_diff_op_requires_before_or_after() -> None:
+def test_reproposal_diff_requires_schema_version_1_0_0() -> None:
     with pytest.raises(ValidationError):
         ReproposalDiff(
+            schemaVersion="2.0.0",
             proposalId="p1",
             basedOnIteration=1,
             traceKey="crit-1:p1",
@@ -33,6 +34,26 @@ def test_reproposal_diff_op_requires_before_or_after() -> None:
                     "opId": "op-1",
                     "opType": "move",
                     "targetRef": "card:c1",
+                    "before": {"x": 0, "y": 0},
+                    "after": {"x": 1, "y": 1},
+                }
+            ],
+        )
+
+
+def test_reproposal_diff_requires_before_and_after_for_each_diff_op() -> None:
+    with pytest.raises(ValidationError):
+        ReproposalDiff(
+            schemaVersion="1.0.0",
+            proposalId="p1",
+            basedOnIteration=1,
+            traceKey="crit-1:p1",
+            diffOps=[
+                {
+                    "opId": "op-1",
+                    "opType": "move",
+                    "targetRef": "card:c1",
+                    "after": {"x": 1, "y": 1},
                 }
             ],
         )
@@ -47,14 +68,13 @@ def test_review_attribution_requires_review_fields_for_human_reviewed() -> None:
         )
 
 
-def test_review_attribution_allows_unreviewed_without_reviewer_ref() -> None:
-    validated = ReviewAttribution(
-        schemaVersion="1.0.0",
-        reviewState="unreviewed",
-        auditRecordedAt=_now(),
-    )
-    assert validated.reviewerRef is None
-    assert validated.reviewedAt is None
+def test_review_attribution_requires_reviewer_fields_even_when_unreviewed() -> None:
+    with pytest.raises(ValidationError):
+        ReviewAttribution(
+            schemaVersion="1.0.0",
+            reviewState="unreviewed",
+            auditRecordedAt=_now(),
+        )
 
 
 def test_critique_input_rejects_unknown_fields() -> None:
@@ -73,6 +93,7 @@ def test_critique_input_rejects_unknown_fields() -> None:
 def test_reproposal_diff_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
         ReproposalDiff(
+            schemaVersion="1.0.0",
             proposalId="p2",
             basedOnIteration=2,
             traceKey="crit-2:p2",
@@ -124,6 +145,8 @@ def test_review_attribution_defaults_override_policy() -> None:
     validated = ReviewAttribution(
         schemaVersion="1.0.0",
         reviewState="unreviewed",
+        reviewedAt=_now(),
+        reviewerRef="user:u-1",
         auditRecordedAt=_now(),
     )
     assert validated.overridePolicy == "human_dual_control_only"

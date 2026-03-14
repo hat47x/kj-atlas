@@ -406,11 +406,21 @@ class ReproposalDiffOp(BaseModel):
 class ReproposalDiff(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    schemaVersion: Literal["1.0.0"]
     proposalId: str
     basedOnIteration: int = Field(ge=1)
     diffOps: list[ReproposalDiffOp] = Field(min_length=1)
     traceKey: str
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+    @model_validator(mode="after")
+    def validate_required_before_after(self) -> "ReproposalDiff":
+        for op in self.diffOps:
+            if op.before is None:
+                raise ValueError("diffOps.before is required by A1-REDIFF-IF")
+            if op.after is None:
+                raise ValueError("diffOps.after is required by A1-REDIFF-IF")
+        return self
 
 
 class ReviewAttribution(BaseModel):
@@ -445,11 +455,10 @@ class ReviewAttribution(BaseModel):
 
     @model_validator(mode="after")
     def validate_human_review_transition(self) -> "ReviewAttribution":
-        if self.reviewState == "human_reviewed":
-            if self.reviewedAt is None:
-                raise ValueError("reviewedAt is required when reviewState=human_reviewed")
-            if self.reviewerRef is None:
-                raise ValueError("reviewerRef is required when reviewState=human_reviewed")
+        if self.reviewedAt is None:
+            raise ValueError("reviewedAt is required by A1-ATTR-IF")
+        if self.reviewerRef is None:
+            raise ValueError("reviewerRef is required by A1-ATTR-IF")
         return self
 
 
