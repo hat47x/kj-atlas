@@ -571,3 +571,47 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - vitest は文書固定値（3導線ラベル）と validator 制約の整合確認として扱う。
 
 上記コマンドの結果を PR/作業記録に残し、再現可能性を担保します。
+
+## Stream B 運用同期（FB-P2B-01 / FB-P2B-02, A3）
+
+Stream C/D の実装確定内容に合わせ、Similar-card 候補提示と Manual assisted merge の運用手順を固定する。
+
+参照契約ID（A1/A2/A3共通）:
+
+- `CTR-2B-01-CANDIDATE-GROUP-V1`（候補グループ）
+- `CTR-2B-02-DECISION-LOG-V1`（決定ログ）
+
+### 1. 実行順序（Plan → Execute → Verify → Proceed）
+
+1. **Plan**
+   - Similar-card 候補収集は deterministic heuristic とし、`Collect candidates` は確定操作を行わない。
+   - 4値決定（`accept` / `partial` / `reject` / `defer`）以外を運用で追加しない。
+2. **Execute**
+   - `MergeSuggestionsPanel` で候補グループを確認し、必要時のみ `editedText` を編集する。
+   - 最終判断は人間が実施し、決定時に `mergeSuggestionDecisions` へ append する。
+3. **Verify**
+   - 同一 `groupId` の履歴は append 順序を保持し、`snapshotVersion` が `CTR-2B-02-DECISION-LOG-V1` のレコードだけを復元対象とする。
+   - read-only モード時は候補収集/決定ボタンが disabled であることを確認する。
+4. **Proceed**
+   - 契約ID不一致、4値外の decision、または自動確定の導線を検知した場合は停止し、A1契約の再確認へ戻す。
+
+### 2. 運用上の制約
+
+- 「Deterministic heuristic only (no AI decision). Final merge decision remains human-in-the-loop.」の方針を固定値として扱う。
+- `accept` は監査記録であり、即時にカード統合を自動実行しない（確定導線は別操作）。
+- 候補対象カードが2件未満になった場合、`Merge suggestion is no longer applicable.` として決定を拒否する。
+- `groupId` 空文字、`cardIds` 空、`editedText` 空文字は fail-fast で拒否する。
+
+### 3. docs-check 記録（最小）
+
+```bash
+cd 03_Implement/frontend
+pnpm -s vitest run src/ui/MergeSuggestionsPanel.test.ts src/domain/merge_suggestion_decisions.test.ts src/domain/stream_b_contract_handoff.test.ts
+```
+
+```bash
+rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|reject|defer|human-in-the-loop" \
+  03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx \
+  03_Implement/frontend/src/domain/merge_suggestion_decisions.ts \
+  04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md
+```
