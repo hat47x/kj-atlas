@@ -5,6 +5,7 @@ import {
   HIL_RS_CONTRACT_IDS,
   HIL_RS_CRITIQUE_REQUIRED_FIELDS,
   HIL_RS_CRITIQUE_SCHEMA_VERSION,
+  HIL_RS_REDIFF_SCHEMA_VERSION,
   HIL_RS_REVIEW_AUDIT_FIELDS,
   HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION,
   validateHilRsCritiqueInput,
@@ -42,8 +43,10 @@ describe("hil_rs_stub_client", () => {
       critique: "A1-CRITIQUE-IF",
       rediff: "A1-REDIFF-IF",
       attribution: "A1-ATTR-IF",
+      error: "A1-ERROR-IF",
     });
     expect(HIL_RS_CRITIQUE_SCHEMA_VERSION).toBe("1.0.0");
+    expect(HIL_RS_REDIFF_SCHEMA_VERSION).toBe("1.0.0");
     expect(HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION).toBe("1.0.0");
     expect([...HIL_RS_CRITIQUE_REQUIRED_FIELDS]).toEqual([
       "critiqueId",
@@ -116,6 +119,7 @@ describe("hil_rs_stub_client", () => {
     });
 
     expect(payload).not.toBeNull();
+    expect(payload?.schemaVersion).toBe("1.0.0");
     expect(payload?.basedOnIteration).toBe(3);
     expect(payload?.diffOps).toEqual([
       {
