@@ -28,8 +28,16 @@
   - `schemaVersion` 固定値は `1.0.0`（Critique / Attribution / TieBreak）。
   - 単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
   - 禁止事項は SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止。
+  - 想定との差分（契約ID / schemaVersion / 禁止事項 / 参照先）が存在しないことを確認。
 - Proceed:
   - Phase 2へ進行。
+
+> Stop Rule（Phase 1）:
+> 想定との差分を検知した場合は即停止し、
+> 1) 失敗再現手順
+> 2) 競合ファイル
+> 3) 必要な承認者と判断事項
+> を提出する。
 
 ### Phase 2: ADR要否判定（Context / Decision / Consequences）
 
@@ -121,7 +129,19 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 - Self-Correctionは最大3回まで。
 - 3回超過 / 前提崩壊 / 未定義競合を検知した場合は即停止し、
-  1) 失敗条件
-  2) 影響I/F
-  3) 必要な人間判断
+  1) 失敗再現手順
+  2) 競合ファイル
+  3) 必要な承認者と判断事項
   を提出する。
+
+## 6) Phase 5 Gate判定（A2開始条件）
+
+- チェックリスト（A2開始前に全項目必須）:
+  - [ ] SSOTが `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` で固定されている。
+  - [ ] `contractLinkLocked=true` / `sharedResourceFreeze=true` がA1 issueとSSOTの双方で一致している。
+  - [ ] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が一致している。
+  - [ ] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が一致している。
+  - [ ] 「A2/A3で契約本文を変更しない」が明記されている。
+- Gate判定:
+  - Ready: チェックリストが全て満たされ、未定義契約変更要求が0件。
+  - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
