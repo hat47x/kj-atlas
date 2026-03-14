@@ -482,6 +482,41 @@ def _assert_similar_candidate_groups_missing_doc(client: TestClient) -> None:
     response = client.get("/docs/not-found/similar-candidate-groups")
     assert response.status_code == 404
 
+
+def _assert_similar_candidate_groups_deterministic_order_contract(client: TestClient) -> None:
+    doc_id = "doc-similar-candidate-groups-order"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload["cards"] = [
+        {"id": "card-c", "text": "left right", "x": 0, "y": 0},
+        {"id": "card-a", "text": "alpha beta", "x": 10, "y": 10},
+        {"id": "card-d", "text": "right left", "x": 20, "y": 20},
+        {"id": "card-b", "text": "beta alpha", "x": 30, "y": 30},
+    ]
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+
+    response = client.get(f"/docs/{doc_id}/similar-candidate-groups")
+    assert response.status_code == 200
+    response_json = response.json()
+
+    assert response_json["totalGroupCount"] == 2
+    assert [group["targetCardId"] for group in response_json["groups"]] == ["card-a", "card-c"]
+    assert [group["candidateCardIds"] for group in response_json["groups"]] == [["card-b"], ["card-d"]]
+
+    for group in response_json["groups"]:
+        assert set(group.keys()) == {
+            "groupId",
+            "targetCardId",
+            "candidateCardIds",
+            "scoreSummary",
+            "reasonCodes",
+            "snapshotVersion",
+        }
+        assert group["reasonCodes"] == ["token_signature"]
+        assert group["scoreSummary"] == {"min": 0.75, "max": 0.75, "avg": 0.75}
+        assert len(group["snapshotVersion"]) == 12
+
 def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v2-relations"
     payload = _sample_payload_v2_with_relation_summaries(doc_id)
@@ -679,6 +714,10 @@ def test_docs_similar_candidate_groups_excludes_non_eligible_cards_sqlite(sqlite
     _assert_similar_candidate_groups_excludes_non_eligible_cards(sqlite_client)
 
 
+def test_docs_similar_candidate_groups_deterministic_order_contract_sqlite(sqlite_client: TestClient) -> None:
+    _assert_similar_candidate_groups_deterministic_order_contract(sqlite_client)
+
+
 @pytest.mark.postgres
 def test_docs_similar_candidate_groups_contract_default_postgres(postgres_client: TestClient) -> None:
     _assert_similar_candidate_groups_contract_default(postgres_client)
@@ -692,6 +731,11 @@ def test_docs_similar_candidate_groups_missing_doc_postgres(postgres_client: Tes
 @pytest.mark.postgres
 def test_docs_similar_candidate_groups_excludes_non_eligible_cards_postgres(postgres_client: TestClient) -> None:
     _assert_similar_candidate_groups_excludes_non_eligible_cards(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_similar_candidate_groups_deterministic_order_contract_postgres(postgres_client: TestClient) -> None:
+    _assert_similar_candidate_groups_deterministic_order_contract(postgres_client)
 
 def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_relation_summary_roundtrip(sqlite_client)
