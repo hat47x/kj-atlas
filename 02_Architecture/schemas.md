@@ -438,3 +438,32 @@ export type MergeDecisionRecord = {
 - fail-safe 判定（`policy_ref_missing|policy_ref_unreachable|policy_ref_invalid`）は保存可。
 
 この境界により、組織属性の最新性は外部IdP/PDPを正本とし、アプリ側の属性陳腐化リスクを回避する。
+
+## 11. Polygon handoff contract keys（FB-P0-2A2B2C）
+
+backend接続準備で利用する比較キーは次を最小契約とする。
+
+```ts
+export type PolygonHandoffInputContract = {
+  gateApprovalRef: string;
+  a2VerifyRef: string;
+  inputHash: string; // sha256 hex(64)
+  deterministicTieBreakOrder: [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
+};
+
+export type PolygonHandoffExpectedOutputContract = {
+  outputPolygonHash: string; // sha256 hex(64)
+  paddingViolationCount: number; // >= 0
+  tieBreakOrderChanged: boolean;
+};
+```
+
+ロールバック判定トリガー:
+
+- `paddingViolationCount > 0`
+- `tieBreakOrderChanged === true`
