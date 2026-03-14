@@ -277,6 +277,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 3 Verify追補（2026-03-13 rerun-5）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Stream D Phase 4 Proceed（2026-03-13 rerun-6）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を再確定し、共有3ファイルの同期をクローズ。
 - Stream D Phase 3 Verify追補（2026-03-13 rerun-6）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Stream D Phase 3 Verify追補（2026-03-14 rerun-7）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 
 ## Rules
 
