@@ -378,3 +378,40 @@
   - 契約本文/契約IDの改変、`schemaVersion` 変更、共有リソース更新。
 - Return conditions:
   - 契約衝突・不整合を検出した場合は統合フェーズへ差し戻し（人間判断必須）。
+
+
+## 4.1.7) Stream A A1契約固定ログ（最終）
+
+### Phase 1 (Read Sync): Plan → Execute → Verify → Proceed
+- Plan: 対象3ファイル（親Issue / A1 Issue / Architecture契約）の契約ID・固定値・単一参照先を再読し、差分判定を行う。
+- Execute: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only` を突合。
+- Verify: 不一致0件、単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみ。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 (ADR合意): Plan → Execute → Verify → Proceed
+- Plan: ADR変更要否を Context / Decision / Consequences で明文化。
+- Execute:
+  - Context: A1は`ADR-0026` D2（契約先行）の下位固定。
+  - Decision: ADR追加/更新は不要。
+  - Consequences: 契約固定値変更要求時のみ承認待ち停止。
+- Verify: 上位方針（SafeMode既定ON・漏えい防止後退禁止）変更なし。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 (Contract Fix): Plan → Execute → Verify → Proceed
+- Plan: 単一参照先、固定schemaVersion、禁止境界を凍結。
+- Execute:
+  - Fixed IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+  - Fixed schemaVersion: `CritiqueInputContract=1.0.0`, `ReviewAttributionContract=1.0.0`
+  - Fixed policy: `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - Freeze flags: `contractLinkLocked=true`, `sharedResourceFreeze=true`
+- Verify: 契約ID複線化0件、単一参照先複線化0件。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 (Handoff): Plan → Execute → Verify → Proceed
+- Plan: A2/A3へ固定I/Fと禁止境界を配布。
+- Execute:
+  - A2/A3参照先は単一正本のみ。
+  - A2は`03_Implement/**`専属、A3は`04_Documentation/**`専属。
+  - 共有リソース（`issues/README.md`, `project-progress-dashboard.md`）は更新禁止。
+- Verify: 受け渡し固定項目（ID / schemaVersion / policy / freeze flags）を全て明記。
+- Proceed: Stream AのA1契約固定を完了。
