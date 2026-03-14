@@ -39,9 +39,9 @@
 
 ## Acceptance criteria
 
-- [ ] A1/A2契約IDで実装計画トレースが可能。
-- [ ] Plan→Execute→Verify→Proceedの順序が固定される。
-- [ ] AC/DoD不足時のドラフト提案手順が明文化される。
+- [x] A1/A2契約IDで実装計画トレースが可能。
+- [x] Plan→Execute→Verify→Proceedの順序が固定される。
+- [x] AC/DoD不足時のドラフト提案手順が明文化される。
 
 
 
@@ -102,3 +102,26 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、またはA1/A2契約リンク不整合を検出した場合は停止して指示待ち。
+
+
+## A3 implementation trace（Stream C）
+
+### Plan
+- `RQ-2A-02` をキーに、A2 handoff log (`M1..M4`) を `evaluateIslandVisibilityA3GoNoGo` に投入する検証を固定。
+- A3開始条件として「重複mockCase禁止」「contractVersion固定」「ownerOfFix整合」を追加。
+
+### Execute
+- `frontend/src/domain/view/island_visibility_handoff.ts` にて、以下のFail Fast判定を実装。
+  - duplicate mock case 検知
+  - contractVersion不整合検知
+  - `M1/M2/M3 ownerOfFix=A3` 強制
+  - `M4 ownerOfFix!=A3` 強制
+- `frontend/src/domain/view/island_visibility_handoff.test.ts` にNoGoケースを追加。
+
+### Verify
+- `evaluateIslandVisibilityA3GoNoGo` のGo条件は維持（`M1/M2/M3=pass`, `M4=fail`）。
+- 追加NoGo条件がテストで再現可能。
+
+### Proceed
+- A2→A3接続I/F（`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`）で欠損なし。
+- 未定義依存なし、A1契約 (`IslandVisibilityContractV1`) の再解釈なし。

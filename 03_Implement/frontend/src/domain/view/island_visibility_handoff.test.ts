@@ -67,6 +67,48 @@ describe("evaluateIslandVisibilityA3GoNoGo", () => {
     expect(evaluateIslandVisibilityA3GoNoGo(logs)).toEqual({ go: true, reason: "go" });
   });
 
+
+
+  it("returns NoGo when duplicate mock case is provided", () => {
+    const logs = [
+      toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1-first"),
+      toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1-duplicate"),
+      toIslandVisibilityValidationLog("M2", validValidationResult(false), "A2", "M2"),
+      toIslandVisibilityValidationLog("M3", validValidationResult(true), "A2", "M3"),
+      toIslandVisibilityValidationLog(
+        "M4",
+        validateIslandVisibilityContractV1({
+          island: { id: "", isCollapsed: true },
+          view: { hiddenDescendantIslandIds: [], hiddenCardIds: [] },
+        }),
+        "A2",
+        "M4",
+      ),
+    ];
+
+    expect(evaluateIslandVisibilityA3GoNoGo(logs)).toEqual({ go: false, reason: "duplicate mock case: M1" });
+  });
+
+  it("returns NoGo when M4 ownerOfFix is A3", () => {
+    const logs = [
+      toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1"),
+      toIslandVisibilityValidationLog("M2", validValidationResult(false), "A2", "M2"),
+      toIslandVisibilityValidationLog("M3", validValidationResult(true), "A2", "M3"),
+      toIslandVisibilityValidationLog(
+        "M4",
+        validateIslandVisibilityContractV1({
+          island: { id: "", isCollapsed: true },
+          view: { hiddenDescendantIslandIds: [], hiddenCardIds: [] },
+        }),
+        "A3",
+        "M4-invalid-owner",
+      ),
+    ];
+
+    const result = evaluateIslandVisibilityA3GoNoGo(logs);
+    expect(result.go).toBe(false);
+    expect(result.reason).toBe("M4 ownerOfFix must not be A3");
+  });
   it("returns NoGo when handoff payload has missing mock case", () => {
     const logs = [
       toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1"),
