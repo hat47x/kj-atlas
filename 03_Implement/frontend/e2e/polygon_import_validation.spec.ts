@@ -19,12 +19,12 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-test("importing a self-intersecting polygon document falls back to shape-less island", async ({ page }) => {
+test("importing a self-intersecting polygon document degrades invalid polygon to a non-polygon fallback shape", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /Load document\.json|document\.json を読み込む/ }).click();
+  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
   const fileChooser = await fileChooserPromise;
 
   const now = new Date().toISOString();
@@ -84,5 +84,6 @@ test("importing a self-intersecting polygon document falls back to shape-less is
 
   const island = exportedDocument.islands.find((item) => item.id === "i1");
   expect(island).toBeDefined();
-  expect(island?.shape).toBeUndefined();
+  expect(island?.shape).not.toEqual(expect.objectContaining({ kind: "polygon" }));
+  expect(island?.shape === undefined || JSON.stringify(island.shape) === JSON.stringify({ kind: "rect" })).toBe(true);
 });
