@@ -66,6 +66,48 @@
 - A2/A3 は契約解釈待ちなしで作業開始できる。
 - Active一覧同期は未完タスクとして残るため、統合フェーズでの追実施が必須となる。
 
+## 4.1.6) Stream A Phase 1-4 運用点検ログ（2026-03-14）
+
+### Phase 1: Read Gate同期（Plan → Execute → Verify → Proceed）
+
+- Plan:
+  - 対象: `HIL-RS-01` / `HIL-RS-01-A1` / `project-progress-dashboard.md` / `issues/README.md`。
+  - AC/DoD: A1→A2→A3依存維持、Decision Queue件数（Ready=1 / Open=2）の整合、停止条件違反0件。
+  - 変更境界: Stream A許可範囲内の4ファイルのみ。
+- Execute:
+  - 再Readで依存順・Queue状態・停止条件記述を突合。
+- Verify:
+  - 依存順 `A1→A2→A3` を全対象で確認。
+  - `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` を確認。
+  - 停止条件違反（依存不整合 / 完了報告欠落 / 競合未定義）=0件。
+- Proceed:
+  - Phase 2へ進行。
+
+### Phase 2: A1契約確定レビュー（Plan → Execute → Verify → Proceed）
+
+- Context: A1契約は `ADR-0026` D2（契約先行）の下位固定で、上位方針変更要求なし。
+- Decision: ADR変更は不要。上位変更要求が出た場合は「Context / Decision / Consequences」起票後、承認完了まで実装停止。
+- Consequences: A2/A3は既存契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）を参照専用で利用可能。
+
+### Phase 3: Decision Queue処理（Plan → Execute → Verify → Proceed）
+
+- DQ-HIL-EXEC-01（Ready）運用点検:
+  - `contractLinkLocked` / `sharedResourceFreeze` / `validatorPass` の3点テンプレを再確認。
+  - Ready維持（逸脱なし）。
+- DQ-FB-P2C-01（Open）期限管理:
+  - 期限: 2026-03-18 JST。
+  - 未確定I/F: `A2開始のReady遷移時点`、`A3 Proceed判定条件（QA3件）`。
+- DQ-OPS-SOURCE-01（Open）期限管理:
+  - 期限: 2026-03-21 JST（運用再判定の最終確認日）。
+  - 未確定I/F: `N/A→URL移行トリガー定義`、`切替時のRACI-I最小ログ必須項目`。
+
+### Phase 4: 共有リソース同期（Plan → Execute → Verify → Proceed）
+
+- Plan: `issues/README.md` と `project-progress-dashboard.md` のみを同一コミットで同期。
+- Execute: Active件数・Queue件数・依存順（A1→A2→A3）を更新。
+- Verify: Queue値（Ready=1 / Open=2）と停止条件違反0件を再確認。
+- Proceed: Stream A範囲の同期完了として次担当へhandoff。
+
 ## 4.1.1) Phase 1: Read/Baseline（Stream A記録）
 
 - Read対象（対象3ファイル）:
@@ -281,7 +323,7 @@
 ### Decision
 
 - HIL方針の変更は不要と判定し、ADR明文化の追加は行わない。
-- Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Approved` / `DQ-OPS-SOURCE-01=Open` を維持する。
+- Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` を維持する。
 - 次の1手は「Ready 1件の運用逸脱監査」と「Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件を維持する。
 
 ### Consequences

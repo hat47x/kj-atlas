@@ -10,7 +10,7 @@
 - issue memoは総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` の2件。
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
-- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01`（Approved運用）と `DQ-OPS-SOURCE-01` をOpenとして管理する（未決=2件）。
+- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01` と `DQ-OPS-SOURCE-01` をOpenとして管理する（未決=2件）。
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
 
 ### 未完Issue全件（18件）とレーン割当
@@ -152,7 +152,7 @@
 - 判断に必要な入力: Plan Ownerがテンプレ案、Architecture Ownerが承認、期限=2026-03-14 JST。
 
 ### DQ-FB-P2C-01（polygon tie-break規則）
-- 状態: **Ready（Gate 0承認Yes / 2026-03-14反映）**
+- 状態: **Open（期限管理中 / 2026-03-14再確認）**
 - 背景: `FB-P2C-01-A1` で順序案は定義済みで、Gate 0承認YesによりA2 Proceed条件が充足した。
 - 同期結果: I/F項目 `deterministicTieBreakOrder` は `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` を維持し、A2開始をReady化。A3はA2結果同期後にProceed判定する。
 - 放置リスク: 承認記録とQA証跡を同期しない場合、再開後の監査追跡性が低下する。
@@ -196,7 +196,7 @@
 3. QA Owner が 3ケース検証を実施し A3 Proceed/Block を確定。
 
 ### DQ-OPS-SOURCE-01（Source Issue運用方針）
-- 状態: **Ready（閉域運用方針で継続）**
+- 状態: **Open（閉域運用方針で継続）**
 - 背景: Active memoは `Source Issue: N/A` で統一し、Codex + GitHub の閉域運用を継続する。
 - 現在の整理: 外部連携が未発生のため、URL移行開始宣言やRACI固定は当面不要。
 - 放置リスク: 方針を明記しない場合、将来の再開時に判断基準が揺れる。
@@ -207,6 +207,14 @@
 - Rule-2: Q1/Q2は承認ゲートではなく参照チェックとして保持し、日次運用での裁定を要求しない。
 - Rule-3: 期限駆動ではなくイベント駆動（外部連携要件/運用方針変更）で再判定する。
 - Rule-4: docs更新時の検証は `validator + unittest + rg` を維持し、運用記録の再現性のみ担保する。
+
+
+### Stream A Phase 1-4 同期ログ（2026-03-14, critical path）
+
+- Phase 1 Read Gate: `HIL-RS-01` / `HIL-RS-01-A1` / `issues/README.md` / `project-progress-dashboard.md` を再読し、依存順 `A1→A2→A3`・Queue（Ready=1/Open=2）・停止条件違反0件を確認。
+- Phase 2 A1レビュー: `ADR-0026` 下位具体化であることを再確認し、ADR追加不要を維持。上位変更要求が発生した場合は Context/Decision/Consequences 起票と承認完了まで停止。
+- Phase 3 DQ処理: `DQ-HIL-EXEC-01` は Ready運用点検を完了、`DQ-FB-P2C-01`/`DQ-OPS-SOURCE-01` は Open継続で期限管理（未確定I/Fを列挙）。
+- Phase 4 共有同期: Active件数・Queue件数・依存順を shared resource 2ファイルで同一コミット同期。
 
 ## 対応案
 

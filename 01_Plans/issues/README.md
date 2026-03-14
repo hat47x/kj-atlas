@@ -261,7 +261,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
-- Decision Queue: `DQ-HIL-EXEC-01` は Ready、`DQ-FB-P2C-01`（Approved運用）/ `DQ-OPS-SOURCE-01` は Open（Ready=1 / Open=2）。
+- Decision Queue: `DQ-HIL-EXEC-01` は Ready、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open（Ready=1 / Open=2）。
 - 決定済み項目の扱い: `DQ-HIL-A1-01` / `DQ-HIL-A1-02` は `project-progress-dashboard.md` の決定ログ（`DR-HIL-A1-01` / `DR-HIL-A1-02`）へ集約し、Queueから除外済み。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
 - Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue: Ready=1/Open=2、A1→A2→A3）を再確認。
@@ -280,6 +280,8 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 3 Verify追補（2026-03-14 rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Stream D Phase 3 Verify追補（2026-03-14 rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Stream D Phase 4 Publish（2026-03-14 rerun-8）: Plan→Execute→Verify→Proceed を再完了し、共有統合3ファイルを単一コミット対象で同期。未解決Queueは `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の2件を維持、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / 停止条件違反なし）を確定。
+
+- Stream A Phase 1-4同期（2026-03-14）: Read Gate再読で A1→A2→A3依存・Queue（Ready=1/Open=2）・停止条件違反0件を確認し、A1契約レビュー（ADR追加不要）→DQ運用点検（`DQ-HIL-EXEC-01` Ready維持、`DQ-FB-P2C-01`/`DQ-OPS-SOURCE-01` Open期限管理）→共有2ファイル同期を同一コミットで実施。
 
 ## Rules
 
@@ -327,4 +329,4 @@ issue補助メモには、最低でも次の項目を含める。
 - Done メモは自動GCせず、量が増えた場合も人間判断でのみ削除/整理する。
 - ADR 側ステータス（例: `FB-RM-I18N-03`）は issue memo の実績に同期する。
 - 2026-03-11 Stream D統合フェーズで Active/Done 集計と dashboard の Decision Queue / Next actions を再監査し、不整合ゼロを確認。
-- Stream D Phase 5 Proceed（2026-03-13 rerun-3）: 5ファイル再読→共有リソース同期→Verifyを再実施し、Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Ready` / `DQ-OPS-SOURCE-01=Ready`、依存順序は A1→A2→A3 を維持。
+- Stream D Phase 5 Proceed（2026-03-13 rerun-3）: 5ファイル再読→共有リソース同期→Verifyを再実施し、Decision Queueは `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open`、依存順序は A1→A2→A3 を維持。
