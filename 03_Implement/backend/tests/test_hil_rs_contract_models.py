@@ -119,3 +119,23 @@ def test_review_attribution_rejects_email_like_reviewer_ref() -> None:
             reviewerRef="alice@example.com",
             auditRecordedAt=_now(),
         )
+
+def test_review_attribution_defaults_override_policy() -> None:
+    validated = ReviewAttribution(
+        schemaVersion="1.0.0",
+        reviewState="unreviewed",
+        auditRecordedAt=_now(),
+    )
+    assert validated.overridePolicy == "human_dual_control_only"
+
+
+def test_review_attribution_rejects_email_like_owner_ref() -> None:
+    with pytest.raises(ValidationError):
+        ReviewAttribution(
+            schemaVersion="1.0.0",
+            reviewState="human_reviewed",
+            reviewedAt=_now(),
+            reviewerRef="user:u-1",
+            ownerRef="owner@example.com",
+            auditRecordedAt=_now(),
+        )

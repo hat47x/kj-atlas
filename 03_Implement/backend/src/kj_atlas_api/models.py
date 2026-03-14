@@ -388,6 +388,7 @@ class ReviewAttribution(BaseModel):
     reviewedAt: datetime | None = None
     reviewerRef: str | None = Field(default=None, min_length=1)
     auditRecordedAt: datetime
+    overridePolicy: Literal["human_dual_control_only"] = "human_dual_control_only"
     reviewContext: str | None = Field(default=None, exclude_if=lambda value: value is None)
     ownerRef: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
@@ -398,6 +399,15 @@ class ReviewAttribution(BaseModel):
             return None
         if "@" in value:
             raise ValueError("reviewerRef must be opaque and must not contain email-like identifiers")
+        return value
+
+    @field_validator("ownerRef")
+    @classmethod
+    def validate_owner_ref_opaque(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if "@" in value:
+            raise ValueError("ownerRef must be opaque and must not contain email-like identifiers")
         return value
 
     @model_validator(mode="after")
