@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -86,3 +86,29 @@
 ## Fail-safe
 
 - Self-Correctionは最大3回。超過時は停止して人間判断依頼。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`Open`, A3=`Open`。
+- 実行順はA1→A2→A3で固定。
+
+### Phase 2: A1固定点の再確認
+- 依存契約: `DependsOnContractID=CTR-2B-02-DECISION-LOG-V1`。
+- 未定義項目: なし。
+
+### Phase 3: A2モック検証（実コード非依存）
+- 先行固定対象:
+  - APIシグネチャ: `append/list/restore`
+  - 型: `MergeDecisionRecord`
+  - 比較キー: `snapshotVersion`, append順序, `action` enum
+- 実コード依存排除: stub/fixtureで検証。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2 Verifyで4値制約・順序保持・非自動確定がPass。
+- 停止条件: 契約逸脱・未定義競合・前提崩れ。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: enum追加はA1差し戻し。
+- 既知リスク: restore時の順序逆転。
+- 回帰観点: append→restoreの同順序再現、enum外除外。

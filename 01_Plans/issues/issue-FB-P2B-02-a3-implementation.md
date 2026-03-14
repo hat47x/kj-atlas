@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -97,3 +97,26 @@
 ## Fail-safe
 
 - A1契約不整合、3回超過、またはStream C/Dとの競合検知で即停止。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`Open`, A3=`Open`。
+- 実行順はA1→A2→A3で固定。
+
+### Phase 2: A1固定点の再確認
+- 依存契約: `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1`。
+- A3で再定義しない項目: action 4値制約、append/list/restore I/F、非自動確定境界。
+
+### Phase 3: A2検証結果の受理条件
+- 受理条件: APIシグネチャ/型/比較キーのmock Verify結果がPass。
+- 実装依存の逆流を禁止。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2 Verify Pass（4値制約、順序再現、非自動確定）。
+- 停止条件: 契約逸脱・未定義競合・前提崩れ。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: `CTR-2B-02-DECISION-LOG-V1` 単一参照。
+- 既知リスク: enum拡張要求とsnapshot互換崩れ。
+- 回帰観点: decision log append/restoreの再現性。

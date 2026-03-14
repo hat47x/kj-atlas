@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -100,3 +100,29 @@
 ## Fail-safe
 
 - Self-Correctionは最大3回。超過時は停止して人間判断依頼。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`In Progress`, A3=`In Progress`。
+- 実行順はA1→A2→A3で固定。
+
+### Phase 2: A1固定点の再確認
+- 依存契約: `DependsOnContractID=CTR-2B-01-CANDIDATE-GROUP-V1`。
+- 未定義項目: なし（契約境界で閉じる）。
+
+### Phase 3: A2モック検証（実コード非依存）
+- 先行固定対象:
+  - APIシグネチャ: `CandidateListViewModel` 入出力
+  - 型: `SimilarCandidateGroup`
+  - 比較キー: `groupId`, `targetCardId`, `snapshotVersion`, group順序
+- 実コード依存排除: stub/fixtureでのみ検証。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2 Verifyで「契約ID一致」「非自動確定」「再読込復元」すべてPass。
+- 停止条件: 契約逸脱・未定義競合・前提崩れ。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: 契約拡張禁止、比較キー不変。
+- 既知リスク: restore順序の不安定化（実装時のソート差異）。
+- 回帰観点: 同一入力同一順序、候補提示のみでは確定しない。

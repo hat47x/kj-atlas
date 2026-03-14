@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -116,3 +116,26 @@
   - decision action 4値（`accept|partial|reject|defer`）と `decidedBy: human` 前提を満たす。
 - Proceed:
   - Verify記録を更新し、下流監査へ引き渡し可能。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`In Progress`, A3=`In Progress`。
+- 実行順はA1→A2→A3で固定。
+
+### Phase 2: A1固定点の再確認
+- 依存契約: `ReferenceContractID=CTR-2B-01-CANDIDATE-GROUP-V1`。
+- A3で再定義しない項目: 契約ID・必須フィールド・非自動確定境界。
+
+### Phase 3: A2検証結果の受理条件
+- 受理条件: APIシグネチャ/型/比較キーのmock Verify結果が揃っていること。
+- 実装依存の逆流を禁止（A3起点で契約変更しない）。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2のVerify Pass（契約ID一致、順序再現、非自動確定）。
+- 停止条件: 契約逸脱・未定義競合・前提崩れ。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: `CTR-2B-01-CANDIDATE-GROUP-V1` 単一参照。
+- 既知リスク: UI表示順の差異が比較キー判定を崩す可能性。
+- 回帰観点: `groupId/targetCardId/snapshotVersion` での同値性。
