@@ -290,6 +290,8 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F Phase 5 Proceed（2026-03-14 rerun-13）: 再開判定チェックリストを更新し、公開値（Ready=1/Open=2、次アクション=Ready監査1件+Open期限管理2件、停止条件違反0件、未承認決定混入なし）を共有。
 - Stream H Phase 1-4 最終同期（2026-03-14）: A〜G完了報告・Queue状態・依存順をRead同期し、共有3ファイルで Active=2 / Done=25 / 件数43 / Decision Queue Ready=1/Open=2 を再反映。
 - Stream H Phase 3 Verify（2026-03-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数・Queue・再開判定1行の一致を確認。
+- Stream E Phase 5 Proceed（2026-03-14）: **再開判定チェックリスト確定（1行）** = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。
+- Stream E Phase 4 Verify（2026-03-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を確認。
 
 ## Rules
 
