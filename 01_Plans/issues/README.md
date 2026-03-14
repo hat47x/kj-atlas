@@ -256,7 +256,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream F 統合スナップショット（2026-03-14 JST, final rerun-12）
+### Stream F 統合スナップショット（2026-03-14 JST, rerun-17）
 
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
@@ -297,6 +297,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F Phase 4 Verify（2026-03-14 rerun-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数43・Queue Ready=1/Open=2・再開判定1行・停止条件違反0件の一致を再確定。
 - Stream F Phase 1-5 再同期（2026-03-14 rerun-15）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）をRead Gateで再確認し、shared resource 3ファイルの単一変更セット更新後に validator/unittest/rg を再実行して件数43・Active2・Done25・再開判定1行・停止条件違反0件の一致を維持。
 - Stream E Phase 1-4 同期（2026-03-14 rerun-16）: Read同期（A/B/C/D完了報告）→件数/状態/Decision Queue反映→参照リンク/件数/依存順監査→再開判定チェックリスト1行確定を直列実行し、shared resource 3ファイルの公開値を `件数43 / Active2 / Done25 / Queue Ready=1 Open=2 / A1→A2→A3 / 停止条件違反0件` で再固定。
+- Stream F Phase 1-5 最終再同期（2026-03-14 rerun-17）: Read Gate（A〜E完了報告と証跡）→Plan（3ファイル限定）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（再開判定チェックリスト1行固定）を実施し、件数43・Active2・Done25・Queue Ready=1/Open=2・依存順A1→A2→A3・停止条件違反0件を維持。
 
 ## Rules
 
