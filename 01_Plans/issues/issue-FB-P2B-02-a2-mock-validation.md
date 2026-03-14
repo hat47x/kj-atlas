@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -112,3 +112,22 @@
 - 固定条件: enum追加はA1差し戻し。
 - 既知リスク: restore時の順序逆転。
 - 回帰観点: append→restoreの同順序再現、enum外除外。
+
+## Stream E execution log（2026-03-14）
+
+### Phase 1: Read Gate
+- Read: `issue-FB-P2B-01/02-a1-interface-contract.md` と当該A2/A3メモを再読し、`ContractID` / `DependsOnContractID` / `ReferenceContractID` の一致を確認。
+- 判定: Pass（契約ID不整合なし）。
+
+### Phase 2-3: A2/A3
+- A2: mock先行条件（非自動確定・再読込復元・順序保持）を契約境界として固定。
+- A3: 契約再定義禁止のまま、frontend実装テスト観点へ接続。
+
+### Phase 4: Verify（宣言検証）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_candidates.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts`
+- 判定: Pass（関連suite全件成功）。
+
+### Phase 5: Proceed
+- Go（A2/A3の宣言検証レベル要件を充足）。
+
