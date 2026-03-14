@@ -1,5 +1,6 @@
 import type { DocumentV2 } from "./types";
 import {
+  HIL_RS_CRITIQUE_SCHEMA_VERSION,
   type HilRsCritiqueInput,
   type HilRsCritiqueType,
   type HilRsReviewAttribution,
@@ -54,7 +55,7 @@ function pushCritiqueInput(
   }
 
   const candidate: HilRsCritiqueInput = {
-    schemaVersion: "1.0.0",
+    schemaVersion: HIL_RS_CRITIQUE_SCHEMA_VERSION,
     critiqueId: `${targetRef}:${options.iteration}`,
     targetRef,
     critiqueType: resolveCritiqueTypeFromTags(normalizedTags),

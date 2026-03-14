@@ -6,10 +6,34 @@ export const HIL_RS_CRITIQUE_TYPES = [
   "no_articulable_reason",
 ] as const;
 
+export const HIL_RS_CONTRACT_IDS = {
+  critique: "A1-CRITIQUE-IF",
+  rediff: "A1-REDIFF-IF",
+  attribution: "A1-ATTR-IF",
+} as const;
+
+export const HIL_RS_CRITIQUE_SCHEMA_VERSION = "1.0.0" as const;
+export const HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION = "1.0.0" as const;
+
+export const HIL_RS_CRITIQUE_REQUIRED_FIELDS = [
+  "critiqueId",
+  "targetRef",
+  "critiqueType",
+  "createdAt",
+  "iteration",
+] as const;
+
+export const HIL_RS_REVIEW_AUDIT_FIELDS = [
+  "reviewState",
+  "reviewedAt",
+  "reviewerRef",
+  "auditRecordedAt",
+] as const;
+
 export type HilRsCritiqueType = (typeof HIL_RS_CRITIQUE_TYPES)[number];
 
 export type HilRsCritiqueInput = {
-  schemaVersion: "1.0.0";
+  schemaVersion: typeof HIL_RS_CRITIQUE_SCHEMA_VERSION;
   critiqueId: string;
   targetRef: string;
   critiqueType: HilRsCritiqueType;
@@ -44,7 +68,7 @@ export const HIL_RS_REVIEW_STATES = ["unreviewed", "human_reviewed"] as const;
 export type HilRsReviewState = (typeof HIL_RS_REVIEW_STATES)[number];
 
 export type HilRsReviewAttribution = {
-  schemaVersion: "1.0.0";
+  schemaVersion: typeof HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION;
   reviewState: HilRsReviewState;
   reviewedAt: string | null;
   reviewerRef: string;
@@ -101,7 +125,7 @@ export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiq
   const input = value as Record<string, unknown>;
 
   if (!hasOnlyAllowedKeys(input, HIL_RS_CRITIQUE_ALLOWED_KEYS)) return false;
-  if (input.schemaVersion !== "1.0.0") return false;
+  if (input.schemaVersion !== HIL_RS_CRITIQUE_SCHEMA_VERSION) return false;
   if (!isNonEmptyString(input.critiqueId)) return false;
   if (!isNonEmptyString(input.targetRef)) return false;
   if (!isNonEmptyString(input.createdAt) || !isIsoTimestamp(input.createdAt)) return false;
@@ -146,7 +170,7 @@ export function validateHilRsReviewAttribution(value: unknown): value is HilRsRe
   const attribution = value as Record<string, unknown>;
 
   if (!hasOnlyAllowedKeys(attribution, HIL_RS_ATTRIBUTION_ALLOWED_KEYS)) return false;
-  if (attribution.schemaVersion !== "1.0.0") return false;
+  if (attribution.schemaVersion !== HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION) return false;
   if (!HIL_RS_REVIEW_STATES.includes(attribution.reviewState as HilRsReviewState)) return false;
   if (!isNonEmptyString(attribution.reviewerRef)) return false;
   if (!isNonEmptyString(attribution.auditRecordedAt) || !isIsoTimestamp(attribution.auditRecordedAt)) return false;
