@@ -216,6 +216,7 @@
 - Verify追補（rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-11, Stream F）: Phase 1 Read Sync（3共有ファイル再読）→Phase 2 同期反映（件数/状態/依存/判断キュー）→Phase 3 validator/unittest/`rg` 検証→Phase 4 Closeout を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を再確定。
+- Verify追補（rerun-13, Stream F）: 起動条件（A〜E完了報告受領 / A1→A2→A3依存整合 / shared resource freeze解除）をRead Gateで再確認後、Phase 1-5（Read→Plan→Execute→Verify→Proceed）を実施。`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功により、件数43・Active2・Done25・Queue Ready=1/Open=2・停止条件違反0件・未承認決定混入なしを再確定。
 
 ### 6-6. Stream G 監査ログ（Source Issue運用方針, 2026-03-14）
 

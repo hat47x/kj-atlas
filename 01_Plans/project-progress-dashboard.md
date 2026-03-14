@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream F final shared-resource sync, rerun-12)
+最終更新: 2026-03-14 (JST, Stream F final shared-resource sync, rerun-13)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -13,6 +13,7 @@
 - Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をOpenとして管理する（Ready=1 / Open=2、人間承認待ち=2件）。
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
 - Stream F Phase 1-4最終同期（rerun-12）で3共有ファイルを再読し、件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行の一致を再確認した。
+- Stream F Phase 1-5再同期（rerun-13）で起動条件（A〜E完了報告受領 / A1→A2→A3依存整合 / shared resource freeze解除）を再確認し、3共有ファイル単一変更セット同期後に Verify（validator/unittest/rg）成功を記録した。
 
 ### 未完Issue全件（18件）とレーン割当
 
@@ -305,6 +306,7 @@
 - 2026-03-14再同期（rerun-9）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - 2026-03-14再同期（rerun-10）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - 2026-03-14再同期（rerun-12, Stream F）: Phase 1 Read（A/B/C完了報告・Decision Queue・件数再読）→Phase 2 Plan（Active表/Queue/次アクション/件数を同期項目として宣言）→Phase 3 Execute（共有3ファイル単一変更セット同期）→Phase 4 Verify（validator/unittest/rg 成功）を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を再確認。
+- 2026-03-14再同期（rerun-13, Stream F）: Phase 1 Read Sync（3共有ファイル再読）→Phase 2 Plan（件数/状態/Decision Queue/次アクション同期対象を固定）→Phase 3 Execute（単一変更セット同期）→Phase 4 Verify（validator/unittest/rg 成功）→Phase 5 Proceed（再開判定チェックリスト更新）を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・停止条件違反0件を再確認。
 
 ### Phase 5: Proceed（2026-03-13 rerun-3）
 
@@ -312,6 +314,7 @@
 - Next actions は「Ready 1件の運用点検 + Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
 - Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
 - Stream F Phase 5 Proceed（rerun-12）: 再開判定チェックリストを更新し、他レーン公開値を「Queue Ready=1/Open=2 / 次アクション=Ready監査1件+Open期限管理2件 / 停止条件違反0件」で固定した。
+- Stream F Phase 5 Proceed（rerun-13）: 再開判定チェックリストを再更新し、公開値を「Queue Ready=1/Open=2 / 次アクション=Ready監査1件+Open期限管理2件 / 停止条件違反0件 / 未承認決定混入なし」で維持した。
 
 ## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-14）
 

@@ -286,6 +286,8 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 4 Publish（2026-03-14 rerun-11）: human_judgementメタプロンプト再適用で Decision Queue 3件をGate再判定（暫定）し、rerun-12で最終状態を `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` に再同期。
 - Stream F Phase 3 Verify追補（2026-03-14 rerun-12）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md` を再実行し、Queue表示の同期を確認。
 - Stream F Phase 5 Proceed（2026-03-14 rerun-12）: 再開判定チェックリストを更新し、他レーン公開値（Ready=1/Open=2、次アクション=Ready監査1件+Open期限管理2件、停止条件違反0件）を共有。
+- Stream F Phase 3 Verify追補（2026-03-14 rerun-13）: Phase 1 Read Sync→Phase 2 Plan→Phase 3 Execute（単一変更セット）後に `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数43・Queue Ready=1/Open=2・再開判定1行の整合を確認。
+- Stream F Phase 5 Proceed（2026-03-14 rerun-13）: 再開判定チェックリストを更新し、公開値（Ready=1/Open=2、次アクション=Ready監査1件+Open期限管理2件、停止条件違反0件、未承認決定混入なし）を共有。
 
 ## Rules
 
