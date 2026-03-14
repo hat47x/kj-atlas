@@ -152,11 +152,11 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 ## 8. Phase 5 Gate判定（A2開始条件）
 
 - チェックリスト（全項目必須）:
-  - [ ] Single Reference（SSOT）が本書のみである。
-  - [ ] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
-  - [ ] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が維持されている。
-  - [ ] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が維持されている。
-  - [ ] A2/A3文書に「契約本文を変更しない」ルールが明記されている。
+  - [x] Single Reference（SSOT）が本書のみである。
+  - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
+  - [x] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が維持されている。
+  - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が維持されている。
+  - [x] A2/A3文書に「契約本文を変更しない」ルールが明記されている。
 - Gate判定:
   - Ready: 全項目達成かつ未定義契約変更要求0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
