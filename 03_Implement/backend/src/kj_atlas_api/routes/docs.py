@@ -33,6 +33,8 @@ from kj_atlas_api.models import (
     DocumentRow,
     MergeDecisionLogRow,
     MergeDecisionRecord,
+    PolygonHandoffContractVerificationRequest,
+    PolygonHandoffContractVerificationResponse,
     SimilarCandidateGroup,
     SimilarCandidateScoreSummary,
 )
@@ -439,3 +441,46 @@ def get_similar_candidate_groups(
 
     document = document_payload_adapter.validate_python(json.loads(doc_row.payload_json))
     return _build_similar_candidate_groups(document, payload_json=doc_row.payload_json)
+
+
+@router.post("/{doc_id}/polygon-handoff/verify-contract", response_model=PolygonHandoffContractVerificationResponse)
+def verify_polygon_handoff_contract(
+    doc_id: str,
+    payload: PolygonHandoffContractVerificationRequest,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> PolygonHandoffContractVerificationResponse:
+    _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=doc_id,
+        safe_mode=True,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+
+    if db.get(DocumentRow, doc_id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    expected_output = payload.expectedOutput
+    failure_reasons: list[str] = []
+    if expected_output.paddingViolationCount > 0:
+        failure_reasons.append("paddingViolationCount>0")
+    if expected_output.tieBreakOrderChanged:
+        failure_reasons.append("tieBreakOrderChanged=true")
+
+    status: str = "ok"
+    if failure_reasons:
+        status = "rollback_required"
+
+    verification_key = sha256(
+        f"{payload.input.inputHash}:{expected_output.outputPolygonHash}".encode("utf-8")
+    ).hexdigest()
+
+    return PolygonHandoffContractVerificationResponse(
+        status=status,
+        rollbackRequired=bool(failure_reasons),
+        failureReasons=failure_reasons,
+        verificationKey=verification_key,
+    )
