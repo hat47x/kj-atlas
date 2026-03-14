@@ -167,3 +167,32 @@
   - A2/A3 は契約本文変更を提案せず、必要時は統合フェーズへ人間エスカレーションする。
   - **A2/A3は契約変更禁止**。
 
+
+## 14) Decision Queue整理（Stream A view）
+
+| QueueID | Topic | Status | Decision | Proceed Impact |
+|---|---|---|---|---|
+| DQ-FB-P2C-01-001 | deterministicTieBreakOrder固定 | Closed | `padding>self_intersection>area_delta>vertex_count` | A2可 |
+| DQ-FB-P2C-01-002 | Gate 0 承認証跡 | Closed | Approved（A1記録済み） | A3可 |
+| DQ-FB-P2C-01-003 | 契約変更ルーティング | Closed | A1差し戻しのみ | A2/A3可 |
+
+## 15) Mock引き渡し仕様（実装不要）
+
+- Stub response（検証専用）:
+  - `PolygonAutoFitStub.v1`
+    - `input`: `islandId`, `targetCardIds[]`, `padding`, `seed`
+    - `output`: `polygon`, `vertexCount`, `areaDelta`, `appliedTieBreakOrder`
+    - `appliedTieBreakOrder` は `padding>self_intersection>area_delta>vertex_count` 固定
+- Fixture schema:
+  - `fixtures/fb_p2c_01/polygon_autofit_case01.json`
+  - `fixtures/fb_p2c_01/polygon_autofit_case_tie.json`
+- Validation:
+  - 同一入力で同一 `polygon` が再現できない場合はBlock。
+  - tie-break順序が不一致の場合はBlock。
+
+## 16) Proceed判定（A2/A3）
+
+- 可否: **可**
+- 根拠: Gate 0承認済み、tie-break順序と契約差し戻し経路を固定済み。
+- 残リスク: 幾何演算の丸め差異による境界値ブレ。A2 fixtureに許容誤差定義を追加して統制。
+

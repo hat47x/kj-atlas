@@ -140,3 +140,19 @@
 - 固定条件: 4値制約と契約ID不変。
 - 既知リスク: action enum拡張要求による互換破壊。
 - 回帰観点: restore順序再現、enum外action除外。
+
+
+## Decision Queue整理（Stream A view）
+
+| QueueID | Topic | Status | Decision | Proceed Impact |
+|---|---|---|---|---|
+| DQ-FB-P2B-02-001 | ContractID固定 (`CTR-2B-02-MANUAL-MERGE-V1`) | Closed | A1で固定 | A2可 |
+| DQ-FB-P2B-02-002 | 手動承認境界（auto-merge禁止） | Closed | 契約に明記して禁止 | A3可 |
+| DQ-FB-P2B-02-003 | 競合解消の停止条件 | Closed | 未定義競合は即停止 | A2/A3可 |
+
+## Proceed判定（A2/A3）
+
+- 可否: **可**
+- 根拠: 契約IDとmanual merge境界が固定、Decision Queue残件なし。
+- 残リスク: 競合種類の分類粒度差。分類追加要求はA1差し戻しで統制。
+
