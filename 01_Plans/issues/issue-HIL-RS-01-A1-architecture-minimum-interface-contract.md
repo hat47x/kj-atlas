@@ -212,6 +212,31 @@
 - 変更凍結宣言:
   - A1契約本文は凍結済みとし、変更は統合フェーズの人間判断でのみ実施する。
 
+
+## 0.7) Stream A Phase 1-3 再点検（2026-03-14）
+
+### Phase 1: Read Gate同期
+
+- 対象再Read: `HIL-RS-01` / `HIL-RS-01-A1` / `project-progress-dashboard.md` / `issues/README.md`。
+- 依存確認: `A1→A2→A3` の直列依存に変更なし。
+- Queue確認: `DQ-HIL-EXEC-01=Ready`、`DQ-FB-P2C-01=Open`、`DQ-OPS-SOURCE-01=Open`。
+- 停止条件違反: 0件（依存不整合・完了報告欠落・未定義競合なし）。
+
+### Phase 2: A1契約確定レビュー
+
+- Context: A1は既存 `ADR-0026` D2の下位具体化。
+- Decision: ADR追加/更新は不要を維持。
+- Consequences: 契約変更要求が発生した場合は Context/Decision/Consequences 起票と承認完了までA2/A3停止。
+
+### Phase 3: DQ処理入力（A1視点）
+
+- `DQ-HIL-EXEC-01`（Ready）:
+  - 再開判定テンプレ `contractLinkLocked/sharedResourceFreeze/validatorPass` の運用点検を完了。
+- `DQ-FB-P2C-01`（Open）:
+  - 未確定I/Fを `A2開始Ready判定時点` と `A3 Proceed条件（QA3件）` に限定。
+- `DQ-OPS-SOURCE-01`（Open）:
+  - 未確定I/Fを `N/A→URL移行トリガー` と `切替時RACI-I最小ログ項目` に限定。
+
 ## 1) 課題 / Problem statement
 
 - HIL-RS-01の実行順でA1契約が未固定だと、A2（Frontend実装）とA3（Documentation同期）が同一論点を重複解釈して競合する。
