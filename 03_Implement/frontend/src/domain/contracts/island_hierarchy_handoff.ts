@@ -55,6 +55,12 @@ export function toIslandHierarchyValidationLog(
 export function evaluateIslandHierarchyA3GoNoGo(logs: IslandHierarchyValidationLog[]): { go: boolean; reason: string } {
   const byCase = new Map<IslandHierarchyMockCaseId, IslandHierarchyValidationLog>();
   for (const log of logs) {
+    if (byCase.has(log.mockCaseId)) {
+      return { go: false, reason: `duplicate mock case: ${log.mockCaseId}` };
+    }
+    if (log.contractVersion !== "IslandHierarchyContractV1") {
+      return { go: false, reason: `contract version mismatch: ${log.contractVersion}` };
+    }
     byCase.set(log.mockCaseId, log);
   }
 
