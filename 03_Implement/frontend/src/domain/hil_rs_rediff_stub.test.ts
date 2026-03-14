@@ -43,7 +43,7 @@ describe("buildHilRsRediffStub", () => {
 
     expect(payload).not.toBeNull();
     expect(payload?.traceKey).toContain("card:c1:2");
-    expect(payload?.diffOps.map((op) => op.opType).sort()).toEqual(["add", "move", "remove"]);
+    expect(payload?.diffOps.map((op) => op.opType)).toEqual(["add", "move", "remove"]);
   });
 
 
@@ -86,6 +86,35 @@ describe("buildHilRsRediffStub", () => {
 
     expect(payload).not.toBeNull();
     expect(payload?.traceKey).toBe("trace:card:c1:2+island:i1:2");
+  });
+
+
+  it("keeps deterministic diff op ordering regardless of suggested card order", () => {
+    const suggested: DocumentV2 = {
+      ...CURRENT_DOC,
+      cards: [
+        { id: "c3", text: "gamma", x: 20, y: 20 },
+        { id: "c1", text: "alpha", x: 2, y: 3 },
+      ],
+    };
+
+    const payload = buildHilRsRediffStub(CURRENT_DOC, suggested, {
+      suggestionId: "proposal-ordered",
+      iteration: 2,
+      critiqueInputs: [
+        {
+          schemaVersion: "1.0.0",
+          critiqueId: "card:c1:2",
+          targetRef: "card:c1",
+          critiqueType: "too_close",
+          createdAt: "2026-03-11T00:00:00.000Z",
+          iteration: 2,
+        },
+      ],
+    });
+
+    expect(payload).not.toBeNull();
+    expect(payload?.diffOps.map((op) => op.opId)).toEqual(["op:add:c3", "op:move:c1", "op:remove:c2"]);
   });
 
 
