@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-01-A1 Similar-card候補提示 / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open
+- Status: Ready (A1 Contract Fixed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream C
@@ -47,6 +47,11 @@
 
 ## 固定契約（A1成果物）
 
+- ContractFreeze:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+
 - `SimilarCandidateGroup`:
   - `groupId: string`
   - `targetCardId: string`
@@ -76,6 +81,17 @@
   - [x] 非自動確定（実装禁止）が保持されている。
 - Proceed:
   - A2は本契約IDのみに依存してmock検証へ進む。
+
+## Handoff（A2/A3参照専用）
+
+- Fixed links:
+  - `issue-FB-P2B-01-a2-mock-validation.md`
+  - `issue-FB-P2B-01-a3-implementation.md`
+- 変更禁止項目:
+  - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
+  - `SimilarCandidateGroup` / `CandidateListViewModel` のフィールド定義
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- 逸脱要求はA1へ差し戻し。
 
 ## Validation plan
 

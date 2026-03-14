@@ -100,6 +100,12 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - 単一参照先の複線化
   - `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` の更新
 
+## 3) Non-goals（固定）
+
+- `03_Implement/**` の実装変更は実施しない。
+- `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` は更新しない。
+- A2/A3で契約変更を行わない。
+
 ## 3) Fail-safe
 
 - Self-Correctionは最大3回まで。

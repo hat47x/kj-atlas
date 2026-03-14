@@ -22,6 +22,11 @@
 
 ## Contract definition（A1成果物）
 
+- ContractFreeze:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+
 - InterfaceName: `IslandVisibilityContractV1`
 - ContractLinks:
   - Upstream: `ADR-0007 FB-P2A-02`
@@ -47,9 +52,9 @@
 
 ## Acceptance criteria
 
-- [ ] Required fields / Invariants / ContractLinksが固定される。
-- [ ] A2/A3は本契約の参照のみで進行可能。
-- [ ] SafeMode既定やshare/export既定挙動を変更しない。
+- [x] Required fields / Invariants / ContractLinksが固定される。
+- [x] A2/A3は本契約の参照のみで進行可能。
+- [x] SafeMode既定やshare/export既定挙動を変更しない。
 
 ## Execution protocol（Plan→Execute→Verify→Proceed）
 
@@ -91,6 +96,17 @@
   - `issue-FB-P2A-02-a3-implementation.md`
 - Rule:
   - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
+
+## Handoff（A2/A3参照専用）
+
+- Fixed links:
+  - `issue-FB-P2A-02-a2-mock-validation.md`
+  - `issue-FB-P2A-02-a3-implementation.md`
+- 変更禁止項目:
+  - `InterfaceName=IslandVisibilityContractV1`
+  - Required fields / Invariants / ContractLinks
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- 逸脱要求はA1へ差し戻し。
 
 ## Validation plan
 
