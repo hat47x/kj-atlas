@@ -123,7 +123,7 @@ import {
 } from "./domain/view/collapse_visibility";
 import { setAllIslandsCollapsed, setIslandCollapsed } from "./domain/view/collapse_state";
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
-import { createHilRsStubClient } from "./domain/hil_rs_stub_client";
+import { createHilRsClient } from "./domain/hil_rs_client";
 import { HilRsRediffPreview } from "./ui/HilRsRediffPreview";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
@@ -7777,7 +7777,7 @@ ${parsedDocument.error}`);
     />
   );
 
-  const hilRsStubClient = useMemo(() => createHilRsStubClient(), []);
+  const hilRsStubClient = useMemo(() => createHilRsClient(), []);
 
   const hilRsCritiqueInputs = useMemo(() => {
     if (!document) {
