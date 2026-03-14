@@ -63,7 +63,8 @@
 > 想定との差分を検知した場合は即停止し、
 > 1) 失敗再現手順
 > 2) 競合ファイル
-> 3) 必要な承認者と判断事項
+> 3) 必要な承認者
+> 4) 解決のYes/No質問
 > を提出する。
 
 ### Phase 2: ADR要否判定（Context / Decision / Consequences）
@@ -153,6 +154,13 @@
   - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
   - SSOT複線化（契約参照先が2件以上）。
   - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
+
+## 11) Fail-safe stop report template（固定）
+
+1) 失敗再現手順
+2) 競合ファイル
+3) 必要承認者
+4) 解決のYes/No質問
 
 - 未決裁項目（Pending approvals）:
   - なし（A1範囲で新規ADRは不要判定を維持）。
