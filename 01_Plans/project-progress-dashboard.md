@@ -268,11 +268,11 @@
 ## 次の1手
 
 1. `DQ-HIL-EXEC-01` は Ready 維持とし、A2/A3運用テンプレ逸脱を監査する。
-2. `DQ-FB-P2C-01` は Ready（Gate 0承認Yes反映済み）としてA2開始ログとQA3件ログを監査し、A3 Proceed判定の根拠を蓄積する。
-3. `DQ-OPS-SOURCE-01` は Ready（AI決定済み）として `Source Issue: N/A` 継続方針を維持し、外部連携時のみ再判定する。
-4. Stream D rerun-10 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=3/Open=0 の一致を次回同期開始条件に固定する。
+2. `DQ-FB-P2C-01` は Open（Approved運用）としてA2開始ログとQA3件ログを監査し、A3 Proceed判定の根拠を蓄積する。
+3. `DQ-OPS-SOURCE-01` は Open（閉域運用方針）として `Source Issue: N/A` 継続方針を維持し、外部連携時のみ再判定する。
+4. Stream D rerun-10 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=1/Open=2 の一致を次回同期開始条件に固定する。
 
-再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / 人間承認待ちQueue=0件（3ThemeはReady運用） / 停止条件違反なし。
+再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。
 
 ## Stream D 実行ログ（2026-03-13, Phase 1-4）
 
