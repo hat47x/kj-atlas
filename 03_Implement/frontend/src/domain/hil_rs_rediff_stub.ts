@@ -8,9 +8,29 @@ type BuildHilRsRediffStubOptions = {
   critiqueInputs: readonly HilRsCritiqueInput[];
 };
 
+const DIFF_OP_ORDER: Record<HilRsRediffPayload["diffOps"][number]["opType"], number> = {
+  add: 0,
+  move: 1,
+  remove: 2,
+  regroup: 3,
+  relabel: 4,
+};
+
 function buildTraceKey(critiqueInputs: readonly HilRsCritiqueInput[]): string {
   const canonicalCritiqueIds = [...new Set(critiqueInputs.map((input) => input.critiqueId))].sort();
   return `trace:${canonicalCritiqueIds.join("+")}`;
+}
+
+function sortDiffOpsDeterministically(diffOps: HilRsRediffPayload["diffOps"]): HilRsRediffPayload["diffOps"] {
+  return [...diffOps].sort((left, right) => {
+    const byType = DIFF_OP_ORDER[left.opType] - DIFF_OP_ORDER[right.opType];
+    if (byType !== 0) return byType;
+
+    const byTarget = left.targetRef.localeCompare(right.targetRef);
+    if (byTarget !== 0) return byTarget;
+
+    return left.opId.localeCompare(right.opId);
+  });
 }
 
 export function buildHilRsRediffStub(
@@ -81,7 +101,7 @@ export function buildHilRsRediffStub(
     proposalId: options.suggestionId,
     basedOnIteration: options.iteration,
     traceKey: buildTraceKey(options.critiqueInputs),
-    diffOps,
+    diffOps: sortDiffOpsDeterministically(diffOps),
   };
 
   return validateHilRsRediffPayload(candidate) ? candidate : null;
