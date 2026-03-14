@@ -290,6 +290,9 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F Phase 5 Proceed（2026-03-14 rerun-13）: 再開判定チェックリストを更新し、公開値（Ready=1/Open=2、次アクション=Ready監査1件+Open期限管理2件、停止条件違反0件、未承認決定混入なし）を共有。
 - Stream H Phase 1-4 最終同期（2026-03-14）: A〜G完了報告・Queue状態・依存順をRead同期し、共有3ファイルで Active=2 / Done=25 / 件数43 / Decision Queue Ready=1/Open=2 を再反映。
 - Stream H Phase 3 Verify（2026-03-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数・Queue・再開判定1行の一致を確認。
+- Stream E Phase 1 Read同期（2026-03-14 final）: Stream A/B/C/D完了報告受領、依存順 `A1→A2→A3`、Decision Queue（Ready=1/Open=2）、shared resource以外の未マージ差分なしを再確認。
+- Stream E Phase 2-3 統合/実行（2026-03-14 final）: shared resource 3ファイルのみを単一変更セットで更新し、件数43・Active2・Done25・Queue Ready=1/Open=2・次アクション（Ready監査1件 + Open期限管理2件）を同期。
+- Stream E Phase 4-5 Verify/Proceed（2026-03-14 final）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` 成功を確認し、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を公開ログ化。
 
 ## Rules
 

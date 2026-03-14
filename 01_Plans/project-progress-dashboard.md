@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream H final shared-resource sync)
+最終更新: 2026-03-14 (JST, Stream E final shared-resource sync)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -14,6 +14,7 @@
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
 - Stream F Phase 1-4最終同期（rerun-12）で3共有ファイルを再読し、件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行の一致を再確認した。
 - Stream F Phase 1-5再同期（rerun-13）で起動条件（A〜E完了報告受領 / A1→A2→A3依存整合 / shared resource freeze解除）を再確認し、3共有ファイル単一変更セット同期後に Verify（validator/unittest/rg）成功を記録した。
+- Stream E 最終同期（final）で起動条件（Stream A/B/C/D完了報告受領 / shared resource以外の未マージ差分なし）を再確認し、3共有ファイルの Active/Done件数・Decision Queue・依存順・再開判定チェックリスト1行を同一値（43 / Active=2 / Done=25 / Ready=1 Open=2 / A1→A2→A3）へ同期した。
 
 ### 未完Issue全件（18件）とレーン割当
 
@@ -505,10 +506,10 @@ Theme-ID: DQ-OPS-SOURCE-01
 人間承認が必要な論点は、最終2案・採否条件・期限・未採用時ロールバックを添えて提出する。
 
 
-## Stream H Final Integrator 実行ログ（2026-03-14, Phase 1-4）
+## Stream E Final Integrator 実行ログ（2026-03-14, Phase 1-5）
 
-- Phase 1 Read同期: Stream A〜G の完了報告、Decision Queue（`DQ-HIL-EXEC-01` Ready / `DQ-FB-P2C-01` Open / `DQ-OPS-SOURCE-01` Open）、依存順 `A1→A2→A3` を再読確認。
-- Phase 2 反映: shared resource 3ファイルで Active/Done/Queue/次の1手を最終同期し、未承認決定の確定扱い・依存順序不一致・共有範囲外編集がないことを確認。
-- Phase 3 件数再監査: issue memo総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上 Active=2 / Done=25、Decision Queue=Ready 1 / Open 2 を再計算。
-- Phase 4 公開: 再開判定チェックリスト1行を固定（未固定箇所=0件 / 依存タスク契約リンク確定 / Decision Queue未解決=2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし）。
-- Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` 成功。
+- Phase 1 Read同期: Stream A/B/C/D 完了報告、Decision Queue（`DQ-HIL-EXEC-01` Ready / `DQ-FB-P2C-01` Open / `DQ-OPS-SOURCE-01` Open）、依存順 `A1→A2→A3`、shared resource以外の未マージ差分なしを再確認。
+- Phase 2 Plan統合: Active/Done件数（Active=2 / Done=25）、issue memo総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、次アクション（Ready監査1件 + Open期限管理2件）を固定。
+- Phase 3 Execute: shared resource 3ファイル（`issues/README.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md`）のみを単一変更セットで同期。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` が成功し、件数・Queue・依存順・再開判定1行の一致を確認。
+- Phase 5 Proceed（公開ログ）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
