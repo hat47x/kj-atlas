@@ -312,3 +312,21 @@
 - 配布固定I/F: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder`
 - Freeze条件: `contractLinkLocked=true`, `sharedResourceFreeze=true`
 - 変更禁止: **A2/A3は契約変更禁止**。
+
+
+## 12) Stream A Critical Path Completion（2026-03-14）
+
+- Completion: `契約/I-F固定` は完了。A2/A3は待ちなしで着手可能。
+- Fixed Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Compatibility lock:
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+- Downstream input contract:
+  - A2: 実装時に上記固定値を読み取り専用で使用する。
+  - A3: 運用文書に上記固定値を転記し、追加解釈を導入しない。
+- Downstream prohibited changes:
+  - 契約本文/契約IDの改変、`schemaVersion` 変更、共有リソース更新。
+- Return conditions:
+  - 契約衝突・不整合を検出した場合は統合フェーズへ差し戻し（人間判断必須）。

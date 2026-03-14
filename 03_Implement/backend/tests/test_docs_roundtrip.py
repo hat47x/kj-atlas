@@ -638,7 +638,7 @@ def test_docs_v2_polygon_geometry_roundtrip_postgres(postgres_client: TestClient
     _assert_v2_polygon_geometry_roundtrip(postgres_client)
 
 
-def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str) -> dict:
+def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref: str = "user:u-1") -> dict:
     return {
         "version": 2,
         "id": doc_id,
@@ -679,7 +679,7 @@ def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str) -> dict:
             "schemaVersion": "1.0.0",
             "reviewState": "human_reviewed",
             "reviewedAt": "2026-02-11T00:02:00Z",
-            "reviewerRef": "user:u-1",
+            "reviewerRef": reviewer_ref,
             "auditRecordedAt": "2026-02-11T00:02:00Z",
         },
     }
@@ -687,9 +687,13 @@ def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str) -> dict:
 
 def _assert_v2_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v2-hil-rs"
-    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id)
+    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:opaque-1")
 
-    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    put_response = client.put(
+        f"/docs/{doc_id}",
+        json=payload,
+        headers={"x-actor-ref": "reviewer:opaque-1"},
+    )
     assert put_response.status_code == 200
     put_json = put_response.json()
     assert put_json["critiqueInputs"][0]["schemaVersion"] == "1.0.0"
@@ -707,3 +711,16 @@ def test_docs_v2_hil_rs_contract_fields_roundtrip_sqlite(sqlite_client: TestClie
 
 def test_docs_v2_hil_rs_contract_fields_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_hil_rs_contract_fields_roundtrip(postgres_client)
+
+
+def test_docs_v2_hil_rs_contract_fields_reject_spoofed_reviewer_sqlite(sqlite_client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-hil-rs-spoofed"
+    payload = _sample_payload_v2_with_hil_rs_contract_fields(doc_id, reviewer_ref="reviewer:other")
+
+    put_response = sqlite_client.put(
+        f"/docs/{doc_id}",
+        json=payload,
+        headers={"x-actor-ref": "reviewer:opaque-1"},
+    )
+    assert put_response.status_code == 403
+    assert put_response.json()["detail"] == "reviewerRef must match authenticated identity"

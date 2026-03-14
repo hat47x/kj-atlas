@@ -195,6 +195,46 @@ export type MergeSuggestion = {
   rationale?: string;
 };
 
+const CANDIDATE_GROUP_CONTRACT_VERSION = "CTR-2B-01-CANDIDATE-GROUP-V1";
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => isNonEmptyString(entry));
+}
+
+function isMergeSuggestion(value: unknown): value is MergeSuggestion {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const suggestion = value as Partial<MergeSuggestion>;
+  const summary = suggestion.scoreSummary;
+  if (!summary || typeof summary !== "object") {
+    return false;
+  }
+
+  return (
+    isNonEmptyString(suggestion.groupId)
+    && isNonEmptyString(suggestion.targetCardId)
+    && isStringArray(suggestion.candidateCardIds)
+    && isFiniteNumber(summary.min)
+    && isFiniteNumber(summary.max)
+    && isFiniteNumber(summary.avg)
+    && isStringArray(suggestion.reasonCodes)
+    && suggestion.snapshotVersion === CANDIDATE_GROUP_CONTRACT_VERSION
+    && isStringArray(suggestion.cardIds)
+    && isNonEmptyString(suggestion.mergedTextDraft)
+    && (suggestion.rationale === undefined || isNonEmptyString(suggestion.rationale))
+  );
+}
+
 export async function suggestMerges(doc: DocumentV2, instruction?: string): Promise<{ suggestions: MergeSuggestion[] }> {
   const response = await fetch(`${API_BASE}/ai/suggest-merges`, {
     method: "POST",
@@ -211,6 +251,10 @@ export async function suggestMerges(doc: DocumentV2, instruction?: string): Prom
   const body = (await response.json()) as { suggestions?: MergeSuggestion[] };
   if (!Array.isArray(body.suggestions)) {
     throw new ApiError(500, "Invalid merge suggestions response");
+  }
+
+  if (!body.suggestions.every((suggestion) => isMergeSuggestion(suggestion))) {
+    throw new ApiError(500, "Invalid merge suggestions contract payload");
   }
 
   return { suggestions: body.suggestions };

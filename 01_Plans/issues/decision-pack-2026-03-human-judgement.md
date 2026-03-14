@@ -183,11 +183,11 @@
 - Phase 2.5（FB-P2C Gate判定）: Gate 0承認Yes反映済みのため `FB-P2C-01-A2` は 再開、`A3` は A2結果同期後にProceed判定とする。
 
 - Phase 1（Read同期）: Stream A/B/C完了報告の存在と決定リンク（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認。
-- Phase 2（相互整合）: Active issue / Decision Queue / 決定ログ / 次の1手を再照合し、`DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をReadyとして更新。重複再掲・未承認決定の確定扱い・未定義競合の混入がないことを確認。
-- Phase 3（件数監査）: issue memo総数43件、Open=8 / Draft=7 / Done系=25、Decision Queue未決=0（Ready=3 / Open=0）、停止条件違反0件を再計算。
-- Phase 4（公開）: 再開判定チェックリストを1行確定（未固定箇所=0件 / 依存タスク契約リンク確定 / Queue未決なし / 停止条件違反なし）。
+- Phase 2（相互整合）: Active issue / Decision Queue / 決定ログ / 次の1手を再照合し、`DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01` をReady、`DQ-FB-P2C-01` をOpenとして更新。重複再掲・未承認決定の確定扱い・未定義競合の混入がないことを確認。
+- Phase 3（件数監査）: issue memo総数43件、Open=8 / Draft=7 / Done系=25、Decision Queue未決=1（Ready=2 / Open=1）、停止条件違反0件を再計算。
+- Phase 4（公開）: 再開判定チェックリストを1行確定（未固定箇所=0件 / 依存タスク契約リンク確定 / Queue未決は`DQ-FB-P2C-01` / 停止条件違反なし）。
 - Phase 5（再同期追記）: 2026-03-14に validator/unittest/rg を再実行し、件数・Decision Queue・再開判定チェックリストの一致を維持。
-- Phase 3 Verify追補（再同期）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-pack の相互整合（件数43、Queue Ready=3/Open=0）を再確認。
+- Phase 3 Verify追補（再同期）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-pack の相互整合（件数43、Queue Ready=2/Open=1）を再確認。
 - Phase 3 Verify追補（rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）維持下で3共有ファイルを再同期し、validator/unittest/rg の成功で件数・Queue・再開判定の一致を再確認。
 
 ### 6-2. Stream D 最終同期メモ（2026-03-11）
@@ -204,10 +204,12 @@
 
 ### 6-5. Stream D Proceed更新（2026-03-13 rerun-3）
 
-- Phase 1-4の再監査結果を維持し、Phase 5で次の1手を `DQ-HIL-EXEC-01`（Ready監査）/ `DQ-FB-P2C-01`（Ready監査）/ `DQ-OPS-SOURCE-01`（Ready監査）へ再同期。
+- Phase 1-4の再監査結果を維持し、Phase 5で次の1手を `DQ-HIL-EXEC-01`（Ready監査）/ `DQ-OPS-SOURCE-01`（Ready監査）/ `DQ-FB-P2C-01`（Open継続）へ再同期。
 - A1→A2→A3依存と停止条件（共有リソース同時更新違反・未承認決定の確定扱い・自己修復3回超過）は変更なし。
 - Verify追補（rerun-3）として validator/unittest/rg 成功ログを反映し、dashboard/README/decision-pack のQueue・件数・再開判定チェックリスト一致を維持。
-- Verify追補（rerun-4）: Stream D専有の共有資源3ファイル同期後に validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=3/Open=0・再開判定1行の一致を確認。
-- Verify追補（rerun-5）: Stream A/B/C完了報告および決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=3/Open=0・再開判定1行の一致を維持。
+- Verify追補（rerun-4）: Stream D専有の共有資源3ファイル同期後に validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=2/Open=1・再開判定1行の一致を確認。
+- Verify追補（rerun-5）: Stream A/B/C完了報告および決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=2/Open=1・再開判定1行の一致を維持。
 
-- Verify追補（rerun-7）: Stream A/B/C完了報告および決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=3/Open=0・再開判定1行の一致を維持。
+- Verify追補（rerun-6）: Stream A/B/C完了報告および決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Verify追補（rerun-7）: Stream A/B/C完了報告および決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Verify追補（rerun-8）: Phase 1 Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を再確認後、共有統合3ファイルを同時更新し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。

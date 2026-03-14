@@ -261,22 +261,24 @@ issue補助メモには、最低でも次の項目を含める。
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
-- Decision Queue: `DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Ready（Ready=3 / Open=0）。
+- Decision Queue: `DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01` は Ready、`DQ-FB-P2C-01` は Open（Ready=2 / Open=1）。
 - 決定済み項目の扱い: `DQ-HIL-A1-01` / `DQ-HIL-A1-02` は `project-progress-dashboard.md` の決定ログ（`DR-HIL-A1-01` / `DR-HIL-A1-02`）へ集約し、Queueから除外済み。
 - 再監査: `validate_active_issue_memos.py` / `unittest` / `rg` による整合チェックを実施し、件数・状態・依存順の不整合0件を再確認。
-- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue: Ready=3/Open=0、A1→A2→A3）を再確認。
+- Stream D再検証（同日追補）: A/B/C完了報告受領済み状態を維持し、共有リソース2点の同期値（27/2/25、Decision Queue: Ready=2/Open=1、A1→A2→A3）を再確認。
 - Stream D Phase 1再確認（2026-03-13）: Stream A/B/C 完了報告受領済み・契約リンク固定済み・共有リソース更新範囲3ファイル固定を再確認。
-- Stream D再同期（2026-03-13）: validator/unittest/rg を再実行し、件数・状態・依存順に加えて Decision Queue（Ready=3 / Open=0）と決定ログ集約済み項目の整合維持を確認。
-- Stream D Phase 2 Proceed（2026-03-13）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue: Ready=3/Open=0 / A1→A2→A3）を更新してクローズ。
-- Stream D Phase 3監査（2026-03-13）: issue memo総数43件（Open=8 / Draft=7 / Done系=25 / In Progress=1 / Blocked=2）を再計算し、Decision Queue未決=0（Ready=3）・停止条件違反0件を確認。
-- Stream D Phase 4公開（2026-03-13）: 再開判定チェックリストを1行確定（未固定箇所=0 / 契約リンク確定 / Queue未決なし / 停止条件違反なし）。
+- Stream D再同期（2026-03-13）: validator/unittest/rg を再実行し、件数・状態・依存順に加えて Decision Queue（Ready=2 / Open=1）と決定ログ集約済み項目の整合維持を確認。
+- Stream D Phase 2 Proceed（2026-03-13）: Stream A/B/C 完了報告受領済みゲートを再確認し、共有リソース同期（Active=2 / Done=25 / Decision Queue: Ready=2/Open=1 / A1→A2→A3）を更新してクローズ。
+- Stream D Phase 3監査（2026-03-13）: issue memo総数43件（Open=8 / Draft=7 / Done系=25 / In Progress=1 / Blocked=2）を再計算し、Decision Queue未決=1（Ready=2）・停止条件違反0件を確認。
+- Stream D Phase 4公開（2026-03-13）: 再開判定チェックリストを1行確定（未固定箇所=0 / 契約リンク確定 / Queue未決は`DQ-FB-P2C-01` / 停止条件違反なし）。
 - Stream D Phase 3 Verify追補（2026-03-13）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、dashboard/README/decision-packの件数・Queue・再開判定の整合維持を確認。
 - Stream D Phase 3 Verify追補（2026-03-13 rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を前提に、3共有ファイル同時同期後の validator/unittest/rg 成功を再確認。
-- Stream D Phase 2 Gate判定（2026-03-14, FB-P2C下流）: Gate 0承認Yesを反映し、`FB-P2C-01-A2` を再開、`A3` はA2結果同期後にProceed判定とした。Decision Queue は `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Ready` / `DQ-OPS-SOURCE-01=Ready` に同期。
-- Stream D Phase 4 Proceed（2026-03-13 rerun-4）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決0件 / 停止条件違反なし）を再確定。
-- Stream D Phase 3 Verify追補（2026-03-13 rerun-5）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=3/Open=0・再開判定1行の一致を維持。
-- Stream D Phase 4 Proceed（2026-03-14 rerun-7）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決0件 / 停止条件違反なし）を再確定し、共有3ファイルの同期をクローズ。
-- Stream D Phase 3 Verify追補（2026-03-14 rerun-7）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=3/Open=0・再開判定1行の一致を維持。
+- Stream D Phase 2 Gate判定（2026-03-13, FB-P2C下流）: Gate 0未承認を再確認し、`FB-P2C-01-A2` / `A3` は Blocked 維持、Decision Queue は `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` に同期。
+- Stream D Phase 4 Proceed（2026-03-13 rerun-4）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を再確定。
+- Stream D Phase 3 Verify追補（2026-03-13 rerun-5）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Stream D Phase 4 Proceed（2026-03-13 rerun-6）: 再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / Queue未決2件 / 停止条件違反なし）を再確定し、共有3ファイルの同期をクローズ。
+- Stream D Phase 3 Verify追補（2026-03-13 rerun-6）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Stream D Phase 3 Verify追補（2026-03-14 rerun-7）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再確認後、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Stream D Phase 4 Publish（2026-03-14 rerun-8）: Plan→Execute→Verify→Proceed を再完了し、共有統合3ファイルを単一コミット対象で同期。未解決Queueは `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の2件を維持、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / 停止条件違反なし）を確定。
 
 ## Rules
 
