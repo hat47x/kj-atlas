@@ -112,6 +112,13 @@
 
 ## Fail-safe
 
+### Stop report template（競合/前提崩れ時）
+
+1) 失敗再現手順
+2) 競合ファイル
+3) 必要承認者
+4) 解決のYes/No質問
+
 - A1契約不整合、またはStream C/D管轄競合検知時は即停止し人間判断依頼。
 
 ## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
