@@ -1,4 +1,5 @@
 import json
+import re
 from hashlib import sha256
 from typing import cast
 
@@ -26,11 +27,14 @@ from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import (
+    Card,
     CandidateListViewModel,
     DocumentPayload,
     DocumentRow,
     MergeDecisionLogRow,
     MergeDecisionRecord,
+    SimilarCandidateGroup,
+    SimilarCandidateScoreSummary,
 )
 
 router = APIRouter(prefix="/docs", tags=["docs"])
@@ -119,6 +123,79 @@ def _compute_etag(payload_json: str) -> str:
 
 def _format_etag(etag: str) -> str:
     return f'"{etag}"'
+
+
+def _normalize_text_for_candidate_key(raw_text: str) -> str:
+    return " ".join(raw_text.casefold().split())
+
+
+def _token_signature(raw_text: str) -> str:
+    normalized = _normalize_text_for_candidate_key(raw_text)
+    if not normalized:
+        return ""
+    tokens = sorted({token for token in re.split(r"[^\w]+", normalized) if token})
+    return "|".join(tokens)
+
+
+def _is_candidate_eligible(card: Card) -> bool:
+    return card.mergedIntoCardId is None and card.canonicalId is None and not card.sources
+
+
+def _build_similar_candidate_groups(document: DocumentPayload, *, payload_json: str) -> CandidateListViewModel:
+    if document.version != 2:
+        return CandidateListViewModel(generatedAt="1970-01-01T00:00:00Z", groups=[], totalGroupCount=0)
+
+    cards = sorted((card for card in document.cards if _is_candidate_eligible(card)), key=lambda card: card.id)
+    grouped_by_normalized_text: dict[str, list[Card]] = {}
+    grouped_by_token_signature: dict[str, list[Card]] = {}
+    for card in cards:
+        normalized_text = _normalize_text_for_candidate_key(card.text)
+        if normalized_text:
+            grouped_by_normalized_text.setdefault(normalized_text, []).append(card)
+        signature = _token_signature(card.text)
+        if signature:
+            grouped_by_token_signature.setdefault(signature, []).append(card)
+
+    groups_by_card_set: dict[tuple[str, ...], SimilarCandidateGroup] = {}
+
+    def register_group(*, reason_code: str, key: str, candidates: list[Card], score: float) -> None:
+        if len(candidates) < 2:
+            return
+        ordered_ids = tuple(card.id for card in sorted(candidates, key=lambda card: card.id))
+        existing_group = groups_by_card_set.get(ordered_ids)
+        if existing_group is not None:
+            if reason_code not in existing_group.reasonCodes:
+                existing_group.reasonCodes.append(reason_code)
+                existing_group.reasonCodes.sort()
+            return
+
+        target_card_id = ordered_ids[0]
+        candidate_card_ids = list(ordered_ids[1:])
+        encoded_key = re.sub(r"[^a-z0-9_-]+", "-", key.casefold()).strip("-") or "unknown"
+        group_id = f"heuristic-{reason_code}-{encoded_key}-{target_card_id}"
+        groups_by_card_set[ordered_ids] = SimilarCandidateGroup(
+            groupId=group_id,
+            targetCardId=target_card_id,
+            candidateCardIds=candidate_card_ids,
+            scoreSummary=SimilarCandidateScoreSummary(min=score, max=score, avg=score),
+            reasonCodes=[reason_code],
+            snapshotVersion=_compute_etag(payload_json)[:12],
+        )
+
+    for normalized_text, grouped_cards in grouped_by_normalized_text.items():
+        register_group(reason_code="normalized_text", key=normalized_text, candidates=grouped_cards, score=1.0)
+    for signature, grouped_cards in grouped_by_token_signature.items():
+        register_group(reason_code="token_signature", key=signature, candidates=grouped_cards, score=0.75)
+
+    ordered_groups = sorted(
+        groups_by_card_set.values(),
+        key=lambda group: (group.targetCardId, group.candidateCardIds, group.groupId),
+    )
+    return CandidateListViewModel(
+        generatedAt=document.updatedAt,
+        groups=ordered_groups,
+        totalGroupCount=len(ordered_groups),
+    )
 
 
 def _parse_if_match(if_match: str) -> set[str]:
@@ -356,11 +433,9 @@ def get_similar_candidate_groups(
 ) -> CandidateListViewModel:
     _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
-    if db.get(DocumentRow, doc_id) is None:
+    doc_row = db.get(DocumentRow, doc_id)
+    if doc_row is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    return CandidateListViewModel(
-        generatedAt="1970-01-01T00:00:00Z",
-        groups=[],
-        totalGroupCount=0,
-    )
+    document = document_payload_adapter.validate_python(json.loads(doc_row.payload_json))
+    return _build_similar_candidate_groups(document, payload_json=doc_row.payload_json)

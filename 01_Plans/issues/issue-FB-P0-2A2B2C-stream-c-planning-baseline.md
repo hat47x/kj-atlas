@@ -70,8 +70,9 @@
   - 既存 endpoint と後方互換を保持する。
 
 ### Verify
-- 現時点の実装着手判定: **Blocked（2C tie-break 明文化待ち）**。
+- 現時点の実装着手判定: **Partially Unblocked（FB-P2B-01 API契約の mock-first 実装は着手可能）**。
 - 契約矛盾検出: **なし**（矛盾発生時は即停止）。
+- 実装反映（Stream G）: `GET /docs/{doc_id}/similar-candidate-groups` を決定論ヒューリスティック（normalized_text / token_signature）で実装し、既存 `status/code/provisioned` 契約への影響がないことを確認。
 
 ### Proceed
 - 実装は保留し、Phase 4 で unit/integration 観点の検証枠のみ先行確定する。
