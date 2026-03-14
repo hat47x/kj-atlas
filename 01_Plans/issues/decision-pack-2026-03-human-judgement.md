@@ -215,3 +215,4 @@
 - Verify追補（rerun-8）: Phase 1 Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を再確認後、共有統合3ファイルを同時更新し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- Verify追補（rerun-11, Stream F）: Phase 1 Read Sync（3共有ファイル再読）→Phase 2 同期反映（件数/状態/依存/判断キュー）→Phase 3 validator/unittest/`rg` 検証→Phase 4 Closeout を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を再確定。

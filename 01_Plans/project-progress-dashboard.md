@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream D final shared-resource sync, rerun-10)
+最終更新: 2026-03-14 (JST, Stream F final shared-resource sync, rerun-11)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -12,6 +12,7 @@
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
 - Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01` と `DQ-OPS-SOURCE-01` をOpenとして管理する（未決=2件）。
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
+- Stream F Phase 1-4最終同期（rerun-11）で3共有ファイルを再読し、件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行の一致を再確認した。
 
 ### 未完Issue全件（18件）とレーン割当
 
