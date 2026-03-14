@@ -121,6 +121,6 @@ describe("buildIslandVisibilityContractPayload", () => {
 
   it("M4: returns fail-fast when target island does not exist", () => {
     const result = buildIslandVisibilityContractPayload({ islands: [{ id: "root", cardIds: ["c-root"] }] }, new Set(["missing"]), "missing");
-    expect(result).toEqual({ ok: false, error: "island.id is required" });
+    expect(result).toEqual({ ok: false, error: "unknown island.id: missing" });
   });
 });
