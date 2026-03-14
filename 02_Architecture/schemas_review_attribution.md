@@ -81,6 +81,25 @@ type ReviewSignatureVerification = {
 };
 ```
 
+
+## HIL-RS-01-A1 contract binding（A1-ATTR-IF）
+
+- SSOT（唯一参照先）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Contract ID（固定）: `A1-ATTR-IF`
+- schemaVersion（固定）: `1.0.0`
+- required fields（固定）:
+  - `reviewState` (`unreviewed | human_reviewed`)
+  - `reviewedAt`
+  - `reviewerRef`（non-empty opaque string）
+  - `auditRecordedAt`
+- overridePolicy（固定）: `human_dual_control_only`
+- prohibited（固定）:
+  - `ai_only_override`
+  - `safemode_relaxation`
+  - `share_export_leakage_relaxation`
+
+> 契約値の変更要求（schemaVersion / required fields / overridePolicy）はA1 issueへ差し戻し、A2/A3で変更しない。
+
 ## Defaults
 - reviewAttributionPolicy.storePII = false
 - reviewAttributionPolicy.exportRedactionMode = "strip-identities"

@@ -145,3 +145,21 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Gate判定:
   - Ready: チェックリストが全て満たされ、未定義契約変更要求が0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
+
+## 7) Phase 5 Gate report（1-page）
+
+
+- 着手可能条件（Ready）:
+  - SSOT が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみで固定。
+  - 固定値一致: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only`。
+  - Freeze flag一致: `contractLinkLocked=true` / `sharedResourceFreeze=true`。
+  - 安全制約維持: SafeMode既定ON、share/export漏えい防止後退禁止、PII生値保存禁止。
+
+- 停止条件（Block）:
+  - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
+  - SSOT複線化（契約参照先が2件以上）。
+  - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
+
+- 未決裁項目（Pending approvals）:
+  - なし（A1範囲で新規ADRは不要判定を維持）。
+  - ただし上位方針変更を伴う契約変更要求が発生した場合のみ、A1差し戻し + 人間承認完了まで停止。
