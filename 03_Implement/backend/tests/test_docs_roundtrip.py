@@ -428,6 +428,26 @@ def _assert_merge_decision_logs_contract_validation(client: TestClient) -> None:
     assert duplicate_response.status_code == 409
 
 
+
+
+def _assert_similar_candidate_groups_contract_default(client: TestClient) -> None:
+    doc_id = "doc-similar-candidate-groups"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+
+    response = client.get(f"/docs/{doc_id}/similar-candidate-groups")
+    assert response.status_code == 200
+    response_json = response.json()
+    assert response_json["groups"] == []
+    assert response_json["totalGroupCount"] == 0
+
+
+def _assert_similar_candidate_groups_missing_doc(client: TestClient) -> None:
+    response = client.get("/docs/not-found/similar-candidate-groups")
+    assert response.status_code == 404
+
 def _assert_v2_relation_summary_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v2-relations"
     payload = _sample_payload_v2_with_relation_summaries(doc_id)
@@ -610,6 +630,25 @@ def test_docs_merge_decision_logs_contract_roundtrip_postgres(postgres_client: T
 
 def test_docs_merge_decision_logs_contract_validation_postgres(postgres_client: TestClient) -> None:
     _assert_merge_decision_logs_contract_validation(postgres_client)
+
+
+
+def test_docs_similar_candidate_groups_contract_default_sqlite(sqlite_client: TestClient) -> None:
+    _assert_similar_candidate_groups_contract_default(sqlite_client)
+
+
+def test_docs_similar_candidate_groups_missing_doc_sqlite(sqlite_client: TestClient) -> None:
+    _assert_similar_candidate_groups_missing_doc(sqlite_client)
+
+
+@pytest.mark.postgres
+def test_docs_similar_candidate_groups_contract_default_postgres(postgres_client: TestClient) -> None:
+    _assert_similar_candidate_groups_contract_default(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_similar_candidate_groups_missing_doc_postgres(postgres_client: TestClient) -> None:
+    _assert_similar_candidate_groups_missing_doc(postgres_client)
 
 def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_relation_summary_roundtrip(sqlite_client)

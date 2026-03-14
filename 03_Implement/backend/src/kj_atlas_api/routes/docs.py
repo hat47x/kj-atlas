@@ -25,7 +25,13 @@ from kj_atlas_api.audit import build_event
 from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
-from kj_atlas_api.models import DocumentPayload, DocumentRow, MergeDecisionLogRow, MergeDecisionRecord
+from kj_atlas_api.models import (
+    CandidateListViewModel,
+    DocumentPayload,
+    DocumentRow,
+    MergeDecisionLogRow,
+    MergeDecisionRecord,
+)
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -339,3 +345,22 @@ def restore_merge_decision_logs(
         .order_by(MergeDecisionLogRow.id.asc())
     ).all()
     return [MergeDecisionRecord.model_validate(json.loads(row.payload_json)) for row in rows]
+
+
+@router.get("/{doc_id}/similar-candidate-groups", response_model=CandidateListViewModel)
+def get_similar_candidate_groups(
+    doc_id: str,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> CandidateListViewModel:
+    _authorize_request(request, db, action="read", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+
+    if db.get(DocumentRow, doc_id) is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return CandidateListViewModel(
+        generatedAt="1970-01-01T00:00:00Z",
+        groups=[],
+        totalGroupCount=0,
+    )
