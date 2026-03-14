@@ -6,10 +6,10 @@ const TIE_BREAK_EPSILON = 1e-6;
 
 export const POLYGON_TIE_BREAK_SCHEMA_VERSION = "1.0.0" as const;
 export const POLYGON_TIE_BREAK_ORDER = [
-  "paddingViolationCount",
-  "selfIntersection",
-  "areaDeltaAbs",
-  "vertexCount",
+  "padding_compliance",
+  "self_intersection_avoidance",
+  "minimum_area_delta",
+  "minimum_vertex_count",
 ] as const;
 
 type PolygonCandidate = {

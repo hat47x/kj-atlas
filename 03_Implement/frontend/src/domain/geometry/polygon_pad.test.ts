@@ -69,10 +69,10 @@ describe("padPolygonFromCentroid", () => {
   it("publishes fixed tie-break contract metadata", () => {
     expect(POLYGON_TIE_BREAK_SCHEMA_VERSION).toBe("1.0.0");
     expect(POLYGON_TIE_BREAK_ORDER).toEqual([
-      "paddingViolationCount",
-      "selfIntersection",
-      "areaDeltaAbs",
-      "vertexCount",
+      "padding_compliance",
+      "self_intersection_avoidance",
+      "minimum_area_delta",
+      "minimum_vertex_count",
     ]);
   });
 
