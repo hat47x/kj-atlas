@@ -1,0 +1,118 @@
+import { describe, expect, it, vi } from "vitest";
+
+import { createHilRsClient } from "./hil_rs_client";
+import type { DocumentV2 } from "./types";
+
+const BASE_DOCUMENT: DocumentV2 = {
+  schemaVersion: "2.0",
+  cards: [
+    {
+      id: "c1",
+      text: "card",
+      x: 0,
+      y: 0,
+      critique: "",
+      critiqueTags: [],
+      links: [],
+      evidenceRefs: [],
+      textReviewed: false,
+      claimType: "fact",
+      sourceCardId: null,
+      relationTypeToSource: null,
+    },
+  ],
+  islands: [],
+  edges: [],
+  view: { viewport: { x: 0, y: 0, zoom: 1 }, basisId: null },
+};
+
+describe("hil_rs_client", () => {
+  it("uses the stub output when provider is not specified", () => {
+    const client = createHilRsClient();
+    const critiqueInputs = client.collectCritiqueInputs({
+      document: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], critique: "too close", critiqueTags: ["too_close"] }],
+      },
+      iteration: 1,
+      createdAt: "2026-03-14T00:00:00.000Z",
+    });
+
+    const payload = client.previewRediff({
+      currentDocument: BASE_DOCUMENT,
+      suggestedDocument: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], x: 10 }],
+      },
+      suggestionId: "s1",
+      iteration: 1,
+      critiqueInputs,
+    });
+
+    expect(payload).not.toBeNull();
+    expect(payload?.proposalId).toBe("s1");
+  });
+
+  it("uses provider payload when it satisfies A1-REDIFF-IF validation", () => {
+    const provider = {
+      proposeReDiff: vi.fn().mockImplementation((input) => ({ ...input, proposalId: `${input.proposalId}-provider` })),
+    };
+
+    const client = createHilRsClient({ rediffProvider: provider });
+
+    const critiqueInputs = client.collectCritiqueInputs({
+      document: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], critique: "too close", critiqueTags: ["too_close"] }],
+      },
+      iteration: 1,
+      createdAt: "2026-03-14T00:00:00.000Z",
+    });
+
+    const payload = client.previewRediff({
+      currentDocument: BASE_DOCUMENT,
+      suggestedDocument: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], x: 10 }],
+      },
+      suggestionId: "s1",
+      iteration: 1,
+      critiqueInputs,
+    });
+
+    expect(provider.proposeReDiff).toHaveBeenCalledTimes(1);
+    expect(payload?.proposalId).toBe("s1-provider");
+  });
+
+  it("falls back to stub payload when provider returns an invalid payload", () => {
+    const provider = {
+      proposeReDiff: vi.fn().mockReturnValue({ proposalId: "", basedOnIteration: 1, diffOps: [], traceKey: "" }),
+    };
+
+    const client = createHilRsClient({ rediffProvider: provider });
+
+    const critiqueInputs = client.collectCritiqueInputs({
+      document: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], critique: "too close", critiqueTags: ["too_close"] }],
+      },
+      iteration: 1,
+      createdAt: "2026-03-14T00:00:00.000Z",
+    });
+
+    const payload = client.previewRediff({
+      currentDocument: BASE_DOCUMENT,
+      suggestedDocument: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], x: 10 }],
+      },
+      suggestionId: "s1",
+      iteration: 1,
+      critiqueInputs,
+    });
+
+    expect(provider.proposeReDiff).toHaveBeenCalledTimes(1);
+    expect(payload).not.toBeNull();
+    expect(payload?.proposalId).toBe("s1");
+  });
+});
