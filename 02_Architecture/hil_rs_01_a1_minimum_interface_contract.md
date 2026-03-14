@@ -136,3 +136,14 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - SafeMode / share-exportの安全制約を後退させること
 - エスカレーション規定:
   - 契約変更要求は必ずA1へ差し戻し。A2/A3で改訂しない。
+
+
+## 7. Contract change request routing（固定）
+
+- 差し戻し先（唯一）:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 受付対象:
+  - 契約ID / schemaVersion / requiredFields / overridePolicy / tie-break順序の変更要求
+- A2/A3での禁止:
+  - 本契約書の直接改訂
+  - 単一参照先（SSOT）の複線化

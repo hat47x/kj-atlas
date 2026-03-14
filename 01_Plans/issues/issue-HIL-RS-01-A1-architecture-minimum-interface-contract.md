@@ -106,7 +106,18 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` は更新しない。
 - A2/A3で契約変更を行わない。
 
-## 3) Fail-safe
+
+## 4) Contract change request routing（固定）
+
+- 差し戻し先（唯一）:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 受付対象:
+  - 契約ID / schemaVersion / requiredFields / overridePolicy / tie-break順序の変更要求
+- A2/A3での禁止:
+  - 契約本文の直接改訂
+  - SSOT（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）の複線化
+
+## 5) Fail-safe
 
 - Self-Correctionは最大3回まで。
 - 3回超過 / 前提崩壊 / 未定義競合を検知した場合は即停止し、
