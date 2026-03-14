@@ -23,7 +23,7 @@
 
 ## 3) 解決方針 / Proposed solution
 
-- A1で契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）と単一参照先を固定する。
+- A1で契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）と単一参照先（Single Source of Truth）を固定する。
 - A2/A3は参照専用で着手し、契約変更要求はA1へ差し戻す。
 - 共有リソース（`issues/README.md` / `project-progress-dashboard.md`）更新は統合フェーズへ分離する。
 
@@ -51,7 +51,7 @@
 - Execute:
   - `issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `hil_rs_01_a1_minimum_interface_contract.md` を再Read。
 - Verify（事実のみ）:
-  - 契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`。
+  - 契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`。
   - schemaVersion固定値: `1.0.0`（Critique / Attribution / TieBreak）。
   - 単一参照先: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
   - 禁止事項: SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止。
