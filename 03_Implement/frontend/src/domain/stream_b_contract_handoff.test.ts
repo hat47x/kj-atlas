@@ -101,6 +101,24 @@ describe("stream_b_contract_handoff", () => {
     expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({ go: true, reason: "go" });
   });
 
+
+  it("returns NoGo when contract version is not locked", () => {
+    const logs = [
+      {
+        contractVersion: "CTR-2B-99-UNKNOWN",
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "invalid contract",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
+      go: false,
+      reason: "invalid contract version: CTR-2B-99-UNKNOWN",
+    });
+  });
   it("returns NoGo when mock cases contain duplicates", () => {
     const duplicate = {
       contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
