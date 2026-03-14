@@ -521,6 +521,18 @@ class PolygonHandoffContractVerificationResponse(BaseModel):
     failureReasons: list[str] = Field(default_factory=list)
     verificationKey: str
 
+    @model_validator(mode="after")
+    def ensure_status_consistency(self) -> "PolygonHandoffContractVerificationResponse":
+        expected_rollback = self.status == "rollback_required"
+        has_failures = len(self.failureReasons) > 0
+
+        if self.rollbackRequired != expected_rollback:
+            raise ValueError("rollbackRequired must match status")
+        if has_failures != expected_rollback:
+            raise ValueError("failureReasons must be non-empty iff status is rollback_required")
+
+        return self
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
