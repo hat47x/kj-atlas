@@ -7,6 +7,7 @@ import {
   generateNarrative,
   getDocument,
   putDocument,
+  suggestMerges,
   suggestIslandSummary,
   summarizeIslandRelation,
   suggestLayout,
@@ -2203,7 +2204,24 @@ export default function App() {
     setStatusMessage("Collecting merge candidates...");
 
     try {
-      const result = { suggestions: collectMergeCandidates(document) };
+      const remoteInstruction = mergeSuggestionInstruction.trim() || undefined;
+      const localFallback = () => ({ suggestions: collectMergeCandidates(document) });
+
+      let result: { suggestions: MergeSuggestion[] };
+      try {
+        result = await suggestMerges(document, remoteInstruction);
+      } catch (error) {
+        const isApiUnavailable =
+          error instanceof ApiError && (error.status === 404 || error.status === 405 || error.status === 501);
+        const isNetworkUnavailable = error instanceof TypeError;
+
+        if (!isApiUnavailable && !isNetworkUnavailable) {
+          throw error;
+        }
+
+        result = localFallback();
+      }
+
       const latestDecisionByGroup = getLatestMergeSuggestionDecisionByGroup(document.mergeSuggestionDecisions);
       setMergeSuggestions(
         result.suggestions.map((suggestion) => {
@@ -2236,7 +2254,7 @@ export default function App() {
     } finally {
       setIsSuggestingMerges(false);
     }
-  }, [document, isSuggestingMerges]);
+  }, [document, isSuggestingMerges, mergeSuggestionInstruction]);
 
   const handleMergeSuggestionTextChange = useCallback((groupId: string, value: string) => {
     setMergeSuggestions((previousSuggestions) =>
