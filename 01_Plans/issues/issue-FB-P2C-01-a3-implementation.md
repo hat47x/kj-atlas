@@ -187,3 +187,44 @@
 - 実施内容:
   - 本節へ実行ログを追記し、Plan→Execute→Verify→Proceedのトレースを固定。
   - 失敗→修復履歴（import名不一致、テスト文字列エスケープ）を明示し監査可能化。
+
+## 14) Stream F 実行ログ（2026-03-14）
+
+### Phase 1: Read同期（Gate0/A2 Verify/tie-break固定順）
+- Plan:
+  - A2/A3ハンドオフと実装差分を再照合し、固定順序逸脱がないことを確認する。
+- Execute:
+  - `deterministicTieBreakOrder` と比較キー（`inputHash`, `outputPolygonHash`, `paddingViolationCount`）の継承要件を確認。
+- Verify:
+  - Gate0承認 + A2 Verify pass の前提一致を確認（Pass）。
+- Proceed:
+  - polygon auto-fit 実装接続へ進行。
+
+### Phase 2: 実装接続（A2ハンドオフ準拠）
+- Plan:
+  - canvas edge描画経路を `geometry/shape` 統一参照に接続し、不正polygonのフォールバックを固定化する。
+- Execute:
+  - `EdgeLayer.tsx` に `getRenderableIslandPolygonPoints` を追加し、
+    - `getIslandPolygonPoints`（geometry優先）
+    - `isSelfIntersectingPolygon`（自己交差排除）
+    を通過したpolygonのみ centroid/anchor 計算へ利用するよう接続。
+- Verify:
+  - polygon妥当時は既存挙動維持、自己交差時はrect中心フォールバックへ遷移（Pass）。
+- Proceed:
+  - deterministic geometry 回帰テスト追加へ進行。
+
+### Phase 3: Verify（同一入力同一出力 / padding順守）
+- Plan:
+  - 既存A2由来テストと新規回帰テストで、決定論と境界フォールバックを同時検証する。
+- Execute:
+  - `EdgeLayer.polygon_anchor.test.ts` を追加し、
+    1. geometry優先の決定論
+    2. 自己交差polygonの空配列フォールバック
+    を検証。
+- Verify:
+  - 対象vitestと issue memo validator がPass（Self-Correction 0回）。
+- Proceed:
+  - 実装逸脱なしでA3を継続可能。
+
+### Phase 4: Proceed（逸脱時差戻し条件の維持）
+- `outputPolygonHash不一致` / `paddingViolationCount>0` / `tieBreakOrder逸脱` を検出した場合はA2へ差戻し、の運用を継続。

@@ -1,7 +1,9 @@
 import { memo, useMemo } from "react";
 import type { MouseEvent } from "react";
 
+import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
 import { polygonCentroid } from "../domain/geometry/polygon_centroid";
+import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
 import { rayPolygonBoundaryIntersection } from "../domain/geometry/ray_polygon_intersect";
 import type { RenderEdge } from "../domain/edge_aggregate";
 import type { Card, Island } from "../domain/types";
@@ -34,9 +36,19 @@ function getCardCenter(card: Card): CenterPoint {
   };
 }
 
+export function getRenderableIslandPolygonPoints(island: Island) {
+  const polygonPoints = getIslandPolygonPoints(island);
+  if (polygonPoints.length < 3 || isSelfIntersectingPolygon(polygonPoints)) {
+    return [];
+  }
+
+  return polygonPoints;
+}
+
 function getIslandCenter(island: Island, cardsById: Map<string, Card>): CenterPoint | null {
-  if (island.shape?.kind === "polygon" && island.shape.points.length >= 3) {
-    return polygonCentroid(island.shape.points);
+  const polygonPoints = getRenderableIslandPolygonPoints(island);
+  if (polygonPoints.length >= 3) {
+    return polygonCentroid(polygonPoints);
   }
 
   const islandCards = island.cardIds
@@ -146,16 +158,17 @@ function EdgeLayerComponent({
       return null;
     }
 
-    if (island.shape?.kind !== "polygon" || island.shape.points.length < 3) {
+    const polygonPoints = getRenderableIslandPolygonPoints(island);
+    if (polygonPoints.length < 3) {
       return islandCenter;
     }
 
-    const centroid = polygonCentroid(island.shape.points);
+    const centroid = polygonCentroid(polygonPoints);
     if (!centroid) {
       return islandCenter;
     }
 
-    const intersection = rayPolygonBoundaryIntersection(centroid, oppositePoint, island.shape.points);
+    const intersection = rayPolygonBoundaryIntersection(centroid, oppositePoint, polygonPoints);
     return intersection ?? centroid;
   }
 
