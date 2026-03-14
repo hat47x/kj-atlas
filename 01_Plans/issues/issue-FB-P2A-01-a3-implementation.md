@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -147,3 +147,11 @@
   - A1 Required fields / Invariants / ContractLinks の改変。
   - GoNoGo条件（`M1/M2=pass`, `M3/M4=fail`）の変更。
   - SafeMode/share-export既定挙動を変更する差分。
+
+
+## Stream B execution note（A3 implementation）
+
+- A2固定ログを `evaluateIslandHierarchyA3GoNoGoStreamD` に接続し、Go条件（`M1/M2=pass`,`M3/M4=fail`）を維持。
+- `validateIslandHierarchyRoundTripStreamD` で roundtrip 後の契約整合を確認。
+- A3では `IslandHierarchyContractV1` の ContractLock を再利用し、契約項目追加/再定義は行っていない。
+
