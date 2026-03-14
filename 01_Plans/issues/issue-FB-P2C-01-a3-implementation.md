@@ -1,10 +1,10 @@
-# Issue Draft: FB-P2C-01-A3 Polygon auto-fit / 実装
+# Issue Draft: FB-P2C-01-A3 Polygon auto-fit / 実装ハンドオフ
 
 - Type: Feature request
-- Status: Blocked (A2完了待ち)
+- Status: Ready (Stream B / Awaiting implementation execution lane)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream A
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -23,13 +23,13 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending（A2 Verify完了まで開始不可）
-- DecisionQueueRef（未確定時の参照先）: A2 Verify結果 + Gate 0承認記録
+- DecisionStatus（Fixed / Pending）: Fixed（Gate 0承認 + A2 Verify pass を受領）
+- DecisionQueueRef（未確定時の参照先）: `DQ-FB-P2C-01` + `A2-HANDOFF-FB-P2C-01-2026-03-14`
 
 ## 1) 課題 / Problem statement
 
-- A3は実装接続フェーズだが、A2検証を通っていない状態で進めると契約逸脱（特にpadding優先順序）が発生する。
-- そのため本Issueは **A2完了までBlock** とし、契約順序の改変を禁止する。
+- A3は実装接続フェーズであり、A2検証結果を満たす条件でのみ着手可能とする必要がある。
+- 契約順序（特にpadding優先）が曖昧なまま実装するとDoD未達に直結するため、着手/停止条件を固定する。
 
 ## 2) 背景 / Context
 
@@ -47,22 +47,22 @@
 ## 4) 提案する解決策 / Proposed solution
 
 - 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-P2C-01-*.md`）。
-- 実行条件: Gate 0承認 + A2 Verify pass の両方をProceed条件に設定。
+- 実行条件: `Gate 0承認 + A2 Verify pass` の両方を満たす場合のみProceed。
 - 非目標: 契約順序の再定義、A2未完了での実装着手。
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Gate 0承認記録とA2 Verify結果の両方が参照可能である。
-- [ ] 実装接続時の契約順序（padding遵守優先）が明文化される。
-- [ ] A2からの入力契約（fixture/比較キー/許容差分）を継承する。
-- [ ] 検証レベル `integration` が宣言・整合している。
-- [ ] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
+- [x] Gate 0承認記録とA2 Verify結果の両方が参照可能である。
+- [x] 実装接続時の契約順序（padding遵守優先）が明文化される。
+- [x] A2からの入力契約（fixture/比較キー/許容差分）を継承する。
+- [x] 検証レベル `integration` が宣言・整合している。
+- [x] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: A2 Verify pass を受領し、Plan開始条件を満たす。
-- [ ] T2: 契約順序逸脱禁止（padding遵守優先）を実装受入条件に固定する。
-- [ ] T3: 実装フェーズへの引き渡しメモ（入力/出力/失敗時ロールバック）を確定する。
+- [x] T1: A2 Verify pass を受領し、Plan開始条件を満たす。
+- [x] T2: 契約順序逸脱禁止（padding遵守優先）を実装受入条件に固定する。
+- [x] T3: 実装フェーズへの引き渡しメモ（入力/出力/失敗時ロールバック）を確定する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -71,7 +71,7 @@
 - 期待結果:
   - issue memo命名・メタ項目が整合し、検証スクリプトが成功する。
 - 未実施時の理由・代替検証:
-  - A2未完了の間は Execute/Verify に進まない（Fail-safe）。
+  - N/A
 
 ## 8) 代替案 / Alternatives considered
 
@@ -82,36 +82,61 @@
 
 - 失敗モード: 契約順序違反により同一入力同一出力を満たせない。
 - 影響範囲: `FB-P2C-01` のDoD未達。
-- ロールバック手順: A3をBlocked維持し、A2またはA1へ差し戻す。
+- ロールバック手順:
+  1. 実装着手を停止する（Fail-fast）。
+  2. A2の比較キーで逸脱点を再検証する。
+  3. `outputPolygonHash不一致` / `paddingViolationCount>0` / `tieBreakOrder逸脱` のいずれかを検出した時点でA2へ差し戻す。
 
 ## 10) Additional context
 
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a3-implementation.md` のみ。
-- 競合回避メモ: Stream A は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
+- 競合回避メモ: Stream B は FB-P2C-01 A2/A3 のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
 - Workflow: Plan → Execute → Verify → Proceed（Verify失敗時は最大3回自己修復）。
 
-## 11) Stream A Phase status（2026-03-13 実行ログ）
+## 11) Stream B 実行ログ（2026-03-14）
 
-### Phase 1: A1 Interface Contract / Phase 2: Gate 0 判定 参照同期
-- Read同期（必須3ファイル再読込）: 実施済み。
-- 直前コミット想定との差分記録: 3ファイルとも差分なし（開始時点）。
-- Verify: A3開始条件が `Gate 0承認 + A2 Verify pass` であることを再確認。
+### Phase 1: Read Gate
+- Plan:
+  - A2/A3を再Readし、Gate0承認・A2前提・A3前提の一致を確認。
+- Execute:
+  - A1承認状態、A2更新内容、A3開始条件を三点照合。
+- Verify:
+  - 前提不整合なし（Pass / Self-Correction 0回）。
+- Proceed:
+  - A3開始条件定義フェーズへ進行。
 
-### Phase 3: A2 Mock Validation 依存確認
-- Read同期（必須3ファイル再読込）: 実施済み。
-- 直前コミット想定との差分記録: 依存条件に差分なし。
-- Proceed判定: A2 Verify pass 未受領のためA3は進行不可。
+### Phase 2: A2依存受領
+- Plan:
+  - A2検証ログの受領可否を判定する。
+- Execute:
+  - `A2-HANDOFF-FB-P2C-01-2026-03-14` を参照し、input/output契約を取り込む。
+- Verify:
+  - A2 Verify Pass を確認（Pass）。
+- Proceed:
+  - 実装ハンドオフ条件の固定へ進行。
 
-### Phase 4: A3 Implementation Planning Link
-- Plan: A2 Verify通過後にのみ実装接続条件を確定。
-- Execute: 未実施（A2 Blocked継続）。
-- Verify: 未実施（Fail-safe準拠）。
-- Proceed判定: 停止。
+### Phase 3: A3（Implementation Handoff）
+- Plan:
+  - 実装着手条件とロールバック条件を固定し、開始判定を明文化する。
+- Execute:
+  - **実装着手条件（Start Conditions）**
+    1. `GateDecision=approved`（`DQ-FB-P2C-01`）
+    2. `A2Verify=pass`（`A2-HANDOFF-FB-P2C-01-2026-03-14`）
+    3. `deterministicTieBreakOrder` の順序固定を維持
+    4. A2比較キー（`inputHash`, `outputPolygonHash`, `paddingViolationCount`）を実装検証へ継承
+  - **ロールバック条件（Rollback Triggers）**
+    1. 同一入力で `outputPolygonHash` 不一致
+    2. `paddingViolationCount > 0`
+    3. tie-break順序の追加/省略/並べ替えの検出
+    4. A2で未定義の実装依存判定軸が受入基準に混入
+- Verify:
+  - 開始条件とロールバック条件がA1/A2契約と整合（Pass）。
+- Proceed:
+  - A3 planning handoff 完了。実装レーンへ引き渡し可能。
 
-### Phase 5: Verify & Report
-- フェイルセーフ判定: `Gate 0承認ログ不在` に起因する連鎖Block。
-- Blocking ID: `BLK-FB-P2C-01-GATE0-MISSING`
-- 参照元:
-  - A2 `Status: Blocked (Gate 0待ち)`
-  - 本ファイル `Status: Blocked (A2完了待ち)`
-- 解消に必要な承認者: Human Decision Gate 0 承認権限者（承認後、A2 Verify実施担当）。
+## 12) ADRルール適用記録
+
+- 判定: ADR変更は不要。
+- 理由:
+  - 本更新はA1で承認済みの `deterministicTieBreakOrder` を再利用し、Context/Decision/Consequences の新規追加を要しない。
+  - 契約値変更や上位方針変更を伴わないため、実装前ADR改訂トリガーは発生しない。

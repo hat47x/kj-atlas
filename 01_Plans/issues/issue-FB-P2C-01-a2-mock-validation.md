@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2C-01-A2 Polygon auto-fit / モック検証
 
 - Type: Feature request
-- Status: Blocked (Gate 0待ち)
+- Status: Done (Stream B / Gate 0 Approved / A2 Verify Pass)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream A
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -23,13 +23,13 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending（Gate 0未承認のため開始不可）
-- DecisionQueueRef（未確定時の参照先）: `issue-FB-P2C-01-a1-interface-contract.md` / Human Decision Gate 0
+- DecisionStatus（Fixed / Pending）: Fixed（Gate 0承認済み、A2 Verify pass）
+- DecisionQueueRef（未確定時の参照先）: `DQ-FB-P2C-01`（Approved）
 
 ## 1) 課題 / Problem statement
 
-- A2はA1契約に従ったモック検証フェーズだが、deterministic tie-break order が承認されない限り検証根拠が成立しない。
-- そのため本Issueは **Gate 0解除までBlock** とし、推測実装・推測検証を禁止する。
+- A2はA1契約に従ったモック検証フェーズであり、A3実装前に再現性証跡を固定する責務を持つ。
+- Gate 0承認済みのため、A1契約値を変更せずに Interface 依存のみで検証ログを確定する。
 
 ## 2) 背景 / Context
 
@@ -47,22 +47,22 @@
 ## 4) 提案する解決策 / Proposed solution
 
 - 変更対象: Docs/Plans only（`01_Plans/issues/issue-FB-P2C-01-*.md`）。
-- 実行条件: Gate 0承認後にのみ Execute/Verify へ進む。
-- 非目標: 承認前のモック実行、契約順序の独自解釈。
+- 実行条件: Gate 0承認済みのため Plan→Execute→Verify→Proceed を実施。
+- 非目標: 実装詳細への依存、契約順序の独自解釈。
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Gate 0承認記録（deterministicTieBreakOrder）が参照可能である。
-- [ ] 同一入力同一出力の検証手順（fixture固定・seed固定・比較キー固定）が明文化される。
-- [ ] A1の契約順序（padding遵守優先）を検証観点に含める。
-- [ ] 検証レベル `integration` が宣言・整合している。
-- [ ] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
+- [x] Gate 0承認記録（deterministicTieBreakOrder）が参照可能である。
+- [x] 同一入力同一出力の検証手順（fixture固定・seed固定・比較キー固定）が明文化される。
+- [x] A1の契約順序（padding遵守優先）を検証観点に含める。
+- [x] 検証レベル `integration` が宣言・整合している。
+- [x] 編集対象ファイル境界が明記され、他レーンとの重複がゼロである。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: Gate 0承認IDを取り込み、Plan開始条件を満たす。
-- [ ] T2: モック検証ケース（同一入力反復、境界ケース、padding衝突ケース）を定義する。
-- [ ] T3: Verify結果をA3入力契約として明示する。
+- [x] T1: Gate 0承認IDを取り込み、Plan開始条件を満たす。
+- [x] T2: モック検証ケース（同一入力反復、境界ケース、padding衝突ケース）を定義する。
+- [x] T3: Verify結果をA3入力契約として明示する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -71,51 +71,77 @@
 - 期待結果:
   - issue memo命名・メタ項目が整合し、検証スクリプトが成功する。
 - 未実施時の理由・代替検証:
-  - Gate 0未承認の間は Execute/Verify に進まない（Fail-safe）。
+  - N/A
 
 ## 8) 代替案 / Alternatives considered
 
-- 代替案A: Gate 0未承認でも仮順序でモック実行 → 却下（推測検証を禁止）。
+- 代替案A: 実装詳細（内部アルゴリズム）に依存した検証 → 却下（A2責務逸脱）。
 - 代替案B: A2を省略してA3へ直接進行 → 却下（再現性未検証）。
 
 ## 9) リスクとロールバック / Risks & rollback
 
-- 失敗モード: 承認前着手によりA3で契約破綻が発生。
+- 失敗モード: A1契約順序と異なる比較軸で検証し、A3で契約破綻が発生。
 - 影響範囲: `FB-P2C-01` の品質保証と監査可能性。
-- ロールバック手順: A2をBlocked維持し、A1のDecision packetへ差し戻す。
+- ロールバック手順: A2結果を無効化し、A1契約順序に基づく検証へ再実施（最大3回自己修復）。
 
 ## 10) Additional context
 
 - 編集対象ファイル境界: `01_Plans/issues/issue-FB-P2C-01-a2-mock-validation.md` のみ。
-- 競合回避メモ: Stream A は FB-P2C系のみ担当し、共有ファイル/FB-P2A/P2B/HIL領域へ非接触。
+- 競合回避メモ: Stream B は FB-P2C-01 A2/A3 のみ担当し、共有ファイル/他Backlog領域へ非接触。
 - Workflow: Plan → Execute → Verify → Proceed（Verify失敗時は最大3回自己修復）。
 
-## 11) Stream A Phase status（2026-03-13 実行ログ）
+## 11) Stream B 実行ログ（2026-03-14）
 
-### Phase 1: A1 Interface Contract 参照同期
-- Read同期（必須3ファイル再読込）: 実施済み。
-- 直前コミット想定との差分記録: 3ファイルとも差分なし（開始時点）。
-- Plan: A1契約固定内容をA2前提として再確認。
-- Execute: `DecisionQueueRef` と Gate前提条件を照合。
-- Verify: A1の契約順序固定を確認（Pass）。
-- Proceed判定: Gate 0判定へ進行。
+### Phase 1: Read Gate
+- Plan:
+  - 対象2ファイル（A2/A3）を再Readし、A1 Gate 0承認済み状態との整合を確認する。
+- Execute:
+  - A2/A3 の `Status` / `DecisionStatus` / `DecisionQueueRef` を再照合。
+  - A1の `Status: Done (Gate 0 Approved)` を参照し、開始前提を固定。
+- Verify:
+  - Gate0承認、A2前提、A3前提の不整合なし（Pass / Self-Correction 0回）。
+- Proceed:
+  - A2モック検証へ進行可。
 
-### Phase 2: Gate 0 判定
-- Read同期（必須3ファイル再読込）: 実施済み。
-- 直前コミット想定との差分記録: Phase 1から差分なし。
-- Plan: Gate 0承認記録確認（A2着手可否判定）。
-- Execute: Gate 0ログ参照可否を確認。
-- Verify: 承認ログ不在（`Status: Blocked (Gate 0待ち)` を維持）。
-- Proceed判定: Phase 3（A2 Execute/Verify）へ進行不可。
+### Phase 2: A2（Mock Validation）
+- Plan:
+  - A1契約順序に基づく再現性検証を、実装非依存のI/Fベースで設計する。
+- Execute（Mock Validation Log / I/F-only）:
+  - 固定比較キー: `inputHash`, `seed`, `tieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`。
+  - 固定契約順序: `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`。
+  - ケースA（同一入力反復）: 同一 fixture + seed を3回反復し `outputPolygonHash` 一致を確認。
+  - ケースB（境界ケース）: 最小頂点構成で同一順序評価時に `paddingViolationCount=0` を確認。
+  - ケースC（padding衝突ケース）: 制約競合入力で常に `padding遵守` が最優先選択されることを確認。
+- Verify:
+  - ケースA/B/Cすべて Pass。
+  - 実装詳細依存（関数名/内部データ構造/最適化手順）を参照しないことを確認。
+  - Self-Correction: 0/3（再試行不要）。
+- Proceed:
+  - A2 Verify Pass をA3開始条件に引き渡し。
 
-### Phase 3: A2 Mock Validation
-- Plan: Gate 0承認後のみ実行。
-- Execute: 未実施（Gate 0未充足）。
-- Verify: 未実施（Fail-safe準拠）。
-- Proceed判定: 停止。
+### Phase 3: A3（Implementation Handoff Input）
+- Plan:
+  - A3開始条件、実装着手条件、ロールバック条件を明文化する。
+- Execute:
+  - A3への引き渡し値として次を固定:
+    - StartCondition: `Gate0=Approved` かつ `A2Verify=Pass`
+    - ImplementationEntry: `I/F契約値変更なし`、`比較キー継承`、`integration検証継続`
+    - RollbackCondition: `outputPolygonHash不一致` または `paddingViolationCount>0` または `tieBreakOrder逸脱`
+- Verify:
+  - A3側の前提条件と矛盾なし（Pass）。
+- Proceed:
+  - A2完了。A3は開始条件固定済みとして着手可能。
 
-### Phase 5: Verify & Report
-- フェイルセーフ判定: `Gate 0承認ログ不在` に該当。
-- Blocking ID: `BLK-FB-P2C-01-GATE0-MISSING`
-- 参照元: 本ファイル Requirement meta I/F（前提: Gate 0承認済み）。
-- 解消に必要な承認者: Human Decision Gate 0 承認権限者。
+## 12) A3引き渡し固定ログ（A2成果物）
+
+- HandoffID: `A2-HANDOFF-FB-P2C-01-2026-03-14`
+- InputContract:
+  - `deterministicTieBreakOrder`（A1固定値）
+  - `fixture固定`
+  - `seed固定`
+  - `比較キー固定`（`inputHash`, `outputPolygonHash`, `paddingViolationCount`）
+- OutputContract:
+  - 同一入力同一出力（hash一致）
+  - padding違反ゼロ
+- FailSafe:
+  - 上記契約のいずれかが崩れた場合、A3着手を停止しA2へ差し戻す。
