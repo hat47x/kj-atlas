@@ -145,3 +145,56 @@
   - padding違反ゼロ
 - FailSafe:
   - 上記契約のいずれかが崩れた場合、A3着手を停止しA2へ差し戻す。
+
+## 13) Stream B 実装同期ログ（fixture+stub, 2026-03-14）
+
+### Read Gate（A1契約固定）
+- 参照元: `issue-FB-P2C-01-a1-interface-contract.md` の `deterministicTieBreakOrder`。
+- 契約固定値（ローカル固定）:
+  - `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`
+  - 機械可読値: `padding>self_intersection>area_delta>vertex_count`
+
+### Plan（A2責務宣言）
+- Mockケース:
+  - Case A: 同一入力反復（再現性）
+  - Case B: 最小頂点境界（三角形）
+  - Case C: padding強制ケース（競合時の優先順位）
+- 期待結果:
+  - `outputPolygonHash` は反復実行で不変
+  - `paddingViolationCount=0`
+  - `appliedTieBreakOrder` がA1固定値と一致
+- 責務境界:
+  - A2: fixture + stub + integration検証まで
+  - A3: 実装接続（本Issueでは非対象）
+
+### Execute（最小変更）
+- 追加 fixture:
+  - `03_Implement/frontend/tests/fixtures/fb_p2c_01/polygon_autofit_cases.json`
+- 追加 mock接続層:
+  - `03_Implement/frontend/src/domain/p2c_polygon_stub_client.ts`
+- 追加 integration検証:
+  - `03_Implement/frontend/src/domain/p2c_polygon_stub_client.test.ts`
+
+### Verify（integration）
+- 実行コマンド:
+  - `npm --prefix 03_Implement/frontend run test -- src/domain/p2c_polygon_stub_client.test.ts src/domain/p2c_polygon_handoff.test.ts`
+- 結果:
+  - Pass（A/B/Cの再現性・padding制約・tie-break契約整合を確認）
+- Self-Correction:
+  - 0/3
+
+### Proceed（A3 handoff packet）
+- HandoffPacketID: `A2-HANDOFF-FB-P2C-01-2026-03-14-B`
+- StartCondition:
+  - `Gate0=Approved`
+  - `A2Verify=Pass`
+- FixedInputKeys:
+  - `handoffId`
+  - `appliedTieBreakOrder`
+  - `inputHash`
+  - `outputPolygonHash`
+  - `paddingViolationCount`
+- StopCondition:
+  - `appliedTieBreakOrder mismatch`
+  - `paddingViolationCount>0`
+  - `outputPolygonHash drift`
