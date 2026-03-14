@@ -441,3 +441,62 @@
   - 入力契約: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`（上記固定リンクのみ参照）。
   - 禁止事項: 契約ID・`schemaVersion`・`requiredFields`・`overridePolicy` の変更、SSOT複線化、共有リソース更新。
   - 差し戻し条件: 契約ID衝突、`schemaVersion` 不一致、SafeMode/漏えい防止後退、境界外編集発生。
+
+## 15) Stream A 追加同期ログ（2026-03-14 / HEAD再点検）
+
+### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
+- Plan:
+  - 直前コミット差分とA1契約本文の整合を再検査する。
+  - 未確定I/F（API signature / data type / schemaVersion）を再列挙し、0件を確認する。
+- Execute:
+  - `git diff --name-only HEAD~1..HEAD -- <A1対象8ファイル>` を実行し、対象差分を確認。
+  - 以下3ファイルを再読し、A1契約の単一正本を照合。
+    - `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+    - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+    - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Verify:
+  - 直前コミット差分: **差分0件**（想定との差異なし）。
+  - 未確定I/F: **0件**（契約ID / schemaVersion / overridePolicy / requiredFields 固定維持）。
+  - Self-Correction: 0回（1回目で合格）。
+- Proceed:
+  - Phase 2へ進行。
+
+### Phase 2: ADR明文化要否（Plan → Execute → Verify → Proceed）
+- Plan:
+  - 追加判断の発生有無を `ADR-0026` D2 と照合する。
+- Execute:
+  - 変更範囲をA1契約固定の再確認に限定し、新規アーキ判断の追加を行わない。
+- Verify:
+  - **ADR追加/改定不要**（Context/Decision/Consequencesは既存定義で充足）。
+- Proceed:
+  - Phase 3へ進行。
+
+### Phase 3: 契約固定（Plan → Execute → Verify → Proceed）
+- Plan:
+  - `contractLinkLocked=true` の証跡、固定値一覧、`sharedResourceFreeze=true` 宣言を再掲する。
+- Execute:
+  - 固定リンク（SSOT）を `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の1件に維持。
+  - 固定値一覧を以下で確定。
+
+| 区分 | 固定値 |
+|---|---|
+| API signature（Contract ID） | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` |
+| schemaVersion | `CritiqueInputContract=1.0.0`, `ReviewAttributionContract=1.0.0` |
+| data type（必須） | `critiqueId,targetRef,critiqueType,createdAt,iteration` / `reviewState,reviewedAt,reviewerRef,auditRecordedAt` |
+| policy | `overridePolicy=human_dual_control_only` |
+| freeze flags | `contractLinkLocked=true`, `sharedResourceFreeze=true` |
+
+- Verify:
+  - 固定リンク複線化なし、固定値逸脱なし。
+- Proceed:
+  - Phase 4へ進行。
+
+### Phase 4: ハンドオフ（Plan → Execute → Verify → Proceed）
+- Plan:
+  - Stream B/C向け固定リンク・固定値を配布し、変更凍結状態を再宣言する。
+- Execute:
+  - B/C開始条件として「契約本文参照専用」「固定値変更禁止」「共有リソース凍結」を再通知。
+- Verify:
+  - B/C開始条件を満たす記録がA1契約本文と本Issue双方に存在することを確認。
+- Proceed:
+  - A1は **handoff complete / freeze active** を維持。以後の契約変更は統合フェーズの人間判断へエスカレーション。
