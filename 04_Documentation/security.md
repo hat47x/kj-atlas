@@ -377,3 +377,25 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - SafeMode既定ONの緩和
 
 上記に抵触する変更が必要な場合は、実装を停止し `ADR-0026` と上位層（00〜02）で先に合意する。
+
+### 8.3 Stream B（FB-P2B-01 / FB-P2B-02）運用の安全境界
+
+Similar-card 候補提示と Manual assisted merge は、次の安全境界を満たす場合のみ運用する。
+
+- 候補提示は deterministic heuristic に限定し、AI による自動確定を禁止する。
+- 最終 decision は人間が `accept` / `partial` / `reject` / `defer` を明示選択する。
+- decision 記録は監査目的であり、`accept` を契機に即時自動統合しない。
+- read-only モードでは候補収集・decision 記録を禁止する。
+
+契約固定値:
+
+- Candidate contract: `CTR-2B-01-CANDIDATE-GROUP-V1`
+- Decision log contract: `CTR-2B-02-DECISION-LOG-V1`
+
+逸脱時の扱い:
+
+- 4値以外の decision を許容する変更
+- contractVersion を未固定化する変更
+- human-in-the-loop を弱める自動確定導線
+
+上記いずれかを検知した場合、運用更新を停止し、A1契約レビュー（Stream C/D）へ差し戻す。

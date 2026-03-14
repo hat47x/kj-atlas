@@ -439,3 +439,36 @@ cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts
 
 注記:
 - `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
+
+## 8. Stream B（FB-P2B-01 / FB-P2B-02）同期E2E運用
+
+実装確定済みの Similar-card 候補提示 / Manual assisted merge について、E2E観点を以下で固定する。
+
+### 8.1 受入条件（最低）
+
+- 候補収集は deterministic heuristic として表示され、AI自動確定を行わない。
+- 候補グループで 4値 decision（`accept` / `partial` / `reject` / `defer`）を記録できる。
+- read-only モードでは `Collect candidates` と decision ボタンが disabled となる。
+- 不正入力（4値外 decision、契約ID不一致）は受け入れず、既存ログを破壊しない。
+
+### 8.2 推奨コマンド（Frontend integration）
+
+```bash
+cd 03_Implement/frontend
+pnpm -s vitest run src/ui/MergeSuggestionsPanel.test.ts src/domain/merge_suggestion_decisions.test.ts src/domain/stream_b_contract_handoff.test.ts
+```
+
+### 8.3 実装契約との照合（docs-check）
+
+```bash
+rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|Deterministic heuristic only|human-in-the-loop|accept|partial|reject|defer" \
+  03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx \
+  03_Implement/frontend/src/domain/merge_suggestion_decisions.ts \
+  03_Implement/frontend/src/domain/stream_b_contract_handoff.ts \
+  04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md
+```
+
+### 8.4 フェイルセーフ
+
+- contractVersion が `CTR-2B-01-CANDIDATE-GROUP-V1` / `CTR-2B-02-DECISION-LOG-V1` と一致しない場合は停止。
+- 自動マージ確定を示す導線が追加された場合は停止し、A1契約へ差し戻す。
