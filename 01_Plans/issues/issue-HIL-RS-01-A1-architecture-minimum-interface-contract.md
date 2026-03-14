@@ -531,3 +531,36 @@
   - B/C開始条件を満たす記録がA1契約本文と本Issue双方に存在することを確認。
 - Proceed:
   - A1は **handoff complete / freeze active** を維持。以後の契約変更は統合フェーズの人間判断へエスカレーション。
+
+
+## 0.8) Stream A A1契約固定（最終確定）
+
+### Phase 1 (Read Sync): Plan → Execute → Verify → Proceed
+- Plan: 親Issue / 本Issue / Architecture正本の3ファイルを再Readし、契約IDと固定値整合を検証。
+- Execute: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` と固定値を横断突合。
+- Verify: 不一致0件、単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみ。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 (ADR合意): Plan → Execute → Verify → Proceed
+- Context: A1は`ADR-0026` D2（契約先行）を具体化する下位契約。
+- Decision: ADR追加/更新は不要。
+- Consequences: 契約ID・固定値変更要求時は承認完了まで停止。
+- Verify: 価値軸（保留/可逆/HIL）と安全制約（SafeMode既定ON/漏えい防止）への変更なし。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 (Contract Fix): Plan → Execute → Verify → Proceed
+- Execute（固定）:
+  - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+  - Single Reference: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `CritiqueInputContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.schemaVersion=1.0.0`
+  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- Verify: 契約複線化0件、未定義競合0件。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 (Handoff): Plan → Execute → Verify → Proceed
+- 固定ID引き渡し: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- 固定schemaVersion引き渡し: critique/review attribution ともに `1.0.0`
+- 禁止境界引き渡し: A2/A3は契約本文の独自拡張禁止、共有リソース更新禁止、SafeMode後退禁止。
+- Proceed: A2/A3着手条件を凍結済みとして引き渡し。

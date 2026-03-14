@@ -327,3 +327,32 @@ gate0ApprovalEvidence:
 - `sharedResourceFreeze=true`
 - 単一参照先は本ファイルのみ（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）。
 - 契約固定値（`schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`）は変更凍結とし、改訂要求は統合フェーズで人間承認を必須とする。
+
+
+## 9. Stream A Final Freeze（A1 Contract Lock）
+
+### 9.1 Fixed IDs / Single Reference
+- Contract IDs（固定）: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Single Reference（固定）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+
+### 9.2 Fixed Values（変更禁止）
+- `CritiqueInputContract.schemaVersion=1.0.0`
+- `ReviewAttributionContract.schemaVersion=1.0.0`
+- `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+- `DeterministicTieBreakContract.schemaVersion=1.0.0`
+- `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
+
+### 9.3 Freeze Flags
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### 9.4 Prohibited Boundaries（A2/A3向け）
+- A2は `03_Implement/**` 以外を編集しない。
+- A3は `04_Documentation/**` 以外を編集しない。
+- 共有リソース（`01_Plans/issues/README.md`, `01_Plans/project-progress-dashboard.md`）を更新しない。
+- SafeMode既定ONおよびshare/export漏えい防止の後退を伴う変更を行わない。
+
+### 9.5 Stop Conditions
+- 契約ID不一致、または単一参照先の複線化を検出した場合は即停止。
+- `schemaVersion` / `requiredFields` / `overridePolicy` の未定義競合を検出した場合は即停止。
+- 上記停止時は、人間判断による統合フェーズ承認まで再開しない。
