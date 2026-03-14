@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, restoreMergeSuggestionDecisionsBySnapshot } from "./merge_suggestion_decisions";
+import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 import type { DocumentV2 } from "./types";
 
 type ValidationLog = {
@@ -41,7 +42,7 @@ describe("Stream B A2 mock validation", () => {
       responsibility: "A2-Mock",
       input: { cardCount: document.cards.length },
       expected: {
-        snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+        snapshotVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
         reasonCodes: ["heuristic:normalized-text"],
       },
       result: {
@@ -79,12 +80,12 @@ describe("Stream B A2 mock validation", () => {
       );
     }, createDocument());
 
-    const restored = restoreMergeSuggestionDecisionsBySnapshot(next.mergeSuggestionDecisions, "CTR-2B-02-DECISION-LOG-V1");
+    const restored = restoreMergeSuggestionDecisionsBySnapshot(next.mergeSuggestionDecisions, STREAM_B_CONTRACTS.decisionLog.contractId);
 
     const log: ValidationLog = {
       contractId: "CTR-2B-02-DECISION-LOG-V1",
       responsibility: "A2-Mock",
-      input: { appendOrder: orderedActions, snapshotVersion: "CTR-2B-02-DECISION-LOG-V1" },
+      input: { appendOrder: orderedActions, snapshotVersion: STREAM_B_CONTRACTS.decisionLog.contractId },
       expected: {
         restoredActionsInOrder: orderedActions,
         restoredCount: orderedActions.length,
@@ -102,4 +103,45 @@ describe("Stream B A2 mock validation", () => {
     expect(restored.every((entry) => entry.selectedCardIds?.join(",") === "c1,c2")).toBe(true);
     expect(restored.every((entry) => entry.decidedBy === "human")).toBe(log.expected.noAutoRepresentativeCommit);
   });
+
+  it("restores only human-confirmed decisions after reload", () => {
+    const decisions = [
+      {
+        id: "d1",
+        decisionId: "d1",
+        groupId: "g1",
+        decision: "accept",
+        action: "accept",
+        decidedAt: "2026-03-01T10:00:00.000Z",
+        decidedBy: "human",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1", "c2"],
+        mergedTextDraft: "risk mitigation",
+        editedText: "risk mitigation",
+        note: "risk mitigation",
+        snapshotVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+      },
+      {
+        id: "d2",
+        decisionId: "d2",
+        groupId: "g1",
+        decision: "accept",
+        action: "accept",
+        decidedAt: "2026-03-01T10:01:00.000Z",
+        decidedBy: "system",
+        cardIds: ["c1", "c2"],
+        selectedCardIds: ["c1", "c2"],
+        mergedTextDraft: "risk mitigation",
+        editedText: "risk mitigation",
+        note: "risk mitigation",
+        snapshotVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+      },
+    ] as DocumentV2["mergeSuggestionDecisions"];
+
+    const restored = restoreMergeSuggestionDecisionsBySnapshot(decisions, STREAM_B_CONTRACTS.decisionLog.contractId);
+
+    expect(restored).toHaveLength(1);
+    expect(restored[0]?.id).toBe("d1");
+  });
+
 });

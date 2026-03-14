@@ -190,6 +190,7 @@ describe("merge_suggestion_decisions", () => {
         mergedTextDraft: "alpha",
         editedText: "alpha",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
       },
       {
         id: "d2",
@@ -202,6 +203,7 @@ describe("merge_suggestion_decisions", () => {
         mergedTextDraft: "alpha",
         editedText: "alpha pending",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
       },
       {
         id: "d3",
@@ -233,6 +235,7 @@ describe("merge_suggestion_decisions", () => {
         mergedTextDraft: "alpha",
         editedText: "alpha",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
       },
       {
         id: "d2",
@@ -245,6 +248,7 @@ describe("merge_suggestion_decisions", () => {
         mergedTextDraft: "alpha",
         editedText: "alpha pending",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
       },
       {
         id: "d3",
@@ -257,6 +261,7 @@ describe("merge_suggestion_decisions", () => {
         mergedTextDraft: "alpha",
         editedText: "alpha no",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "system",
       },
       {
         id: "d4",
