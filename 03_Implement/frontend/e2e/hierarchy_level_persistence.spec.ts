@@ -53,7 +53,7 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   };
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /Load document\.json|document\.json を読み込む/ }).click();
+  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles({
     name: "hierarchy-level.json",

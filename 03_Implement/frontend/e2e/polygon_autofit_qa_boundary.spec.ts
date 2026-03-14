@@ -78,7 +78,7 @@ test("QA-2: importing self-intersecting polygon falls back to shape-less island"
   await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /Load document\.json|document\.json を読み込む/ }).click();
+  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
   const fileChooser = await fileChooserPromise;
 
   const now = new Date().toISOString();
