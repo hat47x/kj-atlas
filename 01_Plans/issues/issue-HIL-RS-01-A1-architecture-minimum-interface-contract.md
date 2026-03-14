@@ -102,6 +102,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
   - `DeterministicTieBreakContract.schemaVersion=1.0.0`
   - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
+  - `ErrorContract.schemaVersion=1.0.0`
+  - `ErrorContract.codes=A1_SCHEMA_VERSION_MISMATCH|A1_REQUIRED_FIELD_MISSING|A1_TRACE_KEY_MISSING|A1_OVERRIDE_POLICY_VIOLATION|A1_PII_POLICY_VIOLATION`
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
 - 禁止事項:
@@ -114,6 +116,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - `03_Implement/**` の実装変更は実施しない。
 - `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` は更新しない。
 - A2/A3で契約変更を行わない。
+- エラーコード体系の拡張（A1改訂なし）を行わない。
 
 
 ## 4) Contract change request routing（固定）
@@ -142,6 +145,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - [x] SSOTが `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` で固定されている。
   - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` がA1 issueとSSOTの双方で一致している。
   - [x] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が一致している。
+  - [x] 共通エラー契約（`A1-ERROR-IF`）と5件の固定`errorCode`が一致している。
   - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が一致している。
   - [x] 「A2/A3で契約本文を変更しない」が明記されている。
 - Gate判定:
@@ -175,6 +179,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 | DQ-HIL-RS-01-A1-002 | `schemaVersion=1.0.0` 固定（Critique/Attribution/TieBreak） | Closed | Fixed in SSOT | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
 
 ## 9) Mock引き渡し仕様（A2/A3参照専用・実装禁止）
 
@@ -219,6 +224,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
   - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
   - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
+  - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
 - Fixture schema（固定）:
   - `fixtures/hil_rs_01/critique_input_v1.json`
   - `fixtures/hil_rs_01/rediff_v1.json`
@@ -228,6 +234,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   2. 必須キー欠落は Block。
   3. `A1-REDIFF-IF` で `traceKey` 欠落は Block。
   4. 生PII（`email` / `external_uid` / provider user id）検知は Block。
+  5. 固定列挙外の`errorCode`は Block。
 
 ## 12) Proceed verdict（Stream A）
 
@@ -242,7 +249,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 - 判定: **可（A2/A3開始可）**
 - 根拠:
-  - Contract ID / `schemaVersion` / tie-break順序 / overridePolicy の固定済み。
+  - Contract ID / `schemaVersion` / tie-break順序 / overridePolicy / errorCode列挙 の固定済み。
   - SSOT単一参照（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）を維持。
   - Decision Queue未処理項目 0 件。
 - 残リスク:

@@ -21,6 +21,26 @@
 
 ## 2. Contract matrix（必須 / 任意 / 禁止）
 
+### 2.0 `A1-ERROR-IF`（共通エラー契約）
+
+- `schemaVersion`: `1.0.0`（固定）
+- `errorEnvelope` 必須:
+  - `errorCode`（string, 固定列挙）
+  - `message`（string, 人間可読・PII禁止）
+  - `contractId`（`A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF`）
+  - `retryable`（boolean）
+  - `occurredAt`（ISO-8601）
+- `errorCode` 固定列挙:
+  - `A1_SCHEMA_VERSION_MISMATCH`
+  - `A1_REQUIRED_FIELD_MISSING`
+  - `A1_TRACE_KEY_MISSING`
+  - `A1_OVERRIDE_POLICY_VIOLATION`
+  - `A1_PII_POLICY_VIOLATION`
+- 禁止:
+  - A1改訂なしでのエラーコード追加
+  - `message` への email / external_uid / provider user id 埋め込み
+  - `contractId` 欠落状態でのエラー返却
+
 ### 2.1 `A1-CRITIQUE-IF`
 
 - `schemaVersion`: `1.0.0`（固定）
@@ -128,6 +148,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
   - `DeterministicTieBreakContract.schemaVersion=1.0.0`
   - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
+  - `ErrorContract.schemaVersion=1.0.0`
+  - `ErrorContract.codes=A1_SCHEMA_VERSION_MISMATCH|A1_REQUIRED_FIELD_MISSING|A1_TRACE_KEY_MISSING|A1_OVERRIDE_POLICY_VIOLATION|A1_PII_POLICY_VIOLATION`
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
 - 明示禁止:
@@ -155,6 +177,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - [x] Single Reference（SSOT）が本書のみである。
   - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
   - [x] `schemaVersion=1.0.0`（Critique / ReDiff / Attribution tie-break policy）が維持されている。
+  - [x] 共通エラー契約（`A1-ERROR-IF`, `ErrorContract.schemaVersion=1.0.0`）が維持されている。
   - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が維持されている。
   - [x] A2/A3文書に「契約本文を変更しない」ルールが明記されている。
 - Gate判定:
@@ -177,6 +200,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 | DQ-HIL-RS-01-A1-002 | `schemaVersion` freeze | Closed | `1.0.0` 固定（Critique/Attribution/TieBreak） |
 | DQ-HIL-RS-01-A1-003 | Deterministic判定順 | Closed | `padding_compliance > self_intersection_avoidance > minimum_area_delta > minimum_vertex_count` |
 | DQ-HIL-RS-01-A1-004 | Change request routing | Closed | A1 issue差し戻しのみ許可 |
+| DQ-HIL-RS-01-A1-005 | Error contract freeze | Closed | `A1-ERROR-IF` + errorCode 5件固定 |
 
 ## 11. Mock handoff interface（implementation-free validation）
 
@@ -189,12 +213,16 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Review attribution fixture schema (`ReviewAttributionFixtureV1`)
   - required: `schemaVersion`, `reviewState`, `reviewedAt`, `reviewerRef`, `auditRecordedAt`
   - optional: `reviewContext`, `ownerRef`
+- Error fixture schema (`ErrorEnvelopeFixtureV1`)
+  - required: `schemaVersion`, `errorCode`, `message`, `contractId`, `retryable`, `occurredAt`
+  - fixed `errorCode`: `A1_SCHEMA_VERSION_MISMATCH | A1_REQUIRED_FIELD_MISSING | A1_TRACE_KEY_MISSING | A1_OVERRIDE_POLICY_VIOLATION | A1_PII_POLICY_VIOLATION`
 
 Validation rules:
 1. `schemaVersion` mismatch is Block.
 2. Missing required key is Block.
 3. `A1-REDIFF-IF` without `traceKey` is Block.
 4. Any fixture with raw PII (`email`, `external_uid`, provider user id) is Block.
+5. Any error outside fixed `errorCode` enum is Block.
 
 ## 12. Proceed verdict for downstream tracks
 
