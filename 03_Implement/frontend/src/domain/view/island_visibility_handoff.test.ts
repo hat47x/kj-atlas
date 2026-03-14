@@ -107,8 +107,31 @@ describe("evaluateIslandVisibilityA3GoNoGo", () => {
 
     const result = evaluateIslandVisibilityA3GoNoGo(logs);
     expect(result.go).toBe(false);
-    expect(result.reason).toBe("M4 ownerOfFix must not be A3");
+    expect(result.reason).toBe("M4 ownerOfFix must be A2");
   });
+
+
+  it("returns NoGo when M4 ownerOfFix is A1", () => {
+    const logs = [
+      toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1"),
+      toIslandVisibilityValidationLog("M2", validValidationResult(false), "A2", "M2"),
+      toIslandVisibilityValidationLog("M3", validValidationResult(true), "A2", "M3"),
+      toIslandVisibilityValidationLog(
+        "M4",
+        validateIslandVisibilityContractV1({
+          island: { id: "", isCollapsed: true },
+          view: { hiddenDescendantIslandIds: [], hiddenCardIds: [] },
+        }),
+        "A1",
+        "M4-invalid-owner",
+      ),
+    ];
+
+    const result = evaluateIslandVisibilityA3GoNoGo(logs);
+    expect(result.go).toBe(false);
+    expect(result.reason).toBe("M4 ownerOfFix must be A2");
+  });
+
   it("returns NoGo when handoff payload has missing mock case", () => {
     const logs = [
       toIslandVisibilityValidationLog("M1", validValidationResult(true), "A2", "M1"),
