@@ -10,7 +10,7 @@
 - issue memoは総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` の2件。
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
-- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` は再開条件充足でReady、`DQ-FB-P2C-01` はGate 0未承認でOpen、`DQ-OPS-SOURCE-01` は閉域運用方針でOpenとして管理する。
+- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` は再開条件充足でReady、`DQ-FB-P2C-01` はGate 0未承認でOpen、`DQ-OPS-SOURCE-01` はAI委譲成立によりReadyとして管理する。
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
 
 ### 未完Issue全件（18件）とレーン割当
@@ -152,11 +152,30 @@
 - 判断に必要な入力: Plan Ownerがテンプレ案、Architecture Ownerが承認、期限=2026-03-14 JST。
 
 ### DQ-FB-P2C-01（polygon tie-break規則）
-- 状態: **Open（Gate 0未承認 / 2026-03-13再同期）**
+- 状態: **Open（Gate 0未承認 / 2026-03-14再同期）**
 - 背景: `FB-P2C-01-A1` で順序案は定義済みだが、Gate 0承認記録が未確認のためA2へProceedできない。
 - 同期結果: I/F項目 `deterministicTieBreakOrder` は `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小` を維持しつつ、A2/A3はBlockedのまま。
 - 放置リスク: 承認前にA2/A3へ進行すると順序逸脱・非決定挙動が再発。
-- 判断に必要な入力: Human Decision Gate 0承認記録、A2検証開始可否、期限=2026-03-15 JST。
+- 判断に必要な入力: Human Decision Gate 0承認記録、A2検証開始可否、期限=2026-03-18 JST。
+
+#### DQ-FB-P2C-01 意思決定ブリーフ（背景込み・判定用）
+
+| 観点 | 確定事項（既決） | 未確定事項（要判断） | 判定に必要な証跡 |
+|---|---|---|---|
+| 背景/目的 | `FB-P2C-01-A1` で tie-break 契約を先行固定済み。A2/A3 は Gate 0 承認待ちで停止中。 | Gate 0 の採否（A2 を開始するか）。 | Gate 0 承認記録ID（Yes/No + 時刻 + 承認者）。 |
+| I/F契約 | `deterministicTieBreakOrder = padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`。 | 案B（自己交差最優先）へ差し替えるか。 | 案A/Bの採否記録 + A1差分有無。 |
+| 実行可否 | A2/A3 は `DL-HIL-01` に従い未承認決定を確定扱いできない。 | A2開始をReadyへ遷移するか、Open継続か。 | Plan Owner による Queue更新ログ。 |
+| 品質条件 | Proceed 条件は QA再現3件Pass（衝突0）と fixture差分理由の文書化。 | QA開始条件を満たしたと判定するか。 | QA Owner 実行ログ（3件の結果と差分理由）。 |
+| 期限/ロールバック | 期限は `2026-03-18 JST`。 | 期限超過時に案C（Block維持）へ移行するか。 | 期限時点の判定ログ + ロールバック記録。 |
+
+**最終Yes/No質問（人間承認キュー）**
+1. **Q1**: 案Aで Gate 0 を承認し、A2 を開始してよいか。
+2. **Q2**: Q1がNoの場合、案B（自己交差最優先）へ契約差分更新を実施して再審査するか。
+
+**判断フロー（依存順）**
+1. Gate 0 Approver が Q1/Q2 を記録。
+2. Plan Owner が `DQ-FB-P2C-01` を Open→Ready/Blocked へ同期。
+3. QA Owner が 3ケース検証を実施し Proceed/Block を確定。
 
 ### DQ-OPS-SOURCE-01（Source Issue運用方針）
 - 状態: **Ready（閉域運用方針で継続）**
@@ -222,9 +241,9 @@
 1. `DQ-HIL-EXEC-01` は Ready として維持し、A2/A3再開時に同一テンプレ（`contractLinkLocked/sharedResourceFreeze/validatorPass`）の運用逸脱がないかを監査する。
 2. `DQ-FB-P2C-01` は Open を維持し、Gate 0承認記録が確定するまでA2/A3 Blockを継続する。
 3. `DQ-OPS-SOURCE-01` は `Source Issue: N/A` 継続を基本とし、外部連携要件が発生した場合のみRunbook手順1〜6の実行要否を再判定する。
-4. Stream D rerun-4 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=1/Open=2 の一致を次回同期開始条件に固定する。
+4. Stream D rerun-7 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=2/Open=1 の一致を次回同期開始条件に固定する。
 
-再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決は `DQ-FB-P2C-01` と `DQ-OPS-SOURCE-01` を維持 / 停止条件違反なし。
+再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決は `DQ-FB-P2C-01` のみ維持 / 停止条件違反なし。
 
 ## Stream D 実行ログ（2026-03-13, Phase 1-4）
 
@@ -237,22 +256,22 @@
 ### Phase 2: 相互整合更新（Active / Decision Queue / 決定ログ / 次の1手）
 
 - Active issue運用値を `issues/README.md` と再照合し、運用上のActiveは `HIL-RS-01` / `HIL-RS-01-A1` の2件で一致を維持。
-- Decision Queueを再評価し、`DQ-HIL-EXEC-01` は Ready、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open として維持。決定済み項目の重複再掲がないことを確認。
+- Decision Queueを再評価し、`DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01` は Ready、`DQ-FB-P2C-01` は Open として維持。決定済み項目の重複再掲がないことを確認。
 - 決定ログは既存IDのみを維持し、未承認決定を「確定扱い」していないことを確認。
-- 「次の1手」はOpen2件（`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01`）の期限管理と、Ready1件（`DQ-HIL-EXEC-01`）の運用逸脱点検に限定し、未定義競合を新規導入しない。
+- 「次の1手」はOpen1件（`DQ-FB-P2C-01`）の期限管理と、Ready2件（`DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01`）の運用逸脱点検に限定し、未定義競合を新規導入しない。
 
 ### Phase 3: 件数監査（再計算）
 
 - issue memo総数: 43
 - Open: 8 / Draft: 7 / Done系: 25（Done=24 + Done(SQLite fallback path)=1）
 - In Progress: 1 / Blocked: 2
-- Decision Queue残件: 2（Ready=1 / Open=2）
+- Decision Queue残件: 1（Ready=2 / Open=1）
 - 停止条件違反: 0（契約リンク未固定 / shared resource更新衝突 / Self-Correction 3回超過の検出なし）
 
 ### Phase 4: 公開（再開判定チェックリスト1行確定）
 
-- **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は `DQ-FB-P2C-01` と `DQ-OPS-SOURCE-01` の2件 / 停止条件違反なし。
-- 2026-03-13再同期: validator/unittest/rg を再実行し、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・依存順（A1→A2→A3）の一致を再確認。
+- **再開判定チェックリスト確定:** 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未解決は `DQ-FB-P2C-01` の1件 / 停止条件違反なし。
+- 2026-03-14再同期: validator/unittest/rg を再実行し、件数（43/8/1/2/7/25）・Decision Queue（Ready=2/Open=1）・依存順（A1→A2→A3）の一致を再確認。
 - 2026-03-13再同期（rerun-2）: Read Gate（A/B/C完了報告・契約リンク固定・検証ログ受領）を維持したまま、3共有ファイル同時同期と Verify（validator/unittest/rg）成功を再確認。
 - 2026-03-13 Phase 3 Verify追補: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` 監査を再実行し、共有統合2ファイル（dashboard/README）と decision-pack の整合を維持。
 
@@ -262,18 +281,33 @@
 
 ### Phase 5: Proceed（2026-03-13 rerun-3）
 
-- `DQ-HIL-EXEC-01` は Ready 維持（再開時の `contractLinkLocked/sharedResourceFreeze/validatorPass` 逸脱監査を継続）。
-- `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open 維持（未承認決定の確定扱いを禁止）。
-- Next actions は「Ready 1件の運用点検 + Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
-- Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
+- `DQ-HIL-EXEC-01` / `DQ-OPS-SOURCE-01` は Ready 維持（テンプレ逸脱監査とSource Issue運用監査を継続）。
+- `DQ-FB-P2C-01` は Open 維持（Gate 0承認までは未承認決定の確定扱いを禁止）。
+- Next actions は「Ready 2件の運用点検 + Open 1件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
+- Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=2/Open=1）・再開判定チェックリストの一致を確認。
 
-## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-13）
+## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-14）
+
+### 0. コンソール整理済みプロンプト（実行入力）
+```text
+[MetaPrompt Run]
+最優先制約: 監査
+Theme-ID: DQ-FB-P2C-01
+背景: polygon tie-break規則のGate 0承認記録欠落でA2/A3が停止中
+未確定I/F: Gate0ApprovalRecord / A2StartEligibility
+締切: 2026-03-18T23:59:00+09:00
+担当ロール: Human Decision Gate 0 Approver, Plan Owner, QA Owner
+依存ID: FB-P2C-01-A1
+失敗時影響: A2/A3停止継続・実装遅延・判定ドリフト
+可逆性: Medium
+根拠参照: 00_Prompt/human_judgement_virtual_stakeholder_meta_prompt.md, 01_Plans/project-progress-dashboard.md, 01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md
+```
 
 ### 0. Preflight
 - 入力必須項目: 充足（Theme-ID/背景/I-F/期限/担当/依存/影響/可逆性/根拠）。
 - 根拠解決: `00_Prompt`/`01_Plans` の既存文書へ解決。
 - 循環依存: なし（`FB-P2C-01-A1 -> A2 -> A3` の直列）。
-- 最優先制約: 「上流整合」のみを宣言。
+- 最優先制約: 「監査」のみを宣言。
 
 ### 1. 実行サマリ（目的 / 対象範囲 / 参照文書）
 - 目的: Gate 0未承認で停止中の `DQ-FB-P2C-01` をYes/No裁定可能な2案へ圧縮する。
@@ -290,7 +324,7 @@
 ### 3. 人間判断待ち（詳細）
 - Theme-ID: `DQ-FB-P2C-01`。
 - 未確定点: `Gate0ApprovalRecord` の有無とA2開始可否。
-- 期限: 2026-03-15 JST。
+- 期限: 2026-03-18 JST。
 - 担当ロール: Human Decision Gate 0 Approver / Plan Owner / QA Owner。
 
 ### 4. 対応案（3案）
@@ -313,7 +347,7 @@
 ### 7. 未確定在庫
 - `UNC-DQ-FB-P2C-01-01`: Gate 0承認記録ID未付与。
 - 解消条件: ApproverがYes/Noを記録し、採否条件を満たすこと。
-- 担当/期限/依存: Human Approver / 2026-03-15 JST / `FB-P2C-01-A1`。
+- 担当/期限/依存: Human Approver / 2026-03-18 JST / `FB-P2C-01-A1`。
 
 ### 8. 次の1手（依存順）
 1. Gate 0 Approverが案A/BのYes/Noを記録する。
@@ -323,7 +357,7 @@
 ### 9. 人間承認キュー（参考・非厳格運用）
 - Q1: 案Aを採用してA2を再開するか（Yes条件: QA3件Pass、No時: 案Bへ）。
 - Q2: 案Bを採用してA1差分更新を先行するか（Yes条件: 期限延長許容、No時: 案Cへ）。
-- 期限: 2026-03-15 JST。
+- 期限: 2026-03-18 JST。
 - 未採用時ロールバック: A2/A3 Block維持、`DQ-FB-P2C-01` Open継続。
 
 ### 10. 検証結果（実行コマンドと結果）
@@ -344,7 +378,7 @@
 - Step2: Yes/No 4問 = Yes, Yes, Yes, Yes。
 - Step3: No項目なしのため修正ログ追加なし。
 
-## DQ-OPS-SOURCE-01 仮想ステークホルダー処理ログ（2026-03-13）
+## DQ-OPS-SOURCE-01 仮想ステークホルダー処理ログ（2026-03-14）
 
 ### 0. コンソール整理済みプロンプト（実行入力）
 ```text
