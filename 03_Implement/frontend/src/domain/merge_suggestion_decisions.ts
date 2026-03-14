@@ -1,7 +1,8 @@
 import type { DocumentV2 } from "./types";
+import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 
 export const MERGE_SUGGESTION_DECISIONS = ["accept", "partial", "reject", "defer"] as const;
-const DECISION_LOG_SNAPSHOT_VERSION = "CTR-2B-02-DECISION-LOG-V1";
+const DECISION_LOG_SNAPSHOT_VERSION = STREAM_B_CONTRACTS.decisionLog.contractId;
 
 export type MergeSuggestionDecision = (typeof MERGE_SUGGESTION_DECISIONS)[number];
 
@@ -113,6 +114,9 @@ export function restoreMergeSuggestionDecisionsBySnapshot(
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(snapshotVersion, "snapshotVersion");
   return (decisions ?? []).filter(
-    (decision) => decision.snapshotVersion === snapshotVersion && isMergeSuggestionDecision(decision.action)
+    (decision) =>
+      decision.snapshotVersion === snapshotVersion
+      && isMergeSuggestionDecision(decision.action)
+      && decision.decidedBy === "human"
   );
 }

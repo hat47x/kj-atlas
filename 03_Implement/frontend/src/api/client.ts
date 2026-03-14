@@ -1,4 +1,5 @@
 import type { Card, Document, DocumentV2, Island } from "../domain/types";
+import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 
 const API_BASE = "/api";
 
@@ -195,7 +196,7 @@ export type MergeSuggestion = {
   rationale?: string;
 };
 
-const CANDIDATE_GROUP_CONTRACT_VERSION = "CTR-2B-01-CANDIDATE-GROUP-V1";
+const CANDIDATE_GROUP_CONTRACT_VERSION = STREAM_B_CONTRACTS.candidateGroup.contractId;
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);

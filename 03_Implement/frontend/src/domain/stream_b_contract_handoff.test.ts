@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { validateCandidateGroupContract, validateDecisionLogContract } from "./stream_b_contract_handoff";
+import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 import type { DocumentV2 } from "./types";
 
 function createDocument(): DocumentV2 {
@@ -25,7 +26,8 @@ describe("stream_b_contract_handoff", () => {
   it("builds A2 candidate-group handoff log", () => {
     const result = validateCandidateGroupContract(createDocument());
     expect(result).toEqual({
-      contractVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+      contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+      schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
       mockCaseId: "M1",
       validationResult: "pass",
       ownerOfFix: "A3",
@@ -47,7 +49,8 @@ describe("stream_b_contract_handoff", () => {
     );
 
     expect(result).toEqual({
-      contractVersion: "CTR-2B-02-DECISION-LOG-V1",
+      contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+      schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
       mockCaseId: "M2",
       validationResult: "pass",
       ownerOfFix: "A3",

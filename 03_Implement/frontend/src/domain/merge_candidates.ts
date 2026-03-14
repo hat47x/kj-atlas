@@ -1,5 +1,6 @@
 import type { MergeSuggestion } from "../api/client";
 import type { Card, DocumentV2 } from "./types";
+import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 
 type CandidateReason = "normalized-text" | "token-signature";
 
@@ -8,8 +9,6 @@ type CandidateGroup = {
   cards: Card[];
   score: number;
 };
-
-const CANDIDATE_CONTRACT_SNAPSHOT_VERSION = "CTR-2B-01-CANDIDATE-GROUP-V1";
 
 const TOKEN_SPLIT = /[^a-z0-9]+/g;
 
@@ -66,7 +65,7 @@ function toSuggestions(groups: CandidateGroup[]): MergeSuggestion[] {
           avg: group.score,
         },
         reasonCodes: [`heuristic:${group.reason}`],
-        snapshotVersion: CANDIDATE_CONTRACT_SNAPSHOT_VERSION,
+        snapshotVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
         cardIds,
         mergedTextDraft,
         rationale: `heuristic:${group.reason}`,

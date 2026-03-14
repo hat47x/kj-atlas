@@ -1,11 +1,13 @@
 import { collectMergeCandidates } from "./merge_candidates";
 import { appendMergeSuggestionDecision, type MergeSuggestionDecision } from "./merge_suggestion_decisions";
 import type { DocumentV2 } from "./types";
+import { STREAM_B_CONTRACTS, type StreamBContractId, type StreamBSchemaVersion } from "./stream_b_contract";
 
 export type StreamBValidationOwner = "A1" | "A2" | "A3";
 
 export type StreamBValidationLog = {
-  contractVersion: "CTR-2B-01-CANDIDATE-GROUP-V1" | "CTR-2B-02-DECISION-LOG-V1";
+  contractVersion: StreamBContractId;
+  schemaVersion: StreamBSchemaVersion;
   mockCaseId: "M1" | "M2" | "M3" | "M4";
   validationResult: "pass" | "fail";
   ownerOfFix: StreamBValidationOwner;
@@ -16,7 +18,8 @@ export function validateCandidateGroupContract(document: DocumentV2): StreamBVal
   const first = collectMergeCandidates(document)[0];
   if (!first) {
     return {
-      contractVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+      contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+      schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
       mockCaseId: "M4",
       validationResult: "fail",
       ownerOfFix: "A2",
@@ -24,9 +27,10 @@ export function validateCandidateGroupContract(document: DocumentV2): StreamBVal
     };
   }
 
-  const isValid = first.snapshotVersion === "CTR-2B-01-CANDIDATE-GROUP-V1" && first.reasonCodes.length > 0;
+  const isValid = first.snapshotVersion === STREAM_B_CONTRACTS.candidateGroup.contractId && first.reasonCodes.length > 0;
   return {
-    contractVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+    contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+    schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
     mockCaseId: isValid ? "M1" : "M3",
     validationResult: isValid ? "pass" : "fail",
     ownerOfFix: isValid ? "A3" : "A2",
@@ -51,13 +55,14 @@ export function validateDecisionLogContract(
   const entry = next.mergeSuggestionDecisions?.at(-1);
 
   const isValid =
-    entry?.snapshotVersion === "CTR-2B-02-DECISION-LOG-V1" &&
+    entry?.snapshotVersion === STREAM_B_CONTRACTS.decisionLog.contractId &&
     entry.action === input.decision &&
     entry.decisionId !== undefined &&
     entry.decisionId.length > 0;
 
   return {
-    contractVersion: "CTR-2B-02-DECISION-LOG-V1",
+    contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+    schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
     mockCaseId: isValid ? "M2" : "M3",
     validationResult: isValid ? "pass" : "fail",
     ownerOfFix: isValid ? "A3" : "A2",
