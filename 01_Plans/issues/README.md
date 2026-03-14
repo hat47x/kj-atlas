@@ -296,6 +296,7 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F Phase 1-5 最終同期（2026-03-14 rerun-14）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）・shared resource freeze解除をRead Gateで再確認し、共有3ファイルの同期対象（件数43 / Active=2 / Done=25 / 次アクション=Ready監査1件+Open期限管理2件）を宣言後に単一変更セットで反映した。
 - Stream F Phase 4 Verify（2026-03-14 rerun-14）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を再実行し、件数43・Queue Ready=1/Open=2・再開判定1行・停止条件違反0件の一致を再確定。
 - Stream F Phase 1-5 再同期（2026-03-14 rerun-15）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）をRead Gateで再確認し、shared resource 3ファイルの単一変更セット更新後に validator/unittest/rg を再実行して件数43・Active2・Done25・再開判定1行・停止条件違反0件の一致を維持。
+- Stream E Phase 1-4 同期（2026-03-14 rerun-16）: Read同期（A/B/C/D完了報告）→件数/状態/Decision Queue反映→参照リンク/件数/依存順監査→再開判定チェックリスト1行確定を直列実行し、shared resource 3ファイルの公開値を `件数43 / Active2 / Done25 / Queue Ready=1 Open=2 / A1→A2→A3 / 停止条件違反0件` で再固定。
 
 ## Rules
 
