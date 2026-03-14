@@ -35,6 +35,13 @@
 - [x] A1契約の単一参照先が固定されている。
 - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` の証跡がある。
 
+## 5) Phase 1 Read同期で抽出した契約未確定項目
+
+- 型（Type）: 未確定項目なし（A1契約IDごとの必須/任意/禁止を固定済み）。
+- `schemaVersion`: 未確定項目なし（`1.0.0`で固定）。
+- 責務境界: 未確定項目なし（A1=契約固定、A2/A3=参照専用）。
+- 禁止事項: 未確定項目なし（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止を固定）。
+
 ## 5) Stream A log（Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read & Baseline

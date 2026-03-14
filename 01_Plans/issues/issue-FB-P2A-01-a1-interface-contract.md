@@ -22,6 +22,11 @@
 
 ## Contract definition（A1成果物）
 
+- ContractFreeze:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+
 - InterfaceName: `IslandHierarchyContractV1`
 - ContractLinks:
   - Upstream: `ADR-0007 FB-P2A-01`
@@ -80,10 +85,10 @@
 
 ## Acceptance criteria
 
-- [ ] A1でRequired fields / Invariants / ContractLinksが固定される。
-- [ ] A2/A3は本契約を変更せず参照のみで進行できる。
-- [ ] SafeMode・share/export既定挙動を変更しないと明記される。
-- [ ] 契約リンク不整合がない（A1→A2→A3）。
+- [x] A1でRequired fields / Invariants / ContractLinksが固定される。
+- [x] A2/A3は本契約を変更せず参照のみで進行できる。
+- [x] SafeMode・share/export既定挙動を変更しないと明記される。
+- [x] 契約リンク不整合がない（A1→A2→A3）。
 
 ## State sync / conflict check
 
@@ -92,6 +97,17 @@
   - `issue-FB-P2A-01-a2-mock-validation.md`
   - `issue-FB-P2A-01-a3-implementation.md`
 - 前回コミット差分競合がある場合は、契約リンク整合を優先して修正する。
+
+## Handoff（A2/A3参照専用）
+
+- Fixed links:
+  - `issue-FB-P2A-01-a2-mock-validation.md`
+  - `issue-FB-P2A-01-a3-implementation.md`
+- 変更禁止項目:
+  - `InterfaceName=IslandHierarchyContractV1`
+  - Required fields / Invariants / ContractLinks
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- 逸脱要求はA1へ差し戻し。
 
 ## Validation plan
 

@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-02-A1 Manual assisted mergeフロー / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open
+- Status: Ready (A1 Contract Fixed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream D
@@ -40,6 +40,11 @@
 
 ## 固定契約（A1成果物）
 
+- ContractFreeze:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+
 - `MergeDecisionRecord`:
   - `decisionId: string`
   - `groupId: string`
@@ -77,6 +82,17 @@
   - [x] AC/DoD補完条件がA2/A3へ引き渡し可能な形で定義されている。
 - Proceed:
   - A2は契約IDを唯一参照してmock検証へ進む。
+
+## Handoff（A2/A3参照専用）
+
+- Fixed links:
+  - `issue-FB-P2B-02-a2-mock-validation.md`
+  - `issue-FB-P2B-02-a3-implementation.md`
+- 変更禁止項目:
+  - `ContractID=CTR-2B-02-DECISION-LOG-V1`
+  - `MergeDecisionRecord` / `DecisionLogStoreContract` の定義
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- 逸脱要求はA1へ差し戻し。
 
 ## Validation plan
 
