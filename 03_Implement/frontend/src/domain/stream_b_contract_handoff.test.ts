@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { validateCandidateGroupContract, validateDecisionLogContract } from "./stream_b_contract_handoff";
+import {
+  evaluateStreamBA3GoNoGo,
+  validateCandidateGroupContract,
+  validateDecisionLogContract,
+} from "./stream_b_contract_handoff";
 import { STREAM_B_CONTRACTS } from "./stream_b_contract";
 import type { DocumentV2 } from "./types";
 
@@ -55,6 +59,103 @@ describe("stream_b_contract_handoff", () => {
       validationResult: "pass",
       ownerOfFix: "A3",
       evidence: "decisionId=decision-1",
+    });
+  });
+
+  it("returns go when M1-M4 logs satisfy A2→A3 handoff constraints", () => {
+    const logs = [
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "candidate group contract pass",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
+        mockCaseId: "M2",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "decision log contract pass",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M3",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "invalid snapshotVersion/reasonCodes",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M4",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "candidate group not generated",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({ go: true, reason: "go" });
+  });
+
+  it("returns NoGo when mock cases contain duplicates", () => {
+    const duplicate = {
+      contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+      schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+      mockCaseId: "M1",
+      validationResult: "pass",
+      ownerOfFix: "A3",
+      evidence: "duplicate",
+    } as const;
+
+    expect(evaluateStreamBA3GoNoGo([duplicate, duplicate])).toEqual({
+      go: false,
+      reason: "duplicate mock case: M1",
+    });
+  });
+
+  it("returns NoGo when fail cases are assigned to A3", () => {
+    const logs = [
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "M1",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
+        mockCaseId: "M2",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "M2",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M3",
+        validationResult: "fail",
+        ownerOfFix: "A3",
+        evidence: "M3",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M4",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "M4",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
+      go: false,
+      reason: "M3/M4 ownerOfFix must not be A3",
     });
   });
 });
