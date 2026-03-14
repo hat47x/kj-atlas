@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -63,12 +63,18 @@
 
 - Plan:
   - decision log契約のみを固定し、実装項目を除外する。
+  - AC/DoD不足を補完するため、A2/A3が再利用可能な最小I/F整合条件を明文化する。
 - Execute:
   - 上記契約を `CTR-2B-02-DECISION-LOG-V1` として定義。
+  - 補完提案（A1時点で固定）:
+    - AC補完-1: `action` は `accept|partial|reject|defer` の4値以外を受理しない。
+    - AC補完-2: `restore(snapshotVersion)` は同一 `snapshotVersion` に対して決定順序を保持する。
+    - DoD補完-1: A2/A3は契約拡張を行わず、本契約ID参照のみで進行する。
 - Verify:
   - [x] 4アクション enum が固定されている。
   - [x] append/list/restore I/F が固定されている。
   - [x] 非自動確定が契約境界として維持されている。
+  - [x] AC/DoD補完条件がA2/A3へ引き渡し可能な形で定義されている。
 - Proceed:
   - A2は契約IDを唯一参照してmock検証へ進む。
 
@@ -84,7 +90,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 
