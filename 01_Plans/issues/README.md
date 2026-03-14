@@ -256,7 +256,7 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream D 統合スナップショット（2026-03-14 JST, final rerun-10）
+### Stream F 統合スナップショット（2026-03-14 JST, final rerun-12）
 
 - 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
 - Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
@@ -283,8 +283,9 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream D Phase 4 Publish（2026-03-14 rerun-8）: Plan→Execute→Verify→Proceed を再完了し、共有統合3ファイルを単一コミット対象で同期。未解決Queueは `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` の2件を維持、再開判定チェックリスト1行（未固定箇所=0 / 契約リンク確定 / 停止条件違反なし）を確定。
 
 - Stream A Phase 1-4同期（2026-03-14）: Read Gate再読で A1→A2→A3依存・Queue（Ready=1/Open=2）・停止条件違反0件を確認し、A1契約レビュー（ADR追加不要）→DQ運用点検（`DQ-HIL-EXEC-01` Ready維持、`DQ-FB-P2C-01`/`DQ-OPS-SOURCE-01` Open期限管理）→共有2ファイル同期を同一コミットで実施。
-- Stream D Phase 4 Publish（2026-03-14 rerun-11）: human_judgementメタプロンプト再適用で Decision Queue 3件をGate再判定し、`DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をReady運用へ統一（人間承認待ち=0件）。
-- Stream D Phase 3 Verify追補（2026-03-14 rerun-11）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md` を再実行し、Queue表示の同期を確認。
+- Stream D Phase 4 Publish（2026-03-14 rerun-11）: human_judgementメタプロンプト再適用で Decision Queue 3件をGate再判定（暫定）し、rerun-12で最終状態を `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` に再同期。
+- Stream F Phase 3 Verify追補（2026-03-14 rerun-12）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md` を再実行し、Queue表示の同期を確認。
+- Stream F Phase 5 Proceed（2026-03-14 rerun-12）: 再開判定チェックリストを更新し、他レーン公開値（Ready=1/Open=2、次アクション=Ready監査1件+Open期限管理2件、停止条件違反0件）を共有。
 
 ## Rules
 

@@ -216,3 +216,4 @@
 - Verify追補（rerun-9）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-10）: Stream A/B/C完了報告と決定リンク固定（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）をRead同期で再確認後、validator/unittest/rg を再実行し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - Verify追補（rerun-11, Stream F）: Phase 1 Read Sync（3共有ファイル再読）→Phase 2 同期反映（件数/状態/依存/判断キュー）→Phase 3 validator/unittest/`rg` 検証→Phase 4 Closeout を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を再確定。
+- Verify追補（rerun-12, Stream F）: Phase 1 ReadでA/B/C完了報告・Decision Queue・件数集計を再確認し、Phase 2で同期項目（Active表/Queue/次アクション/件数）を宣言、Phase 3で3共有ファイル単一変更セット同期、Phase 4で validator/unittest/`rg` を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行・停止条件違反0件を維持。
