@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`
@@ -79,7 +79,7 @@
   - A3 handoff I/Fの必須項目が欠損なし。
 
 
-## A2 mock validation plan（Stream B / Phase 3）
+## A2 mock validation plan（Stream D / Phase 3）
 
 - fixture/stub分解（実装依存を分離）:
   - Fixture:
@@ -143,7 +143,7 @@
 - 自己修復が3回連続で失敗、またはA1契約リンク切れを検出した場合は停止して指示待ち。
 
 
-## A2 validation execution log（Stream C）
+## A2 validation execution log（Stream D）
 
 | contractVersion | mockCaseId | validationResult | ownerOfFix | evidence |
 |---|---|---|---|---|
