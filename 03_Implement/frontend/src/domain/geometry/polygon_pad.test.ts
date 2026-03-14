@@ -4,32 +4,26 @@ import { padPolygonFromCentroid } from "./polygon_pad";
 
 describe("padPolygonFromCentroid", () => {
   it("returns original reference when polygon is invalid or padding is non-positive", () => {
-    const segment = [
+    const degenerate = [
       { x: 0, y: 0 },
       { x: 10, y: 0 },
     ];
 
-    expect(padPolygonFromCentroid(segment, 8)).toBe(segment);
-
-    const triangle = [
-      { x: 0, y: 0 },
-      { x: 10, y: 0 },
-      { x: 0, y: 10 },
-    ];
-    expect(padPolygonFromCentroid(triangle, 0)).toBe(triangle);
+    expect(padPolygonFromCentroid(degenerate, 4)).toBe(degenerate);
+    expect(padPolygonFromCentroid(degenerate, 0)).toBe(degenerate);
   });
 
   it("expands each vertex by the requested padding distance", () => {
     const polygon = [
       { x: 0, y: 0 },
-      { x: 6, y: 0 },
-      { x: 6, y: 6 },
-      { x: 0, y: 6 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+      { x: 0, y: 10 },
     ];
 
     const padded = padPolygonFromCentroid(polygon, 2);
+    const centroid = { x: 5, y: 5 };
 
-    const centroid = { x: 3, y: 3 };
     for (let index = 0; index < polygon.length; index += 1) {
       const before = polygon[index]!;
       const after = padded[index]!;
@@ -41,15 +35,29 @@ describe("padPolygonFromCentroid", () => {
 
   it("is deterministic for identical input", () => {
     const polygon = [
-      { x: 0, y: 0 },
-      { x: 4, y: 1 },
-      { x: 6, y: 5 },
-      { x: 1, y: 7 },
+      { x: 2, y: 2 },
+      { x: 18, y: 1 },
+      { x: 20, y: 14 },
+      { x: 8, y: 22 },
+      { x: 1, y: 11 },
     ];
 
     const first = padPolygonFromCentroid(polygon, 3);
     const second = padPolygonFromCentroid(polygon, 3);
 
     expect(second).toEqual(first);
+  });
+
+  it("keeps padding-first tie-break priority over area minimization", () => {
+    const polygon = [
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      { x: 20, y: 20 },
+      { x: 0, y: 20 },
+    ];
+
+    const padded = padPolygonFromCentroid(polygon, 4);
+
+    expect(padded).not.toEqual(polygon);
   });
 });
