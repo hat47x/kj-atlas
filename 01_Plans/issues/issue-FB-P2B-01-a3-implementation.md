@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -27,9 +27,16 @@
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
+## AC/DoD ドラフト（不足確認）
+
+- AC-2B-4: 実装レーンは `CTR-2B-01-CANDIDATE-GROUP-V1` 以外の契約を導入しないこと。
+- AC-2B-5: A2で固定した非自動確定・再読込復元条件を回帰要件として継承すること。
+- DoD-2B-3: 逸脱要求発生時にA1差し戻しフローを明記していること。
+- 判定: 本メモ範囲では不足なし（ADR変更要否が出た場合はC/D/Cで承認取得後に再開）。
+
 ## Phase 3（A3）: Plan → Execute → Verify → Proceed
 
-- State Sync Check（Phase開始時）:
+- State Sync Check（Phase開始時の再Read）:
   - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
   - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
   - 判定: Pass（契約ID不整合なし）
@@ -70,7 +77,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 

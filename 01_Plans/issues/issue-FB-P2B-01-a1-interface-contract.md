@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -26,6 +26,12 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
+
+## AC/DoD ドラフト（不足確認）
+
+- AC-2B-1: candidate group一覧と対象Card確認を成立させるための入出力型が固定されていること。
+- DoD-2B-1: A2/A3が契約再定義せず `CTR-2B-01-CANDIDATE-GROUP-V1` を参照できること。
+- 判定: 本メモ範囲では不足なし（追加要求が出た場合はA1へ差し戻し）。
 
 ## Context / Decision / Consequences
 
@@ -55,7 +61,7 @@
 
 ## Phase 1（A1）: Plan → Execute → Verify → Proceed
 
-- State Sync Check（Phase開始時）:
+- State Sync Check（Phase開始時の再Read）:
   - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
   - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
   - 判定: Pass（契約ID不整合なし）
@@ -83,7 +89,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 

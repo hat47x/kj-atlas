@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -27,9 +27,16 @@
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
+## AC/DoD ドラフト（不足確認）
+
+- AC-2B-2: mock投入で `CandidateListViewModel` の群が順序/対象Cardを保持して観測できること。
+- AC-2B-3: 候補提示のみで merge state が自動確定しないこと。
+- DoD-2B-2: 同一 `snapshotVersion` 入力で再読込時に同一group構造が再現されること。
+- 判定: 本メモ範囲では不足なし（契約追加要求はA1へ差し戻し）。
+
 ## Phase 2（A2）: Plan → Execute → Verify → Proceed
 
-- State Sync Check（Phase開始時）:
+- State Sync Check（Phase開始時の再Read）:
   - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
   - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
   - 判定: Pass（契約ID不整合なし）
@@ -61,7 +68,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 
