@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -42,6 +42,38 @@
 - [ ] Plan→Execute→Verify→Proceedがチェックリスト化されている。
 - [ ] AC/DoD不足のドラフト提案手順が明文化されている。
 
+
+## Phase execution log（A3）
+
+### Read sync（Phase開始時）
+
+- `issue-FB-P2A-01-a1-interface-contract.md`
+- `issue-FB-P2A-01-a2-mock-validation.md`
+- `issue-FB-P2A-01-a3-implementation.md`
+
+### Plan
+
+- A1契約IDとA2ケースIDを実装タスクへトレース可能にマッピングする。
+- GoNoGo判定条件（M1/M2 pass, M3/M4 fail, owner確定）を前提条件として固定する。
+
+### Execute
+
+- 実装順序を `schema -> domain model -> persistence roundtrip` で維持する。
+- A2の handoff payload を実装チェックリストへ転写する。
+
+### Verify
+
+- `contractVersion=IslandHierarchyContractV1` を契約ロックとして再確認する。
+- `ownerOfFix` 未確定ケースが残っていないことを検証する。
+
+### Proceed
+
+- Go判定成立時のみ次タスクへ進行し、NoGo時はA1/A2/A3責務へ即時返却する。
+
+## ADR change handling
+
+- ADR change involved: **No**（A3は既定契約の実装接続であり、ADR改定は不要）
+- C/D/C + approval: **N/A**
 
 ## A2→A3 接続条件（確定）
 
