@@ -22,6 +22,7 @@ from kj_atlas_api.access_control import (
     resolve_access_decision,
 )
 from kj_atlas_api.audit import build_event
+from kj_atlas_api.auth_assurance import build_auth_assurance_metadata
 from kj_atlas_api.auth_context import resolve_identity_context
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import DocumentPayload, DocumentRow, MergeDecisionLogRow, MergeDecisionRecord
@@ -163,6 +164,7 @@ def get_document(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
+                    **build_auth_assurance_metadata(access_request.auth),
                 },
             )
         )
@@ -251,6 +253,7 @@ def post_export_audit(
                     "policyRefPresent": access_request.resource.policy_ref is not None,
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
+                    **build_auth_assurance_metadata(access_request.auth),
                 },
             )
         )
