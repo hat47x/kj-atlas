@@ -139,3 +139,31 @@ def test_review_attribution_rejects_email_like_owner_ref() -> None:
             ownerRef="owner@example.com",
             auditRecordedAt=_now(),
         )
+
+
+
+def test_deterministic_tie_break_defaults_to_fixed_order() -> None:
+    from kj_atlas_api.models import DeterministicTieBreak
+
+    validated = DeterministicTieBreak(schemaVersion="1.0.0")
+    assert validated.order == (
+        "padding_compliance",
+        "self_intersection_avoidance",
+        "minimum_area_delta",
+        "minimum_vertex_count",
+    )
+
+
+def test_deterministic_tie_break_rejects_reordered_values() -> None:
+    from kj_atlas_api.models import DeterministicTieBreak
+
+    with pytest.raises(ValidationError):
+        DeterministicTieBreak(
+            schemaVersion="1.0.0",
+            order=(
+                "self_intersection_avoidance",
+                "padding_compliance",
+                "minimum_area_delta",
+                "minimum_vertex_count",
+            ),
+        )

@@ -808,6 +808,15 @@ def _sample_payload_v2_with_hil_rs_contract_fields(doc_id: str, *, reviewer_ref:
             "reviewerRef": reviewer_ref,
             "auditRecordedAt": "2026-02-11T00:02:00Z",
         },
+        "deterministicTieBreak": {
+            "schemaVersion": "1.0.0",
+            "order": [
+                "padding_compliance",
+                "self_intersection_avoidance",
+                "minimum_area_delta",
+                "minimum_vertex_count",
+            ],
+        },
     }
 
 
@@ -829,6 +838,12 @@ def _assert_v2_hil_rs_contract_fields_roundtrip(client: TestClient) -> None:
     get_json = get_response.json()
     assert get_json["reproposalDiffs"][0]["traceKey"] == "crit-1:proposal-1"
     assert get_json["reviewAttribution"]["reviewState"] == "human_reviewed"
+    assert get_json["deterministicTieBreak"]["order"] == [
+        "padding_compliance",
+        "self_intersection_avoidance",
+        "minimum_area_delta",
+        "minimum_vertex_count",
+    ]
 
 
 def test_docs_v2_hil_rs_contract_fields_roundtrip_sqlite(sqlite_client: TestClient) -> None:
