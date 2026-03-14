@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "handoffId": "A2-HANDOFF-FB-P2C-01-2026-03-14",
+  "appliedTieBreakOrder": "padding>self_intersection>area_delta>vertex_count",
+  "cases": [
+    {
+      "mockCaseId": "A",
+      "seed": 20260314,
+      "padding": 24,
+      "points": [
+        { "x": 90, "y": 80 },
+        { "x": 250, "y": 72 },
+        { "x": 318, "y": 156 },
+        { "x": 282, "y": 248 },
+        { "x": 154, "y": 290 },
+        { "x": 78, "y": 188 }
+      ]
+    },
+    {
+      "mockCaseId": "B",
+      "seed": 20260314,
+      "padding": 12,
+      "points": [
+        { "x": 30, "y": 30 },
+        { "x": 120, "y": 26 },
+        { "x": 86, "y": 110 }
+      ]
+    },
+    {
+      "mockCaseId": "C",
+      "seed": 20260314,
+      "padding": 36,
+      "points": [
+        { "x": 120, "y": 80 },
+        { "x": 222, "y": 82 },
+        { "x": 312, "y": 170 },
+        { "x": 276, "y": 290 },
+        { "x": 178, "y": 326 },
+        { "x": 90, "y": 206 }
+      ]
+    }
+  ]
+}
