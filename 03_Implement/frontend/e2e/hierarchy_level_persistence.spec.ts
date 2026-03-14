@@ -64,15 +64,16 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
-  await page.getByRole("button", { name: "View" }).click();
-  await page.getByRole("button", { name: "Overview" }).click();
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.getByLabel(/Structure level|構造レベル/).selectOption("overview");
 
   await expect(page.getByText("Root Placard").first()).toBeVisible();
-  await expect(page.getByText("Child Placard").first()).toBeVisible();
+  await expect(page.getByText("Child Placard").first()).toBeHidden();
   await expect(page.getByText("Root Member").first()).toBeHidden();
   await expect(page.getByText("Child Member").first()).toBeHidden();
 
-  await page.getByRole("button", { name: "Detail" }).click();
+  await page.getByLabel(/Structure level|構造レベル/).selectOption("detail");
+  await expect(page.getByText("Child Placard").first()).toBeVisible();
   await expect(page.getByText("Root Member").first()).toBeVisible();
   await expect(page.getByText("Child Member").first()).toBeVisible();
 
