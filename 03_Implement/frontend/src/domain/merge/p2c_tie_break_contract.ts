@@ -3,8 +3,8 @@ export const P2C_TIE_BREAK_SCHEMA_VERSION = "1.0.0" as const;
 export const P2C_DETERMINISTIC_TIE_BREAK_ORDER = [
   "padding_compliance",
   "self_intersection_avoidance",
-  "minimum_area_delta",
-  "minimum_vertex_count",
+  "area_delta_minimization",
+  "vertex_count_minimization",
 ] as const;
 
 export type P2CTieBreakKey = (typeof P2C_DETERMINISTIC_TIE_BREAK_ORDER)[number];
