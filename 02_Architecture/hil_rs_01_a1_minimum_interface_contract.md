@@ -50,6 +50,20 @@
     - `"share_export_leakage_relaxation"`
   - `requiredApproval`: `"SecurityOfficer+SystemOwner"`
 
+#### DeterministicTieBreakContract（固定）
+
+- `contractKey`: `"deterministicTieBreakOrder"`（固定）
+- `schemaVersion`: `"1.0.0"`（固定）
+- `order`（固定・入替禁止）:
+  1. `padding_compliance`
+  2. `self_intersection_avoidance`
+  3. `minimum_area_delta`
+  4. `minimum_vertex_count`
+- `rule`（固定）:
+  - 同一入力には同一順序評価を必ず適用し、同一出力を返す。
+  - 順序の省略・追加・名称変更は不可（契約改訂扱い）。
+  - Gate 0承認がない順序変更提案は却下する。
+
 ### 2.1 Critique入力I/F（Contract Key: `A1-CRITIQUE-IF`）
 
 #### 必須
@@ -171,6 +185,7 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
+  - `deterministicTieBreakOrder`
 - Single Reference（固定）:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 非目標（A2/A3共通）:
@@ -197,6 +212,7 @@
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
 - 禁止境界:
@@ -242,6 +258,7 @@ freezeRecord:
     - "A1-CRITIQUE-IF"
     - "A1-REDIFF-IF"
     - "A1-ATTR-IF"
+    - "deterministicTieBreakOrder"
   fixedValues:
     critiqueSchemaVersion: "1.0.0"
     critiqueRequiredFields:
@@ -257,6 +274,11 @@ freezeRecord:
       - reviewerRef
       - auditRecordedAt
     reviewOverridePolicy: "human_dual_control_only"
+    deterministicTieBreakOrder:
+      - padding_compliance
+      - self_intersection_avoidance
+      - minimum_area_delta
+      - minimum_vertex_count
   freezeDeclaration: "A2/A3開始後は本契約の本文変更を禁止し、変更は統合フェーズの人間判断でのみ実施する"
 
 gate0ApprovalEvidence:

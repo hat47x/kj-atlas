@@ -67,7 +67,7 @@
   - 禁止: AIのみで`human_reviewed`遷移、生ID保存、`reviewEvents`欠如時の閲覧不可化
   - `schemaVersion=1.0.0`
 - tie-break順序:
-  - 本A1契約では未定義（N/A）。順序規約は `issue-FB-P2C-01-a1-interface-contract.md` の `deterministicTieBreakOrder` に分離管理。
+  - `deterministicTieBreakOrder` をA1固定値として採用（`padding_compliance > self_intersection_avoidance > minimum_area_delta > minimum_vertex_count`）。
 
 #### Phase 2進行前の修正方針
 
@@ -101,9 +101,9 @@
 
 ### Phase 3: Contract Fix（必須/任意/禁止の固定）
 
-- `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約を、必須/任意/禁止で分解して固定済み。
+- `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約に加え `deterministicTieBreakOrder` を固定順序契約として固定済み。
 - A2/A3は単一参照先 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみを参照し、独自I/Fを追加しない。
-- 禁止事項（SafeMode後退、share/export漏えい防止の弱化、PII生値保存）は3契約の共通境界として固定。
+- 禁止事項（SafeMode後退、share/export漏えい防止の弱化、PII生値保存）はA1契約群の共通境界として固定。
 
 
 ### Phase 3追記: Contract Fix確定値（Decision Queue解消）
@@ -204,6 +204,8 @@
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
 - Freeze Flags（固定）:
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
@@ -248,6 +250,7 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
+  - `deterministicTieBreakOrder`
 - 参照先:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - 契約未固定箇所:
@@ -311,7 +314,7 @@
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 - single reference: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- locked contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- locked contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `deterministicTieBreakOrder`
 
 ### 11.2 A2/A3固定リンク・固定値一覧
 
@@ -323,6 +326,8 @@
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.auditFields=reviewState|reviewedAt|reviewerRef|auditRecordedAt`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
+  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
+  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
 
 ### 11.3 変更凍結宣言
 
@@ -395,6 +400,7 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
+  - `deterministicTieBreakOrder`
   - `deterministicTieBreakOrder`（`FB-P2C-01` Gate 0提出パケット）
 - Single Reference（契約本文SSOT）:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
