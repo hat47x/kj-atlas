@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { padPolygonFromCentroid } from "./polygon_pad";
+import {
+  padPolygonFromCentroid,
+  POLYGON_TIE_BREAK_ORDER,
+  POLYGON_TIE_BREAK_SCHEMA_VERSION,
+  selectPolygonCandidateByTieBreak,
+} from "./polygon_pad";
 
 describe("padPolygonFromCentroid", () => {
   it("returns original reference when polygon is invalid or padding is non-positive", () => {
@@ -59,5 +64,19 @@ describe("padPolygonFromCentroid", () => {
     const padded = padPolygonFromCentroid(polygon, 4);
 
     expect(padded).not.toEqual(polygon);
+  });
+
+  it("publishes fixed tie-break contract metadata", () => {
+    expect(POLYGON_TIE_BREAK_SCHEMA_VERSION).toBe("1.0.0");
+    expect(POLYGON_TIE_BREAK_ORDER).toEqual([
+      "paddingViolationCount",
+      "selfIntersection",
+      "areaDeltaAbs",
+      "vertexCount",
+    ]);
+  });
+
+  it("selectPolygonCandidateByTieBreak fails fast when candidates are empty", () => {
+    expect(() => selectPolygonCandidateByTieBreak([])).toThrow("candidates must contain at least one polygon");
   });
 });
