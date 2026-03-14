@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -121,3 +121,29 @@
 - GoNoGo条件を実コードで固定。
   - Go: `M1/M2=pass` かつ `M3/M4=fail` かつ owner確定
   - NoGo: case不足または上記不一致
+
+
+## A3 implementation connection guard（Stream B / Phase 4）
+
+- 着手条件（Start）:
+  - A1契約ロック `IslandHierarchyContractV1` が有効。
+  - A2 handoff payload（`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）がM1〜M4で全件揃う。
+- 停止条件（Stop）:
+  - `contractVersion` 不一致、mockCase重複/欠損、`ownerOfFix`未確定を検出した場合は推測継続せず停止。
+  - AC/DoD不足が検出され、`agreementStatus=agreed` になる前。
+- ロールバック条件（Rollback）:
+  - GoNoGo不成立時はA3側の追加前提を破棄し、A2責務分離結果へ巻き戻す。
+  - 契約ドリフト検出時はA1固定契約へ差し戻し、A3で契約再定義しない。
+
+
+## Stream B one-page handoff（Phase 5）
+
+- 固定I/F（Fixed Interface）:
+  - `contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
+  - ContractLock: `IslandHierarchyContractV1`
+- 許容差分（Allowed Delta）:
+  - A3内の実装順序・検証順序・タスク粒度の調整（契約語彙と判定を変えない範囲）。
+- 禁止変更（Forbidden Changes）:
+  - A1 Required fields / Invariants / ContractLinks の改変。
+  - GoNoGo条件（`M1/M2=pass`, `M3/M4=fail`）の変更。
+  - SafeMode/share-export既定挙動を変更する差分。

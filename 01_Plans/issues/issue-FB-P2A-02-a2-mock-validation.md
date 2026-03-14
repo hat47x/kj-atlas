@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream F
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`
@@ -77,6 +77,25 @@
   - M1〜M4の`validationResult`と`ownerOfFix`が確定。
 - A2 Proceed条件:
   - A3 handoff I/Fの必須項目が欠損なし。
+
+
+## A2 mock validation plan（Stream B / Phase 3）
+
+- fixture/stub分解（実装依存を分離）:
+  - Fixture:
+    - F1 `visibility_collapse_valid.json`（M1）
+    - F2 `visibility_expand_restore_valid.json`（M2）
+    - F3 `visibility_double_collapse_idempotent.json`（M3）
+    - F4 `visibility_missing_island_invalid.json`（M4）
+  - Stub:
+    - S1 `visibility contract projector stub`
+    - S2 `collapse/expand invariant evaluator stub`
+- 実装依存の明示切り離し:
+  - 描画エンジン、state管理実装、UI操作シーケンスには依存しない。
+  - 判定軸はA1契約Invariant（表示/ヒットテスト除外、復帰可能、document非破壊）のみ。
+- GoNoGo固定:
+  - Go: `M1/M2/M3=pass` かつ `M4=fail`。
+  - NoGo: 判定不一致、ケース欠損、責務未確定。
 
 ## A3 handoff I/F
 

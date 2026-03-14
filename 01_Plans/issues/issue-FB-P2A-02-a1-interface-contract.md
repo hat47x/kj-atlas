@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream F
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -41,6 +41,30 @@
   - `isCollapsed=true` の親配下は描画・ヒットテスト対象外。
   - `isCollapsed=false` で直近状態から復帰可能。
   - collapse/expand操作はdocument構造を破壊しない（view stateのみ変更）。
+
+
+## A1 contract audit（Stream B / Phase 2）
+
+- 契約項目確定:
+  - InterfaceName=`IslandVisibilityContractV1`
+  - Required fields / Invariants / ContractLinks をA1固定値として維持。
+- I/F境界確定:
+  - A2/A3は `contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence` を共通I/Fとして使用する。
+  - collapse/expandの実装方法には依存せず、入出力契約のみ固定する。
+- 非目標（Non-goals）:
+  - 表示アルゴリズム詳細、UIイベント設計、03_Implement配下コード変更は対象外。
+  - SafeMode/share-export既定の変更は対象外。
+
+## ADR起票要否（Phase 2判定）
+
+- 判定: **起票不要（No ADR proposal）**
+- Context:
+  - `ADR-0007` で確定済みの方針をI/Fへ具体化するタスク。
+- Decision:
+  - A1契約監査結果をIssueへ固定し、ADR更新は実施しない。
+- Consequences:
+  - A2/A3の直列実行で契約ドリフトを抑止できる。
+  - 方針変更が必要な差分のみADR追加トリガへ回送する。
 
 ## ADR要否判定（Phase 1要件）
 

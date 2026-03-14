@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream B
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -95,6 +95,25 @@
 - DriftCheck:
   - ContractLinks（A1→A2→A3）が全て到達可能であること。
   - Invariants（存在参照 / DAG / roundtrip不変）を判定表にそのまま転写すること。
+
+
+## A2 mock validation plan（Stream B / Phase 3）
+
+- fixture/stub分解（実装依存を分離）:
+  - Fixture:
+    - F1 `hierarchy_root_valid.json`（M1対応）
+    - F2 `hierarchy_three_levels_valid.json`（M2対応）
+    - F3 `hierarchy_missing_parent_invalid.json`（M3対応）
+    - F4 `hierarchy_cycle_invalid.json`（M4対応）
+  - Stub:
+    - S1 `contract projector stub`（A1契約キー抽出）
+    - S2 `invariant evaluator stub`（存在参照 / DAG / roundtrip判定）
+- 実装依存の明示切り離し:
+  - 03_Implementの関数名・モジュール名には依存しない。
+  - 判定は `IslandHierarchyContractV1` のI/FとInvariantのみで実施する。
+- GoNoGo固定:
+  - Go: `M1/M2=pass` かつ `M3/M4=fail`、`ownerOfFix`確定。
+  - NoGo: ケース欠損、判定不一致、責務未確定。
 
 ## Validation log schema（A3引き継ぎ必須）
 
