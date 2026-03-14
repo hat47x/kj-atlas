@@ -48,7 +48,7 @@ export const evaluateIslandVisibilityA3GoNoGoStreamD = (
   const logs = REQUIRED_MOCK_CASES.map((mockCaseId) => {
     const entry = byCase.get(mockCaseId)!;
     return {
-      contractVersion: entry.contractVersion,
+      contractVersion: CONTRACT_VERSION,
       mockCaseId,
       validationResult: entry.validationResult,
       ownerOfFix: entry.ownerOfFix,
