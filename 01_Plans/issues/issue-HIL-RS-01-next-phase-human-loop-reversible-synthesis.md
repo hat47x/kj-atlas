@@ -99,6 +99,18 @@
 - Proceed:
   - Stream A範囲の目的（契約/I-F固定）を完了。
 
+### Phase 5: Proceed判定
+
+- Plan:
+  - A2開始可否をGateチェックリストで確認し、Ready/Blockを単一判定で確定する。
+- Execute:
+  - SSOT/Freeze flag/固定値/禁止事項/契約変更不可ルールの5観点でチェック実施。
+- Verify:
+  - Ready条件5項目が全て満たされ、未定義契約変更要求が0件であることを確認。
+  - Mock handoff I/F（APIシグネチャ・型・fixture schema）がSSOTと一致することを確認。
+- Proceed:
+  - A2/A3へ **Ready** 判定で引き継ぎ。契約変更要求はA1差し戻しを維持。
+
 ## 7) Contract change request routing（固定）
 
 - 差し戻し先（唯一）:
@@ -127,6 +139,21 @@
   - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
 - 明示禁止:
   - 契約変更禁止。逸脱要求はA1へ差し戻し。
+
+### 8.1 Mock-ready I/F（A2実装前提）
+
+- API signatures（固定・実装前提）:
+  - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
+  - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
+  - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
+- 型参照（固定）:
+  - `CritiqueInputFixtureV1`
+  - `ReDiffFixtureV1`
+  - `ReviewAttributionFixtureV1`
+- Fixture schema（固定）:
+  - `fixtures/hil_rs_01/critique_input_v1.json`
+  - `fixtures/hil_rs_01/rediff_v1.json`
+  - `fixtures/hil_rs_01/review_attribution_v1.json`
 
 
 ## 9) Phase 5 Gate判定（A2開始条件）
