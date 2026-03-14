@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -36,6 +36,7 @@
 
 - Plan:
   - A1契約のみ依存でmock検証条件を固定し、契約拡張は行わない。
+  - AC/DoD補完の適用として、非自動確定・順序復元・異常系除外の3条件を検証観点に固定する。
 - Execute:
   - mock append順序: `accept -> partial -> reject -> defer`。
   - 非自動確定: append時に representative確定イベントを発生させない。
@@ -46,6 +47,7 @@
   - [x] 非自動確定条件が明記されている。
   - [x] 再読込復元条件が明記されている。
   - [x] stub/fixtureで検証継続可能。
+  - [x] AC/DoD補完（4値制約・順序保持・契約拡張禁止）がA3入力条件として明記されている。
 - Proceed:
   - A3へ `CTR-2B-02-DECISION-LOG-V1` を参照IDとして引き渡す。
 
@@ -61,7 +63,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 

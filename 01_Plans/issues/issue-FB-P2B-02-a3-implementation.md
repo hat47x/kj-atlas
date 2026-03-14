@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -36,6 +36,7 @@
 
 - Plan:
   - `CTR-2B-02-DECISION-LOG-V1` を参照し、契約再定義を禁止する。
+  - AC/DoD補完条件（4値制約・順序保持・非自動確定）を実装接続ゲートに埋め込む。
 - Execute:
   - Gate-1: `MergeDecisionRecord` 必須項目を全保持。
   - Gate-2: A2の非自動確定条件を回帰要件化。
@@ -53,6 +54,8 @@
 - AC/DoD検証結果:
   - AC-2B-2（決定の保存）: **Plan上は達成見込み**（実装未着手）。
   - AC-2B-5（自動確定しない）: **Plan上は達成見込み**（実装未着手）。
+  - AC補完-1（4値制約）: **Plan上は達成見込み**（実装で検証要）。
+  - AC補完-2（restore順序保持）: **Plan上は達成見込み**（実装で検証要）。
 - 未達項目:
   - 実コード上のappend/list/restoreと回帰テスト結果。
 - 次レーン受け渡し条件:
@@ -71,7 +74,7 @@
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Output:
-  - `ok: validated 2 active issue memos`
+  - `ok: validated <N> active issue memos`
 - Self-Correction:
   - 0/3（修復ループ不要）
 
