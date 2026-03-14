@@ -89,8 +89,12 @@ export function buildIslandVisibilityContractPayload(
   collapsedIslandIds: ReadonlySet<string>,
   islandId: string,
 ): ContractValidationResult<IslandVisibilityContractV1> {
-  if (!doc.islands.some((island) => island.id === islandId)) {
+  if (islandId.length === 0) {
     return { ok: false, error: "island.id is required" };
+  }
+
+  if (!doc.islands.some((island) => island.id === islandId)) {
+    return { ok: false, error: `unknown island.id: ${islandId}` };
   }
 
   const hiddenDescendantIslandIds = [...collectHiddenDescendantIslandIds(doc.islands, collapsedIslandIds)].sort();
