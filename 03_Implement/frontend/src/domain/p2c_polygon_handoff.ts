@@ -1,16 +1,11 @@
 import { padPolygonFromCentroid } from "./geometry/polygon_pad";
+import { P2C_DETERMINISTIC_TIE_BREAK_ORDER, type P2CTieBreakKey } from "./merge/p2c_tie_break_contract";
+
+export { P2C_DETERMINISTIC_TIE_BREAK_ORDER };
 
 export type Point = { x: number; y: number };
 
 export const P2C_A2_HANDOFF_ID = "A2-HANDOFF-FB-P2C-01-2026-03-14" as const;
-export const P2C_DETERMINISTIC_TIE_BREAK_ORDER = [
-  "padding_compliance",
-  "self_intersection_avoidance",
-  "area_delta_minimization",
-  "vertex_count_minimization",
-] as const;
-
-export type P2CTieBreakKey = (typeof P2C_DETERMINISTIC_TIE_BREAK_ORDER)[number];
 export type P2CMockCaseId = "A" | "B" | "C";
 
 export type P2CMockValidationLog = {

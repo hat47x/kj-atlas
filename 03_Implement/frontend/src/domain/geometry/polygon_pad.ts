@@ -1,23 +1,16 @@
 import type { Point } from "../types";
+import { P2C_DETERMINISTIC_TIE_BREAK_ORDER, type P2CTieBreakKey } from "../merge/p2c_tie_break_contract";
 import { isSelfIntersectingPolygon } from "./polygon_self_intersection";
 
 const PADDING_EPSILON = 1e-6;
 const TIE_BREAK_EPSILON = 1e-6;
 
 export const POLYGON_TIE_BREAK_SCHEMA_VERSION = "1.0.0" as const;
-export const POLYGON_TIE_BREAK_ORDER = [
-  "padding_compliance",
-  "self_intersection_avoidance",
-  "minimum_area_delta",
-  "minimum_vertex_count",
-] as const;
+export const POLYGON_TIE_BREAK_ORDER = P2C_DETERMINISTIC_TIE_BREAK_ORDER;
 
 type PolygonCandidate = {
   points: Point[];
-  paddingViolationCount: number;
-  selfIntersection: boolean;
-  areaDeltaAbs: number;
-  vertexCount: number;
+  score: Record<P2CTieBreakKey, number>;
 };
 
 function polygonArea(points: Point[]): number {
@@ -61,20 +54,11 @@ function countPaddingViolations(basePoints: Point[], candidatePoints: Point[], c
 }
 
 function compareCandidates(a: PolygonCandidate, b: PolygonCandidate): number {
-  if (a.paddingViolationCount !== b.paddingViolationCount) {
-    return a.paddingViolationCount - b.paddingViolationCount;
-  }
-
-  if (a.selfIntersection !== b.selfIntersection) {
-    return Number(a.selfIntersection) - Number(b.selfIntersection);
-  }
-
-  if (Math.abs(a.areaDeltaAbs - b.areaDeltaAbs) > TIE_BREAK_EPSILON) {
-    return a.areaDeltaAbs - b.areaDeltaAbs;
-  }
-
-  if (a.vertexCount !== b.vertexCount) {
-    return a.vertexCount - b.vertexCount;
+  for (const key of POLYGON_TIE_BREAK_ORDER) {
+    const delta = a.score[key] - b.score[key];
+    if (Math.abs(delta) > TIE_BREAK_EPSILON) {
+      return delta;
+    }
   }
 
   const serializedA = JSON.stringify(a.points);
@@ -82,7 +66,7 @@ function compareCandidates(a: PolygonCandidate, b: PolygonCandidate): number {
   return serializedA.localeCompare(serializedB);
 }
 
-export type PolygonTieBreakMetrics = Omit<PolygonCandidate, "points">;
+export type PolygonTieBreakMetrics = PolygonCandidate["score"];
 
 export function selectPolygonCandidateByTieBreak(candidates: PolygonCandidate[]): PolygonCandidate {
   if (candidates.length === 0) {
@@ -116,10 +100,12 @@ export function padPolygonFromCentroid(points: Point[], padding: number): Point[
 
   const candidates: PolygonCandidate[] = [points, padded].map((candidatePoints) => ({
     points: candidatePoints,
-    paddingViolationCount: countPaddingViolations(points, candidatePoints, centroid, padding),
-    selfIntersection: isSelfIntersectingPolygon(candidatePoints),
-    areaDeltaAbs: Math.abs(polygonArea(candidatePoints) - baseArea),
-    vertexCount: candidatePoints.length,
+    score: {
+      padding_compliance: countPaddingViolations(points, candidatePoints, centroid, padding),
+      self_intersection_avoidance: Number(isSelfIntersectingPolygon(candidatePoints)),
+      area_delta_minimization: Math.abs(polygonArea(candidatePoints) - baseArea),
+      vertex_count_minimization: candidatePoints.length,
+    },
   }));
 
   const selected = selectPolygonCandidateByTieBreak(candidates);

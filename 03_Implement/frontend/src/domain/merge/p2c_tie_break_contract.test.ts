@@ -12,9 +12,9 @@ describe("p2c_tie_break_contract", () => {
     expect(
       isP2CTieBreakOrderFixed([
         "padding_compliance",
-        "minimum_area_delta",
+        "area_delta_minimization",
         "self_intersection_avoidance",
-        "minimum_vertex_count",
+        "vertex_count_minimization",
       ]),
     ).toBe(false);
   });
@@ -26,8 +26,8 @@ describe("p2c_tie_break_contract", () => {
         score: {
           padding_compliance: 1,
           self_intersection_avoidance: 1,
-          minimum_area_delta: 9,
-          minimum_vertex_count: 9,
+          area_delta_minimization: 9,
+          vertex_count_minimization: 9,
         },
       },
       {
@@ -35,8 +35,8 @@ describe("p2c_tie_break_contract", () => {
         score: {
           padding_compliance: 1,
           self_intersection_avoidance: 2,
-          minimum_area_delta: 0,
-          minimum_vertex_count: 0,
+          area_delta_minimization: 0,
+          vertex_count_minimization: 0,
         },
       },
     ]);
@@ -51,8 +51,8 @@ describe("p2c_tie_break_contract", () => {
         score: {
           padding_compliance: 1,
           self_intersection_avoidance: 1,
-          minimum_area_delta: 1,
-          minimum_vertex_count: 1,
+          area_delta_minimization: 1,
+          vertex_count_minimization: 1,
         },
       },
       {
@@ -60,8 +60,8 @@ describe("p2c_tie_break_contract", () => {
         score: {
           padding_compliance: 1,
           self_intersection_avoidance: 1,
-          minimum_area_delta: 1,
-          minimum_vertex_count: 1,
+          area_delta_minimization: 1,
+          vertex_count_minimization: 1,
         },
       },
     ]);

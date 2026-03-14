@@ -1,11 +1,11 @@
 # Issue Draft: FB-P2C-01-A3 Polygon auto-fit / 実装ハンドオフ
 
 - Type: Feature request
-- Status: Ready (Stream D / backend接続準備レーン)
+- Status: Done (Stream C / P2C-A3 implementation)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
-- Scope: `01_Plans/issues/` (planning memo only)
+- Owner: Stream C
+- Scope: `01_Plans/issues/` + `03_Implement/frontend/src/domain/**`（P2C-A3実装）
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/island_shapes.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
 - Expected verification level: `integration`
@@ -19,7 +19,7 @@
   - 前提: Gate 0承認済みかつA2で同一入力同一出力の検証を完了している。
   - 操作: A1/A2契約を順守し、API/Schema依存だけを分離したハンドオフテンプレへ接続する。
   - 期待結果: 契約順序逸脱なしで実装レーンが着手可能になる。
-  - 除外: 実コード変更（`03_Implement/**`）と運用文書更新（`04_Documentation/**`）。
+  - 除外: A1/A2契約本文の変更、shared resource 3ファイル、運用文書更新（`04_Documentation/**`）。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
@@ -170,3 +170,50 @@
 3. 修正3: 停止条件（Gate未承認・契約矛盾・競合検出）を明示した。
 
 > 上限超過時停止ルール: Self-Correction が 3 回を超える場合は更新を停止し、競合一覧を提出する。
+
+
+## 14) Stream C 実装ログ（P2C-A3 implementation）
+
+### Phase 1: Read Gate
+- Plan:
+  - A1/A2成果物を再読し、`deterministicTieBreakOrder` の不変条件を確認する。
+- Execute:
+  - A1/A2/A3 memoと既存実装を照合し、tie-breakキー名ドリフト（`minimum_*` と `*_minimization`）を検出。
+- Verify:
+  - Gate 0承認 + A2 Verify pass + 契約順序固定を再確認（Pass）。
+- Proceed:
+  - 契約変更なしでA3実装に進行。
+
+### Phase 2: Plan
+- 実装差分:
+  1. tie-breakキー名をA1/A2契約語彙（`area_delta_minimization`, `vertex_count_minimization`）へ統一。
+  2. `polygon_pad.ts` の評価順序を `merge/p2c_tie_break_contract.ts` 参照へ一本化し、重複定義を排除。
+  3. 既存unitテストを契約語彙へ更新して回帰検証を追加。
+- AC/DoD:
+  - 同一入力同一出力（deterministic）
+  - `paddingViolationCount == 0`
+  - tie-break順序の追加/省略/並べ替え禁止
+- 検証コマンド:
+  - `npm test -- --run src/domain/geometry/polygon_pad.test.ts src/domain/p2c_polygon_handoff.test.ts src/domain/merge/p2c_tie_break_contract.test.ts src/domain/stream_d_p2c_mock_validation.test.ts`
+
+### Phase 3: Execute
+- 契約参照専用で以下を実施:
+  - `merge/p2c_tie_break_contract.ts` をA1/A2契約語彙へ整合。
+  - `polygon_pad.ts` は tie-break順序定数を契約モジュールから参照し、候補比較をスコア辞書ベースで固定順評価へ置換。
+  - `p2c_polygon_handoff.ts` は同一契約定数を再利用し、A2→A3ハンドオフ判定で単一定義を使用。
+
+### Phase 4: Verify（失敗時自己修復 最大3回）
+- 1回目実行で全テストPass。自己修復は **0回**。
+- 実行結果:
+  - 4 test files / 15 tests passed。
+
+### Phase 5: Proceed
+- A3完了判定:
+  - 契約順序は不変のまま実装へ接続完了。
+  - キー名ドリフトを除去し、A2比較キーとA3実装キーを整合。
+- ロールバック手順:
+  1. `03_Implement/frontend/src/domain/geometry/polygon_pad.ts`
+  2. `03_Implement/frontend/src/domain/merge/p2c_tie_break_contract.ts`
+  3. `03_Implement/frontend/src/domain/p2c_polygon_handoff.ts`
+  4. 関連テスト3ファイル
+  - 上記を本コミット以前へ戻し、`npm test -- --run ...` の再実行でA2整合状態へ復帰する。

@@ -71,8 +71,8 @@ describe("padPolygonFromCentroid", () => {
     expect(POLYGON_TIE_BREAK_ORDER).toEqual([
       "padding_compliance",
       "self_intersection_avoidance",
-      "minimum_area_delta",
-      "minimum_vertex_count",
+      "area_delta_minimization",
+      "vertex_count_minimization",
     ]);
   });
 
