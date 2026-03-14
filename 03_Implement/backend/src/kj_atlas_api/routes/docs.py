@@ -30,6 +30,21 @@ router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
 
 
+def _validate_review_attribution_identity(*, document: DocumentPayload, identity: AuthContext) -> None:
+    if document.version != 2:
+        return
+
+    review_attribution = document.reviewAttribution
+    if review_attribution is None or review_attribution.reviewState != "human_reviewed":
+        return
+
+    if identity.actor_ref is None:
+        raise HTTPException(status_code=403, detail="authenticated reviewer identity is required")
+
+    if review_attribution.reviewerRef != identity.actor_ref:
+        raise HTTPException(status_code=403, detail="reviewerRef must match authenticated identity")
+
+
 
 def _authorize_request(
     request: Request,
@@ -165,10 +180,12 @@ def put_document(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
-    _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
+    access_request, _ = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if document.id != doc_id:
         raise HTTPException(status_code=400, detail="Path doc_id and document.id must match")
+
+    _validate_review_attribution_identity(document=document, identity=access_request.auth)
 
     payload_json = document.model_dump_json()
     doc_row = db.get(DocumentRow, doc_id)
