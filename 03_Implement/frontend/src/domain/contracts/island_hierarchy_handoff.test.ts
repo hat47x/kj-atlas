@@ -136,6 +136,41 @@ describe("A2→A3 handoff logs", () => {
 
     expect(evaluateIslandHierarchyA3GoNoGo([m1, m2, m4])).toEqual({ go: false, reason: "missing mock case: M3" });
   });
+
+  it("returns NoGo when duplicate mock case is provided", () => {
+    const m1 = toIslandHierarchyValidationLog(
+      "M1",
+      validateIslandHierarchyContractV1({
+        schemaVersion: "2.0.0",
+        islands: [{ id: "root", parentIslandId: null, childIslandIds: [] }],
+      }),
+      "A2",
+      "root island accepted",
+    );
+
+    expect(evaluateIslandHierarchyA3GoNoGo([m1, m1])).toEqual({ go: false, reason: "duplicate mock case: M1" });
+  });
+
+  it("returns NoGo when contract version mismatches", () => {
+    const m1 = toIslandHierarchyValidationLog(
+      "M1",
+      validateIslandHierarchyContractV1({
+        schemaVersion: "2.0.0",
+        islands: [{ id: "root", parentIslandId: null, childIslandIds: [] }],
+      }),
+      "A2",
+      "root island accepted",
+    );
+    const mismatched = {
+      ...m1,
+      contractVersion: "IslandVisibilityContractV1",
+    } as unknown as (typeof m1);
+
+    expect(evaluateIslandHierarchyA3GoNoGo([mismatched])).toEqual({
+      go: false,
+      reason: "contract version mismatch: IslandVisibilityContractV1",
+    });
+  });
 });
 
 describe("validateIslandHierarchyRoundTrip", () => {
