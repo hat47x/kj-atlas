@@ -73,10 +73,26 @@
 
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `cd 03_Implement/frontend && npm test -- src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts src/domain/stream_b_mock_validation.test.ts`
 - Output:
   - `ok: validated <N> active issue memos`
+  - `vitest target suites passed`
 - Self-Correction:
   - 0/3（修復ループ不要）
+
+## Phase 4（Verify）
+
+- 判定: Pass
+- 監査メモ:
+  - Manual merge意思決定ログは保存・再読込で順序保持し、`decidedBy === "human"` のみ復元対象とする条件を維持。
+  - UI側操作ボタンはread-only時に無効化され、監査再現性を阻害しない。
+
+## Phase 5（Proceed）
+
+- 下流監査向け記録:
+  - 契約ID: `CTR-2B-02-DECISION-LOG-V1`
+  - 回帰対象: `merge_suggestion_decisions` / `MergeSuggestionsPanel` / `stream_b_mock_validation`
+  - エスカレーション条件: 自動確定ロジックの追加要求、または復元フィルタ条件の緩和要求。
 
 ## Fail-safe
 

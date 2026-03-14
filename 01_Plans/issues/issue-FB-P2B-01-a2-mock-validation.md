@@ -67,10 +67,19 @@
 
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `cd 03_Implement/frontend && npm test -- src/domain/merge_candidates.test.ts src/domain/stream_b_mock_validation.test.ts`
 - Output:
   - `ok: validated <N> active issue memos`
+  - `vitest target suites passed`
 - Self-Correction:
   - 0/3（修復ループ不要）
+
+## Phase 4（Verify）
+
+- 判定: Pass
+- 監査メモ:
+  - `CTR-2B-01-CANDIDATE-GROUP-V1` の mock 検証は deterministic fixture で再現可能。
+  - 候補提示のみで canonical merge の自動確定が実行されないことを回帰テストで維持。
 
 ## Fail-safe
 

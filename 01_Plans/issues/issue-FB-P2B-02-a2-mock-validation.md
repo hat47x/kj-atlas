@@ -62,10 +62,26 @@
 
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_suggestion_decisions.test.ts`
 - Output:
   - `ok: validated <N> active issue memos`
+  - `vitest target suites passed`
 - Self-Correction:
   - 0/3（修復ループ不要）
+
+## Phase 4（Verify）
+
+- 判定: Pass
+- 監査メモ:
+  - `CTR-2B-02-DECISION-LOG-V1` の append順序（accept→partial→reject→defer）と restore再現性をfixtureで固定。
+  - enum外 action を復元対象外にする契約境界をテストで確認。
+
+## Phase 5（Proceed）
+
+- 下流監査向け記録:
+  - 契約ID: `CTR-2B-02-DECISION-LOG-V1`
+  - 回帰対象: `stream_b_mock_validation` / `merge_suggestion_decisions`
+  - エスカレーション条件: action enum拡張要求、または snapshotVersionの互換破壊。
 
 ## Fail-safe
 
