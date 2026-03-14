@@ -130,3 +130,27 @@
 3. 修正3: Stop条件（Gate未承認・契約矛盾・競合検出）を明文化。
 
 > 上限超過時停止ルール: Self-Correction が 3 回を超える場合は更新を停止し、競合一覧を提出する。
+
+---
+
+## Stream D 実装追記（FB-P0 backend接続準備）
+
+### Phase 1: Read同期
+- `00_Prompt` と `02_Architecture` の契約を再確認し、A1/A2/A3で指定された比較キー（`inputHash` / `outputPolygonHash` / `paddingViolationCount` / `deterministicTieBreakOrder`）を固定した。
+
+### Phase 2: モック接続検証
+- backend APIに `verify-contract` エンドポイントを追加する前提で、モック入力/出力契約をPydanticで先行定義した。
+- hash形式（sha256 hex 64桁）と tie-break順序固定をバリデーションで担保した。
+
+### Phase 3: 実装
+- 追加実装:
+  - `POST /docs/{doc_id}/polygon-handoff/verify-contract`
+  - rollback判定（`paddingViolationCount>0` / `tieBreakOrderChanged=true`）
+  - `verificationKey=sha256(inputHash:outputPolygonHash)`
+- 契約破壊なし（既存Document CRUD/merge logsは非変更）。
+
+### Phase 4: Verify/Handoff
+- backend unit testsを追加し、正常系/rollback系/入力不正系を確認。
+- Docs同期必要差分:
+  - `02_Architecture/api.md`: endpoint契約追記
+  - `02_Architecture/schemas.md`: handoff比較キー追記
