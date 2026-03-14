@@ -24,10 +24,10 @@ describe("p2c_polygon_stub_client", () => {
   });
 
   it("fails fast when fixture tie-break order drifts from A1 contract", () => {
-    const drifted: P2CFixtureBundle = {
+    const drifted = {
       ...FIXTURE,
       appliedTieBreakOrder: "padding>area_delta>self_intersection>vertex_count",
-    };
+    } as unknown as P2CFixtureBundle;
 
     expect(() => runP2CMockValidation(drifted)).toThrowError("appliedTieBreakOrder mismatch");
   });
