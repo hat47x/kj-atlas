@@ -76,10 +76,26 @@
 
 - Command:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `cd 03_Implement/frontend && npm test -- src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts`
 - Output:
   - `ok: validated <N> active issue memos`
+  - `vitest target suites passed`
 - Self-Correction:
   - 0/3（修復ループ不要）
+
+## Phase 4（Verify）
+
+- 判定: Pass
+- 監査メモ:
+  - UI導線（候補提示→意思決定）と決定ログ保存（append/list/restore）の契約整合を回帰テストで維持。
+  - `accept|partial|reject|defer` の4値制約と非自動確定（human操作のみ）を継続確認。
+
+## Phase 5（Proceed）
+
+- 下流監査向け記録:
+  - 契約ID: `CTR-2B-01-CANDIDATE-GROUP-V1`
+  - 回帰対象: `merge_candidates` / `merge_suggestion_decisions` / `MergeSuggestionsPanel`
+  - エスカレーション条件: 契約ID変更要求、または非自動確定ポリシーへの逸脱要求。
 
 ## Fail-safe
 
