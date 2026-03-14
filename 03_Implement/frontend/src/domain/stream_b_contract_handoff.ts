@@ -76,6 +76,14 @@ export function evaluateStreamBA3GoNoGo(logs: StreamBValidationLog[]): { go: boo
   const ids = new Set<string>();
 
   for (const log of logs) {
+    if (log.contractVersion !== STREAM_B_CONTRACTS.candidateGroup.contractId && log.contractVersion !== STREAM_B_CONTRACTS.decisionLog.contractId) {
+      return { go: false, reason: `invalid contract version: ${log.contractVersion}` };
+    }
+
+    if (log.schemaVersion !== STREAM_B_CONTRACTS.candidateGroup.schemaVersion && log.schemaVersion !== STREAM_B_CONTRACTS.decisionLog.schemaVersion) {
+      return { go: false, reason: `invalid schema version: ${log.schemaVersion}` };
+    }
+
     if (ids.has(log.mockCaseId)) {
       return { go: false, reason: `duplicate mock case: ${log.mockCaseId}` };
     }
