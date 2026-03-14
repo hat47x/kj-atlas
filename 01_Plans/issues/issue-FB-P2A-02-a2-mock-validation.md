@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A2 Validation Planned)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream F
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`
@@ -45,6 +45,39 @@
 - [ ] 失敗時責務分離ルールが明文化される。
 - [ ] A3へ渡す検証ログ項目が定義される。
 
+## Execution protocol（Plan→Execute→Verify→Proceed）
+
+1. **Plan**
+   - A1契約凍結（`IslandVisibilityContractV1`）とモックケース（M1〜M4）を対応付ける。
+2. **Execute**
+   - M1→M2→M3→M4の順に直列検証し、各ケースで`validationResult`と`ownerOfFix`を記録する。
+3. **Verify**
+   - GoNoGo条件（`M1/M2/M3=pass`, `M4=fail`）および責務分離の確定を確認する。
+4. **Proceed**
+   - A3 handoff I/Fを満たすログのみ引き渡す。未確定項目があればA2で修復する。
+
+## AC/DoD不足の事前提案（合意前提）
+
+- Trigger:
+  - 判定根拠（`evidence`）が不十分でA3へ引き継げない場合。
+- Proposal template:
+  - `gapId`
+  - `blockingMockCaseId`
+  - `proposalDelta`
+  - `expectedImpact(A1/A2/A3)`
+  - `agreementStatus`（`pending` / `agreed` / `rejected`）
+- Rule:
+  - `agreementStatus=agreed` になるまでA3へProceedしない。
+
+## Serial execution gate（A1→A2→A3）
+
+- A2開始条件:
+  - A1契約が凍結済みでContractLinks到達性が有効。
+- A2完了条件:
+  - M1〜M4の`validationResult`と`ownerOfFix`が確定。
+- A2 Proceed条件:
+  - A3 handoff I/Fの必須項目が欠損なし。
+
 ## A3 handoff I/F
 
 - Handoff payload:
@@ -78,6 +111,8 @@
   - `issue-FB-P2A-02-a1-interface-contract.md`
   - `issue-FB-P2A-02-a2-mock-validation.md`
   - `issue-FB-P2A-02-a3-implementation.md`
+- Rule:
+  - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
 
 ## Validation plan
 

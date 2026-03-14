@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream F
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -51,12 +51,46 @@
 - [ ] A2/A3は本契約の参照のみで進行可能。
 - [ ] SafeMode既定やshare/export既定挙動を変更しない。
 
+## Execution protocol（Plan→Execute→Verify→Proceed）
+
+1. **Plan**
+   - 可視性契約（`isCollapsed` / `hiddenDescendantIslandIds` / `hiddenCardIds`）の意味境界を固定する。
+   - hit-test対象外条件（collapse時）をInvariantsへ明示する。
+2. **Execute**
+   - `IslandVisibilityContractV1` のRequired fields / Invariants / ContractLinksを文書化し、A2/A3リンクを確定する。
+3. **Verify**
+   - ContractLinksの到達性（A1→A2→A3）と用語整合を確認する。
+4. **Proceed**
+   - ACを満たした場合のみA2へ進行する。未充足時はA1内で修復する。
+
+## AC/DoD不足の事前提案（合意前提）
+
+- Trigger:
+  - AC/DoDが判定不能、または責務分離が不明瞭な場合。
+- Proposal template:
+  - `gapId`
+  - `currentRisk`
+  - `proposalDelta`
+  - `expectedImpact(A1/A2/A3)`
+  - `agreementStatus`（`pending` / `agreed` / `rejected`）
+- Rule:
+  - `agreementStatus=agreed` になるまで次Phaseへ進行しない。
+
+## Serial execution gate（A1→A2→A3）
+
+- A1完了条件:
+  - `IslandVisibilityContractV1` のRequired fields / Invariants / ContractLinksが固定済み。
+- A1 Proceed条件:
+  - A2/A3参照先が有効、かつ未定義競合なし。
+
 ## State sync / conflict check
 
 - Phase開始時Read対象:
   - `issue-FB-P2A-02-a1-interface-contract.md`
   - `issue-FB-P2A-02-a2-mock-validation.md`
   - `issue-FB-P2A-02-a3-implementation.md`
+- Rule:
+  - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
 
 ## Validation plan
 
