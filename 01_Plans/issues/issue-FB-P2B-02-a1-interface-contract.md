@@ -153,7 +153,7 @@
 
 | QueueID | Topic | Status | Decision | Proceed Impact |
 |---|---|---|---|---|
-| DQ-FB-P2B-02-001 | ContractID固定 (`CTR-2B-02-MANUAL-MERGE-V1`) | Closed | A1で固定 | A2可 |
+| DQ-FB-P2B-02-001 | ContractID固定 (`CTR-2B-02-DECISION-LOG-V1`) | Closed | A1で固定 | A2可 |
 | DQ-FB-P2B-02-002 | 手動承認境界（auto-merge禁止） | Closed | 契約に明記して禁止 | A3可 |
 | DQ-FB-P2B-02-003 | 競合解消の停止条件 | Closed | 未定義競合は即停止 | A2/A3可 |
 

@@ -192,3 +192,23 @@
 - 未決裁項目（Pending approvals）:
   - なし（A1範囲で新規ADRは不要判定を維持）。
   - ただし上位方針変更を伴う契約変更要求が発生した場合のみ、A1差し戻し + 人間承認完了まで停止。
+
+## 12) Decision Queue整理（Stream A 固定）
+
+| QueueID | Topic | Status | Decision | Owner | Unblock Condition |
+|---|---|---|---|---|---|
+| DQ-HIL-RS-01-A1-001 | Contract IDs freeze (`A1-CRITIQUE-IF`/`A1-REDIFF-IF`/`A1-ATTR-IF`) | Closed | Fixed in SSOT | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-002 | `schemaVersion=1.0.0` 固定（Critique/Attribution/TieBreak） | Closed | Fixed in SSOT | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
+
+## 13) Proceed verdict（Stream A）
+
+- A1: **Fixed / Ready**（契約ID・schemaVersion・禁止事項・SSOTを固定）。
+- A2: **Ready**（Mock-ready I/Fが固定、契約変更は禁止）。
+- A3: **Ready**（参照専用ルールと安全制約を維持）。
+- Block条件再掲:
+  - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
+  - SSOT複線化（契約参照先が2件以上）。
+  - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
