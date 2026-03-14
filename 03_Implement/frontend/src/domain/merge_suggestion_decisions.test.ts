@@ -25,6 +25,40 @@ function createBaseDocument(): DocumentV2 {
 }
 
 describe("merge_suggestion_decisions", () => {
+  it("keeps append order accept->partial->reject->defer and restores same order for contract snapshot", () => {
+    const base = createBaseDocument();
+    const appends: Array<{ id: string; decision: "accept" | "partial" | "reject" | "defer"; editedText: string }> = [
+      { id: "d1", decision: "accept", editedText: "alpha accept" },
+      { id: "d2", decision: "partial", editedText: "alpha partial" },
+      { id: "d3", decision: "reject", editedText: "alpha reject" },
+      { id: "d4", decision: "defer", editedText: "alpha defer" },
+    ];
+
+    const updated = appends.reduce<DocumentV2>((doc, append, index) => {
+      const next = appendMergeSuggestionDecision(
+        doc,
+        {
+          groupId: "g1",
+          decision: append.decision,
+          cardIds: ["c1", "c2"],
+          mergedTextDraft: "alpha",
+          editedText: append.editedText,
+        },
+        {
+          idFactory: () => append.id,
+          now: `2026-01-0${index + 2}T00:00:00.000Z`,
+        }
+      );
+
+      expect(next.mergeSuggestionDecisions?.at(-1)).not.toHaveProperty("representativeCardId");
+      return next;
+    }, base);
+
+    const restored = restoreMergeSuggestionDecisionsBySnapshot(updated.mergeSuggestionDecisions, "CTR-2B-02-DECISION-LOG-V1");
+    expect(restored.map((entry) => entry.action)).toEqual(["accept", "partial", "reject", "defer"]);
+    expect(restored.map((entry) => entry.id)).toEqual(["d1", "d2", "d3", "d4"]);
+  });
+
   it("appends decision entries with deterministic card id ordering", () => {
     const result = appendMergeSuggestionDecision(
       createBaseDocument(),
