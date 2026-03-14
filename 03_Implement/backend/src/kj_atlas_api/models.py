@@ -478,6 +478,49 @@ class DeterministicTieBreak(BaseModel):
         "minimum_vertex_count",
     )
 
+
+class PolygonHandoffInputContract(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    gateApprovalRef: str
+    a2VerifyRef: str
+    inputHash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    deterministicTieBreakOrder: tuple[
+        Literal["padding_compliance"],
+        Literal["self_intersection_avoidance"],
+        Literal["minimum_area_delta"],
+        Literal["minimum_vertex_count"],
+    ] = (
+        "padding_compliance",
+        "self_intersection_avoidance",
+        "minimum_area_delta",
+        "minimum_vertex_count",
+    )
+
+
+class PolygonHandoffExpectedOutputContract(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    outputPolygonHash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    paddingViolationCount: int = Field(ge=0)
+    tieBreakOrderChanged: bool
+
+
+class PolygonHandoffContractVerificationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    input: PolygonHandoffInputContract
+    expectedOutput: PolygonHandoffExpectedOutputContract
+
+
+class PolygonHandoffContractVerificationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["ok", "rollback_required"]
+    rollbackRequired: bool
+    failureReasons: list[str] = Field(default_factory=list)
+    verificationKey: str
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
