@@ -144,4 +144,19 @@ describe("buildIslandVisibilityContractPayload", () => {
     const result = buildIslandVisibilityContractPayload({ islands: [{ id: "root", cardIds: ["c-root"] }] }, new Set(["missing"]), "missing");
     expect(result).toEqual({ ok: false, error: "unknown island.id: missing" });
   });
+
+  it("M4: returns fail-fast when collapsed island ids include unknown id", () => {
+    const result = buildIslandVisibilityContractPayload(
+      {
+        islands: [
+          { id: "root", cardIds: ["c-root"] },
+          { id: "child", cardIds: ["c-child"], parentIslandId: "root" },
+        ],
+      },
+      new Set(["root", "missing"]),
+      "root"
+    );
+
+    expect(result).toEqual({ ok: false, error: "unknown collapsed island.id: missing" });
+  });
 });

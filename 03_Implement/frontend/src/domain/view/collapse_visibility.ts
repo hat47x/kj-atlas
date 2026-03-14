@@ -97,6 +97,13 @@ export function buildIslandVisibilityContractPayload(
     return { ok: false, error: `unknown island.id: ${islandId}` };
   }
 
+  const knownIslandIds = new Set(doc.islands.map((island) => island.id));
+  const unknownCollapsedIslandIds = [...collapsedIslandIds].filter((collapsedId) => !knownIslandIds.has(collapsedId));
+  if (unknownCollapsedIslandIds.length > 0) {
+    const firstUnknownCollapsedIslandId = unknownCollapsedIslandIds.sort()[0];
+    return { ok: false, error: `unknown collapsed island.id: ${firstUnknownCollapsedIslandId}` };
+  }
+
   const hiddenDescendantIslandIds = [...collectHiddenDescendantIslandIds(doc.islands, collapsedIslandIds)].sort();
   const hiddenCardIds = [...getCollapsedHiddenCardIds(doc, collapsedIslandIds)].sort();
 
