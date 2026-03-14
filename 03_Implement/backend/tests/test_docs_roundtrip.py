@@ -440,9 +440,43 @@ def _assert_similar_candidate_groups_contract_default(client: TestClient) -> Non
     response = client.get(f"/docs/{doc_id}/similar-candidate-groups")
     assert response.status_code == 200
     response_json = response.json()
-    assert response_json["groups"] == []
-    assert response_json["totalGroupCount"] == 0
+    assert response_json["totalGroupCount"] == 1
+    assert len(response_json["groups"]) == 1
 
+    group = response_json["groups"][0]
+    assert group["targetCardId"] == "card-1"
+    assert group["candidateCardIds"] == ["card-2"]
+    assert group["reasonCodes"] == ["normalized_text", "token_signature"]
+    assert group["scoreSummary"] == {"min": 1.0, "max": 1.0, "avg": 1.0}
+    assert group["groupId"].startswith("heuristic-normalized_text-")
+    assert len(group["snapshotVersion"]) == 12
+
+
+
+
+def _assert_similar_candidate_groups_excludes_non_eligible_cards(client: TestClient) -> None:
+    doc_id = "doc-similar-candidate-groups-filter"
+    payload = _sample_payload_v2_with_merge_suggestion_decisions(doc_id)
+    payload["cards"] = [
+        {"id": "card-1", "text": "gamma delta", "x": 0, "y": 0},
+        {"id": "card-2", "text": "delta gamma", "x": 10, "y": 10},
+        {"id": "card-merged", "text": "gamma delta", "x": 20, "y": 20, "mergedIntoCardId": "card-1"},
+        {"id": "card-source", "text": "gamma delta", "x": 30, "y": 30, "sources": ["raw-1"]},
+    ]
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+
+    response = client.get(f"/docs/{doc_id}/similar-candidate-groups")
+    assert response.status_code == 200
+    response_json = response.json()
+
+    assert response_json["totalGroupCount"] == 1
+    group = response_json["groups"][0]
+    assert group["targetCardId"] == "card-1"
+    assert group["candidateCardIds"] == ["card-2"]
+    assert group["reasonCodes"] == ["token_signature"]
+    assert group["scoreSummary"] == {"min": 0.75, "max": 0.75, "avg": 0.75}
 
 def _assert_similar_candidate_groups_missing_doc(client: TestClient) -> None:
     response = client.get("/docs/not-found/similar-candidate-groups")
@@ -641,6 +675,10 @@ def test_docs_similar_candidate_groups_missing_doc_sqlite(sqlite_client: TestCli
     _assert_similar_candidate_groups_missing_doc(sqlite_client)
 
 
+def test_docs_similar_candidate_groups_excludes_non_eligible_cards_sqlite(sqlite_client: TestClient) -> None:
+    _assert_similar_candidate_groups_excludes_non_eligible_cards(sqlite_client)
+
+
 @pytest.mark.postgres
 def test_docs_similar_candidate_groups_contract_default_postgres(postgres_client: TestClient) -> None:
     _assert_similar_candidate_groups_contract_default(postgres_client)
@@ -649,6 +687,11 @@ def test_docs_similar_candidate_groups_contract_default_postgres(postgres_client
 @pytest.mark.postgres
 def test_docs_similar_candidate_groups_missing_doc_postgres(postgres_client: TestClient) -> None:
     _assert_similar_candidate_groups_missing_doc(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_similar_candidate_groups_excludes_non_eligible_cards_postgres(postgres_client: TestClient) -> None:
+    _assert_similar_candidate_groups_excludes_non_eligible_cards(postgres_client)
 
 def test_docs_v2_relation_summary_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_relation_summary_roundtrip(sqlite_client)
