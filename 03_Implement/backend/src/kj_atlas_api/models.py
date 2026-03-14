@@ -452,6 +452,23 @@ class ReviewAttribution(BaseModel):
                 raise ValueError("reviewerRef is required when reviewState=human_reviewed")
         return self
 
+
+class DeterministicTieBreak(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schemaVersion: Literal["1.0.0"]
+    order: tuple[
+        Literal["padding_compliance"],
+        Literal["self_intersection_avoidance"],
+        Literal["minimum_area_delta"],
+        Literal["minimum_vertex_count"],
+    ] = (
+        "padding_compliance",
+        "self_intersection_avoidance",
+        "minimum_area_delta",
+        "minimum_vertex_count",
+    )
+
 class DocumentV2(BaseModel):
     version: Literal[2]
     id: str
@@ -470,6 +487,7 @@ class DocumentV2(BaseModel):
     critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
     reproposalDiffs: list[ReproposalDiff] | None = Field(default=None, exclude_if=lambda value: value is None)
     reviewAttribution: ReviewAttribution | None = Field(default=None, exclude_if=lambda value: value is None)
+    deterministicTieBreak: DeterministicTieBreak | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 DocumentPayload = Annotated[DocumentV1 | DocumentV2, Field(discriminator="version")]
