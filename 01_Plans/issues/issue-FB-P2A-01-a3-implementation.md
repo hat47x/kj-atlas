@@ -38,9 +38,9 @@
 
 ## Acceptance criteria
 
-- [ ] A1/A2の契約ID・ケースIDを使って実装計画へトレース可能。
-- [ ] Plan→Execute→Verify→Proceedがチェックリスト化されている。
-- [ ] AC/DoD不足のドラフト提案手順が明文化されている。
+- [x] A1/A2の契約ID・ケースIDを使って実装計画へトレース可能。
+- [x] Plan→Execute→Verify→Proceedがチェックリスト化されている。
+- [x] AC/DoD不足のドラフト提案手順が明文化されている。
 
 
 ## Phase execution log（A3）
@@ -110,3 +110,14 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、またはA1/A2契約リンク不整合を検出した場合は停止して指示待ち。
+
+
+### Stream B execution note（A3 implementation）
+
+- 実装順序を `schema -> domain model -> persistence roundtrip` として最小実装で接続。
+  - schema: `IslandHierarchyContractV1` を `projectIslandHierarchyContractV1` で投影
+  - domain model: `toIslandHierarchyValidationLog` / `evaluateIslandHierarchyA3GoNoGo` で A2→A3 I/F 固定
+  - persistence roundtrip: `validateIslandHierarchyRoundTrip` で JSON roundtrip 後の契約妥当性を検証
+- GoNoGo条件を実コードで固定。
+  - Go: `M1/M2=pass` かつ `M3/M4=fail` かつ owner確定
+  - NoGo: case不足または上記不一致

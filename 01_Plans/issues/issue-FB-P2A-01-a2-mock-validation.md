@@ -42,10 +42,10 @@
 
 ## Acceptance criteria
 
-- [ ] A1契約を変更せずにモック検証ケースを定義できる。
-- [ ] 正常系/異常系の判定基準が明示される。
-- [ ] 失敗時に「契約修正 or モック修正」の切り分けルールが記録される。
-- [ ] A3へ渡す検証ログ項目（入力/期待/結果/責務）が定義される。
+- [x] A1契約を変更せずにモック検証ケースを定義できる。
+- [x] 正常系/異常系の判定基準が明示される。
+- [x] 失敗時に「契約修正 or モック修正」の切り分けルールが記録される。
+- [x] A3へ渡す検証ログ項目（入力/期待/結果/責務）が定義される。
 
 ## A3 handoff I/F
 
@@ -121,3 +121,11 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、またはA1契約リンク切れを検出した場合は停止して指示待ち。
+
+
+### Stream B execution note（A2 mock validation）
+
+- 実装配置: `03_Implement/frontend/src/domain/contracts/island_hierarchy_handoff.ts`
+- テスト配置: `03_Implement/frontend/src/domain/contracts/island_hierarchy_handoff.test.ts`
+- M1/M2=pass, M3/M4=fail を handoff log (`contractVersion` / `mockCaseId` / `validationResult` / `ownerOfFix` / `evidence`) で固定。
+- A1契約 (`IslandHierarchyContractV1`) の Required fields / Invariants は変更していない。
