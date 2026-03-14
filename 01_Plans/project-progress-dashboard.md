@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream D final shared-resource sync, rerun-9)
+最終更新: 2026-03-14 (JST, Stream D final shared-resource sync, rerun-10)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -259,7 +259,7 @@
 1. `DQ-HIL-EXEC-01` は Ready 維持とし、A2/A3運用テンプレ逸脱を監査する。
 2. `DQ-FB-P2C-01` は Open（Approved運用）としてA2開始ログとQA3件ログを監査し、A3 Proceed判定の根拠を蓄積する。
 3. `DQ-OPS-SOURCE-01` は `Source Issue: N/A` 継続方針を維持し、外部連携時のみ再判定する。
-4. Stream D rerun-9 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=1/Open=2 の一致を次回同期開始条件に固定する。
+4. Stream D rerun-10 の Verifyログ（validator/unittest/rg）を保持し、Active=2 / Done=25 / Decision Queue Ready=1/Open=2 の一致を次回同期開始条件に固定する。
 
 再開判定チェックリスト: 未固定箇所=0件 / 依存タスクの契約リンク確定 / Decision Queue未決=2件（`DQ-FB-P2C-01`, `DQ-OPS-SOURCE-01`） / 停止条件違反なし。
 
@@ -294,6 +294,7 @@
 - 2026-03-13 Phase 3 Verify追補: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` 監査を再実行し、共有統合2ファイル（dashboard/README）と decision-pack の整合を維持。
 
 - 2026-03-14再同期（rerun-9）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- 2026-03-14再同期（rerun-10）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 
 ### Phase 5: Proceed（2026-03-13 rerun-3）
 
