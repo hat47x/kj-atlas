@@ -568,3 +568,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、件数・Queue・依存順・再開判定1行の一致を確認。
 - Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
 
+
+## Stream D 共有資源再同期ログ（2026-03-14 rerun-22, Phase 1-5）
+
+- Phase 1 Read Gate: Stream A/B/C/E/F完了報告、依存順 `A1→A2→A3`、Decision Queue（Ready=1 / Open=2）、停止条件違反0件を再確認。
+- Phase 2 Plan: 更新対象を shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）に限定し、公開値 `件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25） / Active=2 / Done=25 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` と Source Issue=N/A 運用維持を固定。
+- Phase 3 Execute: Active table / Decision Queue / Next actions / 集計値を単一変更セットで同期し、片側更新なしを維持。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、件数・Queue・依存順・再開判定1行の一致を確認。
+- Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
