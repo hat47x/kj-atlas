@@ -1,7 +1,7 @@
 import json
 import re
 from hashlib import sha256
-from typing import cast
+from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, TypeAdapter
@@ -463,19 +463,10 @@ def verify_polygon_handoff_contract(
     if db.get(DocumentRow, doc_id) is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    expected_output = payload.expectedOutput
-    failure_reasons: list[str] = []
-    if expected_output.paddingViolationCount > 0:
-        failure_reasons.append("paddingViolationCount>0")
-    if expected_output.tieBreakOrderChanged:
-        failure_reasons.append("tieBreakOrderChanged=true")
-
-    status: str = "ok"
-    if failure_reasons:
-        status = "rollback_required"
+    failure_reasons, status = _evaluate_polygon_handoff_rollback(payload)
 
     verification_key = sha256(
-        f"{payload.input.inputHash}:{expected_output.outputPolygonHash}".encode("utf-8")
+        f"{payload.input.inputHash}:{payload.expectedOutput.outputPolygonHash}".encode("utf-8")
     ).hexdigest()
 
     return PolygonHandoffContractVerificationResponse(
@@ -484,3 +475,17 @@ def verify_polygon_handoff_contract(
         failureReasons=failure_reasons,
         verificationKey=verification_key,
     )
+
+
+def _evaluate_polygon_handoff_rollback(
+    payload: PolygonHandoffContractVerificationRequest,
+) -> tuple[list[str], Literal["ok", "rollback_required"]]:
+    expected_output = payload.expectedOutput
+    failure_reasons: list[str] = []
+    if expected_output.paddingViolationCount > 0:
+        failure_reasons.append("paddingViolationCount>0")
+    if expected_output.tieBreakOrderChanged:
+        failure_reasons.append("tieBreakOrderChanged=true")
+    if failure_reasons:
+        return failure_reasons, "rollback_required"
+    return failure_reasons, "ok"
