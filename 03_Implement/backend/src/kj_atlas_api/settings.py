@@ -199,15 +199,19 @@ class Settings(BaseSettings):
                     "KJ_ATLAS_LLM_PROVIDER=large-scale requires KJ_ATLAS_LLM_ESCALATION_ENABLED=true"
                 )
 
-        if self.access_control_external_http_auth_mode not in {"none", "oidc", "saml"}:
+        normalized_auth_mode = self.access_control_external_http_auth_mode.strip().lower()
+        if normalized_auth_mode not in {"none", "oidc", "saml"}:
             raise ValueError(
                 "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE must be one of none|oidc|saml"
             )
+        self.access_control_external_http_auth_mode = normalized_auth_mode
 
-        if self.reviewer_ref_resolver_adapter not in {"user_id", "sso_subject"}:
+        normalized_reviewer_ref_adapter = self.reviewer_ref_resolver_adapter.strip().lower()
+        if normalized_reviewer_ref_adapter not in {"user_id", "sso_subject"}:
             raise ValueError(
                 "KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject"
             )
+        self.reviewer_ref_resolver_adapter = normalized_reviewer_ref_adapter
 
         return self
 
