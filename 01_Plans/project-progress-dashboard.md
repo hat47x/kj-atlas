@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream F rerun-15 shared-resource sync)
+最終更新: 2026-03-14 (JST, Stream E rerun-16 shared-resource sync)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -16,6 +16,7 @@
 - Stream F Phase 1-5再同期（rerun-13）で起動条件（A〜E完了報告受領 / A1→A2→A3依存整合 / shared resource freeze解除）を再確認し、3共有ファイル単一変更セット同期後に Verify（validator/unittest/rg）成功を記録した。
 - Stream E 最終同期（final）で起動条件（Stream A/B/C/D完了報告受領 / shared resource以外の未マージ差分なし）を再確認し、3共有ファイルの Active/Done件数・Decision Queue・依存順・再開判定チェックリスト1行を同一値（43 / Active=2 / Done=25 / Ready=1 Open=2 / A1→A2→A3）へ同期した。
 - Stream F Phase 1-5 再同期（rerun-15）でA〜E完了報告・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）・停止条件違反0件を再確認し、shared resource 3ファイルを単一変更セットで再同期した。
+- Stream E Phase 1-4 同期（rerun-16）でRead同期（A/B/C/D完了報告）→件数/状態/Decision Queue反映→参照リンク/件数/依存順監査→再開判定チェックリスト1行確定を直列実行し、公開値を `件数43 / Active=2 / Done=25 / Ready=1 / Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` に再固定した。
 
 ### 未完Issue全件（18件）とレーン割当
 
