@@ -177,6 +177,22 @@ describe("merge_suggestion_decisions", () => {
     ).toThrowError("editedText must be a non-empty string");
   });
 
+  it("fails fast when decision is outside contract enum", () => {
+    expect(() =>
+      appendMergeSuggestionDecision(
+        createBaseDocument(),
+        {
+          groupId: "g1",
+          decision: "accept-ish" as unknown as "accept",
+          cardIds: ["c1"],
+          mergedTextDraft: "alpha",
+          editedText: "alpha",
+        },
+        { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
+      )
+    ).toThrowError("decision must be one of accept|partial|reject|defer");
+  });
+
   it("lists decision history by group without auto-confirming representative merge", () => {
     const decisions: DocumentV2["mergeSuggestionDecisions"] = [
       {
@@ -278,6 +294,53 @@ describe("merge_suggestion_decisions", () => {
     ];
 
     expect(restoreMergeSuggestionDecisionsBySnapshot(decisions, "CTR-2B-02-DECISION-LOG-V1").map((entry) => entry.id)).toEqual([
+      "d1",
+      "d2",
+    ]);
+  });
+
+  it("restores entries in deterministic order by decidedAt then id", () => {
+    const decisions: DocumentV2["mergeSuggestionDecisions"] = [
+      {
+        id: "d2",
+        groupId: "g1",
+        decision: "partial",
+        action: "partial",
+        decidedAt: "2026-01-02T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
+      },
+      {
+        id: "d1",
+        groupId: "g1",
+        decision: "accept",
+        action: "accept",
+        decidedAt: "2026-01-02T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
+      },
+      {
+        id: "d0",
+        groupId: "g1",
+        decision: "defer",
+        action: "defer",
+        decidedAt: "2026-01-01T00:00:00.000Z",
+        cardIds: ["c1", "c2"],
+        mergedTextDraft: "alpha",
+        editedText: "alpha",
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decidedBy: "human",
+      },
+    ];
+
+    expect(restoreMergeSuggestionDecisionsBySnapshot(decisions, "CTR-2B-02-DECISION-LOG-V1").map((entry) => entry.id)).toEqual([
+      "d0",
       "d1",
       "d2",
     ]);
