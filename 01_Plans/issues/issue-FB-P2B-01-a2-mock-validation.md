@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-01-A2 Similar-card候補提示 / モック検証
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream E
@@ -140,8 +140,27 @@
 ### Phase 4: Verify（宣言検証）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_candidates.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts`
+
+## Stream C execution log（2026-03-14, serial lane）
+
+### Phase 1: Read同期
+- Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+- Contract一致: `ContractID` = `DependsOnContractID` = `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
+- 判定: Pass
+
+### Phase 2: P2B-01 A2（Plan → Execute → Verify → Proceed）
+- Plan: mock先行で `CandidateListViewModel` の順序・`targetCardId`・`snapshotVersion` を固定し、非自動確定制約を維持。
+- Execute: 既存fixture前提で候補提示/再読込復元/非自動確定を検証。
+- Verify:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → Pass
+  - `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_candidates.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts` → Pass
+- Proceed: A3接続へ進行。
+
+### Fail-safe checkpoint
+- 契約再定義要求: なし（A1差し戻し不要）。
+- 同一ファイル競合/未定義依存: 検知なし。
+- Self-Correction: 0/3。
 - 判定: Pass（関連suite全件成功）。
 
 ### Phase 5: Proceed
 - Go（A2/A3の宣言検証レベル要件を充足）。
-

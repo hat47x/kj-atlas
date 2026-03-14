@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-01-A3 Similar-card候補提示 / 実装接続
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream E
@@ -158,3 +158,22 @@
 ### Phase 5: Proceed
 - Go（A2/A3の宣言検証レベル要件を充足）。
 
+
+## Stream C execution log（2026-03-14, serial lane）
+
+### Phase 1: Read同期
+- Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+- Contract一致: `ContractID` = `DependsOnContractID` = `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
+- 判定: Pass
+
+### Phase 2: P2B-01 A3（Plan → Execute → Verify → Proceed）
+- Plan: A2で固定済みの非自動確定・再読込復元をそのまま実装接続ゲートへ継承し、契約再定義を禁止。
+- Execute: `merge_candidates` / `merge_suggestion_decisions` / `MergeSuggestionsPanel` を対象に契約境界回帰を実行。
+- Verify:
+  - `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_candidates.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts` → Pass
+- Proceed: P2B-02 A2へ直列で進行。
+
+### Fail-safe checkpoint
+- 契約再定義要求: なし（A1差し戻し不要）。
+- 同一ファイル競合/未定義依存: 検知なし。
+- Self-Correction: 0/3。

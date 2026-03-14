@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-02-A3 Manual assisted mergeフロー / 実装接続
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream E
@@ -139,3 +139,27 @@
 ### Phase 5: Proceed
 - Go（A2/A3の宣言検証レベル要件を充足）。
 
+
+## Stream C execution log（2026-03-14, serial lane）
+
+### Phase 1: Read同期
+- Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
+- Contract一致: `ContractID` = `DependsOnContractID` = `ReferenceContractID` = `CTR-2B-02-DECISION-LOG-V1`
+- 判定: Pass
+
+### Phase 3: P2B-02 A3（Plan → Execute → Verify → Proceed）
+- Plan: `CTR-2B-02-DECISION-LOG-V1` 単一参照で実装接続し、契約拡張を禁止。
+- Execute: decision log append/restoreの回帰、read-only時UI操作無効、非自動確定条件を再検証。
+- Verify:
+  - `cd 03_Implement/frontend && npm test -- src/domain/stream_b_mock_validation.test.ts src/domain/merge_candidates.test.ts src/domain/merge_suggestion_decisions.test.ts src/ui/MergeSuggestionsPanel.test.ts` → Pass
+- Proceed: Verifyフェーズ完了（Go）。
+
+### Phase 4: Verify（回帰/契約逸脱/復元）
+- 回帰テスト: Pass
+- 契約逸脱チェック: Pass（ContractID一致、再定義なし）
+- 復元系チェック: Pass（snapshotVersion単位で順序保持）
+
+### Fail-safe checkpoint
+- 契約再定義要求: なし（A1差し戻し不要）。
+- 同一ファイル競合/未定義依存: 検知なし。
+- Self-Correction: 0/3。
