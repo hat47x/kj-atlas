@@ -144,6 +144,47 @@ describe("canvas_svg export", () => {
     expect(svg).toContain("Card one");
   });
 
+
+  it("falls back to rect export for self-intersecting polygon", () => {
+    const doc = buildDoc();
+    doc.islands = [
+      {
+        id: "i1",
+        title: "Invalid Polygon",
+        cardIds: ["c1"],
+        shape: {
+          kind: "polygon",
+          points: [
+            { x: 0, y: 0 },
+            { x: 120, y: 120 },
+            { x: 120, y: 0 },
+            { x: 0, y: 120 },
+          ],
+        },
+      },
+    ];
+
+    const viewState = {
+      visibleIslandIds: new Set(["i1"]),
+      hiddenCardIds: new Set<string>(),
+      hideSourceCards: false,
+      summaryView: false,
+      abstractMapView: false,
+    };
+
+    const bounds = computeVisibleBounds(doc, viewState);
+    expect(bounds).not.toBeNull();
+
+    const svg = exportCanvasToSVG({
+      doc,
+      viewState,
+      camera: { panX: 0, panY: 0, zoom: 1, viewportWidth: 1280, viewportHeight: 720 },
+      area: bounds!,
+    });
+
+    expect(svg).toContain("<rect");
+    expect(svg).not.toContain(`<polygon points="0,0 120,120 120,0 0,120"`);
+  });
   it("does not mutate document", () => {
     const doc = buildDoc();
     const before = JSON.stringify(doc);

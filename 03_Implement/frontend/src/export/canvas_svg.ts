@@ -2,6 +2,7 @@ import { getEdgesToRender, type RenderEdge } from "../domain/edge_aggregate";
 import { getDerivedIslandEdges } from "../domain/island_edge_aggregate";
 import { getIslandCenter, getIslandWorldBounds, type BoundsRect, type VisibleBoundsViewState } from "../domain/geometry/bounds";
 import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
+import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
 import type { Card, DocumentV2, Island } from "../domain/types";
 
 const CARD_WIDTH = 220;
@@ -112,7 +113,7 @@ export function exportCanvasToSVG({ doc, viewState, camera: _camera, area }: Exp
     }
 
     const polygonPoints = getIslandPolygonPoints(island);
-    if (polygonPoints.length >= 3) {
+    if (polygonPoints.length >= 3 && !isSelfIntersectingPolygon(polygonPoints)) {
       const polygon = polygonPoints.map((point) => `${point.x},${point.y}`).join(" ");
       islandElements.push(`<polygon points="${polygon}" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>`);
     } else {
