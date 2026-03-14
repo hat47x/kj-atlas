@@ -140,3 +140,19 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、または契約リンク不整合を検出した場合は停止して指示待ち。
+
+
+## Decision Queue整理（Stream A view）
+
+| QueueID | Topic | Status | Decision | Proceed Impact |
+|---|---|---|---|---|
+| DQ-FB-P2A-02-001 | ContractID固定 (`CTR-2A-02-COLLAPSE-EXPAND-V1`) | Closed | A1で固定 | A2可 |
+| DQ-FB-P2A-02-002 | 判定順（expand/collapseの優先条件） | Closed | A1定義順を固定 | A3可 |
+| DQ-FB-P2A-02-003 | 逸脱時の差し戻し経路 | Closed | A1のみ受付 | A2/A3可 |
+
+## Proceed判定（A2/A3）
+
+- 可否: **可**
+- 根拠: 契約ID・判定順・停止条件をA1メモで固定済み。
+- 残リスク: 境界ケース（循環参照データ）でのfixture追加要求。契約改定ではなく検証ケース追加で対応。
+

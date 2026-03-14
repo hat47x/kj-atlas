@@ -163,3 +163,55 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - 未決裁項目（Pending approvals）:
   - なし（A1範囲で新規ADRは不要判定を維持）。
   - ただし上位方針変更を伴う契約変更要求が発生した場合のみ、A1差し戻し + 人間承認完了まで停止。
+
+
+## 8) Decision Queue整理（Stream A 固定）
+
+| QueueID | Topic | Status | Decision | Owner | Unblock Condition |
+|---|---|---|---|---|---|
+| DQ-HIL-RS-01-A1-001 | Contract IDs freeze (`A1-CRITIQUE-IF`/`A1-REDIFF-IF`/`A1-ATTR-IF`) | Closed | Fixed in SSOT | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-002 | `schemaVersion=1.0.0` 固定（Critique/Attribution/TieBreak） | Closed | Fixed in SSOT | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
+
+## 9) Mock引き渡し仕様（A2/A3参照専用・実装禁止）
+
+- Stub response（A2検証用、例示固定）:
+  - `CritiqueInputStub.v1`:
+    - `schemaVersion: "1.0.0"`
+    - `critiqueId: "crit-001"`
+    - `targetRef: "card:sample-01"`
+    - `critiqueType: "feels_off"`
+    - `createdAt: "2026-03-14T00:00:00Z"`
+    - `iteration: 1`
+  - `ReDiffStub.v1`:
+    - `proposalId: "proposal-001"`
+    - `basedOnIteration: 1`
+    - `diffOps: [{ opId, opType, targetRef, before, after }]`
+    - `traceKey: "crit-001"`
+  - `ReviewAttributionStub.v1`:
+    - `schemaVersion: "1.0.0"`
+    - `reviewState: "unreviewed"`
+    - `reviewedAt: "2026-03-14T00:00:00Z"`
+    - `reviewerRef: "opaque-reviewer-01"`
+    - `auditRecordedAt: "2026-03-14T00:00:00Z"`
+- Fixture schema（A2/A3共通）:
+  - `fixtures/hil_rs_01/critique_input_v1.json`
+  - `fixtures/hil_rs_01/rediff_v1.json`
+  - `fixtures/hil_rs_01/review_attribution_v1.json`
+- Validation rule（docsベース）:
+  - 必須キー欠落時は fixture 不合格。
+  - `schemaVersion` 不一致は即Block。
+  - `traceKey` 欠落の `A1-REDIFF-IF` は即Block。
+
+## 10) Proceed判定（Phase 5）
+
+- 判定: **可（A2/A3開始可）**
+- 根拠:
+  - Contract ID / `schemaVersion` / tie-break順序 / overridePolicy の固定済み。
+  - SSOT単一参照（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）を維持。
+  - Decision Queue未処理項目 0 件。
+- 残リスク:
+  - A2/A3で fixture 名称差異が発生する可能性（契約値ではなく運用名の揺れ）。
+  - 対策: fixture 名称差異は A1契約変更ではなく、A2/A3側のマッピング注記で吸収。
+

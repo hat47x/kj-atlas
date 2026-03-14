@@ -142,3 +142,19 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、または契約リンク不整合を検出した場合は更新を停止し、指示待ちに遷移する。
+
+
+## Decision Queue整理（Stream A view）
+
+| QueueID | Topic | Status | Decision | Proceed Impact |
+|---|---|---|---|---|
+| DQ-FB-P2A-01-001 | ContractID固定 (`CTR-2A-01-ISLAND-HIERARCHY-V1`) | Closed | A1で固定 | A2可 |
+| DQ-FB-P2A-01-002 | A2/A3で契約変更禁止 | Closed | 逸脱はA1差し戻し | A3可 |
+| DQ-FB-P2A-01-003 | SafeMode後退禁止の適用確認 | Closed | 契約境界で後退禁止 | A2/A3可 |
+
+## Proceed判定（A2/A3）
+
+- 可否: **可**
+- 根拠: 契約IDと必須フィールドが固定、Decision Queueの未処理項目なし。
+- 残リスク: tie時ソートキーの名称揺れ（実装詳細）。A1契約変更なしでA2/A3注記で吸収。
+

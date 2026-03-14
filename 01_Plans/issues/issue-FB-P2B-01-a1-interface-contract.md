@@ -138,3 +138,19 @@
 - 固定条件: 契約ID不変、フィールド追加はA1差し戻し。
 - 既知リスク: tie時順序キーの実装側解釈ブレ。
 - 回帰観点: 同一 `snapshotVersion` の順序再現性 / 非自動確定維持。
+
+
+## Decision Queue整理（Stream A view）
+
+| QueueID | Topic | Status | Decision | Proceed Impact |
+|---|---|---|---|---|
+| DQ-FB-P2B-01-001 | ContractID固定 (`CTR-2B-01-CANDIDATE-GROUP-V1`) | Closed | A1で固定 | A2可 |
+| DQ-FB-P2B-01-002 | 非自動確定（候補提示のみ） | Closed | 契約外操作として禁止 | A3可 |
+| DQ-FB-P2B-01-003 | snapshot再現性キー固定 | Closed | `snapshotVersion` を比較キー化 | A2/A3可 |
+
+## Proceed判定（A2/A3）
+
+- 可否: **可**
+- 根拠: 契約ID/必須フィールド/非目標（自動確定禁止）を固定済み。
+- 残リスク: 同点候補の順序決定ロジックの実装解釈差。A2のfixture順序期待値で拘束。
+

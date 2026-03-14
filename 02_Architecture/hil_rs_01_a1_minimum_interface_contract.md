@@ -166,3 +166,40 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - 失敗再現手順
 - 競合ファイル
 - 必要な承認者と判断事項
+
+
+## 10. Decision Queue snapshot（A1 fixed）
+
+| QueueID | Topic | Status | Decision |
+|---|---|---|---|
+| DQ-HIL-RS-01-A1-001 | Contract IDs freeze | Closed | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` 固定 |
+| DQ-HIL-RS-01-A1-002 | `schemaVersion` freeze | Closed | `1.0.0` 固定（Critique/Attribution/TieBreak） |
+| DQ-HIL-RS-01-A1-003 | Deterministic判定順 | Closed | `padding_compliance > self_intersection_avoidance > minimum_area_delta > minimum_vertex_count` |
+| DQ-HIL-RS-01-A1-004 | Change request routing | Closed | A1 issue差し戻しのみ許可 |
+
+## 11. Mock handoff interface（implementation-free validation）
+
+- Critique fixture schema (`CritiqueInputFixtureV1`)
+  - required: `schemaVersion`, `critiqueId`, `targetRef`, `critiqueType`, `createdAt`, `iteration`
+  - optional: `comment`, `constraintHints`
+- ReDiff fixture schema (`ReDiffFixtureV1`)
+  - required: `proposalId`, `basedOnIteration`, `diffOps[]`, `traceKey`
+  - `diffOps[].required`: `opId`, `opType`, `targetRef`, `before`, `after`
+- Review attribution fixture schema (`ReviewAttributionFixtureV1`)
+  - required: `schemaVersion`, `reviewState`, `reviewedAt`, `reviewerRef`, `auditRecordedAt`
+  - optional: `reviewContext`, `ownerRef`
+
+Validation rules:
+1. `schemaVersion` mismatch is Block.
+2. Missing required key is Block.
+3. `A1-REDIFF-IF` without `traceKey` is Block.
+4. Any fixture with raw PII (`email`, `external_uid`, provider user id) is Block.
+
+## 12. Proceed verdict for downstream tracks
+
+- A2: **Ready**（contract fixed + mock schema fixed）
+- A3: **Ready**（contract fixed + non-goals fixed）
+- Residual risk:
+  - Fixture file naming drift between tracks (non-contractual).
+  - Mitigation: treat naming drift as documentation mapping issue; do not mutate contract IDs or required fields.
+
