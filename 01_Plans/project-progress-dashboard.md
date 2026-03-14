@@ -316,6 +316,7 @@
 - Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
 - Stream F Phase 5 Proceed（rerun-12）: 再開判定チェックリストを更新し、他レーン公開値を「Queue Ready=1/Open=2 / 次アクション=Ready監査1件+Open期限管理2件 / 停止条件違反0件」で固定した。
 - Stream F Phase 5 Proceed（rerun-13）: 再開判定チェックリストを再更新し、公開値を「Queue Ready=1/Open=2 / 次アクション=Ready監査1件+Open期限管理2件 / 停止条件違反0件 / 未承認決定混入なし」で維持した。
+- Stream F Phase 1-5 最終同期（rerun-14）: A〜E完了報告受領、依存順 `A1→A2→A3`、Queue（Ready=1/Open=2）をRead Gateで再確認後、共有3ファイルのみを単一変更セットで同期し、validator/unittest/rg の再実行で件数43・Active2・Done25・再開判定1行・停止条件違反0件の一致を再確定した。
 
 ## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-14）
 
