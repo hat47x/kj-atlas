@@ -353,6 +353,42 @@
 - A2/A3は「契約参照のみ」の前提を維持したまま再開判定を行える。
 - Decision Queueの解消済み項目（`DQ-A1-01..04`）と未決項目（`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01`）の境界が明確に維持される。
 
+## 10) Stream A 再同期ログ（2026-03-14 / Phase 1→4）
+
+### Plan
+
+- Scopeを `01_Plans/issues/issue-HIL-RS-01*` と `02_Architecture/*interface*` に固定し、編集禁止境界（`03_Implement/**` / 共有リソース3ファイル）を再確認した。
+- Verify観点を `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `schemaVersion` / `overridePolicy` / `contractLinkLocked` / `sharedResourceFreeze` に限定した。
+
+### Execute
+
+- 対象再読（Phase 1）:
+  - `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 未固定I/Fの再列挙（Phase 1）:
+  - APIシグネチャ: 未固定項目なし（0件）。
+  - 型/requiredFields: 未固定項目なし（0件）。
+  - `schemaVersion`: 未固定項目なし（0件、`1.0.0`固定）。
+  - 判定条件（`overridePolicy`/tie-break/freeze flags）: 未固定項目なし（0件）。
+- ADR明文化判定（Phase 2）:
+  - 新規Decision追加は不要（既存Context/Decision/Consequencesで閉じており、未定義競合なし）。
+- 契約固定（Phase 3）:
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true` の維持を再確認。
+  - 単一参照先 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再固定。
+- ハンドオフ（Phase 4）:
+  - B/C向け変更禁止項目（契約ID・schemaVersion・requiredFields・overridePolicy・freeze flags）を再掲し、凍結継続を宣言。
+
+### Verify
+
+- `rg` による横断確認で、契約ID複線化・参照先分岐・固定値逸脱は未検出。
+- Self-Correctionは不要（1回目検証で合格）。
+
+### Proceed
+
+- A1は **contract fixed / handoff ready** 状態を維持。
+- 失敗条件（契約リンク未固定、未定義競合、freeze flag欠落）が生起した場合のみ停止し、人間判断へエスカレーションする。
+
 ## Phase 4 Handoff（A2/A3固定配布）
 
 - 固定I/F一覧:
@@ -369,4 +405,3 @@
   - A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみを編集対象とする。
   - A2/A3は契約ID、schemaVersion、requiredFields、overridePolicy、deterministicTieBreakOrder を変更してはならない。
   - **A2/A3は契約変更禁止**。
-
