@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, Stream F final shared-resource sync, rerun-11)
+最終更新: 2026-03-14 (JST, Stream F final shared-resource sync, rerun-12)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -10,9 +10,9 @@
 - issue memoは総数43件（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` の2件。
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
-- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` / `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をすべてReadyで管理する（人間承認待ち=0件）。
+- Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をOpenとして管理する（Ready=1 / Open=2、人間承認待ち=2件）。
 - Stream D Phase 1 Read同期（rerun-4）で Stream A/B/C 完了報告と契約リンク固定証跡を再確認し、共有資源3ファイルのみを同期対象として維持した。
-- Stream F Phase 1-4最終同期（rerun-11）で3共有ファイルを再読し、件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行の一致を再確認した。
+- Stream F Phase 1-4最終同期（rerun-12）で3共有ファイルを再読し、件数43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行の一致を再確認した。
 
 ### 未完Issue全件（18件）とレーン割当
 
@@ -304,12 +304,14 @@
 
 - 2026-03-14再同期（rerun-9）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
 - 2026-03-14再同期（rerun-10）: Stream A/B/C完了報告・契約リンク固定・検証ログ受領をRead Gateで再確認し、validator/unittest/rg を再実行して件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を維持。
+- 2026-03-14再同期（rerun-12, Stream F）: Phase 1 Read（A/B/C完了報告・Decision Queue・件数再読）→Phase 2 Plan（Active表/Queue/次アクション/件数を同期項目として宣言）→Phase 3 Execute（共有3ファイル単一変更セット同期）→Phase 4 Verify（validator/unittest/rg 成功）を完了し、件数43・Active2・Done25・Decision Queue Ready=1/Open=2・再開判定1行の一致を再確認。
 
 ### Phase 5: Proceed（2026-03-13 rerun-3）
 
 - `DQ-HIL-EXEC-01` は Ready 維持、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open継続（テンプレ逸脱監査と期限管理を継続）。
 - Next actions は「Ready 1件の運用点検 + Open 2件の期限管理」に限定し、A1→A2→A3依存と停止条件（共有リソース競合/未承認確定/自己修復3回超）を維持。
 - Verify結果: validator/unittest/rg 成功、件数（43/8/1/2/7/25）・Decision Queue（Ready=1/Open=2）・再開判定チェックリストの一致を確認。
+- Stream F Phase 5 Proceed（rerun-12）: 再開判定チェックリストを更新し、他レーン公開値を「Queue Ready=1/Open=2 / 次アクション=Ready監査1件+Open期限管理2件 / 停止条件違反0件」で固定した。
 
 ## DQ-FB-P2C-01 仮想ステークホルダー処理ログ（2026-03-14）
 
