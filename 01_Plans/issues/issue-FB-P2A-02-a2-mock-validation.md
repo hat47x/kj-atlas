@@ -41,9 +41,9 @@
 
 ## Acceptance criteria
 
-- [ ] collapse/expandの正常系・異常系モックが揃う。
-- [ ] 失敗時責務分離ルールが明文化される。
-- [ ] A3へ渡す検証ログ項目が定義される。
+- [x] collapse/expandの正常系・異常系モックが揃う。
+- [x] 失敗時責務分離ルールが明文化される。
+- [x] A3へ渡す検証ログ項目が定義される。
 
 ## Execution protocol（Plan→Execute→Verify→Proceed）
 
@@ -122,3 +122,16 @@
 ## Fail-safe
 
 - 自己修復が3回連続で失敗、またはA1契約リンク切れを検出した場合は停止して指示待ち。
+
+
+## A2 validation execution log（Stream C）
+
+| contractVersion | mockCaseId | validationResult | ownerOfFix | evidence |
+|---|---|---|---|---|
+| IslandVisibilityContractV1 | M1 | pass | A3 | collapse hides descendants and cards |
+| IslandVisibilityContractV1 | M2 | pass | A3 | expand restores hiddenDescendantIslandIds/hiddenCardIds |
+| IslandVisibilityContractV1 | M3 | pass | A3 | double collapse remains idempotent |
+| IslandVisibilityContractV1 | M4 | fail | A2 | fail-fast on invalid island.id (required) |
+
+- GoNoGo result: **Go**（`M1/M2/M3=pass` かつ `M4=fail`）
+- Owner routing check: pass casesは`A3`、fail case（M4）は`A2`で固定。

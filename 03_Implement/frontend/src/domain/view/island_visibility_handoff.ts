@@ -42,6 +42,14 @@ export function evaluateIslandVisibilityA3GoNoGo(logs: IslandVisibilityValidatio
 } {
   const byCase = new Map<IslandVisibilityMockCaseId, IslandVisibilityValidationLog>();
   for (const log of logs) {
+    if (byCase.has(log.mockCaseId)) {
+      return { go: false, reason: `duplicate mock case: ${log.mockCaseId}` };
+    }
+
+    if (log.contractVersion !== "IslandVisibilityContractV1") {
+      return { go: false, reason: `invalid contract version: ${log.contractVersion}` };
+    }
+
     byCase.set(log.mockCaseId, log);
   }
 
@@ -67,6 +75,14 @@ export function evaluateIslandVisibilityA3GoNoGo(logs: IslandVisibilityValidatio
 
   if (m4.validationResult !== "fail") {
     return { go: false, reason: "M4 must be fail" };
+  }
+
+  if (m1.ownerOfFix !== "A3" || m2.ownerOfFix !== "A3" || m3.ownerOfFix !== "A3") {
+    return { go: false, reason: "M1/M2/M3 ownerOfFix must be A3" };
+  }
+
+  if (m4.ownerOfFix === "A3") {
+    return { go: false, reason: "M4 ownerOfFix must not be A3" };
   }
 
   return { go: true, reason: "go" };
