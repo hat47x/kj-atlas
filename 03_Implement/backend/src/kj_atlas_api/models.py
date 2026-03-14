@@ -333,6 +333,39 @@ class MergeDecisionRecord(BaseModel):
     snapshotVersion: str
 
 
+class SimilarCandidateScoreSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    min: float
+    max: float
+    avg: float
+
+
+class SimilarCandidateGroup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    groupId: str
+    targetCardId: str
+    candidateCardIds: list[str]
+    scoreSummary: SimilarCandidateScoreSummary
+    reasonCodes: list[str]
+    snapshotVersion: str
+
+
+class CandidateListViewModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    generatedAt: datetime
+    groups: list[SimilarCandidateGroup]
+    totalGroupCount: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_total_group_count(self) -> "CandidateListViewModel":
+        if self.totalGroupCount != len(self.groups):
+            raise ValueError("totalGroupCount must equal len(groups)")
+        return self
+
+
 class CritiqueInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
