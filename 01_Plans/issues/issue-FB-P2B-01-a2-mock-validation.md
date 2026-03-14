@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2B-01-A2 Similar-card候補提示 / モック検証
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -35,6 +35,11 @@
 - 判定: 本メモ範囲では不足なし（契約追加要求はA1へ差し戻し）。
 
 ## Phase 2（A2）: Plan → Execute → Verify → Proceed
+
+- Phase 1 Read同期（A1契約ID一致確認）:
+  - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+  - 判定: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
+  - 結果: Pass
 
 - State Sync Check（Phase開始時の再Read）:
   - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
@@ -73,6 +78,17 @@
   - `vitest target suites passed`
 - Self-Correction:
   - 0/3（修復ループ不要）
+
+## Stream D execution log（2026-03-14）
+
+- Plan:
+  - A1契約ID一致を再確認し、A2の非自動確定・再読込復元条件を回帰テストで再検証する。
+- Execute:
+  - `src/domain/merge_candidates.test.ts` / `src/domain/stream_b_mock_validation.test.ts` を実行し、候補提示が契約準拠であることを確認。
+- Verify:
+  - docs-check と frontend integration test はすべて Pass。
+- Proceed:
+  - A3実装接続フェーズへ継続。
 
 ## Phase 4（Verify）
 

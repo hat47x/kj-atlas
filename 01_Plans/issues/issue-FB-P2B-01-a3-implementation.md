@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2B-01-A3 Similar-card候補提示 / 実装接続
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -55,6 +55,11 @@
 - Proceed:
   - Phase 4のVerify/Handoffへ進む。
 
+- Implementation handoff（Stream D）:
+  - `CTR-2B-01-CANDIDATE-GROUP-V1` を唯一契約として実装・回帰を継続する。
+  - 候補提示のみで確定しない（human操作のみ）制約を維持する。
+  - 再読込時の deterministic 復元を integration test で維持する。
+
 ## Phase 4（Verify / Handoff）
 
 - AC/DoD検証結果:
@@ -100,3 +105,14 @@
 ## Fail-safe
 
 - A1契約不整合、3回超過、またはStream C/Dとの競合検知で即停止。
+
+## Stream D execution log（2026-03-14）
+
+- Plan:
+  - A2で固定した条件（非自動確定・再読込復元）をA3実装回帰に引き継ぐ。
+- Execute:
+  - `src/domain/merge_suggestion_decisions.test.ts` / `src/ui/MergeSuggestionsPanel.test.ts` を再実行し、候補提示→意思決定の契約整合を確認。
+- Verify:
+  - decision action 4値（`accept|partial|reject|defer`）と `decidedBy: human` 前提を満たす。
+- Proceed:
+  - Verify記録を更新し、下流監査へ引き渡し可能。
