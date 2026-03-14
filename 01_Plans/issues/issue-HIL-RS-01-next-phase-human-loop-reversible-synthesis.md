@@ -42,7 +42,7 @@
 - 責務境界: 未確定項目なし（A1=契約固定、A2/A3=参照専用）。
 - 禁止事項: 未確定項目なし（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止を固定）。
 
-## 5) Stream A log（Plan → Execute → Verify → Proceed）
+## 6) Stream A log（Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read & Baseline
 
@@ -90,7 +90,17 @@
 - Proceed:
   - Stream A範囲の目的（契約/I-F固定）を完了。
 
-## 6) Handoff packet（A2/A3）
+## 7) Contract change request routing（固定）
+
+- 差し戻し先（唯一）:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 受付対象:
+  - 契約ID / schemaVersion / requiredFields / overridePolicy / tie-break順序の変更要求
+- A2/A3での禁止:
+  - 契約本文の直接改訂
+  - SSOT（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）の複線化
+
+## 8) Handoff packet（A2/A3）
 
 - Contract IDs（固定）:
   - `A1-CRITIQUE-IF`
