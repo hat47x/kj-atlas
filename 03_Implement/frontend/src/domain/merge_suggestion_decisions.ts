@@ -116,18 +116,10 @@ export function restoreMergeSuggestionDecisionsBySnapshot(
   snapshotVersion: string
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(snapshotVersion, "snapshotVersion");
-  return (decisions ?? [])
-    .filter(
-      (decision) =>
-        decision.snapshotVersion === snapshotVersion
-        && isMergeSuggestionDecision(decision.action)
-        && decision.decidedBy === "human"
-    )
-    .sort((left, right) => {
-      const decidedAtCompare = left.decidedAt.localeCompare(right.decidedAt);
-      if (decidedAtCompare !== 0) {
-        return decidedAtCompare;
-      }
-      return left.id.localeCompare(right.id);
-    });
+  return (decisions ?? []).filter(
+    (decision) =>
+      decision.snapshotVersion === snapshotVersion
+      && isMergeSuggestionDecision(decision.action)
+      && decision.decidedBy === "human"
+  );
 }
