@@ -112,3 +112,29 @@
 ## Fail-safe
 
 - A1契約不整合、またはStream C/D管轄との競合検知時は即停止し人間判断依頼。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`In Progress`, A3=`In Progress`。
+- 実行順: **A1固定点確認 → A2 mock検証 → A3接続準備**（直列固定）。
+
+### Phase 2: A1固定点の確認
+- A2/A3依存項目のみ抽出済み:
+  - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
+  - `SimilarCandidateGroup` / `CandidateListViewModel` 必須フィールド
+  - 非自動確定（候補提示のみで確定しない）
+- 未定義項目: なし（ADR合意待ち不要）。
+
+### Phase 3: A2モック検証の前提
+- 検証境界を **APIシグネチャ/型/比較キー** に限定する。
+- 実コード依存は持ち込まない（stub/fixtureのみ）。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2が `CTR-2B-01-CANDIDATE-GROUP-V1` 依存・非自動確定・再読込復元をVerify済み。
+- 停止条件: 契約逸脱、未定義競合、前提崩れを検知した時点で即停止。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: 契約ID不変、フィールド追加はA1差し戻し。
+- 既知リスク: tie時順序キーの実装側解釈ブレ。
+- 回帰観点: 同一 `snapshotVersion` の順序再現性 / 非自動確定維持。

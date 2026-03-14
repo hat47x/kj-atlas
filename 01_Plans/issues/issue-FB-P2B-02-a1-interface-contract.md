@@ -4,7 +4,7 @@
 - Status: Ready (A1 Contract Fixed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream C
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -113,3 +113,30 @@
 ## Fail-safe
 
 - A1契約不整合、またはStream C/D管轄競合検知時は即停止し人間判断依頼。
+
+## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
+
+### Phase 1: Read同期（状態差確認）
+- 状態差: A1=`Ready`, A2=`Open`, A3=`Open`。
+- 実行順: **A1固定点確認 → A2 mock検証 → A3接続準備**。
+
+### Phase 2: A1固定点の確認
+- A2/A3依存項目のみ抽出済み:
+  - `ContractID=CTR-2B-02-DECISION-LOG-V1`
+  - `action` 4値制約（`accept|partial|reject|defer`）
+  - `append/list/restore(snapshotVersion)` I/F
+  - 非自動確定（human decision only）
+- 未定義項目: なし（ADR合意待ち不要）。
+
+### Phase 3: A2モック検証の前提
+- 検証境界を APIシグネチャ/型/比較キー（順序・snapshotVersion）に限定。
+- 実コード依存を排除し、fixtureで閉じる。
+
+### Phase 4: A3接続準備（開始/停止条件）
+- 開始条件: A2で4値制約・順序保持・非自動確定をVerify済み。
+- 停止条件: 契約逸脱、未定義競合、前提崩れ。
+
+### Phase 5: 実装レーン引き渡し
+- 固定条件: 4値制約と契約ID不変。
+- 既知リスク: action enum拡張要求による互換破壊。
+- 回帰観点: restore順序再現、enum外action除外。
