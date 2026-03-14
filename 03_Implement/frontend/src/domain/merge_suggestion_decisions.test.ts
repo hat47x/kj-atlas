@@ -299,7 +299,7 @@ describe("merge_suggestion_decisions", () => {
     ]);
   });
 
-  it("restores entries in deterministic order by decidedAt then id", () => {
+  it("restores entries in append order without re-sorting by timestamps", () => {
     const decisions: DocumentV2["mergeSuggestionDecisions"] = [
       {
         id: "d2",
@@ -340,9 +340,9 @@ describe("merge_suggestion_decisions", () => {
     ];
 
     expect(restoreMergeSuggestionDecisionsBySnapshot(decisions, "CTR-2B-02-DECISION-LOG-V1").map((entry) => entry.id)).toEqual([
-      "d0",
-      "d1",
       "d2",
+      "d1",
+      "d0",
     ]);
   });
 });
