@@ -206,7 +206,39 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `schemaVersion` 不一致は即Block。
   - `traceKey` 欠落の `A1-REDIFF-IF` は即Block。
 
-## 10) Proceed判定（Phase 5）
+
+## 10) A2/A3 Contract immutability rule（固定）
+
+- A2/A3は本IssueおよびSSOTを**参照専用**とし、契約本文の変更権限を持たない。
+- 契約変更要求（契約ID/schemaVersion/requiredFields/overridePolicy/tie-break順序）はA1へ差し戻す。
+- A2/A3での許可は「マッピング注記・実装内参照・テストfixture適合」のみとする。
+
+## 11) Mock-ready handoff contract（A2向け）
+
+- API signatures（固定）:
+  - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
+  - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
+  - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
+- Fixture schema（固定）:
+  - `fixtures/hil_rs_01/critique_input_v1.json`
+  - `fixtures/hil_rs_01/rediff_v1.json`
+  - `fixtures/hil_rs_01/review_attribution_v1.json`
+- Validation gates（固定）:
+  1. `schemaVersion` 不一致は Block。
+  2. 必須キー欠落は Block。
+  3. `A1-REDIFF-IF` で `traceKey` 欠落は Block。
+  4. 生PII（`email` / `external_uid` / provider user id）検知は Block。
+
+## 12) Proceed verdict（Stream A）
+
+- A2: **Ready**（SSOT固定 + mock-ready契約固定）
+- A3: **Ready**（契約不変ルール + 非目標固定）
+- Block条件再掲:
+  - 未定義契約変更要求
+  - SSOT複線化
+  - SafeMode/share-export後退前提
+
+## 13) Proceed判定（Phase 5）
 
 - 判定: **可（A2/A3開始可）**
 - 根拠:

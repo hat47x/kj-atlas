@@ -18,7 +18,6 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
-  - `deterministicTieBreakOrder`
 
 ## 2. Contract matrix（必須 / 任意 / 禁止）
 
@@ -41,7 +40,8 @@
 
 ### 2.2 `A1-REDIFF-IF`
 
-- 構造固定（schemaVersionの追加定義は行わない）
+- `schemaVersion`: `1.0.0`（固定）
+- 構造固定（A2/A3で型追加・必須緩和を行わない）
 - 必須:
   - `proposalId`
   - `basedOnIteration`
@@ -80,7 +80,7 @@
   - 生ID保存
   - `reviewEvents` 欠如を理由に閲覧不可化
 
-### 2.4 `deterministicTieBreakOrder`
+### 2.4 `A1-ATTR-IF` tie-break policy
 
 - `schemaVersion`: `1.0.0`（固定）
 - 順序（固定・入替禁止）:
@@ -154,7 +154,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - チェックリスト（全項目必須）:
   - [x] Single Reference（SSOT）が本書のみである。
   - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
-  - [x] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が維持されている。
+  - [x] `schemaVersion=1.0.0`（Critique / ReDiff / Attribution tie-break policy）が維持されている。
   - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が維持されている。
   - [x] A2/A3文書に「契約本文を変更しない」ルールが明記されている。
 - Gate判定:
@@ -204,3 +204,10 @@ Validation rules:
   - Fixture file naming drift between tracks (non-contractual).
   - Mitigation: treat naming drift as documentation mapping issue; do not mutate contract IDs or required fields.
 
+
+
+## 13. A2/A3 immutability rule（enforced）
+
+- A2/A3は本書を参照専用で利用し、契約本文の改訂を行ってはならない。
+- 契約変更要求はA1 issueへ差し戻し、人間承認完了まで実装に反映しない。
+- A2/A3で許可される変更は、実装内マッピング・テストfixture適合・文書注記のみ。
