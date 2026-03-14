@@ -18,6 +18,7 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
 
 ## 2. Contract matrix（必須 / 任意 / 禁止）
 
@@ -196,7 +197,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 | QueueID | Topic | Status | Decision |
 |---|---|---|---|
-| DQ-HIL-RS-01-A1-001 | Contract IDs freeze | Closed | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` 固定 |
+| DQ-HIL-RS-01-A1-001 | Contract IDs freeze | Closed | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 固定 |
 | DQ-HIL-RS-01-A1-002 | `schemaVersion` freeze | Closed | `1.0.0` 固定（Critique/Attribution/TieBreak） |
 | DQ-HIL-RS-01-A1-003 | Deterministic判定順 | Closed | `padding_compliance > self_intersection_avoidance > minimum_area_delta > minimum_vertex_count` |
 | DQ-HIL-RS-01-A1-004 | Change request routing | Closed | A1 issue差し戻しのみ許可 |

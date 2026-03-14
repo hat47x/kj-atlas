@@ -127,6 +127,7 @@
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
 - Single Reference（固定）:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Freeze flags:
@@ -146,14 +147,17 @@
   - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
   - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
   - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
+  - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
 - 型参照（固定）:
   - `CritiqueInputFixtureV1`
   - `ReDiffFixtureV1`
   - `ReviewAttributionFixtureV1`
+  - `ErrorEnvelopeFixtureV1`
 - Fixture schema（固定）:
   - `fixtures/hil_rs_01/critique_input_v1.json`
   - `fixtures/hil_rs_01/rediff_v1.json`
   - `fixtures/hil_rs_01/review_attribution_v1.json`
+  - `fixtures/hil_rs_01/error_envelope_v1.json`
 
 
 ## 9) Phase 5 Gate判定（A2開始条件）
@@ -173,7 +177,7 @@
 
 - 着手可能条件（Ready）:
   - SSOT が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみで固定。
-  - 固定値一致: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only`。
+  - 固定値一致: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only`。
   - Freeze flag一致: `contractLinkLocked=true` / `sharedResourceFreeze=true`。
   - 安全制約維持: SafeMode既定ON、share/export漏えい防止後退禁止、PII生値保存禁止。
 
@@ -197,7 +201,7 @@
 
 | QueueID | Topic | Status | Decision | Owner | Unblock Condition |
 |---|---|---|---|---|---|
-| DQ-HIL-RS-01-A1-001 | Contract IDs freeze (`A1-CRITIQUE-IF`/`A1-REDIFF-IF`/`A1-ATTR-IF`) | Closed | Fixed in SSOT | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-001 | Contract IDs freeze (`A1-CRITIQUE-IF`/`A1-REDIFF-IF`/`A1-ATTR-IF`/`A1-ERROR-IF`) | Closed | Fixed in SSOT | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-002 | `schemaVersion=1.0.0` 固定（Critique/Attribution/TieBreak） | Closed | Fixed in SSOT | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
@@ -216,7 +220,7 @@
 ## 14) A1契約凍結マトリクス（変更許可/禁止/停止条件）
 
 - 変更禁止（A2/A3で不可）:
-  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の契約ID
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の契約ID
   - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
   - `overridePolicy=human_dual_control_only`
   - tie-break順序（`padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`）
