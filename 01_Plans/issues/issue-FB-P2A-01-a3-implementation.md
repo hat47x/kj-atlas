@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A3 Handoff Condition Fixed)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -112,18 +112,18 @@
 - 自己修復が3回連続で失敗、またはA1/A2契約リンク不整合を検出した場合は停止して指示待ち。
 
 
-### Stream B execution note（A3 implementation）
+### Stream D execution note（A3 implementation）
 
 - 実装順序を `schema -> domain model -> persistence roundtrip` として最小実装で接続。
   - schema: `IslandHierarchyContractV1` を `projectIslandHierarchyContractV1` で投影
-  - domain model: `toIslandHierarchyValidationLog` / `evaluateIslandHierarchyA3GoNoGo` で A2→A3 I/F 固定
-  - persistence roundtrip: `validateIslandHierarchyRoundTrip` で JSON roundtrip 後の契約妥当性を検証
+  - domain model: `toIslandHierarchyValidationLog` / `evaluateIslandHierarchyA3GoNoGoStreamD` で A2→A3 I/F 固定
+  - persistence roundtrip: `validateIslandHierarchyRoundTripStreamD` で JSON roundtrip 後の契約妥当性を検証
 - GoNoGo条件を実コードで固定。
   - Go: `M1/M2=pass` かつ `M3/M4=fail` かつ owner確定
   - NoGo: case不足または上記不一致
 
 
-## A3 implementation connection guard（Stream B / Phase 4）
+## A3 implementation connection guard（Stream D / Phase 4）
 
 - 着手条件（Start）:
   - A1契約ロック `IslandHierarchyContractV1` が有効。
@@ -136,7 +136,7 @@
   - 契約ドリフト検出時はA1固定契約へ差し戻し、A3で契約再定義しない。
 
 
-## Stream B one-page handoff（Phase 5）
+## Stream D one-page handoff（Phase 5）
 
 - 固定I/F（Fixed Interface）:
   - `contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
