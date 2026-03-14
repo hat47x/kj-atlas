@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import HTTPException, Request
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.access_control import AuthContext
@@ -36,12 +37,20 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _normalize_provider(raw_provider: str | None) -> str:
+    if raw_provider is None:
+        return "header"
+    return raw_provider.strip().lower() or "header"
+
+
 def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdentity:
     reviewer_ref_adapter = build_reviewer_ref_resolver_adapter(
         adapter_name=settings.reviewer_ref_resolver_adapter
     )
-    provider = _header(request, settings.auth_provider_field) or "header"
-    external_uid = _header(request, settings.auth_subject_field) or _header(request, settings.auth_user_field)
+    provider = _normalize_provider(_header(request, settings.auth_provider_field))
+    external_uid = _header(request, settings.auth_subject_field) or _header(
+        request, settings.auth_user_field
+    )
     display_name = _header(request, settings.auth_name_field)
     email = _header(request, settings.auth_email_field)
 
@@ -82,7 +91,10 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
 
     identity = (
         db.query(UserIdentityRow)
-        .filter(UserIdentityRow.provider == provider, UserIdentityRow.external_uid == external_uid)
+        .filter(
+            func.lower(UserIdentityRow.provider) == provider,
+            UserIdentityRow.external_uid == external_uid,
+        )
         .one_or_none()
     )
 

@@ -88,7 +88,10 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
             )
             assert denied.status_code == 403
             assert denied.json()["detail"]["code"] == "identity_not_provisioned"
-            assert "Pre-provision via /admin/provision/users" in denied.json()["detail"]["message"]
+            assert (
+                "Pre-provision via /admin/provision/users"
+                in denied.json()["detail"]["message"]
+            )
 
             provision = client.post(
                 "/admin/provision/users",
@@ -106,11 +109,20 @@ def test_strict_mode_requires_pre_provisioned_identity(tmp_path) -> None:
 
             conflict = client.post(
                 "/admin/provision/users",
-                json={"provider": "saml", "externalUid": "bob", "displayName": "Not Bob"},
+                json={
+                    "provider": "saml",
+                    "externalUid": "bob",
+                    "displayName": "Not Bob",
+                },
             )
             assert conflict.status_code == 409
-            assert conflict.json()["detail"]["code"] == "identity_already_provisioned_conflict"
-            assert "conflicting profile attributes" in conflict.json()["detail"]["message"]
+            assert (
+                conflict.json()["detail"]["code"]
+                == "identity_already_provisioned_conflict"
+            )
+            assert (
+                "conflicting profile attributes" in conflict.json()["detail"]["message"]
+            )
 
             allowed = client.put(
                 "/docs/doc-auth-strict",
@@ -133,7 +145,11 @@ def test_sso_subject_reviewer_ref_profile_on_provision(tmp_path) -> None:
             client, _ = fixture
             provision = client.post(
                 "/admin/provision/users",
-                json={"provider": "oidc", "externalUid": "sub-alice", "displayName": "Alice"},
+                json={
+                    "provider": "oidc",
+                    "externalUid": "sub-alice",
+                    "displayName": "Alice",
+                },
             )
             assert provision.status_code == 201
             payload = provision.json()
@@ -155,7 +171,11 @@ def test_sso_subject_header_preferred_over_forwarded_user(tmp_path) -> None:
             client, _ = fixture
             provision = client.post(
                 "/admin/provision/users",
-                json={"provider": "oidc", "externalUid": "subject-header", "displayName": "Alice"},
+                json={
+                    "provider": "oidc",
+                    "externalUid": "subject-header",
+                    "displayName": "Alice",
+                },
             )
             assert provision.status_code == 201
 
@@ -172,6 +192,7 @@ def test_sso_subject_header_preferred_over_forwarded_user(tmp_path) -> None:
     finally:
         settings.allow_jit_provisioning = original_allow_jit
         settings.reviewer_ref_resolver_adapter = original_adapter
+
 
 def test_unauthenticated_path_keeps_actor_ref_fallback(tmp_path) -> None:
     original_allow_jit = settings.allow_jit_provisioning
@@ -222,7 +243,11 @@ def test_admin_provision_contract_reviewer_and_owner_ref_prefix(tmp_path) -> Non
             client, _ = fixture
             response = client.post(
                 "/admin/provision/users",
-                json={"provider": "oidc", "externalUid": "prefix-check", "displayName": "Prefix"},
+                json={
+                    "provider": "oidc",
+                    "externalUid": "prefix-check",
+                    "displayName": "Prefix",
+                },
             )
             assert response.status_code == 201
             payload = response.json()
@@ -233,7 +258,9 @@ def test_admin_provision_contract_reviewer_and_owner_ref_prefix(tmp_path) -> Non
 
 
 @pytest.mark.auth_level1
-def test_admin_provision_contract_response_shape_is_stable_for_create_and_retry(tmp_path) -> None:
+def test_admin_provision_contract_response_shape_is_stable_for_create_and_retry(
+    tmp_path,
+) -> None:
     original_allow_jit = settings.allow_jit_provisioning
     settings.allow_jit_provisioning = False
     try:
@@ -241,11 +268,20 @@ def test_admin_provision_contract_response_shape_is_stable_for_create_and_retry(
             client, _ = fixture
             create = client.post(
                 "/admin/provision/users",
-                json={"provider": "oidc", "externalUid": "shape-check", "displayName": "Shape"},
+                json={
+                    "provider": "oidc",
+                    "externalUid": "shape-check",
+                    "displayName": "Shape",
+                },
             )
             assert create.status_code == 201
             created_payload = create.json()
-            assert set(created_payload.keys()) == {"userId", "reviewerRef", "ownerRef", "provisioned"}
+            assert set(created_payload.keys()) == {
+                "userId",
+                "reviewerRef",
+                "ownerRef",
+                "provisioned",
+            }
             assert isinstance(created_payload["userId"], str)
             assert isinstance(created_payload["reviewerRef"], str)
             assert isinstance(created_payload["ownerRef"], str)
@@ -254,12 +290,85 @@ def test_admin_provision_contract_response_shape_is_stable_for_create_and_retry(
 
             retry = client.post(
                 "/admin/provision/users",
-                json={"provider": "oidc", "externalUid": "shape-check", "displayName": "Shape"},
+                json={
+                    "provider": "oidc",
+                    "externalUid": "shape-check",
+                    "displayName": "Shape",
+                },
             )
             assert retry.status_code == 200
             retried_payload = retry.json()
-            assert set(retried_payload.keys()) == {"userId", "reviewerRef", "ownerRef", "provisioned"}
+            assert set(retried_payload.keys()) == {
+                "userId",
+                "reviewerRef",
+                "ownerRef",
+                "provisioned",
+            }
             assert retried_payload["userId"] == created_payload["userId"]
             assert retried_payload["provisioned"] is False
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_normalizes_provider_case_for_idempotency(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            created = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "OIDC",
+                    "externalUid": "provider-case",
+                    "displayName": "Case",
+                },
+            )
+            assert created.status_code == 201
+
+            retry = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "provider-case",
+                    "displayName": "Case",
+                },
+            )
+            assert retry.status_code == 200
+            assert retry.json()["provisioned"] is False
+            assert retry.json()["userId"] == created.json()["userId"]
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_docs_resolve_identity_accepts_provider_case_variant_under_strict_mode(
+    tmp_path,
+) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            provision = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "oidc",
+                    "externalUid": "case-variant-sub",
+                    "displayName": "Case",
+                },
+            )
+            assert provision.status_code == 201
+
+            response = client.put(
+                "/docs/doc-auth-provider-case",
+                json=_sample_payload("doc-auth-provider-case"),
+                headers={
+                    "x-forwarded-user": "case-variant-sub",
+                    "x-auth-provider": "OIDC",
+                },
+            )
+            assert response.status_code == 200
     finally:
         settings.allow_jit_provisioning = original_allow_jit

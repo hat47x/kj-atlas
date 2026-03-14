@@ -5,11 +5,15 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import UserIdentityRow, UserRow
-from kj_atlas_api.reviewer_ref import ReviewerRefResolutionInput, build_reviewer_ref_resolver_adapter
+from kj_atlas_api.reviewer_ref import (
+    ReviewerRefResolutionInput,
+    build_reviewer_ref_resolver_adapter,
+)
 from kj_atlas_api.settings import settings
 
 router = APIRouter(prefix="/admin/provision", tags=["admin"])
@@ -38,6 +42,14 @@ class ProvisionUserResponse(BaseModel):
     provisioned: bool
 
 
+def _normalize_provider(raw_provider: str) -> str:
+    return raw_provider.strip().lower()
+
+
+def _normalize_external_uid(raw_external_uid: str) -> str:
+    return raw_external_uid.strip()
+
+
 def _normalize_optional_field(raw: str | None) -> str | None:
     if raw is None:
         return None
@@ -55,16 +67,21 @@ def provision_user(
         adapter_name=settings.reviewer_ref_resolver_adapter
     )
 
-    provider = payload.provider.strip()
-    external_uid = payload.externalUid.strip()
+    provider = _normalize_provider(payload.provider)
+    external_uid = _normalize_external_uid(payload.externalUid)
     display_name = _normalize_optional_field(payload.displayName)
     email = _normalize_optional_field(payload.email)
     if not provider or not external_uid:
-        raise HTTPException(status_code=400, detail="provider and externalUid must be non-empty")
+        raise HTTPException(
+            status_code=400, detail="provider and externalUid must be non-empty"
+        )
 
     identity = (
         db.query(UserIdentityRow)
-        .filter(UserIdentityRow.provider == provider, UserIdentityRow.external_uid == external_uid)
+        .filter(
+            func.lower(UserIdentityRow.provider) == provider,
+            UserIdentityRow.external_uid == external_uid,
+        )
         .one_or_none()
     )
     if identity is not None:
@@ -78,15 +95,24 @@ def provision_user(
                 },
             )
 
-        if display_name is not None and user_row.display_name not in {None, display_name}:
+        if display_name is not None and user_row.display_name not in {
+            None,
+            display_name,
+        }:
             raise HTTPException(
                 status_code=409,
-                detail={"code": _IDENTITY_CONFLICT_CODE, "message": _IDENTITY_CONFLICT_MESSAGE},
+                detail={
+                    "code": _IDENTITY_CONFLICT_CODE,
+                    "message": _IDENTITY_CONFLICT_MESSAGE,
+                },
             )
         if email is not None and user_row.email not in {None, email}:
             raise HTTPException(
                 status_code=409,
-                detail={"code": _IDENTITY_CONFLICT_CODE, "message": _IDENTITY_CONFLICT_MESSAGE},
+                detail={
+                    "code": _IDENTITY_CONFLICT_CODE,
+                    "message": _IDENTITY_CONFLICT_MESSAGE,
+                },
             )
 
         user_id = user_row.id
