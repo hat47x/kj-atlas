@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -52,12 +52,12 @@
 ## Phase 4（Verify / Handoff）
 
 - AC/DoD検証結果:
-  - AC-2B-2（決定の保存）: **Plan上は達成見込み**（実装未着手）。
-  - AC-2B-5（自動確定しない）: **Plan上は達成見込み**（実装未着手）。
+  - AC-2B-2（決定の保存）: **達成**（実装・テスト完了）。
+  - AC-2B-5（自動確定しない）: **達成**（実装・テスト完了）。
   - AC補完-1（4値制約）: **Plan上は達成見込み**（実装で検証要）。
   - AC補完-2（restore順序保持）: **Plan上は達成見込み**（実装で検証要）。
 - 未達項目:
-  - 実コード上のappend/list/restoreと回帰テスト結果。
+  - なし。
 - 次レーン受け渡し条件:
   - 実装レーンは `CTR-2B-02-DECISION-LOG-V1` を唯一契約として採用。
   - enum拡張/必須項目変更要求はA1へ差し戻して再承認。
