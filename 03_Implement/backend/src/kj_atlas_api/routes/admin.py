@@ -56,6 +56,26 @@ def _normalize_optional_field(raw: str | None) -> str | None:
     normalized = raw.strip()
     return normalized or None
 
+def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> UserIdentityRow | None:
+    matched_rows = (
+        db.query(UserIdentityRow)
+        .filter(
+            func.lower(UserIdentityRow.provider) == provider,
+            UserIdentityRow.external_uid == external_uid,
+        )
+        .limit(2)
+        .all()
+    )
+    if len(matched_rows) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "identity_mapping_conflict",
+                "message": "Multiple identity mappings matched the same provider/externalUid pair.",
+            },
+        )
+    return matched_rows[0] if matched_rows else None
+
 
 @router.post("/users", response_model=ProvisionUserResponse, status_code=201)
 def provision_user(
@@ -76,14 +96,7 @@ def provision_user(
             status_code=400, detail="provider and externalUid must be non-empty"
         )
 
-    identity = (
-        db.query(UserIdentityRow)
-        .filter(
-            func.lower(UserIdentityRow.provider) == provider,
-            UserIdentityRow.external_uid == external_uid,
-        )
-        .one_or_none()
-    )
+    identity = _resolve_identity_row(db=db, provider=provider, external_uid=external_uid)
     if identity is not None:
         user_row = db.get(UserRow, identity.user_id)
         if user_row is None:

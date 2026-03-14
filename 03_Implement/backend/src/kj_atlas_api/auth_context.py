@@ -43,6 +43,27 @@ def _normalize_provider(raw_provider: str | None) -> str:
     return raw_provider.strip().lower() or "header"
 
 
+def _resolve_identity_row(*, db: Session, provider: str, external_uid: str) -> UserIdentityRow | None:
+    matched_rows = (
+        db.query(UserIdentityRow)
+        .filter(
+            func.lower(UserIdentityRow.provider) == provider,
+            UserIdentityRow.external_uid == external_uid,
+        )
+        .limit(2)
+        .all()
+    )
+    if len(matched_rows) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "identity_mapping_conflict",
+                "message": "Multiple identity mappings matched the same provider/externalUid pair.",
+            },
+        )
+    return matched_rows[0] if matched_rows else None
+
+
 def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdentity:
     reviewer_ref_adapter = build_reviewer_ref_resolver_adapter(
         adapter_name=settings.reviewer_ref_resolver_adapter
@@ -89,14 +110,7 @@ def resolve_identity_context(*, db: Session, request: Request) -> ResolvedIdenti
             auth_context=auth,
         )
 
-    identity = (
-        db.query(UserIdentityRow)
-        .filter(
-            func.lower(UserIdentityRow.provider) == provider,
-            UserIdentityRow.external_uid == external_uid,
-        )
-        .one_or_none()
-    )
+    identity = _resolve_identity_row(db=db, provider=provider, external_uid=external_uid)
 
     if identity is None:
         if not settings.allow_jit_provisioning:
