@@ -7,6 +7,7 @@ import {
   collectInitiallyCollapsedIslandIds,
   getCollapsedHiddenCardIds,
 } from "./collapse_visibility";
+import { evaluateIslandVisibilityA3GoNoGo, toIslandVisibilityValidationLog } from "./island_visibility_handoff";
 
 describe("collectCollapsedIslandIds", () => {
   it("includes descendants of explicitly collapsed islands", () => {
@@ -117,6 +118,26 @@ describe("buildIslandVisibilityContractPayload", () => {
       expect(expand.value.view.hiddenDescendantIslandIds).toEqual([]);
       expect(expand.value.view.hiddenCardIds).toEqual([]);
     }
+  });
+
+
+
+  it("A2→A3: evaluates Go when M1/M2/M3 pass and M4 fail-fast is owned by A2", () => {
+    const doc = {
+      islands: [
+        { id: "root", cardIds: ["c-root"] },
+        { id: "child", cardIds: ["c-child"], parentIslandId: "root" },
+      ],
+    };
+
+    const logs = [
+      toIslandVisibilityValidationLog("M1", buildIslandVisibilityContractPayload(doc, new Set(["root"]), "root"), "A2", "collapse"),
+      toIslandVisibilityValidationLog("M2", buildIslandVisibilityContractPayload(doc, new Set(), "root"), "A2", "expand"),
+      toIslandVisibilityValidationLog("M3", buildIslandVisibilityContractPayload(doc, new Set(["root"]), "root"), "A2", "idempotent"),
+      toIslandVisibilityValidationLog("M4", buildIslandVisibilityContractPayload(doc, new Set(["missing"]), "missing"), "A2", "invalid island"),
+    ];
+
+    expect(evaluateIslandVisibilityA3GoNoGo(logs)).toEqual({ go: true, reason: "go" });
   });
 
   it("M4: returns fail-fast when target island does not exist", () => {

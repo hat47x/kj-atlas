@@ -81,8 +81,8 @@ export function evaluateIslandVisibilityA3GoNoGo(logs: IslandVisibilityValidatio
     return { go: false, reason: "M1/M2/M3 ownerOfFix must be A3" };
   }
 
-  if (m4.ownerOfFix === "A3") {
-    return { go: false, reason: "M4 ownerOfFix must not be A3" };
+  if (m4.ownerOfFix !== "A2") {
+    return { go: false, reason: "M4 ownerOfFix must be A2" };
   }
 
   return { go: true, reason: "go" };
