@@ -74,7 +74,7 @@ export function buildP2CMockValidationLog(
   seed: number,
   padding: number
 ): P2CMockValidationLog {
-  const output = padPolygonFromCentroid(fixture, padding);
+  const output = padPolygonFromCentroid([...fixture], padding);
   const paddingViolationCount = countPaddingViolations(fixture, output, padding);
   const isPass = paddingViolationCount === 0;
 

@@ -6,8 +6,8 @@ import { STREAM_B_CONTRACTS, type StreamBContractId, type StreamBSchemaVersion }
 export type StreamBValidationOwner = "A1" | "A2" | "A3";
 
 export type StreamBValidationLog = {
-  contractVersion: StreamBContractId;
-  schemaVersion: StreamBSchemaVersion;
+  contractVersion: StreamBContractId | string;
+  schemaVersion: StreamBSchemaVersion | string;
   mockCaseId: "M1" | "M2" | "M3" | "M4";
   validationResult: "pass" | "fail";
   ownerOfFix: StreamBValidationOwner;
