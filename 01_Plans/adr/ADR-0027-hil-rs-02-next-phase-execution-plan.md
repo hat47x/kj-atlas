@@ -41,6 +41,35 @@
 - EC-4: `project-progress-dashboard.md` と `issues/README.md` の Active / Decision Queue / 次の1手が同期される。
 - EC-5: docs-check（validator + unittest + diff check）が成功する。
 
+### D5. HIL-RS凍結I/F（Contract/Governance）
+
+- Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Contract IDs（変更禁止）:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- Fixed identifiers（変更禁止）:
+  - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- SSOT（単一参照先）:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+
+### D6. 固定状態遷移 / 停止条件
+
+- State transitions（固定）:
+  - A2/A3公開判定: `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可。
+  - Decision Queue: `Pending -> Approved` または `Pending -> Rejected` のみ許可。
+- 禁止遷移:
+  - `Pending` を経由しない確定化。
+  - A1完了前の A2/A3 `Draft -> Open`。
+- Stop conditions（即停止）:
+  1. 契約ID / schemaVersion / overridePolicy / SSOT の不一致。
+  2. SafeMode既定ON、share/export漏えい防止、`human_dual_control_only` の後退要求。
+  3. 凍結対象共有リソース（dashboard/README）への未承認更新要求。
+
 ## Consequences
 
 - 期待効果:

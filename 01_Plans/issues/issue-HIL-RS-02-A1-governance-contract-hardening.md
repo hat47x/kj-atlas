@@ -118,6 +118,23 @@
   - `schemaVersion` / `overridePolicy` / 契約ID / requiredFields / errorCode列挙 の直接変更
   - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退
 
+### 固定状態遷移（A1 gate contract）
+
+- A2/A3公開判定（許可）:
+  - `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可。
+- Decision Queue（許可遷移）:
+  - `Pending -> Approved`
+  - `Pending -> Rejected`
+- 禁止遷移:
+  - `Pending` を経由しない確定化。
+  - `Approved -> Pending` の巻き戻し。
+
+### Stop conditions（即停止してA1差し戻し）
+
+1. 契約ID / `schemaVersion` / `overridePolicy` / SSOT の不一致。
+2. SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退要求。
+3. 凍結対象共有リソース（`issues/README.md` / `project-progress-dashboard.md`）への未承認更新要求。
+
 ### A2/A3契約境界（A1以外で変更禁止）
 
 以下はA2/A3で直接編集せず、変更要求はA1へ差し戻す。
@@ -176,3 +193,16 @@
   2. Decision Queueが未処理ゼロ（`Pending=0`）。
   3. 承認ログが追跡可能（evidenceLink完備）。
 - 違反時処理: A2/A3で契約変更を検知した時点で`StoppedForClarification`へ遷移し、A1へ差し戻す。
+
+## 14) Handoff（固定I/F一覧・差し戻し条件・未確定事項）
+
+- 固定I/F一覧:
+  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+  - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
+  - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 差し戻し条件:
+  - 上記固定識別子の変更要求、または停止条件に該当する要求を検知した場合。
+- 未確定事項（Decision Queueへ送る）:
+  - `DQ-HIL-RS-02-A1-001`（A2 fixture命名揺れ）
+  - `DQ-HIL-RS-02-A1-002`（A3 SSOT参照表記統一）

@@ -85,6 +85,8 @@ kj-atlas は OSS として、多様な環境で利用される：
 
 > 注記: 本書は設計解説であり、契約値の最終決定は常にSSOTを優先する。A2/A3は本節を改訂せずA1へ差し戻す。
 
+- Freeze Pack参照（HIL-RS-02）: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`。A2/A3はread-only参照とし、契約変更要求はA1へ差し戻す。
+
 ### Concepts
 - **ReviewerRef**: 文字列ID（例: `user:local:4f9c...` / `user:sso:sub:...`）
 - **ReviewEvent**: いつ、何に対して、どんなレビューアクションが起きたか
