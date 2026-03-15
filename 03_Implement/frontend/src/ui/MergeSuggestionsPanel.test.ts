@@ -36,7 +36,30 @@ function buildProps() {
     ]),
     onMergedTextChange: vi.fn(),
     onDecide: vi.fn(),
-    latestAuditEventByGroup: new Map([["heuristic-risk-a-b", { decidedAt: "2026-02-28T10:00:00.000Z" }]]),
+    latestAuditEventByGroup: new Map([[
+      "heuristic-risk-a-b",
+      {
+        eventId: "evt-1",
+        groupId: "heuristic-risk-a-b",
+        decision: "defer" as const,
+        decidedAt: "2026-02-28T10:00:00.000Z",
+        decidedBy: "human" as const,
+        cardIds: ["a", "b"],
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+    ]]),
+    auditEvents: [
+      {
+        eventId: "evt-1",
+        groupId: "heuristic-risk-a-b",
+        decision: "defer" as const,
+        decidedAt: "2026-02-28T10:00:00.000Z",
+        decidedBy: "human" as const,
+        cardIds: ["a", "b"],
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      },
+    ],
+    onExportAuditEvents: vi.fn(),
   };
 }
 
@@ -53,6 +76,10 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Representative: a [fallback], source count: 1");
     expect(html).toContain("Rationale: heuristic:normalized-text");
     expect(html).toContain("Audit event recorded at");
+    expect(html).toContain("decision=defer");
+    expect(html).toContain("Export decision audit events (JSONL)");
+    expect(html).toContain("1 event(s)");
+    expect(html).toContain("Draft diff preview:");
     expect(html).toContain("Accept");
     expect(html).toContain("Partially accept");
     expect(html).toContain("Reject");
@@ -65,5 +92,16 @@ describe("MergeSuggestionsPanel", () => {
 
     expect(html).toContain("Collect candidates");
     expect(html).toContain("disabled");
+  });
+
+  it("renders no-audit-events helper text when audit list is empty", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MergeSuggestionsPanel, {
+        ...buildProps(),
+        auditEvents: [],
+      })
+    );
+
+    expect(html).toContain("No audit events yet");
   });
 });

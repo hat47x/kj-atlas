@@ -1558,14 +1558,25 @@ export default function App() {
   const compareImportInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
   const latestMergeDecisionAuditByGroup = useMemo(() => {
-    const latest = new Map<string, { decidedAt: string }>();
+    const latest = new Map<string, MergeDecisionAuditEvent>();
     for (const event of mergeDecisionAuditEvents) {
       const current = latest.get(event.groupId);
       if (!current || current.decidedAt <= event.decidedAt) {
-        latest.set(event.groupId, { decidedAt: event.decidedAt });
+        latest.set(event.groupId, event);
       }
     }
     return latest;
+  }, [mergeDecisionAuditEvents]);
+
+  const handleExportMergeDecisionAuditEvents = useCallback(() => {
+    if (mergeDecisionAuditEvents.length === 0) {
+      setStatusMessage("No merge decision audit events to export");
+      return;
+    }
+
+    const lines = mergeDecisionAuditEvents.map((event) => JSON.stringify(event));
+    downloadTextFile("merge-decision-audit-events.jsonl", "application/x-ndjson", `${lines.join("\n")}\n`);
+    setStatusMessage(`Exported ${mergeDecisionAuditEvents.length} merge decision audit event(s)`);
   }, [mergeDecisionAuditEvents]);
   const selectedAggregatedEdge = useMemo(() => {
     if (!selectedEdgeId) {
@@ -8042,6 +8053,8 @@ ${parsedDocument.error}`);
                     onMergedTextChange={handleMergeSuggestionTextChange}
                     onDecide={handleRecordMergeSuggestionDecision}
                     latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
+                    auditEvents={mergeDecisionAuditEvents}
+                    onExportAuditEvents={handleExportMergeDecisionAuditEvents}
                   />
                 }
                 critiqueInput={
