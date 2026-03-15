@@ -412,12 +412,18 @@ Compose未実行時は、以下を「未確認リスク」としてPRに残す�
 - diagnostics の表示/出力へ新規指標を追加するPRでは、unit/workerテストに加え、export経路を通すE2Eを必須チェック項目とする。
 - PR本文の「未実施項目」に E2E省略理由を記載する場合は、次回是正タスク（Issueまたは同PR内追補）を必ず紐づける。
 
-## 11. HIL-RS-01 ドキュメント同期検証（A3 docs-check）
+## 11. HIL-RS-02-A3 ドキュメント同期検証（仮運用 / docs-check）
 
 A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで確認する。
 
+仮運用タグ（依存切断ルール）:
+- `status=provisional`
+- `evidenceType=mock-trace`
+- `replaceOnNextSync=true`
+
 前提（A1/A2整合）:
 - RequirementID `HIL-RS-01-A1` の契約境界（Critique入力 / 再提案差分 / レビュー帰属）を参照済みであること。
+- HIL-RS-02-A3 は A2実コード完成待ちをしないモック証跡同期であることを記録していること。
 - Contract Keys（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）が運用文書側に明記されていること。
 - Freeze Flags（`contractLinkLocked=true` / `sharedResourceFreeze=true`）が運用文書側に明記されていること。
 - 契約正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を参照し、Issueメモとの差分がないこと。
@@ -427,13 +433,14 @@ A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで
 ```bash
 python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
-rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
+rg -n "HIL-RS-01|HIL-RS-02-A3|ADR-0026|SafeMode|可逆|Critique|レビュー帰属|仮運用|モック証跡" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
 rg -n "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|contractLinkLocked|sharedResourceFreeze" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md
 cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts src/domain/hil_rs_rediff_stub.test.ts
 ```
 
 期待値:
 - issue memo validator と unit test が成功する。
+- 仮運用タグ（`status=provisional`, `evidenceType=mock-trace`, `replaceOnNextSync=true`）が3文書で確認できる。
 - `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 / Critique / レビュー帰属 の同期記述が存在する。
 - HIL-RS workflow 関連の vitest（UI/contract/payload）が成功し、文書化した運用制約と実装の差分がない。
 - `hil_rs_payload` 系の検証（未知tags→`no_articulable_reason`、空コメント+空tagsは未発行、`iteration>=1`）が運用記述と一致する。
@@ -474,3 +481,16 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|Deterministic heur
 
 - contractVersion が `CTR-2B-01-CANDIDATE-GROUP-V1` / `CTR-2B-02-DECISION-LOG-V1` と一致しない場合は停止。
 - 自動マージ確定を示す導線が追加された場合は停止し、A1契約へ差し戻す。
+
+
+### 11.1 未確定事項とA1差し戻し条件（Proceed）
+
+未確定事項（仮運用中）:
+- A2実コード由来の最終監査イベント形式（`mock-trace` からの置換点）
+- 差分レビュー画面の最終UI文言が `HilRsWorkflowPanel` 固定値から変更される可能性
+
+A1差し戻し対象（検知時に停止）:
+- Contract Keys / Freeze Flags の不一致
+- `A1-ERROR-IF` 固定コード外の追加
+- `traceKey` 必須条件の欠落
+- PII-like field拒否または人間レビュー帰属必須の破れ

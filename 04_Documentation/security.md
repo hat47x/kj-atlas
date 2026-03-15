@@ -335,7 +335,7 @@ PII非保存ルール:
 - 承認順序・承認有効期限・代理承認・違反時SLAなどの未確定フローを決めないと運用できない場合、推測で確定せず停止する。
 - 停止時は質問リストを更新し、状態を「確認待ちで停止」と明記したうえで、回答が得られるまで strict 例外の実行を禁止する。
 
-## HIL-RS-01 セキュリティ運用境界（A3）
+## HIL-RS-02-A3 セキュリティ運用境界（仮運用 / モック証跡）
 
 A1契約・A2仕様の文書同期として、次フェーズ運用時の最小境界を固定する。
 
@@ -347,6 +347,13 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
 - Freeze Flags: `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+
+仮運用タグ（依存切断ルール）:
+
+- `status=provisional`
+- `evidenceType=mock-trace`
+- `replaceOnNextSync=true`
+- A2の実コード完成を待たず、A1契約I/Fと想定運用フローに基づく暫定同期として扱う。
 
 - SafeMode既定ON、および share/export 漏えい防止の既存制約を変更しない。
 - Critique→再提案の反復は候補提示として扱い、確定操作は人間操作のみで実施する。
@@ -388,6 +395,14 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 1. 文書更新を停止し、逸脱箇所（契約ID/固定値/実装差分）を列挙する。
 2. A1正本（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）へ照合し、差分をA1差し戻しとして起票する。
 3. 差分解消までA3更新を再開しない（推測補完禁止）。
+
+### 8.2.1 異常時ロールバック実施ログ（仮運用）
+
+- `rollbackReason`: `contract_mismatch | freeze_flag_violation | pii_violation | rediff_missing`
+- `rollbackStatus`: `rollback_pending | rollback_done`
+- `rollbackBy`: `Platform Operator`
+- `approvalRef`: Security Officer / System Owner の承認参照ID
+- `reopenCondition`: A1差し戻し解消 + docs-check再実行成功
 
 上記に抵触する変更が必要な場合は、実装を停止し `ADR-0026` と上位層（00〜02）で先に合意する。
 
