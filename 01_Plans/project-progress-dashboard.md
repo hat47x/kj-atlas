@@ -20,13 +20,14 @@
 - Stream E Phase 1-4 同期（rerun-16）でRead同期（A/B/C/D完了報告）→件数/状態/Decision Queue反映→参照リンク/件数/依存順監査→再開判定チェックリスト1行確定を直列実行し、公開値を `件数43 / Active=2 / Done=25 / Ready=1 / Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` に再固定した。
 - Stream F Phase 1-5 最終再同期（rerun-17）でRead Gate（A〜E完了報告と証跡）→Plan（3ファイル限定差分）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（再開判定チェックリスト1行固定）を完了し、公開値を `件数43 / Active=2 / Done=25 / Ready=1 / Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` として維持した。
 - Stream E Phase 1-5 最終同期（rerun-20）でA〜D完了報告・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）・停止条件違反0件を再確認し、shared resource 3ファイルを単一変更セットで再同期して公開値（件数43 / Active=2 / Done=25 / Ready=1 / Open=2）を維持した。
+- Stream D 共有資源同期（2026-03-15 rerun-24）で 3共有ファイルを再読し、公開値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25） / Active=6 / Done=25 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` に再固定。Source Issue は README運用基準（Open=`N/A` / Draft=`TBD`）を維持し、再開判定チェックリスト1行（未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持した。
 
-### 未完Issue全件（18件）とレーン割当
+### 未完Issue全件（22件）とレーン割当
 
-- **Stream A（契約/I-F固定）**: `HIL-RS-01`, `HIL-RS-01-A1`, `FB-P2C-01-A1`, `FB-P2B-01-A1`, `FB-P2B-02-A1`, `FB-P2A-01-A1`, `FB-P2A-02-A1`。
-- **Stream B（Frontend A2/A3）**: `FB-P2B-01-A2/A3`, `FB-P2B-02-A2/A3`, `FB-P2C-01-A2/A3`, `FB-P2A-01-A2/A3`, `FB-P2A-02-A2/A3`。
+- **Stream A（契約/I-F固定）**: `HIL-RS-01`, `HIL-RS-01-A1`, `HIL-RS-02`, `HIL-RS-02-A1`, `FB-P2C-01-A1`, `FB-P2B-01-A1`, `FB-P2B-02-A1`, `FB-P2A-01-A1`, `FB-P2A-02-A1`。
+- **Stream B（Frontend A2/A3）**: `HIL-RS-02-A2`, `FB-P2B-01-A2/A3`, `FB-P2B-02-A2/A3`, `FB-P2C-01-A2/A3`, `FB-P2A-01-A2/A3`, `FB-P2A-02-A2/A3`。
 - **Stream C（Backend/Auth/Schema）**: `FB-P0-2A2B2C-stream-c-planning-baseline`（Draft）を先頭に、A契約確定後のAPI/schema実装へ接続。
-- **Stream D（統合ドキュメント）**: 共有更新は `project-progress-dashboard.md` / `issues/README.md` / `decision-pack` のみを単一コミットで同期。
+- **Stream D（統合ドキュメント）**: `HIL-RS-02-A3` と共有更新（`project-progress-dashboard.md` / `issues/README.md` / `decision-pack`）を単一コミットで同期。
 - **競合回避ルール**: `*_a1_*` はA専有、`*_a2_*`/`*_a3_*` はB/C専有、共有統合ファイルはD専有。交差編集を禁止する。
 
 ### 1) 計画分析と実行戦略のサマリー（優先度・依存・競合）
