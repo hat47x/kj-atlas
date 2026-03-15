@@ -47,6 +47,8 @@
 
 - `rg -n "SafeMode|human_dual_control_only|A1→A2→A3" 01_Plans/issues/issue-HIL-RS-02-*.md 01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`
 - `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
 
 ## 7) 依存関係
 
@@ -94,6 +96,23 @@
 
 上記はA1完了時点で凍結し、A2/A3では変更要求を直接反映せず、必ずA1へ差し戻す。
 
+### A1 Decision Queue運用（固定遷移）
+
+- 許可遷移: `Pending -> Approved` または `Pending -> Rejected` のみ。
+- 禁止遷移: `Pending` を経由しない確定化、`Approved -> Pending` の巻き戻し。
+- 記録必須項目: `QueueID / Owner / UTC timestamp / evidenceLink / decisionBy`。
+- ゲート: `Pending` が1件でも存在する間はA2/A3のOpen化を禁止。
+
+### A2/A3契約境界（A1以外で変更禁止）
+
+以下はA2/A3で直接編集せず、変更要求はA1へ差し戻す。
+
+1. SafeMode既定ON。
+2. share/export漏えい防止既定。
+3. `human_dual_control_only`。
+4. `schemaVersion` / `overridePolicy` / 契約ID整合。
+5. `contractLinkLocked=true` / `sharedResourceFreeze=true`。
+
 ## 11) フェーズ実行ログ（Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read同期
@@ -132,3 +151,13 @@
 |---|---|---|---|---|
 | DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Pending | Architecture Owner | A2 kickoff reviewで承認 |
 | DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Pending | Documentation Owner | A3 handoff reviewで承認 |
+
+## 13) A2/A3引き渡し宣言（凍結契約パック）
+
+- Pack-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Availability: A1完了時にread-onlyで公開。
+- Unlock条件:
+  1. A1 AC/DoD満了。
+  2. Decision Queueが未処理ゼロ（`Pending=0`）。
+  3. 承認ログが追跡可能（evidenceLink完備）。
+- 違反時処理: A2/A3で契約変更を検知した時点で`StoppedForClarification`へ遷移し、A1へ差し戻す。
