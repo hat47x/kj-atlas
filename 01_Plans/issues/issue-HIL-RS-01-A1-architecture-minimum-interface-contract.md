@@ -284,3 +284,24 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - 解除条件:
   - A1契約変更要求のDecision Queueが0件であること
   - 人間承認つきの統合フェーズ開始が宣言されること
+
+## 15) HIL-RS凍結I/F（後続依存向け）
+
+### 固定I/F一覧（immutable）
+
+- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+- `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true` / `sharedResourceFreeze=true`
+- SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+
+### 差し戻し条件（A1 only）
+
+- 契約ID・識別子・state transitions・stop条件の変更要求を検知した場合。
+- SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退要求を検知した場合。
+
+### 未確定事項（確定扱い禁止）
+
+- `DQ-HIL-RS-01-A1-006`（A2 mock fixture命名揺れの吸収方針）
+- `DQ-HIL-RS-01-A1-007`（A3 SSOT参照表記統一）
