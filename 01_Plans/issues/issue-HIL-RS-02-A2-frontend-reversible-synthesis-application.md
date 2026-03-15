@@ -1,12 +1,12 @@
 # Issue Draft: HIL-RS-02 A2 Frontend 可逆統合フロー適用
 
 - Type: Implementation
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: TBD
 - Priority: P1
 - Owner: Frontend Owner
-- Scope: `03_Implement/frontend/`, `04_Documentation/`
+- Scope: `03_Implement/frontend/`
 - Related Backlog: `HIL-RS-02`
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`
 - Expected verification level: `unit`
@@ -22,6 +22,7 @@
 ## 3) スコープ
 
 - frontendの候補比較UI、差分表示、確定操作の監査イベント出力。
+- 確定操作を「信頼できる人間操作（trusted click）」に限定するUI境界を追加する。
 
 ## 4) 非スコープ
 
@@ -31,12 +32,12 @@
 ## 5) 受入条件
 
 - AC-1: SafeMode既定ONでの動作が維持される。
-- AC-2: 確定操作は人間操作時のみ発火する。
+- AC-2: 確定操作は人間操作時のみ発火する（trusted event check）。
 - AC-3: 回帰テスト（unit）を追加し、既存機能の破壊がない。
 
 ## 6) 検証方法
 
-- `npm --prefix 03_Implement/frontend test -- --runInBand`
+- `npm --prefix 03_Implement/frontend test -- src/ui/MergeSuggestionsPanel.test.ts src/ui/HilRsWorkflowPanel.test.ts`
 - `npm --prefix 03_Implement/frontend run lint`
 
 ## 7) 依存関係
@@ -49,6 +50,7 @@
 
 ## 9) 着手順
 
-1. 契約参照実装
-2. UI導線追加
-3. unit検証
+1. Plan: 契約とAC/DoDを確認し、A2 I/F固定値を維持する。
+2. Execute: UIの確定操作導線にtrusted event境界を適用する。
+3. Verify: unit/lintを通し、可逆ワークフロー表示と確定導線の回帰を確認する。
+4. Proceed: 残課題を次タスクへハンドオフする。
