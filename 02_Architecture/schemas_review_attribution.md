@@ -100,6 +100,19 @@ type ReviewSignatureVerification = {
 
 > 契約値の変更要求（schemaVersion / required fields / overridePolicy）はA1 issueへ差し戻し、A2/A3で変更しない。
 
+
+### A1-ERROR-IF binding（review attribution関連）
+
+review attribution の検証失敗時は次の error code を用いる。
+
+- `A1_SCHEMA_VERSION_MISMATCH`
+- `A1_REQUIRED_FIELD_MISSING`
+- `A1_OVERRIDE_POLICY_VIOLATION`
+- `A1_PII_POLICY_VIOLATION`
+
+共通 envelope 形式は `02_Architecture/schemas.md` の `A1-ERROR-IF` を唯一参照先とし、
+`contractId` は `A1-ATTR-IF` で固定する。
+
 ## Defaults
 - reviewAttributionPolicy.storePII = false
 - reviewAttributionPolicy.exportRedactionMode = "strip-identities"

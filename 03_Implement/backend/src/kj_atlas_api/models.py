@@ -479,6 +479,29 @@ class DeterministicTieBreak(BaseModel):
     )
 
 
+class A1ErrorEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    errorCode: Literal[
+        "A1_SCHEMA_VERSION_MISMATCH",
+        "A1_REQUIRED_FIELD_MISSING",
+        "A1_TRACE_KEY_MISSING",
+        "A1_OVERRIDE_POLICY_VIOLATION",
+        "A1_PII_POLICY_VIOLATION",
+    ]
+    message: str
+    contractId: Literal["A1-CRITIQUE-IF", "A1-REDIFF-IF", "A1-ATTR-IF"]
+    retryable: bool
+    occurredAt: datetime
+
+
+class A1ErrorResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schemaVersion: Literal["1.0.0"]
+    errorEnvelope: A1ErrorEnvelope
+
+
 class PolygonHandoffInputContract(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
