@@ -95,4 +95,5 @@
   3. Invariant-03: `human_dual_control_only` を維持し、単独承認へ緩和しない。
   4. Invariant-04: `contractLinkLocked=true` / `sharedResourceFreeze=true`。
   5. Invariant-05: `schemaVersion` / `overridePolicy` / 契約ID整合を維持。
+  6. Invariant-06: `A1-ERROR-IF` のerrorCode列挙を固定し、A2/A3で拡張しない。
 - Return path: 変更要求は必ず A1 issue の Decision Queue に `Pending` で登録して再判定する。
