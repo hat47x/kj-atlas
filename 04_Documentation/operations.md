@@ -490,7 +490,8 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 - RequirementID: `HIL-RS-01-A1`
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
-- Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+- Freeze Flags: `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 
 ### 1. 実行順序（A1 → A2 → A3）
@@ -512,10 +513,11 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 ### 1.1 A3運用固定（再現手順）
 
-1. `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` の3契約を、運用手順・検証手順・停止条件のすべてで同一表記に揃える。
+1. `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の4契約を、運用手順・検証手順・停止条件のすべてで同一表記に揃える。
 2. `HilRsWorkflowPanel` の3導線ラベルと説明文を、運用文言の固定値として扱う。
 3. `hil_rs_contract.ts` の検証制約（PII-like field拒否 / reversible diff必須 / human review帰属必須）と矛盾する運用記述を禁止する。
-4. 契約未固定（ID未記載・契約境界の欠落）を検知した場合は、推測補完せず更新を停止する。
+4. `contractLinkLocked=true` / `sharedResourceFreeze=true` が崩れている場合は、推測補完せず更新を停止する。
+5. 契約未固定（ID未記載・契約境界の欠落）を検知した場合は、推測補完せず更新を停止する。
 
 ### 1.2 A2挙動との対応表（A3同期対象）
 
@@ -543,6 +545,9 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 3. レビュー帰属の生成条件:
    - `createHilRsReviewAttribution` は validator 成功時のみ attribution を返し、失敗時は `null` を返す。
    - 不正な帰属値を運用で補完しない（再入力または再承認を要求する）。
+4. 再提案差分とエラー契約の最低整合:
+   - 再提案差分（`A1-REDIFF-IF`）は `traceKey` を必須とし、欠落時は処理を中止する。
+   - 契約違反・必須欠落・PII違反は `A1-ERROR-IF` の固定コード（5件）へ写像し、独自コードを追加しない。
 
 ### 2. 制約（非目標と停止条件）
 
@@ -556,11 +561,24 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - Frontend コンポーネント実装
 - SafeMode 既定ON の緩和
 
+ロールバック条件（A3同期の停止/差し戻し）:
+
+- Contract Keys / Freeze Flags のいずれかに不一致がある。
+- `traceKey` 欠落や可逆差分欠落など、A2 handoff で固定した必須整合に違反する。
+- PII-like field拒否・人間レビュー帰属必須のいずれかを満たせない。
+
+ロールバック手順:
+
+1. 文書更新を停止し、逸脱箇所（契約ID/固定値/実装差分）を列挙する。
+2. A1正本（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）へ照合し、差分をA1差し戻しとして起票する。
+3. 差分解消までA3更新を再開しない（推測補完禁止）。
+
 ### 3. docs-check 記録
 
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+- `rg -n "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|contractLinkLocked|sharedResourceFreeze" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
 - `rg -n "A2-1 Candidate comparison|A2-2 Critique input|A2-3 Diff visualization|Collect and compare merge/layout candidates before any commit.|Capture critique and re-suggest iteratively while keeping human final approval.|Review deterministic diffs before apply/discard to keep the workflow reversible." 03_Implement/frontend/src/ui/HilRsWorkflowPanel.tsx 04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md`
 - `rg -n "no_articulable_reason|createHilRsReviewAttribution|iteration" 03_Implement/frontend/src/domain/hil_rs_payload.ts 04_Documentation/operations.md`
 - `cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts src/domain/hil_rs_rediff_stub.test.ts`

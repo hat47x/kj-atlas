@@ -248,6 +248,10 @@ issue補助メモには、最低でも次の項目を含める。
 |---|---|---|---|
 | HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Open | N/A |
 | HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Open | N/A |
+| HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Open | N/A |
+| HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
+| HIL-RS-02-A2 | `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` | Draft | TBD |
+| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | TBD |
 
 ### HIL-RS-01 実行順序と競合回避（Stream D 統合基準）
 
@@ -298,6 +302,8 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F Phase 1-5 再同期（2026-03-14 rerun-15）: A〜E完了報告受領・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）をRead Gateで再確認し、shared resource 3ファイルの単一変更セット更新後に validator/unittest/rg を再実行して件数43・Active2・Done25・再開判定1行・停止条件違反0件の一致を維持。
 - Stream E Phase 1-4 同期（2026-03-14 rerun-16）: Read同期（A/B/C/D完了報告）→件数/状態/Decision Queue反映→参照リンク/件数/依存順監査→再開判定チェックリスト1行確定を直列実行し、shared resource 3ファイルの公開値を `件数43 / Active2 / Done25 / Queue Ready=1 Open=2 / A1→A2→A3 / 停止条件違反0件` で再固定。
 - Stream F Phase 1-5 最終再同期（2026-03-14 rerun-17）: Read Gate（A〜E完了報告と証跡）→Plan（3ファイル限定）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（再開判定チェックリスト1行固定）を実施し、件数43・Active2・Done25・Queue Ready=1/Open=2・依存順A1→A2→A3・停止条件違反0件を維持。
+
+- Stream D Phase 1-5 統合再同期（2026-03-14 rerun-22）: Stream A/B/C/E/F の完了報告受領をRead Gateで再確認し、Active表（2件）/Decision Queue（Ready=1, Open=2）/Next actions（Ready監査1件 + Open期限管理2件）/依存順 `A1→A2→A3` を3共有ファイルで再同期。`Source Issue` はREADME運用基準どおり `N/A` 維持。検証は `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で一致を確認し、再開判定1行（未固定箇所0 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持。
 
 ## Rules
 
@@ -351,3 +357,4 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream F 共有資源再同期（2026-03-14 rerun-19, Phase 1-5）: Read GateでA〜E完了報告・依存順`A1→A2→A3`・Decision Queue（Ready=1/Open=2）・停止条件違反0件を再確認し、shared resource 3ファイルを単一変更セットで同期後、validator/unittest/rgで件数43・Active=2・Done=25・再開判定1行の一致を再確認。
 - Stream E 共有資源最終同期（2026-03-14 rerun-20, Phase 1-5）: Stream A/B/C/D完了報告・依存順`A1→A2→A3`・Decision Queue（Ready=1/Open=2）・停止条件違反0件をRead同期し、shared resource 3ファイルのみを単一変更セットで再同期後、validator/unittest/rgで件数43・Active=2・Done=25・再開判定1行の一致を維持。
 - Stream D 共有資源再同期（2026-03-14 rerun-21, Phase 1-5）: Read GateでStream A/B/C完了報告・契約リンク（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）・検証ログ受領を再確認し、shared resource 3ファイルを単一変更セットで同期後、validator/unittest/rgで件数43・Active=2・Done=25・Decision Queue（Ready=1/Open=2）・再開判定1行の一致を維持。
+- Stream HIL-RS-02 planning sync（2026-03-14）: 次フェーズ計画として `HIL-RS-02` / `HIL-RS-02-A1` / `HIL-RS-02-A2` / `HIL-RS-02-A3` を追加し、Active件数を6件（Open=4 / Draft=2）、全体件数を47件（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25）へ更新。Decision Queueは既存運用（Ready=1 / Open=2）を維持。

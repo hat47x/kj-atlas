@@ -10,10 +10,21 @@ export const HIL_RS_CONTRACT_IDS = {
   critique: "A1-CRITIQUE-IF",
   rediff: "A1-REDIFF-IF",
   attribution: "A1-ATTR-IF",
+  error: "A1-ERROR-IF",
 } as const;
 
 export const HIL_RS_CRITIQUE_SCHEMA_VERSION = "1.0.0" as const;
+export const HIL_RS_REDIFF_SCHEMA_VERSION = "1.0.0" as const;
 export const HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION = "1.0.0" as const;
+export const HIL_RS_ERROR_SCHEMA_VERSION = "1.0.0" as const;
+
+export const HIL_RS_ERROR_CODES = [
+  "A1_SCHEMA_VERSION_MISMATCH",
+  "A1_REQUIRED_FIELD_MISSING",
+  "A1_TRACE_KEY_MISSING",
+  "A1_OVERRIDE_POLICY_VIOLATION",
+  "A1_PII_POLICY_VIOLATION",
+] as const;
 
 export const HIL_RS_CRITIQUE_REQUIRED_FIELDS = [
   "critiqueId",
@@ -57,10 +68,22 @@ export type HilRsDiffOp = {
 };
 
 export type HilRsRediffPayload = {
+  schemaVersion: typeof HIL_RS_REDIFF_SCHEMA_VERSION;
   proposalId: string;
   basedOnIteration: number;
   diffOps: HilRsDiffOp[];
   traceKey: string;
+};
+
+export type HilRsErrorCode = (typeof HIL_RS_ERROR_CODES)[number];
+
+export type HilRsContractErrorEnvelope = {
+  schemaVersion: typeof HIL_RS_ERROR_SCHEMA_VERSION;
+  errorCode: HilRsErrorCode;
+  message: string;
+  contractId: (typeof HIL_RS_CONTRACT_IDS)["critique"] | (typeof HIL_RS_CONTRACT_IDS)["rediff"] | (typeof HIL_RS_CONTRACT_IDS)["attribution"];
+  retryable: boolean;
+  occurredAt: string;
 };
 
 export const HIL_RS_REVIEW_STATES = ["unreviewed", "human_reviewed"] as const;
@@ -89,7 +112,7 @@ const HIL_RS_CRITIQUE_ALLOWED_KEYS = new Set([
   "constraintHints",
 ]);
 
-const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["proposalId", "basedOnIteration", "diffOps", "traceKey"]);
+const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["schemaVersion", "proposalId", "basedOnIteration", "diffOps", "traceKey"]);
 
 const HIL_RS_DIFF_OP_ALLOWED_KEYS = new Set(["opId", "opType", "targetRef", "before", "after", "rationale"]);
 
@@ -104,6 +127,8 @@ const HIL_RS_ATTRIBUTION_ALLOWED_KEYS = new Set([
   "ownerRef",
 ]);
 
+const HIL_RS_ERROR_ALLOWED_KEYS = new Set(["schemaVersion", "errorCode", "message", "contractId", "retryable", "occurredAt"]);
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -114,6 +139,10 @@ function isIsoTimestamp(value: string): boolean {
 
 function hasPiiLikeIdentityFields(value: Record<string, unknown>): boolean {
   return ["provider", "external_uid", "email"].some((key) => key in value);
+}
+
+function hasPiiLikeText(value: string): boolean {
+  return /@|external_uid|provider\s+user\s+id|provider_user_id/i.test(value);
 }
 
 function hasOnlyAllowedKeys(value: Record<string, unknown>, allowedKeys: ReadonlySet<string>): boolean {
@@ -145,6 +174,7 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
   const payload = value as Record<string, unknown>;
 
   if (!hasOnlyAllowedKeys(payload, HIL_RS_REDIFF_ALLOWED_KEYS)) return false;
+  if (payload.schemaVersion !== HIL_RS_REDIFF_SCHEMA_VERSION) return false;
   if (!isNonEmptyString(payload.proposalId)) return false;
   if (!Number.isInteger(payload.basedOnIteration) || (payload.basedOnIteration as number) < 1) return false;
   if (!isNonEmptyString(payload.traceKey)) return false;
@@ -161,6 +191,27 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
     if (parsed.before === null && parsed.after === null) return false;
     if (parsed.rationale !== undefined && typeof parsed.rationale !== "string") return false;
   }
+
+  return true;
+}
+
+export function validateHilRsContractErrorEnvelope(value: unknown): value is HilRsContractErrorEnvelope {
+  if (typeof value !== "object" || value === null) return false;
+  const envelope = value as Record<string, unknown>;
+
+  if (!hasOnlyAllowedKeys(envelope, HIL_RS_ERROR_ALLOWED_KEYS)) return false;
+  if (envelope.schemaVersion !== HIL_RS_ERROR_SCHEMA_VERSION) return false;
+  if (!HIL_RS_ERROR_CODES.includes(envelope.errorCode as HilRsErrorCode)) return false;
+  if (!isNonEmptyString(envelope.message) || hasPiiLikeText(envelope.message)) return false;
+  if (
+    envelope.contractId !== HIL_RS_CONTRACT_IDS.critique
+    && envelope.contractId !== HIL_RS_CONTRACT_IDS.rediff
+    && envelope.contractId !== HIL_RS_CONTRACT_IDS.attribution
+  ) {
+    return false;
+  }
+  if (typeof envelope.retryable !== "boolean") return false;
+  if (!isNonEmptyString(envelope.occurredAt) || !isIsoTimestamp(envelope.occurredAt)) return false;
 
   return true;
 }

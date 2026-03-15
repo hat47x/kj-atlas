@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "proposalId": "proposal-1",
+  "basedOnIteration": 1,
+  "traceKey": "trace:card:c1:1",
+  "diffOps": [
+    {
+      "opId": "op-1",
+      "opType": "move",
+      "targetRef": "card:c1",
+      "before": { "x": 0, "y": 0 },
+      "after": { "x": 2, "y": 3 }
+    }
+  ]
+}

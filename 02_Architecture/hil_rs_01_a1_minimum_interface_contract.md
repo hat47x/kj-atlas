@@ -13,7 +13,7 @@
 
 ## 1. Single reference / fixed IDs
 
-- Single Reference（SSOT）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Single Reference / Single Source of Truth（SSOT）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Contract IDs（固定）:
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
@@ -175,7 +175,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 ## 8. Phase 5 Gate判定（A2開始条件）
 
 - チェックリスト（全項目必須）:
-  - [x] Single Reference（SSOT）が本書のみである。
+  - [x] Single Reference / Single Source of Truth（SSOT）が本書のみである。
   - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
   - [x] `schemaVersion=1.0.0`（Critique / ReDiff / Attribution tie-break policy）が維持されている。
   - [x] 共通エラー契約（`A1-ERROR-IF`, `ErrorContract.schemaVersion=1.0.0`）が維持されている。

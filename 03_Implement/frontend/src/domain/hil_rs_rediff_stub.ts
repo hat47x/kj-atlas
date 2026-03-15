@@ -1,6 +1,10 @@
 import type { DocumentV2 } from "./types";
 import type { HilRsCritiqueInput, HilRsRediffPayload } from "./hil_rs_contract";
-import { validateHilRsCritiqueInput, validateHilRsRediffPayload } from "./hil_rs_contract";
+import {
+  HIL_RS_REDIFF_SCHEMA_VERSION,
+  validateHilRsCritiqueInput,
+  validateHilRsRediffPayload,
+} from "./hil_rs_contract";
 
 type BuildHilRsRediffStubOptions = {
   suggestionId: string;
@@ -98,6 +102,7 @@ export function buildHilRsRediffStub(
   }
 
   const candidate: HilRsRediffPayload = {
+    schemaVersion: HIL_RS_REDIFF_SCHEMA_VERSION,
     proposalId: options.suggestionId,
     basedOnIteration: options.iteration,
     traceKey: buildTraceKey(options.critiqueInputs),

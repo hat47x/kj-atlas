@@ -418,7 +418,8 @@ A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで
 
 前提（A1/A2整合）:
 - RequirementID `HIL-RS-01-A1` の契約境界（Critique入力 / 再提案差分 / レビュー帰属）を参照済みであること。
-- Contract Keys（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）が運用文書側に明記されていること。
+- Contract Keys（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）が運用文書側に明記されていること。
+- Freeze Flags（`contractLinkLocked=true` / `sharedResourceFreeze=true`）が運用文書側に明記されていること。
 - 契約正本 `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を参照し、Issueメモとの差分がないこと。
 - A2挙動（候補比較 / 人間入力 / 差分可視）と A3文書記述の対応表が `operations.md` に記録済みであること。
 - `HilRsWorkflowPanel` の3導線ラベル/説明文と、運用文書の手順文言に差分がないこと。
@@ -427,6 +428,7 @@ A3では、実装E2Eに加えて文書同期の再現性を次のコマンドで
 python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
 rg -n "HIL-RS-01|ADR-0026|SafeMode|可逆|Critique|レビュー帰属" 04_Documentation 01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md
+rg -n "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|contractLinkLocked|sharedResourceFreeze" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md
 cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_contract.test.ts src/domain/hil_rs_payload.test.ts src/domain/hil_rs_rediff_stub.test.ts
 ```
 

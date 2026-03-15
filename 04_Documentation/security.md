@@ -344,7 +344,8 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 
 - RequirementID: `HIL-RS-01-A1`
 - 契約境界: Critique入力 / 再提案差分 / レビュー帰属
-- Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`
+- Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+- Freeze Flags: `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 
 - SafeMode既定ON、および share/export 漏えい防止の既存制約を変更しない。
@@ -375,6 +376,18 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - 単一スコアでの自動ランキング
 - 人間承認を省略する自動確定
 - SafeMode既定ONの緩和
+
+ロールバック条件（A3同期の停止/差し戻し）:
+
+- Contract Keys / Freeze Flags のいずれかに不一致がある。
+- `traceKey` 欠落や可逆差分欠落など、A2 handoff の必須整合に違反する。
+- PII-like field拒否・人間レビュー帰属必須のいずれかを満たせない。
+
+ロールバック手順:
+
+1. 文書更新を停止し、逸脱箇所（契約ID/固定値/実装差分）を列挙する。
+2. A1正本（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）へ照合し、差分をA1差し戻しとして起票する。
+3. 差分解消までA3更新を再開しない（推測補完禁止）。
 
 上記に抵触する変更が必要な場合は、実装を停止し `ADR-0026` と上位層（00〜02）で先に合意する。
 

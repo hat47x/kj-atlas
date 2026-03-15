@@ -26,6 +26,7 @@ const BASE_DOCUMENT: DocumentV2 = {
   edges: [],
 };
 
+
 describe("hil_rs_client", () => {
   it("uses the stub output when provider is not specified", () => {
     const client = createHilRsClient();
@@ -86,7 +87,7 @@ describe("hil_rs_client", () => {
 
   it("falls back to stub payload when provider returns an invalid payload", () => {
     const provider = {
-      proposeReDiff: vi.fn().mockReturnValue({ proposalId: "", basedOnIteration: 1, diffOps: [], traceKey: "" }),
+      proposeReDiff: vi.fn().mockReturnValue({ schemaVersion: "1.0.0", proposalId: "", basedOnIteration: 1, diffOps: [], traceKey: "" }),
     };
 
     const client = createHilRsClient({ rediffProvider: provider });

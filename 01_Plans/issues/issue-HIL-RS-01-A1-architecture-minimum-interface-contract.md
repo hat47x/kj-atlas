@@ -17,14 +17,14 @@
 
 - Plan:
   - 対象3ファイルを再Readし、契約ID / schemaVersion / 禁止事項 / 単一参照先を抽出する。
-  - AC: A1契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）が一意、単一参照先が1件。
+  - AC: A1契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）が一意、単一参照先（Single Source of Truth）が1件。
 - Execute:
   - 再Read対象:
     1. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
     2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
     3. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Verify（事実のみ）:
-  - 抽出された契約IDは3件（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF`）。
+  - 抽出された契約IDは4件（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）。
   - `schemaVersion` 固定値は `1.0.0`（Critique / Attribution / TieBreak）。
   - 単一参照先は `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
   - 禁止事項は SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止。
@@ -62,7 +62,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - 正本を `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定。
   - Freeze flag を明文化（`contractLinkLocked=true`, `sharedResourceFreeze=true`）。
 - Verify:
-  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` が固定。
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` が固定。
   - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が固定。
   - 単一参照先が1件であることを確認。
 - Proceed:
