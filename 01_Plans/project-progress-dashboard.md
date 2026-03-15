@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-03-14 (JST, HIL-RS-02 planning sync)
+最終更新: 2026-03-15 (JST, Stream E rerun-25 sync)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -585,4 +585,13 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 2 Plan: 更新対象を shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）に限定し、公開値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25） / Active=6 / Done=25 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` に固定。
 - Phase 3 Execute: 3ファイルを単一変更セットで同期し、Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`）と Source Issue運用（Active OpenはN/A、DraftはTBD）を維持。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=6|Done=25" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル一致を確認。
+- Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+
+## Stream E 共有統合同期ログ（2026-03-15 rerun-25, Phase 1-5）
+
+- Phase 1 Read同期: Stream A/B/C/D 完了報告と証跡リンク（`DR-HIL-A1-01` / `DR-HIL-A1-02` / `DL-HIL-01` / `DR-REQ-DEF-02` / `DR-REQ-DEF-03`）を再読し、基準値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25） / Active=6 / Done=25 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` を確定。
+- Phase 2 Plan: 反映対象を shared resource 3ファイルの Active表・Decision Queue・次の1手・件数集計に限定し、未承認事項を確定扱いしない方針を維持。
+- Phase 3 Execute: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` のみを同一ロジック・単一変更セットで同期。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=6|Done=25|DR-HIL-A1-01|DL-HIL-01|DR-REQ-DEF-02" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、不一致0件（self-correction 0/3）を確認。
 - Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
