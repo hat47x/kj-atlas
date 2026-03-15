@@ -39,7 +39,7 @@
 ### DoD（A1完了定義）
 
 1. A1の開始条件・停止条件・再開条件・差し戻し経路が本issue単体で追跡可能。
-2. Decision Queueは全項目が `Pending` で管理され、確定扱いの項目が存在しない。
+2. Decision Queueは `Pending -> Approved|Rejected` の許可遷移のみで管理され、`Pending` を経由しない確定化が存在しない。
 3. A2/A3の開始条件が「A1完了 + 承認ログ充足」に固定されている。
 4. docs-check（validator / unittest / diff check）が成功している。
 
@@ -102,6 +102,19 @@
 - 禁止遷移: `Pending` を経由しない確定化、`Approved -> Pending` の巻き戻し。
 - 記録必須項目: `QueueID / Owner / UTC timestamp / evidenceLink / decisionBy`。
 - ゲート: `Pending` が1件でも存在する間はA2/A3のOpen化を禁止。
+
+### A2/A3 read-only参照パック（固定）
+
+- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- 参照正本（唯一）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- freeze宣言（固定）:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 変更要求の差し戻し先（唯一）:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- A2/A3での禁止:
+  - `schemaVersion` / `overridePolicy` / 契約ID / requiredFields の直接変更
+  - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退
 
 ### A2/A3契約境界（A1以外で変更禁止）
 
