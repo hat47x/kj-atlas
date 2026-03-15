@@ -63,10 +63,18 @@
 ## 10) Stream A A1 gate（固定）
 
 - 依存順の強制: A1→A2→A3 を厳守し、A1完了前にA2/A3をOpen化しない。
+- A1停止条件:
+  - 未承認の契約変更要求を確定扱いした場合。
+  - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退が前提となる場合。
+- A1再開条件:
+  - 変更要求がDecision Queueへ `Pending` 登録され、承認ログが追記された場合。
+  - A1差し戻し経路（A1 issue記載）で再判定が完了した場合。
 - A2開始条件（Ready）:
   1. A1契約ID/`schemaVersion`/`overridePolicy`がSSOTと一致。
   2. `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持。
   3. Decision QueueのPending項目に対する承認記録が揃う。
+  4. A1で凍結した変更禁止項目（SafeMode既定ON / human_dual_control_only / share-export漏えい防止）をA2/A3が変更しない。
 - Block理由:
   - 未承認の契約変更要求を確定扱いした場合。
   - SafeMode既定ONまたはshare/export漏えい防止後退が前提となる場合。
+  - Decision Queue項目がPending管理を外れている場合。
