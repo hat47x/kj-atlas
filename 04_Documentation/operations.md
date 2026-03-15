@@ -262,7 +262,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`は本番標準（strict）とする。
 - 例外発動条件: 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
-- 停止条件: Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たせない場合は、Platform Operator は `StoppedForClarification`（確認待ちで停止）を記録し、適用を禁止する。
+- 停止条件: D1〜D4 固定値のいずれかを満たせない場合は、Platform Operator は `StoppedForClarification`（確認待ちで停止）を記録し、適用を禁止する。
 - Platform Operator 記録必須項目: 実施時刻・理由・承認者・対象環境・復旧条件。承認記録がない変更を禁止する。
 - 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、復旧時刻と検証結果を記録する。
 - 違反時SLA: 15m以内に一次エスカレーション、60m以内に二次エスカレーションを実施する。
@@ -277,9 +277,23 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 | D3 | 復旧判定は2者共同、代理承認なし | 代理承認は常時不可、必要時は再申請。 |
 | D4 | 変更台帳+監査ID相互参照、48hレビュー、15m/60mエスカレーション | 記録未完了のまま `Closed` へ遷移しない。 |
 
+状態遷移（strict mode例外運用）:
+
+- `Requested`（申請作成）
+  - D1 の承認順序（Security Officer先行）を満たすと `Approved`。
+  - 承認不備・固定値不一致がある場合は `StoppedForClarification`。
+- `Approved`（2者承認完了）
+  - Platform Operator が適用した時点で `ExceptionActive`。
+- `ExceptionActive`（一時緩和中）
+  - D2 の最大2h到達時、または停止条件成立時に `RollbackPending`。
+- `RollbackPending`（復旧待ち）
+  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰し検証完了で `Closed`。
+- `StoppedForClarification`（確認待ちで停止）
+  - 未確定事項が解消されるまで適用禁止。解消後は `Requested` から再開。
+
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
 
-> 本テンプレートは Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）で運用する。逸脱時は `StoppedForClarification`（確認待ちで停止）へ遷移する。
+> 本テンプレートは D1〜D4 固定値で運用する。逸脱時は `StoppedForClarification`（確認待ちで停止）へ遷移する。
 
 #### A. 2者承認テンプレート（Security Officer + System Owner）
 
@@ -293,7 +307,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - Planned rollback by (UTC):
 - Security Officer approval: [Approved/Rejected] / Name / Timestamp(UTC)
 - System Owner approval: [Approved/Rejected] / Name / Timestamp(UTC)
-- Decision profile: Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A
+- Decision profile: D1-D4 compliant
 ```
 
 #### B. Platform Operator 実行記録テンプレート
@@ -317,7 +331,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - [ ] 2者承認が揃っている（Security Officer + System Owner）。
   - [ ] 必須記録5項目（時刻/理由/承認者/対象環境/復旧条件）をテンプレートに記入済み。
   - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用する対象環境を明示済み。
-  - [ ] Q1〜Q10 固定値を満たせない項目がある場合、「停止」と記録した。
+  - [ ] D1〜D4 固定値を満たせない項目がある場合、「停止」と記録した。
   - [ ] SafeMode既定ONを弱める変更（share/export制約緩和）が含まれていない。
 - 事後チェック（復旧後）
   - [ ] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰済み。
