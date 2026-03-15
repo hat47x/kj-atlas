@@ -467,3 +467,30 @@ export type PolygonHandoffExpectedOutputContract = {
 
 - `paddingViolationCount > 0`
 - `tieBreakOrderChanged === true`
+
+## 12. HIL-RS-01 A1 error envelope contract（A1-ERROR-IF）
+
+A1契約違反時に backend が返すエラーは共通 envelope を用いる。
+
+```ts
+export type A1ErrorEnvelope = {
+  schemaVersion: "1.0.0";
+  errorEnvelope: {
+    errorCode:
+      | "A1_SCHEMA_VERSION_MISMATCH"
+      | "A1_REQUIRED_FIELD_MISSING"
+      | "A1_TRACE_KEY_MISSING"
+      | "A1_OVERRIDE_POLICY_VIOLATION"
+      | "A1_PII_POLICY_VIOLATION";
+    message: string;
+    contractId: "A1-CRITIQUE-IF" | "A1-REDIFF-IF" | "A1-ATTR-IF";
+    retryable: boolean;
+    occurredAt: string; // ISO 8601
+  };
+};
+```
+
+- `message` へ email / external_uid など生IDを含めない。
+- `contractId` は違反した契約IDを必ず指す。
+- A2/A3 で errorCode 列挙を拡張しない。
+

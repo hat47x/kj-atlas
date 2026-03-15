@@ -1,10 +1,11 @@
 import json
 import re
 from hashlib import sha256
+from datetime import datetime, timezone
 from typing import Literal, cast
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
-from pydantic import BaseModel, TypeAdapter
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -33,6 +34,7 @@ from kj_atlas_api.models import (
     DocumentRow,
     MergeDecisionLogRow,
     MergeDecisionRecord,
+    A1ErrorResponse,
     PolygonHandoffContractVerificationRequest,
     PolygonHandoffContractVerificationResponse,
     SimilarCandidateGroup,
@@ -56,6 +58,101 @@ def _validate_review_attribution_identity(*, document: DocumentPayload, identity
 
     if review_attribution.reviewerRef != identity.actor_ref:
         raise HTTPException(status_code=403, detail="reviewerRef must match authenticated identity")
+
+
+def _raise_a1_validation_error(*, code: str, contract_id: str, message: str) -> None:
+    payload = A1ErrorResponse.model_validate(
+        {
+            "schemaVersion": "1.0.0",
+            "errorEnvelope": {
+                "errorCode": code,
+                "message": message,
+                "contractId": contract_id,
+                "retryable": False,
+                "occurredAt": datetime.now(timezone.utc).isoformat(),
+            },
+        }
+    )
+    raise HTTPException(status_code=422, detail=payload.model_dump(mode="json"))
+
+
+def _validate_document_payload_with_a1_contract(document_payload: object) -> DocumentPayload:
+    try:
+        document = document_payload_adapter.validate_python(document_payload)
+    except ValidationError as exc:
+        errors = exc.errors()
+        message = str(errors[0].get("msg", "document payload validation failed")) if errors else str(exc)
+        code = "A1_REQUIRED_FIELD_MISSING"
+        contract_id = "A1-REDIFF-IF"
+
+        if "schemaVersion" in str(message):
+            code = "A1_SCHEMA_VERSION_MISMATCH"
+            if "critiqueInputs" in str(message):
+                contract_id = "A1-CRITIQUE-IF"
+            elif "reviewAttribution" in str(message):
+                contract_id = "A1-ATTR-IF"
+        if "reviewerRef must be opaque" in str(message):
+            code = "A1_PII_POLICY_VIOLATION"
+            contract_id = "A1-ATTR-IF"
+        if "traceKey" in str(message):
+            code = "A1_TRACE_KEY_MISSING"
+            contract_id = "A1-REDIFF-IF"
+
+        _raise_a1_validation_error(
+            code=code,
+            contract_id=contract_id,
+            message=message,
+        )
+
+    if document.version != 2:
+        return document
+
+    if document.critiqueInputs is not None:
+        for critique in document.critiqueInputs:
+            if critique.schemaVersion != "1.0.0":
+                _raise_a1_validation_error(
+                    code="A1_SCHEMA_VERSION_MISMATCH",
+                    contract_id="A1-CRITIQUE-IF",
+                    message="schemaVersion must be 1.0.0 for critique inputs",
+                )
+
+    if document.reproposalDiffs is not None:
+        for reproposal in document.reproposalDiffs:
+            if reproposal.schemaVersion != "1.0.0":
+                _raise_a1_validation_error(
+                    code="A1_SCHEMA_VERSION_MISMATCH",
+                    contract_id="A1-REDIFF-IF",
+                    message="schemaVersion must be 1.0.0 for reproposal diffs",
+                )
+            if not reproposal.traceKey:
+                _raise_a1_validation_error(
+                    code="A1_TRACE_KEY_MISSING",
+                    contract_id="A1-REDIFF-IF",
+                    message="traceKey is required by A1-REDIFF-IF",
+                )
+
+    if document.reviewAttribution is not None:
+        attribution = document.reviewAttribution
+        if attribution.schemaVersion != "1.0.0":
+            _raise_a1_validation_error(
+                code="A1_SCHEMA_VERSION_MISMATCH",
+                contract_id="A1-ATTR-IF",
+                message="schemaVersion must be 1.0.0 for review attribution",
+            )
+        if attribution.overridePolicy != "human_dual_control_only":
+            _raise_a1_validation_error(
+                code="A1_OVERRIDE_POLICY_VIOLATION",
+                contract_id="A1-ATTR-IF",
+                message="overridePolicy must be human_dual_control_only",
+            )
+        if attribution.reviewerRef is not None and "@" in attribution.reviewerRef:
+            _raise_a1_validation_error(
+                code="A1_PII_POLICY_VIOLATION",
+                contract_id="A1-ATTR-IF",
+                message="reviewerRef must be opaque and must not contain email-like identifiers",
+            )
+
+    return document
 
 
 
@@ -260,13 +357,14 @@ def get_document(
 @router.put("/{doc_id}", response_model=DocumentPayload)
 def put_document(
     doc_id: str,
-    document: DocumentPayload,
     response: Response,
     request: Request,
+    document_payload: object = Body(...),
     if_match: str | None = Header(default=None, alias="If-Match"),
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> DocumentPayload:
+    document = _validate_document_payload_with_a1_contract(document_payload)
     access_request, _ = _authorize_request(request, db, action="write", doc_id=doc_id, safe_mode=True, read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"))
 
     if document.id != doc_id:
