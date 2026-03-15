@@ -459,14 +459,21 @@ export type PolygonHandoffInputContract = {
 export type PolygonHandoffExpectedOutputContract = {
   outputPolygonHash: string; // sha256 hex(64)
   paddingViolationCount: number; // >= 0
-  tieBreakOrderChanged: boolean;
+  tieBreakOrder?: [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
+  tieBreakOrderChanged?: boolean; // tieBreakOrder未送信時に必須
 };
 ```
 
 ロールバック判定トリガー:
 
 - `paddingViolationCount > 0`
-- `tieBreakOrderChanged === true`
+- `tieBreakOrder` が `deterministicTieBreakOrder` と不一致
+- `tieBreakOrderChanged === true`（後方互換）
 
 ## 12. HIL-RS-01 A1 error envelope contract（A1-ERROR-IF）
 

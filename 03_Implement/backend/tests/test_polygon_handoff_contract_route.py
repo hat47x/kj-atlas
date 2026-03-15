@@ -26,8 +26,8 @@ def _sample_payload(doc_id: str) -> dict:
     }
 
 
-def _sample_contract_payload(*, input_hash: str, output_hash: str, padding_violation_count: int, tie_break_changed: bool) -> dict:
-    return {
+def _sample_contract_payload(*, input_hash: str, output_hash: str, padding_violation_count: int, tie_break_changed: bool | None = None, tie_break_order: list[str] | None = None) -> dict:
+    payload = {
         "input": {
             "gateApprovalRef": "DQ-FB-P2C-01",
             "a2VerifyRef": "A2-HANDOFF-FB-P2C-01-2026-03-14",
@@ -42,9 +42,13 @@ def _sample_contract_payload(*, input_hash: str, output_hash: str, padding_viola
         "expectedOutput": {
             "outputPolygonHash": output_hash,
             "paddingViolationCount": padding_violation_count,
-            "tieBreakOrderChanged": tie_break_changed,
         },
     }
+    if tie_break_changed is not None:
+        payload["expectedOutput"]["tieBreakOrderChanged"] = tie_break_changed
+    if tie_break_order is not None:
+        payload["expectedOutput"]["tieBreakOrder"] = tie_break_order
+    return payload
 
 
 @pytest.fixture()
@@ -115,6 +119,73 @@ def test_verify_polygon_handoff_contract_requests_rollback_on_contract_violation
     assert body["rollbackRequired"] is True
     assert body["failureReasons"] == ["paddingViolationCount>0", "tieBreakOrderChanged=true"]
 
+
+def test_verify_polygon_handoff_contract_requests_rollback_when_tie_break_order_differs(client: TestClient) -> None:
+    doc_id = "doc-handoff-order-changed"
+    put_response = client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert put_response.status_code == 200
+
+    payload = _sample_contract_payload(
+        input_hash="f" * 64,
+        output_hash="1" * 64,
+        padding_violation_count=0,
+        tie_break_order=[
+            "minimum_vertex_count",
+            "minimum_area_delta",
+            "self_intersection_avoidance",
+            "padding_compliance",
+        ],
+    )
+    response = client.post(f"/docs/{doc_id}/polygon-handoff/verify-contract", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "rollback_required"
+    assert body["rollbackRequired"] is True
+    assert body["failureReasons"] == ["tieBreakOrderChanged=true"]
+
+
+def test_verify_polygon_handoff_contract_accepts_tie_break_order_without_changed_flag(client: TestClient) -> None:
+    doc_id = "doc-handoff-order-ok"
+    put_response = client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert put_response.status_code == 200
+
+    payload = _sample_contract_payload(
+        input_hash="2" * 64,
+        output_hash="3" * 64,
+        padding_violation_count=0,
+        tie_break_order=[
+            "padding_compliance",
+            "self_intersection_avoidance",
+            "minimum_area_delta",
+            "minimum_vertex_count",
+        ],
+    )
+    response = client.post(f"/docs/{doc_id}/polygon-handoff/verify-contract", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["rollbackRequired"] is False
+    assert body["failureReasons"] == []
+
+
+def test_verify_polygon_handoff_contract_keeps_backward_compat_without_tie_break_signal(client: TestClient) -> None:
+    doc_id = "doc-handoff-backward-compatible"
+    put_response = client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert put_response.status_code == 200
+
+    payload = _sample_contract_payload(
+        input_hash="4" * 64,
+        output_hash="5" * 64,
+        padding_violation_count=0,
+    )
+    response = client.post(f"/docs/{doc_id}/polygon-handoff/verify-contract", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["rollbackRequired"] is False
 
 def test_verify_polygon_handoff_contract_rejects_invalid_hash_shape(client: TestClient) -> None:
     doc_id = "doc-handoff-invalid"

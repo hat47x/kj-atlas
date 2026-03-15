@@ -526,7 +526,15 @@ class PolygonHandoffExpectedOutputContract(BaseModel):
 
     outputPolygonHash: str = Field(pattern=r"^[0-9a-f]{64}$")
     paddingViolationCount: int = Field(ge=0)
-    tieBreakOrderChanged: bool
+    tieBreakOrder: list[
+        Literal[
+            "padding_compliance",
+            "self_intersection_avoidance",
+            "minimum_area_delta",
+            "minimum_vertex_count",
+        ]
+    ] | None = Field(default=None, min_length=4, max_length=4)
+    tieBreakOrderChanged: bool = False
 
 
 class PolygonHandoffContractVerificationRequest(BaseModel):
