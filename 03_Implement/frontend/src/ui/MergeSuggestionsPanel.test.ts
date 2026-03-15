@@ -85,6 +85,7 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Reject");
     expect(html).toContain("Defer");
     expect(html).toContain("no automatic canonical merge is executed");
+    expect(html).toContain("Trusted human interaction is required for decision commits.");
   });
 
   it("disables merge-decision editing controls in read-only mode", () => {

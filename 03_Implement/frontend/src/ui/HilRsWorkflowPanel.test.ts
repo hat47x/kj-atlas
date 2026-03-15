@@ -20,5 +20,6 @@ describe("HilRsWorkflowPanel", () => {
     expect(html).toContain("candidate-slot");
     expect(html).toContain("critique-slot");
     expect(html).toContain("diff-slot");
+    expect(html).toContain("trusted human confirmation");
   });
 });
