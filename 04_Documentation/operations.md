@@ -631,5 +631,7 @@ pnpm -s vitest run src/ui/MergeSuggestionsPanel.test.ts src/domain/merge_suggest
 rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|reject|defer|human-in-the-loop" \
   03_Implement/frontend/src/ui/MergeSuggestionsPanel.tsx \
   03_Implement/frontend/src/domain/merge_suggestion_decisions.ts \
+  03_Implement/frontend/src/domain/stream_b_contract.ts \
+  03_Implement/frontend/src/domain/stream_b_contract_handoff.ts \
   04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md
 ```
