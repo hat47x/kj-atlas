@@ -582,7 +582,12 @@ def _evaluate_polygon_handoff_rollback(
     failure_reasons: list[str] = []
     if expected_output.paddingViolationCount > 0:
         failure_reasons.append("paddingViolationCount>0")
-    if expected_output.tieBreakOrderChanged:
+
+    tie_break_order_changed = expected_output.tieBreakOrderChanged
+    if expected_output.tieBreakOrder is not None:
+        tie_break_order_changed = tuple(expected_output.tieBreakOrder) != payload.input.deterministicTieBreakOrder
+
+    if tie_break_order_changed:
         failure_reasons.append("tieBreakOrderChanged=true")
     if failure_reasons:
         return failure_reasons, "rollback_required"

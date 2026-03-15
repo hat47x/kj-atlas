@@ -133,7 +133,8 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
   - `input.deterministicTieBreakOrder: ["padding_compliance", "self_intersection_avoidance", "minimum_area_delta", "minimum_vertex_count"]`
   - `expectedOutput.outputPolygonHash: string`（sha256 hex / 64桁）
   - `expectedOutput.paddingViolationCount: number`（>=0）
-  - `expectedOutput.tieBreakOrderChanged: boolean`
+  - `expectedOutput.tieBreakOrder: ["padding_compliance", "self_intersection_avoidance", "minimum_area_delta", "minimum_vertex_count"]`
+  - `expectedOutput.tieBreakOrderChanged: boolean`（後方互換。`tieBreakOrder` 未送信時に必須）
 - Response:
   - `status: "ok" | "rollback_required"`
   - `rollbackRequired: boolean`
