@@ -42,7 +42,7 @@ export function HilRsWorkflowPanel({ candidateComparison, critiqueInput, diffVis
       </section>
       <section style={SECTION_STYLE}>
         <div style={TITLE_STYLE}>A2-3 Diff visualization</div>
-        <div style={DESCRIPTION_STYLE}>Review deterministic diffs before apply/discard to keep the workflow reversible.</div>
+        <div style={DESCRIPTION_STYLE}>Review deterministic diffs before apply/discard to keep the workflow reversible and commit only by trusted human confirmation.</div>
         {diffVisualization}
       </section>
     </>

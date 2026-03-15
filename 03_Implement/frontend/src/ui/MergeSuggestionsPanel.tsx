@@ -1,8 +1,9 @@
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import type { Card } from "../domain/types";
 import type { MergeSuggestion } from "../api/client";
 import type { MergeSuggestionDecision } from "../domain/merge_suggestion_decisions";
 import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_events";
+import { evaluateMergeDecisionTrustBoundary } from "../domain/hil_rs_trusted_boundary";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
@@ -152,12 +153,25 @@ export function MergeSuggestionsPanel({
   onExportAuditEvents,
   isReadOnly = false,
 }: MergeSuggestionsPanelProps) {
+  const [trustBoundaryErrorMessage, setTrustBoundaryErrorMessage] = useState<string | null>(null);
+
   const handleDecisionClick = (
     groupId: string,
     decision: MergeSuggestionDecision,
     event: MouseEvent<HTMLButtonElement>
   ) => {
-    onDecide(groupId, decision, { isTrusted: event.isTrusted });
+    const trustBoundary = evaluateMergeDecisionTrustBoundary({
+      isReadOnly,
+      isTrustedEvent: event.isTrusted,
+    });
+
+    if (!trustBoundary.allowDecision) {
+      setTrustBoundaryErrorMessage(trustBoundary.errorMessage);
+      return;
+    }
+
+    setTrustBoundaryErrorMessage(null);
+    onDecide(groupId, decision, { isTrusted: true });
   };
 
   return (
@@ -208,6 +222,11 @@ export function MergeSuggestionsPanel({
         </span>
       </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
+      {trustBoundaryErrorMessage ? (
+        <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }} aria-live="polite">
+          {trustBoundaryErrorMessage}
+        </div>
+      ) : null}
       {suggestions.map((suggestion) => (
         <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
@@ -309,7 +328,7 @@ export function MergeSuggestionsPanel({
             <button type="button" disabled={isReadOnly} onClick={(event) => handleDecisionClick(suggestion.groupId, "defer", event)}>Defer</button>
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
-            Decisions are recorded only; no automatic canonical merge is executed.
+            Decisions are recorded only; no automatic canonical merge is executed. Trusted human interaction is required for decision commits.
           </div>
         </article>
       ))}
