@@ -36,6 +36,7 @@ function buildProps() {
     ]),
     onMergedTextChange: vi.fn(),
     onDecide: vi.fn(),
+    latestAuditEventByGroup: new Map([["heuristic-risk-a-b", { decidedAt: "2026-02-28T10:00:00.000Z" }]]),
   };
 }
 
@@ -51,6 +52,7 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("b: risk mitigation");
     expect(html).toContain("Representative: a [fallback], source count: 1");
     expect(html).toContain("Rationale: heuristic:normalized-text");
+    expect(html).toContain("Audit event recorded at");
     expect(html).toContain("Accept");
     expect(html).toContain("Partially accept");
     expect(html).toContain("Reject");

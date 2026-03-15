@@ -23,6 +23,7 @@ type MergeSuggestionsPanelProps = {
   cardsById: Map<string, Card>;
   onMergedTextChange: (groupId: string, value: string) => void;
   onDecide: (groupId: string, decision: MergeSuggestionDecision) => void;
+  latestAuditEventByGroup?: ReadonlyMap<string, { decidedAt: string }>;
 };
 
 function snippet(text: string): string {
@@ -75,6 +76,7 @@ export function MergeSuggestionsPanel({
   cardsById,
   onMergedTextChange,
   onDecide,
+  latestAuditEventByGroup,
   isReadOnly = false,
 }: MergeSuggestionsPanelProps) {
   return (
@@ -166,6 +168,11 @@ export function MergeSuggestionsPanel({
           </div>
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Rationale: {suggestion.rationale}</div>
+          ) : null}
+          {latestAuditEventByGroup?.get(suggestion.groupId) ? (
+            <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
+              Audit event recorded at {new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString()}
+            </div>
           ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" disabled={isReadOnly} onClick={() => onDecide(suggestion.groupId, "accept")}>Accept</button>
