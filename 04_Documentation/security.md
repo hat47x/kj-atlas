@@ -303,7 +303,7 @@ for event in hr_events:
 - [ ] 復旧条件: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰済み。
 - [ ] 復旧時刻と復旧条件の充足を記録済み。
 - [ ] 記録に `roles/groups/policyRef` 生値・subject生値・本文等のPIIが含まれていない（下記 8.2 の禁止項目準拠）。
-- [ ] Q1〜Q10 固定値から逸脱する項目がある場合、**TODO化せず「確認待ちで停止」**として扱っている。
+- [ ] D1〜D4 固定値から逸脱する項目がある場合、**TODO化せず「確認待ちで停止」**として扱っている。
 
 ### 8.2 監査最小化・PII最小化ルール（strict mode例外ログ）
 
