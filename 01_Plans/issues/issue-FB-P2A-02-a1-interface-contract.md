@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream B
+- Owner: Stream D
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -19,6 +19,15 @@
 - SecurityGateImpact: N/A（計画のみ）
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
+
+## Phase management（Stream D）
+
+- Phase 1: Read同期（A1/A2/A3の3点再読）
+- Phase 2: A1契約点検（I/F固定と契約ドリフト検知）
+- Phase 3: A2モック検証計画固定（M1..M4・責務分離）
+- Phase 4: A3 handoff条件固定（GoNoGoと停止条件）
+- Phase 5: Verify（記述整合・依存整合）
+
 
 ## Contract definition（A1成果物）
 
@@ -138,6 +147,9 @@
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 
 ## Fail-safe
+
+- self-correction上限: 3回。連続失敗時はProceed禁止で停止。
+- 停止トリガ: Ready条件崩壊 / 依存逆転 / 未定義競合を検出した場合は即時停止して報告。
 
 ### Stop report template（競合/前提崩れ時）
 
