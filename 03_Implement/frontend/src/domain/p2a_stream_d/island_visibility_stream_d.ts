@@ -1,4 +1,8 @@
 import {
+  evaluateIslandVisibilityA3GoNoGo,
+  type IslandVisibilityValidationLog,
+} from "../view/island_visibility_handoff";
+import {
   type GoNoGoReport,
   type HandoffLogEntry,
   REQUIRED_MOCK_CASES,
@@ -23,7 +27,6 @@ const EXPECTED_OWNER = {
 export const evaluateIslandVisibilityA3GoNoGoStreamD = (
   entries: HandoffLogEntry[],
 ): GoNoGoReport => {
-  const reasons: string[] = [];
   const byCase = new Map<string, HandoffLogEntry>();
 
   for (const entry of entries) {
@@ -37,11 +40,30 @@ export const evaluateIslandVisibilityA3GoNoGoStreamD = (
   }
 
   for (const mockCaseId of REQUIRED_MOCK_CASES) {
-    const entry = byCase.get(mockCaseId);
-    if (!entry) {
-      reasons.push(`missing mockCaseId: ${mockCaseId}`);
-      continue;
+    if (!byCase.has(mockCaseId)) {
+      return { go: false, reasons: [`missing mockCaseId: ${mockCaseId}`] };
     }
+  }
+
+  const logs = REQUIRED_MOCK_CASES.map((mockCaseId) => {
+    const entry = byCase.get(mockCaseId)!;
+    return {
+      contractVersion: CONTRACT_VERSION,
+      mockCaseId,
+      validationResult: entry.validationResult,
+      ownerOfFix: entry.ownerOfFix,
+      evidence: entry.evidence,
+    } satisfies IslandVisibilityValidationLog;
+  });
+
+  const goNoGo = evaluateIslandVisibilityA3GoNoGo(logs);
+  if (goNoGo.go) {
+    return { go: true, reasons: [] };
+  }
+
+  const reasons: string[] = [];
+  for (const mockCaseId of REQUIRED_MOCK_CASES) {
+    const entry = byCase.get(mockCaseId)!;
     if (entry.validationResult !== EXPECTED_RESULTS[mockCaseId]) {
       reasons.push(`${mockCaseId} result mismatch`);
     }
@@ -50,5 +72,9 @@ export const evaluateIslandVisibilityA3GoNoGoStreamD = (
     }
   }
 
-  return { go: reasons.length === 0, reasons };
+  if (reasons.length === 0) {
+    reasons.push(goNoGo.reason);
+  }
+
+  return { go: false, reasons };
 };

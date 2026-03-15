@@ -1,4 +1,8 @@
 import {
+  evaluateIslandHierarchyA3GoNoGo,
+  type IslandHierarchyValidationLog,
+} from "../contracts/island_hierarchy_handoff";
+import {
   type GoNoGoReport,
   type HandoffLogEntry,
   REQUIRED_MOCK_CASES,
@@ -32,7 +36,6 @@ export const projectIslandHierarchyContractV1 = (
 export const evaluateIslandHierarchyA3GoNoGoStreamD = (
   entries: HandoffLogEntry[],
 ): GoNoGoReport => {
-  const reasons: string[] = [];
   const byCase = new Map<string, HandoffLogEntry>();
 
   for (const entry of entries) {
@@ -44,11 +47,30 @@ export const evaluateIslandHierarchyA3GoNoGoStreamD = (
   }
 
   for (const mockCaseId of REQUIRED_MOCK_CASES) {
-    const entry = byCase.get(mockCaseId);
-    if (!entry) {
-      reasons.push(`missing mockCaseId: ${mockCaseId}`);
-      continue;
+    if (!byCase.has(mockCaseId)) {
+      return { go: false, reasons: [`missing mockCaseId: ${mockCaseId}`] };
     }
+  }
+
+  const logs = REQUIRED_MOCK_CASES.map((mockCaseId) => {
+    const entry = byCase.get(mockCaseId)!;
+    return {
+      contractVersion: CONTRACT_VERSION,
+      mockCaseId,
+      validationResult: entry.validationResult,
+      ownerOfFix: entry.ownerOfFix,
+      evidence: entry.evidence,
+    } satisfies IslandHierarchyValidationLog;
+  });
+
+  const goNoGo = evaluateIslandHierarchyA3GoNoGo(logs);
+  if (goNoGo.go) {
+    return { go: true, reasons: [] };
+  }
+
+  const reasons: string[] = [];
+  for (const mockCaseId of REQUIRED_MOCK_CASES) {
+    const entry = byCase.get(mockCaseId)!;
     if (entry.validationResult !== EXPECTED_RESULTS[mockCaseId]) {
       reasons.push(`${mockCaseId} result mismatch`);
     }
@@ -57,7 +79,11 @@ export const evaluateIslandHierarchyA3GoNoGoStreamD = (
     }
   }
 
-  return { go: reasons.length === 0, reasons };
+  if (reasons.length === 0) {
+    reasons.push(goNoGo.reason);
+  }
+
+  return { go: false, reasons };
 };
 
 export const validateIslandHierarchyRoundTripStreamD = (

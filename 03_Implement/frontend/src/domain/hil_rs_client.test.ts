@@ -5,7 +5,8 @@ import type { DocumentV2 } from "./types";
 
 const BASE_DOCUMENT: DocumentV2 = {
   version: 2,
-  id: "doc-base",
+  id: "doc-1",
+  title: "test-doc",
   createdAt: "2026-03-14T00:00:00.000Z",
   updatedAt: "2026-03-14T00:00:00.000Z",
   transform: { panX: 0, panY: 0, zoom: 1 },
