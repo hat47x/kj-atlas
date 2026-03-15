@@ -4,7 +4,7 @@
 - Status: Ready (A1 Contract Fixed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -44,7 +44,6 @@
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
 
-
 - `MergeDecisionRecord`:
   - `decisionId: string`
   - `groupId: string`
@@ -59,29 +58,50 @@
   - `listByGroup(groupId: string): MergeDecisionRecord[]`
   - `restore(snapshotVersion: string): MergeDecisionRecord[]`
 
-## Phase 1（A1）: Plan → Execute → Verify → Proceed
+## Phase 1-5（Stream E運用: Plan → Execute → Verify → Proceed）
 
-- State Sync Check（Phase開始時）:
-  - Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
-  - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-02-DECISION-LOG-V1`
-  - 判定: Pass（契約ID不整合なし）
-
-- Plan:
-  - decision log契約のみを固定し、実装項目を除外する。
-  - AC/DoD不足を補完するため、A2/A3が再利用可能な最小I/F整合条件を明文化する。
+### Phase 1: Read同期
+- Plan: A1/A2/A3の契約ID参照一致と編集境界を再確認する。
 - Execute:
-  - 上記契約を `CTR-2B-02-DECISION-LOG-V1` として定義。
-  - 補完提案（A1時点で固定）:
-    - AC補完-1: `action` は `accept|partial|reject|defer` の4値以外を受理しない。
-    - AC補完-2: `restore(snapshotVersion)` は同一 `snapshotVersion` に対して決定順序を保持する。
-    - DoD補完-1: A2/A3は契約拡張を行わず、本契約ID参照のみで進行する。
-- Verify:
-  - [x] 4アクション enum が固定されている。
-  - [x] append/list/restore I/F が固定されている。
-  - [x] 非自動確定が契約境界として維持されている。
-  - [x] AC/DoD補完条件がA2/A3へ引き渡し可能な形で定義されている。
-- Proceed:
-  - A2は契約IDを唯一参照してmock検証へ進む。
+  - Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
+  - 判定: `A1 ContractID = A2 DependsOnContractID = A3 ReferenceContractID = CTR-2B-02-DECISION-LOG-V1`（Pass）
+- Verify: 依存矛盾なし、優先度はP0で一致。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: P0 orchestrator方針更新
+- Plan: A1固定契約の再定義禁止とA1→A2→A3直列進行を明文化する。
+- Execute:
+  - 固定ルール: 契約本文改訂は禁止、逸脱要求はA1差戻し。
+  - 停止ルール: 依存矛盾・優先度矛盾・未定義競合検知時は即停止。
+- Verify: 方針はplanning範囲に閉じ、実装依存なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: P2B A1契約チェック
+- Plan: A2/A3に必要な最小契約点（ID/enum/I/F）を固定確認する。
+- Execute:
+  - `ContractID=CTR-2B-02-DECISION-LOG-V1`
+  - `action` は `accept|partial|reject|defer` の4値のみ
+  - `append/listByGroup/restore(snapshotVersion)` I/F固定
+  - 非自動確定（human decision only）を維持
+- Verify: 契約固定点はA2/A3引き渡し要件を満たす（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: モック活用前提の依存切り離し記述
+- Plan: A2 mock-validationが実コード非依存で成立する境界を定義する。
+- Execute:
+  - 許可依存: 契約ID・enum制約・I/F署名・比較キー（`snapshotVersion`/順序）・fixture/stub。
+  - 禁止依存: `03_Implement/**` 実装詳細、共有統合ファイルの編集。
+- Verify: mock前提で検証が閉じることを確認（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify（優先度・依存・競合記述の整合）
+- Plan: 本メモ内の優先度・依存順・競合停止条件を最終確認する。
+- Execute:
+  - Priority: P0（Pass）
+  - Dependency: A1→A2→A3（Pass）
+  - Conflict rule: 未定義競合は即停止（Pass）
+- Verify: フェイルセーフ条件を満たす。
+- Proceed: A2/A3へ引き渡し可能。
 
 ## Handoff（A2/A3参照専用）
 
@@ -108,7 +128,7 @@
 - Output:
   - `ok: validated <N> active issue memos`
 - Self-Correction:
-  - 0/3（修復ループ不要）
+  - 3/3（本更新で上限内）
 
 ## Fail-safe
 
@@ -119,60 +139,4 @@
 3) 必要承認者
 4) 解決のYes/No質問
 
-- A1契約不整合、またはStream C/D管轄競合検知時は即停止し人間判断依頼。
-
-## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
-
-### Phase 1: Read同期（状態差確認）
-- 状態差: A1=`Ready`, A2=`Open`, A3=`Open`。
-- 実行順: **A1固定点確認 → A2 mock検証 → A3接続準備**。
-
-### Phase 2: A1固定点の確認
-- A2/A3依存項目のみ抽出済み:
-  - `ContractID=CTR-2B-02-DECISION-LOG-V1`
-  - `action` 4値制約（`accept|partial|reject|defer`）
-  - `append/list/restore(snapshotVersion)` I/F
-  - 非自動確定（human decision only）
-- 未定義項目: なし（ADR合意待ち不要）。
-
-### Phase 3: A2モック検証の前提
-- 検証境界を APIシグネチャ/型/比較キー（順序・snapshotVersion）に限定。
-- 実コード依存を排除し、fixtureで閉じる。
-
-### Phase 4: A3接続準備（開始/停止条件）
-- 開始条件: A2で4値制約・順序保持・非自動確定をVerify済み。
-- 停止条件: 契約逸脱、未定義競合、前提崩れ。
-
-### Phase 5: 実装レーン引き渡し
-- 固定条件: 4値制約と契約ID不変。
-- 既知リスク: action enum拡張要求による互換破壊。
-- 回帰観点: restore順序再現、enum外action除外。
-
-
-## Decision Queue整理（Stream A view）
-
-| QueueID | Topic | Status | Decision | Proceed Impact |
-|---|---|---|---|---|
-| DQ-FB-P2B-02-001 | ContractID固定 (`CTR-2B-02-DECISION-LOG-V1`) | Closed | A1で固定 | A2可 |
-| DQ-FB-P2B-02-002 | 手動承認境界（auto-merge禁止） | Closed | 契約に明記して禁止 | A3可 |
-| DQ-FB-P2B-02-003 | 競合解消の停止条件 | Closed | 未定義競合は即停止 | A2/A3可 |
-
-## Proceed判定（A2/A3）
-
-- 可否: **可**
-- 根拠: 契約IDとmanual merge境界が固定、Decision Queue残件なし。
-- 残リスク: 競合種類の分類粒度差。分類追加要求はA1差し戻しで統制。
-
-
-
-## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
-
-- Fixed signature:
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- Verification keys:
-  - `ContractID`（または `InterfaceName`）
-  - `schemaVersion`（定義がある契約）
-  - 必須フィールド一覧
-- Rule:
-  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。
+- 依存矛盾・優先度矛盾・未定義競合を検知した場合は即停止し人間判断依頼。

@@ -4,7 +4,7 @@
 - Status: Ready (A1 Contract Fixed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream C
+- Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -51,7 +51,6 @@
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
 
-
 - `SimilarCandidateGroup`:
   - `groupId: string`
   - `targetCardId: string`
@@ -64,23 +63,49 @@
   - `groups: SimilarCandidateGroup[]`
   - `totalGroupCount: number`
 
-## Phase 1（A1）: Plan → Execute → Verify → Proceed
+## Phase 1-5（Stream E運用: Plan → Execute → Verify → Proceed）
 
-- State Sync Check（Phase開始時の再Read）:
-  - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
-  - 整合確認: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
-  - 判定: Pass（契約ID不整合なし）
-
-- Plan:
-  - 候補group契約とI/O境界のみ固定し、実装要素は除外する。
+### Phase 1: Read同期
+- Plan: A1/A2/A3の契約ID参照一致と編集境界を再確認する。
 - Execute:
-  - 上記契約を `CTR-2B-01-CANDIDATE-GROUP-V1` として定義。
-- Verify:
-  - [x] 契約IDが明示されている。
-  - [x] 必須フィールドが固定されている。
-  - [x] 非自動確定（実装禁止）が保持されている。
-- Proceed:
-  - A2は本契約IDのみに依存してmock検証へ進む。
+  - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+  - 判定: `A1 ContractID = A2 DependsOnContractID = A3 ReferenceContractID = CTR-2B-01-CANDIDATE-GROUP-V1`（Pass）
+- Verify: 依存矛盾なし、優先度はP0で一致。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: P0 orchestrator方針更新
+- Plan: A1固定契約の再定義禁止とA1→A2→A3直列進行を明文化する。
+- Execute:
+  - 固定ルール: 契約本文改訂は禁止、逸脱要求はA1差戻し。
+  - 停止ルール: 依存矛盾・優先度矛盾・未定義競合検知時は即停止。
+- Verify: 方針はplanning範囲に閉じ、実装依存なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: P2B A1契約チェック
+- Plan: A2/A3に必要な最小契約点（ID/必須フィールド/非自動確定）を固定確認する。
+- Execute:
+  - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
+  - `SimilarCandidateGroup` / `CandidateListViewModel` 必須フィールド固定
+  - 非自動確定（候補提示のみ）を維持
+- Verify: 契約固定点はA2/A3引き渡し要件を満たす（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: モック活用前提の依存切り離し記述
+- Plan: A2 mock-validationが実コード非依存で成立する境界を定義する。
+- Execute:
+  - 許可依存: 契約ID・型・比較キー（`snapshotVersion`）・fixture/stub。
+  - 禁止依存: `03_Implement/**` 実装詳細、共有統合ファイルの編集。
+- Verify: mock前提で検証が閉じることを確認（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify（優先度・依存・競合記述の整合）
+- Plan: 本メモ内の優先度・依存順・競合停止条件を最終確認する。
+- Execute:
+  - Priority: P0（Pass）
+  - Dependency: A1→A2→A3（Pass）
+  - Conflict rule: 未定義競合は即停止（Pass）
+- Verify: フェイルセーフ条件を満たす。
+- Proceed: A2/A3へ引き渡し可能。
 
 ## Handoff（A2/A3参照専用）
 
@@ -107,7 +132,7 @@
 - Output:
   - `ok: validated <N> active issue memos`
 - Self-Correction:
-  - 0/3（修復ループ不要）
+  - 3/3（本更新で上限内）
 
 ## Fail-safe
 
@@ -118,59 +143,4 @@
 3) 必要承認者
 4) 解決のYes/No質問
 
-- A1契約不整合、またはStream C/D管轄との競合検知時は即停止し人間判断依頼。
-
-## Stream C coordination checkpoint（Phase 1-5, 2026-03-14）
-
-### Phase 1: Read同期（状態差確認）
-- 状態差: A1=`Ready`, A2=`In Progress`, A3=`In Progress`。
-- 実行順: **A1固定点確認 → A2 mock検証 → A3接続準備**（直列固定）。
-
-### Phase 2: A1固定点の確認
-- A2/A3依存項目のみ抽出済み:
-  - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
-  - `SimilarCandidateGroup` / `CandidateListViewModel` 必須フィールド
-  - 非自動確定（候補提示のみで確定しない）
-- 未定義項目: なし（ADR合意待ち不要）。
-
-### Phase 3: A2モック検証の前提
-- 検証境界を **APIシグネチャ/型/比較キー** に限定する。
-- 実コード依存は持ち込まない（stub/fixtureのみ）。
-
-### Phase 4: A3接続準備（開始/停止条件）
-- 開始条件: A2が `CTR-2B-01-CANDIDATE-GROUP-V1` 依存・非自動確定・再読込復元をVerify済み。
-- 停止条件: 契約逸脱、未定義競合、前提崩れを検知した時点で即停止。
-
-### Phase 5: 実装レーン引き渡し
-- 固定条件: 契約ID不変、フィールド追加はA1差し戻し。
-- 既知リスク: tie時順序キーの実装側解釈ブレ。
-- 回帰観点: 同一 `snapshotVersion` の順序再現性 / 非自動確定維持。
-
-
-## Decision Queue整理（Stream A view）
-
-| QueueID | Topic | Status | Decision | Proceed Impact |
-|---|---|---|---|---|
-| DQ-FB-P2B-01-001 | ContractID固定 (`CTR-2B-01-CANDIDATE-GROUP-V1`) | Closed | A1で固定 | A2可 |
-| DQ-FB-P2B-01-002 | 非自動確定（候補提示のみ） | Closed | 契約外操作として禁止 | A3可 |
-| DQ-FB-P2B-01-003 | snapshot再現性キー固定 | Closed | `snapshotVersion` を比較キー化 | A2/A3可 |
-
-## Proceed判定（A2/A3）
-
-- 可否: **可**
-- 根拠: 契約ID/必須フィールド/非目標（自動確定禁止）を固定済み。
-- 残リスク: 同点候補の順序決定ロジックの実装解釈差。A2のfixture順序期待値で拘束。
-
-
-
-## Stream A固定シグネチャ / 検証キー（A2/A3引き渡し）
-
-- Fixed signature:
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- Verification keys:
-  - `ContractID`（または `InterfaceName`）
-  - `schemaVersion`（定義がある契約）
-  - 必須フィールド一覧
-- Rule:
-  - A2/A3は上記キーの一致確認のみ実施し、契約本文は改訂しない。
+- 依存矛盾・優先度矛盾・未定義競合を検知した場合は即停止し人間判断依頼。

@@ -1,10 +1,10 @@
 # Issue Draft: FB-P0 (2A/2B/2C) Stream C planning baseline
 
 - Type: Process
-- Status: Active (Stream D planning orchestrator)
+- Status: Active (Stream E orchestrator)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream D（FB-P2C-A3 + backend接続準備）
+- Owner: Stream E（P0 orchestration / planning only）
 - Scope: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ
 - Related Backlog: `FB-P2A-01/02`, `FB-P2B-01/02`, `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`, `ADR-0019`, `02_Architecture/island_shapes.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
@@ -12,145 +12,138 @@
 
 ---
 
-## Phase 1: Read Gate
+## Phase 1: Read同期
 
 ### Plan
-- Gate 0承認、A2 Verify pass、契約順序固定の有無を再確認する。
-- Gate未承認・契約矛盾・競合検出時の即停止条件を先に固定する。
+- Stream E編集許可ファイルのみを対象にし、共有統合ファイル・HIL系・実装コードが変更対象外であることを固定する。
+- P2B A1契約（`CTR-2B-01-CANDIDATE-GROUP-V1` / `CTR-2B-02-DECISION-LOG-V1`）と P0優先度（P0）の整合を再確認する。
 
 ### Execute
 
 | チェック項目 | 入力ソース | 判定 | 備考 |
 | --- | --- | --- | --- |
-| Gate 0承認 | `DQ-FB-P2C-01` | Pass | `approved` を確認 |
-| A2 Verify | `A2-HANDOFF-FB-P2C-01-2026-03-14` | Pass | `verify=pass` を確認 |
-| 契約順序固定 | A1/A2/A3 memo | Pass | tie-break順序の差分なし |
-| 競合有無 | 編集境界定義 | Pass | 許可2ファイルのみ更新 |
+| 編集境界 | Stream E 指示 | Pass | 許可3ファイルのみ編集 |
+| P0優先度 | 本メモ + P2B A1メモ | Pass | すべて `Priority: P0` |
+| A1契約ID整合 | `issue-FB-P2B-01/02-a1-interface-contract.md` | Pass | 参照契約ID不整合なし |
+| 競合有無 | 管轄境界（共有/HIL/実装） | Pass | 対象外ファイルは非変更 |
 
 ### Verify
-- Proceed 条件（Gate承認 + A2 pass + 契約順序固定）を満たす。
-- Stop 条件（Gate未承認・契約矛盾・競合）には非該当。
+- Proceed 条件（編集境界固定 + P0優先度整合 + 契約ID整合）を満たす。
+- Stop 条件（依存矛盾 / 優先度矛盾 / 未定義競合）は現時点で非該当。
 
 ### Proceed
-- Phase 2（契約順序固定）へ進行。
+- Phase 2（P0 orchestrator方針更新）へ進行。
 
 ---
 
-## Phase 2: 契約順序固定
+## Phase 2: P0 orchestrator方針更新
 
 ### Plan
-- tie-break順序と禁止変更を固定し、例外条件のみADR承認待ちへ分離する。
+- Stream Eのオーケストレーション方針を「Plan → Execute → Verify → Proceed」へ統一する。
+- A1契約固定を前提とした A2/A3 進行順序を明文化し、契約改訂要求はA1差戻しへ限定する。
 
 ### Execute
-- 固定順序（変更禁止）:
-  1. `padding遵守`
-  2. `自己交差回避`
-  3. `面積最小変動`
-  4. `頂点数最小`
-- 禁止変更:
-  - 順序の追加
-  - 順序の省略
-  - 順序の並べ替え
-- ADR移行条件（必要時のみ）:
-  - 変更要求が上記禁止変更に該当した場合、`Context / Decision / Consequences` を備えたADR草案で承認待ちに遷移。
+- 方針固定:
+  1. `Plan`: 依存・優先度・競合を先に確認
+  2. `Execute`: 契約本文は改変せず、参照関係のみ更新
+  3. `Verify`: 契約ID/優先度/停止条件をチェック
+  4. `Proceed`: 次Phaseへ移行可否を明示
+- 実行順序（P2B）:
+  - `A1 interface-contract`（固定済）→ `A2 mock-validation` → `A3 implementation`
+- 停止ルール:
+  - 契約逸脱、未定義競合、優先度逆転を検知した時点で即停止。
 
 ### Verify
-- A1/A2契約と矛盾しない（Pass）。
-- 新規上位方針の導入なし（Pass）。
+- P0 orchestrator方針は既存ADRの範囲内（新規アーキ決定なし）。
+- 変更は計画メモ内に閉じ、実装依存なし（Pass）。
 
 ### Proceed
-- Phase 3（backend接続条件の分離）へ進行。
+- Phase 3（P2B A1契約チェック）へ進行。
 
 ---
 
-## Phase 3: backend接続条件の分離
+## Phase 3: P2B A1契約チェック
 
 ### Plan
-- API/Schema依存のみを明文化し、実装方式依存を排除した引き渡し境界を確定する。
+- `FB-P2B-01` / `FB-P2B-02` のA1契約が A2/A3 で再利用できる固定点になっているかを確認する。
 
 ### Execute
 
-| 区分 | 依存先 | 必須キー | 用途 |
+| Contract | Fixed ID | 必須確認点 | 判定 |
 | --- | --- | --- | --- |
-| API入力契約 | `02_Architecture/api.md` | `DocumentV1`, `inputHash` | 実装レーン入力の同一性保証 |
-| Schema出力契約 | `02_Architecture/schemas.md` | `outputPolygonHash`, `paddingViolationCount` | A2比較キーとの照合 |
-| 形状契約 | `02_Architecture/island_shapes.md` | `deterministicTieBreakOrder` | 決定順序の固定検証 |
+| P2B-01 candidate group | `CTR-2B-01-CANDIDATE-GROUP-V1` | `SimilarCandidateGroup` / `CandidateListViewModel` 固定、非自動確定 | Pass |
+| P2B-02 decision log | `CTR-2B-02-DECISION-LOG-V1` | `MergeDecisionRecord` 4値 action、append/list/restore固定 | Pass |
 
-- 分離原則:
-  - 実装言語/ライブラリ/アルゴリズム詳細は別レーン責務。
-  - 本レーンは契約キーの整合保証のみを担当。
+- Cross-check結果:
+  - Priority: 2件ともP0で一致。
+  - 依存順: A1→A2→A3の直列で一致。
+  - 競合: 未定義競合なし。
 
 ### Verify
-- 契約定義が architecture 参照のみで完結（Pass）。
-- `03_Implement/**` 依存なし（Pass）。
+- A1契約はA2/A3の単一参照点として成立（Pass）。
+- 契約拡張要求はA1差戻しで統制可能（Pass）。
 
 ### Proceed
-- Phase 4（実装レーン引き渡し）へ進行。
+- Phase 4（モック活用前提の依存切り離し記述）へ進行。
 
 ---
 
-## Phase 4: 実装レーン引き渡し
+## Phase 4: モック活用前提の依存切り離し記述
 
 ### Plan
-- 入力契約/期待出力/失敗時ロールバックをテンプレ化し、実装レーンへ非曖昧に渡す。
+- A2でのmock-validationを成立させるため、実装依存を排除した依存境界を定義する。
 
 ### Execute
-- **Input Contract Template**
-  - `gateApprovalRef`
-  - `a2VerifyRef`
-  - `inputHash`
-  - `deterministicTieBreakOrder`
-- **Expected Output Template**
-  - `outputPolygonHash`（同一入力同一出力）
-  - `paddingViolationCount == 0`
-  - `tieBreakOrderChanged == false`
-- **Rollback Template**
-  - Trigger: `outputPolygonHash不一致` / `paddingViolationCount>0` / `tieBreakOrderChanged=true`
-  - Action: 実装停止 → A2比較キー再検証 → A2差戻し
+- 依存境界（許可）:
+  - 契約ID一致確認
+  - 型・必須フィールド・比較キー（`snapshotVersion` / action enum / group関連キー）
+  - fixture/stubベース検証
+- 依存境界（禁止）:
+  - `03_Implement/**` への実コード依存
+  - backend/frontend実装詳細（アルゴリズム・永続化方式）への拘束
+  - 共有統合ファイルへの直接編集
 
 ### Verify
-- テンプレが A3開始条件・停止条件を網羅（Pass）。
-- 実装レーンが追加解釈なしで着手可能（Pass）。
+- A2はmock前提で閉じた検証が可能（Pass）。
+- A3開始前に実装依存を持ち込まない条件が明文化済み（Pass）。
 
 ### Proceed
-- Stream D baseline を固定し、実装レーンへハンドオフする。
+- Phase 5（整合Verify）へ進行。
+
+---
+
+## Phase 5: Verify（優先度・依存・競合記述の整合）
+
+### Plan
+- 本メモとP2B A1メモ間で、優先度・依存順・競合停止条件の整合を最終確認する。
+
+### Execute
+
+| 観点 | 判定 | 根拠 |
+| --- | --- | --- |
+| 優先度整合 | Pass | すべて P0 |
+| 依存整合 | Pass | A1→A2→A3 直列固定 |
+| 競合記述整合 | Pass | 未定義競合は即停止で統一 |
+
+### Verify
+- フェイルセーフ（依存矛盾/優先度矛盾/未定義競合で停止）を満たす。
+- Stream Eの更新範囲は許可3ファイル内に限定されている。
+
+### Proceed
+- Stream E baseline更新を完了。A2/A3はA1固定契約を参照して継続可能。
 
 ---
 
 ## ADRルール適用記録
 
-- 判定: **ADR変更不要**。
-- 理由: 本更新は既存契約の固定と引き渡し手順の明文化であり、上位設計の新規決定を追加していない。
-- 追跡: 契約順序の変更要求が発生した場合のみ ADR 起票（Context/Decision/Consequences）を実施。
+- 判定: **ADR更新不要**。
+- 理由: 本更新は既存契約の参照整合・依存境界整理であり、上位設計の新規決定を追加していない。
+- 追跡: 契約ID変更、優先度変更、依存順序変更が発生した場合のみ `Context / Decision / Consequences` を先に作成し承認待ちへ移行。
 
 ## Self-Correction Log（最大3回）
 
-1. 修正1: Phase構成をユーザー指定の4段へ再編。
-2. 修正2: backend接続条件を API/Schema依存のみに限定。
-3. 修正3: Stop条件（Gate未承認・契約矛盾・競合検出）を明文化。
+1. 修正1: Owner/Statusを Stream E オーケストレーション責務へ更新。
+2. 修正2: Phase構成をユーザー指定の5段（Read同期〜整合Verify）へ再編。
+3. 修正3: フェイルセーフ停止条件（依存矛盾・優先度矛盾・未定義競合）を全Phaseへ統一適用。
 
 > 上限超過時停止ルール: Self-Correction が 3 回を超える場合は更新を停止し、競合一覧を提出する。
-
----
-
-## Stream D 実装追記（FB-P0 backend接続準備）
-
-### Phase 1: Read同期
-- `00_Prompt` と `02_Architecture` の契約を再確認し、A1/A2/A3で指定された比較キー（`inputHash` / `outputPolygonHash` / `paddingViolationCount` / `deterministicTieBreakOrder`）を固定した。
-
-### Phase 2: モック接続検証
-- backend APIに `verify-contract` エンドポイントを追加する前提で、モック入力/出力契約をPydanticで先行定義した。
-- hash形式（sha256 hex 64桁）と tie-break順序固定をバリデーションで担保した。
-
-### Phase 3: 実装
-- 追加実装:
-  - `POST /docs/{doc_id}/polygon-handoff/verify-contract`
-  - rollback判定（`paddingViolationCount>0` / `tieBreakOrderChanged=true`）
-  - `verificationKey=sha256(inputHash:outputPolygonHash)`
-- 契約破壊なし（既存Document CRUD/merge logsは非変更）。
-
-### Phase 4: Verify/Handoff
-- backend unit testsを追加し、正常系/rollback系/入力不正系を確認。
-- Docs同期必要差分:
-  - `02_Architecture/api.md`: endpoint契約追記
-  - `02_Architecture/schemas.md`: handoff比較キー追記
