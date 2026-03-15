@@ -540,6 +540,22 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 4. 人間確定
    - 最終承認は人間のみ実施し、`reviewAttribution` の妥当性が検証できない場合は停止する。
 
+### 1.5 Plan → Execute → Verify → Proceed（A3運用固定）
+
+可逆統合フローの運用は、毎回次の直列手順で実施する。
+
+1. **Plan**
+   - 対象ドキュメントを `operations.md` / `security.md` / `e2e_testing.md` に限定し、A1契約境界との差分を先に列挙する。
+   - 差分ごとに `audit-minimum`（PII最小化）と `rollback trigger`（停止条件）をセットで定義する。
+2. **Execute**
+   - 手順更新時は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` を固定表記で記載する。
+   - `status=provisional` と `evidenceType=mock-trace` を同時記録し、実コード確定前の暫定同期であることを明示する。
+3. **Verify**
+   - docs-check（本節 3）で契約キー、Freeze Flags、3導線固定文言、payload制約の一致を検証する。
+   - 失敗時は最大3回まで自己修復し、4回目以降は更新停止・差し戻しへ移行する。
+4. **Proceed**
+   - `status` を `provisional_reapplied` へ更新し、変更理由・運用影響・次回置換条件（`replaceOnNextSync=true`）を記録する。
+
 ### 1.2 A2挙動との対応表（A3同期対象）
 
 | A2挙動（実装意図） | A3で固定する運用文言 | 逸脱時の扱い |

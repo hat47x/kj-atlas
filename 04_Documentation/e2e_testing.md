@@ -445,6 +445,7 @@ cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts
 - HIL-RS workflow 関連の vitest（UI/contract/payload）が成功し、文書化した運用制約と実装の差分がない。
 - `hil_rs_payload` 系の検証（未知tags→`no_articulable_reason`、空コメント+空tagsは未発行、`iteration>=1`）が運用記述と一致する。
 - A3の非目標（SafeMode後退禁止・自動確定導線禁止）が文書内で確認できる。
+- docs-check失敗時の自己修復は最大3回で打ち切り、`rollback_pending` を記録してProceedへ進めない。
 
 注記:
 - `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
@@ -494,3 +495,16 @@ A1差し戻し対象（検知時に停止）:
 - `A1-ERROR-IF` 固定コード外の追加
 - `traceKey` 必須条件の欠落
 - PII-like field拒否または人間レビュー帰属必須の破れ
+
+### 11.2 ロールバック検証（A3運用）
+
+docs-checkで次のいずれかを検知した場合、A3同期は失敗として扱う。
+
+- Contract Keys / Freeze Flags の欠落または表記不一致
+- `traceKey` 必須条件の欠落
+- PII-like field 拒否制約との矛盾
+
+失敗時の標準処理:
+1. `status=rollback_pending` を記録する。
+2. 直前の `status=provisional` との差分を切り戻す。
+3. 是正後に docs-check を再実行し、成功時のみ `provisional_reapplied` へ更新する。

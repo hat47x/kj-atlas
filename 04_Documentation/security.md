@@ -404,6 +404,21 @@ A1契約・A2仕様の文書同期として、次フェーズ運用時の最小�
 - `approvalRef`: Security Officer / System Owner の承認参照ID
 - `reopenCondition`: A1差し戻し解消 + docs-check再実行成功
 
+### 8.2.2 監査証跡の必須最小項目（可逆統合フロー）
+
+可逆統合フロー（A2-1〜A2-3）では、次の項目を監査証跡の必須最小として固定する。
+
+- `requirementId=HIL-RS-01-A1`
+- `syncScope=HIL-RS-02-A3`
+- `phase=candidate_comparison | critique_input | diff_visualization`
+- `decisionPending=true|false`（候補提示中は `true`）
+- `traceKeyPresence=true`（欠落時はロールバック）
+- `piiMinimized=true`（PII-like field 非保存）
+
+禁止事項:
+- `provider` / `external_uid` / `email` など identity fields の生値を監査ログへ保存しない。
+- free-text を根拠なく二次転記しない（必要時は別系統のアクセス制御下で管理）。
+
 上記に抵触する変更が必要な場合は、実装を停止し `ADR-0026` と上位層（00〜02）で先に合意する。
 
 ### 8.3 Stream B（FB-P2B-01 / FB-P2B-02）運用の安全境界
