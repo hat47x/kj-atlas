@@ -40,6 +40,7 @@
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
+- `rg -n "SafeMode|share/export|human_dual_control_only|A1→A2→A3|contractLinkLocked|sharedResourceFreeze" 01_Plans/issues/issue-HIL-RS-02-*.md 01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md 02_Architecture/strict_mode_exception_approval_flow.md`
 
 ## 7) 依存関係
 
@@ -69,6 +70,10 @@
 - A1再開条件:
   - 変更要求がDecision Queueへ `Pending` 登録され、承認ログが追記された場合。
   - A1差し戻し経路（A1 issue記載）で再判定が完了した場合。
+- A1 Decision Queue運用固定:
+  - Queue項目は `Pending -> Approved|Rejected` 以外の遷移を許可しない。
+  - `Pending` 項目が1件でも残る間はA2/A3をOpen化しない。
+  - Queue更新時は `Owner / UTC timestamp / evidenceLink` を必須記録する。
 - A2開始条件（Ready）:
   1. A1契約ID/`schemaVersion`/`overridePolicy`がSSOTと一致。
   2. `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持。
@@ -78,3 +83,16 @@
   - 未承認の契約変更要求を確定扱いした場合。
   - SafeMode既定ONまたはshare/export漏えい防止後退が前提となる場合。
   - Decision Queue項目がPending管理を外れている場合。
+
+
+## 11) A2/A3参照用「凍結契約パック」（read-only）
+
+- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Package mode: read-only（A2/A3は参照のみ、変更要求はA1へ差し戻し）
+- Contents:
+  1. Invariant-01: SafeMode既定ONを維持。
+  2. Invariant-02: share/export漏えい防止ポリシーを後退させない。
+  3. Invariant-03: `human_dual_control_only` を維持し、単独承認へ緩和しない。
+  4. Invariant-04: `contractLinkLocked=true` / `sharedResourceFreeze=true`。
+  5. Invariant-05: `schemaVersion` / `overridePolicy` / 契約ID整合を維持。
+- Return path: 変更要求は必ず A1 issue の Decision Queue に `Pending` で登録して再判定する。
