@@ -33,12 +33,14 @@
 
 - AC-1: 新運用手順が既存手順と矛盾しない。
 - AC-2: ロールバック手順が明記される。
-- AC-3: docs-checkが通過する。
+- AC-3: strict mode例外の状態遷移（`StoppedForClarification` / `RollbackPending` / `Closed`）と2者承認責務が operations/security で一致している。
+- AC-4: D1〜D4固定値（承認TTL=4h、最大2h、代理承認なし、48hレビュー+15m/60m）が operations/security 双方で一致している。
+- AC-5: docs-checkが通過する。
 
 ## 6) 検証方法
 
 - `python 01_Plans/issues/validate_active_issue_memos.py`
-- `rg -n "HIL-RS-02|rollback|SafeMode" 04_Documentation/operations.md 04_Documentation/security.md`
+- `rg -n "StoppedForClarification|RollbackPending|Closed|D1〜D4|Security Officer|System Owner|Platform Operator" 04_Documentation/operations.md 04_Documentation/security.md`
 
 ## 7) 依存関係
 
@@ -52,4 +54,5 @@
 
 1. 差分棚卸し
 2. 文書反映
-3. docs-check
+3. 相互リンク/用語/固定値の監査
+4. docs-check

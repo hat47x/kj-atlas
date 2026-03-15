@@ -262,15 +262,24 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`は本番標準（strict）とする。
 - 例外発動条件: 例外的に緩和する場合（`true` へ変更）は Security Officer + System Owner の2者承認を必須とする。
-- 停止条件: Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たせない場合は、Platform Operator は「確認待ちで停止」を記録し、適用を禁止する。
+- 停止条件: Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）を満たせない場合は、Platform Operator は `StoppedForClarification`（確認待ちで停止）を記録し、適用を禁止する。
 - Platform Operator 記録必須項目: 実施時刻・理由・承認者・対象環境・復旧条件。承認記録がない変更を禁止する。
 - 復旧条件: 期限到来または停止条件成立時に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、復旧時刻と検証結果を記録する。
 - 違反時SLA: 15m以内に一次エスカレーション、60m以内に二次エスカレーションを実施する。
 - backend 開発者はコードで一時バイパスを実装してはならない。
 
+固定値サマリ（D1〜D4）:
+
+| Decision ID | 固定値 | 運用上の必須アクション |
+|---|---|---|
+| D1 | Security Officer先行、承認TTL=4h | 4h以内に2者承認未達なら申請失効。 |
+| D2 | tenant単位、最大2h | 2h到達時は `RollbackPending` へ遷移し strict 復帰。 |
+| D3 | 復旧判定は2者共同、代理承認なし | 代理承認は常時不可、必要時は再申請。 |
+| D4 | 変更台帳+監査ID相互参照、48hレビュー、15m/60mエスカレーション | 記録未完了のまま `Closed` へ遷移しない。 |
+
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
 
-> 本テンプレートは Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）で運用する。逸脱時は「要確認」で停止する。
+> 本テンプレートは Q1〜Q10 固定値（Q1-2=A, Q3-4=A, Q5-6=A, Q7-10=A）で運用する。逸脱時は `StoppedForClarification`（確認待ちで停止）へ遷移する。
 
 #### A. 2者承認テンプレート（Security Officer + System Owner）
 
