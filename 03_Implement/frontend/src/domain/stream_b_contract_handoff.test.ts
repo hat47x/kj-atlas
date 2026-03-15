@@ -171,7 +171,49 @@ describe("stream_b_contract_handoff", () => {
 
     expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
       go: false,
-      reason: "M3/M4 ownerOfFix must not be A3",
+      reason: "M3/M4 ownerOfFix must be A2",
+    });
+  });
+
+  it("returns NoGo when fail cases are assigned to non-A2 owner", () => {
+    const logs = [
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "M1",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
+        mockCaseId: "M2",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "M2",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M3",
+        validationResult: "fail",
+        ownerOfFix: "A1",
+        evidence: "M3",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M4",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "M4",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
+      go: false,
+      reason: "M3/M4 ownerOfFix must be A2",
     });
   });
 });
