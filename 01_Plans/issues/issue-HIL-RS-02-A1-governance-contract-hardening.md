@@ -52,3 +52,24 @@
 1. A1開始条件固定
 2. 停止/再開条件固定
 3. A2/A3 Draft境界反映
+
+
+## 10) 開始/停止/再開条件（A1固定）
+
+- 開始条件:
+  - `ADR-0026` / `ADR-0027` とA1契約正本（SSOT）で矛盾がない。
+  - A2/A3はDraft維持である。
+- 停止条件:
+  - 未承認の契約変更要求を確定扱いした場合。
+  - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退が必要になった場合。
+  - Self-Correctionが3回を超えた場合。
+- 再開条件:
+  - Decision Queueへ未確定事項をPendingで登録し、承認ログが追記される。
+  - A1差し戻し経路（本issue）で再判定が完了する。
+
+## 11) Decision Queue（未確定管理）
+
+| QueueID | Topic | Status | Owner | Next Action |
+|---|---|---|---|---|
+| DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Pending | Architecture Owner | A2 kickoff reviewで承認 |
+| DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Pending | Documentation Owner | A3 handoff reviewで承認 |

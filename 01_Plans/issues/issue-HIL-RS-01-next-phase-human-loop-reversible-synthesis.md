@@ -88,28 +88,28 @@
 - Proceed:
   - Phase 4へ進行。
 
-### Phase 4: Handoff
+### Phase 4: Verify
 
 - Plan:
-  - A2/A3向け固定値一覧・参照先一覧・禁止事項を発行。
+  - AC/DoDに対する自己検証を実施し、A1契約固定の証跡を確定する。
 - Execute:
-  - 引き渡しパケットをA1 issueとA1契約正本に同期。
-- Verify:
-  - 「契約変更禁止。逸脱要求はA1へ差し戻し」を明記。
-- Proceed:
-  - Stream A範囲の目的（契約/I-F固定）を完了。
-
-### Phase 5: Proceed判定
-
-- Plan:
-  - A2開始可否をGateチェックリストで確認し、Ready/Blockを単一判定で確定する。
-- Execute:
-  - SSOT/Freeze flag/固定値/禁止事項/契約変更不可ルールの5観点でチェック実施。
+  - SSOT/Freeze flag/固定値/禁止事項/契約変更不可ルールの5観点で検証を実施。
 - Verify:
   - Ready条件5項目が全て満たされ、未定義契約変更要求が0件であることを確認。
   - Mock handoff I/F（APIシグネチャ・型・fixture schema）がSSOTと一致することを確認。
 - Proceed:
-  - A2/A3へ **Ready** 判定で引き継ぎ。契約変更要求はA1差し戻しを維持。
+  - Phase 5へ進行。
+
+### Phase 5: Handoff
+
+- Plan:
+  - A2開始条件（Ready/Block理由）を単一判定で明文化する。
+- Execute:
+  - Handoff packetにReady/Block判定と差し戻し経路（A1のみ）を記録。
+- Verify:
+  - A2/A3はA1契約を参照専用とし、未承認事項を確定扱いしないことを確認。
+- Proceed:
+  - A2/A3へ判定付きで引き継ぐ（契約変更要求はA1差し戻しを維持）。
 
 ## 7) Contract change request routing（固定）
 
@@ -206,12 +206,14 @@
 | DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-006 | A2 mock fixture命名揺れの吸収方針 | Pending | A2でマッピング注記のみ許可（契約値は不変） | Architecture Owner | A2 kickoff reviewで承認 |
+| DQ-HIL-RS-01-A1-007 | A3運用文書への契約リンク表記統一 | Pending | SSOT単一参照を維持した表記に統一 | Documentation Owner | A3 handoff reviewで承認 |
 
 ## 13) Proceed verdict（Stream A）
 
 - A1: **Fixed / Ready**（契約ID・schemaVersion・禁止事項・SSOTを固定）。
-- A2: **Ready**（Mock-ready I/Fが固定、契約変更は禁止）。
-- A3: **Ready**（参照専用ルールと安全制約を維持）。
+- A2: **Conditional Ready**（A1契約は固定済み。DQ-HIL-RS-01-A1-006承認までOpen化は保留）。
+- A3: **Conditional Ready**（参照専用ルールと安全制約は固定。DQ-HIL-RS-01-A1-007承認までOpen化は保留）。
 - Block条件再掲:
   - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
   - SSOT複線化（契約参照先が2件以上）。
