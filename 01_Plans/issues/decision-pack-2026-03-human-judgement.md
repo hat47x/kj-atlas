@@ -352,3 +352,12 @@
 - Phase 3 Execute: 3ファイルを同一ロジック・単一変更セットで同期し、Source Issue 運用基準（Open=`N/A` / Draft=`TBD`）と Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`）を維持。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=6|Done=25|DR-HIL-A1-01|DL-HIL-01|DR-REQ-DEF-02" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、不一致0件（self-correction 0/3）を確認。
 - Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+### 6-10. Stream F 同期ログ（2026-03-15 rerun-26, Phase 1-5）
+
+- Phase 1 Read同期: shared resource 3ファイルを再読し、件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25）、Decision Queue（Ready=1 / Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 Plan: 単一変更セット対象を `issues/README.md` / `project-progress-dashboard.md` / 本decision-pack に限定し、Decision Queueと件数公開値の維持を計画。
+- Phase 3 Execute: 3ファイルへ rerun-26 同期ログのみ追記し、未承認決定の確定扱いを行わないことを再確認。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-26|Decision Queue|A1→A2→A3|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功を確認。
+- Phase 5 Proceed（次回再開条件）: **A〜E完了報告と shared resource freeze解除が維持され、件数47・Decision Queue Ready=1/Open=2・依存順A1→A2→A3・停止条件違反0件が一致していること。**
+
