@@ -1,6 +1,7 @@
 import type { Card } from "../domain/types";
 import type { MergeSuggestion } from "../api/client";
 import type { MergeSuggestionDecision } from "../domain/merge_suggestion_decisions";
+import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_events";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
@@ -23,7 +24,9 @@ type MergeSuggestionsPanelProps = {
   cardsById: Map<string, Card>;
   onMergedTextChange: (groupId: string, value: string) => void;
   onDecide: (groupId: string, decision: MergeSuggestionDecision) => void;
-  latestAuditEventByGroup?: ReadonlyMap<string, { decidedAt: string }>;
+  latestAuditEventByGroup?: ReadonlyMap<string, MergeDecisionAuditEvent>;
+  auditEvents?: readonly MergeDecisionAuditEvent[];
+  onExportAuditEvents?: () => void;
 };
 
 function snippet(text: string): string {
@@ -66,6 +69,73 @@ function representativeResolvedLabel(
   }
 }
 
+type TextDiffSegment = {
+  value: string;
+  kind: "same" | "added" | "removed";
+};
+
+function buildTextDiff(beforeText: string, afterText: string): TextDiffSegment[] {
+  const beforeTokens = beforeText.split(/(\s+)/).filter((token) => token.length > 0);
+  const afterTokens = afterText.split(/(\s+)/).filter((token) => token.length > 0);
+  const longestCommon = Array.from({ length: beforeTokens.length + 1 }, () => new Array<number>(afterTokens.length + 1).fill(0));
+
+  for (let beforeIndex = beforeTokens.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
+    for (let afterIndex = afterTokens.length - 1; afterIndex >= 0; afterIndex -= 1) {
+      if (beforeTokens[beforeIndex] === afterTokens[afterIndex]) {
+        longestCommon[beforeIndex]![afterIndex] = (longestCommon[beforeIndex + 1]?.[afterIndex + 1] ?? 0) + 1;
+      } else {
+        longestCommon[beforeIndex]![afterIndex] = Math.max(
+          longestCommon[beforeIndex + 1]?.[afterIndex] ?? 0,
+          longestCommon[beforeIndex]?.[afterIndex + 1] ?? 0,
+        );
+      }
+    }
+  }
+
+  const segments: TextDiffSegment[] = [];
+  const append = (kind: TextDiffSegment["kind"], token: string) => {
+    const previous = segments.at(-1);
+    if (previous && previous.kind === kind) {
+      previous.value += token;
+      return;
+    }
+    segments.push({ kind, value: token });
+  };
+
+  let beforeIndex = 0;
+  let afterIndex = 0;
+  while (beforeIndex < beforeTokens.length && afterIndex < afterTokens.length) {
+    const beforeToken = beforeTokens[beforeIndex]!;
+    const afterToken = afterTokens[afterIndex]!;
+
+    if (beforeToken === afterToken) {
+      append("same", beforeToken);
+      beforeIndex += 1;
+      afterIndex += 1;
+      continue;
+    }
+
+    if ((longestCommon[beforeIndex + 1]?.[afterIndex] ?? 0) >= (longestCommon[beforeIndex]?.[afterIndex + 1] ?? 0)) {
+      append("removed", beforeToken);
+      beforeIndex += 1;
+    } else {
+      append("added", afterToken);
+      afterIndex += 1;
+    }
+  }
+
+  while (beforeIndex < beforeTokens.length) {
+    append("removed", beforeTokens[beforeIndex]!);
+    beforeIndex += 1;
+  }
+  while (afterIndex < afterTokens.length) {
+    append("added", afterTokens[afterIndex]!);
+    afterIndex += 1;
+  }
+
+  return segments;
+}
+
 export function MergeSuggestionsPanel({
   instruction,
   onInstructionChange,
@@ -77,6 +147,8 @@ export function MergeSuggestionsPanel({
   onMergedTextChange,
   onDecide,
   latestAuditEventByGroup,
+  auditEvents,
+  onExportAuditEvents,
   isReadOnly = false,
 }: MergeSuggestionsPanelProps) {
   return (
@@ -113,6 +185,18 @@ export function MergeSuggestionsPanel({
       </button>
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
         Deterministic heuristic only (no AI decision). Final merge decision remains human-in-the-loop.
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <button
+          type="button"
+          onClick={onExportAuditEvents}
+          disabled={isReadOnly || !onExportAuditEvents || !auditEvents || auditEvents.length === 0}
+        >
+          Export decision audit events (JSONL)
+        </button>
+        <span style={{ fontSize: 11, color: "#475569" }}>
+          {auditEvents && auditEvents.length > 0 ? `${auditEvents.length} event(s)` : "No audit events yet"}
+        </span>
       </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
       {suggestions.map((suggestion) => (
@@ -159,6 +243,41 @@ export function MergeSuggestionsPanel({
               boxSizing: "border-box",
             }}
           />
+          <div
+            style={{
+              marginBottom: 6,
+              padding: 8,
+              border: "1px solid #e2e8f0",
+              borderRadius: 6,
+              fontSize: 12,
+              color: "#334155",
+              backgroundColor: "#f8fafc",
+            }}
+          >
+            <strong>Draft diff preview:</strong>{" "}
+            {buildTextDiff(suggestion.mergedTextDraft, suggestion.editedText).map((segment, segmentIndex) => {
+              if (segment.kind === "same") {
+                return <span key={`${suggestion.groupId}-seg-${segmentIndex}`}>{segment.value}</span>;
+              }
+
+              if (segment.kind === "removed") {
+                return (
+                  <del key={`${suggestion.groupId}-seg-${segmentIndex}`} style={{ backgroundColor: "#fee2e2" }}>
+                    {segment.value}
+                  </del>
+                );
+              }
+
+              return (
+                <ins
+                  key={`${suggestion.groupId}-seg-${segmentIndex}`}
+                  style={{ backgroundColor: "#dcfce7", textDecoration: "none" }}
+                >
+                  {segment.value}
+                </ins>
+              );
+            })}
+          </div>
           <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
             Representative: {suggestion.representativeCardId ?? "(not resolved)"}
             {` [${representativeResolvedLabel(suggestion.representativeResolvedBy)}]`}
@@ -171,7 +290,7 @@ export function MergeSuggestionsPanel({
           ) : null}
           {latestAuditEventByGroup?.get(suggestion.groupId) ? (
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
-              Audit event recorded at {new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString()}
+              Audit event recorded at {new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString()} / decision={latestAuditEventByGroup.get(suggestion.groupId)!.decision}
             </div>
           ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
