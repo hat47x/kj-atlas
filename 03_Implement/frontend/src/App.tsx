@@ -142,6 +142,7 @@ import { applyFixesToPatch, proposeFixes, type FixProposal } from "./domain/patc
 import { parseDocumentJson } from "./import/document_import";
 import { parseViewJson } from "./import/view_import";
 import { appendMergeAuditLog, sanitizeMergeAuditLog, type MergeAuditEntry, type MergeAuditSource } from "./domain/view/audit_log";
+import { appendMergeDecisionAuditEvent, createMergeDecisionAuditEvent, type MergeDecisionAuditEvent } from "./domain/merge/decision_audit_events";
 import { appendReviewEvent, sanitizeReviewEvents, type ReviewEvent } from "./domain/view/review_events";
 import { ZipImportError, detectReviewPackFiles, readZipFiles } from "./import/zip_import";
 import { parseIntegrityManifest, verifyIntegrityManifest } from "./security/artifact_integrity";
@@ -984,6 +985,7 @@ export default function App() {
   const [isPolygonVertexEditEnabled, setIsPolygonVertexEditEnabled] = useState(false);
   const [mergeSuggestionInstruction, setMergeSuggestionInstruction] = useState("");
   const [mergeSuggestions, setMergeSuggestions] = useState<MergeSuggestionDraft[]>([]);
+  const [mergeDecisionAuditEvents, setMergeDecisionAuditEvents] = useState<MergeDecisionAuditEvent[]>([]);
   const [mergeSuggestionError, setMergeSuggestionError] = useState<string | null>(null);
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
   const [isSuggestingIslandSummary, setIsSuggestingIslandSummary] = useState(false);
@@ -1555,6 +1557,16 @@ export default function App() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const compareImportInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
+  const latestMergeDecisionAuditByGroup = useMemo(() => {
+    const latest = new Map<string, { decidedAt: string }>();
+    for (const event of mergeDecisionAuditEvents) {
+      const current = latest.get(event.groupId);
+      if (!current || current.decidedAt <= event.decidedAt) {
+        latest.set(event.groupId, { decidedAt: event.decidedAt });
+      }
+    }
+    return latest;
+  }, [mergeDecisionAuditEvents]);
   const selectedAggregatedEdge = useMemo(() => {
     if (!selectedEdgeId) {
       return null;
@@ -2298,6 +2310,16 @@ export default function App() {
       applyDocumentChange(nextDocument, `Recorded merge decision: ${decision}`);
 
       const decidedAt = nextDocument.mergeSuggestionDecisions?.at(-1)?.decidedAt ?? new Date().toISOString();
+      const decisionId = nextDocument.mergeSuggestionDecisions?.at(-1)?.decisionId ?? crypto.randomUUID();
+      const auditEvent = createMergeDecisionAuditEvent({
+        eventId: decisionId,
+        groupId: suggestion.groupId,
+        decision,
+        decidedAt,
+        cardIds: suggestion.cardIds,
+        snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      });
+      setMergeDecisionAuditEvents((current) => appendMergeDecisionAuditEvent(current, auditEvent));
       setMergeSuggestions((previousSuggestions) =>
         previousSuggestions.map((item) =>
           item.groupId === groupId
@@ -8019,6 +8041,7 @@ ${parsedDocument.error}`);
                     cardsById={cardsById}
                     onMergedTextChange={handleMergeSuggestionTextChange}
                     onDecide={handleRecordMergeSuggestionDecision}
+                    latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
                   />
                 }
                 critiqueInput={
