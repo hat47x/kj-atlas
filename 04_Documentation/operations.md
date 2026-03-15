@@ -481,7 +481,7 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 4. 表示言語の切替が document payload に影響しないことを `document_locale_invariance.test.ts` で確認する。
 5. SafeMode の漏洩防止回帰（`locale_conversion_guard.test.ts` 等）を必ず再実行する。
 
-## HIL-RS-01 運用同期（A3）
+## HIL-RS-02-A3 運用同期（仮運用 / モック証跡）
 
 `ADR-0026` の D1〜D4、および A1 契約と B 実装確定内容に合わせ、
 次フェーズの運用手順は以下を最小セットとして固定します。
@@ -493,6 +493,13 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 - Contract Keys: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
 - Freeze Flags: `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 契約参照先（正本）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+
+仮運用タグ（依存切断ルール）:
+
+- `status=provisional`
+- `evidenceType=mock-trace`
+- `replaceOnNextSync=true`
+- A2実コード完成待ちをせず、A1契約I/Fと想定運用フローに基づく先行同期として扱う。
 
 ### 1. 実行順序（A1 → A2 → A3）
 
@@ -518,6 +525,20 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 3. `hil_rs_contract.ts` の検証制約（PII-like field拒否 / reversible diff必須 / human review帰属必須）と矛盾する運用記述を禁止する。
 4. `contractLinkLocked=true` / `sharedResourceFreeze=true` が崩れている場合は、推測補完せず更新を停止する。
 5. 契約未固定（ID未記載・契約境界の欠落）を検知した場合は、推測補完せず更新を停止する。
+
+### 1.4 可逆統合フローの運用手順（仮運用）
+
+1. 候補比較（A2-1）
+   - 候補は「提案」のみで確定ではないことを記録する。
+   - 監査記録には `phase=candidate_comparison` と `decisionPending=true` を残す。
+2. Critique入力（A2-2）
+   - Critiqueは iteration ごとに入力し、空コメント+空tagsは破棄する。
+   - 監査記録は PII最小化（subject生値なし）を維持し、`traceKey` を必須化する。
+3. 差分可視（A2-3）
+   - `before/after` の差分が欠けた提案は適用禁止にする。
+   - 差分レビューは apply/discard の可逆操作で記録し、自動確定へ昇格しない。
+4. 人間確定
+   - 最終承認は人間のみ実施し、`reviewAttribution` の妥当性が検証できない場合は停止する。
 
 ### 1.2 A2挙動との対応表（A3同期対象）
 
@@ -573,6 +594,19 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 2. A1正本（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）へ照合し、差分をA1差し戻しとして起票する。
 3. 差分解消までA3更新を再開しない（推測補完禁止）。
 
+### 2.1 異常時ロールバック運用（仮運用）
+
+- Trigger-1: `A1-ERROR-IF` 固定コード外のエラーが記録された。
+- Trigger-2: `contractLinkLocked=true` または `sharedResourceFreeze=true` が満たされない。
+- Trigger-3: 監査ログにPII-like field混入が検知された。
+
+対応手順:
+
+1. `status=rollback_pending` を記録し、以降のA3同期を停止。
+2. 直近の `status=provisional` 更新を基準に差分を切り戻す。
+3. A1差し戻し票に「契約キー」「逸脱内容」「再実行条件」を記載。
+4. 是正後に `status=provisional_reapplied` として再同期する。
+
 ### 3. docs-check 記録
 
 - `python 01_Plans/issues/validate_active_issue_memos.py`
@@ -587,6 +621,20 @@ pnpm -s vitest run src/i18n/catalog_integrity.test.ts src/i18n/key_consistency.t
 
 - `rg` で `HIL-RS-01-A1` と 3 Contract Key の同時出現を確認し、表記揺れを禁止する。
 - vitest は文書固定値（3導線ラベル）と validator 制約の整合確認として扱う。
+
+### 3.1 監査証跡テンプレート（仮運用）
+
+作業記録には次の最小項目を残す。
+
+- `requirementId`: `HIL-RS-01-A1`
+- `syncScope`: `HIL-RS-02-A3`
+- `status`: `provisional | rollback_pending | provisional_reapplied`
+- `evidenceType`: `mock-trace`
+- `operatorRole`: `Platform Operator`
+- `approverRoles`: `Security Officer`, `System Owner`
+- `traceKeyPresence`: `true | false`
+- `piiMinimized`: `true | false`
+- `nextSyncAction`: `replace_with_A2_actual_evidence`
 
 上記コマンドの結果を PR/作業記録に残し、再現可能性を担保します。
 
