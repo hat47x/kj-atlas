@@ -200,7 +200,6 @@ ReviewerRef 推奨フォーマット（例）:
 - source判定は UI補助情報であり schema必須項目にしない（`reviewerRef` 単体で互換維持）。
 - backfill時は `reviewerRef` / `ownerRef` のみを書換対象とし、`provider` / `external_uid` は attribution payload へ新規保存しない。
 
-これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。
 - `internal_user_id` は実体として `users.id` を指し、`reviewerRef` / `ownerRef` は表示・交換用の派生参照（`user:<users.id>`）とする。
 - attribution の永続層では `provider` / `external_uid` を保持せず、参照逆引きは `user_identities` に委譲する。
 

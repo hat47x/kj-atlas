@@ -88,10 +88,12 @@
 
 ### A2/A3へ渡す契約境界（変更禁止項目）
 
+- Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`。
 - `human_dual_control_only` の制約定義。
 - SafeMode既定ON。
 - share/export 漏えい防止の既定ポリシー。
 - `schemaVersion` / `overridePolicy` の識別子整合。
+- `A1-ERROR-IF` の固定 error code 列挙（`A1_SCHEMA_VERSION_MISMATCH` / `A1_REQUIRED_FIELD_MISSING` / `A1_TRACE_KEY_MISSING` / `A1_OVERRIDE_POLICY_VIOLATION` / `A1_PII_POLICY_VIOLATION`）。
 - `contractLinkLocked=true` / `sharedResourceFreeze=true`。
 
 上記はA1完了時点で凍結し、A2/A3では変更要求を直接反映せず、必ずA1へ差し戻す。
@@ -113,7 +115,7 @@
 - 変更要求の差し戻し先（唯一）:
   - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - A2/A3での禁止:
-  - `schemaVersion` / `overridePolicy` / 契約ID / requiredFields の直接変更
+  - `schemaVersion` / `overridePolicy` / 契約ID / requiredFields / errorCode列挙 の直接変更
   - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退
 
 ### A2/A3契約境界（A1以外で変更禁止）
