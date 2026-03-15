@@ -235,3 +235,15 @@
   - 契約値の再解釈要求（ID/version/requiredFields/overridePolicy/tie-break）
   - SSOT複線化要求（参照先を複数化する提案）
   - `sharedResourceFreeze=true` を破る更新要求
+
+## 15) Stream A handoff（凍結I/F・差し戻し条件・未確定事項）
+
+- 固定I/F一覧:
+  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+  - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
+  - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 差し戻し条件:
+  - 契約値再解釈要求、SSOT複線化要求、SafeMode後退前提要求を検知した場合はA1へ差し戻す。
+- 未確定事項:
+  - `DQ-HIL-RS-01-A1-006`, `DQ-HIL-RS-01-A1-007` は Decision Queue で Pending 管理し、確定扱いしない。

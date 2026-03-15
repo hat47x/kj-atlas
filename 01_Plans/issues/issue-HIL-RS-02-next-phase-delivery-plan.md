@@ -97,3 +97,22 @@
   5. Invariant-05: `schemaVersion` / `overridePolicy` / 契約ID整合を維持。
   6. Invariant-06: `A1-ERROR-IF` のerrorCode列挙を固定し、A2/A3で拡張しない。
 - Return path: 変更要求は必ず A1 issue の Decision Queue に `Pending` で登録して再判定する。
+
+
+## 12) Context / Decision / Consequences（凍結I/F合意）
+
+### Context
+
+- HIL-RS-02 は A1で契約/統治を先に固定し、A2/A3を参照専用で進める前提である。
+- A1未完了のまま A2/A3 を Open 化すると、契約ID・停止条件・Decision Queue運用の解釈が分岐する。
+
+### Decision
+
+- Freeze Pack `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
+- A2/A3の `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可する。
+- 変更禁止対象（契約ID/schemaVersion/overridePolicy/SSOT/stop条件）の変更要求は A1 へ差し戻す。
+
+### Consequences
+
+- 契約変更の窓口がA1へ一本化され、A2/A3の実装側での仕様分岐を抑止できる。
+- Pendingが残る間はOpen化できないため、短期スループットより監査性を優先する。
