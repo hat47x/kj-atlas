@@ -2294,8 +2294,13 @@ export default function App() {
   }, []);
 
   const handleRecordMergeSuggestionDecision = useCallback(
-    (groupId: string, decision: MergeSuggestionDecision) => {
+    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean }) => {
       if (!document) {
+        return;
+      }
+
+      if (!options.isTrusted) {
+        setMergeSuggestionError("Merge decision must be triggered by a trusted human interaction.");
         return;
       }
 
