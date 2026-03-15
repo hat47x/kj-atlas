@@ -241,6 +241,7 @@ issue補助メモには、最低でも次の項目を含める。
 - DOC-OPS-04統合境界: B/C/D作業中は統合ファイル3点（`issues/README.md` / `project-progress-dashboard.md` / `issue-DOC-OPS-04...md`）の同時更新を禁止し、必要時はB/C/Dを停止して統合フェーズ専用コミットへ切り出す。
 - DOC-OPS-04停止/再開条件: 停止= A不整合 / 統合ファイル更新必要 / SoD違反 / Self-Correction 3回超過。再開= A再承認+Deciders再確認完了 + 統合フェーズ修正完了 + 役割分離再検証ログ追記 + validator/unittest成功。
 - DOC-OPS-04次アクション: 後続改訂は ADR-0023/0024/0025 の境界を維持し、必要時のみ追加ADRを起票する。
+- Stream F Phase 1-5 同期（rerun-26）: Read同期（shared resource 3ファイル）→Plan（件数47 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（次回再開条件1行固定）を完了し、Active issue memos 6件・Source Issue運用（Open=N/A / Draft=TBD）・停止条件違反0件を維持。
 
 ## Active issue memos
 
