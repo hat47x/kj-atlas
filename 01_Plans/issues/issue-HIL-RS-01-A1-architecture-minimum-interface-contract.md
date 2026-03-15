@@ -68,14 +68,25 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Proceed:
   - Phase 4へ進行。
 
-### Phase 4: Handoff
+### Phase 4: Verify
 
 - Plan:
-  - A2/A3向けの固定値一覧・参照先一覧・禁止事項を発行する。
+  - AC/DoDへの自己検証を実施し、契約固定の完遂条件を確認する。
 - Execute:
-  - 引き渡し情報を本issueとArchitecture正本に同期。
+  - 契約ID・schemaVersion・禁止事項・SSOT・freeze flagを照合。
 - Verify:
-  - 「契約変更禁止。逸脱要求はA1へ差し戻し」を明記。
+  - 「契約変更禁止。逸脱要求はA1へ差し戻し」を維持し、未承認を確定扱いしないことを確認。
+- Proceed:
+  - Phase 5へ進行。
+
+### Phase 5: Handoff
+
+- Plan:
+  - A2開始条件（Ready/Block理由）を明文化して引き渡す。
+- Execute:
+  - Handoff packetへReady/Block判定、停止条件、再開条件を記録。
+- Verify:
+  - A2/A3は参照専用で、契約変更要求はA1差し戻し経路のみであることを確認。
 - Proceed:
   - Stream A作業完了（契約/I-F固定のみ）。
 
@@ -168,8 +179,9 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
 
 - 未決裁項目（Pending approvals）:
-  - なし（A1範囲で新規ADRは不要判定を維持）。
-  - ただし上位方針変更を伴う契約変更要求が発生した場合のみ、A1差し戻し + 人間承認完了まで停止。
+  - DQ-HIL-RS-01-A1-006: A2 mock fixture命名揺れの吸収方針（A2 kickoff reviewで承認待ち）。
+  - DQ-HIL-RS-01-A1-007: A3運用文書でのSSOT参照表記統一（A3 handoff reviewで承認待ち）。
+  - 上位方針変更を伴う契約変更要求が発生した場合は、A1差し戻し + 人間承認完了まで停止。
 
 
 ## 8) Decision Queue整理（Stream A 固定）
@@ -181,6 +193,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 | DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
+| DQ-HIL-RS-01-A1-006 | A2 mock fixture命名揺れの吸収方針 | Pending | A2でマッピング注記のみ許可（契約値は不変） | Architecture Owner | A2 kickoff reviewで承認 |
+| DQ-HIL-RS-01-A1-007 | A3運用文書への契約リンク表記統一 | Pending | SSOT単一参照を維持した表記に統一 | Documentation Owner | A3 handoff reviewで承認 |
 
 ## 9) Mock引き渡し仕様（A2/A3参照専用・実装禁止）
 
@@ -241,8 +255,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ## 12) Proceed verdict（Stream A）
 
-- A2: **Ready**（SSOT固定 + mock-ready契約固定）
-- A3: **Ready**（契約不変ルール + 非目標固定）
+- A2: **Conditional Ready**（SSOT固定 + mock-ready契約固定。DQ-HIL-RS-01-A1-006承認までOpen化保留）
+- A3: **Conditional Ready**（契約不変ルール + 非目標固定。DQ-HIL-RS-01-A1-007承認までOpen化保留）
 - Block条件再掲:
   - 未定義契約変更要求
   - SSOT複線化
@@ -250,11 +264,11 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ## 13) Proceed判定（Phase 5）
 
-- 判定: **可（A2/A3開始可）**
+- 判定: **条件付き可（A2/A3開始はPending承認完了後）**
 - 根拠:
   - Contract ID / `schemaVersion` / tie-break順序 / overridePolicy / errorCode列挙 の固定済み。
   - SSOT単一参照（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）を維持。
-  - Decision Queue未処理項目 0 件。
+  - 未承認事項はDecision Queueへ Pending で残置し、確定扱いしていない。
 - 残リスク:
   - A2/A3で fixture 名称差異が発生する可能性（契約値ではなく運用名の揺れ）。
   - 対策: fixture 名称差異は A1契約変更ではなく、A2/A3側のマッピング注記で吸収。

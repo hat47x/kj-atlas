@@ -58,3 +58,15 @@
 3. A1 issue Open
 4. A2/A3 issue Draft
 5. dashboard同期
+
+
+## 10) Stream A A1 gate（固定）
+
+- 依存順の強制: A1→A2→A3 を厳守し、A1完了前にA2/A3をOpen化しない。
+- A2開始条件（Ready）:
+  1. A1契約ID/`schemaVersion`/`overridePolicy`がSSOTと一致。
+  2. `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持。
+  3. Decision QueueのPending項目に対する承認記録が揃う。
+- Block理由:
+  - 未承認の契約変更要求を確定扱いした場合。
+  - SafeMode既定ONまたはshare/export漏えい防止後退が前提となる場合。
