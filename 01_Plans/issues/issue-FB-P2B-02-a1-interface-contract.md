@@ -7,7 +7,7 @@
 - Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
-- Related ADR/Spec: `ADR-0007`, `ADR-0001`
+- Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -29,20 +29,30 @@
 
 ## Context / Decision / Consequences
 
-- Context:
-  - `採用/部分採用/却下/後で` の意思決定を保存・再読込する契約が未固定だと監査可能性が崩れる。
-- Decision:
-  - 契約ID `CTR-2B-02-DECISION-LOG-V1` を固定し、A2/A3はこの契約IDのみ参照する。
-  - append/list/restore I/Fを固定し、自動確定は禁止する。
-- Consequences:
-  - A2はmock append/restore検証を即時開始できる。
-  - A3は契約変更不可で、逸脱時はA1差し戻しを必須化。
+### Context
+- `採用/部分採用/却下/後で` の意思決定を保存・再読込する契約が未固定だと、監査可能性とrestore再現性が崩れる。
+- append/list/restore の境界がA2/A3で揺れると、manual assisted mergeの人間判断ログを同一条件で比較できない。
+- `schemas.md` のスナップショット境界に合わせ、A1は docs-only で decision log 契約を凍結する。
 
-## 固定契約（A1成果物）
+### Decision
+- 契約ID `CTR-2B-02-DECISION-LOG-V1` をA1で凍結し、A2/A3は参照のみ許可する。
+- API署名は mock/stub で検証可能な `appendDecision(record)` / `listDecisionsByGroup(groupId)` / `restoreDecisionLog(snapshotVersion)` に固定する。
+- action enum は `accept | partial | reject | defer` の4値に限定し、自動確定や代表カード更新は契約外とする。
+
+### Consequences
+- A2は4値制約・順序保持・restore境界をfixtureで直ちに検証できる。
+- A3は永続化方式を実装しても契約変更できず、enum拡張や必須項目変更要求はA1差し戻しになる。
+- Gate未承認・契約矛盾・未定義競合が出た場合は強行せず停止できる。
+
+## 固定契約（A1成果物 / Contract Freeze）
 
 - ContractFreeze:
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
+  - `a2ReferenceOnly=true`
+  - `a3ReferenceOnly=true`
+
+### Domain types
 
 - `MergeDecisionRecord`:
   - `decisionId: string`
@@ -58,44 +68,86 @@
   - `listByGroup(groupId: string): MergeDecisionRecord[]`
   - `restore(snapshotVersion: string): MergeDecisionRecord[]`
 
+### Mock-ready API signature（A2/A3参照専用）
+
+- `AppendDecisionInput`:
+  - `record: MergeDecisionRecord`
+- `AppendDecisionOutput`:
+  - `accepted: true`
+- `RestoreDecisionInput`:
+  - `snapshotVersion: string`
+- `MockValidationSignature`:
+  - `appendDecision(input: AppendDecisionInput): AppendDecisionOutput`
+  - `listDecisionsByGroup(groupId: string): MergeDecisionRecord[]`
+  - `restoreDecisionLog(input: RestoreDecisionInput): MergeDecisionRecord[]`
+
+### Comparison keys / deterministic rules
+
+- Decision equality key: `decisionId`
+- Group boundary key: `groupId`
+- Restore boundary key: `snapshotVersion`
+- Ordered fields:
+  - append insertion order
+  - `selectedCardIds[]`
+- Out of scope:
+  - auto-merge execution
+  - representative overwrite
+  - persistence backend choice
+
+## 実装ハンドオフ定義（Template Freeze）
+
+### Input Contract
+- A2/A3は `CTR-2B-02-DECISION-LOG-V1` を唯一参照する。
+- `MergeDecisionRecord.action` は4値のみ受理する。
+- `decidedBy` は人間判断ログを表す値として記録し、自動処理主体を混在させない。
+
+### Expected Output
+- `appendDecision` は追記成功のみを返し、確定イベントを副作用として起こさない。
+- `restoreDecisionLog` は同一 `snapshotVersion` に対して同一順序・同一内容の `MergeDecisionRecord[]` を返す。
+- `listDecisionsByGroup` は `groupId` 境界を越えて混在させない。
+
+### Rollback Trigger
+- `action` enum の追加・改名要求が出た場合。
+- restore時の順序非決定や `snapshotVersion` 互換破壊が判明した場合。
+- appendと同時に自動確定を走らせる要求が出た場合。
+
 ## Phase 1-5（Stream E運用: Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read同期
-- Plan: A1/A2/A3の契約ID参照一致と編集境界を再確認する。
+- Plan: 3ファイルとA2/A3参照先を読み、Gate条件と契約順序を再確認する。
 - Execute:
   - Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
   - 判定: `A1 ContractID = A2 DependsOnContractID = A3 ReferenceContractID = CTR-2B-02-DECISION-LOG-V1`（Pass）
 - Verify: 依存矛盾なし、優先度はP0で一致。
 - Proceed: Phase 2へ進行。
 
-### Phase 2: P0 orchestrator方針更新
-- Plan: A1固定契約の再定義禁止とA1→A2→A3直列進行を明文化する。
+### Phase 2: A1契約凍結
+- Plan: Context / Decision / Consequences を固定し、A2/A3参照専用リンクを明文化する。
 - Execute:
   - 固定ルール: 契約本文改訂は禁止、逸脱要求はA1差戻し。
-  - 停止ルール: 依存矛盾・優先度矛盾・未定義競合検知時は即停止。
-- Verify: 方針はplanning範囲に閉じ、実装依存なし（Pass）。
+  - 参照リンク: `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
+- Verify: 契約本文と参照導線がA1に閉じている（Pass）。
 - Proceed: Phase 3へ進行。
 
-### Phase 3: P2B A1契約チェック
-- Plan: A2/A3に必要な最小契約点（ID/enum/I/F）を固定確認する。
+### Phase 3: Mock-ready化
+- Plan: API署名・型・比較キーをmockで検証可能に整備する。
 - Execute:
-  - `ContractID=CTR-2B-02-DECISION-LOG-V1`
-  - `action` は `accept|partial|reject|defer` の4値のみ
-  - `append/listByGroup/restore(snapshotVersion)` I/F固定
+  - `MockValidationSignature=appendDecision/listDecisionsByGroup/restoreDecisionLog`
+  - 比較キー: `decisionId` / `groupId` / `snapshotVersion` / ordered arrays
   - 非自動確定（human decision only）を維持
-- Verify: 契約固定点はA2/A3引き渡し要件を満たす（Pass）。
+- Verify: A2がfixture/stubのみで検証開始可能（Pass）。
 - Proceed: Phase 4へ進行。
 
-### Phase 4: モック活用前提の依存切り離し記述
-- Plan: A2 mock-validationが実コード非依存で成立する境界を定義する。
+### Phase 4: 実装ハンドオフ定義
+- Plan: Input Contract / Expected Output / Rollback Trigger をテンプレ化する。
 - Execute:
-  - 許可依存: 契約ID・enum制約・I/F署名・比較キー（`snapshotVersion`/順序）・fixture/stub。
-  - 禁止依存: `03_Implement/**` 実装詳細、共有統合ファイルの編集。
-- Verify: mock前提で検証が閉じることを確認（Pass）。
+  - handoff template を本メモ内に固定
+  - A3はテンプレ参照のみ許可
+- Verify: 実装レーンへ渡す最小境界が明文化済み（Pass）。
 - Proceed: Phase 5へ進行。
 
-### Phase 5: Verify（優先度・依存・競合記述の整合）
-- Plan: 本メモ内の優先度・依存順・競合停止条件を最終確認する。
+### Phase 5: Verify / Proceed
+- Plan: docs-check実施、3回までSelf-Correction、超過停止を確認する。
 - Execute:
   - Priority: P0（Pass）
   - Dependency: A1→A2→A3（Pass）
@@ -110,7 +162,8 @@
   - `issue-FB-P2B-02-a3-implementation.md`
 - 変更禁止項目:
   - `ContractID=CTR-2B-02-DECISION-LOG-V1`
-  - `MergeDecisionRecord` / `DecisionLogStoreContract` の定義
+  - `MergeDecisionRecord` / `DecisionLogStoreContract` / mock signature群
+  - 比較キー（`decisionId` / `groupId` / `snapshotVersion` / append order / `selectedCardIds[]`）
   - `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 逸脱要求はA1へ差し戻し。
 
@@ -128,7 +181,7 @@
 - Output:
   - `ok: validated <N> active issue memos`
 - Self-Correction:
-  - 3/3（本更新で上限内）
+  - 0/3（本更新時点。3回超過時は停止）
 
 ## Fail-safe
 
@@ -139,4 +192,4 @@
 3) 必要承認者
 4) 解決のYes/No質問
 
-- 依存矛盾・優先度矛盾・未定義競合を検知した場合は即停止し人間判断依頼。
+- Gate未承認、契約矛盾、未定義競合を検知した場合は即停止し人間判断依頼。
