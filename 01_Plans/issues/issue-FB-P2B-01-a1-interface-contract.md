@@ -7,7 +7,7 @@
 - Owner: Stream E
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
-- Related ADR/Spec: `ADR-0007`, `ADR-0001`
+- Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -35,21 +35,30 @@
 
 ## Context / Decision / Consequences
 
-- Context:
-  - `FB-P2B-01` のDoD（candidate group一覧 + 対象Card確認）を満たす前提として、候補データ契約の先行固定が必要。
-  - A2/A3で再定義が起きると、検証資産の互換性が崩れる。
-- Decision:
-  - 契約ID `CTR-2B-01-CANDIDATE-GROUP-V1` を固定し、A2/A3はこの契約IDのみ参照する。
-  - 自動確定ロジックは契約外（禁止）として扱う。
-- Consequences:
-  - A2はmock検証を即開始可能になる。
-  - A3は契約追従のみ許可され、追加フィールド要求はA1差し戻しを必須とする。
+### Context
+- `FB-P2B-01` のDoD（candidate group一覧 + 対象Card確認）を満たすには、候補データ契約をA1で単一正本化する必要がある。
+- A2/A3で groupキーや比較キーが揺れると、mock fixture・restore期待値・UI観測条件が同時に崩れる。
+- `02_Architecture/schemas.md` のID/配列/スナップショット志向に合わせ、A1は docs-only で境界型を固定する。
 
-## 固定契約（A1成果物）
+### Decision
+- 契約ID `CTR-2B-01-CANDIDATE-GROUP-V1` をA1で凍結し、A2/A3は参照のみ許可する。
+- 比較キーは `groupId` / `targetCardId` / `snapshotVersion` / `candidateCardIds[]` 順序に固定する。
+- API署名は mock/stub で検証可能な `loadCandidateGroups(input) -> CandidateListViewModel` の形で定義し、候補提示以外（merge自動確定・代表カード更新）は契約外とする。
+
+### Consequences
+- A2は fixtureベースで API署名・型・比較キーを検証できる。
+- A3は契約追従のみ許可され、追加フィールド・比較キー変更・確定ロジック追加要求はA1差し戻しになる。
+- Gate未承認・契約矛盾・未定義競合が発生した場合、推測実装に進まず停止できる。
+
+## 固定契約（A1成果物 / Contract Freeze）
 
 - ContractFreeze:
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
+  - `a2ReferenceOnly=true`
+  - `a3ReferenceOnly=true`
+
+### Domain types
 
 - `SimilarCandidateGroup`:
   - `groupId: string`
@@ -63,43 +72,83 @@
   - `groups: SimilarCandidateGroup[]`
   - `totalGroupCount: number`
 
+### Mock-ready API signature（A2/A3参照専用）
+
+- `CandidateQueryInput`:
+  - `targetCardIds?: string[]`
+  - `snapshotVersion: string`
+- `CandidateQueryOutput`:
+  - `viewModel: CandidateListViewModel`
+- `MockValidationSignature`:
+  - `loadCandidateGroups(input: CandidateQueryInput): CandidateQueryOutput`
+
+### Comparison keys / deterministic rules
+
+- Group equality key: `groupId`
+- Target equality key: `targetCardId`
+- Restore boundary key: `snapshotVersion`
+- Ordered fields:
+  - `candidateCardIds[]`
+  - `groups[]`
+- Out of scope:
+  - merge auto-commit
+  - representative card overwrite
+  - scoring algorithm specification
+
+## 実装ハンドオフ定義（Template Freeze）
+
+### Input Contract
+- A2/A3は `CTR-2B-01-CANDIDATE-GROUP-V1` を唯一参照する。
+- mock入力は `CandidateQueryInput.snapshotVersion` を必須とし、`targetCardIds` は optional filter として扱う。
+- fixtureは `CandidateListViewModel.totalGroupCount === groups.length` を満たす。
+
+### Expected Output
+- `loadCandidateGroups` は `CandidateQueryOutput.viewModel` を返し、`groups[]` の順序を保持する。
+- 同一 `snapshotVersion` では同一 `groupId` / `targetCardId` / `candidateCardIds[]` を再現できる。
+- 候補提示のみで merge state は確定しない。
+
+### Rollback Trigger
+- `ContractID` の変更要求が出た場合。
+- `candidateCardIds[]` または `groups[]` の順序非決定が判明した場合。
+- merge自動確定や代表カード更新を同一タスクへ混在させる要求が出た場合。
+
 ## Phase 1-5（Stream E運用: Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read同期
-- Plan: A1/A2/A3の契約ID参照一致と編集境界を再確認する。
+- Plan: 3ファイルとA2/A3参照先を読み、Gate条件と契約順序を再確認する。
 - Execute:
   - Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
   - 判定: `A1 ContractID = A2 DependsOnContractID = A3 ReferenceContractID = CTR-2B-01-CANDIDATE-GROUP-V1`（Pass）
 - Verify: 依存矛盾なし、優先度はP0で一致。
 - Proceed: Phase 2へ進行。
 
-### Phase 2: P0 orchestrator方針更新
-- Plan: A1固定契約の再定義禁止とA1→A2→A3直列進行を明文化する。
+### Phase 2: A1契約凍結
+- Plan: Context / Decision / Consequences を固定し、A2/A3参照専用リンクを明文化する。
 - Execute:
   - 固定ルール: 契約本文改訂は禁止、逸脱要求はA1差戻し。
-  - 停止ルール: 依存矛盾・優先度矛盾・未定義競合検知時は即停止。
-- Verify: 方針はplanning範囲に閉じ、実装依存なし（Pass）。
+  - 参照リンク: `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+- Verify: 契約本文と参照導線がA1に閉じている（Pass）。
 - Proceed: Phase 3へ進行。
 
-### Phase 3: P2B A1契約チェック
-- Plan: A2/A3に必要な最小契約点（ID/必須フィールド/非自動確定）を固定確認する。
+### Phase 3: Mock-ready化
+- Plan: API署名・型・比較キーをmockで検証可能に整備する。
 - Execute:
-  - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
-  - `SimilarCandidateGroup` / `CandidateListViewModel` 必須フィールド固定
+  - `MockValidationSignature=loadCandidateGroups(input: CandidateQueryInput): CandidateQueryOutput`
+  - 比較キー: `groupId` / `targetCardId` / `snapshotVersion` / ordered arrays
   - 非自動確定（候補提示のみ）を維持
-- Verify: 契約固定点はA2/A3引き渡し要件を満たす（Pass）。
+- Verify: A2がfixture/stubのみで検証開始可能（Pass）。
 - Proceed: Phase 4へ進行。
 
-### Phase 4: モック活用前提の依存切り離し記述
-- Plan: A2 mock-validationが実コード非依存で成立する境界を定義する。
+### Phase 4: 実装ハンドオフ定義
+- Plan: Input Contract / Expected Output / Rollback Trigger をテンプレ化する。
 - Execute:
-  - 許可依存: 契約ID・型・比較キー（`snapshotVersion`）・fixture/stub。
-  - 禁止依存: `03_Implement/**` 実装詳細、共有統合ファイルの編集。
-- Verify: mock前提で検証が閉じることを確認（Pass）。
+  - handoff template を本メモ内に固定
+  - A3はテンプレ参照のみ許可
+- Verify: 実装レーンへ渡す最小境界が明文化済み（Pass）。
 - Proceed: Phase 5へ進行。
 
-### Phase 5: Verify（優先度・依存・競合記述の整合）
-- Plan: 本メモ内の優先度・依存順・競合停止条件を最終確認する。
+### Phase 5: Verify / Proceed
+- Plan: docs-check実施、3回までSelf-Correction、超過停止を確認する。
 - Execute:
   - Priority: P0（Pass）
   - Dependency: A1→A2→A3（Pass）
@@ -114,7 +163,8 @@
   - `issue-FB-P2B-01-a3-implementation.md`
 - 変更禁止項目:
   - `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
-  - `SimilarCandidateGroup` / `CandidateListViewModel` のフィールド定義
+  - `SimilarCandidateGroup` / `CandidateListViewModel` / `CandidateQueryInput` / `CandidateQueryOutput`
+  - 比較キー（`groupId` / `targetCardId` / `snapshotVersion` / ordered arrays）
   - `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 逸脱要求はA1へ差し戻し。
 
@@ -132,7 +182,7 @@
 - Output:
   - `ok: validated <N> active issue memos`
 - Self-Correction:
-  - 3/3（本更新で上限内）
+  - 0/3（本更新時点。3回超過時は停止）
 
 ## Fail-safe
 
@@ -143,4 +193,4 @@
 3) 必要承認者
 4) 解決のYes/No質問
 
-- 依存矛盾・優先度矛盾・未定義競合を検知した場合は即停止し人間判断依頼。
+- Gate未承認、契約矛盾、未定義競合を検知した場合は即停止し人間判断依頼。
