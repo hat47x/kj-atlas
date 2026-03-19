@@ -339,7 +339,7 @@ Theme-ID: DQ-FB-P2C-01
 依存ID: FB-P2C-01-A1
 失敗時影響: A2/A3停止継続・実装遅延・判定ドリフト
 可逆性: Medium
-根拠参照: 00_Prompt/human_judgement_virtual_stakeholder_meta_prompt.md, 01_Plans/project-progress-dashboard.md, 01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md
+根拠参照: 00_Prompt/virtual_stakeholder_consensus.md, 01_Plans/project-progress-dashboard.md, 01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md
 ```
 
 ### 0. Preflight
@@ -351,7 +351,7 @@ Theme-ID: DQ-FB-P2C-01
 ### 1. 実行サマリ（目的 / 対象範囲 / 参照文書）
 - 目的: Gate 0承認Yesを反映し、`DQ-FB-P2C-01` の再開条件を監査可能な形で確定する。
 - 対象範囲: `01_Plans` の判断整理のみ（実装コード変更なし）。
-- 参照: `human_judgement_virtual_stakeholder_meta_prompt.md` / 本dashboard / `issue-FB-P2C-01-a1-interface-contract.md`。
+- 参照: `virtual_stakeholder_consensus.md` / 本dashboard / `issue-FB-P2C-01-a1-interface-contract.md`。
 
 ### 2. 仮想ステークホルダー会議ログ
 - Product/Value: 決定論維持を優先し、A2/A3の再開条件をGate 0承認記録へ集約。
@@ -429,13 +429,13 @@ Theme-ID: DQ-OPS-SOURCE-01
 依存ID: DQ-HIL-EXEC-01
 失敗時影響: 運用方針の記述ゆれにより再開時の判断がぶれる
 可逆性: Medium
-根拠参照: 00_Prompt/human_judgement_virtual_stakeholder_meta_prompt.md, 01_Plans/issues/README.md, 01_Plans/project-progress-dashboard.md
+根拠参照: 00_Prompt/virtual_stakeholder_consensus.md, 01_Plans/issues/README.md, 01_Plans/project-progress-dashboard.md
 ```
 
 ### 1. 実行サマリ（目的 / 対象範囲 / 参照文書）
 - 目的: `DQ-OPS-SOURCE-01` をGate判定し、AIで確定可能な項目を先行確定する。
 - 対象範囲: `01_Plans` の運用判断整理と承認キュー圧縮（コード変更なし）。
-- 参照: `human_judgement_virtual_stakeholder_meta_prompt.md` / `issues/README.md` / 本dashboard。
+- 参照: `virtual_stakeholder_consensus.md` / `issues/README.md` / 本dashboard。
 
 ### 2. 仮想ステークホルダー会議ログ
 - Product/Value: 個人OSS・閉域運用に合わせ、過度な承認運用を避けて判断負荷を最小化する。

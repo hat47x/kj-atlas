@@ -75,8 +75,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
-- `00_Prompt/strategic_phase_meta_prompt.md`：課題枯渇時に「現フェーズ完了 + 次フェーズ企画」を自走させるメタプロンプト。
-- `00_Prompt/human_judgement_virtual_stakeholder_meta_prompt.md`：人間判断待ち処理を仮想ステークホルダー会議へ移管し、最小人間承認で運用するためのメタプロンプト。
+- `00_Prompt/meta_prompt.md`：ショートハンド（フェーズ完了判定 / 次フェーズ企画 / 並列実行 / 開発継続）を展開する自律進行メタプロンプト。
+- `00_Prompt/virtual_stakeholder_consensus.md`：人間判断待ち論点を扱う仮想ステークホルダー会議プロトコル。
 - `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
 - `00_Prompt/skills/markdown-mermaid-docops/SKILL.md`：Markdown + Mermaid.js 文書整備とMCP確認の補助スキル（配布テンプレート）。
 
