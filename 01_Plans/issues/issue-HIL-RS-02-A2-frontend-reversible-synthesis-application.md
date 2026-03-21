@@ -1,7 +1,7 @@
 # Issue Draft: HIL-RS-02 A2 Frontend 可逆統合フロー適用
 
 - Type: Implementation
-- Status: In Progress
+- Status: Draft
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: TBD
 - Priority: P1
