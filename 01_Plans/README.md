@@ -80,3 +80,4 @@
 - `01_Plans/README.md` は導線のみを保持し、個別Issue運用ルールの本文は `01_Plans/issues/README.md` に集約する。
 - Active（Draft/Open/In Progress）のみ `01_Plans/issues/README.md` に掲載し、Done は削除（必要時のみ archive）する。
 - 運用ルールの詳細は `01_Plans/adr/ADR-0000-adr-governance.md` の「Issue補助メモのライフサイクル／配置・管理規約」を参照する。
+- 未処理ADR/issueの最小読取手順は `01_Plans/minimal-context-triage.md`、機械抽出は `python 01_Plans/triage_actionable_plans.py` を正本とする。

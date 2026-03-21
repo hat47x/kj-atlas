@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+"""Summarize actionable ADR and issue memo targets with minimal file reads."""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+ISSUE_STATUS_ACTIVE = {"Draft", "Open", "In Progress"}
+ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
+META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
+BACKTICK_RE = re.compile(r"`([^`]+)`")
+REL_PATH_RE = re.compile(r"`([^`]*issue-[^`]+\.md)`")
+ADR_REF_RE = re.compile(r"`(ADR-\d{4}[^`]*)`")
+SECTION_RE = re.compile(r"^##+\s+")
+DEPENDENCY_HEADING_RE = re.compile(r"^##+\s+(?:\d+\)\s*)?(?:依存関係|Dependencies)")
+
+
+@dataclass(frozen=True)
+class IssueMemo:
+    path: str
+    title: str
+    backlog_id: str
+    status: str
+    priority: str
+    owner: str
+    related_backlog: str
+    source_issue: str
+    related_refs: tuple[str, ...]
+    dependency_paths: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AdrRecord:
+    path: str
+    title: str
+    adr_id: str
+    status: str
+    source_issue: str
+    related_refs: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ActionableIssue:
+    backlog_id: str
+    path: str
+    status: str
+    priority: str
+    owner: str
+    ready: bool
+    blockers: tuple[str, ...] = field(default_factory=tuple)
+    depends_on: tuple[str, ...] = field(default_factory=tuple)
+    unlocks: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class ActionableAdr:
+    adr_id: str
+    path: str
+    status: str
+    source_issue: str
+    active_issue_refs: tuple[str, ...] = field(default_factory=tuple)
+
+
+def normalize_status(raw: str) -> str:
+    for prefix in ("Draft", "Open", "In Progress", "Done", "Blocked", "Ready", "Active"):
+        if raw == prefix or raw.startswith(prefix + " ") or raw.startswith(prefix + "("):
+            return prefix
+    return raw
+
+
+def read_header_lines(path: Path, limit: int = 120) -> list[str]:
+    lines: list[str] = []
+    with path.open(encoding="utf-8") as fh:
+        for _, line in zip(range(limit), fh):
+            lines.append(line.rstrip("\n"))
+    return lines
+
+
+def normalize_issue_ref(ref: str) -> str:
+    return ref.removeprefix("01_Plans/") if ref.startswith("01_Plans/") else f"issues/{ref}"
+
+
+def extract_dependency_paths(lines: list[str]) -> tuple[str, ...]:
+    in_dependencies = False
+    refs: list[str] = []
+    for line in lines:
+        if DEPENDENCY_HEADING_RE.match(line.strip()):
+            in_dependencies = True
+            continue
+        if in_dependencies and SECTION_RE.match(line.strip()):
+            break
+        if in_dependencies:
+            refs.extend(normalize_issue_ref(ref) for ref in REL_PATH_RE.findall(line))
+    return tuple(dict.fromkeys(refs))
+
+
+def parse_issue(path: Path) -> IssueMemo:
+    lines = read_header_lines(path)
+    title = lines[0].lstrip("# ").strip() if lines else path.stem
+    meta: dict[str, str] = {}
+    for line in lines[1:20]:
+        m = META_RE.match(line)
+        if m:
+            meta[m.group("key")] = m.group("value")
+    backlog_id = path.name.removeprefix("issue-").removesuffix(".md")
+    related_refs = tuple(dict.fromkeys(BACKTICK_RE.findall(meta.get("Related ADR/Spec", ""))))
+    dependency_paths = extract_dependency_paths(lines)
+    return IssueMemo(
+        path=str(path.relative_to(path.parents[1]).as_posix()),
+        title=title,
+        backlog_id=backlog_id,
+        status=normalize_status(meta.get("Status", "Unknown")),
+        priority=meta.get("Priority", "N/A"),
+        owner=meta.get("Owner", "N/A"),
+        related_backlog=meta.get("Related Backlog", "").strip("`"),
+        source_issue=meta.get("Source Issue", "N/A"),
+        related_refs=related_refs,
+        dependency_paths=dependency_paths,
+    )
+
+
+def parse_adr(path: Path) -> AdrRecord:
+    lines = read_header_lines(path, limit=40)
+    title = lines[0].lstrip("# ").strip() if lines else path.stem
+    meta: dict[str, str] = {}
+    for line in lines[1:10]:
+        m = META_RE.match(line)
+        if m:
+            meta[m.group("key")] = m.group("value")
+    adr_id_match = re.search(r"(ADR-\d{4})", title)
+    adr_id = adr_id_match.group(1) if adr_id_match else path.stem
+    refs = []
+    refs.extend(ADR_REF_RE.findall(meta.get("Related", "")))
+    source_issue = meta.get("Source Issue", "").strip("`")
+    if source_issue:
+        refs.extend(REL_PATH_RE.findall(f"`{source_issue}`"))
+    return AdrRecord(
+        path=str(path.relative_to(path.parents[1]).as_posix()),
+        title=title,
+        adr_id=adr_id,
+        status=normalize_status(meta.get("Status", "Unknown")),
+        source_issue=source_issue,
+        related_refs=tuple(dict.fromkeys(refs)),
+    )
+
+
+def build_actionable_issues(issues: list[IssueMemo]) -> list[ActionableIssue]:
+    issue_by_path = {issue.path: issue for issue in issues}
+    dependents: dict[str, list[str]] = {issue.path: [] for issue in issues}
+    for issue in issues:
+        for dep_path in issue.dependency_paths:
+            if dep_path in dependents and dep_path != issue.path:
+                dependents[dep_path].append(issue.path)
+
+    actionable: list[ActionableIssue] = []
+    for issue in issues:
+        if issue.status not in ISSUE_STATUS_ACTIVE:
+            continue
+        blockers: list[str] = []
+        for dep_path in issue.dependency_paths:
+            dep_issue = issue_by_path.get(dep_path)
+            if dep_issue and dep_issue.path != issue.path and dep_issue.status != "Done":
+                blockers.append(f"{dep_issue.backlog_id}:{dep_issue.status}")
+        ready = issue.status != "Draft" and not blockers
+        actionable.append(
+            ActionableIssue(
+                backlog_id=issue.backlog_id,
+                path=issue.path,
+                status=issue.status,
+                priority=issue.priority,
+                owner=issue.owner,
+                ready=ready,
+                blockers=tuple(blockers),
+                depends_on=issue.dependency_paths,
+                unlocks=tuple(sorted(dependents.get(issue.path, []))),
+            )
+        )
+    order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+    return sorted(actionable, key=lambda x: (not x.ready, order.get(x.priority, 9), x.path))
+
+
+def build_actionable_adrs(adrs: list[AdrRecord], issues: list[IssueMemo]) -> list[ActionableAdr]:
+    active_issue_paths = {issue.path for issue in issues if issue.status in ISSUE_STATUS_ACTIVE}
+    active_issue_names = {Path(path).name: path for path in active_issue_paths}
+    actionable: list[ActionableAdr] = []
+    for adr in adrs:
+        if adr.status not in ADR_ACTIONABLE_STATUSES:
+            continue
+        refs: list[str] = []
+        for ref in adr.related_refs:
+            ref_norm = normalize_issue_ref(ref) if "issue-" in ref else ref
+            ref_name = Path(ref_norm).name
+            if ref_norm in active_issue_paths:
+                refs.append(ref_norm)
+            elif ref_name in active_issue_names:
+                refs.append(active_issue_names[ref_name])
+        if refs:
+            actionable.append(
+                ActionableAdr(
+                    adr_id=adr.adr_id,
+                    path=adr.path,
+                    status=adr.status,
+                    source_issue=adr.source_issue,
+                    active_issue_refs=tuple(sorted(dict.fromkeys(refs))),
+                )
+            )
+    return sorted(actionable, key=lambda x: x.path)
+
+
+def collect(root: Path) -> dict[str, object]:
+    issue_files = sorted((root / "issues").glob("issue-*.md"))
+    adr_files = sorted((root / "adr").glob("ADR-*.md"))
+    issues = [parse_issue(path) for path in issue_files]
+    adrs = [parse_adr(path) for path in adr_files]
+    actionable_issues = build_actionable_issues(issues)
+    actionable_adrs = build_actionable_adrs(adrs, issues)
+    return {
+        "actionable_issues": [asdict(item) for item in actionable_issues],
+        "actionable_adrs": [asdict(item) for item in actionable_adrs],
+        "summary": {
+            "active_issue_count": len(actionable_issues),
+            "ready_issue_count": sum(1 for item in actionable_issues if item.ready),
+            "blocked_issue_count": sum(1 for item in actionable_issues if item.blockers or item.status == "Draft"),
+            "actionable_adr_count": len(actionable_adrs),
+        },
+    }
+
+
+def render_text(report: dict[str, object]) -> str:
+    lines: list[str] = []
+    summary = report["summary"]
+    lines.append("# Minimal Context Triage")
+    lines.append(
+        "summary: "
+        f"active_issues={summary['active_issue_count']}, "
+        f"ready={summary['ready_issue_count']}, "
+        f"blocked={summary['blocked_issue_count']}, "
+        f"actionable_adrs={summary['actionable_adr_count']}"
+    )
+    lines.append("")
+    lines.append("## Ready issues")
+    ready = [item for item in report["actionable_issues"] if item["ready"]]
+    if ready:
+        for item in ready:
+            lines.append(
+                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] owner={item['owner']} path={item['path']}"
+            )
+    else:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Parked or blocked issues")
+    blocked = [item for item in report["actionable_issues"] if not item["ready"]]
+    if blocked:
+        for item in blocked:
+            blocker_text = ", ".join(item["blockers"]) if item["blockers"] else "draft gate"
+            lines.append(
+                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] blockers={blocker_text} path={item['path']}"
+            )
+    else:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## ADRs linked to active work")
+    adrs = report["actionable_adrs"]
+    if adrs:
+        for item in adrs:
+            refs = ", ".join(item["active_issue_refs"])
+            lines.append(f"- {item['adr_id']} [{item['status']}] refs={refs} path={item['path']}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
+    parser.add_argument("--format", choices=("text", "json"), default="text")
+    args = parser.parse_args()
+    report = collect(args.root)
+    if args.format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(render_text(report))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
