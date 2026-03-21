@@ -76,8 +76,8 @@
 
 ## 7. Issue補助メモ運用（Action管理）
 
-- `01_Plans/issues/README.md` を issue補助メモ一覧と作業開始手順の正本とする。
-- `01_Plans/README.md` は導線のみを保持し、個別Issue運用ルールの本文は `01_Plans/issues/README.md` に集約する。
-- Active（Draft/Open/In Progress）のみ `01_Plans/issues/README.md` に掲載し、Done は削除（必要時のみ archive）する。
+- 作業開始時の一次導線は `01_Plans/minimal-context-triage.md` と `python 01_Plans/triage_actionable_plans.py` を正本とする。
+- `01_Plans/issues/README.md` は issue memo 運用ルールの参照先とし、一覧の再読を前提にしない。
+- 個別 issue memo は triage 出力、対象Backlog ID、または関連ADRから必要最小限だけ開く。
 - 運用ルールの詳細は `01_Plans/adr/ADR-0000-adr-governance.md` の「Issue補助メモのライフサイクル／配置・管理規約」を参照する。
-- 未処理ADR/issueの最小読取手順は `01_Plans/minimal-context-triage.md`、機械抽出は `python 01_Plans/triage_actionable_plans.py` を正本とする。
+- 対外文書の内部品質基準は `01_Plans/documentation_quality.md` を参照する。

@@ -69,7 +69,7 @@ DoD（本ADR完了条件）:
 判定規則:
 
 - docs-check が fail の場合は merge 不可（blocking）。
-- `04_Documentation/*.md` を公開対象として更新する場合は、docs-check に加えて `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たさない限り release 不可（blocking）とする。
+- `04_Documentation/*.md` を公開対象として更新する場合は、docs-check に加えて `01_Plans/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たさない限り release 不可（blocking）とする。
 - ただし例外承認の制度設計・責務分離そのものは ADR-D の対象であり、本ADRでは確定しない。
 
 #### Boundary-2: CI拡張（段階適用の審査対象）
@@ -109,7 +109,7 @@ DoD（本ADR完了条件）:
 ## Execute
 
 - 必須（Mandatory）/警告（Warning）/例外（Exception Boundary）を Boundary-1/2/3 として分離した。
-- ADR-0023のRBL基線を前提に、`04_Documentation/` 向け公開品質基準は別紙 `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）へ切り出した。
+- ADR-0023のRBL基線を前提に、`04_Documentation/` 向け公開品質基準は別紙 `01_Plans/documentation_quality.md` の Mandatory（QG-1〜QG-6）へ切り出した。
 - 統合ファイル3点を更新せず、ADR-0024単体で境界を確定した。
 
 ## Verify
@@ -123,7 +123,7 @@ I/F準拠・境界明確性・非目標明記を確認するため、以下を�
 3. 非目標明記:
    - readability本体 / 変更統治責務が本ADRの非目標に記載されていること。
 4. 公開文書境界:
-   - `04_Documentation/*.md` を公開対象にした場合、`documentation_quality.md` の Mandatory 参照が存在すること。
+   - `04_Documentation/*.md` を公開対象にした場合、`01_Plans/documentation_quality.md` の Mandatory 参照が存在すること。
 
 Self-Correction（最大3回）:
 
