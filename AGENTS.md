@@ -168,6 +168,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/security.md`：運用上のセキュリティ。
 - `04_Documentation/security_operational_guidelines.md`：セキュリティ運用ガイドライン（プロファイル選択時の判断補助）。
 - `04_Documentation/release.md`：リリース。
+- `04_Documentation/documentation_quality.md`：公開技術文書（Gist前提）の最低品質基準。
 - `04_Documentation/narratives.md`：文章化/要約出力。
 - `04_Documentation/canonicalization.md`：正規化/決定論。
 - `04_Documentation/local_llm_ops_guide.md`：ローカルLLM運用。

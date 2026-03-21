@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-03-09
 - Deciders: Project Maintainers
-- Scope: `01_Plans/adr/`
+- Scope: `01_Plans/adr/`, `04_Documentation/`
 
 ## Plan
 
@@ -28,6 +28,7 @@ DOC-OPS-04 の ADR候補C では、docs-check は運用されている一方で�
 また、Issue 側の暫定整理では次の前提が示されている。
 
 - `01_Plans` の Decision 文書（ADR / issue meta）および `project-progress-dashboard.md` 更新は docs-check 必須化候補。
+- `04_Documentation/` は対外公開するユーザ/開発者向け文書として Gist リリースされる前提が追加され、公開安全性・単体読解性・再現可能性の最低基準が必要になった。
 - link/metadata strict などの CI 拡張は ADR-C で境界判断する。
 - 境界が曖昧なままでは、軽微修正に過剰な待機コストが発生するか、逆に回帰検知が弱くなる。
 
@@ -63,10 +64,12 @@ DoD（本ADR完了条件）:
 - `01_Plans/adr/*.md`（ADR本文の更新/新規）
 - `01_Plans/issues/*.md`（issue meta を含む運用メモ）
 - `01_Plans/project-progress-dashboard.md`
+- `04_Documentation/*.md` のうち、Gist 等で対外公開するユーザ/開発者向け文書
 
 判定規則:
 
 - docs-check が fail の場合は merge 不可（blocking）。
+- `04_Documentation/*.md` を公開対象として更新する場合は、docs-check に加えて `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たさない限り release 不可（blocking）とする。
 - ただし例外承認の制度設計・責務分離そのものは ADR-D の対象であり、本ADRでは確定しない。
 
 #### Boundary-2: CI拡張（段階適用の審査対象）
@@ -75,6 +78,7 @@ DoD（本ADR完了条件）:
 
 - link check strict
 - metadata strict
+- prose lint / style lint / glossary drift のような文体・用語自動検証
 - その他 docs-check 以外の文書品質自動検証
 
 判定規則:
@@ -93,6 +97,7 @@ DoD（本ADR完了条件）:
 ### 期待される効果
 
 - docs-check の merge blocking 境界が先に固定され、最低限の回帰防止が可能になる。
+- `04_Documentation/` を公開Gistとして扱う場合の最低品質基準が固定され、公開事故（情報漏えい・単体読解不能・手順不備）を減らせる。
 - CI拡張を段階適用とすることで、軽微修正への過剰コストを抑制できる。
 - B（readability）/D（governance）との責務衝突を避け、ADR間の比較可能性を維持できる。
 
@@ -104,7 +109,7 @@ DoD（本ADR完了条件）:
 ## Execute
 
 - 必須（Mandatory）/警告（Warning）/例外（Exception Boundary）を Boundary-1/2/3 として分離した。
-- ADR-0023のRBL基線を前提に、可読性本文定義を本ADRの非目標へ維持した。
+- ADR-0023のRBL基線を前提に、`04_Documentation/` 向け公開品質基準は別紙 `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）へ切り出した。
 - 統合ファイル3点を更新せず、ADR-0024単体で境界を確定した。
 
 ## Verify
@@ -117,6 +122,8 @@ I/F準拠・境界明確性・非目標明記を確認するため、以下を�
    - Boundary-1（docs-check mandatory）と Boundary-2（CI拡張審査対象）が分離されていること。
 3. 非目標明記:
    - readability本体 / 変更統治責務が本ADRの非目標に記載されていること。
+4. 公開文書境界:
+   - `04_Documentation/*.md` を公開対象にした場合、`documentation_quality.md` の Mandatory 参照が存在すること。
 
 Self-Correction（最大3回）:
 
