@@ -13,6 +13,14 @@
 - `PATCH`:
   - 後方互換を保ったバグ修正・文言修正
 
+## 1.5 公開ドキュメントの位置づけ（04_Documentation / Gist）
+
+`04_Documentation/` は、対外的なユーザ/開発者向けの公開技術文書として Gist にリリースできる前提で扱います。
+
+- 内部計画メモや未承認方針は `04_Documentation/` の既定読者に含めません。
+- Gistへ公開する文書は、`04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たしてから出します。
+- 04の文書は「公開運用文書」であり、設計の正本を書き換える場所ではありません。必要な設計根拠は `01_Plans/` / `02_Architecture/` を参照します。
+
 ## 2. リリース前チェック
 
 タグ作成前に、最低限次のチェックを通してください。
@@ -20,6 +28,7 @@
 - Backend テストが成功すること
 - Frontend テストが成功すること
 - Frontend ビルドが成功すること
+- Gist公開対象の `04_Documentation/*.md` が `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たすこと
 
 実行例:
 
@@ -112,3 +121,16 @@ git push origin v0.1.1
 - 運用責務の境界:
   - 製品側: metadata 正規化・検証（import/export/validate）と既定値補完。
   - 運用側: `visibility` の意味づけ（公開ポリシー）を組織ルールへマッピングし、配布先アクセス制御（CDN/SSO/ネットワーク境界）を別途担保。
+
+## 10. 04_Documentation の Gist 公開チェック
+
+`04_Documentation/` を Gist へ切り出して公開する場合、タグリリースとは別に次を確認します。
+
+1. 公開対象ファイルを確定する。
+2. `04_Documentation/documentation_quality.md` の Mandatory（QG-1〜QG-6）を確認する。
+3. Markdown preview で表示崩れを確認する。
+4. 外部読者が読んでも成立するよう、Audience / Goal / Non-goal / Outcome が読めることを確認する。
+5. コマンド例がある場合は、前提条件・実行場所・期待結果が記載されていることを確認する。
+6. 公開判定の記録を PR本文、release note、または同等の監査可能な場所に残す。
+
+> QG未充足の文書は、Gist公開を見送り、修正後に再判定してください。
