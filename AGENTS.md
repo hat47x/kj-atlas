@@ -108,7 +108,9 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0023-ADR-0025*.md`：DOC-OPS-04の可読性/品質ゲート境界/変更統治の確定。
 - `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`：次フェーズ（HIL-RS-01）の計画ADR。
 - `01_Plans/issues/README.md`：Issue補助メモのActive一覧（Draft/Open/In Progress）。
+- `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/issues/*.md`：GitHub Issue運用を補助する短命メモ（Done時は原則削除）。
+- `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
 - `01_Plans/issues/TEMPLATE.md`：Issue補助メモの標準記述テンプレ（人間/生成AI共通）。
 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）

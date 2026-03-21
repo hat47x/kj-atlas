@@ -4,6 +4,7 @@
 Decisionは ADR、Action は issue memo で管理し、本ディレクトリは再開性の補助に限定する。
 
 > Performance note for AI agents: issue memo が増えても全件を都度読む必要はない。対象Backlog ID/関連ADR/作業スコープに一致するメモのみ参照する。
+> Minimal triage: `python 01_Plans/triage_actionable_plans.py` で Ready issue / 保留 issue / Active issue連動ADR を先に抽出し、その出力に出たファイルだけを読む。
 
 ## Scope
 
