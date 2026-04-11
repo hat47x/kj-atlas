@@ -100,6 +100,10 @@ type ReviewSignatureVerification = {
 
 > 契約値の変更要求（schemaVersion / required fields / overridePolicy）はA1 issueへ差し戻し、A2/A3で変更しない。
 
+- freeze宣言（固定）:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
 
 ### A1-ERROR-IF binding（review attribution関連）
 
@@ -107,6 +111,7 @@ review attribution の検証失敗時は次の error code を用いる。
 
 - `A1_SCHEMA_VERSION_MISMATCH`
 - `A1_REQUIRED_FIELD_MISSING`
+- `A1_TRACE_KEY_MISSING`
 - `A1_OVERRIDE_POLICY_VIOLATION`
 - `A1_PII_POLICY_VIOLATION`
 

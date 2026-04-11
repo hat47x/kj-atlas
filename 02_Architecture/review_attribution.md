@@ -102,6 +102,17 @@ kj-atlas は OSS として、多様な環境で利用される：
 
 - Freeze Pack参照（HIL-RS-02）: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`。A2/A3はread-only参照とし、契約変更要求はA1へ差し戻す。
 
+### A1-ERROR-IF alignment（固定）
+
+- error code は次の5件を固定する。
+  - `A1_SCHEMA_VERSION_MISMATCH`
+  - `A1_REQUIRED_FIELD_MISSING`
+  - `A1_TRACE_KEY_MISSING`
+  - `A1_OVERRIDE_POLICY_VIOLATION`
+  - `A1_PII_POLICY_VIOLATION`
+- `errorEnvelope.contractId` は `A1-ATTR-IF` を使用する。
+- A2/A3 での error code 追加・改名・削除は禁止し、変更要求はA1へ差し戻す。
+
 ### Concepts
 - **ReviewerRef**: 文字列ID（例: `user:local:4f9c...` / `user:sso:sub:...`）
 - **ReviewEvent**: いつ、何に対して、どんなレビューアクションが起きたか

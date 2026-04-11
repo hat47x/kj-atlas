@@ -272,3 +272,12 @@
 - Ready: 全条件が真。
 - Block: 1条件でも偽。
 - 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
+
+
+## 16) Completion snapshot (Stream A governance hardening)
+
+- Governance hardening verdict: `Done`。
+- Decision Queue unresolved count: `0`（`Pending` は0件）。
+- Fixed transition: `Pending -> Approved|Rejected` のみ。
+- Downstream gate: A2/A3 は `A1 Done & Pending=0` まで `Draft` 維持。
+- Fail-safe: Self-Correction 3回超過、前提崩壊、未定義競合のいずれかで即停止。
