@@ -20,7 +20,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `DOC-OPS-05 document classification queue`
+- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
 ## 1) 課題 / Problem statement
 

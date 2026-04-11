@@ -3,9 +3,11 @@
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部運用者（閉域/企業）
 > Goal: LLM provider切替と安全運用の公開ガイドを提供する。
+> Non-goal: 組織固有の承認系統・秘密情報・未公開運用メモの共有は行わない。
 > Public boundary: 機密運用情報は除外し、安全前提・監査項目のみ公開する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
-
+> Outcome: provider切替・safeMode境界・監査4点セットを公開runbookとして再現できる。
+> Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This operator guide explains how to run and switch LLM providers for kj-atlas across offline, intranet, and enterprise environments, including safety defaults, escalation controls, and minimal observability.
