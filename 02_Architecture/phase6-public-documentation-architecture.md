@@ -119,15 +119,15 @@ Gate運用は次の順序を固定し、逆順実行を禁止する。
 
 - `planning_queue` 実行結果が取得できない場合は、理由と代替確認（`rg`結果）を Validation evidence へ残す。
 
-## Stream E phase protocol（Gate C→D→E 運用整合）
+## Stream G phase protocol（Gate C→D→E 運用整合）
 
 運用整合タスクは次の5Phaseを固定し、各Phase開始時に対象3文書の再読で状態同期する。
 
-1. Phase 1 Read: 各Phase冒頭で `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
-2. Phase 2 ADR明文化（必要時のみ）: CDC差分がある場合のみ Gate C→D→E 固定で更新する。
-3. Phase 3 KPI定義固定: Gate D の4KPIと入力契約を固定する。
-4. Phase 4 検証計画（docs-check/unit境界）: `docs-check` を必須とし、`unit` は実装非変更時の非対象境界として扱う。
-5. Phase 5 Verify & Proceed: `docs-check` と `diff` の証跡を6項目形式で記録し、完了・未完了・残リスク・次アクションを記録する。
+1. Phase 1 Read（現行Gate定義再読）: 各Phase冒頭で `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
+2. Phase 2 CDC: CDC差分がある場合のみ Gate C→D→E 固定で更新する。
+3. Phase 3 Plan（AC/DoD不足補完合意）: Gate D の4KPIと入力契約、Gate E Proceed 条件の不足を補完して合意する。
+4. Phase 4 Execute（C→D→E順序, evidence 6項目固定）: Gate C→D→E を順序固定で実行し、証跡を `Date / Gate / Command / Result / Decision / Next action` 形式で記録する。
+5. Phase 5 Verify/Proceed（docs-check、3回自己修復上限、超過停止）: `docs-check` と `diff` を実施し、自己修復は最大3回までとし、超過時はFail-safe停止とする。
 
 失敗時は self-correction を最大3回まで許容し、以下に該当した場合はFail-safeで停止する。
 

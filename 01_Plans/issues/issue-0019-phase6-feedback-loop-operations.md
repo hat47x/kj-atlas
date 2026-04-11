@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream E
+- Owner: Stream G
 - Scope: `01_Plans/issues/` + `02_Architecture/phase6-public-documentation-architecture.md`
 - Related ADR/Spec: `ADR-0019`, `ADR-0024`, `phase6-public-documentation-architecture.md`
 - Expected verification level: `docs-check`
@@ -103,14 +103,13 @@
   - Decision: Proceed可
   - Next action: 運用契約の固定結果を引き渡す
 
-## 6.2 Phase execution contract（Stream E 固定）
+## 6.2 Phase execution contract（Stream G 固定）
 
-- Phase 1 Read: 各Phase冒頭で3ファイル（`issue-0019` / `issue-0020` / `phase6-public-documentation-architecture.md`）を再読して同期する。
-- Phase 2 ADR明文化（必要時のみ）: Context / Decision / Consequences の差分がある場合のみ、Gate C→D→E 固定で更新する。
-- Phase 3 KPI定義固定: Gate D 入力契約（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）を固定する。
-- Phase 4 検証計画（docs-check/unit境界）: `docs-check` を必須、`unit` は実装非変更のため非対象として境界を明記する。
-- Phase 5 Verify & Proceed: `docs-check` と `git diff` を実施し、証跡を6項目形式で残したうえで完了/未完了/残リスク/次アクションを記録して引き渡す。
-- self-correction: 検証失敗時は最大3回まで再試行し、3回超過時は Fail-safe で停止する。
+- Phase 1 Read（現行Gate定義再読）: 各Phase冒頭で3ファイル（`issue-0019` / `issue-0020` / `phase6-public-documentation-architecture.md`）を再読して同期する。
+- Phase 2 CDC: Context / Decision / Consequences の差分がある場合のみ、Gate C→D→E 固定で更新する。
+- Phase 3 Plan（AC/DoD不足補完合意）: Gate D 入力契約（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）と Gate E Proceed 条件の不足を補完して合意する。
+- Phase 4 Execute（C→D→E順序, evidence 6項目固定）: Gate C→D→E を順序固定で実行し、証跡を `Date / Gate / Command / Result / Decision / Next action` の6項目で記録する。
+- Phase 5 Verify/Proceed（docs-check、3回自己修復上限、超過停止）: `docs-check` と `git diff` を実施し、検証失敗時は自己修復を最大3回までとし、超過時は Fail-safe で停止する。
 
 ## 7) Fail-safe
 
