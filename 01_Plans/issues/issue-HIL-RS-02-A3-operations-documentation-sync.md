@@ -56,3 +56,19 @@
 2. 文書反映
 3. 相互リンク/用語/固定値の監査
 4. docs-check
+
+
+## 10) 実行ログ（Stream C 単独実行）
+
+### フェーズ進行
+1. Read: ADR-0027 / ADR-0019 / operations/security/e2e 現行文書を確認。
+2. Plan: D1〜D4固定値・状態遷移・責務分離・監査証跡の同期点を定義。
+3. Execute: operations/security/e2e に時系列Runbookと検証順序を追記。
+4. Verify(docs-check): issue memo validator + 用語/固定値の`rg`照合を実施。
+5. Report: 結果を記録し、不整合なしを確認。
+
+### 反映ポイント
+- ロールバック手順を時系列（Requested→Approved→ExceptionActive→RollbackPending→Closed）で明示。
+- `StoppedForClarification` の停止条件を運用・セキュリティで同一語彙に統一。
+- 2者承認責務（Security Officer / System Owner）と実行責務（Platform Operator）を明確化。
+- docs-check失敗時の自己修復上限を3回に固定。

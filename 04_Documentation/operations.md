@@ -339,6 +339,31 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
   - [ ] 監査記録が最小化契約（PII非保存・最小項目）を満たす。
   - [ ] `04_Documentation/security.md` の「8.1 strict mode例外時の安全性チェック」と整合している。
 
+### 3.5 strict mode例外の時系列Runbook（運用本手順）
+
+実運用では以下の順で実施し、各ステップの記録を残す。
+
+1. **申請作成（Requested）**
+   - Platform Operator が申請を起票し、理由・対象tenant・復旧予定時刻を記録。
+2. **一次承認（Security Officer）**
+   - D1の承認順序に従い、Security Officer が先行承認。
+3. **二次承認（System Owner）**
+   - 承認TTL=4h内に System Owner 承認を完了。未達時は申請失効。
+4. **適用（ExceptionActive）**
+   - Platform Operator が `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用し、開始時刻を監査記録へ追記。
+5. **監視（ExceptionActive中）**
+   - 15分/60分エスカレーション監視を有効化し、最大2hを超えないことを確認。
+6. **復旧開始（RollbackPending）**
+   - 2h到達または停止条件成立で `RollbackPending` へ遷移。
+7. **復旧完了（Closed）**
+   - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、検証結果を添えて `Closed` へ遷移。
+8. **事後監査（48h以内）**
+   - 変更台帳と監査IDの相互参照を完了し、48hレビューを実施。
+
+失敗系の扱い:
+- 不明点・固定値不一致・承認不備を検知した時点で `StoppedForClarification` を記録し、手順を中断する。
+- 中断後は推測で進めず、解消後に `Requested` から再開する。
+
 ### 4. SafeMode/read-only 優先
 
 - 判定順は常に `safeMode` → `readOnly` → adapter判定。
