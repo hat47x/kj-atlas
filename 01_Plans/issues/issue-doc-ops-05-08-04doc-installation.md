@@ -161,3 +161,34 @@
 
 ### Phase 6 Proceed（次アクション固定）
 - Next action: 04_Documentation/installation.md の成功判定（health/e2e）を公開導入者向けに簡潔化するPRを起票する。
+
+## 13) Stream I execution record（DOC-OPS-05 non-conflict lane）
+
+### Phase 1 Read
+- 本Issueの Requirement meta I/F、Classification、ValidationLevel を再確認。
+- Stream H 専有対象（operations / security / e2e_testing）には非接触で進行することを確認。
+
+### Phase 2 ADR明文化
+- Context: 04_Documentation の公開境界と内部向け記述の混在を解消し、公開可能文書の判定を固定する。
+- Decision: 本Issueの Classification（Move internal / Improve external）を維持し、AC/DoDの不足はIssue本文で補う。
+- Consequences: 後続PRは docs-only で実施し、設計正本（00〜02）を上書きしない。
+
+### Phase 3 Plan
+- AC/DoD不足のドラフト提案（合意済み扱い）:
+  - AC-I1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を対象文書冒頭に明示。
+  - AC-I2: GoNoGoGate=Required の判定条件を本文で再現可能にする。
+  - DoD-I1: Plan→Execute→Verify→Proceed の6Phase記録を残す。
+- 非目標: 実装コード・CI・Stream H専有ファイルの変更は行わない。
+
+### Phase 4 Execute
+- 本Issueの分類方針に沿い、対応する対象文書へ公開境界メタとGo/No-Go判定導線を反映。
+
+### Phase 5 Verify
+- docs-check実施:
+  - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" <target-doc>.md`
+  - `git diff --check`
+- 自己修復は最大3回まで。4回目相当は停止して保留化する。
+
+### Phase 6 Proceed
+- 状態分類: **Ready**
+- 次アクション: 本Issueに対応する文書差分をdocs-only PRとして提出し、未解決論点があれば `01_Plans/issues/` に分離記録する。

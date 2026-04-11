@@ -5,6 +5,9 @@
 > Goal: 公開設定ガイドとして最小安全設定と確認手順を提供する。
 > Public boundary: 内部の意思決定メモは含めず、実行可能手順と正本参照のみ公開する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Non-goal: 組織固有の内部承認メモや未公開ネットワーク情報の共有。
+> Outcome: 外部運用者が最小安全設定と確認手順を再現できる。
+> Related: `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/security.md`, `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
 
 
 

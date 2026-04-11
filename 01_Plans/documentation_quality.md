@@ -173,3 +173,36 @@ Gist リリース前に、少なくとも次を記録する。
 
 - 品質ゲート失敗時は **最大3回まで修復して再判定** する。
 - 3回を超える場合は作業を停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。
+
+## 12. DOC-OPS-05 Stream I 運用固定（non-conflict docs）
+
+Stream I では次の文書のみを対象とし、Stream H 専有（operations / security / e2e_testing）は編集しない。
+
+- `04_Documentation/canonicalization.md`
+- `04_Documentation/codex_skill_operations.md`
+- `04_Documentation/configuration.md`
+- `04_Documentation/diagnostics.md`
+- `04_Documentation/installation.md`
+- `04_Documentation/local_llm_ops_guide.md`
+- `04_Documentation/narratives.md`
+- `04_Documentation/release.md`
+- `04_Documentation/e2e_verification_log_2026-03-03.md`
+
+### Stream I Phase運用（固定順序）
+
+1. Phase 1 Read
+2. Phase 2 ADR明文化（Context / Decision / Consequences）
+3. Phase 3 Plan
+4. Phase 4 Execute
+5. Phase 5 Verify
+6. Phase 6 Proceed
+
+### AC/DoD不足時の扱い
+
+- AC/DoDに不足がある場合は、実編集前に「ドラフト提案」を issue 本文へ追記して合意扱いにする。
+- 合意前提が崩れた場合は Execute を止め、論点を `01_Plans/issues/` に分離する。
+
+### 自己修復上限
+
+- Verify失敗時の自己修復は最大3回まで。
+- 4回目相当は停止し、ブロッカーとして記録して Proceed を保留化する。
