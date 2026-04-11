@@ -71,6 +71,40 @@ This document specifies a deterministic Local-first escalation policy: system de
 - エスカレーションログは理由コードを保持し、本文は最小化またはハッシュ化する。
 - 送信経路・承認履歴・モデル識別子を監査可能にする。
 
+---
+
+## 6.5 CE2 低リスクAI支援 契約（Stream D 固定）
+
+CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し、直接適用を禁止する。  
+本節は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` の契約を architecture 観点で固定する。
+
+### CE2-D1: Proposal I/F 必須キー
+
+すべての提案出力に以下を必須とする。
+
+- `proposalId: string`
+- `diff: object`
+- `sourceBundleHash: string`
+- `status: proposed | accepted | rejected | held`
+- `reviewState: unreviewed | reviewed`
+
+### CE2-D2: 実行禁止事項（Fail-safe）
+
+以下を検知した場合、処理を継続せず停止する。
+
+1. auto-apply 経路（API/UI/worker）
+2. AI による review 自動昇格（`unreviewed -> reviewed`）
+3. safeMode 保護後退（未レビュー本文混入を含む）
+4. CE1最小I/Fモック契約との差異（`sourceBundleHash` 不整合など）
+
+停止時は `status=held` とし、手動レビュー待ちへ遷移させる。
+
+### CE2-D3: 依存切離し（CE1 モック契約）
+
+- CE2 は CE1 完了待ちを行わず、`ContextQuery + ContextBundle + bundleHash` をモック契約として参照する。
+- 実体CE1との差異が確定した時点で drift を記録し、CE2 の適用フローを停止する。
+- drift 解消後にのみ `held` から再開できる。
+
 
 ## 7. 設定キー整合
 

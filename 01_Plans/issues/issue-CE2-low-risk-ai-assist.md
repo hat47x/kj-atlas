@@ -14,17 +14,19 @@
 - RequirementID: `CE2-LOW-RISK-AI-ASSIST`
 - RequirementStatement: AI提案は全件 proposalId+diff を持つ patch として扱う。
 - PriorityClass: Must
-- AcceptanceScenario: 前提=CE1完了 / 操作=提案生成 / 期待結果=自動適用0件 / 除外=最終結論の自動生成
+- AcceptanceScenario: 前提=CE1最小I/F（ContextQuery + ContextBundle + bundleHash）をモック契約として利用 / 操作=提案生成 / 期待結果=自動適用0件 / 除外=最終結論の自動生成
 - GoNoGoGate: Required
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- DecisionQueueRef: N/A
+- DecisionQueueRef: `CE2-DRIFT-STOP`
 
 ## 1) Context
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
+- Stream D は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ## 2) Decision
 
@@ -43,9 +45,18 @@
 | `sourceBundleHash` | string | Yes | CE-1 bundleHashとの対応 |
 | `rationale` | string | Yes | 提案根拠 |
 | `status` | enum | Yes | `proposed/accepted/rejected/held` |
-| `reviewState` | enum | Yes | `unreviewed/reviewed` 表示専用 |
+| `reviewState` | enum | Yes | `unreviewed/reviewed` 表示専用（自動昇格禁止） |
 
-### 2.3 責務境界（Responsibility）
+### 2.3 固定値（CE2 Contract Freeze）
+
+- `proposalId`: 必須、proposal単位で不変
+- `diff`: 必須、apply差分でなく **比較差分** として保持
+- `sourceBundleHash`: 必須、CE1 ContextBundleと1対1対応
+- `status`: `proposed | accepted | rejected | held` 以外を禁止
+- `reviewState`: `unreviewed | reviewed` のみ。AIによる `reviewed` 付与禁止
+- Auto-apply: UI/API/worker の全経路で禁止
+
+### 2.4 責務境界（Responsibility）
 
 - CE-2は proposal 作成までを責務とし、apply は人手承認ゲートの外で実行しない。
 - `human_reviewed` 昇格は人手操作のみで、AIによる状態変更は禁止。
@@ -56,14 +67,16 @@
 - UI/APIともに auto-apply 経路を契約違反として扱い、検知時は即No-Go。
 - すべてのAI応答は patch/diff と監査ログで追跡可能でなければならない。
 - CE-3 の Patch Workspace は CE-2 proposal I/F を変更せず利用する。
+- review自動昇格・safeMode後退・直接適用経路を検知した場合はフェイルセーフ停止し、運用判断待ちとする。
 
 ## 4) 受入条件 / Acceptance criteria
 
-- [ ] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash`, `status` を持つ。
+- [ ] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState` を持つ。
 - [ ] auto-apply経路が0件（API/UIともに禁止）。
 - [ ] `human_reviewed` への自動昇格が0件。
 - [ ] 提案の採用/却下/保留が監査ログで追跡可能。
 - [ ] safeMode ONで未レビュー本文を含む提案が生成されない。
+- [ ] CE1モック契約との差異検知時に `status=held` で停止し、適用経路が進行しない。
 
 ## 5) タスク分解（文書限定）
 
@@ -75,7 +88,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "proposalId|sourceBundleHash|auto-apply|human_reviewed|safeMode|unreviewed" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation`
+  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_escalation_policy.md 04_Documentation/narratives.md 04_Documentation/security.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 提案I/Fと禁止事項が文書間で一致し、validatorが成功する。

@@ -26,6 +26,19 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - ローカルLLM / 社内LLM利用時のみ `KJ_ATLAS_LLM_PROVIDER=local` を設定します
 - 外部送信が必要な場合は、組織側のポリシーに従って明示的に判断してください
 
+### 3.1 CE2 低リスクAI支援のフェイルセーフ
+
+CE2（低リスクAI支援）を有効化する場合、以下を最低セキュリティ契約として固定する。
+
+1. AI出力は proposal としてのみ保持し、直接適用経路（auto-apply）を禁止する。
+2. proposal は `proposalId/diff/sourceBundleHash/status/reviewState` を必須とする。
+3. `reviewState` の `unreviewed -> reviewed` 昇格は人間の明示操作のみ許可する。
+4. safeMode ON時は未レビュー本文をAI入力へ混入させない。
+5. CE1最小I/Fモック契約との差異を検知した場合は `status=held` で停止し、指示待ちとする。
+
+> 停止トリガ（review自動昇格 / safeMode後退 / 直接適用経路）を検知した場合は、
+> セキュリティイベントとして扱い、適用を進めないこと。
+
 ## 4. 実施しやすい最小コントロール
 
 まずは以下の4点を推奨します。
