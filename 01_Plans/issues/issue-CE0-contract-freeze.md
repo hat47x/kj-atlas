@@ -30,6 +30,26 @@
 - CE3（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
 - Contract ID Matrix は本Issueを一次正本とし、`02_Architecture/architecture.md` と `02_Architecture/schemas.md` は責務境界の同期先として扱う。
 
+## 0.1) Phase 2 ADR明文化（不足分のみ追記）
+
+- ADR記述は Context / Decision / Consequences の不足分のみを補完し、既存合意を再定義しない。
+- CE1/CE2 が参照する語彙（`proposal-only`, `safeMode`, `human_reviewed`, `sourceBundleHash`）を CE0用語に接続する。
+
+## 0.2) Phase 3 Mock-first契約化（依存切断）
+
+- CE1/CE2/CE4 依存は mock I/F で切断し、CE0契約検証をブロックしない。
+- CE0は実装を伴わず契約固定に限定する。
+
+## 0.3) Phase 4 AC/DoD固定（drift-stop）
+
+- drift-stop 条件を固定する（契約ID衝突、語彙衝突、safeMode後退、auto-apply許容）。
+- Verify自己修復は最大3回。4回目失敗相当で即停止し、推測継続を禁止する。
+
+## 0.4) Phase 5 Verify（CE0/CE1/CE2整合）
+
+- CE0/CE1/CE2 の契約ID整合を検証し、衝突0件をProceed条件にする。
+- 契約語彙の差異（同義語ズレ含む）を0件にする。
+
 ## 1) Context
 
 - CE-1以降の実装で参照する契約が複数文書に散在しており、語彙ズレ（Core/Consensus、reviewed/unreviewed、safeMode）が発生しやすい。
@@ -104,6 +124,14 @@
 - [ ] CG-01〜05（Consensus/Working契約）が Architecture と Ops に反映される。
 - [ ] `safeMode` と `unreviewed` の後退表現が 0 件。
 - [ ] Go/NoGo判定を1行で実施できる（Yes/No）。
+- [ ] CE0/CE1/CE2 の Contract ID に重複・異義定義がない。
+
+## 4.1) DoD（Contract Freeze）
+
+- [ ] Phase 1〜5 の各段で `Plan -> Execute -> Verify -> Proceed` 記録が残る。
+- [ ] Verify自己修復は3回以内で完了し、超過時は停止記録が残る。
+- [ ] CE0 Contract ID Matrix が architecture/schemas/CE1/CE2 参照節と一致する。
+- [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
 ## 5) タスク分解（文書限定）
 
@@ -138,3 +166,5 @@
 - `CG-01..05`: Working/Projection/Consensus 分離、`patch + approval` 以外の適用禁止、監査4点セット必須。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
+
+追記フェイルセーフ: Self-Correction 3回超過 / Contract ID collision / scope逸脱要求で停止し、推測で継続しない。
