@@ -2,6 +2,42 @@
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
+
+## 0. 文書分類（DOC-OPS-05-11）
+
+- Classification: **Improve external**（対外文書として改善しつつ維持）
+- Audience: self-host 運用担当者 / PoC管理者 / 初見の技術検証担当
+- Goal: 最小運用の再現手順（更新・確認・安全運用）を単体読解できる形で提供する
+- Non-goal: 実装仕様の正本化、内部判断メモの公開、`03_Implement/*` の仕様変更
+- Outcome: 読者が「どの運用経路を選び、どこを確認すれば安全に運用継続できるか」を判断できる
+
+### 0.1 分類根拠（Audience / Goal / 公開境界）
+
+- Audience適合: 具体コマンドと確認観点を中心に記述しており、外部運用者向け runbook として成立する
+- Goal適合: Docker Compose / 代替運用 / 公開運用の境界が明示されており、再現可能性を満たす
+- 公開境界: 鍵・内部URL・個人情報の固定値を置かず、公開可能なサンプル値（`<doc_id>` 等）に限定している
+
+### 0.2 上流参照 / 下流適用
+
+- 上流参照（正本）:
+  - `02_Architecture/runtime_parameter_registry.md`（実行パラメータ）
+  - `04_Documentation/security.md`（セキュリティ運用詳細）
+  - `04_Documentation/e2e_testing.md`（E2E方針詳細）
+- 下流適用:
+  - 日常運用手順（バックアップ、更新、公開物配布、E2E確認）の実行runbook
+  - docs-only 変更時の確認観点（links / 用語 / 公開境界）
+
+### 0.3 Go/No-Go（docs-check）
+
+- Go（公開改善を継続可能）:
+  - Audience / Goal / Non-goal / Outcome が冒頭で判別可能
+  - 正本リンク（runtime parameter registry, security, e2e）が有効
+  - 実行手順がコピーペースト可能で、確認コマンドを含む
+- No-Go（差し戻し）:
+  - 内部限定情報（鍵、内部固有URL、未承認方針）が本文に混入
+  - 上流正本と矛盾する運用既定値を本書で独自確定
+  - 検証手順が欠落し、再現可能性が担保できない
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。
