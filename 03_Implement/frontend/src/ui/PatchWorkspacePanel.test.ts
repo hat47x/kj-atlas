@@ -26,4 +26,22 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain("Normalized query");
     expect(html).toContain("Recovery path:");
   });
+
+  it("disables preset and decision controls in read-only mode", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PatchWorkspacePanel, {
+        isReadOnly: true,
+        candidates: [{ id: "cand-1", label: "cand-1 (3 cards)" }],
+      })
+    );
+
+    expect(html).toContain('data-testid="ce3-adopt" disabled=""');
+    expect(html).toContain('data-testid="ce3-hold" disabled=""');
+    expect(html).toContain('data-testid="ce3-reject" disabled=""');
+    expect(html).toMatch(/data-testid="ce3-preset-name"[^>]*disabled=""/);
+    expect(html).toMatch(/data-testid="ce3-preset-scope"[^>]*disabled=""/);
+    expect(html).toMatch(/data-testid="ce3-preset-depth"[^>]*disabled=""/);
+    expect(html).toMatch(/data-testid="ce3-preset-filters"[^>]*disabled=""/);
+    expect(html).toContain('data-testid="ce3-run-inline-preset" disabled=""');
+  });
 });
