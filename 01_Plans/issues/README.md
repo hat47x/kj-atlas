@@ -262,10 +262,10 @@ issue補助メモには、最低でも次の項目を含める。
 - 共有リソースの更新は Stream D 統合フェーズに集約し、単一コミットで Active表・決定ログ・次アクション・件数集計を同期する。
 - 2026-03-11時点で Stream A/B/C の完了報告を受領済みとし、Stream D が共有リソース同期の最終更新を実施する。
 
-### Stream F 統合スナップショット（2026-03-14 JST, rerun-17）
+### Stream F 統合スナップショット（2026-04-11 JST, rerun-27）
 
-- 件数: issue memo 全量監査=43（Open=8 / In Progress=1 / Blocked=2 / Draft=7 / Done系=25）、運用上の集約表示=27（Active=2 / Done=25）。
-- Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`（いずれも Open / Source Issue=N/A）。
+- 件数: issue memo 全量監査=47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25）、運用上の集約表示=31（Active=6 / Done=25）。
+- Active一覧: `HIL-RS-01`, `HIL-RS-01-A1`, `HIL-RS-02`, `HIL-RS-02-A1`（Open / Source Issue=N/A）および `HIL-RS-02-A2`, `HIL-RS-02-A3`（Draft / Source Issue=TBD）。
 - 依存順序: **A1 → A2 → A3** を固定（A1完了報告前はA2/A3着手禁止）。
 - Decision Queue: `DQ-HIL-EXEC-01` は Ready、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open（Ready=1 / Open=2）。
 - 決定済み項目の扱い: `DQ-HIL-A1-01` / `DQ-HIL-A1-02` は `project-progress-dashboard.md` の決定ログ（`DR-HIL-A1-01` / `DR-HIL-A1-02`）へ集約し、Queueから除外済み。
