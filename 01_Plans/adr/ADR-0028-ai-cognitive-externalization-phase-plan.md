@@ -49,6 +49,15 @@
   - `02_Architecture` への契約追記（API/IR/review attribution/safeMode境界）
   - Contract IDs を issue で凍結
 
+##### CE-0 Contract Matrix（固定契約）
+
+| Contract ID | Responsibility | Input | Output | Prohibitions |
+| --- | --- | --- | --- | --- |
+| `CE0-CTX-IF` | ContextQuery/ContextBundleの最小I/F固定 | `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode` | deterministic `bundleHash` を持つ ContextBundle | Query Previewバイパス、非決定論bundle |
+| `CE0-SAFEMODE-IF` | safeMode既定ONと未レビュー保護を固定 | `safeMode=true` 時のreview state情報 | `allowUnreviewedText=false` を既定適用 | 未レビュー本文のAI入力混入、保護緩和 |
+| `CE0-REVIEW-IF` | review状態遷移の責務境界を固定 | `human_reviewed`/`unreviewed` state | 人手操作でのみ `human_reviewed` 昇格 | AIによるreview自動昇格 |
+| `CG-01..05` | Working / Projection / Consensus責務固定 | KJ構造 + query constraints + actor/modelTier | proposal-only運用（patch+approval経由） | Consensus直接更新、監査欠損成功扱い |
+
 #### CE-1: Context Query / Bundle 基盤
 
 目的: AI問い合わせを自然言語任せにせず、構造化コンテキストへ固定する。
@@ -142,6 +151,7 @@
 **CE-0 Done条件**
 - Contract IDs が1箇所に集約され、重複定義0件。
 - `safeMode` と `unreviewed` の後退表現が0件。
+- 影響範囲（In Scope）と非対象（Out of Scope）が issue/ADR/Architecture で一致している。
 
 #### CE-1 ブレークダウン
 
@@ -321,6 +331,16 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - `CG-03`: autonomous mode でも safeMode/監査契約を緩和しない。
 - `CG-04`: actor と modelTier を分離して記録する。
 - `CG-05`: 構造化コンテキストはKJ法構造との互換を維持する。
+
+#### D11-6. CE0影響範囲 / 非対象範囲
+
+- 影響範囲（In Scope）:
+  - 契約語彙（Working/Projection/Consensus, reviewed/unreviewed, safeMode）
+  - Contract IDとGo/NoGo Gateの固定
+  - CE-1以降で参照する最小I/F境界
+- 非対象範囲（Out of Scope）:
+  - CE-1以降の実装詳細（API payload詳細、UI配置、CLI UX、RBAC実装）
+  - モデル選定/価格戦略の最終確定（`modelTier` は分離記録のみ凍結）
 
 ## Consequences
 
