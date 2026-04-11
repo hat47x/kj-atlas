@@ -170,6 +170,51 @@ Phase 1〜6 fixed policy:
 - `previewConfirmed` 必須ゲートが破られる実装差分を検知した場合は No-Go。
 - Verify の自己修復が3回を超えた場合は即停止（自動再試行を継続しない）。
 
+### 2.9 CE4 API/CLI/GUI 同値性・監査契約（CE4-API-CLI-AUDIT）
+
+CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フェーズであり、実装方式やUI差分よりも監査可能性を優先する。
+
+#### 2.9.1 logical operation 同値性（固定）
+
+- 対象 operation: `context-query` / `context-bundle` / `proposal-diff` / `apply --dry-run`
+- 同値性判定は `equivalenceKey == same` かつ `bundleHash == same` の AND 条件で固定する。
+- GUI は独自 operation を定義せず、上記 operation を API/CLI と同一語彙で呼び出す。
+
+`equivalenceKey` 定義（normative）:
+1. `ContextQuery` を canonical JSON 化（キー辞書順、UTF-8、余分な空白なし、非決定論フィールド除外）。
+2. `equivalenceKey = sha256(canonical_query_json)` を16進小文字で生成。
+3. API/CLI/GUI は同一 query 入力時に同一 `equivalenceKey` を返す。
+
+#### 2.9.2 監査4点セット（必須イベント）
+
+同一 `equivalenceKey` について、次の4イベントを全て記録しない限り成功扱いにしてはならない（fail-closed）。
+
+| eventType | Required keys |
+| --- | --- |
+| `query` | `queryId`, `timestamp`, `actor`, `safeMode`, `equivalenceKey` |
+| `bundle` | `queryId`, `bundleHash`, `excludedReason[]`, `equivalenceKey` |
+| `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
+| `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
+
+追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
+
+#### 2.9.3 dry-run 副作用境界（固定）
+
+- `dryRun=true` の場合、`sideEffect` は常に `"none"`。
+- `dryRun=true` で禁止される副作用:
+  - DB永続化
+  - 外部送信（監査転送を除く。監査転送は fail-open dispatcher 方針）
+  - review state の昇格（`unreviewed -> reviewed`）
+- 上記を満たさない場合は契約違反として失敗扱い（fail-closed）。
+
+#### 2.9.4 `sourceBundleHash` の受理境界（依存切離し）
+
+- `proposal.sourceBundleHash` は次の両形式を受理する。
+  - 本番 hash（`[0-9a-f]{64}`）
+  - モック hash（`mock:[0-9a-f]{64}`）
+- 形式差により同値性判定・監査手順を分岐させてはならない。
+- CE3未完了時も `mock:<hash>` により CE4 の契約検証を継続可能とする。
+
 ### 2.7 Polygon Handoff Contract Verify（FB-P0-2A2B2C）
 
 Polygon auto-fit の backend接続準備として、A2比較キーの最小契約を検証する。

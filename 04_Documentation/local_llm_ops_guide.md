@@ -105,6 +105,7 @@ Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/
 
 - CE3完了待ちはしない。
 - `sourceBundleHash` は `mock:<hash>` を許容し、監査導線と同値性導線の検証を継続する。
+- 同値性判定は常に `equivalenceKey + bundleHash` の AND 条件で行う（値種別による例外なし）。
 
 ### 4.2 API/CLIの共通監査項目
 
@@ -134,7 +135,14 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 4. API/CLI両方で `apply --dry-run` を実行し、`dryRun=true` かつ `sideEffect=none` を確認する。
 5. 監査ログで `query/bundle/proposal/apply` の4イベントが揃っていることを確認する。
 
-### 4.4 監査欠落の検知・通知
+### 4.4 契約整合チェック（`mock:<hash>` / 本番hash）
+
+1. `sourceBundleHash=mock:<hash>` で 4.3 を実施し、同値性判定と監査4点セットが成立することを確認する。
+2. `sourceBundleHash=<prod_sha256>`（64桁hex）で 4.3 を実施し、同一の判定条件で成立することを確認する。
+3. 1 と 2 で監査キー集合（`equivalenceKey`, `bundleHash`, `dryRun`, `sideEffect`, `sourceBundleHash`, `channel`）に差がないことを確認する。
+4. 差がある場合は契約ドリフトとして CE4 作業を停止し、共通契約へ修正を戻す。
+
+### 4.5 監査欠落の検知・通知
 
 欠落判定は「同一 `equivalenceKey` で `query/bundle/proposal/apply` が揃っているか」で行う。
 
@@ -145,12 +153,13 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 - 判定原則: ログ欠損を成功扱いしない（fail-closed）。
 - 判定原則: `dryRun=true` で `sideEffect=none` を満たさない場合も成功扱いしない（fail-closed）。
 
-### 4.5 Verify → Proceed（3回自己修復上限）
+### 4.6 Verify → Proceed（3回自己修復上限）
 
 - Verify で不整合を検出した場合、自己修復（再実行/設定補正/キー補完）は最大3回まで。
 - 3回で解消しない場合は Proceed を停止し、論点を保留化する。
+- 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
 
-### 4.6 フェイルセーフ停止条件
+### 4.7 フェイルセーフ停止条件
 
 以下を検知した場合、CE4運用を停止する。
 
