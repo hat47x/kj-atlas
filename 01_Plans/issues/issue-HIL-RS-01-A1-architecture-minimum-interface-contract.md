@@ -109,6 +109,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Single Reference（固定）:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Fixed Values（固定）:
+  - `freezeContractId=HIL-RS-01-A1-CONTRACT-FREEZE-v1`
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
@@ -163,6 +164,29 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Gate判定:
   - Ready: チェックリストが全て満たされ、未定義契約変更要求が0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
+
+### 6.1 Gate rule（機械判定可能）
+
+- 入力:
+  - `freezeContractId`
+  - `schemaVersion`
+  - `contractLinkLocked`
+  - `sharedResourceFreeze`
+  - `pendingDecisionQueueCount`
+  - `hasUndefinedContractChangeRequest`
+  - `hasSafeModeRegressionRequest`
+  - `hasShareExportLeakageRelaxationRequest`
+- 判定式:
+  - Ready iff
+    - `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+    - `schemaVersion=="1.0.0"`
+    - `contractLinkLocked==true`
+    - `sharedResourceFreeze==true`
+    - `pendingDecisionQueueCount==0`
+    - `hasUndefinedContractChangeRequest==false`
+    - `hasSafeModeRegressionRequest==false`
+    - `hasShareExportLeakageRelaxationRequest==false`
+  - Block: 上記のいずれかが不一致。
 
 ## 7) Phase 5 Gate report（1-page）
 
@@ -289,7 +313,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ### 固定I/F一覧（immutable）
 
-- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Freeze Pack: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
 - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
 - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
 - `overridePolicy=human_dual_control_only`

@@ -24,8 +24,19 @@
 ## 3) 解決方針 / Proposed solution
 
 - A1で契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）と単一参照先（Single Source of Truth）を固定する。
+- Freeze Contract ID は `HIL-RS-01-A1-CONTRACT-FREEZE-v1` として固定し、A2/A3はread-onlyで参照する。
 - A2/A3は参照専用で着手し、契約変更要求はA1へ差し戻す。
 - 共有リソース（`issues/README.md` / `project-progress-dashboard.md`）更新は統合フェーズへ分離する。
+
+## 3.1 変更理由・影響範囲・非対応範囲（固定）
+
+- 変更理由:
+  - 契約参照先と契約識別子の分岐を防ぎ、A2/A3での仕様ドリフトを抑止するため。
+- 影響範囲:
+  - A1契約文書、A1/A2/A3起票文書、レビュー帰属設計文書の参照ルール。
+- 非対応範囲:
+  - `03_Implement/**` のコード実装変更。
+  - 既存ADRの上位方針変更。
 
 ## 4) 受入条件 / Acceptance criteria
 
@@ -133,6 +144,8 @@
 - Freeze flags:
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
+- Freeze Contract ID:
+  - `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
 - 固定値:
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
@@ -171,6 +184,19 @@
 - Gate判定:
   - Ready: チェックリスト全項目達成かつ未定義契約変更要求0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
+
+### 9.1 Gate rule（機械判定可能）
+
+- Ready iff:
+  - `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+  - `schemaVersion=="1.0.0"`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+  - `pendingDecisionQueueCount==0`
+  - `hasUndefinedContractChangeRequest==false`
+  - `hasSafeModeRegressionRequest==false`
+  - `hasShareExportLeakageRelaxationRequest==false`
+- 1項目でも不一致なら `Block`。
 
 ## 10) Phase 5 Gate report（1-page）
 
@@ -239,7 +265,7 @@
 ## 15) Stream A handoff（凍結I/F・差し戻し条件・未確定事項）
 
 - 固定I/F一覧:
-  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - Freeze Pack: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
   - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
   - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
   - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
