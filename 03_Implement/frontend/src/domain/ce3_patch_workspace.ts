@@ -61,9 +61,10 @@ export function normalizeFilters(value: string): string[] {
 }
 
 export function normalizePresetQuery(preset: Pick<QueryPreset, "scope" | "depth" | "filters">): string {
+  const normalizedDepth = Number.isFinite(preset.depth) ? Math.max(1, Math.floor(preset.depth)) : 1;
   return JSON.stringify({
     scope: preset.scope,
-    depth: Math.max(1, Math.floor(preset.depth)),
+    depth: normalizedDepth,
     filters: [...preset.filters].sort((left, right) => left.localeCompare(right)),
   });
 }
