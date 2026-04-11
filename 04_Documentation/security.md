@@ -305,6 +305,21 @@ for event in hr_events:
 - [ ] 記録に `roles/groups/policyRef` 生値・subject生値・本文等のPIIが含まれていない（下記 8.2 の禁止項目準拠）。
 - [ ] D1〜D4 固定値から逸脱する項目がある場合、**TODO化せず「確認待ちで停止」**として扱っている。
 
+### 8.1.1 strict mode例外の時系列セキュリティ確認
+
+運用時は `operations.md` 3.5 の時系列Runbookに追従し、セキュリティ確認を次の順で実施する。
+
+1. Requested: 申請IDを発行し、対象tenant・理由・復旧条件を記録。
+2. Approved: Security Officer → System Owner の順で承認し、TTL=4h内に完了。
+3. ExceptionActive: PII非保存・SafeMode境界維持・代理承認なしを確認しながら運用。
+4. RollbackPending: 最大2h到達または停止条件成立で即時復旧を開始。
+5. Closed: strict復帰検証を記録し、48h以内の事後レビュー計画を確定。
+6. StoppedForClarification: 1項目でも未確定があれば停止し、回答確定まで切替禁止。
+
+監査証跡の責務分離:
+- Security Officer / System Owner は承認判断と妥当性確認を担当。
+- Platform Operator は承認済み内容のみを実行し、変更台帳・監査IDの相互参照を記録。
+
 ### 8.2 監査最小化・PII最小化ルール（strict mode例外ログ）
 
 strict mode例外ログは、以下の5項目のみを最低監査項目として保存する。

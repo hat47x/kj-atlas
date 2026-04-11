@@ -498,6 +498,21 @@ A1差し戻し対象（検知時に停止）:
 - `traceKey` 必須条件の欠落
 - PII-like field拒否または人間レビュー帰属必須の破れ
 
+### 11.1.1 A3 docs-check の時系列実行手順
+
+A3の検証は以下の固定順序で実施する（Plan → Execute → Verify → Proceed）。
+
+1. Plan: `operations.md` / `security.md` / `e2e_testing.md` のD1〜D4固定値と状態語彙を棚卸し。
+2. Execute: 文書差分を反映（ロールバック条件・2者承認・監査最小項目）。
+3. Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py` を実行。
+4. Verify-2: `rg -n "StoppedForClarification|RollbackPending|Closed|Security Officer|System Owner|Platform Operator"` で用語一致を検証。
+5. Verify-3: `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m"` で固定値一致を検証。
+6. Proceed: 全検証成功時のみ `provisional_reapplied` として継続。
+
+自己修復ルール（上限3回）:
+- docs-check失敗時は、原因を1点ずつ修正して再実行する。
+- 3回失敗した場合は `rollback_pending` を記録し、A3同期を停止する。
+
 ### 11.2 ロールバック検証（A3運用）
 
 docs-checkで次のいずれかを検知した場合、A3同期は失敗として扱う。
