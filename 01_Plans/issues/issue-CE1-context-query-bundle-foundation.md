@@ -19,7 +19,14 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
+
+## 0) Phase 1 Read（I/F抽出 + mock許容）
+
+- CE1必須I/F: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`。
+- 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
+- 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
 ## 1) Context
 
@@ -78,6 +85,8 @@
 2. 配列順序を固定（`selected=id asc`, `relations=(type,from,to) asc`, `evidence=cardId asc`, `contradictions=(weight desc,id asc)`）。
 3. キー順序を UTF-8 バイト列の辞書順で整列した canonical JSON を生成。
 4. `sha256(canonical_json)` を16進小文字で出力し `bundleHash` とする。
+5. canonicalization の入力は `ContextQuery` も同一規則（キー辞書順・列挙値正規化・数値表記正規化）を適用し、`queryCanonicalHash` を計算する。
+6. 同値性判定は `queryCanonicalHash` と `bundleHash` の両方一致を必須条件とする。
 
 判定式: `sameQuery = canonical(ContextQueryA) == canonical(ContextQueryB)` かつ `sameBundle = bundleHashA == bundleHashB`。
 `sameQuery && !sameBundle` は CE-1 Fail として機械判定する。
@@ -129,3 +138,12 @@
 - Query Preview DoD: `previewConfirmed=false` のAPI呼び出しは常に `422 preview_required`。
 - safeMode除外 DoD: `safeModePolicy=strict` かつ `reviewFilter=reviewedOnly` で `excludedReason` に `unreviewed_filtered` を必須出力。
 - Mock分離 DoD: frontend は mock `/context/query` `/context/bundle` で動作し、backend 実装有無で型契約が変化しない。
+
+
+## 9) Phase 6 Proceed（CE3向け参照専用I/F）
+
+- CE3は `sourceBundleHash === bundleHash` を apply 前提として強制する。
+- `previewConfirmed=false` は常に拒否（`422 preview_required`）とする。
+- `safeModePolicy=strict` + `reviewFilter=reviewedOnly` の除外理由を監査に残す。
+
+フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
