@@ -86,6 +86,9 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
   };
 
   const handleRollback = () => {
+    if (isReadOnly) {
+      return;
+    }
     setWorkspaceState((previous) => rollbackWorkspaceDecision(previous));
   };
 
@@ -115,6 +118,9 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
   };
 
   const runPreset = (preset: Pick<QueryPreset, "scope" | "depth" | "filters">) => {
+    if (isReadOnly) {
+      return;
+    }
     setWorkspaceState((previous) => replayPreset(previous, preset, candidates.length > 0));
   };
 
@@ -158,25 +164,26 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
 
       <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Query preset</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto", gap: 6, marginBottom: 8 }}>
-        <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder="Preset name" />
-        <select data-testid="ce3-preset-scope" value={scope} onChange={(event) => setScope(event.target.value as QueryScope)}>
+        <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder="Preset name" disabled={isReadOnly} />
+        <select data-testid="ce3-preset-scope" value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>
           <option value="all">all</option>
           <option value="selection">selection</option>
           <option value="island">island</option>
         </select>
-        <input data-testid="ce3-preset-depth" type="number" min={1} value={depth} onChange={(event) => setDepth(Number(event.target.value))} />
+        <input data-testid="ce3-preset-depth" type="number" min={1} value={depth} onChange={(event) => setDepth(Number(event.target.value))} disabled={isReadOnly} />
         <input
           data-testid="ce3-preset-filters"
           value={filtersInput}
           onChange={(event) => setFiltersInput(event.target.value)}
           placeholder="filters (comma separated)"
+          disabled={isReadOnly}
         />
         <button type="button" data-testid="ce3-save-preset" disabled={isReadOnly} onClick={handleSavePreset}>Save preset</button>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
         {presets.length === 0 ? <span style={{ fontSize: 12, color: "#64748b" }}>No saved presets.</span> : null}
         {presets.map((preset) => (
-          <button key={preset.id} type="button" data-testid={`ce3-run-preset-${preset.id}`} onClick={() => runPreset(preset)}>
+          <button key={preset.id} type="button" data-testid={`ce3-run-preset-${preset.id}`} disabled={isReadOnly} onClick={() => runPreset(preset)}>
             Run {preset.name}
           </button>
         ))}
@@ -184,6 +191,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       <button
         type="button"
         data-testid="ce3-run-inline-preset"
+        disabled={isReadOnly}
         onClick={() => {
           runPreset({
             scope,
