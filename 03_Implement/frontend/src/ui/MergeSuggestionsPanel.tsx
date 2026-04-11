@@ -4,6 +4,7 @@ import type { MergeSuggestion } from "../api/client";
 import type { MergeSuggestionDecision } from "../domain/merge_suggestion_decisions";
 import type { MergeDecisionAuditEvent } from "../domain/merge/decision_audit_events";
 import { evaluateMergeDecisionTrustBoundary } from "../domain/hil_rs_trusted_boundary";
+import { normalizeHilDecisionReason } from "../domain/hil_rs_decision_reason";
 
 type MergeSuggestionDraft = MergeSuggestion & {
   editedText: string;
@@ -25,7 +26,11 @@ type MergeSuggestionsPanelProps = {
   suggestions: MergeSuggestionDraft[];
   cardsById: Map<string, Card>;
   onMergedTextChange: (groupId: string, value: string) => void;
-  onDecide: (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean }) => void;
+  onDecide: (
+    groupId: string,
+    decision: MergeSuggestionDecision,
+    options: { isTrusted: boolean; decisionReason?: string }
+  ) => void;
   latestAuditEventByGroup?: ReadonlyMap<string, MergeDecisionAuditEvent>;
   auditEvents?: readonly MergeDecisionAuditEvent[];
   onExportAuditEvents?: () => void;
@@ -154,6 +159,7 @@ export function MergeSuggestionsPanel({
   isReadOnly = false,
 }: MergeSuggestionsPanelProps) {
   const [trustBoundaryErrorMessage, setTrustBoundaryErrorMessage] = useState<string | null>(null);
+  const [decisionReasonByGroup, setDecisionReasonByGroup] = useState<Record<string, string>>({});
 
   const handleDecisionClick = (
     groupId: string,
@@ -170,8 +176,14 @@ export function MergeSuggestionsPanel({
       return;
     }
 
+    const decisionReason = normalizeHilDecisionReason(decisionReasonByGroup[groupId]);
+    if (!decisionReason) {
+      setTrustBoundaryErrorMessage("Decision reason is required before recording accept/reject/defer.");
+      return;
+    }
+
     setTrustBoundaryErrorMessage(null);
-    onDecide(groupId, decision, { isTrusted: true });
+    onDecide(groupId, decision, { isTrusted: true, decisionReason });
   };
 
   return (
@@ -316,6 +328,30 @@ export function MergeSuggestionsPanel({
           {suggestion.rationale ? (
             <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Rationale: {suggestion.rationale}</div>
           ) : null}
+          <label style={{ display: "block", fontSize: 12, color: "#334155", marginBottom: 4 }}>
+            Decision reason (required)
+          </label>
+          <textarea
+            value={decisionReasonByGroup[suggestion.groupId] ?? ""}
+            disabled={isReadOnly}
+            onChange={(event) => {
+              setDecisionReasonByGroup((current) => ({
+                ...current,
+                [suggestion.groupId]: event.target.value,
+              }));
+            }}
+            rows={2}
+            placeholder="Record why you accept/partial/reject/defer this proposal"
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: 8,
+              marginBottom: 6,
+              boxSizing: "border-box",
+            }}
+          />
           {latestAuditEventByGroup?.get(suggestion.groupId) ? (
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
               Audit event recorded at {new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString()} / decision={latestAuditEventByGroup.get(suggestion.groupId)!.decision}
