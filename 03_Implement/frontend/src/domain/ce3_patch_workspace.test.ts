@@ -26,6 +26,13 @@ describe("ce3_patch_workspace", () => {
     expect(rejected.decisions["cand-2"]).toBe("reject");
     expect(rejected.auditLog).toHaveLength(2);
     expect(rolledBack.decisions["cand-2"]).toBe("hold");
+    expect(rolledBack.auditLog).toHaveLength(3);
+    expect(rolledBack.auditLog[2]).toMatchObject({
+      candidateId: "cand-2",
+      from: "reject",
+      to: "hold",
+      reason: "rollback",
+    });
     expect(rolledBack.rollbackStack).toHaveLength(1);
     expect(rolledBack.phase).toBe("rollback_ready");
   });
@@ -42,7 +49,13 @@ describe("ce3_patch_workspace", () => {
 
     expect(rolledBack.decisions["cand-a"]).toBe("adopt");
     expect(rolledBack.decisions["cand-b"]).toBe("hold");
-    expect(rolledBack.auditLog).toHaveLength(2);
+    expect(rolledBack.auditLog).toHaveLength(3);
+    expect(rolledBack.auditLog[2]).toMatchObject({
+      candidateId: "cand-b",
+      from: "reject",
+      to: "hold",
+      reason: "rollback",
+    });
   });
 
   it("normalizes preset query deterministically", () => {

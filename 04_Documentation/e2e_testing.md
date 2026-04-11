@@ -109,6 +109,7 @@ CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは
 - 候補A/Bを連続操作した後、候補ごとの状態表示（decision matrix）が独立に保持される。
 - `Roll back last workspace decision` で直前状態へ復帰できる。
 - rollback後に「直前の候補だけ」が復旧され、先行候補の決定は維持される。
+- rollback実行時に、復旧対象候補の監査遷移表示へ `(...rollback)` が追記される。
 - Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
 - Preset保存後にページ再読込しても、保存済み `Run <name>` で同一正規化JSONが再現される。
 - 監査遷移数（Audit transitions）が操作回数に応じて増加する。
