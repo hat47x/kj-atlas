@@ -128,3 +128,45 @@ Docker Engine / Docker Compose が未導入です。
 
 ただし、導入前でも本書の「Docker未導入時の代替E2E手順（SQLite）」で連動確認は可能です。
 PRには実施手順と結果を必ず記載してください。
+
+
+## DOC-OPS-05 セット1 実行記録（Phase 1〜6）
+
+### AC（Acceptance Criteria）
+
+- AC-1: 初回導入者向けの公開手順として Classification（Improve external）が明示される。
+- AC-2: Compose経路とSQLite代替経路の2系統が維持される。
+- AC-3: 疎通確認とE2E確認の最小チェックポイントが記載される。
+- AC-4: 変更は Docs only で、実装コードや運用設定既定値を変更しない。
+
+### DoD（Definition of Done）
+
+- DoD-1: Phase 1〜6 記録により、Plan→Execute→Verify→Proceed の順序が追跡可能。
+- DoD-2: docs-check 用コマンドと期待結果が明示される。
+- DoD-3: Proceed判定が Ready/Hold/Needs-decision で示される。
+
+### Phase 1 Read
+
+- 導入手順、代替経路、トラブルシュートの整合を確認。
+
+### Phase 2 Plan
+
+- 方針: 公開導入手順として再現性重視、内部運用メモは除外。
+
+### Phase 3 Execute
+
+- AC/DoD とフェーズ記録を追加。
+
+### Phase 4 Verify
+
+- 推奨コマンド:
+  - `rg -n "DOC-OPS-05 セット1|AC（Acceptance Criteria）|DoD（Definition of Done）" 04_Documentation/installation.md`
+  - `git diff --check`
+
+### Phase 5 Proceed 判定
+
+- 状態: **Ready**（公開導入ガイドとして後続改善へ進行可能）。
+
+### Phase 6 Proceed（引き継ぎ）
+
+- 次アクション: E2E具体手順の増減は `04_Documentation/e2e_testing.md` 正本に合わせて同期。

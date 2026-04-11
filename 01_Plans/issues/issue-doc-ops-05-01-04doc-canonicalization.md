@@ -141,3 +141,25 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## 12) Stream H Set1 AC/DoD clarification（Phase 1〜6）
+
+### Phase 1 Read
+- 対象Docの現行分類・公開境界・検証レベル（docs-check）を再確認。
+
+### Phase 2 Plan
+- AC明確化: Classification / Audience / Public boundary / Validation を必須4点として固定。
+- DoD明確化: Phase 1〜6 の記録、Ready/Hold/Needs-decision のProceed判定を必須化。
+
+### Phase 3 Execute
+- Issue本文に沿って対象Docへ AC/DoD とPhase記録を追記する実施方針を確定。
+
+### Phase 4 Verify
+- `Expected verification level=docs-check` と一致する差分検証（`git diff --check`）を実施。
+
+### Phase 5 Proceed
+- 判定: **Ready**（DecisionStatus=Fixed のため追加判断待ちなし）。
+
+### Phase 6 Proceed（次アクション固定）
+- Next action: 02_Architecture/canonicalization_workflow.md 新設 + 04_Documentation/canonicalization.md を概要stub化する移設PRを起票する。

@@ -133,3 +133,45 @@ ja側にも存在しないキーのみ最終的に key 文字列を返します�
 i18n表示差分を追加する場合は、UIコンポーネントの生文字列を直接変更せず、
 `src/i18n/locales/ja.json` と `src/i18n/locales/en.json` に同一キーを追加して
 `t("...")` 経由で参照してください（例: `search_bar.*`）。
+
+
+## DOC-OPS-05 セット1 実行記録（Phase 1〜6）
+
+### AC（Acceptance Criteria）
+
+- AC-1: 外部運用者向け文書として Classification（Improve external）と公開境界が明示されている。
+- AC-2: 最小安全設定（LLM既定none、監査送信既定off、APIキー任意）の説明が保持されている。
+- AC-3: 正本参照（runtime parameter registry）への導線が維持されている。
+- AC-4: 変更が Docs only に限定され、実装挙動を変更しない。
+
+### DoD（Definition of Done）
+
+- DoD-1: Phase 1〜6 の記録が本文に追加され、進行状態が再開可能。
+- DoD-2: 検証コマンド（docs-check, diff-check）が定義される。
+- DoD-3: Proceed判定が Ready/Hold/Needs-decision で明記される。
+
+### Phase 1 Read
+
+- 設定値の正本境界（02_Architecture）と公開読者向け導線を再確認。
+
+### Phase 2 Plan
+
+- 方針: 外部読者に必要な最小設定/確認手順を残し、内部意思決定情報は含めない。
+
+### Phase 3 Execute
+
+- AC/DoD とフェーズ記録を追加し、改善基準を固定。
+
+### Phase 4 Verify
+
+- 推奨コマンド:
+  - `rg -n "DOC-OPS-05 セット1|AC（Acceptance Criteria）|DoD（Definition of Done）" 04_Documentation/configuration.md`
+  - `git diff --check`
+
+### Phase 5 Proceed 判定
+
+- 状態: **Ready**（公開向け改善文書として後続の微修正PRへ進行可能）。
+
+### Phase 6 Proceed（引き継ぎ）
+
+- 次アクション: 環境変数追加/改名時は runtime parameter registry を先更新し、本書は導線更新のみ実施。
