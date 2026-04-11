@@ -23,7 +23,7 @@
 ## 3) スコープ
 
 - operations/security/e2e_testing の必要差分更新。
-- project-progress-dashboard の A3 同期ログ更新。
+- operations/security/e2e のA3文書同期ログ更新（dashboard は参照のみ）。
 
 ## 4) 非スコープ
 
@@ -38,22 +38,22 @@
 - AC-3: strict mode例外の状態遷移（`Requested/ApprovalPending` -> `Approved` -> `ExceptionActive/ActiveException` -> `RollbackPending` -> `Closed`、未確定時 `StoppedForClarification`）と2者承認責務が operations/security で一致している。
 - AC-4: D1〜D4固定値（承認TTL=4h、最大2h、代理承認なし、48hレビュー+15m/60m）が operations/security 双方で一致している。
 - AC-5: docs-checkが通過する。
-- AC-6: dashboard に A3 同期証跡（Read/Plan/Execute/Verify/Proceed）が1行以上残る。
+- AC-6: 本Issue内に A3 同期証跡（Read/CDC/Plan/Execute/Verify/Proceed）が1回分以上記録される。
 
 ## 6) DoD（A3運用同期）
 
 - DD-1: `operations.md` と `security.md` の責務語彙が一致（Security Officer / System Owner / Platform Operator）。
 - DD-2: 状態語彙の差分（architecture canonical と運用 runbook alias）を明示し、意味差分ゼロを保証。
 - DD-3: `e2e_testing.md` に docs-check 観点（相互リンク、用語一致、固定値一致）を反映。
-- DD-4: `project-progress-dashboard.md` に Stream E A3 同期記録を残す。
-- DD-5: Phase直列の実行順（operations -> security -> e2e -> dashboard）を検証ログで示し、各Phase開始時の再Read証跡を残す。
+- DD-4: 本Issueに Stream H A3 同期記録を残す（dashboard は Read-only 参照）。
+- DD-5: Phase直列の実行順（operations -> security -> e2e）を検証ログで示し、各Phase開始時の再Read証跡を残す。
 
 
 ### 6.1 AC/DoD補完ドラフト（本Issue内合意）
 
 - Draft-1: DD-5 を追加し、Phase直列順序と再Read証跡を DoD に含める。
-- Draft-2: Verify では dashboard を含む5ファイルで語彙一致/固定値一致を確認する。
-- 合意結果: 本Issueの Stream E 実行範囲では Draft-1/2 を採択し、追加ADRは作成しない。
+- Draft-2: Verify では issue + operations + security + e2e の4ファイルで語彙一致/固定値一致を確認する。
+- 合意結果: 本Issueの Stream H 実行範囲では Draft-1/2 を採択し、追加ADRは作成しない。
 
 ## 7) ADR CDC（新規ADRは作成しない）
 
@@ -61,8 +61,8 @@
   - 実装側の状態語彙と運用文書語彙がズレると、例外運用の停止/復旧判断が監査で分断される。
   - A2未完了でもA3文書同期を先行し、運用責務を固定する必要がある。
 - Decision:
-  - 同期対象は `operations.md` / `security.md` / `e2e_testing.md` / `project-progress-dashboard.md`。
-  - 同期順序は `02_Architecture`（参照） -> `04_Documentation`（operations -> security -> e2e） -> `01_Plans`（dashboard）とする。
+  - 同期対象は `operations.md` / `security.md` / `e2e_testing.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`。
+  - 同期順序は `02_Architecture`（参照） -> `04_Documentation`（operations -> security -> e2e） -> `01_Plans/issues`（本Issue記録）とする。
   - 固定語彙は役割3種、状態遷移、D1〜D4固定値を AUTH-OPS-03 準拠で統一する。
 - Consequences:
   - 監査容易性（同一語彙・同一固定値）が向上する。
@@ -74,49 +74,44 @@
 2. 用語一致: 役割（Security Officer/System Owner/Platform Operator）、状態（StoppedForClarification等）が一致。
 3. 固定値一致: D1〜D4（4h / 2h / no delegate / 48h + 15m/60m）が一致。
 
-## 9) フェーズ進行ログ（Stream E）
+## 9) フェーズ進行ログ（Stream H）
 
 ### Phase 1: Read
-- Plan: A3 issue + operations/security/e2e + dashboard を再読し、語彙・責務・状態・D1〜D4差分を抽出する。
-- Execute: 対象5ファイルと `strict_mode_exception_approval_flow.md` を参照して差分棚卸し。
+- Plan: A3 issue + operations/security/e2e を再読し、語彙・責務・状態・D1〜D4差分を抽出する。
+- Execute: 対象4ファイルと `strict_mode_exception_approval_flow.md` を参照して差分棚卸し。
 - Verify: `rg` で状態語彙/固定値/役割の出現位置を抽出し、ズレ候補を特定。
 - Proceed: 差分候補を Plan入力として固定。
 
-### Phase 2: Plan
-- Plan: AC/DoD不足を補完し、docs-check観点（相互リンク・用語一致・固定値一致）をタスク化。
+### Phase 2: CDC
+- Plan: Context/Decision/Consequences を本Issueへ固定し、docs-check観点（相互リンク・用語一致・固定値一致）をタスク化。
 - Execute: AC-6 と DoD を追記し、検証コマンド群を整理。
-- Verify: AC/DoD と検証手順が1対1に対応することを確認。
-- Proceed: CDC明文化へ移行。
+- Verify: 同期対象・順序・固定語彙・固定値が明文化されていることを確認。
+- Proceed: AC/DoD補完ドラフト合意へ移行。
 
-### Phase 3: ADR CDC明文化
-- Plan: 新ADRを作らず、A3 issue 内に Context/Decision/Consequences を固定する。
-- Execute: 本Issue 7章へ CDC を追記。
-- Verify: Context=乖離リスク、Decision=同期対象/順序/固定語彙、Consequences=監査容易性向上+更新コスト増 を満たす。
+### Phase 3: Plan（AC/DoD不足ドラフト合意）
+- Plan: AC/DoD不足（DD-5, docs-check観点, 依存切断ルール）を補完し、実更新前に合意する。
+- Execute: AC/DoD補完ドラフト（6.1）を Stream H 前提へ更新。
+- Verify: AC/DoDと検証手順が1対1に対応していることを確認。
 - Proceed: 文書実更新へ移行。
 
 ### Phase 4: Execute
-- Plan: operations/security/e2e/dashboard を同一語彙・責務・固定値へ同期。
-- Execute: 役割分離語彙、状態遷移語彙、固定値チェック導線を更新。
-- Verify: 4文書間の表記揺れ・固定値差分がゼロであることを確認。
+- Plan: operations/security/e2e を同一語彙・責務・固定値へ直列同期。
+- Execute: operations -> security -> e2e の順で役割語彙、状態遷移語彙、固定値チェック導線を同期。
+- Verify: issue + 3文書間の表記揺れ・固定値差分がゼロであることを確認。
 - Proceed: docs-check実行へ移行。
 
-### Phase 5: Verify
-- Plan: docs-check、キーワード照合、差分整合を実施。
+### Phase 5: Verify/Proceed
+- Plan: docs-check、キーワード照合、差分整合を実施（修復上限3回）。
 - Execute: validator + `rg` を実行し、必要なら自己修復（最大3回）。
-- Verify: 失敗ゼロならProceed、未解消ならフェイルセーフ条件で停止。
+- Verify: 語彙一致/固定値一致を確認し、失敗ゼロならProceed、未解消なら停止。
 - Proceed: 同期結果をA3 issueへ記録。
 
-### Phase 6: Proceed
-- Plan: 同期結果・未解決項目・次アクションを記録。
-- Execute: 実行結果を本Issueとdashboardに反映。
-- Verify: AC/DoD証跡が参照可能であることを確認。
-- Proceed: 乖離が残る場合は停止して追加判断要求。
 
 ## 10) 検証方法
 
 - `python 01_Plans/issues/validate_active_issue_memos.py`
-- `rg -n "StoppedForClarification|RollbackPending|Closed|Requested|ApprovalPending|Approved|ExceptionActive|ActiveException|Security Officer|System Owner|Platform Operator" 04_Documentation/operations.md 04_Documentation/security.md`
-- `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m|D1|D2|D3|D4" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `rg -n "StoppedForClarification|RollbackPending|Closed|Requested|ApprovalPending|Approved|ExceptionActive|ActiveException|Security Officer|System Owner|Platform Operator" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m|D1|D2|D3|D4" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
 
 ## 11) 依存関係
 
@@ -132,9 +127,9 @@
   4. 未定義競合
 - 停止時は「失敗条件 / 影響文書 / 必要な人間判断」を記録して保留する。
 
-## 13) 同期結果（Stream E 実行記録）
+## 13) 同期結果（Stream H 実行記録）
 
-- operations/security/e2e/dashboard を同時同期し、役割・状態・固定値の整合を確認。
+- operations/security/e2e を直列同期し、役割・状態・固定値の整合を確認。
 - 未解決項目: なし（本更新時点）。
 - 次アクション: AUTH-OPS-03 更新時は 4.4 固定順序（Architecture -> Documentation -> Plans -> AGENTS）で再同期する。
-- 2026-04-11 rerun-30（Phase 1〜6）: 役割語彙・状態遷移・D1〜D4固定値を5ファイルで再検証し、`docs-check`（validator + 2系統rg + dashboard証跡確認）を1回で通過。修復回数0回、停止条件（3回超過/未定義競合）非該当。
+- 2026-04-11 stream-h-rerun-01（Phase 1〜5）: 役割語彙・状態遷移・D1〜D4固定値を4ファイルで再検証し、`docs-check`（validator + 2系統rg）を1回で通過。修復回数0回、停止条件（3回超過/未定義競合）非該当。
