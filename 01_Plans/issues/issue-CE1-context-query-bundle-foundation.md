@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `C` (CE1 Context foundation integration)
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
 ## 0) Phase 1 Read（I/F抽出 + mock許容）
@@ -28,14 +28,22 @@
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
-## Phase 1〜6 固定事項（Stream C）
+## Phase 1〜5 固定事項（Stream B / Contract Freeze）
 
 1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを固定する。  
 2. **Phase 2（Contract）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する。  
 3. **Phase 3（Determinism）**: canonical JSON + sha256 による `bundleHash` 算出手順を固定し、同一 canonical query の再実行で一致を要求する。  
-4. **Phase 4（Mock-first Integration）**: CE2/CE4 は CE1 完了待ちを禁止し、mock `ContextQuery/Bundle` 契約で並行検証を継続する。  
-5. **Phase 5（Verification）**: Verify 失敗時は自己修復を最大3回まで許容する。  
-6. **Phase 6（Proceed / Stop）**: 4回目の Verify 失敗（= 3回超過）時点で即停止し、人間判断へエスカレーションする。
+4. **Phase 4（AC/DoD Freeze）**: drift-stop 条件と Verify 自己修復上限（最大3回）を固定し、4回目失敗時は即停止とする。  
+5. **Phase 5（Vocabulary/Contract Verify）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、不整合時は Proceed しない。
+
+## Contract ID Freeze（CE1）
+
+| Contract ID | Summary | Must |
+| --- | --- | --- |
+| `CE1-CTXQ-IF` | ContextQuery 最小I/F固定 | `queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed` |
+| `CE1-CTXB-IF` | ContextBundle 最小I/F固定 | `bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason` |
+| `CE1-HASH-DET-IF` | deterministic hash 契約 | canonical JSON + sha256 + 同一query再実行一致 |
+| `CE1-PREVIEW-GATE-IF` | Query Preview ゲート契約 | `previewConfirmed=false -> 422 preview_required` |
 
 ## 1) Context
 
@@ -120,6 +128,14 @@
 - [ ] safeMode ON + reviewedOnly の既定除外ルールが明記される。
 - [ ] Query Preview必須導線（バイパス禁止）が明記される。
 - [ ] 監査ログ必須キー `queryId`, `bundleHash`, `excludedReason` が固定される。
+- [ ] CE0/CE1/CE2 の契約語彙（`proposal-only`, `safeMode`, `human_reviewed`, `sourceBundleHash`）が衝突しない。
+
+## 4.1) DoD（Contract-only）
+
+- [ ] Phase 1〜5 それぞれで `Plan -> Execute -> Verify -> Proceed` の記録が残る。
+- [ ] Verify の自己修復は 3 回以内で終了し、4 回目は即時停止（推測継続禁止）。
+- [ ] `CE1-CTXQ-IF / CE1-CTXB-IF / CE1-HASH-DET-IF / CE1-PREVIEW-GATE-IF` が CE0/CE2 文書と矛盾しない。
+- [ ] mock-first 前提（依存待機禁止）が明文化され、実装手順が混入していない。
 
 ## 5) タスク分解（文書限定）
 
@@ -157,3 +173,9 @@
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` の除外理由を監査に残す。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
+
+## 10) フェイルセーフ（Stream B 固定）
+
+- Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
+- CE0/CE1/CE2 間で Contract ID 衝突（重複定義/異義定義）を検知した場合は停止する。
+- 編集許可スコープ外（実装コード、CE3/CE4 issue、dashboard、issues/README）に触れる必要が生じた場合は停止する。

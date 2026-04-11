@@ -236,6 +236,7 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 
 ### 7B.1 CE1-CONTEXT-FOUNDATION
 
+- Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - `ContextQuery` 必須キー: `queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`
 - `ContextBundle` 必須キー: `bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
 - `previewConfirmed=false` は `422 preview_required` として失敗扱い。
@@ -243,10 +244,12 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 
 ### 7B.2 CE2-LOW-RISK-AI-ASSIST
 
+- Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - AI出力は proposal-only（`proposalId/diff/sourceBundleHash/rationale/status/reviewState`）に固定。
 - `status` は `proposed|accepted|rejected|held` のみ許可。
 - `reviewState` は表示属性であり、AIによる `reviewed` 自動昇格を禁止。
 - auto-apply を API/UI/worker 全経路で禁止（No-Go 条件）。
+- CE1契約との差異検知時は `held` で停止し、自己修復は最大3回まで（4回目失敗相当で停止）。
 
 ### 7B.3 CE4-API-CLI-AUDIT
 

@@ -55,6 +55,8 @@ CE-1/CE-2/CE-4 は実装着手前に次の最小I/Fを固定する（mock-first�
 
 #### CE1-CONTEXT-FOUNDATION
 
+Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+
 ```ts
 export type ContextQueryV1 = {
   queryId: string;
@@ -85,6 +87,8 @@ export type ContextBundleV1 = {
 
 #### CE2-LOW-RISK-AI-ASSIST
 
+Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
+
 ```ts
 export type ProposalStatus = "proposed" | "accepted" | "rejected" | "held";
 export type ProposalReviewState = "unreviewed" | "reviewed";
@@ -101,6 +105,7 @@ export type ProposalPatchV1 = {
 
 - Auto-apply は禁止（proposal-only）。
 - `reviewState=reviewed` は人手操作のみ許可し、AI自動遷移を禁止。
+- CE1契約との差異検知時は `held` へ遷移し、Verify自己修復は最大3回まで。
 
 #### CE4-API-CLI-AUDIT
 
