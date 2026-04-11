@@ -12,6 +12,7 @@ from kj_atlas_api.routes.ai import router as ai_router
 from kj_atlas_api.routes.ai_relations import router as ai_relations_router
 from kj_atlas_api.routes.admin import router as admin_router
 from kj_atlas_api.routes.docs import router as docs_router
+from kj_atlas_api.routes.context import router as context_router
 from kj_atlas_api.settings import settings
 
 
@@ -54,3 +55,4 @@ app.include_router(docs_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
 app.include_router(ai_relations_router)
+app.include_router(context_router)

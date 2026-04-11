@@ -32,11 +32,11 @@
 
 ## 2) 受入条件 / Acceptance criteria
 
-- [ ] ContextQuery必須フィールド未入力時に400（fail-fast）となる。
-- [ ] 同一Queryを10回実行してbundleHash一致率100%。
-- [ ] safeMode ON + reviewedOnly=true で未レビュー本文がbundleに含まれない。
-- [ ] Query PreviewをバイパスするUI/API導線がない。
-- [ ] 監査ログに `queryId`, `bundleHash`, `excludedReason` が記録される。
+- [x] ContextQuery必須フィールド未入力時に400（fail-fast）となる。
+- [x] 同一Queryを10回実行してbundleHash一致率100%。
+- [x] safeMode ON + reviewedOnly=true で未レビュー本文がbundleに含まれない。
+- [x] Query PreviewをバイパスするUI/API導線がない。
+- [x] 監査ログに `queryId`, `bundleHash`, `excludedReason` が記録される。
 
 ## 3) 実装タスク分解 / Task breakdown
 
@@ -57,3 +57,11 @@
 
 - 失敗モード: bundleHash不安定でCE-2以降の比較不能。
 - ロールバック: truncation/orderingロジックを直前安定版へ戻し、fixture固定で再検証。
+
+
+## 6) 実装メモ（2026-04-11）
+
+- backend: `/context/query` は手動バリデーションで required 欠損を 400 として返却。
+- backend: `/context/bundle` は deterministic sort + canonical JSON hash で `bundleHash` を固定し、除外理由を監査ログへ出力。
+- frontend: query preview state を専用レイヤへ切り出し、preview未承認時は `canSubmit=false` を強制。
+- mock integration: frontend helper から mock bundle 応答を使って統合導線を再現。

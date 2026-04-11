@@ -722,3 +722,11 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
   03_Implement/frontend/src/domain/stream_b_contract_handoff.ts \
   04_Documentation/operations.md 04_Documentation/e2e_testing.md 04_Documentation/security.md
 ```
+
+## 7. CE1 ContextQuery / ContextBundle 運用
+
+- `POST /context/query` は Query Preview 相当の事前検証APIです。`queryId/targetCardIds/depth/scope/reviewedOnly/safeMode` を必須契約として受け取り、欠損時は `400` を返します。
+- `POST /context/bundle` は deterministic bundle generator です。同一 `query + doc` を再実行した場合、`bundleHash` は常に一致することを前提に運用します。
+- `safeMode=true` かつ `reviewedOnly=true` の場合、未レビューカード本文は bundle へ含めず、`excludedReasons` へ `reviewed_only_filter` を記録します。
+- Query Preview を通過していない状態（frontend `canSubmit=false`）での送信導線は無効化し、モック統合でも同条件を維持します。
+- 監査用途では `queryId` / `bundleHash` / `excludedReason` をログ相関キーとして扱います。
