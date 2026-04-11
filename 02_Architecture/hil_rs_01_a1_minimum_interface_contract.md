@@ -1,7 +1,7 @@
 # HIL-RS-01-A1: Architecture最小I/F契約（Critique / 再提案差分 / レビュー帰属）
 
 - Contract ID: `HIL-RS-01-A1`
-- Status: Fixed
+- Status: Fixed (A1 Done)
 - Owner: Architecture Owner
 - Scope: `02_Architecture/`
 - Upstream: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`

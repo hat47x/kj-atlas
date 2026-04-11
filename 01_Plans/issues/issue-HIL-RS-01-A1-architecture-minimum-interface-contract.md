@@ -375,3 +375,12 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 ### 未確定事項（確定扱い禁止）
 
 - なし（契約判定に影響する未確定事項は0件）。
+
+
+## 16) Stream A completion lock (A1 Done & Pending=0)
+
+- A1 verdict: `Done`（本issueは契約凍結の正本更新を完了）。
+- Pending count: `0`（Decision Queue に未処理項目なし）。
+- A2/A3 open gate: `A1 Done & Pending=0` のみで `Draft -> Open` を許可。
+- Block継続条件: 未承認確定化、SafeMode後退、share/export後退、未定義競合を検知した時点で即停止。
+- 差し戻し先（唯一）: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`。

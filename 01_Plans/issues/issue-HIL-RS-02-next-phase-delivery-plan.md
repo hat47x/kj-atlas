@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
+- Scope: `01_Plans/`, `02_Architecture/`
 - Related Backlog: `HIL-RS-02`
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`, `00_Prompt/domain.md`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`
 - Expected verification level: `docs-check`
@@ -182,3 +182,10 @@
 - Ready: 全条件が真。
 - Block: 1条件でも偽。
 - 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
+
+
+## 14) Stream A boundary lock (no out-of-scope edits)
+
+- Stream A editable scope is restricted to `01_Plans/` and `02_Architecture/` only.
+- `04_Documentation/**` and `03_Implement/**` are explicitly out of scope in this critical path.
+- Any requirement that needs upstream ADR revision must stop here and wait for human approval before proceeding.
