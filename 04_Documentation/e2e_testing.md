@@ -485,6 +485,33 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|Deterministic heur
 - contractVersion が `CTR-2B-01-CANDIDATE-GROUP-V1` / `CTR-2B-02-DECISION-LOG-V1` と一致しない場合は停止。
 - 自動マージ確定を示す導線が追加された場合は停止し、A1契約へ差し戻す。
 
+## 8.5 Stream G（CE3 Patch Workspace / Query Presets）E2E
+
+CE3（`issue-CE3-patch-workspace-presets.md`）の導線確認は以下で固定する。
+
+### 8.5.1 受入観点（最低）
+
+- 候補比較ワークスペースで `adopt / hold / reject` を候補単位に操作できる。
+- 部分採用（adopt）後に `Roll back last workspace decision` 1クリックで直前状態へ復旧できる。
+- Preset（name/scope/depth/filters）保存後、`Run current preset` と保存済み `Run <name>` の双方で正規化Queryが再現される。
+- 実行失敗時（候補未収集など）に、失敗メッセージと復旧導線（候補再収集＋rollback）が画面上で確認できる。
+
+### 8.5.2 実行コマンド（Playwright）
+
+```bash
+cd 03_Implement/frontend
+npx playwright test e2e/ce3_patch_workspace.spec.ts --reporter=line
+```
+
+### 8.5.3 docs-check（UI契約の固定）
+
+```bash
+rg -n "CE3 patch workspace|Roll back last workspace decision|Run current preset|Normalized query|Recovery path" \
+  03_Implement/frontend/src/ui/PatchWorkspacePanel.tsx \
+  03_Implement/frontend/e2e/ce3_patch_workspace.spec.ts \
+  04_Documentation/e2e_testing.md
+```
+
 
 ### 11.1 未確定事項とA1差し戻し条件（Proceed）
 

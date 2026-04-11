@@ -51,6 +51,7 @@ import { HilRsWorkflowPanel } from "./ui/HilRsWorkflowPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
+import { PatchWorkspacePanel } from "./ui/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
@@ -8044,23 +8045,33 @@ ${parsedDocument.error}`);
               />
               <HilRsWorkflowPanel
                 candidateComparison={
-                  <MergeSuggestionsPanel
-                    isReadOnly={isReadOnly}
-                    instruction={mergeSuggestionInstruction}
-                    onInstructionChange={setMergeSuggestionInstruction}
-                    onSuggest={() => {
-                      void handleSuggestMerges();
-                    }}
-                    isSuggesting={isSuggestingMerges}
-                    errorMessage={mergeSuggestionError}
-                    suggestions={mergeSuggestions}
-                    cardsById={cardsById}
-                    onMergedTextChange={handleMergeSuggestionTextChange}
-                    onDecide={handleRecordMergeSuggestionDecision}
-                    latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
-                    auditEvents={mergeDecisionAuditEvents}
-                    onExportAuditEvents={handleExportMergeDecisionAuditEvents}
-                  />
+                  <>
+                    <MergeSuggestionsPanel
+                      isReadOnly={isReadOnly}
+                      instruction={mergeSuggestionInstruction}
+                      onInstructionChange={setMergeSuggestionInstruction}
+                      onSuggest={() => {
+                        void handleSuggestMerges();
+                      }}
+                      isSuggesting={isSuggestingMerges}
+                      errorMessage={mergeSuggestionError}
+                      suggestions={mergeSuggestions}
+                      cardsById={cardsById}
+                      onMergedTextChange={handleMergeSuggestionTextChange}
+                      onDecide={handleRecordMergeSuggestionDecision}
+                      latestAuditEventByGroup={latestMergeDecisionAuditByGroup}
+                      auditEvents={mergeDecisionAuditEvents}
+                      onExportAuditEvents={handleExportMergeDecisionAuditEvents}
+                    />
+                    <PatchWorkspacePanel
+                      isReadOnly={isReadOnly}
+                      candidates={mergeSuggestions.map((suggestion) => ({
+                        id: suggestion.groupId,
+                        label: `${suggestion.groupId} (${suggestion.cardIds.length} cards)`,
+                        note: suggestion.rationale,
+                      }))}
+                    />
+                  </>
                 }
                 critiqueInput={
                   <SuggestionPanel
