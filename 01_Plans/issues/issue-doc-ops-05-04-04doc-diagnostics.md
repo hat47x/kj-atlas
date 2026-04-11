@@ -20,7 +20,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `DOC-OPS-05 document classification queue`
+- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
 ## 1) 課題 / Problem statement
 
@@ -92,44 +92,50 @@
 
 ---
 
+## 11) Stream G phase record（DOC-OPS-05 front-half: 01-07）
 
-## 11) Stream H execution log（DOC-OPS-05 serial cycle）
+### Phase 1: Read
+- メタ抽出結果: `Status=Draft`, `Priority=P2`, `Scope` と `VerificationLevel=docs-check` を確認。
+- 重複/矛盾/不足:
+  - 重複: 01〜07で同一テンプレのため、判定項目は共通化可能。
+  - 矛盾: 本Issue固有の分類方針（Move internal / Improve external）は本文と整合。
+  - 不足: Phase 6（Proceed）のOpen可否記録が未定義だったため追加。
 
-### Phase 1 Read
+### Phase 2: Plan
+- 1issue 1主責務: **公開文書改善計画（diagnostics runbook の外部品質要件固定）**
+- AC/DoD補強ドラフト（合意済み）:
+  - AC-Delta-1: DecisionQueueRef が `Pending` の場合のみ参照し、`Fixed` の場合は `N/A` 明示で閉域化する。
+  - AC-Delta-2: Validation plan は「必須メタ確認」「参照整合」「差分整合」の3系統を必須実行手順として記録する。
+  - DoD-Delta: Open化判定を `Ready / Hold / Needs-decision` の三値で明示する。
 
-- Audience/Goal/公開境界に関わる対象本文と関連ADR/Specを確認済み。
+### Phase 3: ADR CDC明文化
+- Context: DOC-OPS-05 前半Issueは、04_Documentation公開境界の整理を最小単位で確定する目的を持つ。
+- Decision: 本Issueは既存ADRの追加なしで、Issue本文内CDC（Context/Decision/Consequences）を正本とする。
+- Consequences: 後続作業は「参照更新/移設/公開改善」に限定され、実装コード変更を要求しない。
 
-### Phase 2 Plan（Audience / Goal / 公開境界 / 次アクション）
+### Phase 4: Execute
+- メタ整備:
+  - DecisionStatus は `Fixed` を維持。
+  - DecisionQueueRef は `Fixed` のため実運用上 `N/A（保留なし）` として扱う。
+- 依存整理:
+  - 他Issue待ちを作らないため、依存は「参照のみ（関連ADR/Spec確認）」に固定。
+- 次アクション（参照のみ）:
+  - `04_Documentation/diagnostics.md` の前提条件・期待結果・フォールバック追補タスクを起票する。
 
-- Audience: 外部利用者・運用担当者・コントリビュータ（文書ごとに内部限定対象は除外）。
-- Goal: 文書を `Move internal` / `Improve external` に二分し、公開境界を固定する。
-- 公開境界: 仕様正本（00〜02）と内部運用メモは公開文書から分離する。
-- 次アクション: `04_Documentation/diagnostics.md に公開runbook前提を追記`
+### Phase 5: Verify
+- docs-check実行項目（必須メタ / 参照整合 / 差分整合）:
+  1. 必須メタ: Requirement meta I/F のキー欠落がないことを目視確認。
+  2. 参照整合: Scope と Related ADR/Spec が本Issue対象と一致することを確認。
+  3. 差分整合: `git diff --check` で体裁崩れがないことを確認。
+- 自己修復ルール: 失敗時は最大3回まで同ファイル内で修復し、4回目は停止して保留化する。
 
-### Phase 3 Execute（分類結果）
-
-- Classification: **Improve external**
-- DecisionStatus: **Fixed**
-- GoNoGoGate 判定: Required（Audience/Goal/公開境界/次アクションの4点が本文に記録されていること）。
-
-### ADR consensus（Context / Decision / Consequences）
-
-- Context: DOC-OPS-05 では 04_Documentation の公開境界を再定義し、内部文書混在を削減する必要がある。
-- Decision: 本Issue対象は **Improve external** とし、上記次アクションを正として合意する。
-- Consequences: 文書配置判断が固定され、後続PRでの移設または公開品質改善の着手条件が明確になる。
-
-### Phase 4 Verify（docs-check / diff）
-
-- docs-check: issue本文に分類結果、公開境界、次アクションを追記し、DecisionStatus を Fixed 化。
-- diff: `git diff --check` で体裁崩れがないことを確認する。
-
-### Phase 5 Proceed（次issueへ）
-
-- 本Issueの分類固定を完了。Stream H の直列処理として次のDOC-OPS-05 issueへ進行可能。
-
+### Phase 6: Proceed
+- Open readiness: **Ready**
+- 保留区分: **なし**
+- 要判断区分: **なし（DecisionStatus=Fixed）**
+- 再開条件（保留時のみ）: N/A
 
 ## Authoring Checklist（人間/生成AI 共通）
-
 - [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
 - [ ] `Related ADR/Spec` が最低1件ある。
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
