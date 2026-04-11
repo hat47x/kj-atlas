@@ -127,12 +127,15 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 CE-1 は実装方式に依存しない契約固定フェーズとし、frontend/backend は mock を介して疎結合に開発できるものとする。
 また、CE-2/CE-4 は CE-1 実装完了待ちを禁止し、本契約を満たす mock API で先行検証を継続する。
 
-Phase 1〜5 fixed policy:
+Phase 1〜6 fixed policy（各Phase先頭で Read を実施し、`Plan -> Execute -> Verify -> Proceed` を反復）:
 1. Phase 1（Read）: `ContextQuery` / `ContextBundle` 最小I/Fを固定し、`previewConfirmed=true` を必須化する。
 2. Phase 2（CDC）: `previewConfirmed=false` を常に `422 preview_required` として拒否する契約判定を固定する。
 3. Phase 3（Plan）: canonical hash（`queryCanonicalHash`, `bundleHash`）の算出手順と AC/DoD を固定する。
 4. Phase 4（Execute）: mock-first 連携で契約検証を進め、CE0/CE2/CE4 の完了待ち依存を作らない。
-5. Phase 5（Verify/Proceed）: Verify 失敗の自己修復は最大3回まで許可し、4回目失敗時は即停止して人間判断へエスカレーションする。
+5. Phase 5（Verify）: `previewConfirmed=false -> 422 preview_required` と deterministic hash 契約の語彙整合を検証する。
+6. Phase 6（Proceed）: CE2/CE4 へ固定I/F（`ContextQuery/ContextBundle/queryCanonicalHash/bundleHash/sourceBundleHash`）を引き渡し、実装待機を禁止する。
+
+フェイルセーフ: Verify 失敗の自己修復は最大3回まで許可し、4回目失敗時は即停止して人間判断へエスカレーションする。
 
 **POST** `/context/query`
 
