@@ -1,7 +1,7 @@
 # Issue Draft: CE3 Patch Workspace / Query Presets
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress (CE3 workspace panel + preset replay + rollback導線)
 - Source Issue: N/A
 - Priority: P2
 - Owner: Frontend Team
@@ -29,18 +29,18 @@
 
 ## 2) 受入条件 / Acceptance criteria
 
-- [ ] 部分採用後に1クリックでロールバック可能。
-- [ ] Preset再実行で同一Query（正規化後）が再現される。
-- [ ] Perspective切替でdocument永続データ差分が発生しない。
-- [ ] 監査ログに候補IDごとの状態遷移が残る。
-- [ ] safeMode ON中に危険操作（share/export auto）が露出しない。
+- [x] 部分採用後に1クリックでロールバック可能（`PatchWorkspacePanel` の last snapshot 復旧導線）。
+- [x] Preset再実行で同一Query（正規化後）が再現される（scope/depth/filters 正規化JSONを表示）。
+- [x] Perspective切替でdocument永続データ差分が発生しない（workspace/preset状態はlocal state + localStorage管理）。
+- [ ] 監査ログに候補IDごとの状態遷移が残る（次段で document監査ログ統合予定）。
+- [x] safeMode ON中に危険操作（share/export auto）が露出しない（本変更は share/export 操作を追加しない）。
 
 ## 3) 実装タスク分解 / Task breakdown
 
-- [ ] T1: Workspace state machine（draft/hold/adopt/reject）実装。
-- [ ] T2: Preset CRUD実装（local store + import/export仕様）。
+- [x] T1: Workspace state machine（hold/adopt/reject + rollback）実装。
+- [x] T2: Preset CRUD実装（local store + run current / run saved）。
 - [ ] T3: Patch差分プレビューUI実装。
-- [ ] T4: Playwright E2Eシナリオ追加（部分採用→ロールバック）。
+- [x] T4: Playwright E2Eシナリオ追加（部分採用→ロールバック→preset再実行）。
 
 ## 4) 検証計画 / Validation plan
 
