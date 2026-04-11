@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (Contracts only / Docs-Plan only)
+- Stream: `D` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: N/A
 
 ## 1) Read（同値性・監査4点セットの現状把握）
@@ -27,6 +27,11 @@
 - Phase 1〜6 で契約ドリフトを許容しないため、CE-4は運用段の再現性と監査性を固定するフェーズとして API/CLI/GUI 同値性を明文化する必要がある。
 - CE-0〜CE-3で確定した安全境界（safeMode既定ON、proposal-only、review昇格禁止）を運用導線で失わないことが前提。
 - CE3完了待ちはしない。`sourceBundleHash` は CE4 の契約検証においてモック入力を許容し、依存待ちを排除する。
+- Read固定4点セット:
+  1. 同値性判定は `equivalenceKey + bundleHash` の AND 条件で固定する。
+  2. 監査イベントは `query/bundle/proposal/apply` の4点セットを必須化する。
+  3. `apply --dry-run` は副作用境界（DB永続化/外部送信/review昇格なし）を固定する。
+  4. `sourceBundleHash` は `mock:<hash>` と本番 hash の双方を受理する。
 
 ## 2) ADR明文化（Context / Decision / Consequences）
 
@@ -71,6 +76,7 @@
 - 実装レーンは共通実行ライブラリを採用し、片系独自ロジックを禁止する。
 - reject reason は分類コード化し、運用時の再発分析を可能にする。
 - safeMode後退、share/export緩和、Consensus直接更新、ログ欠損成功扱いは即No-Go。
+- 契約検証は `sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）に依らず同一フローで実施し、監査導線の分岐を禁止する。
 
 ## 3) Plan（AC/DoD不足提案）
 
@@ -94,6 +100,7 @@
 - Verify-1: 用語ドリフト確認（同値性、監査4点、dry-run副作用0）。
 - Verify-2: 必須キー欠損確認（`equivalenceKey`, `sideEffect`, `sourceBundleHash`）。
 - Verify-3: safeMode後退語彙確認。
+- Verify-4: `sourceBundleHash` が `mock:<hash>` と本番hashの双方で同一契約（同値性判定・監査4点セット）を満たすことを確認。
 - 自己修復は最大3回。3回で収束しない場合は Proceed 停止し、論点を保留化する。
 
 ## 5) フェイルセーフ（停止条件）
