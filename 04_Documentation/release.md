@@ -141,3 +141,45 @@ git push origin v0.1.1
 6. 公開判定の記録を PR本文、release note、または同等の監査可能な場所に残す。
 
 > QG未充足の文書は、Gist公開を見送り、修正後に再判定してください。
+
+
+## DOC-OPS-05 セット1 実行記録（Phase 1〜6）
+
+### AC（Acceptance Criteria）
+
+- AC-1: 対外公開可能なリリース手順として Classification（Improve external）が明示される。
+- AC-2: SemVer・事前チェック・タグ作成・タグ後確認の流れが維持される。
+- AC-3: 内部基準参照（documentation_quality）と公開手順の境界が明確である。
+- AC-4: 変更は Docs only とし、CI設定や実装フローを変更しない。
+
+### DoD（Definition of Done）
+
+- DoD-1: Phase 1〜6 が文書内に記録され、再実行可能な状態。
+- DoD-2: docs-check コマンドが定義され、差分検証可能。
+- DoD-3: Proceed判定（Ready/Hold/Needs-decision）が明記される。
+
+### Phase 1 Read
+
+- リリース前後チェック、CI導線、公開境界を確認。
+
+### Phase 2 Plan
+
+- 方針: 最小再現可能手順を維持し、内部承認フロー詳細は持ち込まない。
+
+### Phase 3 Execute
+
+- AC/DoD とPhase記録を追加し、運用判定を固定。
+
+### Phase 4 Verify
+
+- 推奨コマンド:
+  - `rg -n "DOC-OPS-05 セット1|AC（Acceptance Criteria）|DoD（Definition of Done）" 04_Documentation/release.md`
+  - `git diff --check`
+
+### Phase 5 Proceed 判定
+
+- 状態: **Ready**（公開リリースガイドとして継続改善可能）。
+
+### Phase 6 Proceed（引き継ぎ）
+
+- 次アクション: リリース自動化範囲を拡張する場合は `.github/workflows/release.yml` と同時整合で更新。

@@ -134,3 +134,46 @@ canonicalization は手動操作で巻き戻せる。最小手順は次のとお
 - `DATA-05-3`: canonical 化後も source card の参照経路を欠落なく保持する
 - canonical cards 必須条件: 双方向参照（canonical→source / source→canonical）を保持
 - source visibility 必須条件: visible / hidden / collapsed を保持し復元可能であること
+
+
+## DOC-OPS-05 セット1 実行記録（Phase 1〜6）
+
+### AC（Acceptance Criteria）
+
+- AC-1: 本文に Classification（Move internal）が明示されている。
+- AC-2: Audience / Goal / Public boundary / Next action が冒頭メタで確認できる。
+- AC-3: SafeMode・review境界（AI提案は未レビュー、人手確定のみ）を破る記述がない。
+- AC-4: 公開向け詳細運用を避け、内部移設方針を明示している。
+
+### DoD（Definition of Done）
+
+- DoD-1: Phase 1〜6 の結果が同一文書内で追跡可能。
+- DoD-2: docs-check（体裁/リンク/キーワード確認）手順が定義されている。
+- DoD-3: Proceed判定（Ready/Hold/Needs-decision）が記録されている。
+
+### Phase 1 Read
+
+- 現行本文の分類メタ、review境界、non-goals を再確認。
+
+### Phase 2 Plan
+
+- 方針: canonicalization詳細は内部向け正本へ寄せ、公開層では境界と要点のみ保持。
+- 変更単位: Docs only（実装・スキーマ変更なし）。
+
+### Phase 3 Execute
+
+- AC/DoD を本文へ明文化し、判定基準を固定。
+
+### Phase 4 Verify
+
+- 推奨コマンド:
+  - `rg -n "DOC-OPS-05 セット1|AC（Acceptance Criteria）|DoD（Definition of Done）" 04_Documentation/canonicalization.md`
+  - `git diff --check`
+
+### Phase 5 Proceed 判定
+
+- 状態: **Ready**（Move internal 方針のまま後続移設PRへ進行可能）。
+
+### Phase 6 Proceed（引き継ぎ）
+
+- 次アクション: 内部正本（02/01レイヤ）への移設PRで、本ファイルは公開向け概要stub化を実施。
