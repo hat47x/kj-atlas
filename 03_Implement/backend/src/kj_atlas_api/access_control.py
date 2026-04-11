@@ -309,8 +309,11 @@ def normalize_policy_ref(value: str | None) -> str | None:
 
 
 def parse_visibility(value: str | None) -> Visibility | None:
-    if value in {"Public", "Unlisted", "Org", "Restricted"}:
-        return cast(Visibility, value)
+    if value is None:
+        return None
+    normalized = value.strip()
+    if normalized in {"Public", "Unlisted", "Org", "Restricted"}:
+        return cast(Visibility, normalized)
     return None
 
 

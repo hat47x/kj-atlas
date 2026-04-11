@@ -115,6 +115,20 @@ def test_fail_safe_deny_when_policy_ref_missing_for_restricted_visibility(tmp_pa
     assert response.json()["detail"] == "Access denied: policy_ref_missing"
 
 
+def test_fail_safe_visibility_header_is_trimmed_before_policy_ref_guard(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        client.app.state.access_control_fail_safe_mode = "deny"
+
+        response = client.get(
+            "/docs/doc-restricted-trimmed",
+            headers={"x-doc-visibility": "  Restricted  "},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied: policy_ref_missing"
+
+
 def test_fail_safe_read_only_blocks_write_export_but_allows_read(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         client.app.state.access_control_adapter = AllowAllAdapter()
