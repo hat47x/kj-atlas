@@ -126,7 +126,11 @@
 ### Phase 5 Proceed（次issueへ）
 
 - 本Issueの分類固定を完了。Stream H の直列処理として次のDOC-OPS-05 issueへ進行可能。
+### Phase 6 Proceed（状態分類の記録）
 
+- 状態分類: **Ready（Open候補）**
+- Open準備判定: Audience/Goal/公開境界/Validation/Non-goal が充足しており、依存なしで起票可能。
+- 重複責務排除: リリース工程は DOC-OPS-05-12 に委譲し、本Issueでは文章化ガイドの公開適合のみ扱う。
 
 ## Authoring Checklist（人間/生成AI 共通）
 
