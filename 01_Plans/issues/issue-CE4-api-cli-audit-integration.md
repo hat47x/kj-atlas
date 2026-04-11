@@ -19,6 +19,7 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: N/A
 
 ## 1) Read（同値性・監査4点セットの現状把握）
@@ -35,7 +36,7 @@
 - `apply --dry-run` の副作用境界が曖昧だと、検証実行が本番データ更新と衝突する。
 - 監査ログ欠損を成功扱いすると CE-4 の Exit Criteria（Auditability）に反する。
 
-### 2.2 Decision
+### 2.2 Decision（Execute固定: API/CLI/GUI同値性 + 監査4点セット）
 
 #### A. API/CLI 契約（実装前固定）
 
@@ -46,6 +47,8 @@
   - `apply --dry-run`（副作用なし検証専用）
 - CLI operations:
   - APIと同名・同責務のコマンドを提供し、同入力時の同結果を保証する。
+- GUI operations:
+  - GUIは内部的にAPI/CLIと同じ logical operation を呼び出し、`equivalenceKey` と `bundleHash` の一致を監査可能にする。
 
 #### B. 監査ログ4点セット（固定）
 
@@ -118,3 +121,12 @@
 
 - 失敗モード: CLI/API実装差で同値性が崩れる、または監査欠損が見逃される。
 - ロールバック: 共通契約に反する文書差分をrevertし、同値性要件とフェイルセーフを再固定。
+
+
+## 9) Phase 6 Proceed（CE3向け参照専用I/F）
+
+- CE3は CE4 の同値性判定を `equivalenceKey + bundleHash` のAND条件で参照する。
+- 監査4点セット（`query/bundle/proposal/apply`）は欠損時 fail-closed を維持する。
+- `dryRun=true` の `sideEffect=none` を破る経路は契約違反として扱う。
+
+フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。

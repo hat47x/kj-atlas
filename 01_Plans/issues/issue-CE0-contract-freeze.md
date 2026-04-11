@@ -19,7 +19,15 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
+
+
+## 0) Phase 1 Read（I/F必須項目抽出 + mock前提確認）
+
+- CE0必須I/Fキーを `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` に固定し、後続Issueの再定義を禁止する。
+- CE1/CE2/CE4 は **実装待機禁止** とし、依存は `mock I/F` で切断して契約検証を先行する。
+- CE3（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
 
 ## 1) Context
 
@@ -116,3 +124,15 @@
 
 - 失敗モード: 語彙同期不足によりCE-1以降のI/Fが多義化する。
 - ロールバック: 変更文書を契約ID単位でrevertし、ADR-0028を正本として再同期。
+
+
+## 8) Phase 6 Proceed（CE3実装レーン向け参照専用I/F）
+
+> 参照専用。CE3は以下を変更せず利用すること。
+
+- `CE0-CTX-IF`: Query Preview必須 + deterministic `bundleHash` 前提。
+- `CE0-SAFEMODE-IF`: `safeMode` 既定ON、`allowUnreviewedText=false` 既定。
+- `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみ。
+- `CG-01..05`: Working/Projection/Consensus 分離、`patch + approval` 以外の適用禁止、監査4点セット必須。
+
+フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。

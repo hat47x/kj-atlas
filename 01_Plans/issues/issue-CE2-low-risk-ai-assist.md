@@ -19,7 +19,14 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
+
+## 0) Phase 1 Read（I/F抽出 + mock許容）
+
+- CE2必須I/F: `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState`。
+- CE1依存は `mock bundleHash` で切断し、契約検証を先行（待機禁止）。
+- 提案は **proposal-only** 境界に固定し、適用はCE2責務外とする。
 
 ## 1) Context
 
@@ -59,6 +66,8 @@
 ### 2.4 責務境界（Responsibility）
 
 - CE-2は proposal 作成までを責務とし、apply は人手承認ゲートの外で実行しない。
+- proposal の `accepted` は「適用許可の意思表示」であり、自動適用トリガーではない。
+- `held` は drift-stop 専用状態として扱い、`held` 中は apply 導線へ遷移禁止。
 - `human_reviewed` 昇格は人手操作のみで、AIによる状態変更は禁止。
 - safeMode ON では未レビュー本文を含む提案生成を禁止する。
 
@@ -97,3 +106,12 @@
 
 - 失敗モード: 差分を持たない提案や自動適用導線が混入し監査不能。
 - ロールバック: proposal契約違反箇所をrevertし、CE-1連携キー準拠へ戻す。
+
+
+## 8) Phase 6 Proceed（CE3向け参照専用I/F）
+
+- CE3は CE2 Proposal I/F を変更せず受理する（後方互換必須）。
+- `status` 遷移は `proposed -> accepted/rejected/held` のみ。`held` からの自動復帰禁止。
+- `reviewState` は表示属性であり、AIによる `reviewed` 付与は禁止。
+
+フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。

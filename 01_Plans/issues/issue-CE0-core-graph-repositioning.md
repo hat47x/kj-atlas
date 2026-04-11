@@ -18,8 +18,15 @@
 - GoNoGoGate: Required
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
-- DecisionStatus: Pending
+- DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
+- Stream: `B` (Contracts only / Docs-Plan only)
+
+## 0) Phase 1 Read（最新メタ）
+
+- Core Graph 契約語彙は `Consensus Graph` に固定し、旧称 `Core Graph` は履歴注記用途のみに限定。
+- CE1/CE2/CE4 連携は mock I/F 前提で待機しない（依存切断）。
+- CE3/HIL-RS 系の実装・計画へは本Issueから変更を波及させない。
 
 ## 1) Context
 
@@ -116,3 +123,12 @@
 
 - 失敗モード: Graph責務が曖昧で実装側が独自解釈する。
 - ロールバック: D11決定前の定義に戻し、VSC再審議で再起票。
+
+
+## 8) Phase 6 Proceed（CE3向け参照専用）
+
+- Graph責務: `WorkingGraph`（探索）/`ContextProjectionGraph`（read-only）/`ConsensusGraph`（合意済み）を固定。
+- 遷移責務: `Working -> Consensus = patch + approval only`。
+- 安全責務: `mode=autonomous` でも proposal-only、auto-apply禁止、review自動昇格禁止。
+
+フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
