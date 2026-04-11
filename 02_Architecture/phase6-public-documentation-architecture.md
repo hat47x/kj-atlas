@@ -30,7 +30,7 @@
 - Gate E Proceed 条件を固定する。
   - Go: 記録確定後に次工程へ進行。
   - Conditional: 再判定日 + 担当の記録後に限定進行。
-  - No-Go: 見送り理由 + 再判定日 + 担当の記録完了まで停止。
+  - No-Go: 見送り理由 + 再判定日 + 担当の記録完了まで進行禁止。
 - evidence形式を `Date / Gate / Command / Result / Decision / Next action` の6項目必須に固定する。
 
 ### Consequences
