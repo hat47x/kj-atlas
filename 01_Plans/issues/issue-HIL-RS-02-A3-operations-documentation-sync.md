@@ -137,3 +137,4 @@
 - operations/security/e2e/dashboard を同時同期し、役割・状態・固定値の整合を確認。
 - 未解決項目: なし（本更新時点）。
 - 次アクション: AUTH-OPS-03 更新時は 4.4 固定順序（Architecture -> Documentation -> Plans -> AGENTS）で再同期する。
+- 2026-04-11 rerun-30（Phase 1〜6）: 役割語彙・状態遷移・D1〜D4固定値を5ファイルで再検証し、`docs-check`（validator + 2系統rg + dashboard証跡確認）を1回で通過。修復回数0回、停止条件（3回超過/未定義競合）非該当。

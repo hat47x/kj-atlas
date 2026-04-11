@@ -466,7 +466,7 @@ cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts
 - 仮運用タグ（`status=provisional`, `evidenceType=mock-trace`, `replaceOnNextSync=true`）が3文書で確認できる。
 - `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 / Critique / レビュー帰属 の同期記述が存在する。
 - strict mode例外運用について、D1〜D4固定値（承認順序/TTL、tenant最大2h、代理承認なし、48hレビュー+15m/60mエスカレーション）が `operations.md` と `security.md` で一致する。
-- strict mode例外の状態語彙（`Requested`→`Approved`→`ExceptionActive`→`RollbackPending`→`Closed`、未確定時 `StoppedForClarification`）が運用文書間で矛盾しない。
+- strict mode例外の状態語彙（`Requested/ApprovalPending`→`Approved`→`ExceptionActive/ActiveException`→`RollbackPending`→`Closed`、未確定時 `StoppedForClarification`）が運用文書間で矛盾しない。
 - HIL-RS workflow 関連の vitest（UI/contract/payload）が成功し、文書化した運用制約と実装の差分がない。
 - `hil_rs_payload` 系の検証（未知tags→`no_articulable_reason`、空コメント+空tagsは未発行、`iteration>=1`）が運用記述と一致する。
 - A3の非目標（SafeMode後退禁止・自動確定導線禁止）が文書内で確認できる。
