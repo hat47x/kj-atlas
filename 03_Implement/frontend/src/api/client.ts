@@ -268,6 +268,62 @@ export type SuggestIslandSummaryResult = {
   warnings?: string[];
 };
 
+export type IslandSummaryProposal = {
+  proposalId: string;
+  type: "island_summary";
+  status: "proposed";
+  sourceBundleHash: string;
+  diff: {
+    entityType: "island_summary";
+    targetId: string;
+    field: "summaryText";
+    before?: string;
+    after: string;
+    groundingIds: string[];
+    warnings?: string[];
+  };
+  rationale: string;
+};
+
+export async function proposeIslandSummary(
+  doc: DocumentV2,
+  islandId: string,
+  sourceBundleHash: string
+): Promise<IslandSummaryProposal> {
+  const response = await fetch(`${API_BASE}/ai/proposals/island-summary`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ doc, islandId, sourceBundleHash }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+
+  return (await response.json()) as IslandSummaryProposal;
+}
+
+export async function recordProposalDecision(
+  proposalId: string,
+  decision: "adopt" | "reject" | "hold",
+  actor: string,
+  reason?: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/ai/proposals/audit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ proposalId, decision, actor, reason }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response));
+  }
+}
+
 export async function suggestIslandSummary(doc: DocumentV2, islandId: string): Promise<SuggestIslandSummaryResult> {
   const response = await fetch(`${API_BASE}/ai/suggest-island-summary`, {
     method: "POST",

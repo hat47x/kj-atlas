@@ -29,18 +29,18 @@
 
 ## 2) 受入条件 / Acceptance criteria
 
-- [ ] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash` を持つ。
-- [ ] auto-apply経路が0件（API/UIともに禁止）。
+- [x] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash` を持つ。
+- [x] auto-apply経路が0件（API/UIともに禁止）。
 - [ ] `human_reviewed` への自動昇格が0件。
-- [ ] 提案の採用/却下/保留が監査ログで追跡可能。
+- [x] 提案の採用/却下/保留が監査ログで追跡可能。
 - [ ] safeMode ONで未レビュー本文を含む提案が生成されない。
 
 ## 3) 実装タスク分解 / Task breakdown
 
-- [ ] T1: proposal schema（type/status/diff/rationale）定義。
-- [ ] T2: AIレスポンスをproposalへ変換するadapter実装。
-- [ ] T3: UIに `AI提案/未レビュー/レビュー済` バッジを追加。
-- [ ] T4: proposal lifecycle test（create/reject/hold/adopt）追加。
+- [x] T1: proposal schema（type/status/diff/rationale）定義。
+- [x] T2: AIレスポンスをproposalへ変換するadapter実装。
+- [x] T3: UIに `AI提案/未レビュー/レビュー済` バッジを追加。
+- [x] T4: proposal lifecycle test（create/reject/hold/adopt）追加。
 
 ## 4) 検証計画 / Validation plan
 
