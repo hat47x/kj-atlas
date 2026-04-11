@@ -45,12 +45,12 @@
 | `CE1-HASH-DET-IF` | deterministic hash 契約 | canonical JSON + sha256 + 同一query再実行一致 |
 | `CE1-PREVIEW-GATE-IF` | Query Preview ゲート契約 | `previewConfirmed=false -> 422 preview_required` |
 
-## 1) Context
+## 1) Context（Phase 2 Read）
 
 - CE-1は CE-2/3/4 の前提であり、ここで Query/Bundle の最小I/Fが曖昧だと後続で互換性崩壊が起きる。
-- Stream B では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
+- Stream C では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
 
-## 2) Decision（ADR-0028整合）
+## 2) Decision（ADR-0028整合 / Phase 2 ADR明文化）
 
 
 ### 2.0 Decision framing（Context / Decision / Consequences）
@@ -114,40 +114,50 @@
 - safeMode ON では未レビュー本文を既定除外とし、例外時は監査理由を必須記録する。
 - CE-1時点では proposal 適用責務を持たず、生成までを担当する。
 
-## 3) Consequences
+## 3) Consequences（Phase 2 ADR明文化）
 
 - CE-2以降は `sourceBundleHash` をCE-1の `bundleHash` と一致照合する。
 - CE-2 / CE-4 実装レーンは CE-1 完了待ちをせず、上記I/Fを前提としたモック実装を先行可能（UI/Backend分離）。
 - Query Preview 未実装またはバイパス可能設計は No-Go。
 - Verify 失敗の自己修復は3回まで。4回目以降は継続せず停止する。
 
-## 4) 受入条件 / Acceptance criteria
+## 4) Plan（Phase 3 Read → Plan）
+
+### 4.1 canonical JSON + sha256 手順（固定）
+
+- `ContextQuery` と `ContextBundle` の canonical JSON 化は同一規則（キー辞書順 / UTF-8 / 空白正規化 / 列挙値正規化 / 数値表記正規化）を必須とする。
+- `queryCanonicalHash = sha256(canonical(ContextQuery))`、`bundleHash = sha256(canonical(ContextBundle))` を16進小文字で固定する。
+- Verify 判定は `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）を必須とする。
+
+### 4.2 受入条件 / Acceptance criteria
 
 - [ ] ContextQuery/ContextBundleの最小I/FがADR/Issue/Architectureで同一語彙で定義される。
 - [ ] `bundleHash` の決定論要件（canonical化対象と順序規則）が記載される。
 - [ ] safeMode ON + reviewedOnly の既定除外ルールが明記される。
 - [ ] Query Preview必須導線（バイパス禁止）が明記される。
 - [ ] 監査ログ必須キー `queryId`, `bundleHash`, `excludedReason` が固定される。
-- [ ] CE0/CE1/CE2 の契約語彙（`proposal-only`, `safeMode`, `human_reviewed`, `sourceBundleHash`）が衝突しない。
+- [ ] CE0/CE1/CE2/CE4 の契約語彙（`proposal-only`, `safeMode`, `human_reviewed`, `sourceBundleHash`）が衝突しない。
 
-## 4.1) DoD（Contract-only）
+### 4.3 DoD（Contract-only）
 
-- [ ] Phase 1〜5 それぞれで `Plan -> Execute -> Verify -> Proceed` の記録が残る。
+- [ ] Phase 1〜6 それぞれで `Plan -> Execute -> Verify -> Proceed` の記録が残る。
 - [ ] Verify の自己修復は 3 回以内で終了し、4 回目は即時停止（推測継続禁止）。
 - [ ] `CE1-CTXQ-IF / CE1-CTXB-IF / CE1-HASH-DET-IF / CE1-PREVIEW-GATE-IF` が CE0/CE2 文書と矛盾しない。
 - [ ] mock-first 前提（依存待機禁止）が明文化され、実装手順が混入していない。
+- [ ] `previewConfirmed=false -> 422 preview_required` が API/Issue/Architecture で同一表現になっている。
+- [ ] 同一 canonical query を3回再実行して `bundleHash` が3/3一致する検証条件が明記される。
 
-## 5) タスク分解（文書限定）
+## 5) Execute（Phase 4 Read → Execute / 文書限定）
 
 - [ ] T1: CE-1 I/F固定表を issue + architecture に同期。
 - [ ] T2: deterministic bundle 要件を `02_Architecture` 側へ追記。
-- [ ] T3: Query Preview 必須導線を `04_Documentation/operations.md`（CE1運用注記節）へ同期。
+- [ ] T3: Query Preview 必須導線（`previewConfirmed=false -> 422 preview_required`）を CE1 I/F参照箇所へ同期。
 - [ ] T4: CE-2連携キー（`sourceBundleHash`）を明示。
 
-## 6) 検証計画 / Validation plan
+## 6) Verify（Phase 5 Read → Verify）
 
 - 実行コマンド:
-  - `rg -n "ContextQuery|ContextBundle|bundleHash|Query Preview|reviewFilter|safeModePolicy" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation`
+  - `rg -n "ContextQuery|ContextBundle|bundleHash|previewConfirmed|preview_required|sourceBundleHash" 01_Plans/issues 02_Architecture`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 契約語彙の欠落・重複がなく、validatorが成功する。
@@ -166,15 +176,16 @@
 - Mock分離 DoD: frontend は mock `/context/query` `/context/bundle` で動作し、backend 実装有無で型契約が変化しない。
 
 
-## 9) Phase 6 Proceed（CE3向け参照専用I/F）
+## 9) Phase 6 Proceed（CE2/CE4向け固定I/F）
 
-- CE3は `sourceBundleHash === bundleHash` を apply 前提として強制する。
+- CE2/CE4 は `sourceBundleHash === bundleHash` を proposal/apply 前提として強制する。
 - `previewConfirmed=false` は常に拒否（`422 preview_required`）とする。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` の除外理由を監査に残す。
+- CE2/CE4 は CE1 完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で検証を継続する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 10) フェイルセーフ（Stream B 固定）
+## 10) フェイルセーフ（Stream C 固定）
 
 - Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
 - CE0/CE1/CE2 間で Contract ID 衝突（重複定義/異義定義）を検知した場合は停止する。
