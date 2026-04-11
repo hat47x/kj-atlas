@@ -11,6 +11,44 @@
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`, `02_Architecture/review_attribution.md`
 - Expected verification level: `docs-check`
 
+## 0) Stream A serial execution contract（Phase 1-6）
+
+### Phase 1: Read
+- Plan: 対象3ファイルを再読し `Status / Priority / Scope / Dependencies` を抽出する。
+- Execute: A1契約issue・本issue・delivery plan issueを再読した。
+- Verify: 3ファイルとも `Status=Open`, `Priority=P1`、依存はA1契約固定 + `ADR-0026/0027` で整合。
+- Proceed: 想定差分なし。差分が出た場合は即停止して競合報告する。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Plan: A1契約凍結の CDC を本issueで運用固定する。
+- Execute: 上位ADR改訂が必要な要求は「未承認確定禁止」で停止することを明記する。
+- Verify: `ADR-0026` / `ADR-0027` 改定要否判定がA1停止条件と矛盾しない。
+- Proceed: ADR改訂不要時のみPhase 3へ進む。
+
+### Phase 3: Plan
+- Plan: AC/DoD不足を補い、採否を記録可能な形へ整える。
+- Execute: Decision Queue許可遷移を `Pending -> Approved|Rejected` のみに固定。
+- Verify: Pendingを経由しない確定化が禁止されている。
+- Proceed: A1 gateの機械判定式を維持したままPhase 4へ進む。
+
+### Phase 4: Execute
+- Plan: 開始条件/停止条件/再開条件を一意化する。
+- Execute: A2/A3 Open 条件を `A1 Done & Pending=0` に固定し、差し戻し経路をA1へ一本化。
+- Verify: 未承認確定、SafeMode後退、share/export後退、未定義競合で即停止する。
+- Proceed: 条件固定後にPhase 5へ進む。
+
+### Phase 5: Verify
+- Plan: docs-check系検証を実施し、失敗時はSelf-Correctionを最大3回まで許可。
+- Execute: validator / unittest / diff check を実行。
+- Verify: 3回超過・前提崩壊・未定義競合は即停止。
+- Proceed: 全検証成功時のみPhase 6へ進む。
+
+### Phase 6: Proceed
+- Plan: 残課題と次の1手を記録して終了する。
+- Execute: 残課題はDecision Queueの監査に限定し、契約値変更はA1差し戻しのみ許可。
+- Verify: 非目標（実装変更・契約再定義）への逸脱なし。
+- Proceed: Stream AのGovernance hardening完了。
+
 ## 1) 背景
 
 - HIL-RS-02でA2/A3を安全に開始するため、A1で契約変更差し戻し導線と未確定管理を強化する必要がある。
