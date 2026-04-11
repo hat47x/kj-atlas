@@ -30,6 +30,7 @@ type AppendMergeSuggestionDecisionInput = {
   mergedTextDraft: string;
   editedText: string;
   rationale?: string;
+  decisionReason?: string;
 };
 
 function sortCardIds(cardIds: string[]): string[] {
@@ -79,7 +80,7 @@ export function appendMergeSuggestionDecision(
     selectedCardIds: sortedCardIds,
     mergedTextDraft: input.mergedTextDraft,
     editedText: input.editedText,
-    note: input.editedText,
+    note: input.decisionReason ?? input.editedText,
     snapshotVersion: DECISION_LOG_SNAPSHOT_VERSION,
     rationale: input.rationale,
   };
