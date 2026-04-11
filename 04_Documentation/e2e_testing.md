@@ -92,15 +92,18 @@ fixture では以下の主要差異を再現する。
 CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは、次のE2E観点を最低限確認する。
 
 - 候補に対する `adopt / hold / reject` が独立して操作できる。
+- 候補A/Bを連続操作した後、候補ごとの状態表示（decision matrix）が独立に保持される。
 - `Roll back last workspace decision` で直前状態へ復帰できる。
+- rollback後に「直前の候補だけ」が復旧され、先行候補の決定は維持される。
 - Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
+- 監査遷移数（Audit transitions）が操作回数に応じて増加する。
 - Perspective切替で document永続データ差分が増えない（workspace/presetはlocal state/localStorage管理）。
 - SafeMode ON でも share/export の追加露出が発生しない。
 
 推奨コマンド（grepはプロジェクト命名に合わせる）:
 
 - `cd 03_Implement/frontend && npm run test -- ce3_patch_workspace PatchWorkspacePanel`
-- `cd 03_Implement/frontend && npm run test:e2e -- --grep "Patch Workspace|Preset|rollback"`
+- `cd 03_Implement/frontend && npm run e2e -- --grep "Patch Workspace|Preset|rollback"`
 
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 

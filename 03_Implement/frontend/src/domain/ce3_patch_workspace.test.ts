@@ -30,6 +30,21 @@ describe("ce3_patch_workspace", () => {
     expect(rolledBack.phase).toBe("rollback_ready");
   });
 
+  it("keeps other candidate decisions when rolling back the latest transition", () => {
+    const initial = buildInitialWorkspaceState([
+      { id: "cand-a", label: "cand-a" },
+      { id: "cand-b", label: "cand-b" },
+    ]);
+
+    const adoptA = commitWorkspaceDecision(initial, "cand-a", "adopt", "2026-04-11T00:00:00.000Z");
+    const rejectB = commitWorkspaceDecision(adoptA, "cand-b", "reject", "2026-04-11T00:00:01.000Z");
+    const rolledBack = rollbackWorkspaceDecision(rejectB);
+
+    expect(rolledBack.decisions["cand-a"]).toBe("adopt");
+    expect(rolledBack.decisions["cand-b"]).toBe("hold");
+    expect(rolledBack.auditLog).toHaveLength(2);
+  });
+
   it("normalizes preset query deterministically", () => {
     expect(normalizeFilters(" b, A,  ,c ")).toEqual(["a", "b", "c"]);
     expect(

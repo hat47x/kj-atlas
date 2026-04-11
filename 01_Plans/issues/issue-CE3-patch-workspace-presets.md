@@ -45,7 +45,7 @@
 ## 4) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `npm --prefix 03_Implement/frontend run test:e2e -- --grep "Patch Workspace|Preset|rollback"`
+  - `npm --prefix 03_Implement/frontend run e2e -- --grep "Patch Workspace|Preset|rollback"`
 - 期待結果:
   - 候補比較・可逆操作・再実行性をE2Eで確認。
 
@@ -61,3 +61,21 @@
 - Phase 3 Execute: hold/adopt/reject + rollback stack + preset replay + query正規化再現を実装。
 - Phase 4 Verify: unit/lint/e2eを実施（e2eは環境制約があれば理由を記録）。
 - Phase 5 Proceed: 次タスクは document監査ログ統合（workspace local audit → document監査ログ連携）。
+
+## 7) Stream C Phase Notes (2026-04-11)
+
+- Phase 1 Read: CE3 issue / `PatchWorkspacePanel` / CE3 E2E spec を再読し、候補独立性の検証不足（単一候補のみ検証）を確認。
+- Phase 2 Plan:
+  - adopt/reject/hold の独立保持をUI可視化（candidate decision matrix）で明示。
+  - rollbackは「直前候補のみ復旧、先行候補は維持」をE2Eで検証。
+  - preset replay と audit transition 表示を既存導線のまま回帰確認。
+- Phase 3 Execute:
+  - `PatchWorkspacePanel` に候補ごとの decision/audit 表示を追加。
+  - CE3 E2Eを multi-candidate 手順へ拡張（A採用→B却下→rollback）。
+  - domain unit test に rollback独立性ケースを追加。
+- Phase 4 Verify:
+  - `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts`
+  - `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace"`
+- Phase 5 Proceed:
+  - 未完了: workspace local audit を document監査ログへ昇格する統合（CE4/後続）。
+  - SafeMode後退・share/export露出の追加はなし（UI導線未追加）。
