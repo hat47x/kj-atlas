@@ -12,7 +12,7 @@
 
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE4-API-CLI-AUDIT`
-- RequirementStatement: API/CLI/GUI同値性と監査ログ4点セットを運用導線へ統合する。
+- RequirementStatement: Phase 1〜6を通じて API/CLI/GUI同値性と監査ログ4点セットを固定し、運用導線へ統合する。
 - PriorityClass: Must
 - AcceptanceScenario: 前提=CE3依存で停止しない（`sourceBundleHash`はモック入力許容） / 操作=同一queryをAPI/CLI/GUI実行 / 期待結果=同一bundleHash / 除外=認可機能拡張
 - GoNoGoGate: Required
@@ -24,7 +24,7 @@
 
 ## 1) Read（同値性・監査4点セットの現状把握）
 
-- CE-4は運用段の再現性と監査性を固定するフェーズであり、API/CLI/GUIの同値性を契約として定義する必要がある。
+- Phase 1〜6 で契約ドリフトを許容しないため、CE-4は運用段の再現性と監査性を固定するフェーズとして API/CLI/GUI 同値性を明文化する必要がある。
 - CE-0〜CE-3で確定した安全境界（safeMode既定ON、proposal-only、review昇格禁止）を運用導線で失わないことが前提。
 - CE3完了待ちはしない。`sourceBundleHash` は CE4 の契約検証においてモック入力を許容し、依存待ちを排除する。
 
@@ -61,9 +61,10 @@
 
 #### C. 実行固定（Execute）
 
-- ログキーは `query/bundle/proposal/apply` の4イベントで必須化し、欠損時は即失敗。
-- `dryRun=true` では `sideEffect="none"` を必須化し、DB永続化・外部送信・状態昇格を禁止。
+- ログキーは `query/bundle/proposal/apply` の4イベントで必須化し、欠損時は即失敗（成功扱い禁止）。
+- `dryRun=true` では `sideEffect="none"` を必須化し、DB永続化・外部送信・状態昇格を禁止（must）。
 - `sourceBundleHash` は CE3未完了時に `mock:<hash>` 形式を許容し、契約検証を継続可能にする。
+- Phase 1〜6 の全検証で、同値性判定は `equivalenceKey + bundleHash` のAND条件を固定する。
 
 ### 2.3 Consequences
 
@@ -77,8 +78,8 @@
 
 - [ ] API/CLI/GUI で同一Query時に同一bundleHashを返す。
 - [ ] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
-- [ ] `--dry-run` で副作用0（`sideEffect=none`、DB永続化なし、外部送信なし）を保証。
-- [ ] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能。
+- [ ] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし）を保証。
+- [ ] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能（依存切断）。
 - [ ] 失敗時のreject reasonが分類コード付きで記録される。
 - [ ] CIで同値性テストが自動実行される。
 

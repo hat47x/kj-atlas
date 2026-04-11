@@ -8,7 +8,8 @@
 2. プレフィックスなし旧キーは受理しない。
 3. 新旧キーの混在指定は不正設定として扱う。
 4. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
-5. CE4監査契約では `query/bundle/proposal/apply` の4イベント欠損を成功扱いしない。
+5. CE4監査契約では `query/bundle/proposal/apply` の4イベント欠損を成功扱いしない（fail-closed）。
+6. CE4の `dryRun=true` は常に `sideEffect=none` を必須とし、例外を許可しない。
 
 ## 2. バックエンド設定キー（`settings.py`）
 
@@ -55,6 +56,7 @@
 - `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
 - `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
+- CE4同値性契約は Phase 1〜6 で固定し、`equivalenceKey + bundleHash` のAND判定を共通基準とする。
 
 ## 3. CE4 監査イベント必須キー（契約）
 
@@ -65,7 +67,7 @@
 | `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
 | `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
 
-- `dryRun=true` の場合、`sideEffect=none` を必須とする。
+- `dryRun=true` の場合、`sideEffect=none` を必須とする（must）。
 - 必須キー欠損時は成功扱いせず、監査失敗として扱う。
 
 ## 4. Compose/デプロイ層パラメータ
