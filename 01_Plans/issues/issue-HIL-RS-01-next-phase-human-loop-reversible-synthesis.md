@@ -84,6 +84,7 @@
   - A1契約固定は `ADR-0026` の下位具体化に限定される。
 - Decision:
   - ADR追加/更新は不要。
+  - ただし `ADR-0026` / `ADR-0027` の本文変更が必要と判定された場合は、承認完了まで即停止する。
 - Consequences:
   - A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻し。
 
@@ -192,11 +193,13 @@
   - `schemaVersion=="1.0.0"`
   - `contractLinkLocked==true`
   - `sharedResourceFreeze==true`
+  - `a1Status=="Done"`
   - `pendingDecisionQueueCount==0`
   - `hasUndefinedContractChangeRequest==false`
   - `hasSafeModeRegressionRequest==false`
   - `hasShareExportLeakageRelaxationRequest==false`
 - 1項目でも不一致なら `Block`。
+- Decision Queue遷移制約: `Pending -> Approved` または `Pending -> Rejected` 以外は `Block`。
 
 ## 10) Phase 5 Gate report（1-page）
 

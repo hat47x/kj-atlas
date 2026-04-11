@@ -150,6 +150,7 @@
 ### Phase 1: Read同期
 - Plan: A1→A2→A3依存、停止条件、禁止境界を再確認する。
 - Execute: `ADR-0026` / `ADR-0027` / 本issue / 次フェーズissueを再読。
+- Execute(追加): ADR改定要否を確認し、改定必要時は承認完了まで停止。
 - Verify: 依存順序・Draft維持条件・SafeMode制約を照合。
 - Proceed: 差分がなければPhase 2へ進む。
 
@@ -232,3 +233,4 @@
 判定:
 - Ready: 全条件が真。
 - Block: 1条件でも偽。
+- 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
