@@ -13,7 +13,7 @@
 - クラウドは「Composeで動く構成」をベースに載せ替える
 - DBは本番で PostgreSQL を推奨
 - ローカル開発は SQLite で完結できる
-- CE4運用では API/CLI/GUI 同値性（同一query→同一bundleHash）と監査4点セットを維持する
+- CE4運用では Phase 1〜6 を通じて API/CLI/GUI 同値性（同一query→同一bundleHash）と監査4点セットを維持する
 
 ---
 
@@ -40,6 +40,8 @@ MVPでは、以下の3要素で十分です。
 - `KJ_ATLAS_LLM_PROVIDER`：`none | local | local_http | large-scale | large_scale | external`
 - `KJ_ATLAS_CE4_EQUIVALENCE_MODE`：`bundle_hash`（CE4同値性判定の既定）
 - `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT`：`true`（dry-run副作用0強制）
+- `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS`：`true`（監査4イベント欠損を成功扱いしない）
+- `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK`：`true`（`sourceBundleHash=mock:<hash>` を許容）
 
 ### 3.2 DB
 
@@ -75,6 +77,8 @@ services:
       - KJ_ATLAS_LLM_PROVIDER=none
       - KJ_ATLAS_CE4_EQUIVALENCE_MODE=bundle_hash
       - KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT=true
+      - KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS=true
+      - KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK=true
     ports:
       - "8000:8000"
     depends_on:
@@ -103,6 +107,7 @@ volumes:
 
 - API/CLI/GUIは同一の canonical query から `equivalenceKey` を生成する。
 - 同一 `equivalenceKey` の実行は同一 `bundleHash` を返す。
+- Phase 1〜6 の全工程で、同値性判定は `equivalenceKey + bundleHash` のAND条件を維持する。
 - 同値性定義を多義化する設定（複数判定モードの混在）は禁止。
 
 ### 5.2 監査4点セット契約
@@ -119,6 +124,7 @@ volumes:
 ### 5.3 dry-run 契約
 
 - `apply --dry-run` は `sideEffect=none` を必須とする。
+- `dryRun=true` の成功記録に `sideEffect=none` が無い場合は必ず失敗扱いとする。
 - DB永続化、外部送信、review昇格を禁止する。
 - 監査ログに `dryRun=true` と `sideEffect=none` の両方が存在しない場合は失敗扱い。
 

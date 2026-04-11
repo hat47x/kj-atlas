@@ -89,6 +89,8 @@ LLM_TRANSPORT=in_process
 
 ## 4. CE4 API/CLI 監査統合手順（query/bundle/proposal/apply）
 
+Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/bundle/proposal/apply`）を固定契約として扱う。
+
 
 ### 4.0 CE Contract gate（Stream B固定契約の運用反映）
 
@@ -139,6 +141,7 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 - 通知: Platform Operator が当日中に運用チャネルへ「欠落操作・equivalenceKey・再実行結果」を報告する。
 - 是正: 2回連続で同一欠落が発生した場合、CLI/APIの片系実装差分を停止し、共通実行ライブラリへ集約する。
 - 判定原則: ログ欠損を成功扱いしない（fail-closed）。
+- 判定原則: `dryRun=true` で `sideEffect=none` を満たさない場合も成功扱いしない（fail-closed）。
 
 ### 4.5 Verify → Proceed（3回自己修復上限）
 
