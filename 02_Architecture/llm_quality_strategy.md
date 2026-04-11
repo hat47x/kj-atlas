@@ -80,3 +80,25 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 
 - Layer A の schema validation は `LLMRequest.inputs` が `02_Architecture/llm_input_ir_spec.md` に準拠することを含む。
 - `structured_text_only=true` を満たさないIRは品質評価対象に進めない。
+
+
+## 7. CE-1 品質ゲート（Context / Decision / Consequences）
+
+### 7.1 Context
+
+CE-1では生成品質以前に、ContextQuery/ContextBundle契約の再現性（determinism）を満たさない限り後続評価を開始しない。
+
+### 7.2 Decision
+
+Layer A（必須）へ次のCE-1ゲートを追加する。
+
+1. Determinism gate: 同一 canonical query を3回実行し、`bundleHash` が3/3一致。
+2. Query Preview gate: `previewConfirmed=true` がない request は `422 preview_required`。
+3. SafeMode exclusion gate: `safeModePolicy=strict` + `reviewFilter=reviewedOnly` のとき `excludedReason` に `unreviewed_filtered` を含む。
+4. Mock parity gate: mock backend と実backendで ContextQuery/ContextBundle の JSON schema が一致。
+
+### 7.3 Consequences
+
+- いずれか不合格なら Layer B を実行せず fail とする。
+- CE-2以降の `sourceBundleHash` 検証の前提条件として、このゲート合格結果を監査ログへ残す。
+- 監査ログ最小キーは `queryId`, `bundleHash`, `excludedReason`。

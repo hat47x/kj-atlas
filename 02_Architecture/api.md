@@ -120,6 +120,44 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 - `decidedAt: string (ISO 8601)`
 - `snapshotVersion: string`
 
+
+
+### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
+
+CE-1 は実装方式に依存しない契約固定フェーズとし、frontend/backend は mock を介して疎結合に開発できるものとする。
+
+**POST** `/context/query`
+
+- Purpose: Query Preview通過済みの `ContextQuery` を検証・正規化する。
+- Request body (required):
+  - `queryId: string (UUID)`
+  - `goal: string`
+  - `scope: "document" | "view" | "island"`
+  - `depth: integer (0..5)`
+  - `constraints: object`
+  - `reviewFilter: "reviewedOnly" | "includeUnreviewed"`
+  - `safeModePolicy: "strict"`
+  - `outputMode: "summary" | "proposal" | "candidate"`
+  - `previewConfirmed: true`
+- Error:
+  - `422 preview_required`: `previewConfirmed != true`
+  - `422 invalid_query_contract`: enum/range違反
+
+**POST** `/context/bundle`
+
+- Purpose: Deterministic projection を実行し `ContextBundle` を返す。
+- Request body: `{ "query": ContextQuery }`
+- Response body (required keys):
+  - `queryId`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason`
+
+`bundleHash` canonicalization (normative):
+1. 非決定論フィールド（timestamp/trace/latency）を除外。
+2. 配列ソートを固定（selected=id asc, relations=(type,from,to) asc, evidence=cardId asc, contradictions=(weight desc,id asc)）。
+3. canonical JSON 化（キー辞書順、UTF-8、余分な空白なし）。
+4. `sha256(canonical_json)` を16進小文字で返す。
+
+判定可能要件: 同一 canonical query に対し `bundleHash` が一致しない場合、サーバは `409 nondeterministic_bundle` を返し監査ログへ記録する。
+
 ### 2.7 Polygon Handoff Contract Verify（FB-P0-2A2B2C）
 
 Polygon auto-fit の backend接続準備として、A2比較キーの最小契約を検証する。

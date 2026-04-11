@@ -424,3 +424,59 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 - 実行制約: `02_Architecture/llm_runtime_constraints.md`。
 - 品質ゲート: `02_Architecture/llm_quality_strategy.md`。
 - エスカレーション運用: `02_Architecture/llm_escalation_policy.md`。
+
+
+## 9. CE-1 ContextQuery/ContextBundle 最小I/F（Contract Freeze）
+
+### 9.1 Context
+
+- 本章は ADR-0028 CE-1 の「同一query同一bundleHash」を機械判定可能にするため、LLM入力IRの前段契約を固定する。
+- 本章の契約は mock 実装でも同一に適用し、backend/frontend 依存を切離す。
+
+### 9.2 Decision
+
+`POST /context/query` と `POST /context/bundle` の論理契約を以下で固定する。
+
+```json
+{
+  "ContextQuery": {
+    "queryId": "uuid",
+    "goal": "string",
+    "scope": "document|view|island",
+    "depth": "integer(0..5)",
+    "constraints": {"maxTokens": "integer>0", "timeBudgetMs": "integer>0"},
+    "reviewFilter": "reviewedOnly|includeUnreviewed",
+    "safeModePolicy": "strict",
+    "outputMode": "summary|proposal|candidate",
+    "previewConfirmed": true
+  }
+}
+```
+
+```json
+{
+  "ContextBundle": {
+    "bundleHash": "sha256-hex",
+    "selected": [],
+    "relations": [],
+    "evidence": [],
+    "contradictions": [],
+    "reviewFlags": {"reviewed": 0, "unreviewed": 0},
+    "truncationMeta": {"applied": false, "reasons": []},
+    "excludedReason": []
+  }
+}
+```
+
+`bundleHash` 算出規則（固定）:
+1. 非決定論フィールド除外（timestamp/trace/latency）。
+2. 配列順序固定（selected=id asc, relations=(type,from,to) asc, evidence=cardId asc, contradictions=(weight desc,id asc)）。
+3. canonical JSON 化（キー辞書順、UTF-8、空白なし）。
+4. `sha256(canonical_json)` の16進小文字を採用。
+
+### 9.3 Consequences
+
+- CE-2+ は `sourceBundleHash` に `ContextBundle.bundleHash` を必須連携する。
+- `previewConfirmed=false` は bundle 生成前に 422 とする（Query Previewバイパス禁止）。
+- `safeModePolicy=strict` + `reviewFilter=reviewedOnly` では未レビュー本文を入力IRへ含めない。
+- 機械判定式: `canonical(queryA)==canonical(queryB) && hashA==hashB` が真であること。
