@@ -132,6 +132,27 @@
 - 状態分類: **Open候補（Securityレビュー前提）**
 - Open準備判定: Audience/Goal/公開境界/Validation/Non-goal が充足しており、依存なしで起票可能。
 
+## 12) Stream J 棚卸し（Set 3: Issue Open化条件整備）
+
+### 12.1 対象Issue棚卸し（依存整理）
+
+- DOC-OPS-05-14（本Issue / `security_operational_guidelines.md`）: **本ストリームでOpen条件を明文化**。
+- DOC-OPS-05-09（`local_llm_ops_guide.md`）: F担当領域のため **読み取りのみ**（編集しない）。
+- DOC-OPS-05-13（`security.md`）: G担当領域のため **編集禁止**（依存先として参照のみ）。
+
+### 12.2 Open化ゲート（J確定）
+
+- Gate J-1（Scope固定）: 本Issueの変更対象は「Issue本文のOpen条件整備」に限定し、`04_Documentation/security_operational_guidelines.md` 本文改稿は行わない。
+- Gate J-2（競合回避）: `DOC-OPS-05-09` / `DOC-OPS-05-13` の本文編集を行わない。
+- Gate J-3（受入整合）: Audience / Goal / 公開境界 / Validation / Non-goal がIssue本文で追跡可能。
+- Gate J-4（依存整合）: 基底方針は `DOC-OPS-05-13`、LLM運用境界は `DOC-OPS-05-09` に委譲し、重複改稿を避ける。
+- Gate J-5（起票準備）: Open後は「公開向け運用判断フローの改善PR」に限定して着手し、分類再判定（Move/Improve）は行わない。
+
+### 12.3 Open判定（Stream J）
+
+- 判定: **Ready（Open可能）**
+- 理由: 分類は `Improve external` でFixed済み、かつJゲート（J-1〜J-5）により競合回避と依存分離を確認。
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
