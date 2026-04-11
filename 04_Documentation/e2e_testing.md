@@ -86,6 +86,22 @@ fixture では以下の主要差異を再現する。
 
 失敗時は `03_Implement/backend/.artifacts/auth-level2/` にログが残る（`backend.log`, `mock-idp.log`, `mock-sp.log`, `pytest-auth-level2.log`）。
 
+
+### 2.6 CE3 Patch Workspace Flow（CE3変更時に必須）
+
+CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは、次のE2E観点を最低限確認する。
+
+- 候補に対する `adopt / hold / reject` が独立して操作できる。
+- `Roll back last workspace decision` で直前状態へ復帰できる。
+- Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
+- Perspective切替で document永続データ差分が増えない（workspace/presetはlocal state/localStorage管理）。
+- SafeMode ON でも share/export の追加露出が発生しない。
+
+推奨コマンド（grepはプロジェクト命名に合わせる）:
+
+- `cd 03_Implement/frontend && npm run test -- ce3_patch_workspace PatchWorkspacePanel`
+- `cd 03_Implement/frontend && npm run test:e2e -- --grep "Patch Workspace|Preset|rollback"`
+
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
