@@ -82,6 +82,7 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Draft diff preview:");
     expect(html).toContain("Decision reason (required)");
     expect(html).toContain("Record why you accept/partial/reject/defer this proposal");
+    expect(html).toContain("Decision buttons unlock after recording a reason.");
     expect(html).toContain("Accept");
     expect(html).toContain("Partially accept");
     expect(html).toContain("Reject");
