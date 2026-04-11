@@ -1,4 +1,4 @@
-# diagnostics worker protocol
+# Diagnostics Worker Protocol
 
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部運用者・開発者
@@ -7,7 +7,9 @@
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
 
 
-この文書は Frontend diagnostics worker の I/O 契約を定義する。
+この文書は Frontend diagnostics worker の I/O 契約を定義する。  
+公開運用時の用語は `reviewed / unreviewed` を正とし、`true/false` 表記は状態値の説明時にのみ補助的に使う。  
+品質判定は `01_Plans/documentation_quality.md` の QG-1〜QG-6 に従う。
 対象実装:
 - `03_Implement/frontend/src/worker/diagnostics_protocol.ts`
 - `03_Implement/frontend/src/worker/diagnostics_client.ts`
@@ -157,3 +159,31 @@
 - `bridgeEdgeCount >= 5`
 
 > しきい値は初期運用値であり、プロジェクトデータ特性に応じて調整する。
+
+## Quality gate (Phase 1〜6, Doc-Ops-05 Set 2)
+
+本書の更新時は、次の順序で品質ゲートを適用する。
+
+1. **Phase 1: Scope固定**
+   - 変更範囲を `04_Documentation/diagnostics.md` のみ（またはSet 2許可範囲）に限定する。
+2. **Phase 2: 構造整合**
+   - Audience / Goal / Public boundary が冒頭メタで判別できることを確認する。
+3. **Phase 3: 用語整合**
+   - review状態の語彙を `reviewed / unreviewed` に統一し、他表現を混在させない。
+4. **Phase 4: 導線整合**
+   - 関連正本（Architecture / Plans / 実装パス）への参照が維持されていることを確認する。
+5. **Phase 5: 再現性整合**
+   - E2E確認項目と期待結果（決定論確認を含む）が本文から追跡できることを確認する。
+6. **Phase 6: 公開判定**
+   - 公開不可情報がなく、Go/No-Go判断に必要な情報が本文だけで読めることを確認する。
+
+失敗時は **最大3回まで修復して再判定** し、3回を超える場合は変更を停止して論点を `01_Plans/` にエスカレーションする。
+
+## Related
+
+- `01_Plans/documentation_quality.md`
+- `02_Architecture/schemas.md`
+- `04_Documentation/diagnostics.md`（本書）
+- `03_Implement/frontend/src/worker/diagnostics_protocol.ts`
+- `03_Implement/frontend/src/worker/diagnostics_client.ts`
+- `03_Implement/frontend/src/worker/diagnostics.worker.ts`
