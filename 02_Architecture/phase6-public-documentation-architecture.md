@@ -123,11 +123,11 @@ Gate運用は次の順序を固定し、逆順実行を禁止する。
 
 運用整合タスクは次の5Phaseを固定し、各Phase開始時に対象3文書の再読で状態同期する。
 
-1. Phase 1 Read: `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
-2. Phase 2 ADR明文化（必要時のみ）: Context / Decision / Consequences を Gate C→D→E 固定で同期する。
-3. Phase 3 KPI定義固定: Gate D のKPI定義と入力契約を固定する。
-4. Phase 4 検証計画（docs-check/unit境界）: docs-check と unit境界の責務を明確化した検証計画を確定する。
-5. Phase 5 Verify & Proceed: 検証証跡を6項目形式で記録し、完了・未完了・残リスク・次アクションを確定する。
+1. Phase 1 Read: 各Phase冒頭で `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
+2. Phase 2 ADR明文化（必要時のみ）: CDC差分がある場合のみ Gate C→D→E 固定で更新する。
+3. Phase 3 KPI定義固定: Gate D の4KPIと入力契約を固定する。
+4. Phase 4 検証計画（docs-check/unit境界）: `docs-check` を必須とし、`unit` は実装非変更時の非対象境界として扱う。
+5. Phase 5 Verify & Proceed: `docs-check` と `diff` の証跡を6項目形式で記録し、完了・未完了・残リスク・次アクションを記録する。
 
 失敗時は self-correction を最大3回まで許容し、以下に該当した場合はFail-safeで停止する。
 
