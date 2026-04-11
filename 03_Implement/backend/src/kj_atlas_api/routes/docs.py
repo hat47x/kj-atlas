@@ -407,6 +407,67 @@ class ExportAuditPayload(BaseModel):
     exportKind: str = "bundle"
 
 
+class ContextAuditPayload(BaseModel):
+    operation: Literal["query", "bundle", "proposal", "apply"]
+    safeMode: bool = True
+    bundleHash: str | None = None
+    queryHash: str | None = None
+    dryRun: bool = True
+    rejectReasonCode: str | None = None
+    command: str | None = None
+    channel: Literal["api", "cli"] = "api"
+
+
+@router.post("/{doc_id}/context-audit")
+def post_context_audit(
+    doc_id: str,
+    payload: ContextAuditPayload,
+    request: Request,
+    x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    access_request, decision = _authorize_request(
+        request,
+        db,
+        action="read",
+        doc_id=doc_id,
+        safe_mode=payload.safeMode,
+        read_only=(x_read_only == "1" or (x_read_only or "").lower() == "true"),
+    )
+    dispatcher = getattr(request.app.state, "audit_dispatcher", None)
+    if dispatcher is not None:
+        dispatcher.emit(
+            build_event(
+                event_type=payload.operation,
+                doc_id=doc_id,
+                safe_mode=payload.safeMode,
+                actor_ref=request.headers.get("x-actor-ref"),
+                metadata={
+                    "route": f"/docs/{doc_id}/context-audit",
+                    "method": "POST",
+                    "action": access_request.action,
+                    "decision_allow": decision.allow,
+                    "decision_read_only": decision.read_only,
+                    "decision_reason": decision.reason,
+                    "visibility": access_request.resource.visibility,
+                    "policyRefPresent": access_request.resource.policy_ref is not None,
+                    "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
+                    "traceId": access_request.auth.trace_id,
+                    "operation": payload.operation,
+                    "bundleHash": payload.bundleHash,
+                    "queryHash": payload.queryHash,
+                    "dryRun": payload.dryRun,
+                    "rejectReasonCode": payload.rejectReasonCode,
+                    "command": payload.command,
+                    "channel": payload.channel,
+                    **build_auth_assurance_metadata(access_request.auth),
+                },
+            )
+        )
+
+    return {"status": "accepted"}
+
+
 @router.post("/{doc_id}/export-audit")
 def post_export_audit(
     doc_id: str,

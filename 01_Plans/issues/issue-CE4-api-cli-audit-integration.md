@@ -30,17 +30,17 @@
 ## 2) 受入条件 / Acceptance criteria
 
 - [ ] API/CLI/GUI で同一Query時に同一bundleHashを返す。
-- [ ] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
+- [x] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
 - [ ] `--dry-run` で副作用0（DB永続化なし）を保証。
 - [ ] 失敗時のreject reasonが分類コード付きで記録される。
 - [ ] CIで同値性テストが自動実行される。
 
 ## 3) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 監査ログイベントスキーマ定義（version付き）。
-- [ ] T2: API/CLI共通のquery実行ライブラリ化。
+- [x] T1: 監査ログイベントスキーマ定義（version付き）。
+- [x] T2: API/CLI共通のquery実行ライブラリ化。
 - [ ] T3: 同値性integration test（API vs CLI vs GUI fixture）追加。
-- [ ] T4: operations/local_llm_ops_guideへrunbook追記。
+- [x] T4: operations/local_llm_ops_guideへrunbook追記。
 
 ## 4) 検証計画 / Validation plan
 
