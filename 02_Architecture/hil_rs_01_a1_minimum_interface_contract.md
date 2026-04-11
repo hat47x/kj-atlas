@@ -142,10 +142,11 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `schemaVersion=1.0.0`（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 共通）
+- `overridePolicy=human_dual_control_only`
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 
-> 上記4要素は後続ゲート判定の唯一キーであり、A2/A3で変更しない。
+> 上記5要素は後続ゲート判定の唯一キーであり、A2/A3で変更しない。
 
 ## 6. Handoff packet（A2 / A3）
 
