@@ -73,12 +73,12 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ---
 
-## 6.5 CE2 低リスクAI支援 契約（Stream D 固定）
+## 6.5 CE2 低リスクAI支援 契約（Stream D / proposal-only 固定）
 
 CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し、直接適用を禁止する。  
 本節は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` の契約を architecture 観点で固定する。
 
-### CE2-D1: Proposal I/F 必須キー
+### CE2-D1: Proposal I/F 必須キー（Phase 1〜6で固定）
 
 すべての提案出力に以下を必須とする。
 
@@ -88,14 +88,17 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 - `status: proposed | accepted | rejected | held`
 - `reviewState: unreviewed | reviewed`
 
+上記5キー（`proposalId/diff/sourceBundleHash/status/reviewState`）は CE2 Phase 1〜6 で固定し、改名・省略・型変更を禁止する。
+
 ### CE2-D2: 実行禁止事項（Fail-safe）
 
 以下を検知した場合、処理を継続せず停止する。
 
 1. auto-apply 経路（API/UI/worker）
 2. AI による review 自動昇格（`unreviewed -> reviewed`）
-3. safeMode 保護後退（未レビュー本文混入を含む）
-4. CE1最小I/Fモック契約との差異（`sourceBundleHash` 不整合など）
+3. `human_reviewed` 自動昇格（AI/worker/API いずれの経路でも禁止）
+4. safeMode 保護後退（未レビュー本文混入を含む）
+5. CE1最小I/Fモック契約との差異（`sourceBundleHash` 不整合など）
 
 停止時は `status=held` とし、手動レビュー待ちへ遷移させる。
 
@@ -104,6 +107,17 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 - CE2 は CE1 完了待ちを行わず、`ContextQuery + ContextBundle + bundleHash` をモック契約として参照する。
 - 実体CE1との差異が確定した時点で drift を記録し、CE2 の適用フローを停止する。
 - drift 解消後にのみ `held` から再開できる。
+
+### CE2-D4: CDC実行シーケンス（Plan → Execute → Verify → Proceed）
+
+CE2 Stream D は以下の順序を固定する。
+
+1. **Plan**: 契約キーと禁止事項を固定。
+2. **Execute**: proposal-only で生成（適用なし）。
+3. **Verify**: 契約逸脱を検査し、必要なら修復。
+4. **Proceed**: Verify 合格時のみ次段へ進行。
+
+`Verify` は最大3回まで修復再試行を許可し、3回以内に解消しない場合は `status=held` で停止する。
 
 
 ## 7. 設定キー整合
