@@ -239,8 +239,10 @@ export function MergeSuggestionsPanel({
           {trustBoundaryErrorMessage}
         </div>
       ) : null}
-      {suggestions.map((suggestion) => (
-        <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
+      {suggestions.map((suggestion) => {
+        const hasDecisionReason = Boolean(normalizeHilDecisionReason(decisionReasonByGroup[suggestion.groupId]));
+        return (
+          <article key={suggestion.groupId} style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8, marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
             <div style={{ fontSize: 12, fontWeight: 600 }}>Cards in candidate group</div>
             <div style={{ fontSize: 11, color: "#334155" }}>
@@ -357,17 +359,23 @@ export function MergeSuggestionsPanel({
               Audit event recorded at {new Date(latestAuditEventByGroup.get(suggestion.groupId)!.decidedAt).toLocaleString()} / decision={latestAuditEventByGroup.get(suggestion.groupId)!.decision}
             </div>
           ) : null}
+          {!hasDecisionReason ? (
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>
+              Decision buttons unlock after recording a reason.
+            </div>
+          ) : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" disabled={isReadOnly} onClick={(event) => handleDecisionClick(suggestion.groupId, "accept", event)}>Accept</button>
-            <button type="button" disabled={isReadOnly} onClick={(event) => handleDecisionClick(suggestion.groupId, "partial", event)}>Partially accept</button>
-            <button type="button" disabled={isReadOnly} onClick={(event) => handleDecisionClick(suggestion.groupId, "reject", event)}>Reject</button>
-            <button type="button" disabled={isReadOnly} onClick={(event) => handleDecisionClick(suggestion.groupId, "defer", event)}>Defer</button>
+            <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "accept", event)}>Accept</button>
+            <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "partial", event)}>Partially accept</button>
+            <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "reject", event)}>Reject</button>
+            <button type="button" disabled={isReadOnly || !hasDecisionReason} onClick={(event) => handleDecisionClick(suggestion.groupId, "defer", event)}>Defer</button>
           </div>
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>
             Decisions are recorded only; no automatic canonical merge is executed. Trusted human interaction is required for decision commits.
           </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </section>
   );
 }
