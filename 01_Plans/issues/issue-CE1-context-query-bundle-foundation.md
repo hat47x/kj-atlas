@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (Contracts only / Docs-Plan only)
+- Stream: `C` (CE1 Context foundation integration)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
 ## 0) Phase 1 Read（I/F抽出 + mock許容）
@@ -27,6 +27,15 @@
 - CE1必須I/F: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`。
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
+
+## Phase 1〜6 固定事項（Stream C）
+
+1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを固定する。  
+2. **Phase 2（Contract）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する。  
+3. **Phase 3（Determinism）**: canonical JSON + sha256 による `bundleHash` 算出手順を固定し、同一 canonical query の再実行で一致を要求する。  
+4. **Phase 4（Mock-first Integration）**: CE2/CE4 は CE1 完了待ちを禁止し、mock `ContextQuery/Bundle` 契約で並行検証を継続する。  
+5. **Phase 5（Verification）**: Verify 失敗時は自己修復を最大3回まで許容する。  
+6. **Phase 6（Proceed / Stop）**: 4回目の Verify 失敗（= 3回超過）時点で即停止し、人間判断へエスカレーションする。
 
 ## 1) Context
 
@@ -100,8 +109,9 @@
 ## 3) Consequences
 
 - CE-2以降は `sourceBundleHash` をCE-1の `bundleHash` と一致照合する。
-- 実装レーンは上記I/Fに対しモック実装を先行可能（UI/Backend分離）。
+- CE-2 / CE-4 実装レーンは CE-1 完了待ちをせず、上記I/Fを前提としたモック実装を先行可能（UI/Backend分離）。
 - Query Preview 未実装またはバイパス可能設計は No-Go。
+- Verify 失敗の自己修復は3回まで。4回目以降は継続せず停止する。
 
 ## 4) 受入条件 / Acceptance criteria
 
