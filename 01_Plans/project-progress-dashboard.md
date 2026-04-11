@@ -22,6 +22,7 @@
 - Stream E Phase 1-5 最終同期（rerun-20）でA〜D完了報告・依存順 `A1→A2→A3`・Decision Queue（Ready=1/Open=2）・停止条件違反0件を再確認し、shared resource 3ファイルを単一変更セットで再同期して公開値（件数43 / Active=2 / Done=25 / Ready=1 / Open=2）を維持した。
 - Stream D 共有資源同期（2026-03-15 rerun-24）で 3共有ファイルを再読し、公開値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25） / Active=6 / Done=25 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` に再固定。Source Issue は README運用基準（Open=`N/A` / Draft=`TBD`）を維持し、再開判定チェックリスト1行（未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持した。
 - Stream F Phase 1-5 同期（rerun-26）で Read同期（共有3ファイル再読）→Plan（件数47・Decision Queue Ready=1/Open=2・依存順A1→A2→A3固定）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（次回再開条件1行固定）を直列実行し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25） / Active=6 / Done=25 / 停止条件違反0件` を維持した。
+- Stream F HIL-RS-02 A3 文書同期（2026-04-11 rerun-28）で `issue-HIL-RS-02-A3` / `operations.md` / `security.md` / `e2e_testing.md` を同時更新し、strict mode例外の語彙マッピング（Requested/ApprovalPending, ExceptionActive/ActiveException）、責務分離（Security Officer / System Owner / Platform Operator）、D1〜D4固定値（4h/2h/代理承認なし/48h+15m/60m）の一致を再固定した。
 
 ### 未完Issue全件（22件）とレーン割当
 

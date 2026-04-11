@@ -333,6 +333,15 @@ for event in hr_events:
 - Security Officer / System Owner は承認判断と妥当性確認を担当。
 - Platform Operator は承認済み内容のみを実行し、変更台帳・監査IDの相互参照を記録。
 
+状態語彙マッピング（AUTH-OPS-03 canonical との整合）:
+
+| Runbook語彙（operations/security） | Canonical語彙（`strict_mode_exception_approval_flow.md`） | 意味 |
+|---|---|---|
+| `Requested` | `DraftRequest` / `ApprovalPending` | 申請作成〜承認待ち。 |
+| `ExceptionActive` | `ActiveException` | 一時緩和が適用中。 |
+
+> 注記: 運用文書では時系列説明を優先して `Requested` / `ExceptionActive` を用いるが、承認判定と監査判定は canonical と同一に扱う。
+
 ### 8.2 監査最小化・PII最小化ルール（strict mode例外ログ）
 
 strict mode例外ログは、以下の5項目のみを最低監査項目として保存する。
