@@ -26,16 +26,39 @@
 - 従来Core Graphは「唯一正本」前提だったが、AI単独運用・主体別キャンバス要件を吸収できない。
 - 本Issueは、Graph層の責務境界を再配置し、作業者が設計判断できる状態にする。
 
-## 2) 具体仕様（実装者向け）
+## 2) CE0境界仕様（固定契約）
+
+### 2.1 責務境界（Responsibility）
 
 - Graph種別:
   - `WorkingGraph`: actor/role単位の探索グラフ（未確定許容）。
-  - `ConsensusGraph`: 合意済み差分のみを保持する統合グラフ。
+  - `ContextProjectionGraph`: 問合せ目的へ投影する読取専用グラフ（ContextBundle生成専用）。
+  - `ConsensusGraph`: 合意済み差分のみを保持する統合グラフ（旧Core Graph）。
 - 遷移ルール:
   - `Working -> Consensus` は `patch + approval` のみ。
+  - `Working -> ContextProjection` は read-only projection のみ（書込禁止）。
   - `mode=autonomous` でも監査ログ4点セットを必須。
 - メタ分離:
   - `actor` と `modelTier` を別フィールドで記録（混同禁止）。
+
+### 2.2 入出力境界（Input / Output）
+
+- 入力（許可）:
+  - WorkingGraphのKJ構造（card/island/relation/pending）
+  - Query constraints（safeMode/reviewFilter/depth/scope）
+- 出力（許可）:
+  - ContextBundle（deterministic hash付き）
+  - PatchProposal（Consensus適用前提）
+- 出力（禁止）:
+  - ConsensusGraph直接更新
+  - Projection結果の永続化上書き
+  - review状態のAI自動変更
+
+### 2.3 禁止事項（Non-Regression）
+
+- `autonomous mode` は「自動適用モード」ではない（proposal-only固定）。
+- safeModeがONのとき、未レビュー本文をProjection入力へ混入させない。
+- 監査4点セット欠損時は成功扱いしない。
 
 ## 3) 受入条件 / Acceptance criteria
 

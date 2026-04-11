@@ -181,6 +181,34 @@ MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
 Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `LLM_TRANSPORT`（in_process/ipc/http）で分離する。
 
+## 7A. CE-0 固定契約（Contract Freeze: Core Graph Repositioning）
+
+CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（実装詳細はCE-1以降）。
+
+### 7A.1 責務境界
+
+- `WorkingGraph`: 主体（human/agent/role）ごとの探索・未確定保持を担う作業面。
+- `ContextProjectionGraph`: 問い合わせ目的へ投影する読取専用面。ContextBundle生成にのみ使用。
+- `ConsensusGraph`（旧Core Graph）: `patch + approval` 済み差分のみを保持する統合面。
+
+### 7A.2 入出力境界
+
+- 入力（許可）:
+  - KJ構造（card/island/relation/pending）と query constraints（scope/depth/reviewFilter/safeModePolicy）。
+- 出力（許可）:
+  - deterministic `bundleHash` を持つ ContextBundle。
+  - `proposalId + diff + rationale` を満たす Patch Proposal。
+- 適用経路:
+  - `Working -> Consensus` は `applyPatch` 承認経路のみ。
+  - `Working -> ContextProjection` は読取専用投影のみ（永続更新なし）。
+
+### 7A.3 禁止事項（Non-Regression）
+
+- AIはConsensusGraphを直接更新してはならない。
+- `human_reviewed` 状態をAIが自動付与してはならない。
+- safeMode既定ON時、未レビュー本文をAI入力へ含めてはならない。
+- `mode=autonomous` でも proposal-only を維持し、監査4点セット（query/bundle/proposal/apply）欠損時は失敗扱いとする。
+
 ---
 
 ## 8. デプロイ形態
