@@ -2323,7 +2323,7 @@ export default function App() {
   }, []);
 
   const handleRecordMergeSuggestionDecision = useCallback(
-    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean }) => {
+    (groupId: string, decision: MergeSuggestionDecision, options: { isTrusted: boolean; decisionReason?: string }) => {
       if (!document) {
         return;
       }
@@ -2351,6 +2351,7 @@ export default function App() {
         mergedTextDraft: suggestion.mergedTextDraft,
         editedText: suggestion.editedText,
         rationale: suggestion.rationale,
+        decisionReason: options.decisionReason,
       });
       applyDocumentChange(nextDocument, `Recorded merge decision: ${decision}`);
 
@@ -2363,6 +2364,7 @@ export default function App() {
         decidedAt,
         cardIds: suggestion.cardIds,
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+        decisionReason: options.decisionReason,
       });
       setMergeDecisionAuditEvents((current) => appendMergeDecisionAuditEvent(current, auditEvent));
       setMergeSuggestions((previousSuggestions) =>

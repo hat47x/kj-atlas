@@ -183,7 +183,7 @@ export function MergeSuggestionsPanel({
     }
 
     setTrustBoundaryErrorMessage(null);
-    onDecide(groupId, decision, { isTrusted: true, decisionReason });
+    onDecide(groupId, decision, { isTrusted: event.isTrusted, decisionReason });
   };
 
   return (

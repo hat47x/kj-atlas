@@ -68,6 +68,7 @@ describe("merge_suggestion_decisions", () => {
         cardIds: ["c2", "c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
+        decisionReason: "Human-reviewed: normalize duplicates",
       },
       { idFactory: () => "d1", now: "2026-01-02T00:00:00.000Z" }
     );
@@ -85,7 +86,7 @@ describe("merge_suggestion_decisions", () => {
         selectedCardIds: ["c1", "c2"],
         mergedTextDraft: "alpha",
         editedText: "alpha canonical",
-        note: "alpha canonical",
+        note: "Human-reviewed: normalize duplicates",
         snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
         rationale: undefined,
       },

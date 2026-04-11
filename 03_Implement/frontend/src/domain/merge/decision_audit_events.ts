@@ -10,6 +10,7 @@ export type MergeDecisionAuditEvent = {
   decidedBy: "human";
   cardIds: string[];
   snapshotVersion: string;
+  decisionReason?: string;
 };
 
 function sortCardIds(cardIds: string[]): string[] {
@@ -23,6 +24,7 @@ export function createMergeDecisionAuditEvent(input: {
   decidedAt: string;
   cardIds: string[];
   snapshotVersion: string;
+  decisionReason?: string;
 }): MergeDecisionAuditEvent {
   return {
     eventId: input.eventId,
@@ -32,6 +34,7 @@ export function createMergeDecisionAuditEvent(input: {
     decidedBy: "human",
     cardIds: sortCardIds(input.cardIds),
     snapshotVersion: input.snapshotVersion,
+    decisionReason: input.decisionReason,
   };
 }
 

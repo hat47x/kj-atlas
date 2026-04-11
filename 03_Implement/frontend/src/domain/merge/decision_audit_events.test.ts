@@ -15,6 +15,7 @@ describe("decision_audit_events", () => {
       decidedAt: "2026-03-15T00:00:00.000Z",
       cardIds: ["c-2", "c-1", "c-2"],
       snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      decisionReason: "Reviewed by operator",
     });
 
     expect(event).toEqual({
@@ -25,6 +26,7 @@ describe("decision_audit_events", () => {
       decidedBy: "human",
       cardIds: ["c-1", "c-2"],
       snapshotVersion: "CTR-2B-02-DECISION-LOG-V1",
+      decisionReason: "Reviewed by operator",
     });
   });
 
