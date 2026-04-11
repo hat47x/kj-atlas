@@ -555,7 +555,7 @@ A3の検証は以下の固定順序で実施する（Plan → Execute → Verify
 1. Plan: `operations.md` / `security.md` / `e2e_testing.md` のD1〜D4固定値と状態語彙を棚卸し。
 2. Execute: 文書差分を反映（ロールバック条件・2者承認・監査最小項目）。
 3. Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py` を実行。
-4. Verify-2: `rg -n "StoppedForClarification|RollbackPending|Closed|Security Officer|System Owner|Platform Operator"` で用語一致を検証。
+4. Verify-2: `rg -n "Requested|ApprovalPending|Approved|ExceptionActive|ActiveException|StoppedForClarification|RollbackPending|Closed|Security Officer|System Owner|Platform Operator"` で用語一致を検証。
 5. Verify-3: `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m"` で固定値一致を検証。
 6. Proceed: 全検証成功時のみ `provisional_reapplied` として継続。
 

@@ -339,6 +339,15 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 - `StoppedForClarification`（確認待ちで停止）
   - 未確定事項が解消されるまで適用禁止。解消後は `Requested` から再開。
 
+語彙マッピング（AUTH-OPS-03 canonical との整合）:
+
+| Runbook語彙（本書） | Canonical語彙（`strict_mode_exception_approval_flow.md`） | 意味 |
+|---|---|---|
+| `Requested` | `DraftRequest` / `ApprovalPending` | 申請作成〜承認待ちの運用区間。 |
+| `ExceptionActive` | `ActiveException` | 一時緩和が適用中の状態。 |
+
+> 注記: 本書は運用手順の可読性のため `Requested` / `ExceptionActive` を使用するが、判定意味は canonical と同一である。
+
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
 
 > 本テンプレートは D1〜D4 固定値で運用する。逸脱時は `StoppedForClarification`（確認待ちで停止）へ遷移する。
