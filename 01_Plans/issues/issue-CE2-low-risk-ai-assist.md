@@ -32,7 +32,7 @@
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream D は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream B は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ## 2) Decision
@@ -97,7 +97,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_escalation_policy.md 04_Documentation/narratives.md 04_Documentation/security.md`
+  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_escalation_policy.md 04_Documentation/local_llm_ops_guide.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 提案I/Fと禁止事項が文書間で一致し、validatorが成功する。

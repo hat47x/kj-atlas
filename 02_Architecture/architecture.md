@@ -222,6 +222,32 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 ---
 
+
+## 7B. CE-1/CE-2/CE-4 契約ID固定（mock-first）
+
+CE0に続く固定契約として、実装待機なしで I/F を先行凍結する。
+
+### 7B.1 CE1-CONTEXT-FOUNDATION
+
+- `ContextQuery` 必須キー: `queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`
+- `ContextBundle` 必須キー: `bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
+- `previewConfirmed=false` は `422 preview_required` として失敗扱い。
+- 同一 canonical query では deterministic `bundleHash` 一致を必須化する。
+
+### 7B.2 CE2-LOW-RISK-AI-ASSIST
+
+- AI出力は proposal-only（`proposalId/diff/sourceBundleHash/rationale/status/reviewState`）に固定。
+- `status` は `proposed|accepted|rejected|held` のみ許可。
+- `reviewState` は表示属性であり、AIによる `reviewed` 自動昇格を禁止。
+- auto-apply を API/UI/worker 全経路で禁止（No-Go 条件）。
+
+### 7B.3 CE4-API-CLI-AUDIT
+
+- API/CLI/GUI の同値判定を `equivalenceKey AND bundleHash` で固定。
+- 監査4点セット（`query/bundle/proposal/apply`）は欠損時 fail-closed。
+- `dryRun=true` は `sideEffect=none` を必須化し、DB永続化・外部送信・review昇格を禁止。
+- CE3未完了期間は `sourceBundleHash=mock:<hash>` を許容し、契約検証を停止しない。
+
 ## 8. デプロイ形態
 
 ### 8.1 最優先：Docker Compose（推奨）

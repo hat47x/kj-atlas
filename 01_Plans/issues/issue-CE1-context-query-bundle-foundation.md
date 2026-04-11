@@ -31,7 +31,7 @@
 ## 1) Context
 
 - CE-1は CE-2/3/4 の前提であり、ここで Query/Bundle の最小I/Fが曖昧だと後続で互換性崩壊が起きる。
-- Stream Dでは実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
+- Stream B では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
 
 ## 2) Decision（ADR-0028整合）
 
@@ -115,7 +115,7 @@
 
 - [ ] T1: CE-1 I/F固定表を issue + architecture に同期。
 - [ ] T2: deterministic bundle 要件を `02_Architecture` 側へ追記。
-- [ ] T3: Query Preview 必須導線を `04_Documentation/operations.md` へ追記。
+- [ ] T3: Query Preview 必須導線を `04_Documentation/local_llm_ops_guide.md` へ同期。
 - [ ] T4: CE-2連携キー（`sourceBundleHash`）を明示。
 
 ## 6) 検証計画 / Validation plan

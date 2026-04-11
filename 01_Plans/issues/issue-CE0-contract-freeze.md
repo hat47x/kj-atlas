@@ -107,13 +107,13 @@
 
 - [ ] T1: 契約IDマトリクス表を ADR-0028 と本Issueで一致させる。
 - [ ] T2: `02_Architecture` の関連文書へ語彙同期（Core→Consensus, Working, autonomous mode）。
-- [ ] T3: `04_Documentation/operations.md` に運用上の禁止事項（auto-apply禁止・review昇格禁止）を明文化。
+- [ ] T3: `04_Documentation/local_llm_ops_guide.md` に運用上の禁止事項（auto-apply禁止・review昇格禁止）を同期。
 - [ ] T4: ドリフト検知コマンド結果をIssue末尾へ記録。
 
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Guard-0[1-5]|CG-0[1-5]|Consensus Graph|Working Graph|autonomous|safeMode|unreviewed" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation`
+  - `rg -n "Guard-0[1-5]|CG-0[1-5]|Consensus Graph|WorkingGraph|autonomous|safeMode|unreviewed" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation/local_llm_ops_guide.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。

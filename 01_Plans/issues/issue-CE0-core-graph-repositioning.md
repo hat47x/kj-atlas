@@ -108,8 +108,8 @@
 
 - [ ] T1: `02_Architecture/architecture.md` にGraph層責務表を追加。
 - [ ] T2: `02_Architecture/schemas.md` にGraph種別メタ（actor/modelTier/mode）の予約項目を追加。
-- [ ] T3: `04_Documentation/operations.md` にautonomous mode運用制約を追加。
-- [ ] T4: DecisionQueue項目を `decision-pack-2026-03-human-judgement.md` に連携（共有統合ファイルは本Streamでは編集しない）。
+- [ ] T3: `04_Documentation/local_llm_ops_guide.md` にautonomous mode運用制約を同期。
+- [ ] T4: DecisionQueue項目を本Issue群（CE0/CE1/CE2/CE4）へ参照リンクとして同期（本Stream外ファイルは編集しない）。
 
 ## 6) 検証計画 / Validation plan
 
