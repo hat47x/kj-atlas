@@ -19,7 +19,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: `DOC-OPS-05 document classification queue`
 
 ## 1) 課題 / Problem statement
@@ -91,6 +91,42 @@
 - 実作業では `01_Plans/minimal-context-triage.md` と関連ADRだけを開き、一覧再読を前提にしない。
 
 ---
+
+
+## 11) Stream H execution log（DOC-OPS-05 serial cycle）
+
+### Phase 1 Read
+
+- Audience/Goal/公開境界に関わる対象本文と関連ADR/Specを確認済み。
+
+### Phase 2 Plan（Audience / Goal / 公開境界 / 次アクション）
+
+- Audience: 外部利用者・運用担当者・コントリビュータ（文書ごとに内部限定対象は除外）。
+- Goal: 文書を `Move internal` / `Improve external` に二分し、公開境界を固定する。
+- 公開境界: 仕様正本（00〜02）と内部運用メモは公開文書から分離する。
+- 次アクション: `01_Plans/documentation_quality.md を内部正本として固定し04想定を削除`
+
+### Phase 3 Execute（分類結果）
+
+- Classification: **Move internal**
+- DecisionStatus: **Fixed**
+- GoNoGoGate 判定: Required（Audience/Goal/公開境界/次アクションの4点が本文に記録されていること）。
+
+### ADR consensus（Context / Decision / Consequences）
+
+- Context: DOC-OPS-05 では 04_Documentation の公開境界を再定義し、内部文書混在を削減する必要がある。
+- Decision: 本Issue対象は **Move internal** とし、上記次アクションを正として合意する。
+- Consequences: 文書配置判断が固定され、後続PRでの移設または公開品質改善の着手条件が明確になる。
+
+### Phase 4 Verify（docs-check / diff）
+
+- docs-check: issue本文に分類結果、公開境界、次アクションを追記し、DecisionStatus を Fixed 化。
+- diff: `git diff --check` で体裁崩れがないことを確認する。
+
+### Phase 5 Proceed（次issueへ）
+
+- 本Issueの分類固定を完了。Stream H の直列処理として次のDOC-OPS-05 issueへ進行可能。
+
 
 ## Authoring Checklist（人間/生成AI 共通）
 

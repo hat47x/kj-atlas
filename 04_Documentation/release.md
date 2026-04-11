@@ -1,5 +1,12 @@
 # リリース手順（最小）
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: メンテナ・リリース担当者
+> Goal: 最小リリース手順を公開し再現可能性を担保する。
+> Public boundary: 内部承認履歴は除外し、公開可能な手順とチェックのみを残す。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 このドキュメントは、kj-atlas の最小リリース運用（バージョニング、タグ作成、リリースノート）を定義します。
 
 ## 1. バージョニング方針（SemVer）

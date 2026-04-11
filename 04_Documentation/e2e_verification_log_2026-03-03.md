@@ -1,5 +1,12 @@
 # E2E Verification Log (2026-03-03)
 
+> DOC-OPS-05 Classification: **Move internal**
+> Audience: 内部QA/運用監査
+> Goal: 日付付き検証ログを内部証跡として管理する。
+> Public boundary: 04の恒久公開文書からは分離し、内部ログ置き場へ移管予定。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 目的: ADR-0019 の第一選択（Compose統合経路）を優先し、実行不能時は SQLite 代替経路の証跡と未確認リスク差分を明示する。
 
 ## 1) Compose統合経路（第一選択）

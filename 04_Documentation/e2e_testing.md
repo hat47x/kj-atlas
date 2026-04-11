@@ -1,5 +1,12 @@
 # E2Eテスト方針（Playwright）
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: 外部開発者・QA
+> Goal: 再現可能なE2E手順と受入条件を公開する。
+> Public boundary: 内部進行管理情報は除外し、実行手順と判定基準を公開する。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 本ドキュメントは、`kj-atlas` における End-to-End テストの実施方針を定義します。  
