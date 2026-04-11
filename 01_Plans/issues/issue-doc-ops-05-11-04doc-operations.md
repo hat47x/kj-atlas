@@ -139,3 +139,32 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## 12) Stream F update（security/ops 同期）
+
+### Phase 1) Read同期
+
+- `02_Architecture/strict_mode_exception_approval_flow.md` を基点に、`04_Documentation/operations.md` / `security.md` / `security_operational_guidelines.md` の現行記述を照合。
+
+### Phase 2) Context / Decision / Consequences 明文化
+
+- Context: AUTH-OPS-03 の固定値 D1〜D4 と役割分離を docs 側で明示する必要がある。
+- Decision: operations は実行runbook責務に限定し、承認フロー正本は architecture 参照で固定する。
+- Consequences: 実行手順と設計正本のドリフト検知が容易になる。
+
+### Phase 3) 用語・役割・導線・固定値整合
+
+- 用語統一: Security Officer / System Owner / Platform Operator。
+- 役割分離: 2者承認とPlatform Operator実行を明示。
+- 導線: `security.md` と `strict_mode_exception_approval_flow.md` の参照を固定。
+- 固定値: D1〜D4 を runbook のGo/No-Go判断へ組み込み。
+
+### Phase 4) docs-check
+
+- 実行予定: `rg -n "Context|Decision|Consequences|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md`
+- 実行予定: `git diff --check`
+
+### Phase 5) Proceed
+
+- 判定: Ready（DOC-OPS-05-11 は security/ops 系同期条件を満たす）。
