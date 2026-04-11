@@ -126,7 +126,7 @@ A1は `ADR-0026` D2の下位具体化であり、価値軸・安全制約・停�
 
 ### Decision
 
-ADR追加・更新は不要。上位方針変更を要する契約変更要求が出た場合のみ、承認完了まで停止する。
+ADR追加・更新は不要。上位方針変更を要する契約変更要求、または `ADR-0026` / `ADR-0027` の改定が必要な場合は、承認完了まで停止する。
 
 ### Consequences
 
@@ -200,14 +200,16 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - `GateInput.schemaVersion == "1.0.0"`
 - `GateInput.contractLinkLocked == true`
 - `GateInput.sharedResourceFreeze == true`
+- `GateInput.a1Status == "Done"`
 - `GateInput.pendingDecisionQueueCount == 0`
 - `GateInput.hasUndefinedContractChangeRequest == false`
 - `GateInput.hasSafeModeRegressionRequest == false`
 - `GateInput.hasShareExportLeakageRelaxationRequest == false`
 
 判定:
-- Ready: 上記8条件がすべて真。
+- Ready: 上記9条件がすべて真。
 - Block: 1条件でも偽。
+- 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
 
 ## 9. Fail-safe stop report template
 

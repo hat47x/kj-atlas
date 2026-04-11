@@ -48,7 +48,7 @@ A1の作業は `ADR-0026` D2（契約先行）の下位具体化であり、上�
 
 #### Decision
 
-ADR追加/更新は不要。上位方針変更が必要な契約変更要求が出た場合のみ、承認完了まで停止する。
+ADR追加/更新は不要。上位方針変更が必要な契約変更要求、または `ADR-0026` / `ADR-0027` 改定が必要と判定された場合は、承認完了まで停止する。
 
 #### Consequences
 
@@ -172,6 +172,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `schemaVersion`
   - `contractLinkLocked`
   - `sharedResourceFreeze`
+  - `a1Status`
   - `pendingDecisionQueueCount`
   - `hasUndefinedContractChangeRequest`
   - `hasSafeModeRegressionRequest`
@@ -182,11 +183,13 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
     - `schemaVersion=="1.0.0"`
     - `contractLinkLocked==true`
     - `sharedResourceFreeze==true`
+    - `a1Status=="Done"`
     - `pendingDecisionQueueCount==0`
     - `hasUndefinedContractChangeRequest==false`
     - `hasSafeModeRegressionRequest==false`
     - `hasShareExportLeakageRelaxationRequest==false`
   - Block: 上記のいずれかが不一致。
+  - 追加制約: Decision Queue の許可遷移は `Pending -> Approved|Rejected` のみ。
 
 ## 7) Phase 5 Gate report（1-page）
 

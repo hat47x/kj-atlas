@@ -118,6 +118,7 @@
 
 ### Decision
 
+- `ADR-0026` / `ADR-0027` の改定が必要と判定された場合は、承認完了まで本issueのOpen化判定を停止する。
 - Freeze Pack `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
 - A2/A3の `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可する。
 - 変更禁止対象（契約ID/schemaVersion/overridePolicy/SSOT/stop条件）の変更要求は A1 へ差し戻す。
@@ -142,3 +143,4 @@
 判定:
 - Ready: 全条件が真。
 - Block: 1条件でも偽。
+- 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
