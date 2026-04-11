@@ -7,10 +7,12 @@ import {
   generateNarrative,
   getDocument,
   putDocument,
+  recordProposalDecision,
+  proposeIslandSummary,
   suggestMerges,
-  suggestIslandSummary,
   summarizeIslandRelation,
   suggestLayout,
+  type IslandSummaryProposal,
   type MergeSuggestion,
   type NarrativeIssue,
   type NarrativeIssueReference,
@@ -991,6 +993,8 @@ export default function App() {
   const [isSuggestingMerges, setIsSuggestingMerges] = useState(false);
   const [isSuggestingIslandSummary, setIsSuggestingIslandSummary] = useState(false);
   const [islandSummarySuggestionWarningsByIslandId, setIslandSummarySuggestionWarningsByIslandId] = useState<Record<string, string[]>>({});
+  const [islandSummaryProposal, setIslandSummaryProposal] = useState<IslandSummaryProposal | null>(null);
+  const [proposalAuditTrail, setProposalAuditTrail] = useState<string[]>([]);
   const [isPickingEdgeTarget, setIsPickingEdgeTarget] = useState(false);
   const [connectEdgeType, setConnectEdgeType] = useState<"related" | "negate">("related");
   const [maxDepth, setMaxDepth] = useState<ViewMaxDepth>("all");
@@ -2139,33 +2143,57 @@ export default function App() {
     setStatusMessage("Requesting island summary suggestion...");
 
     try {
-      const result = await suggestIslandSummary(document, targetIsland.id);
-      const nextDocument = updateIslandSummaryWithHistory(
-        document,
-        targetIsland.id,
-        {
-          summaryText: result.summaryText,
-          summaryReviewed: false,
-          summaryGrounding: result.groundingIds,
-        },
-        {
-          changeKind: "ai",
-        }
-      );
-
-      applyDocumentChange(nextDocument, "Suggested island summary");
-      setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
-        ...previousWarnings,
-        [targetIsland.id]: result.warnings ?? [],
-      }));
-      setStatusMessage("Island summary suggestion ready (unreviewed)");
+      const proposal = await proposeIslandSummary(document, targetIsland.id, `${document.id}:${document.updatedAt}`);
+      setIslandSummaryProposal(proposal);
+      setStatusMessage(`Island summary proposal ready (${proposal.proposalId})`);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Failed to suggest island summary";
       setStatusMessage(message);
     } finally {
       setIsSuggestingIslandSummary(false);
     }
-  }, [applyDocumentChange, document, isSuggestingIslandSummary, selectedIslandId]);
+  }, [document, isSuggestingIslandSummary, selectedIslandId]);
+
+  const handleAdoptIslandSummaryProposal = useCallback(async () => {
+    if (!document || !selectedIslandId || !islandSummaryProposal) {
+      return;
+    }
+    const nextDocument = updateIslandSummaryWithHistory(
+      document,
+      selectedIslandId,
+      {
+        summaryText: islandSummaryProposal.diff.after,
+        summaryReviewed: false,
+        summaryGrounding: islandSummaryProposal.diff.groundingIds,
+      },
+      { changeKind: "ai" }
+    );
+    applyDocumentChange(nextDocument, "Adopted island summary proposal");
+    setIslandSummarySuggestionWarningsByIslandId((previousWarnings) => ({
+      ...previousWarnings,
+      [selectedIslandId]: islandSummaryProposal.diff.warnings ?? [],
+    }));
+    await recordProposalDecision(islandSummaryProposal.proposalId, "adopt", "human");
+    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} adopted ${islandSummaryProposal.proposalId}`]);
+    setIslandSummaryProposal(null);
+  }, [applyDocumentChange, document, islandSummaryProposal, selectedIslandId]);
+
+  const handleRejectIslandSummaryProposal = useCallback(async () => {
+    if (!islandSummaryProposal) {
+      return;
+    }
+    await recordProposalDecision(islandSummaryProposal.proposalId, "reject", "human");
+    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} rejected ${islandSummaryProposal.proposalId}`]);
+    setIslandSummaryProposal(null);
+  }, [islandSummaryProposal]);
+
+  const handleHoldIslandSummaryProposal = useCallback(async () => {
+    if (!islandSummaryProposal) {
+      return;
+    }
+    await recordProposalDecision(islandSummaryProposal.proposalId, "hold", "human");
+    setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
+  }, [islandSummaryProposal]);
 
   const handleSuggestLayout = useCallback(async () => {
     if (!document || isSuggesting) {
@@ -8214,6 +8242,17 @@ ${parsedDocument.error}`);
           }}
           onSuggestIslandSummary={() => {
             void handleSuggestIslandSummary();
+          }}
+          islandSummaryProposal={islandSummaryProposal}
+          proposalAuditTrail={proposalAuditTrail}
+          onAdoptIslandSummaryProposal={() => {
+            void handleAdoptIslandSummaryProposal();
+          }}
+          onRejectIslandSummaryProposal={() => {
+            void handleRejectIslandSummaryProposal();
+          }}
+          onHoldIslandSummaryProposal={() => {
+            void handleHoldIslandSummaryProposal();
           }}
           isSuggestingIslandSummary={isSuggestingIslandSummary}
           islandSummarySuggestionWarnings={selectedIsland ? islandSummarySuggestionWarningsByIslandId[selectedIsland.id] ?? [] : []}

@@ -65,6 +65,15 @@ type SidePanelProps = {
   onShowSummaryHistoryGrounding: (groundingIds: string[]) => void;
   onSummaryReviewedChange: (value: boolean) => void;
   onSuggestIslandSummary: () => void;
+  islandSummaryProposal: {
+    proposalId: string;
+    status: "proposed";
+    diff: { after: string };
+  } | null;
+  proposalAuditTrail: string[];
+  onAdoptIslandSummaryProposal: () => void;
+  onRejectIslandSummaryProposal: () => void;
+  onHoldIslandSummaryProposal: () => void;
   isSuggestingIslandSummary: boolean;
   islandSummarySuggestionWarnings: string[];
   summaryGroundingItems: SummaryGroundingItem[];
@@ -222,6 +231,11 @@ export function SidePanel({
   onShowSummaryHistoryGrounding,
   onSummaryReviewedChange,
   onSuggestIslandSummary,
+  islandSummaryProposal,
+  proposalAuditTrail,
+  onAdoptIslandSummaryProposal,
+  onRejectIslandSummaryProposal,
+  onHoldIslandSummaryProposal,
   isSuggestingIslandSummary,
   islandSummarySuggestionWarnings,
   summaryGroundingItems,
@@ -2090,6 +2104,22 @@ export function SidePanel({
           >
             {isSuggestingIslandSummary ? "Suggesting summary..." : "Suggest summary (AI)"}
           </button>
+          {islandSummaryProposal ? (
+            <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 11, color: "#1e3a8a" }}>
+                AI proposal <strong>{islandSummaryProposal.proposalId}</strong> ({islandSummaryProposal.status})
+              </div>
+              <div style={{ fontSize: 12, color: "#1e293b" }}>Patch preview: {islandSummaryProposal.diff.after}</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" onClick={onAdoptIslandSummaryProposal} style={{ flex: 1 }}>Adopt</button>
+                <button type="button" onClick={onHoldIslandSummaryProposal} style={{ flex: 1 }}>Hold</button>
+                <button type="button" onClick={onRejectIslandSummaryProposal} style={{ flex: 1 }}>Reject</button>
+              </div>
+              {proposalAuditTrail.length > 0 ? (
+                <div style={{ fontSize: 11, color: "#334155" }}>Audit: {proposalAuditTrail[proposalAuditTrail.length - 1]}</div>
+              ) : null}
+            </div>
+          ) : null}
           {selectedIsland.summaryReviewed !== true && typeof selectedIsland.summaryText === "string" && selectedIsland.summaryText.length > 0 ? (
             <div
               style={{

@@ -17,6 +17,9 @@ from kj_atlas_api.models_ai import (
     CheckNarrativeResponse,
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
+    ProposalDecisionAuditRequest,
+    ProposalEnvelope,
+    ProposeIslandSummaryRequest,
     SuggestIslandSummaryRequest,
     SuggestIslandSummaryResponse,
 )
@@ -553,6 +556,48 @@ def suggest_island_summary(payload: SuggestIslandSummaryRequest) -> SuggestIslan
     _audit_llm_trace("suggest_island_summary", llm_response)
 
     return _parse_island_summary_response(llm_response.raw_text, payload)
+
+
+@router.post("/proposals/island-summary", response_model=ProposalEnvelope)
+def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnvelope:
+    summary_result = suggest_island_summary(SuggestIslandSummaryRequest(doc=payload.doc, islandId=payload.islandId))
+    target_island = next((item for item in payload.doc.islands if item.id == payload.islandId), None)
+    if target_island is None:
+        raise HTTPException(status_code=422, detail="islandId does not exist")
+    return ProposalEnvelope(
+        proposalId=f"proposal-{uuid4()}",
+        type="island_summary",
+        status="proposed",
+        sourceBundleHash=payload.sourceBundleHash,
+        diff={
+            "entityType": "island_summary",
+            "targetId": payload.islandId,
+            "field": "summaryText",
+            "before": target_island.summaryText,
+            "after": summary_result.summaryText,
+            "groundingIds": summary_result.groundingIds,
+            "warnings": summary_result.warnings,
+        },
+        rationale="AI generated proposal only. Human decision is required before any apply.",
+    )
+
+
+@router.post("/proposals/audit")
+def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> dict[str, str]:
+    logger.info(
+        "proposal_decision_audit",
+        extra={
+            "proposalId": payload.proposalId,
+            "decision": payload.decision,
+            "actor": payload.actor,
+            "reason": payload.reason or "",
+        },
+    )
+    return {
+        "proposalId": payload.proposalId,
+        "decision": payload.decision,
+        "recordedAt": "server-log",
+    }
 
 
 @router.post("/generate-narrative", response_model=GenerateNarrativeResponse)

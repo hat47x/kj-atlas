@@ -101,3 +101,43 @@ class SummarizeIslandRelationResponse(BaseModel):
     groundingCardIds: list[str]
     groundingEdgeIds: list[str]
     warnings: list[str]
+
+
+class ProposalDiff(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entityType: Literal["island_summary"]
+    targetId: str = Field(min_length=1)
+    field: Literal["summaryText"]
+    before: str | None = None
+    after: str = Field(min_length=1)
+    groundingIds: list[str] = Field(min_length=1)
+    warnings: list[str] | None = None
+
+
+class ProposalEnvelope(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1)
+    type: Literal["island_summary"]
+    status: Literal["proposed"]
+    sourceBundleHash: str = Field(min_length=1)
+    diff: ProposalDiff
+    rationale: str = Field(min_length=1)
+
+
+class ProposeIslandSummaryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc: DocumentV2
+    islandId: str = Field(min_length=1)
+    sourceBundleHash: str = Field(min_length=1)
+
+
+class ProposalDecisionAuditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1)
+    decision: Literal["adopt", "reject", "hold"]
+    actor: str = Field(min_length=1)
+    reason: str | None = None
