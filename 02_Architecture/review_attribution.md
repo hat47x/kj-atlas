@@ -64,6 +64,13 @@ kj-atlas は OSS として、多様な環境で利用される：
 - レビューの記録は **reviewEvents** として append-only に近い形で残す
 - “誰が”は **ReviewerRef（匿名ID）** とし、実名等はオプトイン
 
+### CE0-REVIEW-IF（契約凍結の再掲）
+
+- review state 契約は `unreviewed | human_reviewed` を固定する。
+- `human_reviewed` への遷移は **人手操作のみ** とし、AI単独遷移を禁止する。
+- `mode=autonomous` を含むすべてのAI実行モードで、review自動昇格を禁止する。
+- SafeMode既定ONと share/export 漏えい防止は、review attribution の運用変更で緩和してはならない。
+
 ## HIL-RS-01-A1 最小I/F契約（固定参照）
 
 - SSOT（唯一参照先）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`

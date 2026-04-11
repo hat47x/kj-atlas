@@ -79,6 +79,18 @@ docker compose logs api --tail=100
 - ローカル/社内LLM利用時は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を到達可能な内部URLに設定してください。
 - 画面の JSON Export / Import を利用可能です。
 
+### CE0 契約凍結の運用ゲート（Stream B）
+
+- Query Preview bypass を禁止する（ContextQuery送信は Preview 経由のみ）。
+- `ConsensusGraph` への direct write を禁止する（`patch + approval` 以外の更新禁止）。
+- `mode=autonomous` でも proposal-only を維持する（auto-apply 禁止）。
+- review state の自動昇格を禁止する（AIのみで `human_reviewed` へ遷移しない）。
+- 監査4点セット（`query/bundle/proposal/apply`）が欠損した実行は成功扱いにしない。
+
+Go/No-Go 判定（1行）:
+- **Go** = 上記5条件がすべて成立。
+- **No-Go** = 1条件でも不成立（SafeMode後退、auto-apply許容、review自動昇格兆候を含む）。
+
 
 ### Read-only 表示モード
 
