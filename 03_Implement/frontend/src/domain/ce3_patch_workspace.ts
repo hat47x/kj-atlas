@@ -40,6 +40,7 @@ export type WorkspaceAuditEntry = {
   from: WorkspaceDecision;
   to: WorkspaceDecision;
   at: string;
+  reason: "decision" | "rollback";
 };
 
 export type WorkspaceState = {
@@ -181,6 +182,7 @@ export function commitWorkspaceDecision(
         from: previousDecision,
         to: decision,
         at: now,
+        reason: "decision",
       },
     ],
     phase: "decision_recorded",
@@ -198,11 +200,30 @@ export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState
     };
   }
 
+  const rollbackTimestamp = new Date().toISOString();
+  const rollbackEntries: WorkspaceAuditEntry[] = [];
+  const candidateIds = new Set([...Object.keys(state.decisions), ...Object.keys(snapshot.decisions)]);
+  for (const candidateId of candidateIds) {
+    const from = state.decisions[candidateId] ?? "hold";
+    const to = snapshot.decisions[candidateId] ?? "hold";
+    if (from === to) {
+      continue;
+    }
+    rollbackEntries.push({
+      candidateId,
+      from,
+      to,
+      at: rollbackTimestamp,
+      reason: "rollback",
+    });
+  }
+
   return {
     ...state,
     decisions: snapshot.decisions,
     selectedCandidateId: snapshot.selectedCandidateId,
     rollbackStack: state.rollbackStack.slice(0, -1),
+    auditLog: [...state.auditLog, ...rollbackEntries],
     phase: state.rollbackStack.length > 1 ? "rollback_ready" : "idle",
     failureMessage: null,
   };

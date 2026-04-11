@@ -112,7 +112,8 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await expect(page.getByTestId("ce3-decision-state")).toContainText("hold");
   await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("hold");
   await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
-  await expect(page.getByTestId("ce3-audit-log-size")).toContainText("2");
+  await expect(page.getByTestId(`ce3-candidate-audit-${betaCandidateId ?? ""}`)).toContainText("rollback");
+  await expect(page.getByTestId("ce3-audit-log-size")).toContainText("3");
 
   await page.getByTestId("ce3-preset-name").fill("Local CE3 Preset");
   await page.getByTestId("ce3-preset-scope").selectOption("selection");

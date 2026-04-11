@@ -168,3 +168,32 @@
 ### Phase 5) Proceed
 
 - 判定: Ready（DOC-OPS-05-11 は security/ops 系同期条件を満たす）。
+
+## 13) Stream H rerun-02（Phase 1〜6）
+
+### Phase 1 Read（役割語彙・状態遷移・D1〜D4）
+
+- `strict_mode_exception_approval_flow.md` と `operations.md` を再読し、役割・状態・固定値を照合。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context: operations 文書は実行runbookのため、security/e2eと語彙不一致があると検証不能になる。
+- Decision: 用語（3役割）・状態遷移（DraftRequest〜Closed + StoppedForClarification）・D1〜D4 を issue 側要件へ固定する。
+- Consequences: docs-check の判定軸が明確化し、公開文書改善の差し戻しを減らせる。
+
+### Phase 3 Plan（AC/DoD不足提案）
+
+- 提案-1: ACへ「相互リンク有効（security/security_guidelines/e2e）」を追加。
+- 提案-2: DoDへ「固定値の同値表記（4h/2h/48h/15m/60m）」を追加。
+
+### Phase 4 Execute（直列同期の先頭）
+
+- Stream H で operations を先頭更新対象として扱い、次段securityへ受け渡す基準語彙を確定。
+
+### Phase 5 Verify（docs-check + rg + diff）
+
+- `docs-check`・`rg`・`git diff --check` で不整合なしを確認（自己修復 0/3）。
+
+### Phase 6 Proceed（証跡記録）
+
+- 本Issueに rerun-02 の同期証跡を記録し、Open化判断に反映。

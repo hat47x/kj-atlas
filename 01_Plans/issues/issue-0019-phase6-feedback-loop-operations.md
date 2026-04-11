@@ -80,7 +80,7 @@
   - Conditional: 再判定日と担当を記録後に限定進行。
   - No-Go: 見送り理由・再判定日・担当を記録するまで停止。
 
-## 6) Verify（docs-check + diff）
+## 6) Verify（docs-check + diff + 語彙一致）
 
 ### 6.1 Validation evidence（統一形式）
 
@@ -105,11 +105,12 @@
 
 ## 6.2 Phase execution contract（Stream G 固定）
 
-- Phase 1 Read（現行Gate定義再読）: 各Phase冒頭で3ファイル（`issue-0019` / `issue-0020` / `phase6-public-documentation-architecture.md`）を再読して同期する。
-- Phase 2 CDC: Context / Decision / Consequences の差分がある場合のみ、Gate C→D→E 固定で更新する。
-- Phase 3 Plan（AC/DoD不足補完合意）: Gate D 入力契約（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）と Gate E Proceed 条件の不足を補完して合意する。
-- Phase 4 Execute（C→D→E順序, evidence 6項目固定）: Gate C→D→E を順序固定で実行し、証跡を `Date / Gate / Command / Result / Decision / Next action` の6項目で記録する。
-- Phase 5 Verify/Proceed（docs-check、3回自己修復上限、超過停止）: `docs-check` と `git diff` を実施し、検証失敗時は自己修復を最大3回までとし、超過時は Fail-safe で停止する。
+- Phase 1 Read（Gate依存・evidence 6項目再確認）: 各Phase開始時に3ファイル（`issue-0019` / `issue-0020` / `phase6-public-documentation-architecture.md`）を再読し、`C→D→E` と `Date / Gate / Command / Result / Decision / Next action` の6項目必須を再確認する。
+- Phase 2 ADR明文化（CDC補完）: Context / Decision / Consequences の不足分を補完し、Gate C→D→E の依存と Proceed 条件を ADR 形式で固定する。
+- Phase 3 Plan（AC/DoD不足補完）: Proceed 条件を `Go=即時進行 / Conditional=再判定日+担当で限定進行 / No-Go=記録完了まで停止` に明記し、AC/DoD不足を提案して合意する。
+- Phase 4 Execute（Gate順序・KPI入力・判定引継ぎ統一）: Gate C→D→E を順序固定で実行し、Gate D 必須入力（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）と Gate E 判定引継ぎを統一する。
+- Phase 5 Verify（docs-check + diff + 語彙一致、3回自己修復上限）: `python3 01_Plans/issues/validate_active_issue_memos.py --root .`、`git diff`、`rg` による語彙一致を実行し、自己修復は最大3回までとする。4回目失敗はFail-safe停止。
+- Phase 6 Proceed（公開判定運用への引き渡し記録）: Gate E 判定結果、制約、残リスク、再判定日/担当（Conditional/No-Go時）を記録し、公開判定運用へ正式に引き渡す。
 
 ## 7) Fail-safe
 

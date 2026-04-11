@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Ready (A1 Contract Fixed)
 - Priority: P0
-- Owner: Stream D
+- Owner: Stream J
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -149,6 +149,47 @@
   - Required fields / Invariants / ContractLinks
   - `contractLinkLocked=true` / `sharedResourceFreeze=true`
 - 逸脱要求はA1へ差し戻し。
+
+
+## Stream J serial readiness protocol（Plan→Execute→Verify→Proceed 固定）
+
+### Phase 1 Read（Ready/P0メモ整合と未記載項目抽出）
+- Phase開始Read: 当該A1/A2/A3の3メモを再読し、`Status` / `Priority(P0)` / `DecisionStatus` / `ContractID(またはDependsOnContractID)` を照合する。
+- 抽出項目（不足監査）: AC未記載、DoD未記載、停止条件未記載、handoff条件未記載。
+- Proceed条件: 未記載があれば本メモへ追記してから次Phaseへ進む。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Phase開始Read: `Related ADR/Spec` と当該A1契約本文を再読する。
+- Plan: ADR新設ではなく、既存方針のCDC不足をIssue本文へ補完する。
+- Execute: Context / Decision / Consequencesの3点を契約IDと依存順序に紐付けて固定する。
+- Verify: 新規アーキ判断を持ち込んでいないことを確認する。
+- Proceed条件: CDCがA1/A2/A3で矛盾しない。
+
+### Phase 3 Plan（AC/DoD不足提案と合意）
+- Phase開始Read: Acceptance criteria と Fail-safe セクションを再読する。
+- Plan: 不足があれば `gapType=AC|DoD` と `agreementStatus` を明示した提案行を追加する。
+- Execute: 合意前提（`agreementStatus=agreed` でのみGo）を明記する。
+- Verify: AC/DoD不足が未処理のまま次Phaseへ流れていない。
+- Proceed条件: 不足項目が解消済み、または保留理由と再開条件が明記済み。
+
+### Phase 4 Execute（A1→A2→A3直列固定）
+- Phase開始Read: ContractLinks / DependsOnContractID / ReferenceContractID を再照合する。
+- Execute: 依存順序を `A1 -> A2 -> A3` に固定し、逆流要求はA1へ差し戻す。
+- Verify: 並列前提や実装先行前提を含まない。
+- Proceed条件: handoff payload と停止条件が同時に明記されている。
+
+### Phase 5 Verify（docs-check / 依存参照 / 表記ゆれ）
+- Phase開始Read: Validation plan と State sync を再読する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証として実行する。
+- Verify: 失敗時は自己修復を最大3回まで。
+- 停止条件: 3回超過 / 依存不整合 / 指定外ファイル更新が必要になった場合は停止して報告する。
+- Proceed条件: docs-check成功かつ参照整合が維持される。
+
+### Phase 6 Proceed（handoff条件と次実装入口固定）
+- Phase開始Read: Handoff と Proceed 判定を再読する。
+- Execute: handoff固定値（ContractID、version、mockCase、ownerOfFix等）を次実装入口の必須入力として固定する。
+- Verify: 次実装入口が「契約参照のみ」で開始できることを確認する。
+- Proceed: Go時のみ下流へ引き渡し、NoGo時は停止条件と再開条件を併記して保留する。
 
 ## Validation plan
 

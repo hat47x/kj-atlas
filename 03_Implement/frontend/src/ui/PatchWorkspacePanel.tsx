@@ -84,7 +84,8 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
   const latestAuditByCandidate = useMemo(() => {
     const latest = new Map<string, string>();
     for (const entry of workspaceState.auditLog) {
-      latest.set(entry.candidateId, `${entry.from}→${entry.to}`);
+      const suffix = entry.reason === "rollback" ? " (rollback)" : "";
+      latest.set(entry.candidateId, `${entry.from}→${entry.to}${suffix}`);
     }
     return latest;
   }, [workspaceState.auditLog]);

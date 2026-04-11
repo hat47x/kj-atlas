@@ -24,6 +24,20 @@
    - 回帰しやすい安全境界（SafeMode / import / export / docs保存）
    - 環境差分に強い待機戦略（networkidle固定に依存しすぎない）
 
+### 1.1 Stream H 文書横断同期チェック（Verify フェーズ）
+
+operations -> security の直列同期後、e2e では docs-check と `rg` により次を固定確認する。
+
+- 役割語彙: `Security Officer / System Owner / Platform Operator`
+- 状態遷移語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`
+- D1〜D4 固定値: `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 相互リンク: `operations.md` / `security.md` / `security_operational_guidelines.md` を参照可能
+
+運用側の検証コマンド（docs-only変更時）:
+
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|StoppedForClarification|ActiveException|RollbackPending|Closed|D1|D2|D3|D4|4h|2h|48h|15m|60m" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+
 ---
 
 ## 2. kj-atlas向け推奨E2Eスコープ
@@ -95,6 +109,7 @@ CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは
 - 候補A/Bを連続操作した後、候補ごとの状態表示（decision matrix）が独立に保持される。
 - `Roll back last workspace decision` で直前状態へ復帰できる。
 - rollback後に「直前の候補だけ」が復旧され、先行候補の決定は維持される。
+- rollback実行時に、復旧対象候補の監査遷移表示へ `(...rollback)` が追記される。
 - Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
 - Preset保存後にページ再読込しても、保存済み `Run <name>` で同一正規化JSONが再現される。
 - 監査遷移数（Audit transitions）が操作回数に応じて増加する。
