@@ -3,8 +3,11 @@
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部利用者・レビュー担当者
 > Goal: narrative生成とレビュー状態の公開セマンティクスを示す。
+> Non-goal: 内部監査ログ形式・運用承認フローの詳細定義は扱わない。
 > Public boundary: 内部判断ログは含めず、運用意味論と非目標を公開する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Outcome: narrative生成時の既定値・レビュー責務・公開時の注意点を単独で判断できる。
+> Related: `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
 
 
 本ドキュメントは、A型図解（空間配置）から B型文章（narrative）を作成・レビューする際の、
@@ -13,6 +16,17 @@
 - 本ドキュメントで扱う narrative は、カード内容を説明可能な形に並べた文章ドラフトである。
 - AI は narrative の下書き生成を補助できるが、内容の真偽を保証しない。
 - 生成された文章は、**常に `reviewed=false`（未レビュー）を既定値**とする。
+
+## 0. Go/No-Go gate（公開利用前チェック）
+
+以下を満たす場合のみ、本ドキュメントを「公開運用可能（Go）」と判定する。
+
+- Audience / Goal / Non-goal / Public boundary / Outcome / Related が明示されている
+- narrative の既定 review state が `reviewed=false` で固定されている
+- 人間レビューなしで `reviewed=true` へ昇格しないことが明示されている
+- 非目標（真偽の自動保証をしない）が記載されている
+
+上記のいずれかが欠ける場合は「No-Go」とし、公開前に本文を修正する。
 
 ---
 
