@@ -59,6 +59,28 @@
 | `CE0-REVIEW-IF` | review状態遷移の責務境界を固定 | `human_reviewed`/`unreviewed` state | 人手操作でのみ `human_reviewed` 昇格 | AIによるreview自動昇格 |
 | `CG-01..05` | Working/Projection/Consensus責務固定 | KJ構造 + query constraints + actor/modelTier | proposal-only運用（patch+approval経由） | Consensus直接更新、監査欠損成功扱い |
 
+### 2.4 AC/DoD補強ドラフト（Phase 3: Plan）
+
+- 追加AC（ドラフト→本Issueで採用）:
+  - [ ] Query Preview を経由しない ContextQuery 送信経路が 0 件である。
+  - [ ] `ConsensusGraph` への direct write（patch+approval 以外）が 0 件である。
+  - [ ] `mode=autonomous` でも `proposal-only` 契約が明文化されている。
+  - [ ] 監査4点セット（`query/bundle/proposal/apply`）欠損時は No-Go と定義される。
+- DoD（CE0完了判定）:
+  - Plan → Execute → Verify → Proceed の順序で記録され、各段の証跡（定義表・同期差分・検証コマンド）が残る。
+  - CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05 の語彙が `01/02/04` で一致する。
+
+### 2.5 Go/NoGo Key（固定）
+
+- **Go**:
+  - Query Preview 必須経路が維持される。
+  - `patch + approval` 以外で Consensus 更新が発生しない。
+  - SafeMode既定ON・未レビュー本文保護・review自動昇格禁止が同時に成立する。
+- **No-Go**:
+  - Query Preview bypass の導線が1件でも存在する。
+  - direct write / auto-apply / review自動昇格を許容する記述が1件でも存在する。
+  - SafeMode後退（既定OFF化・例外既定化）の兆候を検知する。
+
 ## 3) Consequences
 
 - CE-1〜CE-4 は本Issueの Contract ID を参照し、契約再定義を禁止する。

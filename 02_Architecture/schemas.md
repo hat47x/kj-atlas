@@ -19,6 +19,26 @@ MVPでは以下を成立させます。
 - キャンバス表示のためのビュー変換（パン／ズーム）
 - ドキュメントの保存・復元
 
+### 1.1 CE0 Contract Freeze（責務境界メタ契約）
+
+CE-0 の契約凍結として、実装型に先行して次のメタ契約を固定する。
+
+- `CE0-CTX-IF`:
+  - ContextQuery 必須キー: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode`
+  - ContextBundle 必須キー: `bundleHash`（deterministic）
+  - 禁止: Query Preview bypass / 非決定論 bundle
+- `CE0-SAFEMODE-IF`:
+  - safeMode 既定ON時は `allowUnreviewedText=false` を既定適用
+  - 禁止: 未レビュー本文のAI入力混入、safeMode既定緩和
+- `CE0-REVIEW-IF`:
+  - review state は `unreviewed | human_reviewed`
+  - `human_reviewed` への昇格は人手操作のみ
+  - 禁止: AIによる review 自動昇格
+- `CG-01..05`:
+  - Working / ContextProjection / Consensus を分離
+  - `Working -> Consensus` は `patch + approval` のみ
+  - `mode=autonomous` でも proposal-only（auto-apply禁止）
+
 ---
 
 ## 2. ID・座標系の前提
@@ -500,4 +520,3 @@ export type A1ErrorEnvelope = {
 - `message` へ email / external_uid など生IDを含めない。
 - `contractId` は違反した契約IDを必ず指す。
 - A2/A3 で errorCode 列挙を拡張しない。
-

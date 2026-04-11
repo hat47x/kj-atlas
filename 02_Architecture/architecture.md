@@ -181,11 +181,11 @@ MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
 Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `LLM_TRANSPORT`（in_process/ipc/http）で分離する。
 
-## 7A. CE-0 固定契約（Contract Freeze: Core Graph Repositioning）
+## 7A. CE-0 固定契約（Contract Freeze: Consensus/Working Repositioning）
 
 CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（実装詳細はCE-1以降）。
 
-### 7A.1 責務境界
+### 7A.1 責務境界（CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05）
 
 - `WorkingGraph`: 主体（human/agent/role）ごとの探索・未確定保持を担う作業面。
 - `ContextProjectionGraph`: 問い合わせ目的へ投影する読取専用面。ContextBundle生成にのみ使用。
@@ -208,6 +208,17 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 - `human_reviewed` 状態をAIが自動付与してはならない。
 - safeMode既定ON時、未レビュー本文をAI入力へ含めてはならない。
 - `mode=autonomous` でも proposal-only を維持し、監査4点セット（query/bundle/proposal/apply）欠損時は失敗扱いとする。
+
+### 7A.4 Go/NoGo Key（実装着手ゲート）
+
+- **Go条件**
+  - Query Preview を必須経路として維持する。
+  - `Working -> Consensus` の更新経路は `patch + approval` のみ。
+  - `mode=autonomous` でも proposal-only（auto-apply禁止）を維持する。
+- **No-Go条件**
+  - Query Preview bypass を許容する導線が存在する。
+  - `ConsensusGraph` への direct write を許容する。
+  - AI単独で `human_reviewed` へ遷移させる。
 
 ---
 

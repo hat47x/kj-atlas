@@ -63,11 +63,31 @@
 | Audit | `query/bundle/proposal/apply` を必須化 | 欠損時に成功扱い |
 | Safety | safeMode既定ON時は未レビュー本文をprojectionへ投入しない | safeMode緩和を既定化 |
 
+### 2.4 CG-01..05 固定定義（Phase 1 Read 抽出）
+
+- `CG-01`: Graph責務分離を固定（Working / ContextProjection / Consensus の3層）。
+- `CG-02`: 遷移は `Working -> Consensus = patch + approval only` を固定（direct write禁止）。
+- `CG-03`: Projectionは read-only（永続書込禁止、bundle生成専用）を固定。
+- `CG-04`: `mode=autonomous` でも proposal-only を固定（auto-apply禁止）。
+- `CG-05`: 監査4点セット（`query/bundle/proposal/apply`）欠損時は成功扱い禁止を固定。
+
+### 2.5 Go/NoGo Key（固定）
+
+- **Go**:
+  - Core Graph表現が契約語彙としては `Consensus Graph` に一本化される（旧称は注記のみ）。
+  - Working/Projection/Consensus の read/write 境界が表形式で追跡可能。
+  - Query Preview bypass 禁止・direct write 禁止・auto-apply 禁止が同時成立。
+- **No-Go**:
+  - Core Graph 単独モデルへ責務を再集約する記述が残る。
+  - Projection の永続上書きや review 自動遷移を許容する記述が残る。
+  - `UNC-VSC-CE-02-01..03` の追跡不能状態を放置する。
+
 ## 3) Consequences
 
 - `Core Graph` の語彙は履歴説明用の別名としてのみ残し、契約語彙は `Consensus Graph` に統一する。
 - `autonomous mode` は proposal-only を維持し、自動適用モードとして扱わない。
 - 3項目のDecision QueueがCloseされるまで、実装での責務緩和は禁止する。
+- Fail-safe: SafeMode後退、auto-apply許容、review自動昇格の兆候を検知した場合は即停止する。
 
 ## 4) 受入条件 / Acceptance criteria
 
