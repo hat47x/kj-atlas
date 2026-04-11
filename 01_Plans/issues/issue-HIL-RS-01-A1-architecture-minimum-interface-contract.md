@@ -11,6 +11,50 @@
 - Related ADR/Spec: `ADR-0026`, `ADR-0001`, `00_Prompt/domain.md`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`, `02_Architecture/review_attribution.md`, `02_Architecture/schemas_review_attribution.md`
 - Expected verification level: `docs-check`
 
+## Stream A serial execution contract（Phase 1-6）
+
+### Phase 1: Read
+
+- Plan: 対象3ファイルの `Status / Priority / Scope / Dependencies` を再抽出し、差分有無を判定する。
+- Execute: 本issue・`issue-HIL-RS-02-A1-governance-contract-hardening.md`・`issue-HIL-RS-02-next-phase-delivery-plan.md` を再読。
+- Verify: `Status=Open`, `Priority=P1`, ScopeがDocs中心、Dependenciesが `ADR-0026/0027` + A1 SSOT依存で整合。
+- Proceed: 想定差分なしのため継続。差分があれば即停止して競合を報告。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+
+- Plan: A1契約凍結の CDC を明文化し、上位ADR改訂要否を判定する。
+- Execute: Context/Decision/Consequences をA1契約凍結前提で固定。
+- Verify: `ADR-0026` / `ADR-0027` 改定が必要な要求は「未承認確定禁止」で停止する運用を確認。
+- Proceed: ADR改定不要ならPhase 3へ。
+
+### Phase 3: Plan
+
+- Plan: AC/DoD不足を補う草案を提示し、採否記録を残す。
+- Execute: Decision Queue の許可遷移を `Pending -> Approved|Rejected` に固定。
+- Verify: Pending経由なし確定化が禁止されていることを確認。
+- Proceed: 不足がなければPhase 4へ。
+
+### Phase 4: Execute
+
+- Plan: A1開始条件/停止条件/再開条件を一意化する。
+- Execute: A2/A3 Open 条件を `A1 Done & Pending=0` に固定。
+- Verify: 逸脱条件（未承認確定、SafeMode後退、share/export後退、未定義競合）でBlockになることを確認。
+- Proceed: 条件一意化後にPhase 5へ。
+
+### Phase 5: Verify
+
+- Plan: docs-check系を実行し、失敗時はSelf-Correctionを最大3回まで行う。
+- Execute: validator / unittest / diff check を実施。
+- Verify: 失敗が残る場合は3回以内で修復、超過時は即停止。
+- Proceed: 成功時のみPhase 6へ。
+
+### Phase 6: Proceed
+
+- Plan: 残課題・次の1手・非目標逸脱の有無を確定する。
+- Execute: 残課題を Decision Queue に限定し、A2/A3の契約外注記のみ許可。
+- Verify: 非目標（`03_Implement/**` 変更、契約再定義）への逸脱がないことを確認。
+- Proceed: Stream AのA1契約凍結完了として終了。
+
 ## 0) Stream A workflow log（Plan → Execute → Verify → Proceed）
 
 ### Phase 1: Read & Baseline
