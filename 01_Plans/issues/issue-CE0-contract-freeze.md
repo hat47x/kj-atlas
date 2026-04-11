@@ -32,25 +32,60 @@
 - 再抽出結果（固定語彙）: `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` / `proposal-only` / `Query Preview` / `safeMode` / `human_reviewed`。
 - 再抽出結果（禁止事項）: Query Preview bypass / Consensus direct write / auto-apply / AI review自動昇格 / safeMode既定緩和。
 
+### Phase 1 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）と禁止事項語彙を再抽出し、本Issueを一次正本に固定する。
+- **Execute**: 固定語彙・禁止事項・mock-first依存切断（CE1/CE2/CE4待機禁止）を明文化した。
+- **Verify**: 契約IDの再定義を禁止し、語彙を `Consensus Graph` 系へ統一する方針を確認した。
+- **Proceed**: Phase 2でADR追記は不足補完（Context/Decision/Consequences）に限定し、再定義禁止を継続する。
+
 ## 0.1) Phase 2 ADR明文化（不足分のみ追記）
 
 - ADR記述は Context / Decision / Consequences の不足分のみを補完し、既存合意を再定義しない。
 - CE1/CE2 が参照する語彙（`proposal-only`, `safeMode`, `human_reviewed`, `sourceBundleHash`）を CE0用語に接続する。
+
+### Phase 2 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: ADR-0028本文の再定義はせず、参照注記だけで不足語彙の接続関係を明確化する。
+- **Execute**: CE0語彙から CE1/CE2参照語彙へのマッピング方針を明記した。
+- **Verify**: ADR再定義禁止と「不足分補完のみ」の境界を固定した。
+- **Proceed**: Phase 3でAC/DoD不足項目を追加提案し、Go/No-Go判定に接続する。
 
 ## 0.2) Phase 3 Mock-first契約化（依存切断）
 
 - CE1/CE2/CE4 依存は mock I/F で切断し、CE0契約検証をブロックしない。
 - CE0は実装を伴わず契約固定に限定する。
 
+### Phase 3 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: AC/DoDで「依存待機禁止」を明示し、契約凍結の完了条件を先に固定する。
+- **Execute**: 依存切断と docs-check 完了をProceed条件へ組み込んだ。
+- **Verify**: CE0が実装レーン（03_Implement）を要求しないことを再確認した。
+- **Proceed**: Phase 4でdrift-stopと修復上限（3回）を停止条件として固定する。
+
 ## 0.3) Phase 4 AC/DoD固定（drift-stop）
 
 - drift-stop 条件を固定する（契約ID衝突、語彙衝突、safeMode後退、auto-apply許容）。
 - Verify自己修復は最大3回。4回目失敗相当で即停止し、推測継続を禁止する。
 
+### Phase 4 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: Fail-safeを定量化し、`collision=0` と `safeMode後退=0` を必須ゲート化する。
+- **Execute**: 自己修復3回上限と4回目相当即停止を契約化した。
+- **Verify**: 安全後退（safeMode/auto-apply/review昇格）を1件でもNo-Goにすることを確認した。
+- **Proceed**: Phase 5で契約ID衝突0・語彙衝突0・SafeMode後退0の3点検証へ進む。
+
 ## 0.4) Phase 5 Verify（CE0/CE1/CE2整合）
 
 - CE0/CE1/CE2 の契約ID整合を検証し、衝突0件をProceed条件にする。
 - 契約語彙の差異（同義語ズレ含む）を0件にする。
+
+### Phase 5 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: 参照先Issue間で契約IDと語彙の一意性を機械検索で確認する。
+- **Execute**: 検証コマンドを固定し、衝突0件以外はProceed不可と定義した。
+- **Verify**: Contract ID collision=0 / 語彙 collision=0 / SafeMode後退0 を同時条件として扱う。
+- **Proceed**: Phase 6でCE1/CE2へ参照専用Contract Matrixを引き渡す。
 
 ## 1) Context
 
@@ -178,3 +213,19 @@
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
 追記フェイルセーフ: Self-Correction 3回超過 / Contract ID collision / scope逸脱要求で停止し、推測で継続しない。
+
+### Phase 6 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: CE1/CE2向け引き渡しは本IssueのContract Matrix参照専用とし、再定義を禁止する。
+- **Execute**: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を引き渡し固定値として明記した。
+- **Verify**: 引き渡し対象に実装詳細やADR本文再定義が混入していないことを確認する。
+- **Proceed**: CE1/CE2は本Matrixを上書きせず参照し、差分提案はCE0再起票で扱う。
+
+## 9) CE1/CE2 引き渡し Contract Matrix（固定）
+
+| Consumer | Required Contract IDs | Must Keep | Must Not |
+| --- | --- | --- | --- |
+| CE1 Context Query/Bundle | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CG-01..05` | Query Preview必須 / deterministic `bundleHash` / proposal-only | Preview bypass / 非決定論bundle / direct write |
+| CE2 Low-risk AI Assist | `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CG-02`, `CG-04`, `CG-05` | human review昇格は人手のみ / safeMode既定ON / 監査4点セット | AI review自動昇格 / auto-apply / 監査欠損成功扱い |
+
+> ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
