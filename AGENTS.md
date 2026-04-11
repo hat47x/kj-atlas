@@ -28,13 +28,14 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
 4) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
 5) **Codex+GSD運用ルール**: `00_Prompt/codex_gsd_skill_ops.md`
-6) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
-7) **全体アーキテクチャ**: `02_Architecture/architecture.md`
-8) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-9) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0026`
-10) **実装（03_Implement）**: 対象領域のソースへ
-11) **運用・手順**: `04_Documentation/*`（必要に応じて）
-12) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+6) **認知外在化AI要件（新規中核）**: `00_Prompt/ai_cognitive_externalization_requirements.md`
+7) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+8) **全体アーキテクチャ**: `02_Architecture/architecture.md`
+9) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+10) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0028`
+11) **実装（03_Implement）**: 対象領域のソースへ
+12) **運用・手順**: `04_Documentation/*`（必要に応じて）
+13) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -75,6 +76,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
+- `00_Prompt/ai_cognitive_externalization_requirements.md`：生成AIの認知外在化フレームワーク要件（ContextQuery/ContextBundle/safeMode統治）。
 - `00_Prompt/meta_prompt.md`：ショートハンド（フェーズ完了判定 / 次フェーズ企画 / 並列実行 / 開発継続）を展開する自律進行メタプロンプト。
 - `00_Prompt/virtual_stakeholder_consensus.md`：人間判断待ち論点を扱う仮想ステークホルダー会議プロトコル。
 - `00_Prompt/skills/gsd-kj-atlas/SKILL.md`：`codex_gsd_skill_ops.md` に準拠した Codex スキル定義（配布テンプレート）。
@@ -107,6 +109,8 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`：DOC-OPS-04後続ADRの共通I/F（用語・見出し・判定メタ）先行定義。
 - `01_Plans/adr/ADR-0023-ADR-0025*.md`：DOC-OPS-04の可読性/品質ゲート境界/変更統治の確定。
 - `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`：次フェーズ（HIL-RS-01）の計画ADR。
+- `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`：次フェーズ（HIL-RS-02）の実行計画ADR。
+- `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`：認知外在化要件を実装フェーズへ接続する計画ADR。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。

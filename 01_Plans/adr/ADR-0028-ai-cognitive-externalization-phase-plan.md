@@ -1,0 +1,359 @@
+# ADR-0028: 認知外在化AI要件の文書体系統合と次フェーズ実行計画
+
+- Status: Accepted
+- Date: 2026-04-10
+- Deciders: Project Maintainers
+- Scope: `00_Prompt/`, `01_Plans/adr/`, `02_Architecture/`, `03_Implement/frontend/`, `03_Implement/backend/`, `04_Documentation/`
+- Source Spec: `00_Prompt/ai_cognitive_externalization_requirements.md`
+- Related: `ADR-0001`, `ADR-0007`, `ADR-0026`, `ADR-0027`, `02_Architecture/llm_input_ir_spec.md`, `02_Architecture/llm_quality_strategy.md`
+
+## Context
+
+`00_Prompt/ai_cognitive_externalization_requirements.md` が追加され、kj-atlas を「生成AIの認知外在化フレームワーク」として再定義する要件が提示された。
+一方、既存の文書体系では以下が未固定である。
+
+1. 新規要件の参照優先順位（Read Order）
+2. 00〜04 レイヤへの分解責務（どの文書/層で何を決めるか）
+3. 次フェーズの実行単位・受入条件・停止条件
+
+この未固定状態のまま実装を開始すると、
+- Prompt要件がArchitecture/Implementへ未接続のまま分岐実装される
+- AI機能がチャット主導へ逸脱し、canvas主従関係が崩れる
+- safeMode既定ON/未レビュー保護が機能単位で後退する
+
+リスクがある。
+
+## Decision
+
+認知外在化要件を「上位要件（Prompt）→ 設計（Architecture）→ 実装（Implement）→ 運用（Documentation）」へ段階接続するため、
+以下の5フェーズを固定する。
+
+### D1. 文書体系統合（即時適用）
+
+- `ai_cognitive_externalization_requirements.md` を Read Order に追加し、`domain.md`/`handoff.md`/`codex_gsd_skill_ops.md` の直後に読む。
+- 計画の正本は本ADR（0028）とし、機能詳細の正本は `00_Prompt/ai_cognitive_externalization_requirements.md` とする。
+- `01_Plans` の関連Issue/メモは本ADRのフェーズID（CE-X）を参照キーとして分割する。
+
+### D2. フェーズ構成（CE-0〜CE-4）
+
+#### CE-0: Contract Freeze（設計前固定）
+
+目的: 認知外在化機能の非後退契約を先に固定する。
+
+- Fixed Contracts:
+  - AIは候補生成器（自動確定禁止）
+  - Core Graph 直接更新禁止（patch提案経由のみ）
+  - safeMode既定ON・未レビュー出力の既定抑止
+  - Human context と AI projection context の分離
+- 成果物:
+  - `02_Architecture` への契約追記（API/IR/review attribution/safeMode境界）
+  - Contract IDs を issue で凍結
+
+#### CE-1: Context Query / Bundle 基盤
+
+目的: AI問い合わせを自然言語任せにせず、構造化コンテキストへ固定する。
+
+- 必須実装:
+  - ContextQuery（対象/深さ/範囲/制約）
+  - ContextBundle（deterministic projection）
+  - Query Preview UI（送信前確認）
+- 検証:
+  - 同一queryでbundleが再生成一致
+  - safeMode時の除外ルール適用
+  - diff/auditログ生成
+
+#### CE-2: 低リスクAI支援（候補提示のみ）
+
+目的: 可逆・比較可能なAI支援を先行導入する。
+
+- 対象機能:
+  - 島タイトル候補
+  - reviewed-only既定のB型文章ドラフト
+  - contradiction/evidence由来の論点候補
+- 非許可:
+  - 自動採用・自動公開・review状態自動昇格
+- 検証:
+  - すべてpatch/diffとして比較可能
+  - `unreviewed` 表示がUI/データで保持
+
+#### CE-3: Patch Workspace と Preset 運用
+
+目的: AI提案を比較・部分採用・保留できる運用面を成立させる。
+
+- 対象機能:
+  - AI Patch Proposal Workspace
+  - Query Presets
+  - AI-aware Perspective Mode（人間向け視座と分離）
+- 検証:
+  - 部分採用/保留/廃棄が可逆
+  - Perspective切替がCore Graphを変更しない
+
+#### CE-4: API/CLI/監査統合
+
+目的: 再現可能運用と監査性を実運用導線へ接続する。
+
+- 対象機能:
+  - ContextQuery/Bundle の API/CLI 提供
+  - batch評価・品質回帰チェック
+  - query log / generated patch / apply log の監査導線
+- 検証:
+  - CLI/APIで同一queryが同一bundleを生成
+  - 監査ログの欠落なし
+
+### D3. フェーズ依存関係
+
+- `CE-0 -> CE-1 -> CE-2 -> CE-3 -> CE-4` を固定順序とする。
+- 並列許可は同一CE内のサブタスクに限定する。
+- `CE-1` 未完了で `CE-2` 実装を開始してはならない。
+
+### D4. Exit Criteria（各フェーズ共通）
+
+各CEは、次を満たした場合のみ Done とする。
+
+1. **Spec Sync**: 00/01/02/04の関連文書に矛盾がない。
+2. **Safety**: safeMode既定ONと未レビュー保護に後退がない。
+3. **Reversibility**: AI提案は採用/保留/破棄が可逆。
+4. **Auditability**: query/patch/apply の追跡が可能。
+5. **Fact-based Verify**: テスト/検証コマンド結果で説明可能。
+
+### D5. Stop Conditions（即停止）
+
+- AI出力の自動確定・自動公開を要求する仕様変更。
+- `reviewed` 状態をAI自動付与する変更。
+- safeMode既定ONまたはshare/export保護を後退させる変更。
+- Human context と AI projection context を同一表現へ強制する変更。
+
+### D6. フェーズ別の実行ブレークダウン（具体化）
+
+各フェーズを「A:設計固定 / B:実装 / C:検証 / D:文書同期」の4ステップで実行する。
+
+#### CE-0 ブレークダウン
+
+- CE0-A（Plan）
+  - `llm_input_ir_spec.md` / `llm_quality_strategy.md` / `review_attribution.md` の契約空白を抽出。
+  - Contract IDs を `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF` として予約。
+- CE0-B（Docs）
+  - safeMode既定ON・未レビュー保護・Core Graph直接更新禁止を Architecture 文書へ追記。
+- CE0-C（Verify）
+  - ドリフト検知: `rg -n "safeMode|unreviewed|Core Graph|projection" 00_Prompt 01_Plans/adr 02_Architecture 04_Documentation`
+- CE0-D（Record）
+  - issue メモへ Contract IDs / Stop Conditions / 未確定論点（Pending）を記録。
+
+**CE-0 Done条件**
+- Contract IDs が1箇所に集約され、重複定義0件。
+- `safeMode` と `unreviewed` の後退表現が0件。
+
+#### CE-1 ブレークダウン
+
+- CE1-A（Interface）
+  - ContextQuery の最小I/Fを固定（target/depth/scope/mode/constraints）。
+  - ContextBundle の最小I/Fを固定（selected/relation/evidence/contradiction/review flags/truncation meta）。
+- CE1-B（Implement）
+  - frontend: Query Preview パネル（送信前に対象範囲と制約を表示）。
+  - backend/worker: deterministic bundle generator。
+- CE1-C（Verify）
+  - 決定論テスト: 同一入力でbundle hash一致。
+  - 安全テスト: safeMode時に未レビュー本文が既定除外される。
+- CE1-D（Sync）
+  - `04_Documentation/operations.md` へ Query Preview 運用手順を追加。
+
+**CE-1 Done条件**
+- 同一query再実行で bundle hash 一致率100%。
+- Query Previewなしで送信する経路が残っていない。
+
+#### CE-2 ブレークダウン
+
+- CE2-A（Usecase設計）
+  - タイトル候補 / B型ドラフト / 反対視点提案の I/O 契約を定義。
+- CE2-B（Implement）
+  - すべてのAI応答を patch proposal として保存。
+  - UIで「AI提案」「未レビュー」「レビュー済」を識別表示。
+- CE2-C（Verify）
+  - 自動適用経路が存在しないことをルーティング/イベントで確認。
+  - draft出力の採用・破棄が差分履歴に残ることを確認。
+- CE2-D（Sync）
+  - `04_Documentation/narratives.md` と `04_Documentation/security.md` に利用上の制約を同期。
+
+**CE-2 Done条件**
+- 生成結果は全件 patch/diff で追跡可能。
+- `reviewed` の自動昇格が0件。
+
+#### CE-3 ブレークダウン
+
+- CE3-A（Workspace設計）
+  - 複数パッチ並置・部分採用・保留・廃棄の状態遷移を定義。
+- CE3-B（Implement）
+  - Patch Workspace UI と Query Presets を追加。
+  - AI-aware Perspective を表示レイヤに限定（Core Graph非破壊）。
+- CE3-C（Verify）
+  - 部分採用後のロールバック復元をE2Eで確認。
+  - Presetによる query 再現性（同preset=同query）を確認。
+- CE3-D（Sync）
+  - `04_Documentation/e2e_testing.md` へCE-3検証シナリオを追加。
+
+**CE-3 Done条件**
+- 部分採用/保留/廃棄の状態遷移が監査ログに残る。
+- Perspective変更で document の実データ差分が発生しない。
+
+#### CE-4 ブレークダウン
+
+- CE4-A（公開契約）
+  - ContextQuery/Bundle API schema を固定し version を採番。
+- CE4-B（Implement）
+  - CLI から query 実行・bundle出力・patch適用dry-run を実装。
+  - 監査ログ（query/generated/apply）を統合フォーマット化。
+- CE4-C（Verify）
+  - API/CLI/GUI の同値性テスト（同query同bundle）。
+  - 回帰テストに品質メトリクス（coverage / rejected reason分類）を追加。
+- CE4-D（Sync）
+  - `04_Documentation/operations.md` / `local_llm_ops_guide.md` を運用手順で更新。
+
+**CE-4 Done条件**
+- API/CLI/GUI の同値性検証がCIで自動実行される。
+- query/apply 監査ログの欠落率0%。
+
+### D7. 実行順序と並列化ルール（運用固定）
+
+- 各CEは `A -> B -> C -> D` の順序固定。
+- 並列は `B` ステップ内でのみ許可（frontend/backend/docs補助）。
+- `C` 失敗時は必ず当該CEの `B` に戻し、次CEへ進まない。
+
+### D8. 初期Issue分割テンプレート
+
+- `issue-CE0-contract-freeze.md`
+- `issue-CE1-context-query-bundle-foundation.md`
+- `issue-CE2-low-risk-ai-assist.md`
+- `issue-CE3-patch-workspace-presets.md`
+- `issue-CE4-api-cli-audit-integration.md`
+
+各IssueのACには最低限以下を必須化する。
+1. safeMode後退なし
+2. unreviewed保護維持
+3. patch/diff監査可能
+4. 再現コマンド明記
+
+### D9. AIエージェントが kj-atlas を認知キャンバスとして識別・活用する具体方式（ACCI）
+
+#### D9-1. ACCI（Agent Cognitive Canvas Identification）実行手順
+
+AIエージェントは自由文入力をそのまま処理せず、次の順で kj-atlas を扱う。
+
+1. **Canvas Signature 認識**
+   - `document/view/patch` の3系統入力だけを受理。
+   - `docId/version/updatedAt/safeMode/reviewState` が欠損する場合は停止（推測補完禁止）。
+2. **KJ構造抽出**
+   - KJ法データ構造（card/island/relation/pending）を一次データとして抽出。
+   - 構造化コンテキスト（review flags, contradictions, evidence）はメタ層として重畳する。
+3. **ContextQuery 合成**
+   - `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode` を必須化。
+   - default: `reviewedOnly=true`, `allowUnreviewedText=false`, `outputMode=patch_proposal`。
+4. **ContextBundle 生成**
+   - 同一Queryで同一bundleHashを生成する決定論経路のみ許可。
+   - token超過時の切詰め順序を固定（reviewed evidence → contradiction → pending）。
+5. **Patch Proposal 出力**
+   - AI出力は `proposalId + diff + rationale` を必須化し、直接applyを禁止。
+
+#### D9-2. 実行ガード（固定）
+
+- Guard-01: SafeMode ON 時、未レビュー本文をAI入力へ含めない。
+- Guard-02: `human_reviewed` は人間操作のみで遷移。
+- Guard-03: Core/Consensus対象への書込は `applyPatch` 経路のみ。
+- Guard-04: Query Preview を通過しない送信を拒否。
+- Guard-05: `query/bundle/proposal/apply` の監査ログ4点セットが欠損した場合は失敗扱い。
+
+### D10. 仮想ステークホルダー会議（VSC-CE-01）結果
+
+`00_Prompt/virtual_stakeholder_consensus.md` のプロトコルに従い、AI活用方式を判定した。
+
+#### D10-1. 論点
+
+1. 人間向け空間文脈をAI入力へ直接含めるべきか。
+2. Query Preview を任意化できるか。
+3. 自動適用を許可するか。
+
+#### D10-2. 決定
+
+- 論点1（Gate-1）: Human Spatial Context は補助信号のみ。一次入力はKJ構造+構造化メタに限定。
+- 論点2（Gate-1）: Query Preview は必須。バイパス禁止。
+- 論点3（Gate-3相当）: 自動適用禁止を維持。
+
+#### D10-3. 未確定在庫（人間承認キュー）
+
+- `UNC-VSC-CE-01-01`: Query Preview UI配置（サイド/モーダル/固定）
+- `UNC-VSC-CE-01-02`: bundle token budget 初期値（8k相当を初期提案）
+
+### D11. Core Graph再考（VSC-CE-02）
+
+追加指示を受け、Core Graphの役割を再検討し以下を決定する。
+
+#### D11-1. 論点
+
+1. AI単独運用（人間協調なし）を許可するか。
+2. Core Graphは常に単一正本か、主体別グラフ統合を許可するか。
+3. 高額モデルをhuman role、廉価モデルをagent roleに割り当てる代理構成を許可するか。
+
+#### D11-2. 決定（仮想会議）
+
+- 決定A（Gate-1）:
+  - Core Graphを **Consensus Graph（合意済み統合グラフ）** と再定義する。
+- 決定B（Gate-1）:
+  - 主体別に **Working Graph**（human/agent/role別）を許可する。
+  - `mode=autonomous` オプションでAI単独運用を許可する。
+- 決定C（Gate-2）:
+  - model tier（high-cost/low-cost）運用は許可候補だが、actor責任と分離して記録するまで限定運用。
+
+#### D11-3. 新グラフ位置づけ
+
+1. **Working Graph(s)**: 主体ごとの探索・仮説・未確定保持グラフ。
+2. **Context Projection Graph**: Working Graphから問い合わせ目的に投影する構造化コンテキスト。
+3. **Consensus Graph（旧 Core Graph）**: 合意・適用済み結果を保持する統合グラフ。
+
+#### D11-4. 整合原則（KJ法構造との整合）
+
+- 構造化コンテキストは KJ法データ構造へのメタデータ拡張として実装する。
+- メタデータが作図上省略されても、配置・関係・保留（pending）意味を破壊しない。
+- Consensus Graph へ反映されるのは patch + approval を通過した差分のみ。
+
+#### D11-5. 追加契約ID（CE-0で凍結）
+
+- `CG-01`: Consensus Graph は合意済み状態のみ保持。
+- `CG-02`: Working -> Consensus 遷移は patch + approval 必須。
+- `CG-03`: autonomous mode でも safeMode/監査契約を緩和しない。
+- `CG-04`: actor と modelTier を分離して記録する。
+- `CG-05`: 構造化コンテキストはKJ法構造との互換を維持する。
+
+## Consequences
+
+- 期待効果:
+  - 追加された中核要件を既存体系へ衝突なく接続できる。
+  - 実装順序が固定され、低リスク導入（CE-1/2）を優先できる。
+  - 監査・差分・レビュー重視の既存方針と整合したAI拡張が進む。
+  - Consensus/Working二層で、人間協調とAI単独運用を同一設計上で扱える。
+- 副作用:
+  - 初期フェーズで文書同期と契約固定の工数が増える。
+  - 自動化より可逆性を優先するため、短期的な機能速度は抑制される。
+  - グラフ層追加により運用・検証コストが増える。
+
+## Alternatives
+
+- 代替A（不採用）: 00_Prompt新規文書を参考扱いに留め、計画ADRを作らない。
+  - 不採用理由: 実装優先順位が固定できず、層間ドリフトが増加する。
+- 代替B（不採用）: 既存 HIL-RS-02 に追記し一本化する。
+  - 不採用理由: HIL-RS運用論点と認知外在化機能計画が混在し、意思決定境界が不明瞭になる。
+
+## Rollback
+
+- 条件:
+  - 上位文書（`domain.md`/`ADR-0001`）と整合しない要求が顕在化した場合
+  - 既存SafeMode契約と両立できない場合
+- 手順:
+  1. CE進行を停止し、対象issueをDraftへ戻す。
+  2. 本ADRに `Superseded by` を付与し、修正版ADRを起票する。
+  3. 既に着手した実装はCE単位でrevertする。
+
+## Traceability
+
+- Derived-from: `00_Prompt/ai_cognitive_externalization_requirements.md`
+- Related: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Related: `02_Architecture/llm_input_ir_spec.md`
+- Related: `02_Architecture/llm_quality_strategy.md`

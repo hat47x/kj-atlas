@@ -19,11 +19,14 @@ Its goal is not to let AI decide for humans, but to provide an external structur
 本書は、以下の上流文書と整合する。
 
 - `00_Prompt/domain.md`
-- `01_Plans/value_to_requirements.md`
+- `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - `02_Architecture/architecture.md`
 - `02_Architecture/schemas.md`
 
 今後、AI関連機能を追加する際は、本書を参照して整合性を確認すること。
+
+本書に基づく実行計画の正本は `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md` とし、
+フェーズ進行・受入条件・検証導線は ADR 側で管理する。
 
 ---
 
