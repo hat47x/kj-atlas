@@ -258,6 +258,25 @@
   - 固定エラーコード5件（`A1_SCHEMA_VERSION_MISMATCH` 等）
 - 変更許可（A2/A3で可）:
   - 実装内マッピング注記
+
+## 15) Stream A fixed handoff contract packet（A2/A3向け）
+
+- Packet ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Single reference: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Fixed governance keys:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Queue contract（固定）:
+  - fields: `queueId,status,owner,decisionBy,timestampUtc,evidenceLink`
+  - allowed transition: `Pending -> Approved | Rejected`
+  - denied transition: Pending bypass, `Approved -> Pending`
+- Open gate（固定）:
+  - `Draft -> Open` iff `a1Status=="Done" && pendingDecisionQueueCount==0`
+- Stop/Resume:
+  - Stop: 未承認確定、SafeMode後退要求、share/export後退要求、契約ID/版数不一致
+  - Resume: Decision Queueへ`Pending`登録 + 人間承認記録 + A1再判定完了
   - fixture名の運用上の別名管理（契約値そのものの変更は不可）
   - 契約に影響しない検証ケース追加
 - 停止条件（即停止してA1差し戻し）:

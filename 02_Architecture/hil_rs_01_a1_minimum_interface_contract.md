@@ -278,9 +278,34 @@ Validation rules:
   - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
 - 検証キー（A2/A3共通）:
   - `contractId`
-  - `schemaVersion`
-  - `traceKey`
-  - `snapshotVersion`
+
+## 15. Stream A fixed governance/interface packet（HIL-RS-02 handoff）
+
+### 15.1 Fixed preconditions（A1→A2→A3）
+
+- A2/A3 は `A1 Done` かつ `DecisionQueue pendingCount=0` の場合のみ `Draft -> Open` を許可。
+- `DecisionQueue` の許可遷移は `Pending -> Approved` または `Pending -> Rejected` のみ。
+- 未承認確定（Pendingを経由しない確定化）は禁止。
+
+### 15.2 Fixed queue fields（machine-evaluable）
+
+- `queueId`（string）
+- `status`（`Pending | Approved | Rejected`）
+- `owner`（string）
+- `decisionBy`（string）
+- `timestampUtc`（ISO-8601 UTC）
+- `evidenceLink`（string, non-empty）
+
+### 15.3 Fixed stop/resume conditions
+
+- Stop（即停止）:
+  - `schemaVersion` / `overridePolicy` / `contractId` / SSOT の不一致
+  - `SafeMode` 後退要求、`share/export` 漏えい防止後退要求
+  - `Pending` を経由しない確定化、または `Approved -> Pending` 巻き戻し要求
+- Resume（再開）:
+  - 変更要求をDecision Queueへ `Pending` 登録
+  - 人間承認ログ（`decisionBy`, `timestampUtc`, `evidenceLink`）記録完了
+  - A1差し戻し経路で再判定完了
 - freeze宣言:
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
