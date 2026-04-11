@@ -85,6 +85,14 @@ export type ContextBundleV1 = {
 - `previewConfirmed=false` は契約違反（`422 preview_required`）。
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
 
+`bundleHash` 契約（`CE1-HASH-DET-IF` / bundleHash関連節）:
+1. `ContextBundle` から `generatedAt` / `traceId` / `providerLatencyMs` など非決定論フィールドを除外する。
+2. 配列順序は `selected=id asc`, `relations=(type,from,to) asc`, `evidence=cardId asc`, `contradictions=(weight desc,id asc)` に正規化する。
+3. オブジェクトキーは UTF-8 バイト列辞書順で整列し canonical JSON を生成する。
+4. `sha256(canonical_json)` を16進小文字で出力し `bundleHash` とする。
+5. `ContextQuery` も同一規則で canonical 化し、`queryCanonicalHash` を算出する。
+6. Verify 判定は `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）を必須とし、`sameQuery && !sameBundle` は fail-closed とする。
+
 #### CE2-LOW-RISK-AI-ASSIST
 
 Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`

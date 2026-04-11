@@ -826,8 +826,9 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 
 ## 7. CE1 ContextQuery / ContextBundle 運用
 
-- `POST /context/query` は Query Preview 相当の事前検証APIです。`queryId/targetCardIds/depth/scope/reviewedOnly/safeMode` を必須契約として受け取り、欠損時は `400` を返します。
-- `POST /context/bundle` は deterministic bundle generator です。同一 `query + doc` を再実行した場合、`bundleHash` は常に一致することを前提に運用します。
-- `safeMode=true` かつ `reviewedOnly=true` の場合、未レビューカード本文は bundle へ含めず、`excludedReasons` へ `reviewed_only_filter` を記録します。
-- Query Preview を通過していない状態（frontend `canSubmit=false`）での送信導線は無効化し、モック統合でも同条件を維持します。
-- 監査用途では `queryId` / `bundleHash` / `excludedReason` をログ相関キーとして扱います。
+- `POST /context/query` は Query Preview 通過済み `ContextQuery` の契約検証APIです。`queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed` を必須契約として受け取り、`previewConfirmed=false` は常に `422 preview_required` で拒否します。
+- `POST /context/bundle` は deterministic bundle generator です。同一 canonical query を再実行した場合、`bundleHash` は常に一致する前提で運用します。
+- `safeModePolicy=strict` かつ `reviewFilter=reviewedOnly` の場合、未レビュー本文は bundle へ含めず、`excludedReason` に `unreviewed_filtered` を必須記録します。
+- Query Preview 未通過の送信導線は無効化し、mock `/context/query` `/context/bundle` でも同一契約（bypass禁止）を維持します。
+- Verify/Proceed の自己修復は最大3回まで許可し、4回目失敗時は即停止します。
+- 監査用途では `queryId` / `bundleHash` / `excludedReason` をログ相関キーとして固定します。
