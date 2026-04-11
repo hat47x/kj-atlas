@@ -71,6 +71,15 @@ kj-atlas は OSS として、多様な環境で利用される：
 - `mode=autonomous` を含むすべてのAI実行モードで、review自動昇格を禁止する。
 - SafeMode既定ONと share/export 漏えい防止は、review attribution の運用変更で緩和してはならない。
 
+### CE2 proposal-only 契約節（Stream D / proposal境界固定）
+
+- CE2由来の narrative/review 支援出力は、**確定本文ではなく proposal** として扱う。
+- proposal 最小I/Fは `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState` を必須とする。
+- `status` は `proposed | accepted | rejected | held` のみを許可し、`held` は drift-stop 専用状態とする。
+- CE1（ContextBundle）との差分を検知した場合は `status=held` で停止し、運用判断まで Proceed しない。
+- `accepted` は適用許可の意思表示であり、自動適用トリガーではない（auto-apply禁止）。
+- `reviewState` の AI 自動昇格（`unreviewed -> reviewed` / `human_reviewed`）は禁止し、人手操作のみ許可する。
+
 ## HIL-RS-01-A1 最小I/F契約（固定参照）
 
 - SSOT（唯一参照先）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`

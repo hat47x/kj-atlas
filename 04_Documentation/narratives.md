@@ -71,6 +71,13 @@ CE2では narrative 支援出力を直接本文として確定せず、提案オ
 CE1最小I/F（ContextBundle）の差異が検知された場合、提案は `held` に固定し、
 運用判断があるまで再生成/適用を進めない。
 
+### 2.4 reviewed-only 導線（公開運用）
+
+- narrative の公開利用は `reviewState=reviewed`（互換表記: `reviewed=true`）のものに限定する。
+- `reviewed` への遷移は人間レビュー操作のみで実施し、AI提案単独で昇格しない。
+- `status=accepted` であっても `reviewState=unreviewed` の提案は公開根拠として扱わない。
+- CE1差分検知で `status=held` の提案は、review済みであっても Proceed させない（drift-stop優先）。
+
 ---
 
 ## 3. 推奨ワークフロー
