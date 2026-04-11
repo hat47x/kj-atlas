@@ -1,49 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-
-type WorkspaceDecision = "adopt" | "reject" | "hold";
-type QueryScope = "all" | "selection" | "island";
-
-type CandidateItem = {
-  id: string;
-  label: string;
-  note?: string;
-};
-
-type QueryPreset = {
-  id: string;
-  name: string;
-  scope: QueryScope;
-  depth: number;
-  filters: string[];
-};
+import {
+  buildInitialWorkspaceState,
+  commitWorkspaceDecision,
+  normalizeFilters,
+  normalizePresetQuery,
+  rollbackWorkspaceDecision,
+  syncWorkspaceCandidates,
+  type CandidateItem,
+  type QueryPreset,
+  type QueryScope,
+  type WorkspaceDecision,
+  type WorkspaceState,
+} from "../domain/ce3_patch_workspace";
 
 type PatchWorkspacePanelProps = {
   isReadOnly?: boolean;
   candidates: CandidateItem[];
 };
 
-type WorkspaceSnapshot = {
-  decisions: Record<string, WorkspaceDecision>;
-  selectedCandidateId: string | null;
-};
-
 const PRESET_STORAGE_KEY = "kj-atlas:ce3:patch-workspace-presets:v1";
-
-function normalizeFilters(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter((item) => item.length > 0)
-    .sort((left, right) => left.localeCompare(right));
-}
-
-function normalizeQuery(preset: Pick<QueryPreset, "scope" | "depth" | "filters">): string {
-  return JSON.stringify({
-    scope: preset.scope,
-    depth: Math.max(1, Math.floor(preset.depth)),
-    filters: [...preset.filters].sort((left, right) => left.localeCompare(right)),
-  });
-}
 
 function loadPresets(): QueryPreset[] {
   if (typeof window === "undefined") {
@@ -87,14 +62,8 @@ function savePresets(presets: QueryPreset[]): void {
   window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
 }
 
-function buildInitialDecisions(candidates: CandidateItem[]): Record<string, WorkspaceDecision> {
-  return Object.fromEntries(candidates.map((candidate) => [candidate.id, "hold" satisfies WorkspaceDecision]));
-}
-
 export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWorkspacePanelProps) {
-  const [decisions, setDecisions] = useState<Record<string, WorkspaceDecision>>(() => buildInitialDecisions(candidates));
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(candidates[0]?.id ?? null);
-  const [lastSnapshot, setLastSnapshot] = useState<WorkspaceSnapshot | null>(null);
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState>(() => buildInitialWorkspaceState(candidates));
   const [presets, setPresets] = useState<QueryPreset[]>(() => loadPresets());
   const [presetName, setPresetName] = useState("");
   const [scope, setScope] = useState<QueryScope>("all");
@@ -104,25 +73,10 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
   const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
   const normalizedFilters = useMemo(() => normalizeFilters(filtersInput), [filtersInput]);
-  const activeCandidateId = selectedCandidateId ?? candidates[0]?.id ?? null;
+  const activeCandidateId = workspaceState.selectedCandidateId ?? candidates[0]?.id ?? null;
 
   useEffect(() => {
-    setDecisions((previous) => {
-      const next = buildInitialDecisions(candidates);
-      for (const candidate of candidates) {
-        if (previous[candidate.id]) {
-          next[candidate.id] = previous[candidate.id];
-        }
-      }
-      return next;
-    });
-
-    setSelectedCandidateId((previous) => {
-      if (previous && candidates.some((candidate) => candidate.id === previous)) {
-        return previous;
-      }
-      return candidates[0]?.id ?? null;
-    });
+    setWorkspaceState((previous) => syncWorkspaceCandidates(previous, candidates));
   }, [candidates]);
 
   const commitDecision = (nextDecision: WorkspaceDecision) => {
@@ -130,19 +84,12 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       return;
     }
 
-    setLastSnapshot({ decisions: { ...decisions }, selectedCandidateId: activeCandidateId });
-    setDecisions((previous) => ({ ...previous, [activeCandidateId]: nextDecision }));
+    setWorkspaceState((previous) => commitWorkspaceDecision(previous, activeCandidateId, nextDecision, new Date().toISOString()));
     setFailureMessage(null);
   };
 
   const handleRollback = () => {
-    if (!lastSnapshot) {
-      return;
-    }
-
-    setDecisions(lastSnapshot.decisions);
-    setSelectedCandidateId(lastSnapshot.selectedCandidateId);
-    setLastSnapshot(null);
+    setWorkspaceState((previous) => rollbackWorkspaceDecision(previous));
     setFailureMessage(null);
   };
 
@@ -177,7 +124,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       return;
     }
 
-    setExecutedQuery(normalizeQuery(preset));
+    setExecutedQuery(normalizePresetQuery(preset));
     setFailureMessage(null);
   };
 
@@ -193,7 +140,10 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
           value={activeCandidateId ?? ""}
           disabled={isReadOnly || candidates.length === 0}
           onChange={(event) => {
-            setSelectedCandidateId(event.target.value || null);
+            setWorkspaceState((previous) => ({
+              ...previous,
+              selectedCandidateId: event.target.value || null,
+            }));
           }}
         >
           {candidates.length === 0 ? <option value="">No candidates yet</option> : null}
@@ -208,9 +158,9 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         </div>
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
-        Decision state: {activeCandidateId ? decisions[activeCandidateId] ?? "hold" : "none"}
+        Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"}
       </div>
-      <button type="button" data-testid="ce3-rollback" disabled={isReadOnly || !lastSnapshot} onClick={handleRollback}>
+      <button type="button" data-testid="ce3-rollback" disabled={isReadOnly || workspaceState.rollbackStack.length === 0} onClick={handleRollback}>
         Roll back last workspace decision
       </button>
 
@@ -237,7 +187,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         {presets.length === 0 ? <span style={{ fontSize: 12, color: "#64748b" }}>No saved presets.</span> : null}
         {presets.map((preset) => (
           <button key={preset.id} type="button" data-testid={`ce3-run-preset-${preset.id}`} onClick={() => runPreset(preset)}>
-            Run {preset.name}
+            Replay {preset.name}
           </button>
         ))}
       </div>
@@ -256,6 +206,9 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       </button>
       <div data-testid="ce3-normalized-query" style={{ fontSize: 12, color: "#334155", marginTop: 8 }}>
         Normalized query: {executedQuery ?? "(not executed)"}
+      </div>
+      <div data-testid="ce3-audit-log-size" style={{ fontSize: 12, color: "#334155", marginTop: 6 }}>
+        Audit transitions: {workspaceState.auditLog.length}
       </div>
       {failureMessage ? (
         <div data-testid="ce3-failure" style={{ marginTop: 8, fontSize: 12, color: "#b91c1c" }}>
