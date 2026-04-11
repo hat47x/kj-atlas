@@ -16,7 +16,7 @@ from kj_atlas_api.settings import settings
 
 logger = logging.getLogger(__name__)
 
-AuditEventType = Literal["view", "export"]
+AuditEventType = Literal["view", "export", "query", "bundle", "proposal", "apply"]
 
 
 class AuditEvent(BaseModel):
