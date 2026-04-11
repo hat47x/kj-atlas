@@ -253,3 +253,52 @@
 - 検証ループ: self-correction は最大3回。
 - 強制停止: `attempts > 3`、前提崩壊、未定義競合検知。
 - Proceed条件: 未解決 `Pending` がない状態で `Plan -> Execute -> Verify -> Proceed` を完了記録した場合のみ進行可能。
+
+
+## 16) Stream A critical-path lock update（2026-04-11, Phase 1-6）
+
+### Phase 1: Read（再読結果と差分宣言）
+- Plan: 本issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` を再読し、`Status/Priority/Scope/Dependencies` を比較する。
+- Execute: 対象3ファイルを再読し、A1 gate前提と凍結契約キーを再抽出した。
+- Verify:
+  - `Status=Open`, `Priority=P1`, ScopeはDocs中心で一致。
+  - 依存はA1契約固定 + `ADR-0026/0027` で一致。
+  - 想定との差分は **なし**。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Plan: delivery planの更新が上位ADR改定を要求しないことを確認する。
+- Execute:
+  - Context: 本更新はA1契約凍結を次フェーズ実行条件へ反映する運用固定。
+  - Decision: 上位ADR改定が必要な要求を検知した場合は承認完了まで停止し、未承認確定を禁止。
+  - Consequences: A2/A3は契約をread-only参照、変更要求はA1へ差し戻す。
+- Verify: A1 gate条件と矛盾なし。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD補完と採否記録）
+- Plan: AC/DoD不足を追補し、Decision Queue遷移を固定する。
+- Execute:
+  - 追補AC: `Draft -> Open` は `A1 Done & Pending=0` を満たす場合のみ。
+  - 追補DoD: Decision Queue遷移は `Pending -> Approved|Rejected` のみ。
+  - 採否: **採用**（delivery plan固定）。
+- Verify: Pending bypassが存在しないことを確認。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（A2/A3 Open条件の統一）
+- Plan: 開始条件/停止条件/再開条件をA1 gateに一本化する。
+- Execute:
+  - Open条件を `A1 Done && pendingDecisionQueueCount==0` に統一。
+  - SafeMode既定ON / share-export後退禁止 / `human_dual_control_only` を不変条件として固定。
+- Verify: 1条件でも未達ならBlock（Open不可）であることを確認。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify（AC/DoD照合）
+- Plan: docs-checkで整合性を確認し、必要時のみSelf-Correction（最大3回）。
+- Execute: validator / unittest / diff check / rg確認を実施。
+- Verify: 本計画とA1/A1-governanceの固定条件が一致。
+- Proceed: Phase 6へ進行。
+
+### Phase 6: Proceed（固定I/F・未解決点・停止条件）
+- 固定I/F: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`。
+- 未解決点: 変更要求はDecision Queueへ `Pending` 登録し、承認後にA1再判定。
+- 停止条件: Self-Correction 3回超過 / 依存崩壊 / 未定義競合。

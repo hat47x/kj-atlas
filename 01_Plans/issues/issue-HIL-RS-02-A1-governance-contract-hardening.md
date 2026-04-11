@@ -233,8 +233,8 @@ Stop rule: 1項目でも不一致ならStream Aは即停止し、差分一覧の
 
 | QueueID | Topic | Status | Owner | Next Action |
 |---|---|---|---|---|
-| DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Closed | Architecture Owner | N/A（契約外注記として固定） |
-| DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Closed | Documentation Owner | N/A（契約外注記として固定） |
+| DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Approved | Architecture Owner | N/A（契約外注記として固定） |
+| DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Approved | Documentation Owner | N/A（契約外注記として固定） |
 
 ## 13) A2/A3引き渡し宣言（凍結契約パック）
 
@@ -365,3 +365,52 @@ Stop rule: 1項目でも不一致ならStream Aは即停止し、差分一覧の
 - 検証ループ: self-correction は最大3回。
 - 強制停止: `attempts > 3`、前提崩壊、未定義競合検知。
 - Proceed条件: 未解決 `Pending` がない状態で `Plan -> Execute -> Verify -> Proceed` を完了記録した場合のみ進行可能。
+
+
+## 16) Stream A critical-path lock update（2026-04-11, Phase 1-6）
+
+### Phase 1: Read（再読結果と差分宣言）
+- Plan: 本issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` を再読し、`Status/Priority/Scope/Dependencies` を再比較する。
+- Execute: 3ファイルを再読し、A1 gateの固定キーと遷移規則を抽出した。
+- Verify:
+  - `Status=Open`, `Priority=P1`, Docs中心スコープで一致。
+  - 依存は `ADR-0026/0027` + A1 SSOT で一致。
+  - 想定との差分は **なし**。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Plan: Governance hardeningが上位ADR改定を含意しないか判定する。
+- Execute:
+  - Context: 本issueはA1契約凍結を運用で担保する下位具体化。
+  - Decision: 上位ADR改定を要する要求は承認完了まで停止（未承認確定禁止）。
+  - Consequences: A2/A3はA1契約をread-only参照し、契約変更要求はA1に一本化。
+- Verify: 承認前に契約値を確定できる経路がないことを確認。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD補完と採否記録）
+- Plan: AC/DoD不足を補完し、Decision Queue遷移を固定する。
+- Execute:
+  - 追補AC: `Draft -> Open` は `A1 Done & Pending=0` に限定。
+  - 追補DoD: Decision Queueは `Pending -> Approved|Rejected` のみ許可。
+  - 採否: **採用**（本issueの固定ルール）。
+- Verify: `Closed` など曖昧状態を排し、終状態は `Approved` または `Rejected` のみとする。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（条件統一）
+- Plan: A1 gateと停止/再開条件を機械判定可能に統一する。
+- Execute:
+  - A2/A3 Open条件を `A1 Done && pendingDecisionQueueCount==0` に固定。
+  - SafeMode既定ON / share-export後退禁止 / `human_dual_control_only` の後退要求を即停止条件として固定。
+- Verify: Pendingが1件でも残る場合はOpen不可であることを確認。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify（AC/DoD照合）
+- Plan: docs-checkを実施し、失敗時のみ最大3回までSelf-Correction。
+- Execute: validator / unittest / diff check を実行。
+- Verify: Stream Aの固定制約と矛盾なし。
+- Proceed: Phase 6へ進行。
+
+### Phase 6: Proceed（固定I/F・未解決点・停止条件）
+- 固定I/F: `freezeContractId`, `contractIds`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`。
+- 未解決点: Governance観点の未確定はDecision Queueで `Pending` 管理。
+- 停止条件: Self-Correction 3回超過 / 依存崩壊 / 未定義競合。
