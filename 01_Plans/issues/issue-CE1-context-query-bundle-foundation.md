@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (Contracts only / Docs-Plan only)
+- Stream: `C` (CE1専任 / Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
 ## 0) Phase 1 Read（I/F抽出 + mock許容）
@@ -28,13 +28,13 @@
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
-## Phase 1〜5 固定事項（Stream B / Contract Freeze）
+## 直列フェーズ固定（Stream C / Contract Freeze）
 
-1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを固定する。  
-2. **Phase 2（Contract）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する。  
-3. **Phase 3（Determinism）**: canonical JSON + sha256 による `bundleHash` 算出手順を固定し、同一 canonical query の再実行で一致を要求する。  
-4. **Phase 4（AC/DoD Freeze）**: drift-stop 条件と Verify 自己修復上限（最大3回）を固定し、4回目失敗時は即停止とする。  
-5. **Phase 5（Vocabulary/Contract Verify）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、不整合時は Proceed しない。
+1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
+2. **Phase 2（CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
+3. **Phase 3（Plan: AC/DoD合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。  
+4. **Phase 4（Execute: mock-first契約固定）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
+5. **Phase 5（Verify/Proceed）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。
 
 ## Contract ID Freeze（CE1）
 
@@ -141,7 +141,7 @@
 
 - [ ] T1: CE-1 I/F固定表を issue + architecture に同期。
 - [ ] T2: deterministic bundle 要件を `02_Architecture` 側へ追記。
-- [ ] T3: Query Preview 必須導線を `04_Documentation/local_llm_ops_guide.md` へ同期。
+- [ ] T3: Query Preview 必須導線を `04_Documentation/operations.md`（CE1運用注記節）へ同期。
 - [ ] T4: CE-2連携キー（`sourceBundleHash`）を明示。
 
 ## 6) 検証計画 / Validation plan
