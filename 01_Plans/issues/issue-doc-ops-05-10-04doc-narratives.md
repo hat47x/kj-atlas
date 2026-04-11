@@ -139,3 +139,42 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+---
+
+## 12) Stream F phase execution record（DOC-OPS-05 narratives only）
+
+### Phase1 Read
+
+- `AGENTS.md` の Read Order（00→01→02）に従い、上流制約と公開境界方針を確認。
+- 対象を `04_Documentation/narratives.md` と本Issueメモのみに限定し、他ストリーム専有（operations / security / e2e_testing）へ非接触を確認。
+
+### Phase2 CDC（必要時）
+
+- Context: narratives は公開価値がある一方、内部判断ログを持ち込むと公開境界が崩れる。
+- Decision: Classification `Improve external` を維持し、公開判定に必要なメタ項目（Audience/Goal/Non-goal/Public boundary/Outcome/Related）を本文明記する。
+- Consequences: 後続の公開改善PRで、読者は内部文書を追加参照せずにレビュー責務を解釈できる。
+
+### Phase3 Plan
+
+- 1サブストリーム1文書原則に従い、実編集は `04_Documentation/narratives.md` のみ。
+- AC/DoD不足への提案（合意済み扱い）:
+  - AC-F1: `Outcome` と `Related` を明示し、`Validation plan` の `rg` 検査語に適合させる。
+  - AC-F2: `GoNoGoGate=Required` を本文で再現できるチェック項目を追加する。
+  - DoD-F: docs-check コマンド結果と `git diff --check` の双方が成功していること。
+
+### Phase4 Execute
+
+- `04_Documentation/narratives.md` に `Non-goal` / `Outcome` / `Related` を追記。
+- 公開利用前の `Go/No-Go gate` セクションを追加し、Required判定条件を文書内で自己完結化。
+
+### Phase5 Verify
+
+- docs-check: `rg -n "Audience|Goal|Non-goal|Outcome|Related" 04_Documentation/narratives.md 01_Plans/documentation_quality.md`
+- diff-check: `git diff --check`
+- 失敗時 self-correction は未発火（0/3）。
+
+### Phase6 Proceed
+
+- 状態分類: **Ready（Open候補）**
+- 停止条件評価: 他ストリーム専有ファイルへの変更衝突なし。
