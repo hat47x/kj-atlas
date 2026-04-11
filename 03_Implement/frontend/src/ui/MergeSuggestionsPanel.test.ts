@@ -80,6 +80,8 @@ describe("MergeSuggestionsPanel", () => {
     expect(html).toContain("Export decision audit events (JSONL)");
     expect(html).toContain("1 event(s)");
     expect(html).toContain("Draft diff preview:");
+    expect(html).toContain("Decision reason (required)");
+    expect(html).toContain("Record why you accept/partial/reject/defer this proposal");
     expect(html).toContain("Accept");
     expect(html).toContain("Partially accept");
     expect(html).toContain("Reject");
