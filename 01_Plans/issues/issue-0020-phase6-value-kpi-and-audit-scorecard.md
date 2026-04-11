@@ -68,7 +68,7 @@ KPI scorecard 自体は定義済みだが、Gate C（feedback分類）との接�
 ### 5.1 Gate C to Gate D 接続
 
 - Gate C で分類済みのエントリのみを scorecard対象に含める。
-- `未分類` が残る場合は Gate D を停止し、保留理由・再分類期限を先に記録する。
+- `未分類` が残る場合は Gate D を停止し、保留理由・再判定日を先に記録する。
 
 ### 5.2 Gate D（KPI scorecard integrity）
 
