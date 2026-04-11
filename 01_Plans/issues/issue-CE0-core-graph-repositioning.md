@@ -31,6 +31,61 @@
 - 再抽出結果（CG責務境界）: `WorkingGraph=探索` / `ContextProjectionGraph=read-only投影` / `ConsensusGraph=合意済み統合`。
 - 再抽出結果（禁止事項）: Core Graph単独モデル回帰 / direct write / projection永続上書き / auto-apply / AI review自動昇格。
 
+### Phase 1 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: Core語彙の契約上の正本を `Consensus Graph` に統一し、旧称は履歴注記へ限定する。
+- **Execute**: Graph責務境界と禁止事項を抽出し、mock-first依存切断（CE1/CE2/CE4待機禁止）を明記した。
+- **Verify**: Contract ID Matrix再定義禁止と語彙固定の境界を確認した。
+- **Proceed**: Phase 2でContext/Decision/Consequencesの不足補完だけを行う。
+
+## 0.1) Phase 2 ADR明文化（不足補完のみ）
+
+- ADR-0028は参照注記のみとし、Core/Consensus再定義を本Issueで上書きしない。
+- Context/Decision/Consequences の不足記述のみを補完対象に限定する。
+
+### Phase 2 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: Graph再配置の根拠を「責務境界」と「禁止事項」に限定して追記する。
+- **Execute**: 旧Core語彙の扱い（履歴注記のみ）と契約語彙（Consensus固定）を分離明記した。
+- **Verify**: ADR本文再定義禁止と不足補完のみの原則を確認した。
+- **Proceed**: Phase 3でAC/DoD不足を契約ゲートへ接続する。
+
+## 0.2) Phase 3 Plan（AC/DoD不足補完）
+
+- AC/DoDは `Query Preview必須` / `direct write禁止` / `proposal-only` / `監査4点セット必須` を同時成立させる。
+- CE0契約固定に不要な実装詳細（API/CLI/UI具体）は追加しない。
+
+### Phase 3 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: Graph責務表を検証可能な判定文へ落とし込み、No-Go条件を明示する。
+- **Execute**: CG-01..05をAC/DoDの検査可能単位として整理した。
+- **Verify**: 実装依存の待機条件を排除し、docs-checkで完結することを確認した。
+- **Proceed**: Phase 4で依存切断と停止条件を固定する。
+
+## 0.3) Phase 4 Execute（mock-first依存切断）
+
+- CE1/CE2/CE4の進捗待機なしで、CE0契約検証を独立実行する。
+- Fail-safe（safeMode後退 / auto-apply許容 / review自動昇格許容）を即停止条件に固定する。
+
+### Phase 4 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: 依存待機を禁止し、契約固定タスク単体で完了可能にする。
+- **Execute**: mock I/F前提の独立検証方針を記述した。
+- **Verify**: 停止条件に安全後退3項目を含め、見逃しを許容しないことを確認した。
+- **Proceed**: Phase 5で契約ID/語彙/SafeModeの3点ゼロ衝突検証へ進む。
+
+## 0.4) Phase 5 Verify（衝突ゼロ検証）
+
+- Contract ID collision=0 / 語彙 collision=0 / SafeMode後退=0 を同時成立させる。
+- 自己修復は最大3回まで。4回目相当は即停止する。
+
+### Phase 5 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: 固定語彙と契約IDの検査コマンドを明示し、結果をProceed判定へ直結する。
+- **Execute**: 衝突ゼロを満たさない場合はNo-Go停止とする運用を記述した。
+- **Verify**: 3回修復上限を超えた継続を禁止することを再確認した。
+- **Proceed**: Phase 6でCE1/CE2参照専用のContract Matrixを固定する。
+
 ## 1) Context
 
 - 従来Core Graphは「唯一正本」前提だったが、AI単独運用・主体別キャンバス要件を吸収できない。
@@ -147,3 +202,19 @@
 - 安全責務: `mode=autonomous` でも proposal-only、auto-apply禁止、review自動昇格禁止。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
+
+### Phase 6 Workflow（Plan -> Execute -> Verify -> Proceed）
+
+- **Plan**: CE1/CE2にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
+- **Execute**: Working/Projection/Consensus + CG-01..05 を参照専用I/Fとして固定した。
+- **Verify**: 実装詳細や新規契約IDが混入していないことを確認する。
+- **Proceed**: 追加変更はCE0再起票で処理し、Stream Bの契約凍結を維持する。
+
+## 9) CE1/CE2 引き渡し Graph Contract Matrix（固定）
+
+| Consumer | Graph Contract | Required IDs | Blockers (No-Go) |
+| --- | --- | --- | --- |
+| CE1 | `Working -> ContextProjection(read-only) -> Bundle -> Proposal` | `CE0-CTX-IF`, `CG-01`, `CG-03`, `CG-05` | Projection永続上書き / Query Preview bypass / 監査欠損成功扱い |
+| CE2 | `Working -> Proposal-only -> Human Approval -> Consensus` | `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CG-02`, `CG-04` | auto-apply / review自動昇格 / safeMode既定緩和 |
+
+> ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Core Graph Repositioningの参照専用固定値とする。
