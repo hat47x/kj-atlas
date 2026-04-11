@@ -4,6 +4,7 @@ import {
   commitWorkspaceDecision,
   normalizeFilters,
   normalizePresetQuery,
+  replayPreset,
   rollbackWorkspaceDecision,
   syncWorkspaceCandidates,
 } from "./ce3_patch_workspace";
@@ -25,6 +26,7 @@ describe("ce3_patch_workspace", () => {
     expect(rejected.auditLog).toHaveLength(2);
     expect(rolledBack.decisions["cand-2"]).toBe("hold");
     expect(rolledBack.rollbackStack).toHaveLength(1);
+    expect(rolledBack.phase).toBe("rollback_ready");
   });
 
   it("normalizes preset query deterministically", () => {
@@ -49,5 +51,17 @@ describe("ce3_patch_workspace", () => {
     expect(synced.decisions["cand-1"]).toBe("adopt");
     expect(synced.decisions["cand-3"]).toBe("hold");
     expect(synced.auditLog).toHaveLength(1);
+  });
+
+  it("replays presets and returns recoverable error when no candidates exist", () => {
+    const initial = buildInitialWorkspaceState([]);
+    const failed = replayPreset(initial, { scope: "all", depth: 1, filters: [] }, false);
+    expect(failed.phase).toBe("error");
+    expect(failed.failureMessage).toContain("No candidates available");
+
+    const restored = buildInitialWorkspaceState([{ id: "cand-1", label: "cand-1" }]);
+    const replayed = replayPreset(restored, { scope: "selection", depth: 2, filters: ["risk", "merge"] }, true);
+    expect(replayed.phase).toBe("preset_replayed");
+    expect(replayed.lastExecutedQuery).toBe('{"scope":"selection","depth":2,"filters":["merge","risk"]}');
   });
 });

@@ -20,6 +20,7 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain("Reject");
     expect(html).toContain("Roll back last workspace decision");
     expect(html).toContain("Run current preset");
+    expect(html).toContain("phase: idle");
     expect(html).toContain("No saved presets.");
     expect(html).toContain("Audit transitions");
     expect(html).toContain("Normalized query");
