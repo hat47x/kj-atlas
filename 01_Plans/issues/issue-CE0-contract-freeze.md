@@ -29,6 +29,8 @@
 - CE1/CE2/CE4 は **実装待機禁止** とし、依存は `mock I/F` で切断して契約検証を先行する。
 - CE3（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
 - Contract ID Matrix は本Issueを一次正本とし、`02_Architecture/architecture.md` と `02_Architecture/schemas.md` は責務境界の同期先として扱う。
+- 再抽出結果（固定語彙）: `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` / `proposal-only` / `Query Preview` / `safeMode` / `human_reviewed`。
+- 再抽出結果（禁止事項）: Query Preview bypass / Consensus direct write / auto-apply / AI review自動昇格 / safeMode既定緩和。
 
 ## 0.1) Phase 2 ADR明文化（不足分のみ追記）
 
@@ -111,6 +113,13 @@
   - direct write / auto-apply / review自動昇格を許容する記述が1件でも存在する。
   - SafeMode後退（既定OFF化・例外既定化）の兆候を検知する。
 
+### 2.6 Drift-stop 固定（Phase 4 Execute）
+
+- Contract ID collision は **0件固定**（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の重複再定義禁止）。
+- 語彙 collision は **0件固定**（`Core Graph` は履歴注記のみ、契約語彙は `Consensus Graph` に統一）。
+- SafeMode後退（既定OFF化・例外既定化）兆候は 1件でも検知時点で No-Go 停止。
+- Verify自己修復は最大3回。4回目相当は停止し、推測継続を禁止する。
+
 ## 3) Consequences
 
 - CE-1〜CE-4 は本Issueの Contract ID を参照し、契約再定義を禁止する。
@@ -131,6 +140,7 @@
 - [ ] Phase 1〜5 の各段で `Plan -> Execute -> Verify -> Proceed` 記録が残る。
 - [ ] Verify自己修復は3回以内で完了し、超過時は停止記録が残る。
 - [ ] CE0 Contract ID Matrix が architecture/schemas/CE1/CE2 参照節と一致する。
+- [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
 ## 5) タスク分解（文書限定）
