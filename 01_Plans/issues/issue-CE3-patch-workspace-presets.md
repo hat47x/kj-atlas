@@ -79,3 +79,55 @@
 - Phase 5 Proceed:
   - 未完了: workspace local audit を document監査ログへ昇格する統合（CE4/後続）。
   - SafeMode後退・share/export露出の追加はなし（UI導線未追加）。
+
+## 8) Stream F Phase Notes (2026-04-11)
+
+### Phase 1 Read（現行UI/状態機械/E2E前提）
+
+- `PatchWorkspacePanel` の候補状態表示が `auditLog` の最新遷移を表示していることを確認。
+- `ce3_patch_workspace.ts` の rollback は状態復旧のみで、rollback自体の監査遷移を残していないことを確認。
+- `e2e/ce3_patch_workspace.spec.ts` は rollback後も監査遷移数を `2` のまま期待しており、rollback操作の可観測性を十分に担保していないことを確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context:
+  - CE3要件は「候補IDごとの状態遷移記録」を受入条件に含むが、rollback経路が監査上不可視。
+  - rollback後のUIは最終状態だけを見せるため、通常遷移と復旧遷移の区別が困難。
+- Decision:
+  - `rollbackWorkspaceDecision` 実行時に、差分が発生した候補ごとに `reason=rollback` の監査遷移を追加する。
+  - UIは候補ごとの最新遷移表示に `(rollback)` サフィックスを付与する。
+  - E2Eは rollback 後の監査遷移表示/件数増加を必須確認に更新する。
+- Consequences:
+  - rollback操作の監査可能性が向上し、候補独立性検証時に復旧遷移を識別できる。
+  - document永続データには影響せず、local state管理方針（Core/Consensus非改変）を維持できる。
+
+### Phase 3 Plan（AC/DoD不足の補強提案）
+
+- AC補強提案（固定）:
+  - rollback操作時に対象候補の監査遷移へ `reason=rollback` が残ること。
+  - CE3 E2Eで rollback 後の候補遷移表示（`(rollback)`）と監査遷移件数増加を確認すること。
+- DoD補強提案（固定）:
+  - domain unit + panel unit + CE3 e2e grep を通し、safeMode関連テストを追加で回して非後退を確認すること。
+
+### Phase 4 Execute（workspace/preset/rollback直列実装）
+
+- rollback時に差分候補を走査し、`WorkspaceAuditEntry` へ `reason: "rollback"` を追加。
+- パネル表示で rollback遷移を `from→to (rollback)` として可視化。
+- CE3 domain test / e2e test を更新し、rollback監査遷移の追加を期待値へ反映。
+
+### Phase 5 Verify（unit + e2e + safeMode非後退）
+
+- unit/e2e/safeMode関連の検証コマンドを実行（詳細ログは本Issueの更新コミットに追記）。
+- 3回自己修復上限には未到達（1回でgreen）。
+
+### Phase 6 Proceed（境界・未解決UI課題・次手）
+
+- 変更境界:
+  - `03_Implement/frontend/**`（CE3 domain/ui/e2e）
+  - `04_Documentation/e2e_testing.md`（CE3節）
+  - 本issue進捗記録のみ更新。
+- 未解決UI課題:
+  - rollback監査は現状local stateのみで、document監査ログ統合は未実装。
+  - Preset削除/上書きなど運用UIは後続検討。
+- 次手:
+  - CE4で local監査遷移を document監査ログへ昇格し、export/import監査整合まで拡張する。
