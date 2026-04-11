@@ -8,6 +8,8 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 本仕様は `ADR-0009` の Phase B（データ/IR整備）を完了させるための正本である。  
 対象は「LLMへ渡す前段データ」のみであり、モデル実装や推論品質評価ルーブリック自体は対象外とする。
 
+> CE1 Context foundation integration note: `ContextQuery` / `ContextBundle` の契約固定（`previewConfirmed` 必須、canonical hash）は `02_Architecture/api.md` と `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` を正本とし、本書では IR 接続時の整合条件のみを規定する。
+
 ---
 
 ## 0. Scope / Non-Goals / Acceptance Criteria
@@ -44,6 +46,20 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 - **negation relation**: `relations[*].type == "negation"`。
 - **IR**: `LLMRequest.inputs` に格納する JSON。
 - **structured text only**: JSONで表現可能な文字列・数値・配列・オブジェクトのみを許可し、バイナリを禁止する。
+- **queryCanonicalHash**: canonical 化した `ContextQuery` から算出する sha256 16進小文字。
+- **bundleHash**: canonical 化した `ContextBundle` から算出する sha256 16進小文字。
+
+---
+
+## CE1 Bridge Constraints（ContextQuery/Bundle 連携制約）
+
+本節は Phase 1〜6 の CE1 固定契約を、IR生成境界で破らないための拘束条件を定義する。
+
+1. `previewConfirmed != true` の `ContextQuery` から IR 生成を開始してはならない（APIは `422 preview_required` を返す前提）。
+2. `queryCanonicalHash` と `bundleHash` は、IRメタデータに監査キーとして保持可能でなければならない。
+3. IR生成パイプラインは、同一 canonical query に対する `bundleHash` 不一致を検知した場合に `nondeterministic_bundle` として失敗扱いにする。
+4. CE2/CE4 連携では backend 未実装時も mock `ContextQuery/ContextBundle` 契約で検証を継続し、CE1完了待ちを禁止する。
+5. Verify 失敗時の自己修復は最大3回までとし、3回超過時は処理継続せず停止する（fail-closed）。
 
 ---
 

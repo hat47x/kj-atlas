@@ -125,6 +125,14 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 
 CE-1 は実装方式に依存しない契約固定フェーズとし、frontend/backend は mock を介して疎結合に開発できるものとする。
+また、CE-2/CE-4 は CE-1 実装完了待ちを禁止し、本契約を満たす mock API で先行検証を継続する。
+
+Phase 1〜6 fixed policy:
+1. Phase 1-2: `ContextQuery` / `ContextBundle` 最小I/Fを固定し、`previewConfirmed=true` を必須化する。
+2. Phase 3: canonical hash（`queryCanonicalHash`, `bundleHash`）の算出手順を固定する。
+3. Phase 4: mock-first 連携を許可し、待機依存を作らない。
+4. Phase 5: Verify 失敗は自己修復を最大3回まで許可する。
+5. Phase 6: 3回超過（4回目）の Verify 失敗で停止し、人間判断へエスカレーションする。
 
 **POST** `/context/query`
 
@@ -157,6 +165,10 @@ CE-1 は実装方式に依存しない契約固定フェーズとし、frontend/
 4. `sha256(canonical_json)` を16進小文字で返す。
 
 判定可能要件: 同一 canonical query に対し `bundleHash` が一致しない場合、サーバは `409 nondeterministic_bundle` を返し監査ログへ記録する。
+
+運用停止条件:
+- `previewConfirmed` 必須ゲートが破られる実装差分を検知した場合は No-Go。
+- Verify の自己修復が3回を超えた場合は即停止（自動再試行を継続しない）。
 
 ### 2.7 Polygon Handoff Contract Verify（FB-P0-2A2B2C）
 
