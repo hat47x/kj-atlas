@@ -30,6 +30,17 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - セキュリティ方針・運用判断・実行手順の文書境界が明確になり、公開文書としての再利用性が向上する。
 - DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を継続監査しやすくなる。
 
+### 0.2 Stream H 直列同期（security フェーズ）
+
+Stream H では `operations.md` 同期完了後に本書を更新する。確認順序は次のとおり。
+
+1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
+2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
+3. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
+4. 相互リンク一致（`security.md -> security_operational_guidelines.md -> operations.md -> e2e_testing.md`）
+
+不一致が残る場合は e2e フェーズへ進まずに停止する。
+
 
 ## 1. 前提と範囲
 

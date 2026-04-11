@@ -57,6 +57,18 @@
 - 運用手順側での判断余地が縮小し、AUTH-OPS-03 と運用文書のドリフトを抑制できる。
 - 公開runbookでも内部判断メモを持ち込まずに、再現可能な検証手順を維持できる。
 
+## 0.5 Stream H 横断同期チェック（operations -> security -> e2e）
+
+本書は Stream H の直列同期で **operations を先頭** に扱う。次の3点を満たす場合のみ Go とする。
+
+1. 役割語彙が `Security Officer / System Owner / Platform Operator` に一致する。
+2. strict mode 例外の状態遷移を
+   `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`
+   （未確定時 `StoppedForClarification`）として参照し、別名を使う場合は同義と明記する。
+3. 固定値 D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）を security/e2e と同値で保持する。
+
+相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。

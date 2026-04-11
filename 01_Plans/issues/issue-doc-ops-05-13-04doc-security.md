@@ -168,3 +168,32 @@
 ### Phase 5) Proceed
 
 - 判定: Ready（DOC-OPS-05-13 は公開向け security 基底文書として整合済み）。
+
+## 13) Stream H rerun-02（Phase 1〜6）
+
+### Phase 1 Read（役割語彙・状態遷移・D1〜D4）
+
+- `strict_mode_exception_approval_flow.md`、`security.md`、`operations.md`、`e2e_testing.md` を再読して同期点を確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context: security 文書は公開向け基底方針のため、語彙差分があると運用/検証文書の規範が分断される。
+- Decision: 役割3語彙、状態遷移、D1〜D4固定値を明示し、operations/e2eへの導線を固定する。
+- Consequences: 監査説明の再利用性は上がるが、横断更新時の同時修正コストは増える。
+
+### Phase 3 Plan（AC/DoD不足提案）
+
+- 提案-1: ACへ「StoppedForClarification を含む状態語彙一致」を追加。
+- 提案-2: DoDへ「security -> operations -> e2e 相互リンク確認」を追加。
+
+### Phase 4 Execute（直列同期の第2段）
+
+- operations 同期済み語彙を受け、security を第2段で更新し e2e 検証へ引き渡す。
+
+### Phase 5 Verify（docs-check + rg + diff）
+
+- validator と rg照合で役割/状態/固定値一致を確認（自己修復 0/3）。
+
+### Phase 6 Proceed（証跡記録）
+
+- 本Issueに rerun-02 結果を記録し、security系のOpen準備条件を更新。

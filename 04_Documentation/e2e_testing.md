@@ -24,6 +24,20 @@
    - 回帰しやすい安全境界（SafeMode / import / export / docs保存）
    - 環境差分に強い待機戦略（networkidle固定に依存しすぎない）
 
+### 1.1 Stream H 文書横断同期チェック（Verify フェーズ）
+
+operations -> security の直列同期後、e2e では docs-check と `rg` により次を固定確認する。
+
+- 役割語彙: `Security Officer / System Owner / Platform Operator`
+- 状態遷移語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`
+- D1〜D4 固定値: `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 相互リンク: `operations.md` / `security.md` / `security_operational_guidelines.md` を参照可能
+
+運用側の検証コマンド（docs-only変更時）:
+
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|StoppedForClarification|ActiveException|RollbackPending|Closed|D1|D2|D3|D4|4h|2h|48h|15m|60m" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+
 ---
 
 ## 2. kj-atlas向け推奨E2Eスコープ
