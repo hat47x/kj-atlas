@@ -160,6 +160,7 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 - Verify で不整合を検出した場合、自己修復（再実行/設定補正/キー補完）は最大3回まで。
 - 3回で解消しない場合は Proceed を停止し、論点を保留化する。
 - 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
+- 監査4点セット（`query/bundle/proposal/apply`）の欠損は No-Go とし、補完完了まで成功扱いしない。
 
 ### 4.7 フェイルセーフ停止条件
 
@@ -168,6 +169,12 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 1. 同値性定義の多義化
 2. ログ欠損成功扱い
 3. safeMode後退要求
+
+### 4.8 Proceed引継ぎ記録（運用導線）
+
+- 引継ぎ時は `equivalenceKey + bundleHash` 判定結果、`sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）、`dryRun=true` と `sideEffect=none` の確認結果を同時に記録する。
+- 運用日報には `channel`（`api|cli|gui`）別の実行結果と共通キー集合（`equivalenceKey`, `bundleHash`, `sourceBundleHash`, `dryRun`, `sideEffect`, `schemaVersion`）の差分有無を残す。
+- 差分あり/自己修復3回超過/停止条件該当のいずれかを満たした場合、Proceedは実施せず、Issueへ保留論点として即時エスカレーションする。
 
 ---
 
