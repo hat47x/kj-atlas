@@ -103,6 +103,16 @@
   - Decision: Proceed可
   - Next action: 運用契約の固定結果を引き渡す
 
+## 6.2 Phase execution contract（Stream D 固定）
+
+- Phase 1 Read: 3ファイル（`issue-0019` / `issue-0020` / `phase6-public-documentation-architecture.md`）を毎回再読して同期する。
+- Phase 2 CDC: Context / Decision / Consequences を Gate C→D→E の順序固定で更新する。
+- Phase 3 Plan: AC/DoD の不足項目を補完し、Gate D入力契約と Gate E Proceed条件を明記する。
+- Phase 4 Execute: Gate C→Gate D→Gate E 以外の順序を禁止する。
+- Phase 5 Verify: `docs-check` と `git diff` を実施し、証跡を6項目形式で残す。
+- Phase 6 Proceed: 完了/未完了/残リスク/次アクションを記録して引き渡す。
+- self-correction: 検証失敗時は最大3回まで再試行し、3回超過時は Fail-safe で停止する。
+
 ## 7) Fail-safe
 
 以下を検知した時点で作業を停止し、修正提案のみ記録する。
