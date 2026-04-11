@@ -118,3 +118,20 @@ Gate運用は次の順序を固定し、逆順実行を禁止する。
 ## Operational note
 
 - `planning_queue` 実行結果が取得できない場合は、理由と代替確認（`rg`結果）を Validation evidence へ残す。
+
+## Stream D phase protocol（Gate C→D→E 運用整合）
+
+運用整合タスクは次の6Phaseを固定し、各Phase開始時に対象3文書の再読で状態同期する。
+
+1. Phase1 Read: `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
+2. Phase2 CDC: Context / Decision / Consequences を Gate C→D→E 固定で同期する。
+3. Phase3 Plan: AC/DoD の不足を補完する。
+4. Phase4 Execute: Gate C→Gate D→Gate E の順序でのみ実行する。
+5. Phase5 Verify: `docs-check` と `diff` の証跡を6項目形式で記録する。
+6. Phase6 Proceed: 完了・未完了・残リスク・次アクションを記録する。
+
+失敗時は self-correction を最大3回まで許容し、以下に該当した場合はFail-safeで停止する。
+
+- Gate順序崩壊
+- evidence形式不一致
+- self-correction の3回超過
