@@ -160,3 +160,32 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## 13) Stream F update（security/ops 同期）
+
+### Phase 1) Read同期
+
+- `strict_mode_exception_approval_flow.md` を起点に、security/operations との責務分離と導線を突合。
+
+### Phase 2) Context / Decision / Consequences 明文化
+
+- Context: 本Issue対象は運用判断ガイドであり、承認フロー仕様の再定義を避ける必要がある。
+- Decision: 文書冒頭に DOC-OPS-05 分類と CDC を追加し、D1〜D4 を確認項目として固定する。
+- Consequences: 運用判断時に「どの文書を正本にするか」の迷いを削減できる。
+
+### Phase 3) 用語・役割・導線・固定値整合
+
+- 用語統一: Security Officer / System Owner / Platform Operator。
+- 役割分離: 2者承認と実行責務分離を維持。
+- 導線: `security.md`（基底方針）と `operations.md`（実行runbook）へ接続。
+- 固定値: D1〜D4 チェック節を新設し、停止条件（StoppedForClarification）を明記。
+
+### Phase 4) docs-check
+
+- 実行予定: `rg -n "Context|Decision|Consequences|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security_operational_guidelines.md 04_Documentation/security.md 04_Documentation/operations.md`
+- 実行予定: `git diff --check`
+
+### Phase 5) Proceed
+
+- 判定: Ready（DOC-OPS-05-14 は security/ops 系の公開ガイドとしてOpen可能）。
