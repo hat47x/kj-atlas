@@ -20,7 +20,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `DOC-OPS-05 document classification queue`
+- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
 ## 1) 課題 / Problem statement
 
@@ -93,7 +93,7 @@
 ---
 
 
-## 11) Stream H execution log（DOC-OPS-05 serial cycle）
+## 11) Stream G phase record（DOC-OPS-05 front-half: 01-07）
 
 ### Phase 1 Read
 
@@ -125,7 +125,7 @@
 
 ### Phase 5 Proceed（次issueへ）
 
-- 本Issueの分類固定を完了。Stream H の直列処理として次のDOC-OPS-05 issueへ進行可能。
+- 本Issueの分類固定を完了。Stream G の担当範囲として次のDOC-OPS-05 issueへ進行可能。
 ### Phase 6 Proceed（状態分類の記録）
 
 - 状態分類: **Ready（Open候補）**
@@ -141,7 +141,7 @@
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
 
 
-## 12) Stream H Set1 AC/DoD clarification（Phase 1〜6）
+## 12) Stream G Set1 AC/DoD clarification（Phase 1〜6）
 
 ### Phase 1 Read
 - 対象Docの現行分類・公開境界・検証レベル（docs-check）を再確認。
