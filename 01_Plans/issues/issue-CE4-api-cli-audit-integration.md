@@ -19,10 +19,10 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `F` (CE4 API/CLI Audit Integration)
+- Stream: `E` (CE4 API/CLI Audit Integration)
 - DecisionQueueRef: N/A
 
-## 1) Read（同値性・監査4点セットの現状把握）
+## 1) Phase 1 Read（同値性・監査4点セットの現状把握）
 
 - Phase 1〜6 で契約ドリフトを許容しないため、CE-4は運用段の再現性と監査性を固定するフェーズとして API/CLI/GUI 同値性を明文化する必要がある。
 - CE-0〜CE-3で確定した安全境界（safeMode既定ON、proposal-only、review昇格禁止）を運用導線で失わないことが前提。
@@ -33,7 +33,7 @@
   3. `apply --dry-run` は副作用境界（DB永続化/外部送信/review昇格なし）を固定する。
   4. `sourceBundleHash` は `mock:<hash>` と本番 hash の双方を受理する。
 
-## 2) ADR明文化（Context / Decision / Consequences）
+## 2) Phase 2 ADR明文化（Context / Decision / Consequences）
 
 ### 2.1 Context
 
@@ -78,7 +78,7 @@
 - safeMode後退、share/export緩和、Consensus直接更新、ログ欠損成功扱いは即No-Go。
 - 契約検証は `sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）に依らず同一フローで実施し、監査導線の分岐を禁止する。
 
-## 3) Plan（AC/DoD補完提案）
+## 3) Phase 3 Plan（AC/DoD補完提案）
 
 ### 3.1 受入条件 / Acceptance criteria
 
@@ -96,7 +96,23 @@
 - [ ] DoD-3: ログ欠損を成功扱いしない判定（fail-closed）を運用手順へ反映。
 - [ ] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
 
-## 4) Verify → Proceed（3回自己修復上限）
+## 4) Phase 4 Execute（mock `sourceBundleHash` 許容で依存切断）
+
+- Execute開始時Read（再確認）:
+  - 同値性判定は `equivalenceKey + bundleHash` の AND 条件。
+  - 監査イベントは `query/bundle/proposal/apply` 4点セット必須。
+  - `apply --dry-run` は `sideEffect=none` を必須とし、副作用境界を固定。
+  - `sourceBundleHash` は `mock:<hash>` と本番hashを同一契約で受理。
+- 実行固定:
+  - CE3依存の完了待ちを禁止し、`mock:<hash>` 入力で契約検証を継続。
+  - API/CLI/GUI は同一 logical operation を使い、片系独自分岐を禁止。
+  - 監査キー欠損時は fail-closed で即失敗（成功扱い禁止）。
+
+## 5) Phase 5 Verify（4点セット欠損=No-Go、自己修復最大3回）
+
+- Verify開始時Read（再確認）:
+  - No-Go条件は「4点セット欠損」「dry-run副作用境界違反」「同値性判定不一致」。
+  - 自己修復は最大3回、4回目は禁止。
 
 - Verify-1: 用語ドリフト確認（同値性、監査4点、dry-run副作用0）。
 - Verify-2: 必須キー欠損確認（`equivalenceKey`, `sideEffect`, `sourceBundleHash`）。
@@ -105,7 +121,17 @@
 - Verify-5: `channel`（`api|cli|gui`）差分があっても必須キー集合（`equivalenceKey`, `bundleHash`, `sourceBundleHash`, `dryRun`, `sideEffect`, `schemaVersion`）が不変であることを確認。
 - 自己修復は最大3回。3回で収束しない場合は Proceed 停止し、論点を保留化する。
 
-## 5) フェイルセーフ（停止条件）
+## 6) Phase 6 Proceed（運用導線への引継ぎ記録）
+
+- Proceed開始時Read（再確認）:
+  - 運用導線への引継ぎ先は `04_Documentation/local_llm_ops_guide.md` の CE4 runbook。
+  - 引継ぎ記録には `equivalenceKey + bundleHash` 判定、4点監査、dry-run副作用境界、`mock:<hash>` 許容を必ず含める。
+- 引継ぎ記録（本Issueの完了条件）:
+  - `local_llm_ops_guide.md` に CE4運用runbook（Verify/停止条件含む）が同期済みであること。
+  - 4点セット欠損を No-Go とする fail-closed 原則が運用手順に明記されていること。
+  - 3回自己修復上限と「超過時停止」が運用手順に明記されていること。
+
+## 7) フェイルセーフ（停止条件）
 
 以下を検知した場合は CE4 作業を即停止する。
 
@@ -113,27 +139,27 @@
 2. ログ欠損を成功扱いする記述
 3. safeMode後退要求（share/export保護緩和、未レビュー保護緩和）
 
-## 6) タスク分解（文書限定）
+## 8) タスク分解（文書限定）
 
 - [ ] T1: 監査ログイベントスキーマ（version付き）を architecture/docs に同期。
 - [ ] T2: API/CLI同値性の判定基準（bundleHash一致 + equivalenceKey一致）を明記。
 - [ ] T3: `local_llm_ops_guide.md` に監査runbookを同期。
 - [ ] T4: dry-run副作用0の監査観点を手順化。
 
-## 7) 検証計画 / Validation plan
+## 9) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `rg -n "API/CLI/GUI|bundleHash|equivalenceKey|dry-run|sideEffect|queryId|proposalId|sourceBundleHash|excludedReason|rejectReasonCode|safeMode" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/deployment.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/local_llm_ops_guide.md`
 - 期待結果:
   - 同値性/監査ログ契約の語彙が一致し、dry-run副作用0と停止条件が明示される。
 
-## 8) リスクとロールバック / Risks & rollback
+## 10) リスクとロールバック / Risks & rollback
 
 - 失敗モード: CLI/API実装差で同値性が崩れる、または監査欠損が見逃される。
 - ロールバック: 共通契約に反する文書差分をrevertし、同値性要件とフェイルセーフを再固定。
 
 
-## 9) Phase 6 Proceed（CE3向け参照専用I/F）
+## 11) Phase 6 Proceed（CE3向け参照専用I/F）
 
 - CE3は CE4 の同値性判定を `equivalenceKey + bundleHash` のAND条件で参照する。
 - 監査4点セット（`query/bundle/proposal/apply`）は欠損時 fail-closed を維持する。
