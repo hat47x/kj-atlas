@@ -5,6 +5,32 @@
 このドキュメントは、**イントラネット / VPN 内でのセルフホスト運用を前提**に、
 MVP で実施しやすい最小限の保護策をまとめたものです。
 
+## 0. 文書分類（DOC-OPS-05-13）
+
+- Classification: **Improve external**（対外向けセキュリティ基底文書として維持）
+- Audience: self-host運用者 / セキュリティレビュー担当 / 監査対応担当
+- Goal: 安全境界（safeMode、strict例外、監査最小化）を公開可能な粒度で共有する
+- Non-goal: 実装内部の秘匿情報公開、承認フローの独自再定義
+
+### 0.1 AUTH-OPS-03 整合メモ（Context / Decision / Consequences）
+
+#### Context
+
+- strict mode例外緩和は `02_Architecture/strict_mode_exception_approval_flow.md` が正本で、D1〜D4が固定済み。
+- 本書はセキュリティ基底方針、`04_Documentation/security_operational_guidelines.md` は運用選択時の補助ガイドとして責務分離する。
+
+#### Decision
+
+- 用語を `Security Officer / System Owner / Platform Operator` に統一し、承認2者と実行責務分離を明示する。
+- D1〜D4 固定値を本書の strict 例外チェックへ明示的に取り込み、`TODO化せず停止` ルールを維持する。
+- `security.md -> security_operational_guidelines.md -> operations.md` の導線を保持する。
+
+#### Consequences
+
+- セキュリティ方針・運用判断・実行手順の文書境界が明確になり、公開文書としての再利用性が向上する。
+- DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を継続監査しやすくなる。
+
+
 ## 1. 前提と範囲
 
 - 本プロジェクトのMVPは、**完全な認証・ユーザー管理機能（ユーザー/セッション/OAuth）を提供しません**。
@@ -299,7 +325,12 @@ for event in hr_events:
 
 ### 8.1 strict mode例外時の安全性チェック（AUTH-OPS-03 / T3）
 
-参照正本: `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節（D1〜D4固定）、`04_Documentation/operations.md` 3.2〜3.4（Runbook運用）。
+参照正本: `02_Architecture/strict_mode_exception_approval_flow.md` 6.8節（D1〜D4固定）、`04_Documentation/operations.md`（Runbook運用）。
+
+- D1: Security Officer先行、承認TTL=4h
+- D2: tenant単位、最大2h（超過時はstrictへ自動復帰）
+- D3: 2者共同判定、代理承認なし
+- D4: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
 
 - 本節を strict mode 例外運用の**最小チェックリスト正本**として扱う。
 - 以下の契約を**同時に**満たせない場合、例外適用を停止する。

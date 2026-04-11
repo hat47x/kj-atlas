@@ -3,8 +3,11 @@
 > DOC-OPS-05 Classification: **Move internal**
 > Audience: 内部設計/運用向け（公開対象外候補）
 > Goal: canonicalization の設計・運用正本を内部レイヤへ寄せる。
+> Non-goal: canonicalization 実装仕様の再設計や自動統合ロジック追加は扱わない。
 > Public boundary: 公開向けには概要のみを残し、詳細手順は内部文書へ移設予定。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Outcome: 本文単体で内部移設判断と安全境界（人手確定）を追跡できる。
+> Related: `02_Architecture/schemas.md`, `02_Architecture/architecture.md`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
 
 
 本ドキュメントは、`P-05: カード数の可管理性（merge提案 + canonical化）` を満たすための、

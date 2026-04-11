@@ -258,6 +258,41 @@ Stop rule: 1項目でも不一致ならStream Aは即停止し、差分一覧の
 
 ## 14) Handoff（固定I/F一覧・差し戻し条件・未確定事項）
 
+### 14.1 Fixed I/F contract keys（A2/A3 read-only）
+
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### 14.2 Queue fields contract（固定）
+
+- required fields:
+  - `queueId`
+  - `status`（`Pending | Approved | Rejected`）
+  - `owner`
+  - `decisionBy`
+  - `timestampUtc`（ISO-8601 UTC）
+  - `evidenceLink`
+- allowed transitions:
+  - `Pending -> Approved`
+  - `Pending -> Rejected`
+- prohibited transitions:
+  - Pending bypass
+  - `Approved -> Pending`
+
+### 14.3 Stop / resume rule（固定）
+
+- Stop:
+  - 未承認事項の確定化
+  - SafeMode / share-export / human_dual_control_only の後退要求
+  - SSOT or contract key mismatch
+- Resume:
+  - Decision Queueに`Pending`登録
+  - 人間承認ログ完備（`decisionBy`/`timestampUtc`/`evidenceLink`）
+  - A1差し戻し経路で再判定完了
+
 - 固定I/F一覧:
   - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`

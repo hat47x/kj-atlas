@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `D` (CE2 proposal-only / Docs-Plan only)
+- Stream: `B` (Contracts only / Docs-Plan only)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
 ## 0) CDC Flow（明文化）
@@ -38,6 +38,15 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - CE2必須I/F: `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState`。
 - CE1依存は `mock bundleHash` で切断し、契約検証を先行（待機禁止）。
 - 提案は **proposal-only** 境界に固定し、適用はCE2責務外とする。
+
+## 1.1) Contract ID Freeze（CE2）
+
+| Contract ID | Summary | Must |
+| --- | --- | --- |
+| `CE2-PROPOSAL-IF` | Proposal 最小I/F固定 | `proposalId/diff/sourceBundleHash/rationale/status/reviewState` |
+| `CE2-LIFECYCLE-IF` | status 遷移固定 | `proposed -> accepted/rejected/held` のみ |
+| `CE2-DRIFT-STOP-IF` | CE1差分検知時の停止契約 | 差分検知時は `status=held` で停止、Proceed禁止 |
+| `CE2-NO-AUTOAPPLY-IF` | proposal-only 強制 | API/UI/worker すべて auto-apply 禁止 |
 
 ## 2) Phase 2 Context
 
@@ -97,6 +106,14 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - [ ] 提案の採用/却下/保留が監査ログで追跡可能。
 - [ ] safeMode ONで未レビュー本文を含む提案が生成されない。
 - [ ] CE1モック契約との差異検知時に `status=held` で停止し、適用経路が進行しない。
+- [ ] CE0/CE1/CE2 間で契約語彙とContract IDの衝突が0件である。
+
+## 5.1) DoD（Contract-only）
+
+- [ ] 各Phaseで `Plan -> Execute -> Verify -> Proceed` を記録する。
+- [ ] Verify 修復は 3 回以内。4 回目相当の失敗時は即停止し推測で継続しない。
+- [ ] CE1 mock I/F 依存切断（待機禁止）を維持し、実装詳細の規定を追加しない。
+- [ ] `CE2-PROPOSAL-IF / CE2-LIFECYCLE-IF / CE2-DRIFT-STOP-IF / CE2-NO-AUTOAPPLY-IF` が CE0/CE1 契約と矛盾しない。
 
 ## 6) Verify 修復上限（最大3回）
 
@@ -134,3 +151,9 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - CE1差分検知時は `held` で停止し、差分解消が確認されるまで Proceed しない。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
+
+## 11) フェイルセーフ（Stream B 固定）
+
+- Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
+- Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
+- スコープ逸脱（03_Implement/**、CE3/CE4 issue、dashboard、issues/README）要求が発生した場合は停止する。

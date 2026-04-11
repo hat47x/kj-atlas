@@ -189,3 +189,31 @@
 - Stream A editable scope is restricted to `01_Plans/` and `02_Architecture/` only.
 - `04_Documentation/**` and `03_Implement/**` are explicitly out of scope in this critical path.
 - Any requirement that needs upstream ADR revision must stop here and wait for human approval before proceeding.
+
+## 15) Stream A phase-managed verification record（2026-04-11）
+
+### Phase 1: Read
+
+- Plan: 対象ファイルの `Status/Priority/Dependencies/Contract IDs` を再抽出。
+- Execute: `issue-HIL-RS-01-A1` / `issue-HIL-RS-02-A1` / 本issue を再読。
+- Verify: `Open`, `P1`, 依存 `ADR-0026/0027 + A1 SSOT` で整合。想定差分なし。
+- Proceed: Phase 2へ。
+
+### Phase 2: ADR明文化
+
+- Plan: 新規決定がADR改定を要するか評価。
+- Execute: 変更要求が上位ADR改定を必要とする場合は承認待ち停止を固定。
+- Verify: 未承認確定禁止ルールを維持。
+- Proceed: Phase 3へ。
+
+### Phase 3-4: Contract fix + handoff
+
+- Fixed precondition: `a1Status=="Done" && pendingDecisionQueueCount==0`
+- Fixed interface keys: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`
+- Fixed queue fields: `queueId,status,owner,decisionBy,timestampUtc,evidenceLink`
+- Stop: SafeMode/share-export後退要求、契約不一致、Pending bypass
+- Resume: `Pending` 登録 + 承認ログ充足 + A1再判定
+
+### Phase 5: Verify
+
+- 契約リンク整合（SSOT単一）・未承認確定禁止・SafeMode後退なしを確認して完了。

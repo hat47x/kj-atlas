@@ -3,8 +3,11 @@
 > DOC-OPS-05 Classification: **Move internal**
 > Audience: AIエージェント運用担当者（内部）
 > Goal: Codex skill運用手順を内部ガイドへ統合する。
+> Non-goal: 公開向け利用ガイドの全面改稿や実装コード変更は行わない。
 > Public boundary: 04では最小参照のみ残し、運用詳細は00_Prompt/01_Plansへ集約予定。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Outcome: Skill運用の内部正本導線と公開境界を本文だけで判定できる。
+> Related: `00_Prompt/codex_gsd_skill_ops.md`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
 
 
 ## Purpose

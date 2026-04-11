@@ -38,6 +38,25 @@
   - 上流正本と矛盾する運用既定値を本書で独自確定
   - 検証手順が欠落し、再現可能性が担保できない
 
+
+## 0.4 AUTH-OPS-03 整合メモ（Context / Decision / Consequences）
+
+### Context
+
+- `02_Architecture/strict_mode_exception_approval_flow.md` で、strict mode 例外緩和の固定値 D1〜D4 が確定している。
+- `04_Documentation/security.md` は安全境界の正本、`04_Documentation/security_operational_guidelines.md` はプロファイル選択ガイドの正本であり、本書は実行runbookに責務を限定する。
+
+### Decision
+
+- 本書（operations）は **実行手順とGo/No-Go判定** に集中し、承認フローの制度設計そのものは `02_Architecture/strict_mode_exception_approval_flow.md` を参照する。
+- 役割語彙は `Security Officer / System Owner / Platform Operator` で統一し、承認（2者）と実行（Platform Operator）の分離を維持する。
+- 固定値 D1〜D4（承認TTL=4h、最大2h、代理承認なし、48hレビュー+15m/60mSLA）を runbook の必須チェックとして扱う。
+
+### Consequences
+
+- 運用手順側での判断余地が縮小し、AUTH-OPS-03 と運用文書のドリフトを抑制できる。
+- 公開runbookでも内部判断メモを持ち込まずに、再現可能な検証手順を維持できる。
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。

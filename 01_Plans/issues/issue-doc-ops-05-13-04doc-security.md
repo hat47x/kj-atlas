@@ -139,3 +139,32 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## 12) Stream F update（security/ops 同期）
+
+### Phase 1) Read同期
+
+- `02_Architecture/strict_mode_exception_approval_flow.md` の D1〜D4 と role定義を再確認し、`04_Documentation/security.md` への反映点を特定。
+
+### Phase 2) Context / Decision / Consequences 明文化
+
+- Context: `security.md` は基底方針として公開運用でも参照されるため、固定値と責務境界の明記が必要。
+- Decision: 文書分類を Improve external で維持しつつ、CDC（Context/Decision/Consequences）を章立てで固定する。
+- Consequences: 用語揺れと role不整合を抑制し、監査説明の再利用性が向上する。
+
+### Phase 3) 用語・役割・導線・固定値整合
+
+- 用語統一: Security Officer / System Owner / Platform Operator。
+- 役割分離: 承認（2者）と実行（Platform Operator）を明示。
+- 導線: `security_operational_guidelines.md` / `operations.md` への参照導線を維持。
+- 固定値: D1〜D4 を strict例外チェック節に明示追記。
+
+### Phase 4) docs-check
+
+- 実行予定: `rg -n "Context|Decision|Consequences|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/operations.md`
+- 実行予定: `git diff --check`
+
+### Phase 5) Proceed
+
+- 判定: Ready（DOC-OPS-05-13 は公開向け security 基底文書として整合済み）。

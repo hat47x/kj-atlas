@@ -109,7 +109,7 @@
 - Phase 2 ADR明文化（必要時のみ）: Context / Decision / Consequences の差分がある場合のみ、Gate C→D→E 固定で更新する。
 - Phase 3 KPI定義固定: Gate D 入力契約（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）を固定する。
 - Phase 4 検証計画（docs-check/unit境界）: `docs-check` を必須、`unit` は実装非変更のため非対象として境界を明記する。
-- Phase 5 Verify & Proceed: `docs-check` と `git diff` の証跡を6項目形式で記録し、完了/未完了/残リスク/次アクションを引き渡す。
+- Phase 5 Verify & Proceed: `docs-check` と `git diff` を実施し、証跡を6項目形式で残したうえで完了/未完了/残リスク/次アクションを記録して引き渡す。
 - self-correction: 検証失敗時は最大3回まで再試行し、3回超過時は Fail-safe で停止する。
 
 ## 7) Fail-safe

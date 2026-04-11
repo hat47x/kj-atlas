@@ -218,6 +218,42 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - [x] 共通エラー契約（`A1-ERROR-IF`）と5件の固定`errorCode`が一致している。
   - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が一致している。
   - [x] 「A2/A3で契約本文を変更しない」が明記されている。
+
+## 7) Stream A Phase execution log（2026-04-11）
+
+### Phase 1: Read（Status/Priority/Dependencies再抽出）
+
+- Plan: 対象3ファイルの `Status / Priority / Dependencies / Contract IDs` を再抽出。
+- Execute:
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Verify:
+  - Status: 3ファイルとも `Open`（architecture SSOTは `Fixed (A1 Done)` の整合表現）
+  - Priority: 3ファイルとも `P1`
+  - Dependencies: `ADR-0026` / `ADR-0027` + A1 SSOT 依存で一致
+  - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+- Proceed: 想定差分なしで継続。
+
+### Phase 2: ADR明文化（Context/Decision/Consequences）
+
+- Plan: 新規決定が上位ADR改定を要求するか判定。
+- Execute: 上位ADR改定が必要な要求は承認完了まで停止（未承認確定禁止）を固定。
+- Verify: `ADR-0026/0027` の契約先行方針と矛盾なし。
+- Proceed: ADR追加なしで継続。
+
+### Phase 3-4: 契約固定 + Handoff packet化
+
+- A1→A2→A3 前提: `A1 Done && pendingDecisionQueueCount==0`
+- Pending遷移規則: `Pending -> Approved | Rejected` のみ
+- Fixed I/F keys:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - queue fields: `queueId,status,owner,decisionBy,timestampUtc,evidenceLink`
+- 停止条件:
+  - SafeMode後退要求、share/export漏えい防止後退要求、未承認確定
+- 再開条件:
+  - `Pending` 登録 + 承認ログ充足 + A1再判定完了
 - Gate判定:
   - Ready: チェックリストが全て満たされ、未定義契約変更要求が0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。

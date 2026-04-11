@@ -3,9 +3,11 @@
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部運用者（閉域/企業）
 > Goal: LLM provider切替と安全運用の公開ガイドを提供する。
+> Non-goal: 組織固有の承認系統・秘密情報・未公開運用メモの共有は行わない。
 > Public boundary: 機密運用情報は除外し、安全前提・監査項目のみ公開する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
-
+> Outcome: provider切替・safeMode境界・監査4点セットを公開runbookとして再現できる。
+> Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 This operator guide explains how to run and switch LLM providers for kj-atlas across offline, intranet, and enterprise environments, including safety defaults, escalation controls, and minimal observability.
@@ -103,6 +105,7 @@ Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/
 
 - CE3完了待ちはしない。
 - `sourceBundleHash` は `mock:<hash>` を許容し、監査導線と同値性導線の検証を継続する。
+- 同値性判定は常に `equivalenceKey + bundleHash` の AND 条件で行う（値種別による例外なし）。
 
 ### 4.2 API/CLIの共通監査項目
 
@@ -132,7 +135,14 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 4. API/CLI両方で `apply --dry-run` を実行し、`dryRun=true` かつ `sideEffect=none` を確認する。
 5. 監査ログで `query/bundle/proposal/apply` の4イベントが揃っていることを確認する。
 
-### 4.4 監査欠落の検知・通知
+### 4.4 契約整合チェック（`mock:<hash>` / 本番hash）
+
+1. `sourceBundleHash=mock:<hash>` で 4.3 を実施し、同値性判定と監査4点セットが成立することを確認する。
+2. `sourceBundleHash=<prod_sha256>`（64桁hex）で 4.3 を実施し、同一の判定条件で成立することを確認する。
+3. 1 と 2 で監査キー集合（`equivalenceKey`, `bundleHash`, `dryRun`, `sideEffect`, `sourceBundleHash`, `channel`）に差がないことを確認する。
+4. 差がある場合は契約ドリフトとして CE4 作業を停止し、共通契約へ修正を戻す。
+
+### 4.5 監査欠落の検知・通知
 
 欠落判定は「同一 `equivalenceKey` で `query/bundle/proposal/apply` が揃っているか」で行う。
 
@@ -143,12 +153,13 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 - 判定原則: ログ欠損を成功扱いしない（fail-closed）。
 - 判定原則: `dryRun=true` で `sideEffect=none` を満たさない場合も成功扱いしない（fail-closed）。
 
-### 4.5 Verify → Proceed（3回自己修復上限）
+### 4.6 Verify → Proceed（3回自己修復上限）
 
 - Verify で不整合を検出した場合、自己修復（再実行/設定補正/キー補完）は最大3回まで。
 - 3回で解消しない場合は Proceed を停止し、論点を保留化する。
+- 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
 
-### 4.6 フェイルセーフ停止条件
+### 4.7 フェイルセーフ停止条件
 
 以下を検知した場合、CE4運用を停止する。
 

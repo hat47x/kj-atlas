@@ -5,6 +5,31 @@
 
 > 注意: ここで示す項目は「推奨ガイドライン」です。各組織は法令・規程・システム特性に応じて採否を決定してください。
 
+## 0. 文書分類（DOC-OPS-05-14）
+
+- Classification: **Improve external**（公開可能な運用判断ガイドとして維持）
+- Audience: Security Officer / System Owner / Platform Operator / 監査担当
+- Goal: strict標準と公開運用プロファイルの選択判断を、役割分離と固定値付きで再利用可能にする
+- Non-goal: 承認フロー仕様の再定義（正本は `02_Architecture/strict_mode_exception_approval_flow.md`）
+
+## 0.1 Context / Decision / Consequences（AUTH-OPS-03整合）
+
+### Context
+
+- strict mode例外緩和は D1〜D4 固定値で運用する設計が確定している。
+- 本書は「運用判断の補助」、`security.md` は「安全境界」、`operations.md` は「実行runbook」を担当する。
+
+### Decision
+
+- 役割語彙を `Security Officer / System Owner / Platform Operator` に統一する。
+- D1〜D4（4h承認TTL、最大2h、代理承認なし、48hレビュー+15m/60mSLA）をプロファイル選択時の確認項目として固定する。
+- 導線を `security.md`（基底方針）と `operations.md`（実行）へ明示する。
+
+### Consequences
+
+- 役割分離と固定値の参照が1ページで確認でき、実運用での判断ブレを抑制できる。
+- 文書横断ドリフト（用語/役割/導線/固定値）の差分点検が容易になる。
+
 ## 1. 目的
 
 - 運用プロファイル選択時の判断材料を共通化する。
@@ -50,3 +75,19 @@
 
 - 四半期または主要インシデント後に見直すことを推奨。
 - 見直し時は `04_Documentation/security.md` と `02_Architecture/strict_mode_exception_approval_flow.md` の整合を確認する。
+
+
+## 6. AUTH-OPS-03 固定値（D1〜D4）チェック
+
+- D1: Security Officer先行、承認TTL=4h
+- D2: tenant単位、最大2h（超過時はstrictへ自動復帰）
+- D3: 2者共同判定、代理承認なし
+- D4: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
+
+運用時は上記4点を同時に満たすこと。満たせない場合は `StoppedForClarification` 扱いで停止し、再承認を行う。
+
+## 7. 関連導線（読む順序）
+
+1. 設計正本: `02_Architecture/strict_mode_exception_approval_flow.md`
+2. セキュリティ基底方針: `04_Documentation/security.md`
+3. 実行runbook: `04_Documentation/operations.md`

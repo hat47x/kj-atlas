@@ -81,6 +81,13 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     () => (activeCandidate?.preview ? summarizeCandidatePatchDiff(activeCandidate.preview) : null),
     [activeCandidate]
   );
+  const latestAuditByCandidate = useMemo(() => {
+    const latest = new Map<string, string>();
+    for (const entry of workspaceState.auditLog) {
+      latest.set(entry.candidateId, `${entry.from}→${entry.to}`);
+    }
+    return latest;
+  }, [workspaceState.auditLog]);
 
   useEffect(() => {
     setWorkspaceState((previous) => syncWorkspaceCandidates(previous, candidates));
@@ -164,6 +171,26 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
         Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"} (phase: {workspaceState.phase})
+      </div>
+      <div
+        data-testid="ce3-candidate-state-list"
+        style={{ border: "1px solid #e2e8f0", borderRadius: 6, backgroundColor: "#ffffff", padding: 8, marginBottom: 8 }}
+      >
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>Candidate decisions</div>
+        {candidates.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>No candidates collected yet.</div> : null}
+        {candidates.map((candidate) => (
+          <div
+            key={candidate.id}
+            style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#334155", marginBottom: 2 }}
+          >
+            <span data-testid={`ce3-candidate-state-${candidate.id}`}>
+              {candidate.label}: {workspaceState.decisions[candidate.id] ?? "hold"}
+            </span>
+            <span data-testid={`ce3-candidate-audit-${candidate.id}`} style={{ color: "#64748b" }}>
+              {latestAuditByCandidate.get(candidate.id) ?? "no transition"}
+            </span>
+          </div>
+        ))}
       </div>
       <div
         data-testid="ce3-diff-preview"
