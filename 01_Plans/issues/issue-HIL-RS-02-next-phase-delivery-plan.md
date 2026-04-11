@@ -87,7 +87,7 @@
 
 ## 11) A2/A3参照用「凍結契約パック」（read-only）
 
-- Freeze-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Package mode: read-only（A2/A3は参照のみ、変更要求はA1へ差し戻し）
 - Contents:
   1. Invariant-01: SafeMode既定ONを維持。
@@ -118,7 +118,7 @@
 
 ### Decision
 
-- Freeze Pack `HIL-RS-01-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
+- Freeze Pack `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
 - A2/A3の `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可する。
 - 変更禁止対象（契約ID/schemaVersion/overridePolicy/SSOT/stop条件）の変更要求は A1 へ差し戻す。
 
@@ -129,7 +129,7 @@
 
 ## 13) Gate rule（machine-evaluable）
 
-- `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
 - `schemaVersion=="1.0.0"`
 - `contractLinkLocked==true`
 - `sharedResourceFreeze==true`
