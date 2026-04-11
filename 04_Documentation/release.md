@@ -3,9 +3,11 @@
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: メンテナ・リリース担当者
 > Goal: 最小リリース手順を公開し再現可能性を担保する。
+> Non-goal: 組織内部の承認会議ログ・秘密鍵運用手順・未公開インシデント情報は扱わない。
 > Public boundary: 内部承認履歴は除外し、公開可能な手順とチェックのみを残す。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
-
+> Outcome: 外部読者が最小リリース手順と公開チェックを単独で追従できる。
+> Related: `01_Plans/documentation_quality.md`, `.github/workflows/release.yml`, `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
 
 このドキュメントは、kj-atlas の最小リリース運用（バージョニング、タグ作成、リリースノート）を定義します。
 
