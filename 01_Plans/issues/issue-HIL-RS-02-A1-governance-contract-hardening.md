@@ -15,7 +15,7 @@
 
 ### Phase 1: Read
 - Plan: 対象3ファイルを再読し `Status / Priority / Scope / Dependencies` を抽出する。
-- Execute: A1契約issue・本issue・delivery plan issueを再読した。
+- Execute: A1契約issue・本issue・`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読した。
 - Verify: 3ファイルとも `Status=Open`, `Priority=P1`、依存はA1契約固定 + `ADR-0026/0027` で整合。
 - Proceed: 想定差分なし。差分が出た場合は即停止して競合報告する。
 
@@ -52,6 +52,19 @@
 ## 1) 背景
 
 - HIL-RS-02でA2/A3を安全に開始するため、A1で契約変更差し戻し導線と未確定管理を強化する必要がある。
+
+## 1.1) Freeze extraction snapshot（対象3ファイル一致）
+
+| Key | Fixed value |
+|---|---|
+| `freezeContractId` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` |
+| `contractIds` | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` |
+| `schemaVersion` | `1.0.0` |
+| `overridePolicy` | `human_dual_control_only` |
+| `contractLinkLocked` | `true` |
+| `sharedResourceFreeze` | `true` |
+
+Stop rule: 1項目でも不一致ならStream Aは即停止し、差分一覧のみ報告する。
 
 ## 2) 目的
 

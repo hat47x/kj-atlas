@@ -16,7 +16,7 @@
 ### Phase 1: Read
 
 - Plan: 対象3ファイルの `Status / Priority / Scope / Dependencies` を再抽出し、差分有無を判定する。
-- Execute: 本issue・`issue-HIL-RS-02-A1-governance-contract-hardening.md`・`issue-HIL-RS-02-next-phase-delivery-plan.md` を再読。
+- Execute: 本issue・`issue-HIL-RS-02-A1-governance-contract-hardening.md`・`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読。
 - Verify: `Status=Open`, `Priority=P1`, ScopeがDocs中心、Dependenciesが `ADR-0026/0027` + A1 SSOT依存で整合。
 - Proceed: 想定差分なしのため継続。差分があれば即停止して競合を報告。
 
@@ -56,6 +56,19 @@
 - Proceed: Stream AのA1契約凍結完了として終了。
 
 ## 0) Stream A workflow log（Plan → Execute → Verify → Proceed）
+
+### Phase 1 extraction snapshot（対象3ファイル一致）
+
+| Key | Fixed value |
+|---|---|
+| `freezeContractId` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` |
+| `contractIds` | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` |
+| `schemaVersion` | `1.0.0` |
+| `overridePolicy` | `human_dual_control_only` |
+| `contractLinkLocked` | `true` |
+| `sharedResourceFreeze` | `true` |
+
+差分検知規則: 上記6キーのいずれかが不一致なら即停止し、差分一覧のみ報告する。
 
 ### Phase 1: Read & Baseline
 
