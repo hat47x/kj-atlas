@@ -91,3 +91,4 @@
 1. 設計正本: `02_Architecture/strict_mode_exception_approval_flow.md`
 2. セキュリティ基底方針: `04_Documentation/security.md`
 3. 実行runbook: `04_Documentation/operations.md`
+4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）

@@ -189,3 +189,32 @@
 ### Phase 5) Proceed
 
 - 判定: Ready（DOC-OPS-05-14 は security/ops 系の公開ガイドとしてOpen可能）。
+
+## 14) Stream H rerun-02（Phase 1〜6）
+
+### Phase 1 Read（役割語彙・状態遷移・D1〜D4）
+
+- `strict_mode_exception_approval_flow.md` と `security_operational_guidelines.md`、関連3文書を再読。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context: ガイド文書は運用判断の参照起点であり、固定値や状態名の不一致が判断ブレを生む。
+- Decision: D1〜D4 と `StoppedForClarification` を含む状態語彙を明示し、security/operations/e2e への導線を固定する。
+- Consequences: プロファイル選択時の判断差は減るが、AUTH-OPS-03更新時の同期責務が増える。
+
+### Phase 3 Plan（AC/DoD不足提案）
+
+- 提案-1: ACへ「役割語彙3種の一致確認」を追加。
+- 提案-2: DoDへ「相互リンク + 固定値同値表記」を追加。
+
+### Phase 4 Execute（直列同期の補助ガイド段）
+
+- operations -> security 更新後の整合状態を受け、guidelines で運用判断チェック項目を同期。
+
+### Phase 5 Verify（docs-check + rg + diff）
+
+- docs-check と rg照合で不一致なし、修復回数 0/3 を確認。
+
+### Phase 6 Proceed（証跡記録）
+
+- 本Issueへ rerun-02 同期証跡を追記し、次回同期の再利用基準を固定。

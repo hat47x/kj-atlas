@@ -133,3 +133,37 @@
 - 未解決項目: なし（本更新時点）。
 - 次アクション: AUTH-OPS-03 更新時は 4.4 固定順序（Architecture -> Documentation -> Plans -> AGENTS）で再同期する。
 - 2026-04-11 stream-h-rerun-01（Phase 1〜5）: 役割語彙・状態遷移・D1〜D4固定値を4ファイルで再検証し、`docs-check`（validator + 2系統rg）を1回で通過。修復回数0回、停止条件（3回超過/未定義競合）非該当。
+
+## 14) Stream H rerun-02（Plan -> Execute -> Verify -> Proceed）
+
+### Phase 1 Read（先頭Read）
+
+- `strict_mode_exception_approval_flow.md` を再読し、役割語彙・状態遷移・D1〜D4固定値を再確認。
+- `operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を再読し、語彙差分を棚卸し。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context: docs横断で役割語彙・状態遷移・固定値のずれが発生すると、監査時に同一事象を別判定するリスクがある。
+- Decision: Stream H は operations -> security -> e2e の直列順で同期し、各フェーズ開始時に再Readを実施する。
+- Consequences: 文書更新の自由度は下がるが、ドリフト検知と監査説明の一貫性が向上する。
+
+### Phase 3 Plan（AC/DoD不足提案）
+
+- AC補完提案:
+  - AC-7: 相互リンク（operations/security/security_guidelines/e2e）が全て有効であること。
+- DoD補完提案:
+  - DD-6: D1〜D4の数値表現（4h/2h/48h/15m/60m）を4文書で同一表記に統一する。
+
+### Phase 4 Execute（operations -> security -> e2e）
+
+- 実行順序を固定: 1) operations 2) security 3) e2e。
+- 各文書で語彙・状態・固定値・導線を同期し、前段の不一致が解消するまで次段へ進まない。
+
+### Phase 5 Verify（docs-check + rg + 差分整合）
+
+- 実行結果: validator + 2系統rgで整合を確認。修復回数 0/3。
+- 停止条件確認: 3回超過なし / 固定値不一致なし / 未定義競合なし。
+
+### Phase 6 Proceed（同期証跡記録）
+
+- 本節を同期証跡として記録し、次回AUTH-OPS-03更新時の再実行ベースラインとする。
