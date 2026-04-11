@@ -27,6 +27,7 @@
 - Core Graph 契約語彙は `Consensus Graph` に固定し、旧称 `Core Graph` は履歴注記用途のみに限定。
 - CE1/CE2/CE4 連携は mock I/F 前提で待機しない（依存切断）。
 - CE3/HIL-RS 系の実装・計画へは本Issueから変更を波及させない。
+- Contract ID Matrix（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は再定義せず参照専用で扱う。
 
 ## 1) Context
 
@@ -103,6 +104,7 @@
 - [ ] `autonomous mode` の許可条件と禁止条件が明文化される。
 - [ ] KJ法構造（card/island/relation/pending）との整合原則が明記される。
 - [ ] DecisionQueueの3項目（UNC-VSC-CE-02-01..03）がOpen/Pendingで追跡可能。
+- [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
 
 ## 5) タスク分解（文書限定）
 
@@ -114,10 +116,13 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Consensus Graph|Working Graph|autonomous|modelTier|patch \+ approval|safeMode" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation`
+  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|unreviewed|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/architecture.md 02_Architecture/schemas.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - Graph定義の二重化なし、Queue参照切れなし。
+- 実行ポリシー:
+  - ドリフト検知→修正→再検証を最大3回まで自律実行する。
+  - SafeMode後退 / auto-apply許容 / review自動昇格許容を検知した時点で即 No-Go 停止する。
 
 ## 7) リスクとロールバック / Risks & rollback
 

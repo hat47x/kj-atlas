@@ -39,12 +39,19 @@ CE-0 の契約凍結として、実装型に先行して次のメタ契約を固
   - `Working -> Consensus` は `patch + approval` のみ
   - `mode=autonomous` でも proposal-only（auto-apply禁止）
 
+| Contract ID | Must | Must Not |
+| --- | --- | --- |
+| `CE0-CTX-IF` | Query Preview を経由した ContextQuery、deterministic `bundleHash` | Query Preview bypass、非決定論 bundle |
+| `CE0-SAFEMODE-IF` | safeMode既定ON、`allowUnreviewedText=false` 既定 | 未レビュー本文のAI入力混入、safeMode既定緩和 |
+| `CE0-REVIEW-IF` | `human_reviewed` 昇格は人手のみ | AIによる review 自動昇格 |
+| `CG-01..05` | Working/Projection/Consensus 分離、proposal-only、監査4点セット必須 | direct write、auto-apply、監査欠損成功扱い |
+
 ---
 
 
 ### 1.2 CE1/CE2/CE4 Contract Freeze（型先行・実装非依存）
 
-CE-1/CE-2/CE-4 は実装着手前に次の最小I/Fを固定する（mock-first）。
+CE-1/CE-2/CE-4 は実装着手前に次の最小I/Fを固定する（mock-first、依存切断）。
 
 #### CE1-CONTEXT-FOUNDATION
 
