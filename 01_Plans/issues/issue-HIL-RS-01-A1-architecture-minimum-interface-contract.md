@@ -469,3 +469,60 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - 検証ループ: self-correction は最大3回。
 - 強制停止: `attempts > 3`、前提崩壊、未定義競合検知。
 - Proceed条件: 未解決 `Pending` がない状態で `Plan -> Execute -> Verify -> Proceed` を完了記録した場合のみ進行可能。
+
+
+## 8) Stream A critical-path lock update（2026-04-11, Phase 1-6）
+
+### Phase 1: Read（再読結果と差分宣言）
+- Plan: 本issue / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` を再読し、`Status/Priority/Scope/Dependencies` を比較する。
+- Execute: 3ファイルを再読し、A1契約固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`）を再抽出した。
+- Verify:
+  - Status: 3ファイルとも `Open`。
+  - Priority: 3ファイルとも `P1`。
+  - Scope: Docs中心（`01_Plans/`, 必要時のみ `02_Architecture/`）で一致。
+  - Dependencies: `ADR-0026/0027` + A1 SSOT依存で一致。
+  - 想定との差分: **なし**。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Plan: A1契約凍結のCDCを確定し、上位ADR改定要否を判定する。
+- Execute:
+  - Context: 本件は `ADR-0026/0027` の下位具体化であり、上位方針（SafeMode既定ON / share-export漏えい防止 / human_dual_control_only）を変更しない。
+  - Decision: 上位ADR改定が必要な要求が出た場合は **未承認確定を禁止して停止** する。
+  - Consequences: A2/A3は参照専用を維持し、契約変更要求はA1へ差し戻す。
+- Verify: 上位ADR改定が必要な要求を「承認前に確定」する経路がないことを確認。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD補完と採否記録）
+- Plan: AC/DoD不足を補完し、Decision Queue遷移を固定する。
+- Execute:
+  - AC追補案: `A2/A3 Open` は `A1 Done & Pending=0` のときのみ許可。
+  - DoD追補案: Decision Queue遷移は `Pending -> Approved|Rejected` のみ許可。
+  - 採否: **採用**（本issue固定ルール）。
+- Verify: Pending bypass と `Approved/Rejected` からの巻き戻しを禁止。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（開始条件固定）
+- Plan: A2/A3 Open化条件と安全制約を単一条件へ統一する。
+- Execute:
+  - Open条件を `A1 Done && pendingDecisionQueueCount==0` に統一。
+  - 安全制約（SafeMode既定ON / share-export後退禁止 / `human_dual_control_only`）を後退不可として固定。
+- Verify: Open条件を満たさない場合は `Draft` 維持 + A1差し戻しであることを確認。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify（AC/DoD照合）
+- Plan: docs-check（validator / unittest / diff check）で整合確認する。
+- Execute: Planに定義した検証コマンドで自己検証を実施。
+- Verify: 失敗なし（Self-Correction不要）。
+- Proceed: Phase 6へ進行。
+
+### Phase 6: Proceed（固定I/F・未解決点・停止条件）
+- 固定I/F:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 未解決点: なし（契約固定観点）。
+- 停止条件: Self-Correction 3回超過 / 依存崩壊 / 未定義競合検知で即停止。
