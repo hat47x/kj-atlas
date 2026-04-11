@@ -28,6 +28,7 @@
 - CE0必須I/Fキーを `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` に固定し、後続Issueの再定義を禁止する。
 - CE1/CE2/CE4 は **実装待機禁止** とし、依存は `mock I/F` で切断して契約検証を先行する。
 - CE3（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
+- Contract ID Matrix は本Issueを一次正本とし、`02_Architecture/architecture.md` と `02_Architecture/schemas.md` は責務境界の同期先として扱う。
 
 ## 1) Context
 
@@ -77,6 +78,7 @@
 - DoD（CE0完了判定）:
   - Plan → Execute → Verify → Proceed の順序で記録され、各段の証跡（定義表・同期差分・検証コマンド）が残る。
   - CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05 の語彙が `01/02/04` で一致する。
+  - Query Preview必須・direct write禁止・proposal-only・監査4点セット必須の4要件が No-Go 条件と矛盾なく同居する。
 
 ### 2.5 Go/NoGo Key（固定）
 
@@ -113,7 +115,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Guard-0[1-5]|CG-0[1-5]|Consensus Graph|WorkingGraph|autonomous|safeMode|unreviewed" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation/local_llm_ops_guide.md`
+  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|Query Preview|direct write|proposal-only|safeMode|unreviewed" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/architecture.md 02_Architecture/schemas.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。

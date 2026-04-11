@@ -183,13 +183,20 @@ Provider列挙は信頼境界（none/fixture/local/external）で固定し、通
 
 ## 7A. CE-0 固定契約（Contract Freeze: Consensus/Working Repositioning）
 
-CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（実装詳細はCE-1以降）。
+CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（**責務境界のみを対象**。API/CLI/UI の実装詳細はCE-1以降）。
 
 ### 7A.1 責務境界（CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05）
 
 - `WorkingGraph`: 主体（human/agent/role）ごとの探索・未確定保持を担う作業面。
 - `ContextProjectionGraph`: 問い合わせ目的へ投影する読取専用面。ContextBundle生成にのみ使用。
 - `ConsensusGraph`（旧Core Graph）: `patch + approval` 済み差分のみを保持する統合面。
+
+| Contract ID | Responsibility boundary |
+| --- | --- |
+| `CE0-CTX-IF` | ContextQuery と ContextBundle の最小必須キー、Query Preview 必須経路、deterministic `bundleHash` |
+| `CE0-SAFEMODE-IF` | safeMode 既定ON、`allowUnreviewedText=false` 既定、未レビュー本文保護 |
+| `CE0-REVIEW-IF` | `unreviewed/human_reviewed` の遷移境界（昇格は人手のみ） |
+| `CG-01..05` | Working/ContextProjection/Consensus 分離、`patch + approval` のみ、proposal-only、監査4点セット必須 |
 
 ### 7A.2 入出力境界
 
