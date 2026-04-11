@@ -1,7 +1,7 @@
 # Issue Draft: CE0 Core Graph Repositioning（Consensus/Working model）
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner
@@ -21,12 +21,12 @@
 - DecisionStatus: Pending
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
 
-## 1) 課題 / Problem statement
+## 1) Context
 
 - 従来Core Graphは「唯一正本」前提だったが、AI単独運用・主体別キャンバス要件を吸収できない。
-- 本Issueは、Graph層の責務境界を再配置し、作業者が設計判断できる状態にする。
+- CE-0でグラフ責務を固定しないと、CE-1以降で projection と consensus の更新経路が混線する。
 
-## 2) CE0境界仕様（固定契約）
+## 2) Decision
 
 ### 2.1 責務境界（Responsibility）
 
@@ -54,13 +54,22 @@
   - Projection結果の永続化上書き
   - review状態のAI自動変更
 
-### 2.3 禁止事項（Non-Regression）
+### 2.3 I/F固定表（実装レーン引き渡し用）
 
-- `autonomous mode` は「自動適用モード」ではない（proposal-only固定）。
-- safeModeがONのとき、未レビュー本文をProjection入力へ混入させない。
-- 監査4点セット欠損時は成功扱いしない。
+| Layer | Must | Must Not |
+| --- | --- | --- |
+| Graph model | Working/Projection/Consensusを分離し、read/write責務を明示 | Core Graph単独モデルで責務を兼務させる |
+| Transition | `patch + approval` 以外でConsensus更新しない | direct write / auto-merge |
+| Audit | `query/bundle/proposal/apply` を必須化 | 欠損時に成功扱い |
+| Safety | safeMode既定ON時は未レビュー本文をprojectionへ投入しない | safeMode緩和を既定化 |
 
-## 3) 受入条件 / Acceptance criteria
+## 3) Consequences
+
+- `Core Graph` の語彙は履歴説明用の別名としてのみ残し、契約語彙は `Consensus Graph` に統一する。
+- `autonomous mode` は proposal-only を維持し、自動適用モードとして扱わない。
+- 3項目のDecision QueueがCloseされるまで、実装での責務緩和は禁止する。
+
+## 4) 受入条件 / Acceptance criteria
 
 - [ ] `Core Graph` 用語が対象文書で `Consensus Graph` に置換/追記される。
 - [ ] Working/Consensusの責務境界を1テーブルで提示（read/write責務を明示）。
@@ -68,22 +77,22 @@
 - [ ] KJ法構造（card/island/relation/pending）との整合原則が明記される。
 - [ ] DecisionQueueの3項目（UNC-VSC-CE-02-01..03）がOpen/Pendingで追跡可能。
 
-## 4) 実装タスク分解 / Task breakdown
+## 5) タスク分解（文書限定）
 
 - [ ] T1: `02_Architecture/architecture.md` にGraph層責務表を追加。
 - [ ] T2: `02_Architecture/schemas.md` にGraph種別メタ（actor/modelTier/mode）の予約項目を追加。
 - [ ] T3: `04_Documentation/operations.md` にautonomous mode運用制約を追加。
-- [ ] T4: DecisionQueue項目を `decision-pack-2026-03-human-judgement.md` に連携。
+- [ ] T4: DecisionQueue項目を `decision-pack-2026-03-human-judgement.md` に連携（共有統合ファイルは本Streamでは編集しない）。
 
-## 5) 検証計画 / Validation plan
+## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Consensus Graph|Working Graph|autonomous|modelTier|patch \+ approval" 01_Plans/adr 02_Architecture 04_Documentation`
+  - `rg -n "Consensus Graph|Working Graph|autonomous|modelTier|patch \+ approval|safeMode" 01_Plans/adr 01_Plans/issues 02_Architecture 04_Documentation`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - Graph定義の二重化なし、Queue参照切れなし。
 
-## 6) リスクとロールバック / Risks & rollback
+## 7) リスクとロールバック / Risks & rollback
 
 - 失敗モード: Graph責務が曖昧で実装側が独自解釈する。
 - ロールバック: D11決定前の定義に戻し、VSC再審議で再起票。
