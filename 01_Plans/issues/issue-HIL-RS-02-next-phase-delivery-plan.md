@@ -217,3 +217,39 @@
 ### Phase 5: Verify
 
 - 契約リンク整合（SSOT単一）・未承認確定禁止・SafeMode後退なしを確認して完了。
+
+## Stream A 直列ロック更新（2026-04-11, クリティカルパス）
+
+### Phase 1: Read Sync（4ファイル抽出）
+
+- 抽出キー: `Status`, `Priority`, `Scope`, `contractIds`, `schemaVersion`。
+- ベースラインタプル:
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `Scope=01_Plans/ and/or 02_Architecture/`
+- 差分判定ルール: 抽出キーのいずれかが上記ベースラインまたは各ファイルの役割定義と不一致なら、Stream Aは即停止する。
+
+### Phase 2: ADR CDC確定（Context / Decision / Consequences）
+
+- Context: 本ストリームは `ADR-0026` / `ADR-0027` の下位具体化であり、SafeModeおよび漏えい防止制約を緩和しない。
+- Decision: ADR改訂を含意する要求が出た時点で状態を **承認待ち停止** とし、人間承認完了まで実行を継続しない。
+- Consequences: A2/A3はA1契約を参照専用で利用し、契約変更要求はA1へ差し戻す。
+
+### Phase 3: Plan固定
+
+- AC/DoD固定: Decision Queue の許可遷移は `Pending -> Approved|Rejected` のみ。
+- 禁止: `Pending` を経由しない確定化は無効。
+
+### Phase 4: Execute固定
+
+- 公開条件固定: `A2/A3 Open` は **`A1 Done && Pending=0` の場合のみ** 許可。
+- 即停止条件:
+  1. SafeMode後退要求。
+  2. share/export 漏えい防止の後退要求。
+  3. 未定義契約競合の検知。
+
+### Phase 5: Verify & Proceed固定
+
+- 検証ループ: self-correction は最大3回。
+- 強制停止: `attempts > 3`、前提崩壊、未定義競合検知。
+- Proceed条件: 未解決 `Pending` がない状態で `Plan -> Execute -> Verify -> Proceed` を完了記録した場合のみ進行可能。
