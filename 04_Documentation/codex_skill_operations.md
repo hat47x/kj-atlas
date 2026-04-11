@@ -1,5 +1,12 @@
 # Codex Skill Operations Guide
 
+> DOC-OPS-05 Classification: **Move internal**
+> Audience: AIエージェント運用担当者（内部）
+> Goal: Codex skill運用手順を内部ガイドへ統合する。
+> Public boundary: 04では最小参照のみ残し、運用詳細は00_Prompt/01_Plansへ集約予定。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 ## Purpose
 
 本書は、`kj-atlas` プロジェクトで Codex skill を安全に導入・運用するための実務ガイドである。

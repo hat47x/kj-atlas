@@ -1,5 +1,12 @@
 # diagnostics worker protocol
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: 外部運用者・開発者
+> Goal: diagnostics worker 契約を公開runbookとして参照可能にする。
+> Public boundary: 内部検討ログは含めず、契約/フォールバック条件を公開する。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 この文書は Frontend diagnostics worker の I/O 契約を定義する。
 対象実装:
 - `03_Implement/frontend/src/worker/diagnostics_protocol.ts`

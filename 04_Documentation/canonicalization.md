@@ -1,5 +1,12 @@
 # Canonicalization Workflow
 
+> DOC-OPS-05 Classification: **Move internal**
+> Audience: 内部設計/運用向け（公開対象外候補）
+> Goal: canonicalization の設計・運用正本を内部レイヤへ寄せる。
+> Public boundary: 公開向けには概要のみを残し、詳細手順は内部文書へ移設予定。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 本ドキュメントは、`P-05: カード数の可管理性（merge提案 + canonical化）` を満たすための、
 **canonicalization の運用手順**を定義する。
 

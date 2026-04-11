@@ -1,5 +1,12 @@
 # インストール（Docker Compose / イントラ向け最小手順）
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: 初回導入者・運用担当者
+> Goal: 最小インストールと疎通確認を公開ガイドとして提供する。
+> Public boundary: 内部環境依存の作業メモは除外し、標準手順に限定する。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 この手順は、`kj-atlas` をイントラネット・自前ホスト環境で最小構成起動するためのものです。

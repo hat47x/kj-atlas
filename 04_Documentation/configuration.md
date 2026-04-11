@@ -1,5 +1,12 @@
 # 設定（OSS / イントラ・自前ホスト向け）
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: 外部運用者・管理者
+> Goal: 公開設定ガイドとして最小安全設定と確認手順を提供する。
+> Public boundary: 内部の意思決定メモは含めず、実行可能手順と正本参照のみ公開する。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 このドキュメントは、最小運用に必要な設定のみを記載します。

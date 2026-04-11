@@ -1,5 +1,12 @@
 # Narrative Generation and Review Semantics
 
+> DOC-OPS-05 Classification: **Improve external**
+> Audience: 外部利用者・レビュー担当者
+> Goal: narrative生成とレビュー状態の公開セマンティクスを示す。
+> Public boundary: 内部判断ログは含めず、運用意味論と非目標を公開する。
+> Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+
+
 本ドキュメントは、A型図解（空間配置）から B型文章（narrative）を作成・レビューする際の、
 **最小の運用セマンティクス**を定義する。
 
