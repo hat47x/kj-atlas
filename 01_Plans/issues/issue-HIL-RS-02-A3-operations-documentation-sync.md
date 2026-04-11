@@ -45,7 +45,15 @@
 - DD-1: `operations.md` と `security.md` の責務語彙が一致（Security Officer / System Owner / Platform Operator）。
 - DD-2: 状態語彙の差分（architecture canonical と運用 runbook alias）を明示し、意味差分ゼロを保証。
 - DD-3: `e2e_testing.md` に docs-check 観点（相互リンク、用語一致、固定値一致）を反映。
-- DD-4: `project-progress-dashboard.md` に Stream F A3 同期記録を残す。
+- DD-4: `project-progress-dashboard.md` に Stream E A3 同期記録を残す。
+- DD-5: Phase直列の実行順（operations -> security -> e2e -> dashboard）を検証ログで示し、各Phase開始時の再Read証跡を残す。
+
+
+### 6.1 AC/DoD補完ドラフト（本Issue内合意）
+
+- Draft-1: DD-5 を追加し、Phase直列順序と再Read証跡を DoD に含める。
+- Draft-2: Verify では dashboard を含む5ファイルで語彙一致/固定値一致を確認する。
+- 合意結果: 本Issueの Stream E 実行範囲では Draft-1/2 を採択し、追加ADRは作成しない。
 
 ## 7) ADR CDC（新規ADRは作成しない）
 
@@ -66,7 +74,7 @@
 2. 用語一致: 役割（Security Officer/System Owner/Platform Operator）、状態（StoppedForClarification等）が一致。
 3. 固定値一致: D1〜D4（4h / 2h / no delegate / 48h + 15m/60m）が一致。
 
-## 9) フェーズ進行ログ（Stream F）
+## 9) フェーズ進行ログ（Stream E）
 
 ### Phase 1: Read
 - Plan: A3 issue + operations/security/e2e + dashboard を再読し、語彙・責務・状態・D1〜D4差分を抽出する。
@@ -124,7 +132,7 @@
   4. 未定義競合
 - 停止時は「失敗条件 / 影響文書 / 必要な人間判断」を記録して保留する。
 
-## 13) 同期結果（Stream F 実行記録）
+## 13) 同期結果（Stream E 実行記録）
 
 - operations/security/e2e/dashboard を同時同期し、役割・状態・固定値の整合を確認。
 - 未解決項目: なし（本更新時点）。
