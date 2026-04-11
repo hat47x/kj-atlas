@@ -107,7 +107,7 @@
 
 ### A2/A3 read-only参照パック（固定）
 
-- Freeze-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - 参照正本（唯一）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - freeze宣言（固定）:
   - `contractLinkLocked=true`
@@ -181,12 +181,12 @@
 
 | QueueID | Topic | Status | Owner | Next Action |
 |---|---|---|---|---|
-| DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Pending | Architecture Owner | A2 kickoff reviewで承認 |
-| DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Pending | Documentation Owner | A3 handoff reviewで承認 |
+| DQ-HIL-RS-02-A1-001 | A2 mock fixture命名揺れの吸収方針 | Closed | Architecture Owner | N/A（契約外注記として固定） |
+| DQ-HIL-RS-02-A1-002 | A3運用文書でのSSOT参照表記統一 | Closed | Documentation Owner | N/A（契約外注記として固定） |
 
 ## 13) A2/A3引き渡し宣言（凍結契約パック）
 
-- Pack-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- Pack-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Availability: A1完了時にread-onlyで公開。
 - Unlock条件:
   1. A1 AC/DoD満了。
@@ -207,7 +207,7 @@
 ## 14) Handoff（固定I/F一覧・差し戻し条件・未確定事項）
 
 - 固定I/F一覧:
-  - Freeze Pack: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
   - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
   - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
@@ -219,7 +219,7 @@
 
 ## 15) Gate rule（machine-evaluable）
 
-- `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
 - `schemaVersion=="1.0.0"`
 - `contractLinkLocked==true`
 - `sharedResourceFreeze==true`

@@ -140,7 +140,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ### 5.1 Freeze canonical tuple（機械判定キー）
 
-- `freezeContractId=HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `schemaVersion=1.0.0`（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 共通）
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
@@ -196,7 +196,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ### 8.1 Gate rule（machine-evaluable）
 
-- `GateInput.freezeContractId == "HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `GateInput.freezeContractId == "HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
 - `GateInput.schemaVersion == "1.0.0"`
 - `GateInput.contractLinkLocked == true`
 - `GateInput.sharedResourceFreeze == true`

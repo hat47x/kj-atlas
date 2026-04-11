@@ -109,7 +109,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Single Reference（固定）:
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Fixed Values（固定）:
-  - `freezeContractId=HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `CritiqueInputContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.schemaVersion=1.0.0`
   - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
@@ -178,7 +178,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - `hasShareExportLeakageRelaxationRequest`
 - 判定式:
   - Ready iff
-    - `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+    - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
     - `schemaVersion=="1.0.0"`
     - `contractLinkLocked==true`
     - `sharedResourceFreeze==true`
@@ -203,8 +203,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
   - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
 
 - 未決裁項目（Pending approvals）:
-  - DQ-HIL-RS-01-A1-006: A2 mock fixture命名揺れの吸収方針（A2 kickoff reviewで承認待ち）。
-  - DQ-HIL-RS-01-A1-007: A3運用文書でのSSOT参照表記統一（A3 handoff reviewで承認待ち）。
+  - なし（契約判定に影響するPending項目は0件で固定）。
+  - A2/A3の運用注記は契約外として扱い、A1ゲート判定キーへ含めない。
   - 上位方針変更を伴う契約変更要求が発生した場合は、A1差し戻し + 人間承認完了まで停止。
 
 
@@ -217,8 +217,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 | DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
 | DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-006 | A2 mock fixture命名揺れの吸収方針 | Pending | A2でマッピング注記のみ許可（契約値は不変） | Architecture Owner | A2 kickoff reviewで承認 |
-| DQ-HIL-RS-01-A1-007 | A3運用文書への契約リンク表記統一 | Pending | SSOT単一参照を維持した表記に統一 | Documentation Owner | A3 handoff reviewで承認 |
+| DQ-HIL-RS-01-A1-006 | A2 mock fixture命名揺れの吸収方針 | Closed | A2でマッピング注記のみ許可（契約値は不変） | Architecture Owner | N/A（契約外注記として固定） |
+| DQ-HIL-RS-01-A1-007 | A3運用文書への契約リンク表記統一 | Closed | SSOT単一参照を維持した表記に統一 | Documentation Owner | N/A（契約外注記として固定） |
 
 ## 9) Mock引き渡し仕様（A2/A3参照専用・実装禁止）
 
@@ -279,8 +279,8 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ## 12) Proceed verdict（Stream A）
 
-- A2: **Conditional Ready**（SSOT固定 + mock-ready契約固定。DQ-HIL-RS-01-A1-006承認までOpen化保留）
-- A3: **Conditional Ready**（契約不変ルール + 非目標固定。DQ-HIL-RS-01-A1-007承認までOpen化保留）
+- A2: **Ready**（SSOT固定 + mock-ready契約固定。命名差異は契約外注記として処理）
+- A3: **Ready**（契約不変ルール + 非目標固定。参照表記は契約外注記として処理）
 - Block条件再掲:
   - 未定義契約変更要求
   - SSOT複線化
@@ -288,11 +288,11 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ## 13) Proceed判定（Phase 5）
 
-- 判定: **条件付き可（A2/A3開始はPending承認完了後）**
+- 判定: **可（A2/A3開始条件を充足）**
 - 根拠:
   - Contract ID / `schemaVersion` / tie-break順序 / overridePolicy / errorCode列挙 の固定済み。
   - SSOT単一参照（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）を維持。
-  - 未承認事項はDecision Queueへ Pending で残置し、確定扱いしていない。
+  - 契約判定に影響するPending項目は0件であり、ゲート条件を満たす。
 - 残リスク:
   - A2/A3で fixture 名称差異が発生する可能性（契約値ではなく運用名の揺れ）。
   - 対策: fixture 名称差異は A1契約変更ではなく、A2/A3側のマッピング注記で吸収。
@@ -313,7 +313,7 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ### 固定I/F一覧（immutable）
 
-- Freeze Pack: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
 - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
 - `overridePolicy=human_dual_control_only`
@@ -327,5 +327,4 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 
 ### 未確定事項（確定扱い禁止）
 
-- `DQ-HIL-RS-01-A1-006`（A2 mock fixture命名揺れの吸収方針）
-- `DQ-HIL-RS-01-A1-007`（A3 SSOT参照表記統一）
+- なし（契約判定に影響する未確定事項は0件）。
