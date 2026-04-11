@@ -5,6 +5,9 @@
 > Goal: 最小インストールと疎通確認を公開ガイドとして提供する。
 > Public boundary: 内部環境依存の作業メモは除外し、標準手順に限定する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Non-goal: 組織内限定の配布手順や未公開運用ノートの共有。
+> Outcome: 初回導入者が最小起動・疎通・停止を再現できる。
+> Related: `03_Implement/deploy/docker-compose.yml`, `04_Documentation/e2e_testing.md`, `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
 
 
 
