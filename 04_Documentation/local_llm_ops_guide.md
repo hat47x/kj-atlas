@@ -80,6 +80,44 @@ LLM_TRANSPORT=in_process
 
 ---
 
+## CE4 API/CLI 監査統合手順（query/bundle/proposal/apply）
+
+### 1) API/CLIの共通監査項目
+
+`POST /docs/{docId}/context-audit` は次の4操作を `eventType` として記録する。
+
+- `query`
+- `bundle`
+- `proposal`
+- `apply`
+
+API経由/CLI経由のどちらでも、以下の監査項目を同一キーで残す。
+
+- `operation`
+- `bundleHash`
+- `queryHash`
+- `dryRun`
+- `rejectReasonCode`
+- `command`
+- `channel`（`api` または `cli`）
+
+### 2) 実施手順（最小）
+
+1. APIで `context-audit` を実行し、4操作分のイベントが出力されることを確認する。
+2. CLIで `context-query` / `context-bundle` / `proposal-diff` / `apply --dry-run` を実行する。
+3. 監査出力で API/CLI のキーセットが一致することを確認する（値はチャネル差分を許容）。
+
+### 3) 監査欠落の検知・通知
+
+欠落判定は「直近監査バッチに `query/bundle/proposal/apply` が揃っているか」で行う。
+
+- 検知条件: 上記4イベントのいずれかが欠落。
+- 一次対応: 欠落した操作を再実行し、`traceId` を付与して再送する。
+- 通知: Platform Operator が当日中に運用チャネルへ「欠落操作・traceId・再実行結果」を報告する。
+- 是正: 2回連続で同一欠落が発生した場合、CLI/APIの片系実装差分を停止し、共通実行ライブラリへ集約する。
+
+---
+
 ## 4. エスカレーション運用
 
 ### 4.1 既定

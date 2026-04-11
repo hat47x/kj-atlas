@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+import httpx
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from kj_atlas_api import cli
 from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
@@ -151,3 +153,96 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
     assert event.metadata["amrClass"] == "single_factor"
     assert event.metadata["assuranceLevel"] == "low"
     assert event.metadata["authAgeBucket"] == "unknown"
+
+
+def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
+    spy = SpyAuditDispatcher()
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        for operation in ("query", "bundle", "proposal", "apply"):
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                json={
+                    "operation": operation,
+                    "safeMode": True,
+                    "bundleHash": "bundle-1",
+                    "queryHash": "query-1",
+                    "dryRun": True,
+                    "rejectReasonCode": "none",
+                    "command": f"context-{operation}",
+                    "channel": "api",
+                },
+                headers={"x-trace-id": f"trace-{operation}"},
+            )
+            assert response.status_code == 200
+            assert response.json() == {"status": "accepted"}
+
+    assert [event.eventType for event in spy.events] == ["query", "bundle", "proposal", "apply"]
+    for event in spy.events:
+        assert set(event.metadata) >= {
+            "operation",
+            "bundleHash",
+            "queryHash",
+            "dryRun",
+            "rejectReasonCode",
+            "command",
+            "channel",
+        }
+
+
+def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch) -> None:
+    spy = SpyAuditDispatcher()
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
+
+        api_response = client.post(
+            "/docs/doc-cli/context-audit",
+            json={
+                "operation": "query",
+                "safeMode": True,
+                "bundleHash": "bundle-2",
+                "queryHash": "query-2",
+                "dryRun": True,
+                "rejectReasonCode": None,
+                "command": "context-query",
+                "channel": "api",
+            },
+            headers={"x-trace-id": "trace-api"},
+        )
+        assert api_response.status_code == 200
+
+        def _fake_post(url, json, headers, timeout):  # noqa: ANN001
+            path = url.removeprefix("http://127.0.0.1:8000")
+            response = client.post(path, json=json, headers=headers)
+            return httpx.Response(
+                status_code=response.status_code,
+                content=response.content,
+                request=httpx.Request("POST", url),
+            )
+
+        monkeypatch.setattr(cli.httpx, "post", _fake_post)
+
+        input_file = tmp_path / "context_query.json"
+        input_file.write_text('{"docId":"doc-cli","bundleHash":"bundle-2","queryHash":"query-2"}', encoding="utf-8")
+        result = cli.main(
+            [
+                "--api-base-url",
+                "http://127.0.0.1:8000",
+                "--trace-id",
+                "trace-cli",
+                "context-query",
+                "--input",
+                str(input_file),
+                "--dry-run",
+            ]
+        )
+        assert result == 0
+
+    assert len(spy.events) == 2
+    api_event = spy.events[0]
+    cli_event = spy.events[1]
+    assert api_event.eventType == cli_event.eventType == "query"
+    assert set(api_event.metadata.keys()) == set(cli_event.metadata.keys())
+    assert cli_event.metadata["channel"] == "cli"
