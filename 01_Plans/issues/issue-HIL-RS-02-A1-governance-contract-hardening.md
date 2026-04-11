@@ -107,7 +107,7 @@
 
 ### A2/A3 read-only参照パック（固定）
 
-- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Freeze-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
 - 参照正本（唯一）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - freeze宣言（固定）:
   - `contractLinkLocked=true`
@@ -186,7 +186,7 @@
 
 ## 13) A2/A3引き渡し宣言（凍結契約パック）
 
-- Pack-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Pack-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
 - Availability: A1完了時にread-onlyで公開。
 - Unlock条件:
   1. A1 AC/DoD満了。
@@ -194,10 +194,20 @@
   3. 承認ログが追跡可能（evidenceLink完備）。
 - 違反時処理: A2/A3で契約変更を検知した時点で`StoppedForClarification`へ遷移し、A1へ差し戻す。
 
+## 13.1) 変更理由・影響範囲・非対応範囲（固定）
+
+- 変更理由:
+  - A2/A3着手判定を文書差分ではなく固定契約キーで機械判定できるようにするため。
+- 影響範囲:
+  - A1 Gate判定、A2/A3 Open化判定、Decision Queueの承認運用。
+- 非対応範囲:
+  - 実装コード変更。
+  - 契約の新規ID追加、`schemaVersion` 再定義、errorCode拡張。
+
 ## 14) Handoff（固定I/F一覧・差し戻し条件・未確定事項）
 
 - 固定I/F一覧:
-  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - Freeze Pack: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
   - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
   - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
   - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
@@ -206,3 +216,19 @@
 - 未確定事項（Decision Queueへ送る）:
   - `DQ-HIL-RS-02-A1-001`（A2 fixture命名揺れ）
   - `DQ-HIL-RS-02-A1-002`（A3 SSOT参照表記統一）
+
+## 15) Gate rule（machine-evaluable）
+
+- `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `schemaVersion=="1.0.0"`
+- `contractLinkLocked==true`
+- `sharedResourceFreeze==true`
+- `a1Status=="Done"`
+- `pendingDecisionQueueCount==0`
+- `hasUndefinedContractChangeRequest==false`
+- `hasSafeModeRegressionRequest==false`
+- `hasShareExportLeakageRelaxationRequest==false`
+
+判定:
+- Ready: 全条件が真。
+- Block: 1条件でも偽。

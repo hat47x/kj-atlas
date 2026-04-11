@@ -82,10 +82,18 @@ kj-atlas は OSS として、多様な環境で利用される：
   - AIのみで `human_reviewed` へ遷移しない
   - 実名 / email / external_uid / provider など生IDを保存しない
   - SafeMode既定ONおよびshare/export漏えい防止を後退させない
+- Freeze flags（固定）:
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Freeze canonical tuple（固定）:
+  - `freezeContractId=HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
 
 > 注記: 本書は設計解説であり、契約値の最終決定は常にSSOTを優先する。A2/A3は本節を改訂せずA1へ差し戻す。
 
-- Freeze Pack参照（HIL-RS-02）: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`。A2/A3はread-only参照とし、契約変更要求はA1へ差し戻す。
+- Freeze Pack参照（HIL-RS-02）: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`。A2/A3はread-only参照とし、契約変更要求はA1へ差し戻す。
 
 ### Concepts
 - **ReviewerRef**: 文字列ID（例: `user:local:4f9c...` / `user:sso:sub:...`）

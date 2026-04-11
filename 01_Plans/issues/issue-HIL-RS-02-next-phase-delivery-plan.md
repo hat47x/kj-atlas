@@ -87,7 +87,7 @@
 
 ## 11) A2/A3参照用「凍結契約パック」（read-only）
 
-- Freeze-ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Freeze-ID: `HIL-RS-01-A1-CONTRACT-FREEZE-v1`
 - Package mode: read-only（A2/A3は参照のみ、変更要求はA1へ差し戻し）
 - Contents:
   1. Invariant-01: SafeMode既定ONを維持。
@@ -97,6 +97,16 @@
   5. Invariant-05: `schemaVersion` / `overridePolicy` / 契約ID整合を維持。
   6. Invariant-06: `A1-ERROR-IF` のerrorCode列挙を固定し、A2/A3で拡張しない。
 - Return path: 変更要求は必ず A1 issue の Decision Queue に `Pending` で登録して再判定する。
+
+## 11.1) 変更理由・影響範囲・非対応範囲（固定）
+
+- 変更理由:
+  - HIL-RS-02で議論/実装導線が先行して契約解釈が分岐することを防ぐため。
+- 影響範囲:
+  - A2/A3のOpen判定、Decision Queue運用、A1差し戻し経路の運用判定。
+- 非対応範囲:
+  - `03_Implement/**` の変更。
+  - `schemaVersion` / `overridePolicy` / 契約IDの再定義。
 
 
 ## 12) Context / Decision / Consequences（凍結I/F合意）
@@ -108,7 +118,7 @@
 
 ### Decision
 
-- Freeze Pack `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
+- Freeze Pack `HIL-RS-01-A1-CONTRACT-FREEZE-v1` を本issueでも正本参照として固定する。
 - A2/A3の `Draft -> Open` は `A1 Done` かつ `DecisionQueue Pending=0` のときのみ許可する。
 - 変更禁止対象（契約ID/schemaVersion/overridePolicy/SSOT/stop条件）の変更要求は A1 へ差し戻す。
 
@@ -116,3 +126,19 @@
 
 - 契約変更の窓口がA1へ一本化され、A2/A3の実装側での仕様分岐を抑止できる。
 - Pendingが残る間はOpen化できないため、短期スループットより監査性を優先する。
+
+## 13) Gate rule（machine-evaluable）
+
+- `freezeContractId=="HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `schemaVersion=="1.0.0"`
+- `contractLinkLocked==true`
+- `sharedResourceFreeze==true`
+- `a1Status=="Done"`
+- `pendingDecisionQueueCount==0`
+- `hasUndefinedContractChangeRequest==false`
+- `hasSafeModeRegressionRequest==false`
+- `hasShareExportLeakageRelaxationRequest==false`
+
+判定:
+- Ready: 全条件が真。
+- Block: 1条件でも偽。

@@ -138,6 +138,15 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - `sharedResourceFreeze=true`
 - 固定値は本書を唯一参照先とし、複線化を禁止する。
 
+### 5.1 Freeze canonical tuple（機械判定キー）
+
+- `freezeContractId=HIL-RS-01-A1-CONTRACT-FREEZE-v1`
+- `schemaVersion=1.0.0`（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 共通）
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+> 上記4要素は後続ゲート判定の唯一キーであり、A2/A3で変更しない。
+
 ## 6. Handoff packet（A2 / A3）
 
 - 固定値一覧:
@@ -184,6 +193,21 @@ A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻�
 - Gate判定:
   - Ready: 全項目達成かつ未定義契約変更要求0件。
   - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
+
+### 8.1 Gate rule（machine-evaluable）
+
+- `GateInput.freezeContractId == "HIL-RS-01-A1-CONTRACT-FREEZE-v1"`
+- `GateInput.schemaVersion == "1.0.0"`
+- `GateInput.contractLinkLocked == true`
+- `GateInput.sharedResourceFreeze == true`
+- `GateInput.pendingDecisionQueueCount == 0`
+- `GateInput.hasUndefinedContractChangeRequest == false`
+- `GateInput.hasSafeModeRegressionRequest == false`
+- `GateInput.hasShareExportLeakageRelaxationRequest == false`
+
+判定:
+- Ready: 上記8条件がすべて真。
+- Block: 1条件でも偽。
 
 ## 9. Fail-safe stop report template
 
