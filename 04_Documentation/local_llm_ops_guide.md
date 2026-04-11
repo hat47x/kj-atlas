@@ -107,7 +107,7 @@ Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/
 - `sourceBundleHash` は `mock:<hash>` を許容し、監査導線と同値性導線の検証を継続する。
 - 同値性判定は常に `equivalenceKey + bundleHash` の AND 条件で行う（値種別による例外なし）。
 
-### 4.2 API/CLIの共通監査項目
+### 4.2 API/CLI/GUIの共通監査項目
 
 `POST /docs/{docId}/context-audit` は次の4操作を `eventType` として記録する。
 
@@ -116,7 +116,7 @@ Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/
 - `proposal`
 - `apply`
 
-API経由/CLI経由のどちらでも、以下の監査項目を同一キーで残す。
+API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで残す。
 
 - `equivalenceKey`
 - `bundleHash`
@@ -125,21 +125,23 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 - `sourceBundleHash`
 - `rejectReasonCode`
 - `command`
-- `channel`（`api` または `cli`）
+- `channel`（`api` / `cli` / `gui`）
+- `schemaVersion`（CE4契約期間は固定値）
 
 ### 4.3 実施手順（最小runbook）
 
 1. APIで `context-query` と `context-bundle` を実行し、`equivalenceKey` と `bundleHash` を取得する。
 2. CLIで同一入力の `context-query` と `context-bundle` を実行し、`equivalenceKey` と `bundleHash` が一致することを確認する。
-3. API/CLI両方で `proposal-diff` を実行し、`sourceBundleHash`（本番値または `mock:<hash>`）を記録する。
-4. API/CLI両方で `apply --dry-run` を実行し、`dryRun=true` かつ `sideEffect=none` を確認する。
-5. 監査ログで `query/bundle/proposal/apply` の4イベントが揃っていることを確認する。
+3. GUIで同一入力を実行し、API/CLIと `equivalenceKey` と `bundleHash` が一致することを確認する。
+4. API/CLI/GUIで `proposal-diff` を実行し、`sourceBundleHash`（本番値または `mock:<hash>`）を記録する。
+5. API/CLI/GUIで `apply --dry-run` を実行し、`dryRun=true` かつ `sideEffect=none` を確認する。
+6. 監査ログで `query/bundle/proposal/apply` の4イベントが揃っていることを確認する。
 
 ### 4.4 契約整合チェック（`mock:<hash>` / 本番hash）
 
 1. `sourceBundleHash=mock:<hash>` で 4.3 を実施し、同値性判定と監査4点セットが成立することを確認する。
 2. `sourceBundleHash=<prod_sha256>`（64桁hex）で 4.3 を実施し、同一の判定条件で成立することを確認する。
-3. 1 と 2 で監査キー集合（`equivalenceKey`, `bundleHash`, `dryRun`, `sideEffect`, `sourceBundleHash`, `channel`）に差がないことを確認する。
+3. 1 と 2 で監査キー集合（`equivalenceKey`, `bundleHash`, `dryRun`, `sideEffect`, `sourceBundleHash`, `channel`, `schemaVersion`）に差がないことを確認する。
 4. 差がある場合は契約ドリフトとして CE4 作業を停止し、共通契約へ修正を戻す。
 
 ### 4.5 監査欠落の検知・通知

@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `D` (Contracts only / Docs-Plan only)
+- Stream: `F` (CE4 API/CLI Audit Integration)
 - DecisionQueueRef: N/A
 
 ## 1) Read（同値性・監査4点セットの現状把握）
@@ -78,7 +78,7 @@
 - safeMode後退、share/export緩和、Consensus直接更新、ログ欠損成功扱いは即No-Go。
 - 契約検証は `sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）に依らず同一フローで実施し、監査導線の分岐を禁止する。
 
-## 3) Plan（AC/DoD不足提案）
+## 3) Plan（AC/DoD補完提案）
 
 ### 3.1 受入条件 / Acceptance criteria
 
@@ -94,6 +94,7 @@
 - [ ] DoD-1: 同値性キー `equivalenceKey` の定義元（query canonical hash）をArchitectureに明記。
 - [ ] DoD-2: `dry-run` の禁止副作用（DB/外送/review昇格）をRuntime/Opsに明記。
 - [ ] DoD-3: ログ欠損を成功扱いしない判定（fail-closed）を運用手順へ反映。
+- [ ] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
 
 ## 4) Verify → Proceed（3回自己修復上限）
 
@@ -101,6 +102,7 @@
 - Verify-2: 必須キー欠損確認（`equivalenceKey`, `sideEffect`, `sourceBundleHash`）。
 - Verify-3: safeMode後退語彙確認。
 - Verify-4: `sourceBundleHash` が `mock:<hash>` と本番hashの双方で同一契約（同値性判定・監査4点セット）を満たすことを確認。
+- Verify-5: `channel`（`api|cli|gui`）差分があっても必須キー集合（`equivalenceKey`, `bundleHash`, `sourceBundleHash`, `dryRun`, `sideEffect`, `schemaVersion`）が不変であることを確認。
 - 自己修復は最大3回。3回で収束しない場合は Proceed 停止し、論点を保留化する。
 
 ## 5) フェイルセーフ（停止条件）

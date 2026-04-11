@@ -179,6 +179,7 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
 - 対象 operation: `context-query` / `context-bundle` / `proposal-diff` / `apply --dry-run`
 - 同値性判定は `equivalenceKey == same` かつ `bundleHash == same` の AND 条件で固定する。
 - GUI は独自 operation を定義せず、上記 operation を API/CLI と同一語彙で呼び出す。
+- 同値性判定は `query/bundle/proposal/apply` の全監査イベントで同一 `equivalenceKey` を共有していることを前提に評価する。
 
 `equivalenceKey` 定義（normative）:
 1. `ContextQuery` を canonical JSON 化（キー辞書順、UTF-8、余分な空白なし、非決定論フィールド除外）。
@@ -197,6 +198,7 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
 | `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
 
 追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
+`schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
 
 #### 2.9.3 dry-run 副作用境界（固定）
 
