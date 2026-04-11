@@ -6,6 +6,19 @@ export type CandidateItem = {
   id: string;
   label: string;
   note?: string;
+  preview?: CandidatePatchPreview;
+};
+
+export type CandidatePatchPreview = {
+  sourceSnippets: string[];
+  draftText: string;
+  editedText?: string;
+};
+
+export type CandidatePatchDiffSummary = {
+  additions: number;
+  removals: number;
+  hasChanges: boolean;
 };
 
 export type QueryPreset = {
@@ -53,6 +66,45 @@ export function normalizePresetQuery(preset: Pick<QueryPreset, "scope" | "depth"
     depth: Math.max(1, Math.floor(preset.depth)),
     filters: [...preset.filters].sort((left, right) => left.localeCompare(right)),
   });
+}
+
+function tokenizeDiffText(text: string): string[] {
+  return text.trim().split(/\s+/).filter((token) => token.length > 0);
+}
+
+export function summarizeCandidatePatchDiff(preview: CandidatePatchPreview): CandidatePatchDiffSummary {
+  const beforeTokens = tokenizeDiffText(preview.sourceSnippets.join(" "));
+  const afterTokens = tokenizeDiffText(preview.editedText ?? preview.draftText);
+  const beforeCount = new Map<string, number>();
+  const afterCount = new Map<string, number>();
+
+  for (const token of beforeTokens) {
+    beforeCount.set(token, (beforeCount.get(token) ?? 0) + 1);
+  }
+  for (const token of afterTokens) {
+    afterCount.set(token, (afterCount.get(token) ?? 0) + 1);
+  }
+
+  const tokenSet = new Set([...beforeCount.keys(), ...afterCount.keys()]);
+  let additions = 0;
+  let removals = 0;
+  for (const token of tokenSet) {
+    const before = beforeCount.get(token) ?? 0;
+    const after = afterCount.get(token) ?? 0;
+    if (after > before) {
+      additions += after - before;
+      continue;
+    }
+    if (before > after) {
+      removals += before - after;
+    }
+  }
+
+  return {
+    additions,
+    removals,
+    hasChanges: additions > 0 || removals > 0,
+  };
 }
 
 function buildInitialDecisions(candidates: CandidateItem[]): Record<string, WorkspaceDecision> {

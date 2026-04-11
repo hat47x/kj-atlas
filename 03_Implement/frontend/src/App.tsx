@@ -8099,6 +8099,11 @@ ${parsedDocument.error}`);
                         id: suggestion.groupId,
                         label: `${suggestion.groupId} (${suggestion.cardIds.length} cards)`,
                         note: suggestion.rationale,
+                        preview: {
+                          sourceSnippets: suggestion.cardIds.map((cardId) => cardsById.get(cardId)?.text ?? `[missing:${cardId}]`),
+                          draftText: suggestion.mergedTextDraft,
+                          editedText: suggestion.editedText,
+                        },
                       }))}
                     />
                   </>

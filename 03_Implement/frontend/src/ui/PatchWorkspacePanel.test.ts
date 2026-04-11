@@ -8,7 +8,14 @@ describe("PatchWorkspacePanel", () => {
     const html = renderToStaticMarkup(
       React.createElement(PatchWorkspacePanel, {
         candidates: [
-          { id: "cand-1", label: "cand-1 (3 cards)" },
+          {
+            id: "cand-1",
+            label: "cand-1 (3 cards)",
+            preview: {
+              sourceSnippets: ["alpha", "beta"],
+              draftText: "alpha beta gamma",
+            },
+          },
           { id: "cand-2", label: "cand-2 (2 cards)" },
         ],
       })
@@ -24,6 +31,8 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain("No saved presets.");
     expect(html).toContain("Audit transitions");
     expect(html).toContain("Normalized query");
+    expect(html).toContain("Patch diff preview");
+    expect(html).toContain("Token delta:");
     expect(html).toContain("Recovery path:");
   });
 

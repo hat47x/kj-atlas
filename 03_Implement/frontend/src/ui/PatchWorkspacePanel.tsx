@@ -5,6 +5,7 @@ import {
   normalizeFilters,
   replayPreset,
   rollbackWorkspaceDecision,
+  summarizeCandidatePatchDiff,
   syncWorkspaceCandidates,
   type CandidateItem,
   type QueryPreset,
@@ -72,6 +73,14 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
 
   const normalizedFilters = useMemo(() => normalizeFilters(filtersInput), [filtersInput]);
   const activeCandidateId = workspaceState.selectedCandidateId ?? candidates[0]?.id ?? null;
+  const activeCandidate = useMemo(
+    () => candidates.find((candidate) => candidate.id === activeCandidateId) ?? null,
+    [activeCandidateId, candidates]
+  );
+  const activePreviewSummary = useMemo(
+    () => (activeCandidate?.preview ? summarizeCandidatePatchDiff(activeCandidate.preview) : null),
+    [activeCandidate]
+  );
 
   useEffect(() => {
     setWorkspaceState((previous) => syncWorkspaceCandidates(previous, candidates));
@@ -155,6 +164,31 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
         Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"} (phase: {workspaceState.phase})
+      </div>
+      <div
+        data-testid="ce3-diff-preview"
+        style={{ border: "1px dashed #cbd5e1", borderRadius: 6, padding: 8, marginBottom: 8, backgroundColor: "#ffffff" }}
+      >
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>Patch diff preview</div>
+        {activeCandidate?.preview ? (
+          <>
+            <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
+              Source snippets ({activeCandidate.preview.sourceSnippets.length}): {activeCandidate.preview.sourceSnippets.join(" / ")}
+            </div>
+            <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
+              Draft patch: {activeCandidate.preview.draftText}
+            </div>
+            <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
+              Edited patch: {activeCandidate.preview.editedText ?? activeCandidate.preview.draftText}
+            </div>
+            <div style={{ fontSize: 11, color: "#475569" }}>
+              Token delta: +{activePreviewSummary?.additions ?? 0} / -{activePreviewSummary?.removals ?? 0}
+              {activePreviewSummary?.hasChanges ? "" : " (no textual change)"}
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 11, color: "#64748b" }}>No patch preview available for the selected candidate.</div>
+        )}
       </div>
       <button type="button" data-testid="ce3-rollback" disabled={isReadOnly || workspaceState.rollbackStack.length === 0} onClick={handleRollback}>
         Roll back last workspace decision

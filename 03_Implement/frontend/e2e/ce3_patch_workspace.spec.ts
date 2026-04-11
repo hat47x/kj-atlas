@@ -39,6 +39,8 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   const workspace = page.getByTestId("ce3-workspace-panel");
   await expect(workspace).toBeVisible();
   await expect(page.getByTestId("ce3-candidate-select")).toBeEnabled();
+  await expect(page.getByTestId("ce3-diff-preview")).toContainText("Patch diff preview");
+  await expect(page.getByTestId("ce3-diff-preview")).toContainText("Token delta:");
 
   await page.getByTestId("ce3-adopt").click();
   await expect(page.getByTestId("ce3-decision-state")).toContainText("adopt");
