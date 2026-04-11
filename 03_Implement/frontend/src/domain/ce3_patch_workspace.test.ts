@@ -6,6 +6,7 @@ import {
   normalizePresetQuery,
   replayPreset,
   rollbackWorkspaceDecision,
+  summarizeCandidatePatchDiff,
   syncWorkspaceCandidates,
 } from "./ce3_patch_workspace";
 
@@ -63,5 +64,17 @@ describe("ce3_patch_workspace", () => {
     const replayed = replayPreset(restored, { scope: "selection", depth: 2, filters: ["risk", "merge"] }, true);
     expect(replayed.phase).toBe("preset_replayed");
     expect(replayed.lastExecutedQuery).toBe('{"scope":"selection","depth":2,"filters":["merge","risk"]}');
+  });
+
+  it("summarizes patch preview token delta for CE3 diff preview", () => {
+    const summary = summarizeCandidatePatchDiff({
+      sourceSnippets: ["alpha beta", "beta gamma"],
+      draftText: "alpha gamma delta",
+      editedText: "alpha delta epsilon",
+    });
+
+    expect(summary.additions).toBe(2);
+    expect(summary.removals).toBe(3);
+    expect(summary.hasChanges).toBe(true);
   });
 });

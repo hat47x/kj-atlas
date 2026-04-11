@@ -39,7 +39,7 @@
 
 - [x] T1: Workspace state machine（hold/adopt/reject + rollback）実装。
 - [x] T2: Preset CRUD実装（local store + run current / run saved）。
-- [ ] T3: Patch差分プレビューUI実装（未着手）。
+- [x] T3: Patch差分プレビューUI実装（selected candidate の source/draft/edited + token delta 表示）。
 - [x] T4: Playwright E2Eシナリオ追加（部分採用→ロールバック→preset再実行）。
 
 ## 4) 検証計画 / Validation plan
@@ -60,4 +60,4 @@
 - Phase 2 Plan: AC/DoDを補強（監査遷移ログの最低導入をUI local stateで確定、Core/Consensus非改変を維持）。
 - Phase 3 Execute: hold/adopt/reject + rollback stack + preset replay + query正規化再現を実装。
 - Phase 4 Verify: unit/lint/e2eを実施（e2eは環境制約があれば理由を記録）。
-- Phase 5 Proceed: 次タスクは Patch差分プレビューUI と document監査ログ統合。
+- Phase 5 Proceed: 次タスクは document監査ログ統合（workspace local audit → document監査ログ連携）。
