@@ -89,6 +89,14 @@ LLM_TRANSPORT=in_process
 
 ## 4. CE4 API/CLI 監査統合手順（query/bundle/proposal/apply）
 
+
+### 4.0 CE Contract gate（Stream B固定契約の運用反映）
+
+- Query Preview gate: `previewConfirmed=true` が無い `context-query` は運用上も失敗（`422 preview_required`）として扱う。
+- Proposal gate: AI出力は常に `proposalId/diff/sourceBundleHash/status/reviewState` を満たす patch 提案のみ許可する。
+- Review gate: AIによる `unreviewed -> reviewed` 自動遷移は禁止し、検知時は `status=held` で停止する。
+- Safety gate: safeMode 既定ON時は未レビュー本文の投入・外部送信を禁止する。
+
 ### 4.1 運用前提（依存切離し）
 
 - CE3完了待ちはしない。

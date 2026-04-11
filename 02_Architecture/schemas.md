@@ -41,6 +41,81 @@ CE-0 の契約凍結として、実装型に先行して次のメタ契約を固
 
 ---
 
+
+### 1.2 CE1/CE2/CE4 Contract Freeze（型先行・実装非依存）
+
+CE-1/CE-2/CE-4 は実装着手前に次の最小I/Fを固定する（mock-first）。
+
+#### CE1-CONTEXT-FOUNDATION
+
+```ts
+export type ContextQueryV1 = {
+  queryId: string;
+  goal: string;
+  scope: "document" | "view" | "island";
+  depth: number; // 0..5
+  constraints: Record<string, unknown>;
+  reviewFilter: "reviewedOnly" | "includeUnreviewed";
+  safeModePolicy: "strict";
+  outputMode: "summary" | "proposal" | "candidate";
+  previewConfirmed: boolean;
+};
+
+export type ContextBundleV1 = {
+  bundleHash: string; // sha256 hex (canonical)
+  selected: unknown[];
+  relations: unknown[];
+  evidence: unknown[];
+  contradictions: unknown[];
+  reviewFlags: { reviewed: number; unreviewed: number };
+  truncationMeta: Record<string, unknown>;
+  excludedReason: string[];
+};
+```
+
+- `previewConfirmed=false` は契約違反（`422 preview_required`）。
+- 同一 canonical query で `bundleHash` 不一致は fail 判定。
+
+#### CE2-LOW-RISK-AI-ASSIST
+
+```ts
+export type ProposalStatus = "proposed" | "accepted" | "rejected" | "held";
+export type ProposalReviewState = "unreviewed" | "reviewed";
+
+export type ProposalPatchV1 = {
+  proposalId: string;
+  diff: Record<string, unknown>;
+  sourceBundleHash: string;
+  rationale: string;
+  status: ProposalStatus;
+  reviewState: ProposalReviewState;
+};
+```
+
+- Auto-apply は禁止（proposal-only）。
+- `reviewState=reviewed` は人手操作のみ許可し、AI自動遷移を禁止。
+
+#### CE4-API-CLI-AUDIT
+
+```ts
+export type AuditEventType = "query" | "bundle" | "proposal" | "apply";
+
+export type AuditEventV1 = {
+  eventType: AuditEventType;
+  equivalenceKey: string;
+  queryId?: string;
+  bundleHash?: string;
+  proposalId?: string;
+  sourceBundleHash?: string; // mock:<hash> 許容
+  dryRun?: boolean;
+  sideEffect?: "none" | "write";
+  rejectReasonCode?: string;
+};
+```
+
+- 同値判定は `equivalenceKey AND bundleHash` の一致を必須化。
+- `dryRun=true` では `sideEffect="none"` を必須化（fail-closed）。
+
 ## 2. ID・座標系の前提
 
 ### 2.1 ID
