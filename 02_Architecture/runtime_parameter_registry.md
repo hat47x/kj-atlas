@@ -8,6 +8,7 @@
 2. プレフィックスなし旧キーは受理しない。
 3. 新旧キーの混在指定は不正設定として扱う。
 4. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
+5. CE4監査契約では `query/bundle/proposal/apply` の4イベント欠損を成功扱いしない。
 
 ## 2. バックエンド設定キー（`settings.py`）
 
@@ -45,12 +46,29 @@
 | `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name ヘッダ名 |
 | `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject ヘッダ名 |
 | `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決方式 |
+| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `bundle_hash` | CE4 API/CLI/GUI 同値性判定モード |
+| `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | `apply --dry-run` 副作用0を強制 |
+| `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | query/bundle/proposal/apply 欠損時 fail-closed |
+| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
 
 補足:
 - `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
+- `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
 
-## 3. Compose/デプロイ層パラメータ
+## 3. CE4 監査イベント必須キー（契約）
+
+| Event | 必須キー |
+|---|---|
+| `query` | `queryId`, `timestamp`, `actor`, `safeMode`, `equivalenceKey` |
+| `bundle` | `queryId`, `bundleHash`, `excludedReason[]`, `equivalenceKey` |
+| `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
+| `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
+
+- `dryRun=true` の場合、`sideEffect=none` を必須とする。
+- 必須キー欠損時は成功扱いせず、監査失敗として扱う。
+
+## 4. Compose/デプロイ層パラメータ
 
 | キー | 既定値 | 役割 |
 |---|---|---|
@@ -60,20 +78,28 @@
 | `WEB_PORT` | `8080` | web公開ポート |
 | `VITE_API_BASE` | `/api` | frontend APIベースパス |
 
-## 4. ENV-ARCH-01 契約（一括移行）
+## 5. ENV-ARCH-01 契約（一括移行）
 
 - 切替方式: 一括移行（E1: Option B）
 - 旧キー互換: なし（旧キーは受理しない）
 - 移行痕跡: 追加しない（E2: Option C）
 - 期限運用: 採用しない（E3: 考慮外）
 
-## 5. strict mode 例外運用（AUTH-OPS-03）
+## 6. strict mode 例外運用（AUTH-OPS-03）
 
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を本番 strict mode 標準とする。
 - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` は期限付き例外運用に限定する。
 - いずれでも SafeMode/read-only 優先を弱めない。
 
-## 6. 運用ルール（集約管理）
+## 7. フェイルセーフ停止条件（CE4）
+
+以下を検知した場合は、設定反映を停止する。
+
+1. 同値性定義の多義化（`KJ_ATLAS_CE4_EQUIVALENCE_MODE` の複数許容）
+2. ログ欠損を成功扱いする設定
+3. safeMode後退要求（未レビュー保護・share/export保護の緩和）
+
+## 8. 運用ルール（集約管理）
 
 1. 環境変数・パラメータの追加/改名/削除時は、先に本書を更新する。
 2. 他文書は値の列挙を最小化し、本書への参照を記載する。

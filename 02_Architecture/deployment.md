@@ -13,6 +13,7 @@
 - クラウドは「Composeで動く構成」をベースに載せ替える
 - DBは本番で PostgreSQL を推奨
 - ローカル開発は SQLite で完結できる
+- CE4運用では API/CLI/GUI 同値性（同一query→同一bundleHash）と監査4点セットを維持する
 
 ---
 
@@ -37,6 +38,8 @@ MVPでは、以下の3要素で十分です。
   - prod: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`
 
 - `KJ_ATLAS_LLM_PROVIDER`：`none | local | local_http | large-scale | large_scale | external`
+- `KJ_ATLAS_CE4_EQUIVALENCE_MODE`：`bundle_hash`（CE4同値性判定の既定）
+- `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT`：`true`（dry-run副作用0強制）
 
 ### 3.2 DB
 
@@ -70,6 +73,8 @@ services:
     environment:
       - KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
       - KJ_ATLAS_LLM_PROVIDER=none
+      - KJ_ATLAS_CE4_EQUIVALENCE_MODE=bundle_hash
+      - KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT=true
     ports:
       - "8000:8000"
     depends_on:
@@ -92,7 +97,39 @@ volumes:
 
 ---
 
-## 5. イントラ運用（想定）
+## 5. CE4 API/CLI/監査統合デプロイ契約
+
+### 5.1 同値性契約
+
+- API/CLI/GUIは同一の canonical query から `equivalenceKey` を生成する。
+- 同一 `equivalenceKey` の実行は同一 `bundleHash` を返す。
+- 同値性定義を多義化する設定（複数判定モードの混在）は禁止。
+
+### 5.2 監査4点セット契約
+
+以下のイベントが 1トランザクションで揃っていることを成功条件とする。
+
+1. `query`
+2. `bundle`
+3. `proposal`
+4. `apply`
+
+いずれか欠損した場合は成功扱いしない（fail-closed）。
+
+### 5.3 dry-run 契約
+
+- `apply --dry-run` は `sideEffect=none` を必須とする。
+- DB永続化、外部送信、review昇格を禁止する。
+- 監査ログに `dryRun=true` と `sideEffect=none` の両方が存在しない場合は失敗扱い。
+
+### 5.4 CE3依存切離し契約
+
+- CE4 は CE3完了待ちで停止しない。
+- `sourceBundleHash` は `mock:<hash>` 形式を受理し、同値性検証を継続する。
+
+---
+
+## 6. イントラ運用（想定）
 
 - `web` と `api` は社内ネットワーク内に閉じる
 - `KJ_ATLAS_LLM_PROVIDER=local` の場合、`KJ_ATLAS_LOCAL_LLM_BASE_URL` を社内URLに向ける
@@ -100,22 +137,32 @@ volumes:
 
 ---
 
-## 6. クラウドへの載せ替え方針
+## 7. クラウドへの載せ替え方針
 
-### 6.1 Cloud Run
+### 7.1 Cloud Run
 
 - `web` は静的ホスティング（Cloud Storage + CDN）でもよい
 - `api` を Cloud Run に載せる
 - `db` は Cloud SQL（Postgres）など
 
-### 6.2 低価格VM / 自前サーバ
+### 7.2 低価格VM / 自前サーバ
 
 - Composeをそのまま利用
 - バックアップは `db` のスナップショット or `pg_dump`
 
 ---
 
-## 7. 次に作るもの
+## 8. フェイルセーフ停止条件（CE4）
+
+以下を検知した場合、デプロイ承認を停止する。
+
+1. 同値性定義の多義化
+2. 監査ログ欠損成功扱い
+3. safeMode後退要求（share/export保護緩和、未レビュー保護緩和）
+
+---
+
+## 9. 次に作るもの
 
 - `03_Implement` の雛形（backend/frontend）
 - CI（最低限：lint/test/build）
