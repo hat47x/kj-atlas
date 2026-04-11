@@ -3,7 +3,7 @@ import {
   buildInitialWorkspaceState,
   commitWorkspaceDecision,
   normalizeFilters,
-  normalizePresetQuery,
+  replayPreset,
   rollbackWorkspaceDecision,
   syncWorkspaceCandidates,
   type CandidateItem,
@@ -69,8 +69,6 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
   const [scope, setScope] = useState<QueryScope>("all");
   const [depth, setDepth] = useState(1);
   const [filtersInput, setFiltersInput] = useState("");
-  const [executedQuery, setExecutedQuery] = useState<string | null>(null);
-  const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
   const normalizedFilters = useMemo(() => normalizeFilters(filtersInput), [filtersInput]);
   const activeCandidateId = workspaceState.selectedCandidateId ?? candidates[0]?.id ?? null;
@@ -85,12 +83,10 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     }
 
     setWorkspaceState((previous) => commitWorkspaceDecision(previous, activeCandidateId, nextDecision, new Date().toISOString()));
-    setFailureMessage(null);
   };
 
   const handleRollback = () => {
     setWorkspaceState((previous) => rollbackWorkspaceDecision(previous));
-    setFailureMessage(null);
   };
 
   const handleSavePreset = () => {
@@ -100,7 +96,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
 
     const trimmedName = presetName.trim();
     if (!trimmedName) {
-      setFailureMessage("Preset name is required.");
+      setWorkspaceState((previous) => ({ ...previous, failureMessage: "Preset name is required.", phase: "error" }));
       return;
     }
 
@@ -115,17 +111,11 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     const nextPresets = [...presets, nextPreset].sort((left, right) => left.name.localeCompare(right.name));
     setPresets(nextPresets);
     savePresets(nextPresets);
-    setFailureMessage(null);
+    setWorkspaceState((previous) => ({ ...previous, failureMessage: null }));
   };
 
   const runPreset = (preset: Pick<QueryPreset, "scope" | "depth" | "filters">) => {
-    if (candidates.length === 0) {
-      setFailureMessage("No candidates available. Collect candidates before preset execution.");
-      return;
-    }
-
-    setExecutedQuery(normalizePresetQuery(preset));
-    setFailureMessage(null);
+    setWorkspaceState((previous) => replayPreset(previous, preset, candidates.length > 0));
   };
 
   return (
@@ -158,7 +148,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         </div>
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
-        Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"}
+        Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"} (phase: {workspaceState.phase})
       </div>
       <button type="button" data-testid="ce3-rollback" disabled={isReadOnly || workspaceState.rollbackStack.length === 0} onClick={handleRollback}>
         Roll back last workspace decision
@@ -187,7 +177,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         {presets.length === 0 ? <span style={{ fontSize: 12, color: "#64748b" }}>No saved presets.</span> : null}
         {presets.map((preset) => (
           <button key={preset.id} type="button" data-testid={`ce3-run-preset-${preset.id}`} onClick={() => runPreset(preset)}>
-            Replay {preset.name}
+            Run {preset.name}
           </button>
         ))}
       </div>
@@ -205,14 +195,14 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         Run current preset
       </button>
       <div data-testid="ce3-normalized-query" style={{ fontSize: 12, color: "#334155", marginTop: 8 }}>
-        Normalized query: {executedQuery ?? "(not executed)"}
+        Normalized query: {workspaceState.lastExecutedQuery ?? "(not executed)"}
       </div>
       <div data-testid="ce3-audit-log-size" style={{ fontSize: 12, color: "#334155", marginTop: 6 }}>
         Audit transitions: {workspaceState.auditLog.length}
       </div>
-      {failureMessage ? (
+      {workspaceState.failureMessage ? (
         <div data-testid="ce3-failure" style={{ marginTop: 8, fontSize: 12, color: "#b91c1c" }}>
-          {failureMessage}
+          {workspaceState.failureMessage}
         </div>
       ) : null}
       <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>

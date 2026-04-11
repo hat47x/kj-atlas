@@ -1,5 +1,6 @@
 export type WorkspaceDecision = "adopt" | "reject" | "hold";
 export type QueryScope = "all" | "selection" | "island";
+export type WorkspacePhase = "idle" | "decision_recorded" | "preset_replayed" | "rollback_ready" | "error";
 
 export type CandidateItem = {
   id: string;
@@ -18,6 +19,7 @@ export type QueryPreset = {
 export type WorkspaceSnapshot = {
   decisions: Record<string, WorkspaceDecision>;
   selectedCandidateId: string | null;
+  phase: WorkspacePhase;
 };
 
 export type WorkspaceAuditEntry = {
@@ -32,6 +34,9 @@ export type WorkspaceState = {
   selectedCandidateId: string | null;
   rollbackStack: WorkspaceSnapshot[];
   auditLog: WorkspaceAuditEntry[];
+  phase: WorkspacePhase;
+  lastExecutedQuery: string | null;
+  failureMessage: string | null;
 };
 
 export function normalizeFilters(value: string): string[] {
@@ -54,12 +59,23 @@ function buildInitialDecisions(candidates: CandidateItem[]): Record<string, Work
   return Object.fromEntries(candidates.map((candidate) => [candidate.id, "hold"])) as Record<string, WorkspaceDecision>;
 }
 
+function snapshotState(state: WorkspaceState): WorkspaceSnapshot {
+  return {
+    decisions: { ...state.decisions },
+    selectedCandidateId: state.selectedCandidateId,
+    phase: state.phase,
+  };
+}
+
 export function buildInitialWorkspaceState(candidates: CandidateItem[]): WorkspaceState {
   return {
     decisions: buildInitialDecisions(candidates),
     selectedCandidateId: candidates[0]?.id ?? null,
     rollbackStack: [],
     auditLog: [],
+    phase: "idle",
+    lastExecutedQuery: null,
+    failureMessage: null,
   };
 }
 
@@ -90,19 +106,21 @@ export function commitWorkspaceDecision(
   now: string
 ): WorkspaceState {
   const previousDecision = state.decisions[candidateId] ?? "hold";
+  if (previousDecision === decision) {
+    return {
+      ...state,
+      phase: state.rollbackStack.length > 0 ? "rollback_ready" : "idle",
+      failureMessage: null,
+    };
+  }
+
   return {
     ...state,
     decisions: {
       ...state.decisions,
       [candidateId]: decision,
     },
-    rollbackStack: [
-      ...state.rollbackStack,
-      {
-        decisions: { ...state.decisions },
-        selectedCandidateId: state.selectedCandidateId,
-      },
-    ],
+    rollbackStack: [...state.rollbackStack, snapshotState(state)],
     auditLog: [
       ...state.auditLog,
       {
@@ -112,13 +130,19 @@ export function commitWorkspaceDecision(
         at: now,
       },
     ],
+    phase: "decision_recorded",
+    failureMessage: null,
   };
 }
 
 export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState {
   const snapshot = state.rollbackStack[state.rollbackStack.length - 1];
   if (!snapshot) {
-    return state;
+    return {
+      ...state,
+      phase: "error",
+      failureMessage: "No rollback point available.",
+    };
   }
 
   return {
@@ -126,5 +150,28 @@ export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState
     decisions: snapshot.decisions,
     selectedCandidateId: snapshot.selectedCandidateId,
     rollbackStack: state.rollbackStack.slice(0, -1),
+    phase: state.rollbackStack.length > 1 ? "rollback_ready" : "idle",
+    failureMessage: null,
+  };
+}
+
+export function replayPreset(
+  state: WorkspaceState,
+  preset: Pick<QueryPreset, "scope" | "depth" | "filters">,
+  hasCandidates: boolean
+): WorkspaceState {
+  if (!hasCandidates) {
+    return {
+      ...state,
+      phase: "error",
+      failureMessage: "No candidates available. Collect candidates before preset execution.",
+    };
+  }
+
+  return {
+    ...state,
+    phase: "preset_replayed",
+    lastExecutedQuery: normalizePresetQuery(preset),
+    failureMessage: null,
   };
 }
