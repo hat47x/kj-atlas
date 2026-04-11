@@ -127,3 +127,49 @@ Gist リリース前に、少なくとも次を記録する。
 - `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`
 - `04_Documentation/release.md`
 - `02_Architecture/runtime_parameter_registry.md`
+
+## 11. Doc-Ops-05 Set 2 統合品質ゲート（Phase 1〜6）
+
+次の文書を同時更新する場合、以下の6フェーズを固定順序で適用する。
+
+- `04_Documentation/diagnostics.md`
+- `04_Documentation/narratives.md`
+- `04_Documentation/codex_skill_operations.md`
+- `01_Plans/documentation_quality.md`（本書）
+
+### Phase 1: Scope固定
+
+- 変更対象を上記4ファイルに限定する。
+- Docs-only 原則を維持し、`03_Implement/` の変更を行わない。
+
+### Phase 2: メタ要件確認
+
+- 対外文書（04層）に Audience / Goal / Non-goal / Public boundary / Outcome / Related が明示されていることを確認する。
+- 内部文書（01層）は品質判定基準と運用責務が追跡可能であることを確認する。
+
+### Phase 3: 用語統一
+
+- review状態は `reviewed / unreviewed` を正規語彙とし、`reviewed=true/false` は互換注記に限定する。
+- 安全境界は `SafeMode` / `share/export` の表記に統一する。
+
+### Phase 4: 相互リンク確認
+
+- 04層文書から本書（`01_Plans/documentation_quality.md`）への導線を持つ。
+- narratives は `00_Prompt/domain.md` / `02_Architecture/schemas.md` を参照する。
+- diagnostics は worker 実装パスおよび関連契約への参照を維持する。
+- codex skill 運用文書は `00_Prompt/codex_gsd_skill_ops.md` への導線を維持する。
+
+### Phase 5: 検証・記録
+
+- Markdown表示崩れ、リンク切れ、コマンドブロック、公開不可情報混入を確認し、実行/確認ログを残す。
+- 可能な場合は docs-check コマンドを実行し、結果を記録する。
+
+### Phase 6: Go/No-Go 判定
+
+- QG-1〜QG-6 と本セクション Phase 1〜5 がすべて満たされれば Go。
+- いずれか未充足なら No-Go として公開/統合を停止し、欠落点を列挙する。
+
+### 修復ポリシー（必須）
+
+- 品質ゲート失敗時は **最大3回まで修復して再判定** する。
+- 3回を超える場合は作業を停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。

@@ -7,11 +7,12 @@
 > Public boundary: 内部判断ログは含めず、運用意味論と非目標を公開する。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
 > Outcome: narrative生成時の既定値・レビュー責務・公開時の注意点を単独で判断できる。
-> Related: `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+> Related: `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
 
 
 本ドキュメントは、A型図解（空間配置）から B型文章（narrative）を作成・レビューする際の、
-**最小の運用セマンティクス**を定義する。
+**最小の運用セマンティクス**を定義する。  
+品質ゲートの適用は `01_Plans/documentation_quality.md` の QG-1〜QG-6 を基準とする。
 
 - 本ドキュメントで扱う narrative は、カード内容を説明可能な形に並べた文章ドラフトである。
 - AI は narrative の下書き生成を補助できるが、内容の真偽を保証しない。
@@ -44,7 +45,7 @@
 
 ### 2.1 Unreviewed by default
 
-- AI 生成直後の narrative は、必ず `reviewed=false` とする。
+- AI 生成直後の narrative は、必ず `reviewState=unreviewed`（互換表記: `reviewed=false`）とする。
 - `reviewed=false` は「人間による内容確認が未完了」であることを意味する。
 - UI 上では、生成文章に対して **「未レビュー（unreviewed）」ラベルを明示表示**する。
 - 未レビュー表示がある文章は、意思決定や外部共有の根拠として扱わない。
@@ -112,3 +113,22 @@ narrative 作成は次の順序を推奨する。
 - **automatic truth validation**（自動的な真偽保証）
   - システムは narrative の真実性を自動確定しない。
   - AI 出力を権威的な結論として提示しない。
+
+## 6. Quality gate (Phase 1〜6, Doc-Ops-05 Set 2)
+
+本書の改訂では、次の6フェーズを順に満たす。
+
+1. **Phase 1: Scope固定**
+   - narratives運用意味論のみを対象にし、設計正本の再定義を行わない。
+2. **Phase 2: 公開メタ確認**
+   - Audience / Goal / Non-goal / Outcome / Related が明示されていることを確認する。
+3. **Phase 3: 用語統一**
+   - review状態は `reviewed / unreviewed`（または `reviewState`）を正として記載する。
+4. **Phase 4: 契約整合**
+   - CE2 proposal 契約と SafeMode 制約の文言が矛盾しないことを確認する。
+5. **Phase 5: 導線整合**
+   - `domain.md` / `schemas.md` / `documentation_quality.md` への参照を維持する。
+6. **Phase 6: 公開判定**
+   - 真偽自動保証をしない非目標と、人間レビュー責務が明示されていることを確認する。
+
+失敗時は **最大3回まで修復して再判定** し、3回超過時は公開更新を停止して `01_Plans/` に論点を記録する。

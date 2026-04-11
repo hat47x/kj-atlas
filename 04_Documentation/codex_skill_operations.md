@@ -11,6 +11,7 @@
 
 本書は、`kj-atlas` プロジェクトで Codex skill を安全に導入・運用するための実務ガイドである。
 仕様正本（`00_Prompt` / `01_Plans` / `02_Architecture`）を維持したまま、skill を **実行補助** として活用する。
+公開文書品質の確認は `01_Plans/documentation_quality.md` を参照する。
 
 ## Codex skill loading specification (confirmed)
 
@@ -127,3 +128,27 @@ python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
 - `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は本タスクの更新対象外。
 - docs-check は validator / unittest の2本を実行し、Issue memo に結果を記録する。
 
+## Quality gate (Phase 1〜6, Doc-Ops-05 Set 2)
+
+このガイド更新時は、次の品質ゲートを適用する。
+
+1. **Phase 1: Scope固定**
+   - Skill運用手順のみを更新し、仕様正本（00〜02）の内容を上書きしない。
+2. **Phase 2: 文書メタ確認**
+   - Audience / Goal / Public boundary が冒頭で判別可能であることを確認する。
+3. **Phase 3: 用語統一**
+   - `reviewed / unreviewed`、`SafeMode`、`share/export` の語彙を既存正本に合わせる。
+4. **Phase 4: 導線確認**
+   - `AGENTS.md` Read Order と `00_Prompt/codex_gsd_skill_ops.md` への参照整合を確認する。
+5. **Phase 5: 検証確認**
+   - docs-check / Mermaid検証 / 代替証跡のいずれかを記録可能な形で残す。
+6. **Phase 6: 完了判定**
+   - docs-only 原則と安全境界（SafeMode既定ON）を損なっていないことを確認する。
+
+失敗時は **最大3回まで修復して再判定** し、3回超過時は作業を停止して `01_Plans/issues/` にブロッカーを記録する。
+
+## Related
+
+- `00_Prompt/codex_gsd_skill_ops.md`
+- `01_Plans/documentation_quality.md`
+- `04_Documentation/codex_skill_operations.md`（本書）
