@@ -42,6 +42,20 @@
   利用者が現時点で確認済みであることの記録である。
 - reviewed への変更は、人間の明示操作でのみ行う。
 
+### 2.3 CE2 proposal 契約（低リスクAI支援）
+
+CE2では narrative 支援出力を直接本文として確定せず、提案オブジェクトとして扱う。
+
+- 必須キー: `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState`
+- `status` は `proposed/accepted/rejected/held` のみ
+- `reviewState` は `unreviewed/reviewed` のみ
+- AIは `reviewState=reviewed` を付与してはならない（人手のみ昇格可）
+- Auto-apply（提案の自動反映）は禁止
+- safeMode ON時は未レビュー本文を入力にした narrative 生成を禁止
+
+CE1最小I/F（ContextBundle）の差異が検知された場合、提案は `held` に固定し、
+運用判断があるまで再生成/適用を進めない。
+
 ---
 
 ## 3. 推奨ワークフロー
@@ -55,6 +69,7 @@ narrative 作成は次の順序を推奨する。
 2. **Generate draft narrative**
    - AI で文章ドラフトを生成する。
    - 生成時点の review state は常に `reviewed=false` とする。
+   - 生成結果は proposal として保持し、直接適用しない。
 
 3. **Run consistency check**
    - narrative とカード間の整合チェックを実行する。
