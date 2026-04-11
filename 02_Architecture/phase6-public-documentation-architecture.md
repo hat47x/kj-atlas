@@ -121,13 +121,14 @@ Gate運用は次の順序を固定し、逆順実行を禁止する。
 
 ## Stream G phase protocol（Gate C→D→E 運用整合）
 
-運用整合タスクは次の5Phaseを固定し、各Phase開始時に対象3文書の再読で状態同期する。
+運用整合タスクは次の6Phaseを固定し、各Phase開始時に対象3文書の再読で状態同期する。
 
-1. Phase 1 Read（現行Gate定義再読）: 各Phase冒頭で `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読する。
-2. Phase 2 CDC: CDC差分がある場合のみ Gate C→D→E 固定で更新する。
-3. Phase 3 Plan（AC/DoD不足補完合意）: Gate D の4KPIと入力契約、Gate E Proceed 条件の不足を補完して合意する。
-4. Phase 4 Execute（C→D→E順序, evidence 6項目固定）: Gate C→D→E を順序固定で実行し、証跡を `Date / Gate / Command / Result / Decision / Next action` 形式で記録する。
-5. Phase 5 Verify/Proceed（docs-check、3回自己修復上限、超過停止）: `docs-check` と `diff` を実施し、自己修復は最大3回までとし、超過時はFail-safe停止とする。
+1. Phase 1 Read（Gate依存・evidence 6項目再確認）: 各Phase開始時に `issue-0019` / `issue-0020` / 本アーキテクチャ文書を再読し、`C→D→E` と `Date / Gate / Command / Result / Decision / Next action` の6項目必須を再確認する。
+2. Phase 2 ADR明文化（CDC補完）: Context / Decision / Consequences の不足分を補完し、Gate依存と Proceed 条件を ADR 形式で固定する。
+3. Phase 3 Plan（AC/DoD不足補完）: Gate D の4KPIと入力契約、Gate E Proceed 条件を AC/DoD に不足なく明記し、Proceed 条件を明確化する。
+4. Phase 4 Execute（Gate順序・KPI入力・判定引継ぎ統一）: Gate C→D→E を順序固定で実行し、Gate D 必須入力と Gate E 判定引継ぎを統一する。
+5. Phase 5 Verify（docs-check + diff + 語彙一致、3回自己修復上限）: `python3 01_Plans/issues/validate_active_issue_memos.py --root .`、`git diff`、`rg` による語彙一致を実施し、自己修復は最大3回までとする。4回目失敗はFail-safe停止。
+6. Phase 6 Proceed（公開判定運用への引き渡し記録）: Gate E 判定結果、制約、残リスク、再判定日/担当（Conditional/No-Go時）を記録し、公開判定運用へ正式に引き渡す。
 
 失敗時は self-correction を最大3回まで許容し、以下に該当した場合はFail-safeで停止する。
 
