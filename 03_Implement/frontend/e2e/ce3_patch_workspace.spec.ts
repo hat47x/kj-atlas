@@ -1,6 +1,56 @@
 import { expect, test } from "@playwright/test";
 
 test("CE3 patch workspace supports candidate comparison, preset replay, and rollback recovery", async ({ page }) => {
+  await page.route("**/docs/doc_phase1_canvas", async (route) => {
+    const now = new Date().toISOString();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        version: 2,
+        id: "doc_phase1_canvas",
+        createdAt: now,
+        updatedAt: now,
+        transform: { panX: 0, panY: 0, zoom: 1 },
+        cards: [],
+        edges: [],
+        islands: [],
+      }),
+    });
+  });
+  await page.route("**/ai/suggest-merges", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        suggestions: [
+          {
+            groupId: "group-alpha",
+            targetCardId: "c1",
+            candidateCardIds: ["c2", "c3"],
+            scoreSummary: { min: 0.88, max: 0.99, avg: 0.93 },
+            reasonCodes: ["heuristic:normalized-text"],
+            snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+            cardIds: ["c1", "c2", "c3"],
+            mergedTextDraft: "alpha",
+            rationale: "deterministic fixture",
+          },
+          {
+            groupId: "group-beta",
+            targetCardId: "c4",
+            candidateCardIds: [],
+            scoreSummary: { min: 0.95, max: 0.95, avg: 0.95 },
+            reasonCodes: ["heuristic:token-signature"],
+            snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
+            cardIds: ["c4"],
+            mergedTextDraft: "beta",
+            rationale: "deterministic fixture",
+          },
+        ],
+      }),
+    });
+  });
+
   await page.goto("/");
   await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
 
@@ -41,20 +91,28 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await expect(page.getByTestId("ce3-candidate-select")).toBeEnabled();
   await expect(page.getByTestId("ce3-diff-preview")).toContainText("Patch diff preview");
   await expect(page.getByTestId("ce3-diff-preview")).toContainText("Token delta:");
+  const optionLocator = page.locator('[data-testid="ce3-candidate-select"] option');
+  await expect(optionLocator).toHaveCount(2);
+  const alphaCandidateId = await optionLocator.nth(0).getAttribute("value");
+  const betaCandidateId = await optionLocator.nth(1).getAttribute("value");
+  expect(alphaCandidateId).not.toBeNull();
+  expect(betaCandidateId).not.toBeNull();
 
   await page.getByTestId("ce3-adopt").click();
   await expect(page.getByTestId("ce3-decision-state")).toContainText("adopt");
-  await expect(page.getByTestId("ce3-candidate-state-cand-alpha-0")).toContainText("adopt");
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
 
-  await page.getByTestId("ce3-candidate-select").selectOption("cand-beta-0");
+  await page.getByTestId("ce3-candidate-select").selectOption(betaCandidateId ?? "");
   await page.getByTestId("ce3-reject").click();
-  await expect(page.getByTestId("ce3-candidate-state-cand-beta-0")).toContainText("reject");
-  await expect(page.getByTestId("ce3-candidate-state-cand-alpha-0")).toContainText("adopt");
+  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("reject");
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
   await expect(page.getByTestId("ce3-audit-log-size")).toContainText("2");
 
   await page.getByTestId("ce3-rollback").click();
-  await expect(page.getByTestId("ce3-candidate-state-cand-beta-0")).toContainText("hold");
-  await expect(page.getByTestId("ce3-candidate-state-cand-alpha-0")).toContainText("adopt");
+  await expect(page.getByTestId("ce3-decision-state")).toContainText("hold");
+  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("hold");
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
+  await expect(page.getByTestId("ce3-audit-log-size")).toContainText("2");
 
   await page.getByTestId("ce3-preset-name").fill("Local CE3 Preset");
   await page.getByTestId("ce3-preset-scope").selectOption("selection");
@@ -70,4 +128,9 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await page.getByRole("button", { name: /Run Local CE3 Preset/ }).click();
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"scope\":\"selection\"");
   await expect(page.getByTestId("ce3-failure")).toHaveCount(0);
+
+  await page.reload();
+  await page.getByRole("button", { name: /Collect candidates/i }).click();
+  await page.getByRole("button", { name: /Run Local CE3 Preset/ }).click();
+  await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"filters\":[\"merge\",\"risk\"]");
 });

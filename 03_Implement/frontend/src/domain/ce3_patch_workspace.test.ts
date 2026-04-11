@@ -54,6 +54,13 @@ describe("ce3_patch_workspace", () => {
         filters: ["z", "a"],
       })
     ).toBe('{"scope":"selection","depth":2,"filters":["a","z"]}');
+    expect(
+      normalizePresetQuery({
+        scope: "all",
+        depth: Number.NaN,
+        filters: ["risk"],
+      })
+    ).toBe('{"scope":"all","depth":1,"filters":["risk"]}');
   });
 
   it("syncs candidate list without mutating existing decision history", () => {

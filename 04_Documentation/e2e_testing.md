@@ -96,6 +96,7 @@ CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは
 - `Roll back last workspace decision` で直前状態へ復帰できる。
 - rollback後に「直前の候補だけ」が復旧され、先行候補の決定は維持される。
 - Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
+- Preset保存後にページ再読込しても、保存済み `Run <name>` で同一正規化JSONが再現される。
 - 監査遷移数（Audit transitions）が操作回数に応じて増加する。
 - Perspective切替で document永続データ差分が増えない（workspace/presetはlocal state/localStorage管理）。
 - SafeMode ON でも share/export の追加露出が発生しない。
@@ -521,6 +522,7 @@ CE3（`issue-CE3-patch-workspace-presets.md`）の導線確認は以下で固定
 - 部分採用（adopt）後に `Roll back last workspace decision` 1クリックで直前状態へ復旧できる。
 - Preset（name/scope/depth/filters）保存後、`Run current preset` と保存済み `Run <name>` の双方で正規化Queryが再現される。
 - 実行失敗時（候補未収集など）に、失敗メッセージと復旧導線（候補再収集＋rollback）が画面上で確認できる。
+- E2Eは `/docs/doc_phase1_canvas` と `/ai/suggest-merges` をPlaywright routeで固定応答化し、backend非依存で決定論を維持する。
 
 ### 8.5.2 実行コマンド（Playwright）
 
