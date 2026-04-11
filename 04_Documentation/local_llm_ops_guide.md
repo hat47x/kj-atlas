@@ -87,9 +87,14 @@ LLM_TRANSPORT=in_process
 
 ---
 
-## CE4 API/CLI 監査統合手順（query/bundle/proposal/apply）
+## 4. CE4 API/CLI 監査統合手順（query/bundle/proposal/apply）
 
-### 1) API/CLIの共通監査項目
+### 4.1 運用前提（依存切離し）
+
+- CE3完了待ちはしない。
+- `sourceBundleHash` は `mock:<hash>` を許容し、監査導線と同値性導線の検証を継続する。
+
+### 4.2 API/CLIの共通監査項目
 
 `POST /docs/{docId}/context-audit` は次の4操作を `eventType` として記録する。
 
@@ -100,45 +105,62 @@ LLM_TRANSPORT=in_process
 
 API経由/CLI経由のどちらでも、以下の監査項目を同一キーで残す。
 
-- `operation`
+- `equivalenceKey`
 - `bundleHash`
-- `queryHash`
 - `dryRun`
+- `sideEffect`
+- `sourceBundleHash`
 - `rejectReasonCode`
 - `command`
 - `channel`（`api` または `cli`）
 
-### 2) 実施手順（最小）
+### 4.3 実施手順（最小runbook）
 
-1. APIで `context-audit` を実行し、4操作分のイベントが出力されることを確認する。
-2. CLIで `context-query` / `context-bundle` / `proposal-diff` / `apply --dry-run` を実行する。
-3. 監査出力で API/CLI のキーセットが一致することを確認する（値はチャネル差分を許容）。
+1. APIで `context-query` と `context-bundle` を実行し、`equivalenceKey` と `bundleHash` を取得する。
+2. CLIで同一入力の `context-query` と `context-bundle` を実行し、`equivalenceKey` と `bundleHash` が一致することを確認する。
+3. API/CLI両方で `proposal-diff` を実行し、`sourceBundleHash`（本番値または `mock:<hash>`）を記録する。
+4. API/CLI両方で `apply --dry-run` を実行し、`dryRun=true` かつ `sideEffect=none` を確認する。
+5. 監査ログで `query/bundle/proposal/apply` の4イベントが揃っていることを確認する。
 
-### 3) 監査欠落の検知・通知
+### 4.4 監査欠落の検知・通知
 
-欠落判定は「直近監査バッチに `query/bundle/proposal/apply` が揃っているか」で行う。
+欠落判定は「同一 `equivalenceKey` で `query/bundle/proposal/apply` が揃っているか」で行う。
 
 - 検知条件: 上記4イベントのいずれかが欠落。
-- 一次対応: 欠落した操作を再実行し、`traceId` を付与して再送する。
-- 通知: Platform Operator が当日中に運用チャネルへ「欠落操作・traceId・再実行結果」を報告する。
+- 一次対応: 欠落した操作を再実行し、`equivalenceKey` を維持したまま再送する。
+- 通知: Platform Operator が当日中に運用チャネルへ「欠落操作・equivalenceKey・再実行結果」を報告する。
 - 是正: 2回連続で同一欠落が発生した場合、CLI/APIの片系実装差分を停止し、共通実行ライブラリへ集約する。
+- 判定原則: ログ欠損を成功扱いしない（fail-closed）。
+
+### 4.5 Verify → Proceed（3回自己修復上限）
+
+- Verify で不整合を検出した場合、自己修復（再実行/設定補正/キー補完）は最大3回まで。
+- 3回で解消しない場合は Proceed を停止し、論点を保留化する。
+
+### 4.6 フェイルセーフ停止条件
+
+以下を検知した場合、CE4運用を停止する。
+
+1. 同値性定義の多義化
+2. ログ欠損成功扱い
+3. safeMode後退要求
 
 ---
 
-## 4. エスカレーション運用
+## 5. エスカレーション運用
 
-### 4.1 既定
+### 5.1 既定
 
 - 無効（disabled by default）。
 - 無効時はローカル再試行または人手確認へ遷移。
 
-### 4.2 有効化条件
+### 5.2 有効化条件
 
 - 設定で明示opt-inする。
 - allowlist-only outbound を満たす。
 - 送信前フィルタ（safeMode・最小化・不要メタ除去）を有効化する。
 
-### 4.3 代表トリガ
+### 5.3 代表トリガ
 
 - schema不一致
 - 重要セクション欠落/短すぎ
@@ -148,13 +170,13 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 
 ---
 
-## 5. テストと評価運用
+## 6. テストと評価運用
 
 - 毎回実行: unit + regression（fixture中心）
 - 定期実行: curated integration（強モデル、小規模セット）
 - 目的: 正解一致ではなく、有用性ゲート（構造・安全・根拠性）維持
 
-### 5.1 LFM2.5（SLM）導入目的に関する補足
+### 6.1 LFM2.5（SLM）導入目的に関する補足
 
 - LFM2.5 の導入目的は、主に unit テストおよび E2E テストで「モデル実行経路が正しく動くか」を検証することにある。
 - そのため、LFM2.5 の推論品質や処理性能は、実運用で常時利用する前提の水準に達しない可能性がある。
@@ -162,17 +184,19 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 
 ---
 
-## 6. 観測性（Observability）最小要件
+## 7. 観測性（Observability）最小要件
 
-### 6.1 収集する最小ログ
+### 7.1 収集する最小ログ
 
 - 実行時刻
 - provider種別
 - 成否
 - エスカレーション理由コード
 - 評価スコア（利用時）
+- `equivalenceKey`
+- `sideEffect`
 
-### 6.2 収集しない/赤線化する項目
+### 7.2 収集しない/赤線化する項目
 
 - 生カード本文（safeMode領域）
 - 個人識別につながるメタ情報
@@ -180,7 +204,7 @@ API経由/CLI経由のどちらでも、以下の監査項目を同一キーで�
 
 ---
 
-## 7. 障害時対応
+## 8. 障害時対応
 
 - LocalProvider障害時: FixtureProviderで回帰確認し、モデル基盤切り分けを優先。
 - エスカレーション経路障害時: 外部送信を停止し、ローカルのみで運転継続。
