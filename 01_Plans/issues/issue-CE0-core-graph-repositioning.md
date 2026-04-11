@@ -28,6 +28,8 @@
 - CE1/CE2/CE4 連携は mock I/F 前提で待機しない（依存切断）。
 - CE3/HIL-RS 系の実装・計画へは本Issueから変更を波及させない。
 - Contract ID Matrix（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は再定義せず参照専用で扱う。
+- 再抽出結果（CG責務境界）: `WorkingGraph=探索` / `ContextProjectionGraph=read-only投影` / `ConsensusGraph=合意済み統合`。
+- 再抽出結果（禁止事項）: Core Graph単独モデル回帰 / direct write / projection永続上書き / auto-apply / AI review自動昇格。
 
 ## 1) Context
 
@@ -90,6 +92,13 @@
   - Projection の永続上書きや review 自動遷移を許容する記述が残る。
   - `UNC-VSC-CE-02-01..03` の追跡不能状態を放置する。
 
+### 2.6 Drift-stop 固定（Phase 4 Execute）
+
+- Contract ID collision は **0件固定**（CE0契約IDの再定義禁止）。
+- 語彙 collision は **0件固定**（契約語彙は `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` に固定）。
+- safeMode後退 / auto-apply許容 / review自動昇格許容は 1件でも検知時点で即 No-Go 停止。
+- Verify自己修復は最大3回。4回目相当は停止し、推測継続を禁止する。
+
 ## 3) Consequences
 
 - `Core Graph` の語彙は履歴説明用の別名としてのみ残し、契約語彙は `Consensus Graph` に統一する。
@@ -105,6 +114,7 @@
 - [ ] KJ法構造（card/island/relation/pending）との整合原則が明記される。
 - [ ] DecisionQueueの3項目（UNC-VSC-CE-02-01..03）がOpen/Pendingで追跡可能。
 - [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
+- [ ] Contract ID collision=0 / 語彙 collision=0 が検証ログで確認できる。
 
 ## 5) タスク分解（文書限定）
 

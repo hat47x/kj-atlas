@@ -215,6 +215,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 - `human_reviewed` 状態をAIが自動付与してはならない。
 - safeMode既定ON時、未レビュー本文をAI入力へ含めてはならない。
 - `mode=autonomous` でも proposal-only を維持し、監査4点セット（query/bundle/proposal/apply）欠損時は失敗扱いとする。
+- `Core Graph` を契約語彙へ再導入してはならない（履歴注記用途のみ許可）。
 
 ### 7A.4 Go/NoGo Key（実装着手ゲート）
 
@@ -226,6 +227,12 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
   - Query Preview bypass を許容する導線が存在する。
   - `ConsensusGraph` への direct write を許容する。
   - AI単独で `human_reviewed` へ遷移させる。
+
+### 7A.5 Drift-stop 固定（CE0）
+
+- Contract ID collision は 0 件固定（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の重複再定義禁止）。
+- 語彙 collision は 0 件固定（契約語彙は `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` に統一）。
+- Verify自己修復は最大3回。4回目相当で停止し、推測継続を禁止する。
 
 ---
 

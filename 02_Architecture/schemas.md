@@ -38,6 +38,7 @@ CE-0 の契約凍結として、実装型に先行して次のメタ契約を固
   - Working / ContextProjection / Consensus を分離
   - `Working -> Consensus` は `patch + approval` のみ
   - `mode=autonomous` でも proposal-only（auto-apply禁止）
+  - 監査4点セット（`query/bundle/proposal/apply`）欠損は成功扱い禁止
 
 | Contract ID | Must | Must Not |
 | --- | --- | --- |
@@ -45,6 +46,12 @@ CE-0 の契約凍結として、実装型に先行して次のメタ契約を固
 | `CE0-SAFEMODE-IF` | safeMode既定ON、`allowUnreviewedText=false` 既定 | 未レビュー本文のAI入力混入、safeMode既定緩和 |
 | `CE0-REVIEW-IF` | `human_reviewed` 昇格は人手のみ | AIによる review 自動昇格 |
 | `CG-01..05` | Working/Projection/Consensus 分離、proposal-only、監査4点セット必須 | direct write、auto-apply、監査欠損成功扱い |
+
+#### CE0 drift-stop fixed keys
+
+- Contract ID collision = 0（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の再定義禁止）
+- Vocabulary collision = 0（契約語彙は `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` に固定）
+- Verify自己修復は最大3回（4回目相当は停止）
 
 ---
 
