@@ -31,3 +31,28 @@
 - 設計整合: `02_Architecture/schemas.md`
 - 全体境界: `02_Architecture/architecture.md`
 - トラッキング: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+
+
+## DOC-OPS-05 実行記録（Phase 1〜5）
+
+### Phase 1 Read
+
+- Audience / Goal / Public boundary / Related を確認し、公開境界を再確認。
+
+### Phase 2 Plan
+
+- 本文は docs-only の範囲で更新し、仕様正本（00〜02）を上書きしない方針を固定。
+
+### Phase 3 Execute
+
+- DOC-OPS-05 classification に沿って本文の公開メタと導線を整備。
+
+### Phase 4 Verify
+
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/canonicalization.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+
+- 状態: **Ready**
+- 次アクション: 内部正本への参照stub化を維持し、詳細運用情報は 02_Architecture 側で管理する。
