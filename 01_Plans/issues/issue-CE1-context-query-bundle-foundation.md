@@ -239,6 +239,18 @@ Error code は次を固定し、文言差分を許可しない。
 
 ## 11) Phase 5 Verify 明細（語彙/ID整合）
 
+- Verify command（docs-check）:
+  - `rg -n "CE1-CTXQ-IF|CE1-CTXB-IF|CE1-HASH-DET-IF|CE1-PREVIEW-GATE-IF|ContextQuery|ContextBundle|bundleHash|queryCanonicalHash|previewConfirmed|preview_required|nondeterministic_bundle|unknown_contract_key|sourceBundleHash|drift-stop" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+- Verify pass criteria:
+  - CE1/CE2 間で Contract ID の重複・異義が0件である。
+  - `previewConfirmed=false -> 422 preview_required` が CE1/CE2 で同一語彙で固定される。
+  - `sameQuery && !sameBundle` は常に `409 nondeterministic_bundle` として drift-stop（Fail/Stop）判定される。
+  - 未定義キー混入時は常に `400 unknown_contract_key` で fail-closed となる。
+- Self-repair policy:
+  - Verify は `verifyAttempt=1..3` まで再実行可能。
+  - `verifyAttempt=4` 相当は実行禁止で即停止し、人手判断待ちへ遷移する。
+
 - CE0 契約語彙: `WorkingGraph` / `ContextProjectionGraph` / `Consensus Graph` を維持し、`Core Graph` 再導入を禁止する。
 - CE1 契約ID: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を固定し、別名再定義を禁止する。
 - CE2 接続語彙: `sourceBundleHash` / `proposal-only` / `held` の意味を変更しない。
