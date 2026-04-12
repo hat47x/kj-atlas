@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2A-02-A3 Collapse/Expand操作 / 実装計画接続
 
 - Type: Feature request
-- Status: Ready (A3 Handoff Condition Fixed)
+- Status: Open (Audit Hold: legacy Ready normalized; not a new-start target)
 - Priority: P0
 - Owner: Stream J
 - Scope: `01_Plans/issues/` (planning memo only)
@@ -186,6 +186,29 @@
 - Execute: handoff固定値（ContractID、version、mockCase、ownerOfFix等）を次実装入口の必須入力として固定する。
 - Verify: 次実装入口が「契約参照のみ」で開始できることを確認する。
 - Proceed: Go時のみ下流へ引き渡し、NoGo時は停止条件と再開条件を併記して保留する。
+
+## 監査整理（旧Ready/Activeの現行ライフサイクル対応）
+
+### Phase 1: Read
+- 旧表記 `Ready` / `Active` は監査対象の履歴値としてのみ扱い、現行の起票ライフサイクル（Draft -> Open -> In Progress -> Done）へ再マップした。
+
+### Phase 2: Plan（現行ライフサイクルへのマッピング方針）
+- マッピング方針: `Ready` / `Active` は **Open + Audit Hold** に統一し、新規着手キュー（In Progress）へ自動昇格させない。
+- 本メモは計画整備（docs-check）に限定し、実装タスクへ接続しない。
+
+### Phase 3: Execute（Status語彙と再開条件の統一記述）
+- Status語彙を `Open` に統一し、注記で `Audit Hold`（着手対象外）を固定した。
+- 再開条件（共通）:
+  1. 依存するA1→A2→A3契約整合が再確認済み。
+  2. `validate_active_issue_memos.py` の検証が成功。
+  3. 担当ストリームが In Progress へ昇格する明示判断を記録。
+
+### Phase 4: Verify（README運用ルール整合）
+- `01_Plans/issues/README.md` のライフサイクル定義（Draft/Open/In Progress/Done）に合わせ、旧語彙は運用ステータスとして使用しない。
+
+### Phase 5: Proceed（再開候補 / 保留候補）
+- 再開候補: 依存整合・検証成功・担当明示の3条件を満たした時点で `Open -> In Progress` を検討。
+- 保留候補: 上記条件のいずれか未達、または未定義競合がある場合は `Open (Audit Hold)` を維持。
 
 ## Validation plan
 
