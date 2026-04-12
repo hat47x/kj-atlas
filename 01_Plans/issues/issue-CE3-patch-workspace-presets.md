@@ -193,3 +193,34 @@
   - SafeMode後退なし。
   - 契約逸脱なし（Core/Consensus 非改変）。
   - 未定義競合なし。
+
+## 11) Stream D Follow-up Notes (2026-04-12)
+
+### Phase 1 Read（差分再同期）
+
+- `ce3_patch_workspace.test.ts` / `PatchWorkspacePanel.test.ts` / `ce3_patch_workspace.spec.ts` を再読し、3候補要件はE2Eで担保済みだが unit 側の候補独立性検証が2候補中心であることを確認。
+
+### Phase 2 Plan（AC/DoD補強提案）
+
+- AC補強提案:
+  - domain unitで「3候補時に rollback が最新候補のみへ作用し、未操作候補は hold 維持」を固定化する。
+- DoD補強提案:
+  - Panel unitで候補件数表示 `(3)` の退行を検知できる最小アサーションを追加する。
+
+### Phase 3 Execute（Frontend tests only）
+
+- `03_Implement/frontend/src/domain/ce3_patch_workspace.test.ts`
+  - 3候補（alpha/beta/gamma）シナリオを追加し、A採用→B却下→rollback後の gamma hold 維持と rollback監査対象の限定（betaのみ）を検証。
+- `03_Implement/frontend/src/ui/PatchWorkspacePanel.test.ts`
+  - render fixture を3候補化し、candidate count `(3)` 表示の回帰検知を追加。
+
+### Phase 4 Verify（test/lint）
+
+- `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts` を実行して pass。
+- `npm --prefix 03_Implement/frontend run lint` を実行して pass。
+
+### Phase 5 Proceed（未達/既知制約）
+
+- 未達なし（本スコープ内AC/DoD補強は完了）。
+- 既知制約:
+  - local audit log の document監査ログ統合（CE4連携）は未着手で継続課題。

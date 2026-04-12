@@ -17,6 +17,7 @@ describe("PatchWorkspacePanel", () => {
             },
           },
           { id: "cand-2", label: "cand-2 (2 cards)" },
+          { id: "cand-3", label: "cand-3 (1 card)" },
         ],
       })
     );
@@ -33,6 +34,8 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain("Normalized query");
     expect(html).toContain("Patch diff preview");
     expect(html).toContain("Token delta:");
+    expect(html).toContain("ce3-candidate-count");
+    expect(html).toContain("(3)");
     expect(html).toContain("Recovery path:");
   });
 
