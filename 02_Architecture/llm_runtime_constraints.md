@@ -83,3 +83,44 @@ safeModeは全モードで既定ONとし、外部送信可否と独立して漏�
 
 - 本仕様の設定キーは `LLM_*` に統一する。
 - 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。
+
+## 8. CE-2 Runtime Guardrails（low-risk / proposal-only）
+
+### 8.1 非破壊確認（safeMode既定ON・漏洩防止）
+
+CE2運用では、適用処理を起動せずに以下を確認する。
+
+- safeMode が既定ONであること。
+- reviewed-only 既定により未レビュー本文が提案入力に混入しないこと。
+- share/export 境界を越える外部送信を伴わないこと。
+
+### 8.2 通信と状態遷移の拘束
+
+- CE2 は `proposal-only` とし、runtime 上で apply 経路を起動しない。
+- `status` 許可遷移は `proposed -> accepted|rejected|held` のみ。
+- CE1ドリフト検知時は `status=held` に強制遷移し、後続処理を停止する。
+- `held` 状態の自動解除を禁止する（人手判断ログ必須）。
+
+### 8.3 監査ログ最小セット（再現可能性）
+
+CE2 runtime では次のキーを記録し、同一入力で再現検証できるようにする。
+
+- `queryId`
+- `proposalId`
+- `sourceBundleHash`
+- `transport`（in-process / IPC / localhost HTTP）
+- `safeModeDefaultOnConfirmed`
+- `unreviewedLeakPrevented`
+- `autoApplyPathCount`
+- `autoReviewPromotionCount`
+- `verifyAttempt`
+- `decision`（`pass|held|stop`）
+
+### 8.4 停止条件（フェイルセーフ）
+
+次のいずれかを検知した時点で停止し、人手判断待ちへ遷移する。
+
+- safeMode後退
+- 漏洩防止境界の弱体化
+- 未定義状態遷移
+- Contract ID 衝突または意味不一致
