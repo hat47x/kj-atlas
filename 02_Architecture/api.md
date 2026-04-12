@@ -212,6 +212,12 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
   - review state の昇格（`unreviewed -> reviewed`）
 - 上記を満たさない場合は契約違反として失敗扱い（fail-closed）。
 
+CE4 フェイルセーフ（停止条件）:
+- 監査4点セット欠損を成功扱いしようとする要求
+- `dryRun=true` で `sideEffect="none"` を満たさない挙動
+- safeMode 後退要求（share/export 保護緩和、未レビュー保護緩和）
+- Consensus 直書き要求（proposal/apply 契約を迂回する更新）
+
 #### 2.9.4 `sourceBundleHash` の受理境界（依存切離し）
 
 - `proposal.sourceBundleHash` は次の両形式を受理する。

@@ -138,6 +138,7 @@
 1. 同値性定義の多義化（`same query` 解釈が複数）
 2. ログ欠損を成功扱いする記述
 3. safeMode後退要求（share/export保護緩和、未レビュー保護緩和）
+4. Consensus への直書き要求（proposal/apply 契約を迂回する更新要求）
 
 ## 8) タスク分解（文書限定）
 
