@@ -2213,7 +2213,7 @@ export default function App() {
       setSuggestionError(null);
       setIsSuggestionPreviewEnabled(true);
       setIsAnnotateOverlayEnabled(false);
-      setStatusMessage("Draft suggestion ready for preview");
+      setStatusMessage("Draft suggestion proposal ready (preview only, no auto-apply)");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to get suggestion";
       setSuggestionError(message);
@@ -2225,15 +2225,6 @@ export default function App() {
       setIsSuggesting(false);
     }
   }, [document, isSuggesting, suggestionInstruction]);
-
-  const handleApplySuggestion = useCallback(() => {
-    if (!document || !suggestedDocument) {
-      return;
-    }
-
-    applyDocumentChange(cloneDocument(suggestedDocument), "Applied draft suggestion");
-    setSuggestionIteration(1);
-  }, [applyDocumentChange, document, suggestedDocument]);
 
   const handleDiscardSuggestion = useCallback(() => {
     setSuggestedDocument(null);
@@ -8119,7 +8110,6 @@ ${parsedDocument.error}`);
                     onResuggest={() => {
                       void handleSuggestLayout();
                     }}
-                    onApply={handleApplySuggestion}
                     onDiscard={handleDiscardSuggestion}
                     hasSuggestion={Boolean(suggestedDocument && suggestionId)}
                     isPreviewEnabled={isSuggestionPreviewEnabled}

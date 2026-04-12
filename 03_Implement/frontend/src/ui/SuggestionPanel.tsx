@@ -6,7 +6,6 @@ type SuggestionPanelProps = {
   onInstructionChange: (value: string) => void;
   onSuggest: () => void;
   onResuggest: () => void;
-  onApply: () => void;
   onDiscard: () => void;
   hasSuggestion: boolean;
   isPreviewEnabled: boolean;
@@ -23,7 +22,6 @@ export function SuggestionPanel({
   onInstructionChange,
   onSuggest,
   onResuggest,
-  onApply,
   onDiscard,
   hasSuggestion,
   isPreviewEnabled,
@@ -97,15 +95,15 @@ export function SuggestionPanel({
               <button type="button" onClick={onResuggest} disabled={isReadOnly || isSuggesting}>
                 {isSuggesting ? t("suggestion.panel.resuggesting") : t("suggestion.panel.resuggest")}
               </button>
-              <button type="button" disabled={isReadOnly} onClick={onApply}>
-                {t("suggestion.panel.apply")}
-              </button>
               <button type="button" disabled={isReadOnly} onClick={onDiscard}>
                 {t("suggestion.panel.discard")}
               </button>
             </div>
             <div style={{ fontSize: 11, color: "#475569" }}>
               {t("suggestion.panel.critiques_hint")}
+            </div>
+            <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 6 }}>
+              {t("suggestion.panel.proposal_only_hint")}
             </div>
           </section>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
