@@ -182,6 +182,22 @@
 
 失敗時は **最大3回まで修復して再判定** し、3回を超える場合は変更を停止して論点を `01_Plans/` にエスカレーションする。
 
+## 共通ワークフローとフェイルセーフ（DOC-OPS-05 共通）
+
+本書の更新は次の固定順序で実施する。
+
+1. Phase 1 Read
+2. Phase 2 ADR明文化（Context / Decision / Consequences）
+3. Phase 3 Plan
+4. Phase 4 Execute
+5. Phase 5 Verify
+6. Phase 6 Proceed
+
+フェイルセーフ:
+
+- Verify 失敗時は **自己修復を最大3回まで** 実施する。
+- 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
+
 ## Related
 
 - `01_Plans/documentation_quality.md`

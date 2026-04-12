@@ -14,6 +14,22 @@
 
 ---
 
+## 共通ワークフローとフェイルセーフ（DOC-OPS-05 共通）
+
+本書の更新は次の固定順序で実施する。
+
+1. Phase 1 Read
+2. Phase 2 ADR明文化（Context / Decision / Consequences）
+3. Phase 3 Plan
+4. Phase 4 Execute
+5. Phase 5 Verify
+6. Phase 6 Proceed
+
+フェイルセーフ:
+
+- Verify 失敗時は **自己修復を最大3回まで** 実施する。
+- 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
+
 ## 1. 基本方針
 
 1. `03_Implement/*` の変更では、原則として E2E確認を行う。

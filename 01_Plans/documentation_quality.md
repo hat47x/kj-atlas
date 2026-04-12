@@ -176,7 +176,7 @@ Gist リリース前に、少なくとも次を記録する。
 
 ## 12. DOC-OPS-05 Stream I 運用固定（non-conflict docs）
 
-Stream I では次の文書のみを対象とし、Stream H 専有（operations / security / e2e_testing）は編集しない。
+Stream I では対象Issueで明示された文書のみを編集対象とする。既定では Stream H 専有（operations / security）は編集しない。`e2e_testing.md` は対象Issueで明示された場合のみ例外的に編集可能とする。
 
 - `04_Documentation/canonicalization.md`
 - `04_Documentation/codex_skill_operations.md`
@@ -206,3 +206,11 @@ Stream I では次の文書のみを対象とし、Stream H 専有（operations 
 
 - Verify失敗時の自己修復は最大3回まで。
 - 4回目相当は停止し、ブロッカーとして記録して Proceed を保留化する。
+
+
+## 13. 共通ワークフローとフェイルセーフ（統一運用）
+
+対象文書（`diagnostics.md` / `e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `codex_skill_operations.md` / 本書）は、同一の6Phaseワークフロー（Read→ADR→Plan→Execute→Verify→Proceed）を適用する。
+
+- Verify 失敗時の自己修復は最大3回まで。
+- 4回目相当は停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。

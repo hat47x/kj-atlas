@@ -8,6 +8,22 @@
 > Outcome: 実行可否・Blocked理由・後続再実行条件を監査可能に記録できる。
 > Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
 
+## 共通ワークフローとフェイルセーフ（DOC-OPS-05 共通）
+
+本ログ更新は次の固定順序で実施する。
+
+1. Phase 1 Read
+2. Phase 2 ADR明文化（Context / Decision / Consequences）
+3. Phase 3 Plan
+4. Phase 4 Execute
+5. Phase 5 Verify
+6. Phase 6 Proceed
+
+フェイルセーフ:
+
+- Verify 失敗時は **自己修復を最大3回まで** 実施する。
+- 4回目相当は更新を停止し、`01_Plans/issues/` にブロッカーを記録して再開条件を明示する。
+
 ## 判定サマリ
 
 - Compose経路: **Blocked**（`docker` 未導入）
