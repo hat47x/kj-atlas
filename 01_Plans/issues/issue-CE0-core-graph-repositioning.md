@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner
-- Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contracts only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -171,17 +171,17 @@
 - [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
 - [ ] Contract ID collision=0 / 語彙 collision=0 が検証ログで確認できる。
 
-## 5) タスク分解（文書限定）
+## 5) タスク分解（Stream B: 編集許可ファイル限定）
 
-- [ ] T1: `02_Architecture/architecture.md` にGraph層責務表を追加。
-- [ ] T2: `02_Architecture/schemas.md` にGraph種別メタ（actor/modelTier/mode）の予約項目を追加。
-- [ ] T3: `04_Documentation/local_llm_ops_guide.md` にautonomous mode運用制約を同期。
-- [ ] T4: DecisionQueue項目を本Issue群（CE0/CE1/CE2/CE4）へ参照リンクとして同期（本Stream外ファイルは編集しない）。
+- [ ] T1: 本Issueと `issue-CE0-contract-freeze.md` の CG-01..05 定義を一致させる（再定義禁止）。
+- [ ] T2: `00_Prompt/ai_cognitive_externalization_requirements.md` の三層語彙を Consensus/Working/ContextProjection に同期する。
+- [ ] T3: CE1/CE2向け参照専用 Graph Contract Matrix を固定し、上書き禁止を明記する。
+- [ ] T4: DecisionQueue 参照（`UNC-VSC-CE-02-01..03`）の追跡可能性を本Issue内で維持する。
 
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|unreviewed|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/architecture.md 02_Architecture/schemas.md`
+  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 00_Prompt/ai_cognitive_externalization_requirements.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - Graph定義の二重化なし、Queue参照切れなし。

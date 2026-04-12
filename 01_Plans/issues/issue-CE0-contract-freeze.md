@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contracts only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `00_Prompt/ai_cognitive_externalization_requirements.md`
 - Expected verification level: `docs-check`
@@ -178,17 +178,17 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（文書限定）
+## 5) タスク分解（Stream B: 編集許可ファイル限定）
 
-- [ ] T1: 契約IDマトリクス表を ADR-0028 と本Issueで一致させる。
-- [ ] T2: `02_Architecture` の関連文書へ語彙同期（Core→Consensus, Working, autonomous mode）。
-- [ ] T3: `04_Documentation/local_llm_ops_guide.md` に運用上の禁止事項（auto-apply禁止・review昇格禁止）を同期。
-- [ ] T4: ドリフト検知コマンド結果をIssue末尾へ記録。
+- [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
+- [ ] T2: `00_Prompt/ai_cognitive_externalization_requirements.md` に CE0契約語彙（Consensus/Working/ContextProjection, proposal-only, safeMode）を同期する。
+- [ ] T3: CE1/CE2向け参照専用ハンドオフ（再定義禁止）を本Issue末尾のMatrixに固定する。
+- [ ] T4: ドリフト検知コマンド結果（collision=0 / 安全後退=0）を記録する。
 
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|Query Preview|direct write|proposal-only|safeMode|unreviewed" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/architecture.md 02_Architecture/schemas.md`
+  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 00_Prompt/ai_cognitive_externalization_requirements.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。
