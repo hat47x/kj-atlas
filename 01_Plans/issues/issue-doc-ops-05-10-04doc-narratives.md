@@ -240,3 +240,12 @@
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
+
+## 16) 同一ワークフロー固定（safeMode/漏洩防止後退禁止）
+
+- Workflow固定: **Plan → Execute → Verify → Proceed**
+- Verify失敗時: 最小差分で自己修復し、**最大3回**まで再試行。4回目相当は fail-safe 停止。
+- 後退禁止:
+  - safeMode既定ONを弱める記述
+  - share/export 漏洩防止を緩和する記述
+  - review自動昇格 / auto-apply を許容する記述

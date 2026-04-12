@@ -139,3 +139,24 @@ narrative 作成は次の順序を推奨する。
    - 真偽自動保証をしない非目標と、人間レビュー責務が明示されていることを確認する。
 
 失敗時は **最大3回まで修復して再判定** し、3回超過時は公開更新を停止して `01_Plans/` に論点を記録する。
+
+## 7. 同一ワークフロー（Plan → Execute → Verify → Proceed）
+
+本書に関わる改訂は、必ず次の同一ワークフローで実施する。
+
+1. **Plan**
+   - 変更範囲を `narratives.md` と対応issue memoに限定する。
+   - SafeMode 既定ON、share/export 漏洩防止を後退させる文言が差分に含まれないことを事前確認する。
+2. **Execute**
+   - narrative意味論・review責務・公開境界の明確化のみを実施し、実装仕様の再定義は行わない。
+3. **Verify**
+   - docs-check と差分整合を実施し、失敗時は最小修正で再検証する。
+   - **自己修復は最大3回まで**とし、4回目相当は fail-safe として停止する。
+4. **Proceed**
+   - Verify成功時のみ次の改訂へ進む。未解決論点は `01_Plans/issues/` に保留記録する。
+
+### 禁止事項（安全境界）
+
+- SafeMode の既定ONを弱める表現
+- unreviewed 保護や share/export 漏洩防止を緩和する表現
+- AI単独で `reviewed` 昇格や auto-apply を許可する表現
