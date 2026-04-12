@@ -166,12 +166,16 @@ def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
                 json={
                     "operation": operation,
                     "safeMode": True,
-                    "bundleHash": "bundle-1",
-                    "queryHash": "query-1",
+                    "equivalenceKey": "a" * 64,
+                    "bundleHash": "b" * 64,
+                    "sourceBundleHash": "mock:" + ("c" * 64),
+                    "queryHash": "a" * 64,
                     "dryRun": True,
+                    "sideEffect": "none",
                     "rejectReasonCode": "none",
                     "command": f"context-{operation}",
                     "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
                 },
                 headers={"x-trace-id": f"trace-{operation}"},
             )
@@ -182,12 +186,16 @@ def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
     for event in spy.events:
         assert set(event.metadata) >= {
             "operation",
+            "equivalenceKey",
             "bundleHash",
+            "sourceBundleHash",
             "queryHash",
             "dryRun",
+            "sideEffect",
             "rejectReasonCode",
             "command",
             "channel",
+            "schemaVersion",
         }
 
 
@@ -202,12 +210,16 @@ def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch)
             json={
                 "operation": "query",
                 "safeMode": True,
-                "bundleHash": "bundle-2",
-                "queryHash": "query-2",
+                "equivalenceKey": "d" * 64,
+                "bundleHash": "e" * 64,
+                "sourceBundleHash": "mock:" + ("f" * 64),
+                "queryHash": "d" * 64,
                 "dryRun": True,
+                "sideEffect": "none",
                 "rejectReasonCode": None,
                 "command": "context-query",
                 "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
             },
             headers={"x-trace-id": "trace-api"},
         )
@@ -225,7 +237,10 @@ def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch)
         monkeypatch.setattr(cli.httpx, "post", _fake_post)
 
         input_file = tmp_path / "context_query.json"
-        input_file.write_text('{"docId":"doc-cli","bundleHash":"bundle-2","queryHash":"query-2"}', encoding="utf-8")
+        input_file.write_text(
+            '{"docId":"doc-cli","equivalenceKey":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","bundleHash":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","sourceBundleHash":"mock:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}',
+            encoding="utf-8",
+        )
         result = cli.main(
             [
                 "--api-base-url",
@@ -246,3 +261,66 @@ def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch)
     assert api_event.eventType == cli_event.eventType == "query"
     assert set(api_event.metadata.keys()) == set(cli_event.metadata.keys())
     assert cli_event.metadata["channel"] == "cli"
+
+
+def test_context_audit_rejects_invalid_source_bundle_hash(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "proposal",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:not-hex",
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "proposal-diff",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+
+
+def test_context_audit_rejects_dry_run_side_effect(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "apply",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:" + ("3" * 64),
+                "dryRun": True,
+                "sideEffect": "write",
+                "command": "apply",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+
+
+def test_context_audit_rejects_query_hash_mismatch(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "bundle",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "queryHash": "3" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "context-bundle",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422

@@ -80,6 +80,12 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 - `channel`（`api` / `cli` / `gui`）
 - `schemaVersion`（CE4契約期間は固定値）
 
+必須バリデーション（CE4固定）:
+- `equivalenceKey` と `bundleHash` はともに 64桁hex を必須とする。
+- `queryHash` を送る場合は `equivalenceKey` と同値でなければならない。
+- `sourceBundleHash` は `mock:<64桁hex>` または本番 `64桁hex` のみ許容する。
+- `dryRun=true` の場合、`sideEffect=none` 以外は契約違反として失敗扱いにする。
+
 CE4運用期間の固定値:
 - `schemaVersion="ce4.audit.v1"`
 - `eventType` は `query | bundle | proposal | apply` 以外を許容しない。
