@@ -69,6 +69,29 @@
 
 相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
 
+
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
+
+Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、次を固定する。
+
+- Gate順序は **Gate C -> Gate D -> Gate E** のみ許可（逆順・並列判定は禁止）。
+- Gate Dの必須入力は **測定日 / 対象文書 / 4KPI判定（TFS, Decision Readiness, Support Deflection, Feedback Closure） / 逸脱有無 / 次アクション / 反映先リンク**。
+- evidence形式は **Date / Gate / Command / Result / Decision / Next action** の6項目を必須化。
+- Gate E Proceed条件は **Go=記録確定後に進行、Conditional=再判定日+担当記録後に限定進行、No-Go=見送り理由+再判定日+担当記録まで停止**。
+
+### Fail-safe（Phase6）
+
+次のいずれかを検知した場合は、運用更新を停止し修正提案のみ記録する。
+
+1. 指標定義の曖昧化（式・単位・対象範囲が未確定）。
+2. 責務未定義（測定責任者/承認責任者の欠落）。
+3. 未承認の閾値変更（承認記録なしのKPIしきい値改定）。
+
+### 定点レビュー
+
+- 次回定点レビュー: **2026-04-19 09:00 UTC**
+- 担当: **Stream G（Phase6 Operations Reviewer）**
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。
