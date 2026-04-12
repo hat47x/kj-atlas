@@ -70,7 +70,7 @@
 相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
 
 
-## 0.6 Phase6 Feedback Loop / KPI運用（Stream F）
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
 
 Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
 
@@ -79,30 +79,40 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する
 - evidence形式は **Date / Gate / Command / Result / Decision / Next action** の6項目を必須化。
 - Gate E Proceed条件は **Go=記録確定後に進行、Conditional=再判定日+担当記録後に限定進行、No-Go=見送り理由+再判定日+担当記録まで停止**。
 - KPIしきい値は承認済み台帳のみ有効とし、未承認変更は適用しない。
-- 2026-04-12 Read同期（Stream F）で、Gate C→D→E の単一路線と scorecard入力契約の一致を再確認した。
+- 停止条件は **3回超過 / 前提崩れ / 未定義競合** の3項目を固定し、該当時は Proceed しない。
+- 2026-04-12 Read同期（Stream G）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
+
+### Phase6 固定フロー（Plan → Execute → Verify → Proceed）
+
+1. **Plan**: 受入条件（AC）と完了条件（DoD）を先に固定する。
+2. **Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時更新する。
+3. **Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回までとする。
+4. **Proceed**: 次回測定サイクル条件を満たし、停止条件非該当の場合のみ引き渡す。
 
 ### Fail-safe（Phase6 / ADR衝突時のCDC化）
 
 次のいずれかを検知した場合は、運用更新を停止し **CDC（Context / Decision / Consequences）として論点化** する。
 
-1. KPI定義またはProceed条件が `ADR-0001` / `ADR-0019` / `ADR-0024` と衝突。
+1. KPI定義またはProceed条件が `ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028` と衝突。
 2. 責務未定義（測定責任者/承認責任者の欠落）。
 3. 未承認の閾値変更（承認記録なしのKPIしきい値改定）。
 4. Gate順序が `C→D→E` 以外で記述される。
 5. evidence項目欠落、または Command と Result が対応しない。
+6. 停止条件（3回超過 / 前提崩れ / 未定義競合）に該当。
 
 ### 定点レビュー
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**
-- 担当: **Stream F（Unified Feedback & KPI Audit Owner）**
+- 担当: **Stream G（Unified Feedback & KPI Audit Owner）**
 
-### 次回監査Runbook（Proceed固定）
+### 次回監査Runbook（Phase 1〜6固定）
 
 1. **Phase 1 Read**: 対象3文書（`issue-0019` / `issue-0020` / `operations.md`）を再Readし、Gate定義とKPI契約の差分有無を確認する。
-2. **Phase 2 Plan**: KPI定義（4KPI）と監査スコアカードの AC / DoD を固定する。
-3. **Phase 3 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時に更新する。
-4. **Phase 4 Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
-5. **Phase 5 Proceed**: 次回測定サイクル条件（Gate C完了、Gate D入力6項目、Gate E Proceed条件一致）を満たした場合のみ引き渡す。
+2. **Phase 2 ADR明文化**: 上流ADR（`ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028`）に照合し、契約・停止条件を固定する。
+3. **Phase 3 Plan**: KPI定義（4KPI）と監査スコアカードの AC / DoD を補完して固定する。
+4. **Phase 4 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時に更新する。
+5. **Phase 5 Verify（docs-check）**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
+6. **Phase 6 Proceed**: 次回測定サイクル条件（Gate C完了、Gate D入力6項目、Gate E Proceed条件一致）を満たした場合のみ引き渡す。
 
 ## 1. バックアップ / リストア
 
