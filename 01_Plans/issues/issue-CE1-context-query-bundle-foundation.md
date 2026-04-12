@@ -160,6 +160,25 @@
 - [ ] T3: Query Preview 必須導線（`previewConfirmed=false -> 422 preview_required`）を CE1 I/F参照箇所へ同期。
 - [ ] T4: CE-2連携キー（`sourceBundleHash`）を明示。
 
+### 5.1 A2 検証用 Stub Contract（mock-first 固定）
+
+CE1 は backend/frontend 実装完了待ちを禁止し、A2 は下記 stub 契約のみで検証可能とする。
+
+- `POST /context/query`（構文検証 + preview gate）
+  - request: `ContextQueryV1`（未定義キー禁止）
+  - `previewConfirmed=false` の場合: `422 preview_required`
+  - success(200): `{ "accepted": true, "queryCanonicalHash": "<sha256-hex>" }`
+- `POST /context/bundle`（決定論 bundle 生成）
+  - request: `{ "query": ContextQueryV1, "stubDatasetId": "A2-minimal-v1" }`
+  - success(200): `ContextBundleV1 & { "queryCanonicalHash": "<sha256-hex>" }`
+  - determinism fail: `409 nondeterministic_bundle`
+
+Error code は次を固定し、文言差分を許可しない。
+
+- `422 preview_required`
+- `409 nondeterministic_bundle`
+- `400 unknown_contract_key`
+
 ## 6) Verify（Phase 5 Read → Verify）
 
 - 実行コマンド:
@@ -167,6 +186,23 @@
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 契約語彙の欠落・重複がなく、validatorが成功する。
+  - A2 stub で同一 canonical query を3回再実行し、`queryCanonicalHash` と `bundleHash` が 3/3 一致する。
+  - `previewConfirmed=false` 呼び出しが常に `422 preview_required` で拒否される。
+  - 未定義キー混入時に常に `400 unknown_contract_key` で拒否される。
+
+### 6.1 契約テスト観点（Contract Test Matrix）
+
+- CT-01: Happy path（`previewConfirmed=true`）で `queryCanonicalHash` 生成。
+- CT-02: Preview gate（`previewConfirmed=false`）で `422 preview_required`。
+- CT-03: Determinism（同一入力3回）で `bundleHash` 全一致。
+- CT-04: Drift-stop（未定義キー）で `400 unknown_contract_key`。
+- CT-05: Downstream key continuity（`sourceBundleHash===bundleHash` 比較可能）。
+
+### 6.2 後方互換観点（Backward Compatibility）
+
+- CE1 v1 は **closed-world 契約**（未定義キー禁止）を維持する。
+- 互換拡張が必要な場合は `ContextQueryV2` / `ContextBundleV2` を新設し、v1 の必須キー・エラーコード意味論を変更しない。
+- CE2/CE4 側は `sourceBundleHash` と `previewConfirmed` の意味を v1 期間中固定し、別名導入を禁止する。
 
 ## 7) リスクとロールバック / Risks & rollback
 

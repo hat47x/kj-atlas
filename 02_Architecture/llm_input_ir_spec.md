@@ -65,6 +65,26 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 8. 契約ID衝突（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）または safeMode 後退を検知した場合は即停止する。
 9. CE2提案連携では `sourceBundleHash/status/reviewState` を必須監査キーとして扱い、proposal-only 境界（auto-apply禁止）を破ってはならない。
 
+### CE1 A2 Stub Contract Profile（検証用）
+
+CE1 の IR 接続検証（A2）は backend 完了待ちを禁止し、次の stub contract を最小プロファイルとして固定する。
+
+- `POST /context/query`
+  - request: `ContextQueryV1`（closed-world、未定義キー禁止）
+  - success: `200 { accepted: true, queryCanonicalHash }`
+  - error: `422 preview_required` / `400 unknown_contract_key`
+- `POST /context/bundle`
+  - request: `{ query: ContextQueryV1, stubDatasetId: "A2-minimal-v1" }`
+  - success: `200 ContextBundleV1 + queryCanonicalHash`
+  - error: `409 nondeterministic_bundle` / `400 unknown_contract_key`
+
+A2 contract test では次を機械判定する。
+
+1. 同一 canonical query 3回実行で `queryCanonicalHash` と `bundleHash` が 3/3 一致。
+2. `previewConfirmed=false` が常に `422 preview_required`。
+3. 未定義キーが常に `400 unknown_contract_key`。
+4. CE2 連携キー `sourceBundleHash === bundleHash` を比較可能。
+
 ---
 
 ## 2. KJ入力正規化（固定仕様）
@@ -497,7 +517,9 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 ### 9.3 Consequences
 
 - CE-2+ は `sourceBundleHash` に `ContextBundle.bundleHash` を必須連携する。
-- `previewConfirmed=false` は bundle 生成前に 422 とする（Query Previewバイパス禁止）。
+- `previewConfirmed=false` は bundle 生成前に `422 preview_required` とする（Query Previewバイパス禁止）。
+- 未定義キーを含む request は `400 unknown_contract_key` として reject する（CE1 v1 closed-world）。
+- 同一 canonical query で `bundleHash` が不一致となる場合は `409 nondeterministic_bundle` として fail-closed する。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` では未レビュー本文を入力IRへ含めない。
 - 機械判定式: `canonical(queryA)==canonical(queryB) && hashA==hashB` が真であること。
 - CE4監査では `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` の4キーを欠落させてはならない。

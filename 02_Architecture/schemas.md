@@ -94,6 +94,29 @@ export type ContextBundleV1 = {
 - CE1 v1 は **最小I/F固定** とし、`ContextQueryV1` / `ContextBundleV1` への未定義キー追加を禁止する（拡張は v2 でのみ許可）。
 - CE2/CE4 は backend 実装完了待ちを行わず、mock `ContextQuery/ContextBundle` 契約で先行検証する（mock-first）。
 
+CE1 A2 stub contract（検証専用）:
+
+- `POST /context/query`
+  - request: `ContextQueryV1`（closed-world; unknown key reject）
+  - success: `200 { accepted: true, queryCanonicalHash }`
+  - error: `422 preview_required`, `400 unknown_contract_key`
+- `POST /context/bundle`
+  - request: `{ query: ContextQueryV1, stubDatasetId: "A2-minimal-v1" }`
+  - success: `200 ContextBundleV1 + queryCanonicalHash`
+  - error: `409 nondeterministic_bundle`, `400 unknown_contract_key`
+
+Contract test観点（CE1 v1）:
+
+1. `previewConfirmed=false` は常に `422 preview_required`。
+2. 同一 canonical query 3回再実行で `queryCanonicalHash` / `bundleHash` が3/3一致。
+3. 未定義キーは常に `400 unknown_contract_key`。
+4. CE2/CE4 連携キー `sourceBundleHash === bundleHash` を比較可能。
+
+後方互換観点（CE1 v1）:
+
+- v1 はエラーコード意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を固定し、変更しない。
+- 拡張時は v2 を追加し、v1 の必須キーと判定式 `sameQuery && sameBundle` を維持する。
+
 `bundleHash` 契約（`CE1-HASH-DET-IF` / bundleHash関連節）:
 1. `ContextBundle` から `generatedAt` / `traceId` / `providerLatencyMs` など非決定論フィールドを除外する。
 2. 配列順序は `selected=id asc`, `relations=(type,from,to) asc`, `evidence=cardId asc`, `contradictions=(weight desc,id asc)` に正規化する。
