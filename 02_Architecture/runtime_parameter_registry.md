@@ -47,7 +47,7 @@
 | `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name ヘッダ名 |
 | `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject ヘッダ名 |
 | `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決方式 |
-| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `bundle_hash` | CE4 API/CLI/GUI 同値性判定モード |
+| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 API/CLI/GUI 同値性判定モード |
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | `apply --dry-run` 副作用0を強制 |
 | `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | query/bundle/proposal/apply 欠損時 fail-closed |
 | `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
@@ -55,8 +55,8 @@
 補足:
 - `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
-- `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
-- CE4同値性契約は Phase 1〜6 で固定し、`equivalenceKey + bundleHash` のAND判定を共通基準とする。
+- `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `equivalence_and_bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
+- CE4同値性契約は Phase 1〜6 で固定し、`equivalenceKey + bundleHash` のAND判定を共通基準とする（単独判定を許可しない）。
 
 ## 3. CE4 監査イベント必須キー（契約）
 

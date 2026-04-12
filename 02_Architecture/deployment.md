@@ -38,7 +38,7 @@ MVPでは、以下の3要素で十分です。
   - prod: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`
 
 - `KJ_ATLAS_LLM_PROVIDER`：`none | local | local_http | large-scale | large_scale | external`
-- `KJ_ATLAS_CE4_EQUIVALENCE_MODE`：`bundle_hash`（CE4同値性判定の既定）
+- `KJ_ATLAS_CE4_EQUIVALENCE_MODE`：`equivalence_and_bundle_hash`（`equivalenceKey + bundleHash` AND 固定）
 - `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT`：`true`（dry-run副作用0強制）
 - `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS`：`true`（監査4イベント欠損を成功扱いしない）
 - `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK`：`true`（`sourceBundleHash=mock:<hash>` を許容）
@@ -75,7 +75,7 @@ services:
     environment:
       - KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
       - KJ_ATLAS_LLM_PROVIDER=none
-      - KJ_ATLAS_CE4_EQUIVALENCE_MODE=bundle_hash
+      - KJ_ATLAS_CE4_EQUIVALENCE_MODE=equivalence_and_bundle_hash
       - KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT=true
       - KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS=true
       - KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK=true
