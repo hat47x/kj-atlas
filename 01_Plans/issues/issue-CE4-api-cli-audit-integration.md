@@ -88,11 +88,14 @@
 
 ## 3) Phase 3 Plan（AC/DoD補完提案）
 
+> Phase進行は `Read → ADR CDC → Plan → Execute → Verify → Proceed` の固定順序を維持し、Verifyで未収束（自己修復3回超過）ならProceedを禁止する。
+
+
 ### 3.1 受入条件 / Acceptance criteria
 
 - [ ] API/CLI/GUI で同一Query時に同一bundleHashを返す。
 - [ ] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
-- [ ] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし）を保証。
+- [ ] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし、review昇格なし）を保証。
 - [ ] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能（依存切断）。
 - [ ] 失敗時のreject reasonが分類コード付きで記録される。
 - [ ] CIで同値性テストが自動実行される。

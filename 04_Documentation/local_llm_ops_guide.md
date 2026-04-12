@@ -45,6 +45,8 @@ curl -fsS http://localhost:8000/healthz
 
 Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/bundle/proposal/apply`）を固定契約として扱う。
 
+CE4実行フェーズは `Read → ADR CDC → Plan → Execute → Verify → Proceed` の固定順序で運用し、各フェーズで `equivalenceKey + bundleHash` のAND条件を再確認する。
+
 
 ### 4.0 CE Contract gate（Stream B固定契約の運用反映）
 
@@ -179,30 +181,3 @@ CE4運用期間の固定値:
 - SafeMode既定ONを維持する。
 - 未レビュー本文の自動確定を許可しない。
 - AI出力は提案として扱い、確定は人手レビューで実施する。
-
-## 4. 最小監査チェック
-
-以下を1セットとして記録する。
-
-- query
-- bundle
-- proposal
-- apply（dry-run推奨）
-
-少なくとも `bundleHash` と `sourceBundleHash` を記録し、ログ欠落を成功扱いしない。
-
-## 5. 障害時
-
-- local provider 障害: 外部送信へ自動フォールバックしない。まず復旧または手動判断。
-- 監査欠落: 失敗として扱い、再実行後に再判定。
-- 安全境界違反: 出力公開を停止し、設定を是正してから再開。
-
-## 6. Go/No-Go gate（公開判定）
-
-公開「Go」は以下を満たす場合のみ:
-
-1. Audience / Goal / Non-goal / Public boundary / Outcome / Related が明示されている。
-2. SafeMode既定ON、未レビュー自動確定禁止が明記されている。
-3. 内部専用情報（秘密値・社内限定URL・承認ログ）が含まれていない。
-
-未充足時は「No-Go」として公開更新を停止する。
