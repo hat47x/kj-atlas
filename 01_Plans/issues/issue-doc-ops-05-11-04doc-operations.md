@@ -20,7 +20,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `DOC-OPS-05 document classification queue`
+- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
 ## 1) 課題 / Problem statement
 
@@ -197,3 +197,34 @@
 ### Phase 6 Proceed（証跡記録）
 
 - 本Issueに rerun-02 の同期証跡を記録し、Open化判断に反映。
+
+## 15) Stream F classification-quality pass（Issue memo only）
+
+### Phase 1 Read（全14メモのメタ整合チェック）
+- `Requirement meta I/F` の必須キー（RequirementID / Statement / PriorityClass / AcceptanceScenario / GoNoGoGate / SecurityGateImpact / VerificationLevel / DecisionStatus / DecisionQueueRef）を再確認。
+- `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
+- `DecisionStatus=Fixed` のため、`DecisionQueueRef` を `N/A（DecisionStatus=Fixed）` に正規化。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **追加ADR不要**（既存Issue内CDCで十分）。
+- Context: DOC-OPS-05は文書本文改稿ではなく「分類判定の品質固定」が主目的。
+- Decision: 本Issueの分類は **Improve external** を維持し、判定メタの再現性を優先する。
+- Consequences: Open化時の差し戻し理由を「分類メタ不足」に限定できる。
+
+### Phase 3 Plan（AC/DoD不足の補完）
+- AC補強: Go/No-Go判定条件（Audience / Goal / 公開境界 / 次アクション）が本文で追跡可能であること。
+- DoD補強: Proceed判定を `Ready / Hold / Needs-decision` の三値で明示すること。
+
+### Phase 4 Execute（issue本文整備）
+- 既存本文の分類方針を変更せず、メタ整合（DecisionQueueRef正規化・Open判定基準）のみ整備。
+- 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
+
+### Phase 5 Verify（docs-check / 自己修復上限3回）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- 実行: `git diff --check`
+- 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
+
+### Phase 6 Proceed（Open化候補判定）
+- Open readiness: **Ready**
+- 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
+- Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
