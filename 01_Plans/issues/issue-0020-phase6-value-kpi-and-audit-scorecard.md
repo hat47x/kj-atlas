@@ -4,14 +4,14 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream F
+- Owner: Stream G
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
-- Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `04_Documentation/operations.md`
+- Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `ADR-0028`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
 
 ## 1) Problem statement
 
-KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開判定（Gate E）への受け渡しが揺れると監査結果の比較ができない。Stream F は **KPI監査を運用フィードバックと一体運用** し、単一路線の監査導線を固定する。
+KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開判定（Gate E）への受け渡しが揺れると監査結果の比較が不能になる。Stream G は **KPI監査を運用フィードバックと一体運用** し、単一路線の監査導線を固定する。
 
 ## 2) Phase 1 Read（状態同期）
 
@@ -20,37 +20,48 @@ KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開
 - KPIしきい値は承認済み台帳のみ有効とする。
 - 2026-04-12 の Read同期で、3文書（`issue-0019` / `issue-0020` / `operations.md`）の入力契約一致を再確認した。
 
-## 3) Phase 2 Plan（KPI定義・監査スコアカードAC/DoD）
+## 3) Phase 2 ADR明文化（契約と停止条件の固定）
 
-### 3.1 KPI scope（固定）
+- 上流整合は `ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028` を参照し、KPI契約の独自解釈を禁止する。
+- Gate C→D→E、4KPI、evidence6項目、Proceed条件（Go/Conditional/No-Go）を ADR整合契約として固定する。
+- 停止条件を次で固定する（Fail-safe）:
+  1. 修復試行が3回を超過。
+  2. 前提崩れ（Gate順序・KPI定義・承認済みしきい値前提の崩壊）。
+  3. 未定義競合（上流ADR間で解釈不能な競合が残存）。
+
+## 4) Phase 3 Plan（AC/DoD補完）
+
+### 4.1 KPI scope（固定）
 
 - TFS
 - Decision Readiness
 - Support Deflection
 - Feedback Closure
 
-### 3.2 Acceptance criteria
+### 4.2 Acceptance Criteria
 
 - [x] scorecard 4項目が Gate D の必須評価対象として固定されている。
 - [x] Gate C 完了条件（未分類=0 または保留理由あり）が Gate D の開始条件として固定されている。
 - [x] Gate D 入力契約6項目が固定されている。
 - [x] Gate E Proceed条件（Go / Conditional / No-Go）が固定されている。
+- [x] 停止条件（3回超過 / 前提崩れ / 未定義競合）が3文書で一致している。
 - [x] evidence形式が3文書で一致している。
 
-### 3.3 DoD
+### 4.3 DoD
 
 - [x] 3文書で Gate C→D→E と KPI語彙が一致。
 - [x] 未定義KPIが混入していない。
 - [x] docs-check / 横断語彙照合 / diff整合の結果を記録。
+- [x] 停止条件に該当する場合の CDC 化導線を明文化。
 
-## 4) Phase 3 Execute（運用手順と計測手順の同期）
+## 5) Phase 4 Execute（運用手順と計測手順の同期）
 
-### 4.1 Gate C → Gate D 接続
+### 5.1 Gate C → Gate D 接続
 
 - Gate C で分類済みのエントリのみ scorecard 対象に含める。
 - 未分類が残る場合、Gate D を停止し保留理由・再判定日を先に記録する。
 
-### 4.2 Gate D（KPI scorecard integrity）
+### 5.2 Gate D（KPI scorecard integrity）
 
 scorecard必須入力は次で固定する。
 
@@ -61,7 +72,7 @@ scorecard必須入力は次で固定する。
 - 次アクション
 - 反映先リンク（issue/operations）
 
-### 4.3 Gate E（Proceed decision）
+### 5.3 Gate E（Proceed decision）
 
 - Gate D 結果を入力として Go / Conditional / No-Go を判定する。
 - Proceed条件:
@@ -69,9 +80,9 @@ scorecard必須入力は次で固定する。
   - Conditional: 再判定日 + 担当記録後に限定進行。
   - No-Go: 見送り理由 + 再判定日 + 担当記録まで停止。
 
-## 5) Phase 4 Verify（矛盾チェック）
+## 6) Phase 5 Verify（docs-check）
 
-### 5.1 Validation evidence（統一形式）
+### 6.1 Validation evidence（統一形式）
 
 - Date: 2026-04-12
   - Gate: docs-check
@@ -81,39 +92,41 @@ scorecard必須入力は次で固定する。
   - Next action: KPI語彙照合へ進む
 - Date: 2026-04-12
   - Gate: KPI cross-reference
-  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream F" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
-  - Result: Pass（3文書でKPI語彙とGate依存が一致）
+  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
+  - Result: Pass（3文書でKPI語彙・Gate依存・停止条件が一致）
   - Decision: 監査導線を固定
   - Next action: 差分整合確認へ進む
 - Date: 2026-04-12
   - Gate: diff integrity
   - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
   - Result: Pass（許可ファイルのみ差分）
-  - Decision: Proceed可能
+  - Decision: Proceed判定へ進む
   - Next action: 次回測定条件を確定
 
-### 5.2 修復上限
+### 6.2 修復上限
 
 - docs-check / 用語照合 / diff整合の自己修復は最大3回。
-- 4回目相当は Fail-safe 停止。
+- 4回目相当は Fail-safe 停止（Proceed禁止）。
 
-## 6) Phase 5 Proceed（次の測定サイクル条件）
+## 7) Phase 6 Proceed（次の測定サイクル条件）
 
 1. Gate C 完了条件（未分類の扱い）を満たしている。
 2. Gate D 入力契約6項目が揃っている。
 3. Gate E 判定と次アクションが Proceed条件に一致している。
 4. evidence 6項目形式を各Gateで満たしている。
 5. docs-check / KPI語彙照合 / diff整合が Pass。
+6. 停止条件（3回超過 / 前提崩れ / 未定義競合）のいずれにも該当しない。
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**。
-- 担当: **Stream F（Unified KPI & Audit Scorecard Owner）**。
+- 担当: **Stream G（Unified KPI & Audit Scorecard Owner）**。
 
-## 7) Fail-safe（ADR衝突時のCDC化）
+## 8) Fail-safe（ADR衝突時のCDC化）
 
 次を検知した場合は停止し、CDC（Context / Decision / Consequences）を作成して論点化する。
 
-- KPI定義が `ADR-0001` / `ADR-0019` / `ADR-0024` と矛盾。
+- KPI定義が `ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028` と矛盾。
 - 未承認のしきい値変更。
 - 未定義KPIの混入またはKPI名称不一致。
 - Gate順序が `C→D→E` 以外。
 - evidence項目欠落または Result の根拠不在。
+- 停止条件（3回超過 / 前提崩れ / 未定義競合）に該当。
