@@ -206,3 +206,60 @@ CE2 Stream C は、以下の固定フローでのみ進行する。
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
 - スコープ逸脱（03_Implement/**、CE3/CE4 issue、dashboard、issues/README）要求が発生した場合は停止する。
+
+
+## 12) ADR必要性判定（Phase 2 判定結果）
+
+- 判定: **新規ADRは現時点では不要**（既存 `ADR-0028` と CE0/CE1/CE2 Contract Freeze で意思決定が固定済み）。
+- CDC明文化（差分追記）:
+  - Context: Stream C は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
+  - Decision: 新規ADRを起票せず、当Issueと `02_Architecture/llm_quality_strategy.md` / `02_Architecture/llm_runtime_constraints.md` を単一正本として同期する。
+  - Consequences: 仕様変更要求が Contract ID 追加/意味変更を伴う場合は **ADR起票を再判定し、承認待ちで停止** する。
+- 承認待ち条件（Stop & Ask）:
+  - `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF` の意味変更。
+  - `status` / `reviewState` 列挙値の追加。
+  - safeMode既定ONまたは漏洩防止境界（share/export）を弱める要求。
+
+## 13) AC/DoD 合意版（Phase 3 固定）
+
+### Acceptance Criteria（合意版）
+
+- [ ] CE2提案I/Fを `proposalId/diff/sourceBundleHash/rationale/status/reviewState` で固定し、必須化する。
+- [ ] `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|reviewed` のみ許可する。
+- [ ] auto-apply 経路は UI/API/worker すべてで 0 件を維持する。
+- [ ] `reviewState=reviewed` へのAI自動昇格は 0 件を維持する。
+- [ ] CE1ドリフト検知時は `status=held` で fail-closed 停止し、Proceedを禁止する。
+- [ ] safeMode既定ONと未レビュー本文除外（reviewed-only既定）を非破壊で確認する。
+
+### Definition of Done（合意版）
+
+- [ ] Phase 1〜6 の実施証跡を残し、各Phase開始時のReadチェックを記録する。
+- [ ] Verify試行回数（`verifyAttempt=1..3`）と停止理由を監査ログに残す。
+- [ ] 4回目相当の再試行は行わず `status=held` で停止した事実を記録する。
+- [ ] CE3引継ぎ項目（後方互換固定）を文書化し、改名・省略・型変更禁止を再確認する。
+
+## 14) Verify / Proceed 証跡テンプレート（Phase 5-6）
+
+### 14.1 Verify evidence（監査可能性）
+
+- `verifyAttempt`: `1|2|3`
+- `phaseGate`: `Read|ADR|Plan|Execute|Verify|Proceed`
+- `proposalId`
+- `sourceBundleHash`（mock可: `mock:<hash>`）
+- `statusBefore` / `statusAfter`
+- `reviewStateBefore` / `reviewStateAfter`
+- `driftDetected`: `true|false`
+- `safeModeDefaultOnConfirmed`: `true|false`
+- `unreviewedLeakPrevented`: `true|false`
+- `autoApplyPathCount`: `0`
+- `autoReviewPromotionCount`: `0`
+- `decision`: `pass|held|stop`
+
+### 14.2 Proceed evidence（再現可能性）
+
+- `contractVersion`: `CE2-LOW-RISK-AI-ASSIST/v1`
+- `contractIds`: `[CE2-PROPOSAL-IF, CE2-LIFECYCLE-IF, CE2-DRIFT-STOP-IF, CE2-NO-AUTOAPPLY-IF]`
+- `compatibilityCheck`: `ce3_backward_compatible=true`
+- `stopConditionChecked`: `safeModeRegression|leakageBoundaryRegression|undefinedTransition|contractCollision`
+- `nextAction`: `proceed_ce3|hold_for_human_decision`
+

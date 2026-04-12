@@ -128,3 +128,42 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 - Verify 修復は最大3回までとし、4回目相当は `status=held` で停止する。
 - `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の各Phase開始時に Read チェックを実施し、契約ドリフトを先に検知する。
 - CE-3 への引継ぎでは CE-2 Proposal I/F の後方互換（改名・省略・型変更禁止）を必須とする。
+
+## 9. CE-2 low-risk 運用固定（safe-side）
+
+### 9.1 Serial Phase gate（Stream C）
+
+CE2 は次の順序を固定し、前Phaseの証跡なしで次Phaseへ進まない。
+
+1. Read
+2. ADR CDC（必要性判定を含む）
+3. Plan（AC/DoD固定）
+4. Execute
+5. Verify（最大3回修復）
+6. Proceed（CE3引継ぎ）
+
+### 9.2 Fail-safe first
+
+Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer B は実行しない。
+
+- safeMode既定ONの後退
+- 未レビュー本文の混入（reviewed-only既定違反）
+- auto-apply経路の存在
+- AIによる `reviewState=reviewed` 自動昇格
+- CE1/CE2 契約ドリフト未解消（`status=held` 未遷移）
+
+### 9.3 Verify/Proceed 証跡最小キー
+
+監査可能性と再現可能性のため、CE2品質ゲート結果には次を必須記録する。
+
+- `verifyAttempt`（1..3）
+- `proposalId`
+- `sourceBundleHash`
+- `statusBefore` / `statusAfter`
+- `reviewStateBefore` / `reviewStateAfter`
+- `safeModeDefaultOnConfirmed`
+- `autoApplyPathCount`
+- `autoReviewPromotionCount`
+- `decision`（`pass|held|stop`）
+
+4回目相当の修復は許可せず `status=held` で停止する。
