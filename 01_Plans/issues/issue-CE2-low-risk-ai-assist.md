@@ -19,21 +19,23 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `A` (Critical Path / CE2専任 / Contracts + Docs + status drift-stop)
+- Stream: `C` (CE2 proposal-only専任 / Contracts + Docs + status drift-stop)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
-## 0) Serial Phase Contract（Stream A 固定フロー）
+## 0) Serial Phase Contract（Stream C 固定フロー）
 
-CE2 Stream A は、以下の固定フローでのみ進行する。
+CE2 Stream C は、以下の固定フローでのみ進行する。
 
 1. **Phase 1: Read**（必須I/F再確認）
-2. **Phase 2: ADR明文化**（Context / Decision / Consequences）
+2. **Phase 2: ADR CDC**（Context / Decision / Consequences）
 3. **Phase 3: Plan**（AC/DoD不足提案）
 4. **Phase 4: Execute**（status遷移とdrift-stop固定）
 5. **Phase 5: Verify**（最大3回まで修復して再検証）
 6. **Phase 6: Proceed**（CE3向け参照I/F引継ぎ）
 
 `Verify` で3回修復しても受入条件を満たせない場合は、`status=held` で停止し、人手判断待ちへ遷移する。
+
+各Phase開始時には、直前成果物との差分を対象に `Read` チェックポイントを実施し、契約語彙（`proposalId/diff/sourceBundleHash/status/reviewState`）と状態遷移定義を再確認する。
 
 ## 1) Phase 1 Read（必須I/F抽出 + mock許容）
 
@@ -51,13 +53,13 @@ CE2 Stream A は、以下の固定フローでのみ進行する。
 | `CE2-DRIFT-STOP-IF` | CE1差分検知時の停止契約 | 差分検知時は `status=held` で停止、Proceed禁止 |
 | `CE2-NO-AUTOAPPLY-IF` | proposal-only 強制 | API/UI/worker すべて auto-apply 禁止 |
 
-## 2) Phase 2 ADR明文化（Context / Decision / Consequences）
+## 2) Phase 2 ADR CDC（Context / Decision / Consequences）
 
 ### Context
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream A は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream C は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ### Decision
@@ -148,7 +150,7 @@ CE2 Stream A は、以下の固定フローでのみ進行する。
 
 ## 5.1) DoD（Contract-only）
 
-- [ ] 各Phaseで `Read -> ADR明文化 -> Plan -> Execute -> Verify -> Proceed` を記録する。
+- [ ] 各Phaseで `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` を記録する。
 - [ ] Verify 修復は 3 回以内。4 回目相当の失敗時は即停止し推測で継続しない。
 - [ ] CE1 mock I/F 依存切断（待機禁止）を維持し、実装詳細の規定を追加しない。
 - [ ] `CE2-PROPOSAL-IF / CE2-LIFECYCLE-IF / CE2-DRIFT-STOP-IF / CE2-NO-AUTOAPPLY-IF` が CE0/CE1 契約と矛盾しない。
@@ -199,7 +201,7 @@ CE2 Stream A は、以下の固定フローでのみ進行する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 11) フェイルセーフ（Stream A 固定）
+## 11) フェイルセーフ（Stream C 固定）
 
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
