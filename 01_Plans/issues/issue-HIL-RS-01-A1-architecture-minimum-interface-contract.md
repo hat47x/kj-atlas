@@ -72,3 +72,26 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 ## 8) Fail-safe
 
 - 3回修復超過 / 未承認決定確定化 / 固定識別子不一致で停止。
+
+## 9) Prohibited Transitions / Stop Conditions（凍結）
+
+- `Pending -> Open` を `Approved/Rejected` を経ずに通過させる遷移は禁止。
+- `a1Status != Done` での `A2/A3 Draft -> Open` は禁止。
+- `schemaVersion != 1.0.0` / `overridePolicy != human_dual_control_only` / freeze flags不一致は即停止。
+- Self-Correction は最大3回。4回目は実行禁止（停止報告へ移行）。
+
+停止報告テンプレ（必須）:
+1. 失敗条件
+2. 影響契約ID
+3. 必要な人間判断
+
+## 10) Downstream Handoff（固定値一覧 / 変更禁止）
+
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+> 下流レーンは上記固定値を参照のみ可。変更要求はA1へ差し戻す。

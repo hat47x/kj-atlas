@@ -86,6 +86,18 @@
 - **Verify**: 3回修復上限を超えた継続を禁止することを再確認した。
 - **Proceed**: Phase 6でCE1/CE2参照専用のContract Matrixを固定する。
 
+## 0.5) Phase 1 Read Snapshot（契約・統治 現状表）
+
+| Contract / Key | Current Value (as-is) | schemaVersion | overridePolicy | Freeze Flags |
+| --- | --- | --- | --- | --- |
+| `CG-01` | Working/ContextProjection/Consensus の3層責務分離 | `N/A (meta contract)` | `N/A` | `graphRoleSplitLocked=true` |
+| `CG-02` | `Working -> Consensus = patch + approval only` | `N/A (meta contract)` | `N/A` | `directWriteBlocked=true` |
+| `CG-03` | Projectionはread-only / bundle専用 | `N/A (meta contract)` | `N/A` | `projectionOverwriteBlocked=true` |
+| `CG-04` | autonomousでもproposal-only | `N/A (meta contract)` | `human_dual_control_only`（A1連携時） | `autoApplyBlocked=true` |
+| `CG-05` | 監査4点セット欠損は成功扱い禁止 | `N/A (meta contract)` | `N/A` | `auditIncompleteBlocked=true` |
+
+> 判定: Core語彙は履歴注記専用、契約語彙は `Consensus Graph` 固定を継続する。
+
 ## 1) Context
 
 - 従来Core Graphは「唯一正本」前提だったが、AI単独運用・主体別キャンバス要件を吸収できない。
@@ -174,14 +186,14 @@
 ## 5) タスク分解（Stream B: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-contract-freeze.md` の CG-01..05 定義を一致させる（再定義禁止）。
-- [ ] T2: `00_Prompt/ai_cognitive_externalization_requirements.md` の三層語彙を Consensus/Working/ContextProjection に同期する。
+- [ ] T2: 編集許可ファイル内の三層語彙（Consensus/Working/ContextProjection）だけを同期する（指定外ファイルは非編集）。
 - [ ] T3: CE1/CE2向け参照専用 Graph Contract Matrix を固定し、上書き禁止を明記する。
 - [ ] T4: DecisionQueue 参照（`UNC-VSC-CE-02-01..03`）の追跡可能性を本Issue内で維持する。
 
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 00_Prompt/ai_cognitive_externalization_requirements.md`
+  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - Graph定義の二重化なし、Queue参照切れなし。

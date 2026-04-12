@@ -106,6 +106,22 @@ Any other transition is Block.
 - Consequences:
   - A2/A3で契約再定義をしない。変更要求はA1へ差し戻し。
 
+
+## 6.1) Stop Conditions（Contract Freeze）
+
+次のいずれかを検知した場合は即停止し、推測で継続しない。
+
+- `schemaVersion` 不一致（`1.0.0` 以外）
+- `overridePolicy` 不一致（`human_dual_control_only` 以外）
+- freeze flags 不一致（`contractLinkLocked/sharedResourceFreeze`）
+- 未定義遷移（`Pending -> Approved|Rejected` 以外）
+- Self-Correction 3回超過
+
+停止報告テンプレ:
+1. 失敗条件
+2. 影響契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）
+3. 必要な人間判断
+
 ## 6) Fail-safe
 
 即停止条件:

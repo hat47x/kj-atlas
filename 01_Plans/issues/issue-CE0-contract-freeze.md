@@ -7,7 +7,7 @@
 - Owner: Plan Owner
 - Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Critical Path / Contracts only）
 - Related Backlog: `CE-0`
-- Related ADR/Spec: `ADR-0028`, `00_Prompt/ai_cognitive_externalization_requirements.md`
+- Related ADR/Spec: `ADR-0028`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -86,6 +86,18 @@
 - **Execute**: 検証コマンドを固定し、衝突0件以外はProceed不可と定義した。
 - **Verify**: Contract ID collision=0 / 語彙 collision=0 / SafeMode後退0 を同時条件として扱う。
 - **Proceed**: Phase 6でCE1/CE2へ参照専用Contract Matrixを引き渡す。
+
+## 0.5) Phase 1 Read Snapshot（契約・統治 現状表）
+
+| Contract / Key | Current Value (as-is) | schemaVersion | overridePolicy | Freeze Flags |
+| --- | --- | --- | --- | --- |
+| `CE0-CTX-IF` | ContextQuery/ContextBundle最小I/F（Query Preview必須, deterministic `bundleHash`） | `N/A (meta contract)` | `N/A` | `contractIdFixed=true` |
+| `CE0-SAFEMODE-IF` | safeMode既定ON + `allowUnreviewedText=false` 既定 | `N/A (meta contract)` | `N/A` | `safemodeRegressionBlocked=true` |
+| `CE0-REVIEW-IF` | `human_reviewed` 昇格は人手のみ | `N/A (meta contract)` | `human_dual_control_only`（A1連携時） | `reviewAutoPromotionBlocked=true` |
+| `CG-01..05` | Working/Projection/Consensus 分離 + proposal-only + 監査4点セット必須 | `N/A (meta contract)` | `N/A` | `directWriteBlocked=true`, `autoApplyBlocked=true` |
+| `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（参照） | A1契約凍結パック | `1.0.0` | `human_dual_control_only` | `contractLinkLocked=true`, `sharedResourceFreeze=true` |
+
+> 判定: CE0はメタ契約凍結（schemaVersion非対象）、A1は実体I/F凍結（schemaVersion対象）として直列管理する。
 
 ## 1) Context
 
@@ -181,14 +193,14 @@
 ## 5) タスク分解（Stream A: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
-- [ ] T2: `00_Prompt/ai_cognitive_externalization_requirements.md` に CE0契約語彙（Consensus/Working/ContextProjection, proposal-only, safeMode）を同期する。
+- [ ] T2: 編集許可ファイル内（CE0 / CoreGraph / HIL-RS A1契約文書）で契約語彙を同期し、指定外ファイル編集を行わない。
 - [ ] T3: CE1/CE2向け参照専用ハンドオフ（再定義禁止）を本Issue末尾のMatrixに固定する。
 - [ ] T4: ドリフト検知コマンド結果（collision=0 / 安全後退=0）を記録する。
 
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 00_Prompt/ai_cognitive_externalization_requirements.md`
+  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。
