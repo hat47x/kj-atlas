@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream D
+- Owner: Stream I
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
@@ -19,6 +19,7 @@ KPI scorecard 自体は定義済みだが、Gate C（feedback分類）との接�
 - Gate依存は `C→D→E` を固定し、Gate C 完了前の Gate D 実行を禁止。
 - evidence形式は `Date / Gate / Command / Result / Decision / Next action` を6項目必須で固定。
 - KPIしきい値は承認済み定義のみ有効とし、未承認変更は禁止。
+- 2026-04-12 の Read同期で、Gate C完了条件→Gate D scorecard→Gate E Proceed条件の依存を Stream I 観点で再確認。
 
 ## 3) Phase 2 ADR CDC（新規ADR要否判定）
 
@@ -145,4 +146,4 @@ scorecard記録の必須項目を次に固定する。
 - 残リスク: 反映先リンクの記入漏れによる監査追跡欠落。
 - 次アクション: 次工程へは「運用契約の固定結果」のみを引き渡し、実装依頼は含めない。
 - 次回定点レビュー: **2026-04-19 09:00 UTC**。
-- 担当: **Stream D（Operations KPI & Audit Scorecard Reviewer）**。
+- 担当: **Stream I（Operations KPI & Audit Scorecard Evaluator）**。
