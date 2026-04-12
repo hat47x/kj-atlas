@@ -2,7 +2,7 @@
 
 - Status: Accepted (2026-03-06, D1〜D4 fixed)
 - Owner: Security Officer / System Owner / Platform Operator
-- Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`
+- Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/e2e_testing.md`
 - Related: `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md`
 
 ## 0. この文書の読み方（最初にここだけ読む）

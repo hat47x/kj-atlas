@@ -114,7 +114,7 @@
 - share/export 漏洩防止の緩和要求
 - D1〜D4・役割分離・導線の不一致が解消しない状態
 
-## 9. DOC-OPS-05 Stream H 専任サイクル（P1→P6）
+## 9. DOC-OPS-05 Stream G 専任サイクル（P1→P6）
 
 > 1サイクルで1文書のみを扱う。各Phase冒頭で本書を再読する。
 
@@ -143,6 +143,7 @@
 
 - `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator|Plan → Execute → Verify → Proceed|フェイルセーフ" 04_Documentation/security_operational_guidelines.md`
 - `git diff --check`
+- D1〜D4 固定値の不一致を検知した場合は即時停止し、修復完了まで Proceed へ進めない。
 
 ### P6 Proceed
 

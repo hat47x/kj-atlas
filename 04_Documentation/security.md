@@ -30,16 +30,16 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - セキュリティ方針・運用判断・実行手順の文書境界が明確になり、公開文書としての再利用性が向上する。
 - DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を継続監査しやすくなる。
 
-### 0.2 Stream H 直列同期（security フェーズ）
+### 0.2 Stream G 直列同期（security フェーズ）
 
-Stream H では `operations.md` 同期完了後に本書を更新する。確認順序は次のとおり。
+Stream G では `operations.md`（参照のみ）同期完了後に本書を更新する。確認順序は次のとおり。
 
 1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
 2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
 3. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
 4. 相互リンク一致（`security.md -> security_operational_guidelines.md -> operations.md -> e2e_testing.md`）
 
-不一致が残る場合は e2e フェーズへ進まずに停止する。
+不一致が残る場合は e2e フェーズへ進まずに停止する。D1〜D4 の不整合を検知した場合は即時停止する。
 
 
 ## 1. 前提と範囲
@@ -385,9 +385,9 @@ for event in hr_events:
 
 運用時は `operations.md` 3.5 の時系列Runbookに追従し、セキュリティ確認を次の順で実施する。
 
-1. Requested: 申請IDを発行し、対象tenant・理由・復旧条件を記録。
-2. Approved: Security Officer → System Owner の順で承認し、TTL=4h内に完了。
-3. ExceptionActive: PII非保存・SafeMode境界維持・代理承認なしを確認しながら運用。
+1. DraftRequest: 申請IDを発行し、対象tenant・理由・復旧条件を記録。
+2. ApprovalPending -> Approved: Security Officer → System Owner の順で承認し、TTL=4h内に完了。
+3. ActiveException: PII非保存・SafeMode境界維持・代理承認なしを確認しながら運用。
 4. RollbackPending: 最大2h到達または停止条件成立で即時復旧を開始。
 5. Closed: strict復帰検証を記録し、48h以内の事後レビュー計画を確定。
 6. StoppedForClarification: 1項目でも未確定があれば停止し、回答確定まで切替禁止。
@@ -396,14 +396,7 @@ for event in hr_events:
 - Security Officer / System Owner は承認判断と妥当性確認を担当。
 - Platform Operator は承認済み内容のみを実行し、変更台帳・監査IDの相互参照を記録。
 
-状態語彙マッピング（AUTH-OPS-03 canonical との整合）:
-
-| Runbook語彙（operations/security） | Canonical語彙（`strict_mode_exception_approval_flow.md`） | 意味 |
-|---|---|---|
-| `Requested` | `DraftRequest` / `ApprovalPending` | 申請作成〜承認待ち。 |
-| `ExceptionActive` | `ActiveException` | 一時緩和が適用中。 |
-
-> 注記: 運用文書では時系列説明を優先して `Requested` / `ExceptionActive` を用いるが、承認判定と監査判定は canonical と同一に扱う。
+状態語彙は `02_Architecture/strict_mode_exception_approval_flow.md` の canonical 語彙（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`）に固定する。
 
 ### 8.2 監査最小化・PII最小化ルール（strict mode例外ログ）
 
