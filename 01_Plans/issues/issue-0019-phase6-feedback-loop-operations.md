@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream I
+- Owner: Stream G
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0019`, `ADR-0024`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
@@ -19,7 +19,7 @@
 - Gate依存は `C→D→E` を固定し、Gate C 完了前に Gate D を開始しない。
 - evidence形式は `Date / Gate / Command / Result / Decision / Next action` を6項目必須で固定。
 - KPI閾値（しきい値）は「承認済み台帳の値のみ採用」とし、未承認変更を禁止。
-- 2026-04-12 の Read同期で、Gate依存（C→D→E）とKPI監査スコアカード入力契約を Stream I 観点で再確認。
+- 2026-04-12 の Read同期で、Gate依存（C→D→E）とKPI監査スコアカード入力契約を Stream G 観点で再確認。
 
 ## 3) Phase 2 ADR CDC（新規ADR要否判定）
 
@@ -135,5 +135,5 @@
 - 未完了: KPIしきい値の数値最適化（本ストリーム範囲外）。
 - 残リスク: Conditional運用で再判定日の遅延が起きる可能性。
 - 次アクション: 次工程へは「運用契約の固定結果」のみを引き渡し、実装依頼は含めない。
-- 次回定点レビュー: **2026-04-19 09:00 UTC**。
-- 担当: **Stream I（Operations Gate C→D→E Evaluator）**。
+- 次回定点レビュー: **2026-04-26 09:00 UTC**。
+- 担当: **Stream G（Operations Gate C→D→E Evaluator）**。
