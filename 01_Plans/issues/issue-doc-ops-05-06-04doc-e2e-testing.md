@@ -146,7 +146,7 @@
 
 ### Phase 1 Read
 - 本Issueの Requirement meta I/F、Classification、ValidationLevel を再確認。
-- Stream H 専有対象（operations / security / e2e_testing）には非接触で進行することを確認。
+- 本タスクでは指定5文書（diagnostics / e2e_testing / e2e_verification_log_2026-03-03 / documentation_quality / codex_skill_operations）以外へ非接触で進行することを確認。
 
 ### Phase 2 ADR明文化
 - Context: 04_Documentation の公開境界と内部向け記述の混在を解消し、公開可能文書の判定を固定する。
@@ -203,3 +203,10 @@
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
+
+
+## 16) 共通ワークフローとフェイルセーフ（統一）
+
+- 本Issue対応は 6Phase（Read → ADR明文化 → Plan → Execute → Verify → Proceed）で実施する。
+- Verify 失敗時は自己修復を最大3回まで実施する。
+- 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する。
