@@ -103,7 +103,7 @@ Layer A（必須）へ次のCE-1ゲートを追加する。
 - CE-2以降の `sourceBundleHash` 検証の前提条件として、このゲート合格結果を監査ログへ残す。
 - 監査ログ最小キーは `queryId`, `bundleHash`, `excludedReason`。
 
-## 8. CE-2 proposal-only 品質ゲート（Stream A）
+## 8. CE-2 proposal-only 品質ゲート（Stream C）
 
 ### 8.1 Context
 
@@ -126,4 +126,5 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 
 - 上記ゲートのいずれかが不合格なら Layer B は実行せず fail とする。
 - Verify 修復は最大3回までとし、4回目相当は `status=held` で停止する。
+- `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の各Phase開始時に Read チェックを実施し、契約ドリフトを先に検知する。
 - CE-3 への引継ぎでは CE-2 Proposal I/F の後方互換（改名・省略・型変更禁止）を必須とする。

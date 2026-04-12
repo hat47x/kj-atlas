@@ -73,12 +73,12 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ---
 
-## 6.5 CE2 低リスクAI支援 契約（Stream D / proposal-only 固定）
+## 6.5 CE2 低リスクAI支援 契約（Stream C / proposal-only 固定）
 
 CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し、直接適用を禁止する。  
 本節は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` の契約を architecture 観点で固定する。
 
-### CE2-D1: Proposal I/F 必須キー（Phase 1〜6で固定）
+### CE2-C1: Proposal I/F 必須キー（Phase 1〜6で固定）
 
 すべての提案出力に以下を必須とする。
 
@@ -91,7 +91,7 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 上記5キー（`proposalId/diff/sourceBundleHash/status/reviewState`）は CE2 Phase 1〜6 で固定し、改名・省略・型変更を禁止する。
 また `reviewState` の既定値は `unreviewed` とし、`reviewed` は人手操作でのみ設定可能とする。
 
-### CE2-D2: 実行禁止事項（Fail-safe）
+### CE2-C2: 実行禁止事項（Fail-safe）
 
 以下を検知した場合、処理を継続せず停止する。
 
@@ -103,15 +103,15 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 
 停止時は `status=held` とし、手動レビュー待ちへ遷移させる。
 
-### CE2-D3: 依存切離し（CE1 モック契約）
+### CE2-C3: 依存切離し（CE1 モック契約）
 
 - CE2 は CE1 完了待ちを行わず、`ContextQuery + ContextBundle + bundleHash` をモック契約として参照する。
 - 実体CE1との差異が確定した時点で drift を記録し、CE2 の適用フローを停止する。
 - drift 解消後にのみ `held` から再開できる。
 
-### CE2-D4: CDC実行シーケンス（Plan → Execute → Verify → Proceed）
+### CE2-C4: CDC実行シーケンス（Read → ADR CDC → Plan → Execute → Verify → Proceed）
 
-CE2 Stream D は以下の順序を固定する。
+CE2 Stream C は以下の順序を固定する。
 
 1. **Phase 1 Read**: `proposalId/diff/sourceBundleHash/status/reviewState` を再確認。
 2. **Phase 2 ADR CDC**: Context / Decision / Consequences を明文化。
@@ -119,6 +119,8 @@ CE2 Stream D は以下の順序を固定する。
 4. **Phase 4 Execute**: proposal-only 固定、auto-apply禁止を実施。
 5. **Phase 5 Verify**: 契約逸脱を検査し、必要なら修復。
 6. **Phase 6 Proceed**: CE3向け参照I/Fを引き渡し終了。
+
+各Phase開始時に Read チェックポイントを実施し、status遷移（`proposed/accepted/rejected/held`）と proposal-only 境界を再確認する。
 
 `Verify` は最大3回まで修復再試行を許可し、3回以内に解消しない場合は `status=held` で停止する。
 `held` 中は `accepted/rejected/proposed` への自動遷移を禁止し、drift解消の手動確認が完了するまで Proceed 不可とする。
