@@ -46,11 +46,12 @@ A3のOpen化条件・停止条件・検証条件を **状態遷移契約** と�
 ## 5) State Transition Contract
 
 - Allowed:
-  - `A3: Draft -> Open` only if `A1==Done && Pending==0`
+  - `A3: Draft -> Open` only if `A1==Done && pendingDecisionQueueCount==0`
   - `DecisionQueue: Pending -> Approved | Rejected`
 - Forbidden:
   - Pending bypass
   - A1未完了でのA3 Open
+  - `pendingDecisionQueueCount>0` のままの Open化
   - A3 issue内での契約再定義
 
 ## 6) 受入条件（AC）/ DoD
@@ -60,9 +61,9 @@ A3のOpen化条件・停止条件・検証条件を **状態遷移契約** と�
 - AC-3: Decision Queue許可/禁止遷移が示されている。
 - AC-4: 安全境界（SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only`）後退禁止が明示されている。
 - AC-5: Verify失敗時の自己修復上限3回が定義されている。
-- AC-6: Stream Bの編集境界（issue本文のみ）が明示されている。
+- AC-6: Stream Fの編集境界（issue本文のみ）が明示されている。
 
-## 7) Stream B 強制サイクル（各Phase開始時に再Read）
+## 7) Stream F 強制サイクル（各Phase開始時に再Read）
 
 ### Phase 1 Read
 - 対象5 issue再Read、依存・識別子・遷移条件を棚卸し。
@@ -77,7 +78,7 @@ A3のOpen化条件・停止条件・検証条件を **状態遷移契約** と�
 - 本issue本文のみ更新（契約識別子、遷移、禁止事項、Proceed条件）。
 
 ### Phase 5 Verify
-- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `rg -n "A1 Done|pendingDecisionQueueCount|Pending -> Approved|Pending -> Rejected|human_dual_control_only|schemaVersion=1.0.0" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - 検証失敗は自己修復最大3回。超過で停止。
 
@@ -90,6 +91,7 @@ A3のOpen化条件・停止条件・検証条件を **状態遷移契約** と�
 2. `pendingDecisionQueueCount==0`
 3. Mock snapshot固定識別子一致
 4. 安全境界後退要求なし
+5. Pending bypass が一度も発生していないこと
 
 ## 9) 停止条件
 
