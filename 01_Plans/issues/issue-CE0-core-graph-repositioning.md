@@ -220,7 +220,7 @@
 - **Plan**: CE1/CE2にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
 - **Execute**: Working/Projection/Consensus + CG-01..05 を参照専用I/Fとして固定した。
 - **Verify**: 実装詳細や新規契約IDが混入していないことを確認する。
-- **Proceed**: 追加変更はCE0再起票で処理し、Stream Bの契約凍結を維持する。
+- **Proceed**: 追加変更はCE0再起票で処理し、Stream Aの契約凍結を維持する。
 
 ## 9) CE1/CE2 引き渡し Graph Contract Matrix（固定）
 
@@ -236,7 +236,10 @@
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
 - 未確定責務: `なし`（A1は契約凍結の唯一正本、A2/A3はread-only参照）。
-- 未確定ゲート: `なし`（唯一ゲートは `A1 Done && pendingDecisionQueueCount==0`）。
+- 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
+- 事前想定との差分（箇条書き）:
+  - Proceed/Go式に自然文 `A1 Done` が混在していたため、`a1Status=="Done"` に統一した。
+  - Stream表記が混在していたため、Stream A契約凍結ラインに統一した。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -250,12 +253,12 @@
 
 ### Phase 4: Execute（契約ID・判定条件・停止条件固定）
 - 契約ID固定: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
-- 判定条件固定: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 判定条件固定: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
 - 停止条件固定: Query Preview bypass / direct write / auto-apply / review自動昇格 / SafeMode後退 / Self-Correction 3回超過。
 
 ### Phase 5: Verify -> Proceed
 - Verify: docs-checkで契約ID整合・語彙整合・安全後退0件を確認し、不一致時はSelf-Correction最大3回まで。
-- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && A1 Done && pendingDecisionQueueCount==0)`。
+- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0)`。
 
 ### Fail-safe（停止報告テンプレ）
 - 失敗条件:

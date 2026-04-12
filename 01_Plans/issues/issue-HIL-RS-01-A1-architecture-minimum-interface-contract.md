@@ -30,7 +30,7 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 - Context:
   - A1はHIL-RS全体の契約基準点であり、ここが曖昧だとA2/A3のOpen判定が不安定になる。
 - Decision:
-  - Stream BはA1の **契約識別子と遷移条件のみ** を計画文で固定し、設計実体の編集は行わない。
+  - Stream AはA1の **契約識別子と遷移条件のみ** を計画文で固定し、設計実体の編集は行わない。
 - Consequences:
   - 契約変更要求はA1に集約し、A2/A3はread-only参照に限定される。
 
@@ -39,10 +39,10 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 - Unlock rule（唯一）:
   - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Decision Queue:
-  - `Pending -> Approved | Rejected`
+  - `Pending -> Approved` または `Pending -> Rejected`
 - Prohibited:
   - `Pending` bypass
-  - `A1 Done` 前の `A2/A3 Draft -> Open`
+  - `a1Status!="Done"` での `A2/A3 Draft -> Open`
   - A2/A3 issue内での固定識別子再定義
 
 ## 5) Acceptance Criteria / DoD
@@ -104,7 +104,10 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
 - 未確定責務: `なし`（A1は契約凍結の唯一正本、A2/A3はread-only参照）。
-- 未確定ゲート: `なし`（唯一ゲートは `A1 Done && pendingDecisionQueueCount==0`）。
+- 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
+- 事前想定との差分（箇条書き）:
+  - Decision文の担当Stream表記が混在していたため、Stream A専任運用に統一した。
+  - 禁止遷移の条件文を `a1Status!="Done"` に固定し、判定式との乖離を解消した。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -118,12 +121,12 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 
 ### Phase 4: Execute（契約ID・判定条件・停止条件固定）
 - 契約ID固定: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
-- 判定条件固定: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 判定条件固定: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
 - 停止条件固定: Query Preview bypass / direct write / auto-apply / review自動昇格 / SafeMode後退 / Self-Correction 3回超過。
 
 ### Phase 5: Verify -> Proceed
 - Verify: docs-checkで契約ID整合・語彙整合・安全後退0件を確認し、不一致時はSelf-Correction最大3回まで。
-- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && A1 Done && pendingDecisionQueueCount==0)`。
+- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0)`。
 
 ### Fail-safe（停止報告テンプレ）
 - 失敗条件:
