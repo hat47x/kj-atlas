@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G
+- Owner: Stream D
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0019`, `ADR-0024`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
@@ -121,9 +121,18 @@
 
 ## 8) Phase 6 Proceed（次工程引き渡し）
 
+### 8.1 次回監査Runbook（Gate C→D→E）
+
+1. Gate C: feedback分類を完了し、`未分類=0` または `保留理由 + 再判定日` を記録する。
+2. Gate D: 4KPI（TFS / Decision Readiness / Support Deflection / Feedback Closure）を評価し、必須入力6項目を記録する。
+3. Gate E: Go / Conditional / No-Go を判定し、Proceed条件に従って次アクションを固定する。
+4. evidence記録は各Gateごとに `Date / Gate / Command / Result / Decision / Next action` を残す。
+5. docs-check / 用語整合 / diff整合を実行し、不一致は3回まで自己修復する。
+6. 監査記録確定後に次回定点レビューへ引き継ぐ。
+
 - 完了: Gate C→D→E 順序、Gate D必須入力、Gate E Proceed条件、evidence形式を3文書で固定。
 - 未完了: KPIしきい値の数値最適化（本ストリーム範囲外）。
 - 残リスク: Conditional運用で再判定日の遅延が起きる可能性。
 - 次アクション: 次工程へは「運用契約の固定結果」のみを引き渡し、実装依頼は含めない。
 - 次回定点レビュー: **2026-04-19 09:00 UTC**。
-- 担当: **Stream G（Phase6 Operations Reviewer）**。
+- 担当: **Stream D（Operations Gate C→D→E Reviewer）**。

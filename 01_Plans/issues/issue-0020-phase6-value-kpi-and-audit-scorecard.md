@@ -4,7 +4,7 @@
 - Status: In Progress
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G
+- Owner: Stream D
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
@@ -131,9 +131,18 @@ scorecard記録の必須項目を次に固定する。
 
 ## 8) Phase 6 Proceed（次工程引き渡し）
 
+### 8.1 次回監査Runbook（Gate C→D→E）
+
+1. Gate C: feedback分類を完了し、未分類エントリの残存有無を監査ログに固定する。
+2. Gate D: KPI scorecard（4KPI）を更新し、逸脱有無と次アクションを明記する。
+3. Gate E: Go / Conditional / No-Go 判定と Proceed条件の整合を確認する。
+4. evidence記録は `Date / Gate / Command / Result / Decision / Next action` で統一する。
+5. docs-check / KPI語彙照合 / diff整合を実行し、必要なら3回まで修復する。
+6. 次回監査予定（日時/担当/対象文書）を確定して引き渡す。
+
 - 完了: Gate D入力契約と Gate E Proceed条件を固定。
 - 未完了: KPIしきい値の運用最適化（本ストリーム範囲外）。
 - 残リスク: 反映先リンクの記入漏れによる監査追跡欠落。
 - 次アクション: 次工程へは「運用契約の固定結果」のみを引き渡し、実装依頼は含めない。
 - 次回定点レビュー: **2026-04-19 09:00 UTC**。
-- 担当: **Stream G（KPI & Audit Scorecard Reviewer）**。
+- 担当: **Stream D（Operations KPI & Audit Scorecard Reviewer）**。
