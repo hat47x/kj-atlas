@@ -5,30 +5,55 @@ import { buildQueryPreviewState, runMockContextIntegration, type ContextQueryDra
 function baseDraft(): ContextQueryDraft {
   return {
     queryId: "q-ce1-frontend",
-    targetCardIds: ["c1"],
+    goal: "Summarize contradictions around selected islands",
     depth: 1,
-    scope: "selection",
-    reviewedOnly: true,
-    safeMode: true,
+    scope: "view",
+    constraints: { tokenBudget: 1200 },
+    reviewFilter: "reviewedOnly",
+    safeModePolicy: "strict",
+    outputMode: "summary",
+    previewConfirmed: true,
   };
 }
 
 describe("query preview state", () => {
-  it("blocks submit until preview is acknowledged", () => {
-    const preview = buildQueryPreviewState(baseDraft(), false);
+  it("blocks submit until previewConfirmed is true", () => {
+    const preview = buildQueryPreviewState({ ...baseDraft(), previewConfirmed: false });
     expect(preview.canSubmit).toBe(false);
-    expect(preview.blockers).toContain("preview must be acknowledged before submit");
+    expect(preview.blockers).toContain("previewConfirmed must be true before submit");
   });
 
-  it("allows submit after required fields and preview acknowledgement", () => {
-    const preview = buildQueryPreviewState(baseDraft(), true);
+  it("allows submit after required fields and preview confirmation", () => {
+    const preview = buildQueryPreviewState(baseDraft());
     expect(preview.canSubmit).toBe(true);
-    expect(preview.reviewFilter).toBe("reviewed_only");
+    expect(preview.reviewFilter).toBe("reviewedOnly");
   });
 
-  it("reproduces mock integration flow", async () => {
+  it("returns 422 preview_required when preview is not confirmed", async () => {
+    const draft = { ...baseDraft(), previewConfirmed: false };
+    const result = await runMockContextIntegration(draft, async () => {
+      throw new Error("should not be called");
+    });
+    expect(result).toEqual({
+      canSubmit: false,
+      statusCode: 422,
+      errorCode: "preview_required",
+      blockers: ["previewConfirmed must be true before submit"],
+    });
+  });
+
+  it("reproduces mock integration flow with bundleHash", async () => {
     const draft = baseDraft();
-    const result = await runMockContextIntegration(draft, true, async () => ({ bundleHash: "hash-123" }));
-    expect(result).toEqual({ canSubmit: true, bundleHash: "hash-123" });
+    const result = await runMockContextIntegration(draft, async () => ({
+      bundleHash: "hash-123",
+      selected: [],
+      relations: [],
+      evidence: [],
+      contradictions: [],
+      reviewFlags: { reviewed: 2, unreviewed: 0 },
+      truncationMeta: { truncated: false },
+      excludedReason: ["unreviewed_filtered"],
+    }));
+    expect(result).toEqual({ canSubmit: true, statusCode: 200, bundleHash: "hash-123", excludedReason: ["unreviewed_filtered"] });
   });
 });
