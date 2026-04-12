@@ -89,6 +89,7 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 - `reviewState: unreviewed | reviewed`
 
 上記5キー（`proposalId/diff/sourceBundleHash/status/reviewState`）は CE2 Phase 1〜6 で固定し、改名・省略・型変更を禁止する。
+また `reviewState` の既定値は `unreviewed` とし、`reviewed` は人手操作でのみ設定可能とする。
 
 ### CE2-D2: 実行禁止事項（Fail-safe）
 
@@ -112,12 +113,15 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 
 CE2 Stream D は以下の順序を固定する。
 
-1. **Plan**: 契約キーと禁止事項を固定。
-2. **Execute**: proposal-only で生成（適用なし）。
-3. **Verify**: 契約逸脱を検査し、必要なら修復。
-4. **Proceed**: Verify 合格時のみ次段へ進行。
+1. **Phase 1 Read**: `proposalId/diff/sourceBundleHash/status/reviewState` を再確認。
+2. **Phase 2 ADR CDC**: Context / Decision / Consequences を明文化。
+3. **Phase 3 Plan**: AC/DoD不足（status遷移・drift-stop）を合意。
+4. **Phase 4 Execute**: proposal-only 固定、auto-apply禁止を実施。
+5. **Phase 5 Verify**: 契約逸脱を検査し、必要なら修復。
+6. **Phase 6 Proceed**: CE3向け参照I/Fを引き渡し終了。
 
 `Verify` は最大3回まで修復再試行を許可し、3回以内に解消しない場合は `status=held` で停止する。
+`held` 中は `accepted/rejected/proposed` への自動遷移を禁止し、drift解消の手動確認が完了するまで Proceed 不可とする。
 
 
 ## 7. 設定キー整合
