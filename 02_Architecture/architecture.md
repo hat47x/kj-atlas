@@ -189,7 +189,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 - `WorkingGraph`: 主体（human/agent/role）ごとの探索・未確定保持を担う作業面。
 - `ContextProjectionGraph`: 問い合わせ目的へ投影する読取専用面。ContextBundle生成にのみ使用。
-- `ConsensusGraph`（旧Core Graph）: `patch + approval` 済み差分のみを保持する統合面。
+- `Consensus Graph`（実装上の識別子: `ConsensusGraph`, 旧Core Graph）: `patch + approval` 済み差分のみを保持する統合面。
 
 | Contract ID | Responsibility boundary |
 | --- | --- |
@@ -211,7 +211,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 
 ### 7A.3 禁止事項（Non-Regression）
 
-- AIはConsensusGraphを直接更新してはならない。
+- AIは `Consensus Graph` を直接更新してはならない。
 - `human_reviewed` 状態をAIが自動付与してはならない。
 - safeMode既定ON時、未レビュー本文をAI入力へ含めてはならない。
 - `mode=autonomous` でも proposal-only を維持し、監査4点セット（query/bundle/proposal/apply）欠損時は失敗扱いとする。
@@ -225,7 +225,7 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
   - `mode=autonomous` でも proposal-only（auto-apply禁止）を維持する。
 - **No-Go条件**
   - Query Preview bypass を許容する導線が存在する。
-  - `ConsensusGraph` への direct write を許容する。
+- `Consensus Graph`（`ConsensusGraph` 識別子）への direct write を許容する。
   - AI単独で `human_reviewed` へ遷移させる。
 
 ### 7A.5 Drift-stop 固定（CE0）
@@ -248,6 +248,7 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 - `ContextBundle` 必須キー: `bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
 - `previewConfirmed=false` は `422 preview_required` として失敗扱い。
 - 同一 canonical query では deterministic `bundleHash` 一致を必須化する。
+- CE2/CE4 は CE1 実装完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で先行検証を継続する。
 
 ### 7B.2 CE2-LOW-RISK-AI-ASSIST
 
