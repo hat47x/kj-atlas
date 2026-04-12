@@ -76,7 +76,7 @@
 
 - 停止トリガー: 3回修復超過 / 未承認確定化 / 識別子不一致。
 
-## 8) Stream G update (2026-04-12, planning memo only)
+## 8) Stream F update (2026-04-12, planning memo only)
 
 ### Phase 1) Read同期
 - Re-read HIL-RS-02 parent/child memos and confirmed dependency chain remains `A1 -> A2 -> A3`.
@@ -91,6 +91,8 @@
 ### Phase 3) AC/DoD不足補完
 - Added explicit DoD checkpoint: Proceed requires `A1 Done && pendingDecisionQueueCount==0 && no safety downgrade request`.
 - Added hold behavior: if any queue reopens, phase state must return to `Plan` and re-run CDC check.
+- Locked unlock expression as the sole gate for A2/A3 Open: `A1 Done && pendingDecisionQueueCount==0`.
+- Locked decision progression: unresolved `Pending` items block Proceed without exception (pending bypass prohibited).
 
 ### Phase 4) docs-check
 - Single source command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
@@ -99,4 +101,3 @@
 ### Phase 5) 次レーンhandoff
 - Handoff payload (planning) = `{freezeContractId, schemaVersion, overridePolicy, queueSnapshot, proceedDecision}`.
 - A2/A3 lanes are limited to consume payload; they cannot mutate freeze contract values.
-

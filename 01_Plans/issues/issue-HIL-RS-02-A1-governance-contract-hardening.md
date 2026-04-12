@@ -71,13 +71,13 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 - Plan:
   - AC/DoD不足がある場合は `Context/Decision/Consequences` のドラフトのみ起票し、承認待ち化する。
 - Execute:
-  - 編集は許可ファイルのみ（A1関連2 issue + A1 architecture contract + CE0 2 issue）に限定する。
+  - 編集は許可された planning issue 本文のみに限定する（architecture / implementation / operations 実体文書は編集しない）。
 - Verify:
-  - `rg -n "HIL-RS-02-A1-CONTRACT-FREEZE-v1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `rg -n "HIL-RS-02-A1-CONTRACT-FREEZE-v1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|A1 Done && pendingDecisionQueueCount==0|Pending -> Approved|Pending -> Rejected" 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - 不一致時Self-Correction最大3回。4回目は即停止。
 - Proceed:
-  - すべて一致時のみ `Open化条件` 判定へ進む。
+  - すべて一致し、かつ `A1 Done && pendingDecisionQueueCount==0` のみ満たす場合に限り `Open化条件` 判定へ進む。
 
 ## 9) Fixed Values Handoff（変更禁止）
 
