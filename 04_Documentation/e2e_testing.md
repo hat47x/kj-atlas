@@ -40,7 +40,7 @@
    - 回帰しやすい安全境界（SafeMode / import / export / docs保存）
    - 環境差分に強い待機戦略（networkidle固定に依存しすぎない）
 
-### 1.1 Stream H 文書横断同期チェック（Verify フェーズ）
+### 1.1 Stream G 文書横断同期チェック（Verify フェーズ）
 
 operations -> security の直列同期後、e2e では docs-check と `rg` により次を固定確認する。
 
@@ -509,7 +509,7 @@ cd 03_Implement/frontend && pnpm -s vitest run src/ui/HilRsWorkflowPanel.test.ts
 - 仮運用タグ（`status=provisional`, `evidenceType=mock-trace`, `replaceOnNextSync=true`）が3文書で確認できる。
 - `04_Documentation` 側に HIL-RS-01 / ADR-0026 / SafeMode / 可逆 / Critique / レビュー帰属 の同期記述が存在する。
 - strict mode例外運用について、D1〜D4固定値（承認順序/TTL、tenant最大2h、代理承認なし、48hレビュー+15m/60mエスカレーション）が `operations.md` と `security.md` で一致する。
-- strict mode例外の状態語彙（`Requested/ApprovalPending`→`Approved`→`ExceptionActive/ActiveException`→`RollbackPending`→`Closed`、未確定時 `StoppedForClarification`）が運用文書間で矛盾しない。
+- strict mode例外の状態語彙（`DraftRequest`→`ApprovalPending`→`Approved`→`ActiveException`→`RollbackPending`→`Closed`、未確定時 `StoppedForClarification`）が運用文書間で矛盾しない。
 - HIL-RS workflow 関連の vitest（UI/contract/payload）が成功し、文書化した運用制約と実装の差分がない。
 - `hil_rs_payload` 系の検証（未知tags→`no_articulable_reason`、空コメント+空tagsは未発行、`iteration>=1`）が運用記述と一致する。
 - A3の非目標（SafeMode後退禁止・自動確定導線禁止）が文書内で確認できる。
@@ -601,9 +601,9 @@ A3の検証は以下の固定順序で実施する（Read → CDC → Plan → E
 3. Plan: AC/DoD不足ドラフトを合意し、`operations -> security -> e2e` の直列同期計画を確定。
 4. Execute: 文書差分を反映（運用直列順 `operations -> security -> e2e`、ロールバック条件・2者承認・監査最小項目）。
 5. Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py` を実行。
-6. Verify-2: `rg -n "Requested|ApprovalPending|Approved|ExceptionActive|ActiveException|StoppedForClarification|RollbackPending|Closed|Security Officer|System Owner|Platform Operator"` で用語一致を検証。
+6. Verify-2: `rg -n "DraftRequest|ApprovalPending|Approved|ActiveException|StoppedForClarification|RollbackPending|Closed|Security Officer|System Owner|Platform Operator"` で用語一致を検証。
 7. Verify-3: `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m"` で固定値一致を検証。
-8. Verify-4: `rg -n "HIL-RS-02 A3|Read|CDC|Plan|Execute|Verify/Proceed|Stream H" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` で issue 証跡を検証。
+8. Verify-4: `rg -n "HIL-RS-02 A3|Read|CDC|Plan|Execute|Verify/Proceed|Stream G" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` で issue 証跡を検証。
 9. Verify/Proceed: 全検証成功時のみ `provisional_reapplied` として継続。
 
 自己修復ルール（上限3回）:
