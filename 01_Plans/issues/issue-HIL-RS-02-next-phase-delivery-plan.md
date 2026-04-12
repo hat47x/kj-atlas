@@ -134,3 +134,27 @@
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+## Stream C Normalization Update (2026-04-12)
+
+### Scope Contract（本ストリームの独立性）
+- Stream C は計画整流化のみを行い、A1を外部完了待ちにしない。
+- 本issueで固定するのは「ゲート条件明文化」と「差戻し導線固定」のみ。
+
+### Phase Execution Record（1〜6）
+1. **Phase 1 Read**: HIL-RS-01 / HIL-RS-02 / HIL-RS-02-A3 を再読。
+2. **Phase 2 ADR明文化（CDC）**: CDCの追加改定不要を確認し、既存Decisionを維持。
+3. **Phase 3 Plan**: AC/DoDにA1外部待ち禁止・NoGo条件を反映。
+4. **Phase 4 Execute**: 状態遷移判定式を以下の単一式へ固定。
+5. **Phase 5 Verify**: docs-check、`git diff --check`、キーワード差分確認を実施。
+6. **Phase 6 Proceed**: 条件未充足・曖昧点は質問化して停止。
+
+### State Transition Contract（明確化）
+- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)`
+- `Hold/NoGo := (A1!=Done || pendingDecisionQueueCount>0)`
+- Pending bypass は例外なく禁止。
+- 契約値差分はA1へ差戻しし、A2/A3では変更しない。
+
+### Failure-stop Rule（3回超停止）
+- 自己修復ループは最大3回。
+- 4回目相当は停止し、未確定論点を質問化してDecision Queueへ返却する。
