@@ -70,7 +70,7 @@
 相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
 
 
-## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream D）
 
 Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、次を固定する。
 
@@ -90,7 +90,16 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する
 ### 定点レビュー
 
 - 次回定点レビュー: **2026-04-19 09:00 UTC**
-- 担当: **Stream G（Phase6 Operations Reviewer）**
+- 担当: **Stream D（Operations Gate C→D→E Reviewer）**
+
+### 次回監査Runbook（Proceed固定）
+
+1. **Phase 1 Read**: 対象3文書（`issue-0019` / `issue-0020` / `operations.md`）を再Readし、Gate定義差分の有無を確認する。
+2. **Phase 2 ADR CDC**: Context / Decision / Consequences を更新し、新規ADR要否を判定する（原則は既存ADRで運用具体化）。
+3. **Phase 3 Plan**: AC / DoD / evidence形式（`Date / Gate / Command / Result / Decision / Next action`）を固定する。
+4. **Phase 4 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、逆順・並列判定を禁止する。
+5. **Phase 5 Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
+6. **Phase 6 Proceed**: 監査ログ確定後、次回レビュー日時・担当・残リスクをrunbookとして記録して引き渡す。
 
 ## 1. バックアップ / リストア
 
