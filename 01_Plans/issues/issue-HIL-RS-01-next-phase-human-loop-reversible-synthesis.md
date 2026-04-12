@@ -153,3 +153,29 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+## Stream C Normalization Update (2026-04-12)
+
+### Scope Contract（本ストリームの独立性）
+- Stream C は **HIL-RS計画系issueの整流化のみ** を担当し、実装完了待ちでA1をブロックしない。
+- 本ストリームで行うのは次の2点のみ。
+  1. ゲート条件明文化（`A1 Done && pendingDecisionQueueCount==0`）
+  2. 差戻し導線固定（契約差分は常にA1へ戻す）
+- A1を「外部完了待ち」状態へ遷移させる記述は禁止。
+
+### Phase Execution Record（1〜6）
+1. **Phase 1 Read**: 対象3ファイルを再読し、固定識別子・依存・禁止遷移を再確認。
+2. **Phase 2 ADR明文化（CDC）**: 既存CDCを再確認し、上位ADR改定不要を確認（issue内CDCを継続採用）。
+3. **Phase 3 Plan**: AC/DoD不足として「A1外部待ち禁止」「差戻し先A1固定」を追記。
+4. **Phase 4 Execute**: 状態遷移契約を `A1 Done && pendingDecisionQueueCount==0` に一本化。
+5. **Phase 5 Verify**: docs-check + 差分検証を実施。失敗時は自己修復最大3回、4回目相当で停止。
+6. **Phase 6 Proceed**: Go/NoGoを上記ゲート式で判定し、曖昧点は質問化して停止。
+
+### State Transition Clarification（契約明確化）
+- **Go**: `A1 Done && pendingDecisionQueueCount==0`
+- **NoGo**: `A1!=Done` または `pendingDecisionQueueCount>0`
+- **Rollback route**: 契約不一致・語彙ドリフト・安全境界後退の要求は **A1 issueへ差戻し**。
+
+### Failure-stop Rule（3回超停止）
+- Verify失敗の自己修復は最大3回。
+- 3回超過時は作業停止し、未確定点を Yes/No 質問に分解して記録する。

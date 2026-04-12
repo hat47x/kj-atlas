@@ -122,3 +122,27 @@ Proceed 条件:
 - 発生フェーズ
 - 修復案（最小差分）
 - 再開条件
+
+## Stream C Normalization Update (2026-04-12)
+
+### Scope Alignment（計画整流化限定）
+- 本issueは HIL-RS 計画系整流化のA3メモとして扱い、実装作業を開始条件にしない。
+- Stream Cが固定する対象は次の2点のみ。
+  1. ゲート条件の明文化
+  2. 差戻し導線（契約不一致はA1へ戻す）の固定
+
+### Phase Execution Record（1〜6）
+1. **Phase 1 Read**: 対象3ファイルを再読し、相互参照の整合を確認。
+2. **Phase 2 ADR明文化（CDC）**: 既存CDCを優先し、ADR改定不要を確認。
+3. **Phase 3 Plan**: AC/DoD不足に `A1 external-wait禁止` と `rollback route固定` を追加。
+4. **Phase 4 Execute**: 状態遷移契約を `A1 Done && pendingDecisionQueueCount==0` に統一。
+5. **Phase 5 Verify**: docs-check + 差分検証を実施（失敗時は3回修復まで）。
+6. **Phase 6 Proceed**: 4回目相当失敗または曖昧点残存時は質問化して停止。
+
+### State Transition Contract（A3側の取り扱い）
+- A3は `A1 Done && pendingDecisionQueueCount==0` のときのみ Open/Proceed 可。
+- NoGo時は `Draft/Open(hold)` を維持し、契約差分をA1へ差戻す。
+
+### Failure-stop Rule（3回超停止）
+- 修復は最大3回。
+- 3回超過時は停止し、未解決点を質問として明示する。
