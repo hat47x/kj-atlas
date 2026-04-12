@@ -57,6 +57,21 @@ class ContextBundleResponse(BaseModel):
     bundleHash: str
 
 
+def _canonical_bundle_hash_payload(bundle: ContextBundle) -> dict[str, object]:
+    selected_cards = sorted(
+        (card.model_dump(mode="json") for card in bundle.selectedCards),
+        key=lambda item: item["id"],
+    )
+    excluded_reasons = sorted(
+        bundle.excludedReasons,
+        key=lambda item: (item["cardId"], item["reason"]),
+    )
+    return {
+        "selectedCards": selected_cards,
+        "excludedReasons": excluded_reasons,
+    }
+
+
 def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
     query = request.query
     cards = sorted(request.doc.cards, key=lambda item: item.id)
@@ -83,6 +98,7 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
     excluded = sorted(excluded, key=lambda item: (item["cardId"], item["reason"]))
     bundle = ContextBundle(queryId=query.queryId, selectedCards=selected_cards, excludedReasons=excluded)
 
-    canonical = json.dumps(bundle.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    canonical_payload = _canonical_bundle_hash_payload(bundle)
+    canonical = json.dumps(canonical_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     bundle_hash = sha256(canonical.encode("utf-8")).hexdigest()
     return ContextBundleResponse(bundle=bundle, bundleHash=bundle_hash)

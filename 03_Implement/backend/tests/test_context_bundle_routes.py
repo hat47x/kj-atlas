@@ -58,6 +58,43 @@ def test_context_bundle_hash_is_deterministic_for_same_query() -> None:
         settings.api_key = original_api_key
 
 
+def test_context_bundle_hash_is_stable_when_query_id_changes() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload_1 = {"query": _query_payload(), "doc": _doc_payload()}
+
+            payload_2 = {"query": _query_payload(), "doc": _doc_payload()}
+            payload_2["query"]["queryId"] = "q-ce1-2"
+
+            hash_1 = client.post("/context/bundle", json=payload_1).json()["bundleHash"]
+            hash_2 = client.post("/context/bundle", json=payload_2).json()["bundleHash"]
+
+            assert hash_1 == hash_2
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_bundle_hash_is_stable_when_card_order_changes() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload_1 = {"query": _query_payload(), "doc": _doc_payload()}
+
+            reordered_doc = _doc_payload()
+            reordered_doc["cards"] = list(reversed(reordered_doc["cards"]))
+            payload_2 = {"query": _query_payload(), "doc": reordered_doc}
+
+            hash_1 = client.post("/context/bundle", json=payload_1).json()["bundleHash"]
+            hash_2 = client.post("/context/bundle", json=payload_2).json()["bundleHash"]
+
+            assert hash_1 == hash_2
+    finally:
+        settings.api_key = original_api_key
+
+
 def test_context_bundle_safe_mode_and_reviewed_filter_excludes_unreviewed_text() -> None:
     original_api_key = settings.api_key
     settings.api_key = None
