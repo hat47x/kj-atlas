@@ -65,3 +65,27 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 ## 7) Fail-safe
 
 - 3回修復超過 / 未承認確定化 / 不一致競合で停止。
+
+## 8) Phase Verify Protocol（Plan -> Execute -> Verify -> Proceed）
+
+- Plan:
+  - AC/DoD不足がある場合は `Context/Decision/Consequences` のドラフトのみ起票し、承認待ち化する。
+- Execute:
+  - 編集は許可ファイルのみ（A1関連2 issue + A1 architecture contract + CE0 2 issue）に限定する。
+- Verify:
+  - `rg -n "HIL-RS-02-A1-CONTRACT-FREEZE-v1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - 不一致時Self-Correction最大3回。4回目は即停止。
+- Proceed:
+  - すべて一致時のみ `Open化条件` 判定へ進む。
+
+## 9) Fixed Values Handoff（変更禁止）
+
+| Key | Frozen Value |
+| --- | --- |
+| freezeContractId | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` |
+| contractIds | `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF` |
+| schemaVersion | `1.0.0` |
+| overridePolicy | `human_dual_control_only` |
+| contractLinkLocked | `true` |
+| sharedResourceFreeze | `true` |
