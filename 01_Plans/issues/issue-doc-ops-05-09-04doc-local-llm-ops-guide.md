@@ -67,7 +67,7 @@
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Audience|Goal|Non-goal|Outcome|Related" 04_Documentation/local_llm_ops_guide.md 01_Plans/documentation_quality.md`
+  - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/local_llm_ops_guide.md 01_Plans/documentation_quality.md`
   - `git diff --check`
 - 期待結果:
   - 分類根拠と次アクションが差分として確認できる。
