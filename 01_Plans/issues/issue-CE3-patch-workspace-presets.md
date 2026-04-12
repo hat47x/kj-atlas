@@ -224,3 +224,45 @@
 - 未達なし（本スコープ内AC/DoD補強は完了）。
 - 既知制約:
   - local audit log の document監査ログ統合（CE4連携）は未着手で継続課題。
+
+## 12) Stream D Verification Closure Notes (2026-04-12)
+
+### Phase 1 Read（対象ファイル再読）
+
+- `issue-CE3-patch-workspace-presets.md` / `ce3_patch_workspace.ts` / `PatchWorkspacePanel.tsx` / `ce3_patch_workspace.spec.ts` / `04_Documentation/e2e_testing.md` を再読し、CE3要件（workspace/preset/rollback）が local state + localStorage 境界で完結していることを再確認。
+- 受入条件のうち「3候補並列」「rollback監査遷移」「preset正規化再現」を検証対象として再固定。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+
+- Context:
+  - CE3実装自体は揃っているが、環境差分（Playwright browser/deps不足）で Verify が失敗しうる。
+- Decision:
+  - Verify は `unit -> e2e` の順で実行し、失敗時は `playwright install chromium` / `playwright install-deps chromium` の順で最大3回まで自己修復する。
+- Consequences:
+  - CE3の機能退行と実行環境欠落を切り分け可能になり、3回上限フェイルセーフを維持したまま検証完了可否を判断できる。
+
+### Phase 3 Plan（AC/DoD不足確認）
+
+- AC追加なし（既存ACでCE3検証可能）。
+- DoD運用補強:
+  - unit（domain/ui/presets）pass
+  - CE3 e2e grep pass
+  - 修復回数が3回未満で収束
+
+### Phase 4 Execute（workspace/preset/rollback）
+
+- 実装変更は不要と判断（既存CE3実装を保持）。
+- Verify対象のみ実行。
+
+### Phase 5 Verify（unit/e2e + 失敗時修復）
+
+- unit: 1回で pass。
+- e2e: 1回目 browser binary不足で fail → 修復1（install chromium）。
+- e2e: 2回目 OS library不足で fail → 修復2（install-deps chromium）。
+- e2e: 3回目 pass。
+- フェイルセーフ判定: 自己修復2回で収束（上限3回未満）。
+
+### Phase 6 Proceed
+
+- CE3の実装検証は完了（workspace/preset/rollback のACを再確認）。
+- 継続課題（範囲外）: local audit log の document監査ログ統合（CE4連携）。
