@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Architecture Owner (Stream B planning)
+- Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`
@@ -68,6 +68,9 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 - `pendingDecisionQueueCount == 0`
 - Fixed identifiers 完全一致
 - 安全境界後退要求なし
+- Go/No-Go判定式（固定）:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
 
 ## 8) Fail-safe
 

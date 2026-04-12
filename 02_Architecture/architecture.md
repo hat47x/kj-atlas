@@ -225,8 +225,9 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
   - `mode=autonomous` でも proposal-only（auto-apply禁止）を維持する。
 - **No-Go条件**
   - Query Preview bypass を許容する導線が存在する。
-- `Consensus Graph`（`ConsensusGraph` 識別子）への direct write を許容する。
+  - `Consensus Graph`（`ConsensusGraph` 識別子）への direct write を許容する。
   - AI単独で `human_reviewed` へ遷移させる。
+  - safeMode既定ONまたは `allowUnreviewedText=false` 既定を後退させる。
 
 ### 7A.5 Drift-stop 固定（CE0）
 

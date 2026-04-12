@@ -90,6 +90,9 @@ A2/A3 の `Draft -> Open` は次の全条件を満たす場合のみ許可。
 - `hasUndefinedContractChangeRequest == false`
 - `hasSafeModeRegressionRequest == false`
 - `hasShareExportLeakageRelaxationRequest == false`
+- Go/No-Go判定式（固定）:
+  - `Go = (freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && a1Status=="Done" && pendingDecisionQueueCount==0 && hasUndefinedContractChangeRequest==false && hasSafeModeRegressionRequest==false && hasShareExportLeakageRelaxationRequest==false)`
+  - `NoGo = !Go`
 
 Decision Queue permitted transitions:
 - `Pending -> Approved`
