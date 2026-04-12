@@ -177,7 +177,12 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
         data-testid="ce3-candidate-state-list"
         style={{ border: "1px solid #e2e8f0", borderRadius: 6, backgroundColor: "#ffffff", padding: 8, marginBottom: 8 }}
       >
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>Candidate decisions</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
+          Candidate decisions
+          <span data-testid="ce3-candidate-count" style={{ marginLeft: 6, color: "#64748b", fontWeight: 500 }}>
+            ({candidates.length})
+          </span>
+        </div>
         {candidates.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>No candidates collected yet.</div> : null}
         {candidates.map((candidate) => (
           <div

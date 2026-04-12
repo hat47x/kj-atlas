@@ -89,6 +89,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   const workspace = page.getByTestId("ce3-workspace-panel");
   await expect(workspace).toBeVisible();
   await expect(page.getByTestId("ce3-candidate-select")).toBeEnabled();
+  await expect(page.getByTestId("ce3-candidate-count")).toContainText("(2)");
   await expect(page.getByTestId("ce3-diff-preview")).toContainText("Patch diff preview");
   await expect(page.getByTestId("ce3-diff-preview")).toContainText("Token delta:");
   const optionLocator = page.locator('[data-testid="ce3-candidate-select"] option');
@@ -113,6 +114,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("hold");
   await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
   await expect(page.getByTestId(`ce3-candidate-audit-${betaCandidateId ?? ""}`)).toContainText("rollback");
+  await expect(page.getByTestId(`ce3-candidate-audit-${alphaCandidateId ?? ""}`)).not.toContainText("rollback");
   await expect(page.getByTestId("ce3-audit-log-size")).toContainText("3");
 
   await page.getByTestId("ce3-preset-name").fill("Local CE3 Preset");

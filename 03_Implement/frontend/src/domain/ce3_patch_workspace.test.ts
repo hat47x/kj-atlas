@@ -58,6 +58,17 @@ describe("ce3_patch_workspace", () => {
     });
   });
 
+  it("does not add extra audit transitions when the same decision is re-applied", () => {
+    const initial = buildInitialWorkspaceState([{ id: "cand-a", label: "cand-a" }]);
+    const adopted = commitWorkspaceDecision(initial, "cand-a", "adopt", "2026-04-11T00:00:00.000Z");
+    const adoptedAgain = commitWorkspaceDecision(adopted, "cand-a", "adopt", "2026-04-11T00:00:01.000Z");
+
+    expect(adoptedAgain.decisions["cand-a"]).toBe("adopt");
+    expect(adoptedAgain.auditLog).toHaveLength(1);
+    expect(adoptedAgain.rollbackStack).toHaveLength(1);
+    expect(adoptedAgain.phase).toBe("rollback_ready");
+  });
+
   it("normalizes preset query deterministically", () => {
     expect(normalizeFilters(" b, A,  ,c ")).toEqual(["a", "b", "c"]);
     expect(
