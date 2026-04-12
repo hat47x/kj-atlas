@@ -241,3 +241,36 @@
 | CE2 Low-risk AI Assist | `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CG-02`, `CG-04`, `CG-05` | human review昇格は人手のみ / safeMode既定ON / 監査4点セット | AI review自動昇格 / auto-apply / 監査欠損成功扱い |
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
+
+## Stream A Critical Path Fixpoint (2026-04-12)
+
+### Phase 1: Read（最新再読 + 未確定抽出）
+- 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
+- 未確定責務: `なし`（A1は契約凍結の唯一正本、A2/A3はread-only参照）。
+- 未確定ゲート: `なし`（唯一ゲートは `A1 Done && pendingDecisionQueueCount==0`）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
+- Decision: 本メモの契約ID・凍結値・停止条件を正本として再定義禁止に固定する。
+- Consequences: 差分要求はA1へ差し戻し、下流は参照専用で運用する。
+- 合意記録: `DecisionStatus=Fixed` を承認済み契約として継続（本メモ内合意）。
+
+### Phase 3: Plan（AC/DoD補強）
+- AC補強: Contract ID collision=0 / 語彙collision=0 / SafeMode後退=0 を同時成立。
+- DoD補強: `Plan -> Execute -> Verify -> Proceed` の順序証跡を本メモに残す。
+
+### Phase 4: Execute（契約ID・判定条件・停止条件固定）
+- 契約ID固定: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
+- 判定条件固定: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 停止条件固定: Query Preview bypass / direct write / auto-apply / review自動昇格 / SafeMode後退 / Self-Correction 3回超過。
+
+### Phase 5: Verify -> Proceed
+- Verify: docs-checkで契約ID整合・語彙整合・安全後退0件を確認し、不一致時はSelf-Correction最大3回まで。
+- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && A1 Done && pendingDecisionQueueCount==0)`。
+
+### Fail-safe（停止報告テンプレ）
+- 失敗条件:
+- 影響範囲（ファイル/契約ID）:
+- 人間判断が必要な選択肢（2案）:
+  - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
+  - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
