@@ -154,6 +154,27 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 strict / non-strict いずれの運用プロファイルでも、組織ごとの採否判断は
 `04_Documentation/security_operational_guidelines.md` を参照してください。
 
+## 7.10 同一ワークフロー（Plan → Execute → Verify → Proceed）
+
+`security.md` の更新は、次の同一ワークフローで固定する。
+
+1. **Plan**
+   - `strict_mode_exception_approval_flow.md` を正本として再読し、D1〜D4・役割語彙・導線を確認する。
+   - SafeMode 既定ONと share/export 漏洩防止の後退表現が混入していないことを確認する。
+2. **Execute**
+   - 本書は「基底セキュリティ方針」に限定し、承認フロー仕様の独自再定義を行わない。
+3. **Verify**
+   - docs-check / diff-check で整合を確認する。
+   - 不一致時は最小修正で再検証し、**自己修復は最大3回**までとする。
+4. **Proceed**
+   - 3回で収束しない場合は fail-safe 停止し、未解決論点を issue memo に記録する。
+
+### 後退禁止（Fail-safe即停止）
+
+- SafeMode 既定ONの緩和
+- share/export 漏洩防止境界の緩和
+- review自動昇格・auto-apply・未承認状態の確定扱い
+
 ## 8. Strict provisioning 運用（AUTH-API-02）
 
 `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`の strict mode では、未登録subjectを必ず拒否します。

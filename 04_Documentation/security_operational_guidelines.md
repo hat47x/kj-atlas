@@ -92,3 +92,24 @@
 2. セキュリティ基底方針: `04_Documentation/security.md`
 3. 実行runbook: `04_Documentation/operations.md`
 4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）
+
+## 8. 同一ワークフロー（Plan → Execute → Verify → Proceed）
+
+運用判断ガイドの更新は次の共通手順で行う。
+
+1. **Plan**
+   - 役割（Security Officer / System Owner / Platform Operator）と D1〜D4 を正本と照合する。
+   - SafeMode・share/export漏洩防止の後退表現が差分にないことを確認する。
+2. **Execute**
+   - 本書の責務を「運用判断補助」に限定し、承認フロー正本の再定義は行わない。
+3. **Verify**
+   - docs-check とリンク整合確認を行う。
+   - 失敗時は最小修正で再実行し、**自己修復は最大3回**までとする。
+4. **Proceed**
+   - 3回で収束しない場合は fail-safe 停止し、Decision Queue / issue memo に記録する。
+
+### フェイルセーフ停止条件
+
+- SafeMode 既定ONの後退要求
+- share/export 漏洩防止の緩和要求
+- D1〜D4・役割分離・導線の不一致が解消しない状態
