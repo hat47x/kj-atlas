@@ -99,6 +99,7 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 - `operation` と `command` は固定マッピング（`query↔context-query`, `bundle↔context-bundle`, `proposal↔proposal-diff`, `apply↔apply|apply --dry-run`）に一致しなければならない。
 - `operation=apply` は常に `dryRun=true` を必須とし、`dryRun=false` は契約違反として失敗扱いにする。
 - `dryRun=true` の場合、`sideEffect=none` 以外は契約違反として失敗扱いにする。
+- `dryRun=true` の場合、DB永続化・外部送信・`reviewState` 昇格（`unreviewed -> reviewed`）は全て禁止する。
 
 CE4運用期間の固定値:
 - `schemaVersion="ce4.audit.v1"`
@@ -142,6 +143,7 @@ CE4運用期間の固定値:
 - Verify で不整合を検出した場合、自己修復（再実行/設定補正/キー補完）は最大3回まで。
 - 3回で解消しない場合は Proceed を停止し、論点を保留化する。
 - 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
+- 契約衝突（同一キーの複数定義）または未定義競合（必要キーの定義欠落）を検知した場合も、回数に関わらず即停止する。
 - 監査4点セット（`query/bundle/proposal/apply`）の欠損は No-Go とし、補完完了まで成功扱いしない。
 
 ### 4.7 フェイルセーフ停止条件

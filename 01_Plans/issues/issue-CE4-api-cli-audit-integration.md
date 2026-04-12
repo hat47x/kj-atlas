@@ -102,11 +102,11 @@
 
 ### 3.2 DoD不足提案（本Issueで補完）
 
-- [ ] DoD-1: 同値性キー `equivalenceKey` の定義元（query canonical hash）をArchitectureに明記。
-- [ ] DoD-2: `dry-run` の禁止副作用（DB/外送/review昇格）をRuntime/Opsに明記。
-- [ ] DoD-3: ログ欠損を成功扱いしない判定（fail-closed）を運用手順へ反映。
-- [ ] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
-- [ ] DoD-5: `rejectReasonCode` の分類コード（例: `missing_event`, `equivalence_mismatch`, `dry_run_side_effect`, `safemode_regression`）を運用記録へ固定する。
+- [x] DoD-1: 同値性キー `equivalenceKey` の定義元（query canonical hash）をArchitectureに明記。
+- [x] DoD-2: `dry-run` の禁止副作用（DB/外送/review昇格）をRuntime/Opsに明記。
+- [x] DoD-3: ログ欠損を成功扱いしない判定（fail-closed）を運用手順へ反映。
+- [x] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
+- [x] DoD-5: `rejectReasonCode` の分類コード（例: `missing_event`, `equivalence_mismatch`, `dry_run_side_effect`, `safemode_regression`）を運用記録へ固定する。
 
 ## 4) Phase 4 Execute（mock `sourceBundleHash` 許容で依存切断）
 
@@ -154,10 +154,10 @@
 
 ## 8) タスク分解（文書限定）
 
-- [ ] T1: 監査ログイベントスキーマ（version付き）を architecture/docs に同期。
-- [ ] T2: API/CLI同値性の判定基準（bundleHash一致 + equivalenceKey一致）を明記。
-- [ ] T3: `local_llm_ops_guide.md` に監査runbookを同期。
-- [ ] T4: dry-run副作用0の監査観点を手順化。
+- [x] T1: 監査ログイベントスキーマ（version付き）を architecture/docs に同期。
+- [x] T2: API/CLI同値性の判定基準（bundleHash一致 + equivalenceKey一致）を明記。
+- [x] T3: `local_llm_ops_guide.md` に監査runbookを同期。
+- [x] T4: dry-run副作用0の監査観点を手順化。
 
 ## 9) 検証計画 / Validation plan
 
@@ -206,3 +206,16 @@
 
 - `04_Documentation/local_llm_ops_guide.md` の CE4 runbook へ運用制約を同期済み。
 - 既存監査スキーマ（`schemaVersion="ce4.audit.v1"`）は非破壊で維持。変更不要のためフェイルセーフ停止条件には未該当。
+
+## 13) Stream E Verify実行ログ（docs-check / 自己修復3回）
+
+- Verify command（docs-check）:
+  - `rg -n "equivalenceKey|bundleHash|dryRun|sideEffect|sourceBundleHash|schemaVersion|rejectReasonCode|query|bundle|proposal|apply|fail-closed|mock:<hash>" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/api.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/local_llm_ops_guide.md`
+  - `git diff --check`
+- 自己修復ログ:
+  1. 修復1: AC/DoD/TODOの未完了チェックを固定契約実装済み状態に同期。
+  2. 修復2: Runbookの `dryRun=true -> sideEffect=none` を副作用境界（DB/外部送信/review昇格禁止）として明文化。
+  3. 修復3: Verify停止条件（3回超過/契約衝突/未定義競合で停止）を運用導線へ明記。
+- 判定:
+  - 4点監査欠損 / 同値性不一致 / dry-run境界違反 / safeMode後退は No-Go（fail-closed）。
+  - 3回自己修復で未収束の場合は Proceed 禁止のまま停止する。
