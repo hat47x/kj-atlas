@@ -255,3 +255,23 @@
   - Ready: 実装ストリームへ引き渡し可。
   - Hold: `stop condition` 解消後に同Phaseから再開。
 
+## Stream G handoff sync (2026-04-12)
+
+### Read同期
+- Re-read sibling A1/A2/A3 memos in the same backlog lane and reconfirmed serial dependency `A1 -> A2 -> A3`.
+
+### Dependency / Decision Queue
+- QueueID: `DQ-FB_P2A_01_A2_MOCK_VALIDATION-STREAM-G-2026-04-12`
+- Status: Closed
+- Rule: unresolved queue item blocks Proceed; contract drift is routed back to A1 only.
+
+### AC/DoD補完
+- Added lane-level NoGo rule: no transition to next phase when queue is reopened, dependency is inverted, or contract link is missing.
+- Added lane-level DoD rule: handoff payload must include `contractId`, `decision status`, `rollback trigger`, and `next owner`.
+
+### docs-check
+- Validation command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
+
+### 次レーンhandoff
+- Next lane receives reference-only contract context and may not redefine A1 contract values.
+

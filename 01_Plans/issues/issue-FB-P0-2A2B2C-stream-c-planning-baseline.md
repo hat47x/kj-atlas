@@ -230,3 +230,26 @@
   - Ready: 実装ストリームへ引き渡し可。
   - Hold: `stop condition` 解消後に同Phaseから再開。
 
+## Stream G update (2026-04-12, planning memo only)
+
+### Phase 1) Read同期
+- Re-read baseline + incomplete P2A/P2B memos and confirmed serial order remains `A1 -> A2 -> A3` for each backlog lane.
+
+### Phase 2) A1/A2/A3依存 + Decision Queue更新
+| Lane | QueueID | Topic | Status | Proceed Impact |
+| --- | --- | --- | --- | --- |
+| `FB-P2A-01` | `DQ-FB-P2A-01-READINESS` | A1 fixed contract consumption by A2/A3 | Closed | A2/A3 proceed allowed |
+| `FB-P2A-02` | `DQ-FB-P2A-02-READINESS` | A1 fixed contract consumption by A2/A3 | Closed | A2/A3 proceed allowed |
+| `FB-P2B-01` | `DQ-FB-P2B-01-A1-FIXED` | A1 fixed contract guard | Closed | Downstream keeps reference-only mode |
+| `FB-P2B-02` | `DQ-FB-P2B-02-A1-FIXED` | A1 fixed contract guard | Closed | Downstream keeps reference-only mode |
+
+### Phase 3) AC/DoD不足補完
+- Added common NoGo: unresolved queue / contract drift / undefined conflict => immediate stop.
+- Added common DoD: each lane must keep `Priority=P0`, explicit stop trigger, and handoff payload fields.
+
+### Phase 4) docs-check
+- Baseline validator command remains: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
+
+### Phase 5) 次レーンhandoff
+- Handoff checklist fixed for all lanes: `ContractID`, `DecisionQueue snapshot`, `Go/NoGo`, `Rollback Trigger`, `next owner`.
+
