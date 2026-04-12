@@ -258,3 +258,44 @@
   - safeMode既定ONを弱める記述
   - share/export 漏洩防止を緩和する記述
   - review自動昇格 / auto-apply を許容する記述
+
+## 17) Stream H 専任サイクル（DOC-OPS-05-14 / P1→P6）
+
+### P1 Read（対象文書再読・必須）
+
+- 再読対象: `04_Documentation/security_operational_guidelines.md`（本Issueの単一対象）。
+- 再読確認点: Classification=`Improve external`、Audience/Goal/Non-goal/Public boundary の明示、D1〜D4固定値、SafeMode後退禁止。
+
+### P2 ADR CDC（Context / Decision / Consequences）
+
+- Context: 公開可能な運用ガイドとして維持しつつ、承認フロー正本の再定義は回避する必要がある。
+- Decision: 本Issueは docs-only の公開品質改善に限定し、設計正本は `02_Architecture/strict_mode_exception_approval_flow.md` を参照する。
+- Consequences: security/operations との責務分離が明確になり、Open化時の差し戻し理由を「公開境界/固定値不一致」に限定できる。
+
+### P3 Plan
+
+- AC固定:
+  1. Audience/Goal/Non-goal/Public boundary を対象文書に保持。
+  2. D1〜D4・役割語彙3種（Security Officer / System Owner / Platform Operator）を維持。
+  3. Verify失敗時の自己修復上限3回を明記。
+- Non-goal: 実装コード変更、`operations.md` 変更、他Issue改稿。
+
+### P4 Execute
+
+- 実施内容: 本Issueへ Stream H のP1〜P6記録を追記し、運用手順をフェーズ名で固定。
+- スコープ適合: `issue-doc-ops-05-14-*` と単一対象文書のみ。
+
+### P5 Verify
+
+- 実行コマンド:
+  - `rg -n "^## 17\\) Stream H 専任サイクル|^## 9\\. DOC-OPS-05 Stream H 専任サイクル|P1 Read|P2 ADR CDC|P3 Plan|P4 Execute|P5 Verify|P6 Proceed" 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md 04_Documentation/security_operational_guidelines.md`
+  - `git diff --check`
+- 判定: docs-check の範囲で差分整合を確認。
+
+### P6 Proceed
+
+- 判定: **Ready**
+- フェイルセーフ:
+  - 3回超過（自己修復4回目相当）で停止。
+  - 用語ドリフト（役割語彙/D1〜D4）未収束で停止。
+  - スコープ競合（03_Implement、`operations.md`、他Stream専有領域）検出時は停止。
