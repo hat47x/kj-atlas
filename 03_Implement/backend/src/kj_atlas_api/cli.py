@@ -31,15 +31,26 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -> tuple[str, dict[str, object]]:
     doc_id = str(input_payload["docId"])
+    equivalence_key = input_payload.get("equivalenceKey")
+    bundle_hash = input_payload.get("bundleHash")
+    if not isinstance(equivalence_key, str) or not equivalence_key:
+        raise SystemExit("input JSON must include equivalenceKey")
+    if not isinstance(bundle_hash, str) or not bundle_hash:
+        raise SystemExit("input JSON must include bundleHash")
+
     payload = {
         "operation": args.operation,
         "safeMode": args.safe_mode,
-        "bundleHash": input_payload.get("bundleHash"),
-        "queryHash": input_payload.get("queryHash"),
+        "equivalenceKey": equivalence_key,
+        "bundleHash": bundle_hash,
+        "sourceBundleHash": input_payload.get("sourceBundleHash"),
+        "queryHash": input_payload.get("queryHash", equivalence_key),
         "dryRun": args.dry_run,
+        "sideEffect": input_payload.get("sideEffect", "none"),
         "rejectReasonCode": input_payload.get("rejectReasonCode"),
         "command": args.command,
         "channel": "cli",
+        "schemaVersion": "ce4.audit.v1",
     }
     return doc_id, payload
 

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Literal, cast
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -410,12 +410,16 @@ class ExportAuditPayload(BaseModel):
 class ContextAuditPayload(BaseModel):
     operation: Literal["query", "bundle", "proposal", "apply"]
     safeMode: bool = True
-    bundleHash: str | None = None
+    equivalenceKey: str = Field(pattern=r"^[0-9a-f]{64}$")
+    bundleHash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    sourceBundleHash: str | None = Field(default=None, pattern=r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$")
     queryHash: str | None = None
     dryRun: bool = True
+    sideEffect: Literal["none"] = "none"
     rejectReasonCode: str | None = None
     command: str | None = None
-    channel: Literal["api", "cli"] = "api"
+    channel: Literal["api", "cli", "gui"] = "api"
+    schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"
 
 
 @router.post("/{doc_id}/context-audit")
@@ -426,6 +430,11 @@ def post_context_audit(
     x_read_only: str | None = Header(default=None, alias="X-Read-Only"),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
+    if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
+        raise HTTPException(status_code=422, detail="queryHash must equal equivalenceKey for CE4 equivalence checks")
+    if payload.dryRun and payload.sideEffect != "none":
+        raise HTTPException(status_code=422, detail="dryRun=true requires sideEffect=none")
+
     access_request, decision = _authorize_request(
         request,
         db,
@@ -454,12 +463,16 @@ def post_context_audit(
                     "adapterName": getattr(getattr(request.app.state, "access_control_adapter", None), "name", "none"),
                     "traceId": access_request.auth.trace_id,
                     "operation": payload.operation,
+                    "equivalenceKey": payload.equivalenceKey,
                     "bundleHash": payload.bundleHash,
+                    "sourceBundleHash": payload.sourceBundleHash,
                     "queryHash": payload.queryHash,
                     "dryRun": payload.dryRun,
+                    "sideEffect": payload.sideEffect,
                     "rejectReasonCode": payload.rejectReasonCode,
                     "command": payload.command,
                     "channel": payload.channel,
+                    "schemaVersion": payload.schemaVersion,
                     **build_auth_assurance_metadata(access_request.auth),
                 },
             )
