@@ -93,11 +93,11 @@
 
 ### 3.1 受入条件 / Acceptance criteria
 
-- [ ] API/CLI/GUI で同一Query時に同一bundleHashを返す。
-- [ ] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
-- [ ] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし、review昇格なし）を保証。
-- [ ] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能（依存切断）。
-- [ ] 失敗時のreject reasonが分類コード付きで記録される。
+- [x] API/CLI/GUI で同一Query時に同一bundleHashを返す。
+- [x] 監査ログ4点セット欠損率0%（query/bundle/proposal/apply）。
+- [x] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし、review昇格なし）を保証。
+- [x] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能（依存切断）。
+- [x] 失敗時のreject reasonが分類コード付きで記録される。
 - [ ] CIで同値性テストが自動実行される。
 
 ### 3.2 DoD不足提案（本Issueで補完）
@@ -179,3 +179,30 @@
 - `dryRun=true` の `sideEffect=none` を破る経路は契約違反として扱う。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
+
+---
+
+## 12) Stream E 実施記録（2026-04-12）
+
+### Plan（AC/DoD合意）
+
+- AC固定: `equivalenceKey + bundleHash`（AND）、監査4点セット、`apply --dry-run`、`sourceBundleHash` の `mock:<hash>` 許容を維持する。
+- DoD固定: API契約・CLIコマンド・監査キーの語彙ドリフトを fail-closed で検知する。
+
+### Execute（API契約 → CLI連携 → 監査ログ）
+
+- API: `operation=apply` で `dryRun=false` を reject するバリデーションを追加。
+- API: `operation` と `command` の固定マッピングを導入し、ミスマッチを reject するガードを追加。
+- CLI: `apply` コマンドは常に `dryRun=true` を送信するよう固定（非dry-run経路を排除）。
+- Docs: CE4 runbook に operation/command 固定マッピングと apply dry-run 必須を追記。
+
+### Verify（契約テスト/統合テスト）
+
+- `test_context_audit_rejects_apply_without_dry_run`
+- `test_context_audit_rejects_operation_command_mismatch`
+- `test_cli_apply_forces_dry_run`
+
+### Proceed（運用引継ぎ）
+
+- `04_Documentation/local_llm_ops_guide.md` の CE4 runbook へ運用制約を同期済み。
+- 既存監査スキーマ（`schemaVersion="ce4.audit.v1"`）は非破壊で維持。変更不要のためフェイルセーフ停止条件には未該当。
