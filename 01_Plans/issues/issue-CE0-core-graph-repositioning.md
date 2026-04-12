@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner
-- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contracts only）
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Contracts only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -20,7 +20,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
-- Stream: `B` (Contracts only / Docs-Plan only)
+- Stream: `A` (Contracts only / Docs-Plan only)
 
 ## 0) Phase 1 Read（最新メタ）
 
