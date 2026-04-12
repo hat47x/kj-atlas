@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Backend/Frontend Team
-- Scope: `01_Plans/issues/`, `02_Architecture/`, `04_Documentation/`
+- Owner: Stream B (CE1 ContextQuery/ContextBundle contracts)
+- Scope: `01_Plans/issues/`, `02_Architecture/`（契約文書のみ）
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
@@ -19,22 +19,28 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `A` (Critical Path / CE1専任 / Contracts only / Docs-Plan only)
+- Stream: `B` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
-## 0) Phase 1 Read（I/F抽出 + mock許容）
+## 0) Phase 1 Read（I/F抽出 + mock許容 / Stream B）
 
 - CE1必須I/F: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`。
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
-## 直列フェーズ固定（Stream A / Contract Freeze）
+## 直列フェーズ固定（Stream B / Contract Freeze）
 
 1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
 2. **Phase 2（CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
 3. **Phase 3（Plan: AC/DoD合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。  
 4. **Phase 4（Execute: mock-first契約固定）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
 5. **Phase 5（Verify/Proceed）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。
+
+### 実行順序固定（Stream B 強制）
+
+- 各Phase開始時に対象ファイル（本Issue / `02_Architecture/llm_input_ir_spec.md`）を再読する。
+- 手順は必ず **Plan → Execute → Verify → Proceed** を維持し、逆順・省略を禁止する。
+- Proceed は CE2/CE4 への参照専用引継ぎのみ許可し、実装変更要求を含めない。
 
 ## Contract ID Freeze（CE1）
 
@@ -48,7 +54,7 @@
 ## 1) Context（Phase 2 Read）
 
 - CE-1は CE-2/3/4 の前提であり、ここで Query/Bundle の最小I/Fが曖昧だと後続で互換性崩壊が起きる。
-- Stream A では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
+- Stream B では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
 
 ## 2) Decision（ADR-0028整合 / Phase 2 ADR明文化）
 
@@ -185,9 +191,10 @@
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 10) フェイルセーフ（Stream A 固定）
+## 10) フェイルセーフ（Stream B 固定）
 
 - Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
+- 修復試行が3回を超過した場合、契約ID衝突（重複/異義）を検知した場合、safeMode後退を検知した場合、または編集許可スコープ逸脱が必要になった場合は即停止する。
 - CE0/CE1/CE2 間で Contract ID 衝突（重複定義/異義定義）を検知した場合は停止する。
 - 編集許可スコープ外（実装コード、CE3/CE4 issue、dashboard、issues/README）に触れる必要が生じた場合は停止する。
 - `previewConfirmed` bypass を許容する導線を検知した場合は即停止する。
