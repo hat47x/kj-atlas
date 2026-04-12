@@ -5,20 +5,21 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Plan Owner
-- Scope: `01_Plans/`, `02_Architecture/`
-- Dependencies: `ADR-0026`, `ADR-0027`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Owner: Plan Owner (Stream B)
+- Scope: `01_Plans/issues/`（planning only）
+- Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
 - Expected verification level: `docs-check`
 
 ## 1) Goal
 
-HIL-RS-01 の A1（契約固定）を単一契約として凍結し、A2/A3 を **A1 Done かつ Pending=0 のときのみ** 解放する。
+HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し、A1/A2/A3 依存を「実装待ち」ではなく **状態遷移契約** で管理する。
 
-## 2) Fixed Contract Baseline
+## 2) Mock Contract Snapshot（Interface固定識別子のみ参照）
 
+- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-- Contract IDs（固定）:
+- Fixed Contract IDs:
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
@@ -28,72 +29,67 @@ HIL-RS-01 の A1（契約固定）を単一契約として凍結し、A2/A3 を 
   - `overridePolicy=human_dual_control_only`
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
-- SSOT:
-  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 
-## 3) CDC（Phase 2 ADR）
+## 3) ADR CDC（Phase 2）
 
 - Context:
-  - 本issueは `ADR-0026` / `ADR-0027` の下位具体化であり、上位方針を変更しない。
+  - 本issueは `ADR-0026/0027/0028` の下位計画であり、Stream B は architecture/documentation 実体編集を行わない。
 - Decision:
-  - 上位ADR改定が必要な要求は **承認待ち停止** とし、未承認で確定しない。
+  - A1/A2/A3 の依存は `state-transition contract` として固定し、実装完了待ちを着手条件にしない。
 - Consequences:
-  - A2/A3 は read-only 参照のみ。契約変更要求はA1へ差し戻す。
+  - 不一致はA1へ差し戻す。A2/A3は契約再定義を行わない。
 
-## 4) Acceptance Criteria / DoD
+## 4) State Transition Contract（依存切断）
 
-- [x] A1契約値（Contract IDs / schemaVersion / overridePolicy / freeze flags / SSOT）が単一化されている。
-- [x] A2/A3 開始条件が `A1 Done && pendingDecisionQueueCount==0` に固定されている。
-- [x] Decision Queue 遷移が `Pending -> Approved|Rejected` のみ。
-- [x] SafeMode既定ON / share-export漏えい防止 / human_dual_control_only の後退禁止が明示されている。
-- [x] 契約再定義をA2/A3で実施しないことが明示されている。
+- Allowed:
+  - `A1: Draft -> Open -> In Progress -> Done`
+  - `A2/A3: Draft -> Open` は `A1==Done && pendingDecisionQueueCount==0` のときのみ
+  - `DecisionQueue: Pending -> Approved | Rejected`
+- Forbidden:
+  - Pending bypass
+  - `A1!=Done` での `A2/A3 Draft -> Open`
+  - A2/A3 側での契約ID再定義
 
-## 5) Stream A Workflow（Plan → Execute → Verify → Proceed）
+## 5) Acceptance Criteria / DoD
+
+- [x] CDC（Context/Decision/Consequences）が明文化されている。
+- [x] 依存が状態遷移契約で記述されている。
+- [x] Mock Contract Snapshot の固定識別子のみを参照している。
+- [x] SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` 後退禁止が明示されている。
+- [x] Proceed条件（Open化条件と停止条件）が明文化されている。
+
+## 6) Serial Phases（Plan -> Execute -> Verify -> Proceed）
 
 ### Phase 1 Read
-- Plan: 対象5ファイルを再読し、`Status/Priority/Scope/Dependencies` の差分を抽出。
-- Execute: 5ファイルから固定キーを抽出。
-- Verify: ベースライン不一致がないことを確認。
-- Proceed: 差分なしならPhase 2へ。差分ありは即停止。
+- 対象5 issueを再Readし、Status/Scope/Dependencies/Contract IDs を再確認する。
 
 ### Phase 2 ADR CDC
-- Plan: CDC を明文化。
-- Execute: Context / Decision / Consequences を固定。
-- Verify: 上位ADR改定要否を判定。
-- Proceed: 改定必要なら承認待ち停止、不要ならPhase 3へ。
+- CDCを再確認し、上位ADR改定が必要なら停止（承認待ち）する。
 
 ### Phase 3 Plan
-- Plan: AC/DoD不足を補完。
-- Execute: Gate条件とDecision Queue遷移制約を明示。
-- Verify: `A1 Done && Pending=0` 以外の解放条件が存在しない。
-- Proceed: Phase 4へ。
+- AC/DoDと状態遷移契約の不足を補完する。
 
 ### Phase 4 Execute
-- Plan: 契約凍結をSSOTへ反映。
-- Execute: A1 gate固定、A2/A3 read-only化、差し戻し導線一本化。
-- Verify: 契約ID再定義・安全後退・未承認確定化がない。
-- Proceed: Phase 5へ。
+- issue本文のみ同期し、依存契約・禁止遷移・差し戻し先を更新する。
 
 ### Phase 5 Verify
-- Plan: docs-checkを実施。
-- Execute: validator / unittest / rg / diff-check。
-- Verify: 失敗時Self-Correction最大3回。
-- Proceed: 成功でPhase 6へ、3回超過は停止報告。
+- `validate_active_issue_memos.py` + `rg` で整合確認。失敗時は自己修復最大3回。
 
 ### Phase 6 Proceed
-- Plan: 未確定事項をDecision Queueへ戻す。
-- Execute: Pending項目を更新し、契約再定義は行わない。
-- Verify: 未承認決定の確定化がない。
-- Proceed: Stream A A1固定完了として終了。
+- Open化条件を満たすものだけを次アクションへ進め、未確定はDecision Queueへ戻す。
 
-## 6) Fail-safe（即停止条件）
+## 7) Open化条件（Proceed Gate）
 
-- 3回修復超過
-- 未承認決定の確定化
-- 未定義競合検出
+1. `A1==Done`
+2. `pendingDecisionQueueCount==0`
+3. 固定識別子（Freeze Pack/Contract IDs/schemaVersion/overridePolicy）が一致
+4. 安全境界後退要求が存在しない
 
-停止時は必ず以下を提出する。
-1. 失敗条件
-2. 競合ファイル
-3. 必要承認者
-4. Yes/No質問
+## 8) Fail-safe
+
+- 停止条件:
+  1. Verify失敗が3回超過
+  2. 未承認決定の確定化
+  3. 固定識別子の不一致
+- 停止時記録:
+  - 失敗条件 / 対象issue / 必要承認者 / Yes-No確認事項

@@ -1,169 +1,99 @@
 # Issue Draft: HIL-RS-02 A3 Operations/Documentation 同期
 
-- Type: Documentation
+- Type: Documentation Planning
 - Status: Draft
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: TBD
 - Priority: P2
-- Owner: Operations Owner
-- Scope: `04_Documentation/`, `01_Plans/`
+- Owner: Operations Owner (Stream B planning)
+- Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（issue本文のみ）
 - Related Backlog: `HIL-RS-02`
-- Related ADR/Spec: `ADR-0027`, `ADR-0019`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `02_Architecture/strict_mode_exception_approval_flow.md`
+- Related ADR/Spec: `ADR-0027`, `ADR-0019`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
 
 ## 1) 背景
 
-- A2をインターフェース前提として先行しても、A3運用文書を同期しないと検証・監査手順が実装想定と乖離する。
-- AUTH-OPS-03 の固定語彙（役割、状態、D1〜D4）が運用文書間でズレると、監査時に同一事象を別状態として解釈してしまう。
+A3は運用同期タスクだが、Stream Bは planning only のため、実体文書（`02_Architecture/*`, `04_Documentation/*`）を編集せず、Open化判定に必要な契約条件のみを issue 側で固定する。
 
 ## 2) 目的
 
-- 可逆統合フローの運用手順、異常時ロールバック、監査証跡採取を運用文書へ反映し、A3の運用責務を矛盾なく固定する。
+A3のOpen化条件・停止条件・検証条件を **状態遷移契約** として明文化し、A1依存を実装待ちにしない。
 
-## 3) スコープ
+## 3) Mock Contract Snapshot（固定識別子参照）
 
-- operations/security/e2e_testing の必要差分更新。
-- operations/security/e2e のA3文書同期ログ更新（dashboard は参照のみ）。
+- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
+- Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Fixed Contract IDs:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- Fixed values:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
 
-## 4) 非スコープ
-
-- 認証認可モデルの新規設計。
-- backend API仕様変更。
-- A1/A2 issue 本体変更。
-
-## 5) 受入条件（AC）
-
-- AC-1: 新運用手順が既存手順と矛盾しない。
-- AC-2: ロールバック手順が明記される。
-- AC-3: strict mode例外の状態遷移（`Requested/ApprovalPending` -> `Approved` -> `ExceptionActive/ActiveException` -> `RollbackPending` -> `Closed`、未確定時 `StoppedForClarification`）と2者承認責務が operations/security で一致している。
-- AC-4: D1〜D4固定値（承認TTL=4h、最大2h、代理承認なし、48hレビュー+15m/60m）が operations/security 双方で一致している。
-- AC-5: docs-checkが通過する。
-- AC-6: 本Issue内に A3 同期証跡（Read/CDC/Plan/Execute/Verify/Proceed）が1回分以上記録される。
-
-## 6) DoD（A3運用同期）
-
-- DD-1: `operations.md` と `security.md` の責務語彙が一致（Security Officer / System Owner / Platform Operator）。
-- DD-2: 状態語彙の差分（architecture canonical と運用 runbook alias）を明示し、意味差分ゼロを保証。
-- DD-3: `e2e_testing.md` に docs-check 観点（相互リンク、用語一致、固定値一致）を反映。
-- DD-4: 本Issueに Stream H A3 同期記録を残す（dashboard は Read-only 参照）。
-- DD-5: Phase直列の実行順（operations -> security -> e2e）を検証ログで示し、各Phase開始時の再Read証跡を残す。
-
-
-### 6.1 AC/DoD補完ドラフト（本Issue内合意）
-
-- Draft-1: DD-5 を追加し、Phase直列順序と再Read証跡を DoD に含める。
-- Draft-2: Verify では issue + operations + security + e2e の4ファイルで語彙一致/固定値一致を確認する。
-- 合意結果: 本Issueの Stream H 実行範囲では Draft-1/2 を採択し、追加ADRは作成しない。
-
-## 7) ADR CDC（新規ADRは作成しない）
+## 4) ADR CDC（Phase 2）
 
 - Context:
-  - 実装側の状態語彙と運用文書語彙がズレると、例外運用の停止/復旧判断が監査で分断される。
-  - A2未完了でもA3文書同期を先行し、運用責務を固定する必要がある。
+  - A3は運用同期の出口だが、契約基準が曖昧だとOpen判定が人依存になる。
 - Decision:
-  - 同期対象は `operations.md` / `security.md` / `e2e_testing.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`。
-  - 同期順序は `02_Architecture`（参照） -> `04_Documentation`（operations -> security -> e2e） -> `01_Plans/issues`（本Issue記録）とする。
-  - 固定語彙は役割3種、状態遷移、D1〜D4固定値を AUTH-OPS-03 準拠で統一する。
+  - A3は `A1 Done && pendingDecisionQueueCount==0` のときのみ `Draft -> Open` を許可する。
 - Consequences:
-  - 監査容易性（同一語彙・同一固定値）が向上する。
-  - 文書変更時の同時同期コスト（cross-doc更新）が増える。
+  - A3はA1契約をread-only参照し、契約変更要求はA1へ差し戻す。
 
-## 8) docs-check観点（明示）
+## 5) State Transition Contract
 
-1. 相互リンク: operations <-> security <-> e2e の参照導線が途切れていない。
-2. 用語一致: 役割（Security Officer/System Owner/Platform Operator）、状態（StoppedForClarification等）が一致。
-3. 固定値一致: D1〜D4（4h / 2h / no delegate / 48h + 15m/60m）が一致。
+- Allowed:
+  - `A3: Draft -> Open` only if `A1==Done && Pending==0`
+  - `DecisionQueue: Pending -> Approved | Rejected`
+- Forbidden:
+  - Pending bypass
+  - A1未完了でのA3 Open
+  - A3 issue内での契約再定義
 
-## 9) フェーズ進行ログ（Stream H）
+## 6) 受入条件（AC）/ DoD
 
-### Phase 1: Read
-- Plan: A3 issue + operations/security/e2e を再読し、語彙・責務・状態・D1〜D4差分を抽出する。
-- Execute: 対象4ファイルと `strict_mode_exception_approval_flow.md` を参照して差分棚卸し。
-- Verify: `rg` で状態語彙/固定値/役割の出現位置を抽出し、ズレ候補を特定。
-- Proceed: 差分候補を Plan入力として固定。
+- AC-1: CDC（Context/Decision/Consequences）が明文化されている。
+- AC-2: A3 Open化条件が機械判定式で示されている。
+- AC-3: Decision Queue許可/禁止遷移が示されている。
+- AC-4: 安全境界（SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only`）後退禁止が明示されている。
+- AC-5: Verify失敗時の自己修復上限3回が定義されている。
+- AC-6: Stream Bの編集境界（issue本文のみ）が明示されている。
 
-### Phase 2: CDC
-- Plan: Context/Decision/Consequences を本Issueへ固定し、docs-check観点（相互リンク・用語一致・固定値一致）をタスク化。
-- Execute: AC-6 と DoD を追記し、検証コマンド群を整理。
-- Verify: 同期対象・順序・固定語彙・固定値が明文化されていることを確認。
-- Proceed: AC/DoD補完ドラフト合意へ移行。
+## 7) Stream B 強制サイクル（各Phase開始時に再Read）
 
-### Phase 3: Plan（AC/DoD不足ドラフト合意）
-- Plan: AC/DoD不足（DD-5, docs-check観点, 依存切断ルール）を補完し、実更新前に合意する。
-- Execute: AC/DoD補完ドラフト（6.1）を Stream H 前提へ更新。
-- Verify: AC/DoDと検証手順が1対1に対応していることを確認。
-- Proceed: 文書実更新へ移行。
+### Phase 1 Read
+- 対象5 issue再Read、依存・識別子・遷移条件を棚卸し。
 
-### Phase 4: Execute
-- Plan: operations/security/e2e を同一語彙・責務・固定値へ直列同期。
-- Execute: operations -> security -> e2e の順で役割語彙、状態遷移語彙、固定値チェック導線を同期。
-- Verify: issue + 3文書間の表記揺れ・固定値差分がゼロであることを確認。
-- Proceed: docs-check実行へ移行。
+### Phase 2 ADR CDC
+- CDCを固定。上位ADR改定が必要なら停止（承認待ち）。
 
-### Phase 5: Verify/Proceed
-- Plan: docs-check、キーワード照合、差分整合を実施（修復上限3回）。
-- Execute: validator + `rg` を実行し、必要なら自己修復（最大3回）。
-- Verify: 語彙一致/固定値一致を確認し、失敗ゼロならProceed、未解消なら停止。
-- Proceed: 同期結果をA3 issueへ記録。
+### Phase 3 Plan
+- AC/DoD不足を補完。Open化条件と停止条件を明文化。
 
+### Phase 4 Execute
+- 本issue本文のみ更新（契約識別子、遷移、禁止事項、Proceed条件）。
 
-## 10) 検証方法
-
+### Phase 5 Verify
 - `python 01_Plans/issues/validate_active_issue_memos.py`
-- `rg -n "StoppedForClarification|RollbackPending|Closed|Requested|ApprovalPending|Approved|ExceptionActive|ActiveException|Security Officer|System Owner|Platform Operator" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
-- `rg -n "承認TTL=4h|最大2h|代理承認なし|48h|15m|60m|D1|D2|D3|D4" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `rg -n "A1 Done|pendingDecisionQueueCount|Pending -> Approved|Pending -> Rejected|human_dual_control_only|schemaVersion=1.0.0" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- 検証失敗は自己修復最大3回。超過で停止。
 
-## 11) 依存関係
+### Phase 6 Proceed
+- Open化条件を満たした場合のみA3をOpen候補に進める。未確定はDecision Queueへ戻す。
 
-- `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` はインターフェース前提として参照し、A3文書同期は独立実行する。
+## 8) Open化条件（明文化）
 
-## 12) リスク / フェイルセーフ
+1. `A1==Done`
+2. `pendingDecisionQueueCount==0`
+3. Mock snapshot固定識別子一致
+4. 安全境界後退要求なし
 
-- リスク: 運用文書の同期遅延で現場手順が旧仕様のまま残る。
-- 停止条件:
-  1. 3回修復失敗
-  2. 用語統一不能
-  3. 固定値不一致が解消不能
-  4. 未定義競合
-- 停止時は「失敗条件 / 影響文書 / 必要な人間判断」を記録して保留する。
+## 9) 停止条件
 
-## 13) 同期結果（Stream H 実行記録）
-
-- operations/security/e2e を直列同期し、役割・状態・固定値の整合を確認。
-- 未解決項目: なし（本更新時点）。
-- 次アクション: AUTH-OPS-03 更新時は 4.4 固定順序（Architecture -> Documentation -> Plans -> AGENTS）で再同期する。
-- 2026-04-11 stream-h-rerun-01（Phase 1〜5）: 役割語彙・状態遷移・D1〜D4固定値を4ファイルで再検証し、`docs-check`（validator + 2系統rg）を1回で通過。修復回数0回、停止条件（3回超過/未定義競合）非該当。
-
-## 14) Stream H rerun-02（Plan -> Execute -> Verify -> Proceed）
-
-### Phase 1 Read（先頭Read）
-
-- `strict_mode_exception_approval_flow.md` を再読し、役割語彙・状態遷移・D1〜D4固定値を再確認。
-- `operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を再読し、語彙差分を棚卸し。
-
-### Phase 2 ADR明文化（Context / Decision / Consequences）
-
-- Context: docs横断で役割語彙・状態遷移・固定値のずれが発生すると、監査時に同一事象を別判定するリスクがある。
-- Decision: Stream H は operations -> security -> e2e の直列順で同期し、各フェーズ開始時に再Readを実施する。
-- Consequences: 文書更新の自由度は下がるが、ドリフト検知と監査説明の一貫性が向上する。
-
-### Phase 3 Plan（AC/DoD不足提案）
-
-- AC補完提案:
-  - AC-7: 相互リンク（operations/security/security_guidelines/e2e）が全て有効であること。
-- DoD補完提案:
-  - DD-6: D1〜D4の数値表現（4h/2h/48h/15m/60m）を4文書で同一表記に統一する。
-
-### Phase 4 Execute（operations -> security -> e2e）
-
-- 実行順序を固定: 1) operations 2) security 3) e2e。
-- 各文書で語彙・状態・固定値・導線を同期し、前段の不一致が解消するまで次段へ進まない。
-
-### Phase 5 Verify（docs-check + rg + 差分整合）
-
-- 実行結果: validator + 2系統rgで整合を確認。修復回数 0/3。
-- 停止条件確認: 3回超過なし / 固定値不一致なし / 未定義競合なし。
-
-### Phase 6 Proceed（同期証跡記録）
-
-- 本節を同期証跡として記録し、次回AUTH-OPS-03更新時の再実行ベースラインとする。
+1. 検証失敗の自己修復3回超過
+2. 未承認決定の確定化
+3. 固定識別子不一致
+4. 編集境界違反（issue本文以外を変更しようとした場合）
