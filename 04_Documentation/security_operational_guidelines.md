@@ -113,3 +113,38 @@
 - SafeMode 既定ONの後退要求
 - share/export 漏洩防止の緩和要求
 - D1〜D4・役割分離・導線の不一致が解消しない状態
+
+## 9. DOC-OPS-05 Stream H 専任サイクル（P1→P6）
+
+> 1サイクルで1文書のみを扱う。各Phase冒頭で本書を再読する。
+
+### P1 Read（再読）
+
+- 本書の Classification / Audience / Goal / Non-goal / Public boundary を再確認する。
+- D1〜D4、役割語彙（Security Officer / System Owner / Platform Operator）、SafeMode境界を再確認する。
+
+### P2 ADR CDC
+
+- Context: 本書は公開向け運用判断ガイドであり、承認フロー仕様の正本ではない。
+- Decision: `Improve external` を維持し、内部正本（`02_Architecture/strict_mode_exception_approval_flow.md`）への導線を固定する。
+- Consequences: 公開境界と内部正本の責務が分離され、運用判断の再現性が上がる。
+
+### P3 Plan
+
+- docs-only で更新し、実装/設定値の変更は行わない。
+- Verify手順（docs-check + 差分整合）を先に固定する。
+
+### P4 Execute
+
+- 本書内の公開ガイド記述を、役割語彙・固定値・導線の一致を保ったまま更新する。
+- 重複説明は `security.md` / `operations.md` 側へ委譲し、責務混在を避ける。
+
+### P5 Verify
+
+- `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator|Plan → Execute → Verify → Proceed|フェイルセーフ" 04_Documentation/security_operational_guidelines.md`
+- `git diff --check`
+
+### P6 Proceed
+
+- Ready条件: 用語ドリフトなし、固定値一致、スコープ競合なし。
+- 停止条件: 自己修復3回超過、用語ドリフト未収束、スコープ競合検出（例: `operations.md` 変更要求）。
