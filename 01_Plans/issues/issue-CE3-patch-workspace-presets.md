@@ -131,3 +131,23 @@
   - Preset削除/上書きなど運用UIは後続検討。
 - 次手:
   - CE4で local監査遷移を document監査ログへ昇格し、export/import監査整合まで拡張する。
+
+## 9) Stream C Phase Notes (2026-04-12)
+
+- Phase 1 Read:
+  - CE3 issue / `PatchWorkspacePanel` / `ce3_patch_workspace` / CE3 E2E spec を再読し、候補独立性・rollback監査表示・preset replay が Core/Consensus 非改変で閉じていることを再確認。
+- Phase 2 Plan:
+  - AC/DoD は維持し、Verify の再現性を補強するため CE3 節に Playwright 事前セットアップ手順を明示する。
+  - Verify 失敗時は「browser install → deps install → 再実行」の順で最大3回まで自己修復する方針を固定。
+- Phase 3 Execute:
+  - `04_Documentation/e2e_testing.md` の CE3 セクションに Playwright `install/install-deps` の事前実行コマンドを追加。
+- Phase 4 Verify:
+  - unit: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+  - e2e 1回目: browser binary 不足で fail。
+  - 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium` を実行。
+  - e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+  - 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` を実行。
+  - e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+- Phase 5 Proceed:
+  - 未完了: local audit log を document 監査ログへ昇格する CE4 連携は未着手。
+  - フェイルセーフ判定: 契約逸脱なし、未定義競合なし、自己修復2回で収束（3回上限未満）。

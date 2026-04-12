@@ -123,6 +123,11 @@ CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは
 - `cd 03_Implement/frontend && npm run test -- ce3_patch_workspace PatchWorkspacePanel`
 - `cd 03_Implement/frontend && npm run e2e -- --grep "Patch Workspace|Preset|rollback"`
 
+CE3 変更PRで Playwright 実行環境が未セットアップの場合は、次を事前実行する。
+
+- `cd 03_Implement/frontend && npm exec playwright install chromium`
+- `cd 03_Implement/frontend && npm exec playwright install-deps chromium`
+
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
