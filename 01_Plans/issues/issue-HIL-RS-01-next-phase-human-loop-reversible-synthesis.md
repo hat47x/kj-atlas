@@ -6,292 +6,94 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
-- Related Backlog: HIL-RS-01
-- Related ADR/Spec: `ADR-0026`, `ADR-0001`, `00_Prompt/domain.md`, `02_Architecture/review_attribution.md`
+- Scope: `01_Plans/`, `02_Architecture/`
+- Dependencies: `ADR-0026`, `ADR-0027`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
 - Expected verification level: `docs-check`
 
-## 1) 課題 / Problem statement
+## 1) Goal
 
-- `ENV-ARCH-01` は Close 判定済みだが、次フェーズの作業起点（Backlog/依存順序/停止条件）が未固定だと再開時に手戻りが発生する。
-- HIL-RS-01 では A1（契約固定）を先行し、A2/A3 の重複解釈と競合を防ぐ必要がある。
+HIL-RS-01 の A1（契約固定）を単一契約として凍結し、A2/A3 を **A1 Done かつ Pending=0 のときのみ** 解放する。
 
-## 2) 背景 / Context
+## 2) Fixed Contract Baseline
 
-- `ADR-0026` D2は A1→A2→A3 の契約先行順序を要求する。
-- `domain.md` / `ADR-0001` は保留維持・単一正解否定・可逆性・Human-in-the-loop反復を価値軸として固定している。
-
-## 3) 解決方針 / Proposed solution
-
-- A1で契約ID（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`）と単一参照先（Single Source of Truth）を固定する。
-- Freeze Contract ID は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` として固定し、A2/A3はread-onlyで参照する。
-- A2/A3は参照専用で着手し、契約変更要求はA1へ差し戻す。
-- 共有リソース（`issues/README.md` / `project-progress-dashboard.md`）更新は統合フェーズへ分離する。
-
-## 3.1 変更理由・影響範囲・非対応範囲（固定）
-
-- 変更理由:
-  - 契約参照先と契約識別子の分岐を防ぎ、A2/A3での仕様ドリフトを抑止するため。
-- 影響範囲:
-  - A1契約文書、A1/A2/A3起票文書、レビュー帰属設計文書の参照ルール。
-- 非対応範囲:
-  - `03_Implement/**` のコード実装変更。
-  - 既存ADRの上位方針変更。
-
-## 4) 受入条件 / Acceptance criteria
-
-- [x] `ADR-0026` と本issueで、目的/非目標/停止条件が一致している。
-- [x] A1→A2→A3 の依存順序が明示されている。
-- [x] 安全制約（SafeMode既定ON、share/export漏えい防止後退禁止）が明記されている。
-- [x] A1契約の単一参照先が固定されている。
-- [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` の証跡がある。
-
-## 5) Phase 1 Read同期で抽出した契約未確定項目
-
-- 型（Type）: 未確定項目なし（A1契約IDごとの必須/任意/禁止を固定済み）。
-- `schemaVersion`: 未確定項目なし（`1.0.0`で固定）。
-- 責務境界: 未確定項目なし（A1=契約固定、A2/A3=参照専用）。
-- 禁止事項: 未確定項目なし（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止を固定）。
-
-## 6) Stream A log（Plan → Execute → Verify → Proceed）
-
-### Phase 1: Read & Baseline
-
-- Plan:
-  - 対象3ファイル再Read、契約ID・schemaVersion・禁止事項・単一参照先を抽出。
-- Execute:
-  - `issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `hil_rs_01_a1_minimum_interface_contract.md` を再Read。
-- Verify（事実のみ）:
-  - 契約ID: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`。
-  - schemaVersion固定値: `1.0.0`（Critique / Attribution / TieBreak）。
-  - 単一参照先: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
-  - 禁止事項: SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止。
-  - 想定との差分（契約ID / schemaVersion / 禁止事項 / 参照先）が存在しないことを確認。
-- Proceed:
-  - Phase 2へ進行。
-
-> Stop Rule（Phase 1）:
-> 想定との差分を検知した場合は即停止し、
-> 1) 失敗再現手順
-> 2) 競合ファイル
-> 3) 必要な承認者
-> 4) 解決のYes/No質問
-> を提出する。
-
-### Phase 2: ADR要否判定（Context / Decision / Consequences）
-
-- Context:
-  - A1契約固定は `ADR-0026` の下位具体化に限定される。
-- Decision:
-  - ADR追加/更新は不要。
-  - ただし `ADR-0026` / `ADR-0027` の本文変更が必要と判定された場合は、承認完了まで即停止する。
-- Consequences:
-  - A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻し。
-
-### Phase 3: Contract Fix
-
-- Plan:
-  - 必須/任意/禁止を固定し、単一参照先へ集約。
-- Execute:
-  - A1契約正本を `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に固定。
-  - `contractLinkLocked=true` / `sharedResourceFreeze=true` を証跡化。
-- Verify:
-  - 契約ID・schemaVersion・overridePolicy・tie-break順序の不一致なし。
-- Proceed:
-  - Phase 4へ進行。
-
-### Phase 4: Verify
-
-- Plan:
-  - AC/DoDに対する自己検証を実施し、A1契約固定の証跡を確定する。
-- Execute:
-  - SSOT/Freeze flag/固定値/禁止事項/契約変更不可ルールの5観点で検証を実施。
-- Verify:
-  - Ready条件5項目が全て満たされ、未定義契約変更要求が0件であることを確認。
-  - Mock handoff I/F（APIシグネチャ・型・fixture schema）がSSOTと一致することを確認。
-- Proceed:
-  - Phase 5へ進行。
-
-### Phase 5: Handoff
-
-- Plan:
-  - A2開始条件（Ready/Block理由）を単一判定で明文化する。
-- Execute:
-  - Handoff packetにReady/Block判定と差し戻し経路（A1のみ）を記録。
-- Verify:
-  - A2/A3はA1契約を参照専用とし、未承認事項を確定扱いしないことを確認。
-- Proceed:
-  - A2/A3へ判定付きで引き継ぐ（契約変更要求はA1差し戻しを維持）。
-
-## 7) Contract change request routing（固定）
-
-- 差し戻し先（唯一）:
-  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-- 受付対象:
-  - 契約ID / schemaVersion / requiredFields / overridePolicy / tie-break順序の変更要求
-- A2/A3での禁止:
-  - 契約本文の直接改訂
-  - SSOT（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）の複線化
-
-## 8) Handoff packet（A2/A3）
-
+- Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Contract IDs（固定）:
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
   - `A1-ATTR-IF`
   - `A1-ERROR-IF`
-- Single Reference（固定）:
-  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- Freeze flags:
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- Freeze Contract ID:
-  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-- 固定値:
-  - `CritiqueInputContract.schemaVersion=1.0.0`
-  - `ReviewAttributionContract.schemaVersion=1.0.0`
-  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
-  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
-- 明示禁止:
-  - 契約変更禁止。逸脱要求はA1へ差し戻し。
-
-### 8.1 Mock-ready I/F（A2実装前提）
-
-- API signatures（固定・実装前提）:
-  - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
-  - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
-  - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
-  - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
-- 型参照（固定）:
-  - `CritiqueInputFixtureV1`
-  - `ReDiffFixtureV1`
-  - `ReviewAttributionFixtureV1`
-  - `ErrorEnvelopeFixtureV1`
-- Fixture schema（固定）:
-  - `fixtures/hil_rs_01/critique_input_v1.json`
-  - `fixtures/hil_rs_01/rediff_v1.json`
-  - `fixtures/hil_rs_01/review_attribution_v1.json`
-  - `fixtures/hil_rs_01/error_envelope_v1.json`
-
-
-## 9) Phase 5 Gate判定（A2開始条件）
-
-- チェックリスト（A2開始前に全項目必須）:
-  - [x] SSOTが `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` で固定されている。
-  - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` がissueとSSOT双方で一致している。
-  - [x] `schemaVersion=1.0.0`（Critique / Attribution / TieBreak）が一致している。
-  - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が一致している。
-  - [x] 「A2/A3で契約本文を変更しない」ルールが明記されている。
-- Gate判定:
-  - Ready: チェックリスト全項目達成かつ未定義契約変更要求0件。
-  - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
-
-### 9.1 Gate rule（機械判定可能）
-
-- Ready iff:
-  - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
-  - `schemaVersion=="1.0.0"`
-  - `contractLinkLocked==true`
-  - `sharedResourceFreeze==true`
-  - `a1Status=="Done"`
-  - `pendingDecisionQueueCount==0`
-  - `hasUndefinedContractChangeRequest==false`
-  - `hasSafeModeRegressionRequest==false`
-  - `hasShareExportLeakageRelaxationRequest==false`
-- 1項目でも不一致なら `Block`。
-- Decision Queue遷移制約: `Pending -> Approved` または `Pending -> Rejected` 以外は `Block`。
-
-## 10) Phase 5 Gate report（1-page）
-
-
-- 着手可能条件（Ready）:
-  - SSOT が `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` のみで固定。
-  - 固定値一致: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only`。
-  - Freeze flag一致: `contractLinkLocked=true` / `sharedResourceFreeze=true`。
-  - 安全制約維持: SafeMode既定ON、share/export漏えい防止後退禁止、PII生値保存禁止。
-
-- 停止条件（Block）:
-  - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
-  - SSOT複線化（契約参照先が2件以上）。
-  - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
-
-## 11) Fail-safe stop report template（固定）
-
-1) 失敗再現手順
-2) 競合ファイル
-3) 必要承認者
-4) 解決のYes/No質問
-
-- 未決裁項目（Pending approvals）:
-  - なし（A1範囲で新規ADRは不要判定を維持）。
-  - ただし上位方針変更を伴う契約変更要求が発生した場合のみ、A1差し戻し + 人間承認完了まで停止。
-
-## 12) Decision Queue整理（Stream A 固定）
-
-| QueueID | Topic | Status | Decision | Owner | Unblock Condition |
-|---|---|---|---|---|---|
-| DQ-HIL-RS-01-A1-001 | Contract IDs freeze (`A1-CRITIQUE-IF`/`A1-REDIFF-IF`/`A1-ATTR-IF`/`A1-ERROR-IF`) | Closed | Fixed in SSOT | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-002 | `schemaVersion=1.0.0` 固定（Critique/Attribution/TieBreak） | Closed | Fixed in SSOT | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-003 | deterministic tie-break 順序固定 | Closed | `padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count` | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-004 | 契約変更要求の受付経路 | Closed | A1差し戻しのみ許可 | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-005 | 共通エラー契約固定 | Closed | `A1-ERROR-IF` + errorCode 5件固定 | Architecture Owner | N/A |
-| DQ-HIL-RS-01-A1-006 | A2 mock fixture命名揺れの吸収方針 | Closed | A2でマッピング注記のみ許可（契約値は不変） | Architecture Owner | N/A（契約外注記として固定） |
-| DQ-HIL-RS-01-A1-007 | A3運用文書への契約リンク表記統一 | Closed | SSOT単一参照を維持した表記に統一 | Documentation Owner | N/A（契約外注記として固定） |
-
-## 13) Proceed verdict（Stream A）
-
-- A1: **Fixed / Ready**（契約ID・schemaVersion・禁止事項・SSOTを固定）。
-- A2: **Ready**（A1契約固定済み。契約外の命名注記はA2側マッピングで処理し、契約変更なしで着手可能）。
-- A3: **Ready**（参照専用ルールと安全制約は固定。SSOT参照表記は契約外注記として処理）。
-- Block条件再掲:
-  - 契約ID不一致、schemaVersion不一致、overridePolicy不一致。
-  - SSOT複線化（契約参照先が2件以上）。
-  - 未定義の共有リソース更新要求、またはSafeMode後退前提の要求。
-
-## 14) A1契約凍結マトリクス（変更許可/禁止/停止条件）
-
-- 変更禁止（A2/A3で不可）:
-  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の契約ID
-  - `schemaVersion=1.0.0`（Critique / Attribution / TieBreak / Error）
-  - `overridePolicy=human_dual_control_only`
-  - tie-break順序（`padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`）
-  - 固定エラーコード5件（`A1_SCHEMA_VERSION_MISMATCH` 等）
-- 変更許可（A2/A3で可）:
-  - 実装内マッピング注記
-
-## 15) Stream A fixed handoff contract packet（A2/A3向け）
-
-- Packet ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-- Single reference: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- Fixed governance keys:
+- Fixed values:
   - `schemaVersion=1.0.0`
   - `overridePolicy=human_dual_control_only`
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
-- Queue contract（固定）:
-  - fields: `queueId,status,owner,decisionBy,timestampUtc,evidenceLink`
-  - allowed transition: `Pending -> Approved | Rejected`
-  - denied transition: Pending bypass, `Approved -> Pending`
-- Open gate（固定）:
-  - `Draft -> Open` iff `a1Status=="Done" && pendingDecisionQueueCount==0`
-- Stop/Resume:
-  - Stop: 未承認確定、SafeMode後退要求、share/export後退要求、契約ID/版数不一致
-  - Resume: Decision Queueへ`Pending`登録 + 人間承認記録 + A1再判定完了
-  - fixture名の運用上の別名管理（契約値そのものの変更は不可）
-  - 契約に影響しない検証ケース追加
-- 停止条件（即停止してA1差し戻し）:
-  - 契約値の再解釈要求（ID/version/requiredFields/overridePolicy/tie-break）
-  - SSOT複線化要求（参照先を複数化する提案）
-  - `sharedResourceFreeze=true` を破る更新要求
+- SSOT:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 
-## 15) Stream A handoff（凍結I/F・差し戻し条件・未確定事項）
+## 3) CDC（Phase 2 ADR）
 
-- 固定I/F一覧:
-  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-  - Contract IDs: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
-  - 固定識別子: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
-  - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- 差し戻し条件:
-  - 契約値再解釈要求、SSOT複線化要求、SafeMode後退前提要求を検知した場合はA1へ差し戻す。
-- 未確定事項:
-  - なし（契約判定に影響するPending項目は0件）。
+- Context:
+  - 本issueは `ADR-0026` / `ADR-0027` の下位具体化であり、上位方針を変更しない。
+- Decision:
+  - 上位ADR改定が必要な要求は **承認待ち停止** とし、未承認で確定しない。
+- Consequences:
+  - A2/A3 は read-only 参照のみ。契約変更要求はA1へ差し戻す。
+
+## 4) Acceptance Criteria / DoD
+
+- [x] A1契約値（Contract IDs / schemaVersion / overridePolicy / freeze flags / SSOT）が単一化されている。
+- [x] A2/A3 開始条件が `A1 Done && pendingDecisionQueueCount==0` に固定されている。
+- [x] Decision Queue 遷移が `Pending -> Approved|Rejected` のみ。
+- [x] SafeMode既定ON / share-export漏えい防止 / human_dual_control_only の後退禁止が明示されている。
+- [x] 契約再定義をA2/A3で実施しないことが明示されている。
+
+## 5) Stream A Workflow（Plan → Execute → Verify → Proceed）
+
+### Phase 1 Read
+- Plan: 対象5ファイルを再読し、`Status/Priority/Scope/Dependencies` の差分を抽出。
+- Execute: 5ファイルから固定キーを抽出。
+- Verify: ベースライン不一致がないことを確認。
+- Proceed: 差分なしならPhase 2へ。差分ありは即停止。
+
+### Phase 2 ADR CDC
+- Plan: CDC を明文化。
+- Execute: Context / Decision / Consequences を固定。
+- Verify: 上位ADR改定要否を判定。
+- Proceed: 改定必要なら承認待ち停止、不要ならPhase 3へ。
+
+### Phase 3 Plan
+- Plan: AC/DoD不足を補完。
+- Execute: Gate条件とDecision Queue遷移制約を明示。
+- Verify: `A1 Done && Pending=0` 以外の解放条件が存在しない。
+- Proceed: Phase 4へ。
+
+### Phase 4 Execute
+- Plan: 契約凍結をSSOTへ反映。
+- Execute: A1 gate固定、A2/A3 read-only化、差し戻し導線一本化。
+- Verify: 契約ID再定義・安全後退・未承認確定化がない。
+- Proceed: Phase 5へ。
+
+### Phase 5 Verify
+- Plan: docs-checkを実施。
+- Execute: validator / unittest / rg / diff-check。
+- Verify: 失敗時Self-Correction最大3回。
+- Proceed: 成功でPhase 6へ、3回超過は停止報告。
+
+### Phase 6 Proceed
+- Plan: 未確定事項をDecision Queueへ戻す。
+- Execute: Pending項目を更新し、契約再定義は行わない。
+- Verify: 未承認決定の確定化がない。
+- Proceed: Stream A A1固定完了として終了。
+
+## 6) Fail-safe（即停止条件）
+
+- 3回修復超過
+- 未承認決定の確定化
+- 未定義競合検出
+
+停止時は必ず以下を提出する。
+1. 失敗条件
+2. 競合ファイル
+3. 必要承認者
+4. Yes/No質問
