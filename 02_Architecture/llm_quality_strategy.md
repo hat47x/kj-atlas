@@ -102,3 +102,26 @@ Layer A（必須）へ次のCE-1ゲートを追加する。
 - いずれか不合格なら Layer B を実行せず fail とする。
 - CE-2以降の `sourceBundleHash` 検証の前提条件として、このゲート合格結果を監査ログへ残す。
 - 監査ログ最小キーは `queryId`, `bundleHash`, `excludedReason`。
+
+## 8. CE-2 proposal-only 品質ゲート（Stream D）
+
+### 8.1 Context
+
+CE-2 は「低リスクAI支援」のため、LLM出力を適用結果ではなく **提案差分** として扱う。  
+品質判定は内容の良し悪しより先に、契約逸脱（auto-apply、review自動昇格、安全後退）を fail-closed で検出する必要がある。
+
+### 8.2 Decision
+
+Layer A（必須）へ次の CE-2 契約ゲートを追加する。
+
+1. Proposal schema gate: すべての提案が `proposalId/diff/sourceBundleHash/status/reviewState` を持つ。
+2. Lifecycle gate: 許可遷移は `proposed -> accepted|rejected|held` のみ（`held` から自動遷移禁止）。
+3. No-auto-apply gate: `accepted` を含め、提案状態から直接適用へ進む経路を禁止する。
+4. No-auto-review-promotion gate: AI/worker/API による `reviewState=reviewed` 自動遷移を禁止する。
+5. Drift-stop gate: CE1最小I/Fとの差異検知時は `status=held` を強制し、Verify/Proceed を停止する。
+
+### 8.3 Consequences
+
+- 上記ゲートのいずれかが不合格なら Layer B は実行せず fail とする。
+- Verify 修復は最大3回までとし、4回目相当は `status=held` で停止する。
+- CE-3 への引継ぎでは CE-2 Proposal I/F の後方互換（改名・省略・型変更禁止）を必須とする。

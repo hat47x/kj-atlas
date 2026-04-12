@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: AI Integration Team
-- Scope: `01_Plans/issues/`, `02_Architecture/`, `04_Documentation/`
+- Scope: `01_Plans/issues/`, `02_Architecture/`
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
@@ -40,6 +40,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - CE2必須I/F: `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState`。
 - CE1依存は `mock bundleHash` で切断し、契約検証を先行（待機禁止）。
 - 提案は **proposal-only** 境界に固定し、適用はCE2責務外とする。
+- `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|reviewed` のみ許可し、追加状態を禁止する。
 
 ## 1.1) Contract ID Freeze（CE2）
 
@@ -98,6 +99,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - `status`: `proposed | accepted | rejected | held` 以外を禁止
 - `reviewState`: `unreviewed | reviewed` のみ。AIによる `reviewed` 付与禁止
 - Auto-apply: UI/API/worker の全経路で禁止
+- Drift-stop: CE1差分検知時は必ず `status=held` に遷移し、解除まで `accepted/rejected` 判定を凍結
 
 ### 2.4 責務境界（Responsibility）
 
@@ -142,6 +144,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 - [ ] CE0/CE1/CE2 間で契約語彙とContract IDの衝突が0件である。
 - [ ] `held` 状態のまま自動的に `accepted/rejected/proposed` へ遷移しない。
 - [ ] proposal-only 境界が維持され、`accepted` が自動適用トリガーとして扱われない。
+- [ ] `reviewState` は AI/worker/API により自動で `reviewed` に遷移しない（人手操作のみ）。
 
 ## 5.1) DoD（Contract-only）
 
@@ -170,7 +173,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 ## 8) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_escalation_policy.md 04_Documentation/local_llm_ops_guide.md`
+  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held|drift-stop" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_quality_strategy.md 02_Architecture/llm_escalation_policy.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 提案I/Fと禁止事項が文書間で一致し、validatorが成功する。
