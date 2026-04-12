@@ -126,7 +126,7 @@
 ### Phase 5 Proceed（次issueへ）
 
 - 本Issueの分類固定を完了。Stream G の担当範囲として次のDOC-OPS-05 issueへ進行可能。
-### Phase 6 Proceed（状態分類の記録）
+### Phase 5 Proceed（状態分類の記録）
 
 - 状態分類: **Ready（Open候補）**
 - Open準備判定: Audience/Goal/公開境界/Validation/Non-goal が充足しており、依存なしで起票可能。
@@ -141,14 +141,14 @@
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
 
 
-## 12) Stream G Set1 AC/DoD clarification（Phase 1〜6）
+## 12) Stream G Set1 AC/DoD clarification（Phase 1〜5）
 
 ### Phase 1 Read
 - 対象Docの現行分類・公開境界・検証レベル（docs-check）を再確認。
 
 ### Phase 2 Plan
 - AC明確化: Classification / Audience / Public boundary / Validation を必須4点として固定。
-- DoD明確化: Phase 1〜6 の記録、Ready/Hold/Needs-decision のProceed判定を必須化。
+- DoD明確化: Phase 1〜5 の記録、Ready/Hold/Needs-decision のProceed判定を必須化。
 
 ### Phase 3 Execute
 - Issue本文に沿って対象Docへ AC/DoD とPhase記録を追記する実施方針を確定。
@@ -159,7 +159,7 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（DecisionStatus=Fixed のため追加判断待ちなし）。
 
-### Phase 6 Proceed（次アクション固定）
+### Phase 5 Proceed（次アクション固定）
 - Next action: 04_Documentation/installation.md の成功判定（health/e2e）を公開導入者向けに簡潔化するPRを起票する。
 
 ## 13) Stream I execution record（DOC-OPS-05 non-conflict lane）
@@ -177,7 +177,7 @@
 - AC/DoD不足のドラフト提案（合意済み扱い）:
   - AC-I1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を対象文書冒頭に明示。
   - AC-I2: GoNoGoGate=Required の判定条件を本文で再現可能にする。
-  - DoD-I1: Plan→Execute→Verify→Proceed の6Phase記録を残す。
+  - DoD-I1: Read→Plan→Execute→Verify→Proceed の5Phase記録を残す。
 - 非目標: 実装コード・CI・Stream H専有ファイルの変更は行わない。
 
 ### Phase 4 Execute
@@ -189,7 +189,7 @@
   - `git diff --check`
 - 自己修復は最大3回まで。4回目相当は停止して保留化する。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 状態分類: **Ready**
 - 次アクション: 本Issueに対応する文書差分をdocs-only PRとして提出し、未解決論点があれば `01_Plans/issues/` に分離記録する。
 
@@ -219,7 +219,7 @@
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
-### Phase 6 Proceed（Open化候補判定）
+### Phase 5 Proceed（Open化候補判定）
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.

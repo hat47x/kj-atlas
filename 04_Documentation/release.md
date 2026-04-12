@@ -145,7 +145,7 @@ git push origin v0.1.1
 > QG未充足の文書は、Gist公開を見送り、修正後に再判定してください。
 
 
-## DOC-OPS-05 セット1 実行記録（Phase 1〜6）
+## DOC-OPS-05 セット1 実行記録（Phase 1〜5）
 
 ### AC（Acceptance Criteria）
 
@@ -156,7 +156,7 @@ git push origin v0.1.1
 
 ### DoD（Definition of Done）
 
-- DoD-1: Phase 1〜6 が文書内に記録され、再実行可能な状態。
+- DoD-1: Phase 1〜5 が文書内に記録され、再実行可能な状態。
 - DoD-2: docs-check コマンドが定義され、差分検証可能。
 - DoD-3: Proceed判定（Ready/Hold/Needs-decision）が明記される。
 
@@ -178,10 +178,7 @@ git push origin v0.1.1
   - `rg -n "DOC-OPS-05 セット1|AC（Acceptance Criteria）|DoD（Definition of Done）" 04_Documentation/release.md`
   - `git diff --check`
 
-### Phase 5 Proceed 判定
+### Phase 5 Proceed（判定と引き継ぎ）
 
 - 状態: **Ready**（公開リリースガイドとして継続改善可能）。
-
-### Phase 6 Proceed（引き継ぎ）
-
 - 次アクション: リリース自動化範囲を拡張する場合は `.github/workflows/release.yml` と同時整合で更新。
