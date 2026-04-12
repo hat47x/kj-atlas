@@ -11,6 +11,9 @@
 - Audience: Security Officer / System Owner / Platform Operator / 監査担当
 - Goal: strict標準と公開運用プロファイルの選択判断を、役割分離と固定値付きで再利用可能にする
 - Non-goal: 承認フロー仕様の再定義（正本は `02_Architecture/strict_mode_exception_approval_flow.md`）
+- Public boundary: 組織固有の承認履歴・監査証跡の生データは除外し、公開可能な判断基準と手順のみ提供する
+- Outcome: 役割ごとの判断責務とプロファイル選択条件（D1〜D4）を、外部読者が再利用可能な形で確認できる
+- Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
 ## 0.1 Context / Decision / Consequences（AUTH-OPS-03整合）
 

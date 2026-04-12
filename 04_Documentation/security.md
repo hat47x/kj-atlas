@@ -11,6 +11,9 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - Audience: self-host運用者 / セキュリティレビュー担当 / 監査対応担当
 - Goal: 安全境界（safeMode、strict例外、監査最小化）を公開可能な粒度で共有する
 - Non-goal: 実装内部の秘匿情報公開、承認フローの独自再定義
+- Public boundary: 秘密情報・組織固有の内部統制詳細は除外し、公開可能な安全境界と運用原則のみ扱う
+- Outcome: 運用者が safeMode・strict例外・監査最小要件の優先順位を誤解なく適用できる
+- Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
 
 ### 0.1 AUTH-OPS-03 整合メモ（Context / Decision / Consequences）
 

@@ -9,7 +9,9 @@
 - Audience: self-host 運用担当者 / PoC管理者 / 初見の技術検証担当
 - Goal: 最小運用の再現手順（更新・確認・安全運用）を単体読解できる形で提供する
 - Non-goal: 実装仕様の正本化、内部判断メモの公開、`03_Implement/*` の仕様変更
+- Public boundary: 内部限定の環境固有情報（秘密鍵・閉域URL・個別障害記録）を除外し、公開可能な運用手順のみ記載する
 - Outcome: 読者が「どの運用経路を選び、どこを確認すれば安全に運用継続できるか」を判断できる
+- Related: `04_Documentation/security.md`, `04_Documentation/e2e_testing.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
 
 ### 0.1 分類根拠（Audience / Goal / 公開境界）
 

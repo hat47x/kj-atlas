@@ -3,8 +3,11 @@
 > DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部開発者・QA
 > Goal: 再現可能なE2E手順と受入条件を公開する。
+> Non-goal: 内部進行メモ・個別PRの暫定判断ログの恒久公開。
 > Public boundary: 内部進行管理情報は除外し、実行手順と判定基準を公開する。
+> Outcome: 外部開発者が実行経路（Compose / SQLite代替）と合否判定を独力で再現できる。
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
+> Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
 
 
 
