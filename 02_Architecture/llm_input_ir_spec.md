@@ -61,6 +61,7 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 4. CE2/CE4 連携では backend 未実装時も mock `ContextQuery/ContextBundle` 契約で検証を継続し、CE1完了待ちを禁止する。
 5. Verify 失敗時の自己修復は最大3回までとし、3回超過時は処理継続せず停止する（fail-closed）。
 6. `ContextQuery/ContextBundle` は CE1 v1 最小I/F以外の未定義キーを受理してはならない（拡張は v2 契約改訂でのみ許可）。
+7. CE2提案連携では `sourceBundleHash/status/reviewState` を必須監査キーとして扱い、proposal-only 境界（auto-apply禁止）を破ってはならない。
 
 ---
 

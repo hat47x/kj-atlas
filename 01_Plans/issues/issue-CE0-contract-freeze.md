@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contracts only）
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Critical Path / Contracts only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `00_Prompt/ai_cognitive_externalization_requirements.md`
 - Expected verification level: `docs-check`
@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (Contracts only / Docs-Plan only)
+- Stream: `A` (Critical Path / Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
 
 
@@ -129,7 +129,7 @@
 
 - 追加AC（ドラフト→本Issueで採用）:
   - [ ] Query Preview を経由しない ContextQuery 送信経路が 0 件である。
-  - [ ] `ConsensusGraph` への direct write（patch+approval 以外）が 0 件である。
+  - [ ] `Consensus Graph` への direct write（patch+approval 以外）が 0 件である。
   - [ ] `mode=autonomous` でも `proposal-only` 契約が明文化されている。
   - [ ] 監査4点セット（`query/bundle/proposal/apply`）欠損時は No-Go と定義される。
 - DoD（CE0完了判定）:
@@ -178,7 +178,7 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（Stream B: 編集許可ファイル限定）
+## 5) タスク分解（Stream A: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
 - [ ] T2: `00_Prompt/ai_cognitive_externalization_requirements.md` に CE0契約語彙（Consensus/Working/ContextProjection, proposal-only, safeMode）を同期する。

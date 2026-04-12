@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `C` (CE1専任 / Contracts only / Docs-Plan only)
+- Stream: `A` (Critical Path / CE1専任 / Contracts only / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
 ## 0) Phase 1 Read（I/F抽出 + mock許容）
@@ -28,7 +28,7 @@
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
-## 直列フェーズ固定（Stream C / Contract Freeze）
+## 直列フェーズ固定（Stream A / Contract Freeze）
 
 1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
 2. **Phase 2（CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
@@ -48,7 +48,7 @@
 ## 1) Context（Phase 2 Read）
 
 - CE-1は CE-2/3/4 の前提であり、ここで Query/Bundle の最小I/Fが曖昧だと後続で互換性崩壊が起きる。
-- Stream C では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
+- Stream A では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
 
 ## 2) Decision（ADR-0028整合 / Phase 2 ADR明文化）
 
@@ -185,7 +185,7 @@
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 10) フェイルセーフ（Stream C 固定）
+## 10) フェイルセーフ（Stream A 固定）
 
 - Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
 - CE0/CE1/CE2 間で Contract ID 衝突（重複定義/異義定義）を検知した場合は停止する。

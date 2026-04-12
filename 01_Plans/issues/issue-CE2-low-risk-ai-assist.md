@@ -19,12 +19,12 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `D` (CE2専任 / Contracts + Docs + status drift-stop)
+- Stream: `A` (Critical Path / CE2専任 / Contracts + Docs + status drift-stop)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
-## 0) Serial Phase Contract（Stream D 固定フロー）
+## 0) Serial Phase Contract（Stream A 固定フロー）
 
-CE2 Stream D は、以下の固定フローでのみ進行する。
+CE2 Stream A は、以下の固定フローでのみ進行する。
 
 1. **Phase 1: Read**（必須I/F再確認）
 2. **Phase 2: ADR明文化**（Context / Decision / Consequences）
@@ -57,7 +57,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream B は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream A は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ### Decision
@@ -199,7 +199,7 @@ CE2 Stream D は、以下の固定フローでのみ進行する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 11) フェイルセーフ（Stream D 固定）
+## 11) フェイルセーフ（Stream A 固定）
 
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。

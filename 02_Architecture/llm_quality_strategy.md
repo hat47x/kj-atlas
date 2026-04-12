@@ -103,7 +103,7 @@ Layer A（必須）へ次のCE-1ゲートを追加する。
 - CE-2以降の `sourceBundleHash` 検証の前提条件として、このゲート合格結果を監査ログへ残す。
 - 監査ログ最小キーは `queryId`, `bundleHash`, `excludedReason`。
 
-## 8. CE-2 proposal-only 品質ゲート（Stream D）
+## 8. CE-2 proposal-only 品質ゲート（Stream A）
 
 ### 8.1 Context
 
@@ -113,6 +113,8 @@ CE-2 は「低リスクAI支援」のため、LLM出力を適用結果ではな�
 ### 8.2 Decision
 
 Layer A（必須）へ次の CE-2 契約ゲートを追加する。
+
+Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 
 1. Proposal schema gate: すべての提案が `proposalId/diff/sourceBundleHash/status/reviewState` を持つ。
 2. Lifecycle gate: 許可遷移は `proposed -> accepted|rejected|held` のみ（`held` から自動遷移禁止）。
