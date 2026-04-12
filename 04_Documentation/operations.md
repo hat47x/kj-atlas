@@ -70,37 +70,39 @@
 相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
 
 
-## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream F）
 
-Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、次を固定する。
+Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
 
 - Gate順序は **Gate C -> Gate D -> Gate E** のみ許可（逆順・並列判定は禁止）。
 - Gate Dの必須入力は **測定日 / 対象文書 / 4KPI判定（TFS, Decision Readiness, Support Deflection, Feedback Closure） / 逸脱有無 / 次アクション / 反映先リンク**。
 - evidence形式は **Date / Gate / Command / Result / Decision / Next action** の6項目を必須化。
 - Gate E Proceed条件は **Go=記録確定後に進行、Conditional=再判定日+担当記録後に限定進行、No-Go=見送り理由+再判定日+担当記録まで停止**。
-- 2026-04-12 Read同期（Stream G）で、Gate C→D→E の単一路線とKPI scorecardの入力契約を再確認。
+- KPIしきい値は承認済み台帳のみ有効とし、未承認変更は適用しない。
+- 2026-04-12 Read同期（Stream F）で、Gate C→D→E の単一路線と scorecard入力契約の一致を再確認した。
 
-### Fail-safe（Phase6）
+### Fail-safe（Phase6 / ADR衝突時のCDC化）
 
-次のいずれかを検知した場合は、運用更新を停止し修正提案のみ記録する。
+次のいずれかを検知した場合は、運用更新を停止し **CDC（Context / Decision / Consequences）として論点化** する。
 
-1. 指標定義の曖昧化（式・単位・対象範囲が未確定）。
+1. KPI定義またはProceed条件が `ADR-0001` / `ADR-0019` / `ADR-0024` と衝突。
 2. 責務未定義（測定責任者/承認責任者の欠落）。
 3. 未承認の閾値変更（承認記録なしのKPIしきい値改定）。
+4. Gate順序が `C→D→E` 以外で記述される。
+5. evidence項目欠落、または Command と Result が対応しない。
 
 ### 定点レビュー
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**
-- 担当: **Stream G（Operations Gate C→D→E Evaluator）**
+- 担当: **Stream F（Unified Feedback & KPI Audit Owner）**
 
 ### 次回監査Runbook（Proceed固定）
 
-1. **Phase 1 Read**: 対象3文書（`issue-0019` / `issue-0020` / `operations.md`）を再Readし、Gate定義差分の有無を確認する。
-2. **Phase 2 ADR CDC**: Context / Decision / Consequences を更新し、新規ADR要否を判定する（原則は既存ADRで運用具体化）。
-3. **Phase 3 Plan**: AC / DoD / evidence形式（`Date / Gate / Command / Result / Decision / Next action`）を固定する。
-4. **Phase 4 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、逆順・並列判定を禁止する。
-5. **Phase 5 Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
-6. **Phase 6 Proceed**: 監査ログ確定後、次回レビュー日時・担当・残リスクをrunbookとして記録して引き渡す。
+1. **Phase 1 Read**: 対象3文書（`issue-0019` / `issue-0020` / `operations.md`）を再Readし、Gate定義とKPI契約の差分有無を確認する。
+2. **Phase 2 Plan**: KPI定義（4KPI）と監査スコアカードの AC / DoD を固定する。
+3. **Phase 3 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時に更新する。
+4. **Phase 4 Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
+5. **Phase 5 Proceed**: 次回測定サイクル条件（Gate C完了、Gate D入力6項目、Gate E Proceed条件一致）を満たした場合のみ引き渡す。
 
 ## 1. バックアップ / リストア
 
