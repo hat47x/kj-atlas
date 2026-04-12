@@ -58,6 +58,28 @@ describe("ce3_patch_workspace", () => {
     });
   });
 
+  it("supports three candidates and keeps untouched candidate state during rollback", () => {
+    const initial = buildInitialWorkspaceState([
+      { id: "cand-alpha", label: "cand-alpha" },
+      { id: "cand-beta", label: "cand-beta" },
+      { id: "cand-gamma", label: "cand-gamma" },
+    ]);
+
+    const adoptAlpha = commitWorkspaceDecision(initial, "cand-alpha", "adopt", "2026-04-12T00:00:00.000Z");
+    const rejectBeta = commitWorkspaceDecision(adoptAlpha, "cand-beta", "reject", "2026-04-12T00:00:01.000Z");
+    const rolledBack = rollbackWorkspaceDecision(rejectBeta);
+
+    expect(rolledBack.decisions["cand-alpha"]).toBe("adopt");
+    expect(rolledBack.decisions["cand-beta"]).toBe("hold");
+    expect(rolledBack.decisions["cand-gamma"]).toBe("hold");
+    expect(rolledBack.auditLog).toHaveLength(3);
+    expect(rolledBack.auditLog.map((entry) => entry.candidateId)).toEqual(["cand-alpha", "cand-beta", "cand-beta"]);
+    expect(rolledBack.auditLog[2]).toMatchObject({
+      candidateId: "cand-beta",
+      reason: "rollback",
+    });
+  });
+
   it("does not add extra audit transitions when the same decision is re-applied", () => {
     const initial = buildInitialWorkspaceState([{ id: "cand-a", label: "cand-a" }]);
     const adopted = commitWorkspaceDecision(initial, "cand-a", "adopt", "2026-04-11T00:00:00.000Z");
