@@ -80,6 +80,10 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 - `channel`（`api` / `cli` / `gui`）
 - `schemaVersion`（CE4契約期間は固定値）
 
+CE4運用期間の固定値:
+- `schemaVersion="ce4.audit.v1"`
+- `eventType` は `query | bundle | proposal | apply` 以外を許容しない。
+
 ### 4.3 実施手順（最小runbook）
 
 1. APIで `context-query` と `context-bundle` を実行し、`equivalenceKey` と `bundleHash` を取得する。
@@ -106,6 +110,12 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 - 是正: 2回連続で同一欠落が発生した場合、CLI/APIの片系実装差分を停止し、共通実行ライブラリへ集約する。
 - 判定原則: ログ欠損を成功扱いしない（fail-closed）。
 - 判定原則: `dryRun=true` で `sideEffect=none` を満たさない場合も成功扱いしない（fail-closed）。
+
+`rejectReasonCode` の最小分類（固定）:
+- `missing_event`（4点セット欠損）
+- `equivalence_mismatch`（`equivalenceKey + bundleHash` 不一致）
+- `dry_run_side_effect`（`dryRun=true` かつ `sideEffect!=none`）
+- `safemode_regression`（safeMode後退語彙/設定検知）
 
 ### 4.6 Verify → Proceed（3回自己修復上限）
 

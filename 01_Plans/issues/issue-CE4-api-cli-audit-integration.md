@@ -33,7 +33,7 @@
   3. `apply --dry-run` は副作用境界（DB永続化/外部送信/review昇格なし）を固定する。
   4. `sourceBundleHash` は `mock:<hash>` と本番 hash の双方を受理する。
 
-## 2) Phase 2 ADR明文化（Context / Decision / Consequences）
+## 2) Phase 2 ADR CDC明文化（Context / Decision / Consequences）
 
 ### 2.1 Context
 
@@ -78,6 +78,14 @@
 - safeMode後退、share/export緩和、Consensus直接更新、ログ欠損成功扱いは即No-Go。
 - 契約検証は `sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）に依らず同一フローで実施し、監査導線の分岐を禁止する。
 
+### 2.4 CDC固定テーブル（Phase 1〜6 横断）
+
+| 区分 | CE4固定事項 | No-Go 条件 |
+| --- | --- | --- |
+| Context | API/CLI/GUI の logical operation を `context-query/context-bundle/proposal-diff/apply --dry-run` に統一する。 | operation語彙がチャネルごとに分岐する。 |
+| Decision | 同値性判定を `equivalenceKey + bundleHash`（AND）に固定し、監査4点セット（`query/bundle/proposal/apply`）を必須化する。 | 監査4点欠損を成功扱いする。 |
+| Consequences | `dryRun=true -> sideEffect=none` を強制し、`sourceBundleHash` は `mock:<hash>` / 本番hash を同一契約で検証する。 | dry-runで副作用が発生、または hash 種別で検証経路を分岐する。 |
+
 ## 3) Phase 3 Plan（AC/DoD補完提案）
 
 ### 3.1 受入条件 / Acceptance criteria
@@ -95,6 +103,7 @@
 - [ ] DoD-2: `dry-run` の禁止副作用（DB/外送/review昇格）をRuntime/Opsに明記。
 - [ ] DoD-3: ログ欠損を成功扱いしない判定（fail-closed）を運用手順へ反映。
 - [ ] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
+- [ ] DoD-5: `rejectReasonCode` の分類コード（例: `missing_event`, `equivalence_mismatch`, `dry_run_side_effect`, `safemode_regression`）を運用記録へ固定する。
 
 ## 4) Phase 4 Execute（mock `sourceBundleHash` 許容で依存切断）
 
