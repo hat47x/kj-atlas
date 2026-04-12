@@ -121,6 +121,7 @@ API/CLI/GUI いずれの経路でも、以下の監査項目を同一キーで�
 1. 同値性定義の多義化
 2. ログ欠損成功扱い
 3. safeMode後退要求
+4. Consensus 直書き要求（proposal/apply を迂回する直接更新）
 
 ### 4.8 Proceed引継ぎ記録（運用導線）
 
