@@ -168,7 +168,7 @@ AIは、
 - パッチ提案
 
 を返す存在として扱う。  
-Core Graph を直接変更してはならない。
+Consensus Graph（旧称: Core Graph）を直接変更してはならない。
 
 ## 原則4：曖昧さ・対立・未解決を保持する
 
@@ -193,7 +193,7 @@ kj-atlas は、
 
 本拡張では、文脈を三層で扱う。
 
-## 6.1 Core Graph
+## 6.1 Consensus Graph（旧称: Core Graph）
 
 唯一の正規データ層。
 
@@ -223,9 +223,9 @@ kj-atlas は、
 
 これは人間の思考補助であり、AI入力へ直接渡すことを前提としない。
 
-## 6.3 AI Context Projection
+## 6.3 AI Context Projection（ContextProjectionGraph）
 
-AI問い合わせのたびに Core Graph から生成される投影層。
+AI問い合わせのたびに Consensus Graph / WorkingGraph から生成される読取専用の投影層。
 
 含まれるもの：
 - 対象ノード集合
@@ -240,10 +240,22 @@ AI問い合わせのたびに Core Graph から生成される投影層。
 - output mode
 
 AIはこの投影層を入力として受け取る。
+`patch + approval` を経ない direct write / auto-apply は禁止する。
 
 ---
 
 # 7. AI Context IR（中間表現）要件
+
+## 7.0 CE0 Contract Freeze 参照（Stream B）
+
+本書で扱う契約語彙は、CE0 Contract Freeze の参照専用固定値に従う。
+
+- `CE0-CTX-IF`: ContextQuery/ContextBundle 最小I/F（Query Preview必須、決定論bundle）
+- `CE0-SAFEMODE-IF`: safeMode既定ON、`allowUnreviewedText=false` 既定
+- `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみ
+- `CG-01..05`: WorkingGraph / ContextProjectionGraph / ConsensusGraph の責務分離、`patch + approval` 以外の適用禁止
+
+衝突検知ポリシー: Contract ID collision=0、語彙 collision=0、安全後退（safeMode緩和・auto-apply許容・review自動昇格）=0。
 
 ## 7.1 IR の基本方針
 
@@ -383,7 +395,7 @@ max-nodes 30
 - 関係線の自動確定
 - 真偽判定の断定
 - reviewed 状態の自動付与
-- Core Graph の暗黙更新
+- Consensus Graph（旧称: Core Graph）の暗黙更新
 - 未レビューのまま外部共有向け文章を正式版として出すこと
 
 ---
@@ -566,4 +578,3 @@ kj-atlas のAI拡張の本質は、AIを賢くすることではない。
 > **生成AI時代の高度な情報処理を支える、認知外在化フレームワーク**
 
 として位置づけられる。
-
