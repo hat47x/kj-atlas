@@ -151,3 +151,45 @@
 - Phase 5 Proceed:
   - 未完了: local audit log を document 監査ログへ昇格する CE4 連携は未着手。
   - フェイルセーフ判定: 契約逸脱なし、未定義競合なし、自己修復2回で収束（3回上限未満）。
+
+## 10) Stream D Phase Notes (2026-04-12)
+
+### Phase 1 Read（現状UI/テスト再読）
+
+- `PatchWorkspacePanel` / CE3 domain / CE3 E2E spec を再読し、候補独立操作・rollback監査表示・preset replay が local state + localStorage で完結することを確認。
+- 受入条件「Workspaceに最低3候補を並列表示可能」に対して、既存E2E fixture が2候補のみ検証である点をギャップとして特定。
+
+### Phase 2 Plan（CDC明文化 + AC補完）
+
+- Context:
+  - CE3要件は「最低3候補の並列表示可能性」を求めるが、E2Eが2候補固定のため回帰検知が弱い。
+- Decision:
+  - CE3 E2E fixture に第3候補（gamma）を追加し、`ce3-candidate-count` と selector option 件数の両方で3候補を検証する。
+  - A採用/B却下後に第3候補が `hold` 維持であることを確認し、候補独立性を補強する。
+  - `04_Documentation/e2e_testing.md` の CE3観点に「最低3候補同時表示」確認を追記する。
+- Consequences:
+  - CE3受入条件との整合性が上がり、候補数退行（2候補以下への後退）をE2Eで検知できる。
+  - Core/Consensus 直接編集は発生せず、SafeMode 境界への影響もない。
+
+### Phase 3 Execute（workspace/preset/rollback）
+
+- `03_Implement/frontend/e2e/ce3_patch_workspace.spec.ts`
+  - suggest-merges fixture を3候補化（alpha/beta/gamma）。
+  - test document に `c5` を追加。
+  - 候補件数期待値を `(3)` / option `3` 件へ更新。
+  - A採用/B却下後に第3候補が `hold` 維持することを追加検証。
+- `04_Documentation/e2e_testing.md`
+  - CE3必須観点へ「最低3候補同時表示」チェックを追記。
+
+### Phase 4 Verify（unit/e2e/lint、失敗時3回まで修復）
+
+- frontend unit（ce3 domain/ui/view preset）を実行し pass。
+- CE3 e2e grep 実行し pass（自己修復 0 回）。
+
+### Phase 5 Proceed（未完了課題を次手へ）
+
+- 未完了: local audit log の document 監査ログ統合（CE4連携）は継続課題。
+- 停止条件確認:
+  - SafeMode後退なし。
+  - 契約逸脱なし（Core/Consensus 非改変）。
+  - 未定義競合なし。

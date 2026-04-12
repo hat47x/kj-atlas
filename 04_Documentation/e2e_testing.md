@@ -122,6 +122,7 @@ fixture では以下の主要差異を再現する。
 CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは、次のE2E観点を最低限確認する。
 
 - 候補に対する `adopt / hold / reject` が独立して操作できる。
+- 候補比較UIで最低3候補を同時表示できる（`ce3-candidate-count` と selector option 件数の双方で確認）。
 - 候補A/Bを連続操作した後、候補ごとの状態表示（decision matrix）が独立に保持される。
 - decision matrix の候補件数表示（`ce3-candidate-count`）が収集候補数と一致する。
 - `Roll back last workspace decision` で直前状態へ復帰できる。
