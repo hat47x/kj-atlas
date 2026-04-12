@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: legacy Ready normalized; not a new-start target)
 - Priority: P0
-- Owner: Stream J
+- Owner: Stream F
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -297,4 +297,38 @@
 
 ### 次レーンhandoff
 - Next lane receives reference-only contract context and may not redefine A1 contract values.
+
+## Stream F planning整理（2026-04-12）
+
+> 本セクションを Stream F の正規運用レイヤとして扱う。既存記述と矛盾する場合は本セクションを優先する。
+
+### Phase 1 Read（対象9ファイル再読）
+- 本ファイル群のみを対象に読み合わせを完了。
+- 編集境界は planning memo のみとし、`03_Implement/**` は変更禁止。
+
+### Phase 2 ADR CDC
+- ADR追加は行わず、既存 `Context / Decision / Consequences` の整合確認に限定。
+- 新規アーキ判断が必要になった場合は本レーン内で実装へ進まず停止。
+
+### Phase 3 Plan（A1→A2→A3 直列契約）
+- 依存順序を `A1 interface-contract -> A2 mock-validation -> A3 implementation` に固定。
+- A2/A3で契約本文を再定義しない（参照専用）。
+- 他レーン完了待ちは禁止し、本レーン内の契約順序・停止条件整備のみ実施。
+
+### Phase 4 Execute（監査ホールド状態の整流）
+- 旧 `Ready/Active` は運用語彙として使用せず、`Open (Audit Hold)` を維持。
+- `Open -> In Progress` へは、契約整合・docs-check成功・担当判断の3条件を満たした時のみ遷移可。
+
+### Phase 5 Verify（docs-check）
+- 検証コマンドは以下に固定する。
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 検証失敗時の自己修復は最大3回まで。
+
+### Phase 6 Proceed
+- Go条件: 契約順序整合 / 監査ホールド整流 / docs-check 成功。
+- NoGo条件: 依存矛盾、未定義競合、指定外ファイル更新要求、自己修復3回超過。
+
+### 失敗停止ルール（Stream F 固定）
+- 競合検知時は即停止し、競合一覧と再開条件を記録する。
+- 修復上限は3回。4回目に達する前に必ず停止報告する。
 
