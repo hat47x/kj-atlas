@@ -190,3 +190,22 @@
 - Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
 - CE0/CE1/CE2 間で Contract ID 衝突（重複定義/異義定義）を検知した場合は停止する。
 - 編集許可スコープ外（実装コード、CE3/CE4 issue、dashboard、issues/README）に触れる必要が生じた場合は停止する。
+- `previewConfirmed` bypass を許容する導線を検知した場合は即停止する。
+- `sameQuery && !sameBundle`（bundleHash 非決定化）を検知した場合は即停止する。
+- `ContextQuery/ContextBundle` に CE1最小I/F外の未定義キー追加が必要になった場合は即停止し、契約改訂提案へ切り替える。
+
+## 11) Phase 5 Verify 明細（語彙/ID整合）
+
+- CE0 契約語彙: `WorkingGraph` / `ContextProjectionGraph` / `Consensus Graph` を維持し、`Core Graph` 再導入を禁止する。
+- CE1 契約ID: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を固定し、別名再定義を禁止する。
+- CE2 接続語彙: `sourceBundleHash` / `proposal-only` / `held` の意味を変更しない。
+- 修復試行は最大3回。4回目相当は停止（fail-closed）とし、推測継続を禁止する。
+
+## 12) Phase 6 Proceed（CE2/CE4 参照I/F固定）
+
+| Downstream | CE1から参照される固定I/F | No-Go |
+| --- | --- | --- |
+| CE2 proposal lifecycle | `sourceBundleHash === bundleHash`、`previewConfirmed=true`、`safeModePolicy=strict` | bundleHash不一致、preview bypass、auto-apply許容 |
+| CE4 audit trail | 監査キー `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` | 監査キー欠落、`dryRun=true` で副作用発生 |
+
+CE2/CE4 は上表を mock I/F 前提で先行検証し、CE1実装完了待ちを行わない。

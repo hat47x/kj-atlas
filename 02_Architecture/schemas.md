@@ -91,6 +91,8 @@ export type ContextBundleV1 = {
 
 - `previewConfirmed=false` は契約違反（`422 preview_required`）。
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
+- CE1 v1 は **最小I/F固定** とし、`ContextQueryV1` / `ContextBundleV1` への未定義キー追加を禁止する（拡張は v2 でのみ許可）。
+- CE2/CE4 は backend 実装完了待ちを行わず、mock `ContextQuery/ContextBundle` 契約で先行検証する（mock-first）。
 
 `bundleHash` 契約（`CE1-HASH-DET-IF` / bundleHash関連節）:
 1. `ContextBundle` から `generatedAt` / `traceId` / `providerLatencyMs` など非決定論フィールドを除外する。
@@ -99,6 +101,7 @@ export type ContextBundleV1 = {
 4. `sha256(canonical_json)` を16進小文字で出力し `bundleHash` とする。
 5. `ContextQuery` も同一規則で canonical 化し、`queryCanonicalHash` を算出する。
 6. Verify 判定は `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）を必須とし、`sameQuery && !sameBundle` は fail-closed とする。
+7. Verify自己修復は最大3回までとし、4回目相当は停止する（推測継続禁止）。
 
 #### CE2-LOW-RISK-AI-ASSIST
 

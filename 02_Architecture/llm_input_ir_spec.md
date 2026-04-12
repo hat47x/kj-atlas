@@ -60,6 +60,7 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 3. IR生成パイプラインは、同一 canonical query に対する `bundleHash` 不一致を検知した場合に `nondeterministic_bundle` として失敗扱いにする。
 4. CE2/CE4 連携では backend 未実装時も mock `ContextQuery/ContextBundle` 契約で検証を継続し、CE1完了待ちを禁止する。
 5. Verify 失敗時の自己修復は最大3回までとし、3回超過時は処理継続せず停止する（fail-closed）。
+6. `ContextQuery/ContextBundle` は CE1 v1 最小I/F以外の未定義キーを受理してはならない（拡張は v2 契約改訂でのみ許可）。
 
 ---
 
@@ -496,3 +497,4 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 - `previewConfirmed=false` は bundle 生成前に 422 とする（Query Previewバイパス禁止）。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` では未レビュー本文を入力IRへ含めない。
 - 機械判定式: `canonical(queryA)==canonical(queryB) && hashA==hashB` が真であること。
+- CE4監査では `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` の4キーを欠落させてはならない。
