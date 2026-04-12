@@ -11,7 +11,6 @@ function buildProps() {
     onInstructionChange: vi.fn(),
     onSuggest: vi.fn(),
     onResuggest: vi.fn(),
-    onApply: vi.fn(),
     onDiscard: vi.fn(),
     hasSuggestion: true,
     isPreviewEnabled: true,
@@ -34,8 +33,8 @@ describe("SuggestionPanel", () => {
 
     expect(jaHtml).toContain("ドラフト提案");
     expect(enHtml).toContain("Draft suggestion");
-    expect(jaHtml).not.toContain("Apply suggestion");
-    expect(enHtml).toContain("Apply suggestion");
+    expect(enHtml).toContain("CE-2 guardrail: proposal-only flow. Auto-apply is disabled.");
+    expect(enHtml).not.toContain("Apply suggestion");
   });
 
   it("disables edit actions in read-only mode", () => {

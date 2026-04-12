@@ -143,7 +143,6 @@ function buildSuggestionProps() {
     onInstructionChange: vi.fn(),
     onSuggest: vi.fn(),
     onResuggest: vi.fn(),
-    onApply: vi.fn(),
     onDiscard: vi.fn(),
     hasSuggestion: true,
     isPreviewEnabled: true,
@@ -262,8 +261,9 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).not.toContain("Apply suggestion");
-    expect(enHtml).toContain("Apply suggestion");
+    expect(jaHtml).toContain("proposal-only");
+    expect(enHtml).toContain("proposal-only");
+    expect(enHtml).not.toContain("Apply suggestion");
   });
 
   it("keeps read-only blocking behavior locale-independent", () => {
