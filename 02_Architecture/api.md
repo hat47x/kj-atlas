@@ -202,6 +202,13 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
 
 追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
 `schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
+CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
+
+`rejectReasonCode` は次の分類コードを最小集合として固定する（追加は後方互換でのみ許可）。
+- `missing_event`
+- `equivalence_mismatch`
+- `dry_run_side_effect`
+- `safemode_regression`
 
 #### 2.9.3 dry-run 副作用境界（固定）
 
