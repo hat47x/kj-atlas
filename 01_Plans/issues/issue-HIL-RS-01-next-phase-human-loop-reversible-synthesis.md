@@ -93,3 +93,29 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
   3. 固定識別子の不一致
 - 停止時記録:
   - 失敗条件 / 対象issue / 必要承認者 / Yes-No確認事項
+
+## 9) Stream G update (2026-04-12, planning memo only)
+
+### Phase 1) Read同期
+- Re-read fixed scope memos: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-HIL-RS-02-next-phase-delivery-plan.md`, `issue-HIL-RS-02-A1-governance-contract-hardening.md`, `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`, `issue-HIL-RS-02-A3-operations-documentation-sync.md`.
+- Verified lock values remain unchanged: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`.
+
+### Phase 2) A1/A2/A3依存 + Decision Queue更新
+| QueueID | Topic | Status | Gate | Owner |
+| --- | --- | --- | --- | --- |
+| `DQ-HIL-RS-01-001` | A1 freeze pack consistency (`HIL-RS-02-A1-CONTRACT-FREEZE-v1`) | Closed | `A1==Done` | Stream G |
+| `DQ-HIL-RS-01-002` | A2/A3 open precondition (`pendingDecisionQueueCount==0`) | Closed | `Pending -> Approved/Rejected` only | Stream G |
+| `DQ-HIL-RS-01-003` | Safety boundary downgrade request handling | Closed | downgrade request = `Rejected` | Stream G |
+
+### Phase 3) AC/DoD不足補完
+- Added explicit NoGo condition: if `A1!=Done` **or** unresolved queue exists, A2/A3 must remain `Draft` or `Open (hold)` and cannot move to active execution.
+- Added explicit rollback target: any contract drift must be routed back to A1 memo, not patched in A2/A3.
+
+### Phase 4) docs-check
+- Validation command is fixed to: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
+- If validation fails, self-correction loop max is 3; after that, stop and escalate with queue status snapshot.
+
+### Phase 5) 次レーンhandoff
+- Next lane package must include: `Snapshot ID`, `Freeze Pack ID`, queue table, and explicit Go/NoGo result.
+- Handoff rule: A2/A3 lanes receive reference-only contract payload; contract value edits are prohibited.
+
