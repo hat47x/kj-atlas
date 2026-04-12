@@ -24,7 +24,6 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         sub.add_argument("--safe-mode", action="store_true", default=True)
         sub.add_argument("--no-safe-mode", action="store_false", dest="safe_mode")
         sub.add_argument("--dry-run", action="store_true", default=True)
-        sub.add_argument("--no-dry-run", action="store_false", dest="dry_run")
         sub.set_defaults(operation=operation)
     return parser.parse_args(argv)
 
@@ -38,6 +37,10 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
     if not isinstance(bundle_hash, str) or not bundle_hash:
         raise SystemExit("input JSON must include bundleHash")
 
+    dry_run = args.dry_run
+    if args.operation == "apply":
+        dry_run = True
+
     payload = {
         "operation": args.operation,
         "safeMode": args.safe_mode,
@@ -45,7 +48,7 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
         "bundleHash": bundle_hash,
         "sourceBundleHash": input_payload.get("sourceBundleHash"),
         "queryHash": input_payload.get("queryHash", equivalence_key),
-        "dryRun": args.dry_run,
+        "dryRun": dry_run,
         "sideEffect": input_payload.get("sideEffect", "none"),
         "rejectReasonCode": input_payload.get("rejectReasonCode"),
         "command": args.command,

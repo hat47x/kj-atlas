@@ -422,6 +422,14 @@ class ContextAuditPayload(BaseModel):
     schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"
 
 
+_CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
+    "query": {"context-query"},
+    "bundle": {"context-bundle"},
+    "proposal": {"proposal-diff"},
+    "apply": {"apply", "apply --dry-run"},
+}
+
+
 @router.post("/{doc_id}/context-audit")
 def post_context_audit(
     doc_id: str,
@@ -432,8 +440,15 @@ def post_context_audit(
 ) -> dict[str, str]:
     if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
         raise HTTPException(status_code=422, detail="queryHash must equal equivalenceKey for CE4 equivalence checks")
+    if payload.operation == "apply" and not payload.dryRun:
+        raise HTTPException(status_code=422, detail="CE4 apply operation requires dryRun=true")
     if payload.dryRun and payload.sideEffect != "none":
         raise HTTPException(status_code=422, detail="dryRun=true requires sideEffect=none")
+    if payload.command is not None and payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
+        raise HTTPException(
+            status_code=422,
+            detail=f"command '{payload.command}' is invalid for operation '{payload.operation}'",
+        )
 
     access_request, decision = _authorize_request(
         request,

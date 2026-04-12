@@ -157,6 +157,12 @@ def test_post_export_audit_emits_export_event(tmp_path) -> None:
 
 def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
     spy = SpyAuditDispatcher()
+    operation_to_command = {
+        "query": "context-query",
+        "bundle": "context-bundle",
+        "proposal": "proposal-diff",
+        "apply": "apply --dry-run",
+    }
     with _sqlite_client(tmp_path) as client:
         client.app.state.audit_dispatcher = spy
         client.app.state.access_control_adapter = AllowAllAdapter()
@@ -173,7 +179,7 @@ def test_context_audit_endpoint_emits_four_operation_events(tmp_path) -> None:
                     "dryRun": True,
                     "sideEffect": "none",
                     "rejectReasonCode": "none",
-                    "command": f"context-{operation}",
+                    "command": operation_to_command[operation],
                     "channel": "api",
                     "schemaVersion": "ce4.audit.v1",
                 },
@@ -305,6 +311,48 @@ def test_context_audit_rejects_dry_run_side_effect(tmp_path) -> None:
     assert response.status_code == 422
 
 
+def test_context_audit_rejects_apply_without_dry_run(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "apply",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:" + ("3" * 64),
+                "dryRun": False,
+                "sideEffect": "none",
+                "command": "apply",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+
+
+def test_context_audit_rejects_operation_command_mismatch(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "bundle",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:" + ("3" * 64),
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "proposal-diff",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+
+
 def test_context_audit_rejects_query_hash_mismatch(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         response = client.post(
@@ -324,3 +372,31 @@ def test_context_audit_rejects_query_hash_mismatch(tmp_path) -> None:
         )
 
     assert response.status_code == 422
+
+
+def test_cli_apply_forces_dry_run(tmp_path, monkeypatch) -> None:
+    captured_payload: dict[str, object] = {}
+
+    def _fake_post(url, json, headers, timeout):  # noqa: ANN001
+        captured_payload.update(json)
+        return httpx.Response(200, content=b'{"status":"accepted"}', request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(cli.httpx, "post", _fake_post)
+
+    input_file = tmp_path / "apply.json"
+    input_file.write_text(
+        '{"docId":"doc-cli","equivalenceKey":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","bundleHash":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","sourceBundleHash":"mock:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}',
+        encoding="utf-8",
+    )
+    result = cli.main(
+        [
+            "--api-base-url",
+            "http://127.0.0.1:8000",
+            "apply",
+            "--input",
+            str(input_file),
+        ]
+    )
+    assert result == 0
+    assert captured_payload["operation"] == "apply"
+    assert captured_payload["dryRun"] is True
