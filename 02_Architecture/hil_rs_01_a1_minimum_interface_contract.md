@@ -1,347 +1,120 @@
-# HIL-RS-01-A1: Architecture最小I/F契約（Critique / 再提案差分 / レビュー帰属）
+# HIL-RS-01-A1: Architecture最小I/F契約（Critique / ReDiff / Attribution / Error）
 
 - Contract ID: `HIL-RS-01-A1`
 - Status: Fixed (A1 Done)
 - Owner: Architecture Owner
 - Scope: `02_Architecture/`
-- Upstream: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `00_Prompt/domain.md`
-- Related: `02_Architecture/review_attribution.md`, `02_Architecture/schemas_review_attribution.md`
+- Upstream: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
 
-## 0. Purpose
+## 1) SSOT and Freeze
 
-`ADR-0026` D2（契約先行）の下位具体化として、A2/A3が参照専用で利用する最小I/F契約を固定する。
+- Single Source of Truth:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Freeze Pack ID:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Freeze keys（must hold）:
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
 
-## 1. Single reference / fixed IDs
+## 2) Contract Matrix
 
-- Single Reference / Single Source of Truth（SSOT）: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- Contract IDs（固定）:
-  - `A1-CRITIQUE-IF`
-  - `A1-REDIFF-IF`
-  - `A1-ATTR-IF`
-  - `A1-ERROR-IF`
+### 2.1 `A1-CRITIQUE-IF`
+- `schemaVersion`: `1.0.0`
+- required: `critiqueId`, `targetRef`, `critiqueType`, `createdAt`, `iteration`
+- optional: `comment`, `constraintHints`
+- prohibits:
+  - critique入力のみで自動確定
+  - review自動昇格
+  - 生ID（email/external_uid/provider user id）の保存
 
-## 2. Contract matrix（必須 / 任意 / 禁止）
+### 2.2 `A1-REDIFF-IF`
+- `schemaVersion`: `1.0.0`
+- required: `proposalId`, `basedOnIteration`, `diffOps[]`, `traceKey`
+- `diffOps[].required`: `opId`, `opType`, `targetRef`, `before`, `after`
+- `opType`: `add | remove | move | regroup | relabel`
+- optional: `rationale`
+- prohibits:
+  - 非可逆差分
+  - `traceKey` 欠落
+  - SafeMode禁止操作の暗黙実行
 
-### 2.0 `A1-ERROR-IF`（共通エラー契約）
+### 2.3 `A1-ATTR-IF`
+- `schemaVersion`: `1.0.0`
+- required: `reviewState`, `reviewedAt`, `reviewerRef`, `auditRecordedAt`
+- optional: `reviewContext`, `ownerRef`
+- `reviewState`: `unreviewed | human_reviewed`
+- `overridePolicy`:
+  - allowed: `human_dual_control_only`
+  - prohibited: `ai_only_override`, `safemode_relaxation`, `share_export_leakage_relaxation`
+- prohibits:
+  - AIのみで `human_reviewed` へ昇格
+  - 生ID保存
 
-- `schemaVersion`: `1.0.0`（固定）
-- `errorEnvelope` 必須:
-  - `errorCode`（string, 固定列挙）
-  - `message`（string, 人間可読・PII禁止）
-  - `contractId`（`A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF`）
-  - `retryable`（boolean）
-  - `occurredAt`（ISO-8601）
-- `errorCode` 固定列挙:
+### 2.4 `A1-ERROR-IF`
+- `schemaVersion`: `1.0.0`
+- required: `errorCode`, `message`, `contractId`, `retryable`, `occurredAt`
+- fixed `contractId`: `A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF`
+- fixed `errorCode` enum:
   - `A1_SCHEMA_VERSION_MISMATCH`
   - `A1_REQUIRED_FIELD_MISSING`
   - `A1_TRACE_KEY_MISSING`
   - `A1_OVERRIDE_POLICY_VIOLATION`
   - `A1_PII_POLICY_VIOLATION`
-- 禁止:
-  - A1改訂なしでのエラーコード追加
-  - `message` への email / external_uid / provider user id 埋め込み
-  - `contractId` 欠落状態でのエラー返却
+- prohibits:
+  - A1改訂なしでのerrorCode追加
+  - `message` へのPII埋め込み
 
-### 2.1 `A1-CRITIQUE-IF`
+## 3) Deterministic Tie-break（A1-ATTR-IF）
 
-- `schemaVersion`: `1.0.0`（固定）
-- 必須:
-  - `critiqueId`
-  - `targetRef`
-  - `critiqueType` (`too_close | too_far | not_the_same | feels_off | no_articulable_reason`)
-  - `createdAt` (ISO-8601)
-  - `iteration` (integer >= 1)
-- 任意:
-  - `comment`
-  - `constraintHints`
-- 禁止:
-  - critique入力のみで自動確定へ遷移
-  - `reviewed` の自動更新
-  - 実名 / email / external_uid / provider など生ID保存
-
-### 2.2 `A1-REDIFF-IF`
-
-- `schemaVersion`: `1.0.0`（固定）
-- 構造固定（A2/A3で型追加・必須緩和を行わない）
-- 必須:
-  - `proposalId`
-  - `basedOnIteration`
-  - `diffOps[]`
-  - `traceKey`（`critiqueId` と連結可能）
-- `diffOps`最小単位:
-  - `opId`
-  - `opType` (`add | remove | move | regroup | relabel`)
-  - `targetRef`
-  - `before`
-  - `after`
-- 任意:
-  - `rationale`
-- 禁止:
-  - 逆操作不能な片方向差分
-  - `traceKey` なしの差分
-  - SafeMode禁止操作（share/export）を暗黙実行
-
-### 2.3 `A1-ATTR-IF`
-
-- `schemaVersion`: `1.0.0`（固定）
-- 必須:
-  - `reviewState` (`unreviewed | human_reviewed`)
-  - `reviewedAt`
-  - `reviewerRef`（opaque string）
-  - `auditRecordedAt`
-- 任意:
-  - `reviewContext`
-  - `ownerRef`
-- `overridePolicy`（固定）:
-  - allowed: `human_dual_control_only`
-  - prohibited: `ai_only_override`, `safemode_relaxation`, `share_export_leakage_relaxation`
-  - requiredApproval: `SecurityOfficer+SystemOwner`
-- 禁止:
-  - AIのみで `human_reviewed` へ遷移
-  - 生ID保存
-  - `reviewEvents` 欠如を理由に閲覧不可化
-
-### 2.4 `A1-ATTR-IF` tie-break policy
-
-- `schemaVersion`: `1.0.0`（固定）
-- 順序（固定・入替禁止）:
+- `schemaVersion=1.0.0`
+- fixed order:
   1. `padding_compliance`
   2. `self_intersection_avoidance`
   3. `minimum_area_delta`
   4. `minimum_vertex_count`
 
-## 3. Cross-cutting constraints
+## 4) Governance Gate（A2/A3 unlock rule）
 
-- SafeMode既定ONを後退させない。
-- share/export漏えい防止を弱めない。
-- 監査情報は最小化し、PII保存を既定禁止とする。
-- A2は `03_Implement/**` のみ、A3は `04_Documentation/**` のみ編集する。
-- `01_Plans/issues/README.md` と `01_Plans/project-progress-dashboard.md` は統合フェーズまで編集しない。
+A2/A3 の `Draft -> Open` は次の全条件を満たす場合のみ許可。
 
-## 4. ADR要否判定（Context / Decision / Consequences）
+- `freezeContractId == "HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+- `schemaVersion == "1.0.0"`
+- `overridePolicy == "human_dual_control_only"`
+- `contractLinkLocked == true`
+- `sharedResourceFreeze == true`
+- `a1Status == "Done"`
+- `pendingDecisionQueueCount == 0`
+- `hasUndefinedContractChangeRequest == false`
+- `hasSafeModeRegressionRequest == false`
+- `hasShareExportLeakageRelaxationRequest == false`
 
-### Context
+Decision Queue permitted transitions:
+- `Pending -> Approved`
+- `Pending -> Rejected`
 
-A1は `ADR-0026` D2の下位具体化であり、価値軸・安全制約・停止条件の上位方針変更を伴わない。
+Any other transition is Block.
 
-### Decision
+## 5) CDC（ADR要否）
 
-ADR追加・更新は不要。上位方針変更を要する契約変更要求、または `ADR-0026` / `ADR-0027` の改定が必要な場合は、承認完了まで停止する。
+- Context:
+  - 本契約は `ADR-0026` / `ADR-0027` の下位実装契約。
+- Decision:
+  - 上位ADR改定が必要な要求は承認完了まで停止。
+- Consequences:
+  - A2/A3で契約再定義をしない。変更要求はA1へ差し戻し。
 
-### Consequences
+## 6) Fail-safe
 
-A2/A3は契約待ちなしで着手可能。契約変更要求はA1へ差し戻し、人間承認なしの改訂を禁止する。
+即停止条件:
+- 修復3回超過
+- 未承認決定の確定化
+- 未定義競合検出
 
-## 5. Contract freeze evidence
-
-- `contractLinkLocked=true`
-- `sharedResourceFreeze=true`
-- 固定値は本書を唯一参照先とし、複線化を禁止する。
-
-### 5.1 Freeze canonical tuple（機械判定キー）
-
-- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-- `schemaVersion=1.0.0`（`A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 共通）
-- `overridePolicy=human_dual_control_only`
-- `contractLinkLocked=true`
-- `sharedResourceFreeze=true`
-
-> 上記5要素は後続ゲート判定の唯一キーであり、A2/A3で変更しない。
-
-## 6. Handoff packet（A2 / A3）
-
-- 固定値一覧:
-  - `A1-CRITIQUE-IF`
-  - `A1-REDIFF-IF`
-  - `A1-ATTR-IF`
-  - `CritiqueInputContract.schemaVersion=1.0.0`
-  - `ReviewAttributionContract.schemaVersion=1.0.0`
-  - `ReviewAttributionContract.overridePolicy=human_dual_control_only`
-  - `DeterministicTieBreakContract.schemaVersion=1.0.0`
-  - `DeterministicTieBreakContract.order=padding_compliance>self_intersection_avoidance>minimum_area_delta>minimum_vertex_count`
-  - `ErrorContract.schemaVersion=1.0.0`
-  - `ErrorContract.codes=A1_SCHEMA_VERSION_MISMATCH|A1_REQUIRED_FIELD_MISSING|A1_TRACE_KEY_MISSING|A1_OVERRIDE_POLICY_VIOLATION|A1_PII_POLICY_VIOLATION`
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- 明示禁止:
-  - 契約本文を参照せず独自I/Fを追加すること
-  - 契約変更をA2/A3で実施すること
-  - SafeMode / share-exportの安全制約を後退させること
-- エスカレーション規定:
-  - 契約変更要求は必ずA1へ差し戻し。A2/A3で改訂しない。
-
-
-## 7. Contract change request routing（固定）
-
-- 差し戻し先（唯一）:
-  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-- 受付対象:
-  - 契約ID / schemaVersion / requiredFields / overridePolicy / tie-break順序の変更要求
-- A2/A3での禁止:
-  - 本契約書の直接改訂
-  - 単一参照先（SSOT）の複線化
-
-
-## 8. Phase 5 Gate判定（A2開始条件）
-
-- チェックリスト（全項目必須）:
-  - [x] Single Reference / Single Source of Truth（SSOT）が本書のみである。
-  - [x] `contractLinkLocked=true` / `sharedResourceFreeze=true` が維持されている。
-  - [x] `schemaVersion=1.0.0`（Critique / ReDiff / Attribution tie-break policy）が維持されている。
-  - [x] 共通エラー契約（`A1-ERROR-IF`, `ErrorContract.schemaVersion=1.0.0`）が維持されている。
-  - [x] 禁止事項（SafeMode後退禁止、share/export漏えい防止後退禁止、PII生値保存禁止）が維持されている。
-  - [x] A2/A3文書に「契約本文を変更しない」ルールが明記されている。
-- Gate判定:
-  - Ready: 全項目達成かつ未定義契約変更要求0件。
-  - Block: 1項目でも未達、または未定義契約変更要求/共有リソース更新要求/SafeMode後退前提が発生。
-
-### 8.1 Gate rule（machine-evaluable）
-
-- `GateInput.freezeContractId == "HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
-- `GateInput.schemaVersion == "1.0.0"`
-- `GateInput.contractLinkLocked == true`
-- `GateInput.sharedResourceFreeze == true`
-- `GateInput.a1Status == "Done"`
-- `GateInput.pendingDecisionQueueCount == 0`
-- `GateInput.hasUndefinedContractChangeRequest == false`
-- `GateInput.hasSafeModeRegressionRequest == false`
-- `GateInput.hasShareExportLeakageRelaxationRequest == false`
-
-判定:
-- Ready: 上記9条件がすべて真。
-- Block: 1条件でも偽。
-- 追加判定: Decision Queue遷移が `Pending -> Approved|Rejected` 以外なら Block。
-
-## 9. Fail-safe stop report template
-
-- 失敗再現手順
-- 競合ファイル
-- 必要承認者
-- 解決のYes/No質問
-
-
-## 10. Decision Queue snapshot（A1 fixed）
-
-| QueueID | Topic | Status | Decision |
-|---|---|---|---|
-| DQ-HIL-RS-01-A1-001 | Contract IDs freeze | Closed | `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` 固定 |
-| DQ-HIL-RS-01-A1-002 | `schemaVersion` freeze | Closed | `1.0.0` 固定（Critique/Attribution/TieBreak） |
-| DQ-HIL-RS-01-A1-003 | Deterministic判定順 | Closed | `padding_compliance > self_intersection_avoidance > minimum_area_delta > minimum_vertex_count` |
-| DQ-HIL-RS-01-A1-004 | Change request routing | Closed | A1 issue差し戻しのみ許可 |
-| DQ-HIL-RS-01-A1-005 | Error contract freeze | Closed | `A1-ERROR-IF` + errorCode 5件固定 |
-
-## 11. Mock handoff interface（implementation-free validation）
-
-- Critique fixture schema (`CritiqueInputFixtureV1`)
-  - required: `schemaVersion`, `critiqueId`, `targetRef`, `critiqueType`, `createdAt`, `iteration`
-  - optional: `comment`, `constraintHints`
-- ReDiff fixture schema (`ReDiffFixtureV1`)
-  - required: `proposalId`, `basedOnIteration`, `diffOps[]`, `traceKey`
-  - `diffOps[].required`: `opId`, `opType`, `targetRef`, `before`, `after`
-- Review attribution fixture schema (`ReviewAttributionFixtureV1`)
-  - required: `schemaVersion`, `reviewState`, `reviewedAt`, `reviewerRef`, `auditRecordedAt`
-  - optional: `reviewContext`, `ownerRef`
-- Error fixture schema (`ErrorEnvelopeFixtureV1`)
-  - required: `schemaVersion`, `errorCode`, `message`, `contractId`, `retryable`, `occurredAt`
-  - fixed `errorCode`: `A1_SCHEMA_VERSION_MISMATCH | A1_REQUIRED_FIELD_MISSING | A1_TRACE_KEY_MISSING | A1_OVERRIDE_POLICY_VIOLATION | A1_PII_POLICY_VIOLATION`
-
-Validation rules:
-1. `schemaVersion` mismatch is Block.
-2. Missing required key is Block.
-3. `A1-REDIFF-IF` without `traceKey` is Block.
-4. Any fixture with raw PII (`email`, `external_uid`, provider user id) is Block.
-5. Any error outside fixed `errorCode` enum is Block.
-
-## 12. Proceed verdict for downstream tracks
-
-- A2: **Ready**（contract fixed + mock schema fixed）
-- A3: **Ready**（contract fixed + non-goals fixed）
-- Residual risk:
-  - Fixture file naming drift between tracks (non-contractual).
-  - Mitigation: treat naming drift as documentation mapping issue; do not mutate contract IDs or required fields.
-
-
-
-## 13. A2/A3 immutability rule（enforced）
-
-- A2/A3は本書を参照専用で利用し、契約本文の改訂を行ってはならない。
-- 契約変更要求はA1 issueへ差し戻し、人間承認完了まで実装に反映しない。
-- A2/A3で許可される変更は、実装内マッピング・テストfixture適合・文書注記のみ。
-
-
-## 14. Downstream interface manifest（A2/A3 fixed handoff）
-
-- A2/A3へ引き渡す固定I/F一覧（変更不可）:
-  - `submitCritique(input: CritiqueInputFixtureV1): CritiqueAcceptedV1`
-  - `proposeReDiff(input: ReDiffFixtureV1): ReDiffAcceptedV1`
-  - `recordReviewAttribution(input: ReviewAttributionFixtureV1): AttributionRecordedV1`
-  - `toContractError(input: UnknownFailure): ErrorEnvelopeFixtureV1`
-- 検証キー（A2/A3共通）:
-  - `contractId`
-
-## 15. Stream A fixed governance/interface packet（HIL-RS-02 handoff）
-
-### 15.1 Fixed preconditions（A1→A2→A3）
-
-- A2/A3 は `A1 Done` かつ `DecisionQueue pendingCount=0` の場合のみ `Draft -> Open` を許可。
-- `DecisionQueue` の許可遷移は `Pending -> Approved` または `Pending -> Rejected` のみ。
-- 未承認確定（Pendingを経由しない確定化）は禁止。
-
-### 15.2 Fixed queue fields（machine-evaluable）
-
-- `queueId`（string）
-- `status`（`Pending | Approved | Rejected`）
-- `owner`（string）
-- `decisionBy`（string）
-- `timestampUtc`（ISO-8601 UTC）
-- `evidenceLink`（string, non-empty）
-
-### 15.3 Fixed stop/resume conditions
-
-- Stop（即停止）:
-  - `schemaVersion` / `overridePolicy` / `contractId` / SSOT の不一致
-  - `SafeMode` 後退要求、`share/export` 漏えい防止後退要求
-  - `Pending` を経由しない確定化、または `Approved -> Pending` 巻き戻し要求
-- Resume（再開）:
-  - 変更要求をDecision Queueへ `Pending` 登録
-  - 人間承認ログ（`decisionBy`, `timestampUtc`, `evidenceLink`）記録完了
-  - A1差し戻し経路で再判定完了
-- freeze宣言:
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-
-## Stream A 直列ロック更新（2026-04-11, クリティカルパス）
-
-### Phase 1: Read Sync（4ファイル抽出）
-
-- 抽出キー: `Status`, `Priority`, `Scope`, `contractIds`, `schemaVersion`。
-- ベースラインタプル:
-  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
-  - `schemaVersion=1.0.0`
-  - `Scope=01_Plans/ and/or 02_Architecture/`
-- 差分判定ルール: 抽出キーのいずれかが上記ベースラインまたは各ファイルの役割定義と不一致なら、Stream Aは即停止する。
-
-### Phase 2: ADR CDC確定（Context / Decision / Consequences）
-
-- Context: 本ストリームは `ADR-0026` / `ADR-0027` の下位具体化であり、SafeModeおよび漏えい防止制約を緩和しない。
-- Decision: ADR改訂を含意する要求が出た時点で状態を **承認待ち停止** とし、人間承認完了まで実行を継続しない。
-- Consequences: A2/A3はA1契約を参照専用で利用し、契約変更要求はA1へ差し戻す。
-
-### Phase 3: Plan固定
-
-- AC/DoD固定: Decision Queue の許可遷移は `Pending -> Approved|Rejected` のみ。
-- 禁止: `Pending` を経由しない確定化は無効。
-
-### Phase 4: Execute固定
-
-- 公開条件固定: `A2/A3 Open` は **`A1 Done && Pending=0` の場合のみ** 許可。
-- 即停止条件:
-  1. SafeMode後退要求。
-  2. share/export 漏えい防止の後退要求。
-  3. 未定義契約競合の検知。
-
-### Phase 5: Verify & Proceed固定
-
-- 検証ループ: self-correction は最大3回。
-- 強制停止: `attempts > 3`、前提崩壊、未定義競合検知。
-- Proceed条件: 未解決 `Pending` がない状態で `Plan -> Execute -> Verify -> Proceed` を完了記録した場合のみ進行可能。
+停止時報告:
+1. 失敗条件
+2. 競合ファイル
+3. 必要承認者
+4. Yes/No質問
