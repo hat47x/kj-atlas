@@ -137,27 +137,41 @@ i18n表示差分を追加する場合は、UIコンポーネントの生文字�
 `src/i18n/locales/ja.json` と `src/i18n/locales/en.json` に同一キーを追加して
 `t("...")` 経由で参照してください（例: `search_bar.*`）。
 
+## Go/No-Go gate（公開判定）
+
+公開「Go」は次を満たす場合のみ:
+
+1. Audience / Goal / Non-goal / Public boundary / Outcome / Related が明示されている。
+2. 既定の安全設定（`KJ_ATLAS_LLM_PROVIDER=none`、監査外部送信OFF既定）が明記されている。
+3. 追加/改名パラメータの正本が `02_Architecture/runtime_parameter_registry.md` であることを明記している。
+
+いずれか未充足の場合は「No-Go」として公開更新を停止します。
 
 ## DOC-OPS-05 実行記録（Phase 1〜5）
 
 ### Phase 1 Read
 
+- Latest Read: 2026-04-13
 - Audience / Goal / Public boundary / Related を確認し、公開境界を再確認。
 
 ### Phase 2 Plan
 
+- Latest Read: 2026-04-13
 - 本文は docs-only の範囲で更新し、仕様正本（00〜02）を上書きしない方針を固定。
 
 ### Phase 3 Execute
 
+- Latest Read: 2026-04-13
 - DOC-OPS-05 classification に沿って本文の公開メタと導線を整備。
 
 ### Phase 4 Verify
 
+- Latest Read: 2026-04-13
 - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/configuration.md`
 - `git diff --check`
 
 ### Phase 5 Proceed
 
+- Latest Read: 2026-04-13
 - 状態: **Ready**
 - 次アクション: 公開運用者向けの前提条件と確認手順を維持し、内部判断メモは 01_Plans 側へ分離する。
