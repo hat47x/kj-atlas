@@ -891,3 +891,18 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - Query Preview 未通過の送信導線は無効化し、mock `/context/query` `/context/bundle` でも同一契約（bypass禁止）を維持します。
 - Verify/Proceed の自己修復は最大3回まで許可し、4回目失敗時は即停止します。
 - 監査用途では `queryId` / `bundleHash` / `excludedReason` をログ相関キーとして固定します。
+
+
+## Stream G docs-only execution cycle（DOC-OPS-05）
+
+1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
+2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
+3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
+4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
+6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
+
+### Fail-safe
+
+- 語彙ドリフトが解消不能な場合は作業を停止する。
+- Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。

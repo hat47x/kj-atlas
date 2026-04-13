@@ -175,3 +175,18 @@ i18n表示差分を追加する場合は、UIコンポーネントの生文字�
 - Latest Read: 2026-04-13
 - 状態: **Ready**
 - 次アクション: 公開運用者向けの前提条件と確認手順を維持し、内部判断メモは 01_Plans 側へ分離する。
+
+
+## Stream G docs-only execution cycle（DOC-OPS-05）
+
+1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
+2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
+3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
+4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
+6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
+
+### Fail-safe
+
+- 語彙ドリフトが解消不能な場合は作業を停止する。
+- Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。

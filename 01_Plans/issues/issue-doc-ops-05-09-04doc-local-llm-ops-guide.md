@@ -201,3 +201,33 @@
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
+
+
+## 16) Stream G consolidated cycle（Read / CDC / Plan / Execute / Verify / Proceed）
+
+### 1) Read（対象文書再読）
+- 対象: `Scope` と `Related ADR/Spec` を再読し、公開境界（Audience / Goal / Non-goal / Public boundary）を再確認。
+- 判定: 本Issueは docs-only のため、`03_Implement/**` は変更対象外。
+
+### 2) CDC（Context / Decision / Consequences）
+- Context: `DOC-OPS-05-09` は DOC-OPS-05 の文書分類と公開品質を固定するためのDraft。
+- Decision: Classification は **Improve external** を維持し、既存のDecisionStatus=Fixedを正とする。
+- Consequences: 後続作業は文書更新・参照整合・公開境界確認に限定される。
+
+### 3) Plan（AC / DoD）
+- AC: Audience / Goal / Non-goal / Public boundary / Outcome / Related を本文で追跡可能にする。
+- DoD: Verifyで `docs-check`（メタ/語彙/固定値/リンク）を確認し、Proceedに `Ready/Hold/Needs-decision` を記録する。
+
+### 4) Execute（文書更新）
+- 本Issueメモを最新化し、後続の対象文書更新で使う判定材料を固定。
+- 競合回避のため、分類結果そのもの（Move/Improve）は再判定しない。
+
+### 5) Verify（リンク / 語彙 / 固定値）
+- 推奨コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- フェイルセーフ: 語彙ドリフトが解消不能、または自己修復3回超過時は停止してHold化する。
+
+### 6) Proceed（issue状態更新案）
+- 状態更新案: **Ready**（DecisionStatus=Fixed）。
+- 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
