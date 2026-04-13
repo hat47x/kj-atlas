@@ -168,3 +168,18 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 
 - Ready条件: 用語ドリフトなし、固定値一致、スコープ競合なし。
 - 停止条件: 自己修復3回超過、用語ドリフト未収束、スコープ競合検出（例: `operations.md` 変更要求）。
+
+
+## Stream G docs-only execution cycle（DOC-OPS-05）
+
+1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
+2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
+3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
+4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
+6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
+
+### Fail-safe
+
+- 語彙ドリフトが解消不能な場合は作業を停止する。
+- Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
