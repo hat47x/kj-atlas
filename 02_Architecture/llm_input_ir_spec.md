@@ -80,7 +80,7 @@ CE1 の IR 接続検証（A2）は backend 完了待ちを禁止し、次の stu
 
 
 
-### CE1 Execution Order Lock（Stream C）
+### CE1 Execution Order Lock（Stream B）
 
 CE1 Contract 作業は次の順序を固定し、逆順・省略を禁止する。
 
@@ -97,7 +97,7 @@ Phase 5 Verify は最低限次の機械判定を満たすこと。
 - 同一 canonical query を3回実行し `queryCanonicalHash` と `bundleHash` が 3/3 一致
 - 未定義キーは常に `400 unknown_contract_key`
 
-Phase 6 Proceed は CE2/CE3/CE4 への参照専用連携のみ許可し、実装変更要求を禁止する。
+Phase 6 Proceed は CE2/CE4 への参照専用連携のみ許可し、実装変更要求を禁止する。
 
 A2 contract test では次を機械判定する。
 

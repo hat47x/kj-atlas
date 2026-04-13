@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner
-- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Contracts only）
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contract Freeze / mock-first / Docs only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -20,7 +20,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
-- Stream: `A` (Contracts only / Docs-Plan only)
+- Stream: `B` (Contract Freeze / mock-first / Docs-Plan only)
 
 ## 0) Phase 1 Read（最新メタ）
 
@@ -183,11 +183,11 @@
 - [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
 - [ ] Contract ID collision=0 / 語彙 collision=0 が検証ログで確認できる。
 
-## 5) タスク分解（Stream A: 編集許可ファイル限定）
+## 5) タスク分解（Stream B: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-contract-freeze.md` の CG-01..05 定義を一致させる（再定義禁止）。
 - [ ] T2: 編集許可ファイル内の三層語彙（Consensus/Working/ContextProjection）だけを同期する（指定外ファイルは非編集）。
-- [ ] T3: CE1/CE2向け参照専用 Graph Contract Matrix を固定し、上書き禁止を明記する。
+- [ ] T3: CE2/CE4向け参照専用 Graph Contract Matrix を固定し、上書き禁止を明記する。
 - [ ] T4: DecisionQueue 参照（`UNC-VSC-CE-02-01..03`）の追跡可能性を本Issue内で維持する。
 
 ## 6) 検証計画 / Validation plan
@@ -207,7 +207,7 @@
 - ロールバック: D11決定前の定義に戻し、VSC再審議で再起票。
 
 
-## 8) Phase 6 Proceed（CE3向け参照専用）
+## 8) Phase 6 Proceed（CE2/CE4向け参照専用）
 
 - Graph責務: `WorkingGraph`（探索）/`ContextProjectionGraph`（read-only）/`ConsensusGraph`（合意済み）を固定。
 - 遷移責務: `Working -> Consensus = patch + approval only`。
@@ -217,21 +217,21 @@
 
 ### Phase 6 Workflow（Plan -> Execute -> Verify -> Proceed）
 
-- **Plan**: CE1/CE2にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
+- **Plan**: CE2/CE4にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
 - **Execute**: Working/Projection/Consensus + CG-01..05 を参照専用I/Fとして固定した。
 - **Verify**: 実装詳細や新規契約IDが混入していないことを確認する。
-- **Proceed**: 追加変更はCE0再起票で処理し、Stream Aの契約凍結を維持する。
+- **Proceed**: 追加変更はCE0再起票で処理し、Stream Bの契約凍結を維持する。
 
-## 9) CE1/CE2 引き渡し Graph Contract Matrix（固定）
+## 9) CE2/CE4 引き渡し Graph Contract Matrix（固定）
 
 | Consumer | Graph Contract | Required IDs | Blockers (No-Go) |
 | --- | --- | --- | --- |
-| CE1 | `Working -> ContextProjection(read-only) -> Bundle -> Proposal` | `CE0-CTX-IF`, `CG-01`, `CG-03`, `CG-05` | Projection永続上書き / Query Preview bypass / 監査欠損成功扱い |
-| CE2 | `Working -> Proposal-only -> Human Approval -> Consensus` | `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CG-02`, `CG-04` | auto-apply / review自動昇格 / safeMode既定緩和 |
+| CE2 | `Working -> ContextProjection(read-only) -> Bundle -> Proposal` | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01`, `CG-03`, `CG-04` | Projection永続上書き / Query Preview bypass / auto-apply |
+| CE4 | `Query -> Bundle -> Proposal/Apply Audit` | `CE0-CTX-IF`, `CG-02`, `CG-05` | 監査欠損成功扱い / direct write / safeMode既定緩和 |
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Core Graph Repositioningの参照専用固定値とする。
 
-## Stream A Critical Path Fixpoint (2026-04-12)
+## Stream B Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
@@ -239,7 +239,7 @@
 - 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
 - 事前想定との差分（箇条書き）:
   - Proceed/Go式に自然文 `A1 Done` が混在していたため、`a1Status=="Done"` に統一した。
-  - Stream表記が混在していたため、Stream A契約凍結ラインに統一した。
+  - Stream表記が混在していたため、Stream B契約凍結ラインに統一した。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
