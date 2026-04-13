@@ -36,6 +36,10 @@ LEGACY_ENV_KEYS = {
     "AUTH_NAME_FIELD",
     "AUTH_SUBJECT_FIELD",
     "REVIEWER_REF_RESOLVER_ADAPTER",
+    "CE4_EQUIVALENCE_MODE",
+    "CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT",
+    "CE4_AUDIT_REQUIRE_ALL_EVENTS",
+    "CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK",
 }
 
 
@@ -168,6 +172,22 @@ class Settings(BaseSettings):
         default="user_id",
         validation_alias="KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER",
     )
+    ce4_equivalence_mode: str = Field(
+        default="equivalence_and_bundle_hash",
+        validation_alias="KJ_ATLAS_CE4_EQUIVALENCE_MODE",
+    )
+    ce4_dry_run_enforce_no_side_effect: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT",
+    )
+    ce4_audit_require_all_events: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS",
+    )
+    ce4_source_bundle_hash_allow_mock: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -212,6 +232,19 @@ class Settings(BaseSettings):
                 "KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER must be one of user_id|sso_subject"
             )
         self.reviewer_ref_resolver_adapter = normalized_reviewer_ref_adapter
+
+        if self.ce4_equivalence_mode != "equivalence_and_bundle_hash":
+            raise ValueError(
+                "KJ_ATLAS_CE4_EQUIVALENCE_MODE must be equivalence_and_bundle_hash"
+            )
+        if not self.ce4_dry_run_enforce_no_side_effect:
+            raise ValueError(
+                "KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT must remain true in CE4"
+            )
+        if not self.ce4_audit_require_all_events:
+            raise ValueError(
+                "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS must remain true in CE4"
+            )
 
         return self
 

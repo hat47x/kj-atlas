@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from secrets import compare_digest
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -16,8 +19,19 @@ from kj_atlas_api.routes.context import router as context_router
 from kj_atlas_api.settings import settings
 
 
+def _assert_linear_migration_history() -> None:
+    backend_dir = Path(__file__).resolve().parents[2]
+    cfg = Config(str(backend_dir / "alembic.ini"))
+    cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+    script = ScriptDirectory.from_config(cfg)
+    heads = script.get_heads()
+    if len(heads) != 1:
+        raise RuntimeError(f"Migration conflict detected; expected single head but got {heads}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _assert_linear_migration_history()
     init_db()
     app.state.audit_dispatcher = build_audit_dispatcher()
     app.state.access_control_adapter = build_access_control_adapter(adapter_name=settings.access_control_adapter)

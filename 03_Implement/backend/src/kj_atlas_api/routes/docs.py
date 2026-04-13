@@ -2,6 +2,7 @@ import json
 import re
 from hashlib import sha256
 from datetime import datetime, timezone
+from threading import Lock
 from typing import Literal, cast
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, Response
@@ -40,6 +41,7 @@ from kj_atlas_api.models import (
     SimilarCandidateGroup,
     SimilarCandidateScoreSummary,
 )
+from kj_atlas_api.settings import settings
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
@@ -428,6 +430,32 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
     "proposal": {"proposal-diff"},
     "apply": {"apply", "apply --dry-run"},
 }
+_CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
+_ce4_audit_event_tracker: dict[str, set[str]] = {}
+_ce4_audit_tracker_lock = Lock()
+
+
+def reset_ce4_audit_event_tracker() -> None:
+    with _ce4_audit_tracker_lock:
+        _ce4_audit_event_tracker.clear()
+
+
+def _record_ce4_event_and_validate_completeness(*, equivalence_key: str, operation: str) -> None:
+    with _ce4_audit_tracker_lock:
+        seen = _ce4_audit_event_tracker.setdefault(equivalence_key, set())
+        seen.add(operation)
+        if operation != "apply":
+            return
+        missing = sorted(_CE4_REQUIRED_EVENT_SET - seen)
+    if missing:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "missing_event",
+                "message": "CE4 audit event set is incomplete for apply operation",
+                "missingEvents": missing,
+            },
+        )
 
 
 @router.post("/{doc_id}/context-audit")
@@ -444,12 +472,23 @@ def post_context_audit(
         raise HTTPException(status_code=422, detail="sourceBundleHash is required for proposal/apply operations")
     if payload.operation == "apply" and not payload.dryRun:
         raise HTTPException(status_code=422, detail="CE4 apply operation requires dryRun=true")
-    if payload.dryRun and payload.sideEffect != "none":
+    if settings.ce4_dry_run_enforce_no_side_effect and payload.dryRun and payload.sideEffect != "none":
         raise HTTPException(status_code=422, detail="dryRun=true requires sideEffect=none")
+    if (
+        payload.sourceBundleHash is not None
+        and payload.sourceBundleHash.startswith("mock:")
+        and not settings.ce4_source_bundle_hash_allow_mock
+    ):
+        raise HTTPException(status_code=422, detail="mock sourceBundleHash is disabled by CE4 runtime policy")
     if payload.command is not None and payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
         raise HTTPException(
             status_code=422,
             detail=f"command '{payload.command}' is invalid for operation '{payload.operation}'",
+        )
+    if settings.ce4_audit_require_all_events:
+        _record_ce4_event_and_validate_completeness(
+            equivalence_key=payload.equivalenceKey,
+            operation=payload.operation,
         )
 
     access_request, decision = _authorize_request(
