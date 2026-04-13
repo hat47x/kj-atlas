@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream B (CE2 proposal-only contracts, mock-first)
+- Owner: Stream D (CE2 proposal-only contracts, mock-first)
 - Scope: `01_Plans/issues/`, `02_Architecture/`
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`
@@ -19,12 +19,12 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (CE1/CE2契約整備専任 / Contracts + Docs only / mock-first)
+- Stream: `D` (CE1/CE2契約整備専任 / Contracts + Docs only / mock-first)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
-## 0) Serial Phase Contract（Stream B 固定フロー）
+## 0) Serial Phase Contract（Stream D 固定フロー）
 
-CE2 Stream B は、以下の固定フローでのみ進行する。
+CE2 Stream D は、以下の固定フローでのみ進行する。
 
 1. **Phase 1: Read**（必須I/F再確認）
 2. **Phase 2: ADR CDC**（Context / Decision / Consequences）
@@ -36,6 +36,12 @@ CE2 Stream B は、以下の固定フローでのみ進行する。
 `Verify` で3回修復しても受入条件を満たせない場合は、`status=held` で停止し、人手判断待ちへ遷移する。
 
 各Phase開始時には、直前成果物との差分を対象に `Read` チェックポイントを実施し、契約語彙（`proposalId/diff/sourceBundleHash/status/reviewState`）と状態遷移定義を再確認する。
+
+## 0.1) Independent Execution Rules（Stream D）
+
+- CE1は **mock contract参照** として扱い、実装完了待ちをしない。
+- 実装待ちを理由に停止せず、契約検証（docs-check）を先行する。
+- drift検知時のみ `status=held` で停止し、人手判断待ちへ遷移する。
 
 ## 1) Phase 1 Read（必須I/F抽出 + mock許容 / 依存切断）
 
@@ -60,7 +66,7 @@ CE2 Stream B は、以下の固定フローでのみ進行する。
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream B は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream D は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ### Decision
@@ -123,7 +129,7 @@ CE2 Stream B は、以下の固定フローでのみ進行する。
   - Proceed 判定時に `drift-stop解除確認` を明文化し、未解除なら Proceed 不可とする。
   - 停止条件（3回超過 / 安全後退 / 未定義競合）を毎回のVerify記録に併記する。
 
-## 4) Phase 4 Execute（lifecycle固定）
+## 4) Phase 4 Execute（proposal-only / no-auto-apply / status遷移固定）
 
 - UI/APIともに auto-apply 経路を契約違反として扱い、検知時は即No-Go。
 - すべてのAI応答は patch/diff と監査ログで追跡可能でなければならない。
@@ -202,7 +208,7 @@ CE2 Stream B は、以下の固定フローでのみ進行する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 11) フェイルセーフ（Stream B 固定）
+## 11) フェイルセーフ（Stream D 固定）
 
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
@@ -214,7 +220,7 @@ CE2 Stream B は、以下の固定フローでのみ進行する。
 
 - 判定: **新規ADRは現時点では不要**（既存 `ADR-0028` と CE0/CE1/CE2 Contract Freeze で意思決定が固定済み）。
 - CDC明文化（差分追記）:
-  - Context: Stream B は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
+  - Context: Stream D は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
   - Decision: 新規ADRを起票せず、当Issueと `02_Architecture/llm_quality_strategy.md` / `02_Architecture/llm_runtime_constraints.md` を単一正本として同期する。
   - Consequences: 仕様変更要求が Contract ID 追加/意味変更を伴う場合は **ADR起票を再判定し、承認待ちで停止** する。
 - 承認待ち条件（Stop & Ask）:

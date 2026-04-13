@@ -103,7 +103,7 @@ Layer A（必須）へ次のCE-1ゲートを追加する。
 - CE-2以降の `sourceBundleHash` 検証の前提条件として、このゲート合格結果を監査ログへ残す。
 - 監査ログ最小キーは `queryId`, `bundleHash`, `excludedReason`。
 
-## 8. CE-2 proposal-only 品質ゲート（Stream C）
+## 8. CE-2 proposal-only 品質ゲート（Stream D）
 
 ### 8.1 Context
 
@@ -131,7 +131,7 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 
 ## 9. CE-2 low-risk 運用固定（safe-side）
 
-### 9.1 Serial Phase gate（Stream C）
+### 9.1 Serial Phase gate（Stream D）
 
 CE2 は次の順序を固定し、前Phaseの証跡なしで次Phaseへ進まない。
 
@@ -141,6 +141,13 @@ CE2 は次の順序を固定し、前Phaseの証跡なしで次Phaseへ進まな
 4. Execute
 5. Verify（最大3回修復）
 6. Proceed（CE3引継ぎ）
+
+
+### 9.1.1 Independent execution rules
+
+- CE1 は実装完了待ちではなく **mock contract参照** で扱う。
+- 実装待ちを停止理由にせず、Phase 1〜5 の契約検証を継続する。
+- 停止は drift未解消・safeMode後退・auto-apply検知時のみ許可する。
 
 ### 9.2 Fail-safe first
 
