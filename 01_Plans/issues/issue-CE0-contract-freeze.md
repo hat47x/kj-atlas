@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Critical Path / Contracts only）
+- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contract Freeze / mock-first / Docs only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `A` (Critical Path / Contracts only / Docs-Plan only)
+- Stream: `B` (Contract Freeze / mock-first / Docs-Plan only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
 
 
@@ -27,7 +27,7 @@
 
 - CE0必須I/Fキーを `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` に固定し、後続Issueの再定義を禁止する。
 - CE1/CE2/CE4 は **実装待機禁止** とし、依存は `mock I/F` で切断して契約検証を先行する。
-- CE3（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
+- CE2/CE4（実装レーン）へ渡す情報は本Issueの Contract ID Matrix を参照専用で利用する（本Issueで実装詳細は扱わない）。
 - Contract ID Matrix は本Issueを一次正本とし、`02_Architecture/architecture.md` と `02_Architecture/schemas.md` は責務境界の同期先として扱う。
 - 再抽出結果（固定語彙）: `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` / `proposal-only` / `Query Preview` / `safeMode` / `human_reviewed`。
 - 再抽出結果（禁止事項）: Query Preview bypass / Consensus direct write / auto-apply / AI review自動昇格 / safeMode既定緩和。
@@ -190,11 +190,11 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（Stream A: 編集許可ファイル限定）
+## 5) タスク分解（Stream B: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
 - [ ] T2: 編集許可ファイル内（CE0 / CoreGraph / HIL-RS A1契約文書）で契約語彙を同期し、指定外ファイル編集を行わない。
-- [ ] T3: CE1/CE2向け参照専用ハンドオフ（再定義禁止）を本Issue末尾のMatrixに固定する。
+- [ ] T3: CE2/CE4向け参照専用ハンドオフ（再定義禁止）を本Issue末尾のMatrixに固定する。
 - [ ] T4: ドリフト検知コマンド結果（collision=0 / 安全後退=0）を記録する。
 
 ## 6) 検証計画 / Validation plan
@@ -213,9 +213,9 @@
 - ロールバック: 変更文書を契約ID単位でrevertし、ADR-0028を正本として再同期。
 
 
-## 8) Phase 6 Proceed（CE3実装レーン向け参照専用I/F）
+## 8) Phase 6 Proceed（CE2/CE4向け参照専用I/F）
 
-> 参照専用。CE3は以下を変更せず利用すること。
+> 参照専用。CE2/CE4は以下を変更せず利用すること。
 
 - `CE0-CTX-IF`: Query Preview必須 + deterministic `bundleHash` 前提。
 - `CE0-SAFEMODE-IF`: `safeMode` 既定ON、`allowUnreviewedText=false` 既定。
@@ -228,21 +228,21 @@
 
 ### Phase 6 Workflow（Plan -> Execute -> Verify -> Proceed）
 
-- **Plan**: CE1/CE2向け引き渡しは本IssueのContract Matrix参照専用とし、再定義を禁止する。
+- **Plan**: CE2/CE4向け引き渡しは本IssueのContract Matrix参照専用とし、再定義を禁止する。
 - **Execute**: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を引き渡し固定値として明記した。
 - **Verify**: 引き渡し対象に実装詳細やADR本文再定義が混入していないことを確認する。
-- **Proceed**: CE1/CE2は本Matrixを上書きせず参照し、差分提案はCE0再起票で扱う。
+- **Proceed**: CE2/CE4は本Matrixを上書きせず参照し、差分提案はCE0再起票で扱う。
 
-## 9) CE1/CE2 引き渡し Contract Matrix（固定）
+## 9) CE2/CE4 引き渡し Contract Matrix（固定）
 
 | Consumer | Required Contract IDs | Must Keep | Must Not |
 | --- | --- | --- | --- |
-| CE1 Context Query/Bundle | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CG-01..05` | Query Preview必須 / deterministic `bundleHash` / proposal-only | Preview bypass / 非決定論bundle / direct write |
-| CE2 Low-risk AI Assist | `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CG-02`, `CG-04`, `CG-05` | human review昇格は人手のみ / safeMode既定ON / 監査4点セット | AI review自動昇格 / auto-apply / 監査欠損成功扱い |
+| CE2 Low-risk AI Assist | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05` | Query Preview必須 / deterministic `bundleHash` / human review昇格は人手のみ | Preview bypass / AI review自動昇格 / auto-apply |
+| CE4 API/CLI/Audit Integration | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CG-05` | 監査4点セット必須 / safeMode既定ON / mock-first検証継続 | 監査欠損成功扱い / safeMode既定緩和 / direct write |
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
 
-## Stream A Critical Path Fixpoint (2026-04-12)
+## Stream B Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
