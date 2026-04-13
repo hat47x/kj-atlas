@@ -78,6 +78,27 @@ CE1 の IR 接続検証（A2）は backend 完了待ちを禁止し、次の stu
   - success: `200 ContextBundleV1 + queryCanonicalHash`
   - error: `409 nondeterministic_bundle` / `400 unknown_contract_key`
 
+
+
+### CE1 Execution Order Lock（Stream C）
+
+CE1 Contract 作業は次の順序を固定し、逆順・省略を禁止する。
+
+1. Phase 1 Read
+2. Phase 2 ADR CDC
+3. Phase 3 Plan（AC/DoD不足提案を先に確定）
+4. Phase 4 Execute（`ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` 固定）
+5. Phase 5 Verify（preview gate + 決定論 hash）
+6. Phase 6 Proceed（参照専用 handoff）
+
+Phase 5 Verify は最低限次の機械判定を満たすこと。
+
+- `previewConfirmed=false -> 422 preview_required`
+- 同一 canonical query を3回実行し `queryCanonicalHash` と `bundleHash` が 3/3 一致
+- 未定義キーは常に `400 unknown_contract_key`
+
+Phase 6 Proceed は CE2/CE3/CE4 への参照専用連携のみ許可し、実装変更要求を禁止する。
+
 A2 contract test では次を機械判定する。
 
 1. 同一 canonical query 3回実行で `queryCanonicalHash` と `bundleHash` が 3/3 一致。
