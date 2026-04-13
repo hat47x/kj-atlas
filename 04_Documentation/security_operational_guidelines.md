@@ -33,6 +33,15 @@
 - 役割分離と固定値の参照が1ページで確認でき、実運用での判断ブレを抑制できる。
 - 文書横断ドリフト（用語/役割/導線/固定値）の差分点検が容易になる。
 
+### 0.2 Verify必須チェック（用語・役割・導線・固定値）
+
+security系文書更新時は、次を同時に満たさない限り Proceed しない。
+
+1. 用語: `Security Officer / System Owner / Platform Operator` を統一している
+2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）が崩れていない
+3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> operations.md` の順で参照可能
+4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）に差分がない
+
 ## 1. 目的
 
 - 運用プロファイル選択時の判断材料を共通化する。
@@ -96,19 +105,26 @@
 3. 実行runbook: `04_Documentation/operations.md`
 4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）
 
-## 8. 同一ワークフロー（Plan → Execute → Verify → Proceed）
+## 8. 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
 
 運用判断ガイドの更新は次の共通手順で行う。
 
-1. **Plan**
+1. **Read**
+   - `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` を順に再読する。
+   - 用語・役割・導線・固定値（D1〜D4）の差分がないことを確認する。
+2. **ADR CDC**
+   - Context: 本書は運用判断の補助文書であり、承認フロー仕様そのものではない。
+   - Decision: Verify時の必須4観点（用語/役割/導線/固定値）を固定する。
+   - Consequences: ドキュメント横断同期時の停止条件を明確化できる。
+3. **Plan**
    - 役割（Security Officer / System Owner / Platform Operator）と D1〜D4 を正本と照合する。
    - SafeMode・share/export漏洩防止の後退表現が差分にないことを確認する。
-2. **Execute**
+4. **Execute**
    - 本書の責務を「運用判断補助」に限定し、承認フロー正本の再定義は行わない。
-3. **Verify**
+5. **Verify**
    - docs-check とリンク整合確認を行う。
    - 失敗時は最小修正で再実行し、**自己修復は最大3回**までとする。
-4. **Proceed**
+6. **Proceed**
    - 3回で収束しない場合は fail-safe 停止し、Decision Queue / issue memo に記録する。
 
 ### フェイルセーフ停止条件

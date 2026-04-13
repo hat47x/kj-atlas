@@ -196,26 +196,32 @@ CE4運用期間の固定値:
 - 未レビュー本文の自動確定を許可しない。
 - AI出力は提案として扱い、確定は人手レビューで実施する。
 
-## DOC-OPS-05 実行記録（Phase 1〜5）
+## DOC-OPS-05 実行記録（Phase 1〜6）
 
 ### Phase 1 Read
 
 - Audience / Goal / Public boundary / Related を確認し、公開境界と安全前提を再確認。
 
-### Phase 2 Plan
+### Phase 2 ADR CDC
+
+- Context: 本書は provider切替と監査4点セットの公開runbookであり、承認フロー仕様の正本ではない。
+- Decision: `Read → ADR CDC → Plan → Execute → Verify → Proceed` を固定順序として明文化する。
+- Consequences: API/CLI/GUI 同値性と監査4点セットの運用確認が、公開文書のみで追跡可能になる。
+
+### Phase 3 Plan
 
 - 本文は docs-only の範囲で更新し、仕様正本（00〜02）を上書きしない方針を固定。
 
-### Phase 3 Execute
+### Phase 4 Execute
 
 - Go/No-Go gate を追加し、公開判定を文書内で自己完結化。
 
-### Phase 4 Verify
+### Phase 5 Verify
 
 - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/local_llm_ops_guide.md`
 - `git diff --check`
 
-### Phase 5 Proceed
+### Phase 6 Proceed
 
 - 状態: **Ready**
 - 次アクション: provider切替runbookと監査4点セットの公開境界を維持し、内部承認ログは 01_Plans 側で管理する。

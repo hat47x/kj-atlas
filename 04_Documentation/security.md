@@ -44,6 +44,15 @@ Stream G では `operations.md`（参照のみ）同期完了後に本書を更�
 
 不一致が残る場合は e2e フェーズへ進まずに停止する。D1〜D4 の不整合を検知した場合は即時停止する。
 
+### 0.3 セキュリティ文書整合チェック（必須4観点）
+
+security系文書の更新時は、次の4観点を **Verifyで必ず同時確認** する。
+
+1. 用語: `Security Officer / System Owner / Platform Operator` を混在なく使用していること
+2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）を維持していること
+3. 導線: `security.md -> security_operational_guidelines.md -> operations.md` の参照導線が維持されていること
+4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）が改変されていないこと
+
 
 ## 1. 前提と範囲
 
@@ -157,19 +166,26 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 strict / non-strict いずれの運用プロファイルでも、組織ごとの採否判断は
 `04_Documentation/security_operational_guidelines.md` を参照してください。
 
-## 7.10 同一ワークフロー（Plan → Execute → Verify → Proceed）
+## 7.10 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
 
 `security.md` の更新は、次の同一ワークフローで固定する。
 
-1. **Plan**
+1. **Read**
+   - `strict_mode_exception_approval_flow.md` / `security_operational_guidelines.md` / `operations.md` の導線を再確認する。
+   - D1〜D4、役割語彙、SafeMode境界にドリフトがないことを確認する。
+2. **ADR CDC**
+   - Context: 本書は「セキュリティ基底方針」であり、承認フロー正本の代替ではない。
+   - Decision: 4観点（用語/役割/導線/固定値）を Verify 必須項目として固定する。
+   - Consequences: security系文書の横断ドリフトを公開文書だけで検知しやすくなる。
+3. **Plan**
    - `strict_mode_exception_approval_flow.md` を正本として再読し、D1〜D4・役割語彙・導線を確認する。
    - SafeMode 既定ONと share/export 漏洩防止の後退表現が混入していないことを確認する。
-2. **Execute**
+4. **Execute**
    - 本書は「基底セキュリティ方針」に限定し、承認フロー仕様の独自再定義を行わない。
-3. **Verify**
+5. **Verify**
    - docs-check / diff-check で整合を確認する。
    - 不一致時は最小修正で再検証し、**自己修復は最大3回**までとする。
-4. **Proceed**
+6. **Proceed**
    - 3回で収束しない場合は fail-safe 停止し、未解決論点を issue memo に記録する。
 
 ### 後退禁止（Fail-safe即停止）
