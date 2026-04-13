@@ -1,3 +1,4 @@
+import { buildCe2ProposalOnlyState } from "../domain/ce2_proposal_only";
 import { t } from "../i18n/translate";
 
 type SuggestionPanelProps = {
@@ -33,6 +34,12 @@ export function SuggestionPanel({
   notes,
   isReadOnly = false,
 }: SuggestionPanelProps) {
+  const ce2State = buildCe2ProposalOnlyState({
+    safeModeEnabled: true,
+    previewEnabled: isPreviewEnabled,
+    hasSuggestion,
+  });
+
   return (
     <section
       style={{
@@ -120,6 +127,9 @@ export function SuggestionPanel({
         </>
       ) : null}
       {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{t("suggestion.panel.notes", { notes })}</div> : null}
+      <div data-testid="ce2-proposal-only-state" style={{ fontSize: 11, color: "#64748b" }}>
+        CE2 proposal-only blockers: {ce2State.blockers.join(",")}
+      </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c" }}>{errorMessage}</div> : null}
     </section>
   );

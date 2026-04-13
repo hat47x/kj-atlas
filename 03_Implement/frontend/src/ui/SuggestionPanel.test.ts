@@ -35,6 +35,7 @@ describe("SuggestionPanel", () => {
     expect(enHtml).toContain("Draft suggestion");
     expect(enHtml).toContain("CE-2 guardrail: proposal-only flow. Auto-apply is disabled.");
     expect(enHtml).not.toContain("Apply suggestion");
+    expect(enHtml).toContain("CE2 proposal-only blockers: auto_apply_blocked");
   });
 
   it("disables edit actions in read-only mode", () => {
