@@ -179,3 +179,34 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Failure-stop Rule（3回超停止）
 - Verify失敗の自己修復は最大3回。
 - 3回超過時は作業停止し、未確定点を Yes/No 質問に分解して記録する。
+
+## Stream B HIL Planning Update (2026-04-13)
+
+### Phase 1) Read（対象2ファイル再読）
+- Re-read対象を本メモと `issue-HIL-RS-02-next-phase-delivery-plan.md` の2件に限定し、Scope/Dependencies/Gate式/固定識別子を再確認。
+- 参照値は `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1` と `HIL-RS-02-A1-CONTRACT-FREEZE-v1` のみを採用。
+
+### Phase 2) ADR CDC
+- Context: Stream B は planning-only であり、A1契約値を変更しない。
+- Decision: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` を唯一のProceed判定式として固定。
+- Consequences: 契約値ドリフト/未定義競合は推測修正せず A1 へ差し戻し、Decision Queueへ戻す。
+
+### Phase 3) Plan（AC/DoD不足提案）
+- AC補強: `Gate式一致`, `固定識別子一致`, `Pending bypass=0`, `安全境界後退要求=0` を同時成立条件として運用。
+- DoD補強: `Plan -> Execute -> Verify -> Proceed` の順序証跡をissue本文へ残す。
+
+### Phase 4) Execute（状態遷移契約同期）
+- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)` を維持し、NoGo を `A1!=Done || pendingDecisionQueueCount>0` に固定。
+- A2/A3 の契約再定義禁止、差分要求の差戻し先A1固定を再確認。
+
+### Phase 5) Verify（ゲート式・固定識別子参照整合）
+- Gate式/固定識別子/禁止遷移を `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` と `rg` で照合。
+- 自己修復ループ上限は3回。4回目相当は停止。
+
+### Phase 6) Proceed（未確定はDecision Queueへ戻す）
+- Proceed許可は `A1 Done && pendingDecisionQueueCount==0` 充足時のみ。
+- 未確定・前提崩れ・未定義競合はDecision Queueへ返却し、Yes/No質問化して停止。
+
+### Fail-safe Contract
+- 停止条件: 自己修復3回超過 / 固定識別子不一致 / 未承認確定化 / 前提崩れ。
+- 禁止: 推測での契約補完、A2/A3側での契約値変更、Pendingの暗黙解決。
