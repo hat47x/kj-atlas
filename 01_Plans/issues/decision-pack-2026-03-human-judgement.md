@@ -389,6 +389,15 @@
 - Phase 5 Proceed（公開固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
 
 
+### 6-24. Stream H 共有統合同期ログ（2026-04-13 rerun-30, Phase 1-5）
+
+- Phase 1 Read: Stream A〜G 完了報告と証跡リンク、Decision Queue（Ready=1 / Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を再確認。
+- Phase 2 Plan: 更新対象を shared resource 3ファイル（`project-progress-dashboard.md` / `issues/README.md` / 本decision-pack）に限定し、公開値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2` に固定。
+- Phase 3 Execute: 3ファイルを単一変更セットで同期し、未承認決定を確定扱いしない方針と Source Issue運用（Open=`N/A` / Draft=`TBD`）を維持。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、不一致0件（self-correction 0/3）を確認。
+- Phase 5 Proceed（公開固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+
 ## 7. HIL-RS Contract Pack (Stream A, 2026-04-13)
 
 ### 7-1. Contract IDs（read-only handoff）

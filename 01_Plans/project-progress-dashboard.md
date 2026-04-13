@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-12 (JST, Stream H final sync rerun-29)
+最終更新: 2026-04-13 (JST, Stream H shared sync rerun-30)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -26,6 +26,7 @@
 - Stream E HIL-RS-02 A3 運用同期（2026-04-11 rerun-30）で Phase 1〜6（Read/Plan/ADR CDC明文化/Execute/Verify/Proceed）を再実行し、`docs-check`（validator + 用語一致rg + 固定値一致rg + dashboard証跡rg）を単回通過。3回修復超過/未定義競合は発生せず、同期対象5ファイルの語彙・状態・D1〜D4固定値を再固定した。
 - Stream H 最終同期（2026-04-12 rerun-28）で Phase 1〜5（Read/Plan/Execute/Verify/Proceed）を実施し、shared resource 3ファイルのみを単一変更セットで同期。公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` と再開判定チェックリスト1行を再固定した。
 - Stream H 共有統合同期（2026-04-12 rerun-29）で Phase 1〜5 を再実行し、A〜G完了証跡・件数集計・Decision Queue・依存順 `A1→A2→A3`・停止条件違反0件を再監査。`validator/unittest/rg` 通過を確認したうえで、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2` と再開判定チェックリスト1行を再固定した。
+- Stream H 共有統合同期（2026-04-13 rerun-30）で Phase 1〜5（Read→Plan→Execute→Verify→Proceed）を再実行し、件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）・Active=5・Done=26・Decision Queue（Ready=1 / Open=2）・依存順 `A1→A2→A3`・停止条件違反0件を再確認。`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` 成功により、公開値と再開判定チェックリスト1行を再固定した。
 
 ### 未完Issue全件（22件）とレーン割当
 
