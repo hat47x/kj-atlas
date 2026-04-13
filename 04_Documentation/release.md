@@ -38,6 +38,7 @@
 - Frontend テストが成功すること
 - Frontend ビルドが成功すること
 - Gist公開対象の `04_Documentation/*.md` が `01_Plans/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たすこと
+- strict mode例外運用を含む場合、`02_Architecture/strict_mode_exception_approval_flow.md` の D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）と役割語彙（Security Officer / System Owner / Platform Operator）が `04_Documentation/operations.md` / `04_Documentation/local_llm_ops_guide.md` と一致すること
 
 実行例:
 
@@ -144,6 +145,34 @@ git push origin v0.1.1
 
 > QG未充足の文書は、Gist公開を見送り、修正後に再判定してください。
 
+
+
+## Stream E 専属実行サイクル（operations / release / local_llm_ops_guide）
+
+### Scope（編集許可）
+
+- `04_Documentation/operations.md`
+- `04_Documentation/release.md`
+- `04_Documentation/local_llm_ops_guide.md`
+
+### 編集禁止
+
+- 上記以外のファイル
+
+### 固定フェーズ
+
+- `Read → Plan → Execute → Verify → Proceed`
+- 各フェーズ開始時に対象3文書を再Readし、差分観点（用語 / 役割分離 / D1〜D4 / 参照導線）を確認する。
+
+### 自己修復上限
+
+- Verifyの自己修復（追記・体裁修正・語彙統一）は最大3回。
+- 3回で解消しない場合は **Hold** として停止し、論点を `01_Plans/issues/` へ分離する。
+
+### 停止条件
+
+- 前提不整合（上流正本 `02_Architecture/*` と矛盾）。
+- 他ストリーム領域への越境要求（編集許可外ファイルの変更要求）。
 
 ## DOC-OPS-05 セット1 実行記録（Phase 1〜5）
 
