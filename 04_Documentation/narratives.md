@@ -140,19 +140,26 @@ narrative 作成は次の順序を推奨する。
 
 失敗時は **最大3回まで修復して再判定** し、3回超過時は公開更新を停止して `01_Plans/` に論点を記録する。
 
-## 7. 同一ワークフロー（Plan → Execute → Verify → Proceed）
+## 7. 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
 
 本書に関わる改訂は、必ず次の同一ワークフローで実施する。
 
-1. **Plan**
+1. **Read**
+   - Audience / Goal / Non-goal / Public boundary / Outcome / Related を再確認する。
+   - `reviewState=unreviewed` 既定と SafeMode 境界の後退表現がないことを確認する。
+2. **ADR CDC**
+   - Context: narrative は A型図解に対する説明ドラフトであり、正解の自動確定手段ではない。
+   - Decision: CE2 proposal 契約（proposal-only / review昇格は人手のみ）を公開運用文言として固定する。
+   - Consequences: 外部利用者が review責務と公開可否を本文のみで判断できる。
+3. **Plan**
    - 変更範囲を `narratives.md` と対応issue memoに限定する。
    - SafeMode 既定ON、share/export 漏洩防止を後退させる文言が差分に含まれないことを事前確認する。
-2. **Execute**
+4. **Execute**
    - narrative意味論・review責務・公開境界の明確化のみを実施し、実装仕様の再定義は行わない。
-3. **Verify**
+5. **Verify**
    - docs-check と差分整合を実施し、失敗時は最小修正で再検証する。
    - **自己修復は最大3回まで**とし、4回目相当は fail-safe として停止する。
-4. **Proceed**
+6. **Proceed**
    - Verify成功時のみ次の改訂へ進む。未解決論点は `01_Plans/issues/` に保留記録する。
 
 ### 禁止事項（安全境界）

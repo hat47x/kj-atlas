@@ -187,7 +187,7 @@
 本書の更新は次の固定順序で実施する。
 
 1. Phase 1 Read
-2. Phase 2 ADR明文化（Context / Decision / Consequences）
+2. Phase 2 ADR CDC（Context / Decision / Consequences）
 3. Phase 3 Plan
 4. Phase 4 Execute
 5. Phase 5 Verify
