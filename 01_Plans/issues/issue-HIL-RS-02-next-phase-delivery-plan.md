@@ -158,3 +158,34 @@
 ### Failure-stop Rule（3回超停止）
 - 自己修復ループは最大3回。
 - 4回目相当は停止し、未確定論点を質問化してDecision Queueへ返却する。
+
+## Stream B HIL Planning Update (2026-04-13)
+
+### Phase 1) Read（対象2ファイル再読）
+- Re-read対象を本メモと `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` の2件に固定し、依存・Gate式・固定識別子の一致を確認。
+- 依存連鎖は `A1 -> A2 -> A3` を維持し、A1契約値は参照専用とする。
+
+### Phase 2) ADR CDC
+- Context: HIL-RS-02 は A1 契約を運用へ接続する planning フェーズ。
+- Decision: Open/Proceed判定を `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に一本化。
+- Consequences: Gate不一致や識別子ドリフトはA1へ差し戻し、A2/A3で局所上書きしない。
+
+### Phase 3) Plan（AC/DoD不足提案）
+- AC補強: `Gate式一致`, `Pending bypass禁止`, `固定識別子一致`, `安全境界後退要求=0`。
+- DoD補強: 各phaseに `入力(再読) -> 判定(CDC) -> 同期(Execute) -> 検証(Verify)` の証跡を残す。
+
+### Phase 4) Execute（状態遷移契約同期）
+- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)`、`Hold/NoGo := (A1!=Done || pendingDecisionQueueCount>0)` を固定。
+- Pending bypass と未承認確定化を禁止遷移として維持。
+
+### Phase 5) Verify（ゲート式・固定識別子参照整合）
+- 検証コマンドは `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を正本化し、`rg` でGate式と固定値を再確認。
+- 自己修復は最大3回。超過時は停止してDecision Queueへ返却。
+
+### Phase 6) Proceed（未確定はDecision Queueへ戻す）
+- Proceedは `A1 Done && pendingDecisionQueueCount==0` 成立時のみ許可。
+- 前提崩れ・未定義競合・識別子不一致は推測せず停止し、Decision Queueに戻す。
+
+### Fail-safe Contract
+- 停止条件: 修復3回超過 / 識別子不一致 / 未承認確定化 / 安全境界後退要求。
+- 禁止: A1契約値の再定義、Pendingの暗黙解決、A2/A3での契約値ローカル補完。
