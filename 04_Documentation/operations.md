@@ -74,7 +74,7 @@
 
 ## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
 
-Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
+Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
 
 - Gate順序は **Gate C -> Gate D -> Gate E** のみ許可（逆順・並列判定は禁止）。
 - Gate Dの必須入力は **測定日 / 対象文書 / 4KPI判定（TFS, Decision Readiness, Support Deflection, Feedback Closure） / 逸脱有無 / 次アクション / 反映先リンク**。
@@ -109,7 +109,7 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`）と本書を同期する
 
 ### 次回監査Runbook（Phase 1〜6固定）
 
-1. **Phase 1 Read**: 対象3文書（`issue-0019` / `issue-0020` / `operations.md`）を再Readし、Gate定義とKPI契約の差分有無を確認する。
+1. **Phase 1 Read**: 対象4文書（`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md`）を再Readし、Gate定義とKPI契約の差分有無を確認する。
 2. **Phase 2 ADR明文化**: 上流ADR（`ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028`）に照合し、契約・停止条件を固定する。
 3. **Phase 3 Plan**: KPI定義（4KPI）と監査スコアカードの AC / DoD を補完して固定する。
 4. **Phase 4 Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時に更新する。

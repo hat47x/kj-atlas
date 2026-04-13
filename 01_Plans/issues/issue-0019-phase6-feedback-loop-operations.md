@@ -19,7 +19,7 @@
 - Gate依存は `C→D→E` の固定順序とし、Gate C 完了前に Gate D を開始しない。
 - evidence形式は `Date / Gate / Command / Result / Decision / Next action` の6項目を必須とする。
 - KPIしきい値は承認済み台帳の値のみ有効とし、未承認変更を禁止する。
-- 2026-04-12 の Read同期で、`issue-0019` / `issue-0020` / `operations.md` の3文書に同一契約を適用した。
+- 2026-04-12 の Read同期で、`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md` の4文書に同一契約を適用した。
 
 ## 3) Phase 2 ADR明文化（契約と停止条件の固定）
 
@@ -34,16 +34,16 @@
 
 ### 4.1 Acceptance Criteria
 
-- [x] Gate C→D→E の固定順序が3文書で同一語彙・同一順序で明文化されている。
+- [x] Gate C→D→E の固定順序が4文書で同一語彙・同一順序で明文化されている。
 - [x] Gate C 完了条件（`未分類=0` または `保留理由 + 再判定日`）が Gate D 開始条件に固定されている。
 - [x] Gate D 入力契約（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）が固定されている。
 - [x] Gate E Proceed条件（Go / Conditional / No-Go）が固定されている。
-- [x] 停止条件（3回超過 / 前提崩れ / 未定義競合）が3文書で一致している。
-- [x] evidence形式（Date / Gate / Command / Result / Decision / Next action）が3文書で一致している。
+- [x] 停止条件（3回超過 / 前提崩れ / 未定義競合）が4文書で一致している。
+- [x] evidence形式（Date / Gate / Command / Result / Decision / Next action）が4文書で一致している。
 
 ### 4.2 DoD
 
-- [x] `issue-0019` / `issue-0020` / `operations.md` の記述が同一契約で同期されている。
+- [x] `issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md` の記述が同一契約で同期されている。
 - [x] docs-check / 用語照合 / diff整合の実行結果を記録している。
 - [x] 次回測定サイクルの開始条件（Proceed条件）が明文化されている。
 - [x] 停止条件に該当する場合は Proceed せず CDC 化する導線を明文化している。
@@ -82,13 +82,13 @@
   - Next action: 横断語彙照合へ進む
 - Date: 2026-04-12
   - Gate: terminology consistency
-  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
-  - Result: Pass（3文書の語彙・順序・停止条件整合を確認）
+  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+  - Result: Pass（4文書の語彙・順序・停止条件整合を確認）
   - Decision: 用語ドリフトなし
   - Next action: 差分整合確認へ進む
 - Date: 2026-04-12
   - Gate: diff integrity
-  - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
+  - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（許可ファイルのみ差分）
   - Decision: Proceed判定へ進む
   - Next action: 次回測定サイクル条件を確定
