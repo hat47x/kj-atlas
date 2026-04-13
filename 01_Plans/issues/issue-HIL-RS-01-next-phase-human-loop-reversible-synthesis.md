@@ -210,3 +210,34 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Fail-safe Contract
 - 停止条件: 自己修復3回超過 / 固定識別子不一致 / 未承認確定化 / 前提崩れ。
 - 禁止: 推測での契約補完、A2/A3側での契約値変更、Pendingの暗黙解決。
+
+
+## Stream A Critical Path Update (2026-04-13, contract freeze)
+
+### Phase 1: Read Sync
+- A1ゲート式・固定値・Decision Queue状態を再読し、差分なしを確認。
+- 固定ゲート式を `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に統一。
+
+### Phase 2: ADR CDC（承認待ち化ポリシー）
+- Context: HIL-RS-01 は A2/A3 参照契約の上流であり、下流での契約補完は禁止。
+- Decision: 変更提案は CDC 形式（Context/Decision/Consequences）で先に起票し、承認前は `Draft/Open(hold)` を維持。
+- Consequences: 未承認の契約変更は Proceed 不可。差分要求は A1 へ差戻し。
+
+### Phase 3: Plan（A2/A3参照契約の明文化）
+- A2/A3 参照契約ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`。
+- 禁止事項: Pending bypass / A2-A3側契約値再定義 / SafeMode後退 / review自動昇格 / direct write / auto-apply。
+- Proceed条件: `A1 Done && pendingDecisionQueueCount==0` かつ固定値一致。
+
+### Phase 4: Execute（planning文書固定）
+- 本issueを契約正本として、判定式・契約ID・停止条件を固定。
+- 実装/統合ファイル編集は行わない。
+
+### Phase 5: Verify
+- docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 依存式一致検査: `rg -n "A1 Done && pendingDecisionQueueCount==0|HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending bypass|direct write|auto-apply|review自動昇格|SafeMode後退" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- 失敗時Self-Correction上限: 3回。
+
+### Phase 6: Proceed（read-only contract pack）
+- 引継ぎ形式を read-only contract pack に固定。
+- Pack内容: 契約ID一覧・判定式・禁止事項・停止条件・差戻し先A1。
+
