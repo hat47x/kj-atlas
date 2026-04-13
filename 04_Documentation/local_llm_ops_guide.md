@@ -20,6 +20,14 @@
 
 いずれか未充足なら「No-Go」として公開更新を停止し、`01_Plans/issues/` へ論点を分離する。
 
+
+## 0.1 AUTH-OPS-03 整合ゲート（運用責務）
+
+- 承認フロー仕様の正本は `02_Architecture/strict_mode_exception_approval_flow.md`。
+- 本書での実行責務は、役割語彙を `Security Officer / System Owner / Platform Operator` に統一し、承認（2者）と実行（Platform Operator）を分離して運用すること。
+- strict mode 例外が関与する運用は D1〜D4 固定値（承認TTL=4h、最大2h、代理承認なし、48hレビュー+15m/60m）を必須チェックとする。
+- 上記を満たせない場合は `StoppedForClarification` として停止し、設定変更を実施しない。
+
 ## 1. 運用モード
 
 - Offline: `KJ_ATLAS_LLM_PROVIDER=none`（既定、外部送信なし）
@@ -239,6 +247,15 @@ git diff --check
 - 状態: **Ready**
 - 次アクション: provider切替runbookと監査4点セットの公開境界を維持し、内部承認ログは 01_Plans 側で管理する。
 
+
+
+## Stream E 専属実行サイクル（Read → Plan → Execute → Verify → Proceed）
+
+1. **Read**: `operations.md` / `release.md` / `local_llm_ops_guide.md` を再読し、D1〜D4・役割語彙・導線整合を確認する。
+2. **Plan**: docs-only で3文書内の差分方針を固定する（越境編集を禁止）。
+3. **Execute**: 役割分離（2者承認/実行責務分離）と fixed values の記述を同期する。
+4. **Verify**: `rg` と `git diff --check` で語彙・固定値・体裁を検査し、自己修復は最大3回まで。
+5. **Proceed**: Ready/Hold を判定し、停止条件（前提不整合・他ストリーム越境要求）に該当した場合は即停止する。
 
 ## Stream G docs-only execution cycle（DOC-OPS-05）
 
