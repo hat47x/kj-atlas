@@ -1,30 +1,32 @@
 # Issue Draft: 0019 Phase6 Feedback Loop Operations
 
 - Type: Process
-- Status: In Progress
+- Status: Completed
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G
+- Owner: Stream F
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `ADR-0028`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
 
 ## 1) Problem statement
 
-運用フィードバック（Gate C）とKPI監査（Gate D）が分断されると、Gate E（Proceed判定）の根拠が監査不能になる。Stream G は **feedback運用とKPI監査を単一路線で固定** し、再現可能な runbook と証跡を同期維持する。
+運用フィードバック（Gate C）とKPI監査（Gate D）が分断されると、Gate E（Proceed判定）の根拠が監査不能になる。Stream F は **feedback運用とKPI監査を単一路線で固定** し、再現可能な runbook と証跡を同期維持する。
 
 ## 2) Phase 1 Read（状態同期）
+
+- 実行順序は `Read → CDC → Plan → Execute → Verify(docs-check) → Proceed` で固定する。
 
 - Status / Priority / Scope は `In Progress / P1 / issues+operations` を維持する。
 - Gate依存は `C→D→E` の固定順序とし、Gate C 完了前に Gate D を開始しない。
 - evidence形式は `Date / Gate / Command / Result / Decision / Next action` の6項目を必須とする。
 - KPIしきい値は承認済み台帳の値のみ有効とし、未承認変更を禁止する。
-- 2026-04-12 の Read同期で、`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md` の4文書に同一契約を適用した。
+- 2026-04-13 の Read同期で、`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md` の4文書に同一契約を適用した。
 
-## 3) Phase 2 ADR明文化（契約と停止条件の固定）
+## 3) Phase 2 CDC（Context / Decision / Consequences の固定）
 
 - 上流整合は `ADR-0001`（価値要件）、`ADR-0019`（検証方針）、`ADR-0024`（DOC-OPS運用）、`ADR-0028`（CE系の安全/監査境界）を参照し、相互矛盾を持ち込まない。
-- Gate C→D→E、4KPI、evidence6項目、Proceed条件（Go/Conditional/No-Go）を **ADR整合契約** として固定する。
+- Gate C→D→E、4KPI、evidence6項目、Proceed条件（Go/Conditional/No-Go）を **CDC契約（ADR整合）** として固定する。
 - 停止条件を次で固定する（Fail-safe）:
   1. 修復試行が3回を超過。
   2. 前提崩れ（Gate順序・KPI定義・承認済みしきい値前提の崩壊）。
@@ -48,7 +50,13 @@
 - [x] 次回測定サイクルの開始条件（Proceed条件）が明文化されている。
 - [x] 停止条件に該当する場合は Proceed せず CDC 化する導線を明文化している。
 
-## 5) Phase 4 Execute（運用手順と計測手順の同期）
+## 5) Phase 4 Execute（KPI定義→監査指標→運用Runbook の直列実行）
+
+### 5.0 直列固定（必須）
+
+1. KPI定義（4KPI）を固定。
+2. 監査指標（Gate D 入力6項目 + 逸脱判定）を固定。
+3. 運用Runbook（Gate C→D→E と Proceed条件）を同期更新。
 
 ### 5.1 Gate C（feedback operation）
 
@@ -74,19 +82,19 @@
 
 ### 6.1 Validation evidence（統一形式）
 
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: docs-check
   - Command: `python3 01_Plans/issues/validate_active_issue_memos.py --root .`
   - Result: Pass（issue memo validator 正常終了）
   - Decision: 契約形式を維持
   - Next action: 横断語彙照合へ進む
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: terminology consistency
-  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream F|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（4文書の語彙・順序・停止条件整合を確認）
   - Decision: 用語ドリフトなし
   - Next action: 差分整合確認へ進む
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: diff integrity
   - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（許可ファイルのみ差分）
@@ -110,7 +118,7 @@
 6. 停止条件（3回超過 / 前提崩れ / 未定義競合）のいずれにも該当しない。
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**。
-- 担当: **Stream G（Unified Feedback & KPI Audit Owner）**。
+- 担当: **Stream F（Unified Feedback Loop Operations Owner）**。
 
 ## 8) Fail-safe（ADR衝突時のCDC化）
 

@@ -1,26 +1,27 @@
 # Issue Draft: 0020 Phase6 Value KPI and Audit Scorecard
 
 - Type: Process
-- Status: In Progress
+- Status: Completed
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G
+- Owner: Stream F
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `ADR-0028`, `04_Documentation/operations.md`
 - Expected verification level: `docs-check`
 
 ## 1) Problem statement
 
-KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開判定（Gate E）への受け渡しが揺れると監査結果の比較が不能になる。Stream G は **KPI監査を運用フィードバックと一体運用** し、単一路線の監査導線を固定する。
+KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開判定（Gate E）への受け渡しが揺れると監査結果の比較が不能になる。Stream F は **KPI監査を運用フィードバックと一体運用** し、単一路線の監査導線を固定する。
 
 ## 2) Phase 1 Read（状態同期）
 
 - Gate依存を `C→D→E` に固定し、逆順・並列判定を禁止する。
+- 実行順序を `Read → CDC → Plan → Execute → Verify(docs-check) → Proceed` で固定する。
 - evidence形式を `Date / Gate / Command / Result / Decision / Next action` で統一する。
 - KPIしきい値は承認済み台帳のみ有効とする。
-- 2026-04-12 の Read同期で、4文書（`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md`）の入力契約一致を再確認した。
+- 2026-04-13 の Read同期で、4文書（`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md`）の入力契約一致を再確認した。
 
-## 3) Phase 2 ADR明文化（契約と停止条件の固定）
+## 3) Phase 2 CDC（Context / Decision / Consequences の固定）
 
 - 上流整合は `ADR-0001` / `ADR-0019` / `ADR-0024` / `ADR-0028` を参照し、KPI契約の独自解釈を禁止する。
 - Gate C→D→E、4KPI、evidence6項目、Proceed条件（Go/Conditional/No-Go）を ADR整合契約として固定する。
@@ -54,7 +55,13 @@ KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開
 - [x] docs-check / 横断語彙照合 / diff整合の結果を記録。
 - [x] 停止条件に該当する場合の CDC 化導線を明文化。
 
-## 5) Phase 4 Execute（運用手順と計測手順の同期）
+## 5) Phase 4 Execute（KPI定義→監査指標→運用Runbook の直列実行）
+
+### 5.0 直列固定（必須）
+
+1. KPI定義（TFS / Decision Readiness / Support Deflection / Feedback Closure）を固定。
+2. 監査指標（Gate D 入力6項目 + 逸脱有無）を固定。
+3. 運用Runbook（Gate C→D→E と Proceed条件）を同期更新。
 
 ### 5.1 Gate C → Gate D 接続
 
@@ -84,19 +91,19 @@ scorecard必須入力は次で固定する。
 
 ### 6.1 Validation evidence（統一形式）
 
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: docs-check
   - Command: `python3 01_Plans/issues/validate_active_issue_memos.py --root .`
   - Result: Pass（issue memo validator 正常終了）
   - Decision: KPI定義整合を維持
   - Next action: KPI語彙照合へ進む
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: KPI cross-reference
-  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream F|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（4文書でKPI語彙・Gate依存・停止条件が一致）
   - Decision: 監査導線を固定
   - Next action: 差分整合確認へ進む
-- Date: 2026-04-12
+- Date: 2026-04-13
   - Gate: diff integrity
   - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（許可ファイルのみ差分）
@@ -118,7 +125,7 @@ scorecard必須入力は次で固定する。
 6. 停止条件（3回超過 / 前提崩れ / 未定義競合）のいずれにも該当しない。
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**。
-- 担当: **Stream G（Unified KPI & Audit Scorecard Owner）**。
+- 担当: **Stream F（Unified KPI & Audit Scorecard Owner）**。
 
 ## 8) Fail-safe（ADR衝突時のCDC化）
 
