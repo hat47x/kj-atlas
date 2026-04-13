@@ -140,26 +140,23 @@ narrative 作成は次の順序を推奨する。
 
 失敗時は **最大3回まで修復して再判定** し、3回超過時は公開更新を停止して `01_Plans/` に論点を記録する。
 
-## 7. 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+## 7. 同一ワークフロー（Read → Plan → Execute → Verify → Proceed）
 
 本書に関わる改訂は、必ず次の同一ワークフローで実施する。
 
 1. **Read**
    - Audience / Goal / Non-goal / Public boundary / Outcome / Related を再確認する。
    - `reviewState=unreviewed` 既定と SafeMode 境界の後退表現がないことを確認する。
-2. **ADR CDC**
-   - Context: narrative は A型図解に対する説明ドラフトであり、正解の自動確定手段ではない。
-   - Decision: CE2 proposal 契約（proposal-only / review昇格は人手のみ）を公開運用文言として固定する。
-   - Consequences: 外部利用者が review責務と公開可否を本文のみで判断できる。
-3. **Plan**
+2. **Plan**
    - 変更範囲を `narratives.md` と対応issue memoに限定する。
    - SafeMode 既定ON、share/export 漏洩防止を後退させる文言が差分に含まれないことを事前確認する。
-4. **Execute**
+   - AC/DoD 不足時はドラフトを提示し、合意後に実行へ進む。
+3. **Execute**
    - narrative意味論・review責務・公開境界の明確化のみを実施し、実装仕様の再定義は行わない。
-5. **Verify**
+4. **Verify**
    - docs-check と差分整合を実施し、失敗時は最小修正で再検証する。
    - **自己修復は最大3回まで**とし、4回目相当は fail-safe として停止する。
-6. **Proceed**
+5. **Proceed**
    - Verify成功時のみ次の改訂へ進む。未解決論点は `01_Plans/issues/` に保留記録する。
 
 ### 禁止事項（安全境界）
@@ -169,16 +166,16 @@ narrative 作成は次の順序を推奨する。
 - AI単独で `reviewed` 昇格や auto-apply を許可する表現
 
 
-## Stream G docs-only execution cycle（DOC-OPS-05）
+## Stream F docs-only execution cycle（DOC-OPS-05）
 
 1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
-2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
-3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
-4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
-5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
-6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
+2. **Plan**: AC/DoD を先に定義する。不足時はドラフトを提示し、合意後に実行へ進む。
+3. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+4. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
+5. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
 
 ### Fail-safe
 
+- 参照仕様未確定、または競合検知時は作業を停止する。
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
