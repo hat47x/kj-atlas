@@ -210,3 +210,21 @@
 - 本Issue対応は 6Phase（Read → ADR明文化 → Plan → Execute → Verify → Proceed）で実施する。
 - Verify 失敗時は自己修復を最大3回まで実施する。
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する。
+
+## 17) Stream E execution record (2026-04-13)
+
+### Phase 1 Read
+- DOC-OPS-05-06 の分類（Improve external）と CE3/E2E 検証ログ連携要件を再確認。
+
+### Phase 2 Plan
+- `04_Documentation/e2e_testing.md` に CE3 Verify 自己修復順序（最大3回）を明文化し、再現性を強化。
+
+### Phase 3 Execute
+- CE3節へ `install chromium -> install-deps chromium -> rerun` の順序を追記。
+
+### Phase 4 Verify
+- `rg -n "CE3 Verify の自己修復順序|playwright install chromium|playwright install-deps chromium" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 分類方針（Improve external）を維持しつつ、公開runbookとしての再現性要件を補強完了。

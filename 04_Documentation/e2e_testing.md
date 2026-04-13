@@ -148,6 +148,12 @@ CE3 変更PRで Playwright 実行環境が未セットアップの場合は、�
 - `cd 03_Implement/frontend && npm exec playwright install chromium`
 - `cd 03_Implement/frontend && npm exec playwright install-deps chromium`
 
+CE3 Verify の自己修復順序（最大3回）:
+
+1. 1回目失敗: `playwright install chromium`
+2. 2回目失敗: `playwright install-deps chromium`
+3. 3回目: E2E再実行（未収束なら停止して blocker 記録）
+
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
