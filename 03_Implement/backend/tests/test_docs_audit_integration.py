@@ -290,6 +290,48 @@ def test_context_audit_rejects_invalid_source_bundle_hash(tmp_path) -> None:
     assert response.status_code == 422
 
 
+def test_context_audit_rejects_proposal_without_source_bundle_hash(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "proposal",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "proposal-diff",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "sourceBundleHash is required for proposal/apply operations"
+
+
+def test_context_audit_rejects_apply_without_source_bundle_hash(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "apply",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "apply",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "sourceBundleHash is required for proposal/apply operations"
+
+
 def test_context_audit_rejects_dry_run_side_effect(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         response = client.post(
