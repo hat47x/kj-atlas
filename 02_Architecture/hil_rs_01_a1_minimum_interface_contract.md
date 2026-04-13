@@ -1,7 +1,7 @@
 # HIL-RS-01-A1: Architecture最小I/F契約（Critique / ReDiff / Attribution / Error）
 
 - Contract ID: `HIL-RS-01-A1`
-- Status: Fixed (A1 Done)
+- Status: Fixed (a1Status=="Done")
 - Owner: Architecture Owner
 - Scope: `02_Architecture/`
 - Upstream: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
@@ -99,6 +99,20 @@ Decision Queue permitted transitions:
 - `Pending -> Rejected`
 
 Any other transition is Block.
+
+## 4.1) Read-only Contract Snapshot Artifact（Phase 4 発行物）
+
+A1契約の mock用I/F は以下の read-only artifact として固定し、A2/A3 での再定義を禁止する。
+
+| Artifact Key | Signature / Type | Prohibited Changes |
+| --- | --- | --- |
+| `A1-CRITIQUE-IF` | `CritiqueV1(critiqueId, targetRef, critiqueType, createdAt, iteration, comment?, constraintHints?)` | 必須キー削除 / review自動昇格 / 生ID保存 |
+| `A1-REDIFF-IF` | `ReDiffV1(proposalId, basedOnIteration, diffOps[], traceKey, rationale?)` | `traceKey`欠落 / 非可逆差分 / SafeMode禁止操作の暗黙実行 |
+| `A1-ATTR-IF` | `AttributionV1(reviewState, reviewedAt, reviewerRef, auditRecordedAt, reviewContext?, ownerRef?)` | `overridePolicy`緩和 / AIのみで`human_reviewed`昇格 |
+| `A1-ERROR-IF` | `A1ErrorV1(errorCode, message, contractId, retryable, occurredAt)` | 未承認`errorCode`追加 / PII埋め込み |
+
+- Artifact policy: `readOnly=true`, `mutationAllowed=false`, `changeRequestRoute=A1-CDC-only`。
+- Snapshot validity: `schemaVersion=="1.0.0"` かつ `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`。
 
 ## 5) CDC（ADR要否）
 

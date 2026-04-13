@@ -18,7 +18,7 @@
 ## 2) Governance Baseline（Mock Contract Snapshot参照）
 
 - Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
-- A2/A3 Open条件: `A1 Done && pendingDecisionQueueCount==0`
+- A2/A3 Open条件: `a1Status=="Done" && pendingDecisionQueueCount==0`
 - 許可遷移: `Pending -> Approved|Rejected`
 - 禁止遷移: Pending bypass / A1未完了でのA2/A3 Open
 - 固定識別子:
@@ -67,7 +67,7 @@
 
 ## 6) Open化条件（明文化）
 
-1. `A1 Done`
+1. `a1Status=="Done"`
 2. `pendingDecisionQueueCount==0`
 3. Mock snapshot固定識別子が一致
 4. 安全境界の後退要求がない
@@ -84,14 +84,14 @@
 ### Phase 2) A1/A2/A3依存 + Decision Queue更新
 | QueueID | Topic | Status | Resolution |
 | --- | --- | --- | --- |
-| `DQ-HIL-RS-02-001` | A1 completion gate | Closed | `A1 Done` is mandatory before A2/A3 Open |
+| `DQ-HIL-RS-02-001` | A1 completion gate | Closed | `a1Status=="Done"` is mandatory before A2/A3 Open |
 | `DQ-HIL-RS-02-002` | Pending decision bypass prevention | Closed | bypass forbidden; unresolved items block Proceed |
 | `DQ-HIL-RS-02-003` | Contract-ID/lock-value drift | Closed | drift => return to A1, no local override |
 
 ### Phase 3) AC/DoD不足補完
-- Added explicit DoD checkpoint: Proceed requires `A1 Done && pendingDecisionQueueCount==0 && no safety downgrade request`.
+- Added explicit DoD checkpoint: Proceed requires `a1Status=="Done" && pendingDecisionQueueCount==0 && no safety downgrade request`.
 - Added hold behavior: if any queue reopens, phase state must return to `Plan` and re-run CDC check.
-- Locked unlock expression as the sole gate for A2/A3 Open: `A1 Done && pendingDecisionQueueCount==0`.
+- Locked unlock expression as the sole gate for A2/A3 Open: `a1Status=="Done" && pendingDecisionQueueCount==0`.
 - Locked decision progression: unresolved `Pending` items block Proceed without exception (pending bypass prohibited).
 
 ### Phase 4) docs-check
@@ -107,7 +107,7 @@
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
 - 未確定責務: `なし`（A1は契約凍結の唯一正本、A2/A3はread-only参照）。
-- 未確定ゲート: `なし`（唯一ゲートは `A1 Done && pendingDecisionQueueCount==0`）。
+- 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -121,12 +121,12 @@
 
 ### Phase 4: Execute（契約ID・判定条件・停止条件固定）
 - 契約ID固定: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
-- 判定条件固定: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 判定条件固定: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
 - 停止条件固定: Query Preview bypass / direct write / auto-apply / review自動昇格 / SafeMode後退 / Self-Correction 3回超過。
 
 ### Phase 5: Verify -> Proceed
 - Verify: docs-checkで契約ID整合・語彙整合・安全後退0件を確認し、不一致時はSelf-Correction最大3回まで。
-- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && A1 Done && pendingDecisionQueueCount==0)`。
+- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0)`。
 
 ### Fail-safe（停止報告テンプレ）
 - 失敗条件:
@@ -150,7 +150,7 @@
 6. **Phase 6 Proceed**: 条件未充足・曖昧点は質問化して停止。
 
 ### State Transition Contract（明確化）
-- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)`
+- `Open/Proceed Allowed := (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - `Hold/NoGo := (A1!=Done || pendingDecisionQueueCount>0)`
 - Pending bypass は例外なく禁止。
 - 契約値差分はA1へ差戻しし、A2/A3では変更しない。
@@ -167,7 +167,7 @@
 
 ### Phase 2) ADR CDC
 - Context: HIL-RS-02 は A1 契約を運用へ接続する planning フェーズ。
-- Decision: Open/Proceed判定を `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に一本化。
+- Decision: Open/Proceed判定を `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に一本化。
 - Consequences: Gate不一致や識別子ドリフトはA1へ差し戻し、A2/A3で局所上書きしない。
 
 ### Phase 3) Plan（AC/DoD不足提案）
@@ -175,7 +175,7 @@
 - DoD補強: 各phaseに `入力(再読) -> 判定(CDC) -> 同期(Execute) -> 検証(Verify)` の証跡を残す。
 
 ### Phase 4) Execute（状態遷移契約同期）
-- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)`、`Hold/NoGo := (A1!=Done || pendingDecisionQueueCount>0)` を固定。
+- `Open/Proceed Allowed := (a1Status=="Done" && pendingDecisionQueueCount==0)`、`Hold/NoGo := (A1!=Done || pendingDecisionQueueCount>0)` を固定。
 - Pending bypass と未承認確定化を禁止遷移として維持。
 
 ### Phase 5) Verify（ゲート式・固定識別子参照整合）
@@ -183,7 +183,7 @@
 - 自己修復は最大3回。超過時は停止してDecision Queueへ返却。
 
 ### Phase 6) Proceed（未確定はDecision Queueへ戻す）
-- Proceedは `A1 Done && pendingDecisionQueueCount==0` 成立時のみ許可。
+- Proceedは `a1Status=="Done" && pendingDecisionQueueCount==0` 成立時のみ許可。
 - 前提崩れ・未定義競合・識別子不一致は推測せず停止し、Decision Queueに戻す。
 
 ### Fail-safe Contract
@@ -194,7 +194,7 @@
 ## Stream A Critical Path Update (2026-04-13)
 
 ### Phase 1 Read
-- A1固定契約とQueue状態を再確認し、Proceed唯一条件を `A1 Done && pendingDecisionQueueCount==0` に確定。
+- A1固定契約とQueue状態を再確認し、Proceed唯一条件を `a1Status=="Done" && pendingDecisionQueueCount==0` に確定。
 
 ### Phase 2 ADR CDC
 - Context: HIL-RS-02 は A1 契約運用レーンであり、契約編集レーンではない。
