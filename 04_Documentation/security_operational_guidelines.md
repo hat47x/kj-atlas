@@ -42,6 +42,14 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> operations.md` の順で参照可能
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）に差分がない
 
+### 0.3 Stream D 実行メモ（security docs-only）
+
+Stream D で本書を更新する場合、編集対象は `security.md` / `security_operational_guidelines.md` のみに限定する。
+
+- 承認未了の決定事項は本文へ反映しない（検知時は停止）。
+- D1〜D4、役割語彙、導線の3観点を docs-check で同時確認する。
+- 自己修復は最大3回。3回で収束しない場合は `Hold` として Proceed しない。
+
 ## 1. 目的
 
 - 運用プロファイル選択時の判断材料を共通化する。
@@ -132,6 +140,7 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 - SafeMode 既定ONの後退要求
 - share/export 漏洩防止の緩和要求
 - D1〜D4・役割分離・導線の不一致が解消しない状態
+- 承認未了の決定事項（未確定Q項目、再承認待ち）を確定事項として反映しようとした場合
 
 ## 9. DOC-OPS-05 Stream G 専任サイクル（P1→P6）
 

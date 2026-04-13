@@ -37,6 +37,15 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 
 Stream G では `operations.md`（参照のみ）同期完了後に本書を更新する。確認順序は次のとおり。
 
+### 0.2.1 Stream D 実行メモ（security docs-only）
+
+本書を Stream D 専任で更新する場合は、編集対象を `security.md` / `security_operational_guidelines.md` に限定し、次を満たすまで Proceed しない。
+
+1. 用語一致（`Security Officer / System Owner / Platform Operator`）
+2. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
+3. 承認未了の決定（未確定Q項目・再承認待ち）を確定事項として本文へ反映していない
+4. docs-check（リンク整合 + 固定値照合 + `git diff --check`）が成功
+
 1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
 2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
 3. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
@@ -193,6 +202,7 @@ strict / non-strict いずれの運用プロファイルでも、組織ごとの
 - SafeMode 既定ONの緩和
 - share/export 漏洩防止境界の緩和
 - review自動昇格・auto-apply・未承認状態の確定扱い
+- 承認未了の決定事項（未確定Q項目、再承認待ち差分）の本文反映
 
 ## 8. Strict provisioning 運用（AUTH-API-02）
 
