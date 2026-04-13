@@ -1,14 +1,14 @@
 # Issue Draft: FB-P2B-01-A2 Similar-card候補提示 / モック検証
 
 - Type: Feature request
-- Status: Done
+- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream E
+- Owner: Stream H（audit normalization only）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
-- Expected verification level: `integration`
+- Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
 
@@ -164,3 +164,23 @@
 
 ### Phase 5: Proceed
 - Go（A2/A3の宣言検証レベル要件を充足）。
+
+
+## Stream H normalization contract pack (2026-04-13)
+
+- Scope: legacy Audit Hold群の再開性を揃えるため、状態語彙・依存順序・契約リンクを監査再現可能な最小単位へ正規化する（新規実装なし）。
+- Backlog lane: `FB-P2B-01`
+- Canonical contract: `CTR-2B-01-CANDIDATE-GROUP-V1`
+- Serial dependency: `A1 -> A2(mock) -> A3(implementation-ready contract only)`
+- Mock policy: A2/A3 はモック/fixture/stub前提で参照可能状態を維持し、実コード変更要求を発行しない。
+
+### Resume gate (Go/NoGo)
+
+1. `ContractID/DependsOnContractID/ReferenceContractID` の三点一致を再確認する。
+2. `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` が成功する。
+3. 担当レーンが `Open (Audit Hold)` から `In Progress` へ昇格する明示判断を記録する。
+
+### Stop conditions（fail-fast）
+
+- 契約ID不整合、依存順序逆転、未定義競合を検知した場合は即停止。
+- Self-correction は最大3回。3回超過時は更新を停止し、競合一覧のみ提出する。

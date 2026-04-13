@@ -72,7 +72,7 @@
 相違が1つでもあれば No-Go とし、`04_Documentation/security.md` と `04_Documentation/e2e_testing.md` を更新する前に本書で修復する。
 
 
-## 0.6 Phase6 Feedback Loop / KPI運用（Stream G）
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream F）
 
 Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
 
@@ -82,14 +82,16 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 - Gate E Proceed条件は **Go=記録確定後に進行、Conditional=再判定日+担当記録後に限定進行、No-Go=見送り理由+再判定日+担当記録まで停止**。
 - KPIしきい値は承認済み台帳のみ有効とし、未承認変更は適用しない。
 - 停止条件は **3回超過 / 前提崩れ / 未定義競合** の3項目を固定し、該当時は Proceed しない。
-- 2026-04-12 Read同期（Stream G）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
+- 2026-04-13 Read同期（Stream F）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
 
-### Phase6 固定フロー（Plan → Execute → Verify → Proceed）
+### Phase6 固定フロー（Read → CDC → Plan → Execute → Verify(docs-check) → Proceed）
 
-1. **Plan**: 受入条件（AC）と完了条件（DoD）を先に固定する。
-2. **Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時更新する。
-3. **Verify**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回までとする。
-4. **Proceed**: 次回測定サイクル条件を満たし、停止条件非該当の場合のみ引き渡す。
+1. **Read**: 対象4文書を再読し、Gate契約・KPI契約の差分有無を確認する。
+2. **CDC**: Context / Decision / Consequences を先に固定し、ADR衝突を解消する。
+3. **Plan**: AC/DoDを固定し、KPI定義→監査指標→運用Runbook の直列化を宣言する。
+4. **Execute**: Gate C -> Gate D -> Gate E の単一路線で実行し、運用手順と計測手順を同時更新する。
+5. **Verify(docs-check)**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回までとする。
+6. **Proceed**: 次回測定サイクル条件を満たし、停止条件非該当の場合のみ引き渡す。
 
 ### Fail-safe（Phase6 / ADR衝突時のCDC化）
 
@@ -105,7 +107,7 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 ### 定点レビュー
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**
-- 担当: **Stream G（Unified Feedback & KPI Audit Owner）**
+- 担当: **Stream F（Unified Feedback & KPI Audit Owner）**
 
 ### 次回監査Runbook（Phase 1〜6固定）
 

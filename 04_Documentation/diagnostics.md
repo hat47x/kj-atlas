@@ -221,3 +221,14 @@
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## Phase6 KPI/Audit 連携メモ（Stream F）
+
+diagnostics の構造メトリクスは Gate D（KPI scorecard audit）の補助指標として扱えるが、**KPI定義そのものを置き換えない**。
+運用時は次の直列を固定する。
+
+1. KPI定義（TFS / Decision Readiness / Support Deflection / Feedback Closure）を `issue-0020` で確定。
+2. 監査指標として diagnostics の該当メトリクス（`isolationRate`, `connectivityScore`, `bridgeEdgeCount` など）を補助参照。
+3. Runbook判定は `operations.md` の Gate C→D→E と Proceed条件に従って記録する。
+
+Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の前に CDC（Context / Decision / Consequences）を作成し、未承認のしきい値変更を禁止する。
