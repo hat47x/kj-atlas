@@ -210,3 +210,21 @@
 - 本Issue対応は 6Phase（Read → ADR明文化 → Plan → Execute → Verify → Proceed）で実施する。
 - Verify 失敗時は自己修復を最大3回まで実施する。
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する。
+
+## 17) Stream E execution record (2026-04-13)
+
+### Phase 1 Read
+- DOC-OPS-05-07 の分類（Move internal）と CE3 Verify 実測ログの扱いを再確認。
+
+### Phase 2 Plan
+- 実測ログはIssue側に保持し、`04_Documentation/e2e_testing.md` は公開手順の最小修正に限定する方針を維持。
+
+### Phase 3 Execute
+- CE3 Verify 実行記録を `issue-CE3-patch-workspace-presets.md` に集約し、本Issueは分類方針記録のみに留める。
+
+### Phase 4 Verify
+- `rg -n "Stream E execution record|Move internal|公開手順" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 公開境界方針（Move internal）との整合を維持。後続は移設PRで実施。

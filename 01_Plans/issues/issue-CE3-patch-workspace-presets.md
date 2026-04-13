@@ -266,3 +266,34 @@
 
 - CE3の実装検証は完了（workspace/preset/rollback のACを再確認）。
 - 継続課題（範囲外）: local audit log の document監査ログ統合（CE4連携）。
+
+## 13) Stream E execution record (2026-04-13)
+
+### Phase 1 Read
+
+- CE3要件・CE3 E2E観点・DOC-OPS-05関連Issueを再読し、今回の変更範囲を `03_Implement/frontend/`（verify実行）と docs/issue 更新に限定。
+
+### Phase 2 Plan
+
+- Verifyは `unit -> e2e` で実行。
+- e2e失敗時は `playwright install chromium` → `playwright install-deps chromium` → e2e再実行の順で最大3回自己修復。
+- Core/Consensus 非改変、SafeMode境界非後退を維持。
+
+### Phase 3 Execute
+
+- CE3 Verify を実行し、Playwright依存不足による失敗を2段階で自己修復。
+- CE3 E2E手順へ自己修復順序を `04_Documentation/e2e_testing.md` に明記。
+
+### Phase 4 Verify
+
+- `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` → pass
+- 1回目 `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` → fail（browser binary不足）
+- 修復1 `npm --prefix 03_Implement/frontend exec playwright install chromium` → pass
+- 2回目 e2e → fail（`libatk-1.0.so.0` 不足）
+- 修復2 `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` → pass
+- 3回目 e2e → pass
+
+### Phase 5 Proceed
+
+- 自己修復2回で収束（上限3回未満）。
+- 未完了の後続は CE4（local監査ログの document監査ログ統合）のまま据え置き。
