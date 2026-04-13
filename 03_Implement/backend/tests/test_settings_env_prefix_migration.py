@@ -61,3 +61,25 @@ def test_settings_normalizes_reviewer_ref_resolver_adapter(monkeypatch) -> None:
     loaded = Settings()
 
     assert loaded.reviewer_ref_resolver_adapter == "sso_subject"
+
+
+def test_settings_rejects_non_ce4_equivalence_mode(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_CE4_EQUIVALENCE_MODE", "bundle_hash_only")
+
+    try:
+        Settings()
+        assert False, "Expected invalid CE4 equivalence mode to be rejected"
+    except ValueError as exc:
+        assert "KJ_ATLAS_CE4_EQUIVALENCE_MODE" in str(exc)
+
+
+def test_settings_rejects_disabling_ce4_audit_require_all_events(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS", "false")
+
+    try:
+        Settings()
+        assert False, "Expected CE4 audit fail-closed guard to be rejected"
+    except ValueError as exc:
+        assert "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS" in str(exc)

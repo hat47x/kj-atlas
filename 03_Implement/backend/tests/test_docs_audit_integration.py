@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,6 +14,8 @@ from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
 from kj_atlas_api.models import Base
+from kj_atlas_api.routes.docs import reset_ce4_audit_event_tracker
+from kj_atlas_api.settings import settings
 
 
 class SpyAuditDispatcher:
@@ -29,6 +32,13 @@ class AllowAllAdapter:
 
     def authorize(self, request):  # noqa: ANN001
         return AccessDecision(allow=True)
+
+
+@pytest.fixture(autouse=True)
+def _reset_ce4_tracker() -> Iterator[None]:
+    reset_ce4_audit_event_tracker()
+    yield
+    reset_ce4_audit_event_tracker()
 
 
 
@@ -290,6 +300,32 @@ def test_context_audit_rejects_invalid_source_bundle_hash(tmp_path) -> None:
     assert response.status_code == 422
 
 
+def test_context_audit_rejects_mock_source_bundle_hash_when_disabled(tmp_path) -> None:
+    original = settings.ce4_source_bundle_hash_allow_mock
+    settings.ce4_source_bundle_hash_allow_mock = False
+    try:
+        with _sqlite_client(tmp_path) as client:
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                json={
+                    "operation": "proposal",
+                    "safeMode": True,
+                    "equivalenceKey": "1" * 64,
+                    "bundleHash": "2" * 64,
+                    "sourceBundleHash": "mock:" + ("3" * 64),
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": "proposal-diff",
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                },
+            )
+    finally:
+        settings.ce4_source_bundle_hash_allow_mock = original
+
+    assert response.status_code == 422
+
+
 def test_context_audit_rejects_proposal_without_source_bundle_hash(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         response = client.post(
@@ -372,6 +408,29 @@ def test_context_audit_rejects_apply_without_dry_run(tmp_path) -> None:
         )
 
     assert response.status_code == 422
+
+
+def test_context_audit_rejects_apply_when_required_events_missing(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "apply",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:" + ("3" * 64),
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "apply",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "missing_event"
+    assert response.json()["detail"]["missingEvents"] == ["bundle", "proposal", "query"]
 
 
 def test_context_audit_rejects_operation_command_mismatch(tmp_path) -> None:
