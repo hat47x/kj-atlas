@@ -224,6 +224,9 @@ CE4 フェイルセーフ（停止条件）:
 - `dryRun=true` で `sideEffect="none"` を満たさない挙動
 - safeMode 後退要求（share/export 保護緩和、未レビュー保護緩和）
 - Consensus 直書き要求（proposal/apply 契約を迂回する更新）
+- Verify の自己修復が 3回失敗した場合（4回目試行は行わない）
+- 前提崩れ（同値性定義や固定 operation 契約の不成立）
+- 未定義競合（必須キーの契約定義欠落、または同一キーの多重定義衝突）
 
 #### 2.9.4 `sourceBundleHash` の受理境界（依存切離し）
 

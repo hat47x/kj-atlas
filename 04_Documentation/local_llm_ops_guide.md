@@ -154,12 +154,25 @@ CE4運用期間の固定値:
 2. ログ欠損成功扱い
 3. safeMode後退要求
 4. Consensus 直書き要求（proposal/apply を迂回する直接更新）
+5. Verify の自己修復が3回失敗した場合（4回目試行は禁止）
+6. 前提崩れ（固定 operation または `equivalenceKey + bundleHash` 判定が成立しない）
+7. 未定義競合（必須キー未定義、または同一キーの契約衝突）
 
 ### 4.8 Proceed引継ぎ記録（運用導線）
 
 - 引継ぎ時は `equivalenceKey + bundleHash` 判定結果、`sourceBundleHash` の値種別（`mock:<hash>` / 本番hash）、`dryRun=true` と `sideEffect=none` の確認結果を同時に記録する。
 - 運用日報には `channel`（`api|cli|gui`）別の実行結果と共通キー集合（`equivalenceKey`, `bundleHash`, `sourceBundleHash`, `dryRun`, `sideEffect`, `schemaVersion`）の差分有無を残す。
 - 差分あり/自己修復3回超過/停止条件該当のいずれかを満たした場合、Proceedは実施せず、Issueへ保留論点として即時エスカレーションする。
+
+### 4.9 docs-check（CE4契約整合）
+
+```bash
+rg -n "equivalenceKey|bundleHash|dryRun|sideEffect|sourceBundleHash|schemaVersion|rejectReasonCode|query|bundle|proposal|apply|fail-closed|前提崩れ|未定義競合|3回" \
+  01_Plans/issues/issue-CE4-api-cli-audit-integration.md \
+  02_Architecture/api.md \
+  04_Documentation/local_llm_ops_guide.md
+git diff --check
+```
 
 ---
 
