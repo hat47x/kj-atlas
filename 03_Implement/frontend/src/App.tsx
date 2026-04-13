@@ -53,7 +53,7 @@ import { HilRsWorkflowPanel } from "./ui/HilRsWorkflowPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
-import { PatchWorkspacePanel } from "./ui/PatchWorkspacePanel";
+import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
 import type { IslandRelationEdgeSelection } from "./domain/island_relation_explain";
 import {
