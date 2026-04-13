@@ -4,7 +4,7 @@
 - Status: Open (Audit Hold: legacy Active normalized; not a new-start target)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream F（P0/P2A/P2B planning normalization only）
+- Owner: Stream H（FB planning normalization only）
 - Scope: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ
 - Related Backlog: `FB-P2A-01/02`, `FB-P2B-01/02`, `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`, `ADR-0019`, `02_Architecture/island_shapes.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
@@ -310,3 +310,26 @@
 - 競合検知時は即停止し、競合一覧と再開条件を記録する。
 - 修復上限は3回。4回目に達する前に必ず停止報告する。
 
+## Stream H normalization snapshot（latest）
+
+### Phase 1 Read（Audit Hold前提確認）
+- 9ファイルを再読し、`Status=Open (Audit Hold)` と `Priority=P0` を確認。
+- 対象依存を `A1 -> A2 -> A3` の直列に限定し、並列実行前提を禁止。
+
+### Phase 2 Plan（A1→A2→A3直列正規化）
+- P2A-01: `CTR-2A-01-ISLAND-HIERARCHY-V1`
+- P2A-02: `CTR-2A-02-COLLAPSE-EXPAND-V1`
+- P2B-01: `CTR-2B-01-CANDIDATE-GROUP-V1`
+- P2B-02: `CTR-2B-02-DECISION-LOG-V1`
+- A2/A3はA1契約の参照専用（契約本文改変禁止）で固定。
+
+### Phase 3 Execute（契約ID・用語・依存整合）
+- 用語を `ContractID / DependsOnContractID / ReferenceContractID` に統一。
+- 依存逆転・契約ID衝突・未定義競合は即停止で統一。
+
+### Phase 4 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を共通検証コマンドとして維持。
+- self-correction は最大3回、超過時停止。
+
+### Phase 5 Proceed
+- 再開は「契約整合 + docs-check成功 + 担当明示」の3条件が満たされた場合のみ。

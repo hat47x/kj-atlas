@@ -4,7 +4,7 @@
 - Status: Open (Audit Hold: legacy Ready normalized; not a new-start target)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream F
+- Owner: Stream H
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -365,3 +365,22 @@
 - 競合検知時は即停止し、競合一覧と再開条件を記録する。
 - 修復上限は3回。4回目に達する前に必ず停止報告する。
 
+## Stream H normalization snapshot（latest）
+
+### Phase 1 Read（Audit Hold前提確認）
+- A1/A2/A3の3メモを再読し、`Status=Open (Audit Hold)` と `Priority=P0` を再確認。
+
+### Phase 2 Plan（A1→A2→A3直列正規化）
+- `A1 -> A2 -> A3` を唯一の進行順序として固定。
+- A2/A3ではA1契約本文を改変せず、参照のみ許可。
+
+### Phase 3 Execute（契約ID・用語・依存整合）
+- `ContractID` と参照先契約（`DependsOnContractID` / `ReferenceContractID`）の一致を確認。
+- 用語ゆれを抑制し、依存逆転要求はA1差し戻し。
+
+### Phase 4 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行基準に固定。
+- 依存不整合・契約衝突・未定義競合があれば停止。
+
+### Phase 5 Proceed
+- Go条件: 契約整合・検証成功・停止条件未該当。
