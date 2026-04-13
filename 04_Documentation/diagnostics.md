@@ -187,16 +187,17 @@
 本書の更新は次の固定順序で実施する。
 
 1. Phase 1 Read
-2. Phase 2 ADR CDC（Context / Decision / Consequences）
-3. Phase 3 Plan
-4. Phase 4 Execute
-5. Phase 5 Verify
-6. Phase 6 Proceed
+2. Phase 2 Plan（品質ゲート宣言）
+3. Phase 3 Execute（局所更新）
+4. Phase 4 Verify（リンク/語彙/整形）
+5. Phase 5 Proceed（残課題明示）
 
 フェイルセーフ:
 
 - Verify 失敗時は **自己修復を最大3回まで** 実施する。
 - 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
+
+- Stream G フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
 
 ## Related
 
@@ -211,11 +212,11 @@
 ## Stream G docs-only execution cycle（DOC-OPS-05）
 
 1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
-2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
-3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
-4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
-5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
-6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
+2. **Plan**: 品質ゲート（Audience/Goal/Non-goal/Public boundary/Outcome/Related）と停止条件を宣言する。
+3. **Execute**: docs-only スコープ（`03_Implement/**` 非変更）で本文を局所更新する。
+4. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
+5. **Proceed**: Ready/Hold/Needs-decision を記録し、残課題を次Issueへ引き継ぐ。
+
 
 ### Fail-safe
 
