@@ -50,7 +50,7 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 
 ## 5) Serial Phases（Read -> CDC -> Plan -> Execute -> Verify -> Proceed）
 
-- Phase開始ごとに対象5 issueを再Readする。
+- Phase開始ごとに対象4 issue（CE0 Contract Freeze / CE0 Core Graph / HIL-RS-01 A1 / HIL-RS-02 A1）を再Readする。
 - Executeはissue本文のみ同期する（契約識別子、遷移、禁止事項）。
 - Verifyは `validate_active_issue_memos.py` / `rg` / `git diff`。
 - 失敗時は自己修復最大3回。超過時は停止。

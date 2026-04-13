@@ -193,7 +193,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `rg -n "Consensus Graph|WorkingGraph|ContextProjectionGraph|autonomous|patch \\+ approval|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply|CG-0[1-5]" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - Graph定義の二重化なし、Queue参照切れなし。
