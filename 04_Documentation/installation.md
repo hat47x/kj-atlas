@@ -132,27 +132,41 @@ Docker Engine / Docker Compose が未導入です。
 ただし、導入前でも本書の「Docker未導入時の代替E2E手順（SQLite）」で連動確認は可能です。
 PRには実施手順と結果を必ず記載してください。
 
+## Go/No-Go gate（公開判定）
+
+公開「Go」は次を満たす場合のみ:
+
+1. Audience / Goal / Non-goal / Public boundary / Outcome / Related が明示されている。
+2. 初回導入者向けに最小手順（起動・疎通・停止）が再現可能な順序で記載されている。
+3. 詳細E2Eの正本が `04_Documentation/e2e_testing.md` である導線が維持されている。
+
+いずれか未充足の場合は「No-Go」として公開更新を停止します。
 
 ## DOC-OPS-05 実行記録（Phase 1〜5）
 
 ### Phase 1 Read
 
+- Latest Read: 2026-04-13
 - Audience / Goal / Public boundary / Related を確認し、公開境界を再確認。
 
 ### Phase 2 Plan
 
+- Latest Read: 2026-04-13
 - 本文は docs-only の範囲で更新し、仕様正本（00〜02）を上書きしない方針を固定。
 
 ### Phase 3 Execute
 
+- Latest Read: 2026-04-13
 - DOC-OPS-05 classification に沿って本文の公開メタと導線を整備。
 
 ### Phase 4 Verify
 
+- Latest Read: 2026-04-13
 - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/installation.md`
 - `git diff --check`
 
 ### Phase 5 Proceed
 
+- Latest Read: 2026-04-13
 - 状態: **Ready**
 - 次アクション: 初回導入者向けの最小手順（起動・疎通・停止）を維持し、組織固有手順は含めない。
