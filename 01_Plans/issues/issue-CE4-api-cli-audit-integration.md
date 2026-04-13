@@ -162,7 +162,7 @@
 ## 9) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "API/CLI/GUI|bundleHash|equivalenceKey|dry-run|sideEffect|queryId|proposalId|sourceBundleHash|excludedReason|rejectReasonCode|safeMode" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/deployment.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/local_llm_ops_guide.md`
+  - `rg -n "API/CLI/GUI|bundleHash|equivalenceKey|dryRun|sideEffect|queryId|proposalId|sourceBundleHash|excludedReason|rejectReasonCode|safeMode|fail-closed|schemaVersion" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/api.md 04_Documentation/local_llm_ops_guide.md`
 - 期待結果:
   - 同値性/監査ログ契約の語彙が一致し、dry-run副作用0と停止条件が明示される。
 
@@ -219,3 +219,24 @@
 - 判定:
   - 4点監査欠損 / 同値性不一致 / dry-run境界違反 / safeMode後退は No-Go（fail-closed）。
   - 3回自己修復で未収束の場合は Proceed 禁止のまま停止する。
+
+## 14) Stream F 実施記録（CE4 API/CLI Audit）
+
+### Read / ADR CDC / Plan
+
+- Stream E で固定した CE4 契約（`equivalenceKey + bundleHash`、監査4点セット、`apply --dry-run`、`sourceBundleHash` の `mock:<hash>` 許容）を再確認し、追加仕様を導入せず監査導線固定に限定した。
+- AC/DoD 不足の補完対象を docs 範囲（Issue / `02_Architecture/api.md` / `04_Documentation/local_llm_ops_guide.md`）へ限定した。
+
+### Execute（監査導線固定）
+
+- `Validation plan` の docs-check 導線を CE4 契約の正本参照に揃え、検証対象を `api.md` / `local_llm_ops_guide.md` / 本Issueに統一した。
+- フェイルセーフ停止条件を CE4 運用導線に合わせ、`3回失敗・前提崩れ・未定義競合` で停止する判定を明文化した。
+
+### Verify（docs-check + 契約整合）
+
+- Verify command:
+  - `rg -n "equivalenceKey|bundleHash|dryRun|sideEffect|sourceBundleHash|schemaVersion|rejectReasonCode|query|bundle|proposal|apply|fail-closed|前提崩れ|未定義競合|3回" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/api.md 04_Documentation/local_llm_ops_guide.md`
+  - `git diff --check`
+- 判定:
+  - CE4 契約語彙（同値性/監査4点/dry-run副作用境界/fail-closed）の文書間整合を確認。
+  - フェイルセーフ停止条件（3回失敗・前提崩れ・未定義競合）を運用導線へ同期。
