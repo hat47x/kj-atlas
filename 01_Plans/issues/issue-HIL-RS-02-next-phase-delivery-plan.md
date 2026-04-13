@@ -189,3 +189,27 @@
 ### Fail-safe Contract
 - 停止条件: 修復3回超過 / 識別子不一致 / 未承認確定化 / 安全境界後退要求。
 - 禁止: A1契約値の再定義、Pendingの暗黙解決、A2/A3での契約値ローカル補完。
+
+
+## Stream A Critical Path Update (2026-04-13)
+
+### Phase 1 Read
+- A1固定契約とQueue状態を再確認し、Proceed唯一条件を `A1 Done && pendingDecisionQueueCount==0` に確定。
+
+### Phase 2 ADR CDC
+- Context: HIL-RS-02 は A1 契約運用レーンであり、契約編集レーンではない。
+- Decision: CDC未承認の契約変更は採用せず、Decision Queueへ戻す。
+- Consequences: A2/A3 planning は参照専用で継続、差分はA1集約。
+
+### Phase 3 Plan
+- A2/A3 が参照する固定契約ID・固定値・禁止事項・Proceed条件を明文化。
+
+### Phase 4 Execute
+- planning文書内で `Go/NoGo` 判定式・停止条件を再固定。
+
+### Phase 5 Verify
+- docs-check と依存式一致検査を実施（3回超過で停止）。
+
+### Phase 6 Proceed
+- handoff は read-only contract pack 形式（契約ID一覧 / 判定式 / 禁止事項）で出力。
+

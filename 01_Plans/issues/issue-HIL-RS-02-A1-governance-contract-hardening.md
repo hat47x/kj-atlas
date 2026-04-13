@@ -125,3 +125,28 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+
+## Stream A Contract Governance Lock (2026-04-13)
+
+### Phase 1 Read
+- A1/A2/A3相互参照と固定識別子を再読し、未定義競合なしを確認。
+
+### Phase 2 ADR CDC
+- Context: 契約値の多重正本化は統治崩壊リスク。
+- Decision: 契約値更新はA1 CDC承認後のみ。
+- Consequences: 下流での即時パッチは禁止、差戻し運用を維持。
+
+### Phase 3 Plan
+- 固定ID/固定値/禁止事項/Proceed条件を A2/A3 参照契約として記録。
+
+### Phase 4 Execute
+- 判定式固定: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0)`。
+- 停止条件固定: self-correction 3回超過 / 未承認確定化 / 固定値不一致 / 前提崩壊。
+
+### Phase 5 Verify
+- docs-check + rg一致確認を実施。
+
+### Phase 6 Proceed
+- read-only contract pack を次レーンに引き継ぎ。契約値変更は不可。
+

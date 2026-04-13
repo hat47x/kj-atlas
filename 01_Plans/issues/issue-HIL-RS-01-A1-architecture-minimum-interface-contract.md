@@ -134,3 +134,23 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+
+## Stream A Phase Lock (2026-04-13)
+
+### Plan
+- A1を唯一の契約凍結点として維持し、A2/A3は参照専用とする。
+
+### Execute
+- 固定契約ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`。
+- 固定判定式: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 固定NoGo: `NoGo = !Go`。
+
+### Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending -> Approved|Pending -> Rejected" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+
+### Proceed
+- 下流引継ぎは read-only contract pack のみ許可。
+- A2/A3 における契約再定義要求は常にA1へ差戻し。
+

@@ -388,3 +388,36 @@
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、不一致0件（self-correction 0/3）を確認。
 - Phase 5 Proceed（公開固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
 
+
+## 7. HIL-RS Contract Pack (Stream A, 2026-04-13)
+
+### 7-1. Contract IDs（read-only handoff）
+- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- A1 interface IDs: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`
+- CE0 guard IDs: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`
+
+### 7-2. Fixed Values
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### 7-3. Proceed / NoGo Formula
+- `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`
+- `NoGo = !Go`
+
+### 7-4. Prohibited Operations
+- Pending bypass
+- A2/A3側での契約ID・固定値の再定義
+- 未承認決定の確定化
+- SafeMode後退 / review自動昇格 / direct write / auto-apply
+
+### 7-5. Stop Conditions
+- Self-Correction 3回超過
+- 固定識別子不一致
+- 未定義競合
+- 前提崩壊（A1未完了またはQueue未解消）
+
+### 7-6. Return Route
+- 差分要求は常に `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差戻し。
+
