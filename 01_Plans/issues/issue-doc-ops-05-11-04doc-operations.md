@@ -228,3 +228,34 @@
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
+
+## 16) Stream G sync addendum（Gate C→D→E / evidence6 / Proceed）
+
+DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次を **固定契約** とする（`issue-0019` / `issue-0020` / `operations.md` と同値）。
+
+### 固定契約
+
+- Gate順序: **Gate C -> Gate D -> Gate E**（逆順・並列判定は禁止）。
+- evidence 6項目: **Date / Gate / Command / Result / Decision / Next action**。
+- Gate E Proceed条件:
+  - **Go**: 記録確定後に次工程へ進行。
+  - **Conditional**: 再判定日 + 担当記録後に限定進行。
+  - **No-Go**: 見送り理由 + 再判定日 + 担当記録まで停止。
+- 停止条件（Fail-safe）:
+  1. 修復試行が3回を超過。
+  2. 前提崩れ（Gate順序・KPI定義・承認済みしきい値前提の崩壊）。
+  3. 未定義競合（上流ADR間で解釈不能な競合が残存）。
+
+### Verify / Proceed
+
+- Verifyは docs-check / 用語照合 / diff整合の3点を必須とし、自己修復は最大3回。
+- Proceedは次の6条件を満たす場合のみ許可する。
+  1. Gate C 完了（未分類=0、または保留理由+再判定日を記録）。
+  2. Gate D 入力契約6項目（測定日 / 対象文書 / 4KPI判定 / 逸脱有無 / 次アクション / 反映先リンク）が欠落なし。
+  3. Gate E 判定が Proceed条件（Go / Conditional / No-Go）に一致。
+  4. evidence 6項目形式を各Gateで充足。
+  5. docs-check / 用語照合 / diff整合がPass。
+  6. 停止条件（3回超過 / 前提崩れ / 未定義競合）に非該当。
+
+- 次回定点レビュー: **2026-04-26 09:00 UTC**。
+- 担当: **Stream G（Unified Feedback & KPI Audit Owner）**。

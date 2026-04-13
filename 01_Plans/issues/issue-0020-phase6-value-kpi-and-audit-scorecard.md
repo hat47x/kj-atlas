@@ -18,7 +18,7 @@ KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開
 - Gate依存を `C→D→E` に固定し、逆順・並列判定を禁止する。
 - evidence形式を `Date / Gate / Command / Result / Decision / Next action` で統一する。
 - KPIしきい値は承認済み台帳のみ有効とする。
-- 2026-04-12 の Read同期で、3文書（`issue-0019` / `issue-0020` / `operations.md`）の入力契約一致を再確認した。
+- 2026-04-12 の Read同期で、4文書（`issue-0019` / `issue-0020` / `issue-doc-ops-05-11` / `operations.md`）の入力契約一致を再確認した。
 
 ## 3) Phase 2 ADR明文化（契約と停止条件の固定）
 
@@ -44,12 +44,12 @@ KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開
 - [x] Gate C 完了条件（未分類=0 または保留理由あり）が Gate D の開始条件として固定されている。
 - [x] Gate D 入力契約6項目が固定されている。
 - [x] Gate E Proceed条件（Go / Conditional / No-Go）が固定されている。
-- [x] 停止条件（3回超過 / 前提崩れ / 未定義競合）が3文書で一致している。
-- [x] evidence形式が3文書で一致している。
+- [x] 停止条件（3回超過 / 前提崩れ / 未定義競合）が4文書で一致している。
+- [x] evidence形式が4文書で一致している。
 
 ### 4.3 DoD
 
-- [x] 3文書で Gate C→D→E と KPI語彙が一致。
+- [x] 4文書で Gate C→D→E と KPI語彙が一致。
 - [x] 未定義KPIが混入していない。
 - [x] docs-check / 横断語彙照合 / diff整合の結果を記録。
 - [x] 停止条件に該当する場合の CDC 化導線を明文化。
@@ -92,13 +92,13 @@ scorecard必須入力は次で固定する。
   - Next action: KPI語彙照合へ進む
 - Date: 2026-04-12
   - Gate: KPI cross-reference
-  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
-  - Result: Pass（3文書でKPI語彙・Gate依存・停止条件が一致）
+  - Command: `rg -n "Gate C|Gate D|Gate E|TFS|Decision Readiness|Support Deflection|Feedback Closure|Go / Conditional / No-Go|Date / Gate / Command / Result / Decision / Next action|Proceed条件|未分類|しきい値|閾値|Stream G|3回超過|前提崩れ|未定義競合" 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+  - Result: Pass（4文書でKPI語彙・Gate依存・停止条件が一致）
   - Decision: 監査導線を固定
   - Next action: 差分整合確認へ進む
 - Date: 2026-04-12
   - Gate: diff integrity
-  - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 04_Documentation/operations.md`
+  - Command: `git diff -- 01_Plans/issues/issue-0019-phase6-feedback-loop-operations.md 01_Plans/issues/issue-0020-phase6-value-kpi-and-audit-scorecard.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
   - Result: Pass（許可ファイルのみ差分）
   - Decision: Proceed判定へ進む
   - Next action: 次回測定条件を確定
