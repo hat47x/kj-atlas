@@ -126,7 +126,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
 - 未確定責務: `なし`（A1は契約凍結の唯一正本、A2/A3はread-only参照）。
-- 未確定ゲート: `なし`（唯一ゲートは `A1 Done && pendingDecisionQueueCount==0`）。
+- 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -140,12 +140,12 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 
 ### Phase 4: Execute（契約ID・判定条件・停止条件固定）
 - 契約ID固定: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
-- 判定条件固定: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
+- 判定条件固定: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`。
 - 停止条件固定: Query Preview bypass / direct write / auto-apply / review自動昇格 / SafeMode後退 / Self-Correction 3回超過。
 
 ### Phase 5: Verify -> Proceed
 - Verify: docs-checkで契約ID整合・語彙整合・安全後退0件を確認し、不一致時はSelf-Correction最大3回まで。
-- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && A1 Done && pendingDecisionQueueCount==0)`。
+- Proceed条件（1行）: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0)`。
 
 ### Fail-safe（停止報告テンプレ）
 - 失敗条件:
@@ -159,7 +159,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Scope Contract（本ストリームの独立性）
 - Stream C は **HIL-RS計画系issueの整流化のみ** を担当し、実装完了待ちでA1をブロックしない。
 - 本ストリームで行うのは次の2点のみ。
-  1. ゲート条件明文化（`A1 Done && pendingDecisionQueueCount==0`）
+  1. ゲート条件明文化（`a1Status=="Done" && pendingDecisionQueueCount==0`）
   2. 差戻し導線固定（契約差分は常にA1へ戻す）
 - A1を「外部完了待ち」状態へ遷移させる記述は禁止。
 
@@ -167,12 +167,12 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 1. **Phase 1 Read**: 対象3ファイルを再読し、固定識別子・依存・禁止遷移を再確認。
 2. **Phase 2 ADR明文化（CDC）**: 既存CDCを再確認し、上位ADR改定不要を確認（issue内CDCを継続採用）。
 3. **Phase 3 Plan**: AC/DoD不足として「A1外部待ち禁止」「差戻し先A1固定」を追記。
-4. **Phase 4 Execute**: 状態遷移契約を `A1 Done && pendingDecisionQueueCount==0` に一本化。
+4. **Phase 4 Execute**: 状態遷移契約を `a1Status=="Done" && pendingDecisionQueueCount==0` に一本化。
 5. **Phase 5 Verify**: docs-check + 差分検証を実施。失敗時は自己修復最大3回、4回目相当で停止。
 6. **Phase 6 Proceed**: Go/NoGoを上記ゲート式で判定し、曖昧点は質問化して停止。
 
 ### State Transition Clarification（契約明確化）
-- **Go**: `A1 Done && pendingDecisionQueueCount==0`
+- **Go**: `a1Status=="Done" && pendingDecisionQueueCount==0`
 - **NoGo**: `A1!=Done` または `pendingDecisionQueueCount>0`
 - **Rollback route**: 契約不一致・語彙ドリフト・安全境界後退の要求は **A1 issueへ差戻し**。
 
@@ -188,7 +188,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 
 ### Phase 2) ADR CDC
 - Context: Stream B は planning-only であり、A1契約値を変更しない。
-- Decision: `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` を唯一のProceed判定式として固定。
+- Decision: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` を唯一のProceed判定式として固定。
 - Consequences: 契約値ドリフト/未定義競合は推測修正せず A1 へ差し戻し、Decision Queueへ戻す。
 
 ### Phase 3) Plan（AC/DoD不足提案）
@@ -196,7 +196,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 - DoD補強: `Plan -> Execute -> Verify -> Proceed` の順序証跡をissue本文へ残す。
 
 ### Phase 4) Execute（状態遷移契約同期）
-- `Open/Proceed Allowed := (A1 Done && pendingDecisionQueueCount==0)` を維持し、NoGo を `A1!=Done || pendingDecisionQueueCount>0` に固定。
+- `Open/Proceed Allowed := (a1Status=="Done" && pendingDecisionQueueCount==0)` を維持し、NoGo を `A1!=Done || pendingDecisionQueueCount>0` に固定。
 - A2/A3 の契約再定義禁止、差分要求の差戻し先A1固定を再確認。
 
 ### Phase 5) Verify（ゲート式・固定識別子参照整合）
@@ -204,7 +204,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 - 自己修復ループ上限は3回。4回目相当は停止。
 
 ### Phase 6) Proceed（未確定はDecision Queueへ戻す）
-- Proceed許可は `A1 Done && pendingDecisionQueueCount==0` 充足時のみ。
+- Proceed許可は `a1Status=="Done" && pendingDecisionQueueCount==0` 充足時のみ。
 - 未確定・前提崩れ・未定義競合はDecision Queueへ返却し、Yes/No質問化して停止。
 
 ### Fail-safe Contract
@@ -216,7 +216,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 
 ### Phase 1: Read Sync
 - A1ゲート式・固定値・Decision Queue状態を再読し、差分なしを確認。
-- 固定ゲート式を `Go = (A1 Done && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に統一。
+- 固定ゲート式を `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` に統一。
 
 ### Phase 2: ADR CDC（承認待ち化ポリシー）
 - Context: HIL-RS-01 は A2/A3 参照契約の上流であり、下流での契約補完は禁止。
@@ -226,7 +226,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 3: Plan（A2/A3参照契約の明文化）
 - A2/A3 参照契約ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`。
 - 禁止事項: Pending bypass / A2-A3側契約値再定義 / SafeMode後退 / review自動昇格 / direct write / auto-apply。
-- Proceed条件: `A1 Done && pendingDecisionQueueCount==0` かつ固定値一致。
+- Proceed条件: `a1Status=="Done" && pendingDecisionQueueCount==0` かつ固定値一致。
 
 ### Phase 4: Execute（planning文書固定）
 - 本issueを契約正本として、判定式・契約ID・停止条件を固定。
@@ -234,7 +234,7 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 
 ### Phase 5: Verify
 - docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- 依存式一致検査: `rg -n "A1 Done && pendingDecisionQueueCount==0|HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending bypass|direct write|auto-apply|review自動昇格|SafeMode後退" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- 依存式一致検査: `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending bypass|direct write|auto-apply|review自動昇格|SafeMode後退" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - 失敗時Self-Correction上限: 3回。
 
 ### Phase 6: Proceed（read-only contract pack）

@@ -150,3 +150,17 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 ### Phase 6 Proceed
 - read-only contract pack を次レーンに引き継ぎ。契約値変更は不可。
 
+## 11) Read-only Artifact（Phase 4: mock I/F snapshot 公開）
+
+A1契約を下流へ引き渡す際は、次の read-only artifact を固定値として公開する。
+
+| Contract ID | Signature (type) | 禁止事項 |
+| --- | --- | --- |
+| `A1-CRITIQUE-IF` | `CritiqueV1(critiqueId, targetRef, critiqueType, createdAt, iteration, comment?, constraintHints?)` | 必須キー削除 / review自動昇格 / 生ID保存 |
+| `A1-REDIFF-IF` | `ReDiffV1(proposalId, basedOnIteration, diffOps[], traceKey, rationale?)` | `traceKey`欠落 / 非可逆差分 / SafeMode禁止操作の暗黙実行 |
+| `A1-ATTR-IF` | `AttributionV1(reviewState, reviewedAt, reviewerRef, auditRecordedAt, reviewContext?, ownerRef?)` | `overridePolicy`緩和 / AIのみで`human_reviewed`昇格 |
+| `A1-ERROR-IF` | `A1ErrorV1(errorCode, message, contractId, retryable, occurredAt)` | 未承認`errorCode`追加 / PII埋め込み |
+
+- Artifact属性: `readOnly=true`, `mutationAllowed=false`, `changeRequestRoute=A1-CDC-only`。
+- 有効条件: `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0"`。
+
