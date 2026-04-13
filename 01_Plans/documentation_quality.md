@@ -191,11 +191,10 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 ### Stream I Phase運用（固定順序）
 
 1. Phase 1 Read
-2. Phase 2 ADR明文化（Context / Decision / Consequences）
-3. Phase 3 Plan
-4. Phase 4 Execute
-5. Phase 5 Verify
-6. Phase 6 Proceed
+2. Phase 2 Plan（品質ゲート宣言）
+3. Phase 3 Execute（局所更新）
+4. Phase 4 Verify（リンク/語彙/整形）
+5. Phase 5 Proceed（残課題明示）
 
 ### AC/DoD不足時の扱い
 
@@ -210,7 +209,8 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 
 ## 13. 共通ワークフローとフェイルセーフ（統一運用）
 
-対象文書（`diagnostics.md` / `e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `codex_skill_operations.md` / 本書）は、同一の6Phaseワークフロー（Read→ADR→Plan→Execute→Verify→Proceed）を適用する。
+対象文書（`diagnostics.md` / `e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `codex_skill_operations.md` / 本書）は、同一の5Phaseワークフロー（Read→Plan→Execute→Verify→Proceed）を適用する。
 
 - Verify 失敗時の自己修復は最大3回まで。
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。
+- Stream G フェイルセーフ: テスト方針矛盾または監査要件未達を検知した場合は Execute を停止し、Proceed で残課題を明示する。

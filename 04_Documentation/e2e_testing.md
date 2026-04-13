@@ -22,16 +22,17 @@
 本書の更新は次の固定順序で実施する。
 
 1. Phase 1 Read
-2. Phase 2 ADR明文化（Context / Decision / Consequences）
-3. Phase 3 Plan
-4. Phase 4 Execute
-5. Phase 5 Verify
-6. Phase 6 Proceed
+2. Phase 2 Plan（品質ゲート宣言）
+3. Phase 3 Execute（局所更新）
+4. Phase 4 Verify（リンク/語彙/整形）
+5. Phase 5 Proceed（残課題明示）
 
 フェイルセーフ:
 
 - Verify 失敗時は **自己修復を最大3回まで** 実施する。
 - 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
+
+- Stream G フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
 
 ## 1. 基本方針
 
