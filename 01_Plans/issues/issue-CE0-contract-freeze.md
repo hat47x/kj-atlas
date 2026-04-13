@@ -7,7 +7,7 @@
 - Owner: Plan Owner
 - Scope: `01_Plans/issues/`, `00_Prompt/`（Stream A: Critical Path / Contracts only）
 - Related Backlog: `CE-0`
-- Related ADR/Spec: `ADR-0028`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -200,7 +200,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。

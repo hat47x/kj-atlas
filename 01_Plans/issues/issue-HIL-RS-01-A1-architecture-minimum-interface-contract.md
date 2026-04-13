@@ -55,7 +55,7 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 
 ## 6) Serial Phases（各Phase開始時に再Read）
 
-1. Read: 対象5 issue再Read、差分抽出。
+1. Read: 対象4 issue（CE0 Contract Freeze / CE0 Core Graph / HIL-RS-01 A1 / HIL-RS-02 A1）再Read、差分抽出。
 2. ADR CDC: Context/Decision/Consequences再確認。
 3. Plan: AC/DoD・遷移契約不足を補完。
 4. Execute: issue本文のみ更新（契約識別子/遷移/禁止事項）。
