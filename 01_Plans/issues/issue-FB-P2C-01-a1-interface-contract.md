@@ -1,10 +1,10 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Done (Stream A / Gate 0 Approved)
+- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream A
+- Owner: Stream H（audit normalization only）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -203,3 +203,23 @@
 2) 競合ファイル
 3) 必要承認者
 4) 解決のYes/No質問
+
+
+## Stream H normalization contract pack (2026-04-13)
+
+- Scope: legacy Audit Hold群の再開性を揃えるため、状態語彙・依存順序・契約リンクを監査再現可能な最小単位へ正規化する（新規実装なし）。
+- Backlog lane: `FB-P2C-01`
+- Canonical contract: `N/A`
+- Serial dependency: `A1 -> A2(mock) -> A3(implementation-ready contract only)`
+- Mock policy: A2/A3 はモック/fixture/stub前提で参照可能状態を維持し、実コード変更要求を発行しない。
+
+### Resume gate (Go/NoGo)
+
+1. `ContractID/DependsOnContractID/ReferenceContractID` の三点一致を再確認する。
+2. `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` が成功する。
+3. 担当レーンが `Open (Audit Hold)` から `In Progress` へ昇格する明示判断を記録する。
+
+### Stop conditions（fail-fast）
+
+- 契約ID不整合、依存順序逆転、未定義競合を検知した場合は即停止。
+- Self-correction は最大3回。3回超過時は更新を停止し、競合一覧のみ提出する。

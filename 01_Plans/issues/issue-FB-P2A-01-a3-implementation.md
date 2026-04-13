@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-01-A3 Island階層モデル導入 / 実装計画接続
 
 - Type: Feature request
-- Status: Open (Audit Hold: legacy Ready normalized; not a new-start target)
+- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream H
+- Owner: Stream H（audit normalization only）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -294,7 +294,7 @@
 
 ### Dependency / Decision Queue
 - QueueID: `DQ-FB_P2A_01_A3_IMPLEMENTATION-STREAM-G-2026-04-12`
-- Status: Closed
+- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Rule: unresolved queue item blocks Proceed; contract drift is routed back to A1 only.
 
 ### AC/DoD補完
@@ -360,3 +360,23 @@
 
 ### Phase 5 Proceed
 - Go条件: 契約整合・検証成功・停止条件未該当。
+
+
+## Stream H normalization contract pack (2026-04-13)
+
+- Scope: legacy Audit Hold群の再開性を揃えるため、状態語彙・依存順序・契約リンクを監査再現可能な最小単位へ正規化する（新規実装なし）。
+- Backlog lane: `FB-P2A-01`
+- Canonical contract: `CTR-2A-01-ISLAND-HIERARCHY-V1`
+- Serial dependency: `A1 -> A2(mock) -> A3(implementation-ready contract only)`
+- Mock policy: A2/A3 はモック/fixture/stub前提で参照可能状態を維持し、実コード変更要求を発行しない。
+
+### Resume gate (Go/NoGo)
+
+1. `ContractID/DependsOnContractID/ReferenceContractID` の三点一致を再確認する。
+2. `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` が成功する。
+3. 担当レーンが `Open (Audit Hold)` から `In Progress` へ昇格する明示判断を記録する。
+
+### Stop conditions（fail-fast）
+
+- 契約ID不整合、依存順序逆転、未定義競合を検知した場合は即停止。
+- Self-correction は最大3回。3回超過時は更新を停止し、競合一覧のみ提出する。
