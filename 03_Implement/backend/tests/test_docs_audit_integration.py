@@ -279,6 +279,69 @@ def test_cli_context_query_emits_same_audit_fields_as_api(tmp_path, monkeypatch)
     assert cli_event.metadata["channel"] == "cli"
 
 
+def test_cli_apply_forces_dry_run_true_even_when_input_requests_side_effect(tmp_path, monkeypatch) -> None:
+    spy = SpyAuditDispatcher()
+    with _sqlite_client(tmp_path) as client:
+        client.app.state.audit_dispatcher = spy
+        client.app.state.access_control_adapter = AllowAllAdapter()
+        for operation, command in (
+            ("query", "context-query"),
+            ("bundle", "context-bundle"),
+            ("proposal", "proposal-diff"),
+        ):
+            response = client.post(
+                "/docs/doc-cli/context-audit",
+                json={
+                    "operation": operation,
+                    "safeMode": True,
+                    "equivalenceKey": "d" * 64,
+                    "bundleHash": "e" * 64,
+                    "sourceBundleHash": "mock:" + ("f" * 64),
+                    "queryHash": "d" * 64,
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": command,
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                },
+            )
+            assert response.status_code == 200
+
+        def _fake_post(url, json, headers, timeout):  # noqa: ANN001
+            path = url.removeprefix("http://127.0.0.1:8000")
+            response = client.post(path, json=json, headers=headers)
+            return httpx.Response(
+                status_code=response.status_code,
+                content=response.content,
+                request=httpx.Request("POST", url),
+            )
+
+        monkeypatch.setattr(cli.httpx, "post", _fake_post)
+
+        input_file = tmp_path / "apply.json"
+        input_file.write_text(
+            '{"docId":"doc-cli","equivalenceKey":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","bundleHash":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","sourceBundleHash":"mock:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dryRun":false,"sideEffect":"write"}',
+            encoding="utf-8",
+        )
+        result = cli.main(
+            [
+                "--api-base-url",
+                "http://127.0.0.1:8000",
+                "apply",
+                "--input",
+                str(input_file),
+            ]
+        )
+        assert result == 0
+
+    assert len(spy.events) == 4
+    event = spy.events[-1]
+    assert event.eventType == "apply"
+    assert event.metadata["dryRun"] is True
+    assert event.metadata["sideEffect"] == "none"
+    assert event.metadata["command"] == "apply"
+
+
 def test_context_audit_rejects_invalid_source_bundle_hash(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         response = client.post(

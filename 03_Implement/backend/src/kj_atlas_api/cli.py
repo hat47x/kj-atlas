@@ -40,6 +40,9 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
     dry_run = args.dry_run
     if args.operation == "apply":
         dry_run = True
+    side_effect = input_payload.get("sideEffect", "none")
+    if dry_run:
+        side_effect = "none"
 
     payload = {
         "operation": args.operation,
@@ -49,7 +52,7 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
         "sourceBundleHash": input_payload.get("sourceBundleHash"),
         "queryHash": input_payload.get("queryHash", equivalence_key),
         "dryRun": dry_run,
-        "sideEffect": input_payload.get("sideEffect", "none"),
+        "sideEffect": side_effect,
         "rejectReasonCode": input_payload.get("rejectReasonCode"),
         "command": args.command,
         "channel": "cli",
