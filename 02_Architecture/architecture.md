@@ -185,6 +185,13 @@ Provider列挙は信頼境界（none/fixture/local/external）で固定し、通
 
 CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止事項を次で固定する（**責務境界のみを対象**。API/CLI/UI の実装詳細はCE-1以降）。
 
+### 7A.0 Contract Definition Check（CDC）固定
+
+- CE0/CE1の Contract ID は参照専用固定値として扱い、再採番・異義定義を禁止する。
+- CE1/CE2/CE4 は mock I/F を前提に依存待機せず検証を継続する。
+- 本章の契約は責務境界のみを扱い、推測で実装要件（API詳細/CLI/UI具体）を追加しない。
+
+
 ### 7A.1 責務境界（CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05）
 
 - `WorkingGraph`: 主体（human/agent/role）ごとの探索・未確定保持を担う作業面。

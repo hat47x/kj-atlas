@@ -64,6 +64,8 @@ CE-1/CE-2/CE-4 は実装着手前に次の最小I/Fを固定する（mock-first�
 
 Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 
+CDC固定: Contract IDは再定義禁止、mock-first依存切断を維持し、推測による実装要件追加を禁止する。
+
 ```ts
 export type ContextQueryV1 = {
   queryId: string;
