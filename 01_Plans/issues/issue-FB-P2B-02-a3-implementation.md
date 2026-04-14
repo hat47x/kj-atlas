@@ -221,3 +221,45 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準コマンドとする。
 - Verify: Self-Correction counter = `0/3`（本更新時点）。
 - Proceed: 3回超過時は停止して競合一覧のみ報告。
+
+## Stream F serial execution update（2026-04-14）
+
+- Stream role: `Stream F（FB-P2B planning memo）` 専任。
+- Edit scope: `01_Plans/issues/issue-FB-P2B-01-*.md` / `01_Plans/issues/issue-FB-P2B-02-*.md` のみ。
+- Immutable policy: 上記以外は編集禁止。
+
+### Phase 1: Read
+- Plan: 当該レーンの A1/A2/A3 を再読し、`ContractID / DependsOnContractID / ReferenceContractID` を照合する。
+- Execute: 契約ID三点一致、依存順序 `A1 -> A2 -> A3`、Priority `P0` を確認する。
+- Verify: 差分・逆順依存・契約未定義がないことを確認する。
+- Proceed: Pass時のみ Phase 2 へ進行する。
+
+### Phase 2: A1契約（CDC）
+- Plan: CDC（Contract-Driven Consistency）として A1 の契約凍結を再確認する。
+- Execute: 契約再定義禁止、契約拡張要求は A1 差し戻し、A2/A3 は参照専用を固定する。
+- Verify: `ContractID` の変更要求がないことを確認する。
+- Proceed: Pass時のみ Phase 3 へ進行する。
+
+### Phase 3: A2 mock validation仕様
+- Plan: 実コード非依存で mock/fixture/stub 前提の検証仕様を固定する。
+- Execute: 非自動確定・再読込復元・順序保持（および契約で定義された enum 境界）を必須観点として扱う。
+- Verify: A2仕様が A1 契約参照のみで完結していることを確認する。
+- Proceed: Pass時のみ Phase 4 へ進行する。
+
+### Phase 4: A3 implementation readiness
+- Plan: A3 の開始条件/停止条件/差し戻し条件を契約準拠で固定する。
+- Execute: 実装接続は readiness 定義までとし、契約変更を受け付けない。
+- Verify: `A1 -> A2 -> A3` の直列依存と handoff 入力の固定を確認する。
+- Proceed: Pass時のみ Phase 5 へ進行する。
+
+### Phase 5: Verify（README lifecycle整合）
+- Plan: docs-check と issue lifecycle（`Draft -> Open -> In Progress -> Done`）の整合を検証する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準コマンドとして実行する。
+- Verify: README の lifecycle 記述と矛盾しない状態語彙（Open/In Progress/Done）に揃っていることを確認する。
+- Proceed: 整合が取れた場合のみ Go、未整合は NoGo として停止条件へ遷移する。
+
+### 強制サイクル / フェイルセーフ
+- Self-repair は最大 3 回まで（`0/3` から開始し、4回目相当は実施しない）。
+- 致命条件（契約ID不整合、依存順序逆転、編集禁止領域の更新要求、README lifecycle との不整合未解消）を検知した場合は即停止する。
+- 停止時は「競合一覧・停止理由・再開条件」を記録し、推測で進行しない。
+
