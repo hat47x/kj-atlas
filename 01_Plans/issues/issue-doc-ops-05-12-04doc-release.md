@@ -253,3 +253,29 @@
 ### 6) Proceed（issue状態更新案）
 - 状態更新案: **Ready**（DecisionStatus=Fixed）。
 - 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
+
+## 16) Stream H canonical consolidation (Phase 1〜5)
+
+### Phase 1 Read（14 Draft共通テンプレ差分抽出）
+- 共通テンプレ（Requirement meta I/F, Acceptance criteria, Validation plan, Authoring Checklist）を再確認し、Issue固有差分は `Scope` / `Related ADR/Spec` / `推奨アクション` のみを主差分として固定。
+- 対象: `04_Documentation/release.md`
+
+### Phase 2 ADR CDC必要性判定
+- 判定: **追加ADR不要**（Issue本文の CDC 記録で十分）。
+- 条件: 既存ADR/Specへの参照で判断根拠が追跡可能な場合、ADR新設は行わない。
+
+### Phase 3 Plan（優先順）
+1. Priority 1: 分類決定（Move internal / Improve external）を本文で固定。
+2. Priority 2: Audience / Goal / Public boundary / Outcome / Related の追跡可能性を確認。
+3. Priority 3: docs-check（`rg` / `git diff --check`）で体裁と導線を検証。
+
+### Phase 4 Execute（文書配置見直し）
+- Classification execution: **Improve external**
+- 実行境界: Docs-only（`03_Implement/**` 非変更）。
+- Move internal の場合は公開スタブ化と内部正本導線を優先し、Improve external の場合は公開可読性・公開境界の明示を優先。
+
+### Phase 5 Verify（リンク・見出し・品質ゲート）
+- Verify command set:
+  - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/release.md 01_Plans/documentation_quality.md`
+  - `git diff --check`
+- 自己修復ポリシー: 不整合は最大3回まで修復し、4回目相当は停止してブロッカー化する。
