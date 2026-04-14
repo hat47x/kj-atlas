@@ -19,10 +19,11 @@
 
 - Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - A2/A3 Open条件: `a1Status=="Done" && pendingDecisionQueueCount==0`
-- 許可遷移: `Pending -> Approved|Rejected`
+- 許可遷移: `Pending -> Approved` または `Pending -> Rejected`
 - 禁止遷移: Pending bypass / A1未完了でのA2/A3 Open
 - 固定識別子:
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `schemaVersion=1.0.0`
   - `overridePolicy=human_dual_control_only`
   - `contractLinkLocked=true`
@@ -212,4 +213,3 @@
 
 ### Phase 6 Proceed
 - handoff は read-only contract pack 形式（契約ID一覧 / 判定式 / 禁止事項）で出力。
-
