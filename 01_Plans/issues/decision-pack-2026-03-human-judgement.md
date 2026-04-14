@@ -430,3 +430,11 @@
 ### 7-6. Return Route
 - 差分要求は常に `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差戻し。
 
+### 6-13. Stream A Critical Path rerun-32（2026-04-14, 共有3ファイル正規化）
+
+- Phase 1 Read: shared resource 3ファイルと HIL-RS 個票を再読し、Decision Queue（`Ready=1 / Open=2`）・依存順（`A1→A2→A3`）・個票Status（Open=4/Draft=1/Done=1）を再確認。
+- Phase 2 ADR明文化判定: 新規Decision不要。承認待ちが必要な新規判断は発生せず、未承認決定の確定化を回避。
+- Phase 3 正規化方針: lifecycleは `Draft/Open/In Progress/Done` の4状態のみを公開値として扱い、`Blocked` は `Open(hold)` に内包して集計。
+- Phase 4 同期値（基準47件）: `Open=12（Open10+Blocked2） / In Progress=1 / Draft=8 / Done=26`、Decision Queueは `Ready=1 / Open=2` を維持。
+- Phase 5 Verify: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg` により3共有ファイルの一致を確認。
+

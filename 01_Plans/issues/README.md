@@ -371,3 +371,12 @@ issue補助メモには、最低でも次の項目を含める。
 - Stream H 共有統合同期（2026-04-12 rerun-29, Phase 1-5）: Read同期でA〜G完了報告と証跡リンク、Decision Queue（Ready=1/Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を再確認。shared resource 3ファイルのみを単一変更セットで再同期し、`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で公開値（件数47 / Active=5 / Done=26 / Queue Ready=1 Open=2）と再開判定チェックリスト1行を維持。
 
 - Stream H 共有統合同期（2026-04-13 rerun-30, Phase 1-5）: ReadでA〜G完了報告・Decision Queue（Ready=1/Open=2）・依存順 `A1→A2→A3`・停止条件違反0件を再確認し、Planで件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）/ Active=5 / Done=26 を固定。Executeはshared resource 3ファイル単一変更セットのみ、Verifyは `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し一致を確認。Proceedとして再開判定チェックリスト1行（未固定箇所0件 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持。
+
+### Stream A Critical Path rerun-32（2026-04-14, lifecycle正規化）
+
+- Phase 1 Read同期: shared resource 3ファイル + HIL-RS個票を再読し、Decision Queue `Ready=1 / Open=2` と依存順 `A1→A2→A3` の一致を確認。
+- Phase 2 ADR判定: 新規ADRは不要。未承認決定の確定化は行わず、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` は Open 継続。
+- Phase 3 正規化: lifecycle公開値は `Draft/Open/In Progress/Done` に統一し、`Blocked` は履歴語彙としてのみ保持（集計は `Open(hold)` へ内包）。
+- Phase 4 同期値（基準47件）: **Open=12（Open10+Blocked2） / In Progress=1 / Draft=8 / Done=26**。
+- Phase 5 Verify: validator / unittest / `rg` を再実行し、3共有ファイルで同一ロジック反映を確認。
+
