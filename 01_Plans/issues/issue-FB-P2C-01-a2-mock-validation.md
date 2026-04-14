@@ -198,3 +198,37 @@
   - `appliedTieBreakOrder mismatch`
   - `paddingViolationCount>0`
   - `outputPolygonHash drift`
+
+## Stream G addendum: A2 QA再現条件の固定（2026-04-14）
+
+### Fixed QA Reproduction Contract
+- 前提（全て必須）:
+  1. `DQ-FB-P2C-01` が承認済みであること。
+  2. tie-break順序が `padding>self_intersection>area_delta>vertex_count` と一致すること。
+  3. fixture ID と seed をテストケースごとに固定すること。
+- 比較キー（固定・追加禁止）:
+  - `inputHash`
+  - `seed`
+  - `appliedTieBreakOrder`
+  - `outputPolygonHash`
+  - `paddingViolationCount`
+- 合格判定:
+  - 同一 `inputHash` + 同一 `seed` の3回反復で `outputPolygonHash` が 3/3 一致。
+  - `paddingViolationCount == 0`。
+  - `appliedTieBreakOrder` が固定値と完全一致。
+- 不合格判定（Block）:
+  - 上記のいずれか1項目でも不一致。
+
+### Verify Evidence / Deadline / Rollback
+- 承認証跡: A1の Gate 0 証跡4点セットを参照必須。
+- 期限: `2026-04-30T23:59:59Z` までに再実行ログが更新されない場合は `A2 Verify stale` 扱い。
+- rollback条件:
+  1. `outputPolygonHash` drift
+  2. `paddingViolationCount > 0`
+  3. `appliedTieBreakOrder` mismatch
+- rollbackアクション:
+  - A2を `Pending Revalidation` に戻し、A3へのProceedを停止する。
+
+### Cycle guard
+- Plan→Execute→Verify→Proceed を1サイクルとして最大3回。
+- 3回超過時は `Unapproved` を明示し、確定扱いを禁止する。

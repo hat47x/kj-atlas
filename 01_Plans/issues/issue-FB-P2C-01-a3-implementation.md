@@ -217,3 +217,36 @@
   3. `03_Implement/frontend/src/domain/p2c_polygon_handoff.ts`
   4. 関連テスト3ファイル
   - 上記を本コミット以前へ戻し、`npm test -- --run ...` の再実行でA2整合状態へ復帰する。
+
+## Stream G addendum: A3 proceed/block判定基準の固定（2026-04-14）
+
+### Proceed criteria（全件必須）
+1. Gate証跡4点セット（`Approver(s)` / `ApprovedAt` / `DecisionStatement` / `GateDecision`）が参照可能。
+2. A2で `A2 Verify Pass` が記録され、再現性キーが欠損していない。
+3. tie-break順序が `padding>self_intersection>area_delta>vertex_count` から変更されていない。
+4. 失敗時 rollback 導線（A2差し戻し）が有効なまま維持されている。
+
+### Block criteria（1件でも該当で停止）
+- `GateDecision != approved`
+- `A2 Verify stale` または `A2 Verify fail`
+- `appliedTieBreakOrder mismatch`
+- `paddingViolationCount > 0`
+- `outputPolygonHash drift`
+- 承認証跡の期限切れ（`2026-04-30T23:59:59Z` を超過し再確認なし）
+
+### Verify Evidence / Rollback
+- Verify証跡:
+  - `gateApprovalRef`
+  - `a2VerifyRef`
+  - `inputHash`
+  - `outputPolygonHash`
+  - `paddingViolationCount`
+- rollback条件:
+  1. Block criteria に1件でも該当
+  2. 契約語彙（tie-break key名）にドリフトを検知
+- rollbackアクション:
+  - A3を即時停止し、A2比較キーで再検証後、必要ならA1再承認へエスカレーション。
+
+### Cycle guard
+- Plan→Execute→Verify→Proceed の自己修復は最大3回。
+- 3回超過時は `Proceed=No` を固定し、未承認事項の確定扱いを禁止する。
