@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream B（FB-P2A A1/A2/A3 exclusive）
+- Owner: Stream E（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -20,12 +20,12 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream E）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約点検（I/F固定と契約ドリフト検知）
-- Phase 3: A2モック検証計画固定（M1..M4・責務分離）
-- Phase 4: A3 handoff条件固定（GoNoGoと停止条件）
+- Phase 2: A1契約明確化（CDC明文化）
+- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
+- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
 - Phase 5: Verify（記述整合・依存整合）
 
 ## Contract freeze confirmation
@@ -153,26 +153,26 @@
   - `issue-FB-P2A-01-a3-implementation.md`
 
 
-## Stream B strict serial protocol（Phase 1→5）
+## Stream E strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
 - 照合項目: `Status` / `Priority(P0)` / `DecisionStatus` / `ContractID(またはDependsOnContractID)`。
 - 不足監査: AC/DoD/停止条件/handoff条件。
 
-### Phase 2 A1固定
+### Phase 2 A1契約明確化（CDC明文化）
 - Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を固定対象として再確認する。
 - Execute: 契約本文の再定義は行わず、固定I/Fの一致確認のみ実施する。
 - Verify: A1→A2→A3依存の逆転・並列前提・契約ドリフトがないことを確認する。
 - Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す。
 
-### Phase 3 A2モック計画
+### Phase 3 A2モック検証計画更新
 - Plan: M1..M4（正常/異常）と責務分離（A1/A2/A3）を再確認する。
 - Execute: handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として扱う。
 - Verify: GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）の整合を確認する。
 - Proceed: 判定不一致または責務未確定時は停止し、A2へ差し戻す。
 
-### Phase 4 A3 handoff条件
+### Phase 4 A3実装準備条件定義
 - Plan: 実装入口は契約参照のみで開始できる条件を確認する。
 - Execute: Plan→Execute→Verify→Proceed を固定順序で適用し、実装先行を禁止する。
 - Verify: AC/DoD不足を検知した場合は `gapType` と `agreementStatus` を用いたドラフト提案を先行し、`agreementStatus=agreed` まで実行しない。

@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream B（FB-P2A A1/A2/A3 exclusive）
+- Owner: Stream E（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -20,15 +20,20 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream E）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約点検（I/F固定と契約ドリフト検知）
-- Phase 3: A2モック検証計画固定（M1..M4・責務分離）
-- Phase 4: A3 handoff条件固定（GoNoGoと停止条件）
+- Phase 2: A1契約明確化（CDC明文化）
+- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
+- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
 - Phase 5: Verify（記述整合・依存整合）
 
 ## Contract definition（A1成果物）
+
+- CDC（Contract Definition Checklist）:
+  - C1: ContractID / InterfaceName の固定
+  - C2: Required fields / Invariants の固定
+  - C3: ContractLinks（A1→A2→A3）到達性の固定
 
 - ContractID: `CTR-2A-01-ISLAND-HIERARCHY-V1`
 - InterfaceName: `IslandHierarchyContractV1`
@@ -56,7 +61,7 @@
 ### Context
 
 - `02_Architecture/schemas.md` は FB-P2A-01 の単一正本として `parentIslandId?: string` を定義している。
-- Stream D の担当範囲は P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
+- Stream E の担当範囲は P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
 - 実装コードや共有ファイルを更新せずに、A2/A3 が同一契約を参照できる状態を先に作る必要がある。
 
 ### Decision
@@ -71,7 +76,7 @@
 - 子一覧キャッシュや UI 都合の派生表現は A3 実装検討の裁量として残るが、A1 契約破壊変更は禁止される。
 - SafeMode / share-export / 実装コードには影響を持ち込まない。
 
-## A1 contract audit（Stream D / Phase 2）
+## A1 contract audit（Stream E / Phase 2）
 
 - 契約項目確定:
   - `ContractID=CTR-2A-01-ISLAND-HIERARCHY-V1`
@@ -151,26 +156,26 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream B strict serial protocol（Phase 1→5）
+## Stream E strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
 - 照合項目: `Status` / `Priority(P0)` / `DecisionStatus` / `ContractID(またはDependsOnContractID)`。
 - 不足監査: AC/DoD/停止条件/handoff条件。
 
-### Phase 2 A1固定
+### Phase 2 A1契約明確化（CDC明文化）
 - Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を固定対象として再確認する。
 - Execute: 契約本文の再定義は行わず、固定I/Fの一致確認のみ実施する。
 - Verify: A1→A2→A3依存の逆転・並列前提・契約ドリフトがないことを確認する。
 - Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す。
 
-### Phase 3 A2モック計画
+### Phase 3 A2モック検証計画更新
 - Plan: M1..M4（正常/異常）と責務分離（A1/A2/A3）を再確認する。
 - Execute: handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として扱う。
 - Verify: GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）の整合を確認する。
 - Proceed: 判定不一致または責務未確定時は停止し、A2へ差し戻す。
 
-### Phase 4 A3 handoff条件
+### Phase 4 A3実装準備条件定義
 - Plan: 実装入口は契約参照のみで開始できる条件を確認する。
 - Execute: Plan→Execute→Verify→Proceed を固定順序で適用し、実装先行を禁止する。
 - Verify: AC/DoD不足を検知した場合は `gapType` と `agreementStatus` を用いたドラフト提案を先行し、`agreementStatus=agreed` まで実行しない。
