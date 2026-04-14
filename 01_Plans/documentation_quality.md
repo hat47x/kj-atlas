@@ -214,3 +214,34 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 - Verify 失敗時の自己修復は最大3回まで。
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。
 - Stream G フェイルセーフ: テスト方針矛盾または監査要件未達を検知した場合は Execute を停止し、Proceed で残課題を明示する。
+
+## 14. DOC-OPS-05 Stream H Draft群整理プロトコル（01〜14）
+
+本節は `issue-doc-ops-05-01` 〜 `issue-doc-ops-05-14` の Draft整理に適用する固定プロトコル。
+
+### Phase 1 Read（14 Draftの共通テンプレ差分抽出）
+
+- 共通テンプレ（Requirement meta I/F / Acceptance criteria / Validation plan / Authoring Checklist）の有無を確認する。
+- 差分は `Scope` / `Related ADR/Spec` / `推奨アクション` / `SecurityGateImpact` に限定して抽出する。
+
+### Phase 2 ADR CDC必要性判定
+
+- 既存ADR/Specへの参照で根拠追跡が可能な場合は **追加ADRを作成しない**。
+- 追加ADRが必要になる条件（例: 仕様境界の新規導入、既存正本の衝突）がある場合のみ CDC を ADR化する。
+
+### Phase 3 Plan（優先順）
+
+1. 分類決定（Move internal / Improve external）の固定。
+2. 公開境界（Audience / Goal / Non-goal / Public boundary / Outcome / Related）の検証。
+3. docs-check 実行と修復計画（最大3回）の確定。
+
+### Phase 4 Execute（文書配置見直し）
+
+- Move internal: 公開文書を最小スタブ化し、内部正本への導線を残す。
+- Improve external: 公開文書としての単体読解性と再現可能性を改善する。
+- いずれも docs-only で実施し、`03_Implement/**` は変更しない。
+
+### Phase 5 Verify（リンク・見出し・品質ゲート）
+
+- 見出し整合、内部リンク、有効なRelated参照、QG-1〜QG-6 を確認する。
+- 失敗時は **最大3回まで修復**。4回目相当は停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へ移行する。
