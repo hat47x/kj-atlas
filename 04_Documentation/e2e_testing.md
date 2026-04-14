@@ -155,6 +155,20 @@ CE3 Verify の自己修復順序（最大3回）:
 2. 2回目失敗: `playwright install-deps chromium`
 3. 3回目: E2E再実行（未収束なら停止して blocker 記録）
 
+#### CE3 UI状態機械 AC/DoD（Stream F frontend）
+
+CE3 Frontend の状態機械（`idle -> evaluating -> rolled_back` と候補単位の `adopt/hold/reject`）に対する最小AC/DoDを次で固定する。
+
+- AC（受入条件）
+  - `ce3-decision-state` が phase を常に可視化できる。
+  - `ce3-candidate-state-*` / `ce3-candidate-audit-*` が候補ID単位で独立表示される。
+  - `ce3-audit-log-size` が操作回数に応じて増減を観測できる。
+  - SafeMode境界を越える導線（share/export auto）をCE3 panelに追加しない。
+- DoD（完了条件）
+  - panel unit（`PatchWorkspacePanel.test.ts`）で上記ACの静的可観測性を検証する。
+  - domain unit（`ce3_patch_workspace.test.ts`）でrollback時の候補独立性を検証する。
+  - CE3 e2e grep（Patch Workspace/Preset/rollback）を実行し、失敗時は自己修復手順を3回上限で適用する。
+
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は

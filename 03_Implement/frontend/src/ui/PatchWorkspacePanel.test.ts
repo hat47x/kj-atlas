@@ -39,6 +39,31 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain("Recovery path:");
   });
 
+  it("keeps CE3 state-machine checkpoints observable for each candidate", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PatchWorkspacePanel, {
+        candidates: [
+          { id: "cand-alpha", label: "cand-alpha (3 cards)" },
+          { id: "cand-beta", label: "cand-beta (2 cards)" },
+          { id: "cand-gamma", label: "cand-gamma (1 card)" },
+        ],
+      }),
+    );
+
+    expect(html).toContain('data-testid="ce3-decision-state"');
+    expect(html).toContain('data-testid="ce3-candidate-state-list"');
+    expect(html).toContain('data-testid="ce3-candidate-state-cand-alpha"');
+    expect(html).toContain('data-testid="ce3-candidate-state-cand-beta"');
+    expect(html).toContain('data-testid="ce3-candidate-state-cand-gamma"');
+    expect(html).toContain('data-testid="ce3-candidate-audit-cand-alpha"');
+    expect(html).toContain('data-testid="ce3-candidate-audit-cand-beta"');
+    expect(html).toContain('data-testid="ce3-candidate-audit-cand-gamma"');
+    expect(html).toContain('data-testid="ce3-audit-log-size"');
+    expect(html).toContain("no transition");
+    expect(html).not.toContain("share");
+    expect(html).not.toContain("export");
+  });
+
   it("disables preset and decision controls in read-only mode", () => {
     const html = renderToStaticMarkup(
       React.createElement(PatchWorkspacePanel, {
