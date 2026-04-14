@@ -87,6 +87,7 @@ This document defines a two-layer quality gate strategy: deterministic rule chec
 ### 7.1 Context
 
 CE-1では生成品質以前に、ContextQuery/ContextBundle契約の再現性（determinism）を満たさない限り後続評価を開始しない。
+CE0境界（safeMode後退禁止・review自動昇格禁止・Consensus direct write禁止）に抵触する差分は、品質判定対象に入れず即時 fail-closed とする。
 
 ### 7.2 Decision
 
@@ -119,7 +120,7 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 1. Proposal schema gate: すべての提案が `proposalId/diff/sourceBundleHash/status/reviewState` を持つ。
 2. Lifecycle gate: 許可遷移は `proposed -> accepted|rejected|held` のみ（`held` から自動遷移禁止）。
 3. No-auto-apply gate: `accepted` を含め、提案状態から直接適用へ進む経路を禁止する。
-4. No-auto-review-promotion gate: AI/worker/API による `reviewState=reviewed` 自動遷移を禁止する。
+4. No-auto-review-promotion gate: AI/worker/API による `reviewState=human_reviewed` 自動遷移を禁止する。
 5. Drift-stop gate: CE1最小I/Fとの差異検知時は `status=held` を強制し、Verify/Proceed を停止する。
 
 ### 8.3 Consequences
@@ -156,7 +157,7 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - safeMode既定ONの後退
 - 未レビュー本文の混入（reviewed-only既定違反）
 - auto-apply経路の存在
-- AIによる `reviewState=reviewed` 自動昇格
+- AIによる `reviewState=human_reviewed` 自動昇格
 - CE1/CE2 契約ドリフト未解消（`status=held` 未遷移）
 
 ### 9.3 Verify/Proceed 証跡最小キー
