@@ -8096,6 +8096,18 @@ ${parsedDocument.error}`);
                           editedText: suggestion.editedText,
                         },
                       }))}
+                      onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
+                        setStatusMessage(`Workspace decision: ${candidateId} ${previousDecision} → ${decision}`);
+                      }}
+                      onDecisionRolledBack={({ restoredCandidateIds }) => {
+                        setStatusMessage(`Workspace rollback restored: ${restoredCandidateIds.join(", ")}`);
+                      }}
+                      onPresetSaved={(preset) => {
+                        setStatusMessage(`Workspace preset saved: ${preset.name}`);
+                      }}
+                      onPresetExecuted={({ query }) => {
+                        setStatusMessage(`Workspace preset executed: ${query}`);
+                      }}
                     />
                   </>
                 }

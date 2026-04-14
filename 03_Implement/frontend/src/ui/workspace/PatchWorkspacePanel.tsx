@@ -17,6 +17,15 @@ import {
 type PatchWorkspacePanelProps = {
   isReadOnly?: boolean;
   candidates: CandidateItem[];
+  onDecisionCommitted?: (payload: {
+    candidateId: string;
+    decision: WorkspaceDecision;
+    previousDecision: WorkspaceDecision;
+    at: string;
+  }) => void;
+  onDecisionRolledBack?: (payload: { restoredCandidateIds: string[]; at: string }) => void;
+  onPresetSaved?: (preset: QueryPreset) => void;
+  onPresetExecuted?: (payload: { query: string; scope: QueryScope; depth: number; filters: string[] }) => void;
 };
 
 const PRESET_STORAGE_KEY = "kj-atlas:ce3:patch-workspace-presets:v1";
@@ -65,7 +74,14 @@ function savePresets(presets: QueryPreset[]): void {
   window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
 }
 
-export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWorkspacePanelProps) {
+export function PatchWorkspacePanel({
+  candidates,
+  isReadOnly = false,
+  onDecisionCommitted,
+  onDecisionRolledBack,
+  onPresetSaved,
+  onPresetExecuted,
+}: PatchWorkspacePanelProps) {
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>(() => buildInitialWorkspaceState(candidates));
   const [presets, setPresets] = useState<QueryPreset[]>(() => loadPresets());
   const [presetName, setPresetName] = useState("");
@@ -100,15 +116,41 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     if (isReadOnly || !activeCandidateId) {
       return;
     }
-
-    setWorkspaceState((previous) => commitWorkspaceDecision(previous, activeCandidateId, nextDecision, new Date().toISOString()));
+    const now = new Date().toISOString();
+    setWorkspaceState((previous) => {
+      const previousDecision = previous.decisions[activeCandidateId] ?? "hold";
+      const next = commitWorkspaceDecision(previous, activeCandidateId, nextDecision, now);
+      if (next !== previous) {
+        onDecisionCommitted?.({
+          candidateId: activeCandidateId,
+          decision: nextDecision,
+          previousDecision,
+          at: now,
+        });
+      }
+      return next;
+    });
   };
 
   const handleRollback = () => {
     if (isReadOnly) {
       return;
     }
-    setWorkspaceState((previous) => rollbackWorkspaceDecision(previous));
+    const now = new Date().toISOString();
+    setWorkspaceState((previous) => {
+      const next = rollbackWorkspaceDecision(previous);
+      if (next.phase !== "error") {
+        const restoredCandidateIds = Object.keys(next.decisions).filter((candidateId) => {
+          const before = previous.decisions[candidateId] ?? "hold";
+          const after = next.decisions[candidateId] ?? "hold";
+          return before !== after;
+        });
+        if (restoredCandidateIds.length > 0) {
+          onDecisionRolledBack?.({ restoredCandidateIds, at: now });
+        }
+      }
+      return next;
+    });
   };
 
   const handleSavePreset = () => {
@@ -133,6 +175,7 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     const nextPresets = [...presets, nextPreset].sort((left, right) => left.name.localeCompare(right.name));
     setPresets(nextPresets);
     savePresets(nextPresets);
+    onPresetSaved?.(nextPreset);
     setWorkspaceState((previous) => ({ ...previous, failureMessage: null }));
   };
 
@@ -140,7 +183,18 @@ export function PatchWorkspacePanel({ candidates, isReadOnly = false }: PatchWor
     if (isReadOnly) {
       return;
     }
-    setWorkspaceState((previous) => replayPreset(previous, preset, candidates.length > 0));
+    setWorkspaceState((previous) => {
+      const next = replayPreset(previous, preset, candidates.length > 0);
+      if (next.phase !== "error" && next.lastExecutedQuery) {
+        onPresetExecuted?.({
+          query: next.lastExecutedQuery,
+          scope: preset.scope,
+          depth: Math.max(1, Math.floor(preset.depth)),
+          filters: [...preset.filters],
+        });
+      }
+      return next;
+    });
   };
 
   return (
