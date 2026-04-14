@@ -184,3 +184,41 @@
 
 - 契約ID不整合、依存順序逆転、未定義競合を検知した場合は即停止。
 - Self-correction は最大3回。3回超過時は更新を停止し、競合一覧のみ提出する。
+
+
+## Stream C serial execution update（2026-04-14）
+
+- Stream role: `Stream C（FB-P2B A1/A2/A3）` 専属。
+- Contract input policy: 他ストリーム成果物は immutable な契約入力として扱い、待ち合わせを行わない。
+- Target lane: `A2 mock validation`
+- Locked Contract ID: `CTR-2B-01-CANDIDATE-GROUP-V1`
+
+### Phase 1 Read同期（差分確認）
+- Plan: A1/A2/A3の3メモを再読し、`ContractID / DependsOnContractID / ReferenceContractID` の差分を確認。
+- Execute: 3メモの契約キーを照合し、記法ゆれ・依存順序逆転の有無を点検。
+- Verify: 差分なし（`CTR-2B-01-CANDIDATE-GROUP-V1` で一致）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 A1契約固定
+- Plan: A1で固定済みの契約ID・型・比較キーを再固定し、A2/A3は参照専用で運用。
+- Execute: 契約拡張要求・キー変更要求・順序非決定要求をA1差し戻し条件として明文化。
+- Verify: 契約再定義禁止を維持。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 A2モック検証定義
+- Plan: 実コード非依存で、stub/fixtureのみの検証条件を固定。
+- Execute: 非自動確定・再読込復元・順序保持（およびenum境界がある場合は4値制約）を検証条件として保持。
+- Verify: A2定義はA1契約参照のみで成立。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 A3接続条件固定
+- Plan: A3開始条件/停止条件/差し戻し条件を契約準拠で固定。
+- Execute: A3は実装接続の入口定義のみとし、契約変更は受け付けない。
+- Verify: `A1 -> A2 -> A3` 直列依存を維持。
+- Proceed: Phase 5へ進行。
+
+### Phase 5 Verify
+- Plan: docs-checkでメモ整合を検証し、失敗時は自己修復を最大3回まで実施。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準コマンドとする。
+- Verify: Self-Correction counter = `0/3`（本更新時点）。
+- Proceed: 3回超過時は停止して競合一覧のみ報告。
