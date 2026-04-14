@@ -223,3 +223,43 @@
 
 - 契約ID不整合、依存順序逆転、未定義競合を検知した場合は即停止。
 - Self-correction は最大3回。3回超過時は更新を停止し、競合一覧のみ提出する。
+
+## Stream G planning memo (FB-P2C, 2026-04-14)
+
+### Phase 1) Read（tie-break契約・Gate条件）
+- Read対象（固定）:
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- tie-break契約（参照専用固定）:
+  - `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`
+  - 機械可読値: `padding>self_intersection>area_delta>vertex_count`
+- Gate条件（Go/NoGo）:
+  1. `DQ-FB-P2C-01` の承認証跡（Approver/ApprovedAt/DecisionStatement）が参照可能。
+  2. A2の再現性キー（`inputHash`,`seed`,`outputPolygonHash`,`paddingViolationCount`）が固定されている。
+  3. A3の停止条件（`tieBreakOrder逸脱` / `paddingViolationCount>0` / `outputPolygonHash不一致`）が参照可能。
+
+### Phase 2) ADR必要判定（CDC）
+- CDC判定結果: **ADR起票は不要（No）**。
+- 判定理由:
+  - 本メモは既存契約の確認・固定・受入判定基準の明確化に限定し、新しい上位方針を追加しない。
+  - tie-break順序の追加/並べ替え/省略要求が発生した場合のみ、`Context/Decision/Consequences` 形式でADR検討へ遷移する。
+- CDC fail-fast:
+  - 契約ID衝突、語彙衝突、Gate証跡欠損を検出した時点で Proceed を停止する。
+
+### Phase 5) Verify（承認証跡・期限・rollback条件）
+- 承認証跡チェック（必須）:
+  - `Approver(s)`, `ApprovedAt`, `DecisionStatement`, `GateDecision` の4点セット。
+- 期限（このメモの有効期限）:
+  - `2026-04-30T23:59:59Z` までに再確認がない場合、状態を `Pending Revalidation` に戻す。
+- rollback条件:
+  1. Gate証跡4点セットの欠損。
+  2. A2/A3で固定した比較キーが欠落。
+  3. tie-break順序の非互換変更提案が混入。
+- rollbackアクション:
+  - 状態を `Audit Hold` へ戻し、A2/A3 Proceedを停止、A1へ差し戻して再承認を要求する。
+
+### Plan→Execute→Verify→Proceed（cycle cap）
+- Self-correctionは最大3回。
+- 3回を超える場合は更新を停止し、未承認論点を `Pending` として列挙する。
+- **未承認事項を `Fixed` / `Approved` 扱いにしてはならない。**
