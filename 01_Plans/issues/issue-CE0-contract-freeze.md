@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/issues/`, `00_Prompt/`（Stream B: Contract Freeze / mock-first / Docs only）
+- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream D: Contract Freeze / mock-first / Docs-Architecture only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
@@ -19,7 +19,7 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `B` (Contract Freeze / mock-first / Docs-Plan only)
+- Stream: `D` (Contract Freeze / mock-first / Docs-Architecture only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
 
 
@@ -190,7 +190,7 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（Stream B: 編集許可ファイル限定）
+## 5) タスク分解（Stream D: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
 - [ ] T2: 編集許可ファイル内（CE0 / CoreGraph / HIL-RS A1契約文書）で契約語彙を同期し、指定外ファイル編集を行わない。
@@ -242,7 +242,7 @@
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
 
-## Stream B Contract Freeze Fixpoint (2026-04-12)
+## Stream D Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
