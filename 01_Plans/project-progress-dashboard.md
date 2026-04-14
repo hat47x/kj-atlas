@@ -602,3 +602,28 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` のみを同一ロジック・単一変更セットで同期。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=6|Done=25|DR-HIL-A1-01|DL-HIL-01|DR-REQ-DEF-02" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、不一致0件（self-correction 0/3）を確認。
 - Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+## Stream A Critical Path 同期ログ（2026-04-14 rerun-32）
+
+### Phase 1: Read同期（Plan -> Execute -> Verify -> Proceed）
+- 対象: `project-progress-dashboard.md` / `issues/README.md` / `decision-pack-2026-03-human-judgement.md` / `issue-HIL-RS-01*` / `issue-HIL-RS-02*` を再読。
+- 一致: Decision Queue は `Ready=1 / Open=2`、依存順は `A1→A2→A3`、HIL-RS個票のStatusは `Open=4 / Draft=1 / Done=1`。
+- 不一致（件数表示）: 共有ファイルには legacy集計（`Blocked` を独立カウント）と lifecycle集計（Draft/Open/In Progress/Done）の混在が残る。
+
+### Phase 2: ADR明文化（必要時のみ）
+- 新規Decisionは不要（既存ADR/Issue CDCの範囲内）。
+- 未承認事項の確定化は実施せず、Decision Queue 2件は Open 継続。
+
+### Phase 3: 正規化方針（差分最小）
+- 正規化ルール: lifecycleは `Draft / Open / In Progress / Done` の4状態のみを公開値として扱う。
+- 互換ルール: `Blocked` は履歴語彙として残すが、集計上は `Open(hold)` に内包する。
+- 2026-04-14 rerun-32 正規化表示（基準値47件）: `Open=12（=Open10+Blocked2） / In Progress=1 / Draft=8 / Done=26`。
+
+### Phase 4: 同期
+- dashboard / README / decision-pack の3ファイルで、Decision Queue（Ready=1/Open=2）・依存順（A1→A2→A3）・正規化方針を同一文言で同期。
+
+### Phase 5: Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し成功。
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` を実行し成功。
+- `rg -n "rerun-32|Open=12|Ready=1 / Open=2|A1→A2→A3|Blocked は履歴語彙" 01_Plans/project-progress-dashboard.md 01_Plans/issues/README.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で3ファイル一致を確認。
+
