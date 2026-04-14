@@ -418,7 +418,13 @@ class ContextAuditPayload(BaseModel):
     queryHash: str | None = None
     dryRun: bool = True
     sideEffect: Literal["none"] = "none"
-    rejectReasonCode: str | None = None
+    rejectReasonCode: Literal[
+        "none",
+        "missing_event",
+        "equivalence_mismatch",
+        "dry_run_side_effect",
+        "safemode_regression",
+    ] | None = None
     command: str | None = None
     channel: Literal["api", "cli", "gui"] = "api"
     schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"

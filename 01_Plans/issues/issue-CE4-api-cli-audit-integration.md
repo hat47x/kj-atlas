@@ -98,7 +98,7 @@
 - [x] `--dry-run` で副作用0（`dryRun=true` なら常に `sideEffect=none`、DB永続化なし、外部送信なし、review昇格なし）を保証。
 - [x] `sourceBundleHash` は本番値・`mock:<hash>` の両方を受理し、同値性判定を継続可能（依存切断）。
 - [x] 失敗時のreject reasonが分類コード付きで記録される。
-- [ ] CIで同値性テストが自動実行される。
+- [x] CIで同値性テストが自動実行される（`03_Implement/backend/tests/test_docs_audit_integration.py` をCI標準pytest対象として維持）。
 
 ### 3.2 DoD不足提案（本Issueで補完）
 

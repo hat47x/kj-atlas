@@ -475,6 +475,54 @@ def test_context_audit_rejects_query_hash_mismatch(tmp_path) -> None:
     assert response.status_code == 422
 
 
+def test_context_audit_accepts_fixed_reject_reason_code(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        for operation, command in (
+            ("query", "context-query"),
+            ("bundle", "context-bundle"),
+            ("proposal", "proposal-diff"),
+            ("apply", "apply --dry-run"),
+        ):
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                json={
+                    "operation": operation,
+                    "safeMode": True,
+                    "equivalenceKey": "1" * 64,
+                    "bundleHash": "2" * 64,
+                    "sourceBundleHash": "mock:" + ("3" * 64),
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": command,
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                    "rejectReasonCode": "none",
+                },
+            )
+            assert response.status_code == 200
+
+
+def test_context_audit_rejects_unknown_reject_reason_code(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "query",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "context-query",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+                "rejectReasonCode": "unexpected_code",
+            },
+        )
+
+    assert response.status_code == 422
+
+
 def test_cli_apply_forces_dry_run(tmp_path, monkeypatch) -> None:
     captured_payload: dict[str, object] = {}
 
