@@ -84,6 +84,18 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 - 停止条件は **3回超過 / 前提崩れ / 未定義競合** の3項目を固定し、該当時は Proceed しない。
 - 2026-04-13 Read同期（Stream F）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
 
+## 0.7 Proceed（未解決点の委譲先）
+
+本書（DOC-OPS-05-11）は公開運用runbookを主責務とし、以下は**未解決点として次Issueへ委譲**する。
+
+- 委譲先: `DOC-OPS-05-13`（`04_Documentation/security.md`）
+  - 委譲内容: 脅威分類の詳細、公開時の禁止事項一覧、セキュリティ既定値の背景説明。
+- 委譲先: `DOC-OPS-05-14`（`04_Documentation/security_operational_guidelines.md`）
+  - 委譲内容: プロファイル選択時の判断フロー、例外承認時の運用判断ガイド詳細。
+- 本書で扱わない理由:
+  - 重複責務回避（operations は「実行runbook」、security/guidelines は「安全方針と判断補助」）。
+  - 文書間ドリフト防止（同一論点の正本を複数箇所で持たない）。
+
 ### Phase6 固定フロー（Read → CDC → Plan → Execute → Verify(docs-check) → Proceed）
 
 1. **Read**: 対象4文書を再読し、Gate契約・KPI契約の差分有無を確認する。
