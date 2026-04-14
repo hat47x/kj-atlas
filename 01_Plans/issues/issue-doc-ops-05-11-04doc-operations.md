@@ -258,6 +258,51 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
   6. 停止条件（3回超過 / 前提崩れ / 未定義競合）に非該当。
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**。
+
+## 17) Stream H rerun-03（Read → CDC → Plan → Execute → Verify → Proceed）
+
+### Phase 1 Read
+
+- `04_Documentation/operations.md` の文書分類メタ（Audience / Goal / Non-goal / Public boundary / Outcome）と、Issue側のACを再照合。
+- 固定値（D1〜D4）と役割語彙（Security Officer / System Owner / Platform Operator）の逸脱がないことを確認。
+
+### Phase 2 CDC（必要性判定）
+
+- 判定: **追加ADR不要**（既存ADRとIssue CDCで閉じる）。
+- Context: operations は runbook 正本であり、security/guidelines と責務境界を分離する必要がある。
+- Decision: 本Issueの分類は **Improve external** を維持し、未解決論点は次Issueへ委譲する。
+- Consequences: 1 issue = 1 doc の原則を維持しつつ、重複改稿と用語衝突を回避できる。
+
+### Phase 3 Plan
+
+- 実施計画:
+  1. operations 本文に Proceed 節を追加し、未解決点と委譲先Issueを明示。
+  2. Issue本文に rerun-03 記録を残し、停止条件（競合・逸脱）非該当を確認。
+
+### Phase 4 Execute
+
+- 実施内容:
+  - `04_Documentation/operations.md` に「0.7 Proceed（未解決点の委譲先）」を追記。
+  - 委譲先を `DOC-OPS-05-13` / `DOC-OPS-05-14` として固定。
+
+### Phase 5 Verify
+
+- 実行コマンド:
+  - `rg -n "0.7 Proceed|委譲先|DOC-OPS-05-13|DOC-OPS-05-14" 04_Documentation/operations.md`
+  - `git diff --check`
+- 結果: docs-check 観点（links/用語/責務境界）で不整合なし。
+- 自己修復: 0/3（追加修復なし）。
+
+### Phase 6 Proceed
+
+- 判定: **Ready**
+- 未解決点の次Issue委譲:
+  - セキュリティ詳細ポリシー: `DOC-OPS-05-13`
+  - 運用判断フロー詳細: `DOC-OPS-05-14`
+- 停止条件確認:
+  - 他レーン共有ファイル更新要求: なし
+  - 用語衝突: なし
+  - 固定値逸脱: なし
 - 担当: **Stream G（Unified Feedback & KPI Audit Owner）**。
 
 
