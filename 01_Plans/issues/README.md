@@ -243,6 +243,7 @@ issue補助メモには、最低でも次の項目を含める。
 - DOC-OPS-04停止/再開条件: 停止= A不整合 / 統合ファイル更新必要 / SoD違反 / Self-Correction 3回超過。再開= A再承認+Deciders再確認完了 + 統合フェーズ修正完了 + 役割分離再検証ログ追記 + validator/unittest成功。
 - DOC-OPS-04次アクション: 後続改訂は ADR-0023/0024/0025 の境界を維持し、必要時のみ追加ADRを起票する。
 - Stream F Phase 1-5 同期（rerun-26）: Read同期（shared resource 3ファイル）→Plan（件数47 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（次回再開条件1行固定）を完了し、Active issue memos 6件・Source Issue運用（Open=N/A / Draft=TBD）・停止条件違反0件を維持。
+- Stream I Phase 1-5 同期（2026-04-14 rerun-31）: Read同期（A〜H完了報告と3共有ファイル再読）→Plan（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / Queue未解決2件）→Execute（shared resource 3ファイル単一変更セット）→Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→Proceed（再開判定チェックリスト1行固定）を完了。
 
 ## Active issue memos
 
