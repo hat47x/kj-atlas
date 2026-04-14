@@ -78,7 +78,8 @@ kj-atlas は OSS として、多様な環境で利用される：
 - `status` は `proposed | accepted | rejected | held` のみを許可し、`held` は drift-stop 専用状態とする。
 - CE1（ContextBundle）との差分を検知した場合は `status=held` で停止し、運用判断まで Proceed しない。
 - `accepted` は適用許可の意思表示であり、自動適用トリガーではない（auto-apply禁止）。
-- `reviewState` の AI 自動昇格（`unreviewed -> reviewed` / `human_reviewed`）は禁止し、人手操作のみ許可する。
+- `ConsensusGraph` への direct write は禁止し、適用は `patch + approval` のみを許可する。
+- `reviewState` の AI 自動昇格（`unreviewed -> human_reviewed`）は禁止し、人手操作のみ許可する。
 
 ## HIL-RS-01-A1 最小I/F契約（固定参照）
 

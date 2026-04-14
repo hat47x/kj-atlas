@@ -99,6 +99,7 @@ CE2運用では、適用処理を起動せずに以下を確認する。
 - CE2 は `proposal-only` とし、runtime 上で apply 経路を起動しない。
 - `status` 許可遷移は `proposed -> accepted|rejected|held` のみ。
 - CE1ドリフト検知時は `status=held` に強制遷移し、後続処理を停止する。
+- `reviewState` の遷移は `unreviewed -> human_reviewed` を人手操作に限定し、runtime自動昇格を禁止する。
 - `held` 状態の自動解除を禁止する（人手判断ログ必須）。
 
 ### 8.3 監査ログ最小セット（再現可能性）

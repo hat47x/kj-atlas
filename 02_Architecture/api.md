@@ -137,6 +137,11 @@ Phase 1〜6 fixed policy（各Phase先頭で Read を実施し、`Plan -> Execut
 
 フェイルセーフ: Verify 失敗の自己修復は最大3回まで許可し、4回目失敗時は即停止して人間判断へエスカレーションする。
 
+CE0境界（参照専用固定）:
+- `CE0-SAFEMODE-IF`: safeMode既定ONと `allowUnreviewedText=false` 既定を緩和しない。
+- `CE0-REVIEW-IF`: `unreviewed -> human_reviewed` 昇格は人手のみ（AI自動昇格禁止）。
+- `CG-01..05`: Consensus Graph への direct write を禁止し、`patch + approval` 以外の適用経路を許可しない。
+
 **POST** `/context/query`
 
 - Purpose: Query Preview通過済みの `ContextQuery` を検証・正規化する。
@@ -153,6 +158,7 @@ Phase 1〜6 fixed policy（各Phase先頭で Read を実施し、`Plan -> Execut
 - Error:
   - `422 preview_required`: `previewConfirmed != true`
   - `422 invalid_query_contract`: enum/range違反
+  - `400 unknown_contract_key`: CE1 v1 最小I/F外のキーを検知
 
 **POST** `/context/bundle`
 
@@ -216,7 +222,7 @@ CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
 - `dryRun=true` で禁止される副作用:
   - DB永続化
   - 外部送信（監査転送を除く。監査転送は fail-open dispatcher 方針）
-  - review state の昇格（`unreviewed -> reviewed`）
+  - review state の昇格（`unreviewed -> human_reviewed`）
 - 上記を満たさない場合は契約違反として失敗扱い（fail-closed）。
 
 CE4 フェイルセーフ（停止条件）:
