@@ -437,7 +437,7 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
     "apply": {"apply", "apply --dry-run"},
 }
 _CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
-_ce4_audit_event_tracker: dict[str, set[str]] = {}
+_ce4_audit_event_tracker: dict[tuple[str, str], set[str]] = {}
 _ce4_audit_tracker_lock = Lock()
 
 
@@ -446,9 +446,12 @@ def reset_ce4_audit_event_tracker() -> None:
         _ce4_audit_event_tracker.clear()
 
 
-def _record_ce4_event_and_validate_completeness(*, equivalence_key: str, operation: str) -> None:
+def _record_ce4_event_and_validate_completeness(
+    *, equivalence_key: str, bundle_hash: str, operation: str
+) -> None:
     with _ce4_audit_tracker_lock:
-        seen = _ce4_audit_event_tracker.setdefault(equivalence_key, set())
+        tracker_key = (equivalence_key, bundle_hash)
+        seen = _ce4_audit_event_tracker.setdefault(tracker_key, set())
         seen.add(operation)
         if operation != "apply":
             return
@@ -494,6 +497,7 @@ def post_context_audit(
     if settings.ce4_audit_require_all_events:
         _record_ce4_event_and_validate_completeness(
             equivalence_key=payload.equivalenceKey,
+            bundle_hash=payload.bundleHash,
             operation=payload.operation,
         )
 
