@@ -23,6 +23,9 @@ describe("PatchWorkspacePanel (workspace subtree)", () => {
     );
 
     expect(html).toContain("CE3 Patch workspace");
+    expect(html).toContain("Adopt (partial)");
+    expect(html).toContain("Discard");
+    expect(html).toContain("Perspective controls remain display-only");
     expect(html).toContain("Roll back last workspace decision");
     expect(html).toContain("Run current preset");
     expect(html).toContain("No saved presets.");
