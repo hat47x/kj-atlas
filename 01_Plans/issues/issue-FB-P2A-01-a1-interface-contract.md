@@ -196,3 +196,55 @@
 - self-correction上限: 3回。
 - 停止トリガ: 3回超過 / 依存不整合 / 指定外ファイル更新が必要 / ContractID衝突。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
+
+## Stream A Serial Contract Lock (2026-04-16)
+
+### Phase 1 Read（再Read + 差分抽出）
+- 本ファイルを含む Stream A 管轄10ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
+- 差分抽出結果:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0` を唯一ゲートとして維持。
+  - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` を固定値として維持。
+  - 契約ID衝突・依存逆転・未定義競合は 0 件。
+
+### Phase 2 ADR CDC
+- Context: A1契約固定を下流A2/A3の参照専用境界として維持する。
+- Decision: 新規ADR追加は不要（既存 ADR-0026/0027/0028 と整合）。未承認決定は確定扱いしない。
+- Consequences: 契約変更要求はA1へ差戻し、下流はread-only handoff値のみ利用する。
+
+### Phase 3 Plan
+- AC/DoD不足時はドラフト提案を先行し、`agreementStatus=agreed` まで Execute へ進まない。
+- SSOT固定値:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Go/No-Go:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+
+### Phase 4 Execute
+- 文言・契約ID・依存順序（A1→A2→A3）・停止条件を本ファイル内で同期。
+- 禁止遷移を固定:
+  - `Pending` bypass（`Pending -> Approved/Rejected` 以外）
+  - A1未完了時の A2/A3 `Draft -> Open`
+  - 未承認決定の確定扱い
+- Read-only handoff:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending -> Approved|Pending -> Rejected" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- Self-Correctionは最大3回。4回目相当は即停止。
+
+### Phase 6 Proceed
+- 再開条件: `NoGo` 要因（未承認決定、識別子不一致、依存逆転）を解消し、再VerifyがPassすること。
+- 差戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1契約正本）。
+- Decision Queue未解決項目は `Pending` のまま保持し、確定扱いしない。
+
+### Fail-safe（停止報告テンプレ）
+1. 失敗条件
+2. 影響ファイル・契約ID
+3. 人間判断が必要な選択肢（2案）
+   - 案1: 既存固定値を維持してA1へ差戻し
+   - 案2: 承認会議で固定値変更を決定後に再凍結
