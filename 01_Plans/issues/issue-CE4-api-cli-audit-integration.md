@@ -247,3 +247,21 @@
 - CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した契約検証を継続する。
 - Verify は自己修復 3 回まで。4 回目相当は実施せず停止し、`Proceed` を実行しない。
 - API/CLI/GUI 同値性契約は `equivalenceKey + bundleHash`（AND）と監査4点セット（`query/bundle/proposal/apply`）を同時充足した場合のみ pass とする。
+
+## 16) Stream E 実行プロンプト適用ログ（2026-04-16）
+
+### Read（Phase冒頭固定）
+
+- 各フェーズ開始時に CE4 固定契約を再読する（`equivalenceKey + bundleHash` / 監査4点 / `apply --dry-run` / `sourceBundleHash=mock:<hash>`）。
+- フェーズ順序は直列（`Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed`）のみを許可し、並列進行は行わない。
+
+### Execute（依存待ち禁止）
+
+- CE3 完了待ちは禁止し、`sourceBundleHash=mock:<hash>` で契約検証を継続する。
+- API/CLI/GUI の同値性判定は `equivalenceKey + bundleHash` のAND条件を固定する。
+- 監査4点セット（`query/bundle/proposal/apply`）欠損は成功扱い禁止（fail-closed）とする。
+
+### Verify（停止条件）
+
+- Verify の自己修復は最大3回までとし、3回失敗時点で即停止する（4回目試行は禁止）。
+- 停止時は Proceed を実施せず、欠損イベント・`equivalenceKey`・`rejectReasonCode` を保留論点として記録する。
