@@ -302,3 +302,20 @@
 5. **Phase 5 Proceed**
    - Go条件（契約一致・検証Pass・停止条件非該当）を満たす場合のみ次レーンへ引き渡す。
 
+## Stream H execution update（2026-04-16 / FB-P2B-01 A3）
+
+### Phase 1 Read
+- 先頭Read: A1/A2/A3の契約リンクを再確認し、A3が参照専用であることを確認する。
+
+### Phase 2 Plan
+- A3はimplementation-ready契約の接続定義のみ扱い、契約変更は受け付けない。
+
+### Phase 3 Execute
+- 回帰観点（非自動確定・復元順序）をA2検証結果から継承して固定する。
+
+### Phase 4 Verify
+- 直列依存 `A1 -> A2 -> A3` を満たす場合のみGo候補とする。
+
+### Phase 5 Proceed
+- 失敗3回上限を適用し、超過時は即停止する。
+

@@ -276,3 +276,20 @@
 5. **Phase 5 Proceed**
    - Go条件（契約一致・検証Pass・停止条件非該当）を満たす場合のみ次レーンへ引き渡す。
 
+## Stream H execution update（2026-04-16 / FB-P2B-02 A2）
+
+### Phase 1 Read
+- 先頭Read: A1/A2/A3を再読し、契約IDキー一致を確認する。
+
+### Phase 2 Plan
+- A2はmock検証責務に限定し、A1契約の拡張・緩和を禁止する。
+
+### Phase 3 Execute
+- 4値制約・順序保持・非自動確定・restore再現を検証軸として固定する。
+
+### Phase 4 Verify
+- 依存順序 `A1 -> A2 -> A3` とFail-fast条件を確認する。
+
+### Phase 5 Proceed
+- 3回失敗で停止し、競合一覧のみ提出する。
+

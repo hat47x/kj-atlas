@@ -320,3 +320,14 @@
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream H execution update（2026-04-16 / FB-P2C-01 A1監査）
+
+- Scope lock: 本更新は契約整合監査のみ（baseline同様）で、A2/A3実装準備・コード変更には踏み込まない。
+- Phase start rule: 各Phase先頭で A1/A2/A3 メモを再Readし、`deterministicTieBreakOrder` と Gate 0 前提を再照合する。
+- Contract audit points:
+  1. `padding > self_intersection > area_delta > vertex_count` の順序固定。
+  2. A2/A3 は契約変更禁止（逸脱時はA1差し戻し）。
+  3. 依存順序は `A1 -> A2 -> A3` を維持。
+- Fail-safe: 契約不整合・未定義競合・3回失敗で停止。
+
