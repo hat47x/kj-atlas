@@ -331,3 +331,24 @@
   3. 依存順序は `A1 -> A2 -> A3` を維持。
 - Fail-safe: 契約不整合・未定義競合・3回失敗で停止。
 
+
+
+## Stream D execution addendum (2026-04-16, independent completion)
+
+### Phase 1) Read（対象3ファイル固定）
+- Read files:
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- Verify: A1/A2/A3 すべてで `RequirementID=RQ-2C-02` と `DecisionQueueRef=DQ-FB-P2C-01` の整合を確認。
+
+### Phase 2) A1契約・tie-break規則固定
+- Fixed I/F（A1 single source for Stream D）:
+  - `deterministicTieBreakOrder=padding>self_intersection>area_delta>vertex_count`
+  - `ContractMutation=forbidden`（追加/省略/並べ替え禁止）
+- Proceed条件: Gate 0 が `approved` の場合のみ A2 へ進行。
+- Block条件: tie-break順序不一致または承認証跡欠落。
+
+### Self-repair guard
+- Plan→Execute→Verify→Proceed を1サイクルとし、自己修復は最大3回。
+- 3回超過時は `Proceed=No` として停止し、A2/A3へ進行しない。

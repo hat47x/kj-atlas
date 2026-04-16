@@ -286,3 +286,27 @@
 - 結果:
   - 全条件を満たし `Proceed=Yes`。
   - Self-Correction 0/3（上限未到達）。
+
+
+## Stream D execution addendum (2026-04-16, independent completion)
+
+### Phase 4) A3実装接続条件固定
+- Start conditions（全件必須）:
+  1. `GateDecision=approved`
+  2. `A2VerifyStatus=Pass`
+  3. `deterministicTieBreakOrder` が固定値と一致
+- Implementation handoff contract:
+  - Input: `gateApprovalRef`, `a2VerifyRef`, `inputHash`, `deterministicTieBreakOrder`
+  - Output: `outputPolygonHash`, `paddingViolationCount`, `tieBreakOrderChanged=false`
+- Stop conditions（1件でも停止）:
+  - `outputPolygonHash drift`
+  - `paddingViolationCount > 0`
+  - `tieBreakOrderChanged=true`
+
+### Phase 5) Verify / Proceed
+- Verify: 上記 Start/Stop 条件を docs-check で照合し、矛盾なしを確認。
+- Proceed: 条件成立時のみ `A3 Proceed=Yes`。未成立時は `Proceed=No`。
+
+### Self-repair guard
+- A3も自己修復は最大3回。
+- 3回超過時は停止し、A2差し戻しまたはA1再承認へエスカレーション。
