@@ -294,3 +294,21 @@ kj-atlas は OSS として、多様な環境で利用される：
 - 監査:
   - 生値は保存せず、`hasStepUp` / `assuranceLevel` / `authAgeBucket` の正規化指標のみ出力可能。
   - 監査ログは safeMode/漏洩防止原則に従い、再識別性を増やす詳細属性を追加しない。
+
+## Stream A CE0/HIL Contract Freeze Alignment (2026-04-16)
+
+### Context
+- review attribution は `CE0-REVIEW-IF` の中核であり、`human_reviewed` 自動昇格禁止の統治境界を維持する必要がある。
+
+### Decision
+- 本書の review state 契約は `unreviewed | human_reviewed` の2値を維持し、AI/worker/APIによる自動昇格を禁止する。
+- `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1` を参照契約として固定し、A2/A3での再定義を禁止する。
+
+### Consequences
+- safeMode後退、unreviewed保護後退、direct write許容が検知された場合は fail-closed。
+- 修復は最大3回、超過時は停止報告（失敗条件 / 影響契約ID / 要承認事項）へ移行する。
+
+### Snapshot Metadata
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Version: `1.0.0`
+- Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`

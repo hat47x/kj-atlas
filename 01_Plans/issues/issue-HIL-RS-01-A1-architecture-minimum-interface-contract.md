@@ -219,3 +219,47 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream A CE0/HIL Approval Ledger (2026-04-16)
+
+### Phase 1 (Read)
+- A1/CE0/HIL governanceの契約ID・判定式・禁止遷移を再読し、想定との差分を照合。
+- 差分結果: 固定値（`schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, freeze flags）は全一致。
+
+### Phase 2 (ADR合意)
+- Context: A1契約はCE0契約と直列依存であり、更新窓口を一箇所に固定する必要がある。
+- Decision: A1は contract pack の唯一正本を維持し、承認ログは本Issueに追記する。
+- Consequences: A2/A3および下流レーンは値の参照のみ許可され、変更要求はA1へ差戻し。
+
+### Phase 3 (Contract Freeze)
+- Freeze対象を再固定:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- ID重複: 0件（CE0/HIL 3 issue照合）。
+
+### Phase 4 (Verify)
+- 安全検証結果:
+  - safeMode後退: 0件
+  - unreviewed保護後退: 0件
+  - direct write許容記述: 0件
+- Self-Correction: 0/3。
+
+### Phase 5 (Record)
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Snapshot Version: `1.0.0`
+- Snapshot Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+- Reference tuple:
+  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+### Approval Log
+
+| Timestamp (UTC) | Phase | Decision | Result |
+| --- | --- | --- | --- |
+| 2026-04-16T00:00:00Z | Phase 2 | A1を唯一正本として固定 | Approved |
+| 2026-04-16T00:00:00Z | Phase 3 | Freeze keys再固定 | Approved |
+| 2026-04-16T00:00:00Z | Phase 4 | Verify gate（safeMode/direct-write） | Pass |
+| 2026-04-16T00:00:00Z | Phase 5 | Snapshot発行 | Recorded |
