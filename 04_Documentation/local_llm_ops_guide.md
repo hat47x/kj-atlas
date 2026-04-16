@@ -153,6 +153,8 @@ CE4運用期間の固定値:
 - 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
 - 契約衝突（同一キーの複数定義）または未定義競合（必要キーの定義欠落）を検知した場合も、回数に関わらず即停止する。
 - 監査4点セット（`query/bundle/proposal/apply`）の欠損は No-Go とし、補完完了まで成功扱いしない。
+- 実行順序は `Plan -> Execute -> Verify -> Proceed` を固定し、順序逆転（Verify前Proceed）を禁止する。
+- CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` の契約検証結果を Proceed 記録へ含める。
 
 ### 4.7 フェイルセーフ停止条件
 

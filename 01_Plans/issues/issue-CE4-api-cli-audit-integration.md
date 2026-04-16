@@ -240,3 +240,10 @@
 - 判定:
   - CE4 契約語彙（同値性/監査4点/dry-run副作用境界/fail-closed）の文書間整合を確認。
   - フェイルセーフ停止条件（3回失敗・前提崩れ・未定義競合）を運用導線へ同期。
+
+## 15) Stream E 継続運用メモ（2026-04-16 / CE2・CE4連携）
+
+- 固定フローは `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` とし、`Plan -> Execute -> Verify -> Proceed` の順序逸脱を禁止する。
+- CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した契約検証を継続する。
+- Verify は自己修復 3 回まで。4 回目相当は実施せず停止し、`Proceed` を実行しない。
+- API/CLI/GUI 同値性契約は `equivalenceKey + bundleHash`（AND）と監査4点セット（`query/bundle/proposal/apply`）を同時充足した場合のみ pass とする。

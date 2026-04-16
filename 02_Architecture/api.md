@@ -241,6 +241,7 @@ CE4 フェイルセーフ（停止条件）:
   - モック hash（`mock:[0-9a-f]{64}`）
 - 形式差により同値性判定・監査手順を分岐させてはならない。
 - CE3未完了時も `mock:<hash>` により CE4 の契約検証を継続可能とする。
+- 運用runbook（`04_Documentation/local_llm_ops_guide.md`）でも `Plan -> Execute -> Verify -> Proceed` の固定順序と同一契約を維持する。
 
 ### 2.7 Polygon Handoff Contract Verify（FB-P0-2A2B2C）
 
