@@ -18,6 +18,8 @@ class ContextQuery(BaseModel):
     scope: Literal["selection", "document"]
     reviewedOnly: bool = True
     safeMode: bool = True
+    allowUnreviewedText: bool = False
+    previewConfirmed: bool = False
 
 
 class ContextQueryValidationResponse(BaseModel):
@@ -25,6 +27,7 @@ class ContextQueryValidationResponse(BaseModel):
 
     query: ContextQuery
     preview: dict[str, object]
+    queryCanonicalHash: str
 
 
 class ContextBundleRequest(BaseModel):
@@ -55,6 +58,7 @@ class ContextBundleResponse(BaseModel):
 
     bundle: ContextBundle
     bundleHash: str
+    queryCanonicalHash: str
 
 
 def _canonical_bundle_hash_payload(bundle: ContextBundle) -> dict[str, object]:
@@ -72,8 +76,30 @@ def _canonical_bundle_hash_payload(bundle: ContextBundle) -> dict[str, object]:
     }
 
 
+def _canonical_query_hash_payload(query: ContextQuery) -> dict[str, object]:
+    return {
+        "targetCardIds": sorted(set(query.targetCardIds)),
+        "depth": query.depth,
+        "scope": query.scope,
+        "reviewedOnly": query.reviewedOnly,
+        "safeMode": query.safeMode,
+        "allowUnreviewedText": query.allowUnreviewedText,
+    }
+
+
+def _sha256_canonical(payload: dict[str, object]) -> str:
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
     query = request.query
+    if query.safeMode and query.allowUnreviewedText:
+        raise ValueError("allowUnreviewedText cannot be enabled when safeMode is true")
+    if not query.previewConfirmed:
+        raise ValueError("preview_required")
+
+    query_hash = _sha256_canonical(_canonical_query_hash_payload(query))
     cards = sorted(request.doc.cards, key=lambda item: item.id)
     include_ids = {card.id for card in cards} if query.scope == "document" else set(query.targetCardIds)
 
@@ -85,7 +111,7 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
 
         reviewed = card.textReviewed is True
         if query.reviewedOnly and not reviewed:
-            excluded.append({"cardId": card.id, "reason": "reviewed_only_filter"})
+            excluded.append({"cardId": card.id, "reason": "unreviewed_filtered"})
             continue
 
         text_value: str | None = card.text
@@ -98,7 +124,5 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
     excluded = sorted(excluded, key=lambda item: (item["cardId"], item["reason"]))
     bundle = ContextBundle(queryId=query.queryId, selectedCards=selected_cards, excludedReasons=excluded)
 
-    canonical_payload = _canonical_bundle_hash_payload(bundle)
-    canonical = json.dumps(canonical_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    bundle_hash = sha256(canonical.encode("utf-8")).hexdigest()
-    return ContextBundleResponse(bundle=bundle, bundleHash=bundle_hash)
+    bundle_hash = _sha256_canonical(_canonical_bundle_hash_payload(bundle))
+    return ContextBundleResponse(bundle=bundle, bundleHash=bundle_hash, queryCanonicalHash=query_hash)
