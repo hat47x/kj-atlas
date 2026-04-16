@@ -49,9 +49,11 @@ Stream G では `operations.md`（参照のみ）同期完了後に本書を更�
 1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
 2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
 3. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
-4. 相互リンク一致（`security.md -> security_operational_guidelines.md -> operations.md -> e2e_testing.md`）
+4. 相互リンク一致（`strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`）
 
 不一致が残る場合は e2e フェーズへ進まずに停止する。D1〜D4 の不整合を検知した場合は即時停止する。
+
+A3 docs同期では `operations.md` を参照のみ（編集禁止）とする。
 
 ### 0.3 セキュリティ文書整合チェック（必須4観点）
 
@@ -59,7 +61,7 @@ security系文書の更新時は、次の4観点を **Verifyで必ず同時確�
 
 1. 用語: `Security Officer / System Owner / Platform Operator` を混在なく使用していること
 2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）を維持していること
-3. 導線: `security.md -> security_operational_guidelines.md -> operations.md` の参照導線が維持されていること
+3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の参照導線が維持されていること
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）が改変されていないこと
 
 

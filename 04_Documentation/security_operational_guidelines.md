@@ -26,7 +26,7 @@
 
 - 役割語彙を `Security Officer / System Owner / Platform Operator` に統一する。
 - D1〜D4（4h承認TTL、最大2h、代理承認なし、48hレビュー+15m/60mSLA）をプロファイル選択時の確認項目として固定する。
-- 導線を `security.md`（基底方針）と `operations.md`（実行）へ明示する。
+- 導線を `strict_mode_exception_approval_flow.md`（正本）-> `security.md`（基底方針）-> `security_operational_guidelines.md`（本書）-> `e2e_testing.md`（検証）として明示する。
 
 ### Consequences
 
@@ -39,7 +39,7 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 
 1. 用語: `Security Officer / System Owner / Platform Operator` を統一している
 2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）が崩れていない
-3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> operations.md` の順で参照可能
+3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の順で参照可能
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）に差分がない
 
 ### 0.3 Stream D 実行メモ（security docs-only）
@@ -105,6 +105,8 @@ Stream D で本書を更新する場合、編集対象は `security.md` / `secur
 - D4: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
 
 運用時は上記4点を同時に満たすこと。満たせない場合は `StoppedForClarification` 扱いで停止し、再承認を行う。
+
+A3 docs同期では `operations.md` は参照のみ（編集禁止）とする。
 
 ## 7. 関連導線（読む順序）
 

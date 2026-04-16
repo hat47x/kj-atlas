@@ -34,6 +34,17 @@
 
 ---
 
+## 1.0.1 DOC-OPS-02 同期順序（固定）
+
+AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
+
+1. `02_Architecture/strict_mode_exception_approval_flow.md`（本書 / 正本）
+2. `04_Documentation/security.md`
+3. `04_Documentation/security_operational_guidelines.md`
+4. `04_Documentation/e2e_testing.md`
+
+`04_Documentation/operations.md` は実行runbookとして参照対象に含まれるが、A3 docs同期では更新対象外とする。
+
 ## 1.1 ミニ用語集（この文書で使う言葉）
 
 - **strict**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` の状態。未登録主体を拒否する。

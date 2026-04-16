@@ -148,17 +148,11 @@ Proceed 条件:
 - 3回超過時は停止し、未解決点を質問として明示する。
 
 
-## Stream A Override Note (2026-04-13, Critical Path)
+## Stream G A3 Execution Log (2026-04-16)
 
-- 本issueは Stream A クリティカルパス契約の下流 planning 参照として扱う。
-- 本タスクの編集対象は `01_Plans/issues/*` に限定し、`02_Architecture/*` / `04_Documentation/*` の実体編集には進まない。
-
-### A3 Planning Contract (read-only)
-- 参照必須契約ID:
-  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-  - `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
-  - `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`
-- Proceed gate: `A1 Done && pendingDecisionQueueCount==0`
-- 禁止事項: Pending bypass / A3での契約再定義 / SafeMode後退 / 未承認確定化。
-- 差戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-
+- Phase 1 Read: D1〜D4 / 役割語彙 / 状態語彙 / 導線（architecture -> security -> guidelines -> e2e）を再確認。
+- Phase 2 ADR CDC: 既存決定（AUTH-OPS-03固定値）で充足し、ADR更新不要を確認。
+- Phase 3 Plan: AC/DoD を再固定し、`operations.md` は参照のみ（編集禁止）を明示。
+- Phase 4 Execute: `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` の canonical 同期を実施。
+- Phase 5 Verify: docs-check + `rg` + `git diff --check` を実行し、D1〜D4不整合0件を確認。
+- Phase 6 Proceed: fail-safe条件（D1〜D4不整合 / safeMode後退 / 許可外編集 / 3回修復超過）が非成立で継続可能。
