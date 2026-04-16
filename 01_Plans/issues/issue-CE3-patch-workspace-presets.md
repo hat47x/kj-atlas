@@ -297,3 +297,36 @@
 
 - 自己修復2回で収束（上限3回未満）。
 - 未完了の後続は CE4（local監査ログの document監査ログ統合）のまま据え置き。
+
+## 14) Stream CE3 timestamp alignment notes (2026-04-16)
+
+### Phase 1 Read
+
+- `ce3_patch_workspace.ts` / `PatchWorkspacePanel.tsx` / CE3 unit test / CE3 E2E観点を再読し、rollback監査ログの時刻が panel callback と別生成になりうる点を確認。
+
+### Phase 2 Plan（AC/DoD不足提案）
+
+- AC補強提案:
+  - rollback監査ログ `at` は UI callback と同一時刻で記録されること（観測容易性の向上）。
+- DoD補強提案:
+  - domain unit で rollback `at` の固定値注入を検証し、時刻の二重生成を回避したことを確認する。
+
+### Phase 3 Execute（patch workspace/preset/rollback導線）
+
+- `rollbackWorkspaceDecision(state, now?)` に `now` 引数（省略時は従来どおり現在時刻）を追加。
+- `PatchWorkspacePanel` の rollback導線から同一 `now` を渡し、UI callback と監査ログの時刻を揃える。
+- domain unit に rollback監査ログ `at` の一致アサーションを追加。
+
+### Phase 4 Verify
+
+- `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` → pass
+- 1回目 `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` → fail（browser binary不足）
+- 修復1 `npm --prefix 03_Implement/frontend exec playwright install chromium` → pass
+- 2回目 e2e → fail（`libatk-1.0.so.0` 不足）
+- 修復2 `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` → pass
+- 3回目 e2e → pass
+
+### Phase 5 Proceed（未達明示）
+
+- CE3スコープ内の未達はなし。
+- 範囲外の継続課題: local監査ログの document監査ログ統合（CE4）。

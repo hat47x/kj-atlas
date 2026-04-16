@@ -138,7 +138,7 @@ export function PatchWorkspacePanel({
     }
     const now = new Date().toISOString();
     setWorkspaceState((previous) => {
-      const next = rollbackWorkspaceDecision(previous);
+      const next = rollbackWorkspaceDecision(previous, now);
       if (next.phase !== "error") {
         const restoredCandidateIds = Object.keys(next.decisions).filter((candidateId) => {
           const before = previous.decisions[candidateId] ?? "hold";

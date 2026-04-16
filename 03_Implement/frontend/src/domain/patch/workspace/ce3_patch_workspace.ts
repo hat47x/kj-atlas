@@ -191,7 +191,7 @@ export function commitWorkspaceDecision(
   };
 }
 
-export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState {
+export function rollbackWorkspaceDecision(state: WorkspaceState, now: string = new Date().toISOString()): WorkspaceState {
   const snapshot = state.rollbackStack[state.rollbackStack.length - 1];
   if (!snapshot) {
     return {
@@ -201,7 +201,6 @@ export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState
     };
   }
 
-  const rollbackTimestamp = new Date().toISOString();
   const rollbackEntries: WorkspaceAuditEntry[] = [];
   const candidateIds = new Set([...Object.keys(state.decisions), ...Object.keys(snapshot.decisions)]);
   for (const candidateId of candidateIds) {
@@ -214,7 +213,7 @@ export function rollbackWorkspaceDecision(state: WorkspaceState): WorkspaceState
       candidateId,
       from,
       to,
-      at: rollbackTimestamp,
+      at: now,
       reason: "rollback",
     });
   }
