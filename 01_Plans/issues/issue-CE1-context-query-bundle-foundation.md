@@ -186,6 +186,7 @@ Error code は次を固定し、文言差分を許可しない。
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 契約語彙の欠落・重複がなく、validatorが成功する。
+  - `Contract ID collision=0` / `safeMode後退=0` を同時充足し、どちらかが崩れた場合は即停止する。
   - A2 stub で同一 canonical query を3回再実行し、`queryCanonicalHash` と `bundleHash` が 3/3 一致する。
   - `previewConfirmed=false` 呼び出しが常に `422 preview_required` で拒否される。
   - 未定義キー混入時に常に `400 unknown_contract_key` で拒否される。
@@ -224,6 +225,7 @@ Error code は次を固定し、文言差分を許可しない。
 - `previewConfirmed=false` は常に拒否（`422 preview_required`）とする。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` の除外理由を監査に残す。
 - CE2/CE4 は CE1 完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で検証を継続する。
+- CE2/CE4 への引き渡しは **read-only handoff** とし、契約更新は CE1 再起票でのみ受け付ける。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
@@ -264,4 +266,3 @@ Error code は次を固定し、文言差分を許可しない。
 | CE4 audit trail | 監査キー `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` | 監査キー欠落、`dryRun=true` で副作用発生 |
 
 CE2/CE4 は上表を mock I/F 前提で先行検証し、CE1実装完了待ちを行わない。
-

@@ -95,6 +95,7 @@ export type ContextBundleV1 = {
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
 - CE1 v1 は **最小I/F固定** とし、`ContextQueryV1` / `ContextBundleV1` への未定義キー追加を禁止する（拡張は v2 でのみ許可）。
 - CE2/CE4 は backend 実装完了待ちを行わず、mock `ContextQuery/ContextBundle` 契約で先行検証する（mock-first）。
+- CE2/CE4 への連携は read-only handoff とし、契約更新は CE1 再起票でのみ許可する。
 
 CE1 A2 stub contract（検証専用）:
 

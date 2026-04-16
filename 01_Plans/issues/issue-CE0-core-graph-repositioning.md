@@ -78,6 +78,7 @@
 
 - Contract ID collision=0 / 語彙 collision=0 / SafeMode後退=0 を同時成立させる。
 - 自己修復は最大3回まで。4回目相当は即停止する。
+- Verify結果は `collision=0` と `safeMode後退=0` を明示記録し、どちらかが崩れた時点で Proceed を禁止する。
 
 ### Phase 5 Workflow（Plan -> Execute -> Verify -> Proceed）
 
@@ -212,6 +213,7 @@
 - Graph責務: `WorkingGraph`（探索）/`ContextProjectionGraph`（read-only）/`ConsensusGraph`（合意済み）を固定。
 - 遷移責務: `Working -> Consensus = patch + approval only`。
 - 安全責務: `mode=autonomous` でも proposal-only、auto-apply禁止、review自動昇格禁止。
+- CE2/CE4への引き渡しは **read-only** を固定し、契約変更要求は CE0/CE1 に差し戻して再起票する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
