@@ -160,7 +160,7 @@ CE3 Verify の自己修復順序（最大3回）:
 
 #### CE3 UI状態機械 AC/DoD（Stream F frontend）
 
-CE3 Frontend の状態機械（`idle -> evaluating -> rolled_back` と候補単位の `adopt/hold/reject`）に対する最小AC/DoDを次で固定する。
+CE3 Frontend の状態機械（`idle / decision_recorded / preset_replayed / rollback_ready / error` と候補単位の `adopt/hold/reject`）に対する最小AC/DoDを次で固定する。
 
 - AC（受入条件）
   - `ce3-decision-state` が phase を常に可視化できる。

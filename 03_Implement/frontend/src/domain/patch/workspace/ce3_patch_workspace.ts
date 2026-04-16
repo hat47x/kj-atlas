@@ -220,7 +220,7 @@ export function rollbackWorkspaceDecision(state: WorkspaceState, now: string = n
 
   return {
     ...state,
-    decisions: snapshot.decisions,
+    decisions: { ...snapshot.decisions },
     selectedCandidateId: snapshot.selectedCandidateId,
     rollbackStack: state.rollbackStack.slice(0, -1),
     auditLog: [...state.auditLog, ...rollbackEntries],

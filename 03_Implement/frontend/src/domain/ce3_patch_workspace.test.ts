@@ -81,6 +81,19 @@ describe("ce3_patch_workspace", () => {
     });
   });
 
+  it("clones snapshot decisions on rollback to keep state immutable", () => {
+    const initial = buildInitialWorkspaceState([
+      { id: "cand-a", label: "cand-a" },
+      { id: "cand-b", label: "cand-b" },
+    ]);
+    const adopted = commitWorkspaceDecision(initial, "cand-a", "adopt", "2026-04-16T00:00:00.000Z");
+    const rejected = commitWorkspaceDecision(adopted, "cand-b", "reject", "2026-04-16T00:00:01.000Z");
+    const rolledBack = rollbackWorkspaceDecision(rejected, "2026-04-16T00:00:02.000Z");
+
+    expect(rolledBack.decisions).not.toBe(adopted.decisions);
+    expect(rolledBack.decisions).toEqual(adopted.decisions);
+  });
+
   it("does not add extra audit transitions when the same decision is re-applied", () => {
     const initial = buildInitialWorkspaceState([{ id: "cand-a", label: "cand-a" }]);
     const adopted = commitWorkspaceDecision(initial, "cand-a", "adopt", "2026-04-11T00:00:00.000Z");

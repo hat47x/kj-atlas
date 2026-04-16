@@ -330,3 +330,33 @@
 
 - CE3スコープ内の未達はなし。
 - 範囲外の継続課題: local監査ログの document監査ログ統合（CE4）。
+
+## 15) Stream F immutability + E2E doc sync notes (2026-04-16)
+
+### Phase 1 Read（差分同期）
+
+- `ce3_patch_workspace.ts` / `ce3_patch_workspace.test.ts` / `04_Documentation/e2e_testing.md` を再読し、rollback 復旧時に `snapshot.decisions` を参照渡ししている点と、E2E文書の状態機械表記差分を確認。
+
+### Phase 2 Plan（AC/DoD確認）
+
+- AC追加は不要（既存AC内で「可逆操作」「監査遷移」「Core/Consensus非改変」を満たす）。
+- DoD補強:
+  - rollback 復旧時の decisions をコピーして不変性を維持する。
+  - domain unit に rollback 復旧オブジェクトの参照分離アサーションを追加する。
+  - CE3 E2E文書の状態機械表記を実装値へ同期する。
+
+### Phase 3 Execute（Frontend/E2E差分）
+
+- `rollbackWorkspaceDecision` の戻り値 `decisions` を `{ ...snapshot.decisions }` で複製して返すよう更新。
+- domain unit に「rollback 復旧後の decisions が snapshot と同値かつ別参照」であることを追加検証。
+- `04_Documentation/e2e_testing.md` の CE3状態機械表記を `idle / decision_recorded / preset_replayed / rollback_ready / error` に修正。
+
+### Phase 4 Verify
+
+- `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` → pass
+- `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` → pass
+
+### Phase 5 Proceed
+
+- CE3スコープ内の未達はなし。
+- 継続課題（範囲外）は据え置き: local監査ログの document監査ログ統合（CE4）。
