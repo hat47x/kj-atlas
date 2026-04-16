@@ -540,3 +540,23 @@
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream H execution update（2026-04-16 / FB-P2B-01 A1）
+
+### Phase 1 Read
+- 先頭Read: `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`
+- 判定: `ContractID=CTR-2B-01-CANDIDATE-GROUP-V1` を三点照合の基準として固定。
+
+### Phase 2 Plan
+- A1は契約凍結のみを扱い、A2/A3へ参照専用で引き渡す。
+
+### Phase 3 Execute
+- 契約ID・必須フィールド・比較キーを維持し、契約拡張要求は差し戻し対象とする。
+
+### Phase 4 Verify
+- 直列依存 `A1 -> A2 -> A3` と Gate条件を確認する。
+
+### Phase 5 Proceed
+- Go条件: 契約整合が維持され、停止条件に非該当。
+- Stop条件: 契約不整合/未定義競合/3回失敗で停止。
+

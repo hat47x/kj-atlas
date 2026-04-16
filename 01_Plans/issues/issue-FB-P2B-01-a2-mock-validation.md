@@ -289,3 +289,20 @@
 5. **Phase 5 Proceed**
    - Go条件（契約一致・検証Pass・停止条件非該当）を満たす場合のみ次レーンへ引き渡す。
 
+## Stream H execution update（2026-04-16 / FB-P2B-01 A2）
+
+### Phase 1 Read
+- 先頭Read: A1/A2/A3を再読し、`ContractID / DependsOnContractID / ReferenceContractID` を照合する。
+
+### Phase 2 Plan
+- A2はmock/fixture/stub検証に限定し、A1契約の再定義を行わない。
+
+### Phase 3 Execute
+- 非自動確定・順序保持・再読込復元を必須観点として固定する。
+
+### Phase 4 Verify
+- `A1 -> A2 -> A3` 直列依存と停止条件（契約逸脱/未定義競合）を確認する。
+
+### Phase 5 Proceed
+- self-correctionは最大3回。3回超過時は停止して競合一覧のみ提出。
+

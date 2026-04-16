@@ -539,3 +539,22 @@
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream H execution update（2026-04-16 / FB-P2B-02 A1）
+
+### Phase 1 Read
+- 先頭Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
+- 判定: `CTR-2B-02-DECISION-LOG-V1` の三点一致を基準固定。
+
+### Phase 2 Plan
+- A1契約凍結を維持し、A2/A3は参照専用で直列進行する。
+
+### Phase 3 Execute
+- action 4値制約・append/list/restore I/F・非自動確定境界を変更禁止で維持する。
+
+### Phase 4 Verify
+- `A1 -> A2 -> A3` 依存逆転なしを確認する。
+
+### Phase 5 Proceed
+- self-correctionは最大3回、超過時は停止。
+

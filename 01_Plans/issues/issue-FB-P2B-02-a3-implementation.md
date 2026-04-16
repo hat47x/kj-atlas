@@ -288,3 +288,20 @@
 5. **Phase 5 Proceed**
    - Go条件（契約一致・検証Pass・停止条件非該当）を満たす場合のみ次レーンへ引き渡す。
 
+## Stream H execution update（2026-04-16 / FB-P2B-02 A3）
+
+### Phase 1 Read
+- 先頭Read: A1/A2/A3の契約整合とA2検証結果を再確認する。
+
+### Phase 2 Plan
+- A3は契約準拠の実装接続定義のみ扱い、契約再定義禁止を維持する。
+
+### Phase 3 Execute
+- append/restore再現性と非自動確定境界を回帰前提として固定する。
+
+### Phase 4 Verify
+- `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1` の単一参照を確認する。
+
+### Phase 5 Proceed
+- self-correctionが3回を超えた場合は停止し、NoGoとして報告する。
+

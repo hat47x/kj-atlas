@@ -405,3 +405,11 @@
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream H execution update（2026-04-16 / FB-P2B baseline監査）
+
+- Scope lock: baseline は契約整合監査のみに限定し、実装・共有統合ファイル・他レーン仕様は変更しない。
+- Serial rule: `FB-P2B-01` / `FB-P2B-02` ともに `A1 -> A2 -> A3` を直列固定し、逆順・並列着手を禁止。
+- Phase start rule: 各Phase先頭で `A1/A2/A3` と本baselineを再Readして契約キー整合を確認する。
+- Fail-safe: 契約不整合・未定義競合・停止条件該当時は即停止し、self-correctionは最大3回まで。
+
