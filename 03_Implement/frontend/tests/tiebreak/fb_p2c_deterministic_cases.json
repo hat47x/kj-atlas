@@ -1,0 +1,89 @@
+[
+  {
+    "fixtureId": "case-a-repeatable",
+    "inputHash": "in-a-001",
+    "seed": 77,
+    "candidates": [
+      {
+        "candidateId": "poly-a",
+        "outputPolygonHash": "out-a",
+        "paddingViolationCount": 0,
+        "metrics": {
+          "padding": 0,
+          "self_intersection": 0,
+          "area_delta": 2,
+          "vertex_count": 4
+        }
+      },
+      {
+        "candidateId": "poly-b",
+        "outputPolygonHash": "out-b",
+        "paddingViolationCount": 0,
+        "metrics": {
+          "padding": 0,
+          "self_intersection": 0,
+          "area_delta": 3,
+          "vertex_count": 4
+        }
+      }
+    ]
+  },
+  {
+    "fixtureId": "case-b-boundary",
+    "inputHash": "in-b-001",
+    "seed": 11,
+    "candidates": [
+      {
+        "candidateId": "tri-a",
+        "outputPolygonHash": "out-tri-a",
+        "paddingViolationCount": 0,
+        "metrics": {
+          "padding": 0,
+          "self_intersection": 0,
+          "area_delta": 1,
+          "vertex_count": 3
+        }
+      },
+      {
+        "candidateId": "tri-b",
+        "outputPolygonHash": "out-tri-b",
+        "paddingViolationCount": 0,
+        "metrics": {
+          "padding": 0,
+          "self_intersection": 0,
+          "area_delta": 1,
+          "vertex_count": 4
+        }
+      }
+    ]
+  },
+  {
+    "fixtureId": "case-c-padding-priority",
+    "inputHash": "in-c-001",
+    "seed": 19,
+    "candidates": [
+      {
+        "candidateId": "padding-safe",
+        "outputPolygonHash": "out-safe",
+        "paddingViolationCount": 0,
+        "metrics": {
+          "padding": 0,
+          "self_intersection": 1,
+          "area_delta": 10,
+          "vertex_count": 8
+        }
+      },
+      {
+        "candidateId": "padding-broken",
+        "outputPolygonHash": "out-broken",
+        "paddingViolationCount": 1,
+        "metrics": {
+          "padding": 1,
+          "self_intersection": 0,
+          "area_delta": 0,
+          "vertex_count": 3
+        }
+      }
+    ]
+  }
+]
