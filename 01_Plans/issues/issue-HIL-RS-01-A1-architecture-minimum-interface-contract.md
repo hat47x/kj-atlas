@@ -263,3 +263,42 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 | 2026-04-16T00:00:00Z | Phase 3 | Freeze keys再固定 | Approved |
 | 2026-04-16T00:00:00Z | Phase 4 | Verify gate（safeMode/direct-write） | Pass |
 | 2026-04-16T00:00:00Z | Phase 5 | Snapshot発行 | Recorded |
+
+## Stream A Execution Record (2026-04-16, Critical Path / A1 Contract Freeze)
+
+### Phase 1: Read
+- 実装開始直前に本ファイルと `issue-HIL-RS-02-A1-governance-contract-hardening.md` を再Readし、想定差分なしを確認。
+- 変更範囲は Stream A 許可ファイル2件のみに限定。
+
+### Phase 2: ADR CDC
+- Context: A1契約が複線化すると A2/A3 の Open 判定が再現不能になる。
+- Decision: Unlock rule を唯一式として維持し、固定識別子（contract IDs / schemaVersion / overridePolicy）を不変で固定。
+- Consequences: 下流は read-only handoff のみ許可。契約変更要求は必ず A1 へ差戻し。
+
+### Phase 3: Plan（AC/DoD不足補完ドラフト→合意）
+- AC補完: Go/NoGo を文章と条件式の両方で再現可能にする。
+- DoD補完: `Plan -> Execute -> Verify -> Proceed/Stop` の順序を本記録に固定。
+- 合意状態: `agreementStatus=agreed`（本Issue内で確定）。
+
+### Phase 4: Execute
+- Unlock rule（一意）を維持: `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`。
+- 固定識別子を不変で維持:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+### Phase 5: Verify
+- Verifyコマンド（Stream A許可範囲のみ）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg -n 'a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|Pending -> Approved|Pending -> Rejected' 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- Self-Correction は最大3回。4回目相当は即停止。
+
+### Phase 6: Proceed / Stop
+- Go（文章）: A1がDoneでDecision Queueが空、かつ固定識別子が完全一致している場合のみ Proceed。
+- Go（条件式）: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- NoGo（条件式）: `NoGo = !Go`
+- Stop条件: 3回超過、前提崩壊、未定義競合、固定識別子不一致。
+
