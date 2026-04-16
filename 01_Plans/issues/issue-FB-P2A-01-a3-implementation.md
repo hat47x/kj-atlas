@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream E（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -19,7 +19,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream E）
+## Phase management（Stream B）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
 - Phase 2: A1契約明確化（CDC明文化）
@@ -130,7 +130,7 @@
 | `M1..M4` | A2 mockCaseId | A3 verification checklist |
 | `ownerOfFix` | A2 failure routing | A3 backlog split (A1/A2/A3) |
 
-## A3 implementation connection guard（Stream E / Phase 4）
+## A3 implementation connection guard（Stream B / Phase 4）
 
 - 着手条件（Start）:
   - A1契約ロックが有効。
@@ -150,7 +150,7 @@
   - `issue-FB-P2A-01-a3-implementation.md`
 
 
-## Stream E strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -158,27 +158,36 @@
 - 不足監査: AC/DoD/停止条件/handoff条件。
 
 ### Phase 2 A1契約明確化（CDC明文化）
-- Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を固定対象として再確認する。
+- Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を**read-only参照**で固定対象として再確認する。
 - Execute: 契約本文の再定義は行わず、固定I/Fの一致確認のみ実施する。
 - Verify: A1→A2→A3依存の逆転・並列前提・契約ドリフトがないことを確認する。
-- Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す。
+- Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す（契約値の推測補完は禁止）。
 
 ### Phase 3 A2モック検証計画更新
 - Plan: M1..M4（正常/異常）と責務分離（A1/A2/A3）を再確認する。
 - Execute: handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として扱う。
 - Verify: GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）の整合を確認する。
-- Proceed: 判定不一致または責務未確定時は停止し、A2へ差し戻す。
+- Proceed: 判定不一致または責務未確定時は停止し、Decision Queueへ返却してA2へ差し戻す。
 
 ### Phase 4 A3実装準備条件定義
 - Plan: 実装入口は契約参照のみで開始できる条件を確認する。
 - Execute: Plan→Execute→Verify→Proceed を固定順序で適用し、実装先行を禁止する。
 - Verify: AC/DoD不足を検知した場合は `gapType` と `agreementStatus` を用いたドラフト提案を先行し、`agreementStatus=agreed` まで実行しない。
-- Proceed: 合意済み条件と停止条件が同時に満たされる場合のみ下流へ引き渡す。
+- Proceed: 合意済み条件と停止条件が同時に満たされる場合のみ下流へ引き渡し、未解決はDecision Queueへ返却する。
 
 ### Phase 5 Verify
 - docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
+
+
+## Stream B lane guard（FB-P2A only）
+
+- 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
+- Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
+- A1契約値は read-only 参照のみ。未定義値を推測で補完しない。
+- モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
+- 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
 
 ## Validation plan
 
