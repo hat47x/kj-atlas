@@ -282,3 +282,26 @@
 - 再Read: Verify結果とスコープ逸脱の有無を再確認。
 - 判定: **Ready**（docs-only、許可範囲内、停止条件なし）。
 - 継続条件: 後続差分でも同じ5Phase + 再Read + 修復上限3回を維持する。
+
+## Stream J execution record（2026-04-16 / serial lane）
+
+### Phase 1 Read
+- 本Issue本文の Requirement meta I/F / Acceptance / Validation / 直近のPhase記録を再読し、分類が `Improve external` でFixed済みであることを確認。
+- Stream I との分離を維持するため、対象は **issue-doc-ops-05-09-04doc-local-llm-ops-guide.md のみ** とし、他ストリーム専有ファイルは編集しない。
+
+### Phase 2 Plan
+- 実行順序を `Read → Plan → Execute → Verify → Proceed` に固定。
+- 失敗時の自己修復は最大3回までとし、4回目相当は `StoppedForClarification` で停止する。
+
+### Phase 3 Execute
+- Open化準備に必要な運用ルール（直列実行・競合回避・停止条件）を本セクションに追記。
+- スコープはIssueメモ整備に限定し、`04_Documentation/*` の本文改稿は行わない。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `git diff --check`
+- 判定基準: 体裁崩れなし、必須メタ欠落なし、Stream I との相互編集なし。
+
+### Phase 5 Proceed
+- 判定: **Ready（Open可能）**。
+- 継続ルール: 後続更新でも同じ5Phaseを維持し、修復回数上限（3回）を超えた場合は停止して保留化する。
