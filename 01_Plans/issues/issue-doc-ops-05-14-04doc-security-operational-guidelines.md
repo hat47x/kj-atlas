@@ -355,3 +355,25 @@
   - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/security_operational_guidelines.md 01_Plans/documentation_quality.md`
   - `git diff --check`
 - 自己修復ポリシー: 不整合は最大3回まで修復し、4回目相当は停止してブロッカー化する。
+
+## 18) Phase 1-5 rerun（2026-04-16 / security mandatory verify）
+
+### Phase 1 Read
+- 各Phase開始時に `security_operational_guidelines.md` / `security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` を再Read。
+
+### Phase 2 Plan
+- docs-only / scope-locked で実施し、承認フロー正本の再定義を回避。
+
+### Phase 3 Execute
+- Classification=Improve external を維持し、判断ガイド責務に限定して整備。
+
+### Phase 4 Verify（必須4観点）
+1. 語彙: `Security Officer / System Owner / Platform Operator`
+2. 役割: 2者承認 + Platform Operator実行責務分離
+3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> operations.md`
+4. 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
+- 実施コマンド: `rg` / `git diff --check`
+- 自己修復上限は3回。
+
+### Phase 5 Proceed
+- 判定: **Ready**。4回目相当は `StoppedForClarification` で停止。

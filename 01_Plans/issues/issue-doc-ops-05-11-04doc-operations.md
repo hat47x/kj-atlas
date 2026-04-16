@@ -360,3 +360,22 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
   - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/operations.md 01_Plans/documentation_quality.md`
   - `git diff --check`
 - 自己修復ポリシー: 不整合は最大3回まで修復し、4回目相当は停止してブロッカー化する。
+
+## 17) Phase 1-5 rerun（2026-04-16 / scope-locked）
+
+### Phase 1 Read
+- 開始時に `operations.md` / `security.md` / `security_operational_guidelines.md` / `strict_mode_exception_approval_flow.md` を再Readし、語彙・導線・D1〜D4の差分有無を確認。
+
+### Phase 2 Plan
+- 編集許可範囲（Issue本文 + Scopeファイル）に限定し、docs-only で実施。
+
+### Phase 3 Execute
+- operations を runbook責務に限定し、承認フロー正本の再定義を行わない方針を追記。
+
+### Phase 4 Verify
+- `rg -n "Phase 1-5|Security Officer|System Owner|Platform Operator|D1|D2|D3|D4" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+- `git diff --check`
+- 自己修復上限は3回。
+
+### Phase 5 Proceed
+- 判定: **Ready**。修復4回目相当は `StoppedForClarification` で停止。

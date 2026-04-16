@@ -920,3 +920,11 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## 0.8 Phase 1-5 実行記録（2026-04-16 / DOC-OPS-05-11）
+
+- Phase 1 Read: 開始時に `operations.md` / `security.md` / `security_operational_guidelines.md` / `strict_mode_exception_approval_flow.md` を再Readし、役割語彙・導線・固定値の差分有無を確認。
+- Phase 2 Plan: docs-only での改善に限定し、公開境界（Audience/Goal/Non-goal/Public boundary）を維持する計画を固定。
+- Phase 3 Execute: 運用runbook責務に限定して追記し、承認フロー正本の再定義は行わない。
+- Phase 4 Verify: `rg` と `git diff --check` で体裁・導線・語彙整合を確認。自己修復上限は3回。
+- Phase 5 Proceed: 判定は **Ready**。4回目相当の修復が必要になった場合は **StoppedForClarification** で停止する。

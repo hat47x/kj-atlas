@@ -279,3 +279,22 @@
   - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/release.md 01_Plans/documentation_quality.md`
   - `git diff --check`
 - 自己修復ポリシー: 不整合は最大3回まで修復し、4回目相当は停止してブロッカー化する。
+
+## 17) Phase 1-5 rerun（2026-04-16 / scope-locked）
+
+### Phase 1 Read
+- 開始時に `release.md` / `operations.md` / `security.md` / `strict_mode_exception_approval_flow.md` を再Readし、公開境界と参照導線を確認。
+
+### Phase 2 Plan
+- 編集許可範囲（Issue本文 + Scopeファイル）のみを対象に、docs-only で実施。
+
+### Phase 3 Execute
+- Classification=Improve external を維持し、公開リリース手順の再現性維持を明記。
+
+### Phase 4 Verify
+- `rg -n "Phase 1-5|Improve external|Public boundary|Ready" 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md 04_Documentation/release.md`
+- `git diff --check`
+- 自己修復上限は3回。
+
+### Phase 5 Proceed
+- 判定: **Ready**。修復4回目相当は `StoppedForClarification` で停止。

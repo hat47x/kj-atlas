@@ -579,3 +579,16 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## 0.4 Phase 1-5 実行記録（2026-04-16 / DOC-OPS-05-13）
+
+- Phase 1 Read: 各Phase開始時に `security.md` / `security_operational_guidelines.md` / `operations.md` / `strict_mode_exception_approval_flow.md` を再Read。
+- Phase 2 Plan: docs-only かつ基底セキュリティ方針に限定し、承認フロー仕様の再定義を禁止。
+- Phase 3 Execute: 公開境界を維持しつつ、security系必須4観点（語彙・役割・導線・固定値）を同期。
+- Phase 4 Verify（必須）:
+  - 語彙: `Security Officer / System Owner / Platform Operator`
+  - 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> operations.md`
+  - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
+  - 実施コマンド: `rg` と `git diff --check`
+- Phase 5 Proceed: 判定は **Ready**。Verify不一致が3回で収束しない場合は **StoppedForClarification**。
