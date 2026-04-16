@@ -9,6 +9,11 @@
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
 - Expected verification level: `docs-check`
 
+## Dependencies
+
+- DependsOn: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md` / `01_Plans/issues/issue-FB-P2A-01-a2-mock-validation.md`
+- Unblocks: downstream implementation lane only（no contract re-definition）
+- Gate/Blocker: Ready when A1 contract lock + A2 validation ledger are complete; Blocked on contract mismatch, missing mockCase, or unresolved ownerOfFix.
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2A-01`

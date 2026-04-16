@@ -10,6 +10,11 @@
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
 - Expected verification level: `docs-check`
 
+## Dependencies
+
+- DependsOn: none（A1 contract root）
+- Unblocks: issue-FB-P2B-01-a2-mock-validation.md / issue-FB-P2B-01-a3-implementation.md
+- Gate/Blocker: Ready when ContractID・Required fields・Invariants・ContractLinks are Fixed; Blocked when contract drift or DecisionStatus=Pending.
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2B-01`
