@@ -270,3 +270,24 @@
   - `tests/tiebreak` fixture と integration test に再現条件を固定化。
 - Cycle guard:
   - Self-Correction 0/3。
+
+
+## Stream D execution addendum (2026-04-16, independent completion)
+
+### Phase 3) A2モック検証・QA証跡固定（モック依存切断）
+- Mock dependency cut policy:
+  - 実装未完でも、固定I/F + fixture + seed で検証を先行。
+  - 実装詳細（関数名/ライブラリ/最適化手順）への依存を禁止。
+- Fixed QA keys:
+  - `inputHash`, `seed`, `appliedTieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`
+- Pass criteria（全件必須）:
+  1. 同一 `inputHash` + 同一 `seed` を3回反復し、`outputPolygonHash` が3/3一致。
+  2. `paddingViolationCount == 0`。
+  3. `appliedTieBreakOrder == padding>self_intersection>area_delta>vertex_count`。
+- Evidence lock:
+  - `A2VerifyStatus=Pass|Fail`
+  - `A2EvidenceRef`（再現ログ参照ID）
+
+### Self-repair guard
+- Verify失敗時はA2内で最大3回まで自己修復。
+- 3回超過時は `A2 Verify=Unapproved` を固定し、A3 Proceed を禁止。
