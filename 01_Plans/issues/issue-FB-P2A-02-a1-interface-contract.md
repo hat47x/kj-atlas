@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream E（FB-P2A planning memo exclusive）
+- Owner: Stream G（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -25,7 +25,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream E）
+## Phase management（Stream G）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
 - Phase 2: A1契約明確化（CDC明文化）
@@ -152,7 +152,7 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream E strict serial protocol（Phase 1→5）
+## Stream G strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -181,6 +181,14 @@
 - docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
+
+## Stream G execution override（FB-P2A A1→A2→A3）
+
+- 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
+- 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
+- 各 Phase 開始時に A1/A2/A3 の3ファイルを再Readしてから着手する。
+- 実行順序は **Plan→Execute→Verify→Proceed** を固定し、順序逆転時は停止する。
+- Self-correction は最大3回とし、3回失敗で停止・報告する。
 
 ## Validation plan
 

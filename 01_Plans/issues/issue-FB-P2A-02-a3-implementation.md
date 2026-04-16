@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream B（FB-P2A planning memo exclusive）
+- Owner: Stream G（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
@@ -24,7 +24,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream G）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
 - Phase 2: A1契約明確化（CDC明文化）
@@ -152,7 +152,7 @@
   - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
 
 
-## Stream B strict serial protocol（Phase 1→5）
+## Stream G strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -183,13 +183,21 @@
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
 
-## Stream B lane guard（FB-P2A only）
+## Stream G lane guard（FB-P2A only）
 
 - 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
 - Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
 - A1契約値は read-only 参照のみ。未定義値を推測で補完しない。
 - モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
 - 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
+
+## Stream G execution override（FB-P2A A1→A2→A3）
+
+- 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
+- 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
+- 各 Phase 開始時に A1/A2/A3 の3ファイルを再Readしてから着手する。
+- 実行順序は **Plan→Execute→Verify→Proceed** を固定し、順序逆転時は停止する。
+- Self-correction は最大3回とし、3回失敗で停止・報告する。
 
 ## Validation plan
 
