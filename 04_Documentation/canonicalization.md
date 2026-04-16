@@ -119,3 +119,9 @@
 ### Phase 5: Proceed（対象ファイル再読）
 - 本ファイルを再読したうえで状態を判定し、`Ready / Hold / Needs-decision` を記録。
 - 判定: **Ready**（現時点で保留なし）。
+
+## Stream G serial checkpoint（2026-04-16）
+
+- Classification: **Move internal**（公開は概要stubを維持）。
+- docs-only gate: 本書は公開境界の説明に限定し、内部運用/契約の詳細は `02_Architecture/*` と issue トラッキングへ委譲する。
+- Stop conditions: 公開境界未確定 / 責務分離矛盾 / 指定外編集要求を検知した場合は更新を停止する。

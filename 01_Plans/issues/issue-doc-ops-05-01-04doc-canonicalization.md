@@ -367,3 +367,29 @@
 ### Phase 5: Proceed（対象ファイル再読）
 - 本ファイルを再読したうえで状態を判定し、`Ready / Hold / Needs-decision` を記録。
 - 判定: **Ready**（現時点で保留なし）。
+
+## 17) Stream G serial pass（2026-04-16, docs-only）
+
+### Phase 1: Read
+- Read target pair: `issue-doc-ops-05-01-04doc-canonicalization.md` + `04_Documentation/canonicalization.md`.
+- Reconfirmed scope guard: docs-only（`03_Implement/**` と `02_Architecture/**` は参照のみ）。
+
+### Phase 2: Classification decision
+- Decision: **Move internal**（維持、再判定なし）。
+- Rationale snapshot:
+  - Audience は公開向け概要のみで十分。
+  - canonicalization の詳細運用/契約は内部正本（設計/計画）管理が妥当。
+  - public-exposure 境界の誤解を避けるため、公開文書は stub 方針を継続。
+
+### Phase 3: ADR CDC（必要時のみ）
+- 判定: **追加ADR不要**。
+- 既存の Context/Decision/Consequences を本Issue内CDCとして維持。
+
+### Phase 4: Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/canonicalization.md`
+- `git diff --check`
+- 自己修復上限: 3回（4回目相当は停止/Hold）。
+
+### Phase 5: Proceed
+- Status: **Ready**
+- Next issue handoff condition: 公開境界未確定/責務分離矛盾/指定外編集要求が発生した場合は停止。
