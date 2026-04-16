@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Plan Owner
-- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream D: Contract Freeze / mock-first / Docs-Architecture only）
+- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream C: Contract Freeze / mock-first / Docs-Architecture only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
@@ -19,8 +19,15 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `D` (Contract Freeze / mock-first / Docs-Architecture only)
+- Stream: `C` (Contract Freeze / mock-first / Docs-Architecture only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
+
+## Stream C 実行ガード（CE0/CE1 Contract Freeze）
+
+- Contract ID の再定義は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
+- 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
+- mock-first で依存を切断し、外部完了待ちを禁止する。
+- Verify自己修復は最大3回。4回目相当は即停止する。
 
 
 ## 0) Phase 1 Read（I/F必須項目抽出 + mock前提確認）
@@ -191,7 +198,7 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（Stream D: 編集許可ファイル限定）
+## 5) タスク分解（Stream C: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
 - [ ] T2: 編集許可ファイル内（CE0 / CoreGraph / HIL-RS A1契約文書）で契約語彙を同期し、指定外ファイル編集を行わない。
@@ -201,7 +208,7 @@
 ## 6) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `rg -n "CE0-CTX-IF|CE0-SAFEMODE-IF|CE0-REVIEW-IF|CG-0[1-5]|Consensus Graph|WorkingGraph|ContextProjectionGraph|Query Preview|direct write|proposal-only|safeMode|human_reviewed|auto-apply" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md 02_Architecture/llm_input_ir_spec.md 02_Architecture/schemas.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 用語不一致がなく、validatorが成功する。
@@ -244,7 +251,7 @@
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
 
-## Stream D Contract Freeze Fixpoint (2026-04-12)
+## Stream C Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
