@@ -192,3 +192,16 @@ Stream D で本書を更新する場合、編集対象は `security.md` / `secur
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## 0.4 Phase 1-5 実行記録（2026-04-16 / DOC-OPS-05-14）
+
+- Phase 1 Read: 各Phase開始時に `security_operational_guidelines.md` / `security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` を再Read。
+- Phase 2 Plan: docs-only で公開運用判断ガイドに限定し、承認フロー正本の再定義を回避。
+- Phase 3 Execute: プロファイル判断と役割分離の記述を維持しつつ、導線を固定。
+- Phase 4 Verify（必須）:
+  - 語彙: `Security Officer / System Owner / Platform Operator`
+  - 役割: 2者承認と Platform Operator 実行責務分離
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> operations.md`
+  - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
+  - 実施コマンド: `rg` と `git diff --check`
+- Phase 5 Proceed: 判定は **Ready**。自己修復3回超過時は **StoppedForClarification** で停止。

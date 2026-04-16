@@ -226,3 +226,11 @@ git push origin v0.1.1
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## 11. Phase 1-5 実行記録（2026-04-16 / DOC-OPS-05-12）
+
+- Phase 1 Read: 開始時に `release.md` / `operations.md` / `security.md` / `strict_mode_exception_approval_flow.md` を再Readし、公開境界と語彙整合を確認。
+- Phase 2 Plan: docs-only 変更に限定し、分類（Improve external）と公開チェック手順を維持する計画を固定。
+- Phase 3 Execute: 本書の公開リリース手順と参照導線を整理し、内部専用情報は持ち込まない。
+- Phase 4 Verify: `rg` と `git diff --check` を実施。修復は最大3回、超過時は停止。
+- Phase 5 Proceed: 判定は **Ready**。後続は公開品質改善PRのみを対象とする。
