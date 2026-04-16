@@ -203,6 +203,9 @@ export function PatchWorkspacePanel({
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
         Compare candidates, record adopt/reject/hold decisions, and recover with one-click rollback.
       </div>
+      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }} data-testid="ce3-perspective-scope">
+        Perspective controls remain display-only and are not persisted by CE3 presets.
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
         <select
           data-testid="ce3-candidate-select"
@@ -221,9 +224,9 @@ export function PatchWorkspacePanel({
           ))}
         </select>
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" data-testid="ce3-adopt" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("adopt")}>Adopt</button>
+          <button type="button" data-testid="ce3-adopt" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("adopt")}>Adopt (partial)</button>
           <button type="button" data-testid="ce3-hold" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("hold")}>Hold</button>
-          <button type="button" data-testid="ce3-reject" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("reject")}>Reject</button>
+          <button type="button" data-testid="ce3-reject" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("reject")}>Discard</button>
         </div>
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
