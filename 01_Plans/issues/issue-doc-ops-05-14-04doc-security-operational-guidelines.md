@@ -252,7 +252,7 @@
 
 ## 16) 同一ワークフロー固定（safeMode/漏洩防止後退禁止）
 
-- Workflow固定: **Plan → Execute → Verify → Proceed**
+- Workflow固定: **Read → C/D/C → Execute → Verify → Proceed**
 - Verify失敗時: 最小差分で自己修復し、**最大3回**まで再試行。4回目相当は fail-safe 停止。
 - 後退禁止:
   - safeMode既定ONを弱める記述
