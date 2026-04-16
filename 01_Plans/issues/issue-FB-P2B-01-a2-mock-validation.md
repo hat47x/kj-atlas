@@ -264,3 +264,23 @@
 - 致命条件（契約ID不整合、依存順序逆転、編集禁止領域の更新要求、README lifecycle との不整合未解消）を検知した場合は即停止する。
 - 停止時は「競合一覧・停止理由・再開条件」を記録し、推測で進行しない。
 
+## Stream F planning memo update（2026-04-16 / FB-P2B-01・02 A2/A3）
+
+- 担当: `FB-P2B-01 / FB-P2B-02` の `A2/A3 planning memo`
+- 編集範囲: 本メモ4件のみ（P2A/P2C/HIL/CE/shared resource は read-only）
+- A1依存方針: A1は常に read-only とし、A2/A3 は mock/fixture/stub で検証する。
+- Fail-safe: 修復（self-correction）は `3回` まで。`3回超過` で停止し、競合一覧のみ提出する。
+
+### Phase運用（固定）
+
+1. **Phase 1 Read**
+   - 各Phase開始時に `A1/A2/A3` を再Readして契約キー（`ContractID / DependsOnContractID / ReferenceContractID`）を照合する。
+2. **Phase 2 Plan**
+   - A1契約を再定義せず、A2/A3の検証観点（非自動確定・順序保持・再読込復元）を固定する。
+3. **Phase 3 Execute**
+   - mock/fixtureのみで実行し、実装都合の契約変更要求はA1差し戻し条件として記録する。
+4. **Phase 4 Verify**
+   - `validate_active_issue_memos.py` を基準に docs-check を実施し、契約逸脱・依存逆転・未定義競合を検知したら停止する。
+5. **Phase 5 Proceed**
+   - Go条件（契約一致・検証Pass・停止条件非該当）を満たす場合のみ次レーンへ引き渡す。
+
