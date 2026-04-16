@@ -323,3 +323,36 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 6 Proceed
 - Proceed条件: Go式一致 + Pending bypass 0 + 安全境界後退要求 0 + Verify pass。
 - 未確定項目はYes/No質問へ分解してDecision Queueへ戻し、推測確定しない。
+
+
+## Stream A Contract Freeze Output v1.1（2026-04-16）
+
+### Phase 1 Read Sync
+- Plan: HIL-RS-01/02およびA1契約正本を再読して Freeze Pack 整合を確認。
+- Execute: Contract IDs / `schemaVersion` / `overridePolicy` / SSOT の一致を照合。
+- Verify: 想定差分なし（不一致 0件）。
+- Proceed: 契約を参照専用で公開継続。
+
+### Phase 2 Plan（AC/DoD不足の補完方針）
+- `agreementStatus=agreed` を満たすまで Execute へ進めない。
+- 未確定論点は「決定に必要な証跡」を明記し、`Pending` のまま保持する。
+
+### Phase 3 ADR/Decision（Context / Decision / Consequences）
+- Context: 下流レーンの前提を都度成果物ではなく固定仕様参照に変換する必要がある。
+- Decision: A1 Freeze Pack v1.1 を唯一参照とし、未承認項目は確定扱いしない。
+- Consequences: A2/A3 は契約再定義禁止。変更要求は A1 へ差戻し。
+
+### Phase 4 固定I/Fパック（版番号付き）
+- Reference Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1.1`
+- 変更禁止項目:
+  - `freezeContractId`
+  - `contractIds`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+### Phase 5 Verify & Proceed
+- Proceed条件: `a1Status=="Done" && pendingDecisionQueueCount==0` かつ固定値一致。
+- 失敗時はSelf-Correction最大3回、超過時は停止してDecision Queueへ返却。
+- 公開状態: `reference-only`（下流は参照のみ）。
