@@ -184,6 +184,14 @@ rg -n "equivalenceKey|bundleHash|dryRun|sideEffect|sourceBundleHash|schemaVersio
 git diff --check
 ```
 
+### 4.10 Stream E 実行ガード（2026-04-16 追補）
+
+- フェーズは直列で運用し、各フェーズ冒頭で Read を実施する（`Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed`）。
+- CE3 完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容して契約検証を継続する。
+- 監査4点セット（`query/bundle/proposal/apply`）欠損は成功扱い禁止（fail-closed）。
+- Verify の自己修復は最大3回まで。3回失敗時は即停止し、Proceedへ進まない。
+
+
 ---
 
 ## 5. エスカレーション運用
