@@ -296,3 +296,36 @@
 ### Phase 6 Proceed
 - Proceedは Verify pass かつ Go式成立時のみ許可。
 - 不成立時は `Draft/Open(hold)` を維持し、Decision Queueへ差し戻す。
+
+
+## Stream A Governance Queue Fixpoint v1.1（2026-04-16）
+
+### Phase 1 Read Sync
+- Plan: A1正本とHIL-RS-01/02のGate式・固定識別子を再照合。
+- Execute: `a1Status=="Done" && pendingDecisionQueueCount==0` を唯一ゲートとして再確認。
+- Verify: Freeze Pack要素（Contract IDs / `schemaVersion` / `overridePolicy` / SSOT）差分なし。
+- Proceed: A2/A3は参照専用のまま継続。
+
+### Phase 2 Plan（Decision Queue証跡化）
+| Queue ID | Decision topic | Required evidence | Status rule |
+| --- | --- | --- | --- |
+| `DQ-HIL-RS-02-CDC` | 契約変更要求 | CDC（Context/Decision/Consequences）と互換評価 | 承認まで `Pending` |
+| `DQ-HIL-RS-02-SAFE` | SafeMode後退要求 | 回帰再現手順と漏えい境界評価 | 原則 `Rejected` |
+| `DQ-HIL-RS-02-SHARE` | share/export緩和要求 | 監査要件と代替案比較 | 承認なしは `Pending` 維持 |
+
+### Phase 3 ADR/Decision（Context / Decision / Consequences）
+- Context: delivery planning が契約再定義を内包すると統治境界が崩れる。
+- Decision: HIL-RS-02は固定仕様参照のみを許可し、決定待ちは Queue へ戻す。
+- Consequences: 未承認項目の確定化は禁止。NoGo時は停止報告を必須化。
+
+### Phase 4 Contract Freeze（参照専用パック配布）
+- Pack Version: `HIL-RS-02-A1-CONTRACT-FREEZE-v1.1`
+- 変更禁止:
+  - `Pending bypass`
+  - `A1未完了でのA2/A3 Open`
+  - `overridePolicy` 緩和
+  - `schemaVersion` の独自更新
+
+### Phase 5 Verify & Proceed
+- Verify commands: docs-check + gate式rg確認。
+- Proceed: `Go`成立時のみ。未確定は `Pending` 維持で人間判断待ち。

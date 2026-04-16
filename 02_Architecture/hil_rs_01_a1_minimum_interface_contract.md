@@ -151,3 +151,45 @@ A1契約の mock用I/F は以下の read-only artifact として固定し、A2/A
 2. 競合ファイル
 3. 必要承認者
 4. Yes/No質問
+
+
+## 7) Stream A Contract Freeze Pack v1.1（2026-04-16）
+
+### Phase 1: Read Sync（Plan → Execute → Verify → Proceed）
+- Plan: Freeze Pack要素（Contract IDs / `schemaVersion` / `overridePolicy` / SSOT）を抽出し、A1を唯一正本として照合する。
+- Execute: `A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF | A1-ERROR-IF` と固定値を再確認。
+- Verify: 想定差分は 0（契約ID衝突 0 / 語彙衝突 0 / 安全境界後退 0）。
+- Proceed: 差分なしのため Freeze継続。
+
+### Phase 2: Plan（Decision Queueの証跡分解）
+未確定論点は次の「証跡が揃うまで `Pending` 維持」を固定する。
+
+| Queue Topic | Required evidence to decide | Close condition |
+| --- | --- | --- |
+| Contract change request | 変更理由、影響契約ID、下流互換評価、A1 CDC記録 | `Approved` または `Rejected` |
+| SafeMode regression request | 回帰有無の再現手順、既定ON維持可否、漏えい境界評価 | `Rejected` 以外はProceed不可 |
+| Share/Export relaxation request | 漏えいリスク評価、監査ログ要件、代替案比較 | `Rejected` 以外はProceed不可 |
+
+### Phase 3: ADR/Decision明文化（Context / Decision / Consequences）
+- Context: A2/A3の前提を成果物依存ではなく固定仕様参照へ統一する必要がある。
+- Decision: Freeze Pack v1.1 を参照専用で固定し、未承認項目は `Pending` のまま保持する。
+- Consequences: 下流は再定義不可。変更要求は A1 CDC に集約される。
+
+### Phase 4: Contract Freeze出力（read-only）
+- Pack Version: `HIL-RS-02-A1-CONTRACT-FREEZE-v1.1`（reference-only）
+- Immutable list:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Violation stop conditions:
+  - immutable値の改変提案
+  - `Pending -> Approved/Rejected` 以外の遷移
+  - Self-Correction 3回超過
+
+### Phase 5: Verify & Proceed
+- Verify gate: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- Publish mode: `readOnly=true` / `mutationAllowed=false`。
+- 次の判断待ち: Decision Queueに証跡未充足の項目が1件でもあれば `Pending` 維持。
