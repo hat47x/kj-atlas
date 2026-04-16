@@ -22,6 +22,34 @@
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
 - Stream: `C` (Contract Freeze / mock-first / Docs-Architecture only)
 
+
+## Stream E 実行契約（2026-04-16 / CE計画専属）
+
+### Scope（編集境界）
+
+- 本Issueは Stream E が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
+- `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
+
+### Phase 固定（Read → Contract-first → Mock-first → Verify → Proceed）
+
+1. **Read**: CE対象Issueと参照ADRの整合を先に確認する。
+2. **Contract-first**: I/F・型・監査キーを先に固定し、実装仕様を持ち込まない。
+3. **Mock-first**: 実装完了待ちを禁止し、モック契約で検証可能性を先行確保する。
+4. **Verify**: docs-check とトレーサビリティ（契約ID・語彙・No-Go条件）を検証する。
+5. **Proceed**: 実装レーンへは参照専用契約として引き渡し、再定義を禁止する。
+
+### ADR 必須条件（Stop & Ask）
+
+- **方針変更を伴う差分**（契約ID追加・意味変更・列挙値変更・安全境界変更）は、Context / Decision / Consequences を文書化するまで進行しない。
+- ADR承認前は Proceed を実行せず、契約凍結を維持したまま停止する。
+
+### Fail-closed 停止条件
+
+- Verify自己修復は最大3回。`attempt=4` 相当は即停止する。
+- 未定義競合（同一IDの意味衝突、未規定状態遷移、安全境界矛盾）を検知した時点で停止する。
+- 停止時は推測継続せず、競合点と保留理由を明示する。
+
 ## Stream C 実行ガード（CE0/CE1 Contract Freeze）
 
 - Contract ID の再定義は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
