@@ -63,3 +63,23 @@
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## DOC-OPS-05 追加実行記録（2026-04-16 / Target 05-01..05）
+
+### Phase 1 Read（再Read）
+- 本書と関連Issueを再Readし、公開境界とdocs-onlyスコープを確認。
+
+### Phase 2 Plan（再Read）
+- 5Phase（Read→Plan→Execute→Verify→Proceed）で進行し、対象外文書へは非接触とする。
+
+### Phase 3 Execute（再Read）
+- 本書の既存分類・公開境界メタを維持しつつ、05-01..05セットの実行記録を追記。
+
+### Phase 4 Verify（再Read）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/codex_skill_operations.md 01_Plans/documentation_quality.md`
+- `git diff --check`
+- 修復は最大3回まで。3回超過は停止（Hold）。
+
+### Phase 5 Proceed（再Read）
+- 判定: **Ready**
+- 次アクション: 同一セット内Issue本文とScope本文の整合を維持して進行。

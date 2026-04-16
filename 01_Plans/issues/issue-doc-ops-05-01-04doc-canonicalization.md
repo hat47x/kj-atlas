@@ -281,3 +281,30 @@
   - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/canonicalization.md 01_Plans/documentation_quality.md`
   - `git diff --check`
 - 自己修復ポリシー: 不整合は最大3回まで修復し、4回目相当は停止してブロッカー化する。
+
+## 17) Stream J execution record（DOC-OPS-05 target 05-01..05）
+
+### Phase 1 Read（再Read実施）
+- Date: 2026-04-16
+- 再Read対象: `04_Documentation/canonicalization.md` と `01_Plans/documentation_quality.md`（QG-1〜QG-6）
+- 判定: Scopeは docs-only、対象外ファイル（DOC-OPS-05他Issue/共有resource）は非接触で固定。
+
+### Phase 2 Plan（再Read実施）
+- Date: 2026-04-16
+- Plan: Read → Plan → Execute → Verify → Proceed の5Phaseで直列実行。
+- 受入条件: Audience / Goal / Non-goal / Public boundary / Outcome / Related と Go/No-Go を維持。
+
+### Phase 3 Execute（再Read実施）
+- Date: 2026-04-16
+- 実行: Issue本文と対象Scope文書のみを更新対象として追記し、分類（Move internal / Improve external）は既存決定を維持。
+
+### Phase 4 Verify（再Read実施）
+- Date: 2026-04-16
+- docs-check: `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/canonicalization.md 01_Plans/documentation_quality.md`
+- formatting-check: `git diff --check`
+- Fail-safe: 自己修復は最大3回。3回超過時は停止して Hold 化する。
+
+### Phase 5 Proceed（再Read実施）
+- Date: 2026-04-16
+- 状態: **Ready**（検証通過時）。
+- 次アクション: 同一5件セット（05-01..05）の残差分と整合を保ったまま次サイクルへ進行。

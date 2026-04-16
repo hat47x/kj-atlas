@@ -10,8 +10,8 @@
 > Related: `02_Architecture/schemas.md`, `03_Implement/frontend/src/worker/diagnostics_protocol.ts`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 
 
-この文書は Frontend diagnostics worker の I/O 契約を定義する。  
-公開運用時の用語は `reviewed / unreviewed` を正とし、`true/false` 表記は状態値の説明時にのみ補助的に使う。  
+この文書は Frontend diagnostics worker の I/O 契約を定義する。
+公開運用時の用語は `reviewed / unreviewed` を正とし、`true/false` 表記は状態値の説明時にのみ補助的に使う。
 品質判定は `01_Plans/documentation_quality.md` の QG-1〜QG-6 に従う。
 対象実装:
 - `03_Implement/frontend/src/worker/diagnostics_protocol.ts`
@@ -233,3 +233,23 @@ diagnostics の構造メトリクスは Gate D（KPI scorecard audit）の補助
 3. Runbook判定は `operations.md` の Gate C→D→E と Proceed条件に従って記録する。
 
 Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の前に CDC（Context / Decision / Consequences）を作成し、未承認のしきい値変更を禁止する。
+
+## DOC-OPS-05 追加実行記録（2026-04-16 / Target 05-01..05）
+
+### Phase 1 Read（再Read）
+- 本書と関連Issueを再Readし、公開境界とdocs-onlyスコープを確認。
+
+### Phase 2 Plan（再Read）
+- 5Phase（Read→Plan→Execute→Verify→Proceed）で進行し、対象外文書へは非接触とする。
+
+### Phase 3 Execute（再Read）
+- 本書の既存分類・公開境界メタを維持しつつ、05-01..05セットの実行記録を追記。
+
+### Phase 4 Verify（再Read）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/diagnostics.md 01_Plans/documentation_quality.md`
+- `git diff --check`
+- 修復は最大3回まで。3回超過は停止（Hold）。
+
+### Phase 5 Proceed（再Read）
+- 判定: **Ready**
+- 次アクション: 同一セット内Issue本文とScope本文の整合を維持して進行。
