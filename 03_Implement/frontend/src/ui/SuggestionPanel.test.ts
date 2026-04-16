@@ -13,6 +13,23 @@ function buildProps() {
     onResuggest: vi.fn(),
     onDiscard: vi.fn(),
     hasSuggestion: true,
+    suggestionId: "proposal-ui-1",
+    proposalCandidates: [
+      {
+        proposalId: "proposal-ui-1",
+        label: "Proposal 1",
+        status: "proposed" as const,
+        reviewState: "unreviewed" as const,
+      },
+      {
+        proposalId: "proposal-ui-2",
+        label: "Proposal 2",
+        status: "held" as const,
+        reviewState: "human_reviewed" as const,
+      },
+    ],
+    selectedProposalId: "proposal-ui-2",
+    onSelectProposalCandidate: vi.fn(),
     isPreviewEnabled: true,
     onPreviewToggle: vi.fn(),
     isAnnotateOverlayEnabled: false,
@@ -36,6 +53,9 @@ describe("SuggestionPanel", () => {
     expect(enHtml).toContain("CE-2 guardrail: proposal-only flow. Auto-apply is disabled.");
     expect(enHtml).not.toContain("Apply suggestion");
     expect(enHtml).toContain("CE2 proposal-only blockers: auto_apply_blocked");
+    expect(enHtml).toContain("Patch proposals");
+    expect(enHtml).toContain("review state: 1 unreviewed / 1 human reviewed");
+    expect(enHtml).toContain("Proposal 2 (held, human_reviewed)");
   });
 
   it("disables edit actions in read-only mode", () => {
