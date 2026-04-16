@@ -306,3 +306,25 @@
 ### Phase 5 Proceed
 - self-correctionは最大3回。3回超過時は停止して競合一覧のみ提出。
 
+## Stream C serial execution update（2026-04-16 / P2B-01 A2）
+
+### Phase 1: Read同期（6ファイル）
+- Read: `FB-P2B-01/02` のA1/A2/A3を再照合。
+- Verify: `DependsOnContractID=CTR-2B-01-CANDIDATE-GROUP-V1` と A1/A3契約キーの一致を確認（Pass）。
+
+### Phase 2: A1契約（CDC）依存固定
+- A2はA1契約の参照専用で運用し、契約改訂要求を受理しない。
+- CDC boundary: `groupId / targetCardId / snapshotVersion / ordered arrays` を固定。
+
+### Phase 3: A2モック検証計画固定
+- Mock plan: `CandidateListViewModel` をfixtureで検証（非自動確定・順序保持・再読込復元）。
+- Contract drift対応: ドリフト検知時はA1へ差し戻し、A2は停止。
+
+### Phase 4: A3実装接続条件固定
+- A3入力条件: `CTR-2B-01-CANDIDATE-GROUP-V1` 単一参照、候補提示のみ、merge自動確定禁止。
+
+### Phase 5: Verify / Proceed
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-repair: `0/3`（未実施）。
+- Proceed: Go（停止条件の発火なし）。
+

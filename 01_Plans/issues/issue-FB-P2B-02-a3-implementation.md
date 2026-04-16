@@ -305,3 +305,25 @@
 ### Phase 5 Proceed
 - self-correctionが3回を超えた場合は停止し、NoGoとして報告する。
 
+## Stream C serial execution update（2026-04-16 / P2B-02 A3）
+
+### Phase 1: Read同期（6ファイル）
+- Read: `FB-P2B-01/02` A1/A2/A3 を再読。
+- Verify: `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1` の整合を確認（Pass）。
+
+### Phase 2: A1契約（CDC）整理
+- A3は契約入力専用レーンとして運用し、CDC変更を行わない。
+- 逸脱要求（enum拡張・I/F変更）はA1差し戻し。
+
+### Phase 3: A2モック検証計画の受理条件固定
+- 受理条件: 4値制約・順序保持・非自動確定がA2で固定済みであること。
+
+### Phase 4: A3実装接続条件固定
+- Gate: `A1 -> A2 -> A3` 直列依存を固定。
+- Handoff payload: `ContractID`, action enum, restore boundary, rollback trigger を必須化。
+
+### Phase 5: Verify / Proceed
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-repair: `0/3`（未実施）。
+- Proceed: Go（未定義依存 / 契約ドリフトなし）。
+
