@@ -215,3 +215,42 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream A CE0/HIL Governance Approval Record (2026-04-16)
+
+### Phase 1 (Read)
+- 本Issue開始時に CE0/A1/gov 契約文書を再読し、Gate式・Freeze keys・禁止遷移の差分を確認。
+- 現状差分: なし（唯一Unlock rule と Decision Queue 遷移が維持）。
+
+### Phase 2 (ADR合意)
+- Context: ガバナンス判定式の重複定義は A2/A3 の誤Open化を誘発する。
+- Decision: 判定式は本Issueの固定式を正本として維持し、承認ログを追記する。
+- Consequences: 契約変更要求は A1 へ差し戻し、本Issueでは hardening rule の更新のみ許可。
+
+### Phase 3 (Contract Freeze)
+- 固定値:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+- Contract ID collision: 0件。
+
+### Phase 4 (Verify)
+- 証跡:
+  - safeMode後退=0
+  - unreviewed保護維持=Yes
+  - direct write禁止維持=Yes
+- Self-Correction: 0/3（fail-safe非該当）。
+
+### Phase 5 (Record)
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Snapshot Version: `1.0.0`
+- Snapshot Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+- Reference Lines: Hardening Rules / Fixed Values Handoff / Stream A Serial Contract Lock。
+
+### Approval Log
+
+| Timestamp (UTC) | Phase | Actor | Approval |
+| --- | --- | --- | --- |
+| 2026-04-16T00:00:00Z | Phase 2 | Stream A (Critical Path) | Governance式重複禁止を承認 |
+| 2026-04-16T00:00:00Z | Phase 3 | Stream A (Critical Path) | Freeze keys固定を承認 |
+| 2026-04-16T00:00:00Z | Phase 4 | Stream A (Critical Path) | Verify pass を承認 |
+| 2026-04-16T00:00:00Z | Phase 5 | Stream A (Critical Path) | Snapshot記録を承認 |

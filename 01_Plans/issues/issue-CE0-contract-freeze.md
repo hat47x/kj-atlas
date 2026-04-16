@@ -279,3 +279,43 @@
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+## Stream A CE0/HIL Contract Freeze Record (2026-04-16)
+
+### Phase 1 (Read)
+- 対象6ファイル（CE0/HIL 3 issue + 02_Architecture 3仕様）を再読し、契約ID差分候補を抽出。
+- 差分候補判定: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF` は再定義候補なし（freeze継続）。
+
+### Phase 2 (ADR合意)
+- Context: CE0/HIL契約は下流のCE1/CE2検証の前提であり、語彙・IDの揺れを許容しない。
+- Decision: `Context / Decision / Consequences` は既存ADR（`ADR-0028`/`ADR-0026`/`ADR-0027`）に追記不要、issue内の承認ログ運用のみ追加。
+- Consequences: A2/A3を含む下流は read-only handoff のみ許可し、契約更新要求は A1/CE0へ差し戻す。
+
+### Phase 3 (Contract Freeze)
+- 固定契約: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再固定。
+- ID重複チェック: 0件（本IssueとA1 governance issue間で再定義なし）。
+
+### Phase 4 (Verify)
+- 検証証跡:
+  - safeMode後退: 0件
+  - unreviewed保護後退: 0件
+  - direct write許容: 0件
+- Self-Correction回数: 0/3（停止条件非該当）。
+
+### Phase 5 (Record)
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Snapshot Version: `1.0.0`
+- Snapshot Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+- 固定参照行:
+  - CE0 matrix: 本Issue `2.3 CE-0 Contract ID Matrix`
+  - A1 freeze keys: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` Section 2/10
+  - Governance hardening: `issue-HIL-RS-02-A1-governance-contract-hardening.md` Section 2/9
+
+### Approval Log（CE0/HIL）
+
+| Timestamp (UTC) | Phase | Actor | Decision | Evidence |
+| --- | --- | --- | --- | --- |
+| 2026-04-16T00:00:00Z | Phase 2 | Stream A (Critical Path) | ADR追記不要 / 承認ログ追加を採用 | ADR整合確認（0026/0027/0028） |
+| 2026-04-16T00:00:00Z | Phase 3 | Stream A (Critical Path) | CE0契約再固定（再定義禁止） | Contract ID collision=0 |
+| 2026-04-16T00:00:00Z | Phase 4 | Stream A (Critical Path) | Verify Pass | safeMode後退0 / direct write 0 |
+| 2026-04-16T00:00:00Z | Phase 5 | Stream A (Critical Path) | Snapshot発行 | Snapshot ID/Version/Hash 記録 |

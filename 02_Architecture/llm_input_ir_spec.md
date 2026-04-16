@@ -544,3 +544,26 @@ A2 contract test では次を機械判定する。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` では未レビュー本文を入力IRへ含めない。
 - 機械判定式: `canonical(queryA)==canonical(queryB) && hashA==hashB` が真であること。
 - CE4監査では `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` の4キーを欠落させてはならない。
+
+---
+
+## Stream A CE0/HIL Contract Snapshot Linkage (2026-04-16)
+
+### Context
+- CE0/HIL 契約凍結（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF`）は IR 生成境界で後退させてはならない。
+
+### Decision
+- 本仕様の CE1 Bridge Constraints は、`CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1` を参照し、次を固定する。
+  - `previewConfirmed=true` 必須
+  - deterministic `queryCanonicalHash` / `bundleHash`
+  - safeMode後退禁止
+  - proposal-only 境界（direct write / auto-apply 禁止）
+
+### Consequences
+- Verifyで契約ドリフトを検知した場合は IR生成を停止し、Self-Correction は最大3回。
+- 下流は snapshot 参照のみ可とし、契約更新は CE0/A1 issue 側でのみ実施する。
+
+### Snapshot Metadata
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Version: `1.0.0`
+- Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`

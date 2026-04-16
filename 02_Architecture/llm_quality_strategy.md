@@ -175,3 +175,25 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - `decision`（`pass|held|stop`）
 
 4回目相当の修復は許可せず `status=held` で停止する。
+
+## Stream A CE0/HIL Governance Verification Hook (2026-04-16)
+
+### Context
+- 品質ゲートは契約固定（CE0/HIL）より下流であり、契約後退を品質評価で吸収してはならない。
+
+### Decision
+- Layer Aの fail-closed 判定に、以下の CE0/HIL 契約監査キーを必須化する。
+  - `safeModeRegressionCount==0`
+  - `unreviewedProtectionRegressionCount==0`
+  - `directWritePathCount==0`
+  - `contractIdCollisionCount==0`
+- Verifyで不一致があれば Layer B を実行せず停止し、Self-Correction を最大3回まで許可する。
+
+### Consequences
+- CE2/CE3 への Proceed は `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の順序証跡がある場合に限定される。
+- 契約更新は quality strategy では行わず、CE0/A1 契約Issueでのみ許可する。
+
+### Snapshot Metadata
+- Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
+- Version: `1.0.0`
+- Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
