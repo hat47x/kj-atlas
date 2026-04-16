@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream D (CE1 ContextQuery/ContextBundle contracts)
-- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream D: 契約文書のみ / mock-first）
+- Owner: Stream C (CE1 ContextQuery/ContextBundle contracts)
+- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream C: 契約文書のみ / mock-first）
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
@@ -19,16 +19,23 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `D` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Architecture only)
+- Stream: `C` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Architecture only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
-## 0) Phase 1 Read（I/F抽出 + mock許容 / Stream D）
+## Stream C 実行ガード（CE0/CE1 Contract Freeze）
+
+- Contract ID の再定義は禁止（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）。
+- 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
+- 自己修復は最大3回。`verifyAttempt=4` 相当は即停止（fail-closed）とする。
+- mock-first を維持し、外部完了待ちを禁止する。
+
+## 0) Phase 1 Read（I/F抽出 + mock許容 / Stream C）
 
 - CE1必須I/F: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`。
 - 依存先（CE2/CE4）は CE1実装完了待ちを禁止し、`mock ContextQuery/Bundle I/F` を正規契約として先行検証する。
 - 本Issueは契約固定のみを扱い、実装詳細（APIハンドラ/型生成/UI部品）は範囲外。
 
-## 直列フェーズ固定（Stream D / Contract Freeze）
+## 直列フェーズ固定（Stream C / Contract Freeze）
 
 1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
 2. **Phase 2（CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
@@ -36,7 +43,7 @@
 4. **Phase 4（Execute: mock-first契約固定）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
 5. **Phase 5（Verify/Proceed）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。
 
-### 実行順序固定（Stream D 強制）
+### 実行順序固定（Stream C 強制）
 
 - 各Phase開始時に対象ファイル（本Issue / `02_Architecture/llm_input_ir_spec.md`）を再読する。
 - 手順は必ず **Plan → Execute → Verify → Proceed** を維持し、逆順・省略を禁止する。
@@ -54,7 +61,7 @@
 ## 1) Context（Phase 2 Read）
 
 - CE-1は CE-2/3/4 の前提であり、ここで Query/Bundle の最小I/Fが曖昧だと後続で互換性崩壊が起きる。
-- Stream D では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
+- Stream C では実装詳細ではなく、モックで依存切離し可能な契約（API/型/責務境界）を先に固定する。
 
 ## 2) Decision（ADR-0028整合 / Phase 2 ADR明文化）
 
@@ -229,7 +236,7 @@ Error code は次を固定し、文言差分を許可しない。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 
-## 10) フェイルセーフ（Stream D 固定）
+## 10) フェイルセーフ（Stream C 固定）
 
 - Self-Correction が 3 回を超えた場合は停止し、人手判断待ちへ遷移する。
 - 修復試行が3回を超過した場合、契約ID衝突（重複/異義）を検知した場合、safeMode後退を検知した場合、または編集許可スコープ逸脱が必要になった場合は即停止する。
@@ -242,10 +249,10 @@ Error code は次を固定し、文言差分を許可しない。
 ## 11) Phase 5 Verify 明細（語彙/ID整合）
 
 - Verify command（docs-check）:
-  - `rg -n "CE1-CTXQ-IF|CE1-CTXB-IF|CE1-HASH-DET-IF|CE1-PREVIEW-GATE-IF|ContextQuery|ContextBundle|bundleHash|queryCanonicalHash|previewConfirmed|preview_required|nondeterministic_bundle|unknown_contract_key|sourceBundleHash|drift-stop" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `rg -n "CE1-CTXQ-IF|CE1-CTXB-IF|CE1-HASH-DET-IF|CE1-PREVIEW-GATE-IF|ContextQuery|ContextBundle|bundleHash|queryCanonicalHash|previewConfirmed|preview_required|nondeterministic_bundle|unknown_contract_key|sourceBundleHash|drift-stop" 01_Plans/issues/issue-CE0-contract-freeze.md 01_Plans/issues/issue-CE0-core-graph-repositioning.md 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md 02_Architecture/llm_input_ir_spec.md 02_Architecture/schemas.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - Verify pass criteria:
-  - CE1/CE2 間で Contract ID の重複・異義が0件である。
+  - CE0/CE1 間で Contract ID の重複・異義が0件である。
   - `previewConfirmed=false -> 422 preview_required` が CE1/CE2 で同一語彙で固定される。
   - `sameQuery && !sameBundle` は常に `409 nondeterministic_bundle` として drift-stop（Fail/Stop）判定される。
   - 未定義キー混入時は常に `400 unknown_contract_key` で fail-closed となる。
