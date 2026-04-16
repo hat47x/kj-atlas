@@ -250,3 +250,14 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - `autoApplyPathCount`: `0`
 - `autoReviewPromotionCount`: `0`
 - `decision`: `pass|held|stop`
+
+## 14) Phase 6 Proceed（CE4連携向け引継ぎ）
+
+- Proceed は `Plan -> Execute -> Verify -> Proceed` の順序を崩さない。
+- CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した状態で CE4 連携へ引き継ぐ。
+- 引継ぎ時は次の固定事項を記録する。
+  - `proposalId/diff/sourceBundleHash/status/reviewState` の必須キーが欠損していないこと。
+  - `status=held` が drift-stop 専用であること（未解除での再開禁止）。
+  - auto-apply 経路 0 件、`reviewState` 自動昇格 0 件であること。
+  - Verify の修復回数（`verifyAttempt`）が 3 回以内であること。
+- 3回修復で収束しない場合は Proceed せず、`status=held` のまま停止する。
