@@ -117,6 +117,11 @@ export function restoreMergeSuggestionDecisionsBySnapshot(
   snapshotVersion: string
 ): MergeSuggestionDecisionEntry[] {
   assertNonEmptyString(snapshotVersion, "snapshotVersion");
+  if (snapshotVersion !== DECISION_LOG_SNAPSHOT_VERSION) {
+    throw new Error(
+      `snapshotVersion must match ${DECISION_LOG_SNAPSHOT_VERSION}; contract deviations must be routed to A1`
+    );
+  }
   return (decisions ?? []).filter(
     (decision) =>
       decision.snapshotVersion === snapshotVersion
