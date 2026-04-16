@@ -397,3 +397,12 @@ issue補助メモには、最低でも次の項目を含める。
 - Phase 3 Execute（単一変更セット）: shared resource 3ファイルのみを単一変更セットで同期し、未承認決定の確定扱い・推測マージを実施しない。
 - Phase 4 Verify（validator + unittest + rg整合）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-34|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
 - Phase 5 Proceed（再開判定チェックリスト1行固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+
+### Stream H 共有統合同期（2026-04-16 rerun-35, Phase 1-5）
+
+- Phase 1 Read（3ファイル最新同期）: shared resource 3ファイルを再読し、Decision Queue（Ready=1 / Open=2）・依存順 `A1→A2→A3`・停止条件違反0件を確認。
+- Phase 2 Plan（件数/Queue/依存順）: 公開値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2` に固定し、次の1手を `DQ-HIL-EXEC-01` Ready監査継続 + `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open継続へ限定。
+- Phase 3 Execute（単一変更セット）: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` のみを同一変更セットで同期。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-35|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
+- Phase 5 Proceed（再開判定チェックリスト1行固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
