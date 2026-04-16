@@ -207,3 +207,42 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
   - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
   - 実施コマンド: `rg` と `git diff --check`
 - Phase 5 Proceed: 判定は **Ready**。自己修復3回超過時は **StoppedForClarification** で停止。
+
+## Stream H 専任: DOC-OPS-05後半 実行記録（2026-04-16）
+
+### Phase 1 Read
+
+- 対象本文と関連正本（`00_Prompt/*` / `01_Plans/adr/ADR-0001` / `02_Architecture/*`）を再読し、公開境界を確認した。
+- 用語・責務の整合（特に security 系は `Security Officer / System Owner / Platform Operator`）を事前確認した。
+
+### Phase 2 Plan（AC/DoD補完）
+
+- AC補完:
+  - Audience / Goal / Non-goal / Public boundary / Outcome / Related の冒頭メタを維持する。
+  - 本文は docs-only で更新し、実装仕様・設定値の新規決定を持ち込まない。
+  - 参照導線（関連文書・issue memo）を切断しない。
+- DoD補完:
+  - Read → Plan → Execute → Verify → Proceed の記録を残す。
+  - Verify で `docs-check` とリンク整合を確認する。
+
+### Phase 3 Execute
+
+- 本文の方針を維持したまま、Stream H後半の実行責務（Phase運用・停止条件）を追記した。
+- 編集範囲外（backend/frontendコード、shared統合3ファイル）は変更しない。
+
+### Phase 4 Verify（docs-check + リンク整合）
+
+- `rg` で必須メタ語彙・Phase見出し・停止条件語彙を確認した。
+- `git diff --check` で体裁崩れがないことを確認した。
+- security 系は D1〜D4 と役割語彙の整合を追加確認した。
+
+### Phase 5 Proceed
+
+- 判定: **Ready**
+- 継続条件: 次回更新でも同一フェーズ順序と docs-only 制約を維持する。
+
+### 停止条件（固定）
+
+- 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
+- D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
+- Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
