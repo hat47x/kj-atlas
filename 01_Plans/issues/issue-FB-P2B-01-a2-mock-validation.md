@@ -10,6 +10,11 @@
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
 - Expected verification level: `docs-check`
 
+## Dependencies
+
+- DependsOn: `01_Plans/issues/issue-FB-P2B-01-a1-interface-contract.md`
+- Unblocks: issue-FB-P2B-01-a3-implementation.md
+- Gate/Blocker: Ready when A1 is Done/Fixed and mock GoNoGo is `M1/M2/M3=pass & M4=fail`; Blocked when A1 not fixed or ownerOfFix unresolved.
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2B-01`
