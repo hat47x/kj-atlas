@@ -353,3 +353,36 @@
 ### Phase 5 Proceed
 - 判定: **Ready（Open可能）**。
 - 継続ルール: 後続更新でも同じ5Phaseを維持し、修復回数上限（3回）を超えた場合は停止して保留化する。
+
+## 16) Stream H 後半（DOC-OPS-05）Phase 1〜5 記録
+
+### Phase 1 Read
+- 対象Issue本文と対象Doc本文を再読し、Classification=`Improve external` と docs-only 範囲を再確認。
+- 関連正本（`00_Prompt/*`, `ADR-0001`, `02_Architecture/*`）の参照導線を確認。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC補完:
+  - Audience / Goal / Non-goal / Public boundary / Outcome / Related を追跡可能に維持。
+  - Go/No-Go 条件を本文で再現可能に維持。
+  - Validation を `docs-check` と一致させる。
+- DoD補完:
+  - Read → Plan → Execute → Verify → Proceed を記録する。
+  - Ready/Hold/Needs-decision の Proceed 判定を明記する。
+
+### Phase 3 Execute
+- 本Issueの分類方針（Improve external）を変更せず、後半運用記録のみ追記。
+- スコープ外（shared統合3ファイル、実装コード、他ストリーム専有）へは非接触。
+
+### Phase 4 Verify（docs-check + リンク整合）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Phase|停止条件" <target-doc> <this-issue>`
+- `git diff --check`
+- security系Issue（13/14）は D1〜D4 と役割語彙の一致も同時確認。
+
+### Phase 5 Proceed
+- 状態: **Ready**（docs-only / 分類Fixed / 停止条件非該当）
+- 次アクション: 対応Docの公開品質改善PRへ直結する。
+
+### 停止条件（固定）
+- 責務用語不整合を検知した場合は停止。
+- D1〜D4 固定値矛盾を検知した場合は停止。
+- Verify自己修復が3回を超えた場合は停止（`StoppedForClarification`）。
