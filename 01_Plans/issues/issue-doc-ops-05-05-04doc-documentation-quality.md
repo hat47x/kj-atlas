@@ -293,3 +293,39 @@
 - Date: 2026-04-16
 - 状態: **Ready**（検証通過時）。
 - 次アクション: 同一5件セット（05-01..05）の残差分と整合を保ったまま次サイクルへ進行。
+
+
+## 18) Stream I serial execution (Phase 1..5 fixed, 2026-04-16, DOC-OPS-05-05)
+
+### Phase 1: Read
+- Read: Requirement meta I/F・Scope・Related ADR/Spec・推奨アクション（Move internal）を再確認。
+- Read: 既存のStream記録との差分を確認し、本実行は **Phase 1..5固定** で進行することを明記。
+- Read outcome: 対象は docs-only、`01_Plans/documentation_quality.md (or 04_Documentation counterpart policy stub)` の分類・改善計画に限定。
+
+### Phase 2: Plan（不足AC/DoDの先行提案）
+- Read: 受入条件/DoDの欠落有無を再点検。
+- AC提案（不足時に先行適用）:
+  - AC-SI-1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を対象文書冒頭に明示する。
+  - AC-SI-2: `GoNoGoGate=Required` の判定条件（Go条件/No-Go条件）を文書内で再現可能にする。
+  - AC-SI-3: `Expected verification level=docs-check` と実行コマンドを一致させる。
+- DoD提案（不足時に先行適用）:
+  - DoD-SI-1: Plan→Execute→Verify→Proceed を含む **Phase 1..5記録** を残す。
+  - DoD-SI-2: Proceedで `Ready / Hold / Needs-decision` を明記する。
+  - DoD-SI-3: Verify失敗は同一Issue内で最大3回まで自己修復し、4回目相当は停止。
+
+### Phase 3: Execute
+- Read: 非目標（実装コード変更なし、他Stream専有ファイル非変更）を再確認。
+- Execute: 本Issueの分類方針（Move internal）を維持し、公開境界メタと次アクション導線を固定。
+- Execute: DecisionStatus=Fixed のため DecisionQueueRef は `N/A` を維持。
+
+### Phase 4: Verify
+- Read: docs-check対象コマンドを再確認。
+- Verify command:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `git diff --check`
+- Verify policy: 失敗時は最大3回まで修復、4回目相当は停止して `Hold` 化。
+
+### Phase 5: Proceed
+- Read: Verify結果とGo/No-Go判定基準を再確認。
+- Proceed status: **Ready**（現時点でDecisionStatus=Fixed、検証レベル=docs-check、分類方針=Move internal）。
+- Next action: docs-only PR で分類方針を反映し、未解決論点は `01_Plans/issues/` へ分離記録。
