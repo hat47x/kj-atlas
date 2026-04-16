@@ -73,6 +73,13 @@
 3. Mock snapshot固定識別子が一致
 4. 安全境界の後退要求がない
 
+### 6.1) A2/A3 着手条件（A1 freeze I/F固定参照）
+
+- `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && hasUndefinedContractChangeRequest==false && hasSafeModeRegressionRequest==false && hasShareExportLeakageRelaxationRequest==false && agreementStatus=="agreed")`
+- `Go = StartAllowed`
+- `NoGo = !StartAllowed`
+- `NoGo` 時は実行着手せず、`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻す。
+
 ## 7) Fail-safe
 
 - 停止トリガー: 3回修復超過 / 未承認確定化 / 識別子不一致。

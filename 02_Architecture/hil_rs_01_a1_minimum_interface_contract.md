@@ -100,6 +100,46 @@ Decision Queue permitted transitions:
 
 Any other transition is Block.
 
+## 4.2) Unresolved Execution Tasks Start Conditions（A1 Freeze準拠）
+
+A1凍結I/Fを維持したまま、未解決タスク（A2/A3）へ着手するための前提を次で固定する。
+
+### A2（Frontend reversible synthesis application）着手条件
+
+- 必須（全件一致）:
+  - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+  - `schemaVersion=="1.0.0"`
+  - `overridePolicy=="human_dual_control_only"`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - `hasUndefinedContractChangeRequest==false`
+  - `hasSafeModeRegressionRequest==false`
+  - `hasShareExportLeakageRelaxationRequest==false`
+  - `agreementStatus=="agreed"`（Phase PlanでAC/DoD不足が解消済み）
+- 追加証跡（A2特有）:
+  - Read-only artifact参照宣言（`mutationAllowed=false`）をA2メモに記載済み。
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の再定義差分 0 件。
+
+### A3（Operations / documentation sync）着手条件
+
+- 必須（全件一致）:
+  - A2着手条件の全項目を満たすこと。
+  - 運用文書同期は read-only handoff 値のみ使用し、契約値の局所補完をしないこと。
+- 追加証跡（A3特有）:
+  - Stop template（失敗条件 / 影響I/F / 必要な人間判断）がA3メモに存在すること。
+  - `Pending -> Approved|Rejected` 以外の遷移を許容する記述が 0 件であること。
+
+### NoGo / Stop（A2/A3共通）
+
+- 次のいずれかで NoGo:
+  - 固定値不一致（`schemaVersion` / `overridePolicy` / freeze flags）。
+  - 未定義契約変更要求あり（`hasUndefinedContractChangeRequest==true`）。
+  - 安全境界後退要求あり（SafeMode または share/export）。
+  - Decision Queue に `Pending` が残存（`pendingDecisionQueueCount>0`）。
+- Self-Correction は最大3回。4回目相当は停止し、A1 CDCへ差戻す。
+
 ## 4.1) Read-only Contract Snapshot Artifact（Phase 4 発行物）
 
 A1契約の mock用I/F は以下の read-only artifact として固定し、A2/A3 での再定義を禁止する。

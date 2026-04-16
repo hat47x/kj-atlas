@@ -99,6 +99,31 @@ A1を「実装タスク」ではなく、A2/A3を制御する **最小I/F契約�
 
 > 下流レーンは上記固定値を参照のみ可。変更要求はA1へ差し戻す。
 
+### 10.1) Unresolved Task Start Gate（A2/A3着手条件の確定）
+
+- A2/A3 着手許可式（固定）:
+  - `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && hasUndefinedContractChangeRequest==false && hasSafeModeRegressionRequest==false && hasShareExportLeakageRelaxationRequest==false && agreementStatus=="agreed")`
+- `StartAllowed==false` の場合は NoGo とし、`A1-CDC-only` へ差戻す。
+- A2/A3 は次を禁止:
+  - 固定識別子の再定義
+  - `Pending` bypass（`Approved/Rejected` を経ない遷移）
+  - 安全境界の緩和（safeMode既定ON / share-export漏えい防止）
+
+### 10.2) Single Handoff（Stream A → A2/A3）
+
+- 固定I/F一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Go/NoGo条件:
+  - `Go = StartAllowed`
+  - `NoGo = !StartAllowed`
+- 差し戻し条件（固定）:
+  - 固定値不一致、未承認決定確定化、未定義競合、Self-Correction 3回超過。
+
 ## Stream A Critical Path Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
@@ -301,4 +326,3 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - Go（条件式）: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
 - NoGo（条件式）: `NoGo = !Go`
 - Stop条件: 3回超過、前提崩壊、未定義競合、固定識別子不一致。
-

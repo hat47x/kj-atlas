@@ -90,6 +90,27 @@ A1契約凍結をガバナンス判定式として固定し、A2/A3の誤Open化
 | contractLinkLocked | `true` |
 | sharedResourceFreeze | `true` |
 
+## 10) Stream A Single Handoff（Critical Path / A2-A3 start gate）
+
+### 固定I/F一覧（read-only）
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### Go/NoGo条件（未解決実行タスクの着手判定）
+- `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && hasUndefinedContractChangeRequest==false && hasSafeModeRegressionRequest==false && hasShareExportLeakageRelaxationRequest==false && agreementStatus=="agreed")`
+- `Go = StartAllowed`
+- `NoGo = !StartAllowed`
+
+### 差し戻し条件（A1-CDC-only）
+- 固定識別子不一致（contract IDs / freeze flags）。
+- `Pending -> Approved|Rejected` 以外の遷移が検出された場合。
+- SafeMode後退またはshare/export緩和要求が1件でも存在する場合。
+- Self-Correction 3回超過（4回目は禁止）。
+
 ## Stream A Critical Path Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
@@ -293,4 +314,3 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - Go（条件式）: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
 - NoGo（条件式）: `NoGo = !Go`
 - Stop条件: 3回超過、前提崩壊、未定義競合、固定識別子不一致。
-
