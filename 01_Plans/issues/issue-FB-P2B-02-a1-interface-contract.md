@@ -558,3 +558,22 @@
 ### Phase 5 Proceed
 - self-correctionは最大3回、超過時は停止。
 
+## Stream C serial execution update（2026-04-16 / P2B-02 A1）
+
+### Phase 1: Read同期（6ファイル）
+- Read: `issue-FB-P2B-01-a1/a2/a3-*.md` + `issue-FB-P2B-02-a1/a2/a3-*.md`
+- Verify: `CTR-2B-02-DECISION-LOG-V1` のA1/A2/A3契約キー一致を確認（Pass）。
+
+### Phase 2: A1契約（CDC）整理
+- Decision: `CTR-2B-02-DECISION-LOG-V1` を単一正本として維持。
+- CDC freeze: `append/list/restore` 署名と action 4値制約を固定。
+
+### Phase 3-4: 接続条件
+- A2 mock固定: append順序・非自動確定・snapshot復元を前提化。
+- A3接続固定: 契約参照のみ、enum拡張・必須項目変更はA1差し戻し。
+
+### Phase 5: Verify / Proceed
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-repair: `0/3`（未実施）。
+- Proceed: Go（停止条件の発火なし）。
+

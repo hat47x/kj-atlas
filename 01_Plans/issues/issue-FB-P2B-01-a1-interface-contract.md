@@ -560,3 +560,22 @@
 - Go条件: 契約整合が維持され、停止条件に非該当。
 - Stop条件: 契約不整合/未定義競合/3回失敗で停止。
 
+## Stream C serial execution update（2026-04-16 / P2B-01 A1）
+
+### Phase 1: Read同期（6ファイル）
+- Read: `issue-FB-P2B-01-a1/a2/a3-*.md` + `issue-FB-P2B-02-a1/a2/a3-*.md`
+- Verify: `CTR-2B-01-CANDIDATE-GROUP-V1` / `CTR-2B-02-DECISION-LOG-V1` のA1/A2/A3参照がそれぞれ一致（Pass）。
+
+### Phase 2: A1契約（CDC）整理
+- Decision: `CTR-2B-01-CANDIDATE-GROUP-V1` を CDC の単一正本として維持し、A2/A3は参照専用。
+- Consequences: 契約拡張・比較キー変更・順序非決定要求はA1差し戻し。
+
+### Phase 3-4: 接続条件
+- A2 mock固定: `loadCandidateGroups` の非自動確定・順序保持・snapshot復元。
+- A3接続固定: `A1 -> A2 -> A3` 直列、契約再定義禁止。
+
+### Phase 5: Verify / Proceed
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-repair: `0/3`（未実施）。
+- Proceed: Go（未定義依存 / 契約ドリフト / 指定外編集要求は未検知）。
+

@@ -293,3 +293,24 @@
 ### Phase 5 Proceed
 - 3回失敗で停止し、競合一覧のみ提出する。
 
+## Stream C serial execution update（2026-04-16 / P2B-02 A2）
+
+### Phase 1: Read同期（6ファイル）
+- Read: `FB-P2B-01/02` のA1/A2/A3を再照合。
+- Verify: `DependsOnContractID=CTR-2B-02-DECISION-LOG-V1` がA1/A3と一致（Pass）。
+
+### Phase 2: A1契約（CDC）依存固定
+- A2はA1契約参照のみ。`action` 4値・`snapshotVersion` 境界を改訂しない。
+
+### Phase 3: A2モック検証計画固定
+- Mock plan: `append -> list -> restore` をfixtureで検証。
+- 必須観点: 非自動確定、append順序保持、enum外action除外。
+
+### Phase 4: A3実装接続条件固定
+- A3入力条件: `CTR-2B-02-DECISION-LOG-V1` 単一参照、auto-merge禁止。
+
+### Phase 5: Verify / Proceed
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-repair: `0/3`（未実施）。
+- Proceed: Go（契約ドリフト未検知）。
+
