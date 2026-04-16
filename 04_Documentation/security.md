@@ -177,7 +177,7 @@ curl -H 'X-API-Key: change-me' http://localhost:8000/docs/<doc_id>
 strict / non-strict いずれの運用プロファイルでも、組織ごとの採否判断は
 `04_Documentation/security_operational_guidelines.md` を参照してください。
 
-## 7.10 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+## 7.10 同一ワークフロー（Read → C/D/C → Execute → Verify → Proceed）
 
 `security.md` の更新は、次の同一ワークフローで固定する。
 

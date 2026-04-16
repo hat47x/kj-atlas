@@ -115,7 +115,7 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
 3. 実行runbook: `04_Documentation/operations.md`
 4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）
 
-## 8. 同一ワークフロー（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+## 8. 同一ワークフロー（Read → C/D/C → Execute → Verify → Proceed）
 
 運用判断ガイドの更新は次の共通手順で行う。
 
@@ -171,7 +171,7 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
 
 ### P5 Verify
 
-- `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator|Plan → Execute → Verify → Proceed|フェイルセーフ" 04_Documentation/security_operational_guidelines.md`
+- `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator|Read → C/D/C → Execute → Verify → Proceed|フェイルセーフ" 04_Documentation/security_operational_guidelines.md`
 - `git diff --check`
 - D1〜D4 固定値の不一致を検知した場合は即時停止し、修復完了まで Proceed へ進めない。
 
