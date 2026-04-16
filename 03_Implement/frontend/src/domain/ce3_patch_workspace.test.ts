@@ -19,7 +19,7 @@ describe("ce3_patch_workspace", () => {
 
     const adopted = commitWorkspaceDecision(initial, "cand-1", "adopt", "2026-04-11T00:00:00.000Z");
     const rejected = commitWorkspaceDecision(adopted, "cand-2", "reject", "2026-04-11T00:00:01.000Z");
-    const rolledBack = rollbackWorkspaceDecision(rejected);
+    const rolledBack = rollbackWorkspaceDecision(rejected, "2026-04-11T00:00:02.000Z");
 
     expect(initial.decisions["cand-1"]).toBe("hold");
     expect(adopted.decisions["cand-1"]).toBe("adopt");
@@ -31,6 +31,7 @@ describe("ce3_patch_workspace", () => {
       candidateId: "cand-2",
       from: "reject",
       to: "hold",
+      at: "2026-04-11T00:00:02.000Z",
       reason: "rollback",
     });
     expect(rolledBack.rollbackStack).toHaveLength(1);
