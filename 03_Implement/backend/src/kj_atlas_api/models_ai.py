@@ -120,7 +120,8 @@ class ProposalEnvelope(BaseModel):
 
     proposalId: str = Field(min_length=1)
     type: Literal["island_summary"]
-    status: Literal["proposed"]
+    status: Literal["proposed", "accepted", "rejected", "held"]
+    reviewState: Literal["unreviewed", "reviewed"] = "unreviewed"
     sourceBundleHash: str = Field(min_length=1)
     diff: ProposalDiff
     rationale: str = Field(min_length=1)
@@ -138,6 +139,15 @@ class ProposalDecisionAuditRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     proposalId: str = Field(min_length=1)
-    decision: Literal["adopt", "reject", "hold"]
+    decision: Literal["accepted", "rejected", "held", "adopt", "reject", "hold"]
     actor: str = Field(min_length=1)
     reason: str | None = None
+
+
+class ProposalDecisionAuditResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    proposalId: str = Field(min_length=1)
+    status: Literal["accepted", "rejected", "held"]
+    reviewState: Literal["unreviewed"]
+    recordedAt: str = Field(min_length=1)

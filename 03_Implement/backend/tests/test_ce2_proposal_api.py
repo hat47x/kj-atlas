@@ -40,17 +40,27 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
     body = response.json()
     assert body["proposalId"].startswith("proposal-")
     assert body["status"] == "proposed"
+    assert body["reviewState"] == "unreviewed"
     assert body["sourceBundleHash"] == "bundle-hash-1"
     assert body["diff"]["before"] == "old summary"
     assert isinstance(body["diff"]["after"], str) and body["diff"]["after"].strip() != ""
 
 
-def test_record_proposal_decision_accepts_adopt_reject_hold() -> None:
+def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion() -> None:
+    expected = {
+        "adopt": "accepted",
+        "accepted": "accepted",
+        "reject": "rejected",
+        "rejected": "rejected",
+        "hold": "held",
+        "held": "held",
+    }
     with TestClient(app) as client:
-        for decision in ("adopt", "reject", "hold"):
+        for decision, expected_status in expected.items():
             response = client.post(
                 "/ai/proposals/audit",
                 json={"proposalId": "proposal-1", "decision": decision, "actor": "tester"},
             )
             assert response.status_code == 200
-            assert response.json()["decision"] == decision
+            assert response.json()["status"] == expected_status
+            assert response.json()["reviewState"] == "unreviewed"

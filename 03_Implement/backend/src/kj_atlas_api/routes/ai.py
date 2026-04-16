@@ -18,6 +18,7 @@ from kj_atlas_api.models_ai import (
     GenerateNarrativeRequest,
     GenerateNarrativeResponse,
     ProposalDecisionAuditRequest,
+    ProposalDecisionAuditResponse,
     ProposalEnvelope,
     ProposeIslandSummaryRequest,
     SuggestIslandSummaryRequest,
@@ -568,6 +569,7 @@ def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnve
         proposalId=f"proposal-{uuid4()}",
         type="island_summary",
         status="proposed",
+        reviewState="unreviewed",
         sourceBundleHash=payload.sourceBundleHash,
         diff={
             "entityType": "island_summary",
@@ -583,21 +585,31 @@ def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnve
 
 
 @router.post("/proposals/audit")
-def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> dict[str, str]:
+def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalDecisionAuditResponse:
+    status_map = {
+        "adopt": "accepted",
+        "accepted": "accepted",
+        "reject": "rejected",
+        "rejected": "rejected",
+        "hold": "held",
+        "held": "held",
+    }
+    status = status_map[payload.decision]
     logger.info(
         "proposal_decision_audit",
         extra={
             "proposalId": payload.proposalId,
-            "decision": payload.decision,
+            "decision": status,
             "actor": payload.actor,
             "reason": payload.reason or "",
         },
     )
-    return {
-        "proposalId": payload.proposalId,
-        "decision": payload.decision,
-        "recordedAt": "server-log",
-    }
+    return ProposalDecisionAuditResponse(
+        proposalId=payload.proposalId,
+        status=status,
+        reviewState="unreviewed",
+        recordedAt="server-log",
+    )
 
 
 @router.post("/generate-narrative", response_model=GenerateNarrativeResponse)
