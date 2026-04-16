@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream E (CE2 proposal-only契約固定, docs-first)
+- Owner: Stream D (CE2 proposal-only契約固定, docs-first)
 - Scope: `01_Plans/issues/`, `02_Architecture/`
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`
@@ -19,30 +19,29 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `E` (CE2 proposal-only契約固定専任 / Contracts + Docs only / mock-first)
+- Stream: `D` (CE2 proposal-only契約固定専任 / Contracts + Docs only / mock-first)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
-## 0) Serial Phase Contract（Stream E 固定フロー）
+## 0) Serial Phase Contract（Stream D 固定フロー）
 
-CE2 Stream E は、以下の固定フローでのみ進行する。
+CE2 Stream D は、以下の固定フローでのみ進行する。
 
-1. **Phase 1: Read**（必須I/F再確認）
-2. **Phase 2: ADR CDC**（Context / Decision / Consequences）
-3. **Phase 3: Plan**（AC/DoD不足提案）
-4. **Phase 4: Execute**（status遷移とdrift-stop固定）
-5. **Phase 5: Verify**（最大3回まで修復して再検証）
+1. **Phase 1: Plan**（契約固定とAC/DoD確認）
+2. **Phase 2: Execute**（status遷移とdrift-stop固定）
+3. **Phase 3: Verify**（最大3回まで修復して再検証）
+4. **Phase 4: Proceed**（引継ぎ、条件未達時は停止）
 
-`Verify` で3回修復しても受入条件を満たせない場合は、`status=held` で停止し、人手判断待ちへ遷移する。
+`Verify` で3回失敗しても受入条件を満たせない場合は、`status=held` で停止し、人手判断待ちへ遷移する。
 
-各Phase開始時には、直前成果物との差分を対象に `Read` チェックポイントを実施し、契約語彙（`proposalId/diff/sourceBundleHash/status/reviewState`）と状態遷移定義を再確認する。
+Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/reviewState`）と状態遷移定義を再確認し、drift検知時は即停止する。
 
-## 0.1) Independent Execution Rules（Stream E）
+## 0.1) Independent Execution Rules（Stream D）
 
 - CE1は **mock contract参照** として扱い、実装完了待ちをしない。
 - 実装待ちを理由に停止せず、契約検証（docs-check）を先行する。
 - drift検知時のみ `status=held` で停止し、人手判断待ちへ遷移する。
 
-## 1) Phase 1 Read（必須I/F抽出 + mock許容 / 依存切断）
+## 1) Contract Freeze Preconditions（Plan前提 / mock許容 / 依存切断）
 
 - CE2必須I/F: `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState`。
 - CE1依存は `mock bundleHash` で切断し、契約検証を先行（待機禁止）。
@@ -59,13 +58,13 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 | `CE2-DRIFT-STOP-IF` | CE1差分検知時の停止契約 | 差分検知時は `status=held` で停止、再検証開始禁止 |
 | `CE2-NO-AUTOAPPLY-IF` | proposal-only 強制 | API/UI/worker すべて auto-apply 禁止 |
 
-## 2) Phase 2 ADR CDC（Context / Decision / Consequences）
+## 2) Contract Rationale（CDC snapshot）
 
 ### Context
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream E は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream D は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ### Decision
@@ -81,7 +80,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - CE1とのI/Fドリフト検知時は `held` 停止が最優先となり、仕様未定義競合を未解消のまま先送りできない。
 - CE3は CE2 proposal I/F を変更せず受理する必要があり、後方互換性を維持する。
 
-## 3) Phase 3 Plan（AC/DoD不足提案）
+## 3) Plan（AC/DoD不足提案）
 
 ### 2.1 対象ユースケース（提案のみ）
 
@@ -115,7 +114,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - CE-2は proposal 作成までを責務とし、apply は人手承認ゲートの外で実行しない。
 - proposal の `accepted` は「適用許可の意思表示」であり、自動適用トリガーではない。
 - `held` は drift-stop 専用状態として扱い、`held` 中は apply 導線へ遷移禁止。
-- `human_reviewed` 自動昇格は禁止（`reviewState` の AI 更新を含む）。昇格は人手操作のみ。
+- `reviewed` 自動昇格は禁止（`reviewState` の AI 更新を含む）。昇格は人手操作のみ。
 - safeMode ON では未レビュー本文を含む提案生成を禁止する。
 
 ### 3.1 AC/DoD不足の補完提案（Plan出力）
@@ -125,11 +124,11 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
   - `sourceBundleHash` が mock 参照であることを監査ログに残す検証文言を追加する。
   - CE1差分検知時に `status=held` で停止し、差分解消完了まで Verify を再開しない文言を必須化する。
 - DoD補完:
-  - Phase 1〜5 の実施記録に attempt 番号（`verifyAttempt=1..3`）を必須化する。
+  - Plan/Execute/Verify/Proceed の実施記録に attempt 番号（`verifyAttempt=1..3`）を必須化する。
   - Verify 判定時に `drift-stop解除確認` を明文化し、未解除なら pass 不可とする。
   - 停止条件（3回超過 / 安全後退 / 未定義競合）を毎回のVerify記録に併記する。
 
-## 4) Phase 4 Execute（proposal-only / no-auto-apply / status遷移固定）
+## 4) Execute（proposal-only / no-auto-apply / status遷移固定）
 
 - UI/APIともに auto-apply 経路を契約違反として扱い、検知時は即No-Go。
 - すべてのAI応答は patch/diff と監査ログで追跡可能でなければならない。
@@ -142,11 +141,11 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
   - CE1 mock I/Fとの差分検知時は `status=held` を強制し、Verifyは停止する。
   - drift未解消の状態で proposal を再生成・再採用しない。
 
-## 5) Phase 5 Verify（proposal-only維持 + drift-stop検証）
+## 5) Verify（proposal-only維持 + drift-stop検証）
 
 - [ ] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState` を持つ。
 - [ ] auto-apply経路が0件（API/UIともに禁止）。
-- [ ] `human_reviewed` への自動昇格が0件。
+- [ ] `reviewed` への自動昇格が0件。
 - [ ] 提案の採用/却下/保留が監査ログで追跡可能。
 - [ ] safeMode ONで未レビュー本文を含む提案が生成されない。
 - [ ] CE1モック契約との差異検知時に `status=held` で停止し、適用経路が進行しない。
@@ -158,7 +157,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 
 ## 5.1) DoD（Contract-only）
 
-- [ ] 各Phaseで `Plan -> Execute -> Verify` を記録し、Phase開始時にReadチェックを記録する。
+- [ ] 各Phaseで `Plan -> Execute -> Verify -> Proceed` を記録し、Plan開始時の契約チェックを記録する。
 - [ ] Verify 修復は 3 回以内。4 回目相当の失敗時は即停止し推測で継続しない。
 - [ ] CE1 mock I/F 依存切断（待機禁止）を維持し、実装詳細の規定を追加しない。
 - [ ] `CE2-PROPOSAL-IF / CE2-LIFECYCLE-IF / CE2-DRIFT-STOP-IF / CE2-NO-AUTOAPPLY-IF` が CE0/CE1 契約と矛盾しない。
@@ -184,7 +183,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 ## 8) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held|drift-stop" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_quality_strategy.md 02_Architecture/llm_escalation_policy.md`
+  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|reviewed|safeMode|unreviewed|held|drift-stop" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_quality_strategy.md 02_Architecture/llm_escalation_policy.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 提案I/Fと禁止事項が文書間で一致し、validatorが成功する。
@@ -195,7 +194,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - ロールバック: proposal契約違反箇所をrevertし、CE-1連携キー準拠へ戻す。
 
 
-## 10) フェイルセーフ（Stream E 固定）
+## 10) フェイルセーフ（Stream D 固定）
 
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
@@ -203,11 +202,11 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - 未定義競合（前提矛盾 / 未規定状態遷移）を検知した場合は推測せず停止する。
 
 
-## 11) ADR必要性判定（Phase 2 判定結果）
+## 11) ADR必要性判定（contract 判定結果）
 
 - 判定: **新規ADRは現時点では不要**（既存 `ADR-0028` と CE0/CE1/CE2 Contract Freeze で意思決定が固定済み）。
 - CDC明文化（差分追記）:
-  - Context: Stream E は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
+  - Context: Stream D は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
   - Decision: 新規ADRを起票せず、当Issueと `02_Architecture/llm_quality_strategy.md` / `02_Architecture/llm_runtime_constraints.md` を単一正本として同期する。
   - Consequences: 仕様変更要求が Contract ID 追加/意味変更を伴う場合は **ADR起票を再判定し、承認待ちで停止** する。
 - 承認待ち条件（Stop & Ask）:
@@ -215,7 +214,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
   - `status` / `reviewState` 列挙値の追加。
   - safeMode既定ONまたは漏洩防止境界（share/export）を弱める要求。
 
-## 12) AC/DoD 合意版（Phase 3 固定）
+## 12) AC/DoD 合意版（Plan 固定）
 
 ### Acceptance Criteria（合意版）
 
@@ -229,17 +228,17 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 
 ### Definition of Done（合意版）
 
-- [ ] Phase 1〜5 の実施証跡を残し、各Phase開始時のReadチェックを記録する。
+- [ ] Plan/Execute/Verify/Proceed の実施証跡を残し、Plan開始時の契約チェックを記録する。
 - [ ] Verify試行回数（`verifyAttempt=1..3`）と停止理由を監査ログに残す。
 - [ ] 4回目相当の再試行は行わず `status=held` で停止した事実を記録する。
 - [ ] 未定義競合および前提崩壊の停止理由を明示し、推測継続を禁止する。
 
-## 13) Verify 証跡テンプレート（Phase 5）
+## 13) Verify 証跡テンプレート
 
 ### 13.1 Verify evidence（監査可能性）
 
 - `verifyAttempt`: `1|2|3`
-- `phaseGate`: `Read|ADR|Plan|Execute|Verify`
+- `phaseGate`: `Plan|Execute|Verify|Proceed`
 - `proposalId`
 - `sourceBundleHash`（mock可: `mock:<hash>`）
 - `statusBefore` / `statusAfter`
@@ -251,7 +250,7 @@ CE2 Stream E は、以下の固定フローでのみ進行する。
 - `autoReviewPromotionCount`: `0`
 - `decision`: `pass|held|stop`
 
-## 14) Phase 6 Proceed（CE4連携向け引継ぎ）
+## 14) Proceed（CE4連携向け引継ぎ）
 
 - Proceed は `Plan -> Execute -> Verify -> Proceed` の順序を崩さない。
 - CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した状態で CE4 連携へ引き継ぐ。

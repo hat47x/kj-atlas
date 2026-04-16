@@ -120,14 +120,14 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 1. Proposal schema gate: すべての提案が `proposalId/diff/sourceBundleHash/status/reviewState` を持つ。
 2. Lifecycle gate: 許可遷移は `proposed -> accepted|rejected|held` のみ（`held` から自動遷移禁止）。
 3. No-auto-apply gate: `accepted` を含め、提案状態から直接適用へ進む経路を禁止する。
-4. No-auto-review-promotion gate: AI/worker/API による `reviewState=human_reviewed` 自動遷移を禁止する。
+4. No-auto-review-promotion gate: AI/worker/API による `reviewState=reviewed` 自動遷移を禁止する。
 5. Drift-stop gate: CE1最小I/Fとの差異検知時は `status=held` を強制し、Verify/Proceed を停止する。
 
 ### 8.3 Consequences
 
 - 上記ゲートのいずれかが不合格なら Layer B は実行せず fail とする。
 - Verify 修復は最大3回までとし、4回目相当は `status=held` で停止する。
-- `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の各Phase開始時に Read チェックを実施し、契約ドリフトを先に検知する。
+- `Plan -> Execute -> Verify -> Proceed` の固定順序で進行し、Plan開始時に契約ドリフトを先に検知する。
 - CE-3 への引継ぎでは CE-2 Proposal I/F の後方互換（改名・省略・型変更禁止）を必須とする。
 
 ## 9. CE-2 low-risk 運用固定（safe-side）
@@ -136,18 +136,16 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 
 CE2 は次の順序を固定し、前Phaseの証跡なしで次Phaseへ進まない。
 
-1. Read
-2. ADR CDC（必要性判定を含む）
-3. Plan（AC/DoD固定）
-4. Execute
-5. Verify（最大3回修復）
-6. Proceed（CE3引継ぎ）
+1. Plan（AC/DoD固定）
+2. Execute
+3. Verify（最大3回修復）
+4. Proceed（CE3引継ぎ）
 
 
 ### 9.1.1 Independent execution rules
 
 - CE1 は実装完了待ちではなく **mock contract参照** で扱う。
-- 実装待ちを停止理由にせず、Phase 1〜5 の契約検証を継続する。
+- 実装待ちを停止理由にせず、Plan/Execute/Verify/Proceed の契約検証を継続する。
 - 停止は drift未解消・safeMode後退・auto-apply検知時のみ許可する。
 
 ### 9.2 Fail-safe first
@@ -157,7 +155,7 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - safeMode既定ONの後退
 - 未レビュー本文の混入（reviewed-only既定違反）
 - auto-apply経路の存在
-- AIによる `reviewState=human_reviewed` 自動昇格
+- AIによる `reviewState=reviewed` 自動昇格
 - CE1/CE2 契約ドリフト未解消（`status=held` 未遷移）
 
 ### 9.3 Verify/Proceed 証跡最小キー
@@ -190,7 +188,7 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - Verifyで不一致があれば Layer B を実行せず停止し、Self-Correction を最大3回まで許可する。
 
 ### Consequences
-- CE2/CE3 への Proceed は `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の順序証跡がある場合に限定される。
+- CE2/CE3 への Proceed は `Plan -> Execute -> Verify -> Proceed` の順序証跡がある場合に限定される。
 - 契約更新は quality strategy では行わず、CE0/A1 契約Issueでのみ許可する。
 
 ### Snapshot Metadata
