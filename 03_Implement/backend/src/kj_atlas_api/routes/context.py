@@ -10,6 +10,8 @@ from kj_atlas_api.models_context import (
     ContextBundleResponse,
     ContextQuery,
     ContextQueryValidationResponse,
+    _canonical_query_hash_payload,
+    _sha256_canonical,
     build_bundle,
 )
 
@@ -34,19 +36,26 @@ def validate_context_query(payload: object = Body(...)) -> ContextQueryValidatio
         "safeMode": query.safeMode,
         "targetCount": len(query.targetCardIds),
     }
-    return ContextQueryValidationResponse(query=query, preview=preview)
+    query_hash = _sha256_canonical(_canonical_query_hash_payload(query))
+    return ContextQueryValidationResponse(query=query, preview=preview, queryCanonicalHash=query_hash)
 
 
 @router.post("/bundle", response_model=ContextBundleResponse)
 def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
     request = _validate_payload(ContextBundleRequest, payload)
-    response = build_bundle(request)
+    try:
+        response = build_bundle(request)
+    except ValueError as exc:
+        if str(exc) == "preview_required":
+            raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     for item in response.bundle.excludedReasons:
         logger.info(
             "context_bundle_excluded",
             extra={
                 "queryId": request.query.queryId,
                 "bundleHash": response.bundleHash,
+                "queryCanonicalHash": response.queryCanonicalHash,
                 "excludedReason": item["reason"],
                 "cardId": item["cardId"],
             },

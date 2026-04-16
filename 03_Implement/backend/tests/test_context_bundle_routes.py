@@ -30,6 +30,8 @@ def _query_payload() -> dict:
         "scope": "selection",
         "reviewedOnly": True,
         "safeMode": True,
+        "allowUnreviewedText": False,
+        "previewConfirmed": True,
     }
 
 
@@ -105,7 +107,38 @@ def test_context_bundle_safe_mode_and_reviewed_filter_excludes_unreviewed_text()
             assert response.status_code == 200
             bundle = response.json()["bundle"]
             assert bundle["selectedCards"] == [{"id": "c-reviewed", "text": "reviewed body", "reviewed": True}]
-            assert {"cardId": "c-unreviewed", "reason": "reviewed_only_filter"} in bundle["excludedReasons"]
+            assert {"cardId": "c-unreviewed", "reason": "unreviewed_filtered"} in bundle["excludedReasons"]
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_bundle_rejects_request_when_preview_not_confirmed() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            query = _query_payload()
+            query["previewConfirmed"] = False
+            response = client.post("/context/bundle", json={"query": query, "doc": _doc_payload()})
+            assert response.status_code == 422
+            assert response.json()["detail"]["code"] == "preview_required"
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_query_hash_is_stable_when_target_order_changes() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload_1 = _query_payload()
+            payload_2 = _query_payload()
+            payload_2["targetCardIds"] = list(reversed(payload_2["targetCardIds"]))
+
+            hash_1 = client.post("/context/query", json=payload_1).json()["queryCanonicalHash"]
+            hash_2 = client.post("/context/query", json=payload_2).json()["queryCanonicalHash"]
+
+            assert hash_1 == hash_2
     finally:
         settings.api_key = original_api_key
 
