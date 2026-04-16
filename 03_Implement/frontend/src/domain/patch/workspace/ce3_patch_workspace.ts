@@ -54,19 +54,22 @@ export type WorkspaceState = {
 };
 
 export function normalizeFilters(value: string): string[] {
-  return value
+  return Array.from(new Set(value
     .split(",")
     .map((item) => item.trim().toLowerCase())
-    .filter((item) => item.length > 0)
+    .filter((item) => item.length > 0)))
     .sort((left, right) => left.localeCompare(right));
 }
 
 export function normalizePresetQuery(preset: Pick<QueryPreset, "scope" | "depth" | "filters">): string {
   const normalizedDepth = Number.isFinite(preset.depth) ? Math.max(1, Math.floor(preset.depth)) : 1;
+  const normalizedFilters = Array.from(
+    new Set(preset.filters.map((filter) => filter.trim().toLowerCase()).filter((filter) => filter.length > 0))
+  ).sort((left, right) => left.localeCompare(right));
   return JSON.stringify({
     scope: preset.scope,
     depth: normalizedDepth,
-    filters: [...preset.filters].sort((left, right) => left.localeCompare(right)),
+    filters: normalizedFilters,
   });
 }
 

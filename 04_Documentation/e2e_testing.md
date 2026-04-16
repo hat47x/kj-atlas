@@ -136,7 +136,7 @@ CE3（候補比較/部分採用/rollback/preset replay）を変更するPRでは
 - rollback実行時に、復旧対象候補の監査遷移表示へ `(...rollback)` が追記される。
 - rollback後に先行候補の監査遷移表示へ `(...rollback)` が誤付与されない。
 - rollback監査遷移の時刻が、同操作で発火するUIイベント時刻と整合する（同一操作由来として追跡可能）。
-- Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される。
+- Preset保存後の replay で `scope/depth/filters` 正規化JSONが再現される（filters は trim/lowercase/重複排除後にソート）。
 - Preset保存後にページ再読込しても、保存済み `Run <name>` で同一正規化JSONが再現される。
 - 監査遷移数（Audit transitions）が操作回数に応じて増加する。
 - Perspective切替で document永続データ差分が増えない（workspace/presetはlocal state/localStorage管理）。

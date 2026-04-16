@@ -106,12 +106,12 @@ describe("ce3_patch_workspace", () => {
   });
 
   it("normalizes preset query deterministically", () => {
-    expect(normalizeFilters(" b, A,  ,c ")).toEqual(["a", "b", "c"]);
+    expect(normalizeFilters(" b, A,  ,c, a, B ")).toEqual(["a", "b", "c"]);
     expect(
       normalizePresetQuery({
         scope: "selection",
         depth: 2.8,
-        filters: ["z", "a"],
+        filters: ["z", "a", "Z", "  a "],
       })
     ).toBe('{"scope":"selection","depth":2,"filters":["a","z"]}');
     expect(

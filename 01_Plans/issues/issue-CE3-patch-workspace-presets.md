@@ -360,3 +360,37 @@
 
 - CE3スコープ内の未達はなし。
 - 継続課題（範囲外）は据え置き: local監査ログの document監査ログ統合（CE4）。
+
+## 16) Stream F filter normalization hardening notes (2026-04-16)
+
+### Phase 1 Read（CE3 issue / code / e2e spec）
+
+- `ce3_patch_workspace.ts` / `ce3_patch_workspace.test.ts` / `04_Documentation/e2e_testing.md` を再読し、Preset正規化が sort のみで duplicate filter を排除しない点を確認。
+- CE3要件「Preset再実行で同一Query再現」の観点で、入力揺れ（重複・大小文字・余白）を同一化する余地を特定。
+
+### Phase 2 Plan（AC/DoD不足の補強提案）
+
+- AC補強提案:
+  - `normalizeFilters` / `normalizePresetQuery` は trim + lowercase + 重複排除 + sort を実施し、同義入力で同一JSONを返す。
+- DoD補強提案:
+  - domain unit で duplicate filter を含む入力の正規化結果を固定化する。
+  - CE3 docs の E2E観点へ重複排除の正規化条件を追記する。
+
+### Phase 3 Execute（workspace/preset）
+
+- `normalizeFilters` を Set ベースへ変更し、filters 重複を除去。
+- `normalizePresetQuery` でも filters を trim/lowercase 後に重複排除 + sort してから JSON 化するよう更新。
+- domain unit の preset 正規化ケースに duplicate filter 入力を追加。
+- `04_Documentation/e2e_testing.md` の CE3節に filters 重複排除を明記。
+
+### Phase 4 Verify（unit/lint/e2e）
+
+- `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts` を実行し pass。
+- `npm --prefix 03_Implement/frontend run lint` を実行し pass。
+- `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を実行し pass。
+- 自己修復は 0 回（3回上限未満）。
+
+### Phase 5 Proceed
+
+- CE3スコープ内の未達はなし。
+- 継続課題（範囲外）: local監査ログの document監査ログ統合（CE4）。
