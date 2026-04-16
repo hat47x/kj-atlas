@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream G（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -25,7 +25,7 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 
-## Phase management（Stream G）
+## Phase management（Stream B）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
 - Phase 2: A1契約明確化（CDC明文化）
@@ -161,7 +161,7 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream G strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -191,7 +191,7 @@
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
-## Stream G execution override（FB-P2A A1→A2→A3）
+## Stream B execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -261,3 +261,18 @@
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream B Phase 1-2 completion snapshot（2026-04-16）
+
+### Phase 1 Read（Plan→Execute→Verify→Proceed）
+- Plan: A1/A2/A3 の3ファイルを再読し、`ContractID`・依存・Gate状態の照合観点を固定。
+- Execute: `CTR-2A-01-ISLAND-HIERARCHY-V1` / `IslandHierarchyContractV1`、`DependsOn`、`GoNoGo` 定義を再照合。
+- Verify: 契約ID衝突なし、依存逆転なし、DecisionStatus は3ファイルとも `Fixed` を確認。
+- Proceed: A1契約を read-only 正本として Phase 2 へ進行。
+
+### Phase 2 A1（Context / Decision / Consequences）
+- Context: A1契約は `parentIslandId` 正本モデルとA1→A2→A3直列依存を固定する前提で維持する。
+- Decision: A1契約本文の再定義は行わず、CDC（ContractID/Required fields/Invariants/ContractLinks）を承認待ち固定値として扱う。
+- Consequences: A2/A3 は契約推測補完を禁止し、差分は検証手順・引継ぎ明確化のみに限定される。
+- Approval state: `Pending human confirmation`（値の推測補完は未実施）。
+

@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream G（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -24,7 +24,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream G）
+## Phase management（Stream B）
 
 - Phase 1: Read同期（A1/A2/A3の3点再読）
 - Phase 2: A1契約明確化（CDC明文化）
@@ -155,7 +155,7 @@
   - `issue-FB-P2A-01-a3-implementation.md`
 
 
-## Stream G strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -186,7 +186,7 @@
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
 
-## Stream G lane guard（FB-P2A only）
+## Stream B lane guard（FB-P2A only）
 
 - 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
 - Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
@@ -194,7 +194,7 @@
 - モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
 - 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
 
-## Stream G execution override（FB-P2A A1→A2→A3）
+## Stream B execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -212,3 +212,17 @@
 - self-correction上限: 3回。
 - 停止トリガ: 3回超過 / 依存不整合 / 指定外ファイル更新が必要 / ContractID衝突。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
+
+## Stream B Phase 4-5 completion snapshot（2026-04-16）
+
+### Phase 4 A3（実装接続条件固定）
+- Plan: A2 handoff payload を唯一入力として実装接続条件（Go/NoGo・Stop・Rollback）を固定。
+- Execute: `Go = (M1/M2/M3=pass && M4=fail && ownerOfFix確定)` / `NoGo = !Go` を契約条件として維持。
+- Verify: `contractId` / `contractVersion` 不一致、mockCase欠損/重複、`ownerOfFix` 未確定を停止トリガとして明示済み。
+- Proceed: Go成立時のみ下流へ進行し、NoGo時はA1/A2責務へ巻き戻す。
+
+### Phase 5 Verify / Proceed（docs-check + dependency check）
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify focus: 依存逆転なし（A1→A2→A3）、契約ID衝突なし、指定外ファイル編集なし。
+- Next action: Stream B は本3ファイルを `Done-ready (human approval pending)` として保持し、実装レーンへの引き渡し判断を待機。
+
