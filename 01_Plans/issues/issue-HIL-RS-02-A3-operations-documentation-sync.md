@@ -156,3 +156,34 @@ Proceed 条件:
 - Phase 4 Execute: `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` の canonical 同期を実施。
 - Phase 5 Verify: docs-check + `rg` + `git diff --check` を実行し、D1〜D4不整合0件を確認。
 - Phase 6 Proceed: fail-safe条件（D1〜D4不整合 / safeMode後退 / 許可外編集 / 3回修復超過）が非成立で継続可能。
+
+## Stream B HIL Umbrella Planning Update (2026-04-16)
+
+### Phase 1 Read（対象3ファイル再Read）
+- 各Phase開始時に次の3ファイルを再Readし、A3メモの整合前提を再確認。
+  1. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `issue-HIL-RS-02-next-phase-delivery-plan.md`
+  3. `issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- A3は umbrella planning 配下で `A1 Done && pendingDecisionQueueCount==0` が成立するまで `Draft/Open(hold)` を維持。
+
+### Phase 2 ADR CDC（先行明文化）
+- Context: A3は文書同期レーンだが、Stream Bでは許可3ファイル以外を編集しない。
+- Decision: A3のProceedは上位2ファイルと同じGo条件（A1完了・Pending=0・固定値一致）を満たす場合のみ。
+- Consequences: 条件未達・固定値不一致・未承認確定化はA3単独で解決せずDecision Queueへ返却し、A1契約正本へ差し戻す。
+
+### Phase 3 Plan
+- AC/DoD不足時はドラフト提案を記録し、合意後にのみ Execute へ進む。
+- A3 planning AC: `3-file reread`, `CDC先行`, `No unauthorized file edit`, `Self-repair<=3`。
+
+### Phase 4 Execute
+- 本issueに A3のNoGo条件（`A1!=Done || pendingDecisionQueueCount>0`）と差戻し導線を固定。
+- `02_Architecture/*` と `04_Documentation/*` は参照のみとし、本更新では未編集を維持。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `rg -n "Stream B HIL Umbrella Planning Update \(2026-04-16\)|A1 Done && pendingDecisionQueueCount==0|Draft/Open\(hold\)|Decision Queue|Self-repair<=3|No unauthorized file edit" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- Verify失敗時の自己修復は最大3回。超過時は停止して差分記録。
+
+### Phase 6 Proceed
+- Proceed許可: Go条件成立 + Verify pass + 許可外編集0件。
+- Proceed不可: NoGo条件成立時、未確定をYes/No質問化してDecision Queueへ戻す。

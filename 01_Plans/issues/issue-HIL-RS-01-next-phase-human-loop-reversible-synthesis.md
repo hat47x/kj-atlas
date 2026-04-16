@@ -292,3 +292,34 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 3. 人間判断が必要な選択肢（2案）
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
+
+## Stream B HIL Umbrella Planning Update (2026-04-16)
+
+### Phase 1 Read（対象3ファイル再Read）
+- 再Read対象を次の3ファイルに固定。
+  1. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `issue-HIL-RS-02-next-phase-delivery-plan.md`
+  3. `issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- Gate式・固定識別子・Fail-safeが3ファイルで同値であることを確認。
+
+### Phase 2 ADR CDC（先行明文化）
+- Context: Stream BはHIL umbrella planning専用であり、実装・architecture・operations本文の編集を行わない。
+- Decision: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)` を親issueの唯一Proceed条件として維持。
+- Consequences: 不一致・未承認・競合は推測で補完せずDecision Queueへ返却し、A1契約正本へ差し戻す。
+
+### Phase 3 Plan
+- AC/DoD不足がある場合はドラフト提案を先行し、`agreementStatus=agreed` を確認するまで Execute に進まない。
+- 追加AC: `3-file reread evidence`, `CDC先行`, `Plan->Execute->Verify->Proceed証跡`, `Self-repair<=3`。
+
+### Phase 4 Execute
+- 本issueは planning SSOT として、3ファイル横断で使う Gate式・禁止遷移・差し戻し先を文言同期。
+- A2/A3での契約値再定義禁止と Pending bypass 禁止を維持。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `rg -n "Stream B HIL Umbrella Planning Update \(2026-04-16\)|a1Status==\"Done\" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Self-repair<=3|Decision Queue" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- Verify失敗時の自己修復は最大3回。4回目相当は停止。
+
+### Phase 6 Proceed
+- Proceed条件: Go式一致 + Pending bypass 0 + 安全境界後退要求 0 + Verify pass。
+- 未確定項目はYes/No質問へ分解してDecision Queueへ戻し、推測確定しない。
