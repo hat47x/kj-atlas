@@ -689,3 +689,26 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 - 再Read: Verify結果とスコープ逸脱の有無を再確認。
 - 判定: **Ready**（docs-only、許可範囲内、停止条件なし）。
 - 継続条件: 後続差分でも同じ5Phase + 再Read + 修復上限3回を維持する。
+
+## DOC-OPS-05 Stream G 前半フェーズ実行記録（2026-04-16）
+
+- Classification確認: **Improve external**（再判定なし）
+- フェイルセーフ固定: 用語ドリフト検知・固定値不一致検知・自己修復3回超過で停止（Hold）
+
+### Phase 1: Read（対象ファイル再読）
+- 本ファイルを再読し、Scope / Audience / Goal / Public boundary / Related の整合を確認。
+
+### Phase 2: Plan（対象ファイル再読）
+- 本ファイルを再読したうえで、docs-only の変更範囲と受入条件を固定。
+
+### Phase 3: Execute（対象ファイル再読）
+- 本ファイルを再読したうえで、分類方針（Move internal / Improve external）を維持して更新。
+
+### Phase 4: Verify（docs-check、対象ファイル再読）
+- 本ファイルを再読したうえで docs-check を実施。
+- 推奨確認: `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/e2e_testing.md`
+- 体裁確認: `git diff --check`
+
+### Phase 5: Proceed（対象ファイル再読）
+- 本ファイルを再読したうえで状態を判定し、`Ready / Hold / Needs-decision` を記録。
+- 判定: **Ready**（現時点で保留なし）。
