@@ -664,3 +664,28 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 
 - 語彙ドリフトが解消不能な場合は作業を停止する。
 - Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
+
+## Phase 1-5 execution record (2026-04-16, DOC-OPS-05-06/07/08/09/10 scope)
+
+### Phase 1: Read
+- 再Read: 本文冒頭メタ（Audience / Goal / Non-goal / Public boundary / Outcome / Related）と Requirement meta I/F を再確認。
+- スコープ確認: 本タスクは「当該Issue本文 + 当該Scope文書」のみを編集対象とする。
+
+### Phase 2: Plan
+- 再Read: 関連ADR（特に ADR-0019）と `01_Plans/documentation_quality.md` の参照導線を再確認。
+- 計画: Read → Plan → Execute → Verify → Proceed を単一サイクルで実施し、記録を追記する。
+- フェイルセーフ: Verify 失敗時の自己修復は最大3回まで、4回目相当は停止。
+
+### Phase 3: Execute
+- 再Read: 直前差分と本文の禁止事項（SafeMode後退、公開境界逸脱）を再確認してから編集。
+- 実施内容: 本セクションを追記し、Phase運用・再Read・修復上限ルールを明文化。
+
+### Phase 4: Verify
+- 再Read: 追記後の本文を再読し、語彙ドリフト・参照不整合・体裁崩れの有無を確認。
+- 実施: `git diff --check` と対象ファイルの目視確認を実施。
+- 修復回数: 0回（3回超過なし）。
+
+### Phase 5: Proceed
+- 再Read: Verify結果とスコープ逸脱の有無を再確認。
+- 判定: **Ready**（docs-only、許可範囲内、停止条件なし）。
+- 継続条件: 後続差分でも同じ5Phase + 再Read + 修復上限3回を維持する。
