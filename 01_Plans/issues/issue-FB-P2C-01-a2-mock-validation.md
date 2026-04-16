@@ -232,3 +232,41 @@
 ### Cycle guard
 - Plan→Execute→Verify→Proceed を1サイクルとして最大3回。
 - 3回超過時は `Unapproved` を明示し、確定扱いを禁止する。
+
+## Stream E addendum: A2 mock再検証ログ（2026-04-16）
+
+### Phase 1) Read（承認記録・契約・テスト観点）
+- Gate承認参照:
+  - `DQ-FB-P2C-01`（Approved）
+  - `A2-HANDOFF-FB-P2C-01-2026-03-14`
+- 固定契約（差し替え禁止）:
+  - `deterministicTieBreakOrder = padding>self_intersection>area_delta>vertex_count`
+  - 比較キー: `inputHash`, `seed`, `appliedTieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`
+- テスト観点（QA 3件）:
+  1. 同一 `inputHash` + 同一 `seed` を3回反復し、`outputPolygonHash` 3/3一致。
+  2. 全ケースで `paddingViolationCount == 0`。
+  3. `appliedTieBreakOrder` が固定順序と完全一致。
+
+### Phase 2) Plan（QA3件の再現条件明示）
+- fixture固定: `03_Implement/frontend/tests/tiebreak/fb_p2c_deterministic_cases.json`
+- 再現条件:
+  - ケースA: repeatability（3回一致）
+  - ケースB: boundary（三角形最小頂点）
+  - ケースC: padding conflict（padding優先）
+- 判定:
+  - 1件でも不一致なら `Block`。
+
+### Phase 3) A2 mock検証
+- 実施内容:
+  - 実装依存を持たない tie-break 選択器と worker adapter を新設し、fixture を入力に検証。
+- 証跡キー:
+  - `inputHash`, `seed`, `appliedTieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`
+
+### Phase 5) Verify（再現性・監査証跡）
+- Verify結果:
+  - QA3件すべて Pass。
+  - `appliedTieBreakOrder mismatch` / `paddingViolationCount>0` / `outputPolygonHash drift` は未検出。
+- 監査証跡:
+  - `tests/tiebreak` fixture と integration test に再現条件を固定化。
+- Cycle guard:
+  - Self-Correction 0/3。

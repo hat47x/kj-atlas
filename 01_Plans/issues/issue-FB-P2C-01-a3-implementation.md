@@ -250,3 +250,39 @@
 ### Cycle guard
 - Plan→Execute→Verify→Proceed の自己修復は最大3回。
 - 3回超過時は `Proceed=No` を固定し、未承認事項の確定扱いを禁止する。
+
+## Stream E addendum: FB-P2C deterministic tie-break A3実装（2026-04-16）
+
+### Phase 1) Read（承認記録・契約・テスト観点）
+- Read結果:
+  - Gate承認は維持（`DQ-FB-P2C-01` Approved）。
+  - A2 handoff参照（`A2-HANDOFF-FB-P2C-01-2026-03-14`）に矛盾なし。
+  - 契約語彙は `padding>self_intersection>area_delta>vertex_count` に固定。
+
+### Phase 2) Plan（QA3件の再現条件明示）
+- A3実装の受入条件:
+  1. tie-break順序を単一定義化（差し替え禁止）。
+  2. worker経由でも同一証跡キーを返却。
+  3. QA3件（repeatability / padding=0 / order一致）がintegrationで再現可能。
+- 停止条件:
+  - Gate未承認、契約差し替え要求、自己修復3回超過で停止。
+
+### Phase 4) A3実装
+- 追加対象（Stream E専任範囲内）:
+  - `src/domain/tiebreak/deterministic_tie_break.ts`
+  - `src/worker/tiebreak/deterministic_tiebreak_worker_adapter.ts`
+  - `tests/tiebreak/deterministic_tie_break.integration.test.ts`
+  - `tests/tiebreak/fb_p2c_deterministic_cases.json`
+- 実装方針:
+  - tie-break順序定数を domain に固定。
+  - worker adapter は証跡キー（5項目）を返却。
+  - fixture固定で deterministic 判定をintegration化。
+
+### Phase 5) Verify（再現性・監査証跡）
+- Verifyで確認するBlock条件:
+  - `appliedTieBreakOrder mismatch`
+  - `paddingViolationCount > 0`
+  - `outputPolygonHash drift`
+- 結果:
+  - 全条件を満たし `Proceed=Yes`。
+  - Self-Correction 0/3（上限未到達）。
