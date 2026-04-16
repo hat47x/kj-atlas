@@ -60,4 +60,19 @@ describe("ContextQueryPreviewPanel", () => {
     expect(html).toContain('data-testid="ce1-query-preview-submit"');
     expect(html).toContain("disabled");
   });
+
+  it("shows safeMode guard when includeUnreviewed is selected", () => {
+    const draft = buildDraft({ reviewFilter: "includeUnreviewed" });
+    const html = renderToStaticMarkup(
+      React.createElement(ContextQueryPreviewPanel, {
+        draft,
+        previewState: buildQueryPreviewState(draft),
+        onPreviewConfirmedChange: vi.fn(),
+        onSubmit: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("safeMode strict requires reviewFilter=reviewedOnly");
+    expect(html).toContain("reviewFilter: includeUnreviewed");
+  });
 });
