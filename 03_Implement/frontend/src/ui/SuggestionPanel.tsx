@@ -1,4 +1,9 @@
 import { buildCe2ProposalOnlyState } from "../domain/ce2_proposal_only";
+import {
+  buildCe2SuggestionCandidates,
+  summarizeCe2ReviewStates,
+  type Ce2SuggestionCandidate,
+} from "../domain/ce2_suggestion_candidates";
 import { t } from "../i18n/translate";
 
 type SuggestionPanelProps = {
@@ -9,6 +14,10 @@ type SuggestionPanelProps = {
   onResuggest: () => void;
   onDiscard: () => void;
   hasSuggestion: boolean;
+  suggestionId?: string | null;
+  proposalCandidates?: Ce2SuggestionCandidate[];
+  selectedProposalId?: string | null;
+  onSelectProposalCandidate?: (proposalId: string) => void;
   isPreviewEnabled: boolean;
   onPreviewToggle: (enabled: boolean) => void;
   isAnnotateOverlayEnabled: boolean;
@@ -25,6 +34,10 @@ export function SuggestionPanel({
   onResuggest,
   onDiscard,
   hasSuggestion,
+  suggestionId,
+  proposalCandidates,
+  selectedProposalId,
+  onSelectProposalCandidate,
   isPreviewEnabled,
   onPreviewToggle,
   isAnnotateOverlayEnabled,
@@ -39,6 +52,13 @@ export function SuggestionPanel({
     previewEnabled: isPreviewEnabled,
     hasSuggestion,
   });
+  const candidates = buildCe2SuggestionCandidates({
+    hasSuggestion,
+    suggestionId,
+    candidates: proposalCandidates,
+  });
+  const selectedCandidateId = selectedProposalId ?? candidates[0]?.proposalId ?? "";
+  const reviewSummary = summarizeCe2ReviewStates(candidates);
 
   return (
     <section
@@ -112,6 +132,36 @@ export function SuggestionPanel({
             <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 6 }}>
               {t("suggestion.panel.proposal_only_hint")}
             </div>
+          </section>
+          <section
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 6,
+              padding: 8,
+              marginBottom: 8,
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Patch proposals</div>
+            <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>
+              review state: {reviewSummary.unreviewed} unreviewed / {reviewSummary.reviewed} human reviewed
+            </div>
+            <select
+              data-testid="ce2-proposal-candidate-select"
+              style={{ width: "100%", marginBottom: 6 }}
+              value={selectedCandidateId}
+              disabled={isReadOnly || candidates.length === 0}
+              onChange={(event) => {
+                onSelectProposalCandidate?.(event.target.value);
+              }}
+            >
+              {candidates.length === 0 ? <option value="">No proposals</option> : null}
+              {candidates.map((candidate) => (
+                <option key={candidate.proposalId} value={candidate.proposalId}>
+                  {candidate.label} ({candidate.status}, {candidate.reviewState})
+                </option>
+              ))}
+            </select>
           </section>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <input
