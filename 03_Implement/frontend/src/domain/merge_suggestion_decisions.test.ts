@@ -346,4 +346,12 @@ describe("merge_suggestion_decisions", () => {
       "d0",
     ]);
   });
+
+  it("fails fast when restore is requested with an undefined snapshot contract", () => {
+    expect(() =>
+      restoreMergeSuggestionDecisionsBySnapshot([], "CTR-2B-02-DECISION-LOG-V2")
+    ).toThrowError(
+      "snapshotVersion must match CTR-2B-02-DECISION-LOG-V1; contract deviations must be routed to A1"
+    );
+  });
 });
