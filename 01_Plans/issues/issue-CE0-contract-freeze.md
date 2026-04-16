@@ -79,6 +79,7 @@
 
 - CE0/CE1/CE2 の契約ID整合を検証し、衝突0件をProceed条件にする。
 - 契約語彙の差異（同義語ズレ含む）を0件にする。
+- Verify結果は `Contract ID collision=0` / `safeMode後退=0` を同時記録し、どちらかが1件でもNo-Go停止とする。
 
 ### Phase 5 Workflow（Plan -> Execute -> Verify -> Proceed）
 
@@ -221,6 +222,7 @@
 - `CE0-SAFEMODE-IF`: `safeMode` 既定ON、`allowUnreviewedText=false` 既定。
 - `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみ。
 - `CG-01..05`: Working/Projection/Consensus 分離、`patch + approval` 以外の適用禁止、監査4点セット必須。
+- CE2/CE4へのハンドオフは **read-only** とし、契約改訂要求は CE0/CE1 へ差し戻して再起票する。
 
 フェイルセーフ（即停止）: SafeMode後退 / auto-apply許容 / 未レビュー昇格許容。
 

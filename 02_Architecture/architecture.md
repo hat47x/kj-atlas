@@ -257,6 +257,7 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 - `previewConfirmed=false` は `422 preview_required` として失敗扱い。
 - 同一 canonical query では deterministic `bundleHash` 一致を必須化する。
 - CE2/CE4 は CE1 実装完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で先行検証を継続する。
+- CE2/CE4 への受け渡しは read-only handoff とし、契約更新は CE1 再起票でのみ扱う。
 
 ### 7B.2 CE2-LOW-RISK-AI-ASSIST
 
