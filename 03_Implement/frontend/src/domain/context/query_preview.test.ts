@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildQueryPreviewState, runMockContextIntegration, type ContextQueryDraft } from "./query_preview";
+import { buildQueryPreviewState, runMockContextIntegration, toCanonicalQueryKey, type ContextQueryDraft } from "./query_preview";
 
 function baseDraft(): ContextQueryDraft {
   return {
@@ -29,6 +29,12 @@ describe("query preview state", () => {
     expect(preview.reviewFilter).toBe("reviewedOnly");
   });
 
+  it("blocks unreviewed filter when safeModePolicy is strict", () => {
+    const preview = buildQueryPreviewState({ ...baseDraft(), reviewFilter: "includeUnreviewed" });
+    expect(preview.canSubmit).toBe(false);
+    expect(preview.blockers).toContain("safeMode strict requires reviewFilter=reviewedOnly");
+  });
+
   it("returns 422 preview_required when preview is not confirmed", async () => {
     const draft = { ...baseDraft(), previewConfirmed: false };
     const result = await runMockContextIntegration(draft, async () => {
@@ -55,5 +61,28 @@ describe("query preview state", () => {
       excludedReason: ["unreviewed_filtered"],
     }));
     expect(result).toEqual({ canSubmit: true, statusCode: 200, bundleHash: "hash-123", excludedReason: ["unreviewed_filtered"] });
+  });
+
+  it("builds a deterministic canonical key for semantically equal inputs", () => {
+    const first = baseDraft();
+    const second: ContextQueryDraft = {
+      ...baseDraft(),
+      constraints: {
+        modelTier: "local",
+        tokenBudget: 1200,
+        nested: { beta: true, alpha: "x" },
+      },
+    };
+    const third: ContextQueryDraft = {
+      ...baseDraft(),
+      constraints: {
+        nested: { alpha: "x", beta: true },
+        tokenBudget: 1200,
+        modelTier: "local",
+      },
+    };
+
+    expect(toCanonicalQueryKey(first)).toBe(toCanonicalQueryKey(baseDraft()));
+    expect(toCanonicalQueryKey(second)).toBe(toCanonicalQueryKey(third));
   });
 });

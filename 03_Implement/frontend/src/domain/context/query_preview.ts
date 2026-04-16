@@ -32,11 +32,39 @@ export type QueryPreviewState = {
   blockers: string[];
 };
 
+function toStableValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => toStableValue(item));
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right));
+    return Object.fromEntries(entries.map(([key, entryValue]) => [key, toStableValue(entryValue)]));
+  }
+  return value;
+}
+
+export function toCanonicalQueryKey(draft: ContextQueryDraft): string {
+  return JSON.stringify({
+    queryId: draft.queryId.trim(),
+    goal: draft.goal.trim(),
+    scope: draft.scope,
+    depth: draft.depth,
+    constraints: toStableValue(draft.constraints),
+    reviewFilter: draft.reviewFilter,
+    safeModePolicy: draft.safeModePolicy,
+    outputMode: draft.outputMode,
+    previewConfirmed: draft.previewConfirmed,
+  });
+}
+
 export function buildQueryPreviewState(draft: ContextQueryDraft): QueryPreviewState {
   const blockers: string[] = [];
   if (draft.queryId.trim().length === 0) blockers.push("queryId is required");
   if (draft.goal.trim().length === 0) blockers.push("goal is required");
   if (draft.depth < 0 || draft.depth > 5) blockers.push("depth must be between 0 and 5");
+  if (draft.safeModePolicy === "strict" && draft.reviewFilter === "includeUnreviewed") {
+    blockers.push("safeMode strict requires reviewFilter=reviewedOnly");
+  }
   if (!draft.previewConfirmed) blockers.push("previewConfirmed must be true before submit");
 
   return {
