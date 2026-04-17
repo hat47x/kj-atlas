@@ -35,25 +35,22 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 
 ### 0.2 Stream G 直列同期（security フェーズ）
 
-Stream G では `operations.md`（参照のみ）同期完了後に本書を更新する。確認順序は次のとおり。
+Stream G では `02_Architecture/strict_mode_exception_approval_flow.md` を正本として、
+`security.md -> security_operational_guidelines.md -> e2e_testing.md` の順で同期する。
+`operations.md` は runbook 正本として常時照合し、語彙・責務・固定値の同値性を確認する。
 
 ### 0.2.1 Stream D 実行メモ（security docs-only）
 
 本書を Stream D 専任で更新する場合は、編集対象を `security.md` / `security_operational_guidelines.md` に限定し、次を満たすまで Proceed しない。
 
-1. 用語一致（`Security Officer / System Owner / Platform Operator`）
-2. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
-3. 承認未了の決定（未確定Q項目・再承認待ち）を確定事項として本文へ反映していない
-4. docs-check（リンク整合 + 固定値照合 + `git diff --check`）が成功
-
 1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
 2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
 3. 固定値一致（D1=4h、D2=2h、D3=代理承認なし、D4=48h/15m/60m）
 4. 相互リンク一致（`strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`）
+5. 承認未了の決定（未確定Q項目・再承認待ち）を確定事項として本文へ反映していない
+6. docs-check（リンク整合 + 固定値照合 + `git diff --check`）が成功
 
 不一致が残る場合は e2e フェーズへ進まずに停止する。D1〜D4 の不整合を検知した場合は即時停止する。
-
-A3 docs同期では `operations.md` を参照のみ（編集禁止）とする。
 
 ### 0.3 セキュリティ文書整合チェック（必須4観点）
 

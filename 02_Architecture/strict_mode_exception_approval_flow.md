@@ -43,7 +43,7 @@ AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 3. `04_Documentation/security_operational_guidelines.md`
 4. `04_Documentation/e2e_testing.md`
 
-`04_Documentation/operations.md` は実行runbookとして参照対象に含まれるが、A3 docs同期では更新対象外とする。
+`04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 
 ## 1.1 ミニ用語集（この文書で使う言葉）
 

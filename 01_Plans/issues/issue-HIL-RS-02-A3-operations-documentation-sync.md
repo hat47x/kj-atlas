@@ -10,11 +10,11 @@
 - Scope:
   - `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
   - `02_Architecture/strict_mode_exception_approval_flow.md`
+  - `04_Documentation/operations.md`
   - `04_Documentation/security.md`
   - `04_Documentation/security_operational_guidelines.md`
   - `04_Documentation/e2e_testing.md`
 - Out of scope:
-  - `04_Documentation/operations.md`
   - `01_Plans/project-progress-dashboard.md`
   - `01_Plans/issues/README.md`
   - `03_Implement/*`
@@ -32,7 +32,7 @@ strict mode 例外運用（AUTH-OPS-03）は D1〜D4 固定値で運用するが
 1. 用語一致（Security Officer / System Owner / Platform Operator）
 2. 責務分離一致（2者承認と実行責務分離）
 3. 固定値一致（D1〜D4）
-4. 導線一致（architecture -> security -> guidelines -> e2e）
+4. 導線一致（architecture -> security -> guidelines -> e2e、operationsはrunbook整合）
 
 ## 2) Decision
 
@@ -69,7 +69,7 @@ Stream G は docs-only で上記5ファイルのみ更新し、strict mode 例�
 - AC-1: 役割語彙が3文書+アーキ文書で一致。
 - AC-2: 状態語彙が canonical に一致。
 - AC-3: D1〜D4 固定値が一致。
-- AC-4: 導線（architecture -> security -> guidelines -> e2e）が明示。
+- AC-4: 導線（architecture -> security -> guidelines -> e2e）が明示され、operations runbookが同値語彙で整合。
 - AC-5: `operations.md` / dashboard / issues README / 実装コードを編集しない。
 - AC-6: docs-check を再現可能コマンドで記録。
 
@@ -92,11 +92,13 @@ python 01_Plans/issues/validate_active_issue_memos.py
 python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py
 rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" \
   02_Architecture/strict_mode_exception_approval_flow.md \
+  04_Documentation/operations.md \
   04_Documentation/security.md \
   04_Documentation/security_operational_guidelines.md \
   04_Documentation/e2e_testing.md
-rg -n "operations\.md|security_operational_guidelines\.md|e2e_testing\.md" \
+rg -n "operations\.md|security\.md|security_operational_guidelines\.md|e2e_testing\.md" \
   02_Architecture/strict_mode_exception_approval_flow.md \
+  04_Documentation/operations.md \
   04_Documentation/security.md \
   04_Documentation/security_operational_guidelines.md \
   04_Documentation/e2e_testing.md
@@ -187,3 +189,27 @@ Proceed 条件:
 ### Phase 6 Proceed
 - Proceed許可: Go条件成立 + Verify pass + 許可外編集0件。
 - Proceed不可: NoGo条件成立時、未確定をYes/No質問化してDecision Queueへ戻す。
+
+## Stream G A3 Rerun-04 (2026-04-17)
+
+### Phase 1 Read
+- D1〜D4固定値・役割語彙・状態語彙を `strict_mode_exception_approval_flow.md` / `operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` で再読。
+
+### Phase 2 ADR CDC
+- AUTH-OPS-03 固定値は既存決定で充足。方針変更がないため追加ADR/CDCは起票しない。
+
+### Phase 3 Plan（AC/DoD）
+- AC: 語彙一致・責務分離・導線一致（architecture -> security -> guidelines -> e2e）・固定値一致（D1〜D4）。
+- DoD: docs-check + diff-check 成功、ドリフト0件。
+
+### Phase 4 Execute
+- `operations.md` の状態語彙を canonical に収束（DraftRequest / ApprovalPending / ActiveException）。
+- `e2e_testing.md` の docs-check コマンドへ `operations.md` を追加。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**。不一致が1件でも再発した場合は `StoppedForClarification` として停止する。
