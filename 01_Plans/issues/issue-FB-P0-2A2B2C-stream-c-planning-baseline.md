@@ -4,7 +4,7 @@
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream H（audit normalization only）
+- Owner: Stream D（FB-P2B + FB-P0 baseline lane）
 - Scope: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ
 - Related Backlog: `FB-P2A-01/02`, `FB-P2B-01/02`, `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`, `ADR-0019`, `02_Architecture/island_shapes.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
@@ -445,3 +445,40 @@
 ### Phase 6) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
+
+## Stream D execution update（2026-04-17）
+
+- Stream role: `Stream D（FB-P2B + FB-P0 baseline専属）`
+- Editable scope: baseline + FB-P2B A1/A2/A3 issue memos only
+- Immutable scope: `P2A/P2C/CE/HIL` issue群, `03_Implement/**`, 共有統合3ファイル
+
+### Phase 1 Read（P0優先度 / A1→A2→A3境界確認）
+- Plan: P0優先度、契約順序、編集境界を再確認する。
+- Execute: P2B-01/02のA1/A2/A3契約ID・依存順を照合した。
+- Verify: `P0` と `A1 -> A2 -> A3` の一致を確認（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 ADR CDC（方針変更時のみ）
+- Plan: 既存方針逸脱の有無を確認し、必要時のみ `Context / Decision / Consequences` を起票する。
+- Execute: 今回更新は契約リンク固定と検証手順明確化のみで、新規方針追加なし。
+- Verify: ADR更新不要（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 Plan（mock-ready API/比較キー/rollback合意）
+- Plan: A2開始条件として mock-ready API署名・比較キー・rollback条件を明文化する。
+- Execute: P2B-01/02双方で `ContractID` と比較キーを固定し、rollback triggerをA1差戻し条件として統一。
+- Verify: A2/A3が参照専用で開始可能（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 Execute（baseline↔P2B A1/A2/A3契約リンク固定）
+- Plan: baselineからP2B-01/02 A1/A2/A3の契約リンク追跡を固定する。
+- Execute: A1 root、A2 depends、A3 referenceの直列リンクを維持。
+- Verify: 契約矛盾・未定義競合なし（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5 Verify（docs-check / 依存矛盾0 / 競合0 / 修復上限）
+- Plan: docs-checkを実行し、依存矛盾0・競合0・自己修復3回上限を確認する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準コマンドとして適用。
+- Verify: fail-safe条件（Gate未承認・契約矛盾・未定義競合・修復上限超過で停止）を再固定。
+- Proceed: Stream D契約パック更新を完了。
+
