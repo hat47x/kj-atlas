@@ -384,3 +384,21 @@
 ### Phase 6 Proceed / Stop
 - `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0)` を満たす場合のみ完了。
 - それ以外は停止し、人間判断へエスカレーション。
+
+## Stream B Alignment Addendum（2026-04-17, mock-first / contract-only）
+
+### Plan
+- CE0 では `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再定義せず再確認する。
+- CE1/CE2 依存は mock-first 前提で切断し、実装完了待ちは行わない。
+
+### Execute
+- safeMode 後退禁止、Consensus direct write 禁止、auto-apply 禁止を固定値として維持する。
+- Query Preview bypass を禁止し、`proposal-only` 境界を崩さない。
+
+### Verify
+- `Contract ID collision=0` / `Vocabulary collision=0` / `safeMode regression=0` を同時条件で確認する。
+- Self-Correction は最大3回。`attempt=4` 相当は即停止する。
+
+### Proceed
+- CE1/CE2 へは参照専用 handoff のみ許可し、契約ID再定義要求は受け付けない。
+
