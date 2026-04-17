@@ -360,3 +360,36 @@
 - 責務用語不整合を検知した場合は停止。
 - D1〜D4 固定値矛盾を検知した場合は停止。
 - Verify自己修復が3回を超えた場合は停止（`StoppedForClarification`）。
+
+
+## Stream C serial update (2026-04-17)
+
+### Phase 1) Read（Scope / AC確認）
+- Scope を再確認し、本Issueは **issueメモ更新のみ** に限定する。
+- AC/DoD・VerificationLevel・GoNoGoGate・DecisionStatus の整合を確認した。
+- 禁止事項確認: 実装コードおよび Stream C/G 専有の `04_Documentation/e2e_testing.md` / `04_Documentation/security.md` / `04_Documentation/operations.md` には非接触。
+
+### Phase 2) ADR CDC（方針変更時のみ）
+- 判定: **追加ADR不要**。
+- 理由: 本更新は計画メモのAC/DoD整備と検証手順の明確化に限定し、上位方針・アーキテクチャ決定を変更しない。
+
+### Phase 3) Plan（AC/DoD不足の先行合意）
+- 先行合意（本Issue共通）:
+  - AC-C1: Scope / Non-goal / Verification を本文内で追跡可能にする。
+  - AC-C2: Proceed条件とStop条件を本文に明示する。
+  - DoD-C1: `docs-check + diff` の実行結果を記録する。
+  - DoD-C2: 自己修復は最大3回。4回目相当は停止して競合報告に切り替える。
+
+### Phase 4) Execute（直列更新）
+- 本Issueを直列レーンの1件として更新し、他Issue同時編集は実施しない。
+- 変更はメモ本文の運用記録・判定条件の追記に限定した。
+
+### Phase 5) Verify（docs-check + diff、最大3回修復）
+- 検証コマンド（共通）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+- 検証ポリシー: 不一致時は当該Issueのみ最大3回まで自己修復し、超過時は即停止。
+
+### Phase 6) Proceed（次Issueへ）
+- 判定: **Proceed可能**（致命競合なし）。
+- 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
