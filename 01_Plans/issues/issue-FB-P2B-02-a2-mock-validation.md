@@ -378,3 +378,35 @@
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
 
+## Stream E serial execution update（2026-04-17 / A2 mock validation lane）
+
+### Phase 1: Read
+- Plan: A1/A2/A3 を再読し、契約キーと依存順序を照合。
+- Execute: `ContractID/DependsOnContractID/ReferenceContractID` 三点一致を確認。
+- Verify: `CTR-2B-02-DECISION-LOG-V1` で一致（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（Context / Decision / Consequences）
+- Context: A2は実装非依存のmock検証レーンであり、契約拡張を許すとA3 handoffが不安定化する。
+- Decision: A2は A1契約参照のみとし、検証対象を `4値制約 / 非自動確定 / restore順序一致` に固定する。
+- Consequences: 新規 action 値・restore仕様変更要求は A1へ差し戻し、A2では扱わない。
+- Verify: 設計変更要求なし（CDC整備のみ）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD不足の補完）
+- gapType=AC: `agreementStatus=agreed` として、M1/M2/M3=pass・M4=fail を Go 条件へ固定。
+- gapType=DoD: `agreementStatus=agreed` として、検証失敗時の自己修復上限 `3回` を明文化。
+
+### Phase 4: Execute
+- mock append順序 `accept -> partial -> reject -> defer` を維持。
+- enum外 action は契約違反として復元対象外を維持。
+- A3引き渡し値は `CTR-2B-02-DECISION-LOG-V1` のみ。
+
+### Phase 5: Verify → Proceed
+- docs-check基準: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-Correction counter: `0/3`（本更新時点）。
+- Proceed判定: Go（A2は契約参照型mock検証レーンとして継続可能）。
+
+### Fail-safe checkpoint
+- 3回超過 / 契約ドリフト / 依存逆転 / 競合検出で即停止する。
+

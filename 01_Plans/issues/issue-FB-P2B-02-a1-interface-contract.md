@@ -641,3 +641,34 @@
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
 
+## Stream E serial execution update（2026-04-17 / A1 contract freeze only）
+
+### Phase 1: Read
+- Plan: A1/A2/A3 の3メモを再読し、契約キーと依存順序を照合する。
+- Execute: `ContractID=CTR-2B-02-DECISION-LOG-V1` と `A1 -> A2 -> A3` を確認。
+- Verify: 差分なし（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（Context / Decision / Consequences）
+- Context: A2/A3 で契約境界が揺れると、manual assisted merge の監査再現性が崩れる。
+- Decision: A1契約 `CTR-2B-02-DECISION-LOG-V1` を固定し、A2/A3 は参照専用を継続する。
+- Consequences: enum拡張・必須項目変更・restore境界変更要求は A1 差し戻しとする。
+- Verify: 設計変更なし（CDC追記のみ）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD不足の補完）
+- gapType=DoD: `agreementStatus=agreed` で、停止条件（3回超過・契約ドリフト・競合検出）を明示。
+- gapType=AC: `agreementStatus=agreed` で、A2/A3 参照時の `4値制約 / 順序保持 / 非自動確定` を固定入力化。
+
+### Phase 4: Execute
+- A1本文に対して契約再定義は行わず、固定値と差し戻し条件のみ維持。
+- 並列化要求・実装先行要求は受理せず、直列 `A1 -> A2 -> A3` を維持。
+
+### Phase 5: Verify → Proceed
+- docs-check基準: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-Correction counter: `0/3`（本更新時点）。
+- Proceed判定: Go（A1は契約凍結状態を維持）。
+
+### Fail-safe checkpoint
+- 3回超過 / 契約ドリフト / 競合検出時は即停止し、競合一覧・停止理由・再開条件のみ提示する。
+
