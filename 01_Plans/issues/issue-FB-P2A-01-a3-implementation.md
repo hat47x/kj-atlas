@@ -24,13 +24,14 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream B / user-fixed serial mapping）
 
-- Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約明確化（CDC明文化）
-- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
-- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
-- Phase 5: Verify（記述整合・依存整合）
+- Phase 1（A1）: Read / CDC
+- Phase 2（A1）: Execute / Verify
+- Phase 3（A2）: Plan / Execute（mock ledger）
+- Phase 4（A2）: Verify
+- Phase 5（A3）: Plan / Execute（handoff固定）
+- Phase 6（A3）: Verify / Proceed
 
 ## Execution protocol（Plan→Execute→Verify→Proceed）
 
@@ -125,6 +126,12 @@
 ### Proceed
 
 - Go判定成立時のみ次タスクへ進行し、NoGo時はA1/A2/A3責務へ即時返却する。
+
+## Serial completion marker（A3 segment）
+
+- Phase 5（Plan/Execute handoff固定）: Completed
+- Phase 6（Verify/Proceed）: Completed
+- Proceed condition: Go判定成立時のみ実装レーンへ接続（NoGoはA1/A2責務へ返却）
 
 ## 実装トレース最小単位
 
@@ -225,4 +232,3 @@
 - Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Verify focus: 依存逆転なし（A1→A2→A3）、契約ID衝突なし、指定外ファイル編集なし。
 - Next action: Stream B は本3ファイルを `Done-ready (human approval pending)` として保持し、実装レーンへの引き渡し判断を待機。
-
