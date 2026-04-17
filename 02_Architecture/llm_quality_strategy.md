@@ -197,3 +197,11 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
 - Version: `1.0.0`
 - Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+
+## Stream B CE Contract Sync Note（2026-04-17）
+
+- CE0/CE1/CE2 の品質ゲートは `Plan -> Execute -> Verify -> Proceed` を固定順序とする。
+- Verify は `Contract ID collision=0` / `Vocabulary collision=0` / `safeMode regression=0` の同時充足を前提とする。
+- Self-Correction は最大3回とし、4回目相当は `fail-closed`（CE2 は `status=held`）で停止する。
+- 本書は実装手順を追加せず、mock-first 契約検証の基準のみを扱う。
+

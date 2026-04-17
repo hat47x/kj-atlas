@@ -313,3 +313,21 @@ Error code は次を固定し、文言差分を許可しない。
 | CE4 audit trail | 監査キー `queryId` / `queryCanonicalHash` / `bundleHash` / `excludedReason` | 監査キー欠落、`dryRun=true` で副作用発生 |
 
 CE2/CE4 は上表を mock I/F 前提で先行検証し、CE1実装完了待ちを行わない。
+
+## Stream B Alignment Addendum（2026-04-17, mock-first / contract-only）
+
+### Plan
+- `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を固定IDとして再確認する。
+- 方針変更は行わず、CDC は既存合意（Context/Decision/Consequences）の再確認に限定する。
+
+### Execute
+- `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の語彙を単一表現で固定する。
+- `previewConfirmed=false -> 422 preview_required`、canonical JSON + sha256、mock-first 依存切断を維持する。
+
+### Verify
+- 同一 canonical query の `queryCanonicalHash` / `bundleHash` 3/3 一致を決定論ゲートとして確認する。
+- Contract ID collision=0、安全後退=0、未定義キー拒否（`400 unknown_contract_key`）を同時確認する。
+
+### Proceed
+- CE2 への連携は `sourceBundleHash === bundleHash` を参照専用条件として引き渡す。
+

@@ -290,3 +290,21 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
   - auto-apply 経路 0 件、`reviewState` 自動昇格 0 件であること。
   - Verify の修復回数（`verifyAttempt`）が 3 回以内であること。
 - 3回修復で収束しない場合は Proceed せず、`status=held` のまま停止する。
+
+## Stream B Alignment Addendum（2026-04-17, mock-first / contract-only）
+
+### Plan
+- `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF` を固定IDとして再確認する。
+- CE1 は mock contract 参照とし、実装完了待ちを行わない。
+
+### Execute
+- proposal-only を固定し、direct write / auto-apply / review自動昇格を禁止する。
+- `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|human_reviewed` のみ許可する。
+
+### Verify
+- CE1ドリフト検知時の `status=held` 強制停止、`held` 自動解除禁止、safeMode後退0件を確認する。
+- Self-Correction は最大3回。`attempt=4` 相当は即停止する。
+
+### Proceed
+- CE3/CE4 への契約再定義要求は受理せず、参照専用 handoff のみ実施する。
+

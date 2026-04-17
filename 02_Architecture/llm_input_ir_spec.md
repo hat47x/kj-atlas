@@ -567,3 +567,14 @@ A2 contract test では次を機械判定する。
 - Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
 - Version: `1.0.0`
 - Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+
+## Stream B Contract Vocabulary Sync Note（2026-04-17）
+
+本書で扱う CE0/CE1/CE2 契約語彙は次で固定する。
+
+- CE0: `safeMode` 後退禁止 / Consensus direct write 禁止 / auto-apply 禁止
+- CE1: `ContextQuery` / `ContextBundle` / `queryCanonicalHash` / `bundleHash` / `previewConfirmed`
+- CE2: `proposal-only` / `proposalId` / `diff` / `sourceBundleHash` / `status` / `reviewState` / `held`
+
+上記語彙の意味変更・列挙値変更・安全境界変更は本書単独で行わず、Issue 契約（CE0/CE1/CE2）で CDC 承認後に同期する。
+
