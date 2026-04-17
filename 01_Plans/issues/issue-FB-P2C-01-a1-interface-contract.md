@@ -4,7 +4,7 @@
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream H（audit normalization only）
+- Owner: Stream F（FB-P2C-01-A1 / CE1 planning contracts only）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -30,6 +30,14 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed（A1内で固定、Gate 0承認記録を反映済み）
 - DecisionQueueRef（未確定時の参照先）: `DQ-FB-P2C-01`（Approved: deterministicTieBreakOrder approval）
+
+## Stream F execution boundary（2026-04-17）
+
+- Target lane: `FB-P2C-01-A1` + `CE1 planning` only。
+- Editable files: 本ファイル / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE0-contract-freeze.md` のみ。
+- Prohibited edits: `03_Implement/**`、共有統合ファイル、他issue。
+- Fixed phase order: **Read → ADR CDC（必要時）→ Plan（I/F最小契約+mock可能性）→ Execute（契約固定）→ Verify/Proceed（docs-check）**。
+- Stop rule: Gate未承認、Decision未確定、Verify自己修復4回目相当で停止。
 
 ## 1) 課題 / Problem statement
 

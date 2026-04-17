@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream C (CE1 ContextQuery/ContextBundle contracts)
+- Owner: Stream F (CE1 ContextQuery/ContextBundle planning contracts only)
 - Scope: `01_Plans/issues/`, `02_Architecture/`（Stream C: 契約文書のみ / mock-first）
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`
@@ -19,9 +19,17 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `C` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Architecture only)
+- Stream: `F` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Architecture only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
+
+## Stream F execution boundary（2026-04-17 / CE1 planning only）
+
+- Scope lock: CE1のI/F最小契約とmock検証可能性の定義に限定する。
+- Interface-first: 実装依存（handler/UI/DB）を契約本文へ持ち込まない。
+- Contract freeze keys: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を再定義しない。
+- Proceed gate: `preview_required` / `nondeterministic_bundle` / `unknown_contract_key` の意味論が固定された場合のみ進行可。
+- Stop rule: Gate未承認、Decision未確定、Verify自己修復4回目相当で停止。
 
 ## Stream E 実行契約（2026-04-16 / CE計画専属）
 
