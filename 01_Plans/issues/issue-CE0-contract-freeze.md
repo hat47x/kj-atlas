@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Plan Owner
+- Owner: Stream F（CE1 planning liaison / CE0 reference freeze only）
 - Scope: `01_Plans/issues/`, `02_Architecture/`（Stream A: Contract Freeze / mock-first / Docs-Architecture only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
@@ -19,9 +19,16 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `A` (Contract Freeze / mock-first / Docs-Architecture only)
+- Stream: `F` (CE1 planning liaison / Contract Freeze reference only / Docs-Architecture only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
 
+
+## Stream F liaison note（2026-04-17 / CE1 dependency isolation）
+
+- CE0は **reference freeze** として参照し、CE1契約語彙との整合確認のみを扱う。
+- CE1計画系の依存切断を優先し、CE0本文へ新規実装要件を追加しない。
+- Interface-first原則により、CE0側では契約ID・禁止事項・No-Go条件の再定義を行わない。
+- Stop rule: Gate未承認、Decision未確定、Verify自己修復4回目相当で停止。
 
 ## Stream A 実行契約（2026-04-16 / CE計画専属）
 
