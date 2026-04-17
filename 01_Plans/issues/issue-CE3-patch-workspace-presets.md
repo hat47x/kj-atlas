@@ -394,3 +394,38 @@
 
 - CE3スコープ内の未達はなし。
 - 継続課題（範囲外）: local監査ログの document監査ログ統合（CE4）。
+
+## 17) Stream H Verification Notes (2026-04-17)
+
+### Phase 1 Read（CE3 issue / UI / test 再読）
+
+- `issue-CE3-patch-workspace-presets.md` の AC/DoD と CE3 の対象テスト（domain/ui/e2e）を再読し、検証順序を `unit -> e2e` で固定。
+- `PatchWorkspacePanel` と `ce3_patch_workspace` の local state 境界（Core/Consensus 非改変）を再確認。
+
+### Phase 2 ADR CDC 判定
+
+- 実装方針の変更はなし（既存 CDC を維持）。
+- 本フェーズでは Verify 手順のみを更新し、仕様/設計の新規意思決定は追加しない。
+
+### Phase 3 Plan（AC/DoD不足の確認）
+
+- AC/DoD の追加は不要と判断。
+- Verify 失敗時の自己修復上限 3 回を適用する方針を明示。
+
+### Phase 4 Execute（workspace/preset/rollback）
+
+- コード変更なし（既存実装の回帰検証のみ実施）。
+
+### Phase 5 Verify（失敗時3回修復）
+
+- unit 1回目: pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `playwright install chromium` 実施。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `playwright install-deps chromium` 実施（apt mirror の一時 `503` 警告は旧 index fallback で継続）。
+- e2e 3回目: pass（3回上限内で収束）。
+
+### Phase 6 Proceed（停止条件判定）
+
+- 失敗残なしのため Proceed。
+- 未着手課題は継続して CE4（local audit → document監査ログ統合）へ委譲。
