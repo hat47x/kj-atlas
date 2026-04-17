@@ -10,7 +10,7 @@
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
-- Owner: Stream H（audit normalization only）
+- Owner: Stream D（FB-P2B + FB-P0 baseline lane）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`
@@ -346,4 +346,41 @@
 - Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Self-repair: `0/3`（未実施）。
 - Proceed: Go（未定義依存 / 契約ドリフトなし）。
+
+## Stream D execution update（2026-04-17）
+
+- Stream role: `Stream D（FB-P2B + FB-P0 baseline専属）`
+- Workflow lock: `Plan -> Execute -> Verify -> Proceed`
+- Serial lock: `A1 contract freeze -> A2 mock validation -> A3 implementation handoff`
+- Fail-safe: Gate未承認 / 契約矛盾 / 未定義競合 / Self-Correction 3回超過で即停止
+
+### Phase 1 Read
+- Plan: P0優先度、A1→A2→A3順序、編集境界を確認する。
+- Execute: 本メモの契約IDと関連A1/A2/A3リンクを再照合した。
+- Verify: 契約順序と優先度に矛盾なし（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 ADR CDC
+- Plan: 変更が方針に触れる場合のみ `Context / Decision / Consequences` を追加し承認待ちにする。
+- Execute: 本更新は契約リンク固定と検証導線の整理に限定。
+- Verify: 新規ADR判断なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 Plan
+- Plan: mock-ready API署名・比較キー・rollback条件をA1契約に対して固定する。
+- Execute: DependsOn/Reference契約IDを単一参照点として保持。
+- Verify: A2/A3が契約参照のみで継続可能（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 Execute
+- Plan: baselineとP2B A1/A2/A3間の契約リンクを固定する。
+- Execute: 逆流要求はA1差し戻し、A2/A3で契約再定義を禁止。
+- Verify: 契約矛盾・未定義競合なし（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5 Verify
+- Plan: docs-check、依存矛盾0、競合0、修復3回上限を確認する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
+- Verify: fail-safeを満たさない場合は即停止。
+- Proceed: Stream Dレーンの契約更新を維持。
 
