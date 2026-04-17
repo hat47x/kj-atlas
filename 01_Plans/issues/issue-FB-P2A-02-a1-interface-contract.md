@@ -208,54 +208,25 @@
 - 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
 
-## Stream C Serial Contract Lock (2026-04-16)
+## Phase execution record（FB-P2A-02 / Stream C）
 
-### Phase 1 Read（再Read + 差分抽出）
-- 本ファイルを含む Stream C 管轄6ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
-- 差分抽出結果:
-  - `a1Status=="Done" && pendingDecisionQueueCount==0` を唯一ゲートとして維持。
-  - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` を固定値として維持。
-  - 契約ID衝突・依存逆転・未定義競合は 0 件。
+### Phase 1 Read（再Read済み）
+- A1/A2/A3 の3ファイルを再Readし、`ContractID` / 依存順序 / `DecisionStatus` を照合。
+- 結果: 依存順序は `A1 -> A2 -> A3` で整合、未定義競合なし。
 
 ### Phase 2 ADR CDC
-- Context: A1契約固定を下流A2/A3の参照専用境界として維持する。
-- Decision: 新規ADR追加は不要（既存 ADR-0026/0027/0028 と整合）。未承認決定は確定扱いしない。
-- Consequences: 契約変更要求はA1へ差戻し、下流はread-only handoff値のみ利用する。
+- Context: 本件は `ADR-0007` 既存方針（collapse/expand の可視性制御）を契約I/Fへ固定する作業。
+- Decision: 新規ADRは起票しない（No ADR proposal）。
+- Consequences: 方針変更要求が出た場合のみA1で CDC 起票し、承認まで下流作業を停止する。
 
 ### Phase 3 Plan
-- AC/DoD不足時はドラフト提案を先行し、`agreementStatus=agreed` まで Execute へ進まない。
-- SSOT固定値:
-  - `schemaVersion=1.0.0`
-  - `overridePolicy=human_dual_control_only`
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- Go/No-Go:
-  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
-  - `NoGo = !Go`
+- Plan→Execute→Verify→Proceed の固定順序を再確認。
+- AC/DoD不足は `agreementStatus=agreed` まで進行禁止。
 
 ### Phase 4 Execute
-- 文言・契約ID・依存順序（A1→A2→A3）・停止条件を本ファイル内で同期。
-- 禁止遷移を固定:
-  - `Pending` bypass（`Pending -> Approved/Rejected` 以外）
-  - A1未完了時の A2/A3 `Draft -> Open`
-  - 未承認決定の確定扱い
-- Read-only handoff:
-  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- A1契約値（`CTR-2A-02-COLLAPSE-EXPAND-V1` / `IslandVisibilityContractV1`）を変更せず固定。
+- A2/A3 への handoff を read-only 参照として維持。
 
-### Phase 5 Verify
-- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending -> Approved|Pending -> Rejected" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
-- Self-Correctionは最大3回。4回目相当は即停止。
-
-### Phase 6 Proceed
-- 再開条件: `NoGo` 要因（未承認決定、識別子不一致、依存逆転）を解消し、再VerifyがPassすること。
-- 差戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1契約正本）。
-- Decision Queue未解決項目は `Pending` のまま保持し、確定扱いしない。
-
-### Fail-safe（停止報告テンプレ）
-1. 失敗条件
-2. 影響ファイル・契約ID
-3. 人間判断が必要な選択肢（2案）
-   - 案1: 既存固定値を維持してA1へ差戻し
-   - 案2: 承認会議で固定値変更を決定後に再凍結
+### Phase 5 Verify / Proceed
+- `docs-check` と A1→A2→A3 のリンク整合を確認して Proceed 可否を判定。
+- self-correction は最大3回。4回目相当は停止して判断待ち。
