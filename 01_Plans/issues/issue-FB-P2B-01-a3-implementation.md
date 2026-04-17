@@ -1,5 +1,11 @@
 # Issue Draft: FB-P2B-01-A3 Similar-card候補提示 / 実装接続
 
+## Edit Control (2026-04-17)
+
+- Edit authorization scope: this file only within FB-P2B-01 A1/A2/A3 serial lane.
+- Serial lock: `A1 contract freeze -> A2 mock validation -> A3 implementation handoff`.
+- Out-of-scope policy: editing non-target files is prohibited; contract changes must be routed back to A1.
+
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
