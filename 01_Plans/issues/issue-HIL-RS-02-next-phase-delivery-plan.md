@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Plan Owner (Stream B)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `ADR-0027`, `ADR-0026`, `ADR-0028`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- Dependencies: `ADR-0027`, `ADR-0026`, `ADR-0028`, `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `state-transition gate (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`, `00_Prompt/domain.md`
 - Expected verification level: `docs-check`
 
@@ -336,3 +336,34 @@
 ### Phase 5 Verify & Proceed
 - Verify commands: docs-check + gate式rg確認。
 - Proceed: `Go`成立時のみ。未確定は `Pending` 維持で人間判断待ち。
+
+
+## Stream B Serial Contract Alignment (2026-04-17)
+
+### Phase 1 Read（Dependencies / State Transition / Fail-safe 再読）
+- 再読対象を本メモと `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` の2件に固定し、依存・遷移・停止条件の同値性を点検。
+- 点検結果: `Dependencies` の主語を「特定ファイル待ち」から「凍結契約 + 状態遷移ゲート」へ統一する必要を確認。
+
+### Phase 2 ADR CDC（変更明文化・承認待ち）
+- Context: HIL-RS-02 は契約運用レーンであり、契約編集レーンではない。
+- Decision: `Dependencies` を `freezeContractId + state-transition gate` で表現し、着手可否は `Go/NoGo` 契約式のみで判定する。
+- Consequences: 参照ファイルは read-only 導線として扱い、依存判定は状態遷移契約を正本とする。
+- Decision Status: `Pending Approval`（CDC承認待ち）。
+
+### Phase 3 Plan（AC/DoD不足提案）
+- AC提案: `dependencyExpressionDrift=0`, `gateExpressionDrift=0`, `freezeIdentifierDrift=0`, `pendingBypass=0`, `safetyDowngradeRequest=0`。
+- DoD提案: Verifyで `docs-check + rg + diff` の3点を必須化し、証跡を本issueへ残す。
+- 合意状態: `agreementStatus=pending_approval`（承認前は `Draft/Open(hold)` を維持）。
+
+### Phase 4 Execute（依存記述の契約統一）
+- `Dependencies` を `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `state-transition gate` の契約記述へ統一。
+- `Go/NoGo` 式、禁止遷移、A1差戻し導線は既存契約を維持（再定義禁止）。
+
+### Phase 5 Verify（docs-check + diff整合）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `rg -n "Dependencies:|state-transition gate|a1Status=="Done" && pendingDecisionQueueCount==0|Fail-safe" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- 自己修復上限は3回。4回目相当は停止。
+
+### Phase 6 Proceed（未解決の返却）
+- 未承認・未定義競合・前提崩れは Decision Queue へ返却し、推測で確定しない。
+- Proceedは `a1Status=="Done" && pendingDecisionQueueCount==0` 成立時のみ許可。
