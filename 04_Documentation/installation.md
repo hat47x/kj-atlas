@@ -249,3 +249,35 @@ PRには実施手順と結果を必ず記載してください。
 - 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
 - D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
 - Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
+
+## Stream J execution record（2026-04-17, DOC-OPS-05-08 pair）
+
+### Phase 1 Read
+
+- `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` と本書を最新状態で同期し、Classification が **Improve external** で固定されていることを確認した。
+- 本書の公開境界（Public boundary）と非目標（Non-goal）が、組織内限定手順を除外する方針と一致することを再確認した。
+
+### Phase 2 ADR CDC
+
+- 判定: 方針変更なしのため **ADR追加なし**。
+- Context: 初回導入者向け公開手順の再現性を維持する。
+- Decision: 既存の Audience / Goal / Public boundary / Go/No-Go gate を維持する。
+- Consequences: 後続更新は docs-check と参照整合の範囲に限定し、実装変更に踏み込まない。
+
+### Phase 3 Plan
+
+- AC補完: 「最小起動・疎通・停止」の3手順が順序通りに再現できることを維持基準に固定。
+- DoD補完: Read → ADR CDC → Plan → Execute → Verify/Proceed をこのペアで記録し、次ペアへ引き継げる状態にする。
+
+### Phase 4 Execute
+
+- 本書では方針ドリフト防止のため、DOC-OPS-05-08 の運用記録を追記した（手順本体は変更しない）。
+
+### Phase 5 Verify / Proceed
+
+- docs-check:
+  - `rg -n "Improve external|Public boundary|Go/No-Go gate|Stream J execution record" 04_Documentation/installation.md`
+  - `rg -n "Classification|GoNoGoGate|DecisionStatus|Stream J execution record" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 判定: **Ready**
+- Proceed条件: 用語不整合・参照切れ・未定義競合が検出された場合は停止し、自己修復は最大3回までとする。

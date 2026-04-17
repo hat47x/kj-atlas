@@ -238,6 +238,33 @@
 
 ### 3) Plan（AC / DoD）
 - AC: Audience / Goal / Non-goal / Public boundary / Outcome / Related を本文で追跡可能にする。
+
+## 17) Stream J execution record（2026-04-17, single-pair update）
+
+### Phase 1 Read
+- 対象ペアを `issue-doc-ops-05-08-04doc-installation.md` + `04_Documentation/installation.md` に固定し、最新記述を同期した。
+- `DecisionStatus=Fixed` / `Classification=Improve external` / `GoNoGoGate=Required` の整合を再確認した。
+
+### Phase 2 ADR CDC
+- Context: 本Issueは公開向け導入ガイドの分類固定と維持管理が目的。
+- Decision: 方針変更なし。既存の分類（Improve external）を維持し、追加ADRは作成しない。
+- Consequences: 実施は docs-only とし、実装コード・共有統合ファイルには非接触で進める。
+
+### Phase 3 Plan
+- AC/DoD不足を補う計画として、対象docに Stream J の5Phase運用記録を追記する。
+- 失敗時は自己修復最大3回、4回目相当で停止（Hold）とする。
+
+### Phase 4 Execute
+- 実行結果: `04_Documentation/installation.md` に Stream J セクションを追記し、Issueとの同期状態を明文化した。
+- 同時多点変更禁止に従い、このペア以外のdoc/issueは更新しない。
+
+### Phase 5 Verify / Proceed
+- docs-check:
+  - `rg -n "Stream J execution record|Improve external|Go/No-Go gate|Public boundary" 04_Documentation/installation.md`
+  - `rg -n "Stream J execution record|DecisionStatus|GoNoGoGate|Classification" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 判定: **Ready**
+- Proceed: 次ペアへ進む際も Plan → Execute → Verify → Proceed を固定し、参照切れ・用語不整合・未定義競合を検知した場合は停止する。
 - DoD: Verifyで `docs-check`（メタ/語彙/固定値/リンク）を確認し、Proceedに `Ready/Hold/Needs-decision` を記録する。
 
 ### 4) Execute（文書更新）
