@@ -31,13 +31,14 @@
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
-### Phase 固定（Read → Contract-first → Mock-first → Verify → Proceed）
+### Phase 固定（Read → ADR CDC → Plan → Execute(同値性契約) → Verify(max3) → Proceed）
 
 1. **Read**: CE対象Issueと参照ADRの整合を先に確認する。
 2. **Contract-first**: I/F・型・監査キーを先に固定し、実装仕様を持ち込まない。
-3. **Mock-first**: 実装完了待ちを禁止し、モック契約で検証可能性を先行確保する。
-4. **Verify**: docs-check とトレーサビリティ（契約ID・語彙・No-Go条件）を検証する。
-5. **Proceed**: 実装レーンへは参照専用契約として引き渡し、再定義を禁止する。
+3. **Plan**: AC/DoD と No-Go 条件を契約語彙で固定し、実装仕様を持ち込まない。
+4. **Execute(同値性契約)**: 実装完了待ちを禁止し、モック契約で `equivalenceKey + bundleHash` / 監査4点セットを先行検証する。
+5. **Verify(max3)**: docs-check とトレーサビリティ（契約ID・語彙・No-Go条件）を検証し、自己修復は最大3回まで。
+6. **Proceed**: 実装レーンへは参照専用契約として引き渡し、再定義を禁止する。
 
 ### ADR 必須条件（Stop & Ask）
 
@@ -116,7 +117,7 @@
 
 ## 3) Phase 3 Plan（AC/DoD補完提案）
 
-> Phase進行は `Read → ADR CDC → Plan → Execute → Verify → Proceed` の固定順序を維持し、Verifyで未収束（自己修復3回超過）ならProceedを禁止する。
+> Phase進行は `Read → ADR CDC → Plan → Execute(同値性契約) → Verify(max3) → Proceed` の固定順序を維持し、Verifyで未収束（自己修復3回超過）ならProceedを禁止する。
 
 
 ### 3.1 受入条件 / Acceptance criteria
@@ -136,7 +137,7 @@
 - [x] DoD-4: 監査イベント4点（`query/bundle/proposal/apply`）の `schemaVersion` を固定し、API/CLI/GUIで同一値を記録する。
 - [x] DoD-5: `rejectReasonCode` の分類コード（例: `missing_event`, `equivalence_mismatch`, `dry_run_side_effect`, `safemode_regression`）を運用記録へ固定する。
 
-## 4) Phase 4 Execute（mock `sourceBundleHash` 許容で依存切断）
+## 4) Phase 4 Execute(同値性契約)（mock `sourceBundleHash` 許容で依存切断）
 
 - Execute開始時Read（再確認）:
   - 同値性判定は `equivalenceKey + bundleHash` の AND 条件。
@@ -148,7 +149,7 @@
   - API/CLI/GUI は同一 logical operation を使い、片系独自分岐を禁止。
   - 監査キー欠損時は fail-closed で即失敗（成功扱い禁止）。
 
-## 5) Phase 5 Verify（4点セット欠損=No-Go、自己修復最大3回）
+## 5) Phase 5 Verify(max3)（4点セット欠損=No-Go、自己修復最大3回）
 
 - Verify開始時Read（再確認）:
   - No-Go条件は「4点セット欠損」「dry-run副作用境界違反」「同値性判定不一致」。

@@ -63,7 +63,7 @@ curl -fsS http://localhost:8000/healthz
 
 Phase 1〜6 を通じて、API/CLI/GUI 同値性と監査4点セット（`query/bundle/proposal/apply`）を固定契約として扱う。
 
-CE4実行フェーズは `Read → ADR CDC → Plan → Execute → Verify → Proceed` の固定順序で運用し、各フェーズで `equivalenceKey + bundleHash` のAND条件を再確認する。
+CE4実行フェーズは `Read → ADR CDC → Plan → Execute(同値性契約) → Verify(max3) → Proceed` の固定順序で運用し、各フェーズで `equivalenceKey + bundleHash` のAND条件を再確認する。
 
 
 ### 4.0 CE Contract gate（Stream B固定契約の運用反映）
@@ -153,7 +153,7 @@ CE4運用期間の固定値:
 - 契約ドリフト（operation語彙差、監査キー差、`mock:<hash>` と本番hashでの判定差）を検知した場合は、回数に関わらず即停止する。
 - 契約衝突（同一キーの複数定義）または未定義競合（必要キーの定義欠落）を検知した場合も、回数に関わらず即停止する。
 - 監査4点セット（`query/bundle/proposal/apply`）の欠損は No-Go とし、補完完了まで成功扱いしない。
-- 実行順序は `Plan -> Execute -> Verify -> Proceed` を固定し、順序逆転（Verify前Proceed）を禁止する。
+- 実行順序は `Plan -> Execute(同値性契約) -> Verify(max3) -> Proceed` を固定し、順序逆転（Verify前Proceed）を禁止する。
 - CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` の契約検証結果を Proceed 記録へ含める。
 
 ### 4.7 フェイルセーフ停止条件
@@ -186,7 +186,7 @@ git diff --check
 
 ### 4.10 Stream E 実行ガード（2026-04-16 追補）
 
-- フェーズは直列で運用し、各フェーズ冒頭で Read を実施する（`Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed`）。
+- フェーズは直列で運用し、各フェーズ冒頭で Read を実施する（`Read -> ADR CDC -> Plan -> Execute(同値性契約) -> Verify(max3) -> Proceed`）。
 - CE3 完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容して契約検証を継続する。
 - 監査4点セット（`query/bundle/proposal/apply`）欠損は成功扱い禁止（fail-closed）。
 - Verify の自己修復は最大3回まで。3回失敗時は即停止し、Proceedへ進まない。
@@ -236,7 +236,7 @@ git diff --check
 ### Phase 2 ADR CDC
 
 - Context: 本書は provider切替と監査4点セットの公開runbookであり、承認フロー仕様の正本ではない。
-- Decision: `Read → ADR CDC → Plan → Execute → Verify → Proceed` を固定順序として明文化する。
+- Decision: `Read → ADR CDC → Plan → Execute(同値性契約) → Verify(max3) → Proceed` を固定順序として明文化する。
 - Consequences: API/CLI/GUI 同値性と監査4点セットの運用確認が、公開文書のみで追跡可能になる。
 
 ### Phase 3 Plan
