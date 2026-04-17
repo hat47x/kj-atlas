@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream C（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -25,7 +25,7 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 
-## Phase management（Stream C / FB-P2A serial lock）
+## Phase management（Stream B / FB-P2A serial lock）
 
 - Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
 - Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
@@ -65,7 +65,7 @@
 ### Context
 
 - `02_Architecture/schemas.md` は FB-P2A-01 の単一正本として `parentIslandId?: string` を定義している。
-- Stream C の担当範囲は FB-P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
+- Stream B の担当範囲は FB-P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
 - 実装コードや共有ファイルを更新せずに、A2/A3 が同一契約を参照できる状態を先に作る必要がある。
 
 ### Decision
@@ -80,7 +80,7 @@
 - 子一覧キャッシュや UI 都合の派生表現は A3 実装検討の裁量として残るが、A1 契約破壊変更は禁止される。
 - SafeMode / share-export / 実装コードには影響を持ち込まない。
 
-## A1 contract audit（Stream C / Phase 2）
+## A1 contract audit（Stream B / Phase 2）
 
 - 契約項目確定:
   - `ContractID=CTR-2A-01-ISLAND-HIERARCHY-V1`
@@ -166,7 +166,7 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream C strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -196,7 +196,7 @@
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
-## Stream C execution override（FB-P2A A1→A2→A3）
+## Stream B execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -216,10 +216,10 @@
 - 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
 
-## Stream C Serial Contract Lock (2026-04-16)
+## Stream B Serial Contract Lock (2026-04-16)
 
 ### Phase 1 Read（再Read + 差分抽出）
-- 本ファイルを含む Stream C 管轄6ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
+- 本ファイルを含む Stream B 管轄3ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
 - 差分抽出結果:
   - `a1Status=="Done" && pendingDecisionQueueCount==0` を唯一ゲートとして維持。
   - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` を固定値として維持。
@@ -256,7 +256,7 @@
 - `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending -> Approved|Pending -> Rejected" 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
 - Self-Correctionは最大3回。4回目相当は即停止。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 再開条件: `NoGo` 要因（未承認決定、識別子不一致、依存逆転）を解消し、再VerifyがPassすること。
 - 差戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1契約正本）。
 - Decision Queue未解決項目は `Pending` のまま保持し、確定扱いしない。
@@ -268,7 +268,7 @@
    - 案1: 既存固定値を維持してA1へ差戻し
    - 案2: 承認会議で固定値変更を決定後に再凍結
 
-## Stream C Phase 1-2 completion snapshot（2026-04-16）
+## Stream B Phase 1-2 completion snapshot（2026-04-16）
 
 ### Phase 1 Read（Plan→Execute→Verify→Proceed）
 - Plan: A1/A2/A3 の3ファイルを再読し、`ContractID`・依存・Gate状態の照合観点を固定。
