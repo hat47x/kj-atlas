@@ -577,3 +577,29 @@
 - Self-repair: `0/3`（未実施）。
 - Proceed: Go（停止条件の発火なし）。
 
+
+## Stream F CDC fixed-cycle update（2026-04-17）
+
+- Fixed rule: `CDC -> Plan -> Execute -> Verify -> Proceed`
+- Repair cap: Self-correction is limited to 3 attempts; stop on the 4th equivalent attempt.
+
+### CDC
+- Contract lock re-check: `ContractID=CTR-2B-02-DECISION-LOG-V1` remains immutable.
+- Serial dependency re-check: `A1 -> A2 -> A3` only.
+- Drift guard: no enum extension, no required-field change, no contract-link rewrite.
+
+### Plan
+- Keep A1 as the single source of truth for decision-log interface contract.
+- Limit scope to docs-only normalization in `01_Plans/issues/`.
+
+### Execute
+- Reassert A1 fixed set (`MergeDecisionRecord`, `DecisionLogStoreContract`, mock signatures).
+- Reassert rollback triggers (enum change / nondeterministic restore / auto-apply request).
+
+### Verify
+- Verification command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
+- Pass criteria: contract metadata consistency without introducing new unresolved keys.
+
+### Proceed
+- Go only when CDC and docs-check both pass.
+- If failed, perform self-correction up to 3 times and stop with blocker list when exceeded.
