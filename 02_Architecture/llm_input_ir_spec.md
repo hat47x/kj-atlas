@@ -86,9 +86,9 @@ CE1 Contract 作業は次の順序を固定し、逆順・省略を禁止する�
 
 1. Phase 1 Read
 2. Phase 2 ADR CDC
-3. Phase 3 Plan（AC/DoD不足提案を先に確定）
-4. Phase 4 Execute（`ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` 固定）
-5. Phase 5 Verify（preview gate + 決定論 hash）
+3. Phase 3 Plan（AC/DoD提案合意を先に確定）
+4. Phase 4 Execute（契約固定：`ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`）
+5. Phase 5 Verify（preview gate + 決定論 hash、自己修復は3回まで）
 6. Phase 6 Proceed（参照専用 handoff）
 
 Phase 5 Verify は最低限次の機械判定を満たすこと。
@@ -97,7 +97,7 @@ Phase 5 Verify は最低限次の機械判定を満たすこと。
 - 同一 canonical query を3回実行し `queryCanonicalHash` と `bundleHash` が 3/3 一致
 - 未定義キーは常に `400 unknown_contract_key`
 
-Phase 6 Proceed は CE2/CE4 への参照専用連携のみ許可し、実装変更要求を禁止する。
+Phase 6 Proceed は CE2/CE4 への参照専用連携のみ許可し、実装変更要求を禁止する。CE2/CE4 は mock 契約で依存切断したまま進行し、CE1 完了待ちを禁止する。
 
 A2 contract test では次を機械判定する。
 
