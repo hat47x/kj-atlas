@@ -218,6 +218,42 @@
 - Phase開始Read: Handoff と Proceed 判定を再読する。
 - Execute: handoff固定値（ContractID、version、mockCase、ownerOfFix等）を次実装入口の必須入力として固定する。
 - Verify: 次実装入口が「契約参照のみ」で開始できることを確認する。
+
+## Stream D serial execution update（2026-04-17）
+
+- Stream role: `Stream D（FB-P2B-01 A1/A2/A3）` 専属。
+- Edit scope: `issue-FB-P2B-01-a1/a2/a3` の3メモのみ。
+- Working rule: `Plan -> Execute -> Verify -> Proceed` を固定し、契約不整合は即停止。
+
+### Phase 1: Read同期
+- Plan: A1/A2/A3を再読し、契約リンク整合（`ContractID/DependsOnContractID/ReferenceContractID`）を再確認する。
+- Execute: `CTR-2B-01-CANDIDATE-GROUP-V1` の三点一致と依存順序 `A1 -> A2 -> A3` を照合。
+- Verify: 差分なし（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（必要時のみ）
+- Plan: 新規ADRは作成せず、既存A1契約のCDC（Context/Decision/Consequences）整合だけを確認する。
+- Execute: A1契約凍結・A2/A3参照専用・契約変更はA1差戻しの3条件を再固定。
+- Verify: 契約再定義要求なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD合意）
+- Plan: A1 AC/DoDの不足有無を確認し、未定義依存がないことを確認する。
+- Execute: AC-2B-1 / DoD-2B-1 と停止条件（契約不整合・未定義依存・3回超過停止）を維持。
+- Verify: 不足なし（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（A1契約）
+- Plan: A1は契約固定点として、A2/A3への入力境界のみを提供する。
+- Execute: `CTR-2B-01-CANDIDATE-GROUP-V1`、型定義、比較キー、ordered arrays を固定維持。
+- Verify: A2/A3が参照専用で利用可能（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify / Proceed
+- Plan: docs-checkでメモ整合を確認し、失敗時は自己修復を最大3回まで許可する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify: Pass（Self-Correction: `0/3`）。
+- Proceed: A2 mock validation lane へ引き渡し可能。
 - Proceed: Go時のみ下流へ引き渡し、NoGo時は停止条件と再開条件を併記して保留する。
 
 ## 監査整理（旧Ready/Activeの現行ライフサイクル対応）
@@ -621,4 +657,3 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
-

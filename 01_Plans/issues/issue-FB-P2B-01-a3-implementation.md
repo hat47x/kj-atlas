@@ -259,6 +259,42 @@
 - Verify: 差分・逆順依存・契約未定義がないことを確認する。
 - Proceed: Pass時のみ Phase 2 へ進行する。
 
+## Stream D serial execution update（2026-04-17）
+
+- Stream role: `Stream D（FB-P2B-01 A1/A2/A3）` 専属。
+- Target lane: `A3 implementation handoff`
+- Reference contract: `CTR-2B-01-CANDIDATE-GROUP-V1`
+
+### Phase 1: Read同期
+- Plan: A1/A2/A3を再読し、契約リンク・依存順序・停止条件を再確認する。
+- Execute: A1 `ContractID` = A2 `DependsOnContractID` = A3 `ReferenceContractID` を照合。
+- Verify: 一致（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（必要時のみ）
+- Plan: A3でADR新設はせず、A1/A2契約のCDC整合を接続条件として維持する。
+- Execute: 契約再定義禁止、逸脱要求はA1差戻し、A2検証条件継承の3点を固定。
+- Verify: 逸脱提案なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD合意）
+- Plan: AC-2B-4/2B-5 と DoD-2B-3 の適用条件を確認する。
+- Execute: 非自動確定・再読込復元を回帰要件として保持し、未定義依存の流入を禁止。
+- Verify: 不足なし（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（A3接続）
+- Plan: 実装入口を契約参照専用に固定し、A1/A2の境界を保つ。
+- Execute: `merge_candidates` / `merge_suggestion_decisions` / `MergeSuggestionsPanel` を契約回帰対象として維持。
+- Verify: A3 handoff が契約参照のみで開始可能（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify / Proceed
+- Plan: docs-checkでメモ整合を確認し、失敗時は最大3回まで自己修復する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify: Pass（Self-Correction: `0/3`）。
+- Proceed: implementation lane へ handoff 可能。
+
 ### Phase 2: A1契約（CDC）
 - Plan: CDC（Contract-Driven Consistency）として A1 の契約凍結を再確認する。
 - Execute: 契約再定義禁止、契約拡張要求は A1 差し戻し、A2/A3 は参照専用を固定する。
@@ -383,4 +419,3 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
-
