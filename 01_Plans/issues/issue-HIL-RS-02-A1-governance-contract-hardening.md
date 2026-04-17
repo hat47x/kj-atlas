@@ -340,3 +340,27 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - 失敗条件: `dependencyReverseFlowDetected=true` / `pendingBypassDetected=true` / `identifierDriftDetected=true` / `selfCorrectionCount>3` / `premiseCollapseDetected=true`。
 - 影響範囲: 影響ファイル（HIL-RS-01/HIL-RS-02/A1/A2/A3 issue）と固定識別子（freezeContractId / contractIds / schemaVersion / overridePolicy / freeze flags）を明記する。
 - 必要な人間判断: 「NoGo維持でDecision Queueへ返却」または「CDC承認で条件更新後に再検証」の二択を提示して停止する。
+
+
+## Stream A Governance Hardening Record (2026-04-17)
+
+### Phase 1 Read
+- Stream A 編集許可4ファイルを再Readし、Hardening Rules / Freeze keys / Return path の整合を確認（想定差分ゼロ）。
+
+### Phase 2 ADR CDC
+- Context: Governance式の複線化は A2/A3 誤Open の直接原因になる。
+- Decision: CDC追加は不要。既存hardening ruleを正本として継続し、契約差分はA1へ差戻す。
+- Consequences: A2/A3 は read-only 参照、Pending bypass は禁止維持。
+
+### Phase 3 Plan
+- AC/DoD不足なし。Self-Correction上限3回と停止報告テンプレの現行定義を維持。
+
+### Phase 4 Execute
+- 契約境界を再固定:
+  - Unlock rule: `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - Queue rule: `Pending -> Approved` / `Pending -> Rejected`
+  - Freeze keys: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` + `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+
+### Phase 5 Verify / Proceed
+- docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
+- Proceedは Go成立時のみ。NoGo要因検知時は停止し、失敗条件・影響範囲・必要な人間判断を報告する。

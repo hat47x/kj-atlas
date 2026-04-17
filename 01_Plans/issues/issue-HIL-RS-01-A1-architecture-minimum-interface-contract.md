@@ -352,3 +352,27 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - 失敗条件: `contractIdCollision>0` / `vocabularyCollision>0` / `safeModeRegression>0` / `selfCorrectionCount>3` / `undefinedConflictDetected=true`。
 - 影響範囲: 影響ファイル（A1/A2/A3 issue）と契約ID（`CE0-*`, `CG-01..05`, `A1-*`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`）を列挙する。
 - 必要な人間判断: 「固定値維持でA1差戻し」または「CDC承認後に再凍結」の二択を明示して停止する。
+
+
+## Stream A Contract Lock Record (2026-04-17)
+
+### Phase 1 Read
+- Stream A 編集許可4ファイルを再Readし、A1最小I/F契約の固定識別子と禁止遷移に差分ゼロを確認。
+
+### Phase 2 ADR CDC
+- Context: A1契約はA2/A3着手可否の唯一基準であり、判定式の重複正本化は不可。
+- Decision: 新規CDC起票は不要。既存CDCを継続採用し、契約変更要求はA1-CDC-onlyへ差戻す。
+- Consequences: 下流Issueは read-only 参照のみ、ローカル再定義は禁止。
+
+### Phase 3 Plan
+- AC/DoD不足なし。`StartAllowed` 判定式と fail-safe 条件を現行固定値で維持する。
+
+### Phase 4 Execute
+- 契約境界を再固定:
+  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `Pending -> Approved | Rejected` 以外を禁止
+  - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / freeze flags を変更禁止
+
+### Phase 5 Verify / Proceed
+- docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
+- `a1Status=="Done" && pendingDecisionQueueCount==0` のみ Proceed 可。未達時は停止して人間判断へエスカレーション。
