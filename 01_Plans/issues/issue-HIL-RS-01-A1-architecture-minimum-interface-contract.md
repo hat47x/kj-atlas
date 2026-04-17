@@ -347,3 +347,8 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 
 ### Phase 6 Proceed / Stop
 - `a1Status=="Done" && pendingDecisionQueueCount==0` のときのみ Proceed。未達時は停止して人間へエスカレーション。
+
+### Phase 6.1 Stop Report（必須3項目）
+- 失敗条件: `contractIdCollision>0` / `vocabularyCollision>0` / `safeModeRegression>0` / `selfCorrectionCount>3` / `undefinedConflictDetected=true`。
+- 影響範囲: 影響ファイル（A1/A2/A3 issue）と契約ID（`CE0-*`, `CG-01..05`, `A1-*`, `HIL-RS-02-A1-CONTRACT-FREEZE-v1`）を列挙する。
+- 必要な人間判断: 「固定値維持でA1差戻し」または「CDC承認後に再凍結」の二択を明示して停止する。

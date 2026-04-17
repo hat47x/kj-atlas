@@ -335,3 +335,8 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 
 ### Phase 6 Proceed / Stop
 - `a1Status=="Done" && pendingDecisionQueueCount==0` のときのみ Proceed。未達時は停止して人間へエスカレーション。
+
+### Phase 6.1 Stop Report（必須3項目）
+- 失敗条件: `dependencyReverseFlowDetected=true` / `pendingBypassDetected=true` / `identifierDriftDetected=true` / `selfCorrectionCount>3` / `premiseCollapseDetected=true`。
+- 影響範囲: 影響ファイル（HIL-RS-01/HIL-RS-02/A1/A2/A3 issue）と固定識別子（freezeContractId / contractIds / schemaVersion / overridePolicy / freeze flags）を明記する。
+- 必要な人間判断: 「NoGo維持でDecision Queueへ返却」または「CDC承認で条件更新後に再検証」の二択を提示して停止する。
