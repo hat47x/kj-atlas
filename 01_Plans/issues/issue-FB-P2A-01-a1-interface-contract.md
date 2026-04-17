@@ -25,13 +25,14 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream B / user-fixed serial mapping）
 
-- Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約明確化（CDC明文化）
-- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
-- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
-- Phase 5: Verify（記述整合・依存整合）
+- Phase 1（A1）: Read / CDC（A1/A2/A3の3点再読 + CDC固定）
+- Phase 2（A1）: Execute / Verify（契約固定の実施と検証）
+- Phase 3（A2）: Plan / Execute（mock ledger）
+- Phase 4（A2）: Verify
+- Phase 5（A3）: Plan / Execute（handoff固定）
+- Phase 6（A3）: Verify / Proceed
 
 ## Contract definition（A1成果物）
 
@@ -131,6 +132,12 @@
 ### Proceed
 
 - A2へ引き渡す固定契約として `CTR-2A-01-ISLAND-HIERARCHY-V1` を採用し、A1を完了状態とする。
+
+## Serial completion marker（A1 segment）
+
+- Phase 1（Read/CDC）: Completed
+- Phase 2（Execute/Verify）: Completed
+- Next gate: A2 Phase 3 へ直列引き渡し（A1契約はread-only固定）
 
 ## Acceptance criteria
 
@@ -275,4 +282,3 @@
 - Decision: A1契約本文の再定義は行わず、CDC（ContractID/Required fields/Invariants/ContractLinks）を承認待ち固定値として扱う。
 - Consequences: A2/A3 は契約推測補完を禁止し、差分は検証手順・引継ぎ明確化のみに限定される。
 - Approval state: `Pending human confirmation`（値の推測補完は未実施）。
-

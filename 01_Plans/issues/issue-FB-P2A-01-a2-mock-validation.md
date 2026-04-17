@@ -25,13 +25,14 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B）
+## Phase management（Stream B / user-fixed serial mapping）
 
-- Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約明確化（CDC明文化）
-- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
-- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
-- Phase 5: Verify（記述整合・依存整合）
+- Phase 1（A1）: Read / CDC
+- Phase 2（A1）: Execute / Verify
+- Phase 3（A2）: Plan / Execute（mock ledger）
+- Phase 4（A2）: Verify
+- Phase 5（A3）: Plan / Execute（handoff固定）
+- Phase 6（A3）: Verify / Proceed
 
 ## Contract freeze confirmation
 
@@ -126,6 +127,12 @@
 ### Proceed
 
 - A3へ handoff payload をそのまま渡し、実装接続条件の評価へ進む。
+
+## Serial completion marker（A2 segment）
+
+- Phase 3（Plan/Execute mock ledger）: Completed
+- Phase 4（Verify）: Completed
+- GoNoGo snapshot: `M1/M2/M3=pass` and `M4=fail` を維持（A3へ直列引き渡し）
 
 ## Validation log schema（A3引き継ぎ必須）
 
@@ -223,4 +230,3 @@
 - Execute: `M1/M2/M3=pass`・`M4=fail` を GoNoGo 判定式として維持し、payload を `contractId/contractVersion/mockCaseId/validationResult/ownerOfFix/evidence` で固定。
 - Verify: A1契約（Required fields/Invariants）への変更を行っていないこと、A3接続に必要な入力が全ケースで定義済みであることを確認。
 - Proceed: A3へは payload を read-only で受け渡し、判定不一致時はA2差戻しを継続する。
-
