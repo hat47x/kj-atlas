@@ -310,3 +310,46 @@
 ### Self-repair guard
 - A3も自己修復は最大3回。
 - 3回超過時は停止し、A2差し戻しまたはA1再承認へエスカレーション。
+
+
+## Stream E independent addendum: A3引渡条件固定（2026-04-17）
+
+### Phase 1 Read（tie-break契約 / Gate条件 / QA条件の再読）
+- 参照確認:
+  - A1契約固定: `padding>self_intersection>area_delta>vertex_count`
+  - A2証跡: `A2 Verify Pass` + 比較キー5項目
+  - Gate条件: `DQ-FB-P2C-01` Approved
+
+### Phase 2 ADR CDC（ルール変更要否判定）
+- 判定: **変更なし（ADR更新不要）**。
+- 理由: 契約変更ではなく、A3着手/停止条件の固定化のみ。
+
+### Phase 3 Plan（AC/DoD不足提案→合意）
+- AC補強提案:
+  1. A3は `A2VerifyStatus=Pass` 未満で着手禁止。
+  2. `tieBreakOrderChanged=true` をNoGo即時判定。
+- DoD補強提案:
+  - A3引渡テンプレ（Input/Output/Rollback）の3点が欠落なく参照可能であること。
+- 合意結果: 本メモのA3 proceed/block基準に統合。
+
+### Phase 4 Execute（A3引渡条件固定）
+- Start conditions（全件必須）:
+  1. `GateDecision=approved`
+  2. `A2VerifyStatus=Pass`
+  3. `deterministicTieBreakOrder` が固定値と一致
+- Handoff contract:
+  - Input: `gateApprovalRef`, `a2VerifyRef`, `inputHash`, `deterministicTieBreakOrder`
+  - Output: `outputPolygonHash`, `paddingViolationCount`, `tieBreakOrderChanged=false`
+
+### Phase 5 Verify（再現性条件 / NoGo条件）
+- 再現性条件:
+  - A2比較キーでA3の入出力整合を追跡可能であること。
+- NoGo条件（1件でも該当で停止）:
+  1. 承認記録欠落
+  2. `A2 Verify stale/fail`
+  3. `outputPolygonHash drift`
+  4. `paddingViolationCount > 0`
+  5. `tieBreakOrderChanged=true`
+  6. 自己修復上限超過（3回超）
+- Verify結果: **Pass（Self-Correction 0/3）**。
+- Proceed: **Yes（条件成立時のみ）**。

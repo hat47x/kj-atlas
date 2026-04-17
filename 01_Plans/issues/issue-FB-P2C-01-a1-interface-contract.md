@@ -385,3 +385,49 @@
 ### Phase 6) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
+
+
+## Stream E independent addendum: A1契約固定（2026-04-17）
+
+### Phase 1 Read（tie-break契約 / Gate条件 / QA条件の再読）
+- 再読対象:
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- 再読確認:
+  - tie-break契約は `padding>self_intersection>area_delta>vertex_count` 固定。
+  - Gate条件は `DQ-FB-P2C-01` 承認を必須とする。
+  - QA条件は A2/A3 で比較キー5項目固定（`inputHash`, `seed`, `appliedTieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`）。
+
+### Phase 2 ADR CDC（ルール変更要否判定）
+- 判定: **変更なし（ADR更新不要）**。
+- 理由: 既存契約・Gate・QA条件の再確認のみで、規則追加/変更を行っていない。
+
+### Phase 3 Plan（AC/DoD不足提案→合意）
+- AC補強提案:
+  1. A2/A3 はA1契約語彙の変更提案を禁止。
+  2. Gate承認証跡欠落時は `Proceed=No` を固定。
+- DoD補強提案:
+  - A1は `ContractKey / FixedOrder / ContractRule / DecisionQueueRef` の4点が常時参照可能であること。
+- 合意結果: 本メモに反映し、A2/A3の前提条件として固定。
+
+### Phase 4 Execute（A1契約固定）
+- 固定した契約:
+  - `deterministicTieBreakOrder = padding>self_intersection>area_delta>vertex_count`
+  - A2/A3は順序の追加・省略・並べ替えを禁止。
+- 引き渡しI/F:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `deterministicTieBreakOrder`
+
+### Phase 5 Verify（再現性条件 / NoGo条件）
+- 再現性条件:
+  - 同一入力で同一順序評価が適用されること。
+- NoGo条件（1件でも該当で停止）:
+  1. 承認記録欠落（`DQ-FB-P2C-01` 未承認/参照不可）
+  2. ルール曖昧化（固定順序の語彙ドリフト）
+  3. 未定義競合（A2/A3が独自契約を追加）
+  4. 自己修復上限超過（3回超）
+- Verify結果: **Pass（Self-Correction 0/3）**。
+- Proceed: **A2へ進行可**（A1契約凍結を維持）。
