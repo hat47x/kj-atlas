@@ -135,7 +135,7 @@ Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE
 
 ```ts
 export type ProposalStatus = "proposed" | "accepted" | "rejected" | "held";
-export type ProposalReviewState = "unreviewed" | "reviewed";
+export type ProposalReviewState = "unreviewed" | "human_reviewed";
 
 export type ProposalPatchV1 = {
   proposalId: string;
@@ -148,7 +148,7 @@ export type ProposalPatchV1 = {
 ```
 
 - Auto-apply は禁止（proposal-only）。
-- `reviewState=reviewed` は人手操作のみ許可し、AI自動遷移を禁止。
+- `reviewState=human_reviewed` は人手操作のみ許可し、AI自動遷移を禁止。
 - CE1契約との差異検知時は `held` へ遷移し、Verify自己修復は最大3回まで。
 - CE1/CE2/CE4 は backend 実装待機を禁止し、mock 契約で依存切断した検証を継続する。
 

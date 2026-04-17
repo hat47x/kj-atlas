@@ -86,17 +86,17 @@ CE2（低リスクAI支援）では、LLM出力を「提案patch」に限定し�
 - `diff: object`
 - `sourceBundleHash: string`
 - `status: proposed | accepted | rejected | held`
-- `reviewState: unreviewed | reviewed`
+- `reviewState: unreviewed | human_reviewed`
 
 上記5キー（`proposalId/diff/sourceBundleHash/status/reviewState`）は CE2 Phase 1〜6 で固定し、改名・省略・型変更を禁止する。
-また `reviewState` の既定値は `unreviewed` とし、`reviewed` は人手操作でのみ設定可能とする。
+また `reviewState` の既定値は `unreviewed` とし、`human_reviewed` は人手操作でのみ設定可能とする。
 
 ### CE2-C2: 実行禁止事項（Fail-safe）
 
 以下を検知した場合、処理を継続せず停止する。
 
 1. auto-apply 経路（API/UI/worker）
-2. AI による review 自動昇格（`unreviewed -> reviewed`）
+2. AI による review 自動昇格（`unreviewed -> human_reviewed`）
 3. `human_reviewed` 自動昇格（AI/worker/API いずれの経路でも禁止）
 4. safeMode 保護後退（未レビュー本文混入を含む）
 5. CE1最小I/Fモック契約との差異（`sourceBundleHash` 不整合など）
