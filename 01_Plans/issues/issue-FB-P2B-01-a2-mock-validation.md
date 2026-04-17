@@ -258,6 +258,42 @@
 - Verify: A2仕様が A1 契約参照のみで完結していることを確認する。
 - Proceed: Pass時のみ Phase 4 へ進行する。
 
+## Stream D serial execution update（2026-04-17）
+
+- Stream role: `Stream D（FB-P2B-01 A1/A2/A3）` 専属。
+- Target lane: `A2 mock validation`
+- Immutable input: `DependsOnContractID=CTR-2B-01-CANDIDATE-GROUP-V1`
+
+### Phase 1: Read同期
+- Plan: A1/A2/A3を再読し、契約リンク整合と直列依存を確認する。
+- Execute: A1 `ContractID` / A2 `DependsOnContractID` / A3 `ReferenceContractID` の一致を照合。
+- Verify: 三点一致（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（必要時のみ）
+- Plan: A2ではADR追加を行わず、A1契約CDCへの従属を明示する。
+- Execute: 契約拡張禁止・契約差分要求はA1差戻し・A2はmock検証限定を再固定。
+- Verify: CDC逸脱なし（Pass）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD合意）
+- Plan: AC-2B-2/2B-3 と DoD-2B-2 の充足条件をmock前提で再確認する。
+- Execute: 観測条件を `順序保持`・`非自動確定`・`snapshot復元` の3点に固定。
+- Verify: 未定義依存なし（Pass）。
+- Proceed: Phase 4へ進行。
+
+### Phase 4: Execute（A2モック）
+- Plan: A1契約のAPI署名と比較キーに限定してmock検証を実施する。
+- Execute: fixture/stubで `CandidateListViewModel` を検証し、候補提示のみで確定しないことを維持。
+- Verify: A3への接続前提を満たす（Pass）。
+- Proceed: Phase 5へ進行。
+
+### Phase 5: Verify / Proceed
+- Plan: docs-checkを基準に整合を確認し、失敗時は自己修復を最大3回まで行う。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify: Pass（Self-Correction: `0/3`）。
+- Proceed: A3 implementation handoff lane へ引き渡し可能。
+
 ### Phase 4: A3 implementation readiness
 - Plan: A3 の開始条件/停止条件/差し戻し条件を契約準拠で固定する。
 - Execute: 実装接続は readiness 定義までとし、契約変更を受け付けない。
@@ -370,4 +406,3 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
-
