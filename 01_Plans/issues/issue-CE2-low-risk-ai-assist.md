@@ -54,10 +54,12 @@
 
 CE2 Stream D は、以下の固定フローでのみ進行する。
 
-1. **Phase 1: Plan**（契約固定とAC/DoD確認）
-2. **Phase 2: Execute**（status遷移とdrift-stop固定）
-3. **Phase 3: Verify**（最大3回まで修復して再検証）
-4. **Phase 4: Proceed**（引継ぎ、条件未達時は停止）
+1. **Phase 1: Read**（対象Issue/ADRと契約語彙の再確認）
+2. **Phase 2: ADR CDC**（Context/Decision/Consequencesを固定）
+3. **Phase 3: Plan**（契約固定とAC/DoD確認）
+4. **Phase 4: Execute**（status/reviewState契約固定 + drift-stop固定）
+5. **Phase 5: Verify**（最大3回まで修復して再検証）
+6. **Phase 6: Proceed**（引継ぎ、条件未達時は停止）
 
 `Verify` で3回失敗しても受入条件を満たせない場合は、`status=held` で停止し、人手判断待ちへ遷移する。
 
@@ -75,7 +77,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 - CE1依存は `mock bundleHash` で切断し、契約検証を先行（待機禁止）。
 - CE0/CE4 の完了待ちは行わず、read-only参照に限定する（再定義禁止）。
 - 提案は **proposal-only** 境界に固定し、適用はCE2責務外とする。
-- `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|reviewed` のみ許可し、追加状態を禁止する。
+- `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|human_reviewed` のみ許可し、追加状態を禁止する。
 
 ## 1.1) Contract ID Freeze（CE2）
 
@@ -98,7 +100,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 ### Decision
 
 - proposal-only 契約を固定し、CE2の責務を「提案生成と監査可能性の担保」に限定する。
-- 自動適用（auto-apply）と自動昇格（AIによる `reviewState=reviewed` 付与）を全面禁止する。
+- 自動適用（auto-apply）と自動昇格（AIによる `reviewState=human_reviewed` 付与）を全面禁止する。
 - CE1差分検知時は `status=held` を強制し、解消確認まで `accepted/rejected` へ遷移しない。
 - 前提崩壊（CE1最小I/F不成立、または契約語彙の単一正本喪失）時は推測補完を禁止し、`status=held` で停止する。
 
@@ -125,7 +127,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 | `sourceBundleHash` | string | Yes | CE-1 bundleHashとの対応 |
 | `rationale` | string | Yes | 提案根拠 |
 | `status` | enum | Yes | `proposed/accepted/rejected/held` |
-| `reviewState` | enum | Yes | `unreviewed/reviewed` 表示専用（自動昇格禁止） |
+| `reviewState` | enum | Yes | `unreviewed/human_reviewed` 表示専用（自動昇格禁止） |
 
 ### 2.3 固定値（CE2 Contract Freeze）
 
@@ -133,7 +135,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 - `diff`: 必須、apply差分でなく **比較差分** として保持
 - `sourceBundleHash`: 必須、CE1 ContextBundleと1対1対応
 - `status`: `proposed | accepted | rejected | held` 以外を禁止
-- `reviewState`: `unreviewed | reviewed` のみ。AIによる `reviewed` 付与禁止
+- `reviewState`: `unreviewed | human_reviewed` のみ。AIによる `human_reviewed` 付与禁止
 - Auto-apply: UI/API/worker の全経路で禁止
 - Drift-stop: CE1差分検知時は必ず `status=held` に遷移し、解除まで `accepted/rejected` 判定を凍結
 
@@ -142,7 +144,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 - CE-2は proposal 作成までを責務とし、apply は人手承認ゲートの外で実行しない。
 - proposal の `accepted` は「適用許可の意思表示」であり、自動適用トリガーではない。
 - `held` は drift-stop 専用状態として扱い、`held` 中は apply 導線へ遷移禁止。
-- `reviewed` 自動昇格は禁止（`reviewState` の AI 更新を含む）。昇格は人手操作のみ。
+- `human_reviewed` 自動昇格は禁止（`reviewState` の AI 更新を含む）。昇格は人手操作のみ。
 - safeMode ON では未レビュー本文を含む提案生成を禁止する。
 
 ### 3.1 AC/DoD不足の補完提案（Plan出力）
@@ -152,7 +154,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
   - `sourceBundleHash` が mock 参照であることを監査ログに残す検証文言を追加する。
   - CE1差分検知時に `status=held` で停止し、差分解消完了まで Verify を再開しない文言を必須化する。
 - DoD補完:
-  - Plan/Execute/Verify/Proceed の実施記録に attempt 番号（`verifyAttempt=1..3`）を必須化する。
+  - Read/ADR CDC/Plan/Execute/Verify/Proceed の実施記録に attempt 番号（`verifyAttempt=1..3`）を必須化する。
   - Verify 判定時に `drift-stop解除確認` を明文化し、未解除なら pass 不可とする。
   - 停止条件（3回超過 / 安全後退 / 未定義競合）を毎回のVerify記録に併記する。
 
@@ -173,7 +175,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 
 - [ ] すべてのAI応答が `proposalId`, `diff`, `sourceBundleHash`, `status`, `reviewState` を持つ。
 - [ ] auto-apply経路が0件（API/UIともに禁止）。
-- [ ] `reviewed` への自動昇格が0件。
+- [ ] `human_reviewed` への自動昇格が0件。
 - [ ] 提案の採用/却下/保留が監査ログで追跡可能。
 - [ ] safeMode ONで未レビュー本文を含む提案が生成されない。
 - [ ] CE1モック契約との差異検知時に `status=held` で停止し、適用経路が進行しない。
@@ -181,11 +183,11 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 - [ ] 前提崩壊（CE1最小I/F不成立、契約語彙の不整合）を検知した場合は即停止し、推測で継続しない。
 - [ ] `held` 状態のまま自動的に `accepted/rejected/proposed` へ遷移しない。
 - [ ] proposal-only 境界が維持され、`accepted` が自動適用トリガーとして扱われない。
-- [ ] `reviewState` は AI/worker/API により自動で `reviewed` に遷移しない（人手操作のみ）。
+- [ ] `reviewState` は AI/worker/API により自動で `human_reviewed` に遷移しない（人手操作のみ）。
 
 ## 5.1) DoD（Contract-only）
 
-- [ ] 各Phaseで `Plan -> Execute -> Verify -> Proceed` を記録し、Plan開始時の契約チェックを記録する。
+- [ ] 各Phaseで `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` を記録し、Plan開始時の契約チェックを記録する。
 - [ ] Verify 修復は 3 回以内。4 回目相当の失敗時は即停止し推測で継続しない。
 - [ ] CE1 mock I/F 依存切断（待機禁止）を維持し、実装詳細の規定を追加しない。
 - [ ] `CE2-PROPOSAL-IF / CE2-LIFECYCLE-IF / CE2-DRIFT-STOP-IF / CE2-NO-AUTOAPPLY-IF` が CE0/CE1 契約と矛盾しない。
@@ -211,7 +213,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 ## 8) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|reviewed|safeMode|unreviewed|held|drift-stop" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_quality_strategy.md 02_Architecture/llm_escalation_policy.md`
+  - `rg -n "proposalId|diff|sourceBundleHash|status|reviewState|auto-apply|human_reviewed|safeMode|unreviewed|held|drift-stop|Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md 02_Architecture/llm_quality_strategy.md 02_Architecture/llm_escalation_policy.md`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 期待結果:
   - 提案I/Fと禁止事項が文書間で一致し、validatorが成功する。
@@ -247,16 +249,16 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 ### Acceptance Criteria（合意版）
 
 - [ ] CE2提案I/Fを `proposalId/diff/sourceBundleHash/rationale/status/reviewState` で固定し、必須化する。
-- [ ] `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|reviewed` のみ許可する。
+- [ ] `status` は `proposed|accepted|rejected|held`、`reviewState` は `unreviewed|human_reviewed` のみ許可する。
 - [ ] auto-apply 経路は UI/API/worker すべてで 0 件を維持する。
-- [ ] `reviewState=reviewed` へのAI自動昇格は 0 件を維持する。
+- [ ] `reviewState=human_reviewed` へのAI自動昇格は 0 件を維持する。
 - [ ] CE1ドリフト検知時は `status=held` で fail-closed 停止し、再検証開始を禁止する。
 - [ ] 前提崩壊（CE1最小I/F不成立、契約語彙の単一正本喪失）検知時は `status=held` で即停止する。
 - [ ] safeMode既定ONと未レビュー本文除外（reviewed-only既定）を非破壊で確認する。
 
 ### Definition of Done（合意版）
 
-- [ ] Plan/Execute/Verify/Proceed の実施証跡を残し、Plan開始時の契約チェックを記録する。
+- [ ] Read/ADR CDC/Plan/Execute/Verify/Proceed の実施証跡を残し、Plan開始時の契約チェックを記録する。
 - [ ] Verify試行回数（`verifyAttempt=1..3`）と停止理由を監査ログに残す。
 - [ ] 4回目相当の再試行は行わず `status=held` で停止した事実を記録する。
 - [ ] 未定義競合および前提崩壊の停止理由を明示し、推測継続を禁止する。
@@ -266,7 +268,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 ### 13.1 Verify evidence（監査可能性）
 
 - `verifyAttempt`: `1|2|3`
-- `phaseGate`: `Plan|Execute|Verify|Proceed`
+- `phaseGate`: `Read|ADR CDC|Plan|Execute|Verify|Proceed`
 - `proposalId`
 - `sourceBundleHash`（mock可: `mock:<hash>`）
 - `statusBefore` / `statusAfter`
@@ -280,7 +282,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 
 ## 14) Proceed（CE4連携向け引継ぎ）
 
-- Proceed は `Plan -> Execute -> Verify -> Proceed` の順序を崩さない。
+- Proceed は `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` の順序を崩さない。
 - CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した状態で CE4 連携へ引き継ぐ。
 - 引継ぎ時は次の固定事項を記録する。
   - `proposalId/diff/sourceBundleHash/status/reviewState` の必須キーが欠損していないこと。
