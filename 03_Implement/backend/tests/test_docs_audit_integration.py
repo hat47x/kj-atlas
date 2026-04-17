@@ -339,7 +339,7 @@ def test_cli_apply_forces_dry_run_true_even_when_input_requests_side_effect(tmp_
     assert event.eventType == "apply"
     assert event.metadata["dryRun"] is True
     assert event.metadata["sideEffect"] == "none"
-    assert event.metadata["command"] == "apply"
+    assert event.metadata["command"] == "apply --dry-run"
 
 
 def test_context_audit_rejects_invalid_source_bundle_hash(tmp_path) -> None:
@@ -421,7 +421,7 @@ def test_context_audit_rejects_apply_without_source_bundle_hash(tmp_path) -> Non
                 "bundleHash": "2" * 64,
                 "dryRun": True,
                 "sideEffect": "none",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -443,7 +443,7 @@ def test_context_audit_rejects_dry_run_side_effect(tmp_path) -> None:
                 "sourceBundleHash": "mock:" + ("3" * 64),
                 "dryRun": True,
                 "sideEffect": "write",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -464,7 +464,7 @@ def test_context_audit_rejects_apply_without_dry_run(tmp_path) -> None:
                 "sourceBundleHash": "mock:" + ("3" * 64),
                 "dryRun": False,
                 "sideEffect": "none",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -485,7 +485,7 @@ def test_context_audit_rejects_apply_when_required_events_missing(tmp_path) -> N
                 "sourceBundleHash": "mock:" + ("3" * 64),
                 "dryRun": True,
                 "sideEffect": "none",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -530,7 +530,7 @@ def test_context_audit_rejects_apply_when_bundle_hash_differs_from_prior_events(
                 "sourceBundleHash": "mock:" + ("3" * 64),
                 "dryRun": True,
                 "sideEffect": "none",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -575,7 +575,7 @@ def test_context_audit_rejects_apply_when_source_bundle_hash_differs_from_propos
                 "sourceBundleHash": "mock:" + ("4" * 64),
                 "dryRun": True,
                 "sideEffect": "none",
-                "command": "apply",
+                "command": "apply --dry-run",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -598,6 +598,26 @@ def test_context_audit_rejects_operation_command_mismatch(tmp_path) -> None:
                 "dryRun": True,
                 "sideEffect": "none",
                 "command": "proposal-diff",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert response.status_code == 422
+
+
+def test_context_audit_rejects_missing_command(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "bundle",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "queryHash": "1" * 64,
+                "dryRun": True,
+                "sideEffect": "none",
                 "channel": "api",
                 "schemaVersion": "ce4.audit.v1",
             },
@@ -701,3 +721,4 @@ def test_cli_apply_forces_dry_run(tmp_path, monkeypatch) -> None:
     assert result == 0
     assert captured_payload["operation"] == "apply"
     assert captured_payload["dryRun"] is True
+    assert captured_payload["command"] == "apply --dry-run"

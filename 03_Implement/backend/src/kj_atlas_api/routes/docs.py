@@ -425,7 +425,7 @@ class ContextAuditPayload(BaseModel):
         "dry_run_side_effect",
         "safemode_regression",
     ] | None = None
-    command: str | None = None
+    command: str
     channel: Literal["api", "cli", "gui"] = "api"
     schemaVersion: Literal["ce4.audit.v1"] = "ce4.audit.v1"
 
@@ -434,7 +434,7 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
     "query": {"context-query"},
     "bundle": {"context-bundle"},
     "proposal": {"proposal-diff"},
-    "apply": {"apply", "apply --dry-run"},
+    "apply": {"apply --dry-run"},
 }
 _CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
 
@@ -507,7 +507,7 @@ def post_context_audit(
         and not settings.ce4_source_bundle_hash_allow_mock
     ):
         raise HTTPException(status_code=422, detail="mock sourceBundleHash is disabled by CE4 runtime policy")
-    if payload.command is not None and payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
+    if payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
         raise HTTPException(
             status_code=422,
             detail=f"command '{payload.command}' is invalid for operation '{payload.operation}'",
