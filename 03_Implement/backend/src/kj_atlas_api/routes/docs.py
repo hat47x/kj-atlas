@@ -437,7 +437,14 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
     "apply": {"apply", "apply --dry-run"},
 }
 _CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
-_ce4_audit_event_tracker: dict[tuple[str, str], set[str]] = {}
+
+
+class _Ce4AuditTrackerState(BaseModel):
+    seen_operations: set[str] = Field(default_factory=set)
+    proposal_source_bundle_hash: str | None = None
+
+
+_ce4_audit_event_tracker: dict[tuple[str, str], _Ce4AuditTrackerState] = {}
 _ce4_audit_tracker_lock = Lock()
 
 
@@ -447,15 +454,26 @@ def reset_ce4_audit_event_tracker() -> None:
 
 
 def _record_ce4_event_and_validate_completeness(
-    *, equivalence_key: str, bundle_hash: str, operation: str
+    *, equivalence_key: str, bundle_hash: str, operation: str, source_bundle_hash: str | None
 ) -> None:
     with _ce4_audit_tracker_lock:
         tracker_key = (equivalence_key, bundle_hash)
-        seen = _ce4_audit_event_tracker.setdefault(tracker_key, set())
-        seen.add(operation)
+        state = _ce4_audit_event_tracker.setdefault(tracker_key, _Ce4AuditTrackerState())
+        state.seen_operations.add(operation)
+        if operation == "proposal":
+            state.proposal_source_bundle_hash = source_bundle_hash
+        if operation == "apply" and state.proposal_source_bundle_hash is not None:
+            if state.proposal_source_bundle_hash != source_bundle_hash:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "equivalence_mismatch",
+                        "message": "sourceBundleHash must match the prior proposal event for the same equivalenceKey and bundleHash",
+                    },
+                )
         if operation != "apply":
             return
-        missing = sorted(_CE4_REQUIRED_EVENT_SET - seen)
+        missing = sorted(_CE4_REQUIRED_EVENT_SET - state.seen_operations)
     if missing:
         raise HTTPException(
             status_code=409,
@@ -499,6 +517,7 @@ def post_context_audit(
             equivalence_key=payload.equivalenceKey,
             bundle_hash=payload.bundleHash,
             operation=payload.operation,
+            source_bundle_hash=payload.sourceBundleHash,
         )
 
     access_request, decision = _authorize_request(

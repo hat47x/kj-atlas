@@ -294,3 +294,32 @@
 
 - Verify の自己修復は最大3回までとし、3回失敗時点で即停止する（4回目試行は禁止）。
 - 停止時は Proceed を実施せず、欠損イベント・`equivalenceKey`・`rejectReasonCode` を保留論点として記録する。
+
+## 17) Stream G 実施記録（2026-04-17 / CE4 API・CLI監査統合）
+
+### Phase 1 Read（CE4 + CE1/CE2契約キー再読）
+
+- CE4固定契約（`equivalenceKey + bundleHash`、監査4点セット、`apply --dry-run`、`sourceBundleHash` の `mock:<hash>` 許容）を再確認。
+- CE1/CE2は参照専用とし、契約再定義を行わない方針を再確認。
+
+### Phase 2 ADR CDC
+
+- 境界変更なし（既存 `query/bundle/proposal/apply` 契約の強化実装のみ）として ADR 追加は不要。
+
+### Phase 3 Plan（AC/DoD補完）
+
+- 既存 AC に対して、`proposal -> apply` 間の `sourceBundleHash` 一貫性チェックを fail-closed で補強する方針を合意。
+
+### Phase 4 Execute
+
+- backend `context-audit` で同一 `equivalenceKey + bundleHash` 系列の `proposal` 記録値と `apply.sourceBundleHash` の不一致を `equivalence_mismatch`（409）で reject するガードを追加。
+- 既存の proposal-only / dry-run 境界は維持し、direct write / auto-apply 経路は追加していない。
+
+### Phase 5 Verify（unit/integration + 契約整合）
+
+- `test_docs_audit_integration.py` に `proposal` と `apply` の `sourceBundleHash` 不一致を reject する回帰テストを追加。
+- `pytest -q 03_Implement/backend/tests/test_docs_audit_integration.py` で pass を確認。
+
+### Phase 6 Proceed
+
+- CE4監査契約の drift 防止を実装レーンへ引継ぎ可能な状態で完了（契約IDや語彙の再定義なし）。
