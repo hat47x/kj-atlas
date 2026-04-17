@@ -391,3 +391,34 @@
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
 
+## Stream E serial execution update（2026-04-17 / A3 implementation readiness lane）
+
+### Phase 1: Read
+- Plan: A1/A2/A3 を再読し、契約入力と依存順序を再照合。
+- Execute: `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1` と `A1 -> A2 -> A3` を確認。
+- Verify: 差分なし（Pass）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2: ADR CDC（Context / Decision / Consequences）
+- Context: A3は実装接続入口であり、契約再定義が起こると監査再現性と下流回帰が破綻する。
+- Decision: A3は契約再定義禁止を維持し、A2検証済み条件を実装接続ゲートへ固定する。
+- Consequences: enum拡張・必須項目変更・restore境界変更要求は A1差し戻しでのみ扱う。
+- Verify: 新規アーキ判断なし（CDC整備のみ）。
+- Proceed: Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD不足の補完）
+- gapType=AC: `agreementStatus=agreed` として、`4値制約 / 非自動確定 / restore順序保持` を開始条件に固定。
+- gapType=DoD: `agreementStatus=agreed` として、契約逸脱検知時は NoGo + 停止理由記録を必須化。
+
+### Phase 4: Execute
+- 実装接続は readiness 定義までに限定し、契約変更は受理しない。
+- handoff 必須入力を `ContractID + mockCase + ownerOfFix` に固定。
+
+### Phase 5: Verify → Proceed
+- docs-check基準: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-Correction counter: `0/3`（本更新時点）。
+- Proceed判定: Go（A3は契約参照のみで開始可能）。
+
+### Fail-safe checkpoint
+- 3回超過 / 契約ドリフト / 同一ファイル競合検知時は即停止し、再開条件を併記する。
+
