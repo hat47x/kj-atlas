@@ -326,3 +326,24 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - Go（条件式）: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
 - NoGo（条件式）: `NoGo = !Go`
 - Stop条件: 3回超過、前提崩壊、未定義競合、固定識別子不一致。
+
+
+## Stream A Serial Execution Record (2026-04-17)
+
+### Phase 1 Read
+- 対象4ファイルを再Readし、契約ID・Unlock条件・Freeze値を再照合。差分は本文の固定値で吸収済み。
+
+### Phase 2 ADR CDC
+- 方針変更差分なしのため、新規ADR起票は行わず既存CDCを継続。
+
+### Phase 3 Plan
+- AC/DoD不足を確認し、Go/NoGo判定を単一式へ固定。
+
+### Phase 4 Execute
+- `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`、`Pending -> Approved/Rejected`、freeze keys を再固定。
+
+### Phase 5 Verify
+- `Plan -> Execute -> Verify -> Proceed` を維持。自己修復は最大3回（4回目禁止）。
+
+### Phase 6 Proceed / Stop
+- `a1Status=="Done" && pendingDecisionQueueCount==0` のときのみ Proceed。未達時は停止して人間へエスカレーション。
