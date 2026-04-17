@@ -368,3 +368,27 @@
 ### Phase 5: Proceed（対象ファイル再読）
 - 本ファイルを再読したうえで状態を判定し、`Ready / Hold / Needs-decision` を記録。
 - 判定: **Ready**（現時点で保留なし）。
+
+
+## 17) Stream G rerun-03（2026-04-17, AUTH-OPS-03同期）
+
+### Phase 1 Read
+- D1〜D4 固定値、役割語彙（Security Officer / System Owner / Platform Operator）、状態語彙（DraftRequest〜Closed + StoppedForClarification）を正本と対象文書で再読した。
+
+### Phase 2 ADR CDC
+- 判定: 既存AUTH-OPS-03固定値で充足。**方針変更なしのため新規CDC/ADR追加なし**。
+
+### Phase 3 Plan（AC/DoD）
+- AC: 語彙一致 / 責務分離 / 導線一致（architecture -> security -> guidelines -> e2e）/ 固定値一致（D1〜D4）。
+- DoD: docs-check + `git diff --check` 成功、不一致0件。
+
+### Phase 4 Execute
+- e2e側の docs-check コマンドに `operations.md` を追加し、D1〜D4 と状態語彙の照合対象を明示した。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（ドリフト0）。不一致が1件でも再発した場合は `StoppedForClarification` で停止する。

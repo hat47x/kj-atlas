@@ -435,3 +435,26 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 - 責務用語不整合を検知した場合は停止。
 - D1〜D4 固定値矛盾を検知した場合は停止。
 - Verify自己修復が3回を超えた場合は停止（`StoppedForClarification`）。
+
+
+## 18) Stream G rerun-03（2026-04-17, canonical語彙収束）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` を正本として D1〜D4 / 役割語彙 / 状態語彙を再読した。
+
+### Phase 2 ADR CDC
+- 方針変更なし（固定値維持）のため CDC/ADR 追加は不要と判断した。
+
+### Phase 3 Plan（AC/DoD）
+- AC: `operations.md` の状態語彙を canonical（DraftRequest/ApprovalPending/Approved/ActiveException/RollbackPending/Closed/StoppedForClarification）へ統一。
+- DoD: 役割分離と固定値（4h/2h/代理承認なし/48h+15m/60m）を保持し、docs-check成功。
+
+### Phase 4 Execute
+- `Requested` / `ExceptionActive` の表記を canonical 状態語彙へ置換し、runbook時系列を再編成した。
+
+### Phase 5 Verify
+- `rg -n "Requested|ExceptionActive|DraftRequest|ApprovalPending|ActiveException|StoppedForClarification" 04_Documentation/operations.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（語彙ドリフト0）。

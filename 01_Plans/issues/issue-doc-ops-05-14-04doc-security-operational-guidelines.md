@@ -433,3 +433,26 @@
 - 責務用語不整合を検知した場合は停止。
 - D1〜D4 固定値矛盾を検知した場合は停止。
 - Verify自己修復が3回を超えた場合は停止（`StoppedForClarification`）。
+
+
+## 16) Stream G rerun-03（2026-04-17, docs-only整合）
+
+### Phase 1 Read
+- 正本と4文書（operations/security/guidelines/e2e）で語彙・導線・固定値を再読した。
+
+### Phase 2 ADR CDC
+- 方針変更なしのため追加ADR/CDCは不要と判断した。
+
+### Phase 3 Plan（AC/DoD）
+- AC: `security_operational_guidelines.md` が D1〜D4 と責務分離を保持し、e2eへ参照導線を維持する。
+- DoD: docs-check + diff-check 成功。
+
+### Phase 4 Execute
+- guidelines 側は fixed values/role vocabulary を維持し、operations を含む横断照合の前提を再固定した。
+
+### Phase 5 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（ドリフト0）。

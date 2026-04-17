@@ -419,26 +419,20 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 状態遷移（strict mode例外運用）:
 
-- `Requested`（申請作成）
-  - D1 の承認順序（Security Officer先行）を満たすと `Approved`。
-  - 承認不備・固定値不一致がある場合は `StoppedForClarification`。
+- `DraftRequest`（申請作成）
+  - 申請内容を作成し、承認審査へ進むと `ApprovalPending`。
+  - 必須情報不足・固定値不一致がある場合は `StoppedForClarification`。
+- `ApprovalPending`（2者承認待ち）
+  - D1 の承認順序（Security Officer先行）で2者承認が揃うと `Approved`。
+  - 承認TTL=4hを超過した場合は申請失効（再申請）。
 - `Approved`（2者承認完了）
-  - Platform Operator が適用した時点で `ExceptionActive`。
-- `ExceptionActive`（一時緩和中）
+  - Platform Operator が適用した時点で `ActiveException`。
+- `ActiveException`（一時緩和中）
   - D2 の最大2h到達時、または停止条件成立時に `RollbackPending`。
 - `RollbackPending`（復旧待ち）
   - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ復帰し検証完了で `Closed`。
 - `StoppedForClarification`（確認待ちで停止）
-  - 未確定事項が解消されるまで適用禁止。解消後は `Requested` から再開。
-
-語彙マッピング（AUTH-OPS-03 canonical との整合）:
-
-| Runbook語彙（本書） | Canonical語彙（`strict_mode_exception_approval_flow.md`） | 意味 |
-|---|---|---|
-| `Requested` | `DraftRequest` / `ApprovalPending` | 申請作成〜承認待ちの運用区間。 |
-| `ExceptionActive` | `ActiveException` | 一時緩和が適用中の状態。 |
-
-> 注記: 本書は運用手順の可読性のため `Requested` / `ExceptionActive` を使用するが、判定意味は canonical と同一である。
+  - 未確定事項が解消されるまで適用禁止。解消後は `DraftRequest` から再開。
 
 ### 3.3 strict mode例外 Runbookテンプレート（2者承認 + 実行記録）
 
@@ -448,7 +442,7 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 ```markdown
 - Request ID:
-- Requested at (UTC):
+- DraftRequest at (UTC):
 - Reason (業務/障害文脈):
 - Target environment:
 - Requested change: KJ_ATLAS_ALLOW_JIT_PROVISIONING false -> true
@@ -492,26 +486,28 @@ npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line
 
 実運用では以下の順で実施し、各ステップの記録を残す。
 
-1. **申請作成（Requested）**
+1. **申請作成（DraftRequest）**
    - Platform Operator が申請を起票し、理由・対象tenant・復旧予定時刻を記録。
-2. **一次承認（Security Officer）**
+2. **承認審査開始（ApprovalPending）**
+   - Security Officer 先行の承認順序で審査へ進める。
+3. **一次承認（Security Officer）**
    - D1の承認順序に従い、Security Officer が先行承認。
-3. **二次承認（System Owner）**
+4. **二次承認（System Owner）**
    - 承認TTL=4h内に System Owner 承認を完了。未達時は申請失効。
-4. **適用（ExceptionActive）**
+5. **適用（ActiveException）**
    - Platform Operator が `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用し、開始時刻を監査記録へ追記。
-5. **監視（ExceptionActive中）**
+6. **監視（ActiveException中）**
    - 15分/60分エスカレーション監視を有効化し、最大2hを超えないことを確認。
-6. **復旧開始（RollbackPending）**
+7. **復旧開始（RollbackPending）**
    - 2h到達または停止条件成立で `RollbackPending` へ遷移。
-7. **復旧完了（Closed）**
+8. **復旧完了（Closed）**
    - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` へ戻し、検証結果を添えて `Closed` へ遷移。
-8. **事後監査（48h以内）**
+9. **事後監査（48h以内）**
    - 変更台帳と監査IDの相互参照を完了し、48hレビューを実施。
 
 失敗系の扱い:
 - 不明点・固定値不一致・承認不備を検知した時点で `StoppedForClarification` を記録し、手順を中断する。
-- 中断後は推測で進めず、解消後に `Requested` から再開する。
+- 中断後は推測で進めず、解消後に `DraftRequest` から再開する。
 
 ### 4. SafeMode/read-only 優先
 
