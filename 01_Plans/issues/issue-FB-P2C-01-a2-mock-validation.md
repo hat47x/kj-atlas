@@ -291,3 +291,47 @@
 ### Self-repair guard
 - Verify失敗時はA2内で最大3回まで自己修復。
 - 3回超過時は `A2 Verify=Unapproved` を固定し、A3 Proceed を禁止。
+
+
+## Stream E independent addendum: A2モック検証固定（2026-04-17）
+
+### Phase 1 Read（tie-break契約 / Gate条件 / QA条件の再読）
+- 参照確認:
+  - A1契約: `deterministicTieBreakOrder = padding>self_intersection>area_delta>vertex_count`
+  - Gate条件: `DQ-FB-P2C-01` Approved が必須
+  - QA条件: 比較キー5項目固定 + 3回反復一致
+
+### Phase 2 ADR CDC（ルール変更要否判定）
+- 判定: **変更なし（ADR更新不要）**。
+- 理由: A2は承認済み契約の検証証跡固定のみを実施。
+
+### Phase 3 Plan（AC/DoD不足提案→合意）
+- AC補強提案:
+  1. `A2 Verify stale` を明示NoGo化（期限超過で自動Block）。
+  2. 比較キーへの追加・削除を禁止（監査差分を防止）。
+- DoD補強提案:
+  - QA3件（repeatability / padding=0 / order一致）をすべて満たすこと。
+- 合意結果: A2検証基準として固定。
+
+### Phase 4 Execute（A2モック証跡固定）
+- 固定証跡キー:
+  - `inputHash`, `seed`, `appliedTieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`
+- 実施ルール:
+  1. 同一 `inputHash` + 同一 `seed` を3回反復
+  2. `paddingViolationCount == 0`
+  3. `appliedTieBreakOrder` が固定順序と一致
+- A3引き渡し条件:
+  - `A2VerifyStatus=Pass`
+  - `A2EvidenceRef` が参照可能
+
+### Phase 5 Verify（再現性条件 / NoGo条件）
+- 再現性条件:
+  - `outputPolygonHash` が3/3一致しドリフトしない。
+- NoGo条件（1件でも該当で停止）:
+  1. 承認記録欠落
+  2. `appliedTieBreakOrder mismatch`
+  3. `paddingViolationCount > 0`
+  4. `outputPolygonHash drift`
+  5. 自己修復上限超過（3回超）
+- Verify結果: **Pass（Self-Correction 0/3）**。
+- Proceed: **A3へ進行可**。
