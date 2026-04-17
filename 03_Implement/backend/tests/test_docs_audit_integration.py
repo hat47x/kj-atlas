@@ -541,6 +541,50 @@ def test_context_audit_rejects_apply_when_bundle_hash_differs_from_prior_events(
     assert apply_response.json()["detail"]["missingEvents"] == ["bundle", "proposal", "query"]
 
 
+def test_context_audit_rejects_apply_when_source_bundle_hash_differs_from_proposal(tmp_path) -> None:
+    with _sqlite_client(tmp_path) as client:
+        for operation, command in (
+            ("query", "context-query"),
+            ("bundle", "context-bundle"),
+            ("proposal", "proposal-diff"),
+        ):
+            response = client.post(
+                "/docs/doc-context/context-audit",
+                json={
+                    "operation": operation,
+                    "safeMode": True,
+                    "equivalenceKey": "1" * 64,
+                    "bundleHash": "2" * 64,
+                    "sourceBundleHash": "mock:" + ("3" * 64),
+                    "dryRun": True,
+                    "sideEffect": "none",
+                    "command": command,
+                    "channel": "api",
+                    "schemaVersion": "ce4.audit.v1",
+                },
+            )
+            assert response.status_code == 200
+
+        apply_response = client.post(
+            "/docs/doc-context/context-audit",
+            json={
+                "operation": "apply",
+                "safeMode": True,
+                "equivalenceKey": "1" * 64,
+                "bundleHash": "2" * 64,
+                "sourceBundleHash": "mock:" + ("4" * 64),
+                "dryRun": True,
+                "sideEffect": "none",
+                "command": "apply",
+                "channel": "api",
+                "schemaVersion": "ce4.audit.v1",
+            },
+        )
+
+    assert apply_response.status_code == 409
+    assert apply_response.json()["detail"]["code"] == "equivalence_mismatch"
+
+
 def test_context_audit_rejects_operation_command_mismatch(tmp_path) -> None:
     with _sqlite_client(tmp_path) as client:
         response = client.post(
