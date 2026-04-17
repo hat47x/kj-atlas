@@ -53,9 +53,9 @@
 ## Stream C 実行ガード（CE0/CE1 Contract Freeze）
 
 - Contract ID の再定義は禁止（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）。
-- 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
+- 各Phase開始時は **Read → ADR CDC → Plan（AC/DoD提案合意）→ Execute（契約固定）→ Verify（3回まで）→ Proceed** を固定順で実施する。
 - 自己修復は最大3回。`verifyAttempt=4` 相当は即停止（fail-closed）とする。
-- mock-first を維持し、外部完了待ちを禁止する。
+- mock-first を維持し、CE2/CE4は mock 連携で依存切断したまま外部完了待ちを禁止する。
 
 ## 0) Phase 1 Read（I/F抽出 + mock許容 / Stream C）
 
@@ -66,10 +66,11 @@
 ## 直列フェーズ固定（Stream C / Contract Freeze）
 
 1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
-2. **Phase 2（CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
-3. **Phase 3（Plan: AC/DoD合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。  
-4. **Phase 4（Execute: mock-first契約固定）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
-5. **Phase 5（Verify/Proceed）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。
+2. **Phase 2（ADR CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
+3. **Phase 3（Plan: AC/DoD提案合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。  
+4. **Phase 4（Execute: 契約固定 / mock-first）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
+5. **Phase 5（Verify: 3回まで）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。  
+6. **Phase 6（Proceed）**: CE2/CE4 へは参照専用 handoff のみを許可し、Contract ID 再定義要求を受け付けない。
 
 ### 実行順序固定（Stream C 強制）
 
@@ -258,6 +259,17 @@ Error code は次を固定し、文言差分を許可しない。
 
 - CE2/CE4 は `sourceBundleHash === bundleHash` を proposal/apply 前提として強制する。
 - `previewConfirmed=false` は常に拒否（`422 preview_required`）とする。
+- CE2/CE4 は mock 連携を維持し、CE1 実装完了待ちを禁止する（依存切断）。
+- Proceed での変更要求は参照専用に限定し、`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` の再定義を禁止する。
+
+## 10) Phase 実行記録（2026-04-17 / Contract-only）
+
+- Read: 対象I/F（`ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed`）を再確認済み。
+- ADR CDC: `previewConfirmed=false -> 422 preview_required` を No-Go 条件として再固定済み。
+- Plan: AC/DoD 追加提案（Determinism / Preview / safeMode / Mock分離）を合意済み契約として扱う。
+- Execute: CE2/CE4 依存を mock で切断したまま、契約文書のみ最小差分で固定。
+- Verify: `verifyAttempt <= 3` を上限として保持し、`verifyAttempt=4` 相当は fail-closed 停止。
+- Proceed: CE2/CE4 への参照専用 handoff のみ許可し、Contract ID 再定義禁止を継続。
 - `safeModePolicy=strict` + `reviewFilter=reviewedOnly` の除外理由を監査に残す。
 - CE2/CE4 は CE1 完了待ちを禁止し、mock `ContextQuery/ContextBundle` 契約で検証を継続する。
 - CE2/CE4 への引き渡しは **read-only handoff** とし、契約更新は CE1 再起票でのみ受け付ける。
