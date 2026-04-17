@@ -44,6 +44,13 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
     if dry_run:
         side_effect = "none"
 
+    operation_to_command = {
+        "query": "context-query",
+        "bundle": "context-bundle",
+        "proposal": "proposal-diff",
+        "apply": "apply --dry-run",
+    }
+
     payload = {
         "operation": args.operation,
         "safeMode": args.safe_mode,
@@ -54,7 +61,7 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
         "dryRun": dry_run,
         "sideEffect": side_effect,
         "rejectReasonCode": input_payload.get("rejectReasonCode"),
-        "command": args.command,
+        "command": operation_to_command[args.operation],
         "channel": "cli",
         "schemaVersion": "ce4.audit.v1",
     }
