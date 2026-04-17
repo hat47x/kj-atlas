@@ -3,6 +3,7 @@ import {
   buildInitialWorkspaceState,
   commitWorkspaceDecision,
   normalizeFilters,
+  normalizePresetInput,
   normalizePresetQuery,
   replayPreset,
   rollbackWorkspaceDecision,
@@ -121,6 +122,17 @@ describe("ce3_patch_workspace", () => {
         filters: ["risk"],
       })
     ).toBe('{"scope":"all","depth":1,"filters":["risk"]}');
+    expect(
+      normalizePresetInput({
+        scope: "selection",
+        depth: 3.7,
+        filters: [" risk", "merge", "MERGE ", ""],
+      })
+    ).toEqual({
+      scope: "selection",
+      depth: 3,
+      filters: ["merge", "risk"],
+    });
   });
 
   it("syncs candidate list without mutating existing decision history", () => {
