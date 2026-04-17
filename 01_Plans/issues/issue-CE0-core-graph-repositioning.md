@@ -5,7 +5,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner
-- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream C: Contract Freeze / mock-first / Docs-Architecture only）
+- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream A: Contract Freeze / mock-first / Docs-Architecture only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -20,14 +20,14 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
-- Stream: `C` (Contract Freeze / mock-first / Docs-Architecture only)
+- Stream: `A` (Contract Freeze / mock-first / Docs-Architecture only)
 
 
-## Stream E 実行契約（2026-04-16 / CE計画専属）
+## Stream A 実行契約（2026-04-16 / CE計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream E が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream A が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
@@ -50,12 +50,15 @@
 - 未定義競合（同一IDの意味衝突、未規定状態遷移、安全境界矛盾）を検知した時点で停止する。
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
-## Stream C 実行ガード（CE0/CE1 Contract Freeze）
+## Stream A 実行ガード（CE0/CE1 Contract Freeze）
 
 - Contract ID の再定義は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
 - mock-first で依存を切断し、外部完了待ちを禁止する。
 - Verify自己修復は最大3回。4回目相当は即停止する。
+- A1ゲート式は `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)` を唯一条件として固定する。
+- DecisionQueue遷移は `Pending -> Approved` または `Pending -> Rejected` のみ許可する（bypass禁止）。
+- Freeze固定値は `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` を維持する。
 
 ## 0) Phase 1 Read（最新メタ）
 
@@ -219,7 +222,7 @@
 - [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
 - [ ] Contract ID collision=0 / 語彙 collision=0 が検証ログで確認できる。
 
-## 5) タスク分解（Stream C: 編集許可ファイル限定）
+## 5) タスク分解（Stream A: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-contract-freeze.md` の CG-01..05 定義を一致させる（再定義禁止）。
 - [ ] T2: 編集許可ファイル内の三層語彙（Consensus/Working/ContextProjection）だけを同期する（指定外ファイルは非編集）。
@@ -257,7 +260,7 @@
 - **Plan**: CE2/CE4にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
 - **Execute**: Working/Projection/Consensus + CG-01..05 を参照専用I/Fとして固定した。
 - **Verify**: 実装詳細や新規契約IDが混入していないことを確認する。
-- **Proceed**: 追加変更はCE0再起票で処理し、Stream Cの契約凍結を維持する。
+- **Proceed**: 追加変更はCE0再起票で処理し、Stream Aの契約凍結を維持する。
 
 ## 9) CE2/CE4 引き渡し Graph Contract Matrix（固定）
 
@@ -268,7 +271,7 @@
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Core Graph Repositioningの参照専用固定値とする。
 
-## Stream C Contract Freeze Fixpoint (2026-04-12)
+## Stream A Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
@@ -276,7 +279,7 @@
 - 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
 - 事前想定との差分（箇条書き）:
   - Proceed/Go式に自然文 `A1 Done` が混在していたため、`a1Status=="Done"` に統一した。
-  - Stream表記が混在していたため、Stream C契約凍結ラインに統一した。
+  - Stream表記が混在していたため、Stream A契約凍結ラインに統一した。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -303,3 +306,30 @@
 - 人間判断が必要な選択肢（2案）:
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
+
+
+## Stream A Serial Execution Record (2026-04-17)
+
+### Phase 1 Read
+- 対象4ファイル（CE0 Contract Freeze / CE0 Core Graph / HIL-RS-01 A1 / HIL-RS-02 A1）を再Readし、契約ID・Unlock条件・Freeze値を再確認。
+- 差分判定: 重大差分なし（固定識別子とゲート式は一致）。
+
+### Phase 2 ADR CDC
+- 方針変更差分がないため、既存の Context / Decision / Consequences を継続利用（新規ADRは不要）。
+- 変更が必要な場合は承認まで Proceed しない運用を維持。
+
+### Phase 3 Plan
+- AC/DoD不足を補完し、Go/NoGo判定を単一式へ統一。
+- 停止条件を `Self-Correction<=3` と `a1Status=="Done" && pendingDecisionQueueCount==0` 不成立時停止に固定。
+
+### Phase 4 Execute
+- A1ゲート式、DecisionQueue遷移、固定識別子（freeze keys）を本文内で再同期。
+- 再定義禁止と read-only handoff を維持。
+
+### Phase 5 Verify
+- Plan -> Execute -> Verify -> Proceed の順序を維持。
+- Verify不一致時の自己修復は最大3回、4回目は禁止。
+
+### Phase 6 Proceed / Stop
+- `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0)` を満たす場合のみ完了。
+- それ以外は停止し、人間判断へエスカレーション。
