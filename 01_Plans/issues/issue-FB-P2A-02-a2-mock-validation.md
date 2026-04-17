@@ -204,7 +204,14 @@
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
 - 各 Phase 開始時に A1/A2/A3 の3ファイルを再Readしてから着手する。
 - 実行順序は **Plan→Execute→Verify→Proceed** を固定し、順序逆転時は停止する。
-- Self-correction は最大3回とし、3回失敗で停止・報告する。
+- Self-correction は最大3回までとし、**4回目に入る前に停止・報告**する。
+
+## Unified execution rule lock（同一ルール固定）
+
+- strict serial: A1→A2→A3 の直列のみ許可（並列禁止）。
+- CDC必須: Contract Definition Checklist（C1/C2/C3）とA1固定契約値の一致確認を必須化する。
+- 各Phase開始Read: Phase開始時に A1/A2/A3 の3ファイルを再Readする。
+- self-correction: 最大3回。4回目相当は停止して指示待ち。
 
 ## Validation plan
 
