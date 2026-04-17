@@ -327,3 +327,29 @@
 - Self-repair: `0/3`（未実施）。
 - Proceed: Go（未定義依存 / 契約ドリフトなし）。
 
+
+## Stream F CDC fixed-cycle update（2026-04-17）
+
+- Fixed rule: `CDC -> Plan -> Execute -> Verify -> Proceed`
+- Repair cap: Self-correction is limited to 3 attempts; stop on the 4th equivalent attempt.
+
+### CDC
+- Reference contract re-check: `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1`.
+- Serial dependency re-check: `A1 -> A2 -> A3` only.
+- Change-control re-check: A3 is handoff-only and cannot redefine A1/A2 contract artifacts.
+
+### Plan
+- Keep A3 as implementation-entry gate based on fixed contract input.
+- Preserve required gates: required fields complete, non-auto-apply preserved, restore-order regression guarded.
+
+### Execute
+- Reassert handoff inputs (`ContractID`, mock validation ledger, rollback/escalation triggers).
+- Reassert rejection route: enum extension or required-field mutation requests must be returned to A1.
+
+### Verify
+- Verification command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`.
+- Pass criteria: contract-link consistency and no dependency inversion.
+
+### Proceed
+- Go only when CDC and docs-check both pass.
+- If failed, perform self-correction up to 3 times and stop with blocker list when exceeded.
