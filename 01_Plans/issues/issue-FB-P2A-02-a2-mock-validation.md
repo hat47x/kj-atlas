@@ -191,7 +191,7 @@
 
 ## Stream C lane guard（FB-P2A only）
 
-- 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
+- 編集対象は FB-P2A A1/A2/A3 issue のみ（CE/HIL/03_Implement は対象外）。
 - Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
 - A1契約値は read-only 参照のみ。未定義値を推測で補完しない。
 - モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
@@ -223,3 +223,25 @@
 - 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 指定外ファイル編集要求 / ContractID衝突。
 - 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
+
+## Phase execution record（FB-P2A-02 / Stream C）
+
+### Phase 1 Read（再Read済み）
+- A1/A2/A3 の3ファイルを再Readし、依存順序 `A1 -> A2 -> A3` と ContractID 一致を確認。
+
+### Phase 2 ADR CDC
+- Context: A1契約固定済み前提での下流計画。
+- Decision: 新規ADR追加なし（既存契約の運用固定）。
+- Consequences: 契約変更要求はA1へ差し戻し、A2/A3で再定義しない。
+
+### Phase 3 Plan
+- Plan→Execute→Verify→Proceed の順序を固定。
+- AC/DoD不足は `agreementStatus=agreed` まで進行しない。
+
+### Phase 4 Execute
+- A2: mock ledger（M1..M4）と責務分離を固定。
+- A3: handoff I/F と rollback 条件を固定。
+
+### Phase 5 Verify / Proceed
+- GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）と docs-check を満たす場合のみ Proceed。
+- self-correction は最大3回。超過時は停止して判断待ち。
