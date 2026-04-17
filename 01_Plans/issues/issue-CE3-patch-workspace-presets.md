@@ -429,3 +429,35 @@
 
 - 失敗残なしのため Proceed。
 - 未着手課題は継続して CE4（local audit → document監査ログ統合）へ委譲。
+
+## 18) Stream F Phase Notes (2026-04-17)
+
+### Phase 1 Read（CE3要件再確認）
+
+- CE3要件（3候補並列 / adopt-reject-hold独立 / preset再実行）を issue + CE3 domain/ui/e2e で再確認。
+- 現状ギャップとして、`onPresetExecuted` callback payload が保存済み/外部由来presetで未正規化のまま渡る可能性を確認。
+
+### Phase 2 ADR CDC
+
+- 方針変更なし（既存CDC内で収まる入力正規化強化のため、承認待ち項目なし）。
+
+### Phase 3 Plan（AC/DoD補強提案）
+
+- AC補強: preset実行時の callback payload も normalized query と同一正規化（depth切り下げ / filters lowercase+dedupe+sort）に揃える。
+- DoD補強: domain unit で `normalizePresetInput` の振る舞いを固定化し、UI callback の再現性担保をコード上で維持する。
+
+### Phase 4 Execute（UI/状態機械）
+
+- `normalizePresetInput` を domain へ追加し、`normalizePresetQuery` / `replayPreset` の入力型を統一。
+- `PatchWorkspacePanel` の `runPreset` で preset を先に正規化してから state machine と callback に連携。
+- `ce3_patch_workspace.test.ts` に `normalizePresetInput` の決定論テストを追加。
+
+### Phase 5 Verify（unit/lint/e2e）
+
+- CE3 domain/ui unit、preset/view unit、frontend lint、CE3 e2e grep を実行。
+- 失敗時自己修復は 0 回（1回でgreen、上限3回未満）。
+
+### Proceed
+
+- Core/Consensus非改変を維持し、変更は `frontend` + 本issue進捗記録内に限定。
+- safeMode後退・share/export危険導線追加なし。

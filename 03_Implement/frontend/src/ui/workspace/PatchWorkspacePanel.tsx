@@ -3,6 +3,7 @@ import {
   buildInitialWorkspaceState,
   commitWorkspaceDecision,
   normalizeFilters,
+  normalizePresetInput,
   replayPreset,
   rollbackWorkspaceDecision,
   summarizeCandidatePatchDiff,
@@ -183,14 +184,15 @@ export function PatchWorkspacePanel({
     if (isReadOnly) {
       return;
     }
+    const normalizedPreset = normalizePresetInput(preset);
     setWorkspaceState((previous) => {
-      const next = replayPreset(previous, preset, candidates.length > 0);
+      const next = replayPreset(previous, normalizedPreset, candidates.length > 0);
       if (next.phase !== "error" && next.lastExecutedQuery) {
         onPresetExecuted?.({
           query: next.lastExecutedQuery,
-          scope: preset.scope,
-          depth: Math.max(1, Math.floor(preset.depth)),
-          filters: [...preset.filters],
+          scope: normalizedPreset.scope,
+          depth: normalizedPreset.depth,
+          filters: [...normalizedPreset.filters],
         });
       }
       return next;

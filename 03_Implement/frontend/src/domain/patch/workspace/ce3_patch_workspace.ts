@@ -29,6 +29,8 @@ export type QueryPreset = {
   filters: string[];
 };
 
+export type QueryPresetInput = Pick<QueryPreset, "scope" | "depth" | "filters">;
+
 export type WorkspaceSnapshot = {
   decisions: Record<string, WorkspaceDecision>;
   selectedCandidateId: string | null;
@@ -61,15 +63,24 @@ export function normalizeFilters(value: string): string[] {
     .sort((left, right) => left.localeCompare(right));
 }
 
-export function normalizePresetQuery(preset: Pick<QueryPreset, "scope" | "depth" | "filters">): string {
+export function normalizePresetInput(preset: QueryPresetInput): QueryPresetInput {
   const normalizedDepth = Number.isFinite(preset.depth) ? Math.max(1, Math.floor(preset.depth)) : 1;
   const normalizedFilters = Array.from(
     new Set(preset.filters.map((filter) => filter.trim().toLowerCase()).filter((filter) => filter.length > 0))
   ).sort((left, right) => left.localeCompare(right));
-  return JSON.stringify({
+  return {
     scope: preset.scope,
     depth: normalizedDepth,
     filters: normalizedFilters,
+  };
+}
+
+export function normalizePresetQuery(preset: QueryPresetInput): string {
+  const normalized = normalizePresetInput(preset);
+  return JSON.stringify({
+    scope: normalized.scope,
+    depth: normalized.depth,
+    filters: normalized.filters,
   });
 }
 
@@ -234,7 +245,7 @@ export function rollbackWorkspaceDecision(state: WorkspaceState, now: string = n
 
 export function replayPreset(
   state: WorkspaceState,
-  preset: Pick<QueryPreset, "scope" | "depth" | "filters">,
+  preset: QueryPresetInput,
   hasCandidates: boolean
 ): WorkspaceState {
   if (!hasCandidates) {
