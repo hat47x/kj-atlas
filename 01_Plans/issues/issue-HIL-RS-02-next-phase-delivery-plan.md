@@ -367,3 +367,27 @@
 ### Phase 6 Proceed（未解決の返却）
 - 未承認・未定義競合・前提崩れは Decision Queue へ返却し、推測で確定しない。
 - Proceedは `a1Status=="Done" && pendingDecisionQueueCount==0` 成立時のみ許可。
+
+
+## Stream A Delivery Gate Record (2026-04-17)
+
+### Phase 1 Read
+- Stream A 管轄4ファイルを再読し、A1→A2/A3依存が `a1Status=="Done" && pendingDecisionQueueCount==0` に一本化されていることを確認。
+
+### Phase 2 ADR CDC
+- Context: Delivery planning は契約編集ではなく、A1固定契約の参照運用である必要がある。
+- Decision: CDC追加は不要。未定義競合は推測修正せず Decision Queue へ返却する。
+- Consequences: A2/A3の開始判定は固定識別子一致 + queue解消を必須条件として維持。
+
+### Phase 3 Plan
+- AC/DoD不足なし。Go/NoGoと停止条件の既存条項を維持。
+
+### Phase 4 Execute
+- Go/NoGo境界を再固定:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+  - 停止条件: Self-Correction 3回超過 / 固定識別子不一致 / 未承認確定化
+
+### Phase 5 Verify / Proceed
+- docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
+- Proceedは `Go` 成立時のみ許可。未達はA1差戻し + Decision Queue継続。

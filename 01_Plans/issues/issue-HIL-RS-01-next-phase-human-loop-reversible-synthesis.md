@@ -387,3 +387,28 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 6 Proceed（未解決の返却）
 - 未承認CDC・未定義競合・前提崩れは Decision Queue へ返却し、推測で確定しない。
 - Proceed条件は既存どおり `a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+
+## Stream A Serial Governance Record (2026-04-17)
+
+### Phase 1 Read
+- 本メモと Stream A 編集許可4ファイルを再読し、固定値・契約ID・Proceedゲートに想定差分ゼロを確認。
+- 差分ゼロ確認項目: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` / `a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+### Phase 2 ADR CDC
+- Context: 本Issueは HIL-RS umbrella の統治計画正本であり、A1契約値の再定義を禁止する必要がある。
+- Decision: CDCの追加起票は不要（既存CDCで足りる）。契約差分要求はA1へ差戻し固定。
+- Consequences: A2/A3の開始判定は read-only 参照のみで運用し、Pending の暗黙解決を禁止する。
+
+### Phase 3 Plan
+- AC/DoD不足なしを再確認（不足発生時のみCDCドラフト起票）。
+- 合意済みProceed条件を維持: `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0)`。
+
+### Phase 4 Execute
+- 契約境界を再固定:
+  - Go/NoGo: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0)`, `NoGo = !Go`
+  - 停止条件: 固定識別子不一致 / 未承認確定化 / SafeMode後退要求 / Self-Correction 3回超過
+
+### Phase 5 Verify / Proceed
+- docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
+- Proceed判定: `a1Status=="Done" && pendingDecisionQueueCount==0` 未達時は NoGo とし、A1差戻しを継続。
