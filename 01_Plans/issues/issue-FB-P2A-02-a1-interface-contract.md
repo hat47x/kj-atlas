@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream G（FB-P2A planning memo exclusive）
+- Owner: Stream C（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -25,14 +25,13 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream G）
+## Phase management（Stream C / FB-P2A serial lock）
 
-- Phase 1: Read同期（A1/A2/A3の3点再読）
-- Phase 2: A1契約明確化（CDC明文化）
-- Phase 3: A2モック検証計画更新（M1..M4・責務分離）
-- Phase 4: A3実装準備条件定義（GoNoGoと停止条件）
-- Phase 5: Verify（記述整合・依存整合）
-
+- Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
+- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
+- Phase 3 Plan: AC/DoD不足のドラフトを作成し、`agreementStatus=agreed` まで進行しない。
+- Phase 4 Execute: A1契約固定 → A2 mock ledger固定 → A3 handoff固定を直列で実施する。
+- Phase 5 Verify: docs-check + 契約リンク整合 + 自己修復上限3回を確認する。
 ## Contract definition（A1成果物）
 
 - CDC（Contract Definition Checklist）:
@@ -65,7 +64,7 @@
 ### Context
 
 - `ADR-0007` は collapse/expand で子要素が描画・ヒットテスト対象外になり、expandで復帰することを要求している。
-- Stream E の担当範囲は P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
+- Stream C の担当範囲は FB-P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
 - 本作業では UI 実装方法や renderer 詳細を決めず、入力/出力契約だけを先に固定する必要がある。
 
 ### Decision
@@ -80,7 +79,7 @@
 - A3 は view 状態遷移と非破壊性を入力契約として受け取れる。
 - SafeMode / share-export の既定挙動を後退させる変更は本契約の対象外として明示固定される。
 
-## A1 contract audit（Stream E / Phase 2）
+## A1 contract audit（Stream C / Phase 2）
 
 - 契約項目確定:
   - `ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1`
@@ -152,7 +151,7 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream G strict serial protocol（Phase 1→5）
+## Stream C strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -182,7 +181,7 @@
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
-## Stream G execution override（FB-P2A A1→A2→A3）
+## Stream C execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -205,13 +204,14 @@
 ## Fail-safe
 
 - self-correction上限: 3回。
-- 停止トリガ: 3回超過 / 依存不整合 / 指定外ファイル更新が必要 / ContractID衝突。
+- 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 指定外ファイル編集要求 / ContractID衝突。
+- 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
 
-## Stream A Serial Contract Lock (2026-04-16)
+## Stream C Serial Contract Lock (2026-04-16)
 
 ### Phase 1 Read（再Read + 差分抽出）
-- 本ファイルを含む Stream A 管轄10ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
+- 本ファイルを含む Stream C 管轄6ファイルを再Readし、契約ID / Gate式 / 禁止遷移を照合。
 - 差分抽出結果:
   - `a1Status=="Done" && pendingDecisionQueueCount==0` を唯一ゲートとして維持。
   - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true` を固定値として維持。
