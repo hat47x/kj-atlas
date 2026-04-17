@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Plan Owner (Stream B)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `state-transition gate (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
 - Expected verification level: `docs-check`
 
@@ -356,3 +356,34 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 - Proceed条件: `a1Status=="Done" && pendingDecisionQueueCount==0` かつ固定値一致。
 - 失敗時はSelf-Correction最大3回、超過時は停止してDecision Queueへ返却。
 - 公開状態: `reference-only`（下流は参照のみ）。
+
+
+## Stream B Serial Contract Alignment (2026-04-17)
+
+### Phase 1 Read（Dependencies / State Transition / Fail-safe 再読）
+- 再読対象を本メモと `issue-HIL-RS-02-next-phase-delivery-plan.md` の2件に固定し、`Dependencies` / `State Transition Contract` / `Fail-safe` の3要素だけを点検。
+- 確認結果: 依存記述は「実装完了待ち」ではなく、`a1Status=="Done" && pendingDecisionQueueCount==0` の状態遷移契約へ統一可能。
+
+### Phase 2 ADR CDC（変更明文化・承認待ち）
+- Context: Stream B は planning-only であり、A1契約値は read-only 参照に限定する。
+- Decision: 依存の正規表現を `state-transition gate` に統一し、着手可否をゲート式でのみ判定する。
+- Consequences: 既存ファイル依存を「参照導線」と「状態遷移契約」に分離し、契約不一致はA1へ差し戻す。
+- Decision Status: `Pending Approval`（CDC承認待ちのため確定扱いしない）。
+
+### Phase 3 Plan（AC/DoD不足提案）
+- AC提案: `dependencyExpressionDrift=0`, `gateExpressionDrift=0`, `failSafeDrift=0`, `pendingBypass=0`。
+- DoD提案: `Read -> CDC -> Plan -> Execute -> Verify -> Proceed` の各フェーズ証跡を本メモに残す。
+- 合意状態: `agreementStatus=pending_approval`（承認前は `Draft/Open(hold)` を維持）。
+
+### Phase 4 Execute（依存記述の契約統一）
+- 本メモの `Dependencies` は `state-transition gate` を明示する記述へ統一。
+- `Go/NoGo` 判定・禁止遷移・差戻し先A1は既存契約を維持し、再定義しない。
+
+### Phase 5 Verify（docs-check + diff整合）
+- 検証コマンド正本: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`。
+- 差分整合: `rg` で `state-transition gate`, `a1Status=="Done" && pendingDecisionQueueCount==0`, `Fail-safe` を照合。
+- 自己修復上限: 3回（4回目相当は停止）。
+
+### Phase 6 Proceed（未解決の返却）
+- 未承認CDC・未定義競合・前提崩れは Decision Queue へ返却し、推測で確定しない。
+- Proceed条件は既存どおり `a1Status=="Done" && pendingDecisionQueueCount==0`。
