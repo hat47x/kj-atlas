@@ -259,6 +259,44 @@
 
 ### Phase 5 Proceed（未達/既知制約）
 
+## 13) Stream E Phase Notes (2026-04-18)
+
+### Phase 1 Read（issue/実装/検証導線の再確認）
+
+- `issue-CE3-patch-workspace-presets.md` / `ce3_patch_workspace.ts` / `PatchWorkspacePanel.tsx` / `e2e/ce3_patch_workspace.spec.ts` を再読し、CE3要件（workspace state machine / preset replay / rollback監査導線）が Core/Consensus 直接編集なしで閉じていることを確認。
+- 既存実装で `adopt/reject/hold` 独立性、rollback監査遷移（`reason=rollback`）、Preset正規化再実行（`scope/depth/filters`）が揃っているため、実装差分は不要と判断。
+
+### Phase 2 ADR CDC（方針変更判定）
+
+- 方針変更は検出されず、新規 CDC 起票は不要（既存 CE3 CDC を継続利用）。
+- 承認待ち論点なし。
+
+### Phase 3 Plan（AC/DoD不足の再点検）
+
+- AC/DoD不足は検出なし。以下を Verify 条件として固定:
+  - unit: CE3 domain + panel + preset の回帰が green。
+  - e2e: `Patch Workspace|Preset|rollback` grep が green。
+  - 失敗時修復は最大3回（browser install → deps install → rerun）。
+
+### Phase 4 Execute（scope内最小差分）
+
+- 実装コード変更は行わず、進捗同期（本Issue更新）のみ実施。
+
+### Phase 5 Verify（unit + panel + e2e、失敗時修復）
+
+- unit 1回目: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium` を実行。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` を実行。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+- 修復回数は2回で収束（上限3回未満）。
+
+### Phase 6 Proceed（rollback可逆性 + 監査遷移）
+
+- Proceed 判定: 合格。rollback可逆性と監査遷移可視化を既存テストで再確認。
+- 継続課題: local audit log の document監査ログ昇格（CE4連携）は未着手のまま据え置き。
+
 - 未達なし（本スコープ内AC/DoD補強は完了）。
 - 既知制約:
   - local audit log の document監査ログ統合（CE4連携）は未着手で継続課題。
