@@ -10,6 +10,34 @@
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
 
+## Stream D Phase execution record（2026-04-18 / CE contract-first・mock-first）
+
+### Phase 1: Read（再読結果）
+- 契約ID固定: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- 禁止事項固定: Query Preview bypass / direct write / auto-apply / AIによる`human_reviewed`自動昇格 / safeMode既定緩和。
+- 依存切断固定: CE1/CE2/CE4 連携は `sourceBundleHash=mock:<hash>` 前提で継続し、実装完了待機を禁止。
+
+### Phase 2: ADR CDC（変更判定）
+- 本更新では **契約ID・列挙値・安全境界の意味変更なし**。
+- したがって CDC（Context/Decision/Consequences）の新規起票は不要（既存契約を維持）。
+
+### Phase 3: Plan（先行固定）
+- API/型の先行固定は CE1/CE2/CE4 Issue に委譲し、本Issueはメタ契約凍結（再定義禁止）を維持。
+- AC/DoD補強点: `collision=0` / `safeMode regression=0` / `No-Go語彙一致` を完了条件として固定。
+
+### Phase 4: Execute（contract-first + mock-first）
+- 実装待機を行わず、契約参照専用の同期に限定。
+- `proposal-only` と fail-closed（監査欠損成功扱い禁止）を維持。
+
+### Phase 5: Verify（docs-check + self-correction <=3）
+- docs-check対象: 契約ID、禁止事項語彙、No-Go条件の5Issue内一致。
+- self-correction は最大3回。`attempt=4` 相当は停止。
+
+### Phase 6: Proceed（進行条件）
+- `Contract ID collision=0` / `Vocabulary collision=0` / `safeMode後退=0` を満たす場合のみ Proceed。
+- いずれか不成立時は fail-safe停止（推測での継続禁止）。
+
+
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE0-CONTRACT-FREEZE`
 - RequirementStatement: ACCI方式・Guard-01〜05・CG-01〜05 を文書横断で凍結する。
