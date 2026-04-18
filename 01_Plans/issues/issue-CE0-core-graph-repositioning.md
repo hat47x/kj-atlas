@@ -420,3 +420,35 @@ type AuditEnvelope = {
 ### Phase 5 Verify/Proceed / Stop
 - `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0)` を満たす場合のみ完了。
 - それ以外は停止し、人間判断へエスカレーション。
+
+---
+
+## Stream E Update (2026-04-18): CE0 Core Graph Contract-first Planning（実装不要確定）
+
+### Phase 1: Read
+- 語彙を `WorkingGraph` / `ContextProjectionGraph` / `ConsensusGraph` に固定。
+- `Core Graph` は履歴参照語としてのみ許容し、契約語彙としては再利用しない。
+
+### Phase 2: 共通I/F最小セット定義
+- Graph責務I/F:
+  - `working -> consensus` は `patch+approval` のみ
+  - `context_projection` は read-only
+  - 監査4点セット必須（`query/bundle/proposal/apply`）
+
+### Phase 3: モック可能境界の切り出し
+- CE1/CE2/CE4 未完了時も `mock:<hash>` で契約検証を先行。
+- direct write / auto-apply を mock検証でも禁止（fail-closed）。
+
+### Phase 4: 監査項目・受入条件整備
+- 監査項目:
+  - `transitionRule` 逸脱 0件
+  - projection 永続上書き 0件
+  - 監査4点欠損 0件
+- 受入条件:
+  1) Graph role vocabulary collision=0
+  2) transition prohibition違反=0
+  3) self-repair は最大3回
+
+### Phase 5: Proceed（実装不要の確定範囲）
+- CE0-core は境界契約の固定のみで完了（コード変更なし）。
+- 実装不要: Graph永続化仕様の実装、UI導線、API endpoint追加。

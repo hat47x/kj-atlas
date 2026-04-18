@@ -389,3 +389,36 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 ### Proceed
 - CE3/CE4 への契約再定義要求は受理せず、参照専用 handoff のみ実施する。
 
+
+---
+
+## Stream E Update (2026-04-18): CE2 Contract-first Planning（実装不要確定）
+
+### Phase 1: Read
+- CE2 は proposal-only 境界を維持し、適用責務を持たない。
+- CE1差分が未解消なら `status=held` を強制する。
+
+### Phase 2: 共通I/F最小セット定義
+- Proposal最小I/F:
+  `proposalId/diff/sourceBundleHash/rationale/status/reviewState`。
+- 列挙固定:
+  - `status: proposed|accepted|rejected|held`
+  - `reviewState: unreviewed|human_reviewed`
+
+### Phase 3: モック可能境界の切り出し
+- `sourceBundleHash=mock:<hash>` を許容し CE1完了待ちを禁止。
+- mock時も `auto-apply=禁止` / `reviewState自動昇格=禁止` を維持。
+
+### Phase 4: 監査項目・受入条件整備
+- 監査項目:
+  - auto-apply path 0件
+  - review auto-promotion 0件
+  - held遷移漏れ 0件
+- 受入条件:
+  1) proposal語彙の単一正本化
+  2) CE1/CE4 参照互換性の維持
+  3) self-repair 最大3回
+
+### Phase 5: Proceed（実装不要の確定範囲）
+- CE2 は契約と遷移ルールの固定で Proceed。
+- 実装不要: apply API、UI操作実装、モデル選定。
