@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2A-01-A1 Island階層モデル導入 / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (Stream A Contract Freeze Candidate)
+- Status: Closed (Stream A serial phase complete: A1 fixed on 2026-04-18)
 - Priority: P0
 - Owner: Stream A（Critical Path / FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
@@ -58,6 +58,32 @@
 - Downstream-A3: `issue-FB-P2A-01-a3-implementation.md`（Annex参照のみ）
 
 ## Phase management（Stream A / FB-P2A serial lock）
+
+## Phase 3 Plan result（agreement record）
+
+- agreementStatus: `agreed`
+- agreedAt: `2026-04-18`
+- Agreement scope: AC/DoD gaps are closed and Stream A serial order (`A1 -> A2 -> A3`) is locked.
+- Note: no undefined conflict found; no external lane file edits required.
+
+## Phase 4 Execute result（strict serial）
+
+1. A1: `ContractID / Required fields / Invariants / ContractLinks` fixed（done）
+2. A2: mock ledger (`M1..M4`) fixed under A1 Annex freeze（done）
+3. A3: implementation handoff contract and rollback conditions fixed（done）
+
+## Phase 5 Verify result
+
+- docs-check target: `01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- verificationFocus: AC/DoD consistency, dependency alignment, contract drift absence
+- selfCorrectionCount: `0/3`（no retry needed）
+
+## Phase 6 Proceed decision
+
+- proceedDecision: `ready-to-transition`
+- nextStatusProposal: `FB-P2A-01 planning serial complete (Stream A)`
+- stopConditionCheck: clear（no blocker）
+
 
 - Phase 1 Read: A1/A2/A3 3点を再読し、Status/AC/DoD/依存を抽出する。
 - Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認記録完了まで停止する。
