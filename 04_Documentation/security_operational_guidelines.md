@@ -246,3 +246,31 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 - 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
 - D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
 - Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
+
+## Stream I 専任サイクル（DOC-OPS-05 security guidelines / 2026-04-18）
+
+### Phase 1) Read
+
+- `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` の関連導線と固定値（D1〜D4）を再読した。
+- Stream G 競合回避のため、対象は `security.md` / `security_operational_guidelines.md` と対応issueのみに限定した。
+
+### Phase 2) Plan（語彙・責務・導線・固定値）
+
+- 語彙: `Security Officer / System Owner / Platform Operator` を統一維持。
+- 責務: 2者承認 + 実行責務分離を維持。
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を維持。
+- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h + 15m/60m を維持。
+
+### Phase 3) Execute
+
+- 本書に Stream I 実行記録を追加し、運用判断補助という責務境界を維持した。
+
+### Phase 4) Verify（docs-check + 参照整合）
+
+- docs-check: `rg` と `git diff --check` で必須語彙・固定値・体裁整合を確認。
+- 参照整合: `security.md` と対応issueの同一ワークフロー、停止条件（自己修復3回上限）を確認。
+
+### Phase 5) Proceed（運用注意点）
+
+- 判定: **Ready**（Stream G 競合検出なし）。
+- 運用注意点: 競合検出時は即停止、自己修復は最大3回。3回超過時は `Hold` / `StoppedForClarification` で停止する。
