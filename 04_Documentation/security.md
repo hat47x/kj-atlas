@@ -630,3 +630,31 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 - 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
 - D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
 - Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
+
+## Stream I 専任サイクル（DOC-OPS-05 security / 2026-04-18）
+
+### Phase 1) Read
+
+- `strict_mode_exception_approval_flow.md` / `security_operational_guidelines.md` / `operations.md` の導線を再確認し、用語・役割・固定値（D1〜D4）を再読した。
+- Stream G 競合回避のため、編集対象を `security.md` / `security_operational_guidelines.md` と対応issueのみに固定した。
+
+### Phase 2) Plan（語彙・責務・導線・固定値）
+
+- 語彙: `Security Officer / System Owner / Platform Operator` を維持。
+- 責務: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）を維持。
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を維持。
+- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h + 15m/60m を維持。
+
+### Phase 3) Execute
+
+- 本書に Stream I の実行記録を追加し、docs-only スコープ外（実装コード / shared files）の編集を行わない。
+
+### Phase 4) Verify（docs-check + 参照整合）
+
+- docs-check: `rg` で語彙・責務・導線・固定値の一致を確認。
+- 参照整合: 関連文書・対応issueで同一ワークフローと停止条件（修復3回上限）を照合。
+
+### Phase 5) Proceed（運用注意点）
+
+- 判定: **Ready**（Stream G 競合検出なし）。
+- 運用注意点: 競合検出時は即停止、Verify失敗の自己修復は最大3回まで。3回超過時は `StoppedForClarification` として停止する。

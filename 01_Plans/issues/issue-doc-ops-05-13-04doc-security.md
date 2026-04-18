@@ -464,3 +464,27 @@
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
+
+## 17) Stream I 専任実行記録（DOC-OPS-05 security / 2026-04-18）
+
+### Phase 1 Read
+- 対象: `security.md` と本Issue本文を再読し、classification=Improve external と docs-check 要件を再確認。
+- 競合確認: Stream G 対象との同時編集を検知しないことを確認。
+
+### Phase 2 Plan（語彙・責務・導線・固定値）
+- 語彙: `Security Officer / System Owner / Platform Operator`。
+- 責務: 2者承認 + Platform Operator 実行責務分離。
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`。
+- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m。
+
+### Phase 3 Execute
+- 本Issueへ Stream I サイクルを追記し、docs-only・対象限定の実行証跡を追加。
+
+### Phase 4 Verify（docs-check + 参照整合）
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- 参照整合として `security.md` と用語/固定値/導線の一致を再確認。
+
+### Phase 5 Proceed（運用注意点）
+- 判定: **Ready**。
+- 運用注意点: Stream G 競合検出時は停止。自己修復は最大3回、3回超過時は `Hold` として停止。
