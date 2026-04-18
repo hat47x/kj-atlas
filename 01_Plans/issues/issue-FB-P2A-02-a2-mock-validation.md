@@ -287,3 +287,19 @@
   - GoNoGo一致
 - Phase 6 Proceed rule（Fixed）:
   - **NoGo の場合は停止し、A1へ差し戻す。**
+
+## Stream C delta log (2026-04-18, FB-P2A-02 A2 lane re-check)
+
+### Phase 1 Read re-check（ContractID/DependsOn/Unblocks）
+- DependsOnContractID: `CTR-2A-02-COLLAPSE-EXPAND-V1`
+- DependsOn: `issue-FB-P2A-02-a1-interface-contract.md`
+- Unblocks: `issue-FB-P2A-02-a3-implementation.md`
+- 判定: **整合（A1固定契約を参照してA3へ単方向handoff）**
+
+### Phase 4 Execute lock（A2 mock criteria）
+- 判定基準を固定: `M1/M2/M3=pass` かつ `M4=fail`。
+- handoff payload 固定: `contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`。
+
+### Phase 5 Verify / Phase 6 Proceed
+- Verify最小セット: `docs-check` + GoNoGo一致 + ContractLinks一致。
+- Proceed rule: GoNoGo不一致または責務未確定時は **A1へ差戻し**。
