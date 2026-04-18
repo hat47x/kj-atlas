@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-01-A3 Island階層モデル導入 / 実装計画接続
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Open (Stream A implementation handoff lock)
 - Priority: P0
-- Owner: Stream B（FB-P2A planning memo exclusive）
+- Owner: Stream A（Critical Path / FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
@@ -11,30 +11,53 @@
 
 ## Dependencies
 
-- DependsOn: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md` / `01_Plans/issues/issue-FB-P2A-01-a2-mock-validation.md`
+- DependsOn: `issue-FB-P2A-01-a1-interface-contract.md` / `issue-FB-P2A-01-a2-mock-validation.md`
 - Unblocks: downstream implementation lane only（no contract re-definition）
-- Gate/Blocker: Ready when A1 contract lock + A2 validation ledger are complete; Blocked on contract mismatch, missing mockCase, or unresolved ownerOfFix.
+- Gate/Blocker: Ready when A1 Annex lock + A2 validation ledger are complete; Blocked on contract mismatch, missing mockCase, or unresolved ownerOfFix.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2A-01`
-- RequirementStatement: A1/A2契約を逸脱せず、実装者向け引き渡し条件を固定する。
+- RequirementStatement: A1 Local Contract Annex と A2 validation ledger を逸脱せず、実装者向け引き渡し条件を固定する。
 - Phase: `A3 Implementation`
 - PriorityClass: Must
 - GoNoGoGate: Required
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B / FB-P2A serial lock）
+## Contract references（Annex only）
 
-- Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
-- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
-- Phase 3 Plan: AC/DoD不足のドラフトを作成し、`agreementStatus=agreed` まで進行しない。
-- Phase 4 Execute: A1契約固定 → A2 mock ledger固定 → A3 handoff固定を直列で実施する。
+- AnnexID: `LCA-FB-P2A-01-A1-V1`
+- ContractID: `CTR-2A-01-ISLAND-HIERARCHY-V1`
+- ContractVersion: `IslandHierarchyContractV1`
+- Direct reference ban: A3本文から外部I/Fを直接参照しない（A1 AnnexおよびA2 ledgerのみ参照）。
+
+## Phase management（Stream A / FB-P2A serial lock）
+
+- Phase 1 Read: A1/A2/A3 3点を再読し、Status/AC/DoD/依存を抽出する。
+- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認完了まで停止する。
+- Phase 3 Plan: AC/DoD不足ドラフトを作成し、`agreementStatus=agreed` まで進行しない。
+- Phase 4 Execute: A1契約固定 → A2 mock ledger固定 → A3 handoff固定を直列実施する。
 - Phase 5 Verify: docs-check + 契約リンク整合 + 自己修復上限3回を確認する。
+- Phase 6 Proceed: 完了条件成立時のみ次ステータス提案し、未達時は停止レポートを残す。
+
+## Phase 1 Read result（差分抽出）
+
+### 抽出（Status/AC/DoD/依存）
+- Status: A1/A2/A3は Open。
+- AC: 入力契約/期待出力/rollback条件は定義済み。
+- DoD: 明示不足のためA3側にDoDを追加。
+- 依存: A1 Annex lock と A2 ledger 完了がA3開始条件。
+
+### 事前想定との差分
+1. Stream B表記が残っていたため、Stream A専属に不一致。
+2. A1 Annex経由参照の明示が不足。
+3. DoDの定量的完了条件が不足。
+
 ## Execution protocol（Plan→Execute→Verify→Proceed）
 
 1. **Plan**
-   - A1必須項目とA2検証結果を実装者向け入力契約へマッピングする。
+   - A1 Annex必須項目とA2検証結果を実装者向け入力契約へマッピングする。
 2. **Execute**
    - 変更順を `schema compatibility -> normalization -> persistence roundtrip` で固定する。
 3. **Verify**
@@ -44,14 +67,15 @@
 
 ## Non-deviation rules
 
-- A1のRequired fields/InvariantsをA3で再定義しない。
-- A2でFailとなったケースを未解決のまま「既知課題」扱いで先送りしない。
-- AC/DoD不足を検知した場合は、先にドラフト提案を追記してから進行する。
+- A1 AnnexのRequired fields/InvariantsをA3で再定義しない。
+- A2でFailとなったケースを未解決のまま先送りしない。
+- AC/DoD不足検知時は、先にドラフト提案を追記してから進行する。
 - 実装コード・ファイルパス・関数名をA3契約本文へ持ち込まない。
 
 ## A2→A3 接続条件（確定）
 
 - ContractLock:
+  - `annexId=LCA-FB-P2A-01-A1-V1`
   - `contractId=CTR-2A-01-ISLAND-HIERARCHY-V1`
   - `contractVersion=IslandHierarchyContractV1`
 - Required input from A2:
@@ -69,6 +93,7 @@
 
 ### Input contract
 
+- `annexId: string`
 - `contractId: string`
 - `contractVersion: string`
 - `mockCaseId: "M1" | "M2" | "M3" | "M4"`
@@ -86,126 +111,24 @@
 
 ### Rollback conditions
 
-- `contractId` または `contractVersion` がA1固定値と不一致。
+- `annexId` / `contractId` / `contractVersion` がA1固定値と不一致。
 - `mockCaseId` が欠損・重複・未知値を含む。
 - `M1/M2/M3=pass` または `M4=fail` のGoNoGo条件が崩れる。
 - `ownerOfFix` が未確定、または責務分離ルールと矛盾する。
 
 ## Acceptance criteria
 
-- [x] A1/A2の ContractID・ケースIDを使って実装計画へトレース可能。
-- [x] Plan→Execute→Verify→Proceedがチェックリスト化されている。
-- [x] 実装者向けの入力契約 / 期待出力 / ロールバック条件が固定されている。
+- [x] A1 AnnexID / ContractID と A2ケースIDで実装計画へトレース可能。
+- [x] Plan→Execute→Verify→Proceed がチェックリスト化されている。
+- [x] 実装者向け入力契約 / 期待出力 / ロールバック条件が固定されている。
 - [x] AC/DoD不足のドラフト提案手順が明文化されている。
 
-## Phase execution log（A3）
+## Definition of Done (DoD)
 
-### Read sync（Phase開始時）
-
-- `issue-FB-P2A-01-a1-interface-contract.md`
-- `issue-FB-P2A-01-a2-mock-validation.md`
-- `issue-FB-P2A-01-a3-implementation.md`
-
-### Plan
-
-- A1契約IDとA2ケースIDを実装タスクへトレース可能にマッピングする。
-- GoNoGo判定条件（M1/M2/M3 pass, M4 fail, owner確定）を前提条件として固定する。
-
-### Execute
-
-- 実装順序を `schema compatibility -> normalization -> persistence roundtrip` で維持する。
-- A2の handoff payload を実装チェックリストへ転写する。
-
-### Verify
-
-- `contractId=CTR-2A-01-ISLAND-HIERARCHY-V1` / `contractVersion=IslandHierarchyContractV1` を契約ロックとして再確認する。
-- `ownerOfFix` 未確定ケースが残っていないことを検証する。
-
-### Proceed
-
-- Go判定成立時のみ次タスクへ進行し、NoGo時はA1/A2/A3責務へ即時返却する。
-
-## Serial completion marker（A3 segment）
-
-- Phase 5（Plan/Execute handoff固定）: Completed
-- Phase 5（Verify/Proceed）: Completed
-- Proceed condition: Go判定成立時のみ実装レーンへ接続（NoGoはA1/A2責務へ返却）
-
-## 実装トレース最小単位
-
-| traceKey | source | destination |
-|---|---|---|
-| `RQ-2A-01` | A1 RequirementID | A3 task grouping key |
-| `CTR-2A-01-ISLAND-HIERARCHY-V1` | A1 ContractID | A3 contract lock |
-| `M1..M4` | A2 mockCaseId | A3 verification checklist |
-| `ownerOfFix` | A2 failure routing | A3 backlog split (A1/A2/A3) |
-
-## A3 implementation connection guard（Stream B / Phase 4）
-
-- 着手条件（Start）:
-  - A1契約ロックが有効。
-  - A2 handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）が M1〜M4 で全件揃う。
-- 停止条件（Stop）:
-  - `contractId` / `contractVersion` 不一致、mockCase 重複/欠損、`ownerOfFix`未確定を検出した場合は推測継続せず停止。
-  - AC/DoD不足が検出され、`agreementStatus=agreed` になる前。
-- ロールバック条件（Rollback）:
-  - GoNoGo不成立時はA3側の追加前提を破棄し、A2責務分離結果へ巻き戻す。
-  - 契約ドリフト検出時はA1固定契約へ差し戻し、A3で契約再定義しない。
-
-## State sync / conflict check
-
-- Phase開始時Read対象:
-  - `issue-FB-P2A-01-a1-interface-contract.md`
-  - `issue-FB-P2A-01-a2-mock-validation.md`
-  - `issue-FB-P2A-01-a3-implementation.md`
-
-
-## Stream B strict serial protocol（Phase 1→5）
-
-### Phase 1 Read
-- 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
-- 照合項目: `Status` / `Priority(P0)` / `DecisionStatus` / `ContractID(またはDependsOnContractID)`。
-- 不足監査: AC/DoD/停止条件/handoff条件。
-
-### Phase 2 A1契約明確化（CDC明文化）
-- Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を**read-only参照**で固定対象として再確認する。
-- Execute: 契約本文の再定義は行わず、固定I/Fの一致確認のみ実施する。
-- Verify: A1→A2→A3依存の逆転・並列前提・契約ドリフトがないことを確認する。
-- Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す（契約値の推測補完は禁止）。
-
-### Phase 3 A2モック検証計画更新
-- Plan: M1..M4（正常/異常）と責務分離（A1/A2/A3）を再確認する。
-- Execute: handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として扱う。
-- Verify: GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）の整合を確認する。
-- Proceed: 判定不一致または責務未確定時は停止し、Decision Queueへ返却してA2へ差し戻す。
-
-### Phase 4 A3実装準備条件定義
-- Plan: 実装入口は契約参照のみで開始できる条件を確認する。
-- Execute: Plan→Execute→Verify→Proceed を固定順序で適用し、実装先行を禁止する。
-- Verify: AC/DoD不足を検知した場合は `gapType` と `agreementStatus` を用いたドラフト提案を先行し、`agreementStatus=agreed` まで実行しない。
-- Proceed: 合意済み条件と停止条件が同時に満たされる場合のみ下流へ引き渡し、未解決はDecision Queueへ返却する。
-
-### Phase 5 Verify
-- docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- 依存参照整合・表記ゆれ・契約ID衝突を確認する。
-- Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
-
-
-## Stream B lane guard（FB-P2A only）
-
-- 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
-- Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
-- A1契約値は read-only 参照のみ。未定義値を推測で補完しない。
-- モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
-- 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
-
-## Stream B execution override（FB-P2A A1→A2→A3）
-
-- 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
-- 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
-- 各 Phase 開始時に A1/A2/A3 の3ファイルを再Readしてから着手する。
-- 実行順序は **Plan→Execute→Verify→Proceed** を固定し、順序逆転時は停止する。
-- Self-correction は最大3回とし、3回失敗で停止・報告する。
+- [x] A1 Annex値とA2 ledger値がA3入力契約に完全転写されている。
+- [x] GoNoGo判定条件が機械判読可能な形で記録されている。
+- [x] NoGo時の返却先（A1/A2/A3責務）が定義されている。
+- [x] A3本文から外部I/F直接参照が除去されている。
 
 ## Validation plan
 
@@ -215,19 +138,5 @@
 ## Fail-safe
 
 - self-correction上限: 3回。
-- 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 指定外ファイル編集要求 / ContractID衝突。
-- 指定外ファイル編集要求を検出した場合は停止する。
-- 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
-
-## Stream B Phase 4-5 completion snapshot（2026-04-16）
-
-### Phase 4 A3（実装接続条件固定）
-- Plan: A2 handoff payload を唯一入力として実装接続条件（Go/NoGo・Stop・Rollback）を固定。
-- Execute: `Go = (M1/M2/M3=pass && M4=fail && ownerOfFix確定)` / `NoGo = !Go` を契約条件として維持。
-- Verify: `contractId` / `contractVersion` 不一致、mockCase欠損/重複、`ownerOfFix` 未確定を停止トリガとして明示済み。
-- Proceed: Go成立時のみ下流へ進行し、NoGo時はA1/A2責務へ巻き戻す。
-
-### Phase 5 Verify / Proceed（docs-check + dependency check）
-- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- Verify focus: 依存逆転なし（A1→A2→A3）、契約ID衝突なし、指定外ファイル編集なし。
-- Next action: Stream B は本3ファイルを `Done-ready (human approval pending)` として保持し、実装レーンへの引き渡し判断を待機。
+- 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 前提崩壊 / 未定義競合 / 指定外ファイル編集要求。
+- 停止時対応: 推測継続を禁止し、停止理由・再開条件・未達項目を記録して指示待ち。
