@@ -376,3 +376,39 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 5 Verify / Proceed
 - docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
 - `a1Status=="Done" && pendingDecisionQueueCount==0` のみ Proceed 可。未達時は停止して人間判断へエスカレーション。
+
+## Stream E Contract Advancement Update (2026-04-17)
+
+### Phase 1) Read同期（4ファイル固定）
+- Read対象をHIL契約4ファイルに限定し、A1を契約正本として再確認。
+- 固定値確認: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `contractLinkLocked=true` / `sharedResourceFreeze=true`。
+
+### Phase 2) CDC起票/更新（ADR要件）
+- Context: A1契約が曖昧だとA2/A3の着手判定と停止判定が両方揺れる。
+- Decision: A1は `contract freeze + start gate` のみ扱い、契約変更はCDC承認前に適用しない。
+- Consequences: 未承認変更はA1内で保留し、下流はread-only参照を継続する。
+
+### Phase 3) Plan（A1先行・A2/A3開放条件）
+- A1完了条件（固定）:
+  - `A1Done = (a1Status=="Done" && approvalStatus=="approved")`
+- A2/A3開放条件（固定）:
+  - `A2A3Open = (A1Done && pendingDecisionQueueCount==0 && agreementStatus=="agreed")`
+- 承認前進行禁止:
+  - `approvalStatus!="approved"` の場合、次Phaseへ進行禁止（Hold）。
+
+### Phase 4) Execute（契約固定）
+- 固定ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`。
+- 契約変更要求ルート: `A1-CDC-only`。
+
+### Phase 5) Verify（条件一致監査）
+- 検証式:
+  - `Go = (a1Status=="Done" && approvalStatus=="approved" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+- 監査不一致時はSelf-Correction最大3回、超過時停止。
+
+### Phase 6) Proceed（Open化条件の提案）
+- Open提案:
+  1. `Go==true`
+  2. `hasUndefinedContractChangeRequest==false`
+  3. `hasSafeModeRegressionRequest==false`
+- 未達時はA1で再CDC起票して承認待ちに戻す。

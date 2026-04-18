@@ -391,3 +391,38 @@
 ### Phase 5 Verify / Proceed
 - docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
 - Proceedは `Go` 成立時のみ許可。未達はA1差戻し + Decision Queue継続。
+
+## Stream E Contract Advancement Update (2026-04-17)
+
+### Phase 1) Read同期（4ファイル固定）
+- HIL-RS契約4ファイルのみを再Readし、delivery planが契約優先順序（A1→A2→A3）を維持していることを確認。
+
+### Phase 2) CDC起票/更新（ADR要件）
+- Context: Delivery計画が契約固定前に進むと、A2/A3で再凍結が発生して手戻りが増える。
+- Decision: RS-02はA1承認を先行ゲートとし、A2/A3は「準備は可、Openは承認後のみ」に固定する。
+- Consequences: 承認待ち期間はA2/A3をDraft/Open(hold)に据え置き、実行開始しない。
+
+### Phase 3) Plan（A1先行・A2/A3開放条件）
+- 開放判定（提案）:
+  - `OpenA2A3 = (a1Status=="Done" && approvalStatus=="approved" && pendingDecisionQueueCount==0)`
+- A2/A3の開放条件は上式のみを採用し、派生条件のローカル追加を禁止。
+
+### Phase 4) Execute（契約固定）
+- 固定参照:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- 禁止:
+  - `Pending` の暗黙解決
+  - `approvalStatus!="approved"` での次Phase進行
+
+### Phase 5) Verify（条件一致監査）
+- 監査観点:
+  1. Gate式が4ファイル間で一致
+  2. Freeze keys が一致
+  3. 安全境界後退要求が0件
+- 監査失敗時は3回上限で自己修復、超過時停止。
+
+### Phase 6) Proceed（Open化条件の提案）
+- Open提案:
+  - `Proceed = (OpenA2A3==true && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- `Proceed==false` の場合はDecision Queueへ返却し、承認待ちを継続する。

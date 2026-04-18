@@ -412,3 +412,49 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 5 Verify / Proceed
 - docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
 - Proceed判定: `a1Status=="Done" && pendingDecisionQueueCount==0` 未達時は NoGo とし、A1差戻しを継続。
+
+## Stream E Contract Advancement Update (2026-04-17)
+
+### Phase 1) Read同期（4ファイル固定）
+- Read対象を以下4ファイルに固定し、他ストリーム成果へ依存しないことを確認。
+  1. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `issue-HIL-RS-02-next-phase-delivery-plan.md`
+  4. `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- 再確認項目: `a1Status=="Done" && pendingDecisionQueueCount==0`、`schemaVersion=1.0.0`、`overridePolicy=human_dual_control_only`、`contractLinkLocked=true`、`sharedResourceFreeze=true`。
+
+### Phase 2) CDC起票/更新（ADR要件）
+- Context: HIL-RS契約の進行判定が複数記述に分散すると、A2/A3の誤Open化が発生しうる。
+- Decision: Stream E は4ファイル内でのみ契約判定を固定し、A1先行（A1完了前はA2/A3開放禁止）を維持する。
+- Consequences: 契約差分要求はA1に集約し、承認済みになるまで `Open(hold)` を維持する。
+
+### Phase 3) Plan（A1先行・A2/A3開放条件）
+- A1先行条件（固定）:
+  - `A1 Gate = (a1Status=="Done")`
+- A2/A3開放条件（固定）:
+  - `OpenAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- Phase進行条件（承認ゲート）:
+  - `phaseApprovalRequired=true`
+  - `approvalStatus!="approved"` の間は次Phaseへ進まない。
+
+### Phase 4) Execute（契約固定）
+- 契約固定対象:
+  - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - Contract IDs: `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- 禁止事項（再確認）:
+  - `Pending` bypass
+  - A1未完了でのA2/A3 `Draft -> Open`
+  - SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only` の後退
+
+### Phase 5) Verify（条件一致監査）
+- 実行コマンド（4ファイル閉域）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg -n 'a1Status=="Done" && pendingDecisionQueueCount==0|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|HIL-RS-02-A1-CONTRACT-FREEZE-v1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|phaseApprovalRequired=true|approvalStatus!="approved"' 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- Self-Correction上限: 3回。
+
+### Phase 6) Proceed（Open化条件の提案）
+- 提案Open化条件:
+  1. `approvalStatus=="approved"`
+  2. `OpenAllowed==true`
+  3. `Pending` 件数0
+- 1つでも未充足なら `Proceed=NoGo` とし、Decision Queueへ戻す。
