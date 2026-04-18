@@ -261,3 +261,26 @@ narrative 作成は次の順序を推奨する。
 - **前提崩れ**: 上流正本との矛盾を検知した場合は停止する。
 - **スコープ越境**: docs-only 範囲外への変更要求を検知した場合は停止する。
 - **自己修復上限超過**: Verify 修復が3回を超えた場合は `StoppedForClarification` として停止する。
+
+## Stream H docs群1 serial cycle (2026-04-18)
+
+### Phase 1 Read
+- 対象ファイルを再読し、`Audience / Goal / Non-goal / Public boundary / Outcome / Related` の整合を確認した。
+- Scopeを docs-only に固定し、編集禁止対象（`security.md` / `security_operational_guidelines.md` / shared files）へ非接触であることを確認した。
+
+### Phase 2 Plan
+- 1Phase1責務で進行し、変更は「実行記録の同期」と「公開境界の維持」に限定する。
+- AC/DoD不足があれば先に補完提案し、未合意の新規仕様決定は持ち込まない。
+
+### Phase 3 Execute（1ファイル直列）
+- Classification: **Improve external**
+- 04_Documentation/narratives.md は外部公開向けnarrative手順を維持し、内部判断メモを混在させない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5" 04_Documentation/narratives.md`
+- `git diff --check`
+- 修復は最大3回まで。4回目相当は `StoppedForClarification` として停止する。
+
+### Phase 5 Proceed（差分要約）
+- 判定: **Ready**
+- 停止条件: 分類不能・対象外編集要求・自己修復3回超過を検知した場合は停止する。
