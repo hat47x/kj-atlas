@@ -489,3 +489,31 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 ### Phase 6 Proceed
 - Proceedは式一致時のみ許可。
 - 不一致時は即停止し、Decision Queueへ返却。
+
+## Stream A Execution Record (2026-04-18, dedicated lane)
+
+### Phase 1 Read（4ファイル差分一覧）
+- Status差分: 全件 `Open`（差分なし）。
+- Dependencies差分: 親計画として `state-transition gate` を依存宣言し、A1系2件を上流参照。
+- Gate式差分: 実効式は全件 `a1Status=="Done" && pendingDecisionQueueCount==0` で一致（差分なし）。
+
+### Phase 2 ADR CDC
+- Context: 親計画のゲート分岐は下流誤遷移を生むため禁止。
+- Decision: 新規方針追加を行わず、既存CDCに従った契約同期のみ実施。
+- Consequences: 未承認・未確定は Proceed させず Decision Queue 保持。
+- Approval: `agreementStatus=agreed`（同期作業として合意）。
+
+### Phase 3 Plan（Checklist宣言）
+- `Plan -> Execute -> Verify -> Proceed` を検証チェックリストとして宣言。
+- AC/DoD不足はなし。Proceed前提を `agreementStatus=agreed` に固定。
+
+### Phase 4 Execute
+- 契約語彙、禁止遷移、差戻し条件をA1正本に同期。
+- 明示禁止: A2/A3側で固定値の再定義・上書き。
+
+### Phase 5 Verify
+- docs-check相当（validator + rg）で一致確認。
+- self-correction最大3回、4回目相当で停止。
+
+### Phase 6 Proceed
+- Gate成立時のみ進行し、未確定論点は Decision Queue に戻す。
