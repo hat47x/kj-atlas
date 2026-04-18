@@ -1,7 +1,8 @@
 # Issue Draft: FB-P2B-02-A2 Manual assisted mergeフロー / モック検証
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Done (Stream D serial completion on 2026-04-17)
+- Lifecycle: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream D（FB-P2B + FB-P0 baseline lane）
@@ -409,4 +410,25 @@
 
 ### Fail-safe checkpoint
 - 3回超過 / 契約ドリフト / 依存逆転 / 競合検出で即停止する。
+
+## Stream D serial execution update（2026-04-17 / A2）
+
+### Phase 1: Read
+- A1/A2/A3を再読し、`DependsOnContractID=CTR-2B-02-DECISION-LOG-V1` を再照合。
+
+### Phase 2: ADR CDC（必要時）
+- CDC追加は不要。A1契約への依存のみでA2検証を継続する方針を維持。
+
+### Phase 3: Plan（AC/DoD補完）
+- AC/DoD補完として `action` 4値、append順序、restore同順序、非自動確定を必須化。
+
+### Phase 4: Execute（A1→A2→A3）
+- A2 mock検証条件をA3 handoff入力（契約参照のみ）として固定。
+
+### Phase 5: Verify（<=3回修復）
+- 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 結果: Pass。Self-Correction: `0/3`。
+
+### Phase 6: Proceed
+- Go（A3に `CTR-2B-02-DECISION-LOG-V1` と mock検証固定条件を引き渡し）。
 
