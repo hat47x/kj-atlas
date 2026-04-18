@@ -125,3 +125,29 @@
 - Classification: **Move internal**（公開は概要stubを維持）。
 - docs-only gate: 本書は公開境界の説明に限定し、内部運用/契約の詳細は `02_Architecture/*` と issue トラッキングへ委譲する。
 - Stop conditions: 公開境界未確定 / 責務分離矛盾 / 指定外編集要求を検知した場合は更新を停止する。
+
+## Focused execution record（2026-04-17 / DOC-OPS-05-01）
+
+- Target files only: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` + `04_Documentation/canonicalization.md`
+- Prohibition: **他4xドキュメント編集禁止**
+
+### Phase: Read
+- 本文の Classification / Audience / Public boundary / Go-No-Go 条件を再確認。
+
+### Phase: CDC（必要時）
+- 判定: **不要**（DecisionStatus=Fixed、既存CDCで十分）。
+
+### Phase: Plan
+- 変更は実行記録の同期追記に限定し、公開内容（概要stub）を変更しない。
+
+### Phase: Execute
+- 本書へ Focused cycle 記録を追記し、Issue側の同記録と整合させる。
+
+### Phase: Verify（<=3）
+1. `rg -n "Focused execution record|Phase: Read|Phase: CDC|Phase: Verify（<=3）" 04_Documentation/canonicalization.md 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+2. `git diff --check`
+3. `git diff -- 04_Documentation/canonicalization.md 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+
+### Phase: Proceed
+- Status: **Ready**
+- Note: DOC-OPS-05 の Move internal 方針は維持。
