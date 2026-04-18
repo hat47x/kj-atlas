@@ -364,3 +364,44 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 5 Verify / Proceed
 - docs-check 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`（Pass）。
 - Proceedは Go成立時のみ。NoGo要因検知時は停止し、失敗条件・影響範囲・必要な人間判断を報告する。
+
+## Stream E Contract Advancement Update (2026-04-17)
+
+### Phase 1) Read同期（4ファイル固定）
+- governance hardening は HIL契約4ファイルのみを対象として再Readし、編集範囲を閉域化する。
+
+### Phase 2) CDC起票/更新（ADR要件）
+- Context: governance判定式に承認ゲートがない場合、`Done` だけで誤って次Phaseへ遷移し得る。
+- Decision: `approvalStatus=="approved"` を Phase共通の進行必須条件として追加固定する。
+- Consequences: 承認未了は一律 `NoGo` とし、次Phase移行は不可となる。
+
+### Phase 3) Plan（A1先行・A2/A3開放条件）
+- Hardening Gate（固定）:
+  - `HardeningGo = (a1Status=="Done" && approvalStatus=="approved" && pendingDecisionQueueCount==0)`
+- 開放禁止条件（固定）:
+  - `a1Status!="Done" || approvalStatus!="approved" || pendingDecisionQueueCount>0`
+
+### Phase 4) Execute（契約固定）
+- Freeze keys再固定:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 禁止遷移再固定:
+  - `Pending` bypass
+  - `approvalStatus!="approved"` での `Draft -> Open`
+
+### Phase 5) Verify（条件一致監査）
+- 検証式:
+  - `Proceed = (HardeningGo && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- 不一致時の運用:
+  - 3回まで自己修復
+  - 4回目相当は即停止 + A1差戻し
+
+### Phase 6) Proceed（Open化条件の提案）
+- Open提案条件:
+  1. `Proceed==true`
+  2. `Pending` 0件
+  3. `hasUndefinedContractChangeRequest==false`
+- 条件未充足時は `Open(hold)` 維持。
