@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream E (CE0/CE1/CE2/CE4 contract-first planning only)
-- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
+- Owner: Stream D (CE0/CE1/CE2/CE4 contract-first planning only)
+- Scope: `01_Plans/issues/`（Stream D: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`
 - Expected verification level: `docs-check`
@@ -19,10 +19,10 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
+- Stream: `D` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
 - DecisionQueueRef: N/A
 
-## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+## Stream D 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
 
 ### Scope lock（編集境界）
 
@@ -54,9 +54,16 @@
 - Verify自己修復が3回を超えた時点（`attempt=4` 相当）で停止。
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
-## Stream G Parallel Prep Snapshot（2026-04-17）
 
-> 目的: `CE4-api-cli-audit-integration` を Stream G の責務として CE0/CE2 と並列準備する。API/CLI/GUI同値性は **契約先行** で固定し、mock入力で依存待機を排除する。
+### 依存切断（mock）固定条件（Stream D）
+
+- CE1未完了でも `sourceBundleHash=mock:<hash>` を許容し、実装完了待ちを禁止する。
+- API/CLI/GUI の同値性判定は `equivalenceKey + bundleHash` の AND 条件で固定する。
+- proposal-only を固定し、auto-apply 禁止・`human_reviewed` 自動昇格禁止を全フェーズで維持する。
+
+## Stream D Parallel Prep Snapshot（2026-04-18）
+
+> 目的: `CE4-api-cli-audit-integration` を Stream D の責務として CE0/CE2 と並列準備する。API/CLI/GUI同値性は **契約先行** で固定し、mock入力で依存待機を排除する。
 
 ### Phase運用（固定）
 1. **Read**: `equivalenceKey + bundleHash` と監査4点セットを再確認。
@@ -96,11 +103,11 @@ export type AuditEventV1 = {
 - DoD: fail-closed（欠損成功扱い禁止）と自己修復3回上限が明文化されている。
 
 
-## Stream G 実行契約（2026-04-17 / CE計画専属）
+## Stream D 実行契約（2026-04-18 / CE計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream G が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream D が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
@@ -284,7 +291,7 @@ export type AuditEventV1 = {
 
 ---
 
-## 12) Stream E 実施記録（2026-04-12）
+## 12) Stream D 実施記録（2026-04-12）
 
 ### Plan（AC/DoD合意）
 
@@ -309,7 +316,7 @@ export type AuditEventV1 = {
 - `04_Documentation/local_llm_ops_guide.md` の CE4 runbook へ運用制約を同期済み。
 - 既存監査スキーマ（`schemaVersion="ce4.audit.v1"`）は非破壊で維持。変更不要のためフェイルセーフ停止条件には未該当。
 
-## 13) Stream E Verify実行ログ（docs-check / 自己修復3回）
+## 13) Stream D Verify実行ログ（docs-check / 自己修復3回）
 
 - Verify command（docs-check）:
   - `rg -n "equivalenceKey|bundleHash|dryRun|sideEffect|sourceBundleHash|schemaVersion|rejectReasonCode|query|bundle|proposal|apply|fail-closed|mock:<hash>" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md 02_Architecture/api.md 02_Architecture/runtime_parameter_registry.md 04_Documentation/local_llm_ops_guide.md`
@@ -322,11 +329,11 @@ export type AuditEventV1 = {
   - 4点監査欠損 / 同値性不一致 / dry-run境界違反 / safeMode後退は No-Go（fail-closed）。
   - 3回自己修復で未収束の場合は Proceed 禁止のまま停止する。
 
-## 14) Stream F 実施記録（CE4 API/CLI Audit）
+## 14) Stream D 実施記録（CE4 API/CLI Audit）
 
 ### Read / ADR CDC / Plan
 
-- Stream E で固定した CE4 契約（`equivalenceKey + bundleHash`、監査4点セット、`apply --dry-run`、`sourceBundleHash` の `mock:<hash>` 許容）を再確認し、追加仕様を導入せず監査導線固定に限定した。
+- Stream D で固定した CE4 契約（`equivalenceKey + bundleHash`、監査4点セット、`apply --dry-run`、`sourceBundleHash` の `mock:<hash>` 許容）を再確認し、追加仕様を導入せず監査導線固定に限定した。
 - AC/DoD 不足の補完対象を docs 範囲（Issue / `02_Architecture/api.md` / `04_Documentation/local_llm_ops_guide.md`）へ限定した。
 
 ### Execute（監査導線固定）
@@ -343,14 +350,14 @@ export type AuditEventV1 = {
   - CE4 契約語彙（同値性/監査4点/dry-run副作用境界/fail-closed）の文書間整合を確認。
   - フェイルセーフ停止条件（3回失敗・前提崩れ・未定義競合）を運用導線へ同期。
 
-## 15) Stream E 継続運用メモ（2026-04-16 / CE2・CE4連携）
+## 15) Stream D 継続運用メモ（2026-04-16 / CE2・CE4連携）
 
 - 固定フローは `Read -> ADR CDC -> Plan -> Execute -> Verify -> Proceed` とし、`Plan -> Execute -> Verify -> Proceed` の順序逸脱を禁止する。
 - CE3完了待ちは禁止し、`sourceBundleHash=mock:<hash>` を許容した契約検証を継続する。
 - Verify は自己修復 3 回まで。4 回目相当は実施せず停止し、`Proceed` を実行しない。
 - API/CLI/GUI 同値性契約は `equivalenceKey + bundleHash`（AND）と監査4点セット（`query/bundle/proposal/apply`）を同時充足した場合のみ pass とする。
 
-## 16) Stream E 実行プロンプト適用ログ（2026-04-16）
+## 16) Stream D 実行プロンプト適用ログ（2026-04-16）
 
 ### Read（Phase冒頭固定）
 
@@ -368,7 +375,7 @@ export type AuditEventV1 = {
 - Verify の自己修復は最大3回までとし、3回失敗時点で即停止する（4回目試行は禁止）。
 - 停止時は Proceed を実施せず、欠損イベント・`equivalenceKey`・`rejectReasonCode` を保留論点として記録する。
 
-## 17) Stream G 実施記録（2026-04-17 / CE4 API・CLI監査統合）
+## 17) Stream D 実施記録（2026-04-17 / CE4 API・CLI監査統合）
 
 ### Phase 1 Read（CE4 + CE1/CE2契約キー再読）
 

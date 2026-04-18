@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream E (CE0/CE1/CE2/CE4 contract-first planning only)
-- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
+- Owner: Stream D (CE0/CE1/CE2/CE4 contract-first planning only)
+- Scope: `01_Plans/issues/`（Stream D: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -20,9 +20,9 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
-- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
+- Stream: `D` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
 
-## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+## Stream D 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
 
 ### Scope lock（編集境界）
 
@@ -55,7 +55,14 @@
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
 
-## Stream G Parallel Prep Snapshot（2026-04-17）
+### 依存切断（mock）固定条件（Stream D）
+
+- CE1未完了でも `sourceBundleHash=mock:<hash>` を許容し、実装完了待ちを禁止する。
+- API/CLI/GUI の同値性判定は `equivalenceKey + bundleHash` の AND 条件で固定する。
+- proposal-only を固定し、auto-apply 禁止・`human_reviewed` 自動昇格禁止を全フェーズで維持する。
+
+
+## Stream D Parallel Prep Snapshot（2026-04-18）
 
 > 目的: `CE0-core-graph-repositioning` / `CE2-low-risk-ai-assist` / `CE4-api-cli-audit-integration` を **並列準備**するため、CE0側の責務境界を interface-first で先行固定する。
 
@@ -97,11 +104,11 @@ type AuditEnvelope = {
 - AC-3: `query/bundle/proposal/apply` 欠損は成功扱いしない。
 - DoD: Contract ID collision=0 / vocabulary collision=0 / safeMode後退=0。
 
-## Stream G 実行契約（2026-04-17 / CE2/CE0-core-graph 計画専属）
+## Stream D 実行契約（2026-04-18 / CE2/CE0-core-graph 計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream G が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream D が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
@@ -124,7 +131,7 @@ type AuditEnvelope = {
 - 未定義競合（同一IDの意味衝突、未規定状態遷移、安全境界矛盾）を検知した時点で停止する。
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
-## Stream G 実行ガード（CE0/CE1 Contract Freeze）
+## Stream D 実行ガード（CE0/CE1 Contract Freeze）
 
 - Contract ID の再定義は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
@@ -302,7 +309,7 @@ type AuditEnvelope = {
 - [ ] Query Preview必須 / direct write禁止 / proposal-only / 監査4点セット必須 の4条件が同時成立する。
 - [ ] Contract ID collision=0 / 語彙 collision=0 が検証ログで確認できる。
 
-## 5) タスク分解（Stream G: 編集許可ファイル限定）
+## 5) タスク分解（Stream D: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-contract-freeze.md` の CG-01..05 定義を一致させる（再定義禁止）。
 - [ ] T2: 編集許可ファイル内の三層語彙（Consensus/Working/ContextProjection）だけを同期する（指定外ファイルは非編集）。
@@ -340,7 +347,7 @@ type AuditEnvelope = {
 - **Plan**: CE2/CE4にはGraph責務境界の固定値のみを引き渡し、再定義を禁止する。
 - **Execute**: Working/Projection/Consensus + CG-01..05 を参照専用I/Fとして固定した。
 - **Verify**: 実装詳細や新規契約IDが混入していないことを確認する。
-- **Proceed**: 追加変更はCE0再起票で処理し、Stream Gの契約凍結を維持する。
+- **Proceed**: 追加変更はCE0再起票で処理し、Stream Dの契約凍結を維持する。
 
 ## 9) CE2/CE4 引き渡し Graph Contract Matrix（固定）
 
@@ -351,7 +358,7 @@ type AuditEnvelope = {
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Core Graph Repositioningの参照専用固定値とする。
 
-## Stream G Contract Freeze Fixpoint (2026-04-17)
+## Stream D Contract Freeze Fixpoint (2026-04-17)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
@@ -359,7 +366,7 @@ type AuditEnvelope = {
 - 未確定ゲート: `なし`（唯一ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0`）。
 - 事前想定との差分（箇条書き）:
   - Proceed/Go式に自然文 `A1 Done` が混在していたため、`a1Status=="Done"` に統一した。
-  - Stream表記が混在していたため、Stream G契約凍結ラインに統一した。
+  - Stream表記が混在していたため、Stream D契約凍結ラインに統一した。
 
 ### Phase 2: ADR明文化（Context / Decision / Consequences）
 - Context: 契約・統治のクリティカルパスを実装依存から切り離し、docs-checkで閉じる。
@@ -388,7 +395,7 @@ type AuditEnvelope = {
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
 
 
-## Stream G Serial Execution Record (2026-04-17)
+## Stream D Serial Execution Record (2026-04-17)
 
 ### Phase 1 Read
 - 対象4ファイル（CE0 Contract Freeze / CE0 Core Graph / HIL-RS-01 A1 / HIL-RS-02 A1）を再Readし、契約ID・Unlock条件・Freeze値を再確認。

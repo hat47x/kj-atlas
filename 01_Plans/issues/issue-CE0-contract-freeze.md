@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream E（CE0/CE1/CE2/CE4 contract-first planning）
-- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
+- Owner: Stream D（CE0/CE1/CE2/CE4 contract-first planning）
+- Scope: `01_Plans/issues/`（Stream D: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Expected verification level: `docs-check`
@@ -19,10 +19,10 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
+- Stream: `D` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
 - DecisionQueueRef: `UNC-VSC-CE-01-01`, `UNC-VSC-CE-02-01`
 
-## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+## Stream D 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
 
 ### Scope lock（編集境界）
 
@@ -55,18 +55,25 @@
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
 
-## Stream F liaison note（2026-04-17 / CE1 dependency isolation）
+### 依存切断（mock）固定条件（Stream D）
+
+- CE1未完了でも `sourceBundleHash=mock:<hash>` を許容し、実装完了待ちを禁止する。
+- API/CLI/GUI の同値性判定は `equivalenceKey + bundleHash` の AND 条件で固定する。
+- proposal-only を固定し、auto-apply 禁止・`human_reviewed` 自動昇格禁止を全フェーズで維持する。
+
+
+## Stream D liaison note（2026-04-17 / CE1 dependency isolation）
 
 - CE0は **reference freeze** として参照し、CE1契約語彙との整合確認のみを扱う。
 - CE1計画系の依存切断を優先し、CE0本文へ新規実装要件を追加しない。
 - Interface-first原則により、CE0側では契約ID・禁止事項・No-Go条件の再定義を行わない。
 - Stop rule: Gate未承認、Decision未確定、Verify自己修復4回目相当で停止。
 
-## Stream A 実行契約（2026-04-16 / CE計画専属）
+## Stream D 実行契約（2026-04-18 / CE計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream A が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream D が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
@@ -89,7 +96,7 @@
 - 未定義競合（同一IDの意味衝突、未規定状態遷移、安全境界矛盾）を検知した時点で停止する。
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
-## Stream A 実行ガード（CE0/CE1 Contract Freeze）
+## Stream D 実行ガード（CE0/CE1 Contract Freeze）
 
 - Contract ID の再定義は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - 各Phase開始時は **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
@@ -268,7 +275,7 @@
 - [ ] Contract ID collision=0 / 語彙 collision=0 / drift-stop固定（safeMode後退検知即停止）が検証ログで追跡できる。
 - [ ] 実装指示（03_Implement配下変更前提）が本Issueに含まれない。
 
-## 5) タスク分解（Stream A: 編集許可ファイル限定）
+## 5) タスク分解（Stream D: 編集許可ファイル限定）
 
 - [ ] T1: 本Issueと `issue-CE0-core-graph-repositioning.md` の Contract ID Matrix を参照専用固定値として一致させる。
 - [ ] T2: 編集許可ファイル内（CE0 / CoreGraph / HIL-RS A1契約文書）で契約語彙を同期し、指定外ファイル編集を行わない。
@@ -321,7 +328,7 @@
 
 > ADR-0028は参照注記のみ（本文再定義禁止）。本MatrixはCE0 Contract Freezeの参照専用固定値として運用する。
 
-## Stream A Contract Freeze Fixpoint (2026-04-12)
+## Stream D Contract Freeze Fixpoint (2026-04-12)
 
 ### Phase 1: Read（最新再読 + 未確定抽出）
 - 未確定I/F: `なし`（固定対象は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）。
@@ -357,7 +364,7 @@
   - 案1: 契約固定値を維持し、差分要求をA1へ差し戻す。
   - 案2: 契約固定値の変更を承認会議へエスカレーションし、承認後に再凍結する。
 
-## Stream A CE0/HIL Contract Freeze Record (2026-04-16)
+## Stream D CE0/HIL Contract Freeze Record (2026-04-16)
 
 ### Phase 1 (Read)
 - 対象6ファイル（CE0/HIL 3 issue + 02_Architecture 3仕様）を再読し、契約ID差分候補を抽出。
@@ -392,13 +399,13 @@
 
 | Timestamp (UTC) | Phase | Actor | Decision | Evidence |
 | --- | --- | --- | --- | --- |
-| 2026-04-16T00:00:00Z | Phase 2 | Stream A (Critical Path) | ADR追記不要 / 承認ログ追加を採用 | ADR整合確認（0026/0027/0028） |
-| 2026-04-16T00:00:00Z | Phase 3 | Stream A (Critical Path) | CE0契約再固定（再定義禁止） | Contract ID collision=0 |
-| 2026-04-16T00:00:00Z | Phase 4 | Stream A (Critical Path) | Verify Pass | safeMode後退0 / direct write 0 |
-| 2026-04-16T00:00:00Z | Phase 5 | Stream A (Critical Path) | Snapshot発行 | Snapshot ID/Version/Hash 記録 |
+| 2026-04-16T00:00:00Z | Phase 2 | Stream D (Critical Path) | ADR追記不要 / 承認ログ追加を採用 | ADR整合確認（0026/0027/0028） |
+| 2026-04-16T00:00:00Z | Phase 3 | Stream D (Critical Path) | CE0契約再固定（再定義禁止） | Contract ID collision=0 |
+| 2026-04-16T00:00:00Z | Phase 4 | Stream D (Critical Path) | Verify Pass | safeMode後退0 / direct write 0 |
+| 2026-04-16T00:00:00Z | Phase 5 | Stream D (Critical Path) | Snapshot発行 | Snapshot ID/Version/Hash 記録 |
 
 
-## Stream A Serial Execution Record (2026-04-17)
+## Stream D Serial Execution Record (2026-04-17)
 
 ### Phase 1 Read
 - 対象4ファイル（CE0 Contract Freeze / CE0 Core Graph / HIL-RS-01 A1 / HIL-RS-02 A1）を再Readし、契約ID・Unlock条件・Freeze値を再確認。
@@ -443,9 +450,9 @@
 
 
 
-## Stream F contract-first completion profile（2026-04-17）
+## Stream D contract-first completion profile（2026-04-18）
 
-> この節は Stream F 実行時の最新固定値として、旧ストリーム記録より優先して適用する。
+> この節は Stream D 実行時の最新固定値として、旧ストリーム記録より優先して適用する。
 
 ### Scope lock（編集境界）
 
@@ -456,14 +463,14 @@
 
 1. **Read**: CE0/CE1/FB-P2C-01-A1 の現行契約ID・禁止事項・DoDを再読し、重複定義を抽出。
 2. **ADR CDC**: CE契約境界は既存契約の明文化で充足し、新規ADR起票は不要（No new policy）。
-3. **Plan**: Contract IDs / mock I/F / DoD を Stream F 内で閉じた固定値として定義。
+3. **Plan**: Contract IDs / mock I/F / DoD を Stream D 内で閉じた固定値として定義。
 4. **Execute**: CE0 契約凍結（再定義禁止）と mock-first 条件（実装待ち禁止）を固定。
 5. **Verify**: `Contract ID collision=0` / `Vocabulary collision=0` / `SafeMode regression hint=0` をGo条件として維持。
 6. **Proceed**: CE1/FB-P2C-01-A1へ参照専用で引き渡し（契約変更禁止）。
 
 ### Stream-local independence（外部契約非参照）
 
-- CE契約は Stream F 内で閉じる。外部契約を参照しない。
+- CE契約は Stream D 内で閉じる。外部契約を参照しない。
 - 外部契約の語彙が必要な場合は **本Issueに転記して固定** し、参照リンク依存を作らない。
 
 ### Stop conditions（fail-closed）
