@@ -265,3 +265,28 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 ### Phase 5 Proceed（再Read）
 - 判定: **Ready**
 - 次アクション: 同一セット内Issue本文とScope本文の整合を維持して進行。
+
+## DOC-OPS-05 Stream J2 execution record (2026-04-18)
+
+### Phase 1: Read
+- Target issue scope and this document were re-read to confirm Audience / Goal / Public boundary.
+- Classification remains **Move internal** and no Stream H-owned file edits are required.
+
+### Phase 2: ADR CDC
+- CDC update is **not required** because the existing placement policy is within current DOC-OPS-05 decisions.
+
+### Phase 3: Plan
+- AC/DoD補足: 分類根拠（Audience/Goal/公開境界）・次アクション・検証一致（docs-check）を1セットで記録する。
+- 次アクション固定: 内部品質基準として01_Plans配置を維持し、04_Documentationへの再配置は行わない。
+
+### Phase 4: Execute
+- docs-onlyで本ファイルのみを更新し、実装仕様変更は行わない。
+
+### Phase 5: Verify
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|DOC-OPS-05 Stream J2" 01_Plans/documentation_quality.md`
+- `git diff --check`
+- Self-correction policy: max 3 attempts, then stop and reassign if unresolved.
+
+### Phase 6: Proceed
+- 判定: **Ready**
+- 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
