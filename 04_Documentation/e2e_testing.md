@@ -178,6 +178,20 @@ CE3 Frontend の状態機械（`idle / decision_recorded / preset_replayed / rol
   - domain unit（`ce3_patch_workspace.test.ts`）でrollback時の候補独立性を検証する。
   - CE3 e2e grep（Patch Workspace/Preset/rollback）を実行し、失敗時は自己修復手順を3回上限で適用する。
 
+
+
+#### CE3 検証記録（2026-04-18 / frontend）
+
+- 対象Issue: `01_Plans/issues/issue-CE3-patch-workspace-presets.md`
+- 実行結果:
+  - unit: pass（ce3 domain/ui/preset）
+  - e2e 1回目: browser binary 不足で fail
+  - 自己修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium`
+  - e2e 2回目: `libatk-1.0.so.0` 不足で fail
+  - 自己修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium`
+  - e2e 3回目: pass（`--grep "CE3 patch workspace|Patch Workspace|Preset|rollback"`）
+- 判定: 自己修復2回で収束（上限3回未満）。safeMode後退・share/export露出追加なし。
+
 ### 2.5 AUTH-E2E-01 固定運用（Level 1 / Level 2）
 
 本節は `issue-AUTH-E2E-01` の正本運用として固定する。依存実装は
