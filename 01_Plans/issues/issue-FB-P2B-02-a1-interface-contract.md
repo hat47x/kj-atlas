@@ -1,7 +1,8 @@
 # Issue Draft: FB-P2B-02-A1 Manual assisted mergeフロー / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Done (Stream D serial completion on 2026-04-17)
+- Lifecycle: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream D（FB-P2B + FB-P0 baseline lane）
@@ -322,7 +323,7 @@
 
 ### Dependency / Decision Queue
 - QueueID: `DQ-FB_P2B_02_A1_INTERFACE_CONTRACT-STREAM-G-2026-04-12`
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Done (Stream D serial completion on 2026-04-17)
 - Rule: unresolved queue item blocks Proceed; contract drift is routed back to A1 only.
 
 ### AC/DoD補完
@@ -671,4 +672,25 @@
 
 ### Fail-safe checkpoint
 - 3回超過 / 契約ドリフト / 競合検出時は即停止し、競合一覧・停止理由・再開条件のみ提示する。
+
+## Stream D serial execution update（2026-04-17 / A1）
+
+### Phase 1: Read
+- Read OrderとA1/A2/A3メモを再読し、`ContractID=CTR-2B-02-DECISION-LOG-V1` の固定を確認。
+
+### Phase 2: ADR CDC（必要時）
+- 新規ADR追加は不要と判定。既存CDC（契約凍結）をA1本文で再確認。
+
+### Phase 3: Plan（AC/DoD補完）
+- AC/DoDとして「4値制約・順序保持・契約拡張禁止」をA2/A3入力境界として固定。
+
+### Phase 4: Execute（A1→A2→A3）
+- A1を契約正本として固定し、A2/A3の参照専用運用を再明記。
+
+### Phase 5: Verify（<=3回修復）
+- docs-check観点で依存順序と固定値を点検。
+- Self-Correction: `0/3`。
+
+### Phase 6: Proceed
+- Go（A2/A3へ契約IDと固定比較キーを引き渡し済み）。
 

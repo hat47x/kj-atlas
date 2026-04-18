@@ -1,7 +1,8 @@
 # Issue Draft: FB-P2B-02-A3 Manual assisted mergeフロー / 実装接続
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Done (Stream D serial completion on 2026-04-17)
+- Lifecycle: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream D（FB-P2B + FB-P0 baseline lane）
@@ -421,4 +422,25 @@
 
 ### Fail-safe checkpoint
 - 3回超過 / 契約ドリフト / 同一ファイル競合検知時は即停止し、再開条件を併記する。
+
+## Stream D serial execution update（2026-04-17 / A3）
+
+### Phase 1: Read
+- A1/A2/A3再読で `ReferenceContractID=CTR-2B-02-DECISION-LOG-V1` と依存順序を確認。
+
+### Phase 2: ADR CDC（必要時）
+- 契約再定義不要。A3は実装接続入口のみを扱うCDCを維持。
+
+### Phase 3: Plan（AC/DoD補完）
+- AC/DoD補完項目（4値制約・restore順序保持・非自動確定）を回帰ゲートとして固定。
+
+### Phase 4: Execute（A1→A2→A3）
+- A1契約とA2検証結果を入力に、A3 handoff境界（契約参照のみ）を確定。
+
+### Phase 5: Verify（<=3回修復）
+- 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 結果: Pass。Self-Correction: `0/3`。
+
+### Phase 6: Proceed
+- Done。停止条件（契約不整合/競合/3回超過）非該当を確認し、独立完遂を記録。
 
