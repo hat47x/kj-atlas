@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream E (CE0/CE1/CE2/CE4 contract-first planning only)
-- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
+- Owner: Stream D (CE0/CE1/CE2/CE4 contract-first planning only)
+- Scope: `01_Plans/issues/`（Stream D: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
@@ -19,10 +19,10 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
+- Stream: `D` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
-## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+## Stream D 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
 
 ### Scope lock（編集境界）
 
@@ -55,7 +55,14 @@
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
 
-## Stream G Parallel Prep Snapshot（2026-04-17）
+### 依存切断（mock）固定条件（Stream D）
+
+- CE1未完了でも `sourceBundleHash=mock:<hash>` を許容し、実装完了待ちを禁止する。
+- API/CLI/GUI の同値性判定は `equivalenceKey + bundleHash` の AND 条件で固定する。
+- proposal-only を固定し、auto-apply 禁止・`human_reviewed` 自動昇格禁止を全フェーズで維持する。
+
+
+## Stream D Parallel Prep Snapshot（2026-04-18）
 
 > 目的: `CE2-low-risk-ai-assist` を CE0/CE4 と並列準備する。**proposal-only** を崩さず、APIシグネチャ先行 + mock依存切断で実装待機を排除する。
 
@@ -92,11 +99,11 @@ export type ProposalDraftV1 = {
 - AC-3: CE1 drift検知時は `status=held` で fail-closed。
 - DoD: proposal語彙と状態遷移が docs 間で単一正本に一致。
 
-## Stream G 実行契約（2026-04-17 / CE2/CE0-core-graph 計画専属）
+## Stream D 実行契約（2026-04-18 / CE2/CE0-core-graph 計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream G が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream D が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
@@ -119,9 +126,9 @@ export type ProposalDraftV1 = {
 - 未定義競合（同一IDの意味衝突、未規定状態遷移、安全境界矛盾）を検知した時点で停止する。
 - 停止時は推測継続せず、競合点と保留理由を明示する。
 
-## 0) Serial Phase Contract（Stream G 固定フロー）
+## 0) Serial Phase Contract（Stream D 固定フロー）
 
-Stream G（CE2/CE0-core-graph 専属）は、以下の固定フローでのみ進行する。
+Stream D（CE2/CE0-core-graph 専属）は、以下の固定フローでのみ進行する。
 
 1. **Phase 1: Read**（対象Issue/ADRと契約語彙の再確認）
 2. **Phase 2: ADR CDC**（Context/Decision/Consequencesを固定）
@@ -133,7 +140,7 @@ Stream G（CE2/CE0-core-graph 専属）は、以下の固定フローでのみ�
 
 Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/reviewState`）と状態遷移定義を再確認し、drift検知時は即停止する。
 
-## 0.1) Independent Execution Rules（Stream G）
+## 0.1) Independent Execution Rules（Stream D）
 
 - CE1は **mock contract参照** として扱い、実装完了待ちをしない。
 - 実装待ちを理由に停止せず、契約検証（docs-check）を先行する。
@@ -168,7 +175,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 
 - CE-2は「低リスク導入」が目的であり、AIを確定器として扱わない契約固定が必要。
 - CE-1で確定した `bundleHash` を入力として受け、比較可能・可逆な proposal 運用へ接続する。
-- Stream G は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
+- Stream D は CE1 完了待ちを行わず、CE1最小I/Fを **モック契約** として参照して先行整備する。
 - CE1 実装との差異（フィールド欠落・命名差分・状態遷移差分）を検知した場合は CE2 側の実装/文書更新を停止し、差分解消指示を待つ（drift-stop）。
 
 ### Decision
@@ -298,7 +305,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 - ロールバック: proposal契約違反箇所をrevertし、CE-1連携キー準拠へ戻す。
 
 
-## 10) フェイルセーフ（Stream G 固定）
+## 10) フェイルセーフ（Stream D 固定）
 
 - Self-Correction 3回超過で停止し、人手判断待ちへ遷移する。
 - Contract ID collision（重複IDまたは同一IDの意味不一致）を検知した場合は停止する。
@@ -310,7 +317,7 @@ Plan開始時には契約語彙（`proposalId/diff/sourceBundleHash/status/revie
 
 - 判定: **新規ADRは現時点では不要**（既存 `ADR-0028` と CE0/CE1/CE2 Contract Freeze で意思決定が固定済み）。
 - CDC明文化（差分追記）:
-  - Context: Stream G は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
+  - Context: Stream D は CE2 の低リスク化を docs 契約で先行固定し、実装依存を持ち込まない。
   - Decision: 新規ADRを起票せず、当Issueと `02_Architecture/llm_quality_strategy.md` / `02_Architecture/llm_runtime_constraints.md` を単一正本として同期する。
   - Consequences: 仕様変更要求が Contract ID 追加/意味変更を伴う場合は **ADR起票を再判定し、承認待ちで停止** する。
 - 承認待ち条件（Stop & Ask）:
