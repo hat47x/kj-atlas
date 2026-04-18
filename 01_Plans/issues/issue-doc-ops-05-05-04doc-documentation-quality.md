@@ -412,3 +412,36 @@
 ### Phase 6 Proceed
 - 状態: **Ready**
 - 停止条件: 分類不能・対象外編集要求・修復3回超過を検知した場合は停止。
+
+## 16) Stream G DOC-OPS-05 triage fix（2026-04-18）
+
+### Phase 1 Read（Scope / Priority / AC 抽出）
+- Scope/Priority/Requirement meta I/F を再読し、`推奨アクション`・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` の一致を確認。
+- AC未充足として「分類根拠の明文化」「次実行単位の固定」「GoNoGoGate判定条件の再現性」を抽出。
+
+### Phase 2 ADR CDC（新方針要否）
+- 判定: **追加ADRなし（Issue内CDCで固定）**。
+- Context: DOC-OPS-05 は文書本文の全面改稿ではなく、公開境界の分類決定と実行順序固定が目的。
+- Decision: 本Issueの分類を **Move internal** として確定し、後続は docs-only 変更単位に限定。
+- Consequences: 実装/他Issueへ波及させず、Open化判定を分類メタの充足可否で一意に判断可能。
+
+### Phase 3 Plan（AC/DoD不足ドラフト）
+- AC-G1: Audience / Goal / Public boundary / Related を対象文書に追記するタスクを次PR要件に固定。
+- AC-G2: GoNoGoGate=Required の判定条件（上記4点 + Validation + Non-goal）をIssue本文で追跡可能化。
+- DoD-G1: Proceed判定を `Ready / Hold / Needs-decision` の三値で残す。
+- DoD-G2: Validationは docs-check（メタ確認・参照整合・`git diff --check`）を必須実行手順に固定。
+
+### Phase 4 Execute（分類根拠・次実行単位の固定）
+- Classification（確定）: **Move internal**
+- 分類根拠: AudienceとPublic boundaryを基準に、内部運用正本と外部公開導線の混在解消を優先。
+- 次実行単位（固定）: `01_Plans/documentation_quality.md` を正本に固定し、`04_Documentation/documentation_quality.md` は内部参照先への導線stubに置換するPRを起票する。
+
+### Phase 5 Verify（docs-check整合 / 修復上限3回）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実行: `git diff --check`
+- 判定: 失敗時は同Issue内修復を最大3回まで。4回目相当は Fail-safe に従い停止。
+
+### Phase 6 Proceed（Ready化候補）
+- 状態: **Ready**
+- Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
+- Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
