@@ -691,3 +691,33 @@
   - 原因: 契約不整合 / 未定義競合 / 検証3回超過
   - 影響: A2/A3へのhandoff停止
   - 要承認事項: 契約変更要否（A1再凍結の承認）
+
+
+## Stream C serial execution update（2026-04-18 / FB-P2B-01 A1）
+
+### Phase 1 Read（4ファイル再読）
+- 再読対象: baseline + A1 + A2 + A3（固定4ファイル）。
+- 契約照合: A1 `ContractID` / A2 `DependsOnContractID` / A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`（一致）。
+- 依存照合: `A1 -> A2 -> A3`（維持）。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**（契約変更要求なし、Context/Decision/Consequencesの追記不要）。
+
+### Phase 3 Plan（直列前提の固定）
+- A1で固定する範囲を再確認:
+  - Contract ID / Domain types / API signature / deterministic keys。
+- A2/A3への制約:
+  - 参照専用（再定義禁止）
+  - 逸脱要求はA1差し戻し。
+
+### Phase 4 Execute（契約凍結の再反映）
+- A1契約凍結を同日更新として記録し、A2/A3へ同一契約IDで引き渡し可能状態を維持。
+
+### Phase 5 Verify（docs-check + 参照一致）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` 実行対象に含めて確認。
+- 判定: 契約ID参照の不整合なし。
+- Self-Correction: 0/3。
+
+### Phase 6 Proceed
+- Go（A1固定契約を維持したままA2/A3へ進行可能）。
+- Fail-safe: 契約ドリフト / 未定義競合 / 修復3回超過で停止。

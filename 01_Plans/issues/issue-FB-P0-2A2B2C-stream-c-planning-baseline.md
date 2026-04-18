@@ -482,3 +482,45 @@
 - Verify: fail-safe条件（Gate未承認・契約矛盾・未定義競合・修復上限超過で停止）を再固定。
 - Proceed: Stream D契約パック更新を完了。
 
+
+
+## Stream C serial execution update（2026-04-18 / FB-P2B-01 + FB-P0 baseline alignment）
+
+### Phase 1 Read（4ファイル再読 + 契約ID/依存/優先度確認）
+- Read対象（固定スコープ）:
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+  - `issue-FB-P2B-01-a1-interface-contract.md`
+  - `issue-FB-P2B-01-a2-mock-validation.md`
+  - `issue-FB-P2B-01-a3-implementation.md`
+- 契約一致: `ContractID` = `DependsOnContractID` = `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`
+- 依存順序: `A1 -> A2 -> A3`（逆流要求なし）
+- 優先度: baseline/A1/A2/A3 すべて `P0` を維持
+
+### Phase 2 ADR-CDC（変更必要時のみ）
+- 判定: **追加CDC不要**（新規方針変更・契約変更なし）。
+- 承認状態: 既存A1固定契約を継続採用（再承認要求なし）。
+
+### Phase 3 Plan（A1→A2→A3直列 + AC/DoD不足確認）
+- A1: 契約凍結維持（`CTR-2B-01-CANDIDATE-GROUP-V1` 単一参照）。
+- A2: mock検証要件（非自動確定 / 再読込復元 / 順序保持）を維持。
+- A3: handoffは契約参照のみ、契約再定義禁止を維持。
+- AC/DoD不足: **なし**（不足提案ドラフト追加不要）。
+
+### Phase 4 Execute（A1凍結 → A2 mock → A3 handoff反映）
+- 実施内容:
+  - baselineへ最新の直列運用記録を追加。
+  - A1/A2/A3の各メモに同日付の同期記録を追加（契約ID・依存・停止条件の統一）。
+- out-of-scope変更: なし（`01_Plans/issues/` の対象4ファイルのみ更新）。
+
+### Phase 5 Verify（docs-check + 契約ID参照一致）
+- Verifyコマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 期待:
+  - active issue memo validation成功
+  - 契約参照一致（A1/A2/A3）
+- Self-Correction: 0/3（初回で整合）。
+
+### Phase 6 Proceed（完了判定）
+- Proceed判定: **Go**（Plan → Execute → Verify → Proceed 完了）。
+- 継続条件: 追加要求はA1契約差し戻しルールを維持。
+- 停止条件（フェイルセーフ）: 未定義競合 / 契約ドリフト / 修復3回超過で停止。
