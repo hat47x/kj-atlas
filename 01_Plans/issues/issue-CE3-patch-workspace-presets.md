@@ -602,3 +602,42 @@
 
 - Proceed 判定: 合格（CE3要件に対する新規未達なし）。
 - 継続課題は従来どおり CE4（local audit log の document監査ログ統合）へ据え置き。
+
+## 20) Stream CE3 Frontend Notes (2026-04-18)
+
+### Phase 1 Read（差分再確認）
+
+- `issue-CE3-patch-workspace-presets.md`・`ce3_patch_workspace.ts`・`PatchWorkspacePanel.tsx`・`e2e/ce3_patch_workspace.spec.ts` を再読し、CE3要件（rollback監査可視化 / preset再現性 / safeMode非後退）の実装済み境界を確認。
+
+### Phase 2 ADR CDC（方針変更要否）
+
+- 実装方針の追加変更は不要（既存CDCで要件充足）。
+- 承認待ち事項は発生せず、既存AC/DoDを維持して Verify を実行。
+
+### Phase 3 Plan（AC/DoD整合）
+
+- AC/DoDの不足は検出なし。以下を固定して検証：
+  - rollback監査可視化（`(rollback)` 表示）
+  - preset再実行の正規化JSON再現
+  - safeMode非後退（share/export露出追加なし）
+
+### Phase 4 Execute（CE3範囲の最小更新）
+
+- 実装コード変更は不要。
+- CE3検証記録を `04_Documentation/e2e_testing.md` に追記し、再現手順を同期。
+
+### Phase 5 Verify（unit + e2e + diff-check）
+
+- unit: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium` 実行。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` 実行。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+- diff-check: `git diff --stat` でCE3対象外差分なしを確認。
+
+### Phase 6 Proceed（完遂判定）
+
+- AC/DoD達成としてCE3 Frontendタスクを完了。
+- 未完了課題は既存の CE4 連携（local監査ログのdocument監査ログ昇格）のみ。
+
