@@ -524,3 +524,27 @@
 - Proceed判定: **Go**（Plan → Execute → Verify → Proceed 完了）。
 - 継続条件: 追加要求はA1契約差し戻しルールを維持。
 - 停止条件（フェイルセーフ）: 未定義競合 / 契約ドリフト / 修復3回超過で停止。
+
+## Stream C boundary/baseline update（2026-04-18）
+
+- Stream role: `Stream C` 専任（planning baseline 管轄）。
+- Baseline update scope: 参照関係と境界定義のみ更新。
+- Fixed contract lane: `FB-P2B-01` / `CTR-2B-01-CANDIDATE-GROUP-V1`
+- Serial lock: `A1 freeze -> A2 mock -> A3 handoff`
+- Non-goal: `03_Implement/**` 編集禁止。
+
+### Reference relations（固定）
+- A1 contract source: `issue-FB-P2B-01-a1-interface-contract.md`
+- A2 mock validation: `issue-FB-P2B-01-a2-mock-validation.md`
+- A3 handoff memo: `issue-FB-P2B-01-a3-implementation.md`
+- Rule: A2/A3は参照専用、契約変更要求はA1へ差戻し。
+
+### Boundary definition（固定）
+- Allowed: 契約ID整合確認、mock前提検証条件、handoff入出力境界。
+- Forbidden: 実装コード変更、契約再定義、依存順序逆転、未定義競合の持ち越し。
+
+### Verify gate
+- `docs-check` を単一基準にする。
+- ContractID整合と非自動確定ルール維持を必須判定にする。
+- self-correctionは最大3回。4回目修復要求で停止。
+
