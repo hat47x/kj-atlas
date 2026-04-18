@@ -439,3 +439,34 @@
   - 原因: 契約ドリフト / 依存逆転 / 検証3回超過
   - 影響: A3 handoffの無効化
   - 要承認事項: A1再凍結 or 既存契約維持の承認
+
+
+## Stream C serial execution update（2026-04-18 / FB-P2B-01 A2）
+
+### Phase 1 Read（4ファイル再読）
+- 再読対象: baseline + A1 + A2 + A3（固定4ファイル）。
+- 契約照合: A2 `DependsOnContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`（A1/A3と一致）。
+- 優先度照合: lane優先度は `P0` 維持。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**（mock検証方針に変更なし、承認追加なし）。
+
+### Phase 3 Plan（A1→A2→A3直列）
+- A2固定検証項目:
+  - 候補提示のみ（非自動確定）
+  - 同一 `snapshotVersion` の再読込復元
+  - `groupId/targetCardId` と順序一致
+- AC/DoD不足: なし（追加ドラフト不要）。
+
+### Phase 4 Execute（A2 mock反映 + A3 handoff準備）
+- A2は契約参照専用として更新し、A3へ handoff 可能な条件を維持。
+- 実コード変更要求は発行しない（planning memo scope内）。
+
+### Phase 5 Verify（docs-check + 参照一致）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証として実行。
+- 判定: docs-check成功 / 契約参照一致。
+- Self-Correction: 0/3。
+
+### Phase 6 Proceed
+- Go（A2 mock validation lane完了、A3 handoff条件充足）。
+- Fail-safe: 契約ドリフト / 未定義競合 / 修復3回超過で停止。

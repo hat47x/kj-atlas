@@ -452,3 +452,33 @@
   - 原因: 契約逸脱 / 未定義競合 / 検証3回超過
   - 影響: implementation laneへの引き渡し停止
   - 要承認事項: A1再凍結の承認、または契約逸脱要求の却下
+
+
+## Stream C serial execution update（2026-04-18 / FB-P2B-01 A3）
+
+### Phase 1 Read（4ファイル再読）
+- 再読対象: baseline + A1 + A2 + A3（固定4ファイル）。
+- 契約照合: A3 `ReferenceContractID` = `CTR-2B-01-CANDIDATE-GROUP-V1`（A1/A2と一致）。
+- 依存照合: A2のmock検証条件を受理する直列順序を維持（`A1 -> A2 -> A3`）。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**（A3は既存契約参照のみで実施、意思決定追加なし）。
+
+### Phase 3 Plan（A3 handoff固定）
+- A3接続要件:
+  - 契約再定義禁止
+  - 非自動確定 / 再読込復元の回帰要件継承
+  - 逸脱要求はA1差し戻し
+- AC/DoD不足: なし。
+
+### Phase 4 Execute（handoff反映）
+- 実装レーン受け渡し条件を契約参照専用で維持し、比較キー不変を明文化。
+
+### Phase 5 Verify（docs-check + 参照一致）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` 実行対象に含めて確認。
+- 判定: docs-check成功 / 参照整合維持。
+- Self-Correction: 0/3。
+
+### Phase 6 Proceed
+- Go（A3 handoff ready）。
+- Fail-safe: 未定義競合 / 契約ドリフト / 修復3回超過で停止。
