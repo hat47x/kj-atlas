@@ -470,3 +470,35 @@
 ### Phase 6 Proceed
 - Go（A2 mock validation lane完了、A3 handoff条件充足）。
 - Fail-safe: 契約ドリフト / 未定義競合 / 修復3回超過で停止。
+
+## Stream C serial lock update（2026-04-18）
+
+- Stream role: `Stream C` 専任。
+- DependsOnContractID: `CTR-2B-01-CANDIDATE-GROUP-V1`
+- Serial lock: `A1 freeze -> A2 mock -> A3 handoff`
+- Non-goal: `03_Implement/**` 編集禁止。
+
+### Phase 1 Read
+- A1/A2/A3を再読し、契約ID一致を確認。
+- 判定: `ContractID/DependsOnContractID/ReferenceContractID` 三点一致（Pass）。
+
+### Phase 2 ADR CDC
+- mock要件が契約変更を要する場合のみ CDC を明文化し、承認まで停止。
+- A2単独で契約を変更しない。
+
+### Phase 3 Plan
+- AC/DoD不足はドラフト提案に限定し、合意後のみ反映。
+- 未合意の不足項目が残る場合はNoGo。
+
+### Phase 4 Execute
+- A2は mock/fixture/stub で契約検証のみ実施。
+- 非自動確定・再読込復元・順序保持を維持し、契約再定義はA1へ差戻し。
+
+### Phase 5 Verify
+- `docs-check`、ContractID整合、非自動確定ルール維持を確認。
+- self-correction 最大3回。4回目修復要求時は停止。
+
+### Phase 6 Proceed
+- A3への引き渡しは read-only contract handoff のみ。
+- Fail-safe: 契約逸脱 / 優先度逆転 / 未定義競合 / 修復上限超過で停止。
+
