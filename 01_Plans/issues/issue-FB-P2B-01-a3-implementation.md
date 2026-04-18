@@ -419,3 +419,36 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
+
+## Stream C serial execution update（2026-04-17 / FB-P2B-01 A3）
+
+- Stream role: `Stream C（FB-P2B-01 A1→A2→A3）` 専属。
+- Reference contract: `CTR-2B-01-CANDIDATE-GROUP-V1`（A1固定、A3再定義禁止）。
+
+### Phase 1 Read（毎回）
+- Read: A1/A2/A3を再読し、契約リンクと依存順序を再確認。
+- Verify: `A1 -> A2 -> A3` 直列と契約ID一致を確認（Pass）。
+
+### Phase 2 ADR CDC（必要時）
+- Context: A3はimplementation handoff定義のみを扱う。
+- Decision: 新規ADR追加なし、既存CDCの参照運用を継続。
+- Consequences: 契約変更要求はA1差し戻し。
+
+### Phase 3 Plan（AC/DoD提案）
+- AC/DoDは既存 `AC-2B-4` / `AC-2B-5` / `DoD-2B-3` を継続適用。
+- 追加提案: なし（不足検知なし）。
+
+### Phase 4 Execute（A1→A2→A3）
+- A3担当: 契約参照専用で実装接続条件とrollback条件を維持。
+- 禁止: 契約ID変更、比較キー変更、auto-apply導入。
+
+### Phase 5 Verify（Self-Correction <=3）
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-Correction policy: 最大3回。4回目相当は停止。
+
+### Phase 6 Proceed
+- Proceed条件: 契約参照のみで実装入口が開始可能。
+- Stop template（推測継続禁止）:
+  - 原因: 契約逸脱 / 未定義競合 / 検証3回超過
+  - 影響: implementation laneへの引き渡し停止
+  - 要承認事項: A1再凍結の承認、または契約逸脱要求の却下
