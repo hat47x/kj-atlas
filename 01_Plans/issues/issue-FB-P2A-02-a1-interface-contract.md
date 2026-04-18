@@ -255,3 +255,20 @@
 
 ### Phase 6 Proceed
 - Proceed判定: **Pass**（A1完了、A2へ進行可）。
+
+## Stream B fixed I/F injection lock（FB-P2A-02）
+
+- ContractID: `CTR-2A-02-COLLAPSE-EXPAND-V1`（Fixed）
+- ContractVersion: `IslandVisibilityContractV1`（Fixed）
+- Required fields（Fixed）:
+  - `island.id`
+  - `island.isCollapsed`
+  - `view.hiddenDescendantIslandIds`
+  - `view.hiddenCardIds`
+- GoNoGo（Fixed）: `M1/M2/M3=pass` and `M4=fail`
+- Phase 5 Verify minimum checks（Fixed）:
+  - `docs-check`
+  - 契約リンク整合（A1→A2→A3）
+  - GoNoGo一致
+- Phase 6 Proceed rule（Fixed）:
+  - **NoGo の場合は停止し、A1へ差し戻す。**
