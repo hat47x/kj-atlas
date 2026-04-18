@@ -419,3 +419,21 @@
 ### Phase 6) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
+
+## 17) Canonical workflow & stop conditions lock（DOC-OPS-05-10）
+
+### Workflow（固定）
+
+`Read → Plan → Execute → Verify → Proceed`
+
+- Read: `Audience / Goal / Non-goal / Public boundary / Outcome / Related` を再確認する。
+- Plan: docs-only（`issue-doc-ops-05-10-04doc-narratives.md` + `04_Documentation/narratives.md`）に限定し、非目標を固定する。
+- Execute: 分類（Improve external）を維持したまま、公開境界とレビュー責務の明確化のみ更新する。
+- Verify: `docs-check` と `git diff --check` を実施する。
+- Proceed: 判定を `Ready / Hold / Needs-decision` で記録する。
+
+### Stop conditions（固定）
+
+1. **前提崩れ**: 上流正本（`00_Prompt/*`, `01_Plans/adr/ADR-0001`, `02_Architecture/*`）と矛盾を検知した場合は停止。
+2. **スコープ越境**: docs-only 範囲外（実装コード、他ストリーム専有ファイル）への変更要求を検知した場合は停止。
+3. **自己修復上限超過**: Verify 修復が3回を超えた場合は `StoppedForClarification` で停止（4回目相当は実施しない）。

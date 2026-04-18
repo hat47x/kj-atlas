@@ -243,3 +243,21 @@ narrative 作成は次の順序を推奨する。
 - 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
 - D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
 - Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
+
+## 8. Canonical workflow & stop conditions（固定）
+
+### Workflow（固定）
+
+`Read → Plan → Execute → Verify → Proceed`
+
+1. **Read**: 冒頭メタ（Audience / Goal / Non-goal / Public boundary / Outcome / Related）と review state 既定（`unreviewed`）を再確認する。
+2. **Plan**: 更新範囲を docs-only（`04_Documentation/narratives.md` と対応issue memo）に限定し、SafeMode / share-export 後退禁止を固定する。
+3. **Execute**: narrative意味論、公開境界、人間レビュー責務の明確化に限定して更新する。
+4. **Verify**: `rg` によるメタ語彙確認と `git diff --check` を実行する。
+5. **Proceed**: `Ready / Hold / Needs-decision` を記録し、未解決論点は `01_Plans/issues/` へ分離する。
+
+### Stop conditions（固定）
+
+- **前提崩れ**: 上流正本との矛盾を検知した場合は停止する。
+- **スコープ越境**: docs-only 範囲外への変更要求を検知した場合は停止する。
+- **自己修復上限超過**: Verify 修復が3回を超えた場合は `StoppedForClarification` として停止する。
