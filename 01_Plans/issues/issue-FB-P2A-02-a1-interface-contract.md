@@ -272,3 +272,19 @@
   - GoNoGo一致
 - Phase 6 Proceed rule（Fixed）:
   - **NoGo の場合は停止し、A1へ差し戻す。**
+
+## Stream C delta log (2026-04-18, FB-P2A-02 A1 lane re-check)
+
+### Phase 1 Read re-check（ContractID/DependsOn/Unblocks）
+- ContractID: `CTR-2A-02-COLLAPSE-EXPAND-V1`（A1固定）
+- DependsOn: `none`（A1 contract root）
+- Unblocks: `issue-FB-P2A-02-a2-mock-validation.md` / `issue-FB-P2A-02-a3-implementation.md`
+- 判定: **整合（A1→A2→A3 の直列依存を維持）**
+
+### Phase 3 Plan lock（A1→A2→A3）
+- 直列計画を `A1 fixed contract -> A2 mock validation -> A3 handoff` で固定。
+- AC/DoD不足は検出されず、`agreementStatus=agreed` を継続。
+
+### Phase 5 Verify / Phase 6 Proceed
+- Verify最小セット: `docs-check` + ContractLinks一致（A1→A2→A3）。
+- Proceed rule: 矛盾検知時は **A1へ差戻し**。
