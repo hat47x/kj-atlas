@@ -426,3 +426,29 @@
 ### Phase 6) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
+
+## 17) 2026-04-17 Focused cycle（Target限定: issue + canonicalization）
+
+- Target files: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`, `04_Documentation/canonicalization.md`
+- Prohibition: **他4xドキュメント編集禁止**
+
+### Read
+- 本IssueのClassification（Move internal）と `04_Documentation/canonicalization.md` の公開境界メタを再確認。
+
+### CDC（必要時）
+- 判定: **今回は追加CDC不要**（DecisionStatus=Fixed / 既存CDCで充足）。
+
+### Plan
+- 変更を2ファイルに限定し、公開境界の再確認記録のみを追記する。
+
+### Execute
+- 本Issueに本フェーズ記録を追加し、対象文書に同一フェーズ記録を同期する。
+
+### Verify（<=3）
+- Verify-1: `rg -n "Focused cycle|Phase|Verify（<=3）|他4xドキュメント編集禁止" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md 04_Documentation/canonicalization.md`
+- Verify-2: `git diff --check`
+- Verify-3: `git diff -- 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md 04_Documentation/canonicalization.md`
+
+### Proceed
+- 判定: **Ready**
+- 次アクション: Move internal方針は維持し、公開文書は概要stubとして継続。
