@@ -207,12 +207,13 @@
 
 ## 16) 共通ワークフローとフェイルセーフ（統一）
 
-- 本Issue対応は 6Phase（Read → ADR明文化 → Plan → Execute → Verify → Proceed）で実施する。
+- 本Issue対応は **5Phase（Read → Plan → Execute → Verify → Proceed）** で実施する。
+- `04_Documentation/diagnostics.md` 側の実行手順と**同一ワークフロー**を維持する。
 - Verify 失敗時は自己修復を最大3回まで実施する。
-- 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する。
+- 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する（**同一停止条件**）。
 
 
-## 16) Stream G consolidated cycle（Read / CDC / Plan / Execute / Verify / Proceed）
+## 17) Stream G consolidated cycle（Read / CDC / Plan / Execute / Verify / Proceed）
 
 ### 1) Read（対象文書再読）
 - 対象: `Scope` と `Related ADR/Spec` を再読し、公開境界（Audience / Goal / Non-goal / Public boundary）を再確認。
@@ -241,7 +242,7 @@
 - 状態更新案: **Ready**（DecisionStatus=Fixed）。
 - 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
 
-## 16) Stream H canonical consolidation (Phase 1〜5)
+## 18) Stream H canonical consolidation (Phase 1〜5)
 
 ### Phase 1 Read（14 Draft共通テンプレ差分抽出）
 - 共通テンプレ（Requirement meta I/F, Acceptance criteria, Validation plan, Authoring Checklist）を再確認し、Issue固有差分は `Scope` / `Related ADR/Spec` / `推奨アクション` のみを主差分として固定。
