@@ -31,6 +31,34 @@
 - DecisionStatus（Fixed / Pending）: Fixed（A1内で固定、Gate 0承認記録を反映済み）
 - DecisionQueueRef（未確定時の参照先）: `DQ-FB-P2C-01`（Approved: deterministicTieBreakOrder approval）
 
+
+## Stream F contract-first completion profile（2026-04-17）
+
+> この節は Stream F 実行時の最新固定値として、旧ストリーム記録より優先して適用する。
+
+### Scope lock（編集境界）
+
+- 本Issueは `FB-P2C-01-A1` の interface contract 固定に限定する。
+- 編集対象は CE0/CE1/A1 の3Issueのみ（他Issue/実装ファイル編集禁止）。
+
+### Phase record（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+
+1. **Read**: A1 tie-break契約と CE1連携キーを再読。
+2. **ADR CDC**: 新規方針追加なし。既存契約の明文化のみで進行。
+3. **Plan**: Contract IDs、mock I/F、DoDをA1境界で固定。
+4. **Execute**: `deterministicTieBreakOrder` を唯一順序（`padding>self_intersection>area_delta>vertex_count`）として固定。
+5. **Verify**: A2/A3が順序を変更せず参照専用で利用すること、契約衝突0件。
+6. **Proceed**: A2/A3へは mock検証条件のみ引き渡し、契約更新権限はA1へ差し戻す。
+
+### Stream-local independence（外部契約非参照）
+
+- CE連携語彙は本Issue内固定値のみ使用し、外部契約参照は行わない。
+- 必要語彙は転記固定し、リンク依存を追加しない。
+
+### Stop conditions（fail-closed）
+
+- SafeMode後退示唆、未定義競合、Verify自己修復3回超過のいずれかで停止。
+
 ## Stream F execution boundary（2026-04-17）
 
 - Target lane: `FB-P2C-01-A1` + `CE1 planning` only。
