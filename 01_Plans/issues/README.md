@@ -307,6 +307,10 @@ issue補助メモには、最低でも次の項目を含める。
 
 - Stream D Phase 1-5 統合再同期（2026-03-14 rerun-22）: Stream A/B/C/E/F の完了報告受領をRead Gateで再確認し、Active表（2件）/Decision Queue（Ready=1, Open=2）/Next actions（Ready監査1件 + Open期限管理2件）/依存順 `A1→A2→A3` を3共有ファイルで再同期。`Source Issue` はREADME運用基準どおり `N/A` 維持。検証は `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で一致を確認し、再開判定1行（未固定箇所0 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持。
 
+
+- Stream J 共有統合同期（2026-04-18 rerun-37, Phase 1-5）: Phase 1 Read（shared resource 3ファイル再読）→ Phase 2 Plan（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 を固定）→ Phase 3 Execute（3ファイル単一変更セット）→ Phase 4 Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-37|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を実施し、停止条件違反0件・推測マージ0件を確認。
+
+
 ## Rules
 
 1. 新規作成先は必ず `01_Plans/issues/`。
