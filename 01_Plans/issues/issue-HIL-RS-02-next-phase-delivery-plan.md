@@ -426,3 +426,34 @@
 - Open提案:
   - `Proceed = (OpenA2A3==true && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
 - `Proceed==false` の場合はDecision Queueへ返却し、承認待ちを継続する。
+
+## Stream D Delivery Plan Synchronization Record (2026-04-18)
+
+### Phase 1 Read
+- 対象4ファイルを再読し、Unlock式と禁止遷移を照合。
+- 固定式: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+### Phase 2 ADR CDC
+- Context: Delivery計画はA1契約の運用同期であり、ゲート式の派生追加を許容しない。
+- Decision: A2/A3 Openは `a1Status=="Done" && pendingDecisionQueueCount==0` 成立時のみ。
+- Consequences: A1完了前はA2/A3をOpenしない。未承認確定化は禁止。
+- Decision Status: Pending Approval（追加文言は承認待ち）。
+
+### Phase 3 Plan
+- AC/DoD補完:
+  - A1完了前Open禁止を固定規約として明文化。
+  - 強制サイクル `Plan -> Execute -> Verify -> Proceed` を継続。
+
+### Phase 4 Execute
+- 状態遷移契約同期:
+  - 許可: `Pending -> Approved | Rejected`
+  - 禁止: `Pending bypass` / `a1Status!="Done"` での `A2/A3 Draft -> Open`
+  - 停止: 式不一致 / 未承認確定化 / 修復3回超過
+
+### Phase 5 Verify
+- 式一致確認: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+- docs-checkを必須化。
+
+### Phase 6 Proceed
+- 条件一致時のみProceed。
+- 不一致時は即停止し、A1契約へ差戻し。

@@ -405,3 +405,34 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   2. `Pending` 0件
   3. `hasUndefinedContractChangeRequest==false`
 - 条件未充足時は `Open(hold)` 維持。
+
+## Stream D Governance Synchronization Record (2026-04-18)
+
+### Phase 1 Read
+- 対象4ファイルのGovernance節を再読し、Unlock式を照合。
+- 基準式は `a1Status=="Done" && pendingDecisionQueueCount==0` で一致。
+
+### Phase 2 ADR CDC
+- Context: Governance hardeningはA1ゲート単一性を維持するための保護層。
+- Decision: A1完了前のA2/A3 Openを禁止遷移として固定し、未承認確定化を禁止。
+- Consequences: 判定不一致はA1へ差戻し、下流でのローカル確定を禁止。
+- Decision Status: Pending Approval（hardening文言の同期承認待ち）。
+
+### Phase 3 Plan
+- AC/DoD補完:
+  - Open gateは `a1Status=="Done" && pendingDecisionQueueCount==0` のみ。
+  - A1未完了時は `Open(hold)` 維持。
+
+### Phase 4 Execute
+- 契約同期:
+  - 許可遷移: `Pending -> Approved | Rejected`
+  - 禁止遷移: `Pending bypass` / `a1Status!="Done"` の `Draft -> Open`
+  - 停止条件: 式不一致 / 未承認確定化 / 修復3回超過
+
+### Phase 5 Verify
+- Verify式一致: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+- docs-check必須、不一致は3回まで自己修復。
+
+### Phase 6 Proceed
+- 条件一致時のみProceed。
+- 条件不一致時はNoGoで停止し、A1-CDC-onlyへ返却。

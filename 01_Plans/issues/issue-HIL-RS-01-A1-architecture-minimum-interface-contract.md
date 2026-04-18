@@ -412,3 +412,33 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   2. `hasUndefinedContractChangeRequest==false`
   3. `hasSafeModeRegressionRequest==false`
 - 未達時はA1で再CDC起票して承認待ちに戻す。
+
+## Stream D A1 Gate Synchronization Record (2026-04-18)
+
+### Phase 1 Read
+- 対象4ファイルを再読し、Unlock式を `a1Status=="Done" && pendingDecisionQueueCount==0` に統一されているか照合。
+- 照合結果: A1ゲートの正本式は維持。A2/A3のOpenはA1完了前に許可しない方針を継続。
+
+### Phase 2 ADR CDC
+- Context: A1契約はHIL-RS全体の唯一ゲートであり、派生ゲートの混在は誤Openを誘発する。
+- Decision: A1ゲート契約は `a1Status=="Done" && pendingDecisionQueueCount==0` のみを採用し、未承認の確定化を禁止する。
+- Consequences: A2/A3はA1完了前に `Draft -> Open` へ遷移不可。差分要求はA1-CDC-onlyへ差し戻し。
+- Decision Status: Pending Approval（文言同期のみ。契約値変更は未実施）。
+
+### Phase 3 Plan
+- AC補完: `A1完了前のA2/A3 Open禁止` を明示。
+- DoD補完: `Plan -> Execute -> Verify -> Proceed` の強制サイクルを固定。
+
+### Phase 4 Execute
+- 状態遷移契約を同期:
+  - Unlock（唯一）: `a1Status=="Done" && pendingDecisionQueueCount==0`
+  - 禁止遷移: `a1Status!="Done"` での `A2/A3 Draft -> Open`、`Pending bypass`、未承認確定化
+  - 停止条件: 式不一致 / 未承認確定化 / 自己修復3回超過
+
+### Phase 5 Verify
+- 式一致確認: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+- docs-checkを必須化し、不一致時は3回まで修復。4回目相当は即停止。
+
+### Phase 6 Proceed
+- Proceed条件: 上記式一致かつ `pendingDecisionQueueCount==0`。
+- 不一致時: NoGoで停止し、A1-CDC-onlyへ差戻し。
