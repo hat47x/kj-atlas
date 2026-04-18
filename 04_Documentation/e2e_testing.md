@@ -9,6 +9,14 @@
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
 > Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
 
+## DOC-OPS-05 統合同期メモ（2026-04-18）
+
+- 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
+- canonical 用語: `Security Officer / System Owner / Platform Operator`
+- canonical 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`（未確定時 `StoppedForClarification`）
+- fixed values (D1〜D4): `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先）
+
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。

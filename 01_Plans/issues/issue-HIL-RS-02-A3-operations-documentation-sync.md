@@ -243,3 +243,50 @@ Proceed 条件:
   - 未承認決定の確定扱い: 該当なし
   - 用語不一致の解消不能（3回超過）: 該当なし
   - 未定義競合: 該当なし
+
+## Stream F docs sync統合レーン（競合統合）実行ログ (2026-04-18)
+
+### Phase 1: Read（6ファイル再Read）
+- 再読対象:
+  - `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `02_Architecture/strict_mode_exception_approval_flow.md`
+  - `04_Documentation/operations.md`
+  - `04_Documentation/security.md`
+  - `04_Documentation/security_operational_guidelines.md`
+  - `04_Documentation/e2e_testing.md`
+- 点検結果:
+  - 用語: `Security Officer / System Owner / Platform Operator` で一致。
+  - 責務: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）で一致。
+  - 固定値: D1〜D4（`4h / 2h / 代理承認なし / 48h + 15m/60m`）で一致。
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を維持し、`operations.md` を runbook 同値確認先として並行参照する点で一致。
+
+### Phase 2: ADR CDC
+- 判定: **追加CDC不要**。
+- 理由: AUTH-OPS-03 の固定値（D1〜D4）に変更がなく、固定値変更トリガー非成立のため。
+
+### Phase 3: Plan（AC/DoDドラフト）
+- AC-7（追加）: `operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` に DOC-OPS-05 issue 06/11/13/14 の同時参照を明記し、同期境界を固定する。
+- DoD-3（追加）: 上記4文書で、統合レーン用の同一 canonical 文言（用語・責務・D1〜D4・導線）を確認できる。
+
+### Phase 4: Execute（docs-only最小差分）
+- 実施:
+  - `02_Architecture/strict_mode_exception_approval_flow.md` に DOC-OPS-05 issue 06/11/13/14 の関連参照を追記。
+  - `04_Documentation/operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` に、同一 canonical 語彙セットを示す統合同期メモを追記。
+- 非実施:
+  - README / dashboard / decision-pack / 実装コードの編集は未実施（禁止遵守）。
+
+### Phase 5: Verify（validator + rg + diff-check）
+- 実施コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+  - `rg -n "issue-doc-ops-05-06|issue-doc-ops-05-11|issue-doc-ops-05-13|issue-doc-ops-05-14" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+  - `git diff --check`
+- Self-correction回数: 0回（上限3回以内）。
+
+### Phase 6: Proceed
+- 判定: **Ready**。
+- 進行条件:
+  - D1〜D4 不整合 0 件
+  - safeMode 後退 0 件
+  - 許可外編集 0 件
