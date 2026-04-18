@@ -387,3 +387,30 @@
 ### Phase 6) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
+
+## Stream H dedicated cycle (2026-04-18)
+
+### Phase 1 Read
+- Scope固定を再確認（許可: 本Issueファイルのみ更新、実装コード変更なし）。
+- 分類/配置方針の既存記録を再読し、分類不能要素がないことを確認。
+
+### Phase 2 ADR-CDC（必要時のみ）
+- 判定: **不要**（DecisionStatus=Fixed を維持）。
+
+### Phase 3 Plan（AC/DoDドラフト→合意）
+- AC: Classification / Audience / Public boundary / Validation（docs-check）の4点を満たす。
+- DoD: Plan → Execute → Verify → Proceed を本Issue内に記録する。
+
+### Phase 4 Execute（分類/配置方針の確定）
+- Classification: **Improve external**
+- 対象文書との最小整合: `04_Documentation/release.md の公開リリース手順を改善するPRを起票する`
+- 非目標: 対象文書本文の全面改稿、実装コード変更、スコープ外Issue編集。
+
+### Phase 5 Verify（docs-check, 修復上限3回）
+- Verify-1: `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+- Verify-2: `git diff --check`
+- フェイルセーフ: 失敗時は同一Issueで最大3回まで修復し、4回目相当は停止。
+
+### Phase 6 Proceed
+- 状態: **Ready**
+- 停止条件: 分類不能・対象外編集要求・修復3回超過を検知した場合は停止。
