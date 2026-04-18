@@ -458,3 +458,34 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
   2. `OpenAllowed==true`
   3. `Pending` 件数0
 - 1つでも未充足なら `Proceed=NoGo` とし、Decision Queueへ戻す。
+
+## Stream D Plan Synchronization Record (2026-04-18)
+
+### Phase 1 Read
+- 対象4ファイルを再読し、Unlock式の一致を確認。
+- 一致式（固定）: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+### Phase 2 ADR CDC
+- Context: Umbrella計画でUnlock式が複数化するとA2/A3のOpen判定が分岐する。
+- Decision: A1ゲートは単一式に固定し、A1完了前はA2/A3をOpenしない。
+- Consequences: 未承認の確定化は禁止。未解決項目はDecision Queueへ保持。
+- Decision Status: Pending Approval（追加確定は承認待ち）。
+
+### Phase 3 Plan
+- AC/DoD補完:
+  - `A1完了前にA2/A3をOpenしない` 規約を固定。
+  - `Plan -> Execute -> Verify -> Proceed` を必須サイクル化。
+
+### Phase 4 Execute
+- 状態遷移契約を同期:
+  - 許可: `DecisionQueue: Pending -> Approved | Rejected`
+  - 禁止: `Pending bypass` / `a1Status!="Done"` での `A2/A3 Draft -> Open`
+  - 停止: 式不一致、未承認確定化、修復3回超過
+
+### Phase 5 Verify
+- Verify式: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+- docs-check実施を必須化し、失敗時は最大3回修復。
+
+### Phase 6 Proceed
+- Proceedは式一致時のみ許可。
+- 不一致時は即停止し、Decision Queueへ返却。
