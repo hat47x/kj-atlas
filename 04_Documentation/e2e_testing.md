@@ -32,7 +32,7 @@
 - Verify 失敗時は **自己修復を最大3回まで** 実施する。
 - 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
 
-- Stream G フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
+- Stream F フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
 
 ## 1. 基本方針
 
@@ -44,7 +44,7 @@
    - 回帰しやすい安全境界（SafeMode / import / export / docs保存）
    - 環境差分に強い待機戦略（networkidle固定に依存しすぎない）
 
-### 1.1 Stream G 文書横断同期チェック（Verify フェーズ）
+### 1.1 Stream F 文書横断同期チェック（Verify フェーズ）
 
 architecture -> security -> guidelines の直列同期後、operations/e2e では docs-check と `rg` により次を固定確認する。
 
@@ -649,7 +649,7 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 3. 是正後に docs-check を再実行し、成功時のみ `provisional_reapplied` へ更新する。
 
 
-## Stream G docs-only execution cycle（DOC-OPS-05）
+## Stream F docs-only execution cycle（DOC-OPS-05）
 
 1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
 2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。

@@ -33,9 +33,9 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - セキュリティ方針・運用判断・実行手順の文書境界が明確になり、公開文書としての再利用性が向上する。
 - DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を継続監査しやすくなる。
 
-### 0.2 Stream G 直列同期（security フェーズ）
+### 0.2 Stream F 直列同期（security フェーズ）
 
-Stream G では `02_Architecture/strict_mode_exception_approval_flow.md` を正本として、
+Stream F では `02_Architecture/strict_mode_exception_approval_flow.md` を正本として、
 `security.md -> security_operational_guidelines.md -> e2e_testing.md` の順で同期する。
 `operations.md` は runbook 正本として常時照合し、語彙・責務・固定値の同値性を確認する。
 

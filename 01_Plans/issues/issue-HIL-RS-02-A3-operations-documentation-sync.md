@@ -1,10 +1,10 @@
-# Issue: HIL-RS-02 A3 strict-mode例外運用 文書同期（Stream G）
+# Issue: HIL-RS-02 A3 strict-mode例外運用 文書同期（Stream F）
 
 - Type: Documentation Sync
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Lifecycle: DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed -> StoppedForClarification
 - Priority: P1
-- Owner: Stream G
+- Owner: Stream F
 - Source Issue: TBD
 - Expected verification level: `docs-check`
 - Scope:
@@ -36,7 +36,7 @@ strict mode 例外運用（AUTH-OPS-03）は D1〜D4 固定値で運用するが
 
 ## 2) Decision
 
-Stream G は docs-only でスコープ内6ファイルのみ更新し、strict mode 例外運用の canonical 表現を次で固定する。
+Stream F は docs-only でスコープ内6ファイルのみ更新し、strict mode 例外運用の canonical 表現を次で固定する。
 
 - 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`
 - D1〜D4 固定値:
@@ -190,7 +190,7 @@ Proceed 条件:
 - Proceed許可: Go条件成立 + Verify pass + 許可外編集0件。
 - Proceed不可: NoGo条件成立時、未確定をYes/No質問化してDecision Queueへ戻す。
 
-## Stream G A3 Rerun-04 (2026-04-17)
+## Stream F A3 Rerun-05 (2026-04-18)
 
 ### Phase 1 Read
 - D1〜D4固定値・役割語彙・状態語彙を `strict_mode_exception_approval_flow.md` / `operations.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` で再読。
@@ -212,4 +212,4 @@ Proceed 条件:
 - `git diff --check`
 
 ### Phase 6 Proceed
-- 判定: **Ready**。不一致が1件でも再発した場合は `StoppedForClarification` として停止する。
+- 判定: **Ready**。D1〜D4不整合0件の場合のみ Proceed し、不一致が1件でも再発した場合は `StoppedForClarification` として停止する。

@@ -106,7 +106,7 @@ Stream D で本書を更新する場合、編集対象は `security.md` / `secur
 
 運用時は上記4点を同時に満たすこと。満たせない場合は `StoppedForClarification` 扱いで停止し、再承認を行う。
 
-A3 docs同期では `operations.md` は参照のみ（編集禁止）とする。
+A3 docs同期では `operations.md` を runbook整合確認先として扱い、canonical語彙・D1〜D4固定値の是正が必要な場合のみ最小修正を許可する。
 
 ## 7. 関連導線（読む順序）
 
@@ -144,7 +144,7 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
 - D1〜D4・役割分離・導線の不一致が解消しない状態
 - 承認未了の決定事項（未確定Q項目、再承認待ち）を確定事項として反映しようとした場合
 
-## 9. DOC-OPS-05 Stream G 専任サイクル（P1→P6）
+## 9. DOC-OPS-05 Stream F 専任サイクル（P1→P6）
 
 > 1サイクルで1文書のみを扱う。各Phase冒頭で本書を再読する。
 
@@ -181,7 +181,7 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
 - 停止条件: 自己修復3回超過、用語ドリフト未収束、スコープ競合検出（例: `operations.md` 変更要求）。
 
 
-## Stream G docs-only execution cycle（DOC-OPS-05）
+## Stream F docs-only execution cycle（DOC-OPS-05）
 
 1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
 2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
