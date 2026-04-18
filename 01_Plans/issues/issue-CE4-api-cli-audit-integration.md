@@ -403,3 +403,37 @@ export type AuditEventV1 = {
 ### Phase 6 Proceed
 
 - CE4監査契約の drift 防止を実装レーンへ引継ぎ可能な状態で完了（契約IDや語彙の再定義なし）。
+
+---
+
+## Stream E Update (2026-04-18): CE4 Contract-first Planning（実装不要確定）
+
+### Phase 1: Read
+- CE4 は API/CLI/GUI 同値性と監査4点セットを固定する運用契約。
+- CE3依存で停止しない（`sourceBundleHash=mock:<hash>` 許容）。
+
+### Phase 2: 共通I/F最小セット定義
+- 同値性I/F:
+  - `equivalenceKey + bundleHash`（AND条件）
+  - `LogicalOperation: context-query/context-bundle/proposal-diff/apply-dry-run`
+- 監査イベントI/F:
+  - `event: query|bundle|proposal|apply`
+  - `schemaVersion: ce4.audit.v1`
+
+### Phase 3: モック可能境界の切り出し
+- CE3未完了でも mock hashで同値性検証を継続。
+- `dryRun=true` を固定し副作用境界（`sideEffect=none`）のみ先行評価。
+
+### Phase 4: 監査項目・受入条件整備
+- 監査項目:
+  - 監査4点欠損率 0%
+  - dry-run side effect 0件
+  - equivalence mismatch 0件
+- 受入条件:
+  1) API/CLI/GUI語彙差分0
+  2) fail-closed（欠損成功扱い禁止）
+  3) self-repair 最大3回
+
+### Phase 5: Proceed（実装不要の確定範囲）
+- CE4 は運用契約（同値性・監査）の固定で完了。
+- 実装不要: CLIコマンド実装、監査基盤実装、CI配線変更。

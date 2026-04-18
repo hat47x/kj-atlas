@@ -478,3 +478,39 @@
 - SafeMode後退示唆を1件でも検知した時点で停止。
 - 未定義競合（同一ID異義・状態遷移未規定）を検知した時点で停止。
 - Verify自己修復は3回まで。4回目相当は停止。
+
+---
+
+## Stream E Update (2026-04-18): CE0 Contract-first Planning（実装不要確定）
+
+### Phase 1: Read
+- 対象: CE0/CE1/CE2/CE4 issue 間の Contract ID・禁止事項・safeMode 境界。
+- 確認結果: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再定義せず参照専用で維持。
+
+### Phase 2: 共通I/F最小セット定義
+- 共通最小I/F（CE横断）:
+  - `equivalenceKey`（チャネル同値性キー）
+  - `bundleHash` / `sourceBundleHash`（`mock:<hash>` 許容）
+  - `proposalId`
+  - `status: proposed|accepted|rejected|held`
+  - `reviewState: unreviewed|human_reviewed`
+- 共通禁止: Query Preview bypass / auto-apply / AIによる `human_reviewed` 昇格 / safeMode既定緩和。
+
+### Phase 3: モック可能境界の切り出し
+- CE1/CE3 の完了待ちは行わず、`sourceBundleHash=mock:<hash>` で CDC 非依存に検証可能。
+- CE0 は contract-only（実装・API実装詳細・RBACは対象外）。
+
+### Phase 4: 監査項目・受入条件整備
+- 監査必須4点: `query` / `bundle` / `proposal` / `apply`（欠損成功扱い禁止）。
+- 受入条件:
+  1) Contract ID collision=0
+  2) vocabulary collision=0
+  3) safeMode regression=0
+  4) self-repair は最大3回（4回目相当で停止）
+
+### Phase 5: Proceed（実装不要の確定範囲）
+- Proceed 判定: CE0 は「契約凍結の参照正本」を確定し、実装レーンへは参照専用で引き渡す。
+- 実装不要の確定範囲:
+  - `03_Implement/**` 全体
+  - shared files（README / dashboard / decision-pack）
+  - CE3 実装・詳細設計

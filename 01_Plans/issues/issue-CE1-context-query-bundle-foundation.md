@@ -406,3 +406,42 @@ CE2/CE4 は上表を mock I/F 前提で先行検証し、CE1実装完了待ち�
 ### Proceed
 - CE2 への連携は `sourceBundleHash === bundleHash` を参照専用条件として引き渡す。
 
+
+---
+
+## Stream E Update (2026-04-18): CE1 Contract-first Planning（実装不要確定）
+
+### Phase 1: Read
+- CE1 は ContextQuery / ContextBundle の最小契約を担い、CE2/CE4 は参照専用で利用。
+- safeMode 既定ONと reviewed-only 既定を前提にする。
+
+### Phase 2: 共通I/F最小セット定義
+- `ContextQueryV1` 必須キー:
+  `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`。
+- `ContextBundleV1` 必須キー:
+  `bundleHash/queryId/cards/excludedReasons/generatedAt`。
+- hash契約:
+  - deterministic 生成
+  - 同一入力で同一 `bundleHash`
+
+### Phase 3: モック可能境界の切り出し
+- モック境界:
+  - `bundleHash=mock:<hash>` を受理
+  - `excludedReasons` はモックでも必須記録
+- 非対象:
+  - LLM provider実装
+  - 実データ永続化挙動の最適化
+
+### Phase 4: 監査項目・受入条件整備
+- 監査項目:
+  - preview gate bypass 0件
+  - non-deterministic hash 0件
+  - safeMode違反 0件
+- 受入条件:
+  1) CE0語彙との衝突0
+  2) CE2/CE4 参照I/Fとして不足キー0
+  3) self-repair 最大3回
+
+### Phase 5: Proceed（実装不要の確定範囲）
+- Proceed は「最小I/F確定と参照可能性の保証」で完了。
+- 実装不要: backend/frontend/worker への反映、CLI実装。
