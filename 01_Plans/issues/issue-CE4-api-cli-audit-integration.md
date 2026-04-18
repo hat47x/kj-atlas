@@ -10,6 +10,33 @@
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`
 - Expected verification level: `docs-check`
 
+## Stream D Phase execution record（2026-04-18 / CE4 API-CLI-audit）
+
+### Phase 1: Read（再読結果）
+- 契約ID固定: `CE4-API-CLI-AUDIT`。
+- 固定判定軸: `equivalenceKey + bundleHash`（AND）と監査4点（`query/bundle/proposal/apply`）。
+- mock依存切断: `sourceBundleHash=mock:<hash>` を受理し、CE3完了待ちを禁止。
+
+### Phase 2: ADR CDC（変更判定）
+- 本更新は同値性・監査境界の再確認であり、意味変更なし。
+- CDC追加不要（契約ID/列挙/安全境界の意味変更時のみ起票）。
+
+### Phase 3: Plan（API signature / data type 先行固定）
+- `LogicalOperation` と `AuditEventV1` を先行固定。
+- `dryRun=true -> sideEffect=none` を fail-closed要件として固定。
+
+### Phase 4: Execute（contract-first + mock-first）
+- API/CLI/GUI同値性を契約優先で固定し、実装待機を禁止。
+- 監査4点セット欠損は成功扱い禁止。
+
+### Phase 5: Verify（docs-check + self-correction <=3）
+- 検証観点: 同値性一致、監査4点欠損0%、dry-run副作用0、hash種別非依存。
+- self-correction 3回超過は停止。
+
+### Phase 6: Proceed（進行条件）
+- `衝突0 / 安全後退0 / 同値性成立` を満たす場合のみ Proceed。
+
+
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE4-API-CLI-AUDIT`
 - RequirementStatement: Phase 1〜6を通じて API/CLI/GUI同値性と監査ログ4点セットを固定し、運用導線へ統合する。

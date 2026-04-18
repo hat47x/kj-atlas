@@ -10,6 +10,33 @@
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
 
+## Stream D Phase execution record（2026-04-18 / CE2 low-risk assist）
+
+### Phase 1: Read（再読結果）
+- 契約ID固定: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`。
+- 禁止事項固定: auto-apply、`human_reviewed` 自動昇格、safeMode後退。
+- mock依存切断: CE1未完了でも `sourceBundleHash=mock:<hash>` 前提で進行。
+
+### Phase 2: ADR CDC（変更判定）
+- 本更新は既存提案I/Fの確認であり、列挙値変更（`status` / `reviewState`）なし。
+- CDC追加は不要（意味変更時のみ承認待ち）。
+
+### Phase 3: Plan（API signature / data type 先行固定）
+- Proposal最小I/Fを凍結: `proposalId/diff/sourceBundleHash/rationale/status/reviewState`。
+- 列挙凍結: `status=proposed|accepted|rejected|held` / `reviewState=unreviewed|human_reviewed`。
+
+### Phase 4: Execute（contract-first + mock-first）
+- 実装待機禁止。proposal-only境界（apply責務外）を維持。
+- drift検知時は `status=held` で fail-safe停止。
+
+### Phase 5: Verify（docs-check + self-correction <=3）
+- 検証観点: 必須フィールド完備、auto-apply 0件、自動昇格0件、drift-stop記述整合。
+- self-correction 3回超過で停止。
+
+### Phase 6: Proceed（進行条件）
+- 衝突0・安全後退0・同値性条件充足時のみ Proceed。
+
+
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE2-LOW-RISK-AI-ASSIST`
 - RequirementStatement: AI提案は全件 proposalId+diff を持つ patch として扱う。

@@ -10,6 +10,33 @@
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
 
+## Stream D Phase execution record（2026-04-18 / CE0 core-graph lane）
+
+### Phase 1: Read（再読結果）
+- 固定語彙: `WorkingGraph` / `ContextProjectionGraph` / `Consensus Graph`。
+- 禁止事項: `Working -> Consensus` direct write禁止、auto-apply禁止、review自動昇格禁止。
+- mock依存切断: CE1未完了時でも `sourceBundleHash=mock:<hash>` 前提で契約検証を継続。
+
+### Phase 2: ADR CDC（変更判定）
+- 本更新は責務境界の明確化のみで、列挙値・安全境界の意味変更なし。
+- CDC追加は不要（既存 `CG-01..05` の意味を維持）。
+
+### Phase 3: Plan（先行固定）
+- GraphRole / TransitionRule / AuditEnvelope を契約固定値として扱い、実装依存を持ち込まない。
+- AC/DoD不足は `patch+approval only`、`context_projection read-only`、監査4点セット必須で補完。
+
+### Phase 4: Execute（contract-first + mock-first）
+- CE2/CE4 への引き渡しは参照専用I/Fのみ。
+- 実装待機禁止、契約再定義禁止を明文化。
+
+### Phase 5: Verify（docs-check + self-correction <=3）
+- 5Issue横断で語彙衝突と遷移衝突を検査し、衝突はNo-Go。
+- self-correction 3回超過は fail-safe停止。
+
+### Phase 6: Proceed（進行条件）
+- `Working -> Consensus = patch+approval only` と `proposal-only` が全Issue一致時のみ Proceed。
+
+
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE0-CORE-GRAPH-REPOSITION`
 - RequirementStatement: Core GraphをConsensus Graphへ再定義し、Working Graphとの責務境界を固定する。

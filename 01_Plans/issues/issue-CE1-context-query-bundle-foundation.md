@@ -10,6 +10,33 @@
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
 
+## Stream D Phase execution record（2026-04-18 / CE1 context foundation）
+
+### Phase 1: Read（再読結果）
+- 契約ID固定: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`。
+- 禁止事項固定: preview未確認送信、non-deterministic bundle、unknown key許容。
+- mock依存切断: CE2/CE4 は `sourceBundleHash=mock:<hash>` で先行可能。
+
+### Phase 2: ADR CDC（変更判定）
+- 本更新では `ContextQueryV1` / `ContextBundleV1` の意味変更なし。
+- CDC起票は不要（意味変更時のみ Stop & Ask を維持）。
+
+### Phase 3: Plan（API signature / data type 先行固定）
+- `POST /context/query`・`POST /context/bundle` のv1シグネチャとエラー意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を凍結。
+- v1は closed-world（未定義キー拒否）を固定し、拡張はv2のみ許可。
+
+### Phase 4: Execute（contract-first + mock-first）
+- backend実装完了待ちを禁止し、A2 stub契約で先行検証。
+- CE2/CE4 連携は read-only handoff（`sourceBundleHash === bundleHash` 比較可能性）を維持。
+
+### Phase 5: Verify（docs-check + self-correction <=3）
+- 検証観点: preview gate / determinism 3-run一致 / unknown key reject / 連携キー同値性。
+- self-correction上限3回、4回目相当で停止。
+
+### Phase 6: Proceed（進行条件）
+- `queryCanonicalHash` と `bundleHash` の決定論要件を満たした場合のみ Proceed。
+
+
 ## Requirement meta I/F（共通キー）
 - RequirementID: `CE1-CONTEXT-FOUNDATION`
 - RequirementStatement: ContextQuery/Bundleを決定論で生成し、Query Preview必須導線を契約として固定する。
