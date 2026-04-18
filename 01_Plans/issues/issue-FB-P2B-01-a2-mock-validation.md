@@ -545,3 +545,34 @@
 ### CDC / 停止条件
 - CDC変更要求（契約ID/比較キー/GoNoGo判定式）が発生した場合は承認まで停止。
 - Self-Correction上限は3回。超過時は停止。
+
+
+## Stream D strict serial lock update（2026-04-18 / FB-P2B-01 A2）
+
+- Scope lock: 本更新は planning memo 4ファイル同期のみ。実装コード・HIL/CEは非対象。
+- Workflow lock: `Plan -> Execute -> Verify -> Proceed`。
+
+### Phase 1: Read
+- 4ファイル再Readで `DependsOnContractID` / Priority / 依存順序を確認。
+- 判定: `DependsOnContractID=CTR-2B-01-CANDIDATE-GROUP-V1`、Priority=`P0`、順序=`A1 -> A2 -> A3`（Pass）。
+
+### Phase 2: ADR CDC（契約意味変更時のみ）
+- A2でCDCを発火するのは契約意味変更を伴う場合のみ。
+- 本更新判定: mock検証手順の明確化のみで契約意味変更なし（CDC不要）。
+
+### Phase 3: Plan
+- baseline orchestration を `Plan -> Execute -> Verify -> Proceed` 固定で追従。
+- AC/DoD不足ドラフト判定: 既存 `AC-2B-2` / `AC-2B-3` / `DoD-2B-2` を継続適用（不足なし）。
+
+### Phase 4: Execute
+- A2は A1契約IDを単一参照点として利用し、契約再定義を行わない。
+- baselineとは参照関係のみ同期し、比較キー・非自動確定の再定義は禁止。
+
+### Phase 5: Verify
+- Validator: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`。
+- 契約ID整合チェック: `A1 ContractID == A2 DependsOnContractID == A3 ReferenceContractID`。
+- Self-Correctionは最大3回（4回目相当で停止）。
+
+### Phase 6: Proceed
+- Go条件: 参照整合=OK、競合=0、優先度逆転=0。
+- Fail-safe停止条件: 依存矛盾 / 契約ドリフト / 未定義競合 / 修復4回目相当。

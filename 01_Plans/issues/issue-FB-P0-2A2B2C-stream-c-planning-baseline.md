@@ -600,3 +600,40 @@
 ### CDC rule（必須）
 - CDCが必要になった場合（ContractID変更、比較キー変更、GoNoGo条件変更）は、**承認記録が付くまで実行停止** とする。
 - Self-Correction上限は3回。4回目相当は停止して競合一覧のみ提出。
+
+
+## Stream D strict orchestration update（2026-04-18 / FB-P0 baseline for FB-P2B-01）
+
+- Scope lock: `FB-P2B-01` の A1/A2/A3 + baseline の4ファイルのみを同期対象とする。
+- Orchestration lock（固定）: `Plan -> Execute -> Verify -> Proceed`。
+- Non-goal: 契約再定義・実装コード変更・HIL/CE編集は行わない。
+
+### Phase 1: Read
+- 4ファイル再Readで契約ID・優先度・依存順序（`A1 -> A2 -> A3`）を照合。
+- 判定: `ContractID/DependsOnContractID/ReferenceContractID` は `CTR-2B-01-CANDIDATE-GROUP-V1` で一致、Priority=`P0`（Pass）。
+
+### Phase 2: ADR CDC（契約意味変更時のみ）
+- CDC明文化は契約意味変更がある場合に限定し、承認待ち状態を必須にする。
+- 本更新判定: 契約意味変更なしのため CDC起票なし。
+
+### Phase 3: Plan
+- baseline orchestration を固定（`Plan -> Execute -> Verify -> Proceed`）。
+- AC/DoD不足ドラフト: 現時点の不足はなし。
+- 不足発生時ドラフトI/F（テンプレ）:
+  - `gapType=AC|DoD`
+  - `gapSummary=<不足内容>`
+  - `proposal=<追記案>`
+  - `agreementStatus=draft|agreed`（`agreed` 前はProceed禁止）
+
+### Phase 4: Execute
+- baselineは参照関係のみ同期し、P2B契約は A1単一参照点を維持する。
+- 契約ID再定義・比較キー再定義は行わない。
+
+### Phase 5: Verify
+- Validator: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`。
+- 契約ID整合チェック: `A1 ContractID == A2 DependsOnContractID == A3 ReferenceContractID`。
+- Self-Correction: 最大3回（4回目相当で停止）。
+
+### Phase 6: Proceed
+- Go条件: 参照整合=OK、競合=0、優先度逆転=0。
+- NoGo/Fail-safe: 依存矛盾 / 契約ドリフト / 未定義競合 / 修復4回目相当。
