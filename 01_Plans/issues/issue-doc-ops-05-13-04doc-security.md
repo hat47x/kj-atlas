@@ -394,3 +394,40 @@
 
 ### Phase 6 Proceed
 - 判定: **Ready**（不一致0件）。
+
+## 19) Stream I dedicated cycle (2026-04-18)
+
+### Phase 1 Read
+- Read Order（00_Prompt → 01_Plans/ADR → 02_Architecture）と本Issueの `Requirement meta I/F` を再確認。
+- 本Streamの編集許可ファイル以外は非接触とし、Stream G競合が発生した場合は issue本文の追記のみ先行する。
+
+### Phase 2 ADR-CDC（必要時のみ）
+- 判定: **既存ADRで充足（追加ADR起票なし）**。
+- Context: DOC-OPS-05 Draft issue の Open化判断を、公開境界と検証導線の観点で固定する。
+- Decision: 本Issueは既存の推奨アクション（Move internal / Improve external）を維持し、メタI/F不足のみ補完する。
+- Consequences: 後続PRは docs-only の最小差分へ限定し、実装・スキーマ層へ波及させない。
+
+### Phase 3 Plan
+- AC補完:
+  - AC-I-1: `Audience / Goal / Non-goal / Outcome / Related` の追跡可能性を維持する。
+  - AC-I-2: `GoNoGoGate=Required` の判定条件を本文から再現可能にする。
+  - AC-I-3: `DecisionStatus=Fixed` の場合は `DecisionQueueRef=N/A` を維持する。
+- DoD補完:
+  - DoD-I-1: 強制サイクル `Plan → Execute → Verify → Proceed` の証跡を残す。
+  - DoD-I-2: Verify失敗時の自己修復は最大3回、4回目相当で停止する。
+
+### Phase 4 Execute
+- Issue本文の範囲で、分類方針・Go/No-Go条件・検証導線を維持/補強する（最小差分）。
+- 編集禁止対象（他Stream専有ファイル、03_Implement配下、統合ファイル）には変更を加えない。
+
+### Phase 5 Verify
+- docs-check（Issueメモ検証）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- 差分整合:
+  - `git diff --check`
+- 自己修復ポリシー: 失敗時は同一Issue内で最大3回まで修復し、4回目相当で停止して `Hold` とする。
+
+### Phase 6 Proceed
+- 判定: **Ready（Draft維持のままOpen準備可）**。
+- Proceed条件: AC/DoD/Verifyが成立し、競合ファイル・前提崩壊・修復3回超過のいずれにも該当しない。
+- フェイルセーフ: 上記停止条件を検知した場合は作業を停止し、未解決事項を本Issue本文へ記録して継続実行を禁止する。
