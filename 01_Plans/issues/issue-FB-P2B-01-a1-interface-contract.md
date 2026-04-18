@@ -753,3 +753,45 @@
 - 実装レーンへの受け渡しは `read-only contract handoff` のみ許可。
 - Fail-safe: 契約逸脱 / 優先度逆転 / 未定義競合 / 4回目修復要求で停止。
 
+
+
+## Stream D update (2026-04-18): Phase 1-5 authoritative ledger
+
+> このセクションを Stream D の最新運用記録として扱う。旧ログと矛盾する場合は本セクションを優先する。
+
+### Phase 1) Read
+- Plan: A1/A2/A3 と baseline を再読し、`ContractID/DependsOnContractID/ReferenceContractID` の一致を確認する。
+- Execute: `CTR-2B-01-CANDIDATE-GROUP-V1` の三点一致、`Priority=P0`、依存順序 `A1 -> A2 -> A3` を確認した。
+- Verify: 不整合なし（Pass）。
+- Proceed: Phase 2 へ進行。
+
+### Phase 2) A1契約整備
+- Plan: A1は契約単一正本として固定し、A2/A3を参照専用にする。
+- Execute: 以下を固定した。
+  - ContractID: `CTR-2B-01-CANDIDATE-GROUP-V1`
+  - 比較キー: `groupId / targetCardId / snapshotVersion / ordered arrays`
+  - 非目標: 自動確定・契約再定義
+- Verify: 契約境界が A1 に閉じている（Pass）。
+- Proceed: Phase 3 へ進行。
+
+### Phase 3) A2モック検証条件整備
+- Plan: mock/stub のみで検証可能な条件をA1側に明文化する。
+- Execute: `loadCandidateGroups(input)` と deterministic restore 条件、非自動確定条件を A2 参照要件として固定した。
+- Verify: A2が実装非依存で開始可能（Pass）。
+- Proceed: Phase 4 へ進行。
+
+### Phase 4) A3実装条件整備
+- Plan: A3開始条件・停止条件・差し戻し条件を A1基準で固定する。
+- Execute: 契約逸脱要求はA1差し戻し、A3での契約追加禁止を明記した。
+- Verify: A3 handoff の判定境界が明確（Pass）。
+- Proceed: Phase 5 へ進行。
+
+### Phase 5) Baseline統合前提
+- Plan: baseline 側へ優先順位と直列実行条件を引き渡す。
+- Execute: `P0` 優先、`A1 -> A2 -> A3`、未定義競合時停止、Self-Correction上限3回を共有した。
+- Verify: baseline統合に必要な固定値が揃っている（Pass）。
+- Proceed: Stream D baseline統合フェーズへ引き渡し。
+
+### CDC / 停止条件
+- CDC（Contract-Driven Consistency）追加要求が発生した場合は **承認取得まで停止** する。
+- Self-Correction は最大3回。4回目相当は停止して競合一覧のみ記録する。
