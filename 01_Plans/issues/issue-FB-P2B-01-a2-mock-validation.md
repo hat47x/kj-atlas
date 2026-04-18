@@ -406,3 +406,36 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証とする。
 - Verify: fail-safeを満たさない場合は即停止。
 - Proceed: Stream Dレーンの契約更新を維持。
+
+## Stream C serial execution update（2026-04-17 / FB-P2B-01 A2）
+
+- Stream role: `Stream C（FB-P2B-01 A1→A2→A3）` 専属。
+- Immutable input: A1契約 `CTR-2B-01-CANDIDATE-GROUP-V1` を唯一入力とする。
+
+### Phase 1 Read（毎回）
+- Read: A1/A2/A3を再読し、`ContractID / DependsOnContractID / ReferenceContractID` を照合。
+- Verify: 三点一致（Pass）。
+
+### Phase 2 ADR CDC（必要時）
+- Context: A2はmock検証レーンであり、方針追加を行わない。
+- Decision: A2はCDC従属（契約再定義禁止）。
+- Consequences: 追加キー/比較軸要求はA1差し戻し。
+
+### Phase 3 Plan（AC/DoD提案）
+- AC/DoDは既存 `AC-2B-2` / `AC-2B-3` / `DoD-2B-2` を継続適用。
+- 検証観点: 非自動確定・順序保持・snapshot復元。
+
+### Phase 4 Execute（A1→A2→A3）
+- A2担当: fixture/stubで `CandidateListViewModel` と比較キー整合を検証。
+- A3への出力: mock検証結果と契約境界のみをhandoff。
+
+### Phase 5 Verify（Self-Correction <=3）
+- Verify command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Self-Correction policy: 最大3回。4回目相当は停止。
+
+### Phase 6 Proceed
+- Proceed条件: A1契約一致 / A2検証条件維持 / A3入力固定。
+- Stop template（推測継続禁止）:
+  - 原因: 契約ドリフト / 依存逆転 / 検証3回超過
+  - 影響: A3 handoffの無効化
+  - 要承認事項: A1再凍結 or 既存契約維持の承認
