@@ -23,6 +23,43 @@
 - DecisionQueueRef: `CE2-DRIFT-STOP`
 
 
+## Stream G Parallel Prep Snapshot（2026-04-17）
+
+> 目的: `CE2-low-risk-ai-assist` を CE0/CE4 と並列準備する。**proposal-only** を崩さず、APIシグネチャ先行 + mock依存切断で実装待機を排除する。
+
+### Phase運用（固定）
+1. **Read**: CE2契約ID（`CE2-PROPOSAL-IF` ほか）と禁止事項を再確認。
+2. **CDC（必要時）**: `status/reviewState` 列挙変更や安全境界変更時のみ CDC 追記。
+3. **Plan**: APIシグネチャを先に凍結し、CE1差分は mock bundle で吸収。
+4. **Execute**: 契約本文と検証項目（No-Go）を対応付ける。
+5. **Verify**: AC/DoD整合 + drift-stop（最大3回修復）。
+6. **Proceed**: CE4連携は参照専用（再定義禁止）。
+
+### API Signature Freeze（実装前固定）
+```ts
+export type ProposalStatus = "proposed" | "accepted" | "rejected" | "held";
+export type ReviewState = "unreviewed" | "human_reviewed";
+
+export type ProposalDraftV1 = {
+  proposalId: string;
+  diff: Record<string, unknown>;
+  sourceBundleHash: string; // mock:<hash> 許容
+  rationale: string;
+  status: ProposalStatus;
+  reviewState: ReviewState;
+};
+```
+
+### Mock decoupling（依存切断）
+- CE1実装完了待ちを禁止し、`sourceBundleHash=mock:<hash>` で契約検証を継続。
+- CE0/CE4は read-only参照とし、CE2側で再定義しない。
+
+### Verify観点（AC/DoD）
+- AC-1: auto-apply経路0件（UI/API/worker）。
+- AC-2: AIによる `human_reviewed` 自動昇格0件。
+- AC-3: CE1 drift検知時は `status=held` で fail-closed。
+- DoD: proposal語彙と状態遷移が docs 間で単一正本に一致。
+
 ## Stream G 実行契約（2026-04-17 / CE2/CE0-core-graph 計画専属）
 
 ### Scope（編集境界）

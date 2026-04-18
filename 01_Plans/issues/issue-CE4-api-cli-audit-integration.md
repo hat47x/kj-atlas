@@ -4,7 +4,7 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P2
-- Owner: Backend/Ops Team
+- Owner: Stream G (CE0/CE2/CE4 parallel planning & contract definitions only)
 - Scope: `01_Plans/issues/`, `02_Architecture/`, `04_Documentation/local_llm_ops_guide.md`
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`
@@ -19,15 +19,56 @@
 - SecurityGateImpact: SafeMode / public-exposure
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `E` (CE4 API/CLI Audit Integration)
+- Stream: `G` (CE0/CE2/CE4 parallel planning / Contract Freeze / mock-first / Docs-Architecture only)
 - DecisionQueueRef: N/A
 
+## Stream G Parallel Prep Snapshot（2026-04-17）
 
-## Stream E 実行契約（2026-04-16 / CE計画専属）
+> 目的: `CE4-api-cli-audit-integration` を Stream G の責務として CE0/CE2 と並列準備する。API/CLI/GUI同値性は **契約先行** で固定し、mock入力で依存待機を排除する。
+
+### Phase運用（固定）
+1. **Read**: `equivalenceKey + bundleHash` と監査4点セットを再確認。
+2. **CDC（必要時）**: 同値性定義・監査キー・安全境界に意味変更がある場合のみ CDC 追記。
+3. **Plan**: APIシグネチャを先に固定し、CLI/GUIは同一 logical operation に束ねる。
+4. **Execute**: 契約（同値性/監査/dry-run境界）を検証計画へ写像。
+5. **Verify**: AC/DoD整合（最大3回修復、4回目は禁止）。
+6. **Proceed**: 運用runbookへ参照専用I/Fとして引き渡し。
+
+### API Signature Freeze（実装前固定）
+```ts
+export type LogicalOperation =
+  | "context-query"
+  | "context-bundle"
+  | "proposal-diff"
+  | "apply-dry-run";
+
+export type AuditEventV1 = {
+  event: "query" | "bundle" | "proposal" | "apply";
+  equivalenceKey: string;
+  bundleHash?: string;
+  sourceBundleHash?: string; // mock:<hash> 許容
+  dryRun?: true;
+  sideEffect?: "none";
+  schemaVersion: "ce4.audit.v1";
+};
+```
+
+### Mock decoupling（依存切断）
+- CE3完了待ちを禁止し、`sourceBundleHash=mock:<hash>` で同値性検証を実行。
+- API/CLI/GUIの比較は `equivalenceKey + bundleHash` をAND条件で固定。
+
+### Verify観点（AC/DoD）
+- AC-1: 監査4点セット欠損率0%。
+- AC-2: `dryRun=true -> sideEffect=none` を強制。
+- AC-3: 同値性判定不一致は即No-Go。
+- DoD: fail-closed（欠損成功扱い禁止）と自己修復3回上限が明文化されている。
+
+
+## Stream G 実行契約（2026-04-17 / CE計画専属）
 
 ### Scope（編集境界）
 
-- 本Issueは Stream E が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
+- 本Issueは Stream G が CE0/CE1/CE2/CE4 の**計画・契約文書のみ**を扱う前提で維持する。
 - 編集対象は `01_Plans/issues/issue-CE*.md` と CE関連の `02_Architecture` 契約文書の最小差分に限定する。
 - `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）は編集禁止とする。
 
