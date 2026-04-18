@@ -436,3 +436,32 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 6 Proceed
 - 条件一致時のみProceed。
 - 条件不一致時はNoGoで停止し、A1-CDC-onlyへ返却。
+
+## Stream A Execution Record (2026-04-18, dedicated lane)
+
+### Phase 1 Read（4ファイル差分一覧）
+- Status差分: 4ファイルとも `Status: Open`（差分なし）。
+- Dependencies差分: 本Issueは `issue-HIL-RS-01-A1...` 依存を持つ governance hardening 位置づけで親計画2件より厳格。
+- Gate式差分: 全ファイル `a1Status=="Done" && pendingDecisionQueueCount==0` で一致（差分なし）。
+
+### Phase 2 ADR CDC
+- Context: hardening規約は既存ADR整合内での明確化対象。
+- Decision: 新規方針変更は行わず、CDCは「同期」扱いとする。
+- Consequences: 未承認確定化と Pending bypass を継続禁止。
+- Approval: `agreementStatus=agreed`（同期合意）。
+
+### Phase 3 Plan（Checklist宣言）
+- `Plan -> Execute -> Verify -> Proceed` を本Issueの運用順として固定。
+- AC/DoD不足なしを再確認し、Proceed前提を `agreementStatus=agreed` に統一。
+
+### Phase 4 Execute
+- 契約語彙・禁止遷移・差戻し条件をA1正本と同値化。
+- 明示禁止: A2/A3側での契約再定義（read-only参照のみ）。
+
+### Phase 5 Verify
+- docs-check相当（validator + rg）を実行。
+- self-correction 3回上限を再明記。
+
+### Phase 6 Proceed
+- `a1Status=="Done" && pendingDecisionQueueCount==0` 充足時のみ Proceed。
+- 未確定は Decision Queue へ返却。

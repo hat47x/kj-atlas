@@ -457,3 +457,31 @@
 ### Phase 6 Proceed
 - 条件一致時のみProceed。
 - 不一致時は即停止し、A1契約へ差戻し。
+
+## Stream A Execution Record (2026-04-18, dedicated lane)
+
+### Phase 1 Read（4ファイル差分一覧）
+- Status差分: 全件 `Open`（差分なし）。
+- Dependencies差分: 本Issueは `freezeContractId` 明示依存を持つ delivery計画。
+- Gate式差分: 全件 `a1Status=="Done" && pendingDecisionQueueCount==0` 一致（差分なし）。
+
+### Phase 2 ADR CDC
+- Context: delivery計画は契約運用の同期レイヤであり、契約再定義レイヤではない。
+- Decision: 方針変更不要。CDCは同期記録として明文化。
+- Consequences: A2/A3でのローカル契約変更は禁止し、差分要求はA1へ差戻し。
+- Approval: `agreementStatus=agreed`（同期合意）。
+
+### Phase 3 Plan（Checklist宣言）
+- `Plan -> Execute -> Verify -> Proceed` を固定チェックリスト化。
+- AC/DoD不足なし。Proceed条件に `agreementStatus=agreed` を保持。
+
+### Phase 4 Execute
+- issue本文の契約語彙・禁止遷移・差戻し条件をA1正本へ同期。
+- 明示禁止: A2/A3での固定契約値再定義。
+
+### Phase 5 Verify
+- docs-check相当（validator + rg）を実施。
+- self-correction 3回まで、4回目相当は停止。
+
+### Phase 6 Proceed
+- Gate成立項目のみ進行し、未確定項目は Decision Queue に戻す。

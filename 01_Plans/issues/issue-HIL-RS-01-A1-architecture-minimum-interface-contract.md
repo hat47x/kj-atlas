@@ -442,3 +442,36 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 6 Proceed
 - Proceed条件: 上記式一致かつ `pendingDecisionQueueCount==0`。
 - 不一致時: NoGoで停止し、A1-CDC-onlyへ差戻し。
+
+## Stream A Execution Record (2026-04-18, dedicated lane)
+
+### Phase 1 Read（4ファイル差分一覧）
+- Status差分: 4ファイルとも `Status: Open`（差分なし）。
+- Dependencies差分:
+  - A1最小I/F: `ADR-0026/0027/0028`
+  - HIL-RS-02 A1 hardening: `ADR-0026/0027/0028 + issue-HIL-RS-01-A1...`
+  - HIL-RS-01親計画: `ADR-0026/0027/0028 + state-transition gate`
+  - HIL-RS-02親計画: `ADR-0026/0027/0028 + freezeContractId + state-transition gate`
+- Gate式差分: 実効ゲートは全ファイル `a1Status=="Done" && pendingDecisionQueueCount==0` に一致（差分なし）。
+
+### Phase 2 ADR CDC
+- Context: 契約固定値は既存ADR（0026/0027/0028）と整合し、方針変更は不要。
+- Decision: 方針変更を行わず、固定契約と禁止遷移の同期のみ実施。
+- Consequences: A2/A3 は参照専用を維持し、契約差分要求は A1 へ差戻し。
+- Approval: `agreementStatus=agreed`（方針変更なしの同期として合意記録）。
+
+### Phase 3 Plan（Checklist宣言）
+- Verification checklist: `Plan -> Execute -> Verify -> Proceed`
+- AC/DoD補完: `agreementStatus=agreed` を Proceed 前提に固定。
+
+### Phase 4 Execute
+- 契約語彙・禁止遷移・差戻し条件を本Issueの固定値へ再同期。
+- 明示禁止: A2/A3側での固定契約値再定義。
+
+### Phase 5 Verify
+- docs-check相当（validator + rg）で整合確認。
+- self-correction 上限: 3回（4回目相当は即停止）。
+
+### Phase 6 Proceed
+- Gate: `a1Status=="Done" && pendingDecisionQueueCount==0` を満たす場合のみ進行。
+- 未確定事項は Decision Queue に戻す。
