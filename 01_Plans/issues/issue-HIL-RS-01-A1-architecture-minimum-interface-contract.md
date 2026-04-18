@@ -537,3 +537,62 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - 失敗時フェイルセーフ:
   - 停止条件: Self-Correction > 3 / 未定義競合 / 固定値不一致。
   - 停止報告: `失敗条件 / 影響I/F / 要人間判断` をセットで提出。
+
+
+## Stream A Governance Sync Record (2026-04-18)
+
+### Phase 1: Read（対象2ファイル再Read + 差分記録）
+- 再Read対象:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- 固定値一致確認:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- ゲート式一致確認:
+  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+- 事前想定との差分（箇条書き）:
+  - `agreementStatus` をゲートに含む記述がBOM間で粒度差あり（A1側は補助条件、A1 governance側は必須条件として明示）。
+  - Verifyコマンド例に指定外issueが含まれる過去記述が残存していたため、本同期記録では対象2ファイル検証を正とする。
+
+### Phase 2: ADR CDC（方針変更要否）
+- 判定: **方針変更不要**（既存CDCと整合）。
+- Context / Decision / Consequences は既存記述を継続利用し、新規承認待ちは発生させない。
+
+### Phase 3: Plan（AC/DoD + NoGo式）
+- AC/DoD追記（運用明文化）:
+  - `Plan -> Execute -> Verify -> Proceed` の順序証跡を本記録で固定。
+  - 固定識別子の二重定義禁止を A2/A3 側制約として維持。
+- 禁止遷移（固定）:
+  - `Pending` bypass（`Pending -> Approved/Rejected` 以外）。
+  - `a1Status!="Done"` での A2/A3 `Draft -> Open`。
+  - A2/A3 issue 内での `freezeContractId` / `contractIds` / freeze flags 再定義。
+- Go/NoGo（固定）:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+
+### Phase 4: Execute（SSOT同期）
+- SSOTとして凍結:
+  - `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`。
+- A2/A3再定義禁止:
+  - 下流は read-only 参照のみ可。
+  - 変更要求は `A1-CDC-only` へ差戻し。
+
+### Phase 5: Verify（順序証跡 + Self-Correction上限）
+- Verify順序:
+  - Plan確認 -> Execute差分確認 -> docs-check/grep確認 -> Proceed判定。
+- Self-Correction:
+  - 最大3回。
+  - 4回目は禁止（即停止報告）。
+
+### Phase 6: Proceed（完了条件）
+- Proceed条件:
+  - 未承認決定なし。
+  - 固定識別子不一致なし。
+  - 未定義競合なし。
+- NoGo停止条件:
+  - 上記いずれか未充足の場合は NoGo として停止報告。

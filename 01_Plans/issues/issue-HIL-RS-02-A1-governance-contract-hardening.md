@@ -526,3 +526,61 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - Fail-safe:
   - 停止条件: 3回超過 / 前提崩壊 / 未定義競合。
   - 停止報告: `失敗条件 / 影響I/F / 要人間判断`。
+
+
+## Stream A Governance Sync Record (2026-04-18, Critical Path A-only)
+
+### Phase 1: Read（対象2ファイル再Read + 差分記録）
+- 再Read対象:
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- 固定値一致:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- ゲート式一致:
+  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `StartAllowed = (a2a3Unlock && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+- 事前想定との差分（箇条書き）:
+  - `agreementStatus=="agreed"` の明示有無に記述粒度差があるため、governance gateでは必須条件を維持する。
+  - 過去Verify例の一部が指定外issueを参照していたため、本レコードでは対象2ファイルのみを検証対象に固定する。
+
+### Phase 2: ADR CDC（方針変更要否）
+- 判定: **方針変更不要**（既存Context/Decision/Consequencesで整合）。
+- 実施方針:
+  - CDCは追記せず、既存承認済み方針をhardening継続。
+
+### Phase 3: Plan（AC/DoD補完 + Gate明文化）
+- AC/DoD補完:
+  - `Plan -> Execute -> Verify -> Proceed` を運用順序として固定。
+  - A2/A3での固定識別子再定義不可を明文化。
+- 禁止遷移:
+  - `Pending` bypass。
+  - `a1Status!="Done"` での A2/A3 `Draft -> Open`。
+  - 未承認決定の確定化。
+- Go/NoGo:
+  - `Go = StartAllowed`
+  - `NoGo = !StartAllowed`
+
+### Phase 4: Execute（A1契約凍結値をSSOT同期）
+- SSOT同期対象:
+  - `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`。
+- A2/A3制約:
+  - 再定義不可（read-only参照のみ）。
+  - 変更要求は `A1-CDC-only` に差戻し。
+
+### Phase 5: Verify（証跡 + 失敗時上限）
+- Verify証跡:
+  - 対象2ファイルに対する fixed values / gate式 / prohibitions の一致確認。
+- Self-Correction:
+  - 最大3回。
+  - 4回目は禁止（NoGo停止）。
+
+### Phase 6: Proceed / NoGo
+- Proceed:
+  - `StartAllowed==true` かつ未承認決定・識別子不一致・未定義競合が0件。
+- NoGo:
+  - 上記未充足時は停止報告し、人間判断へエスカレーション。
