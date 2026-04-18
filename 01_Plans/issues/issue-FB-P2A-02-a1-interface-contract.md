@@ -231,3 +231,27 @@
 - `docs-check` と A1→A2→A3 のリンク整合を確認して Proceed 可否を判定。
 - self-correction は最大3回。4回目相当は停止して判断待ち。
 - Proceed decision: **Completed（A1→A2→A3 を Stream B 単独で完遂）**。
+
+## Stream B execution log (2026-04-18, FB-P2A-02 A1)
+
+### Phase 1 Read
+- A1/A2/A3 の3ファイルを再Readし、`ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1` と依存順序 `A1 -> A2 -> A3` を再確認。
+
+### Phase 2 ADR-CDC
+- Context: 既存 `ADR-0007` の collapse/expand 方針をI/F契約へ固定する文書タスク。
+- Decision: 新規ADR起票なし（方針変更なし）。
+- Consequences: 契約差分要求が出た場合はA1へ差し戻し、承認待ち中は下流停止。
+
+### Phase 3 Plan
+- AC/DoD不足ドラフト判定: **不足なし**。
+- `agreementStatus=agreed`（既存AC/DoDと停止条件が揃っているため）。
+
+### Phase 4 Execute
+- A1契約固定値（ContractID / InterfaceName / Required fields / Invariants / ContractLinks）を再ロックし、A2/A3への参照整合を確認。
+
+### Phase 5 Verify
+- docs-check と依存整合を Phase 5 で実施（詳細はA3実行ログで集約）。
+- self-correction 回数: 0/3。
+
+### Phase 6 Proceed
+- Proceed判定: **Pass**（A1完了、A2へ進行可）。
