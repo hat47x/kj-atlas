@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream C（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/architecture.md`
@@ -25,7 +25,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream C / FB-P2A serial lock）
+## Phase management（Stream B / FB-P2A serial lock）
 
 - Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
 - Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
@@ -64,7 +64,7 @@
 ### Context
 
 - `ADR-0007` は collapse/expand で子要素が描画・ヒットテスト対象外になり、expandで復帰することを要求している。
-- Stream C の担当範囲は FB-P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
+- Stream B の担当範囲は FB-P2A 専用 issue の契約固定・モック検証設計・実装引き渡し条件の文書化に限定される。
 - 本作業では UI 実装方法や renderer 詳細を決めず、入力/出力契約だけを先に固定する必要がある。
 
 ### Decision
@@ -79,7 +79,7 @@
 - A3 は view 状態遷移と非破壊性を入力契約として受け取れる。
 - SafeMode / share-export の既定挙動を後退させる変更は本契約の対象外として明示固定される。
 
-## A1 contract audit（Stream C / Phase 2）
+## A1 contract audit（Stream B / Phase 2）
 
 - 契約項目確定:
   - `ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1`
@@ -151,7 +151,7 @@
 - 逸脱要求はA1へ差し戻し。
 
 
-## Stream C strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -181,7 +181,7 @@
 - 依存参照整合・表記ゆれ・契約ID衝突を確認する。
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
-## Stream C execution override（FB-P2A A1→A2→A3）
+## Stream B execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -208,7 +208,7 @@
 - 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
 
-## Phase execution record（FB-P2A-02 / Stream C）
+## Phase execution record（FB-P2A-02 / Stream B）
 
 ### Phase 1 Read（再Read済み）
 - A1/A2/A3 の3ファイルを再Readし、`ContractID` / 依存順序 / `DecisionStatus` を照合。
@@ -230,3 +230,4 @@
 ### Phase 5 Verify / Proceed
 - `docs-check` と A1→A2→A3 のリンク整合を確認して Proceed 可否を判定。
 - self-correction は最大3回。4回目相当は停止して判断待ち。
+- Proceed decision: **Completed（A1→A2→A3 を Stream B 単独で完遂）**。
