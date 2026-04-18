@@ -439,6 +439,69 @@
 - 判定: **変更なし（ADR更新不要）**。
 - 理由: 既存契約・Gate・QA条件の再確認のみで、規則追加/変更を行っていない。
 
+## FB-P2C-01 A1 contract-first execution memo（2026-04-18）
+
+### Phase 1: Read（deterministicTieBreakOrder / 編集境界の再Read）
+
+- 再Read固定点:
+  - `deterministicTieBreakOrder=padding>self_intersection>area_delta>vertex_count`
+  - 編集境界は **本ファイル単体**（`01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`）のみ。
+- 再確認結果:
+  - tie-break順序は既存固定値と一致（変更なし）。
+  - 実装コード（`03_Implement/**`）・他Issue・運用文書は編集対象外として維持。
+
+### Phase 2: ADR CDC（変更時のみ）
+
+- 判定: **No CDC（起票不要）**。
+- 条件付き運用:
+  - tie-break順序の追加/削除/並び替え、または安全境界（SafeMode既定/漏洩防止）に意味変更が発生する場合のみ、
+    `Context / Decision / Consequences` を明文化して承認待ちへ移行する。
+  - 本更新では意味変更を行わないため、既存契約の固定記録のみ実施。
+
+### Phase 3: Plan（A2/A3 read-only 契約 / GoNoGo）
+
+- A2/A3引き渡し契約（read-only）:
+  - `deterministicTieBreakOrder` は参照専用（変更提案禁止）。
+  - `ContractMutation=forbidden`（追加/省略/並べ替え禁止）を維持。
+  - 変更要求の戻し先は **A1のみ**（A2/A3は差し戻し要求まで）。
+- Go/NoGo基準（A2/A3着手判定）:
+  - Go:
+    1. `DQ-FB-P2C-01` が Approved。
+    2. `appliedTieBreakOrder` が `padding>self_intersection>area_delta>vertex_count` と一致。
+    3. `paddingViolationCount==0` かつ再現性キーが固定。
+  - NoGo:
+    - 上記いずれか欠落、または未定義競合の検出。
+- AC/DoD補完ドラフト（A1境界）:
+  - AC-ADD-1: A2/A3が順序変更不可であることを本文内で機械可読値付きで追跡可能。
+  - DoD-ADD-1: docs-check成功 + 契約衝突0件確認 + Self-Correction 3回以内。
+
+### Phase 4: Execute（固定順序 / 禁止事項 / 戻し先）
+
+- 固定順序（唯一）: `padding > self_intersection > area_delta > vertex_count`
+- 禁止事項:
+  1. tie-break順序の改変（追加・削除・並び替え）。
+  2. SafeMode後退示唆につながる契約緩和。
+  3. A2/A3からの直接契約改訂。
+- 戻し先（A1）:
+  - 契約変更要望・未定義競合・Gate証跡欠落は A1へ差し戻し、A2/A3 Proceedを停止する。
+- 外部契約参照:
+  - **新規リンク追加なし**（既存参照のみ維持）。
+
+### Phase 5: Verify（docs-check / 契約衝突0 / 自己修復上限）
+
+- 実施要件:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を通過。
+  - 本Issue内の `deterministicTieBreakOrder` 記述が単一順序へ収束していることを確認。
+  - Self-Correction は最大3回。4回目相当は停止。
+
+### Phase 6: Proceed（完了条件）
+
+- 完了可否: **契約固定が担保できた場合のみ Complete**。
+- 完了条件:
+  - A1契約が read-only handoff としてA2/A3へ渡せる。
+  - GoNoGo条件が明文化され、NoGo時の戻し先がA1に固定されている。
+  - fail-safe条件（SafeMode後退示唆 / 未定義競合 / 3回超修復）を満たした場合は即停止する。
+
 ### Phase 3 Plan（AC/DoD不足提案→合意）
 - AC補強提案:
   1. A2/A3 はA1契約語彙の変更提案を禁止。
