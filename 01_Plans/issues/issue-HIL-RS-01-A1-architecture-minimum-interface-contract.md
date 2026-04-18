@@ -475,3 +475,65 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 6 Proceed
 - Gate: `a1Status=="Done" && pendingDecisionQueueCount==0` を満たす場合のみ進行。
 - 未確定事項は Decision Queue に戻す。
+
+## Stream A Serial Contract Record (2026-04-18)
+
+### Phase 1 Read（状態同期）
+- 再読対象: 本Issue / `issue-HIL-RS-02-A1-governance-contract-hardening.md`。
+- 差分確認（status/owner/AC/scope）:
+  - status: `Open` 維持（想定どおり）。
+  - owner: `Architecture Owner (Stream A contracts)` 維持（想定どおり）。
+  - AC: Unlock rule / Freeze keys / Self-Correction上限の3点は既存記載と一致。
+  - scope: planning only を維持し、実装/shared files 変更なし。
+- Plan更新要否: なし（差異ゼロ）。
+
+### Phase 2 ADR-CDC（Context / Decision / Consequences）
+- Context:
+  - A1契約は HIL-RS-02 統治判定の単一正本であり、A2/A3での再定義を許すと誤Open化リスクが発生する。
+- Decision:
+  - 本Issueの契約値（freezeContractId / contractIds / schemaVersion / overridePolicy / freeze flags）を参照専用の固定値として維持し、変更要求はA1-CDC-onlyへ差戻す。
+- Consequences:
+  - 下流は read-only handoff のみ利用可能。
+  - Pending bypass / SafeMode後退要求 / share-export緩和要求は NoGo 扱い。
+
+### Phase 3 Agreement（承認待ちゲート）
+- agreementStatus: `pending_human_approval`
+- 承認待ち理由:
+  - CDCの確定には human approval が必要。
+  - 承認取得前は「提案状態」を維持し、固定値の意味変更を行わない。
+- Proceed制約:
+  - `agreementStatus=="agreed"` になるまで Contract Freeze の新規確定は禁止。
+
+### Phase 4 Contract Freeze（I/F固定・境界条件・非目標）
+- Freeze対象（変更禁止）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 境界条件（Go/NoGo）:
+  - `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+  - `Go = StartAllowed`
+  - `NoGo = !StartAllowed`
+- 非目標（Stream A）:
+  - 03_Implement 配下の実装変更。
+  - shared files の更新。
+  - A2/A3本文での契約値再定義。
+
+### Phase 5 Handoff（参照ID / mock条件）
+- Downstream reference IDs:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- Mock conditions:
+  - `schemaVersion=="1.0.0"`
+  - `overridePolicy=="human_dual_control_only"`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+  - `agreementStatus=="agreed"`
+- 失敗時フェイルセーフ:
+  - 停止条件: Self-Correction > 3 / 未定義競合 / 固定値不一致。
+  - 停止報告: `失敗条件 / 影響I/F / 要人間判断` をセットで提出。

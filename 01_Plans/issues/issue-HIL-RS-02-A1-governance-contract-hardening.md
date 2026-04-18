@@ -465,3 +465,64 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 6 Proceed
 - `a1Status=="Done" && pendingDecisionQueueCount==0` 充足時のみ Proceed。
 - 未確定は Decision Queue へ返却。
+
+## Stream A Governance Serial Record (2026-04-18)
+
+### Phase 1 Read（状態同期）
+- 再読対象: 本Issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`。
+- 差異確認（status/owner/AC/scope）:
+  - status: `Open`（想定一致）。
+  - owner: `Architecture Owner (Stream A contracts)`（想定一致）。
+  - AC: Unlock rule唯一・Decision Queue唯一・Freeze keys固定は維持。
+  - scope: planning only を維持し、指定外ファイル編集なし。
+- 差異対応: Plan更新不要（差異なし）。
+
+### Phase 2 ADR-CDC（Context / Decision / Consequences）
+- Context:
+  - 統治判定式の多重正本化は A2/A3 の Draft->Open 判定逸脱を誘発する。
+- Decision:
+  - Governance hardening は本Issueに固定し、契約値変更は A1-CDC-only に一本化する。
+- Consequences:
+  - 下流は固定値参照のみ実施。
+  - 未承認決定の確定化は全面禁止。
+
+### Phase 3 Agreement（承認待ち）
+- agreementStatus: `pending_human_approval`
+- 承認待ち条件:
+  - CDCに対する human agreement が未取得。
+- 進行制約:
+  - `agreementStatus=="agreed"` までは新規確定を実施しない。
+
+### Phase 4 Contract Freeze（固定値・境界・非目標）
+- 固定値（I/F freeze）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 境界条件:
+  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `StartAllowed = (a2a3Unlock && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+  - `Go = StartAllowed`
+  - `NoGo = !StartAllowed`
+- 非目標:
+  - 03_Implement配下への変更。
+  - 運用文書・shared files の同時改変。
+
+### Phase 5 Handoff（参照ID / mock条件）
+- Handoff参照ID:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- Mock適用条件:
+  - `schemaVersion=="1.0.0"`
+  - `overridePolicy=="human_dual_control_only"`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+  - `agreementStatus=="agreed"`
+- Fail-safe:
+  - 停止条件: 3回超過 / 前提崩壊 / 未定義競合。
+  - 停止報告: `失敗条件 / 影響I/F / 要人間判断`。
