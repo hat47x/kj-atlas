@@ -23,6 +23,48 @@
 - Stream: `G` (CE2/CE0-core-graph planning / Contract Freeze / mock-first / Docs-Architecture only)
 
 
+## Stream G Parallel Prep Snapshot（2026-04-17）
+
+> 目的: `CE0-core-graph-repositioning` / `CE2-low-risk-ai-assist` / `CE4-api-cli-audit-integration` を **並列準備**するため、CE0側の責務境界を interface-first で先行固定する。
+
+### Phase運用（固定）
+1. **Read**: CE0契約語彙（Working/ContextProjection/Consensus）とADR-0028契約IDを再確認。
+2. **CDC（必要時）**: Contract ID/列挙値/安全境界の意味変更がある場合のみ Context/Decision/Consequences を追記。
+3. **Plan**: 実装前にシグネチャを固定し、依存は mock で切断。
+4. **Execute**: 契約文（責務/禁止/遷移）を検証計画と1:1対応で明文化。
+5. **Verify**: AC/DoD整合を確認（自己修復は最大3回）。
+6. **Proceed**: CE2/CE4へ参照専用I/Fとして引き渡し（再定義禁止）。
+
+### Interface-first（CE0固定I/F）
+```ts
+type GraphRole = "working" | "context_projection" | "consensus";
+
+type TransitionRule = {
+  from: "working";
+  to: "consensus";
+  via: "patch+approval";
+  directWrite: false;
+  autoApply: false;
+};
+
+type AuditEnvelope = {
+  query: boolean;
+  bundle: boolean;
+  proposal: boolean;
+  apply: boolean;
+}; // 4点セット欠損は失敗
+```
+
+### Mock decoupling（依存切断）
+- CE1/CE2/CE4未完了でも `TransitionRule` と `AuditEnvelope` を docs-check で検証可能にする。
+- mock値（`mock:<hash>` / mock proposal）を許容して契約検証を先行する。
+
+### Verify観点（AC/DoD）
+- AC-1: `Working -> Consensus = patch+approval only` が文書全体で一貫。
+- AC-2: `context_projection` の read-only が一貫。
+- AC-3: `query/bundle/proposal/apply` 欠損は成功扱いしない。
+- DoD: Contract ID collision=0 / vocabulary collision=0 / safeMode後退=0。
+
 ## Stream G 実行契約（2026-04-17 / CE2/CE0-core-graph 計画専属）
 
 ### Scope（編集境界）
