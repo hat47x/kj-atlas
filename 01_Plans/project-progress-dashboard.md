@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-17 (JST, Stream H shared sync rerun-36)
+最終更新: 2026-04-18 (JST, Stream J shared sync rerun-37)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -664,3 +664,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 4 Execute: 3共有ファイルのみを単一変更セットで同期し、未承認決定の確定扱い・未定義競合・推測マージを実施しない。
 - Phase 5 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-36|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+## Stream J 共有統合同期ログ（2026-04-18 rerun-37, Phase 1-5）
+
+- Phase 1 Read（最新状態）: shared resource 3ファイルを再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26`、Decision Queue（Ready=1 / Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を再確認。
+- Phase 2 Plan（件数・Queue・再開判定）: 更新対象を `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の3ファイルに限定し、未承認決定の確定扱い・推測マージを行わない方針を固定。
+- Phase 3 Execute（単一変更セット）: shared resource 3ファイルのみを単一変更セットで同期し、再開判定チェックリスト1行（未固定箇所0件 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持。
+- Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-37|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認（self-correction 0/3）。
+- Phase 5 Proceed（次回再開条件1行）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
