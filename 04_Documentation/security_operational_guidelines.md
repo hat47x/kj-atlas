@@ -15,6 +15,14 @@
 - Outcome: 役割ごとの判断責務とプロファイル選択条件（D1〜D4）を、外部読者が再利用可能な形で確認できる
 - Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
+## DOC-OPS-05 統合同期メモ（2026-04-18）
+
+- 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
+- canonical 用語: `Security Officer / System Owner / Platform Operator`
+- canonical 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`（未確定時 `StoppedForClarification`）
+- fixed values (D1〜D4): `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先）
+
 ## 0.1 Context / Decision / Consequences（AUTH-OPS-03整合）
 
 ### Context

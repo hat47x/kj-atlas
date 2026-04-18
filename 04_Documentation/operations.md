@@ -13,6 +13,14 @@
 - Outcome: 読者が「どの運用経路を選び、どこを確認すれば安全に運用継続できるか」を判断できる
 - Related: `04_Documentation/security.md`, `04_Documentation/e2e_testing.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
 
+## DOC-OPS-05 統合同期メモ（2026-04-18）
+
+- 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
+- canonical 用語: `Security Officer / System Owner / Platform Operator`
+- canonical 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`（未確定時 `StoppedForClarification`）
+- fixed values (D1〜D4): `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先）
+
 ### 0.1 分類根拠（Audience / Goal / 公開境界）
 
 - Audience適合: 具体コマンドと確認観点を中心に記述しており、外部運用者向け runbook として成立する

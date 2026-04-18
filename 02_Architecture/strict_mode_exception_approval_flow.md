@@ -4,6 +4,7 @@
 - Owner: Security Officer / System Owner / Platform Operator
 - Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/e2e_testing.md`
 - Related: `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md`
+- DOC-OPS-05 Sync Issues: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`, `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
 ## 0. この文書の読み方（最初にここだけ読む）
 

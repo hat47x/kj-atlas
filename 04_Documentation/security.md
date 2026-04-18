@@ -15,6 +15,14 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 - Outcome: 運用者が safeMode・strict例外・監査最小要件の優先順位を誤解なく適用できる
 - Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
 
+## DOC-OPS-05 統合同期メモ（2026-04-18）
+
+- 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
+- canonical 用語: `Security Officer / System Owner / Platform Operator`
+- canonical 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`（未確定時 `StoppedForClarification`）
+- fixed values (D1〜D4): `4h / 2h / 代理承認なし / 48h + 15m/60m`
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先）
+
 ### 0.1 AUTH-OPS-03 整合メモ（Context / Decision / Consequences）
 
 #### Context
