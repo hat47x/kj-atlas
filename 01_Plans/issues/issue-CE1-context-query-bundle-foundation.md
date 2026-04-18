@@ -23,6 +23,34 @@
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
 
 
+
+## Stream F contract-first completion profile（2026-04-17）
+
+> この節は Stream F 実行時の最新固定値として、旧ストリーム記録より優先して適用する。
+
+### Scope lock（編集境界）
+
+- 編集対象は CE0/CE1/FB-P2C-01-A1 の3Issueのみ。
+- CE1本文では handler/UI/DB の実装要件を追加しない（contract-only）。
+
+### Phase record（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+
+1. **Read**: CE1 v1 I/Fとエラー意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を再確認。
+2. **ADR CDC**: CE境界は既存I/Fで明文化済みのため、新規ADR起票不要。
+3. **Plan**: Contract IDs（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と mock I/F、DoDを固定。
+4. **Execute**: closed-world（未定義キー拒否）+ preview gate必須 + deterministic hash条件を契約化。
+5. **Verify**: 同一canonical query 3回で `queryCanonicalHash` / `bundleHash` が3/3一致、`previewConfirmed=false` は `422`、未知キーは `400`。
+6. **Proceed**: CE2/CE4 には `sourceBundleHash===bundleHash` 比較可能な参照専用契約として引き渡す。
+
+### Stream-local independence（外部契約非参照）
+
+- CE1契約は Stream F 内で閉じる。外部契約参照を禁止する。
+- 外部仕様を使う必要がある場合は、CE1本文に転記した固定文のみ使用する。
+
+### Stop conditions（fail-closed）
+
+- SafeMode後退示唆、未定義競合、Verify自己修復3回超過のいずれかで停止。
+
 ## Stream F execution boundary（2026-04-17 / CE1 planning only）
 
 - Scope lock: CE1のI/F最小契約とmock検証可能性の定義に限定する。

@@ -409,3 +409,33 @@
 ### Proceed
 - CE1/CE2 へは参照専用 handoff のみ許可し、契約ID再定義要求は受け付けない。
 
+
+
+## Stream F contract-first completion profile（2026-04-17）
+
+> この節は Stream F 実行時の最新固定値として、旧ストリーム記録より優先して適用する。
+
+### Scope lock（編集境界）
+
+- 編集対象は `issue-CE0-contract-freeze.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-FB-P2C-01-a1-interface-contract.md` の3ファイルに限定する。
+- 実装（`03_Implement/**`）・共有ファイル・他Issueは変更しない。
+
+### Phase record（Read → ADR CDC → Plan → Execute → Verify → Proceed）
+
+1. **Read**: CE0/CE1/FB-P2C-01-A1 の現行契約ID・禁止事項・DoDを再読し、重複定義を抽出。
+2. **ADR CDC**: CE契約境界は既存契約の明文化で充足し、新規ADR起票は不要（No new policy）。
+3. **Plan**: Contract IDs / mock I/F / DoD を Stream F 内で閉じた固定値として定義。
+4. **Execute**: CE0 契約凍結（再定義禁止）と mock-first 条件（実装待ち禁止）を固定。
+5. **Verify**: `Contract ID collision=0` / `Vocabulary collision=0` / `SafeMode regression hint=0` をGo条件として維持。
+6. **Proceed**: CE1/FB-P2C-01-A1へ参照専用で引き渡し（契約変更禁止）。
+
+### Stream-local independence（外部契約非参照）
+
+- CE契約は Stream F 内で閉じる。外部契約を参照しない。
+- 外部契約の語彙が必要な場合は **本Issueに転記して固定** し、参照リンク依存を作らない。
+
+### Stop conditions（fail-closed）
+
+- SafeMode後退示唆を1件でも検知した時点で停止。
+- 未定義競合（同一ID異義・状態遷移未規定）を検知した時点で停止。
+- Verify自己修復は3回まで。4回目相当は停止。
