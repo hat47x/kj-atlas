@@ -517,3 +517,37 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 
 ### Phase 6 Proceed
 - Gate成立時のみ進行し、未確定論点は Decision Queue に戻す。
+
+## Stream B HIL-RS Execution Planning Update (2026-04-18)
+
+### Phase 1) Read（最新メタ再読）
+- 再読対象を本Issueと `issue-HIL-RS-02-next-phase-delivery-plan.md` の2件に限定し、`ADR-0026` / `ADR-0027` / `ADR-0028` の固定契約と整合することを再確認。
+- 固定参照値は `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1` と `HIL-RS-02-A1-CONTRACT-FREEZE-v1` のみを採用し、A2/A3での契約再定義を禁止。
+
+### Phase 2) Plan設計（AC / DoD / 検証計画）
+- AC:
+  1. `Go/NoGo` が単一式（`a1Status=="Done" && pendingDecisionQueueCount==0`）で機械判定可能。
+  2. 固定識別子（`schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`）の一致を必須化。
+  3. `Pending bypass=0` と安全境界後退要求=0 を同時成立条件とする。
+- DoD:
+  - `Plan -> Execute -> Verify -> Proceed` の順序証跡を本Issueに記録し、未承認決定を確定扱いしない。
+- 検証計画:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg` による Gate式・固定識別子・禁止遷移の一致確認。
+
+### Phase 3) モック前提化（I/F依存の切断）
+- A2/A3は Freeze Pack の read-only consumer として扱い、I/F依存は `freezeContractId` + `contractIds` 参照に切断。
+- 契約差分要求は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻し、下流Issueでの局所補完を禁止。
+
+### Phase 4) Verify（依存 / 優先度 / 責務境界の整合）
+- 依存整合: `A1 -> A2 -> A3` を維持し、A1未完了時は A2/A3 を `Draft/Open(hold)` へ固定。
+- 優先度整合: 安全境界（SafeMode既定ON / share-export漏えい防止 / `human_dual_control_only`）を最優先条件として評価。
+- 責務境界整合: Stream B は planning-only を維持し、architecture / implementation の変更提案を含めない。
+
+### Phase 5) Proceed（次の1手固定）
+- 次の1手（固定）:
+  1. `validate_active_issue_memos.py` 実行結果を基準に Go/NoGo を更新。
+  2. `NoGo` の場合は Decision Queue へ返却し、Yes/No 形式で未確定論点を記録。
+  3. `Go` の場合でも A2/A3 へは read-only handoff pack（Gate式・固定識別子・禁止遷移）のみ連携。
+- フェイルセーフ:
+  - Self-correction は最大3回。4回目相当で停止し、承認待ちへ遷移。
