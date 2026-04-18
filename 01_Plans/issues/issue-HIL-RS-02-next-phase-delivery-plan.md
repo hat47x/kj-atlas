@@ -519,3 +519,41 @@
   3. 整合一致時は read-only handoff pack をA2/A3側へ連携（契約値の編集権限なし）。
 - フェイルセーフ:
   - Self-correction 上限は3回。超過時は停止し指示待ち。
+
+## Stream B HIL Umbrella Planning Update (2026-04-18, A1 gate-only alignment)
+
+### Phase 1: Read（対象2ファイル再Read）
+- 再Read対象を次の2ファイルに固定して再確認した。
+  1. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `issue-HIL-RS-02-next-phase-delivery-plan.md`
+- 整合確認対象は **A1ゲート式のみ** とし、`a1Status=="Done" && pendingDecisionQueueCount==0` の一致を確認。
+
+### Phase 2: ADR CDC（変更要否判定）
+- Context: Stream B は umbrella planning 担当であり、planning issue 以外は編集しない。
+- Decision: 仕様変更不要（既存CDCでゲート式整合を満たす）。
+- Consequences: 仕様変更が必要になった場合のみ CDC追記 + `approvalStatus="pending"` で停止する。
+
+### Phase 3: Plan（AC/DoDドラフト明確化）
+- AC/DoDドラフト（合意済み運用）:
+  1. `A1完了前Open化禁止` を明示維持。
+  2. `pendingDecisionQueueCount==0` 充足前は Proceed 不可。
+  3. A1ゲート式の語彙差分を発生させない。
+
+### Phase 4: Execute（状態遷移契約として記述）
+- 依存契約:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `NoGo = (a1Status!="Done" || pendingDecisionQueueCount>0)`
+- 実装待ちは着手条件にしない（契約参照のみ）。
+
+### Phase 5: Verify（validator + rg）
+- 検証コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg -n 'a1Status=="Done" && pendingDecisionQueueCount==0|A1完了前Open化禁止|Pending bypass|NoGo' 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Self-Correctionは最大3回。4回目相当は停止して指示待ち。
+
+### Phase 6: Proceed（Go条件のみ進行）
+- Go条件成立時のみ進行。
+- 条件未達は Decision Queue へ返却する。
+
+### Fail-safe（本ストリーム）
+- 未承認決定の確定化、固定ID不一致、自己修復3回超過は停止して指示待ち。

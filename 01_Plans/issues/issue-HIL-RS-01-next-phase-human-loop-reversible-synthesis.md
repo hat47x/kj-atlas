@@ -551,3 +551,45 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
   3. `Go` の場合でも A2/A3 へは read-only handoff pack（Gate式・固定識別子・禁止遷移）のみ連携。
 - フェイルセーフ:
   - Self-correction は最大3回。4回目相当で停止し、承認待ちへ遷移。
+
+## Stream B HIL Umbrella Planning Update (2026-04-18, A1 gate-only alignment)
+
+### Phase 1: Read（対象2ファイル再Read）
+- 再Read対象を次の2ファイルに固定して再確認した。
+  1. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `issue-HIL-RS-02-next-phase-delivery-plan.md`
+- 整合確認対象は **A1ゲート式のみ** とし、`a1Status=="Done" && pendingDecisionQueueCount==0` の一致を確認。
+
+### Phase 2: ADR CDC（変更要否判定）
+- Context: Stream B は planning issue のみを対象とし、契約実体・architecture/documentation 実体は編集しない。
+- Decision: 今回は仕様変更不要（既存CDCでA1ゲート式が一致）。
+- Consequences: 追加CDCは起票しない。将来差分が出た場合は CDC（Context/Decision/Consequences）を追記し `approvalStatus="pending"` のまま停止する。
+
+### Phase 3: Plan（AC/DoDドラフト明確化）
+- AC/DoDドラフト（合意済み運用）:
+  1. `A1完了前Open化禁止`（`a1Status!="Done"` の間は A2/A3 を Open 化しない）。
+  2. `Pending件数0必須`（`pendingDecisionQueueCount==0` を満たさない限り Proceed しない）。
+  3. `A1完了前Open化禁止ルール` を両issueで同一語彙で維持する。
+
+### Phase 4: Execute（状態遷移契約として記述）
+- 依存は実装待ちではなく状態遷移契約として固定:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `NoGo = (a1Status!="Done" || pendingDecisionQueueCount>0)`
+- 実装タスクの完了有無は着手条件にしない（契約参照のみ）。
+
+### Phase 5: Verify（validator + rg）
+- 検証コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg -n 'a1Status=="Done" && pendingDecisionQueueCount==0|A1完了前Open化禁止|Pending bypass|NoGo' 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Self-Correctionは最大3回。4回目相当は停止して指示待ち。
+
+### Phase 6: Proceed（Go条件のみ進行）
+- `Go` 条件成立時のみ進行。
+- 条件未達・未承認決定・固定ID不一致は Decision Queue へ戻す。
+
+### Fail-safe（本ストリーム）
+- 停止条件:
+  1. 未承認決定の確定化
+  2. 固定ID不一致
+  3. 自己修復3回超過
+- 停止時は `approvalStatus="pending"` とし、指示待ちに遷移する。
