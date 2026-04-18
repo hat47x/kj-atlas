@@ -1,9 +1,9 @@
 # Issue Draft: FB-P2A-01-A2 Island階層モデル導入 / モック検証
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Open (Stream A mock validation lock)
 - Priority: P0
-- Owner: Stream B（FB-P2A planning memo exclusive）
+- Owner: Stream A（Critical Path / FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `issue-FB-P2A-01-a1-interface-contract.md`
@@ -12,12 +12,13 @@
 ## Dependencies
 
 - DependsOn: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md`
-- Unblocks: issue-FB-P2A-01-a3-implementation.md
-- Gate/Blocker: Ready when A1 is Done/Fixed and mock GoNoGo is `M1/M2/M3=pass & M4=fail`; Blocked when A1 not fixed or ownerOfFix unresolved.
+- Unblocks: `issue-FB-P2A-01-a3-implementation.md`
+- Gate/Blocker: Ready when A1 Annex lock is Fixed and mock GoNoGo is `M1/M2/M3=pass & M4=fail`; Blocked when Annex lock unresolved or ownerOfFix unresolved.
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `RQ-2A-01`
-- RequirementStatement: A1で固定した `CTR-2A-01-ISLAND-HIERARCHY-V1` / `IslandHierarchyContractV1` の妥当性をモックで検証する。
+- RequirementStatement: A1 Local Contract Annex（`LCA-FB-P2A-01-A1-V1`）の妥当性をモックで検証する。
 - Phase: `A2 Mock Validation`
 - PriorityClass（Must / Should / Could）: Must
 - GoNoGoGate（Required / Optional / N/A）: Required
@@ -25,22 +26,36 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream B / FB-P2A serial lock）
-
-- Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
-- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
-- Phase 3 Plan: AC/DoD不足のドラフトを作成し、`agreementStatus=agreed` まで進行しない。
-- Phase 4 Execute: A1契約固定 → A2 mock ledger固定 → A3 handoff固定を直列で実施する。
-- Phase 5 Verify: docs-check + 契約リンク整合 + 自己修復上限3回を確認する。
-## Contract freeze confirmation
+## Contract freeze confirmation（Annex参照専用）
 
 - FixedContractRef: `issue-FB-P2A-01-a1-interface-contract.md`
+- AnnexID: `LCA-FB-P2A-01-A1-V1`
 - ContractID: `CTR-2A-01-ISLAND-HIERARCHY-V1`
 - ContractVersion: `IslandHierarchyContractV1`
 - FreezeRule: A2では Required fields / Invariants を変更しない。
-- DriftCheck:
-  - ContractLinks（A1→A2→A3）が全て到達可能であること。
-  - Invariants（存在参照 / 循環禁止 / 正規化フォールバック / roundtrip保持）を判定表へそのまま転写すること。
+- Direct reference ban: A2本文から外部I/Fへ直接参照しない（A1 Annexを介して参照）。
+
+## Phase management（Stream A / FB-P2A serial lock）
+
+- Phase 1 Read: A1/A2/A3 3点を再読し、Status/AC/DoD/依存を抽出する。
+- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認完了まで停止する。
+- Phase 3 Plan: AC/DoD不足ドラフトを作成し、`agreementStatus=agreed` まで進行しない。
+- Phase 4 Execute: A1契約固定 → A2 mock ledger固定 → A3 handoff固定を直列実施する。
+- Phase 5 Verify: docs-check + 契約リンク整合 + 自己修復上限3回を確認する。
+- Phase 6 Proceed: 完了条件成立時のみA3へ進行提案し、未達時は停止レポートを残す。
+
+## Phase 1 Read result（差分抽出）
+
+### 抽出（Status/AC/DoD/依存）
+- Status: A1/A2/A3 は Open。
+- AC: GoNoGo定義（M1..M4）は明確。
+- DoD: A2にDoD節が未定義だったため補強対象。
+- 依存: A1 Annex lock -> A2 ledger -> A3 handoff の直列依存を確認。
+
+### 事前想定との差分
+1. Stream B表記が残っていたため、Stream Aへ統一が必要。
+2. A1 Annex参照専用ルールが明文化不足。
+3. DoDの完了判定基準が不足。
 
 ## Mock validation scope
 
@@ -83,11 +98,18 @@
 
 ## Acceptance criteria
 
-- [x] A1契約を変更せずにモック検証ケースを定義できる。
-- [x] fixture ごとに I/F シグネチャとデータ型の確認項目が明示される。
+- [x] A1 Annex契約を変更せずにモック検証ケースを定義できる。
+- [x] fixture ごとに I/F シグネチャとデータ型確認項目が明示される。
 - [x] 正常系/異常系の判定基準が明示される。
 - [x] 失敗時に「契約修正 / モック修正 / 実装修正」の切り分けルールが記録される。
 - [x] A3へ渡す検証ログ項目（入力/期待/結果/責務）が定義される。
+
+## Definition of Done (DoD)
+
+- [x] `AnnexID` / `ContractID` / `ContractVersion` がA1と一致している。
+- [x] M1..M4全ケースに `validationResult` と `ownerOfFix` が定義されている。
+- [x] GoNoGo（`M1/M2/M3=pass` かつ `M4=fail`）がledgerで再現できる。
+- [x] A2本文から外部I/F直接参照が除去されている。
 
 ## A3 handoff I/F
 
@@ -99,116 +121,16 @@
   - `ownerOfFix`
   - `evidence`
 
-## Phase execution log（A2）
-
-### Read sync（Phase開始時）
-
-- `issue-FB-P2A-01-a1-interface-contract.md`
-- `issue-FB-P2A-01-a2-mock-validation.md`
-- `issue-FB-P2A-01-a3-implementation.md`
-
-### Plan
-
-- A1固定契約を変更せず、M1〜M4の判定表を準備する。
-- 失敗時の責務分離（A1/A2/A3）とA3引き継ぎログ項目を固定する。
-
-### Execute
-
-- M1/M2/M3を正常系、M4を異常系として契約Invariantに対応付ける。
-- `contractId` / `contractVersion` / `mockCaseId` / `validationResult` / `ownerOfFix` / `evidence` を引き継ぎI/Fとして定義する。
-
-### Verify
-
-- A1の Required fields / Invariants を変更していないことを確認する。
-- 判定結果が `M1/M2/M3=pass`・`M4=fail` のGoNoGo条件へ接続可能であることを確認する。
-
-### Proceed
-
-- A3へ handoff payload をそのまま渡し、実装接続条件の評価へ進む。
-
-## Serial completion marker（A2 segment）
-
-- Phase 3（Plan/Execute mock ledger）: Completed
-- Phase 4（Verify）: Completed
-- GoNoGo snapshot: `M1/M2/M3=pass` and `M4=fail` を維持（A3へ直列引き渡し）
-
-## Validation log schema（A3引き継ぎ必須）
-
-| field | type | description |
-|---|---|---|
-| `contractId` | string | `CTR-2A-01-ISLAND-HIERARCHY-V1` 固定値 |
-| `contractVersion` | string | `IslandHierarchyContractV1` 固定値 |
-| `mockCaseId` | enum(`M1`,`M2`,`M3`,`M4`) | モックケースID |
-| `validationResult` | enum(`pass`,`fail`) | モック判定結果 |
-| `ownerOfFix` | enum(`A1`,`A2`,`A3`) | 失敗時の修正責務 |
-| `evidence` | string | 判定根拠（Invariant IDまたは期待値） |
-
 ## A2 validation ledger（契約監査結果）
 
-| contractId | contractVersion | mockCaseId | validationResult | ownerOfFix | evidence |
-|---|---|---|---|---|---|
-| `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M1` | `pass` | `A3` | root island allows missing `parentIslandId` |
-| `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M2` | `pass` | `A3` | existing parent references preserve 3-level hierarchy |
-| `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M3` | `pass` | `A3` | invalid `parentIslandId` is normalized to `undefined` |
-| `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M4` | `fail` | `A2` | cycle must be rejected by invariant check |
+| annexId | contractId | contractVersion | mockCaseId | validationResult | ownerOfFix | evidence |
+|---|---|---|---|---|---|---|
+| `LCA-FB-P2A-01-A1-V1` | `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M1` | `pass` | `A3` | root island allows missing `parentIslandId` |
+| `LCA-FB-P2A-01-A1-V1` | `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M2` | `pass` | `A3` | existing parent references preserve 3-level hierarchy |
+| `LCA-FB-P2A-01-A1-V1` | `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M3` | `pass` | `A3` | invalid `parentIslandId` is normalized to `undefined` |
+| `LCA-FB-P2A-01-A1-V1` | `CTR-2A-01-ISLAND-HIERARCHY-V1` | `IslandHierarchyContractV1` | `M4` | `fail` | `A2` | cycle must be rejected by invariant check |
 
 - GoNoGo result: **Go**（`M1/M2/M3=pass` かつ `M4=fail`）
-- Owner routing check: 契約・fixtureが固定済みのため、A3は pass ケースを入力契約として受領し、A2 は fail ケースの検証責務を保持する。
-
-## State sync / conflict check
-
-- Phase開始時Read対象:
-  - `issue-FB-P2A-01-a1-interface-contract.md`
-  - `issue-FB-P2A-01-a2-mock-validation.md`
-  - `issue-FB-P2A-01-a3-implementation.md`
-
-
-## Stream B strict serial protocol（Phase 1→5）
-
-### Phase 1 Read
-- 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
-- 照合項目: `Status` / `Priority(P0)` / `DecisionStatus` / `ContractID(またはDependsOnContractID)`。
-- 不足監査: AC/DoD/停止条件/handoff条件。
-
-### Phase 2 A1契約明確化（CDC明文化）
-- Plan: A1契約（ContractID / Required fields / Invariants / ContractLinks）を**read-only参照**で固定対象として再確認する。
-- Execute: 契約本文の再定義は行わず、固定I/Fの一致確認のみ実施する。
-- Verify: A1→A2→A3依存の逆転・並列前提・契約ドリフトがないことを確認する。
-- Proceed: A1固定が崩れた場合は停止し、A1へ差し戻す（契約値の推測補完は禁止）。
-
-### Phase 3 A2モック検証計画更新
-- Plan: M1..M4（正常/異常）と責務分離（A1/A2/A3）を再確認する。
-- Execute: handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として扱う。
-- Verify: GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）の整合を確認する。
-- Proceed: 判定不一致または責務未確定時は停止し、Decision Queueへ返却してA2へ差し戻す。
-
-### Phase 4 A3実装準備条件定義
-- Plan: 実装入口は契約参照のみで開始できる条件を確認する。
-- Execute: Plan→Execute→Verify→Proceed を固定順序で適用し、実装先行を禁止する。
-- Verify: AC/DoD不足を検知した場合は `gapType` と `agreementStatus` を用いたドラフト提案を先行し、`agreementStatus=agreed` まで実行しない。
-- Proceed: 合意済み条件と停止条件が同時に満たされる場合のみ下流へ引き渡し、未解決はDecision Queueへ返却する。
-
-### Phase 5 Verify
-- docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- 依存参照整合・表記ゆれ・契約ID衝突を確認する。
-- Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
-
-
-## Stream B lane guard（FB-P2A only）
-
-- 編集対象は FB-P2A A2/A3 issue のみ（A1/CE/HIL/03_Implement は対象外）。
-- Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
-- A1契約値は read-only 参照のみ。未定義値を推測で補完しない。
-- モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
-- 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
-
-## Stream B execution override（FB-P2A A1→A2→A3）
-
-- 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
-- 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
-- 各 Phase 開始時に A1/A2/A3 の3ファイルを再Readしてから着手する。
-- 実行順序は **Plan→Execute→Verify→Proceed** を固定し、順序逆転時は停止する。
-- Self-correction は最大3回とし、3回失敗で停止・報告する。
 
 ## Validation plan
 
@@ -218,14 +140,5 @@
 ## Fail-safe
 
 - self-correction上限: 3回。
-- 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 指定外ファイル編集要求 / ContractID衝突。
-- 指定外ファイル編集要求を検出した場合は停止する。
+- 停止トリガ: 3回超過 / 契約ドリフト / ownerOfFix未確定 / 前提崩壊 / 未定義競合 / 指定外ファイル編集要求。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
-
-## Stream B Phase 3 completion snapshot（2026-04-16）
-
-### Phase 3 A2（Plan→Execute→Verify→Proceed）
-- Plan: モック検証仕様 `M1..M4` と責務分離ルール、handoff payload の固定項目を再確認。
-- Execute: `M1/M2/M3=pass`・`M4=fail` を GoNoGo 判定式として維持し、payload を `contractId/contractVersion/mockCaseId/validationResult/ownerOfFix/evidence` で固定。
-- Verify: A1契約（Required fields/Invariants）への変更を行っていないこと、A3接続に必要な入力が全ケースで定義済みであることを確認。
-- Proceed: A3へは payload を read-only で受け渡し、判定不一致時はA2差戻しを継続する。
