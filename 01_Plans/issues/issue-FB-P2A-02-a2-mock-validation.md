@@ -246,3 +246,27 @@
 - GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）と docs-check を満たす場合のみ Proceed。
 - self-correction は最大3回。超過時は停止して判断待ち。
 - Proceed decision: **Completed（A1→A2→A3 を Stream B 単独で完遂）**。
+
+## Stream B execution log (2026-04-18, FB-P2A-02 A2)
+
+### Phase 1 Read
+- A1/A2/A3 の3ファイルを再Readし、A1契約固定値と A2 DependsOn を照合。
+
+### Phase 2 ADR-CDC
+- Context: A1固定契約をモック検証へ適用する下流フェーズ。
+- Decision: 方針変更なしのため新規ADR起票なし。
+- Consequences: 契約変更要求はA1へ返却し、A2では再定義しない。
+
+### Phase 3 Plan
+- AC/DoD不足ドラフト判定: **不足なし**。
+- `agreementStatus=agreed`（M1..M4、GoNoGo、責務分離、handoff payloadが定義済み）。
+
+### Phase 4 Execute
+- A2 ledger を `M1/M2/M3=pass` `M4=fail` で固定し、`ownerOfFix` と `evidence` をA3 handoff I/Fに合わせて整列。
+
+### Phase 5 Verify
+- docs-check と契約リンク整合を Phase 5 で実施（詳細はA3実行ログで集約）。
+- self-correction 回数: 0/3。
+
+### Phase 6 Proceed
+- Proceed判定: **Pass**（A2完了、A3へ進行可）。
