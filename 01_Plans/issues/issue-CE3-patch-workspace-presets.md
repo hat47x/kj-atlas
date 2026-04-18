@@ -461,3 +461,37 @@
 
 - Core/Consensus非改変を維持し、変更は `frontend` + 本issue進捗記録内に限定。
 - safeMode後退・share/export危険導線追加なし。
+
+## 12) Stream H Phase Notes (2026-04-17)
+
+### Phase 1 Read（issue + 実装対象再確認）
+
+- 本issue、`ce3_patch_workspace` domain、`PatchWorkspacePanel`、`presets`、CE3 E2E spec を再読し、要求境界（Frontendローカル状態 + localStorage、Core/Consensus非改変）を確認。
+- 既存実装が `adopt/reject/hold`、rollback、preset replay、rollback監査表示を満たしている前提で、未完了は Verify/Proceed の更新であることを確認。
+
+### Phase 2 Plan（不足AC/DoD提案）
+
+- AC補強提案:
+  - Verifyログに「ブラウザ依存の修復手順（install → install-deps）」を実行順で残し、再現性を担保する。
+- DoD補強提案:
+  - CE3対象 unit（domain/ui/presets）と CE3 e2e grep を同日実行し、両方 pass した結果を issue に記録する。
+
+### Phase 3 Execute（UI/preset/replay/rollback）
+
+- 実装追加は不要（既存実装が CE3 機能要件を満たしていることを確認）。
+- 進行管理として本issueに Stream H の実施ログを追記。
+
+### Phase 4 Verify（test/lint、最大3回修復）
+
+- unit: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium`。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` を試行したが、`apt.llvm.org` 502 により fail。
+- 修復3: 失敗要因 repo を一時無効化後、再度 `playwright install-deps chromium` を実行して依存導入を完了。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+
+### Phase 5 Proceed（進行報告）
+
+- CE3-patch-workspace-presets は Stream H 範囲で完了（実装回帰なし、検証green）。
+- 未着手の次段論点は従来どおり CE4（local監査ログのdocument統合）。
