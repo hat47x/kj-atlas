@@ -571,3 +571,34 @@
 
 - CE3-patch-workspace-presets は Stream H 範囲で完了（実装回帰なし、検証green）。
 - 未着手の次段論点は従来どおり CE4（local監査ログのdocument統合）。
+
+## 19) Stream F Phase Notes (2026-04-18)
+
+### Phase 1 Read（対象再読）
+
+- CE3 issue / `ce3_patch_workspace` / `PatchWorkspacePanel` / `e2e/ce3_patch_workspace.spec.ts` を再読し、機能要件・AC・DoDに対する追加実装ギャップがないことを確認。
+- 既存方針どおり Frontend local state + localStorage 管理で完結しており、Core/Consensus 直接編集が発生しないことを確認。
+
+### Phase 2 Plan（AC/DoD再固定）
+
+- AC/DoD不足は検出なし。
+- Verify は「unit → e2e（失敗時は install → install-deps → rerun の順で最大3回自己修復）」を固定。
+
+### Phase 3 Execute（最小差分）
+
+- 実装コード変更は不要と判断し、本 issue 進行ログ更新のみ実施。
+
+### Phase 4 Verify（unit + e2e）
+
+- unit 1回目: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium` を実行。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` を実行。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+- 自己修復2回で収束（上限3回未満）。
+
+### Phase 5 Proceed（回帰記録）
+
+- Proceed 判定: 合格（CE3要件に対する新規未達なし）。
+- 継続課題は従来どおり CE4（local audit log の document監査ログ統合）へ据え置き。
