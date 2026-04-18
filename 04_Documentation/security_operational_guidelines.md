@@ -203,7 +203,7 @@ A3 docs同期では `operations.md` は参照のみ（編集禁止）とする�
 - Phase 4 Verify（必須）:
   - 語彙: `Security Officer / System Owner / Platform Operator`
   - 役割: 2者承認と Platform Operator 実行責務分離
-  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> operations.md`
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先として並行参照）
   - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
   - 実施コマンド: `rg` と `git diff --check`
 - Phase 5 Proceed: 判定は **Ready**。自己修復3回超過時は **StoppedForClarification** で停止。

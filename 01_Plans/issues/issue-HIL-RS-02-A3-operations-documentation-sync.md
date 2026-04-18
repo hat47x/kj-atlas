@@ -36,7 +36,7 @@ strict mode 例外運用（AUTH-OPS-03）は D1〜D4 固定値で運用するが
 
 ## 2) Decision
 
-Stream G は docs-only で上記5ファイルのみ更新し、strict mode 例外運用の canonical 表現を次で固定する。
+Stream G は docs-only でスコープ内6ファイルのみ更新し、strict mode 例外運用の canonical 表現を次で固定する。
 
 - 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`
 - D1〜D4 固定値:
@@ -49,7 +49,7 @@ Stream G は docs-only で上記5ファイルのみ更新し、strict mode 例�
 ## 3) Consequences
 
 - 文書横断ドリフト（用語/責務/固定値/導線）の再発検知が容易になる。
-- `operations.md` を編集せずに、security/guidelines/e2e 側から整合検証を完結できる。
+- `operations.md` は原則参照先だが、canonical語彙・固定値ドリフト是正が必要な場合のみスコープ内で最小修正できる。
 - Verify 失敗時は自己修復を最大3回までに制限し、4回目相当は停止して差分を記録する。
 
 ## 4) Phase Plan（固定）
@@ -70,7 +70,7 @@ Stream G は docs-only で上記5ファイルのみ更新し、strict mode 例�
 - AC-2: 状態語彙が canonical に一致。
 - AC-3: D1〜D4 固定値が一致。
 - AC-4: 導線（architecture -> security -> guidelines -> e2e）が明示され、operations runbookが同値語彙で整合。
-- AC-5: `operations.md` / dashboard / issues README / 実装コードを編集しない。
+- AC-5: dashboard / issues README / 実装コードを編集しない（`operations.md` はスコープ内のため必要最小限の同期修正のみ許可）。
 - AC-6: docs-check を再現可能コマンドで記録。
 
 DoD:
@@ -154,7 +154,7 @@ Proceed 条件:
 
 - Phase 1 Read: D1〜D4 / 役割語彙 / 状態語彙 / 導線（architecture -> security -> guidelines -> e2e）を再確認。
 - Phase 2 ADR CDC: 既存決定（AUTH-OPS-03固定値）で充足し、ADR更新不要を確認。
-- Phase 3 Plan: AC/DoD を再固定し、`operations.md` は参照のみ（編集禁止）を明示。
+- Phase 3 Plan: AC/DoD を再固定し、`operations.md` は原則参照・必要時のみ最小修正で同期する方針を明示。
 - Phase 4 Execute: `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` の canonical 同期を実施。
 - Phase 5 Verify: docs-check + `rg` + `git diff --check` を実行し、D1〜D4不整合0件を確認。
 - Phase 6 Proceed: fail-safe条件（D1〜D4不整合 / safeMode後退 / 許可外編集 / 3回修復超過）が非成立で継続可能。

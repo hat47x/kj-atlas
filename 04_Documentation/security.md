@@ -26,7 +26,7 @@ MVP で実施しやすい最小限の保護策をまとめたものです。
 
 - 用語を `Security Officer / System Owner / Platform Operator` に統一し、承認2者と実行責務分離を明示する。
 - D1〜D4 固定値を本書の strict 例外チェックへ明示的に取り込み、`TODO化せず停止` ルールを維持する。
-- `security.md -> security_operational_guidelines.md -> operations.md` の導線を保持する。
+- `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の主導線を保持し、`operations.md` は runbook 整合確認先として並行参照する。
 
 #### Consequences
 
@@ -587,7 +587,7 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 - Phase 4 Verify（必須）:
   - 語彙: `Security Officer / System Owner / Platform Operator`
   - 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）
-  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> operations.md`
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先として並行参照）
   - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
   - 実施コマンド: `rg` と `git diff --check`
 - Phase 5 Proceed: 判定は **Ready**。Verify不一致が3回で収束しない場合は **StoppedForClarification**。
