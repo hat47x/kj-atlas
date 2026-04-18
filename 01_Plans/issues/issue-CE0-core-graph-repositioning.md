@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G (CE2/CE0-core-graph planning & contract definitions only)
-- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream G: Contract Freeze / mock-first / Docs-Architecture only）
+- Owner: Stream E (CE0/CE1/CE2/CE4 contract-first planning only)
+- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028` (D11), `00_Prompt/virtual_stakeholder_consensus.md`
 - Expected verification level: `docs-check`
@@ -20,7 +20,39 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 - DecisionQueueRef: `UNC-VSC-CE-02-01`, `UNC-VSC-CE-02-02`, `UNC-VSC-CE-02-03`
-- Stream: `G` (CE2/CE0-core-graph planning / Contract Freeze / mock-first / Docs-Architecture only)
+- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
+
+## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+
+### Scope lock（編集境界）
+
+- 編集対象は以下5Issueのみ（本Issueを含む）:
+  - `issue-CE0-contract-freeze.md`
+  - `issue-CE0-core-graph-repositioning.md`
+  - `issue-CE1-context-query-bundle-foundation.md`
+  - `issue-CE2-low-risk-ai-assist.md`
+  - `issue-CE4-api-cli-audit-integration.md`
+- `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）、他Issueは編集禁止。
+- 本Issueは実装依存を持ち込まない（contract-only / docs-only）。
+
+### 固定フェーズ（Phase 1〜6）
+
+1. **Phase 1 Read**: 契約ID・禁止事項・mock依存切断方針を再確認する。
+2. **Phase 2 ADR-CDC**: 変更が必要な場合のみ `Context / Decision / Consequences` を明文化し、承認がない限り先へ進まない。
+3. **Phase 3 Plan**: APIシグネチャ/データ型を先行固定し、AC/DoD不足をドラフト合意する。
+4. **Phase 4 Execute**: contract-first + mock-first で依存を切断し、実装待機を禁止する。
+5. **Phase 5 Verify**: docs-check + 契約ID整合を検証し、失敗時は自己修復を最大3回まで許可する。
+6. **Phase 6 Proceed**: 契約確定（衝突0 / 安全後退0）時のみ次段へ進む。
+
+### 強制サイクル（各Phase内で固定）
+
+- **Plan → Execute → Verify → Proceed** の順序を必須化する（省略・逆順禁止）。
+
+### Fail-safe（停止条件）
+
+- 契約未確定、または安全境界後退（safeMode既定ONの破壊、auto-apply許容、review自動昇格許容）を検知した場合は即停止。
+- Verify自己修復が3回を超えた時点（`attempt=4` 相当）で停止。
+- 停止時は推測継続せず、競合点と保留理由を明示する。
 
 
 ## Stream G Parallel Prep Snapshot（2026-04-17）

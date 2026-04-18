@@ -4,8 +4,8 @@
 - Status: Open
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream F (CE1 ContextQuery/ContextBundle planning contracts only)
-- Scope: `01_Plans/issues/`, `02_Architecture/`（Stream C: 契約文書のみ / mock-first）
+- Owner: Stream E (CE0/CE1/CE2/CE4 contract-first planning only)
+- Scope: `01_Plans/issues/`（Stream E: contract-only / mock-first / docs-only）
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`
 - Expected verification level: `docs-check`
@@ -19,8 +19,40 @@
 - SecurityGateImpact: SafeMode / share-export
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- Stream: `F` (CE1専任 / ContextQuery-ContextBundle契約のみ / Docs-Architecture only)
+- Stream: `E` (CE0/CE1/CE2/CE4 contract-first planning only / docs-only)
 - DecisionQueueRef: `UNC-VSC-CE-01-02`
+
+## Stream E 専属実行プロトコル（2026-04-18 / Contract-first + mock-first）
+
+### Scope lock（編集境界）
+
+- 編集対象は以下5Issueのみ（本Issueを含む）:
+  - `issue-CE0-contract-freeze.md`
+  - `issue-CE0-core-graph-repositioning.md`
+  - `issue-CE1-context-query-bundle-foundation.md`
+  - `issue-CE2-low-risk-ai-assist.md`
+  - `issue-CE4-api-cli-audit-integration.md`
+- `03_Implement/**` と shared統合3ファイル（README/dashboard/decision-pack）、他Issueは編集禁止。
+- 本Issueは実装依存を持ち込まない（contract-only / docs-only）。
+
+### 固定フェーズ（Phase 1〜6）
+
+1. **Phase 1 Read**: 契約ID・禁止事項・mock依存切断方針を再確認する。
+2. **Phase 2 ADR-CDC**: 変更が必要な場合のみ `Context / Decision / Consequences` を明文化し、承認がない限り先へ進まない。
+3. **Phase 3 Plan**: APIシグネチャ/データ型を先行固定し、AC/DoD不足をドラフト合意する。
+4. **Phase 4 Execute**: contract-first + mock-first で依存を切断し、実装待機を禁止する。
+5. **Phase 5 Verify**: docs-check + 契約ID整合を検証し、失敗時は自己修復を最大3回まで許可する。
+6. **Phase 6 Proceed**: 契約確定（衝突0 / 安全後退0）時のみ次段へ進む。
+
+### 強制サイクル（各Phase内で固定）
+
+- **Plan → Execute → Verify → Proceed** の順序を必須化する（省略・逆順禁止）。
+
+### Fail-safe（停止条件）
+
+- 契約未確定、または安全境界後退（safeMode既定ONの破壊、auto-apply許容、review自動昇格許容）を検知した場合は即停止。
+- Verify自己修復が3回を超えた時点（`attempt=4` 相当）で停止。
+- 停止時は推測継続せず、競合点と保留理由を明示する。
 
 
 
@@ -101,11 +133,11 @@
 
 ## 直列フェーズ固定（Stream C / Contract Freeze）
 
-1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。  
-2. **Phase 2（ADR CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。  
-3. **Phase 3（Plan: AC/DoD提案合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。  
-4. **Phase 4（Execute: 契約固定 / mock-first）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。  
-5. **Phase 5（Verify: 3回まで）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。  
+1. **Phase 1（Read）**: `ContextQuery` / `ContextBundle` / `bundleHash` / `previewConfirmed` の最小I/Fを抽出・固定する。
+2. **Phase 2（ADR CDC）**: `previewConfirmed=false` は常に `422 preview_required` として拒否する CDC（Contract Definition Check）を固定する。
+3. **Phase 3（Plan: AC/DoD提案合意）**: canonical JSON + sha256 の `bundleHash` 算出手順、drift-stop 条件、AC/DoD を合意済み契約として固定する。
+4. **Phase 4（Execute: 契約固定 / mock-first）**: CE0/CE2/CE4 完了待ちを行わず、mock `ContextQuery/ContextBundle` I/F 前提で契約同期を実行する。
+5. **Phase 5（Verify: 3回まで）**: CE0/CE1/CE2 の語彙・契約ID整合を検証し、Verify の自己修復は最大3回、4回目失敗時は即停止する。
 6. **Phase 6（Proceed）**: CE2/CE4 へは参照専用 handoff のみを許可し、Contract ID 再定義要求を受け付けない。
 
 ### 実行順序固定（Stream C 強制）
