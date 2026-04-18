@@ -513,3 +513,45 @@
 - 実装レーンへは `read-only contract handoff` のみ許可。
 - Fail-safe: 契約逸脱 / 優先度逆転 / 未定義競合 / 修復上限超過で停止。
 
+
+
+## Stream D update (2026-04-18): A3 implementation handoff gate refresh
+
+> 本セクションを Stream D の最新A3接続記録として扱う。
+
+### Phase 1) Read
+- Plan: A1/A2/A3 + baseline を再読して handoff 境界を確認する。
+- Execute: `ReferenceContractID=CTR-2B-01-CANDIDATE-GROUP-V1`、`Priority=P0`、`A1->A2->A3` を確認。
+- Verify: 依存逆転なし（Pass）。
+- Proceed: Phase 2 へ進行。
+
+### Phase 2) A1契約準拠のA3開始条件整備
+- Plan: A3で契約再定義を禁止し、A1固定値のみ参照する。
+- Execute: ContractID変更要求・追加フィールド要求はA1差し戻しとした。
+- Verify: 契約境界の逸脱なし（Pass）。
+- Proceed: Phase 3 へ進行。
+
+### Phase 3) A2検証結果の継承条件整備
+- Plan: A2のmock検証条件をA3回帰要件へ継承する。
+- Execute: 非自動確定・再読込復元・順序保持をA3受入条件へ固定。
+- Verify: A2->A3連結条件が明文化済み（Pass）。
+- Proceed: Phase 4 へ進行。
+
+### Phase 4) 実装条件整備（planning-only）
+- Plan: 実装コードに触れず、handoff payloadのみ定義する。
+- Execute: 必須handoffを固定。
+  - `ReferenceContractID`
+  - 回帰対象（順序/復元/非自動確定）
+  - Rollback Trigger（契約逸脱・比較キー変更・自動確定混入）
+- Verify: planning memo範囲に閉じる（Pass）。
+- Proceed: Phase 5 へ進行。
+
+### Phase 5) Baseline統合入力
+- Plan: baselineで優先順位確定に使うA3入力を確定する。
+- Execute: `P0`、直列依存、停止条件、Self-Correction上限3回を統合入力として明文化。
+- Verify: baseline優先順位確定に必要な情報を充足（Pass）。
+- Proceed: baselineへ引き渡し。
+
+### CDC / 停止条件
+- CDC差分（契約改訂・判定式変更）が必要になった場合は承認まで停止。
+- Self-Correctionは3回上限。超過時は停止。

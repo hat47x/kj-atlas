@@ -548,3 +548,55 @@
 - ContractID整合と非自動確定ルール維持を必須判定にする。
 - self-correctionは最大3回。4回目修復要求で停止。
 
+
+
+## Stream D baseline consolidation update (2026-04-18): authoritative priority pack
+
+> ファイル名は stream-c だが、本セクションは **Stream D（FB-P2B-01 + FB-P0 baseline 専任）** の現行基準を記録する。旧セクションと矛盾する場合は本セクションを優先する。
+
+### Baseline priority order（確定）
+1. `FB-P2B-01 A1` 契約固定（`CTR-2B-01-CANDIDATE-GROUP-V1`）
+2. `FB-P2B-01 A2` mock検証条件固定（順序保持・非自動確定・deterministic restore）
+3. `FB-P2B-01 A3` 実装接続条件固定（参照専用）
+4. `FB-P0 baseline` 統合（P0優先順位・停止条件・docs-check手順）
+
+### Phase 1) Read
+- Plan: P2B-01 A1/A2/A3 と baseline を再読して優先順位を確定する。
+- Execute: ContractID一致、`Priority=P0`、依存順 `A1->A2->A3` を確認。
+- Verify: 依存矛盾なし（Pass）。
+- Proceed: Phase 2 へ進行。
+
+### Phase 2) A1契約整備
+- Plan: baseline側でA1契約を単一正本として固定する。
+- Execute: `CTR-2B-01-CANDIDATE-GROUP-V1` を唯一契約として参照し、契約改訂要求はA1差し戻しへ固定。
+- Verify: 契約正本の重複なし（Pass）。
+- Proceed: Phase 3 へ進行。
+
+### Phase 3) A2モック検証条件整備
+- Plan: baselineでA2開始条件を判定可能にする。
+- Execute: Go条件を固定。
+  - `groups[] / candidateCardIds[]` の順序保持
+  - `groupId / targetCardId / snapshotVersion` 一致
+  - 非自動確定維持
+  - deterministic restore
+- Verify: A2判定が契約参照のみで可能（Pass）。
+- Proceed: Phase 4 へ進行。
+
+### Phase 4) A3実装条件整備
+- Plan: A3 handoff 条件を baseline に固定する。
+- Execute: `ReferenceContractID`、回帰観点、Rollback Trigger を baseline 判定項目に追加。
+- Verify: A3開始前に必要な入力が揃う（Pass）。
+- Proceed: Phase 5 へ進行。
+
+### Phase 5) Baseline統合と優先順位確定
+- Plan: Stream D の最終優先順位と停止ルールを確定する。
+- Execute:
+  - 優先順位: `A1 > A2 > A3 > baseline integration`
+  - 停止条件: Gate未承認 / 契約矛盾 / 未定義競合 / Self-Correction超過
+  - 検証コマンド: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify: P0 baseline運用として矛盾なし（Pass）。
+- Proceed: Stream D baseline更新を完了。
+
+### CDC rule（必須）
+- CDCが必要になった場合（ContractID変更、比較キー変更、GoNoGo条件変更）は、**承認記録が付くまで実行停止** とする。
+- Self-Correction上限は3回。4回目相当は停止して競合一覧のみ提出。

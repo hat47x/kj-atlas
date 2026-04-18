@@ -502,3 +502,46 @@
 - A3への引き渡しは read-only contract handoff のみ。
 - Fail-safe: 契約逸脱 / 優先度逆転 / 未定義競合 / 修復上限超過で停止。
 
+
+
+## Stream D update (2026-04-18): A2 mock validation gate refresh
+
+> 本セクションを Stream D の最新A2運用記録として扱う。
+
+### Phase 1) Read
+- Plan: A1/A2/A3 + baseline を再読して依存整合を確認する。
+- Execute: `DependsOnContractID=CTR-2B-01-CANDIDATE-GROUP-V1` と `Priority=P0` を再確認した。
+- Verify: 直列依存 `A1 -> A2 -> A3` を維持（Pass）。
+- Proceed: Phase 2 へ進行。
+
+### Phase 2) A1契約参照固定
+- Plan: A2で契約再定義を行わず、A1を唯一参照にする。
+- Execute: 契約変更要求はA1差し戻し、A2はmock条件定義に限定。
+- Verify: A2スコープ逸脱なし（Pass）。
+- Proceed: Phase 3 へ進行。
+
+### Phase 3) A2モック検証条件整備
+- Plan: mock Go/NoGo 条件を明確化する。
+- Execute: 必須観点を固定。
+  - 順序保持: `groups[]` / `candidateCardIds[]`
+  - キー整合: `groupId / targetCardId / snapshotVersion`
+  - 非自動確定: 候補提示のみ
+  - 復元性: 同一 `snapshotVersion` で deterministic
+- Verify: A2開始条件が実装非依存で完結（Pass）。
+- Proceed: Phase 4 へ進行。
+
+### Phase 4) A3実装接続条件整備
+- Plan: A3に渡す入力条件を固定する。
+- Execute: A3 handoffに `ReferenceContractID`・回帰条件・差し戻し条件を必須化。
+- Verify: A3が参照のみで開始可能（Pass）。
+- Proceed: Phase 5 へ進行。
+
+### Phase 5) Baseline統合入力
+- Plan: baselineへ優先順位と検証条件を統合する。
+- Execute: `P0`、`A1->A2->A3`、docs-check、Self-Correction<=3 を統合入力として固定した。
+- Verify: baseline側へ引き渡し可能（Pass）。
+- Proceed: baseline統合を実施。
+
+### CDC / 停止条件
+- CDC変更要求（契約ID/比較キー/GoNoGo判定式）が発生した場合は承認まで停止。
+- Self-Correction上限は3回。超過時は停止。
