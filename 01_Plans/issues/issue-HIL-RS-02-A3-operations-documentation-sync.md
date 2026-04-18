@@ -213,3 +213,33 @@ Proceed 条件:
 
 ### Phase 6 Proceed
 - 判定: **Ready**。D1〜D4不整合0件の場合のみ Proceed し、不一致が1件でも再発した場合は `StoppedForClarification` として停止する。
+
+## Stream G A3 Operations Documentation Sync (2026-04-18)
+
+### Phase 1 Read
+- 対象正本と運用文書を再読し、`Security Officer / System Owner / Platform Operator` の用語一致、状態語彙（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` + `StoppedForClarification`）、D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）の一致を確認。
+- 読取対象: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/e2e_testing.md`。
+
+### Phase 2 CDC明文化（Context / Decision / Consequences）
+- Context: AUTH-OPS-03 の固定値は既に確定済みで、A3は docs-only 同期の監査精度を維持する段階。
+- Decision: 追加仕様決定は行わず、既存 canonical 語彙・責務分離・固定値を維持する。未承認事項の確定扱いは禁止。
+- Consequences: ドキュメント間ドリフトの再発防止を優先し、差分が不要な場合は issue ログ更新のみで監査証跡を残す。
+
+### Phase 3 用語/責務/固定値（D1〜D4）同期
+- 同期結果: 差分不要（既存文書で用語・責務・固定値が同値）。
+- 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）を維持していることを確認。
+- D1〜D4 不整合は 0 件（停止条件非該当）。
+
+### Phase 4 Verify（docs-check）
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `rg -n "operations\\.md|security\\.md|security_operational_guidelines\\.md|e2e_testing\\.md" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 5 Proceed（監査ログ化）
+- 判定: **Ready**（docs-check 全件成功、D1〜D4 不整合 0 件、許可外ファイル編集 0 件）。
+- 停止条件評価:
+  - 未承認決定の確定扱い: 該当なし
+  - 用語不一致の解消不能（3回超過）: 該当なし
+  - 未定義競合: 該当なし
