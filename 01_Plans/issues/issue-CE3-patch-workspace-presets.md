@@ -641,3 +641,35 @@
 - AC/DoD達成としてCE3 Frontendタスクを完了。
 - 未完了課題は既存の CE4 連携（local監査ログのdocument監査ログ昇格）のみ。
 
+
+## 21) Stream E Follow-up Notes (2026-04-19)
+
+### Phase 1 Read（CE3 issue + frontend再Read）
+
+- CE3 issue本体と `PatchWorkspacePanel` / `ce3_patch_workspace` / CE3 E2E spec を再読し、候補比較・部分採用・rollback監査可視化・preset replay が local state + localStorage 境界内で完結していることを確認。
+- SafeMode境界（share/export auto 追加禁止）と Core/Consensus 非改変条件に抵触する変更が無いことを再確認。
+
+### Phase 2 Plan（AC/DoD不足ドラフト→合意）
+
+- AC/DoD不足は新規検出なし。既存固定条件（3候補同時表示、候補独立 rollback、preset 正規化再現、監査遷移可視化）を維持。
+- Verify 失敗時は CE3 自己修復手順（browser install → deps install → rerun、最大3回）を適用する方針で合意。
+
+### Phase 3 Execute（UI/state/replay/rollback）
+
+- 実装差分は不要（既存CE3実装が受入条件を満たすため）。
+- 変更は本Issueの進捗記録更新のみに限定。
+
+### Phase 4 Verify（unit/lint/e2e + 最大3回修復）
+
+- unit: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- lint: `npm --prefix 03_Implement/frontend run lint` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium`。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium`。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+
+### Phase 5 Proceed（rollback手順 + 監査ログ整備）
+
+- rollback手順・監査遷移可視化（`reason=rollback` と UI表示）については既存実装で維持され、後退なし。
+- 未完了は従来どおり CE4 連携（local audit log の document監査ログ昇格）を継続課題として据え置き。
