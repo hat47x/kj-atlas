@@ -584,3 +584,36 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   - `StartAllowed==true` かつ未承認決定・識別子不一致・未定義競合が0件。
 - NoGo:
   - 上記未充足時は停止報告し、人間判断へエスカレーション。
+
+## Stream A Critical Path Execution (2026-04-19)
+
+### Phase 1 Read
+- Status=`Open`, Priority=`P1`, DecisionStatus=`Fixed` を再確認。
+- ContractID=`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
+- GoNoGoGate=`a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+### Phase 2 ADR CDC
+- Context: ガバナンス契約は `ADR-0026/0027/0028` と整合。
+- Decision: CDC差分なし。承認待ち項目なし。
+- Consequences: A1契約固定のまま下流へread-only連携。
+
+### Phase 3 Plan
+- AC/DoD不足なし。`agreementStatus=agreed` 維持。
+
+### Phase 4 Execute（A1契約固定証跡）
+- `contractLinkLocked=true` を固定。
+- `sharedResourceFreeze=true` を固定。
+- Return path=`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を維持。
+
+### Phase 5 Verify
+- docs-check + link整合 + ContractID collision=0 を確認（Self-Correction 0/3）。
+
+### Phase 6 Proceed（固定I/F + 非目標）
+- 固定I/F:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 非目標: 契約値の局所上書き、Pending bypass、SafeMode/share-export境界の後退。
