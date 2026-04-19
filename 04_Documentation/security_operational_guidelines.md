@@ -314,3 +314,26 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 - 判定: **Ready**
 - 停止条件: 自己修復3回超過、または用語/役割/導線/固定値不一致が残る場合は fail-safe 停止。
+
+## Stream G 実行記録（DOC-OPS-05文書群② / 2026-04-19）
+
+### Phase 1 Read同期
+- `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` / 本書を再読し、4観点（用語・役割・導線・固定値）を同期確認した。
+- 役割分離（2者承認: Security Officer + System Owner、実行: Platform Operator）と D1〜D4 固定値の同値を確認した。
+
+### Phase 2 CDC明文化（判断分岐時のみ）
+- 判定: **分岐なし（CDC追加なし）**。
+- 理由: 本書は運用判断補助として既存Decisionを維持する更新であり、追加の方針分岐が発生していない。
+
+### Phase 3 Execute（文書更新）
+- Stream G のフェーズ進行記録を追記し、公開境界（Improve external / Non-goal: 承認フロー正本の再定義禁止）を維持した。
+- 既存の fail-safe 停止条件（不一致時停止、自己修復3回上限）を変更していない。
+
+### Phase 4 Verify（docs-check + 用語/固定値照合）
+- docs-check: `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|StoppedForClarification" 04_Documentation/security_operational_guidelines.md 04_Documentation/security.md 04_Documentation/operations.md`
+- diff-check: `git diff --check`
+- 判定: Pass（必須メタ・用語・固定値の不一致なし）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed（Ready）**。
+- 停止条件: D1〜D4不一致、導線切断、または語彙ドリフトが残る場合は `StoppedForClarification` として停止する。
