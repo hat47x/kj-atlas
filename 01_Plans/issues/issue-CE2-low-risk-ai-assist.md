@@ -15,7 +15,7 @@
 - 未承認決定は `held` とし、確定扱いしない。
 - `reviewState=human_reviewed` へのAI自動昇格は禁止。
 
-## Phase 1 Read（契約I/F抽出）
+## Phase 1) Read同期（ADR-0028整合確認）
 ### Contract IDs
 - `CE2-PROPOSAL-IF`
 - `CE2-LIFECYCLE-IF`
@@ -31,12 +31,22 @@
 - auto-apply
 - AIによる `human_reviewed` 自動昇格
 
-## Phase 2 契約参照正規化（CE1/CE0参照固定）
-- `sourceBundleHash` は CE1 `bundleHash` を参照する比較キーとしてのみ扱う。
+## Phase 2) CE2契約凍結（CDC明文化→承認）
 - CE0 `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` を参照し、CE2側でsafeModeやreview遷移を再定義しない。
+- CE1 `bundleHash` を参照し、`sourceBundleHash` は比較キーとしてのみ扱う。
 - CE1 drift検知時は `status=held` で停止する。
 
-## Phase 3 Plan（AC/DoD）
+## Phase 3) CE1/CE2のmock前提I/F分離
+- CE2が必要とするCE1依存は `sourceBundleHash` のみ（query語彙を持ち込まない）。
+- mock hash検証でも lifecycle (`proposed/accepted/rejected/held`) を変更しない。
+- proposal評価とreview昇格判定を分離し、後者は人手操作のみ許可。
+
+## Phase 4) CE4連携契約（API/CLI/Audit）定義
+- CE4監査導線に `proposal/apply` を必須提供。
+- `dryRun=true` では `apply` を「実行試行ログのみ・副作用なし」で記録。
+- fail-closed: 監査欠損またはhash不整合は成功扱い禁止。
+
+## Phase 5) Verify / Proceed
 ### Acceptance Criteria
 - [ ] auto-apply経路0件
 - [ ] AI自動昇格0件
@@ -48,13 +58,14 @@
 - [ ] `held` 停止条件がNo-Goとして明記済み
 - [ ] `Read → Freeze/Normalize → Plan → Verify → Proceed` の順序を維持
 
-## Phase 4 Verify
-- `docs-check`
+### Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
 - Proposal I/F必須キー欠落0、状態遷移衝突0、禁止経路混入0。
 - 自己修復は最大3回。4回目相当は停止。
 
-## Phase 5 Proceed（実装ストリーム向けI/F配布）
-### I/F仕様書固定
+### Proceed（実装ストリーム向けI/F配布）
 - `ProposalDraftV1`
 - Lifecycle: `proposed -> accepted/rejected/held`
 - Fail-safe: drift時 `held` 固定
