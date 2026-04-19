@@ -510,3 +510,35 @@
 
 ### Phase 6) Proceed
 - 判定: **Ready**（docs-only / 許可スコープ内 / DecisionStatus=Fixed維持）。
+
+## 18) Stream F DOC-OPS-05後半（Phase 1〜5: Read同期→CDC→AC/DoD→Rollback→Verify/Proceed）
+
+### Phase 1) Read同期（毎Phase開始）
+- Read Order の上流（`00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md`）と、対象Scope（`04doc_e2e_testing.md`）の境界を突合。
+- `Expected verification level=docs-check` / `VerificationLevel=docs-check` / `DecisionStatus=Fixed` の3点を再確認し、差し戻し条件を固定。
+
+### Phase 2) セキュリティ/運用境界のCDC明文化→承認
+- Context: DOC-OPS-05後半では、公開文書の境界を曖昧にしないことが最優先。
+- Decision: Classification（`Improve external`）は再判定せず維持し、SecurityGateImpact と GoNoGoGate の判定軸を本文で追跡可能にする。
+- Consequences: 後続PRは docs-only に限定し、公開境界の曖昧化や未承認確定化を防止する。
+- 承認条件: `Ready / Hold / Needs-decision` の三値で Proceed 判定を記録する。
+
+### Phase 3) docs-check向け AC/DoD 固定
+- AC-F-1: Audience / Goal / 公開境界 / 次アクションの4点をIssue本文で再現可能にする。
+- AC-F-2: `DecisionQueueRef` は `DecisionStatus=Fixed` のとき `N/A` を維持する。
+- DoD-F-1: Verify は「メタキー整合」「参照整合」「差分整合」の3系統を必須実施とする。
+- DoD-F-2: `GoNoGoGate=Required` の判定根拠を本文中で追跡可能にする。
+
+### Phase 4) 検証計画と失敗時ロールバック固定
+- 検証コマンド（共通）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+  - `git diff --check`
+- 失敗時ロールバック:
+  1. 当該Issueのみ最小差分で自己修復（最大3回）。
+  2. 4回目相当は **即停止** し、状態を `Hold` に変更。
+  3. 停止理由を「公開境界の曖昧化」または「承認なし確定化の疑い」として記録。
+
+### Phase 5) Verify / Proceed
+- Verify判定: docs-checkで不整合がない場合のみ `Ready`。
+- Proceed条件: 公開境界を曖昧化せず、承認なしで確定化していないこと。
+- Fail-safe再掲: 公開境界の曖昧化・承認なし確定化を検知した時点で作業を停止する。
