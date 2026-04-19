@@ -478,3 +478,29 @@
 ### Phase 5 Proceed（差分要約）
 - 判定: **Ready**
 - 停止条件: 分類不能・対象外編集要求・自己修復3回超過を検知した場合は停止する。
+
+
+## Stream H serial execution record（2026-04-19, DOC-OPS-05-02）
+
+### Phase 1 Read
+- 対象Issueと `04_Documentation/codex_skill_operations.md` を再Readし、`Scope / RequirementID / DecisionStatus=Fixed` を確認。
+- Classification は **Move internal** を維持。
+
+### Phase 2 ADR CDC
+- 判定: **ADR追加不要**（方針変更なし）。
+- Issue内CDCを正本とし、承認待ち項目は作らない。
+
+### Phase 3 Plan
+- AC/DoD不足なし。公開境界メタとGo/No-Goの維持を計画として固定。
+
+### Phase 4 Execute
+- 「内部文書へ移動（Move internal）」分類を維持。
+- 実行方針: 公開向けは境界スタブのみ、運用詳細は内部正本へ委譲。
+
+### Phase 5 Verify
+- docs-check: 必須メタ、Related参照、整形差分（`git diff --check`）を確認。
+- Self-Correction は最大3回。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 失敗条件に該当するブロッカーなし。

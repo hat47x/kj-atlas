@@ -281,3 +281,25 @@ i18n表示差分を追加する場合は、UIコンポーネントの生文字�
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+
+## Stream H serial cycle（2026-04-19 / DOC-OPS-05-03）
+
+### Phase 1 Read
+- `issue-doc-ops-05-03` と本書を再Readし、Classification=**Improve external** と DecisionStatus=Fixed を確認。
+
+### Phase 2 ADR CDC
+- 追加ADR不要。公開改善方針は既存CDCで充足。
+
+### Phase 3 Plan
+- AC/DoD不足なし。最小安全設定と再現可能な手順維持を固定。
+
+### Phase 4 Execute
+- 公開向け設定ガイドの構成を維持し、内部情報を混在させない。
+
+### Phase 5 Verify
+- docs-check（メタ整合・リンク整合・`git diff --check`）を実施。
+- 自己修復上限3回。
+
+### Phase 6 Proceed
+- 状態: **Ready**

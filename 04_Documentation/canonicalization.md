@@ -199,3 +199,25 @@
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+
+## Stream H serial cycle（2026-04-19 / DOC-OPS-05-01）
+
+### Phase 1 Read
+- `issue-doc-ops-05-01` と本書を再Readし、Classification=**Move internal** と DecisionStatus=Fixed の整合を確認。
+
+### Phase 2 ADR CDC
+- 追加ADRは不要。既存CDCのまま継続。
+
+### Phase 3 Plan
+- AC/DoD不足なし。公開stub維持と内部正本導線の明確化を継続。
+
+### Phase 4 Execute
+- 公開境界メタ（Audience/Goal/Non-goal/Public boundary/Outcome/Related）を維持。
+
+### Phase 5 Verify
+- docs-check（メタ整合・リンク整合・`git diff --check`）を適用。
+- 自己修復は最大3回。
+
+### Phase 6 Proceed
+- 状態: **Ready**
