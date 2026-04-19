@@ -637,3 +637,49 @@
 ### Phase 6: Proceed
 - Go条件: 参照整合=OK、競合=0、優先度逆転=0。
 - NoGo/Fail-safe: 依存矛盾 / 契約ドリフト / 未定義競合 / 修復4回目相当。
+
+## Stream C planning baseline refresh（2026-04-19 / single-file exclusive）
+
+### Phase 1: Read
+- Scope lock を再確認: 本更新は `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ編集し、他ファイルは非編集。
+- 既存固定値の再読結果:
+  - 優先度は `P0` 固定。
+  - 依存順序は `A1 -> A2 mock-validation -> A3 implementation` 固定。
+  - 停止条件は「契約矛盾 / 未定義競合 / Gate未承認 / self-correction上限超過」で即停止。
+
+### Phase 2: Plan（監査観点定義）
+- 監査観点を以下5点に固定する。
+  1. **Contract Integrity**: `ContractID / DependsOnContractID / ReferenceContractID` の整合。
+  2. **Serial Dependency**: `A1 -> A2 -> A3` の逆転・並列着手禁止。
+  3. **Priority Discipline**: baseline と関連レーンが `Priority=P0` を維持。
+  4. **Fail-safe Governance**: NoGo条件（契約矛盾・未定義競合・Gate未承認・修復上限超過）の明示。
+  5. **Docs-check Reproducibility**: 単一検証コマンドで再現可能な検証計画を維持。
+- 受入条件（Audit AC）:
+  - AC-1: 上記5観点が本文で追跡可能。
+  - AC-2: Go/NoGo判定基準が Proceed 章に明示される。
+  - AC-3: 参照リンクが存在し、依存追跡が途切れない。
+
+### Phase 3: Execute（ベースライン更新）
+- 本セクションを追記し、Stream Cの監査観点と受入条件を baseline 正本へ反映。
+- 既存の運用制約（P0固定、A1→A2→A3、即停止ルール、self-correction最大3回）を変更せず継承。
+- 実装・共有統合ファイル・他レーン仕様への拡張要求は本更新では扱わない（No scope expansion）。
+
+### Phase 4: Verify（依存リンク整合）
+- 参照リンク整合チェック（本メモ内の依存先ファイル）:
+  - `issue-FB-P2B-01-a1-interface-contract.md`
+  - `issue-FB-P2B-01-a2-mock-validation.md`
+  - `issue-FB-P2B-01-a3-implementation.md`
+  - `issue-FB-P2B-02-a1-interface-contract.md`
+  - `issue-FB-P2B-02-a2-mock-validation.md`
+  - `issue-FB-P2B-02-a3-implementation.md`
+- 判定: 依存先リンクは存在し、baseline の依存追跡は継続可能（Pass）。
+- docs-check は本レーン方針どおり以下を正本コマンドとして維持:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+
+### Phase 5: Proceed（Go/NoGo提案）
+- **Go提案**:
+  - 条件: 5監査観点すべて Pass、依存リンク整合 Pass、NoGo条件非該当。
+  - 提案: Stream C baseline は次のA2/A3監査へ進行可能。
+- **NoGo提案**:
+  - 条件: 契約ID不整合、依存逆転、未定義競合、または self-correction 3回超過。
+  - 提案: 直ちに停止し、A1差戻し + 競合一覧提出へ切替。
