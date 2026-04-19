@@ -523,3 +523,25 @@
 
 - 判定: **Ready**
 - クローズ準備条件: DOC-OPS-05-13 対象文書（`04_Documentation/security.md`）の docs-check 成功と差分整合を満たすこと。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-13）
+
+### Phase 1) Read
+- Requirement meta I/F と分類（Move internal / Improve external）、関連 04_Documentation 対象文書を再読。
+
+### Phase 2) セキュリティ境界優先
+- SafeMode既定ON、share/export漏えい防止、公開境界（Public boundary）の後退禁止を優先確認。
+
+### Phase 3) e2e/testing/release整合
+- `e2e_testing.md` / `operations.md` / `release.md` と当該Issueの受入条件・検証レベル（docs-check）を照合。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- `installation.md` / `local_llm_ops_guide.md` / `narratives.md` と責務重複がないことを確認。
+
+### Phase 5) Verify
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|GoNoGoGate|VerificationLevel" <target>`
+- `git diff --check`
+- 自己修復は最大3回。4回目相当は `Hold` で停止。
+
+### Phase 6) Proceed
+- 判定: **Ready**（docs-only / 許可スコープ内 / DecisionStatus=Fixed維持）。

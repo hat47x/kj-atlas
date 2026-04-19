@@ -372,3 +372,23 @@ git push origin v0.1.1
 ### Phase 5 Proceed/Stop
 - 判定: **Ready**
 - 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-12）
+
+### Phase 1) Read
+- release 手順と `e2e_testing.md` / `operations.md` / `security.md` の依存関係を再読。
+
+### Phase 2) セキュリティ境界優先
+- リリースゲートで SafeMode / share-export 境界後退を許容しないことを再確認。
+
+### Phase 3) e2e/testing/release整合
+- release判定とE2E判定（Compose/代替経路/Blocked記録）が整合することを確認。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- install/local-llm/narratives 更新時のリリース判定導線（docs-check対象）を維持。
+
+### Phase 5) Verify
+- docs-check + `git diff --check`。
+
+### Phase 6) Proceed
+- 判定: **Ready**。
