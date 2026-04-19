@@ -370,27 +370,22 @@ Proceed 条件:
 - 判定: **Ready**（語彙ドリフト0件、D1〜D4不整合0件、許可外ファイル編集0件）。
 - 引継ぎ条件: 差分発生時は docs-only 最小差分で再同期し、3回超過時は `StoppedForClarification` で停止。
 
+## Stream H 監査判定ログ（2026-04-19）
 
-## Stream A Critical Path Constraint Overlay (2026-04-19)
+### 1) Read同期（対象Issueのみ）
+- Active issue 5件を再読し、A3が `a1Status=="Done" && pendingDecisionQueueCount==0` 依存であることを再確認。
 
-### Phase 1: Read & Drift Check
-- 本issueの現状態は `Status: Draft` であり、Stream A再開ゲート未充足時は `Open(hold)` 維持。
-- Scope表記に architecture/documentation 実体ファイルが含まれるが、本ストリーム実行は **planning issue 更新のみ** に制限。
+### 2) AC/DoD達成判定
+- 判定: **未達（クローズ不可）**。
+- 理由: docs-checkの実行ログはあるが、A3 Open/Doneの前提となるA1完了確定が不足。加えて本issueメタは `Status: Draft` / `Source Issue: TBD` のまま。
 
-### Phase 2: ADR CDC
-- Context: Stream A は契約固定レーンであり、A3実文書同期は下流ストリーム責務。
-- Decision: A3は契約値変更を行わず、A1固定I/F参照のみ許可。
-- Consequences: A3側での契約補完は無効。差分要求はA1へ返却。
+### 3) Blocker有無と依存整合
+- Blocker: **あり**（A1完了待ち + Source Issue未確定）。
+- 依存整合: A3のNoGo条件定義は整合。
 
-### Phase 3: Contract Freeze / Restart Gate
-- A3 Proceed前提（固定）:
-  - `a1Status=="Done" && pendingDecisionQueueCount==0`
-  - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
-  - `schemaVersion=="1.0.0"`
-  - `overridePolicy=="human_dual_control_only"`
-  - `contractLinkLocked==true && sharedResourceFreeze==true`
-- Stop条件:
-  - D1〜D4不整合 / 未承認確定化 / SafeMode後退要求 / Self-Correction 3回超過。
+### 4) Status変更提案（Draft/Open/In Progress/Done）
+- 提案: **Draft 維持**（Open化条件未充足）。
 
-### Phase 4: Proceed
-- 判定: `NoGo`（本更新時点は `Status: Draft` を維持し、上位ゲート成立まで進行停止）。
+### 5) Verify / Proceed
+- Verify: docs-checkコマンド整合は確認。
+- Proceed: A1完了証跡・pendingDecisionQueueCount=0・Source Issue確定後に再監査。

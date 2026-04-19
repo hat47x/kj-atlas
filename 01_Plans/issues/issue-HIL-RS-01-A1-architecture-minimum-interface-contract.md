@@ -767,34 +767,22 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
 
-## Stream A Contract Freeze Revalidation (2026-04-19)
+## Stream H 監査判定ログ（2026-04-19）
 
-### Phase 1: Read & Drift Check
-- `Status/Priority/Scope/Dependencies` を再読し、`Open / P1 / planning only / ADR-0026-0028` を維持確認。
-- A1契約識別子（`A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）と固定値に差分なし。
+### 1) Read同期（対象Issueのみ）
+- Active issue 5件を再読し、A1を依存ゲート正本として参照する構造を確認。
 
-### Phase 2: ADR CDC
-- Context: A1は契約変更窓口の唯一正本。
-- Decision: A1以外で契約値を更新しない方針を再承認記録。
-- Consequences: A2/A3は read-only 参照。変更要求は `A1-CDC-only` へ集約。
-- Approval Record: `cdcApproval=recorded`（未承認項目はなし）。
+### 2) AC/DoD達成判定
+- 判定: **未達（クローズ不可）**。
+- 理由: 契約/ゲート定義は固定済みだが、A1自身の `Done` 遷移を裏付ける実行完了証跡（最終承認・残キューゼロ）が本issue内で確定していない。
 
-### Phase 3: Contract Freeze
-- Freeze値固定:
-  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-  - `schemaVersion=1.0.0`
-  - `overridePolicy=human_dual_control_only`
-  - `contractLinkLocked=true`
-  - `sharedResourceFreeze=true`
-- 禁止遷移固定:
-  - `Pending` bypass
-  - `a1Status!="Done"` での A2/A3 Open
+### 3) Blocker有無と依存整合
+- Blocker: **あり**（A1 Doneの監査証跡不足）。
+- 依存整合: 下流A2/A3の禁止遷移条件は整合。
 
-### Phase 4-5: Verify / Proceed
-- Verify 成功条件:
-  - 識別子衝突0
-  - 語彙ドリフト0
-  - 安全境界後退要求0
-- Proceed条件:
-  - `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
-  - `NoGo = !StartAllowed`。
+### 4) Status変更提案（Draft/Open/In Progress/Done）
+- 提案: **Open 維持**（Done 判定は保留）。
+
+### 5) Verify / Proceed
+- Verify: 依存式・禁止遷移・fail-safeは文書上整合。
+- Proceed: `a1Status=="Done"` の確定証跡追加後に再判定。

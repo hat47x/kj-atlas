@@ -764,24 +764,22 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
 
-## Stream A Governance Hardening Lock (2026-04-19)
+## Stream H 監査判定ログ（2026-04-19）
 
-### Phase 1: Read & Drift Check
-- A1 hardening rule を再読し、`Unlock rule` と `Decision Queue` が単一化されていることを確認。
-- 差分: なし（固定値/禁止遷移を維持）。
+### 1) Read同期（対象Issueのみ）
+- Active issue 5件再読により、A1 hardening がOpen化誤判定防止の中核であることを確認。
 
-### Phase 2: ADR CDC
-- Context: ガバナンス判定式の重複定義は誤Open化リスク。
-- Decision: 本issueの判定式を唯一正本として維持し、下流はread-onlyで参照。
-- Consequences: 変更要求はA1 CDCへ差戻し。
+### 2) AC/DoD達成判定
+- 判定: **未達（クローズ不可）**。
+- 理由: hardening規則の記述はあるが、A1をDoneへ遷移させる監査証跡（最終承認・残件ゼロ）が不足。
 
-### Phase 3: Contract Freeze
-- 固定判定式:
-  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
-  - `NoGo = !Go`
-- 固定禁止事項:
-  - Pending bypass / A1未完了時Open / 未承認確定化 / SafeMode後退。
+### 3) Blocker有無と依存整合
+- Blocker: **あり**（Done証跡不足）。
+- 依存整合: Unlock rule / Decision Queue rule / Return path は整合。
 
-### Phase 4: Proceed
-- `Proceed=Allowed` は `Go==true` かつ Verify pass 時のみ。
-- それ以外は `Open(hold)` を維持し、Decision Queue で保留。
+### 4) Status変更提案（Draft/Open/In Progress/Done）
+- 提案: **Open 維持**。
+
+### 5) Verify / Proceed
+- Verify: ルール定義の矛盾は監査上未検出。
+- Proceed: A1完了証跡追加まではNo Close。
