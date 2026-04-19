@@ -971,3 +971,11 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
 - D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
 - Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
+
+## 0.9 Stream G dedicated cycle（2026-04-19 / DOC-OPS-05-11）
+
+- Phase 1 Read: `issue-doc-ops-05-11-04doc-operations.md` と本書のみ再Readし、`1 issue : 1 doc` 制約を再確認。
+- Phase 2 Plan: 既存分類 `Improve external` を維持し、内部移設ではなく公開runbookの可読性維持を優先。
+- Phase 3 Execute: 方針変更なしのため本文の実行手順は据え置き、実行証跡のみを最小追記。
+- Phase 4 Verify: `docs-check`（issue validator / `rg` / `git diff --check`）を実施し、修復上限3回ルールを維持。
+- Phase 5 Proceed: 判定 **Ready**。次担当へ「内部限定情報の混入監査を優先し、担当外docは非編集」を引き継ぐ。

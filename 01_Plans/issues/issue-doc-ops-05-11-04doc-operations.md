@@ -528,3 +528,27 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
+
+## 20) Stream G dedicated cycle（2026-04-19 / 1 issue : 1 doc）
+
+### Phase 1 Read
+- `issue-doc-ops-05-11-04doc-operations.md` と `04_Documentation/operations.md` のみ再Readし、担当外docは非参照・非編集を確認。
+
+### Phase 2 Plan（内部移動 or 対外改善）
+- 判定方針: 既存分類 `Improve external` を維持し、公開runbookとしての可読性/再現性を最小差分で補強する。
+- スコープ固定: `1 issue : 1 doc` を維持し、同一PRで他docを混在させない。
+
+### Phase 3 Execute（最小差分）
+- issue側には本サイクルの証跡のみ追記し、分類・優先度・検証レベルなどの既存決定は変更しない。
+- 追加方針変更なしのため、ADR新規起票は不要（既存 CDC を継続利用）。
+
+### Phase 4 Verify（docs-check）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- 実行: `rg -n "DOC-OPS-05-11|Improve external|Phase 1 Read|Phase 5 Proceed" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+- 実行: `git diff --check`
+- 判定: 失敗時の自己修復は最大3回。3回超過時は `StoppedForClarification` で停止。
+
+### Phase 5 Proceed（次担当への引継ぎメモ）
+- 判定: **Ready**
+- 引継ぎ: 次担当は `operations.md` 本文の既存runbook節を維持しつつ、内部限定情報混入の有無のみを重点監査する。
+- フェイルセーフ: 担当外doc編集要求・分類未合意・検証3回超過のいずれかで停止する。
