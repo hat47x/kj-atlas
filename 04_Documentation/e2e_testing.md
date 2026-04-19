@@ -804,3 +804,12 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 ### Phase 5 Proceed/Stop
 - 判定: **Ready**
 - 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
+
+
+## Stream F HIL-RS-02-A3 docs-check sync log（2026-04-19）
+
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` / `operations.md` / `security.md` / `security_operational_guidelines.md` / 本書を再読。
+- Phase 2 用語同期: `Security Officer / System Owner / Platform Operator` と状態語彙（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` + `StoppedForClarification`）を確認。
+- Phase 3 D1〜D4整合: `4h / 2h / 代理承認なし / 48h + 15m/60m` の固定値一致を確認。
+- Phase 4 Verify: issue memo validator、語彙/固定値 `rg`、`git diff --check` で docs-check pass。
+- Phase 5 Proceed: **Ready**。統合ストリームには「不整合再発時は3回修復上限、超過時停止」を引き継ぐ。
