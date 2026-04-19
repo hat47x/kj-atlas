@@ -7,7 +7,7 @@
 - Out-of-scope policy: editing non-target files is prohibited; contract changes must be routed back to A1.
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Done (2026-04-19 Stream C serial completion: A1→A2→A3 closed)
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream D（FB-P2B + FB-P0 baseline lane）
@@ -576,3 +576,44 @@
 ### Phase 6: Proceed
 - Go条件: 参照整合=OK、競合=0、優先度逆転=0。
 - Fail-safe停止条件: 依存矛盾 / 契約ドリフト / 未定義競合 / 修復4回目相当。
+
+
+## Stream C exclusive completion update（2026-04-19）
+
+- Scope lock: edited only `issue-FB-P2B-01-a1-interface-contract.md` / `issue-FB-P2B-01-a2-mock-validation.md` / `issue-FB-P2B-01-a3-implementation.md`。
+- Fail-safe precheck: `ContractID/DependsOnContractID/ReferenceContractID` 一致、依存順序 `A1 -> A2 -> A3`、指定外編集要求なし。
+
+### Phase 1 Read
+- Phase開始時再Read: 上記3ファイルを再読。
+- Plan: 契約ID・依存順序・停止条件を照合する。
+- Execute: `CTR-2B-01-CANDIDATE-GROUP-V1` 三点一致を確認。
+- Verify: 不一致なし（Pass）。
+- Proceed: Phase 2へ。
+
+### Phase 2 A1固定
+- Phase開始時再Read: 上記3ファイルを再読。
+- Plan: A1契約を再凍結し、方針変更なしを確認する。
+- Execute: `SimilarCandidateGroup` / `CandidateListViewModel` / 比較キー固定を再確認。
+- Verify: 既存方針に変更なし（ADR更新不要、承認待ち事項なし）。
+- Proceed: Phase 3へ。
+
+### Phase 3 A2モック
+- Phase開始時再Read: 上記3ファイルを再読。
+- Plan: mock/fixture前提で順序保持・非自動確定・再読込復元を保持する。
+- Execute: A2の検証条件をA1契約参照のみで再固定。
+- Verify: 契約拡張要求なし、依存逆転なし（Pass）。
+- Proceed: Phase 4へ。
+
+### Phase 4 A3接続
+- Phase開始時再Read: 上記3ファイルを再読。
+- Plan: A3を契約参照専用ハンドオフとして閉じる。
+- Execute: A3開始条件/停止条件/差し戻し条件をA1/A2整合のまま確定。
+- Verify: 実装先行・契約再定義の混入なし（Pass）。
+- Proceed: Phase 5へ。
+
+### Phase 5 Verify
+- Phase開始時再Read: 上記3ファイルを再読。
+- Plan: docs-checkで整合を確認し、必要時のみ自己修復（最大3回）。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行。
+- Verify: Pass（self-correction 0/3）。
+- Proceed: FB-P2B-01 A1→A2→A3 を Stream C 単独で完遂としてクローズ。
