@@ -290,3 +290,29 @@ Proceed 条件:
   - D1〜D4 不整合 0 件
   - safeMode 後退 0 件
   - 許可外編集 0 件
+
+## Stream F A3 Operations Documentation Sync (2026-04-19)
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、状態語彙・役割語彙・D1〜D4固定値を確認。
+- `04_Documentation/operations.md` / `04_Documentation/security.md` / `04_Documentation/e2e_testing.md` を再読し、runbook整合と導線（architecture -> security -> guidelines -> e2e）を確認。
+
+### Phase 2 Plan
+- ACを再固定: 用語一致 / 役割分離 / 固定値一致 / 導線一致 / 許可外編集ゼロ。
+- フェイルセーフを再確認: 語彙ドリフト、固定値不一致、未承認決定混入時は `StoppedForClarification` で停止。
+
+### Phase 3 ADR CDC（必要時のみ）
+- AUTH-OPS-03 固定値に変更はなく、追加ADRは不要と判断。
+
+### Phase 4 Execute
+- docs-check で4観点（用語・役割・導線・D1〜D4固定値）を再検証。
+- 結果: 許可スコープ内文書の canonical 表現は既に一致しており、`operations.md` / `security.md` / `e2e_testing.md` の追加修正は不要。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py` : pass
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass
+- `rg` 2系統（語彙・固定値 / 相互リンク）: pass
+- `git diff --check` : pass
+
+### Proceed 判定
+- **Ready（継続可能）**。D1〜D4不整合0件、語彙ドリフト0件、未承認決定混入0件。
