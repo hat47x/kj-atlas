@@ -154,3 +154,25 @@
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+
+## Stream H serial cycle（2026-04-19 / DOC-OPS-05-02）
+
+### Phase 1 Read
+- `issue-doc-ops-05-02` と本書を再Readし、Classification=**Move internal** と DecisionStatus=Fixed を確認。
+
+### Phase 2 ADR CDC
+- 追加ADR不要。既存CDCで継続。
+
+### Phase 3 Plan
+- AC/DoD不足なし。公開境界スタブ運用を維持。
+
+### Phase 4 Execute
+- 公開文書は最小説明に限定し、内部運用は正本参照へ誘導。
+
+### Phase 5 Verify
+- docs-check（必須メタ・参照整合・`git diff --check`）を実施。
+- 自己修復上限3回。
+
+### Phase 6 Proceed
+- 状態: **Ready**

@@ -535,3 +535,30 @@
 ### Phase 5 Proceed（差分要約）
 - 判定: **Ready**
 - 停止条件: 分類不能・対象外編集要求・自己修復3回超過を検知した場合は停止する。
+
+
+## Stream H serial execution record（2026-04-19, DOC-OPS-05-01）
+
+### Phase 1 Read
+- 対象Issueと `04_Documentation/canonicalization.md` を再Readし、`Scope / RequirementID / DecisionStatus=Fixed` を確認。
+- Classification は **Move internal** を維持し、docs-only スコープを再確認。
+
+### Phase 2 ADR CDC
+- 判定: **ADR追加不要**。既存CDC（Issue本文）で方針変更なし。
+- Context / Decision / Consequences は既存記録を正本とし、承認待ちは発生しない。
+
+### Phase 3 Plan
+- AC/DoD不足なし。既存AC（Audience / Goal / Public boundary / Validation）を採用。
+- 未合意の新規仕様は追加しない。
+
+### Phase 4 Execute
+- 「内部文書へ移動（Move internal）」分類を維持。
+- 実行方針: 公開stubを維持し、詳細運用は内部正本参照へ固定。
+
+### Phase 5 Verify
+- docs-check: 必須メタ整合・公開境界メタ整合・差分整形を確認。
+- Self-Correction 上限は3回、超過時は停止報告。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 停止条件未該当（自己修復3回超過 / 前提条件崩れ / 未定義競合なし）。

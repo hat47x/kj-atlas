@@ -479,3 +479,29 @@
 ### Phase 5 Proceed（差分要約）
 - 判定: **Ready**
 - 停止条件: 分類不能・対象外編集要求・自己修復3回超過を検知した場合は停止する。
+
+
+## Stream H serial execution record（2026-04-19, DOC-OPS-05-04）
+
+### Phase 1 Read
+- 対象Issueと `04_Documentation/diagnostics.md` を再Readし、`Scope / RequirementID / DecisionStatus=Fixed` を確認。
+- Classification は **Improve external** を維持。
+
+### Phase 2 ADR CDC
+- 判定: **ADR追加不要**。worker契約公開方針に変更なし。
+- Context / Decision / Consequences は既存Issue本文で追跡可能。
+
+### Phase 3 Plan
+- AC/DoD不足なし。契約/フォールバック/決定論の公開品質維持を計画固定。
+
+### Phase 4 Execute
+- 「対外文書として改善（Improve external）」分類を維持。
+- 実行方針: 公開runbookの説明品質を維持し、内部監査詳細は持ち込まない。
+
+### Phase 5 Verify
+- docs-check: 必須メタ、契約語彙、差分整形を確認。
+- Self-Correction は最大3回。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- フェイルセーフ条件への該当なし。
