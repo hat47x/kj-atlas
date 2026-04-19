@@ -593,3 +593,46 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
   2. 固定ID不一致
   3. 自己修復3回超過
 - 停止時は `approvalStatus="pending"` とし、指示待ちに遷移する。
+
+## Stream A Critical Path Execution (2026-04-19, A1 Contract Lock)
+
+### Phase 1 Read（Status/Priority/DecisionStatus/ContractID/GoNoGoGate）
+
+| Memo | Status | Priority | DecisionStatus | ContractID | GoNoGoGate |
+| --- | --- | --- | --- | --- | --- |
+| HIL-RS-01 umbrella | Open | P1 | Fixed | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | `a1Status=="Done" && pendingDecisionQueueCount==0` |
+| HIL-RS-01 A1 | Open | P1 | Fixed | `A1-CRITIQUE-IF\|A1-REDIFF-IF\|A1-ATTR-IF\|A1-ERROR-IF` | `Go = StartAllowed`, `NoGo = !StartAllowed` |
+| HIL-RS-02 umbrella | Open | P1 | Fixed | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | `a1Status=="Done" && pendingDecisionQueueCount==0` |
+| HIL-RS-02 A1 | Open | P1 | Fixed | `A1-CRITIQUE-IF\|A1-REDIFF-IF\|A1-ATTR-IF\|A1-ERROR-IF` | `a1Status=="Done" && pendingDecisionQueueCount==0` |
+
+### Phase 2 ADR CDC
+- Context: `ADR-0026/0027/0028` との差分は検出されず、契約再定義は不要。
+- Decision: `DecisionStatus=Fixed` を維持し、承認待ちCDCを新規追加しない。
+- Consequences: 下流A2/A3はread-only handoffのみ許可、契約差分要求はA1へ差戻し。
+
+### Phase 3 Plan
+- AC/DoD不足はなし（既存ACに加えて `ContractID collision=0` / `GoNoGoGate ambiguity=0` を充足）。
+- `agreementStatus=agreed` を前提に Execute 進行可と判定。
+
+### Phase 4 Execute（A1契約固定証跡）
+- `contractLinkLocked=true` を固定値として維持。
+- `sharedResourceFreeze=true` を固定値として維持。
+- 固定I/F: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`。
+
+### Phase 5 Verify
+- docs-check: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- link/identifier check: `rg -n "HIL-RS-02-A1-CONTRACT-FREEZE-v1|A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF|contractLinkLocked=true|sharedResourceFreeze=true|a1Status==\"Done\" && pendingDecisionQueueCount==0" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- Self-Correction実行回数: 0/3（初回で整合）。
+
+### Phase 6 Proceed（固定I/F一覧 + 非目標）
+- 固定I/F一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 非目標（変更禁止点）:
+  - A2/A3側での契約ID/固定値再定義
+  - Pending bypass
+  - SafeMode後退 / share-export緩和

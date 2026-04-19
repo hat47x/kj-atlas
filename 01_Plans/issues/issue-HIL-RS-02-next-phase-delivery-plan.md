@@ -557,3 +557,28 @@
 
 ### Fail-safe（本ストリーム）
 - 未承認決定の確定化、固定ID不一致、自己修復3回超過は停止して指示待ち。
+
+## Stream A Critical Path Execution (2026-04-19)
+
+### Phase 1 Read
+- Status=`Open`, Priority=`P1`, DecisionStatus=`Fixed` を再確認。
+- ContractID=`HIL-RS-02-A1-CONTRACT-FREEZE-v1` と A1 contract IDs を参照固定。
+- GoNoGoGate=`a1Status=="Done" && pendingDecisionQueueCount==0` を維持。
+
+### Phase 2 ADR CDC
+- Context/Decision/Consequences の上位差分は検出なし。
+- 承認待ちCDCの新規作成は不要（既存固定方針を継続）。
+
+### Phase 3 Plan
+- AC/DoD不足なし。`agreementStatus=agreed` を維持し Execute へ進行。
+
+### Phase 4 Execute（A1契約固定証跡）
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` の固定証跡を維持。
+- A2/A3はread-only handoffでのみ契約値を利用（再定義禁止）。
+
+### Phase 5 Verify
+- docs-check / 依存リンク整合 / ContractID collision=0 を確認（Self-Correction 0/3）。
+
+### Phase 6 Proceed（固定I/F + 非目標）
+- 固定I/F: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`。
+- 非目標: Pending bypass、A2/A3での契約変更、安全境界の緩和。

@@ -596,3 +596,29 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   - 未定義競合なし。
 - NoGo停止条件:
   - 上記いずれか未充足の場合は NoGo として停止報告。
+
+## Stream A Critical Path Execution (2026-04-19)
+
+### Phase 1 Read
+- Status=`Open`, Priority=`P1`, DecisionStatus=`Fixed` を再確認。
+- ContractID=`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF` を再確認。
+- GoNoGoGate=`a1Status=="Done" && pendingDecisionQueueCount==0` を再確認。
+
+### Phase 2 ADR CDC
+- Context: `ADR-0026/0027/0028` に対する方針差分なし。
+- Decision: CDC追加提案は不要。`DecisionStatus=Fixed` 維持。
+- Consequences: 承認待ち無しのため実装フェーズ（本issue更新）を継続。
+
+### Phase 3 Plan
+- AC/DoD不足はなし。`agreementStatus=agreed` 扱いで継続。
+
+### Phase 4 Execute（A1契約固定証跡）
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` をA1固定値として維持。
+- 下流引継ぎI/Fは read-only とし、変更要求は `A1-CDC-only` に限定。
+
+### Phase 5 Verify
+- docs-check + 依存リンク整合 + ContractID衝突ゼロを確認（Self-Correction 0/3）。
+
+### Phase 6 Proceed（固定I/F + 非目標）
+- Fixed I/F: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`。
+- 非目標: A2/A3による契約値再定義、SafeMode後退、share-export緩和。
