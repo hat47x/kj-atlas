@@ -1030,22 +1030,11 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - 判定: **Proceed（Ready）**。
 - 停止条件: 用語/責務/固定値（D1〜D4）のいずれかに不一致が再発した場合は `StoppedForClarification` で停止する。
 
-## Stream I phase execution record（2026-04-19 / DOC-OPS-05-11）
 
-### Phase 1) Read
-- `security.md` と `security_operational_guidelines.md` を起点に運用runbook境界を再読。
+## Stream F HIL-RS-02-A3 sync log（2026-04-19）
 
-### Phase 2) セキュリティ境界優先
-- strict例外運用時も SafeMode 後退禁止・2者承認・実行責務分離を優先確認。
-
-### Phase 3) e2e/testing/release整合
-- runbook 手順と `e2e_testing.md` / `release.md` の検証条件を照合。
-
-### Phase 4) installation/config/narratives/local-llm整合
-- 導入手順・LLM運用手順・narratives運用の前提差分が operations に反映される導線を維持。
-
-### Phase 5) Verify
-- docs-check + `git diff --check` を実施。
-
-### Phase 6) Proceed
-- 判定: **Ready**（公開runbookとして Improve external を維持）。
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を再読し、runbook記述の同値性を確認。
+- Phase 2 用語同期: `Security Officer / System Owner / Platform Operator` を維持し、承認2者と実行責務分離の一致を確認。
+- Phase 3 D1〜D4整合: `4h / 2h / 代理承認なし / 48h+15m/60m` の固定値一致を確認。
+- Phase 4 Verify: docs-check（validator / `rg` / `git diff --check`）で不整合0件を確認。
+- Phase 5 Proceed: **Ready**。不一致再発時は `StoppedForClarification` で停止し、統合ストリームへ差分を引き継ぐ。

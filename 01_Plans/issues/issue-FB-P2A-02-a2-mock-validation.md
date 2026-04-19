@@ -340,3 +340,22 @@
 ### Phase 5 (Proceed)
 - A2の引き渡し条件を満たすため A3 Proceed 可。
 - 未解決・判定不一致が発生した場合は **A1 または Decision Queue へ差し戻し** とする。
+
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A2 refresh)
+
+### Phase 1 Read同期
+- A1/A2/A3 の3ファイルを再Readし、A1固定契約値と A2 DependsOn を再照合。
+- 差分前提: `ContractID`/`ContractVersion`/GoNoGo (`M1/M2/M3=pass`, `M4=fail`) に競合なし。
+
+### Phase 3 A2モック検証
+- fixture/stub 前提を再確認し、実装依存を持ち込まない条件を維持。
+- 検証ログI/Fを固定: `contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`。
+
+### Phase 5 Verify（A1→A2因果証跡）
+- A1 Invariants が A2 判定基準（非表示・復帰・冪等・不正要求拒否）へ写像されることを確認。
+- A2 ledger が A3 の `implementationReadiness` 判定入力として利用可能であることを確認。
+- self-correction 使用回数: `0/3`。
+
+### Phase 6 Proceed
+- Proceed判定: `Pass`（A3 handoff 可能）。

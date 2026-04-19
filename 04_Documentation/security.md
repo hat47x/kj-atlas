@@ -700,6 +700,14 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 - 判定: **Ready**
 - 停止条件: 役割語彙・導線・固定値（D1〜D4）不一致、または自己修復3回超過を検知した場合は `StoppedForClarification` で停止。
 
+## Stream F HIL-RS-02-A3 sync log（2026-04-19）
+
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` を正本として再読し、`security.md` / `operations.md` / `e2e_testing.md` と導線整合を確認。
+- Phase 2 用語同期: `Security Officer / System Owner / Platform Operator` を維持し、2者承認+実行責務分離を再確認。
+- Phase 3 D1〜D4整合: D1=4h、D2=2h、D3=代理承認なし、D4=48h+15m/60m の一致を再確認。
+- Phase 4 Verify: docs-check（語彙・固定値・リンク・diff）を実施し不整合0件。
+- Phase 5 Proceed: **Ready**。差分再発時は fail-safe に従い `StoppedForClarification` で停止。
+
 ## Stream G 実行記録（DOC-OPS-05文書群② / 2026-04-19）
 
 ### Phase 1 Read同期
@@ -722,24 +730,3 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed（Ready）**。
 - 停止条件: Verify不一致が自己修復3回で収束しない場合は `StoppedForClarification` として停止する。
-
-## Stream I boundary-first execution record（2026-04-19 / DOC-OPS-05-13）
-
-### Phase 1) Read
-- `02_Architecture/strict_mode_exception_approval_flow.md` と `04_Documentation/security_operational_guidelines.md` を再読し、D1〜D4・役割語彙・SafeMode境界を再確認。
-
-### Phase 2) セキュリティ境界優先
-- SafeMode 既定ON、share/export 漏えい防止、review昇格の人手限定を後退不可として再固定。
-
-### Phase 3) e2e/testing/release整合
-- `04_Documentation/e2e_testing.md` / `04_Documentation/operations.md` / `04_Documentation/release.md` への導線を再点検し、検証系文書との境界整合を確認。
-
-### Phase 4) installation/config/narratives/local-llm整合
-- `installation.md` / `local_llm_ops_guide.md` / `narratives.md` の公開境界説明が security 基底方針と矛盾しないことを確認。
-
-### Phase 5) Verify
-- docs-check（語彙・導線・固定値）と `git diff --check` で体裁を確認。
-- 自己修復上限は3回、4回目相当は `StoppedForClarification` で停止。
-
-### Phase 6) Proceed
-- 判定: **Ready**（security基底方針の境界を維持しつつ、関連運用文書と整合）。

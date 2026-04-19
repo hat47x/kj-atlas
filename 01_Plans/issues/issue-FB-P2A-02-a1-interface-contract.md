@@ -319,3 +319,21 @@
 ### Phase 5 (Proceed)
 - Proceed条件: A1固定値を変更せずA2へ引き渡し可能。
 - 未解決が発生した場合は **A1 または Decision Queue へ差し戻し** とする。
+
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A1 refresh)
+
+### Phase 1 Read同期
+- A1/A2/A3 の3ファイルを再Readし、`ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1`、依存順序 `A1 -> A2 -> A3`、`DecisionStatus=Fixed` を再照合。
+- 差分前提: 契約値・依存リンク・GoNoGo 条件にドリフトなし。
+
+### Phase 2 A1契約固定
+- I/Fシグネチャ固定を再確認: `IslandVisibilityContractV1` の Required fields は `island.id`, `island.isCollapsed`, `view.hiddenDescendantIslandIds`, `view.hiddenCardIds`。
+- 決定論ルール固定を再確認: collapse/expand は view state のみ変更し document 構造を破壊しない。
+
+### Phase 5 Verify（A1因果証跡）
+- A1契約が A2 mock case（M1〜M4）の判定軸を規定し、A3 handoff payload の `contractId/contractVersion` を拘束する因果を確認。
+- self-correction 使用回数: `0/3`。
+
+### Phase 6 Proceed
+- Proceed判定: `Pass`（A2へ進行可）。
