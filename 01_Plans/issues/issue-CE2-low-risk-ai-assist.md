@@ -1,7 +1,7 @@
 # Issue Draft: CE2 Low-Risk AI Assist（Stream E / proposal-only）
 
 - Type: Feature request
-- Status: Open
+- Status: Completed (contract freeze confirmed / docs-only)
 - Priority: P1
 - Owner: Stream E（CE2専属）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
@@ -63,3 +63,27 @@
 - Lifecycle: `proposed -> accepted/rejected/held`
 - Fail-safe: drift時 `held` 固定
 - フェイルセーフ: 3回超過・禁止経路混入・未定義競合で停止。
+
+## Stream E Completion Notes (2026-04-19)
+
+### Phase 1 Read同期 + スコープ固定
+- `AGENTS.md` Read Order（00→02）と本Issueを再読し、CE2は docs-only / contract-only lane で固定。
+- 編集対象を `issue-CE2-low-risk-ai-assist.md` のみに固定し、codepath変更禁止を明記再確認。
+
+### Phase 2 契約確認（CDC）
+- CDC明文化:
+  - Contract IDs: `CE2-PROPOSAL-IF / CE2-LIFECYCLE-IF / CE2-DRIFT-STOP-IF / CE2-NO-AUTOAPPLY-IF`
+  - Required keys: `proposalId/diff/sourceBundleHash/rationale/status/reviewState`
+  - Guardrail: auto-apply禁止、AIによる`human_reviewed`自動昇格禁止
+- 上記契約は `02_Architecture/schemas.md` のCE2契約節と語彙衝突なし（再定義なし）を確認。
+
+### Phase 3 Execute（CE2 lane）
+- 実装追加は行わず、proposal-only契約の固定と停止条件（drift時`held`）を運用入力として確定。
+- `sourceBundleHash=mock:<hash>` を許容する依存切断方針を維持。
+
+### Phase 4 Verify（docs-check）
+- docs-check として issue memo validator / unit test を実行し、契約語彙の構文整合を確認。
+
+### Phase 5 Proceed/Stop
+- Proceed 判定: ✅（契約衝突0 / 禁止経路混入0 / 再修復回数0）
+- Stop 条件（3回超過）は未発火。

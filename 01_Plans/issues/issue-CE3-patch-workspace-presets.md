@@ -1,7 +1,7 @@
 # Issue Draft: CE3 Patch Workspace / Query Presets
 
 - Type: Feature request
-- Status: In Progress (CE3 workspace panel + preset replay + rollback導線)
+- Status: Completed (workspace/preset/rollback AC satisfied)
 - Source Issue: N/A
 - Priority: P2
 - Owner: Frontend Team
@@ -258,6 +258,32 @@
 - 未完了事項は従来どおり CE4 連携（local audit log の document監査ログ昇格）を継続課題として据え置き。
 
 ### Phase 5 Proceed（未達/既知制約）
+
+## 13) Stream E Completion Notes (2026-04-19)
+
+### Phase 1 Read同期 + スコープ固定
+- CE3 issue / CE3 domain+UI+E2E tests を再読し、残課題が「検証再現」と「CE4への監査昇格引き継ぎ」であることを確認。
+- スコープは CE3検証・issue更新のみ（Core/Consensus直接編集なし）で固定。
+
+### Phase 2 契約確認（CDC）
+- CE3契約を以下で再確認:
+  - candidate decision lifecycle: `adopt/reject/hold`
+  - rollbackは可逆であり、監査遷移は local state に記録
+  - preset replay は正規化 query を再現
+- CE2/CE4契約との境界（proposal-only / audit event）は read-only参照として保持し、CE3側で再定義しない。
+
+### Phase 3 Execute（収束）
+- 実装差分は不要と判断し、CE3受入条件の収束判定を更新。
+- 未完了事項を「CE4での document監査ログ昇格」に限定して明示。
+
+### Phase 4 Verify（unit/integration優先）
+- unit: CE3 domain/ui/preset 対象テスト実行。
+- integration(e2e): CE3 patch workspace grep で回帰確認。
+- 失敗時自己修復上限（3回）に到達せず収束。
+
+### Phase 5 Proceed/Stop
+- Proceed 判定: ✅（AC未達なし、safeMode後退なし、契約逸脱なし）
+- Stop 条件（3回超過）は未発火。
 
 ## 13) Stream E Phase Notes (2026-04-18)
 

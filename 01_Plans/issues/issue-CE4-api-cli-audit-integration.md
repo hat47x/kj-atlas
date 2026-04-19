@@ -1,7 +1,7 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream G / CE4専属 / planning-only）
+# Issue Draft: CE4 API/CLI/監査統合（Stream E execution / planning-only）
 
 - Type: Feature request
-- Status: Open
+- Status: Completed (planning I/F freeze confirmed)
 - Priority: P2
 - Owner: Stream G（CE4専属）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
@@ -61,3 +61,28 @@
   1) 同値判定は `equivalenceKey + bundleHash` のみ
   2) 監査4点欠損ゼロ
   3) `mock:<hash>` 許容で依存切断
+
+## Stream E Completion Notes (2026-04-19)
+
+### Phase 1 Read同期 + スコープ固定
+- CE4 lane を planning-only / docs-only として再固定。
+- 編集対象を本Issueファイルに限定し、API/CLI実装ファイル変更は非対象とした。
+
+### Phase 2 契約確認（CDC）
+- CDC明文化:
+  - 同値性: `equivalenceKey AND bundleHash`
+  - 監査4点: `query/bundle/proposal/apply`（欠損はfail-closed）
+  - `dryRun=true -> sideEffect=none`
+  - `sourceBundleHash=mock:<hash>` 許容
+- `02_Architecture/schemas.md` の CE4 `AuditEventV1` 契約と照合し、語彙衝突なしを確認。
+
+### Phase 3 Execute（CE4 lane）
+- 実装要件の追加は行わず、固定I/Fを実装入力として再提示する形に限定。
+- hash種別（mock/本番）で監査フローを分岐しない方針を維持。
+
+### Phase 4 Verify（docs-check）
+- docs-check 実行結果で issue memo の整合を確認（validator + unit test）。
+
+### Phase 5 Proceed/Stop
+- Proceed 判定: ✅（同値判定軸の再定義0 / 監査欠損許容0 / 再修復回数0）
+- Stop 条件（3回超過・契約衝突）は未発火。
