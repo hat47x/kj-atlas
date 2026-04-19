@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
 - Priority: P0
-- Owner: Stream C（FB-P2A planning memo exclusive）
+- Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
@@ -24,7 +24,7 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
-## Phase management（Stream C / FB-P2A serial lock）
+## Phase management（Stream B / FB-P2A serial lock）
 
 - Phase 1 Read: A1/A2/A3 3点を再読し、ContractID・依存関係を照合する。
 - Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認まで停止する。
@@ -128,7 +128,7 @@
 | `M1..M4` | A2 mockCaseId | A3 verification checklist |
 | `ownerOfFix` | A2 failure routing | A3 backlog split (A1/A2/A3) |
 
-## A3 implementation connection guard（Stream C / Phase 4）
+## A3 implementation connection guard（Stream B / Phase 4）
 
 - 着手条件（Start）:
   - `IslandVisibilityContractV1` がA1で固定され、A2ログがM1〜M4全件で存在する。
@@ -151,7 +151,7 @@
   - Phase開始ごとに上記3ファイルを再Readし、差分競合がある場合は推測継続せず停止・報告する。
 
 
-## Stream C strict serial protocol（Phase 1→5）
+## Stream B strict serial protocol（Phase 1→5）
 
 ### Phase 1 Read
 - 対象ファイル（A1/A2/A3の3点）を**Phase開始時に必ず再Read**する。
@@ -182,7 +182,7 @@
 - Self-Correction は最大3回。4回目相当は**停止して指示待ち**とする。
 
 
-## Stream C lane guard（FB-P2A only）
+## Stream B lane guard（FB-P2A only）
 
 - 編集対象は FB-P2A A1/A2/A3 issue のみ（CE/HIL/03_Implement は対象外）。
 - Plan→Execute→Verify→Proceed の順序を固定し、順序逆転時は停止する。
@@ -190,7 +190,7 @@
 - モック前提で依存を切断し、実装依存（renderer/state管理/関数名）を持ち込まない。
 - 未解決・責務未確定は Proceed せず Decision Queue へ返却する。
 
-## Stream C execution override（FB-P2A A1→A2→A3）
+## Stream B execution override（FB-P2A A1→A2→A3）
 
 - 同一レーン内依存は A1→A2→A3 の**直列処理のみ**を許可する。
 - 外部レーン完了待ちは禁止し、依存解決は当該レーン内で閉じる。
@@ -217,7 +217,7 @@
 - 指定外ファイル編集要求を検出した場合は停止する。
 - 停止時対応: 推測継続を禁止し、停止理由と再開条件を記録して指示待ち。
 
-## Phase execution record（FB-P2A-02 / Stream C）
+## Phase execution record（FB-P2A-02 / Stream B）
 
 ### Phase 1 Read（再Read済み）
 - A1/A2/A3 の3ファイルを再Readし、依存順序 `A1 -> A2 -> A3` と ContractID 一致を確認。
@@ -238,9 +238,9 @@
 ### Phase 5 Verify / Proceed
 - GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）と docs-check を満たす場合のみ Proceed。
 - self-correction は最大3回。超過時は停止して判断待ち。
-- Proceed decision: **Completed（A1→A2→A3 を Stream C 単独で完遂）**。
+- Proceed decision: **Completed（A1→A2→A3 を Stream B 単独で完遂）**。
 
-## Stream C execution log (2026-04-18, FB-P2A-02 A3)
+## Stream B execution log (2026-04-18, FB-P2A-02 A3)
 
 ### Phase 1 Read
 - A1/A2/A3 の3ファイルを再Readし、依存順序 `A1 -> A2 -> A3` と ContractID/ContractVersion の一致を再確認。
@@ -264,9 +264,9 @@
 - self-correction 回数: 0/3。
 
 ### Phase 6 Proceed
-- Proceed判定: **Completed**（FB-P2A-02 を Stream C の A1→A2→A3 直列で完了）。
+- Proceed判定: **Completed**（FB-P2A-02 を Stream B の A1→A2→A3 直列で完了）。
 
-## Stream C fixed I/F injection lock（FB-P2A-02）
+## Stream B fixed I/F injection lock（FB-P2A-02）
 
 - ContractID: `CTR-2A-02-COLLAPSE-EXPAND-V1`（Fixed）
 - ContractVersion: `IslandVisibilityContractV1`（Fixed）
@@ -283,7 +283,7 @@
 - Phase 6 Proceed rule（Fixed）:
   - **NoGo の場合は停止し、A1へ差し戻す。**
 
-## Stream C delta log (2026-04-18, FB-P2A-02 A3 lane re-check)
+## Stream B delta log (2026-04-18, FB-P2A-02 A3 lane re-check)
 
 ### Phase 1 Read re-check（ContractID/DependsOn/Unblocks）
 - DependsOnContractID: `CTR-2A-02-COLLAPSE-EXPAND-V1`
@@ -298,3 +298,16 @@
 ### Phase 5 Verify / Phase 6 Proceed
 - Verify最小セット: `docs-check` + ContractLinks一致 + GoNoGo一致。
 - Proceed rule: 矛盾検知時は **A1へ差戻し**。
+
+## Stream B phase closure record (2026-04-19)
+
+### Phase 1 Read
+- A1/A2/A3 を再Readし、依存順序 `A1 -> A2 -> A3` と `ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1` の一致を確認。
+
+### Phase 4 A3 implementation connection
+- A1/A2 固定値（contract lock + mock ledger）を前提に handoff 条件を再定義なしで固定。
+- 実装接続条件は `GoNoGo=Go`（`M1/M2/M3=pass` かつ `M4=fail`）と `ownerOfFix` 解決済みを必須化。
+- 契約再定義禁止・指定外ファイル編集禁止・推測補完禁止を継続適用。
+
+### Phase 5 Verify
+- docs-check 実行と依存リンク整合確認が完了した場合のみ Proceed。
