@@ -672,3 +672,12 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute（単一変更セット）: shared resource 3ファイルのみを単一変更セットで同期し、再開判定チェックリスト1行（未固定箇所0件 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持。
 - Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-37|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（次回再開条件1行）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+
+## Stream H 共有統合同期ログ（2026-04-19 rerun-38, Phase 1-5）
+
+- Phase 1 Read: shared resource 3ファイル（`01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）を再読し、件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）・Active=5・Done=26・Decision Queue（Ready=1 / Open=2）・依存順 `A1→A2→A3`・停止条件違反0件の一致を確認。
+- Phase 2 Plan: 更新差分を shared resource 3ファイルの同期ログ追記に限定し、未承認事項の確定化を行わない方針を固定。
+- Phase 3 Execute: Active一覧・Decision Queue・再開判定チェックリスト1行を3ファイルで同時同期し、単一変更セットを維持。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-38|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、件数・Queue・依存順・再開判定1行の整合を確認。
+- Phase 5 Proceed: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
