@@ -335,3 +335,31 @@
   5. 自己修復上限超過（3回超）
 - Verify結果: **Pass（Self-Correction 0/3）**。
 - Proceed: **A3へ進行可**。
+
+
+## Stream C addendum: A2モック検証条件更新（2026-04-19）
+
+### Phase 1) Read
+- A1固定契約・A2比較キー・A3着手条件を再読し、検証境界を「mock validationのみ」に限定。
+
+### Phase 3) A2モック検証条件更新
+- 固定 tie-break順序: `padding>self_intersection>area_delta>vertex_count`
+- QA再現条件（必須）:
+  1. 同一 `inputHash` + 同一 `seed` を3回反復し、`outputPolygonHash` が3/3一致。
+  2. `paddingViolationCount == 0`。
+  3. `appliedTieBreakOrder` が固定値と完全一致。
+- 比較キー（固定・追加禁止）:
+  - `inputHash`
+  - `seed`
+  - `appliedTieBreakOrder`
+  - `outputPolygonHash`
+  - `paddingViolationCount`
+
+### Phase 5) Verify（Gate記録とQA再現要件）
+- Gate参照: `DQ-FB-P2C-01` Approved を前提に維持。
+- stale判定: `2026-04-30T23:59:59Z` を超過し再実行ログ未更新なら `A2 Verify stale`。
+- 自己修復上限: Plan→Execute→Verify→Proceed を最大3サイクル。4回目は停止。
+
+### Phase 6) Proceed（Go/NoGo提案）
+- **Go（条件付き）**: QA3条件を全充足し、stale条件に抵触しない場合。
+- **NoGo**: `outputPolygonHash drift` / `paddingViolationCount > 0` / `appliedTieBreakOrder mismatch` / stale該当のいずれか。
