@@ -248,3 +248,24 @@
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed (Ready)**
 - Stop条件: docs-check不整合の自己修復が3回を超えた場合は **Stop** とし、保留化する。
+
+
+## DOC-OPS-05-01 serial run log（2026-04-19）
+
+### Phase 1 Read
+- Read対象: `04_Documentation/canonicalization.md` と対応Issue `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`。
+- 公開境界/内部境界と `VerificationLevel=docs-check` を再確認。
+
+### Phase 2 Plan
+- 本ファイルは docs-only で局所更新し、対象外（05-06以降・共有統合3ファイル・コード）へ非接触。
+
+### Phase 3 Execute
+- 既存分類 `Move internal` と Audience/Goal/Non-goal/Public boundary/Outcome/Related を維持したまま、2026-04-19 実行ログを追記。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS-05-01 serial run log|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/canonicalization.md 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 状態: **Ready**
+- 次アクション: 本セット（05-01..05）内での整合維持を継続。
