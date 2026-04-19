@@ -585,3 +585,27 @@
   3. 自己修復4回目相当（上限3回超過）
 - 判定:
   - 本更新は docs契約補強のみ。上記Stop条件非該当時のみProceed。
+
+
+## Stream C addendum: A1契約確認ログ（2026-04-19）
+
+### Phase 1) Read
+- 対象: A1/A2/A3 の3メモのみを再読し、編集境界（issues配下3ファイル限定）を固定。
+- 確認結果: `deterministicTieBreakOrder` は A1正本として維持され、A2/A3 は参照専用である。
+
+### Phase 2) A1契約確認（tie-break順序固定値）
+- 固定値（機械可読）: `padding>self_intersection>area_delta>vertex_count`
+- 固定値（表示）: `padding遵守 > 自己交差回避 > 面積最小変動 > 頂点数最小`
+- 契約ルール再確認:
+  1. 追加禁止
+  2. 省略禁止
+  3. 並べ替え禁止
+
+### Verify（Gate記録）
+- Gate参照: `DQ-FB-P2C-01` は Approved 扱いを維持。
+- 証跡必須キー: `Approver(s)`, `ApprovedAt`, `DecisionStatement`, `GateDecision`。
+- 判定: A1契約は **Fixed 維持**、A2/A3へ引き渡し可能。
+
+### Proceed（Go/NoGo提案）
+- **Go（条件付き）**: A2/A3 が上記固定順序と証跡キーを無変更で継承する場合のみ Proceed 可。
+- **NoGo**: 順序値または証跡キーの欠損・改変を検知した場合は即時停止し、A1差し戻し。

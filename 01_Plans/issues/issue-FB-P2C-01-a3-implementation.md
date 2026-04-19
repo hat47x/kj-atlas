@@ -353,3 +353,36 @@
   6. 自己修復上限超過（3回超）
 - Verify結果: **Pass（Self-Correction 0/3）**。
 - Proceed: **Yes（条件成立時のみ）**。
+
+
+## Stream C addendum: A3実装受入条件更新（2026-04-19）
+
+### Phase 1) Read
+- A1固定契約とA2 handoff（`A2-HANDOFF-FB-P2C-01-2026-03-14`）を再読し、A3の受入境界を更新。
+
+### Phase 4) A3実装受入条件更新
+- A3 Entry 必須条件:
+  1. `GateDecision=approved`
+  2. `A2 Verify Pass`
+  3. `deterministicTieBreakOrder = padding>self_intersection>area_delta>vertex_count`
+- 受入条件（Implementation AC）:
+  - `outputPolygonHash` がA2比較キーで再現可能。
+  - `paddingViolationCount == 0` を維持。
+  - `tieBreakOrderChanged == false`（追加/省略/並べ替え禁止）。
+- QA再現要件（A3側）:
+  - A2比較キー5点をそのまま利用し、キーの増減を禁止。
+
+### Phase 5) Verify（Gate記録とQA再現要件）
+- Verify証跡キー:
+  - `gateApprovalRef`
+  - `a2VerifyRef`
+  - `inputHash`
+  - `outputPolygonHash`
+  - `paddingViolationCount`
+- 失敗時処理:
+  - Block criteria 1件該当で即停止し、A2比較キー再検証へ差し戻し。
+- 自己修復上限: 最大3回。超過時は `Proceed=No` 固定。
+
+### Phase 6) Proceed（Go/NoGo提案）
+- **Go（条件付き）**: Entry条件3点 + Verify証跡5点 + rollback導線有効を全て満たす場合。
+- **NoGo**: `GateDecision != approved` / `A2 Verify stale|fail` / `appliedTieBreakOrder mismatch` / `paddingViolationCount > 0` / `outputPolygonHash drift`。
