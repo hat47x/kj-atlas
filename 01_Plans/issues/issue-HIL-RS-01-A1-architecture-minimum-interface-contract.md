@@ -706,3 +706,63 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 ### Phase 5: Gate
 - `a1Status=="Done" && pendingDecisionQueueCount==0 && agreementStatus=="agreed"` 以外は NoGo。
 - Self-Correction 3回超過時は即停止し、推測修正を禁止。
+
+## Stream A Contract & Decision Log Lock (2026-04-19)
+
+### Phase 1 (Read) — 不整合棚卸し
+- 再読対象（固定4ファイル）:
+  - `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `issue-HIL-RS-02-next-phase-delivery-plan.md`
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+- 不整合として検出した記述:
+  1. `対象5 issue` / `対象3ファイル` / `対象4 issue` の表記ゆれ。
+  2. Verifyコマンドが編集禁止ファイル（例: `issue-HIL-RS-02-A3-operations-documentation-sync.md`）を参照する箇所。
+  3. Decision Queue参照が `DecisionQueue` / `Decision Queue` で混在。
+- 本ロック更新では、**判定対象は固定4ファイルのみ** とし、表記を `Decision Queue` に統一する。
+
+### Phase 2 (Plan) — AC/DoD補完案の固定
+- AC追加（固定）:
+  - [x] `Status=Open` / `Priority=P1` が4ファイルで一致。
+  - [x] `Go/Proceed` 判定式が `a1Status=="Done" && pendingDecisionQueueCount==0` を中核に一致。
+  - [x] Decision Queue遷移が `Pending -> Approved | Rejected` のみ。
+  - [x] Verify対象が固定4ファイルから逸脱しない。
+- DoD追加（固定）:
+  - [x] `Plan -> Execute -> Verify -> Proceed` の順序証跡を本節に残す。
+  - [x] Verify失敗時Self-Correctionは最大3回。4回目は禁止（停止・エスカレーション）。
+
+### Phase 3 (ADR明文化) — 仕様変更が必要な論点のみ
+- Context: 既存メモ群は契約値そのものよりも「参照範囲/表記ゆれ」でドリフトリスクがある。
+- Decision: 契約値変更は行わず、**参照範囲を固定4ファイルへ制限**し、Decision Queue表記を統一する。
+- Consequences: 追加仕様変更要求は `A1-CDC-only` で承認待ち化し、未承認のまま確定しない。
+
+### Phase 4 (Execute) — 契約ID・Gate条件・停止条件固定
+- Contract IDs（固定）:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+  - `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+- Gate条件（固定）:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+  - `NoGo = !Go`
+- 停止条件（固定）:
+  - Self-Correction 3回超過
+  - 編集境界違反（固定4ファイル外の編集が必要）
+  - 前提契約未定義（contract IDs / freeze keys / gate式の欠落）
+
+### Phase 5 (Verify) — 自己検証
+- 整合確認:
+  - Status/Priority/Gate式/Freeze keys/Decision Queue遷移を固定4ファイルで照合。
+- リンク確認:
+  - 差し戻し先は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定。
+- 重複・矛盾確認:
+  - 旧ログの「対象5 issue」等は履歴として残すが、**本節の固定値を優先**する。
+
+### Phase 6 (Proceed) — 次ストリーム向け固定値一覧
+- `Status`: `Open`（4ファイル共通）
+- `Priority`: `P1`（4ファイル共通）
+- `Decision Queue rule`: `Pending -> Approved | Rejected`（bypass禁止）
+- `Go/Proceed core gate`: `a1Status=="Done" && pendingDecisionQueueCount==0`
+- `Freeze keys`: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
+- `Return path`: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
+
