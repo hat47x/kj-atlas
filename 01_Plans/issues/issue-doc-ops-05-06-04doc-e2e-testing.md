@@ -462,3 +462,29 @@
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
+
+## 18) Stream I mid-1 execution record (2026-04-19, DOC-OPS-05-06)
+
+### Phase 1 Read（対象再読）
+- 本Issue本文と `04_Documentation/e2e_testing.md` を再読し、Scope/Classification/VerificationLevel=docs-check を再確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: E2E手順は公開可能文書として維持しつつ、内部ログとの差分境界を固定する必要がある。
+- Decision: Classification は **Improve external** を維持し、runbook の公開品質改善を優先する。
+- Consequences: 変更は docs-only で実施し、ADR-0019 の運用正本と矛盾する改変を避ける。
+
+### Phase 3 Plan（対象再読）
+- AC補完: 公開境界メタ・Go/No-Go・関連文書導線が再現可能であること。
+- DoD補完: Read → ADR CDC → Plan → Execute → Verify → Proceed を記録する。
+
+### Phase 4 Execute（対象再読）
+- 本セクションを追加し、Stream I mid-1 の6Phase運用を固定。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `git diff --check`
+- 自己修復: 0/3 回（超過なし）。
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**
+- 理由: Improve external 方針と docs-check ゲートが本文でトレース可能。

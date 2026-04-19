@@ -316,3 +316,27 @@
 
 ### Phase 4 handoff prep
 - A3 handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）を固定入力として再確認。
+
+### Phase 3 Plan
+- A1固定契約を read-only 前提として M1..M4 の検証順序と GoNoGo 条件（`M1/M2/M3=pass` かつ `M4=fail`）を固定。
+- AC/DoD不足判定: 不足なし（`agreementStatus=agreed`）。
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A2 revalidation)
+
+### Phase 1 (A2) Read
+- A1/A2/A3 の3ファイルを再Readし、DependsOn がA1固定契約を参照していることを確認。
+
+### Phase 2 (A2) Execute
+- A1契約本文を変更せず、A2 mock validation plan / ledger / handoff payload を固定値として維持。
+
+### Phase 3 (A2) Verify
+- GoNoGo条件を再検証: `M1/M2/M3=pass` かつ `M4=fail`。
+- `ownerOfFix` の責務分離（A1/A2/A3）が未確定でないことを確認。
+
+### Phase 4 (Cross Verify)
+- A1→A2→A3 の契約リンクと handoff I/F（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）の連結を再確認。
+- 依存逆転・契約再定義は検出なし。
+
+### Phase 5 (Proceed)
+- A2の引き渡し条件を満たすため A3 Proceed 可。
+- 未解決・判定不一致が発生した場合は **A1 または Decision Queue へ差し戻し** とする。

@@ -309,3 +309,30 @@ narrative 作成は次の順序を推奨する。
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+## Stream J（DOC-OPS-05 中盤2）実行記録（2026-04-19）
+
+### Phase 1 Read
+- 開始時に対応Issueと本ドキュメントを再読し、Classification=**Improve external** と公開境界メタの有効性を確認。
+- 変更範囲を `01_Plans/issues/issue-doc-ops-05-*`（担当4件）と本ドキュメントに限定。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**（既存の分類・公開境界・Go/No-Go方針は上流文書と整合）。
+
+### Phase 3 Plan
+- AC/DoD不足の補完方針:
+  - Audience / Goal / Non-goal / Public boundary / Outcome / Related の再確認結果を記録。
+  - Verify は docs-check（`rg` / issue memo validator / `git diff --check`）で実施。
+  - Verify失敗時は自己修復を最大3回まで許容し、4回目相当は停止して判断依頼。
+
+### Phase 4 Execute
+- docs-only 追記を実施。既存手順・分類方針は維持し、実装仕様やコード変更は行わない。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream J（DOC-OPS-05 中盤2）" 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md 04_Documentation/narratives.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 引き継ぎ: 次担当は各Phase開始時に issue/doc の再読を継続し、競合・前提崩壊・3回超過時は即停止する。

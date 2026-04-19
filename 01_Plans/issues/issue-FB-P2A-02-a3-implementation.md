@@ -311,3 +311,23 @@
 
 ### Phase 5 Verify
 - docs-check 実行と依存リンク整合確認が完了した場合のみ Proceed。
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A3 revalidation)
+
+### Phase 1 (A3) Read
+- A1/A2/A3 の3ファイルを再Readし、A3がA1契約固定値とA2 handoff payload のみを入力とする前提を再確認。
+
+### Phase 2 (A3) Execute
+- 実装接続条件（Input/Expected output/Rollback）を固定し、契約再定義を実施しない方針を維持。
+
+### Phase 3 (A3) Verify
+- GoNoGo条件（`M1/M2/M3=pass` かつ `M4=fail`）と `ownerOfFix` 確定を再確認。
+- AC/DoD不足時は `gapType` + `agreementStatus` で先行提案し、`agreementStatus=agreed` まで NoGo とする条件を維持。
+
+### Phase 4 (Cross Verify)
+- A1 ContractLock / A2 validation ledger / A3 implementation readiness の3点接続を確認。
+- 依存逆転（A3からA1再定義）はなし。
+
+### Phase 5 (Proceed)
+- A3は契約固定入力のみで開始可能。
+- 未解決・責務競合・契約不一致は **A1 または Decision Queue へ差し戻し** とする。

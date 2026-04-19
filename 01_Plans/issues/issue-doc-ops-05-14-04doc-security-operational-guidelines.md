@@ -550,3 +550,37 @@
 ### Phase 5 Proceed（運用注意点）
 - 判定: **Ready**。
 - 運用注意点: Stream G 競合検出時は停止。自己修復は最大3回、3回超過時は `Hold` として停止。
+
+## 17) Stream K execution log（2026-04-19 / DOC-OPS-05-14）
+
+### Phase 1 Read
+
+- `issue-doc-ops-05-14-04doc-security-operational-guidelines.md` と `04_Documentation/security_operational_guidelines.md` を再読し、Scope / Related ADR/Spec / SecurityGateImpact の一致を確認。
+- `DecisionStatus=Fixed` と `Classification=Improve external` の維持を確認。
+
+### Phase 2 ADR CDC
+
+- 判定: **追加仕様変更なし（CDC確認のみ）**。
+- Context: 本Issueは公開向け運用判断ガイドの分類固定と品質維持を目的とする。
+- Decision: 既存の分類・公開境界・GoNoGoGate を変更せず、docs-only で整合補強を実施。
+- Consequences: 依存Issueとの責務分離を保ったまま、最小差分で進行可能。
+
+### Phase 3 Plan
+
+- AC/DoD補強案: Verify に `docs-check / リンク整合 / diff整合` の3点を必須化し、自己修復上限3回を明記。
+- 合意: 対象は本Issueメモと対象文書のみ。strict mode共有統合ファイルや他ストリーム対象は編集しない。
+
+### Phase 4 Execute
+
+- 本Issueへ Stream K のフェーズ証跡を追記し、Proceed判定基準を固定。
+
+### Phase 5 Verify
+
+- 実施: `rg -n "Stream K execution log|Phase 1 Read|Phase 5 Verify|self-repair|自己修復" 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- 実施: `git diff --check`
+- 結果: 体裁崩れなし。自己修復 0/3 で収束。
+
+### Phase 6 Proceed
+
+- 判定: **Ready**
+- クローズ準備条件: DOC-OPS-05-14 対象文書（`04_Documentation/security_operational_guidelines.md`）の docs-check 成功と差分整合を満たすこと。

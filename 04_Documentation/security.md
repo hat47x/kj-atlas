@@ -666,3 +666,36 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 
 - 判定: **Ready**（Stream G 競合検出なし）。
 - 運用注意点: 競合検出時は即停止、Verify失敗の自己修復は最大3回まで。3回超過時は `StoppedForClarification` として停止する。
+
+## 12. Stream K docs-only execution log（2026-04-19 / DOC-OPS-05-13）
+
+### Phase 1 Read
+
+- `security.md` / `security_operational_guidelines.md` と対応issue（DOC-OPS-05-13, 05-14）を再読し、公開境界・役割語彙・D1〜D4・導線の整合を確認。
+
+### Phase 2 ADR CDC
+
+- Context: 本書は公開向けの基底セキュリティ方針であり、承認フロー仕様の正本ではない。
+- Decision: 既存の分類（Improve external）と Fail-safe 条件を維持し、仕様値の追加変更は行わない。
+- Consequences: 文書責務を維持したまま、Stream K の docs-only 証跡を追加できる。
+
+### Phase 3 Plan
+
+- docs-only で最小差分更新。
+- Verify は docs-check（語彙/導線/固定値確認）+ `git diff --check` を必須化。
+
+### Phase 4 Execute
+
+- 本節を追加し、Stream K の実行証跡を明文化。
+- SafeMode既定ON・share/export漏洩防止・承認責務分離に関する既存記述は変更しない。
+
+### Phase 5 Verify
+
+- 実施: `rg -n "Stream K docs-only execution log|Phase 1 Read|Phase 5 Verify|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security.md`
+- 実施: `git diff --check`
+- 結果: 体裁崩れなし。自己修復 0/3。
+
+### Phase 6 Proceed
+
+- 判定: **Ready**
+- 停止条件: 役割語彙・導線・固定値（D1〜D4）不一致、または自己修復3回超過を検知した場合は `StoppedForClarification` で停止。

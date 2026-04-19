@@ -552,3 +552,31 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 - 判定: **Ready**
 - 引継ぎ: 次担当は `operations.md` 本文の既存runbook節を維持しつつ、内部限定情報混入の有無のみを重点監査する。
 - フェイルセーフ: 担当外doc編集要求・分類未合意・検証3回超過のいずれかで停止する。
+
+## Stream J（DOC-OPS-05 中盤2）実行記録（2026-04-19）
+
+### Phase 1 Read
+- 本Issueと対応ドキュメントを再読し、分類が **Improve external** のまま有効であることを確認。
+- 編集範囲を本Issue + 対応 `04_Documentation` のみへ固定。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**。既存の分類方針・公開境界・GoNoGoGate は上流方針と矛盾なし。
+
+### Phase 3 Plan
+- AC/DoD補完方針:
+  - Audience / Goal / Non-goal / Public boundary / Outcome / Related の継続確認。
+  - Verify は `docs-check`（`rg` / issue memo validator / `git diff --check`）で実施。
+  - 自己修復は最大3回、4回目相当は停止。
+
+### Phase 4 Execute
+- 本Issueの担当範囲（1 issue : 1 doc）に限定した追記のみ実施。
+- 実装コード・他ストリーム専有ファイル・設計正本（00〜02）は未変更。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream J（DOC-OPS-05 中盤2）" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: 後続担当は本Issueと対応ドキュメントをPhase開始時に再読し、差分競合がある場合は即停止して判断依頼。

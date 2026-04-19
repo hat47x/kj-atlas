@@ -757,3 +757,26 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
   - 自己修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium`
   - e2e 3回目: pass（`--grep "CE3 patch workspace|Patch Workspace|Preset|rollback"`）
 - 判定: 自己修復2回で収束（上限3回未満）。SafeMode後退・share/export露出追加なし。
+## Stream I mid-1 execution record（2026-04-19, DOC-OPS-05-06）
+
+### Phase 1 Read（対象再読）
+- 本文と対応Issue（DOC-OPS-05-06）を再読し、公開runbookの範囲を再確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: E2E手順は公開運用正本として維持し、内部ログ文書との差分境界を明確化する必要がある。
+- Decision: Classification **Improve external** を維持し、実行手順・受入条件・導線を優先して整備する。
+- Consequences: 本書は公開向け手順に集中し、内部監査ログの詳細は verification log 側へ分離する。
+
+### Phase 3 Plan（対象再読）
+- AC: Audience/Goal/Public boundary/Outcome/Related と Go/No-Go を追跡可能にする。
+- DoD: Read→ADR CDC→Plan→Execute→Verify→Proceed を記録する。
+
+### Phase 4 Execute（対象再読）
+- 本節を追記し、6Phase運用を固定。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**（公開runbookとしての整合を維持）。

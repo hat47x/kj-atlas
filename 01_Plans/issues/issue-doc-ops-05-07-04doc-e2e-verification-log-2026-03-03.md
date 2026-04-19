@@ -448,3 +448,29 @@
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
+
+## 18) Stream I mid-1 execution record (2026-04-19, DOC-OPS-05-07)
+
+### Phase 1 Read（対象再読）
+- 本Issue本文と `04_Documentation/e2e_verification_log_2026-03-03.md` を再読し、Classification/VerificationLevel を確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: 日付付き検証ログは内部証跡として管理し、公開手順と役割を分離する必要がある。
+- Decision: Classification は **Move internal** を維持し、公開導線は e2e_testing を正本参照とする。
+- Consequences: 本Issueは証跡整備に限定し、公開運用手順の主記述は増やさない。
+
+### Phase 3 Plan（対象再読）
+- AC補完: Blocked理由・再開条件・公開境界を同一文書で追跡可能にする。
+- DoD補完: 6Phase記録を残し、3回自己修復上限を明示する。
+
+### Phase 4 Execute（対象再読）
+- 本セクションを追記し、Stream I mid-1 の固定フローを記録。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+- 自己修復: 0/3 回（超過なし）。
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**
+- 理由: internalログ方針と停止条件が明示され、後続再開条件も追跡可能。
