@@ -979,3 +979,30 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - Phase 3 Execute: 方針変更なしのため本文の実行手順は据え置き、実行証跡のみを最小追記。
 - Phase 4 Verify: `docs-check`（issue validator / `rg` / `git diff --check`）を実施し、修復上限3回ルールを維持。
 - Phase 5 Proceed: 判定 **Ready**。次担当へ「内部限定情報の混入監査を優先し、担当外docは非編集」を引き継ぐ。
+
+## Stream J（DOC-OPS-05 中盤2）実行記録（2026-04-19）
+
+### Phase 1 Read
+- 開始時に対応Issueと本ドキュメントを再読し、Classification=**Improve external** と公開境界メタの有効性を確認。
+- 変更範囲を `01_Plans/issues/issue-doc-ops-05-*`（担当4件）と本ドキュメントに限定。
+
+### Phase 2 ADR CDC（必要時のみ）
+- 判定: **不要**（既存の分類・公開境界・Go/No-Go方針は上流文書と整合）。
+
+### Phase 3 Plan
+- AC/DoD不足の補完方針:
+  - Audience / Goal / Non-goal / Public boundary / Outcome / Related の再確認結果を記録。
+  - Verify は docs-check（`rg` / issue memo validator / `git diff --check`）で実施。
+  - Verify失敗時は自己修復を最大3回まで許容し、4回目相当は停止して判断依頼。
+
+### Phase 4 Execute
+- docs-only 追記を実施。既存手順・分類方針は維持し、実装仕様やコード変更は行わない。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream J（DOC-OPS-05 中盤2）" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md 04_Documentation/operations.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 引き継ぎ: 次担当は各Phase開始時に issue/doc の再読を継続し、競合・前提崩壊・3回超過時は即停止する。
