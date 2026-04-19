@@ -680,3 +680,29 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   2. 影響契約ID
   3. 必要な人間判断
 
+
+
+## Stream A Dedicated Run (2026-04-19)
+
+### Phase 1: Read & Scope Lock
+- 再読結果: 固定識別子・Go/NoGo式・禁止遷移は既存記述と一致。
+- AC不足補完: `agreementStatus=="agreed"` を `StartAllowed` の必須条件として維持し、未合意時Execute禁止を明示。
+
+### Phase 2: ADR CDC
+- Context: A1は下流A2/A3の唯一契約凍結点。
+- Decision: `freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / freeze flags の再定義を禁止。
+- Consequences: 変更要求は `A1-CDC-only` へ集約。
+
+### Phase 3: Plan -> Execute（A1）
+- 契約固定（I/F, 用語, 判定条件）をA1で完結。
+- 判定条件を `Go = StartAllowed`、`NoGo = !StartAllowed` として継続固定。
+
+### Phase 4: Verify
+- A2着手前モック検証条件（実装非依存）:
+  - `Contract ID collision=0`
+  - `Vocabulary collision=0`
+  - `safeModeRegression=0`
+
+### Phase 5: Gate
+- `a1Status=="Done" && pendingDecisionQueueCount==0 && agreementStatus=="agreed"` 以外は NoGo。
+- Self-Correction 3回超過時は即停止し、推測修正を禁止。

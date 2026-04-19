@@ -694,3 +694,38 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
   2. 影響契約ID
   3. 必要な人間判断
 
+
+
+## Stream A Dedicated Execution Log (2026-04-19)
+
+### Phase 1: Read & Scope Lock
+- 再読対象を次の5 issue memoに固定: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-02-next-phase-delivery-plan.md`, `issue-HIL-RS-02-A1-governance-contract-hardening.md`, `issue-HIL-RS-02-A3-operations-documentation-sync.md`。
+- 変更対象ファイル一覧（固定宣言）:
+  1. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+  4. `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  5. `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- AC/DoD不足（ドラフト提案）:
+  - `agreementStatus=="agreed"` を Proceed 前提として明示。
+  - `A2(モック検証)` を「契約依存・実装非依存」で実施する判定観点を追加。
+  - 許可外編集が必要になった場合の即停止条件を明記。
+- 合意状態: `agreementStatus=agreed`（本ログ追記時点で本issue内合意）。
+
+### Phase 2: ADR CDC（必要性判定）
+- Context: 既存 `ADR-0026/0027/0028` が上位契約を確定済み。
+- Decision: 新規ADR追加は不要。issue内CDCを正本として運用し、未承認事項の確定扱いを禁止。
+- Consequences: 契約差分要求は `A1` へ差戻し、A2/A3は read-only 参照を維持。
+
+### Phase 3: Plan -> Execute（A1/A2/A3直列）
+- A1: 契約ID・固定値・ゲート式を唯一化（既存固定値を維持）。
+- A2: モック検証を `collision==0 && vocabularyDrift==0 && safeModeRegression==0` の docs-check観点で実施。
+- A3: 運用同期は文書間ドリフト検知のみを許可し、契約値の局所上書きを禁止。
+
+### Phase 4: Verify
+- Verify基準: `Proceed = (collision==0 && vocabularyDrift==0 && safeModeRegression==0 && a1Status=="Done" && pendingDecisionQueueCount==0 && agreementStatus=="agreed")`。
+- Self-Correction方針: 失敗時は最大3回まで。4回目は推測修正禁止で停止。
+
+### Phase 5: Proceed/Stop Gate
+- Proceed条件: 上記Verify式が成立し、許可外編集要求が0件。
+- Stop条件（致命）: 前提崩壊 / 未定義競合 / Self-Correction 3回超過。

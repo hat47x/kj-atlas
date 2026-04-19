@@ -640,3 +640,27 @@
   2. 影響契約ID
   3. 必要な人間判断
 
+
+
+## Stream A Serial Delivery Lock (2026-04-19)
+
+### Phase 1: Read & Scope Lock
+- 対象5 issueを再読し、`A1 -> A2 -> A3` 依存と固定値一致を確認。
+- AC不足補完: `agreementStatus=="agreed"` を Proceed 必須条件へ追加。
+
+### Phase 2: ADR CDC
+- Context: HIL-RS-02は計画実行フェーズであり契約編集フェーズではない。
+- Decision: CDC未承認変更は採用せず、Decision Queueへ返却。
+- Consequences: A2/A3での契約値上書きを禁止。
+
+### Phase 3: Plan -> Execute（A1/A2/A3直列）
+- A1: 契約凍結値を参照正本として維持。
+- A2: モック検証（契約のみ依存、実装非依存）を必須化。
+- A3: 運用同期は docs drift の是正に限定。
+
+### Phase 4: Verify
+- Proceed式を次で固定:
+  - `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+
+### Phase 5: Stop Gate
+- 致命停止: 前提崩壊 / 未定義競合 / Self-Correction 3回超過。
