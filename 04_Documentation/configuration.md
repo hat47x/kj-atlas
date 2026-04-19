@@ -238,6 +238,33 @@ i18n表示差分を追加する場合は、UIコンポーネントの生文字�
 
 ### Phase 1 Read
 - 対象ファイルを再読し、`Audience / Goal / Non-goal / Public boundary / Outcome / Related` の整合を確認した。
+
+## Stream F serial cycle（2026-04-19 / DOC-OPS-05-03）
+
+### Phase 1 Read同期
+- `issue-doc-ops-05-03-04doc-configuration.md` と本書を照合し、Classification=**Improve external** と公開境界メタの整合を確認。
+- `02_Architecture/runtime_parameter_registry.md` を正本参照とする導線が維持されていることを確認。
+
+### Phase 2 Plan（AC/DoD草案→合意）
+- AC:
+  1) 外部運用者向け公開ガイド方針（Improve external）を維持する。
+  2) 既定安全設定（`KJ_ATLAS_LLM_PROVIDER=none`、監査外部送信OFF既定）の明記を維持する。
+  3) Verifyで docs-check（`rg` + `git diff --check`）を実行する。
+- DoD:
+  - docs-onlyで対象3文書以外を編集しない。
+  - 自己修復は最大3回、超過時は停止する。
+
+### Phase 3 Execute
+- 本書の設定値説明は変更せず、Stream Fの5Phase実行記録を追記。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|KJ_ATLAS_LLM_PROVIDER=none|Stream F serial cycle" 04_Documentation/configuration.md`
+- `git diff --check`
+- 自己修復回数: **0/3**
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**
+- Stop条件: docs-check不整合の自己修復が3回を超えた場合は **Stop** とし、保留化する。
 - Scopeを docs-only に固定し、編集禁止対象（`security.md` / `security_operational_guidelines.md` / shared files）へ非接触であることを確認した。
 
 ### Phase 2 Plan
