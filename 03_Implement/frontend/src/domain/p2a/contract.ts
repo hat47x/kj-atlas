@@ -47,6 +47,14 @@ export type P2AValidationLog = {
   evidence: string;
 };
 
+export type P2AImplementationReadiness = {
+  implementationReadiness: "go" | "no-go";
+  acceptedMockCases: P2AMockCaseId[];
+  blockedMockCases: P2AMockCaseId[];
+  rollbackTrigger: string[];
+  notes: string[];
+};
+
 const REQUIRED_FIELDS: readonly P2ARequiredField[] = [
   "island.id",
   "island.isCollapsed",

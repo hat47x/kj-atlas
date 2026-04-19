@@ -331,3 +331,12 @@
 ### Phase 5 (Proceed)
 - A3は契約固定入力のみで開始可能。
 - 未解決・責務競合・契約不一致は **A1 または Decision Queue へ差し戻し** とする。
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A3 implementation output lock)
+
+### Phase 4 (A3) Execute
+- A2固定handoff I/F（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）のみを入力に、実装者向け出力I/F（`implementationReadiness`,`acceptedMockCases`,`blockedMockCases`,`rollbackTrigger`,`notes`）をfrontend実装へ固定。
+
+### Phase 5 (A3) Verify
+- `implementationReadiness=go` は `M1/M2/M3=pass` かつ `M4=fail` の場合のみ成立。
+- GoNoGo不一致時は `implementationReadiness=no-go` とし、`rollbackTrigger` に失敗理由を記録してA2固定ledgerへ巻き戻す。
