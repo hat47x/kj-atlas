@@ -780,3 +780,27 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 
 ### Phase 6 Proceed（対象再読）
 - 判定: **Ready**（公開runbookとしての整合を維持）。
+
+
+## Stream H serial cycle（2026-04-19 / DOC-OPS-05-06）
+
+### Phase 1 Read（参照整合）
+- 対象Issueと本文を照合し、Classification=Improve external と公開境界（Audience / Goal / Non-goal / Outcome / Related）の整合を確認。
+- 重複・矛盾は既存本文へ統合し、新規仕様追加は行わない。
+
+### Phase 2 Plan（AC/DoDドラフト）
+- AC: 公開境界メタの維持、Issue分類との一致、docs-onlyスコープ維持。
+- DoD: Read→Plan→Execute→Verify→Proceed を記録し、検証コマンドを再現可能に残す。
+
+### Phase 3 Execute（本文更新）
+- 本節を追記し、Stream H の担当範囲であることを明示。
+- 編集範囲は本ファイルのみとし、他ストリーム対象ファイルは非変更。
+
+### Phase 4 Verify（docs-check + 参照リンク）
+- `rg -n "Audience|Goal|Non-goal|Outcome|Related|Go/No-Go|Stream H serial cycle" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+- 参照リンクは `Related` に記載された正本/Issue導線が有効であることを目視確認。
+
+### Phase 5 Proceed/Stop
+- 判定: **Ready**
+- 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
