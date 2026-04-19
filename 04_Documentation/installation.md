@@ -329,3 +329,27 @@ PRには実施手順と結果を必ず記載してください。
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+## Stream I mid-1 execution record（2026-04-19, DOC-OPS-05-08）
+
+### Phase 1 Read（対象再読）
+- 本文と対応Issue（DOC-OPS-05-08）を再読し、公開導入手順の範囲を確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: インストール文書は初回導入者向け公開導線として再現可能性が最優先。
+- Decision: Classification **Improve external** を維持し、最小導入手順（起動/疎通/停止）中心で運用する。
+- Consequences: 内部限定メモの混入を避け、詳細E2Eは `e2e_testing.md` 参照に統一する。
+
+### Phase 3 Plan（対象再読）
+- AC: Audience/Goal/Public boundary/Outcome/Related/Go-NoGo の明示を維持。
+- DoD: 6Phase記録と docs-check 検証を継続する。
+
+### Phase 4 Execute（対象再読）
+- 本節を追記し、Stream I mid-1 の固定フローを反映。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 04_Documentation/installation.md`
+- `git diff --check`
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**（公開導入文書としての品質ゲートを維持）。
