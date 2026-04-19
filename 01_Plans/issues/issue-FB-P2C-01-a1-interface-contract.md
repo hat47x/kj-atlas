@@ -530,3 +530,58 @@
   4. 自己修復上限超過（3回超）
 - Verify結果: **Pass（Self-Correction 0/3）**。
 - Proceed: **A2へ進行可**（A1契約凍結を維持）。
+
+## Stream C contract-driven execution log（2026-04-19）
+
+> Scope: `FB-P2C-01-A1`（本ファイルのみ編集）。P2A/HIL/CE/DOC-OPS-05/共有統合3ファイルは非編集。
+
+### Phase 1: Read同期 + AC/DoD不足ドラフト提案
+- Read同期対象:
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P2C-01-a2-mock-validation.md`
+  - `issue-FB-P2C-01-a3-implementation.md`
+- 確認結果:
+  - A1契約キーは `deterministicTieBreakOrder` 単一。
+  - A2/A3はA1契約参照前提で整合。
+- AC/DoD不足ドラフト（A1内補強）:
+  1. `DecisionStatus=Fixed` の根拠参照（`DQ-FB-P2C-01`）を明示保持。
+  2. Go/NoGo判定は `appliedTieBreakOrder` / `paddingViolationCount` / 承認証跡の3点を必須化。
+  3. deterministic rule の語彙ドリフト検出時は推測補完せずStop。
+
+### Phase 2: A1契約固定（CDC明文化→承認扱い条件の再確認）
+- 固定契約（変更禁止）:
+  - `deterministicTieBreakOrder = padding>self_intersection>area_delta>vertex_count`
+- CDC明文化:
+  - Contract mutation（追加/省略/並べ替え）禁止。
+  - A2/A3はread-only参照のみ。
+  - 契約変更要求はA1差し戻し経由のみ。
+- 承認扱い条件:
+  - `DQ-FB-P2C-01` が参照可能である場合のみ `Proceed=Yes`。
+  - 未承認/証跡欠落時は確定扱い禁止。
+
+### Phase 3: モック検証計画（A2想定）先行確立
+- A2検証観点（先行固定）:
+  1. 同一 `inputHash` + 同一 `seed` の3回反復で `outputPolygonHash` が一致。
+  2. `paddingViolationCount == 0`。
+  3. `appliedTieBreakOrder` が固定順序と完全一致。
+- Block条件:
+  - 1件でも不一致で `Proceed=No`。
+  - deterministic rule が曖昧化した場合は推測せずA1へ差し戻し。
+
+### Phase 4: 実装反映（A3想定）または実装準備完了まで
+- A3着手前提（契約主導）:
+  - `GateDecision=approved` かつ `A2 Verify Pass`。
+  - tie-break順序不変（語彙・順序とも一致）。
+- 実装準備完了判定（本Phaseの完了条件）:
+  - A3が参照すべき固定キー（`gateApprovalRef`, `a2VerifyRef`, `inputHash`, `outputPolygonHash`, `paddingViolationCount`）を維持。
+  - A1側で未承認決定を確定扱いしない運用を明文化済み。
+
+### Phase 5: Verify / Stop（3回修復上限）
+- Verifyコマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Stop rule:
+  1. deterministic rule ambiguity 検出
+  2. 未承認決定の確定化要求
+  3. 自己修復4回目相当（上限3回超過）
+- 判定:
+  - 本更新は docs契約補強のみ。上記Stop条件非該当時のみProceed。
