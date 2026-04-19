@@ -340,3 +340,36 @@
 ### Phase 5 (A3) Verify
 - `implementationReadiness=go` は `M1/M2/M3=pass` かつ `M4=fail` の場合のみ成立。
 - GoNoGo不一致時は `implementationReadiness=no-go` とし、`rollbackTrigger` に失敗理由を記録してA2固定ledgerへ巻き戻す。
+
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A3 refresh)
+
+### Phase 1 Read同期
+- A1/A2/A3 の3ファイルを再Readし、`A1 -> A2 -> A3` 直列依存、`ContractID/ContractVersion` 一致、A2 ledger の GoNoGo 条件を再確認。
+- 差分前提: 契約再定義要求なし、ownerOfFix 未確定なし。
+
+### Phase 4 A3実装計画確定
+- 実装者向け固定I/F（Input/Expected output/Rollback）をA1/A2参照のみで確定。
+- 実装計画順序を `state transition -> render filter -> hit-test filter` に固定し、実装先行・コード持ち込み禁止を再確認。
+- AC/DoD不足チェック結果: `agreementStatus=agreed`（不足なし）。
+
+### Phase 5 Verify（A1→A2→A3 因果と証跡）
+- 因果鎖: A1契約固定 -> A2 mock ledger 固定 -> A3 handoff lock を再確認。
+- 証跡キー: `RQ-2A-02` / `CTR-2A-02-COLLAPSE-EXPAND-V1` / `M1..M4` / `ownerOfFix`。
+- self-correction 使用回数: `0/3`。
+
+### Phase 6 Proceed（DecisionQueue）
+```yaml
+DecisionQueue:
+  - id: DQ-FB-P2A-02-001
+    topic: "A3 handoff後の実コード実装開始タイミング"
+    status: "open"
+    owner: "Implementation lane (outside Stream B scope)"
+    blocking: false
+    reason: "本ストリームは planning memo 専任であり、03_Implement 変更は編集禁止。"
+    required_input:
+      - "A3 handoff contract（本ファイル確定版）"
+      - "A2 validation ledger（M1..M4）"
+    next_action: "実装レーンで着手判定を実施し、必要ならA1へ契約差分要求を起票する。"
+```
+- Proceed判定: `Completed`（Stream B scope内 A1→A2→A3 完了）。
