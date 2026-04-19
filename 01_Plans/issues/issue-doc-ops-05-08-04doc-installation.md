@@ -503,3 +503,29 @@
 ### Phase 5 Proceed（差分要約）
 - 判定: **Ready**
 - 停止条件: 分類不能・対象外編集要求・自己修復3回超過を検知した場合は停止する。
+
+## 18) Stream I mid-1 execution record (2026-04-19, DOC-OPS-05-08)
+
+### Phase 1 Read（対象再読）
+- 本Issue本文と `04_Documentation/installation.md` を再読し、Classification/GoNoGoGate/VerificationLevel を確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: 導入手順は公開読者向けに再現性が必要で、内部ノート混在を防ぐ必要がある。
+- Decision: Classification は **Improve external** を維持し、最小導入導線（起動/疎通/停止）を主軸に保つ。
+- Consequences: docs-only で公開品質改善を続行し、実装や運用内部文書へ逸脱しない。
+
+### Phase 3 Plan（対象再読）
+- AC補完: Audience/Goal/Public boundary/Go-NoGo/Related の追跡可能性を維持。
+- DoD補完: 6Phase記録と Verify 3回上限の運用を明記。
+
+### Phase 4 Execute（対象再読）
+- 本セクションを追加し、Stream I mid-1 の固定Phaseを明文化。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+- `git diff --check`
+- 自己修復: 0/3 回（超過なし）。
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**
+- 理由: Improve external 方針と公開ゲートが一貫している。

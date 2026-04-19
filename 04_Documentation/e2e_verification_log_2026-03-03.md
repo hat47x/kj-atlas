@@ -93,3 +93,27 @@ docker --version && docker compose version
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+## Stream I mid-1 execution record（2026-04-19, DOC-OPS-05-07）
+
+### Phase 1 Read（対象再読）
+- 本文と対応Issue（DOC-OPS-05-07）を再読し、内部証跡文書としての境界を確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: 本ログは内部監査証跡の保持が目的であり、公開手順文書とは役割分離が必要。
+- Decision: Classification **Move internal** を維持し、公開導線は `04_Documentation/e2e_testing.md` を正本として維持。
+- Consequences: 将来更新は「実施結果/Blocked/再開条件」の証跡記録に限定される。
+
+### Phase 3 Plan（対象再読）
+- AC: 実行結果、Blocked条件、再開条件を日付付きで追跡可能にする。
+- DoD: 6Phase運用と3回自己修復上限を遵守する。
+
+### Phase 4 Execute（対象再読）
+- 本節を追記し、Stream I mid-1 の固定運用を明文化。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 04_Documentation/e2e_verification_log_2026-03-03.md`
+- `git diff --check`
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**（内部証跡としての分類と導線を維持）。

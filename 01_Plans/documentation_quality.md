@@ -290,3 +290,27 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 ### Phase 6: Proceed
 - 判定: **Ready**
 - 根拠: 分類根拠・次アクション・検証一致を同一文書内で追跡可能。
+
+## 15. Stream I mid-1 execution record（2026-04-19, DOC-OPS-05-05）
+
+### Phase 1 Read（対象再読）
+- 本文と対応Issue（DOC-OPS-05-05）を再読し、内部品質基準文書としての境界を再確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: 本書は公開手順ではなく、公開判定を行うための内部品質基準である。
+- Decision: 本書の分類は **Move internal** 相当の内部正本として固定し、公開文書からは参照導線で利用する。
+- Consequences: 対外手順本文への直接混入を防ぎ、判定基準の重複記述を抑制する。
+
+### Phase 3 Plan（対象再読）
+- AC: QG-1〜QG-6 と DOC-OPS-05 のメタ項目が追跡できること。
+- DoD: 6Phase運用と自己修復上限（3回）を継続適用すること。
+
+### Phase 4 Execute（対象再読）
+- 本節を追記し、Stream I mid-1 の運用固定を明文化。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 01_Plans/documentation_quality.md`
+- `git diff --check`
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**（内部品質基準としての役割を維持）。

@@ -445,3 +445,29 @@
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
+
+## 18) Stream I mid-1 execution record (2026-04-19, DOC-OPS-05-05)
+
+### Phase 1 Read（対象再読）
+- 本Issue本文と `01_Plans/documentation_quality.md` を再読し、Scope/Classification/VerificationLevel=docs-check を再確認。
+
+### Phase 2 ADR CDC（対象再読）
+- Context: `documentation_quality.md` は内部品質基準としての位置づけを固定し、公開境界判断の再現性を担保する必要がある。
+- Decision: Classification は **Move internal** を維持し、公開導線は issue + related の参照更新で管理する。
+- Consequences: 後続は docs-only の参照整備に限定し、実装コード/スキーマ変更を行わない。
+
+### Phase 3 Plan（対象再読）
+- AC補完: Audience / Goal / Non-goal / Public boundary / Outcome / Related の追跡可能性を維持する。
+- DoD補完: Read → ADR CDC → Plan → Execute → Verify → Proceed を1サイクルとして記録する。
+
+### Phase 4 Execute（対象再読）
+- 本セクションを追加し、Stream I mid-1 の固定ワークフローと CDC を明文化。
+
+### Phase 5 Verify（対象再読）
+- `rg -n "Stream I mid-1|Phase 1 Read|Phase 2 ADR CDC|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `git diff --check`
+- 自己修復: 0/3 回（超過なし）。
+
+### Phase 6 Proceed（対象再読）
+- 判定: **Ready**
+- 理由: docs-check 前提・分類方針・CDC・停止条件（3回超過）を本文で追跡可能。
