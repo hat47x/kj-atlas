@@ -699,3 +699,26 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 
 - 判定: **Ready**
 - 停止条件: 役割語彙・導線・固定値（D1〜D4）不一致、または自己修復3回超過を検知した場合は `StoppedForClarification` で停止。
+
+## Stream G 実行記録（DOC-OPS-05文書群② / 2026-04-19）
+
+### Phase 1 Read同期
+- `strict_mode_exception_approval_flow.md` を起点に、`security.md` / `security_operational_guidelines.md` / `operations.md` の記述を再読し、用語・責務分離・固定値（D1〜D4）の一致を確認した。
+- 導線 `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を維持し、`operations.md` を runbook 同値確認先として照合した。
+
+### Phase 2 CDC明文化（判断分岐時のみ）
+- 判定: **分岐なし（CDC追加なし）**。
+- 理由: 本書の分類（Improve external）と責務（基底セキュリティ方針）は既存確定事項で、代替判断を追加していない。
+
+### Phase 3 Execute（文書更新）
+- Stream G の実行証跡を追記し、既存のフェイルセーフ境界（SafeMode既定ON、share/export漏洩防止、未承認事項の確定禁止）を再確認した。
+- D1〜D4 と役割語彙の固定契約を維持した。
+
+### Phase 4 Verify（docs-check + 用語/固定値照合）
+- docs-check: `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|StoppedForClarification" 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/operations.md`
+- diff-check: `git diff --check`
+- 判定: Pass（語彙一致、固定値一致、フォーマット異常なし）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed（Ready）**。
+- 停止条件: Verify不一致が自己修復3回で収束しない場合は `StoppedForClarification` として停止する。

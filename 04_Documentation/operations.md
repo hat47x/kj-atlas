@@ -1006,3 +1006,26 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 引き継ぎ: 次担当は各Phase開始時に issue/doc の再読を継続し、競合・前提崩壊・3回超過時は即停止する。
+
+## Stream G 実行記録（DOC-OPS-05文書群② / 2026-04-19）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、`operations.md` / `security.md` / `security_operational_guidelines.md` の用語・責務・固定値（D1〜D4）を照合した。
+- canonical 用語を `Security Officer / System Owner / Platform Operator` に統一維持し、状態語彙（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` と `StoppedForClarification`）の一致を確認した。
+
+### Phase 2 CDC明文化（判断分岐時のみ）
+- 判定: **分岐なし（CDC追加なし）**。
+- 理由: 分類（Improve external）と責務境界（runbook専任）は既存決定で固定済みであり、新規の二択判断を伴わないため。
+
+### Phase 3 Execute（文書更新）
+- Stream G の docs-only 進行記録を追加し、運用runbookの責務（実行手順）を維持した。
+- SafeMode既定ON / share-export漏洩防止 / D1〜D4固定値に変更がないことを明示した。
+
+### Phase 4 Verify（docs-check + 用語/固定値照合）
+- docs-check: `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|StoppedForClarification" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md`
+- diff-check: `git diff --check`
+- 判定: Pass（用語ドリフトなし、固定値不一致なし、体裁崩れなし）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed（Ready）**。
+- 停止条件: 用語/責務/固定値（D1〜D4）のいずれかに不一致が再発した場合は `StoppedForClarification` で停止する。
