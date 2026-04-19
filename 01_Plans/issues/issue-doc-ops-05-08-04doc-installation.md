@@ -551,3 +551,35 @@
 
 ### Phase 6) Proceed
 - 判定: **Ready**（docs-only / 許可スコープ内 / DecisionStatus=Fixed維持）。
+
+## 18) Stream E execution log（2026-04-19, DOC-OPS-05前半）
+
+### Phase 1) Read同期
+- Read Order（00_Prompt→01_Plans→02_Architecture）で本Issueの根拠文書を再確認。
+- 本Issueの固定値 `DecisionStatus=Fixed` / `VerificationLevel=docs-check` / `GoNoGoGate=Required` を同期。
+
+### Phase 2) Audience / Goal / 公開境界の固定
+- Audience: **公開導入者（first-time installer）**
+- Goal: **導入手順の公開ガイド品質を強化し内部メモを混在させない**
+- 公開境界: **Classification=Improve external** を維持し、`Scope` 外ファイルへの変更を禁止。
+
+### Phase 3) CDC（必要なDecisionのみ）
+- Context: DOC-OPS-05前半として、文書配置と品質基準の判定をIssue単位で再現可能にする。
+- Decision: 追加ADRは作成せず、Issue本文CDCを正本として扱う。
+- Consequences: 後続作業は docs-check と文書導線整備に限定し、実装コード変更を発生させない。
+
+### Phase 4) AC/DoD確定と検証計画
+- AC固定:
+  1. Audience / Goal / 公開境界を本文で追跡可能。
+  2. `Expected verification level` と `VerificationLevel` の一致。
+  3. Go/No-Go判定条件（Required）を本文で再現可能。
+- DoD固定:
+  - Read→CDC→AC/DoD→Verify→Proceed を本セクションで記録済み。
+  - 状態を `Ready / Hold / Needs-decision` の三値で判定可能。
+- Verify plan:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+
+### Phase 5) Verify / Proceed（3回自己修復）
+- 自己修復ポリシー: 不整合検出時は **同一Issue内で最大3回** 修復。4回目相当は停止して `Hold` 化。
+- Proceed判定: **Ready**（DecisionStatus=Fixed かつ要判断追加なし）。
