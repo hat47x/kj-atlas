@@ -745,3 +745,15 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
   - 自己修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium`
   - e2e 3回目: pass（`--grep "CE3 patch workspace|Patch Workspace|Preset|rollback"`）
 - 判定: 自己修復2回で収束（上限3回未満）。SafeMode後退・share/export露出追加なし。
+
+#### CE3 検証記録（2026-04-19 / frontend / Stream F rerun）
+
+- 対象Issue: `01_Plans/issues/issue-CE3-patch-workspace-presets.md`
+- 実行結果:
+  - unit: pass（`src/domain/ce3_patch_workspace.test.ts` / `src/ui/PatchWorkspacePanel.test.ts` / `src/domain/view/presets.test.ts`）
+  - e2e 1回目: browser binary 不足で fail
+  - 自己修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium`
+  - e2e 2回目: `libatk-1.0.so.0` 不足で fail
+  - 自己修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium`
+  - e2e 3回目: pass（`--grep "CE3 patch workspace|Patch Workspace|Preset|rollback"`）
+- 判定: 自己修復2回で収束（上限3回未満）。SafeMode後退・share/export露出追加なし。
