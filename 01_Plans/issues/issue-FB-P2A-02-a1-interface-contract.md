@@ -300,3 +300,22 @@
 
 ### Phase 3 Proceed gate
 - A2へ渡す固定値（Required fields / Invariants / ContractLinks）を再確認し、A1 proceed 条件を継続して満たすことを確認。
+
+## Stream B execution log (2026-04-19, FB-P2A-02 A1 revalidation)
+
+### Phase 1 (A1) Read
+- A1/A2/A3 の3ファイルを再Readし、`ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1` と依存順序 `A1 -> A2 -> A3` を再照合した。
+
+### Phase 2 (A1) Execute
+- ContractID / Required fields / Invariants / ContractLinks を read-only 監査対象として再確認し、再定義を行わず固定値維持を確認した。
+
+### Phase 3 (A1) Verify
+- CDC（C1/C2/C3）一致を確認。
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` の固定状態を維持。
+
+### Phase 4 (Cross Verify)
+- A1→A2→A3 の相互リンクを確認し、依存逆転（A2→A1再定義、A3→A1再定義）がないことを確認。
+
+### Phase 5 (Proceed)
+- Proceed条件: A1固定値を変更せずA2へ引き渡し可能。
+- 未解決が発生した場合は **A1 または Decision Queue へ差し戻し** とする。
