@@ -15,7 +15,7 @@
 - 未承認決定を確定扱いしない。
 - 3回超過（再試行・再修正）または契約衝突（I/F矛盾）を検知した場合は停止。
 
-## Phase 1 Read（契約I/F抽出）
+## Phase 1) Read同期（ADR-0028整合確認）
 ### 同値性I/F
 - 判定軸は `equivalenceKey + bundleHash`（AND）に固定。
 - API/CLI/GUI の比較は上記2軸のみで評価する。
@@ -25,12 +25,26 @@
 - `dryRun=true -> sideEffect=none` を固定。
 - `sourceBundleHash=mock:<hash>` を許容し、外部依存を切断する。
 
-## Phase 2 契約参照正規化（CE1/CE2参照固定）
+## Phase 2) CE4連携契約凍結（CDC明文化→承認）
 - `bundleHash/sourceBundleHash` は CE1契約語彙を参照する。
 - `proposal/apply` 監査導線は CE2 proposal lifecycle 語彙（`proposed/accepted/rejected/held`）と整合させる。
 - 欠損を成功扱いしない（fail-closed）。
 
-## Phase 3 Plan（AC / DoD）
+## Phase 3) CE1/CE2のmock前提I/F分離
+- CE1依存: `bundleHash/sourceBundleHash` の比較語彙のみ。
+- CE2依存: lifecycleとproposal監査語彙のみ。
+- `mock:<hash>` と本番hashで監査フローを分岐させない。
+
+## Phase 4) API/CLI/Audit契約（公開I/F）定義
+### 固定I/F仕様書
+- Logical operations: `context-query | context-bundle | proposal-diff | apply-dry-run`
+- AuditEvent v1: `event/equivalenceKey/bundleHash/sourceBundleHash/dryRun/sideEffect`
+- 判定規則:
+  1) 同値判定は `equivalenceKey + bundleHash` のみ
+  2) 監査4点欠損ゼロ
+  3) `mock:<hash>` 許容で依存切断
+
+## Phase 5) Verify / Proceed
 ### Acceptance Criteria
 - [ ] API/CLI/GUI が同一入力時に同一 `equivalenceKey` かつ同一 `bundleHash` を返す
 - [ ] 監査4点（`query / bundle / proposal / apply`）欠損率0%
@@ -42,16 +56,14 @@
 - [ ] 欠損を成功扱いしない（fail-closed）
 - [ ] 計画I/Fが API/CLI/監査で同一語彙・同一判定軸を保持
 
-## Phase 4 Verify
-- `docs-check`
+### Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
 - 判定基準: 同値性不一致0、監査欠損0、dry-run副作用逸脱0、契約衝突0。
 - 自己修復は最大3回。4回目相当は停止。
 
-## Phase 5 Proceed（実装ストリーム向けI/F配布）
-### I/F仕様書固定
-- Logical operations: `context-query | context-bundle | proposal-diff | apply-dry-run`
-- AuditEvent v1: `event/equivalenceKey/bundleHash/sourceBundleHash/dryRun/sideEffect`
-- 実装チームへ渡す固定要件:
-  1) 同値判定は `equivalenceKey + bundleHash` のみ
-  2) 監査4点欠損ゼロ
-  3) `mock:<hash>` 許容で依存切断
+### Proceed（実装ストリーム向けI/F配布）
+- CE4公開I/F（Logical operations + AuditEvent v1）
+- 同値判定規則（`equivalenceKey + bundleHash`）
+- 監査欠損fail-closed規則

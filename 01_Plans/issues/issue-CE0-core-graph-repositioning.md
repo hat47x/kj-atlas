@@ -12,9 +12,10 @@
 ## Lane guard
 - 本Issueは Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いとし、確定扱いしない。
+- safeMode後退・自動確定化（auto-apply/auto-publish）を禁止する。
 - 実装指示混入時は停止。
 
-## Phase 1 Read（契約I/F抽出）
+## Phase 1) Read同期（ADR-0028整合確認）
 ### Graph role I/F
 - `working`: 編集作業領域
 - `context_projection`: read-only投影
@@ -27,11 +28,22 @@
 ### Audit I/F
 - 必須4点: `query / bundle / proposal / apply`
 
-## Phase 2 CE0契約凍結反映
+## Phase 2) CE0契約凍結（CDC明文化→承認）
 - `CG-01..05` を本Issue側で再定義せず参照に統一する。
-- CE1/CE2/CE4 へ配布する Graph role / transition / audit は read-only handoff とする。
+- Vocabulary固定: `WorkingGraph / ContextProjectionGraph / Consensus Graph`。
+- 承認前は `held`、承認後のみ `frozen` と記録する。
 
-## Phase 3 Plan（AC/DoD）
+## Phase 3) CE1/CE2のmock前提I/F分離
+- CE1: `context_projection` は read-only参照のみ（生成元変更不可）。
+- CE2: proposal lifecycle は `working` 領域に限定し、`consensus` 直更新禁止。
+- mock検証時も遷移規則（patch+approval only）を省略しない。
+
+## Phase 4) CE4連携契約（API/CLI/Audit）定義
+- API/CLI/GUIの監査導線は `query/bundle/proposal/apply` を共通必須。
+- `dryRun=true` は `sideEffect=none` に固定。
+- `context_projection` の書換操作は監査失敗として扱う（fail-closed）。
+
+## Phase 5) Verify / Proceed
 ### Acceptance Criteria
 - [ ] `working -> consensus = patch+approval only` が全Issue一致
 - [ ] `context_projection` read-only が全Issue一致
@@ -43,12 +55,12 @@
 - [ ] 役割・遷移・監査の3層で説明可能
 - [ ] self-heal 3回以内
 
-## Phase 4 Verify
-- `docs-check`
-- 遷移衝突0、語彙衝突0、safeMode後退0。
+### Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
 
-## Phase 5 Proceed（実装ストリーム向けI/F配布）
-### I/F仕様書固定
+### Proceed（実装ストリーム向けI/F配布）
 - GraphRole: `working | context_projection | consensus`
 - Transition: `working -> consensus via patch+approval`
 - AuditEnvelope: `query/bundle/proposal/apply` 必須

@@ -13,46 +13,63 @@
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）は対象外。
 - CE0契約IDは再定義禁止：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
 - 未承認決定を確定扱いしない（承認待ち論点は `held` 扱い）。
+- safeMode後退・自動確定化（auto-apply/auto-publish/auto-review昇格）を禁止する。
 - 実装指示が混入した場合は **Stop**（planning lane fail-safe）。
 
-## Phase 1 Read（契約I/F抽出）
-### 固定I/F
+## Phase 1) Read同期（ADR-0028整合確認）
+### 固定I/F（ADR-0028 D2/D6準拠）
 - `CE0-CTX-IF`: ContextQuery必須キーと deterministic `bundleHash`。
 - `CE0-SAFEMODE-IF`: safeMode既定ON、`allowUnreviewedText=false` 既定。
 - `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみ。
 - `CG-01..05`: `Working -> Consensus` は `patch + approval` のみ。
 
-### 禁止事項
+### 禁止事項（No-Go）
 - Query Preview bypass
 - Consensus direct write
-- auto-apply
+- auto-apply / auto-publish
 - AIによる review 自動昇格
 - safeMode既定緩和
 
-## Phase 2 CE0契約凍結（最優先）
-- Contract ID collision = 0 を凍結条件とする。
-- Vocabulary collision = 0 を凍結条件とする（`Consensus Graph / WorkingGraph / ContextProjectionGraph`）。
-- CE1/CE2/CE4 は CE0契約を**参照のみ**で使用し、再定義しない。
+## Phase 2) CE0契約凍結（CDC明文化→承認）
+### CDC（Contract Definition Check）
+- Contract ID collision = 0
+- Vocabulary collision = 0（`Consensus Graph / WorkingGraph / ContextProjectionGraph`）
+- CE1/CE2/CE4 は CE0契約を**参照のみ**で使用し、再定義しない
 
-## Phase 3 Plan（AC/DoD）
+### 承認ゲート
+- Freeze候補を「固定契約」「禁止事項」「停止条件」の3ブロックで提示
+- 承認前は `provisional`、承認後のみ `frozen`
+
+## Phase 3) CE1/CE2のmock前提I/F分離（参照境界固定）
+- CE1へ渡す境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照）
+- CE2へ渡す境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照）
+- 共通: safeMode境界は `CE0-SAFEMODE-IF` の参照のみ（CE1/CE2側で再定義しない）
+
+## Phase 4) CE4連携契約（API/CLI/Audit）定義
+- CE4へ渡す必須監査導線: `query / bundle / proposal / apply`
+- CE4同値判定の前提: `equivalenceKey + bundleHash`
+- 欠損成功扱い禁止（fail-closed）
+
+## Phase 5) Verify / Proceed
 ### Acceptance Criteria
 - [ ] Contract ID collision = 0
 - [ ] Vocabulary collision = 0
 - [ ] SafeMode regression = 0
 - [ ] No-Go語彙（direct write / auto-apply / preview bypass）一致
+- [ ] CE1/CE2/CE4への参照境界が再定義なしで説明可能
 
 ### Definition of Done
 - [ ] 5 Issue間で契約語彙が単一正本化されている
 - [ ] 実装依存記述を含まない
 - [ ] `docs-check` で差分説明可能
 
-## Phase 4 Verify（矛盾ゼロ検証）
-- `docs-check`
-- 5 Issue横断で `Contract ID / 禁止事項 / safeMode境界` の矛盾ゼロを確認。
+### Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
 - 自己修復は最大3回。4回目相当は停止。
 
-## Phase 5 Proceed（実装ストリーム向けI/F配布）
-### Implementation Input Freeze（I/F仕様書）
+### Proceed（実装ストリーム向けI/F配布）
 - `CE0-CTX-IF`
 - `CE0-SAFEMODE-IF`
 - `CE0-REVIEW-IF`
