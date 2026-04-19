@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Plan Owner (Stream B)
+- Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
 - Dependencies: `ADR-0027`, `ADR-0026`, `ADR-0028`, `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `state-transition gate (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`, `00_Prompt/domain.md`
@@ -582,3 +582,61 @@
 ### Phase 6 Proceed（固定I/F + 非目標）
 - 固定I/F: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`。
 - 非目標: Pending bypass、A2/A3での契約変更、安全境界の緩和。
+
+## Stream A Critical Path Lock Update (2026-04-19)
+
+### Phase 1 Read（Plan -> Execute -> Verify -> Proceed）
+- 対象4 issueを再読し、`a1Status=="Done" && pendingDecisionQueueCount==0` を唯一Go/Proceed式として一致確認。
+- 固定識別子は次に固定（差分0件）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+
+### Phase 2 ADR CDC（変更提案の承認待ち化）
+- Context: HILガバナンス契約はA1を唯一正本とし、A2/A3はread-only参照とする必要がある。
+- Decision: 新規ADR追加は不要。契約変更提案はCDC形式でDecision Queueへ戻し、未承認を確定化しない。
+- Consequences: 承認前変更は `NoGo`。A2/A3は契約再定義禁止。
+
+### Phase 3 Plan（AC/DoD補強、合意前は実行しない）
+- AC/DoD追加固定:
+  - `ForbiddenTransitionCount == 0`
+  - `PendingBypassCount == 0`
+  - `StopConditionViolationCount == 0`
+  - `agreementStatus == "agreed"` が満たされるまで Execute 禁止
+
+### Phase 4 Execute（状態遷移式・禁止遷移・停止条件の同期）
+- State Gate（固定）:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+  - `NoGo = !Go`
+- 禁止遷移（固定）:
+  - `Pending -> Open`（`Approved/Rejected` を経ない遷移）
+  - `a1Status!="Done"` での `A2/A3 Draft -> Open`
+  - 未承認決定の確定化
+  - A2/A3での固定識別子再定義
+
+### Phase 5 Verify（自己修復は最大3回）
+- 検証手順: `validator -> rg -> git diff` の順。
+- Self-Correction上限: `3`。`attempt >= 4` を検出した時点で即停止。
+
+### Phase 6 Proceed（合意済みかつ停止条件違反ゼロのみ）
+- Proceed許可条件:
+  - `agreementStatus=="agreed"`
+  - `StopConditionViolationCount==0`
+  - `pendingDecisionQueueCount==0`
+  - `Go==true`
+- いずれか未充足の場合は Decision Queue へ返却（`Pending` 維持）。
+
+### Fail-safe（即停止条件）
+- 即停止トリガー:
+  1. Self-Correction 3回超過
+  2. 固定識別子不一致
+  3. 未定義競合の発生
+  4. 未承認決定の確定化
+- 停止時報告テンプレ:
+  1. 失敗条件
+  2. 影響契約ID
+  3. 必要な人間判断
+
