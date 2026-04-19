@@ -492,3 +492,12 @@
 - Phase 3 Execute（Active一覧・Decision Queue・再開判定同期）: 3ファイルを単一変更セットで同期し、Active一覧・Decision Queue・再開判定チェックリスト1行の文言を一致させた。
 - Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-38|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、件数・Queue・依存順・再開判定1行の一致を確認。
 - Phase 5 Proceed（次回再開条件1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+
+### 6-32. Stream Shared 共有統合同期ログ（2026-04-19 rerun-39, Phase 1-5）
+
+- Phase 1 Read（A〜I完了証跡確認）: shared resource 3ファイルを再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Ready=1 / Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 Plan（件数・ステータス・Decision Queue更新方針）: 更新差分を `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / 本decision-pack の同期ログ追記に限定し、未承認決定の確定化を行わない方針を固定。
+- Phase 3 Execute（単一変更セット）: 3ファイルを単一変更セットで同期し、Active一覧・Decision Queue・再開判定チェックリスト1行の一致を維持。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-39|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、件数・Queue・依存順・再開判定1行の一致を確認。
+- Phase 5 Proceed（次回再開条件1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
