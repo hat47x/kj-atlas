@@ -380,3 +380,23 @@ PRには実施手順と結果を必ず記載してください。
 
 ### Phase 6 Proceed（対象再読）
 - 判定: **Ready**（公開導入文書としての品質ゲートを維持）。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-08）
+
+### Phase 1) Read
+- install手順と security / operations / e2e の依存を再読。
+
+### Phase 2) セキュリティ境界優先
+- 導入時に SafeMode既定ON と公開境界を誤って緩和しない注意を再確認。
+
+### Phase 3) e2e/testing/release整合
+- 導入後の確認導線として `e2e_testing.md` / `release.md` 参照を維持。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- local LLM有効化時の追加前提を `local_llm_ops_guide.md` へ委譲し、責務分離を維持。
+
+### Phase 5) Verify
+- docs-check + `git diff --check`。
+
+### Phase 6) Proceed
+- 判定: **Ready**。

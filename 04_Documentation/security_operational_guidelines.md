@@ -337,3 +337,23 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed（Ready）**。
 - 停止条件: D1〜D4不一致、導線切断、または語彙ドリフトが残る場合は `StoppedForClarification` として停止する。
+
+## Stream I boundary-first execution record（2026-04-19 / DOC-OPS-05-14）
+
+### Phase 1) Read
+- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` と `04_Documentation/security.md` を再読。
+
+### Phase 2) セキュリティ境界優先
+- D1〜D4、2者承認、Platform Operator実行責務分離、SafeMode後退禁止を最優先で確認。
+
+### Phase 3) e2e/testing/release整合
+- `operations.md` と `e2e_testing.md` の runbook/検証導線が本書の運用判断基準と一致することを確認。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- 公開向け導入・LLM運用・narratives説明の境界が security guideline を逸脱していないことを確認。
+
+### Phase 5) Verify
+- docs-check + `git diff --check` を実施。
+
+### Phase 6) Proceed
+- 判定: **Ready**（公開運用判断ガイドとして Improve external 方針を維持）。

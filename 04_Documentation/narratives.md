@@ -360,3 +360,23 @@ narrative 作成は次の順序を推奨する。
 ### Phase 5 Proceed/Stop
 - 判定: **Ready**
 - 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-10）
+
+### Phase 1) Read
+- narratives文書の公開境界と security / operations / local-llm 依存を再読。
+
+### Phase 2) セキュリティ境界優先
+- 未レビュー本文や機微情報の外部露出を抑制する境界を優先確認。
+
+### Phase 3) e2e/testing/release整合
+- narratives変更時の検証導線（docs-check / release gate参照）を維持。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- install/local-llm前提との差分を narratives責務内に限定して記述する方針を維持。
+
+### Phase 5) Verify
+- docs-check + `git diff --check`。
+
+### Phase 6) Proceed
+- 判定: **Ready**。

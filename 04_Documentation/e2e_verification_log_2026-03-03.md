@@ -141,3 +141,23 @@ docker --version && docker compose version
 ### Phase 5 Proceed/Stop
 - 判定: **Ready**
 - 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-07）
+
+### Phase 1) Read
+- 本ログの分類（Move internal）と公開手順正本（`e2e_testing.md`）の役割分離を再確認。
+
+### Phase 2) セキュリティ境界優先
+- 監査証跡として SafeMode/公開境界の後退がないことを確認。
+
+### Phase 3) e2e/testing/release整合
+- Compose/SQLite判定の記録方式がE2E方針と release gate の説明と矛盾しないことを確認。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- 環境前提差分（導入・LLM接続有無）をログ注記で追跡できる方針を維持。
+
+### Phase 5) Verify
+- docs-check + `git diff --check` を実施。
+
+### Phase 6) Proceed
+- 判定: **Ready**（内部証跡文書として Move internal を維持）。

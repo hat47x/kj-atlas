@@ -804,3 +804,23 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 ### Phase 5 Proceed/Stop
 - 判定: **Ready**
 - 停止条件: Verify自己修復が3回を超過、または未定義競合（要件キー未定義/契約衝突）を検知した場合は **Stop** とし、`01_Plans/issues/` に保留論点を記録する。
+
+## Stream I phase execution record（2026-04-19 / DOC-OPS-05-06）
+
+### Phase 1) Read
+- `ADR-0019` と `security.md` / `security_operational_guidelines.md` を再読し、E2E方針の安全境界依存を確認。
+
+### Phase 2) セキュリティ境界優先
+- SafeMode後退禁止、share/export漏えい防止、strict運用時の検証観点を優先確認。
+
+### Phase 3) e2e/testing/release整合
+- 本文のE2E実行手順・判定基準と `release.md` の検証ゲートを再照合。
+
+### Phase 4) installation/config/narratives/local-llm整合
+- 導入/構成/LLM運用に由来する前提差分がE2E手順に反映される導線を維持。
+
+### Phase 5) Verify
+- docs-checkと `git diff --check` を実施。未収束時は3回上限で自己修復。
+
+### Phase 6) Proceed
+- 判定: **Ready**（公開runbookとしての分類を維持）。
