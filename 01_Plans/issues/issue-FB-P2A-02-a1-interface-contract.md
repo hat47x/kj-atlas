@@ -337,3 +337,23 @@
 
 ### Phase 6 Proceed
 - Proceed判定: `Pass`（A2へ進行可）。
+
+
+## Stream B phase cycle record (2026-04-19, A1 contract freeze reconfirm)
+
+### Plan
+- A1契約固定値（`CTR-2A-02-COLLAPSE-EXPAND-V1` / `IslandVisibilityContractV1`）と `Required fields` / `Invariants` / `ContractLinks` を再照合する。
+- A2/A3への参照を read-only とし、A1本文の契約再定義を禁止する。
+
+### Execute
+- A1本文の固定契約を変更せず維持し、A2/A3参照先の到達性（A1→A2→A3）を再確認した。
+- AC/DoD不足チェックを実施し、追加ドラフト提案が不要であることを確認した（`agreementStatus=agreed`）。
+
+### Verify
+- Verify観点: ContractID衝突=0 / ContractLinks断絶=0 / 指定外ファイル編集=0。
+- self-correction使用回数: `0/3`（上限超過なし）。
+
+### Proceed
+- 判定: **Pass**。
+- 次フェーズ条件: A2は A1 fixed contract を変更せずに mock ledger 検証のみ実施する。
+- フェイルセーフ: 依存崩壊・未定義競合・self-correction 4回目相当で即停止し判断要求する。
