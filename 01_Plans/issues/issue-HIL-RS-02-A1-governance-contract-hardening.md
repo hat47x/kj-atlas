@@ -675,3 +675,31 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
   2. 影響契約ID
   3. 必要な人間判断
 
+
+
+## Stream A Governance Hardening Rerun (2026-04-19)
+
+### Phase 1: Read & Scope Lock
+- 再読で hardening rule の単一性（Unlock/Decision Queue/Return path）を確認。
+- 変更対象は Stream A 許可5ファイルのみに固定。
+
+### Phase 2: ADR CDC
+- Context: ガバナンス判定式の多重正本化は誤Open化を誘発する。
+- Decision: 本issueの固定判定式を唯一運用規約として継続。
+- Consequences: 契約差分はA1へ差戻し、A2/A3は read-only。
+
+### Phase 3: Plan -> Execute
+- A1: `StartAllowed` 判定へ `agreementStatus=="agreed"` を必須条件として維持。
+- A2: 実装非依存のモック検証観点（ID/語彙/安全後退）を明文化。
+- A3: 運用同期時の契約値ローカル補完を禁止。
+
+### Phase 4: Verify
+- Verify pass 条件:
+  - `collision==0`
+  - `vocabularyDrift==0`
+  - `safeModeRegression==0`
+  - `a1Status=="Done" && pendingDecisionQueueCount==0`
+
+### Phase 5: Proceed/Stop
+- Proceedは上記条件全成立時のみ。
+- 4回目相当の修復は実施せず停止報告へ移行。

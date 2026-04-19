@@ -4,7 +4,7 @@
 - Status: Draft
 - Lifecycle: DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed -> StoppedForClarification
 - Priority: P1
-- Owner: Stream F
+- Owner: Architecture Owner (Stream A contracts)
 - Source Issue: TBD
 - Expected verification level: `docs-check`
 - Scope:
@@ -316,3 +316,32 @@ Proceed 条件:
 
 ### Proceed 判定
 - **Ready（継続可能）**。D1〜D4不整合0件、語彙ドリフト0件、未承認決定混入0件。
+
+
+## Stream A Takeover Log (2026-04-19)
+
+### Phase 1: Read & Scope Lock
+- Stream A担当へ切替。Ownerを `Architecture Owner (Stream A contracts)` に更新。
+- Scopeを Stream A独立性へ再固定:
+  - 許可編集: 本issue + HIL-RS専用ADR/運用文書（必要時のみ）
+  - 禁止編集: FB/CE系issue、DOC-OPS-05群、共有統合3ファイル（README/dashboard/decision-pack）
+- AC不足補完: `A3はA1契約read-only参照` を明示。
+
+### Phase 2: ADR CDC
+- Context: A3は運用同期レーンであり、契約変更レーンではない。
+- Decision: A3で契約値を再定義しない。差分要求はA1へ返却。
+- Consequences: docs同期は監査可能性（語彙/責務/導線/固定値）維持に限定。
+
+### Phase 3: Plan -> Execute（A1/A2/A3直列整合）
+- A1依存ゲートを固定: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+- A2モック検証の完了を前提にA3 Proceed判定。
+- A3実行は docs-check と監査証跡記録に限定。
+
+### Phase 4: Verify
+- Proceed式（A3）:
+  - `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0 && agreementStatus=="agreed" && safeModeRegression==0 && collision==0)`
+- Self-Correctionは3回上限。4回目は停止。
+
+### Phase 5: Proceed/Stop Gate
+- Proceed: 上記式成立 + 許可外編集0件。
+- Stop: 前提崩壊 / 未定義競合 / 3回超過。
