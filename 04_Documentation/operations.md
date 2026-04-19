@@ -1029,3 +1029,12 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed（Ready）**。
 - 停止条件: 用語/責務/固定値（D1〜D4）のいずれかに不一致が再発した場合は `StoppedForClarification` で停止する。
+
+
+## Stream F HIL-RS-02-A3 sync log（2026-04-19）
+
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を再読し、runbook記述の同値性を確認。
+- Phase 2 用語同期: `Security Officer / System Owner / Platform Operator` を維持し、承認2者と実行責務分離の一致を確認。
+- Phase 3 D1〜D4整合: `4h / 2h / 代理承認なし / 48h+15m/60m` の固定値一致を確認。
+- Phase 4 Verify: docs-check（validator / `rg` / `git diff --check`）で不整合0件を確認。
+- Phase 5 Proceed: **Ready**。不一致再発時は `StoppedForClarification` で停止し、統合ストリームへ差分を引き継ぐ。

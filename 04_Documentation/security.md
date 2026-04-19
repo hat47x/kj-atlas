@@ -722,3 +722,12 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed（Ready）**。
 - 停止条件: Verify不一致が自己修復3回で収束しない場合は `StoppedForClarification` として停止する。
+
+
+## Stream F HIL-RS-02-A3 sync log（2026-04-19）
+
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` を正本として再読し、`security.md` / `operations.md` / `e2e_testing.md` と導線整合を確認。
+- Phase 2 用語同期: `Security Officer / System Owner / Platform Operator` を維持し、2者承認+実行責務分離を再確認。
+- Phase 3 D1〜D4整合: D1=4h、D2=2h、D3=代理承認なし、D4=48h+15m/60m の一致を再確認。
+- Phase 4 Verify: docs-check（語彙・固定値・リンク・diff）を実施し不整合0件。
+- Phase 5 Proceed: **Ready**。差分再発時は fail-safe に従い `StoppedForClarification` で停止。

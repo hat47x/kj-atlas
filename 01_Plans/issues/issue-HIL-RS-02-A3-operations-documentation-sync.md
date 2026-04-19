@@ -345,3 +345,27 @@ Proceed 条件:
 ### Phase 5: Proceed/Stop Gate
 - Proceed: 上記式成立 + 許可外編集0件。
 - Stop: 前提崩壊 / 未定義競合 / 3回超過。
+
+
+## Stream F A3 Ops-Docs Sync Rerun-06 (2026-04-19)
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、canonical 用語（Security Officer / System Owner / Platform Operator）、状態語彙、D1〜D4 固定値を確認。
+- `04_Documentation/operations.md` / `04_Documentation/security.md` / `04_Documentation/e2e_testing.md` を再読し、runbook導線（architecture -> security -> guidelines -> e2e）整合を確認。
+
+### Phase 2 用語同期
+- 3文書で役割語彙を再照合し、承認（Security Officer + System Owner）と実行（Platform Operator）の責務分離を維持。
+
+### Phase 3 固定値 D1〜D4 整合
+- D1=承認TTL 4h、D2=最大2h、D3=代理承認なし、D4=48hレビュー+15m/60mエスカレーションの一致を確認。
+- 不整合検知時は `StoppedForClarification` で停止する fail-safe を再確認。
+
+### Phase 4 Verify（docs-check）
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 5 Proceed（統合ストリーム引継ぎ）
+- 判定: **Ready**（語彙ドリフト0件、D1〜D4不整合0件、許可外ファイル編集0件）。
+- 引継ぎ条件: 差分発生時は docs-only 最小差分で再同期し、3回超過時は `StoppedForClarification` で停止。
