@@ -673,3 +673,42 @@
 
 - rollback手順・監査遷移可視化（`reason=rollback` と UI表示）については既存実装で維持され、後退なし。
 - 未完了は従来どおり CE4 連携（local audit log の document監査ログ昇格）を継続課題として据え置き。
+
+## 14) Stream F Phase Notes (2026-04-19)
+
+### Phase 1 Read（現行workspace state machine再読）
+
+- `03_Implement/frontend/src/domain/patch/workspace/ce3_patch_workspace.ts` / `03_Implement/frontend/src/ui/workspace/PatchWorkspacePanel.tsx` / `03_Implement/frontend/e2e/ce3_patch_workspace.spec.ts` を再読し、`adopt/reject/hold` 独立性・rollback監査遷移・3候補並列の受入条件が維持されていることを確認。
+- Core/Consensus 直接編集が発生していないこと、workspace/preset が local state + localStorage 境界に留まることを再確認。
+
+### Phase 2 ADR CDC（必要時のみ）
+
+- 新規の Context/Decision/Consequences 追加は不要（既存CDCで要件を充足）。
+- 方針変更なしのため ADR 更新は実施せず、既存AC/DoDで Verify を継続。
+
+### Phase 3 Plan（AC/DoD不足補完）
+
+- AC/DoD不足は検出なし。
+- Verify 実行条件を再固定:
+  - unit: CE3 domain/ui/preset 回帰が green。
+  - e2e: `Patch Workspace|Preset|rollback` grep が green。
+  - 失敗時自己修復: 最大3回（`playwright install chromium` → `playwright install-deps chromium` → rerun）。
+
+### Phase 4 Execute（reversible操作・preset再現・監査遷移）
+
+- 実装差分は不要と判断し、状態機械・監査遷移・preset再現をテスト実行で再検証。
+
+### Phase 5 Verify（unit/e2e）
+
+- unit 1回目: `npm --prefix 03_Implement/frontend run test -- src/domain/ce3_patch_workspace.test.ts src/ui/PatchWorkspacePanel.test.ts src/domain/view/presets.test.ts` を pass。
+- e2e 1回目: browser binary 不足で fail。
+- 修復1: `npm --prefix 03_Implement/frontend exec playwright install chromium` を実行。
+- e2e 2回目: `libatk-1.0.so.0` 不足で fail。
+- 修復2: `npm --prefix 03_Implement/frontend exec playwright install-deps chromium` を実行。
+- e2e 3回目: `npm --prefix 03_Implement/frontend run e2e -- --grep "CE3 patch workspace|Patch Workspace|Preset|rollback"` を pass。
+- 自己修復回数は2回で収束（3回上限未満）。
+
+### Phase 6 Proceed（未解決をCE4へhandoff）
+
+- Proceed 判定: 合格（本スコープ内AC/DoD未達なし）。
+- CE4 handoff: local audit log の document監査ログ昇格は未着手のため継続課題として据え置き。
