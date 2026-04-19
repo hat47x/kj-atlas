@@ -282,3 +282,35 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 - 判定: **Ready**（Stream G 競合検出なし）。
 - 運用注意点: 競合検出時は即停止、自己修復は最大3回。3回超過時は `Hold` / `StoppedForClarification` で停止する。
+
+## 10. Stream K docs-only execution log（2026-04-19 / DOC-OPS-05-14）
+
+### Phase 1 Read
+
+- `security_operational_guidelines.md` / `security.md` と対応issue（DOC-OPS-05-13, 05-14）を再読し、Scope・公開境界・運用責務の整合を確認。
+
+### Phase 2 ADR CDC
+
+- Context: 本書は公開向け運用判断ガイドであり、承認フロー正本の再定義を行わない。
+- Decision: 既存方針（Improve external、D1〜D4固定、役割分離）を維持し、Stream K の実行証跡のみ追記。
+- Consequences: 他ストリームとの責務競合を増やさず、再利用可能な運用記録を追加できる。
+
+### Phase 3 Plan
+
+- docs-only / 最小差分で更新し、実装や共有統合ファイルの編集は行わない。
+- Verify で `docs-check + リンク整合 + git diff --check` を実施する。
+
+### Phase 4 Execute
+
+- 本節を追加し、Plan → Execute → Verify → Proceed の固定ワークフローに沿った実施証跡を残した。
+
+### Phase 5 Verify
+
+- 実施: `rg -n "Stream K docs-only execution log|Phase 1 Read|Phase 5 Verify|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security_operational_guidelines.md`
+- 実施: `git diff --check`
+- 結果: 体裁崩れなし。自己修復 0/3。
+
+### Phase 6 Proceed
+
+- 判定: **Ready**
+- 停止条件: 自己修復3回超過、または用語/役割/導線/固定値不一致が残る場合は fail-safe 停止。
