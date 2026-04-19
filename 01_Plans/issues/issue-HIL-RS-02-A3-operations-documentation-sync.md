@@ -369,3 +369,28 @@ Proceed 条件:
 ### Phase 5 Proceed（統合ストリーム引継ぎ）
 - 判定: **Ready**（語彙ドリフト0件、D1〜D4不整合0件、許可外ファイル編集0件）。
 - 引継ぎ条件: 差分発生時は docs-only 最小差分で再同期し、3回超過時は `StoppedForClarification` で停止。
+
+
+## Stream A Critical Path Constraint Overlay (2026-04-19)
+
+### Phase 1: Read & Drift Check
+- 本issueの現状態は `Status: Draft` であり、Stream A再開ゲート未充足時は `Open(hold)` 維持。
+- Scope表記に architecture/documentation 実体ファイルが含まれるが、本ストリーム実行は **planning issue 更新のみ** に制限。
+
+### Phase 2: ADR CDC
+- Context: Stream A は契約固定レーンであり、A3実文書同期は下流ストリーム責務。
+- Decision: A3は契約値変更を行わず、A1固定I/F参照のみ許可。
+- Consequences: A3側での契約補完は無効。差分要求はA1へ返却。
+
+### Phase 3: Contract Freeze / Restart Gate
+- A3 Proceed前提（固定）:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0`
+  - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+  - `schemaVersion=="1.0.0"`
+  - `overridePolicy=="human_dual_control_only"`
+  - `contractLinkLocked==true && sharedResourceFreeze==true`
+- Stop条件:
+  - D1〜D4不整合 / 未承認確定化 / SafeMode後退要求 / Self-Correction 3回超過。
+
+### Phase 4: Proceed
+- 判定: `NoGo`（本更新時点は `Status: Draft` を維持し、上位ゲート成立まで進行停止）。

@@ -766,3 +766,35 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - `Return path`: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
+
+## Stream A Contract Freeze Revalidation (2026-04-19)
+
+### Phase 1: Read & Drift Check
+- `Status/Priority/Scope/Dependencies` を再読し、`Open / P1 / planning only / ADR-0026-0028` を維持確認。
+- A1契約識別子（`A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）と固定値に差分なし。
+
+### Phase 2: ADR CDC
+- Context: A1は契約変更窓口の唯一正本。
+- Decision: A1以外で契約値を更新しない方針を再承認記録。
+- Consequences: A2/A3は read-only 参照。変更要求は `A1-CDC-only` へ集約。
+- Approval Record: `cdcApproval=recorded`（未承認項目はなし）。
+
+### Phase 3: Contract Freeze
+- Freeze値固定:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 禁止遷移固定:
+  - `Pending` bypass
+  - `a1Status!="Done"` での A2/A3 Open
+
+### Phase 4-5: Verify / Proceed
+- Verify 成功条件:
+  - 識別子衝突0
+  - 語彙ドリフト0
+  - 安全境界後退要求0
+- Proceed条件:
+  - `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && agreementStatus=="agreed")`
+  - `NoGo = !StartAllowed`。

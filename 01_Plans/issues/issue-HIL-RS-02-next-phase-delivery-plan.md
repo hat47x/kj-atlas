@@ -724,3 +724,28 @@
 - `Return path`: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
+
+## Stream A Delivery Gate Confirmation (2026-04-19)
+
+### Phase 1: Read & Drift Check
+- 親子依存（A1 -> A2 -> A3）を再確認し、依存逆転なし。
+- `Status: Open` / `Priority: P1` / `Scope: planning only` を維持。
+
+### Phase 2: ADR CDC
+- Context: HIL-RS-02 は A1 凍結契約を実行計画へ接続する運用レーン。
+- Decision: Proceed判定を A1単一ゲート式へ固定継続。
+- Consequences: A2/A3で契約補完しない。未確定はDecision Queueへ返却。
+
+### Phase 3: Contract Freeze + Restart Gate
+- `Open/Proceed Allowed := (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`
+- `NoGo = !Go`
+- Restart条件（再開ゲート）:
+  - `NoGo` を解消し、`validate_active_issue_memos.py` と `rg` 再検証がPassすること。
+
+### Phase 4: Stop Conditions
+- 即停止:
+  - 固定識別子不一致
+  - 未承認決定の確定化
+  - Pending bypass
+  - Self-Correction 3回超過

@@ -763,3 +763,25 @@ A1契約を下流へ引き渡す際は、次の read-only artifact を固定値�
 - `Return path`: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
+
+## Stream A Governance Hardening Lock (2026-04-19)
+
+### Phase 1: Read & Drift Check
+- A1 hardening rule を再読し、`Unlock rule` と `Decision Queue` が単一化されていることを確認。
+- 差分: なし（固定値/禁止遷移を維持）。
+
+### Phase 2: ADR CDC
+- Context: ガバナンス判定式の重複定義は誤Open化リスク。
+- Decision: 本issueの判定式を唯一正本として維持し、下流はread-onlyで参照。
+- Consequences: 変更要求はA1 CDCへ差戻し。
+
+### Phase 3: Contract Freeze
+- 固定判定式:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+- 固定禁止事項:
+  - Pending bypass / A1未完了時Open / 未承認確定化 / SafeMode後退。
+
+### Phase 4: Proceed
+- `Proceed=Allowed` は `Go==true` かつ Verify pass 時のみ。
+- それ以外は `Open(hold)` を維持し、Decision Queue で保留。

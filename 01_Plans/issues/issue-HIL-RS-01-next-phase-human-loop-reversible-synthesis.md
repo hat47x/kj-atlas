@@ -789,3 +789,51 @@ HIL-RS-01 を **Plan契約の単一正本（issue群）** として再整理し�
 - `Return path`: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - `Fail-safe`: Verify失敗3回超過 / 編集境界違反 / 前提契約未定義で即停止・人間エスカレーション
 
+
+## Stream A Critical Path Lock Update (2026-04-19)
+
+### Phase 1: Read & Drift Check
+- 対象5 issue を再読し、`Status/Priority/Scope/Dependencies` のドリフトを確認。
+- 差分記録:
+  - 本issueは `Status: Open` / `Priority: P1` / `Scope: planning only` を維持。
+  - 依存ゲートは `a1Status=="Done" && pendingDecisionQueueCount==0` の単一式を維持。
+  - `issue-HIL-RS-02-A3-operations-documentation-sync.md` は `Status: Draft` のため、Proceed対象外（hold）と判定。
+
+### Phase 2: ADR CDC（承認記録）
+- Context: Stream A の目的は HIL ガバナンス契約固定と再開ゲート確定であり、実装/運用実体編集は対象外。
+- Decision: 追加ADR起票は不要（`ADR-0026/0027/0028` と整合）。本issue群CDCを契約正本として継続。
+- Consequences: 未承認変更は確定せず `Decision Queue: Pending` を維持、差分要求は A1 へ差し戻す。
+- Approval Record: `approvalState=recorded-in-issue`（本更新時点で承認待ち事項なし）。
+
+### Phase 3: Contract Freeze
+- A1/A2/A3 遷移条件固定:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion==1.0.0 && overridePolicy==human_dual_control_only && contractLinkLocked==true && sharedResourceFreeze==true)`
+  - `NoGo = !Go`
+- Decision Queue 固定:
+  - 許可: `Pending -> Approved | Rejected`
+  - 禁止: `Pending bypass`
+- Stop条件固定:
+  - 固定識別子不一致 / 未承認確定化 / SafeMode後退要求 / Self-Correction 3回超過。
+
+### Phase 4: Plan -> Execute -> Verify -> Proceed
+- Plan: AC/DoD不足なし（本更新でドリフト記録と再開ゲートを明文化）。
+- Execute: 許可5ファイルのみ更新。
+- Verify:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `rg -n "a1Status=="Done" && pendingDecisionQueueCount==0|HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true|Pending -> Approved|Pending -> Rejected|Pending bypass" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `git diff --check`
+- Proceed判定:
+  - `Proceed=Conditional`（A3 が `Draft` のため A2/A3 は `Open(hold)` 維持。A1契約は再開可能状態を維持）。
+
+### Phase 5: Handover Pack（read-only）
+- 固定I/F一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 禁止事項:
+  - A2/A3側契約再定義 / Pending bypass / SafeMode後退 / direct write / auto-apply / review自動昇格。
+- 再開条件:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0 && agreementStatus=="agreed" && hasUndefinedContractChangeRequest==false`。
