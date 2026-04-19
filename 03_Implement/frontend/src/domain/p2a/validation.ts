@@ -3,6 +3,7 @@ import {
   P2A02_CONTRACT_VERSION,
   P2A_A1_CONTRACT_LOCK,
   type P2AA1ContractLock,
+  type P2AImplementationReadiness,
   type P2AMockFixture,
   type P2AMockCaseId,
   type P2AValidationLog,
@@ -132,4 +133,25 @@ export function evaluateP2AA3Proceed(logs: readonly P2AValidationLog[]): { go: b
   }
 
   return { go: true, reason: "go" };
+}
+
+export function buildP2AImplementationReadiness(logs: readonly P2AValidationLog[]): P2AImplementationReadiness {
+  const proceed = evaluateP2AA3Proceed(logs);
+  if (proceed.go) {
+    return {
+      implementationReadiness: "go",
+      acceptedMockCases: ["M1", "M2", "M3"],
+      blockedMockCases: ["M4"],
+      rollbackTrigger: [],
+      notes: ["GoNoGo passed (M1/M2/M3=pass and M4=fail)"],
+    };
+  }
+
+  return {
+    implementationReadiness: "no-go",
+    acceptedMockCases: [],
+    blockedMockCases: [...REQUIRED_CASES],
+    rollbackTrigger: [proceed.reason],
+    notes: ["Rollback to A2 fixed ledger and resolve ownerOfFix / contract mismatch"],
+  };
 }
