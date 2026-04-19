@@ -221,3 +221,30 @@
 
 ### Phase 6 Proceed
 - 状態: **Ready**
+
+## Stream F serial cycle（2026-04-19 / DOC-OPS-05-01）
+
+### Phase 1 Read同期
+- `issue-doc-ops-05-01-04doc-canonicalization.md` と本書を照合し、Classification=**Move internal**、公開境界メタ、関連導線の整合を確認。
+- `02_Architecture/schemas.md` / `02_Architecture/architecture.md` 参照が現行方針（公開は概要、詳細は内部正本）と矛盾しないことを確認。
+
+### Phase 2 Plan（AC/DoD草案→合意）
+- AC:
+  1) 公開stub方針（Move internal）を維持する。
+  2) Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+  3) Verifyで docs-check（`rg` + `git diff --check`）を実行する。
+- DoD:
+  - docs-onlyで対象3文書以外を編集しない。
+  - 自己修復は最大3回、超過時は停止する。
+
+### Phase 3 Execute
+- 本書の方針を変更せず、Stream Fとしての5Phase実行記録を追記。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream F serial cycle" 04_Documentation/canonicalization.md`
+- `git diff --check`
+- 自己修復回数: **0/3**
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**
+- Stop条件: docs-check不整合の自己修復が3回を超えた場合は **Stop** とし、保留化する。

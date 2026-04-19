@@ -239,6 +239,33 @@ PRには実施手順と結果を必ず記載してください。
 - `git diff --check` で体裁崩れがないことを確認した。
 - security 系は D1〜D4 と役割語彙の整合を追加確認した。
 
+## Stream F serial cycle（2026-04-19 / DOC-OPS-05-08）
+
+### Phase 1 Read同期
+- `issue-doc-ops-05-08-04doc-installation.md` と本書を照合し、Classification=**Improve external** と公開境界メタの整合を確認。
+- `04_Documentation/e2e_testing.md` をE2E正本として参照する導線が維持されていることを確認。
+
+### Phase 2 Plan（AC/DoD草案→合意）
+- AC:
+  1) 初回導入者向け最小手順（起動・疎通・停止）を維持する。
+  2) Docker代替（SQLite）手順とE2E正本導線を維持する。
+  3) Verifyで docs-check（`rg` + `git diff --check`）を実行する。
+- DoD:
+  - docs-onlyで対象3文書以外を編集しない。
+  - 自己修復は最大3回、超過時は停止する。
+
+### Phase 3 Execute
+- 既存インストール手順は変更せず、Stream Fの5Phase実行記録を追記。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|e2e_testing.md|Stream F serial cycle" 04_Documentation/installation.md`
+- `git diff --check`
+- 自己修復回数: **0/3**
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**
+- Stop条件: docs-check不整合の自己修復が3回を超えた場合は **Stop** とし、保留化する。
+
 ### Phase 5 Proceed
 
 - 判定: **Ready**
