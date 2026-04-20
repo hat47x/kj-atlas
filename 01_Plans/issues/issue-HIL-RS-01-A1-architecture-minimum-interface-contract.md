@@ -26,11 +26,21 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 - `sharedResourceFreeze=true`
 - `safeModeDefault=ON`
 
+### 2.1) Phase 1 Read 差分確認（2026-04-20 固定）
+
+- 対象: `issue-HIL-RS-01-A1` / `issue-HIL-RS-01` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`
+- A1固定値差分:
+  - `schemaVersion`: 差分なし（`1.0.0`）
+  - `contractLinkLocked`: 差分なし（`true`）
+  - `sharedResourceFreeze`: 差分なし（`true`）
+  - `safeModeDefault`: 差分なし（`ON`）
+- 判定: `DiffCount=0`（Proceed可）
+
 ## 3) ADR CDC（必要時のみ）
 
 - Context:
   - A1 が曖昧だと A2/A3 の Open 判定が不安定化する。
-- Decision:
+- Decision（Draft / held）:
   - Stream A は A1 契約識別子と遷移条件のみ固定し、下流は read-only 参照とする。
 - Consequences:
   - 変更要求は `A1-CDC-only` へ差し戻し、A2/A3 で局所修正しない。

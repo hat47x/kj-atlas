@@ -37,14 +37,26 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
   - `sharedResourceFreeze`
   - `validatorPass`
 
-## 3) ADR CDC（方針変更が必要な場合のみ承認待ち）
+### 2.1) Phase 1 Read 差分確認（2026-04-20 固定）
+
+- 対象: `issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`
+- A1固定値差分:
+  - `schemaVersion`: 差分なし（`1.0.0`）
+  - `contractLinkLocked`: 差分なし（`true`）
+  - `sharedResourceFreeze`: 差分なし（`true`）
+  - `safeModeDefault`: 差分なし（`ON`）
+- 判定: `DiffCount=0`（Proceed可）
+
+## 3) ADR CDC（方針変更が必要な場合のみ承認待ち / Pending）
 
 - Context:
   - HIL-RS-01 は `ADR-0026/0027/0028` の下位計画であり、契約逸脱を抑止する。
-- Decision:
+- Decision（Draft / held）:
   - A1/A2/A3 依存は `state-transition contract` で固定し、下流で契約値を再定義しない。
 - Consequences:
   - 契約差分要求は常に `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻す。
+- ApprovalStatus: `Pending (Human approval required)`
+- Pre-approval lock: `承認前は確定扱い禁止`
 
 ## 4) State Transition Contract（固定）
 
@@ -101,7 +113,7 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 ### Phase 6: Proceed
 - Plan: 他ストリーム向けの「凍結I/Fスナップショット（read-only handoff）」を確定。
-- Execute: freezeContractId・固定キー・unlockRule・Go/No-Go を出力。
+- Execute: freezeContractId・固定キー・unlockRule・Go/No-Go を出力（**read-only contract参照のみ**）。
 - Verify: A1 frozen keys と完全一致。
 - Proceed: 成功時のみ handoff 完了。失敗時は停止報告へ移行。
 
