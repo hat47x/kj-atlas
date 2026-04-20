@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Contract Freeze（Stream B / CE契約群 / contract-only planning）
+# Issue Draft: CE0 Contract Freeze（Stream C / CE契約群 / contract-only planning）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream B（CE契約群）
+- Owner: Stream C（CE契約群）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE0-contract-freeze.md` のみ
 - Related Backlog: `CE-0`
@@ -66,6 +66,7 @@ Freeze判定（全て必須）:
 - **Decision**: 既存契約IDを再定義せず、参照境界のみを明確化したこと。
 - **Consequences**: CE1/CE2/CE4の依存先が一意化されること。
 - **Approval**: 反映状態は `held` とし、承認前確定を禁止する。
+- 衝突未検知時（`contract_id_collision=0` かつ `vocabulary_collision=0` かつ `scope_deviation=0`）はCDCを起票しない。
 
 ### ADR CDC起票テンプレ（必要時のみ）
 ```md

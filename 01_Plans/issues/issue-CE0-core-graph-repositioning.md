@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Core Graph Repositioning（Stream B / CE契約群 / contract-only planning）
+# Issue Draft: CE0 Core Graph Repositioning（Stream C / CE契約群 / contract-only planning）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream B（CE契約群）
+- Owner: Stream C（CE契約群）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
@@ -19,7 +19,7 @@
 ## Phase 1 Read（role / transition / no-go語彙確認）
 ### Read同期スナップショット
 - Contract ID: CE0契約ID群を参照のみで利用（再定義禁止）
-- No-Go語彙: `direct write` / `auto-apply` / `auto-publish` / `preview bypass` / `safeMode既定緩和`
+- No-Go語彙（CE0 canonical 5 IDs）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
 - Scope: graph role/transition/audit 契約固定のみ
 
 ### Graph role I/F
@@ -48,6 +48,7 @@
 - **Decision**: `WorkingGraph / ContextProjectionGraph / Consensus Graph` へ固定。
 - **Consequences**: CE1/CE2/CE4の連携時に role/transition の解釈が単一化。
 - **Approval**: 差分発生時の反映状態は `held`（未承認確定禁止）。
+- 衝突未検知時（role/transition/audit語彙揺れ=0 かつ No-Go不一致=0 かつ SafeMode逸脱=0）はCDCを起票しない。
 
 ## Phase 4 Execute（working / context_projection / consensus 責務固定）
 ### Execute方針
@@ -73,6 +74,7 @@
 - Contract IDs: `CG-01..05`, `CE0-SAFEMODE-IF`
 - 禁止事項: direct write / auto-apply / auto-publish / safeMode緩和
 - 検証条件: role/transition/audit衝突0, docs-check pass
+- 参照方向固定: `CE0 -> (CE1, CE2, CE4)` の一方向のみ（下流からCE0契約の再定義禁止）。
 - CE1参照境界: `context_projection` は read-only参照のみ（`consensus` への書込不可）。
 - CE2参照境界: proposal lifecycle は `working` 専有、`consensus` 反映は `patch+approval` のみ。
 - CE4参照境界: 監査導線は `query/bundle/proposal/apply` を必須とし、`equivalenceKey + bundleHash` は参照のみ。
@@ -82,4 +84,4 @@
 - 未定義ファイル競合
 - SafeMode後退の兆候
 - 依存前提崩壊
-- No-Go語彙衝突（`direct write` / `auto-apply` / `auto-publish` / `preview bypass` / `safeMode既定緩和`）
+- No-Go語彙衝突（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）

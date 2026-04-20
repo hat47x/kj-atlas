@@ -1,9 +1,9 @@
-# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream B / CE契約群 / contract-only planning）
+# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream C / CE契約群 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream B（CE契約群）
+- Owner: Stream C（CE契約群）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
@@ -11,9 +11,10 @@
 - Verification: `docs-check`
 
 ## Lane guard（独立性）
-- CE1はCE0 SSOT参照レーン。CE0/CE2/CE4契約を待たず、mock/hash/read-only参照で依存切断する。
+- CE1はCE0 SSOT参照レーン。CE0を上位SSOTとしてread-only参照し、CE1側で再定義しない。
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - CE0契約参照は必須、CE1側で再定義しない。
+- 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向に固定し、CE1からCE0契約本文への逆流再定義を禁止する。
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
@@ -40,7 +41,8 @@
 - `nondeterministic_bundle`
 
 ### No-Go / safeMode境界
-- Query Preview bypass 禁止。
+- No-Go語彙（CE0 canonical 5 IDs）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+- Query Preview bypass 禁止（`preview_bypass`）。
 - `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 
 ## Phase 2 Plan（AC/DoD不足ドラフト）
@@ -56,9 +58,10 @@
 - unknown key -> `400 unknown_contract_key` を契約として固定。
 - 同一 canonical query で `queryCanonicalHash/bundleHash` 一致を契約として固定。
 
-## Phase 3 ADR CDC（Context / Decision / Consequences, 承認待ち）
-- CDC Status: `held`（承認待ち）
-- 差分検知ログ対象: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ。
+## Phase 3 ADR CDC（衝突検知時のみ Context / Decision / Consequences を起票し承認待ち）
+- 差分検知ログ対象: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ / No-Go語彙不一致 / CE0契約ID衝突。
+- 衝突未検知時（contract_id_collision=0 かつ vocabulary_collision=0）はCDCを起票しない。
+- CDC起票時のStatus: `held`（承認待ち、未承認確定禁止）。
 
 ### Context
 - v1で hash決定論・preview gate・closed-world を同時固定し、実装差分の裁量を残さない。
@@ -117,6 +120,7 @@
 - 検証条件: hash決定論一致, preview gate強制, docs-check pass
 
 ### Read-only handoff（CE2 / CE4向け）
+- handoff matrixはread-only維持とし、下流（CE2/CE4）での契約再定義を禁止する。
 - CE2向け:
   - 比較語彙は `sourceBundleHash === bundleHash` のみ利用可（再定義禁止）。
   - `sourceBundleHash` の供給元は CE1 `ContextBundleV1` の `bundleHash` 固定値のみ。
