@@ -15,7 +15,7 @@
 - CE4は API/CLI/監査の契約I/F固定のみ（実装禁止）。
 - CE1/CE0/CE2契約は参照専用（CE4で再定義しない）。
 - 検証失敗時の自己修復は最大3回、4回目相当は停止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Execute+Verify → Phase 5 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan（AC/DoD不足ドラフト）→ Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
 
 ## Phase 1 Read（equivalenceKey+bundleHash / audit4点 / fail-closed 前提確認）
 ### Read同期スナップショット
@@ -36,7 +36,15 @@
 - 監査欠損の成功扱い禁止（fail-closed）。
 - `CE0-SAFEMODE-IF` を参照し、CE4側で緩和しない。
 
-## Phase 2 I/F Mock Freeze（CE1/CE2参照語彙のみで固定）
+## Phase 2 Plan（AC/DoD不足ドラフト）
+### AC/DoD不足ドラフト（不足がある場合のみ追記）
+- [ ] API/CLI/GUIの同値入力サンプル定義が不足している場合は、`equivalenceKey + bundleHash` の比較表を追記する。
+- [ ] 監査4点（`query / bundle / proposal / apply`）の欠損検知ルールが不足している場合は、欠損時 fail-closed を追記する。
+- [ ] `dryRun=true` 時の `sideEffect=none` 検証ログ定義が不足している場合は、監査ログ項目を追記する。
+- [ ] `sourceBundleHash=mock:<hash>` での依存切断検証が不足している場合は、mock比較ケースを追記する。
+- [ ] `CE0-SAFEMODE-IF` 参照導線が不足している場合は、No-Go節に明示追記する。
+
+### I/F Mock Freeze（CE1/CE2参照語彙のみで固定）
 ### Contract IDs（CE4固定I/F）
 - `CE4-EQUIVALENCE-IF`
 - `CE4-AUDIT-CHAIN-IF`
@@ -56,8 +64,8 @@
 - **Consequences**: CE1/CE2参照境界の一意化、監査欠損時の停止一貫性を確保。
 - **Approval**: 差分発生時の反映状態は `held`。
 
-## Phase 4 Execute+Verify（AC/DoD補完 → 合意 → docs-check）
-### Execute（contract-only）
+## Phase 4 Execute（contract-only）
+### Execute（equivalenceKey+bundleHash固定 / 監査4点固定）
 - 公開I/Fを `context-query/context-bundle/proposal-diff/apply-dry-run` に整理。
 - AuditEvent v1 語彙を固定: `event/equivalenceKey/bundleHash/sourceBundleHash/dryRun/sideEffect`。
 - 判定規則を3点で固定:
@@ -70,10 +78,11 @@
 - CE2語彙参照: `proposed/accepted/rejected/held` + `proposal/apply` を再定義せず利用。
 - Stopper合意: 監査欠損成功扱い・safeMode緩和・自己修復4回目相当・未定義競合で停止。
 
-### Verify（docs-check）
+## Phase 5 Verify（docs-check / 修復最大3回）
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
+- 修復カウンタ運用: `attempt_1 -> attempt_2 -> attempt_3` まで許容。`attempt_4` 相当は fail-safe 停止。
 
 ### Acceptance Criteria / DoD
 - [x] API/CLI/GUI が同一入力時に同一 `equivalenceKey` かつ同一 `bundleHash`
@@ -82,7 +91,7 @@
 - [x] `sourceBundleHash=mock:<hash>` で同値性検証を完結可能
 - [x] SafeMode regression = 0（`CE0-SAFEMODE-IF` 参照、緩和なし）
 
-## Phase 5 Proceed（read-only contract handoff）
+## Phase 6 Proceed（API/CLI/GUI同値監査I/F handoff）
 ### Fixed contract handoff
 - Contract IDs: `CE4-EQUIVALENCE-IF` / `CE4-AUDIT-CHAIN-IF` / `CE4-DRYRUN-SAFETY-IF` / `CE4-MOCK-HASH-IF`
 - Read-only参照: CE1語彙（`equivalenceKey/bundleHash/sourceBundleHash/queryCanonicalHash`）+ CE2語彙（proposal lifecycle + `proposal/apply`）
