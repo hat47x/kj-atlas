@@ -702,3 +702,34 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 指定順の次Issueを同一手順（Phase 1〜5）で処理する。
+
+## 20) Stream G DOC-OPS-05 front-half serial lock (2026-04-20)
+
+### Phase 1 Read
+- Scope/Requirement meta I/F/DecisionStatus を再確認し、`DOC-OPS-05-02` は docs-only かつ `DecisionStatus=Fixed` であることを確認。
+- RequirementStatement を再読し、「内部移管 or 対外改善」の二択判定タスクであることを固定。
+
+### Phase 2 Plan
+- AC/DoD不足を補うドラフト方針を固定:
+  - AC補強: Audience / Goal / Public boundary / Next action / VerificationLevel一致を必須判定項目化。
+  - DoD補強: Proceed を `Ready / Hold / Needs-decision` 三値で必須記録。
+- 判定軸（内部移管 or 対外改善）を明文化:
+  - **内部移管**: 読者の主対象が maintainer / contributor で、公開時に前提不足または内部運用依存が強い。
+  - **対外改善**: 読者の主対象が外部運用者で、公開境界を明示すれば利用価値がある。
+
+### Phase 3 ADR CDC（必要時のみ）
+- 判定: 追加ADR不要（Issue内 CDC で十分）。
+- Context: codex skill運用はエージェント運用手順への依存が強い。
+- Decision: 本Issueの分類は **Move internal** を維持。
+- Consequences: 後続は 00_Prompt / 01_Plans 側への移管と04側参照stub化の docs-only PR に限定。
+
+### Phase 4 Execute
+- 当該Issue内の計画記述のみ更新し、他Issue・他文書には非波及で固定。
+- 実行計画を「分類判定固定」「次アクション固定」「検証手順固定」の3点に限定。
+
+### Phase 5 Verify / Proceed
+- docs-check 実施方針（最大3回自己修復）:
+  1) `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  2) `git diff --check`
+- 3回超過停止ルール: 4回目相当は修復せず `Hold` へ遷移。
+- Proceed判定: **Ready**（DecisionStatus=Fixed、分類=Move internal、検証計画=docs-check）。
