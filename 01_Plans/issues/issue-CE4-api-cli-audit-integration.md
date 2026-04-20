@@ -15,8 +15,8 @@
 - CE4は API/CLI/監査の契約I/F固定のみ（実装詳細・アルゴリズム詳細は禁止）。
 - CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照専用。
 - 監査欠損は常に fail-closed（成功扱い禁止）。
-- 検証失敗時の自己修復は最大3回、4回目相当は停止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`。
+- 検証失敗時の自己修復は最大3回。**3回超過（4回目着手）を禁止し、即停止する。**
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` の固定順のみ許可（Phaseの追加・入替・省略を禁止）。
 
 ## Phase 1 Read（CE0 contract IDs と監査4点の参照整合確認）
 ### CE0 contract IDs（read-only）
@@ -86,4 +86,5 @@
 
 ### 未承認事項の扱い
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
+- 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
