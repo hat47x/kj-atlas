@@ -1,9 +1,9 @@
-# Issue Draft: CE2 Low-Risk AI Assist（Stream D専任 / CE契約群 / proposal-only / contract-only planning）
+# Issue Draft: CE2 Low-Risk AI Assist（Stream E専任 / CE契約群 / proposal-only / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE2専任 / proposal-only契約固定）
+- Owner: Stream E（CE2専任 / proposal-only契約固定）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE2-low-risk-ai-assist.md` のみ
 - Related Backlog: `CE-2`
@@ -12,6 +12,7 @@
 
 ## Lane guard（固定）
 - proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
+- CE2 proposal lifecycle は `proposed | accepted | rejected | held` 以外を許可しない（固定）。
 - CE2は **proposal-only 契約固定**（実装禁止）。
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
 - auto-apply は常時禁止。
@@ -58,13 +59,14 @@
 - 判定: 不一致が1件でもあれば `status=held` で停止し、再定義なしで差分理由のみ記録する。
 
 ## Phase 4 Execute（patch/diff追跡可能性を明文化）
+- 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
 - **Decision**: proposal-only + no-auto-apply + human-only昇格を維持。
 - **Consequences**: CE4監査で proposal/apply の追跡可能性が固定化。
 - **Approval**: 差分発生時の反映状態は `held`。
 - 追跡可能性要件: すべての提案変更は `proposalId` をキーに `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能であること。
-- 監査導線: `proposal` と `apply` を分離し、CE2では `apply` 実行権限・自動導線を持たないことを明記する。
+- 監査導線: `proposal` と `apply` の監査トレースを分離し、CE2は proposal-only 契約境界を維持する。
 
 ## Phase 5 Verify（safeMode後退ゼロを検証）
 - lifecycleを `proposed/accepted/rejected/held` に固定。
@@ -92,7 +94,7 @@
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE1と一致
 - [ ] SafeMode regression = 0
 - [ ] lifecycle語彙が `proposed|accepted|rejected|held` 以外を含まない
-- [ ] CE4 handoff は read-only で、apply 権限/導線を追加しない
+- [ ] CE4 handoff は read-only を維持する
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 
 ## Proceed（未確定は保留、3回超過や前提崩壊で停止）
