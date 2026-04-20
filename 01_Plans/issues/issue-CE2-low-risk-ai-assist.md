@@ -10,12 +10,13 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
-## Lane guard
+## Lane guard（固定）
 - proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
-- CE2は proposal-only 契約固定のみ（実装禁止）。
+- CE2は **proposal-only 契約固定**（実装禁止）。
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
-- `reviewState=human_reviewed` のAI自動昇格は禁止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
+- auto-apply は常時禁止。
+- `reviewState=human_reviewed` のAI自動昇格は禁止（人手のみ）。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 CDC → Phase 4 Execute → Phase 5 Verify → Proceed` に固定する。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
@@ -50,7 +51,13 @@
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
 
-## Phase 3 Execute（patch/diff追跡可能性を明文化）
+## Phase 3 CDC（Contract Drift Check）
+- 目的: CE2契約の再定義を防ぎ、proposal-only / no-auto-apply / human-only昇格を固定化する。
+- 比較対象: `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CE1-CTXB-IF`（参照のみ）。
+- drift検知キー: lifecycle語彙、`sourceBundleHash`、`reviewState`、No-Go語彙。
+- 判定: 不一致が1件でもあれば `status=held` で停止し、再定義なしで差分理由のみ記録する。
+
+## Phase 4 Execute（patch/diff追跡可能性を明文化）
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
 - **Decision**: proposal-only + no-auto-apply + human-only昇格を維持。
@@ -59,22 +66,19 @@
 - 追跡可能性要件: すべての提案変更は `proposalId` をキーに `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能であること。
 - 監査導線: `proposal` と `apply` を分離し、CE2では `apply` 実行権限・自動導線を持たないことを明記する。
 
-## Phase 4 Verify（safeMode後退ゼロを検証）
-### Plan
+## Phase 5 Verify（safeMode後退ゼロを検証）
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
 - `sourceBundleHash === bundleHash` を参照整合キーとして明示。
 - AC/DoD不足ドラフトを先に固定し、実行中の契約再定義を禁止。
 - proposal-only を維持し、実装・auto-apply 経路の作成/示唆を禁止。
-
-### Execute
 - collision=0 / safeMode regression=0 を満たす整理を実施。
 - 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
 - 契約再定義要求または safeMode 後退要求を受けた場合は即停止（Fail-safe）。
 - lifecycle は常に `proposed|accepted|rejected|held` のみを許可し、別名語彙を導入しない。
 - `reviewState=human_reviewed` は人手操作のみで遷移可能（AI提案は `unreviewed` に固定）。
 
-### Verify
+### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
@@ -91,7 +95,7 @@
 - [ ] CE4 handoff は read-only で、apply 権限/導線を追加しない
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 
-## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
+## Proceed（未確定は保留、3回超過や前提崩壊で停止）
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
