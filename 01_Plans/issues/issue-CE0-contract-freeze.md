@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Contract Freeze（Stream D / CE契約専任 / planning-only）
+# Issue Draft: CE0 Contract Freeze（Stream B / CE契約専任 / planning-only）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE契約専任）
+- Owner: Stream B（CE契約専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
@@ -30,7 +30,13 @@
 - AIによる review 自動昇格
 - safeMode既定緩和
 
-## Phase 2) CE0契約凍結（CDC明文化→承認）
+## Phase 2) Plan（AC/DoD不足時の提案）
+### 補強提案（不足がある場合のみ追加）
+- AC不足時は「衝突ゼロ」「safeMode後退ゼロ」「参照境界の再定義ゼロ」を最小セットとして補完する。
+- DoD不足時は「契約語彙単一正本」「実装依存記述なし」「検証手順の再現可能性」を補完する。
+- 補強提案は CE0既存契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の参照に限定し、再定義しない。
+
+## Phase 3) ADR CDC（必要時のみ: CE0契約凍結）
 ### CDC（Contract Definition Check）
 - Contract ID collision = 0
 - Vocabulary collision = 0（`Consensus Graph / WorkingGraph / ContextProjectionGraph`）
@@ -40,17 +46,18 @@
 - Freeze候補を「固定契約」「禁止事項」「停止条件」の3ブロックで提示
 - 承認前は `provisional`、承認後のみ `frozen`
 
-## Phase 3) CE1/CE2のmock前提I/F分離（参照境界固定）
+## Phase 4) Execute（Issue粒度・依存・検証計画の確定）
+### CE1/CE2のmock前提I/F分離（参照境界固定）
 - CE1へ渡す境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照）
 - CE2へ渡す境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照）
 - 共通: safeMode境界は `CE0-SAFEMODE-IF` の参照のみ（CE1/CE2側で再定義しない）
 
-## Phase 4) CE4連携契約（API/CLI/Audit）定義
+### CE4連携契約（API/CLI/Audit）定義
 - CE4へ渡す必須監査導線: `query / bundle / proposal / apply`
 - CE4同値判定の前提: `equivalenceKey + bundleHash`
 - 欠損成功扱い禁止（fail-closed）
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（検証可能性・再開可能性チェック）
 ### Acceptance Criteria
 - [ ] Contract ID collision = 0
 - [ ] Vocabulary collision = 0

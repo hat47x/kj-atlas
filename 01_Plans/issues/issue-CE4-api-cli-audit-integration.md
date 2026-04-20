@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream D / planning-only）
+# Issue Draft: CE4 API/CLI/監査統合（Stream B / planning-only）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream D（CE契約専任）
+- Owner: Stream B（CE契約専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
@@ -25,17 +25,23 @@
 - `dryRun=true -> sideEffect=none` を固定。
 - `sourceBundleHash=mock:<hash>` を許容し、外部依存を切断する。
 
-## Phase 2) CE4連携契約凍結（CDC明文化→承認）
+## Phase 2) Plan（AC/DoD不足時の提案）
+- AC不足時は「同値性一致」「監査4点欠損ゼロ」「dryRun副作用なし」「mock依存切断完結」を補強する。
+- DoD不足時は「hash種別非分岐」「fail-closed」「判定軸の共通化」を補強する。
+- 補強提案は CE1/CE2/CE0の既存契約参照に限定し、CE4で再定義しない。
+
+## Phase 3) ADR CDC（必要時のみ: CE4連携契約凍結）
 - `bundleHash/sourceBundleHash` は CE1契約語彙を参照する。
 - `proposal/apply` 監査導線は CE2 proposal lifecycle 語彙（`proposed/accepted/rejected/held`）と整合させる。
 - 欠損を成功扱いしない（fail-closed）。
 
-## Phase 3) CE1/CE2のmock前提I/F分離
+## Phase 4) Execute（Issue粒度・依存・検証計画の確定）
+### CE1/CE2のmock前提I/F分離
 - CE1依存: `bundleHash/sourceBundleHash` の比較語彙のみ。
 - CE2依存: lifecycleとproposal監査語彙のみ。
 - `mock:<hash>` と本番hashで監査フローを分岐させない。
 
-## Phase 4) API/CLI/Audit契約（公開I/F）定義
+### API/CLI/Audit契約（公開I/F）定義
 ### 固定I/F仕様書
 - Logical operations: `context-query | context-bundle | proposal-diff | apply-dry-run`
 - AuditEvent v1: `event/equivalenceKey/bundleHash/sourceBundleHash/dryRun/sideEffect`
@@ -44,7 +50,7 @@
   2) 監査4点欠損ゼロ
   3) `mock:<hash>` 許容で依存切断
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（検証可能性・再開可能性チェック）
 ### Acceptance Criteria
 - [ ] API/CLI/GUI が同一入力時に同一 `equivalenceKey` かつ同一 `bundleHash` を返す
 - [ ] 監査4点（`query / bundle / proposal / apply`）欠損率0%

@@ -1,9 +1,9 @@
-# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream D / planning-only）
+# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream B / planning-only）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE1専属）
+- Owner: Stream B（CE1専属）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
@@ -31,22 +31,28 @@
 - closed-world: 未定義キーが1つでも存在した場合は常に `400 unknown_contract_key`。
 - deterministic hash: 同一 canonical query は再実行しても `queryCanonicalHash` / `bundleHash` が一致。
 
-## Phase 2) CE0参照下でCE1契約凍結（CDC明文化→承認）
+## Phase 2) Plan（AC/DoD不足時の提案）
+- AC不足時は「決定論3回一致」「preview gate厳格化」「closed-world違反検出」を最小補完する。
+- DoD不足時は「CE2/CE4依存可能性」「語彙一意性」「v1閉世界の明文化」を補完する。
+- 補強提案は CE0参照契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF`）を逸脱せず、CE1で再定義しない。
+
+## Phase 3) ADR CDC（必要時のみ: CE0参照下でCE1契約凍結）
 - `ContextQueryV1` / `ContextBundleV1` を v1 closed-world として固定（未定義キー追加禁止）。
 - CE0 `CE0-CTX-IF` / `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 - v1拡張要求は未承認の限り `held` とし、v2再起票まで確定しない。
 
-## Phase 3) CE1/CE2のmock前提I/F分離
+## Phase 4) Execute（Issue粒度・依存・検証計画の確定）
+### CE1/CE2のmock前提I/F分離
 - CE2連携キーは `sourceBundleHash === bundleHash` 比較に固定。
 - CE2側で ContextQueryV1/BundleV1 を拡張しない（参照のみ）。
 - mock hash と本番hashでI/Fを分岐しない（語彙共通）。
 
-## Phase 4) CE4連携契約（API/CLI/Audit）定義
+### CE4連携契約（API/CLI/Audit）定義
 - CE4同値判定へ渡す固定キー: `equivalenceKey`, `queryCanonicalHash`, `bundleHash`。
 - API/CLI/GUIで同一 canonical query が同一 `bundleHash` を返すことを前提契約化。
 - 監査導線は `query/bundle` をCE1側最小出力として必須化。
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（検証可能性・再開可能性チェック）
 ### Acceptance Criteria
 - [ ] 同一 canonical query 3回で `queryCanonicalHash` が完全一致
 - [ ] 同一 canonical query 3回で `bundleHash` が完全一致
