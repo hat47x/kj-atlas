@@ -1,16 +1,16 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (A1 contract freeze for Stream C lock lane)
+- Status: Open (A1 contract freeze for Stream B lock lane)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream C（FB Stream F lock lane 専任）
+- Owner: Stream B（FB-P0 baseline / FB-P2C-A1 契約固定専任）
 - Scope: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md` のみ
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`
 - Expected verification level: `docs-check`
 
-## Stream C execution boundary（hard lock）
+## Stream B execution boundary（hard lock）
 
 - Editable files:
   - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
@@ -59,13 +59,13 @@
 
 ---
 
-## Phase 2) Plan（I/F固定）
+## Phase 2) Plan（AC/DoD不足ドラフト合意）
 
 ### Plan
 - A1契約の固定値を明文化し、AC/DoD不足時のドラフト提案を行う。
 
 ### Execute
-- AC/DoDドラフト（不足時提案）:
+- AC/DoDドラフト合意:
   1. Contract ID 一意固定。
   2. tie-break順序固定。
   3. Required fields / Invariants 固定。
@@ -91,7 +91,7 @@
 
 ### Execute
 - 衝突なし: `CDC変更不要` を明記。
-- 衝突あり: Context / Decision / Consequences を最小差分で記録。
+- 衝突あり: Context / Decision / Consequences を最小差分で記録（承認待ち）。
 
 ### Verify
 - CDC欠落なし。
@@ -140,7 +140,7 @@
 
 ---
 
-## Phase 4) Execute（mock-first handoff）
+## Phase 4) Execute（tie-break契約とread-only handoff固定）
 
 ### Plan
 - A2/A3が実装前に検証可能な最小I/Fを固定する。
@@ -177,7 +177,7 @@
 
 ---
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（A2/A3契約スナップショット）
 
 ### Verify checklist
 - [x] Contract ID 固定
@@ -190,6 +190,14 @@
 - **A2 Proceed: 可（mock-validationのみ）**
 - **A3 Proceed: 可（implementation-ready contract参照のみ）**
 - 契約更新要求はA1差し戻しのみ可。
+
+### Snapshot
+- SnapshotID: `SNAP-FB-P2C-A1-CTR-V1`
+- ReferenceContractID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
+- DeterministicOrder: `padding>self_intersection>area_delta>vertex_count`
+- ReplayKeys: `inputHash`, `seed`, `outputPolygonHash`, `paddingViolationCount`, `appliedTieBreakOrder`
+- MutationPolicy: `read-only`
+- Consumers: `A2`, `A3`
 
 ---
 
