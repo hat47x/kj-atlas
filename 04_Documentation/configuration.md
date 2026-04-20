@@ -374,3 +374,31 @@ i18n表示差分を追加する場合は、UIコンポーネントの生文字�
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: 環境変数の更新が生じた場合は `02_Architecture/runtime_parameter_registry.md` と同時同期する。
+
+## Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）
+
+### Phase 1 Read
+- `configuration.md / installation.md / local_llm_ops_guide.md / codex_skill_operations.md` の4文書を再読し、公開境界メタとGo/No-Go判定導線を確認。
+
+### Phase 2 Mock依存切断（DQ-CONTRACT-v1 仮固定）
+- `01_Plans/documentation_quality.md` への依存は、次の **DQ-CONTRACT-v1** を固定値として運用。
+  - メタ必須: Audience / Goal / Non-goal / Public boundary / Outcome / Related
+  - 公開品質: QG-1（公開安全性）/ QG-5（正本導線）/ QG-6（検証記録）
+  - 失敗時: 自己修復は最大3回、4回目相当は停止（Hold）
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。既存DOC-OPS-05分類と公開境界で追跡可能なため、追加ADRは起票しない。
+
+### Phase 4 Plan→Execute→Verify
+- AC/DoD自己検証:
+  1) docs-only で対象4文書以外を編集しない。
+  2) `KJ_ATLAS_LLM_PROVIDER=none` 既定と安全境界を後退させない。
+  3) Verify は docs-check（`rg` + `git diff --check`）を実行し、修復上限3回を維持する。
+- Verify:
+  - `rg -n "Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）|DQ-CONTRACT-v1|Phase 5 Proceed" 04_Documentation/configuration.md`
+  - `git diff --check`
+
+### Phase 5 Proceed（DQ-CONTRACT-v1 差分）
+- 判定: **Ready**
+- 差分一覧:
+  - `configuration.md` は DQ-CONTRACT-v1 と **差分なし**（必須メタ/公開安全/正本導線/検証記録を維持）。
