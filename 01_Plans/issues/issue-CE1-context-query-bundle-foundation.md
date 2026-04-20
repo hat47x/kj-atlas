@@ -62,20 +62,11 @@
 - 差分検知ログ対象: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ / No-Go語彙不一致 / CE0契約ID衝突。
 - 衝突未検知時（contract_id_collision=0 かつ vocabulary_collision=0）はCDCを起票しない。
 - CDC起票時のStatus: `held`（承認待ち、未承認確定禁止）。
-
-### Context
-- v1で hash決定論・preview gate・closed-world を同時固定し、実装差分の裁量を残さない。
-
-### Decision
-- 語彙固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
-- 未定義キー拒否: `400 unknown_contract_key`。
-- preview必須: `previewConfirmed=false` は生成処理に進まず `422 preview_required`。
-- hash決定論: canonical query が同一なら `queryCanonicalHash` と `bundleHash` は常に一致。
-
-### Consequences
-- CE2は `sourceBundleHash === bundleHash` の比較キーのみで参照可能。
-- CE4は `equivalenceKey + bundleHash`（AND）に `queryCanonicalHash` を加えて監査照合可能。
-- v1 closed-worldを維持し、拡張要求は v2再起票に限定。
+- CDCが必要になった場合のみ、以下3項目を **その場で明文化して `held`** に遷移する（未承認のまま確定しない）。
+  - **Context**: どの契約/語彙で何が衝突したか（CE0参照ID・語彙差分・検知ログ）。
+  - **Decision**: v1で固定する解決策（I/F凍結範囲のみ。再定義禁止）。
+  - **Consequences**: CE2/CE4 handoff への影響と回帰リスク。
+- 本Issue時点では CDC未起票（衝突未検知）として扱う。
 
 ## Phase 4 Execute（ContextQuery/Bundle v1 closed-world, preview_required, hash決定論）
 ### I/F Mock Freeze（実装記述なし）
