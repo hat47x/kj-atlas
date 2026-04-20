@@ -29,7 +29,44 @@ export type P2CStubRunResult = {
   goNoGo: ReturnType<typeof evaluateP2CA3StartCondition>;
 };
 
+const P2C_REQUIRED_CASES = ["A", "B", "C"] as const;
+
+function assertFiniteNumber(value: number, fieldPath: string): void {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${fieldPath} must be a finite number`);
+  }
+}
+
+function assertBundleContract(bundle: P2CFixtureBundle): void {
+  if (bundle.schemaVersion !== "1.0.0") {
+    throw new Error(`unsupported schemaVersion: ${bundle.schemaVersion}`);
+  }
+
+  const seenCases = new Set<P2CFixtureCase["mockCaseId"]>();
+  for (const [caseIndex, testCase] of bundle.cases.entries()) {
+    if (seenCases.has(testCase.mockCaseId)) {
+      throw new Error(`duplicate mockCaseId: ${testCase.mockCaseId}`);
+    }
+    seenCases.add(testCase.mockCaseId);
+
+    assertFiniteNumber(testCase.seed, `cases[${caseIndex}].seed`);
+    assertFiniteNumber(testCase.padding, `cases[${caseIndex}].padding`);
+    for (const [pointIndex, point] of testCase.points.entries()) {
+      assertFiniteNumber(point.x, `cases[${caseIndex}].points[${pointIndex}].x`);
+      assertFiniteNumber(point.y, `cases[${caseIndex}].points[${pointIndex}].y`);
+    }
+  }
+
+  for (const requiredCase of P2C_REQUIRED_CASES) {
+    if (!seenCases.has(requiredCase)) {
+      throw new Error(`missing mockCaseId: ${requiredCase}`);
+    }
+  }
+}
+
 export function runP2CMockValidation(bundle: P2CFixtureBundle): P2CStubRunResult {
+  assertBundleContract(bundle);
+
   if (bundle.handoffId !== P2C_A2_HANDOFF_ID) {
     throw new Error(`unexpected handoffId: ${bundle.handoffId}`);
   }

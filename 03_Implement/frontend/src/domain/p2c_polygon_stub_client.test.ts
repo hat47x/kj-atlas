@@ -31,4 +31,36 @@ describe("p2c_polygon_stub_client", () => {
 
     expect(() => runP2CMockValidation(drifted)).toThrowError("appliedTieBreakOrder mismatch");
   });
+
+  it("fails fast when fixture schemaVersion drifts", () => {
+    const drifted = {
+      ...FIXTURE,
+      schemaVersion: "2.0.0",
+    } as unknown as P2CFixtureBundle;
+
+    expect(() => runP2CMockValidation(drifted)).toThrowError("unsupported schemaVersion: 2.0.0");
+  });
+
+  it("fails fast when required case is missing from bundle", () => {
+    const drifted = {
+      ...FIXTURE,
+      cases: FIXTURE.cases.filter((item) => item.mockCaseId !== "C"),
+    } as unknown as P2CFixtureBundle;
+
+    expect(() => runP2CMockValidation(drifted)).toThrowError("missing mockCaseId: C");
+  });
+
+  it("fails fast when point values are non-finite", () => {
+    const driftedCases = [...FIXTURE.cases];
+    driftedCases[0] = {
+      ...driftedCases[0],
+      points: [{ ...driftedCases[0].points[0], x: Number.NaN }, ...driftedCases[0].points.slice(1)],
+    };
+    const drifted = {
+      ...FIXTURE,
+      cases: driftedCases,
+    } as unknown as P2CFixtureBundle;
+
+    expect(() => runP2CMockValidation(drifted)).toThrowError("cases[0].points[0].x must be a finite number");
+  });
 });
