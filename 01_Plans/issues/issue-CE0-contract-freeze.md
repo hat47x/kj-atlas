@@ -13,7 +13,7 @@
 ## Lane guard（このレーンの絶対条件 / CE SSOT）
 - CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
-- CE0契約IDは再定義禁止：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- CE0契約IDは再定義禁止（freeze対象）：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
@@ -30,11 +30,15 @@
 - `CG-01..05`: `Working -> Consensus` は `patch + approval` のみ。
 
 ### No-Go語彙（固定）
-- Query Preview bypass
-- Consensus direct write
-- auto-apply / auto-publish
-- AIによる review 自動昇格
-- safeMode既定緩和
+- `preview_bypass`（Query Preview bypass）
+- `consensus_direct_write`（Consensus direct write）
+- `auto_apply_or_publish`（auto-apply / auto-publish）
+- `ai_review_auto_promotion`（AIによる review 自動昇格）
+- `safemode_default_relaxation`（safeMode既定緩和）
+
+#### No-Go canonical wording（差分判定用）
+- 比較・照合は上記5語彙ID（`preview_bypass` 等）を正本とし、日本語/英語表記揺れは括弧内同義語として扱う。
+- CE1/CE2/CE4へは語彙IDのみを受け渡し、下流文書で同義語を追加しても禁止判定の意味は拡張・縮退しない。
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
 - Freeze原則: CE1/CE2/CE4はCE0契約を再定義せず、I/F参照のみで固定する。
@@ -94,6 +98,15 @@ Freeze判定（全て必須）:
 - No-Go語彙が全Issueで同一かを確認し、揺れがあれば修正する。
 - AC/DoD不足があれば CE0側で補完提案を先に明文化し、承認前は `held` とする。
 
+### AC/DoD不足ドラフト（CE0で先に固定）
+- AC不足候補A: 「read-only参照」の判定根拠が曖昧
+  - 追記案: `Matrix` に「許可される変更はリンク更新/注記のみ」を必須条件として明記済みであることをDoDに含める。
+- AC不足候補B: No-Go語彙の表記揺れによる誤判定
+  - 追記案: 5語彙ID（`preview_bypass` ほか）を照合キーに固定し、自然言語は同義語扱いに限定する。
+- AC不足候補C: CDC発火条件の見落とし
+  - 追記案: `contract_id_collision | vocabulary_collision | scope_deviation` のいずれか検知時は `held` 記録を必須化する。
+- Status: `held`（承認待ち。確定運用は承認後）
+
 ### Execute
 - collision=0 / safeMode regression=0 を満たす記述へ整理。
 - 検証失敗時は自己修復を最大3回まで実施し、4回目相当は停止する。
@@ -107,7 +120,7 @@ Freeze判定（全て必須）:
 - [ ] Contract ID collision = 0
 - [ ] Vocabulary collision = 0
 - [ ] SafeMode regression = 0
-- [ ] No-Go語彙一致（direct write / auto-apply / preview bypass）
+- [ ] No-Go語彙一致（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）
 - [ ] CE1/CE2/CE4参照境界を再定義なしで説明可能
 - [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
 - [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
