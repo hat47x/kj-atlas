@@ -1,4 +1,4 @@
-# Issue Draft: CE2 Low-Risk AI Assist（Stream B / CE契約群 / proposal-only / contract-only planning）
+# Issue Draft: CE2 Low-Risk AI Assist（Stream D専任 / CE契約群 / proposal-only / contract-only planning）
 
 - Type: Feature request
 - Status: Open
@@ -40,21 +40,26 @@
 - AIによる `human_reviewed` 自動昇格禁止
 - `CE0-SAFEMODE-IF` を参照し、CE2側で緩和しない
 
-## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+## Phase 2 Plan（候補提示限定・自動採用禁止・review自動昇格禁止をACに固定）
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
+- CE2のAI支援は候補提示（proposal）に限定し、採用判定は人手のみ。
+- `status=accepted` は人手承認の結果としてのみ遷移し、AIの自動採用は禁止。
+- `reviewState=human_reviewed` は人手操作のみで遷移可能（AI提案は `unreviewed` 固定）。
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
 
-## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
 - **Decision**: proposal-only + no-auto-apply + human-only昇格を維持。
 - **Consequences**: CE4監査で proposal/apply の追跡可能性が固定化。
 - **Approval**: 差分発生時の反映状態は `held`。
+- 追跡可能性要件: すべての提案変更は `proposalId` をキーに `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能であること。
+- 監査導線: `proposal` と `apply` を分離し、CE2では `apply` 実行権限・自動導線を持たないことを明記する。
 
-## Phase 4 Plan→Execute→Verify（AC/DoD補完 + docs-check自己検証）
+## Phase 4 Verify（safeMode後退ゼロを検証）
 ### Plan
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
@@ -73,9 +78,11 @@
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
+- safeMode検証観点: `CE0-SAFEMODE-IF` の既定（safeMode ON / `allowUnreviewedText=false`）を参照し、CE2追記が緩和・迂回を作っていないことを差分で確認する。
 
 ### Acceptance Criteria / DoD
 - [ ] auto-apply経路0件
+- [ ] 候補提示（proposal）限定であり、自動採用経路0件
 - [ ] AI自動昇格0件
 - [ ] CE1 drift検知時は `status=held`
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE1と一致
@@ -84,16 +91,17 @@
 - [ ] CE4 handoff は read-only で、apply 権限/導線を追加しない
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 
-## Phase 5 Proceed（次工程向け固定契約の出力）
+## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
 - 検証条件: lifecycle固定, drift-stop有効, docs-check pass
 - handoff先: CE4監査（read-only）
+- 未確定事項は `held` を維持し、確定扱いで次工程へ渡さない。
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
 - 契約再定義要求の発生
 - 未定義ファイル競合
 - SafeMode後退の兆候
-- 依存前提崩壊
+- 依存前提崩壊（参照契約の欠損・整合不能を含む）
