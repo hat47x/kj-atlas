@@ -709,3 +709,34 @@
 - 判定: **Ready**
 - 理由: 開始時Read、Plan→Execute→Verify→Proceed の直列記録を同一Issueで完結済み。
 - 次アクション: 対応する `04_Documentation/*` 本文改稿PRを docs-only で分離実施する。
+
+## 17) Stream I execution log（DOC-OPS-05 後半 / serial）
+
+### Phase 1 Read（Scope / Related ADR / Spec / DecisionStatus）
+- Scope再確認: `04_Documentation/release.md` の分類・公開境界の固定（docs-only）。
+- Related再確認: `04_Documentation/release.md` / `01_Plans/documentation_quality.md` / `.github/workflows/release.yml`。
+- DecisionStatus確認: `Fixed` を維持（分類再判定はしない）。
+
+### Phase 2 Plan（AC/DoD不足提案の固定）
+- AC追加固定:
+  - `public-exposure` 観点で、公開可能なリリース手順と内部限定運用情報の切り分け基準を追跡可能にする。
+  - `GoNoGoGate=Required` 判定根拠（Audience / Goal / 公開境界 / 次アクション）を本文で確認できる状態にする。
+- DoD追加固定:
+  - Proceed判定を `Ready / Hold / Needs-decision` の三値で明示する。
+  - SafeMode既定ON・share/export漏えい防止の後退を許容しない。
+
+### Phase 3 ADR CDC（必要時のみ）
+- 判定: 追加ADRは **不要**（既存Issue内CDCで十分）。
+- Context: 本Issueは公開リリース文書の分類品質固定であり、設計変更は扱わない。
+- Decision: `Improve external` と `DecisionStatus=Fixed` を維持。
+- Consequences: 後続のrelease文書改善PRで、公開境界と再現手順の同期基準が明確化される。
+
+### Phase 4 Execute（このIssueファイルのみ更新）
+- 実施: Stream Iログを本Issueへ追記し、AC/DoD補強と安全境界維持条件を固定。
+- 非実施: `04_Documentation/*` 本文、shared resource、実装コード。
+
+### Phase 5 Verify / Proceed
+- docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+- formatting: `git diff --check`
+- 自己修復ポリシー: 不整合時は当該Issueのみ最大3回まで修復し、4回目相当で停止。
+- Proceed判定: **Ready**（致命的矛盾・未定義競合・前提崩壊なし）。
