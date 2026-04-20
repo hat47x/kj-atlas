@@ -104,6 +104,18 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
   - 重複責務回避（operations は「実行runbook」、security/guidelines は「安全方針と判断補助」）。
   - 文書間ドリフト防止（同一論点の正本を複数箇所で持たない）。
 
+## 0.8 Known gap（DOC-OPS-05 / Stream E）
+
+- Gap-1: 実運用の環境別チェックリスト（single-node / HA / air-gapped）は本書に未収載。
+  - 理由: 具体構成ごとに前提が異なり、現行Issue（DOC-OPS-05-11）の docs-only スコープでは確定不可。
+  - 委譲先: `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md` の Proceed で次タスク化する。
+- Gap-2: KPI しきい値の最新値は本書で固定しない。
+  - 理由: 承認済み台帳が正本であり、本書に二重管理するとドリフトリスクが高い。
+  - 委譲先: `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`（Gate D/E の入力契約監査）。
+- Gap-3: AUTH-OPS-03 の将来改訂時における差分追跡テンプレートは未定義。
+  - 理由: 仕様変更の有無が未確定で、推測補完は行わない方針。
+  - 委譲先: `04_Documentation/security_operational_guidelines.md` と連動する後続DOC-OPS issue。
+
 ### Phase6 固定フロー（Read → CDC → Plan → Execute → Verify(docs-check) → Proceed）
 
 1. **Read**: 対象4文書を再読し、Gate契約・KPI契約の差分有無を確認する。
