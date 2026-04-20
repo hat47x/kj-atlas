@@ -38,7 +38,7 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 - Context:
   - 判定規約が複数化すると HIL-RS-02 の統治が崩れる。
 - Decision:
-  - Stream A は統治規約を本 issue に固定し、下流は read-only 参照のみ。
+  - （Draft / held）Stream A は統治規約を本 issue に固定し、下流は read-only 参照のみ。
 - Consequences:
   - 契約差分要求は A1 へ集約し、A2/A3 で局所上書きしない。
 
@@ -87,7 +87,7 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
    - Proceed: 3回超過・前提崩壊で即停止。
 6. Phase 6 Proceed
    - Plan: 凍結I/Fスナップショット（read-only handoff）を確定。
-   - Execute: fixed keys・unlockRule・Go/No-Go・return path を出力。
+   - Execute: fixed keys・unlockRule・Go/No-Go・return path を出力（**read-only contract参照のみ**）。
    - Verify: A2/A3 参照専用条件と一致。
    - Proceed: 一致時のみ handoff 完了。失敗時は停止。
 

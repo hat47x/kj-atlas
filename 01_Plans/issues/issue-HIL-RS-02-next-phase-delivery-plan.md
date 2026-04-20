@@ -50,7 +50,7 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - Context:
   - HIL-RS-02 は A1 契約を運用へ接続するフェーズ。
 - Decision:
-  - 依存は状態遷移で固定し、A2/A3 で契約値を変更しない。
+  - （Draft / held）依存は状態遷移で固定し、A2/A3 で契約値を変更しない。
 - Consequences:
   - 契約差分は A1 へ集約。未承認事項は `Pending` 維持。
 
@@ -104,7 +104,7 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 
 ### Phase 6 Proceed
 - Plan: 「凍結I/Fスナップショット（read-only handoff）」を確定。
-- Execute: freezeContractId・fixed keys・Go/No-Go・NoGo時差し戻し先を出力。
+- Execute: freezeContractId・fixed keys・Go/No-Go・NoGo時差し戻し先を出力（**read-only contract参照のみ**）。
 - Verify: A1契約（Stream A）と一致。
 - Proceed: 一致時のみ handoff 完了。
 
