@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2A-02-A3 Collapse/Expand操作 / 実装計画接続
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Completed (Stream B lock complete; Go/NoGo fixed)
 - Priority: P0
 - Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
@@ -393,3 +393,14 @@ DecisionQueue:
 - 判定: **Pass（A3 handoff fixed）**。
 - 次作業条件: 実装レーンはA3 fixed handoffのみを入力に着手し、契約変更要求はA1へ差し戻す。
 - フェイルセーフ: 依存崩壊・未定義競合・self-correction 4回目相当で即停止し判断要求する。
+
+## Stream B completion certificate (2026-04-20)
+
+- Phase 1 Read: A1/A2/A3 を再読し、`ContractID` / `DependsOn` / `GoNoGo` を照合済み。
+- Phase 2 A1 fixed reference: 契約再定義なし（A1固定値を read-only 参照）。
+- Phase 3 A2 fixed reference: `M1..M4` の GoNoGo と `ownerOfFix` をそのまま引継ぎ。
+- Phase 4 A3 fixed:
+  - handoff I/F: `contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
+  - rollback 条件: Contract不一致 / mockCase欠損・未知値 / GoNoGo崩れ / ownerOfFix未確定
+  - AC/DoD gap rule: `agreementStatus=agreed` 以外は NoGo
+- Phase 5 Verify/Proceed: docs-check / 依存整合 / 契約ドリフト無しを確認し、Proceed=Completed。
