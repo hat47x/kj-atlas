@@ -19,6 +19,11 @@
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Contract IDs（凍結対象）
 - CE0契約IDは参照のみ（再定義禁止）。
+- CE0参照境界（read-only）:
+  - `CE0-CTX-IF`
+  - `CE0-SAFEMODE-IF`
+  - `CE0-REVIEW-IF`
+  - `CG-01..05`
 - `CE1-CTXQ-IF`（ContextQueryV1）
 - `CE1-CTXB-IF`（ContextBundleV1）
 - `CE1-HASH-DET-IF`（hash決定論）
@@ -34,6 +39,13 @@
 - `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+- 固定I/F（v1 / closed-world）
+  - `ContextQueryV1` は未定義キーを許容しない（`400 unknown_contract_key`）。
+  - `ContextBundleV1` は `queryCanonicalHash` / `bundleHash` を必須返却する。
+  - `previewConfirmed=false` は生成処理に進まず `422 preview_required` を返す。
+- hash固定（決定論）
+  - 同一 canonical query では `queryCanonicalHash` が常に一致。
+  - 同一 canonical query では `bundleHash` が常に一致。
 - CE2連携境界: `sourceBundleHash === bundleHash` 比較キーのみを提供。
 - CE4連携境界: `equivalenceKey + bundleHash`（AND判定）と `queryCanonicalHash` を引き渡す。
 - CE1 v1 は closed-world を維持し、拡張は v2再起票のみ。
@@ -55,6 +67,11 @@
 ### Execute
 - collision=0 / safeMode regression=0 を満たす記述へ整理。
 - 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
+- Stopperの明文化:
+  - preview bypass 許容が混入した場合は即停止。
+  - safeMode緩和（既定値変更を含む）が混入した場合は即停止。
+  - 契約語彙の未定義競合（CE0/CE2/CE4間）が解消不能なら停止。
+  - Self-Correction 3回超過で停止。
 
 ### Verify
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -74,6 +91,14 @@
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
 - 検証条件: hash決定論一致, preview gate強制, docs-check pass
+
+### Read-only handoff（CE2 / CE4向け）
+- CE2向け:
+  - 比較語彙は `sourceBundleHash === bundleHash` のみ利用可（再定義禁止）。
+  - `sourceBundleHash` の供給元は CE1 `ContextBundleV1` の `bundleHash` 固定値のみ。
+- CE4向け:
+  - 監査照合は `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を必須入力とする。
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` のエラー語彙をそのまま監査ログ語彙に継承する。
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
