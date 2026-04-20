@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Contract Freeze（Stream C / CE契約群 / contract-only planning）
+# Issue Draft: CE0 Contract Freeze（Stream B / CE0 Contract SSOT / contract-only planning）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream C（CE契約群）
+- Owner: Stream B（CE0 Contract Freeze 専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE0-contract-freeze.md` のみ
 - Related Backlog: `CE-0`
@@ -52,6 +52,7 @@
 - Phase 1の固定語彙・No-Go語彙・Scopeを再読し、差分ゼロを確認してから着手する。
 
 - Freeze原則: CE1/CE2/CE4はCE0契約を再定義せず、I/F参照のみで固定する。
+- AC/DoD不足が見つかった場合は **提案を `held` で先に起票し、合意後にのみ freeze へ反映** する（先行確定禁止）。
 - CE1参照境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照のみ）。
 - CE2参照境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照のみ）。
 - CE4参照境界: 監査4点 `query/bundle/proposal/apply` と fail-closed（`CG-01..05`参照のみ）。
@@ -68,6 +69,7 @@ Freeze判定（全て必須）:
 - 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向のみ（逆参照での再定義禁止）。
 - CE1/CE2/CE4は contract本文の複製を行わず、Contract ID参照のみ記述する。
 - 参照先に差分が必要な場合は CE0再起票（本Issue）を経由し、下流Issueで先行確定しない。
+- handoff本文は read-only（Contract ID参照のみ）とし、依存切断方針（mock-first）を維持する。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
 ### 最新再読チェック（Phase開始ゲート）
@@ -110,9 +112,9 @@ Freeze判定（全て必須）:
 - CE0 Contract IDs再定義禁止、proposal-only、safeMode既定維持を再確認する。
 
 ### Execute Plan（実行前固定）
-- 5 Issue横断で契約語彙を照合し、再定義を除去する。
-- CE1/CE2/CE4への handoff を「参照のみ」に統一する。
-- No-Go語彙が全Issueで同一かを確認し、揺れがあれば修正する。
+- CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ。
+- CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する。
+- No-Go語彙IDの照合観点をCE0に明記し、下流への受け渡しは語彙ID参照のみとする。
 - AC/DoD不足があれば CE0側で補完提案を先に明文化し、承認前は `held` とする。
 
 ### AC/DoD不足ドラフト（CE0で先に固定）
@@ -154,6 +156,7 @@ Freeze判定（全て必須）:
 - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
 - 禁止事項: direct write / auto-apply / preview bypass / AI review昇格 / safeMode緩和
 - 検証条件: collision=0, SafeMode regression=0, docs-check pass
+- 引き渡し形式: CE1/CE2/CE4へは Contract ID参照のみ（本文複製・下流再定義は禁止）
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
