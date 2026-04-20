@@ -70,6 +70,11 @@
   2. tie-break順序固定。
   3. Required fields / Invariants 固定。
   4. A2/A3 read-only handoff固定。
+- A1契約境界（A2/A3参照専用）:
+  - `ReferenceContractID=CTR-FB-P2C-01-A1-TIEBREAK-V1`
+  - `DeterministicOrder=padding>self_intersection>area_delta>vertex_count`
+  - `ReplayKeys=inputHash,seed,outputPolygonHash,paddingViolationCount,appliedTieBreakOrder`
+  - `MutationPolicy=prohibited`（A2/A3での契約値変更禁止）
 
 ### Verify
 - AC/DoDが検証可能で曖昧語を含まない。
@@ -165,6 +170,7 @@
 ### Verify
 - mock-first条件でA2/A3開始可。
 - 契約更新を伴わずに検証可能。
+- 決定論順序の変更はStop triggerとしてA1差し戻し対象。
 
 ### Proceed
 - Phase 5へ進行。
