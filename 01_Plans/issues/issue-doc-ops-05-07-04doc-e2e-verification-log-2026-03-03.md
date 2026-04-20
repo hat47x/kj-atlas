@@ -554,3 +554,45 @@
 ### 5) Proceed（次の1手と未解決点）
 - 次の1手: 日付付き実測ログの内部証跡運用と公開手順（e2e_testing側）の責務分離を維持。
 - 未解決点: なし（本Issueの DecisionStatus=Fixed を維持）。
+
+## DOC-OPS-05 Lane Update (2026-04-20)
+
+### Phase 1) Read（対象Issueの現状・関連Spec確認）
+- 対象: `issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Draft memoのみ）。
+- 参照した関連Spec: 本Issueの `Related ADR/Spec`、`01_Plans/documentation_quality.md`、`01_Plans/adr/ADR-0001-value-to-requirements.md`。
+- 現状判定: Classification は **Move internal**、VerificationLevel は `docs-check` を維持。
+
+### Phase 2) Plan（AC/DoD不足ドラフト）
+- AC追補案:
+  - AC-P1: 受入条件に「Audience / Goal / Public boundary / Next action」を明示し、追跡可能にする。
+  - AC-P2: Validation plan は `docs-check` コマンド（validator + diff）を明記する。
+- DoD追補案:
+  - DoD-P1: Proceed判定を `Ready / Hold / Needs-decision` の三値で記録する。
+  - DoD-P2: 非目標（実装コード非変更・共有統合ファイル非変更）を明記する。
+
+### Phase 3) ADR CDC（必要時）
+- 判定: **追加ADR不要**（Issue memo内CDCで運用）。
+- Context: DOC-OPS-05 は 04_Documentation 文書の公開境界整理。
+- Decision: 本Issueは **Move internal** を維持し、Issue単位でOpen準備条件を固定。
+- Consequences: 後続は docs-only 変更へ限定し、実装コード変更を禁止。
+
+### Phase 4) Execute（受入条件・検証計画・停止条件を整備）
+- 受入条件整備: AC-P1/P2 を追記済み（本セクションで補完）。
+- 検証計画整備: docs-check を `validate_active_issue_memos.py` と `git diff --check` で実施。
+- 停止条件: 共有統合ファイル（`issues/README.md`, `project-progress-dashboard.md`）の更新要求が出た場合は停止し、統合レーンへエスカレーション。
+
+### Phase 5) Verify（docs-check, 修復最大3回）
+- 実施ルール: docs-check 失敗時は同一Issue修正を最大3回まで。4回目相当は **Hold**。
+- 実行対象（全DOC-OPS-05 Draft群を一括検証）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 6) Proceed（Open化準備リスト）
+- Open readiness: **Ready**（Draft→Open候補）。
+- Open化準備リスト:
+  - [ ] Classification（Move internal / Improve external）が固定されている。
+  - [ ] Audience / Goal / Public boundary / Next action が本文で追跡可能。
+  - [ ] docs-check 手順が本文に明示されている。
+  - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
+  - [ ] 実装コード非変更（docs-only）を満たしている。
