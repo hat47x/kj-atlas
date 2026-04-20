@@ -693,3 +693,33 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 指定順の次Issueを同一手順（Phase 1〜5）で処理する。
+
+## Stream H mid-cycle execution record（2026-04-20 / DOC-OPS-05-09）
+
+### Phase 1 Read（対象Issue再読）
+- 本Issue本文を再読し、`Requirement meta I/F`・`推奨アクション`・`GoNoGoGate`・`VerificationLevel` を再確認。
+- 直列対象5Issue以外は編集禁止であることを再確認し、shared resource には非接触で進行。
+
+### Phase 2 Plan（対象Issue再読）
+- 本Issueを再読した上で、今回の主責務を「Issueメモの5Phase実行記録の更新」に限定。
+- AC/DoD不足へのAIドラフト提案（合意後反映対象）:
+  - AC-H-mid-1: Phase開始時の対象Issue再読ログが各Issue本文に残っていること。
+  - AC-H-mid-2: Verify/Proceed の判定が `Ready / Hold / Needs-decision` で追跡できること。
+  - DoD-H-mid-1: docs-checkコマンド結果と変更境界（5Issue限定）を記録すること。
+
+### Phase 3 ADR CDC（対象Issue再読・必要時判定）
+- 対象Issue再読後の判定: **追加ADR不要**（既存ADR/Spec参照とIssue CDCで十分）。
+- Context: DOC-OPS-05中盤では、公開境界の判断を崩さずに実行ログを整備する。
+- Decision: `Improve external` を維持し、DecisionStatus=Fixedを前提に運用する。
+- Consequences: 後続実装は docs-only を維持し、対象外ファイルの変更を発生させない。
+
+### Phase 4 Execute（対象Issue再読）
+- 対象Issueを再読後、本文へ本5Phase記録を追記。
+- 変更範囲を当該5Issueに限定し、他ファイルは未変更。
+
+### Phase 5 Verify / Proceed（対象Issue再読）
+- Verify（docs-check）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- 自己修復ポリシー: 不整合時は最大3回修復し、4回目相当で停止。
+- Proceed判定: **Ready**（DecisionStatus=Fixed、推奨アクション維持、5Issue限定編集を満たす）。
