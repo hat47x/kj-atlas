@@ -292,3 +292,36 @@
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: 移設先の正本文書を確定した時点で本書のRelatedを更新する。
+
+
+## Stream G serial cycle（2026-04-20 / DOC-OPS-05 Canonicalization）
+
+### Phase 1 Read
+- `04_Documentation/canonicalization.md` の冒頭メタ、Go/No-Go、既存の停止条件を再読し、Classification=`Move internal` の維持を確認。
+- 依存参照として `02_Architecture/schemas.md` と `02_Architecture/architecture.md`、および release workflow（`.github/workflows/release.yml`）を参照し、実装仕様の再定義を行わない方針を確認。
+
+### Phase 2 Plan（AC/DoDドラフト→合意）
+- AC draft:
+  1. 公開stub方針（Move internal）を維持する。
+  2. Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+  3. Verify は docs-check（`rg` + `git diff --check`）で再現可能に残す。
+- DoD draft:
+  - docs-only で編集許可範囲3ファイル以外を変更しない。
+  - Read→Plan→Execute→Verify→Proceed の記録を残す。
+  - 自己修復は最大3回、超過時は停止する。
+- 合意: 上記AC/DoDで実行し、未定義競合が出た場合は停止する。
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。既存分類と公開境界は上流文書と整合しており、新規CDCは要求されない。
+
+### Phase 4 Execute→Verify
+- docs-only で本節を追記し、既存の安全境界（SafeMode既定ON / 漏えい防止後退禁止）に抵触しないことを確認。
+- docs-check:
+  - `rg -n "Stream G serial cycle|Phase 1 Read|Phase 2 Plan|Phase 3 ADR CDC|Phase 4 Execute→Verify|Phase 5 Proceed" 04_Documentation/canonicalization.md`
+  - `git diff --check`
+- 自己修復回数: 0/3
+
+### Phase 5 Proceed（残課題 / 外部依存）
+- 判定: **Ready**
+- 残課題: Move internal の最終移設先確定時に Related の導線更新が必要。
+- 外部依存: リリース関連の実行確認は `.github/workflows/release.yml`（タグ `v*.*.*` で Release Build 実行）に依存し、本書では参照のみ行う。

@@ -400,3 +400,36 @@ narrative 作成は次の順序を推奨する。
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+
+## Stream G serial cycle（2026-04-20 / DOC-OPS-05 Narratives）
+
+### Phase 1 Read
+- 冒頭メタ（Audience/Goal/Non-goal/Public boundary/Outcome/Related）と reviewState 規約（`unreviewed` 既定）を再読。
+- `00_Prompt/domain.md` / `02_Architecture/schemas.md` / `.github/workflows/release.yml` を参照し、公開意味論のみ更新対象であることを確認。
+
+### Phase 2 Plan（AC/DoDドラフト→合意）
+- AC draft:
+  1. `reviewState=unreviewed` 既定と human-only 昇格条件を後退させない。
+  2. SafeMode既定ON・漏えい防止の禁止事項を維持する。
+  3. docs-check結果を再現可能なコマンドで残す。
+- DoD draft:
+  - docs-only、許可範囲外ファイル非変更。
+  - Read→Plan→Execute→Verify→Proceed の記録を本書へ残す。
+  - 自己修復は最大3回。
+- 合意: 本ドラフトを採用して実行し、未定義競合時は停止する。
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。既存の ContextBundle/Proposal 契約と review semantics で整合が保たれている。
+
+### Phase 4 Execute→Verify
+- docs-only で本節を追記し、公開境界と非目標（真偽自動保証をしない）を維持。
+- docs-check:
+  - `rg -n "Stream G serial cycle|Phase 1 Read|Phase 2 Plan|Phase 3 ADR CDC|Phase 4 Execute→Verify|Phase 5 Proceed" 04_Documentation/narratives.md`
+  - `git diff --check`
+- 自己修復回数: 0/3
+
+### Phase 5 Proceed（残課題 / 外部依存）
+- 判定: **Ready**
+- 残課題: CE2提案契約の実装側監査項目は `03_Implement` と別ストリームで追跡が必要。
+- 外部依存: release時の最終artifact確認は `.github/workflows/release.yml` のジョブ成功（Backend Docker build / Frontend artifact）に依存する。
