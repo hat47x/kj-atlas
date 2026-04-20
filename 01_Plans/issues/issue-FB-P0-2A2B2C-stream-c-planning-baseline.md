@@ -1,24 +1,24 @@
-# Issue Draft: FB-P0 (2A/2B/2C) Stream C planning baseline
+# Issue Draft: FB-P0 (2A/2B/2C) Stream F planning baseline
 
 - Type: Process
-- Status: Open (Audit Hold: Stream C contract freeze)
+- Status: Open (Audit Hold: Stream F contract freeze)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream C（P2C契約 + baseline計画のみ）
+- Owner: Stream F（FB-P0 baseline + FB-P2C A1契約固定のみ）
 - Scope: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ
 - Editable files (hard lock):
   - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
   - `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
-- Non-editable files: 上記以外すべて
+- Non-editable files: 上記以外すべて（FB-P2A / HIL / CE / 共有統合ファイル / 実装コードを含む）
 - Related Backlog: `FB-P2A-01/02`, `FB-P2B-01/02`, `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`, `ADR-0019`
 - Expected verification level: `docs-check`
 
 ---
 
-## Baseline objective（Stream C）
+## Baseline objective（Stream F）
 
-- 目的: **P2C A1契約をStream C内でfreeze** し、A2/A3が外部待ちなしでmock前提進行できる引き渡し仕様を固定する。
+- 目的: **FB-P0 baseline と FB-P2C A1契約のみをfreeze** し、A2/A3が外部待ちなしでmock前提進行できる引き渡し仕様を固定する。
 - 非目標:
   - `03_Implement/**` の変更
   - 他Issue・共有統合ファイルの変更
@@ -27,11 +27,12 @@
   - 外部ストリーム待ち禁止。
   - 必要I/Fは本ストリームで固定し、mock可能な形で出力する。
 - フェイルセーフ:
-  - 未承認確定 / 契約競合 / Verify自己修復3回超過のいずれかで即停止。
+  - **Plan → Execute → Verify → Proceed** を順守し、Verify自己修復は最大3回。
+  - 未承認確定 / 契約競合 / Verify自己修復3回超過のいずれかで致命停止。
 
 ---
 
-## Phase 1) Read同期
+## Phase 1) Read（依存・優先度確認）
 
 ### Plan
 - 編集境界（2ファイルのみ）と実施Phase順序を固定する。
@@ -39,7 +40,7 @@
 
 ### Execute
 - 編集許可2ファイルのみ対象であることを確認。
-- 実施順序を `1) Read同期 -> 2) baseline前提固定 -> 3) A1契約固定 -> 4) A2/A3引き渡し仕様化 -> 5) Verify/Proceed` に固定。
+- 実施順序を `1) Read -> 2) Plan -> 3) ADR CDC（必要時のみ） -> 4) Execute（mock前提） -> 5) Verify/Proceed` に固定。
 
 ### Verify
 - 編集境界逸脱なし。
@@ -50,10 +51,10 @@
 
 ---
 
-## Phase 2) baseline前提の固定（Scope / Non-goal）
+## Phase 2) Plan（I/F固定）
 
 ### Scope（固定）
-- Stream Cは **P2C契約とbaseline計画のみ** を扱う。
+- Stream Fは **FB-P0 baseline と FB-P2C A1契約固定のみ** を扱う。
 - 成果物は docs-check で検証可能な契約文書に限定する。
 
 ### Non-goal（固定）
@@ -68,27 +69,24 @@
 
 ---
 
-## Phase 3) A1契約固定（CDC→承認）
+## Phase 3) ADR CDC（必要時のみ）
 
 ### Plan
-- A1契約は CDC（Context / Decision / Consequences）形式で固定し、承認済み状態を明記する。
+- A1契約が既存ADR/Specと矛盾する場合のみ、CDC（Context / Decision / Consequences）を補強する。
 
 ### Execute
-- ContractID・必須キー・invariants・禁止遷移をA1文書へ固定。
-- 承認ゲートを `DecisionStatus=Fixed` + `GateDecision=approved` で明示。
-- 契約更新要求のルートを「A1差し戻しのみ」に固定。
+- 契約差分が必要な場合のみCDC節を更新し、不要時は「変更不要」を明記して先に進む。
 
 ### Verify
 - CDC要素欠落なし。
 - 契約ID衝突なし。
-- 未承認項目をApproved扱いしていない。
 
 ### Proceed
 - Phase 4へ進行。
 
 ---
 
-## Phase 4) A2/A3への引き渡し仕様化（モック前提）
+## Phase 4) Execute（モック前提を明示）
 
 ### Plan
 - A2/A3が外部依存なしで開始できるよう、mock I/F・比較キー・停止条件を固定する。
@@ -113,13 +111,13 @@
 
 ---
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（下流へ read-only handoff）
 
 ### Final checks
 
 | 観点 | 判定 | 備考 |
 | --- | --- | --- |
-| 編集境界（2ファイルのみ） | Pass | Stream C独立性を維持 |
+| 編集境界（2ファイルのみ） | Pass | Stream F独立性を維持 |
 | Scope/Non-goal固定 | Pass | baseline前提を凍結 |
 | A1契約（CDC→承認） | Pass | ContractID + Gate明記 |
 | A2/A3引き渡し（mock前提） | Pass | ReferenceContractID固定 |
