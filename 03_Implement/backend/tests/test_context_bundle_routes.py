@@ -109,3 +109,20 @@ def test_context_bundle_downstream_source_hash_comparable() -> None:
             assert len(body["bundleHash"]) == 64
     finally:
         settings.api_key = original_api_key
+
+
+def test_context_bundle_strict_safemode_filters_unreviewed_even_when_included() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = _bundle_payload()
+            payload["query"]["reviewFilter"] = "includeUnreviewed"
+            response = client.post("/context/bundle", json=payload)
+            assert response.status_code == 200
+            body = response.json()
+            assert body["reviewFlags"]["unreviewed"] == 0
+            assert all(item["reviewed"] is True for item in body["selected"])
+            assert "safe_mode_unreviewed_text" in body["excludedReason"]
+    finally:
+        settings.api_key = original_api_key

@@ -133,8 +133,11 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
         selected = [item for item in selected if item["reviewed"] is True]
         excluded_reason.append("unreviewed_filtered")
 
-    if query.safeModePolicy == "strict" and query.reviewFilter == "includeUnreviewed":
-        excluded_reason.append("safe_mode_unreviewed_text")
+    if query.safeModePolicy == "strict":
+        before_count = len(selected)
+        selected = [item for item in selected if item["reviewed"] is True]
+        if len(selected) != before_count:
+            excluded_reason.append("safe_mode_unreviewed_text")
 
     relations = sorted(_STUB_DATASET["relations"], key=lambda item: (item["type"], item["from"], item["to"]))
     evidence = sorted(_STUB_DATASET["evidence"], key=lambda item: item["cardId"])
