@@ -58,6 +58,27 @@ Stream D で本書を更新する場合、編集対象は `security.md` / `secur
 - D1〜D4、役割語彙、導線の3観点を docs-check で同時確認する。
 - 自己修復は最大3回。3回で収束しない場合は `Hold` として Proceed しない。
 
+## 0.4 責務境界（guidelines の単一責務）
+
+### 対象読者
+- Security Officer / System Owner（採否判断の責任者）
+- Platform Operator（実行前チェック担当）
+- 監査担当（判断妥当性の確認者）
+
+### 前提知識
+- `security.md` に定義された後退禁止境界（SafeMode既定ON、漏えい防止）を理解していること
+- `operations.md` が実行手順の正本であること
+- 承認制度の正本は `strict_mode_exception_approval_flow.md` であること
+
+### 公開してよい情報
+- strict / 公開運用プロファイルの選択観点
+- 役割分離（2者承認 + 実行責務分離）と D1〜D4 チェック観点
+- 判断記録の最小粒度（日時、責任主体、見直し条件）
+
+### 本書で扱わない情報（security / operations へ委譲）
+- セキュリティ原則そのものの定義・禁止事項の正本化（`security.md`）
+- 日次運用コマンドや復旧Runbook（`operations.md`）
+
 ## 1. 目的
 
 - 運用プロファイル選択時の判断材料を共通化する。

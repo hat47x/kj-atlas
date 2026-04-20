@@ -70,6 +70,27 @@ security系文書の更新時は、次の4観点を **Verifyで必ず同時確�
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）が改変されていないこと
 
 
+## 0.4 責務境界（security の単一責務）
+
+### 対象読者
+- Security Officer（セキュリティ妥当性の責任者）
+- System Owner（業務継続責任者）
+- 監査・レビュー担当
+
+### 前提知識
+- `strict_mode_exception_approval_flow.md` の承認制度と D1〜D4 固定値を理解していること
+- `operations.md` が運用手順の正本であり、本書は手順書ではないこと
+- `security_operational_guidelines.md` が運用判断補助であること
+
+### 公開してよい情報
+- SafeMode既定ON、share/export漏えい防止、review昇格制約などの安全境界
+- strict例外運用で後退禁止とする必須制約
+- 公開可能な最小コントロール（ネットワーク境界、鍵管理原則、整合チェック）
+
+### 本書で扱わない情報（operations / guidelines へ委譲）
+- 手順コマンド中心のRunbook詳細（`operations.md`）
+- プロファイル選択時のケース別判断フロー（`security_operational_guidelines.md`）
+
 ## 1. 前提と範囲
 
 - 本プロジェクトのMVPは、**完全な認証・ユーザー管理機能（ユーザー/セッション/OAuth）を提供しません**。
