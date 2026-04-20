@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Core Graph Repositioning（Stream D / CE契約専任 / planning-only）
+# Issue Draft: CE0 Core Graph Repositioning（Stream B / CE契約専任 / planning-only）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE契約専任）
+- Owner: Stream B（CE契約専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
@@ -28,22 +28,28 @@
 ### Audit I/F
 - 必須4点: `query / bundle / proposal / apply`
 
-## Phase 2) CE0契約凍結（CDC明文化→承認）
+## Phase 2) Plan（AC/DoD不足時の提案）
+- AC不足時は「役割一致」「遷移一致」「監査欠損ゼロ」「safeMode後退ゼロ」を補強する。
+- DoD不足時は「語彙二重定義なし」「3層説明可能（役割/遷移/監査）」「3回以内の自己修復」を補強する。
+- 補強提案は CE0既存契約 `CG-01..05` の参照に限定し、再定義しない。
+
+## Phase 3) ADR CDC（必要時のみ: CE0契約凍結）
 - `CG-01..05` を本Issue側で再定義せず参照に統一する。
 - Vocabulary固定: `WorkingGraph / ContextProjectionGraph / Consensus Graph`。
 - 承認前は `held`、承認後のみ `frozen` と記録する。
 
-## Phase 3) CE1/CE2のmock前提I/F分離
+## Phase 4) Execute（Issue粒度・依存・検証計画の確定）
+### CE1/CE2のmock前提I/F分離
 - CE1: `context_projection` は read-only参照のみ（生成元変更不可）。
 - CE2: proposal lifecycle は `working` 領域に限定し、`consensus` 直更新禁止。
 - mock検証時も遷移規則（patch+approval only）を省略しない。
 
-## Phase 4) CE4連携契約（API/CLI/Audit）定義
+### CE4連携契約（API/CLI/Audit）定義
 - API/CLI/GUIの監査導線は `query/bundle/proposal/apply` を共通必須。
 - `dryRun=true` は `sideEffect=none` に固定。
 - `context_projection` の書換操作は監査失敗として扱う（fail-closed）。
 
-## Phase 5) Verify / Proceed
+## Phase 5) Verify / Proceed（検証可能性・再開可能性チェック）
 ### Acceptance Criteria
 - [ ] `working -> consensus = patch+approval only` が全Issue一致
 - [ ] `context_projection` read-only が全Issue一致
