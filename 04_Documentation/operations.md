@@ -150,6 +150,27 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 5. **Phase 5 Verify（docs-check）**: docs-check / 用語整合 / diff整合を実施し、修復は最大3回、4回目相当はFail-safe停止。
 6. **Phase 6 Proceed**: 次回測定サイクル条件（Gate C完了、Gate D入力6項目、Gate E Proceed条件一致）を満たした場合のみ引き渡す。
 
+## 0.9 責務境界（operations の単一責務）
+
+### 対象読者
+- Platform Operator（一次運用担当）
+- System Owner（運用判断の最終責任者）
+- PoC / self-host の初期導入担当
+
+### 前提知識
+- Docker Compose による起動・停止とログ確認ができること
+- `security.md` が定義する安全境界（SafeMode既定ON、漏えい防止）を理解していること
+- strict mode例外の制度設計は `02_Architecture/strict_mode_exception_approval_flow.md` が正本であること
+
+### 公開してよい情報
+- 日常運用Runbook（起動、停止、更新、確認、復旧）
+- 運用者が再現できる最小コマンドとGo/No-Go観点
+- 参照導線（security / guidelines / e2e へのリンク）
+
+### 本書で扱わない情報（security / guidelines へ委譲）
+- セキュリティ原則の詳細根拠、脅威分類、禁止事項一覧（`security.md`）
+- strict / non-strict の採否判断フロー、例外判断の比較観点（`security_operational_guidelines.md`）
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。
