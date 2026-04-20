@@ -21,6 +21,26 @@
 
 A3 を「operations/documentation sync の契約参照専用」計画メモとして確定し、A1 完了前の逸脱実行を防止する。
 
+## 1.1) Task Brief（Phase 2 Plan）
+
+- Scope:
+  - A3 を `contract reference only` の運用同期メモとして整合維持する。
+- Non-Goals:
+  - A3 内での契約値確定/再定義。
+  - `02_Architecture/**` や `04_Documentation/**` の直接更新。
+- Acceptance Criteria:
+  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` の差分が 0 件。
+  - D1〜D4 と役割語彙が参照専用で固定される。
+- DoD:
+  - A1未完了時の A3 Open 禁止が明示。
+  - 差戻し先が A1 で一意。
+- Validation:
+  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
+- Stop Conditions:
+  - A1未完了での Open 化要求。
+  - A3 内での契約再定義要求。
+  - Self-Correction 3回超過。
+
 ## 2) Contract Freeze（read-only reference）
 
 - snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
@@ -39,6 +59,19 @@ A3 を「operations/documentation sync の契約参照専用」計画メモと�
   - `contractLinkLocked`
   - `sharedResourceFreeze`
   - `validatorPass`
+
+### 2.2) Phase 1 Read 差分確認（2026-04-20 固定）
+
+- 対象: `issue-HIL-RS-02-A3` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-01-A1`
+- 固定キー差分:
+  - `schemaVersion`: 差分なし（`1.0.0`）
+  - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
+  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
+  - `contractLinkLocked`: 差分なし（`true`）
+  - `sharedResourceFreeze`: 差分なし（`true`）
+  - `safeModeDefault`: 差分なし（`ON`）
+- 判定: `DiffCount=0`（Proceed可）
 
 
 ## 2.1) Operations/Documentation Sync Alignment（A3 固定参照）
@@ -61,9 +94,15 @@ A3 を「operations/documentation sync の契約参照専用」計画メモと�
 - Context:
   - A3 は A1 契約固定後に開放される下流計画であり、契約変更窓口ではない。
 - Decision:
-  - A3 は契約参照のみ許可し、契約差分要求は A1 へ差し戻す。
+  - （Draft / held）A3 は契約参照のみ許可し、契約差分要求は A1 へ差し戻す。
 - Consequences:
   - A1 未完了または Queue 未解決時は `Draft/Open(hold)` を維持する。
+
+### 3.1) ADR合意ステータス（承認待ち）
+
+- ApprovalStatus: `Pending (Human approval required)`
+- ApprovalScope: `CDC Context/Decision/Consequences`
+- Pre-approval lock: `承認前は確定扱い禁止（A3はread-only referenceのみ）`
 
 ## 4) Acceptance Criteria / DoD
 

@@ -15,6 +15,39 @@
 
 A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防止する。
 
+## 1.1) Task Brief（Phase 2 Plan）
+
+- Scope:
+  - A1 Governance 契約の hardening 条件（unlockRule / queue / fixed keys）の整合固定。
+- Non-Goals:
+  - A2/A3 側での契約差分確定。
+  - `01_Plans/issues/` 以外の変更。
+- Acceptance Criteria:
+  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` の差分が 0 件。
+  - Return path が A1 に唯一固定される。
+- DoD:
+  - Go/No-Go 判定式が全節で一貫。
+  - 未承認事項が `Pending/held` で維持。
+- Validation:
+  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
+- Stop Conditions:
+  - 固定識別子不一致。
+  - Pending bypass 要求。
+  - Self-Correction 3回超過。
+
+### 1.2) Phase 1 Read 差分確認（2026-04-20 固定）
+
+- 対象: `issue-HIL-RS-02-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02-A3`
+- 固定キー差分:
+  - `schemaVersion`: 差分なし（`1.0.0`）
+  - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
+  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
+  - `contractLinkLocked`: 差分なし（`true`）
+  - `sharedResourceFreeze`: 差分なし（`true`）
+  - `safeModeDefault`: 差分なし（`ON`）
+- 判定: `DiffCount=0`（Proceed可）
+
 ## 2) Contract Freeze Hardening（read-only）
 
 - Dependency order（唯一）: `A1 -> A2 -> A3`

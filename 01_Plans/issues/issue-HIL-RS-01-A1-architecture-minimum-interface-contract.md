@@ -15,6 +15,26 @@
 
 A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化を防止する。
 
+## 1.1) Task Brief（Phase 2 Plan）
+
+- Scope:
+  - A1最小I/F契約の固定値・遷移条件の単一正本化。
+- Non-Goals:
+  - A2/A3側での契約値変更。
+  - `01_Plans/issues/` 以外の更新。
+- Acceptance Criteria:
+  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` が全対象ファイルで一致。
+  - 承認前項目は `Pending/held` のまま維持。
+- DoD:
+  - A1 が唯一の差戻し先であることを明示。
+  - `A1 -> A2 -> A3` と unlockRule の一意性を明示。
+- Validation:
+  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
+- Stop Conditions:
+  - 固定値不一致。
+  - Pending bypass 要求。
+  - Self-Correction 3回超過。
+
 ## 2) Contract Freeze（mock-first / read-only）
 
 - snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
@@ -31,6 +51,9 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 - 対象: `issue-HIL-RS-01-A1` / `issue-HIL-RS-01` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`
 - A1固定値差分:
   - `schemaVersion`: 差分なし（`1.0.0`）
+  - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
+  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
   - `contractLinkLocked`: 差分なし（`true`）
   - `sharedResourceFreeze`: 差分なし（`true`）
   - `safeModeDefault`: 差分なし（`ON`）
