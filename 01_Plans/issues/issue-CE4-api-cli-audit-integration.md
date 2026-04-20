@@ -11,12 +11,18 @@
 - Verification: `docs-check`
 
 ## Lane guard（独立性・停止条件）
+- CE4はCE0 SSOT + CE1/CE2 read-only handoff を参照し、契約語彙を再定義しない。
 - CE4は API/CLI/監査の計画I/F固定のみ（実装禁止）。
 - CE1/CE0/CE2契約は参照専用（CE4で再定義しない）。
 - 検証失敗時の自己修復は最大3回、4回目相当は停止。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Read同期スナップショット
+- 固定語彙: `equivalenceKey + bundleHash` / `sourceBundleHash` / proposal lifecycle
+- Scope: API/CLI/監査I/F契約固定のみ（実装禁止）
+- No-Go語彙: 監査欠損成功扱い / 語彙再定義 / safeMode既定緩和
+
 ### 同値性I/F
 - 判定軸は `equivalenceKey + bundleHash`（AND）に固定。
 
@@ -31,11 +37,12 @@
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
 - CE1参照境界: `bundleHash/sourceBundleHash/queryCanonicalHash` 語彙のみ依存。
-- CE2参照境界: lifecycle（`proposed/accepted/rejected/held`）と `proposal/apply` 監査語彙のみ依存。
+- CE2参照境界: proposal lifecycle（`proposed/accepted/rejected/held`）と `proposal/apply` 監査語彙のみ依存。
 - CE4内で hash語彙・状態語彙を再定義しない。
 - `mock:<hash>` と本番hashで監査フローを分岐させない。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+- 差分検知ログ: `equivalenceKey + bundleHash` 判定軸、`sourceBundleHash` 語彙、proposal lifecycle の不一致。
 - **Context**: API/CLI/GUI間の同値判定・監査語彙衝突有無。
 - **Decision**: `equivalenceKey + bundleHash` 固定、監査4点必須、fail-closed維持。
 - **Consequences**: CE1/CE2参照境界の一意化、監査欠損時の停止一貫性を確保。
@@ -68,7 +75,7 @@
 
 ## Phase 5 Proceed（次工程向け固定契約の出力）
 ### Fixed contract handoff
-- Contract IDs: CE4監査I/F + CE1/CE2参照語彙
+- Contract IDs: CE4監査I/F（read-only handoff） + CE1/CE2参照語彙
 - 禁止事項: 監査欠損成功扱い / 語彙再定義 / safeMode緩和
 - 検証条件: 同値判定軸固定, 監査4点必須, docs-check pass
 

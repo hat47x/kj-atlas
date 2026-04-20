@@ -11,12 +11,17 @@
 - Verification: `docs-check`
 
 ## Lane guard
+- proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
 - CE2は proposal-only 契約固定のみ（実装禁止）。
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
 - `reviewState=human_reviewed` のAI自動昇格は禁止。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Read同期スナップショット
+- 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
+- No-Go語彙: `auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`
+
 ### Contract IDs
 - `CE2-PROPOSAL-IF`
 - `CE2-LIFECYCLE-IF`
@@ -35,11 +40,12 @@
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
-- CE4参照境界: `proposal/apply` 監査語彙を共通化。
+- CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+- 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
 - **Decision**: proposal-only + no-auto-apply + human-only昇格を維持。
 - **Consequences**: CE4監査で proposal/apply の追跡可能性が固定化。

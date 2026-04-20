@@ -11,12 +11,14 @@
 - Verification: `docs-check`
 
 ## Lane guard（独立性）
+- CE1はCE0 SSOT参照レーン。CE0/CE2/CE4契約を待たず、mock/hash/read-only参照で依存切断する。
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - CE0契約参照は必須、CE1側で再定義しない。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Contract IDs（凍結対象）
+- CE0契約IDは参照のみ（再定義禁止）。
 - `CE1-CTXQ-IF`（ContextQueryV1）
 - `CE1-CTXB-IF`（ContextBundleV1）
 - `CE1-HASH-DET-IF`（hash決定論）
@@ -33,11 +35,12 @@
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
 - CE2連携境界: `sourceBundleHash === bundleHash` 比較キーのみを提供。
-- CE4連携境界: `equivalenceKey/queryCanonicalHash/bundleHash` を引き渡す。
+- CE4連携境界: `equivalenceKey + bundleHash`（AND判定）と `queryCanonicalHash` を引き渡す。
 - CE1 v1 は closed-world を維持し、拡張は v2再起票のみ。
 - 参照境界は CE0 (`CE0-CTX-IF`/`CE0-SAFEMODE-IF`) 参照のみで固定。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+- 差分検知ログ: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ。
 - **Context**: hash決定論・preview gate・closed-world の衝突有無。
 - **Decision**: v1語彙固定、未定義キー拒否、preview必須を維持。
 - **Consequences**: CE2/CE4 が `sourceBundleHash === bundleHash` に依存可能。
@@ -63,6 +66,7 @@
 - [ ] 同一 canonical query 3回で `bundleHash` が一致
 - [ ] `previewConfirmed=false` は常に `422 preview_required`
 - [ ] 未定義キー入力は常に `400 unknown_contract_key`
+- [ ] `sourceBundleHash === bundleHash` 比較語彙がCE2/CE4と一致
 - [ ] SafeMode regression = 0
 
 ## Phase 5 Proceed（次工程向け固定契約の出力）
