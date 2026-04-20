@@ -23,8 +23,11 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
 
 ## 2) Contract Freeze（read-only reference）
 
-- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
-- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
+- freezeContractId=`HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Dependency order: `A1 -> A2 -> A3`
+- unlockRule=`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- decisionQueueTransition=`Pending -> Approved | Pending -> Rejected`
 - Fixed identifiers:
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `schemaVersion=1.0.0`

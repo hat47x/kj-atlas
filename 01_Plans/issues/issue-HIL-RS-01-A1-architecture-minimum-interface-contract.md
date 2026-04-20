@@ -17,7 +17,7 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 ## 2) Contract Freeze（mock-first / read-only）
 
-- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
+- snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
 - `schemaVersion=1.0.0`
