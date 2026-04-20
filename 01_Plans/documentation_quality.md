@@ -258,6 +258,41 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 - 本書の既存分類・公開境界メタを維持しつつ、05-01..05セットの実行記録を追記。
 
 ### Phase 4 Verify（再Read）
+
+## 15. DQ-CONTRACT-v1（Stream F: Quality/E2E/Diagnostics）
+
+本契約は Stream F（Quality/E2E/Diagnostics docs）が `01_Plans/documentation_quality.md` / `04_Documentation/e2e_testing.md` / `04_Documentation/e2e_verification_log_2026-03-03.md` / `04_Documentation/diagnostics.md` を直列フェーズで更新する際の、**最小品質判定I/F** を定義する。
+
+### 15.1 Contract scope（固定）
+
+- 編集許可対象は上記4ファイルのみ。
+- docs-only を維持し、`03_Implement/**` を変更しない。
+- 上流正本（ADR/Architecture）との矛盾を検知した場合は、下流文書の独断更新を停止する。
+
+### 15.2 品質判定軸（DQ-A1〜A6）
+
+- **DQ-A1: Meta completeness**
+  Audience / Goal / Non-goal / Public boundary / Outcome / Related を読者が判別できる。
+- **DQ-A2: Reproducibility**
+  docs-checkコマンド（`rg` / `git diff --check` / 必要時validator）が再実行可能な形で記録される。
+- **DQ-A3: Cross-link integrity**
+  `documentation_quality.md` ↔ `e2e_testing.md` ↔ `e2e_verification_log_2026-03-03.md` ↔ `diagnostics.md` の参照導線が維持される。
+- **DQ-A4: Safety boundary**
+  SafeMode既定ON・share/export漏えい防止を後退させる記述を追加しない。
+- **DQ-A5: Terminology consistency**
+  review語彙は `reviewed / unreviewed` を正とし、他表現は互換注記に限定する。
+- **DQ-A6: Fail-safe discipline**
+  Verify失敗時は最大3回まで自己修復し、4回目相当は Stop として Proceedを保留化する。
+
+### 15.3 Go/No-Go 判定
+
+- **Go**: DQ-A1〜A6 をすべて満たし、docs-checkが成功。
+- **No-Go**: いずれか1つでも未充足。未充足項目と再開条件を verification log に記録する。
+
+### 15.4 Stopper（強制停止条件）
+
+- 承認前の規約確定禁止: 本契約を上位正本（ADR/Architecture）へ昇格する変更は行わない。
+- 競合・前提崩壊（上位文書との矛盾、定義済み語彙の衝突）を検知した場合は即停止する。
 - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 01_Plans/documentation_quality.md 01_Plans/documentation_quality.md`
 - `git diff --check`
 - 修復は最大3回まで。3回超過は停止（Hold）。

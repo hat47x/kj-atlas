@@ -42,6 +42,18 @@
 
 - Stream F フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
 
+## Stream F DQ-CONTRACT-v1 適用（2026-04-20）
+
+本書は `01_Plans/documentation_quality.md` の **DQ-CONTRACT-v1** を適用対象とする。
+
+- 判定軸: DQ-A1（メタ完全性）〜 DQ-A6（3回自己修復上限）を満たす。
+- Verify最小セット（docs-check）:
+  - `rg -n "DQ-CONTRACT-v1|Audience|Goal|Non-goal|Public boundary|Outcome|Related|docs-check" 04_Documentation/e2e_testing.md 04_Documentation/diagnostics.md 04_Documentation/e2e_verification_log_2026-03-03.md 01_Plans/documentation_quality.md`
+  - `git diff --check`
+- Stopper:
+  - 承認前の規約確定（上位正本への昇格）を行わない。
+  - 競合・前提崩壊を検知した場合は即停止し、verification logへ保留理由を記録する。
+
 ## 1. 基本方針
 
 1. `03_Implement/*` の変更では、原則として E2E確認を行う。

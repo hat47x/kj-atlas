@@ -201,6 +201,17 @@
 
 - Stream G フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
 
+## Stream F DQ-CONTRACT-v1 適用（2026-04-20）
+
+本書の品質判定は `01_Plans/documentation_quality.md` に定義した **DQ-CONTRACT-v1（DQ-A1〜A6）** に従う。
+
+- メタ完全性: Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+- 契約整合: worker契約（schemaVersion / fallback / requestId isolation / structural metrics）への導線を維持する。
+- Verify最小セット（docs-check）:
+  - `rg -n "DQ-CONTRACT-v1|reviewed / unreviewed|schemaVersion|fallback|requestId|structuralMetrics|Related" 04_Documentation/diagnostics.md 01_Plans/documentation_quality.md`
+  - `git diff --check`
+- 失敗時ポリシー: 自己修復は最大3回。4回目相当は Stop とし、Proceed を保留にする。
+
 ## Related
 
 - `01_Plans/documentation_quality.md`
