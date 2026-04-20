@@ -412,3 +412,36 @@ git push origin v0.1.1
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+
+## Stream G serial cycle（2026-04-20 / DOC-OPS-05 Release docs）
+
+### Phase 1 Read
+- `release.md` の公開境界、SemVer、リリース前後チェックを再読し、最小手順の責務を確認。
+- `.github/workflows/release.yml` を参照し、タグ `v*.*.*` 時の実行ジョブ（backend docker build / frontend artifact）を外部依存として確認。
+
+### Phase 2 Plan（AC/DoDドラフト→合意）
+- AC draft:
+  1. 公開可能な最小手順（SemVer→事前チェック→タグ→タグ後確認）を維持する。
+  2. 内部承認ログ・鍵運用など Non-goal を混入させない。
+  3. workflow参照を「参照のみ」に留め、CI定義自体は変更しない。
+- DoD draft:
+  - docs-only で許可範囲外ファイルを編集しない。
+  - Verifyで `rg` と `git diff --check` を実施し、最大3回まで自己修復。
+  - Proceedで残課題/外部依存を明記する。
+- 合意: 上記AC/DoDで実行し、未定義競合が出た場合は停止する。
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。既存の公開手順は ADR/上流方針と整合しており、新規Decisionは必要なし。
+
+### Phase 4 Execute→Verify
+- docs-only で本節を追記し、実装・workflowファイルは変更しない。
+- docs-check:
+  - `rg -n "Stream G serial cycle|Phase 1 Read|Phase 2 Plan|Phase 3 ADR CDC|Phase 4 Execute→Verify|Phase 5 Proceed" 04_Documentation/release.md`
+  - `git diff --check`
+- 自己修復回数: 0/3
+
+### Phase 5 Proceed（残課題 / 外部依存）
+- 判定: **Ready**
+- 残課題: Required checks 名称変更時の追従手順は将来のworkflow変更PRで同期が必要。
+- 外部依存: GitHub Actions 実行可否・artifact生成は `.github/workflows/release.yml` の実行環境に依存する（本タスクは参照のみ）。
