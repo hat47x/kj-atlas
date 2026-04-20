@@ -730,3 +730,38 @@
   - [ ] docs-check 手順が本文に明示されている。
   - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
   - [ ] 実装コード非変更（docs-only）を満たしている。
+
+## 17) Stream Z fixed cycle（Phase 1 Read → Phase 5 Verify/Proceed）
+
+### Phase 1 Read（operations/security系の相互参照と公開境界の再確認）
+
+- 対象: `04_Documentation/security_operational_guidelines.md`
+- Cross-reference確認: `04_Documentation/security.md` / `04_Documentation/operations.md` / `02_Architecture/strict_mode_exception_approval_flow.md`
+- 公開境界確認: Audience / Goal / Non-goal / Public boundary が本文で追跡可能であること。
+
+### Phase 2 ADR CDC（変更時のみ・承認待ち管理）
+
+- Rule: **差分が発生した場合のみ** Context / Decision / Consequences を追記する。
+- Rule: 変更提案は `DecisionStatus=Pending` とし、承認完了まで `Fixed` へ更新しない。
+- Rule: 変更なしの場合は「CDC追加なし（既存合意を維持）」を明記する。
+
+### Phase 3 Plan（固定キー）
+
+- SecurityGateImpact: **public-exposure（固定）**
+- GoNoGoGate: **Required（固定）**
+- DecisionStatus: **Fixed / Pending の二値で管理（固定）**
+
+### Phase 4 Execute（役割語彙 / 固定値 / 導線の整合）
+
+- 役割語彙: `Security Officer / System Owner / Platform Operator` を統一する。
+- 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）と矛盾しないことを確認する。
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を保持し、`operations.md` は runbook 整合確認先として併記する。
+- Execute outcome: security_operational_guidelines.md を判断補助ガイドに限定し、承認フロー正本の再定義を行わない。
+
+### Phase 5 Verify / Proceed（docs-check・停止条件）
+
+- Verify command:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+  - `git diff --check`
+- Proceed条件: docs-check 成功かつ Go/No-Go 判定が Go の場合のみ次Issueへ進行する。
+- 停止条件: **自己修復3回超過** または **前提崩壊（公開境界破綻 / 上流正本との矛盾）** を検知した場合は停止し、`StoppedForClarification` として記録する。
