@@ -1050,3 +1050,23 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - Phase 3 D1〜D4整合: `4h / 2h / 代理承認なし / 48h+15m/60m` の固定値一致を確認。
 - Phase 4 Verify: docs-check（validator / `rg` / `git diff --check`）で不整合0件を確認。
 - Phase 5 Proceed: **Ready**。不一致再発時は `StoppedForClarification` で停止し、統合ストリームへ差分を引き継ぐ。
+
+## Stream E serial cycle（2026-04-20 / DOC-OPS-05後半 docs-only）
+
+### Phase 1 Read
+- 本文先頭メタ（Classification / Audience / Goal / Non-goal / Public boundary / Outcome / Related）を再確認。
+
+### Phase 2 Plan
+- 変更は docs-only に限定し、Plan→Execute→Verify→Proceed の固定順序で進める。
+- Verify失敗時の自己修復は最大3回、4回目相当は停止する。
+
+### Phase 3 Execute
+- 本文の公開境界・導線を維持し、safeMode既定ON／漏えい防止後退禁止を再確認。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related" 04_Documentation/operations.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。

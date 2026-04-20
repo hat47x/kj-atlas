@@ -577,3 +577,27 @@
 - Verify判定: docs-checkで不整合がない場合のみ `Ready`。
 - Proceed条件: 公開境界を曖昧化せず、承認なしで確定化していないこと。
 - Fail-safe再掲: 公開境界の曖昧化・承認なし確定化を検知した時点で作業を停止する。
+
+## Stream E execution record（2026-04-20 / docs-only後半）
+
+### Phase 1 Read
+- Requirement meta I/F、Classification、GoNoGoGate、DecisionStatus（Fixed）を再確認。
+- Scope外（README / dashboard / decision-pack / 実装コード）へ非接触で進行することを確認。
+
+### Phase 2 Plan
+- Plan→Execute→Verify→Proceed の固定順序で進行。
+- 受入条件は「Audience/Goal/公開境界/Next action/Related の可読性維持」を優先し、仕様追加は行わない。
+
+### Phase 3 Execute
+- docs-only の最小差分で本Issueと対応文書の同期状態を確認。
+- ADR方針変更は発生していないため CDC新規作成は不要（既存Issue内CDCを維持）。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/*.md`
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- 失敗時は自己修復を最大3回まで、4回目相当は停止してHold化する。
+
+### Phase 5 Proceed
+- 判定: **Ready**（docs-only継続可能）。
+- 引き継ぎ: 同一ワークフロー（Plan→Execute→Verify→Proceed）を維持し、致命的矛盾時は停止して論点を分離する。
