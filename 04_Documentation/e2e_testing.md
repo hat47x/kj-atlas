@@ -813,3 +813,23 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 - Phase 3 D1〜D4整合: `4h / 2h / 代理承認なし / 48h + 15m/60m` の固定値一致を確認。
 - Phase 4 Verify: issue memo validator、語彙/固定値 `rg`、`git diff --check` で docs-check pass。
 - Phase 5 Proceed: **Ready**。統合ストリームには「不整合再発時は3回修復上限、超過時停止」を引き継ぐ。
+
+## Stream E serial cycle（2026-04-20 / DOC-OPS-05後半 docs-only）
+
+### Phase 1 Read
+- 本文先頭メタ（Classification / Audience / Goal / Non-goal / Public boundary / Outcome / Related）を再確認。
+
+### Phase 2 Plan
+- 変更は docs-only に限定し、Plan→Execute→Verify→Proceed の固定順序で進める。
+- Verify失敗時の自己修復は最大3回、4回目相当は停止する。
+
+### Phase 3 Execute
+- 本文の公開境界・導線を維持し、safeMode既定ON／漏えい防止後退禁止を再確認。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。

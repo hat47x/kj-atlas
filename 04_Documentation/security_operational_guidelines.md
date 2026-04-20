@@ -357,3 +357,23 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 ### Phase 6) Proceed
 - 判定: **Ready**（公開運用判断ガイドとして Improve external 方針を維持）。
+
+## Stream E serial cycle（2026-04-20 / DOC-OPS-05後半 docs-only）
+
+### Phase 1 Read
+- 本文先頭メタ（Classification / Audience / Goal / Non-goal / Public boundary / Outcome / Related）を再確認。
+
+### Phase 2 Plan
+- 変更は docs-only に限定し、Plan→Execute→Verify→Proceed の固定順序で進める。
+- Verify失敗時の自己修復は最大3回、4回目相当は停止する。
+
+### Phase 3 Execute
+- 本文の公開境界・導線を維持し、safeMode既定ON／漏えい防止後退禁止を再確認。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related" 04_Documentation/security_operational_guidelines.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
