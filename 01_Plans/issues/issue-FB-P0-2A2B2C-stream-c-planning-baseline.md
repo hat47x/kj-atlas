@@ -61,6 +61,11 @@
 ### Execute
 - Scope固定: **FB-P0 baseline + FB-P2C-01 A1契約のみ**。
 - Non-goal固定: 実装着手・他ストリーム依存・未承認項目のFixed化を禁止。
+- A1契約境界（read-only参照）:
+  - ReferenceContractID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
+  - DeterministicOrder: `padding>self_intersection>area_delta>vertex_count`
+  - ReplayKeys: `inputHash`, `seed`, `outputPolygonHash`, `paddingViolationCount`, `appliedTieBreakOrder`
+  - ChangePolicy: `A2/A3は参照のみ（順序変更・項目追加削除は禁止）`
 - AC/DoDドラフト（不足時提案）:
   1. A1 Contract ID が一意固定されている。
   2. tie-break順序が機械可読で固定されている。
@@ -113,6 +118,7 @@
 ### Verify
 - mock前提でA2/A3開始可。
 - 実装詳細への依存持ち込みなし。
+- 決定論順序変更要求は **A1差し戻しのみ許可**（A2/A3での直接変更は禁止）。
 
 ### Proceed
 - Phase 5へ進行。
