@@ -1,35 +1,47 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (Audit Hold: A1 contract freeze for Stream F)
+- Status: Open (Audit Hold: A1 freeze requires machine-readable Go/NoGo gate confirmation)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream F（FB-P2C A1契約固定のみ）
+- Owner: Stream C（FB-P2C A1契約固定のみ）
 - Scope: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md` のみ
 - Related Backlog: `FB-P2C-01`
-- Related ADR/Spec: `ADR-0001`, `ADR-0007`
+- Related ADR/Spec: `ADR-0001`, `ADR-0007`, `ADR-0019`
 - Expected verification level: `docs-check`
 
-## Stream F execution boundary（hard lock）
+## Stream C execution boundary（hard lock）
 
 - Editable files:
   - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
   - `issue-FB-P2C-01-a1-interface-contract.md`
 - Prohibited edits: 上記以外すべて（FB-P2A / HIL / CE / 共有統合ファイル / 実装コードを含む）。
 - Fixed phase order:
-  1) Phase 1 Read（依存・優先度確認）
-  2) Phase 2 Plan（I/F固定）
-  3) Phase 3 ADR CDC（必要時のみ）
-  4) Phase 4 Execute（モック前提）
-  5) Phase 5 Verify/Proceed（下流へread-only handoff）
+  1) Phase 1 Read（Audit Hold理由の再確認）
+  2) Phase 2 Mock Contract（契約ID/Go-NoGo固定）
+  3) Phase 3 ADR CDC（変更要否明文化 + 承認待ち）
+  4) Phase 4 Plan→Execute→Verify（AC/DoD機械可読化）
+  5) Phase 5 Proceed（1行ルール固定）
 - Dependency cut policy:
   - 外部ストリーム待ち禁止。
   - 必要I/Fは本Issue内でfreezeし、mock可能形を出力。
 - Fail-safe:
   - 共通ルール `Plan → Execute → Verify → Proceed` を適用。
-  - Verify自己修復は最大3回。未承認確定 / 契約競合 / 3回超過で停止。
+  - Verify自己修復は最大3回。未承認確定 / 契約競合 / 3回超過 / 前提崩壊で停止。
 
 ---
+
+## Phase 1) Read（Audit Hold理由の再確認）
+
+- Hold reason confirmation:
+  - `FB-P0` baseline: A1 mock gate の再確認待ち。
+  - `FB-P2C-01-A1`: Go/NoGo条件の機械可読化確認待ち。
+- Consistency check:
+  - 両ファイルでHold理由が同一論点（A1 gate）に収束していること。
+
+---
+
+## Phase 2) Mock Contract（A1契約固定）
 
 ## Requirement meta I/F（共通キー）
 
@@ -38,17 +50,15 @@
 - PriorityClass: Must
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
-- DecisionQueueRef: `DQ-FB-P2C-01`（GateDecision: approved）
+- DecisionQueueRef: `DQ-FB-P2C-01`
 
----
+### A1 Contract freeze（CDC）
 
-## A1 Contract freeze（CDC）
-
-### Context
+#### Context
 - `FB-P2C-01` のDoD「同一入力で同一polygon」を満たすには、tie-break順序の非決定性を排除する必要がある。
 - A2/A3はA1契約を単一正本としてread-only参照し、契約値を変更しない運用が必要。
 
-### Decision
+#### Decision
 - Contract ID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
 - Deterministic tie-break order（機械可読）:
   - `padding>self_intersection>area_delta>vertex_count`
@@ -62,22 +72,66 @@
   1. 同一 `inputHash + seed` で同一 `outputPolygonHash`。
   2. `appliedTieBreakOrder` は固定順序と完全一致。
   3. `paddingViolationCount == 0` を必須。
+- Go conditions:
+  1. 同一入力同一 `outputPolygonHash` の再現成功。
+  2. `appliedTieBreakOrder` が固定順序と一致。
+  3. `paddingViolationCount == 0`。
+- NoGo conditions:
+  1. tie-break順序不一致。
+  2. `paddingViolationCount > 0`。
+  3. `outputPolygonHash` の非決定的変動。
 - Must-not:
   - A2/A3による順序入替・項目追加・項目削除。
   - 未承認状態での契約更新。
 
-### Consequences
+#### Consequences
 - A2はmock-validationを外部待ちなしで進行できる。
 - A3はimplementation-ready判定を契約準拠で実施できる。
 - 契約変更要求はA1へ差し戻し、直接更新を禁止する。
 
 ---
 
-## Approval record（A1 Gate）
+## Phase 3) ADR CDC（変更要否明文化 + 承認待ち）
 
-- GateDecision: `approved`
-- Approval basis: `DQ-FB-P2C-01`（deterministic tie-break order 承認）
-- Effective mode: `A2/A3 read-only reference`
+- ADR impact decision: **No ADR text change required**（既存 `ADR-0001`, `ADR-0007`, `ADR-0019` で包含）。
+- CDC approval state:
+  - `CDCApprovalState: pending_review`
+  - `CDCApprovalQueue: DQ-FB-P2C-01`
+  - `CDCApprovalGate: not_rejected`
+
+---
+
+## Phase 4) Plan→Execute→Verify（AC/DoD機械可読化）
+
+### Machine-readable AC
+
+```yaml
+acceptance_criteria:
+  - id: AC-A1-1
+    check: "ContractID == CTR-FB-P2C-01-A1-TIEBREAK-V1"
+  - id: AC-A1-2
+    check: "DeterministicOrder == padding>self_intersection>area_delta>vertex_count"
+  - id: AC-A1-3
+    check: "RequiredFields include inputHash, seed, outputPolygonHash, paddingViolationCount, appliedTieBreakOrder"
+  - id: AC-A1-4
+    check: "GoConditions and NoGoConditions are both defined"
+```
+
+### Machine-readable DoD
+
+```yaml
+definition_of_done:
+  cdc_documented: true
+  gate_machine_readable: true
+  cross_file_consistency: true
+  hold_release_rule: "all AC pass && CDCApprovalGate == not_rejected"
+```
+
+---
+
+## Phase 5) Proceed（1行ルール）
+
+- **解除条件が満たされた場合のみ次工程開始。**
 
 ---
 
@@ -111,7 +165,8 @@
 - Verify checklist:
   - [x] Contract ID 固定
   - [x] CDC（Context/Decision/Consequences）固定
-  - [x] 承認状態（GateDecision=approved）明示
+  - [x] Go/NoGo 条件を機械可読化
+  - [x] ADR変更要否と承認待ち状態を明示
   - [x] A2/A3 handoff（mock-first）固定
   - [x] フェイルセーフ停止条件明示
 
