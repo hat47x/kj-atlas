@@ -37,9 +37,11 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 ## 4) State Transition Contract（固定）
 
+- Dependency order（唯一）:
+  - `A1 -> A2 -> A3`
 - Unlock rule（唯一）:
   - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
-- Decision Queue:
+- Decision Queue（唯一）:
   - `Pending -> Approved` または `Pending -> Rejected`
 - Prohibited:
   - `Pending` bypass
@@ -58,31 +60,31 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-1. Read
+1. Phase 1 Read
    - Plan: 対象 issue 再読対象を固定。
-   - Execute: 契約ID / Gate式 / 固定値を照合。
+   - Execute: `freezeContractId` / `contractIds` / Unlock rule / Go-NoGo 条件を照合。
    - Verify: 不一致=0件。
    - Proceed: 不一致時は CDC 承認待ちへ。
-2. Plan
-   - Plan: AC/DoD不足を抽出。
-   - Execute: ドラフト提案を記録。
-   - Verify: `agreementStatus=agreed` まで確定しない。
-   - Proceed: 合意済みのみ Execute へ。
-3. ADR CDC（必要時）
+2. Phase 2 ADR CDC（必要時）
    - Plan: 方針変更有無を判定。
-   - Execute: CDC を承認待ちで記録。
+   - Execute: Context / Decision / Consequences を承認待ちで記録。
    - Verify: 承認前の確定化なし。
-   - Proceed: 承認後のみ Phase 4。
-4. Execute
+   - Proceed: 承認後のみ Phase 3。
+3. Phase 3 Execute
    - Plan: 正規化対象（契約文言・依存順・停止条件）を固定。
-   - Execute: 曖昧語を削除し式を固定。
-   - Verify: 依存逆転=0。
-   - Proceed: Verify pass で次へ。
-5. Verify & Proceed
-   - Plan: 検証コマンド固定。
+   - Execute: 契約語彙の重複・矛盾を解消し単一式へ固定。
+   - Verify: 依存逆転=0、未定義競合=0。
+   - Proceed: Verify pass で Phase 4 へ。
+4. Phase 4 Verify
+   - Plan: docs-check 観点（語彙整合、依存順序、停止条件）を固定。
    - Execute: docs-check 実施。
    - Verify: `validatorPass=true`。
-   - Proceed: 固定I/Fを read-only handoff する。
+   - Proceed: Pass のみ Phase 5 へ。
+5. Phase 5 Proceed
+   - Plan: 下流配布対象を固定。
+   - Execute: read-only 契約スナップショットを発行。
+   - Verify: Downstream への変更禁止キーが一致。
+   - Proceed: A2/A3 へ handoff。
 
 ## 7) Go / No-Go（固定）
 
@@ -97,7 +99,7 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
   2. 影響契約ID
   3. 要承認事項
 
-## 9) Downstream Fixed I/F（変更禁止）
+## 9) Downstream Fixed I/F Snapshot（変更禁止）
 
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`

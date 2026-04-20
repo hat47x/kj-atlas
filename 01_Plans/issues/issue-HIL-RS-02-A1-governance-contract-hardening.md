@@ -17,7 +17,7 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 ## 2) Hardening Rules（固定）
 
-- Dependency order: `A1 -> A2 -> A3`
+- Dependency order（唯一）: `A1 -> A2 -> A3`
 - Unlock rule（唯一）:
   - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Decision Queue（唯一）:
@@ -54,36 +54,35 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-1. Read
+1. Phase 1 Read
    - Plan: 再読対象を固定。
-   - Execute: 契約ID/凍結値/遷移を照合。
+   - Execute: `freezeContractId` / `contractIds` / Unlock rule / Go-NoGo 条件を照合。
    - Verify: 不一致=0件。
    - Proceed: 差分は CDC 論点へ。
-2. Plan
-   - Plan: AC/DoD不足を抽出。
-   - Execute: ドラフト提案化。
-   - Verify: 未承認は `Pending` 維持。
-   - Proceed: 合意済みのみ次へ。
-3. ADR CDC（必要時）
+2. Phase 2 ADR CDC（必要時）
    - Plan: 方針変更要否判定。
-   - Execute: CDC 記録（承認待ち）。
+   - Execute: Context / Decision / Consequences を承認待ちで記録。
    - Verify: 承認前確定化なし。
-   - Proceed: 承認済みのみ Execute。
-4. Execute
+   - Proceed: 承認済みのみ Phase 3。
+3. Phase 3 Execute
    - Plan: 契約文言正規化対象を固定。
-   - Execute: 曖昧語を削除し統一式へ。
+   - Execute: 契約語彙の重複・矛盾を解消し単一式へ固定。
    - Verify: 依存逆転/未定義競合=0件。
    - Proceed: Verify pass で次へ。
-5. Verify & Proceed
-   - Plan: 検証コマンド固定。
+4. Phase 4 Verify
+   - Plan: docs-check 観点（語彙整合、依存順序、停止条件）を固定。
    - Execute: docs-check 実施。
    - Verify: `validatorPass=true`。
-   - Proceed: 固定I/Fを read-only handoff。
+   - Proceed: 固定I/F handoff 判定へ。
+5. Phase 5 Proceed
+   - Plan: 下流配布対象を固定。
+   - Execute: read-only 契約スナップショットを発行。
+   - Verify: A1 側 frozen keys と一致。
+   - Proceed: A2/A3 は参照のみ。
 
-## 6) Open化条件
+## 6) Open化条件（固定）
 
-- `a1Status=="Done"`
-- `pendingDecisionQueueCount==0`
+- `a2a3Unlock == true`
 - `contractLinkLocked==true`
 - `sharedResourceFreeze==true`
 - `validatorPass==true`
@@ -101,7 +100,9 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
   3. 固定識別子不一致
   4. 担当外編集要求
 - 停止時報告:
-  - 失敗条件 / 影響範囲 / 要承認事項
+  1. 失敗条件
+  2. 影響契約ID
+  3. 要承認事項
 
 ## 9) Fixed Values Handoff（変更禁止）
 
