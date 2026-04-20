@@ -15,7 +15,7 @@
 
 HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依存を実装待ちではなく状態遷移契約で管理する。
 
-## 2) Fixed Contract Snapshot（read-only）
+## 2) Contract Freeze（mock-first / read-only）
 
 - Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -68,35 +68,35 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-### Phase 1: Read
+### Phase 1: Read & Lock
 - Plan: 対象5 issue を再読し差分候補を列挙。
-- Execute: Status / Dependencies / 固定識別子を照合。
+- Execute: `Status / Dependencies / Scope / fixed keys` を照合。
 - Verify: 固定値不一致=0件を確認。
-- Proceed: 不一致があれば Phase 2 で CDC 承認待ちへ。
+- Proceed: 不一致があれば即停止して Phase 3 CDC 承認待ちへ。
 
-### Phase 2: Plan
-- Plan: AC/DoD 不足があればドラフト提案化。
-- Execute: 提案を issue 本文へ追記（確定扱い禁止）。
-- Verify: 未承認項目を `Pending` で保持。
-- Proceed: 合意済み項目のみ Execute 対象へ。
+### Phase 2: Contract Freeze（mock-first）
+- Plan: I/F固定対象（contractIds / schemaVersion / gate条件）を確定。
+- Execute: 実装詳細は追加せず、他ストリーム非依存の最小契約のみ固定。
+- Verify: read-only 契約として矛盾がない。
+- Proceed: 凍結完了時のみ Phase 3 へ。
 
 ### Phase 3: ADR CDC（必要時のみ）
 - Plan: 方針変更の必要性判定。
-- Execute: `Context/Decision/Consequences` を明文化して承認待ち化。
+- Execute: `Context/Decision/Consequences` を承認待ちで明文化。
 - Verify: 承認前に確定文言へ進んでいないことを確認。
 - Proceed: 承認済みのみ Phase 4 へ。
 
-### Phase 4: Execute
-- Plan: 契約文言・依存順・停止条件の正規化対象を固定。
-- Execute: 曖昧語を排除し、判定式を機械判定可能な形へ統一。
-- Verify: 依存逆転・未定義語彙=0件。
+### Phase 4: Plan -> Execute -> Verify
+- Plan: AC/DoD 不足提案と停止条件を固定。
+- Execute: 契約文言・依存順・停止条件を正規化。
+- Verify: 依存逆転=0、未定義語彙=0、`validatorPass=true`。
 - Proceed: Verify pass 時のみ Phase 5 へ。
 
-### Phase 5: Verify & Proceed
-- Plan: AC/DoD 一致確認項目を確定。
-- Execute: docs-check 実施。
-- Verify: `validatorPass=true` を確認。
-- Proceed: 次工程向け固定I/F一覧を出力。
+### Phase 5: Proceed / Stopper
+- Plan: 次工程へ渡す固定I/F一覧を確定。
+- Execute: read-only handoff を出力。
+- Verify: A1 frozen keys と一致。
+- Proceed: 失敗・競合時は即停止し指示待ち。
 
 ## 7) Gate / Proceed 条件
 

@@ -21,7 +21,7 @@
 
 A3 を「契約参照専用」の計画メモとして確定し、A1 完了前の逸脱実行を防止する。
 
-## 2) Fixed Contract Snapshot（read-only）
+## 2) Contract Freeze（read-only reference）
 
 - Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -58,35 +58,35 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-### Phase 1 Read
+### Phase 1 Read & Lock
 - Plan: 再読対象と照合項目を固定。
 - Execute: A1/A2/A3 依存・固定値・禁止遷移を確認。
 - Verify: 差分/競合=0件。
-- Proceed: 差分があれば CDC 論点化。
+- Proceed: 差分があれば CDC 論点化し即停止。
 
-### Phase 2 Plan
-- Plan: AC/DoD不足を提案化。
-- Execute: 合意前は `Pending` で保持。
-- Verify: 未承認確定化なし。
-- Proceed: 合意済みのみ次へ。
+### Phase 2 Contract Freeze（mock-first）
+- Plan: I/F固定対象を確定。
+- Execute: 実装詳細は追加せず契約参照専用を維持。
+- Verify: A3 単独で契約変更を起こせない。
+- Proceed: 凍結維持確認後に Phase 3。
 
 ### Phase 3 ADR CDC（必要時）
 - Plan: 方針変更要否を判定。
 - Execute: CDC を承認待ち化。
 - Verify: 承認前確定化なし。
-- Proceed: 承認後のみ Execute。
+- Proceed: 承認後のみ Phase 4。
 
-### Phase 4 Execute
-- Plan: 契約文言・依存順・停止条件の正規化範囲を固定。
-- Execute: 曖昧語排除、差戻し導線を一意化。
-- Verify: 禁止遷移/語彙ドリフト=0件。
+### Phase 4 Plan -> Execute -> Verify
+- Plan: AC/DoD 不足提案と停止条件を固定。
+- Execute: 契約文言・依存順・停止条件を正規化。
+- Verify: 禁止遷移/語彙ドリフト=0件、`validatorPass=true`。
 - Proceed: Verify pass で次へ。
 
-### Phase 5 Verify & Proceed
-- Plan: 検証コマンド固定。
-- Execute: docs-check 実施。
-- Verify: `validatorPass=true`。
-- Proceed: 固定I/F一覧を次工程へ出力。
+### Phase 5 Proceed / Stopper
+- Plan: 固定I/F一覧を次工程へ出力。
+- Execute: read-only handoff を発行。
+- Verify: frozen keys 一致。
+- Proceed: 失敗時は即停止し指示待ち。
 
 ## 6) Open/Proceed Gate（固定）
 
