@@ -181,3 +181,28 @@ docker --version && docker compose version
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## Stream F serial cycle（2026-04-20 / Quality-E2E-Diagnostics）
+
+### Phase 1 Read
+- 対象4ファイル（`documentation_quality.md` / `e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `diagnostics.md`）を再読。
+- 品質ゲート抽出結果: メタ完全性、再現可能性、相互リンク、SafeMode境界、語彙整合、3回自己修復上限。
+
+### Phase 2 Contract Freeze
+- `01_Plans/documentation_quality.md` に **DQ-CONTRACT-v1**（DQ-A1〜A6）を明文化。
+- 固定方針: 承認前の規約確定を禁止し、上位正本への昇格は行わない。
+
+### Phase 3 Execute
+- `04_Documentation/e2e_testing.md` と `04_Documentation/diagnostics.md` に DQ-CONTRACT-v1 適用節を追記。
+- 本ログへフェーズ記録と Verify結果を追記。
+
+### Phase 4 Verify（docs-check / cross-link）
+- 実行コマンド:
+  - `rg -n "DQ-CONTRACT-v1|DQ-A1|DQ-A2|DQ-A3|DQ-A4|DQ-A5|DQ-A6|Stream F DQ-CONTRACT-v1 適用" 01_Plans/documentation_quality.md 04_Documentation/e2e_testing.md 04_Documentation/diagnostics.md 04_Documentation/e2e_verification_log_2026-03-03.md`
+  - `git diff --check`
+- 結果: pass（修復0/3）。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 品質I/F固定出力: DQ-CONTRACT-v1（DQ-A1〜A6）を参照し、他レーンは docs-check + cross-link確認を同一判定軸として利用可能。
+- Stopper確認: 競合・前提崩壊なし。承認前の規約昇格なし。
