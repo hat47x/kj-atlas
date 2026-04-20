@@ -587,3 +587,29 @@
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: 公開運用者向けに最小安全設定と確認手順を維持し、内部判断メモは `01_Plans/issues/` 側へ分離。
+
+## Stream F execution record（2026-04-20 / 指定Phaseプロトコル）
+
+### Phase 1) Read
+- Scope制約を再確認し、本Issueメモ以外を編集しないことを固定。
+- Requirement meta I/F と `DecisionStatus=Fixed` / `VerificationLevel=docs-check` の整合を再確認。
+
+### Phase 2) Plan（AC/DoD不足ドラフト合意）
+- AC補強案: 外部公開文書としての判定根拠（Audience / Goal / Public boundary / Validation）を常に本文で追跡可能にする。
+- DoD補強案: Proceed判定を `Ready / Hold / Needs-decision` の3値で固定し、Stopper該当時は `Hold` へ遷移。
+
+### Phase 3) ADR CDC（必要時）
+- 判定: **追加ADR不要**。
+- CDC: Context=公開設定ガイドの品質固定, Decision=Improve external分類維持, Consequences=後続は公開改善PRへ限定。
+
+### Phase 4) Execute + Verify（docs-check, 最大3回自己修復）
+- Execute: Issue本文へ本フェーズ記録を追記（本ファイルのみ）。
+- Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify-2: `git diff --check`
+- 自己修復: 0/3回（追加修復なし）。
+
+### Phase 5) Proceed（次の1手・未解決点）
+- 状態: **Ready**
+- 次の1手: `04_Documentation/configuration.md` に公開向け前提条件と確認手順を補強するdocs-only PRを起票。
+- 未解決点: runtime parameter registry との相互参照粒度（節単位/表単位）の最終統一。
+- Stopper確認: 未定義競合なし / safeMode後退語彙なし / 自己修復3回超過なし。

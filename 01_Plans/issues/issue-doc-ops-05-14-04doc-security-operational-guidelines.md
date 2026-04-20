@@ -662,3 +662,29 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（docs-only継続可能）。
 - 引き継ぎ: 同一ワークフロー（Plan→Execute→Verify→Proceed）を維持し、致命的矛盾時は停止して論点を分離する。
+
+## Stream F execution record（2026-04-20 / 指定Phaseプロトコル）
+
+### Phase 1) Read
+- Scope制約を再確認し、本Issueメモ以外を編集しないことを固定。
+- Requirement meta I/F と `DecisionStatus=Fixed` / `VerificationLevel=docs-check` の整合を再確認。
+
+### Phase 2) Plan（AC/DoD不足ドラフト合意）
+- AC補強案: セキュリティ運用ガイドの公開境界（Audience / Goal / Public boundary / SecurityGateImpact）を本文で追跡可能に維持。
+- DoD補強案: Proceed判定を `Ready / Hold / Needs-decision` の3値で固定し、Stopper該当時は `Hold` へ遷移。
+
+### Phase 3) ADR CDC（必要時）
+- 判定: **追加ADR不要**。
+- CDC: Context=security運用判断ガイドの公開品質固定, Decision=Improve external分類維持, Consequences=後続は公開運用判断フロー改善PRへ限定。
+
+### Phase 4) Execute + Verify（docs-check, 最大3回自己修復）
+- Execute: Issue本文へ本フェーズ記録を追記（本ファイルのみ）。
+- Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify-2: `git diff --check`
+- 自己修復: 0/3回（追加修復なし）。
+
+### Phase 5) Proceed（次の1手・未解決点）
+- 状態: **Ready**
+- 次の1手: `04_Documentation/security_operational_guidelines.md` の公開向け運用判断フローをdocs-onlyで補強するPRを起票。
+- 未解決点: `security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` の三者リンク粒度の最終統一。
+- Stopper確認: 未定義競合なし / safeMode後退語彙なし / 自己修復3回超過なし。
