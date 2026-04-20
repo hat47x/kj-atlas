@@ -14,7 +14,9 @@
 - CE0契約IDの再定義禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
+- `role / transition / no-go` 語彙は本Issueで固定し、同義語への置換や拡張定義を禁止。
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- **各Phase開始時に必ずReadを実施**し、直前Phaseとの差分有無（語彙・禁止事項・SafeMode境界）を確認してから進行する。
 
 ## Phase 1 Read（role / transition / no-go語彙確認）
 ### Read同期スナップショット
@@ -35,6 +37,7 @@
 - `CE0-SAFEMODE-IF` を参照し、Graph再配置タスク側で緩和しない。
 
 ## Phase 2 Plan（AC / DoDドラフト + I/F Mock Freeze）
+- Phase開始Read: Phase 1で固定した `role / transition / no-go` 語彙を再読し、差分があれば `held` として計画へ仮置きする（確定禁止）。
 - AC/DoDを先にドラフトし、ContextQuery / ContextBundle / Review 境界をI/Fのみ固定する。
 - CE1: `context_projection` は read-only参照のみ。
 - CE2: proposal lifecycle は `working` に限定、`consensus` 直更新禁止。
@@ -43,6 +46,7 @@
 - 参照境界は `CG-01..05` 参照のみで記述し、再定義しない。
 
 ## Phase 3 ADR CDC（必要時のみ Context / Decision / Consequences を記録し承認待ち）
+- Phase開始Read: Phase 2計画と固定語彙の一致を確認し、不一致は `held` で起票（推測で決定しない）。
 - 差分検知ログ: role/transition/audit語彙の揺れ、No-Go語彙不一致、SafeMode境界の逸脱。
 - **Context**: Graph role/transition/audit の語彙衝突有無。
 - **Decision**: `WorkingGraph / ContextProjectionGraph / Consensus Graph` へ固定。
@@ -52,6 +56,7 @@
 
 ## Phase 4 Execute（working / context_projection / consensus 責務固定）
 ### Execute方針
+- Phase開始Read: Phase 3で `held` になった未承認事項の残存有無を確認し、未承認は継続して `held` に留める。
 - 役割・遷移・監査の3層をIssue記述内で分離。
 - `working -> consensus = patch+approval only` を明示。
 - `context_projection` 書換を fail-closed 条件として統一。
@@ -59,6 +64,7 @@
 - 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
 
 ## Phase 5 Verify（docs-check / 自律修復最大3回）
+- Phase開始Read: Phase 4の契約固定結果を再読し、未承認項目が確定扱いになっていないことを確認する。
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
@@ -70,6 +76,7 @@
 - [ ] SafeMode regression = 0
 
 ## Phase 6 Proceed（CE1 / CE2 / CE4参照境界の出力）
+- Phase開始Read: Phase 5検証結果を再読し、`held` 項目を handoff に混入させないことを確認する。
 ### Fixed contract handoff
 - Contract IDs: `CG-01..05`, `CE0-SAFEMODE-IF`
 - 禁止事項: direct write / auto-apply / auto-publish / safeMode緩和
@@ -85,3 +92,4 @@
 - SafeMode後退の兆候
 - 依存前提崩壊
 - No-Go語彙衝突（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）
+- 未承認事項の確定化（`held` 解除の承認証跡なし）
