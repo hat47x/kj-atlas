@@ -655,3 +655,31 @@
   - [ ] docs-check 手順が本文に明示されている。
   - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
   - [ ] 実装コード非変更（docs-only）を満たしている。
+
+## 19) Requested 5-phase execution (Scope-limited)
+
+### Phase 1 Read: Scope / Related ADR確認
+- Scope確認: `04_Documentation/configuration.md` を対象とする docs-only issue として固定。
+- Related ADR/Spec確認: 02_Architecture/runtime_parameter_registry.md, 01_Plans/documentation_quality.md, 01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md を参照し、00〜02の正本を上書きしない。
+- 変更境界: 本issueメモの更新に限定し、他ファイル編集は行わない。
+
+### Phase 2 Plan: 分類判定 + Go/No-Go Gate定義
+- 分類判定: **Improve external**
+- Go/No-Go Gate: **Required**（判定項目: Audience / Goal / 公開境界 / 次アクション / VerificationLevel一致）。
+- No-Go条件: 分類根拠が欠落、または `Expected verification level` と実施検証が不一致。
+
+### Phase 3 Execute: AC / Validation / Non-goal 補完
+- AC補完: 分類結果、根拠（Audience/Goal/公開境界）、次アクション、SecurityGateImpact記載を必須化。
+- Validation補完: docs-check手順と `git diff --check` を実行計画に固定。
+- Non-goal補完: 対象文書の全面改稿・実装コード変更・CI設計変更は本Issueの対象外。
+
+### Phase 4 Verify: docs-check + diff check
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+  - `git diff --check`
+- 合格条件: メタI/Fの欠落なし、Markdown体裁崩れなし。
+
+### Phase 5 Proceed: Ready/Hold と3回超過停止
+- Proceed判定: **Ready**（DecisionStatus=Fixed かつ Go/No-Go Gate=Required を満たす想定）。
+- Hold条件: 参照不整合 / 固定値矛盾 / docs-check不合格。
+- 停止条件: 自己修復は最大3回まで。**3回超過（4回目相当）は停止して Hold** とする。
