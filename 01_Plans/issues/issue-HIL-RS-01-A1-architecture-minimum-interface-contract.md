@@ -35,6 +35,12 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 - Consequences:
   - 変更要求は `A1-CDC-only` へ差し戻し、A2/A3 で局所修正しない。
 
+### 3.1) ADR合意ステータス（承認待ち）
+
+- ApprovalStatus: `Pending (Human approval required)`
+- ApprovalScope: `CDC Context/Decision/Consequences`
+- Pre-approval lock: `承認前は確定扱い禁止（契約凍結値は変更禁止）`
+
 ## 4) State Transition Contract（固定）
 
 - Dependency order（唯一）:
@@ -88,15 +94,16 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 ## 7) Go / No-Go（固定）
 
-- `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `NoGo = !Go`
+- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+- `Go = A2A3StartAllowed`
+- `NoGo = !A2A3StartAllowed`
 
 ## 8) Fail-safe
 
 - 即停止: Self-Correction 3回超過 / 未定義競合 / 前提崩壊 / 担当外編集要求。
 - 停止時報告:
   1. 失敗条件
-  2. 影響契約ID
+  2. 影響I/F
   3. 要承認事項
 
 ## 9) Downstream Fixed I/F Snapshot（変更禁止）
