@@ -77,20 +77,20 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
 1. Phase 1 Read
-   - Plan: 対象4ファイルの照合項目（依存順序 / unlockRule / fixed keys）を固定。
+   - Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）の照合項目（依存順序 / unlockRule / fixed keys）を固定。
    - Execute: `Status / Dependencies / Scope / fixed keys / unlockRule` を照合。
    - Verify: 不一致 `DiffCount=0`。
-   - Proceed: 差分は即停止し Phase 2 CDC へ送る。
-2. Phase 2 ADR CDC（必要時）
-   - Plan: 方針差分がある場合のみ `Context / Decision / Consequences` を起票。
-   - Execute: 承認前は `Pending/held` として扱い、確定禁止を維持。
-   - Verify: 承認前の契約再定義が0件。
-   - Proceed: 承認済みのみ Phase 3。
-3. Phase 3 Plan
+   - Proceed: 差分は即停止し Phase 2 Plan へ送る。
+2. Phase 2 Plan
    - Plan: AC/DoD 不足（停止条件 / 差し戻し条件 / 検証条件）をドラフト化。
    - Execute: ドラフトを既存契約語彙へ正規化して追記。
    - Verify: 固定キーとの矛盾が0件。
-   - Proceed: 合意済みのみ Phase 4。
+   - Proceed: 合意済みのみ Phase 3。
+3. Phase 3 ADR CDC（必要時）
+   - Plan: 方針差分がある場合のみ `Context / Decision / Consequences` を起票。
+   - Execute: 承認前は `Pending/held` として扱い、確定禁止を維持。
+   - Verify: 承認前の契約再定義が0件。
+   - Proceed: 承認済みのみ Phase 4。
 4. Phase 4 Execute
    - Plan: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を再固定。
    - Execute: A1契約本文と Downstream snapshot を同一値へ統一。
@@ -106,6 +106,8 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
    - Execute: freezeContractId・fixed keys・Go/No-Go を出力。
    - Verify: Downstream 変更禁止キーが一致。
    - Proceed: A2/A3 へ参照専用で引き渡す。
+
+
 
 ## 7) Go / No-Go（固定）
 

@@ -73,22 +73,22 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
 ### Phase 1 Read
-- Plan: 対象4ファイルの依存・固定値・unlockRule照合項目を固定。
-- Execute: `A1 -> A2 -> A3`、`a2a3Unlock`、固定キー群を再読照合。
+- Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）の依存・固定値・unlockRule照合項目を固定。
+- Execute: `A1 -> A2 -> A3`、`a2a3Unlock`、固定キー（`schemaVersion / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）を再読照合。
 - Verify: 不一致 `DiffCount=0`。
-- Proceed: 差分は即停止し Phase 2 CDC へ。
+- Proceed: 差分は即停止し Phase 2 Plan へ。
 
-### Phase 2 ADR CDC（必要時）
-- Plan: 方針差分の有無を判定し、必要時のみ CDC を起票。
-- Execute: `Context / Decision / Consequences` を `Pending/held` で記録。
-- Verify: 承認前の確定化（契約値変更）が0件。
-- Proceed: 承認済みのみ Phase 3 へ。
-
-### Phase 3 Plan
+### Phase 2 Plan
 - Plan: AC/DoD 不足（Go/No-Go、停止条件、差し戻し条件）をドラフト化。
 - Execute: 合意済みドラフトを契約語彙に正規化して反映。
 - Verify: 固定キーと矛盾がない。
-- Proceed: 合意済みのみ Phase 4 へ。
+- Proceed: 合意済みのみ Phase 3 へ。
+
+### Phase 3 ADR CDC（必要時）
+- Plan: 方針差分の有無を判定し、必要時のみ CDC を起票。
+- Execute: `Context / Decision / Consequences` を `Pending/held` で記録。
+- Verify: 承認前の確定化（契約値変更）が0件。
+- Proceed: 承認済みのみ Phase 4 へ。
 
 ### Phase 4 Execute
 - Plan: 凍結対象キーを再確定。
@@ -107,6 +107,8 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - Execute: freezeContractId・fixed keys・Go/No-Go・NoGo時差し戻し先を出力（**read-only contract参照のみ**）。
 - Verify: A1契約（Stream A）と一致。
 - Proceed: 一致時のみ handoff 完了。
+
+
 
 ## 6) Proceed Gate（固定）
 

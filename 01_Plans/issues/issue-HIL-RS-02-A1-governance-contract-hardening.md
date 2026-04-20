@@ -61,20 +61,20 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
 1. Phase 1 Read
-   - Plan: 対象4ファイルの照合項目（依存順 / unlockRule / fixed keys / Go-NoGo）を固定。
+   - Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）の照合項目（依存順 / unlockRule / fixed keys / Go-NoGo）を固定。
    - Execute: `Status / Dependencies / Scope` と fixed keys / unlockRule / Go-NoGo を再読照合。
    - Verify: 不一致 `DiffCount=0`。
-   - Proceed: 差分は即停止し Phase 2 CDC 論点へ。
-2. Phase 2 ADR CDC（必要時）
-   - Plan: 方針差分時のみ `Context / Decision / Consequences` を起票。
-   - Execute: 承認前は `Pending/held`、確定化禁止を維持。
-   - Verify: 承認前に固定値・Go/No-Go が再定義されていない。
-   - Proceed: 承認済みのみ Phase 3。
-3. Phase 3 Plan
+   - Proceed: 差分は即停止し Phase 2 Plan 論点へ。
+2. Phase 2 Plan
    - Plan: AC/DoD 不足（停止条件・差し戻し条件・検証条件）をドラフト化。
    - Execute: 合意済みドラフトを契約語彙へ正規化して反映。
    - Verify: 凍結キーと矛盾が0件。
-   - Proceed: 合意済みのみ Phase 4。
+   - Proceed: 合意済みのみ Phase 3。
+3. Phase 3 ADR CDC（必要時）
+   - Plan: 方針差分時のみ `Context / Decision / Consequences` を起票。
+   - Execute: 承認前は `Pending/held`、確定化禁止を維持。
+   - Verify: 承認前に固定値・Go/No-Go が再定義されていない。
+   - Proceed: 承認済みのみ Phase 4。
 4. Phase 4 Execute
    - Plan: 契約凍結対象の最終統一範囲を固定。
    - Execute: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を全節で統一。
@@ -90,6 +90,8 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
    - Execute: fixed keys・unlockRule・Go/No-Go・return path を出力（**read-only contract参照のみ**）。
    - Verify: A2/A3 参照専用条件と一致。
    - Proceed: 一致時のみ handoff 完了。失敗時は停止。
+
+
 
 ## 6) Open化条件（固定）
 

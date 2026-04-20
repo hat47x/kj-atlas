@@ -80,35 +80,43 @@ A3 を「operations/documentation sync の契約参照専用」計画メモと�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-### Phase 1 Read & Lock
-- Plan: A1契約値・D1〜D4固定値・役割語彙の再読対象を固定。
-- Execute: A1/A2/A3依存、固定値、禁止遷移に加え、AUTH-OPS-03語彙とD1〜D4を照合。
+### Phase 1 Read
+- Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）のA1契約値・D1〜D4固定値・役割語彙の再読対象を固定。
+- Execute: A1/A2/A3依存、unlockRule、凍結キー（`schemaVersion / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）に加え、AUTH-OPS-03語彙とD1〜D4を照合。
 - Verify: 差分/競合=0件。
-- Proceed: 差分があれば CDC 論点化し即停止。
+- Proceed: 差分があれば即停止し Phase 2 Plan へ。
 
-### Phase 2 Contract Freeze（mock-first）
-- Plan: I/F固定対象を確定。
-- Execute: 実装詳細は追加せず契約参照専用を維持。
+### Phase 2 Plan
+- Plan: operations/documentation同期の AC/DoD 不足（語彙・導線・固定値）を補完提案としてドラフト化。
+- Execute: 追加提案を既存契約語彙へ正規化し、A3 の `read-only reference only` 制約を維持。
 - Verify: A3 単独で契約変更を起こせない。
-- Proceed: 凍結維持確認後に Phase 3。
+- Proceed: 合意済みドラフトのみ Phase 3 へ。
 
 ### Phase 3 ADR CDC（必要時）
-- Plan: Context / Decision / Consequences の変更要否を判定。
+- Plan: `Context / Decision / Consequences` の変更要否を判定。
 - Execute: 必要時のみ CDC を承認待ちとして起票（承認前の確定化禁止）。
 - Verify: 承認前確定化なし。
 - Proceed: 承認後のみ Phase 4。
 
-### Phase 4 Plan -> Execute -> Verify
-- Plan: operations/documentation同期の AC/DoD 不足（語彙・導線・固定値）を補完提案として固定。
+### Phase 4 Execute
+- Plan: 凍結I/F統一対象（`contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）とA1依存順を再固定。
 - Execute: 役割語彙・同期導線・D1〜D4固定値・A1依存順を正規化し一貫化。
 - Verify: 禁止遷移/語彙ドリフト/固定値ドリフト=0件、`validatorPass=true`。
-- Proceed: Verify pass で次へ。
+- Proceed: Verify pass で Phase 5 へ。
 
-### Phase 5 Proceed / Stopper
-- Plan: 固定I/F一覧と docs-check 実施手順を次工程へ出力。
+### Phase 5 Verify
+- Plan: 固定I/F一覧と docs-check 実施手順を次工程へ出力する検証条件を固定。
 - Execute: read-only handoff を発行し docs-check を実施。
 - Verify: frozen keys 一致、docs-check pass、Self-Correction が3回を超えていない。
 - Proceed: 3回超過または検証失敗時は即停止し指示待ち。
+
+### Phase 6 Proceed
+- Plan: 参照専用handoff（freezeContractId / fixed keys / unlockRule / Go-NoGo / return path）を確定。
+- Execute: A1契約を単一正本として、A3からの再定義禁止を明示して引き渡す。
+- Verify: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` と凍結キー完全一致。
+- Proceed: 一致時のみ handoff 完了。
+
+
 
 ## 6) Open/Proceed Gate（固定）
 
