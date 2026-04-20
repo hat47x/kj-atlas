@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream B（CE契約群）
+- Owner: Stream D（CE2専任 / proposal-only契約固定）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE2-low-risk-ai-assist.md` のみ
 - Related Backlog: `CE-2`
@@ -16,11 +16,13 @@
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
 - `reviewState=human_reviewed` のAI自動昇格は禁止。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
+- 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Read同期スナップショット
 - 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
 - No-Go語彙: `auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`
+- `reviewState` 語彙: `unreviewed | human_reviewed`（昇格は人手のみ）
 
 ### Contract IDs
 - `CE2-PROPOSAL-IF`
@@ -41,6 +43,7 @@
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
+- I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
 
@@ -60,6 +63,7 @@
 ### Execute
 - collision=0 / safeMode regression=0 を満たす整理を実施。
 - 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
+- 契約再定義要求または safeMode 後退要求を受けた場合は即停止（Fail-safe）。
 
 ### Verify
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -78,9 +82,11 @@
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
 - 検証条件: lifecycle固定, drift-stop有効, docs-check pass
+- handoff先: CE4監査（read-only）
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
+- 契約再定義要求の発生
 - 未定義ファイル競合
 - SafeMode後退の兆候
 - 依存前提崩壊
