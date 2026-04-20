@@ -43,6 +43,18 @@
 - CE4参照境界: 監査4点 `query/bundle/proposal/apply` と fail-closed（`CG-01..05`参照のみ）。
 - safeMode境界は `CE0-SAFEMODE-IF` を上位正本として固定し、下流Issueで再定義しない。
 
+### I/F Mock Freeze Matrix（read-only handoff）
+| Consumer | Read-only参照元（CE0 SSOT） | 許可される変更 | 禁止 |
+| --- | --- | --- | --- |
+| CE1 | `CE0-CTX-IF`（ContextQuery必須キー / deterministic bundle） | 参照リンクの更新のみ | 必須キー再定義、hash規則改変 |
+| CE2 | `CE0-REVIEW-IF`（proposal-only / human昇格手動） | 状態遷移説明の補足のみ | auto-apply、AI review昇格 |
+| CE4 | `CG-01..05`（監査4点 / fail-closed） | 監査導線の注記のみ | 監査欠損の成功扱い、direct write |
+
+Freeze判定（全て必須）:
+- 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向のみ（逆参照での再定義禁止）。
+- CE1/CE2/CE4は contract本文の複製を行わず、Contract ID参照のみ記述する。
+- 参照先に差分が必要な場合は CE0再起票（本Issue）を経由し、下流Issueで先行確定しない。
+
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
 ### CDC条件（変更が発生した場合のみ記録）
 - 差分検知ログ（Phase 1起点）: 契約ID衝突 / No-Go語彙揺れ / Scope逸脱のいずれかがあればCDC化する。
@@ -50,6 +62,25 @@
 - **Decision**: 既存契約IDを再定義せず、参照境界のみを明確化したこと。
 - **Consequences**: CE1/CE2/CE4の依存先が一意化されること。
 - **Approval**: 反映状態は `held` とし、承認前確定を禁止する。
+
+### ADR CDC起票テンプレ（必要時のみ）
+```md
+#### CDC-CE0-<yyyymmdd>-<seq>
+- Status: held（承認待ち）
+- Trigger: [contract_id_collision | vocabulary_collision | scope_deviation]
+- Context:
+  - 衝突箇所:
+  - 影響Contract ID:
+- Decision:
+  - CE0契約ID再定義なし
+  - 参照境界の補正のみ
+- Consequences:
+  - CE1/CE2/CE4の参照先が一意
+  - 下流Issueはread-only参照を維持
+- Approval Needed:
+  - reviewer:
+  - due:
+```
 
 ### 凍結判定
 - Contract ID collision = 0
@@ -61,6 +92,7 @@
 - 5 Issue横断で契約語彙を照合し、再定義を除去する。
 - CE1/CE2/CE4への handoff を「参照のみ」に統一する。
 - No-Go語彙が全Issueで同一かを確認し、揺れがあれば修正する。
+- AC/DoD不足があれば CE0側で補完提案を先に明文化し、承認前は `held` とする。
 
 ### Execute
 - collision=0 / safeMode regression=0 を満たす記述へ整理。
@@ -77,6 +109,8 @@
 - [ ] SafeMode regression = 0
 - [ ] No-Go語彙一致（direct write / auto-apply / preview bypass）
 - [ ] CE1/CE2/CE4参照境界を再定義なしで説明可能
+- [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
+- [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
 
 ## Phase 5 Proceed（次工程向け固定契約の出力）
 ### Fixed contract handoff
