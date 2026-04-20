@@ -15,6 +15,26 @@
 
 HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定する。
 
+## 1.1) Task Brief（Phase 2 Plan）
+
+- Scope:
+  - HIL-RS-02 の実行計画を A1 契約凍結値へ完全整合させる。
+- Non-Goals:
+  - A1固定値の再定義。
+  - 実装領域（`03_Implement/**`）の変更。
+- Acceptance Criteria:
+  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` の差分が 0 件。
+  - A2/A3 開放条件が `A1 Done + pendingDecisionQueueCount==0` で固定。
+- DoD:
+  - Go/No-Go 判定式が単一化され、差戻し先が A1 に固定される。
+  - 未承認事項が `Pending/held` として記録される。
+- Validation:
+  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
+- Stop Conditions:
+  - 固定値ドリフト検出。
+  - 契約再定義要求。
+  - Self-Correction 3回超過。
+
 ## 2) Governance Baseline（read-only snapshot）
 
 - snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
@@ -40,6 +60,8 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - 固定キー差分:
   - `schemaVersion`: 差分なし（`1.0.0`）
   - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
+  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
   - `contractLinkLocked`: 差分なし（`true`）
   - `sharedResourceFreeze`: 差分なし（`true`）
   - `safeModeDefault`: 差分なし（`ON`）

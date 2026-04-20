@@ -15,6 +15,26 @@
 
 HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依存を実装待ちではなく状態遷移契約で管理する。
 
+## 1.1) Task Brief（Phase 2 Plan）
+
+- Scope:
+  - `01_Plans/issues/` 内の HIL-RS A系契約メモの整合維持（A1→A2→A3）。
+- Non-Goals:
+  - `01_Plans/issues/` 以外の更新。
+  - 契約ID・固定値の再定義。
+- Acceptance Criteria:
+  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` の差分が 0 件。
+  - 未承認事項は `held/pending` のまま維持される。
+- DoD:
+  - Serial Phase Protocol（Read→Plan→ADR CDC→Execute→Verify→Proceed）が明文化済み。
+  - A2/A3 の Open 条件が `A1==Done && pendingDecisionQueueCount==0` に固定される。
+- Validation:
+  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
+- Stop Conditions:
+  - 固定値差分の検出。
+  - 未承認項目の確定化要求。
+  - Self-Correction 3回超過。
+
 ## 2) Contract Freeze（mock-first / read-only）
 
 - snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
@@ -42,6 +62,9 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 - 対象: `issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`
 - A1固定値差分:
   - `schemaVersion`: 差分なし（`1.0.0`）
+  - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
+  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
   - `contractLinkLocked`: 差分なし（`true`）
   - `sharedResourceFreeze`: 差分なし（`true`）
   - `safeModeDefault`: 差分なし（`ON`）
