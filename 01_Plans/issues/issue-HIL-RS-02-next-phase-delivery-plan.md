@@ -17,12 +17,11 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 
 ## 2) Governance Baseline（read-only snapshot）
 
-- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
-- Freeze Pack: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
+- freezeContractId=`HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Dependency order: `A1 -> A2 -> A3`
-- Allowed transitions:
-  - `Pending -> Approved`
-  - `Pending -> Rejected`
+- unlockRule=`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- decisionQueueTransition=`Pending -> Approved | Pending -> Rejected`
 - Forbidden transitions:
   - Pending bypass
   - A1未完了での A2/A3 Open

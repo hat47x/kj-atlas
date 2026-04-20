@@ -17,9 +17,10 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 ## 2) Contract Freeze（mock-first / read-only）
 
-- Snapshot ID: `MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
-- Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
+- freezeContractId=`HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - Dependency order: `A1 -> A2 -> A3`
+- unlockRule=`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - Contract IDs:
   - `A1-CRITIQUE-IF`
   - `A1-REDIFF-IF`
@@ -50,7 +51,7 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 - Allowed:
   - `A1: Draft -> Open -> In Progress -> Done`
   - `A2/A3: Draft -> Open` は `A1==Done && pendingDecisionQueueCount==0` のときのみ
-  - `DecisionQueue: Pending -> Approved | Rejected`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - Forbidden:
   - `Pending` bypass
   - `A1!=Done` での `A2/A3 Draft -> Open`
