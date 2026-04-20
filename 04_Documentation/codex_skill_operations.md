@@ -220,3 +220,33 @@
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: 内部正本の統合完了後に本書の公開境界スタブを最終化する。
+
+## Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）
+
+### Phase 1 Read
+- `configuration.md / installation.md / local_llm_ops_guide.md / codex_skill_operations.md` を再読し、Move internal分類と公開境界スタブ方針を確認。
+
+### Phase 2 Mock依存切断（DQ-CONTRACT-v1 仮固定）
+- `documentation_quality` への参照は DQ-CONTRACT-v1 を固定して評価。
+  - メタ必須: Audience / Goal / Non-goal / Public boundary / Outcome / Related
+  - 公開品質: QG-1（公開安全性）/ QG-5（正本導線）/ QG-6（検証記録）
+  - 失敗時: 自己修復3回まで、超過時停止
+
+### Phase 3 ADR CDC（必要時判定）
+- Context: 本書は公開境界スタブであり、運用正本は `00_Prompt/codex_gsd_skill_ops.md`。
+- Decision: 追加ADRは作成せず、既存DOC-OPS-05分類（Move internal）を維持する。
+- Consequences: 外部公開文書は最小説明に留め、内部運用詳細の混在を防止する。
+
+### Phase 4 Plan→Execute→Verify
+- AC/DoD自己検証:
+  1) docs-only で対象4文書以外を編集しない。
+  2) Skill文書が仕様正本を上書きしない境界を維持する。
+  3) Verify は docs-check（`rg` + `git diff --check`）を実施する。
+- Verify:
+  - `rg -n "Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）|DQ-CONTRACT-v1|Phase 5 Proceed" 04_Documentation/codex_skill_operations.md`
+  - `git diff --check`
+
+### Phase 5 Proceed（DQ-CONTRACT-v1 差分）
+- 判定: **Ready**
+- 差分一覧:
+  - `codex_skill_operations.md` は DQ-CONTRACT-v1 と **差分なし**（必須メタ/正本導線/検証記録を維持）。

@@ -420,3 +420,31 @@ PRには実施手順と結果を必ず記載してください。
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）
+
+### Phase 1 Read
+- `configuration.md / installation.md / local_llm_ops_guide.md / codex_skill_operations.md` の4文書を再読し、公開境界メタとE2E導線を確認。
+
+### Phase 2 Mock依存切断（DQ-CONTRACT-v1 仮固定）
+- `documentation_quality` 依存は DQ-CONTRACT-v1 を固定して評価。
+  - メタ必須: Audience / Goal / Non-goal / Public boundary / Outcome / Related
+  - 公開品質: QG-1（公開安全性）/ QG-4（再現可能性）/ QG-5（正本導線）
+  - 失敗時: 自己修復3回まで、超過時停止
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。ADR-0019 と既存DOC-OPS-05方針で導線が充足している。
+
+### Phase 4 Plan→Execute→Verify
+- AC/DoD自己検証:
+  1) 初回導入手順（起動/疎通/停止）とSQLite代替導線を維持する。
+  2) SafeMode・漏えい防止を後退させる記述を追加しない。
+  3) Verify を docs-check で実施する。
+- Verify:
+  - `rg -n "Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）|DQ-CONTRACT-v1|Phase 5 Proceed" 04_Documentation/installation.md`
+  - `git diff --check`
+
+### Phase 5 Proceed（DQ-CONTRACT-v1 差分）
+- 判定: **Ready**
+- 差分一覧:
+  - `installation.md` は DQ-CONTRACT-v1 と **差分なし**（必須メタ/再現可能手順/正本導線を維持）。

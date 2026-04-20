@@ -483,3 +483,31 @@ git diff --check
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）
+
+### Phase 1 Read
+- `configuration.md / installation.md / local_llm_ops_guide.md / codex_skill_operations.md` を再読し、provider切替と安全境界の整合を確認。
+
+### Phase 2 Mock依存切断（DQ-CONTRACT-v1 仮固定）
+- DQ-CONTRACT-v1 を契約値として固定。
+  - メタ必須: Audience / Goal / Non-goal / Public boundary / Outcome / Related
+  - 公開品質: QG-1（公開安全性）/ QG-2（文書メタ明示）/ QG-5（正本導線）/ QG-6（検証記録）
+  - 失敗時: 自己修復3回まで、超過時停止
+
+### Phase 3 ADR CDC（必要時判定）
+- 判定: **不要**。strict mode 例外運用は既存正本（`02_Architecture/strict_mode_exception_approval_flow.md`）で管理済み。
+
+### Phase 4 Plan→Execute→Verify
+- AC/DoD自己検証:
+  1) docs-only で対象4文書のみ更新する。
+  2) Offline既定（`KJ_ATLAS_LLM_PROVIDER=none`）とSafeMode境界を後退させない。
+  3) Verify を docs-check で実施し、修復上限3回を明示する。
+- Verify:
+  - `rg -n "Stream E serial cycle（2026-04-20 / Configuration-Installation-LLM-Skill docs）|DQ-CONTRACT-v1|Phase 5 Proceed" 04_Documentation/local_llm_ops_guide.md`
+  - `git diff --check`
+
+### Phase 5 Proceed（DQ-CONTRACT-v1 差分）
+- 判定: **Ready**
+- 差分一覧:
+  - `local_llm_ops_guide.md` は DQ-CONTRACT-v1 と **差分なし**（必須メタ/安全境界/正本導線/検証記録を維持）。
