@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream F / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream E（CE4専任）
+- Owner: Stream F（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -36,6 +36,13 @@
 - safeMode既定を緩和しない（`CE0-SAFEMODE-IF` 準拠）。
 
 ## Phase 2 Plan（API/CLI同値性・監査欠損fail-closedをAC化）
+### 合意済みスコープ（contract-only）
+- CE4は契約I/F固定のみを扱い、実装手段・アルゴリズム・内部最適化は記述しない。
+- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を唯一の判定軸とする。
+- 監査4点欠損は常に fail-closed（成功扱い禁止）を適用する。
+- `dryRun=true` は常に `sideEffect=none` を強制し、副作用を許容しない。
+- `sourceBundleHash=mock:<hash>` は本番hashと同一の契約判定・監査導線を適用する。
+
 ### Acceptance Criteria（contract-only）
 - [ ] API/CLI が同一 query 入力時に同一 `equivalenceKey` かつ同一 `bundleHash` を返す。
 - [ ] 監査4点（`query / bundle / proposal / apply`）の欠損は 0 件。
@@ -48,6 +55,8 @@
 - [ ] CE4の公開I/F記述は API/CLI/監査導線に限定され、実装詳細を含まない。
 - [ ] CE0/CE1/CE2語彙の再定義がない。
 - [ ] fail-closed 条件が監査4点欠損に対して明示されている。
+- [ ] `dryRun=true -> sideEffect=none` が契約条項として明示されている。
+- [ ] `sourceBundleHash=mock:<hash>` の同値判定条項が明示されている。
 
 ## Phase 3 Execute（I/F固定と監査導線のみ記述）
 ### Fixed Contract IDs（CE4）
@@ -61,6 +70,14 @@
 - 参照語彙は `equivalenceKey / bundleHash / sourceBundleHash / queryCanonicalHash` の read-only 利用に限定。
 - proposal lifecycle は `proposed / accepted / rejected / held` の read-only 利用に限定。
 
+### CE4 Contract I/F Matrix（normative / contract-only）
+| Contract ID | Input Surface | Output / Audit Obligation | Failure Semantics |
+| --- | --- | --- | --- |
+| `CE4-EQUIVALENCE-IF` | API/CLI共通 query | 同一 query では `equivalenceKey` と `bundleHash` を同値で返す | いずれか不一致時は fail-closed |
+| `CE4-AUDIT-CHAIN-IF` | `query -> bundle -> proposal -> apply` | 4点すべての監査イベント記録を必須化 | 1点でも欠損した時点で fail-closed |
+| `CE4-DRYRUN-SAFETY-IF` | `dryRun=true` | 監査語彙 `sideEffect=none` を必須化 | `none` 以外は fail-closed |
+| `CE4-MOCK-HASH-IF` | `sourceBundleHash=mock:<hash>` | 本番hashと同一の同値判定・監査導線を適用 | 分岐差分/欠損検出時は fail-closed |
+
 ### 監査導線固定（実装詳細禁止）
 - 監査イベント導線は `query -> bundle -> proposal -> apply` の4点を必須化。
 - `dryRun=true -> sideEffect=none` を監査イベント語彙として固定。
@@ -70,6 +87,7 @@
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
+- 自己修復は最大3回。3回で解消しない場合は4回目に着手せず即停止する。
 
 ### Self Verification Checklist
 - [ ] 同一 query に対して API/CLI の `equivalenceKey` と `bundleHash` が同値である。
