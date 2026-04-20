@@ -10,13 +10,19 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
-## Lane guard（このレーンの絶対条件）
+## Lane guard（このレーンの絶対条件 / CE SSOT）
+- CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
 - CE0契約IDは再定義禁止：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Read同期スナップショット
+- Contract ID: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+- 固定語彙: `equivalenceKey + bundleHash` / `sourceBundleHash` / `proposal lifecycle`
+- Scope: contract-only（実装非干渉、mock/hash/read-only参照で依存切断）
+
 ### 固定I/F（参照のみ）
 - `CE0-CTX-IF`: ContextQuery必須キー + deterministic `bundleHash`。
 - `CE0-SAFEMODE-IF`: safeMode既定ON、`allowUnreviewedText=false` 既定。
@@ -31,6 +37,7 @@
 - safeMode既定緩和
 
 ## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+- Freeze原則: CE1/CE2/CE4はCE0契約を再定義せず、I/F参照のみで固定する。
 - CE1参照境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照のみ）。
 - CE2参照境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照のみ）。
 - CE4参照境界: 監査4点 `query/bundle/proposal/apply` と fail-closed（`CG-01..05`参照のみ）。
@@ -38,6 +45,7 @@
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
 ### CDC条件（変更が発生した場合のみ記録）
+- 差分検知ログ（Phase 1起点）: 契約ID衝突 / No-Go語彙揺れ / Scope逸脱のいずれかがあればCDC化する。
 - **Context**: 何の衝突・曖昧性を解消するか。
 - **Decision**: 既存契約IDを再定義せず、参照境界のみを明確化したこと。
 - **Consequences**: CE1/CE2/CE4の依存先が一意化されること。

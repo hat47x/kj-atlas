@@ -11,11 +11,17 @@
 - Verification: `docs-check`
 
 ## Lane guard
+- CE0契約IDの再定義禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
 - 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Read同期スナップショット
+- Contract ID: CE0契約ID群を参照のみで利用（再定義禁止）
+- No-Go語彙: `direct write` / `auto-apply` / `auto-publish` / `preview bypass` / `safeMode既定緩和`
+- Scope: graph role/transition/audit 契約固定のみ
+
 ### Graph role I/F
 - `working`: 編集作業領域
 - `context_projection`: read-only投影
@@ -32,9 +38,11 @@
 - CE1: `context_projection` は read-only参照のみ。
 - CE2: proposal lifecycle は `working` に限定、`consensus` 直更新禁止。
 - CE4: 監査導線は `query/bundle/proposal/apply` を共通必須。
+- CE4同値判定語彙は `equivalenceKey + bundleHash` を参照のみで利用する。
 - 参照境界は `CG-01..05` 参照のみで記述し、再定義しない。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+- 差分検知ログ: role/transition/audit語彙の揺れ、No-Go語彙不一致、SafeMode境界の逸脱。
 - **Context**: Graph role/transition/audit の語彙衝突有無。
 - **Decision**: `WorkingGraph / ContextProjectionGraph / Consensus Graph` へ固定。
 - **Consequences**: CE1/CE2/CE4の連携時に role/transition の解釈が単一化。
