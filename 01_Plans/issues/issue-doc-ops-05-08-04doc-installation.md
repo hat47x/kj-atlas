@@ -706,3 +706,33 @@
 - Open化条件: Classification固定、GoNoGoGate=Required、DecisionStatus=Fixed、Validation手順明記の4条件を満たすこと。
 - 判定: **Ready（Open候補）**。
 - 致命エラー時停止条件: 必須メタ欠落 / VerificationLevel不一致 / Scope逸脱が検出された場合は **即時Hold** に遷移し、次編集を停止する。
+
+## 18) Stream J serial execution record（Phase 1-5 strict）
+
+### Phase 1: Read（開始時Read必須）
+- 開始時Read（Read Order上流）: `00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/codex_gsd_skill_ops.md` → `00_Prompt/ai_cognitive_externalization_requirements.md`。
+- 判断軸Read: `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.md` / `02_Architecture/schemas.md`。
+- Issue固有Read: `Scope=04_Documentation/installation.md` と `Related ADR/Spec`、`Requirement meta I/F` を再確認し、`VerificationLevel=docs-check` を固定。
+
+### Phase 2: Plan
+- 単一責務: `DOC-OPS-05-08` のIssueメモ品質を **Phase 1-5 直列処理** に正規化する。
+- 実施計画:
+  1. Phase見出しを Read→Plan→Execute→Verify→Proceed の5段に統一。
+  2. Proceed判定を `Ready / Hold / Needs-decision` 三値で残す。
+  3. docs-onlyスコープ（Issueメモのみ）を維持し、実装コード変更を禁止。
+
+### Phase 3: Execute
+- 本Issueに Stream J 記録を追記し、5Phase運用を明示。
+- `DecisionStatus=Fixed` のため `DecisionQueueRef=N/A` を維持し、追加判断待ちを作らない。
+- 変更範囲を本Issueファイル内に限定。
+
+### Phase 4: Verify
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 判定基準: メタI/F欠落なし・体裁崩れなし・5Phase記録が同一Issue内で完結。
+
+### Phase 5: Proceed
+- 判定: **Ready**
+- 理由: 開始時Read、Plan→Execute→Verify→Proceed の直列記録を同一Issueで完結済み。
+- 次アクション: 対応する `04_Documentation/*` 本文改稿PRを docs-only で分離実施する。
