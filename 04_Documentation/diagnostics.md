@@ -369,3 +369,26 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 ### Phase 5 Proceed
 - 状態: **Ready**
 - 次アクション: 本セット（05-01..05）内での整合維持を継続。
+
+## Stream D execution log（2026-04-20 / DOC-OPS-05-04）
+
+### Phase 1 Read
+- 対象: `04_Documentation/diagnostics.md` と対応Issueの Requirement meta I/F を再読し、docs-only 境界を確認。
+- 判定: Classification=`Improve external` を維持し、編集禁止範囲（README / dashboard / decision-pack / 実装コード）へ非接触。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- AC補完: Audience / Goal / Non-goal / Public boundary / Outcome / Related と Go/No-Go 判定導線が追跡可能であること。
+- DoD補完: Read → Plan → Execute → Verify → Proceed の5Phase記録を残し、Verifyは docs-check 手順を明示すること。
+
+### Phase 3 Execute
+- 既存の分類方針と公開境界メタを維持し、DOC-OPS-05前半（01〜05）の同期記録を本節へ追加。
+- 非目標を維持し、仕様正本（00〜02）の上書き・実装変更は行わない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream D execution log" 04_Documentation/diagnostics.md 04_Documentation/diagnostics.md`
+- `git diff --check`
+- 失敗時は自己修復を最大3回まで。4回目相当は停止して Hold とする。
+
+### Phase 5 Proceed（残課題記録）
+- 状態: **Ready**
+- 残課題: worker契約更新時は schemas / worker実装参照と同時にdocs同期を行う。

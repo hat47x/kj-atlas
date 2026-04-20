@@ -564,3 +564,26 @@
 ### Phase 5) Verify / Proceed（3回自己修復）
 - 自己修復ポリシー: 不整合検出時は **同一Issue内で最大3回** 修復。4回目相当は停止して `Hold` 化。
 - Proceed判定: **Ready**（DecisionStatus=Fixed かつ要判断追加なし）。
+
+## Stream D execution log（2026-04-20 / DOC-OPS-05-03）
+
+### Phase 1 Read
+- 対象: `04_Documentation/configuration.md` と対応Issueの Requirement meta I/F を再読し、docs-only 境界を確認。
+- 判定: Classification=`Improve external` を維持し、編集禁止範囲（README / dashboard / decision-pack / 実装コード）へ非接触。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- AC補完: Audience / Goal / Non-goal / Public boundary / Outcome / Related と Go/No-Go 判定導線が追跡可能であること。
+- DoD補完: Read → Plan → Execute → Verify → Proceed の5Phase記録を残し、Verifyは docs-check 手順を明示すること。
+
+### Phase 3 Execute
+- 既存の分類方針と公開境界メタを維持し、DOC-OPS-05前半（01〜05）の同期記録を本節へ追加。
+- 非目標を維持し、仕様正本（00〜02）の上書き・実装変更は行わない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream D execution log" 04_Documentation/configuration.md 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+- `git diff --check`
+- 失敗時は自己修復を最大3回まで。4回目相当は停止して Hold とする。
+
+### Phase 5 Proceed（残課題記録）
+- 状態: **Ready**
+- 残課題: 公開運用者向けに最小安全設定と確認手順を維持し、内部判断メモは `01_Plans/issues/` 側へ分離。

@@ -560,3 +560,26 @@
 - Verify判定: docs-checkで不整合がない場合のみ `Ready`。
 - Proceed条件: 公開境界を曖昧化せず、承認なしで確定化していないこと。
 - Fail-safe再掲: 公開境界の曖昧化・承認なし確定化を検知した時点で作業を停止する。
+
+## Stream D execution log（2026-04-20 / DOC-OPS-05-04）
+
+### Phase 1 Read
+- 対象: `04_Documentation/diagnostics.md` と対応Issueの Requirement meta I/F を再読し、docs-only 境界を確認。
+- 判定: Classification=`Improve external` を維持し、編集禁止範囲（README / dashboard / decision-pack / 実装コード）へ非接触。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- AC補完: Audience / Goal / Non-goal / Public boundary / Outcome / Related と Go/No-Go 判定導線が追跡可能であること。
+- DoD補完: Read → Plan → Execute → Verify → Proceed の5Phase記録を残し、Verifyは docs-check 手順を明示すること。
+
+### Phase 3 Execute
+- 既存の分類方針と公開境界メタを維持し、DOC-OPS-05前半（01〜05）の同期記録を本節へ追加。
+- 非目標を維持し、仕様正本（00〜02）の上書き・実装変更は行わない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream D execution log" 04_Documentation/diagnostics.md 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+- `git diff --check`
+- 失敗時は自己修復を最大3回まで。4回目相当は停止して Hold とする。
+
+### Phase 5 Proceed（残課題記録）
+- 状態: **Ready**
+- 残課題: 契約・フォールバック・決定論の公開runbook品質を維持し、実装詳細の増補は関連Issueへ分離。
