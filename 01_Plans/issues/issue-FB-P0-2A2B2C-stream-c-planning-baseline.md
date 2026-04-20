@@ -1,10 +1,10 @@
-# Issue Draft: FB-P0 (2A/2B/2C) Stream C planning baseline
+# Issue Draft: FB-P0 (2A/2B/2C) Stream B planning baseline
 
 - Type: Process
 - Status: Open (Contract Freeze in progress)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream C（FB Stream F lock lane 専任）
+- Owner: Stream B（FB-P0 baseline / FB-P2C-A1 契約固定専任）
 - Scope: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ
 - Editable files (hard lock):
   - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
@@ -16,7 +16,7 @@
 
 ---
 
-## Baseline objective（Stream C）
+## Baseline objective（Stream B）
 
 - 目的: **FB-P0 baseline と FB-P2C A1契約のみを freeze** し、A2/A3が外部待ちなし・mock前提で進行できる引き渡し仕様を固定する。
 - 非目標:
@@ -52,11 +52,11 @@
 
 ---
 
-## Phase 2) Plan（I/F固定）
+## Phase 2) Plan（AC/DoD不足ドラフト合意）
 
 ### Plan
-- Stream Cが固定する契約境界（A1 tie-break契約・A2/A3 read-only導線）を定義する。
-- AC/DoDが不足する場合のドラフト提案を先に作成する。
+- Stream Bが固定する契約境界（A1 tie-break契約・A2/A3 read-only導線）を定義する。
+- AC/DoD不足ドラフトを合意し、検証可能文言に統一する。
 
 ### Execute
 - Scope固定: **FB-P0 baseline + FB-P2C-01 A1契約のみ**。
@@ -66,7 +66,7 @@
   - DeterministicOrder: `padding>self_intersection>area_delta>vertex_count`
   - ReplayKeys: `inputHash`, `seed`, `outputPolygonHash`, `paddingViolationCount`, `appliedTieBreakOrder`
   - ChangePolicy: `A2/A3は参照のみ（順序変更・項目追加削除は禁止）`
-- AC/DoDドラフト（不足時提案）:
+- AC/DoDドラフト合意:
   1. A1 Contract ID が一意固定されている。
   2. tie-break順序が機械可読で固定されている。
   3. A2/A3 handoffがread-onlyで固定されている。
@@ -88,7 +88,7 @@
 
 ### Execute
 - 衝突なしの場合: `CDC変更不要` を明示。
-- 衝突ありの場合: Context / Decision / Consequences を最小差分で補強。
+- 衝突ありの場合: Context / Decision / Consequences を最小差分で補強（承認待ち）。
 
 ### Verify
 - CDC要素欠落なし。
@@ -99,7 +99,7 @@
 
 ---
 
-## Phase 4) Execute（mock前提）
+## Phase 4) Execute（tie-break契約とread-only handoff固定）
 
 ### Plan
 - A2/A3が外部依存なしで開始できる最低限I/Fを固定する。
@@ -125,13 +125,13 @@
 
 ---
 
-## Phase 5) Verify / Proceed（下流へread-only handoff）
+## Phase 5) Verify / Proceed（docs-check、最大3回修復）
 
 ### Final checks
 
 | 観点 | 判定 | 備考 |
 | --- | --- | --- |
-| 編集境界（2ファイルのみ） | Pass | Stream C lock lane遵守 |
+| 編集境界（2ファイルのみ） | Pass | Stream B lock lane遵守 |
 | Scope/Non-goal固定 | Pass | baseline凍結完了 |
 | A1契約（CDC/承認） | Pass | Contract ID + Gate明記 |
 | A2/A3引き渡し（mock前提） | Pass | read-only handoff固定 |
@@ -145,6 +145,18 @@
   2. 契約競合
   3. Verify自己修復3回超過
   4. 指定外ファイル差分発生
+
+---
+
+## A2/A3向け契約スナップショット（固定出力）
+
+- SnapshotID: `SNAP-FB-P2C-A1-CTR-V1`
+- ReferenceContractID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
+- DeterministicOrder: `padding>self_intersection>area_delta>vertex_count`
+- ReplayKeys: `inputHash`, `seed`, `outputPolygonHash`, `paddingViolationCount`, `appliedTieBreakOrder`
+- MutationPolicy: `read-only`
+- ApplicableTargets: `A2`, `A3`
+- ChangeRequestRoute: `A1へ差し戻しのみ`
 
 ---
 
