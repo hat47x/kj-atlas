@@ -60,31 +60,36 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-1. Phase 1 Read & Lock
-   - Plan: 再読対象を固定。
-   - Execute: `Status / Dependencies / Scope` と fixed keys / Unlock rule / Go-NoGo 条件を照合。
-   - Verify: 不一致=0件。
-   - Proceed: 差分は CDC 論点へ。
-2. Phase 2 Contract Freeze（mock-first）
-   - Plan: I/F固定対象を確定。
-   - Execute: 実装詳細を追加せず最小契約のみ維持。
-   - Verify: A2/A3 非依存で成立すること。
-   - Proceed: 凍結維持を確認後に Phase 3。
-3. Phase 3 ADR CDC（必要時）
-   - Plan: 方針変更要否判定。
-   - Execute: Context / Decision / Consequences を承認待ちで記録。
-   - Verify: 承認前確定化なし。
-   - Proceed: 承認済みのみ Phase 4。
-4. Phase 4 Plan -> Execute -> Verify
-   - Plan: 契約文言正規化対象を固定。
-   - Execute: 契約語彙の重複・矛盾を解消し単一式へ固定。
-   - Verify: 依存逆転/未定義競合=0件、`validatorPass=true`。
-   - Proceed: Verify pass で次へ。
-5. Phase 5 Proceed / Stopper
-   - Plan: 下流配布対象を固定。
-   - Execute: read-only 契約スナップショットを発行。
-   - Verify: A1 側 frozen keys と一致。
-   - Proceed: A2/A3 は参照のみ。失敗時は即停止。
+1. Phase 1 Read
+   - Plan: 対象4ファイルの照合項目（依存順 / unlockRule / fixed keys / Go-NoGo）を固定。
+   - Execute: `Status / Dependencies / Scope` と fixed keys / unlockRule / Go-NoGo を再読照合。
+   - Verify: 不一致 `DiffCount=0`。
+   - Proceed: 差分は即停止し Phase 2 CDC 論点へ。
+2. Phase 2 ADR CDC（必要時）
+   - Plan: 方針差分時のみ `Context / Decision / Consequences` を起票。
+   - Execute: 承認前は `Pending/held`、確定化禁止を維持。
+   - Verify: 承認前に固定値・Go/No-Go が再定義されていない。
+   - Proceed: 承認済みのみ Phase 3。
+3. Phase 3 Plan
+   - Plan: AC/DoD 不足（停止条件・差し戻し条件・検証条件）をドラフト化。
+   - Execute: 合意済みドラフトを契約語彙へ正規化して反映。
+   - Verify: 凍結キーと矛盾が0件。
+   - Proceed: 合意済みのみ Phase 4。
+4. Phase 4 Execute
+   - Plan: 契約凍結対象の最終統一範囲を固定。
+   - Execute: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を全節で統一。
+   - Verify: 依存逆転/未定義競合=0件。
+   - Proceed: 一致時のみ Phase 5。
+5. Phase 5 Verify
+   - Plan: docs-check（validator / 語彙照合 / diff整合）を固定。
+   - Execute: docs-check 実施、Self-Correction は最大3回。
+   - Verify: `validatorPass=true` かつ A1 側 frozen keys と一致。
+   - Proceed: 3回超過・前提崩壊で即停止。
+6. Phase 6 Proceed
+   - Plan: 凍結I/Fスナップショット（read-only handoff）を確定。
+   - Execute: fixed keys・unlockRule・Go/No-Go・return path を出力。
+   - Verify: A2/A3 参照専用条件と一致。
+   - Proceed: 一致時のみ handoff 完了。失敗時は停止。
 
 ## 6) Open化条件（固定）
 

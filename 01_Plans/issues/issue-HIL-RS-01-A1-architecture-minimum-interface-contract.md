@@ -66,31 +66,36 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-1. Phase 1 Read & Lock
-   - Plan: 対象 issue 再読対象を固定。
-   - Execute: `Status` / `Dependencies` / `Scope` / fixed keys / Unlock rule を照合。
-   - Verify: 不一致=0件。
-   - Proceed: 不一致時は即停止し CDC 承認待ちへ。
-2. Phase 2 Contract Freeze（mock-first）
-   - Plan: I/F固定対象（contractIds / schemaVersion / gate条件）を確定。
-   - Execute: 実装詳細を追加せず、最小契約のみ固定。
-   - Verify: 下流非依存で成立する read-only 契約であること。
-   - Proceed: 凍結完了時のみ Phase 3。
-3. Phase 3 ADR CDC（必要時）
-   - Plan: 方針変更有無を判定。
-   - Execute: Context / Decision / Consequences を承認待ちで記録。
-   - Verify: 承認前の確定化なし。
-   - Proceed: 承認後のみ Phase 4。
-4. Phase 4 Plan -> Execute -> Verify
-   - Plan: AC/DoD 不足提案と停止条件を固定。
-   - Execute: 契約文言・依存順・停止条件を正規化。
-   - Verify: 依存逆転=0、未定義競合=0、`validatorPass=true`。
-   - Proceed: Verify pass で Phase 5。
-5. Phase 5 Proceed / Stopper
-   - Plan: 下流配布対象を固定。
-   - Execute: read-only 契約スナップショットを発行。
-   - Verify: Downstream への変更禁止キーが一致。
-   - Proceed: A2/A3 へ handoff。失敗時は即停止。
+1. Phase 1 Read
+   - Plan: 対象4ファイルの照合項目（依存順序 / unlockRule / fixed keys）を固定。
+   - Execute: `Status / Dependencies / Scope / fixed keys / unlockRule` を照合。
+   - Verify: 不一致 `DiffCount=0`。
+   - Proceed: 差分は即停止し Phase 2 CDC へ送る。
+2. Phase 2 ADR CDC（必要時）
+   - Plan: 方針差分がある場合のみ `Context / Decision / Consequences` を起票。
+   - Execute: 承認前は `Pending/held` として扱い、確定禁止を維持。
+   - Verify: 承認前の契約再定義が0件。
+   - Proceed: 承認済みのみ Phase 3。
+3. Phase 3 Plan
+   - Plan: AC/DoD 不足（停止条件 / 差し戻し条件 / 検証条件）をドラフト化。
+   - Execute: ドラフトを既存契約語彙へ正規化して追記。
+   - Verify: 固定キーとの矛盾が0件。
+   - Proceed: 合意済みのみ Phase 4。
+4. Phase 4 Execute
+   - Plan: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を再固定。
+   - Execute: A1契約本文と Downstream snapshot を同一値へ統一。
+   - Verify: `A1 -> A2 -> A3`・unlockRule の重複/逆転0件。
+   - Proceed: 一致時のみ Phase 5。
+5. Phase 5 Verify
+   - Plan: docs-check（validator / 語彙照合 / diff整合）を定義。
+   - Execute: docs-check 実施、失敗時Self-Correctionは最大3回。
+   - Verify: `validatorPass=true` かつ frozen keys 不一致0件。
+   - Proceed: 失敗3回超過時は即停止。
+6. Phase 6 Proceed
+   - Plan: 凍結I/Fスナップショット（read-only handoff）を確定。
+   - Execute: freezeContractId・fixed keys・Go/No-Go を出力。
+   - Verify: Downstream 変更禁止キーが一致。
+   - Proceed: A2/A3 へ参照専用で引き渡す。
 
 ## 7) Go / No-Go（固定）
 

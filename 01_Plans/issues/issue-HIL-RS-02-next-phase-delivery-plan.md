@@ -72,35 +72,41 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-### Phase 1 Read & Lock
-- Plan: 対象 issue の依存・固定値照合項目を定義。
-- Execute: `Status / Dependencies / Scope / identifiers` を再読。
-- Verify: 不一致=0件。
-- Proceed: 差分は Phase 3 CDC で論点化。
+### Phase 1 Read
+- Plan: 対象4ファイルの依存・固定値・unlockRule照合項目を固定。
+- Execute: `A1 -> A2 -> A3`、`a2a3Unlock`、固定キー群を再読照合。
+- Verify: 不一致 `DiffCount=0`。
+- Proceed: 差分は即停止し Phase 2 CDC へ。
 
-### Phase 2 Contract Freeze（mock-first）
-- Plan: I/F固定対象（contractIds / schemaVersion / gate条件）を固定。
-- Execute: 実装詳細なしで最小契約のみ維持。
-- Verify: 他ストリーム非依存で参照可能。
-- Proceed: 凍結確認後に Phase 3 へ。
+### Phase 2 ADR CDC（必要時）
+- Plan: 方針差分の有無を判定し、必要時のみ CDC を起票。
+- Execute: `Context / Decision / Consequences` を `Pending/held` で記録。
+- Verify: 承認前の確定化（契約値変更）が0件。
+- Proceed: 承認済みのみ Phase 3 へ。
 
-### Phase 3 ADR CDC（必要時）
-- Plan: 方針変更要否を判定。
-- Execute: CDC を承認待ちで記録。
-- Verify: 承認前の確定記述なし。
-- Proceed: 承認済みのみ Phase 4 へ。
+### Phase 3 Plan
+- Plan: AC/DoD 不足（Go/No-Go、停止条件、差し戻し条件）をドラフト化。
+- Execute: 合意済みドラフトを契約語彙に正規化して反映。
+- Verify: 固定キーと矛盾がない。
+- Proceed: 合意済みのみ Phase 4 へ。
 
-### Phase 4 Plan -> Execute -> Verify
-- Plan: AC/DoD 不足提案と停止条件を固定。
-- Execute: 契約文言・依存順・停止条件を正規化。
-- Verify: 依存逆転/語彙ドリフト=0件、`validatorPass=true`。
-- Proceed: Verify pass で次へ。
+### Phase 4 Execute
+- Plan: 凍結対象キーを再確定。
+- Execute: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を本文全体で統一。
+- Verify: 依存逆転/語彙ドリフト=0件。
+- Proceed: 一致時のみ Phase 5 へ。
 
-### Phase 5 Proceed / Stopper
-- Plan: 固定I/Fを次工程へ渡す。
-- Execute: read-only handoff を発行。
-- Verify: frozen keys 一致。
-- Proceed: 失敗時は即停止し指示待ち。
+### Phase 5 Verify
+- Plan: docs-check（validator / `rg` / `git diff --check`）を固定。
+- Execute: docs-check 実施、失敗時Self-Correction最大3回。
+- Verify: `validatorPass=true`、frozen keys不一致0件。
+- Proceed: 3回超過・未定義競合・前提崩壊で即停止。
+
+### Phase 6 Proceed
+- Plan: 「凍結I/Fスナップショット（read-only handoff）」を確定。
+- Execute: freezeContractId・fixed keys・Go/No-Go・NoGo時差し戻し先を出力。
+- Verify: A1契約（Stream A）と一致。
+- Proceed: 一致時のみ handoff 完了。
 
 ## 6) Proceed Gate（固定）
 
@@ -153,4 +159,3 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
   - `contractLinkLocked!=true`
   - `sharedResourceFreeze!=true`
   - `validatorPass!=true`
-
