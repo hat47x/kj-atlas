@@ -120,15 +120,18 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 1. 設計正本: `02_Architecture/strict_mode_exception_approval_flow.md`
 2. セキュリティ基底方針: `04_Documentation/security.md`
-3. 実行runbook: `04_Documentation/operations.md`
+3. 運用判断ガイド（本書）: `04_Documentation/security_operational_guidelines.md`
 4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）
+
+補助導線: `04_Documentation/operations.md` は runbook 同値確認先として並行参照する。
 
 ## 8. 同一ワークフロー（Read → C/D/C → Execute → Verify → Proceed）
 
 運用判断ガイドの更新は次の共通手順で行う。
 
 1. **Read**
-   - `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` を順に再読する。
+   - `strict_mode_exception_approval_flow.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を順に再読する。
+   - `operations.md` は runbook 同値確認先として並行参照する。
    - 用語・役割・導線・固定値（D1〜D4）の差分がないことを確認する。
 2. **ADR CDC**
    - Context: 本書は運用判断の補助文書であり、承認フロー仕様そのものではない。
