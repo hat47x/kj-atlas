@@ -1,32 +1,33 @@
 # Issue Draft: FB-P2C-01-A1 Polygon auto-fit / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (Audit Hold: A1 contract freeze for Stream C)
+- Status: Open (Audit Hold: A1 contract freeze for Stream F)
 - Source Issue: N/A
 - Priority: P0
-- Owner: Stream C（P2C契約固定のみ）
+- Owner: Stream F（FB-P2C A1契約固定のみ）
 - Scope: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md` のみ
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0001`, `ADR-0007`
 - Expected verification level: `docs-check`
 
-## Stream C execution boundary（hard lock）
+## Stream F execution boundary（hard lock）
 
 - Editable files:
   - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
   - `issue-FB-P2C-01-a1-interface-contract.md`
-- Prohibited edits: 上記以外すべて。
+- Prohibited edits: 上記以外すべて（FB-P2A / HIL / CE / 共有統合ファイル / 実装コードを含む）。
 - Fixed phase order:
-  1) Read同期
-  2) baseline前提固定（Scope/Non-goal）
-  3) A1契約固定（CDC→承認）
-  4) A2/A3引き渡し仕様化（モック前提）
-  5) Verify/Proceed
+  1) Phase 1 Read（依存・優先度確認）
+  2) Phase 2 Plan（I/F固定）
+  3) Phase 3 ADR CDC（必要時のみ）
+  4) Phase 4 Execute（モック前提）
+  5) Phase 5 Verify/Proceed（下流へread-only handoff）
 - Dependency cut policy:
   - 外部ストリーム待ち禁止。
   - 必要I/Fは本Issue内でfreezeし、mock可能形を出力。
 - Fail-safe:
-  - 未承認確定 / 契約競合 / Verify自己修復3回超過で停止。
+  - 共通ルール `Plan → Execute → Verify → Proceed` を適用。
+  - Verify自己修復は最大3回。未承認確定 / 契約競合 / 3回超過で停止。
 
 ---
 
@@ -45,7 +46,7 @@
 
 ### Context
 - `FB-P2C-01` のDoD「同一入力で同一polygon」を満たすには、tie-break順序の非決定性を排除する必要がある。
-- A2/A3はA1契約を単一正本として参照し、契約値を変更しない運用が必要。
+- A2/A3はA1契約を単一正本としてread-only参照し、契約値を変更しない運用が必要。
 
 ### Decision
 - Contract ID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
