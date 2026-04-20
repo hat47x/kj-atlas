@@ -259,6 +259,42 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 
 - 次回定点レビュー: **2026-04-26 09:00 UTC**。
 
+## 19) Stream E execution log（2026-04-20, DOC-OPS-05文書改訂のみ）
+
+### Phase 1) Read（対象文書とissue memo同期確認）
+
+- 対象: `04_Documentation/operations.md` と本Issueを再読し、Classification=`Improve external` / DecisionStatus=`Fixed` を確認。
+- 同期確認: 既存のGo/No-Go、Gate C→D→E、Fail-safe（3回超過 / 前提崩れ / 未定義競合）記述が残っていることを確認。
+- スコープ確認: docs-only を維持し、編集禁止対象（`03_Implement/**` 等）へ非接触で進行。
+
+### Phase 2) Plan（AC/DoD起案）
+
+- AC-E1: `operations.md` に **Known gap** を明示し、不足情報を推測で補完しないこと。
+- AC-E2: 各 Known gap に「理由」と「委譲先」を明記し、次タスク導線を固定すること。
+- DoD-E1: docs-check（`rg` / `validate_active_issue_memos.py` / `git diff --check`）で整合が再現可能であること。
+
+### Phase 3) Execute（文書更新）
+
+- `04_Documentation/operations.md` に `0.8 Known gap（DOC-OPS-05 / Stream E）` を追加。
+- 追記内容は Gap-1〜Gap-3（環境別runbook詳細、KPIしきい値台帳連携、AUTH-OPS-03将来差分テンプレ未定義）を明示。
+- 推測補完を避けるため、すべて「理由 + 委譲先」を付与した。
+
+### Phase 4) Verify（docs-check, link整合）
+
+- 実行:
+  - `rg -n "Known gap|Gap-1|Gap-2|Gap-3|委譲先" 04_Documentation/operations.md 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: 失敗なし。自己修復は 0/3 回。
+
+### Phase 5) Proceed（次タスク明記）
+
+- 状態: **Ready**
+- 次タスク:
+  1. DOC-OPS-05-13 / 14 側で、operations の Known gap 参照リンクを追加して委譲導線を双方向化する。
+  2. 環境別runbookの必要性を別Issue化（single-node / HA / air-gapped）し、公開境界を再判定する。
+- フェイルセーフ: 規約不整合・未定義競合・自己修復3回超過を検知した場合は停止して保留化する。
+
 ## 17) Stream H rerun-03（Read → CDC → Plan → Execute → Verify → Proceed）
 
 ### Phase 1 Read
