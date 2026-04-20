@@ -10,6 +10,24 @@
 > Related: `02_Architecture/schemas.md`, `03_Implement/frontend/src/worker/diagnostics_protocol.ts`, `01_Plans/documentation_quality.md`, `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 
 
+
+## Reader Guide（最初に確認）
+
+- **この文書の役割**: diagnostics worker の**診断仕様（契約）**。
+- **主読者**: フロントエンド実装者 / QA / 運用者。
+- **読むタイミング**:
+  1. diagnostics worker の実装変更前
+  2. `schemaVersion` 変更検討時
+  3. worker異常時の fallback 判定時
+- **この文書に含めないもの**: 日次の実行履歴（`e2e_verification_log_2026-03-03.md`へ）。
+
+## 文書導線（方針 / ログ / 診断仕様）
+
+- E2E方針・実行手順: `04_Documentation/e2e_testing.md`
+- E2E実行履歴: `04_Documentation/e2e_verification_log_2026-03-03.md`
+- 診断仕様（本書）: `04_Documentation/diagnostics.md`
+
+上記3文書は役割を固定し、同一内容を重複記載しない。
 この文書は Frontend diagnostics worker の I/O 契約を定義する。
 公開運用時の用語は `reviewed / unreviewed` を正とし、`true/false` 表記は状態値の説明時にのみ補助的に使う。
 品質判定は `01_Plans/documentation_quality.md` の QG-1〜QG-6 に従う。
@@ -52,6 +70,18 @@
 
 - 別requestIdのメッセージは無視する。
 - 別requestIdで malformed なメッセージが来ても、対象requestの処理は継続する。
+
+
+### fallback 発生時の記録ルール（再現性）
+
+fallback が発生した場合、検証ログには次を記録する。
+
+- requestId
+- 検知トリガー（例: unsupported `schemaVersion` / malformed envelope）
+- fallback先（main-thread compute）
+- 影響範囲（該当テストケースまたは画面操作）
+
+これにより、worker異常の再現手順と切り分けを保持する。
 
 ## Compatibility guarantee
 

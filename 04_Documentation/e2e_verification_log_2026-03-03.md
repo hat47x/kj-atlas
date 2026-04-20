@@ -6,7 +6,30 @@
 > Non-goal: 恒久公開文書としての運用手順提供。
 > Public boundary: 本書は内部ログであり、公開手順の正本は `04_Documentation/e2e_testing.md` を参照する。
 > Outcome: 実行可否・Blocked理由・後続再実行条件を監査可能に記録できる。
+
 > Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+
+## Reader Guide（最初に確認）
+
+- **この文書の役割**: E2Eの**実行履歴ログ**（日付付き証跡）。
+- **主読者**: QA / 監査担当 / リリース判定者。
+- **読むタイミング**:
+  1. 実行結果の監査時
+  2. blocked案件の再開判断時
+- **この文書に含めないもの**: 一般向けの実行手順（`e2e_testing.md` が正本）。
+
+### ログ記載の最小必須項目（再現性維持）
+
+各エントリは最低限、以下を含める。
+
+- Date（UTCまたはタイムゾーン明記）
+- Route（Compose / SQLite代替）
+- Command（実行コマンド）
+- Result（pass / fail / blocked）
+- Evidence（主要出力またはエラー文字列）
+- Next action（再実行条件・担当）
+
+**禁止**: 「未実施だが問題なし」「詳細省略」など、再現不能な省略記述。
 
 ## 共通ワークフローとフェイルセーフ（DOC-OPS-05 共通）
 

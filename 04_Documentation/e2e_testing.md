@@ -6,8 +6,29 @@
 > Non-goal: 内部進行メモ・個別PRの暫定判断ログの恒久公開。
 > Public boundary: 内部進行管理情報は除外し、実行手順と判定基準を公開する。
 > Outcome: 外部開発者が実行経路（Compose / SQLite代替）と合否判定を独力で再現できる。
+
 > Next action: DOC-OPS-05 issueの分類固定に従い、Move internal は移設PR、Improve external は公開品質改善PRを後続で実施。
 > Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+
+## Reader Guide（最初に確認）
+
+- **この文書の役割**: E2Eの**方針と実行手順の正本**。
+- **主読者**: 開発者 / QA（実行担当）。
+- **読むタイミング**:
+  1. E2Eを実行する前（実行経路・受入基準の確認）
+  2. PRに検証結果を書く前（記録項目の確認）
+- **この文書に含めないもの**: 日付付きの実行履歴・一時的な失敗経緯（`e2e_verification_log_2026-03-03.md`に記録）。
+
+### 実行不能時の記録ルール（曖昧化禁止）
+
+E2Eが実行不能な場合、**未実施のままPass扱いにしない**。以下4点を必須記録とする。
+
+1. 実行コマンド（実際に打鍵した文字列）
+2. 成否（pass / fail / blocked）
+3. 未実施理由（環境要因を具体化。例: `docker: command not found`）
+4. 再開条件（何が満たされれば再実行できるか）
+
+記録先は `04_Documentation/e2e_verification_log_2026-03-03.md` とし、PR本文には要約のみを記載する。
 
 ## DOC-OPS-05 統合同期メモ（2026-04-18）
 
@@ -53,6 +74,15 @@
 - Stopper:
   - 承認前の規約確定（上位正本への昇格）を行わない。
   - 競合・前提崩壊を検知した場合は即停止し、verification logへ保留理由を記録する。
+
+
+## 文書の役割分離（方針 / ログ / 診断仕様）
+
+- `e2e_testing.md`: **方針と手順**（How to run / 合否判定）
+- `e2e_verification_log_2026-03-03.md`: **実行ログ**（When/Where/Result/Blocked）
+- `diagnostics.md`: **診断仕様**（worker契約 / schemaVersion / fallback）
+
+更新時は、上記の役割を跨いで内容を重複させない。
 
 ## 1. 基本方針
 
