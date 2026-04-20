@@ -583,3 +583,29 @@
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: 契約・フォールバック・決定論の公開runbook品質を維持し、実装詳細の増補は関連Issueへ分離。
+
+## Stream J execution record（2026-04-20 / 指定5Phase）
+
+### 1) Read
+- 対象を本Issueメモと `04_Documentation/diagnostics.md` の整合確認に限定。
+- `DecisionStatus=Fixed` / `VerificationLevel=docs-check` / `Classification=Improve external` を再確認。
+
+### 2) Plan（AC/DoD不足ドラフト合意）
+- AC補強案: Audience / Goal / Non-goal / Public boundary / Outcome / Related / GoNoGoGate の追跡可能性を維持する。
+- DoD補強案: Read→Plan→Execute+Verify→Proceed の記録が1セクションで再開可能であること。
+
+### 3) ADR CDC（必要時）
+- 判定: **追加ADR不要**。
+- CDC運用: 既存Issue内の Context / Decision / Consequences を正本として継続し、分類再判定は行わない。
+
+### 4) Execute + Verify（docs-check, 最大3回自己修復）
+- Execute: 本5Phase実行記録を追記（docs-only、対象外ファイル非編集）。
+- Verify:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+  - `git diff --check`
+- 自己修復: 検証不一致時は最大3回まで。同一論点で4回目相当は停止。
+- Stopper: 未定義競合 / safeMode後退語彙検知 / 3回超過時は `Hold` として停止。
+
+### 5) Proceed（次の1手と未解決点）
+- 次の1手: `04_Documentation/diagnostics.md` 側の公開runbook表現（前提・期待結果・フォールバック）監査を継続。
+- 未解決点: なし（本Issueの DecisionStatus=Fixed を維持）。
