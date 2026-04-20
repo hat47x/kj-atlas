@@ -359,3 +359,26 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 ### Phase 5 Proceed
 - 状態: **Ready**
 - 次アクション: 本セット（05-01..05）内での整合維持を継続。
+
+## Stream D execution log（2026-04-20 / DOC-OPS-05-05）
+
+### Phase 1 Read
+- 対象: `01_Plans/documentation_quality.md` と対応Issueの Requirement meta I/F を再読し、docs-only 境界を確認。
+- 判定: Classification=`Internal standard` を維持し、編集禁止範囲（README / dashboard / decision-pack / 実装コード）へ非接触。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- AC補完: Audience / Goal / Non-goal / Public boundary / Outcome / Related と Go/No-Go 判定導線が追跡可能であること。
+- DoD補完: Read → Plan → Execute → Verify → Proceed の5Phase記録を残し、Verifyは docs-check 手順を明示すること。
+
+### Phase 3 Execute
+- 既存の分類方針と公開境界メタを維持し、DOC-OPS-05前半（01〜05）の同期記録を本節へ追加。
+- 非目標を維持し、仕様正本（00〜02）の上書き・実装変更は行わない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream D execution log" 01_Plans/documentation_quality.md 01_Plans/documentation_quality.md`
+- `git diff --check`
+- 失敗時は自己修復を最大3回まで。4回目相当は停止して Hold とする。
+
+### Phase 5 Proceed（残課題記録）
+- 状態: **Ready**
+- 残課題: DOC-OPS-05後半対象文書にも同一の5Phase運用と自己修復上限3回を適用する。
