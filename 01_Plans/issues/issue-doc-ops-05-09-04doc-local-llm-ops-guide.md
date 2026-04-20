@@ -570,3 +570,31 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（docs-only継続可能）。
 - 引き継ぎ: 同一ワークフロー（Plan→Execute→Verify→Proceed）を維持し、致命的矛盾時は停止して論点を分離する。
+
+## 17) Phase cycle update (2026-04-20, independent scope)
+
+### Phase 1) Read
+- 対象Issue本文の `Requirement meta I/F` / `Acceptance criteria` / `Validation plan` を再読し、分類が **Improve external** で固定済みであることを確認。
+- 独立性チェック: 本ファイル以外を編集しない前提を確認。
+
+### Phase 2) Plan（AC/DoD不足ドラフト合意）
+- ACドラフト合意: `Audience / Goal / Public boundary / Outcome / Related` を追跡可能に保つ。
+- DoDドラフト合意: Proceedで `次の1手` と `未解決点` を必ず明示する。
+
+### Phase 3) ADR CDC（必要時）
+- 判定: **追加ADR不要**。
+- Context: DOC-OPS-05 の目的は分類品質固定であり、設計変更は含まない。
+- Decision: 既存の `DecisionStatus=Fixed` を維持。
+- Consequences: 後続は docs-only の実行タスクへ分離可能。
+
+### Phase 4) Execute + Verify（docs-check, 最大3回自己修復）
+- Execute: 本Issueメモへ本フェーズ記録を追記（スコープ内編集のみ）。
+- Verify（docs-check）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- 自己修復上限: 3回。4回目相当は Stopper に従い停止。
+
+### Phase 5) Proceed（次の1手 / 未解決点）
+- 次の1手: `04_Documentation/local_llm_ops_guide.md` の公開境界と安全前提（SafeMode既定ON・外部送信条件）を明示。
+- 未解決点: 未解決なし（DecisionStatus=Fixed）。
+- Stopper確認: 未定義競合なし / safeMode後退語彙なし / 自己修復回数は上限内。
