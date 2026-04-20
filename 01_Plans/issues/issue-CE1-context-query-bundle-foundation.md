@@ -1,9 +1,9 @@
-# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream C / CE契約群 / contract-only planning）
+# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream D / CE1専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream C（CE契約群）
+- Owner: Stream D（CE1 ContextQuery/ContextBundle Foundation）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
@@ -22,6 +22,15 @@
 - Status / Scope / Related ADR: 本Issueヘッダ + `ADR-0028` + `02_Architecture/schemas.md`
 - CE0 read-only境界: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
 - CE1凍結対象: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+
+### 前提差分チェック（Phase 1 gate）
+- 判定: **前提差分なし（continue）**
+- 停止条件（差分検知時）:
+  - CE0契約IDの改名/再採番
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙変更
+  - safeMode既定値に関する上流変更
+- 差分検知時の動作:
+  - 本Issue更新を停止し、Phase 3（CDC held）へ遷移して承認待ちに固定する。
 
 ### Contract IDs（凍結対象）
 - CE0契約IDは参照のみ（再定義禁止）。
@@ -53,6 +62,13 @@
 - DoD不足補完1: CE2/CE4引き渡しキーの一致条件を明文化（`sourceBundleHash === bundleHash`）。
 - DoD不足補完2: safeMode regression=0 を完了条件に追加。
 
+### 合意後固定（Plan freeze）
+- 本Issueでは上記Gap draftを **CE1 v1契約の固定候補** として扱う。
+- 固定は contract-only（I/F語彙・戻り値・検証条件）に限定し、実装手段は記述しない。
+- 依存切断方針としてモック前提を維持する:
+  - `sourceBundleHash` は CE1 `bundleHash` の受け渡し専用キーとして扱う。
+  - hash検証は deterministic mock（同一canonical queryを3回）で成立判定する。
+
 ### Plan outputs（v1で凍結する内容）
 - `previewConfirmed=false -> 422 preview_required` を契約として固定。
 - unknown key -> `400 unknown_contract_key` を契約として固定。
@@ -68,12 +84,19 @@
   - **Consequences**: CE2/CE4 handoff への影響と回帰リスク。
 - 本Issue時点では CDC未起票（衝突未検知）として扱う。
 
+### CDC最小テンプレート（衝突時のみ記入）
+- Status: `held`
+- Context: `CE0参照ID` / `衝突語彙` / `検知ログID`
+- Decision: `v1で固定するI/F差分（再定義なし）`
+- Consequences: `CE2/CE4 handoff影響` / `safeMode回帰リスク`
+
 ## Phase 4 Execute（ContextQuery/Bundle v1 closed-world, preview_required, hash決定論）
 ### I/F Mock Freeze（実装記述なし）
 - 固定I/F（v1 / closed-world）
   - `ContextQueryV1` は未定義キーを許容しない（`400 unknown_contract_key`）。
   - `ContextBundleV1` は `queryCanonicalHash` / `bundleHash` を必須返却する。
   - `previewConfirmed=false` は生成処理に進まず `422 preview_required` を返す。
+  - Query Previewは必須ゲートとし、bypass経路を許容しない（`preview_bypass`禁止）。
 - hash固定（決定論）
   - 同一 canonical query では `queryCanonicalHash` が常に一致。
   - 同一 canonical query では `bundleHash` が常に一致。
@@ -109,6 +132,8 @@
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
 - 検証条件: hash決定論一致, preview gate強制, docs-check pass
+- 契約語彙整合: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を固定継承
+- SafeMode後退: 0（既定緩和なし）
 
 ### Read-only handoff（CE2 / CE4向け）
 - handoff matrixはread-only維持とし、下流（CE2/CE4）での契約再定義を禁止する。
