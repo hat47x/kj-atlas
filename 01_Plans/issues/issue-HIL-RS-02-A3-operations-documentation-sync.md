@@ -19,7 +19,7 @@
 
 ## 1) Objective
 
-A3 を「契約参照専用」の計画メモとして確定し、A1 完了前の逸脱実行を防止する。
+A3 を「operations/documentation sync の契約参照専用」計画メモとして確定し、A1 完了前の逸脱実行を防止する。
 
 ## 2) Contract Freeze（read-only reference）
 
@@ -40,6 +40,22 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
   - `sharedResourceFreeze`
   - `validatorPass`
 
+
+## 2.1) Operations/Documentation Sync Alignment（A3 固定参照）
+
+- Canonical source（正本）: `02_Architecture/strict_mode_exception_approval_flow.md`
+- Sync route（固定導線）: `02_Architecture` -> `04_Documentation` -> `01_Plans` -> `AGENTS.md`
+- Role vocabulary（固定語彙）:
+  - `Security Officer`
+  - `System Owner`
+  - `Platform Operator`
+- D1〜D4 fixed values（AUTH-OPS-03 決定値、A3は参照のみ）:
+  - `D1`: Security Officer先行、承認TTL=`4h`
+  - `D2`: tenant単位、例外最大継続時間=`2h`
+  - `D3`: 復旧判定は2者共同、代理承認なし
+  - `D4`: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
+- A3 restriction: 上記語彙・導線・固定値は **read-only reference only**（A3内で再定義しない）。
+
 ## 3) ADR CDC（必要時のみ）
 
 - Context:
@@ -56,14 +72,17 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
 - [x] `contractLinkLocked / sharedResourceFreeze / validatorPass` 判定が固定されている。
 - [x] `safeModeDefault=ON` 後退禁止が明文化されている。
 - [x] Proceed 条件・停止条件・差戻し先が明文化されている。
+- [x] 役割語彙（Security Officer / System Owner / Platform Operator）が正本と一致している。
+- [x] D1〜D4 の固定値が参照専用で明文化されている。
+- [x] `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md` 導線が明文化されている。
 
 ## 5) Serial Phase Protocol（強制）
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
 ### Phase 1 Read & Lock
-- Plan: 再読対象と照合項目を固定。
-- Execute: A1/A2/A3 依存・固定値・禁止遷移を確認。
+- Plan: A1契約値・D1〜D4固定値・役割語彙の再読対象を固定。
+- Execute: A1/A2/A3依存、固定値、禁止遷移に加え、AUTH-OPS-03語彙とD1〜D4を照合。
 - Verify: 差分/競合=0件。
 - Proceed: 差分があれば CDC 論点化し即停止。
 
@@ -74,22 +93,22 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
 - Proceed: 凍結維持確認後に Phase 3。
 
 ### Phase 3 ADR CDC（必要時）
-- Plan: 方針変更要否を判定。
-- Execute: CDC を承認待ち化。
+- Plan: Context / Decision / Consequences の変更要否を判定。
+- Execute: 必要時のみ CDC を承認待ちとして起票（承認前の確定化禁止）。
 - Verify: 承認前確定化なし。
 - Proceed: 承認後のみ Phase 4。
 
 ### Phase 4 Plan -> Execute -> Verify
-- Plan: AC/DoD 不足提案と停止条件を固定。
-- Execute: 契約文言・依存順・停止条件を正規化。
-- Verify: 禁止遷移/語彙ドリフト=0件、`validatorPass=true`。
+- Plan: operations/documentation同期の AC/DoD 不足（語彙・導線・固定値）を補完提案として固定。
+- Execute: 役割語彙・同期導線・D1〜D4固定値・A1依存順を正規化し一貫化。
+- Verify: 禁止遷移/語彙ドリフト/固定値ドリフト=0件、`validatorPass=true`。
 - Proceed: Verify pass で次へ。
 
 ### Phase 5 Proceed / Stopper
-- Plan: 固定I/F一覧を次工程へ出力。
-- Execute: read-only handoff を発行。
-- Verify: frozen keys 一致。
-- Proceed: 失敗時は即停止し指示待ち。
+- Plan: 固定I/F一覧と docs-check 実施手順を次工程へ出力。
+- Execute: read-only handoff を発行し docs-check を実施。
+- Verify: frozen keys 一致、docs-check pass、Self-Correction が3回を超えていない。
+- Proceed: 3回超過または検証失敗時は即停止し指示待ち。
 
 ## 6) Open/Proceed Gate（固定）
 
