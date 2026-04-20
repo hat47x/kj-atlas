@@ -640,3 +640,34 @@
   - [ ] docs-check 手順が本文に明示されている。
   - [ ] 共有統合ファイルを更新しない独立レーン条件を満たしている。
   - [ ] 実装コード非変更（docs-only）を満たしている。
+
+
+## 99) Phase refresh (2026-04-20 / DOC-OPS-05 strict 5-phase)
+
+### Phase 1 Read（Audience / Goal / 公開境界確認）
+- Audience: 公開文書の読者（利用者 / 運用担当 / コントリビュータ）に限定し、内部運用専用読者を分離対象として再確認。
+- Goal: `04_Documentation/local_llm_ops_guide.md` の公開可否と改善方針を、Issue本文だけで再現可能な形で固定する。
+- 公開境界: 仕様正本（00〜02）・内部運用ログ（01）・対外ガイド（04）の境界を混在させない。
+
+### Phase 2 Plan（docs-only範囲固定 / 実装修正禁止）
+- Scope 固定: 本Issueメモの更新のみ（docs-only）。
+- 禁止事項: `03_Implement/**` と実装仕様の変更、CI設定変更、Schema変更。
+- 期待成果: 分類・AC・Validation・Proceed判定を5Phaseで追跡可能にする。
+
+### Phase 3 Execute（AC / Task breakdown / Validation整備）
+- Classification（固定）: **Improve external**
+- AC整備: Audience / Goal / 公開境界 / Next action / VerificationLevel の5点を判定必須項目として固定。
+- Task breakdown整備: 判定（Read）→ 方針固定（Plan）→ 記録更新（Execute）→ 検証（Verify）→ Open判定（Proceed）を単一路線化。
+- Validation整備: `docs-check` と `git diff --check` の2系統を必須にし、失敗時は自己修復最大3回で停止条件を適用。
+
+### Phase 4 Verify（Expected verification level整合確認）
+- 整合結果: `Expected verification level=docs-check` と `VerificationLevel=docs-check` は一致。
+- 実行手順（再現用）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- 判定: docs-only Issueとして必要十分（unit/integration/e2e は対象外）。
+
+### Phase 5 Proceed（Open化条件判定 / 致命エラー時停止）
+- Open化条件: Classification固定、GoNoGoGate=Required、DecisionStatus=Fixed、Validation手順明記の4条件を満たすこと。
+- 判定: **Ready（Open候補）**。
+- 致命エラー時停止条件: 必須メタ欠落 / VerificationLevel不一致 / Scope逸脱が検出された場合は **即時Hold** に遷移し、次編集を停止する。
