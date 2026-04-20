@@ -15,9 +15,16 @@
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
 - CE0契約IDは再定義禁止（freeze対象）：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
-- 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- **各Phase開始時は本Issueを最新再読してから開始する（再読省略禁止）。**
+- 自己修復は Verify で最大3回まで。4回目相当は即停止する。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### 最新再読チェック（Phase開始ゲート）
+- 対象ファイル: `issue-CE0-contract-freeze.md`（本書のみ）
+- CE0 SSOT再定義禁止 / 実装禁止 / 指定外編集禁止を再確認
+- 失敗時自己修復上限（3回）を再確認
+
 ### Read同期スナップショット
 - Contract ID: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
 - 固定語彙: `equivalenceKey + bundleHash` / `sourceBundleHash` / `proposal lifecycle`
@@ -40,7 +47,10 @@
 - 比較・照合は上記5語彙ID（`preview_bypass` 等）を正本とし、日本語/英語表記揺れは括弧内同義語として扱う。
 - CE1/CE2/CE4へは語彙IDのみを受け渡し、下流文書で同義語を追加しても禁止判定の意味は拡張・縮退しない。
 
-## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+## Phase 2 Plan（I/F Mock Freeze計画: ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+### 最新再読チェック（Phase開始ゲート）
+- Phase 1の固定語彙・No-Go語彙・Scopeを再読し、差分ゼロを確認してから着手する。
+
 - Freeze原則: CE1/CE2/CE4はCE0契約を再定義せず、I/F参照のみで固定する。
 - CE1参照境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照のみ）。
 - CE2参照境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照のみ）。
@@ -60,6 +70,9 @@ Freeze判定（全て必須）:
 - 参照先に差分が必要な場合は CE0再起票（本Issue）を経由し、下流Issueで先行確定しない。
 
 ## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
+### 最新再読チェック（Phase開始ゲート）
+- CDCは「差分検知時のみ起票」の原則を再読し、未検知時の不要起票を禁止する。
+
 ### CDC条件（変更が発生した場合のみ記録）
 - 差分検知ログ（Phase 1起点）: 契約ID衝突 / No-Go語彙揺れ / Scope逸脱のいずれかがあればCDC化する。
 - **Context**: 何の衝突・曖昧性を解消するか。
@@ -92,8 +105,11 @@ Freeze判定（全て必須）:
 - Vocabulary collision = 0（`Consensus Graph / WorkingGraph / ContextProjectionGraph`）
 - 承認前は `provisional`、承認後のみ `frozen`
 
-## Phase 4 Plan→Execute→Verify（AC/DoD補完 + docs-check自己検証）
-### Plan
+## Phase 4 Execute（Plan反映のみ。契約再定義・実装変更なし）
+### 最新再読チェック（Phase開始ゲート）
+- CE0 Contract IDs再定義禁止、proposal-only、safeMode既定維持を再確認する。
+
+### Execute Plan（実行前固定）
 - 5 Issue横断で契約語彙を照合し、再定義を除去する。
 - CE1/CE2/CE4への handoff を「参照のみ」に統一する。
 - No-Go語彙が全Issueで同一かを確認し、揺れがあれば修正する。
@@ -112,7 +128,11 @@ Freeze判定（全て必須）:
 - collision=0 / safeMode regression=0 を満たす記述へ整理。
 - 検証失敗時は自己修復を最大3回まで実施し、4回目相当は停止する。
 
-### Verify
+## Phase 5 Verify（docs-check自己検証）
+### 最新再読チェック（Phase開始ゲート）
+- Verify対象は docs-check のみ。実装変更・指定外編集が混入していないことを再確認する。
+
+### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
@@ -126,7 +146,10 @@ Freeze判定（全て必須）:
 - [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
 - [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
 
-## Phase 5 Proceed（次工程向け固定契約の出力）
+## Phase 6 Proceed（次工程向け固定契約の出力）
+### 最新再読チェック（Phase開始ゲート）
+- Verify結果とAC/DoDを再読し、未達項目があれば Proceed せず `held` に戻す。
+
 ### Fixed contract handoff
 - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
 - 禁止事項: direct write / auto-apply / preview bypass / AI review昇格 / safeMode緩和
