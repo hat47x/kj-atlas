@@ -59,11 +59,15 @@
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
 - `sourceBundleHash === bundleHash` を参照整合キーとして明示。
+- AC/DoD不足ドラフトを先に固定し、実行中の契約再定義を禁止。
+- proposal-only を維持し、実装・auto-apply 経路の作成/示唆を禁止。
 
 ### Execute
 - collision=0 / safeMode regression=0 を満たす整理を実施。
 - 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
 - 契約再定義要求または safeMode 後退要求を受けた場合は即停止（Fail-safe）。
+- lifecycle は常に `proposed|accepted|rejected|held` のみを許可し、別名語彙を導入しない。
+- `reviewState=human_reviewed` は人手操作のみで遷移可能（AI提案は `unreviewed` に固定）。
 
 ### Verify
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -76,6 +80,9 @@
 - [ ] CE1 drift検知時は `status=held`
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE1と一致
 - [ ] SafeMode regression = 0
+- [ ] lifecycle語彙が `proposed|accepted|rejected|held` 以外を含まない
+- [ ] CE4 handoff は read-only で、apply 権限/導線を追加しない
+- [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 
 ## Phase 5 Proceed（次工程向け固定契約の出力）
 ### Fixed contract handoff
