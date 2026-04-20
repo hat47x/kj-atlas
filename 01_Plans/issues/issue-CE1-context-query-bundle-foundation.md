@@ -14,9 +14,14 @@
 - CE1はCE0 SSOT参照レーン。CE0/CE2/CE4契約を待たず、mock/hash/read-only参照で依存切断する。
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - CE0契約参照は必須、CE1側で再定義しない。
-- 強制ワークフローは `Phase 1 Read → Phase 2 I/F Mock Freeze → Phase 3 ADR CDC → Phase 4 Plan→Execute→Verify → Phase 5 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Read log（このIssueで参照確認した対象）
+- Status / Scope / Related ADR: 本Issueヘッダ + `ADR-0028` + `02_Architecture/schemas.md`
+- CE0 read-only境界: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+- CE1凍結対象: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+
 ### Contract IDs（凍結対象）
 - CE0契約IDは参照のみ（再定義禁止）。
 - CE0参照境界（read-only）:
@@ -38,7 +43,39 @@
 - Query Preview bypass 禁止。
 - `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 
-## Phase 2 I/F Mock Freeze（ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+## Phase 2 Plan（AC/DoD不足ドラフト）
+### Gap draft（不足補完）
+- AC不足補完1: hash決定論の検証回数を明示（同一canonical queryで3回一致）。
+- AC不足補完2: preview gateの失敗コード/語彙を固定（`422 preview_required`）。
+- AC不足補完3: closed-world違反時の失敗コード/語彙を固定（`400 unknown_contract_key`）。
+- DoD不足補完1: CE2/CE4引き渡しキーの一致条件を明文化（`sourceBundleHash === bundleHash`）。
+- DoD不足補完2: safeMode regression=0 を完了条件に追加。
+
+### Plan outputs（v1で凍結する内容）
+- `previewConfirmed=false -> 422 preview_required` を契約として固定。
+- unknown key -> `400 unknown_contract_key` を契約として固定。
+- 同一 canonical query で `queryCanonicalHash/bundleHash` 一致を契約として固定。
+
+## Phase 3 ADR CDC（Context / Decision / Consequences, 承認待ち）
+- CDC Status: `held`（承認待ち）
+- 差分検知ログ対象: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ。
+
+### Context
+- v1で hash決定論・preview gate・closed-world を同時固定し、実装差分の裁量を残さない。
+
+### Decision
+- 語彙固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- 未定義キー拒否: `400 unknown_contract_key`。
+- preview必須: `previewConfirmed=false` は生成処理に進まず `422 preview_required`。
+- hash決定論: canonical query が同一なら `queryCanonicalHash` と `bundleHash` は常に一致。
+
+### Consequences
+- CE2は `sourceBundleHash === bundleHash` の比較キーのみで参照可能。
+- CE4は `equivalenceKey + bundleHash`（AND）に `queryCanonicalHash` を加えて監査照合可能。
+- v1 closed-worldを維持し、拡張要求は v2再起票に限定。
+
+## Phase 4 Execute（ContextQuery/Bundle v1 closed-world, preview_required, hash決定論）
+### I/F Mock Freeze（実装記述なし）
 - 固定I/F（v1 / closed-world）
   - `ContextQueryV1` は未定義キーを許容しない（`400 unknown_contract_key`）。
   - `ContextBundleV1` は `queryCanonicalHash` / `bundleHash` を必須返却する。
@@ -46,34 +83,21 @@
 - hash固定（決定論）
   - 同一 canonical query では `queryCanonicalHash` が常に一致。
   - 同一 canonical query では `bundleHash` が常に一致。
-- CE2連携境界: `sourceBundleHash === bundleHash` 比較キーのみを提供。
-- CE4連携境界: `equivalenceKey + bundleHash`（AND判定）と `queryCanonicalHash` を引き渡す。
-- CE1 v1 は closed-world を維持し、拡張は v2再起票のみ。
-- 参照境界は CE0 (`CE0-CTX-IF`/`CE0-SAFEMODE-IF`) 参照のみで固定。
+- CE2連携境界
+  - `sourceBundleHash === bundleHash` 比較キーのみを提供。
+- CE4連携境界
+  - `equivalenceKey + bundleHash`（AND判定）と `queryCanonicalHash` を引き渡す。
+- 参照境界
+  - CE0 (`CE0-CTX-IF`/`CE0-SAFEMODE-IF`) 参照のみで固定。
 
-## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
-- 差分検知ログ: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ。
-- **Context**: hash決定論・preview gate・closed-world の衝突有無。
-- **Decision**: v1語彙固定、未定義キー拒否、preview必須を維持。
-- **Consequences**: CE2/CE4 が `sourceBundleHash === bundleHash` に依存可能。
-- **Approval**: 差分発生時の反映状態は `held`。
+### Stop conditions（フェイルセーフ）
+- preview bypass 許容が混入した場合は即停止。
+- safeMode緩和（既定値変更を含む）が混入した場合は即停止。
+- 契約語彙の未定義競合（CE0/CE2/CE4間）が解消不能なら停止。
+- Self-Correction 3回超過で停止。
 
-## Phase 4 Plan→Execute→Verify（AC/DoD補完 + docs-check自己検証）
-### Plan
-- `previewConfirmed=false -> 422 preview_required` を明示。
-- unknown key -> `400 unknown_contract_key` を明示。
-- 同一 canonical query で `queryCanonicalHash/bundleHash` 一致を要件化。
-
-### Execute
-- collision=0 / safeMode regression=0 を満たす記述へ整理。
-- 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
-- Stopperの明文化:
-  - preview bypass 許容が混入した場合は即停止。
-  - safeMode緩和（既定値変更を含む）が混入した場合は即停止。
-  - 契約語彙の未定義競合（CE0/CE2/CE4間）が解消不能なら停止。
-  - Self-Correction 3回超過で停止。
-
-### Verify
+## Phase 5 Verify（docs-check / 修復3回まで）
+### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
@@ -86,7 +110,7 @@
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE2/CE4と一致
 - [ ] SafeMode regression = 0
 
-## Phase 5 Proceed（次工程向け固定契約の出力）
+## Phase 6 Proceed（CE2/CE4連携キー handoff）
 ### Fixed contract handoff
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
