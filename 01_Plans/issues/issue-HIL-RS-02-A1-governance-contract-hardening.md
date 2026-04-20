@@ -7,7 +7,7 @@
 - Source Issue: N/A
 - Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `ADR-0027`, `ADR-0026`, `ADR-0028`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- Dependencies: `ADR-0027`, `ADR-0026`, `ADR-0028`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0026`
 - Expected verification level: `docs-check`
 
@@ -15,7 +15,7 @@
 
 A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防止する。
 
-## 2) Hardening Rules（固定）
+## 2) Contract Freeze Hardening（read-only）
 
 - Dependency order（唯一）: `A1 -> A2 -> A3`
 - Unlock rule（唯一）:
@@ -54,31 +54,31 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
 
-1. Phase 1 Read
+1. Phase 1 Read & Lock
    - Plan: 再読対象を固定。
-   - Execute: `freezeContractId` / `contractIds` / Unlock rule / Go-NoGo 条件を照合。
+   - Execute: `Status / Dependencies / Scope` と fixed keys / Unlock rule / Go-NoGo 条件を照合。
    - Verify: 不一致=0件。
    - Proceed: 差分は CDC 論点へ。
-2. Phase 2 ADR CDC（必要時）
+2. Phase 2 Contract Freeze（mock-first）
+   - Plan: I/F固定対象を確定。
+   - Execute: 実装詳細を追加せず最小契約のみ維持。
+   - Verify: A2/A3 非依存で成立すること。
+   - Proceed: 凍結維持を確認後に Phase 3。
+3. Phase 3 ADR CDC（必要時）
    - Plan: 方針変更要否判定。
    - Execute: Context / Decision / Consequences を承認待ちで記録。
    - Verify: 承認前確定化なし。
-   - Proceed: 承認済みのみ Phase 3。
-3. Phase 3 Execute
+   - Proceed: 承認済みのみ Phase 4。
+4. Phase 4 Plan -> Execute -> Verify
    - Plan: 契約文言正規化対象を固定。
    - Execute: 契約語彙の重複・矛盾を解消し単一式へ固定。
-   - Verify: 依存逆転/未定義競合=0件。
+   - Verify: 依存逆転/未定義競合=0件、`validatorPass=true`。
    - Proceed: Verify pass で次へ。
-4. Phase 4 Verify
-   - Plan: docs-check 観点（語彙整合、依存順序、停止条件）を固定。
-   - Execute: docs-check 実施。
-   - Verify: `validatorPass=true`。
-   - Proceed: 固定I/F handoff 判定へ。
-5. Phase 5 Proceed
+5. Phase 5 Proceed / Stopper
    - Plan: 下流配布対象を固定。
    - Execute: read-only 契約スナップショットを発行。
    - Verify: A1 側 frozen keys と一致。
-   - Proceed: A2/A3 は参照のみ。
+   - Proceed: A2/A3 は参照のみ。失敗時は即停止。
 
 ## 6) Open化条件（固定）
 
