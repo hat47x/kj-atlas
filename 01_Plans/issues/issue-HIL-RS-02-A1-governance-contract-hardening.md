@@ -42,6 +42,12 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 - Consequences:
   - 契約差分要求は A1 へ集約し、A2/A3 で局所上書きしない。
 
+### 3.1) ADR合意ステータス（承認待ち）
+
+- ApprovalStatus: `Pending (Human approval required)`
+- ApprovalScope: `CDC Context/Decision/Consequences`
+- Pre-approval lock: `承認前は確定扱い禁止（A2/A3はread-only参照のみ）`
+
 ## 4) Acceptance Criteria / DoD
 
 - [x] Unlock rule が唯一条件として明文化されている。
@@ -89,8 +95,9 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 ## 7) Go / No-Go（固定）
 
-- `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `NoGo = !Go`
+- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+- `Go = A2A3StartAllowed`
+- `NoGo = !A2A3StartAllowed`
 
 ## 8) Fail-safe
 
@@ -101,7 +108,7 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
   4. 担当外編集要求
 - 停止時報告:
   1. 失敗条件
-  2. 影響契約ID
+  2. 影響I/F
   3. 要承認事項
 
 ## 9) Fixed Values Handoff（変更禁止）

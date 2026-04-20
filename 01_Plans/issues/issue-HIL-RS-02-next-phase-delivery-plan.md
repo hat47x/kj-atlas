@@ -33,6 +33,18 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
   - `sharedResourceFreeze=true`
   - `safeModeDefault=ON`
 
+
+## 2.1) Phase 1 Read 差分確認（2026-04-20固定）
+
+- 対象: `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-01-A1`
+- 固定キー差分:
+  - `schemaVersion`: 差分なし（`1.0.0`）
+  - `overridePolicy`: 差分なし（`human_dual_control_only`）
+  - `contractLinkLocked`: 差分なし（`true`）
+  - `sharedResourceFreeze`: 差分なし（`true`）
+  - `safeModeDefault`: 差分なし（`ON`）
+- 判定: `DiffCount=0`（Proceed可）
+
 ## 3) ADR CDC（必要時のみ）
 
 - Context:
@@ -41,6 +53,12 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
   - 依存は状態遷移で固定し、A2/A3 で契約値を変更しない。
 - Consequences:
   - 契約差分は A1 へ集約。未承認事項は `Pending` 維持。
+
+### 3.1) ADR合意ステータス（承認待ち）
+
+- ApprovalStatus: `Pending (Human approval required)`
+- ApprovalScope: `CDC Context/Decision/Consequences`
+- Pre-approval lock: `承認前は確定扱い禁止（運用はread-only継続）`
 
 ## 4) Acceptance Criteria / DoD
 
@@ -94,9 +112,9 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 
 ## 7) A2/A3 Start Rule（固定）
 
-- `StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `Go = StartAllowed`
-- `NoGo = !StartAllowed`
+- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+- `Go = A2A3StartAllowed`
+- `NoGo = !A2A3StartAllowed`
 - `NoGo` 時は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻す。
 
 ## 8) Fail-safe
@@ -107,7 +125,7 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
   - 前提崩壊
   - 担当外編集要求
 - 停止時報告:
-  - 失敗条件 / 影響範囲 / 要承認事項
+  - 失敗条件 / 影響I/F / 要承認事項
 
 ## 9) Next Step 固定I/F一覧
 
@@ -118,3 +136,21 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 - `safeModeDefault=ON`
+
+
+## 10) Phase 5 Proceed Handoff（read-only）
+
+- Handoff mode: `read-only`
+- Frozen values:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+- No-Go conditions（いずれか1つでも該当で停止）:
+  - `a1Status!="Done"`
+  - `pendingDecisionQueueCount>0`
+  - `contractLinkLocked!=true`
+  - `sharedResourceFreeze!=true`
+  - `validatorPass!=true`
+
