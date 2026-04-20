@@ -24,72 +24,92 @@
 - No-Go語彙（CE0 canonical 5 IDs）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
 - Scope: graph role/transition/audit 契約固定のみ
 
-### Graph role I/F
+### Graph role I/F（固定）
 - `working`: 編集作業領域
 - `context_projection`: read-only投影
 - `consensus`: 承認済み合意領域
 
-### Transition / No-Go
+### Transition / No-Go（固定）
 - 許可: `working -> consensus` は `patch+approval` のみ
 - 禁止: direct write / auto-apply / auto-publish
 
-### safeMode境界
+### safeMode境界（固定）
 - `CE0-SAFEMODE-IF` を参照し、Graph再配置タスク側で緩和しない。
+- SafeMode既定ONの後退を禁止する。
 
-## Phase 2 Plan（AC / DoDドラフト + I/F Mock Freeze）
-- Phase開始Read: Phase 1で固定した `role / transition / no-go` 語彙を再読し、差分があれば `held` として計画へ仮置きする（確定禁止）。
-- AC/DoDを先にドラフトし、ContextQuery / ContextBundle / Review 境界をI/Fのみ固定する。
-- CE1: `context_projection` は read-only参照のみ。
-- CE2: proposal lifecycle は `working` に限定、`consensus` 直更新禁止。
-- CE4: 監査導線は `query/bundle/proposal/apply` を共通必須。
-- CE4同値判定語彙は `equivalenceKey + bundleHash` を参照のみで利用する。
-- 参照境界は `CG-01..05` 参照のみで記述し、再定義しない。
+### Phase 1 差分判定ルール
+- 各Phase開始Readで `role / transition / no-go` に差分が1件でも検出された場合は即停止し、差分一覧を `held` で記録して指示待ちとする。
 
-## Phase 3 ADR CDC（必要時のみ Context / Decision / Consequences を記録し承認待ち）
-- Phase開始Read: Phase 2計画と固定語彙の一致を確認し、不一致は `held` で起票（推測で決定しない）。
-- 差分検知ログ: role/transition/audit語彙の揺れ、No-Go語彙不一致、SafeMode境界の逸脱。
-- **Context**: Graph role/transition/audit の語彙衝突有無。
-- **Decision**: `WorkingGraph / ContextProjectionGraph / Consensus Graph` へ固定。
-- **Consequences**: CE1/CE2/CE4の連携時に role/transition の解釈が単一化。
-- **Approval**: 差分発生時の反映状態は `held`（未承認確定禁止）。
-- 衝突未検知時（role/transition/audit語彙揺れ=0 かつ No-Go不一致=0 かつ SafeMode逸脱=0）はCDCを起票しない。
+## Phase 2 Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
+### Scope（このIssueで実施すること）
+- CE0 Core Graphの責務境界（`working` / `context_projection` / `consensus`）を**契約文言として固定**する。
+- `transition` と `no-go` を CE0 canonical語彙の範囲で整合化する。
+- 未承認事項は `pending` または `held` で在庫化し、確定化しない。
 
-## Phase 4 Execute（working / context_projection / consensus 責務固定）
-### Execute方針
-- Phase開始Read: Phase 3で `held` になった未承認事項の残存有無を確認し、未承認は継続して `held` に留める。
-- 役割・遷移・監査の3層をIssue記述内で分離。
-- `working -> consensus = patch+approval only` を明示。
-- `context_projection` 書換を fail-closed 条件として統一。
-- collision=0 / safeMode regression=0 を満たす整理を実施。
-- 検証失敗時は自己修復を最大3回まで、4回目相当は停止。
+### Non-Goals（このIssueで実施しないこと）
+- 実装変更（handler/UI/DB/worker/API/Schema migration）
+- CE0契約ID・No-Go語彙の再定義、拡張、別名化
+- SafeMode既定ONを弱める記述
+- 未承認事項の確定化
 
-## Phase 5 Verify（docs-check / 自律修復最大3回）
-- Phase開始Read: Phase 4の契約固定結果を再読し、未承認項目が確定扱いになっていないことを確認する。
-- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+### Acceptance Criteria（AC）
+- AC-1: Contract ID参照が `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の参照のみに限定される。
+- AC-2: Graph roleが `working` / `context_projection` / `consensus` の3区分で固定される。
+- AC-3: 許可遷移が `working -> consensus` の `patch+approval` のみで記述される。
+- AC-4: No-Go語彙が canonical 5 IDs から逸脱しない。
+- AC-5: 未承認事項が `held` または `pending` として保持され、確定扱いされない。
+- AC-6: 検証手順として `docs-check` が明示される。
+
+### Definition of Done（DoD）
+- DoD-1: 本Issue本文だけを更新し、編集禁止ファイルに変更がない。
+- DoD-2: Phase 1〜6の固定順序と停止条件が明文化されている。
+- DoD-3: `docs-check` が成功し、失敗時自己修復上限（3回）が遵守される。
+- DoD-4: Proceed判定が AC全充足時のみ `Done`、未承認事項は在庫記録で終了する。
+
+### Validation（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `git diff --check`
+- （任意補助）`rg -n "preview_bypass|consensus_direct_write|auto_apply_or_publish|ai_review_auto_promotion|safemode_default_relaxation" 01_Plans/issues/issue-CE0-core-graph-repositioning.md`
 
-### Acceptance Criteria / DoD
-- [ ] `working -> consensus = patch+approval only` が全Issue一致
-- [ ] `context_projection` read-only が全Issue一致
-- [ ] 監査4点欠損=0
-- [ ] SafeMode regression = 0
+### Stop Conditions（停止条件）
+- SC-1: Phase開始Readで語彙差分を検出
+- SC-2: CE0契約ID再定義、No-Go語彙変更、SafeMode既定ON後退の兆候を検出
+- SC-3: docs-check失敗が3回以内に収束しない（4回目相当は禁止）
 
-## Phase 6 Proceed（CE1 / CE2 / CE4参照境界の出力）
-- Phase開始Read: Phase 5検証結果を再読し、`held` 項目を handoff に混入させないことを確認する。
-### Fixed contract handoff
-- Contract IDs: `CG-01..05`, `CE0-SAFEMODE-IF`
-- 禁止事項: direct write / auto-apply / auto-publish / safeMode緩和
-- 検証条件: role/transition/audit衝突0, docs-check pass
-- 参照方向固定: `CE0 -> (CE1, CE2, CE4)` の一方向のみ（下流からCE0契約の再定義禁止）。
-- CE1参照境界: `context_projection` は read-only参照のみ（`consensus` への書込不可）。
-- CE2参照境界: proposal lifecycle は `working` 専有、`consensus` 反映は `patch+approval` のみ。
-- CE4参照境界: 監査導線は `query/bundle/proposal/apply` を必須とし、`equivalenceKey + bundleHash` は参照のみ。
+### AC/DoD不足時の扱い
+- AC/DoD不足を検知した場合は、本Issue内にAIドラフトを追記して**明示合意まで `held` 維持**とする。
 
-## Fail-safe（即停止条件）
-- Self-Correction 3回超過
-- 未定義ファイル競合
-- SafeMode後退の兆候
-- 依存前提崩壊
-- No-Go語彙衝突（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）
-- 未承認事項の確定化（`held` 解除の承認証跡なし）
+## Phase 3 ADR CDC（方針差分が必要な場合のみ）
+### Context
+- CE0 Core Graph責務境界を契約レベルで固定するため、方針差分の要否を最小化して判定する。
+
+### Decision（状態制約付き）
+- 方針差分が不要な場合: `No ADR delta` として本Issue内の契約文言整備に限定する。
+- 方針差分が必要な場合: `pending` として Context/Decision/Consequences を記述し、**承認まで `held` 維持**する。
+
+### Consequences
+- 承認前は確定扱い禁止。
+- 合意待ち項目は未確定在庫として Phase 6 に引き継ぐ。
+
+## Phase 4 Execute（contract-only）
+- 本Issue本文内の契約記述（role / transition / no-go / stop条件 /判定条件）のみを修正対象とする。
+- 実装記述（handler/UI/DB/worker/API挙動）は追加しない。
+- 変更後に再読し、`Phase 1 Read` の固定語彙との不一致がないことを確認する。
+
+## Phase 5 Verify（docs-check / 自己修復最大3回）
+- 実行: `docs-check`。
+- 失敗時: 原因を1点ずつ修正し再実行（最大3回）。
+- 4回目相当は実施せず、`stopped_for_clarification` として停止する。
+
+## Phase 6 Proceed（完了判定）
+- Proceed条件: AC/DoD満了かつ docs-check pass。
+- 未承認事項がある場合: `held` 在庫（未確定）を明記して終了。
+- 完了時も contract-only の境界を維持し、実装タスクへ昇格しない。
+
+## Traceability Checklist
+- [ ] CE0契約IDの再定義をしていない。
+- [ ] No-Go語彙（canonical 5 IDs）を変更していない。
+- [ ] SafeMode既定ONを後退させていない。
+- [ ] 未承認事項を確定化していない（`held/pending` 維持）。
+- [ ] 実装記述（handler/UI/DB/worker）を追加していない。
+- [ ] `docs-check` を実行し結果を確認した。
