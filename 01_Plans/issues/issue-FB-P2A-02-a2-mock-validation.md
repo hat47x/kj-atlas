@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2A-02-A2 Collapse/Expand操作 / モック検証
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Completed (Stream B lock complete; Go/NoGo fixed)
 - Priority: P0
 - Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
@@ -379,3 +379,15 @@
 - 判定: **Pass**。
 - 次フェーズ条件: A3は A2ログを唯一入力として実装計画固定を実施する。
 - フェイルセーフ: GoNoGo不一致・ownerOfFix未定義・self-correction 4回目相当で即停止し判断要求する。
+
+## Stream B completion certificate (2026-04-20)
+
+- Phase 1 Read: A1/A2/A3 を再読し、`ContractID` / `DependsOn` / `GoNoGo` を照合済み。
+- Phase 2 A1 fixed reference: `CTR-2A-02-COLLAPSE-EXPAND-V1` / `IslandVisibilityContractV1` を read-only 参照で固定。
+- Phase 3 A2 fixed:
+  - Mock/Fixure: `M1..M4` を固定
+  - `ownerOfFix` 分離を固定
+  - GoNoGo: `M1/M2/M3=pass` + `M4=fail` を固定
+- Phase 4 A3 handoff fixed input:
+  - `contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
+- Phase 5 Verify/Proceed: docs-check と判定整合を満たし、Proceed=Completed。

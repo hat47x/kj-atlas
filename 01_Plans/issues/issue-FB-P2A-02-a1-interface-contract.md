@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2A-02-A1 Collapse/Expand操作 / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Open (Audit Hold: normalized contract pack; resumable by explicit Go/NoGo)
+- Status: Completed (Stream B lock complete; Go/NoGo fixed)
 - Priority: P0
 - Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
@@ -357,3 +357,14 @@
 - 判定: **Pass**。
 - 次フェーズ条件: A2は A1 fixed contract を変更せずに mock ledger 検証のみ実施する。
 - フェイルセーフ: 依存崩壊・未定義競合・self-correction 4回目相当で即停止し判断要求する。
+
+## Stream B completion certificate (2026-04-20)
+
+- Phase 1 Read: A1/A2/A3 を再読し、`ContractID` / `DependsOn` / `GoNoGo` 参照整合を確認済み。
+- Phase 2 A1 fixed:
+  - `ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1`
+  - `InterfaceName=IslandVisibilityContractV1`
+  - Required fields / Invariants / ContractLinks を固定済み。
+- Phase 3 A2 fixed prerequisite: M1-M4 mock ledger と `ownerOfFix` ルールへの引き渡し前提を固定済み。
+- Phase 4 A3 fixed prerequisite: handoff I/F・rollback 条件・`agreementStatus=agreed` 以外 NoGo ルールを固定済み。
+- Phase 5 Verify/Proceed: docs-check / 契約リンク / 依存整合に矛盾なし、Proceed=Completed。
