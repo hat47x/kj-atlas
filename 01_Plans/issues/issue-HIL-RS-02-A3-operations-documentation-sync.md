@@ -93,9 +93,35 @@ A3 を「契約参照専用」の計画メモとして確定し、A1 完了前�
 
 ## 6) Open/Proceed Gate（固定）
 
-- `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `NoGo = !Go`
-- `NoGo` 時は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻す。
+- Gate predicate（唯一）:
+  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+  - `NoGo = !Go`
+- Open化条件（Draft -> Open を許可）:
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+  - `validatorPass==true`
+- 維持条件（Draft維持 / Open(hold)維持）:
+  - `a1Status!="Done"` の間は `Draft` 固定（A3 Open化禁止）
+  - `pendingDecisionQueueCount>0` の間は `Draft` または `Open(hold)` を維持
+  - A3 は `contract reference only` を維持し、契約値の再定義を行わない
+- 停止条件（即停止）:
+  - A1未完了でA3 Open化要求を受領
+  - 契約差分をA3内で確定しようとする要求を受領
+  - `safeModeDefault=ON` を後退させる変更要求を受領
+- 差戻し先（固定）:
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+### Gate State Summary（as-is）
+
+- 現状:
+  - `a1Status="Open"`（`Done` ではない）
+  - `A3 Status="Draft"` を維持する
+- 解放条件:
+  - `A1 Done && pendingDecisionQueueCount==0` を満たし、かつ `Go=true`
+- 停止条件:
+  - 上記「停止条件（即停止）」のいずれかに該当した時点で作業停止し、指示待ち
 
 ## 7) Fail-safe
 
