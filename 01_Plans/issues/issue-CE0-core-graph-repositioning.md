@@ -15,7 +15,7 @@
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
 - `role / transition / no-go` 語彙は本Issueで固定し、同義語への置換や拡張定義を禁止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`。
 - **各Phase開始時に必ずReadを実施**し、直前Phaseとの差分有無（語彙・禁止事項・SafeMode境界）を確認してから進行する。
 
 ## Phase 1 Read（role / transition / no-go語彙確認）
@@ -62,7 +62,7 @@
 
 ### Definition of Done（DoD）
 - DoD-1: 本Issue本文だけを更新し、編集禁止ファイルに変更がない。
-- DoD-2: Phase 1〜6の固定順序と停止条件が明文化されている。
+- DoD-2: Phase 1〜5の固定順序と停止条件が明文化されている。
 - DoD-3: `docs-check` が成功し、失敗時自己修復上限（3回）が遵守される。
 - DoD-4: Proceed判定が AC全充足時のみ `Done`、未承認事項は在庫記録で終了する。
 
@@ -79,7 +79,12 @@
 ### AC/DoD不足時の扱い
 - AC/DoD不足を検知した場合は、本Issue内にAIドラフトを追記して**明示合意まで `held` 維持**とする。
 
-## Phase 3 ADR CDC（方針差分が必要な場合のみ）
+### ADR実施条件（CDC明文化）
+- 方針差分が必要な場合のみ、`Context / Decision / Consequences (CDC)` を本Issueへ明文化する。
+- CDC記述後は承認待ちステータスに遷移し、承認完了まで `held` を維持する。
+- 承認完了後にのみ `Phase 3 Execute` へ進む。
+
+## ADR CDC（方針差分が必要な場合のみ / Plan後に実施）
 ### Context
 - CE0 Core Graph責務境界を契約レベルで固定するため、方針差分の要否を最小化して判定する。
 
@@ -89,19 +94,19 @@
 
 ### Consequences
 - 承認前は確定扱い禁止。
-- 合意待ち項目は未確定在庫として Phase 6 に引き継ぐ。
+- 合意待ち項目は未確定在庫として Phase 5 Proceed に引き継ぐ。
 
-## Phase 4 Execute（contract-only）
+## Phase 3 Execute（contract-only）
 - 本Issue本文内の契約記述（role / transition / no-go / stop条件 /判定条件）のみを修正対象とする。
 - 実装記述（handler/UI/DB/worker/API挙動）は追加しない。
 - 変更後に再読し、`Phase 1 Read` の固定語彙との不一致がないことを確認する。
 
-## Phase 5 Verify（docs-check / 自己修復最大3回）
+## Phase 4 Verify（docs-check / 自己修復最大3回）
 - 実行: `docs-check`。
 - 失敗時: 原因を1点ずつ修正し再実行（最大3回）。
 - 4回目相当は実施せず、`stopped_for_clarification` として停止する。
 
-## Phase 6 Proceed（完了判定）
+## Phase 5 Proceed（完了判定）
 - Proceed条件: AC/DoD満了かつ docs-check pass。
 - 未承認事項がある場合: `held` 在庫（未確定）を明記して終了。
 - 完了時も contract-only の境界を維持し、実装タスクへ昇格しない。
