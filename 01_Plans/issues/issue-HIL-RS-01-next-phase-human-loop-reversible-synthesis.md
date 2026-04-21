@@ -13,7 +13,7 @@
 
 ## 1) Goal
 
-HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依存を実装待ちではなく状態遷移契約で管理する。
+HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依存を状態遷移契約で管理する。
 
 ## 2) Contract Freeze（read-only, single source of truth）
 
@@ -34,50 +34,51 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
   - `sharedResourceFreeze=true`
   - `safeModeDefault=ON`
 
-## 3) Serial Phase Management（強制）
+## 3) Serial Phase Protocol（強制）
 
-- 各 Phase で `Plan -> Execute -> Verify -> Proceed` を適用する。
+各Phaseは **開始時に対象5ファイルを再読** し、必ず `Plan -> Execute -> Verify -> Proceed` を順に実施する。
 
-> 各 Phase 開始時に対象4ファイル（本書 / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`）を再読し、差分があれば Plan を更新してから実行する。
+- 対象5ファイル:
+  - `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `issue-HIL-RS-02-next-phase-delivery-plan.md`
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `issue-HIL-RS-02-A3-operations-documentation-sync.md`
 
-### Phase 1 Read（2026-04-21）
+### Phase 1: Read & Baseline（2026-04-21）
+- Plan: `Status / Priority / Dependencies / AC / DoD` を比較観点として固定。
+- Execute: 対象5ファイルの固定キー・依存順序・停止条件を照合。
+- Verify: `DiffCount=0`。
+- Proceed: 差分がある場合は Plan を更新してから次へ進む。
 
-- Check targets: `Status / Priority / Acceptance Criteria / Dependencies`
-- Result: 差分なし（`DiffCount=0`）
-- Proceed条件: 差分なしのみ Phase 2 へ
+### Phase 2: Plan（合意済み）
+- Plan: `A1 -> A2 -> A3`、`unlockRule`、`decisionQueueTransition`、`NoGo return path` を単一正本へ収束。
+- Execute: AC/DoD不足を補完（Decision Queue固定遷移、NoGo時A1差戻し、依存矛盾ゼロ）。
+- Verify: 5ファイル全てで同語彙・同判定式を参照。
+- Proceed: CDC必要時は Phase 3 へ。
 
-### Phase 2 Plan（AC/DoD不足の追記案 + 合意 / 判定軸明示）
+### Phase 3: ADR CDC Gate
+- Plan: ADR変更要否を判定。
+- Execute: **契約整合のみ** のため ADR変更なし。
+- Verify: `Context / Decision / Consequences` 新規起案不要。
+- Proceed: Phase 4 へ。
 
-- 追記案（合意済み）:
-  - 判定軸（固定）: `a2a3Unlock / decisionQueueTransition / safeModeDefault`
-  1. AC に `decisionQueueTransition` の固定参照を追加。
-  2. DoD に「NoGo時の唯一差し戻し先=A1」を追加。
-  3. Verifyに「依存矛盾ゼロ」を明文化。
-- 合意ログ: 本タスク依頼をもって Stream A で実施合意済み。
+### Phase 4: Execute
+- Plan: 契約値・停止条件・語彙の統一対象を再固定。
+- Execute: A1唯一ゲート、Decision Queue固定遷移、NoGo差戻し先A1を統一。
+- Verify: 固定キー差分0・依存矛盾0。
+- Proceed: Phase 5 へ。
 
-### Phase 3 Execute（契約ID・停止条件・Decision Queue参照整備）
+### Phase 5: Verify
+- Plan: AC/DoD検証手順を固定。
+- Execute: docs-checkと差分検証を実施。
+- Verify: 失敗時self-correction最大3回、4回目相当は停止。
+- Proceed: Pass時のみ Phase 6 へ。
 
-- Executed:
-  - `freezeContractId` と `contractIds` を全節で固定。
-  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` を統一参照化。
-  - Stop Conditions を `固定値差分 / Pending bypass / Self-Correction 3回超過 / 担当外編集要求` に統一。
-
-### Phase 4 Verify（AC/DoD整合検査）
-
-- Verification checks:
-  - AC: `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` の差分 0。
-  - DoD: `A1 -> A2 -> A3` と `NoGo -> A1差し戻し` が整合。
-  - 文書整合: 対象4ファイルで依存矛盾 0。
-
-### Phase 5 Proceed（handoff）
-
-- handoff 固定値一覧: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
-- handoff 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
-- handoff 差し戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-- 次担当者向け handoff（read-only）:
-  - A2/A3 は本書の契約値を再定義しない。
-  - NoGo 条件が1つでも成立した場合は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に差し戻す。
-  - 未承認事項は `Pending/held` を維持し、確定扱い禁止。
+### Phase 6: Proceed（handoff）
+- 固定値: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
+- 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
+- NoGo return path: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ## 4) Acceptance Criteria / DoD
 
@@ -89,7 +90,7 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 ### Definition of Done
 
-- Serial workflow（Plan -> Execute -> Verify -> Proceed）を本書で固定。
+- Serial workflow（Plan -> Execute -> Verify -> Proceed）が5ファイルで一致。
 - `safeModeDefault=ON` と `human_dual_control_only` 後退禁止が明文化。
 - NoGo時の唯一差し戻し先が A1 契約ファイルである。
 
@@ -102,14 +103,11 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 ## 6) Stop Conditions / Fail-safe
 
 - 即停止条件:
-  1. Self-Correction 3回超過
-  2. 前提崩壊
-  3. 未定義競合
-  4. 指定外ファイル編集要求または検知
-- 停止時即時報告:
-  - 失敗条件
-  - 影響範囲
-  - 人間に必要な判断
+  1. 固定値ドリフト検出
+  2. `Pending bypass` 要求
+  3. Self-Correction 3回超過
+  4. 前提崩壊 / 未定義競合
+  5. 指定外ファイル編集要求または検知
 
 ## 7) Next Step Fixed I/F（read-only）
 
