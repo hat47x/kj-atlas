@@ -679,3 +679,31 @@
   - `git diff --check`
 - 自己修復ポリシー: 不整合時は最大3回修復し、4回目相当で停止。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、推奨アクション維持、5Issue限定編集を満たす）。
+
+## 18) Stream I dedicated execution record (2026-04-21)
+
+### Phase 1 Read（対象ファイル再読）
+- 再読対象: 本Issue全文を再読し、`Requirement meta I/F`・`Proposed solution`・`Acceptance criteria`・`Validation plan` を確認。
+- スコープ固定: 指定対象3ファイル以外は編集禁止。
+
+### Phase 2 Plan（AC/DoD補完、対象ファイル再読後）
+- 再読実施: Plan開始時に本Issue本文を再読。
+- AC補完: Audience / Goal / 公開境界 / 次アクション / VerificationLevel一致を Proceed 判定の必須条件として維持。
+- DoD補完: 5Phase（Read→Plan→Execute→Verify→Proceed）を同一Issue本文で追跡可能にする。
+
+### Phase 3 Execute（対象ファイル再読後に実施）
+- 再読実施: Execute開始時に本Issue本文を再読。
+- 実施内容: 本Stream I専任記録（本節）を追記し、指定スコープ内での実行証跡を明文化。
+- ADR CDC判定: `DecisionStatus=Fixed` のため追加CDCは不要（必要時のみ明文化ルールを適用）。
+
+### Phase 4 Verify（対象ファイル再読後に実施）
+- 再読実施: Verify開始時に本Issue本文を再読。
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 失敗時の自己修復: 同一ファイル内で最大3回。4回目相当は停止し `Hold`。
+
+### Phase 5 Proceed（対象ファイル再読後に判定）
+- 再読実施: Proceed開始時に本Issue本文を再読。
+- 判定: **Ready**。
+- 停止条件: 3回超過修復 / 未定義競合 / 前提崩壊が発生した場合は作業停止して指示待ち。
