@@ -14,6 +14,10 @@
 - CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
 - CE0契約IDは再定義禁止（freeze対象）：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- CE0 Contract IDの追加・改名・削除を禁止する（freeze中の再定義不可）。
+- safeMode既定値（ON, `allowUnreviewedText=false`）の後退を禁止する。
+- 推測実装（speculative implementation）を禁止し、記載根拠は本Issue内の固定語彙/固定I/Fに限定する。
+- 致命エラー（Fail-safe該当）検知時は即停止し、`held` へ戻す。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
 - 強制ワークフローは **`Phase 1 Read → Phase 2 Plan（AC/DoD補完） → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`**。
 - **各Phase開始時は本Issueを最新再読してから開始する（再読省略禁止）。**
@@ -170,6 +174,11 @@
 ## Phase 5 Proceed（次工程向け固定契約の出力）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify結果とAC/DoDを再読し、未達項目があれば Proceed せず `held` に戻す。
+
+### Proceed判定の停止条件（fatal）
+- `contract_id_collision` / `vocabulary_collision` / `scope_deviation` のいずれかが残存する場合は Proceed しない。
+- SafeMode regression が1件でも検出された場合は即停止し、Phase 3へ巻き戻して再修復する。
+- docs-check が不合格の場合は最大3回まで自己修復し、4回目相当は停止する。
 
 ### Fixed contract handoff
 - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
