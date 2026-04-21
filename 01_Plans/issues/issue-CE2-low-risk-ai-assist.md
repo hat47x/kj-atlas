@@ -17,13 +17,17 @@
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
 - auto-apply は常時禁止。
 - `reviewState=human_reviewed` のAI自動昇格は禁止（人手のみ）。
+- `reviewState` は `unreviewed | human_reviewed` のみ許可し、AI提案は常に `unreviewed` に固定する。
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan（AC/DoD補完）→ Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
+- 各Phase開始時は必ず Read を実施し、前Phaseの固定契約との差分有無を確認してから進行する。
+- AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Execute を開始しない。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
 ## Stream E operation profile（契約固定）
 - 担当は Stream E 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
 - 編集範囲は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみとし、他ファイルは参照専用とする。
 - Phase運用は `Phase 1 Read → Phase 2 Plan → Phase 3 Execute（status: proposed|accepted|rejected|held）→ Phase 4 Verify（auto-apply禁止・review auto promotion禁止）→ Phase 5 Proceed` を固定する。
+- `accepted/rejected/held` は人手判断の結果としてのみ遷移可能とし、AIは `proposed` の候補提示に限定する。
 - 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
@@ -49,6 +53,7 @@
 - `CE0-SAFEMODE-IF` を参照し、CE2側で緩和しない
 
 ## Phase 2 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
+- 開始時Read: Phase 1 で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
@@ -66,6 +71,7 @@
 - ADR記述は必要時のみ `Context / Decision / Consequences` を明文化し、承認待ち中は `held` を維持する。
 
 ## Phase 3 Execute（patch/diff追跡可能性を明文化）
+- 開始時Read: Phase 2 で確定した AC/DoD 合意内容を再読し、未合意項目があれば `held` で停止する。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
@@ -76,6 +82,7 @@
 - 監査導線: `proposal` と `apply` の監査トレースを分離し、CE2は proposal-only 契約境界を維持する。
 
 ## Phase 4 Verify（safeMode後退ゼロを検証）
+- 開始時Read: Phase 3 の変更差分（proposal-only / no-auto-apply / human-only昇格）を再確認する。
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
 - `sourceBundleHash === bundleHash` を参照整合キーとして明示。
@@ -107,6 +114,7 @@
 - [ ] 未確定項目は `held` のまま次工程へ渡し、確定語彙へ昇格させない
 
 ## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
+- 開始時Read: Verify結果と fail-safe 判定条件（3回超過 / 前提崩壊 / 競合）を再確認する。
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
