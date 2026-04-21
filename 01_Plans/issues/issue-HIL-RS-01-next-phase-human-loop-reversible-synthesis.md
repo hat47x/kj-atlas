@@ -36,6 +36,8 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 ## 3) Serial Phase Management（強制）
 
+- 各 Phase で `Plan -> Execute -> Verify -> Proceed` を適用する。
+
 > 各 Phase 開始時に対象4ファイル（本書 / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`）を再読し、差分があれば Plan を更新してから実行する。
 
 ### Phase 1 Read（2026-04-21）
@@ -44,9 +46,10 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 - Result: 差分なし（`DiffCount=0`）
 - Proceed条件: 差分なしのみ Phase 2 へ
 
-### Phase 2 Plan（AC/DoD不足の追記案 + 合意）
+### Phase 2 Plan（AC/DoD不足の追記案 + 合意 / 判定軸明示）
 
 - 追記案（合意済み）:
+  - 判定軸（固定）: `a2a3Unlock / decisionQueueTransition / safeModeDefault`
   1. AC に `decisionQueueTransition` の固定参照を追加。
   2. DoD に「NoGo時の唯一差し戻し先=A1」を追加。
   3. Verifyに「依存矛盾ゼロ」を明文化。
@@ -68,6 +71,9 @@ HIL-RS-01 を **契約先行の計画正本** として固定し、A1/A2/A3 依�
 
 ### Phase 5 Proceed（handoff）
 
+- handoff 固定値一覧: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
+- handoff 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
+- handoff 差し戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 次担当者向け handoff（read-only）:
   - A2/A3 は本書の契約値を再定義しない。
   - NoGo 条件が1つでも成立した場合は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に差し戻す。
