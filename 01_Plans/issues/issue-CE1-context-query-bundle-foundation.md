@@ -226,3 +226,53 @@
 - CE2向け連携キーは `sourceBundleHash === bundleHash` のみを参照。
 - CE4向け連携キーは `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を参照。
 - フェイルセーフ監視: preview bypass許容化なし / Self-Correction 3回超過なし。
+
+---
+
+## Stream D Execution Record（2026-04-21 / CE1 I/F freeze reaffirmation）
+
+### Phase 1 Read（Status/Scope/Related ADR + 差分ゲート）
+- Read対象を再確認:
+  - 本Issueの Status / Scope / Related ADR
+  - `ADR-0028`（CE0→CE1依存順序、stop条件）
+  - `02_Architecture/schemas.md`（CE1 I/F語彙、error semantics、determinism要件）
+- 差分ゲート結果: **前提差分なし（continue）**。
+- CE0 read-only参照を再確認し、CE1側での再定義を禁止状態で維持。
+
+### Phase 2 Plan（AC/DoD不足提案・合意）
+- AC/DoD固定候補を再確認し、以下の不足補完を維持合意:
+  - 同一canonical queryで3回一致（`queryCanonicalHash` / `bundleHash`）
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - `sourceBundleHash === bundleHash`
+  - safeMode regression = 0
+- ADR CDC起票要否: 衝突未検知のため **起票不要**（`held`遷移なし）。
+
+### Phase 3 Execute（CE1契約語彙固定）
+- CE1契約語彙を再固定（contract-only、実装記述なし）:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- 逆流再定義禁止を明文化維持:
+  - CE0は read-only SSOT 参照のみ。
+  - CE1→CE0本文への再定義・再採番は禁止。
+
+### Phase 4 Verify（docs-check、自己修復上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（再試行不要）。
+
+### Phase 5 Proceed（handoff）
+- CE2/CE4への handoff は read-only 契約参照のまま継続。
+- 下流利用キーを固定維持:
+  - CE2: `sourceBundleHash === bundleHash`
+  - CE4: `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash`
+- 停止条件監視結果:
+  - preview bypass 許容化なし
+  - safeMode既定緩和なし
+  - 依存前提崩壊なし
+
+### ADR変更要求時の停止ルール（再確認）
+- ADR変更が必要になった場合は、**Context / Decision / Consequences を先に明文化し、承認待ち `held` で停止**する。
+- 未承認状態での契約確定・下流反映は禁止。
