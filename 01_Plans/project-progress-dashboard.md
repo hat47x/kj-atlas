@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-20 (JST, Stream J shared integration rerun-44)
+最終更新: 2026-04-21 (JST, Stream L shared integration rerun-45)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -715,3 +715,12 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute（単一変更セット）: 3ファイルのみを同時更新し、未承認決定の確定扱い・推測マージ・対象外ファイル編集を実施しない。
 - Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-44|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（再開判定1行確定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+
+## Stream L 共有統合同期ログ（2026-04-21 rerun-45, Phase 1-5）
+
+- Phase 1 Read（A〜K完了証跡確認）: shared resource 3ファイルを再読し、Stream A〜K の完了報告リンク、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を再確認。
+- Phase 2 Plan（件数/状態/Queue更新方針）: 更新対象を `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の3ファイルに限定し、単一変更セットで件数・Decision Queue・再開判定チェックリスト1行を同期する方針を固定。
+- Phase 3 Execute（単一変更セット）: 3共有ファイルのみを同時更新し、未承認決定の確定扱い・対象外ファイル編集・推測マージを実施しない。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-45|Stream A〜K|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で3ファイル整合を確認。
+- Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
