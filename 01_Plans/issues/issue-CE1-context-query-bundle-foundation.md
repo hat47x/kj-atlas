@@ -276,3 +276,44 @@
 ### ADR変更要求時の停止ルール（再確認）
 - ADR変更が必要になった場合は、**Context / Decision / Consequences を先に明文化し、承認待ち `held` で停止**する。
 - 未承認状態での契約確定・下流反映は禁止。
+
+---
+
+## Stream D Execution Record（2026-04-21 / phase-loop refresh）
+
+### Phase 1 Read（再読）
+- 本ファイルをPhase冒頭で再読し、Scope/Editableが `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- CE0 read-only境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+- 前提差分ゲート結果: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD補完の合意再確認）
+- AC/DoD固定ポイントを再確認:
+  - preview gate: `previewConfirmed=false -> 422 preview_required`
+  - closed-world: unknown keyは `400 unknown_contract_key`
+  - hash決定論: 同一canonical queryで `queryCanonicalHash` / `bundleHash` 3回一致
+  - エラー意味論固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- mock-first依存切断を維持し、実装待ち依存を追加しないことを再確認。
+
+### Phase 3 Execute（I/F契約固定のみ）
+- contract-onlyとして以下を再固定（実装記述なし）:
+  - `CE1-CTXQ-IF`
+  - `CE1-CTXB-IF`
+  - `CE1-HASH-DET-IF`
+  - `CE1-PREVIEW-GATE-IF`
+- CE2/CE4 handoffキーを再確認:
+  - CE2: `sourceBundleHash === bundleHash`
+  - CE4: `equivalenceKey + bundleHash`（AND）+ `queryCanonicalHash`
+
+### Phase 4 Verify（自己修復上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（再試行不要）。
+
+### Phase 5 Proceed（継続条件）
+- CE1契約は read-only handoff で継続（下流での再定義禁止）。
+- フェイルセーフ監視:
+  - preview bypass許容化なし
+  - safeMode既定緩和なし
+  - 契約語彙衝突なし
