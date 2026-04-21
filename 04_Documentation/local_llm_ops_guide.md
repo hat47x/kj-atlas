@@ -98,3 +98,18 @@ git diff --check
 - 上流正本（`02_Architecture/*`）との矛盾を検知。
 - SafeMode後退要求を検知。
 - Verify自己修復が3回を超過。
+
+## 8. 実行フェーズ固定（Read → Plan → Execute → Verify → Proceed）
+
+Local LLM 運用変更時は、次の順序を固定する。
+
+1. **Read**: `llm_provider_spec.md` / `runtime_parameter_registry.md` / `operations.md` を再確認する。
+2. **Plan**: 対象モード（Offline/Intranet/Enterprise）、変更対象の環境変数、監査4点セット確認方法を先に固定する。
+3. **Execute**: 設定反映と疎通確認を実施し、コマンド結果を記録する。
+4. **Verify**: `rg` と `git diff --check` で文書整合を確認する。
+5. **Proceed**: Go/No-Go を明示し、未解決事項があれば次サイクルへ引き継ぐ。
+
+フェイルセーフ:
+
+- Verify失敗時の自己修復は **最大3回**。
+- 3回で収束しない、または未定義競合を検知した場合は `StoppedForClarification` で停止する。

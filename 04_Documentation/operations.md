@@ -67,7 +67,7 @@
 - 運用手順側での判断余地が縮小し、AUTH-OPS-03 と運用文書のドリフトを抑制できる。
 - 公開runbookでも内部判断メモを持ち込まずに、再現可能な検証手順を維持できる。
 
-## 0.5 Stream F 横断同期チェック（architecture -> security -> guidelines -> e2e + operations runbook整合）
+## 0.5 Stream E 横断同期チェック（architecture -> security -> guidelines -> e2e + operations runbook整合）
 
 本書は `02_Architecture/strict_mode_exception_approval_flow.md` を起点に **architecture -> security -> guidelines -> e2e** の固定順序で同期し、operations は runbook整合確認先として同時照合する。次の3点を満たす場合のみ Go とする。
 
@@ -80,7 +80,7 @@
 相違が1つでもあれば No-Go とし、D1〜D4 不整合ゼロになるまで修復する。修復は最大3回までとし、4回目相当は `StoppedForClarification` で停止する。
 
 
-## 0.6 Phase6 Feedback Loop / KPI運用（Stream F）
+## 0.6 Phase6 Feedback Loop / KPI運用（Stream E）
 
 Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）と本書を同期する際は、**運用フィードバックとKPI監査を一本化** して次を固定する。
 
@@ -90,7 +90,7 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 - Gate E Proceed条件は **Go=記録確定後に進行、Conditional=再判定日+担当記録後に限定進行、No-Go=見送り理由+再判定日+担当記録まで停止**。
 - KPIしきい値は承認済み台帳のみ有効とし、未承認変更は適用しない。
 - 停止条件は **3回超過 / 前提崩れ / 未定義競合** の3項目を固定し、該当時は Proceed しない。
-- 2026-04-13 Read同期（Stream F）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
+- 2026-04-13 Read同期（Stream E）で、Gate C→D→E の単一路線、scorecard入力契約、停止条件一致を再確認した。
 
 ## 0.7 Proceed（未解決点の委譲先）
 
