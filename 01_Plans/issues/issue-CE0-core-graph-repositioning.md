@@ -15,7 +15,7 @@
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
 - `role / transition / no-go` 語彙は本Issueで固定し、同義語への置換や拡張定義を禁止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR Consensus → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
 - **各Phase開始時に必ずReadを実施**し、直前Phaseとの差分有無（語彙・禁止事項・SafeMode境界）を確認してから進行する。
 
 ## Phase 1 Read（role / transition / no-go語彙確認）
@@ -79,7 +79,7 @@
 ### AC/DoD不足時の扱い
 - AC/DoD不足を検知した場合は、本Issue内にAIドラフトを追記して**明示合意まで `held` 維持**とする。
 
-## Phase 3 ADR CDC（方針差分が必要な場合のみ）
+## Phase 3 ADR Consensus（方針差分が必要な場合のみ）
 ### Context
 - CE0 Core Graph責務境界を契約レベルで固定するため、方針差分の要否を最小化して判定する。
 
@@ -115,7 +115,7 @@
 - AC/DoD/Stop Conditions を再確認し、不足なし。
 - 本作業の変更範囲を本Issueファイル内の進行記録追記のみに固定。
 
-### Phase 3 ADR CDC
+### Phase 3 ADR Consensus
 - 判定: `No ADR delta`（方針差分なし）。
 
 ### Phase 4 Execute
@@ -149,7 +149,7 @@
 - AC/DoD不足は未検出のため追補提案は不要、既存AC/DoDで進行可能と判定。
 - 変更範囲を本Issue文書の契約記述整合と実行記録追記のみに固定。
 
-### Phase 3 ADR CDC
+### Phase 3 ADR Consensus
 - 最新Read後に判定し、`No ADR delta`（方針差分なし）。
 - 追加ADR起票や仕様拡張は行わず、contract-only維持。
 
