@@ -15,29 +15,8 @@
 
 A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化を防止する。
 
-## 1.1) Task Brief（Phase 2 Plan）
+## 2) Frozen Minimum Interface Contract
 
-- Scope:
-  - A1最小I/F契約の固定値・遷移条件の単一正本化。
-- Non-Goals:
-  - A2/A3側での契約値変更。
-  - `01_Plans/issues/` 以外の更新。
-- Acceptance Criteria:
-  - `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` が全対象ファイルで一致。
-  - 承認前項目は `Pending/held` のまま維持。
-- DoD:
-  - A1 が唯一の差戻し先であることを明示。
-  - `A1 -> A2 -> A3` と unlockRule の一意性を明示。
-- Validation:
-  - `docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）。
-- Stop Conditions:
-  - 固定値不一致。
-  - Pending bypass 要求。
-  - Self-Correction 3回超過。
-
-## 2) Contract Freeze（mock-first / read-only）
-
-- snapshotId=`MOCK-CONTRACT-SNAPSHOT-HIL-RS-v1`
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
 - `schemaVersion=1.0.0`
@@ -45,113 +24,75 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 - `safeModeDefault=ON`
+- `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 
-### 2.1) Phase 1 Read 差分確認（2026-04-20 固定）
+## 3) Serial Phase Management（強制）
 
-- 対象: `issue-HIL-RS-01-A1` / `issue-HIL-RS-01` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`
-- A1固定値差分:
-  - `schemaVersion`: 差分なし（`1.0.0`）
-  - `overridePolicy`: 差分なし（`human_dual_control_only`）
-  - `unlockRule`: 差分なし（`a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`）
-  - `decisionQueueTransition`: 差分なし（`Pending -> Approved | Pending -> Rejected`）
-  - `contractLinkLocked`: 差分なし（`true`）
-  - `sharedResourceFreeze`: 差分なし（`true`）
-  - `safeModeDefault`: 差分なし（`ON`）
-- 判定: `DiffCount=0`（Proceed可）
+> 各 Phase 開始時に対象4ファイル（`issue-HIL-RS-01` / 本書 / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`）を再読し、差分があれば Plan 更新後に実行する。
 
-## 3) ADR CDC（必要時のみ）
+### Phase 1 Read（2026-04-21）
 
-- Context:
-  - A1 が曖昧だと A2/A3 の Open 判定が不安定化する。
-- Decision（Draft / held）:
-  - Stream A は A1 契約識別子と遷移条件のみ固定し、下流は read-only 参照とする。
-- Consequences:
-  - 変更要求は `A1-CDC-only` へ差し戻し、A2/A3 で局所修正しない。
+- Check: `Status / Priority / AC / Dependencies`
+- Result: 差分なし（`DiffCount=0`）
 
-### 3.1) ADR合意ステータス（承認待ち）
+### Phase 2 Plan（追記案 + 合意）
 
-- ApprovalStatus: `Pending (Human approval required)`
-- ApprovalScope: `CDC Context/Decision/Consequences`
-- Pre-approval lock: `承認前は確定扱い禁止（契約凍結値は変更禁止）`
+- 追記案（合意済み）:
+  - AC に `decisionQueueTransition` の固定参照を追加。
+  - DoD に「A1が唯一差し戻し先」を追加。
+  - Verify に「依存矛盾ゼロ」を追加。
 
-## 4) State Transition Contract（固定）
+### Phase 3 Execute
 
-- Dependency order（唯一）:
-  - `A1 -> A2 -> A3`
-- Unlock rule（唯一）:
-  - `a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
-- Decision Queue（唯一）:
-  - `Pending -> Approved` または `Pending -> Rejected`
-- Prohibited:
-  - `Pending` bypass
-  - `a1Status!="Done"` での `A2/A3 Draft -> Open`
-  - A2/A3 issue 内で固定識別子の再定義
+- Executed:
+  - 契約ID・固定値・unlockRule を単一正本として再固定。
+  - Stop Conditions を4ファイルで同語彙へ統一。
+  - Decision Queue 参照を一意化。
 
-## 5) Acceptance Criteria / DoD
+### Phase 4 Verify
 
-- [x] CDC が明文化されている。
-- [x] Unlock rule が一意である。
-- [x] 固定識別子が Mock snapshot と一致している。
-- [x] `safeModeDefault=ON` と安全境界後退禁止が明示されている。
-- [x] Verify 失敗時の3回上限と停止条件が明示されている。
+- AC/DoD 整合結果:
+  - fixed keys diff = 0
+  - dependency contradiction = 0
+  - NoGo return path = A1（本書）で統一
 
-## 6) Serial Phase Protocol（強制）
+### Phase 5 Proceed（handoff）
 
-各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
+- 次担当者向け:
+  - A2/A3 は read-only 参照のみ。
+  - 契約差分要求は本書へ集約（A2/A3 で局所修正禁止）。
+  - `Pending/held` bypass 禁止。
 
-1. Phase 1 Read
-   - Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）の照合項目（依存順序 / unlockRule / fixed keys）を固定。
-   - Execute: `Status / Dependencies / Scope / fixed keys / unlockRule` を照合。
-   - Verify: 不一致 `DiffCount=0`。
-   - Proceed: 差分は即停止し Phase 2 Plan へ送る。
-2. Phase 2 Plan
-   - Plan: AC/DoD 不足（停止条件 / 差し戻し条件 / 検証条件）をドラフト化。
-   - Execute: ドラフトを既存契約語彙へ正規化して追記。
-   - Verify: 固定キーとの矛盾が0件。
-   - Proceed: 合意済みのみ Phase 3。
-3. Phase 3 ADR CDC（必要時）
-   - Plan: 方針差分がある場合のみ `Context / Decision / Consequences` を起票。
-   - Execute: 承認前は `Pending/held` として扱い、確定禁止を維持。
-   - Verify: 承認前の契約再定義が0件。
-   - Proceed: 承認済みのみ Phase 4。
-4. Phase 4 Execute
-   - Plan: `contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault` を再固定。
-   - Execute: A1契約本文と Downstream snapshot を同一値へ統一。
-   - Verify: `A1 -> A2 -> A3`・unlockRule の重複/逆転0件。
-   - Proceed: 一致時のみ Phase 5。
-5. Phase 5 Verify
-   - Plan: docs-check（validator / 語彙照合 / diff整合）を定義。
-   - Execute: docs-check 実施、失敗時Self-Correctionは最大3回。
-   - Verify: `validatorPass=true` かつ frozen keys 不一致0件。
-   - Proceed: 失敗3回超過時は即停止。
-6. Phase 6 Proceed
-   - Plan: 凍結I/Fスナップショット（read-only handoff）を確定。
-   - Execute: freezeContractId・fixed keys・Go/No-Go を出力。
-   - Verify: Downstream 変更禁止キーが一致。
-   - Proceed: A2/A3 へ参照専用で引き渡す。
+## 4) Acceptance Criteria / DoD
 
+### Acceptance Criteria
 
+- `schemaVersion / overridePolicy / unlockRule / decisionQueueTransition / safeModeDefault` が対象4ファイルで一致。
+- `A1 -> A2 -> A3` と `a2a3Unlock` が唯一条件として定義される。
 
-## 7) Go / No-Go（固定）
+### DoD
+
+- A1 が唯一の差し戻し先である。
+- Go/No-Go 判定式が他ファイルと一致する。
+- Verify 失敗時 Self-Correction は最大3回。
+
+## 5) ADR Rule
+
+- 追加/改訂が必要な場合のみ `Context / Decision / Consequences` を Draft 化。
+- 承認明示まで確定禁止（`Pending/held`）。
+- 現時点判定: 既存契約整合化のみのため新規 ADR なし。
+
+## 6) Go / No-Go（固定）
 
 - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
 - `Go = A2A3StartAllowed`
 - `NoGo = !A2A3StartAllowed`
+- `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## 8) Fail-safe
+## 7) Stop Conditions / Fail-safe
 
-- 即停止: Self-Correction 3回超過 / 未定義競合 / 前提崩壊 / 担当外編集要求。
-- 停止時報告:
-  1. 失敗条件
-  2. 影響I/F
-  3. 要承認事項
-
-## 9) Downstream Fixed I/F Snapshot（変更禁止）
-
-- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
-- `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
-- `schemaVersion=1.0.0`
-- `overridePolicy=human_dual_control_only`
-- `contractLinkLocked=true`
-- `sharedResourceFreeze=true`
-- `safeModeDefault=ON`
+- Self-Correction 3回超過
+- 前提崩壊
+- 未定義競合
+- 指定外ファイル編集要求または検知
