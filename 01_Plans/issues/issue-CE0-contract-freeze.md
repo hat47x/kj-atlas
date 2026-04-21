@@ -15,7 +15,7 @@
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
 - CE0契約IDは再定義禁止（freeze対象）：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは **`Phase 1 Read → Phase 2 Plan（AC/DoD補完） → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`**。
 - **各Phase開始時は本Issueを最新再読してから開始する（再読省略禁止）。**
 - 自己修復は Verify で最大3回まで。4回目相当は即停止する。
 
@@ -47,12 +47,12 @@
 - 比較・照合は上記5語彙ID（`preview_bypass` 等）を正本とし、日本語/英語表記揺れは括弧内同義語として扱う。
 - CE1/CE2/CE4へは語彙IDのみを受け渡し、下流文書で同義語を追加しても禁止判定の意味は拡張・縮退しない。
 
-## Phase 2 Plan（I/F Mock Freeze計画: ContextQuery / ContextBundle / Review 境界をI/Fのみ固定）
+## Phase 2 Plan（I/F Mock Freeze計画 + AC/DoD補完）
 ### 最新再読チェック（Phase開始ゲート）
 - Phase 1の固定語彙・No-Go語彙・Scopeを再読し、差分ゼロを確認してから着手する。
 
+### Plan方針
 - Freeze原則: CE1/CE2/CE4はCE0契約を再定義せず、I/F参照のみで固定する。
-- AC/DoD不足が見つかった場合は **提案を `held` で先に起票し、合意後にのみ freeze へ反映** する（先行確定禁止）。
 - CE1参照境界: `ContextQuery/ContextBundle` + hash決定論（`CE0-CTX-IF`参照のみ）。
 - CE2参照境界: proposal-only + review自動昇格禁止（`CE0-REVIEW-IF`参照のみ）。
 - CE4参照境界: 監査4点 `query/bundle/proposal/apply` と fail-closed（`CG-01..05`参照のみ）。
@@ -65,25 +65,27 @@
 | CE2 | `CE0-REVIEW-IF`（proposal-only / human昇格手動） | 状態遷移説明の補足のみ | auto-apply、AI review昇格 |
 | CE4 | `CG-01..05`（監査4点 / fail-closed） | 監査導線の注記のみ | 監査欠損の成功扱い、direct write |
 
-Freeze判定（全て必須）:
+### Freeze判定（全て必須）
 - 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向のみ（逆参照での再定義禁止）。
 - CE1/CE2/CE4は contract本文の複製を行わず、Contract ID参照のみ記述する。
 - 参照先に差分が必要な場合は CE0再起票（本Issue）を経由し、下流Issueで先行確定しない。
 - handoff本文は read-only（Contract ID参照のみ）とし、依存切断方針（mock-first）を維持する。
 
-## Phase 3 ADR CDC（方針差分時のみ Context / Decision / Consequences を記録し承認待ち）
-### 最新再読チェック（Phase開始ゲート）
-- CDCは「差分検知時のみ起票」の原則を再読し、未検知時の不要起票を禁止する。
+### AC/DoD補完（Phase 2で先に固定）
+- AC不足候補A: 「read-only参照」の判定根拠が曖昧。
+  - 補完: `Matrix` に「許可される変更はリンク更新/注記のみ」を必須条件としてDoDへ反映する。
+- AC不足候補B: No-Go語彙の表記揺れによる誤判定。
+  - 補完: 5語彙ID（`preview_bypass` ほか）を照合キーに固定し、自然言語は同義語扱いに限定する。
+- AC不足候補C: CDC発火条件の見落とし。
+  - 補完: `contract_id_collision | vocabulary_collision | scope_deviation` のいずれか検知時は `held` 記録を必須化する。
+- Status: `held`（承認待ち。確定運用は承認後）
 
-### CDC条件（変更が発生した場合のみ記録）
-- 差分検知ログ（Phase 1起点）: 契約ID衝突 / No-Go語彙揺れ / Scope逸脱のいずれかがあればCDC化する。
-- **Context**: 何の衝突・曖昧性を解消するか。
-- **Decision**: 既存契約IDを再定義せず、参照境界のみを明確化したこと。
-- **Consequences**: CE1/CE2/CE4の依存先が一意化されること。
-- **Approval**: 反映状態は `held` とし、承認前確定を禁止する。
-- 衝突未検知時（`contract_id_collision=0` かつ `vocabulary_collision=0` かつ `scope_deviation=0`）はCDCを起票しない。
+### ADR CDC（必要時のみ）
+- 原則: 差分検知時のみCDCを起票し、**`held`（承認待ち）** を維持して次Phaseへ進む。
+- Trigger: `contract_id_collision` / `vocabulary_collision` / `scope_deviation`。
+- 未検知（すべて0）の場合はCDC起票しない。
 
-### ADR CDC起票テンプレ（必要時のみ）
+#### CDCテンプレ（必要時のみ）
 ```md
 #### CDC-CE0-<yyyymmdd>-<seq>
 - Status: held（承認待ち）
@@ -102,12 +104,7 @@ Freeze判定（全て必須）:
   - due:
 ```
 
-### 凍結判定
-- Contract ID collision = 0
-- Vocabulary collision = 0（`Consensus Graph / WorkingGraph / ContextProjectionGraph`）
-- 承認前は `provisional`、承認後のみ `frozen`
-
-## Phase 4 Execute（Plan反映のみ。契約再定義・実装変更なし）
+## Phase 3 Execute（Plan反映のみ。契約再定義・実装変更なし）
 ### 最新再読チェック（Phase開始ゲート）
 - CE0 Contract IDs再定義禁止、proposal-only、safeMode既定維持を再確認する。
 
@@ -115,22 +112,13 @@ Freeze判定（全て必須）:
 - CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ。
 - CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する。
 - No-Go語彙IDの照合観点をCE0に明記し、下流への受け渡しは語彙ID参照のみとする。
-- AC/DoD不足があれば CE0側で補完提案を先に明文化し、承認前は `held` とする。
+- Phase 2で `held` 化したAC/DoD補完提案は、承認前に確定扱いしない。
 
-### AC/DoD不足ドラフト（CE0で先に固定）
-- AC不足候補A: 「read-only参照」の判定根拠が曖昧
-  - 追記案: `Matrix` に「許可される変更はリンク更新/注記のみ」を必須条件として明記済みであることをDoDに含める。
-- AC不足候補B: No-Go語彙の表記揺れによる誤判定
-  - 追記案: 5語彙ID（`preview_bypass` ほか）を照合キーに固定し、自然言語は同義語扱いに限定する。
-- AC不足候補C: CDC発火条件の見落とし
-  - 追記案: `contract_id_collision | vocabulary_collision | scope_deviation` のいずれか検知時は `held` 記録を必須化する。
-- Status: `held`（承認待ち。確定運用は承認後）
-
-### Execute
-- collision=0 / safeMode regression=0 を満たす記述へ整理。
+### Execute結果条件
+- `collision=0` / `safeMode regression=0` を満たす記述へ整理。
 - 検証失敗時は自己修復を最大3回まで実施し、4回目相当は停止する。
 
-## Phase 5 Verify（docs-check自己検証）
+## Phase 4 Verify（docs-check自己検証）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify対象は docs-check のみ。実装変更・指定外編集が混入していないことを再確認する。
 
@@ -147,8 +135,9 @@ Freeze判定（全て必須）:
 - [ ] CE1/CE2/CE4参照境界を再定義なしで説明可能
 - [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
 - [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
+- [ ] Phase 2で補完したAC/DoD案が `held` と承認待ちステータスで追跡可能
 
-## Phase 6 Proceed（次工程向け固定契約の出力）
+## Phase 5 Proceed（次工程向け固定契約の出力）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify結果とAC/DoDを再読し、未達項目があれば Proceed せず `held` に戻す。
 
