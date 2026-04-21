@@ -80,13 +80,42 @@ export function buildQueryPreviewState(draft: ContextQueryDraft): QueryPreviewSt
 }
 
 export type RunMockContextIntegrationResult =
+  | { canSubmit: false; statusCode: 400; errorCode: "unknown_contract_key"; unknownKeys: string[] }
   | { canSubmit: false; statusCode: 422; errorCode: "preview_required" | "invalid_query"; blockers: string[] }
   | { canSubmit: true; statusCode: 200; bundleHash: string; excludedReason: string[] };
+
+const CONTEXT_QUERY_V1_KEYS = new Set([
+  "queryId",
+  "goal",
+  "scope",
+  "depth",
+  "constraints",
+  "reviewFilter",
+  "safeModePolicy",
+  "outputMode",
+  "previewConfirmed",
+]);
+
+function findUnknownContractKeys(draft: ContextQueryDraft): string[] {
+  return Object.keys(draft as Record<string, unknown>)
+    .filter((key) => !CONTEXT_QUERY_V1_KEYS.has(key))
+    .sort((left, right) => left.localeCompare(right));
+}
 
 export async function runMockContextIntegration(
   draft: ContextQueryDraft,
   postBundle: (query: ContextQueryDraft) => Promise<ContextBundleMock>,
 ): Promise<RunMockContextIntegrationResult> {
+  const unknownKeys = findUnknownContractKeys(draft);
+  if (unknownKeys.length > 0) {
+    return {
+      canSubmit: false,
+      statusCode: 400,
+      errorCode: "unknown_contract_key",
+      unknownKeys,
+    };
+  }
+
   const preview = buildQueryPreviewState(draft);
   if (!preview.canSubmit) {
     const hasPreviewGateBlocker = preview.blockers.includes("previewConfirmed must be true before submit");
