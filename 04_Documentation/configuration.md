@@ -115,3 +115,30 @@ docker compose up -d
 3. 追加/改名パラメータの正本が `02_Architecture/runtime_parameter_registry.md` であることを明記している。
 
 いずれか未充足の場合は「No-Go」として公開更新を停止します。
+
+## Stream D serial cycle（2026-04-21 / DOC-OPS-05-03 前半 docs-only）
+
+### Phase 1 Read
+- 本書と対応Issue（`issue-doc-ops-05-03-04doc-configuration.md`）を再読し、公開境界と `Classification=Improve external` を確認。
+- 編集範囲を docs-only（本ファイルのみ）に固定し、担当外ファイルへ非接触で進行する。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC:
+  1. 既定安全値（`KJ_ATLAS_LLM_PROVIDER=none`、監査外部送信OFF既定）が明確であること。
+  2. 環境変数の正本が `02_Architecture/runtime_parameter_registry.md` である導線が維持されること。
+- DoD:
+  1. Read → Plan → Execute → Verify → Proceed を記録すること。
+  2. Verifyで docs-check を実施し、失敗時は3回以内の自己修復に限定すること。
+
+### Phase 3 Execute
+- 本節を追記し、Stream D 前半担当の実行証跡を追加。
+- 変数仕様の新規決定は行わず、既存公開ガイドの責務（最小安全設定と確認手順）を維持。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Related|Go/No-Go|KJ_ATLAS_LLM_PROVIDER=none|Stream D serial cycle" 04_Documentation/configuration.md`
+- `git diff --check`
+- 自己修復は最大3回。4回目相当は停止して Hold。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 次アクション: 追加/改名パラメータ発生時は runtime parameter registry と同時同期する。
