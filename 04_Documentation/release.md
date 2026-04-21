@@ -101,3 +101,18 @@ No-Go 条件:
 rg -n "Audience|This document decides|This document does not decide|SemVer|Go/No-Go|CHANGELOG|tag|Release" 04_Documentation/release.md
 git diff --check
 ```
+
+## 9. 実行フェーズ固定（Read → Plan → Execute → Verify → Proceed）
+
+リリース作業は次の順序を固定し、順序入れ替えや省略を行わない。
+
+1. **Read**: 本書、`CHANGELOG.md`、関連runbook（`operations.md`）を再読し、今回の対象範囲を明確化する。
+2. **Plan**: リリース対象、実施コマンド、Go/No-Go判定観点、未実施時の記録先を先に固定する。
+3. **Execute**: 前節の手順（テスト・ビルド・タグ作成）を実行し、実行ログを残す。
+4. **Verify**: 本節の `rg` / `git diff --check` を含めて整合確認する。
+5. **Proceed**: 判定（Go / No-Go）と未解決項目を記録し、次アクションへ進む。
+
+フェイルセーフ:
+
+- Verify で不整合が出た場合の自己修復は **最大3回** まで。
+- 3回で収束しない場合は `StoppedForClarification` として停止し、判断要求を記録する。
