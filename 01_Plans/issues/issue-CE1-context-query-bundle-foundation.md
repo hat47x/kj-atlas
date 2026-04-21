@@ -15,9 +15,11 @@
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - CE0契約参照は必須、CE1側で再定義しない。
 - 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向に固定し、CE1からCE0契約本文への逆流再定義を禁止する。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR CDC → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`。
+- 各Phaseの冒頭で本対象ファイルを再読し、前提差分を再確認する。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+- Phase sync: 本対象ファイルを基準版として再読開始。
 ### Read log（このIssueで参照確認した対象）
 - Status / Scope / Related ADR: 本Issueヘッダ + `ADR-0028` + `02_Architecture/schemas.md`
 - CE0 read-only境界: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
@@ -55,6 +57,7 @@
 - `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 
 ## Phase 2 Plan（AC/DoD不足ドラフト）
+- Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
 ### Gap draft（不足補完）
 - AC不足補完1: hash決定論の検証回数を明示（同一canonical queryで3回一致）。
 - AC不足補完2: preview gateの失敗コード/語彙を固定（`422 preview_required`）。
@@ -74,7 +77,7 @@
 - unknown key -> `400 unknown_contract_key` を契約として固定。
 - 同一 canonical query で `queryCanonicalHash/bundleHash` 一致を契約として固定。
 
-## Phase 3 ADR CDC（衝突検知時のみ Context / Decision / Consequences を起票し承認待ち）
+## ADR CDC（衝突検知時のみ Context / Decision / Consequences を起票し承認待ち）
 - 差分検知ログ対象: `equivalenceKey + bundleHash` / `sourceBundleHash` / error semantics の語彙揺れ / No-Go語彙不一致 / CE0契約ID衝突。
 - 衝突未検知時（contract_id_collision=0 かつ vocabulary_collision=0）はCDCを起票しない。
 - CDC起票時のStatus: `held`（承認待ち、未承認確定禁止）。
@@ -90,7 +93,8 @@
 - Decision: `v1で固定するI/F差分（再定義なし）`
 - Consequences: `CE2/CE4 handoff影響` / `safeMode回帰リスク`
 
-## Phase 4 Execute（ContextQuery/Bundle v1 closed-world, preview_required, hash決定論）
+## Phase 3 Execute（ContextQuery/Bundle v1 closed-world, preview_required, hash決定論）
+- Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
 ### I/F Mock Freeze（実装記述なし）
 - 固定I/F（v1 / closed-world）
   - `ContextQueryV1` は未定義キーを許容しない（`400 unknown_contract_key`）。
@@ -113,7 +117,8 @@
 - 契約語彙の未定義競合（CE0/CE2/CE4間）が解消不能なら停止。
 - Self-Correction 3回超過で停止。
 
-## Phase 5 Verify（docs-check / 修復3回まで）
+## Phase 4 Verify（docs-check / 修復3回まで）
+- Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
 ### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
@@ -127,7 +132,8 @@
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE2/CE4と一致
 - [ ] SafeMode regression = 0
 
-## Phase 6 Proceed（CE2/CE4連携キー handoff）
+## Phase 5 Proceed（CE2/CE4連携キー handoff）
+- Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
 ### Fixed contract handoff
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
