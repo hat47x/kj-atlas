@@ -5,6 +5,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from kj_atlas_api.models import DocumentV2
 
 
+SOURCE_BUNDLE_HASH_PATTERN = r"^(?:[0-9a-f]{64}|mock:[0-9a-f]{64})$"
+
+
 class NarrativeIssueReference(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -122,7 +125,7 @@ class ProposalEnvelope(BaseModel):
     type: Literal["island_summary"]
     status: Literal["proposed", "accepted", "rejected", "held"]
     reviewState: Literal["unreviewed", "reviewed"] = "unreviewed"
-    sourceBundleHash: str = Field(min_length=1)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
     diff: ProposalDiff
     rationale: str = Field(min_length=1)
 
@@ -132,7 +135,7 @@ class ProposeIslandSummaryRequest(BaseModel):
 
     doc: DocumentV2
     islandId: str = Field(min_length=1)
-    sourceBundleHash: str = Field(min_length=1)
+    sourceBundleHash: str = Field(pattern=SOURCE_BUNDLE_HASH_PATTERN)
 
 
 class ProposalDecisionAuditRequest(BaseModel):

@@ -20,7 +20,7 @@ def _payload() -> dict:
             "islands": [{"id": "i1", "cardIds": ["c1", "c2"], "summaryText": "old summary"}],
         },
         "islandId": "i1",
-        "sourceBundleHash": "bundle-hash-1",
+        "sourceBundleHash": "a" * 64,
     }
 
 
@@ -41,7 +41,7 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
     assert body["proposalId"].startswith("proposal-")
     assert body["status"] == "proposed"
     assert body["reviewState"] == "unreviewed"
-    assert body["sourceBundleHash"] == "bundle-hash-1"
+    assert body["sourceBundleHash"] == "a" * 64
     assert body["diff"]["before"] == "old summary"
     assert isinstance(body["diff"]["after"], str) and body["diff"]["after"].strip() != ""
 
@@ -64,3 +64,11 @@ def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promot
             assert response.status_code == 200
             assert response.json()["status"] == expected_status
             assert response.json()["reviewState"] == "unreviewed"
+
+
+def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:
+    payload = _payload()
+    payload["sourceBundleHash"] = "invalid-hash"
+    with TestClient(app) as client:
+        response = client.post("/ai/proposals/island-summary", json=payload)
+    assert response.status_code == 422
