@@ -799,3 +799,25 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類=Improve external、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
+
+## 18) Stream H Set-1 execution record (2026-04-21, serial-1: configuration)
+
+### Phase: Read
+- 対象Issue本文を再読し、`Requirement meta I/F` と `DecisionStatus=Fixed`、`VerificationLevel=docs-check` を確認。
+- 対象Doc（`04_Documentation/configuration.md`）の分類方針が `Improve external` で一貫していることを再確認。
+
+### Phase: Plan
+- 本Issueの主責務を「公開設定ガイドとしての改善方針固定」に限定。
+- AC焦点を `Audience / Goal / Public boundary / Next action` の4点で再固定。
+
+### Phase: Execute
+- Stream H の直列運用ログとして本節を追加し、各Phaseの判定根拠を明文化。
+- 既存の分類・Gate定義（Required / docs-check / Fixed）は変更せず維持。
+
+### Phase: Verify
+- `git diff --check` で体裁崩れがないことを確認。
+- docs-only変更であるため、追加のunit/integration/e2eは非対象。
+
+### Phase: Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/configuration.md` の公開読者向け導線（前提・確認手順・正本参照）を改善する docs-only PR を継続。

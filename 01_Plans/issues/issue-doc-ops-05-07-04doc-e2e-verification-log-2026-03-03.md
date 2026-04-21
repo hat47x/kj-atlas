@@ -734,3 +734,25 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類=Move internal、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
+
+## 18) Stream H Set-1 execution record (2026-04-21, serial-4: e2e-verification-log)
+
+### Phase: Read
+- 対象Issue本文を再読し、`RequirementID=DOC-OPS-05-07` と分類 `Move internal` を確認。
+- 対象が日付付き運用証跡であり、公開文書より内部記録に適することを再確認。
+
+### Phase: Plan
+- 本Issueの主責務を「E2E実測ログの内部移管方針固定」に限定。
+- 判定観点を `Audience / Goal / Public boundary / Move destination` の4点に固定。
+
+### Phase: Execute
+- Stream H 直列4件目として、5Phase実行ログを本Issueに追記。
+- 既存Decision（Move internal / Fixed / docs-check）は変更せず、実行順序の監査性のみ補強。
+
+### Phase: Verify
+- `git diff --check` を実行し、Markdown差分の整形崩れがないことを確認。
+- docs-only変更のため、追加の自動テストは実施対象外。
+
+### Phase: Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation` から内部保管先（`01_Plans` 配下または archive）へ移管するdocs-only PRを起票。

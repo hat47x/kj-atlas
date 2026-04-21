@@ -758,3 +758,25 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類=Improve external、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
+
+## 18) Stream H Set-1 execution record (2026-04-21, serial-3: e2e-testing)
+
+### Phase: Read
+- 対象Issue本文を再読し、`Scope=04_Documentation/e2e_testing.md` と `Expected verification level=docs-check` を確認。
+- 分類方針 `Improve external`（公開runbook改善）が維持されていることを再確認。
+
+### Phase: Plan
+- 本Issueの主責務を「E2E手順の公開品質改善計画固定」に限定。
+- 判定軸は `Audience / Goal / Public boundary / GoNoGoGate` を必須項目として維持。
+
+### Phase: Execute
+- Stream H の直列3件目として、5Phaseログ（Read→Plan→Execute→Verify→Proceed）を追記。
+- 既存方針（docs-only、DecisionStatus=Fixed）を変更せず、記録の再現性のみ強化。
+
+### Phase: Verify
+- `git diff --check` を実行し、体裁崩れがないことを確認。
+- 本作業はissueメモ更新のみのため、実行系E2Eテストは対象外。
+
+### Phase: Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/e2e_testing.md` の実行前提・結果判定・失敗時導線を公開向けに整理するPRへ進む。

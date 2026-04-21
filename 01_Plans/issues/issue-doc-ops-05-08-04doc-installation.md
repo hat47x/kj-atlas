@@ -823,3 +823,25 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 18) Stream H Set-1 execution record (2026-04-21, serial-2: installation)
+
+### Phase: Read
+- 対象Issue本文を再読し、`RequirementID=DOC-OPS-05-08` と `DecisionStatus=Fixed` を確認。
+- 対象Doc（`04_Documentation/installation.md`）の分類が `Improve external` であることを再確認。
+
+### Phase: Plan
+- 本Issueの主責務を「初回導入者向け情報の公開改善計画固定」に限定。
+- 必須判定点を `Audience / Goal / Public boundary / Validation` の4点で維持。
+
+### Phase: Execute
+- Stream H 直列2件目として、Read→Plan→Execute→Verify→Proceed の5Phase記録を追加。
+- 既存のGoNoGoGate=Required と VerificationLevel=docs-check の定義は維持。
+
+### Phase: Verify
+- `git diff --check` によりMarkdown体裁の破損がないことを確認。
+- docs-only変更のため、追加テストは不要（差分検証を実施）。
+
+### Phase: Proceed
+- 判定: **Ready**。
+- 次アクション: installation ガイドの公開品質改善（前提条件・成功確認・関連導線の明示）を後続PRで実施。
