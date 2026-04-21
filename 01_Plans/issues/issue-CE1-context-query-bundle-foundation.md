@@ -191,3 +191,38 @@
   - Self-Correction 3回超過: 該当なし
   - 未定義競合: 該当なし
   - 前提崩壊: 該当なし
+
+---
+
+## Stream D Execution Record（2026-04-21 / contract freeze re-check）
+
+### Phase 1 Read（CE0参照境界・差分ゲート確認）
+- CE0 read-only境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再確認。
+- 差分ゲート判定: **前提差分なし（continue）**。
+- 停止監視対象（改名・語彙変更・safeMode既定変更）: 未検知。
+
+### Phase 2 Plan（AC/DoDドラフト合意の再確認）
+- 固定対象を再確認:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - hash決定論（同一canonical queryで3回一致）
+  - `sourceBundleHash === bundleHash`
+  - safeMode regression = 0
+
+### Phase 3 Execute（CE1固定契約のみ）
+- 固定契約IDを維持:
+  - `CE1-CTXQ-IF`
+  - `CE1-CTXB-IF`
+  - `CE1-HASH-DET-IF`
+  - `CE1-PREVIEW-GATE-IF`
+- contract-only範囲を維持し、実装記述の追加なし。
+
+### Phase 4 Verify（語彙/禁止事項/safeMode境界）
+- `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙固定を再確認。
+- No-Go語彙（`preview_bypass` ほかCE0 canonical 5 IDs）の不許容を再確認。
+- safeMode既定緩和なし（回帰兆候なし）。
+
+### Phase 5 Proceed（CE2/CE4連携参照メモ）
+- CE2向け連携キーは `sourceBundleHash === bundleHash` のみを参照。
+- CE4向け連携キーは `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を参照。
+- フェイルセーフ監視: preview bypass許容化なし / Self-Correction 3回超過なし。
