@@ -27,48 +27,44 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 
-## 3) Serial Phase Management（強制）
+## 3) Serial Phase Protocol（強制）
 
-- 各 Phase で `Plan -> Execute -> Verify -> Proceed` を適用する。
+各Phaseは **開始時に対象5ファイルを再読** し、`Plan -> Execute -> Verify -> Proceed` を順に実施する。
 
-> 各 Phase 開始時に対象4ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / 本書 / `issue-HIL-RS-02-A1`）を再読し、差分検知時は Plan 更新を先行する。
+### Phase 1: Read & Baseline（2026-04-21）
+- Plan: `Status / Priority / Dependencies / AC / DoD` 比較軸を固定。
+- Execute: 5ファイルの固定値・依存順序・停止条件を照合。
+- Verify: `DiffCount=0`。
+- Proceed: 差分検知時は Plan 更新を先行。
 
-### Phase 1 Read（2026-04-21）
+### Phase 2: Plan（合意済み）
+- Plan: `A1 -> A2 -> A3`、unlockRule、decisionQueueTransition、NoGo return path を SSOT へ収束。
+- Execute: ACにDecision Queue固定遷移、DoDにA1差戻し固定、Verifyに依存矛盾ゼロを明示。
+- Verify: 判定式・語彙の揺れがない。
+- Proceed: CDC必要時は Phase 3。
 
-- Check: `Status / Priority / AC / Dependencies`
-- Result: 差分なし（`DiffCount=0`）
+### Phase 3: ADR CDC Gate
+- Plan: ADR改訂要否を判定。
+- Execute: 契約整合化のみでADR変更なし。
+- Verify: 承認待ちCDCなし。
+- Proceed: Phase 4。
 
-### Phase 2 Plan（追記案 + 合意 / 判定軸明示）
+### Phase 4: Execute
+- Plan: 契約ID・凍結キー・停止条件を統一。
+- Execute: A1唯一ゲート、Pending bypass禁止、NoGo時A1差戻しを統一記述。
+- Verify: AC diff check=0、DoD consistency=OK。
+- Proceed: Phase 5。
 
-- 追記案（合意済み）:
-  - 判定軸（固定）: `a2a3Unlock / decisionQueueTransition / safeModeDefault`
-  - AC に Decision Queue 固定参照を追加。
-  - DoD に「NoGo時のA1差し戻し固定」を追加。
-  - Verify に「依存矛盾ゼロ」の明記を追加。
+### Phase 5: Verify
+- Plan: docs-check観点を固定。
+- Execute: `docs-check` と `git diff --check`。
+- Verify: 失敗時self-correctionは最大3回。
+- Proceed: Pass時のみ Phase 6。
 
-### Phase 3 Execute
-
-- Executed:
-  - 契約ID・凍結キー・unlockRule を統一。
-  - 停止条件を4ファイルで一致化。
-  - Decision Queue 参照を固定語彙化。
-
-### Phase 4 Verify
-
-- Verification:
-  - AC diff check = 0
-  - DoD consistency check = OK
-  - 文書整合（依存矛盾）= 0
-
-### Phase 5 Proceed（handoff）
-
-- handoff 固定値一覧: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
-- handoff 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
-- handoff 差し戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-- 次担当者向け:
-  - A2/A3 は read-only 参照のみ。
-  - NoGo時は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ差し戻し。
-  - `Pending/held` を承認前に解除しない。
+### Phase 6: Proceed（handoff）
+- handoff固定値: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
+- handoff禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
+- handoff差戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ## 4) Acceptance Criteria / DoD
 
@@ -101,6 +97,7 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 ## 7) Stop Conditions / Fail-safe
 
 - 固定値ドリフト検出
-- Pending bypass 要求
+- `Pending bypass` 要求
 - Self-Correction 3回超過
+- 前提崩壊 / 未定義競合
 - 指定外ファイル編集要求または検知
