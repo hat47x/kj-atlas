@@ -149,3 +149,39 @@
 - 未定義ファイル競合
 - SafeMode後退の兆候
 - 依存前提崩壊
+
+---
+
+## Stream D Execution Record（2026-04-21 / docs-only）
+
+### Phase 1 Read（対象ファイル再読）
+- 再読対象: `issue-CE1-context-query-bundle-foundation.md`（本ファイル）
+- 判定: Scopeは `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみで維持。
+- 独立性チェック: 指定外ファイル編集なし。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC/DoD補完方針を再確認し、v1契約の固定対象を以下で維持:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一canonical queryで `queryCanonicalHash` / `bundleHash` の決定論一致（3回）
+  - CE2/CE4 handoff key: `sourceBundleHash === bundleHash`
+  - safeMode regression = 0
+- CDC起票要否: 衝突未検知のため **起票不要**（`held`遷移なし）。
+
+### Phase 3 Execute（contract-only整備）
+- 実施内容: 本Issue内の運用記録を追加（実装記述は追加しない）。
+- 禁止事項再確認: preview bypass / safeMode既定緩和 / 契約再定義を未実施。
+
+### Phase 4 Verify（最大3回自己修復ルール）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0回（再試行不要）。
+
+### Phase 5 Proceed（次レーン引き渡し条件）
+- CE1固定契約語彙は維持し、CE2/CE4へは read-only handoff を継続。
+- 停止条件監視:
+  - Self-Correction 3回超過: 該当なし
+  - 未定義競合: 該当なし
+  - 前提崩壊: 該当なし
