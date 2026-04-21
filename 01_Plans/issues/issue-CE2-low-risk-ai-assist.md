@@ -17,7 +17,7 @@
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
 - auto-apply は常時禁止。
 - `reviewState=human_reviewed` のAI自動昇格は禁止（人手のみ）。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 CDC → Phase 4 Execute → Phase 5 Verify → Proceed` に固定する。
+- 強制ワークフローは `Phase 1 Read → Phase 2 Plan（AC/DoD補完）→ Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
@@ -42,7 +42,7 @@
 - AIによる `human_reviewed` 自動昇格禁止
 - `CE0-SAFEMODE-IF` を参照し、CE2側で緩和しない
 
-## Phase 2 Plan（候補提示限定・自動採用禁止・review自動昇格禁止をACに固定）
+## Phase 2 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
@@ -52,13 +52,13 @@
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
 
-## Phase 3 CDC（Contract Drift Check）
-- 目的: CE2契約の再定義を防ぎ、proposal-only / no-auto-apply / human-only昇格を固定化する。
+### ADR/CDC（必要時のみ実施）
+- 条件: CE2契約語彙（lifecycle / `sourceBundleHash` / `reviewState` / No-Go語彙）に変更要求が出た場合。
+- 手順: CDCを明文化し、`status=held` で承認待ちに遷移してから次Phaseへ進む。
 - 比較対象: `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CE1-CTXB-IF`（参照のみ）。
-- drift検知キー: lifecycle語彙、`sourceBundleHash`、`reviewState`、No-Go語彙。
-- 判定: 不一致が1件でもあれば `status=held` で停止し、再定義なしで差分理由のみ記録する。
+- 判定: 不一致が1件でもあれば差分理由のみ記録し、CE2で再定義しない。
 
-## Phase 4 Execute（patch/diff追跡可能性を明文化）
+## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
@@ -68,7 +68,7 @@
 - 追跡可能性要件: すべての提案変更は `proposalId` をキーに `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能であること。
 - 監査導線: `proposal` と `apply` の監査トレースを分離し、CE2は proposal-only 契約境界を維持する。
 
-## Phase 5 Verify（safeMode後退ゼロを検証）
+## Phase 4 Verify（safeMode後退ゼロを検証）
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
 - `sourceBundleHash === bundleHash` を参照整合キーとして明示。
@@ -96,8 +96,10 @@
 - [ ] lifecycle語彙が `proposed|accepted|rejected|held` 以外を含まない
 - [ ] CE4 handoff は read-only を維持する
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
+- [ ] 変更対象ファイルが `issue-CE2-low-risk-ai-assist.md` のみである
+- [ ] 未確定項目は `held` のまま次工程へ渡し、確定語彙へ昇格させない
 
-## Proceed（未確定は保留、3回超過や前提崩壊で停止）
+## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
