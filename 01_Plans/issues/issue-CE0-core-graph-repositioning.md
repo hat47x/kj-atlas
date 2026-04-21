@@ -137,3 +137,32 @@
 - [x] 未承認事項を確定化していない（`held/pending` 維持）。
 - [x] 実装記述（handler/UI/DB/worker）を追加していない。
 - [x] `docs-check` を実行し結果を確認した。
+
+
+## Phase Execution Record（2026-04-21 / Stream C / role-transition-no-go freeze update）
+### Phase 1 Read
+- 最新Readを実施し、`role / transition / no-go` 固定語彙とSafeMode境界に差分なし。
+- CE0契約ID群（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみで再定義なし。
+
+### Phase 2 Plan
+- 目的を「`role / transition / no-go` 語彙の契約固定（実装禁止）」に限定。
+- AC/DoD不足は未検出のため追補提案は不要、既存AC/DoDで進行可能と判定。
+- 変更範囲を本Issue文書の契約記述整合と実行記録追記のみに固定。
+
+### Phase 3 ADR CDC
+- 最新Read後に判定し、`No ADR delta`（方針差分なし）。
+- 追加ADR起票や仕様拡張は行わず、contract-only維持。
+
+### Phase 4 Execute
+- `role`: `working` / `context_projection` / `consensus` を固定語彙として維持。
+- `transition`: 許可遷移を `working -> consensus` の `patch+approval` のみに固定。
+- `no-go`: canonical 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）以外を追加・置換しない。
+- 実装記述（handler/UI/DB/worker/API/Schema migration）を追加しない。
+
+### Phase 5 Verify
+- 最新Read後に `docs-check` を実行し、pass。
+- `git diff --check` を実行し、空白エラー等なし。
+
+### Phase 6 Proceed
+- 判定: `Done`（既存AC/DoDを満たし、docs-check pass）。
+- 未承認事項在庫: なし（`held/pending` の新規発生なし）。
