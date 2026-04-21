@@ -30,6 +30,13 @@
 - `accepted/rejected/held` は人手判断の結果としてのみ遷移可能とし、AIは `proposed` の候補提示に限定する。
 - 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
 
+### Stream E fixed gate（本Issue内での運用固定）
+- Gate-1（proposal-only）: CE2は提案文言の作成・更新に限定し、実装/auto-apply経路を作らない。
+- Gate-2（lifecycle固定）: `proposed | accepted | rejected | held` 以外の語彙を導入しない。
+- Gate-3（review昇格禁止）: AI提案の `reviewState` は常に `unreviewed`。`human_reviewed` は人手操作のみ。
+- Gate-4（AC/DoD先行）: AC/DoD不足時は先にドラフト提案と人手合意を完了し、Executeに進まない。
+- Gate-5（自己修復上限）: 検証失敗時の自己修復は最大3回。4回目相当は fail-safe 停止。
+
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Read同期スナップショット
 - 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
