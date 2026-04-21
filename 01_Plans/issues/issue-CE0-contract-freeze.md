@@ -23,6 +23,8 @@
 ### 最新再読チェック（Phase開始ゲート）
 - 対象ファイル: `issue-CE0-contract-freeze.md`（本書のみ）
 - CE0 SSOT再定義禁止 / 実装禁止 / 指定外編集禁止を再確認
+- Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の凍結を再確認
+- No-Go canonical wording（5語彙ID）を再確認
 - 失敗時自己修復上限（3回）を再確認
 
 ### Read同期スナップショット
@@ -108,6 +110,14 @@
 ### 最新再読チェック（Phase開始ゲート）
 - CE0 Contract IDs再定義禁止、proposal-only、safeMode既定維持を再確認する。
 
+### Freeze contract canonical expressions（統一正本）
+| Contract ID | Freeze expression（正本。下流は参照のみ） |
+| --- | --- |
+| `CE0-CTX-IF` | ContextQuery必須キーを固定し、ContextBundleは deterministic `bundleHash`（`equivalenceKey + bundleHash`）で照合する。 |
+| `CE0-SAFEMODE-IF` | safeMode は既定ON、`allowUnreviewedText=false` を既定固定し、緩和は契約外とする。 |
+| `CE0-REVIEW-IF` | proposal lifecycle は proposal-only を維持し、`human_reviewed` 昇格は人手操作のみ許可する。 |
+| `CG-01..05` | `Working -> Consensus` 遷移は `patch + approval` のみで成立し、direct write を禁止する。 |
+
 ### Execute Plan（実行前固定）
 - CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ。
 - CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する。
@@ -146,6 +156,12 @@
 - 禁止事項: direct write / auto-apply / preview bypass / AI review昇格 / safeMode緩和
 - 検証条件: collision=0, SafeMode regression=0, docs-check pass
 - 引き渡し形式: CE1/CE2/CE4へは Contract ID参照のみ（本文複製・下流再定義は禁止）
+
+### CE1/CE2/CE4向け参照I/F一覧（read-only handoff）
+- CE1（Context Bundle consumer）: `CE0-CTX-IF` / `CG-01` / `CG-02`
+- CE2（Review governance consumer）: `CE0-REVIEW-IF` / `CE0-SAFEMODE-IF` / `CG-03` / `CG-04`
+- CE4（Audit & fail-closed consumer）: `CG-01..05` / `CE0-SAFEMODE-IF`
+- 共通条件: Contract ID参照のみ、本文複製禁止、再定義禁止、差分要求はCE0再起票
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
