@@ -912,3 +912,29 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 17) Stream I Set-2 runtime execution contract（Plan→Execute→Verify→Proceed）
+
+### Audience / Goal / 公開境界
+- Audience: `04_Documentation` の公開文書を参照する外部利用者・運用担当者・コントリビュータ。
+- Goal: 対象文書の分類（Move internal / Improve external）を維持したまま、公開可能な運用情報と内部限定情報の境界を固定する。
+- 公開境界: 設計正本（`00_Prompt`〜`02_Architecture`）を上書きせず、`04_Documentation` では公開運用に必要な手順のみを扱う。
+
+### Go/No-Go 判定基準（Required）
+- Go:
+  1. 本Issue本文に Audience / Goal / 公開境界 / 次アクション が明記されている。
+  2. `Expected verification level` と `VerificationLevel` がともに `docs-check` で一致している。
+  3. `DecisionStatus=Fixed` と `DecisionQueueRef=N/A（DecisionStatus=Fixed）` が保持されている。
+  4. Verify の実行結果が `git diff --check` で問題なし。
+- No-Go:
+  - 上記4条件のいずれかを満たさない場合は `Proceed=Hold` とし、修復内容をIssue本文に追記する。
+
+### Phase contract
+1. Plan: 変更対象をIssue本文に限定し、分類方針を再判定せずに不足メタのみ補完する。
+2. Execute: AC/DoD、公開境界、Go/No-Go導線を追記・正規化する。
+3. Verify: `docs-check`（メタ整合/語彙整合/差分整合）を実施する。
+4. Proceed: `Ready / Hold / Needs-decision` のいずれかを明示して次アクションを固定する。
+
+### Verify失敗時の自己修復ポリシー（最大3回）
+- Retry 1〜3: 失敗原因を同一Issue内で修正し、Verifyを再実行する。
+- Retry超過（4回目相当）: 自己修復を停止し、`Proceed=Hold` とブロッカー内容を記録する。
