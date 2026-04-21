@@ -103,6 +103,17 @@
 - `git diff --check`
 - 自己修復は最大3回。3回で解消しない場合は4回目に着手せず即停止する。
 
+### Fail-closed Verification Matrix（監査欠損成功扱い禁止）
+| Case ID | Preconditions | Expected Result |
+| --- | --- | --- |
+| `CE4-V-001` | `query/bundle/proposal/apply` が4点そろう | 成功判定してよい（契約準拠） |
+| `CE4-V-002` | `query` 欠損 | **fail-closed**（成功応答禁止） |
+| `CE4-V-003` | `bundle` 欠損 | **fail-closed**（成功応答禁止） |
+| `CE4-V-004` | `proposal` 欠損 | **fail-closed**（成功応答禁止） |
+| `CE4-V-005` | `apply` 欠損 | **fail-closed**（成功応答禁止） |
+| `CE4-V-006` | `dryRun=true` かつ `sideEffect!=none` | **fail-closed**（成功応答禁止） |
+| `CE4-V-007` | `sourceBundleHash=mock:<hash>` で監査導線が本番と不一致 | **fail-closed**（成功応答禁止） |
+
 ### Self Verification Checklist
 - [ ] 同一 query に対して API/CLI の `equivalenceKey` と `bundleHash` が同値である。
 - [ ] 監査ログは `query / bundle / proposal / apply` の欠落が 0 件。
@@ -118,6 +129,23 @@
 
 ### 未承認事項の扱い
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
+
+---
+
+## Stream F Execution Record（2026-04-21）
+
+### Phase Progress（Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0 contract IDs / 監査4点 / CE0参照契約のread-only条件を再確認）。
+- Phase 2 Plan: 完了（API/CLI同値条件と監査欠損fail-closedをACへ固定）。
+- Phase 3 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
+- Phase 4 Verify: 完了（監査欠損成功扱い禁止の判定ケースを `CE4-V-001..007` で固定）。
+- Phase 5 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
+
+### Repair Attempt Ledger（自己修復上限）
+- Attempt 1: pass
+- Attempt 2: n/a
+- Attempt 3: n/a
+- Attempt 4+: **forbidden / stop**
 - 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
 - CDC-CE4-001 / CDC-CE4-002 は承認待ちのまま保持し、承認完了まで実装・確定を禁止。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
