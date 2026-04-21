@@ -878,3 +878,27 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 17) Stream J execution record（Security boundary first / serial）
+
+### Phase 1 Read
+- `04_Documentation/security_operational_guidelines.md` を read-only 参照し、公開ガイドに残す運用判断情報と内部限定手順の境界を再確認。
+- `DOC-OPS-05-13`（基底方針）と `DOC-OPS-05-09`（LLM運用境界）は依存参照のみとし、本文編集は行わない。
+
+### Phase 2 Plan
+- 優先順位: **セキュリティ境界 > 公開境界 > 依存分離**。
+- 直列実行: Read → Plan → Execute → Verify → Proceed を本Issue単位で完結。
+- 停止条件: 未定義競合、または自己修復3回超過見込みを検知した時点で即停止。
+
+### Phase 3 Execute
+- Go/No-Go Required の判定軸を「公開運用判断として説明可能か」「内部専用情報を含まないか」で固定。
+- Classification は **Improve external（維持）** とし、再分類は実施しない。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回。4回目相当は停止して `Hold` 化。
+
+### Phase 5 Proceed
+- 状態: **Ready**（Open可能）
+- 次アクション: 公開向け運用判断フロー改善PRでは、内部専用例示を別導線へ分離する。

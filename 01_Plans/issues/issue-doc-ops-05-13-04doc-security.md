@@ -819,3 +819,27 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 17) Stream J execution record（Security boundary first / serial）
+
+### Phase 1 Read
+- `04_Documentation/security.md` を read-only 参照し、公開可能情報（原則・統制）と非公開情報（内部運用詳細・環境固有値）の境界を再確認。
+- 依存分離方針として、他ストリーム管理ファイルは参照のみ（本文編集なし）を維持。
+
+### Phase 2 Plan
+- 優先順位: **セキュリティ境界 > 公開境界 > 体裁整合**。
+- 本Issueの更新対象を Issue本文の判定根拠強化に限定し、`Classification=Improve external` は再判定しない。
+- 停止条件: 語彙衝突または未定義競合を検知した場合は即停止し `Needs-decision` へ遷移。
+
+### Phase 3 Execute
+- Go/No-Go 判定根拠を「公開可/非公開」の2層で固定。
+- SecurityGateImpact=`public-exposure` に対応するレビュー観点（公開前レビュー必須）を明示。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回。4回目相当は fail-safe 停止。
+
+### Phase 5 Proceed
+- 状態: **Ready**（Open候補維持）
+- 次アクション: `security.md` 側の公開改善PRで、公開境界（公開可/非公開）の節構造を先に固定してから本文改稿を実施。

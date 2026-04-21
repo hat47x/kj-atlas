@@ -780,3 +780,27 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 17) Stream J execution record（Security/Public boundary alignment）
+
+### Phase 1 Read
+- `04_Documentation/local_llm_ops_guide.md` を read-only 参照し、公開可能な運用原則と内部限定情報（接続先固有設定・組織内手順）を切り分け確認。
+- security系Issue（05-13/05-14）は参照のみとして競合を回避。
+
+### Phase 2 Plan
+- 優先順位: **セキュリティ境界 > 公開境界 > 他ストリーム非依存**。
+- 本Issueは LLM運用境界の明確化に限定し、一般セキュリティ統制は 05-13/05-14 へ委譲。
+- 停止条件: 未定義競合、自己修復3回超過で即停止。
+
+### Phase 3 Execute
+- Classification **Improve external** を維持し、公開runbookとして必要な最小情報のみを対象にする方針を固定。
+- GoNoGoGate Required 判定に「公開可否の境界説明が文書内で自己完結」を追加。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回（4回目相当は fail-safe 停止）。
+
+### Phase 5 Proceed
+- 状態: **Ready**
+- 次アクション: local LLM公開運用PRでは、内部依存値をテンプレート化し秘匿情報を記載しない。
