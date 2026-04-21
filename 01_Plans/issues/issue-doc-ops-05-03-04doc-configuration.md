@@ -744,3 +744,31 @@
   2) `git diff --check`
 - 3回超過停止ルール: 4回目相当は修復せず `Hold` へ遷移。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、分類=Improve external、検証計画=docs-check）。
+
+
+## Stream H dedicated cycle（2026-04-21, 5Phase strict）
+
+> Note: Stream H運用は **5Phase（Read → Plan → Execute → Verify → Proceed）** を正とし、各Phase冒頭で対象ファイルを再読する。
+
+### Phase 1 Read（対象ファイル再読）
+- 本Issueファイルを再読し、`Requirement meta I/F` と `Expected verification level=docs-check` を再確認。
+- 分類判定は **Improve external** を維持し、指定外ファイルは編集しない。
+
+### Phase 2 Plan（AC/DoD補完, 対象ファイル再読）
+- AC必須4点を固定: Classification / Audience / Public boundary / Validation。
+- DoD必須要件を固定: 5Phase記録、Proceed判定（Ready / Hold / Needs-decision）、自己修復上限3回。
+- ADR要否判定: 既存CDCで十分のため **ADR追加なし**。
+
+### Phase 3 Execute（対象ファイル再読）
+- 本Issue内の運用記録を5Phase strictに正規化し、`Plan→Execute→Verify→Proceed` の導線を明示。
+- 指定外ファイル（docs本文/実装コード/他Issue）は非変更。
+
+### Phase 4 Verify（対象ファイル再読）
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+  - `git diff --check`
+- 失敗時は同一ファイル内で最大3回まで自己修復し、4回目相当は停止して `Hold` 化する。
+
+### Phase 5 Proceed（対象ファイル再読）
+- 判定: **Ready**（DecisionStatus=Fixed かつ docs-check整合）。
+- Next action: 04_Documentation/configuration.md のAudience/Prerequisites/Validation節を公開向けに補強するPRを起票。
