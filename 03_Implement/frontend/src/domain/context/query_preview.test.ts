@@ -48,6 +48,19 @@ describe("query preview state", () => {
     });
   });
 
+  it("returns 400 unknown_contract_key when query contains keys outside ContextQueryV1", async () => {
+    const invalidDraft = { ...baseDraft(), extraFlag: true } as ContextQueryDraft & { extraFlag: boolean };
+    const result = await runMockContextIntegration(invalidDraft, async () => {
+      throw new Error("should not be called");
+    });
+    expect(result).toEqual({
+      canSubmit: false,
+      statusCode: 400,
+      errorCode: "unknown_contract_key",
+      unknownKeys: ["extraFlag"],
+    });
+  });
+
   it("reproduces mock integration flow with bundleHash", async () => {
     const draft = baseDraft();
     const result = await runMockContextIntegration(draft, async () => ({
