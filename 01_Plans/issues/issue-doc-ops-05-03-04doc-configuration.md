@@ -772,3 +772,30 @@
 ### Phase 5 Proceed（対象ファイル再読）
 - 判定: **Ready**（DecisionStatus=Fixed かつ docs-check整合）。
 - Next action: 04_Documentation/configuration.md のAudience/Prerequisites/Validation節を公開向けに補強するPRを起票。
+
+## 18) DOC-OPS-05 前半専任シリアル実行記録（2026-04-21）
+
+### Phase 1 Read（開始時最新状態再読）
+- `Requirement meta I/F`・`推奨アクション=Improve external`・`DecisionStatus=Fixed`・`VerificationLevel=docs-check` を再確認。
+- 公開/内部分類の判断根拠を再確認（Audience/Goal/公開境界）。
+
+### Phase 2 Plan（AC/DoD補完提案と合意）
+- AC補完提案:
+  - AC-S1: Audience=`導入担当者/管理者（外部利用者）` を明示する。
+  - AC-S2: Goal=`設定手順の対外可読性向上` を明示する。
+  - AC-S3: 公開境界=`公開文書として維持（機微情報は除外）` を明示する。
+- DoD補完提案:
+  - DOD-S1: Read→Plan→Execute→Verify→Proceed の5Phase記録を必須化。
+  - DOD-S2: Verify失敗時は最大3回自己修復、4回目相当でHold停止。
+- 合意: 本Issue運用上の補完提案として採用（Issueメモ内合意）。
+
+### Phase 3 Execute（本文追記）
+- 本セクションを追記し、公開境界の判断根拠（Audience/Goal/公開境界）と5Phase運用を固定。
+
+### Phase 4 Verify（最大3回自己修復）
+- Attempt 1: メタ整合目視確認で問題なし。
+- 自己修復実績: 0回（3回上限未使用）。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 理由: 分類=Improve external、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
