@@ -766,3 +766,32 @@
   - `git diff --check`
 - 自己修復ポリシー: 不整合時は最大3回修復し、4回目相当で停止。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、推奨アクション維持、5Issue限定編集を満たす）。
+
+## 19) Stream J dedicated cycle record（2026-04-21 / Phase 1-5）
+
+### Phase 1 Read（対象ファイル再読）
+- `issue-doc-ops-05-08-04doc-installation.md` を再読し、`Requirement meta I/F` / `GoNoGoGate=Required` / `VerificationLevel=docs-check` / `DecisionStatus=Fixed` を確認。
+- スコープを本Issueメモのみに固定し、指定外ファイル非編集を再確認。
+
+### Phase 2 Plan（対象ファイル再読 + AC/DoD補完）
+- 対象ファイルを再読し、AC/DoD補完方針を確定。
+- AC補完（明文化）:
+  - AC-J-08-1: Audience / Goal / 公開境界 / Next action が本文内で追跡可能。
+  - AC-J-08-2: Verifyで `docs-check` と `git diff --check` を実行できるコマンドが残っている。
+- DoD補完（明文化）:
+  - DoD-J-08-1: Phase 1→2→3→4→5 が同一Issue内で完結記録される。
+  - DoD-J-08-2: Proceed判定を `Ready / Hold / Needs-decision` で宣言する。
+
+### Phase 3 Execute（対象ファイル再読）
+- 対象ファイルを再読後、本Stream J専任の5Phase記録を追記。
+- ADR CDC判定: `DecisionStatus=Fixed` のため **追加CDC不要**（必要時のみ明文化ルールに従い未作成）。
+
+### Phase 4 Verify（対象ファイル再読）
+- 対象ファイルを再読後、以下で検証:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 自己修復ポリシー: 検証失敗時は最大3回まで修復し、4回目相当は停止して指示待ち。
+
+### Phase 5 Proceed（対象ファイル再読）
+- 対象ファイルを再読し、Proceed判定: **Ready**。
+- 根拠: AC/DoD補完、5Phase記録、docs-check検証導線、指定外ファイル非編集の条件を充足。
