@@ -816,3 +816,31 @@
 ### Phase 5 Proceed（対象ファイル再読）
 - 対象ファイルを再読し、Proceed判定: **Ready**。
 - 根拠: AC/DoD補完、5Phase記録、docs-check検証導線、指定外ファイル非編集の条件を充足。
+
+
+## 16) DOC-OPS-05 back-half serial execution record（Phase 1〜5）
+
+### Phase 1 Read
+- `Requirement meta I/F`、既存分類（Improve external）、ValidationLevel（docs-check）を再確認。
+- 関連正本（`01_Plans/documentation_quality.md` と `04_Documentation/narratives.md` の対応）を確認。
+
+### Phase 2 Plan（不足AC/DoD提案と合意）
+- 追加AC提案（合意済み）:
+  - AC-B1: Audience / Goal / Non-goal / Public boundary / Outcome / Related の6項目を追跡可能にする。
+  - AC-B2: GoNoGoGate=Required の判定条件を本文中で再現可能にする。
+- 追加DoD提案（合意済み）:
+  - DoD-B1: Read→Plan→Execute→Verify→Proceed の5段をIssue本文へ記録。
+  - DoD-B2: Proceed判定を `Ready | Hold | Needs-decision` の三値で明記。
+
+### Phase 3 Execute
+- 本Issueでは分類方針（Improve external）を維持し、上記 AC/DoD 追記方針を固定。
+- 非目標（実装変更、指定外ファイル編集）を再確認。
+
+### Phase 4 Verify（max 3 self-heal）
+- 実施コマンド: `git diff --check`
+- 実施コマンド: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+- 結果: 体裁崩れなし、自己修復回数 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
