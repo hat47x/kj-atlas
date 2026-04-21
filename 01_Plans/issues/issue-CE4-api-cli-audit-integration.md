@@ -46,13 +46,14 @@
 
 ### 合意済みスコープ（contract-only）
 - CE4は契約I/F固定のみを扱い、実装手段・アルゴリズム・内部最適化は記述しない。
-- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を唯一の判定軸とする。
+- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を唯一の判定軸とする（片側一致の部分成功を禁止）。
 - 監査4点欠損は常に fail-closed（成功扱い禁止）を適用する。
 - `dryRun=true` は常に `sideEffect=none` を強制し、副作用を許容しない。
 - `sourceBundleHash=mock:<hash>` は本番hashと同一の契約判定・監査導線を適用する。
 
 ### Acceptance Criteria（contract-only）
 - [ ] API/CLI が同一 query 入力時に同一 `equivalenceKey` かつ同一 `bundleHash` を返す。
+- [ ] `equivalenceKey` のみ一致、または `bundleHash` のみ一致は成功扱いにしない（AND欠損をfail-closed）。
 - [ ] 監査4点（`query / bundle / proposal / apply`）の欠損は 0 件。
 - [ ] 監査4点のいずれか欠損時は必ず fail-closed（成功応答を返さない）。
 - [ ] `dryRun=true` は常に `sideEffect=none`。
@@ -65,6 +66,7 @@
 - [ ] CE4の公開I/F記述は API/CLI/監査導線に限定され、実装詳細を含まない。
 - [ ] CE0/CE1/CE2語彙の再定義がない。
 - [ ] fail-closed 条件が監査4点欠損に対して明示されている。
+- [ ] `equivalenceKey AND bundleHash` の両方一致を満たさない部分一致を成功扱いしないことが明示されている。
 - [ ] `dryRun=true -> sideEffect=none` が契約条項として明示されている。
 - [ ] `sourceBundleHash=mock:<hash>` の同値判定条項が明示されている。
 - [ ] 同値判定の比較根拠（`queryCanonicalHash`）が監査証跡必須項目として明示されている。
@@ -121,9 +123,12 @@
 | `CE4-V-005` | `apply` 欠損 | **fail-closed**（成功応答禁止） |
 | `CE4-V-006` | `dryRun=true` かつ `sideEffect!=none` | **fail-closed**（成功応答禁止） |
 | `CE4-V-007` | `sourceBundleHash=mock:<hash>` で監査導線が本番と不一致 | **fail-closed**（成功応答禁止） |
+| `CE4-V-008` | `equivalenceKey` 一致 かつ `bundleHash` 不一致 | **fail-closed**（AND不成立の成功扱い禁止） |
+| `CE4-V-009` | `equivalenceKey` 不一致 かつ `bundleHash` 一致 | **fail-closed**（AND不成立の成功扱い禁止） |
 
 ### Self Verification Checklist
 - [ ] 同一 query に対して API/CLI の `equivalenceKey` と `bundleHash` が同値である。
+- [ ] `equivalenceKey` 単独一致または `bundleHash` 単独一致の部分成功を許容していない。
 - [ ] 監査ログは `query / bundle / proposal / apply` の欠落が 0 件。
 - [ ] 監査欠損時に fail-closed 以外の遷移を許していない。
 - [ ] `dryRun=true` で `sideEffect=none` を常に満たす。
@@ -148,7 +153,7 @@
 - Phase 1 Read: 完了（CE0 contract IDs / 監査4点 / CE0参照契約のread-only条件を再確認）。
 - Phase 2 Plan: 完了（API/CLI同値条件と監査欠損fail-closedをACへ固定）。
 - Phase 3 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
-- Phase 4 Verify: 完了（監査欠損成功扱い禁止の判定ケースを `CE4-V-001..007` で固定）。
+- Phase 4 Verify: 完了（監査欠損成功扱い禁止に加え、AND不成立ケースを含む判定ケースを `CE4-V-001..009` で固定）。
 - Phase 5 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
 
 ### Repair Attempt Ledger（自己修復上限）
