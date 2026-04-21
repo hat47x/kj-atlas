@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-21 (JST, Stream L shared integration rerun-45)
+最終更新: 2026-04-21 (JST, Stream F shared integration rerun-46)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -724,3 +724,12 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute（単一変更セット）: 3共有ファイルのみを同時更新し、未承認決定の確定扱い・対象外ファイル編集・推測マージを実施しない。
 - Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-45|Stream A〜K|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で3ファイル整合を確認。
 - Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+
+## Stream F 共有統合同期ログ（2026-04-21 rerun-46, Phase 1-5）
+
+- Phase 1 Read（3ファイル同時再読）: shared resource 3ファイルを再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2`、依存順 `A1→A2→A3`、D1〜D4固定値（4h / 2h / 代理承認なし / 48h+15m+60m）、停止条件違反0件を再確認。
+- Phase 2 Plan（同期差分最小化）: 更新対象を `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の3ファイルに限定し、件数・用語・Decision Queue・再開判定チェックリスト1行・D1〜D4固定値を保持する単一変更セット方針を固定。
+- Phase 3 Execute（単一変更セット）: 3ファイルに rerun-46 同期ログのみを追記し、未承認事項の確定扱い・対象外ファイル編集・推測マージを実施しない。
+- Phase 4 Verify（validator + unittest + rg整合）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-46|Decision Queue|Ready=1 / Open=2|A1→A2→A3|D1〜D4|4h / 2h / 代理承認なし / 48h\+15m\+60m|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で3ファイル整合を確認。
+- Phase 5 Proceed（次回再開条件1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / D1〜D4固定値維持 / 停止条件違反0件` が一致していること。**
