@@ -36,6 +36,14 @@
 - safeMode既定を緩和しない（`CE0-SAFEMODE-IF` 準拠）。
 
 ## Phase 2 Plan（API/CLI同値性・監査欠損fail-closedをAC化）
+### AC/DoD不足提案と合意（contract-only）
+- 提案P1: API/CLI同値判定の監査再現性を強化するため、`queryCanonicalHash` を監査必須項目へ昇格する。
+  - 合意: 採用（語彙追加ではなく既存参照語彙の必須化として扱う）。
+- 提案P2: proposal lifecycle の語彙拡張を抑止するため、閉集合（`proposed / accepted / rejected / held`）を明文化する。
+  - 合意: 採用（contract boundary の固定のみ、挙動変更なし）。
+- 提案P3: No-Go逸脱を防ぐため、CE4での禁止事項（語彙再定義・safeMode緩和・監査欠損成功扱い）を Verify でも再チェック対象にする。
+  - 合意: 採用（Phase 4 checklist に反映）。
+
 ### 合意済みスコープ（contract-only）
 - CE4は契約I/F固定のみを扱い、実装手段・アルゴリズム・内部最適化は記述しない。
 - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を唯一の判定軸とする。
@@ -120,6 +128,8 @@
 - [ ] 監査欠損時に fail-closed 以外の遷移を許していない。
 - [ ] `dryRun=true` で `sideEffect=none` を常に満たす。
 - [ ] `sourceBundleHash=mock:<hash>` でも同一判定軸を維持する。
+- [ ] CE4で語彙再定義を行っていない（read-only参照維持）。
+- [ ] `CE0-SAFEMODE-IF` の既定（safeMode既定ON / `allowUnreviewedText=false`）を緩和していない。
 
 ## Phase 5 Proceed（未承認事項は確定せず停止条件を維持）
 ### Handoff（確定事項のみ）
