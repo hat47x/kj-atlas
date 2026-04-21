@@ -707,3 +707,30 @@
 - 再読実施: Proceed開始時に本Issue本文を再読。
 - 判定: **Ready**。
 - 停止条件: 3回超過修復 / 未定義競合 / 前提崩壊が発生した場合は作業停止して指示待ち。
+
+## 18) DOC-OPS-05 前半専任シリアル実行記録（2026-04-21）
+
+### Phase 1 Read（開始時最新状態再読）
+- `Requirement meta I/F`・`推奨アクション=Move internal`・`DecisionStatus=Fixed`・`VerificationLevel=docs-check` を再確認。
+- 公開/内部分類の判断根拠を再確認（Audience/Goal/公開境界）。
+
+### Phase 2 Plan（AC/DoD補完提案と合意）
+- AC補完提案:
+  - AC-S1: Audience=`監査担当/運用チーム（内部）` を明示する。
+  - AC-S2: Goal=`日付付きE2E実測ログの監査証跡保持` を明示する。
+  - AC-S3: 公開境界=`公開対象外（内部ログ保管領域へ移管）` を明示する。
+- DoD補完提案:
+  - DOD-S1: Read→Plan→Execute→Verify→Proceed の5Phase記録を必須化。
+  - DOD-S2: Verify失敗時は最大3回自己修復、4回目相当でHold停止。
+- 合意: 本Issue運用上の補完提案として採用（Issueメモ内合意）。
+
+### Phase 3 Execute（本文追記）
+- 本セクションを追記し、公開境界の判断根拠（Audience/Goal/公開境界）と5Phase運用を固定。
+
+### Phase 4 Verify（最大3回自己修復）
+- Attempt 1: メタ整合目視確認で問題なし。
+- 自己修復実績: 0回（3回上限未使用）。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 理由: 分類=Move internal、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
