@@ -844,3 +844,27 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 本Issueに対応する docs-only PR へ進行可能。未定義競合・前提崩壊が発生した場合は即停止して指示待ち。
+
+## 17) Stream J execution record（Security/Public boundary alignment）
+
+### Phase 1 Read
+- `04_Documentation/narratives.md` を read-only 参照し、公開向け説明可能範囲と内部判断ログ境界を再確認。
+- セキュリティ/運用基底の判断は 05-13/05-14 を参照し、本Issueでは文章化ガイド境界に限定。
+
+### Phase 2 Plan
+- 優先順位: **公開境界の明確化（誤公開防止） > セキュリティ整合 > 非依存実行**。
+- 直列手順（Read→Plan→Execute→Verify→Proceed）を本Issue単体で完結。
+- 停止条件: 未定義競合、または自己修復3回超過時は即停止して `Needs-decision`。
+
+### Phase 3 Execute
+- Classification **Improve external** を維持し、公開文書に載せる記述を「用途・制約・非対象」に限定する方針を固定。
+- GoNoGoGate Required 判定に「内部専用判断ログを公開本文へ混在させない」観点を追加。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回。4回目相当は停止。
+
+### Phase 5 Proceed
+- 状態: **Ready**
+- 次アクション: narratives公開改善PRでは、内部レビュー履歴を除外した外部説明テンプレートを先に整備。
