@@ -405,7 +405,7 @@
 - 非目標: 対象文書本文の全面改稿、実装コード変更、スコープ外Issue編集。
 
 ### Phase 5 Verify（docs-check, 修復上限3回）
-- Verify-1: `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- Verify-1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Verify-2: `git diff --check`
 - フェイルセーフ: 失敗時は同一Issueで最大3回まで修復し、4回目相当は停止。
 
@@ -753,3 +753,33 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類=Move internal、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
+
+## 19) Stream G baseline fixation（2026-04-21）
+
+### Phase 1 Read
+- 対象を本Issueと `01_Plans/documentation_quality.md` のみに限定して再読。
+- 文書品質ゲート基準の固定を最優先し、分類結果（**Move internal**）と `Expected verification level=docs-check` を再確認。
+
+### Phase 2 Plan
+- 実行計画を **Read → Plan → Execute → Verify → Proceed** の5Phaseで固定。
+- AC/DoD不足が見つかった場合は、**提案 → 合意 → 実行** の順を必須とする（未合意のまま実行しない）。
+- 他DOC-OPS issueは編集対象外とし、本Issue単独で完結させる。
+
+### Phase 3 Execute
+- 実行内容は「品質ゲート基準の固定」と「次アクション導線の明確化」のみ。
+- 変更範囲を本Issueメモに限定し、分類再判定・スコープ拡張・実装コード変更は行わない。
+
+### Phase 4 Verify
+- 必須チェック（docs-check baseline）:
+  1. Requirement meta I/F 必須キーの欠落なし。
+  2. `DecisionStatus=Fixed` と `DecisionQueueRef=N/A` の整合。
+  3. `GoNoGoGate=Required` の判定条件が本文で追跡可能。
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+- 失敗時は同一Issue内で自己修復を最大3回まで実施し、**3回超過で停止（Hold）**。
+
+### Phase 5 Proceed
+- 判定: **Ready / Hold / Needs-decision** の三値で記録する。
+- Ready条件: 上記品質ゲートを満たし、未合意変更・スコープ外編集・3回超過がないこと。
+- 現判定（本固定時点）: **Ready**。
