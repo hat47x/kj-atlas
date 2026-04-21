@@ -50,6 +50,8 @@
 - [ ] `dryRun=true` は常に `sideEffect=none`。
 - [ ] `sourceBundleHash=mock:<hash>` 入力でも同一判定規則（`equivalenceKey + bundleHash`）を維持。
 - [ ] `CE0-SAFEMODE-IF` 参照導線を維持し、CE4で緩和しない。
+- [ ] API/CLI同値判定の監査証跡に `queryCanonicalHash` を必須記録し、比較根拠を欠落させない。
+- [ ] proposal lifecycle の遷移語彙は `proposed / accepted / rejected / held` のみを利用し、追加語彙を導入しない。
 
 ### Definition of Done（DoD）
 - [ ] CE4の公開I/F記述は API/CLI/監査導線に限定され、実装詳細を含まない。
@@ -57,6 +59,18 @@
 - [ ] fail-closed 条件が監査4点欠損に対して明示されている。
 - [ ] `dryRun=true -> sideEffect=none` が契約条項として明示されている。
 - [ ] `sourceBundleHash=mock:<hash>` の同値判定条項が明示されている。
+- [ ] 同値判定の比較根拠（`queryCanonicalHash`）が監査証跡必須項目として明示されている。
+- [ ] proposal lifecycle を read-only語彙に限定する条項が明示されている。
+
+### CDC（Change Decision Clarification）
+- CDC-CE4-001: CE4契約に `queryCanonicalHash` 監査必須化を追加する。
+  - 理由: API/CLI同値判定の比較根拠を監査で再現可能にするため。
+  - 影響: 契約語彙の追加なし（既存 read-only 語彙の必須化のみ）。
+  - 承認状態: **承認待ち**（未承認のため実装確定禁止）。
+- CDC-CE4-002: CE4契約に proposal lifecycle 語彙の閉集合（`proposed / accepted / rejected / held`）を明文化する。
+  - 理由: CE4での語彙拡張・再定義を防止するため。
+  - 影響: 契約境界の明確化のみ（挙動変更なし）。
+  - 承認状態: **承認待ち**（承認後に次Phaseへ進行）。
 
 ## Phase 3 Execute（I/F固定と監査導線のみ記述）
 ### Fixed Contract IDs（CE4）
@@ -105,4 +119,5 @@
 ### 未承認事項の扱い
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
 - 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
+- CDC-CE4-001 / CDC-CE4-002 は承認待ちのまま保持し、承認完了まで実装・確定を禁止。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
