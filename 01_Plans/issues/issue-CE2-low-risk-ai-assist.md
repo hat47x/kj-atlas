@@ -20,6 +20,12 @@
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan（AC/DoD補完）→ Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
+## Stream E operation profile（契約固定）
+- 担当は Stream E 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
+- 編集範囲は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみとし、他ファイルは参照専用とする。
+- Phase運用は `Phase 1 Read → Phase 2 Plan → Phase 3 Execute（status: proposed|accepted|rejected|held）→ Phase 4 Verify（auto-apply禁止・review auto promotion禁止）→ Phase 5 Proceed` を固定する。
+- 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
+
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Read同期スナップショット
 - 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
@@ -57,6 +63,7 @@
 - 手順: CDCを明文化し、`status=held` で承認待ちに遷移してから次Phaseへ進む。
 - 比較対象: `CE0-REVIEW-IF`, `CE0-SAFEMODE-IF`, `CE1-CTXB-IF`（参照のみ）。
 - 判定: 不一致が1件でもあれば差分理由のみ記録し、CE2で再定義しない。
+- ADR記述は必要時のみ `Context / Decision / Consequences` を明文化し、承認待ち中は `held` を維持する。
 
 ## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
