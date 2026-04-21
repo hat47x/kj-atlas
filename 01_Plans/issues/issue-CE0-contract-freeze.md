@@ -82,6 +82,17 @@
   - 補完: `contract_id_collision | vocabulary_collision | scope_deviation` のいずれか検知時は `held` 記録を必須化する。
 - Status: `held`（承認待ち。確定運用は承認後）
 
+### AC/DoD補完提案の合意明記（Phase 2）
+- 合意対象: AC不足候補A/B/C の補完方針そのもの（実装や下流再定義は含めない）。
+- 合意記録:
+  - `agreement_scope`: CE0契約本文の語彙固定と判定根拠の明確化のみ。
+  - `agreement_state`: `held`（承認待ち）
+  - `agreement_note`: 承認前は運用確定扱いせず、Phase 3では「契約語彙統一」と「禁止事項単一化」の編集に限定する。
+- 非合意（明示）:
+  - CE1/CE2/CE4の本文更新・再定義
+  - `03_Implement/**` の実装変更
+  - CE0 Contract IDの追加/改名/削除
+
 ### ADR CDC（必要時のみ）
 - 原則: 差分検知時のみCDCを起票し、**`held`（承認待ち）** を維持して次Phaseへ進む。
 - Trigger: `contract_id_collision` / `vocabulary_collision` / `scope_deviation`。
@@ -118,6 +129,15 @@
 | `CE0-REVIEW-IF` | proposal lifecycle は proposal-only を維持し、`human_reviewed` 昇格は人手操作のみ許可する。 |
 | `CG-01..05` | `Working -> Consensus` 遷移は `patch + approval` のみで成立し、direct write を禁止する。 |
 
+### Prohibited operations canonical set（単一正本）
+| No-Go ID | Canonical prohibition | Alias（同義語。判定はID基準） |
+| --- | --- | --- |
+| `preview_bypass` | Query Preview を経由しない適用を禁止する。 | preview bypass |
+| `consensus_direct_write` | Consensus への direct write を禁止する。 | direct write |
+| `auto_apply_or_publish` | auto-apply / auto-publish を禁止する。 | automatic apply/publish |
+| `ai_review_auto_promotion` | AI判断のみで `human_reviewed` へ昇格することを禁止する。 | AI review auto promotion |
+| `safemode_default_relaxation` | safeMode既定値（ON, `allowUnreviewedText=false`）の緩和を禁止する。 | safemode relaxation |
+
 ### Execute Plan（実行前固定）
 - CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ。
 - CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する。
@@ -153,7 +173,7 @@
 
 ### Fixed contract handoff
 - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
-- 禁止事項: direct write / auto-apply / preview bypass / AI review昇格 / safeMode緩和
+- 禁止事項（ID正本）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
 - 検証条件: collision=0, SafeMode regression=0, docs-check pass
 - 引き渡し形式: CE1/CE2/CE4へは Contract ID参照のみ（本文複製・下流再定義は禁止）
 
@@ -162,6 +182,11 @@
 - CE2（Review governance consumer）: `CE0-REVIEW-IF` / `CE0-SAFEMODE-IF` / `CG-03` / `CG-04`
 - CE4（Audit & fail-closed consumer）: `CG-01..05` / `CE0-SAFEMODE-IF`
 - 共通条件: Contract ID参照のみ、本文複製禁止、再定義禁止、差分要求はCE0再起票
+
+### Handoff boundary record（参照専用境界の記録）
+- Boundary mode: read-only reference（CE1/CE2/CE4は参照専用、再定義不可）。
+- Transfer unit: Contract ID + No-Go ID のみ（契約本文の複製なし）。
+- Escalation rule: 境界逸脱の要求は `scope_deviation` としてCDC `held` を起票し、承認完了まで停止。
 
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過
