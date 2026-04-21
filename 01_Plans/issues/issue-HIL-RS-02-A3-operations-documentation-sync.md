@@ -117,45 +117,37 @@ A3 を「operations/documentation sync の契約参照専用」計画メモと�
 
 ## 5) Serial Phase Protocol（強制）
 
-各Phaseで必ず **Plan -> Execute -> Verify -> Proceed** を実施する。
+各Phaseは **冒頭で必ず対象ファイル（本ファイル）を再読** し、**Plan -> Execute -> Verify -> Proceed** を順に実施する。
 
 ### Phase 1 Read
-- Plan: 対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）のA1契約値・D1〜D4固定値・役割語彙の再読対象を固定。
+- Plan: 本ファイル再読後、対象5ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1` / `issue-HIL-RS-02-A3`）の再読チェックポイント（A1契約値・D1〜D4固定値・役割語彙）を固定。
 - Execute: A1/A2/A3依存、unlockRule、凍結キー（`schemaVersion / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）に加え、AUTH-OPS-03語彙とD1〜D4を照合。
 - Verify: 差分/競合=0件。
-- Proceed: 差分があれば即停止し Phase 2 Plan へ。
+- Proceed: 差分があれば即停止し指示待ち。差分なしで Phase 2 Plan へ。
 
-### Phase 2 Plan
-- Plan: operations/documentation同期の AC/DoD 不足（語彙・導線・固定値）を補完提案としてドラフト化。
+### Phase 2 Plan（AC/DoD補完）
+- Plan: 本ファイル再読後、operations/documentation同期の AC/DoD 不足（語彙・導線・固定値・停止条件）を補完提案としてドラフト化。
 - Execute: 追加提案を既存契約語彙へ正規化し、A3 の `read-only reference only` 制約を維持。
 - Verify: A3 単独で契約変更を起こせない。
-- Proceed: 合意済みドラフトのみ Phase 3 へ。
+- Proceed: 変更が CDC を要する場合は **CDC を明文化して承認待ち** とし、承認後に Phase 3 Execute へ。CDC不要なら直ちに Phase 3 Execute へ。
 
-### Phase 3 ADR CDC（必要時）
-- Plan: `Context / Decision / Consequences` の変更要否を判定。
-- Execute: 必要時のみ CDC を承認待ちとして起票（承認前の確定化禁止）。
-- Verify: 承認前確定化なし。
-- Proceed: 承認後のみ Phase 4。
-
-### Phase 4 Execute
-- Plan: 凍結I/F統一対象（`contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）とA1依存順を再固定。
+### Phase 3 Execute
+- Plan: 本ファイル再読後、凍結I/F統一対象（`contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）とA1依存順を再固定。
 - Execute: 役割語彙・同期導線・D1〜D4固定値・A1依存順を正規化し一貫化。
 - Verify: 禁止遷移/語彙ドリフト/固定値ドリフト=0件、`validatorPass=true`。
-- Proceed: Verify pass で Phase 5 へ。
+- Proceed: Verify pass で Phase 4 Verify へ。
 
-### Phase 5 Verify
-- Plan: 固定I/F一覧と docs-check 実施手順を次工程へ出力する検証条件を固定。
-- Execute: read-only handoff を発行し docs-check を実施。
+### Phase 4 Verify
+- Plan: 本ファイル再読後、固定I/F一覧と docs-check 実施手順を検証条件として固定。
+- Execute: read-only handoff 形式で検証出力を整え、`docs-check`（`python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` + `git diff --check`）を実施。
 - Verify: frozen keys 一致、docs-check pass、Self-Correction が3回を超えていない。
-- Proceed: 3回超過または検証失敗時は即停止し指示待ち。
+- Proceed: 失敗時は自己修復（最大3回）。3回超過/未定義競合/前提崩壊は即停止し指示待ち。
 
-### Phase 6 Proceed
-- Plan: 参照専用handoff（freezeContractId / fixed keys / unlockRule / Go-NoGo / return path）を確定。
-- Execute: A1契約を単一正本として、A3からの再定義禁止を明示して引き渡す。
+### Phase 5 Proceed
+- Plan: 本ファイル再読後、参照専用 handoff（freezeContractId / fixed keys / unlockRule / Go-NoGo / return path）を確定。
+- Execute: A1契約を単一正本として、A3からの再定義禁止と差戻し先A1固定を明示して引き渡す。
 - Verify: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` と凍結キー完全一致。
-- Proceed: 一致時のみ handoff 完了。
-
-
+- Proceed: 一致時のみ handoff 完了。不一致時は Phase 2 Plan へ戻す。
 
 ## 6) Open/Proceed Gate（固定）
 
