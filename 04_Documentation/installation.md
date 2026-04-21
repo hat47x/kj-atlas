@@ -115,3 +115,30 @@ Docker未導入です。Docker Engine + Compose を導入するか、上記のSQ
 3. 詳細E2E正本（`04_Documentation/e2e_testing.md`）への導線が維持されている。
 
 いずれか未充足の場合は「No-Go」として公開更新を停止します。
+
+## Stream D serial cycle（2026-04-21 / DOC-OPS-05-08 前半 docs-only）
+
+### Phase 1 Read
+- 本書と対応Issue（`issue-doc-ops-05-08-04doc-installation.md`）を再読し、`Classification=Improve external` を確認。
+- 編集境界を docs-only（`04_Documentation/installation.md` のみ）に固定し、`01_Plans/**`・`02_Architecture/**`・`03_Implement/**` 非編集を確認。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC:
+  1. Audience / Goal / Non-goal / Public boundary / Related / Go/No-Go が追跡可能であること。
+  2. Compose手順と Docker未導入時の代替手順（SQLite）が共存し、導線が明確であること。
+- DoD:
+  1. Read → Plan → Execute → Verify → Proceed の5Phaseを記録すること。
+  2. Verifyを docs-check で実施し、自己修復は最大3回までとすること。
+
+### Phase 3 Execute
+- 本節を追記し、前半担当（Stream D）の実行記録を追加。
+- 既存の導入手順・公開境界・安全既定（内部情報非掲載）を維持し、仕様や実装の新規決定は行わない。
+
+### Phase 4 Verify（docs-check）
+- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Related|Go/No-Go|Stream D serial cycle" 04_Documentation/installation.md`
+- `git diff --check`
+- 失敗時は原因を1点ずつ修正し、再実行は最大3回まで。超過時は Hold。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 次アクション: Compose系手順に変更が入る場合は、`04_Documentation/e2e_testing.md` の導線整合を同時確認する。
