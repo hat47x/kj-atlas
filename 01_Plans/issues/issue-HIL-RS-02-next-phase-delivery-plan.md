@@ -101,3 +101,71 @@ HIL-RS-02 を、A1 契約凍結を前提にした実行計画として固定す�
 - Self-Correction 3回超過
 - 前提崩壊 / 未定義競合
 - 指定外ファイル編集要求または検知
+
+## 8) Stream A Phase Execution Log（2026-04-21）
+
+### Phase 1: Read（Plan -> Execute -> Verify -> Proceed）
+
+- Plan:
+  - 対象5ファイル（RS-01 umbrella/A1、RS-02 umbrella/A1/A3）を再読し、`Context / Decision / Consequences` と固定I/Fの未整合を抽出する。
+- Execute:
+  - 5ファイルの契約キー（`freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / unlockRule / decisionQueueTransition`）を照合。
+  - `A1 -> A2 -> A3` 依存順序と `A1!=Done で A2/A3 Open禁止` の記述有無を確認。
+- Verify:
+  - 固定I/F（Freeze Pack ID / Contract IDs / schemaVersion / overridePolicy）の文書間差分は **0件**。
+  - 未整合（文脈整合）を1件検出:
+    1. `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` は `Status: Done` だが、A1は `Open` のため、統治契約（A1完了前のA2/A3 Open禁止）との解釈差分が残る。
+- Proceed:
+  - 固定キーの再定義は不要。追加意思決定が必要なため Phase 2 へ進行。
+
+### Phase 2: ADR明文化（追加意思決定が必要な項目のみ）
+
+#### ADR Draft（Pending）: `HIL-RS-02-GOV-EXCEPTION-01`
+
+- Context:
+  - 契約は `A1 -> A2 -> A3` と `A1!=Done で A2/A3 Open禁止` を固定している。
+  - 一方で現況は A1=`Open`、A2=`Done` であり、記録上は契約順序と整合しない。
+- Decision（Pending / 未確定）:
+  - A2完了扱いを「契約確定前の先行実施（grandfathered）」として許容するか、A1完了まで `Done -> Open(hold)` へ戻すかを人間Deciderが判定する。
+- Consequences:
+  - 許容する場合: 実績連続性は維持されるが、将来の統治判定に例外運用が残る。
+  - 戻す場合: 契約一貫性は向上するが、進捗指標と履歴差分の調整コストが発生する。
+
+### Phase 3: 契約凍結照合（Freeze）
+
+- Freeze Pack ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（一致）
+- Contract IDs: `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`（一致）
+- `schemaVersion=1.0.0`（一致）
+- `overridePolicy=human_dual_control_only`（一致）
+- 結果: 固定I/F差分 **0件**（契約値は凍結維持）。
+
+### Phase 4: 検証（docs-check + 参照整合）
+
+- 実行:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Self-Correction:
+  - 0回（失敗なし）。
+
+### Phase 5: Proceed 判定
+
+- 状態宣言: **Needs-decision**
+- 失敗条件:
+  - `HIL-RS-02-GOV-EXCEPTION-01` 未判定のまま A3 を `Draft -> Open` へ遷移させること。
+- 影響I/F:
+  - `A1 -> A2 -> A3` 開放判定式
+  - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 必要な人間判断:
+  1. A2の現 `Done` を例外承認するか（grandfathered）。
+  2. 例外不承認の場合、A2ステータスを `Open(hold)` 相当へ戻すか。
+
+## 9) Decision Queue（Pending）
+
+- `HIL-RS-02-GOV-EXCEPTION-01`
+  - Status: Pending
+  - Owner: Project Maintainers（Deciders）
+  - Due: 次回 HIL-RS 合同レビュー
+  - Blocking:
+    - A3 `Draft -> Open` 判定
+    - HIL-RS-02 の Ready 宣言
