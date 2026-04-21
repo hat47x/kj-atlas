@@ -30,6 +30,8 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 ## 3) Serial Phase Management（強制）
 
+- 各 Phase で `Plan -> Execute -> Verify -> Proceed` を適用する。
+
 > 各 Phase 開始時に対象4ファイル（`issue-HIL-RS-01` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02` / 本書）を再読し、差分時は Plan 更新を優先する。
 
 ### Phase 1 Read（2026-04-21）
@@ -37,9 +39,10 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 - Check: `Status / Priority / AC / Dependencies`
 - Result: 差分なし（`DiffCount=0`）
 
-### Phase 2 Plan（追記案 + 合意）
+### Phase 2 Plan（追記案 + 合意 / 判定軸明示）
 
 - 追記案（合意済み）:
+  - 判定軸（固定）: `a2a3Unlock / decisionQueueTransition / safeModeDefault`
   - AC に `decisionQueueTransition` 固定参照を追加。
   - DoD に「A1以外へ差し戻さない」を追加。
   - Verify に「依存矛盾ゼロ」を追加。
@@ -59,6 +62,9 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 ### Phase 5 Proceed（handoff）
 
+- handoff 固定値一覧: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
+- handoff 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
+- handoff 差し戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 次担当者向け:
   - A2/A3 は本 hardening 契約を read-only 参照。
   - `Pending/held` を承認前に確定化しない。
@@ -81,6 +87,7 @@ A1 契約凍結を統治判定式として固定し、A2/A3 の誤Open化を防�
 
 - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
 - `Go = A2A3StartAllowed`
+- `A1未完了時A2/A3 Open禁止 = (a1Status!="Done") => Open禁止`
 - `NoGo = !A2A3StartAllowed`
 
 ## 6) ADR Rule

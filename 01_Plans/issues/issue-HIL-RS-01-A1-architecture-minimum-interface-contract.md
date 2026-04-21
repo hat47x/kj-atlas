@@ -29,6 +29,8 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 ## 3) Serial Phase Management（強制）
 
+- 各 Phase で `Plan -> Execute -> Verify -> Proceed` を適用する。
+
 > 各 Phase 開始時に対象4ファイル（`issue-HIL-RS-01` / 本書 / `issue-HIL-RS-02` / `issue-HIL-RS-02-A1`）を再読し、差分があれば Plan 更新後に実行する。
 
 ### Phase 1 Read（2026-04-21）
@@ -36,9 +38,10 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 - Check: `Status / Priority / AC / Dependencies`
 - Result: 差分なし（`DiffCount=0`）
 
-### Phase 2 Plan（追記案 + 合意）
+### Phase 2 Plan（追記案 + 合意 / 判定軸明示）
 
 - 追記案（合意済み）:
+  - 判定軸（固定）: `a2a3Unlock / decisionQueueTransition / safeModeDefault`
   - AC に `decisionQueueTransition` の固定参照を追加。
   - DoD に「A1が唯一差し戻し先」を追加。
   - Verify に「依存矛盾ゼロ」を追加。
@@ -59,6 +62,9 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 ### Phase 5 Proceed（handoff）
 
+- handoff 固定値一覧: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`
+- handoff 禁止遷移: `A1!=Done で A2/A3 Open` / `Pending bypass` / `NoGo時のA1以外差し戻し`
+- handoff 差し戻し先: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 次担当者向け:
   - A2/A3 は read-only 参照のみ。
   - 契約差分要求は本書へ集約（A2/A3 で局所修正禁止）。
@@ -87,6 +93,7 @@ A1 を A2/A3 の唯一ゲートとして固定し、契約値の多重正本化�
 
 - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
 - `Go = A2A3StartAllowed`
+- `A1未完了時A2/A3 Open禁止 = (a1Status!="Done") => Open禁止`
 - `NoGo = !A2A3StartAllowed`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
