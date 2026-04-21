@@ -200,3 +200,46 @@ A3 を「operations/documentation sync の契約参照専用」計画メモと�
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 - `safeModeDefault=ON`
+
+
+## 9) Stream G pre-open memo (2026-04-21)
+
+### Phase 1 Read（Draft理由・Out of scope確認）
+- Draft理由: `a1Status="Open"` のため、`A1 Done` 前提を満たしていない。
+- Out of scope再確認: `03_Implement/**` / `04_Documentation/**` / shared integration files は編集対象外。
+- 参照固定: A3 は `contract reference only` を維持し、契約値再定義を行わない。
+
+### Phase 2 Plan（Open化条件のAC/DoD補完案）
+- AC補完案:
+  - AC-G1: Open判定に `a1Status=="Done" && pendingDecisionQueueCount==0` を必須固定。
+  - AC-G2: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` の一致確認を必須化。
+  - AC-G3: 差戻し先を `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` のみに固定。
+- DoD補完案:
+  - DoD-G1: `docs-check` と `git diff --check` の通過結果を記録。
+  - DoD-G2: Open可否を Yes/No で明示し、No の場合は不足条件を列挙。
+
+### Phase 3 Execute（契約参照専用を維持）
+- A3本文での契約値変更は行わず、A1契約の read-only 参照のみ維持。
+- 本メモは Open化前整備（planning memo）に限定し、実装・運用文書本文は更新しない。
+
+### Phase 4 Verify（docs-check観点）
+- 実施項目:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+- 期待結果: 体裁崩れなし、必須メタ欠落なし。
+
+### Phase 5 Proceed（Open化可否判定）
+- 判定: **No**（2026-04-21時点）
+- 理由:
+  - `a1Status` が `Done` ではなく `Open`。
+  - `A1 Done && pendingDecisionQueueCount==0` の解放条件を未充足。
+- Open化再判定トリガ:
+  1. A1完了（Done化）
+  2. Decision Queue pending=0
+  3. validatorPass=true の再確認
+
+### Fail-safe（Stream G）
+- 即停止条件:
+  1. A1未完了での強行Open要求
+  2. 指定外ファイル編集要求
+  3. Self-Correction 3回超過
