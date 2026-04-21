@@ -860,3 +860,27 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 - formatting: `git diff --check`
 - 自己修復ポリシー: 不整合時は当該Issueのみ最大3回まで修復し、4回目相当で停止。
 - Proceed判定: **Ready**（致命的矛盾・未定義競合・前提崩壊なし）。
+
+
+## 18) Stream K execution log（Phase固定: Read→Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read（同期: 対象ファイル再読）
+- 再読対象: `issue-doc-ops-05-11-04doc-operations.md`。
+- 確認: Scope/Requirement meta I/F/DecisionStatus=Fixed/VerificationLevel=docs-check を再確認。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC補完: Audience・Goal・公開境界・次アクションの4点が追跡可能であることを明文化。
+- DoD補完: Proceed判定を `Ready / Hold / Needs-decision` で明示し、GoNoGoGate=Required の判定根拠を残す。
+
+### Phase 3 Execute（指定範囲のみ）
+- 実施: Stream K の5Phase証跡を本Issueへ追記。
+- 非実施: 指定外ファイル編集、`04_Documentation/*` 本文改稿、実装コード変更。
+
+### Phase 4 Verify（自己修復上限3回）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- 実行: `git diff --check`
+- 自己修復規則: 不整合時は当該Issueのみ最大3回まで修復し、4回目相当は停止して指示待ち。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 理由: 5Phaseの直列実行・AC/DoD補完・docs-check整合を同一Issue内で完結。
