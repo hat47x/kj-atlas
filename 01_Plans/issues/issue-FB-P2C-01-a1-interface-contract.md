@@ -13,6 +13,7 @@
 ---
 
 ## Phase 1: Read
+- Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted
 - Status: `Open`
 - Priority: `P0`
@@ -47,6 +48,10 @@
 - 保留
   - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は実装詳細候補として `held`（確定扱いしない）。
 
+### Approval Gate（Execute進行条件）
+- ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
+- 未承認事項は `pending/held` のまま保持し、確定扱いしない。
+
 ### Consequences
 - A2/A3はA1 freeze contract参照のみ（再定義禁止）。
 - 未承認アルゴリズム詳細は開始条件に使わない。
@@ -65,6 +70,7 @@
   2. 指定外ファイル差分0。
 
 ## Phase 4: Execute
+- Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - Handoff snapshot（read-only）
   - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -74,10 +80,13 @@
   - `MutationPolicy=read-only`
 
 ## Phase 5: Verify
+- AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+- 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
 ## Phase 6: Proceed / Stop
-- Proceed: AC/DoD全充足。
+- Proceed: AC/DoD全充足、かつ `held` 以外の未承認事項なし。
 - Stop: SSOT競合、未承認確定、3回超過、指定外差分。
+- 停止時出力: 原因・影響・再開条件を明文化する。

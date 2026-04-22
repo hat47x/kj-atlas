@@ -13,6 +13,7 @@
 - Non-target file policy: 対象7Issue以外は不干渉
 
 ## Phase 1: Read
+- Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 - Extracted: Status=`Open`, Priority=`P1`, Scope=`planning only`, Dependencies=`A1 -> A2 -> A3`。
 - Delta log（現値）
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -37,6 +38,10 @@
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
+### Approval Gate（Execute進行条件）
+- ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
+- 未承認事項は `pending/held` のまま保持し、確定扱いしない。
+
 ### Consequences
 - A1以外への差戻し禁止。
 - `Pending bypass` 禁止。
@@ -52,16 +57,20 @@
   - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。
 
 ## Phase 4: Execute
+- Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
 - `Go = A2A3StartAllowed`
 - `NoGo = !A2A3StartAllowed`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ## Phase 5: Verify
+- AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+- 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
 ## Phase 6: Proceed / Stop
-- Proceed: AC/DoD充足。
+- Proceed: AC/DoD充足、かつ `held` 以外の未承認事項なし。
 - Stop: ドリフト、Pending bypass、未定義競合、3回超過、指定外差分。
+- 停止時出力: 原因・影響・再開条件を明文化する。
