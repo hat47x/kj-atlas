@@ -868,3 +868,35 @@
 ### Phase 5 Proceed
 - 状態: **Ready**
 - 次アクション: narratives公開改善PRでは、内部レビュー履歴を除外した外部説明テンプレートを先に整備。
+
+## 18) Stream G DOC-OPS-05 content lane run（2026-04-22 / narratives）
+
+### Phase 1 Read（Scope / Related ADR/Spec / Verification）
+- 再読対象: Scope=`04_Documentation/narratives.md`、Related ADR/Spec（`00_Prompt/domain.md`, `01_Plans/documentation_quality.md`）、Expected verification level=`docs-check` を再確認。
+- 事前想定との差分ログ:
+  - 差分G-10-01: 既存節で分類（Improve external）は固定済みだが、docs-check実行結果の当日ログが未記載。
+  - 差分G-10-02: AC上は公開境界確認があるが、直列処理順を示す記録が不足。
+
+### Phase 2 Plan（AC/DoD不足ドラフト提案）
+- ACドラフト提案:
+  - AC-G-10-01: narrativesはStream G直列順の2件目として記録し、前件完了後に実行する。
+  - AC-G-10-02: Verifyでdocs-check結果を明示し、Expected verification level一致を確認する。
+- DoDドラフト提案:
+  - DoD-G-10-01: Phase 1〜5記録を本節に完結。
+  - DoD-G-10-02: Verify失敗時の自己修復上限3回を明示。
+- 合意記録: `DecisionStatus=Fixed` のため本節内ドラフトを合意済みとしてExecuteへ進行。
+
+### Phase 3 Execute（本Issue反映）
+- 実施内容: Stream G専任ログを追記し、差分ログとAC/DoD補強を固定。
+- 実施順序: Stream G指定順の2件目（narratives）として完了判定。
+
+### Phase 4 Verify（docs-check）
+- 実行コマンド（1回目）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+  - `git diff --check`
+- 判定: pass（self-correction 0/3）。
+
+### Phase 5 Proceed / Stop
+- 状態: **Proceed（Ready）**
+- 次アクション: Stream G指定順の3件目 `issue-doc-ops-05-09-04doc-local-llm-ops-guide.md` へ進行。
+- Stop条件: 未定義競合、前提崩れ、または自己修復3回超過時は停止して理由・影響・再開条件を記録する。
