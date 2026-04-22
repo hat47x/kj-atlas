@@ -14,6 +14,7 @@
 - 専有編集ファイルは `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ。
 - CE2は **proposal-only** を固定し、実装・auto-apply は常時禁止。
 - AIによる `reviewState=human_reviewed` への昇格は常時禁止（人手操作のみ）。
+- CE0/CE1 契約は **参照専用** とし、CE2側で再定義・拡張しない。
 - 強制フェーズ順序は **Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** のみ。
 - AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 3 Execute を開始しない**。
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
@@ -151,5 +152,6 @@
 - Self-Correction 3回超過
 - 契約再定義要求の発生
 - 未定義ファイル競合
+- 指定外ファイル差分の発生
 - SafeMode後退の兆候
 - 依存前提崩壊（参照契約の欠損・整合不能を含む）
