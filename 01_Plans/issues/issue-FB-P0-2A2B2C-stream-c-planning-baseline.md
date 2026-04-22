@@ -27,14 +27,10 @@
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
-- 事前想定との差分
-  1. ファイル名に `stream-c` が残存（運用主体は Stream A）。
-  2. 一部Issueで `Proceed` 条件文が簡略化され、`held` 優先停止の明記が不足。
-- 判定: 差分ありのため `held` 記録。
+- 事前想定との差分: なし（SSOT固定済み、Proceed可）。
 
 ### held record（Phase 1 gate）
-- `HOLD-P1-NAMING-ALIGN`: 命名差分（legacy filename のみ stream-c 表記）
-- `HOLD-P1-PROCEED-GATE-TEXT`: Proceed/Stop 文言の未統一
+- `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）
 
 ## Phase 2: ADR/CDC Consensus（必須）
 ### Context
@@ -85,7 +81,7 @@
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - 対象7Issueの語彙・判定式・停止条件を統一。
 - `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)` をA1->A2->A3の唯一判定式として固定。
-- `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `No-Go = (!ProceedGate && !Conditional)` を共通化。
+- `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
 - 非対象ファイルの編集は実施しない。
 
 ## Phase 5: Verify
