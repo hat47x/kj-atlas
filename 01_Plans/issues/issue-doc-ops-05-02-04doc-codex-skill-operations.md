@@ -861,3 +861,30 @@
 ### Phase 5 Proceed / Stop
 - 判定: **Proceed**
 - 停止条件評価: 3回超過なし / 前提崩れなし / 未定義競合なし。
+
+## 16) DOC-OPS-05 dedicated serial run (2026-04-22)
+
+### Phase 1 Read
+- 対象Issue `DOC-OPS-05-02` の最新本文（Requirement meta I/F / AC / Validation plan）を再確認。
+- Scope対象文書 `04_Documentation/codex_skill_operations.md` を read-only 参照し、公開境界・読者・目的の現状を確認。
+- 前提崩れ/競合検知: **なし**。
+
+### Phase 2 Plan
+- AC/DoD不足のドラフト提案: docs-check結果を Issue メモ側に記録し、Proceed 判定を `Ready / Hold / Needs-decision` で固定する。
+- 合意: 本Issueは docs-only の分類/実行メモ整備として進行し、指定外ファイルは編集しない。
+- ADR要否判定: **不要**（文書分類メモ更新のみで設計決定の新設なし）。
+
+### Phase 3 Execute
+- 実施: 本Issueメモに専任実行ログ（Phase 1〜5）を追記。
+- 分類方針: **Move internal** を維持。
+- 変更範囲: `01_Plans/issues/issue-doc-ops-05-XX-*.md` のみ。
+
+### Phase 4 Verify
+- docs-check 実行計画: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` と `git diff --check`。
+- 自己修復ポリシー: 不整合時は同一Issueメモ内で最大3回修復、4回目相当は停止。
+- 本Issue時点の修復回数: **0/3**（全体検証で最終確認）。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
+- 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
