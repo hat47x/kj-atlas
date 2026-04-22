@@ -46,6 +46,9 @@
 - Gate-5（自己修復上限）: 検証失敗時の自己修復は最大3回。4回目相当は fail-safe 停止。
 
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
+### Phase 1 gate（固定）
+- proposal-only 契約固定、`reviewState` 制約、No-Go語彙（`auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`）を開始時に必ず確認する。
+
 ### Read同期スナップショット
 - 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
 - No-Go語彙: `auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`
@@ -69,6 +72,7 @@
 
 ## Phase 2 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
 - 開始時Read: Phase 1 で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
+- Execute開始ゲート: AC/DoD不足時はAIがドラフト提案のみ行い、人手合意前は Phase 3 Execute を開始しない。
 - AC/DoD不足時: AIは不足項目のドラフトのみ提示し、合意済みAC/DoDが揃うまで `status=held` を維持する。
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
@@ -89,6 +93,8 @@
 ## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 開始時Read: Phase 2 で確定した AC/DoD 合意内容を再読し、未合意項目があれば `held` で停止する。
 - 実行開始条件: AC/DoDの人手合意が完了していること（未合意なら Execute 開始禁止）。
+- proposal lifecycle は `proposed | accepted | rejected | held` に固定し、別名・追加語彙を導入しない。
+- auto-apply と AIによる `reviewState=human_reviewed` 自動昇格を明示的に禁止する。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
@@ -100,6 +106,7 @@
 
 ## Phase 4 Verify（safeMode後退ゼロを検証）
 - 開始時Read: Phase 3 の変更差分（proposal-only / no-auto-apply / human-only昇格）を再確認する。
+- docs-check（3点セット）を実行し、自己修復は最大3回までに制限する。
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
 - `sourceBundleHash === bundleHash` を参照整合キーとして明示。
@@ -132,6 +139,7 @@
 
 ## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
 - 開始時Read: Verify結果と fail-safe 判定条件（3回超過 / 前提崩壊 / 競合）を再確認する。
+- 3回超過（4回目相当）または前提崩壊を検知した場合は Proceed を中止し、fail-safe 停止する。
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
