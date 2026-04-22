@@ -285,3 +285,34 @@
 - Phase開始前Readを実施し、Proceed条件（AC/DoD + docs-check pass）を照合。
 - 判定: `Done`（single-file / contract-only / 語彙固定 / CE0契約ID read-only / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は 3 回上限を超える前に `held` で停止し、4回目相当は `stopped_for_clarification` を適用。
+
+## Phase Execution Record（2026-04-22 / Stream C / core-graph boundary contract lock only）
+### Phase 1 Read
+- Read再同期を実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を確認。
+- 差分判定: 語彙衝突・再定義・後退兆候は 0 件（継続可）。
+
+### Phase 2 Plan
+- Phase開始時Readを再実施し、直前Phaseとの差分（role/transition/no-go, SafeMode, no-go制約）を再点検。
+- Scopeを「Core Graph責務境界の契約固定記録」へ限定し、編集対象を本Issue単一ファイルのみに固定。
+- AC/DoD不足は未検出。よってAIドラフト提案フェーズは未起動（`held` 新規なし）。
+
+### Phase 3 ADR Consensus
+- Phase開始時Readを再実施し、契約語彙の差分有無を再確認。
+- 判定: `No ADR delta`（契約固定のみで遂行、方針追加なし）。
+- 未承認論点は確定化せず、発生時は `held`/`pending` で在庫化する方針を維持。
+
+### Phase 4 Execute
+- Phase開始時Readを再実施後、contract-only で本Issueの実行記録を追記。
+- `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定維持。
+- 禁止事項（CE0契約ID再定義、SafeMode後退、語彙衝突、指定外編集）に抵触しないことを確認。
+
+### Phase 5 Verify
+- Phase開始時Readを再実施し、語彙差分・No-Go逸脱・SafeMode後退がないことを確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Verify失敗は発生せず、自己修復回数は 0/3。
+
+### Phase 6 Proceed
+- Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（Stream C専任、single-file、contract-only、責務境界契約固定を維持）。
+- 未承認事項在庫: なし。今後検出時は `held` で停止し、4回目相当のVerifyは実施しない。
