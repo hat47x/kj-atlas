@@ -940,3 +940,38 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+## 17) DOC-OPS-05 バッチ5専任プロトコル固定（Read -> ADR/CDC -> Plan -> Execute -> Verify -> Proceed）
+
+### Phase 1 Read（開始時Read必須）
+- Read対象: `Scope` / `Related ADR/Spec` / `SecurityGateImpact` を再確認し、**public-exposure 境界**（公開可能情報と非公開運用情報の分離）を明示する。
+- Read結果: 本Issueは docs-only であり、実装変更を行わない。
+
+### Phase 2 ADR/CDC（開始時Read必須）
+- Read対象: 直前PhaseのRead結果と既存CDC記録を再読。
+- Context: セキュリティ文書は公開時の説明責務を持つ一方、内部運用詳細の露出を防ぐ必要がある。
+- Decision: Classification は **Improve external** を維持し、`SecurityGateImpact=public-exposure` をレビューゲートとして固定する。
+- Consequences: 後続の文書改善は公開境界の明示を必須とし、内部限定情報は分離対象として扱う。
+
+### Phase 3 Plan（開始時Read必須）
+- Read対象: 既存AC/DoDとValidation planを再読。
+- AC/DoD不足時の扱い: **AIドラフト提案を先に作成し、合意が得られるまでExecuteへ進まない。**
+- Plan固定:
+  - AC: Audience / Goal / Non-goal / 公開境界 / Outcome / Related の追跡可能性を担保。
+  - DoD: GoNoGoGate判定根拠、Verify結果、Proceed判定（Ready/Hold/Needs-decision）を記録。
+
+### Phase 4 Execute（開始時Read必須）
+- Read対象: 合意済みPlanと非目標（実装変更禁止）を再確認。
+- 実行制約: Issueメモの範囲で公開境界と判定メタを整備し、コード/実装ファイルは変更しない。
+
+### Phase 5 Verify（開始時Read必須）
+- Read対象: Phase 4で確定した差分とValidation plan。
+- Verify項目:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files <this-issue-file>`
+  - `git diff --check`
+- 失敗時ポリシー: **最大3回まで自己修復**。4回目相当、前提崩れ、未定義競合が発生した場合は即停止する。
+
+### Phase 6 Proceed（開始時Read必須）
+- Read対象: Verify結果と停止条件の該当有無。
+- Proceed条件: Verify成功かつ停止条件非該当の場合のみ `Ready` とする。
+- 停止条件: 4回目相当の修復試行、前提崩れ、未定義競合を検知した時点で `StoppedForClarification` を記録して終了する。
