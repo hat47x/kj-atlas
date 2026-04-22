@@ -904,3 +904,40 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+## 18) DOC-OPS-05 Batch3 dedicated execution record（2026-04-22）
+
+### Phase 1: Read
+- Read: `Requirement meta I/F` と既存 Stream 記録を再読し、Classification=`Improve external` / DecisionStatus=`Fixed` を再確認。
+- Read: 編集範囲を本Issueファイルのみに限定し、実装変更禁止を再確認。
+
+### Phase 2: ADR/CDC
+- Read: `Related ADR/Spec`（`04_Documentation/installation.md` / `01_Plans/documentation_quality.md`）の参照整合を再確認。
+- Context: installation 文書は公開価値が高く、初回導入者向け品質強化が必要。
+- Decision: 本Issueの分類は **Improve external** を維持し、公開境界を明示する改善方針を固定。
+- Consequences: 後続は docs-only の導入手順改善に限定し、実装コードや運用基盤は非変更。
+
+### Phase 3: Plan
+- Read: 既存AC/DoDおよびGoNoGoGate要件を再読。
+- AC/DoD不足に対するAIドラフト提案:
+  - AC-B3-08-1: Audience / Goal / Public boundary / Outcome の4点をProceed判定時に再掲必須。
+  - DoD-B3-08-1: Verify結果に「コマンド」「合否」「修復回数（0-3）」を必須記録。
+- 合意記録: 本バッチ内の編集方針として上記ドラフトを採用し、Issue運用ルールに追加。
+
+### Phase 4: Execute
+- Read: Planで固定した補強AC/DoDを再読。
+- 実施内容: Batch3専任の6Phase固定ログを追記し、判定導線と停止条件を明文化。
+- 非実施: `04_Documentation/installation.md` 本体改稿、`03_Implement/**` 変更、他Issue変更。
+
+### Phase 5: Verify
+- Read: Verify失敗時の自己修復上限（3回）を再読。
+- 実行コマンド（予定）:
+  - `rg -n "Batch3 dedicated execution record|AC-B3-08-1|DoD-B3-08-1|Ready/Hold/Needs-decision" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 判定基準: 追記語彙が検出され、Markdown体裁崩れが無いこと。
+
+### Phase 6: Proceed
+- Read: Phase 1〜5結果を再読し、停止条件の該当有無を確認。
+- 状態: **Ready**
+- 続行条件: Verifyを3回以内の自己修復で収束できること。
+- 即停止条件: 4回目相当の修復要求 / 前提崩れ / 競合検知。
