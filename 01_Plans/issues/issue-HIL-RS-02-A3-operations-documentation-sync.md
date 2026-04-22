@@ -11,17 +11,30 @@
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
+- Non-target file policy: 対象7Issue以外は不干渉
 
 ## Phase 1: Read
-- Status/Priority/Scope/Related ADRを再読。
-- Delta log: A3はread-only reference onlyを維持。Open条件をA1ゲートで明確化。
+### Extracted
+- Status: `Draft`
+- Priority: `P1`
+- Scope: operations documentation sync の契約参照のみ
+- Dependencies: `A1 -> A2 -> A3`（A1完了までDraft固定）
+- Related ADR/Spec: `ADR-0027/0028`
 
-## Phase 2: ADR Consensus
+### Delta log
+- 現値
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+- 事前想定との差分: なし（A3はread-only参照）。
+
+## Phase 2: ADR/CDC Consensus
 ### Context
-- A3は運用文書同期の参照ノードであり、契約再定義をしてはいけない。
+- A3は運用文書同期の参照ノードであり、契約再定義を許容しない。
 
 ### Decision
-- Contract Freeze（read-only）:
+- Contract Freeze（read-only）
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `schemaVersion=1.0.0`
@@ -33,30 +46,33 @@
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - Sync route固定: `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`
 - Role vocabulary固定: `Security Officer`, `System Owner`, `Platform Operator`
-- D1〜D4固定値は参照専用（A3再定義禁止）。
+- D1〜D4固定値: 参照専用（A3再定義禁止）
 
 ### Consequences
 - A1未完了時A3 Open禁止。
-- NoGo時差戻しはA1のみ。
+- NoGo差戻しはA1のみ。
 
 ### held
-- A3単独での契約改定要求は `held` として却下対象。
+- A3単独での契約改定要求は `held`。
 
 ## Phase 3: Plan
-- AC: fixed keys diff=0 / role語彙固定 / D1〜D4参照固定。
-- DoD: A3 Open gateがA1条件に従う / NoGo差戻し先A1一意。
+- 対象差分意図: A3をread-only参照ノードとして固定。
+- 非対象不干渉: 7Issue外は編集しない。
+- AC/DoD
+  - AC: fixed keys diff=0 / role語彙固定 / D1〜D4参照固定。
+  - DoD: A3 Open gateがA1条件従属 / NoGo差戻し先A1一意 / self-correction<=3。
 
 ## Phase 4: Execute
-- Open/Proceed Gate:
+- Open/Proceed Gate
   - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
   - `NoGo = !Go`
-  - `a1Status!="Done"` の間は `Draft` 固定。
+  - `a1Status!="Done"` の間は `Draft` 固定
 
 ## Phase 5: Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
-- self-correction最大3回。
 
 ## Phase 6: Proceed / Stop
 - Proceed: AC/DoD充足時のみ。
-- Stop: A1未完了でOpen要求、Pending bypass、未定義競合、self-correction超過。
+- Stop: A1未完了でOpen要求、Pending bypass、未定義競合、3回超過、指定外差分。

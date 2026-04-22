@@ -10,30 +10,22 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
+- Non-target file policy: 対象7Issue以外は不干渉
 
-## Phase 1: Read（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- 対象4ファイルを再読し、契約キーと判定式の差分抽出を行う。
+## Phase 1: Read
+- Extracted: Status=`Open`, Priority=`P1`, Scope=`planning only`, Dependencies=`A1 -> A2 -> A3`。
+- Delta log（現値）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+- 事前想定との差分: なし（Proceed可）。
 
-### Execute
-- Status/Priority/Scope/Related ADRを再読済み。
-- Delta log: 固定キーは整合。NoGo差戻し先をA1契約Issueへ一本化。
+## Phase 2: ADR/CDC Consensus
+### Context
+- A1契約はRS-01/RS-02共通ゲートであり、判定式を単一化する必要がある。
 
-### Verify
-- 固定キー4点（`freezeContractId` / `contractLinkLocked` / `sharedResourceFreeze` / `safeModeDefault`）の差分=0を確認。
-
-### Proceed
-- Phase 2へ進行。
-
-## Phase 2: ADR/CDC Consensus（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- Decision差分の有無をContext/Decision/Consequences形式で明文化する。
-
-### Execute
-#### Context
-- A1契約はRS-01/RS-02両系統の開放ゲートであり、統治判定式を単一化する必要がある。
-
-#### Decision（Contract Freeze SSOT）
+### Decision（Contract Freeze SSOT）
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
 - `schemaVersion=1.0.0`
@@ -45,84 +37,31 @@
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-#### Consequences
+### Consequences
 - A1未完了時A2/A3 Open禁止。
 - NoGo return pathはA1契約Issue固定。
 
-#### held
-- `HIL-RS-02-GOV-EXCEPTION-01` は `held`。
+### held
+- `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持。
 
-### Verify
-- 4ファイルでDecision値が一致することを確認。
+## Phase 3: Plan
+- 対象ファイル差分意図: Go/NoGo判定式とキー定義を統一。
+- 非対象不干渉: 7Issue外は編集しない。
+- AC/DoD
+  - AC: 固定キー差分0 / unlockRule一致 / Pending bypass禁止。
+  - DoD: NoGo return path一意 / safeModeDefault維持 / self-correction<=3。
 
-### Proceed
-- 差分なしのため追加ADR起票なしでPhase 3へ。
+## Phase 4: Execute
+- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+- `Go = A2A3StartAllowed`
+- `NoGo = !A2A3StartAllowed`
+- `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## Phase 3: Plan（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- AC/DoDの不足を補い、検証可能な文面へ固定する。
-
-### Execute
-- AC:
-  - 固定キー一致（4ファイル差分0）。
-  - `unlockRule` 一致。
-  - `decisionQueueTransition` 一致。
-  - `NoGo return path` がA1契約Issueで一意。
-- DoD:
-  - Go/NoGo判定式一致。
-  - A1差戻し先一意。
-  - `safeModeDefault=ON` 維持。
-  - self-correction `<=3`。
-
-### Verify
-- AC/DoDがPhase 4の判定式で機械的に照合可能であることを確認。
-
-### Proceed
-- Phase 4へ。
-
-## Phase 4: Execute（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- 契約キーとGo/NoGo判定式を固定し、ドリフト余地を排除する。
-
-### Execute
-- Go/NoGo:
-  - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-  - `Go = A2A3StartAllowed`
-  - `NoGo = !A2A3StartAllowed`
-  - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-
-### Verify
-- 契約キー4点の記載揺れなし。
-
-### Proceed
-- Phase 5へ。
-
-## Phase 5: Verify（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- docs-check / diff整合 / 自己修復上限を検証する。
-
-### Execute
+## Phase 5: Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
-### Verify
-- docs-check相当とdiff整合を確認。
-- self-correction は最大3回。
-
-### Proceed
-- すべて通過時のみPhase 6へ。
-
-## Phase 6: Proceed / Stop（Plan -> Execute -> Verify -> Proceed）
-### Plan
-- handoff要約を作成し、停止条件の有無を最終確認する。
-
-### Execute
-- Proceed条件: AC/DoD充足、`held`以外に未承認なし。
-- Stop条件: 前提崩壊、未定義競合、承認なき確定、self-correction超過。
-
-### Verify
-- Stop条件非該当を確認。
-
-### Proceed
-- Stream A handoffへ引き継いで終了。
+## Phase 6: Proceed / Stop
+- Proceed: AC/DoD充足、`held` 以外の未承認なし。
+- Stop: 前提崩れ、未定義競合、3回超過、指定外ファイル変更。
