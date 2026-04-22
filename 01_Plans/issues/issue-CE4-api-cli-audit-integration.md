@@ -74,12 +74,14 @@
 
 ### CDC（Change Decision Clarification）
 - CDC-CE4-001: CE4契約に `queryCanonicalHash` 監査必須化を追加する。
-  - 理由: API/CLI同値判定の比較根拠を監査で再現可能にするため。
-  - 影響: 契約語彙の追加なし（既存 read-only 語彙の必須化のみ）。
+  - Context: API/CLI同値判定の比較根拠が監査証跡で欠落すると再現検証ができず、fail-closed判定の説明責任が崩れる。
+  - Decision: `queryCanonicalHash` を CE4監査必須項目として固定し、API/CLI双方で欠落を許容しない。
+  - Consequences: 契約語彙の追加は行わず、既存 read-only 語彙の必須化のみを実施する。未承認中は `held` で保持し、確定実装しない。
   - 承認状態: **承認待ち**（未承認のため実装確定禁止）。
 - CDC-CE4-002: CE4契約に proposal lifecycle 語彙の閉集合（`proposed / accepted / rejected / held`）を明文化する。
-  - 理由: CE4での語彙拡張・再定義を防止するため。
-  - 影響: 契約境界の明確化のみ（挙動変更なし）。
+  - Context: proposal lifecycle の語彙境界が曖昧な場合、CE4での語彙拡張や再定義が混入し契約同値性が崩れる。
+  - Decision: CE4で利用可能な lifecycle 語彙を `proposed / accepted / rejected / held` の閉集合に固定する。
+  - Consequences: 契約境界の明確化のみで挙動変更は行わない。未承認中は `held` 維持とし、確定扱いにしない。
   - 承認状態: **承認待ち**（承認後に次Phaseへ進行）。
 
 ## Phase 3 Execute（I/F固定と監査導線のみ記述）
