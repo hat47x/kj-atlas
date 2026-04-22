@@ -900,3 +900,32 @@
 - 状態: **Ready**
 - 続行条件: Verifyが3回以内で収束し、競合がないこと。
 - 即停止条件: 4回目相当の修復要求 / 前提崩れ / 競合検知。
+
+
+## Stream H dedicated final pass（2026-04-22 / strict Phase 1-5）
+
+### Phase 1 Read
+- 本Issueの Requirement meta I/F / AC / DoD / Validation plan を再読し、docs-only スコープを再確認。
+- 前提確認: 対象は Issue メモ更新のみ。実装コードは変更しない（方針言及まで）。
+
+### Phase 2 Plan
+- 強制ゲート: **Plan → Execute → Verify** の順序を固定。
+- AC/DoD不足時の扱い: **AIドラフトを先に提示し、合意後に Execute へ進む**。
+- 停止条件を固定:
+  1) self-correction が3回を超過
+  2) 共有ファイル競合が発生
+  3) 前提条件が崩れる（依存仕様の不一致など）
+
+### Phase 3 Execute
+- 本Issue本文に、上記の順序強制・合意前提・停止条件を追記して運用ルールを明文化。
+- 非目標を維持: `04_Documentation/*` 本文改稿、実装コード変更、指定外Issue編集は実施しない。
+
+### Phase 4 Verify
+- docs-check:
+  - `rg -n "Stream H dedicated final pass|strict Phase 1-5|Plan → Execute → Verify|AIドラフト|合意後|self-correction|共有ファイル競合|前提条件" <this-issue-file>`
+  - `git diff --check`
+- 確認結果: 5Phase記録、強制ゲート、停止条件、docs-only制約が追跡可能。
+
+### Phase 5 Proceed
+- 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
+- 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
