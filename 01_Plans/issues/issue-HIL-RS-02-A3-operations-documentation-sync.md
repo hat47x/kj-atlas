@@ -7,11 +7,11 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象7Issue以外
+- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉
+- Non-target file policy: 対象5Issue以外は不干渉
 
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
@@ -56,13 +56,14 @@
 ### Consequences
 - A1未完了時A3 Open禁止。
 - NoGo差戻しはA1のみ。
+- `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ### held
 - A3単独での契約改定要求は `held`。
 
 ## Phase 3: Plan
 - 対象差分意図: A3をread-only参照ノードとして固定。
-- 非対象不干渉: 7Issue外は編集しない。
+- 非対象不干渉: 5Issue外は編集しない。
 - AC/DoD
   - AC: fixed keys diff=0 / role語彙固定 / D1〜D4参照固定。
   - DoD: A3 Open gateがA1条件従属 / NoGo差戻し先A1一意 / self-correction<=3。
@@ -70,8 +71,10 @@
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - Open/Proceed Gate
-  - `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-  - `NoGo = !Go`
+  - `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+  - `Go = A2A3StartAllowed`
+  - `NoGo = !A2A3StartAllowed`
+  - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
   - `a1Status!="Done"` の間は `Draft` 固定
 
 ## Phase 5: Verify
