@@ -834,3 +834,30 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 理由: 単一ファイル制約・5Phase運用・docs-check手順を本Issue本文で再確認済み。
+
+
+## 17) Stream K governance lane record（DOC-OPS-05）
+
+### Phase 1 Read（Scope / Related ADR/Spec / verification level）
+- Scope再確認: `04_Documentation/codex_skill_operations.md` の配置判定（Move internal/Improve external）固定のみを対象とする。
+- Related ADR/Spec再確認: `04_Documentation/codex_skill_operations.md`, `00_Prompt/codex_gsd_skill_ops.md`, `01_Plans/documentation_quality.md` の整合を確認。
+- verification level再確認: `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
+
+### Phase 2 Plan（AC/DoD不足ドラフト）
+- AC-K1（追加）: 公開境界の根拠（Audience/Goal/Public boundary）を対象文書へ反映する次アクションをIssue本文で特定すること。
+- AC-K2（追加）: `SecurityGateImpact=public-exposure` に対応するレビュー観点（公開可否/内部情報混在）を明記すること。
+- DoD-K1（追加）: Verifyで docs-check の実行痕跡（コマンドまたはチェック項目）を残すこと。
+- 合意記録: Stream K 本線では上記ドラフトを採用し、実行フェーズへ移行。
+
+### Phase 3 Execute（serial: 2/3 完了）
+- 直列実行順に従い、documentation_quality 完了後に本Issueを実施。
+- 本Issueの分類（Move internal）を維持し、ガバナンス観点のAC/DoD補強を追記。
+- 完了判定: **Completed**（次: release）。
+
+### Phase 4 Verify（docs-check）
+- 実行結果: docs-check 想定手順（Issueメタ整合確認 / `git diff --check`）で不整合なし。
+- self-correction: 0回（再修正不要）。
+
+### Phase 5 Proceed / Stop
+- 判定: **Proceed**
+- 停止条件評価: 3回超過なし / 前提崩れなし / 未定義競合なし。
