@@ -96,6 +96,9 @@
   - `agreement_scope`: CE0契約本文の語彙固定と判定根拠の明確化のみ。
   - `agreement_state`: `held`（承認待ち）
   - `agreement_note`: 承認前は運用確定扱いせず、Phase 3では「契約語彙統一」と「禁止事項単一化」の編集に限定する。
+- Execute開始条件（合意ゲート）:
+  - `agreement_state` が `held` の間は **Phase 3 Executeへ進まない**。
+  - Execute開始は `agreement_state=agreed` 明記後に限定する（記録なし開始は禁止）。
 - 非合意（明示）:
   - CE1/CE2/CE4の本文更新・再定義
   - `03_Implement/**` の実装変更
@@ -151,6 +154,12 @@
 - CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する（契約本文の新規追加・改名・削除は禁止）。
 - No-Go語彙IDの照合観点をCE0に明記し、下流への受け渡しは語彙ID参照のみとする。
 - Phase 2で `held` 化したAC/DoD補完提案は、承認前に確定扱いしない。
+
+### Contract-only wording hygiene checklist（再定義防止）
+- 許可: 表記揺れの統一、語順調整、見出し整理（意味不変）。
+- 禁止: Contract ID / No-Go ID / safeMode既定値 / proposal lifecycle の意味変更。
+- 禁止: CE1/CE2/CE4向けに契約本文を複製して「別定義」を作ること。
+- 差分の判断単位は `Contract ID` と `No-Go ID` を優先し、自然言語差分のみでは再定義扱いにしない。
 
 ### Execute結果条件
 - `collision=0` / `safeMode regression=0` を満たす記述へ整理。
