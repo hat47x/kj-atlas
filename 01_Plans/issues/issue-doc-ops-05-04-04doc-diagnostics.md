@@ -822,3 +822,42 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類=Improve external、判断根拠3点（Audience/Goal/公開境界）明記、DoD/Verify上限ルールを固定済み。
+
+## 19) Stream I serial record (2026-04-22, DOC-OPS-05 test/diagnostics lane)
+
+### Phase 1 Read
+- Scope / Related ADR/Spec / Expected verification level（`docs-check`）を再読し、docs-only前提を再確認。
+- 事前想定との差分: 過去記録に 5Phase と 6Phase の表現揺れがあるため、本レコードでは 5Phase に固定する。
+
+### Phase 2 Plan
+- AC/DoD不足を補完して合意済み化（ユーザー承認: 2026-04-22）。
+- 追加AC:
+  - AC-P1: Stream I記録は 5Phase（Read→Plan→Execute→Verify→Proceed）に固定。
+  - AC-P2: Verifyに docs-check コマンドと self-correction上限（最大3回）を必ず明記。
+  - AC-P3: Proceedに Stop条件（3回超過 / 前提崩れ / 競合検知）と再開条件を明記。
+  - AC-P4: 記録内容は本Issue Scope（diagnostics）に限定。
+- 追加DoD:
+  - DoD-P1: Stream Iの実行順は diagnostics → e2e_testing → e2e_verification_log の直列。
+  - DoD-P2: `validate_active_issue_memos.py --files` と `git diff --check` を実行。
+  - DoD-P3: 失敗時の自己修復は最大3回、4回目相当は停止。
+
+### Phase 3 Execute
+- 本Issue（diagnostics lane）の記録を先頭実行として更新。
+- 分類方針（Improve external）・DecisionStatus（Fixed）・VerificationLevel（docs-check）は既存値を維持。
+
+### Phase 4 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+  - `git diff --check`
+- self-correction方針: 失敗時は当該ファイル内で最大3回修正し、3回超過で停止。
+
+### Phase 5 Proceed
+- 判定: **Ready**（本ファイルのStream I記録更新を完了）。
+- 停止条件:
+  - self-correction 3回超過
+  - 前提崩れ（docs-only条件や指定編集境界の破綻）
+  - 競合検知（他ストリーム編集と衝突）
+- 再開条件:
+  - 停止原因の明文化
+  - 修正方針と編集境界の再合意
+  - 直前失敗コマンドの再実行で正常化を確認
