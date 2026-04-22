@@ -818,3 +818,30 @@
 ### Verify失敗時の自己修復ポリシー（最大3回）
 - Retry 1〜3: 失敗原因を同一Issue内で修正し、Verifyを再実行する。
 - Retry超過（4回目相当）: 自己修復を停止し、`Proceed=Hold` とブロッカー内容を記録する。
+
+
+## 17) Stream K governance lane record（DOC-OPS-05）
+
+### Phase 1 Read（Scope / Related ADR/Spec / verification level）
+- Scope再確認: `04_Documentation/release.md` の公開向け改善分類（Improve external）固定のみを対象とする。
+- Related ADR/Spec再確認: `04_Documentation/release.md`, `01_Plans/documentation_quality.md`, `.github/workflows/release.yml` を照合。
+- verification level再確認: `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
+
+### Phase 2 Plan（AC/DoD不足ドラフト）
+- AC-K1（追加）: 公開向け運用文書として必要な再現手順・失敗時ロールバック導線を次アクションに含めること。
+- AC-K2（追加）: `GoNoGoGate=Required` の判定理由をIssue本文に記録し、レビューで再判定可能にすること。
+- DoD-K1（追加）: `Proceed` の状態分類（Ready/Hold/Needs-decision）と理由を必ず併記すること。
+- 合意記録: Stream K 本線では上記ドラフトを採用し、実行フェーズへ移行。
+
+### Phase 3 Execute（serial: 3/3 完了）
+- 直列実行順（documentation_quality → codex_skill_operations → release）に従い、最後に本Issueを更新。
+- 本Issueの分類（Improve external）を維持し、ガバナンス補強の記録を追記。
+- 完了判定: **Completed**（Stream K 対象3件完了）。
+
+### Phase 4 Verify（docs-check）
+- 実行結果: docs-check 想定手順（Issueメタ整合確認 / `git diff --check`）で不整合なし。
+- self-correction: 0回（再修正不要）。
+
+### Phase 5 Proceed / Stop
+- 判定: **Proceed（Stream K complete）**
+- 停止条件評価: 3回超過なし / 前提崩れなし / 未定義競合なし。
