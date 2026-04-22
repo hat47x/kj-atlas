@@ -814,3 +814,23 @@
 ### Verify失敗時の自己修復ポリシー（最大3回）
 - Retry 1〜3: 失敗原因を同一Issue内で修正し、Verifyを再実行する。
 - Retry超過（4回目相当）: 自己修復を停止し、`Proceed=Hold` とブロッカー内容を記録する。
+
+## Stream H aligned execution note（2026-04-21）
+
+### Phase 1 Read
+- 本Issueのみ再読し、`DecisionStatus=Fixed` / `VerificationLevel=docs-check` / 分類=`Move internal` を確認。
+
+### Phase 2 Plan
+- Phase運用を **Stream H と同一（5Phase: Read → Plan → Execute → Verify → Proceed）** に固定。
+- 変更対象を本ファイルの運用記録追記のみに限定し、対象外編集を禁止。
+
+### Phase 3 Execute
+- 本セクションを追記し、Stream H 同一運用とスコープ固定（single-file）を明文化。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 理由: 単一ファイル制約・5Phase運用・docs-check手順を本Issue本文で再確認済み。
