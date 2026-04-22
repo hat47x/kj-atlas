@@ -195,3 +195,31 @@
 ### Phase 6 Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、contract-only維持）。
 - 致命条件の発生なし。発生時は `stopped_for_clarification` で停止報告する運用を再確認。
+
+## Phase Execution Record（2026-04-22 / Stream C / independent-run strict single-file update）
+### Phase 1 Read
+- 本Issueの最新状態を実行直前にReadし、`role / transition / no-go` 語彙、SafeMode境界、停止条件を再確認。
+- 事前想定との差分確認: 想定どおり固定語彙と契約境界は維持され、差分は検出されなかったため `held` 候補は新規発生なし。
+
+### Phase 2 Plan
+- Scope: 本Issue 1ファイル内での実行記録更新と、既存契約文言との整合確認のみ。
+- Non-Goals: CE0契約ID再定義、実装変更（`03_Implement/**`）、未承認事項の確定化。
+- AC/DoD/Validation/Stop Conditions を既存定義に準拠して再確認し、不足は検出されなかったため追加ドラフト提案は不要と判定。
+- 編集対象が `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみであることを再確認。
+
+### Phase 3 ADR/CDC Consensus
+- 方針差分判定: `No ADR delta`（新規の Context/Decision/Consequences 追加承認は不要）。
+- 未承認論点の確定化は行わず、必要時は `held/pending` 維持の方針を再確認。
+
+### Phase 4 Execute
+- 承認済みの既存Plan/契約境界に一致する最小差分として、本実行記録のみ追記。
+- `role / transition / no-go` 語彙の追加・再定義は実施せず、SafeMode既定ONの後退を示唆する記述も追加しない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 不一致は発生せず、自己修復回数は 0/3。
+
+### Phase 6 Proceed
+- 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only 制約を維持）。
+- 未承認論点の新規発生なし。発生時は推測で進行せず `held` で停止する。
