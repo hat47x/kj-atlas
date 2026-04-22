@@ -848,3 +848,31 @@
 - 判定: **Ready**。
 - 理由: 専有ファイル制約を順守し、分類（Improve external）・検証レベル（docs-check）・5Phase記録が整合。
 - Next action: `04_Documentation/configuration.md` の公開読者向け改善PRへ引き継ぐ。
+
+### Phase 1 Read（setup lane / configuration）
+- Scope / Related ADR/Spec / `Expected verification level=docs-check` を再読し、setup lane の責務を当該Issue単体に固定。
+- `DecisionStatus=Fixed` と `GoNoGoGate=Required` の整合を再確認。
+
+### Phase 2 Plan（AC/DoD delta agreed）
+- AC-H1（Scope固定）: 本Issueは `04_Documentation/configuration.md` 由来の分類・計画固定のみを扱う。
+- AC-H2（順序制約）: setup lane は `DOC-OPS-05-03` を先行完了し、後続 `DOC-OPS-05-08` は本Issue完了後に実施する。
+- AC-H3（検証一致）: Verify は `docs-check` を必須とし、`git diff --check` を最終ゲートにする。
+- AC-H4（再読ゲート）: Execute開始直前に対象ファイル再読を必須化する。
+- DoD-H1: Read/Plan/Execute/Verify/Proceed の5Phase記録を残す。
+- DoD-H2: Verify失敗時の自己修復は最大3回、4回目相当は停止（Hold）とする。
+- DoD-H3: Proceedは `Ready / Hold / Needs-decision` の三値で明示する。
+- DoD-H4: 前提崩れ・未定義競合時は推測実行せず停止する。
+
+### Phase 3 Execute（configuration first）
+- 実行順制約どおり、本Issueを先行対象として更新した（installationは未着手）。
+- 既存の分類方針（Improve external）とDecisionStatus（Fixed）は変更しない。
+
+### Phase 4 Verify（docs-check）
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+- `git diff --check`
+- 自己修復上限: 最大3回。
+
+### Phase 5 Proceed
+- 状態分類: **Ready**
+- 理由: AC-H1〜H4 / DoD-H1〜H4 をIssue本文に固定し、検証方式（docs-check）と整合したため。
+- 停止条件: 前提崩れ、未定義競合、自己修復3回超過を検知した場合は **Hold**。
