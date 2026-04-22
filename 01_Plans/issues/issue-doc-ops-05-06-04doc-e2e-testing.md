@@ -846,3 +846,42 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+## 20) DOC-OPS-05 Batch2専任実行記録（2026-04-22, 固定6Phase）
+
+### Phase 1 Read
+- Phase開始時に本Issueファイル（`DOC-OPS-05-06`）を再読し、`Scope` / `Related ADR/Spec` / `VerificationLevel=docs-check` を確認。
+- 判定: docs-only 範囲は維持、指定外ファイルは編集しない。
+
+### Phase 2 ADR/CDC
+- Phase開始時に本Issueファイルを再読し、既存 CDC 記録との整合を確認。
+- Context: e2e_testing文書は公開改善（Improve external）として扱う既定方針。
+- Decision: 追加ADRは不要、Issue内CDCを正本として運用継続。
+- Consequences: 実装変更は禁止、Issueメモの運用証跡更新のみ実施。
+
+### Phase 3 Plan
+- Phase開始時に本Issueファイルを再読。
+- AC/DoD不足点の確認結果: 固定6Phase導線（Read→ADR/CDC→Plan→Execute→Verify→Proceed）を明示的に追記する必要あり。
+- ドラフト提案（合意済み）:
+  - AC-B2-06-1: 各Phase冒頭で対象ファイル再読を明記する。
+  - AC-B2-06-2: Verify失敗時の自己修復上限3回と、4回目相当で停止を明記する。
+  - DoD-B2-06-1: Proceedに停止条件（前提崩れ/未定義競合/3回超過）と再開条件を残す。
+- 合意後にのみExecuteへ進行。
+
+### Phase 4 Execute
+- Phase開始時に本Issueファイルを再読。
+- 実施内容: Batch2専任として本6Phase記録を追記し、既存分類（Improve external）を維持。
+- 変更境界: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ。
+
+### Phase 5 Verify
+- Phase開始時に本Issueファイルを再読。
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+  - `git diff --check`
+- 自己修復ルール: 失敗時は同一ファイル内で最大3回、4回目相当は即停止。
+
+### Phase 6 Proceed
+- Phase開始時に本Issueファイルを再読。
+- 判定: **Ready**。
+- 停止条件: 前提崩れ / 未定義競合 / 自己修復3回超過。
+- 再開条件: 停止原因の明文化、修復方針の合意、直前失敗コマンド再実行で正常化確認。
