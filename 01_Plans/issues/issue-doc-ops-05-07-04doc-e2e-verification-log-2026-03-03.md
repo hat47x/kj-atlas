@@ -822,3 +822,40 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+## 18) DOC-OPS-05 Batch3 dedicated execution record（2026-04-22）
+
+### Phase 1: Read
+- Read: `Requirement meta I/F` と既存の Stream 記録を再読し、Classification=`Move internal` / DecisionStatus=`Fixed` を再確認。
+- Read: 編集範囲を本Issueファイルのみに限定し、実装変更禁止を再確認。
+
+### Phase 2: ADR/CDC
+- Read: `Related ADR/Spec`（`01_Plans/documentation_quality.md` / `ADR-0019`）との整合観点を再確認。
+- Context: e2e実測ログは公開ガイド本体よりも内部運用証跡として扱う。
+- Decision: 本Issueの分類は **Move internal** を維持し、公開境界の判断を固定する。
+- Consequences: 後続は docs-only で移設導線整備に限定し、コード・スキーマ・CI設定は変更しない。
+
+### Phase 3: Plan
+- Read: 受入条件とDoDの既存記述を再読。
+- AC/DoD不足に対するAIドラフト提案:
+  - AC-B3-07-1: Proceed 判定時に `Ready/Hold/Needs-decision` の三値と根拠1行を必須記録。
+  - DoD-B3-07-1: Verify 実行ログに「実行コマンド」「結果」「修復回数」を必須記録。
+- 合意記録: 本バッチ内の編集方針として上記ドラフトを採用し、Issue本文へ反映して運用する。
+
+### Phase 4: Execute
+- Read: 直前Phaseのドラフト提案とスコープ制約を再読。
+- 実施内容: Batch3専任ログとして6Phase固定順を追記し、AC/DoD補強の運用ルールを明文化。
+- 非実施: `04_Documentation/*` 実体、`03_Implement/**`、他Issueファイル。
+
+### Phase 5: Verify
+- Read: Verify手順（自己修復上限3回 / 4回目相当停止）を再読。
+- 実行コマンド（予定）:
+  - `rg -n "Batch3 dedicated execution record|AC-B3-07-1|DoD-B3-07-1|Ready/Hold/Needs-decision" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 判定基準: 追記セクションが検出され、体裁エラーが無いこと。
+
+### Phase 6: Proceed
+- Read: Phase 1〜5の結果を再読し、ブロッカー有無を確認。
+- 状態: **Ready**
+- 続行条件: Verifyが1回で通過、または3回以内の自己修復で収束すること。
+- 即停止条件: 4回目相当の修復要求 / 前提崩れ / 競合検知。

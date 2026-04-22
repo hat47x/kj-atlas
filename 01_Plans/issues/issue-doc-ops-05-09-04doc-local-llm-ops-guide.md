@@ -863,3 +863,40 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+## 19) DOC-OPS-05 Batch3 dedicated execution record（2026-04-22）
+
+### Phase 1: Read
+- Read: `Requirement meta I/F` と既存 Stream 記録を再読し、Classification=`Improve external` / DecisionStatus=`Fixed` を再確認。
+- Read: 編集対象を本Issueファイルのみに限定し、実装変更禁止を再確認。
+
+### Phase 2: ADR/CDC
+- Read: `Related ADR/Spec`（`04_Documentation/local_llm_ops_guide.md` / `02_Architecture/llm_provider_spec.md`）の整合を再確認。
+- Context: Local LLM運用ガイドは公開対象だが、安全前提と公開境界の明示が必要。
+- Decision: 本Issueの分類は **Improve external** を維持し、公開runbookとしての要件補強方針を固定。
+- Consequences: 後続変更は docs-only の境界明示に限定し、LLM実装・API・スキーマは変更しない。
+
+### Phase 3: Plan
+- Read: 受入条件/DoDとGoNoGoGateの既存文言を再読。
+- AC/DoD不足に対するAIドラフト提案:
+  - AC-B3-09-1: Proceed時に `SecurityGateImpact=public-exposure` と対策観点を1行で再確認。
+  - DoD-B3-09-1: Verifyログへ「実行コマンド」「合否」「修復回数（0-3）」を必須記録。
+- 合意記録: 本バッチの専任編集として上記ドラフトを採用し、Issue運用へ反映。
+
+### Phase 4: Execute
+- Read: Planで固定したAC/DoD補強項目を再読。
+- 実施内容: Batch3専任6Phaseログを追記し、停止条件とProceed判定を明確化。
+- 非実施: `04_Documentation/local_llm_ops_guide.md` 実体改稿、`03_Implement/**` 変更、他Issue変更。
+
+### Phase 5: Verify
+- Read: Verify失敗時の自己修復上限（3回）と4回目停止条件を再読。
+- 実行コマンド（予定）:
+  - `rg -n "Batch3 dedicated execution record|AC-B3-09-1|DoD-B3-09-1|SecurityGateImpact=public-exposure|Ready/Hold/Needs-decision" 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- 判定基準: 必須語彙の検出と体裁崩れなし。
+
+### Phase 6: Proceed
+- Read: Phase 1〜5結果と停止条件を再読。
+- 状態: **Ready**
+- 続行条件: Verifyが3回以内で収束し、競合がないこと。
+- 即停止条件: 4回目相当の修復要求 / 前提崩れ / 競合検知。
