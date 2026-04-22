@@ -1,11 +1,11 @@
-# Issue Draft: FB-P0 baseline / Stream A critical-path planning baseline
+# Issue Draft: FB-P0 baseline / Stream A critical-path planning baseline（legacy filename: stream-c）
 
 - Type: Process
 - Status: Open（critical path active）
 - Priority: P0
 - Owner: Stream A（Critical Path: P0/P1 Contract & Governance）
 - Scope: `01_Plans/issues/` の対象7Issueの計画・契約整合のみ
-- Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT
+- Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
 - Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
@@ -33,7 +33,7 @@
 - 判定: 差分ありのため `held` 記録。
 
 ### held record（Phase 1 gate）
-- `HOLD-P1-NAMING-ALIGN`: 命名差分（stream-c 表記）
+- `HOLD-P1-NAMING-ALIGN`: 命名差分（legacy filename のみ stream-c 表記）
 - `HOLD-P1-PROCEED-GATE-TEXT`: Proceed/Stop 文言の未統一
 
 ## Phase 2: ADR/CDC Consensus（必須）
