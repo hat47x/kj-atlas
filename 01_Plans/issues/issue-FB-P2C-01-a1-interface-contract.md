@@ -42,9 +42,14 @@
 - 固定（採用）
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
   - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 保留
   - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は実装詳細候補として `held`（確定扱いしない）。
 
@@ -66,11 +71,15 @@
   2. `held` 論点を確定扱いしない。
   3. A2/A3 read-only参照を明記。
 - DoD
-  1. Go/NoGo判定でA1 freeze値のみ参照。
+  1. Go/NoGo判定でA1 freeze値のみ参照（`schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze` を含む）。
   2. 指定外ファイル差分0。
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
+- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
+- `Go = A2A3StartAllowed`
+- `NoGo = !A2A3StartAllowed`
+- `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Handoff snapshot（read-only）
   - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
