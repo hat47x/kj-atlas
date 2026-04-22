@@ -396,3 +396,39 @@
   - 未定義競合: なし
   - Self-Correction 3回超過: なし
 - 判定: 継続可能（contract-only handoff維持）。
+
+
+---
+
+## Stream D Execution Record（2026-04-22 / CE1 contract-only mock dependency cut）
+
+### Phase 1 Read（再読確認）
+- 本ファイルをPhase開始前に再読し、編集対象が本ファイルのみであることを再確認。
+- CE0 SSOTは参照専用（read-only）であり、CE1側での再定義禁止を再確認。
+- 判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（再読確認 + 凍結計画）
+- CE1はI/F凍結のみ（実装記述禁止）を再確認。
+- 依存切断は mock 固定値で成立させる方針を再確認。
+- 固定値（contract-only / mock-only）:
+  - `mockContractIds = ["CE1-CTXQ-IF", "CE1-CTXB-IF", "CE1-HASH-DET-IF", "CE1-PREVIEW-GATE-IF"]`
+  - `mockBundleHash = "BUNDLE_HASH_MOCK_CE1_V1_FIXED"`
+
+### Phase 3 Execute（再読確認 + 契約固定）
+- CE1 I/F語彙のみを固定し、handler/UI/DB/worker などの実装記述は追加しない。
+- CE0 SSOTは参照専用として扱い、契約本文・契約IDの再定義を行わない。
+- CE2/CE4連携は mock 依存で切断し、以下固定値を受け渡し前提とする。
+  - `sourceBundleHash = "BUNDLE_HASH_MOCK_CE1_V1_FIXED"`
+  - Contract IDs は `mockContractIds` のみ許容。
+
+### Phase 4 Verify（再読確認 + docs-check）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（上限超過なし）。
+
+### Phase 5 Proceed（再読確認 + 継続判定）
+- 継続条件: CE0再定義なし / 実装記述なし / mock固定値依存切断維持。
+- ADRタスク発生時は `Context / Decision / Consequences` を明文化し、承認前は `held` で停止する。
+- 判定: **Proceed（contract-only状態を維持して継続可能）**。
