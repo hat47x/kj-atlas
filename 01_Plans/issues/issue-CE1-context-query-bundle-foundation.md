@@ -432,3 +432,48 @@
 - 継続条件: CE0再定義なし / 実装記述なし / mock固定値依存切断維持。
 - ADRタスク発生時は `Context / Decision / Consequences` を明文化し、承認前は `held` で停止する。
 - 判定: **Proceed（contract-only状態を維持して継続可能）**。
+
+---
+
+## Stream D Execution Record（2026-04-22 / independent-run contract freeze check）
+
+### Phase 1 Read（対象再読・境界確認）
+- 対象ファイルを再読し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を read-only として再確認。
+- CE1凍結対象（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）を再確認。
+- error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）および No-Go語彙を再確認。
+- 差分判定: **前提差分なし（CDC held遷移なし）**。
+
+### Phase 2 Plan（AC/DoD/Validation/Stop Conditions 明文化）
+- Acceptance Criteria（固定）:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一 canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false` は `422 preview_required`。
+  - 未定義キー入力は `400 unknown_contract_key`。
+- DoD（固定）:
+  - CE2/CE4引き渡し比較キーは `sourceBundleHash === bundleHash`。
+  - SafeMode regression = 0。
+  - contract-only（実装記述なし）を維持。
+- Validation（実行予定）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions（再確認）:
+  - CE0再定義要求 / safeMode境界後退要求 / 対象外編集要求 / Self-Correction 3回超過。
+
+### Phase 3 Execute（契約記述のみ更新）
+- 本Execution Recordを追記し、AC/DoD/Validation/Stop Conditionsを契約運用記述として明文化。
+- I/F凍結範囲外の仕様追加なし、実装記述（handler/UI/DB/worker）なし。
+- CE0契約本文の再定義なし、語彙改変なし。
+
+### Phase 4 Verify（AC/DoD照合 + docs-check + diff check）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（修復不要）。
+
+### Phase 5 Proceed（進行可否判定）
+- unresolved差分: なし。
+- CDC起票要否: なし（衝突未検知）。
+- 判定: **Proceed（held遷移不要、contract-only維持）**。
