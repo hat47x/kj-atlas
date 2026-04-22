@@ -971,3 +971,40 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 
 - 現在判定: **Ready**（分類基準固定・方針整合・docs-check実施可能）。
 - 次アクション: 専有3ファイルの直列処理を維持し、対象外編集は実施しない。
+
+## 17) Stream J lane execution log（DOC-OPS-05 security/ops, 2026-04-22）
+
+### Phase 1 Read（Scope / Related ADR/Spec / 語彙・導線整合）
+
+- 再読対象: `Scope`、`Related ADR/Spec`、既存の Stream H/F/G ログ。
+- 前提差分: Classification=`Improve external` / DecisionStatus=`Fixed` は維持、`operations -> security -> security_operational_guidelines` の直列順を本laneで固定。
+- 語彙・導線: Security Officer / System Owner / Platform Operator、および strict mode 参照導線を維持。
+
+### Phase 2 ADR/CDC consensus（必須）
+
+- Context: DOC-OPS-05 security/ops lane は公開境界を崩さず、Issueメモの運用手順を直列固定する必要がある。
+- Decision: 本Issueは operations 先頭として、後段（05-13, 05-14）へ引き渡す基準（語彙・Gate・Verify上限）を定義する。
+- Consequences: docs-check 失敗時の自己修復上限3回、未解決競合時停止を明示できる。
+- Held/Pending（未承認事項）:
+  - Pending-1: `Ready/Hold/Needs-decision` の最終運用ラベル名は横断運用で変更余地あり（本Issueでは確定しない）。
+
+### Phase 3 Plan（AC/DoDドラフトと合意）
+
+- AC/DoDドラフト提案:
+  1. AC: operations は security/guide への直列引き渡し条件（語彙一致・固定値参照）を保持する。
+  2. AC: Verify は docs-check + `git diff --check` を必須とする。
+  3. DoD: 自己修復は最大3回、4回目相当で Stop を明記する。
+- 合意状態: **Agreed**（本依頼の Stream J 専任指示を合意根拠として採用）。
+
+### Phase 4 Execute（operations -> security -> guidelines の先頭）
+
+- 実施内容: 本Issueに Stream J フェーズ記録を追加。
+- スコープ確認: 本ファイルのみ更新（指定外ファイルは未編集）。
+
+### Phase 5 Verify / Proceed / Stop
+
+- Verify実行:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- Self-correction policy: 失敗時は本Issue内で最大3回まで修正、4回目相当で停止。
+- Proceed判定: **Proceed（security へ）**。

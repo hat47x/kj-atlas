@@ -935,3 +935,41 @@
 
 - 現在判定: **Ready**（分類基準固定・方針整合・docs-check実施可能）。
 - 次アクション: 専有3ファイルの直列処理を維持し、対象外編集は実施しない。
+
+## 18) Stream J lane execution log（DOC-OPS-05 security/ops, 2026-04-22）
+
+### Phase 1 Read（Scope / Related ADR/Spec / 語彙・導線整合）
+
+- 再読対象: `Scope`、`Related ADR/Spec`、operations/security の Stream J 追記。
+- 前提差分: 直列順 `operations -> security -> security_operational_guidelines` の終点として判定を受領。
+- 語彙・導線: Security Officer / System Owner / Platform Operator、D1〜D4、StoppedForClarification を維持。
+
+### Phase 2 ADR/CDC consensus（必須）
+
+- Context: guidelines は運用判断補助の公開境界を扱うため、上流2Issueの条件を受けて最終Proceed判定を担う。
+- Decision: 本Issueでは docs-only 方針を維持し、分類（Improve external）を固定したまま Verify/Stop 条件を明文化する。
+- Consequences: Open化時に「未定義競合・前提崩れ・3回超過」で停止できる明確なガードを保持できる。
+- Held/Pending（未承認事項）:
+  - Held-1: security本体改稿の具体日程は本Issue外（別PR計画）として保留。
+
+### Phase 3 Plan（AC/DoDドラフトと合意）
+
+- AC/DoDドラフト提案:
+  1. AC: docs-check 実施と結果記録（pass/fail理由）を必須化。
+  2. AC: Proceed/Stop判定に「3回超過・未定義競合・前提崩れ」を含める。
+  3. DoD: 本Issueは3ファイル境界を超えないことを明記。
+- 合意状態: **Agreed**（本依頼の Stream J 専任指示を合意根拠として採用）。
+
+### Phase 4 Execute（直列順の第3段）
+
+- 実施内容: 本Issueに Stream J フェーズ記録を追加。
+- スコープ確認: 本ファイルのみ更新（指定外ファイルは未編集）。
+
+### Phase 5 Verify / Proceed / Stop
+
+- Verify実行:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+  - `git diff --check`
+- Self-correction policy: 失敗時は本Issue内で最大3回まで修正、4回目相当で停止。
+- Proceed判定: **Ready（Open可能）**。
+- Stop条件: 未定義競合 / 前提崩れ / 自己修復3回超過で停止して指示待ち。
