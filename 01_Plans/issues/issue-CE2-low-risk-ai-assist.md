@@ -21,6 +21,7 @@
 
 ## Lane guard（固定）
 - proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
+- lifecycle は閉集合（closed set）として扱い、`proposed | accepted | rejected | held` 以外への拡張を禁止する。
 - CE2 proposal lifecycle は `proposed | accepted | rejected | held` 以外を許可しない（固定）。
 - CE2は **proposal-only 契約固定**（実装禁止）。
 - CE1/CE0契約は参照専用（CE2で再定義しない）。
@@ -106,6 +107,7 @@
 - 開始時Read: Phase 2 で確定した AC/DoD 合意内容を再読し、未合意項目があれば `held` で停止する。
 - 実行開始条件: AC/DoDの人手合意が完了していること（未合意なら Execute 開始禁止）。
 - proposal lifecycle は `proposed | accepted | rejected | held` に固定し、別名・追加語彙を導入しない。
+- `reviewState` は `unreviewed | human_reviewed` の閉集合のみを許可し、AI提案は常に `unreviewed` に固定する。
 - auto-apply と AIによる `reviewState=human_reviewed` 自動昇格を明示的に禁止する。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - AIの実行結果は `status=proposed` 候補提示に限定し、`accepted/rejected/held` の確定遷移は人手判断に限定する。
