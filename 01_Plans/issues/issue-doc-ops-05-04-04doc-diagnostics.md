@@ -982,3 +982,31 @@
 ### Phase 6 Proceed
 - 判定: **Ready（承認待ち）**
 - 停止条件: Verify失敗が3回を超えた場合はHoldへ移行し、追加編集を停止。
+
+## Stream G serial lane run（2026-04-22, Phase 04）
+
+### Phase 1: Read
+- 対象再読: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` と対象Doc `04_Documentation/diagnostics.md` を最新状態で再読。
+- メタ確認: `Audience / Goal / 公開境界 / GoNoGoGate / SecurityGateImpact` の不足有無を確認。
+
+### Phase 2: Plan
+- Audience: DOC-OPS-05 の公開文書整備担当者（人間レビュー担当 + 生成AI運用担当）。
+- Goal: `04_Documentation/diagnostics.md` の分類と公開境界を再現可能な計画品質で固定する。
+- 公開境界: 実装詳細・内部判断メモは非公開、公開運用に必要な説明のみ対象。
+- GoNoGoGate: `Required`（Open化前に判定根拠の明示を必須化）。
+- SecurityGateImpact: `public-exposure`（公開時の情報漏えい・過剰公開を防止）。
+
+### Phase 3: Execute
+- docs-only 更新として、本Issueメモに Stream G 直列処理ログを追記。
+- 指定外編集（実装コード / HIL・CE・FB 系Issue）は未実施。
+
+### Phase 4: Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+  - `git diff --check`
+- diff整合: 1ファイル単位の差分で体裁崩れがないことを確認。
+
+### Phase 5: Proceed
+- 判定: **Ready**（推奨アクション `Improve external` を維持）。
+- 次工程: Phase 05（存在する場合）の対象Issueへ直列進行。
+- フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
