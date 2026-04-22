@@ -5,40 +5,42 @@
 - Priority: P0
 - Owner: Stream A（Critical Path: P0/P1 Contract & Governance）
 - Scope: `01_Plans/issues/` の対象7Issueの計画・契約整合のみ
-- Editable files:
-  - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
-  - `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
-  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
-  - `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
-  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
-  - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
-  - `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
-- Non-editable files: 上記以外すべて
-- Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT
+- Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
+- Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
 
 ---
 
-## Phase 1: Read（再読・差分ログ）
-
-### Extracted baseline
+## Phase 1: Read（再読・抽出）
+### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
-- Scope: 対象7Issueの契約/統治文書
-- Related ADR/Spec: 上記5ADR
+- Scope: 対象7Issueの契約/統治/handoff整合
+- Dependencies: `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON`
+- Related ADR: `ADR-0001/0019/0026/0027/0028`
 
-### Delta log（事前想定との差分）
-1. Issue名に `stream-c` が残存しており、実運用（Stream A）と命名が不一致。
-2. 既存文書群に「A1完了前A2/A3 Open禁止」の表現ゆれがあった。
-3. A3文書の参照専用制約（read-only reference only）は維持すべきで一致。
+### Delta log（A1→A2→A3 / freeze値）
+- 現値（baseline）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+- 事前想定との差分
+  1. ファイル名に `stream-c` が残存（運用主体は Stream A）。
+  2. 一部Issueで `Proceed` 条件文が簡略化され、`held` 優先停止の明記が不足。
+- 判定: 差分ありのため `held` 記録。
 
-## Phase 2: ADR Consensus（必須）
+### held record（Phase 1 gate）
+- `HOLD-P1-NAMING-ALIGN`: 命名差分（stream-c 表記）
+- `HOLD-P1-PROCEED-GATE-TEXT`: Proceed/Stop 文言の未統一
 
+## Phase 2: ADR/CDC Consensus（必須）
 ### Context
-- クリティカルパスでは、A1契約凍結を唯一ゲートとしてA2/A3を統治する必要がある。
+- Stream A クリティカルパスは A1 契約凍結を唯一ゲートとして A2/A3 を開放する必要がある。
 
-### Decision
-- 次の契約値をSSOTとして固定する。
+### Decision（固定 / 保留の明示）
+- 固定（freeze）
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `schemaVersion=1.0.0`
@@ -48,34 +50,42 @@
   - `safeModeDefault=ON`
   - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 保留（pending/held）
+  - `HIL-RS-02-GOV-EXCEPTION-01`: `held` 維持（未承認事項）
 
 ### Consequences
-- A1未完了でA2/A3 Openは禁止。
-- NoGo時差戻し先はA1契約Issueに固定。
+- A1未完了時のA2/A3 Open禁止。
+- NoGo差戻し先は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定。
 
-### held（未承認事項）
-- `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（A2先行Done解釈は未承認）。
+## Phase 3: Plan
+- 対象ファイルごとの差分意図
+  1. baseline: freeze値とgate条件のSSOTを明記。
+  2. A1/A2/A3系Issue: 同一判定式へ統一。
+  3. A3: read-only referenceを維持。
+- 非対象ファイル不干渉
+  - `01_Plans/issues/` の対象7Issue以外は変更しない。
 
-## Phase 3: Plan（AC/DoD点検）
-
-### AC
-1. 固定キー差分0。
-2. `A1 -> A2 -> A3` の依存順序固定。
-3. `Pending bypass` 禁止。
-
-### DoD
-1. NoGo return path が A1 で一意。
-2. 未承認事項は `held` で固定。
-3. 指定外ファイル差分0。
+### AC / DoD（ドラフト→合意済み）
+- AC
+  1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
+  2. 依存順序 `A1 -> A2 -> A3` を全7Issueで固定。
+  3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
+- DoD
+  1. NoGo return path が A1契約Issue で一意。
+  2. Proceed条件が「AC/DoD充足 + held以外未承認なし」に統一。
+  3. 指定外ファイル差分0。
 
 ## Phase 4: Execute
 - 対象7Issueの語彙・判定式・停止条件を統一。
-- 実装コードや他ストリームIssueは未変更。
+- 非対象ファイルの編集は実施しない。
 
 ## Phase 5: Verify
-- `docs-check` と `git diff --check` で検証。
-- 失敗時 self-correction は最大3回。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+- self-correction は最大3回（4回目相当は停止）。
 
 ## Phase 6: Proceed / Stop
-- Proceed条件: AC/DoD充足。
-- Stop条件: 前提崩れ / 未定義競合 / 承認なき契約確定 / self-correction 3回超過。
+- Proceed: AC/DoD充足、かつ `held` 以外の未承認事項なし。
+- Stop: 前提崩れ / 未定義競合 / 3回超過 / 指定外ファイル変更検知。
+- 停止時出力: 原因・影響・再開条件を明文化する。

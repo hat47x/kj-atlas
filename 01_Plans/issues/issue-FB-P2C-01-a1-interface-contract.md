@@ -5,63 +5,79 @@
 - Priority: P0
 - Owner: Stream A（Critical Path）
 - Scope: A1最小I/F契約の固定（Contract ID / Signature / Deterministic Rule）
-- Editable files: 対象7Issueのみ
-- Related ADR/Spec: `ADR-0001`, `ADR-0026`, `ADR-0027`
+- Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
+- Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
+- Non-target file policy: 対象7Issue以外は不干渉
 
 ---
 
 ## Phase 1: Read
+### Extracted
 - Status: `Open`
 - Priority: `P0`
 - Scope: A1契約固定のみ
-- Related ADR/Spec: `ADR-0001/0026/0027`
-- Delta log: 既存の契約3点は有効。Stream B表記をStream A運用へ補正。
+- Dependencies: 下流A2/A3はA1契約の参照専用
+- Related ADR: `ADR-0001/0026/0027/0028`
 
-## Phase 2: ADR Consensus
+### Delta log
+- 現値（critical-path freeze）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+- 事前想定との差分
+  - 独自Contract（`CTR-FB-P2C-01-A1-TIEBREAK-V1`）が並立し、A1 SSOTと衝突余地あり。
+- 判定: 差分あり `held`。
 
+### held record
+- `HOLD-A1-SSOT-COLLISION`: 並立Contract IDの競合可能性
+
+## Phase 2: ADR/CDC Consensus
 ### Context
-- A1はA2/A3の開始可否を決める唯一ゲートであり、契約値の多重正本化を防止する必要がある。
+- A1は全下流判定ゲートであり、Contract IDを単一SSOTへ収束させる必要がある。
 
 ### Decision
-- Contract ID: `CTR-FB-P2C-01-A1-TIEBREAK-V1`
-- Signature: `PolygonAutoFitContract.v1(input) -> output`
-- Type:
-  - input: `inputHash:string`, `seed:string`, `candidatePolygonHash:string`, `paddingViolationCount:number`
-  - output: `outputPolygonHash:string`, `appliedTieBreakOrder:string`
-- Deterministic Rule: `padding > self_intersection > area_delta > vertex_count`
-- MutationPolicy: `read-only`
+- 固定（採用）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+  - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- 保留
+  - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は実装詳細候補として `held`（確定扱いしない）。
 
 ### Consequences
-- A2/A3は契約変更禁止（参照のみ）。
-- 下流実装仕様は本Issueで確定しない。
-
-### held
-- 実装アルゴリズム詳細、最適化詳細、下流テスト詳細は `held`。
+- A2/A3はA1 freeze contract参照のみ（再定義禁止）。
+- 未承認アルゴリズム詳細は開始条件に使わない。
 
 ## Phase 3: Plan
-### AC
-1. Contract ID固定。
-2. Signature単一表記。
-3. Deterministic Rule固定順序。
-4. MutationPolicy=read-only。
+- 差分意図: A1契約を「唯一ゲート」に戻す。
+- 非対象不干渉: 対象7Issue外は編集しない。
 
-### DoD
-1. handoff最小セットのみ。
-2. 指定外ファイル差分0。
+### AC / DoD
+- AC
+  1. A1 SSOTキーが他Issueと一致。
+  2. `held` 論点を確定扱いしない。
+  3. A2/A3 read-only参照を明記。
+- DoD
+  1. Go/NoGo判定でA1 freeze値のみ参照。
+  2. 指定外ファイル差分0。
 
 ## Phase 4: Execute
-- Handoff snapshot（read-only）:
-  - `SnapshotID=SNAP-FB-P2C-A1-CTR-V1`
-  - `ContractID=CTR-FB-P2C-01-A1-TIEBREAK-V1`
-  - `Signature=PolygonAutoFitContract.v1(input)->output`
-  - `DeterministicRule=padding>self_intersection>area_delta>vertex_count`
+- Handoff snapshot（read-only）
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
   - `MutationPolicy=read-only`
 
 ## Phase 5: Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
 ## Phase 6: Proceed / Stop
 - Proceed: AC/DoD全充足。
-- Stop: 未承認確定、契約競合、self-correction 3回超過、指定外差分。
+- Stop: SSOT競合、未承認確定、3回超過、指定外差分。
