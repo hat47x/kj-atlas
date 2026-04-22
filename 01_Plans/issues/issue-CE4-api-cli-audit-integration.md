@@ -11,7 +11,8 @@
 - Verification: `docs-check`
 
 ## Lane guard（独立性・停止条件）
-- CE4は CE0 SSOT + CE1/CE2 read-only handoff を参照し、契約語彙を再定義しない。
+- CE4は CE0 SSOT + CE1/CE2 read-only handoff を参照し、**CE0/CE1/CE2 を更新しない**。
+- CE4は CE0/CE1/CE2 の契約語彙を再定義しない（read-only参照のみ）。
 - CE4は API/CLI/監査の契約I/F固定のみ（実装詳細・アルゴリズム詳細は禁止）。
 - CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照専用。
 - 監査欠損は常に fail-closed（成功扱い禁止）。
@@ -24,6 +25,10 @@
 - `CE0-SAFEMODE-IF`: safeMode既定ON、`allowUnreviewedText=false` 既定を参照。
 - `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手のみを参照。
 - `CG-01..05`: proposal-only / 監査4点 / fail-closed の統治境界を参照。
+
+### CE1/CE2 handoff（read-only）
+- CE1/CE2 は参照専用（差分確認のみ）とし、CE4から逆流更新しない。
+- CE4では CE1/CE2 の実装詳細・運用手順を追記しない（契約I/F固定のみ）。
 
 ### 監査4点（read-only）
 - 必須イベントは `query / bundle / proposal / apply` の4点で固定。
@@ -73,6 +78,8 @@
 - [ ] proposal lifecycle を read-only語彙に限定する条項が明示されている。
 
 ### CDC（Change Decision Clarification: Context / Decision / Consequences 必須）
+> ADR作業が発生する場合、**Context / Decision / Consequences の承認完了前に確定記述へ進まない**。
+
 - CDC-CE4-001: CE4契約に `queryCanonicalHash` 監査必須化を追加する。
   - Context: API/CLI同値判定の比較根拠が監査証跡に残らない場合、再現検証時の同値判定が不安定化する。
   - Decision: `queryCanonicalHash` を監査必須項目として固定し、`equivalenceKey + bundleHash` の同値判定根拠に紐づける。
@@ -146,6 +153,7 @@
 
 ### 未承認事項の扱い
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
+- 致命エラー（自己修復3回超過 / SafeMode後退兆候 / 契約矛盾検出）時は即停止し、指示待ちへ遷移する。
 
 ---
 
