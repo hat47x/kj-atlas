@@ -223,3 +223,33 @@
 ### Phase 6 Proceed
 - 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only 制約を維持）。
 - 未承認論点の新規発生なし。発生時は推測で進行せず `held` で停止する。
+
+## Phase Execution Record（2026-04-22 / Stream C / core-graph contract freeze reaffirmation）
+### Phase 1 Read
+- 本Phase開始時に本Issueを再読し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認。
+- 差分判定: 固定語彙に変更なし、No-Go canonical 5 IDs に変更なし、`held` へ移行すべき差分なし。
+
+### Phase 2 Plan
+- Scope を「本Issueの契約固定記述と実行記録の更新」に限定し、single-file 制約を再確認。
+- Non-Goals（実装記述追加、CE0契約ID再定義、No-Go語彙再定義、SafeMode後退記述）を再確認。
+- AC/DoD不足の有無を確認し、不足は検出されなかったため `held` 追加は不要と判定。
+
+### Phase 3 ADR Consensus
+- 本Phase開始時に再読を実施し、方針差分の有無を再評価。
+- 判定: `No ADR delta`。未承認論点の確定化は行わず、必要時 `held/pending` 維持方針を継続。
+
+### Phase 4 Execute
+- contract-only 境界を維持し、本Issue本文への実行記録追記のみ実施。
+- `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定語彙として維持。
+- 実装記述（handler/UI/DB/worker/API）を追加しないことを再確認。
+
+### Phase 5 Verify
+- 本Phase開始時に再読し、語彙差分・SafeMode後退兆候・No-Go逸脱がないことを確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数は 0/3（>3 に達せず停止条件未発火）。
+
+### Phase 6 Proceed
+- 本Phase開始時に再読し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（contract-only / single-file / 語彙固定 / SafeMode境界維持）。
+- 未承認事項在庫: なし。新規発生時は `held` で停止し人手合意待ちとする。
