@@ -142,3 +142,28 @@ Docker未導入です。Docker Engine + Compose を導入するか、上記のSQ
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: Compose系手順に変更が入る場合は、`04_Documentation/e2e_testing.md` の導線整合を同時確認する。
+
+
+## DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-08）
+
+### Phase 1 Read（同期）
+- Read同期: `04_Documentation/installation.md` と `issue-doc-ops-05-08-04doc-installation.md` を再読。
+
+### Phase 2 ADR/CDC
+- Context: 公開導入文書として最小導入と代替導入の再現性が必要。
+- Decision: Improve external を維持し、導線を簡潔化する。
+- Consequences: 初回導入者の失敗点を減らし、検証導線を維持できる。
+
+### Phase 3 Plan（AC/DoDドラフト→合意）
+- AC draft: 最小手順・代替手順・E2E正本導線の維持。
+- DoD draft: 6Phase記録と docs-check、自己修復3回上限。
+- 合意: Issueメモで合意済み。
+
+### Phase 4 Execute
+- 本節を追記し、Issueと本文の同期証跡を固定。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/installation.md`
+
+### Phase 6 Proceed
+- Ready。公開導入手順を継続保守。

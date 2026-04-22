@@ -1021,3 +1021,37 @@
 ### Phase 5) Proceed
 - 判定: **Ready**
 - 理由: 分類基準（Audience/Goal/公開境界）・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` が揃っているため。
+
+
+## 17) DOC-OPS Track 1 serial execution (2026-04-22)
+
+### Phase 1 Read（同期）
+- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md` を同時再読。
+- `Classification=Move internal` と stub公開方針を確認。
+
+### Phase 2 ADR/CDC
+- Context: canonicalization 詳細は設計正本へ集約し、公開文書は概要に限定する方針。
+- Decision: **Move internal** を維持し、公開文書は内部正本への導線stubsとして維持する。
+- Consequences: 詳細仕様の重複管理を削減し、公開境界の逸脱を抑止できる。
+
+### Phase 3 Plan（AC/DoD ドラフト→合意）
+- AC不足ドラフト:
+  1. Audience / Goal / Migration policy / Non-goal が明示される。
+  2. 「AI提案は自動確定しない」境界が維持される。
+- DoD不足ドラフト:
+  1. 6Phase 記録をIssue/Doc双方へ残す。
+  2. Verify失敗時は3回まで自己修復し、超過停止。
+- 合意記録: **本Issueメモ内で合意済み（Track 1運用）**。
+
+### Phase 4 Execute
+- 公開stub方針と内部正本導線を、Issueメモと対象Docで整合させる。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- 自己修復: 0/3（本更新時点）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/canonicalization.md` は公開stub運用を維持し、詳細は内部正本へ集約する。

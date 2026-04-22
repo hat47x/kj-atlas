@@ -116,3 +116,28 @@ git diff --check
 
 - Verify で不整合が出た場合の自己修復は **最大3回** まで。
 - 3回で収束しない場合は `StoppedForClarification` として停止し、判断要求を記録する。
+
+
+## DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-12）
+
+### Phase 1 Read（同期）
+- Read同期: `04_Documentation/release.md` と `issue-doc-ops-05-12-04doc-release.md` を再読。
+
+### Phase 2 ADR/CDC
+- Context: 公開リリース手順は監査可能性と再現性を両立する必要がある。
+- Decision: Improve external を維持し、判定根拠の記録を必須化。
+- Consequences: リリース時の判断と未実施理由を追跡可能にできる。
+
+### Phase 3 Plan（AC/DoDドラフト→合意）
+- AC draft: Audience/decides/does-not-decide/Go-NoGo の維持。
+- DoD draft: 6Phase記録 + docs-check + 自己修復3回上限。
+- 合意: Issueメモで合意済み。
+
+### Phase 4 Execute
+- 本節を追記し、Issue-Doc同期とPhase順序固定を明文化。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/release.md`
+
+### Phase 6 Proceed
+- Ready。公開リリース手順の継続更新へ進行。

@@ -970,3 +970,37 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
 - 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
+
+
+## 17) DOC-OPS Track 1 serial execution (2026-04-22)
+
+### Phase 1 Read（同期）
+- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` / `04_Documentation/installation.md` を同時再読。
+- `Classification=Improve external` と公開導入手順の責務を確認。
+
+### Phase 2 ADR/CDC
+- Context: installation 文書は外部利用者の初期導入体験を左右する。
+- Decision: **Improve external** を維持し、最小導入・代替導入・E2E導線を明示する。
+- Consequences: 導入失敗時の切り分けが容易になり、公開文書としての再現性が向上する。
+
+### Phase 3 Plan（AC/DoD ドラフト→合意）
+- AC不足ドラフト:
+  1. 起動/疎通/停止の最小手順が順序どおり追跡可能。
+  2. Docker不可時の代替（SQLite）導線が維持される。
+- DoD不足ドラフト:
+  1. 6Phase 記録と Go/No-Go 条件が残る。
+  2. Verify失敗時の自己修復は3回まで。
+- 合意記録: **本Issueメモ内で合意済み（Track 1運用）**。
+
+### Phase 4 Execute
+- Issueメモと対象DocのAC/DoD整合を更新し、公開境界の逸脱を防止。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 自己修復: 0/3（本更新時点）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/installation.md` の公開導入手順を docs-only で継続改善。
