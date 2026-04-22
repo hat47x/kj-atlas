@@ -225,3 +225,33 @@
 - 未定義競合
 - 指定外ファイル差分
 - 依存前提崩壊
+
+## Stream B Execution Ledger（CE0 Contract Freeze / this file only）
+> 目的: Phase運用を実行ログとして固定し、各Phase開始時の「最新再読」を監査可能にする。
+
+### Current run snapshot（2026-04-22）
+- lane: Stream B / CE0 Contract Freeze only
+- editable scope: `issue-CE0-contract-freeze.md` only
+- non-editable scope guard: CE1 / CE2 / CE4 files, `03_Implement/**`
+- contract freeze guard: Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は再定義禁止
+- fail-safe status: active（4回目修復 / safeMode後退要求 / contract_id_collision / scope逸脱を検知した時点で停止）
+
+### Phase gate execution record（latest-read mandatory）
+| Phase | Latest Read 実施 | 実施内容（要約） | Status |
+| --- | --- | --- | --- |
+| Phase 1 Read | Yes | 本Issue再読、Scope/Contract ID/No-Go/修復上限を再確認 | done |
+| Phase 2 ADR/CDC | Yes | Context/Decision/Consequences の明文化ルールを再確認、承認前は `held` を維持 | held-ready |
+| Phase 3 Plan | Yes | AC/DoD補完A/B/CとExecute開始条件（`agreement_state=agreed`）を再確認 | done |
+| Phase 4 Execute | Yes | 編集対象を本Issueに限定し、語彙統一・判定根拠明確化のみ許可 | done |
+| Phase 5 Verify | Yes | docs-check系コマンド + `git diff --check` で自己検証（修復上限3） | pending-run |
+| Phase 6 Proceed | Yes | Verify再読後、未達があれば `held` へ戻す停止条件を再確認 | held-until-verify |
+
+### ADR/CDC decision packet rule（approval gate）
+- Context:
+  - CE0 SSOT凍結を維持しつつ、下流（CE1/CE2/CE4）に read-only handoff するための判定根拠を固定する。
+- Decision:
+  - Contract ID / No-Go ID の語彙ID判定を正本として維持し、承認前の確定運用を行わない（`held`）。
+- Consequences:
+  - 下流は参照専用で再定義不可、衝突検知時はCDC `held` を起票して停止できる。
+- Approval:
+  - `agreement_state=agreed` 明記までは Proceed 不可（Phase 4以降の確定運用を禁止）。
