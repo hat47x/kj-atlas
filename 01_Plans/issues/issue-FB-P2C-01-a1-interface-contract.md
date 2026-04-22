@@ -28,11 +28,11 @@
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
 - 事前想定との差分
-  - 独自Contract（`CTR-FB-P2C-01-A1-TIEBREAK-V1`）が並立し、A1 SSOTと衝突余地あり。
-- 判定: 差分あり `held`。
+  - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は legacy候補として凍結し、判定ゲートから除外済み（read-only参照のみ）。
+- 判定: A1 SSOTとの差分なし（Proceed可）。
 
 ### held record
-- `HOLD-A1-SSOT-COLLISION`: 並立Contract IDの競合可能性
+- `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）
 
 ## Phase 2: ADR/CDC Consensus
 ### Context
@@ -51,7 +51,8 @@
   - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
   - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 保留
-  - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は実装詳細候補として `held`（確定扱いしない）。
+  - `HIL-RS-02-GOV-EXCEPTION-01`: `held` 維持（未承認事項）。
+  - `CTR-FB-P2C-01-A1-TIEBREAK-V1`: legacy参照のみ（判定ゲート非採用、確定扱いしない）。
 
 ### Approval Gate（Execute進行条件）
 - ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
