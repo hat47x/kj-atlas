@@ -168,25 +168,30 @@
 - 判定: `Done`（既存AC/DoDを満たし、docs-check pass）。
 - 未承認事項在庫: なし（`held/pending` の新規発生なし）。
 
-## Phase Execution Record（2026-04-22 / Stream C / contract-boundary lock）
+## Phase Execution Record（2026-04-22 / Stream C / contract-boundary lock + mock-pack input）
 ### Phase 1 Read
-- `role / transition / no-go` 語彙を再読し、直前記録との差分なし（継続可）。
-- SafeMode境界（`CE0-SAFEMODE-IF` 参照）に後退兆候なし。
+- `role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode境界を再読し、差分なし。
+- 入力は mock contract pack を利用し、他ストリーム完了待ちを前提にしないことを確認。
 
 ### Phase 2 Plan
-- Context: CE0 Core Graphの責務境界を契約として固定し、実装変更を伴わずに語彙整合のみを担保する。
-- Decision: `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定し、同義語化・拡張を行わない。
-- Consequences: 未承認論点は `held` で維持し、確定化せずに Proceed 判定時へ繰り越す。
-- AC/DoD不足の追加検知なし（AIドラフト提示は不要）。
+- Scope を本Issueの契約文言整合のみに固定（実装変更なし）。
+- `role / transition / no-go` は既存固定語彙のみを使用し、再定義・同義語化・拡張を行わない。
+- 致命条件（語彙差分、契約ID再定義、SafeMode既定ON後退、docs-check 4回目相当）発生時は推測実行せず停止報告する。
 
-### Phase 3 Execute
-- graph責務境界の契約固定のみを対象として文書整合を確認（実装変更なし）。
-- `role / transition / no-go` の固定語彙を維持。
+### Phase 3 ADR/CDC Consensus（Context/Decision/Consequences）
+- Context: CE0 Core Graph責務境界の契約固定を、mock contract pack入力で先行検証する。
+- Decision: `No ADR delta`。`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を維持。
+- Consequences: 未承認論点は `held` または `pending` の在庫として保持し、確定化しない。
 
-### Phase 4 Verify
-- `docs-check` を実行し、pass。
-- self-correction は 0/3 回（追加修正不要）。
+### Phase 4 Execute
+- contract-only 境界を維持し、本Issue本文の記述整合のみを実施。
+- CE0契約IDは read-only 参照のみで利用し、再定義なし。
 
-### Phase 5 Proceed
-- 判定: `Done`（contract-only 境界維持、docs-check pass）。
-- 停止条件の該当なし（3回超過・語彙衝突・SafeMode後退兆候なし）。
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数は 0/3（追加修正なし）。
+
+### Phase 6 Proceed
+- 判定: `Done`（AC/DoD充足、docs-check pass、contract-only維持）。
+- 致命条件の発生なし。発生時は `stopped_for_clarification` で停止報告する運用を再確認。
