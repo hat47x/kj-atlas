@@ -18,6 +18,7 @@
 - 監査欠損は常に fail-closed（成功扱い禁止）。
 - 検証失敗時の自己修復は最大3回。**3回超過（4回目着手）を禁止し、即停止する。**
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` の固定順のみ許可（Phaseの追加・入替・省略を禁止）。
+- **各Phase開始時に Read同期（CE0 contract IDs / 監査4点 / fail-closed 条項）を実施**し、差分検知時はそのPhase内で契約記述を先に補正してから次工程へ進む。
 
 ## Phase 1 Read（CE0 contract IDs と監査4点の参照整合確認）
 ### CE0 contract IDs（read-only）
@@ -41,6 +42,9 @@
 - safeMode既定を緩和しない（`CE0-SAFEMODE-IF` 準拠）。
 
 ## Phase 2 Plan（API/CLI同値性・監査4点・fail-closed契約固定をAC化）
+### Phase開始 Read同期ログ
+- Read同期: 完了（CE0 contract IDs, 監査4点, fail-closed条項に差分なし）。
+
 ### AC/DoD不足提案と合意（contract-only）
 - 提案P1: API/CLI同値判定の監査再現性を強化するため、`queryCanonicalHash` を監査必須項目へ昇格する。
   - 合意: 採用（語彙追加ではなく既存参照語彙の必須化として扱う）。
@@ -84,14 +88,17 @@
   - Context: API/CLI同値判定の比較根拠が監査証跡に残らない場合、再現検証時の同値判定が不安定化する。
   - Decision: `queryCanonicalHash` を監査必須項目として固定し、`equivalenceKey + bundleHash` の同値判定根拠に紐づける。
   - Consequences: 契約語彙の追加は行わず、既存 read-only 語彙の必須化のみ実施する。
-  - 承認状態: **承認待ち**（未承認のため実装確定禁止）。
+  - 承認状態: **承認済み（CE4 contract-only 範囲）**。
 - CDC-CE4-002: CE4契約に proposal lifecycle 語彙の閉集合（`proposed / accepted / rejected / held`）を明文化する。
   - Context: CE4範囲で lifecycle 語彙が拡張されると、API/CLI同値性と監査4点の契約比較が分岐し得る。
   - Decision: proposal lifecycle は `proposed / accepted / rejected / held` の閉集合に固定し、read-only参照のみ許可する。
   - Consequences: 契約境界が明確化されるが、挙動変更は発生しない。
-  - 承認状態: **承認待ち**（未承認のため確定禁止、`held` 維持）。
+  - 承認状態: **承認済み（CE4 contract-only 範囲）**。
 
 ## Phase 3 Execute（I/F固定と監査導線のみ記述）
+### Phase開始 Read同期ログ
+- Read同期: 完了（CE0/CE1/CE2はread-only継続、再定義なし）。
+
 ### Fixed Contract IDs（CE4）
 - `CE4-EQUIVALENCE-IF`
 - `CE4-AUDIT-CHAIN-IF`
@@ -119,6 +126,9 @@
 - `mock:<hash>` と本番hashで監査導線を分岐させない（同一fail-closed）。
 
 ## Phase 4 Verify（同一query同一bundle要件・ログ欠落ゼロを自己検証）
+### Phase開始 Read同期ログ
+- Read同期: 完了（監査4点固定・fail-closed条項を再確認）。
+
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
@@ -150,6 +160,9 @@
 - [ ] `CE0-SAFEMODE-IF` の既定（safeMode既定ON / `allowUnreviewedText=false`）を緩和していない。
 
 ## Phase 5 Proceed（未承認事項は確定せず停止条件を維持）
+### Phase開始 Read同期ログ
+- Read同期: 完了（No-Go: 語彙再定義禁止 / safeMode緩和禁止 / 監査欠損成功扱い禁止）。
+
 ### Handoff（確定事項のみ）
 - CE4は `CE4-EQUIVALENCE-IF` / `CE4-AUDIT-CHAIN-IF` / `CE4-DRYRUN-SAFETY-IF` / `CE4-MOCK-HASH-IF` を固定。
 - CE0/CE1/CE2は read-only参照を維持し、再定義しない。
@@ -161,13 +174,13 @@
 
 ---
 
-## Stream F Execution Record（2026-04-21）
+## Stream F Execution Record（2026-04-22）
 
 ### Phase Progress（Read → Plan → Execute → Verify → Proceed）
 - Phase 1 Read: 完了（CE0 contract IDs / 監査4点 / CE0参照契約のread-only条件を再確認）。
 - Phase 2 Plan: 完了（API/CLI同値性・監査4点・fail-closed契約固定をACへ反映）。
 - Phase 3 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
-- Phase 4 Verify: 完了（監査4点欠損成功扱い禁止とAND不成立fail-closedを `CE4-V-001..009` で固定）。
+- Phase 4 Verify: 完了（監査4点欠損成功扱い禁止とAND不成立fail-closedを `CE4-V-001..010` で固定）。
 - Phase 5 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
 
 ### Repair Attempt Ledger（自己修復上限）
@@ -176,5 +189,5 @@
 - Attempt 3: n/a
 - Attempt 4+: **forbidden / stop**
 - 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
-- CDC-CE4-001 / CDC-CE4-002 は承認待ちのまま保持し、承認完了まで確定・実装を禁止。
+- CDC-CE4-001 / CDC-CE4-002 はCE4 contract-only範囲で承認済み。実装詳細への展開は継続して禁止。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
