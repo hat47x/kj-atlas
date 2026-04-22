@@ -564,3 +564,43 @@
   - CE0 read-only境界維持
   - safeMode regression = 0
 - 判定: Verify結果で条件を満たす場合のみ継続。未達時は停止。
+
+---
+
+## Stream D Execution Record（2026-04-22 / CE1 I/F freeze only, mock-first dependency cut）
+
+### Phase 1 Read（Read同期）
+- 本対象ファイルを再読し、編集許可が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0は read-only SSOT として参照のみ（再定義禁止）を再確認。
+- 前提差分判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD補完提案）
+- 本対象ファイルを再読したうえで、AC/DoD補完を再確認:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一 canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false -> 422 preview_required`。
+  - unknown key -> `400 unknown_contract_key`。
+  - CE2/CE4連携キーは `sourceBundleHash === bundleHash` 固定。
+  - SafeMode regression = 0。
+- CDC要否判定: 契約衝突・語彙衝突を検知しないため **CDC起票なし**（held遷移不要）。
+
+### Phase 3 Execute（contract-only / 実装禁止順守）
+- CE1 v1 I/F凍結の確認のみ実施（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）。
+- モック前提の依存切断を維持（`sourceBundleHash`, `bundleHash` を契約キーとして固定）。
+- 実装記述（handler/UI/DB/worker）および指定外ファイル編集は未実施。
+
+### Phase 4 Verify（docs-check + self-correction<=3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（再試行不要）。
+
+### Phase 5 Proceed（継続判定）
+- 継続条件判定:
+  - docs-check pass
+  - self-correction <= 3
+  - preview bypass混入なし
+  - safeMode緩和なし
+  - 未定義契約競合なし
+- 判定: **Proceed可（CE1 I/F凍結を維持）**。
