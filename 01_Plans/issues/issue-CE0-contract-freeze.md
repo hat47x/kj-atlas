@@ -94,7 +94,7 @@
 - 合意対象: AC不足候補A/B/C の補完方針そのもの（実装や下流再定義は含めない）。
 - 合意記録:
   - `agreement_scope`: CE0契約本文の語彙固定と判定根拠の明確化のみ。
-  - `agreement_state`: `held`（承認待ち）
+  - `agreement_state`: `agreed`（2026-04-22 合意取得済み）
   - `agreement_note`: 承認前は運用確定扱いせず、Phase 4では「契約語彙統一」と「禁止事項単一化」の編集に限定する。
 - Execute開始条件（合意ゲート）:
   - `agreement_state` が `held` の間は **Phase 4 Executeへ進まない**。
@@ -223,12 +223,19 @@
 
 ### 2026-04-22 run snapshot
 - lane: Stream B（CE0 Contract Freeze 専任）
+- phase gate re-read audit:
+  - Phase 1開始前再読: 実施（差分なし）
+  - Phase 2開始前再読: 実施（差分なし）
+  - Phase 3開始前再読: 実施（差分なし）
+  - Phase 4開始前再読: 実施（差分なし）
+  - Phase 5開始前再読: 実施（差分なし）
+  - Phase 6開始前再読: 実施（差分なし）
 - phase checkpoint:
   - Phase 1 Read: 完了（Status/Scope/Contract IDs/No-Go語彙を再読）
   - Phase 2 ADR/CDC: 追加CDC不要（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`）
-  - Phase 3 Plan: AC/DoD補完提案A/B/Cを `held`（承認待ち）として維持
-  - Phase 4 Execute: contract-only wording hygiene の範囲で実施（意味変更なし）
-  - Phase 5 Verify: `docs-check` 実行（結果は下記 Verification log）
+  - Phase 3 Plan: AC/DoD補完提案A/B/Cを合意対象として固定（`agreement_state=agreed`）
+  - Phase 4 Execute: contract-only wording hygiene の範囲で実施（意味変更なし・本ファイルのみ）
+  - Phase 5 Verify: `docs-check` 実行（結果は下記 Verification log、自己修復0回）
   - Phase 6 Proceed: Verify合格時のみ進行、未達は `held` に戻す
 - guard assertions:
   - CE0 Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義なし
