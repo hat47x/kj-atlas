@@ -10,6 +10,15 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+
+## Stream E Assignment Lock（2026-04-22）
+- 担当範囲は Stream E 専任とし、CE2 proposal-only 契約固定のみを扱う。
+- 編集許可は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみに限定し、それ以外は編集禁止。
+- lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可し、拡張しない。
+- AI による `human_reviewed` 昇格は禁止し、`reviewState` の人手昇格のみ許可する。
+- auto-apply は禁止し、提案は常に proposal-only 境界に留める。
+- フェイルセーフは lifecycle拡張 / review昇格違反 / safeMode後退 / 指定外編集を即停止条件とする。
+
 ## Operator Directive（固定）
 - 専有編集ファイルは `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ。
 - CE2は **proposal-only** を固定し、実装・auto-apply は常時禁止。
@@ -187,3 +196,11 @@
 - 指定外ファイル差分の発生
 - SafeMode後退の兆候
 - 依存前提崩壊（参照契約の欠損・整合不能を含む）
+
+
+## Stream E execution log（2026-04-22）
+- Phase 1 Read: Read Order（上流文書）と本Issue本文を再読して契約固定を同期。
+- Phase 2 Plan: 追加差分を「担当範囲・閉集合lifecycle・昇格禁止・auto-apply禁止・fail-safe固定」の明文化に限定。
+- Phase 3 Execute: 本Issueファイル内のみを更新し、指定外ファイルは未変更。
+- Phase 4 Verify: docs-check 3点セット（validator / unittest / `git diff --check`）で差分妥当性を確認。
+- Phase 5 Proceed: Verify通過のため契約固定を維持したまま次工程へ引き渡し可能。
