@@ -230,13 +230,17 @@
   - Phase 4開始前再読: 実施（差分なし）
   - Phase 5開始前再読: 実施（差分なし）
   - Phase 6開始前再読: 実施（差分なし）
+- Phase 1抽出（固定語彙/Contract ID/No-Go語彙）:
+  - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  - 固定語彙: `equivalenceKey + bundleHash` / `sourceBundleHash` / `proposal lifecycle`
+  - No-Go IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
 - phase checkpoint:
   - Phase 1 Read: 完了（Status/Scope/Contract IDs/No-Go語彙を再読）
   - Phase 2 ADR/CDC: 追加CDC不要（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`）
   - Phase 3 Plan: AC/DoD補完提案A/B/Cを合意対象として固定（`agreement_state=agreed`）
   - Phase 4 Execute: contract-only wording hygiene の範囲で実施（意味変更なし・本ファイルのみ）
   - Phase 5 Verify: `docs-check` 実行（結果は下記 Verification log、自己修復0回）
-  - Phase 6 Proceed: Verify合格時のみ進行、未達は `held` に戻す
+  - Phase 6 Proceed: **Go**（判定根拠: `collision=0` / `safeMode regression=0` / docs-check pass）
 - guard assertions:
   - CE0 Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義なし
   - safeMode既定（ON, `allowUnreviewedText=false`）の緩和なし
@@ -245,7 +249,8 @@
 
 ### Verification log template（self-correction <= 3）
 - attempt_1:
-  - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => `ok: validated 5 active issue memos`
+  - docs-check: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => `Ran 8 tests ... OK`
   - git diff --check: pass
   - result: pass（self-correction 0回）
 - attempt_2（必要時のみ）:
