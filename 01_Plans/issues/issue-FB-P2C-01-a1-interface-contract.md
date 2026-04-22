@@ -70,15 +70,17 @@
   1. A1 SSOTキーが他Issueと一致。
   2. `held` 論点を確定扱いしない。
   3. A2/A3 read-only参照を明記。
+  4. `ProceedGate` をA1/A2/A3共通判定式として固定。
 - DoD
   1. Go/NoGo判定でA1 freeze値のみ参照（`schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze` を含む）。
   2. 指定外ファイル差分0。
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `Go = A2A3StartAllowed`
-- `NoGo = !A2A3StartAllowed`
+- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
+- `Go = ProceedGate`
+- `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
+- `NoGo = (!ProceedGate && !Conditional)`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Handoff snapshot（read-only）
   - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -95,7 +97,8 @@
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
-## Phase 6: Proceed / Stop
-- Proceed: AC/DoD全充足、かつ `held` 以外の未承認事項なし。
-- Stop: SSOT競合、未承認確定、3回超過、指定外差分。
-- 停止時出力: 原因・影響・再開条件を明文化する。
+## Phase 6: Proceed（Go / Conditional / No-Go）
+- Go: `ProceedGate=true` かつ AC/DoD全充足、`held` 以外の未承認事項なし。
+- Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合。
+- No-Go: SSOT競合、未承認確定、Self-Correction 3回超過、指定外差分。
+- No-Go時出力: 原因・影響・再開条件を明文化する。
