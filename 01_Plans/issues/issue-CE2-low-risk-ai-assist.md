@@ -10,6 +10,14 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+## Operator Directive（固定）
+- 専有編集ファイルは `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ。
+- CE2は **proposal-only** を固定し、実装・auto-apply は常時禁止。
+- AIによる `reviewState=human_reviewed` への昇格は常時禁止（人手操作のみ）。
+- 強制フェーズ順序は **Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** のみ。
+- AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 3 Execute を開始しない**。
+- 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
+
 ## Lane guard（固定）
 - proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
 - CE2 proposal lifecycle は `proposed | accepted | rejected | held` 以外を許可しない（固定）。
@@ -61,6 +69,7 @@
 
 ## Phase 2 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
 - 開始時Read: Phase 1 で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
+- AC/DoD不足時: AIは不足項目のドラフトのみ提示し、合意済みAC/DoDが揃うまで `status=held` を維持する。
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
@@ -79,6 +88,7 @@
 
 ## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 開始時Read: Phase 2 で確定した AC/DoD 合意内容を再読し、未合意項目があれば `held` で停止する。
+- 実行開始条件: AC/DoDの人手合意が完了していること（未合意なら Execute 開始禁止）。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
