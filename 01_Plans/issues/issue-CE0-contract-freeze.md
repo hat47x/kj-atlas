@@ -19,7 +19,7 @@
 - 推測実装（speculative implementation）を禁止し、記載根拠は本Issue内の固定語彙/固定I/Fに限定する。
 - 致命エラー（Fail-safe該当）検知時は即停止し、`held` へ戻す。
 - 未承認決定を確定扱いしない（承認待ち論点は `held`）。
-- 強制ワークフローは **`Phase 1 Read → Phase 2 Plan（AC/DoD補完） → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed`**。
+- 強制ワークフローは **`Phase 1 Read → Phase 2 ADR/CDC（Context/Decision/Consequences） → Phase 3 Plan（AC/DoD補完） → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`**。
 - **各Phase開始時は本Issueを最新再読してから開始する（再読省略禁止）。**
 - 自己修復は Verify で最大3回まで。4回目相当は即停止する。
 
@@ -53,7 +53,7 @@
 - 比較・照合は上記5語彙ID（`preview_bypass` 等）を正本とし、日本語/英語表記揺れは括弧内同義語として扱う。
 - CE1/CE2/CE4へは語彙IDのみを受け渡し、下流文書で同義語を追加しても禁止判定の意味は拡張・縮退しない。
 
-## Phase 2 Plan（I/F Mock Freeze計画 + AC/DoD補完）
+## Phase 2 ADR/CDC（Context/Decision/Consequences）
 ### 最新再読チェック（Phase開始ゲート）
 - Phase 1の固定語彙・No-Go語彙・Scopeを再読し、差分ゼロを確認してから着手する。
 
@@ -95,9 +95,9 @@
 - 合意記録:
   - `agreement_scope`: CE0契約本文の語彙固定と判定根拠の明確化のみ。
   - `agreement_state`: `held`（承認待ち）
-  - `agreement_note`: 承認前は運用確定扱いせず、Phase 3では「契約語彙統一」と「禁止事項単一化」の編集に限定する。
+  - `agreement_note`: 承認前は運用確定扱いせず、Phase 4では「契約語彙統一」と「禁止事項単一化」の編集に限定する。
 - Execute開始条件（合意ゲート）:
-  - `agreement_state` が `held` の間は **Phase 3 Executeへ進まない**。
+  - `agreement_state` が `held` の間は **Phase 4 Executeへ進まない**。
   - Execute開始は `agreement_state=agreed` 明記後に限定する（記録なし開始は禁止）。
 - 非合意（明示）:
   - CE1/CE2/CE4の本文更新・再定義
@@ -128,7 +128,7 @@
   - due:
 ```
 
-## Phase 3 Execute（Plan反映のみ。契約再定義・実装変更なし）
+## Phase 3 Plan（I/F Mock Freeze計画 + AC/DoD補完）
 ### 最新再読チェック（Phase開始ゲート）
 - CE0 Contract IDs再定義禁止、proposal-only、safeMode既定維持を再確認する。
 
@@ -165,7 +165,17 @@
 - `collision=0` / `safeMode regression=0` を満たす記述へ整理。
 - 検証失敗時は自己修復を最大3回まで実施し、4回目相当は停止する。
 
-## Phase 4 Verify（docs-check自己検証）
+## Phase 4 Execute（Plan反映のみ。契約再定義・実装変更なし）
+### 最新再読チェック（Phase開始ゲート）
+- Phase 3 Planで固定した Contract ID / No-Go ID / safeMode既定を再読し、意味変更なしの編集に限定する。
+- 指定外ファイルの差分が0であることを確認してから編集を実行する。
+
+### Execute実施境界
+- 対象は `issue-CE0-contract-freeze.md` のみ（他ファイル編集禁止）。
+- CE0 SSOT本文の語彙統一・判定根拠の明確化に限定し、CE0 Contract IDの再定義は行わない。
+- CE1/CE2/CE4への依存は mock snapshot（read-only参照）前提で切断し、下流再定義を起こさない。
+
+## Phase 5 Verify（docs-check自己検証 / Self-Correction上限3回）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify対象は docs-check のみ。実装変更・指定外編集が混入していないことを再確認する。
 
@@ -183,8 +193,7 @@
 - [ ] CE1/CE2/CE4 handoffがread-only参照であることをMatrixで確認可能
 - [ ] CDC発生時に `held` 記録（Context/Decision/Consequences）が残る
 - [ ] Phase 2で補完したAC/DoD案が `held` と承認待ちステータスで追跡可能
-
-## Phase 5 Proceed（次工程向け固定契約の出力）
+## Phase 6 Proceed（次工程向け固定契約の出力）
 ### 最新再読チェック（Phase開始ゲート）
 - Verify結果とAC/DoDを再読し、未達項目があれば Proceed せず `held` に戻す。
 
@@ -211,7 +220,8 @@
 - Escalation rule: 境界逸脱の要求は `scope_deviation` としてCDC `held` を起票し、承認完了まで停止。
 
 ## Fail-safe（即停止条件）
-- Self-Correction 3回超過
-- 未定義ファイル競合
+- Self-Correction 3回超過（4回目修復に到達）
 - SafeMode後退の兆候
+- 未定義競合
+- 指定外ファイル差分
 - 依存前提崩壊
