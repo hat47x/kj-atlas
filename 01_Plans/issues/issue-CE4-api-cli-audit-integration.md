@@ -16,6 +16,7 @@
 - CE4は API/CLI/監査の契約I/F固定のみ（実装詳細・アルゴリズム詳細は禁止）。
 - CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照専用。
 - 監査欠損は常に fail-closed（成功扱い禁止）。
+- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を固定し、片側一致を成功扱いしない。
 - 検証失敗時の自己修復は最大3回。**3回超過（4回目着手）を禁止し、即停止する。**
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` の固定順のみ許可（Phaseの追加・入替・省略を禁止）。
 - **各Phase開始時に Read同期（CE0 contract IDs / 監査4点 / fail-closed 条項）を実施**し、差分検知時はそのPhase内で契約記述を先に補正してから次工程へ進む。
@@ -35,6 +36,7 @@
 - 必須イベントは `query / bundle / proposal / apply` の4点で固定。
 - `dryRun=true` 時は `sideEffect=none` を契約語彙として固定。
 - `sourceBundleHash=mock:<hash>` は依存切断下でも同値検証を成立させる参照キーとして固定。
+- 同値判定監査の比較根拠として `queryCanonicalHash` を必須記録し、欠損時は fail-closed とする。
 
 ### No-Go
 - CE4で語彙再定義をしない。
