@@ -572,3 +572,11 @@
 - Phase 3 Execute（3ファイル順次処理）: `01_Plans/issues/README.md` → `01_Plans/project-progress-dashboard.md` → 本decision-pack の順で1件ずつ完了判定しながら同期し、対象外編集・他ストリーム依存・未承認決定の確定化を実施しない。
 - Phase 4 Verify（Issue別docs-check）: `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` を実行し、5Issueすべてで `Expected verification level=docs-check` を確認（self-correction 0/3）。
 - Phase 5 Proceed（停止条件評価）: 競合検知・前提崩れ・self-correction 3回超過はいずれも未検出。**共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+### 6-41. Stream H 運用整合ログ（2026-04-22, Open/Draft operations issue sync）
+
+- Phase 1 Read: `issue-HIL-RS-02-A3-operations-documentation-sync.md` / `issues/README.md` / `project-progress-dashboard.md` を再読し、A3が Draft のまま契約参照専用であること、依存順 `A1→A2→A3`、Decision Queue（Ready=1 / Open=2）を確認。
+- Phase 2 Plan: AC/DoD不足を `docs-check責務の明文化` と `Source Issue運用（Draft=TBD）明記` として補完し、契約再定義禁止（read-only）を再固定。
+- Phase 3 Execute: A3 memo のみを更新し、`未承認確定化 / 語彙ドリフト / 指定外編集` をフェイルセーフ停止条件として明記。
+- Phase 4 Verify: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` / `git diff --check` を実行し、self-correction 0/3。
+- Phase 5 Proceed: A3は Draft 維持（Conditional）。未承認事項の確定扱いなし、語彙ドリフトなし、指定外編集なしを確認。
