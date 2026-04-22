@@ -845,3 +845,35 @@
 ### Phase: Proceed
 - 判定: **Ready**。
 - 次アクション: installation ガイドの公開品質改善（前提条件・成功確認・関連導線の明示）を後続PRで実施。
+- 状態更新案: **Ready**（DecisionStatus=Fixed）。
+- 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
+
+## 18) Stream H setup lane consolidation (Phase 1〜5)
+
+### Phase 1 Read（setup lane / installation）
+- Scope / Related ADR/Spec / `Expected verification level=docs-check` を再読し、対象を `04_Documentation/installation.md` 起点の分類・実行計画に限定。
+- 前段 `DOC-OPS-05-03` 完了後に本Issueへ着手する順序制約を確認。
+
+### Phase 2 Plan（AC/DoD delta agreed）
+- AC-H1（Scope固定）: 本Issueは installation 系の分類・公開改善計画のみ扱う。
+- AC-H2（順序制約）: setup lane は `configuration -> installation` の直列実行を必須とする。
+- AC-H3（検証一致）: Verify は `docs-check` を必須、`git diff --check` を最終ゲートに固定。
+- AC-H4（再読ゲート）: Execute直前に本Issue最新状態の再読を必須化する。
+- DoD-H1: Read/Plan/Execute/Verify/Proceed の5Phase記録を残す。
+- DoD-H2: 自己修復は最大3回、4回目相当は停止（Hold）とする。
+- DoD-H3: Proceed判定は `Ready / Hold / Needs-decision` の三値で必ず記録する。
+- DoD-H4: 前提崩れ・未定義競合時は推測で進めず停止する。
+
+### Phase 3 Execute（configuration -> installation）
+- 直列実行ポリシーに従い、`DOC-OPS-05-03` 更新完了後に本Issueを更新。
+- 既存の分類（Improve external）および DecisionStatus（Fixed）は維持する。
+
+### Phase 4 Verify（docs-check）
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+- `git diff --check`
+- 自己修復上限: 最大3回。
+
+### Phase 5 Proceed
+- 状態分類: **Ready**
+- 理由: AC-H1〜H4 / DoD-H1〜H4 を本文に固定し、順序制約と検証レベルが整合したため。
+- 停止条件: 自己修復3回超過、前提崩れ、未定義競合を検知した場合は **Hold**。
