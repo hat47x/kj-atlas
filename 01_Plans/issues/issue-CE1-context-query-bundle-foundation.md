@@ -515,3 +515,52 @@
   - 語彙衝突: なし
   - safeMode前提崩れ: なし
   - 自己修復超過: なし
+
+---
+
+## Stream D Execution Record（2026-04-22 / CE1 phase-run with ADR pre-execute gate）
+
+### Phase 1 Read（Phase冒頭Read同期）
+- Read同期: 本ファイルを再読し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- 独立性ルール確認:
+  - CE0/CE2/CE4は参照のみ（逆流編集禁止）。
+  - CE1はI/F凍結のみ（実装記述禁止）。
+- 前提差分判定: **差分なし（continue）**。
+
+### Phase 2 Plan（ADR Context/Decision/Consequences 明文化 + 合意）
+- Read同期: 本ファイル再読済み。
+- AC/DoDドラフト提示（不足補完）:
+  - AC: 同一canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致。
+  - AC: `previewConfirmed=false -> 422 preview_required`。
+  - AC: unknown key -> `400 unknown_contract_key`。
+  - DoD: `sourceBundleHash === bundleHash` をCE2/CE4連携キーとして固定。
+  - DoD: SafeMode regression = 0。
+- ADR明文化（承認前Execute禁止ゲート）:
+  - **Context**: CE1の契約凍結対象は `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`。CE0はSSOTとしてread-only参照のみ。語彙固定は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+  - **Decision**: v1ではI/F語彙・エラー意味論・決定論判定のみを固定し、implementation detail（handler/UI/DB/worker）は記述しない。
+  - **Consequences**: CE2/CE4 handoffは read-only contract 継承に限定され、`sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` / `queryCanonicalHash` の参照整合を維持。safeMode既定緩和は不許容。
+- 合意状態: **本Issue内Planとして合意済み（Execute開始条件を満たす）**。
+
+### Phase 3 Execute（contract-only）
+- Read同期: 本ファイル再読済み。
+- 実施内容: Planで合意したI/F凍結事項を本Execution Recordとして追記。
+- 非実施（禁止順守）:
+  - CE0/CE2/CE4本文の編集
+  - 実装記述（handler/UI/DB/worker）
+
+### Phase 4 Verify（docs-check / self-correction上限3）
+- Read同期: 本ファイル再読済み。
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Self-Correction: Attempt 1で判定し、失敗時のみ最大3回まで自己修復。
+
+### Phase 5 Proceed（継続判定）
+- Read同期: 本ファイル再読済み。
+- Proceed条件:
+  - docs-check pass
+  - self-correction <= 3
+  - CE0 read-only境界維持
+  - safeMode regression = 0
+- 判定: Verify結果で条件を満たす場合のみ継続。未達時は停止。
