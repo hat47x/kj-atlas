@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象5Issue以外は不干渉
+- Non-target file policy: 対象7Issue以外は不干渉
 
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
@@ -51,16 +51,17 @@
 
 ## Phase 3: Plan
 - 対象差分意図: Go/NoGo判定式と禁止遷移を固定。
-- 非対象不干渉: 5Issue外は編集しない。
+- 非対象不干渉: 7Issue外は編集しない。
 - AC/DoD
   - AC: fixed keys diff=0 / return path唯一 / Pending bypass禁止明記。
   - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `A2A3StartAllowed = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && validatorPass==true)`
-- `Go = A2A3StartAllowed`
-- `NoGo = !A2A3StartAllowed`
+- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
+- `Go = ProceedGate`
+- `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
+- `NoGo = (!ProceedGate && !Conditional)`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ## Phase 5: Verify
@@ -70,7 +71,8 @@
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
-## Phase 6: Proceed / Stop
-- Proceed: AC/DoD充足、かつ `held` 以外の未承認事項なし。
-- Stop: ドリフト、Pending bypass、未定義競合、3回超過、指定外差分。
-- 停止時出力: 原因・影響・再開条件を明文化する。
+## Phase 6: Proceed（Go / Conditional / No-Go）
+- Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
+- Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合。
+- No-Go: ドリフト、Pending bypass、未定義競合、Self-Correction 3回超過、指定外差分。
+- No-Go時出力: 原因・影響・再開条件を明文化する。

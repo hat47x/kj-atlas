@@ -75,6 +75,7 @@
   1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
   2. 依存順序 `A1 -> A2 -> A3` を全7Issueで固定。
   3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
+  4. A1 -> A2 -> A3 判定式は `ProceedGate` を唯一のSSOTとして扱う。
 - DoD
   1. NoGo return path が A1契約Issue で一意。
   2. Proceed条件が「AC/DoD充足 + held以外未承認なし」に統一。
@@ -83,6 +84,8 @@
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - 対象7Issueの語彙・判定式・停止条件を統一。
+- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)` をA1->A2->A3の唯一判定式として固定。
+- `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `No-Go = (!ProceedGate && !Conditional)` を共通化。
 - 非対象ファイルの編集は実施しない。
 
 ## Phase 5: Verify
@@ -93,7 +96,8 @@
 - `git diff --check`
 - self-correction は最大3回（4回目相当は停止）。
 
-## Phase 6: Proceed / Stop
-- Proceed: AC/DoD充足、かつ `held` 以外の未承認事項なし。
-- Stop: 前提崩れ / 未定義競合 / 3回超過 / 指定外ファイル変更検知。
-- 停止時出力: 原因・影響・再開条件を明文化する。
+## Phase 6: Proceed（Go / Conditional / No-Go）
+- Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
+- Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定され、確定扱いを行わない。
+- No-Go: 前提崩れ / 未定義競合 / Self-Correction 3回超過 / 指定外ファイル変更検知 / 未承認確定化の発生。
+- No-Go時出力: 原因・影響・再開条件を明文化する。
