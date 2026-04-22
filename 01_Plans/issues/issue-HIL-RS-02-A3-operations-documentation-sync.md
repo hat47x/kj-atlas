@@ -28,9 +28,10 @@
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
+  - `sourceIssuePolicy=Draft/TBD (README運用基準)`
 - 事前想定との差分: なし（A3はread-only参照）。
 
-## Phase 2: ADR/CDC Consensus
+## Phase 2: ADR/CDC Consensus（必要時のみ）
 ### Context
 - A3は運用文書同期の参照ノードであり、契約再定義を許容しない。
 
@@ -64,9 +65,15 @@
 ## Phase 3: Plan
 - 対象差分意図: A3をread-only参照ノードとして固定。
 - 非対象不干渉: 7Issue外は編集しない。
-- AC/DoD
-  - AC: fixed keys diff=0 / role語彙固定 / D1〜D4参照固定。
-  - DoD: A3 Open gateがA1条件従属 / NoGo差戻し先A1一意 / self-correction<=3。
+- AC（minimum）
+  - AC-1: fixed keys diff=0（freezeContractId / contractIds / schemaVersion / overridePolicy / safeModeDefault / sharedResourceFreeze）。
+  - AC-2: role語彙（Security Officer / System Owner / Platform Operator）ドリフトなし。
+  - AC-3: D1〜D4は参照専用で再定義しない。
+  - AC-4: Source Issue運用（Draft=`TBD`）を維持。
+- DoD（minimum）
+  - DoD-1: A3 Open gateがA1条件従属である。
+  - DoD-2: NoGo差戻し先がA1で一意。
+  - DoD-3: docs-check証跡を残し、self-correction<=3。
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
@@ -79,14 +86,16 @@
   - `a1Status!="Done"` の間は `Draft` 固定
 
 ## Phase 5: Verify
-- AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+- AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check / scope checks）を順に実行する。
 - 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - `git diff --check`
 
 ## Phase 6: Proceed（Go / Conditional / No-Go）
 - Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合（A3はDraft維持）。
 - No-Go: A1未完了でOpen要求、Pending bypass、未定義競合、Self-Correction 3回超過、指定外差分。
+- フェイルセーフ停止条件: 未承認確定化 / 語彙ドリフト / 指定外編集。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
