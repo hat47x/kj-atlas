@@ -19,6 +19,24 @@
 - AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 3 Execute を開始しない**。
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 
+## Phase Compliance Ledger（運用記録テンプレ / 毎Phase開始時に更新）
+- Purpose: 各Phase開始時の Read 同期と固定契約の再確認を記録し、proposal-only 契約逸脱を防止する。
+- Self-Correction Counter: `0/3`（検証失敗ごとに `+1`。`4/3` 相当は fail-safe 停止）
+- Allowed State Set（固定）:
+  - lifecycle: `proposed | accepted | rejected | held`
+  - reviewState: `unreviewed | human_reviewed`
+- Forbidden Actions（固定）:
+  - auto-apply
+  - AIによる `reviewState=human_reviewed` 自動昇格
+  - safeMode既定緩和 / preview bypass
+
+### Phase start checklist（全Phase共通）
+- [ ] 開始時 Read 同期を実施し、前Phaseとの差分有無を確認した。
+- [ ] proposal-only 契約固定（実装禁止 / auto-apply禁止）を再確認した。
+- [ ] `reviewState` の閉集合（`unreviewed | human_reviewed`）維持を再確認した。
+- [ ] AC/DoD未合意の場合、`status=held` のまま Execute 非開始を確認した。
+- [ ] Self-Correction Counter が `3/3` 以内であることを確認した（超過時は停止）。
+
 ## Lane guard（固定）
 - proposal lifecycle は `proposed | accepted | rejected | held` を固定し、再定義しない。
 - lifecycle は閉集合（closed set）として扱い、`proposed | accepted | rejected | held` 以外への拡張を禁止する。
