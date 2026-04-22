@@ -875,3 +875,28 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+
+## DOC-OPS Track 2 serial cycle（2026-04-22 / 05-06 linked）
+
+### Phase 1 Read（同期）
+- 本文と対応Issue（`issue-doc-ops-05-06-04doc-e2e-testing.md`）を再読し、Improve external方針を確認。
+
+### Phase 2 ADR/CDC（承認待ち）
+- Context: 公開向けE2E手順の正本として、内部証跡ログとの責務分離が必要。
+- Decision（提案）: 本書は実行手順・Go/No-Go・再開条件に限定し、履歴詳細は verification log に分離する。
+- Consequences: 利用者の再現性は向上するが、運用固定はレビュー承認まで **Pending approval**。
+
+### Phase 3 Plan
+- Plan: 手順正本としての記述境界維持、検証コマンド再現性維持、関連導線維持。
+
+### Phase 4 Execute
+- Track 2 の6Phase運用記録を本文に追記（docs-only）。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 2 serial cycle|Pending approval|Phase 2 ADR/CDC" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Proceed（承認待ち）**
+- 自己修復: 最大3回、超過時は停止。

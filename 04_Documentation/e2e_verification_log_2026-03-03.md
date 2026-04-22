@@ -229,3 +229,28 @@ docker --version && docker compose version
 - 判定: **Ready**。
 - 品質I/F固定出力: DQ-CONTRACT-v1（DQ-A1〜A6）を参照し、他レーンは docs-check + cross-link確認を同一判定軸として利用可能。
 - Stopper確認: 競合・前提崩壊なし。承認前の規約昇格なし。
+
+
+## DOC-OPS Track 2 serial cycle（2026-04-22 / 05-07 linked）
+
+### Phase 1 Read（同期）
+- 本文と対応Issue（`issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`）を再読し、Move internal方針を確認。
+
+### Phase 2 ADR/CDC（承認待ち）
+- Context: 本書は内部監査向け実行証跡であり、公開runbookと役割を分離する必要がある。
+- Decision（提案）: 本書は実行履歴/blocked/再開条件の記録に限定し、公開手順の正本化は行わない。
+- Consequences: 公開境界は明確になるが、運用確定はレビュー承認まで **Pending approval**。
+
+### Phase 3 Plan
+- Plan: 実行結果の再現可能性（Date/Route/Command/Result/Evidence/Next action）を維持する。
+
+### Phase 4 Execute
+- Track 2 の6Phase運用記録を本文に追記（docs-only）。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 2 serial cycle|Pending approval|Phase 2 ADR/CDC" 04_Documentation/e2e_verification_log_2026-03-03.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Proceed（承認待ち）**
+- 自己修復: 最大3回、超過時は停止。

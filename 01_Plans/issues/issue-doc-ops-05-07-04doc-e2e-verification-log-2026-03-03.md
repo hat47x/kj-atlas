@@ -886,3 +886,31 @@
 ### Phase 5) Proceed
 - 判定: **Ready**
 - 理由: 分類基準（Audience/Goal/公開境界）・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` が揃っているため。
+
+
+## DOC-OPS Track 2 serial cycle（2026-04-22 / 05-07）
+
+### Phase 1 Read（同期）
+- 対象再読: 本Issue本文と `04_Documentation/e2e_verification_log_2026-03-03.md` を再読し、分類=**Move internal** を同期確認。
+- 固定条件: docs-only / 指定外ファイル非編集 / Verify自己修復は最大3回。
+
+### Phase 2 ADR/CDC（承認待ち）
+- Context: 日付付きE2E実行ログは公開手順の正本ではなく内部証跡として扱う必要がある。
+- Decision（提案）: `e2e_verification_log_2026-03-03.md` は内部証跡として運用し、公開導線は `e2e_testing.md` を正本に固定する。
+- Consequences: 公開境界は明確化されるが、移設/運用確定はレビュー承認まで **Pending approval** とする。
+
+### Phase 3 Plan
+- Plan-1: Move internal 判定根拠（Audience / Goal / Public boundary）を追跡可能に維持。
+- Plan-2: Blocked条件 / 再開条件 / 実行結果の記録規約を維持。
+- Plan-3: docs-check（`rg` + `git diff --check`）で整合確認。
+
+### Phase 4 Execute
+- 本Issueへ Track 2 の6Phase記録を追記（docs-only）。
+
+### Phase 5 Verify
+- Verify command: `rg -n "DOC-OPS Track 2 serial cycle|Phase 1 Read|Phase 2 ADR/CDC|Pending approval" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- Verify command: `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready（承認待ち）**
+- 停止条件: Verify失敗が3回を超えた場合はHoldへ移行し、追加編集を停止。

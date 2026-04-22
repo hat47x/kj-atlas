@@ -433,3 +433,28 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 ### Phase 5 Proceed（残課題記録）
 - 状態: **Ready**
 - 残課題: worker契約更新時は schemas / worker実装参照と同時にdocs同期を行う。
+
+
+## DOC-OPS Track 2 serial cycle（2026-04-22 / 05-04 linked）
+
+### Phase 1 Read（同期）
+- 本文と対応Issue（`issue-doc-ops-05-04-04doc-diagnostics.md`）を再読し、Improve external方針を確認。
+
+### Phase 2 ADR/CDC（承認待ち）
+- Context: diagnosticsは公開契約文書として、再現可能性と公開境界の両立が必要。
+- Decision（提案）: 本書は契約・fallback・決定論条件の説明に限定し、内部進行ログの混在を避ける。
+- Consequences: 参照性は向上するが、最終固定はレビュー承認まで **Pending approval**。
+
+### Phase 3 Plan
+- Plan: schemaVersion/fallback/requestId isolation/structural metrics の追跡可能性を維持する。
+
+### Phase 4 Execute
+- Track 2 の6Phase運用記録を本文に追記（docs-only）。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 2 serial cycle|Pending approval|Phase 2 ADR/CDC" 04_Documentation/diagnostics.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Proceed（承認待ち）**
+- 自己修復: 最大3回、超過時は停止。
