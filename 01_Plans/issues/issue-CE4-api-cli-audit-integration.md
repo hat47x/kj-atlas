@@ -35,7 +35,7 @@
 - 監査欠損を成功扱いしない。
 - safeMode既定を緩和しない（`CE0-SAFEMODE-IF` 準拠）。
 
-## Phase 2 Plan（API/CLI同値性・監査欠損fail-closedをAC化）
+## Phase 2 Plan（API/CLI同値性・監査4点・fail-closed契約固定をAC化）
 ### AC/DoD不足提案と合意（contract-only）
 - 提案P1: API/CLI同値判定の監査再現性を強化するため、`queryCanonicalHash` を監査必須項目へ昇格する。
   - 合意: 採用（語彙追加ではなく既存参照語彙の必須化として扱う）。
@@ -72,17 +72,17 @@
 - [ ] 同値判定の比較根拠（`queryCanonicalHash`）が監査証跡必須項目として明示されている。
 - [ ] proposal lifecycle を read-only語彙に限定する条項が明示されている。
 
-### CDC（Change Decision Clarification）
+### CDC（Change Decision Clarification: Context / Decision / Consequences 必須）
 - CDC-CE4-001: CE4契約に `queryCanonicalHash` 監査必須化を追加する。
-  - Context: API/CLI同値判定の比較根拠が監査証跡で欠落すると再現検証ができず、fail-closed判定の説明責任が崩れる。
-  - Decision: `queryCanonicalHash` を CE4監査必須項目として固定し、API/CLI双方で欠落を許容しない。
-  - Consequences: 契約語彙の追加は行わず、既存 read-only 語彙の必須化のみを実施する。未承認中は `held` で保持し、確定実装しない。
+  - Context: API/CLI同値判定の比較根拠が監査証跡に残らない場合、再現検証時の同値判定が不安定化する。
+  - Decision: `queryCanonicalHash` を監査必須項目として固定し、`equivalenceKey + bundleHash` の同値判定根拠に紐づける。
+  - Consequences: 契約語彙の追加は行わず、既存 read-only 語彙の必須化のみ実施する。
   - 承認状態: **承認待ち**（未承認のため実装確定禁止）。
 - CDC-CE4-002: CE4契約に proposal lifecycle 語彙の閉集合（`proposed / accepted / rejected / held`）を明文化する。
-  - Context: proposal lifecycle の語彙境界が曖昧な場合、CE4での語彙拡張や再定義が混入し契約同値性が崩れる。
-  - Decision: CE4で利用可能な lifecycle 語彙を `proposed / accepted / rejected / held` の閉集合に固定する。
-  - Consequences: 契約境界の明確化のみで挙動変更は行わない。未承認中は `held` 維持とし、確定扱いにしない。
-  - 承認状態: **承認待ち**（承認後に次Phaseへ進行）。
+  - Context: CE4範囲で lifecycle 語彙が拡張されると、API/CLI同値性と監査4点の契約比較が分岐し得る。
+  - Decision: proposal lifecycle は `proposed / accepted / rejected / held` の閉集合に固定し、read-only参照のみ許可する。
+  - Consequences: 契約境界が明確化されるが、挙動変更は発生しない。
+  - 承認状態: **承認待ち**（未承認のため確定禁止、`held` 維持）。
 
 ## Phase 3 Execute（I/F固定と監査導線のみ記述）
 ### Fixed Contract IDs（CE4）
@@ -151,11 +151,11 @@
 
 ## Stream F Execution Record（2026-04-21）
 
-### Phase Progress（Plan → Execute → Verify → Proceed）
+### Phase Progress（Read → Plan → Execute → Verify → Proceed）
 - Phase 1 Read: 完了（CE0 contract IDs / 監査4点 / CE0参照契約のread-only条件を再確認）。
-- Phase 2 Plan: 完了（API/CLI同値条件と監査欠損fail-closedをACへ固定）。
+- Phase 2 Plan: 完了（API/CLI同値性・監査4点・fail-closed契約固定をACへ反映）。
 - Phase 3 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
-- Phase 4 Verify: 完了（監査欠損成功扱い禁止に加え、AND不成立ケースを含む判定ケースを `CE4-V-001..009` で固定）。
+- Phase 4 Verify: 完了（監査4点欠損成功扱い禁止とAND不成立fail-closedを `CE4-V-001..009` で固定）。
 - Phase 5 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
 
 ### Repair Attempt Ledger（自己修復上限）
@@ -164,5 +164,5 @@
 - Attempt 3: n/a
 - Attempt 4+: **forbidden / stop**
 - 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
-- CDC-CE4-001 / CDC-CE4-002 は承認待ちのまま保持し、承認完了まで実装・確定を禁止。
+- CDC-CE4-001 / CDC-CE4-002 は承認待ちのまま保持し、承認完了まで確定・実装を禁止。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
