@@ -518,6 +518,33 @@
 - 編集範囲を本Issue対応の2ファイルに限定し、`doc-ops-05-06`以降・共有統合3ファイル・コードは非編集。
 
 ### Phase 3 Execute
+## Stream H parity lock record（2026-04-21）
+
+### Phase 1 Read
+- 本Issue本文を再読し、`Scope=04_Documentation/diagnostics.md` と `VerificationLevel=docs-check` を確認。
+- `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` の固定値を再確認。
+
+### Phase 2 ADR CDC
+- 判定: **追加ADR不要**。
+- Context / Decision / Consequences は既存セクションで追跡可能なため、方針の新規追加は行わない。
+
+### Phase 3 Plan
+- Phase運用は **Stream H と同一**（Read → ADR CDC → Plan → Execute → Verify → Proceed）で固定。
+- 変更範囲は **専有ファイル: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` のみ** とし、対象外編集は禁止。
+
+### Phase 4 Execute
+- Classification は **Improve external** を維持（再判定なし）。
+- 本更新は運用記録の追記のみ。実装コード・他Issue・共有ファイルには非接触。
+
+### Phase 5 Verify
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+  - `git diff --check`
+- 自己修復は最大3回、4回目相当は停止して `Hold` 化する。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 根拠: Scope固定、Phase運用H同一、docs-check導線、停止条件が本文で再現可能。
 - 分類方針 `Improve external` を維持し、対象文書へ最新の実行記録を反映。
 - 既存の安全境界（SafeMode既定ON / share-export境界）を変更しない。
 
