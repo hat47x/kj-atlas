@@ -13,6 +13,7 @@
 ---
 
 ## Phase 1: Read（再読・抽出）
+- Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
@@ -53,6 +54,10 @@
 - 保留（pending/held）
   - `HIL-RS-02-GOV-EXCEPTION-01`: `held` 維持（未承認事項）
 
+### Approval Gate（Execute進行条件）
+- ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
+- 未承認事項は `pending/held` のまま保持し、確定扱いしない。
+
 ### Consequences
 - A1未完了時のA2/A3 Open禁止。
 - NoGo差戻し先は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定。
@@ -76,10 +81,13 @@
   3. 指定外ファイル差分0。
 
 ## Phase 4: Execute
+- Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - 対象7Issueの語彙・判定式・停止条件を統一。
 - 非対象ファイルの編集は実施しない。
 
 ## Phase 5: Verify
+- AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+- 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
