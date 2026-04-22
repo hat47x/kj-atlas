@@ -963,3 +963,37 @@
 ### Phase 5) Proceed
 - 判定: **Ready**
 - 理由: 分類基準（Audience/Goal/公開境界）・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` が揃っているため。
+
+
+## 17) DOC-OPS Track 1 serial execution (2026-04-22)
+
+### Phase 1 Read（同期）
+- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` / `04_Documentation/configuration.md` を同時再読。
+- `Classification=Improve external` / `VerificationLevel=docs-check` / docs-only 制約を再確認。
+
+### Phase 2 ADR/CDC
+- Context: 設定文書は公開価値が高いが、公開境界（内部運用情報非掲載）を常に明示する必要がある。
+- Decision: 本Issueは **Improve external** を維持し、公開ガイドの安全既定と正本導線を固定する。
+- Consequences: 後続更新は docs-check で追跡可能になり、内部判断メモの混入を抑止できる。
+
+### Phase 3 Plan（AC/DoD ドラフト→合意）
+- AC不足ドラフト:
+  1. Audience / Goal / Public boundary / Non-goal / Related を文書先頭で確認可能にする。
+  2. Go/No-Go 判定条件を本文で再現できる。
+- DoD不足ドラフト:
+  1. Read → ADR/CDC → Plan → Execute → Verify → Proceed の6Phaseを記録する。
+  2. Verify失敗時は最大3回まで自己修復し、超過時は停止する。
+- 合意記録: **本Issueメモ内で合意済み（Track 1運用）**。
+
+### Phase 4 Execute
+- Issueメモと対象Docの整合（公開境界メタ / Go/No-Go / docs-check導線）を更新対象として固定。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+  - `git diff --check`
+- 自己修復: 0/3（本更新時点）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/configuration.md` の公開境界メタと検証導線を維持して継続更新する。

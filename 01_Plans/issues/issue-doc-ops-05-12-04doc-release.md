@@ -154,3 +154,37 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
 - 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
+
+
+## 12) DOC-OPS Track 1 serial execution (2026-04-22)
+
+### Phase 1 Read（同期）
+- 対象Read同期: `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` / `04_Documentation/release.md` を同時再読。
+- `Classification=Improve external` と公開リリース手順の最小責務を再確認。
+
+### Phase 2 ADR/CDC
+- Context: release 文書は外部公開運用の再現性と監査可能性を担保する必要がある。
+- Decision: **Improve external** を維持し、監査導線（チェック→タグ→公開記録）を明示する。
+- Consequences: リリース時の判定根拠が追跡可能になり、手順逸脱の検知が容易になる。
+
+### Phase 3 Plan（AC/DoD ドラフト→合意）
+- AC不足ドラフト:
+  1. Audience / decides / does not decide / Go-NoGo 条件を維持。
+  2. 実施不能チェックの理由記録先を明示。
+- DoD不足ドラフト:
+  1. 6Phase 記録を残す。
+  2. Verify失敗時は自己修復3回上限・超過停止。
+- 合意記録: **本Issueメモ内で合意済み（Track 1運用）**。
+
+### Phase 4 Execute
+- Issueメモと対象Docを同期し、公開リリース手順の境界を明文化。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+  - `git diff --check`
+- 自己修復: 0/3（本更新時点）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: `04_Documentation/release.md` を docs-only で継続改善し、監査導線を維持する。

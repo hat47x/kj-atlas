@@ -142,3 +142,28 @@ docker compose up -d
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 追加/改名パラメータ発生時は runtime parameter registry と同時同期する。
+
+
+## DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-03）
+
+### Phase 1 Read（同期）
+- Read同期: `04_Documentation/configuration.md` と `issue-doc-ops-05-03-04doc-configuration.md` を再読。
+
+### Phase 2 ADR/CDC
+- Context: 公開設定ガイドとして安全既定と正本導線の一貫性が必要。
+- Decision: Improve external を維持し、公開境界を厳守する。
+- Consequences: 内部情報混入を抑制し、外部利用者の設定失敗を低減。
+
+### Phase 3 Plan（AC/DoDドラフト→合意）
+- AC draft: 安全既定・正本導線・Go/No-Go 条件の追跡可能性。
+- DoD draft: 6Phase記録と docs-check 成功、失敗時3回自己修復上限。
+- 合意: Issueメモで合意済み。
+
+### Phase 4 Execute
+- 本節を追記し、Issueとの整合運用を固定。
+
+### Phase 5 Verify
+- `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/configuration.md`
+
+### Phase 6 Proceed
+- Ready。docs-onlyで継続改善。
