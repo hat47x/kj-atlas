@@ -101,12 +101,14 @@
 ### I/F固定（実装詳細禁止）
 - 判定軸は `equivalenceKey + bundleHash`（AND）に固定。
 - 参照語彙は `equivalenceKey / bundleHash / sourceBundleHash / queryCanonicalHash` の read-only 利用に限定。
+- 同値判定の監査証跡には `queryCanonicalHash` を必須記録し、欠損時は fail-closed とする。
 - proposal lifecycle は `proposed / accepted / rejected / held` の read-only 利用に限定。
 
 ### CE4 Contract I/F Matrix（normative / contract-only）
 | Contract ID | Input Surface | Output / Audit Obligation | Failure Semantics |
 | --- | --- | --- | --- |
 | `CE4-EQUIVALENCE-IF` | API/CLI共通 query | 同一 query では `equivalenceKey` と `bundleHash` を同値で返す | いずれか不一致時は fail-closed |
+| `CE4-EQUIVALENCE-IF` | API/CLI共通 query | 同値比較の監査証跡として `queryCanonicalHash` を必須記録する | 欠損時は fail-closed |
 | `CE4-AUDIT-CHAIN-IF` | `query -> bundle -> proposal -> apply` | 4点すべての監査イベント記録を必須化 | 1点でも欠損した時点で fail-closed |
 | `CE4-DRYRUN-SAFETY-IF` | `dryRun=true` | 監査語彙 `sideEffect=none` を必須化 | `none` 以外は fail-closed |
 | `CE4-MOCK-HASH-IF` | `sourceBundleHash=mock:<hash>` | 本番hashと同一の同値判定・監査導線を適用 | 分岐差分/欠損検出時は fail-closed |
@@ -134,6 +136,7 @@
 | `CE4-V-007` | `sourceBundleHash=mock:<hash>` で監査導線が本番と不一致 | **fail-closed**（成功応答禁止） |
 | `CE4-V-008` | `equivalenceKey` 一致 かつ `bundleHash` 不一致 | **fail-closed**（AND不成立の成功扱い禁止） |
 | `CE4-V-009` | `equivalenceKey` 不一致 かつ `bundleHash` 一致 | **fail-closed**（AND不成立の成功扱い禁止） |
+| `CE4-V-010` | 同値判定監査で `queryCanonicalHash` 欠損 | **fail-closed**（比較根拠欠損の成功扱い禁止） |
 
 ### Self Verification Checklist
 - [ ] 同一 query に対して API/CLI の `equivalenceKey` と `bundleHash` が同値である。
@@ -142,6 +145,7 @@
 - [ ] 監査欠損時に fail-closed 以外の遷移を許していない。
 - [ ] `dryRun=true` で `sideEffect=none` を常に満たす。
 - [ ] `sourceBundleHash=mock:<hash>` でも同一判定軸を維持する。
+- [ ] 同値判定監査で `queryCanonicalHash` の欠損を許容していない。
 - [ ] CE4で語彙再定義を行っていない（read-only参照維持）。
 - [ ] `CE0-SAFEMODE-IF` の既定（safeMode既定ON / `allowUnreviewedText=false`）を緩和していない。
 
