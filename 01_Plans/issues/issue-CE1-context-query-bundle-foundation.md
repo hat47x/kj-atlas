@@ -317,3 +317,42 @@
   - preview bypass許容化なし
   - safeMode既定緩和なし
   - 契約語彙衝突なし
+
+---
+
+## Stream D Execution Record（2026-04-21 / user-directed phase cycle）
+
+### Phase 1 Read（対象限定の再確認）
+- 再読対象: 本ファイルのみ（`01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`）。
+- スコープ判定: docs-only / contract-only / mock-first を維持。
+- CE0境界判定: CE0はSSOTとしてread-only参照のみ。**CE0再定義禁止**を維持。
+
+### Phase 2 Plan（不足AC/DoD補完）
+- AC補完（固定）:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+- DoD補完（固定）:
+  - handoff比較キーは `sourceBundleHash === bundleHash` のみ
+  - SafeMode regression = 0
+  - CDCは衝突検知時のみ起票（通常時は未起票）
+
+### Phase 3 Execute（mock-first contract freeze）
+- 実施: v1契約語彙と判定条件の固定確認のみ（実装記述なし）。
+- 維持した固定ID:
+  - `CE1-CTXQ-IF`
+  - `CE1-CTXB-IF`
+  - `CE1-HASH-DET-IF`
+  - `CE1-PREVIEW-GATE-IF`
+
+### Phase 4 Verify（docs-check）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3
+
+### Phase 5 Proceed（CDC条件付き進行）
+- 進行判定: contract_id_collision=0 / vocabulary_collision=0 のため継続可。
+- CDC方針: 必要時のみ Context / Decision / Consequences を作成し `held` で承認待ち。
+- 現時点: CDC起票不要（衝突未検知）。
