@@ -97,6 +97,7 @@
 - 変更後に再読し、`Phase 1 Read` の固定語彙との不一致がないことを確認する。
 
 ## Phase 5 Verify（docs-check / 自己修復最大3回）
+- 差分検知時は `held` で停止し、未承認のまま確定しない。
 - 実行: `docs-check`。
 - 失敗時: 原因を1点ずつ修正し再実行（最大3回）。
 - 4回目相当は実施せず、`stopped_for_clarification` として停止する。
