@@ -477,3 +477,41 @@
 - unresolved差分: なし。
 - CDC起票要否: なし（衝突未検知）。
 - 判定: **Proceed（held遷移不要、contract-only維持）**。
+
+## Stream D Execution Record（2026-04-22 / CE1 mock-first I/F freeze refresh）
+
+### Phase 1 Read（Status/Scope/Related ADR再確認）
+- 本ファイルを再読し、編集可能範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに限定されることを再確認。
+- `ADR-0028` と `02_Architecture/schemas.md` を read-only 参照し、CE1は contract-only / mock-first / 実装非依存を維持。
+- 差分ゲート判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足ドラフト）
+- AC不足補完の固定候補を再確認:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一 canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false -> 422 preview_required`。
+  - unknown key -> `400 unknown_contract_key`。
+- DoD不足補完の固定候補を再確認:
+  - `sourceBundleHash === bundleHash` を CE2/CE4 handoff key として固定。
+  - safeMode regression = 0。
+
+### Phase 3 Execute（closed-world / preview_required / hash決定論 契約固定）
+- CE1 v1は closed-world を維持し、未定義キー黙認を禁止。
+- Query Preview gate を必須化し、`preview_bypass` の許容を禁止。
+- hash決定論を `sameQuery && sameBundle` 判定で固定し、`sameQuery && !sameBundle` を fail-closed として扱う。
+- CE0 read-only参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義を実施しない。
+
+### Phase 4 Verify（docs-check + self-correction<=3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（再試行不要）。
+
+### Phase 5 Proceed（合格時のみ）
+- Proceed条件（docs-check pass / self-correction<=3 / safeMode regression=0）を満たしたため継続可能。
+- 停止条件監視結果:
+  - 契約ID衝突: なし
+  - 語彙衝突: なし
+  - safeMode前提崩れ: なし
+  - 自己修復超過: なし
