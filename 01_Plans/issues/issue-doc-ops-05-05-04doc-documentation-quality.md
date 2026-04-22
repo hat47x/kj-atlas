@@ -903,3 +903,34 @@
 ### Phase 5) Proceed
 - 判定: **Ready**
 - 理由: 分類基準（Audience/Goal/公開境界）・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` が揃っているため。
+
+## 17) DOC-OPS Track 4 dedicated cycle（2026-04-22 / order: 05-05 → 05-11 → 05-13 → 05-14）
+
+### Phase 1 Read（開始時同期）
+- Read同期: `AGENTS.md` と `01_Plans/documentation_quality.md` を再読し、公開境界・docs-only制約・固定値参照方針を確認。
+- 判定: DOC-OPS-05-05 は **Move internal** を維持し、内部品質基準の正本固定を継続。
+
+### Phase 2 ADR/CDC（承認先行）
+- Context: 対外文書と内部品質基準が混在すると、公開境界と監査導線が崩れる。
+- Decision: 本Issueは `01_Plans/documentation_quality.md` を内部Normativeとして固定する。
+- Consequences: 04配下は公開本文、01配下は内部判定基準という責務境界を維持できる。
+- 承認: **Issue内合意済み（DecisionStatus=Fixed）** を先行条件として Execute へ進行。
+
+### Phase 3 Plan（順序固定）
+- 実行順序を `05-05 → 05-11 → 05-13 → 05-14` に固定。
+- 同期観点は **用語・役割・導線・固定値（D1〜D4）**。
+- Verify失敗時は自己修復最大3回、4回目相当で停止（Hold）。
+
+### Phase 4 Execute
+- 本Issueでは分類判断を再判定せず、Track 4 の基準文書として Proceed条件を固定。
+- 変更範囲は issue memo と指定文書のみ（指定外ファイル非編集）。
+
+### Phase 5 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `git diff --check`
+- 失敗時は最小修復を最大3回まで実施し、超過時は停止。
+
+### Phase 6 Proceed
+- 判定: **Ready（Track 4 起点）**。
+- 引き継ぎ: 次順序 `DOC-OPS-05-11` に進行し、同一Phase運用を継続する。

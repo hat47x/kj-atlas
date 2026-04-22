@@ -459,3 +459,11 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 - 前提崩壊（適用範囲や公開境界が判定不能）
 
 停止時は、未充足項目と再開条件を記録し、人間判断へエスカレーションします。
+
+## 17. DOC-OPS Track 4 sync baseline（2026-04-22）
+
+- 対象順序は `05-05 → 05-11 → 05-13 → 05-14` で固定する。
+- 各Phase開始時に Read同期（AGENTS / 対象Issue / 対象文書）を行う。
+- ADRタスクは **Context / Decision / Consequences を先に明文化し、DecisionStatus承認確認後に Execute** する。
+- Verify失敗時は自己修復を最大3回までとし、4回目相当は停止（Hold / StoppedForClarification）。
+- 同期必須観点: 用語（Security Officer / System Owner / Platform Operator）、役割（2者承認+実行責務分離）、導線（architecture→security→guidelines→e2e + operations照合）、固定値（D1〜D4）。

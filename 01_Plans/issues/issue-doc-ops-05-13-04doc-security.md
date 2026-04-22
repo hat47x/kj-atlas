@@ -1004,3 +1004,32 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
 - 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
+
+## Stream Track 4 serial execution record（2026-04-22）
+
+### Phase 1 Read（開始時同期）
+- Read同期: `AGENTS.md` / `04_Documentation/security.md` / `04_Documentation/operations.md` / `04_Documentation/security_operational_guidelines.md` を再読。
+- 直前Issue（05-11）のProceed=Readyを受領し、順序 `05-11 → 05-13` を確認。
+
+### Phase 2 ADR/CDC（承認先行）
+- Context: security は公開基底方針だが、実行手順や判断補助と混ざると境界が崩れる。
+- Decision: **Improve external** を維持し、基底方針（security）と運用判断（guidelines）を分離する。
+- Consequences: DOC-OPS-02の4観点（用語/役割/導線/固定値）監査を再利用しやすい。
+- 承認: DecisionStatus=Fixed を先行確認して Execute へ進行。
+
+### Phase 3 Plan
+- 同期観点: `Security Officer / System Owner / Platform Operator`、導線、D1〜D4。
+- Verify失敗時: 最大3回まで自己修復、超過時は停止。
+
+### Phase 4 Execute
+- security本文では後退禁止境界（safeMode既定ON、share/export漏洩防止）を維持し、runbook再定義を行わない。
+- 指定外ファイルは編集しない。
+
+### Phase 5 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready（Securityレビュー前提）**。
+- 次順序: `DOC-OPS-05-14` へ進行。
