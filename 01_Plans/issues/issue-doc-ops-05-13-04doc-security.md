@@ -876,3 +876,40 @@
 
 - 現在判定: **Ready**（分類基準固定・方針整合・docs-check実施可能）。
 - 次アクション: 専有3ファイルの直列処理を維持し、対象外編集は実施しない。
+
+## 17) Stream J lane execution log（DOC-OPS-05 security/ops, 2026-04-22）
+
+### Phase 1 Read（Scope / Related ADR/Spec / 語彙・導線整合）
+
+- 再読対象: `Scope`、`Related ADR/Spec`、operations 側（05-11）の最新追記。
+- 前提差分: operations から受領した直列条件（語彙一致・Verify上限）を security 側に適用。
+- 語彙・導線: Security Officer / System Owner / Platform Operator と `security -> operations -> guidelines` の導線を維持。
+
+### Phase 2 ADR/CDC consensus（必須）
+
+- Context: security は基底方針文書のため、operations と guidelines の中継点として CDC を固定する必要がある。
+- Decision: 本Issueでは分類再判定を行わず、Improve external のまま運用同期条件のみ補強する。
+- Consequences: 後段guidelinesでの判断補助が security 基底方針と矛盾しにくくなる。
+- Held/Pending（未承認事項）:
+  - Pending-1: 監査ラベル命名（`Open候補` vs `Ready`）の最終統一は保留し、本Issueでは併記許容。
+
+### Phase 3 Plan（AC/DoDドラフトと合意）
+
+- AC/DoDドラフト提案:
+  1. AC: security は公開境界（Audience/Goal/Non-goal/Public boundary）を追跡可能に維持。
+  2. AC: role語彙3種と停止条件（修復3回超過）を Issue本文に保持。
+  3. DoD: Verify pass 後のみ `Proceed（guidelines へ）` を記録。
+- 合意状態: **Agreed**（本依頼の Stream J 専任指示を合意根拠として採用）。
+
+### Phase 4 Execute（直列順の第2段）
+
+- 実施内容: 本Issueに Stream J フェーズ記録を追加。
+- スコープ確認: 本ファイルのみ更新（指定外ファイルは未編集）。
+
+### Phase 5 Verify / Proceed / Stop
+
+- Verify実行:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+- Self-correction policy: 失敗時は本Issue内で最大3回まで修正、4回目相当で停止。
+- Proceed判定: **Proceed（security_operational_guidelines へ）**。
