@@ -843,3 +843,36 @@
 ### Phase 5 Proceed
 - 状態: **Ready**（Open候補維持）
 - 次アクション: `security.md` 側の公開改善PRで、公開境界（公開可/非公開）の節構造を先に固定してから本文改稿を実施。
+
+## 18) Stream専有 3点セット直列処理（Phase 1〜5）
+
+### Phase 1 Read（3ファイル差分確認）
+
+- 対象を本Issueを含む専有3ファイルに固定し、他Issue/他層は編集対象外とする。
+- `DecisionStatus=Fixed` / `Classification=Improve external` / `VerificationLevel=docs-check` の現値を再確認。
+
+### Phase 2 Plan（公開/内部分類の判断基準固定）
+
+- 分類判定基準（固定）:
+  1. Audience が外部利用者/運用担当者を含む場合は `Improve external` を優先。
+  2. 内部承認メモ・秘密情報・実装詳細のみで成立する場合のみ `Move internal` を許可。
+  3. SafeMode既定ON・share/export漏洩防止の後退を伴う分類変更は禁止。
+- Proceed判定は `Ready / Hold / Needs-decision` の三値で記録する。
+
+### Phase 3 Execute（方針整合）
+
+- 本Issueの分類は **Improve external（Fixed）** を維持する。
+- 実行方針: `04_Documentation/security.md` を公開セキュリティ基底文書として維持（内部専用メモ化しない）。
+- 非目標: 対象外ファイル編集、仕様正本（00〜02）改変、実装コード修正。
+
+### Phase 4 Verify（docs-check）
+
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+- 失敗時ポリシー: 競合検知 / 前提崩壊 / 自己修復3回超過のいずれかで停止。
+
+### Phase 5 Proceed
+
+- 現在判定: **Ready**（分類基準固定・方針整合・docs-check実施可能）。
+- 次アクション: 専有3ファイルの直列処理を維持し、対象外編集は実施しない。

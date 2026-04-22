@@ -938,3 +938,36 @@ DOC-OPS-05-11 は文書分類Issueだが、Phase6運用同期対象として次�
 ### Verify失敗時の自己修復ポリシー（最大3回）
 - Retry 1〜3: 失敗原因を同一Issue内で修正し、Verifyを再実行する。
 - Retry超過（4回目相当）: 自己修復を停止し、`Proceed=Hold` とブロッカー内容を記録する。
+
+## 18) Stream専有 3点セット直列処理（Phase 1〜5）
+
+### Phase 1 Read（3ファイル差分確認）
+
+- 対象を本Issueを含む専有3ファイルに固定し、他Issue/他層は編集対象外とする。
+- `DecisionStatus=Fixed` / `Classification=Improve external` / `VerificationLevel=docs-check` の現値を再確認。
+
+### Phase 2 Plan（公開/内部分類の判断基準固定）
+
+- 分類判定基準（固定）:
+  1. Audience が外部利用者/運用担当者を含む場合は `Improve external` を優先。
+  2. 内部承認メモ・秘密情報・実装詳細のみで成立する場合のみ `Move internal` を許可。
+  3. SafeMode既定ON・share/export漏洩防止の後退を伴う分類変更は禁止。
+- Proceed判定は `Ready / Hold / Needs-decision` の三値で記録する。
+
+### Phase 3 Execute（方針整合）
+
+- 本Issueの分類は **Improve external（Fixed）** を維持する。
+- 実行方針: `04_Documentation/operations.md` を公開runbook改善対象として維持（Move internal へ再分類しない）。
+- 非目標: 対象外ファイル編集、仕様正本（00〜02）改変、実装コード修正。
+
+### Phase 4 Verify（docs-check）
+
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- 失敗時ポリシー: 競合検知 / 前提崩壊 / 自己修復3回超過のいずれかで停止。
+
+### Phase 5 Proceed
+
+- 現在判定: **Ready**（分類基準固定・方針整合・docs-check実施可能）。
+- 次アクション: 専有3ファイルの直列処理を維持し、対象外編集は実施しない。
