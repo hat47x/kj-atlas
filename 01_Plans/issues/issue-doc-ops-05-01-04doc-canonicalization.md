@@ -902,3 +902,35 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 分類方針（Move internal）と5Phase実行計画を本Issue内で固定し、docs-check経路を明示したため。
+
+## 21) Stream G DOC-OPS-05 content lane run（2026-04-22 / canonicalization）
+
+### Phase 1 Read（Scope / Related ADR/Spec / Verification）
+- 再読対象: Scope=`04_Documentation/canonicalization.md`、Related ADR/Spec（`02_Architecture/schemas.md`, `02_Architecture/architecture.md`）、Expected verification level=`docs-check` を再確認。
+- 事前想定との差分ログ:
+  - 差分G-01: 既存ログは多数あるが、`Expected verification level=docs-check` を「実行コマンド結果」と対で記録した節が不足。
+  - 差分G-02: ACに「実行順序（canonicalization→narratives→local_llm_ops_guide）」の明示がなかった。
+
+### Phase 2 Plan（AC/DoD不足ドラフト提案）
+- ACドラフト提案:
+  - AC-G-01: Stream Gの直列順（canonicalization→narratives→local_llm_ops_guide）を遵守した実行記録を残す。
+  - AC-G-02: docs-checkの実コマンド結果を当日実行ログとして残す。
+- DoDドラフト提案:
+  - DoD-G-01: Phase 1〜5の記録が同一節に完結する。
+  - DoD-G-02: Verify失敗時は最大3回の自己修復で停止条件を適用する。
+- 合意記録: 本Issueは `DecisionStatus=Fixed` のため、上記ドラフトを本節内で合意済みとしてExecuteへ進行。
+
+### Phase 3 Execute（本Issue反映）
+- 実施内容: Stream G専任ログを追記し、差分ログ・AC/DoD補強案・停止条件を固定。
+- 実施順序: Stream G指定順の1件目（canonicalization）として完了判定。
+
+### Phase 4 Verify（docs-check）
+- 実行コマンド（1回目）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- 判定: pass（self-correction 0/3）。
+
+### Phase 5 Proceed / Stop
+- 状態: **Proceed（Ready）**
+- 次アクション: Stream G指定順の2件目 `issue-doc-ops-05-10-04doc-narratives.md` へ進行。
+- Stop条件: 未定義競合、前提崩れ、または自己修復3回超過時は停止して理由・影響・再開条件を記録する。

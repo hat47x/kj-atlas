@@ -804,3 +804,35 @@
 ### Phase 5 Proceed
 - 状態: **Ready**
 - 次アクション: local LLM公開運用PRでは、内部依存値をテンプレート化し秘匿情報を記載しない。
+
+## 18) Stream G DOC-OPS-05 content lane run（2026-04-22 / local_llm_ops_guide）
+
+### Phase 1 Read（Scope / Related ADR/Spec / Verification）
+- 再読対象: Scope=`04_Documentation/local_llm_ops_guide.md`、Related ADR/Spec（`02_Architecture/llm_provider_spec.md`, `01_Plans/documentation_quality.md`）、Expected verification level=`docs-check` を再確認。
+- 事前想定との差分ログ:
+  - 差分G-09-01: Improve external方針は固定済みだが、今回実行分のVerify記録が未反映。
+  - 差分G-09-02: Stream G指定の直列3件目としての完了判定ログが未整備。
+
+### Phase 2 Plan（AC/DoD不足ドラフト提案）
+- ACドラフト提案:
+  - AC-G-09-01: local_llm_ops_guideを直列3件目として実行し、前2件完了後に着手したことを記録。
+  - AC-G-09-02: docs-check実行結果を当日ログとして残し、Expected verification levelとの一致を明記。
+- DoDドラフト提案:
+  - DoD-G-09-01: Phase 1〜5の単一節完結。
+  - DoD-G-09-02: self-correction上限3回超過時の停止条件明記。
+- 合意記録: `DecisionStatus=Fixed` のため本節内ドラフトを合意済みとしてExecuteへ進行。
+
+### Phase 3 Execute（本Issue反映）
+- 実施内容: Stream G専任ログを追記し、差分ログ・AC/DoD補強・停止条件を固定。
+- 実施順序: Stream G指定順の3件目（local_llm_ops_guide）として完了判定。
+
+### Phase 4 Verify（docs-check）
+- 実行コマンド（1回目）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- 判定: pass（self-correction 0/3）。
+
+### Phase 5 Proceed / Stop
+- 状態: **Proceed（Ready / Stream G 3件完了）**
+- 停止判定: 3回超過・未定義競合・前提崩れは未検知。
+- 再開条件（停止時のみ）: 当該競合の明文化と解消指示を受領後に再開。
