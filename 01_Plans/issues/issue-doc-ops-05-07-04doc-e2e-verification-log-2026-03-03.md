@@ -859,3 +859,30 @@
 - 状態: **Ready**
 - 続行条件: Verifyが1回で通過、または3回以内の自己修復で収束すること。
 - 即停止条件: 4回目相当の修復要求 / 前提崩れ / 競合検知。
+
+## Stream G normalization pass (2026-04-22)
+
+### Phase 1) Read
+- `Status=Draft` / `Scope` / `Expected verification level=docs-check` の一致を再確認。
+- 既存記録内の Proceed 表記ゆれ（Phase 5 / Phase 6）を検知し、本passでは **5段階（Read/Plan/Execute/Verify/Proceed）** を正とする。
+
+### Phase 2) Plan
+- 分類基準を 3軸で統一：
+  1. **Audience**: 主読者が外部利用者か内部運用者か
+  2. **Goal**: 文書目的が公開ガイドか内部運用・証跡か
+  3. **公開境界**: `04_Documentation` に置く妥当性があるか
+- 本Issueの分類決定を固定: **Move internal**。
+
+### Phase 3) Execute
+- Issue本文は docs-only 計画メモとして整形し、実装変更は行わない。
+- 分類・AC・Validation の整合のみを対象にし、対象外（04_Documentation本体、shared resource、他Issue群）は未編集を維持。
+
+### Phase 4) Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 期待結果: メモ形式エラーなし、差分の体裁崩れなし。
+
+### Phase 5) Proceed
+- 判定: **Ready**
+- 理由: 分類基準（Audience/Goal/公開境界）・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` が揃っているため。
