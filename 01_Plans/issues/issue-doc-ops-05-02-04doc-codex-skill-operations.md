@@ -218,6 +218,36 @@
 - 対象: `Scope` と `Related ADR/Spec` を再読し、公開境界（Audience / Goal / Non-goal / Public boundary）を再確認。
 - 判定: 本Issueは docs-only のため、`03_Implement/**` は変更対象外。
 
+## 17) Track 3 serial execution record（2026-04-22, DOC-OPS-05-02）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order, `00_Prompt/codex_gsd_skill_ops.md`, `01_Plans/documentation_quality.md`, `04_Documentation/codex_skill_operations.md` を再読。
+- 確認: 本Issueは DOC-OPS Track 3 専有。指定外ファイル編集を禁止。
+
+### Phase 2 ADR/CDC（開始同期）
+- Context: codex skill運用の実体は内部運用文書にあり、公開文書側は参照導線の最小化が妥当。
+- Decision: Classification を **Move internal** で固定し、04文書は stub 運用へ移行。
+- Consequences: 公開文書は分類結果・Go/No-Go・停止条件のみ保持し、運用正本更新は `00_Prompt` 側で実施。
+
+### Phase 3 Plan（開始同期）
+- AC/DoD不足提案:
+  - AC-T3-02-1: 対象文書冒頭に `Outcome` と `Public boundary` を必須化。
+  - DoD-T3-02-1: Verifyで `rg` + `git diff --check` を実行し、自己修復回数を記録。
+- 合意: **Issue内合意済み**（DOC-OPS-05共通運用）。
+
+### Phase 4 Execute（開始同期）
+- `04_Documentation/codex_skill_operations.md` に分類結果（Move internal）、公開stub方針、Outcome/Public boundary を反映。
+- 実装コードおよび指定外ファイルは未変更。
+
+### Phase 5 Verify（開始同期）
+- docs-check 実行方針: `rg -n "Outcome|Public boundary|Move internal|stub|Go/No-Go|StoppedForClarification" 04_Documentation/codex_skill_operations.md`
+- 自己修復ポリシー: 最大3回。超過時は `Hold` で停止。
+- 自己修復回数: **0/3**。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次順序: Track 3 の直列順序に従い `DOC-OPS-05-09` へ進行。
+
 ### 2) CDC（Context / Decision / Consequences）
 - Context: `DOC-OPS-05-02` は DOC-OPS-05 の文書分類と公開品質を固定するためのDraft。
 - Decision: Classification は **Move internal** を維持し、既存のDecisionStatus=Fixedを正とする。

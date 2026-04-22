@@ -2,6 +2,8 @@
 
 > Audience: 外部運用者（閉域/企業）
 > Purpose: ローカルLLM運用時の最小runbookを提供する。
+> Outcome: 分類結果を **Improve external** に固定し、外部公開runbookとして再利用できる検証導線を提供する。
+> Public boundary: 公開可能な運用条件と検証手順のみを記載し、秘密情報・内部承認ログ・組織固有手順は含めない。
 > This document decides: provider切替手順、safeMode境界、最小監査確認。
 > This document does not decide: 組織固有の承認フロー、秘密情報管理、内部監査ログの保管方式。
 > Related: `02_Architecture/llm_provider_spec.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/operations.md`
