@@ -888,3 +888,36 @@
 - 判定: **Ready**。
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
+
+
+## 17) DOC-OPS-05 Batch1 dedicated execution log（Phase 1→6, standalone）
+
+### Phase 1 Read
+- 最新本文を再読し、`Status=Draft` / `Priority=P2` / `Scope=04_Documentation/codex_skill_operations.md` / `VerificationLevel=docs-check` を確認。
+- 本Issueの分類テーマが「Move internal / Improve external の二択計画固定」であることを確認。
+
+### Phase 2 ADR/CDC
+- Context: codex skill運用は内部エージェント運用色が強く、外部向け04配下との境界整理が必要。
+- Decision: 本Issueの分類決定を **Move internal** として維持。
+- Consequences: 後続は内部正本（00_Prompt/01_Plans側）への集約計画に限定し、実装コード変更を行わない。
+
+### Phase 3 Plan
+- AC/DoD不足の有無を確認し、不足なしと判定。
+- 合意済み最小計画を維持:
+  - Audience / Goal / 公開境界の根拠をIssueに残す。
+  - 次アクションを「内部移設計画」に固定する。
+
+### Phase 4 Execute
+- 本バッチでは分類計画の固定のみを実施（本文の方針維持・非スコープ要求の混入なし）。
+- 非干渉ルールを満たすため、対象外ファイル・実装コードは未変更。
+
+### Phase 5 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `git diff --check`
+- 失敗時自己修復ポリシー: 最大3回、4回目相当は即 `Hold` 停止。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 未解決: **なし**
+- held条件: 非該当（未定義競合・対象外編集要求ともに発生なし）
