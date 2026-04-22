@@ -356,3 +356,43 @@
 - 進行判定: contract_id_collision=0 / vocabulary_collision=0 のため継続可。
 - CDC方針: 必要時のみ Context / Decision / Consequences を作成し `held` で承認待ち。
 - 現時点: CDC起票不要（衝突未検知）。
+
+---
+
+## Stream D Execution Record（2026-04-22 / user-directed phase cycle refresh）
+
+### Phase 1 Read（CE0境界・契約ID・error semantics再確認）
+- 再読対象を本ファイルのみに固定し、指定外編集禁止を再確認。
+- CE0 read-only参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再確認。
+- CE1契約ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）を再確認。
+- error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の語彙固定を再確認。
+- 前提差分判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足の提案・合意固定）
+- AC補完を合意固定（contract-only）:
+  - hash決定論は同一 canonical query の3回一致で判定。
+  - preview gate失敗は `422 preview_required` を固定。
+  - closed-world違反は `400 unknown_contract_key` を固定。
+- DoD補完を合意固定（I/F先行）:
+  - CE2/CE4連携比較キーは `sourceBundleHash === bundleHash` を固定。
+  - SafeMode regression = 0 を完了条件に維持。
+- 実装詳細（handler/UI/DB/worker）記述は追加しない。
+
+### Phase 3 Execute（ContextQuery/Bundle/hash deterministic 契約文言固定）
+- ContextQuery/Bundle v1 の契約文言を本Issue記載の固定語彙で維持。
+- hash deterministic要件（`queryCanonicalHash` / `bundleHash`）を同一canonical queryでの一致契約として維持。
+- preview必須ゲートと closed-world を契約として維持（bypass禁止）。
+
+### Phase 4 Verify（docs-check / self-correction上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（上限超過なし）。
+
+### Phase 5 Proceed（停止条件監視）
+- 停止条件確認:
+  - 前提差分: なし
+  - 未定義競合: なし
+  - Self-Correction 3回超過: なし
+- 判定: 継続可能（contract-only handoff維持）。
