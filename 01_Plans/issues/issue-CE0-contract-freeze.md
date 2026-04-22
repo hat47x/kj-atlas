@@ -219,6 +219,39 @@
 - Transfer unit: Contract ID + No-Go ID のみ（契約本文の複製なし）。
 - Escalation rule: 境界逸脱の要求は `scope_deviation` としてCDC `held` を起票し、承認完了まで停止。
 
+## Stream B execution log（CE0 Contract Freeze / contract-only）
+
+### 2026-04-22 run snapshot
+- lane: Stream B（CE0 Contract Freeze 専任）
+- phase checkpoint:
+  - Phase 1 Read: 完了（Status/Scope/Contract IDs/No-Go語彙を再読）
+  - Phase 2 ADR/CDC: 追加CDC不要（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`）
+  - Phase 3 Plan: AC/DoD補完提案A/B/Cを `held`（承認待ち）として維持
+  - Phase 4 Execute: contract-only wording hygiene の範囲で実施（意味変更なし）
+  - Phase 5 Verify: `docs-check` 実行（結果は下記 Verification log）
+  - Phase 6 Proceed: Verify合格時のみ進行、未達は `held` に戻す
+- guard assertions:
+  - CE0 Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義なし
+  - safeMode既定（ON, `allowUnreviewedText=false`）の緩和なし
+  - 未承認決定の確定扱いなし（`held` 維持）
+  - 自己修復上限は Verify 内で最大3回、4回目相当で停止
+
+### Verification log template（self-correction <= 3）
+- attempt_1:
+  - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - git diff --check: pass
+  - result: pass（self-correction 0回）
+- attempt_2（必要時のみ）:
+  - docs-check:
+  - git diff --check:
+  - result:
+- attempt_3（必要時のみ）:
+  - docs-check:
+  - git diff --check:
+  - result:
+- stop_condition:
+  - 4回目相当 / 前提崩れ / 競合検知で即停止
+
 ## Fail-safe（即停止条件）
 - Self-Correction 3回超過（4回目修復に到達）
 - SafeMode後退の兆候
