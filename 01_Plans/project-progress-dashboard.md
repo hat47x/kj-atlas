@@ -733,3 +733,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute（単一変更セット）: 3ファイルに rerun-46 同期ログのみを追記し、未承認事項の確定扱い・対象外ファイル編集・推測マージを実施しない。
 - Phase 4 Verify（validator + unittest + rg整合）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-46|Decision Queue|Ready=1 / Open=2|A1→A2→A3|D1〜D4|4h / 2h / 代理承認なし / 48h\+15m\+60m|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で3ファイル整合を確認。
 - Phase 5 Proceed（次回再開条件1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / D1〜D4固定値維持 / 停止条件違反0件` が一致していること。**
+
+## Stream Shared 共有統合同期ログ（2026-04-22 rerun-47, Phase 1-5）
+
+- Phase 1 Read（Issue別再読）: Active 5件（`HIL-RS-01` / `HIL-RS-01-A1` / `HIL-RS-02` / `HIL-RS-02-A1` / `HIL-RS-02-A3`）の `Scope` / `Related ADR/Spec` / `Expected verification level=docs-check` を再読し、3共有ファイルの前提値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）を再確認。
+- Phase 2 Plan（AC/DoD不足ドラフト）: 各Issueに共通して不足し得るAC/DoDを `AC: Issueごとに主検証責務をdocs-checkへ固定` / `DoD: VerifyでIssue単位のdocs-check証跡を残す` として先行提案し、shared resource 3ファイルへ反映する方針で合意固定。
+- Phase 3 Execute（3ファイル順次処理）: `01_Plans/issues/README.md` → `01_Plans/project-progress-dashboard.md` → `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の順で1件ずつ完了判定しながら同期し、対象外ファイル編集・他ストリーム依存・未承認決定の確定化を実施しない。
+- Phase 4 Verify（Issue別docs-check）: Issueごとのdocs-checkとして `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` を実行し、全Issueで `docs-check` 宣言一致を確認（self-correction 0/3）。
+- Phase 5 Proceed（停止条件判定）: 競合検知・前提崩れ・self-correction 3回超過はいずれも未検出。**共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
