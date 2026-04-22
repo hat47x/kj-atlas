@@ -218,6 +218,36 @@
 - AC: Audience / Goal / Non-goal / Public boundary / Outcome / Related を本文で追跡可能にする。
 - DoD: Verifyで `docs-check`（メタ/語彙/固定値/リンク）を確認し、Proceedに `Ready/Hold/Needs-decision` を記録する。
 
+## 17) Track 3 serial execution record（2026-04-22, DOC-OPS-05-09）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order, `02_Architecture/llm_provider_spec.md`, `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/local_llm_ops_guide.md` を再読。
+- 確認: 直列順序 `05-02 → 05-09 → 05-10` の中間工程として実施。
+
+### Phase 2 ADR/CDC（開始同期）
+- Context: local LLM運用は外部公開価値が高いが、公開境界と内部情報の分離を明示する必要がある。
+- Decision: Classification は **Improve external** を維持し、公開runbook化を継続。
+- Consequences: 公開可能な運用条件・検証導線を拡充し、秘密情報や内部承認ログは非掲載を維持。
+
+### Phase 3 Plan（開始同期）
+- AC/DoD不足提案:
+  - AC-T3-09-1: 文書冒頭メタへ `Outcome` を追加し、改善完了条件を可視化する。
+  - AC-T3-09-2: `Public boundary` を明示して公開/内部の境界を固定する。
+- 合意: **Issue内合意済み**（DOC-OPS-05共通運用）。
+
+### Phase 4 Execute（開始同期）
+- `04_Documentation/local_llm_ops_guide.md` 冒頭メタに `Outcome` と `Public boundary` を追記。
+- 既存のSafeMode・Go/No-Go・停止条件は維持し、指定外編集は未実施。
+
+### Phase 5 Verify（開始同期）
+- docs-check 実行方針: `rg -n "Outcome|Public boundary|safeMode|Go/No-Go|StoppedForClarification" 04_Documentation/local_llm_ops_guide.md`
+- 自己修復ポリシー: 最大3回。超過時は停止。
+- 自己修復回数: **0/3**。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次順序: Track 3 直列順序に従い `DOC-OPS-05-10` へ進行。
+
 ### 4) Execute（文書更新）
 - 本Issueメモを最新化し、後続の対象文書更新で使う判定材料を固定。
 - 競合回避のため、分類結果そのもの（Move/Improve）は再判定しない。

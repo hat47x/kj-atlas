@@ -2,6 +2,8 @@
 
 > Audience: 外部利用者・レビュー担当者
 > Purpose: narrative生成とレビュー運用の意味論を公開する。
+> Outcome: 分類結果を **Improve external** に固定し、公開利用時のレビュー責務と安全境界を再現可能にする。
+> Public boundary: 公開文書は意味論・レビュー条件・停止条件のみを扱い、内部監査実装や組織固有承認フローは扱わない。
 > This document decides: review stateの既定、人間レビュー責務、公開利用条件。
 > This document does not decide: 真偽の自動確定、内部監査ログ形式、組織固有の承認フロー。
 > Related: `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `01_Plans/documentation_quality.md`

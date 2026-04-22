@@ -154,3 +154,33 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
 - 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
+
+## 12) Track 3 serial execution record（2026-04-22, DOC-OPS-05-10）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order, `00_Prompt/domain.md`, `02_Architecture/schemas.md`, `04_Documentation/narratives.md` を再読。
+- 確認: Track 3 の直列最終工程。指定外編集は禁止。
+
+### Phase 2 ADR/CDC（開始同期）
+- Context: narrative文書は公開価値がある一方、AI生成物の扱いを誤ると公開時リスクが高い。
+- Decision: Classification は **Improve external** を維持し、公開境界とレビュー責務を明文化する。
+- Consequences: reviewState運用とSafeMode境界を公開文書として再現可能に維持する。
+
+### Phase 3 Plan（開始同期）
+- AC/DoD不足提案:
+  - AC-T3-10-1: 冒頭メタに `Outcome` を追加して公開改善の到達点を明示する。
+  - AC-T3-10-2: `Public boundary` を追加し、内部承認・監査実装を非対象と明示する。
+- 合意: **Issue内合意済み**（DOC-OPS-05共通運用）。
+
+### Phase 4 Execute（開始同期）
+- `04_Documentation/narratives.md` 冒頭メタに `Outcome` / `Public boundary` を反映。
+- reviewState semantics、proposal-only原則、停止条件は既存方針を維持。
+
+### Phase 5 Verify（開始同期）
+- docs-check 実行方針: `rg -n "Outcome|Public boundary|reviewState|proposal|SafeMode|No-Go" 04_Documentation/narratives.md`
+- 自己修復ポリシー: 最大3回。超過時は停止。
+- 自己修復回数: **0/3**。
+
+### Phase 6 Proceed
+- 判定: **Ready（Track 3 serial completed）**。
+- 次アクション: docs-only 差分としてPR化し、必要ならOpen化時に関連issueへリンクする。
