@@ -85,6 +85,10 @@
 - AC不足候補C: CDC発火条件の見落とし。
   - 補完: `contract_id_collision | vocabulary_collision | scope_deviation` のいずれか検知時は `held` 記録を必須化する。
 - Status: `held`（承認待ち。確定運用は承認後）
+- DoD補完固定（承認待ちの追跡対象）:
+  - `dod_read_only_reference`: Matrix上で「リンク更新/注記のみ」を満たす。
+  - `dod_no_go_id_canonical`: No-Goは5語彙ID照合のみで判定する。
+  - `dod_cdc_held_required`: CDC trigger検知時はContext/Decision/Consequencesを`held`記録する。
 
 ### AC/DoD補完提案の合意明記（Phase 2）
 - 合意対象: AC不足候補A/B/C の補完方針そのもの（実装や下流再定義は含めない）。
@@ -143,8 +147,8 @@
 | `safemode_default_relaxation` | safeMode既定値（ON, `allowUnreviewedText=false`）の緩和を禁止する。 | safemode relaxation |
 
 ### Execute Plan（実行前固定）
-- CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ。
-- CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する。
+- CE0 SSOT本文のみを整備し、下流Issueは Contract ID参照で解釈可能な状態に保つ（契約凍結文言の統一のみ実施）。
+- CE1/CE2/CE4への handoff は「参照のみ（本文複製なし）」で表現を固定する（契約本文の新規追加・改名・削除は禁止）。
 - No-Go語彙IDの照合観点をCE0に明記し、下流への受け渡しは語彙ID参照のみとする。
 - Phase 2で `held` 化したAC/DoD補完提案は、承認前に確定扱いしない。
 
