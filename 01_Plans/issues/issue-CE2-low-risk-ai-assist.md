@@ -55,6 +55,13 @@
 - No-Go語彙: `auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`
 - `reviewState` 語彙: `unreviewed | human_reviewed`（昇格は人手のみ）
 
+### Phase 1 逸脱候補チェックリスト（列挙固定）
+- lifecycleが `proposed | accepted | rejected | held` 以外の語彙を含む。
+- `reviewState` が `unreviewed | human_reviewed` 以外を含む、またはAIが `human_reviewed` 昇格主体として記述されている。
+- No-Go語彙（`auto-apply` / `preview bypass` / `safeMode既定緩和`）を許可・示唆する文言がある。
+- CE0/CE1契約の再定義・拡張をCE2側で行う文言がある。
+- proposal-only契約を逸脱して、実装・反映・適用をAI実行可能と読める文言がある。
+
 ### Contract IDs
 - `CE2-PROPOSAL-IF`
 - `CE2-LIFECYCLE-IF`
@@ -75,6 +82,10 @@
 - 開始時Read: Phase 1 で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
 - Execute開始ゲート: AC/DoD不足時はAIがドラフト提案のみ行い、人手合意前は Phase 3 Execute を開始しない。
 - AC/DoD不足時: AIは不足項目のドラフトのみ提示し、合意済みAC/DoDが揃うまで `status=held` を維持する。
+- Scope（固定）: proposal-only契約の文言整備のみ。契約語彙の追加・再定義・実装仕様化は対象外。
+- Non-goals（固定）: 実装変更、auto-apply導入、review自動昇格、safeMode既定緩和、他issue編集。
+- Validation（固定）: lifecycle/reviewState/No-Go語彙/`sourceBundleHash` 整合を文面上で確認し、Verifyでdocs-checkを実行する。
+- Stop Conditions（固定）: 未合意AC/DoD、契約再定義要求、No-Go許可要求、指定外ファイル差分、自己修復4回目相当。
 - CE1参照境界: `sourceBundleHash` 比較キーのみ依存。
 - CE4参照境界: `proposal/apply` 監査語彙を共通化し、同値判定は `equivalenceKey + bundleHash` を参照のみで利用。
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
@@ -97,6 +108,7 @@
 - proposal lifecycle は `proposed | accepted | rejected | held` に固定し、別名・追加語彙を導入しない。
 - auto-apply と AIによる `reviewState=human_reviewed` 自動昇格を明示的に禁止する。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
+- AIの実行結果は `status=proposed` 候補提示に限定し、`accepted/rejected/held` の確定遷移は人手判断に限定する。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
 - **Decision**: proposal-only + no-auto-apply + human-only昇格を維持。
