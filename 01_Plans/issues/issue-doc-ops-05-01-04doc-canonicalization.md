@@ -874,3 +874,31 @@
 - 判定: **Ready / Hold / Needs-decision** の三値で記録する。
 - Ready条件: 上記品質ゲートを満たし、未合意変更・スコープ外編集・3回超過がないこと。
 - 現判定（本固定時点）: **Ready**。
+
+## 20) 2026-04-21 固定化追記（分類方針 / 実行計画のみ）
+
+### Phase 1 Read
+- 対象を本Issueメモ単体に固定して再読。
+- `Classification=Move internal`、`DecisionStatus=Fixed`、`VerificationLevel=docs-check` を再確認。
+
+### Phase 2 Plan（AC/DoD）
+- AC固定:
+  - 分類方針は **Move internal** のまま維持する。
+  - 公開境界の扱いは「内部正本へ移管・対外はstub導線」を維持する。
+- DoD固定:
+  - 実行順序は **Read → Plan → Execute → Verify → Proceed** の5Phaseのみ。
+  - 本Issue以外のファイルは変更しない。
+
+### Phase 3 Execute
+- 実施内容を「分類方針と実行計画の固定化記録」に限定して追記。
+- 本文の全面改稿・分類再判定・スコープ拡張は実施しない。
+
+### Phase 4 Verify
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- 失敗時は同一ファイル内の修復を最大3回までとし、超過時はHold。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 理由: 分類方針（Move internal）と5Phase実行計画を本Issue内で固定し、docs-check経路を明示したため。
