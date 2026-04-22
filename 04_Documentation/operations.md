@@ -1091,3 +1091,10 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## 0.10 Track 4 sync addendum（2026-04-22）
+
+- 本書は DOC-OPS Track 4 の順序 `05-05 → 05-11 → 05-13 → 05-14` に従って更新する。
+- 各Phase開始時に Read同期を実施し、`security.md` / `security_operational_guidelines.md` / `strict_mode_exception_approval_flow.md` との差分を先に確認する。
+- ADR関連変更は Context / Decision / Consequences を先行明文化し、合意（DecisionStatus=Fixed）確認後に Execute する。
+- Verify失敗時の自己修復は最大3回。超過時は `StoppedForClarification` で停止する。

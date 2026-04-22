@@ -771,3 +771,10 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## 0.5 Track 4 sync addendum（2026-04-22）
+
+- Track 4 直列順序は `05-05 → 05-11 → 05-13 → 05-14`。
+- 各Phase開始時に Read同期し、用語・役割・導線・固定値（D1〜D4）を照合する。
+- ADRタスクは Context / Decision / Consequences を先行記録し、DecisionStatus承認確認後に Execute する。
+- Verify失敗時は自己修復を最大3回まで許可し、4回目相当は fail-safe 停止とする。

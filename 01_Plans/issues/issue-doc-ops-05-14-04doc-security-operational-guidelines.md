@@ -1064,3 +1064,32 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（本Issueは Stream H 専属ルールを満たして次工程へ進行可能）。
 - 引き継ぎ: 後続も同じ 5Phase と停止条件を維持し、AC/DoD不足は必ず AIドラフト→合意後実行で処理する。
+
+## Stream Track 4 serial execution record（2026-04-22）
+
+### Phase 1 Read（開始時同期）
+- Read同期: `AGENTS.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/security.md` / `04_Documentation/operations.md` を再読。
+- 直前Issue（05-13）のProceed=Readyを受領し、順序 `05-13 → 05-14` を確認。
+
+### Phase 2 ADR/CDC（承認先行）
+- Context: guidelines は運用判断補助であり、承認フロー正本や実行runbookの置き換えではない。
+- Decision: **Improve external** を維持し、役割分離と D1〜D4 同値確認を必須化する。
+- Consequences: 公開文書として再利用可能な判断ガイドを維持しつつ、責務競合を回避できる。
+- 承認: DecisionStatus=Fixed を先行条件として確認。
+
+### Phase 3 Plan
+- 必須同期: 用語・役割・導線・固定値（D1〜D4）。
+- Verify失敗時は最大3回まで自己修復し、超過時は停止。
+
+### Phase 4 Execute
+- 本Issueは公開運用判断ガイドの整合維持を主責務とし、仕様正本の再定義を行わない。
+- 指定外ファイル編集は禁止を維持。
+
+### Phase 5 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+  - `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- Track 4 直列処理（05-05 → 05-11 → 05-13 → 05-14）を完了。

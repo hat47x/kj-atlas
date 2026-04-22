@@ -401,3 +401,10 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
+
+## 11. Track 4 sync addendum（2026-04-22）
+
+- 本書の更新は `05-05 → 05-11 → 05-13 → 05-14` の直列順序に従う。
+- 各Phase開始時Read同期を必須化し、`security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` の整合を先に確認する。
+- ADRタスクは Context / Decision / Consequences を先行明文化し、承認（DecisionStatus=Fixed）確認後に Execute する。
+- Verify失敗時の自己修復は最大3回。超過時は停止して Hold / StoppedForClarification とする。
