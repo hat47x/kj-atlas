@@ -30,6 +30,7 @@
 - 事前想定との差分
   - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は legacy候補として凍結し、判定ゲートから除外済み（read-only参照のみ）。
 - 判定: A1 SSOTとの差分なし（Proceed可）。
+- 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 
 ### held record
 - `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）

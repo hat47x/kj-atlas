@@ -28,6 +28,7 @@
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
 - 事前想定との差分: なし（SSOT固定済み、Proceed可）。
+- 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 
 ### held record（Phase 1 gate）
 - `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）
