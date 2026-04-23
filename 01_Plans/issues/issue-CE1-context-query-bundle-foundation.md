@@ -659,3 +659,47 @@
 - handoff制約:
   - 下流での契約本文再定義・再採番を禁止。
   - 変更要求は CDC（`held`）経由のみ許可。
+## Stream D Execution Record（2026-04-23 / CE1 contract-only dependency decoupling freeze）
+
+### Phase 1 Read（再読・境界固定）
+- 再読対象を本ファイルに限定し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0はSSOTとしてread-only参照のみを維持し、CE1側での再定義禁止を再確認。
+- 差分ゲート判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足の提案と合意）
+- 提案（AC補完）:
+  - 同一canonical queryを3回評価し、`queryCanonicalHash` が全回一致すること。
+  - 同一canonical queryを3回評価し、`bundleHash` が全回一致すること。
+  - `previewConfirmed=false` は常に `422 preview_required` を返すこと。
+  - 未定義キーは常に `400 unknown_contract_key` を返すこと。
+- 提案（DoD補完）:
+  - 下流依存切断のため、`sourceBundleHash` / `bundleHash` は mock固定値で契約確定すること。
+  - CE2/CE4比較語彙は `sourceBundleHash === bundleHash` のみを許容すること。
+  - SafeMode regression = 0 を完了条件として維持すること。
+- 合意結果: **上記提案をCE1 v1 contract-only固定条件として合意済み**。
+
+### Phase 3 Execute（contract freeze / mock固定値）
+- 実装記述は追加せず、契約語彙のみ固定。
+- 依存切断の固定値（mock）:
+  - `bundleHash = "BUNDLE_HASH_MOCK_CE1_V1_FIXED"`
+  - `sourceBundleHash = "BUNDLE_HASH_MOCK_CE1_V1_FIXED"`
+- 固定判定:
+  - `sourceBundleHash === bundleHash` を契約確定（下流待ち不要）。
+- 維持事項:
+  - CE0契約ID再定義なし。
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙固定維持。
+  - `preview_bypass` 禁止と safeMode既定緩和禁止を維持。
+
+### Phase 4 Verify（docs-check / self-correction最大3回）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（修復不要）。
+
+### Phase 5 Proceed（契約確定・引き渡し）
+- 判定: **Proceed**（contract-onlyで継続可能）。
+- CE2/CE4 handoffは read-only契約参照を維持:
+  - CE2: `sourceBundleHash === bundleHash` の比較語彙のみ利用。
+  - CE4: `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を必須入力として継続。
+- CDC方針: 衝突検知時のみ `held` に遷移（本記録時点は衝突未検知）。
