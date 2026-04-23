@@ -604,3 +604,58 @@
   - safeMode緩和なし
   - 未定義契約競合なし
 - 判定: **Proceed可（CE1 I/F凍結を維持）**。
+## Stream D Execution Record（2026-04-22 / CE1 plan-fix for ContextQuery/ContextBundle foundation）
+
+### Phase 1 Read（最新再読）
+- 本ファイルを再読し、編集可能範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- 参照境界を再確認:
+  - CE0は read-only（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
+  - CE1固定IDは `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`。
+- 差分ゲート判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（I/Fとモック境界を宣言）
+- CE1は contract-only / mock-first を維持し、実装記述（handler/UI/DB/worker）を追加しない。
+- I/F境界（v1固定）:
+  - Query input: `ContextQueryV1`（closed-world、未定義キー拒否）。
+  - Bundle output: `ContextBundleV1`（`queryCanonicalHash` / `bundleHash` 必須）。
+  - Preview gate: `previewConfirmed=false -> 422 preview_required`。
+- Mock境界（依存切断）:
+  - CE2/CE4 は CE1 backend 実装待ちを行わず、`ContextBundleV1` 互換fixtureで先行検証。
+  - handoffキーは `sourceBundleHash === bundleHash` の比較専用。
+
+### Phase 3 Execute（最小シグネチャ/Preview/deterministic要件を固化）
+- ContextQuery最小シグネチャ（固定）:
+  - `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`
+- ContextBundle最小シグネチャ（固定）:
+  - `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`
+- Preview固定:
+  - `previewConfirmed=false` は常に `422 preview_required`（生成処理へ進ませない）。
+- deterministic固定:
+  - 同一 canonical query で `queryCanonicalHash` と `bundleHash` が一致。
+  - 判定式は `sameQuery && sameBundle` 固定。`sameQuery && !sameBundle` は fail-closed。
+
+### Phase 4 Verify（再生成一致・safeMode除外・audit項目をAC化）
+- AC（固定）:
+  - [ ] 同一 canonical query 3回再生成で `queryCanonicalHash` が 3/3 一致。
+  - [ ] 同一 canonical query 3回再生成で `bundleHash` が 3/3 一致。
+  - [ ] `previewConfirmed=false` は 100% `422 preview_required`。
+  - [ ] 未定義キーは 100% `400 unknown_contract_key`。
+  - [ ] SafeMode regression = 0（既定緩和なし、未レビュー本文混入なし）。
+  - [ ] audit連携項目として `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を維持。
+- Stopper監視:
+  - Self-Correction 3回超過: 該当なし（0/3）。
+  - I/F未定義: 該当なし（最小シグネチャ固定済み）。
+  - safeMode緩和提案混入: 該当なし。
+
+### Phase 5 Proceed（モックfixture仕様を引き渡し）
+- CE2/CE4向け read-only fixture spec（contract-only）:
+  - fixtureId: `CE1-CONTEXT-BUNDLE-A2-minimal-v1`
+  - query fixture: `ContextQueryV1`（closed-world）
+  - bundle fixture: `ContextBundleV1`（`queryCanonicalHash` / `bundleHash` 固定値を含む）
+  - comparison rules:
+    - CE2: `sourceBundleHash === bundleHash`
+    - CE4: `equivalenceKey + bundleHash`（AND）および `queryCanonicalHash`
+  - error semantics固定継承: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- handoff制約:
+  - 下流での契約本文再定義・再採番を禁止。
+  - 変更要求は CDC（`held`）経由のみ許可。
