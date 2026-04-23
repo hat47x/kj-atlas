@@ -74,3 +74,8 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 
 ### 備考
 - E2E実行時に dev server から `/docs/*` proxy の `ECONNREFUSED` 警告は出るが、今回のフローは UI-only でテストはすべて pass。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

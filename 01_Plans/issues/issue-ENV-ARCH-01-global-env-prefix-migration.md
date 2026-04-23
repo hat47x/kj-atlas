@@ -97,3 +97,8 @@
   - 期待通り、旧キー単独/混在を拒否し、新キー設定のみを受理する。
 - `rg -n "旧: |DATABASE_URL|ALLOW_JIT_PROVISIONING|API_KEY" 03_Implement/backend/README.md 04_Documentation/operations.md 04_Documentation/security.md 03_Implement/backend/tests/scripts/run_auth_level2.sh`
   - 旧キー依存の実行例が除去されている。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

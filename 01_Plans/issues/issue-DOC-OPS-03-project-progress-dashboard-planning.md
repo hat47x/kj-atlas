@@ -104,3 +104,8 @@
 - `project-progress-dashboard.md` / `issues/README.md` / `decision-pack-2026-03-human-judgement.md` の Active・Decision Queue・次の1手を同期。
 - 競合停止条件（3回自己修正超過、前提崩壊、未定義競合）をダッシュボード本文へ固定。
 - Active一覧と実態が一致することを docs-check で確認。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

@@ -129,3 +129,8 @@
 - Gate順序が `C→D→E` 以外で記述される。
 - evidence項目の欠落または Command と Result の不整合。
 - 停止条件（3回超過 / 前提崩れ / 未定義競合）に該当。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

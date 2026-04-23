@@ -391,3 +391,8 @@
 - Phase 4 A3 handoff fixed input:
   - `contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`
 - Phase 5 Verify/Proceed: docs-check と判定整合を満たし、Proceed=Completed。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog整理提案: FB-P2A-02 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。

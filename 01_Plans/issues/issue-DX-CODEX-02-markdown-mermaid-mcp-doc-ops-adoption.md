@@ -106,3 +106,8 @@
   - python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py => pass
 - Follow-up: T3（Active issue index更新）は本タスクの禁止範囲のため未実施
 ```
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

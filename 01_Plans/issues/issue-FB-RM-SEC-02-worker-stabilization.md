@@ -55,3 +55,8 @@
 - 2026-02-28: `buildBundleZipBlob` を worker client 経由に更新し、fallback/cancel を実装。
 - 2026-02-28: `App.tsx` の bundle export へ zip 進捗と cancellation handling を反映。
 - 2026-02-28: `bundle_export.test.ts` に worker/fallback/cancel 回帰テストを追加し、関連テストを実行して完了確認。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

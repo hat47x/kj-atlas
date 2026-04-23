@@ -52,3 +52,8 @@
 - 2026-02-28: テスト先行で `merge_decision_audit` の期待仕様（代表/起源追跡・時系列順）を固定。
 - 2026-02-28: bundle export に `merge_decision_audit.json` を追加。
 - 2026-02-28: 関連unit testと typecheck を実行し、回帰なしを確認。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

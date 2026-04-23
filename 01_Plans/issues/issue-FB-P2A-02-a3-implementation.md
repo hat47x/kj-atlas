@@ -404,3 +404,8 @@ DecisionQueue:
   - rollback 条件: Contract不一致 / mockCase欠損・未知値 / GoNoGo崩れ / ownerOfFix未確定
   - AC/DoD gap rule: `agreementStatus=agreed` 以外は NoGo
 - Phase 5 Verify/Proceed: docs-check / 依存整合 / 契約ドリフト無しを確認し、Proceed=Completed。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog整理提案: FB-P2A-02 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
