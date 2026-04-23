@@ -408,3 +408,26 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 - 各Phase開始時Read同期を必須化し、`security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` の整合を先に確認する。
 - ADRタスクは Context / Decision / Consequences を先行明文化し、承認（DecisionStatus=Fixed）確認後に Execute する。
 - Verify失敗時の自己修復は最大3回。超過時は停止して Hold / StoppedForClarification とする。
+
+## 12. Stream M serial update log（2026-04-22 / security_operational_guidelines担当）
+
+### Phase 1 Read
+- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` と基底方針 `04_Documentation/security.md` を再読。
+- 同期順序 `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を再確認。
+
+### Phase 2 Plan
+- 用語を `Security Officer / System Owner / Platform Operator` に固定。
+- 役割を「2者承認（Security Officer + System Owner）/ 実行（Platform Operator）」で固定。
+- D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）を運用判断チェック項目として維持。
+- 失敗時は `Hold` / `StoppedForClarification` で停止し、自己修復3回上限を適用。
+
+### Phase 3 Execute
+- 本節を追記し、運用判断ガイドとしての証跡を更新（docs-only、本文責務は不変更）。
+
+### Phase 4 Verify
+- docs-check（用語・責務・導線・D1〜D4）を `rg` で照合。
+- `git diff --check` でフォーマット崩れがないことを確認。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- フェイルセーフ: 固定値不一致、役割ドリフト、導線切断、自己修復3回超過時は停止。
