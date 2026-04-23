@@ -30,6 +30,7 @@
   - `sharedResourceFreeze=true`
   - `sourceIssuePolicy=Draft/TBD (README運用基準)`
 - 事前想定との差分: なし（A3はread-only参照）。
+- 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 
 ## Phase 2: ADR/CDC Consensus（必要時のみ）
 ### Context
