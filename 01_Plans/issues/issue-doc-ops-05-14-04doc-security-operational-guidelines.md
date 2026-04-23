@@ -1121,3 +1121,17 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 15（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+## 15) Stream M serial sync note（2026-04-22 / security_operational_guidelines担当）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md`（正本）と `security.md` / `security_operational_guidelines.md` の4観点（用語・責務・導線・D1〜D4）を再確認。
+
+### Phase 2 Plan
+- docs-only で `security_operational_guidelines.md` の証跡追記に限定。
+- 固定値 D1〜D4、役割分離、同一ワークフロー（Read→Plan→Execute→Verify→Proceed）を維持。
+
+### Phase 3 Execute / Verify / Proceed
+- Execute: Stream M 実行ログを本体文書へ追記。
+- Verify: `rg` + `git diff --check` で整合確認。
+- Proceed: 判定 **Ready**（不一致または自己修復3回超過時は `Hold` / `StoppedForClarification`）。

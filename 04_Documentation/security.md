@@ -778,3 +778,27 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 - 各Phase開始時に Read同期し、用語・役割・導線・固定値（D1〜D4）を照合する。
 - ADRタスクは Context / Decision / Consequences を先行記録し、DecisionStatus承認確認後に Execute する。
 - Verify失敗時は自己修復を最大3回まで許可し、4回目相当は fail-safe 停止とする。
+
+## 13. Stream M serial update log（2026-04-22 / security担当）
+
+### Phase 1 Read
+- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` を再読し、AUTH系固定値 D1〜D4 と canonical 用語を確認。
+- 直列同期対象 `security.md -> security_operational_guidelines.md` を確定し、同一ワークフロー（Read→Plan→Execute→Verify→Proceed）を再確認。
+
+### Phase 2 Plan
+- 用語を `Security Officer / System Owner / Platform Operator` へ固定。
+- 責務分離（2者承認 + Platform Operator実行）を維持。
+- 固定値 D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m を改変しない。
+- 不一致時は `StoppedForClarification` で停止し、自己修復は最大3回まで。
+
+### Phase 3 Execute
+- 本節を追記し、security系の直列更新証跡のみを追加（docs-only）。
+- SafeMode既定ON、share/export漏えい防止、承認フロー正本の再定義禁止を維持。
+
+### Phase 4 Verify
+- docs-check（語彙・責務・導線・D1〜D4）を `rg` で確認。
+- `git diff --check` で体裁崩れがないことを確認。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- フェイルセーフ: D1〜D4不一致、責務分離崩れ、導線切断、または自己修復3回超過時は停止。
