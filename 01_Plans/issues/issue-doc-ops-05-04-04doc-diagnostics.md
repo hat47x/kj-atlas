@@ -1030,3 +1030,35 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - フェイルセーフ: 自己修復3回超過または未定義競合検知時は **Hold**。
+
+
+## 2026-04-23 Stream G DOC-OPS-05 Draft contract alignment（Issue 05-04）
+
+### Phase 1) Read
+- 本Issueの `Requirement meta I/F`・`Acceptance criteria`・`Validation plan` を再読し、本文契約の欠落有無を確認。
+- 対象を本Issueメモのみに限定し、`04_Documentation/*` 実ファイルは編集対象外であることを確認。
+
+### Phase 2) ADR/CDC（必要時）
+- 追加ADRは起票しない。既存方針（DOC-OPS-05 Draft群の契約整備）に従い、Issue本文内の運用記録をCDCとして扱う。
+- CDC要約: Context=公開文書ドラフト契約の再現性確保 / Decision=6Phase直列処理を固定 / Consequence=docs-onlyメモ更新で完結。
+
+### Phase 3) Plan（AC/DoD不足提案）
+- AC提案: 「対象ドキュメント1ファイルをmock対象として明記」「他Issue非依存」「Verifyコマンド明記」を必須化。
+- DoD提案: `Proceed` で `Ready/Hold/Needs-decision` を必ず記録。
+- Self-Correction制約: 同一Issueで修復は最大3回、4回目相当または競合検知で停止。
+
+### Phase 4) Execute
+- 実施内容: 本Issueメモに対して、6Phase運用・依存切断・Self-Correction上限の契約文を追記。
+- Mock対象（1ファイル固定）: `04_Documentation/diagnostics.md`
+- 依存切断: 他 `issue-doc-ops-05-*` への参照は情報参照に留め、実行依存を作らない。
+
+### Phase 5) Verify
+- 実行コマンド（docs-check）:
+  - `rg -n "^## 2026-04-23 Stream G DOC-OPS-05 Draft contract alignment" 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+  - `git diff --check`
+- 判定基準: 見出し追記が1件以上検出され、diff体裁エラーがないこと。
+
+### Phase 6) Proceed
+- Status: **Ready**
+- Stop condition: Self-Correction 3回超過、または本文契約の競合検知時は **Hold** へ遷移して停止。
+- Next: 次Issue（05-05）へ直列で進行（05-14は完了報告で終了）。
