@@ -195,7 +195,7 @@
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
 
 ### Phase 5 Verify（docs-check / 自己修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
@@ -251,7 +251,7 @@
 
 ### 5) Verify（リンク / 語彙 / 固定値）
 - 推奨コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - フェイルセーフ: 語彙ドリフトが解消不能、または自己修復3回超過時は停止してHold化する。
 
@@ -337,7 +337,7 @@
 ### Phase 4: Verify
 - Read: docs-check対象コマンドを再確認。
 - Verify command:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - Verify policy: 失敗時は最大3回まで修復、4回目相当は停止して `Hold` 化。
 
@@ -406,7 +406,7 @@
 
 ### Phase 5 Verify
 - docs-check（Issueメモ検証）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 差分整合:
   - `git diff --check`
 - 自己修復ポリシー: 失敗時は同一Issue内で最大3回まで修復し、4回目相当で停止して `Hold` とする。
@@ -440,7 +440,7 @@
 - 次実行単位（固定）: 検証ログ `04_Documentation/e2e_verification_log_2026-03-03.md` を `01_Plans/issues/` 配下の監査メモへ移し、04側は参照stubへ置換するPRを起票する。
 
 ### Phase 5 Verify（docs-check整合 / 修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 判定: 失敗時は同Issue内修復を最大3回まで。4回目相当は Fail-safe に従い停止。
 
@@ -517,7 +517,7 @@
 
 ### Phase 4) 検証計画と失敗時ロールバック固定
 - 検証コマンド（共通）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 失敗時ロールバック:
   1. 当該Issueのみ最小差分で自己修復（最大3回）。
@@ -546,7 +546,7 @@
 ### 4) Execute + Verify（docs-check, 最大3回自己修復）
 - Execute: 本5Phase実行記録を追記（docs-only、対象外ファイル非編集）。
 - Verify:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 自己修復: 検証不一致時は最大3回まで。同一論点で4回目相当は停止。
 - Stopper: 未定義競合 / safeMode後退語彙検知 / 3回超過時は `Hold` として停止。
@@ -619,7 +619,7 @@
 ### Phase 4 Verify（Expected verification level整合確認）
 - 整合結果: `Expected verification level=docs-check` と `VerificationLevel=docs-check` は一致。
 - 実行手順（再現用）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 判定: docs-only Issueとして必要十分（unit/integration/e2e は対象外）。
 
@@ -675,7 +675,7 @@
 
 ### Phase 5 Verify / Proceed（対象Issue再読）
 - Verify（docs-check）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 自己修復ポリシー: 不整合時は最大3回修復し、4回目相当で停止。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、推奨アクション維持、5Issue限定編集を満たす）。
@@ -699,7 +699,7 @@
 ### Phase 4 Verify（対象ファイル再読後に実施）
 - 再読実施: Verify開始時に本Issue本文を再読。
 - 実行コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 失敗時の自己修復: 同一ファイル内で最大3回。4回目相当は停止し `Hold`。
 
@@ -781,7 +781,7 @@
 
 ### Phase 4 Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - self-correction方針: 失敗時は当該ファイル内で最大3回修正し、3回超過で停止。
 
@@ -879,7 +879,7 @@
 
 ### Phase 4) Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 期待結果: メモ形式エラーなし、差分の体裁崩れなし。
 
@@ -934,7 +934,7 @@
 
 ### Phase 4: Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - diff整合: 1ファイル単位の差分で体裁崩れがないことを確認。
 
@@ -942,3 +942,23 @@
 - 判定: **Ready**（推奨アクション `Move internal` を維持）。
 - 次工程: Phase 08（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+
+## 18) Track 4 serial execution record（2026-04-22）
+
+### Phase 1 Read
+- 本Issueと対象文書（`04_Documentation/e2e_verification_log_2026-03-03.md`）を再読し、Classification **Move internal** を確認。
+
+### Phase 2 Plan
+- AC: 内部証跡として Date/Route/Command/Result/Evidence/Next action を維持。
+- DoD: docs-only + Verify（`rg`/`git diff --check`）+ 自己修復3回上限。
+
+### Phase 3 Execute
+- 対象文書へ Track 4 の実行記録を追記。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**。

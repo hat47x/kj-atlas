@@ -115,3 +115,26 @@ Local LLM 運用変更時は、次の順序を固定する。
 
 - Verify失敗時の自己修復は **最大3回**。
 - 3回で収束しない、または未定義競合を検知した場合は `StoppedForClarification` で停止する。
+
+
+## 9. DOC-OPS Track 4 serial cycle（2026-04-22 / DOC-OPS-05-09）
+
+### Phase 1 Read
+- `AGENTS.md` Read Order、`02_Architecture/llm_provider_spec.md`、`02_Architecture/runtime_parameter_registry.md`、対応Issue（`issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`）を再読。
+- Classification **Improve external** と公開境界（秘密情報・内部承認ログ非掲載）を確認。
+
+### Phase 2 Plan
+- 運用境界を `provider切替/safeMode境界/監査4点セット` の3点で固定。
+- フェイルセーフは自己修復3回上限、超過時 `StoppedForClarification`。
+
+### Phase 3 Execute
+- 本Trackの実行記録を docs-only で追記。
+- `safeMode` 既定ONと提案-only運用の記述は維持し、後退させない。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 4 serial cycle|Improve external|safeMode|query|bundle|proposal|apply|StoppedForClarification" 04_Documentation/local_llm_ops_guide.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 次アクション: 変数名追加/改名が必要な場合は `runtime_parameter_registry.md` を先に更新してから本書へ反映。
