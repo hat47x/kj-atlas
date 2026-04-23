@@ -316,3 +316,38 @@
 - Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Stream C専任、single-file、contract-only、責務境界契約固定を維持）。
 - 未承認事項在庫: なし。今後検出時は `held` で停止し、4回目相当のVerifyは実施しない。
+
+## Phase Execution Record（2026-04-22 / Stream C専任 / core-graph責務再配置 proposal-only固定）
+### 1. Read
+- Phase開始時Readを実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認。
+- 差分判定: 語彙差分 0 件、契約ID再定義 0 件、SafeMode後退兆候 0 件。
+- フェイルセーフ確認: `direct write` 許容が混入した場合は即時停止し `held` として記録する。
+
+### 2. Plan（AC/DoD不足ドラフト提案）
+- Scope: Core Graph責務再配置の契約固定（`working` / `context_projection` / `consensus`）のみ。
+- Non-Goals: 実装変更、CE0契約ID再定義、No-Go語彙拡張、SafeMode既定緩和。
+- AC/DoD不足点の点検結果:
+  - AC追加ドラフト提案: `proposal-only` を明文化し、`direct write` を常時No-Goとして固定する。
+  - DoD追加ドラフト提案: Verifyで「契約逸脱（Contract drift）」「責務混在（Role bleed）」の2観点チェックを必須化する。
+- 上記は**ドラフト提案のみ**とし、承認までは `held` 扱いで確定化しない。
+
+### 3. Execute（proposal-only運用、直接更新禁止方針を固定）
+- 運用方針を `proposal-only` に固定し、`working -> consensus` は `patch+approval` 以外を許容しない。
+- `consensus_direct_write` / `auto_apply_or_publish` を継続No-Goとして維持。
+- `direct write` 許容記述の混入を検出した場合はフェイルセーフにより即停止（`stopped_for_clarification`）。
+
+### 4. Verify（契約逸脱・責務混在チェック）
+- チェックA（契約逸脱）: CE0契約IDの再定義有無、canonical 5 IDs逸脱有無、SafeMode後退有無を確認（逸脱 0 件）。
+- チェックB（責務混在）: `working` / `context_projection` / `consensus` の役割混在、`patch+approval` 以外の遷移記述混入を確認（混在 0 件）。
+- 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`、`git diff --check`。
+- 自己修復回数制限: 最大 3 回。4回目相当は実施せず停止する。
+
+### 5. Proceed（mock前提で他ストリーム独立実行可能なI/F断面）
+- 判定: `Done`（contract-only / proposal-only / single-file 制約維持）。
+- mock前提I/F断面（他ストリーム独立実行用）:
+  - I/F-1 `GraphRoleContract`: `working` / `context_projection` / `consensus` の語彙固定（read-only参照）。
+  - I/F-2 `TransitionGate`: 許可遷移は `working -> consensus` + `patch+approval` のみ。
+  - I/F-3 `NoGoGate`: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
+  - I/F-4 `SafetyGate`: SafeMode既定ON・`allowUnreviewedText=false` を前提固定。
+  - I/F-5 `AuditGate`: query/bundle/proposal/apply の監査4点セット欠損時は成功扱い禁止（mockでも同一判定）。
+- 未承認事項は `held` 在庫で維持し、確定判断は行わない。
