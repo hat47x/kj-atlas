@@ -458,3 +458,25 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 ### Phase 6 Proceed
 - 判定: **Proceed（承認待ち）**
 - 自己修復: 最大3回、超過時は停止。
+
+## DOC-OPS Track 2 follow-up cycle（2026-04-22 / 05-04 ownership）
+
+### Phase 1 Read（再同期）
+- `04_Documentation/diagnostics.md` と `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` を再読し、Classification=`Improve external` を再確認。
+- docs-only / 指定外ファイル非編集 / Verify自己修復上限3回を固定条件として再宣言。
+
+### Phase 2 Plan（ワークフロー固定）
+- Plan-1: Audience / Goal / Non-goal / Public boundary / Outcome / Related の追跡可能性を維持。
+- Plan-2: `schemaVersion` / `requestId` / fallback / structural metrics の契約導線を維持。
+- Plan-3: Verifyは docs-check（`rg` + `git diff --check`）のみで再現可能にする。
+
+### Phase 3 Execute
+- Track 2 follow-up の5Phase記録を追記し、公開runbook境界の維持を明文化。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 2 follow-up cycle|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/diagnostics.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。

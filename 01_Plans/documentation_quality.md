@@ -467,3 +467,25 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 - ADRタスクは **Context / Decision / Consequences を先に明文化し、DecisionStatus承認確認後に Execute** する。
 - Verify失敗時は自己修復を最大3回までとし、4回目相当は停止（Hold / StoppedForClarification）。
 - 同期必須観点: 用語（Security Officer / System Owner / Platform Operator）、役割（2者承認+実行責務分離）、導線（architecture→security→guidelines→e2e + operations照合）、固定値（D1〜D4）。
+
+## 18. DOC-OPS Track 4 follow-up cycle（2026-04-22 / 05-05 ownership）
+
+### Phase 1 Read（再同期）
+- `AGENTS.md` / `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md` / 本書を再読し、`Move internal` の分類を維持。
+- docs-only / 指定外ファイル非編集 / 自己修復上限3回を再確認。
+
+### Phase 2 Plan（判定境界固定）
+- Plan-1: QG-1〜QG-6 を公開前判定の最小I/Fとして維持。
+- Plan-2: `04_Documentation/*`（外部本文）と `01_Plans/*`（内部判定基準）の責務境界を維持。
+- Plan-3: Verifyは docs-check（`rg` + `git diff --check`）で再現可能に記録する。
+
+### Phase 3 Execute
+- Track 4 follow-up の5Phase記録を追記し、内部基準正本としての運用境界を明文化。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 4 follow-up cycle|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 01_Plans/documentation_quality.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。

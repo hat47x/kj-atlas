@@ -900,3 +900,25 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 ### Phase 6 Proceed
 - 判定: **Proceed（承認待ち）**
 - 自己修復: 最大3回、超過時は停止。
+
+## DOC-OPS Track 2 follow-up cycle（2026-04-22 / 05-06 ownership）
+
+### Phase 1 Read（再同期）
+- `04_Documentation/e2e_testing.md` と `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` を再読し、Classification=`Improve external` を再確認。
+- docs-only / 指定外ファイル非編集 / Verify自己修復上限3回を固定条件として再宣言。
+
+### Phase 2 Plan（運用境界固定）
+- Plan-1: 公開runbookとしての手順正本（前提・Go/No-Go・再開条件）を維持。
+- Plan-2: 履歴証跡は `e2e_verification_log` 側に分離する責務境界を維持。
+- Plan-3: Verifyは docs-check（`rg` + `git diff --check`）で再現可能に記録する。
+
+### Phase 3 Execute
+- Track 2 follow-up の5Phase記録を追記し、公開手順の責務分離と再現性を明文化。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 2 follow-up cycle|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。
