@@ -80,6 +80,34 @@
 - 検証観点2: AC に「安全」「可逆」「検証コマンド」が含まれる。
 - 検証観点3: docs-check（validator/unittest）が成功する。
 
+## Stream J Audit（ADR連動監査: active issue基準）
+
+### Read
+
+- `python 01_Plans/triage_actionable_plans.py` の出力を正とし、active issue 逆引きで対象ADRを抽出した。
+- 抽出結果: active issue に直接連動するADRは `ADR-0026` / `ADR-0027` の2件。
+
+### ADR/CDC
+
+- `ADR-0026` / `ADR-0027` の本文に `Context` / `Decision` / `Consequences` が存在することを確認した。
+- 本ADR（`ADR-0026`）は CDC 欠損なし。
+
+### Plan
+
+- active issue 連動ADRで CDC 欠損が検出された場合のみ、欠損見出しを最小追記する。
+- 欠損なしの場合は「未処理ADRなし」をADR本文へ明文化し、Proceedで逆引き表を固定する。
+
+### Execute
+
+- 本監査回では CDC 欠損を検出しなかったため、仕様追記は監査結果の明文化に限定した（実質変更最小）。
+
+### Proceed（issue逆引き表）
+
+| Active issue | 連動ADR | CDC欠損 | 判定 |
+| --- | --- | --- | --- |
+| `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis` | `ADR-0026` | なし | 追補不要 |
+| `issue-HIL-RS-02-next-phase-delivery-plan` | `ADR-0027` | なし | 追補不要 |
+
 ## Proceed
 
 1. `HIL-RS-01` を起点に A1（Architecture最小I/F定義）を最初の実行タスクとして起票する。
