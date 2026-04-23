@@ -27,6 +27,7 @@
 - 強制フェーズ順序は **Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** のみ。
 - AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 3 Execute を開始しない**。
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
+- Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
 ## Phase Compliance Ledger（運用記録テンプレ / 毎Phase開始時に更新）
 - Purpose: 各Phase開始時の Read 同期と固定契約の再確認を記録し、proposal-only 契約逸脱を防止する。
@@ -119,6 +120,7 @@
 - I/F固定項目: `proposalId` / `diff` / `sourceBundleHash` / `rationale` / `status` / `reviewState`
 - CE2のAI支援は候補提示（proposal）に限定し、採用判定は人手のみ。
 - `status=accepted` は人手承認の結果としてのみ遷移し、AIの自動採用は禁止。
+- AC固定: PlanフェーズのAI支援は候補提示（複数案）に限定し、自動確定（auto-confirm）を禁止する。
 - `reviewState=human_reviewed` は人手操作のみで遷移可能（AI提案は `unreviewed` 固定）。
 - drift検知時は `status=held` で停止。
 - CE2独自のquery語彙追加は禁止（再定義防止）。
@@ -137,6 +139,7 @@
 - `reviewState` は `unreviewed | human_reviewed` の閉集合のみを許可し、AI提案は常に `unreviewed` に固定する。
 - auto-apply と AIによる `reviewState=human_reviewed` 自動昇格を明示的に禁止する。
 - 実行内容は proposal-only 契約文言の更新に限定し、実装手順・実行権限の記述は行わない。
+- reviewed-only既定: Executeの検討対象は `human_reviewed` を優先し、`unreviewed` は明示許可がある場合のみ比較対象に含める。
 - AIの実行結果は `status=proposed` 候補提示に限定し、`accepted/rejected/held` の確定遷移は人手判断に限定する。
 - 差分検知ログ: proposal lifecycle、`sourceBundleHash`、No-Go語彙の不一致。
 - **Context**: proposal lifecycle / review遷移 / drift-stop の衝突有無。
@@ -144,7 +147,9 @@
 - **Consequences**: CE4監査で proposal/apply の追跡可能性が固定化。
 - **Approval**: 差分発生時の反映状態は `held`。
 - 追跡可能性要件: すべての提案変更は `proposalId` をキーに `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能であること。
+- 可逆比較要件: 変更前後の差分は常に reversible diff（戻し可能な比較）で記録し、片方向の確定更新を行わない。
 - 監査導線: `proposal` と `apply` の監査トレースを分離し、CE2は proposal-only 契約境界を維持する。
+- 監査証跡要件: `query/bundle/proposal/apply` の4点セット語彙を欠損なく残し、CE4へread-onlyで受け渡す。
 
 ## Phase 4 Verify（safeMode後退ゼロを検証）
 - 開始時Read: Phase 3 の変更差分（proposal-only / no-auto-apply / human-only昇格）を再確認する。
@@ -159,6 +164,8 @@
 - 契約再定義要求または safeMode 後退要求を受けた場合は即停止（Fail-safe）。
 - lifecycle は常に `proposed|accepted|rejected|held` のみを許可し、別名語彙を導入しない。
 - `reviewState=human_reviewed` は人手操作のみで遷移可能（AI提案は `unreviewed` に固定）。
+- 非目標違反検出: Non-goals（実装変更 / auto-apply導入 / review自動昇格 / safeMode既定緩和 / 他issue編集）への違反を差分で検出し、違反時は fail-safe 停止する。
+- 修正上限: Verifyでの自己修復は最大3回までとし、4回目相当は実施せず停止する。
 
 ### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -169,6 +176,8 @@
 ### Acceptance Criteria / DoD
 - [ ] auto-apply経路0件
 - [ ] 候補提示（proposal）限定であり、自動採用経路0件
+- [ ] 自動確定（auto-confirm）経路0件
+- [ ] 自動公開（auto-publish）経路0件
 - [ ] AI自動昇格0件
 - [ ] CE1 drift検知時は `status=held`
 - [ ] `sourceBundleHash === bundleHash` 比較語彙がCE1と一致
@@ -182,9 +191,11 @@
 ## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
 - 開始時Read: Verify結果と fail-safe 判定条件（3回超過 / 前提崩壊 / 競合）を再確認する。
 - 3回超過（4回目相当）または前提崩壊を検知した場合は Proceed を中止し、fail-safe 停止する。
+- Proceed出力境界: A/Bテスト・UI検証へ渡す成果は mock 境界（I/F語彙・期待入出力・監査キー）に限定し、実装指示や自動適用手順を含めない。
 ### Fixed contract handoff
 - Contract IDs: `CE2-PROPOSAL-IF` / `CE2-LIFECYCLE-IF` / `CE2-DRIFT-STOP-IF` / `CE2-NO-AUTOAPPLY-IF`
 - 禁止事項: auto-apply / AI review昇格 / safeMode緩和
+- 禁止事項（追加）: auto-confirm / auto-publish
 - 検証条件: lifecycle固定, drift-stop有効, docs-check pass
 - handoff先: CE4監査（read-only）
 - 未確定事項は `held` を維持し、確定扱いで次工程へ渡さない。
@@ -196,6 +207,7 @@
 - 指定外ファイル差分の発生
 - SafeMode後退の兆候
 - 依存前提崩壊（参照契約の欠損・整合不能を含む）
+- 自動確定 / 自動公開 / レビュー自動昇格の要求
 
 
 ## Stream E execution log（2026-04-22）
