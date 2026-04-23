@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-21 (JST, Stream F shared integration rerun-46)
+最終更新: 2026-04-22 (JST, Stream Shared read-only aggregation rerun-48)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -741,3 +741,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute（3ファイル順次処理）: `01_Plans/issues/README.md` → `01_Plans/project-progress-dashboard.md` → `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の順で1件ずつ完了判定しながら同期し、対象外ファイル編集・他ストリーム依存・未承認決定の確定化を実施しない。
 - Phase 4 Verify（Issue別docs-check）: Issueごとのdocs-checkとして `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md 01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` を実行し、全Issueで `docs-check` 宣言一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（停止条件判定）: 競合検知・前提崩れ・self-correction 3回超過はいずれも未検出。**共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+## Stream Shared 共有統合同期ログ（2026-04-22 rerun-48, Phase 1-5）
+
+- Phase 1 Read同期（read-only集約）: shared resource 3ファイルを再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26`、Decision Queue（Ready=1 / Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を再確認。
+- Phase 2 件数再計算: 件数/状態を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26` に再固定。
+- Phase 3 Decision Queue整合: `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` の3件を維持し、3共有ファイルで同一文言を確認。
+- Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-48|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認。
+- Phase 5 Proceed（再開判定1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
