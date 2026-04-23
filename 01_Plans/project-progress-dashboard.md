@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-22 (JST, Stream Shared read-only aggregation rerun-48)
+最終更新: 2026-04-23 (JST, Stream H shared resource integration rerun-49)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -749,3 +749,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Decision Queue整合: `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` の3件を維持し、3共有ファイルで同一文言を確認。
 - Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-48|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の成功で整合一致を確認。
 - Phase 5 Proceed（再開判定1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+## Stream H 共有統合同期ログ（2026-04-23 rerun-49, Phase 1-5）
+
+- Phase 1 Read（3ファイル同時再読）: shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）を同時再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` と停止条件違反0件を確認。
+- Phase 2 Plan（公開値宣言）: AC/DoD不足はなしと判定し、公開値を `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` に固定。次の1手は `DQ-HIL-EXEC-01` Ready監査継続、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open継続に限定。
+- Phase 3 Execute（単一変更セット）: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` の3ファイルのみを単一変更セットで反映し、未承認決定の確定扱い・推測マージ・対象外編集を実施しない。
+- Phase 4 Verify（validator/unittest/rg整合）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-49|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合一致を確認（self-correction 0/3）。
+- Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
