@@ -56,6 +56,30 @@
   - AC: fixed keys差分0 / decisionQueueTransition固定 / NoGo return path一意。
   - DoD: safeModeDefault=ON維持 / overridePolicy後退なし / self-correction<=3。
 
+### Contract Freeze Snapshot（A2/A3 read-only引き渡し）
+- `contract_id=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schema_version=1.0.0`
+- `contract_ids=[A1-CRITIQUE-IF, A1-REDIFF-IF, A1-ATTR-IF, A1-ERROR-IF]`
+- `prohibited_changes`:
+  1. Contract IDs / `schemaVersion` / `overridePolicy` の変更
+  2. `contractLinkLocked=true` / `sharedResourceFreeze=true` / `safeModeDefault=ON` の後退
+  3. Decision Queue の `Pending` bypass
+  4. A1 完了前の A2/A3 Open 化
+
+### Mock可能な最小シグネチャ（Contract-only）
+```yaml
+stream_a_freeze:
+  contract_id: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
+  schema_version: "1.0.0"
+  must_match:
+    override_policy: "human_dual_control_only"
+    contract_link_locked: true
+    shared_resource_freeze: true
+    safe_mode_default: "ON"
+gate:
+  a2a3_unlock: "a1Status == Done && pendingDecisionQueueCount == 0"
+```
+
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
