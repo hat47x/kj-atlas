@@ -35,8 +35,8 @@ Go 条件（全て必須）:
 
 ### 3.2 昇格条件
 
-- `reviewState=reviewed` は、人間がカードと照合して妥当と判断した記録。
-- AI単独で `reviewed` へ昇格してはならない。
+- `reviewState=human_reviewed` は、人間がカードと照合して妥当と判断した記録。
+- AI単独で `human_reviewed` へ昇格してはならない。
 
 ### 3.3 proposal-only 原則
 
@@ -49,7 +49,7 @@ Go 条件（全て必須）:
 1. readingOrder を定義する。
 2. AIで draft narrative を生成する（`unreviewed` 固定）。
 3. consistency check で欠落・矛盾候補を抽出する。
-4. 人間が修正し、妥当な場合のみ `reviewed` に変更する。
+4. 人間が修正し、妥当な場合のみ `human_reviewed` に変更する。
 
 ## 5. Caveats / Non-goals
 
