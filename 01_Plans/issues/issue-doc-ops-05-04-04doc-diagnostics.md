@@ -1010,3 +1010,23 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 05（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+## Stream I ownership follow-up（2026-04-22 / lane 05-04）
+
+### Phase 1 Read
+- 本Issue本文と対象Doc `04_Documentation/diagnostics.md` を再読し、Classification=`Improve external` と docs-only 境界を再確認。
+
+### Phase 2 Plan
+- 5Phase（Read → Plan → Execute → Verify → Proceed）を固定し、Verify自己修復は最大3回とする。
+- 指定外ファイル編集を禁止し、公開runbook境界のみを扱う。
+
+### Phase 3 Execute
+- 本Issueへ ownership follow-up 記録を追記（docs-only）。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- フェイルセーフ: 自己修復3回超過または未定義競合検知時は **Hold**。
