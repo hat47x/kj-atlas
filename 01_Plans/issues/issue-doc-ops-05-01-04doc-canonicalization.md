@@ -1083,3 +1083,28 @@
 - 判定: **Ready**（推奨アクション `Move internal` を維持）。
 - 次工程: Phase 02（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+
+## 18) User-requested serial run (2026-04-22, Issue 05-01)
+
+### Phase 1 Read
+- Phase開始時再Read: 本Issueメモと `04_Documentation/canonicalization.md` を再読。
+- 確認結果: Classification=`Move internal` / VerificationLevel=`docs-check` / GoNoGoGate=`Required`。
+
+### Phase 2 Plan
+- Phase開始時再Read: 本Issueメモを再読。
+- AC/DoD不足判定: **不足なし**（既存ACに Audience/Goal/Public boundary/検証条件を含む）。
+- 実行計画: docs-onlyで Issueメモと対象Docの整合記録を固定。
+
+### Phase 3 Execute
+- Phase開始時再Read: 対象Doc `04_Documentation/canonicalization.md` を再読。
+- 実施: 直列運用記録を追記（分類方針は維持、指定外ファイルは未編集）。
+
+### Phase 4 Verify
+- Phase開始時再Read: 本Issueメモの Validation plan を再読。
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `git diff --check`。
+- 自己修復回数: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 継続条件: Move internal の公開stub運用を維持し、詳細は内部正本へ集約。

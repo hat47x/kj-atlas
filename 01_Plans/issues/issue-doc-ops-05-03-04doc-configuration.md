@@ -1025,3 +1025,28 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 04（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+
+## 18) User-requested serial run (2026-04-22, Issue 05-03)
+
+### Phase 1 Read
+- Phase開始時再Read: 本Issueメモと `04_Documentation/configuration.md` を再読。
+- 確認結果: Classification=`Improve external` / VerificationLevel=`docs-check` / GoNoGoGate=`Required`。
+
+### Phase 2 Plan
+- Phase開始時再Read: 本Issueメモを再読。
+- AC/DoD不足判定: **不足なし**（公開読者向け要件と検証導線が既存定義済み）。
+- 実行計画: docs-onlyで公開設定ガイドの境界メタと正本導線を維持。
+
+### Phase 3 Execute
+- Phase開始時再Read: 対象Doc `04_Documentation/configuration.md` を再読。
+- 実施: 直列運用記録を追記（Improve external 方針維持、指定外ファイルは未編集）。
+
+### Phase 4 Verify
+- Phase開始時再Read: 本Issueメモの Validation plan を再読。
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` / `git diff --check`。
+- 自己修復回数: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 継続条件: Improve external を維持し、runtime parameter registry 正本導線を継続。
