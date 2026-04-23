@@ -208,6 +208,52 @@
 - 検証条件: collision=0, SafeMode regression=0, docs-check pass
 - 引き渡し形式: CE1/CE2/CE4へは Contract ID参照のみ（本文複製・下流再定義は禁止）
 
+### Mock signature disclosure（型・禁止操作 / read-only handoff）
+> 目的: CE1/CE2/CE4がCE0契約を**再定義せず**接続できる最小シグネチャを公開する。
+
+```ts
+// CE0-CTX-IF（query preview mandatory）
+type ReviewFilter = "reviewed_only" | "include_unreviewed_metadata";
+type OutputMode = "patch_proposal" | "analysis_preview";
+
+type ContextQuery = {
+  queryId: string;
+  goal: string;
+  scope: { cardIds?: string[]; islandIds?: string[] };
+  depth: number;
+  reviewFilter: ReviewFilter;
+  safeMode: true; // default fixed ON
+  allowUnreviewedText: false; // default fixed false
+  outputMode: OutputMode;
+};
+
+type ContextBundle = {
+  bundleHash: string; // deterministic
+  equivalenceKey: string;
+  sourceBundleHash?: string;
+  constraints: string[];
+};
+
+// CE0-REVIEW-IF / CG-01..05（proposal-only + patch approval only）
+type PatchProposal = {
+  proposalId: string;
+  sourceBundleHash: string;
+  diff: unknown;
+  rationale: string;
+  lifecycle: "proposal_only";
+};
+```
+
+- 禁止操作（No-Go ID固定）:
+  - `preview_bypass`: `ContextQuery` を Query Preview無しで適用する操作を禁止。
+  - `consensus_direct_write`: `ConsensusGraph` への direct write を禁止。
+  - `auto_apply_or_publish`: `PatchProposal` の自動 apply/publish を禁止。
+  - `ai_review_auto_promotion`: AI判断のみで `human_reviewed` へ昇格する操作を禁止。
+  - `safemode_default_relaxation`: `safeMode=true` / `allowUnreviewedText=false` の既定緩和を禁止。
+- 型公開の境界:
+  - 本シグネチャは CE0 SSOT の参照補助であり、契約本文の追加定義ではない。
+  - 変更要求は CE0再起票でのみ受け付け、CE1/CE2/CE4での改変は不可。
+
 ### CE1/CE2/CE4向け参照I/F一覧（read-only handoff）
 - CE1（Context Bundle consumer）: `CE0-CTX-IF` / `CG-01` / `CG-02`
 - CE2（Review governance consumer）: `CE0-REVIEW-IF` / `CE0-SAFEMODE-IF` / `CG-03` / `CG-04`
@@ -288,8 +334,8 @@
 | Phase 2 ADR/CDC | Yes | Context/Decision/Consequences の明文化ルールを再確認、承認前は `held` を維持 | held-ready |
 | Phase 3 Plan | Yes | AC/DoD補完A/B/CとExecute開始条件（`agreement_state=agreed`）を再確認 | done |
 | Phase 4 Execute | Yes | 編集対象を本Issueに限定し、語彙統一・判定根拠明確化のみ許可 | done |
-| Phase 5 Verify | Yes | docs-check系コマンド + `git diff --check` で自己検証（修復上限3） | pending-run |
-| Phase 6 Proceed | Yes | Verify再読後、未達があれば `held` へ戻す停止条件を再確認 | held-until-verify |
+| Phase 5 Verify | Yes | docs-check系コマンド + `git diff --check` を実行し、自己修復0回で通過 | done |
+| Phase 6 Proceed | Yes | Verify再読後にMock signature（型/禁止操作）をread-only handoffとして公開 | done |
 
 ### ADR/CDC decision packet rule（approval gate）
 - Context:
