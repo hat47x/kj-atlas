@@ -597,3 +597,12 @@
 - Phase 3 Execute（単一変更セット）: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / 本decision-pack の3ファイルのみを単一変更セットで反映し、未承認決定の確定扱い・推測マージ・指定外編集を実施しない。
 - Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-49|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+
+### 6-44. Stream F 共有統合同期ログ（2026-04-23 rerun-50, Phase 1-5）
+
+- Phase 1 Read（3ファイル同時再読）: shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / 本decision-pack）を再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Ready=1 / Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 Plan（AC/DoD確認）: AC/DoD不足はなし。更新対象を3ファイルに限定し、未承認決定を確定扱いしない方針を維持。
+- Phase 3 Execute（単一変更セット）: Active一覧・Decision Queue・次の1手・再開判定チェックリスト1行を3ファイル同時更新し、件数不整合0件を維持。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-50|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、整合一致を確認（self-correction 0/3）。
+- Phase 5 Proceed（再開判定1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
