@@ -56,6 +56,38 @@
   - AC: 固定キー差分0 / unlockRule一致 / Pending bypass禁止。
   - DoD: NoGo return path一意 / safeModeDefault維持 / self-correction<=3。
 
+### Contract Freeze Snapshot（A2/A3 read-only引き渡し）
+- `contract_id=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schema_version=1.0.0`
+- `contract_ids=[A1-CRITIQUE-IF, A1-REDIFF-IF, A1-ATTR-IF, A1-ERROR-IF]`
+- `ssot=02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- `prohibited_changes`:
+  1. Contract ID の追加・削除・改名
+  2. `schemaVersion=1.0.0` 以外への更新
+  3. `overridePolicy=human_dual_control_only` の緩和
+  4. `contractLinkLocked=true` / `sharedResourceFreeze=true` / `safeModeDefault=ON` の後退
+  5. `DecisionQueue` の `Pending` 経由なし確定（bypass）
+  6. A1 Done 前の A2/A3 `Draft -> Open`
+
+### Mock可能な最小シグネチャ（Contract-only）
+```yaml
+freeze_pack:
+  contract_id: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
+  schema_version: "1.0.0"
+  contracts:
+    - id: "A1-CRITIQUE-IF"
+    - id: "A1-REDIFF-IF"
+    - id: "A1-ATTR-IF"
+    - id: "A1-ERROR-IF"
+gate:
+  a2a3_unlock_if:
+    a1_status: "Done"
+    pending_decision_queue_count: 0
+  decision_queue_transition:
+    - "Pending -> Approved"
+    - "Pending -> Rejected"
+```
+
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`

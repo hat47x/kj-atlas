@@ -56,6 +56,36 @@
   - AC: fixed keys diff=0 / return path唯一 / Pending bypass禁止明記。
   - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。
 
+### Contract Freeze Snapshot（A2/A3 read-only引き渡し）
+- `contract_id=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schema_version=1.0.0`
+- `contract_ids=[A1-CRITIQUE-IF, A1-REDIFF-IF, A1-ATTR-IF, A1-ERROR-IF]`
+- `governance_fixed`:
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+- `prohibited_changes`:
+  1. Pending bypass（未承認確定）
+  2. A1外への NoGo return path 変更
+  3. A1未完了での A2/A3 Open
+  4. safeMode / dual-control / freeze keys の後退
+
+### Mock可能な最小シグネチャ（Governance Gate）
+```yaml
+governance_gate_v1:
+  freeze_contract_id: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
+  schema_version: "1.0.0"
+  require:
+    override_policy: "human_dual_control_only"
+    contract_link_locked: true
+    shared_resource_freeze: true
+    safe_mode_default: "ON"
+  reject_if:
+    - "pending_bypass_detected == true"
+    - "a1_status != Done && a2_or_a3_open_requested == true"
+```
+
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
