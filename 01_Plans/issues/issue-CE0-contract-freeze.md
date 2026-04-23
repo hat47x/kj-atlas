@@ -258,6 +258,59 @@ type PatchProposal = {
 - CE1（Context Bundle consumer）: `CE0-CTX-IF` / `CG-01` / `CG-02`
 - CE2（Review governance consumer）: `CE0-REVIEW-IF` / `CE0-SAFEMODE-IF` / `CG-03` / `CG-04`
 - CE4（Audit & fail-closed consumer）: `CG-01..05` / `CE0-SAFEMODE-IF`
+
+---
+
+## Stream B Execution Record（2026-04-23 / CE0 Contract Freeze）
+
+### Phase 1 Read
+- Read同期: 本Issueを再読し、CE0固定語彙・No-Go 5語彙ID・safeMode境界（`safeMode=true`, `allowUnreviewedText=false`）を再確認。
+- Plan: CE0 SSOT再定義禁止、CE1/CE2/CE4参照のみ、指定外編集ゼロを維持。
+- Execute: 再読チェックのみ（編集なし）。
+- Verify: 固定Contract IDおよびNo-Go IDの差分なし。
+- Proceed: `Go`（Phase 2へ遷移）。
+
+### Phase 2 ADR/CDC
+- Read同期: Phase 1固定語彙とScopeの差分ゼロを再確認。
+- Plan: CDCは `contract_id_collision | vocabulary_collision | scope_deviation` 検知時のみ `held` 起票。
+- Execute: 本実行では上記Triggerを未検知（0件）のためCDC新規起票なし。
+- Verify: `held` 運用ルール（未承認決定を確定扱いしない）を維持。
+- Proceed: `Go`（Phase 3へ遷移）。
+
+### Phase 3 Plan
+- Read同期: CE0 Contract ID凍結、proposal-only、safeMode既定維持を再確認。
+- Plan: contract-only記述整備に限定し、ID追加/改名/削除を禁止。
+- Execute: AC/DoD不足補完の追跡方針（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- Verify: 合意ゲート `agreement_state=agreed`（2026-04-22）との整合を確認。
+- Proceed: `Go`（Phase 4へ遷移）。
+
+### Phase 4 Execute
+- Read同期: 意味不変編集限定・指定外ファイル編集禁止を再確認。
+- Plan: CE0契約本文の語彙統一と判定根拠の明確化のみ実施。
+- Execute: 本Issue内に実行記録を追加（契約ID/No-Go ID/safeMode境界の意味変更なし）。
+- Verify: CE0 Contract ID、No-Go ID、safeMode既定値の定義本文は不変。
+- Proceed: `Go`（Phase 5へ遷移）。
+
+### Phase 5 Verify
+- Read同期: docs-checkのみを検証対象として再確認。
+- Plan: `docs-check + diff` を順に実行し、失敗時のみ自己修復（最大3回）。
+- Execute:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Verify: 3コマンドすべて成功（自己修復 0/3）。
+- Proceed: `Go`（Phase 6へ遷移）。
+
+### Phase 6 Proceed
+- Read同期: Verify結果とAC/DoD未達の有無を再確認。
+- Plan: fatal条件（collision / scope_deviation / safeMode regression / docs-check fail）残存時は停止。
+- Execute: fatal条件の残存なしを確認。
+- Verify:
+  - `contract_id_collision=0`
+  - `vocabulary_collision=0`
+  - `safeMode regression=0`
+  - `docs-check=pass`
+- Proceed判定: **Go**（CE1/CE2/CE4へread-only handoff可能）。
 - 共通条件: Contract ID参照のみ、本文複製禁止、再定義禁止、差分要求はCE0再起票
 
 ### Handoff boundary record（参照専用境界の記録）
