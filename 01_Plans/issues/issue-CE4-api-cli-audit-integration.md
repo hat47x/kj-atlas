@@ -237,3 +237,23 @@
 - 未承認事項を `accepted` / `rejected` に遷移させない（`held` 固定）。
 - CDC-CE4-001 / CDC-CE4-002 はCE4 contract-only範囲で承認済み。実装詳細への展開は継続して禁止。
 - 未定義競合・SafeMode後退兆候・自己修復3回超過は即停止。
+
+## Stream F Execution Record（2026-04-23）
+
+### Phase Progress（Read → Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0/CE1/CE2 read-only境界、監査4点、fail-closed固定条項を再確認）。
+- Phase 2 Plan: 完了（既存AC/DoDを点検し、不足提案の新規発生なし＝現行条項で充足と合意）。
+- Phase 3 Execute: 完了（契約I/F固定範囲のみ維持。API/CLIシグネチャ契約先行・mock前提・依存切断を再確認）。
+- Phase 4 Verify: 完了（`validate_active_issue_memos` / `unittest` / `git diff --check` を実行し成功）。
+- Phase 5 Proceed: 完了（未承認事項は `held` 維持、No-Go逸脱なし）。
+
+### Verification Command Log
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → `ok: validated 5 active issue memos`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` → `Ran 8 tests ... OK`
+- `git diff --check` → no output（問題なし）
+
+### Repair Attempt Ledger（自己修復上限）
+- Attempt 1: pass（修復不要）
+- Attempt 2: n/a
+- Attempt 3: n/a
+- Attempt 4+: **forbidden / stop**
