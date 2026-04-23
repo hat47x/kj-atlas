@@ -93,8 +93,40 @@
   2. SafeMode/漏洩防止/責務分離の後退が必要になった場合
 - ロールバック手順:
   1. HIL-RS-02-A2/A3をDraft維持またはOpenからDraftへ戻す。
-  2. A1 issueへ変更要求を差し戻し、Decision Queueへ未確定として登録。
-  3. 必要時は本ADRを Superseded とし、上位ADR改訂後に再起票する。
+ 2. A1 issueへ変更要求を差し戻し、Decision Queueへ未確定として登録。
+ 3. 必要時は本ADRを Superseded とし、上位ADR改訂後に再起票する。
+
+## Stream J Audit（ADR連動監査: active issue基準）
+
+### Read
+
+- `01_Plans/issues` の active status（Draft/Open/In Progress）と `triage_actionable_plans.py` の逆引き結果で、監査対象ADRを抽出した。
+- 対象: `ADR-0026` / `ADR-0027`（active issue 直結）。
+
+### ADR/CDC
+
+- 監査対象2件について `Context` / `Decision` / `Consequences` の欠損有無を確認した。
+- 判定: 欠損なし（未処理ADR 0件）。
+
+### Plan
+
+- 欠損ADRがある場合のみ、該当ADRへ欠損見出しを最小追記する。
+- 欠損がない場合は、active issue 連動観点で「追加補完不要」を本文に固定する。
+
+### Execute
+
+- 今回は CDC 欠損が0件のため、補完項目の宣言と判定記録のみを最小追記した。
+
+### Verify
+
+- docs-check を `validator + unittest + triage` の組み合わせで再実行し、監査記録と整合することを確認する。
+
+### Proceed（issue逆引き表）
+
+| Active issue | 連動ADR | CDC欠損 | 対応 |
+| --- | --- | --- | --- |
+| `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis` | `ADR-0026` | なし | 追加補完不要 |
+| `issue-HIL-RS-02-next-phase-delivery-plan` | `ADR-0027` | なし | 追加補完不要 |
 
 ## Traceability
 
