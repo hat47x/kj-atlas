@@ -87,9 +87,15 @@ governance_gate_v1:
     - "a1_status != Done && a2_or_a3_open_requested == true"
 ```
 
+### A1->A2->A3 Gate Contract（Canonical / SSOT）
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")`
+- `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（一意・固定）
+- `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
+- A2/A3 は `A2A3_OPEN_ALLOWED=true` を満たすまで `Draft/Open` 変更禁止。
+
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
+- `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
 - `Go = ProceedGate`
 - `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
 - `NoGo = (!ProceedGate && !Conditional)`
