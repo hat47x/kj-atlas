@@ -56,3 +56,25 @@
 
 ### Phase 6 Proceed
 - Ready。詳細は内部正本で継続管理。
+
+
+## DOC-OPS user-requested serial execution（2026-04-22 / Issue 05-01）
+
+### Phase 1 Read
+- Phase開始時再Read: `04_Documentation/canonicalization.md` と対応Issueを再読。
+
+### Phase 2 Plan
+- Phase開始時再Read: 本文ヘッダメタ（Audience/Goal/Public boundary/Non-goal）を再読。
+- AC/DoD不足判定: 不足なし。既存stub構成を維持。
+
+### Phase 3 Execute
+- Phase開始時再Read: Go/No-Go節を再読。
+- 実施: 本直列実行ログを追記（分類は Move internal のまま）。
+
+### Phase 4 Verify
+- Phase開始時再Read: Verify対象キーワードを再読。
+- 実行: `rg -n "DOC-OPS user-requested serial execution|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/canonicalization.md`。
+- 自己修復回数: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（公開stub + 内部正本導線を維持）。

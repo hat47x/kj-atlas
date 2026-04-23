@@ -60,3 +60,25 @@ skill導入/実行コマンドを使う場合は、前提条件を必ず明記�
 rg -n "Audience|This document decides|This document does not decide|Go/No-Go|SafeMode|StoppedForClarification" 04_Documentation/codex_skill_operations.md
 git diff --check
 ```
+
+
+## DOC-OPS user-requested serial execution（2026-04-22 / Issue 05-02）
+
+### Phase 1 Read
+- Phase開始時再Read: `04_Documentation/codex_skill_operations.md` と対応Issueを再読。
+
+### Phase 2 Plan
+- Phase開始時再Read: Audience/Purpose/Public boundary/decides節を再読。
+- AC/DoD不足判定: 不足なし。公開stub運用を維持。
+
+### Phase 3 Execute
+- Phase開始時再Read: Go/No-Go節を再読。
+- 実施: 本直列実行ログを追記（Classification=Move internal を維持）。
+
+### Phase 4 Verify
+- Phase開始時再Read: Verify節を再読。
+- 実行: `rg -n "DOC-OPS user-requested serial execution|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/codex_skill_operations.md`。
+- 自己修復回数: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（内部正本導線を維持）。
