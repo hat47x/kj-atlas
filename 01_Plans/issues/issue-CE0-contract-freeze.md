@@ -267,6 +267,25 @@ type PatchProposal = {
 
 ## Stream B execution log（CE0 Contract Freeze / contract-only）
 
+### 2026-04-23 run snapshot
+- lane: Stream B（CE0 Contract Freeze 専任）
+- phase gate re-read audit:
+  - Phase 1開始前再読: 実施（本Issue再読、差分なし）
+  - Phase 2開始前再読: 実施（固定Contract ID / No-Go語彙の再確認）
+  - Phase 3開始前再読: 実施（AC/DoD補完A/B/Cと合意ゲート再確認）
+  - Phase 4開始前再読: 実施（編集対象を本ファイルのみに限定）
+  - Phase 5開始前再読: 実施（docs-checkのみをVerify対象として再確認）
+  - Phase 6開始前再読: 実施（Proceed停止条件とFail-safeを再確認）
+- plan agreement（AC/DoD不足補完の先行合意）:
+  - `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` を先行提案し、`agreement_scope` 内で維持
+  - `agreement_state=agreed` を満たすため、Executeは語彙統一と判定根拠の明確化に限定
+- execute boundary assertions:
+  - CE0 Contract IDの追加・改名・削除は未実施（freeze維持）
+  - safeMode既定（ON, `allowUnreviewedText=false`）の後退なし
+  - CE1/CE2/CE4は read-only handoff として扱い、本文複製・再定義なし
+- verify policy:
+  - Verify失敗時の自己修復は最大3回、4回目相当は即停止
+
 ### 2026-04-22 run snapshot
 - lane: Stream B（CE0 Contract Freeze 専任）
 - phase gate re-read audit:
@@ -294,6 +313,11 @@ type PatchProposal = {
   - 自己修復上限は Verify 内で最大3回、4回目相当で停止
 
 ### Verification log template（self-correction <= 3）
+- run_2026-04-23 attempt_1:
+  - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => `ok: validated 5 active issue memos`
+  - docs-check: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => `Ran 8 tests ... OK`
+  - git diff --check: pass
+  - result: pass（self-correction 0回）
 - attempt_1:
   - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => `ok: validated 5 active issue memos`
   - docs-check: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => `Ran 8 tests ... OK`
