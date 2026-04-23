@@ -62,6 +62,47 @@
 - `dryRun=true` は常に `sideEffect=none` を強制し、副作用を許容しない。
 - `sourceBundleHash=mock:<hash>` は本番hashと同一の契約判定・監査導線を適用する。
 
+### APIシグネチャ先行定義（contract-only / mock server前提）
+> 実装は未着手。契約のみ固定し、backendは本節を境界として独立実装可能とする。
+
+- Endpoint: `POST /v1/context/bundles:resolve`
+- Required Request Fields:
+  - `query` (string, non-empty)
+  - `dryRun` (boolean)
+  - `sourceBundleHash` (string; `sha256:<hex>` または `mock:<hash>`)
+  - `safeMode` (boolean; CE4では `true` 既定を前提に緩和しない)
+- Required Response Fields:
+  - `equivalenceKey` (string)
+  - `bundleHash` (string)
+  - `queryCanonicalHash` (string)
+  - `proposalLifecycle` (`proposed | accepted | rejected | held`)
+  - `sideEffect` (`none` only when `dryRun=true`)
+  - `auditChain` (object; `query/bundle/proposal/apply` の4イベント参照子を含む)
+- Error Contract:
+  - 監査4点欠損 / `queryCanonicalHash` 欠損 / AND不成立 / `dryRun=true` かつ `sideEffect!=none` は `fail-closed` として扱い、成功応答を返さない。
+
+### CLI契約先行定義（contract-only / mock CLI前提）
+> 実装は未着手。契約のみ固定し、frontend/opsは本節を境界として独立実装可能とする。
+
+- Command: `kj-atlas ce4 resolve-bundle`
+- Required Options:
+  - `--query <string>`
+  - `--dry-run <true|false>`
+  - `--source-bundle-hash <sha256:...|mock:...>`
+  - `--safe-mode <true|false>`（既定 `true`、`false` 運用はCE4範囲外）
+- Required Stdout Contract (JSON):
+  - `equivalenceKey`
+  - `bundleHash`
+  - `queryCanonicalHash`
+  - `proposalLifecycle`
+  - `sideEffect`
+  - `auditChain.query|bundle|proposal|apply`
+- Exit Code Contract:
+  - `0`: AND成立 + 監査4点完備 + `queryCanonicalHash` 完備
+  - `1`: fail-closed（欠損/不一致/禁止条件違反を含む）
+- API/CLI Equivalence Obligation:
+  - 同一入力（`query/dryRun/sourceBundleHash/safeMode`）では API と CLI の `equivalenceKey` と `bundleHash` が同一でなければならない。
+
 ### Acceptance Criteria（contract-only）
 - [ ] API/CLI が同一 query 入力時に同一 `equivalenceKey` かつ同一 `bundleHash` を返す。
 - [ ] `equivalenceKey` のみ一致、または `bundleHash` のみ一致は成功扱いにしない（AND欠損をfail-closed）。
@@ -112,6 +153,7 @@
 - 参照語彙は `equivalenceKey / bundleHash / sourceBundleHash / queryCanonicalHash` の read-only 利用に限定。
 - 同値判定の監査証跡には `queryCanonicalHash` を必須記録し、欠損時は fail-closed とする。
 - proposal lifecycle は `proposed / accepted / rejected / held` の read-only 利用に限定。
+- API endpoint / CLI command 名は Phase 2 で固定した契約を参照し、実装側で独自拡張しない。
 
 ### CE4 Contract I/F Matrix（normative / contract-only）
 | Contract ID | Input Surface | Output / Audit Obligation | Failure Semantics |
@@ -160,6 +202,7 @@
 - [ ] 同値判定監査で `queryCanonicalHash` の欠損を許容していない。
 - [ ] CE4で語彙再定義を行っていない（read-only参照維持）。
 - [ ] `CE0-SAFEMODE-IF` の既定（safeMode既定ON / `allowUnreviewedText=false`）を緩和していない。
+- [ ] APIシグネチャ / CLI契約が mock server / mock CLI で再現可能な最小必須項目として固定されている。
 
 ## Phase 5 Proceed（未承認事項は確定せず停止条件を維持）
 ### Phase開始 Read同期ログ
@@ -173,6 +216,7 @@
 ### 未承認事項の扱い
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
 - 致命エラー（自己修復3回超過 / SafeMode後退兆候 / 契約矛盾検出）時は即停止し、指示待ちへ遷移する。
+- **Stopper**: 契約未承認項目を実装前提として扱いそうな兆候を検知した時点で即停止し、`held` 維持のまま承認待ちに遷移する。
 
 ---
 
