@@ -703,3 +703,44 @@
   - CE2: `sourceBundleHash === bundleHash` の比較語彙のみ利用。
   - CE4: `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を必須入力として継続。
 - CDC方針: 衝突検知時のみ `held` に遷移（本記録時点は衝突未検知）。
+## Stream C Execution Record（2026-04-23 / CE1 contract-only phase cycle）
+
+### Phase 1 Read（CE0参照境界/CE1契約ID/error semantics再読）
+- 再読対象を本ファイルに固定し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- CE0 read-only参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再確認し、CE1側での再定義禁止を維持。
+- CE1契約ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
+- 判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足ドラフト提案と合意）
+- AC補完（contract-only）:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一 canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false -> 422 preview_required`。
+  - unknown key -> `400 unknown_contract_key`。
+- DoD補完（contract-only）:
+  - CE2/CE4 handoff比較キーは `sourceBundleHash === bundleHash` 固定。
+  - `safeMode regression = 0` を完了条件に維持。
+- 合意判定: 既存Plan freezeと整合し、追加のADR CDC起票は不要（衝突未検知）。
+
+### Phase 3 Execute（closed-world + preview gate + deterministic hash を契約固定）
+- closed-worldを契約固定し、未定義キー受理を禁止（`400 unknown_contract_key`）。
+- preview gateを契約固定し、`previewConfirmed=false` は常に `422 preview_required`。
+- deterministic hashを契約固定し、同一 canonical query に対して `queryCanonicalHash` / `bundleHash` の一致を必須化。
+- contract-only維持: handler/UI/DB/worker 等の実装記述は追加しない。
+
+### Phase 4 Verify（docs-check / 自己修復最大3回）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（4回目修復に到達せず）。
+
+### Phase 5 Proceed（判定記録 / 未承認はheld維持）
+- 判定: **Proceed**（contract_id_collision=0 / vocabulary_collision=0 / safeMode regression=0）。
+- 未承認論点: なし（新規CDCなし）。
+- ルール固定: 今後、衝突検知時は `Context / Decision / Consequences` を明文化し、承認まで `held` 維持。
+- フェイルセーフ監視:
+  - safeMode後退: なし
+  - preview bypass混入: なし
+  - 未定義競合: なし
+  - 4回目修復到達: なし
