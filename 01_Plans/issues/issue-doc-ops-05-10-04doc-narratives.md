@@ -212,3 +212,21 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 11（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+## Stream J serial lane run（2026-04-22, Narratives owner）
+
+### Phase 1: Read
+- `04_Documentation/narratives.md` と本Issueを再読し、review state語彙が `unreviewed/human_reviewed` と一致するかを確認。
+
+### Phase 2: Plan
+- docs-only で `reviewed` 表記を `human_reviewed` に正規化し、公開境界・Go/No-Go観点は維持する。
+
+### Phase 3: Execute
+- `04_Documentation/narratives.md` の昇格条件・ワークフロー記述を `human_reviewed` へ統一。
+
+### Phase 4: Verify
+- `rg -n "human_reviewed|unreviewed|proposal|SafeMode" 04_Documentation/narratives.md`
+- `git diff --check`
+
+### Phase 5: Proceed
+- 判定: **Ready**（語彙ドリフトを解消し、公開改善方針 `Improve external` を維持）。

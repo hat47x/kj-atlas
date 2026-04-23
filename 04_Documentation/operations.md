@@ -11,6 +11,8 @@
 - Non-goal: 実装仕様の正本化、内部判断メモの公開、`03_Implement/*` の仕様変更
 - Public boundary: 内部限定の環境固有情報（秘密鍵・閉域URL・個別障害記録）を除外し、公開可能な運用手順のみ記載する
 - Outcome: 読者が「どの運用経路を選び、どこを確認すれば安全に運用継続できるか」を判断できる
+- This document decides: 公開可能な最小運用runbook（起動/停止/確認/復旧の実行順序とGo/No-Go観点）。
+- This document does not decide: セキュリティ制度設計の正本、組織固有の承認台帳、実装仕様の新規確定。
 - Related: `04_Documentation/security.md`, `04_Documentation/e2e_testing.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
 
 ## DOC-OPS-05 統合同期メモ（2026-04-18）

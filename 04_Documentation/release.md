@@ -1,10 +1,14 @@
 # リリース手順（最小）
 
+> Classification: **Improve external**（対外文書として改善しつつ維持）
 > Audience: メンテナ・リリース担当者
-> Purpose: 監査可能な最小リリース手順を提供する。
+> Goal: 監査可能な最小リリース手順を、外部公開可能な形式で再現できるようにする。
+> Non-goal: 組織内部の承認会議ログ、秘密鍵詳細運用、未公開インシデント対応の確定。
+> Outcome: 判定根拠（Go/No-Go）と未実施理由を追跡できる公開リリースrunbookを維持する。
+> Public boundary: 公開文書は共通手順・確認観点・記録要件のみを扱い、組織固有の承認証跡や秘密情報は扱わない。
 > This document decides: SemVer、リリース前チェック、タグ作成、タグ後確認、公開記録。
 > This document does not decide: 組織内部の承認会議ログ、秘密鍵詳細運用、未公開インシデント対応。
-> Related: `01_Plans/documentation_quality.md`, `.github/workflows/release.yml`, `04_Documentation/local_llm_ops_guide.md`
+> Related: `01_Plans/documentation_quality.md`, `.github/workflows/release.yml`, `04_Documentation/local_llm_ops_guide.md`, `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
 
 ## 1. SemVer 方針
 

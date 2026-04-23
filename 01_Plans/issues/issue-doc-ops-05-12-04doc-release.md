@@ -216,3 +216,21 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 13（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+## Stream J serial lane run（2026-04-22, Release owner）
+
+### Phase 1: Read
+- `04_Documentation/release.md` と本Issueを再読し、Audience/Goal/公開境界メタの有無を確認。
+
+### Phase 2: Plan
+- docs-only で `Classification / Goal / Non-goal / Outcome / Public boundary` を冒頭メタへ追加する。
+
+### Phase 3: Execute
+- `04_Documentation/release.md` の冒頭メタを DOC-OPS-05 形式へ揃え、関連issueリンクを追加。
+
+### Phase 4: Verify
+- `rg -n "Classification|Goal|Non-goal|Outcome|Public boundary|Go/No-Go" 04_Documentation/release.md`
+- `git diff --check`
+
+### Phase 5: Proceed
+- 判定: **Ready**（公開改善方針 `Improve external` を維持し、監査可能な公開手順メタを固定）。

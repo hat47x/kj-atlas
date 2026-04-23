@@ -211,3 +211,21 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 12（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+## Stream J serial lane run（2026-04-22, Operations owner）
+
+### Phase 1: Read
+- `04_Documentation/operations.md` と本Issueを再読し、Audience/Goal/Public boundary と責務境界の明示を確認。
+
+### Phase 2: Plan
+- docs-only で `This document decides / does not decide` を追記し、runbook責務を明文化する。
+
+### Phase 3: Execute
+- `04_Documentation/operations.md` 冒頭メタへ決定範囲/非決定範囲を追加。
+
+### Phase 4: Verify
+- `rg -n "This document decides|This document does not decide|Audience|Goal|Public boundary" 04_Documentation/operations.md`
+- `git diff --check`
+
+### Phase 5: Proceed
+- 判定: **Ready**（公開runbook責務を維持し、security/guidelinesへの委譲境界を明確化）。
