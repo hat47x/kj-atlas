@@ -351,3 +351,35 @@
   - I/F-4 `SafetyGate`: SafeMode既定ON・`allowUnreviewedText=false` を前提固定。
   - I/F-5 `AuditGate`: query/bundle/proposal/apply の監査4点セット欠損時は成功扱い禁止（mockでも同一判定）。
 - 未承認事項は `held` 在庫で維持し、確定判断は行わない。
+
+## Phase Execution Record（2026-04-23 / Stream C / CE0 core graph repositioning strict-phase rerun）
+### Phase 1 Read
+- 対象ファイルを再読し、`role / transition / no-go` 固定語彙（`working` / `context_projection` / `consensus`、`patch+approval`、canonical 5 IDs）を確認。
+- 差分確認: 直前記録との差分は追記のみで、語彙・禁止事項・SafeMode境界（既定ON）に変更なし。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみ、再定義なし。
+
+### Phase 2 Plan
+- 対象ファイルを再読し、Phase 1との差分がないことを確認。
+- Scopeを本Issue 1ファイルの実行記録更新のみに限定（single-file / contract-only）。
+- AC/DoD不足判定: 不足は未検出。不足発生時はドラフト提示→合意まで `held` 維持の運用を継続。
+
+### Phase 3 ADR Consensus
+- 対象ファイルを再読し、方針差分の有無を確認。
+- 判定: `No ADR delta`（新規ADR合意要求なし）。
+- 未承認論点は確定しない（必要時は `pending` / `held`）。
+
+### Phase 4 Execute
+- 対象ファイルを再読し、固定語彙と禁止事項に差分がないことを確認してから追記。
+- `working -> consensus` は `patch+approval` のみを許可する契約を維持。
+- 実装領域（handler/UI/DB/worker/API/Schema migration）への変更は実施しない。
+
+### Phase 5 Verify
+- 対象ファイルを再読し、語彙逸脱・SafeMode後退・契約ID再定義がないことを確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Self-Correction実績: 0/3（上限3回を超過していない）。
+
+### Phase 6 Proceed
+- 対象ファイルを再読し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（single-file / contract-only / 語彙固定 / CE0契約ID再定義禁止 / SafeMode既定ON維持）。
+- 未承認事項在庫: なし。AC/DoD不足が将来検出された場合はドラフト提示後、合意まで `held` で停止する。
