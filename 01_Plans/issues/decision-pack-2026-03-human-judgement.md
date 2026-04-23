@@ -580,3 +580,11 @@
 - Phase 3 Execute: A3 memo のみを更新し、`未承認確定化 / 語彙ドリフト / 指定外編集` をフェイルセーフ停止条件として明記。
 - Phase 4 Verify: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` / `git diff --check` を実行し、self-correction 0/3。
 - Phase 5 Proceed: A3は Draft 維持（Conditional）。未承認事項の確定扱いなし、語彙ドリフトなし、指定外編集なしを確認。
+
+### 6-42. Stream Shared 共有統合同期ログ（2026-04-22 rerun-48, Phase 1-5）
+
+- Phase 1 Read同期（read-only集約）: shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / 本decision-pack）を再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Ready=1 / Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 件数再計算: 集計値を `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26` に再固定。
+- Phase 3 Decision Queue整合: Queueを `DQ-HIL-EXEC-01=Ready` / `DQ-FB-P2C-01=Open` / `DQ-OPS-SOURCE-01=Open` として維持し、未承認決定の確定扱いなしを再確認。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-48|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
+- Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
