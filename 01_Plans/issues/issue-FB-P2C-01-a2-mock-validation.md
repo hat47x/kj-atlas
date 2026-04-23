@@ -363,3 +363,8 @@
 ### Phase 6) Proceed（Go/NoGo提案）
 - **Go（条件付き）**: QA3条件を全充足し、stale条件に抵触しない場合。
 - **NoGo**: `outputPolygonHash drift` / `paddingViolationCount > 0` / `appliedTieBreakOrder mismatch` / stale該当のいずれか。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog整理提案: FB-P2C-01 は系列メモ複数運用（2件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。

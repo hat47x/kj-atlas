@@ -59,3 +59,8 @@ FB-RM-MID-01 の DoD（同一入力で候補順序安定）を満たすため、
 - 2026-02-28: merge候補生成の決定論テストを追加し、同率時順序を固定。
 - 2026-02-28: merge候補パネル文言を AI 前提から heuristic 前提へ更新。
 - 2026-02-28: UI回帰テストを追加し、候補表示・理由表示を固定。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

@@ -52,3 +52,8 @@ smoke + 変更対象フロー + 安全境界（SafeMode/read-only）を E2E で�
    - pass（readOnlyで `Suggest layout` disabled + SafeMode locked context 文言表示）
 5. 実行コマンドと結果をPR記録できる形で残す
    - pass（本メモに記録済み）
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

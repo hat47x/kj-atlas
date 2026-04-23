@@ -368,3 +368,8 @@
 - Phase 3 A2 fixed prerequisite: M1-M4 mock ledger と `ownerOfFix` ルールへの引き渡し前提を固定済み。
 - Phase 4 A3 fixed prerequisite: handoff I/F・rollback 条件・`agreementStatus=agreed` 以外 NoGo ルールを固定済み。
 - Phase 5 Verify/Proceed: docs-check / 契約リンク / 依存整合に矛盾なし、Proceed=Completed。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog整理提案: FB-P2A-02 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。

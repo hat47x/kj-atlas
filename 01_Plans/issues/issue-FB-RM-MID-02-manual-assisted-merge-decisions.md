@@ -38,3 +38,8 @@
 - `npm run test -- src/ui/MergeSuggestionsPanel.test.ts`
 - `npm run typecheck`
 - `pytest 03_Implement/backend/tests/test_docs_roundtrip.py -k merge_suggestion_decisions`
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog整理提案: FB-P2B-02 は系列メモ複数運用（4件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。

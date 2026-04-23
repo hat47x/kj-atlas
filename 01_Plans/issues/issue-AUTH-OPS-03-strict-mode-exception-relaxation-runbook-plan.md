@@ -126,3 +126,8 @@
 - 固定値整合: D1〜D4（4h, tenant/2h, 代理承認なし, 48h+15m/60m）を全対象文書で再確認。
 - 停止条件整合: 未確定事項が1件でも残る場合は `StoppedForClarification` を維持する契約を再確認。
 - 検証: validator/unit test/`rg` により再現可能な形で確認。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

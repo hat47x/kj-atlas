@@ -184,3 +184,8 @@
 
 - REQ-DEF共通I/Fは本Issueを正本として固定し、REQ-DEF-02/03 は参照専用とする。
 - 禁止範囲（REQ-DEF-02/03本文の先行編集禁止）を維持し、未確定は Decision Queue に集約する。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。

@@ -112,3 +112,8 @@
 - 2026-02-28: validator の仕様を強化（allowed verification level 判定）し、ユニットテストを追加して回帰防止を導入。
 - 2026-02-28: Source Issue 未確定でも完了済みタスクを滞留させないため、本メモを `Done` へ移管し、`01_Plans/issues/README.md` の Active 一覧から除外。
 - 2026-02-28: validator に index/memo 間の `Status` と `Source Issue` 一致検証を追加し、ユニットテストで mismatch 検知を固定。
+
+## Stream I Done/Completed Audit (2026-04-23)
+- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
+- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- 重複Backlog: 該当なし。
