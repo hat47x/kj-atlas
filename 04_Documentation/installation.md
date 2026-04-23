@@ -167,3 +167,26 @@ Docker未導入です。Docker Engine + Compose を導入するか、上記のSQ
 
 ### Phase 6 Proceed
 - Ready。公開導入手順を継続保守。
+
+
+## DOC-OPS Track 4 serial cycle（2026-04-22 / DOC-OPS-05-08）
+
+### Phase 1 Read
+- `AGENTS.md` Read Order、`ADR-0019`、対応Issue（`issue-doc-ops-05-08-04doc-installation.md`）を再読。
+- Classification **Improve external** と公開導入文書の目的（最小導入 + 代替導入）を確認。
+
+### Phase 2 Plan
+- AC固定: Audience/Goal/Public boundary/Non-goal を維持し、Compose/SQLiteの両導線を再現可能順で保持。
+- フェイルセーフ: docs-check失敗時は3回まで修復し、4回目相当はHold。
+
+### Phase 3 Execute
+- 本Trackの実行記録を追記し、既存の手順本文は仕様変更せず維持。
+- 公開境界（秘密情報・内部承認ログを含めない）を再確認。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 4 serial cycle|Improve external|Compose|SQLite|Go/No-Go" 04_Documentation/installation.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 次アクション: Composeコマンド変更時は `04_Documentation/e2e_testing.md` との同期を同一差分で確認。

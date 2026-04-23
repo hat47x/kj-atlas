@@ -193,7 +193,7 @@
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
 
 ### Phase 5 Verify（docs-check / 自己修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
@@ -254,7 +254,7 @@
 
 ### 5) Verify（リンク / 語彙 / 固定値）
 - 推奨コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - フェイルセーフ: 語彙ドリフトが解消不能、または自己修復3回超過時は停止してHold化する。
 
@@ -328,7 +328,7 @@
 - スコープはIssueメモ整備に限定し、`04_Documentation/*` の本文改稿は行わない。
 
 ### Phase 4 Verify
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 判定基準: 体裁崩れなし、必須メタ欠落なし、Stream I との相互編集なし。
 
@@ -429,7 +429,7 @@
 
 ### Phase 5 Verify
 - docs-check（Issueメモ検証）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 差分整合:
   - `git diff --check`
 - 自己修復ポリシー: 失敗時は同一Issue内で最大3回まで修復し、4回目相当で停止して `Hold` とする。
@@ -463,7 +463,7 @@
 - 次実行単位（固定）: `04_Documentation/local_llm_ops_guide.md` に公開可能なローカルLLM運用手順と非公開境界を分離記述する改善PRを起票する。
 
 ### Phase 5 Verify（docs-check整合 / 修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 判定: 失敗時は同Issue内修復を最大3回まで。4回目相当は Fail-safe に従い停止。
 
@@ -515,7 +515,7 @@
 - 実装コード・他ストリーム専有ファイル・設計正本（00〜02）は未変更。
 
 ### Phase 5 Verify
-- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- `python 01_Plans/issues/validate_active_issue_memos.py`
 - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|Stream J（DOC-OPS-05 中盤2）" 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md 04_Documentation/local_llm_ops_guide.md`
 - `git diff --check`
 
@@ -570,7 +570,7 @@
   - Read→CDC→AC/DoD→Verify→Proceed を本セクションで記録済み。
   - 状態を `Ready / Hold / Needs-decision` の三値で判定可能。
 - Verify plan:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 
 ### Phase 5) Verify / Proceed（3回自己修復）
@@ -593,7 +593,7 @@
 
 ### Phase 4 Verify
 - `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/*.md`
-- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- `python 01_Plans/issues/validate_active_issue_memos.py`
 - `git diff --check`
 - 失敗時は自己修復を最大3回まで、4回目相当は停止してHold化する。
 
@@ -620,7 +620,7 @@
 ### Phase 4) Execute + Verify（docs-check, 最大3回自己修復）
 - Execute: 本Issueメモへ本フェーズ記録を追記（スコープ内編集のみ）。
 - Verify（docs-check）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 自己修復上限: 3回。4回目相当は Stopper に従い停止。
 
@@ -693,7 +693,7 @@
 ### Phase 4 Verify（Expected verification level整合確認）
 - 整合結果: `Expected verification level=docs-check` と `VerificationLevel=docs-check` は一致。
 - 実行手順（再現用）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 判定: docs-only Issueとして必要十分（unit/integration/e2e は対象外）。
 
@@ -749,7 +749,7 @@
 
 ### Phase 5 Verify / Proceed（対象Issue再読）
 - Verify（docs-check）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 自己修復ポリシー: 不整合時は最大3回修復し、4回目相当で停止。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、推奨アクション維持、5Issue限定編集を満たす）。
@@ -775,7 +775,7 @@
 
 ### Phase 4 Verify（対象ファイル再読）
 - 対象ファイルを再読後、以下で検証:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 自己修復ポリシー: 検証失敗時は最大3回まで修復し、4回目相当は停止して指示待ち。
 
@@ -804,7 +804,7 @@
 
 ### Phase 4 Verify（max 3 self-heal）
 - 実施コマンド: `git diff --check`
-- 実施コマンド: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実施コマンド: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 結果: 体裁崩れなし、自己修復回数 0/3。
 
 ### Phase 5 Proceed
@@ -827,7 +827,7 @@
 - GoNoGoGate Required 判定に「公開可否の境界説明が文書内で自己完結」を追加。
 
 ### Phase 4 Verify
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py`
 - 実行: `git diff --check`
 - 自己修復: 最大3回（4回目相当は fail-safe 停止）。
 
@@ -858,7 +858,7 @@
 
 ### Phase 4 Verify（docs-check）
 - 実行コマンド（1回目）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - 判定: pass（self-correction 0/3）。
 
@@ -979,7 +979,7 @@
 
 ### Phase 4: Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `git diff --check`
 - diff整合: 1ファイル単位の差分で体裁崩れがないことを確認。
 
@@ -987,3 +987,23 @@
 - 判定: **Ready**（推奨アクション `Improve external` を維持）。
 - 次工程: Phase 10（存在する場合）の対象Issueへ直列進行。
 - フェイルセーフ: 自己修復は最大3回。4回目相当・未定義競合・指定外編集検知時は `Hold` で停止。
+
+
+## 18) Track 4 serial execution record（2026-04-22）
+
+### Phase 1 Read
+- 本Issueと対象文書（`04_Documentation/local_llm_ops_guide.md`）を再読し、Classification **Improve external** を確認。
+
+### Phase 2 Plan
+- AC: 公開境界（秘密情報非掲載）と safeMode境界、監査4点セット導線を維持。
+- DoD: docs-only + Verify（`rg`/`git diff --check`）+ 自己修復3回上限。
+
+### Phase 3 Execute
+- 対象文書へ Track 4 の実行記録を追記。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**。

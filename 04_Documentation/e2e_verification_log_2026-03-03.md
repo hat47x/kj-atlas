@@ -254,3 +254,26 @@ docker --version && docker compose version
 ### Phase 6 Proceed
 - 判定: **Proceed（承認待ち）**
 - 自己修復: 最大3回、超過時は停止。
+
+
+## DOC-OPS Track 4 serial cycle（2026-04-22 / DOC-OPS-05-07）
+
+### Phase 1 Read
+- `AGENTS.md` の Read Order と `ADR-0019`、対応Issue（`issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`）を再読。
+- Classification **Move internal** と公開手順正本（`04_Documentation/e2e_testing.md`）の役割分離を再確認。
+
+### Phase 2 Plan
+- 記録方針を `Date/Route/Command/Result/Evidence/Next action` の6項目で固定。
+- フェイルセーフは自己修復3回上限、4回目相当は `01_Plans/issues/` へブロッカー記録して停止。
+
+### Phase 3 Execute
+- 本Trackの実行記録を docs-only で追記。
+- 既存のBlocked条件・再開条件・公開境界は変更しない。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS Track 4 serial cycle|Move internal|Date|Route|Command|Result|Evidence|Next action" 04_Documentation/e2e_verification_log_2026-03-03.md`
+- `git diff --check`
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 継続条件: Compose未実施リスクは本ログへ追記し、公開手順は `e2e_testing.md` に集約維持。
