@@ -29,6 +29,16 @@
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
+## Stream E hard constraints（2026-04-23 明文化）
+- 対象編集は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
+- lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
+- `proposal-only` を固定し、auto-apply は常時禁止とする。
+- AIは `reviewState=human_reviewed` へ昇格しない（人手のみ）。
+- 実行フェーズは `Read → Plan → Execute → Verify → Proceed` の順序固定。
+- 各Phase開始時に Read同期を必須化し、差分検知時は `status=held` で停止する。
+- AC/DoD不足時は AIドラフト提示のみに限定し、人手合意まで Execute を禁止する。
+- 自己修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
+
 ## Phase Compliance Ledger（運用記録テンプレ / 毎Phase開始時に更新）
 - Purpose: 各Phase開始時の Read 同期と固定契約の再確認を記録し、proposal-only 契約逸脱を防止する。
 - Self-Correction Counter: `0/3`（検証失敗ごとに `+1`。`4/3` 相当は fail-safe 停止）
@@ -42,6 +52,7 @@
 
 ### Phase start checklist（全Phase共通）
 - [ ] 開始時 Read 同期を実施し、前Phaseとの差分有無を確認した。
+- [ ] 差分が検知された場合、`status=held` を設定して停止した（次Phaseへ進まない）。
 - [ ] proposal-only 契約固定（実装禁止 / auto-apply禁止）を再確認した。
 - [ ] `reviewState` の閉集合（`unreviewed | human_reviewed`）維持を再確認した。
 - [ ] AC/DoD未合意の場合、`status=held` のまま Execute 非開始を確認した。
@@ -58,6 +69,7 @@
 - `reviewState` は `unreviewed | human_reviewed` のみ許可し、AI提案は常に `unreviewed` に固定する。
 - 強制ワークフローは `Phase 1 Read → Phase 2 Plan（AC/DoD補完）→ Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
 - 各Phase開始時は必ず Read を実施し、前Phaseの固定契約との差分有無を確認してから進行する。
+- 各Phase開始時の Read 同期で差分を検知した場合は `status=held` で停止し、Planに差し戻して合意を再取得する。
 - AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Execute を開始しない。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
@@ -78,6 +90,7 @@
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 ### Phase 1 gate（固定）
 - proposal-only 契約固定、`reviewState` 制約、No-Go語彙（`auto-apply` / AI review自動昇格 / `preview bypass` / `safeMode既定緩和`）を開始時に必ず確認する。
+- 差分検知時は `status=held` とし、Resolve前に次Phaseへ進まない。
 
 ### Read同期スナップショット
 - 固定語彙: `sourceBundleHash` / proposal lifecycle / `equivalenceKey + bundleHash`（CE4同値判定参照）
@@ -109,6 +122,7 @@
 
 ## Phase 2 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
 - 開始時Read: Phase 1 で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
+- 差分検知時: `status=held` を維持し、差分解消と人手合意が完了するまで Plan から先へ進まない。
 - Execute開始ゲート: AC/DoD不足時はAIがドラフト提案のみ行い、人手合意前は Phase 3 Execute を開始しない。
 - AC/DoD不足時: AIは不足項目のドラフトのみ提示し、合意済みAC/DoDが揃うまで `status=held` を維持する。
 - Scope（固定）: proposal-only契約の文言整備のみ。契約語彙の追加・再定義・実装仕様化は対象外。
@@ -134,6 +148,7 @@
 
 ## Phase 3 Execute（patch/diff追跡可能性を明文化）
 - 開始時Read: Phase 2 で確定した AC/DoD 合意内容を再読し、未合意項目があれば `held` で停止する。
+- 差分検知時: `status=held` で停止し、勝手に解釈して更新しない。
 - 実行開始条件: AC/DoDの人手合意が完了していること（未合意なら Execute 開始禁止）。
 - proposal lifecycle は `proposed | accepted | rejected | held` に固定し、別名・追加語彙を導入しない。
 - `reviewState` は `unreviewed | human_reviewed` の閉集合のみを許可し、AI提案は常に `unreviewed` に固定する。
@@ -153,6 +168,7 @@
 
 ## Phase 4 Verify（safeMode後退ゼロを検証）
 - 開始時Read: Phase 3 の変更差分（proposal-only / no-auto-apply / human-only昇格）を再確認する。
+- 差分検知時: `status=held` とし、自己修復カウンタを1増分して再同期する。
 - docs-check（3点セット）を実行し、自己修復は最大3回までに制限する。
 - lifecycleを `proposed/accepted/rejected/held` に固定。
 - `held` を fail-safe停止語彙として統一。
@@ -190,6 +206,7 @@
 
 ## Phase 5 Proceed（未確定は保留、3回超過や前提崩壊で停止）
 - 開始時Read: Verify結果と fail-safe 判定条件（3回超過 / 前提崩壊 / 競合）を再確認する。
+- 差分検知時: `status=held` を維持し、Proceedを実行せず停止する。
 - 3回超過（4回目相当）または前提崩壊を検知した場合は Proceed を中止し、fail-safe 停止する。
 - Proceed出力境界: A/Bテスト・UI検証へ渡す成果は mock 境界（I/F語彙・期待入出力・監査キー）に限定し、実装指示や自動適用手順を含めない。
 ### Fixed contract handoff
