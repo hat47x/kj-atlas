@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream F / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream F（CE4専任）
+- Owner: Stream E（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
