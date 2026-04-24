@@ -1135,3 +1135,32 @@
 - 判定: **Ready**
 - 次アクション: Stream H 直列ルールを維持し、DOC-OPS-05-08→14 の順で次Issueへ進行。
 - Fail-safe: 指定外差分 / 前提崩壊 / 未定義競合 / 修復4回目相当で停止。
+
+## Stream H dedicated sync record（2026-04-24）
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を起点に、AUTH-OPS-03 / DOC-OPS-02 の正本語彙（Security Officer / System Owner / Platform Operator、StoppedForClarification、D1〜D4）を再確認した。
+- 本Issueの Scope と Related ADR/Spec を再読し、Docs-only かつ単一Issue更新で進めることを確認した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: DOC-OPS-05 のIssueメモは Open化前の判定材料であり、語彙ドリフトがあると運用判断が分岐する。
+- Decision: 役割語彙・責務分離・導線・固定値（D1〜D4）を優先語彙として維持し、分類結果（Move/Improve）は再判定しない。
+- Consequences: 後続の本文改稿PRで参照基準が固定される一方、AUTH-OPS-03更新時の追従同期が必須となる。
+
+### Phase 3 Plan（AC / DoD合意）
+- AC-H1: Issue本文で `DecisionStatus=Fixed` / `GoNoGoGate=Required` / `VerificationLevel=docs-check` の整合が追跡できる。
+- AC-H2: セキュリティ境界に関する語彙で「2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）」を後退させない。
+- DoD-H: Read → ADR → Plan → Execute → Verify（最大3回自己修復）→ Proceed の記録を残し、指定外ファイルへ編集を広げない。
+
+### Phase 4 Execute
+- 本Issueは Stream H 専任対象として、Issueメモへの同期記録追加のみに限定した。
+- Fail-safe 条件（差分競合 / 用語ドリフト / 指定外編集）を満たす変化がないことを確認した。
+
+### Phase 5 Verify（自己修復上限3回）
+- Verify-1: `python 01_Plans/issues/validate_active_issue_memos.py --files <this-issue-file>`
+- Verify-2: `git diff --check`
+- 結果: 本更新では自己修復 0/3（再試行なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready（Stream H lane）**
+- 次アクション: それぞれの対象 `04_Documentation/*` 本文更新PR時に、AUTH-OPS-03 / DOC-OPS-02 の語彙整合チェックを再実施する。
