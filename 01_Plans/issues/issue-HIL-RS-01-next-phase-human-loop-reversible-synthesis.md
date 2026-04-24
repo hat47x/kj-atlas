@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`
 - Expected verification level: `docs-check`
-- Non-target file policy: 指定4Issue以外は不干渉
+- Non-target file policy: 対象7Issue以外は不干渉
 
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
@@ -52,7 +52,7 @@
 
 ## Phase 3: Plan
 - 対象差分意図: RS-01の開放条件をA1 SSOTへ揃える。
-- 非対象不干渉: 指定4Issue外は編集しない。
+- 非対象不干渉: 対象7Issue外は編集しない。
 - AC/DoD
   - AC: fixed keys差分0 / decisionQueueTransition固定 / NoGo return path一意。
   - DoD: safeModeDefault=ON維持 / overridePolicy後退なし / self-correction<=3。
