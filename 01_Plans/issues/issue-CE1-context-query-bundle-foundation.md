@@ -781,3 +781,42 @@
 - CE4 handoffは `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を read-only で継続。
 - CDC起票要否: 衝突未検知のため起票不要（`held` 遷移なし）。
 - フェイルセーフ監視: CE0再定義なし / preview bypassなし / safeMode後退なし / 指定外編集なし。
+
+## Stream D Execution Record（2026-04-24 / CE1 dedicated contract freeze sync）
+
+### Phase 1 Read（CE0参照境界・CE1凍結ID・error semantics再確認）
+- 再読対象を本ファイルに限定し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0 read-only参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再確認し、CE1側で再定義しないことを維持。
+- CE1凍結ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
+- 前提差分ゲート判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足ドラフト。合意までExecute禁止）
+- AC/DoD不足を contract-only で再ドラフト:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+  - CE2/CE4比較語彙は `sourceBundleHash === bundleHash`
+  - SafeMode regression = 0
+- Execute開始条件を明示: **上記ドラフト合意前はExecute禁止**。
+- 合意判定: 本Issue既存Plan freezeと整合し、**本サイクル内で合意済み**。
+
+### Phase 3 Execute（contract-only更新 / mock前提で依存切断）
+- 合意済み範囲のみを contract-only で更新（実装記述なし）。
+- deterministic hash / preview gate を mock前提で維持し、依存切断方針を継続:
+  - hash検証は同一canonical query反復一致条件のみ固定。
+  - preview gateは `previewConfirmed=false -> 422 preview_required` の契約固定を維持。
+- CE0本文再定義・逆流更新は未実施（read-only参照継続）。
+
+### Phase 4 Verify（docs-check + 用語固定検査 / 自己修復3回まで）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- 用語固定検査: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の揺れなし。
+- Self-Correction: 0 / 3（自己修復不要）。
+
+### Phase 5 Proceed（合意済みのみ確定 / 差分検知時held）
+- 確定範囲: 合意済み contract-only項目のみ。
+- 差分検知時ルール: CE0契約ID改名・語彙変更・safeMode既定変更を検知した場合は **held停止**。
+- ADR条件: 競合検知時のみ `Context / Decision / Consequences` を起票し、承認待ちに遷移。
+- 現時点判定: 衝突未検知のため CDC起票なし（Proceed継続）。
