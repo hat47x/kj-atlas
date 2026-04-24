@@ -383,3 +383,35 @@
 - 対象ファイルを再読し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（single-file / contract-only / 語彙固定 / CE0契約ID再定義禁止 / SafeMode既定ON維持）。
 - 未承認事項在庫: なし。AC/DoD不足が将来検出された場合はドラフト提示後、合意まで `held` で停止する。
+
+## Phase Execution Record（2026-04-24 / Stream C専任 / CE0 Core Graph Repositioning contract-only fixpoint）
+### Phase 1 Read（role/transition/no-go差分確認）
+- 実行開始時Readを実施し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（canonical 5 IDs）を再確認。
+- 直前記録との差分判定: 語彙差分 0 件、禁止事項差分 0 件、SafeMode境界（既定ON維持）差分 0 件。
+- フェイルセーフ前提を再確認: `direct write` 容認、SafeMode緩和、未定義競合の検出時は即時停止して `held` または `stopped_for_clarification` とする。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- Scopeを本Issue単体の契約固定文言に限定（single-file / contract-only）。
+- AC補完: 「`role / transition / no-go` の固定語彙を同義語置換せず維持する」を明記。
+- DoD補完: 「Verifyで self-correction 回数を 3 回以内に制限し、4 回目相当を実施しない」を明記。
+- 補完項目は本Issueの契約運用に反映し、実装依存（handler/UI/DB/worker/API/Schema migration）は追加しない。
+
+### Phase 3 ADR Consensus（Context/Decision/Consequences承認）
+- Context: CE0 Core Graph Repositioning を実装非依存の mock 前提で先行固定し、他ストリームが同一契約I/Fを参照可能にする。
+- Decision: `No ADR delta` を承認。契約固定は `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs の維持に限定。
+- Consequences: 未承認論点は `held/pending` 在庫化し、確定化しない。契約逸脱検出時は停止し、推測で進行しない。
+
+### Phase 4 Execute（契約文言のみ）
+- 実施内容を本Issue内の契約文言・実行記録更新のみに限定。
+- `direct write` 容認につながる記述、SafeMode緩和記述、未定義競合の黙示許容は追加しない。
+- mock活用方針として、実装依存を持たない transition/no-go 契約の先行固定のみを実施。
+
+### Phase 5 Verify（self-correction <= 3）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- self-correction 実績: 0/3。上限超過（4回目相当）は未実施。
+
+### Phase 6 Proceed（handoff）
+- 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
+- handoff: 他ストリームは本Issueの固定契約（role/transition/no-go, SafeMode境界, fail-safe停止条件）を read-only 参照して実装側へ展開する。
+- 未承認事項在庫: なし。将来検出時は `held` で停止し、人手合意まで確定化しない。
