@@ -79,7 +79,7 @@
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
+- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
 - `Go = ProceedGate`
 - `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
 - `NoGo = (!ProceedGate && !Conditional)`
