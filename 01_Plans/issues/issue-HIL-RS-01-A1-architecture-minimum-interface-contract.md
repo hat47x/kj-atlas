@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉
+- Non-target file policy: 指定4Issue以外は不干渉
 
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
@@ -52,7 +52,7 @@
 
 ## Phase 3: Plan
 - 対象ファイル差分意図: Go/NoGo判定式とキー定義を統一。
-- 非対象不干渉: 7Issue外は編集しない。
+- 非対象不干渉: 指定4Issue外は編集しない。
 - AC/DoD
   - AC: 固定キー差分0 / unlockRule一致 / Pending bypass禁止。
   - DoD: NoGo return path一意 / safeModeDefault維持 / self-correction<=3。
