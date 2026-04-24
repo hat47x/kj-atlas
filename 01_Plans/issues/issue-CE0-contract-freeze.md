@@ -10,6 +10,23 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+## Stream B execution ledger（CE0専任 / contract-only）
+- lane: `Stream B`
+- ssot_scope: `CE0 only`（CE1/CE2/CE4は参照専用）
+- edit_allowlist: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ
+- fail_safe:
+  - 指定外ファイル編集を検知した場合は即停止して `held`。
+  - safeMode既定値後退（`safeMode=true` / `allowUnreviewedText=false` 逸脱）を検知した場合は即停止して `held`。
+  - Contract ID再定義（追加/改名/削除）を検知した場合は即停止して `held`。
+
+### Phase status（固定ワークフロー追跡）
+- Phase 1 Read: `completed`（固定ID / No-Go / safeMode境界を再確認）
+- Phase 2 ADR/CDC: `completed`（Context/Decision/Consequencesを明文化、承認待ち論点は `held` 維持）
+- Phase 3 Plan: `completed`（AC/DoD不足ドラフト化、未合意は Execute禁止）
+- Phase 4 Execute: `completed`（contract-only wording修正のみ）
+- Phase 5 Verify: `completed`（docs-check 実行、失敗時の自己修復上限=3を維持）
+- Phase 6 Proceed: `in_progress`（合意済みのみ確定、未承認は `held`）
+
 ## Lane guard（このレーンの絶対条件 / CE SSOT）
 - CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
 - 本Issueは**計画・契約先行のみ**を扱う。実装（`03_Implement/**`）と共有統合ファイルは対象外。
