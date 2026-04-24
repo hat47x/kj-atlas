@@ -269,17 +269,32 @@
 - Attempt 4+: **forbidden / stop**
 
 
-## Stream F Execution Record（2026-04-24 / contract-only refresh）
+## Stream F Execution Record（2026-04-24）
 
 ### Phase Progress（Read → Plan → Execute → Verify → Proceed）
-- Phase 1 Read: 完了（CE0/CE1/CE2 の参照専用境界と CE0 contract IDs を再確認）。
-- Phase 2 Plan: 完了（API/CLI同値AND判定、監査4点、fail-closed、safeMode非緩和を AC/DoD として固定）。
-- Phase 3 Execute: 完了（契約I/F固定のみを維持し、実装詳細は追加しない）。
-- Phase 4 Verify: 完了（自己修復上限3回、監査欠損成功扱い禁止、片側一致成功扱い禁止を再確認）。
-- Phase 5 Proceed: 完了（handoff は contract ID と fail-safe 条件のみを確定事項として維持）。
+- Phase 1 Read: 完了（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`、監査4点、fail-closed条項を再確認）。
+- Phase 2 Plan: 完了（AC/DoD不足ドラフトを提示し、合意済みのみ採用）。
+  - Draft-AC-1: API/CLI同値監査で `queryCanonicalHash` 欠損時 fail-closed を明示維持する。→ 合意: 採用（既存契約の再確認として固定）。
+  - Draft-DoD-1: proposal lifecycle の閉集合（`proposed / accepted / rejected / held`）逸脱禁止をDoD監査対象として固定する。→ 合意: 採用（契約語彙の再定義なし）。
+  - Draft-DoD-2: `equivalenceKey + bundleHash`（AND）不成立は片側一致でも成功扱い不可をNo-Goに再掲する。→ 合意: 採用（fail-safe強化）。
+- Phase 3 Execute: 完了（API/CLIシグネチャと監査導線の契約先行定義のみを維持し、実装は未着手）。
+- Phase 4 Verify: 完了（docs-check + No-Go検査を実施し、自己修復0/3で通過）。
+- Phase 5 Proceed: 完了（合意済みのみ確定、未承認事項は `held` 維持）。
 
-### Self-Correction Ledger
-- Attempt 1: pass
-- Attempt 2: n/a
-- Attempt 3: n/a
-- Attempt 4+: forbidden / stop
+### Phase 4 Verify Log（docs-check + No-Go、self-correction<=3）
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- No-Go検査（fail-safe逸脱の不在確認）:
+  - `rg -n "片側一致.*成功扱い|監査欠損.*成功扱い|safeMode.*緩和" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- 判定: いずれも通過（自己修復 0/3、4回目着手なし）。
+
+### Proceed Decision（2026-04-24）
+- Decision: **Ready（contract-only）**
+- 固定事項:
+  - CE0/CE1/CE2 は read-only 参照を維持（再定義禁止）。
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
+  - 監査4点（`query / bundle / proposal / apply`）欠損は fail-closed 固定。
+- Held事項:
+  - 実装・運用手順の具体化は CE4 範囲外のため `held` のまま維持。
