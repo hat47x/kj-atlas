@@ -744,3 +744,40 @@
   - preview bypass混入: なし
   - 未定義競合: なし
   - 4回目修復到達: なし
+## Stream D Execution Record（2026-04-24 / CE1 contract-only phase cycle）
+
+### Phase 1 Read（CE0 read-only参照境界の再確認）
+- 本ファイルを再読し、編集許可が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに限定されることを再確認。
+- CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を read-only として再確認し、CE1側で再定義しない。
+- 前提差分ゲート判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- AC固定候補を維持:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+- DoD固定候補を維持:
+  - `sourceBundleHash === bundleHash`（CE2/CE4 handoff）
+  - SafeMode regression = 0
+
+### Phase 3 Execute（I/F契約固定、実装記述禁止）
+- CE1は contract-only を維持し、handler/UI/DB/worker などの実装記述を追加しない。
+- 固定契約IDを再確認:
+  - `CE1-CTXQ-IF`
+  - `CE1-CTXB-IF`
+  - `CE1-HASH-DET-IF`
+  - `CE1-PREVIEW-GATE-IF`
+- preview bypass / safeMode既定緩和 / CE0再定義は未実施。
+
+### Phase 4 Verify（self-correction<=3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（上限超過なし）。
+
+### Phase 5 Proceed（CE2/CE4へread-only handoff）
+- CE2 handoffは `sourceBundleHash === bundleHash` の比較語彙のみを read-only で継続。
+- CE4 handoffは `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を read-only で継続。
+- CDC起票要否: 衝突未検知のため起票不要（`held` 遷移なし）。
+- フェイルセーフ監視: CE0再定義なし / preview bypassなし / safeMode後退なし / 指定外編集なし。
