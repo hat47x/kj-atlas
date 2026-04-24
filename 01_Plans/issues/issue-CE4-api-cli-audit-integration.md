@@ -1,14 +1,24 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream F / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream E（CE4専任）
+- Owner: Stream F（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
+
+
+## Stream F Assignment Lock（2026-04-24）
+- 担当範囲は Stream F 専任とし、CE4 API/CLI/Audit Integration の contract-only 固定のみを扱う。
+- 編集許可は `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみに限定し、他ファイルは編集しない。
+- フェーズ順序は `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
+- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を維持し、片側一致の成功扱いを禁止する。
+- 監査4点（`query / bundle / proposal / apply`）欠損は常に fail-closed とし、成功応答を返さない。
+- safeMode既定（`CE0-SAFEMODE-IF`）は緩和しない。
+- 自己修復は最大3回までとし、4回目相当は即停止する。
 
 ## Lane guard（独立性・停止条件）
 - CE4は CE0 SSOT + CE1/CE2 read-only handoff を参照し、**CE0/CE1/CE2 を更新しない**。
@@ -257,3 +267,19 @@
 - Attempt 2: n/a
 - Attempt 3: n/a
 - Attempt 4+: **forbidden / stop**
+
+
+## Stream F Execution Record（2026-04-24 / contract-only refresh）
+
+### Phase Progress（Read → Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0/CE1/CE2 の参照専用境界と CE0 contract IDs を再確認）。
+- Phase 2 Plan: 完了（API/CLI同値AND判定、監査4点、fail-closed、safeMode非緩和を AC/DoD として固定）。
+- Phase 3 Execute: 完了（契約I/F固定のみを維持し、実装詳細は追加しない）。
+- Phase 4 Verify: 完了（自己修復上限3回、監査欠損成功扱い禁止、片側一致成功扱い禁止を再確認）。
+- Phase 5 Proceed: 完了（handoff は contract ID と fail-safe 条件のみを確定事項として維持）。
+
+### Self-Correction Ledger
+- Attempt 1: pass
+- Attempt 2: n/a
+- Attempt 3: n/a
+- Attempt 4+: forbidden / stop
