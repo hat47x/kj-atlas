@@ -29,6 +29,14 @@
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
+## Stream E phase contract（2026-04-24 追記）
+- **Phase 1 Read**: 閉集合（`proposed | accepted | rejected | held`）/禁止事項（auto-apply・AI review自動昇格・safeMode後退）/Read同期チェックを必須とする。
+- **Phase 2 Plan**: AC/DoD不足時は不足ドラフト提示に限定し、人手合意成立まで **Phase 3 Execute を開始しない**。
+- **Phase 3 Execute**: 契約文言更新のみに限定し、実装指示・自動適用手順・運用権限付与を記載しない。
+- **Phase 4 Verify**: 禁止遷移・safeMode後退・指定外編集を検査し、自己修復は最大3回（`1/3`〜`3/3`）まで。
+- **Phase 5 Proceed**: 条件未充足時は `held` で停止し、確定扱いで次工程へ渡さない。
+- **Fail-safe**: 自動確定 / 自動公開 / レビュー自動昇格要求を検知した時点で即停止する。
+
 ## Stream E hard constraints（2026-04-23 明文化）
 - 対象編集は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
