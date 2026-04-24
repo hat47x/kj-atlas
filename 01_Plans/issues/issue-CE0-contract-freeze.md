@@ -320,6 +320,25 @@ type PatchProposal = {
 
 ## Stream B execution log（CE0 Contract Freeze / contract-only）
 
+### 2026-04-24 run snapshot
+- lane: Stream B（CE0 Contract Freeze 専任）
+- phase gate re-read audit:
+  - Phase 1開始前再読: 実施（本Issue再読、Contract ID固定とNo-Go 5語彙IDを再確認）
+  - Phase 2開始前再読: 実施（CDC trigger と `held` 記録要件を再確認）
+  - Phase 3開始前再読: 実施（AC/DoD補完A/B/Cと `agreement_state=agreed` を再確認）
+  - Phase 4開始前再読: 実施（契約語彙統一のみ・意味不変編集のみを再確認）
+  - Phase 5開始前再読: 実施（docs-check限定、self-correction上限3を再確認）
+  - Phase 6開始前再読: 実施（fatal停止条件とread-only handoff条件を再確認）
+- execute boundary assertions:
+  - 編集対象は本ファイルのみ（指定外編集なし）
+  - CE0 Contract IDの追加/改名/削除なし（freeze維持）
+  - safeMode既定（ON, `allowUnreviewedText=false`）の後退なし
+  - CE1/CE2/CE4への受け渡しは Contract ID + No-Go語彙IDのread-only snapshotのみ
+- handoff snapshot（read-only / downstream redefinition denied）:
+  - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  - Vocabulary IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+  - transfer mode: 参照専用（本文複製なし・下流再定義なし）
+
 ### 2026-04-23 run snapshot
 - lane: Stream B（CE0 Contract Freeze 専任）
 - phase gate re-read audit:
