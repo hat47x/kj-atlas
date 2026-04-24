@@ -1048,3 +1048,31 @@
 ### Phase 6 Proceed（次Issueへ）
 - 判定: **Ready**（DecisionStatus=Fixed / DecisionQueueRef=N/A）。
 - 次アクション: Stream Gの直列実行として次のDOC-OPS-05 issueへ進む。
+
+## 18) Stream G dedicated execution record (2026-04-24)
+
+### Phase 1 Read
+- Scope/Status/VerificationLevel（docs-check）を再確認し、本Issueは計画整備のみであることを確認。
+- 指定外ファイル・実装コードは非対象であることを明示。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: DOC-OPS-05 の Draft gate 解消に向け、Issueメモ側で分類判定と実行条件を固定する必要がある。
+- Decision: 追加ADRは作成せず、Issue本文内CDCを正本として扱う。
+- Consequences: 後続作業は docs-only の計画更新に限定し、実装コード編集は実施しない。
+
+### Phase 3 Plan（AC / DoD合意）
+- AC: documentation_quality の配置判定（Move internal/Improve external）を計画として固定する。
+- DoD: Read→ADR→Plan→Execute→Verify→Proceed の6Phase記録が残り、Proceed判定が `Ready / Hold / Needs-decision` の三値で示される。
+
+### Phase 4 Execute
+- 本Issueメモ内の計画情報（AC/DoD/Proceed条件）を更新対象に限定。
+- Stream H専有ファイルおよび指定外ファイルへは非接触。
+
+### Phase 5 Verify（自己修復は最大3回）
+- 実施: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実施: `git diff --check`
+- 失敗時は同一ファイル内で最大3回まで自己修復し、4回目相当は即停止して `Hold` 化する。
+
+### Phase 6 Proceed
+- 判定: **Ready**（本Issueの DecisionStatus=Fixed かつ docs-check 範囲で完結）。
+- Fail-safe: 指定外ファイル変更・前提崩れ・競合検知時は即停止し、Issueを `Hold` に切替える。
