@@ -1,9 +1,9 @@
-# Issue Draft: CE2 Low-Risk AI Assist（Stream D専任 / CE契約群 / proposal-only / contract-only planning）
+# Issue Draft: CE2 Low-Risk AI Assist（Stream E専任 / CE契約群 / proposal-only / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE2専任 / proposal-only契約固定）
+- Owner: Stream E（CE2専任 / proposal-only契約固定）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE2-low-risk-ai-assist.md` のみ
 - Related Backlog: `CE-2`
@@ -11,8 +11,8 @@
 - Verification: `docs-check`
 
 
-## Stream D Assignment Lock（2026-04-23）
-- 担当範囲は Stream D 専任とし、CE2 proposal-only 契約固定のみを扱う。
+## Stream E Assignment Lock（2026-04-23）
+- 担当範囲は Stream E 専任とし、CE2 proposal-only 契約固定のみを扱う。
 - 編集許可は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみに限定し、それ以外は編集禁止。
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可し、拡張しない。
 - AI による `human_reviewed` 昇格は禁止し、`reviewState` の人手昇格のみ許可する。
@@ -29,7 +29,7 @@
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
-## Stream D hard constraints（2026-04-23 明文化）
+## Stream E hard constraints（2026-04-23 明文化）
 - 対象編集は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
 - `proposal-only` を固定し、auto-apply は常時禁止とする。
@@ -73,14 +73,14 @@
 - AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Execute を開始しない。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
-## Stream D operation profile（契約固定）
-- 担当は Stream D 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
+## Stream E operation profile（契約固定）
+- 担当は Stream E 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
 - 編集範囲は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみとし、他ファイルは参照専用とする。
 - Phase運用は `Phase 1 Read → Phase 2 Plan → Phase 3 Execute（status: proposed|accepted|rejected|held）→ Phase 4 Verify（auto-apply禁止・review auto promotion禁止）→ Phase 5 Proceed` を固定する。
 - `accepted/rejected/held` は人手判断の結果としてのみ遷移可能とし、AIは `proposed` の候補提示に限定する。
 - 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
 
-### Stream D fixed gate（本Issue内での運用固定）
+### Stream E fixed gate（本Issue内での運用固定）
 - Gate-1（proposal-only）: CE2は提案文言の作成・更新に限定し、実装/auto-apply経路を作らない。
 - Gate-2（lifecycle固定）: `proposed | accepted | rejected | held` 以外の語彙を導入しない。
 - Gate-3（review昇格禁止）: AI提案の `reviewState` は常に `unreviewed`。`human_reviewed` は人手操作のみ。
@@ -227,7 +227,7 @@
 - 自動確定 / 自動公開 / レビュー自動昇格の要求
 
 
-## Stream D execution log（2026-04-23）
+## Stream E execution log（2026-04-23）
 - Phase 1 Read: Read Order（上流文書）と本Issue本文を再読して契約固定を同期。
 - Phase 2 Plan: 追加差分を「担当範囲・閉集合lifecycle・昇格禁止・auto-apply禁止・fail-safe固定」の明文化に限定。
 - Phase 3 Execute: 本Issueファイル内のみを更新し、指定外ファイルは未変更。
