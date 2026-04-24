@@ -261,3 +261,31 @@
 - Status: **Ready**
 - Stop condition: Self-Correction 3回超過、または本文契約の競合検知時は **Hold** へ遷移して停止。
 - Next: 次Issue（05-12）へ直列で進行（05-14は完了報告で終了）。
+
+## 2026-04-24 Stream H serial pass（DOC-OPS-05 strict lane）
+
+### Phase 1 Read
+- 対象Issue（DOC-OPS-05-11）の Requirement meta I/F、既存Classification、GoNoGoGate、Validation plan を再確認。
+- 競合回避条件として shared resource（`01_Plans/issues/README.md`、`01_Plans/project-progress-dashboard.md`）非編集を再確認。
+
+### Phase 2 ADR/CDC（必要時のみ）
+- Context: 本Issueは運用文書系の分類固定メモであり、本文全面改稿や実装変更はスコープ外。
+- Decision: 既存DecisionStatus=Fixedを維持し、追加判断は発生させない。
+- Consequences: 後続のdocs-only PRは分類再判定ではなく、固定済み方針の実行に限定される。
+
+### Phase 3 Plan（AC/DoD不足補完・合意）
+- AC補完: Audience / Goal / 公開境界 / 次アクション / Validation が本文で追跡可能であること。
+- DoD補完: Phase 1〜6 記録、self-correction上限（<=3）、停止条件（指定外差分・前提崩壊・未定義競合）を明示。
+
+### Phase 4 Execute（計画固定のみ）
+- 実施: Issueメモ上の運用記録のみ更新し、実装コード・他Issue・shared resourceは未変更。
+
+### Phase 5 Verify（self-correction<=3）
+- 実行: `git diff --check`
+- 実行: `rg -n "Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed|self-correction<=3" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- 結果: 体裁崩れなし。自己修復は 0/3。
+
+### Phase 6 Proceed（次Issueへ）
+- 判定: **Ready**
+- 次アクション: Stream H 直列ルールを維持し、DOC-OPS-05-08→14 の順で次Issueへ進行。
+- Fail-safe: 指定外差分 / 前提崩壊 / 未定義競合 / 修復4回目相当で停止。
