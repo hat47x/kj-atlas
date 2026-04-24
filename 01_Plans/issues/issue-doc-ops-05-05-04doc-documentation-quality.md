@@ -1014,3 +1014,37 @@
 - Status: **Ready**
 - Stop condition: Self-Correction 3回超過、または本文契約の競合検知時は **Hold** へ遷移して停止。
 - Next: 次Issue（05-06）へ直列で進行（05-14は完了報告で終了）。
+
+
+## 17) Stream G dedicated run (2026-04-24)
+
+### Phase 1 Read（対象Issue再読）
+- `Requirement meta I/F` と `Acceptance criteria` を再読し、`VerificationLevel=docs-check` / `DecisionStatus=Fixed` を確認。
+- Scopeを再確認し、本Issueは `01_Plans/issues` メモ更新のみ（実装変更なし）に限定。
+
+### Phase 2 ADR/CDC（必要時のみ）
+- 判定: **追加ADR不要**。
+- Context: DOC-OPS-05-05 は文書分類と公開境界の固定が主目的。
+- Decision: 既存方針 **Move internal** を維持し、未確定事項を増やさない。
+- Consequences: 後続作業は docs-only の参照更新/移設/公開改善に限定する。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC追補案:
+  - AC-G1: `GoNoGoGate=Required` の判定条件（Audience / Goal / 公開境界 / 次アクション）を本文で追跡可能にする。
+  - AC-G2: 検証は `必須メタ確認 → 参照整合 → 差分整合` の順で記録する。
+- DoD追補案:
+  - DoD-G1: Proceed判定を `Ready / Hold / Needs-decision` の三値で固定する。
+
+### Phase 4 Execute（issue本文の計画固定のみ）
+- 実施内容: 本Issueメモ内でPhase 1〜6の運用記録を固定（計画以外の変更なし）。
+- 非実施: 実装コード、`04_Documentation/*` 本文、他Issueメモの編集。
+
+### Phase 5 Verify（docs-check, self-correction<=3）
+- 実行記録:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `git diff --check`
+- 自己修復ルール: 検証失敗時は当該Issueのみ最大3回修復、4回目相当は停止して `Hold`。
+
+### Phase 6 Proceed（次Issueへ）
+- 判定: **Ready**（DecisionStatus=Fixed / DecisionQueueRef=N/A）。
+- 次アクション: Stream Gの直列実行として次のDOC-OPS-05 issueへ進む。
