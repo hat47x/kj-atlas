@@ -415,3 +415,33 @@
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
 - handoff: 他ストリームは本Issueの固定契約（role/transition/no-go, SafeMode境界, fail-safe停止条件）を read-only 参照して実装側へ展開する。
 - 未承認事項在庫: なし。将来検出時は `held` で停止し、人手合意まで確定化しない。
+
+## Phase Execution Record（2026-04-24 / Stream C専任 / CE0 contract vocabulary freeze rerun）
+### Phase 1 Read（語彙差分確認）
+- 実行開始時Readを実施し、固定語彙 `working` / `context_projection` / `consensus` と遷移契約 `working -> consensus` + `patch+approval` を再確認。
+- No-Go canonical 5語彙（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）を再確認し、語彙差分 0 件。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみ（再定義なし）。
+
+### Phase 2 Plan（AC/DoD明文化）
+- Scopeを本Issue単体（single-file / contract-only）に固定し、実装変更は行わない。
+- AC明文化: role/transition/no-go語彙を固定し、同義語置換・拡張・再定義を禁止。
+- DoD明文化: `docs-check` pass と self-correction 最大3回を必須とし、4回目相当は実施しない。
+- AC/DoD不足が生じた場合はドラフト提案のみ実施し、承認まで `held` 維持とする。
+
+### Phase 3 ADR（Context/Decision/Consequences）
+- Context: Core Graph責務再配置を契約固定として扱い、他ストリーム連携時の境界揺れを防止する。
+- Decision: `No ADR delta`。固定契約は `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、No-Go canonical 5語彙を維持。
+- Consequences: 未承認論点は `held/pending` の在庫で保持し、確定化しない。
+
+### Phase 4 Execute（本Issueのみ更新）
+- 更新対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに限定して実行記録を追記。
+- SafeMode後退、No-Go語彙変更、CE0契約ID再定義、指定外編集は未実施。
+
+### Phase 5 Verify（docs-check / 自己修復最大3回）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- self-correction 実績: 0/3（4回目相当は未実施）。
+
+### Phase 6 Proceed（未承認はheld維持）
+- 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
+- 未承認事項在庫: なし。将来の未承認論点は `held` のまま維持し、承認前に確定化しない。
