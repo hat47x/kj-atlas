@@ -8,11 +8,12 @@
 - Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
 - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉
+- Non-target file policy: 対象6Issue以外は不干渉
 
 ---
 
-## Phase 1: Read
+## Phase 1: Read（再読・差分確認）
+- 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted
 - Status: `Open`
@@ -64,8 +65,9 @@
 - 未承認アルゴリズム詳細は開始条件に使わない。
 
 ## Phase 3: Plan
+- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 差分意図: A1契約を「唯一ゲート」に戻す。
-- 非対象不干渉: 対象7Issue外は編集しない。
+- 非対象不干渉: 対象6Issue外は編集しない。
 
 ### AC / DoD
 - AC

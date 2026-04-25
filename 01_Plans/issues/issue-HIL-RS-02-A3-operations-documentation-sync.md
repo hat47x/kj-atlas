@@ -7,13 +7,14 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象7Issue以外
+- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象6Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉
+- Non-target file policy: 対象6Issue以外は不干渉
 
-## Phase 1: Read
+## Phase 1: Read（再読・差分確認）
+- 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted
 - Status: `Draft`
@@ -64,8 +65,9 @@
 - A3単独での契約改定要求は `held`。
 
 ## Phase 3: Plan
+- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象差分意図: A3をread-only参照ノードとして固定。
-- 非対象不干渉: 7Issue外は編集しない。
+- 非対象不干渉: 6Issue外は編集しない。
 - AC（minimum）
   - AC-1: fixed keys diff=0（freezeContractId / contractIds / schemaVersion / overridePolicy / safeModeDefault / sharedResourceFreeze）。
   - AC-2: role語彙（Security Officer / System Owner / Platform Operator）ドリフトなし。
