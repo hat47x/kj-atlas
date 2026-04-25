@@ -25,7 +25,47 @@
 - Phase 3 Plan: `completed`（AC/DoD不足ドラフト化、未合意は Execute禁止）
 - Phase 4 Execute: `completed`（contract-only wording修正のみ）
 - Phase 5 Verify: `completed`（docs-check 実行、失敗時の自己修復上限=3を維持）
-- Phase 6 Proceed: `in_progress`（合意済みのみ確定、未承認は `held`）
+- Phase 6 Proceed: `completed`（最新判定: `Go`。未承認論点は `held` 維持）
+
+## Stream B latest run（2026-04-25 / CE0 only）
+
+### Phase 1 Read（最新再読）
+- 実施: 本Issueを再読し、Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を再確認。
+- 実施: No-Go語彙ID（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）固定を再確認。
+- 実施: safeMode境界（既定ON、`allowUnreviewedText=false`）後退禁止を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0をSSOTとして維持し、下流（CE1/CE2/CE4）はread-only参照のみ。
+- Decision: Contract ID再定義なし、No-Go語彙ID判定維持、未承認論点は `held` のまま運用。
+- Consequences: 下流再定義を抑止し、衝突時は `held` 記録で停止可能。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため、新規CDC起票なし。
+
+### Phase 3 Plan（AC/DoD補完提案の合意確認）
+- 合意対象: `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` を継続追跡。
+- 合意状態: `agreement_state=agreed` を維持。未承認の新規論点は `held`。
+- 実行境界: contract-only wording修正のみ、実装変更禁止。
+
+### Phase 4 Execute（contract-only）
+- 実施: 本ファイル内の進行状態と実行記録を更新（指定外ファイル編集なし）。
+- 非実施: CE0 Contract IDの追加・改名・削除、safeMode既定値変更、CE1/CE2/CE4本文変更。
+
+### Phase 5 Verify（docs-check / self-correction ≤ 3）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- 判定: **Go**
+- 根拠:
+  - `contract_id_collision=0`
+  - `vocabulary_collision=0`
+  - `safeMode regression=0`
+  - docs-check pass
+- 継続条件:
+  - CE1/CE2/CE4への引き渡しは Contract ID / No-Go ID のread-only参照のみ。
+  - 未承認論点は確定扱いせず `held` 維持。
 
 ## Lane guard（このレーンの絶対条件 / CE SSOT）
 - CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
