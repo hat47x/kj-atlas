@@ -820,3 +820,58 @@
 - 差分検知時ルール: CE0契約ID改名・語彙変更・safeMode既定変更を検知した場合は **held停止**。
 - ADR条件: 競合検知時のみ `Context / Decision / Consequences` を起票し、承認待ちに遷移。
 - 現時点判定: 衝突未検知のため CDC起票なし（Proceed継続）。
+## Stream D Execution Record（2026-04-25 / user-directed CE1 contract lock cycle）
+
+### Phase 1 Read（CE1/CE0契約語彙の最新整合確認）
+- 対象を本ファイルのみに固定して再読し、CE1は contract-only / mock-first / 実装禁止を再確認。
+- CE0は read-only SSOT として参照し、逆流再定義（契約本文・ID再採番）を禁止状態で維持。
+- CE1凍結対象ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の整合を確認。
+- error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に語彙変更なし。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences 合意）
+- 衝突検知観点を再確認:
+  - CE0契約ID衝突
+  - `equivalenceKey + bundleHash` / `sourceBundleHash` の語彙揺れ
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論変更
+- 判定: contract_id_collision=0, vocabulary_collision=0 のため CDC起票不要（`held`遷移なし）。
+- 合意事項（契約凍結対象のみ）:
+  - **Context**: CE0 read-only + CE1 I/F freeze + mock-first依存切断
+  - **Decision**: CE1 v1は契約文言のみ固定、実装記述を追加しない
+  - **Consequences**: CE2/CE4は read-only handoff のみ受領し、再定義禁止
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完（合意済み）:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致
+  - 同一 canonical query 3回で `bundleHash` 一致
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+- DoD補完（合意済み）:
+  - `sourceBundleHash === bundleHash` を CE2/CE4連携比較キーとして固定
+  - safeMode regression = 0
+  - contract-only（handler/UI/DB/worker 記述なし）
+
+### Phase 4 Execute（契約文言固定のみ）
+- 本Execution Recordを追加し、契約語彙・AC/DoD・停止条件を更新。
+- CE1 I/F凍結範囲外の仕様追加や実装記述は追加しない。
+- CE0本文への逆流再定義を実施しない。
+
+### Phase 5 Verify（docs-check + self-correction<=3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- 判定: **Go**（contract-only維持、CDC未起票、safeMode回帰なし）。
+- Conditional移行条件:
+  - `preview_required` の意味論変更
+  - CE0契約ID改名/再採番
+  - `unknown_contract_key` / `nondeterministic_bundle` の語彙変更
+- No-Go条件:
+  - preview bypass許容化
+  - safeMode既定緩和
+  - Self-Correction 3回超過
+
+### Fail-safe（即停止）
+- `preview_required` 等の error semantics 変更を検知した場合は即停止し、CDCを `held` で起票して承認待ちに固定する。
