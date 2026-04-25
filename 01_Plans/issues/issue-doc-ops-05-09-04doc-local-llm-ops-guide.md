@@ -1096,3 +1096,50 @@
 ### Phase 6 Proceed
 - 判定: **Ready（Stream H lane）**
 - 次アクション: それぞれの対象 `04_Documentation/*` 本文更新PR時に、AUTH-OPS-03 / DOC-OPS-02 の語彙整合チェックを再実施する。
+
+## 18) Stream K execution record（DOC-OPS-05-09）
+
+### Phase 1: Read（対象再読と抽出）
+- Status: `Draft`
+- Priority: `P2`
+- Scope: `04_Documentation/local_llm_ops_guide.md`
+- Expected verification level: `docs-check`
+- Audience: 外部運用者（閉域/企業）
+- Goal: ローカルLLM運用時の最小runbookを提供する。
+- Non-goal: 組織固有の承認フロー、秘密情報管理、内部監査ログ保管方式の決定。
+- Public boundary: 公開可能な運用条件と検証手順のみを記載し、秘密情報・内部承認ログ・組織固有手順は含めない。
+- 前提差分: **held**（上流仕様差分は本サイクルで未確定のため据え置き）。
+
+### Phase 2: ADR/CDC（明文化）
+- Context: `local_llm_ops_guide.md` は外部利用価値が高い一方で、内部運用情報の混入を防ぐ公開境界固定が必要。
+- Decision: **external改善（Improve external）を維持**し、内部移設は採用しない。
+- Consequences:
+  1. 本Issueは docs-only の分類確定メモとして継続する。
+  2. 実施単位は公開runbook品質向上（境界明示・検証導線明示）に限定する。
+  3. internal限定情報は `04_Documentation` へ持ち込まない。
+
+### Phase 3: Plan（AC/DoD整合）
+- Plan → Execute → Verify → Proceed の順序で進行する。
+- AC確認:
+  1. 分類結果明記: **Improve external** を維持。
+  2. 公開境界根拠明記: Audience / Goal / Non-goal / Public boundary を記録。
+  3. 次アクション明記: 公開runbookの改善単位を固定。
+- DoD確認:
+  1. allowlist外差分0。
+  2. docs-check記録を残す。
+  3. 安全境界（safeMode既定ON・漏えい防止）後退なし。
+
+### Phase 4: Execute（承認済み範囲のみ）
+- 実施内容: 本Issueメモに Stream K の分類判断・根拠・次アクションを追記。
+- 非実施: `04_Documentation/local_llm_ops_guide.md` 本文更新（本サイクルでは不要）。
+
+### Phase 5: Verify（AC/DoD照合）
+- docs-check:
+  - `rg -n "Stream K execution record|Status:|Priority:|Scope:|Expected verification level|Audience|Goal|Non-goal|Public boundary|Improve external" 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- self-correction: 0/3（修正再試行は不要）。
+
+### Phase 6: Proceed（Go/Conditional/No-Go）
+- 判定: **Go**
+- 根拠: AC 3点・DoD 3点を満たし、allowlist外差分なし。
+- 次アクション: 必要時のみ `04_Documentation/local_llm_ops_guide.md` で公開境界の表現改善を実施する（本Issueの分類は固定）。
