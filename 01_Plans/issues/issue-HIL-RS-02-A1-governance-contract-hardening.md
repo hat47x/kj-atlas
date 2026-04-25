@@ -10,9 +10,10 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉
+- Non-target file policy: 対象6Issue以外は不干渉
 
-## Phase 1: Read
+## Phase 1: Read（再読・差分確認）
+- 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 - Extracted: Status=`Open`, Priority=`P1`, Scope=`planning only`, Dependencies=`A1 -> A2 -> A3`。
 - Delta log（現値）
@@ -51,8 +52,9 @@
 - `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持。
 
 ## Phase 3: Plan
+- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象差分意図: Go/NoGo判定式と禁止遷移を固定。
-- 非対象不干渉: 対象7Issue外は編集しない。
+- 非対象不干渉: 対象6Issue外は編集しない。
 - AC/DoD
   - AC: fixed keys diff=0 / return path唯一 / Pending bypass禁止明記。
   - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。

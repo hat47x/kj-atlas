@@ -4,20 +4,21 @@
 - Status: Open（critical path active）
 - Priority: P0
 - Owner: Stream A（Critical Path: P0/P1 Contract & Governance）
-- Scope: `01_Plans/issues/` の対象7Issueの計画・契約整合のみ
+- Scope: `01_Plans/issues/` の対象6Issueの計画・契約整合のみ
 - Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
+- Non-target file policy: 対象6Issue以外は不干渉（編集禁止）
 
 ---
 
-## Phase 1: Read（再読・抽出）
+## Phase 1: Read（再読・差分確認）
+- 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
-- Scope: 対象7Issueの契約/統治/handoff整合
+- Scope: 対象6Issueの契約/統治/handoff整合
 - Dependencies: `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON`
 - Related ADR: `ADR-0001/0019/0026/0027/0028`
 
@@ -60,17 +61,18 @@
 - NoGo差戻し先は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定。
 
 ## Phase 3: Plan
+- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象ファイルごとの差分意図
   1. baseline: freeze値とgate条件のSSOTを明記。
   2. A1/A2/A3系Issue: 同一判定式へ統一。
   3. A3: read-only referenceを維持。
 - 非対象ファイル不干渉
-  - `01_Plans/issues/` の対象7Issue以外は変更しない。
+  - `01_Plans/issues/` の対象6Issue以外は変更しない。
 
 ### AC / DoD（ドラフト→合意済み）
 - AC
   1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
-  2. 依存順序 `A1 -> A2 -> A3` を全7Issueで固定。
+  2. 依存順序 `A1 -> A2 -> A3` を全6Issueで固定。
   3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
   4. A1 -> A2 -> A3 判定式は `ProceedGate` を唯一のSSOTとして扱う。
 - DoD
@@ -80,7 +82,7 @@
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- 対象7Issueの語彙・判定式・停止条件を統一。
+- 対象6Issueの語彙・判定式・停止条件を統一。
 - `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)` をA1->A2->A3の唯一判定式として固定。
 - `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
 - 非対象ファイルの編集は実施しない。
