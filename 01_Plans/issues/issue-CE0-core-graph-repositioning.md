@@ -445,3 +445,36 @@
 ### Phase 6 Proceed（未承認はheld維持）
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
 - 未承認事項在庫: なし。将来の未承認論点は `held` のまま維持し、承認前に確定化しない。
+
+## Phase Execution Record（2026-04-25 / Stream C専任 / CE0 independent contract-only rerun）
+### Phase 1 Read
+- Phase開始時に対象ファイルを再Readし、固定語彙 `working` / `context_projection` / `consensus`、許可遷移 `working -> consensus` + `patch+approval`、No-Go canonical 5 IDs を再確認。
+- 独立性制約（CE0契約ID再定義禁止・実装変更禁止・No-Go語彙固定）を再確認し、差分 0 件。
+- SafeMode境界（既定ON・緩和禁止）に変更がないことを確認。
+
+### Phase 2 Plan
+- Phase開始時に再Readし、Scopeを本Issue 1ファイルの実行記録追記のみに固定（single-file / contract-only）。
+- AC/DoD不足判定を再実施し、不足は未検出。将来不足検出時はドラフト提案を追記し、明示合意まで `held` 維持とする。
+- Stop Conditions（語彙差分、CE0契約ID再定義、SafeMode後退、self-correction 4回目相当）を再確認。
+
+### Phase 3 ADR Consensus
+- Phase開始時に再Readし、方針差分の有無を判定。
+- 判定: `No ADR delta`（契約固定の範囲内で処理可能）。
+- 未承認事項は確定化せず、必要時 `held/pending` で在庫化する方針を維持。
+
+### Phase 4 Execute
+- Phase開始時に再Readし、固定語彙・禁止事項との不一致がないことを確認してから追記。
+- 実行内容は本Issue本文の記録更新のみ。実装変更（handler/UI/DB/worker/API/Schema migration）は未実施。
+- CE0契約IDは read-only 参照のみで再定義なし、No-Go canonical 5 IDs への追加/置換なし。
+
+### Phase 5 Verify
+- Phase開始時に再Readし、語彙逸脱・SafeMode後退・契約ID再定義がないことを再確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- `rg -n "preview_bypass|consensus_direct_write|auto_apply_or_publish|ai_review_auto_promotion|safemode_default_relaxation" 01_Plans/issues/issue-CE0-core-graph-repositioning.md` を実行し、canonical 5 IDs の固定参照を確認。
+- self-correction 実績: 0/3（上限超過なし、4回目相当は未実施）。
+
+### Phase 6 Proceed
+- Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（独立性制約遵守、single-file / contract-only 維持）。
+- 未承認事項在庫: なし。今後AC/DoD不足が検出された場合はドラフト提案を追記し、合意まで `held` で停止する。
