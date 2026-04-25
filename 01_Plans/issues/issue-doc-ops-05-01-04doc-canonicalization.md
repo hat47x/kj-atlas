@@ -1202,3 +1202,60 @@
 ### Phase 6 Proceed
 - 判定: **Ready**（本Issueの DecisionStatus=Fixed かつ docs-check 範囲で完結）。
 - Fail-safe: 指定外ファイル変更・前提崩れ・競合検知時は即停止し、Issueを `Hold` に切替える。
+
+## 19) Stream G execution (DOC-OPS-05-01 / 2026-04-25)
+
+### Phase 1: Read（開始時再読）
+- 再読対象: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
+- 抽出結果（固定）:
+  - Status: `Draft`
+  - Priority: `P2`
+  - Scope: `04_Documentation/canonicalization.md`
+  - Expected verification level: `docs-check`
+  - Audience: 外部利用者（概要参照）
+  - Goal: 公開境界固定と内部正本導線の明示
+  - Non-goal: アルゴリズム詳細・内部レビュー手順・運用判断ログの公開
+  - 公開境界: 公開は概要のみ、設計詳細/運用詳細/変更管理は内部正本
+  - RequirementStatement: 「internal移設」または「external改善」の二択判定を固定する
+- 差分有無: 想定との差分なし（`held` 事項なし）。
+
+### Phase 2: ADR/CDC（合意フェーズ）
+- Context:
+  - 分類判断が必要な理由: `04_Documentation` の公開文書と内部文書の境界を明示し、public-exposure リスクを抑えるため。
+  - 本対象のみ扱う理由: `DOC-OPS-05-01` の単一責務は canonicalization 文書の配置判定であり、他Issueへ依存しないため。
+- Decision:
+  - 採用: **Move internal**（公開stub運用 + 内部正本導線維持）。
+  - 理由: Audience/Goal/公開境界の整合が既に成立し、DecisionStatus=`Fixed` で再判定不要のため。
+- Consequences:
+  - 影響範囲: docs-only（Issueメモと対象文書の分類根拠記録）。
+  - 後続1手: `02_Architecture` 側へ canonicalization 正本導線を整理する後続Issue/PRを起票。
+- 承認状態:
+  - 事前承認根拠: Requirement meta I/F の `DecisionStatus=Fixed`。
+  - 未承認事項: なし（未承認は `held` として固定対象なし）。
+
+### Phase 3: Plan（AC/DoD固定）
+- サイクル宣言: **Plan → Execute → Verify → Proceed**。
+- AC:
+  1. 分類結果（internal/external）が明記される。
+  2. 根拠（Audience/Goal/公開境界）が記録される。
+  3. 次アクションが記録される。
+- DoD:
+  1. allowlist外ファイル差分0。
+  2. docs-check結果を記録。
+  3. 未承認事項の確定化なし（`held` 以外へ昇格しない）。
+
+### Phase 4: Execute（本Issue範囲のみ）
+- 実行直前再Readを実施し、分類判断・根拠記録のみに変更範囲を限定。
+- 実施内容: 本Issueへ 6Phase 実行記録を追記（全面改稿・実装変更は未実施）。
+
+### Phase 5: Verify（自己検証）
+- AC/DoD照合: 充足。
+- docs-check:
+  - `rg -n "Audience|Goal|Non-goal|Public boundary|RequirementStatement|Move internal|Improve external" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md 04_Documentation/canonicalization.md`
+  - `git diff --check`
+- self-correction: 0/3（4回目相当なし）。
+
+### Phase 6: Proceed（進行判定）
+- 判定: **Go**。
+- 根拠: AC/DoD充足、allowlist外差分なし、未承認事項なし。
+- No-Go条件: 前提崩れ/allowlist違反/自己修復3回超過を検知した場合は即停止して原因・影響・再開条件を記録する。
