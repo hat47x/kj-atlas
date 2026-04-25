@@ -208,7 +208,7 @@
 
 ### Phase 4: Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `git diff --check`
 - diff整合: 1ファイル単位の差分で体裁崩れがないことを確認。
 
@@ -323,3 +323,48 @@
 ### Phase 6 Proceed
 - 判定: **Ready（Stream H lane）**
 - 次アクション: それぞれの対象 `04_Documentation/*` 本文更新PR時に、AUTH-OPS-03 / DOC-OPS-02 の語彙整合チェックを再実施する。
+
+## Stream L serial execution run（2026-04-25 / DOC-OPS-05-12）
+
+### Phase 1: Read
+- 最新再読対象: `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md` と `04_Documentation/release.md`。
+- 確認結果:
+  - Status: Draft（分類判定を保持しつつ実行計画を管理）。
+  - Scope: `04_Documentation/release.md`（issue上の対象範囲）。
+  - RequirementStatement: 「internal移設」または「external改善」の二択で固定。
+  - Audience/Goal/公開境界: `04_Documentation/release.md` 冒頭メタに明示済み。
+- 差分検知: 既存判定（Improve external）と矛盾なし。`held` への移行条件は未発火。
+
+### Phase 2: ADR/CDC
+- Context: `release.md` は外部利用者が再現可能なリリース導線を確認するための公開runbookとして機能し、内部専用情報は Public boundary で除外されている。
+- Decision: **external改善（Improve external）を維持**。internal移設は採用しない。
+- Consequences:
+  1. docs-only で公開品質（監査可能性・再現性）を継続改善する。
+  2. 内部承認ログや秘密情報は公開境界外として維持する。
+  3. 本Issueは分類判断と次アクションの固定に限定し、実装変更へ波及しない。
+
+### Phase 3: Plan
+- Plan → Execute → Verify → Proceed を固定。
+- AC充足計画:
+  1. 分類結果明記: Improve external を本文に維持。
+  2. 根拠明記: Audience/Goal/公開境界の観点で判定理由を記録。
+  3. 次アクション明記: `04_Documentation/release.md` の公開改善を docs-only で継続。
+- DoD充足計画:
+  1. allowlist外差分0 を維持。
+  2. docs-check 証跡を残す。
+  3. 未承認事項の確定化は実施しない。
+
+### Phase 4: Execute
+- 実施内容: 本Issueメモに Stream L 実行ログ（分類判断・根拠・次アクション）を最小差分で追記。
+- 非実施: `04_Documentation/release.md` は合意済み分類と矛盾がないため今回は未編集。
+
+### Phase 5: Verify
+- 実行コマンド（docs-check）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+- self-correction: 失敗時のみ最大3回。4回目相当は停止。
+
+### Phase 6: Proceed
+- 判定: **Go**。
+- 理由: AC（分類/根拠/次アクション）とDoD（allowlist外差分0、docs-check、未承認事項の非確定化）を満たす実行計画として成立。
+- 次アクション: 後続 docs-only 作業で `04_Documentation/release.md` の公開改善（external向け可読性・監査導線）を継続する。
