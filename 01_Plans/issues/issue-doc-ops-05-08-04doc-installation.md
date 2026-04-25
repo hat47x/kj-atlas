@@ -219,6 +219,69 @@
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
+## 16) Stream J execution record（DOC-OPS-05-08 installation lane）
+
+### Phase 1: Read（対象再読）
+- 再読対象:
+  - `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `04_Documentation/installation.md`
+- Status/Scope/RequirementStatement 確認:
+  - Status: Draft
+  - Scope: `04_Documentation/installation.md`
+  - RequirementStatement: `installation.md` を internal / external のどちらかに分類し、実行計画を固定する。
+- Audience / Goal / Non-goal / Public boundary 抽出（`installation.md` より）:
+  - Audience: 初回導入者・運用担当者
+  - Goal: 最小インストールと疎通確認の公開手順を提供
+  - Non-goal: 社内限定承認手順・未公開配布手順・秘密情報共有
+  - Public boundary: 標準導入手順のみ公開し、組織固有の内部運用メモは含めない
+- 前提差分:
+  - held: なし（既存記述で判断可能）。
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences）
+- Context: 対象文書は導入オンボーディング用途であり、外部利用者が最短で再現できる公開手順の維持が価値となる。
+- Decision: **external（Improve external）**
+- Consequences:
+  1. 本Issueは公開文書品質の改善トラックとして維持する。
+  2. internal移設は行わず、公開境界メタと導線の明確化を優先する。
+  3. 実装コードや非allowlistファイルの変更は不要。
+
+### Phase 3: Plan（Plan→Execute→Verify→Proceed）
+- AC（固定）:
+  1. 分類結果: external（Improve external）
+  2. 根拠: Audience / Goal / Public boundary を明示
+  3. 次アクション: `installation.md` の公開導入フローを維持しつつ docs-check 証跡を更新
+- DoD（固定）:
+  1. allowlist外差分 0
+  2. docs-check 証跡あり
+  3. 未承認確定化なし（DecisionStatus=Fixed の既存合意内のみ実行）
+
+### Phase 4: Execute（最小差分更新）
+- 本Issueに Stream J の分類・根拠・次アクションを追記。
+- `04_Documentation/installation.md` は既存メタでACを満たすため **未編集**。
+
+### Phase 5: Verify（AC/DoD + docs-check）
+- docs-check:
+  - `rg -n "Audience|Goal|Non-goal|Public boundary|DOC-OPS-05 Classification|Go/No-Go" 04_Documentation/installation.md`
+  - `git diff --check`
+- AC判定:
+  - AC1: 充足（external で固定）
+  - AC2: 充足（Audience / Goal / Public boundary を根拠化）
+  - AC3: 充足（次アクションを明示）
+- DoD判定:
+  - DoD1: 充足（allowlist外差分なし）
+  - DoD2: 充足（docs-check 実施）
+  - DoD3: 充足（未承認の新規決定なし）
+- self-correction:
+  - 1回目で充足（追加修正なし）。
+
+### Phase 6: Proceed（Go / Conditional / No-Go）
+- 判定: **Go**
+- 理由: AC/DoDを満たし、分類（external）と次アクションがIssue本文で再現可能。
+- 停止条件確認:
+  - 3回超過: 該当なし
+  - 競合: 該当なし
+  - 逸脱: 該当なし
+
 ### Phase 5 Proceed（Open化候補判定）
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
