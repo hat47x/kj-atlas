@@ -14,7 +14,7 @@
 ## Stream F Assignment Lock（2026-04-24）
 - 担当範囲は Stream F 専任とし、CE4 API/CLI/Audit Integration の contract-only 固定のみを扱う。
 - 編集許可は `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみに限定し、他ファイルは編集しない。
-- フェーズ順序は `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` に固定する。
+- フェーズ順序は `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` に固定する。
 - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を維持し、片側一致の成功扱いを禁止する。
 - 監査4点（`query / bundle / proposal / apply`）欠損は常に fail-closed とし、成功応答を返さない。
 - safeMode既定（`CE0-SAFEMODE-IF`）は緩和しない。
@@ -28,7 +28,7 @@
 - 監査欠損は常に fail-closed（成功扱い禁止）。
 - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を固定し、片側一致を成功扱いしない。
 - 検証失敗時の自己修復は最大3回。**3回超過（4回目着手）を禁止し、即停止する。**
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed` の固定順のみ許可（Phaseの追加・入替・省略を禁止）。
+- 強制ワークフローは `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` の固定順のみ許可（Phaseの追加・入替・省略を禁止）。
 - **各Phase開始時に Read同期（CE0 contract IDs / 監査4点 / fail-closed 条項）を実施**し、差分検知時はそのPhase内で契約記述を先に補正してから次工程へ進む。
 
 ## Phase 1 Read（CE0 contract IDs と監査4点の参照整合確認）
@@ -53,7 +53,7 @@
 - 監査欠損を成功扱いしない。
 - safeMode既定を緩和しない（`CE0-SAFEMODE-IF` 準拠）。
 
-## Phase 2 Plan（API/CLI同値性・監査4点・fail-closed契約固定をAC化）
+## Phase 2 ADR/CDC（ADR/CDC確定と合意形成）
 ### Phase開始 Read同期ログ
 - Read同期: 完了（CE0 contract IDs, 監査4点, fail-closed条項に差分なし）。
 
@@ -63,7 +63,11 @@
 - 提案P2: proposal lifecycle の語彙拡張を抑止するため、閉集合（`proposed / accepted / rejected / held`）を明文化する。
   - 合意: 採用（contract boundary の固定のみ、挙動変更なし）。
 - 提案P3: No-Go逸脱を防ぐため、CE4での禁止事項（語彙再定義・safeMode緩和・監査欠損成功扱い）を Verify でも再チェック対象にする。
-  - 合意: 採用（Phase 4 checklist に反映）。
+  - 合意: 採用（Phase 5 checklist に反映）。
+
+## Phase 3 Plan（API/CLI同値性・監査4点・fail-closed契約固定をAC化）
+### Phase開始 Read同期ログ
+- Read同期: 完了（CE0 contract IDs, 監査4点, fail-closed条項, CDC承認状態に差分なし）。
 
 ### 合意済みスコープ（contract-only）
 - CE4は契約I/F固定のみを扱い、実装手段・アルゴリズム・内部最適化は記述しない。
@@ -148,7 +152,7 @@
   - Consequences: 契約境界が明確化されるが、挙動変更は発生しない。
   - 承認状態: **承認済み（CE4 contract-only 範囲）**。
 
-## Phase 3 Execute（I/F固定と監査導線のみ記述）
+## Phase 4 Execute（I/F固定と監査導線のみ記述）
 ### Phase開始 Read同期ログ
 - Read同期: 完了（CE0/CE1/CE2はread-only継続、再定義なし）。
 
@@ -163,7 +167,7 @@
 - 参照語彙は `equivalenceKey / bundleHash / sourceBundleHash / queryCanonicalHash` の read-only 利用に限定。
 - 同値判定の監査証跡には `queryCanonicalHash` を必須記録し、欠損時は fail-closed とする。
 - proposal lifecycle は `proposed / accepted / rejected / held` の read-only 利用に限定。
-- API endpoint / CLI command 名は Phase 2 で固定した契約を参照し、実装側で独自拡張しない。
+- API endpoint / CLI command 名は Phase 3 で固定した契約を参照し、実装側で独自拡張しない。
 
 ### CE4 Contract I/F Matrix（normative / contract-only）
 | Contract ID | Input Surface | Output / Audit Obligation | Failure Semantics |
@@ -179,7 +183,7 @@
 - `dryRun=true -> sideEffect=none` を監査イベント語彙として固定。
 - `mock:<hash>` と本番hashで監査導線を分岐させない（同一fail-closed）。
 
-## Phase 4 Verify（同一query同一bundle要件・ログ欠落ゼロを自己検証）
+## Phase 5 Verify（同一query同一bundle要件・ログ欠落ゼロを自己検証）
 ### Phase開始 Read同期ログ
 - Read同期: 完了（監査4点固定・fail-closed条項を再確認）。
 
@@ -214,7 +218,7 @@
 - [ ] `CE0-SAFEMODE-IF` の既定（safeMode既定ON / `allowUnreviewedText=false`）を緩和していない。
 - [ ] APIシグネチャ / CLI契約が mock server / mock CLI で再現可能な最小必須項目として固定されている。
 
-## Phase 5 Proceed（未承認事項は確定せず停止条件を維持）
+## Phase 6 Proceed（未承認事項は確定せず停止条件を維持）
 ### Phase開始 Read同期ログ
 - Read同期: 完了（No-Go: 語彙再定義禁止 / safeMode緩和禁止 / 監査欠損成功扱い禁止）。
 
@@ -232,12 +236,13 @@
 
 ## Stream F Execution Record（2026-04-22）
 
-### Phase Progress（Read → Plan → Execute → Verify → Proceed）
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
 - Phase 1 Read: 完了（CE0 contract IDs / 監査4点 / CE0参照契約のread-only条件を再確認）。
-- Phase 2 Plan: 完了（API/CLI同値性・監査4点・fail-closed契約固定をACへ反映）。
-- Phase 3 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
-- Phase 4 Verify: 完了（監査4点欠損成功扱い禁止とAND不成立fail-closedを `CE4-V-001..010` で固定）。
-- Phase 5 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
+- Phase 2 ADR/CDC: 完了（CDC-CE4-001 / CDC-CE4-002 の承認状態を固定）。
+- Phase 3 Plan: 完了（API/CLI同値性・監査4点・fail-closed契約固定をAC/DoDへ反映）。
+- Phase 4 Execute: 完了（contract-only I/F matrix と監査導線固定を記述）。
+- Phase 5 Verify: 完了（監査4点欠損成功扱い禁止とAND不成立fail-closedを `CE4-V-001..010` で固定）。
+- Phase 6 Proceed: 完了（未承認事項は `held` 維持、契約再定義禁止を維持）。
 
 ### Repair Attempt Ledger（自己修復上限）
 - Attempt 1: pass
@@ -250,12 +255,13 @@
 
 ## Stream F Execution Record（2026-04-23）
 
-### Phase Progress（Read → Plan → Execute → Verify → Proceed）
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
 - Phase 1 Read: 完了（CE0/CE1/CE2 read-only境界、監査4点、fail-closed固定条項を再確認）。
-- Phase 2 Plan: 完了（既存AC/DoDを点検し、不足提案の新規発生なし＝現行条項で充足と合意）。
-- Phase 3 Execute: 完了（契約I/F固定範囲のみ維持。API/CLIシグネチャ契約先行・mock前提・依存切断を再確認）。
-- Phase 4 Verify: 完了（`validate_active_issue_memos` / `unittest` / `git diff --check` を実行し成功）。
-- Phase 5 Proceed: 完了（未承認事項は `held` 維持、No-Go逸脱なし）。
+- Phase 2 ADR/CDC: 完了（CDC承認状態を確認し、追加CDCは不要と判断）。
+- Phase 3 Plan: 完了（既存AC/DoDを点検し、不足提案の新規発生なし＝現行条項で充足と合意）。
+- Phase 4 Execute: 完了（契約I/F固定範囲のみ維持。API/CLIシグネチャ契約先行・mock前提・依存切断を再確認）。
+- Phase 5 Verify: 完了（`validate_active_issue_memos` / `unittest` / `git diff --check` を実行し成功）。
+- Phase 6 Proceed: 完了（未承認事項は `held` 維持、No-Go逸脱なし）。
 
 ### Verification Command Log
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → `ok: validated 5 active issue memos`
@@ -271,17 +277,18 @@
 
 ## Stream F Execution Record（2026-04-24）
 
-### Phase Progress（Read → Plan → Execute → Verify → Proceed）
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
 - Phase 1 Read: 完了（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`、監査4点、fail-closed条項を再確認）。
-- Phase 2 Plan: 完了（AC/DoD不足ドラフトを提示し、合意済みのみ採用）。
+- Phase 2 ADR/CDC: 完了（AC/DoD不足ドラフトのうち CDC起点で合意済みのみ採用）。
+- Phase 3 Plan: 完了（合意済みAC/DoDを契約境界へ固定）。
   - Draft-AC-1: API/CLI同値監査で `queryCanonicalHash` 欠損時 fail-closed を明示維持する。→ 合意: 採用（既存契約の再確認として固定）。
   - Draft-DoD-1: proposal lifecycle の閉集合（`proposed / accepted / rejected / held`）逸脱禁止をDoD監査対象として固定する。→ 合意: 採用（契約語彙の再定義なし）。
   - Draft-DoD-2: `equivalenceKey + bundleHash`（AND）不成立は片側一致でも成功扱い不可をNo-Goに再掲する。→ 合意: 採用（fail-safe強化）。
-- Phase 3 Execute: 完了（API/CLIシグネチャと監査導線の契約先行定義のみを維持し、実装は未着手）。
-- Phase 4 Verify: 完了（docs-check + No-Go検査を実施し、自己修復0/3で通過）。
-- Phase 5 Proceed: 完了（合意済みのみ確定、未承認事項は `held` 維持）。
+- Phase 4 Execute: 完了（API/CLIシグネチャと監査導線の契約先行定義のみを維持し、実装は未着手）。
+- Phase 5 Verify: 完了（docs-check + No-Go検査を実施し、自己修復0/3で通過）。
+- Phase 6 Proceed: 完了（合意済みのみ確定、未承認事項は `held` 維持）。
 
-### Phase 4 Verify Log（docs-check + No-Go、self-correction<=3）
+### Phase 5 Verify Log（docs-check + No-Go、self-correction<=3）
 - docs-check:
   - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
@@ -298,3 +305,23 @@
   - 監査4点（`query / bundle / proposal / apply`）欠損は fail-closed 固定。
 - Held事項:
   - 実装・運用手順の具体化は CE4 範囲外のため `held` のまま維持。
+
+## Stream F Execution Record（2026-04-25）
+
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0/CE1/CE2 read-only, 監査4点, fail-closed固定, No-Go条項を再確認）。
+- Phase 2 ADR/CDC: 完了（CDC-CE4-001 / CDC-CE4-002 の承認状態を再確認。追加CDC提案はなし）。
+- Phase 3 Plan: 完了（`equivalenceKey + bundleHash` AND固定、監査4点欠損fail-closed、self-correction<=3 をAC/DoDで再確認）。
+- Phase 4 Execute: 完了（contract-only I/F記述のみ更新。実装詳細・アルゴリズム記述は未追加）。
+- Phase 5 Verify: 完了（docs-check + No-Go検査で逸脱なし。自己修復0/3）。
+- Phase 6 Proceed: 完了（未承認事項は `held` 維持、4回目自己修復に着手しない停止条件を維持）。
+
+### Phase 5 Verify Log（docs-check + No-Go、self-correction<=3）
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- No-Go検査（独立性・固定条件）:
+  - `rg -n "Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+  - `rg -n "equivalenceKey \\+ bundleHash|監査4点|fail-closed|自己修復は最大3回" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- 判定: 通過（自己修復 0/3、4回目着手なし）。
