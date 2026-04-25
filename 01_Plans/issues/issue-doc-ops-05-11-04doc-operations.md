@@ -318,3 +318,64 @@
 ### Phase 6 Proceed
 - 判定: **Ready（Stream H lane）**
 - 次アクション: それぞれの対象 `04_Documentation/*` 本文更新PR時に、AUTH-OPS-03 / DOC-OPS-02 の語彙整合チェックを再実施する。
+
+## 2026-04-25 Stream H 実行ログ（DOC-OPS-05-11 / strict Phase 1-6）
+
+### Phase 1: Read（latest re-read）
+- 再読対象: `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`, `04_Documentation/operations.md`。
+- 抽出（Issue meta）:
+  - Status: `Draft`
+  - Priority: `P2`
+  - Scope: `04_Documentation/operations.md`
+  - Expected verification level: `docs-check`
+  - RequirementStatement: `operations.md` を `Move internal` または `Improve external` に分類し、実行計画を固定する。
+- 抽出（operations 文書分類）:
+  - Audience: `self-host 運用担当者 / PoC管理者 / 初見の技術検証担当`
+  - Goal: `最小運用の再現手順（更新・確認・安全運用）を単体読解できる形で提供`
+  - Non-goal: `実装仕様の正本化、内部判断メモの公開、03_Implement/* の仕様変更`
+  - 公開境界: `秘密鍵・閉域URL・個別障害記録など内部限定情報は除外し、公開可能な運用手順のみ記載`
+- 差分確認（held判定）:
+  - `held: none`（Issueの既存Decisionとoperations側の分類は整合）
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences）
+- Context:
+  - 対象は operations 文書分類タスクのみ（allowlist制約あり）。
+  - 既存DecisionStatusは `Fixed` だが、再読結果で公開境界の明文化が維持されていることを確認する必要がある。
+- Decision（二択）:
+  - **Improve external** を維持（Move internal にはしない）。
+- Consequences:
+  - 公開runbook責務を維持しつつ、内部限定情報の混入を抑制できる。
+  - 次アクションは docs-only の公開改善PRに限定される。
+- 承認記録:
+  - 本実行は Stream H 専任実行プロンプト（2026-04-25）を承認入力として処理。
+
+### Phase 3: Plan（固定順序: Plan -> Execute -> Verify -> Proceed）
+- AC（最低ライン）:
+  1. 分類結果（Improve external）を明記する。
+  2. 根拠（Audience / Goal / 公開境界）を明記する。
+  3. 次アクション（docs-only 公開改善PR）を明記する。
+- DoD（最低ライン）:
+  1. allowlist外差分 0。
+  2. docs-check 実行記録を残す。
+  3. 未承認事項を確定化しない（今回は承認済み入力のみ反映）。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへ分類判断・根拠・次アクションの固定ログのみ追記。
+- 非実施（スコープ外）:
+  - `04_Documentation/operations.md` 本文改稿
+  - 実装コード変更
+  - 指定外Issue更新
+
+### Phase 5: Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `rg -n "2026-04-25 Stream H 実行ログ|Improve external|held: none|Plan -> Execute -> Verify -> Proceed" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- self-correction: 0/3（失敗時のみ再試行、4回目相当は停止）。
+
+### Phase 6: Proceed
+- 判定: **Go**
+- 理由:
+  - AC 3点（分類結果・根拠・次アクション）を満たした。
+  - DoD 3点（allowlist外差分0・docs-check記録・未承認確定化なし）を満たした。
+- 次アクション: `04_Documentation/operations.md` の公開改善を docs-only PR として継続（分類再判定は行わない）。
