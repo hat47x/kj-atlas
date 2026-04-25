@@ -1164,3 +1164,43 @@
 ### Phase 6 Proceed
 - 判定: **Ready（Stream H lane）**
 - 次アクション: それぞれの対象 `04_Documentation/*` 本文更新PR時に、AUTH-OPS-03 / DOC-OPS-02 の語彙整合チェックを再実施する。
+
+## 2026-04-25 Stream I execution log（DOC-OPS-05-13）
+
+### Phase 1: Read
+- Status/Priority/Scope: `Draft` / `P2` / `04_Documentation/security.md` を再確認。
+- SecurityGateImpact: `public-exposure`（公開境界の曖昧化リスクを主要論点として扱う）。
+- Audience/Goal/公開境界: `security.md` の文書分類節（Audience/Goal/Public boundary）と本Issueの Requirement meta I/F が整合していることを確認。
+- 前提ズレ判定: **なし**（`held` への遷移条件は未検出）。
+
+### Phase 2: ADR/CDC
+- Context: 公開境界が曖昧なままだと内部運用情報の露出リスクが残り、運用者向けの安全説明責務も果たしにくい。
+- Decision: 本Issueの分類は **Improve external** を維持し、内部移設（Move internal）は採用しない。
+- Consequences: セキュリティ運用導線は `security.md` を公開可能な基底方針として維持し、手順詳細は `operations.md` / `security_operational_guidelines.md` へ責務分離する。
+- 承認状態: 本Issueは `DecisionStatus=Fixed` のため、未承認 `held` には遷移しない。
+
+### Phase 3: Plan
+- 宣言: **Plan → Execute → Verify → Proceed** を本ログで実施。
+- AC確認:
+  1. 分類結果明記（Improve external）: 充足
+  2. 公開境界根拠明記（Audience/Goal/Public boundary）: 充足
+  3. 次アクション明記（公開文書としての改善導線維持）: 充足
+- DoD確認方針:
+  1. allowlist外差分0
+  2. docs-check実行記録
+  3. 安全境界後退なし
+
+### Phase 4: Execute
+- 実行前再Readを実施し、分類判断の明記と根拠追記に限定。
+- 変更内容: 本Issueに Stream I の判断ログのみ追記（コード変更なし、他Issue編集なし）。
+
+### Phase 5: Verify
+- AC/DoD照合: 充足。
+- docs-check:
+  - `git diff --check`
+  - `rg -n "2026-04-25 Stream I execution log|Phase 1: Read|Phase 2: ADR/CDC|Phase 3: Plan|Phase 4: Execute|Phase 5: Verify|Phase 6: Proceed" 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- self-correction: 0/3（再修正不要）。
+
+### Phase 6: Proceed
+- 判定: **Go**
+- 継続条件: 公開境界矛盾・allowlist外差分・自己修復4回目相当が発生した場合は停止して `held` へ遷移する。
