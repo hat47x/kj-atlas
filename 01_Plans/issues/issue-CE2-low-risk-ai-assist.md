@@ -295,3 +295,31 @@
 - AC/DoD が不足する場合は AI がドラフトを提示し、人手合意が成立するまで Execute を開始しない。
 - Verify 失敗時の自己修復は最大 `3/3` まで許可し、`4/3` 相当は fail-safe 停止とする。
 - fail-safe 即停止条件: 自動確定要求 / 自動公開要求 / review 自動昇格要求 / lifecycle 閉集合逸脱 / safeMode 後退 / 指定外編集 / 4回目再試行。
+
+## Stream E single-file execution record（2026-04-26 / proposal-only）
+
+### Phase 1 Read
+- Scope を `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみに固定し、他ファイルは read-only 参照とする。
+- 固定制約を再確認した：`proposal-only` / auto-apply禁止 / `reviewState=human_reviewed` のAI昇格禁止 / lifecycle閉集合（`proposed | accepted | rejected | held`）。
+- CE0/CE1 は参照専用境界とし、CE2側で契約再定義を行わない。
+
+### Phase 2 ADR/CDC
+- **Context**: CE2 low-risk AI assist は候補提示専用であり、自動確定・自動公開・自動昇格を許可すると契約境界を破る。
+- **Decision**: ADR記述を先行して固定し、承認前は `status=held` を維持して確定遷移（`accepted/rejected`）を行わない。
+- **Consequences**: 承認前確定を防止でき、proposal-only 監査線（`proposalId/diff/sourceBundleHash/rationale/status/reviewState`）を保ったまま人手判断へ委譲できる。
+
+### Phase 3 Plan
+- Plan は AC/DoD 未合意時のドラフト提示に限定し、人手合意成立まで Phase 4 Execute を開始しない。
+- Verify 失敗時の修復は `1/3`〜`3/3` に制限し、`4/3` 相当で fail-safe 停止する。
+
+### Phase 4 Execute
+- 本Issueでの Execute は契約文言更新（docs-only）に限定し、実装・auto-apply・公開操作を行わない。
+- `reviewState` は AI提案時 `unreviewed` 固定とし、`human_reviewed` は人手操作のみに限定する。
+
+### Phase 5 Verify
+- Verify は docs-check 相当の文面検証（scope逸脱 / 禁止語彙許可 / lifecycle逸脱 / review自動昇格）を実施する。
+- 不一致検知時は自己修復カウンタを加算し、上限超過で即停止する。
+
+### Phase 6 Proceed
+- Verify 合格時のみ Proceed し、停止条件（自動確定要求・自動公開要求・レビュー自動昇格要求・safeMode後退・4回目修復）検知時は即時中断する。
+- Proceed 後も単一編集ファイル制約を維持し、次サイクル開始時に Phase 1 Read へ戻る。
