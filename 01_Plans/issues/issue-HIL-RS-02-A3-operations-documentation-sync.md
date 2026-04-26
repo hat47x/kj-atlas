@@ -155,3 +155,66 @@
 ### Consequences
 - 依存待ちによる無為停止を回避しつつ、契約凍結と安全境界を維持する。
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
+
+---
+
+## Stream B Execution Log（2026-04-26 / HIL-RS-02-A3 mock I/F準備）
+
+### Phase 1: Read（再読・差分確認）
+#### Context
+- 本Issueを再読し、A3が `mock I/F preparation only` の Draft運用であることを再確認した。
+- 固定キー（freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / unlockRule / decisionQueueTransition）を再確認した。
+
+#### Decision
+- 既存固定キーを維持し、A3側で契約値の再定義を行わない。
+- 編集対象は本ファイルの追記のみとし、指定外ファイルは不干渉とする。
+
+#### Consequences
+- A1完了前のOpen化・契約改定要求は引き続き `held` 対象として扱う。
+
+### Phase 2: ADR/CDC明文化（Context / Decision / Consequences）
+#### Context
+- A3は運用同期ノードであり、契約SSOTはA1（read-only参照）である。
+- Prompt指定により、実装強行は禁止であり、準備タスクの明文化が要求される。
+
+#### Decision
+- CDCを本ログで明文化し、Plan→Execute→Verify→Proceed の順序を固定。
+- `ProceedGate` は据え置き、`a1Status!="Done"` の間は `Conditional（準備継続）` のみ許可。
+
+#### Consequences
+- 契約逸脱リスクを増やさずに、A3 Open前の準備証跡を積み増しできる。
+
+### Phase 3: Plan（AC/DoD不足ドラフト）
+#### Context
+- 既存AC/DoD minimumは定義済みだが、mock I/F準備の停止条件を運用者が即参照できる粒度に揃える余地がある。
+
+#### Decision（不足ドラフト）
+- AC-5（追加）: `NoGo return path` が A1 issue を一意参照していることを毎回検証する。
+- DoD-4（追加）: Verify結果に self-correction試行回数（0〜3）を明記し、4回目相当で停止判断を再利用可能にする。
+- 合意状態: **Draft（本Issue内で先行固定、Open化時に人間承認で最終化）**。
+
+#### Consequences
+- A1依存下でも「何を満たせば準備完了か」が明確になり、再開時の判断コストが下がる。
+
+### Phase 4: Execute（mock I/F準備のみ）
+#### Context
+- A1未完了前提のため、契約値更新・Open化は実行不可。
+
+#### Decision
+- 本Issueに対して、Phaseログと不足AC/DoDドラフトの追記のみを実施した。
+- 実装コード・他文書の変更は行わない。
+
+#### Consequences
+- A3の準備成果のみが追加され、依存順 `A1 -> A2 -> A3` と Draft制約を維持できる。
+
+### Phase 5: Verify / Proceed（docs-check + 停止条件判定）
+#### Context
+- docs-checkを実行し、宣言済みコマンドと停止条件を照合する必要がある。
+
+#### Decision
+- `validator / unittest / rg / git diff --check` を実行し、結果を本ログに記録する。
+- 判定は `Go / Conditional / No-Go` の3値で行い、推測による昇格は禁止する。
+
+#### Consequences
+- 本実行の判定は `Conditional`（A1未完了のため準備継続のみ）とする。
+- 停止条件（未定義競合・契約逸脱・前提崩壊）は未検知。self-correction試行は 0/3。
