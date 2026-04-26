@@ -10,7 +10,9 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象4Issue以外は不干渉
+- Non-target file policy: 対象6Issue以外は不干渉
+
+- Execution order (Stream A fixed serial): 4/6 HIL-RS-01 umbrella
 
 ## Phase 1: Read（再読・差分確認）
 - 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
@@ -23,6 +25,7 @@
   - `sharedResourceFreeze=true`
 - 事前想定との差分: なし（Proceed可）。
 - 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
+- Phase gate checklist: `Status / Scope / Dependencies / 固定キー` を各Phase開始時に再確認し、差分が1つでもあれば `held` に記録して停止。
 
 ## Phase 2: ADR/CDC Consensus
 ### Context

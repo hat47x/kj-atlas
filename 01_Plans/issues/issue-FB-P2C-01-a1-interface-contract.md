@@ -10,6 +10,8 @@
 - Verification level: `docs-check`
 - Non-target file policy: 対象6Issue以外は不干渉
 
+- Execution order (Stream A fixed serial): 2/6 FB-P2C A1契約凍結
+
 ---
 
 ## Phase 1: Read（再読・差分確認）
@@ -32,6 +34,7 @@
   - `CTR-FB-P2C-01-A1-TIEBREAK-V1` は legacy候補として凍結し、判定ゲートから除外済み（read-only参照のみ）。
 - 判定: A1 SSOTとの差分なし（Proceed可）。
 - 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
+- Phase gate checklist: `Status / Scope / Dependencies / 固定キー` を各Phase開始時に再確認し、差分が1つでもあれば `held` に記録して停止。
 
 ### held record
 - `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）
