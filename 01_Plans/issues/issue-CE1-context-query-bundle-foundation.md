@@ -875,3 +875,34 @@
 
 ### Fail-safe（即停止）
 - `preview_required` 等の error semantics 変更を検知した場合は即停止し、CDCを `held` で起票して承認待ちに固定する。
+
+## Stream D Execution Record（2026-04-25 / CE1専任フェーズ固定運用）
+
+### Phase 1 Read（CE0参照境界・CE1 Contract IDs再確認）
+- CE0参照境界（read-only）を再確認: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- CE1 Contract IDsを再確認: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`。
+- 差分ゲート判定: CE0再定義なし、語彙衝突なし（continue）。
+
+### Phase 2 Plan（mock-first前提のI/F固定）
+- preview gate固定: `previewConfirmed=false -> 422 preview_required`。
+- hash deterministic固定: 同一canonical queryを3回評価し `queryCanonicalHash` / `bundleHash` 一致を受入条件化。
+- error semantics固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- closed-world固定: 未定義キーは `400 unknown_contract_key`。
+
+### Phase 3 Execute（contract-only更新 / 実装詳細禁止）
+- 本Issue内で契約語彙・検証条件・停止条件の整合のみ更新。
+- 実装詳細（handler / UI / DB / worker）は追加しない。
+- CE0本文再定義、CE1外ファイル編集は実施しない。
+
+### Phase 4 Verify（docs-check / 最大3回）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3。
+
+### Phase 5 Proceed（handoffキー整合確認）
+- CE2 handoffキー整合: `sourceBundleHash === bundleHash` を維持。
+- CE4 handoffキー整合: `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を維持。
+- ADR条件: 衝突未検知のため CDC（Context / Decision / Consequences）起票なし。
+- フェイルセーフ監視: CE0再定義なし / 語彙衝突未解決なし / Self-Correction 3回超過なし。
