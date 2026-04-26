@@ -1159,3 +1159,29 @@
 ### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+## 18) Stream H serial completion record（2026-04-26 / DOC-OPS-05-02）
+
+### Phase 1 Read
+- 対象Issueと対象文書（`04_Documentation/codex_skill_operations.md`）を再読し、編集境界が4ファイル限定であることを確認。
+
+### Phase 2 ADR/CDC
+- Context: codex skill 運用の正本は `00_Prompt/codex_gsd_skill_ops.md` にあり、04文書は公開境界の窓口として維持する必要がある。
+- Decision: 本Issueの分類は **Move internal** を維持し、04文書は公開stubとして運用する。
+- Consequences: 公開側は導線と判定ルールのみ更新し、運用詳細の追加は行わない。
+
+### Phase 3 Plan
+- AC/DoD不足はなし（既存ACを採用）。
+- 実行計画: docs-only最小差分で、Issueと対象文書に直列フェーズ完了ログを追記する。
+
+### Phase 4 Execute
+- Issue本文に本セクションを追記し、直列フェーズの完了証跡を追加。
+
+### Phase 5 Verify
+- docs-check: `rg -n "Stream H serial completion record|Move internal|ADR/CDC|Phase 5 Verify" 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md 04_Documentation/codex_skill_operations.md`
+- diff-check: `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**（05-02完了）。
+- 直列遷移: `DOC-OPS-05-09` へ進行。

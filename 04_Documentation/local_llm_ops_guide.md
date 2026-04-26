@@ -138,3 +138,27 @@ Local LLM 運用変更時は、次の順序を固定する。
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: 変数名追加/改名が必要な場合は `runtime_parameter_registry.md` を先に更新してから本書へ反映。
+
+## Stream H serial execution（2026-04-26 / DOC-OPS-05-09）
+
+### Phase 1 Read
+- 対象Issue（`issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`）と本書を再読。
+
+### Phase 2 ADR/CDC
+- Context: 本書は外部向けrunbookとして有効だが、公開境界を超える内部情報の混在は不可。
+- Decision: 分類は **Improve external** を維持し、LLM運用境界の説明に限定する。
+- Consequences: 実装仕様や内部承認実務の新規追加は行わない。
+
+### Phase 3 Plan
+- docs-only / 最小差分で直列フェーズ記録のみ追加。
+
+### Phase 4 Execute
+- 本セクションを追加し、Issueとの整合ログを明示。
+
+### Phase 5 Verify
+- `rg -n "Stream H serial execution|Improve external|LLM運用境界|Phase 5 Verify" 04_Documentation/local_llm_ops_guide.md`
+- `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 状態: **Ready**（直列2Issue完了）。

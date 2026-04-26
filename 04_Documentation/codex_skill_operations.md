@@ -82,3 +82,27 @@ git diff --check
 
 ### Phase 5 Proceed
 - 判定: **Ready**（内部正本導線を維持）。
+
+## Stream H serial execution（2026-04-26 / DOC-OPS-05-02）
+
+### Phase 1 Read
+- 対象Issue（`issue-doc-ops-05-02-04doc-codex-skill-operations.md`）と本書を再読。
+
+### Phase 2 ADR/CDC
+- Context: 公開境界の誤読を防ぐため、04文書は内部正本への導線に限定する。
+- Decision: 分類は **Move internal** を維持し、公開stub方針を継続。
+- Consequences: 運用詳細は `00_Prompt/codex_gsd_skill_ops.md` 側で更新する。
+
+### Phase 3 Plan
+- docs-only / 最小差分で直列フェーズ記録のみ追加。
+
+### Phase 4 Execute
+- 本セクションを追加し、Issueとの整合ログを明示。
+
+### Phase 5 Verify
+- `rg -n "Stream H serial execution|Move internal|公開stub|Phase 5 Verify" 04_Documentation/codex_skill_operations.md`
+- `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 状態: **Ready**（次Issueへ進行可）。
