@@ -285,3 +285,13 @@
 - 進行条件: Verify が合格し、自己修復カウンタが `3/3` 以内であること。
 - 停止条件: Verify未合格、禁止事項要求、指定外ファイル差分、safeMode後退、自己修復3回超過。
 - handoffは proposal-only 境界（I/F語彙・期待入出力・監査キー）に限定し、実装指示や自動適用手順を含めない。
+
+## Stream E CE2 lock refresh（2026-04-26 / this run）
+- Scope は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` の単一ファイル固定とし、指定外編集を禁止する。
+- CE2 は proposal-only 固定とし、auto-apply / auto-confirm / auto-publish を常時禁止する。
+- `reviewState=human_reviewed` への遷移は人手操作のみとし、AI は `unreviewed` 候補提示に限定する。
+- lifecycle は閉集合 `proposed | accepted | rejected | held` のみ許可し、追加語彙は fail-safe 停止とする。
+- 実行順序は `Phase 1 Read -> Phase 2 ADR/CDC -> Phase 3 Plan -> Phase 4 Execute -> Phase 5 Verify -> Phase 6 Proceed` を唯一の順序として固定する。
+- AC/DoD が不足する場合は AI がドラフトを提示し、人手合意が成立するまで Execute を開始しない。
+- Verify 失敗時の自己修復は最大 `3/3` まで許可し、`4/3` 相当は fail-safe 停止とする。
+- fail-safe 即停止条件: 自動確定要求 / 自動公開要求 / review 自動昇格要求 / lifecycle 閉集合逸脱 / safeMode 後退 / 指定外編集 / 4回目再試行。
