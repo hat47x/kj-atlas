@@ -127,6 +127,8 @@ kj-atlas は、生成AIに対して、人間が高度な判断に必要とする
 - 人間のレビュー状態が明示されること
 - safeMode を共有・配布時の既定とすること
 - 後から監査・差分確認・再評価ができること
+- 中間処理（分類/要約/整形/条件分岐）と最終判断（採否・統合方針）を分離し、
+  モデル能力とコストに応じて責務分担できること
 
 ---
 
@@ -186,6 +188,20 @@ kj-atlas は、
 ## 原則5：共有時は安全側に倒す
 
 共有・レビュー配布・静的公開などの経路では、safeMode を既定ONとし、未レビューAI文章や生テキストを漏らさない。
+
+## 原則6：推論パイプラインを二層化する（中間処理層 / 最終判断層）
+
+分類・要約・フォーマット変換・条件分岐などの中間処理は、
+高速・低コスト層（例: Groq 上の Llama / Qwen）へ委譲してよい。
+
+ただし、次の最終判断は高信頼層（例: Claude / GPT-5）に限定する。
+
+- patch の採否判定
+- competing proposal の統合方針
+- 保留解除の提案（hold解除候補）
+- 公開前の最終 narrative 承認候補
+
+最終判断層であっても **自動確定は禁止** し、出力は常に proposal-only とする。
 
 ---
 
@@ -258,6 +274,25 @@ AIはこの投影層を入力として受け取る。
 衝突検知ポリシー: Contract ID collision=0、語彙 collision=0、安全後退（safeMode緩和・auto-apply許容・review自動昇格）=0。
 
 ## 7.1 IR の基本方針
+
+## 7.1a Multi-Model Routing 要件（MMR-01〜06）
+
+本節は、モデル責務分担を固定する要件である。
+
+- **MMR-01（責務分離）**:
+  `intermediate`（中間処理）と `final_judgement`（最終判断）を論理的に分離する。
+- **MMR-02（許可タスク）**:
+  `intermediate` は `classify/summarize/format_transform/branch_resolve` に限定する。
+- **MMR-03（禁止タスク）**:
+  `intermediate` は `accept/reject/merge/finalize/publish` を実行してはならない。
+- **MMR-04（モデル階層）**:
+  `final_judgement` は high-reasoning tier（例: Claude / GPT-5）へルーティングする。
+- **MMR-05（監査性）**:
+  監査ログに `routingStage`（intermediate/final_judgement）、
+  `provider/model`、`sourceBundleHash`、`proposalId` を必須記録する。
+- **MMR-06（安全停止）**:
+  `final_judgement` 経路が利用不能な場合は auto-publish へフォールバックせず、
+  `held` へ遷移して人手確認待ちにする。
 
 AIに渡す入力は、キャンバスの見た目や雑多な履歴ではなく、**問い合わせ目的に応じて切り出された構造化コンテキスト束** であるべきである。
 

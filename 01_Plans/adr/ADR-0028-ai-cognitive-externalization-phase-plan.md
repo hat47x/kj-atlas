@@ -81,9 +81,11 @@
   - contradiction/evidence由来の論点候補
 - 非許可:
   - 自動採用・自動公開・review状態自動昇格
+  - 中間処理モデルによる最終採否判定（accept/reject/merge/finalize）
 - 検証:
   - すべてpatch/diffとして比較可能
   - `unreviewed` 表示がUI/データで保持
+  - 中間処理（分類/要約/整形/条件分岐）と最終判断のルーティングが分離される
 
 #### CE-3: Patch Workspace と Preset 運用
 
@@ -105,9 +107,11 @@
   - ContextQuery/Bundle の API/CLI 提供
   - batch評価・品質回帰チェック
   - query log / generated patch / apply log の監査導線
+  - Multi-Model Routing 監査（`routingStage`, `provider`, `model`, `sourceBundleHash`, `proposalId`）
 - 検証:
   - CLI/APIで同一queryが同一bundleを生成
   - 監査ログの欠落なし
+  - `final_judgement` 経路障害時に `held` へ fail-safe 遷移する
 
 ### D3. フェーズ依存関係
 
@@ -178,15 +182,19 @@
 - CE2-B（Implement）
   - すべてのAI応答を patch proposal として保存。
   - UIで「AI提案」「未レビュー」「レビュー済」を識別表示。
+  - `intermediate` ステージは Groq 上の Llama/Qwen 等を許可し、候補生成専用に固定。
+  - `final_judgement` ステージは Claude/GPT-5 等の高推論tierに固定（proposal-only）。
 - CE2-C（Verify）
   - 自動適用経路が存在しないことをルーティング/イベントで確認。
   - draft出力の採用・破棄が差分履歴に残ることを確認。
+  - 中間処理モデルが `accept/reject/merge/finalize/publish` を実行できないことを契約テストで確認。
 - CE2-D（Sync）
   - `04_Documentation/narratives.md` と `04_Documentation/security.md` に利用上の制約を同期。
 
 **CE-2 Done条件**
 - 生成結果は全件 patch/diff で追跡可能。
 - `reviewed` の自動昇格が0件。
+- 中間処理層と最終判断層の責務混線（routing violation）が0件。
 
 #### CE-3 ブレークダウン
 
@@ -212,15 +220,18 @@
 - CE4-B（Implement）
   - CLI から query 実行・bundle出力・patch適用dry-run を実装。
   - 監査ログ（query/generated/apply）を統合フォーマット化。
+  - 監査ログへ `routingStage` と `provider/model` を追加し、段階別追跡を可能化。
 - CE4-C（Verify）
   - API/CLI/GUI の同値性テスト（同query同bundle）。
   - 回帰テストに品質メトリクス（coverage / rejected reason分類）を追加。
+  - `final_judgement` 経路停止時に `held` 遷移し、自動公開へ進まないことを確認。
 - CE4-D（Sync）
   - `04_Documentation/operations.md` / `local_llm_ops_guide.md` を運用手順で更新。
 
 **CE-4 Done条件**
 - API/CLI/GUI の同値性検証がCIで自動実行される。
 - query/apply 監査ログの欠落率0%。
+- intermediate/final_judgement の段階別監査追跡が可能。
 
 ### D7. 実行順序と並列化ルール（運用固定）
 
