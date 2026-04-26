@@ -325,3 +325,37 @@
   - `rg -n "Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
   - `rg -n "equivalenceKey \\+ bundleHash|監査4点|fail-closed|自己修復は最大3回" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
 - 判定: 通過（自己修復 0/3、4回目着手なし）。
+
+## Stream F Execution Record（2026-04-25 / CE4 directive sync）
+
+### Phase 1 Read（CE0/CE1/CE2参照境界 + 監査4点）
+- CE0/CE1/CE2 を read-only 参照境界として再確認（逆流更新なし）。
+- 監査4点 `query / bundle / proposal / apply` を固定語彙として再確認。
+- 監査欠損時の成功扱い禁止（fail-closed）を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: API/CLI同値判定の比較根拠と監査欠損時の停止条件を維持する必要がある。
+- Decision: 既存 CDC（`CDC-CE4-001`, `CDC-CE4-002`）の承認状態を維持し、新規CDCは起票しない。
+- Consequences: contract-only 境界を維持し、未承認事項は `held` を継続。
+
+### Phase 3 Plan（固定条件の再確認）
+- `equivalenceKey + bundleHash`（AND）固定を再確認。
+- 監査4点欠損は fail-closed 固定を再確認。
+- `dryRun=true -> sideEffect=none` 固定を再確認。
+- AC/DoD不足の新規発生なし（現行条項で合意状態を維持）。
+
+### Phase 4 Execute（contract-only）
+- 実施: 本ファイルの運用記録のみ更新。
+- 非実施: 実装追加、safeMode緩和、語彙再定義、他ファイル編集。
+
+### Phase 5 Verify（docs-check / self-correction<=3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（自己修復 0/3、4回目着手なし）。
+
+### Phase 6 Proceed（Go判定）
+- 監査欠損成功扱いが無いことを確認。
+- safeMode既定緩和が無いことを確認。
+- Proceed Decision: **Go（contract-only）**。
