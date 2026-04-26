@@ -22,10 +22,11 @@
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `sharedResourceFreeze=true`
   - `contractLinkLocked=true`
 - 事前想定との差分: なし（Proceed可）。
-- 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
+- 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 - Phase gate checklist: `Status / Scope / Dependencies / 固定キー` を各Phase開始時に再確認し、差分が1つでもあれば `held` に記録して停止。
 
 ## Phase 2: ADR/CDC Consensus
@@ -40,6 +41,7 @@
 - `contractLinkLocked=true`
 - `sharedResourceFreeze=true`
 - `safeModeDefault=ON`
+- `safeModeBoundary=SAFE_MODE_STRICT_ON`
 - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
@@ -85,6 +87,7 @@
   - `contractLinkLocked=true`
   - `sharedResourceFreeze=true`
   - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
 - `prohibited_changes`:
   1. Pending bypass（未承認確定）
   2. A1外への NoGo return path 変更
@@ -101,13 +104,14 @@ governance_gate_v1:
     contract_link_locked: true
     shared_resource_freeze: true
     safe_mode_default: "ON"
+    safe_mode_boundary: "SAFE_MODE_STRICT_ON"
   reject_if:
     - "pending_bypass_detected == true"
     - "a1_status != Done && a2_or_a3_open_requested == true"
 ```
 
 ### A1->A2->A3 Gate Contract（Canonical / SSOT）
-- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")`
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（一意・固定）
 - `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
 - A2/A3 は `A2A3_OPEN_ALLOWED=true` を満たすまで `Draft/Open` 変更禁止。
@@ -132,7 +136,7 @@ governance_gate_v1:
 - `self_correction_attempt >= 4`（4回目相当）を検知した場合。
 - 未承認事項の確定化（pending bypass）を検知した場合。
 - `NoGo return path` の改変要求を検知した場合。
-- `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` / `contractLinkLocked=true` の後退兆候を検知した場合。
+- `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` / `contractLinkLocked=true` の後退兆候を検知した場合。
 - 上記を検知した場合は推測継続を禁止し、`held` 記録を更新して停止する。
 
 ## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
