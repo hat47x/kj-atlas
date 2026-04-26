@@ -614,3 +614,64 @@
 - Phase 3 Execute（単一変更セット）: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / 本decision-pack の3ファイルのみを単一変更セットで同期し、対象外編集を実施しない。
 - Phase 4 Verify（validator + unittest + rg + diff check）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-51|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` / `git diff --check` を実行し、整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+---
+
+## 7. 判断待ち専任レーン（未承認確定化なし）
+
+> 目的: 既存の完了ログとは分離し、**人間承認待ちの論点だけ**を短時間で再判定できるようにする。
+> ルール: 本レーンでは未承認事項を **確定扱いにしない**（Decision=Proposalのまま保持）。
+
+### 7-1. Phase 1) Read同期
+
+- 参照正本（固定順）
+  1. `02_Architecture/strict_mode_exception_approval_flow.md`
+  2. `04_Documentation/operations.md` / `04_Documentation/security.md`
+  3. `01_Plans/project-progress-dashboard.md`
+  4. `01_Plans/issues/README.md`
+- Read結果（本日時点）
+  - 判断待ちQueueは2件として扱う: `DQ-FB-P2C-01`, `DQ-OPS-SOURCE-01`。
+  - いずれも **Approved未確定** のため、ここでは Proposal のみ記録する。
+
+### 7-2. Phase 2) Context整理
+
+| Queue ID | 背景 | 未確定点 | 制約 |
+|---|---|---|---|
+| DQ-FB-P2C-01 | FB-P2C Gate運用の再開条件を監査中 | Gate 0承認の適用範囲と再開タイミングを正式化するか | A1→A2→A3依存、停止条件違反0件を維持 |
+| DQ-OPS-SOURCE-01 | `Source Issue` を `N/A` 維持中 | GitHub Issues正本運用開始時のURL移行条件を確定するか | 開始宣言未確定の間はURL化しない |
+
+### 7-3. Phase 3) Decision選択肢整形（Yes/No/条件）
+
+#### DQ-FB-P2C-01
+
+- **Yes**: Gate 0承認を有効化し、A2をProceed、A3をA2同期後にProceed判定。
+- **No**: Gate 0承認は未適用とし、A2/A3を継続保留。
+- **条件付き**: Gate 0は有効化するが、`validator/unittest/rg` の3点成功をProceed前提にする。
+
+#### DQ-OPS-SOURCE-01
+
+- **Yes**: GitHub Issues正本運用開始宣言をトリガに、`Source Issue` をURLへ移行。
+- **No**: `Source Issue` は `N/A` 固定を継続。
+- **条件付き**: 開始宣言 + RACI-I通知 + README規約同期の3条件充足時のみURL化。
+
+### 7-4. Phase 4) Consequences明記
+
+| Queue ID | 選択肢 | 期待効果 | 主なリスク |
+|---|---|---|---|
+| DQ-FB-P2C-01 | Yes | フェーズ再開判断が早まり停滞を解消 | 前提不足のまま進めると再停止の可能性 |
+| DQ-FB-P2C-01 | No | 誤判定による前倒し進行を防止 | 保留長期化で依存タスクが滞留 |
+| DQ-FB-P2C-01 | 条件付き | 安全性と進行性のバランス確保 | 条件定義が曖昧だと再解釈が発生 |
+| DQ-OPS-SOURCE-01 | Yes | Source追跡性が向上し監査導線が明確化 | 開始宣言の運用が曖昧だと誤移行 |
+| DQ-OPS-SOURCE-01 | No | Fail-safe（誤URL化防止）を強く維持 | N/A長期化で参照一貫性が弱まる |
+| DQ-OPS-SOURCE-01 | 条件付き | 運用切替時の監査可能性を担保 | 条件チェック運用の追加コスト |
+
+### 7-5. Phase 5) Proceed（承認待ち化）/ Stop
+
+- **現在状態**: `DQ-FB-P2C-01`, `DQ-OPS-SOURCE-01` ともに **Stop（承認待ち）**。
+- Proceed条件（共通）
+  1. 人間Deciderの明示（日時/JST付き）
+  2. 選択肢（Yes/No/条件）の明示
+  3. 反映先3ファイル（dashboard / issues README / decision-pack）の同一日同期
+- 記録ルール
+  - 承認前: `Decision (Proposal)` として保持。
+  - 承認後: `Decision (Final)` へ昇格し、Approval logに日付・Decider・根拠文を追記。
