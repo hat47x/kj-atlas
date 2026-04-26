@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本指示で許可された5 Issue以外は不干渉
+- Non-target file policy: 本指示で許可された7 Issue以外は不干渉
 
 - Execution order (Stream A fixed serial): 3/6 HIL-RS-01 A1
 

@@ -8,7 +8,7 @@
 - Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
 - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: 対象6Issue以外は不干渉
+- Non-target file policy: 対象7Issue以外は不干渉
 
 - Execution order (Stream A fixed serial): 2/6 FB-P2C A1契約凍結
 
@@ -70,7 +70,7 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 差分意図: A1契約を「唯一ゲート」に戻す。
-- 非対象不干渉: 対象6Issue外は編集しない。
+- 非対象不干渉: 対象7Issue外は編集しない。
 
 ### AC / DoD
 - AC
