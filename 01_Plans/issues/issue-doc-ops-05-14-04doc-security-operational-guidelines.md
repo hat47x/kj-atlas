@@ -68,3 +68,27 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 12) Stream F serial execution log（2026-04-26）
+
+### Phase 1 Read
+- 本Issue本文（Requirement meta I/F / Serial cycle record / Stop conditions）を再読し、対象が `DOC-OPS-05-14` 単票であることを確認。
+- security lane の終点Issueとして、`operations → security → guidelines` の順序定義を再確認。
+
+### Phase 2 Plan
+- 実行範囲を **issue-doc-ops-05-14 のみ** に固定し、他Issueへの依存追加を禁止。
+- 検証は `docs-check` のみ（差分整合と公開境界記録）を実施対象として明文化。
+
+### Phase 3 Execute（ADRタスク必須 C/D/C + 承認記録）
+- Context: guidelines は運用判断補助文書であり、公開可能情報と内部統制情報の境界が最重要。
+- Decision: `DOC-OPS-05-14` は **Improve external** を維持し、固定値（D1〜D4相当）は上流参照のみで扱う。
+- Consequences: 文書再配置の実行時に責務分離（2者承認・実行分離）を崩さず、公開境界を追跡可能にできる。
+- Approval record: **Issueメモ内承認（Stream F運用合意）** として本C/D/Cを記録。未承認決定の確定化は行わない。
+
+### Phase 4 Verify
+- `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
+- 自己修復回数を `0/3` で開始し、失敗時のみ最大3回まで。4回目相当は Stop conditions に従い停止。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- security系 lane（operations → security → guidelines）の Stream F 担当分を完了として記録。
