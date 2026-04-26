@@ -448,3 +448,35 @@
   - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
   - 監査4点欠損は fail-closed 固定（成功応答禁止）。
   - 停止条件: 上限超過（自己修復4回目相当）/ 前提崩れ / 未定義競合を検知した時点で即停止。
+
+## Stream F Execution Record（2026-04-26 / Prompt F sync: Plan→Execute→Verify→Proceed）
+
+### Phase 1 Plan
+- Phase開始 Read同期: 完了（CE0 contract IDs / CE1・CE2 read-only境界 / 監査4点 `query / bundle / proposal / apply` / fail-closed固定を再確認）。
+- Plan（docs-only / contract-only）:
+  1. 本ファイルの運用記録のみ更新する。
+  2. API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定を維持する。
+  3. 監査4点欠損は fail-closed 固定（成功応答禁止）を維持する。
+  4. 自己修復は最大3回、3回超過（4回目相当）は即停止する。
+
+### Phase 2 Execute
+- Phase開始 Read同期: 完了（No-Go: safeMode緩和禁止 / 語彙再定義禁止 / 監査欠損成功扱い禁止を再確認）。
+- 実施: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ更新。
+- 非実施: 実装変更、他ファイル編集、契約語彙の追加再定義。
+
+### Phase 3 Verify
+- Phase開始 Read同期: 完了（AND判定固定 / 監査4点固定 / fail-closed固定 / 修復上限を再確認）。
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（自己修復 0/3）。
+- 停止条件: 3回で解消しない場合は4回目に着手せず停止。
+
+### Phase 4 Proceed
+- Phase開始 Read同期: 完了（Proceed前に固定条件の維持を再確認）。
+- Proceed Decision: **Go（docs-only / contract-only）**。
+- 維持事項:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
+  - 監査4点欠損は fail-closed 固定（成功応答禁止）。
+  - 自己修復3回超過時は即停止。
