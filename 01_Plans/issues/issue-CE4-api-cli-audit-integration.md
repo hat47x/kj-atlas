@@ -530,3 +530,46 @@
   - `equivalenceKey + bundleHash`（AND）の片側一致成功扱いを禁止する。
   - 監査4点欠損時 fail-closed を維持する。
   - 自己修復は最大3回、4回目相当は即停止する。
+
+## Stream F Execution Record（2026-04-26 / directive: Read→ADR/CDC→Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read
+- Read同期: 完了（CE0/CE1/CE2 を read-only 参照し、逆流更新しない条件を再確認）。
+- 固定条件の再確認:
+  - 監査4点 `query / bundle / proposal / apply` 欠損は fail-closed。
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）のみ許可。
+  - safeMode後退禁止（`CE0-SAFEMODE-IF` 準拠）。
+
+### Phase 2 ADR/CDC
+- Context: CE4契約差分が発生する場合、承認待ちのまま確定記述へ進むと契約境界が不明瞭化する。
+- Decision: 差分時は **Context / Decision / Consequences** を先行確定し、承認待ちは `held` で管理する。
+- Consequences:
+  - `held` の論点は Proceed で確定扱いしない。
+  - CE4は contract-only 境界を維持し、実装詳細へ展開しない。
+
+### Phase 3 Plan
+- AC/DoD不足のAIドラフト方針:
+  1. 監査欠損成功扱い禁止を Verify の必須チェックとして維持。
+  2. 片側一致成功扱い禁止（`equivalenceKey` 単独一致 / `bundleHash` 単独一致）を Verify の必須チェックとして維持。
+  3. self-repair は最大3回、4回目相当は停止条件として明記。
+- Scope: 本ファイルのみ更新（他ファイル編集禁止）。
+
+### Phase 4 Execute
+- 実施: 本ファイルの運用記録のみ更新。
+- 非実施: コード変更、他ファイル編集、safeMode緩和、CE0/CE1/CE2再定義。
+
+### Phase 5 Verify
+- Attempt 1 / self-repair 0/3:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - `rg -n "equivalenceKey \\+ bundleHash|監査4点|fail-closed|safeMode後退禁止|self-repair|4回目" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- 判定: pass（禁止条件逸脱なし）。
+
+### Phase 6 Proceed
+- Proceed Decision: **Go（docs-only / contract-only）**。
+- 維持事項:
+  - 監査4点欠損は fail-closed を維持（成功扱いしない）。
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定を維持（片側一致を成功扱いしない）。
+  - safeMode後退禁止を維持。
+  - self-repair は3回上限、4回目相当は即停止。
