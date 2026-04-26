@@ -1256,3 +1256,46 @@
 - 自己修復（Verify失敗時の修正）は最大3回。
 - **4回目相当は停止**し、状態を `Hold` に更新する。
 - **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
+
+## 18) Stream I strict-serial execution (2026-04-26 / DOC-OPS-05-08)
+
+### Phase 1 Read
+- 再読対象: 本Issue、`04_Documentation/installation.md`。
+- 前段（05-03）完了確認: Stream I で `Proceed=Ready` を確認後に着手。
+- 編集許可境界: 指定4ファイルのみ。
+
+### Phase 2 ADR/CDC
+- Context: installation は公開オンボーディング文書であり、導入再現性と公開境界の明確化が必要。
+- Decision: 分類は **Improve external** を維持する。
+- Consequences: 導入手順の責務を維持し、運用内部情報や指定外ファイルへの変更を回避する。
+
+### Phase 3 Plan
+- Scope: `issue-doc-ops-05-08-04doc-installation.md` と `04_Documentation/installation.md` の同期更新。
+- Non-goals: e2e/operations/security文書の改訂、実装コード変更、インフラ設定の新規仕様化。
+- AC:
+  1. 分類と根拠（Audience/Goal/Public boundary/Non-goal）を追跡可能にする。
+  2. Go/No-Go判定条件を本文で確認可能にする。
+  3. docs-check コマンドを再実行可能な形で残す。
+- DoD:
+  1. Phase 1〜6 の記録が残る。
+  2. 変更範囲が許可4ファイル内に閉じる。
+  3. Verifyが成功し、自己修復3回以内で完了。
+- Validation:
+  - `rg -n "Stream I strict-serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md 04_Documentation/installation.md`
+  - `git diff --check`
+- Stop conditions:
+  1. 修復4回目相当
+  2. Requirement meta I/F 矛盾
+  3. 指定外ファイル編集が必要になった場合
+
+### Phase 4 Execute
+- 実施: 本IssueにStream Iの直列実行記録を追記。
+- 実施: `installation.md` 側に同一フェーズ記録を追記してIssue整合を固定。
+
+### Phase 5 Verify
+- docs-checkを実行し、失敗時は最大3回まで自己修復。
+- 4回目相当または前提崩れ時は即停止し `Hold`。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 次アクション: docs-only PR 作成へ進行。

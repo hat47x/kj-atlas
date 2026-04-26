@@ -190,3 +190,35 @@ Docker未導入です。Docker Engine + Compose を導入するか、上記のSQ
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 次アクション: Composeコマンド変更時は `04_Documentation/e2e_testing.md` との同期を同一差分で確認。
+
+## Stream I strict serial execution（2026-04-26 / DOC-OPS-05-08）
+
+### Phase 1 Read
+- 対象再読: `04_Documentation/installation.md` と `issue-doc-ops-05-08-04doc-installation.md`。
+- 直列前提: DOC-OPS-05-03 完了（Ready）後に着手。
+
+### Phase 2 ADR/CDC
+- Context: 公開導入ガイドとして最小導入手順と公開境界の両立が必要。
+- Decision: **Improve external** を維持し、内部運用情報は追加しない。
+- Consequences: 導入再現性を維持しつつ、詳細検証は `04_Documentation/e2e_testing.md` 導線へ委譲。
+
+### Phase 3 Plan
+- Scope: 本文書の直列実行ログ追記とIssue整合。
+- Non-goals: 手順仕様の拡張、実装変更、指定外ファイル変更。
+- AC: Audience/Goal/Public boundary/Non-goal/Go-NoGo が追跡可能。
+- DoD: Phase 1〜6記録、docs-check成功、指定外差分0。
+- Validation: `rg` + `git diff --check`。
+- Stop conditions: 修復4回目相当 / Requirement meta I/F矛盾 / 指定外編集必要化。
+
+### Phase 4 Execute
+- 実施: Stream I の実行記録を追記。
+- 維持: Compose手順・SQLite代替手順・Go/No-Go構造。
+
+### Phase 5 Verify
+- 実行: `rg -n "Stream I strict serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/installation.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回、4回目相当で停止。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 次アクション: docs-only PRへ進行。
