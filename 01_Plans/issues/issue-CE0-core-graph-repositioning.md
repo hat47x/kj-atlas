@@ -478,3 +478,32 @@
 - Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（独立性制約遵守、single-file / contract-only 維持）。
 - 未承認事項在庫: なし。今後AC/DoD不足が検出された場合はドラフト提案を追記し、合意まで `held` で停止する。
+
+## Phase Execution Record（2026-04-25 / Stream C専任 / CE0 scope-fixed contract-only run）
+### Phase 1 Read（role / transition / no-go 再読）
+- 実行開始時Readを実施し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（canonical 5 IDs）を再確認。
+- 直前記録との差分確認: 語彙ドリフト 0 件、No-Go語彙変更 0 件、SafeMode境界（既定ON維持）差分 0 件。
+
+### Phase 2 Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
+- Scope: 本Issue単体の契約文言整合と実行記録追記のみ（single-file / contract-only）。
+- Non-Goals: 実装変更、CE0契約ID再定義、No-Go語彙変更・拡張、SafeMode既定ON後退、未承認事項の確定化。
+- AC/DoD: 既存定義（語彙固定・`patch+approval`固定・docs-check pass・self-correction 最大3回）を満たす方針を再確認。
+- Validation: `docs-check` と `git diff --check` を実施。
+- Stop Conditions: 語彙ドリフト検出、No-Go語彙変更検出、SafeMode後退兆候、Verify 3回超過で停止。
+
+### Phase 3 ADR Consensus（方針差分時のみ CDC）
+- 判定: `No ADR delta`（新規CDC起票不要）。
+- 方針差分が発生した場合のみ `Context / Decision / Consequences` を `pending` で起票し、承認まで `held` を維持する。
+
+### Phase 4 Execute（contract-only修正）
+- 本Issue本文のみを更新し、実装領域（handler/UI/DB/worker/API/Schema migration）への変更は実施しない。
+- 固定語彙（`role / transition / no-go`）とSafeMode境界の不変条件を維持。
+
+### Phase 5 Verify（docs-check / diff check / 最大3回修復）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- self-correction 実績: 0/3（上限超過なし）。
+
+### Phase 6 Proceed（Go判定）
+- 判定: `Done`（AC充足、docs-check pass、未承認事項の確定化なし）。
+- フェイルセーフ再確認: 語彙ドリフト / No-Go語彙変更 / SafeMode後退 / 3回超過が発生した場合は即停止し、`held` または `stopped_for_clarification` とする。
