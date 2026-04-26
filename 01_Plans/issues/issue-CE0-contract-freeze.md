@@ -477,6 +477,17 @@ type PatchProposal = {
   - 未承認決定の確定扱いなし（`held` 維持）
   - 自己修復上限は Verify 内で最大3回、4回目相当で停止
 
+### 2026-04-26 prompt-b run（Plan → Execute → Verify → Proceed）
+- Phase 1 Read同期: 開始前に本Issueを再読し、CE0 Contract ID凍結・No-Go 5語彙ID・safeMode既定（`safeMode=true`, `allowUnreviewedText=false`）を再確認。
+- Phase 2 ADR/CDC（Context / Decision / Consequences）:
+  - Context: Stream BはCE0契約SSOT維持を目的とし、CE1/CE2/CE4はread-only参照に限定する。
+  - Decision: Contract ID再定義禁止、safeMode後退禁止、指定ファイル単独編集を継続する。
+  - Consequences: 下流再定義と境界逸脱を抑止し、逸脱時は`held`へ即停止できる状態を維持する。
+- Phase 3 Plan: contract-onlyの記録更新に限定し、本文意味変更を伴う編集を禁止する。
+- Phase 4 Execute: 本IssueにPrompt B実行ログを追記（指定外ファイル編集なし）。
+- Phase 5 Verify: docs-check 3点を実行し、self-correction 0/3で通過。
+- Phase 6 Proceed: **Go**（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` / `safeMode regression=0`）。
+
 ### Verification log template（self-correction <= 3）
 - run_2026-04-26 attempt_1:
   - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => `ok: validated 5 active issue memos`
