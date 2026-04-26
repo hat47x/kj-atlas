@@ -55,6 +55,15 @@ This document specifies a deterministic Local-first escalation policy: system de
 - 送信前にsafeMode/赤線化ポリシーを適用。
 - 送信データは最小化し、不要メタデータを含めない。
 
+### 4.3 Multi-Model Routing（責務分離）
+
+- `intermediate` 段階（分類/要約/フォーマット変換/条件分岐）は、
+  低遅延・低コスト系モデル（例: Groq 上の Llama / Qwen）を許可する。
+- `final_judgement` 段階（accept/reject/merge/finalize の提案生成）は、
+  高推論系モデル（例: Claude / GPT-5）へ固定する。
+- `intermediate` は proposal の材料生成に限定し、最終採否の決定権を持たない。
+- `final_judgement` 経路が利用不能な場合、`intermediate` へ権限昇格せず `held` へ遷移する（fail-closed）。
+
 ---
 
 ## 5. コスト制御
@@ -124,6 +133,16 @@ CE2 Stream C は以下の順序を固定する。
 
 `Verify` は最大3回まで修復再試行を許可し、3回以内に解消しない場合は `status=held` で停止する。
 `held` 中は `accepted/rejected/proposed` への自動遷移を禁止し、drift解消の手動確認が完了するまで Proceed 不可とする。
+
+### CE2-C5: 監査必須項目（Routing）
+
+CE2/CE4 で生成される監査イベントには、少なくとも以下を含める。
+
+- `routingStage`: `intermediate | final_judgement`
+- `provider`
+- `model`
+- `sourceBundleHash`
+- `proposalId`（存在する場合）
 
 
 ## 7. 設定キー整合
