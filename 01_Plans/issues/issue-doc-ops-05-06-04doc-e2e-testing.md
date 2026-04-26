@@ -1161,3 +1161,26 @@
 ### Phase 6 Proceed
 - 判定: **Ready**
 - 停止条件確認: 自己修復上限超過なし、依存仕様不整合なし、許可外ファイル編集なし。
+
+## Stream J phase-sync serial update（2026-04-26 / DOC-OPS-05-06）
+
+### Phase 1 Read sync
+- 再読同期: `04_Documentation/e2e_testing.md` / `ADR-0019` / 本Issueの Requirement meta I/F を同一フェーズで再確認。
+- 依存扱い: 他ストリーム成果は参照のみとし、待機依存は設定しない。
+
+### Phase 2 Plan sync
+- 直列実行順: 05-06 → 05-07 → 05-08 を固定。
+- AC同期: Classification=Improve external、VerificationLevel=docs-check、GoNoGoGate=Required を維持。
+
+### Phase 3 Execute sync
+- 実施: 本Issueにフェーズ同期記録を追記（docs-only / allowlist内）。
+- 非実施: 実装コード変更、指定外Issue更新。
+
+### Phase 4 Verify sync
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `git diff --check`
+- 自己修復: 失敗時は最大3回、4回目相当は停止。
+
+### Phase 5 Proceed sync
+- 判定: **Ready**
+- 停止条件: 自己修復上限超過 / Requirement meta矛盾 / allowlist外変更要求。

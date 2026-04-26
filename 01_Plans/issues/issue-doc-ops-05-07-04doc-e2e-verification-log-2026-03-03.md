@@ -1135,3 +1135,26 @@
 ### Phase 6 Proceed
 - 判定: **Ready**
 - 停止条件確認: 自己修復上限超過なし、依存仕様不整合なし、許可外ファイル編集なし。
+
+## Stream J phase-sync serial update（2026-04-26 / DOC-OPS-05-07）
+
+### Phase 1 Read sync
+- 再読同期: `04_Documentation/e2e_verification_log_2026-03-03.md` / `04_Documentation/e2e_testing.md` / 本Issueの Requirement meta I/F を確認。
+- 依存扱い: 先行05-06は参照のみ、ブロッキング依存は設定しない。
+
+### Phase 2 Plan sync
+- 直列順序維持: 05-06完了記録確認後に05-07を更新。
+- AC同期: Classification=Move internal、VerificationLevel=docs-check、GoNoGoGate=Required を維持。
+
+### Phase 3 Execute sync
+- 実施: 本Issueへフェーズ同期記録を追記し、分類決定を不変で維持。
+- 非実施: 移設本体作業・指定外ファイル更新。
+
+### Phase 4 Verify sync
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+- 自己修復: 失敗時最大3回、4回目相当で停止。
+
+### Phase 5 Proceed sync
+- 判定: **Ready**
+- 停止条件: 自己修復上限超過 / Requirement meta矛盾 / allowlist外変更要求。
