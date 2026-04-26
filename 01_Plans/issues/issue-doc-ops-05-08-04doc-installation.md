@@ -1328,3 +1328,36 @@
 ### Phase 6 Proceed sync
 - 判定: **Ready**
 - 停止条件: 自己修復上限超過 / Requirement meta矛盾 / allowlist外変更要求。
+
+
+## 2026-04-26 Serial control record（Phase 1→5 / DOC-OPS-05-08）
+
+### Phase 1 Read
+- 先行固定参照: `DOC-OPS-05-03 (configuration)` の固定方針を参照。
+- 依存切断確認: 本Issueは configuration を入力参照とし、実行依存を作らない。
+
+### Phase 2 Plan（不足AC/DoD補完）
+- AC補完:
+  1. installation側の判断は `configuration-fixed` を参照して追随する。
+  2. 未確定参照は `TBD-placeholder: config-anchor-installation` として固定。
+  3. config境界の再定義要求が出た場合は即停止（Hold）。
+- DoD補完:
+  - 5Phaseを直列で記録。
+  - Verifyは最大3回、4回目相当は停止。
+
+### Phase 3 Execute
+- 本Issueに `参照のみ追随` と `TBD-placeholder` を明記。
+- ADR/CDC（方針差分のみ）:
+  - Context: configuration先行固定に合わせ、installationは追随運用へ変更。
+  - Decision: 承認前のため **Pending**。
+  - Consequences: configuration更新が確定するまでinstallation側の確定化を禁止。
+
+### Phase 4 Verify（cycle 1/3）
+- 実施コマンド:
+  - `rg -n "config-anchor-installation|Decision: 承認前のため \*\*Pending\*\*|参照のみ追随" 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+  - `git diff --check`
+- 結果: docs-check観点で問題なし。
+
+### Phase 5 Proceed
+- 判定: **Needs-decision**（承認前確定禁止のため）
+- 次アクション: configuration境界が再定義されないことを確認後、承認プロセスへ回付。
