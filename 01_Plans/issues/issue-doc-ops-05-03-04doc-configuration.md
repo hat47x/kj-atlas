@@ -1245,3 +1245,33 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - Proceed条件: 公開改善PRの起票へ進行可能。停止条件（自己修復3回超過）は未該当。
+
+
+## 2026-04-26 Serial control record（Phase 1→5 / DOC-OPS-05-03）
+
+### Phase 1 Read
+- 対象再読: 本Issueメモのみを再読し、`configuration` を先に固定する依存切断ルールを確認。
+- 制約確認: 編集対象は本Issue/installation/releaseの3ファイルのみ。指定外ファイル編集は禁止。
+
+### Phase 2 Plan（不足AC/DoD補完）
+- AC補完:
+  1. `configuration` を基準仕様（先行固定）として扱う。
+  2. 後続Issue（installation/release）は本Issueを**参照のみ**し、実行依存を持たない。
+  3. `mock` 参照先が未確定な項目は `TBD-placeholder` で固定する。
+- DoD補完:
+  - 直列順序 `Read → Plan → Execute → Verify → Proceed` を1サイクルずつ記録。
+  - Verify失敗時の自己修復は最大3回。4回目相当は停止。
+
+### Phase 3 Execute
+- 本Issueに直列制御ルール（依存切断・placeholder・停止条件）を追記。
+- ADR/CDCは**方針差分が発生した場合のみ**作成し、承認前は `Pending` 扱いとする運用を明記。
+
+### Phase 4 Verify（cycle 1/3）
+- 実施コマンド:
+  - `rg -n "2026-04-26 Serial control record|TBD-placeholder|承認前は `Pending`" 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+  - `git diff --check`
+- 結果: 体裁崩れなし。追加ルールの追跡可能性を確認。
+
+### Phase 5 Proceed
+- 判定: **Ready（configuration先行固定）**
+- 次Issueへの引き継ぎ: installation/releaseは本Issueの固定方針を参照のみで追随する。

@@ -488,3 +488,36 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 次アクション: `Improve external` 方針のまま、対象Docの公開改善タスクへ接続。
+
+
+## 2026-04-26 Serial control record（Phase 1→5 / DOC-OPS-05-12）
+
+### Phase 1 Read
+- 先行固定参照: `DOC-OPS-05-03 (configuration)` を一次参照として再読。
+- 依存切断確認: releaseは configuration参照のみで追随し、他Issue依存を持たない。
+
+### Phase 2 Plan（不足AC/DoD補完）
+- AC補完:
+  1. releaseの分類/公開境界は configurationの固定境界に整合する。
+  2. 未確定参照は `TBD-placeholder: config-anchor-release` で保持。
+  3. 対象外ファイル編集要求・未承認確定化要求は停止トリガー。
+- DoD補完:
+  - 5Phaseをissue単位で完了してから次へ進む。
+  - Verify修復回数は最大3回。
+
+### Phase 3 Execute
+- 本Issueへ `参照のみ追随` と placeholder運用を追記。
+- ADR/CDC（方針差分のみ）:
+  - Context: release運用を configuration先行固定に合わせる必要がある。
+  - Decision: 承認前のため **Pending**。
+  - Consequences: 公開手順の最終確定は承認後に限定される。
+
+### Phase 4 Verify（cycle 1/3）
+- 実施コマンド:
+  - `rg -n "config-anchor-release|Decision: 承認前のため \*\*Pending\*\*|参照のみ追随" 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+  - `git diff --check`
+- 結果: 追記内容の検索性と差分体裁を確認。
+
+### Phase 5 Proceed
+- 判定: **Needs-decision**（承認前確定禁止）
+- 次アクション: 承認完了後に release側の最終固定を実施。
