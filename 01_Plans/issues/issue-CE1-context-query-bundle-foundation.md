@@ -1031,3 +1031,43 @@
 - Phase冒頭で本対象ファイルを再読し、AC/DoDとVerify結果の整合を再確認。
 - 判定: **Proceed**（CE1 I/F凍結を維持、CE2/CE4へのread-only handoff継続）。
 - 停止条件監視: 前提崩壊なし / 未定義競合なし / 修復上限超過なし。
+## Stream D Execution Record（2026-04-26 / CE1 serial phase contract lock）
+
+### Phase 1 Read（Status/Scope/CE0 read-only再確認）
+- 再読対象を本ファイルに限定し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only とし、CE1側での改名・再採番・再定義を禁止状態で維持。
+- 前提差分ゲート判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD不足補完の合意固定）
+- AC補完をcontract-onlyで固定:
+  - 同一canonical query 3回一致（`queryCanonicalHash` / `bundleHash`）。
+  - `previewConfirmed=false -> 422 preview_required`。
+  - 未定義キーは `400 unknown_contract_key`。
+- DoD補完をcontract-onlyで固定:
+  - CE2/CE4 handoff key は `sourceBundleHash === bundleHash`。
+  - SafeMode regression = 0。
+- 衝突時のみ CDC（Context / Decision / Consequences）を起票し、`held` で承認待ちに遷移する方針を再確認。
+
+### Phase 3 Execute（I/F文言固定）
+- CE1 v1 契約語彙を固定維持:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- 依存切断（mock）を維持:
+  - hash決定論検証は同一canonical queryの3回一致前提。
+  - CE2/CE4への連携は `sourceBundleHash/bundleHash` 契約キーで切断。
+- 実装記述（handler/UI/DB/worker）は追加しない（contract-only維持）。
+
+### Phase 4 Verify（docs-check / 自己修復3回まで）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（再試行不要）。
+
+### Phase 5 Proceed（継続判定）
+- Proceed判定: contract_id_collision=0 / vocabulary_collision=0 / safeMode regression=0 のため継続可。
+- Stopper監視結果:
+  - CE0契約ID改名・再採番: なし
+  - 語彙衝突未解消: なし
+  - safeMode後退: なし
+  - 4回目再試行: なし
