@@ -427,3 +427,35 @@
 ### Phase 5. Proceed/Stop
 - 判定: **Proceed**。
 - 理由: CDC要否判定とAC/DoD補完が反映され、Open化前の品質ゲートを満たす。
+
+## Stream K serial execution record（2026-04-26, release owner）
+
+### Phase 1 Read
+- `04_Documentation/release.md` と本Issueを再読し、公開境界と監査可能性要件（Go/No-Go記録）が維持されていることを確認。
+- 最新差分検知として、判定ログ導線・未実施理由の記録先・停止条件を点検。
+
+### Phase 2 ADR/CDC
+- Context: release文書は公開向け手順であり、監査可能な判定証跡が必要。
+- Decision: 分類は **Improve external** を維持し、Go/No-Go理由を必ず記録する。
+- Consequences: 公開境界を守りつつ、後追い監査で判定根拠を再現できる。
+
+### Phase 3 Plan
+- AC補完提案:
+  - AC-K-12-1: `Audit trail` として「実施コマンド/未実施理由/Go-NoGo判定」をセットで記録する。
+  - AC-K-12-2: 公開境界の外（組織固有承認・秘密情報）を非対象として明記する。
+- DoD補完提案:
+  - DoD-K-12-1: 6Phase記録をIssue/Doc双方へ残す。
+  - DoD-K-12-2: Verify自己修復は3回上限、超過時停止を明示する。
+
+### Phase 4 Execute
+- docs-only 最小差分で `04_Documentation/release.md` に監査ログ必須項目を追記。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "Audit trail|Go/No-Go|未実施|Public boundary|StoppedForClarification" 04_Documentation/release.md`
+  - `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 継続条件: 公開境界と監査可能性が維持されること。

@@ -57,7 +57,13 @@ Go 条件（全て必須）:
 - consistency check は助言（advisory）であり、自動確定機構ではない。
 - 本書は **automatic truth validation**（真偽の自動保証）を提供しない。
 
-## 6. Verify / 停止条件
+## 6. Domain vocabulary compatibility（必須）
+
+- 用語は `00_Prompt/domain.md` の定義を優先し、独自定義で上書きしない。
+- `reviewState` は `unreviewed` / `human_reviewed` を正規とする。
+- SafeMode, share/export の境界表記を既存仕様と矛盾させない。
+
+## 7. Verify / 停止条件
 
 ```bash
 rg -n "Audience|This document decides|This document does not decide|reviewState|unreviewed|reviewed|proposal|auto-apply|SafeMode" 04_Documentation/narratives.md
@@ -69,3 +75,27 @@ git diff --check
 - 上流正本との矛盾を検知。
 - AI生成結果を確定情報として扱う記述が混入。
 - Verify自己修復が3回を超過。
+
+
+## 8. Stream K serial completion record（2026-04-26）
+
+### Phase 1 Read
+- 本書と `00_Prompt/domain.md` を再読し、語彙矛盾がないことを確認。
+
+### Phase 2 ADR/CDC
+- Context: narrative公開は有効だが語彙衝突は運用リスク。
+- Decision: Improve externalを維持し、domain語彙互換を必須化。
+- Consequences: 公開利用時の誤解を抑制。
+
+### Phase 3 Plan
+- Go/No-Goへ「domain語彙矛盾なし」を組み込む。
+
+### Phase 4 Execute
+- Domain vocabulary compatibility節を追加。
+
+### Phase 5 Verify
+- `rg -n "Domain vocabulary compatibility|reviewState|human_reviewed|SafeMode|Go/No-Go" 04_Documentation/narratives.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（自己修復0/3）。

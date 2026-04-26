@@ -99,14 +99,22 @@ No-Go 条件:
 - 監査導線（CHANGELOG、タグ、リリースノート）が欠落。
 - SafeMode/strict mode関連の整合未確認。
 
-## 8. Verify
+## 8. Audit trail（公開判定の監査可能性）
+
+公開判定の記録には、最低限次を残します。
+
+1. 実施コマンド（実行した順序を含む）
+2. 未実施項目と理由
+3. Go/No-Go 判定と判定理由
+
+## 9. Verify
 
 ```bash
 rg -n "Audience|This document decides|This document does not decide|SemVer|Go/No-Go|CHANGELOG|tag|Release" 04_Documentation/release.md
 git diff --check
 ```
 
-## 9. 実行フェーズ固定（Read → Plan → Execute → Verify → Proceed）
+## 10. 実行フェーズ固定（Read → Plan → Execute → Verify → Proceed）
 
 リリース作業は次の順序を固定し、順序入れ替えや省略を行わない。
 
@@ -122,7 +130,7 @@ git diff --check
 - 3回で収束しない場合は `StoppedForClarification` として停止し、判断要求を記録する。
 
 
-## DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-12）
+## 11. DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-12）
 
 ### Phase 1 Read（同期）
 - Read同期: `04_Documentation/release.md` と `issue-doc-ops-05-12-04doc-release.md` を再読。
@@ -145,3 +153,27 @@ git diff --check
 
 ### Phase 6 Proceed
 - Ready。公開リリース手順の継続更新へ進行。
+
+
+## 12. Stream K serial completion record（2026-04-26）
+
+### Phase 1 Read
+- 本書とIssue `issue-doc-ops-05-12-04doc-release.md` を再読し、公開境界とGo/No-Go判定導線を確認。
+
+### Phase 2 ADR/CDC
+- Context: release文書は公開運用手順と監査可能性を同時に満たす必要がある。
+- Decision: Improve externalを維持し、Audit trail必須項目を固定。
+- Consequences: 判定根拠と未実施理由を後追い監査で再現可能。
+
+### Phase 3 Plan
+- AC/DoD不足として監査記録項目（実施コマンド/未実施理由/Go-NoGo）を補完。
+
+### Phase 4 Execute
+- Audit trail節を追加し、既存手順は維持。
+
+### Phase 5 Verify
+- `rg -n "Audit trail|Go/No-Go|未実施|Public boundary|StoppedForClarification" 04_Documentation/release.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（自己修復0/3）。
