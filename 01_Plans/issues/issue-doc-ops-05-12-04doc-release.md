@@ -396,3 +396,34 @@
 ### Phase 6 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+## 2026-04-26 Stream N 5フェーズ実行（対象限定: DOC-OPS-05-12）
+
+### Phase 1. Read同期
+- `04_Documentation/release.md` と関連runbook導線（operations/security）を再読し、文書責務境界を確認。
+- 既存Issue本文の `Requirement meta I/F` / AC / Validation / Non-goal の充足状況を再確認。
+
+### Phase 2. CDC要否判定（必要ならADR形式で先に合意）
+- 判定: **追加ADRは不要**（既存ADR群とIssue内CDCで判断可能）。
+- 合意（ADR形式ミニマム）:
+  - Context: release は公開運用手順として再現性重視の文書。
+  - Decision: 本Issueは `Improve external` を維持し、分類再判定は行わない。
+  - Consequences: 文書分類の再議論を抑制し、公開品質改善タスクへ直結できる。
+
+### Phase 3. Plan（AC/DoD補完）
+- AC補完:
+  - Validationの期待レベル `docs-check` と実施コマンドを1対1で追跡可能に固定。
+  - 公開境界（公開対象/内部対象）を節単位で確認可能にする。
+- DoD補完:
+  - release から operations/security 参照導線が欠落していないことを完了条件へ追加。
+
+### Phase 4. Execute + Verify（max 3 self-corrections）
+- Execute: Issue本文へ本5フェーズ記録を追記（スコープ外ファイルは未編集）。
+- Verify:
+  - `rg -n "2026-04-26 Stream N 5フェーズ実行|Phase 1\. Read同期|Phase 2\. CDC要否判定|Phase 3\. Plan|Phase 4\. Execute \+ Verify|Phase 5\. Proceed/Stop" 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+  - `git diff --check`
+- Self-corrections: **0/3**（追加修正なし）。
+
+### Phase 5. Proceed/Stop
+- 判定: **Proceed**。
+- 理由: CDC要否判定とAC/DoD補完が反映され、Open化前の品質ゲートを満たす。
