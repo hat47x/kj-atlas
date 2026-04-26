@@ -29,6 +29,23 @@
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
+## Prompt E execution contract（2026-04-26）
+### Context
+- Stream E / CE2 は low-risk AI assist を proposal-only 境界で運用し、実装経路（auto-apply）を持たないことが前提である。
+- `reviewState=human_reviewed` は人手レビューの監査属性であり、AIが昇格主体にならないことを契約境界として固定する。
+- 6-phase 運用では各Phase開始前の Read 同期が drift 検知の唯一ゲートであり、同期欠落は誤進行リスクを生む。
+
+### Decision
+- proposal-only 境界を固定し、auto-apply を常時禁止する。
+- AI による `human_reviewed` 昇格を禁止し、`unreviewed` 提案のみを許可する。
+- 各Phase開始前に Read 同期を必須化し、差分検知時は `status=held` で停止する。
+- Verify 失敗時の自己修復は `1/3`〜`3/3` までに制限し、`4/3` 相当で fail-safe 停止する。
+
+### Consequences
+- CE2 のAI支援は候補提示（proposal）に限定され、採用・昇格の最終判断は常に人手責任として保持される。
+- Phase進行は Read同期記録を伴うため、drift 発生時の停止根拠と監査再現性が確保される。
+- 自己修復上限を超えた場合は作業継続より安全停止が優先され、誤更新の連鎖を防止できる。
+
 
 ## Stream E CE2 phase enforcement update（2026-04-26）
 - proposal-only 境界を固定し、auto-apply は常時禁止とする。
