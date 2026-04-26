@@ -507,3 +507,27 @@
 ### Phase 6 Proceed（Go判定）
 - 判定: `Done`（AC充足、docs-check pass、未承認事項の確定化なし）。
 - フェイルセーフ再確認: 語彙ドリフト / No-Go語彙変更 / SafeMode後退 / 3回超過が発生した場合は即停止し、`held` または `stopped_for_clarification` とする。
+
+## Phase Execution Record（2026-04-26 / Stream B read-sync witness for CE0 only）
+### Phase 1 Read
+- 実行開始時に `issue-CE0-contract-freeze.md` と本Issueを再読し、`role / transition / no-go` と CE0 canonical 5 IDs の差分を確認（差分なし）。
+- 事前想定との差分: なし（`held` へ切替える事象なし）。
+
+### Phase 2 Interface-first
+- Core Graph側は CE0 SSOT を read-only 参照する前提を明文化し、I/F再定義を行わない。
+- 判定キーは CE0 canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）のみを利用する。
+
+### Phase 3 Plan
+- AC/DoD不足の有無を再確認し、不足は未検出。
+- 不足発生時はドラフト追記のうえ `held` 維持、合意前に Execute確定しない方針を再確認。
+
+### Phase 4 Execute / Verify
+- 実施は contract-only の実行記録追記のみ（実装変更なし）。
+- Verify attempt_1:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 Proceed / Fail-safe
+- 判定: `Done`（docs-check pass、語彙差分なし、safeMode後退なし）。
+- 停止条件（競合・前提崩壊・自己修復4回目相当）は継続監視し、発火時は `held` / `stopped_for_clarification` とする。
