@@ -359,3 +359,48 @@
 - 監査欠損成功扱いが無いことを確認。
 - safeMode既定緩和が無いことを確認。
 - Proceed Decision: **Go（contract-only）**。
+
+## Stream F Execution Record（2026-04-26 / 5-phase directive sync）
+
+### Phase 1 Read
+- 完了（CE0 contract IDs、CE1/CE2 read-only境界、監査4点 `query / bundle / proposal / apply`、fail-closed条項を再確認）。
+- 差分検知: なし（契約語彙・No-Go条項ともに変更不要）。
+
+### Phase 2 Interface Contract（CDC先行）
+- CDC Gate（ADR関連の先行確認）:
+  - `CDC-CE4-001`（`queryCanonicalHash` 監査必須化）: **承認済み**。
+  - `CDC-CE4-002`（proposal lifecycle 閉集合固定）: **承認済み**。
+- Decision:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定を継続。
+  - proposal lifecycle は `proposed / accepted / rejected / held` の閉集合を継続。
+  - 監査欠損・AND不成立・`queryCanonicalHash` 欠損は fail-closed 維持。
+- Consequences:
+  - contract-only 境界を維持し、実装詳細やアルゴリズム追記は行わない。
+
+### Phase 3 Plan
+- 実施計画（docs-only / 単一ファイル）:
+  1. 本ファイルに 5-phase 運用記録を追記。
+  2. 他ファイル非編集を維持。
+  3. docs-check と `git diff --check` で検証。
+- Acceptance:
+  - 5-phase順序（Read → Interface Contract → Plan → Execute+Verify → Proceed）で記録されている。
+  - CDC先行（Context/Decision/Consequences）承認済みを明記している。
+  - safeMode緩和・語彙再定義・監査欠損成功扱いが追加されていない。
+
+### Phase 4 Execute+Verify
+- Execute:
+  - 実施: 本ファイルへの追記のみ。
+  - 非実施: 実装追加、他ファイル編集、safeMode境界変更。
+- Verify（Attempt 1 / self-correction 0/3）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（4回目着手なし）。
+
+### Phase 5 Proceed
+- Proceed Decision: **Go（contract-only / docs-only）**。
+- 維持事項:
+  - CE0/CE1/CE2 read-only 境界を維持。
+  - `equivalenceKey + bundleHash`（AND）固定を維持。
+  - 監査4点欠損の fail-closed を維持。
+  - 未承認事項は `held` 維持（確定しない）。
