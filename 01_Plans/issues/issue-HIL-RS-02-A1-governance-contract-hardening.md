@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象6Issue以外は不干渉
+- Non-target file policy: 対象5Issue以外は不干渉
 
 ## Phase 1: Read（再読・差分確認）
 - 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
@@ -44,6 +44,10 @@
 - ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
 - 未承認事項は `pending/held` のまま保持し、確定扱いしない。
 
+### Approval Record（必須）
+- Status: `Pending`（承認記録が追記されるまで Phase 4 へ進行禁止）
+- Required fields: `approved_by`, `approved_at`, `evidence`
+
 ### Consequences
 - A1以外への差戻し禁止。
 - `Pending bypass` 禁止。
@@ -54,10 +58,16 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象差分意図: Go/NoGo判定式と禁止遷移を固定。
-- 非対象不干渉: 対象6Issue外は編集しない。
+- 非対象不干渉: 対象5Issue外は編集しない。
+- Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
+- Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - AC/DoD
   - AC: fixed keys diff=0 / return path唯一 / Pending bypass禁止明記。
   - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。
+- 検証コマンド（Plan時点で固定）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
 
 ### Contract Freeze Snapshot（A2/A3 read-only引き渡し）
 - `contract_id=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -110,8 +120,9 @@ governance_gate_v1:
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
-## Phase 6: Proceed（Go / Conditional / No-Go）
+## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
 - Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合。
 - No-Go: ドリフト、Pending bypass、未定義競合、Self-Correction 3回超過、指定外差分。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
+- 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
