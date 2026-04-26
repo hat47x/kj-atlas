@@ -954,3 +954,43 @@
   - preview bypass許容化: 該当なし
   - safeMode既定緩和: 該当なし
   - Self-Correction 3回超過: 該当なし
+
+---
+
+## Stream D Execution Record（2026-04-26 / CE1 strict 5-phase run）
+
+### Phase 1 Read
+- 本対象ファイルを再読し、`Status / Scope / Related ADR` と lane guard を再確認。
+- CE0参照は read-only（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を維持し、逆流再定義禁止を再確認。
+- 致命条件チェック: 前提崩れ・未定義競合なし（continue）。
+
+### Phase 2 Plan（Read実施後）
+- Read: Phase開始時に本対象ファイルを再読し、Phase 1との差分なしを確認。
+- AC/DoDドラフトを以下で固定（contract-only）:
+  - 同一 canonical query を3回評価し `queryCanonicalHash` / `bundleHash` が3/3一致。
+  - `previewConfirmed=false` は `422 preview_required`。
+  - 未定義キーは `400 unknown_contract_key`。
+  - handoff比較キーは `sourceBundleHash === bundleHash`。
+  - safeMode regression = 0。
+- 非対象の明示: handler / UI / DB / worker 実装記述は追加しない。
+
+### Phase 3 Execute（Read実施後）
+- Read: Phase開始時に本対象ファイルを再読し、Plan固定内容との差分なしを確認。
+- 実施: 本Execution Recordの追記のみ（docs-only / mock-first / contract-only）。
+- 禁止事項遵守: CE0再定義なし、preview bypass許容化なし、safeMode既定緩和なし。
+
+### Phase 4 Verify（Read実施後、修復上限3）
+- Read: Phase開始時に本対象ファイルを再読し、Verify対象が docs-check のみであることを確認。
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0/3（修復不要）。
+
+### Phase 5 Proceed（Read実施後）
+- Read: Phase開始時に本対象ファイルを再読し、Verify結果とDoD達成状態を再確認。
+- Proceed判定: **Go**（CE1 contract-only維持、CE2/CE4 read-only handoff維持）。
+- 致命条件監視:
+  - 前提崩れ: 該当なし
+  - 未定義競合: 該当なし
+  - 修復上限超過: 該当なし
