@@ -684,3 +684,11 @@
 - Phase 3 Execute（単一変更セット）: rerun-52 の同期ログのみを追記し、対象外編集・未承認決定の確定化を行わない。
 - Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-52|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の一致を確認。
 - Phase 5 Proceed（固定値確定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` が一致していること。**
+
+### 6-47. Stream I 共有統合同期ログ（2026-04-26 rerun-53, Phase 1-5）
+
+- Phase 1 Read（3ファイル同時再読）: `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / 本decision-pack を再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Ready=1 / Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 Plan（件数/状態/Queue更新計画）: 更新対象を shared resource 3ファイルに限定し、未承認決定の確定化・件数不一致・Decision Queue不整合を停止条件として維持。
+- Phase 3 Execute（単一変更セット）: rerun-53 の同期ログのみを3ファイルへ同時反映し、指定外ファイル編集を行わない。
+- Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-53|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合一致を確認（self-correction 0/3）。
+- Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
