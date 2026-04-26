@@ -1071,3 +1071,48 @@
   - 語彙衝突未解消: なし
   - safeMode後退: なし
   - 4回目再試行: なし
+
+---
+
+## Stream D Execution Record（2026-04-26 / CE1 user-directed isolated run）
+
+### Phase 1 Read（対象限定・独立性確認）
+- 再読対象を本ファイルのみに限定し、他ファイル編集禁止を再確認。
+- CE0はread-only参照のみ（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）とし、CE1での契約再定義禁止を再確認。
+- 前提差分ゲート: CE0契約ID改名・error semantics語彙変更・safeMode既定変更は未検知（continue）。
+
+### Phase 2 Plan（AC/DoD不足ドラフト→固定）
+- ACドラフト固定（contract-only）:
+  - 同一 canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一 canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false` は `422 preview_required`。
+  - 未定義キーは `400 unknown_contract_key`。
+- DoDドラフト固定（handoff最小I/F）:
+  - CE2/CE4連携比較キーは `sourceBundleHash === bundleHash` のみ。
+  - `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` をCE4監査入力語彙として固定。
+  - safeMode regression = 0。
+- 実装記述（handler/UI/DB/worker）禁止を明示維持。
+
+### Phase 3 Execute（mock依存切断・I/F凍結）
+- mock依存切断をI/F語彙で固定:
+  - CE1は `sourceBundleHash/bundleHash` 比較契約のみを下流handoffに使用。
+  - deterministic hash検証条件を先行固定（同一canonical query 3回一致）。
+- No-Go維持:
+  - `preview_bypass` 混入禁止。
+  - safeMode既定緩和禁止。
+  - CE0契約本文への逆流再定義禁止。
+
+### Phase 4 Verify（docs-check / 修復上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- 修復回数: 0/3（4回目到達前、停止条件は未発火）。
+
+### Phase 5 Proceed（継続判定）
+- 判定: **Proceed**（CE1 contract-only固定を維持、CE2/CE4 read-only handoff継続）。
+- 停止条件監視結果:
+  - preview bypass混入: なし
+  - safeMode後退: なし
+  - 契約語彙衝突未解消: なし
+  - 4回目修復到達: なし
