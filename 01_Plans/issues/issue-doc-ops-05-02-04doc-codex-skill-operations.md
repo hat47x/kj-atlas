@@ -1185,3 +1185,27 @@
 ### Phase 6 Proceed
 - 判定: **Ready**（05-02完了）。
 - 直列遷移: `DOC-OPS-05-09` へ進行。
+
+## 17) Stream I serial execution log（2026-04-26, DOC-OPS-05-02）
+
+### Phase 1 Read sync
+- `Requirement meta I/F` を再読し、`DecisionStatus=Fixed` / `DecisionQueueRef=N/A` / `VerificationLevel=docs-check` を確認。
+- Scope は `04_Documentation/codex_skill_operations.md` のみであることを再確認し、横断改稿を行わないことを固定。
+
+### Phase 2 Plan（ADR 3点）
+- Context: codex skill 運用文書は内部運用要素が強く、公開境界の明示が必要。
+- Decision: 本Issueは **Move internal** 判定を維持し、外部公開向けには参照stub化を次アクションに固定。
+- Consequences: 後続作業は docs-only での移設導線整備に限定し、実装・スキーマ変更は行わない。
+
+### Phase 3 Execute
+- Issue本文上の運用方針（Move internal / docs-check / GoNoGoGate=Required）を再確認し、Stream I の実行ログを追記。
+- 対象外ファイルを編集しないことを明記した。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+- 実行: `git diff --check`
+- 結果: いずれも通過。自己修復は 0 回（上限3回未満）。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- Proceed条件: 次ユニット（移設stub作成）へ進行可能。停止条件（自己修復3回超過）は未該当。

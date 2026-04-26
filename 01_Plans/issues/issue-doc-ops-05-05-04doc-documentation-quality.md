@@ -1142,3 +1142,27 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 継続条件: docs-only スコープ維持、allowlist外ファイルへの変更なし。
+
+## 18) Stream I serial execution log（2026-04-26, DOC-OPS-05-05）
+
+### Phase 1 Read sync
+- `Requirement meta I/F` を再読し、`DecisionStatus=Fixed` / `DecisionQueueRef=N/A` / `VerificationLevel=docs-check` を確認。
+- Scope は `01_Plans/documentation_quality.md` のみであることを再確認し、他Issue/他レイヤへの編集を禁止。
+
+### Phase 2 Plan（ADR 3点）
+- Context: documentation_quality は内部品質基準の正本であり、公開文書との境界明確化が必要。
+- Decision: 本Issueは **Move internal** 判定を維持し、内部正本としての参照整合を優先する。
+- Consequences: 後続作業は参照導線の整理に限定し、公開向け本文化や実装変更は実施しない。
+
+### Phase 3 Execute
+- 既存の分類決定（Move internal）を変更せず、Stream I の5Phase実行ログのみ追記。
+- 対象外ファイルの変更を行っていないことを確認。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実行: `git diff --check`
+- 結果: いずれも通過。自己修復は 0 回（上限3回未満）。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- Proceed条件: 内部文書配置整理の次タスクへ進行可能。停止条件（自己修復3回超過）は未該当。
