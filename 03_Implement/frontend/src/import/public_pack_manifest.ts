@@ -88,6 +88,7 @@ export function validatePublicPackManifest(input: unknown): PublicPackManifestVa
 
   const packs: PublicPackManifestEntry[] = [];
   const errors: PublicPackManifestValidationError[] = [];
+  const seenPackIds = new Set<string>();
 
   input.packs.forEach((entry, index) => {
     const parsedEntry = parseEntry(entry, index);
@@ -96,6 +97,12 @@ export function validatePublicPackManifest(input: unknown): PublicPackManifestVa
       return;
     }
 
+    if (seenPackIds.has(parsedEntry.entry.id)) {
+      errors.push({ path: `packs[${index}].id`, message: `duplicate id: ${parsedEntry.entry.id}` });
+      return;
+    }
+
+    seenPackIds.add(parsedEntry.entry.id);
     packs.push(parsedEntry.entry);
   });
 
@@ -112,6 +119,10 @@ export function validatePublicPackManifest(input: unknown): PublicPackManifestVa
   }
 
   if (typeof input.defaultPackId === "string") {
+    if (!seenPackIds.has(input.defaultPackId)) {
+      return { ok: false, errors: [{ path: "defaultPackId", message: "defaultPackId must reference an existing packs[].id." }] };
+    }
+
     manifest.defaultPackId = input.defaultPackId;
   }
 

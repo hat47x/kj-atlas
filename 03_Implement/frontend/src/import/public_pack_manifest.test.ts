@@ -89,6 +89,32 @@ describe("validatePublicPackManifest", () => {
       },
     });
   });
+
+  it("rejects duplicate pack ids", () => {
+    const result = validatePublicPackManifest({
+      packs: [
+        { id: "main", documentPath: "main.document.json", visibility: "Public" },
+        { id: "main", documentPath: "secondary.document.json", visibility: "Org" },
+      ],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ path: "packs[1].id", message: "duplicate id: main" }],
+    });
+  });
+
+  it("rejects defaultPackId that is missing from packs", () => {
+    const result = validatePublicPackManifest({
+      defaultPackId: "missing",
+      packs: [{ id: "main", documentPath: "main.document.json", visibility: "Public" }],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ path: "defaultPackId", message: "defaultPackId must reference an existing packs[].id." }],
+    });
+  });
 });
 
 describe("parsePublicPackManifest", () => {
