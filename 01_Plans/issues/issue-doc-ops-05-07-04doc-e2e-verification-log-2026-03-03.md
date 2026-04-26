@@ -1108,3 +1108,30 @@
 - 自己修復（Verify失敗時の修正）は最大3回。
 - **4回目相当は停止**し、状態を `Hold` に更新する。
 - **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
+
+
+## Stream J serial completion record（2026-04-26 / DOC-OPS-05-07）
+
+### Phase 1 Read
+- 対象Issue本文と `04_Documentation/e2e_verification_log_2026-03-03.md` を再読し、分類（Move internal）と証跡用途を確認。
+
+### Phase 2 ADR/CDC
+- Context: E2E verification log は実測証跡を保持する内部文書であり、手順正本とは厳密に分離する必要がある。
+- Decision: Classification **Move internal** を維持し、手順正本は `04_Documentation/e2e_testing.md` に固定する。
+- Consequences: 本Issueの更新は Date/Route/Command/Result/Evidence/Next action の実測記録品質に限定する。
+
+### Phase 3 Plan
+- AC補完: ①実測ログ最小項目の維持 ②公開手順文書との役割分離明記 ③Blocked時の再開条件明記。
+- DoD補完: docs-check で文言・リンク・体裁を確認し、6Phase記録を追跡可能にする。
+
+### Phase 4 Execute
+- 本Issueへ Stream J の6Phase記録を追加し、分類/境界/検証方針の既存決定を維持。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial completion record|Move internal|Date/Route/Command/Result/Evidence/Next action" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 停止条件確認: 自己修復上限超過なし、依存仕様不整合なし、許可外ファイル編集なし。

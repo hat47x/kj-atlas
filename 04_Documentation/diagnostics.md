@@ -480,3 +480,29 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 ### Phase 5 Proceed
 - 判定: **Ready**
 - フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。
+
+
+## Stream J serial cycle（2026-04-26 / DOC-OPS-05-04）
+
+### Phase 1 Read
+- 本文と対応Issue（DOC-OPS-05-04）を再読し、Classification=Improve external と docs-check 前提を確認。
+
+### Phase 2 ADR/CDC
+- Context: diagnostics は外部運用者が参照する診断仕様であり、内部実行ログとは分離が必要。
+- Decision: 本書を「診断仕様の正本」として維持し、運用履歴は verification log 側へ分離する。
+- Consequences: 本書の更新は仕様・期待結果・フォールバック記述に限定され、日付付き実測ログは記載しない。
+
+### Phase 3 Plan
+- AC補完: Audience/Goal/Public boundary/Outcome/Related を冒頭メタで追跡可能にする。
+- DoD補完: docs-check（メタ/導線/体裁）に合格し、6Phase記録を残す。
+
+### Phase 4 Execute
+- Stream J の6Phase記録を追記（docs-only、最小差分）。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial cycle|Phase 2 ADR/CDC|diagnostics は外部運用者" 04_Documentation/diagnostics.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**

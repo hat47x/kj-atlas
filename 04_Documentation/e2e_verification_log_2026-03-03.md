@@ -277,3 +277,29 @@ docker --version && docker compose version
 ### Phase 5 Proceed
 - 判定: **Ready**
 - 継続条件: Compose未実施リスクは本ログへ追記し、公開手順は `e2e_testing.md` に集約維持。
+
+
+## Stream J serial cycle（2026-04-26 / DOC-OPS-05-07）
+
+### Phase 1 Read
+- 本文と対応Issue（DOC-OPS-05-07）を再読し、分類=Move internal とログ文書境界を確認。
+
+### Phase 2 ADR/CDC
+- Context: 本書は実測ログ（証跡）であり、実行手順の正本を兼ねると運用判断が曖昧化する。
+- Decision: 本書は実測記録専用とし、手順正本は `04_Documentation/e2e_testing.md` 参照に固定する。
+- Consequences: 各更新は Date/Route/Command/Result/Evidence/Next action の品質維持に限定される。
+
+### Phase 3 Plan
+- AC補完: 実測ログ最小必須項目を満たし、Blocked時の再開条件を必ず記録する。
+- DoD補完: docs-check 合格、6Phase記録追跡可能、手順正本との混同なし。
+
+### Phase 4 Execute
+- Stream J の6Phase記録を追記（docs-only、最小差分）。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial cycle|実測ログ|手順正本|Date/Route/Command/Result/Evidence/Next action" 04_Documentation/e2e_verification_log_2026-03-03.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**
