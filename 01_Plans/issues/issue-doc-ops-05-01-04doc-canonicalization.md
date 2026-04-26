@@ -956,7 +956,7 @@
 
 ### Phase 4 Verify
 - 実行コマンド:
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `git diff --check`
 - 失敗時は同一ファイル内の修復を最大3回までとし、超過時はHold。
 
@@ -1433,3 +1433,35 @@
 - 判定: **Ready**
 - 根拠: スコープ逸脱なし、Fixed項目維持、docs-check手順を明示。
 - フェイルセーフ: 公開境界の推測確定要求・指定外ファイル編集要求・4回目再試行が発生した場合は停止して指示待ち。
+
+## 19) 2026-04-26 serial cycle（Read → Plan → Execute → Verify → Proceed）
+
+### Read
+- 対象を本Issueファイルのみに限定し、Classification=`Move internal` / VerificationLevel=`docs-check` / DecisionStatus=`Fixed` を再確認。
+- 既存記録の重複は維持しつつ、今回サイクルでは **AC/DoD不足の補強ドラフト提示** と **検証ログ追加** のみ実施する。
+
+### Plan
+- スコープ: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` のみ。
+- 非目標: `04_Documentation/canonicalization.md` を含む他ファイル変更、実装コード変更、ADR新設。
+- AC/DoD不足ドラフト（今回提示）:
+  - AC-K1: `Expected verification level` と `VerificationLevel` の一致を Verify で都度記録する。
+  - AC-K2: Proceed 判定は `Ready / Hold / Needs-decision` の三値とし、根拠（DecisionStatus/検証結果）を1行で残す。
+  - DoD-K1: Read→Plan→Execute→Verify→Proceed の5フェーズを同一セクションで完結記録する。
+  - DoD-K2: Verify失敗時の自己修復は同一サイクル内で最大3回、4回目相当は即Holdを明記する。
+
+### Execute
+- 本セクション（19）を追記し、ユーザー指定の必須要件（AC/DoD不足ドラフト、docs-check、差分監査、3回自己修復上限）を明文化。
+- 既存の分類方針（Move internal）・GoNoGoGate（Required）・SecurityGateImpact（public-exposure）は変更しない。
+
+### Verify
+- docs-check:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 差分監査:
+  - `git diff --check`
+  - `git diff -- 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+- 自己修復上限:
+  - 失敗時は同一ファイル内で最大3回まで修復。4回目相当は **Hold** に移行して停止。
+
+### Proceed
+- 判定: **Ready**
+- 根拠: DecisionStatus=`Fixed` を維持し、docs-check + 差分監査で本サイクル追記の整合を確認可能。
