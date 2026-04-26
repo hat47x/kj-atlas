@@ -78,3 +78,30 @@
 
 ### Phase 5 Proceed
 - 判定: **Ready**（公開stub + 内部正本導線を維持）。
+
+
+## DOC-OPS-05-01 Stream G final sync（2026-04-26）
+
+### Phase 1 Read
+- `04_Documentation/canonicalization.md` と対応Issueを再読し、分類・公開境界・検証レベルの整合を確認。
+
+### Phase 2 ADR/CDC
+- Context: canonicalization の詳細は設計正本に集約し、公開文書は概要に限定する必要がある。
+- Decision: **Move internal** を継続し、本書は公開stubとして維持する。
+- Consequences: 公開境界の明確化により露出リスクを抑制し、詳細は `02_Architecture/schemas.md` / `02_Architecture/architecture.md` 参照へ統一。
+
+### Phase 3 Plan
+- Scope: 本書の配置方針と導線の固定。
+- Non-goals: 実装仕様変更、他文書の横展開編集。
+- AC/DoD: Audience / Goal / Public boundary / Migration policy / Non-goal / Go-NoGo 条件の維持、docs-check実施、6Phase記録。
+
+### Phase 4 Execute
+- 実施: Stream G完了ログを追記し、Issueとの整合（Move internal + 公開stub運用）を固定。
+
+### Phase 5 Verify
+- docs-check相当: ヘッダメタ・Go/No-Go条件・内部正本導線を再確認。
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 後続最小メモ: 設計正本が更新された場合のみ、stub導線を同期更新する。

@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-01 04_Documentation/canonicalization.md の配置見直し
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Ready
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD
@@ -56,19 +56,19 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `04_Documentation/canonicalization.md` の分類結果（内部移設 or 対外改善）が本文に明記される。
-- [ ] 分類の根拠として Audience / Goal / 公開境界の観点が記録される。
-- [ ] 変更先候補（移設先または改善対象節）が明記される。
-- [ ] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
-- [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
-- [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
-- [ ] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
+- [x] `04_Documentation/canonicalization.md` の分類結果（内部移設 or 対外改善）が本文に明記される。
+- [x] 分類の根拠として Audience / Goal / 公開境界の観点が記録される。
+- [x] 変更先候補（移設先または改善対象節）が明記される。
+- [x] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
+- [x] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
+- [x] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
+- [x] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 対象文書の Audience / Goal / Non-goal を確認する。
-- [ ] T2 内部移設か対外改善かを判定し、根拠を本文へ追記する。
-- [ ] T3 次の実行単位（移設先作成 or 公開改善PR）を明記する。
+- [x] T1 対象文書の Audience / Goal / Non-goal を確認する。
+- [x] T2 内部移設か対外改善かを判定し、根拠を本文へ追記する。
+- [x] T3 次の実行単位（移設先作成 or 公開改善PR）を明記する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -1293,3 +1293,61 @@
 ### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+
+## 17) Stream G final execution（2026-04-26 / DOC-OPS-05-01 単独完遂）
+
+### Phase 1 Read（状態同期）
+- 再読対象: `01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md` / `04_Documentation/canonicalization.md`。
+- 確認結果: `Status=Ready`, `Priority=P2`, `Scope=04_Documentation/canonicalization.md`, `Expected verification level=docs-check`, Requirement meta I/F（RequirementID / GoNoGoGate / SecurityGateImpact / VerificationLevel）は整合。
+- 事前想定との差分: なし（`DecisionStatus=Fixed` のため追加判断待ちは不要）。
+
+### Phase 2 ADR/CDC（明文化）
+- Context: canonicalization は設計・契約寄り情報が中心で、公開資料としては「概要のみ」を維持し内部正本へ誘導する必要がある。
+- Decision: **Move internal** を採用継続。`04_Documentation/canonicalization.md` は外部向け stub、詳細は `02_Architecture/schemas.md` / `02_Architecture/architecture.md` に集約する。
+- Consequences:
+  - 利点: 公開境界の明確化、内部詳細の露出抑制、参照正本の一貫性向上。
+  - 副作用: 外部向け情報量は限定されるため、詳細確認は内部正本参照が前提。
+  - 後続作業: 必要時のみ docs-only で「導線更新」と「stubの最小改善」を行う。
+
+### Phase 3 Plan（AC/DoD合意）
+- Scope: Issue本文と `04_Documentation/canonicalization.md` の配置方針・実行計画の固定。
+- Non-Goals: 実装コード変更、他DOC-OPS Issue編集、`04_Documentation/security*.md` / `operations.md` の編集。
+- Acceptance Criteria:
+  1. 分類結果（Move internal）がIssue/対象文書の両方で一貫して明記されている。
+  2. 根拠（Audience / Goal / Public boundary）が追跡可能。
+  3. 次アクション（内部正本導線の維持・必要時のdocs-only更新）が明記されている。
+  4. Verification が `docs-check` と一致している。
+- DoD:
+  - Phase 1〜6 の記録が残る。
+  - AC充足、GoNoGoGate=Required の判定基準維持、SecurityGateImpact=public-exposure を明示。
+  - スコープ外ファイル変更なし。
+- Validation Plan:
+  - `rg -n "DOC-OPS-05 Classification|Audience|Goal|Public boundary|Migration policy|Non-goal|Go/No-Go" 04_Documentation/canonicalization.md`
+  - `rg -n "Stream G final execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- Stop Conditions:
+  1. 自己修復3回超過
+  2. Scope/Requirement meta I/F 矛盾
+  3. 未定義ファイル競合
+  4. allowlist外編集が必要になった場合
+
+### Phase 4 Execute（実行）
+- Issue本文: 本セクションを追加し、Move internal方針・CDC・AC/DoD・検証手順・完了判定を固定。
+- 対象文書: 公開stubとしての位置づけを維持し、本Issueとの整合ログを追記。
+- スコープ逸脱: なし。
+
+### Phase 5 Verify（自己検証）
+- AC充足: 充足（1〜4を確認）。
+- DoD充足: 充足（6Phase記録、Gate明示、allowlist遵守）。
+- docs-check相当:
+  - 記述整合（Issue/Docの分類と境界）
+  - 差分健全性（`git diff --check`）
+- self-correction: 0/3（追加修復なし）。
+
+### Phase 6 Proceed（完了判定）
+- 完了条件: AC/DoD充足、Verify成功、スコープ逸脱なしを確認。
+- 判定: **Ready（完了）**。
+- 後続への最小メモ:
+  - 未完了論点: なし（`DecisionStatus=Fixed`）。
+  - 再開条件: `02_Architecture` 側で canonicalization 詳細の改訂が発生した場合のみ、stub導線の差分同期を docs-only で実施。
