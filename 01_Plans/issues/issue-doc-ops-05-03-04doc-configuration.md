@@ -1221,3 +1221,27 @@
 ### Phase 6 Proceed
 - 判定: **Ready**
 - 次工程: DOC-OPS-05-08 を同一ルールで直列実行する。
+
+## 17) Stream I serial execution log（2026-04-26, DOC-OPS-05-03）
+
+### Phase 1 Read sync
+- `Requirement meta I/F` を再読し、`DecisionStatus=Fixed` / `DecisionQueueRef=N/A` / `VerificationLevel=docs-check` を確認。
+- Scope は `04_Documentation/configuration.md` のみであることを再確認し、他Issueへの横断改稿を禁止。
+
+### Phase 2 Plan（ADR 3点）
+- Context: configuration 文書は外部利用者価値が高く、公開境界と前提条件の明示が品質ゲートになる。
+- Decision: 本Issueは **Improve external** 判定を維持し、Audience/Goal/Public boundary の補強を次アクションに固定。
+- Consequences: 後続作業は公開向け品質改善の docs-only 変更に限定し、実装・設定値の変更は行わない。
+
+### Phase 3 Execute
+- Issue本文の分類方針（Improve external）と検証レベル（docs-check）を維持したまま Stream I ログを追記。
+- 非対象ファイルの変更は実施していない。
+
+### Phase 4 Verify
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+- 実行: `git diff --check`
+- 結果: いずれも通過。自己修復は 0 回（上限3回未満）。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- Proceed条件: 公開改善PRの起票へ進行可能。停止条件（自己修復3回超過）は未該当。
