@@ -11,6 +11,13 @@
 - Verification: `docs-check`
 
 
+## Stream E Request Override（2026-04-26 / latest）
+- Phase順序は **Read → ADR/CDC → Plan → Execute → Verify/Proceed** を唯一の進行順序とする。
+- CE2は **proposal-only** を固定し、auto-apply / auto-confirm / auto-publish を常時禁止する。
+- AIによる `reviewState=human_reviewed` 昇格を禁止し、昇格は人手操作のみ許可する。
+- 各Phase開始時は必ず Read同期を実施し、差分検知時は `status=held` で停止する。
+- Verify失敗時の自己修復は最大3回（`1/3`〜`3/3`）までとし、`4/3` 相当で fail-safe 停止する。
+
 ## Stream E Assignment Lock（2026-04-23）
 - 担当範囲は Stream E 専任とし、CE2 proposal-only 契約固定のみを扱う。
 - 編集許可は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみに限定し、それ以外は編集禁止。
@@ -24,7 +31,7 @@
 - CE2は **proposal-only** を固定し、実装・auto-apply は常時禁止。
 - AIによる `reviewState=human_reviewed` への昇格は常時禁止（人手操作のみ）。
 - CE0/CE1 契約は **参照専用** とし、CE2側で再定義・拡張しない。
-- 強制フェーズ順序は **Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed** のみ。
+- 強制フェーズ順序は **Read → ADR/CDC → Plan → Execute → Verify/Proceed** のみ。
 - AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 4 Execute を開始しない**。
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
@@ -50,7 +57,7 @@
 ## Stream E CE2 phase enforcement update（2026-04-26）
 - proposal-only 境界を固定し、auto-apply は常時禁止とする。
 - AIによる `reviewState=human_reviewed` への自動昇格を常時禁止する。
-- 強制フェーズ順序は **Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed** のみとする。
+- 強制フェーズ順序は **Read → ADR/CDC → Plan → Execute → Verify/Proceed** のみとする。
 - 各Phase開始前に必ず Read 同期を実施し、差分検知時は `status=held` で停止する。
 - Plan→Execute→Verify→Proceed の順序は省略・結合を禁止する。
 - Verify失敗時は自己修復を最大3回（`1/3`〜`3/3`）まで許可し、`4/3` 相当で fail-safe 停止して指示待ちとする。
@@ -75,7 +82,7 @@
 - lifecycle閉集合: `proposed | accepted | rejected | held` のみを許可し、語彙追加・別名導入を禁止する。
 - proposal-only固定: 実装・auto-apply・自動確定・自動公開を常時禁止し、AIは候補提示に限定する。
 - review昇格固定: AIによる `reviewState=human_reviewed` 昇格を禁止し、人手操作のみ許可する。
-- 実行順序固定: `Phase 1 Read同期 -> Phase 2 ADR/CDC（Mock化） -> Phase 3 Plan -> Phase 4 Execute -> Phase 5 Verify -> Phase 6 Proceed`。
+- 実行順序固定: `Read -> ADR/CDC（Mock化） -> Plan -> Execute -> Verify/Proceed`。
 - Read同期必須: 各Phase開始時にRead同期を実施し、差分検知時は `status=held` で停止する。
 - AC/DoDゲート: 不足時はAIドラフト提示のみを許可し、人手合意成立までExecuteを開始しない。
 - Verify再試行上限: 修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
@@ -86,7 +93,7 @@
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
 - `proposal-only` を固定し、auto-apply は常時禁止とする。
 - AIは `reviewState=human_reviewed` へ昇格しない（人手のみ）。
-- 実行フェーズは `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` の順序固定。
+- 実行フェーズは `Read → ADR/CDC → Plan → Execute → Verify/Proceed` の順序固定。
 - 各Phase開始時に Read同期を必須化し、差分検知時は `status=held` で停止する。
 - AC/DoD不足時は AIドラフト提示のみに限定し、人手合意まで Execute を禁止する。
 - 自己修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
@@ -119,7 +126,7 @@
 - auto-apply は常時禁止。
 - `reviewState=human_reviewed` のAI自動昇格は禁止（人手のみ）。
 - `reviewState` は `unreviewed | human_reviewed` のみ許可し、AI提案は常に `unreviewed` に固定する。
-- 強制ワークフローは `Phase 1 Read（必須再読）→ Phase 2 ADR/CDC → Phase 3 Plan（AC/DoD補完）→ Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` に固定する。
+- 強制ワークフローは `Read（必須再読）→ ADR/CDC → Plan（AC/DoD補完）→ Execute → Verify/Proceed` に固定する。
 - 各Phase開始時は必ず Read を実施し、前Phaseの固定契約との差分有無を確認してから進行する。
 - 各Phase開始時の Read 同期で差分を検知した場合は `status=held` で停止し、Planに差し戻して合意を再取得する。
 - AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Phase 4 Execute を開始しない。
@@ -128,7 +135,7 @@
 ## Stream E operation profile（契約固定）
 - 担当は Stream E 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
 - 編集範囲は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみとし、他ファイルは参照専用とする。
-- Phase運用は `Phase 1 Read（必須再読）→ Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute（auto-apply禁止・review auto promotion禁止）→ Phase 5 Verify（Self-Correction最大3回）→ Phase 6 Proceed` を固定する。
+- Phase運用は `Read（必須再読）→ ADR/CDC → Plan → Execute（auto-apply禁止・review auto promotion禁止）→ Verify/Proceed（Self-Correction最大3回）` を固定する。
 - `accepted/rejected/held` は人手判断の結果としてのみ遷移可能とし、AIは `proposed` の候補提示に限定する。
 - 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
 
@@ -240,7 +247,7 @@
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 - [ ] 変更対象ファイルが `issue-CE2-low-risk-ai-assist.md` のみである
 
-## Phase 5 Verify（safeMode後退ゼロを検証 / Self-Correction最大3回）
+## Phase 5 Verify/Proceed（safeMode後退ゼロを検証し、合格時のみProceed / Self-Correction最大3回）
 - 開始時Read: Phase 4 Execute の差分と Verify条件（禁止遷移 / safeMode後退ゼロ / 指定外編集なし）を再確認する。
 - 差分検知時: `status=held` を維持し、自己修復カウンタを増分して再同期する。
 - docs-check（3点セット）を実行し、検証失敗時の自己修復は最大3回（`1/3`〜`3/3`）までとする。
