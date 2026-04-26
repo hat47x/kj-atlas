@@ -1195,3 +1195,29 @@
 - 自己修復（Verify失敗時の修正）は最大3回。
 - **4回目相当は停止**し、状態を `Hold` に更新する。
 - **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
+
+## 18) Stream H serial completion record（2026-04-26 / DOC-OPS-05-09）
+
+### Phase 1 Read
+- 対象Issueと対象文書（`04_Documentation/local_llm_ops_guide.md`）を再読し、05-02完了後に開始したことを確認。
+
+### Phase 2 ADR/CDC
+- Context: local LLM運用は対外価値がある一方、公開境界を越える内部手順の混入を防ぐ必要がある。
+- Decision: 本Issueの分類は **Improve external** を維持し、LLM運用境界の説明に限定する。
+- Consequences: 実装仕様の追加は行わず、公開runbookとしての導線整備に留める。
+
+### Phase 3 Plan
+- AC/DoD不足はなし（既存ACを採用）。
+- 実行計画: docs-only最小差分で、Issueと対象文書に直列フェーズ完了ログを追記する。
+
+### Phase 4 Execute
+- Issue本文に本セクションを追記し、直列フェーズの完了証跡を追加。
+
+### Phase 5 Verify
+- docs-check: `rg -n "Stream H serial completion record|Improve external|LLM運用境界|Phase 5 Verify" 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md 04_Documentation/local_llm_ops_guide.md`
+- diff-check: `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**（05-09完了）。
+- 直列タスク: Stream H 対象範囲の2Issueを完了。
