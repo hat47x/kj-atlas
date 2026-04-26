@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-26 (JST, Stream H shared resource integration rerun-51)
+最終更新: 2026-04-26 (JST, Stream Shared conflict-only sync rerun-52)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -8,7 +8,7 @@
 
 - 2026-03-14 HIL-RS-02 planning syncで、議事録/ADR-0027/Issue4件（Open2+Draft2）を追加し、依存順 `HIL-RS-02-A1 → A2 → A3` とDecision Queue 2件（Open）を反映した。
 - ADRは `ADR-0000`〜`ADR-0026` がすべて Accepted系で、未解決ADRは0件。クリティカルパスは `ADR-0026` 配下の `HIL-RS-01-A1 -> A2 -> A3`。
-- issue memoは総数47件（Open=10 / In Progress=1 / Blocked=2 / Draft=9 / Done系=25）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` / `HIL-RS-02` / `HIL-RS-02-A1` / `HIL-RS-02-A2` / `HIL-RS-02-A3` の6件。
+- issue memoは総数47件（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）。運用上のActiveは `issues/README.md` と整合する `HIL-RS-01` / `HIL-RS-01-A1` / `HIL-RS-02` / `HIL-RS-02-A1` / `HIL-RS-02-A3` の5件。
 - 依存性は「契約先行(A1) -> モック検証(A2) -> 実装(A3)」で、I/Fのみ依存する作業はモックで並行化し、実装待ちを最小化する。
 - 競合源は共有統合ファイル `01_Plans/issues/README.md` と本ファイル。両ファイルは統合フェーズ専用コミットでのみ更新する。
 - Decision Queueは3件を再監査し、`DQ-HIL-EXEC-01` をReady、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` をOpenとして管理する（Ready=1 / Open=2、人間承認待ち=2件）。
