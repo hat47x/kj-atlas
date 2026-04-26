@@ -1100,3 +1100,29 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - 各Phase開始時に Read同期を実施し、`security.md` / `security_operational_guidelines.md` / `strict_mode_exception_approval_flow.md` との差分を先に確認する。
 - ADR関連変更は Context / Decision / Consequences を先行明文化し、合意（DecisionStatus=Fixed）確認後に Execute する。
 - Verify失敗時の自己修復は最大3回。超過時は `StoppedForClarification` で停止する。
+
+## 0.11 Stream L serial lane log（2026-04-26 / DOC-OPS-05-11）
+
+### Phase 1 Read
+- `issue-doc-ops-05-11-04doc-operations.md` と本書を再読し、公開runbook責務を確認。
+
+### Phase 2 ADR/CDC
+- Context: operations は実行runbookであり、security/guidelines の制度設計を内包しない。
+- Decision: 本書は `Improve external` を維持し、`Security Officer / System Owner / Platform Operator` と 2者承認+実行分離、D1〜D4同値確認をGo判定前提に固定。
+- Consequences: 役割語彙ドリフトと責務混在を抑止し、公開境界を維持できる。
+
+### Phase 3 Plan
+- Scope: docs-onlyの追記。
+- Non-goal: 実装変更・承認制度の再定義。
+- AC/DoD: 冒頭分類メタと本節の整合が確認できること。
+- Validation: `rg` / `git diff --check`。
+- Stop: 自己修復3回超過、用語/責務/固定値不一致。
+
+### Phase 4 Execute
+- 本節を追加し、DOC-OPS-05-11の直列完遂証跡を固定。
+
+### Phase 5 Verify
+- docs-check観点で不整合なし（自己修復 0/3）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（次順序は security 文書）。

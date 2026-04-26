@@ -1263,3 +1263,32 @@
 ### Phase 5. Proceed/Stop
 - 判定: **Proceed**。
 - 理由: 必須観点（CDC要否、AC/DoD補完、docs-check）が充足し、次工程へ移行可能。
+
+## 2026-04-26 Stream L serial completion log（DOC-OPS-05-13）
+
+### Phase 1 Read
+- 対象Issueと `04_Documentation/security.md` を再読し、05-11 Proceed=Ready 後の直列順序を確認。
+
+### Phase 2 ADR/CDC
+- Context: security は安全境界の基底文書であり、公開可読性と後退禁止境界の両立が必要。
+- Decision: Classification=`Improve external` を維持し、safeMode既定ON・share/export漏洩防止・2者承認/実行分離・D1〜D4固定を必須確認項目に固定。
+- Consequences: 公開文書として再利用しつつ、AUTH-OPS-03とのドリフト検知を継続できる。
+
+### Phase 3 Plan
+- Scope: `issue-doc-ops-05-13` と `security.md` のdocs-only整合追記。
+- Non-goal: 実装変更、他Issue改稿、承認フロー正本改変。
+- AC: Audience/Goal/Public boundary と fail-safe 条件を追跡可能にする。
+- DoD: 用語3種・役割分離・D1〜D4・導線を確認できる。
+- Validation: `rg` + `git diff --check`。
+- Stop条件: 自己修復3回超過、前提崩れ、allowlist外編集必要化。
+
+### Phase 4 Execute
+- 本ログを追記し、直列処理の契約を固定。
+
+### Phase 5 Verify
+- 結果: docs-check観点の整合を確認。
+- 自己修復: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次順序: `DOC-OPS-05-14` へ直列進行。

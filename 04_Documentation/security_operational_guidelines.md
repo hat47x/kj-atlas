@@ -431,3 +431,29 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - フェイルセーフ: 固定値不一致、役割ドリフト、導線切断、自己修復3回超過時は停止。
+
+## 13. Stream L serial lane log（2026-04-26 / DOC-OPS-05-14）
+
+### Phase 1 Read
+- `issue-doc-ops-05-14-04doc-security-operational-guidelines.md` と本書、`security.md` / `operations.md` を再読。
+
+### Phase 2 ADR/CDC
+- Context: 本書は公開向けの運用判断補助で、承認制度の正本ではない。
+- Decision: `Improve external` を維持し、`Security Officer / System Owner / Platform Operator`、2者承認+実行分離、D1〜D4固定、safeMode後退禁止を固定。
+- Consequences: 運用判断の再利用性を保ちつつ、security/runbookとの責務境界を維持できる。
+
+### Phase 3 Plan
+- Scope: docs-only追記。
+- Non-goal: 実装/設定値変更、承認フロー再定義。
+- AC/DoD: 4観点（用語/役割/導線/固定値）と停止条件を維持。
+- Validation: `rg` / `git diff --check`。
+- Stop: 自己修復3回超過、不整合未収束。
+
+### Phase 4 Execute
+- 本節を追加し、DOC-OPS-05-14直列完了の証跡を追記。
+
+### Phase 5 Verify
+- docs-check観点で不整合なし（自己修復 0/3）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
