@@ -1252,3 +1252,34 @@
 ### Phase 6 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+## 2026-04-26 Stream N 5フェーズ実行（対象限定: DOC-OPS-05-14）
+
+### Phase 1. Read同期
+- `04_Documentation/security_operational_guidelines.md` と `security.md` / `operations.md` の役割分担と導線を再確認。
+- 既存Issue本文の分類固定（Improve external / DecisionStatus=Fixed）とGo/No-Go要件を再読。
+
+### Phase 2. CDC要否判定（必要ならADR形式で先に合意）
+- 判定: **追加ADRは不要**（既存Issue CDCで十分）。
+- 合意（ADR形式ミニマム）:
+  - Context: guidelines は運用判断補助として公開可能範囲の明確化が主目的。
+  - Decision: 分類は `Improve external` 維持、内部専用情報の分離基準明示を継続。
+  - Consequences: 公開境界判断の一貫性が向上し、重複責務を回避できる。
+
+### Phase 3. Plan（AC/DoD補完）
+- AC補完:
+  - 役割語彙3種（Security Officer / System Owner / Platform Operator）一致確認を明示。
+  - D1〜D4 と `StoppedForClarification` の確認項目化を維持。
+- DoD補完:
+  - guidelines から security/operations 参照導線の有効性確認を完了条件へ追加。
+
+### Phase 4. Execute + Verify（max 3 self-corrections）
+- Execute: Issue本文へ本5フェーズ記録を追記（スコープ外ファイルは未編集）。
+- Verify:
+  - `rg -n "2026-04-26 Stream N 5フェーズ実行|Phase 1\. Read同期|Phase 2\. CDC要否判定|Phase 3\. Plan|Phase 4\. Execute \+ Verify|Phase 5\. Proceed/Stop" 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+  - `git diff --check`
+- Self-corrections: **0/3**（追加修正なし）。
+
+### Phase 5. Proceed/Stop
+- 判定: **Proceed**。
+- 理由: CDC要否判定・AC/DoD補完・検証計画を満たし、Open化後の改善PRへ進行可能。
