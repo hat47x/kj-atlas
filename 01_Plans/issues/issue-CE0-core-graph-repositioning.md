@@ -649,3 +649,31 @@
 ### 6 Proceed
 - 判定: `Done`（AC/DoD整合、docs-check pass、single-file / contract-only 制約維持）。
 - 未承認事項在庫: なし。将来、語彙差分・契約ID変異・SafeMode後退・4回目自己修復条件が発生した場合は即停止して `held` または `stopped_for_clarification` とする。
+
+## Phase Execution Record（2026-04-26 / Stream C / CE0 single-file requested cycle）
+### Read
+- 開始時Read同期を実施し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（`direct write / auto-apply / auto-publish`）の固定語彙を確認。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみで、再定義なし。
+- 差分判定: 直前記録との差分なし（語彙・禁止事項・SafeMode境界の変更なし）。
+
+### Plan
+- Read同期を再実施し、Read結果との差分なしを確認してから計画を固定。
+- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみへ限定し、contract-only（実装変更なし）を維持。
+- `role / transition / no-go` の同義語置換・拡張・再定義は禁止。未承認事項は `held/pending` で保持し、確定しない。
+
+### ADR/CDC
+- Read同期を再実施し、方針差分の有無を確認（差分なし）。
+- 判定: `No ADR delta`。
+- もし方針差分が発生した場合は `pending` 記録に切り替え、承認完了まで `held` を維持する。
+
+### Execute
+- Read同期を再実施し、禁止条件（direct write / auto-apply / auto-publish）と SafeMode既定ON境界を再確認してから実施。
+- 実施内容は本Issueの実行記録追記のみ。他ファイル変更、実装変更（handler/UI/DB/worker/API/Schema migration）は未実施。
+
+### Verify/Proceed
+- Read同期を再実施し、検証対象と停止条件を確認。
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- 自己修復回数: 0/3（上限3回、4回目相当は `stopped_for_clarification` で停止）。
+- Proceed判定: `Done`（AC/DoD整合、docs-check pass、single-file / contract-only / 固定語彙維持）。
+- 未承認事項在庫: なし（新規 `held/pending` なし）。
