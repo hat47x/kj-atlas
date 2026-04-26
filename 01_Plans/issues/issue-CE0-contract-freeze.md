@@ -561,31 +561,32 @@ type PatchProposal = {
 - Approval:
   - `agreement_state=agreed` 明記までは Proceed 不可（Phase 4以降の確定運用を禁止）。
 
-## Stream B Phase Execution Record（2026-04-26 / CE0 interface-first + mock verification）
+## Stream B Phase Execution Record（2026-04-26 / CE0 contract freeze）
 ### Phase 1 Read
-- 対象2ファイル（`issue-CE0-contract-freeze.md` / `issue-CE0-core-graph-repositioning.md`）を開始時に再読し、Contract ID・No-Go canonical 5 IDs・safeMode境界の差分を確認（差分なし）。
+- 対象ファイル（`issue-CE0-contract-freeze.md`）のみを開始時に再読し、Contract ID・No-Go canonical 5 IDs・safeMode境界の差分を確認（差分なし）。
 - 想定との差分確認結果: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`。
 
-### Phase 2 Interface-first
-- APIシグネチャ/型/判定条件を先に固定（contract-only, mock前提）。
-  - `CE0-CTX-IF`: `ContextQuery.required_keys` + deterministic `bundleHash`（`equivalenceKey + bundleHash`）
-  - `CE0-SAFEMODE-IF`: `safeMode=true` 既定、`allowUnreviewedText=false` 既定
-  - `CE0-REVIEW-IF`: proposal lifecycle は proposal-only、`human_reviewed` 昇格は人手のみ
-  - `CG-01..05`: `working -> consensus` は `patch + approval` のみ
-- 判定条件をID照合に固定: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0 SSOTを維持し、CE1/CE2/CE4はread-only handoffに限定する。
+- Decision: Contract IDの再定義禁止、safeMode既定（ON, `allowUnreviewedText=false`）後退禁止、未承認論点は `held` を維持。
+- Consequences: 下流再定義を抑止し、`contract_id_collision | vocabulary_collision | scope_deviation` 検知時は `held` で即停止可能。
 
 ### Phase 3 Plan
 - AC/DoD不足の再点検を実施し、既存の `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` の追跡で充足可能と判定。
-- 新規不足が発生した場合はドラフト追記して `held` 維持、合意前に確定運用へ進めない方針を再確認。
+- 新規不足が発生した場合はドラフト提案を先に記録し、合意前は `held` のまま Execute に進まない。
 
-### Phase 4 Execute / Verify（mock中心）
+### Phase 4 Execute
 - 実施内容: CE0契約SSOTの進行記録更新のみ（指定外ファイル編集なし）。
-- Verify attempt_1:
+- 非実施: Contract ID再定義、safeMode既定値変更、CE1/CE2/CE4本文編集。
+
+### Phase 5 Verify（self-correction ≤ 3）
+- attempt_1:
   - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
   - result: pass（self-correction 0/3）
 
-### Phase 5 Proceed / Fail-safe
-- 判定: **Go**（mock検証pass、collision/regressionなし）。
-- 停止条件を再確認: 競合検出、前提崩壊、または自己修復4回目相当で即 `held` / `stopped_for_clarification`。
+### Phase 6 Proceed
+- 判定: **Go**（docs-check pass、collision/regressionなし）。
+- handoff境界: CE1/CE2/CE4へは Contract ID / No-Go ID のread-only参照のみを引き渡す。
+- fail-safe: 競合検出、safeMode後退、未承認確定化、自己修復4回目相当で即 `held` / `stopped_for_clarification`。
