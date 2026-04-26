@@ -74,14 +74,16 @@
   1. A1 SSOTキーが他Issueと一致。
   2. `held` 論点を確定扱いしない。
   3. A2/A3 read-only参照を明記。
-  4. `ProceedGate` をA1/A2/A3共通判定式として固定。
+  4. `A2A3_OPEN_ALLOWED` をA1/A2/A3共通判定式として固定。
 - DoD
   1. Go/NoGo判定でA1 freeze値のみ参照（`schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze` を含む）。
   2. 指定外ファイル差分0。
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)`
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")`
+- `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
+- `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
 - `Go = ProceedGate`
 - `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
 - `NoGo = (!ProceedGate && !Conditional)`
