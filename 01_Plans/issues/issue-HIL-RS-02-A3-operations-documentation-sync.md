@@ -11,7 +11,7 @@
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象5Issue以外は不干渉
+- Non-target file policy: 本指示で許可された5 Issue以外は不干渉
 
 ## Operating Premise（Prompt G適用）
 - A1未完前提でA3は **mock I/Fベースの準備タスクのみ** 実施する。
@@ -65,6 +65,7 @@
 ### Approval Record（必須）
 - Status: `Pending`（A3 Open gateの承認は未充足）
 - Required fields: `approved_by`, `approved_at`, `evidence`
+- AC/DoDに不足がある場合はAIが不足項目をDraft提示し、`Approval Record` で合意するまで Execute へ進まない。
 
 ### held
 - A3単独での契約改定要求。
@@ -78,6 +79,7 @@
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
+- Gate式は固定値を参照のみとし、再定義・派生定義を禁止する。
 - AC（minimum）
   - AC-1: fixed keys diff=0（freezeContractId / contractIds / schemaVersion / overridePolicy / safeModeDefault / sharedResourceFreeze）。
   - AC-2: role語彙（Security Officer / System Owner / Platform Operator）ドリフトなし。
@@ -131,6 +133,13 @@
 
 ### Consequences
 - 検証失敗の持ち越しを防ぎ、A3 Open前に準備品質を担保できる。
+
+### Fail-safe held trigger（即停止）
+- `self_correction_attempt >= 4`（4回目相当）を検知した場合。
+- 未承認事項の確定化（pending bypass）を検知した場合。
+- `NoGo return path` の改変要求を検知した場合。
+- `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` の後退兆候を検知した場合。
+- 上記を検知した場合は推測継続を禁止し、`held` 記録を更新して停止する。
 
 ## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
 ### Context
