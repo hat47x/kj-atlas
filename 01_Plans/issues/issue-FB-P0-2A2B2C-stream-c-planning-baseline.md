@@ -74,7 +74,7 @@
   1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
   2. 依存順序 `A1 -> A2 -> A3` を全6Issueで固定。
   3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
-  4. A1 -> A2 -> A3 判定式は `ProceedGate` を唯一のSSOTとして扱う。
+  4. A1 -> A2 -> A3 判定式は `A2A3_OPEN_ALLOWED` を唯一のSSOTとして扱う。
 - DoD
   1. NoGo return path が A1契約Issue で一意。
   2. Proceed条件が「AC/DoD充足 + held以外未承認なし」に統一。
@@ -83,8 +83,9 @@
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
 - 対象6Issueの語彙・判定式・停止条件を統一。
-- `ProceedGate = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && validatorPass==true)` をA1->A2->A3の唯一判定式として固定。
-- `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")` をA1->A2->A3の唯一判定式として固定。
+- `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected` を共通化。
+- `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)` / `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
 - 非対象ファイルの編集は実施しない。
 
 ## Phase 5: Verify
