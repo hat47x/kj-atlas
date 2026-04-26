@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象6Issue以外は不干渉
+- Non-target file policy: 本指示で許可された5 Issue以外は不干渉
 
 - Execution order (Stream A fixed serial): 4/6 HIL-RS-01 umbrella
 
@@ -46,6 +46,7 @@
 ### Approval Gate（Execute進行条件）
 - ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
 - 未承認事項は `pending/held` のまま保持し、確定扱いしない。
+- AC/DoDに不足がある場合はAIが不足項目をDraft提示し、`Approval Record` で合意するまで Execute へ進まない。
 
 ### Approval Record（必須）
 - Status: `Pending`（承認記録が追記されるまで Phase 4 へ進行禁止）
@@ -61,10 +62,11 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象差分意図: RS-01の開放条件をA1 SSOTへ揃える。
-- 非対象不干渉: 対象4Issue外は編集しない。
+- 非対象不干渉: 本指示で許可された5 Issue以外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
+- Gate式は固定値を参照のみとし、再定義・派生定義を禁止する。
 - AC/DoD
   - AC: fixed keys差分0 / decisionQueueTransition固定 / NoGo return path一意。
   - DoD: safeModeDefault=ON維持 / overridePolicy後退なし / self-correction<=3。
@@ -118,6 +120,13 @@ gate:
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
+
+### Fail-safe held trigger（即停止）
+- `self_correction_attempt >= 4`（4回目相当）を検知した場合。
+- 未承認事項の確定化（pending bypass）を検知した場合。
+- `NoGo return path` の改変要求を検知した場合。
+- `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` の後退兆候を検知した場合。
+- 上記を検知した場合は推測継続を禁止し、`held` 記録を更新して停止する。
 
 ## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
 - Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
