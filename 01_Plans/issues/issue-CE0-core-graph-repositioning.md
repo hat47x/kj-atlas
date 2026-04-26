@@ -531,3 +531,35 @@
 ### Phase 5 Proceed / Fail-safe
 - 判定: `Done`（docs-check pass、語彙差分なし、safeMode後退なし）。
 - 停止条件（競合・前提崩壊・自己修復4回目相当）は継続監視し、発火時は `held` / `stopped_for_clarification` とする。
+
+## Phase Execution Record（2026-04-26 / Stream C / CE0 Core Graph Repositioning strict serial run）
+### Phase 1 Read
+- Read同期を実施し、`role / transition / no-go` 固定語彙（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs）を再確認。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only 参照のみで、再定義なし。
+- 差分判定: 直前Phaseとの差分 0 件（語彙・禁止事項・SafeMode境界に変更なし）。
+
+### Phase 2 Plan
+- Phase冒頭Read同期を再実施し、Phase 1 からの差分 0 件を確認。
+- Scopeを本Issue 1ファイルの contract-only 記録更新のみに固定（実装変更禁止）。
+- Plan→Execute→Verify→Proceed の直列遷移を明記し、未承認事項は `held/pending` 維持で確定化しない。
+
+### Phase 3 ADR Consensus
+- Phase冒頭Read同期を再実施し、語彙差分・No-Go逸脱・SafeMode後退兆候の有無を確認（差分 0 件）。
+- 判定: `No ADR delta`（方針差分なし）。
+- 方針差分が将来発生した場合は `pending` として記録し、承認完了まで `held` を維持する。
+
+### Phase 4 Execute
+- Phase冒頭Read同期を再実施し、固定語彙不変条件を再確認してから実施。
+- 実行内容は本Issue本文への実行記録追記のみ。実装領域（handler/UI/DB/worker/API/Schema migration）は未変更。
+- CE0契約ID再定義、No-Go語彙置換・拡張、SafeMode既定ON後退の記述追加は未実施。
+
+### Phase 5 Verify
+- Phase冒頭Read同期を再実施し、Phase 4 からの語彙差分 0 件を確認。
+- Verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- Verify attempt_1: `git diff --check` → pass。
+- self-correction 実績は 0/3。失敗時は最大3回まで自己修復し、4回目相当は実施せず `stopped_for_clarification` で停止する。
+
+### Phase 6 Proceed
+- Phase冒頭Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（single-file / contract-only / CE0契約ID read-only / 語彙固定 / SafeMode境界維持）。
+- 未承認事項在庫: なし。将来発生時は `held` へ遷移してエスカレーションする。
