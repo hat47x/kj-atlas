@@ -38,6 +38,17 @@
 - **Phase 6 Proceed**: 条件未充足時は `held` で停止し、確定扱いで次工程へ渡さない。
 - **Fail-safe**: 自動確定 / 自動公開 / レビュー自動昇格要求を検知した時点で即停止する。
 
+## Stream E CE2 proposal-only directive（2026-04-25）
+- Scope固定: 編集許可は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ。その他ファイル編集は禁止。
+- lifecycle閉集合: `proposed | accepted | rejected | held` のみを許可し、語彙追加・別名導入を禁止する。
+- proposal-only固定: 実装・auto-apply・自動確定・自動公開を常時禁止し、AIは候補提示に限定する。
+- review昇格固定: AIによる `reviewState=human_reviewed` 昇格を禁止し、人手操作のみ許可する。
+- 実行順序固定: `Phase 1 Read -> Phase 2 ADR/CDC -> Phase 3 Plan -> Phase 4 Execute -> Phase 5 Verify -> Phase 6 Proceed`。
+- Read同期必須: 各Phase開始時にRead同期を実施し、差分検知時は `status=held` で停止する。
+- AC/DoDゲート: 不足時はAIドラフト提示のみを許可し、人手合意成立までExecuteを開始しない。
+- Verify再試行上限: 修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
+- Fail-safe即停止条件: 自動確定 / 自動公開 / レビュー自動昇格要求、safeMode後退、自己修復3回超過。
+
 ## Stream E hard constraints（2026-04-23 明文化）
 - 対象編集は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
@@ -235,3 +246,11 @@
 - Phase 4 Execute: 本Issueファイル内のみを更新し、指定外ファイルは未変更。
 - Phase 5 Verify: docs-check 3点セット（validator / unittest / `git diff --check`）で差分妥当性を確認。
 - Phase 6 Proceed: Go（Verify通過。契約固定を維持したまま次工程へ引き渡し可能）。
+
+## Stream E execution log（2026-04-25 / CE2 proposal-only再同期）
+- Phase 1 Read: 本Issueを再読し、Scope固定（単一ファイル）/lifecycle閉集合/proposal-only/review昇格禁止を同期。
+- Phase 2 ADR/CDC: 契約語彙変更要求なしのため CDC追加なし。変更要求発生時は `held` 停止を再確認。
+- Phase 3 Plan: AC/DoD不足時はAIドラフト提示のみ、人手合意までExecute禁止のゲートを再確認。
+- Phase 4 Execute: 本Issue内の契約明文化のみ更新（実装指示・自動適用手順・権限付与は未記載）。
+- Phase 5 Verify: docs-check 3点セットを実行し、禁止遷移/指定外編集/safeMode後退がないことを確認。
+- Phase 6 Proceed: Go（proposal-only固定を維持。未合意事項が発生した場合は `held` で停止）。
