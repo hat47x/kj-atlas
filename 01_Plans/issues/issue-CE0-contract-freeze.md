@@ -29,7 +29,7 @@
 
 ## Stream B latest run（2026-04-26 / CE0 only）
 
-- run_id: `stream-b-ce0-2026-04-26-02`
+- run_id: `stream-b-ce0-2026-04-26-03`
 - scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md only`（遵守）
 - stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
 
@@ -491,6 +491,17 @@ type PatchProposal = {
 - Phase 4 Execute: 本IssueにPrompt B実行ログを追記（指定外ファイル編集なし）。
 - Phase 5 Verify: docs-check 3点を実行し、self-correction 0/3で通過。
 - Phase 6 Proceed: **Go**（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` / `safeMode regression=0`）。
+
+### 2026-04-26 prompt-user run（Read → ADR/CDC → Plan → Execute → Verify/Proceed）
+- Phase 1 Read同期: 開始前に本Issueを再読し、Scope限定（本ファイルのみ）とfreeze条件（Contract ID固定 / safeMode既定維持）を再確認。
+- Phase 2 ADR/CDC（Context / Decision / Consequences）:
+  - Context: CE0契約をSSOTとして維持し、CE1/CE2/CE4はread-only参照に限定する。
+  - Decision: Contract ID再定義なし、safeMode後退なし、指定外編集なしを継続する。
+  - Consequences: 境界逸脱時は `held` 停止を適用し、下流再定義を抑止する。
+- Phase 3 Plan: Plan→Execute→Verify→Proceed の順序固定を明記し、contract-only wording更新以外を禁止。
+- Phase 4 Execute: 本Issueへ実行ログのみ追記（指定外ファイル編集なし）。
+- Phase 5 Verify: docs-check 3点を実行し、自己修復は最大3回。4回目相当は即停止。
+- Phase 6 Proceed: **Go**（`contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` / `safeMode regression=0` / docs-check pass）。
 
 ### Verification log template（self-correction <= 3）
 - run_2026-04-26 attempt_1:
