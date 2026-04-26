@@ -1178,3 +1178,46 @@
 ### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+## 19) Stream I strict-serial execution (2026-04-26 / DOC-OPS-05-03)
+
+### Phase 1 Read
+- 再読対象: 本Issue、`04_Documentation/configuration.md`。
+- 編集許可: 指定4ファイルのみ（本Issue/05-08 Issue/`configuration.md`/`installation.md`）。
+- 前提確認: Requirement meta I/F は `DecisionStatus=Fixed`、`VerificationLevel=docs-check`、`GoNoGoGate=Required` で矛盾なし。
+
+### Phase 2 ADR/CDC
+- Context: 公開設定ガイドは外部運用者向けに最小安全設定を示しつつ、内部情報を公開境界外へ維持する必要がある。
+- Decision: 分類は **Improve external** を維持し、Scopeを docs-only に固定する。
+- Consequences: 実装・e2e・operations・security 系ファイルには触れず、文書メタと検証導線のみ更新対象にする。
+
+### Phase 3 Plan
+- Scope: `issue-doc-ops-05-03-04doc-configuration.md` と `04_Documentation/configuration.md` の整合更新。
+- Non-goals: 実装コード変更、他Issue変更、公開境界を越える内部運用手順の追加。
+- AC:
+  1. 分類（Improve external）と根拠（Audience/Goal/Public boundary/Non-goal）を追跡可能にする。
+  2. Go/No-Go判定条件を本文で再確認できる。
+  3. docs-check手順（`rg` / `git diff --check`）を再実行可能に残す。
+- DoD:
+  1. Phase 1〜6 の記録が残る。
+  2. 変更が許可4ファイル内に閉じる。
+  3. Verifyが成功し、自己修復0〜3回の範囲で完了する。
+- Validation:
+  - `rg -n "Stream I strict-serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md 04_Documentation/configuration.md`
+  - `git diff --check`
+- Stop conditions:
+  1. 修復4回目相当
+  2. Requirement meta I/F 矛盾検知
+  3. 指定外ファイル編集が必要になった時点
+
+### Phase 4 Execute
+- 実施: 本IssueにStream I直列実行記録を追記。
+- 実施: `configuration.md` に同一フェーズ記録を追記し、Issueとの往復導線を維持。
+
+### Phase 5 Verify
+- 実施コマンドは Phase 3 Validation に固定。
+- 失敗時は同一4ファイル内で最大3回まで自己修復し、4回目相当で停止（Hold）。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 次工程: DOC-OPS-05-08 を同一ルールで直列実行する。

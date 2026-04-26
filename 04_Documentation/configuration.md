@@ -189,3 +189,35 @@ docker compose up -d
 
 ### Phase 5 Proceed
 - 判定: **Ready**（公開設定ガイドとして継続）。
+
+## Stream I strict serial execution（2026-04-26 / DOC-OPS-05-03）
+
+### Phase 1 Read
+- 対象再読: `04_Documentation/configuration.md` と `issue-doc-ops-05-03-04doc-configuration.md`。
+- 範囲固定: Docs-only、かつ指定4ファイル内のみ編集。
+
+### Phase 2 ADR/CDC
+- Context: 公開設定ガイドとして、外部読者に再現可能な最小安全設定を示す必要がある。
+- Decision: **Improve external** を維持し、公開境界外の内部運用情報は追加しない。
+- Consequences: 正本参照（runtime parameter registry）とGo/No-Go導線を維持する。
+
+### Phase 3 Plan
+- Scope: 本文書の実行記録追記とIssue整合。
+- Non-goals: パラメータ仕様の新規決定、実装仕様変更、指定外文書更新。
+- AC: Audience/Goal/Public boundary/Non-goal と Go/No-Go が追跡可能。
+- DoD: Phase 1〜6記録 + docs-check 成功 + 指定外差分0。
+- Validation: `rg` キーワード確認 + `git diff --check`。
+- Stop conditions: 修復4回目相当 / Requirement meta I/F矛盾 / 指定外編集必要化。
+
+### Phase 4 Execute
+- 実施: Stream I の直列実行記録を追記。
+- 維持: 既存の安全既定（`KJ_ATLAS_LLM_PROVIDER=none` 等）と正本導線。
+
+### Phase 5 Verify
+- 実行: `rg -n "Stream I strict serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/configuration.md`
+- 実行: `git diff --check`
+- 自己修復: 最大3回、4回目相当で停止。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 次工程: DOC-OPS-05-08（installation）へ直列遷移。
