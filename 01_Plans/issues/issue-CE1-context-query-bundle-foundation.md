@@ -1116,3 +1116,36 @@
   - safeMode後退: なし
   - 契約語彙衝突未解消: なし
   - 4回目修復到達: なし
+
+## Stream D Execution Record（2026-04-26 / Read→Plan→Execute→Verify→Proceed strict run）
+
+### Phase 1 Read（Read同期 / CE0参照専用）
+- 本対象ファイルのみ再読し、前回記録との差分を確認。
+- CE0参照境界は read-only 維持（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
+- 判定: 前提差分なし（continue）。
+
+### Phase 2 Plan（I/F凍結のみ）
+- CE1は contract-only を再固定し、実装記述を追加しない。
+- 固定対象を再確認:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+  - `sourceBundleHash === bundleHash`
+  - safeMode regression = 0
+
+### Phase 3 Execute（対象ファイル限定更新）
+- 実施: 本実行記録の追記のみ（対象ファイル以外の編集なし）。
+- 禁止事項監視: preview bypass / safeMode既定緩和 / CE0再定義 は未実施。
+
+### Phase 4 Verify（3回自己修復 / 超過停止）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction実施回数: 0/3。
+- ルール確認: 3回を超える自己修復が必要になった場合は即停止。
+
+### Phase 5 Proceed（連携継続条件の維持）
+- CE1は CE0参照専用 + I/F凍結のみ を継続。
+- CE2/CE4への handoff は read-only で継続し、契約再定義を禁止。
+- 停止条件監視: Self-Correction超過なし、safeMode後退兆候なし、未定義競合なし。
