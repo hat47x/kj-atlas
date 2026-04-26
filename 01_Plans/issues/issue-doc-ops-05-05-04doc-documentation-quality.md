@@ -1166,3 +1166,29 @@
 ### Phase 5 Proceed
 - 判定: **Ready**
 - Proceed条件: 内部文書配置整理の次タスクへ進行可能。停止条件（自己修復3回超過）は未該当。
+
+## 19) 2026-04-26 serial cycle（Read → Plan → Execute → Verify → Proceed）
+
+### 1) Read
+- 本Issue本文を再読し、`Requirement meta I/F` / `Classification=Move internal` / `DecisionStatus=Fixed` / `VerificationLevel=docs-check` を確認。
+- スコープ制約を再確認: 編集対象は本Issueメモと指定Issueメモのみ（実装コード・他Issue編集は禁止）。
+
+### 2) Plan
+- AC/DoD補完案（docs品質判定に限定）:
+  - AC-P1: Audience / Goal / Public boundary / Next action が本文内で追跡可能であること。
+  - DoD-P1: Proceed判定を `Ready / Hold / Needs-decision` で明示すること。
+- ADR要否判定: **不要**（方針差分なし、既存CDCで充足）。
+
+### 3) Execute
+- 本Issueの分類方針を **Move internal** のまま維持し、5Phase固定運用と停止条件（修復3回上限）を明文化。
+- 非目標を再固定: `01_Plans/documentation_quality.md` 実体変更や `03_Implement/**` 変更は本サイクルで実施しない。
+
+### 4) Verify
+- 実行コマンド:
+  - `rg -n "serial cycle|Read → Plan → Execute → Verify → Proceed|Move internal|Proceed判定" 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `git diff --check`
+- 結果不一致時は同一Issue内で最大3回まで自己修復し、4回目相当で停止（Hold）。
+
+### 5) Proceed
+- 判定: **Ready**
+- 理由: Scope逸脱なし / DecisionStatus固定 / docs-check整合 / 追加ADR不要。
