@@ -620,3 +620,32 @@
 ### Phase 6 Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 維持）。
 - 未承認事項在庫: なし。今後、語彙ドリフト・SafeMode後退・CE0契約再定義兆候・4回目再試行条件を検出した場合は即停止する。
+
+## Phase Execution Record（2026-04-26 / Stream C / CE0 constrained single-file cycle）
+### 1 Read
+- 開始時Readを実施し、固定語彙 `working` / `context_projection` / `consensus`、許可遷移 `working -> consensus` + `patch+approval`、禁止 `direct write / auto-apply / auto-publish` を再確認。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみで再定義なし。
+- 停止条件の先行確認: 語彙差分、契約ID変異、SafeMode後退、未承認確定化の兆候なし。
+
+### 2 Plan
+- Scopeを本Issue単体の契約記述整合と実行記録追記のみに限定（single-file / contract-only）。
+- AC/DoD不足は未検出。将来不足時はドラフト提示のみ行い、明示承認まで `held` を維持する。
+- 実行サイクルを `Plan -> Execute -> Verify（<=3回自己修復） -> Proceed` に固定。
+
+### 3 ADR Consensus
+- 方針差分判定: `No ADR delta`。
+- 方針差分が発生した場合のみ `Context / Decision / Consequences` を作成し、承認完了まで `held` 維持。
+
+### 4 Execute
+- 本Issue本文の追記のみを実施し、他ファイル編集なし。
+- `role` は `working` / `context_projection` / `consensus` を維持し、`working -> consensus` は `patch+approval` のみを許可。
+- no-go（`direct write / auto-apply / auto-publish`）を維持し、SafeMode既定ONを後退させる記述を追加しない。
+
+### 5 Verify
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- 自己修復回数: 0/3（4回目相当は未実施）。
+
+### 6 Proceed
+- 判定: `Done`（AC/DoD整合、docs-check pass、single-file / contract-only 制約維持）。
+- 未承認事項在庫: なし。将来、語彙差分・契約ID変異・SafeMode後退・4回目自己修復条件が発生した場合は即停止して `held` または `stopped_for_clarification` とする。
