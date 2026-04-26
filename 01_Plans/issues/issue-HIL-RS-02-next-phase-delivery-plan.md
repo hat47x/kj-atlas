@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 対象5Issue以外は不干渉
+- Non-target file policy: 対象4Issue以外は不干渉
 
 ## Phase 1: Read（再読・差分確認）
 - 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
@@ -58,9 +58,10 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
 - 対象差分意図: 開始判定をA1 SSOTに固定。
-- 非対象不干渉: 対象5Issue外は編集しない。
+- 非対象不干渉: 対象4Issue外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
+- Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
 - AC/DoD
   - AC: fixed keys diff=0 / unlockRule一致 / decisionQueueTransition一致。
   - DoD: NoGo return path A1固定 / held維持 / self-correction<=3。
@@ -110,6 +111,7 @@ delivery_gate_v1:
 ## Phase 5: Verify
 - AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
 - 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
+- Self-Correction counterは `0/3` で開始し、各再試行で `+1` を明示記録する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
