@@ -1250,3 +1250,24 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 次アクション: `Improve external` 方針のまま、対象Docの公開改善タスクへ接続。
+
+## Stream L serial cycle (2026-04-26 / DOC-OPS-05-09)
+
+### Read
+- Requirement meta を再確認し、分類 `Improve external` と LLM運用公開境界を再確認。
+
+### Plan
+- AC/DoD補完方針: 公開可能な運用手順と内部監査運用を分離して記述維持。
+- ADR: 運用境界差分は新規発生なしのため追加ADRは不要。
+
+### Execute
+- 本Issueメモへ Stream L 直列ログを追記（docs-only）。
+
+### Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- `git diff --check`
+- self-repair: 0/3（上限3回、4回目相当は停止）。
+
+### Proceed
+- 判定: **Ready**。
+- 次工程: 05-10 へ直列進行。
