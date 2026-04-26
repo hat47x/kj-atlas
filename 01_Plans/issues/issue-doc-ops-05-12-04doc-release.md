@@ -459,3 +459,32 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 継続条件: 公開境界と監査可能性が維持されること。
+
+
+## Stream K serial run（2026-04-26 / Prompt K lane / step 4/4: DOC-OPS-05-12）
+
+### Phase 1 Read
+- 本Issueと対象 `04_Documentation/release.md` を再読し、分類固定（**Improve external**）が維持されていることを確認。
+- 観点: release監査導線（Go/No-Go証跡）。
+
+### Phase 2 ADR/CDC
+- Context: DOC-OPS-05 の分類固定を崩さず、公開境界を保ったまま次アクションを再確認する。
+- Decision: 本Issueは **Improve external** を維持し、分類再判定は行わない。
+- Consequences: 後続作業は docs-only の公開改善に限定できる。
+
+### Phase 3 Plan
+- 固定順序: Plan → Execute → Verify → Proceed。
+- AC/DoD優先: Audience / Goal / Public boundary / Validation / Next action を本文で追跡可能に維持。
+- 停止条件: self-repair 3回超過、または指定外編集検知時は停止。
+
+### Phase 4 Execute
+- 実施: 本Issueメモに Prompt K 直列処理ログのみを追記。
+- 非実施: 指定外ファイル編集、実装コード変更、分類の再決定。
+
+### Phase 5 Verify
+- docs-check: `git diff --check`
+- self-repair: **0/3**（本更新時点）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: `Improve external` 方針のまま、対象Docの公開改善タスクへ接続。
