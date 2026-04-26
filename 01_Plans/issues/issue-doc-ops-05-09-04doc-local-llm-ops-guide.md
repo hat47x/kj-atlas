@@ -1143,3 +1143,31 @@
 - 判定: **Go**
 - 根拠: AC 3点・DoD 3点を満たし、allowlist外差分なし。
 - 次アクション: 必要時のみ `04_Documentation/local_llm_ops_guide.md` で公開境界の表現改善を実施する（本Issueの分類は固定）。
+
+## 17) Stream G serial run record（2026-04-25）
+
+### Phase 1 Read
+- 再確認: `Status=Draft` / `Priority=P2` / `Scope=04_Documentation/local_llm_ops_guide.md` / `RequirementID=DOC-OPS-05-09` / `VerificationLevel=docs-check`。
+- Requirement meta I/F の必須キー欠落がないことを確認。
+
+### Phase 2 Plan
+- 文書分類判定: **Improve external** を維持。
+- AC草案固定: 対外改善計画（Audience/Goal/Public boundary/改善節）を固定し、本文全面改稿や実装変更を伴わない。
+- DoD草案固定: 公開改善の次アクションと検証手順が本文に固定され、検証がdocs-checkで再実行可能。
+
+### Phase 3 ADR/CDC
+- 方針衝突判定: **衝突なし**（既存Issue内のContext/Decision/Consequencesで充足）。
+- 追加ADR: **不要**。
+
+### Phase 4 Execute
+- 実施内容: issue本文の計画固定のみ更新（分類・AC/DoD・検証・Proceed）。
+- 非実施: 対象文書本文の全面改稿、`03_Implement/**`、共有統合ファイルの変更。
+
+### Phase 5 Verify
+- docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- diff check: `git diff --check`
+- 修復上限: 不整合が出た場合は最大3回まで修復し、超過時は停止。
+
+### Phase 6 Proceed
+- 判定（Go / Conditional / No-Go）: **Go**
+- 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。

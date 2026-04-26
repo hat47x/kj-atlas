@@ -1076,3 +1076,31 @@
 ### Phase 6 Proceed
 - 判定: **Ready**（本Issueの DecisionStatus=Fixed かつ docs-check 範囲で完結）。
 - Fail-safe: 指定外ファイル変更・前提崩れ・競合検知時は即停止し、Issueを `Hold` に切替える。
+
+## 17) Stream G serial run record（2026-04-25）
+
+### Phase 1 Read
+- 再確認: `Status=Draft` / `Priority=P2` / `Scope=01_Plans/documentation_quality.md` / `RequirementID=DOC-OPS-05-05` / `VerificationLevel=docs-check`。
+- Requirement meta I/F の必須キー欠落がないことを確認。
+
+### Phase 2 Plan
+- 文書分類判定: **Move internal** を維持。
+- AC草案固定: 内部移動計画（移動先・参照stub・非公開境界）を固定し、本文改稿や実装変更を伴わない。
+- DoD草案固定: 移動先候補と後続タスクが本文に固定され、検証がdocs-checkで再実行可能。
+
+### Phase 3 ADR/CDC
+- 方針衝突判定: **衝突なし**（既存Issue内のContext/Decision/Consequencesで充足）。
+- 追加ADR: **不要**。
+
+### Phase 4 Execute
+- 実施内容: issue本文の計画固定のみ更新（分類・AC/DoD・検証・Proceed）。
+- 非実施: 対象文書本文の全面改稿、`03_Implement/**`、共有統合ファイルの変更。
+
+### Phase 5 Verify
+- docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- diff check: `git diff --check`
+- 修復上限: 不整合が出た場合は最大3回まで修復し、超過時は停止。
+
+### Phase 6 Proceed
+- 判定（Go / Conditional / No-Go）: **Go**
+- 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
