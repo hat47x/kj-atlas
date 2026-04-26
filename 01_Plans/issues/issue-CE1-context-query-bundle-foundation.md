@@ -994,3 +994,40 @@
   - 前提崩れ: 該当なし
   - 未定義競合: 該当なし
   - 修復上限超過: 該当なし
+
+---
+
+## Stream D Execution Record（2026-04-26 / prompt-d compliance rerun）
+
+### Phase 1 Read（Read同期）
+- 本対象ファイルを再読し、Editableが本ファイルのみであることを確認。
+- CE0はread-only参照（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）として維持し、CE1側で再定義しない。
+- 差分ゲート判定: **前提差分なし（continue）**。
+
+### Phase 2 Plan（Read同期）
+- Phase冒頭で本対象ファイルを再読し、Phase 1との差分なしを確認。
+- 固定対象をI/F凍結のみに限定:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+  - handoff比較キー `sourceBundleHash === bundleHash`
+  - SafeMode regression = 0
+- 実装記述（handler/UI/DB/worker）は非対象として維持。
+
+### Phase 3 Execute（Read同期）
+- Phase冒頭で本対象ファイルを再読し、Planの凍結条件を再確認。
+- 実施内容は本Execution Record追記のみ（docs-only / contract-only）。
+- CE0再定義禁止・preview bypass禁止・safeMode既定緩和禁止を維持。
+
+### Phase 4 Verify（Read同期 / 自己修復上限3）
+- Phase冒頭で本対象ファイルを再読し、検証対象がdocs-checkのみであることを再確認。
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0/3（上限超過なし）。
+
+### Phase 5 Proceed（Read同期）
+- Phase冒頭で本対象ファイルを再読し、AC/DoDとVerify結果の整合を再確認。
+- 判定: **Proceed**（CE1 I/F凍結を維持、CE2/CE4へのread-only handoff継続）。
+- 停止条件監視: 前提崩壊なし / 未定義競合なし / 修復上限超過なし。
