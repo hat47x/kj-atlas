@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream F / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream F（CE4専任）
+- Owner: Stream E（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -11,8 +11,8 @@
 - Verification: `docs-check`
 
 
-## Stream F Assignment Lock（2026-04-24）
-- 担当範囲は Stream F 専任とし、CE4 API/CLI/Audit Integration の contract-only 固定のみを扱う。
+## Stream E Assignment Lock（2026-04-26）
+- 担当範囲は Stream E 専任とし、CE4 API/CLI/Audit Integration の contract-only 固定のみを扱う。
 - 編集許可は `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみに限定し、他ファイルは編集しない。
 - フェーズ順序は `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` に固定する。
 - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）を維持し、片側一致の成功扱いを禁止する。
@@ -231,6 +231,26 @@
 - 未承認事項は `held` のまま据え置き、CE4では確定しない。
 - 致命エラー（自己修復3回超過 / SafeMode後退兆候 / 契約矛盾検出）時は即停止し、指示待ちへ遷移する。
 - **Stopper**: 契約未承認項目を実装前提として扱いそうな兆候を検知した時点で即停止し、`held` 維持のまま承認待ちに遷移する。
+
+## Stream E Execution Record（2026-04-26 / CE4専任 directive sync）
+
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0/CE1/CE2 read-only参照、監査4点、fail-closed、No-Goを再確認）。
+- Phase 2 ADR/CDC: 完了（既存 CDC-CE4-001 / CDC-CE4-002 の承認状態を維持し、新規CDCなし）。
+- Phase 3 Plan: 完了（`equivalenceKey + bundleHash` AND固定、監査欠損fail-closed、self-correction最大3回を再固定）。
+- Phase 4 Execute: 完了（本ファイル内の contract-only 記述更新のみ、範囲外編集なし）。
+- Phase 5 Verify: 完了（docs-check + No-Go検査を実施し、自己修復 0/3 で通過）。
+- Phase 6 Proceed: 完了（未承認事項は `held` 維持、Stopper条件に抵触なし）。
+
+### Phase 5 Verify Log（docs-check + No-Go、self-correction<=3）
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- No-Go検査:
+  - `rg -n "equivalenceKey \\+ bundleHash|fail-closed|監査4点|自己修復は最大3回" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+  - `rg -n "片側一致.*成功扱い|監査欠損.*成功扱い" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- 判定: 通過（片側一致成功扱いなし、監査欠損成功扱いなし、自己修復 0/3、4回目着手なし）。
 
 ---
 
