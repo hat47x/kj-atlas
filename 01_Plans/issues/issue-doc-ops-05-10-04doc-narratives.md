@@ -371,3 +371,35 @@
 - 自己修復（Verify失敗時の修正）は最大3回。
 - **4回目相当は停止**し、状態を `Hold` に更新する。
 - **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
+
+## Stream K serial execution record（2026-04-26, narratives owner）
+
+### Phase 1 Read
+- `04_Documentation/narratives.md` と `00_Prompt/domain.md` の語彙整合を再確認し、`reviewState` / `SafeMode` の用語差異がないことを確認。
+- 最新差分検知として、公開境界・Go/No-Go・停止条件の欠落有無を確認。
+
+### Phase 2 ADR/CDC
+- Context: narrativeは公開可能だが、domain語彙を逸脱すると運用誤解を生む。
+- Decision: 分類は **Improve external** を維持し、定義拡張は既存domain語彙の範囲内に限定する。
+- Consequences: 公開文書の可読性を上げつつ、概念衝突を防止できる。
+
+### Phase 3 Plan
+- AC補完提案:
+  - AC-K-10-1: `Domain vocabulary compatibility` を明記し、用語追加時は `00_Prompt/domain.md` を優先する。
+  - AC-K-10-2: Go/No-Go判定に「語彙矛盾なし」を追加する。
+- DoD補完提案:
+  - DoD-K-10-1: 6Phase記録をIssue/Doc双方へ残す。
+  - DoD-K-10-2: Verify失敗時は3回以内に修復し、超過時停止する。
+
+### Phase 4 Execute
+- docs-only 最小差分で `04_Documentation/narratives.md` に domain語彙整合チェックを追記。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "Domain vocabulary compatibility|reviewState|human_reviewed|SafeMode|Go/No-Go" 04_Documentation/narratives.md`
+  - `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- フェイルセーフ: 3回超過/前提崩れ/allowlist逸脱時は `Hold` で停止する。

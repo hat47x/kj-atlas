@@ -1110,3 +1110,35 @@
 ### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+## 17) Stream K serial execution record（2026-04-26, quality owner）
+
+### Phase 1 Read
+- `01_Plans/documentation_quality.md` と本Issueを再読し、分類が **Move internal**、VerificationLevel が `docs-check` で固定されていることを確認。
+- 最新差分確認として、公開境界・Go/No-Go・AC/DoDの未充足項目を棚卸し。
+
+### Phase 2 ADR/CDC
+- Context: 本文書は公開本文ではなく、公開判定を行う内部Normative基準である。
+- Decision: 分類は **Move internal** を維持し、`04_Documentation/*` に複製しない。
+- Consequences: 外部公開時の判定は本書を参照しつつ、公開本文は `04_Documentation/` で維持する。
+
+### Phase 3 Plan
+- AC補完提案:
+  - AC-K-05-1: `Classification / Public boundary / Go/No-Go` を冒頭で一意に読める状態にする。
+  - AC-K-05-2: Verify手順は `rg` と `git diff --check` を明示し、再現可能にする。
+- DoD補完提案:
+  - DoD-K-05-1: 6Phase記録をIssueとDocの双方に残す。
+  - DoD-K-05-2: Verify失敗時の自己修復上限3回を明示する。
+
+### Phase 4 Execute
+- docs-only の最小差分で `01_Plans/documentation_quality.md` 冒頭メタを補強し、内部文書境界と公開判定導線を明文化。
+
+### Phase 5 Verify
+- 実施コマンド:
+  - `rg -n "Classification|Public boundary|Go/No-Go|QG-1|QG-6" 01_Plans/documentation_quality.md`
+  - `git diff --check`
+- 自己修復回数: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 継続条件: docs-only スコープ維持、allowlist外ファイルへの変更なし。

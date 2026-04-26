@@ -1,5 +1,9 @@
 # 対外文書作成品質基準（内部運用 / AIエージェント向け）
 
+> Classification: **Move internal**（内部運用文書として維持）
+> Public boundary: 本書は公開本文ではなく、`04_Documentation/*` の公開判定基準のみを扱う。組織固有の承認記録・機密情報は扱わない。
+> Go/No-Go: QG-1〜QG-6 と章16の統一判定手順を満たす場合のみ Go。未充足は No-Go。
+
 このドキュメントは、AIエージェントやメンテナが **対外公開するユーザ/開発者向け技術文書** を作成・更新する際の、内部向け品質管理基準を定義します。公開文書そのものではなく、`01_Plans/` に置く内部運用ルールとして扱います。
 
 ## 0. 文書の位置づけ（Normative / Informative）
@@ -489,3 +493,27 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 ### Phase 5 Proceed
 - 判定: **Ready**
 - フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。
+
+
+## 19. Stream K serial completion record（2026-04-26）
+
+### Phase 1 Read
+- 本書と `issue-doc-ops-05-05-04doc-documentation-quality.md` を再読し、Move internal分類とdocs-check要件を確認。
+
+### Phase 2 ADR/CDC
+- Context: 本書は内部Normative基準。
+- Decision: 公開本文へ複製せず、公開判定基準として維持。
+- Consequences: 公開境界と判定責務を一意に追跡できる。
+
+### Phase 3 Plan
+- AC/DoD不足を補完し、Classification/Public boundary/Go-NoGoを冒頭で読める状態にする。
+
+### Phase 4 Execute
+- 冒頭メタと本節をdocs-only最小差分で追記。
+
+### Phase 5 Verify
+- `rg -n "Classification|Public boundary|Go/No-Go|QG-1|QG-6" 01_Plans/documentation_quality.md`
+- `git diff --check`
+
+### Phase 6 Proceed
+- 判定: **Ready**（自己修復0/3）。
