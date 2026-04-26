@@ -219,6 +219,38 @@
 - 既存本文の分類方針を変更せず、メタ整合（DecisionQueueRef正規化・Open判定基準）のみ整備。
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
 
+## 16) Stream L（DOC-OPS-05-13: Public/Private boundary explicitization）
+
+### Phase 1 Read同期
+
+- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` を再読し、文書公開時の安全原則を同期。
+- `02_Architecture/strict_mode_exception_approval_flow.md` / `04_Documentation/security.md` / `THREAT_MODEL.md` の境界定義を突合。
+
+### Phase 2 Context / Decision / Consequences
+
+- Context: `security.md` は公開文書として参照される一方、運用機密を含めると公開境界を越えるリスクがある。
+- Decision: `DOC-OPS-05-13` は **Improve external** を維持し、公開境界・非公開境界を明文化して固定する。
+- Consequences: 公開版の説明責務は強化されるが、内部運用詳細は別文書管理が前提となる。
+
+### Phase 3 Execute（境界明文化）
+
+- 公開境界（Public）:
+  - 脅威カテゴリ、セキュリティ原則、SafeMode既定ON、share/export の漏洩防止方針（概念レベル）。
+  - 監査時に説明可能な役割定義（Security Officer / System Owner / Platform Operator）と責務分離原則。
+- 非公開境界（Private）:
+  - 実運用の内部連絡先、環境固有設定値、未公開脆弱性情報、インシデント個票、承認証跡の生データ。
+  - 攻撃容易化につながる詳細手順・内部構成情報（公開版には記載しない）。
+
+### Phase 4 Verify（docs-check / 自己修復上限）
+
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- 実行: `git diff --check`
+- 自己修復ポリシー: 不一致時は当該Issueのみ最小差分で修復し、**最大3回**。4回目相当は停止。
+
+### Phase 5 Proceed
+
+- 判定: Ready（公開境界・非公開境界を固定し、後続PRの編集範囲を限定できる状態）。
+
 ### Phase 5 Verify（docs-check / 自己修復上限3回）
 - 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
 - 実行: `git diff --check`

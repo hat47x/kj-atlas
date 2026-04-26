@@ -259,6 +259,38 @@
   - share/export 漏洩防止を緩和する記述
   - review自動昇格 / auto-apply を許容する記述
 
+## 17) Stream L（DOC-OPS-05-14: Public/Private boundary explicitization）
+
+### Phase 1 Read同期
+
+- `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` を再読し、公開ガイドに載せる情報粒度を同期。
+- `02_Architecture/strict_mode_exception_approval_flow.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/operations.md` を突合。
+
+### Phase 2 Context / Decision / Consequences
+
+- Context: `security_operational_guidelines.md` は運用判断補助として有用だが、内部手順を混在させると公開境界が破綻する。
+- Decision: `DOC-OPS-05-14` は **Improve external** を維持し、公開判断フローと内部専用情報を分離して記述する。
+- Consequences: 利用者向けガイドの再利用性は向上し、内部運用情報は別管理の統制が必要となる。
+
+### Phase 3 Execute（境界明文化）
+
+- 公開境界（Public）:
+  - プロファイル選択の判断観点、役割分離の原則、StoppedForClarification を含む停止条件の概念説明。
+  - 安全側既定（SafeMode既定ON・share/export 漏洩防止）を崩さない運用チェックリスト。
+- 非公開境界（Private）:
+  - 内部承認の個別記録、組織固有の例外申請経路、運用アカウント情報、監査ログ原本。
+  - 具体的なシステム内部トポロジーや脆弱点を推測可能な実装断片。
+
+### Phase 4 Verify（docs-check / 自己修復上限）
+
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- 実行: `git diff --check`
+- 自己修復ポリシー: 不一致時は当該Issueのみ最小差分で修復し、**最大3回**。4回目相当は停止。
+
+### Phase 5 Proceed
+
+- 判定: Ready（公開向け運用ガイドの境界が固定され、Open後のPRスコープを限定可能）。
+
 ## 17) Stream H 専任サイクル（DOC-OPS-05-14 / P1→P6）
 
 ### P1 Read（対象文書再読・必須）
