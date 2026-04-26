@@ -10,6 +10,12 @@
 - Related ADR/Spec: `04_Documentation/diagnostics.md`, `01_Plans/documentation_quality.md`, `02_Architecture/schemas.md`
 - Expected verification level: `docs-check`
 
+## Execution protocol（DOC-OPS-05-Set1 固定）
+
+- 各Issue開始時は **必ず Phase 1 (Read) を再実行** してから着手する。
+- 実行順序は **Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** の直列固定。
+- Verify 失敗時の自己修復は **最大3回**。4回目相当は **即停止（Hold）** とする。
+
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `DOC-OPS-05-04`
@@ -99,7 +105,7 @@
 - 重複/矛盾/不足:
   - 重複: 01〜07で同一テンプレのため、判定項目は共通化可能。
   - 矛盾: 本Issue固有の分類方針（Move internal / Improve external）は本文と整合。
-  - 不足: Phase 6（Proceed）のOpen可否記録が未定義だったため追加。
+  - 不足: Phase 5（Proceed）のOpen可否記録が未定義だったため追加。
 
 ### Phase 2: Plan
 - 1issue 1主責務: **公開文書改善計画（diagnostics runbook の外部品質要件固定）**
@@ -129,7 +135,7 @@
   3. 差分整合: `git diff --check` で体裁崩れがないことを確認。
 - 自己修復ルール: 失敗時は最大3回まで同ファイル内で修復し、4回目は停止して保留化する。
 
-### Phase 6: Proceed
+### Phase 5: Proceed
 - Open readiness: **Ready**
 - 保留区分: **なし**
 - 要判断区分: **なし（DecisionStatus=Fixed）**
@@ -148,28 +154,28 @@
 - 本Issueの Requirement meta I/F、Classification、ValidationLevel を再確認。
 - 本タスクでは指定5文書（diagnostics / e2e_testing / e2e_verification_log_2026-03-03 / documentation_quality / codex_skill_operations）以外へ非接触で進行することを確認。
 
-### Phase 2 ADR明文化
+### Phase 2 Plan
 - Context: 04_Documentation の公開境界と内部向け記述の混在を解消し、公開可能文書の判定を固定する。
 - Decision: 本Issueの Classification（Move internal / Improve external）を維持し、AC/DoDの不足はIssue本文で補う。
 - Consequences: 後続PRは docs-only で実施し、設計正本（00〜02）を上書きしない。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - AC/DoD不足のドラフト提案（合意済み扱い）:
   - AC-I1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を対象文書冒頭に明示。
   - AC-I2: GoNoGoGate=Required の判定条件を本文で再現可能にする。
-  - DoD-I1: Plan→Execute→Verify→Proceed の6Phase記録を残す。
+  - DoD-I1: Read→Plan→Execute→Verify→Proceed の5Phase記録を残す。
 - 非目標: 実装コード・CI・Stream H専有ファイルの変更は行わない。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - 本Issueの分類方針に沿い、対応する対象文書へ公開境界メタとGo/No-Go判定導線を反映。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - docs-check実施:
   - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" <target-doc>.md`
   - `git diff --check`
 - 自己修復は最大3回まで。4回目相当は停止して保留化する。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 状態分類: **Ready**
 - 次アクション: 本Issueに対応する文書差分をdocs-only PRとして提出し、未解決論点があれば `01_Plans/issues/` に分離記録する。
 
@@ -180,26 +186,26 @@
 - `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
 - `DecisionStatus=Fixed` のため、`DecisionQueueRef` を `N/A（DecisionStatus=Fixed）` に正規化。
 
-### Phase 2 ADR CDC（必要時のみ）
+### Phase 2 Plan（必要時のみ）
 - 判定: **追加ADR不要**（既存Issue内CDCで十分）。
 - Context: DOC-OPS-05は文書本文改稿ではなく「分類判定の品質固定」が主目的。
 - Decision: 本Issueの分類は **Improve external** を維持し、判定メタの再現性を優先する。
 - Consequences: Open化時の差し戻し理由を「分類メタ不足」に限定できる。
 
-### Phase 3 Plan（AC/DoD不足の補完）
+### Phase 3 Execute（AC/DoD不足の補完）
 - AC補強: Go/No-Go判定条件（Audience / Goal / 公開境界 / 次アクション）が本文で追跡可能であること。
 - DoD補強: Proceed判定を `Ready / Hold / Needs-decision` の三値で明示すること。
 
-### Phase 4 Execute（issue本文整備）
+### Phase 3 Execute（issue本文整備）
 - 既存本文の分類方針を変更せず、メタ整合（DecisionQueueRef正規化・Open判定基準）のみ整備。
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
 
-### Phase 5 Verify（docs-check / 自己修復上限3回）
+### Phase 4 Verify（docs-check / 自己修復上限3回）
 - 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
-### Phase 6 Proceed（Open化候補判定）
+### Phase 5 Proceed
 - Open readiness: **Ready**
 - 理由: 分類（Improve external）・検証レベル・GoNoGoGate・DecisionStatusが揃っており、本文改稿タスクと分離可能。
 - Open化ラベル候補: `DOC-OPS-05`, `docs-check`, `classification-quality`, `stream-f`.
@@ -213,13 +219,13 @@
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカー記録を追加して `Hold` へ遷移する（**同一停止条件**）。
 
 
-## 17) Stream G consolidated cycle（Read / CDC / Plan / Execute / Verify / Proceed）
+## 17) Stream G consolidated cycle（Read / Plan / Execute / Verify / Proceed）
 
 ### 1) Read（対象文書再読）
 - 対象: `Scope` と `Related ADR/Spec` を再読し、公開境界（Audience / Goal / Non-goal / Public boundary）を再確認。
 - 判定: 本Issueは docs-only のため、`03_Implement/**` は変更対象外。
 
-### 2) CDC（Context / Decision / Consequences）
+### 2) Plan（Context / Decision / Consequences を含む）
 - Context: `DOC-OPS-05-04` は DOC-OPS-05 の文書分類と公開品質を固定するためのDraft。
 - Decision: Classification は **Improve external** を維持し、既存のDecisionStatus=Fixedを正とする。
 - Consequences: 後続作業は文書更新・参照整合・公開境界確認に限定される。
@@ -238,7 +244,7 @@
   - `git diff --check`
 - フェイルセーフ: 語彙ドリフトが解消不能、または自己修復3回超過時は停止してHold化する。
 
-### 6) Proceed（issue状態更新案）
+### 5) Proceed（issue状態更新案）
 - 状態更新案: **Ready**（DecisionStatus=Fixed）。
 - 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
 
@@ -248,21 +254,21 @@
 - 共通テンプレ（Requirement meta I/F, Acceptance criteria, Validation plan, Authoring Checklist）を再確認し、Issue固有差分は `Scope` / `Related ADR/Spec` / `推奨アクション` のみを主差分として固定。
 - 対象: `04_Documentation/diagnostics.md`
 
-### Phase 2 ADR CDC必要性判定
+### Phase 2 Plan必要性判定
 - 判定: **追加ADR不要**（Issue本文の CDC 記録で十分）。
 - 条件: 既存ADR/Specへの参照で判断根拠が追跡可能な場合、ADR新設は行わない。
 
-### Phase 3 Plan（優先順）
+### Phase 3 Execute（優先順）
 1. Priority 1: 分類決定（Move internal / Improve external）を本文で固定。
 2. Priority 2: Audience / Goal / Public boundary / Outcome / Related の追跡可能性を確認。
 3. Priority 3: docs-check（`rg` / `git diff --check`）で体裁と導線を検証。
 
-### Phase 4 Execute（文書配置見直し）
+### Phase 3 Execute（文書配置見直し）
 - Classification execution: **Improve external**
 - 実行境界: Docs-only（`03_Implement/**` 非変更）。
 - Move internal の場合は公開スタブ化と内部正本導線を優先し、Improve external の場合は公開可読性・公開境界の明示を優先。
 
-### Phase 5 Verify（リンク・見出し・品質ゲート）
+### Phase 4 Verify（リンク・見出し・品質ゲート）
 - Verify command set:
   - `rg -n "^#|^##|Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" 04_Documentation/diagnostics.md 01_Plans/documentation_quality.md`
   - `git diff --check`
@@ -383,7 +389,7 @@
   - `git diff --check`
 - 検証ポリシー: 不一致時は当該Issueのみ最大3回まで自己修復し、超過時は即停止。
 
-### Phase 6) Proceed（次Issueへ）
+### Phase 5) Proceed（次Issueへ）
 - 判定: **Proceed可能**（致命競合なし）。
 - 次Issueへ進む前提: 同一ルール（Scope固定 / docs-check / 3回上限）をそのまま適用する。
 
@@ -399,7 +405,7 @@
 - Decision: 本Issueは既存の推奨アクション（Move internal / Improve external）を維持し、メタI/F不足のみ補完する。
 - Consequences: 後続PRは docs-only の最小差分へ限定し、実装・スキーマ層へ波及させない。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - AC補完:
   - AC-I-1: `Audience / Goal / Non-goal / Outcome / Related` の追跡可能性を維持する。
   - AC-I-2: `GoNoGoGate=Required` の判定条件を本文から再現可能にする。
@@ -408,18 +414,18 @@
   - DoD-I-1: 強制サイクル `Plan → Execute → Verify → Proceed` の証跡を残す。
   - DoD-I-2: Verify失敗時の自己修復は最大3回、4回目相当で停止する。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - Issue本文の範囲で、分類方針・Go/No-Go条件・検証導線を維持/補強する（最小差分）。
 - 編集禁止対象（他Stream専有ファイル、03_Implement配下、統合ファイル）には変更を加えない。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - docs-check（Issueメモ検証）:
   - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 - 差分整合:
   - `git diff --check`
 - 自己修復ポリシー: 失敗時は同一Issue内で最大3回まで修復し、4回目相当で停止して `Hold` とする。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定: **Ready（Draft維持のままOpen準備可）**。
 - Proceed条件: AC/DoD/Verifyが成立し、競合ファイル・前提崩壊・修復3回超過のいずれにも該当しない。
 - フェイルセーフ: 上記停止条件を検知した場合は作業を停止し、未解決事項を本Issue本文へ記録して継続実行を禁止する。
@@ -430,29 +436,29 @@
 - Scope/Priority/Requirement meta I/F を再読し、`推奨アクション`・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` の一致を確認。
 - AC未充足として「分類根拠の明文化」「次実行単位の固定」「GoNoGoGate判定条件の再現性」を抽出。
 
-### Phase 2 ADR CDC（新方針要否）
+### Phase 2 Plan（新方針要否）
 - 判定: **追加ADRなし（Issue内CDCで固定）**。
 - Context: DOC-OPS-05 は文書本文の全面改稿ではなく、公開境界の分類決定と実行順序固定が目的。
 - Decision: 本Issueの分類を **Improve external** として確定し、後続は docs-only 変更単位に限定。
 - Consequences: 実装/他Issueへ波及させず、Open化判定を分類メタの充足可否で一意に判断可能。
 
-### Phase 3 Plan（AC/DoD不足ドラフト）
+### Phase 3 Execute（AC/DoD不足ドラフト）
 - AC-G1: Audience / Goal / Public boundary / Related を対象文書に追記するタスクを次PR要件に固定。
 - AC-G2: GoNoGoGate=Required の判定条件（上記4点 + Validation + Non-goal）をIssue本文で追跡可能化。
 - DoD-G1: Proceed判定を `Ready / Hold / Needs-decision` の三値で残す。
 - DoD-G2: Validationは docs-check（メタ確認・参照整合・`git diff --check`）を必須実行手順に固定。
 
-### Phase 4 Execute（分類根拠・次実行単位の固定）
+### Phase 3 Execute（分類根拠・次実行単位の固定）
 - Classification（確定）: **Improve external**
 - 分類根拠: AudienceとPublic boundaryを基準に、内部運用正本と外部公開導線の混在解消を優先。
 - 次実行単位（固定）: `04_Documentation/diagnostics.md` に公開可能な運用診断範囲と内部専用情報境界を明記する改善PRを起票する。
 
-### Phase 5 Verify（docs-check整合 / 修復上限3回）
+### Phase 4 Verify（docs-check整合 / 修復上限3回）
 - 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 - 実行: `git diff --check`
 - 判定: 失敗時は同Issue内修復を最大3回まで。4回目相当は Fail-safe に従い停止。
 
-### Phase 6 Proceed（Ready化候補）
+### Phase 5 Proceed（Ready化候補）
 - 状態: **Ready**
 - Ready化条件: Classification固定・AC/DoD不足ドラフト記録・次実行単位固定・Verification手順固定を満たす。
 - Fail-safe確認: 分類不能/競合方針/scope外編集要求は未検出。
@@ -487,22 +493,22 @@
 - 対象Issueと `04_Documentation/diagnostics.md` を再Readし、`Scope / RequirementID / DecisionStatus=Fixed` を確認。
 - Classification は **Improve external** を維持。
 
-### Phase 2 ADR CDC
+### Phase 2 Plan
 - 判定: **ADR追加不要**。worker契約公開方針に変更なし。
 - Context / Decision / Consequences は既存Issue本文で追跡可能。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - AC/DoD不足なし。契約/フォールバック/決定論の公開品質維持を計画固定。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - 「対外文書として改善（Improve external）」分類を維持。
 - 実行方針: 公開runbookの説明品質を維持し、内部監査詳細は持ち込まない。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - docs-check: 必須メタ、契約語彙、差分整形を確認。
 - Self-Correction は最大3回。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定: **Ready**
 - フェイルセーフ条件への該当なし。
 
@@ -524,25 +530,25 @@
 - 本Issue本文を再読し、`Scope=04_Documentation/diagnostics.md` と `VerificationLevel=docs-check` を確認。
 - `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` の固定値を再確認。
 
-### Phase 2 ADR CDC
+### Phase 2 Plan
 - 判定: **追加ADR不要**。
 - Context / Decision / Consequences は既存セクションで追跡可能なため、方針の新規追加は行わない。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - Phase運用は **Stream H と同一**（Read → ADR CDC → Plan → Execute → Verify → Proceed）で固定。
 - 変更範囲は **専有ファイル: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` のみ** とし、対象外編集は禁止。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - Classification は **Improve external** を維持（再判定なし）。
 - 本更新は運用記録の追記のみ。実装コード・他Issue・共有ファイルには非接触。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - 実行コマンド:
   - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
   - `git diff --check`
 - 自己修復は最大3回、4回目相当は停止して `Hold` 化する。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定: **Ready**
 - 根拠: Scope固定、Phase運用H同一、docs-check導線、停止条件が本文で再現可能。
 - 分類方針 `Improve external` を維持し、対象文書へ最新の実行記録を反映。
@@ -670,7 +676,7 @@
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
 
-### Phase 6) Proceed（Open化準備リスト）
+### Phase 5) Proceed（Open化準備リスト）
 - Open readiness: **Ready**（Draft→Open候補）。
 - Open化準備リスト:
   - [ ] Classification（Move internal / Improve external）が固定されている。
@@ -757,11 +763,11 @@
 - Decision: 本Issueの分類は **Improve external** を維持。
 - Consequences: 後続は公開runbook品質補強の docs-only PR に限定。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - 当該Issue内の計画記述のみ更新し、他Issue・他文書には非波及で固定。
 - 実行計画を「分類判定固定」「次アクション固定」「検証手順固定」の3点に限定。
 
-### Phase 5 Verify / Proceed
+### Phase 4 Verify / Proceed
 - docs-check 実施方針（最大3回自己修復）:
   1) `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
   2) `git diff --check`
@@ -827,7 +833,7 @@
 
 ### Phase 1 Read
 - Scope / Related ADR/Spec / Expected verification level（`docs-check`）を再読し、docs-only前提を再確認。
-- 事前想定との差分: 過去記録に 5Phase と 6Phase の表現揺れがあるため、本レコードでは 5Phase に固定する。
+- 事前想定との差分: 過去記録に 5Phase と 5Phase の表現揺れがあるため、本レコードでは 5Phase に固定する。
 
 ### Phase 2 Plan
 - AC/DoD不足を補完して合意済み化（ユーザー承認: 2026-04-22）。
@@ -889,40 +895,40 @@
 - 次Issueへ進行条件: docs-check 通過と指定14ファイル限定編集の維持。
 - 停止条件: 4回目修復相当 / 前提崩れ / 競合検知。
 
-## 20) DOC-OPS-05 Batch2専任実行記録（2026-04-22, 固定6Phase）
+## 20) DOC-OPS-05 Batch2専任実行記録（2026-04-22, 固定5Phase）
 
 ### Phase 1 Read
 - Phase開始時に本Issueファイル（`DOC-OPS-05-04`）を再読し、`Scope` / `Related ADR/Spec` / `VerificationLevel=docs-check` を確認。
 - 判定: docs-only 範囲は維持、指定外ファイルは編集しない。
 
-### Phase 2 ADR/CDC
+### Phase 2 Plan
 - Phase開始時に本Issueファイルを再読し、既存 CDC 記録との整合を確認。
 - Context: diagnostics文書は公開改善（Improve external）として扱う既定方針。
 - Decision: 追加ADRは不要、Issue内CDCを正本として運用継続。
 - Consequences: 実装変更は禁止、Issueメモの運用証跡更新のみ実施。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - Phase開始時に本Issueファイルを再読。
-- AC/DoD不足点の確認結果: 固定6Phase導線（Read→ADR/CDC→Plan→Execute→Verify→Proceed）を明示的に追記する必要あり。
+- AC/DoD不足点の確認結果: 固定5Phase導線（Read→Plan→Execute→Verify→Proceed）を明示的に追記する必要あり。
 - ドラフト提案（合意済み）:
   - AC-B2-04-1: 各Phase冒頭で対象ファイル再読を明記する。
   - AC-B2-04-2: Verify失敗時の自己修復上限3回と、4回目相当で停止を明記する。
   - DoD-B2-04-1: Proceedに停止条件（前提崩れ/未定義競合/3回超過）と再開条件を残す。
 - 合意後にのみExecuteへ進行。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - Phase開始時に本Issueファイルを再読。
-- 実施内容: Batch2専任として本6Phase記録を追記し、既存分類（Improve external）を維持。
+- 実施内容: Batch2専任として本5Phase記録を追記し、既存分類（Improve external）を維持。
 - 変更境界: `01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md` のみ。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - Phase開始時に本Issueファイルを再読。
 - docs-check:
   - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
   - `git diff --check`
 - 自己修復ルール: 失敗時は同一ファイル内で最大3回、4回目相当は即停止。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - Phase開始時に本Issueファイルを再読。
 - 判定: **Ready**。
 - 停止条件: 前提崩れ / 未定義競合 / 自己修復3回超過。
@@ -932,7 +938,7 @@
 
 ### Phase 1) Read
 - `Status=Draft` / `Scope` / `Expected verification level=docs-check` の一致を再確認。
-- 既存記録内の Proceed 表記ゆれ（Phase 5 / Phase 6）を検知し、本passでは **5段階（Read/Plan/Execute/Verify/Proceed）** を正とする。
+- 既存記録内の Proceed 表記ゆれ（Phase 5 / 旧Phase 6）を検知し、本passでは **5段階（Read/Plan/Execute/Verify/Proceed）** を正とする。
 
 ### Phase 2) Plan
 - 分類基準を 3軸で統一：
@@ -962,24 +968,24 @@
 - 対象再読: 本Issue本文と `04_Documentation/diagnostics.md` を再読し、分類=**Improve external** を同期確認。
 - 固定条件: docs-only / 指定外ファイル非編集 / Verify自己修復は最大3回。
 
-### Phase 2 ADR/CDC（承認待ち）
+### Phase 2 Plan（承認待ち）
 - Context: diagnostics は外部運用者が参照する契約文書であり、公開境界を維持しつつ再現可能性を確保する必要がある。
 - Decision（提案）: `04_Documentation/diagnostics.md` を公開runbook品質で維持し、内部ログ記述は持ち込まない。
 - Consequences: 文書責務が明確化されるが、最終確定はレビュー承認まで **Pending approval** とする。
 
-### Phase 3 Plan
+### Phase 3 Execute
 - Plan-1: 冒頭メタ（Audience / Goal / Non-goal / Public boundary / Outcome / Related）整合を維持。
 - Plan-2: fallback / schemaVersion / deterministic条件の追跡可能性を維持。
 - Plan-3: docs-check（`rg` + `git diff --check`）で整合確認。
 
-### Phase 4 Execute
-- 本Issueへ Track 2 の6Phase記録を追記（docs-only）。
+### Phase 3 Execute
+- 本Issueへ Track 2 の5Phase記録を追記（docs-only）。
 
-### Phase 5 Verify
-- Verify command: `rg -n "DOC-OPS Track 2 serial cycle|Phase 1 Read|Phase 2 ADR/CDC|Pending approval" 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+### Phase 4 Verify
+- Verify command: `rg -n "DOC-OPS Track 2 serial cycle|Phase 1 Read|Phase 2 Plan|Pending approval" 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 - Verify command: `git diff --check`
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定: **Ready（承認待ち）**
 - 停止条件: Verify失敗が3回を超えた場合はHoldへ移行し、追加編集を停止。
 
@@ -1038,9 +1044,9 @@
 - 本Issueの `Requirement meta I/F`・`Acceptance criteria`・`Validation plan` を再読し、本文契約の欠落有無を確認。
 - 対象を本Issueメモのみに限定し、`04_Documentation/*` 実ファイルは編集対象外であることを確認。
 
-### Phase 2) ADR/CDC（必要時）
+### Phase 2) Plan（必要時のContext/Decision整理を含む）
 - 追加ADRは起票しない。既存方針（DOC-OPS-05 Draft群の契約整備）に従い、Issue本文内の運用記録をCDCとして扱う。
-- CDC要約: Context=公開文書ドラフト契約の再現性確保 / Decision=6Phase直列処理を固定 / Consequence=docs-onlyメモ更新で完結。
+- CDC要約: Context=公開文書ドラフト契約の再現性確保 / Decision=5Phase直列処理を固定 / Consequence=docs-onlyメモ更新で完結。
 
 ### Phase 3) Plan（AC/DoD不足提案）
 - AC提案: 「対象ドキュメント1ファイルをmock対象として明記」「他Issue非依存」「Verifyコマンド明記」を必須化。
@@ -1048,7 +1054,7 @@
 - Self-Correction制約: 同一Issueで修復は最大3回、4回目相当または競合検知で停止。
 
 ### Phase 4) Execute
-- 実施内容: 本Issueメモに対して、6Phase運用・依存切断・Self-Correction上限の契約文を追記。
+- 実施内容: 本Issueメモに対して、5Phase運用・依存切断・Self-Correction上限の契約文を追記。
 - Mock対象（1ファイル固定）: `04_Documentation/diagnostics.md`
 - 依存切断: 他 `issue-doc-ops-05-*` への参照は情報参照に留め、実行依存を作らない。
 
@@ -1058,7 +1064,7 @@
   - `git diff --check`
 - 判定基準: 見出し追記が1件以上検出され、diff体裁エラーがないこと。
 
-### Phase 6) Proceed
+### Phase 5) Proceed
 - Status: **Ready**
 - Stop condition: Self-Correction 3回超過、または本文契約の競合検知時は **Hold** へ遷移して停止。
 - Next: 次Issue（05-05）へ直列で進行（05-14は完了報告で終了）。
@@ -1070,30 +1076,30 @@
 - `Requirement meta I/F` と `Acceptance criteria` を再読し、`VerificationLevel=docs-check` / `DecisionStatus=Fixed` を確認。
 - Scopeを再確認し、本Issueは `01_Plans/issues` メモ更新のみ（実装変更なし）に限定。
 
-### Phase 2 ADR/CDC（必要時のみ）
+### Phase 2 Plan（必要時のみ）
 - 判定: **追加ADR不要**。
 - Context: DOC-OPS-05-04 は文書分類と公開境界の固定が主目的。
 - Decision: 既存方針 **Improve external** を維持し、未確定事項を増やさない。
 - Consequences: 後続作業は docs-only の参照更新/移設/公開改善に限定する。
 
-### Phase 3 Plan（AC/DoD不足ドラフト提案）
+### Phase 3 Execute（AC/DoD不足ドラフト提案）
 - AC追補案:
   - AC-G1: `GoNoGoGate=Required` の判定条件（Audience / Goal / 公開境界 / 次アクション）を本文で追跡可能にする。
   - AC-G2: 検証は `必須メタ確認 → 参照整合 → 差分整合` の順で記録する。
 - DoD追補案:
   - DoD-G1: Proceed判定を `Ready / Hold / Needs-decision` の三値で固定する。
 
-### Phase 4 Execute（issue本文の計画固定のみ）
+### Phase 3 Execute（issue本文の計画固定のみ）
 - 実施内容: 本Issueメモ内でPhase 1〜6の運用記録を固定（計画以外の変更なし）。
 - 非実施: 実装コード、`04_Documentation/*` 本文、他Issueメモの編集。
 
-### Phase 5 Verify（docs-check, self-correction<=3）
+### Phase 4 Verify（docs-check, self-correction<=3）
 - 実行記録:
   - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
   - `git diff --check`
 - 自己修復ルール: 検証失敗時は当該Issueのみ最大3回修復、4回目相当は停止して `Hold`。
 
-### Phase 6 Proceed（次Issueへ）
+### Phase 5 Proceed（次Issueへ）
 - 判定: **Ready**（DecisionStatus=Fixed / DecisionQueueRef=N/A）。
 - 次アクション: Stream Gの直列実行として次のDOC-OPS-05 issueへ進む。
 
@@ -1108,20 +1114,20 @@
 - Decision: 追加ADRは作成せず、Issue本文内CDCを正本として扱う。
 - Consequences: 後続作業は docs-only の計画更新に限定し、実装コード編集は実施しない。
 
-### Phase 3 Plan（AC / DoD合意）
+### Phase 3 Execute（AC / DoD合意）
 - AC: diagnostics の配置判定（Move internal/Improve external）を計画として固定する。
-- DoD: Read→ADR→Plan→Execute→Verify→Proceed の6Phase記録が残り、Proceed判定が `Ready / Hold / Needs-decision` の三値で示される。
+- DoD: Read→ADR→Read→Plan→Execute→Verify→Proceed の5Phase記録が残り、Proceed判定が `Ready / Hold / Needs-decision` の三値で示される。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - 本Issueメモ内の計画情報（AC/DoD/Proceed条件）を更新対象に限定。
 - Stream H専有ファイルおよび指定外ファイルへは非接触。
 
-### Phase 5 Verify（自己修復は最大3回）
+### Phase 4 Verify（自己修復は最大3回）
 - 実施: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
 - 実施: `git diff --check`
 - 失敗時は同一ファイル内で最大3回まで自己修復し、4回目相当は即停止して `Hold` 化する。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定: **Ready**（本Issueの DecisionStatus=Fixed かつ docs-check 範囲で完結）。
 - Fail-safe: 指定外ファイル変更・前提崩れ・競合検知時は即停止し、Issueを `Hold` に切替える。
 
@@ -1136,19 +1142,19 @@
 - AC草案固定: 対外改善計画（Audience/Goal/Public boundary/改善節）を固定し、本文全面改稿や実装変更を伴わない。
 - DoD草案固定: 公開改善の次アクションと検証手順が本文に固定され、検証がdocs-checkで再実行可能。
 
-### Phase 3 ADR/CDC
+### Phase 3 Execute（Context/Decision反映）
 - 方針衝突判定: **衝突なし**（既存Issue内のContext/Decision/Consequencesで充足）。
 - 追加ADR: **不要**。
 
-### Phase 4 Execute
+### Phase 3 Execute
 - 実施内容: issue本文の計画固定のみ更新（分類・AC/DoD・検証・Proceed）。
 - 非実施: 対象文書本文の全面改稿、`03_Implement/**`、共有統合ファイルの変更。
 
-### Phase 5 Verify
+### Phase 4 Verify
 - docs-check: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - diff check: `git diff --check`
 - 修復上限: 不整合が出た場合は最大3回まで修復し、超過時は停止。
 
-### Phase 6 Proceed
+### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
