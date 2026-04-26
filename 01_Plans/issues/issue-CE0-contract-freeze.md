@@ -29,6 +29,10 @@
 
 ## Stream B latest run（2026-04-26 / CE0 only）
 
+- run_id: `stream-b-ce0-2026-04-26-02`
+- scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
+
 ### Phase 1 Read（最新再読）
 - 実施: 本Issueを再読し、Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を再確認。
 - 実施: No-Go語彙ID（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）固定を再確認。
