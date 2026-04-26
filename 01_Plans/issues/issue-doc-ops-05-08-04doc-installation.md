@@ -1232,3 +1232,27 @@
 ### Phase 6 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+
+## 2026-04-26 Execution contract update（Interface-first / Mock-first）
+
+### Interface-first + Mock検証可能性（各Issueで先行評価）
+- Interface-first判定: 文書改訂前に `Audience / Goal / Non-goal / Public boundary / Outcome / Related` のI/Fキーを固定し、本文更新はこのI/Fに従属させる。
+- Mock検証可能性判定: 実環境依存の検証を要求しない `docs-check` を基準とし、`rg` と `git diff --check` の再実行で再現できることをGo条件にする。
+- No-Go条件: I/Fキー欠落、またはMock検証手順が再現不能な場合はExecuteへ進まない。
+
+### 強制フェーズ（Plan → Execute → Verify → Proceed）
+1. **Plan**: AC/DoDと検証コマンドを先に固定する。
+2. **Execute**: Planで合意した差分のみ適用する（docs-only / 指定ファイル限定）。
+3. **Verify**: `Expected verification level=docs-check` と整合するコマンドで確認する。
+4. **Proceed**: `Ready / Hold / Needs-decision` を明示して次工程可否を記録する。
+
+### AC/DoD不足時の運用（AIドラフト先行）
+- AC/DoDに不足がある場合、AIが不足項目ドラフト（AC-Delta / DoD-Delta）を先に提示する。
+- 合意取得前はExecute禁止。合意後のみExecuteへ遷移する。
+- 合意記録は本Issue本文のPhaseログに残し、外部ファイルへ分散させない。
+
+### 修復上限と停止条件
+- 自己修復（Verify失敗時の修正）は最大3回。
+- **4回目相当は停止**し、状態を `Hold` に更新する。
+- **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
