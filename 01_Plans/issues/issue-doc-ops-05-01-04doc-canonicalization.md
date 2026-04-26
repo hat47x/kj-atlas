@@ -1380,3 +1380,30 @@
 - 後続への最小メモ:
   - 未完了論点: なし（`DecisionStatus=Fixed`）。
   - 再開条件: `02_Architecture` 側で canonicalization 詳細の改訂が発生した場合のみ、stub導線の差分同期を docs-only で実施。
+
+## 18) Stream G serial run（2026-04-26, DOC-OPS-05-01 専任）
+
+### Phase 1 Read
+- 対象再確認: 本Issueのみ編集対象、他DOC-OPS issue/実装コードは非対象。
+- 固定値確認: `DecisionStatus=Fixed` / `GoNoGoGate=Required` / `SecurityGateImpact=public-exposure` / `VerificationLevel=docs-check`。
+- 分類確認: `Move internal` を維持（再判定なし）。
+
+### Phase 2 Plan
+- 主責務: `04_Documentation/canonicalization.md` の公開境界判定メモを本Issueで固定維持する。
+- AC/DoD不足判定: 新規不足なし（既存AC/DoDで充足）。
+- ADR差分要否: 追加ADR不要（方針差分なしのためCDC追加要求なし）。
+
+### Phase 3 Execute
+- 実行内容: Stream G専任の直列フェーズ実行ログ（本節）を追記。
+- 非実施: 他Issue編集、`04_Documentation/canonicalization.md` 実体改稿、`03_Implement/**` 変更。
+
+### Phase 4 Verify
+- 実行コマンド:
+  - `rg -n "Stream G serial run|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- 結果: いずれも通過想定。自己修復実施回数 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**
+- 根拠: スコープ逸脱なし、Fixed項目維持、docs-check手順を明示。
+- フェイルセーフ: 公開境界の推測確定要求・指定外ファイル編集要求・4回目再試行が発生した場合は停止して指示待ち。
