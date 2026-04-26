@@ -68,3 +68,27 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 12) Stream F serial execution log（2026-04-26）
+
+### Phase 1 Read
+- 本Issue本文（Requirement meta I/F / Serial cycle record / Stop conditions）を再読し、対象が `DOC-OPS-05-13` 単票であることを確認。
+- 参照正本は `04_Documentation/security.md`・`04_Documentation/operations.md`・`04_Documentation/security_operational_guidelines.md` に限定。
+
+### Phase 2 Plan
+- 実行範囲を **issue-doc-ops-05-13 のみ** に固定し、相互依存は manifest（Related ADR/Spec）参照のみに制限。
+- 受入観点を `Audience / Goal / 公開境界 / 次アクション` と `docs-check` 一致確認に固定。
+
+### Phase 3 Execute（ADRタスク必須 C/D/C + 承認記録）
+- Context: security 文書は公開原則を示すが、運用詳細との境界が曖昧だと過不足ある公開につながる。
+- Decision: `DOC-OPS-05-13` は **Improve external** を維持し、制度定義の再発明は行わず上流導線を優先する。
+- Consequences: 後続の docs-only 更新は公開境界の明確化に集中でき、実装/設定変更を誘発しない。
+- Approval record: **Issueメモ内承認（Stream F運用合意）** として本C/D/Cを記録。未承認の新規決定は追加しない。
+
+### Phase 4 Verify
+- `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を確認。
+- 自己修復回数を `0/3` で開始し、失敗時のみ最大3回まで。4回目相当は Stop conditions に従い停止。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次順序: `DOC-OPS-05-14` を同一プロトコル（Read → Plan → Execute → Verify → Proceed）で処理する。
