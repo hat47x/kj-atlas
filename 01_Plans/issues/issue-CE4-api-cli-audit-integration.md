@@ -480,3 +480,53 @@
   - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
   - 監査4点欠損は fail-closed 固定（成功応答禁止）。
   - 自己修復3回超過時は即停止。
+
+## Stream F Execution Record（2026-04-26 / CE4 serial-phase lock sync）
+
+### Phase 1 Read
+- Read同期: 完了（CE0/CE1/CE2 は read-only 参照境界、CE4編集対象は本ファイルのみを再確認）。
+- 参照固定: `equivalenceKey + bundleHash`（AND）、監査4点 `query / bundle / proposal / apply`、欠損時 fail-closed を再確認。
+- No-Go確認: 片側一致成功扱い禁止、監査欠損成功扱い禁止、safeMode緩和禁止、語彙再定義禁止を確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: API/CLI/Audit 統合契約の再現性を mock server/mock CLI 前提で維持し、依存切断下でも同値判定と監査導線を固定する必要がある。
+- Decision:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定を継続する。
+  - 監査4点（`query / bundle / proposal / apply`）欠損は常に fail-closed とする。
+  - `sourceBundleHash=mock:<hash>` でも本番と同一契約を適用する。
+  - CDC-CE4-001 / CDC-CE4-002 の承認済み状態を維持し、新規CDCは起票しない。
+- Consequences:
+  - contract-only 境界を維持し、実装アルゴリズム記述は行わない。
+  - 未承認事項は `held` 維持とし、CE4側で確定しない。
+
+### Phase 3 Plan
+- Plan補完（AC/DoD不足提案）:
+  - 提案: mock server/mock CLI の双方で `queryCanonicalHash` を同値判定監査の必須比較根拠として保持する。
+  - 合意: 採用（既存契約の必須化・再確認であり、語彙追加なし）。
+- 実施計画（docs-only / 単一ファイル）:
+  1. 本ファイルへ6-phase記録を追記する。
+  2. CE0/CE1/CE2は read-only 参照を維持し更新しない。
+  3. Verifyで docs-check と No-Go検査を実施する。
+
+### Phase 4 Execute
+- 実施: 本ファイルのみ更新（contract-only 記録更新）。
+- 非実施: 実装追加、アルゴリズム記述、他ファイル更新、safeMode緩和、語彙再定義。
+- モック活用固定:
+  - API/CLIシグネチャ先行固定を維持し、mock server/mock CLI で依存切断下の契約検証を可能とする。
+  - 同値判定は `equivalenceKey + bundleHash`（AND）固定を維持する。
+
+### Phase 5 Verify
+- Attempt 1（self-correction 0/3）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - `rg -n "equivalenceKey \\+ bundleHash|query / bundle / proposal / apply|fail-closed|自己修復は最大3回|4回目" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- 判定: pass（No-Go逸脱なし、4回目再試行着手なし）。
+
+### Phase 6 Proceed
+- Proceed Decision: **Go（docs-only / contract-only）**。
+- 維持事項:
+  - CE0/CE1/CE2 read-only 境界を維持する。
+  - `equivalenceKey + bundleHash`（AND）の片側一致成功扱いを禁止する。
+  - 監査4点欠損時 fail-closed を維持する。
+  - 自己修復は最大3回、4回目相当は即停止する。
