@@ -1134,3 +1134,30 @@
 - 自己修復（Verify失敗時の修正）は最大3回。
 - **4回目相当は停止**し、状態を `Hold` に更新する。
 - **致命競合（fatal conflict）** を検知した場合は即時停止し、競合解消条件が明確になるまで `Proceed=Hold` を維持する。
+
+
+## Stream J serial completion record（2026-04-26 / DOC-OPS-05-06）
+
+### Phase 1 Read
+- 対象Issue本文と `04_Documentation/e2e_testing.md` を再読し、分類（Improve external）と E2E方針正本としての位置づけを確認。
+
+### Phase 2 ADR/CDC
+- Context: E2E手順文書は公開runbookとして維持しつつ、内部進行メモや実測ログとの混在を回避する必要がある。
+- Decision: Classification **Improve external** を維持し、`ADR-0019` の方針（Compose/runbook基準）との整合を優先する。
+- Consequences: 本Issueの後続更新は「手順正本の明瞭化」に限定し、実測ログ詳細は `e2e_verification_log_2026-03-03.md` へ分離する。
+
+### Phase 3 Plan
+- AC補完: ①Audience/Goal/Public boundary の再確認 ②`ADR-0019` 参照の維持 ③実行不能時記録ルールの明示。
+- DoD補完: docs-check により語彙/導線/体裁整合を確認し、6Phase記録を残す。
+
+### Phase 4 Execute
+- 本Issueへ Stream J の6Phase記録を追記し、分類・検証レベル・GoNoGoGate 定義を維持した。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial completion record|ADR-0019|Improve external|VerificationLevel" 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 停止条件確認: 自己修復上限超過なし、依存仕様不整合なし、許可外ファイル編集なし。

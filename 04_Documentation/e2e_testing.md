@@ -922,3 +922,29 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 ### Phase 5 Proceed
 - 判定: **Ready**
 - フェイルセーフ: Verify失敗時の自己修復は最大3回。超過時は **Hold** として停止。
+
+
+## Stream J serial cycle（2026-04-26 / DOC-OPS-05-06）
+
+### Phase 1 Read
+- 本文と対応Issue（DOC-OPS-05-06）を再読し、分類=Improve external と runbook正本の位置づけを確認。
+
+### Phase 2 ADR/CDC
+- Context: E2E手順文書は再現手順の正本として公開し、実測履歴はログ文書へ分離する必要がある。
+- Decision: `ADR-0019` を上位根拠として、Compose/SQLite代替の実行方針と合否判定ルールを本書に維持する。
+- Consequences: 実行履歴（日付・環境固有エラー）は `e2e_verification_log_2026-03-03.md` へ記録し、本書は手順正本に専念する。
+
+### Phase 3 Plan
+- AC補完: `ADR-0019` 整合、実行不能時の記録要件、文書役割分離を維持する。
+- DoD補完: docs-check 合格、6Phase記録追跡可能、公開境界メタ維持。
+
+### Phase 4 Execute
+- Stream J の6Phase記録を追記（docs-only、最小差分）。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial cycle|ADR-0019|実測履歴|手順正本" 04_Documentation/e2e_testing.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**

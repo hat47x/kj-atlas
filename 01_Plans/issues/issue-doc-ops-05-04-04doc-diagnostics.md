@@ -1158,3 +1158,30 @@
 ### Phase 5 Proceed
 - 判定（Go / Conditional / No-Go）: **Go**
 - 根拠: DecisionStatus=Fixed かつ docs-check 前提の計画固定が完了。
+
+
+## 19) Stream J serial completion record（2026-04-26 / DOC-OPS-05-04）
+
+### Phase 1 Read
+- 対象Issue本文と `04_Documentation/diagnostics.md` を再読し、最新の分類（Improve external）と docs-check 前提を確認。
+
+### Phase 2 ADR/CDC
+- Context: diagnostics 文書は外部運用者向けに公開価値があり、内部運用ログとは役割分離が必要。
+- Decision: Classification **Improve external** を維持し、Audience / Goal / Public boundary を根拠として固定する。
+- Consequences: 後続更新は docs-only で「診断仕様の可読性改善」に限定し、実装・運用ログを混在させない。
+
+### Phase 3 Plan
+- AC補完: ①分類根拠の明示 ②次アクションの明示 ③GoNoGoGate=Required の判定導線明示。
+- DoD補完: Read→ADR/CDC→Plan→Execute→Verify→Proceed を本文で追跡可能にし、Verify は docs-check で再現可能とする。
+
+### Phase 4 Execute
+- 本Issueへ Stream J の6Phase記録を追加し、既存の分類方針と検証レベルを変更せずに整合化。
+
+### Phase 5 Verify
+- `rg -n "Stream J serial completion record|Phase 2 ADR/CDC|GoNoGoGate|VerificationLevel" 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+- `git diff --check`
+- 修復回数: 0/3
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 停止条件確認: 自己修復上限超過なし、依存仕様の解釈不能なし、許可外ファイル編集要求なし。
