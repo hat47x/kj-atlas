@@ -802,3 +802,29 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - フェイルセーフ: D1〜D4不一致、責務分離崩れ、導線切断、または自己修復3回超過時は停止。
+
+## 0.6 Stream L serial lane log（2026-04-26 / DOC-OPS-05-13）
+
+### Phase 1 Read
+- `issue-doc-ops-05-13-04doc-security.md` と本書、`security_operational_guidelines.md` / `operations.md` の導線を再確認。
+
+### Phase 2 ADR/CDC
+- Context: 本書は安全境界の基底方針で、運用判断補助やrunbookの代替ではない。
+- Decision: `Improve external` を維持し、safeMode既定ON・share/export漏洩防止・用語3種・2者承認と実行分離・D1〜D4固定を Verify 前提へ固定。
+- Consequences: 公開境界を維持しつつ、security系文書の横断ドリフトを検知しやすくなる。
+
+### Phase 3 Plan
+- Scope: docs-only 追記。
+- Non-goal: 実装/設定の仕様追加、承認制度の再定義。
+- AC/DoD: 4観点（用語/役割/導線/固定値）と停止条件を維持。
+- Validation: `rg` / `git diff --check`。
+- Stop: 自己修復3回超過、不一致未収束。
+
+### Phase 4 Execute
+- 本節を追加し、DOC-OPS-05-13直列完遂の記録を残した。
+
+### Phase 5 Verify
+- docs-check観点で不整合なし（自己修復 0/3）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（次順序は security_operational_guidelines）。

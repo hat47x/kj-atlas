@@ -438,3 +438,32 @@
 ### Phase 5. Proceed/Stop
 - 判定: **Proceed**。
 - 理由: CDC要否判定・AC/DoD補完・docs-check観点を満たし、次のOpen/実作業判断へ進行可能。
+
+## 2026-04-26 Stream L serial completion log（DOC-OPS-05-11）
+
+### Phase 1 Read
+- 対象Issueと `04_Documentation/operations.md` 最新本文を再読し、docs-only / allowlist内編集を確認。
+
+### Phase 2 ADR/CDC
+- Context: operations は公開runbook責務だが、security/guidelines との境界を継続監査する必要がある。
+- Decision: Classification=`Improve external` を維持し、用語3種・2者承認/実行分離・D1〜D4同値確認をGo条件へ固定する。
+- Consequences: operations 単独で制度設計を再定義せず、公開runbookとしての再現性を維持できる。
+
+### Phase 3 Plan
+- Scope: `issue-doc-ops-05-11` と `operations.md` の整合追記のみ。
+- Non-goal: 実装コード変更、他Issue改稿、承認制度の新規定義。
+- AC: Audience/Goal/Public boundary/Go-NoGo/Fail-safe を本文追跡可能にする。
+- DoD: docs-check + 用語整合 + `git diff --check` を満たす。
+- Validation: `rg` で必須語彙確認、`git diff --check` 実行。
+- Stop条件: 自己修復3回超過、用語/責務/D1〜D4不整合、allowlist外編集要求。
+
+### Phase 4 Execute
+- 本ログを追記し、Phase要件・停止条件・検証導線を固定。
+
+### Phase 5 Verify
+- 結果: docs-check観点の記述整合を確認。
+- 自己修復: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次順序: `DOC-OPS-05-13` へ直列進行。
