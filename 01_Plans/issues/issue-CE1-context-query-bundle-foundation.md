@@ -906,3 +906,51 @@
 - CE4 handoffキー整合: `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` を維持。
 - ADR条件: 衝突未検知のため CDC（Context / Decision / Consequences）起票なし。
 - フェイルセーフ監視: CE0再定義なし / 語彙衝突未解決なし / Self-Correction 3回超過なし。
+
+---
+
+## Stream D Execution Record（2026-04-26 / phase-order realignment）
+
+### Phase 1 Read（Status / Scope / Related ADR確認）
+- 再読対象: 本Issue（Status/Scope/Related ADR）, `ADR-0028`, `02_Architecture/schemas.md`。
+- 判定: CE0 read-only境界・CE1 contract-only境界ともに前提差分なし。
+- 差分ゲート: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙変更なし。
+
+### Phase 2 I/F固定 + Mock方針
+- I/F固定（v1）:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - `ContextBundleV1` must return `queryCanonicalHash` and `bundleHash`
+- Mock方針（実装非依存）:
+  - deterministic mockで同一canonical queryを3回評価し、`queryCanonicalHash` / `bundleHash` 一致を確認。
+  - CE2/CE4引き渡しキーは read-onlyで `sourceBundleHash === bundleHash` を維持。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC補完:
+  - hash決定論の検証回数を3回で固定。
+  - preview gate失敗語彙を `422 preview_required` に固定。
+  - closed-world違反語彙を `400 unknown_contract_key` に固定。
+- DoD補完:
+  - handoff比較キー一致（`sourceBundleHash === bundleHash`）を完了条件化。
+  - safeMode regression = 0 を完了条件に維持。
+- ADR CDC判定:
+  - 衝突未検知のため CDC起票不要（`held` 遷移なし）。
+
+### Phase 4 Execute / Verify（自己修復上限3回）
+- Execute:
+  - 本Issue内に運用記録のみ追加（contract-only）。
+  - 実装記述（handler/UI/DB/worker）追加なし。
+- Verify Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0/3（上限未到達）。
+
+### Phase 5 Proceed / Stop
+- Proceed条件充足:
+  - CE1固定契約ID・語彙・No-Go境界を維持。
+  - CE2/CE4 handoffは read-only継続。
+- Stop条件監視:
+  - preview bypass許容化: 該当なし
+  - safeMode既定緩和: 該当なし
+  - Self-Correction 3回超過: 該当なし
