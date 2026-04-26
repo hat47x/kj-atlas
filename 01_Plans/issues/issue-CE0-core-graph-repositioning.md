@@ -563,3 +563,33 @@
 - Phase冒頭Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（single-file / contract-only / CE0契約ID read-only / 語彙固定 / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は `held` へ遷移してエスカレーションする。
+
+## Phase Execution Record（2026-04-26 / Stream C / CE0 core graph repositioning prompt-c sync）
+### Phase 1 Read
+- 開始時Read同期を実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認。
+- 差分判定: 固定語彙差分なし、canonical 5 IDs 差分なし、`held` へ移行すべき新規差分なし。
+
+### Phase 2 Plan（ADR first: Context / Decision / Consequences）
+- Context: CE0 Core Graph再配置は contract-only で実施し、`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定維持する。
+- Decision: `No ADR delta`。本作業は本Issue単一ファイル更新に限定し、実装変更（handler/UI/DB/worker/API/Schema migration）を禁止する。
+- Consequences: 未承認論点は `held` または `pending` の在庫として保持し、確定化しない。語彙差分・SafeMode後退兆候・自己修復4回目相当は停止条件とする。
+- Plan同期: AC/DoD/Validation/Stop Conditions を再確認し、不足なしのため既存契約定義を維持して進行。
+
+### Phase 3 ADR Consensus
+- 開始時Read同期を再実施し、Phase 2で明文化した Context/Decision/Consequences と本文契約定義の一致を確認。
+- 判定: `No ADR delta` を維持。未承認事項の確定化は行わず、必要時 `held/pending` 維持。
+
+### Phase 4 Execute
+- 開始時Read同期を再実施し、contract-only 境界と single-file 制約を確認。
+- 実施内容を本Issue内の実行記録追記に限定し、`role / transition / no-go` 語彙の同義語置換・再定義・拡張を実施しない。
+
+### Phase 5 Verify
+- 開始時Read同期を再実施し、検証コマンドと停止条件を再確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数: 0/3（追加修復不要）。
+
+### Phase 6 Proceed
+- 開始時Read同期を再実施し、Proceed条件（AC/DoD満了 + docs-check pass）を確認。
+- 判定: `Done`（contract-only / single-file / 固定語彙維持 / docs-check pass）。
+- 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
