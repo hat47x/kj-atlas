@@ -24,18 +24,23 @@
 - CE2は **proposal-only** を固定し、実装・auto-apply は常時禁止。
 - AIによる `reviewState=human_reviewed` への昇格は常時禁止（人手操作のみ）。
 - CE0/CE1 契約は **参照専用** とし、CE2側で再定義・拡張しない。
-- 強制フェーズ順序は **Phase 1 Read（必須再読）→ Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed** のみ。
-- AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 4 Execute を開始しない**。
+- 強制フェーズ順序は **Phase 1 Read同期 → Phase 2 I/F定義先行（Mock化） → Phase 3 Plan（AC/DoD補完提案） → Phase 4 Execute→Verify（Self-Correction最大3回） → Phase 5 Proceed or Stop** のみ。
+- AC/DoD不足時は、AIが不足項目のドラフトを提示し、**人手合意が成立するまで Phase 4 Execute→Verify を開始しない**。
 - 自己修復・再試行は最大3回まで。**3回超過（4回目相当）で fail-safe 停止**。
 - Stopper: 自動確定 / 自動公開 / レビュー自動昇格が要求された時点で即停止する。
 
+## Stream E 5-phase override（2026-04-26）
+- 本Issueの運用は 5フェーズ固定とし、`Read同期 -> I/F定義先行（Mock化） -> Plan（AC/DoD補完提案） -> Execute→Verify（Self-Correction最大3回） -> Proceed or Stop` を唯一の進行順序とする。
+- Phase 2 は I/F定義を先行し、実装依存は常に Mock 境界に隔離する。
+- Phase 4 は Execute と Verify を連結運用し、検証失敗時の自己修復は `1/3` から `3/3` まで。`4/3` 相当で fail-safe 停止する。
+- Phase 5 は条件充足なら Proceed、致命条件（No-Go要求 / safeMode後退 / 指定外編集 / 自己修復3回超過）なら Stop を選択する。
+
 ## Stream E phase contract（2026-04-25 追記）
 - **Phase 1 Read**: 閉集合（`proposed | accepted | rejected | held`）/禁止事項（auto-apply・AI review自動昇格・safeMode後退）/Read同期チェックを必須とする。
-- **Phase 2 ADR/CDC**: 契約語彙の変更要求がある場合のみ CDC を明文化し、承認完了まで `status=held` を維持する。
-- **Phase 3 Plan**: AC/DoD不足時は不足ドラフト提示に限定し、人手合意成立まで **Phase 4 Execute を開始しない**。
-- **Phase 4 Execute**: 契約文言更新のみに限定し、実装指示・自動適用手順・運用権限付与を記載しない。
-- **Phase 5 Verify**: 禁止遷移・safeMode後退・指定外編集を検査し、自己修復は最大3回（`1/3`〜`3/3`）まで。
-- **Phase 6 Proceed**: 条件未充足時は `held` で停止し、確定扱いで次工程へ渡さない。
+- **Phase 2 I/F定義先行（Mock化）**: `proposalId/diff/sourceBundleHash/rationale/status/reviewState` を先に固定し、契約語彙変更要求がある場合のみ CDC を明文化して承認完了まで `status=held` を維持する。
+- **Phase 3 Plan**: AC/DoD不足時は不足ドラフト提示に限定し、人手合意成立まで **Phase 4 Execute→Verify を開始しない**。
+- **Phase 4 Execute→Verify**: 契約文言更新と検証を連結運用し、禁止遷移・safeMode後退・指定外編集を検査。自己修復は最大3回（`1/3`〜`3/3`）まで。
+- **Phase 5 Proceed or Stop**: 条件充足時のみ Proceed。未充足時は `held` で停止し、確定扱いで次工程へ渡さない。
 - **Fail-safe**: 自動確定 / 自動公開 / レビュー自動昇格要求を検知した時点で即停止する。
 
 ## Stream E CE2 proposal-only directive（2026-04-25）
@@ -43,7 +48,7 @@
 - lifecycle閉集合: `proposed | accepted | rejected | held` のみを許可し、語彙追加・別名導入を禁止する。
 - proposal-only固定: 実装・auto-apply・自動確定・自動公開を常時禁止し、AIは候補提示に限定する。
 - review昇格固定: AIによる `reviewState=human_reviewed` 昇格を禁止し、人手操作のみ許可する。
-- 実行順序固定: `Phase 1 Read -> Phase 2 ADR/CDC -> Phase 3 Plan -> Phase 4 Execute -> Phase 5 Verify -> Phase 6 Proceed`。
+- 実行順序固定: `Phase 1 Read同期 -> Phase 2 I/F定義先行（Mock化） -> Phase 3 Plan -> Phase 4 Execute→Verify -> Phase 5 Proceed or Stop`。
 - Read同期必須: 各Phase開始時にRead同期を実施し、差分検知時は `status=held` で停止する。
 - AC/DoDゲート: 不足時はAIドラフト提示のみを許可し、人手合意成立までExecuteを開始しない。
 - Verify再試行上限: 修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
@@ -54,7 +59,7 @@
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
 - `proposal-only` を固定し、auto-apply は常時禁止とする。
 - AIは `reviewState=human_reviewed` へ昇格しない（人手のみ）。
-- 実行フェーズは `Read（必須再読）→ ADR/CDC → Plan → Execute → Verify → Proceed` の順序固定。
+- 実行フェーズは `Read同期（必須再読）→ I/F定義先行（Mock化）→ Plan → Execute→Verify → Proceed or Stop` の順序固定。
 - 各Phase開始時に Read同期を必須化し、差分検知時は `status=held` で停止する。
 - AC/DoD不足時は AIドラフト提示のみに限定し、人手合意まで Execute を禁止する。
 - 自己修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
@@ -87,16 +92,16 @@
 - auto-apply は常時禁止。
 - `reviewState=human_reviewed` のAI自動昇格は禁止（人手のみ）。
 - `reviewState` は `unreviewed | human_reviewed` のみ許可し、AI提案は常に `unreviewed` に固定する。
-- 強制ワークフローは `Phase 1 Read（必須再読）→ Phase 2 ADR/CDC → Phase 3 Plan（AC/DoD補完）→ Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed` に固定する。
+- 強制ワークフローは `Phase 1 Read同期（必須再読）→ Phase 2 I/F定義先行（Mock化）→ Phase 3 Plan（AC/DoD補完）→ Phase 4 Execute→Verify → Phase 5 Proceed or Stop` に固定する。
 - 各Phase開始時は必ず Read を実施し、前Phaseの固定契約との差分有無を確認してから進行する。
 - 各Phase開始時の Read 同期で差分を検知した場合は `status=held` で停止し、Planに差し戻して合意を再取得する。
-- AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Execute を開始しない。
+- AC/DoD が不足する場合は AI が補完案を提示し、人手合意が取れるまで Execute→Verify を開始しない。
 - 編集許可は `issue-CE2-low-risk-ai-assist.md` のみ。実装コード・共有統合・他CE issue編集は禁止。
 
 ## Stream E operation profile（契約固定）
 - 担当は Stream E 専属とし、CE2 low-risk AI assist の proposal-only 契約に固定する。
 - 編集範囲は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみとし、他ファイルは参照専用とする。
-- Phase運用は `Phase 1 Read（必須再読）→ Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute（status: proposed|accepted|rejected|held）→ Phase 5 Verify（auto-apply禁止・review auto promotion禁止）→ Phase 6 Proceed` を固定する。
+- Phase運用は `Phase 1 Read同期（必須再読）→ Phase 2 I/F定義先行（Mock化）→ Phase 3 Plan → Phase 4 Execute→Verify（auto-apply禁止・review auto promotion禁止・Self-Correction最大3回）→ Phase 5 Proceed or Stop` を固定する。
 - `accepted/rejected/held` は人手判断の結果としてのみ遷移可能とし、AIは `proposed` の候補提示に限定する。
 - 状態語彙の追加要求、SafeMode後退要求、または自己修復3回超過時は fail-safe で即停止する。
 
@@ -140,10 +145,10 @@
 - AIによる `human_reviewed` 自動昇格禁止
 - `CE0-SAFEMODE-IF` を参照し、CE2側で緩和しない
 
-## Phase 2 ADR/CDC（必要時のみ実施：契約語彙変更要求の承認待ちを固定）
+## Phase 2 I/F定義先行（実装依存はMock化）
 - 開始時Read: Phase 1 Read（必須再読）で固定した lifecycle / reviewState / No-Go語彙との差分を再確認する。
 - 差分検知時: `status=held` を維持し、差分解消と人手合意が完了するまで Plan から先へ進まない。
-- Execute開始ゲート: AC/DoD不足時はAIがドラフト提案のみ行い、人手合意前は Phase 4 Execute を開始しない。
+- Execute開始ゲート: AC/DoD不足時はAIがドラフト提案のみ行い、人手合意前は Phase 4 Execute→Verify を開始しない。
 - AC/DoD不足時: AIは不足項目のドラフトのみ提示し、合意済みAC/DoDが揃うまで `status=held` を維持する。禁止事項要求が出た時点で即停止する。
 - Scope（固定）: proposal-only契約の文言整備のみ。契約語彙の追加・再定義・実装仕様化は対象外。
 - Non-goals（固定）: 実装変更、auto-apply導入、review自動昇格、safeMode既定緩和、他issue編集。
@@ -166,8 +171,8 @@
 - 判定: 不一致が1件でもあれば差分理由のみ記録し、CE2で再定義しない。
 - ADR記述は必要時のみ `Context / Decision / Consequences` を明文化し、承認待ち中は `held` を維持する。
 
-## Phase 3 Plan（AC/DoD補完：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
-- 開始時Read: Phase 2 ADR/CDC の合意内容を再読し、未合意項目があれば `held` で停止する。
+## Phase 3 Plan（AC/DoD補完提案：候補提示限定・自動採用禁止・review自動昇格禁止を固定）
+- 開始時Read: Phase 2 I/F定義先行 の合意内容を再読し、未合意項目があれば `held` で停止する。
 - 差分検知時: `status=held` で停止し、勝手に解釈して更新しない。
 - 実行開始条件: AC/DoDの人手合意が完了していること（未合意なら Execute 開始禁止）。
 - proposal lifecycle は `proposed | accepted | rejected | held` に固定し、別名・追加語彙を導入しない。
@@ -186,15 +191,7 @@
 - 監査導線: `proposal` と `apply` の監査トレースを分離し、CE2は proposal-only 契約境界を維持する。
 - 監査証跡要件: `query/bundle/proposal/apply` の4点セット語彙を欠損なく残し、CE4へread-onlyで受け渡す。
 
-## Phase 4 Execute（patch/diff追跡可能性を明文化）
-- 開始時Read: Phase 3 Plan で合意した AC/DoD を必須再読し、未合意項目があれば `status=held` で停止する。
-- 実行内容は proposal-only 契約文言の更新に限定し、実装手順・自動適用経路・権限付与手順を記載しない。
-- proposal lifecycle は `proposed | accepted | rejected | held` の閉集合を維持し、語彙追加を行わない。
-- AI提案の `reviewState` は `unreviewed` 固定とし、`human_reviewed` への昇格は人手操作のみに限定する。
-- 禁止事項要求（auto-apply / 自動確定 / 自動公開 / レビュー自動昇格 / safeMode既定緩和）を受けた時点で即停止する。
-- 追跡可能性要件として `proposalId` と `patch/diff` と `sourceBundleHash` を紐付け、監査時に再現可能な記録を保持する。
-
-## Phase 5 Verify（safeMode後退ゼロを検証）
+## Phase 4 Execute→Verify（safeMode後退ゼロを検証 / Self-Correction最大3回）
 - 開始時Read: Phase 4 Execute の変更差分（proposal-only / no-auto-apply / human-only昇格）を再確認する。
 - 差分検知時は `status=held` とし、自己修復カウンタを1増分して再同期する。
 - docs-check（3点セット）を実行し、検証失敗時の自己修復は最大3回（`1/3`〜`3/3`）までとする。
@@ -216,7 +213,7 @@
 - [ ] docs-check（3点セット）を実行し、自己修復は最大3回以内で収束
 - [ ] 変更対象ファイルが `issue-CE2-low-risk-ai-assist.md` のみである
 
-## Phase 6 Proceed（未確定は保留、3回超過や前提崩壊で停止）
+## Phase 5 Proceed or Stop（未確定は保留、3回超過や前提崩壊で停止）
 - 開始時Read: Verify結果と fail-safe 判定条件（3回超過 / 前提崩壊 / 競合）を再確認する。
 - 差分検知時: `status=held` を維持し、Proceedを実行せず停止する。
 - 3回超過（4回目相当）または前提崩壊を検知した場合は Proceed を中止し、fail-safe 停止する。
@@ -241,16 +238,14 @@
 
 ## Stream E execution log（2026-04-23）
 - Phase 1 Read: Read Order（上流文書）と本Issue本文を再読して契約固定を同期。
-- Phase 2 ADR/CDC: 契約語彙変更要求時のみCDCを明文化し、承認待ちは`held`を維持。
-- Phase 3 Plan: AC/DoD不足時はドラフト提案のみ提示し、人手合意まで Execute を開始しない。
-- Phase 4 Execute: 本Issueファイル内のみを更新し、指定外ファイルは未変更。
-- Phase 5 Verify: docs-check 3点セット（validator / unittest / `git diff --check`）で差分妥当性を確認。
-- Phase 6 Proceed: Go（Verify通過。契約固定を維持したまま次工程へ引き渡し可能）。
+- Phase 2 I/F定義先行: `proposalId/diff/sourceBundleHash/rationale/status/reviewState` を先に固定し、実装依存はMock境界で扱う。
+- Phase 3 Plan: AC/DoD不足時はドラフト提案のみ提示し、人手合意まで Execute→Verify を開始しない。
+- Phase 4 Execute→Verify: 本Issueファイル内のみを更新し、docs-check 3点セット（validator / unittest / `git diff --check`）で差分妥当性を確認。自己修復は最大3回。
+- Phase 5 Proceed or Stop: Go（Verify通過時のみ）。停止条件該当時は `held` のまま停止。
 
 ## Stream E execution log（2026-04-25 / CE2 proposal-only再同期）
 - Phase 1 Read: 本Issueを再読し、Scope固定（単一ファイル）/lifecycle閉集合/proposal-only/review昇格禁止を同期。
-- Phase 2 ADR/CDC: 契約語彙変更要求なしのため CDC追加なし。変更要求発生時は `held` 停止を再確認。
+- Phase 2 I/F定義先行: 契約語彙とI/Fを先に固定し、実装依存はMock化で境界維持。
 - Phase 3 Plan: AC/DoD不足時はAIドラフト提示のみ、人手合意までExecute禁止のゲートを再確認。
-- Phase 4 Execute: 本Issue内の契約明文化のみ更新（実装指示・自動適用手順・権限付与は未記載）。
-- Phase 5 Verify: docs-check 3点セットを実行し、禁止遷移/指定外編集/safeMode後退がないことを確認。
-- Phase 6 Proceed: Go（proposal-only固定を維持。未合意事項が発生した場合は `held` で停止）。
+- Phase 4 Execute→Verify: 本Issue内の契約明文化のみ更新し、docs-check 3点セットで禁止遷移/指定外編集/safeMode後退がないことを確認。自己修復は最大3回。
+- Phase 5 Proceed or Stop: Go（proposal-only固定を維持）。未合意事項や停止条件が発生した場合は `held` で停止。
