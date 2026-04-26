@@ -573,3 +573,47 @@
   - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定を維持（片側一致を成功扱いしない）。
   - safeMode後退禁止を維持。
   - self-repair は3回上限、4回目相当は即停止。
+
+## Stream F Execution Record（2026-04-26 / User directive sync: Read → ADR/CDC → Plan → Execute → Verify/Proceed）
+
+### Phase 1 Read
+- Phase開始 Read同期: 完了（CE0 contract IDs、CE1/CE2 read-only境界、監査4点 `query / bundle / proposal / apply`、fail-closed 条項を再確認）。
+- 固定条件再確認:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）。
+  - 監査4点欠損は常に fail-closed（成功応答禁止）。
+  - safeMode既定は緩和しない（`CE0-SAFEMODE-IF` 準拠）。
+
+### Phase 2 ADR/CDC
+- Phase開始 Read同期: 完了（契約語彙・No-Go・監査4点に差分なし）。
+- Context: 同値判定と監査導線の再現性を contract-only で維持し、部分一致や監査欠損の成功扱いを排除する必要がある。
+- Decision:
+  - `equivalenceKey + bundleHash`（AND）不成立は fail-closed を維持。
+  - `query / bundle / proposal / apply` の4点欠損は fail-closed を維持。
+  - 既存 CDC（`CDC-CE4-001`, `CDC-CE4-002`）承認済み状態を維持し、新規CDCは起票しない。
+- Consequences: CE4は contract-only 境界を維持し、実装詳細・語彙再定義・safeMode緩和を行わない。
+
+### Phase 3 Plan
+- Phase開始 Read同期: 完了（AND条件、監査4点、fail-closed、自己修復上限に差分なし）。
+- Plan（docs-only / 単一ファイル）:
+  1. 本ファイルの運用記録のみ更新する。
+  2. `equivalenceKey + bundleHash`（AND）固定を明記維持する。
+  3. 監査4点欠損 fail-closed を明記維持する。
+  4. Verifyで自己修復上限（最大3回、4回目相当は即停止）を確認する。
+
+### Phase 4 Execute
+- Phase開始 Read同期: 完了（No-Go: 片側一致成功扱い禁止 / 監査欠損成功扱い禁止 / safeMode緩和禁止 / 語彙再定義禁止）。
+- 実施: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ更新。
+- 非実施: コード変更、他ファイル編集、実装アルゴリズム追記。
+
+### Phase 5 Verify/Proceed
+- Phase開始 Read同期: 完了（Proceed直前に固定条件を再確認）。
+- Verify Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（自己修復 0/3、4回目着手なし）。
+- Proceed Decision: **Go（docs-only / contract-only）**。
+- 維持事項:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
+  - 監査4点欠損は fail-closed 固定（成功応答禁止）。
+  - 自己修復は最大3回。3回超過（4回目相当）は即停止。
