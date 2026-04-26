@@ -68,3 +68,37 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 2026-04-26 Stream J strict serial run（1ファイル1ブランチ）
+
+### Phase 1: Read（開始時同期）
+- Read同期: 本Issue（`DOC-OPS-05-11`）と対象正本（`04_Documentation/operations.md`）を再読し、`DecisionStatus=Fixed` / `VerificationLevel=docs-check` / `Scope=operations.md` を確認。
+- 排他条件: **1ファイル1ブランチ** を適用し、本Issue以外の DOC-OPS-05 Draftファイルは編集対象外に固定。
+
+### Phase 2: ADR/CDC（必要時のみ）
+- Read同期: `Related ADR/Spec` と `ADR handling rule` を再読。
+- 判定: 用語・役割・固定値に新規差分なしのため、**ADR起票なし / CDC追記なし**。
+
+### Phase 3: Plan
+- Read同期: `Requirement meta I/F` / `Stop conditions` を再読。
+- 実行計画:
+  1. 本Issueに直列運用ログを追記（他ファイル非編集）。
+  2. Verifyで `Plan→Execute→Verify→Proceed` の連鎖をチェック。
+  3. 自己修復は最大3回、4回目相当は停止。
+
+### Phase 4: Execute
+- Read同期: `Serial cycle record` と `Stop conditions` を再読。
+- 実行: 本節（strict serial run）を追加し、ユーザー指定プロトコル（Read→ADR/CDC→Plan→Execute→Verify/Proceed）を文書化。
+
+### Phase 5: Verify / Proceed
+- Read同期: 本節全体を再読して完了条件を照合。
+- Verify結果:
+  - V1: 単一ファイル編集を維持（pass）。
+  - V2: フェーズ順序 `Read → ADR/CDC → Plan → Execute → Verify/Proceed` を維持（pass）。
+  - V3: 自己修復上限3回の停止条件を明記（pass）。
+- 自己修復ログ（最大3回）:
+  - Repair-1: Phase見出しを `Verify / Proceed` へ統一。
+  - Repair-2: 各PhaseにRead同期行を追加。
+  - Repair-3: 「4回目相当は停止」を明示。
+  - Repair-4: **未実施（禁止）**。
+- Proceed判定: **Ready（次順序は security lane 実行時に再判定）**。
