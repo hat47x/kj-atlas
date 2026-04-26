@@ -1149,3 +1149,40 @@
 - CE1は CE0参照専用 + I/F凍結のみ を継続。
 - CE2/CE4への handoff は read-only で継続し、契約再定義を禁止。
 - 停止条件監視: Self-Correction超過なし、safeMode後退兆候なし、未定義競合なし。
+## Stream C Execution Record（2026-04-26 / CE1 contract-only phase cycle）
+
+### Phase 1 Read（再読・Stopper確認）
+- 本ファイルを再読し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに限定されることを確認。
+- CE0は read-only 参照（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）とし、CE1で再定義しないことを確認。
+- Stopper確認（CE0契約ID改名 / safeMode語彙ドリフト / 範囲外編集）: **未検知**。
+
+### Phase 2 Plan（AC/DoD不足ドラフト確認）
+- AC固定候補を維持:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+- DoD固定候補を維持:
+  - `sourceBundleHash === bundleHash`
+  - SafeMode regression = 0
+- 実装（handler/UI/DB/worker）は対象外として記述追加しない。
+
+### Phase 3 Execute（contract-only更新）
+- 本Execution Recordを追記し、Phase運用ログのみ更新。
+- CE1契約ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を維持。
+- CE0契約の改名・再採番・語彙再定義は未実施。
+
+### Phase 4 Verify（docs-check / self-correction上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（修復不要）。
+
+### Phase 5 Proceed（継続判定）
+- Proceed判定: **continue**（contract-only維持、read-only handoff維持）。
+- Stopper監視結果:
+  - CE0契約ID改名: なし
+  - safeMode語彙ドリフト: なし
+  - 範囲外編集: なし
+
+---
