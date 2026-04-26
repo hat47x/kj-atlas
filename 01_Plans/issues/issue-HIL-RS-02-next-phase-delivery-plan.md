@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本指示で許可された7 Issue以外は不干渉
+- Non-target file policy: 本タスクで編集許可された4 Issue（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md`）以外は不干渉
 
 - Execution order (Stream A fixed serial): 6/6 HIL-RS-02 delivery plan
 
@@ -23,6 +23,7 @@
   - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
   - `safeModeDefault=ON`
   - `sharedResourceFreeze=true`
+  - `contractLinkLocked=true`
 - 事前想定との差分: なし（Proceed可）。
 - 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 - Phase gate checklist: `Status / Scope / Dependencies / 固定キー` を各Phase開始時に再確認し、差分が1つでもあれば `held` に記録して停止。
@@ -60,9 +61,9 @@
 - `HIL-RS-02-GOV-EXCEPTION-01`: `held`（A3 Draft->Open, RS-02 Ready をブロック）。
 
 ## Phase 3: Plan
-- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止）。
+- 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止・各Phaseで必須）。
 - 対象差分意図: 開始判定をA1 SSOTに固定。
-- 非対象不干渉: 本指示で許可された5 Issue以外は編集しない。
+- 非対象不干渉: 編集許可された4 Issue以外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
@@ -113,7 +114,7 @@ delivery_gate_v1:
 - `NoGo = (!ProceedGate && !Conditional)`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## Phase 5: Verify
+## Phase 5: Verify→Proceed
 - AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
 - 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - Self-Correction counterは `0/3` で開始し、各再試行で `+1` を明示記録する。
@@ -125,7 +126,7 @@ delivery_gate_v1:
 - `self_correction_attempt >= 4`（4回目相当）を検知した場合。
 - 未承認事項の確定化（pending bypass）を検知した場合。
 - `NoGo return path` の改変要求を検知した場合。
-- `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` の後退兆候を検知した場合。
+- `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` / `contractLinkLocked=true` の後退兆候を検知した場合。
 - 上記を検知した場合は推測継続を禁止し、`held` 記録を更新して停止する。
 
 ## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
