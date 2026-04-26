@@ -218,6 +218,35 @@
 - AC補強: Go/No-Go判定条件（Audience / Goal / 公開境界 / 次アクション）が本文で追跡可能であること。
 - DoD補強: Proceed判定を `Ready / Hold / Needs-decision` の三値で明示すること。
 
+## 16) Stream H execution log（DOC-OPS-05-01）
+
+### Plan
+- 固定ゴール: `04_Documentation/canonicalization.md` の文書分類を **内部移設（Move internal）** として確定する。
+- 変更範囲: 本Issueメモのみ（本文全面改稿・実装変更なし）。
+- 成功条件: 分類、根拠、次アクション、検証レベル（docs-check）が一貫して再確認できること。
+
+### Execute
+- 分類判定を再固定: **Move internal**。
+- 根拠を維持確認:
+  - Audience: 外部利用者よりも内部設計/運用担当向け。
+  - Goal: 正規化/決定論の設計正本の参照性を高める。
+  - Public boundary: 公開ガイド層（04）から設計層（02/01）へ責務を寄せる。
+- 次アクションを固定:
+  - `02_Architecture/canonicalization_workflow.md` 新設
+  - `04_Documentation/canonicalization.md` は概要stub化
+
+### Verify
+- 実施コマンド（docs-check）:
+  - `rg -n "Move internal|Audience|Goal|Public boundary|Next action|docs-check" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- 失敗時自己修復:
+  - 同ファイル内で最大3回まで修復、4回目相当は **Hold** で停止。
+
+### Proceed
+- 判定: **Ready**
+- 理由: DecisionStatus=`Fixed` かつ分類方針（内部移設）が本文内で再確認可能。
+- 保留条件: 検証コマンドで体裁崩れ/記載欠落が再発した場合のみ **Hold** へ移行。
+
 ### Phase 3 Execute（issue本文整備）
 - 既存本文の分類方針を変更せず、メタ整合（DecisionQueueRef正規化・Open判定基準）のみ整備。
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
