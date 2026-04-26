@@ -7,11 +7,11 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
+- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象7Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本指示で許可された5 Issue以外は不干渉
+- Non-target file policy: 本指示で許可された7 Issue以外は不干渉
 
 ## Operating Premise（Prompt G適用）
 - A1未完前提でA3は **mock I/Fベースの準備タスクのみ** 実施する。

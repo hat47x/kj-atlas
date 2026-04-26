@@ -4,11 +4,11 @@
 - Status: Open（critical path active）
 - Priority: P0
 - Owner: Stream A（Critical Path: P0/P1 Contract & Governance）
-- Scope: `01_Plans/issues/` の対象6Issueの計画・契約整合のみ
+- Scope: `01_Plans/issues/` の対象7Issueの計画・契約整合のみ
 - Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: 対象6Issue以外は不干渉（編集禁止）
+- Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
 
 - Execution order (Stream A fixed serial): 1/6 FB-P0 baseline整合
 
@@ -20,7 +20,7 @@
 ### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
-- Scope: 対象6Issueの契約/統治/handoff整合
+- Scope: 対象7Issueの契約/統治/handoff整合
 - Dependencies: `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON`
 - Related ADR: `ADR-0001/0019/0026/0027/0028`
 
@@ -70,7 +70,7 @@
   2. A1/A2/A3系Issue: 同一判定式へ統一。
   3. A3: read-only referenceを維持。
 - 非対象ファイル不干渉
-  - `01_Plans/issues/` の対象6Issue以外は変更しない。
+  - `01_Plans/issues/` の対象7Issue以外は変更しない。
 
 ### AC / DoD（ドラフト→合意済み）
 - AC
@@ -85,7 +85,7 @@
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- 対象6Issueの語彙・判定式・停止条件を統一。
+- 対象7Issueの語彙・判定式・停止条件を統一。
 - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")` をA1->A2->A3の唯一判定式として固定。
 - `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected` を共通化。
 - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)` / `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
