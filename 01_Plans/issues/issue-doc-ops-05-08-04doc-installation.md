@@ -1299,3 +1299,32 @@
 ### Phase 6 Proceed
 - 判定: **Ready**
 - 次アクション: docs-only PR 作成へ進行。
+
+## 19) Stream J phase-sync serial update（2026-04-26 / DOC-OPS-05-08）
+
+### Phase 1 Read sync
+- 再読同期: 本Issue / `04_Documentation/installation.md` / `01_Plans/documentation_quality.md` を同一フェーズで確認。
+- 依存扱い: 05-06/05-07の判定は参照のみとし、待機依存を作らない。
+
+### Phase 2 ADR/CDC sync
+- Context: installation は公開オンボーディング導線のため、公開境界を維持した改善が必要。
+- Decision: Classification **Improve external** を維持。
+- Consequences: docs-onlyで判定根拠更新を継続し、内部運用情報は混在させない。
+
+### Phase 3 Plan sync
+- 直列順: 05-06 → 05-07 → 05-08 を維持して実行記録を同期。
+- AC同期: Audience/Goal/Public boundary/Non-goal の根拠を追跡可能に保つ。
+- DoD同期: Verify成功、自己修復3回以内、allowlist外差分0。
+
+### Phase 4 Execute sync
+- 実施: 本Issueへ Stream J の同期ログを追記。
+- 非実施: 実装コード・指定外Issue・運用系別ストリーム文書の変更。
+
+### Phase 5 Verify sync
+- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+- `git diff --check`
+- 自己修復: 失敗時は最大3回、4回目相当で停止。
+
+### Phase 6 Proceed sync
+- 判定: **Ready**
+- 停止条件: 自己修復上限超過 / Requirement meta矛盾 / allowlist外変更要求。
