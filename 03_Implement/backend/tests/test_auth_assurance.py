@@ -56,3 +56,15 @@ def test_build_auth_assurance_metadata_invalid_auth_time_is_unknown() -> None:
     metadata = build_auth_assurance_metadata(_ctx(auth_time="not-a-timestamp"))
 
     assert metadata["authAgeBucket"] == "unknown"
+
+
+def test_build_auth_assurance_metadata_falls_back_to_acr_when_aal_unknown() -> None:
+    metadata = build_auth_assurance_metadata(_ctx(acr="aal2", aal="unsupported-aal"))
+
+    assert metadata["assuranceLevel"] == "substantial"
+
+
+def test_build_auth_assurance_metadata_prefers_recognized_aal_over_acr() -> None:
+    metadata = build_auth_assurance_metadata(_ctx(acr="aal3", aal="aal1"))
+
+    assert metadata["assuranceLevel"] == "low"

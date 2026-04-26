@@ -34,8 +34,7 @@ def _parse_auth_time(raw: str | None) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def _resolve_assurance_level(*, acr: str | None, aal: str | None) -> str:
-    raw = (aal or acr)
+def _normalize_assurance(raw: str | None) -> str:
     if raw is None:
         return "unknown"
     normalized = raw.strip().lower()
@@ -46,6 +45,14 @@ def _resolve_assurance_level(*, acr: str | None, aal: str | None) -> str:
     if normalized in _ASSURANCE_LOW:
         return "low"
     return "unknown"
+
+
+def _resolve_assurance_level(*, acr: str | None, aal: str | None) -> str:
+    # Prefer explicit AAL when recognized, but fall back to ACR when AAL is missing/unknown.
+    aal_level = _normalize_assurance(aal)
+    if aal_level != "unknown":
+        return aal_level
+    return _normalize_assurance(acr)
 
 
 def build_auth_assurance_metadata(auth: AuthContext, *, now: datetime | None = None) -> dict[str, str | bool]:
