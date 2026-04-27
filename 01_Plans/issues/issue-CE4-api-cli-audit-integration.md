@@ -693,43 +693,36 @@
   - CE0/CE1/CE2はread-only参照のまま更新しない。
   - 未承認事項は `held` 維持、自己修復3回超過兆候で即停止。
 
-## Stream E Execution Record（2026-04-27 / CE4 API-CLI-Audit 実装同期）
+## Stream E Execution Record（2026-04-27 / CE4 API-CLI-Audit contract sync）
 
 ### Phase 1 Read
 - Phase開始 Read同期: 完了（CE0 contract IDs / CE1・CE2 read-only / 監査4点 / fail-closed / safeMode既定ONを再確認）。
 - AC/DoDドラフト提案:
-  - Draft-AC: `POST /context/bundles:resolve` と CLI `ce4 resolve-bundle` の最小I/Fを実装し、`equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` 必須を維持する。
-  - Draft-DoD: `dryRun=true -> sideEffect=none`、監査4点欠損fail-closed、`safeMode=false` 拒否をコード境界で検証可能にする。
-- 合意: 採用（CE4専任範囲で backend routes/models/CLI のみ変更）。
+  - Draft-AC: API/CLI同値判定は `equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` 必須を維持する。
+  - Draft-DoD: `dryRun=true -> sideEffect=none`、監査4点欠損fail-closed、`safeMode=false` 拒否を契約境界で検証可能にする。
+- 合意: pending（人手合意完了まで contract-only 継続）。
 
 ### Phase 2 Plan
 - Phase開始 Read同期: 完了（No-Goとcontract語彙に差分なし）。
-- Plan:
-  1. `models_context.py` に CE4 resolve request/response と deterministic 生成関数を追加。
-  2. `routes/context.py` に `POST /context/bundles:resolve` を追加し fail-closed 検証を実装。
-  3. `cli.py` に `ce4 resolve-bundle` を追加し API契約と同一入出力キーを扱う。
-  4. 既存回帰テスト + endpoint/CLI smoke を実行し、失敗時は最大3回まで修復。
+- Plan: 本Issue文面の契約固定のみ更新し、実装変更は行わない。
 
 ### Phase 3 Execute
 - Phase開始 Read同期: 完了（監査4点 / AND固定 / safeMode既定維持を再確認）。
-- 実施:
-  - CE4 resolve 用 request/response モデルと `build_ce4_resolved_bundle` を追加。
-  - `/context/bundles:resolve` ルートを追加（`safeMode_required`、`queryCanonicalHash_required`、`audit_chain_incomplete`、`dry_run_requires_no_side_effect` をfail-closed）。
-  - CLIに `kj_atlas_api.cli ce4 resolve-bundle` を追加し、`query/dryRun/sourceBundleHash/safeMode` を API に送信。
+- 実施: contract-only 文言整備のみ（API/CLI実装手順・コード変更の記述は行わない）。
 
 ### Phase 4 Verify
 - Phase開始 Read同期: 完了（No-Go違反なしを確認）。
 - Verify attempt 1/3:
-  - `pytest -q tests/test_context_bundle_routes.py tests/test_docs_audit_integration.py` → pass
-  - `PYTHONPATH=src python - <<'PY' ... /context/bundles:resolve ... PY` → 200 / 必須キー確認
-  - `PYTHONPATH=src python -m kj_atlas_api.cli ce4 resolve-bundle --help` → pass
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
 - 結果: pass（自己修復 0/3、4回目着手なし）。
 
 ### Phase 5 Proceed
 - Phase開始 Read同期: 完了（契約語彙・fail-closed境界・safeMode既定を再確認）。
 - Proceed:
-  - CE4 API/CLI/Audit integration の最小実装を backend に反映。
-  - 監査4点語彙・AND判定・safeMode既定ONの境界は維持。
+  - CE4 API/CLI/Audit integration は contract-only 記述の固定に限定する。
+  - 監査4点語彙・AND判定・safeMode既定ONの境界は維持する。
 
 ## Stream E Coordinated Update（2026-04-27 / API-CLI監査統合 CDC pending / latest）
 
@@ -774,7 +767,7 @@
 - Next-2: 承認結果に応じて AC/DoDドラフト（Draft-AC/DoD-CE4-2026-04-27系）を確定または `held` 維持する。
 - Next-3: CE2側参照境界（read-only）で承認状態を同期し、誤昇格がないことを再検証する。
 
-## Stream F Execution Record（2026-04-27 / CE4 contract-only latest）
+## Stream E Execution Record（2026-04-27 / CE4 contract-only latest）
 
 > 本節を latest authoritative とし、CE4は contract-only 文書固定を継続する。実装詳細・アルゴリズム詳細は確定しない。
 
@@ -823,6 +816,11 @@
 - Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` fail-closed同等性維持。
 - Proceed判定: Go（contract-only文書固定）。
 - 完了条件: docs-check pass、fail-closed条項明記、未承認CDCの確定化禁止を満たす。
+
+## Stream E Lane Ownership Note（2026-04-27 / latest）
+- 本Issueの運用主体は Stream E に固定し、CE2完了ゲート通過後の CE4 直列進行のみを許可する。
+- 旧Stream記録は監査参照用の履歴として残置し、最新運用判断は Stream E 記録を正本とする。
+- proposal-only + mock-first + contract-only を維持し、実装確定は行わない。
 
 ## Stream E Execution Record（2026-04-27 / started after CE2 gate）
 
