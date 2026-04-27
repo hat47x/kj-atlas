@@ -105,3 +105,25 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 後続最小メモ: 設計正本が更新された場合のみ、stub導線を同期更新する。
+
+
+## Stream G mini-Phase serial run（2026-04-27）
+
+### Phase 1 Read
+- 対応Issue（`DOC-OPS-05-01`）と本書の分類ヘッダを再読し、公開境界を確認。
+
+### Phase 2 Plan
+- 変更責務を docs-only の記録同期に限定し、本文の分類（Move internal / Improve external）を維持。
+- 共通ACテンプレ（Scope固定 / 境界明示 / GoNoGo / docs-check / 3回上限）を適用。
+
+### Phase 3 Execute
+- 本節を追記し、Read→Plan→Execute→Verify→Proceed の直列実行証跡を固定。
+- 指定外ファイル・実装コード・共有統合ファイルは未編集。
+
+### Phase 4 Verify
+- `rg -n "DOC-OPS|Classification|Audience|Goal|Public boundary|Go/No-Go|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5" 04_Documentation/canonicalization.md`
+- `git diff --check`
+- self-repair count: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（分類方針と公開境界を維持）。

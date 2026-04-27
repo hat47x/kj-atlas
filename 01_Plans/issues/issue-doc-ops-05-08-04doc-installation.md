@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-08 04_Documentation/installation.md の配置見直し
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Ready
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD
@@ -21,6 +21,16 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
+
+## Stream G 共通ACテンプレ（合意・DOC-OPS-05）
+
+- AC-1 Scope固定: docs-only（`03_Implement/**` 非編集）かつ allowlist 内の対象のみ更新する。
+- AC-2 分類固定: 各対象で `Move internal` または `Improve external` を明記し、公開境界を維持する。
+- AC-3 境界明示: Audience / Goal / Non-goal / Public boundary / Related を追跡可能にする。
+- AC-4 ゲート整合: `GoNoGoGate=Required` を維持し、Go/No-Go 判定条件を本文で再現可能にする。
+- AC-5 検証整合: `VerificationLevel=docs-check` と実行検証（`rg` / `git diff --check`）を一致させる。
+- DoD-1 直列処理: mini-Phase 1..5（Read→Plan→Execute→Verify→Proceed）を記録する。
+- DoD-2 失敗停止: 自己修復は最大3回。4回目相当、競合、allowlist外編集要求で `Hold` 停止。
 
 ## 1) 課題 / Problem statement
 
@@ -226,7 +236,7 @@
   - `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
   - `04_Documentation/installation.md`
 - Status/Scope/RequirementStatement 確認:
-  - Status: Draft
+  - Status: Ready
   - Scope: `04_Documentation/installation.md`
   - RequirementStatement: `installation.md` を internal / external のどちらかに分類し、実行計画を固定する。
 - Audience / Goal / Non-goal / Public boundary 抽出（`installation.md` より）:
@@ -1388,3 +1398,27 @@
 
 ### Phase 6 Proceed
 - 判定: **Ready**（Stream H 範囲で継続可能）。
+
+
+## Stream G mini-Phase run（2026-04-27 / strict serial 1..5）
+
+### Phase 1 Read
+- 本Issueの `Requirement meta I/F` と対象Docの現行分類を再確認。
+- 前提: docs-only / 指定allowlist / `VerificationLevel=docs-check` を固定。
+
+### Phase 2 Plan
+- 単一責務を「対象Docの公開境界維持と分類固定」に限定。
+- 共通ACテンプレを本Issueに適用し、停止条件（3回上限・競合停止）を有効化。
+
+### Phase 3 Execute
+- 本Issueの `Status` を Ready 化し、共通ACテンプレと5Phase記録を追記。
+- 指定外（`operations.md` / `security.md` / `e2e_testing.md` / `03_Implement/**`）は未編集。
+
+### Phase 4 Verify
+- docs-check: 対象Issueと対象Docで ACメタ（Audience/Goal/Public boundary/GoNoGo）を確認。
+- `git diff --check` で体裁不整合がないことを確認。
+- self-repair count: 0/3（この記録時点）。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 次アクション: 同一方式で次の対象Issueへ直列進行。
