@@ -190,6 +190,10 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
 - CE0/CE1の Contract ID は参照専用固定値として扱い、再採番・異義定義を禁止する。
 - CE1/CE2/CE4 は mock I/F を前提に依存待機せず検証を継続する。
 - 本章の契約は責務境界のみを扱い、推測で実装要件（API詳細/CLI/UI具体）を追加しない。
+- **Input Contract Snapshot 固定（CE0）**:
+  - snapshot_id: `ce0-contract-freeze-2026-04-27`
+  - freeze_mode: `contract-only`
+  - downstream_policy: `read-only reference`（CE1/CE2/CE4 は参照のみ）
 
 
 ### 7A.1 責務境界（CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CG-01..05）
@@ -235,6 +239,14 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
   - `Consensus Graph`（`ConsensusGraph` 識別子）への direct write を許容する導線が存在する。
   - AI単独で `human_reviewed` へ遷移させる。
   - safeMode既定ONまたは `allowUnreviewedText=false` 既定を後退させる。
+
+No-Go 判定は次の canonical ID を正本とし、表記揺れは同義語扱いに限定する。
+
+- `preview_bypass`
+- `consensus_direct_write`
+- `auto_apply_or_publish`
+- `ai_review_auto_promotion`
+- `safemode_default_relaxation`
 
 ### 7A.5 Drift-stop 固定（CE0）
 

@@ -23,6 +23,11 @@ MVPでは以下を成立させます。
 
 CE-0 の契約凍結として、実装型に先行して次のメタ契約を固定する。
 
+- Input Contract Snapshot（固定）:
+  - `snapshot_id = ce0-contract-freeze-2026-04-27`
+  - `freeze_mode = contract-only`
+  - `downstream_policy = read-only reference`
+
 - `CE0-CTX-IF`:
   - ContextQuery 必須キー: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode`
   - ContextBundle 必須キー: `bundleHash`（deterministic）
@@ -52,6 +57,7 @@ CE-0 の契約凍結として、実装型に先行して次のメタ契約を固
 - Contract ID collision = 0（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の再定義禁止）
 - Vocabulary collision = 0（契約語彙は `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` に固定）
 - Verify自己修復は最大3回（4回目相当は停止）
+- No-Go canonical IDs = `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
 
 ---
 
