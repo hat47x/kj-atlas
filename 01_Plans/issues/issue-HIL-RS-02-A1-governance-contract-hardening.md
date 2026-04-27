@@ -229,3 +229,47 @@ governance_gate_v1:
 - 理由: `Approval Record: Pending` および `held` 論点（人間承認待ち）が残存。
 - 影響I/F: A2/A3 は `A2A3_OPEN_ALLOWED=true` 充足まで `Draft/Open` 変更禁止。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了と pendingDecisionQueue の解消。
+
+## Stream A execution runbook log（2026-04-27 / Critical Path replay）
+
+### Phase 1: Read snapshot（before change）
+- Status snapshot: `Open`（A3のみ `Draft`）
+- Scope snapshot: `01_Plans/issues/`（planning only）
+- Dependencies snapshot: `A1 -> A2 -> A3`
+- Fixed key snapshot: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Fixed key diff result: `diff=0`（drift not detected）
+
+### Phase 2: ADR/CDC Consensus（Context / Decision / Consequences）
+- Context: A1契約未確定状態でA2/A3を確定すると依存順 `A1 -> A2 -> A3` が崩壊する。
+- Decision: A1固定キーは再定義せず、未承認（`Approval Record: Pending`）は `held` 維持。A2/A3の実装確定は実施しない。
+- Consequences: Executeは「契約再掲と検証手順の同期」に限定し、`NoGo return path` はA1 issue固定で維持する。
+
+### Phase 3: Plan（AC/DoD + lines + verify + stop）
+- AC:
+  1. 固定キー差分 `0`
+  2. `A2A3_OPEN_ALLOWED` 判定式と `NoGo return path` がA1に一意固定
+  3. Pending bypass禁止の明文化
+- DoD:
+  1. `Plan -> Execute -> Verify -> Proceed` の順序ログを保存
+  2. self-correctionを `0/3` で記録
+  3. Conditional/No-Go時に再開条件を1行で固定
+- 変更対象行: 本Issue末尾の runbook log 追記行のみ（既存定義の置換なし）
+- 検証コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 停止条件: self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求。
+
+### Phase 4: Execute（declared scope only）
+- 実施: 本Issueへの runbook log 追記のみ。
+- 非実施: 契約ID更新、safeMode境界緩和、A1未完でのA2/A3 Open化、allowlist外ファイル編集。
+
+### Phase 5: Verify
+- Self-Correction counter: `0/3`（再試行なし）
+- AC/DoD照合: pass（drift/pending bypass/undefined conflict未検知）
+- docs-check: validator / unittest / diff-check 実行予定を固定し、実行結果は本実行ログで追跡する。
+
+### Phase 6: Proceed/Stop
+- 判定: `Conditional`
+- 根拠: `Approval Record: Pending` と `held` 論点が残存し、`A2A3_OPEN_ALLOWED` 充足前。
+- 次の1手（再開条件）: `approved_by` / `approved_at` / `evidence` を入力し、`pendingDecisionQueueCount==0` を満たした時点で再検証する。
