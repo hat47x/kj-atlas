@@ -1527,3 +1527,34 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次アクション: 同一方式で次の対象Issueへ直列進行。
+
+## 2026-04-27 Stream G serial execution (Phase 1-6 strict)
+
+### Phase 1 Read
+- Read同期を再実施（AGENTS Read Orderの上流要素 + `04_Documentation/canonicalization.md`）。
+- Scope再確認: docs-only、かつ本Stream G allowlist内（本Issueメモ更新のみ）。
+
+### Phase 2 ADR/CDC
+- Context: canonicalization は設計寄り情報の比率が高く、公開境界の誤解を生みやすい。
+- Decision: 本Issueの分類を **Move internal** として維持する。
+- Consequences: 後続作業は「内部正本への移設計画」と「公開側stub導線」の整備に限定される。
+
+### Phase 3 Plan
+- Plan -> Execute -> Verify -> Proceed を固定し、並列化しない。
+- AC/DoD不足提案（Issue内合意）:
+  - AC-G-01: Move internal の根拠（Audience/Goal/Public boundary）を追跡可能に残す。
+  - DoD-G-01: Proceedで `Ready/Hold/Needs-decision` を明示する。
+
+### Phase 4 Execute
+- 本Issueメモへ2026-04-27時点の直列実行ログを追加。
+- 指定外ファイル編集・実装変更は未実施。
+
+### Phase 5 Verify
+- docs-check:
+  - `rg -n "2026-04-27 Stream G serial execution|Move internal|Ready/Hold/Needs-decision" 01_Plans/issues/issue-doc-ops-05-01-04doc-canonicalization.md`
+  - `git diff --check`
+- Self-Correction: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: canonicalization の内部移設PR（docs-only）を継続可能。

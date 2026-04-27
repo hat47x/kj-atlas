@@ -1332,3 +1332,34 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次アクション: 同一方式で次の対象Issueへ直列進行。
+
+## 2026-04-27 Stream G serial execution (Phase 1-6 strict)
+
+### Phase 1 Read
+- Read同期を再実施（AGENTS Read Orderの上流要素 + `04_Documentation/local_llm_ops_guide.md`）。
+- Scope再確認: docs-only、allowlist外ファイルは非編集。
+
+### Phase 2 ADR/CDC
+- Context: local LLM運用文書は公開価値が高い一方、内部運用情報の混入を防ぐ境界管理が必須。
+- Decision: 本Issueの分類を **Improve external** として維持する。
+- Consequences: 公開runbook強化を進めつつ、秘密情報/内部承認ログを非対象として固定する。
+
+### Phase 3 Plan
+- 直列固定: Plan -> Execute -> Verify -> Proceed。
+- AC/DoD不足提案（Issue内合意）:
+  - AC-G-09: `Public boundary` と `Outcome` を公開文書の完了判定に紐づける。
+  - DoD-G-09: Verifyは docs-check（`rg` + `git diff --check`）を必須とする。
+
+### Phase 4 Execute
+- 本Issueメモへ2026-04-27実行ログを追記。
+- 指定外編集・実装変更は未実施。
+
+### Phase 5 Verify
+- docs-check:
+  - `rg -n "2026-04-27 Stream G serial execution|Improve external|Public boundary|Outcome" 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+  - `git diff --check`
+- Self-Correction: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: local LLM ops公開改善PR（docs-only）を継続可能。
