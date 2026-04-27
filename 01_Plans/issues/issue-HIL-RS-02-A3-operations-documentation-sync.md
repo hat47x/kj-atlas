@@ -388,3 +388,20 @@
 - 判定: `Conditional`（A3 Draft維持）
 - 根拠: `Approval Record: Pending` と `held` 論点が残存し、`A2A3_OPEN_ALLOWED` 充足前。
 - 次の1手（再開条件）: `approved_by` / `approved_at` / `evidence` を入力し、`pendingDecisionQueueCount==0` を満たした時点で再検証する。
+
+### Phase 5 Verify
+- 実行結果（docs-check）
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : pass
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass（8 tests）
+  - `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md` : pass（required header keys present）
+  - `git diff --check` : pass
+- 判定: fixed keys diff=0 / role vocabulary driftなし / allowlist外編集なし。
+- self-correction: 0/3（上限超過なし）。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- `a1Status != "Done"` 前提のため `ProceedGate=false`、`PrepGate=true`。
+- 本サイクル判定: **Conditional**（Draft維持のまま準備のみ継続）。
+- Goへ進めない理由: A1完了条件（`a1Status=="Done" && pendingDecisionQueueCount==0`）未充足。
+- 成果: A3先行可能範囲（語彙固定・導線固定・検証式固定・held整理）の検証証跡を更新。
+- 未解決: A1完了待ち（契約確定・Open化は未実施）。
+- 次の1手（1項目）: A1完了イベント受領後に、同一検証式で ProceedGate を再判定する。
