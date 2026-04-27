@@ -1396,3 +1396,31 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 理由: 固定5Phase記録、docs-check導線、ADR要否ルール（CDC + 承認待ち）が本文内で再現可能。
+
+## 18) Stream F serial execution record（2026-04-27 / DOC-OPS-05-02）
+
+### Phase 1 Read（開始時同期）
+- Read同期を再実行し、`AGENTS.md` Read Order と本Issueの `Requirement meta I/F` を再確認。
+- Scopeを `01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md` のみへ固定し、指定外編集禁止を確認。
+
+### Phase 2 ADR/CDC（Draft判定）
+- Context: `04_Documentation/codex_skill_operations.md` は内部運用色が強く、公開境界の明確化が必要。
+- Decision: 既存方針どおり Classification は **Move internal** を維持し、DecisionStatus は `Fixed`。
+- Consequences: 後続作業は docs-only の配置整理に限定し、実装変更は行わない。
+
+### Phase 3 Plan
+- Plan -> Execute -> Verify -> Proceed の固定順序を本Issueで再確認。
+- AC/DoD不足時は AIドラフトで補完し、本Issue本文に残す運用を維持。
+
+### Phase 4 Execute
+- 本Issueに Stream F の6Phase記録を追記。
+- 既存の分類・ゲート（GoNoGoGate=Required / VerificationLevel=docs-check）は変更せず維持。
+
+### Phase 5 Verify（docs-check）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+- 実行: `git diff --check`
+- 自己修復回数: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- Proceed条件: 分類・CDC・検証導線が揃っており、次Issueへ直列進行可能。

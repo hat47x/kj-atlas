@@ -1337,3 +1337,31 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次アクション: 同一方式で次の対象Issueへ直列進行。
+
+## 18) Stream F serial execution record（2026-04-27 / DOC-OPS-05-03）
+
+### Phase 1 Read（開始時同期）
+- Read同期を再実行し、`AGENTS.md` Read Order と本Issueの `Requirement meta I/F` を再確認。
+- Scopeを `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md` のみに固定。
+
+### Phase 2 ADR/CDC（Draft判定）
+- Context: `04_Documentation/configuration.md` は公開価値が高く、公開品質メタの整合が必要。
+- Decision: 既存方針どおり Classification は **Improve external** を維持し、DecisionStatus は `Fixed`。
+- Consequences: 後続PRは公開導線整備に集中し、実装コード変更は伴わない。
+
+### Phase 3 Plan
+- 固定順序 `Plan -> Execute -> Verify -> Proceed` を適用。
+- AC/DoD不足は Issue本文で補完し、GoNoGoGate=Required の判定条件を維持。
+
+### Phase 4 Execute
+- 本Issueへ Stream F の6Phase実行ログを追記。
+- 既存の分類・検証レベル（docs-check）を変更せず保持。
+
+### Phase 5 Verify（docs-check）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+- 実行: `git diff --check`
+- 自己修復回数: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- Proceed条件: AC/DoDと分類メタが追跡可能で、次Issueへ直列進行可能。

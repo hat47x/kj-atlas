@@ -1422,3 +1422,31 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次アクション: 同一方式で次の対象Issueへ直列進行。
+
+## 18) Stream F serial execution record（2026-04-27 / DOC-OPS-05-08）
+
+### Phase 1 Read（開始時同期）
+- Read同期を再実行し、`AGENTS.md` Read Order と本Issueのメタ項目を再確認。
+- Scopeを `01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md` のみに固定。
+
+### Phase 2 ADR/CDC（Draft判定）
+- Context: `04_Documentation/installation.md` は公開導入者向け文書として運用価値が高い。
+- Decision: 既存方針どおり Classification は **Improve external** を維持し、DecisionStatus は `Fixed`。
+- Consequences: 変更は docs-only で継続し、実装/CI変更は本Issueの対象外とする。
+
+### Phase 3 Plan
+- 固定順序 `Plan -> Execute -> Verify -> Proceed` を明示して実行。
+- AC/DoD不足時は AIドラフトを先に記録し、合意後実施の原則を維持。
+
+### Phase 4 Execute
+- 本Issueへ Stream F の6Phase記録を追記。
+- VerificationLevel=docs-check と GoNoGoGate=Required を維持。
+
+### Phase 5 Verify（docs-check）
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+- 実行: `git diff --check`
+- 自己修復回数: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- Proceed条件: 分類と検証導線が維持され、指定順（直列）で次Issueへ進行可能。
