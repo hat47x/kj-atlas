@@ -13,6 +13,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--trace-id", default=None)
 
     subparsers = parser.add_subparsers(dest="command", required=True)
+    ce4_parser = subparsers.add_parser("ce4")
+    ce4_subparsers = ce4_parser.add_subparsers(dest="ce4_command", required=True)
+    ce4_resolve = ce4_subparsers.add_parser("resolve-bundle")
+    ce4_resolve.add_argument("--query", required=True)
+    ce4_resolve.add_argument("--dry-run", action="store_true", default=True)
+    ce4_resolve.add_argument("--no-dry-run", action="store_false", dest="dry_run")
+    ce4_resolve.add_argument("--source-bundle-hash", required=True)
+    ce4_resolve.add_argument("--safe-mode", action="store_true", default=True)
+    ce4_resolve.add_argument("--no-safe-mode", action="store_false", dest="safe_mode")
+
     for command, operation in (
         ("context-query", "query"),
         ("context-bundle", "bundle"),
@@ -70,6 +80,22 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
+    if args.command == "ce4":
+        payload = {
+            "query": args.query,
+            "dryRun": args.dry_run,
+            "sourceBundleHash": args.source_bundle_hash,
+            "safeMode": args.safe_mode,
+        }
+        response = httpx.post(
+            f"{args.api_base_url}/context/bundles:resolve",
+            json=payload,
+            timeout=5.0,
+        )
+        response.raise_for_status()
+        print(response.text)
+        return 0
+
     with open(args.input, encoding="utf-8") as fh:
         input_payload = json.load(fh)
     if "docId" not in input_payload:

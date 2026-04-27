@@ -6,12 +6,15 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 
 from kj_atlas_api.models_context import (
+    Ce4ResolveBundleRequest,
+    Ce4ResolveBundleResponse,
     ContextBundleRequest,
     ContextBundleResponse,
     ContextQuery,
     ContextQueryValidationResponse,
     _canonical_query_hash_payload,
     _sha256_canonical,
+    build_ce4_resolved_bundle,
     build_bundle,
 )
 
@@ -56,4 +59,38 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
             "excludedReason": response.excludedReason,
         },
     )
+    return response
+
+
+@router.post("/bundles:resolve", response_model=Ce4ResolveBundleResponse)
+def resolve_ce4_bundle(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
+    request = _validate_payload(Ce4ResolveBundleRequest, payload)
+    try:
+        response = build_ce4_resolved_bundle(request)
+    except ValueError as exc:
+        code = str(exc)
+        if code == "safe_mode_required":
+            raise HTTPException(status_code=422, detail={"code": "safe_mode_required"}) from exc
+        if code == "dry_run_requires_no_side_effect":
+            raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"}) from exc
+        raise HTTPException(status_code=400, detail=code) from exc
+
+    if not (response.equivalenceKey and response.bundleHash):
+        raise HTTPException(status_code=422, detail={"code": "equivalence_and_bundle_hash_required"})
+
+    if not response.queryCanonicalHash:
+        raise HTTPException(status_code=422, detail={"code": "query_canonical_hash_required"})
+
+    required_events = (
+        response.auditChain.query,
+        response.auditChain.bundle,
+        response.auditChain.proposal,
+        response.auditChain.apply,
+    )
+    if any(not event for event in required_events):
+        raise HTTPException(status_code=422, detail={"code": "audit_chain_incomplete"})
+
+    if request.dryRun and response.sideEffect != "none":
+        raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"})
+
     return response

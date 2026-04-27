@@ -56,6 +56,35 @@ class ContextBundleResponse(BaseModel):
     queryCanonicalHash: str
 
 
+class Ce4ResolveBundleRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1)
+    dryRun: bool
+    sourceBundleHash: str = Field(pattern=r"^(sha256:[0-9a-f]{64}|mock:[0-9a-f]{64})$")
+    safeMode: bool = True
+
+
+class Ce4AuditChain(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+    bundle: str
+    proposal: str
+    apply: str
+
+
+class Ce4ResolveBundleResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    equivalenceKey: str
+    bundleHash: str
+    queryCanonicalHash: str
+    proposalLifecycle: Literal["proposed", "accepted", "rejected", "held"]
+    sideEffect: str
+    auditChain: Ce4AuditChain
+
+
 _STUB_DATASET = {
     "selected": [
         {"id": "card-reviewed-01", "reviewed": True, "title": "Reviewed card"},
@@ -162,3 +191,40 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
 
     bundle_hash = _sha256_canonical(_canonical_bundle_hash_payload(provisional))
     return provisional.model_copy(update={"bundleHash": bundle_hash})
+
+
+def build_ce4_resolved_bundle(request: Ce4ResolveBundleRequest) -> Ce4ResolveBundleResponse:
+    if not request.safeMode:
+        raise ValueError("safe_mode_required")
+
+    query_canonical_hash = _sha256_canonical({"query": request.query.strip()})
+    equivalence_key = _sha256_canonical(
+        {
+            "queryCanonicalHash": query_canonical_hash,
+            "safeMode": request.safeMode,
+        }
+    )
+    bundle_hash = _sha256_canonical(
+        {
+            "equivalenceKey": equivalence_key,
+            "sourceBundleHash": request.sourceBundleHash,
+        }
+    )
+
+    side_effect = "none" if request.dryRun else "write"
+    if request.dryRun and side_effect != "none":
+        raise ValueError("dry_run_requires_no_side_effect")
+
+    return Ce4ResolveBundleResponse(
+        equivalenceKey=equivalence_key,
+        bundleHash=bundle_hash,
+        queryCanonicalHash=query_canonical_hash,
+        proposalLifecycle="proposed",
+        sideEffect=side_effect,
+        auditChain=Ce4AuditChain(
+            query=f"query:{query_canonical_hash}",
+            bundle=f"bundle:{bundle_hash}",
+            proposal=f"proposal:{equivalence_key}",
+            apply=f"apply:{equivalence_key}:{bundle_hash}",
+        ),
+    )
