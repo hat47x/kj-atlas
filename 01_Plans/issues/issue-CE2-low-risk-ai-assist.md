@@ -349,3 +349,40 @@
 ### Phase 6 Proceed
 - Verify 合格時のみ Proceed し、停止条件（自動確定要求・自動公開要求・レビュー自動昇格要求・safeMode後退・4回目修復）検知時は即時中断する。
 - Proceed 後も単一編集ファイル制約を維持し、次サイクル開始時に Phase 1 Read へ戻る。
+
+## Stream E Coordinated Update（2026-04-27 / CE2↔CE4 contract alignment / latest）
+
+### Phase 1 Read（再読・相互参照差分確認）
+- 再読対象: `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md`。
+- 確認結果:
+  - 共通契約語彙（`proposal-only`, `contract-only`, `mock-first`, `status=held`, `reviewState` 人手昇格限定）は整合。
+  - CE4側の API/CLI監査統合判断は CDC 明文化済み箇所がある一方、**「本ラウンドの承認待ち」状態を明示する運用行が不足**していたため、承認待ち運用を優先して同期。
+
+### Phase 2 ADR/CDC（CE2境界での承認待ち明文化）
+- CE2判断: CE4の API/CLI監査統合判断は CE2からは read-only 参照とし、以下の CDC 状態を参照固定する。
+  - `CDC-CE4-AUDIT-INTEGRATION-2026-04-27`
+    - Context: API/CLI同値判定（`equivalenceKey + bundleHash`）と監査4点（`query/bundle/proposal/apply`）の監査再現性を運用上で同時固定する必要がある。
+    - Decision: CE4判断は CDC 形式で維持し、**承認完了まで `status=held` を継続**する。
+    - Consequences: CE2は proposal-only 候補提示を維持し、実装・自動確定・自動公開へ越境しない。
+    - Approval: `pending`（人手承認待ち）。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案・合意待ち）
+- Draft-AC-CE2-2026-04-27-01:
+  - CE2文面に「CE4 CDC承認待ち中は CE2 Proceed で未承認事項を `held` 維持する」条項を追加提案。
+- Draft-DoD-CE2-2026-04-27-01:
+  - CE2 Verify で「CE4の承認待ち CDC を `accepted` 相当として扱っていない」ことを明示チェックする提案。
+- 合意状態: **pending**（人手合意成立まで Phase 4 は contract更新の範囲のみ）。
+
+### Phase 4 Execute（proposal-only / contract-only 維持）
+- 実施範囲: CE2契約メモ更新のみ。
+- 非実施: 実装指示、auto-apply、review自動昇格、他ファイル編集。
+
+### Phase 5 Verify（AC/DoD基準・矛盾修正上限3回）
+- Verify Attempt: `1/3`。
+- 判定: pass（本更新は contract-only 記述に限定、No-Go逸脱なし）。
+- ルール: `2/3`, `3/3` までは修正可。`4/3` 相当は fail-safe 停止。
+
+### Phase 6 Proceed（独立実行可能な次アクション）
+- Next-1: 人手に `CDC-CE4-AUDIT-INTEGRATION-2026-04-27` の承認/却下判断を依頼する（単独実行可）。
+- Next-2: 承認結果に応じて CE2 の held 管理条項のみ更新する（単独実行可）。
+- Next-3: CE2 Verify で「承認待ち事項の誤昇格なし」を再確認する（単独実行可）。
