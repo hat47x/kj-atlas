@@ -129,3 +129,36 @@
 
 ### Phase 6 Proceed
 - 判定: **Ready**（次順序は 05-13）。
+
+## Stream I security-lane strict serial run（2026-04-27）
+
+### Phase 1 Read（最新状態同期）
+- Read同期: 本Issue本文、`04_Documentation/operations.md`、および security lane 対象Issue（05-13/05-14）の現行記録を再読。
+- 確認結果: `DecisionStatus=Fixed` / `GoNoGoGate=Required` / `VerificationLevel=docs-check` を維持。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: operations は公開runbook責務だが、security/guidelines と責務境界が近接しているため語彙ドリフト監視が必要。
+- Decision: `Improve external` 分類を据え置き、役割語彙と固定値は上流参照のみで運用する。
+- Consequences: 公開境界後退・未承認確定化を回避しつつ、後続Issueへの直列引き継ぎを可能化。
+
+### Phase 3 Plan（AC/DoD不足ドラフトと合意）
+- AC不足補完（合意）:
+  - AC-4: 役割語彙の不整合検出時は `Hold` とし、本Issueでは確定化しない。
+  - AC-5: 後続Issue（05-13/05-14）へ同一6Phaseプロトコルを強制継承する。
+- DoD不足補完（合意）:
+  - DoD-3: Verifyで `docs-check + git diff --check` を明示実行。
+  - DoD-4: Proceedは `Go / Hold / Needs-decision` の3値で明記。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issueに Stream I 記録を追記（docs-only）。
+- 非実施: 指定外ファイル、実装コード、公開仕様本文の改稿。
+
+### Phase 5 Verify（docs-check + 自己修復<=3）
+- docs-check:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- self-repair: 0/3（4回目修復は停止条件により禁止）。
+
+### Phase 6 Proceed（Go/Hold/Needs-decision）
+- 判定: **Go**。
+- 次順序: 固定直列どおり `DOC-OPS-05-13` へ進行。
