@@ -453,3 +453,30 @@
 ### Proceed
 - 判定: **Ready**。
 - 次工程: 05-02 へ直列進行。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: 上流（`00_Prompt/domain.md` を含む）と本Issueを再読し、語彙整合条件を確認。
+
+### Phase 2 ADR/CDC
+- Context: narratives は公開文書だが domain語彙逸脱が誤解を生みやすい。
+- Decision: **Improve external** を維持し、語彙整合（domain優先）を固定。
+- Consequences: 公開品質と概念整合の両立を維持する。
+
+### Phase 3 Plan
+- 実行計画: Issueメモ更新のみ（docs-only）。
+- 停止条件: self-correction 4回目相当 / 未定義競合 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属6Phaseログ追記。
+- 非実施: 実装コード、architecture本体、shared resource。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。

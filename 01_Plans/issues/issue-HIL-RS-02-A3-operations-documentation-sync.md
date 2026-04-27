@@ -218,3 +218,32 @@
 #### Consequences
 - 本実行の判定は `Conditional`（A1未完了のため準備継続のみ）とする。
 - 停止条件（未定義競合・契約逸脱・前提崩壊）は未検知。self-correction試行は 0/3。
+
+
+## Stream H preparation log（2026-04-27 / A3 Draft維持）
+
+### Phase 1 Read（開始同期）
+- Read同期: Read Order上流と本Issue固定キーを再読（`freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `sharedResourceFreeze` / `safeModeDefault`）。
+
+### Phase 2 ADR/CDC
+- Context: A1未完了のためA3は Open化不可、mock I/F準備のみ実施可能。
+- Decision: `Status: Draft` を維持し、A3では契約再定義・Open化を実施しない。
+- Consequences: 依存順 `A1 -> A2 -> A3` と fail-safe 条件を保持する。
+
+### Phase 3 Plan
+- 実行計画: 本Issue内の準備ログ追記のみ（mock I/F preparation only）。
+- 停止条件: self-correction 4回目相当 / 未承認確定化 / 未定義競合 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: A3 Draft維持を明記したStream Hログを追記。
+- 非実施: Open化、契約更新、実装コード変更、architecture本体変更、shared resource編集。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed/Stop
+- 判定: **Conditional（Draft維持で準備継続）**。
+- Open化: **禁止（A1 Done かつ pendingDecisionQueueCount=0 を満たすまで実施不可）**。
