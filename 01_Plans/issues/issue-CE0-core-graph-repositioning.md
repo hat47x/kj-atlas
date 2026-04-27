@@ -15,7 +15,7 @@
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
 - `role / transition / no-go` 語彙は本Issueで固定し、同義語への置換や拡張定義を禁止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 Plan → Phase 3 ADR Consensus → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
 - **各Phase開始時に必ずReadを実施**し、直前Phaseとの差分有無（語彙・禁止事項・SafeMode境界）を確認してから進行する。
 
 ## Phase 1 Read（role / transition / no-go語彙確認）
@@ -826,3 +826,36 @@
 - Phase開始時に語彙差分チェックを実施し、差分 0 件。
 - 判定: `Done`（Read → Plan → ADR Consensus → Execute → Verify → Proceed の順序を満たし、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
+
+
+## Phase Execution Record（2026-04-27 / Stream C / CE0 Core Graph Repositioning strict serial run）
+### Phase 1 Read
+- Phase開始時Read同期を実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認した。
+- 差分判定: 語彙・禁止事項・SafeMode境界の差分は 0 件で、停止条件は未発火。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Phase開始時Read同期を再実施し、方針差分の有無を確認した。
+- Context: CE0 Core Graph責務境界を proposal-only の契約固定として維持する必要がある。
+- Decision: `No ADR delta`（契約語彙固定で継続、未承認事項は確定しない）。
+- Consequences: 未承認事項が発生した場合は `pending` または `held` で在庫化し、承認まで確定化しない。
+
+### Phase 3 Plan（契約境界・非目標・検証）
+- Phase開始時Read同期を再実施し、Phase 2との差分なしを確認してから計画を固定した。
+- Plan: single-file / docs-only / contract-only を維持し、Core Graph直接更新を許容しない（proposal-only前提を維持）。
+- Non-Goals: 実装変更、CE0契約ID再定義、No-Go語彙拡張、SafeMode既定ON後退、未承認事項の確定化。
+- Verification plan: `docs-check` と `git diff --check` を実行し、失敗時は自己修復最大3回で打ち切る。
+
+### Phase 4 Execute（契約文面のみ）
+- Phase開始時Read同期を再実施し、差分 0 件を確認してから本Issue本文の実行記録のみ追記した。
+- 編集対象は `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみとし、他ファイル編集は行わない。
+
+### Phase 5 Verify（安全境界と整合）
+- Phase開始時Read同期を再実施し、語彙・禁止事項・SafeMode境界の差分 0 件を確認した。
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- Self-Correction実績: 0/3（上限超過なし）。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- Phase開始時Read同期を再実施し、Proceed判定条件（AC/DoD充足 + docs-check pass）を確認した。
+- 判定: `Go=Done`（contract-only / proposal-only / single-file 制約を維持）。
+- Conditional/No-Go該当: なし。未承認事項在庫: なし（新規 `held/pending` 追加なし）。
