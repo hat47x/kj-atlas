@@ -773,3 +773,53 @@
 - Next-1: `CDC-CE4-AUDIT-INTEGRATION-2026-04-27` の人手承認/却下を取得する。
 - Next-2: 承認結果に応じて AC/DoDドラフト（Draft-AC/DoD-CE4-2026-04-27系）を確定または `held` 維持する。
 - Next-3: CE2側参照境界（read-only）で承認状態を同期し、誤昇格がないことを再検証する。
+
+## Stream F Execution Record（2026-04-27 / CE4 contract-only latest）
+
+> 本節を latest authoritative とし、CE4は contract-only 文書固定を継続する。実装詳細・アルゴリズム詳細は確定しない。
+
+### Phase 1 Read
+- Read同期（AND必須）: `equivalenceKey + bundleHash` を唯一の成功条件として再確認。
+- Read同期（監査4点）: `query / bundle / proposal / apply` の4点必須を再確認。
+- Read同期（dryRun）: `dryRun=true -> sideEffect=none` を再確認。
+- Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` は本番hashと同一 fail-closed を適用することを再確認。
+
+### Phase 2 ADR/CDC
+- Read同期（AND必須）: `equivalenceKey + bundleHash` 条項に差分なし。
+- Read同期（監査4点）: 4点監査欠損は成功扱い禁止（fail-closed）を維持。
+- Read同期（dryRun）: `dryRun=true` 時の副作用禁止を維持。
+- Read同期（mock同等性）: `mock:<hash>` の同値判定分岐禁止を維持。
+- CDC運用: 新規CDCが発生する場合は Context / Decision / Consequences を先行明文化し、承認前は `status=held` のまま確定化しない。
+
+### Phase 3 Plan（mock-first / signature-only）
+- Read同期（AND必須）: API/CLI同値判定は `equivalenceKey + bundleHash`（AND）のみ。
+- Read同期（監査4点）: `query / bundle / proposal / apply` を契約必須項目として固定。
+- Read同期（dryRun）: `dryRun=true -> sideEffect=none` を契約必須項目として固定。
+- Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` に本番同等の fail-closed を適用。
+- Plan範囲: API/CLIシグネチャ定義のみ（contract-only）。実装手段・アルゴリズム詳細は記述しない。
+
+### Phase 4 Execute（contract-only）
+- Read同期（AND必須）: 片側一致を成功扱いしない条項を再確認。
+- Read同期（監査4点）: 監査欠損成功扱い禁止を再確認。
+- Read同期（dryRun）: `sideEffect=none` 逸脱時 fail-closed を再確認。
+- Read同期（mock同等性）: `mock:<hash>` 逸脱時 fail-closed を再確認。
+- 実施内容: 本ファイルの contract-only 記述更新のみ（他ファイル編集なし）。
+
+### Phase 5 Verify
+- Read同期（AND必須）: `equivalenceKey + bundleHash` 条項を再確認。
+- Read同期（監査4点）: `query / bundle / proposal / apply` 欠損禁止を再確認。
+- Read同期（dryRun）: `dryRun=true -> sideEffect=none` を再確認。
+- Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` 同等fail-closedを再確認。
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 自己修復: 0/3（4回目着手なし）。
+
+### Phase 6 Proceed
+- Read同期（AND必須）: `equivalenceKey + bundleHash`（AND）維持。
+- Read同期（監査4点）: 監査4点欠損は fail-closed 維持。
+- Read同期（dryRun）: `dryRun=true -> sideEffect=none` 維持。
+- Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` fail-closed同等性維持。
+- Proceed判定: Go（contract-only文書固定）。
+- 完了条件: docs-check pass、fail-closed条項明記、未承認CDCの確定化禁止を満たす。
