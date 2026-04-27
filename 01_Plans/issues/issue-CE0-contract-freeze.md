@@ -20,12 +20,50 @@
   - Contract ID再定義（追加/改名/削除）を検知した場合は即停止して `held`。
 
 ### Phase status（固定ワークフロー追跡）
-- Phase 1 Read: `completed`（固定ID / No-Go / safeMode境界を再確認）
-- Phase 2 ADR/CDC: `completed`（Context/Decision/Consequencesを明文化、承認待ち論点は `held` 維持）
-- Phase 3 Plan: `completed`（AC/DoD不足を提案し、追加合意は `held` 待ち）
-- Phase 4 Execute: `blocked`（`agreement_state=held` のため未着手）
-- Phase 5 Verify: `blocked`（Execute未着手のため未実行）
-- Phase 6 Proceed: `completed`（最新判定: `Hold`。合意待ち）
+- Phase 1 Read: `completed`（各Phase開始時の再読を実施）
+- Phase 2 ADR/CDC: `completed`（Context/Decision/Consequencesを明文化）
+- Phase 3 Plan: `completed`（AC/DoD不足の追加ドラフト要否を確認）
+- Phase 4 Execute: `completed`（contract-only記録更新のみ実施）
+- Phase 5 Verify: `completed`（docs-check通過、自己修復 0/3）
+- Phase 6 Proceed: `completed`（最新判定: `Hold`。承認前論点は `held` 維持）
+
+## Stream B latest run（2026-04-27 / CE0 only / phase-gated hold）
+
+- run_id: `stream-b-ce0-2026-04-27-05`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_repair_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を確認。
+- No-Go canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）差分ゼロを確認。
+- safeMode境界（`safeMode=true` / `allowUnreviewedText=false`）後退なしを確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 contract freeze をSSOTとして維持し、下流は read-only 参照のみとする。
+- Decision: Contract ID再定義なし、safeMode既定値後退なし、No-Go判定は5語彙ID照合を維持する。
+- Consequences: 境界逸脱を検知した場合は `held` へ即停止でき、下流の先行確定を抑止できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC不要。
+
+### Phase 3 Plan
+- AC/DoD不足の再確認を行い、現行追跡（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）で充足することを確認。
+- ADRタスク方針として、承認前論点は確定扱いせず `held` 維持とする。
+
+### Phase 4 Execute
+- contract-only 範囲で本Issueの実行ログを更新。
+- 非実施: 実装変更、指定外ファイル編集、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-repair 0/3）
+
+### Phase 6 Proceed
+- 判定: **Hold**
+- 理由: ADRタスクの承認前論点は `held` 維持とする運用を優先（未承認決定の確定化を回避）。
+- 次回条件: 承認状態更新後に同一フェーズ順（Read → ADR/CDC → Plan → Execute → Verify → Proceed）で再実行。
 
 ## Stream B latest run（2026-04-27 / CE0 only / contract freeze reaffirmed）
 
