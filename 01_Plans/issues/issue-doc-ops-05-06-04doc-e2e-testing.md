@@ -1205,3 +1205,31 @@
 ### Proceed
 - 判定: **Ready**。
 - 次工程: 05-07 へ直列進行。
+
+
+## 18) Stream G serial execution record (2026-04-27)
+
+### Phase 1: Read（対象Issue再読）
+- 再読対象: `04_Documentation/e2e_testing.md` を含む本Issue全文（meta I/F / AC / Validation / Proceed）を再読。
+- 確認結果: Classification=`Improve external`、VerificationLevel=`docs-check`、DecisionStatus=`Fixed` を再確認。
+
+### Phase 2: Plan（AC/DoD不足のドラフト提案）
+- AC/DoD不足ドラフト提案（実行前に固定）:
+  - AC-G-1: Phase 1〜5 を **同一Issue内で直列** 記録し、各Phase開始時に再読した事実を残す。
+  - AC-G-2: Verify は `docs-check`（メタ整合・差分整合）を必須化し、失敗時の修復回数を明記する。
+  - DoD-G-1: Proceed で `Ready / Hold / Needs-decision` のいずれかを明示し、理由を1行で残す。
+
+### Phase 3: Execute
+- 実行内容: 本Issueへ Stream G の5Phase直列運用ログを追記。
+- 分類方針: `Improve external` を変更せず維持。
+- 次アクション: E2E runbook の前提/実行/確認/制約の公開向け整理案を維持。
+
+### Phase 4: Verify
+- 実行コマンド（Attempt 1/3）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+  - `git diff --check`
+- 結果: Attempt 1 で完了（追加修復 0回）。
+
+### Phase 5: Proceed
+- 判定: **Ready**
+- 理由: 5Phase直列記録、AC/DoDドラフト提案、docs-check実施計画、修復上限（最大3回）の4点を本Issue内で充足。
