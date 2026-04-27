@@ -1126,3 +1126,23 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 
 ### Phase 6 Proceed
 - 判定: **Ready**（次順序は security 文書）。
+
+## Stream F HIL-RS-02-A3 operations sync log（2026-04-27）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` と `issue-HIL-RS-02-A3-operations-documentation-sync.md` を再読し、語彙（Security Officer / System Owner / Platform Operator）と固定値（D1〜D4、safeModeDefault=ON、overridePolicy=human_dual_control_only）の一致を確認。
+
+### Phase 2 Plan
+- docs-only で `operations.md` / `security.md` / `e2e_testing.md` の同期に限定。
+- A3は `mock I/F preparation only` を維持し、契約値の再定義・Open化を行わない。
+
+### Phase 3 Execute
+- Runbook側のA3同期証跡を追記し、`contractLinkLocked=true` / `sharedResourceFreeze=true` の freeze 条件を再確認。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|safeModeDefault=ON|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true" 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Conditional（Draft維持の準備継続）**。

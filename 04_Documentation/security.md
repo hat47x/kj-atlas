@@ -828,3 +828,23 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 
 ### Phase 6 Proceed
 - 判定: **Ready**（次順序は security_operational_guidelines）。
+
+## Stream F HIL-RS-02-A3 security sync log（2026-04-27）
+
+### Phase 1 Read
+- A3固定キー（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON`）を再読し、後退がないことを確認。
+- 役割語彙を `Security Officer / System Owner / Platform Operator` で固定。
+
+### Phase 2 Plan
+- 本書の責務をセキュリティ境界（SafeMode既定ON、PII最小化、人間承認分離）に限定し、A3で契約再定義を行わない。
+
+### Phase 3 Execute
+- A3 docs-only 同期記録を追記し、`contractLinkLocked=true` / `sharedResourceFreeze=true` の freeze 条件を security 側でも再確認。
+
+### Phase 4 Verify
+- `rg -n "freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|safeModeDefault=ON|contractLinkLocked=true|sharedResourceFreeze=true|Security Officer|System Owner|Platform Operator" 04_Documentation/security.md 04_Documentation/operations.md 04_Documentation/e2e_testing.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Conditional（A1完了待ちでDraft維持）**。
