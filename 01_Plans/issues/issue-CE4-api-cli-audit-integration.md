@@ -678,3 +678,41 @@
   - 監査4点欠損は常にfail-closed（成功応答禁止）。
   - CE0/CE1/CE2はread-only参照のまま更新しない。
   - 未承認事項は `held` 維持、自己修復3回超過兆候で即停止。
+
+## Stream E Execution Record（2026-04-27 / CE4 API-CLI-Audit 実装同期）
+
+### Phase 1 Read
+- Phase開始 Read同期: 完了（CE0 contract IDs / CE1・CE2 read-only / 監査4点 / fail-closed / safeMode既定ONを再確認）。
+- AC/DoDドラフト提案:
+  - Draft-AC: `POST /context/bundles:resolve` と CLI `ce4 resolve-bundle` の最小I/Fを実装し、`equivalenceKey + bundleHash`（AND）と `queryCanonicalHash` 必須を維持する。
+  - Draft-DoD: `dryRun=true -> sideEffect=none`、監査4点欠損fail-closed、`safeMode=false` 拒否をコード境界で検証可能にする。
+- 合意: 採用（CE4専任範囲で backend routes/models/CLI のみ変更）。
+
+### Phase 2 Plan
+- Phase開始 Read同期: 完了（No-Goとcontract語彙に差分なし）。
+- Plan:
+  1. `models_context.py` に CE4 resolve request/response と deterministic 生成関数を追加。
+  2. `routes/context.py` に `POST /context/bundles:resolve` を追加し fail-closed 検証を実装。
+  3. `cli.py` に `ce4 resolve-bundle` を追加し API契約と同一入出力キーを扱う。
+  4. 既存回帰テスト + endpoint/CLI smoke を実行し、失敗時は最大3回まで修復。
+
+### Phase 3 Execute
+- Phase開始 Read同期: 完了（監査4点 / AND固定 / safeMode既定維持を再確認）。
+- 実施:
+  - CE4 resolve 用 request/response モデルと `build_ce4_resolved_bundle` を追加。
+  - `/context/bundles:resolve` ルートを追加（`safeMode_required`、`queryCanonicalHash_required`、`audit_chain_incomplete`、`dry_run_requires_no_side_effect` をfail-closed）。
+  - CLIに `kj_atlas_api.cli ce4 resolve-bundle` を追加し、`query/dryRun/sourceBundleHash/safeMode` を API に送信。
+
+### Phase 4 Verify
+- Phase開始 Read同期: 完了（No-Go違反なしを確認）。
+- Verify attempt 1/3:
+  - `pytest -q tests/test_context_bundle_routes.py tests/test_docs_audit_integration.py` → pass
+  - `PYTHONPATH=src python - <<'PY' ... /context/bundles:resolve ... PY` → 200 / 必須キー確認
+  - `PYTHONPATH=src python -m kj_atlas_api.cli ce4 resolve-bundle --help` → pass
+- 結果: pass（自己修復 0/3、4回目着手なし）。
+
+### Phase 5 Proceed
+- Phase開始 Read同期: 完了（契約語彙・fail-closed境界・safeMode既定を再確認）。
+- Proceed:
+  - CE4 API/CLI/Audit integration の最小実装を backend に反映。
+  - 監査4点語彙・AND判定・safeMode既定ONの境界は維持。
