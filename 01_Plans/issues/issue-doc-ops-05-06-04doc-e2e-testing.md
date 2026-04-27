@@ -1381,3 +1381,28 @@
 
 ### 6) Proceed
 - 判定: **Go**（セットB次順序: 05-07）。
+
+
+## DOC-OPS-05 専任 run log（2026-04-27 / order 3: 05-06）
+
+### Phase Read
+- 対象Issueを再読し、`Status=Draft`・`VerificationLevel=docs-check`・分類方針を同期した。
+
+### Phase Plan
+- AC/DoD不足ドラフト:
+  - AC追加案: E2E方針文書の公開範囲（runbook vs internal note）判定根拠を本文で追跡可能にする。
+  - DoD追加案: Proceed時に次アクション（公開改善 or 内部移設）を1行で固定する。
+- 合意: 本Issue内のドラフト提案として採用。
+
+### Phase Execute
+- docs-onlyで本run logを追記し、既存分類判断の再現性を補強した。
+
+### Phase Verify
+- 実行予定/実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+  - `git diff --check`
+- 自己修復回数: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 理由: AC/DoD補強ドラフトと検証計画が揃い、停止条件非該当。

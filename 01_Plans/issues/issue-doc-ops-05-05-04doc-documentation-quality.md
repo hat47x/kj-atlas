@@ -135,3 +135,28 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## DOC-OPS-05 専任 run log（2026-04-27 / order 1: 05-05）
+
+### Phase Read
+- 対象Issueを再読し、`DecisionStatus=Fixed`・`VerificationLevel=docs-check`・docs-only境界を同期した。
+
+### Phase Plan
+- AC/DoD不足ドラフト:
+  - AC追加案: Audience / Goal / 公開境界 / 次アクションの4点を常時追跡可能にする。
+  - DoD追加案: Proceed判定を `Ready / Hold / Needs-decision` の三値で必ず記録する。
+- 合意: 本Issue内で上記ドラフトを採用し、既存方針 `Move internal` を維持する。
+
+### Phase Execute
+- docs-onlyの範囲で本run logを追記し、分類方針を再固定した。
+
+### Phase Verify
+- 実行予定/実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `git diff --check`
+- 自己修復回数: 0/3（4回目相当は停止条件により不許可）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 理由: `DecisionStatus=Fixed` かつ docs-check導線が再現可能で、停止条件に抵触しない。

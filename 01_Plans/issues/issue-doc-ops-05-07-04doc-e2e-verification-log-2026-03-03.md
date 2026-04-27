@@ -1369,3 +1369,28 @@
 
 ### 6) Proceed
 - 判定: **Conditional Go**（分類方針は固定、移設実体化は承認ゲート後に実施）。
+
+
+## DOC-OPS-05 専任 run log（2026-04-27 / order 4: 05-07）
+
+### Phase Read
+- 対象Issueを再読し、verification log文書の配置判定メモとしての境界を再確認した。
+
+### Phase Plan
+- AC/DoD不足ドラフト:
+  - AC追加案: ログ文書に対して「公開時の匿名化/最小化」観点の判定根拠を記録する。
+  - DoD追加案: Verify失敗時の自己修復上限3回・4回目停止を明記したまま維持する。
+- 合意: 本Issue内ドラフトとして採用。
+
+### Phase Execute
+- docs-onlyで本run logを追記し、ログ文書の公開境界判断トレーサビリティを補強した。
+
+### Phase Verify
+- 実行予定/実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 自己修復回数: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 理由: 直列4番目の実行条件を満たし、Pending確定化要求なし。

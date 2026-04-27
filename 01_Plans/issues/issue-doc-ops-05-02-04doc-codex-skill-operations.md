@@ -1424,3 +1424,28 @@
 ### Phase 6 Proceed
 - 判定: **Ready**
 - Proceed条件: 分類・CDC・検証導線が揃っており、次Issueへ直列進行可能。
+
+
+## DOC-OPS-05 専任 run log（2026-04-27 / order 2: 05-02）
+
+### Phase Read
+- 対象Issueを再読し、`Scope=04_Documentation/codex_skill_operations.md` と `Move internal` 方針を再確認した。
+
+### Phase Plan
+- AC/DoD不足ドラフト:
+  - AC追加案: `00_Prompt/codex_gsd_skill_ops.md` を正本とする参照導線を明示する。
+  - DoD追加案: Verifyは `docs-check + diff-check` を必須化する。
+- 合意: 本Issue内ドラフトとして採用し、分類方針は変更しない。
+
+### Phase Execute
+- docs-onlyで本run logを追記し、公開境界（内部向け運用文書）を再明記した。
+
+### Phase Verify
+- 実行予定/実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `git diff --check`
+- 自己修復回数: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 理由: 固定直列順の2番目として、メタI/F・GoNoGo・検証導線の整合を維持できた。
