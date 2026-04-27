@@ -1357,3 +1357,51 @@
 - Hold条件:
   - Self-Correction 3回超過
   - CE0/CE1契約語彙衝突（CDC起票が必要）
+
+---
+
+## Stream D Execution Record（2026-04-27 / CE1 I/F freeze dedicated cycle）
+
+### Phase 1 Read（Read同期）
+- Read同期チェック（Phase開始時）:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+  - No-Go語彙とsafeMode境界: `preview_bypass` 禁止、safeMode既定緩和禁止
+- CE0はread-only参照を維持し、再定義は未実施。
+- 差分判定: CE0契約ID改名・語彙変更・safeMode既定変更は未検知（continue）。
+
+### Phase 2 Plan（不足AC/DoD先出し）
+- Read同期チェック（Phase開始時）: Phase 1と同一項目を再確認。
+- 先出しAC/DoD（contract-only / mock-first）:
+  - hash決定論: 同一canonical queryで `queryCanonicalHash` / `bundleHash` が3回一致。
+  - preview gate: `previewConfirmed=false -> 422 preview_required` を固定。
+  - closed-world: 未定義キーは `400 unknown_contract_key` を固定。
+  - handoff I/F: `sourceBundleHash === bundleHash` の比較キーのみ固定。
+  - DoD: `safeMode regression = 0`、docs-check pass。
+- CDC方針: 衝突検知時のみ Context / Decision / Consequences を明文化して `held`。
+
+### Phase 3 Execute（I/F凍結のみ）
+- Read同期チェック（Phase開始時）: Phase 1と同一項目を再確認。
+- 実施内容: 本Issueに運用記録を追記し、I/F固定条件を再確認。
+- 非実施（フェイルセーフ遵守）:
+  - preview bypass許容
+  - safeMode緩和
+  - 未定義契約衝突の放置
+  - 実装記述（handler/UI/DB/worker）
+
+### Phase 4 Verify（docs-check / 自己修復3回まで）
+- Read同期チェック（Phase開始時）: Phase 1と同一項目を再確認。
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 自己修復: 失敗時のみ最小修復を実施し最大3回まで。4回目は停止。
+
+### Phase 5 Proceed（完了条件判定）
+- Read同期チェック（Phase開始時）: Phase 1と同一項目を再確認。
+- 判定条件（I/F固定のみ）:
+  - docs-check pass
+  - contract-only維持（実装記述なし）
+  - `sourceBundleHash === bundleHash` のI/F固定維持
+  - safeMode境界後退なし
+- CDC起票要否: 衝突未検知のため不要（`held` 遷移なし）。
