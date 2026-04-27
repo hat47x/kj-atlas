@@ -266,3 +266,28 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 引き継ぎ: K-2担当（`issue-doc-ops-05-13-04doc-security.md`）へ並列実行可の状態で受け渡し。
+
+## Stream H execution compliance log（2026-04-27, Set A-1: operations）
+
+### 1) Read
+- Read同期: `AGENTS.md` Read Order と本Issue本文を再読し、セットA先行順（operations → security → guidelines）を固定。
+
+### 2) ADR/CDC
+- Context: operations は公開runbook責務、security系2文書との責務境界維持が必要。
+- Decision: 分類 `Improve external` を維持し、新規制度決定は行わない。
+- Consequences: 公開境界ドリフトを抑止し、後続2Issueへ直列引き継ぎ可能とする。
+
+### 3) Plan
+- `Plan -> Execute -> Verify -> Proceed` を本Issueで固定。
+- AC/DoD不足は既存補完提案（AC-1〜3 / DoD-1〜2）を採用。
+
+### 4) Execute
+- 本Issueメモへの追記のみを実施（docs-only, allowlist内）。
+
+### 5) Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### 6) Proceed
+- 判定: **Go**（セットA次順序: 05-13）。

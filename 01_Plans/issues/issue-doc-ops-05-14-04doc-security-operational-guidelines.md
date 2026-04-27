@@ -187,3 +187,28 @@
 ### Phase 6 Proceed（Go/Hold/Needs-decision）
 - 判定: **Go**（理由: 停止条件非該当、security lane 直列完遂）。
 - 終了: 固定直列 `operations → security → guidelines` を完了。
+
+## Stream H execution compliance log（2026-04-27, Set A-3: security operational guidelines）
+
+### 1) Read
+- Read同期: 本Issueと 05-13 Proceed=Go を確認し、セットA終点として境界責務を再確認。
+
+### 2) ADR/CDC
+- Context: guidelines は運用判断補助文書で、制度定義の正本ではない。
+- Decision: 分類 `Improve external` を維持し、D1〜D4相当は上流参照のみ。
+- Consequences: 2者承認/実行分離と公開境界追跡の整合を維持する。
+
+### 3) Plan
+- `Plan -> Execute -> Verify -> Proceed` を固定。
+- AC/DoD不足は既存補完（AC-1〜3, DoD-1〜2）を適用。
+
+### 4) Execute
+- 本Issueメモ追記のみ実施（docs-only, allowlist内）。
+
+### 5) Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### 6) Proceed
+- 判定: **Go**（セットA完了、セットBへ進行）。
