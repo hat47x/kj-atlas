@@ -1186,3 +1186,43 @@
   - 範囲外編集: なし
 
 ---
+
+## Stream D Execution Record（2026-04-27 / Phase 1-5 strict cycle）
+
+### Phase 1 Read（CE0参照境界・語彙・safeMode境界の差分検知）
+- 再読対象を本Issueに固定し、CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）をread-onlyで再確認。
+- 語彙差分検知対象（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再照合。
+- safeMode境界（既定ON・緩和禁止）に関する差分有無を再確認。
+- 判定: **差分なし（continue）**。
+
+### Phase 2 Plan（AC/DoD補完 / mock前提）
+- AC補完を再固定:
+  - `previewConfirmed=false -> 422 preview_required`
+  - 未定義キー -> `400 unknown_contract_key`
+  - 同一canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+- DoD補完を再固定:
+  - `sourceBundleHash === bundleHash`
+  - safeMode regression = 0
+- 依存切断は mock前提を維持（deterministic mock 3回一致のみで判定）。
+
+### Phase 3 Execute（contract-only固定 / 実装記述禁止）
+- 本Issue内の運用記録のみ更新（contract-only）。
+- handler/UI/DB/worker 等の実装記述は追加しない。
+- CE0契約再定義・safeMode既定緩和・preview bypass許容は未実施。
+
+### Phase 4 Verify（docs-check / 修復上限3）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: `0/3`（追加修復なし）。
+
+### Phase 5 Proceed（CE2/CE4 handoff key固定）
+- CE2 handoff key固定: `sourceBundleHash === bundleHash`。
+- CE4 handoff key固定: `equivalenceKey + bundleHash`（AND）および `queryCanonicalHash`。
+- error semantics継承固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- 判定: **Proceed**（read-only handoff継続、契約再定義なし）。
+
+### ADR/CDC（衝突検知時のみ起票）
+- 判定: `contract_id_collision=0` / `vocabulary_collision=0` のため **CDC起票なし**。
+- 運用固定: 衝突検知時のみ `Context / Decision / Consequences` を起票し、`held` へ遷移する。
