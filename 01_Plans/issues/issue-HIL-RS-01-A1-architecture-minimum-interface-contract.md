@@ -160,6 +160,28 @@ gate:
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
 
 
+## Stream A AC/DoD Draft Proposal（Pending Approval）
+
+### Context
+- Phase 3要件として、`A1契約固定`・`A2モック前提`・`A3実装移行条件` を明文化し、承認前はDraft扱いに限定する。
+
+### Decision（Draft）
+- A1契約固定: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を変更禁止。
+- A2モック前提: A2は `mock I/F preparation only` とし、契約値の再定義・派生定義・Pending bypassを禁止する。
+- A3実装移行条件: `A2A3_OPEN_ALLOWED=true`（`a1Status=="Done" && pendingDecisionQueueCount==0` を含む固定ゲート充足）までOpen/実装移行を禁止する。
+
+### Consequences
+- 上記3項目は `Approval Record: Pending` の間は確定扱いしない。
+- 未承認状態では Execute を準備作業のみに限定し、NoGo時はA1契約Issueへ差戻す。
+
+### AC/DoD gap draft（for approval）
+- AC-D1: `A1契約固定` の固定キーに差分がないこと（diff=0）。
+- AC-D2: `A2モック前提` の範囲逸脱（実装確定/契約改定）がないこと。
+- AC-D3: `A3実装移行条件` を満たさない限り `Draft/Open` を変更しないこと。
+- DoD-D1: Verifyに self-correction 試行回数（0〜3）を記録すること。
+- DoD-D2: Proceed判定時に `Go/Conditional/No-Go` の根拠式を再掲すること。
+- DoD-D3: `Approval Record` が未入力の場合は **Needs-decision** として停止またはConditional維持にすること。
+
 ## Stream A handover checkpoint（2026-04-27）
 
 ### Phase 6 Proceed判定（今回）
