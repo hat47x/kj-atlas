@@ -859,3 +859,34 @@
 - Phase開始時Read同期を再実施し、Proceed判定条件（AC/DoD充足 + docs-check pass）を確認した。
 - 判定: `Go=Done`（contract-only / proposal-only / single-file 制約を維持）。
 - Conditional/No-Go該当: なし。未承認事項在庫: なし（新規 `held/pending` 追加なし）。
+
+## Phase Execution Record（2026-04-27 / Stream C / CE0 strict serial rerun-2）
+### Phase 1 Read
+- Phase開始時Read同期を実施し、`role / transition / no-go` 固定語彙（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs）を再確認。
+- 差分判定: 語彙・禁止事項・SafeMode境界の差分は 0 件。ドリフトは未検出。
+
+### Phase 2 ADR/CDC
+- Phase開始時Read同期を再実施し、方針差分の有無を確認。
+- Context: CE0 Core Graph Repositioning は contract-only で契約固定を継続する。
+- Decision: `No ADR delta`（CE0契約ID再定義なし、語彙固定維持、未承認事項の確定化なし）。
+- Consequences: 未承認事項が発生した場合は `held` または `pending` で管理し、承認まで確定しない。
+
+### Phase 3 Plan
+- Phase開始時Read同期を再実施し、Phase 2との差分なしを確認。
+- Scope: 本Issue 1ファイルの実行記録追記のみ（single-file / docs-only / contract-only）。
+- Non-Goals: 実装変更、CE0契約ID再定義、語彙同義語拡張、SafeMode既定ON後退、未承認事項の確定化。
+
+### Phase 4 Execute
+- Phase開始時Read同期を再実施し、固定語彙・禁止事項・SafeMode境界の差分なしを確認して実行。
+- 実行内容は本Issue本文への追記のみ。実装ファイル・他ドキュメントは変更しない。
+
+### Phase 5 Verify
+- Phase開始時Read同期を再実施し、語彙差分・禁止事項逸脱・SafeMode境界ドリフトがないことを確認。
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- self-correction 実績: 0/3（上限超過なし）。
+
+### Phase 6 Proceed
+- Phase開始時Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（Read → ADR/CDC → Plan → Execute → Verify → Proceed の固定順序を満たす）。
+- フェイルセーフ該当: なし（語彙・禁止事項・safeMode境界ドリフトなし、未承認事項確定化要求なし、self-correction上限超過なし）。
