@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された7 Issue（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`）以外は不干渉
+- Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 6/7 HIL-RS-02 delivery plan
@@ -22,7 +22,7 @@
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
 
 ## Phase Control Macro（各Phase共通）
-- 各Phase開始直前に必ず対象7ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
+- 各Phase開始直前に必ず対象5ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
 - 各Phaseは `Plan -> Execute -> Verify -> Proceed` の順序を必須とし、スキップ/逆走を禁止する。
 - フェイルセーフ検知時（4回目相当self-correction、未承認確定化、未定義競合、指定外編集要求）は即停止し、次の3点を必ず出力する。
   1. 原因
@@ -189,3 +189,35 @@ delivery_gate_v1:
 
 ### No-Go条件の再確認
 - self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
+
+
+## Stream A critical-path execution log（2026-04-27 / contract governance hardening）
+
+### Phase 1: Read
+- 再読対象: 本Issue本文。
+- Read同期チェック（`Status / Scope / Dependencies / freezeContractId / schemaVersion / overridePolicy / safeModeDefault`）を実施し、差分 `0` を確認。
+- 追加チェック: `NoGo return path` / `decisionQueueTransition` / `safeModeBoundary` も差分 `0`。
+
+### Phase 2: ADR/CDC
+- **Context**: HIL-RS契約統治をA1 SSOTに固定し、推測実装・競合更新を排除する。
+- **Decision**: 既存固定値（`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON`）を維持し、再定義しない。
+- **Consequences**: `Approval Record: Pending` が残る間は Executeで確定化せず、`held` を維持する。
+
+### Phase 3: Plan
+- 強制順序 `Plan -> Execute -> Verify -> Proceed` を採用。
+- AC/DoD不足は既存 Draft（AC-D1〜D3 / DoD-D1〜D3）を継続し、新規不足は未検知。
+- 非対象編集禁止を再確認（allowlist 5ファイル限定）。
+
+### Phase 4: Execute
+- 実行内容: 本Issueへの運用ログ追記とallowlist整合化のみ。
+- 未実行: 契約値更新、NoGo return path変更、safeMode境界緩和、pending bypass。
+
+### Phase 5: Verify
+- docs-check 実行対象を固定し、`self-correction=0/3` で完了。
+- 検証失敗・ドリフト・未承認確定化は未検知。
+
+### Phase 6: Proceed
+- 判定: **Conditional**。
+- 理由: `Approval Record: Pending` および `held` 論点（人間承認待ち）が残存。
+- 影響I/F: A2/A3 は `A2A3_OPEN_ALLOWED=true` 充足まで `Draft/Open` 変更禁止。
+- 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了と pendingDecisionQueue の解消。
