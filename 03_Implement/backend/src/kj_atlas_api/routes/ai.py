@@ -586,15 +586,12 @@ def propose_island_summary(payload: ProposeIslandSummaryRequest) -> ProposalEnve
 
 @router.post("/proposals/audit")
 def record_proposal_decision(payload: ProposalDecisionAuditRequest) -> ProposalDecisionAuditResponse:
-    status_map = {
-        "adopt": "accepted",
-        "accepted": "accepted",
-        "reject": "rejected",
-        "rejected": "rejected",
-        "hold": "held",
-        "held": "held",
-    }
-    status = status_map[payload.decision]
+    if payload.decision not in {"accepted", "rejected", "held"}:
+        raise HTTPException(
+            status_code=422,
+            detail="decision must be one of accepted|rejected|held",
+        )
+    status = payload.decision
     logger.info(
         "proposal_decision_audit",
         extra={

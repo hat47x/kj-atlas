@@ -48,11 +48,8 @@ def test_propose_island_summary_returns_proposal_without_auto_apply() -> None:
 
 def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promotion() -> None:
     expected = {
-        "adopt": "accepted",
         "accepted": "accepted",
-        "reject": "rejected",
         "rejected": "rejected",
-        "hold": "held",
         "held": "held",
     }
     with TestClient(app) as client:
@@ -64,6 +61,17 @@ def test_record_proposal_decision_maps_to_lifecycle_status_without_review_promot
             assert response.status_code == 200
             assert response.json()["status"] == expected_status
             assert response.json()["reviewState"] == "unreviewed"
+
+
+def test_record_proposal_decision_rejects_alias_decision_vocab() -> None:
+    with TestClient(app) as client:
+        for decision in ("adopt", "reject", "hold"):
+            response = client.post(
+                "/ai/proposals/audit",
+                json={"proposalId": "proposal-1", "decision": decision, "actor": "tester"},
+            )
+            assert response.status_code == 422
+            assert response.json()["detail"] == "decision must be one of accepted|rejected|held"
 
 
 def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:

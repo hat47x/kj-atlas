@@ -312,6 +312,13 @@
 - Verify 失敗時の自己修復は最大 `3/3` まで許可し、`4/3` 相当は fail-safe 停止とする。
 - fail-safe 即停止条件: 自動確定要求 / 自動公開要求 / review 自動昇格要求 / lifecycle 閉集合逸脱 / safeMode 後退 / 指定外編集 / 4回目再試行。
 
+## Stream D backend execution log（2026-04-27 / CE2 low-risk API）
+- Phase 1 Read: CE2固定契約（proposal-only / lifecycle閉集合 / review昇格禁止 / self-correction上限3回）を再同期。
+- Phase 2 モック契約確認: `proposalId/diff/sourceBundleHash/rationale/status/reviewState` I/F と mock `sourceBundleHash` 受理境界を再確認。
+- Phase 3 実装: backend `/ai/proposals/audit` で decision 語彙を `accepted|rejected|held` に限定し、alias 語彙（`adopt/reject/hold`）を 422 拒否へ変更。
+- Phase 4 Verify: `test_ce2_proposal_api.py` のCE2系テストを更新し、alias拒否・reviewState維持を検証。
+- Phase 5 受け渡し: CE2 proposal-only 契約境界（auto-apply禁止 / AI review自動昇格禁止）を維持したまま backend 差分を handoff。
+
 ## Stream D single-file execution record（2026-04-26 / proposal-only）
 
 ### Phase 1 Read
