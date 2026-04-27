@@ -92,3 +92,30 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次順序: `DOC-OPS-05-14` を同一プロトコル（Read → Plan → Execute → Verify → Proceed）で処理する。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: Read Order上流と本Issueを再読し、security lane（operations→security→guidelines）順序を確認。
+
+### Phase 2 ADR/CDC
+- Context: security は公開可能な基底方針に限定し、運用詳細は guidelines へ委譲する必要がある。
+- Decision: **Improve external** を維持し、役割語彙・固定値は参照専用で運用。
+- Consequences: 安全境界後退や未承認確定化を回避できる。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモ追記のみ（docs-only）。
+- 停止条件: self-correction 4回目相当 / 未承認確定化 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属6Phaseログを追記。
+- 非実施: 実装コード、architecture本体、shared resource、指定外Issue。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**（次順序 05-14）。

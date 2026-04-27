@@ -1271,3 +1271,30 @@
 ### Proceed
 - 判定: **Ready**。
 - 次工程: 05-10 へ直列進行。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order（00→01→02）と本Issueを再読し、公開境界と `Improve external` 固定を確認。
+
+### Phase 2 ADR/CDC
+- Context: local LLM 運用文書は公開可能だが内部運用情報混入を避ける必要がある。
+- Decision: 既存分類 **Improve external** を維持し、LLM運用境界の説明に限定。
+- Consequences: docs-onlyで再現可能な運用導線を維持できる。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモの追記のみ。
+- 停止条件: self-correction 4回目相当 / 未承認確定化 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属ログ追記（対象1ファイル）。
+- 非実施: 実装コード・architecture本体・shared resource。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。

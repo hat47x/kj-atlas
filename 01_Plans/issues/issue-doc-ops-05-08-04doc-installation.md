@@ -1361,3 +1361,30 @@
 ### Phase 5 Proceed
 - 判定: **Needs-decision**（承認前確定禁止のため）
 - 次アクション: configuration境界が再定義されないことを確認後、承認プロセスへ回付。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order の上流（00/01/02）と本Issue本文を再読し、docs-only・allowlist内作業を再確認。
+
+### Phase 2 ADR/CDC
+- Context: installation は公開導入導線であり、公開境界の明確化が優先。
+- Decision: Classification **Improve external** を維持し、未承認事項の確定化を行わない。
+- Consequences: 実装コード・architecture本体・shared resource への波及を防止する。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモの記録更新のみ（1ファイル）。
+- 停止条件: self-correction 4回目相当 / 未定義競合 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属ログを追記（docs-only）。
+- 非実施: 指定外Issue、実装コード、architecture本体、shared resource。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-08-04doc-installation.md`
+- `git diff --check`
+- self-correction: 0/3（上限3、4回目相当は停止）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（Stream H 範囲で継続可能）。

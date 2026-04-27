@@ -92,3 +92,30 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - security系 lane（operations → security → guidelines）の Stream F 担当分を完了として記録。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: 上流Read Orderと本Issueを再読し、security系終点レーン責務を再確認。
+
+### Phase 2 ADR/CDC
+- Context: guidelines は運用判断補助として公開境界と責務分離の維持が要点。
+- Decision: **Improve external** を維持し、D1〜D4相当は上流参照のみ。
+- Consequences: 2者承認・実行分離を崩さず公開境界を追跡できる。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモのみ更新。
+- 停止条件: self-correction 4回目相当 / 未定義競合 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属6Phaseログ追記（docs-only）。
+- 非実施: 実装コード、architecture本体、shared resource、指定外Issue。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**（security lane完了）。

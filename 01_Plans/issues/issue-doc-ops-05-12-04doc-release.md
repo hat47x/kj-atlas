@@ -521,3 +521,30 @@
 ### Phase 5 Proceed
 - 判定: **Needs-decision**（承認前確定禁止）
 - 次アクション: 承認完了後に release側の最終固定を実施。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: 上流Read Orderと本Issueを再読し、release監査導線の公開境界を確認。
+
+### Phase 2 ADR/CDC
+- Context: release 文書は公開運用導線だが、内部承認情報の混入を避ける必要がある。
+- Decision: **Improve external** を維持し、監査証跡（Go/No-Go）を維持。
+- Consequences: docs-onlyで公開手順の再現性を確保する。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモの更新のみ。
+- 停止条件: self-correction 4回目相当 / 未定義競合 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Stream H 専属6Phaseログを追記。
+- 非実施: 実装コード、architecture本体、shared resource。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**。

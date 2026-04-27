@@ -102,3 +102,30 @@
   - Repair-3: 「4回目相当は停止」を明示。
   - Repair-4: **未実施（禁止）**。
 - Proceed判定: **Ready（次順序は security lane 実行時に再判定）**。
+
+
+## Stream H dedicated serial run（2026-04-27）
+
+### Phase 1 Read（開始同期）
+- Read同期: `AGENTS.md` Read Order と本Issueを再読し、security lane 先頭としての境界責務を再確認。
+
+### Phase 2 ADR/CDC
+- Context: operations は実行runbookであり、security/guidelines との責務境界維持が必要。
+- Decision: 分類 **Improve external** を維持。役割語彙・導線は既存正本参照のみ。
+- Consequences: 制度定義の再発明を避け、公開境界ドリフトを抑制する。
+
+### Phase 3 Plan
+- 実行計画: 本Issueメモの記録更新のみ。
+- 停止条件: self-correction 4回目相当 / 未承認確定化 / allowlist外編集要求。
+
+### Phase 4 Execute
+- 実施: Read→ADR/CDC→Plan→Execute→Verify→Proceed の順序でStream Hログを追記。
+- 非実施: 指定外Issue、実装コード、architecture本体、shared resource。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**（次順序は 05-13）。
