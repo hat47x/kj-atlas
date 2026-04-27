@@ -823,3 +823,26 @@
 - Read同期（mock同等性）: `sourceBundleHash=mock:<hash>` fail-closed同等性維持。
 - Proceed判定: Go（contract-only文書固定）。
 - 完了条件: docs-check pass、fail-closed条項明記、未承認CDCの確定化禁止を満たす。
+
+## Stream E Execution Record（2026-04-27 / started after CE2 gate）
+
+### CE2 Completion Gate（precondition）
+- CE4開始前提として CE2 の Phase 5 Verify 合格 + Phase 6 Proceed 完了を確認。
+- 逆順・並列開始を行っていないことを確認し、CE4を直列開始。
+
+### Phase Progress（Read → ADR/CDC → Plan → Execute → Verify → Proceed）
+- Phase 1 Read: 完了（CE0 contract IDs、監査4点、fail-closed条項、CE4 scopeを再読し差分なし）。
+- Phase 2 ADR/CDC: 完了（Context/Decision/Consequences を API/CLI同値性・監査・fail-closed 固定へ整列）。
+- Phase 3 Plan: 完了（API/CLI同値性、監査ログ完全性、fail-closed をAC/DoDへ固定）。
+- Phase 4 Execute: 完了（contract-only 記述更新のみ実施、実装詳細は追加しない）。
+- Phase 5 Verify: 完了（同一query同一bundle要件、監査欠落ゼロ、fail-closed維持を確認）。
+- Phase 6 Proceed: 完了（Go判定。未承認事項は `held` 維持、No-Go逸脱なし）。
+
+### Verify Log（self-correction 0/3）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+- 判定: pass（自己修復着手なし、`4/3` 到達なし）。
+
+### Proceed Decision
+- Decision: **Go**（CE4契約固定を継続し、後続は実装非依存の契約準拠確認へ引き継ぐ）。
