@@ -27,6 +27,45 @@
 - Phase 5 Verify: `blocked`（Execute未着手のため未実行）
 - Phase 6 Proceed: `completed`（最新判定: `Hold`。合意待ち）
 
+## Stream B latest run（2026-04-27 / CE0 only / issue-owned update）
+
+- run_id: `stream-b-ce0-2026-04-27-03`
+- assignee: `issue-CE0-contract-freeze.md 単独担当`
+- scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
+
+### Phase 1 Read（Status / Scope / Related ADR 差分確認）
+- 実施: 本ファイル最新状態を再読し、`Status=Open` / `Scope=01_Plans/issues/（docs-only / contract-only / mock-first）` / `Related ADR/Spec=ADR-0028, 02_Architecture/schemas.md` の差分がないことを確認。
+- 実施: 固定Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）と No-Go 5語彙IDの差分ゼロを確認。
+
+### Phase 2 ADR確認（Context / Decision / Consequences）
+- Context: CE0 contract freeze のSSOTは本Issueで維持し、下流はread-only参照のみ。
+- Decision: 既存Decisionで整合が取れているため、新規Decision追加は不要（承認待ち新設なし）。
+- Consequences: 承認待ちは増えず、既存 `agreement_state` と `held` 運用をそのまま継続可能。
+
+### Phase 3 Plan（AC/DoD不足点の確認）
+- 判定: 新規不足なし。既存追跡対象 `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` で網羅可能。
+- 合意状態: 追加ドラフト提示は不要（現行DoDで継続）。
+
+### Phase 4 Execute（contract-only / mock-first）
+- 実施: 本Issue内の実行ログのみ更新し、contract-only / mock-first 境界を明示。
+- 非実施: 実装ファイルへの変更指示、CE0 Contract ID再定義、指定外ファイル編集。
+
+### Phase 5 Verify（AC/DoD適合確認 / self-repair）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-repair 0/3）
+- AC/DoD適合: `contract_id_collision=0` / `vocabulary_collision=0` / `safeMode regression=0` を確認。
+
+### Phase 6 Proceed（完了判定）
+- 判定: **完了（Complete）**
+- 根拠:
+  - 許可範囲内編集のみ（本Issue単独）
+  - contract-only / mock-first の記述更新のみ
+  - VerifyでAC/DoD不整合なし（自己修復不要）
+
 ## Stream B latest run（2026-04-27 / CE0 only / agreement hold）
 
 - run_id: `stream-b-ce0-2026-04-27-02`
