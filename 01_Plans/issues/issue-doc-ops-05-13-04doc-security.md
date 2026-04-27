@@ -226,3 +226,33 @@
 ### Phase 6 Proceed
 - Read同期: `GoNoGoGate` / `DecisionStatus` / `DecisionQueueRef` を再読。
 - 判定: **Ready**（理由: 6Phase直列記録・ADR/CDC条件・docs-check導線・停止条件が再現可能）。
+
+
+## K-2担当 serial run（2026-04-27, docs-only）
+
+### Phase Read
+- 対象を `issue-doc-ops-05-13-04doc-security.md` のみに固定し、指定外編集禁止を再確認。
+- `DecisionStatus=Fixed` / `VerificationLevel=docs-check` / `GoNoGoGate=Required` を再確認。
+
+### Phase ADR/CDC（必要時）
+- 判定: 役割語彙・固定値・公開境界に新規差分なしのため **ADR/CDC 追加なし**。
+- ルール: 差分が発生した場合のみ C/D/C を追記し、承認完了まで `Needs-decision` で停止。
+
+### Phase Plan
+- 実行計画:
+  1. 本Issueに K-2 記録のみ追記（docs-only）。
+  2. 安全境界後退（safeMode既定ON / share-export漏洩防止の緩和）記述を追加しない。
+  3. Verifyは `docs-check` と `git diff --check` で実施。
+
+### Phase Execute
+- 実施: K-2専属6Phaseログを本Issueへ追記。
+- 非実施: `issue-doc-ops-05-11-04doc-operations.md` を含む指定外ファイル編集。
+
+### Phase Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- self-repair: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 引き継ぎ: K-1担当（`issue-doc-ops-05-11-04doc-operations.md`）と並列実行可の状態を維持。
