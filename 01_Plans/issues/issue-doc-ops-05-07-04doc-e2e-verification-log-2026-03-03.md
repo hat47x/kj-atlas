@@ -19,8 +19,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
+- DecisionStatus（Fixed / Pending）: Pending
+- DecisionQueueRef（未確定時の参照先）: `同ファイル 18章（approval-gated classification lock）`
 
 ## 1) 課題 / Problem statement
 
@@ -1313,3 +1313,34 @@
 ### Phase 6 Proceed
 - Read同期: `GoNoGoGate` / `DecisionStatus` / `DecisionQueueRef` を再読。
 - 判定: **Ready**（理由: 6Phase直列記録・ADR/CDC条件・docs-check導線・停止条件が再現可能）。
+
+
+## 18) 2026-04-27 classification lock (approval-gated)
+
+### Phase: Read
+- 対象を本Issue単体（`01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`）に限定して再読。
+- `04_Documentation/e2e_verification_log_2026-03-03.md` は日付付きE2E実測ログであり、恒常的な利用者ガイドではないことを確認。
+
+### Phase: Plan
+- 判定軸を `Audience / Goal / Public boundary / Maintenance cost` の4点に固定。
+- 承認前確定禁止ルールに従い、DecisionStatus は `Pending` のまま運用する。
+
+### Phase: Execute
+- **分類判断（固定案）: internal移管**
+- 根拠:
+  1. Audience: 主読者が開発/運用担当であり、一般利用者向けではない。
+  2. Goal: 単発検証ログの保存であり、恒久的な操作説明ではない。
+  3. Public boundary: 公開配下（`04_Documentation/`）に置くと内部運用情報の露出面を広げる。
+  4. Maintenance cost: 日付付きログを公開階層で増やすと情報鮮度管理コストが増加する。
+- よって、分類は `internal移管` を採用し、対外向け改善（external改善）は本件の第一選択にしない。
+
+### Phase: Verify
+- docs-check:
+  - `rg -n "DecisionStatus|DecisionQueueRef|classification lock|internal移管|承認" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 自己修復: 失敗時は本ファイルのみ最大3回修復し、4回目相当は停止。
+
+### Phase: Proceed
+- 状態: **Needs-decision（承認待ち）**
+- 承認後アクション: `04_Documentation/e2e_verification_log_2026-03-03.md` を内部管理ディレクトリへ移管する実行Issue/PRを起票。
+- 承認前制約: 分類案は固定するが、`Fixed` への昇格は承認完了まで禁止。
