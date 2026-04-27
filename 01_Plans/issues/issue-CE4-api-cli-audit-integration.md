@@ -730,3 +730,46 @@
 - Proceed:
   - CE4 API/CLI/Audit integration の最小実装を backend に反映。
   - 監査4点語彙・AND判定・safeMode既定ONの境界は維持。
+
+## Stream E Coordinated Update（2026-04-27 / API-CLI監査統合 CDC pending / latest）
+
+### Phase 1 Read（再読・相互参照整合）
+- 再読対象: `issue-CE4-api-cli-audit-integration.md` / `issue-CE2-low-risk-ai-assist.md`。
+- 契約語彙整合:
+  - `proposal-only` / `contract-only` / `mock-first` / `status=held` / fail-safe（自己修復上限3回）は整合。
+  - `reviewState` は CE2で `unreviewed | human_reviewed`（昇格は人手のみ）を維持し、CE4側でも再定義しない方針で整合。
+- 不一致是正（文面運用）:
+  - CE4の API/CLI監査統合判断は CDC 記述が存在するが、**本ラウンドの承認待ち状態を明示する最新運用行**を追加して運用同期する。
+
+### Phase 2 ADR/CDC（API/CLI監査統合判断の承認待ち明文化）
+- CDC ID: `CDC-CE4-AUDIT-INTEGRATION-2026-04-27`
+  - Context: API/CLI同値判定を `equivalenceKey + bundleHash`（AND）で固定し、監査4点（`query / bundle / proposal / apply`）と `queryCanonicalHash` の欠損を fail-closed として同一統治したい。
+  - Decision: CE4契約は CDC 形式で固定し、**承認完了までは `status=held` のまま実装確定へ進まない**。
+  - Consequences: proposal-only / contract-only を維持し、実装詳細・アルゴリズム詳細の確定は引き続き禁止。
+  - Approval: `pending`（人手承認待ち）。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- Draft-AC-CE4-2026-04-27-01:
+  - CDC承認待ち中は、API/CLI同値性評価結果を「運用上の確定」として扱わず `held` を維持する。
+- Draft-AC-CE4-2026-04-27-02:
+  - Verifyで `CDC-CE4-AUDIT-INTEGRATION-2026-04-27` が `pending` の場合、Proceedは「契約維持のみ」に限定する。
+- Draft-DoD-CE4-2026-04-27-01:
+  - DoDに「承認待ち CDC を `accepted` 相当として扱っていない」確認項目を追加。
+- 合意状態: **pending**（人手合意完了まで contract更新のみ）。
+
+### Phase 4 Execute（proposal-only / contract-only 維持）
+- 実施: 本issue文書内の契約記述更新のみ。
+- 非実施: API/CLI実装指示、監査実装手順化、他issue編集、safeMode緩和。
+
+### Phase 5 Verify（AC/DoD基準・矛盾修正上限3回）
+- Verify Attempt: `1/3`。
+- Verify結果:
+  - CDCが Context/Decision/Consequences 形式で明文化されている。
+  - 承認状態が `pending` として明示され、誤って `accepted` へ昇格していない。
+  - proposal-only / contract-only 逸脱なし。
+- 上限管理: `2/3`, `3/3` まで修正可。`4/3` 相当は fail-safe 停止。
+
+### Phase 6 Proceed（独立実行可能な次アクション）
+- Next-1: `CDC-CE4-AUDIT-INTEGRATION-2026-04-27` の人手承認/却下を取得する。
+- Next-2: 承認結果に応じて AC/DoDドラフト（Draft-AC/DoD-CE4-2026-04-27系）を確定または `held` 維持する。
+- Next-3: CE2側参照境界（read-only）で承認状態を同期し、誤昇格がないことを再検証する。
