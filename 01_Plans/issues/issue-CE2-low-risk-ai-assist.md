@@ -369,3 +369,9 @@
 ### CE4 Start Gate
 - CE2 Phase 5 Verify 合格および Phase 6 Proceed 完了を満たしたため、CE4着手条件を充足。
 - CE2→CE4 の順序制約（逆順/並列禁止）を満たしていることを記録。
+
+
+## Stream E Lane Ownership Note（2026-04-27 / latest）
+- CE2は Stream E 専任運用を継続し、proposal-only + mock-first + contract-only を維持する。
+- CE2完了（Verify/Proceed）を CE4着手の前提ゲートとして固定し、逆順・並列進行を禁止する。
+- AC/DoD未合意時はドラフト提示に留め、合意前 Execute 非開始を継続する。
