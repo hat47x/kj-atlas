@@ -291,3 +291,28 @@
 
 ### 6) Proceed
 - 判定: **Go**（セットA次順序: 05-13）。
+
+
+## DOC-OPS-05 専任 run log（2026-04-27 / order 5: 05-11）
+
+### Phase Read
+- 対象Issueを再読し、`Improve external` 方針と docs-only境界を同期した。
+
+### Phase Plan
+- AC/DoD不足ドラフト:
+  - AC追加案: operations文書の公開runbook責務とsecurity/guidelines委譲境界を明文化する。
+  - DoD追加案: operations/security間の未定義競合が検知された場合は `Hold` へ遷移する。
+- 合意: 本Issue内ドラフトとして採用。
+
+### Phase Execute
+- docs-onlyで本run logを追記し、競合検知時停止（fail-safe）を運用条件へ追加した。
+
+### Phase Verify
+- 実行予定/実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- 自己修復回数: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 理由: 現時点で operations/security 間の未定義競合は検出されず、停止条件に非該当。
