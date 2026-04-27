@@ -266,3 +266,35 @@ gate:
 - 判定: `Conditional`
 - 根拠: `Approval Record: Pending` と `held` 論点が残存し、`A2A3_OPEN_ALLOWED` 充足前。
 - 次の1手（再開条件）: `approved_by` / `approved_at` / `evidence` を入力し、`pendingDecisionQueueCount==0` を満たした時点で再検証する。
+
+## Stream A fixed-serial protocol replay（2026-04-27 / Plan→Execute→Verify→Proceed）
+
+- Issue order position: `4/7 HIL-RS-01 umbrella`
+- Protocol lock: 各Phaseで `Plan -> Execute -> Verify -> Proceed` を維持（逆走・省略禁止）。
+- Contract lock: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を固定。
+
+### Phase 1: Read
+- 対象7Issueを再読し、`Status / Scope / Dependencies / 固定キー` の差分を確認。
+- 差分検知時は `held` 記録のみ許可し、Executeへ進まない。
+
+### Phase 2: ADR/CDC
+- Context: A1契約凍結を唯一SSOTとし、A2/A3への派生定義を禁止。
+- Decision: 固定キーと `A2A3_OPEN_ALLOWED` 判定式を再定義せず参照専用化。
+- Consequences: 未承認事項は `pending/held` 維持（確定扱い禁止）。
+
+### Phase 3: Plan
+- AC/DoD不足はDraft提案として追記し、`Approval Record` 合意前は確定化しない。
+- 非干渉ルールを再確認し、allowlist外編集を実施しない。
+
+### Phase 4: Execute
+- 契約固定の文言同期のみ更新対象とし、実装・派生契約追加は実施しない。
+- `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON` / NoGo return path 固定を後退させない。
+
+### Phase 5: Verify
+- AC/DoD自己検証後に docs-check（validator / unittest / diff check）を実施。
+- self-correctionは `0〜3` 回まで、`4回目相当` は即停止して人間判断へエスカレーション。
+
+### Phase 6: Proceed
+- Go/Conditional/No-Go を既存判定式で評価。
+- `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
+- フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
