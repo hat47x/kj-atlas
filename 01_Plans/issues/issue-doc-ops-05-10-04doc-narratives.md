@@ -514,3 +514,34 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 次アクション: 同一方式で次の対象Issueへ直列進行。
+
+## 2026-04-27 Stream G serial execution (Phase 1-6 strict)
+
+### Phase 1 Read
+- Read同期を再実施（AGENTS Read Orderの上流要素 + `04_Documentation/narratives.md`）。
+- Scope再確認: docs-only、指定issue外は非編集。
+
+### Phase 2 ADR/CDC
+- Context: narrativesは公開価値があるが、提案文（proposal）と確定文（human_reviewed）の境界管理が必要。
+- Decision: 本Issueの分類を **Improve external** として維持する。
+- Consequences: 公開文書としての説明責務を強化しつつ、内部判断メモの流入を防止する。
+
+### Phase 3 Plan
+- 直列固定: Plan -> Execute -> Verify -> Proceed。
+- AC/DoD不足提案（Issue内合意）:
+  - AC-G-10: Audience/Goal/Non-goal/Public boundary/Outcome を再確認できる状態を維持。
+  - DoD-G-10: Proceedで `Ready/Hold/Needs-decision` を必ず明示。
+
+### Phase 4 Execute
+- 本Issueメモへ2026-04-27の直列実行記録を追記。
+- 指定外編集・コード変更は未実施。
+
+### Phase 5 Verify
+- docs-check:
+  - `rg -n "2026-04-27 Stream G serial execution|Improve external|Ready/Hold/Needs-decision|Public boundary" 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+  - `git diff --check`
+- Self-Correction: 0/3（失敗なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**。
+- 次アクション: narratives公開改善PR（docs-only）へ進行可能。
