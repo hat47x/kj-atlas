@@ -259,6 +259,38 @@
 - 状態更新案: **Ready**（DecisionStatus=Fixed）。
 - 保留条件: 参照リンク切れ / 固定値矛盾 / 語彙ドリフト未解消のいずれかを検知した場合は **Hold**。
 
+## 18) Stream J execution record (2026-04-27)
+
+### Phase 1: Read
+- 対象を本Issue単体に限定し、`Scope`・`Requirement meta I/F`・`Expected verification level=docs-check` を再確認。
+- 非干渉条件として、セキュリティ系・HIL/CE系Issueへは変更を波及させない方針を固定。
+
+### Phase 2: ADR task（Context / Decision / Consequences）
+- Context: `DOC-OPS-05-07` は日付付き E2E 実測ログの公開境界を整理し、内部移管判断を固定する docs-only 課題。
+- Decision: 既存方針 **Move internal** を維持し、追加ADRは作成せず Issue本文 CDC を正本として扱う。
+- Consequences: 後続作業は移設先計画と参照整合に限定し、実装コード・セキュリティ系・HIL/CE系の変更は行わない。
+- 承認待ち判定: **不要（DecisionStatus=Fixed のため）**。
+
+### Phase 3: Plan
+- AC/DoD確認項目を次の3点に固定:
+  1. 分類根拠（Audience / Goal / 公開境界）を追跡可能であること。
+  2. `GoNoGoGate=Required` の判定導線が本文で再現可能であること。
+  3. Proceed 判定を `Ready / Hold / Needs-decision` の三値で明示すること。
+
+### Phase 4: Execute
+- 本Issueの実行記録を追記し、6Phase・ADR task・承認待ち判定を明文化。
+- 対象外ファイルは変更しない（本Issue以外への非干渉を維持）。
+
+### Phase 5: Verify（docs-check）
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 自己修復ポリシー: 失敗時は最大3回まで同一Issue内で修復し、4回目相当は停止して `Hold` へ遷移。
+
+### Phase 6: Proceed
+- 判定: **Ready**
+- 理由: 6Phase記録、ADR CDC、承認待ち判定（不要）が揃い、`VerificationLevel=docs-check` と整合。
+
 ## 16) Stream H canonical consolidation (Phase 1〜5)
 
 ### Phase 1 Read（14 Draft共通テンプレ差分抽出）
