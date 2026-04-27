@@ -5,7 +5,7 @@
 - Priority: P1
 - Owner: Stream B（CE0 Contract Freeze 専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
-- Editable: `issue-CE0-contract-freeze.md` のみ
+- Editable: `issue-CE0-contract-freeze.md` / `02_Architecture/architecture.md（CE0節）` / `02_Architecture/schemas.md（CE0契約節）`
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
@@ -70,6 +70,43 @@
 - 継続条件:
   - CE1/CE2/CE4への引き渡しは Contract ID / No-Go ID のread-only参照のみ。
   - 未承認論点は確定扱いせず `held` 維持。
+
+## Stream B latest run（2026-04-27 / CE0 only / snapshot fixed）
+
+- run_id: `stream-b-ce0-2026-04-27-01`
+- input_contract_snapshot: `ce0-contract-freeze-2026-04-27`（fixed）
+- scope_guard:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `02_Architecture/architecture.md（7A CE0節のみ）`
+  - `02_Architecture/schemas.md（1.1 CE0契約節のみ）`
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
+
+### Phase 1 Read（対象再Read）
+- 実施: 3対象ファイルを再読し、CE0 Contract IDsとNo-Go語彙IDの固定を確認。
+- 実施: safeMode既定値（ON + `allowUnreviewedText=false`）後退禁止を確認。
+
+### Phase 2 AC/DoD確定（Context / Decision / Consequences）
+- Context: Stream B は CE0 contract freeze 専任。下流成果物待ちを行わず、固定スナップショットを使用する。
+- Decision: AC/DoD は「Contract ID再定義なし」「No-Go語彙ID canonical」「read-only handoff」「Verify自己修復≤3」で固定。
+- Consequences: CE1/CE2/CE4 との競合を回避しつつ、CE0を単独で凍結維持できる。
+
+### Phase 3 契約固定（contract-only）
+- 実施: `architecture.md` CE0節に snapshot 固定値と No-Go canonical IDs を追記。
+- 実施: `schemas.md` CE0契約節に snapshot 固定値と drift-stop canonical IDs を追記。
+- 非実施: CE0 Contract ID追加・改名・削除、実装コード変更、共有統合ファイル編集。
+
+### Phase 4 Verify（self-correction ≤ 3）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 引き渡し（Proceed）
+- 判定: **Go**
+- 引き渡し条件:
+  - CE1/CE2/CE4 は `ce0-contract-freeze-2026-04-27` を read-only 参照する。
+  - Contract IDs と No-Go canonical IDs は CE0 SSOT を唯一正本として維持する。
 
 ## Lane guard（このレーンの絶対条件 / CE SSOT）
 - CE0をCE契約のSSOT（single source of truth）とし、CE1/CE2/CE4は**参照のみ**で利用する。
