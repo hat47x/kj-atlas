@@ -25,7 +25,47 @@
 - Phase 3 Plan: `completed`（AC/DoD不足の追加ドラフト要否を確認）
 - Phase 4 Execute: `completed`（contract-only記録更新のみ実施）
 - Phase 5 Verify: `completed`（docs-check通過、自己修復 0/3）
-- Phase 6 Proceed: `completed`（最新判定: `Hold`。承認前論点は `held` 維持）
+- Phase 6 Proceed: `completed`（最新判定: `Conditional-Go`。未承認新規論点は `held` 維持）
+
+## Stream B latest run（2026-04-27 / CE0 only / contract freeze execution directive）
+
+- run_id: `stream-b-ce0-2026-04-27-06`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_repair_overflow=0`
+
+### Phase 1 Read
+- 最新状態・依存・優先度を再確認し、CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を確認。
+- No-Go canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）差分ゼロを確認。
+- fail-safe（safeMode既定後退禁止 / 指定外編集禁止 / Contract ID再定義禁止）を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 contract freeze を本IssueのSSOTとして維持し、下流は read-only 参照のみを継続する。
+- Decision: Contract I/Fと禁止事項の固定に限定し、実装詳細には踏み込まない。
+- Consequences: 契約ドリフトの早期検知が可能となり、逸脱時は `held` へ即停止できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC不要。
+
+### Phase 3 Plan
+- Contract IDs固定、禁止事項固定、fail-safe条件、AC/DoD追跡（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- AC/DoD不足は新規なしと判断し、追加ドラフト提案は不要。
+
+### Phase 4 Execute
+- 契約文面のみを更新（本実行ログの追記）し、範囲逸脱なしを確認。
+- 非実施: 実装変更、指定外ファイル編集、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- drift確認: `contract_id_collision=0` / `vocabulary_collision=0` / `safeMode regression=0`
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件:
+  - CE1/CE2/CE4への引き渡しは Contract ID read-only参照のみ。
+  - 承認前の新規論点は確定せず `held` を維持する。
 
 ## Stream B latest run（2026-04-27 / CE0 only / phase-gated hold）
 
