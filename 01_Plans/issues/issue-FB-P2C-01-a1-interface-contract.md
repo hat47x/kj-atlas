@@ -11,7 +11,7 @@
 - Non-target file policy: 対象7Issue以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream A fixed serial): 2/6 FB-P2C A1契約凍結
+- Execution order (Stream A fixed serial): 2/7 FB-P2C A1契約凍結
 
 ---
 
@@ -148,3 +148,18 @@ mock_contract_v1:
     a1_status: "Done"
     pending_decision_queue_count: 0
 ```
+
+
+## Stream A handover checkpoint（2026-04-27）
+
+### Phase 6 Proceed判定（今回）
+- 判定: **Needs-decision**（`Approval Record: Pending` と `held` 論点が残存）。
+- Go/No-Go条件: 既存の `ProceedGate` / `NoGo` 判定式を継続適用（再定義しない）。
+
+### 未確定論点一覧（次回引き継ぎ）
+1. `Approval Record` の承認主体・時刻・証跡（`approved_by` / `approved_at` / `evidence`）が未入力。
+2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持中で、人間判断待ち。
+3. A2/A3公開判定は `A1 Done && pendingDecisionQueueCount==0` 未充足のため据え置き。
+
+### No-Go条件の再確認
+- self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。

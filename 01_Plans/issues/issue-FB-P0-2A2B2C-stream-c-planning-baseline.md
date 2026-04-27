@@ -11,7 +11,7 @@
 - Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream A fixed serial): 1/6 FB-P0 baseline整合
+- Execution order (Stream A fixed serial): 1/7 FB-P0 baseline整合
 
 ---
 
@@ -78,7 +78,7 @@
 ### AC / DoD（ドラフト→合意済み）
 - AC
   1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
-  2. 依存順序 `A1 -> A2 -> A3` を全6Issueで固定。
+  2. 依存順序 `A1 -> A2 -> A3` を全7Issueで固定。
   3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
   4. A1 -> A2 -> A3 判定式は `A2A3_OPEN_ALLOWED` を唯一のSSOTとして扱う。
 - DoD
@@ -107,3 +107,18 @@
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定され、確定扱いを行わない。
 - No-Go: 前提崩れ / 未定義競合 / Self-Correction 3回超過 / 指定外ファイル変更検知 / 未承認確定化の発生。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
+
+
+## Stream A handover checkpoint（2026-04-27）
+
+### Phase 6 Proceed判定（今回）
+- 判定: **Needs-decision**（`Approval Record: Pending` と `held` 論点が残存）。
+- Go/No-Go条件: 既存の `ProceedGate` / `NoGo` 判定式を継続適用（再定義しない）。
+
+### 未確定論点一覧（次回引き継ぎ）
+1. `Approval Record` の承認主体・時刻・証跡（`approved_by` / `approved_at` / `evidence`）が未入力。
+2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持中で、人間判断待ち。
+3. A2/A3公開判定は `A1 Done && pendingDecisionQueueCount==0` 未充足のため据え置き。
+
+### No-Go条件の再確認
+- self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
