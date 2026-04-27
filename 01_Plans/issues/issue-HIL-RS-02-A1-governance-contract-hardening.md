@@ -10,10 +10,10 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された6 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`）以外は不干渉
+- Non-target file policy: 本ストリームで編集許可された7 Issue（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`）以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream A fixed serial): 5/6 HIL-RS-02 A1
+- Execution order (Stream A fixed serial): 5/7 HIL-RS-02 A1
 
 ## Stream A Contract Lock（HIL-RS fixed）
 - Contract ID固定: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
@@ -22,7 +22,7 @@
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
 
 ## Phase Control Macro（各Phase共通）
-- 各Phase開始直前に必ず対象6ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
+- 各Phase開始直前に必ず対象7ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
 - 各Phaseは `Plan -> Execute -> Verify -> Proceed` の順序を必須とし、スキップ/逆走を禁止する。
 - フェイルセーフ検知時（4回目相当self-correction、未承認確定化、未定義競合、指定外編集要求）は即停止し、次の3点を必ず出力する。
   1. 原因
@@ -160,3 +160,18 @@ governance_gate_v1:
 - No-Go: ドリフト、Pending bypass、未定義競合、Self-Correction 3回超過、指定外差分。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
+
+
+## Stream A handover checkpoint（2026-04-27）
+
+### Phase 6 Proceed判定（今回）
+- 判定: **Needs-decision**（`Approval Record: Pending` と `held` 論点が残存）。
+- Go/No-Go条件: 既存の `ProceedGate` / `NoGo` 判定式を継続適用（再定義しない）。
+
+### 未確定論点一覧（次回引き継ぎ）
+1. `Approval Record` の承認主体・時刻・証跡（`approved_by` / `approved_at` / `evidence`）が未入力。
+2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持中で、人間判断待ち。
+3. A2/A3公開判定は `A1 Done && pendingDecisionQueueCount==0` 未充足のため据え置き。
+
+### No-Go条件の再確認
+- self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
