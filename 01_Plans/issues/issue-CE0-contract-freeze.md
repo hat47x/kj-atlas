@@ -22,10 +22,47 @@
 ### Phase status（固定ワークフロー追跡）
 - Phase 1 Read: `completed`（固定ID / No-Go / safeMode境界を再確認）
 - Phase 2 ADR/CDC: `completed`（Context/Decision/Consequencesを明文化、承認待ち論点は `held` 維持）
-- Phase 3 Plan: `completed`（AC/DoD不足ドラフト化、未合意は Execute禁止）
-- Phase 4 Execute: `completed`（contract-only wording修正のみ）
-- Phase 5 Verify: `completed`（docs-check 実行、失敗時の自己修復上限=3を維持）
-- Phase 6 Proceed: `completed`（最新判定: `Go`。未承認論点は `held` 維持）
+- Phase 3 Plan: `completed`（AC/DoD不足を提案し、追加合意は `held` 待ち）
+- Phase 4 Execute: `blocked`（`agreement_state=held` のため未着手）
+- Phase 5 Verify: `blocked`（Execute未着手のため未実行）
+- Phase 6 Proceed: `completed`（最新判定: `Hold`。合意待ち）
+
+## Stream B latest run（2026-04-27 / CE0 only / agreement hold）
+
+- run_id: `stream-b-ce0-2026-04-27-02`
+- scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / unapproved_finalize=0`
+
+### Phase 1 Read（最新再読）
+- 実施: 本Issueを再読し、固定Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の差分ゼロを確認。
+- 実施: safeMode境界（`safeMode=true` / `allowUnreviewedText=false`）後退なしを確認。
+- 実施: No-Go語彙ID（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）差分ゼロを確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0 Contract Freezeを単独維持し、CE1/CE2/CE4は read-only 参照のみとする。
+- Decision: Contract ID再定義なし、safeMode境界固定、No-Go語彙ID canonical 判定を継続。未承認項目は `held` 維持。
+- Consequences: 下流の再定義と safeMode後退を防止できる一方、追加DoDは合意完了まで確定運用しない。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDCなし。
+
+### Phase 3 Plan（AC/DoD不足提案 / 合意待ち）
+- 提案A（AC不足）: read-only参照の判定基準を「リンク更新/注記のみ許可」に明文化する。
+- 提案B（DoD不足）: No-Go判定は5語彙ID照合を唯一基準とし、同義語は注釈扱いに限定する。
+- 提案C（DoD不足）: `contract_id_collision | vocabulary_collision | scope_deviation` 検知時の `held` 記録を必須化する。
+- agreement_state: `held`（追加合意待ち）
+- gate: 合意未了のため **Phase 4 Executeへ進まない**。
+
+### Phase 4 Execute
+- 状態: `blocked`（contract-only修正を含め未着手）
+
+### Phase 5 Verify
+- 状態: `blocked`（Execute未着手のため docs-check は次回実行）
+
+### Phase 6 Proceed（Go / Hold）
+- 判定: **Hold**
+- 理由: Phase 3の追加AC/DoD提案が `agreement_state=held` のため。
+- 次回引継ぎ:
+  - 合意取得後にのみ Phase 4 Execute（contract-only）を再開する。
+  - 再開時も fail-safe（safeMode後退・Contract ID改変・指定外編集）を先行監視する。
 
 ## Stream B latest run（2026-04-26 / CE0 only）
 
