@@ -1239,3 +1239,41 @@
 ### Phase 5: Proceed
 - 判定: **Ready**
 - 理由: 5Phase直列記録、AC/DoDドラフト提案、docs-check実施計画、修復上限（最大3回）の4点を本Issue内で充足。
+
+## Stream K gate-prep run（2026-04-27）
+
+### Phase 1 Read（Draft gate条件の明示）
+- 本Issueを最新状態で再読し、`Status=Draft` / `Priority=P2` / `Related Backlog=DOC-OPS-05` / `Expected verification level=docs-check` を確認。
+- Draft gate条件を次の4点に固定: (1) 必須メタ（Status/Priority/Related/Validation）欠落なし、(2) Classificationが明示済み、(3) Proceed判定が `Ready/Hold/Needs-decision` で記録可能、(4) docs-only範囲を逸脱しない。
+
+### Phase 2 ADR確認（CDC起票・承認前確定禁止）
+- Context: DOC-OPS-05 Draft群は公開境界の分類判定を安全にOpen化するための事前整備。
+- Decision: 本Issueの分類方針 `Move internal` を維持し、新規の制度変更は追加しない。
+- Consequences: 追加Decisionが必要になった場合は **Issue内CDCを新規起票し、承認完了まで `Needs-decision` で停止**（確定化しない）。
+
+### Phase 3 Plan（Open化に必要な AC / DoD / Validation 定義）
+- AC:
+  1. Audience / Goal / 公開境界 / 次アクションが本文で追跡可能。
+  2. `GoNoGoGate=Required` の判定導線が本文にある。
+  3. `DecisionStatus` と `DecisionQueueRef` の整合（FixedならN/A）が保たれる。
+- DoD:
+  1. docs-onlyで当該Issueファイルのみ更新。
+  2. Verifyで必須メタ整合チェックを通過。
+  3. Proceedで `Ready/Hold/Needs-decision` を理由付きで記録。
+- Validation plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `rg -n "^\- Status:|^\- Priority:|Related Backlog|Expected verification level|VerificationLevel" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+
+### Phase 4 Execute（Draft→Open移行条件の文書整備のみ）
+- 実施内容: 本Stream Kセクションを追記し、Draft gate / CDC運用 / AC-DoD-Validation / Proceed判定条件を明文化。
+- 非実施: 共有ファイル（`project-progress-dashboard.md` / `issues/README.md`）および実装コードの変更。
+
+### Phase 5 Verify（必須メタ整合 + 失敗時3回修復）
+- Verify結果: 1回目チェックで必須メタ（Status/Priority/Related/Validation）整合を確認。
+- 修復回数: 0/3（不整合未検知）。4回目相当は停止し `Hold` へ遷移。
+
+### Phase 6 Proceed（Open化可否判定）
+- 判定: **Ready**。
+- 根拠: Draft gate条件・CDC運用条件・AC/DoD/Validationが本文で再現可能。
+- Open化時の次アクション: 日付付きE2E実測ログを内部記録系へ移管するOpenタスクを分離し、公開対象から除外する。
