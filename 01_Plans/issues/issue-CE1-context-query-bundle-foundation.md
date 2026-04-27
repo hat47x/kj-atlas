@@ -1250,3 +1250,65 @@
 ### Phase 5 記録
 - CE1 frontend mock基盤を contract語彙に合わせて更新。
 - safeMode既定値後退なし / preview gate bypass 追加なし。
+
+---
+
+## Stream D Execution Record（2026-04-27 / CE1 contract-only freeze cycle）
+
+### Phase 1 Read（CE0参照境界とCE1契約ID差分確認）
+- 再読対象: 本Issue、`issue-CE0-contract-freeze.md`（read-only参照）、`ADR-0028`、`02_Architecture/schemas.md`。
+- CE0境界確認（read-only）:
+  - `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+- CE1凍結契約ID差分確認:
+  - `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+- 差分判定: **差分なし**（CE0契約ID改名/再採番なし、語彙変更なし、safeMode既定変更なし）。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- 判定: 衝突未検知のため新規CDCは起票しない。
+- Context:
+  - CE1はCE0 SSOTをread-only参照し、CE1側で再定義しない。
+  - 本サイクルは contract-only 固定であり、実装記述を追加しない。
+- Decision:
+  - CE1 v1契約の固定対象を維持（`422 preview_required`、`400 unknown_contract_key`、hash決定論、`sourceBundleHash === bundleHash`）。
+  - 未確定論点が発生した場合は `held` で停止し、未承認確定を禁止する。
+- Consequences:
+  - CE2/CE4 handoff は read-only で継続できる。
+  - safeMode後退や語彙ドリフトを抑止できる。
+- CDC status: `not_raised`（`held` 対象なし）。
+
+### Phase 3 Plan（AC/DoD不足提案と合意）
+- AC/DoD不足提案（継続合意）:
+  - 同一canonical query 3回で `queryCanonicalHash` 一致。
+  - 同一canonical query 3回で `bundleHash` 一致。
+  - `previewConfirmed=false` は `422 preview_required` 固定。
+  - 未定義キーは `400 unknown_contract_key` 固定。
+  - CE2/CE4連携キーは `sourceBundleHash === bundleHash` 一致条件を維持。
+  - `safeMode regression = 0` をDoDに維持。
+- 合意状態: `agreed`（contract-only範囲内）。
+
+### Phase 4 Execute（contract-only文言固定）
+- 実施: 本Issue内に6Phase運用記録を追加し、契約語彙と固定IDの再確認ログを追記。
+- 非実施（禁止事項遵守）:
+  - CE0契約再定義
+  - 実装記述（handler/UI/DB/worker）
+  - 指定外ファイル編集
+
+### Phase 5 Verify（docs-check / 自己修復上限3）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- result: pass
+- self_correction: `0/3`（修復不要）
+
+### Phase 6 Proceed（Go / Hold / Needs-decision）
+- 判定: **Go**
+- 根拠:
+  - CE0参照境界差分なし
+  - CE1契約ID差分なし
+  - CDC起票トリガー未検知
+  - docs-check pass
+  - safeMode regression=0
+- 監視継続:
+  - 差分検知時は `Needs-decision` を経由し `held` へ遷移
+  - Self-Correction 3回超過時は `Hold`
