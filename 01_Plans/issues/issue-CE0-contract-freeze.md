@@ -27,6 +27,49 @@
 - Phase 5 Verify: `completed`（docs-check通過、自己修復 0/3）
 - Phase 6 Proceed: `completed`（最新判定: `Conditional-Go`。未承認新規論点は `held` 維持）
 
+## Stream B latest run（2026-04-27 / CE0 only / phase-serial compliance refresh）
+
+- run_id: `stream-b-ce0-2026-04-27-07`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始前に本Issueを再読し、編集許可が本ファイルのみに限定されることを確認。
+- Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定と、No-Go canonical IDs 5件固定を確認。
+- fail-safe（指定外編集 / safeMode境界後退 / Contract ID再定義 / self-correction 4/3相当）で即停止する条件を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract Freezeを本IssueのSSOTとして維持し、下流はread-only参照のみを継続する。
+- Decision: contract-only / mock-firstを維持し、実装確定に繋がる記述は追加しない。
+- Consequences: 契約ドリフトを抑止し、逸脱検知時に `held` へ即時遷移できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC起票なし。
+
+### Phase 3 Plan
+- Phase開始前に本Issueを再読し、AC/DoD追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- AC/DoD不足判定: 新規不足なし（追加ドラフト提示不要）。
+- ゲート条件: AC/DoD不足が発生した場合はドラフト提示と合意完了まで `held` とし、Executeへ進まない。
+
+### Phase 4 Execute
+- Phase開始前に本Issueを再読し、contract-only編集境界を再確認。
+- 実施: 本Issue内の実行ログ更新のみ（本セクション追記）。
+- 非実施: 実装変更、指定外ファイル編集、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- Phase開始前に本Issueを再読し、検証対象が docs-check と差分健全性のみであることを再確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- Phase開始前に本Issueを再読し、Proceed判定条件とfail-safe停止条件を再確認。
+- 判定: **Conditional-Go**
+- 条件:
+  - CE1/CE2/CE4への引き渡しは Contract ID / No-Go canonical IDs のread-only参照のみ。
+  - 新規AC/DoD不足や逸脱要求が発生した時点で `held` に戻し、人間承認まで停止する。
+
 ## Stream B latest run（2026-04-27 / CE0 only / contract freeze execution directive）
 
 - run_id: `stream-b-ce0-2026-04-27-06`
