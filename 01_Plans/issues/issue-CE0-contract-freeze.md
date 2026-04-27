@@ -5,7 +5,7 @@
 - Priority: P1
 - Owner: Stream B（CE0 Contract Freeze 専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
-- Editable: `issue-CE0-contract-freeze.md` / `02_Architecture/architecture.md（CE0節）` / `02_Architecture/schemas.md（CE0契約節）`
+- Editable: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ（Stream B 制約）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
@@ -26,6 +26,46 @@
 - Phase 4 Execute: `blocked`（`agreement_state=held` のため未着手）
 - Phase 5 Verify: `blocked`（Execute未着手のため未実行）
 - Phase 6 Proceed: `completed`（最新判定: `Hold`。合意待ち）
+
+## Stream B latest run（2026-04-27 / CE0 only / contract freeze reaffirmed）
+
+- run_id: `stream-b-ce0-2026-04-27-04`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_repair_overflow=0`
+
+### Phase 1 Read
+- 本Issueを最新再読し、固定値 `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の差分ゼロを確認。
+- `safeMode=true` / `allowUnreviewedText=false` の既定固定を再確認。
+- canonical No-Go 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）差分ゼロを確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 contract freeze を本Issue単独で維持し、下流は read-only 参照のみとする。
+- Decision: Contract ID再定義なし、safeMode後退なし、No-Go判定は5語彙ID照合のまま固定。
+- Consequences: CE1/CE2/CE4 側での先行再定義を抑止し、境界逸脱時は `held` 停止に即時移行できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC不要。
+
+### Phase 3 Plan
+- AC/DoD不足の事前ドラフト要否を再確認し、既存追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）で充足と判断。
+- 承認前項目の扱いは `held` を維持し、未承認決定を確定扱いしない方針を再確認。
+
+### Phase 4 Execute
+- contract-only 文言整備として、実行ログ更新と編集境界（本Issueのみ）を明文化。
+- 非実施: 実装変更、shared resource 変更、Contract ID再定義、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-repair 0/3）
+
+### Phase 6 Proceed
+- 判定: **Complete（contract freeze 継続）**
+- 根拠:
+  - docs-check pass
+  - contract-only 文言整備のみ
+  - 実装変更ゼロ / 指定外編集ゼロ
 
 ## Stream B latest run（2026-04-27 / CE0 only / issue-owned update）
 
