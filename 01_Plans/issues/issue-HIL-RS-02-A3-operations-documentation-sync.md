@@ -7,11 +7,11 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream A contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象7Issue以外
+- Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本指示で許可された7 Issue以外は不干渉
+- Non-target file policy: 本指示で許可された5 Issue以外は不干渉
 
 ## Operating Premise（Prompt G適用）
 - A1未完前提でA3は **mock I/Fベースの準備タスクのみ** 実施する。
@@ -310,3 +310,35 @@
 
 ### No-Go条件の再確認
 - self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
+
+
+## Stream A critical-path execution log（2026-04-27 / contract governance hardening）
+
+### Phase 1: Read
+- 再読対象: 本Issue本文。
+- Read同期チェック（`Status / Scope / Dependencies / freezeContractId / schemaVersion / overridePolicy / safeModeDefault`）を実施し、差分 `0` を確認。
+- 追加チェック: `NoGo return path` / `decisionQueueTransition` / `safeModeBoundary` も差分 `0`。
+
+### Phase 2: ADR/CDC
+- **Context**: HIL-RS契約統治をA1 SSOTに固定し、推測実装・競合更新を排除する。
+- **Decision**: 既存固定値（`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON`）を維持し、再定義しない。
+- **Consequences**: `Approval Record: Pending` が残る間は Executeで確定化せず、`held` を維持する。
+
+### Phase 3: Plan
+- 強制順序 `Plan -> Execute -> Verify -> Proceed` を採用。
+- AC/DoD不足は既存 Draft（AC-D1〜D3 / DoD-D1〜D3）を継続し、新規不足は未検知。
+- 非対象編集禁止を再確認（allowlist 5ファイル限定）。
+
+### Phase 4: Execute
+- 実行内容: 本Issueへの運用ログ追記とallowlist整合化のみ。
+- 未実行: 契約値更新、NoGo return path変更、safeMode境界緩和、pending bypass。
+
+### Phase 5: Verify
+- docs-check 実行対象を固定し、`self-correction=0/3` で完了。
+- 検証失敗・ドリフト・未承認確定化は未検知。
+
+### Phase 6: Proceed
+- 判定: **Conditional**。
+- 理由: `Approval Record: Pending` および `held` 論点（人間承認待ち）が残存。
+- 影響I/F: A2/A3 は `A2A3_OPEN_ALLOWED=true` 充足まで `Draft/Open` 変更禁止。
+- 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了と pendingDecisionQueue の解消。
