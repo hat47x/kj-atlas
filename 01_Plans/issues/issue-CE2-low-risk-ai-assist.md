@@ -9,9 +9,6 @@
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
-
-
-
 ## Stream E Request Override（2026-04-27 / latest）
 - Owner は **Stream E 専属** とし、対象は `issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
 - 強制フェーズ順序は **Read → ADR/CDC → Plan → Execute → Verify → Proceed** の6フェーズ直列のみ（結合/省略禁止）。
@@ -19,6 +16,12 @@
 - AC/DoD不足を検知した場合は、Phase 3 Plan で不足ドラフトを先出しし、**人手合意が成立するまで Phase 4 Execute を開始しない**。
 - Verify失敗時の自己修復は `1/3`〜`3/3` まで。`4/3` 相当は fail-safe 停止（継続禁止）。
 - 前提崩壊または契約衝突（CE0/CE1/CE2境界矛盾）を検知した場合は、`status=held` で即停止し人間判断を要求する。
+
+## Stream E Serialized Multi-Issue Gate（2026-04-27 / CE2→CE4）
+- CE2を先行し、**Phase 5 Verify 合格および Phase 6 Proceed 完了まで CE4を開始しない**。
+- CE2実行中は CE4向けの契約追記・推測更新を行わない（issue間の越境編集禁止）。
+- 失敗時運用は自己修復最大3回（`1/3`〜`3/3`）で固定し、`4/3` 相当は即停止する。
+- 契約衝突または前提崩壊を検知した場合、推測実行を禁止し `status=held` で停止する。
 
 ## Stream D Request Override（2026-04-26 / latest）
 - Phase順序は **Read → ADR/CDC → Plan → Execute → Verify/Proceed** を唯一の進行順序とする。
