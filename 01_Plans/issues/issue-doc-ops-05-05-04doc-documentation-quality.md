@@ -201,7 +201,7 @@
 - 対象外（`04_Documentation/*` 実体、実装コード、他ストリームIssue）は未変更。
 
 ### Phase 4 Verify（docs-check / 自己修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
 - 実行: `git diff --check`
 - 自己修復ポリシー: 不一致が出た場合は当該Issueのみ最大3回修復し、4回目相当で停止。
 
@@ -239,7 +239,7 @@
 
 ### 5) Verify（リンク / 語彙 / 固定値）
 - 推奨コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - フェイルセーフ: 語彙ドリフトが解消不能、または自己修復3回超過時は停止してHold化する。
 
@@ -327,7 +327,7 @@
 ### Phase 4: Verify
 - Read: docs-check対象コマンドを再確認。
 - Verify command:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - Verify policy: 失敗時は最大3回まで修復、4回目相当は停止して `Hold` 化。
 
@@ -443,7 +443,7 @@
 - 次実行単位（固定）: `01_Plans/documentation_quality.md` を正本に固定し、`04_Documentation/documentation_quality.md` は内部参照先への導線stubに置換するPRを起票する。
 
 ### Phase 4 Verify（docs-check整合 / 修復上限3回）
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
 - 実行: `git diff --check`
 - 判定: 失敗時は同Issue内修復を最大3回まで。4回目相当は Fail-safe に従い停止。
 
@@ -526,7 +526,7 @@
   - Read→CDC→AC/DoD→Verify→Proceed を本セクションで記録済み。
   - 状態を `Ready / Hold / Needs-decision` の三値で判定可能。
 - Verify plan:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 
 ### Phase 5) Verify / Proceed（3回自己修復）
@@ -573,7 +573,7 @@
 ### 4) Execute + Verify（docs-check, 最大3回自己修復）
 - Execute: 本5Phase実行記録を追記（docs-only、対象外ファイル非編集）。
 - Verify:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 自己修復: 検証不一致時は最大3回まで。同一論点で4回目相当は停止。
 - Stopper: 未定義競合 / safeMode後退語彙検知 / 3回超過時は `Hold` として停止。
@@ -643,7 +643,7 @@
 
 ### Phase 4 Verify: docs-check + diff check
 - 実行コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 合格条件: メタI/Fの欠落なし、Markdown体裁崩れなし。
 
@@ -700,7 +700,7 @@
 
 ### Phase 4 Verify / Proceed
 - docs-check 実施方針（最大3回自己修復）:
-  1) `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  1) `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   2) `git diff --check`
 - 3回超過停止ルール: 4回目相当は修復せず `Hold` へ遷移。
 - Proceed判定: **Ready**（DecisionStatus=Fixed、分類=Move internal、検証計画=docs-check）。
@@ -724,7 +724,7 @@
 ### Phase 4 Verify（対象ファイル再読後に実施）
 - 再読実施: Verify開始時に本Issue本文を再読。
 - 実行コマンド:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 失敗時の自己修復: 同一ファイル内で最大3回。4回目相当は停止し `Hold`。
 
@@ -873,7 +873,7 @@
 ### Phase 4 Verify
 - Phase開始時に本Issueファイルを再読。
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 自己修復ルール: 失敗時は同一ファイル内で最大3回、4回目相当は即停止。
 
@@ -902,7 +902,7 @@
 
 ### Phase 4) Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 期待結果: メモ形式エラーなし、差分の体裁崩れなし。
 
@@ -933,7 +933,7 @@
 
 ### Phase 4 Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 失敗時は最小修復を最大3回まで実施し、超過時は停止。
 
@@ -960,7 +960,7 @@
 
 ### Phase 4: Verify
 - docs-check:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - diff整合: 1ファイル単位の差分で体裁崩れがないことを確認。
 
@@ -982,7 +982,7 @@
 - 本Issueへ ownership follow-up 記録を追記（docs-only）。
 
 ### Phase 4 Verify
-- `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
 - `git diff --check`
 
 ### Phase 5 Proceed
@@ -1047,7 +1047,7 @@
 
 ### Phase 4 Verify（docs-check, self-correction<=3）
 - 実行記録:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 自己修復ルール: 検証失敗時は当該Issueのみ最大3回修復、4回目相当は停止して `Hold`。
 
@@ -1075,7 +1075,7 @@
 - Stream H専有ファイルおよび指定外ファイルへは非接触。
 
 ### Phase 4 Verify（自己修復は最大3回）
-- 実施: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実施: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
 - 実施: `git diff --check`
 - 失敗時は同一ファイル内で最大3回まで自己修復し、4回目相当は即停止して `Hold` 化する。
 
@@ -1159,7 +1159,7 @@
 - 対象外ファイルの変更を行っていないことを確認。
 
 ### Phase 4 Verify
-- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
 - 実行: `git diff --check`
 - 結果: いずれも通過。自己修復は 0 回（上限3回未満）。
 
@@ -1213,10 +1213,47 @@
 
 ### Phase 4: Verify
 - 実行コマンド（Attempt 1/3）:
-  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
   - `git diff --check`
 - 結果: Attempt 1 で完了（追加修復 0回）。
 
 ### Phase 5: Proceed
 - 判定: **Ready**
 - 理由: 5Phase直列記録、AC/DoDドラフト提案、docs-check実施計画、修復上限（最大3回）の4点を本Issue内で充足。
+
+## 18) Serial execution log (2026-04-27, DOC-OPS-05-05)
+
+### Phase 1 Read-sync
+- Read同期: `AGENTS.md` Read Order と以下の参照を再読して開始した。
+  `00_Prompt/system_prompt.md` / `00_Prompt/domain.md` / `00_Prompt/handoff.md` / `00_Prompt/agent_handover.md` / `00_Prompt/codex_gsd_skill_ops.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` / `01_Plans/adr/ADR-0001-value-to-requirements.md` / `02_Architecture/architecture.md` / `02_Architecture/schemas.md` / `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- 順序確認: `05-02` 完了後に `05-05` へ着手した。
+
+### Phase 2 Plan-sync
+- Read同期: Phase 2 開始時に本Issueの `Requirement meta I/F` / `Acceptance criteria` / `Validation plan` を再読。
+- AC/DoD不足判定: 既存ACはあるが、実行運用として「6フェーズ完遂」「Repair段独立」の明示が不足。
+- AC/DoDドラフト提示（本ログ内で合意）:
+  - AC-18-1: 6フェーズ（Read-sync / Plan-sync / Execute-sync / Verify-sync / Repair-sync / Proceed-sync）を直列完遂する。
+  - DoD-18-1: 各フェーズ冒頭のRead同期ログを必須記録にする。
+  - DoD-18-2: Verify失敗時の自己修復は最大3回、4回目相当は即Hold。
+
+### Phase 3 Execute-sync
+- Read同期: Phase 3 開始時に `Scope` / `Proposed solution` / `Non-goal` を再読。
+- 実行: 本Issueメモへ6フェーズ運用ログを追記し、分類決定（Move internal）は変更しない。
+- 競合確認: 未定義競合なし（同一ファイル内の追記のみ）。
+
+### Phase 4 Verify-sync
+- Read同期: Phase 4 開始時に `Validation plan` と `Execution protocol` を再読。
+- Verify実行:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root /workspace/kj-atlas`
+  - `git diff --check`
+- 結果: いずれも通過（修復不要）。
+
+### Phase 5 Repair-sync
+- Read同期: Phase 5 開始時に `自己修復は最大3回` ルールを再読。
+- 修復実行回数: `0/3`（Phase 4が成功したため修復なし）。
+- 停止条件確認: allowlist外編集・未定義競合・4回目修復のいずれも非該当。
+
+### Phase 6 Proceed-sync
+- Read同期: Phase 6 開始時に `Execution protocol` と `GoNoGoGate=Required` を再読。
+- Proceed判定: **Ready**。
+- 次アクション: docs-only でOpen可能。
