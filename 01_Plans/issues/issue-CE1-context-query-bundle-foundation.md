@@ -1460,3 +1460,65 @@
 - Hold条件:
   - Self-Correction 3回超過
   - CE0契約ID/語彙衝突（CDC `held` 要）
+
+---
+
+## Stream D Execution Record（2026-04-27 / CE1 ContextQuery/Bundle Foundation strict sequence）
+
+### 1) Read（Status / Scope / Dependencies確認）
+- Phase開始時Read同期として本Issueを再読し、編集対象が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- Status / Scope / Dependenciesを確認:
+  - Status: Open
+  - Scope: docs-only / contract-only / mock-first
+  - Dependencies: `ADR-0028` と `02_Architecture/schemas.md`（read-only参照）
+- CE0参照境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を維持。
+
+### 2) ADR/CDC（Context / Decision / Consequences）
+- Context:
+  - CE1はCE0 SSOTをread-only参照する下流レーンであり、本サイクルはI/F契約の再固定のみを対象とする。
+  - 依存切断方針に従い、実装詳細は扱わずcontract-onlyで整理する。
+- Decision:
+  - CDCは新規起票しない（契約ID衝突・語彙衝突・safeMode既定変更の未検知を確認）。
+  - CE1 v1の固定語彙/条件（`preview_required` / `unknown_contract_key` / hash決定論 / `sourceBundleHash === bundleHash`）を維持。
+- Consequences:
+  - CE2/CE4はread-only handoffを継続し、下流での契約再定義を抑止。
+  - safeMode後退リスクとpreview bypass混入リスクを引き続きNo-Go監視対象として保持。
+- CDC Status: `not_raised`（衝突未検知）。
+
+### 3) Plan（ContextQuery/Bundle最小I/F、検証観点）
+- 最小I/F契約（mock-first）:
+  - `ContextQueryV1`: closed-world（未定義キーは `400 unknown_contract_key`）
+  - `ContextBundleV1`: `queryCanonicalHash` / `bundleHash` を必須返却
+  - preview gate: `previewConfirmed=false -> 422 preview_required`
+- 検証観点:
+  - 決定論: 同一canonical queryで `queryCanonicalHash` と `bundleHash` が3回一致
+  - handoff整合: `sourceBundleHash === bundleHash`
+  - 安全境界: safeMode regression = 0
+
+### 4) Execute（I/F契約定義のみ）
+- 実施内容: 本Execution Recordを追記し、CE1契約を文書上で再確認（contract-only）。
+- 非実施（明示）:
+  - handler/UI/DB/worker等の実装記述
+  - CE0契約本文の再定義
+  - 指定外ファイル編集
+
+### 5) Verify（決定論・safeMode除外条件の検証可能性）
+- Verifyコマンド（attempt_1）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Self-Correction方針:
+  - 失敗時は最小修復を最大3回まで。
+  - 3回超過時は停止（No-Go）。
+
+### 6) Proceed（Go / Conditional / No-Go）
+- Go:
+  - docs-check pass
+  - contract-only維持
+  - 指定外ファイル編集なし
+  - safeMode境界後退なし
+- Conditional:
+  - docs-check失敗時は自己修復（最大3回）後に再判定
+- No-Go:
+  - Self-Correction 3回超過
+  - CE0契約ID衝突 / 語彙衝突 / safeMode既定変更の検知
