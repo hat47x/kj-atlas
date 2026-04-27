@@ -80,7 +80,7 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止・各Phaseで必須）。
 - 対象差分意図: Go/NoGo判定式と禁止遷移を固定。
-- 非対象不干渉: 編集許可された4 Issue以外は編集しない。
+- 非対象不干渉: 編集許可された5 Issue以外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
