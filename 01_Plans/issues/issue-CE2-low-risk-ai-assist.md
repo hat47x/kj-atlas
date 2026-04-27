@@ -3,13 +3,22 @@
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE2専任 / proposal-only契約固定）
+- Owner: Stream E（CE2専任 / proposal-only契約固定）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE2-low-risk-ai-assist.md` のみ
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+
+
+## Stream E Request Override（2026-04-27 / latest）
+- Owner は **Stream E 専属** とし、対象は `issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
+- 強制フェーズ順序は **Read → ADR/CDC → Plan → Execute → Verify → Proceed** の6フェーズ直列のみ（結合/省略禁止）。
+- 全フェーズで **contract-only + mock-first** を固定し、実装確定（implementation commit）は禁止する。
+- AC/DoD不足を検知した場合は、Phase 3 Plan で不足ドラフトを先出しし、**人手合意が成立するまで Phase 4 Execute を開始しない**。
+- Verify失敗時の自己修復は `1/3`〜`3/3` まで。`4/3` 相当は fail-safe 停止（継続禁止）。
+- 前提崩壊または契約衝突（CE0/CE1/CE2境界矛盾）を検知した場合は、`status=held` で即停止し人間判断を要求する。
 
 ## Stream D Request Override（2026-04-26 / latest）
 - Phase順序は **Read → ADR/CDC → Plan → Execute → Verify/Proceed** を唯一の進行順序とする。
@@ -82,7 +91,7 @@
 - lifecycle閉集合: `proposed | accepted | rejected | held` のみを許可し、語彙追加・別名導入を禁止する。
 - proposal-only固定: 実装・auto-apply・自動確定・自動公開を常時禁止し、AIは候補提示に限定する。
 - review昇格固定: AIによる `reviewState=human_reviewed` 昇格を禁止し、人手操作のみ許可する。
-- 実行順序固定: `Read -> ADR/CDC（Mock化） -> Plan -> Execute -> Verify/Proceed`。
+- 実行順序固定: `Read -> ADR/CDC（Mock化） -> Plan -> Execute -> Verify -> Proceed`。
 - Read同期必須: 各Phase開始時にRead同期を実施し、差分検知時は `status=held` で停止する。
 - AC/DoDゲート: 不足時はAIドラフト提示のみを許可し、人手合意成立までExecuteを開始しない。
 - Verify再試行上限: 修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
@@ -93,7 +102,7 @@
 - lifecycle は閉集合 `proposed | accepted | rejected | held` のみを許可する。
 - `proposal-only` を固定し、auto-apply は常時禁止とする。
 - AIは `reviewState=human_reviewed` へ昇格しない（人手のみ）。
-- 実行フェーズは `Read → ADR/CDC → Plan → Execute → Verify/Proceed` の順序固定。
+- 実行フェーズは `Read → ADR/CDC → Plan → Execute → Verify → Proceed` の順序固定。
 - 各Phase開始時に Read同期を必須化し、差分検知時は `status=held` で停止する。
 - AC/DoD不足時は AIドラフト提示のみに限定し、人手合意まで Execute を禁止する。
 - 自己修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当は fail-safe 停止。
