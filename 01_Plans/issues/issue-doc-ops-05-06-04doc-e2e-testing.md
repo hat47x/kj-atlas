@@ -1339,3 +1339,20 @@
 ### Phase 6 Proceed
 - Read同期: `GoNoGoGate` / `DecisionStatus` / `DecisionQueueRef` を再読。
 - 判定: **Ready**（理由: 6Phase直列記録・ADR/CDC条件・docs-check導線・停止条件が再現可能）。
+
+## 18) Operator directive lock (2026-04-27)
+
+- 担当範囲: **`01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ**（docs-only、実装変更禁止）。
+- 進行フェーズ: **Read → Plan → Execute → Verify → Proceed** を固定順で実施する。
+- 公開境界/分類方針: 本Issueでは **Improve external（対外文書として改善）** を固定し、Move internal への再判定は行わない。
+- Public boundary 固定値:
+  - Audience: 開発者・メンテナ（E2Eを実行/保守する実務担当）
+  - Goal: 実行可能なE2E runbookを公開文書として維持する
+  - Non-goal: 内部進行メモ/個別環境依存の暫定ノウハウを公開正本に混在させること
+  - Outcome: `04_Documentation/e2e_testing.md` の公開品質を上げる後続docs-only PRへ接続する
+- ADR取り扱い:
+  - 追加ADRが必要になった場合は **C/D/C（Context / Decision / Consequences）を明文化** する。
+  - ただし本Issue単体では **承認待ち（Approval pending）** として扱い、承認前に仕様固定を拡張しない。
+- Verifyフェイルセーフ:
+  - 自己修復は **最大3回**。
+  - 3回を超える修復が必要な場合は **停止（Hold）** し、超過理由と再開条件を本Issueへ記録する。
