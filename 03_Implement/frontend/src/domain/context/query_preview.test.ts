@@ -63,7 +63,9 @@ describe("query preview state", () => {
 
   it("reproduces mock integration flow with bundleHash", async () => {
     const draft = baseDraft();
+    const queryCanonicalHash = toCanonicalQueryKey(draft);
     const result = await runMockContextIntegration(draft, async () => ({
+      queryCanonicalHash,
       bundleHash: "hash-123",
       selected: [],
       relations: [],
@@ -73,7 +75,35 @@ describe("query preview state", () => {
       truncationMeta: { truncated: false },
       excludedReason: ["unreviewed_filtered"],
     }));
-    expect(result).toEqual({ canSubmit: true, statusCode: 200, bundleHash: "hash-123", excludedReason: ["unreviewed_filtered"] });
+    expect(result).toEqual({
+      canSubmit: true,
+      statusCode: 200,
+      queryCanonicalHash,
+      bundleHash: "hash-123",
+      sourceBundleHash: "hash-123",
+      excludedReason: ["unreviewed_filtered"],
+    });
+  });
+
+  it("returns 409 nondeterministic_bundle when response query hash mismatches", async () => {
+    const draft = baseDraft();
+    const result = await runMockContextIntegration(draft, async () => ({
+      queryCanonicalHash: "mismatch",
+      bundleHash: "hash-123",
+      selected: [],
+      relations: [],
+      evidence: [],
+      contradictions: [],
+      reviewFlags: { reviewed: 2, unreviewed: 0 },
+      truncationMeta: { truncated: false },
+      excludedReason: [],
+    }));
+    expect(result).toEqual({
+      canSubmit: false,
+      statusCode: 409,
+      errorCode: "nondeterministic_bundle",
+      reason: "query_hash_mismatch",
+    });
   });
 
   it("builds a deterministic canonical key for semantically equal inputs", () => {

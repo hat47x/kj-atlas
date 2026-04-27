@@ -1226,3 +1226,27 @@
 ### ADR/CDC（衝突検知時のみ起票）
 - 判定: `contract_id_collision=0` / `vocabulary_collision=0` のため **CDC起票なし**。
 - 運用固定: 衝突検知時のみ `Context / Decision / Consequences` を起票し、`held` へ遷移する。
+
+## Stream C Execution Record（2026-04-27 / CE1 frontend foundation implementation run）
+
+### Phase 1 Read（同期）
+- 再読対象: 本Issue、`ADR-0028`、`02_Architecture/schemas.md`（CE1 v1 contract と error semantics）。
+- 判定: 前提差分なし。CE0 read-only / CE1 fixed IDs を維持。
+
+### Phase 2 Mock I/F固定
+- `ContextBundleV1` mock返却で `queryCanonicalHash` と `bundleHash` を必須化。
+- handoff比較キー `sourceBundleHash === bundleHash` を frontend mock結果にも固定。
+- `nondeterministic_bundle` を frontend mock失敗語彙へ固定。
+
+### Phase 3 実装
+- `query_preview.ts` の成功レスポンスを `queryCanonicalHash + bundleHash + sourceBundleHash` へ拡張。
+- `queryCanonicalHash` 不一致時は `409 nondeterministic_bundle` を返す契約ガードを追加。
+
+### Phase 4 検証
+- `vitest src/domain/context/query_preview.test.ts`: pass。
+- `git diff --check`: pass。
+- 自己修復: 0回（3回上限未使用）。
+
+### Phase 5 記録
+- CE1 frontend mock基盤を contract語彙に合わせて更新。
+- safeMode既定値後退なし / preview gate bypass 追加なし。
