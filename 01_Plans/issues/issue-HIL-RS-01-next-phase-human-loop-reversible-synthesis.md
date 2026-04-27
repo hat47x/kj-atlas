@@ -10,8 +10,9 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0001`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本タスクで編集許可された4 Issue（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md`）以外は不干渉
+- Non-target file policy: 本ストリームで編集許可された6 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`）以外は不干渉
 
+- Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 4/6 HIL-RS-01 umbrella
 
 ## Stream A Contract Lock（HIL-RS fixed）
@@ -21,7 +22,7 @@
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
 
 ## Phase Control Macro（各Phase共通）
-- 各Phase開始直前に必ず対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
+- 各Phase開始直前に必ず対象6ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
 - 各Phaseは `Plan -> Execute -> Verify -> Proceed` の順序を必須とし、スキップ/逆走を禁止する。
 - フェイルセーフ検知時（4回目相当self-correction、未承認確定化、未定義競合、指定外編集要求）は即停止し、次の3点を必ず出力する。
   1. 原因

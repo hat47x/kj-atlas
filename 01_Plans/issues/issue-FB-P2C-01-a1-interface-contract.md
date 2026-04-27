@@ -10,6 +10,7 @@
 - Verification level: `docs-check`
 - Non-target file policy: 対象7Issue以外は不干渉
 
+- Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 2/6 FB-P2C A1契約凍結
 
 ---
@@ -84,7 +85,7 @@
 
 ## Phase 4: Execute
 - Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON")`
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
 - `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
 - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
 - `Go = ProceedGate`
@@ -111,3 +112,39 @@
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合。
 - No-Go: SSOT競合、未承認確定、Self-Correction 3回超過、指定外差分。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
+
+
+## 変更凍結セクション（Contract Freeze / Stream A）
+- Freeze name: `A1 Interface Contract Freeze v1`
+- Immutable IDs:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Immutable schema/signature:
+  - `schemaVersion=1.0.0`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Start condition（A2/A3 open gate）:
+  - `A2A3_OPEN_ALLOWED=true` かつ `Approval Record=Approved`
+- Prohibited changes（凍結中禁止）:
+  1. Immutable IDs/schemas/signature の変更
+  2. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退
+  3. `overridePolicy=human_dual_control_only` の緩和
+  4. `pending` を経由しない確定（bypass）
+
+## Handover Artifact（下流向け固定契約一覧）
+- 不変ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- 禁止変更点: Contract ID再定義、schemaVersion改版、safeMode境界緩和、Pending bypass
+- モック仕様（推測補完禁止）:
+```yaml
+mock_contract_v1:
+  freeze_contract_id: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
+  schema_version: "1.0.0"
+  contract_ids:
+    - "A1-CRITIQUE-IF"
+    - "A1-REDIFF-IF"
+    - "A1-ATTR-IF"
+    - "A1-ERROR-IF"
+  open_gate:
+    a1_status: "Done"
+    pending_decision_queue_count: 0
+```

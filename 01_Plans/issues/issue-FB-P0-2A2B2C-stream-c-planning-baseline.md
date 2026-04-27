@@ -10,6 +10,7 @@
 - Verification level: `docs-check`
 - Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
 
+- Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 1/6 FB-P0 baseline整合
 
 ---
