@@ -545,3 +545,26 @@
 ### Phase 6 Proceed
 - 判定: **Ready**。
 - 次アクション: narratives公開改善PR（docs-only）へ進行可能。
+
+## Stream J DOC-OPS-05 dedicated run (2026-04-27, Set2)
+
+### Phase 1 Read
+- Read Order 再確認後に本Issueを再読し、Scope/VerificationLevel/DecisionStatus を確認。
+- SecurityGateImpact は `public-exposure` として維持。
+
+### Phase 2 Plan
+- 実行順序を `Read -> Plan -> Execute -> Verify -> Proceed` に固定。
+- 変更対象を本Issueメモ単体に限定し、allowlist外編集を禁止。
+
+### Phase 3 Execute
+- Classification を **Improve external** で再確認し、公開境界の扱いを固定。
+- public-exposure 観点として「公開可能情報のみ記載・内部情報を混在させない」を明記。
+
+### Phase 4 Verify
+- docs-check:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+  - `git diff --check`
+- self-correction: 0/3（失敗時のみ最大3回、4回目相当は即停止）。
+
+### Phase 5 Proceed
+- 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
