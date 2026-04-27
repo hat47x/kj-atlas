@@ -702,3 +702,34 @@
 - Phase開始前に本Issueを再読し、AC/DoDの充足判定を実施。
 - 判定: Proceed可（AC-1〜AC-6 / DoD-1〜DoD-4 を満了）。
 - 未承認事項の新規発生なし。`held` 在庫の追加なしで終了。
+
+## Phase Execution Record（2026-04-27 / Stream C / strict Phase 1-6 rerun）
+### Phase 1 Read（Read同期）
+- Phase開始時に本IssueをRead同期し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（canonical 5 IDs）を再確認。
+- 差分検知結果: 語彙・禁止事項・SafeMode境界の差分は 0 件。停止条件（差分検知時 `held`）は未発火。
+
+### Phase 2 Plan（Read同期）
+- Phase開始時に再Readし、Phase 1との差分がないことを確認してから計画を固定。
+- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` の契約固定記述更新のみに限定（implementation禁止 / single-file）。
+- 差分検知結果: 0 件。差分が発生した場合は即停止し承認待ちへ移行する条件を再確認。
+
+### Phase 3 ADR/CDC（Read同期）
+- Phase開始時に再Readし、方針差分（ADR/CDC起票要否）を確認。
+- 判定: `No ADR delta`（契約固定の範囲で完了可能）。
+- 差分検知結果: 0 件。差分が出た場合は `pending` 記録後に `held` で停止する。
+
+### Phase 4 Execute（Read同期）
+- Phase開始時に再Readし、固定語彙と禁止事項の不一致がないことを確認後に本記録のみ追記。
+- `role / transition / no-go` の再定義・同義語置換・拡張は未実施。実装記述（handler/UI/DB/worker/API/Schema migration）追加なし。
+- 差分検知結果: 0 件（契約境界の逸脱なし）。
+
+### Phase 5 Verify（Read同期 / self-heal <= 3）
+- Phase開始時に再Readし、検証対象と停止条件（4回目相当で停止）を確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し pass。
+- `git diff --check` を実行し pass。
+- Self-Correction実績: 0/3（4回目相当なし）。
+
+### Phase 6 Proceed（Read同期）
+- Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（contract-only / implementation禁止 / single-file 制約維持）。
+- 未承認事項在庫: なし。差分検知時停止ルールを維持したまま終了。
