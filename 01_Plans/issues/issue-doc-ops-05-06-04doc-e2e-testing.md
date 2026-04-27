@@ -1356,3 +1356,28 @@
 - Verifyフェイルセーフ:
   - 自己修復は **最大3回**。
   - 3回を超える修復が必要な場合は **停止（Hold）** し、超過理由と再開条件を本Issueへ記録する。
+
+## Stream H execution compliance log（2026-04-27, Set B-1: e2e testing）
+
+### 1) Read
+- Read同期: `AGENTS.md` Read Order、ADR-0019、本Issue本文を再読し、セットB先頭として順序（e2e testing → verification log）を固定。
+
+### 2) ADR/CDC
+- Context: `e2e_testing.md` は公開runbookとして維持しつつ、実測ログとは責務分離が必要。
+- Decision: 分類 `Improve external` を維持し、Issue内CDC運用を継続。
+- Consequences: 公開手順と内部証跡の混在を避け、後続05-07へ直列引き継ぎする。
+
+### 3) Plan
+- `Plan -> Execute -> Verify -> Proceed` を固定。
+- AC/DoD不足補完: GoNoGo判定導線、Proceed三値、docs-check再現性を必須化。
+
+### 4) Execute
+- 本Issueメモ追記のみを実施（docs-only, allowlist内）。
+
+### 5) Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### 6) Proceed
+- 判定: **Go**（セットB次順序: 05-07）。

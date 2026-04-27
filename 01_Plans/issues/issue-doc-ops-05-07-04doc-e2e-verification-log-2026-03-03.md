@@ -1344,3 +1344,28 @@
 - 状態: **Needs-decision（承認待ち）**
 - 承認後アクション: `04_Documentation/e2e_verification_log_2026-03-03.md` を内部管理ディレクトリへ移管する実行Issue/PRを起票。
 - 承認前制約: 分類案は固定するが、`Fixed` への昇格は承認完了まで禁止。
+
+## Stream H execution compliance log（2026-04-27, Set B-2: e2e verification log）
+
+### 1) Read
+- Read同期: 本Issueと 05-06 Proceed=Go を確認し、セットB終点として公開境界判定を再確認。
+
+### 2) ADR/CDC
+- Context: 日付付き実測ログは運用証跡であり、公開runbook本体とは用途が異なる。
+- Decision: 分類 `Move internal` を維持し、承認前確定化は行わない（DecisionStatus=Pending を維持）。
+- Consequences: 公開対象から証跡を分離し、漏洩・誤公開リスクを低減する。
+
+### 3) Plan
+- `Plan -> Execute -> Verify -> Proceed` を固定。
+- AC/DoD不足補完: DecisionQueueRef（Pending時参照）と Proceed三値判定を明示。
+
+### 4) Execute
+- 本Issueメモ追記のみを実施（docs-only, allowlist内）。
+
+### 5) Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### 6) Proceed
+- 判定: **Conditional Go**（分類方針は固定、移設実体化は承認ゲート後に実施）。

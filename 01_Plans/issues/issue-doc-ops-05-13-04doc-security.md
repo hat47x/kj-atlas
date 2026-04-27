@@ -256,3 +256,28 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 引き継ぎ: K-1担当（`issue-doc-ops-05-11-04doc-operations.md`）と並列実行可の状態を維持。
+
+## Stream H execution compliance log（2026-04-27, Set A-2: security）
+
+### 1) Read
+- Read同期: 本Issueと 05-11 Proceed=Go を確認し、セットA直列順を維持。
+
+### 2) ADR/CDC
+- Context: security は公開原則の基底文書で、運用詳細はguidelinesへ委譲すべき。
+- Decision: 分類 `Improve external` を維持し、役割語彙/固定値は参照専用とする。
+- Consequences: 未承認確定化と公開境界後退を防止する。
+
+### 3) Plan
+- `Plan -> Execute -> Verify -> Proceed` を固定。
+- AC/DoD不足は既存補完（AC-1〜3, DoD-1〜2）を適用。
+
+### 4) Execute
+- 本Issueメモ追記のみ実施（docs-only, allowlist内）。
+
+### 5) Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### 6) Proceed
+- 判定: **Go**（セットA次順序: 05-14）。
