@@ -1369,3 +1369,30 @@
 ### Phase 6 Proceed
 - Read同期: `GoNoGoGate` / `DecisionStatus` / `DecisionQueueRef` を再読。
 - 判定: **Ready**（理由: 6Phase直列記録・ADR/CDC条件・docs-check導線・停止条件が再現可能）。
+
+## Stream L fixed 5-phase execution（2026-04-27, DOC-OPS-05-02）
+
+### Phase 1 Read
+- 本Issue本文を再読し、`Scope=04_Documentation/codex_skill_operations.md`、`VerificationLevel=docs-check`、`DecisionStatus=Fixed` を確認。
+- 本サイクルは **Read → Plan → Execute → Verify → Proceed（固定）** で実行する。
+
+### Phase 2 Plan
+- Context: 対象は `04_Documentation/codex_skill_operations.md` の配置判定トラッキングであり、docs-only で扱う。
+- Decision: 既存方針 `Move internal` を維持し、追加仕様は起票しない。
+- Consequences: 実装・スキーマ変更なし。Issueメモの運用記録と検証導線のみ更新する。
+- ADR要否: **不要**（新規ADRが必要な差分なし）。必要になった場合は C/D/C を明文化し、承認待ちで `Needs-decision` へ遷移する。
+
+### Phase 3 Execute
+- 本Stream L セクションを追記し、固定5Phase、ADR要否ルール、自己修復上限（3回）を明文化。
+- 変更範囲は本Issueファイルのみに限定。
+
+### Phase 4 Verify
+- docs-check 実行:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `git diff --check`
+- 検証結果: 1回目で通過。自己修復回数 **0/3**。
+- フェイルセーフ: 4回目相当は停止して `Hold` に遷移する。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 理由: 固定5Phase記録、docs-check導線、ADR要否ルール（CDC + 承認待ち）が本文内で再現可能。
