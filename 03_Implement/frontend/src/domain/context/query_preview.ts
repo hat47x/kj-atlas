@@ -11,6 +11,7 @@ export type ContextQueryDraft = {
 };
 
 export type ContextBundleMock = {
+  queryCanonicalHash: string;
   bundleHash: string;
   selected: unknown[];
   relations: unknown[];
@@ -82,7 +83,8 @@ export function buildQueryPreviewState(draft: ContextQueryDraft): QueryPreviewSt
 export type RunMockContextIntegrationResult =
   | { canSubmit: false; statusCode: 400; errorCode: "unknown_contract_key"; unknownKeys: string[] }
   | { canSubmit: false; statusCode: 422; errorCode: "preview_required" | "invalid_query"; blockers: string[] }
-  | { canSubmit: true; statusCode: 200; bundleHash: string; excludedReason: string[] };
+  | { canSubmit: false; statusCode: 409; errorCode: "nondeterministic_bundle"; reason: "query_hash_mismatch" }
+  | { canSubmit: true; statusCode: 200; queryCanonicalHash: string; bundleHash: string; sourceBundleHash: string; excludedReason: string[] };
 
 const CONTEXT_QUERY_V1_KEYS = new Set([
   "queryId",
@@ -128,5 +130,22 @@ export async function runMockContextIntegration(
   }
 
   const response = await postBundle(draft);
-  return { canSubmit: true, statusCode: 200, bundleHash: response.bundleHash, excludedReason: response.excludedReason };
+  const queryCanonicalHash = toCanonicalQueryKey(draft);
+  if (response.queryCanonicalHash !== queryCanonicalHash) {
+    return {
+      canSubmit: false,
+      statusCode: 409,
+      errorCode: "nondeterministic_bundle",
+      reason: "query_hash_mismatch",
+    };
+  }
+
+  return {
+    canSubmit: true,
+    statusCode: 200,
+    queryCanonicalHash: response.queryCanonicalHash,
+    bundleHash: response.bundleHash,
+    sourceBundleHash: response.bundleHash,
+    excludedReason: response.excludedReason,
+  };
 }
