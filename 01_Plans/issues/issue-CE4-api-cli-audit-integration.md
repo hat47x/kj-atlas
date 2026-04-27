@@ -637,3 +637,44 @@
   - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定。
   - 監査4点欠損は fail-closed 固定（成功応答禁止）。
   - 自己修復は最大3回。3回超過（4回目相当）は即停止。
+
+## Stream F Execution Record（2026-04-27 / Stream F専属 directive sync）
+
+### Phase 1 Read（監査4点とfail-closed条項の同期）
+- Phase開始 Read同期: 完了（CE0 contract IDs / CE1・CE2 read-only境界 / 監査4点 `query / bundle / proposal / apply` / fail-closed条項を再確認）。
+- 同期結果: 差分なし（`equivalenceKey + bundleHash` AND固定、監査欠損fail-closed固定、safeMode既定緩和禁止を維持）。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences 先行明文化）
+- Phase開始 Read同期: 完了（監査4点、AND判定、fail-closed条項を再確認）。
+- Context: API/CLI同値性の比較根拠を監査証跡で再現可能に保ち、監査欠損を成功扱いしない統治を維持する必要がある。
+- Decision: `equivalenceKey + bundleHash`（AND）固定、監査4点欠損は常時fail-closed、safeMode既定緩和禁止、proposal lifecycle閉集合維持（`proposed / accepted / rejected / held`）。
+- Consequences: contract-only境界を維持し、実装詳細やCE0/CE1/CE2への逆流更新は行わない。
+
+### Phase 3 Plan（API/CLI署名・AND同値判定・監査必須項目固定）
+- Phase開始 Read同期: 完了（CE0/CE1/CE2 read-only、監査4点、fail-closed条項を再確認）。
+- Plan:
+  1. API/CLI署名は既存contract-only定義を維持し、新規語彙を追加しない。
+  2. 同値判定は `equivalenceKey + bundleHash`（AND）を唯一の成功条件として固定する。
+  3. 監査必須項目（`query / bundle / proposal / apply` + `queryCanonicalHash`）欠損は常にfail-closedとする。
+  4. Verifyは docs-check 実行 + self-correction 上限3回を明記し、4回目相当は停止する。
+
+### Phase 4 Execute（contract-only記述）
+- Phase開始 Read同期: 完了（No-Go: safeMode既定緩和禁止 / 監査欠損成功扱い禁止 / 語彙再定義禁止を再確認）。
+- 実施: 本ファイルの実行記録追記のみ（contract-only）。
+- 非実施: 実装変更、他ファイル編集、CE0/CE1/CE2更新。
+
+### Phase 5 Verify（docs-check + self-correction<=3）
+- Phase開始 Read同期: 完了（AND判定・監査4点・fail-closed固定・修復上限を再確認）。
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（self-correction 0/3、4回目着手なし）。
+
+### Phase 6 Proceed（handoff公開）
+- Phase開始 Read同期: 完了（監査4点、fail-closed、safeMode既定境界の維持を再確認）。
+- Handoff公開:
+  - CE4は contract-only固定を継続（API/CLI同値判定は `equivalenceKey + bundleHash` AND）。
+  - 監査4点欠損は常にfail-closed（成功応答禁止）。
+  - CE0/CE1/CE2はread-only参照のまま更新しない。
+  - 未承認事項は `held` 維持、自己修復3回超過兆候で即停止。
