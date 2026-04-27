@@ -117,6 +117,23 @@ describe("stream_b_contract_handoff", () => {
       reason: "invalid contract version: CTR-2B-99-UNKNOWN",
     });
   });
+
+  it("returns NoGo when schema version is not locked", () => {
+    const invalidSchemaLog = {
+      contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+      schemaVersion: "stream-b.unknown",
+      mockCaseId: "M1",
+      validationResult: "pass",
+      ownerOfFix: "A3",
+      evidence: "invalid schema",
+    } as const;
+
+    expect(evaluateStreamBA3GoNoGo([invalidSchemaLog])).toEqual({
+      go: false,
+      reason: "invalid schema version: stream-b.unknown",
+    });
+  });
+
   it("returns NoGo when mock cases contain duplicates", () => {
     const duplicate = {
       contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
@@ -214,6 +231,48 @@ describe("stream_b_contract_handoff", () => {
     expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
       go: false,
       reason: "M3/M4 ownerOfFix must be A2",
+    });
+  });
+
+  it("returns NoGo when pass cases are assigned to non-A3 owner", () => {
+    const logs = [
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A1",
+        evidence: "M1",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.decisionLog.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.decisionLog.schemaVersion,
+        mockCaseId: "M2",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "M2",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M3",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "M3",
+      },
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M4",
+        validationResult: "fail",
+        ownerOfFix: "A2",
+        evidence: "M4",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
+      go: false,
+      reason: "M1/M2 ownerOfFix must be A3",
     });
   });
 });
