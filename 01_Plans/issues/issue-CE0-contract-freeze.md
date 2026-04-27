@@ -612,3 +612,26 @@ type PatchProposal = {
 - 判定: **Go**（docs-check pass、collision/regressionなし）。
 - handoff境界: CE1/CE2/CE4へは Contract ID / No-Go ID のread-only参照のみを引き渡す。
 - fail-safe: 競合検出、safeMode後退、未承認確定化、自己修復4回目相当で即 `held` / `stopped_for_clarification`。
+
+### 2026-04-27 stream-b-ce0-05 run（Read → Plan → Execute → Verify → Proceed）
+- Phase 1 Read:
+  - 本Issueを再読し、編集許可が `issue-CE0-contract-freeze.md` のみであることを再確認。
+  - Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）凍結とNo-Go 5語彙ID固定を再確認。
+  - fail-safe（自己修復は最大3回、前提崩壊/指定外編集要求で停止）を再確認。
+- Phase 2 Plan（不足AC/DoD提案）:
+  - 追加提案1: `dod_handoff_key_fixed` を追加し、Proceed時に handoff key を単一値で固定する。
+  - 追加提案2: `dod_phase_gate_reread_trace` を追加し、各Phase開始前の再読実施ログを必須化する。
+  - 追加提案3: `dod_execute_contract_only_evidence` を追加し、Executeが語彙統一以外を行っていない根拠を記録必須にする。
+  - proposal_state: `agreed`（本Issue内運用の明確化であり、Contract ID再定義なし）。
+- Phase 3 Execute（contract-only記述）:
+  - CE0契約本文の意味変更は行わず、本runログに不足DoD提案と運用根拠のみを追記。
+  - Contract ID / No-Go ID / safeMode既定値 / proposal lifecycle の定義変更なし。
+- Phase 4 Verify（docs-check）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Phase 5 Proceed（handoff key固定）:
+  - proceed_decision: **Go**
+  - handoff_key: `CE0-HANDOFF-LOCK-2026-04-27`（固定）
+  - 判定根拠: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` / `safeMode regression=0` / docs-check pass
+  - handoff_mode: CE1/CE2/CE4へは Contract ID / No-Go ID のread-only参照のみ（本文複製・再定義禁止）
