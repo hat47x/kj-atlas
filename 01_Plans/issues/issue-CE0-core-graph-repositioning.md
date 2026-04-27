@@ -793,3 +793,36 @@
 - Proceed条件（AC/DoD充足 + docs-check pass）を満たすことを確認。
 - 判定: `Done`（contract-only / single-file / 語彙固定 / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は `held/pending` で在庫化し、確定しない。
+
+## Phase Execution Record（2026-04-27 / Stream C / user-requested phase order strict run）
+### Phase 1 Read（語彙差分チェック）
+- Phase開始時に `role / transition / no-go` 語彙差分チェックを実施し、差分 0 件（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を維持）。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみで再定義なし。
+- SafeMode境界（既定ON維持、緩和禁止）に差分なし。
+
+### Phase 2 Plan（語彙差分チェック）
+- Phase開始時に再Readし、`role / transition / no-go` と禁止事項の差分を再確認、差分 0 件。
+- Scopeを本Issue単体の記録追記に限定（docs-only / contract-only / single-file）。
+- 禁止事項（実装変更、CE0契約ID再定義、No-Go語彙変更）を再確認。
+
+### Phase 3 ADR Consensus（Context / Decision / Consequences、語彙差分チェック）
+- Phase開始時に語彙差分チェックを実施し、差分 0 件。
+- Context: CE0 Core Graph責務境界を契約固定のまま維持し、未承認事項の確定化を回避する必要がある。
+- Decision: `No ADR delta`。既存契約（role/transition/no-go、SafeMode境界）を維持し、新規承認事項は追加しない。
+- Consequences: 未承認論点が発生した場合は `held` または `pending` を維持し、承認完了まで確定しない。
+
+### Phase 4 Execute（語彙差分チェック）
+- Phase開始時に語彙差分チェックを実施し、差分 0 件。
+- 本Issueへの実行記録追記のみを実施（実装記述追加なし、他ファイル編集なし）。
+- contract-only 境界と固定語彙を維持。
+
+### Phase 5 Verify（語彙差分チェック / 自己修復最大3回）
+- Phase開始時に語彙差分チェックを実施し、差分 0 件。
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- 自己修復回数: 0/3（上限超過なし）。
+
+### Phase 6 Proceed（語彙差分チェック）
+- Phase開始時に語彙差分チェックを実施し、差分 0 件。
+- 判定: `Done`（Read → Plan → ADR Consensus → Execute → Verify → Proceed の順序を満たし、docs-check pass）。
+- 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
