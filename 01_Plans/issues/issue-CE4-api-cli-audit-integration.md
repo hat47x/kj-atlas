@@ -10,6 +10,20 @@
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+## Stream E Serial Execution Directive（2026-04-27 / latest）
+- CE4は **CE2の Phase 1〜6 完了後** にのみ着手する（CE2/CE4 並列進行を禁止）。
+- CE4フェーズ順序は **Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed** の固定直列のみ許可する。
+- CE0/CE1 は read-only 参照専用とし、CE4側で再定義・拡張しない。
+- CE4は **proposal-only + mock-first** を固定し、実装確定（implementation commit）を禁止する。
+- Verify失敗時の自己修復は最大3回（`1/3`〜`3/3`）。`4/3` 相当は fail-safe 停止する。
+- 契約衝突または前提崩壊を検知した場合、推測実行を禁止し `status=held` で即停止する。
+
+## CE4 Dependency Cut Contract（2026-04-27 / mock-first）
+- CE4は `equivalenceKey + bundleHash` のI/F契約を **mock前提で固定** し、他ストリーム完了待ちを行わない。
+- API/CLI同値判定は AND 条件（`equivalenceKey` かつ `bundleHash`）を唯一の成功条件とし、片側一致成功を禁止する。
+- `sourceBundleHash=mock:<hash>` を同値検証の参照キーとして許可し、本番hashと同一の fail-closed 条項を適用する。
+- 依存切断の範囲は契約I/Fに限定し、実装詳細・アルゴリズム詳細は記述しない。
+
 
 ## Stream E Assignment Lock（2026-04-26）
 - 担当範囲は Stream E 専任とし、CE4 API/CLI/Audit Integration の contract-only 固定のみを扱う。
