@@ -14,6 +14,20 @@
 
 - Execution order (Stream A fixed serial): 3/6 HIL-RS-01 A1
 
+## Stream A Contract Lock（HIL-RS fixed）
+- Contract ID固定: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
+- `NoGo return path` 固定: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（変更禁止）
+- `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` は境界条件として固定（緩和禁止）
+- 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
+
+## Phase Control Macro（各Phase共通）
+- 各Phase開始直前に必ず対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
+- 各Phaseは `Plan -> Execute -> Verify -> Proceed` の順序を必須とし、スキップ/逆走を禁止する。
+- フェイルセーフ検知時（4回目相当self-correction、未承認確定化、未定義競合、指定外編集要求）は即停止し、次の3点を必ず出力する。
+  1. 原因
+  2. 影響I/F
+  3. 人間判断が必要な論点
+
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
 - Extracted: Status=`Open`, Priority=`P1`, Scope=`planning only`, Dependencies=`A1 -> A2 -> A3`。
