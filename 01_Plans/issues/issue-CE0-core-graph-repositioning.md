@@ -733,3 +733,32 @@
 - Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（contract-only / implementation禁止 / single-file 制約維持）。
 - 未承認事項在庫: なし。差分検知時停止ルールを維持したまま終了。
+
+## Phase Execution Record（2026-04-27 / Stream C / requested Phase 1→2(ADR/CDC)→3→4→5→6）
+### Phase 1 Read
+- 開始時Readを実施し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（canonical 5 IDs）とSafeMode境界を再確認した。
+- 差分判定: 語彙・禁止事項・SafeMode境界の差分は 0 件。停止条件（前提崩れ / 未定義競合）未発火。
+
+### Phase 2 ADR/CDC確認
+- 開始時Readを再実施し、方針差分の有無を確認した。
+- 判定: `No ADR delta`（契約固定の範囲で継続可能）。
+- 未承認論点を確定化せず、必要時は `pending` または `held` で在庫化する運用を維持。
+
+### Phase 3 Plan（AC/DoD補完）
+- 開始時Readを再実施し、直前Phaseとの差分なしを確認してから計画を固定した。
+- AC/DoDは既存定義で充足可能と判断し、追加補完は不要（不足検知なし）。
+- Scopeを本Issue単独の契約記述更新に限定し、実装変更・契約ID再定義・語彙拡張を非対象とした。
+
+### Phase 4 Execute
+- 開始時Readを再実施し、固定語彙と禁止事項の不一致がないことを確認したうえで本レコードのみ追記した。
+- contract-only / docs-only / single-file 境界を維持し、他ファイル編集は未実施。
+
+### Phase 5 Verify（自己修復最大3回）
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- 自己修復回数: 0/3。4回目相当は未実施。
+
+### Phase 6 Proceed/Stop
+- 判定: `Proceed=Done`（AC/DoD整合 + docs-check pass）。
+- 停止条件（前提崩れ / 未定義競合 / 3回超過）は未発火。
+- 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
