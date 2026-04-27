@@ -948,3 +948,25 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 
 ### Phase 6 Proceed
 - 判定: **Ready**
+
+## Stream F HIL-RS-02-A3 docs-check sync log（2026-04-27）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` と A3 issue を再読し、固定語彙（役割/状態）と fixed keys（freezeContractId, schemaVersion, overridePolicy, safeModeDefault, freeze flags）を確認。
+
+### Phase 2 Plan
+- 検証対象を docs-only 同期に限定し、`operations -> security -> e2e` の直列順を維持。
+- A1未完了中は `ProceedGate` を満たさない前提で、`Conditional` 判定のみ許容。
+
+### Phase 3 Execute
+- 本書へ Stream F の再検証記録を追記し、A3 Open化や契約改定を実施しない。
+
+### Phase 4 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1|schemaVersion=1.0.0|overridePolicy=human_dual_control_only|safeModeDefault=ON|contractLinkLocked=true|sharedResourceFreeze=true|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Conditional**（A1未完了のため準備継続のみ）。
