@@ -190,3 +190,39 @@
 - 判定: **Ready**。
 - 根拠: Draft gate条件・CDC運用条件・AC/DoD/Validationが本文で再現可能。
 - Open化時の次アクション: `security.md` を公開可能な基底方針に限定し、運用詳細のguidelines委譲を明示するOpenタスクを分離。
+
+
+## Stream G dedicated 6-phase run（2026-04-27, DOC-OPS-05-13）
+
+### Phase 1 Read
+- Read同期: 本Issue本文を再読し、`Status` / `Scope` / `Priority` / `Expected verification level` を確認。
+- 差分確認: 前回記録との差分は **なし**（`Status=Draft`, `Priority=P2`, `VerificationLevel=docs-check` を維持）。
+
+### Phase 2 ADR/CDC
+- Read同期: `Related ADR/Spec` と `ADR handling rule` を再読。
+- Context: DOC-OPS-05 Draft整備は公開境界の安全な固定が目的で、未承認事項の確定化を禁止する。
+- Decision: 分類 `Improve external` を維持し、新規仕様差分は起票しない（差分発生時のみ C/D/C を追記）。
+- Consequences: docs-only の分類整備を継続し、仕様正本（00〜02）の改変を回避する。
+
+### Phase 3 Plan
+- Read同期: `Requirement meta I/F` / `Acceptance criteria` / `Stop conditions` を再読。
+- 実行計画:
+  1. 本Issueに6Phase直列記録を追記（allowlist内のみ）。
+  2. AC/DoD不足はドラフト提案として本文に残す。
+  3. Verify失敗時は自己修復を最大3回、4回目相当は停止（Hold）。
+
+### Phase 4 Execute
+- Read同期: `Scope` / `Proposed solution` / `Non-goal` を再読。
+- 実施: 本セクションを追加して6Phase手順を明文化。
+- 実施後方針: `04_Documentation/security.md` は公開可能な基底方針に限定し、運用詳細はguidelinesへ委譲。
+
+### Phase 5 Verify
+- Read同期: `Validation plan` と `Execution protocol` を再読。
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+- 結果記録: self-repair `0/3`（4回目相当は停止条件により禁止）。
+
+### Phase 6 Proceed
+- Read同期: `GoNoGoGate` / `DecisionStatus` / `DecisionQueueRef` を再読。
+- 判定: **Ready**（理由: 6Phase直列記録・ADR/CDC条件・docs-check導線・停止条件が再現可能）。
