@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-26 (JST, Stream I integrated sync rerun-53)
+最終更新: 2026-04-27 (JST, Stream H integrated sync rerun-54)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -30,6 +30,7 @@
 - Stream I 共有統合同期（2026-04-14 rerun-31）で Phase 1 Read同期（A〜H完了報告・依存順 `A1→A2→A3`・Decision Queue Ready=1/Open=2 を再確認）→ Phase 2 Plan（件数47 / Active=5 / Done=26 / 次の1手を3共有ファイルで固定）→ Phase 3 Execute（単一変更セット）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を直列実行し、停止条件違反0件・推測マージ0件を確認した。
 - Stream H 共有統合同期（2026-04-17 rerun-36）で Plan→Execute→Verify→Proceed を再実行し、共有統合3ファイルのみを同期対象に限定。公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` と再開判定チェックリスト1行（未固定箇所0件 / 契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を維持した。
 - Stream I 共有統合同期（2026-04-26 rerun-53）で Phase 1-5（Read→Plan→Execute→Verify→Proceed）を再実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` と再開判定チェックリスト1行の一致を再固定した。
+- Stream H 共有統合同期（2026-04-27 rerun-54）で Phase 1 Read（全レーン完了報告取り込み）→ Phase 2 集計反映（件数/状態/Decision Queue/依存順の同一値固定）→ Phase 3 Verify（validator/unittest/rg）→ Phase 4 公開値固定→ Phase 5 Proceed（再開判定1行更新）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` を維持した。
 
 ### 未完Issue全件（22件）とレーン割当
 
@@ -766,3 +767,11 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Execute: rerun-53 の同期ログのみを3ファイルへ同時反映し、対象外ファイル編集・推測マージを実施しない。
 - Phase 4 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-53|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+## Stream H 共有統合同期ログ（2026-04-27 rerun-54, Phase 1-5）
+
+- Phase 1 Read（全レーン完了報告取り込み）: shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）を再読し、Stream A〜L / Stream Shared / Stream I までの完了報告ログ、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 集計反映（件数/状態/Queue/依存順）: 更新対象を shared resource 3ファイルに限定し、件数・Active/Done・Decision Queue・依存順を単一変更セットで同一値へ固定。
+- Phase 3 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-54|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の一致を確認。
+- Phase 4 公開値固定: **共有3ファイルの公開値を `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` に固定。**
+- Phase 5 Proceed（再開判定1行更新）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
