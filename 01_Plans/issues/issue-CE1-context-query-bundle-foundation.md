@@ -1312,3 +1312,48 @@
 - 監視継続:
   - 差分検知時は `Needs-decision` を経由し `held` へ遷移
   - Self-Correction 3回超過時は `Hold`
+
+---
+
+## Stream D Execution Record（2026-04-27 / issue-owner single-file cycle）
+
+### Phase 1 Plan（latest read + ADR判断前提固定）
+- latest read 実施（Phase開始時）:
+  - 本Issue（`issue-CE1-context-query-bundle-foundation.md`）
+  - `ADR-0028`
+  - `02_Architecture/schemas.md`（CE1 v1 contract / error semantics）
+- ADR判断の事前明文化（Context / Decision / Consequences）:
+  - Context: CE1はCE0 SSOTをread-only参照し、CE1側再定義は禁止。今回の作業は本Issue単独更新（docs-only / contract-only）。
+  - Decision: 既存v1固定を維持（`422 preview_required` / `400 unknown_contract_key` / hash決定論 / `sourceBundleHash === bundleHash`）。新規仕様追加は行わない。
+  - Consequences: CE2/CE4 handoff語彙の互換性を維持し、safeMode回帰・語彙ドリフトを防止。
+- 計画（Plan）:
+  - 本Issueに運用記録のみ追記する。
+  - 指定外ファイルは編集しない。
+  - Verifyは docs-check 系3コマンドで実施し、失敗時は自己修復最大3回。
+
+### Phase 2 Execute（single-file更新）
+- latest read 実施（Phase開始時）: 本Issueを再読して前提差分なしを確認。
+- 実施内容:
+  - 本セクション（Execution Record）を追記。
+- 非実施（制約遵守）:
+  - CE0/CE1契約再定義
+  - handler/UI/DB/worker等の実装記述追加
+  - 指定外ファイル編集
+
+### Phase 3 Verify（自己修復上限3）
+- latest read 実施（Phase開始時）: 本Issueを再読し、Plan/Executeとの差分意図を確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- result: pass なら Proceed、fail なら最小修復して再試行（最大3回）
+
+### Phase 4 Proceed（Go/Hold判定）
+- latest read 実施（Phase開始時）: 本Issueを再読し、Verify結果との整合を確認。
+- Go条件:
+  - docs-check pass
+  - 指定外ファイル編集なし
+  - CE1 contract語彙・safeMode境界の後退なし
+- Hold条件:
+  - Self-Correction 3回超過
+  - CE0/CE1契約語彙衝突（CDC起票が必要）
