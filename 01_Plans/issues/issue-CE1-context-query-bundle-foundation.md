@@ -1405,3 +1405,58 @@
   - `sourceBundleHash === bundleHash` のI/F固定維持
   - safeMode境界後退なし
 - CDC起票要否: 衝突未検知のため不要（`held` 遷移なし）。
+
+---
+
+## Stream D Execution Record（2026-04-27 / CE1 single-file instruction cycle）
+
+### Phase: Read
+- 本Issueを再読し、編集許可範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0は read-only 参照境界として扱い、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の再定義を行わないことを再確認。
+- 禁止事項（CE0契約再定義、実装記述、指定外編集）を再確認。
+
+### Phase: Plan
+- CE1方針を contract-only / I/F凍結 / mock-first で維持。
+- 固定対象（変更なし）:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - hash決定論（同一canonical query 3回一致）
+  - handoff key `sourceBundleHash === bundleHash`
+  - `safeMode regression = 0`
+- Verify計画: docs-check 3コマンドを実行し、自己修復は最大3回。
+
+### Phase: ADR/CDC（必要時）
+- Context:
+  - CE1は CE0 SSOT を read-only 参照する下流レーン。
+  - 本サイクルは single-file docs-only 更新で、I/F固定の再確認のみを行う。
+- Decision:
+  - 新規CDCは起票しない（衝突未検知のため）。
+  - 既存I/F凍結を維持し、未承認事項の確定は行わない。
+- Consequences:
+  - CE2/CE4への read-only handoff の整合を維持。
+  - safeMode後退・語彙ドリフト・契約逆流再定義を抑止。
+- Status: `not_raised`（承認前確定なし）。
+
+### Phase: Execute
+- 実施内容: 本Issue内に本Execution Recordを追記（contract-only）。
+- 非実施:
+  - CE0契約再定義
+  - handler/UI/DB/worker等の実装記述
+  - 指定外ファイル編集
+
+### Phase: Verify
+- attempt_1 実行予定コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 自己修復ポリシー: 失敗時は最小修復を最大3回まで。4回目相当は停止。
+
+### Phase: Proceed
+- Go条件:
+  - docs-check pass
+  - 指定外編集なし
+  - CE1 I/F凍結・mock-first維持
+  - safeMode regression = 0
+- Hold条件:
+  - Self-Correction 3回超過
+  - CE0契約ID/語彙衝突（CDC `held` 要）
