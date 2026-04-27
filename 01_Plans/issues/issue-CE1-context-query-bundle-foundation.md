@@ -115,7 +115,7 @@
 - preview bypass 許容が混入した場合は即停止。
 - safeMode緩和（既定値変更を含む）が混入した場合は即停止。
 - 契約語彙の未定義競合（CE0/CE2/CE4間）が解消不能なら停止。
-- Self-Correction 3回超過で停止。
+- Self-Correctionは3回まで。**4回目で停止**。
 
 ## Phase 4 Verify（docs-check / 修復3回まで）
 - Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
@@ -151,7 +151,7 @@
   - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` のエラー語彙をそのまま監査ログ語彙に継承する。
 
 ## Fail-safe（即停止条件）
-- Self-Correction 3回超過
+- Self-Correction 4回目
 - 未定義ファイル競合
 - SafeMode後退の兆候
 - 依存前提崩壊
@@ -1522,3 +1522,34 @@
 - No-Go:
   - Self-Correction 3回超過
   - CE0契約ID衝突 / 語彙衝突 / safeMode既定変更の検知
+
+
+## Stream D Execution Record（2026-04-27 / user-directed CE1 phase cycle）
+
+### Phase 1 Read（対象再読 + 前提差分確認）
+- 本ファイルを再読し、編集許可範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- CE0は read-only 参照（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）として扱い、逆流再定義を禁止する前提を再確認。
+- 前提差分ゲート: **差分なし（continue）**。
+
+### Phase 2 Plan（contract-only / mock-first 固定再確認）
+- 実装確定（handler/UI/DB/worker）を行わない方針を再確認。
+- CE1 v1 固定対象を維持:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` 一致
+  - CE2/CE4 handoff key: `sourceBundleHash === bundleHash`
+
+### Phase 3 Execute（I/F記述のみ維持・更新）
+- 本Execution Recordを追記し、CE1契約語彙と検証条件を contract-only で再固定。
+- CE0契約本文の再定義、指定外ファイル編集、実装方式の確定記述は追加しない。
+
+### Phase 4 Verify（docs-check）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - `git diff --check` => pass
+- Self-Correction: 0 / 3（4回目停止ルールに抵触なし）。
+
+### Phase 5 Proceed（継続/停止条件判定）
+- 継続判定: CE0逆流再定義なし / 指定外編集なし / Self-Correction 4回目未到達。
+- 判定: **Proceed（CE1 contract-only を維持して継続可能）**。
