@@ -762,3 +762,34 @@
 - 判定: `Proceed=Done`（AC/DoD整合 + docs-check pass）。
 - 停止条件（前提崩れ / 未定義競合 / 3回超過）は未発火。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
+
+## Phase Execution Record（2026-04-27 / Stream C専任 / CE0 Core Graph contract-only phase-cycle sync）
+### Phase 1 Read（role / transition / no-go 再同期）
+- Phase開始時Readを実施し、固定語彙 `working` / `context_projection` / `consensus` を再確認。
+- `working -> consensus` は `patch+approval` のみ許可であることを再確認。
+- canonical No-Go 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）を再確認し、差分 0 件。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみで再定義なし。
+
+### Phase 2 Plan（contract-only / single-file）
+- Scopeを本Issue単体の契約記述と実行記録追記に限定。
+- Non-Goals（実装変更、語彙再定義、SafeMode後退、未承認事項の確定化）を再確認。
+- AC/DoD不足は未検出。新規ドラフト提案は不要と判定。
+
+### Phase 3 ADR Consensus
+- 方針差分判定を実施し、結果は `No ADR delta`。
+- 方針差分が将来発生する場合のみ Context/Decision/Consequences を追記し、承認まで `held` を維持するルールを継続。
+
+### Phase 4 Execute（contract文言のみ更新）
+- 編集対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに固定して更新。
+- `role / transition / no-go` 固定語彙を維持し、同義語置換・拡張定義を行わない。
+- SafeMode既定ON境界を後退させる記述を追加しない。
+
+### Phase 5 Verify（docs-check / self-repair <= 3）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Verify失敗は発生せず、自己修復回数は 0/3。
+
+### Phase 6 Proceed
+- Proceed条件（AC/DoD充足 + docs-check pass）を満たすことを確認。
+- 判定: `Done`（contract-only / single-file / 語彙固定 / SafeMode境界維持）。
+- 未承認事項在庫: なし。将来発生時は `held/pending` で在庫化し、確定しない。
