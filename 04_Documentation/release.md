@@ -1,6 +1,6 @@
 # リリース手順（最小）
 
-> Classification: **Improve external**（対外文書として改善しつつ維持）
+> DOC-OPS-05 Classification: **Improve external**（対外文書として改善しつつ維持）
 > Audience: メンテナ・リリース担当者
 > Goal: 監査可能な最小リリース手順を、外部公開可能な形式で再現できるようにする。
 > Non-goal: 組織内部の承認会議ログ、秘密鍵詳細運用、未公開インシデント対応の確定。

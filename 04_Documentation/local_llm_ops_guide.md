@@ -1,7 +1,8 @@
 # Local LLM Operations Guide
 
+> DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部運用者（閉域/企業）
-> Purpose: ローカルLLM運用時の最小runbookを提供する。
+> Goal: ローカルLLM運用時の最小runbookを提供する。
 > Outcome: 分類結果を **Improve external** に固定し、外部公開runbookとして再利用できる検証導線を提供する。
 > Public boundary: 公開可能な運用条件と検証手順のみを記載し、秘密情報・内部承認ログ・組織固有手順は含めない。
 > This document decides: provider切替手順、safeMode境界、最小監査確認。
