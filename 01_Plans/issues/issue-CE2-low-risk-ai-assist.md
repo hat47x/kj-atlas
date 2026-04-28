@@ -10,6 +10,24 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+## Stream E-2 Serial Lane Run（2026-04-28 / CE2 first）
+- Lane固定: CE2/CE4専任レーンとして **CE2→CE4** を直列実行し、並列化を禁止する。
+- allowlist固定: `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` 以外は更新しない。
+- 独立ルール: CE0/CE1契約は固定入力として read-only 参照し、CE2側で再定義しない。
+- proposal-only固定: auto-apply / auto-publish / auto-confirm を禁止し、候補提示のみ許可する。
+
+### CE2 Phase 1..6 Execution Snapshot（this run）
+- Phase 1 Read: 完了（CE0/CE1 read-only, No-Go, lifecycle/reviewState閉集合を再確認）。
+- Phase 2 ADR/CDC: 完了（契約語彙の再定義なし、proposal-only境界を再固定）。
+- Phase 3 Plan: 完了（AC/DoD不足時はAIドラフト提案→人手合意後実行のゲートを再確認）。
+- Phase 4 Execute: 完了（contract-only文面整備のみ、実装確定は未実施）。
+- Phase 5 Verify: 完了（自己修復回数 `0/3`、上限超過なし）。
+- Phase 6 Proceed: 完了（前提崩壊/契約衝突/未定義競合なし、CE4へ進行可能）。
+
+### CE2 Stop Conditions（固定）
+- Verifyの自己修復は最大3回（`1/3`〜`3/3`）。`4/3` 相当は fail-safe 停止。
+- 上限超過、前提崩壊、未定義競合を検知した場合は `status=held` で即停止。
+
 ## Stream E-1 Execution Lock（2026-04-28 / CE2 Low-risk AI Assist）
 - Purpose固定: proposal-only 契約をCE2で固定し、候補提示（`status=proposed`）以外の自動確定経路を導入しない。
 - `reviewState` ガード: AIによる `reviewState=human_reviewed` 自動昇格を禁止し、AI提案は常に `unreviewed` とする。
