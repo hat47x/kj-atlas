@@ -1,23 +1,23 @@
-# Issue Draft: FB-P0 baseline / Stream A critical-path planning baseline（legacy filename: stream-c）
+# Issue Draft: FB-P0 baseline / Stream B critical-path planning baseline（legacy filename: stream-c）
 
 - Type: Process
 - Status: Open（critical path active）
 - Priority: P0
-- Owner: Stream A（Critical Path: P0/P1 Contract & Governance）
-- Scope: `01_Plans/issues/` の対象7Issueの計画・契約整合のみ
+- Owner: Stream B（FB-P0/FB-P2C A1 Critical）
+- Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の計画・契約整合のみ
 - Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: 対象7Issue以外は不干渉（編集禁止）
+- Non-target file policy: allowlist 2ファイル以外は不干渉（編集禁止）
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream A fixed serial): 1/7 FB-P0 baseline整合
+- Execution order (Stream B fixed serial): 1/2 FB-P0 baseline整合
 
 ---
 
 ## Phase 1: Read（再読・差分確認）
 - 差分検知時は停止候補として `held` に記録し、Executeへ進まない。
-- Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
+- Phase開始直前に対象2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）を再読し、語彙・判定式・held条件の差分有無を確認する。
 ### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
@@ -35,6 +35,7 @@
 - 事前想定との差分: なし（SSOT固定済み、Proceed可）。
 - 固定キー検証（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`）: 差分 `0`。ドリフト検知時は即停止し `held` に記録する。
 - Phase gate checklist: `Status / Scope / Dependencies / 固定キー` を各Phase開始時に再確認し、差分が1つでもあれば `held` に記録して停止。
+- Stream B hard-stop: allowlist外編集要求 / 未定義競合 / self-correction 4回目相当は即時停止。
 
 ### held record（Phase 1 gate）
 - `HIL-RS-02-GOV-EXCEPTION-01`: 未承認事項として `held` 維持（確定扱い禁止）
@@ -61,6 +62,7 @@
 ### Approval Gate（Execute進行条件）
 - ADR/CDC（Context / Decision / Consequences）の承認完了までは Phase 4 Execute へ進まない。
 - 未承認事項は `pending/held` のまま保持し、確定扱いしない。
+- Phase開始直前に対象2ファイルを再読し、C/D/C + 承認状態に差分があれば停止する。
 
 ### Consequences
 - A1未完了時のA2/A3 Open禁止。
@@ -73,7 +75,8 @@
   2. A1/A2/A3系Issue: 同一判定式へ統一。
   3. A3: read-only referenceを維持。
 - 非対象ファイル不干渉
-  - `01_Plans/issues/` の対象7Issue以外は変更しない。
+  - allowlist 2ファイル以外は変更しない。
+- Phase開始直前に対象2ファイルを再読し、AC/DoD不足があれば AIドラフト提案として追記してから Execute へ進む。
 
 ### AC / DoD（ドラフト→合意済み）
 - AC
@@ -87,14 +90,15 @@
   3. 指定外ファイル差分0。
 
 ## Phase 4: Execute
-- Phase開始直前に本ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
-- 対象7Issueの語彙・判定式・停止条件を統一。
+- Phase開始直前に対象2ファイルを再読し、Phase 2承認済みDecisionとの差分があれば `held` を更新して停止する。
+- 対象2ファイルの語彙・判定式・停止条件を統一。
 - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")` をA1->A2->A3の唯一判定式として固定。
 - `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected` を共通化。
 - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)` / `Go = ProceedGate` / `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)` / `NoGo = (!ProceedGate && !Conditional)` を共通化。
-- 非対象ファイルの編集は実施しない。
+- 非対象ファイルの編集は実施しない（allowlist外編集要求を受けた場合は停止）。
 
 ## Phase 5: Verify
+- Phase開始直前に対象2ファイルを再読し、検証対象と判定式の一致を確認する。
 - AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
 - 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -103,13 +107,14 @@
 - self-correction は最大3回（4回目相当は停止）。
 
 ## Phase 6: Proceed（Go / Conditional / No-Go）
+- Phase開始直前に対象2ファイルを再読し、Proceed判定式の差分がないことを確認する。
 - Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外の未承認事項なし。
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定され、確定扱いを行わない。
 - No-Go: 前提崩れ / 未定義競合 / Self-Correction 3回超過 / 指定外ファイル変更検知 / 未承認確定化の発生。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
 
 
-## Stream A handover checkpoint（2026-04-27）
+## Stream B handover checkpoint（2026-04-27）
 
 ### Phase 6 Proceed判定（今回）
 - 判定: **Needs-decision**（`Approval Record: Pending` と `held` 論点が残存）。
@@ -123,14 +128,14 @@
 ### No-Go条件の再確認
 - self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
 
-## Stream A fixed-serial protocol replay（2026-04-27 / Plan→Execute→Verify→Proceed）
+## Stream B fixed-serial protocol replay（2026-04-27 / Plan→Execute→Verify→Proceed）
 
-- Issue order position: `1/7 FB-P0 baseline`
+- Issue order position: `1/2 FB-P0 baseline`
 - Protocol lock: 各Phaseで `Plan -> Execute -> Verify -> Proceed` を維持（逆走・省略禁止）。
 - Contract lock: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を固定。
 
 ### Phase 1: Read
-- 対象7Issueを再読し、`Status / Scope / Dependencies / 固定キー` の差分を確認。
+- 対象2ファイルを再読し、`Status / Scope / Dependencies / 固定キー` の差分を確認。
 - 差分検知時は `held` 記録のみ許可し、Executeへ進まない。
 
 ### Phase 2: ADR/CDC
