@@ -10,6 +10,36 @@
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
 
+## Stream E Plan Fix Baseline（2026-04-28 / CE4）
+
+### Phase 1) Read
+- CE0/CE1/CE2 契約は read-only 参照のみ。CE4で語彙再定義をしない。
+- fixed boundary を再確認: `equivalenceKey + bundleHash`（AND）, `query/bundle/proposal/apply` 監査4点, fail-closed。
+- fail-safe 起動条件（safeMode後退要求・責務分離崩壊・自己修復3回超過）を開始時に明示する。
+
+### Phase 2) Plan（proposal-only）
+- Planは contract proposal のみを扱い、`accepted/rejected` の最終決定は人間責務とする。
+- AC/DoD不足時は差分ドラフトを提示し、人間承認まで `status=held` を維持する。
+- ADR/CDC が必要な差分は **Context / Decision / Consequences** を先に明文化し、承認待ちとする。
+
+### Phase 3) Execute（patch/diff前提・監査ログ固定）
+- Executeは docs上の patch/diff 記録を必須化し、実装確定は行わない。
+- 監査ログ必須項目は `query / bundle / proposal / apply` + `queryCanonicalHash` を固定し、欠損は fail-closed とする。
+- API/CLI同値判定は `equivalenceKey` と `bundleHash` のAND成立のみ成功とし、部分一致成功を禁止する。
+
+### Phase 4) Verify（安全境界・review境界の後退防止）
+- safeMode既定ON と fail-closed 条項の後退がないことを確認する。
+- review境界として「accept/rejectは人間責務」を再検証し、AIの自動確定経路が無いことを確認する。
+- 検証失敗時の自己修復は `1/3`〜`3/3` まで。`4/3` 相当は fail-safe 停止。
+
+### Phase 5) Proceed（実装前提チェックリスト）
+- [ ] proposal-only 境界の維持（implementation commit なし）
+- [ ] accept/reject が人間責務として記録されている
+- [ ] patch/diff 証跡と監査4点+`queryCanonicalHash` が欠損なく参照可能
+- [ ] API/CLI同値判定（AND）と fail-closed 条項に後退がない
+- [ ] 停止条件（safeMode後退要求 / 責務分離崩壊 / 自己修復3回超過）未発火
+
+
 ## Stream E-2 Serial Lane Run（2026-04-28 / CE4 after CE2）
 - 着手条件: CE2のPhase 1..6完遂を確認後に CE4 Phase 1 を開始する。
 - allowlist固定: `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` のみを対象にする。

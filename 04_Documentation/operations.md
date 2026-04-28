@@ -1147,27 +1147,22 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 ### Phase 5 Proceed
 - 判定: **Conditional（Draft維持の準備継続）**。
 
-## Stream H Open化準備 run（2026-04-28）
+## Stream B A3 sync log（2026-04-28）
 
-### Phase 1 Read（issue + 対応docペア確認）
-- 対応Issueと対象文書のペアを再読し、公開境界・分類・停止条件の整合を確認。
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` / `security.md` / `e2e_testing.md` / A3 issue を再読し、語彙・責務・固定値を照合。
+- 差分: 意味差分なし。固定値表記 `48h + 15m/60m` と `48h+15m/60m` の軽微揺れのみ検知。
 
-### Phase 2 Plan（Draft→Openゲート明文化）
-- Open化ゲートを次の4点で固定。
-  1. 必須メタ（Audience/Goal/Non-goal/Public boundary/Outcome または Requirement meta I/F）が追跡可能。
-  2. AC/DoD/Validationが docs-check 前提で再現可能。
-  3. 未承認事項の確定化を行わない（DecisionStatus=Fixed の範囲外は承認待ち）。
-  4. self-repair は最大3回、4回目相当で停止。
+### Phase 2 Plan
+- docs-only の最小差分で、語彙統一・責務分離・固定値整合の証跡を追記。
+- A3契約の再定義・Open化は実施しない（Approval Pending を維持）。
 
-### Phase 3 Execute（不足メタ/AC/Validation/Stop条件補完）
-- 本セクションを追記し、Open化判定に必要な最小メタ（ゲート、検証、停止条件、Proceed判定）を明示。
+### Phase 3 Execute
+- 本節を追記し、固定値参照は canonical 表記 `4h / 2h / 代理承認なし / 48h + 15m/60m` で扱う。
 
-### Phase 4 Verify（ゲート到達判定 + docs-check）
-- `python3 01_Plans/issues/validate_active_issue_memos.py`
-- `rg -n "Stream H Open化準備 run（2026-04-28）|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed|Open化可否" 04_Documentation/operations.md`
-- `git diff --check`
-- self-repair: 0/3（4回目相当は停止）。
+### Phase 4 Verify
+- docs-check / 相互リンク整合 / fixed-value grep を実施（自己修復 0/3）。
 
-### Phase 5 Proceed（Open化可否）
-- Open化可否: **Yes**。
-- 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
+### Phase 5 Proceed
+- 判定: **Conditional**（A1完了待ち）。
+- 次回再開条件: `a1Status=="Done" && pendingDecisionQueueCount==0`。

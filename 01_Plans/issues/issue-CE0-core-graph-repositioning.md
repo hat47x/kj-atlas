@@ -952,3 +952,41 @@
 - 判定: `Go=Done`。
 - Conditional: なし（未承認事項の追加なし）。
 - No-Go: 該当なし（safeMode後退なし / no-go語彙変更なし / allowlist外編集なし）。
+
+## Phase Execution Record（2026-04-28 / Stream C / CE-0 contract freeze only run-3）
+### Phase 1 Read
+- 対象2ファイル（`issue-CE0-contract-freeze.md` / `issue-CE0-core-graph-repositioning.md`）の最新状態を再読。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止、canonical No-Go 5 IDs 固定、safeMode境界固定（`safeMode=true` / `allowUnreviewedText=false`）を再確認。
+
+### Phase 2 Plan（不足抽出ドラフト）
+- 不足候補A: CE1/CE2へ渡すI/F freezeの最小受領条件が散在しがちだったため、受領条件を単一ノート化する必要を特定。
+- 不足候補B: 禁止事項の機械判定キー（No-Go canonical IDs）を I/F freeze ノート側へ明示連結する必要を特定。
+- 不足候補C: 検証項目の機械実行可否（`docs-check` / `git diff --check`）を Proceed 前提として明文化する必要を特定。
+- ドラフト判定: いずれも新規ID追加不要で、既存契約ID参照のみで補完可能。
+
+### Phase 3 Execute（contract-only / mocks-first 文言固定）
+- 方針固定:
+  - contract-only: 実装詳細（handler/UI/DB/worker/API/schema migration）を記述しない。
+  - mocks-first: CE1/CE2は mock入力で I/F 検証し、実装確定を先行しない。
+- 文言固定:
+  - role: `working` / `context_projection` / `consensus` の3語彙のみ。
+  - transition: `working -> consensus` は `patch+approval` のみ。
+  - no-go: canonical 5 IDs 以外の追加・同義語置換を禁止。
+
+### Phase 4 Verify（機械チェック可能性確認）
+- AC/DoD/禁止事項は以下で機械チェック可能であることを確認:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `git diff --check`
+  - `rg -n "preview_bypass|consensus_direct_write|auto_apply_or_publish|ai_review_auto_promotion|safemode_default_relaxation" 01_Plans/issues/issue-CE0-core-graph-repositioning.md`
+- 自己修復ポリシーは最大3回。4回目相当は `stopped_for_clarification` で停止。
+
+### Phase 5 Proceed（CE1/CE2向け I/F freeze note）
+- freeze_note_id: `CE0-IF-FREEZE-2026-04-28-C`
+- handoff_scope: CE1/CE2は以下を **read-only参照** する（再定義禁止）。
+  1) Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  2) role: `working` / `context_projection` / `consensus`
+  3) transition: `working -> consensus` = `patch+approval` only
+  4) No-Go canonical IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+- fail-safe:
+  - 契約ID競合、禁止事項の曖昧化要求、自己修復4回目相当が発生した場合は即 `held` で停止。
+- proceed_decision: `Conditional-Go`（I/F freezeは固定済み。未承認事項の確定化は継続禁止）。

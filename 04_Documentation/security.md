@@ -849,27 +849,22 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed
 - 判定: **Conditional（A1完了待ちでDraft維持）**。
 
-## Stream H Open化準備 run（2026-04-28）
+## Stream B A3 sync log（2026-04-28）
 
-### Phase 1 Read（issue + 対応docペア確認）
-- 対応Issueと対象文書のペアを再読し、公開境界・分類・停止条件の整合を確認。
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` / `operations.md` / `e2e_testing.md` / A3 issue を再読し、4観点（用語/役割/導線/固定値）を照合。
+- 判定: 語彙・責務分離・D1〜D4意味は一致。軽微な固定値表記揺れのみ確認。
 
-### Phase 2 Plan（Draft→Openゲート明文化）
-- Open化ゲートを次の4点で固定。
-  1. 必須メタ（Audience/Goal/Non-goal/Public boundary/Outcome または Requirement meta I/F）が追跡可能。
-  2. AC/DoD/Validationが docs-check 前提で再現可能。
-  3. 未承認事項の確定化を行わない（DecisionStatus=Fixed の範囲外は承認待ち）。
-  4. self-repair は最大3回、4回目相当で停止。
+### Phase 2 Plan
+- security の責務境界（基底方針）を維持し、A3では契約更新・承認前確定化を行わない。
+- AC/DoD不足ドラフトは issue 側に記録し、本書は整合証跡のみ追記。
 
-### Phase 3 Execute（不足メタ/AC/Validation/Stop条件補完）
-- 本セクションを追記し、Open化判定に必要な最小メタ（ゲート、検証、停止条件、Proceed判定）を明示。
+### Phase 3 Execute
+- 本節の docs-only 追記を実施（最小差分）。
 
-### Phase 4 Verify（ゲート到達判定 + docs-check）
-- `python3 01_Plans/issues/validate_active_issue_memos.py`
-- `rg -n "Stream H Open化準備 run（2026-04-28）|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed|Open化可否" 04_Documentation/security.md`
-- `git diff --check`
-- self-repair: 0/3（4回目相当は停止）。
+### Phase 4 Verify
+- docs-check / 相互リンク整合 / fixed-value grep を実施（自己修復 0/3）。
 
-### Phase 5 Proceed（Open化可否）
-- Open化可否: **Yes**。
-- 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
+### Phase 5 Proceed
+- 判定: **Conditional**（Approval Pending 維持）。
+- 次回再開条件: A1完了 + pendingDecisionQueue解消 + 承認証跡充足。
