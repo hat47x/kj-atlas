@@ -9,6 +9,17 @@
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
+
+## Stream E-1 Execution Lock（2026-04-28 / CE2 Low-risk AI Assist）
+- Purpose固定: proposal-only 契約をCE2で固定し、候補提示（`status=proposed`）以外の自動確定経路を導入しない。
+- `reviewState` ガード: AIによる `reviewState=human_reviewed` 自動昇格を禁止し、AI提案は常に `unreviewed` とする。
+- Auto操作禁止: auto-apply / auto-publish / auto-confirm を常時禁止する。
+- 固定ワークフロー: **Read → ADR/CDC → Plan → Execute → Verify → Proceed**（6フェーズ直列のみ、結合・省略禁止）。
+- 追加制約: lifecycle 閉集合 `proposed | accepted | rejected | held` の拡張を禁止する。
+- CE境界: CE0/CE1 契約は read-only 参照とし、CE2 側で再定義しない。
+- Execute開始条件: AC/DoD の人手合意が成立するまで Phase 4 Execute を開始しない。
+- Self-repair上限: Verify失敗時の自己修復は最大3回（`1/3`〜`3/3`）まで。`4/3` 相当で fail-safe 停止する。
+
 ## Stream E Request Override（2026-04-27 / latest）
 - Owner は **Stream E 専属** とし、対象は `issue-CE2-low-risk-ai-assist.md` のみ（単一ファイル固定）。
 - 強制フェーズ順序は **Read → ADR/CDC → Plan → Execute → Verify → Proceed** の6フェーズ直列のみ（結合/省略禁止）。
