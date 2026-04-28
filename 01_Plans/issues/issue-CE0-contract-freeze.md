@@ -995,3 +995,24 @@ type PatchProposal = {
   - handoff_key: `CE0-HANDOFF-LOCK-2026-04-27`（固定）
   - 判定根拠: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` / `safeMode regression=0` / docs-check pass
   - handoff_mode: CE1/CE2/CE4へは Contract ID / No-Go ID のread-only参照のみ（本文複製・再定義禁止）
+
+## Stream C relay note（2026-04-28 / CE0 contract freeze I/F handoff mirror）
+- relay_id: `CE0-IF-FREEZE-2026-04-28-C`
+- source_lane: `Stream C`
+- destination_lane: `CE1/CE2`
+- handoff_mode: read-only（再定義・別名化・拡張を禁止）
+
+### Relay payload（contract-only）
+1. Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+2. SafeMode境界: `safeMode=true` / `allowUnreviewedText=false`
+3. Canonical No-Go IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+4. Core Graph role/transition: `working` / `context_projection` / `consensus`、`working -> consensus` は `patch+approval` のみ
+
+### Verification gate（mechanically checkable）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+
+### Stop / hold conditions
+- 契約ID競合、禁止事項の曖昧化要求、safeMode既定値後退要求、自己修復4回目相当のいずれかで即 `held`。
+- proceed_status: `Conditional-Go`（契約凍結のみ継続、未承認事項は確定しない）。
