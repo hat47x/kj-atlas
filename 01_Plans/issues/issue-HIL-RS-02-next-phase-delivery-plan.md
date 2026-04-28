@@ -297,3 +297,45 @@ delivery_gate_v1:
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+## Stream A execution log（2026-04-28 / delivery plan gate replay）
+
+### Phase 1: Read（状態同期）
+- 対象5ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期。
+- 結果: `Status=Open` / `Priority=P1` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held` 継続。
+- 事前想定との差分: なし。
+
+### Phase 2: ADR/CDC（実装前必須）
+- Context: delivery plan は A1契約凍結を前提にのみ前進可能。
+- Decision: `A2A3_OPEN_ALLOWED` を含む固定ゲート式を再定義せず参照維持。
+- Consequences: 承認未充足のため、Executeは計画同期ログ追記のみに限定。
+
+### Phase 3: Plan（AC/DoD先行）
+- Scope: delivery plan の gate 条件・hold条件・停止条件をSSOT準拠で同期。
+- Non-goals: 実装確定、A3 Open先行、allowlist外編集。
+- Acceptance Criteria:
+  1. fixed keys diff=0。
+  2. `unlockRule` と `decisionQueueTransition` の一致。
+  3. Pending bypass禁止が明記されている。
+- Definition of Done:
+  1. 順序 `Plan -> Execute -> Verify -> Proceed` を記録。
+  2. self-correction `<=3` 記録。
+  3. 判定結果（Go/Conditional/No-Go）と理由を記録。
+- Validation Plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions: self-correction>=4、未承認確定化、NoGo return path改変、safeMode境界後退。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへのログ追記のみ。
+- 非実施: 契約値更新、A1未完でのA2/A3 Open化。
+
+### Phase 5: Verify
+- Validation Plan に沿って docs-check を実施。
+- self-correction: `0/3`。
+
+### Phase 6: Proceed / Stop
+- 判定: **Conditional**。
+- 理由: `Approval Record: Pending` と `held` 論点継続。
+- 再開条件: 承認証跡入力完了 + `pendingDecisionQueueCount==0`。

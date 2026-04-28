@@ -298,3 +298,46 @@ gate:
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+## Stream A execution log（2026-04-28 / HIL-RS critical path replay）
+
+### Phase 1: Read（状態同期）
+- 対象5ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期確認。
+- 結果: `Status=Open`（A3のみDraft）/ `Priority=P1` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held` 論点継続。
+- 事前想定との差分: なし（`held` 追加なし）。
+
+### Phase 2: ADR/CDC（実装前必須）
+- Context: A1契約凍結をSSOTとして維持し、A2/A3を誤って先行確定しない。
+- Decision: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`・`safeModeDefault=ON`・`safeModeBoundary=SAFE_MODE_STRICT_ON`・`NoGo return path=A1 issue` を再確認し固定維持。
+- Consequences: `Approval Record` 未充足（`approved_by` / `approved_at` / `evidence` 未入力）のため Execute での確定化は継続禁止。
+
+### Phase 3: Plan（AC/DoD先行）
+- Scope: 5 Issue間の契約固定・ゲート条件・運用記録の同期（docs-only）。
+- Non-goals: 実装コード変更、allowlist外編集、pending bypass確定化。
+- Acceptance Criteria:
+  1. 固定キー差分 `0`。
+  2. `A2A3_OPEN_ALLOWED` 判定式の再定義なし。
+  3. `NoGo return path` がA1 issue一意固定。
+  4. `Approval Record: Pending` を確定扱いしない。
+- Definition of Done:
+  1. `Plan -> Execute -> Verify -> Proceed` の順序ログを記録。
+  2. self-correction 回数を `0-3` で記録。
+  3. Go/Conditional/No-Go 判定根拠を明記。
+- Validation Plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions: self-correction 4回目相当、未承認確定化、NoGo return path改変要求、safeMode境界後退検知。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへの運用ログ追記のみ。
+- 非実施: 固定契約値の更新、NoGo return path改変、safeMode境界緩和、allowlist外ファイル編集。
+
+### Phase 5: Verify
+- docs-check を Phase 3 の Validation Plan に従って実施。
+- self-correction: `0/3`（再試行なし）。
+
+### Phase 6: Proceed / Stop
+- 判定: **Conditional**。
+- 理由: `Approval Record: Pending` および `held` 論点が残存し、Go条件が未充足。
+- 継続条件: 人間承認フィールドの充足（`approved_by` / `approved_at` / `evidence`）と pendingDecisionQueue 解消。

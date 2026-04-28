@@ -305,3 +305,45 @@ governance_gate_v1:
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+## Stream A execution log（2026-04-28 / governance hardening replay）
+
+### Phase 1: Read（状態同期）
+- 対象5ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期。
+- 結果: `Status=Open` / `Priority=P1` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held` 維持。
+- 事前想定との差分: なし。
+
+### Phase 2: ADR/CDC（実装前必須）
+- Context: governance hardening は Pending bypass 防止とNoGo差戻し先固定が中核。
+- Decision: `overridePolicy=human_dual_control_only`・`sharedResourceFreeze=true`・`contractLinkLocked=true`・`NoGo return path=A1 issue` を固定維持。
+- Consequences: 承認未充足のまま確定化は禁止、`held` 維持。
+
+### Phase 3: Plan（AC/DoD先行）
+- Scope: 統治契約の禁止遷移と判定式整合。
+- Non-goals: 契約緩和、pending bypass例外化、allowlist外編集。
+- Acceptance Criteria:
+  1. 固定キー差分 `0`。
+  2. `NoGo return path` 改変なし。
+  3. `Pending bypass` 禁止が維持される。
+- Definition of Done:
+  1. 順序ログ完備（Plan→Execute→Verify→Proceed）。
+  2. self-correction `<=3`。
+  3. 未承認事項の確定化なし。
+- Validation Plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions: self-correction>=4、未承認確定化、NoGo return path改変、safeMode境界後退。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへの運用ログ追記のみ。
+- 非実施: 禁止遷移の緩和、NoGo return path変更、A2/A3先行Open。
+
+### Phase 5: Verify
+- Validation Plan に従い docs-check を実行。
+- self-correction: `0/3`。
+
+### Phase 6: Proceed / Stop
+- 判定: **Conditional**。
+- 理由: 承認記録未充足（`approved_by` / `approved_at` / `evidence` 未入力）。
+- 再開条件: 人間承認完了後にProceedGateを再評価。
