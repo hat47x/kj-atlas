@@ -182,6 +182,15 @@ CE0境界（参照専用固定）:
 ### 2.9 CE4 API/CLI/GUI 同値性・監査契約（CE4-API-CLI-AUDIT）
 
 CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フェーズであり、実装方式やUI差分よりも監査可能性を優先する。
+また CE4 は proposal-only 境界を維持し、`accepted/rejected` の自動確定経路を許可しない。
+
+#### 2.9.0 Stream D boundary（proposal-only + API/CLI監査責務分離）
+
+- CE4 の責務は **I/F契約固定** に限定する（実装方式・アルゴリズム詳細・自動適用導線は扱わない）。
+- API責務境界: 入力/出力/失敗時セマンティクスを固定する。
+- CLI責務境界: API同値の入力面・出力面・終了コードを固定する。
+- 監査責務境界: `query/bundle/proposal/apply` と `queryCanonicalHash` の記録を固定する。
+- Fail-safe: proposal-only 逸脱（auto-apply/auto-confirm/auto-publish）または監査欠損成功扱いを検知した場合は fail-closed。
 
 #### 2.9.1 logical operation 同値性（固定）
 
@@ -207,8 +216,11 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
 | `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
 
 追加必須キー（全イベント共通メタ）: `channel`（`api|cli|gui`）, `command`, `schemaVersion`.
-`schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
+ `schemaVersion` は CE4 契約期間中に固定値を使用し、互換性変更時のみ明示的に更新する。
 CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
+
+追加必須キー（同値判定の比較根拠）: `queryCanonicalHash`。
+`queryCanonicalHash` が欠損する監査イベントは、4点が揃っていても成功扱いにしてはならない（fail-closed）。
 
 `rejectReasonCode` は次の分類コードを最小集合として固定する（追加は後方互換でのみ許可）。
 - `missing_event`
@@ -224,6 +236,9 @@ CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
   - 外部送信（監査転送を除く。監査転送は fail-open dispatcher 方針）
   - review state の昇格（`unreviewed -> human_reviewed`）
 - 上記を満たさない場合は契約違反として失敗扱い（fail-closed）。
+
+proposal lifecycle は `proposed | accepted | rejected | held` の閉集合のみを許可する。
+CE4 範囲での語彙追加・別名導入は禁止する。
 
 CE4 フェイルセーフ（停止条件）:
 - 監査4点セット欠損を成功扱いしようとする要求
