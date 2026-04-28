@@ -41,6 +41,43 @@
 - `unknown_contract_key`
 - `nondeterministic_bundle`
 
+## CE1 I/F Signature Freeze（v1 / contract-only）
+- 下記シグネチャは **実装非依存** の契約固定値であり、UI/DB/worker/APIの実装方式は規定しない。
+- closed-world: v1では未定義キーを拒否し、拡張はv2でのみ許可する。
+
+```ts
+export type ContextQueryV1 = {
+  queryId: string;
+  goal: string;
+  scope: "document" | "view" | "island";
+  depth: number; // 0..5
+  constraints: Record<string, unknown>;
+  reviewFilter: "reviewedOnly" | "includeUnreviewed";
+  safeModePolicy: "strict";
+  outputMode: "summary" | "proposal" | "candidate";
+  previewConfirmed: boolean;
+};
+
+export type ContextBundleV1 = {
+  queryCanonicalHash: string; // sha256 hex (canonical query)
+  bundleHash: string; // sha256 hex (canonical bundle)
+  selected: unknown[];
+  relations: unknown[];
+  evidence: unknown[];
+  contradictions: unknown[];
+  reviewFlags: { reviewed: number; unreviewed: number };
+  truncationMeta: Record<string, unknown>;
+  excludedReason: string[];
+};
+```
+
+### Fixed error mapping（v1）
+| Condition | HTTP | Error vocabulary |
+| --- | --- | --- |
+| `previewConfirmed=false` | `422` | `preview_required` |
+| unknown key in `ContextQueryV1`/`ContextBundleV1` | `400` | `unknown_contract_key` |
+| same canonical query but non-equal `bundleHash` | `409` | `nondeterministic_bundle` |
+
 ## No-Go / safeMode境界
 - No-Go語彙（CE0 canonical 5 IDs）:
   `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
@@ -79,6 +116,16 @@
 - Context: `CE0参照ID` / `衝突語彙` / `検知ログID`
 - Decision: `v1で固定するI/F差分（再定義なし）`
 - Consequences: `CE2/CE4 handoff影響` / `safeMode回帰リスク`
+- Approval: `Security Officer + System Owner` の2者承認（両者`approved`でのみProceed再開）
+
+### ADR/CDC quick record（今回）
+- Status: `approved`
+- Context: CE0 read-only境界（`CE0-CTX-IF`/`CE0-SAFEMODE-IF`/`CE0-REVIEW-IF`）を維持したまま、CE1でI/Fシグネチャとエラー語彙のみ凍結。
+- Decision: `ContextQueryV1` / `ContextBundleV1` のキー集合、`queryCanonicalHash` / `bundleHash`、および `422/400/409` の語彙対応をv1固定。
+- Consequences: CE2/CE4は `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` 比較を前提に独立検証可能。safeMode既定はCE0参照のみで後退を防止。
+- Approval:
+  - Security Officer: `approved (2026-04-28)`
+  - System Owner: `approved (2026-04-28)`
 
 ## Phase 3 Plan（AC/DoD不足補完ドラフトとPlan freeze）
 - Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
@@ -140,6 +187,9 @@
 ### Verify failure handling
 - Verify失敗時は自己修復を最大3回まで許可する。
 - 3回超過（4回目相当）は停止し、Statusを `held` としてProceedへ進まない。
+- self-correction counter運用:
+  - `attempt=1..3`: 修復と再検証を許可
+  - `attempt=4`: 即停止（`held`固定）
 
 ## Phase 6 Proceed（CE2/CE4連携キー handoff）
 - Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
