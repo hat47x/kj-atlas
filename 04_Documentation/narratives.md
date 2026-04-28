@@ -1,7 +1,8 @@
 # Narrative Generation and Review Semantics
 
+> DOC-OPS-05 Classification: **Improve external**
 > Audience: 外部利用者・レビュー担当者
-> Purpose: narrative生成とレビュー運用の意味論を公開する。
+> Goal: narrative生成とレビュー運用の意味論を公開する。
 > Outcome: 分類結果を **Improve external** に固定し、公開利用時のレビュー責務と安全境界を再現可能にする。
 > Public boundary: 公開文書は意味論・レビュー条件・停止条件のみを扱い、内部監査実装や組織固有承認フローは扱わない。
 > This document decides: review stateの既定、人間レビュー責務、公開利用条件。
@@ -13,7 +14,7 @@
 Go 条件（全て必須）:
 
 1. `reviewState=unreviewed`（互換表記: `reviewed=false`）が既定である。
-2. `reviewed` 昇格は人間の明示操作のみである。
+2. `human_reviewed` への昇格は人間の明示操作のみである。
 3. AI生成結果を確定情報として扱わないことが明示されている。
 4. SafeMode既定ONと share/export 境界の後退記述がない。
 
