@@ -1486,3 +1486,28 @@
 - 判定: **Ready**
 - 理由: スコープ制約順守、docs-check整合、分類方針維持、停止条件明記の4点を満たしたため。
 - 次アクション: 本Issueを起点に、`04_Documentation/codex_skill_operations.md` の参照stub化または移設PRを docs-only で起票する。
+
+## Stream H Open化準備 run（2026-04-28）
+
+### Phase 1 Read（issue + 対応docペア確認）
+- 対応Issueと対象文書のペアを再読し、公開境界・分類・停止条件の整合を確認。
+
+### Phase 2 Plan（Draft→Openゲート明文化）
+- Open化ゲートを次の4点で固定。
+  1. 必須メタ（Audience/Goal/Non-goal/Public boundary/Outcome または Requirement meta I/F）が追跡可能。
+  2. AC/DoD/Validationが docs-check 前提で再現可能。
+  3. 未承認事項の確定化を行わない（DecisionStatus=Fixed の範囲外は承認待ち）。
+  4. self-repair は最大3回、4回目相当で停止。
+
+### Phase 3 Execute（不足メタ/AC/Validation/Stop条件補完）
+- 本セクションを追記し、Open化判定に必要な最小メタ（ゲート、検証、停止条件、Proceed判定）を明示。
+
+### Phase 4 Verify（ゲート到達判定 + docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Stream H Open化準備 run（2026-04-28）|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed|Open化可否" 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+- `git diff --check`
+- self-repair: 0/3（4回目相当は停止）。
+
+### Phase 5 Proceed（Open化可否）
+- Open化可否: **Yes**。
+- 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
