@@ -3,7 +3,7 @@
 - Type: Process
 - Status: Open（critical path active）
 - Priority: P0
-- Owner: Stream B（FB-P0/FB-P2C A1 Critical）
+- Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の計画・契約整合のみ
 - Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -11,7 +11,7 @@
 - Non-target file policy: allowlist 2ファイル以外は不干渉（編集禁止）
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream B fixed serial): 1/2 FB-P0 baseline整合
+- Execution order (Stream H fixed serial): 1/2 FB-P0 baseline整合
 
 ---
 
@@ -209,3 +209,53 @@
   3. `A1 not Done -> A2/A3 Confirmed`
   4. `safeModeDefault=ON -> OFF`
   5. `SAFE_MODE_STRICT_ON -> relaxed`
+
+## Stream H convergence update（2026-04-28 / authoritative for planning）
+
+> 本セクションは Stream H の最新計画基準。既存の Stream B / Stream F 記録は履歴として保持し、矛盾時は本セクションを優先する。
+
+### Phase 1: Read（未確定I/FとDecision Queue依存の棚卸し）
+- 未確定I/F一覧（A1契約観点）
+  1. `Approval Record` の必須証跡キー（`approved_by` / `approved_at` / `evidence`）が未入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（Decision Queue未解消）。
+  3. `A2A3_OPEN_ALLOWED` 判定入力のうち `a1Status` と `pendingDecisionQueueCount` が未充足。
+- 依存関係は `A1 -> A2 -> A3` 固定。`pendingDecisionQueueCount==0` を満たすまで A2/A3 は `Open(Planning)` のまま据え置く。
+
+### Phase 2: Plan（mockで依存分離できる項目）
+- mock-first 分離対象
+  - 契約整合: `freezeContractId` / `schemaVersion` / `overridePolicy` / `contractIds` / `safeModeDefault` / `safeModeBoundary`。
+  - 判定再現: `A2A3_OPEN_ALLOWED` と `NoGo` を固定文字列で比較し、下流実装依存を排除。
+  - 監査導線: `Approval Record` 未入力時は必ず `Conditional | Needs-decision` を返す。
+- mock dataset: `A1-CONTRACT-MOCK-v1`（契約検証専用、実装接続なし）。
+
+### Phase 3: Execute（A1契約確定文の整備 / 実装禁止）
+- 契約確定文の適用範囲を「本ファイル + `issue-FB-P2C-01-a1-interface-contract.md`」に限定。
+- 実装誘導禁止（フェイルセーフ）
+  - 契約承認前に A2/A3 を Done/Confirmed 扱いしない。
+  - 実装チケットやコード変更手順への誘導文を追加しない。
+- ADR規律
+  - ADR更新が必要になった場合は **CDC（Context/Decision/Consequences）草案のみ** を提示し、承認待ちの間は `held` 固定。
+
+### Phase 4: Verify（再現可能なGo/NoGo）
+- Go条件（全充足必須）
+  1. `A2A3_OPEN_ALLOWED=true`
+  2. `validatorPass=true`
+  3. `Approval Record=Approved`
+  4. `pendingDecisionQueueCount==0`
+- NoGo条件（1つでも該当で停止）
+  1. `pendingBypassDetected=true`
+  2. `undefinedConflictDetected=true`
+  3. allowlist外編集要求
+  4. 契約未承認でA2/A3確定要求
+- Conditional条件
+  - Go未達だが未承認事項が `held` のみで、確定化を行わない場合。
+
+### Phase 5: Proceed（A2/A3着手条件の固定）
+- A2着手条件
+  - `a1Status=="Done" && pendingDecisionQueueCount==0 && Approval Record=Approved`
+- A3着手条件
+  - A2条件を満たしたうえで、A2の `NoGo` 未該当を確認。
+- 固定禁止遷移
+  1. `Pending -> Done`（Approved bypass）
+  2. `Held -> Done`（承認証跡なし）
+  3. `A1 not Done -> A2/A3 Confirmed`

@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open（A1 contract freeze active）
 - Priority: P0
-- Owner: Stream B（FB-P0/FB-P2C A1 Critical）
+- Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: A1最小I/F契約の固定（Contract ID / Signature / Deterministic Rule）
 - Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
 - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -11,7 +11,7 @@
 - Non-target file policy: allowlist 2ファイル以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream B fixed serial): 2/2 FB-P2C A1契約凍結
+- Execution order (Stream H fixed serial): 2/2 FB-P2C A1契約凍結
 
 ---
 
@@ -245,3 +245,38 @@ mock_contract_v1:
   3. `A1 != Done` で `A2/A3 Confirmed`
   4. `safeModeDefault ON` の後退
   5. `SAFE_MODE_STRICT_ON` の緩和
+
+## Stream H convergence update（2026-04-28 / authoritative for A1 contract text）
+
+> 本セクションは Stream H の最新契約整備基準。既存の Stream B / Stream F 記録は履歴として保持し、矛盾時は本セクションを優先する。
+
+### Phase 1: Read（未確定I/F + Decision Queue依存の棚卸し）
+- 未確定I/F
+  1. `Approval Record` 証跡項目（`approved_by` / `approved_at` / `evidence`）未入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 継続。
+  3. `pendingDecisionQueueCount` が 0 でない限り、A2/A3 Openゲートは未達。
+- 依存固定: `A1 -> A2 -> A3`。A2/A3はA1契約の read-only 参照を維持。
+
+### Phase 2: Plan（mockで依存分離）
+- mock-first 検証対象（実装非依存）
+  - `A2A3_OPEN_ALLOWED` 文字列一致
+  - `NoGo` 条件一致
+  - 不変キー一致（`freezeContractId`,`schemaVersion`,`overridePolicy`,`contractIds`,`safeModeDefault`,`safeModeBoundary`,`contractLinkLocked`,`sharedResourceFreeze`）
+- mock dataset: `A1-CONTRACT-MOCK-v1`
+
+### Phase 3: Execute（A1契約確定文のみ整備）
+- 実施内容は文言整備に限定し、実装・派生契約・下流手順の追加は禁止。
+- ADR更新要否が出た場合は CDC草案を提出して承認待ち（承認まで `held` 固定）。
+
+### Phase 4: Verify（Go/NoGo判定の再現性）
+- Go
+  - `A2A3_OPEN_ALLOWED=true && validatorPass=true && Approval Record=Approved && pendingDecisionQueueCount==0`
+- NoGo
+  - `(!A2A3_OPEN_ALLOWED) && (pendingBypassDetected || undefinedConflictDetected || allowlist外編集要求 || 契約未承認でA2/A3確定要求)`
+- Conditional
+  - Go未達かつ未承認事項が `held` のみ。
+
+### Phase 5: Proceed（A2/A3着手条件固定）
+- A2着手: `A1 Done` + `pendingDecisionQueueCount==0` + `Approval Record=Approved`。
+- A3着手: A2着手条件充足 + A2側 NoGo なし。
+- フェイルセーフ: 契約未承認のまま実装誘導しない。逸脱時は停止し `No-Go` を宣言。
