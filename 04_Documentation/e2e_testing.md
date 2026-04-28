@@ -970,3 +970,22 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 
 ### Phase 5 Proceed
 - 判定: **Conditional**（A1未完了のため準備継続のみ）。
+
+## Stream B A3 sync log（2026-04-28）
+
+### Phase 1 Read
+- `operations.md` / `security.md` / `strict_mode_exception_approval_flow.md` / A3 issue を再読し、E2E方針側の語彙・責務・固定値参照を照合。
+
+### Phase 2 Plan
+- E2E方針の責務（実行手順と判定基準）を維持し、A3では契約再定義を行わない。
+- Verifyは docs-check + 相互リンク + fixed-value grep を固定。
+
+### Phase 3 Execute
+- 本節を docs-only で追記し、A3同期の検証導線を明文化。
+
+### Phase 4 Verify
+- validator / unittest / rg / `git diff --check` を実施（自己修復 0/3）。
+
+### Phase 5 Proceed
+- 判定: **Conditional**（A1完了待ち）。
+- 次回再開条件: A1完了通知後に同一コマンドセットで再検証する。

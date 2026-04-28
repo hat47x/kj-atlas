@@ -479,3 +479,42 @@
 - 判定: **Conditional**。
 - 理由: `Approval Record: Pending`（`approved_by` / `approved_at` / `evidence` 未充足）によりGo条件未達。
 - 失敗時の出力対象（継続保持）: 原因=`未承認` / 影響I/F=`A2,A3はDraft/準備のみ` / 人間判断論点=`Approval Record充足`。
+
+## Stream B execution log（2026-04-28 / A3 operations sync）
+
+### Phase 1: Read（4ファイル再読と不一致抽出）
+- 対象再読: `operations.md` / `security.md` / `e2e_testing.md` / 本Issue。
+- 抽出結果（語彙・責務・固定値）:
+  - 語彙: `Security Officer / System Owner / Platform Operator` は4ファイルで一致（ドリフトなし）。
+  - 責務: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）は一致（ドリフトなし）。
+  - 固定値: D1〜D4の意味は一致。
+  - 表記揺れ（軽微）: `48h + 15m/60m` と `48h+15m/60m` が混在。
+- 判定: 実質矛盾はなし。表記揺れのみ最小差分で統一対象とする。
+
+### Phase 2: Plan（AC/DoD不足ドラフトと合意状態）
+#### Context
+- A3は `mock I/F preparation only` のため、承認前の契約確定化は禁止。
+
+#### Decision（Draft提案）
+- AC-6（draft）: `operations.md` / `security.md` / `e2e_testing.md` / 本Issue の D1〜D4 表記を同一フォーマット（`48h + 15m/60m`）で維持する。
+- DoD-4（draft）: Verifyログに「相互リンク整合（architecture→documentation連鎖 + operations同値確認先）」を明記する。
+- 合意状態: `Approval Record: Pending` のため **Draft** 維持（未確定扱い）。
+
+#### Consequences
+- Executeは docs-only の表記統一と検証ログ追記に限定し、契約再定義は行わない。
+
+### Phase 3: Execute（最小差分反映）
+- 実施: `operations.md` / `security.md` / `e2e_testing.md` に Stream B の同期ログを最小追記。
+- 非実施: A3 Open化、契約キー更新、承認未了事項の確定化。
+
+### Phase 4: Verify（docs-check + link整合 + fixed-value grep）
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `rg -n "strict_mode_exception_approval_flow.md|operations.md|security.md|e2e_testing.md|Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|4h / 2h / 代理承認なし / 48h \+ 15m/60m|safeModeDefault=ON|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
+  - `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5: Proceed（次回再開条件の固定）
+- 判定: **Conditional**（A1未完了かつ `Approval Record: Pending`）。
+- 次回再開条件（1行固定）: **`a1Status=="Done" && pendingDecisionQueueCount==0 && approved_by/approved_at/evidence が充足した時点で同一検証式を再実行する。`**

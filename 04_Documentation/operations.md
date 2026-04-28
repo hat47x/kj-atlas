@@ -1146,3 +1146,23 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 
 ### Phase 5 Proceed
 - 判定: **Conditional（Draft維持の準備継続）**。
+
+## Stream B A3 sync log（2026-04-28）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` / `security.md` / `e2e_testing.md` / A3 issue を再読し、語彙・責務・固定値を照合。
+- 差分: 意味差分なし。固定値表記 `48h + 15m/60m` と `48h+15m/60m` の軽微揺れのみ検知。
+
+### Phase 2 Plan
+- docs-only の最小差分で、語彙統一・責務分離・固定値整合の証跡を追記。
+- A3契約の再定義・Open化は実施しない（Approval Pending を維持）。
+
+### Phase 3 Execute
+- 本節を追記し、固定値参照は canonical 表記 `4h / 2h / 代理承認なし / 48h + 15m/60m` で扱う。
+
+### Phase 4 Verify
+- docs-check / 相互リンク整合 / fixed-value grep を実施（自己修復 0/3）。
+
+### Phase 5 Proceed
+- 判定: **Conditional**（A1完了待ち）。
+- 次回再開条件: `a1Status=="Done" && pendingDecisionQueueCount==0`。
