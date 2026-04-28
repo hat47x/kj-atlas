@@ -341,3 +341,34 @@ gate:
 - 判定: **Conditional**。
 - 理由: `Approval Record: Pending` および `held` 論点が残存し、Go条件が未充足。
 - 継続条件: 人間承認フィールドの充足（`approved_by` / `approved_at` / `evidence`）と pendingDecisionQueue 解消。
+
+
+## Stream A fixed-serial execution log（2026-04-28 / HIL-RS critical contract governance）
+
+### Phase 1: Read
+- 対象5ファイルを再読し、`Status / Scope / Dependencies / 固定キー`（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `unlockRule`）を同期確認。
+- 読み取り結果: `Status=Open` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3`。
+- 固定I/F正規化: `unlockRule=(a1Status=="Done" && pendingDecisionQueueCount==0)` を canonical として参照し、派生再定義を禁止。
+- 差分判定: fixed keys diff=`0`。`held` 追加なし。
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences）
+- Context: Stream Aは `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を単一契約として維持し、A1ゲート迂回を禁止する。
+- Decision: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `unlockRule=(a1Status=="Done" && pendingDecisionQueueCount==0)` を再確認して固定。
+- Consequences: `Approval Record: Pending` のため、契約確定操作・Open昇格は実施しない。
+
+### Phase 3: Plan
+- 変更計画（ファイル別・変更点別）: 本ファイルへ当日実行ログを追記し、固定I/F canonical参照を明示する。
+- AC/DoDドラフト不足: 追加なし（既存 Draft を継続利用）。
+
+### Phase 4: Execute
+- allowlist内の本ファイルのみ更新（実行ログ追記）。
+- 非実施: 実装コード変更 / safeMode既定緩和 / `human_dual_control_only` 後退 / A1 gate bypass / A3 Open化。
+
+### Phase 5: Verify
+- AC/DoD自己検証: pass（fixed keys diff=0、Pending bypass未検知）。
+- self-correction: `0/3`（再試行なし）。
+
+### Phase 6: Proceed
+- 判定: **Conditional**。
+- 理由: `Approval Record: Pending`（`approved_by` / `approved_at` / `evidence` 未充足）によりGo条件未達。
+- 失敗時の出力対象（継続保持）: 原因=`未承認` / 影響I/F=`A2,A3はDraft/準備のみ` / 人間判断論点=`Approval Record充足`。
