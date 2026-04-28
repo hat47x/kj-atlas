@@ -27,6 +27,51 @@
 - Phase 5 Verify: `completed`（docs-check通過、自己修復 0/3）
 - Phase 6 Proceed: `completed`（最新判定: `Conditional-Go`。未承認新規論点は `held` 維持）
 
+## Stream B latest run（2026-04-28 / CE0 only / single-file contract freeze lane refresh）
+
+- run_id: `stream-b-ce0-2026-04-28-09`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、固定順序 **Read → ADR/CDC → Plan → Execute → Verify → Proceed** を再確認。
+- contract-only / mock-first / docs-only の境界、および CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+- fail-safe（指定外編集 / safeMode既定値後退 / Contract ID再定義 / self-correction 4回目相当）で即停止する条件を再確認。
+
+### Phase 2 ADR/CDC
+- Phase開始時に本Issueを再読し、ADRが必要になる条件を確認。
+- Context: CE0 Contract Freezeの単一ファイルSSOT運用を継続し、他ファイル変更は行わない。
+- Decision: 既存Contract ID・safeMode境界・No-Go canonical IDsを固定し、再定義や拡張を実施しない。
+- Consequences: 契約ドリフトと安全境界の後退を抑止し、逸脱要求発生時は `held` 停止へ遷移できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC起票なし。
+
+### Phase 3 Plan
+- Phase開始時に本Issueを再読し、AC/DoD追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- Plan: 本Issueの実行ログ更新のみを実施し、他CE仕様確定・実装変更・ID再定義は行わない。
+- ゲート条件: 新規ADR論点や不足が発生した場合は Context/Decision/Consequences 明文化と承認完了まで `held`。
+
+### Phase 4 Execute
+- Phase開始時に本Issueを再読し、単一ファイル編集境界を再確認。
+- 実施: contract-only / docs-only で本実行ログを追記。
+- 非実施: 指定外ファイル編集、実装変更、safeMode既定値変更、CE0 Contract ID再定義。
+
+### Phase 5 Verify
+- Phase開始時に本Issueを再読し、検証対象が docs-check と差分健全性であることを再確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- self-correction policy: 最大3回まで。4回目相当が必要な場合は即停止して指示待ち。
+
+### Phase 6 Proceed
+- Phase開始時に本Issueを再読し、Proceed判定条件を再確認。
+- 判定: **Conditional-Go**
+- 条件:
+  - CE0 Contract Freezeは単一ファイルSSOT運用を継続（read-only参照のみ許可）。
+  - 逸脱要求・未定義競合・self-correction 4回目相当が発生した時点で即時 `held` 停止。
+
 ## Stream B latest run（2026-04-28 / CE0 only / CE0 Contract Freeze execution prompt）
 
 - run_id: `stream-b-ce0-2026-04-28-08`
