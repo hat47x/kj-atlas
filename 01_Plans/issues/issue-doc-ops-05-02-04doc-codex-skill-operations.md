@@ -1449,3 +1449,40 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 理由: 固定直列順の2番目として、メタI/F・GoNoGo・検証導線の整合を維持できた。
+
+## 17) Stream G execution record（DOC-OPS-05-02）
+
+### Phase 1: Read
+- 対象Issue（本ファイル）の `Requirement meta I/F`、`Acceptance criteria`、`Validation plan`、`Execution protocol` を再確認。
+- スコープ制約（編集可能ファイルは本Issueのみ）を確認。
+- `VerificationLevel=docs-check` と `Expected verification level=docs-check` の一致を確認。
+
+### Phase 2: ADR/CDC（必要時）
+- 判定: **追加ADR不要**。
+- Context: 本タスクは分類判定の品質固定と実行記録の追補であり、設計正本（00〜02）や実装変更を伴わない。
+- Decision: 本Issueの分類方針 **Move internal** を維持し、Go/No-Go判定に必要な追跡情報を本Issue内で完結させる。
+- Consequences: 後続作業は docs-only の参照更新/移設提案に限定され、コード/CIへの影響は発生しない。
+
+### Phase 3: Plan
+- P1: 5Phase（Read→ADR/CDC→Plan→Execute→Verify→Proceed）の実行記録を本Issueへ追記する。
+- P2: AC/DoDで不足し得る「Go/No-Go判定導線」と「停止条件（自己修復3回上限）」の再確認結果を明文化する。
+- P3: docs-check コマンドで体裁崩れと差分範囲を検証し、Proceed判定を固定する。
+
+### Phase 4: Execute
+- 本セクション（Stream G execution record）を追記し、フェーズ実行ログを明示。
+- 既存の分類結論（Move internal）・検証レベル（docs-check）・ゲート（GoNoGoGate=Required）を変更せず維持。
+- 他DOC-OPS issue・実装コード・04_Documentation本文の変更は行わない。
+
+### Phase 5: Verify
+- 実行コマンド（docs-check）:
+  - `git diff -- 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `git diff --check`
+- 結果:
+  - 差分が本Issueファイルのみに限定されていることを確認。
+  - whitespace/改行不整合などの体裁エラーがないことを確認。
+- 自己修復カウンタ: 0/3（修復ループ未発生）。
+
+### Phase 6: Proceed
+- 判定: **Ready**
+- 理由: スコープ制約順守、docs-check整合、分類方針維持、停止条件明記の4点を満たしたため。
+- 次アクション: 本Issueを起点に、`04_Documentation/codex_skill_operations.md` の参照stub化または移設PRを docs-only で起票する。
