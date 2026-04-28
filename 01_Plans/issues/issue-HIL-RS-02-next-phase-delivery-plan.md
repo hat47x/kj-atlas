@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された4 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
+- Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 6/7 HIL-RS-02 delivery plan
@@ -80,7 +80,7 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止・各Phaseで必須）。
 - 対象差分意図: 開始判定をA1 SSOTに固定。
-- 非対象不干渉: 編集許可された4 Issue以外は編集しない。
+- 非対象不干渉: 編集許可された5 Issue以外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
@@ -390,3 +390,63 @@ delivery_gate_v1:
   - `Approval Record` 必須項目（`approved_by` / `approved_at` / `evidence`）の充足
   - `pendingDecisionQueueCount==0`
   - `A2A3_OPEN_ALLOWED=true` を満たし、validator / unittest / diff-check が全て成功
+
+## Stream B completion pack（2026-04-28 / Contract & Operations Ready）
+
+### Phase 1: Read（Status / AC / Dependency contradiction list）
+- 読取対象: 本Issue + HIL-RS対象5Issueのメタ（Status / Source Issue / AC/DoD / Dependencies / Validation）。
+- 検知した矛盾（横断）:
+  1. `Non-target file policy` の文言が「4 Issue」表記のままになっている箇所があり、実際の対象5Issueと不一致。
+  2. `Source Issue` が `N/A` と `TBD` で混在し、A1/A2/A3境界の遡及導線が曖昧。
+  3. `Phase 4 Execute` は承認完了まで進行禁止としつつ、過去ログには準備作業を実行した記録があり、運用語彙（Execute=確定変更 or 準備作業）の定義が揺れている。
+  4. `Status` は Open/Draft が正しいが、Open→In Progress 移行の着手条件・停止条件がIssueごとに同粒度で固定されていない。
+
+### Phase 2: Plan（AC/DoD補完ドラフト + 承認待ち）
+- AC補完ドラフト（Stream B）:
+  - AC-B1: `Source Issue` は umbrella/parent を一意参照し、`N/A`/`TBD` を解消できる状態にする。
+  - AC-B2: A1/A2/A3境界を「Contract fix / Application prep / Ops sync prep」の3責務で固定する。
+  - AC-B3: Validationに `validator + unittest + diff --check` を必須化し、Open→In Progress 前に成功証跡を残す。
+  - AC-B4: `Status / Priority / Related ADR/Spec / Validation` を横断比較し、齟齬ゼロを確認する。
+- DoD補完ドラフト（Stream B）:
+  - DoD-B1: `Open -> In Progress` 移行条件と `Stop conditions` を本文で明示する。
+  - DoD-B2: `Approval Record: Pending` の場合は `Conditional` 維持または `Needs-decision` で停止し、確定化しない。
+  - DoD-B3: Source Issue運用逸脱（孤立Issue化、逆参照欠落）を検知した場合は即停止してA1 return pathへ差戻す。
+- 承認待ち項目:
+  - `Approval Record`（`approved_by` / `approved_at` / `evidence`）
+  - `HIL-RS-02-GOV-EXCEPTION-01` の扱い（Pending継続 or Approved/Rejected）
+
+### Phase 3: Execute（境界固定 / Source整合 / 検証計画固定）
+- A1/A2/A3境界（固定）:
+  - A1: Contract/Governance固定（freeze keys, pending bypass防止, return path固定）
+  - A2: 実装適用準備（A1完了前は mock I/F preparation only）
+  - A3: 運用・文書同期準備（A1完了前は Draft維持、同期導線のみ固定）
+- Source Issue整合（固定）:
+  - Umbrella: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`（RS-01）
+  - Umbrella: `issue-HIL-RS-02-next-phase-delivery-plan.md`（RS-02）
+  - Child: A1/A2/A3 は上記Umbrellaへ従属（孤立運用禁止）
+- 検証計画（固定コマンド）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 4: Verify（Issueメタ整合チェック + self-correction）
+- 検査観点:
+  - `Status`: RS-01/RS-02 umbrella と A1 は `Open`、A3は `Draft` を維持
+  - `Priority`: 全Issue `P1`
+  - `Related ADR/Spec`: `ADR-0026/0027/0028` 参照の欠落なし
+  - `Validation`: docs-check（validator/unittest/diff）を共通化
+- self-correction方針:
+  - 失敗時は最大3回まで最小修正→再検証。
+  - 4回目相当、未定義依存、責務境界崩れ、Source Issue逸脱で即停止。
+
+### Phase 5: Proceed（Open→In Progress移行準備）
+- 着手条件（Open->In Progress）:
+  1. `A2A3_OPEN_ALLOWED=true`（A1 Done + pendingDecisionQueueCount=0 + freeze keys一致）
+  2. `Approval Record` 必須フィールドが入力済み
+  3. docs-check成功（validator/unittest/diff）
+- 停止条件（No-Go / 即停止）:
+  1. `pending bypass` または未承認事項の確定化
+  2. `safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` の後退要求
+  3. `Source Issue` 運用逸脱（親子関係喪失・return path改変）
+- 現在判定:
+  - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
