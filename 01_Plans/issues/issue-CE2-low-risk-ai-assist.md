@@ -1,14 +1,44 @@
-# Issue Draft: CE2 Low-Risk AI Assist（Stream E専任 / CE契約群 / proposal-only / contract-only planning）
+# Issue Draft: CE2 Low-Risk AI Assist（Stream D専任 / CE契約群 / proposal-only / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream E（CE2専任 / proposal-only契約固定）
+- Owner: Stream D（CE2専任 / proposal-only契約固定）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE2-low-risk-ai-assist.md` のみ
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
+
+## Stream D Execution Contract（2026-04-28 / CE2 proposal-only）
+
+### Phase 1 Read
+- CE2は proposal-only を固定し、`accepted/rejected` の自動確定経路を作らない。
+- CE0/CE1/CE4 は read-only 参照とし、CE2側で語彙再定義しない。
+- 監査境界として `query / bundle / proposal / apply` を必須参照し、欠損時は fail-closed を適用する。
+
+### Phase 2 Plan
+- AC/DoD の不足がある場合は不足ドラフトのみ提示し、人手承認まで `status=held` を維持する。
+- 追加契約が必要な差分は Context / Decision / Consequences を明文化して承認待ちにする。
+
+### Phase 3 Execute
+- CE2の実行は docs上の契約固定に限定し、実装確定（auto-apply/auto-confirm/auto-publish）を禁止する。
+- 提案の `reviewState` は `unreviewed` 固定とし、AIによる `human_reviewed` 昇格を禁止する。
+
+### Phase 4 Verify
+- 追跡性: patch/diff と監査4点の参照が可能であること。
+- 再現性: proposal lifecycle（`proposed|accepted|rejected|held`）の閉集合が維持されていること。
+- 漏えい防止: safeMode既定ON・未レビュー保護の後退がないこと。
+
+### Phase 5 Proceed（実装隊へのI/F引き渡し）
+- [ ] CE2は proposal-only のみで運用され、実装確定経路を持たない。
+- [ ] `accept/reject` は人間責務として明示されている。
+- [ ] 監査4点（`query/bundle/proposal/apply`）の欠損時 fail-closed が明示されている。
+- [ ] API/CLI 監査境界（CE4）と衝突しない独立契約として記述されている。
+
+### Fail-safe（即停止条件）
+- proposal-only 逸脱（自動確定化）を検知した場合は即停止。
+- 監査不能状態（監査4点欠損を成功扱い）を検知した場合は即停止。
 
 ## Stream E Plan Fix Baseline（2026-04-28 / CE2）
 

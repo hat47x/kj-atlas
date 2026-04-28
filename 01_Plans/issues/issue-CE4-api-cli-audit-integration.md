@@ -1,14 +1,46 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream D / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream E（CE4専任）
+- Owner: Stream D（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
+
+## Stream D Execution Contract（2026-04-28 / CE4 API/CLI audit boundary）
+
+### Phase 1 Read
+- CE4は API/CLI監査境界の契約固定に限定し、frontend/backend実装差分を要求しない。
+- CE0/CE1/CE2は read-only 参照とし、契約語彙の再定義を行わない。
+- proposal-only 原則（自動確定経路の禁止）を開始時に再確認する。
+
+### Phase 2 Plan
+- AC/DoD不足時は契約ドラフトを追記し、人手承認まで `status=held` を維持する。
+- API責務境界（入力/出力/失敗時挙動）と監査責務境界（4イベント+比較根拠）を分離して明記する。
+
+### Phase 3 Execute（先行I/F固定）
+- APIシグネチャとCLI出力契約を mock可能な粒度で先行固定する。
+- 監査ログ必須項目を `query / bundle / proposal / apply + queryCanonicalHash` に固定する。
+- API/CLI同値判定は `equivalenceKey AND bundleHash` のみ成功として扱う。
+
+### Phase 4 Verify（監査観点）
+- 追跡性: API/CLI双方から同一監査チェーンを辿れること。
+- 再現性: 同一入力で `equivalenceKey/bundleHash/queryCanonicalHash` を比較可能であること。
+- 漏えい防止: safeMode後退および `dryRun=true` 時の副作用を許容しないこと。
+
+### Phase 5 Proceed（実装隊へ渡す契約パッケージ）
+- [ ] proposal-only 境界（自動確定化なし）が明記されている。
+- [ ] API I/F（必須入力・必須出力・fail-closed条件）が固定されている。
+- [ ] CLI I/F（必須オプション・出力JSON・終了コード）が固定されている。
+- [ ] 監査境界（4イベント + `queryCanonicalHash`）が欠損時 fail-closed である。
+- [ ] 実装隊が mock で着手可能な独立契約として参照できる。
+
+### Fail-safe（即停止条件）
+- proposal-only 逸脱（auto-apply/auto-confirm/auto-publish）を検知した場合は即停止。
+- 監査不能状態（必須監査項目欠損を成功扱い）を検知した場合は即停止。
 
 ## Stream E Plan Fix Baseline（2026-04-28 / CE4）
 
