@@ -633,3 +633,36 @@
 
 ### Phase 5 Proceed
 - 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
+
+## 17) DOC-OPS-05 Public docs専任レーン（2026-04-28, Phase 1..6 serial）
+
+### Phase 1 Read（開始前必須）
+- Read実施: `AGENTS.md` Read Order（00〜02上位文書）と本Issue本文を開始前に再読。
+- 固定条件再確認: docs-only / allowlist内編集 / `VerificationLevel=docs-check`。
+
+### Phase 2 ADR差分確認（差分時のみ C/D/C）
+- 判定: **ADR差分なし**（既存方針の運用固定タスクのため、新規ADR起票・更新なし）。
+- 運用: ADR差分が発生した場合のみ `Context / Decision / Consequences` を明文化し、承認後に実行へ進む。
+
+### Phase 3 Plan（AC/DoD不足のAIドラフト提示）
+- AIドラフトAC補完:
+  - AC-P1: `Move internal` / `Improve external` の二値分類をIssue本文で固定する。
+  - AC-P2: Audience / Goal / Non-goal / Public boundary / Related を追跡可能に保持する。
+  - AC-P3: Go/No-Go判定条件（Required）を本文から再現できる状態を維持する。
+- AIドラフトDoD補完:
+  - DoD-P1: Phase 1..6 の直列記録を残す。
+  - DoD-P2: Verify失敗時は自己修復最大3回、超過時は `Hold` 停止を記録する。
+
+### Phase 4 Execute
+- 分類固定: **Improve external**（release は公開利用者向け改善トラックとして維持）。
+- 非目標の再確認: 実装コード・allowlist外ファイルは非編集。
+
+### Phase 5 Verify（self-correction 最大3回）
+- 実施コマンド（docs-check）:
+  - `rg -n "Move internal|Improve external|Audience|Goal|Non-goal|Public boundary|Go/No-Go|Phase 1|Phase 6" 01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+  - `git diff --check`
+- 結果: 0回で適合（self-correction 使用 0/3）。
+
+### Phase 6 Proceed
+- 最終判定: **Ready**。
+- 停止条件: self-correction 3回超過時は即 `Hold` とし、未達AC/DoDを明記して停止する。
