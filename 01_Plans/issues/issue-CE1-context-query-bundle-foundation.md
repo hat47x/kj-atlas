@@ -17,6 +17,29 @@
 - 実装詳細（handler/UI/DB/worker）は記述せず、契約I/Fに限定する。
 
 ## Lane guard（独立性）
+
+## Stream C latest run（2026-04-28 / CE1 Context foundation freeze）
+
+### Phase 1 Read
+- CE1 v1 I/F（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と CE0 read-only 境界を再確認。
+- 現行schema境界とエラー語彙固定（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を確認。
+
+### Phase 2 Plan
+- 契約先行でデータ型・必須属性を固定：`ContextQueryV1` / `ContextBundleV1` の closed-world。
+- 互換ルールを固定：v1のキー集合とエラー意味論は変更禁止、拡張は v2 のみ許可。
+
+### Phase 3 Execute
+- mock-first（実装未着手）で A2 実行条件を整備：`previewConfirmed=false -> 422 preview_required`、同一canonical queryで hash一致必須。
+- CE2/CE4 handoff キー（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）を維持。
+
+### Phase 4 Verify
+- 下流実装向けシグネチャ一覧を固定：`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
+- fail-safe 判定：破壊的schema変更なし、互換性喪失なし、他ストリーム編集要求なし。
+
+### Phase 5 Proceed
+- 判定: **Contract Freeze Declared（CE1 Context foundation）**。
+- 追加要求は `held` へ移送し、承認まで v1 契約を凍結維持。
+
 - CE1はCE0 SSOT参照レーン。CE0を上位SSOTとしてread-only参照し、CE1側で再定義しない。
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向に固定し、CE1からCE0契約本文への逆流再定義を禁止する。

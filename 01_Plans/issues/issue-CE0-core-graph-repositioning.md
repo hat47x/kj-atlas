@@ -11,6 +11,29 @@
 - Verification: `docs-check`
 
 ## Lane guard
+
+## Stream C latest run（2026-04-28 / CE0 Core Graph repositioning freeze）
+
+### Phase 1 Read
+- `working` / `context_projection` / `consensus` の責務境界と CE0 canonical No-Go 5 IDs を再確認。
+- 現行schema境界（`02_Architecture/schemas.md` CE0/CE1節）との整合を確認。
+
+### Phase 2 Plan
+- Contract-first で遷移規則を固定：許可は `working -> consensus` の `patch+approval` のみ。
+- 必須属性・互換ルールを固定：proposal-only、direct write禁止、safeMode既定後退禁止。
+
+### Phase 3 Execute
+- mock前提で A2 実行可能条件を整備：Query Preview 必須、auto-apply/auto-publish 経路なし。
+- 実装コード変更は行わず、契約文面のみ更新。
+
+### Phase 4 Verify
+- 下流実装に必要なシグネチャ参照を生成：`ContextQueryV1`、`ContextBundleV1`、`ProposalPatchV1`、`AuditEventV1`。
+- 停止条件監視結果：schema破壊変更なし、互換性喪失なし、他ストリーム領域編集なし。
+
+### Phase 5 Proceed
+- 判定: **Contract Freeze Declared（CE0 Core Graph repositioning）**。
+- 以降の変更は `held` 承認フローを経るまで凍結。
+
 - CE0契約IDの再定義禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）。
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
