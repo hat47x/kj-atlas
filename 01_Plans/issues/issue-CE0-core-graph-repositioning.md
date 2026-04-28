@@ -890,3 +890,34 @@
 - Phase開始時Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Read → ADR/CDC → Plan → Execute → Verify → Proceed の固定順序を満たす）。
 - フェイルセーフ該当: なし（語彙・禁止事項・safeMode境界ドリフトなし、未承認事項確定化要求なし、self-correction上限超過なし）。
+
+## Phase Execution Record（2026-04-28 / Stream C / CE0 core graph boundary contract freeze run）
+### Phase 1 Read
+- 固定語彙と既存契約との差分を再読し、`working` / `context_projection` / `consensus` の3語彙、`working -> consensus` + `patch+approval`、canonical 5 IDs の差分が 0 件であることを確認。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照のみとし、再定義・拡張・別名化を行わないことを確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0 Core Graph Repositioning の目的は責務境界契約の固定であり、語彙再定義・拡張を禁止したまま運用する必要がある。
+- Decision: `No ADR delta`。契約は既存固定を維持し、`working` は編集作業領域、`context_projection` は read-only投影、`consensus` は承認済み合意領域として責務境界を固定する。
+- Consequences: 未承認論点は `held` または `pending` の在庫として扱い、推測確定を禁止する。
+
+### Phase 3 Plan
+- AC/DoD不足を点検し、契約境界・禁止事項・検証導線（docs-check）を満たすための追補は不要と判定。
+- Planを single-file / docs-only / contract-only に固定し、実装変更・依存仕様の推測確定・指定外編集要求への追従を非目標として明示。
+
+### Phase 4 Execute
+- 契約文言整備のみを実施し、責務境界契約を以下で固定:
+  - `working`: 編集作業領域（proposal生成は可、合意領域への直接反映は不可）
+  - `context_projection`: read-only投影（直接編集不可）
+  - `consensus`: 承認済み合意領域（`patch+approval` 経由のみ更新可）
+- 語彙再定義・同義語置換・拡張定義は実施しない。
+
+### Phase 5 Verify（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数は 0/3。上限超過・前提崩れ・指定外編集要求は発生なし。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- 判定: `Go=Done`（AC/DoD整合、docs-check pass、contract-only維持）。
+- Conditional: なし。
+- No-Go: 該当なし（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation` の新規発生なし）。
