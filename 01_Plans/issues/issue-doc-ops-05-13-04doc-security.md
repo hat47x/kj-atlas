@@ -351,3 +351,37 @@
   - `security.md` は原則と境界に限定し、運用詳細を再定義しない（guidelines へ委譲）。
   - `operations.md` と `security_operational_guidelines.md` で矛盾を検知した場合、本Issueでは確定せず差分記録のみ行う。
   - safeMode を含む安全境界を弱める要求は **即 Stop** とし、自己修復を継続しない。
+
+
+## Stream G draft planning only（2026-04-28 / DOC-OPS-05-13）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、Read Orderと本Issueの Draft状態（`Status=Draft`）を再確認。
+- 本Issueは **Draft計画化のみ** を適用し、Open化確定は実施しない。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: security は公開原則の基底文書であり、公開境界と語彙固定が必須。
+- Decision: 分類方針 **Improve external** を維持。役割語彙は `Security Officer / System Owner / Platform Operator` 固定、D1〜D4は参照専用。
+- Consequences: 後続のguidelines連携時に語彙不整合と境界後退を回避できる。
+- Approval: **Draft計画承認（Issueメモ内）**。未承認事項は確定しない。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-13-1: Public boundary と関連導線（operations / guidelines / threat model）を追跡可能に維持する。
+  - AC-G-13-2: GoNoGoGate Required の判定条件を本文で再現可能にする。
+- DoD Draft:
+  - DoD-G-13-1: 6フェーズの直列記録を残す。
+  - DoD-G-13-2: self-correction は3回上限、超過時 `Hold`。
+
+### Phase 4 Execute（Draft計画化のみ）
+- 実施: 本Issueメモに計画ログ追記のみ。
+- 非実施: Status変更、本文確定化、実装変更、未承認事項確定。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Needs-decision（Draft維持）**
+- 理由: Draft計画化のみ要求に従い、未承認確定化を禁止する。

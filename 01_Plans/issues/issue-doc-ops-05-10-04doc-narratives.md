@@ -568,3 +568,37 @@
 
 ### Phase 5 Proceed
 - 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
+
+
+## Stream G dedicated lane run（2026-04-28 / DOC-OPS-05 Security-docs専任）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、Read Orderと本Issueの `Requirement meta I/F` を再確認。
+- `SecurityGateImpact=public-exposure` / docs-only / allowlist内編集を確認。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: narratives は外部公開時の説明品質に直結し、公開境界の語彙統一が必要。
+- Decision: 分類 **Improve external** を維持し、役割語彙を `Security Officer / System Owner / Platform Operator` へ固定する。
+- Consequences: 運用語彙ドリフトを抑え、公開境界の監査性を維持する。
+- Approval: **Issueメモ内運用承認（DOC-OPS-05 Stream G）** を記録。未承認事項は確定しない。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-10-1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
+  - AC-G-10-2: GoNoGoGate Required の判定導線を本文で再現可能にする。
+- DoD Draft:
+  - DoD-G-10-1: 6フェーズの直列ログを残す。
+  - DoD-G-10-2: self-correction は最大3回、超過時停止。
+
+### Phase 4 Execute
+- 実施: 本Issueメモへの追記のみ。
+- 非実施: 実装変更、固定値（D1〜D4）更新、未承認確定化。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-10-04doc-narratives.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 理由: 必須6フェーズと安全運用条件を満たしたため。

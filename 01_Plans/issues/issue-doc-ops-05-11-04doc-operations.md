@@ -354,3 +354,37 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 次順序: security lane（`DOC-OPS-05-13` / `DOC-OPS-05-14`）でAC-K1〜K4を継承して導線実体を反映。
+
+
+## Stream G draft planning only（2026-04-28 / DOC-OPS-05-11）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、Read Orderと本Issueの Draft状態（`Status=Draft`）を再確認。
+- 本Issueは **Draft計画化のみ** とし、実体変更やOpen化確定は行わない。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: operations は security lane先頭で、語彙固定と公開境界維持の計画品質が必要。
+- Decision: 分類方針 **Improve external** を維持。役割語彙は `Security Officer / System Owner / Platform Operator` で固定し、D1〜D4は参照専用。
+- Consequences: 後続実行時に語彙ドリフトと境界後退を抑制できる。
+- Approval: **Draft計画承認（Issueメモ内）**。未承認事項は確定化しない。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-11-1: Audience / Goal / Non-goal / Public boundary / Related を追跡可能にする。
+  - AC-G-11-2: GoNoGoGate Required の判定導線を維持する。
+- DoD Draft:
+  - DoD-G-11-1: 6フェーズ運用ログを保持する。
+  - DoD-G-11-2: self-correction 上限3回、超過時 `Hold` 停止。
+
+### Phase 4 Execute（Draft計画化のみ）
+- 実施: 本Issueメモに計画ログのみ追記。
+- 非実施: 本文確定化、Status変更、実装変更、未承認事項の確定。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Needs-decision（Draft維持）**
+- 理由: 本Issueは Draft計画化のみ要求のため、承認前確定化を行わない。

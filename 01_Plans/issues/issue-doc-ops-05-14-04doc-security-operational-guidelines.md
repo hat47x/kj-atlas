@@ -235,3 +235,37 @@
 
 ### Phase 5 Proceed
 - 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
+
+
+## Stream G dedicated lane run（2026-04-28 / DOC-OPS-05 Security-docs専任）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、Read Orderと本Issue本文、security lane固定順（operations → security → guidelines）を再確認。
+- docs-only / allowlist内編集 / `VerificationLevel=docs-check` を再確認。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: guidelines は公開運用判断の補助文書であり、公開境界・役割語彙固定・固定値参照専用が要件。
+- Decision: 分類 **Improve external** を維持し、`Security Officer / System Owner / Platform Operator` の語彙固定、D1〜D4は参照専用を維持。
+- Consequences: 公開境界の後退と語彙ドリフトを防ぎ、未承認事項の確定化を回避できる。
+- Approval: **Issueメモ内運用承認（DOC-OPS-05 Stream G）** を記録。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-14-1: 公開可能情報と内部統制情報の境界を曖昧化しない。
+  - AC-G-14-2: 役割語彙3点セットの一致を維持する。
+- DoD Draft:
+  - DoD-G-14-1: 6フェーズ直列記録。
+  - DoD-G-14-2: self-correction 最大3回、超過時 `Hold`。
+
+### Phase 4 Execute
+- 実施: 本Issueメモ更新のみ（docs-only）。
+- 非実施: 実装変更、上流固定値変更、未承認確定化。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Go**
+- 理由: security/docs専任レーン条件を満たし、停止条件非該当。
