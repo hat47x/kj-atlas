@@ -1467,3 +1467,37 @@
 ### Phase 5 Proceed（Open化可否）
 - Open化可否: **Yes**。
 - 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
+
+## Stream F 後半整備ログ（2026-04-28）
+
+### Phase 1 Read
+- 対象を本Issue（`DOC-OPS-05-07`）に固定し、`DecisionStatus=Fixed` / `GoNoGoGate=Required` / `VerificationLevel=docs-check` を再確認。
+- 参照正本は `ADR-0019`・`01_Plans/documentation_quality.md`・対象文書 `04_Documentation/e2e_verification_log_2026-03-03.md` に限定。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC補完:
+  1. `Move internal` 判定の根拠（Audience / Goal / 公開境界）を追跡可能にする。
+  2. `DecisionStatus=Fixed` 時は `DecisionQueueRef=N/A` を維持する。
+  3. Verifyは `docs-check`（メタ整合 + 差分整合）で再現可能にする。
+- DoD補完:
+  1. docs-only で本Issueのみ更新。
+  2. 用語不一致・責務分離違反・固定値矛盾を検知した場合は Proceedせず停止。
+
+### Phase 3 Execute
+- 本Stream F 後半整備ログを追記し、Open化判定条件を明文化。
+- 分類方針（`Move internal`）と既存Decisionは変更しない。
+
+### Phase 4 Verify（docs-check準拠）
+- 実施コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- フェイルセーフ確認結果: 用語不一致・責務分離違反・固定値矛盾は **未検知**（検知時は `Hold` へ遷移）。
+
+### Phase 5 Proceed（Open化条件）
+- 判定: **Ready**。
+- Open化条件（全て必須）:
+  1. `Move internal` 判定根拠が本文で追跡可能。
+  2. `GoNoGoGate=Required` と `VerificationLevel=docs-check` が一致。
+  3. `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` が維持。
+  4. フェイルセーフ3条件（用語・責務分離・固定値）に違反がない。
+- いずれか未達の場合は **Hold**（Open化禁止）。
