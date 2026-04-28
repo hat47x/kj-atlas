@@ -13,7 +13,7 @@
 ## Execution protocol（DOC-OPS-05-Set1 固定）
 
 - 各Issue開始時は **必ず Phase 1 (Read) を再実行** してから着手する。
-- 実行順序は **Phase 1 Read → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** の直列固定。
+- 実行順序は **Phase 1 Read → Phase 1.5 ADR/CDC → Phase 2 Plan → Phase 3 Execute → Phase 4 Verify → Phase 5 Proceed** の直列固定。
 - Verify 失敗時の自己修復は **最大3回**。4回目相当は **即停止（Hold）** とする。
 
 ## Requirement meta I/F（共通キー）
@@ -27,6 +27,13 @@
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
+
+## Contract profile（DOC-OPS-05-05 固定）
+
+- freeze_mode: `contract-only`
+- downstream_policy: `read-only reference`
+- quality_gate_contract: `QG-definition-clarification-only`
+- scope_guard: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md` 以外は編集禁止
 
 ## 1) 課題 / Problem statement
 
@@ -63,12 +70,14 @@
 - [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
 - [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
 - [ ] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
+- [ ] quality gate 定義は contract-only で明確化し、release 連携は read-only reference として整合確認する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [ ] T1 対象文書の Audience / Goal / Non-goal を確認する。
 - [ ] T2 内部移設か対外改善かを判定し、根拠を本文へ追記する。
 - [ ] T3 次の実行単位（移設先作成 or 公開改善PR）を明記する。
+- [ ] T4 `04_Documentation/release.md` は read-only 参照のみで整合確認し、編集しない。
 
 ## 7) 検証計画 / Validation plan
 
@@ -77,6 +86,7 @@
   - `git diff --check`
 - 期待結果:
   - 分類根拠と次アクションが差分として確認できる。
+  - quality gate 定義の明確化が contract-only で記録され、release 参照が read-only であることが確認できる。
 - 未実施時の理由・代替検証:
   - 本Issueは計画メモ作成のみのため、自動テストは不要。差分確認を代替検証とする。
 
@@ -98,26 +108,31 @@
 
 ---
 
-## 11) 5-phase execution record（2026-04-27）
+## 11) 6-phase execution record（2026-04-28）
 
 ### Phase 1: Read
 - 本Issueを再読し、`Scope`・`VerificationLevel=docs-check`・`DecisionStatus=Fixed` を確認。
 - docs-only 境界を確認し、実装コード・他Issueファイル非変更を固定。
 
-### Phase 2: Plan（AC/DoD不足のAIドラフト提案）
-- ACドラフト提案:
+### Phase 1.5: ADR/CDC
+- `ADR-0024` の docs-check 境界（必須/CI拡張）を read-only 参照で再確認。
+- `04_Documentation/release.md` の Mandatory（QG-1〜QG-6）連携記述を read-only 参照で確認。
+- CDC（contract drift check）として、本Issueの更新を `contract-only` に固定し、対象外編集を禁止。
+
+### Phase 2: Plan（AC/DoD固定）
+- AC固定:
   - AC-P1: 分類根拠として Audience / Goal / Public boundary を本文で必須追跡。
   - AC-P2: GoNoGoGate=Required の Go / No-Go 判定条件を本文で再現可能化。
   - AC-P3: `Expected verification level` と `Validation plan` のコマンド一致を必須化。
-- DoDドラフト提案:
-  - DoD-P1: Read → Plan → Execute → Verify → Proceed を単一セクションで記録。
+  - AC-P4: quality gate 明確化は contract-only、release は read-only reference を必須化。
+- DoD固定:
+  - DoD-P1: Read → ADR/CDC → Plan → Execute → Verify → Proceed を単一セクションで記録。
   - DoD-P2: Proceed判定を `Ready / Hold / Needs-decision` の三値で明記。
   - DoD-P3: Verify不一致は最大3回自己修復、4回目相当は停止。
-- 合意記録: **本Issue内で上記提案を採用し、Phase 3で反映する。**
 
 ### Phase 3: Execute
-- AC/DoDドラフト提案を本Issue本文へ反映（本節を含む）。
-- 分類方針は `Move internal` を維持（再判定なし）。
+- 実行プロンプト（DOC-OPS-05-05）に合わせ、Execution protocol と Contract profile を更新。
+- 既存分類方針 `Move internal` を維持しつつ、release 連携を read-only 参照として明記。
 
 ### Phase 4: Verify
 - 実行コマンド:
@@ -127,7 +142,7 @@
 
 ### Phase 5: Proceed
 - 判定: **Ready**
-- 判定理由: `DecisionStatus=Fixed`、`VerificationLevel=docs-check`、分類方針 `Move internal`、3回上限ポリシー記載を満たす。
+- 判定理由: `DecisionStatus=Fixed`、`VerificationLevel=docs-check`、分類方針 `Move internal`、`contract-only/read-only reference` 整合、3回上限ポリシー記載を満たす。
 
 ## Authoring Checklist（人間/生成AI 共通）
 - [ ] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
@@ -135,28 +150,3 @@
 - [ ] 受入条件に「安全」「互換」「検証」が含まれる。
 - [ ] `Validation plan` に具体コマンドがある。
 - [ ] 非目標が明記されスコープ逸脱を防いでいる。
-
-
-## DOC-OPS-05 専任 run log（2026-04-27 / order 1: 05-05）
-
-### Phase Read
-- 対象Issueを再読し、`DecisionStatus=Fixed`・`VerificationLevel=docs-check`・docs-only境界を同期した。
-
-### Phase Plan
-- AC/DoD不足ドラフト:
-  - AC追加案: Audience / Goal / 公開境界 / 次アクションの4点を常時追跡可能にする。
-  - DoD追加案: Proceed判定を `Ready / Hold / Needs-decision` の三値で必ず記録する。
-- 合意: 本Issue内で上記ドラフトを採用し、既存方針 `Move internal` を維持する。
-
-### Phase Execute
-- docs-onlyの範囲で本run logを追記し、分類方針を再固定した。
-
-### Phase Verify
-- 実行予定/実行コマンド:
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
-  - `git diff --check`
-- 自己修復回数: 0/3（4回目相当は停止条件により不許可）。
-
-### Phase Proceed
-- 判定: **Ready**。
-- 理由: `DecisionStatus=Fixed` かつ docs-check導線が再現可能で、停止条件に抵触しない。
