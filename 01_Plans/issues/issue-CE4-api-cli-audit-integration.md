@@ -844,3 +844,52 @@
 
 ### Proceed Decision
 - Decision: **Go**（CE4契約固定を継続し、後続は実装非依存の契約準拠確認へ引き継ぐ）。
+
+## Stream E-2 Execution Record（2026-04-28 / CE4 dependency-cut sync, latest authoritative）
+
+> 本節を最新正本とし、CE2成果は read-only 前提値として参照する。CE2完了待ちは行わず、mock I/F で独立進行する。状態遷移確定を伴う変更は行わない。
+
+### Phase 1 Read（契約差分確認）
+- CE2成果は read-only 参照に限定し、CE2完了待ちを前提にしないことを確認。
+- API/CLI同値判定は `equivalenceKey + bundleHash`（AND）固定のみを成功条件として確認。
+- 監査4点 `query / bundle / proposal / apply` 欠損は fail-closed 固定を確認。
+- `dryRun=true -> sideEffect=none` 固定を確認。
+- No-Go確認: 監査欠損成功扱い要求 / safeMode緩和要求 / 語彙再定義要求 / 自己修復4回目相当は停止対象。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: 依存切断下でも API/CLI 同値性・監査完全性・dryRun安全性を崩さずに契約固定する必要がある。
+- Decision:
+  - `equivalenceKey + bundleHash`（AND）を唯一の成功条件に固定。
+  - 監査4点欠損は fail-closed 固定。
+  - `dryRun=true -> sideEffect=none` 固定。
+  - `sourceBundleHash=mock:<hash>` は本番hash同等の判定/監査/fail-closed を適用。
+- Consequences: contract-only 記述のみ更新し、状態遷移確定・実装確定は行わない（`held` 維持）。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完:
+  - API/CLI成功判定は `equivalenceKey` 単独一致または `bundleHash` 単独一致を禁止（AND必須）。
+  - 監査4点のいずれか欠損時は常に fail-closed。
+  - `dryRun=true` の場合は常に `sideEffect=none`。
+  - `mock:<hash>` でも本番hashと同一の fail-closed 導線を適用。
+- DoD補完:
+  - 状態遷移確定を伴う記述（`accepted/rejected` への確定昇格）を追加しない。
+  - CE2参照は read-only のみで、CE2待機条件を導入しない。
+
+### Phase 4 Execute（契約文言のみ）
+- 実施: 本Issue内の契約文言に Stream E-2 の依存切断ポリシーを追記。
+- 非実施: 実装変更 / safeMode緩和 / 語彙再定義 / 状態遷移確定の追記。
+
+### Phase 5 Verify（docs-check）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+- 判定条件: fail-closed逸脱なし、AND固定逸脱なし、`dryRun=true -> sideEffect=none` 逸脱なし。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- Decision: **Conditional-Go（contract-only）**。
+- 理由: 契約文言は固定完了。CE2成果は read-only 前提値として参照しつつ、完了待ちを前提にしない独立進行を維持。
+- 継続条件:
+  - 監査欠損成功扱い要求が発生した場合は **No-Go** で即停止。
+  - safeMode緩和要求が発生した場合は **No-Go** で即停止。
+  - 語彙再定義要求が発生した場合は **No-Go** で即停止。
+  - 自己修復4回目相当の着手が必要になった場合は **No-Go** で即停止。
