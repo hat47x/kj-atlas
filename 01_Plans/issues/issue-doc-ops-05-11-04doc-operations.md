@@ -316,3 +316,41 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 理由: 現時点で operations/security 間の未定義競合は検出されず、停止条件に非該当。
+
+## Stream K 実行ログ（DOC-OPS-05-11 / 2026-04-28）
+
+### Phase Read（開始時Read同期）
+- Read同期: 本Issueと `Related ADR/Spec` を再読し、対象を `operations/security/security_operational_guidelines` の導線整合計画に限定。
+- スコープ固定: **編集は本Issueのみ**。他Issue・実装コード・設計正本は非編集。
+- 前提確認: `GoNoGoGate=Required` / `DecisionStatus=Fixed` / `VerificationLevel=docs-check` を維持。
+
+### Phase ADR/CDC（必要時判定）
+- Context: 3文書間の導線と用語・責務境界は近接しており、ドリフト時に公開境界リスクが増大する。
+- Decision: 新規ADRは起票せず、本Issueで **AC固定と運用手順固定** を実施。
+- Consequences: 仕様正本の改変は行わず、後続実行時に参照可能な判定軸を本Issueへ集約。
+
+### Phase Plan（AC/DoD合意前提）
+- AC（本Runで固定）:
+  - AC-K1: `operations.md` は実行runbook責務、`security.md` は統制方針、`security_operational_guidelines.md` は運用判断補助として導線責務を分離して記録する。
+  - AC-K2: 役割語彙 `Security Officer / System Owner / Platform Operator` の一致確認を必須化し、不一致時は `Hold` を強制する。
+  - AC-K3: 固定値（D1〜D4相当）は再定義せず、正本参照導線のみを記録する。
+  - AC-K4: 次アクション（security laneでの実文書反映）を明示し、未承認事項は確定化しない。
+- DoD（Execute許可条件）:
+  - DoD-K1: AC-K1〜K4 が本Issue内で追跡可能。
+  - DoD-K2: Verify結果（docs-check / diff-check / 停止条件確認）を記録。
+  - DoD-K3: Proceedを `Ready/Hold/Needs-decision` の3値で明記。
+- Execute許可判定: **AC/DoD合意済みのため実行可**。
+
+### Phase Execute（docs-only）
+- 実施: 本Stream K実行ログを追記し、導線整合計画と用語・責務境界是正のACを固定。
+- 非実施: `04_Documentation/*` 本文改稿、他Issue更新、ADR新規作成。
+
+### Phase Verify（max 3 retries）
+- Verify-1: `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- Verify-2: `git diff --check`
+- Verify-3: 本節で `Read → ADR/CDC → Plan → Execute → Verify → Proceed` を満たすことを目視確認。
+- self-repair: 0/3（4回目相当は停止）。
+
+### Phase Proceed
+- 判定: **Ready**。
+- 次順序: security lane（`DOC-OPS-05-13` / `DOC-OPS-05-14`）でAC-K1〜K4を継承して導線実体を反映。
