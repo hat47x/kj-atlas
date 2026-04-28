@@ -123,6 +123,22 @@ Contract test観点（CE1 v1）:
 
 後方互換観点（CE1 v1）:
 
+
+#### CE0/CE1 downstream signature catalog（Phase 4 fixed output）
+
+CE0/CE1 の下流実装が参照すべき固定シグネチャ一覧を次で凍結する（mock-first / 実装非依存）。
+
+- `ContextQueryV1`（Contract ID: `CE1-CTXQ-IF`）
+- `ContextBundleV1`（Contract ID: `CE1-CTXB-IF`）
+- `ProposalPatchV1`（Contract IDs: `CE2-PROPOSAL-IF`, `CE2-LIFECYCLE-IF`）
+- `AuditEventV1`（Contract ID: `CE4-API-CLI-AUDIT`）
+
+互換ルール（v1固定）:
+- v1 の必須キー集合とエラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）は変更しない。
+- 拡張は v2 追加でのみ許可し、v1 の `sameQuery && sameBundle` 判定は維持する。
+- Contract Freeze 中は、上記シグネチャに対する破壊的変更・改名・削除を禁止する。
+
+
 - v1 はエラーコード意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を固定し、変更しない。
 - 拡張時は v2 を追加し、v1 の必須キーと判定式 `sameQuery && sameBundle` を維持する。
 

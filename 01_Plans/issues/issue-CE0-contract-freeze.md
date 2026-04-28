@@ -11,6 +11,29 @@
 - Verification: `docs-check`
 
 ## Stream B execution ledger（CE0専任 / contract-only）
+
+## Stream C execution record（2026-04-28 / CE0 contract freeze confirmation）
+
+### Phase 1 Read
+- 現行I/F境界を再確認し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` が read-only 固定であることを確認。
+- schema破壊的変更・互換喪失・他ストリーム編集要求を停止条件として再確認。
+
+### Phase 2 Plan
+- 契約先行で必須属性を再宣言：`ContextQuery.goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode`、`ContextBundle.bundleHash`。
+- 互換ルールを固定：`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論を v1 で不変化。
+
+### Phase 3 Execute
+- mock-first 前提で A2 実行可能条件を記録（実装未着手）：Query Preview 必須、`Working -> Consensus` は `patch+approval` のみ。
+- 契約IDの追加・改名・削除は未実施（freeze 維持）。
+
+### Phase 4 Verify
+- 下流実装用シグネチャ一覧を確認：`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
+- fail-safe 判定：`contract_id_mutation=0` / `safeMode_regression=0` / `scope_deviation=0`。
+
+### Phase 5 Proceed
+- 判定: **Contract Freeze Recorded**。
+- CE0契約は read-only 参照モードを維持し、未承認拡張要求は `held` 扱いとする。
+
 - lane: `Stream B`
 - ssot_scope: `CE0 only`（CE1/CE2/CE4は参照専用）
 - edit_allowlist: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ
