@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
+- Non-target file policy: 本ストリームで編集許可された4 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 5/7 HIL-RS-02 A1
@@ -80,7 +80,7 @@
 ## Phase 3: Plan
 - 宣言: `Plan -> Execute -> Verify -> Proceed`（直列運用・逆走禁止・各Phaseで必須）。
 - 対象差分意図: Go/NoGo判定式と禁止遷移を固定。
-- 非対象不干渉: 編集許可された5 Issue以外は編集しない。
+- 非対象不干渉: 編集許可された4 Issue以外は編集しない。
 - Scope: HIL-RS 契約/運用ハードニング（Docsのみ）
 - Non-goals: 実装コード変更 / README・dashboard更新 / 対象外Issue編集
 - Interface placeholder policy: A2/A3依存は mock前提の最小I/F記述に限定し、実装確定を行わない。
@@ -214,7 +214,7 @@ governance_gate_v1:
 ### Phase 3: Plan
 - 強制順序 `Plan -> Execute -> Verify -> Proceed` を採用。
 - AC/DoD不足は既存 Draft（AC-D1〜D3 / DoD-D1〜D3）を継続し、新規不足は未検知。
-- 非対象編集禁止を再確認（allowlist 5ファイル限定）。
+- 非対象編集禁止を再確認（allowlist 4ファイル限定）。
 
 ### Phase 4: Execute
 - 実行内容: 本Issueへの運用ログ追記とallowlist整合化のみ。
@@ -378,3 +378,23 @@ governance_gate_v1:
 - 判定: **Conditional**。
 - 理由: `Approval Record: Pending`（`approved_by` / `approved_at` / `evidence` 未充足）によりGo条件未達。
 - 失敗時の出力対象（継続保持）: 原因=`未承認` / 影響I/F=`A2,A3はDraft/準備のみ` / 人間判断論点=`Approval Record充足`。
+
+## Stream A Proceed Handover Package（Fixed Contract / Prohibitions / Stop-Resume）
+
+- 固定契約ID（Contract Freeze SSOT）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- 禁止事項（変更・昇格禁止）
+  1. `NoGo return path` を `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` 以外へ変更
+  2. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` / `contractLinkLocked=true` の後退
+  3. `Pending` を経由しない承認確定（pending bypass）
+  4. `A2A3_OPEN_ALLOWED=false` のまま A2/A3 を `Draft/Open` 遷移
+- 停止条件（Fail-safe / No-Go）
+  - `self_correction_attempt >= 4`
+  - 未承認事項の確定化、未定義競合、指定外ファイル編集要求
+  - 固定キー差分検知（`Status / Scope / Dependencies / 固定キー` のいずれか不一致）
+- 再開条件（Resume Gate）
+  - `Approval Record` 必須項目（`approved_by` / `approved_at` / `evidence`）の充足
+  - `pendingDecisionQueueCount==0`
+  - `A2A3_OPEN_ALLOWED=true` を満たし、validator / unittest / diff-check が全て成功
