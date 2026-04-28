@@ -153,9 +153,16 @@ export type ContextBundleV1 = {
   - `ContextBundleV1` は `queryCanonicalHash` / `bundleHash` を必須返却する。
   - `previewConfirmed=false` は生成処理に進まず `422 preview_required` を返す。
   - Query Previewは必須ゲートとし、bypass経路を許容しない（`preview_bypass`禁止）。
-- hash固定（決定論）
-  - 同一 canonical query では `queryCanonicalHash` が常に一致。
-  - 同一 canonical query では `bundleHash` が常に一致。
+- hash固定（決定論 / CE1-HASH-DET-IF）
+  - `queryCanonicalHash` は canonical query JSON の `sha256(lowercase-hex)` で固定する。
+  - `bundleHash` は canonical bundle JSON の `sha256(lowercase-hex)` で固定する。
+  - canonical化で除外する非決定論キー: `generatedAt` / `traceId` / `providerLatencyMs`。
+  - 配列順序の固定: `selected=id asc`, `relations=(type,from,to) asc`, `evidence=cardId asc`, `contradictions=(weight desc,id asc)`。
+  - 同一 canonical query では `queryCanonicalHash` / `bundleHash` が常に一致し、`sameQuery && !sameBundle` は fail-closed（`409 nondeterministic_bundle`）。
+- safeMode制約（CE0-SAFEMODE-IF read-only参照）
+  - CE1は safeMode既定を再定義しない。
+  - safeMode既定ON時は `allowUnreviewedText=false` を後退させない。
+  - 未レビュー本文をAI入力へ混入させる記述を禁止する（`safemode_default_relaxation` 禁止）。
 - CE2連携境界
   - `sourceBundleHash === bundleHash` 比較キーのみを提供。
 - CE4連携境界
@@ -174,15 +181,18 @@ export type ContextBundleV1 = {
 ### Verify commands
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "CE1-HASH-DET-IF|queryCanonicalHash|bundleHash|sha256|nondeterministic_bundle" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
+- `rg -n "previewConfirmed=false|422 preview_required|unknown_contract_key|closed-world" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
+- `rg -n "allowUnreviewedText=false|safemode_default_relaxation|preview_bypass" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
 - `git diff --check`
 
 ### Acceptance Criteria / DoD
-- [ ] 同一 canonical query 3回で `queryCanonicalHash` が一致
-- [ ] 同一 canonical query 3回で `bundleHash` が一致
-- [ ] `previewConfirmed=false` は常に `422 preview_required`
-- [ ] 未定義キー入力は常に `400 unknown_contract_key`
-- [ ] `sourceBundleHash === bundleHash` 比較語彙がCE2/CE4と一致
-- [ ] SafeMode regression = 0
+- [x] `CE1-CTXQ-IF` / `CE1-CTXB-IF` のv1キー集合が本Issue内で凍結されている
+- [x] `CE1-HASH-DET-IF` の決定論条件（canonical化・除外キー・配列順）が本Issue内で凍結されている
+- [x] `previewConfirmed=false -> 422 preview_required` が本Issue内で凍結されている
+- [x] 未定義キー拒否（`400 unknown_contract_key`）が本Issue内で凍結されている
+- [x] `sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash` の引き渡しキーが明文化されている
+- [x] safeMode後退禁止（`allowUnreviewedText=false` 維持 / `safemode_default_relaxation` 禁止）が明文化されている
 
 ### Verify failure handling
 - Verify失敗時は自己修復を最大3回まで許可する。
