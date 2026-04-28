@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-28 (JST, Stream I integrated sync rerun-55)
+最終更新: 2026-04-28 (JST, Stream A integrated sync rerun-56)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -33,6 +33,8 @@
 - Stream H 共有統合同期（2026-04-27 rerun-54）で Phase 1 Read（全レーン完了報告取り込み）→ Phase 2 集計反映（件数/状態/Decision Queue/依存順の同一値固定）→ Phase 3 Verify（validator/unittest/rg）→ Phase 4 公開値固定→ Phase 5 Proceed（再開判定1行更新）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` を維持した。
 
 - Stream I 共有統合同期（2026-04-28 rerun-55）で Phase 1 Read（共有3ファイル再読）→ Phase 2 Plan（件数/状態/Decision Queue/再開判定の同期項目固定）→ Phase 3 Execute（単一変更セット）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行確定）を実施し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` の一致を維持した。
+
+- Stream A 共有統合同期（2026-04-28 rerun-56）で Phase 1 Read（共有3ファイル再読と件数・Decision Queue・再開判定1行の差分監査）→ Phase 2 Plan（AC/DoD充足確認と同期対象3ファイル固定）→ Phase 3 Execute（shared resource単一変更セット更新）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行確定）を実施し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` と次フェーズ引き継ぎ条件（未解決Queue=2件）の一致を再固定した。
 
 ### 未完Issue全件（22件）とレーン割当
 

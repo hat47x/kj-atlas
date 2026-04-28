@@ -244,6 +244,7 @@ issue補助メモには、最低でも次の項目を含める。
 - DOC-OPS-04次アクション: 後続改訂は ADR-0023/0024/0025 の境界を維持し、必要時のみ追加ADRを起票する。
 - Stream F Phase 1-5 同期（rerun-26）: Read同期（shared resource 3ファイル）→Plan（件数47 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）→Execute（単一変更セット）→Verify（validator/unittest/rg）→Proceed（次回再開条件1行固定）を完了し、Active issue memos 6件・Source Issue運用（Open=N/A / Draft=TBD）・停止条件違反0件を維持。
 - Stream I Phase 1-5 同期（2026-04-14 rerun-31）: Read同期（A〜H完了報告と3共有ファイル再読）→Plan（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / Queue未解決2件）→Execute（shared resource 3ファイル単一変更セット）→Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→Proceed（再開判定チェックリスト1行固定）を完了。
+- Stream A Phase 1-5 同期（2026-04-28 rerun-56）: Read同期（共有3ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、再開判定チェックリスト1行を差分監査）→Plan（AC/DoD不足なしを確認し同期対象を3ファイルへ限定）→Execute（shared resource単一変更セット更新）→Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→Proceed（再開判定チェックリスト1行確定と次フェーズ引き継ぎ: 変更点/未解決Queue2件/停止条件違反0件）を完了。
 
 ## Active issue memos
 
