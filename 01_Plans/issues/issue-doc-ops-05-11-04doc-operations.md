@@ -413,3 +413,37 @@
 ### Phase 5 Proceed（Open化可否）
 - Open化可否: **Yes**。
 - 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
+
+## Stream F 後半整備ログ（2026-04-28）
+
+### Phase 1 Read
+- 対象を本Issue（`DOC-OPS-05-11`）のみに固定し、`Improve external` / `DecisionStatus=Fixed` / `GoNoGoGate=Required` を再確認。
+- `operations.md` は公開runbook責務、security系文書は境界・運用詳細という責務分離を再確認。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC補完:
+  1. Audience / Goal / 公開境界 / 次アクションを本Issue本文から追跡できる。
+  2. 役割語彙（Security Officer / System Owner / Platform Operator）を既存定義から逸脱させない。
+  3. 固定値（D1〜D4相当）は再定義せず参照導線のみ扱う。
+- DoD補完:
+  1. docs-only で本Issueのみ更新。
+  2. フェイルセーフ3条件（用語不一致・責務分離違反・固定値矛盾）検知時は停止。
+
+### Phase 3 Execute
+- 本Stream F 後半整備ログを追記し、Open化時の判定条件を統一。
+- 分類方針（`Improve external`）・既存のserial lane方針は維持。
+
+### Phase 4 Verify（docs-check準拠）
+- 実施コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- フェイルセーフ確認結果: 用語不一致・責務分離違反・固定値矛盾は **未検知**（検知時は `Hold`）。
+
+### Phase 5 Proceed（Open化条件）
+- 判定: **Ready**。
+- Open化条件（全て必須）:
+  1. `Improve external` 判定と公開runbook責務の境界が本文で追跡可能。
+  2. `GoNoGoGate=Required` と `VerificationLevel=docs-check` が一致。
+  3. `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` が維持。
+  4. フェイルセーフ3条件（用語・責務分離・固定値）違反なし。
+- いずれか未達時は **Needs-decision** または **Hold** とし、Open化しない。
