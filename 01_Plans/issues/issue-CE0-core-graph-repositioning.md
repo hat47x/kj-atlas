@@ -921,3 +921,34 @@
 - 判定: `Go=Done`（AC/DoD整合、docs-check pass、contract-only維持）。
 - Conditional: なし。
 - No-Go: 該当なし（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation` の新規発生なし）。
+
+## Phase Execution Record（2026-04-28 / Stream C / CE0責務境界契約専任 run-2）
+### Phase 1 Read（語彙差分検知）
+- `role` 固定語彙（`working` / `context_projection` / `consensus`）を再読し、差分 0 件を確認。
+- `transition` 固定（`working -> consensus` は `patch+approval` のみ）を再読し、差分 0 件を確認。
+- `no-go` は canonical 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）固定で差分 0 件。
+
+### Phase 2 ADR/CDC（必要時のみC/D/C+承認）
+- 方針差分の有無を判定し、`No ADR delta` を確認。
+- Context/Decision/Consequences の新規承認要求は発生していないため、承認フロー起動は不要。
+- 未承認論点の推測確定を禁止し、必要時は `held` 維持方針を再確認。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC/DoD の不足有無を点検し、不足は未検出。
+- 本実行の計画を single-file / docs-only / contract-only に固定。
+- 停止条件（safeMode後退 / no-go語彙変更 / allowlist外編集）発火時は即停止する計画を再確認。
+
+### Phase 4 Execute（契約文言のみ）
+- 契約文言の整合確認と実行記録追記のみを実施。
+- 実装変更（handler/UI/DB/worker/API/schema migration）は未実施。
+- allowlist対象外ファイルの編集は未実施。
+
+### Phase 5 Verify（最大3回自己修復）
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
+- verify attempt_1: `git diff --check` → pass。
+- 自己修復は 0/3（不整合未検出）。
+
+### Phase 6 Proceed（Go / Conditional / No-Go）
+- 判定: `Go=Done`。
+- Conditional: なし（未承認事項の追加なし）。
+- No-Go: 該当なし（safeMode後退なし / no-go語彙変更なし / allowlist外編集なし）。
