@@ -1394,3 +1394,51 @@
 ### Phase Proceed
 - 判定: **Ready**。
 - 理由: 直列4番目の実行条件を満たし、Pending確定化要求なし。
+
+## 20) Stream J execution record（DOC-OPS-05-07 / 2026-04-28）
+
+### Read
+- 対象を本Issue単体に固定（編集可能ファイル: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` のみ）。
+- 目的を **「E2E検証ログの項目欠落ゼロ化に向けた計画記述固定」** と **「判定ログの再現性/追跡性の明記」** に固定。
+- 既存方針 `Move internal` / `VerificationLevel=docs-check` / `DecisionStatus=Fixed` を変更しないことを確認。
+
+### Plan
+- 欠落ゼロ化の計画I/Fを以下で固定:
+  1. **入力**: Scope, Requirement meta I/F, GoNoGoGate, SecurityGateImpact, Validation plan
+  2. **処理**: Read → Plan → Execute → Verify → Proceed の順で記録
+  3. **出力**: 判定（Ready/Hold/Needs-decision）と次アクション
+- 判定ログの再現性ルール:
+  - 判定に使ったコマンド、対象ファイル、日時（UTC）を同一セクションに残す。
+  - `DecisionStatus=Fixed` の場合は `DecisionQueueRef=N/A` を維持し、保留理由を新設しない。
+- 判定ログの追跡性ルール:
+  - 変更理由は「どの受入条件/どのゲートを満たすためか」を1対1で記述する。
+  - 後続作業は docs-only の次実行単位（移設/参照stub化）へ限定する。
+
+### Execute
+- 本セクションを追記し、Stream J の計画記述を固定。
+- 他Issue・他ディレクトリ・実装コードへの変更は未実施（非干渉）。
+
+### Verify
+- 実行日時（UTC）: **2026-04-28**
+- 実行コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+- 合格条件:
+  - Requirement meta I/F の必須キー欠落がない。
+  - docs-check と実行コマンドの整合が取れている。
+  - 体裁崩れ（whitespace/error marker）がない。
+- 自己修復上限:
+  - 同一Issue内で最大3回。
+  - 4回目相当は停止して `Hold` に遷移。
+
+### Proceed
+- 現在判定: **Ready**
+- Proceed根拠:
+  - 目的（欠落ゼロ化/再現性/追跡性）が本文内で明文化されている。
+  - Verify手順と停止条件（自己修復3回上限）が明示されている。
+  - スコープ外変更要求は未検出。
+
+### Stop conditions（本Stream固定）
+- 推測による確定を行わない（根拠不在のDecision固定を禁止）。
+- 他Issueへの干渉が必要になった時点で停止。
+- 自己修復が3回を超えた場合は停止し、`Hold` を記録する。
