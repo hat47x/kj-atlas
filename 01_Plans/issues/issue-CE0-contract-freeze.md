@@ -27,6 +27,47 @@
 - Phase 5 Verify: `completed`（docs-check通過、自己修復 0/3）
 - Phase 6 Proceed: `completed`（最新判定: `Conditional-Go`。未承認新規論点は `held` 維持）
 
+## Stream B latest run（2026-04-28 / CE0 only / CE0 Contract Freeze execution prompt）
+
+- run_id: `stream-b-ce0-2026-04-28-08`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始前に本Issueを再読し、実行フェーズが **Read → ADR/CDC → Plan → Execute → Verify → Proceed** の厳密直列であることを再確認。
+- contract-only / mock-first / docs-only の固定ルール、および CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を再確認。
+- fail-safe（指定外編集 / safeMode境界後退 / Contract ID再定義 / self-correction 4回目相当）で即停止する条件を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract FreezeのSSOTを本Issueに限定し、CE1/CE2/CE4は read-only 参照のまま維持する。
+- Decision: CE0契約IDとsafeMode境界を不変とし、他CEの実装仕様確定に繋がる記述を追加しない。
+- Consequences: 契約ドリフトと境界後退を抑止し、未定義競合または逸脱要求発生時に即時 `held` 停止へ移行できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC起票なし。
+
+### Phase 3 Plan
+- AC/DoD追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- AC/DoD不足判定: 新規不足なし（ドラフト提案・追加合意は不要）。
+- ゲート条件: 不足発生時はドラフト提示と合意完了まで `held` とし、Phase 4へ進行しない。
+
+### Phase 4 Execute
+- 実施: 本Issue内の実行ログ更新のみ（contract-only / docs-only）。
+- 非実施: 実装変更、指定外ファイル編集、CE0 Contract ID追加/改名/削除、safeMode既定値変更、他CE実装仕様の確定。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: Verify成功。自己修復は未使用のため上限（3回）未到達。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件:
+  - CE1/CE2/CE4への引き渡しは Contract ID / No-Go canonical IDs の read-only 参照のみ。
+  - 4回目相当の自己修復要求、未定義競合、指定外編集要求が発生した時点で即時 `held` 停止。
+
 ## Stream B latest run（2026-04-27 / CE0 only / phase-serial compliance refresh）
 
 - run_id: `stream-b-ce0-2026-04-27-07`
