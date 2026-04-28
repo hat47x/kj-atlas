@@ -1442,3 +1442,28 @@
 - 推測による確定を行わない（根拠不在のDecision固定を禁止）。
 - 他Issueへの干渉が必要になった時点で停止。
 - 自己修復が3回を超えた場合は停止し、`Hold` を記録する。
+
+## Stream H Open化準備 run（2026-04-28）
+
+### Phase 1 Read（issue + 対応docペア確認）
+- 対応Issueと対象文書のペアを再読し、公開境界・分類・停止条件の整合を確認。
+
+### Phase 2 Plan（Draft→Openゲート明文化）
+- Open化ゲートを次の4点で固定。
+  1. 必須メタ（Audience/Goal/Non-goal/Public boundary/Outcome または Requirement meta I/F）が追跡可能。
+  2. AC/DoD/Validationが docs-check 前提で再現可能。
+  3. 未承認事項の確定化を行わない（DecisionStatus=Fixed の範囲外は承認待ち）。
+  4. self-repair は最大3回、4回目相当で停止。
+
+### Phase 3 Execute（不足メタ/AC/Validation/Stop条件補完）
+- 本セクションを追記し、Open化判定に必要な最小メタ（ゲート、検証、停止条件、Proceed判定）を明示。
+
+### Phase 4 Verify（ゲート到達判定 + docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py`
+- `rg -n "Stream H Open化準備 run（2026-04-28）|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed|Open化可否" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check`
+- self-repair: 0/3（4回目相当は停止）。
+
+### Phase 5 Proceed（Open化可否）
+- Open化可否: **Yes**。
+- 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
