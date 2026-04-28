@@ -159,3 +159,53 @@
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+
+## Stream F contract fixation addendum（planning baseline + P2C A1）
+
+### Scope lock（Stream F）
+- Stream F は `planning baseline + P2C A1` の契約固定のみを担当する。
+- 編集許可は allowlist 2ファイルのみ。allowlist外への変更要求は `No-Go` として停止する。
+- フェイルセーフ: **契約未固定のまま A2/A3 を確定扱いする要求が来た場合は即停止**。
+
+### Tie-break contract（deterministic）
+- Contract ID: `CTR-FB-P0-P2C-A1-TIEBREAK-v1`
+- Tie-break input order:
+  1. `freezeContractId` 一致
+  2. `schemaVersion` 一致
+  3. `overridePolicy` 一致
+  4. `safeModeDefault/safeModeBoundary` 一致
+  5. `contractLinkLocked/sharedResourceFreeze` 一致
+- Tie-break result:
+  - いずれか不一致なら `NoGo`（A2/A3開始禁止）
+  - 全一致時のみ `ProceedGate` 判定へ進む
+
+### Go / No-Go conditions（fixed）
+- `Go`: `A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` かつ `Approval Record=Approved`
+- `Conditional`: `A2A3_OPEN_ALLOWED=false` かつ未承認事項が `held` のみ
+- `No-Go`: 次のいずれか
+  - tie-break不一致
+  - `pendingBypassDetected=true`
+  - `undefinedConflictDetected=true`
+  - allowlist外編集要求
+  - 契約未固定状態でA2/A3確定要求
+
+### Mock verification conditions（A1 contract-only）
+- Mock dataset: `A1-CONTRACT-MOCK-v1`
+- Required assertions:
+  1. `freezeContractId` / `schemaVersion` / `contractIds` が2ファイルで完全一致
+  2. `A2A3_OPEN_ALLOWED` 判定式が文字列一致
+  3. `NoGo` 条件に `契約未固定でA2/A3確定要求` が含まれる
+  4. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退がない
+
+### Proceed contract IDs / prohibited transitions
+- Active contract IDs:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `CTR-FB-P0-P2C-A1-TIEBREAK-v1`
+- Prohibited transitions:
+  1. `Pending -> Done`（`Approved` を経由しない遷移）
+  2. `Held -> Done`（人間承認なし）
+  3. `A1 not Done -> A2/A3 Confirmed`
+  4. `safeModeDefault=ON -> OFF`
+  5. `SAFE_MODE_STRICT_ON -> relaxed`

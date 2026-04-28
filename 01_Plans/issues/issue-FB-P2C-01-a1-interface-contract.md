@@ -200,3 +200,48 @@ mock_contract_v1:
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+
+## Stream F execution contract（A1 machine-verifiable freeze）
+
+### Phase 2 Plan補強（tie-break / gate / mock）
+- Tie-break Contract ID: `CTR-FB-P0-P2C-A1-TIEBREAK-v1`
+- Tie-break policy（機械判定順）:
+  1. `freezeContractId`
+  2. `schemaVersion`
+  3. `overridePolicy`
+  4. `contractIds`
+  5. `safeModeDefault` + `safeModeBoundary`
+  6. `contractLinkLocked` + `sharedResourceFreeze`
+- 判定結果:
+  - mismatch ≥1: `No-Go`（契約再固定まで停止）
+  - mismatch =0: `Execute/Verify` 継続可
+
+### Phase 3 Execute固定（A1契約を機械検証可能粒度へ）
+- Canonical predicate（single line / SSOT）:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- Deterministic key set（closed-world）:
+  - `freezeContractId,schemaVersion,overridePolicy,contractIds,contractLinkLocked,sharedResourceFreeze,safeModeDefault,safeModeBoundary,pendingDecisionQueueCount,a1Status`
+- Unknown key policy:
+  - 未定義キー検知は `undefinedConflictDetected=true` として `No-Go`
+
+### Phase 4 Verify補強（mock-first）
+- Mock verification must pass before any A2/A3 claim:
+  1. `mock_contract_v1` を用いて `A2A3_OPEN_ALLOWED` を3回再評価し、結果一致（3/3）
+  2. `contractIds` 順序と要素が固定文字列一致
+  3. `NoGo return path` が `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定
+  4. `Approval Record=Pending` の場合、出力は必ず `Conditional` か `Needs-decision`
+- Fail-safe:
+  - **契約未固定のままA2/A3確定扱い要求を受けた場合は即停止（No-Go）**
+
+### Phase 5 Proceed（契約IDと禁止遷移の明示）
+- Effective contract IDs:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `CTR-FB-P0-P2C-A1-TIEBREAK-v1`
+- Prohibited transitions（hard fail）:
+  1. `Pending -> Done`（Approved bypass）
+  2. `Held -> Done`（approval evidenceなし）
+  3. `A1 != Done` で `A2/A3 Confirmed`
+  4. `safeModeDefault ON` の後退
+  5. `SAFE_MODE_STRICT_ON` の緩和
