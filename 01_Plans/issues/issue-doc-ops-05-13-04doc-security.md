@@ -340,3 +340,14 @@
 ### Phase 6 Proceed/Stop
 - 判定: **Proceed (Ready)**。
 - 根拠: 参照整合対象を固定し、安全境界後退・依存論点の推測確定・4回目修復要求のいずれも未発生。
+
+### Reference lock（DOC-OPS-05-13 / Stream L確定）
+- 固定参照セット（変更時は `Needs-decision`）:
+  1. `04_Documentation/security.md`: 公開可能な安全原則・境界（safeMode既定ON、share/export漏えい防止）を定義する基底。
+  2. `04_Documentation/operations.md`: 運用手順・実行責務・導線を定義する運用面の正本。
+  3. `04_Documentation/security_operational_guidelines.md`: セキュリティ運用判断の詳細ガイド。
+  4. `THREAT_MODEL.md`: 脅威起点の前提（攻撃面・抑止方針）を与える上位参照。
+- 参照整合ルール:
+  - `security.md` は原則と境界に限定し、運用詳細を再定義しない（guidelines へ委譲）。
+  - `operations.md` と `security_operational_guidelines.md` で矛盾を検知した場合、本Issueでは確定せず差分記録のみ行う。
+  - safeMode を含む安全境界を弱める要求は **即 Stop** とし、自己修復を継続しない。
