@@ -303,3 +303,45 @@ gate:
 - Go/Conditional/No-Go を既存判定式で評価。
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
+
+## Stream A execution log（2026-04-28 / A1 contract lock replay）
+
+### Phase 1: Read（状態同期）
+- 対象5ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期確認。
+- 結果: `Status=Open` / `Priority=P1` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held=HIL-RS-02-GOV-EXCEPTION-01` 維持。
+- 事前想定との差分: なし。
+
+### Phase 2: ADR/CDC（実装前必須）
+- Context: A1をRS-01/RS-02の契約SSOTとして維持する必要がある。
+- Decision: `freezeContractId`・`contractIds`・`schemaVersion=1.0.0`・`overridePolicy=human_dual_control_only`・`safeModeDefault=ON`・`safeModeBoundary=SAFE_MODE_STRICT_ON` を再確認し変更禁止を継続。
+- Consequences: `Approval Record` が未充足のため、Phase 4はログ追記以外の確定操作を禁止。
+
+### Phase 3: Plan（AC/DoD先行）
+- Scope: A1最小I/F契約固定とA2/A3 gate参照整合。
+- Non-goals: 契約再定義、pending bypass許容、allowlist外編集。
+- Acceptance Criteria:
+  1. 固定キー差分 `0`。
+  2. `decisionQueueTransition` が `Pending -> Approved | Pending -> Rejected` に固定。
+  3. `NoGo return path` が A1 issue 一意。
+- Definition of Done:
+  1. `Plan -> Execute -> Verify -> Proceed` を順守。
+  2. self-correction `<=3` を記録。
+  3. 未承認事項を確定扱いしない。
+- Validation Plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions: self-correction 4回目相当、未承認確定化、NoGo return path改変、safeMode境界後退。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへの運用ログ追記のみ。
+- 非実施: A1固定値更新、A2/A3 Open先行、NoGo return path変更。
+
+### Phase 5: Verify
+- Validation Plan に記載した docs-check を実行。
+- self-correction: `0/3`。
+
+### Phase 6: Proceed / Stop
+- 判定: **Conditional**（承認未充足のため）。
+- 影響I/F: A2/A3は `A2A3_OPEN_ALLOWED=true` まで `Draft/Open` 変更不可。
+- 再開条件: `Approval Record` の必須3項目が充足されること。

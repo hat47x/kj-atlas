@@ -405,3 +405,46 @@
 - 成果: A3先行可能範囲（語彙固定・導線固定・検証式固定・held整理）の検証証跡を更新。
 - 未解決: A1完了待ち（契約確定・Open化は未実施）。
 - 次の1手（1項目）: A1完了イベント受領後に、同一検証式で ProceedGate を再判定する。
+
+## Stream A execution log（2026-04-28 / A3 mock-prep replay）
+
+### Phase 1: Read（状態同期）
+- 対象5ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期。
+- 結果: `Status=Draft`（A3）/ `Priority=P1` / `Scope=operations documentation sync（contract参照のみ）` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held` 維持。
+- 事前想定との差分: なし。
+
+### Phase 2: ADR/CDC（実装前必須）
+- Context: A3はA1未完了のためOpen不可、mock I/F準備のみ許可される。
+- Decision: `Draft` 維持、`mock I/F preparation only` 継続、契約再定義なし、NoGo差戻し先A1固定。
+- Consequences: 承認未充足のため、Executeは準備ログ追記のみ。
+
+### Phase 3: Plan（AC/DoD先行）
+- Scope: A3運用同期の準備項目（語彙固定・導線固定・検証式固定）の更新。
+- Non-goals: A3 Open化、契約改定、実装コード変更、allowlist外編集。
+- Acceptance Criteria:
+  1. fixed keys diff=0。
+  2. role語彙（Security Officer / System Owner / Platform Operator）ドリフトなし。
+  3. `NoGo return path` がA1 issue一意。
+  4. A1未完了中は `Status=Draft` 維持。
+- Definition of Done:
+  1. `Plan -> Execute -> Verify -> Proceed` の順序記録。
+  2. self-correction `<=3`。
+  3. 判定がGoでない場合に停止理由と再開条件を明記。
+- Validation Plan:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Stop Conditions: self-correction>=4、未承認確定化、NoGo return path改変、safeMode境界後退。
+
+### Phase 4: Execute
+- 実施内容: 本Issueへの準備ログ追記のみ。
+- 非実施: A3 Open化、契約値更新、A1未完でのProceed確定。
+
+### Phase 5: Verify
+- Validation Plan の docs-check を実施。
+- self-correction: `0/3`。
+
+### Phase 6: Proceed / Stop
+- 判定: **Conditional**（`PrepGate=true`, `ProceedGate=false`）。
+- 理由: `a1Status!="Done"` と `Approval Record: Pending` が継続。
+- 再開条件: `a1Status=="Done"` かつ `pendingDecisionQueueCount==0` と承認証跡充足。
