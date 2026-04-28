@@ -57,6 +57,7 @@
 - [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
 - [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
 - [ ] 受入シナリオ最小テンプレ（前提/操作/期待結果/除外）は Process/実装系Issueで必須、Docs-onlyでは任意（推奨）。
+- [ ] ADR-0019に整合したE2E運用記述として、実行コマンド・判定基準・例外記録方針（未実施理由/代替検証/次アクション）が本文で追跡可能である。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -156,22 +157,28 @@
 ### Phase 3 Plan
 - AC/DoD不足のドラフト提案（合意済み扱い）:
   - AC-I1: Audience / Goal / Non-goal / Public boundary / Outcome / Related を対象文書冒頭に明示。
-  - AC-I2: GoNoGoGate=Required の判定条件を本文で再現可能にする。
+  - AC-I2: GoNoGoGate=Required の判定条件を本文で再現可能にする（ADR-0019の共通必須: health確認 + docs往復保存確認）。
+  - AC-I3: 例外時は「未実施理由 / 代替検証 / 後続手順（誰がいつ何を再実行するか）」の3点をE2E verification logへ記録する。
   - DoD-I1: Plan→Execute→Verify→Proceed の6Phase記録を残す。
 - 非目標: 実装コード・CI・Stream H専有ファイルの変更は行わない。
 
 ### Phase 4 Execute
 - 本Issueの分類方針に沿い、対応する対象文書へ公開境界メタとGo/No-Go判定導線を反映。
+- ADR-0019整合で固定する運用記述:
+  - 標準経路（Compose）: `curl -fsS http://localhost:8080/api/health` を実行し成功を必須判定とする。
+  - 代替経路（SQLite）: `curl -fsS http://localhost:8000/healthz` と `curl -fsS http://localhost:4173/api/healthz` の両方成功を必須判定とする。
+  - 共通判定: `PUT /docs/{doc_id}` → `GET /docs/{doc_id}` の往復保存成功を必須判定とする。
+  - UI変更時: Playwrightで smoke + 変更対象1ケース以上を必須とし、コマンド・結果をログ化する。
 
 ### Phase 5 Verify
 - docs-check実施:
-  - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go" <target-doc>.md`
+  - `rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Go/No-Go|curl -fsS|PUT /docs/|GET /docs/|Playwright|未実施理由|代替検証|後続手順" 04_Documentation/e2e_testing.md 04_Documentation/e2e_verification_log_2026-03-03.md`
   - `git diff --check`
 - 自己修復は最大3回まで。4回目相当は停止して保留化する。
 
 ### Phase 6 Proceed
 - 状態分類: **Ready**
-- 次アクション: 本Issueに対応する文書差分をdocs-only PRとして提出し、未解決論点があれば `01_Plans/issues/` に分離記録する。
+- 次アクション: 本Issueに対応する文書差分をdocs-only PRとして提出し、例外発生時は `04_Documentation/e2e_verification_log_2026-03-03.md` に「未実施理由 / 代替検証 / 後続手順」を追記してから `01_Plans/issues/` へ分離記録する。
 
 ## 15) Stream F classification-quality pass（Issue memo only）
 
