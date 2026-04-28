@@ -1346,3 +1346,37 @@
 
 ### Phase 5 Proceed
 - 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
+
+
+## Stream G dedicated lane run（2026-04-28 / DOC-OPS-05 Security-docs専任）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、`AGENTS.md` Read Order と本Issueの `Requirement meta I/F` / `GoNoGoGate` / `SecurityGateImpact` を再確認。
+- docs-only・allowlist内編集・`VerificationLevel=docs-check` 固定を再確認。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: diagnostics は public-exposure 境界に接続するため、公開運用語彙と内部向け記述の混在防止が必要。
+- Decision: 本Issueの分類は **Improve external** を維持し、役割語彙は `Security Officer / System Owner / Platform Operator` を固定語彙として参照専用で扱う。
+- Consequences: 公開境界を維持しつつ後続docs改善に限定できる。
+- Approval: **Issueメモ内運用承認（DOC-OPS-05 Stream G）** を記録。未承認事項は確定化しない。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-04-1: Audience / Goal / Non-goal / Public boundary / Related を追跡可能に維持する。
+  - AC-G-04-2: `GoNoGoGate=Required` の判定導線を維持する。
+- DoD Draft:
+  - DoD-G-04-1: `Read→ADR/CDC→Plan→Execute→Verify→Proceed` の6フェーズ記録を残す。
+  - DoD-G-04-2: Verify失敗時の自己修復は最大3回、4回目相当で `Hold` 停止。
+
+### Phase 4 Execute
+- 実施: 本Issueメモへの追記のみ（docs-only / allowlist内）。
+- 非実施: 実装コード変更、D1〜D4固定値の更新、未承認事項の確定化。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-04-04doc-diagnostics.md`
+- `git diff --check`
+- self-correction: 0/3（失敗時のみ最大3回、超過時停止）。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 理由: 6フェーズ、C/D/C+承認、AC/DoDドラフト、自己修復上限、未承認確定化禁止を満たす。

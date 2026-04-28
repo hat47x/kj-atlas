@@ -1386,3 +1386,37 @@
 
 ### Phase 5 Proceed
 - 判定: **Go**（停止条件: セキュリティ導線矛盾 / 指定外編集 / self-correction上限超過 に非該当）。
+
+
+## Stream G dedicated lane run（2026-04-28 / DOC-OPS-05 Security-docs専任）
+
+### Phase 1 Read（開始同期）
+- Read同期を実施し、Read Orderと本Issueの `Requirement meta I/F` / `GoNoGoGate` / `SecurityGateImpact` を再確認。
+- docs-only・allowlist内編集・`VerificationLevel=docs-check` 固定を再確認。
+
+### Phase 2 ADR/CDC（C/D/C + 承認）
+- Context: local LLM運用文書は公開運用者向けのため、公開境界と運用語彙の固定が必要。
+- Decision: 本Issueの分類は **Improve external** を維持し、役割語彙は `Security Officer / System Owner / Platform Operator` に固定する。
+- Consequences: 公開可能な運用手順のみを強化し、内部統制の再定義を回避する。
+- Approval: **Issueメモ内運用承認（DOC-OPS-05 Stream G）** を記録。未承認事項は確定しない。
+
+### Phase 3 Plan（AC/DoD不足ドラフト提案）
+- AC Draft:
+  - AC-G-09-1: Audience / Goal / Non-goal / Public boundary / Related の追跡可能性を維持する。
+  - AC-G-09-2: Go/No-Go判定条件を本文で再現可能にする。
+- DoD Draft:
+  - DoD-G-09-1: 6フェーズを直列で記録する。
+  - DoD-G-09-2: self-correction を3回上限に固定し、超過時は `Hold`。
+
+### Phase 4 Execute
+- 実施: 本Issueメモ更新のみ（docs-only / allowlist内）。
+- 非実施: 実装変更、D1〜D4固定値変更、未承認確定化。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 理由: Stream G専任レーン条件（6フェーズ/C-D-C承認/AC-DoDドラフト/3回上限）を満たす。
