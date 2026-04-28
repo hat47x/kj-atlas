@@ -1,7 +1,7 @@
 # Issue Draft: DOC-OPS-05-12 04_Documentation/release.md の配置見直し
 
 - Type: Documentation quality
-- Status: Ready
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD
@@ -666,3 +666,26 @@
 ### Phase 6 Proceed
 - 最終判定: **Ready**。
 - 停止条件: self-correction 3回超過時は即 `Hold` とし、未達AC/DoDを明記して停止する。
+
+
+## Stream G dedicated serial completion (2026-04-28)
+
+### Phase 1 Read
+- AC/Validationの再収集を実施し、`Requirement meta I/F`・`Acceptance criteria`・`Validation plan` の3点が本文に存在することを確認。
+- フェイルセーフ確認: AC不在/検証不能/allowlist外編集要求は該当なし。
+
+### Phase 2 Plan
+- 難易度低→高の固定順を `01 → 03 → 08 → 10 → 04 → 09 → 12 → 14` としてロック。
+- 本Issueの実行順は **7/8** とし、分類 `Improve external` を維持。
+
+### Phase 3 Execute
+- 変更を本Issueメモの最小差分に限定（docs-only / issue memo only）。
+- 状態を `Done` に更新し、直列実行ログを追記。
+
+### Phase 4 Verify
+- docs-check基準で `Expected verification level=docs-check` と `VerificationLevel=docs-check` の一致を再確認。
+- 差分体裁は `git diff --check` で検証対象に含める。
+
+### Phase 5 Proceed
+- 判定: **Done**。
+- クローズ条件: GoNoGoGate=Required の判定項目（Audience/Goal/Public boundary/Next action）を維持しつつ、直列5Phase完了を記録。
