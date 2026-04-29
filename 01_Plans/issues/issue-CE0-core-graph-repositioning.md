@@ -1099,3 +1099,26 @@
 - Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Plan→Execute→Verify→Proceed 直列、各Phase開始Read、Context/Decision/Consequences先行確定を満たす）。
 - 未承認事項在庫: なし。将来発生時は `held` で停止し、Self-Correction 3回上限を超える前に停止報告する。
+
+## Phase Execution Record（2026-04-29 / Stream C / serial Read→Plan→Execute→Verify→Proceed）
+### Read（Phase start re-Read + diff check）
+- 本Issueを再読し、固定語彙 `working` / `context_projection` / `consensus`、許可遷移 `working -> consensus` + `patch+approval`、canonical 5 IDs、SafeMode既定ON後退禁止に差分なし。
+- 直前記録（2026-04-28 freeze）との差分を確認し、contract-only / mock-first 境界の逸脱なし。
+
+### Plan（AC/DoD不足先行確認）
+- AC/DoD不足の先行点検を実施し、不足は未検出（ドラフト追補不要）。
+- 編集対象を `issue-CE0-core-graph-repositioning.md` のみに固定。
+- I/F契約更新は mock-first の文言整合に限定し、実装経路（handler/UI/DB/worker/API/schema migration）を追加しない。
+
+### Execute（I/F contract-only update）
+- 本実行記録を追加し、直列ワークフロー（Read→Plan→Execute→Verify→Proceed）と再Read差分確認を明示。
+- 既存I/F契約シグネチャ参照（`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`）の扱いを変更せず、mock-first 前提の契約整合のみ維持。
+
+### Verify（docs-check / self-heal <= 3）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass（自己修復 0/3）。
+- `git diff --check` を実行し、pass。
+- `git status --short` で他ファイル編集がないことを確認。
+
+### Proceed
+- 判定: `Done`（AC/DoD充足、docs-check pass、他ファイル編集なし、contract-only + mock-first 維持）。
+- 停止条件該当なし。自己修復上限（3回）超過なし。
