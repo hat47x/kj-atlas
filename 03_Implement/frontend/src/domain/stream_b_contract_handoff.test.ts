@@ -102,6 +102,41 @@ describe("stream_b_contract_handoff", () => {
   });
 
 
+
+  it("returns NoGo when mock case ID is outside M1-M4", () => {
+    const invalidMockCaseLog = {
+      contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+      schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+      mockCaseId: "M5",
+      validationResult: "pass",
+      ownerOfFix: "A3",
+      evidence: "invalid mock case",
+    } as const;
+
+    expect(evaluateStreamBA3GoNoGo([invalidMockCaseLog])).toEqual({
+      go: false,
+      reason: "invalid mock case: M5",
+    });
+  });
+
+  it("returns NoGo when evidence is empty", () => {
+    const logs = [
+      {
+        contractVersion: STREAM_B_CONTRACTS.candidateGroup.contractId,
+        schemaVersion: STREAM_B_CONTRACTS.candidateGroup.schemaVersion,
+        mockCaseId: "M1",
+        validationResult: "pass",
+        ownerOfFix: "A3",
+        evidence: "   ",
+      },
+    ] as const;
+
+    expect(evaluateStreamBA3GoNoGo([...logs])).toEqual({
+      go: false,
+      reason: "empty evidence: M1",
+    });
+  });
+
   it("returns NoGo when contract version is not locked", () => {
     const invalidContractLog = {
       contractVersion: "CTR-2B-99-UNKNOWN",

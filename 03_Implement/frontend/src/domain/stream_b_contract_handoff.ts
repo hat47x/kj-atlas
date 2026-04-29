@@ -15,6 +15,7 @@ export type StreamBValidationLog = {
 };
 
 const REQUIRED_MOCK_CASE_IDS = ["M1", "M2", "M3", "M4"] as const;
+const REQUIRED_MOCK_CASE_ID_SET = new Set<string>(REQUIRED_MOCK_CASE_IDS);
 
 export function validateCandidateGroupContract(document: DocumentV2): StreamBValidationLog {
   const first = collectMergeCandidates(document)[0];
@@ -76,6 +77,14 @@ export function evaluateStreamBA3GoNoGo(logs: StreamBValidationLog[]): { go: boo
   const ids = new Set<string>();
 
   for (const log of logs) {
+    if (!REQUIRED_MOCK_CASE_ID_SET.has(log.mockCaseId)) {
+      return { go: false, reason: `invalid mock case: ${log.mockCaseId}` };
+    }
+
+    if (log.evidence.trim().length === 0) {
+      return { go: false, reason: `empty evidence: ${log.mockCaseId}` };
+    }
+
     if (log.contractVersion !== STREAM_B_CONTRACTS.candidateGroup.contractId && log.contractVersion !== STREAM_B_CONTRACTS.decisionLog.contractId) {
       return { go: false, reason: `invalid contract version: ${log.contractVersion}` };
     }
