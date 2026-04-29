@@ -153,3 +153,13 @@
 - AC: fixed keys diff=`0`、`unlockRule` 一致、`Pending -> Approved/Rejected` 以外の遷移追加なし。
 - DoD: `Plan -> Execute -> Verify -> Proceed` を維持し、self-correction は `0/3`。
 - Gate結果: **Conditional**（承認待ち継続）。
+
+## Stream A contract-governance checkpoint（2026-04-29）
+
+### Read結果（allowlist only）
+- `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `safeModeDefault=ON` を再照合し、差分 `0` を確認。
+
+### Proceed gate
+- 固定遷移: `Pending -> Approved | Pending -> Rejected` のみ許可。
+- 禁止遷移: `Pending bypass`、`A1 Done前の A2/A3 Draft->Open`。
+- 判定: **Conditional / Needs-decision**（承認証跡 `approved_by` / `approved_at` / `evidence` 未入力）。
