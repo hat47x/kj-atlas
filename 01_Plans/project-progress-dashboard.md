@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-28 (JST, Stream A integrated sync rerun-56)
+最終更新: 2026-04-29 (JST, Stream D integrated sync rerun-57)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -36,6 +36,8 @@
 
 - Stream A 共有統合同期（2026-04-28 rerun-56）で Phase 1 Read（共有3ファイル再読と件数・Decision Queue・再開判定1行の差分監査）→ Phase 2 Plan（AC/DoD充足確認と同期対象3ファイル固定）→ Phase 3 Execute（shared resource単一変更セット更新）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行確定）を実施し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` と次フェーズ引き継ぎ条件（未解決Queue=2件）の一致を再固定した。
 
+
+- Stream D 共有統合同期（2026-04-29 rerun-57）で Phase 1 Read同期（Stream A/B/C完了報告・Decision Queue・件数）→ Phase 2 Execute（Active一覧・状態・次の1手を3共有ファイルで同期）→ Phase 3 Verify（件数整合/依存順/停止条件違反0件）→ Phase 4 Publish（再開判定チェックリスト1行固定）→ Phase 5 Proceed（次サイクル条件明文化）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` の一致を維持した。
 ### 未完Issue全件（22件）とレーン割当
 
 - **Stream A（契約/I-F固定）**: `HIL-RS-01`, `HIL-RS-01-A1`, `HIL-RS-02`, `HIL-RS-02-A1`, `FB-P2C-01-A1`, `FB-P2B-01-A1`, `FB-P2B-02-A1`, `FB-P2A-01-A1`, `FB-P2A-02-A1`。

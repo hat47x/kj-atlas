@@ -478,3 +478,11 @@ issue補助メモには、最低でも次の項目を含める。
 - Phase 4 Verify（validator + unittest + rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-55|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合一致を確認（self-correction 0/3）。
 - Phase 5 Proceed（再開判定チェックリスト1行確定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
 
+
+### 6-50. Stream D 共有統合同期ログ（2026-04-29 rerun-57, Phase 1-5）
+
+- Phase 1 Read同期（A/B/C完了報告・Decision Queue・件数）: shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）を再読し、公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2`、依存順 `A1→A2→A3`、停止条件違反0件を確認。
+- Phase 2 Execute（Active一覧/状態/次の1手同期）: 同期対象を共有3ファイルに限定し、未承認決定の確定扱い・件数不整合・未定義競合を停止条件として維持したまま、Active一覧と次アクションを同一値へ再固定。
+- Phase 3 Verify（件数整合/依存順/停止条件）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-57|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合一致を確認。
+- Phase 4 Publish（再開判定チェックリスト1行固定）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+- Phase 5 Proceed（次サイクル条件）: 次サイクルは `DQ-HIL-EXEC-01` Ready監査継続、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open期限管理、shared resource 3ファイル単一変更セット維持を開始条件とする。
