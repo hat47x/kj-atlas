@@ -524,3 +524,36 @@ governance_gate_v1:
 - Contract baseline re-read completed.
 - `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` のドリフトは未検知。
 - `Approval Record` 未充足のため、状態は **Pending維持**。
+
+## Stream A serial phase checkpoint（2026-04-29）
+
+### Phase 1: RS-01 A1 契約固定確認（Read -> Verify）
+- Context: A1契約は全後続Phaseの唯一参照点であり、再定義を許容しない。
+- Decision: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / gate式固定を再確認し、差分0を維持する。
+- Consequences: 承認記録が `Pending` の間は Execute確定化を禁止し、`held` 維持で進行する。
+
+### Phase 2: RS-01 Umbrella整合（Plan -> Execute）
+- Context: Umbrella側の依存ゲート記述がA1契約と不整合だと依存順が逆転する。
+- Decision: A1契約を参照する記法（再定義禁止）へ統一し、`A1 -> A2 -> A3` を固定順として再確認した。
+- Consequences: 後続Phaseは参照整合を前提に進行可能。契約値更新要求は `NoGo` 扱い。
+
+### Phase 3: RS-02 Delivery Plan整合（Verify）
+- Context: Delivery PlanはA1完了前提・hold条件・Proceed条件を明確に切り分ける必要がある。
+- Decision: 実装記述は契約参照型へ統一し、固定キーの再掲は参照のみ（再定義なし）とする。
+- Consequences: `Approval Record: Pending` と `held` が残る間は Conditional運用を維持する。
+
+### Phase 4: RS-02 A1 Governance Hardening（Plan -> Execute -> Verify）
+- Context: 例外系（held）を曖昧にすると pending bypass の温床になる。
+- Decision: heldは「未承認確定化禁止」のための隔離状態として定義を維持し、確定遷移を禁止する。
+- Consequences: 未定義競合・4回目相当self-correction・allowlist外編集要求は即停止トリガーとして継続適用。
+
+### Phase 5: RS-02 A3 Draft gate管理（Proceed）
+- Context: A3はA1依存解消前にOpen化してはならない。
+- Decision: `Status: Draft` 維持、Open化は `a1Status=="Done" && pendingDecisionQueueCount==0` 充足時のみ許可、運用ドキュメント同期は前提固定のみ実施。
+- Consequences: 判定は **Conditional**（準備継続）で据え置き、NoGo差戻し先はA1 issueに固定。
+
+### Phase verification mini-checklist（本チェックポイント）
+- Header整合（Status/Priority/Scope/Related ADR/Spec）: 確認済み。
+- 固定キー不変性（freezeContractId / NoGo return path / safeMode固定値 / gate式）: 差分0。
+- 依存順序逆転（A1 -> A2 -> A3）: 未検知。
+- 変更差分allowlist（許可5ファイル内のみ）: 準拠。

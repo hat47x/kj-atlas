@@ -1039,3 +1039,30 @@
 ### Phase 5) Proceed 判定
 - 競合検知: なし。
 - 判定: Proceed（実装隊が mock で着手可能な契約パッケージを維持）。
+
+## Stream E Execution Record（2026-04-29 / strict 5-phase boundary sync）
+
+### Phase 1) Read/Plan（AC・DoD確認）
+- AC/DoD を再確認し、CE4 は `proposal-only + mock-first + contract-only` の境界に限定する。
+- CE0/CE1/CE2 は read-only 参照のみとし、語彙再定義を禁止する。
+- fail-safe 起動条件（自己修復3回超過 / 前提崩壊 / 未定義競合）を本フェーズ開始時に明示する。
+
+### Phase 2) ADR化（Context / Decision / Consequences）
+- Context: API/CLI同値判定の比較根拠欠損は監査再現性を崩し、contract-only の受入判定を不安定化させる。
+- Decision: `equivalenceKey AND bundleHash` を唯一成功条件として固定し、`queryCanonicalHash` 欠損を fail-closed とする。
+- Consequences: 監査導線 `query / bundle / proposal / apply` の4点必須を維持し、実装詳細への踏み込みを禁止する。
+
+### Phase 3) I/F契約固定（API-CLI-Audit連携点）
+- API/CLI 共通必須出力は `equivalenceKey` / `bundleHash` / `queryCanonicalHash` / `proposalLifecycle` / `sideEffect` / `auditChain` を維持する。
+- API/CLI 同値判定は AND 条件のみ成功（片側一致成功は禁止）を再固定する。
+- 監査連携点は `query -> bundle -> proposal -> apply` の4イベントとし、欠損は常時 fail-closed とする。
+
+### Phase 4) Mock検証（外部実装非依存）
+- `sourceBundleHash=mock:<hash>` を用いた契約検証を前提とし、本番hashと同一判定規則を適用する。
+- `dryRun=true` では `sideEffect=none` 以外を許容しない。
+- 外部実装（frontend/backend/ops 実装）の完了有無に依存せず、契約単体で検証可能な状態を維持する。
+
+### Phase 5) Verify/Proceed
+- Verify 結果: 5-phase 順序（Read/Plan → ADR化 → I/F契約固定 → Mock検証 → Verify/Proceed）で整合。
+- Proceed 判定: **Go（contract-only）**。未承認事項は `held` 維持。
+- Stop条件再掲: 自己修復 `4/3` 相当、前提崩壊、未定義競合のいずれか検知時は即停止。
