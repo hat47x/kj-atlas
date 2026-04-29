@@ -407,7 +407,8 @@ def test_context_audit_rejects_proposal_without_source_bundle_hash(tmp_path) -> 
         )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "sourceBundleHash is required for proposal/apply operations"
+    assert response.json()["detail"]["code"] == "missing_source_bundle_hash"
+    assert response.json()["detail"]["message"] == "sourceBundleHash is required for proposal/apply operations"
 
 
 def test_context_audit_rejects_apply_without_source_bundle_hash(tmp_path) -> None:
@@ -428,7 +429,8 @@ def test_context_audit_rejects_apply_without_source_bundle_hash(tmp_path) -> Non
         )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "sourceBundleHash is required for proposal/apply operations"
+    assert response.json()["detail"]["code"] == "missing_source_bundle_hash"
+    assert response.json()["detail"]["message"] == "sourceBundleHash is required for proposal/apply operations"
 
 
 def test_context_audit_rejects_dry_run_side_effect(tmp_path) -> None:
@@ -471,6 +473,7 @@ def test_context_audit_rejects_apply_without_dry_run(tmp_path) -> None:
         )
 
     assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "apply_requires_dry_run"
 
 
 def test_context_audit_rejects_apply_when_required_events_missing(tmp_path) -> None:
@@ -604,6 +607,7 @@ def test_context_audit_rejects_operation_command_mismatch(tmp_path) -> None:
         )
 
     assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "operation_command_mismatch"
 
 
 def test_context_audit_rejects_missing_command(tmp_path) -> None:
@@ -645,6 +649,7 @@ def test_context_audit_rejects_query_hash_mismatch(tmp_path) -> None:
         )
 
     assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "query_hash_mismatch"
 
 
 def test_context_audit_accepts_fixed_reject_reason_code(tmp_path) -> None:
