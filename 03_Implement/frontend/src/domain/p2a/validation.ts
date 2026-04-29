@@ -11,6 +11,10 @@ import {
 
 const REQUIRED_CASES: readonly P2AMockCaseId[] = ["M1", "M2", "M3", "M4"] as const;
 
+const MOCK_CASE_SET = new Set<P2AMockCaseId>(REQUIRED_CASES);
+const VALIDATION_RESULT_SET = new Set(["pass", "fail"] as const);
+const OWNER_OF_FIX_SET = new Set(["A1", "A2", "A3"] as const);
+
 export function validateP2AA1ContractLock(lock: P2AA1ContractLock): { ok: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -52,8 +56,20 @@ export function validateP2AA2FixtureSignature(fixtures: readonly P2AMockFixture[
       errors.push(`${fixture.fixtureId}: invalid contractVersion`);
     }
 
+    if (!MOCK_CASE_SET.has(fixture.mockCaseId)) {
+      errors.push(`${fixture.fixtureId}: invalid mockCaseId=${fixture.mockCaseId}`);
+    }
+
     if (payload.mockCaseId !== fixture.mockCaseId) {
       errors.push(`${fixture.fixtureId}: payload mockCaseId mismatch`);
+    }
+
+    if (!VALIDATION_RESULT_SET.has(payload.validationResult)) {
+      errors.push(`${fixture.fixtureId}: invalid validationResult=${payload.validationResult}`);
+    }
+
+    if (!OWNER_OF_FIX_SET.has(payload.ownerOfFix)) {
+      errors.push(`${fixture.fixtureId}: invalid ownerOfFix=${payload.ownerOfFix}`);
     }
 
     if (payload.evidence.trim().length === 0) {
