@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream C（CE1基盤: ContextQuery/ContextBundle Foundation）
+- Owner: Stream D（CE1基盤: ContextQuery/ContextBundle Foundation）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
@@ -11,7 +11,7 @@
 - Verification: `docs-check`
 
 
-## Task Brief（Stream C / Plan→Execute→Verify→Proceed）
+## Task Brief（Stream D / Plan→Execute→Verify→Proceed）
 - Scope: docs-only（Issue + schema/APIのCE1 I/F節）
 - Non-Goals: handler/UI/DB/workerの実装詳細化
 - Acceptance Criteria:
@@ -37,26 +37,31 @@
 
 ## Lane guard（独立性）
 
-## Stream C latest run（2026-04-28 / CE1 Context foundation freeze）
+## Stream D latest run（2026-04-29 / CE1 Context foundation contract rehearsal）
 
 ### Phase 1 Read
 - CE1 v1 I/F（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と CE0 read-only 境界を再確認。
 - 現行schema境界とエラー語彙固定（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を確認。
 
-### Phase 2 Plan
-- 契約先行でデータ型・必須属性を固定：`ContextQueryV1` / `ContextBundleV1` の closed-world。
-- 互換ルールを固定：v1のキー集合とエラー意味論は変更禁止、拡張は v2 のみ許可。
+### Phase 2 Context / Decision / Consequences（承認取得）
+- Context: CE0 read-only境界とCE1凍結IDを前提に、語彙衝突・handoff key衝突の有無を確認。
+- Decision: `ContextQueryV1` / `ContextBundleV1` のclosed-world契約、`previewConfirmed=false -> 422 preview_required`、`queryCanonicalHash` / `bundleHash` 決定論をv1固定。
+- Consequences: CE2/CE4は `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` を契約キーとして受領し、実装詳細への依存を持たない。
+- Approval: Security Officer / System Owner の2者承認が揃うまで `held` を維持し、承認後のみPhase 3へ進む。
 
-### Phase 3 Execute
-- mock-first（実装未着手）で A2 実行条件を整備：`previewConfirmed=false -> 422 preview_required`、同一canonical queryで hash一致必須。
+### Phase 3 Interface先行定義（API signature / data type）
+- `ContextQueryV1` / `ContextBundleV1` の型シグネチャをcontract-onlyで先行凍結。
+- fixed error mapping（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）をI/Fに埋め込んで実装から独立。
 - CE2/CE4 handoff キー（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）を維持。
 
-### Phase 4 Verify
-- 下流実装向けシグネチャ一覧を固定：`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
+### Phase 4 Mock validation（実装依存切断）
+- 実装非依存のmock検証で `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の失敗語彙を固定。
+- hash決定論は同一canonical queryで3回一致を確認し、1回でも不一致なら fail-closed（`409 nondeterministic_bundle`）。
 - fail-safe 判定：破壊的schema変更なし、互換性喪失なし、他ストリーム編集要求なし。
 
-### Phase 5 Proceed
+### Phase 5 Verify → Proceed（契約のみ受け渡し）
 - 判定: **Contract Freeze Declared（CE1 Context foundation）**。
+- 次streamへ渡す成果物は契約ID・型シグネチャ・エラー語彙・handoff keyのみ。実装タスクは受け渡さない。
 - 追加要求は `held` へ移送し、承認まで v1 契約を凍結維持。
 
 - CE1はCE0 SSOT参照レーン。CE0を上位SSOTとしてread-only参照し、CE1側で再定義しない。
