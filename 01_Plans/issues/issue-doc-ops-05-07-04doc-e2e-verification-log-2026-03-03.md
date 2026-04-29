@@ -1501,3 +1501,59 @@
   3. `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` が維持。
   4. フェイルセーフ3条件（用語・責務分離・固定値）に違反がない。
 - いずれか未達の場合は **Hold**（Open化禁止）。
+
+---
+
+## 20) Canonical plan freeze (2026-04-28, supersedes prior stream-specific records for execution control)
+
+> この章を **最新の実行制御正本** とする。過去章の Stream別記録（Ready/Fixed を含む）は履歴として保持し、
+> 現在の運用判定は本章の値を優先する。
+
+### Scope lock
+- 対象は `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` のみ。
+- 目的は「配置見直し判断（内部移動 or 対外改善）の計画固定」のみ。
+- 本章では分類そのものを推測確定しない（DecisionStatus=Pending を維持）。
+
+### CD&C approval-gated management（Pending論点）
+- Context: `04_Documentation/e2e_verification_log_2026-03-03.md` は公開境界の再判定が必要。
+- Decision: **Pending論点は仮確定しない**。`Move internal` / `Improve external` の最終確定は CD&C 承認待ちとする。
+- Consequences:
+  - 承認前は計画固定のみを実施し、実体移動・公開改善の実行は着手しない。
+  - Proceed判定は `Needs-decision` を既定とし、CD&C承認受領後のみ `Ready` へ遷移可能。
+
+### Decision meta normalization (authoritative)
+- DecisionStatus: `Pending`
+- DecisionQueueRef: `CD&C / DOC-OPS-05-07 classification approval queue`
+- Open readiness: `Needs-decision`
+- GoNoGoGate: `Required`（CD&C承認IDが記録されるまで Go 不可）
+
+## 21) 5-Phase serial protocol (mandatory, pre-read sync before each phase)
+
+### Phase 1: Read-sync
+- 実行前再読（必須）: 本Issueの `Requirement meta I/F` / `Scope` / `DecisionStatus` / `DecisionQueueRef`。
+- 出力: 今回サイクルの対象・非対象・未確定論点の明文化。
+
+### Phase 2: CDC-sync
+- 実行前再読（必須）: 直前の Phase 1 記録と `CD&C approval-gated management`。
+- 出力: Context / Decision(Pending維持) / Consequences（承認待ち運用）を更新。
+
+### Phase 3: Plan-sync
+- 実行前再読（必須）: 受入条件と `GoNoGoGate=Required` 条件。
+- 出力: 「内部移動」「対外改善」の二択を **承認待ち管理** としてタスク化（推測確定禁止）。
+
+### Phase 4: Verify-sync
+- 実行前再読（必須）: Phase 1〜3 の当該サイクル記録。
+- 必須検証:
+  - `rg -n "DecisionStatus|DecisionQueueRef|CD&C|Needs-decision|Phase 1: Read-sync|Phase 5: Proceed-sync" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `git diff --check`
+
+### Phase 5: Proceed-sync
+- 実行前再読（必須）: Verify結果と CD&C承認有無。
+- 判定規則:
+  - CD&C承認なし: `Needs-decision` を維持。
+  - CD&C承認あり: `Ready` へ更新可。
+  - 体裁/整合エラー残存: `Hold`。
+
+### Self-Correction fail-safe
+- 自己修復は最大3回まで。
+- **4回目（3回超）に到達した時点で直ちに停止し、`Hold` として CD&C にエスカレーションする。**
