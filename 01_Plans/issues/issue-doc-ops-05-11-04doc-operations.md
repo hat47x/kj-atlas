@@ -508,3 +508,33 @@
 ### 5) Proceed
 - 判定: **Ready**。
 - 理由: Open化判断に必要な情報が揃い、未承認確定化もない。
+
+## Stream L strict serial run（2026-04-29, operations → security fixed）
+
+### Phase 1 Read（開始時同期）
+- Read同期: `AGENTS.md` Read Order・本Issue・`04_Documentation/operations.md` を再読し、`DecisionStatus=Fixed` / `VerificationLevel=docs-check` / `GoNoGoGate=Required` を確認。
+- 差分判定: 想定差分（役割語彙・固定値・公開境界）**なし**。差分発生時停止ルールを維持。
+
+### Phase 2 ADR/CDC（必要時のみ）
+- Context: operations は実行runbook責務、security側へ責務を越境しないことが厳密独立性の条件。
+- Decision: 新規ADR不要（既存 `Improve external` 維持）。差分発生時のみ C/D/C を起票し承認完了まで停止。
+- Consequences: 本フェーズは docs-only の同期ログ追記に限定できる。
+
+### Phase 3 Plan
+- 実行計画:
+  1. 本Issueへ Stream L 記録を追記（allowlist内）。
+  2. 直列順 `operations → security` を固定し、security編集は operations 完了後に開始。
+  3. self-correction は 0〜3 回に制限し、4回目相当は停止。
+
+### Phase 4 Execute
+- 実施: operations lane の同期記録のみ更新。
+- 非実施: `issue-HIL-RS-02-A3-operations-documentation-sync.md` を含む対象外ファイル編集、実装コード変更、公開安全境界の緩和。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `git diff --check`
+- self-correction: 0/3（4回目相当は停止）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（security lane へ直列遷移可）。
+- 次順序: 固定どおり `DOC-OPS-05-13` を開始。
