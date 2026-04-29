@@ -137,3 +137,14 @@
 ### Phase 4: Proceed Gate
 - 前提差分: fixed keys diff=`0`（再読時点）。
 - 判定: **Needs-decision（停止可能状態）**。承認未充足のため、次工程は人間承認入力後に再開する。
+
+## Stream A serial gate verification（2026-04-29, critical path）
+
+### Phase 1: Read同期
+- allowlist対象4ファイルを再読し、`schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `Freeze Pack ID=HIL-RS-02-A1-CONTRACT-FREEZE-v1` の一致を確認した。
+- fixed keys drift: `0`。
+
+### Phase 2-5: 判定
+- ADR側の Context / Decision / Consequences は欠損なし。
+- `Pending bypass` 禁止、`A1 Done 前の A2/A3 Open禁止`、`SafeMode既定ON維持` を再確認した。
+- 判定: **Conditional / Needs-decision**（`Approval Record` 未充足のため）。

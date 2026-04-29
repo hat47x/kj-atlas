@@ -559,3 +559,15 @@ gate:
 - 判定: **Conditional / Needs-decision**。
 - 理由: `Approval Record: Pending` および `held` 論点が残存。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
+
+## Stream A fixed-key verification log（2026-04-29 / serial）
+
+### Read
+- 再読対象（allowlist）: `ADR-0026` / `ADR-0027` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02-A1`。
+- 固定キー照合結果: `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` / `decisionQueueTransition` すべて一致（diff=`0`）。
+
+### Plan/Execute/Verify/Proceed
+- Plan: AC/DoD追加不足なし、既存ドラフト継続。
+- Execute: 契約値更新なし（ログ追記のみ）。
+- Verify: self-correction `0/3`。
+- Proceed: **Conditional**（`Approval Record: Pending` 継続）。
