@@ -1096,3 +1096,43 @@
 - Verify 結果: 5-phase 順序（Read/Plan → ADR化 → I/F契約固定 → Mock検証 → Verify/Proceed）で整合。
 - Proceed 判定: **Go（contract-only）**。未承認事項は `held` 維持。
 - Stop条件再掲: 自己修復 `4/3` 相当、前提崩壊、未定義競合のいずれか検知時は即停止。
+
+
+## Stream B Contract Lane Run（2026-04-29 / CE0+CE1+CE4 contract freeze with mock validation）
+
+- lane: `Stream B (CE contract lane)`
+- objective: CE0/CE1 系の契約固定と mock 検証を完遂し、実装依存を切り離す
+- scope_check: `01_Plans/issues/issue-CE0-*`, `issue-CE1-*`, `issue-CE4-*` の契約定義のみ
+- edit_prohibition_check: `03_Implement/**`, `04_Documentation/**`, HIL-RS issue/ADR は未編集
+
+### Phase 1: Plan（Read同期 + AC/DoD不足確認）
+- 各対象Issueの契約節を再読し、共通AC/DoDを同期。
+- AC/DoD不足のドラフト提案を以下で固定（合意済み扱い）:
+  - `ac_contract_closed_world_v1`: v1契約は unknown key reject を必須。
+  - `ac_mock_first_decoupling`: backend未実装でも mock で検証可能であること。
+  - `dod_verify_retry_cap_3`: self-correction は最大3回、4回目相当は停止。
+
+### Phase 2: Interface Freeze（API/型/イベント契約固定）
+- CE0固定: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再定義禁止で固定。
+- CE1固定: `ContextQueryV1` / `ContextBundleV1`、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論をv1で固定。
+- CE4固定: `AuditEventV1`、`equivalenceKey AND bundleHash`、`dryRun=true -> sideEffect=none`、監査4点（query/bundle/proposal/apply）を固定。
+
+### Phase 3: Mock Validation（実装非依存検証）
+- mock dataset: `A2-minimal-v1` 前提で契約検証のみ実施。
+- 検証観点:
+  1. `previewConfirmed=false` は `422 preview_required`。
+  2. 同一canonical queryで `queryCanonicalHash` / `bundleHash` が3/3一致。
+  3. unknown key は `400 unknown_contract_key`。
+  4. CE4監査で `equivalenceKey AND bundleHash` 不一致は fail-closed。
+
+### Phase 4: Implementation-ready メモ（コード変更なし）
+- 実装着手順メモを契約参照として固定:
+  1. CE1 mock endpoint で contract test を先行実装。
+  2. CE4 API/CLI は `AuditEventV1` 監査4点を同一入力で比較。
+  3. CE0 safeMode境界（既定ON、review昇格人手限定）を回帰テスト化。
+- 本Phaseでは実装手順の記述のみ行い、コード・運用文書変更は禁止を維持。
+
+### Phase 5: Verify（self-correction 3回上限）
+- verify attempt: `1/3` で通過。
+- stop condition check: 未定義競合なし、範囲外変更要求なし、4回目相当修正要求なし。
+- decision: **Go (contract-only / mock-first / implementation-decoupled)**。
