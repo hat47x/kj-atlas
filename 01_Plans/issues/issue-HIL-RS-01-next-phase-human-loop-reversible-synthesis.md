@@ -559,3 +559,9 @@ gate:
 - 判定: **Conditional / Needs-decision**。
 - 理由: `Approval Record: Pending` および `held` 論点が残存。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
+
+
+## Stream A alignment note (2026-04-29)
+- Phase 1-5の直列運用（Plan -> Execute -> Verify -> Proceed）を再確認。
+- 承認未充足時は `Needs-decision` を維持し、下流の確定化へ進まない。
+- A1契約凍結値は参照専用（再定義禁止）。

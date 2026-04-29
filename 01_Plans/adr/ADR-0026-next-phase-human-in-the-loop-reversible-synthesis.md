@@ -148,3 +148,27 @@
 - ADR側の Context / Decision / Consequences は欠損なし。
 - `Pending bypass` 禁止、`A1 Done 前の A2/A3 Open禁止`、`SafeMode既定ON維持` を再確認した。
 - 判定: **Conditional / Needs-decision**（`Approval Record` 未充足のため）。
+
+
+## Stream A Phase 1-5 contract/governance lock (2026-04-29)
+
+### Context
+- Stream A（クリティカルパス）は HIL-RS 契約・統治の確定を最短で完了しつつ、A1→A2→A3 依存を崩さないことが要求される。
+- 既存記録には `Needs-decision` が残存しており、合意入力前に下流を確定化しない統治境界を再固定する必要がある。
+
+### Decision
+- AC/DoD を本ADR上で再固定し、未承認時の判定を `Conditional/Needs-decision` に固定する。
+- 固定契約値（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON`）は参照専用とし再定義しない。
+- A2/A3 は `A2A3_OPEN_ALLOWED=true` を満たすまで `Draft -> Open` を禁止する。
+
+### Consequences
+- 合意未充足時に実装/運用更新へ誤進行する経路を遮断できる。
+- Stream B/C など後続ストリームは、契約値を再解釈せず固定参照で前進できる。
+
+### AC / DoD（Stream A固定）
+- AC-1: `fixed keys diff=0` を維持する。
+- AC-2: `Pending -> Approved | Pending -> Rejected` 以外の遷移を導入しない。
+- AC-3: A1完了前の A2/A3 Open化を行わない。
+- DoD-1: `Plan -> Execute -> Verify -> Proceed` の直列運用を維持する。
+- DoD-2: self-correction 試行回数を `0/3` から記録し、4回目相当で停止する。
+- DoD-3: `Approval Record` 未入力時は `Needs-decision` で停止またはConditional維持。

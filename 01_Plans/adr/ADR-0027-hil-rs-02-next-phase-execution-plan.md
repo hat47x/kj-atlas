@@ -163,3 +163,24 @@
 - 固定遷移: `Pending -> Approved | Pending -> Rejected` のみ許可。
 - 禁止遷移: `Pending bypass`、`A1 Done前の A2/A3 Draft->Open`。
 - 判定: **Conditional / Needs-decision**（承認証跡 `approved_by` / `approved_at` / `evidence` 未入力）。
+
+
+## Stream A interface-first freeze record (2026-04-29)
+
+### Context
+- HIL-RS-02 は後続ストリームの参照契約であり、A1完了前にA2/A3が契約更新を行うと統治ドリフトが発生する。
+
+### Decision
+- 後続参照契約（用語・責務・入出力境界）を以下で固定する。
+  - 用語: `Security Officer` / `System Owner` / `Platform Operator`
+  - 責務: `human_dual_control_only`
+  - 境界: `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（固定）
+- 実装を伴う箇所は mock contract で代替し、A3は `mock I/F preparation only` を維持する。
+
+### Consequences
+- 契約値の再定義を防ぎ、A2/A3 はインターフェース準備のみを先行できる。
+- 承認入力（`approved_by` / `approved_at` / `evidence`）が揃うまで Go 判定は行わない。
+
+### Gate equation（再掲・固定）
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- `NoGo = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
