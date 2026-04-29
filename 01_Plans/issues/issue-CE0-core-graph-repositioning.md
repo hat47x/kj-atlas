@@ -1042,3 +1042,30 @@
 - 判定: `Done`（Read→Plan→Execute→Verify→Proceed の直列フローを遵守）。
 - ADR論点: 新規発生なし（`No ADR delta`）。発生時は `Context / Decision / Consequences` と承認完了まで `held` 維持。
 - 未承認事項在庫: なし。将来発生時は self-correction 3回上限を超える前に停止報告する。
+
+
+## Phase Execution Record（2026-04-29 / Stream B CE0 interface-freeze synchronized update）
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、`role / transition / no-go` 固定語彙に差分なしを確認。
+- AC/DoD不足として「イベント契約の明示」と「mock切断準備完了条件」の不足を検知。
+
+### Phase 2 Interface Freeze
+- `working -> consensus` の `patch+approval` をイベント契約として固定：
+  - `proposal.submitted`
+  - `proposal.approval_requested`
+  - `proposal.approved`
+  - `consensus.patch_applied`
+- canonical 5 IDs と safeMode境界を不変として保持。
+
+### Phase 3 Mock Decoupling
+- 他実装は mock emitter/consumer により上記4イベントだけで進行可能と定義。
+- direct write / auto-apply 系イベントは contract level で不許可。
+
+### Phase 4 Verify（attempt_1）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` pass。
+- `git diff --check` pass。
+- self-correction `0/3`。
+
+### Phase 5 Gate
+- 判定: `Conditional-Go`（契約凍結としては完了）。
+- 未承認項目: HTTP API具体path/payloadの確定（CE1担当）を `pending` で保持。

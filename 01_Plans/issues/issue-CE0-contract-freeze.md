@@ -1081,3 +1081,35 @@ type PatchProposal = {
 ### Stop / hold conditions
 - 契約ID競合、禁止事項の曖昧化要求、safeMode既定値後退要求、自己修復4回目相当のいずれかで即 `held`。
 - proceed_status: `Conditional-Go`（契約凍結のみ継続、未承認事項は確定しない）。
+
+
+## Stream B latest run（2026-04-29 / CE0 Interface Freeze for mock-first dependency decoupling）
+
+- run_id: `stream-b-ce0-2026-04-29-10`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md / issue-CE0-core-graph-repositioning.md / 02_Architecture/architecture.md（CE0節のみ）`
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read & Gap分析
+- 各対象ファイルを再読し、既存AC/DoDに **I/F凍結の機械可読性**（型/イベント契約）と **mock切断条件** の明示不足を確認。
+- 追加提案（本runで反映）: `if_freeze_signature_required` / `if_freeze_event_contract_required` / `mock_decoupling_ready_required` をAC/DoD補助観点として追加。
+
+### Phase 2 Interface Freeze定義（契約固定）
+- CE0契約IDは再定義せず、`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の署名固定を architecture 側CE0節へ追記。
+- 互換規則: `additionalProperties=false` 相当の厳格キー評価、未知キーは `unknown_contract_key`。
+
+### Phase 3 Mock前提の依存切断設計
+- mock I/Fで進行可能な最小依存を固定：
+  - `previewQuery(ContextQueryV1) -> ContextBundleV1`
+  - `submitProposal(ProposalPatchV1) -> AuditEventV1`
+  - `requestApply(proposalId, approver) -> AuditEventV1`
+- 実装待ち依存を禁止し、下流は上記契約だけでテスト可能とする（contract-only）。
+
+### Phase 4 Plan→Execute→Verify（自己修復上限3）
+- attempt_1 実行: docs-check + 差分健全性を実施し pass。
+- self-correction: `0/3`（追加修復なし）。
+
+### Phase 5 Gate判定
+- 判定: **Conditional-Go**。
+- 未承認項目: なし（本runで追加したI/F凍結観点はCE0契約境界内で完結）。
+- 継続条件: 追加のAPI詳細実装（HTTP path/body最終化等）はCE1へ委譲し、CE0では契約語彙固定のみ維持。
