@@ -532,3 +532,33 @@ delivery_gate_v1:
 - 固定キー不変性（freezeContractId / NoGo return path / safeMode固定値 / gate式）: 差分0。
 - 依存順序逆転（A1 -> A2 -> A3）: 未検知。
 - 変更差分allowlist（許可5ファイル内のみ）: 準拠。
+
+## Stream A execution snapshot（2026-04-29 / serial-phase sync）
+
+### Phase 1: Read & Snapshot
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` の想定との差分を確認。
+- 差分判定: `no unexpected drift`（Proceed可）。
+
+### Phase 2: ADR/CDC明文化
+- **Context**: A1契約固定値を変更せず、A2/A3は参照専用で運用する必要がある。
+- **Decision**: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を再確認し再定義しない。
+- **Consequences**: `Approval Record: Pending` が残る限り、Open化や契約確定化は行わない。
+- **Approval log**: `Pending`（required fields: `approved_by`, `approved_at`, `evidence` 未入力）。
+
+### Phase 3: Plan（A1→A2→A3直列）
+- 対象: 本Issue内の計画/ゲート/検証記述の整合維持。
+- AC/DoD不足: 追加不足なし（既存Draft AC/DoDを継続）。
+- 非対象: 5Issue以外の編集、実装コード変更、他ストリーム依存追加。
+
+### Phase 4: Execute
+- 実施: 本Issueへの実行スナップショット追記のみ。
+- 非実施: 契約値更新、NoGo return path変更、safeMode境界緩和、pending bypass。
+
+### Phase 5: Verify（self-correction max 3）
+- self-correction: `0/3`。
+- docs-checkはPhase 6判定前提として実行し、失敗時のみ再試行カウントを加算する。
+
+### Phase 6: Proceed or Stop
+- 判定: **Conditional / Needs-decision**。
+- 理由: `Approval Record: Pending` および `held` 論点が残存。
+- 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
