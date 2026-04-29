@@ -1013,3 +1013,32 @@
 - fail-safe:
   - 契約ID競合、禁止事項の曖昧化要求、自己修復4回目相当が発生した場合は即 `held` で停止。
 - proceed_decision: `Conditional-Go`（I/F freezeは固定済み。未承認事項の確定化は継続禁止）。
+
+## Phase Execution Record（2026-04-28 / Stream C専任 / CE0 strict serial Read→Plan→Execute→Verify→Proceed）
+### Phase 1 Read（Read同期）
+- 対象ファイルを冒頭から再読し、固定語彙 `working` / `context_projection` / `consensus`、許可遷移 `working -> consensus` + `patch+approval`、No-Go canonical 5 IDs を再確認。
+- 直前記録との差分確認: 語彙差分 0 件、禁止事項差分 0 件、SafeMode既定ON境界の後退 0 件。
+- API/Data型依存の扱いを再確認: mock I/F 定義を前提に依存切断し、実装変更は行わない。
+
+### Phase 2 Plan（Read同期）
+- Phase開始時にRead同期を再実施し、Phase 1 からの語彙・禁止事項・SafeMode境界差分が 0 件であることを確認。
+- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみへ固定し、contract-only / docs-only / single-file を維持。
+- Non-Goals: handler/UI/DB/worker/API/Schema migration を含む実装変更、CE0契約ID再定義、No-Go語彙変更、SafeMode既定緩和。
+- Self-Correction方針: Verify失敗時の自己修復は最大3回、4回目相当は実施せず停止報告。
+
+### Phase 3 Execute（Read同期）
+- Phase開始時にRead同期を再実施し、固定語彙の不一致がないことを確認後に実行。
+- 実施内容は本Issue内の実行記録追記のみ（他ファイル不干渉）。
+- API/Data型依存は mock I/F 前提で記述し、実装側の変更提案・追加は行わない。
+
+### Phase 4 Verify（Read同期）
+- Phase開始時にRead同期を再実施し、`role / transition / no-go`・SafeMode境界・CE0契約ID read-only 制約の維持を確認。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Self-Correction実績: 0/3（上限超過なし）。
+
+### Phase 5 Proceed（Read同期）
+- Phase開始時にRead同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を照合。
+- 判定: `Done`（Read→Plan→Execute→Verify→Proceed の直列フローを遵守）。
+- ADR論点: 新規発生なし（`No ADR delta`）。発生時は `Context / Decision / Consequences` と承認完了まで `held` 維持。
+- 未承認事項在庫: なし。将来発生時は self-correction 3回上限を超える前に停止報告する。
