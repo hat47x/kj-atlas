@@ -22,6 +22,35 @@ describe("FB-P2A contract validation flow", () => {
     expect(result.errors).toEqual([]);
   });
 
+
+  it("A2 fixture signature fails on invalid runtime enum values", () => {
+    const invalidFixtures = P2A_A2_MOCK_FIXTURES.map((fixture) =>
+      fixture.mockCaseId === "M2"
+        ? {
+            ...fixture,
+            payload: {
+              ...fixture.payload,
+              validationResult: "warning" as "pass",
+            },
+          }
+        : fixture.mockCaseId === "M3"
+          ? {
+              ...fixture,
+              payload: {
+                ...fixture.payload,
+                ownerOfFix: "B1" as "A1",
+              },
+            }
+          : fixture
+    );
+
+    const result = validateP2AA2FixtureSignature(invalidFixtures);
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("F2: invalid validationResult=warning");
+    expect(result.errors).toContain("F3: invalid ownerOfFix=B1");
+  });
+
+
   it("A3 proceed gate returns go for M1/M2/M3 pass + M4 fail", () => {
     const logs = toP2AValidationLedger(P2A_A2_MOCK_FIXTURES);
     expect(evaluateP2AA3Proceed(logs)).toEqual({ go: true, reason: "go" });
