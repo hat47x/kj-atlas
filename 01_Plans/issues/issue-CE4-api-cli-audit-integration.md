@@ -973,3 +973,38 @@
   - safeMode緩和要求が発生した場合は **No-Go** で即停止。
   - 語彙再定義要求が発生した場合は **No-Go** で即停止。
   - 自己修復4回目相当の着手が必要になった場合は **No-Go** で即停止。
+
+## Stream D Execution Record（2026-04-28 / user-directive 5-phase serial）
+
+### Phase 1 Read（開始時Read同期）
+- Read同期: 完了（`00_Prompt/*`、`ADR-0001`、`02_Architecture/architecture.md`、`02_Architecture/schemas.md`、`ADR-0019` を順次参照）。
+- 対象限定: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ編集。
+- 固定条件再確認: proposal-only / mock-first / fail-closed / safeMode既定ON / CE0-CE2 read-only。
+
+### Phase 2 Plan（開始時Read同期）
+- Read同期: 完了（契約語彙と停止条件の差分なし）。
+- 5Phase直列を固定: `Read → Plan → Execute → Verify → Proceed`。
+- 依存切断方針: API/CLIはモック可能な署名定義で境界固定し、実装確定を行わない。
+- ADR変更判定: 今回は不要（既存 CDC-CE4-001 / 002 の承認済み範囲で充足）。
+
+### Phase 3 Execute（開始時Read同期）
+- Read同期: 完了（No-Go条項に後退なし）。
+- 実施内容: 本節の追記のみ（docs-only / contract-only）。
+- 非実施: 実装コード変更、他ファイル編集、auto-apply 系導線追加。
+
+### Phase 4 Verify（開始時Read同期）
+- Read同期: 完了（監査4点、`queryCanonicalHash`、AND判定の維持を再確認）。
+- 検証コマンド:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 自己修復回数: `0/3`（上限超過なし）。
+
+### Phase 5 Proceed（開始時Read同期）
+- Read同期: 完了（proposal-only境界・fail-safe停止条件の差分なし）。
+- Proceed Decision: **Go（contract-only / docs-only）**。
+- 維持事項:
+  - API/CLI同値判定は `equivalenceKey + bundleHash`（AND）のみ。
+  - 監査4点 + `queryCanonicalHash` 欠損は fail-closed。
+  - 依存は `mock:<hash>` を含む署名契約で切断し、実装確定は行わない。
+  - 検証エラー修復は最大3回、超過時は停止報告。
