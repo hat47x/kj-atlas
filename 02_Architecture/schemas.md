@@ -86,7 +86,8 @@ export type ContextQueryV1 = {
 };
 
 export type ContextBundleV1 = {
-  bundleHash: string; // sha256 hex (canonical)
+  queryCanonicalHash: string; // sha256 hex (canonical query)
+  bundleHash: string; // sha256 hex (canonical bundle)
   selected: unknown[];
   relations: unknown[];
   evidence: unknown[];
@@ -120,6 +121,13 @@ Contract test観点（CE1 v1）:
 2. 同一 canonical query 3回再実行で `queryCanonicalHash` / `bundleHash` が3/3一致。
 3. 未定義キーは常に `400 unknown_contract_key`。
 4. CE2/CE4 連携キー `sourceBundleHash === bundleHash` を比較可能。
+
+
+Mock Validation Plan（implementation-decoupled）:
+- Plan: `ContextQueryV1` / `ContextBundleV1` の固定fixture（A2-minimal-v1）を使用して契約検証のみ実施。
+- Execute: backend未実装でも `POST /context/query` / `POST /context/bundle` の入出力語彙をmockで検証。
+- Verify: deterministic hash（3/3一致）、preview gate、unknown key reject を契約テストで確認。
+- Proceed: CE2/CE4へ `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` をread-only handoff。
 
 後方互換観点（CE1 v1）:
 
