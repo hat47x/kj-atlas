@@ -438,6 +438,9 @@ _CE4_OPERATION_TO_COMMANDS: dict[str, set[str]] = {
 }
 _CE4_REQUIRED_EVENT_SET = frozenset({"query", "bundle", "proposal", "apply"})
 
+def _ce4_validation_error(code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=422, detail={"code": code, "message": message})
+
 
 class _Ce4AuditTrackerState(BaseModel):
     seen_operations: set[str] = Field(default_factory=set)
@@ -494,24 +497,21 @@ def post_context_audit(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     if payload.queryHash is not None and payload.queryHash != payload.equivalenceKey:
-        raise HTTPException(status_code=422, detail="queryHash must equal equivalenceKey for CE4 equivalence checks")
+        raise _ce4_validation_error("query_hash_mismatch", "queryHash must equal equivalenceKey for CE4 equivalence checks")
     if payload.operation in {"proposal", "apply"} and payload.sourceBundleHash is None:
-        raise HTTPException(status_code=422, detail="sourceBundleHash is required for proposal/apply operations")
+        raise _ce4_validation_error("missing_source_bundle_hash", "sourceBundleHash is required for proposal/apply operations")
     if payload.operation == "apply" and not payload.dryRun:
-        raise HTTPException(status_code=422, detail="CE4 apply operation requires dryRun=true")
+        raise _ce4_validation_error("apply_requires_dry_run", "CE4 apply operation requires dryRun=true")
     if settings.ce4_dry_run_enforce_no_side_effect and payload.dryRun and payload.sideEffect != "none":
-        raise HTTPException(status_code=422, detail="dryRun=true requires sideEffect=none")
+        raise _ce4_validation_error("dry_run_side_effect_mismatch", "dryRun=true requires sideEffect=none")
     if (
         payload.sourceBundleHash is not None
         and payload.sourceBundleHash.startswith("mock:")
         and not settings.ce4_source_bundle_hash_allow_mock
     ):
-        raise HTTPException(status_code=422, detail="mock sourceBundleHash is disabled by CE4 runtime policy")
+        raise _ce4_validation_error("mock_source_bundle_hash_disabled", "mock sourceBundleHash is disabled by CE4 runtime policy")
     if payload.command not in _CE4_OPERATION_TO_COMMANDS[payload.operation]:
-        raise HTTPException(
-            status_code=422,
-            detail=f"command '{payload.command}' is invalid for operation '{payload.operation}'",
-        )
+        raise _ce4_validation_error("operation_command_mismatch", f"command '{payload.command}' is invalid for operation '{payload.operation}'")
     if settings.ce4_audit_require_all_events:
         _record_ce4_event_and_validate_completeness(
             equivalence_key=payload.equivalenceKey,
