@@ -290,3 +290,48 @@ export type ContextBundleV1 = {
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
 - 検証条件: hash決定論一致, preview gate強制, docs-check pass
+
+## Stream H Execution Log（2026-04-29 / CE0-CE1-CE4 implementation readiness, contract-first）
+
+- lane: `Stream H`
+- mode: `contract-first / mock-driven / non-interference`
+- editable_scope: `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（allowlist準拠）
+- dependency_policy: CE0/CE4 は read-only 参照、I/F依存はすべてモック境界で固定
+- self-repair budget: `0/3`（超過時停止ルールを維持）
+
+### Phase 1 Read
+- CE0（contract freeze）・CE1（ContextQuery/Bundle）・CE4（API/CLI/Audit）の既存契約境界を再読し、語彙再定義禁止を確認。
+- `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の fail-closed 意味論を再確認。
+- SafeMode 後退禁止（`safeMode=true` 既定、`allowUnreviewedText=false`）を再確認。
+
+### Phase 2 Plan
+- 実装前提のI/F依存をモック化する計画を固定：
+  - CE1→CE4 引き渡しキー: `queryCanonicalHash`, `bundleHash`。
+  - CE4 側の同値判定は read-only 条件 `equivalenceKey AND bundleHash` を採用。
+- 契約先行に限定し、実装詳細（provider選択・最適化・永続化手段）は範囲外に固定。
+
+### Phase 3 Execute
+- 本Issue上で contract-only の実装準備ログを追記（コード変更なし）。
+- Mock I/F前提を明文化：
+  - Query Preview 未確認時は常に `422 preview_required`。
+  - 未定義キーは常に `400 unknown_contract_key`。
+  - 同一 canonical query で bundle差異発生時は `409 nondeterministic_bundle`。
+
+### Phase 4 Verify
+- docs整合チェックを実施し、契約語彙の衝突がないことを確認。
+- self-repair は未使用（`0/3`）。
+- 停止条件（safeMode後退要求 / 語彙衝突未解決 / 4回目相当修復要求）は未発火。
+
+### Phase 5 Proceed
+- 判定: **Conditional-Go（実装準備完了）**。
+- 次工程への引き渡し条件:
+  - モック境界で CE1 I/F を固定したまま backend/provider 実装へ着手可能。
+  - CE0/CE4 契約更新要求が出た場合は本レーンで確定せず `held` へ遷移。
+
+### CDC Gate（ADR関連変更時の必須判定）
+- 判定: **No new ADR required in this run**（既存契約の再確認と実装準備記録のみ）。
+- ルール: もし CE1 契約語彙の追加・改名・意味変更が必要になった場合は、
+  1) Context
+  2) Decision
+  3) Consequences
+  を本Issueに先行記録し、承認完了まで `held` を維持する。
