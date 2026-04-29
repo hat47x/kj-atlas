@@ -238,6 +238,36 @@ export type ContextBundleV1 = {
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `rg -n "CE1-HASH-DET-IF|queryCanonicalHash|bundleHash|sha256|nondeterministic_bundle" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
 - `rg -n "previewConfirmed=false|422 preview_required|unknown_contract_key|closed-world" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
+
+## CE1 Serial Execution Record（2026-04-29 / 5-phase directive sync）
+
+### Phase 1 Read
+- 対象ファイルを再Readし、CE1凍結ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）とエラー語彙固定（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
+- 差分検知: なし（contract vocabulary collision=0 / contract id collision=0）。
+
+### Phase 2 Plan（ADR Context / Decision / Consequences 先行）
+- Context: CE0 read-only境界を維持しつつ、CE1はI/F契約固定のみを担当する。
+- Decision: `ContextQueryV1` / `ContextBundleV1` のclosed-world、`previewConfirmed=false -> 422 preview_required`、`sameQuery && !sameBundle -> 409 nondeterministic_bundle` をv1固定として維持。
+- Consequences: CE2/CE4 連携は `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` を利用するが、CE1は実装詳細を持たない。
+- Approval log: Security Officer / System Owner の承認済み記録（2026-04-28）を再確認し、追加CDCは起票しない。
+
+### Phase 3 Execute（contract-only）
+- 実施: 本ファイル内の実行記録追記のみ。
+- 非実施: handler/UI/DB/worker/API実装、他ファイル編集、safeMode境界の再定義。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "CE1-CTXQ-IF|CE1-CTXB-IF|preview_required|unknown_contract_key|nondeterministic_bundle" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
+- `git diff --check`
+- 結果: pass（self-correction 0/3、上限超過なし）。
+
+### Phase 5 Proceed
+- Proceed Decision: **Go（contract-only / docs-only）**。
+- 維持事項:
+  - CE0 read-only境界を維持し、再定義しない。
+  - CE1 v1契約（closed-world / preview gate / deterministic hash）を凍結維持する。
+  - 競合検知または自己修復3回超過時は `held` で即停止する。
 - `rg -n "allowUnreviewedText=false|safemode_default_relaxation|preview_bypass" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`
 - `git diff --check`
 
