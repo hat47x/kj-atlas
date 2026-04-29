@@ -239,6 +239,32 @@
 
 ## Stream G dedicated lane run（2026-04-28 / DOC-OPS-05 Security-docs専任）
 
+## Stream E serial run（2026-04-29 / Doc-Ops Draft lane）
+
+### Phase 1 Plan
+- AC/DoD不足を補完して固定。
+  - AC: 用語・責務・導線・固定値（D1〜D4）の同時整合。
+  - DoD: docs-only、`docs-check`、Proceed判定記録。
+- 設計起因の不整合は文書で解消せず停止報告する方針を再確認。
+
+### Phase 2 Read同期
+- 対象文書と関連正本（`strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` / `e2e_testing.md`）を再読。
+- `Improve external` 分類と public-exposure 境界を維持。
+
+### Phase 3 Execute
+- `security_operational_guidelines.md` に Stream E の5Phaseログを追記（docs-only）。
+- 実装・ADR本文・指定外ファイルは未編集。
+
+### Phase 4 Verify
+- `rg -n "Stream E serial update log|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security_operational_guidelines.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- `git diff --check`
+- self-repair: 0/3
+
+### Phase 5 Proceed
+- 判定: **Go**（停止条件非該当）。
+- Issue status: **Done 維持**（Draft lane の追記同期を完了）。
+
 ### Phase 1 Read（開始同期）
 - Read同期を実施し、Read Orderと本Issue本文、security lane固定順（operations → security → guidelines）を再確認。
 - docs-only / allowlist内編集 / `VerificationLevel=docs-check` を再確認。
