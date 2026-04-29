@@ -41,7 +41,7 @@ const compareByKey = (
   if (leftMetric !== rightMetric) {
     return leftMetric - rightMetric;
   }
-  return left.candidateId.localeCompare(right.candidateId);
+  return 0;
 };
 
 const compareWithAudit = (
