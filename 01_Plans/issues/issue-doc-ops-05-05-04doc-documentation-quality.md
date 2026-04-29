@@ -58,6 +58,16 @@
 - [ ] Proceed判定（三値）が記録される。
 - [ ] 5Phase実行記録が簡潔に維持される。
 
+### AC/DoD不足ドラフト提案（事前合意ログ）
+
+- Gap認識: ACは存在するが、DoD（完了判定）の明文化が不足。
+- Draft提案（実編集前）:
+  - DoD-1: ACチェック項目が全て確認済みであること。
+  - DoD-2: Validation plan記載コマンドを実行し、差分体裁とIssue memo整合が維持されること。
+  - DoD-3: 5Phase直列ログに「Phase開始時Read同期」を明示し、自己修復回数が3回以内であること。
+  - DoD-4: 編集対象が `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md` のみに限定されること。
+- 合意: 本Issueメモ内で上記DoDを採用し、以降のExecute/Verifyに適用する（Status: Agreed）。
+
 ## 6) 実装タスク分解 / Task breakdown
 
 - [ ] T1 重複記録を整理し、最終判断情報を集約。
@@ -83,21 +93,28 @@
 ## 9) Phase execution record（Stream E）
 
 ### Phase 1 Read
+- Read同期: 対象ファイルおよび上位基準（`AGENTS.md` / `01_Plans/documentation_quality.md`）を再読。
 - 対象ファイル再読を実施し、判定情報の分散を確認。
 
 ### Phase 2 Plan
+- Read同期: Phase 1の読取結果とRequirement meta I/Fを再確認。
 - 主責務を「Open化可否判定の明確化」に固定。
+- AC/DoD不足を検出し、ドラフト提案→合意ログを先行記録。
 
 ### Phase 3 Execute
+- Read同期: 合意済みDoDを再確認してから編集開始。
+- メモ品質固定のみを実施（本文改稿禁止）。
 - 重複ログを統合し、判定・検証・Proceedを単一セクションへ再編。
 - 指定外ファイルは未編集。
 
 ### Phase 4 Verify
+- Read同期: Validation planとDoDを照合して検証コマンドを確定。
 - `git diff --check` を実行。
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行。
 - 自己修復回数: 0/3。
 
 ### Phase 5 Proceed
+- Read同期: AC/DoD/Verify結果を最終突合。
 - Open readiness: **Ready**
 - Blocker: なし
 - Needs decision: なし（DecisionStatus=Fixed）
