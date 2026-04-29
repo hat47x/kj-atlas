@@ -109,6 +109,34 @@
   3. A1未完了での A2/A3 Open
   4. safeMode / dual-control / freeze keys の後退
 
+### Freeze判定条件（contractLinkLocked / sharedResourceFreeze）
+- `contractLinkLocked=true` の成立条件（全て必須）
+  1. `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"` が一致していること。
+  2. `contract_ids` の4要素（`A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`）が同一順序で一致していること。
+  3. `NoGo return path` が `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定されていること。
+  4. A2/A3側文書が `DependsOnContractID/ReferenceContractID` でA1契約を参照し、再定義していないこと。
+- `sharedResourceFreeze=true` の成立条件（全て必須）
+  1. `schemaVersion=="1.0.0"` かつ `overridePolicy=="human_dual_control_only"` が一致していること。
+  2. `safeModeDefault=="ON"` かつ `safeModeBoundary=="SAFE_MODE_STRICT_ON"` が一致していること。
+  3. `decisionQueueTransition=="Pending -> Approved | Pending -> Rejected"` が一致していること。
+  4. `pendingBypassDetected==false` かつ `undefinedConflictDetected==false` であること。
+- いずれか1条件でも不一致の場合は `NoGo` とし、A2/A3の更新を停止してA1へ差し戻す。
+
+### A2/A3参照固定値（変更禁止）
+- Fixed IDs:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Fixed value set:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Prohibited mutation:
+  - enum追加・判定式派生・ID改名・NoGo return path変更・Pending bypass。
+
 ### Mock可能な最小シグネチャ（Governance Gate）
 ```yaml
 governance_gate_v1:
