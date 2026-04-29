@@ -243,3 +243,15 @@ docker compose up -d
 
 ### Phase 5 Proceed
 - 判定: **Ready**（分類方針と公開境界を維持）。
+
+## Stream E共通: Draft課題のOpen化条件（DOC-OPS-05）
+
+- 本文書で扱う Draft 課題は、次の **5条件をすべて満たした場合のみ Open 化** する。
+  1. **Read**: 対象本文書と上位根拠（00〜02、必要なADR）を再読し、参照差分を列挙済み。
+  2. **Plan**: Scope / Non-Goals / Acceptance / Validation / Stop Conditions を明文化済み。
+  3. **Execute**: docs-only 境界（実装コード非変更）を維持し、allowlist 外の差分が 0。
+  4. **Verify**: 再現可能な docs-check コマンドと結果（成功/未実施理由）を記録済み。
+  5. **Proceed**: Go/No-Go/Conditional を明示し、未確定事項を「決定」扱いせず次アクションに分離済み。
+- 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
+- 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
+
