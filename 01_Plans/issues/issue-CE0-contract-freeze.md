@@ -1113,3 +1113,51 @@ type PatchProposal = {
 - 判定: **Conditional-Go**。
 - 未承認項目: なし（本runで追加したI/F凍結観点はCE0契約境界内で完結）。
 - 継続条件: 追加のAPI詳細実装（HTTP path/body最終化等）はCE1へ委譲し、CE0では契約語彙固定のみ維持。
+
+## Stream B latest run（2026-04-29 / CE0 only / contract freeze phase-5 refresh）
+
+- run_id: `stream-b-ce0-2026-04-29-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read+Plan
+- 現行 `Status=Open / Priority=P1 / Scope=docs-only, contract-only, mock-first` を再読し、単一ファイル編集制約を再確認。
+- AC/DoDを確認し、不足判定を実施。
+- AC/DoD不足判定: **新規不足なし**（既存 `ac_phase_re_read_required` / `dod_verify_retry_cap` / `dod_contract_only_mock_first` で充足）。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- **Context**: CE0 Contract Freezeは本IssueをSSOTとして保持し、下流ストリームは read-only 参照のみ許可される。契約ドリフトとsafeMode後退を抑止する必要がある。
+- **Decision**: Contract Freeze不変条件を以下で固定する。
+  - 不変条件1: Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の追加・改名・削除を禁止。
+  - 不変条件2: safeMode既定（`safeMode=true` / `allowUnreviewedText=false`）の緩和を禁止。
+  - 不変条件3: No-Go canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）を固定。
+  - 不変条件4: CE1/CE2/CE4は contract-only の read-only参照に限定し、実装確定記述を持ち込まない。
+- **Consequences**: 逸脱要求や未定義競合が生じた場合は `held` 停止へ即時遷移でき、契約境界の安定性を維持できる。
+
+### Phase 3 Execute（contract-only / mock-first）
+- 実施: 本Issue内の実行ログ更新のみ。
+- 依存切断ルールを再確認:
+  - contract-only
+  - mock/hash/read-only参照
+  - 他Issue・実装はI/F名のみ参照（強結合禁止）
+- 非実施: 実装変更、指定外ファイル編集、Contract ID再定義、safeMode既定値変更。
+
+### Phase 4 Verify
+- mock-first原則適合: `ok`
+- 他ファイル無変更: `ok`
+- テキスト整合（定義語・固定値）: `ok`
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 Proceed（受け渡しI/Fのみ）
+- 判定: **Conditional-Go**
+- handoff_if_only:
+  - `CE0-CTX-IF`（read-only）
+  - `CE0-SAFEMODE-IF`（read-only）
+  - `CE0-REVIEW-IF`（read-only）
+  - `CG-01..05`（read-only）
+- 実装指示は行わず、上記I/F参照のみを次工程入力とする。
