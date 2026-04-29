@@ -444,3 +444,31 @@
   3. `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` が維持。
   4. フェイルセーフ3条件（用語・責務分離・固定値）違反なし。
 - いずれか未達時は **Needs-decision** または **Hold** に遷移し、Open化を停止。
+
+## Stream J public-boundary fix memo run（2026-04-28）
+
+### Phase 1 Read同期
+- Read同期: 本Issueの `Requirement meta I/F`・`ADR handling rule`・`Stop conditions` を再読し、対象を `issue-doc-ops-05-13-04doc-security.md` のみに固定。
+- Read同期: 語彙境界は参照のみとし、`operations` / `security_operational_guidelines` はクロス編集禁止を確認。
+
+### Phase 2 Read同期 + Plan
+- Read同期: 既存の分類方針 `Improve external` と `DecisionStatus=Fixed` を再確認。
+- Plan: 公開境界固定のメモ整備に限定し、実装変更・他Issue編集・用語の再定義を禁止。
+- Plan: Self-Correction は最大3回。超過 / 前提崩れ / 未定義競合を検知した時点で `Hold` 停止。
+
+### Phase 3 Read同期 + Execute（CDC明文化）
+- Read同期: ADR論点の扱いを再確認（差分発生時は C/D/C を明文化し、承認後にのみ進行）。
+- Context: security 文書は公開境界を示す基底方針であり、運用手順の詳細は guidelines 側の責務。
+- Decision: 本runでは公開境界固定メモの追記のみ実施し、新規ADR決定・新規固定値定義は行わない。
+- Consequences: 境界ドリフトを抑制し、未承認確定化を回避したまま docs-check 可能な状態を維持。
+
+### Phase 4 Read同期 + Verify
+- Read同期: `Expected verification level=docs-check` / `VerificationLevel=docs-check` / `GoNoGoGate=Required` を再確認。
+- Verify command:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+- Self-Correction: 0/3（4回目相当、前提崩れ、未定義競合は停止条件により `Hold`）。
+
+### Phase 5 Read同期 + Proceed
+- Read同期: `Stop conditions` と `ADR handling rule` を再読。
+- 判定: **Ready**（理由: 公開境界固定メモのみを追加し、横断編集禁止・CDC承認前進行禁止・self-correction上限を満たしたため）。
