@@ -487,3 +487,12 @@ gate:
 ### Proceed
 - 判定: `Conditional`。
 - 根拠: 承認記録未確定のため、Phase 4（RS-01 umbrella）への進行は保留。
+
+
+## Stream A proceed gate replay（2026-04-29）
+
+- Phase再読結果: fixed keys diff=`0`。
+- 承認状態: `Approval Record: Pending`（`approved_by` / `approved_at` / `evidence` 未入力）。
+- Proceed判定: **Conditional / Needs-decision**。
+- 停止理由: 承認未充足のため、A2/A3へのOpen昇格不可。
+- 再開条件: 承認証跡入力完了 + `pendingDecisionQueueCount==0`。

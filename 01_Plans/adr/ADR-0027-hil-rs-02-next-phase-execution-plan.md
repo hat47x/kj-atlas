@@ -136,3 +136,20 @@
 - Related: `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`
 - Related: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - Derived-from: `ADR-0026`
+
+
+## Stream A serial execution update（2026-04-29）
+
+### Plan（対象/非対象宣言）
+- 対象: `ADR-0026/0027` と HIL-RS-01/02 issue（allowlist内）
+- 非対象: 実装コード、dashboard、allowlist外issue。
+
+### Execute（HIL-RS-01-A1 -> HIL-RS-02-A1 -> next-phase）
+1. HIL-RS-01-A1 契約固定の再確認（fixed keys driftなし）。
+2. HIL-RS-02-A1 統治ゲート（Pending bypass禁止・NoGo return path固定）を再確認。
+3. next-phase計画は `Approval Record` 完了まで Draft/Conditional を維持。
+
+### Verify（AC/DoD照合）
+- AC: fixed keys diff=`0`、`unlockRule` 一致、`Pending -> Approved/Rejected` 以外の遷移追加なし。
+- DoD: `Plan -> Execute -> Verify -> Proceed` を維持し、self-correction は `0/3`。
+- Gate結果: **Conditional**（承認待ち継続）。

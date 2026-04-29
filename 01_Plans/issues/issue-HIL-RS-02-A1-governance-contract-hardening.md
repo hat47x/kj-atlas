@@ -490,3 +490,9 @@ governance_gate_v1:
 ### Proceed
 - 判定: `Conditional`。
 - 根拠: Approval RecordがPendingのため、Phase 3への進行は「条件付き（承認後）」。
+
+
+## Stream A execution note（2026-04-29）
+- Contract baseline re-read completed.
+- `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` のドリフトは未検知。
+- `Approval Record` 未充足のため、状態は **Pending維持**。
