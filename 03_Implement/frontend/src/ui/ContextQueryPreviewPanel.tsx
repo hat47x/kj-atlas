@@ -22,6 +22,13 @@ export function ContextQueryPreviewPanel({
   isReadOnly = false,
 }: ContextQueryPreviewPanelProps) {
   const disabled = isReadOnly || isSubmitting;
+  const submitBlocked = disabled || !previewState.canSubmit;
+  const primaryBlocker = previewState.blockers[0] ?? null;
+
+  const handleSubmit = () => {
+    if (submitBlocked) return;
+    onSubmit();
+  };
 
   return (
     <section
@@ -68,9 +75,22 @@ export function ContextQueryPreviewPanel({
         I reviewed this ContextQuery and confirm preview before submit.
       </label>
 
-      <button data-testid="ce1-query-preview-submit" type="button" onClick={onSubmit} disabled={disabled || !previewState.canSubmit}>
+      <button
+        data-testid="ce1-query-preview-submit"
+        type="button"
+        onClick={handleSubmit}
+        disabled={submitBlocked}
+        aria-disabled={submitBlocked}
+        title={primaryBlocker ?? undefined}
+      >
         {isSubmitting ? "Submitting..." : "Submit Context Bundle (Mock)"}
       </button>
+
+      {primaryBlocker ? (
+        <div data-testid="ce1-query-preview-gate-status" style={{ fontSize: 11, color: "#b91c1c" }}>
+          Preview gate block: {primaryBlocker}
+        </div>
+      ) : null}
 
       <footer style={{ fontSize: 11, color: "#475569", display: "grid", gap: 2 }}>
         <span>latest bundleHash: {latestBundleHash ?? "(not generated)"}</span>

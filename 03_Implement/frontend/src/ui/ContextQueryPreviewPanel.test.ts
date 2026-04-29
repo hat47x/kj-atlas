@@ -59,6 +59,8 @@ describe("ContextQueryPreviewPanel", () => {
     expect(html).toContain("previewConfirmed must be true before submit");
     expect(html).toContain('data-testid="ce1-query-preview-submit"');
     expect(html).toContain("disabled");
+    expect(html).toContain("Preview gate block: previewConfirmed must be true before submit");
+    expect(html).toContain('title="previewConfirmed must be true before submit"');
   });
 
   it("shows safeMode guard when includeUnreviewed is selected", () => {
