@@ -120,3 +120,20 @@
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 - Related: `00_Prompt/domain.md`
 - Derived-from: `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+
+
+## Stream A critical-path checkpoint（2026-04-29）
+
+### Phase 1: Contract Baseline Read
+- 対象（Stream A allowlist）を再読し、`Status / Dependencies / Pending承認` を抽出した。
+- 抽出結果: A1=`Open`、RS-01 umbrella=`Open`、RS-02 umbrella=`Open`、A2=`Open`、A3=`Draft`。
+- Pending承認: `Approval Record` 必須項目（`approved_by` / `approved_at` / `evidence`）が未充足のため **承認待ち**。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約凍結未完了のまま A2/A3 を前進させると `A1 -> A2 -> A3` 依存が崩れる。
+- Decision: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` を固定継続。
+- Consequences: 承認待ちの間は Proceed 判定を `Conditional/Needs-decision` に維持し、確定化を行わない。
+
+### Phase 4: Proceed Gate
+- 前提差分: fixed keys diff=`0`（再読時点）。
+- 判定: **Needs-decision（停止可能状態）**。承認未充足のため、次工程は人間承認入力後に再開する。

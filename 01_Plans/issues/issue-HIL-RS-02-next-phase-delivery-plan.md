@@ -481,3 +481,21 @@ delivery_gate_v1:
 ### Proceed
 - 判定: `Conditional`。
 - 根拠: Approval Record未確定のため、次Phase（A1 hardening）は人間承認確定まで進行保留。
+
+
+## Stream A fixed-serial update（2026-04-29）
+
+### Plan
+- 変更対象: 本Issueの運用ログとゲート判定記録のみ。
+- 非対象: allowlist外ファイル、実装コード。
+
+### Execute
+- HIL-RS-02-A1 の統治契約（Pending bypass禁止 / NoGo return path固定）を再確認。
+- next-phaseは `Approval Record` 未充足のため確定化せず。
+
+### Verify
+- AC/DoD照合: pass（fixed keys diff=`0`、未定義依存なし）。
+- self-correction: `0/3`。
+
+### Proceed
+- 判定: **Conditional**（承認待ち）。

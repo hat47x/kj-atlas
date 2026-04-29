@@ -483,3 +483,16 @@ gate:
 ### Proceed
 - 判定: `Conditional`。
 - 根拠: `Approval Record: Pending` が残存し、次Phaseは承認確定後にのみ進行可能。
+
+
+## Stream A Phase checkpoint（2026-04-29）
+
+### Contract Baseline Read
+- 再読対象: RS-01 umbrella / RS-01 A1 / RS-02 umbrella / RS-02 A1 / RS-02 A3。
+- 依存: `A1 -> A2 -> A3` を維持。
+- Pending承認: `Approval Record` が未入力のため **承認待ち**。
+
+### AC/DoD draft補完（承認待ち）
+- AC案: `Status/Dependencies/fixed keys` の差分ゼロを Proceed前提にする。
+- DoD案: `Needs-decision` 判定時は Execute確定を停止し、`原因/影響I/F/再開条件` を記録する。
+- 合意状態: **Pending**（人間承認待ち）。
