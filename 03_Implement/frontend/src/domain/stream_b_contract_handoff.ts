@@ -8,7 +8,7 @@ export type StreamBValidationOwner = "A1" | "A2" | "A3";
 export type StreamBValidationLog = {
   contractVersion: StreamBContractId | string;
   schemaVersion: StreamBSchemaVersion | string;
-  mockCaseId: "M1" | "M2" | "M3" | "M4";
+  mockCaseId: "M1" | "M2" | "M3" | "M4" | string;
   validationResult: "pass" | "fail";
   ownerOfFix: StreamBValidationOwner;
   evidence: string;
