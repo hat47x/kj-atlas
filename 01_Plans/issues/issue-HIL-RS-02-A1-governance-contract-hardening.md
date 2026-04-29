@@ -557,3 +557,59 @@ governance_gate_v1:
 - 固定キー不変性（freezeContractId / NoGo return path / safeMode固定値 / gate式）: 差分0。
 - 依存順序逆転（A1 -> A2 -> A3）: 未検知。
 - 変更差分allowlist（許可5ファイル内のみ）: 準拠。
+
+## Stream A critical-path execution log（2026-04-29 / Contract Freeze & Handover Packet refresh）
+
+### Phase 1: Read & Inventory
+- 再読対象: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-CE0-contract-freeze.md` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
+- I/F未確定棚卸し結果:
+  - 未確定（人間承認待ち）: `Approval Record`（`approved_by` / `approved_at` / `evidence`）。
+  - 固定済み: `freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `NoGo return path`。
+- AC/DoD不足判定: 新規不足なし（既存 `AC-D1..D3 / DoD-D1..D3` を継続）。
+
+### Phase 2: ADR/CDC
+- Context: 既存契約値は固定済みだが、下流Stream B/C向け引き渡し物を「read-only契約パケット」として明示化する必要がある。
+- Decision: 下流参照を `HIL-RS-02-A1-CONTRACT-FREEZE-v1` に統一し、今回ランで `Contract Snapshot ID` を発行して handover packet を固定する。
+- Consequences: Stream B/C は snapshot参照のみ許可され、契約値の再定義・派生定義・ID改名は禁止となる。
+
+### Phase 3: Contract Freeze
+- Contract snapshot ID（版）: `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1-2026-04-29`。
+- Freeze対象（再確認）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Compatibility条件:
+  - 後方互換は `schemaVersion=1.0.0` 同値時のみ `compatible=true`。
+  - enum追加・判定式派生・NoGo return path変更は `compatible=false` とし停止。
+
+### Phase 4: Handover Packet（Stream B/C向け固定資料）
+- Packet ID: `HANDOVER-HIL-RS-02-A1-2026-04-29`。
+- I/F定義（read-only）:
+  1. `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`（再定義禁止）
+  2. `A2A3_OPEN_ALLOWED` 判定式（本Issue記載のcanonical式を唯一参照）
+  3. `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（固定）
+- Non-goals:
+  - 実装コード変更
+  - A2/A3側での契約値補完・拡張
+  - pending事項の確定化
+- 禁止変更:
+  - `safeModeDefault` / `safeModeBoundary` 後退
+  - `overridePolicy` 緩和
+  - `Pending bypass`
+  - `freezeContractId` 改名・再採番
+- 変更凍結宣言: **`HIL-RS-02 A1 contract is frozen as of 2026-04-29 (UTC)`**。
+
+### Verify
+- self-correction counter: `0/3`。
+- docs-check実行（validator / unittest / diff check）を通過した場合のみ `Conditional` 以上を維持。
+
+### Proceed
+- 判定: **Conditional**（`Approval Record: Pending` が残存するため）。
+- 失敗条件 / 影響I/F / 要人間判断:
+  - failure_condition: 承認未完了のまま `Draft/Open` 変更要求が発生した場合。
+  - impacted_interfaces: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`。
+  - human_decision_required: `approved_by` / `approved_at` / `evidence` の確定入力。
