@@ -256,6 +256,8 @@ issue補助メモには、最低でも次の項目を含める。
 | HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
 | HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | TBD |
 
+- Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
+
 ### HIL-RS-01 実行順序と競合回避（Stream D 統合基準）
 
 - 依存順は **A1 → A2 → A3** の直列を固定し、A1完了報告が揃うまで A2/A3 は着手しない。
