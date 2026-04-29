@@ -220,6 +220,32 @@ CEフェーズ開始時点の最小契約として、Graph責務・I/O・禁止�
   - `Working -> Consensus` は `applyPatch` 承認経路のみ。
   - `Working -> ContextProjection` は読取専用投影のみ（永続更新なし）。
 
+
+
+### 7A.2.1 Interface Freeze（APIシグネチャ / データ型 / イベント契約）
+
+CE0では実装詳細ではなく、下流がmockで自走できる最小契約のみを固定する。
+
+- **Type Signatures（v1固定）**
+  - `ContextQueryV1 = { goal: string; scope: string[]; depth: "shallow"|"standard"|"deep"; constraints: string[]; reviewFilter: "all"|"human_reviewed_only"; safeModePolicy: { safeMode: true; allowUnreviewedText: false }; outputMode: "preview"|"proposal" }`
+  - `ContextBundleV1 = { bundleHash: string; queryRef: string; cards: object[]; islands: object[]; relations: object[]; generatedAt: string }`
+  - `ProposalPatchV1 = { proposalId: string; diff: object; rationale: string; sourceBundleHash: string; requestedBy: string }`
+  - `AuditEventV1 = { eventId: string; eventType: "proposal.submitted"|"proposal.approval_requested"|"proposal.approved"|"consensus.patch_applied"; at: string; actor: string; proposalId?: string; bundleHash?: string }`
+
+- **Contract Methods（mock-first）**
+  - `previewQuery(input: ContextQueryV1): ContextBundleV1`
+  - `submitProposal(input: ProposalPatchV1): AuditEventV1`
+  - `requestApply(proposalId: string, approver: string): AuditEventV1`
+
+- **Compatibility / Validation Rules**
+  - 未知キーは `unknown_contract_key` として拒否する。
+  - `ContextBundleV1.bundleHash` は deterministic でなければならず、非決定的結果は `nondeterministic_bundle` とする。
+  - `previewQuery` を経ない apply 要求は `preview_required` として失敗扱い。
+
+- **Event-order invariant（適用前提）**
+  - 許可順序: `proposal.submitted -> proposal.approval_requested -> proposal.approved -> consensus.patch_applied`
+  - 欠落・逆順・直接 `consensus.patch_applied` は No-Go（`consensus_direct_write` 相当）。
+
 ### 7A.3 禁止事項（Non-Regression）
 
 - AIは `Consensus Graph` を直接更新してはならない。
