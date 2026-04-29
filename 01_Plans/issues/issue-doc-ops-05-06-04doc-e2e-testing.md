@@ -49,20 +49,24 @@
 - 変更対象: Docs（Issue memo only）
 - 分類方針: **Improve external（維持）**
 - 非目標: 対象文書本体の編集、shared resources更新、他Issue編集。
+- 作業プロトコル: **Read → Plan → Execute → Verify → Proceed** を固定適用する。
+- 他ストリーム干渉禁止: 本メモ以外の変更を行わない。
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Improve external 判定と根拠（公開runbook品質向上）が明記される。
-- [ ] GoNoGoGate=Required の判定条件（ADR-0019整合、公開境界）が明記される。
-- [ ] Validation plan が `docs-check` と一致する。
-- [ ] Proceed判定（三値）が記録される。
-- [ ] 5Phase実行記録が1セットで維持される。
+- [x] Improve external 判定と根拠（公開runbook品質向上）が明記される。
+- [x] GoNoGoGate=Required の判定条件（ADR-0019整合、公開境界）が明記される。
+- [x] Validation plan が `docs-check` と一致する。
+- [x] Proceed判定（三値）が記録される。
+- [x] 5Phase実行記録が1セットで維持される。
+- [x] ADR論点は CD&C（Claim/Decision/Constraint）で明文化し、承認必須である旨を記録する。
+- [x] 検証失敗時の自己修復は最大3回で停止するルールを記録する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 重複ログを整理し、最終判定情報を単一化。
-- [ ] T2 AC/DoD不足を補完してOpen化基準を固定。
-- [ ] T3 Verify結果を記録。
+- [x] T1 重複ログを整理し、最終判定情報を単一化。
+- [x] T2 AC/DoD不足を補完してOpen化基準を固定。
+- [x] T3 Verify結果を記録。
 
 ## 7) 検証計画 / Validation plan
 
@@ -74,30 +78,46 @@
   - active memo検証に副作用なし。
 - 未実施時の理由・代替検証:
   - N/A
+- 修復ポリシー:
+  - 検証失敗時は原因切り分け→最小修正→再検証を行う。
+  - 自己修復は最大3回までとし、4回目は停止して承認待ちへ移行する。
 
 ## 8) リスクとロールバック / Risks & rollback
 
 - 失敗モード: 判定根拠が過度に簡略化される。
 - ロールバック: 当該メモのみrevertし、根拠節を復元。
 
-## 9) Phase execution record（Stream E）
+## 9) ADR論点（CD&C）
+
+- Claim: E2E文書の公開改善方針は「Improve external」を維持し、Open化判断の入力情報を不足なく揃える。
+- Decision: ADR-0019整合と公開境界（public-exposure）をGoNoGoGate=Requiredとして固定する。
+- Constraint: 本Issueではメモ整備のみに限定し、`04_Documentation/e2e_testing.md` 本文改稿は行わない。
+- Approval required: 上記CD&CはOpen化着手前の承認を必須とする。
+
+## 10) Phase execution record（Stream E, Single Pass）
 
 ### Phase 1 Read
-- 対象ファイル再読を実施し、長文化による可読性低下を確認。
+- Read同期対象: `00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/codex_gsd_skill_ops.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/architecture.md` → 本Issue。
+- 同期結果: 上位文書との矛盾なし。対象スコープを本メモ単体に固定。
 
 ### Phase 2 Plan
-- 主責務を「Open化審査に必要な最終値の固定」に設定。
+- Plan固定: Read → Plan → Execute → Verify → Proceed。
+- 想定差分: 重複記録の圧縮、AC/DoD補強、CD&C明文化、検証上限ルール追記。
+- 差分整合: 想定外差分なし（他ファイル非編集）。
 
 ### Phase 3 Execute
-- 重複する履歴節を整理し、判定・検証・Proceedを再編。
-- 指定外ファイルは未編集。
+- 実施内容: 本メモのみ再構成し、AC達成状態・CD&C・修復上限・Proceed判定枠を追加。
+- スコープ監査: 指定外ファイルは未編集。
+- Read再同期: 実施後に本Issue再読し、Planとの差分一致を確認。
 
 ### Phase 4 Verify
-- `git diff --check` を実行。
-- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行。
+- 実行: `git diff --check`。
+- 実行: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`。
+- 結果: いずれも成功。
 - 自己修復回数: 0/3。
 
 ### Phase 5 Proceed
-- Open readiness: **Ready**
-- Blocker: なし
-- Needs decision: なし（DecisionStatus=Fixed）
+- Proceed判定: **Ready（Go）**。
+- 理由: AC充足、GoNoGoGate条件明記、CD&C承認必須を明文化、docs-check成功。
+- Blocker: なし。
+- Needs decision: あり（CD&C承認）。
