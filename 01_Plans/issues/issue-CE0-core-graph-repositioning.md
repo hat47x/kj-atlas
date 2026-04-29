@@ -1069,3 +1069,33 @@
 ### Phase 5 Gate
 - 判定: `Conditional-Go`（契約凍結としては完了）。
 - 未承認項目: HTTP API具体path/payloadの確定（CE1担当）を `pending` で保持。
+
+## Phase Execution Record（2026-04-29 / Stream C専任 / CE0 Core Graph Repositioning strict serial run）
+### Phase 1 Read
+- Phase開始時Readを実施し、固定語彙 `working` / `context_projection` / `consensus`、許可遷移 `working -> consensus` + `patch+approval`、canonical No-Go 5 IDs、SafeMode既定ON境界の差分が 0 件であることを確認。
+- 役割再配置契約の対象を `working` / `context_projection` / `consensus` に限定し、他領域は非対象であることを確認。
+
+### Phase 2 Plan
+- Phase開始時Readを再実施し、Phase 1から語彙・禁止事項・SafeMode境界の差分がないことを確認。
+- 実行計画を Plan→Execute→Verify→Proceed の直列に固定し、対象ファイルを本Issueのみへ固定。
+- 依存切断方針を mock-first とし、他stream参照は I/F 名（`ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`）のみを許可。
+
+### Phase 3 ADR/CDC Consensus（Context/Decision/Consequences 先行確定）
+- Context: CE0 Core Graphの役割再配置契約を contract-only で維持し、未承認の仕様確定を防止する。
+- Decision: `No ADR delta`。`working` / `context_projection` / `consensus` の責務境界、`working -> consensus` + `patch+approval`、canonical No-Go 5 IDs を不変として維持。
+- Consequences: 本記録更新は承認済み契約の再確認に限定。未承認論点が発生した場合は `held` で停止し確定化しない。
+
+### Phase 4 Execute
+- Phase開始時Readを再実施し、合意済み Context/Decision/Consequences に一致することを確認後に実行。
+- contract-only で本Issueの実行記録のみ更新し、実装変更・スキーマ変更・allowlist外編集は未実施。
+
+### Phase 5 Verify
+- Phase開始時Readを再実施し、固定語彙・禁止事項・SafeMode境界の維持を再確認。
+- verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- verify attempt_1: `git diff --check` を実行し、pass。
+- Self-Correction実績: 0/3（上限超過なし）。
+
+### Phase 6 Proceed
+- Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
+- 判定: `Done`（Plan→Execute→Verify→Proceed 直列、各Phase開始Read、Context/Decision/Consequences先行確定を満たす）。
+- 未承認事項在庫: なし。将来発生時は `held` で停止し、Self-Correction 3回上限を超える前に停止報告する。
