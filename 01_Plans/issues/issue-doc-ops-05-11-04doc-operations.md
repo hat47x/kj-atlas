@@ -447,3 +447,41 @@
   3. `DecisionStatus=Fixed` / `DecisionQueueRef=N/A` が維持。
   4. フェイルセーフ3条件（用語・責務分離・固定値）違反なし。
 - いずれか未達時は **Needs-decision** または **Hold** とし、Open化しない。
+
+## Stream L security公開境界メモ整備（2026-04-28, 5Phase直列）
+
+### Phase 1 Read（開始同期）
+- Read同期: 本Issueの `Requirement meta I/F` / `SecurityGateImpact=public-exposure` / `Stop conditions` を再読。
+- Read同期: security公開境界の責務分離（operations=実行runbook、security=統制、guidelines=運用判断補助）を再確認。
+- スコープ固定: **編集対象は本Issueのみ**（指定外編集禁止）。
+
+### Phase 2 Plan（AC/DoD不足提案 → 合意）
+- AC不足提案:
+  - AC-L1: 公開境界メモとして Audience/Goal/Public boundary/Next action を本Issue単体で追跡可能にする。
+  - AC-L2: 役割語彙 `Security Officer / System Owner / Platform Operator` の一致確認を必須化し、不一致時は `Hold`。
+  - AC-L3: 固定値（D1〜D4相当）は再定義せず、正本参照導線のみ記録する。
+- DoD不足提案:
+  - DoD-L1: Verifyで `validate_active_issue_memos.py --files <this file>` と `git diff --check` を記録する。
+  - DoD-L2: Proceedを `Ready / Hold / Needs-decision` の3値で明記する。
+- 合意記録: **上記 AC-L1〜L3 / DoD-L1〜L2 を本Runの合意済み基準として固定**。
+
+### Phase 3 ADR/CDC（必要時のみ、CD&C先行）
+- Read同期: `ADR handling rule` を再読。
+- 判定: 本Runで新規の役割語彙差分・導線差分・固定値差分は発生なし。
+- 結果: **CD&C追記なし / 新規ADR承認待ちなし**（承認待ちが発生した場合はこのPhaseで停止し、承認完了まで次Phaseへ進まない）。
+
+### Phase 4 Execute（docs-only）
+- 実施: Stream L（本節）を追記し、security公開境界メモの運用基準を5Phase直列で固定。
+- 非実施: `04_Documentation/*` 本文改稿、他Issue編集、実装コード編集。
+
+### Phase 5 Verify / Proceed（修復上限つき）
+- Verifyコマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- 修復ログ:
+  - Repair-1: 未実施
+  - Repair-2: 未実施
+  - Repair-3: 未実施
+  - Repair-4: **禁止（停止条件）**
+- 競合判定: 競合なし（競合発生時は停止）。
+- Proceed判定: **Ready**（security公開境界メモ整備を本Issue内で完了）。
