@@ -16,6 +16,7 @@ def test_api_signature_snapshot_keeps_minimum_paths_and_methods() -> None:
         "/docs/{doc_id}": {"get", "put"},
         "/docs/{doc_id}/merge-decision-logs": {"post"},
         "/docs/{doc_id}/merge-decision-logs/by-group/{group_id}": {"get"},
+        "/docs/{doc_id}/merge-decision-logs/restore/{snapshot_version}": {"get"},
         "/docs/{doc_id}/similar-candidate-groups": {"get"},
         "/context/query": {"post"},
         "/context/bundle": {"post"},
