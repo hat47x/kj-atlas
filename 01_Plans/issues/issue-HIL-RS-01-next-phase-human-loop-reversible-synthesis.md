@@ -452,3 +452,34 @@ gate:
   3. `Source Issue` 運用逸脱（親子関係喪失・return path改変）
 - 現在判定:
   - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
+
+
+## Stream A serial execution log（2026-04-28 / 固定順 Phase 4）
+
+### Fixed Phase
+- Phase 4: `HIL-RS-01 umbrella`（本Issue）
+
+### Read Sync
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` を横断照合。
+- 判定: 固定キー差分0、`NoGo return path` はA1 issueで一意。
+
+### Plan
+- Umbrellaとしての契約統治・停止条件の固定に限定。
+- A2/A3依存は mock前提シグネチャ参照のみ、実装確定は行わない。
+
+### ADR合意ゲート（必須）
+- Context: Umbrellaが依存順/停止条件を保持しないと各A系Issueが独立ドリフトする。
+- Decision: `Plan -> Execute -> Verify -> Proceed` と fail-safe停止条件を再固定。
+- Consequences: 未承認事項は`held`維持、承認完了まで確定化禁止。
+- Approval Record: `Pending`（`approved_by` / `approved_at` / `evidence` 未入力）。
+
+### Execute
+- 実施: 本Issue内のガードレール再確認ログ追記のみ。
+
+### Verify
+- 自己検証: safe mode境界後退なし、NoGo return path改変なし、未定義競合なし。
+- self-correction: `0/3`。
+
+### Proceed
+- 判定: `Conditional`。
+- 根拠: `Approval Record: Pending` が残存し、次Phaseは承認確定後にのみ進行可能。

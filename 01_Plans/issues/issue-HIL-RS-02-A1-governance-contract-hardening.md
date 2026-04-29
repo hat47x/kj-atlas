@@ -458,3 +458,35 @@ governance_gate_v1:
   3. `Source Issue` 運用逸脱（親子関係喪失・return path改変）
 - 現在判定:
   - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
+
+
+## Stream A serial execution log（2026-04-28 / 固定順 Phase 2）
+
+### Fixed Phase
+- Phase 2: `HIL-RS-02 A1 hardening`（本Issue）
+
+### Read Sync
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` を同期確認。
+- 判定: ドリフトなし（`safeModeDefault=ON` / `SAFE_MODE_STRICT_ON` / `human_dual_control_only` 維持）。
+
+### Plan
+- 統治契約の固定のみを対象化し、A2/A3依存は `mock I/F signature` 参照に限定。
+- 未承認事項の確定化を禁止（`pending/held` 維持）。
+
+### ADR合意ゲート（必須）
+- Context: Governance hardeningはNoGo path一意性とPending bypass防止が主目的。
+- Decision: `NoGo return path` はA1 issue固定、`decisionQueueTransition` は `Pending -> Approved | Pending -> Rejected` のみ許可。
+- Consequences: A1未完了でのA2/A3 Open要求は即NoGo。
+- Approval Record: `Pending`（`approved_by` / `approved_at` / `evidence` 未入力）。
+
+### Execute
+- 実施: 統治条件の再掲・整合確認ログのみ。
+- 非実施: 契約値再定義、SafeMode緩和、実装確定。
+
+### Verify
+- 自己検証: fail-safe条件（4回目相当self-correction、未承認確定化、未定義競合）未検知。
+- self-correction: `0/3`。
+
+### Proceed
+- 判定: `Conditional`。
+- 根拠: Approval RecordがPendingのため、Phase 3への進行は「条件付き（承認後）」。
