@@ -43,8 +43,9 @@
 - CE1はCE0 SSOT参照レーン。CE0を上位SSOTとしてread-only参照し、CE1側で再定義しない。
 - CE1は **I/F凍結のみ**。実装記述（handler/UI/DB/worker）は扱わない。
 - 参照方向は `CE0 -> (CE1, CE2, CE4)` の一方向に固定し、CE1からCE0契約本文への逆流再定義を禁止する。
-- 強制ワークフローは `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは **直列5Phase固定**：`Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify`。
 - 各Phaseの冒頭で本対象ファイルを再読し、前提差分を再確認する。
+- 並列実行・Phaseスキップ・Phase逆走は禁止する。
 
 ## Contract IDs（凍結対象）
 - CE0契約IDは参照のみ（再定義禁止）。
@@ -63,6 +64,12 @@
 - `preview_required`
 - `unknown_contract_key`
 - `nondeterministic_bundle`
+
+## Phase control guard（停止条件）
+- 失敗時の自己修復は最大3回まで（`attempt=1..3`）。
+- **4回目相当（失敗3回超）で即停止**し、Statusを `held` に固定する。
+- CE0/CE1/CE2/CE4間で契約語彙・Contract ID・handoff keyの**競合検知時は即停止**し、Phase 2（ADR/CDC）へ戻して承認完了まで反映しない。
+- ADR/CDCが必要な差分は `Context / Decision / Consequences` を必須記載し、`Security Officer + System Owner` 承認完了後にのみ本文へ反映する。
 
 ## CE1 I/F Signature Freeze（v1 / contract-only）
 - 下記シグネチャは **実装非依存** の契約固定値であり、UI/DB/worker/APIの実装方式は規定しない。
@@ -133,6 +140,7 @@ export type ContextBundleV1 = {
   - CE0契約ID衝突
 - 衝突未検知時（`contract_id_collision=0` かつ `vocabulary_collision=0`）はCDCを起票しない。
 - CDC起票時のStatus: **`held`**（承認待ち、未承認確定禁止）。
+- 競合検知時は本Phaseで停止し、承認完了までPhase 3以降へ進まない。
 
 ### CDC最小テンプレート（衝突時のみ記入）
 - Status: `held`
@@ -219,16 +227,12 @@ export type ContextBundleV1 = {
 
 ### Verify failure handling
 - Verify失敗時は自己修復を最大3回まで許可する。
-- 3回超過（4回目相当）は停止し、Statusを `held` としてProceedへ進まない。
+- 3回超過（4回目相当）は停止し、Statusを `held` として完了判定へ進まない。
 - self-correction counter運用:
   - `attempt=1..3`: 修復と再検証を許可
   - `attempt=4`: 即停止（`held`固定）
 
-## Phase 6 Proceed（CE2/CE4連携キー handoff）
-- Phase sync: 本対象ファイルを再読し、前Phaseとの差分がないことを確認。
-- 前提: Phase 5が成功し、`held` 項目が残っていないこと。
-
-### Fixed contract handoff
+### Fixed contract handoff（Phase 5完了時のみ）
 - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
 - 禁止事項: preview bypass / safeMode緩和 / 未定義キー黙認
 - 検証条件: hash決定論一致, preview gate強制, docs-check pass
