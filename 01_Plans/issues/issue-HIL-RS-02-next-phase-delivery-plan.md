@@ -562,3 +562,9 @@ delivery_gate_v1:
 - 判定: **Conditional / Needs-decision**。
 - 理由: `Approval Record: Pending` および `held` 論点が残存。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
+
+
+## Stream A issue-sync checkpoint (2026-04-29)
+- ADR-0026/0027 の CDC と同型で AC/依存/検証計画を再同期した。
+- 実装詳細は本Issueに追加せず、契約・統治の境界記録に限定した。
+- `A1 -> A2 -> A3` 依存と `A1 Done 前の A2/A3 Open禁止` を再固定。

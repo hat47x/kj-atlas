@@ -655,3 +655,9 @@ governance_gate_v1:
 - Execute: 契約値更新なし（ログ追記のみ）。
 - Verify: self-correction `0/3`。
 - Proceed: **Conditional**（`Approval Record: Pending` 継続）。
+
+
+## Stream A governance hardening checkpoint (2026-04-29)
+- Contract freeze keys（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary`）の固定を再確認。
+- Verify phaseでは self-correction `0/3` から開始し、3回超過時は停止する運用を再固定。
+- NoGo return path の一意固定（A1）を維持する。
