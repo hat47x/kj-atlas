@@ -259,3 +259,32 @@
   1. `Pending -> Done`（Approved bypass）
   2. `Held -> Done`（承認証跡なし）
   3. `A1 not Done -> A2/A3 Confirmed`
+
+## Stream G reconciliation note（2026-04-29 / FB残件清算）
+
+### 1) Read（Open理由と未完了条件）
+- Open理由: `Approval Record` が `Pending` のまま、かつ `HIL-RS-02-GOV-EXCEPTION-01` が `held` で残存しているため。
+- 未完了条件: `approved_by` / `approved_at` / `evidence` の欠落、および `pendingDecisionQueueCount==0` 未達。
+
+### 2) Context / Decision / Consequences（CE/HIL整合維持）
+- Context: Stream H（2026-04-28）を現行基準として運用し、A1契約凍結を唯一SSOTとして扱う。
+- Decision: 本メモでは CE/HIL の契約値・判定式を**上書きしない**（read-only同期のみ）。
+- Consequences: A2/A3は `Conditional | Needs-decision` を維持し、確定化を禁止。
+
+### 3) 現行CE/HIL計画との整合判定
+- 判定: **重複統合（close不可）**。
+- 理由: Stream B/F 履歴は保持しつつ、実効ルールは Stream H へ収束済み。未承認論点が残るためクローズ条件未達。
+
+### 4) Plan→Execute→Verify（self-correction上限3）
+- Plan: allowlist 2ファイルのみで、Open理由・ブロッカー・クローズ条件を明文化。
+- Execute: CE/HIL契約の固定値（`freezeContractId`/`safeModeDefault`/`safeModeBoundary`）を変更しない。
+- Verify: 2ファイル間で `A2A3_OPEN_ALLOWED` と `NoGo return path` の整合を確認し、docs-checkを実施。
+
+### 5) Proceed（ブロッカー明示）
+- 現在判定: **Needs-decision / Conditional 継続**。
+- ブロッカー:
+  1. `Approval Record=Approved` への遷移証跡不足。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の human decision 未完了。
+  3. `pendingDecisionQueueCount==0` の確認未完了。
+- 再開条件（Close条件）:
+  - 上記3点がすべて解消され、`A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` を再検証で確認できること。

@@ -280,3 +280,32 @@ mock_contract_v1:
 - A2着手: `A1 Done` + `pendingDecisionQueueCount==0` + `Approval Record=Approved`。
 - A3着手: A2着手条件充足 + A2側 NoGo なし。
 - フェイルセーフ: 契約未承認のまま実装誘導しない。逸脱時は停止し `No-Go` を宣言。
+
+## Stream G reconciliation note（2026-04-29 / FB残件清算）
+
+### 1) Read（Open理由と未完了条件）
+- Open理由: A1契約は凍結済みだが、`Approval Record` が `Pending` で `held` 論点が残っている。
+- 未完了条件: `approved_by` / `approved_at` / `evidence` 未入力、`pendingDecisionQueueCount==0` 未確認。
+
+### 2) Context / Decision / Consequences（CE/HIL整合維持）
+- Context: Stream H（2026-04-28）のA1契約整備基準を authoritative として運用する。
+- Decision: CE/HIL現行契約（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` ほか）を**変更しない**。
+- Consequences: A2/A3に対する確定シグナルは発行せず、`Conditional | Needs-decision` を維持する。
+
+### 3) 現行CE/HIL計画との整合判定
+- 判定: **重複統合（close不可）**。
+- 理由: 契約本文はStream Hへ収束済みだが、人間承認系ブロッカーが未解消。
+
+### 4) Plan→Execute→Verify（self-correction上限3）
+- Plan: allowlist 2ファイルのみで整合差分を整理し、契約凍結文を維持。
+- Execute: A1契約の固定キーと `A2A3_OPEN_ALLOWED` を再定義せず参照専用で扱う。
+- Verify: docs-checkと2ファイル照合で、凍結ID・判定式・NoGo導線の不一致がないことを確認。
+
+### 5) Proceed（ブロッカー明示）
+- 現在判定: **Needs-decision / Conditional 継続**。
+- ブロッカー:
+  1. `Approval Record=Approved` の証跡不足。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が `held` のまま。
+  3. `pendingDecisionQueueCount==0` の監査確認未完了。
+- 再開条件（Close条件）:
+  - 上記3点解消後に `A2A3_OPEN_ALLOWED=true`・`validatorPass=true`・`Approval Record=Approved` を同時充足。
