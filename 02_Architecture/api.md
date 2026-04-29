@@ -215,6 +215,28 @@ CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フ�
 2. `equivalenceKey = sha256(canonical_query_json)` を16進小文字で生成。
 3. API/CLI/GUI は同一 query 入力時に同一 `equivalenceKey` を返す。
 
+#### 2.9.1a CE4 resolve endpoint（mock-first 契約）
+
+- Endpoint（compat）: `POST /context/bundles:resolve`
+- Endpoint（v1 alias）: `POST /context/v1/bundles:resolve`
+- Required Request Fields:
+  - `query`（non-empty string）
+  - `dryRun`（boolean）
+  - `sourceBundleHash`（`sha256:<64hex>` または `mock:<64hex>`）
+  - `safeMode`（boolean, CE4では既定 `true`）
+- Required Response Fields:
+  - `equivalenceKey`
+  - `bundleHash`
+  - `queryCanonicalHash`
+  - `proposalLifecycle`（`proposed | accepted | rejected | held`）
+  - `sideEffect`
+  - `auditChain.query|bundle|proposal|apply`
+- Error Contract（fail-closed / 422）:
+  - 監査4点欠損（空文字・空白のみを含む）
+  - `queryCanonicalHash` 欠損
+  - `dryRun=true` かつ `sideEffect!="none"`
+  - safeMode後退（`safeMode=false`）
+
 #### 2.9.2 監査4点セット（必須イベント）
 
 同一 `equivalenceKey` について、次の4イベントを全て記録しない限り成功扱いにしてはならない（fail-closed）。

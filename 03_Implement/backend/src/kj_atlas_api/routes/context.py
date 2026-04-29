@@ -63,7 +63,7 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
 
 
 @router.post("/bundles:resolve", response_model=Ce4ResolveBundleResponse)
-def resolve_ce4_bundle(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
+def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
     request = _validate_payload(Ce4ResolveBundleRequest, payload)
     try:
         response = build_ce4_resolved_bundle(request)
@@ -81,16 +81,26 @@ def resolve_ce4_bundle(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
     if not response.queryCanonicalHash:
         raise HTTPException(status_code=422, detail={"code": "query_canonical_hash_required"})
 
-    required_events = (
-        response.auditChain.query,
-        response.auditChain.bundle,
-        response.auditChain.proposal,
-        response.auditChain.apply,
-    )
-    if any(not event for event in required_events):
+    required_events = {
+        "query": response.auditChain.query,
+        "bundle": response.auditChain.bundle,
+        "proposal": response.auditChain.proposal,
+        "apply": response.auditChain.apply,
+    }
+    if any(not event.strip() for event in required_events.values()):
         raise HTTPException(status_code=422, detail={"code": "audit_chain_incomplete"})
 
     if request.dryRun and response.sideEffect != "none":
         raise HTTPException(status_code=422, detail={"code": "dry_run_requires_no_side_effect"})
 
     return response
+
+
+@router.post("/bundles:resolve", response_model=Ce4ResolveBundleResponse)
+def resolve_ce4_bundle(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
+    return _resolve_ce4_bundle_contract(payload)
+
+
+@router.post("/v1/bundles:resolve", response_model=Ce4ResolveBundleResponse)
+def resolve_ce4_bundle_v1(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
+    return _resolve_ce4_bundle_contract(payload)
