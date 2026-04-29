@@ -259,6 +259,35 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 ### Phase 3 Execute
 
+## Stream E serial update log（2026-04-29 / Doc-Ops Draft lane）
+
+### Phase 1 Plan
+
+- AC/DoD不足の扱いを先に固定した。
+  - AC: 用語（Security Officer / System Owner / Platform Operator）、役割（2者承認 + 実行責務分離）、導線（architecture → security → guidelines → e2e）、固定値（D1〜D4）を同時一致させる。
+  - DoD: docs-only 更新、docs-check 実施、Proceed 判定（Go/Hold/Needs-decision）を記録する。
+- 設計起因の不整合が見つかった場合は文書内で解消せず停止報告する方針を明示した。
+
+### Phase 2 Read同期
+
+- `02_Architecture/strict_mode_exception_approval_flow.md`、`04_Documentation/security.md`、`04_Documentation/operations.md`、`04_Documentation/e2e_testing.md` との整合観点を再確認した。
+- 本書の責務を「運用判断補助」に限定し、承認フロー仕様の再定義を行わないことを再確認した。
+
+### Phase 3 Execute
+
+- 本書の公開境界（公開可能情報のみ、組織固有の承認履歴・監査証跡は除外）を維持した。
+- 用語・責務・導線・固定値を既存正本に合わせ、追加の制度決定を持ち込まない方針を固定した。
+
+### Phase 4 Verify
+
+- docs-check 観点（リンク・表記・固定値）で自己検証し、差分の体裁崩れがないことを確認する。
+- 自己修復の上限は 3 回、4 回目相当は `StoppedForClarification` とする。
+
+### Phase 5 Proceed
+
+- 判定: **Go**（停止条件非該当）。
+- 次アクション: security lane の同一手順を他の Draft issue に横展開する。
+
 - 本文の方針を維持したまま、Stream H後半の実行責務（Phase運用・停止条件）を追記した。
 - 編集範囲外（backend/frontendコード、shared統合3ファイル）は変更しない。
 
