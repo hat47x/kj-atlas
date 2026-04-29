@@ -610,3 +610,84 @@
 ### Proceed
 - 判定: `Conditional`（Draft維持）。
 - 根拠: A1未完了かつApproval Record未確定のため。
+
+## Stream F monitoring log（2026-04-29 / Draft gate運用監視）
+
+### Phase 1 Read（最新状態・依存・hold条件確認）
+#### Context
+- 対象は本Issue単体であり、A3は `mock I/F preparation only` の Draft運用を維持する。
+- 依存は `A1 -> A2 -> A3` 固定で、A1未完了時はA3 Open化不可。
+
+#### Decision
+- 固定キー（`freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `contractLinkLocked` / `sharedResourceFreeze` / `safeModeDefault` / `unlockRule` / `decisionQueueTransition`）を再確認し、再定義禁止を継続する。
+- `held` 条件（A1完了前のOpen要求、A3単独契約改定要求）を有効のまま維持する。
+
+#### Consequences
+- Draft状態のまま品質監視を継続でき、依存崩しの先行実行を防止する。
+
+### Phase 2 Plan（Open化前提のAC/DoD化）
+#### Context
+- Open化そのものは実施せず、Open化可能条件の明確化のみ行う。
+
+#### Decision
+- Open化前提ACを以下に固定（参照専用、再定義禁止）。
+  - AC-O1: `a1Status=="Done"`
+  - AC-O2: `pendingDecisionQueueCount==0`
+  - AC-O3: fixed keys diff=0（`freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `contractLinkLocked` / `sharedResourceFreeze` / `safeModeDefault`）
+  - AC-O4: role vocabulary drift=0（`Security Officer` / `System Owner` / `Platform Operator`）
+  - AC-O5: `NoGo return path` が `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を一意参照
+- Open化前提DoDを以下に固定。
+  - DoD-O1: `ProceedGate=true` の評価根拠をログ化
+  - DoD-O2: docs-check一式（validator / unittest / rg / `git diff --check`）の成功記録
+  - DoD-O3: self-correction試行回数を `0..3` で明記（`>=4` は停止）
+  - DoD-O4: `Status: Draft` 維持を検証ログに明記（本フェーズではOpen化しない）
+
+#### Consequences
+- Open化判断の入力条件が明示化され、A1完了後の判定遅延を抑制できる。
+
+### Phase 3 Execute（文言整備：再定義禁止）
+#### Context
+- 本フェーズは文言整備のみであり、契約値・固定キー・ルールの再定義は禁止。
+
+#### Decision
+- 本Issueに対して、Draft gate監視ログ（Phase 1〜5）の追記のみ実施する。
+- 上流契約（A1）および他Issue/他ファイルへの編集を行わない。
+
+#### Consequences
+- Scope逸脱なく、Open化条件の可視性のみを改善する。
+
+### Phase 4 Verify（Draft維持・固定キー不変・他ファイル無変更）
+#### Context
+- 検証は docs-check と差分限定確認を中心に行う。
+
+#### Decision
+- Verify観点を固定する。
+  - V1: `Status: Draft` が維持されている。
+  - V2: 固定キーの表記・値に変更がない。
+  - V3: `NoGo return path` がA1参照で不変。
+  - V4: 変更ファイルが本Issueのみである。
+  - V5: self-correction回数が `<=3` である。
+
+#### Consequences
+- Draft gate運用の安全境界を保持したまま、Open化準備の品質を保証できる。
+
+### Phase 5 Proceed（解除条件・停止条件の明文化）
+#### Context
+- Proceedは「Open化実施」ではなく、「次回判断の条件宣言」を目的とする。
+
+#### Decision
+- 解除条件（Open判定可能化）
+  - R1: `a1Status=="Done"`
+  - R2: `pendingDecisionQueueCount==0`
+  - R3: `ProceedGate=true` を満たす証跡が揃う
+  - R4: 未承認事項が `held` に残存しない
+- 停止条件（Fail-safe）
+  - S1: `self_correction_attempt >= 4`
+  - S2: pending bypass（未承認事項の確定化）検知
+  - S3: 固定キー後退（`safeModeDefault=ON` / `overridePolicy=human_dual_control_only` / `sharedResourceFreeze=true` の崩れ）
+  - S4: allowlist外編集要求、または `NoGo return path` 改変要求
+- 判定
+  - 現在は `Conditional`（Draft維持・準備継続）。Open化は未実施。
+
+#### Consequences
+- 実行停止ラインと再開ラインが分離され、推測実行を回避した運用監視を継続できる。
