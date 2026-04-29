@@ -1008,3 +1008,34 @@
   - 監査4点 + `queryCanonicalHash` 欠損は fail-closed。
   - 依存は `mock:<hash>` を含む署名契約で切断し、実装確定は行わない。
   - 検証エラー修復は最大3回、超過時は停止報告。
+
+## Stream D Execution Snapshot（2026-04-29）
+
+### Phase 1) Read + 依存確認
+- CE0/CE1/CE2 は read-only 参照とし、契約語彙の再定義を行わないことを確認。
+- `02_Architecture/api.md` の CE4 節と backend `context` route の契約差分を確認。
+- 差分: CE4先行契約は `POST /v1/context/bundles:resolve` を記載していたが、実装経路は `/context/bundles:resolve` のみだったため、互換エイリアスの明記が必要。
+
+### Phase 2) API/CLI監査イベント契約の先行定義
+- 監査必須要素を `query / bundle / proposal / apply + queryCanonicalHash` に固定。
+- fail-closed 条件を継続固定（欠損・不一致・dryRun副作用を成功扱いしない）。
+
+### Phase 3) Plan → Execute
+- Plan:
+  - 既存エンドポイントを壊さず、v1 alias を追加して mock 実装開始可能な契約にする。
+  - 監査4点は空白文字列を許容しない厳格判定にする。
+- Execute:
+  - `/context/bundles:resolve` を互換経路として維持。
+  - `/context/v1/bundles:resolve` を追加（同一契約実装）。
+  - `auditChain` 必須4イベントを `strip()` 判定で検証し、空白のみを fail-closed 化。
+
+### Phase 4) Verify
+- AC/DoD 照合:
+  - proposal-only 境界: 維持。
+  - API I/F: 必須入力/出力と fail-closed 条件を維持。
+  - 監査境界: 4イベント + `queryCanonicalHash` 欠損時 fail-closed を維持。
+- 失敗時自己修復: 実施なし（0/3）。
+
+### Phase 5) Proceed 判定
+- 競合検知: なし。
+- 判定: Proceed（実装隊が mock で着手可能な契約パッケージを維持）。
