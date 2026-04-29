@@ -49,7 +49,7 @@ Stream F では `02_Architecture/strict_mode_exception_approval_flow.md` を正�
 
 ### 0.2.1 Stream D 実行メモ（security docs-only）
 
-本書を Stream D 専任で更新する場合は、編集対象を `security.md` / `security_operational_guidelines.md` に限定し、次を満たすまで Proceed しない。
+本書を Stream D 専任で更新する場合は、編集対象を `operations.md` / `security.md` / `security_operational_guidelines.md` に限定し、次を満たすまで Proceed しない。
 
 1. 役割語彙一致（Security Officer / System Owner / Platform Operator）
 2. 状態遷移一致（`DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`、未確定は `StoppedForClarification`）
@@ -665,7 +665,7 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 1) Read
 
 - `strict_mode_exception_approval_flow.md` / `security_operational_guidelines.md` / `operations.md` の導線を再確認し、用語・役割・固定値（D1〜D4）を再読した。
-- Stream G 競合回避のため、編集対象を `security.md` / `security_operational_guidelines.md` と対応issueのみに固定した。
+- Stream G 競合回避のため、編集対象を `operations.md` / `security.md` / `security_operational_guidelines.md` と対応issueのみに固定した。
 
 ### Phase 2) Plan（語彙・責務・導線・固定値）
 

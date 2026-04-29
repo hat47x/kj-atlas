@@ -52,7 +52,7 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 
 ### 0.3 Stream D 実行メモ（security docs-only）
 
-Stream D で本書を更新する場合、編集対象は `security.md` / `security_operational_guidelines.md` のみに限定する。
+Stream D で本書を更新する場合、編集対象は `operations.md` / `security.md` / `security_operational_guidelines.md` に限定する。
 
 - 承認未了の決定事項は本文へ反映しない（検知時は停止）。
 - D1〜D4、役割語彙、導線の3観点を docs-check で同時確認する。
