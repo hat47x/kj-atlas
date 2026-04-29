@@ -121,3 +121,26 @@
 - 理由: AC充足、GoNoGoGate条件明記、CD&C承認必須を明文化、docs-check成功。
 - Blocker: なし。
 - Needs decision: あり（CD&C承認）。
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate条件を確認: `Improve external`、`GoNoGoGate=Required`、`VerificationLevel=docs-check`。
+
+### 2) Context / Decision / Consequences
+- Context: E2E手順は対外導線の主要文書でADR-0019整合が必須。
+- Decision: 分類は **Improve external 維持**。
+- Consequences: Open化は可能だが、本文改稿タスクでADR完全整合を担保する必要。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: ADR-0019との受入基準・代替経路・実行コマンドの一致を確認後に `Ready`。
+- DoD: 三値Proceedと自己修復上限（<=3）を維持。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモのみ追記。
+- Verify: docs-check方針維持、自己修復 0/3。
+
+### 5) Proceed
+- 判定: **Ready**。
+- 理由: Open化審査に必要な条件が本文で再現可能。

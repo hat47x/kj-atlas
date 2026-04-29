@@ -485,3 +485,26 @@
   - Repair-4: **禁止（停止条件）**
 - 競合判定: 競合なし（競合発生時は停止）。
 - Proceed判定: **Ready**（security公開境界メモ整備を本Issue内で完了）。
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate確認: `Improve external`、`GoNoGoGate=Required`、`VerificationLevel=docs-check`。
+
+### 2) Context / Decision / Consequences
+- Context: operations は公開runbookだが security系文書と責務境界が近接。
+- Decision: 分類は **Improve external 維持**。
+- Consequences: Open化時は security/guidelines への導線を保持し境界ドリフトを抑止。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: Audience/Goal/Boundary/Next action を1読で追跡可能であること。
+- DoD: Proceed三値、Verify結果、停止条件（修復>3で停止）を維持。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモのみ更新。
+- Verify: docs-check方針維持、自己修復 0/3。
+
+### 5) Proceed
+- 判定: **Ready**。
+- 理由: Open化判断に必要な情報が揃い、未承認確定化もない。

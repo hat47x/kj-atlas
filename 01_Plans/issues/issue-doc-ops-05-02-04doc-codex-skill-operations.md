@@ -135,3 +135,27 @@
 - 根拠: AC/DoD不足提案と合意、検証手順、CD&C明文化を本メモ内で完結。
 - Blocker: なし
 - Needs decision: なし（DecisionStatus=Fixed）
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate条件を再抽出: `Status=Draft`、`GoNoGoGate=Required`、`VerificationLevel=docs-check`、docs-only制約。
+- 判定: Open化判定に必要な最小メタ情報は揃っている。
+
+### 2) Context / Decision / Consequences
+- Context: 対象は内部運用色が強い skill 運用文書。
+- Decision: 分類は **Move internal 維持**。
+- Consequences: Open化候補ではなく、内部導線の明確化タスクとして継続。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: Audience/Goal/Public boundary が対外向けに再定義されない限り `Go` 不可。
+- DoD追記: Proceed は `Ready/Hold/Needs-decision` の三値+理由を必須化。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモのみ更新（docs-only）。
+- Verify: `docs-check` 前提を維持。自己修復: 0/3。
+
+### 5) Proceed
+- 判定: **Hold**（Open化不可）。
+- 理由: internal運用責務が主で public-exposure 前提を満たさない。
