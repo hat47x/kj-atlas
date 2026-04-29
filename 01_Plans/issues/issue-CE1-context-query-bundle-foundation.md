@@ -3,12 +3,31 @@
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE1 ContextQuery/ContextBundle Foundation）
+- Owner: Stream C（CE1基盤: ContextQuery/ContextBundle Foundation）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Verification: `docs-check`
+
+
+## Task Brief（Stream C / Plan→Execute→Verify→Proceed）
+- Scope: docs-only（Issue + schema/APIのCE1 I/F節）
+- Non-Goals: handler/UI/DB/workerの実装詳細化
+- Acceptance Criteria:
+  - [ ] Issue内にADR形式（Context/Decision/Consequences）でCE1 v1固定理由を明記
+  - [ ] `ContextQueryV1` / `ContextBundleV1` のclosed-world契約をschema/API双方で一致
+  - [ ] `previewConfirmed=false -> 422 preview_required` をI/F契約として固定
+  - [ ] `queryCanonicalHash` / `bundleHash` の決定論要件と失敗時`409 nondeterministic_bundle`を固定
+  - [ ] mock validation計画（実実装依存切断）を明記
+- Validation Plan:
+  - [ ] issue memo validator
+  - [ ] unit test for issue memo validator
+  - [ ] `git diff --check`
+- Stop Conditions:
+  - [ ] 依存先未定義（CE0/CE2/CE4 handoff key不成立）
+  - [ ] 契約語彙衝突（error semantics / contract id collision）
+  - [ ] Verify失敗3回超過（`held`）
 
 ## 目的（contract-only）
 - ContextQuery / ContextBundle の最小I/F契約を固定する。
@@ -149,7 +168,7 @@ export type ContextBundleV1 = {
 - Consequences: `CE2/CE4 handoff影響` / `safeMode回帰リスク`
 - Approval: `Security Officer + System Owner` の2者承認（両者`approved`でのみProceed再開）
 
-### ADR/CDC quick record（今回）
+### ADR Record（Context / Decision / Consequences）
 - Status: `approved`
 - Context: CE0 read-only境界（`CE0-CTX-IF`/`CE0-SAFEMODE-IF`/`CE0-REVIEW-IF`）を維持したまま、CE1でI/Fシグネチャとエラー語彙のみ凍結。
 - Decision: `ContextQueryV1` / `ContextBundleV1` のキー集合、`queryCanonicalHash` / `bundleHash`、および `422/400/409` の語彙対応をv1固定。

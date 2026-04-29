@@ -165,7 +165,7 @@ CE0境界（参照専用固定）:
 - Purpose: Deterministic projection を実行し `ContextBundle` を返す。
 - Request body: `{ "query": ContextQuery }`
 - Response body (required keys):
-  - `queryId`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason`
+  - `queryId`, `queryCanonicalHash`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason`
 
 `bundleHash` canonicalization (normative):
 1. 非決定論フィールド（timestamp/trace/latency）を除外。
@@ -178,6 +178,17 @@ CE0境界（参照専用固定）:
 運用停止条件:
 - `previewConfirmed` 必須ゲートが破られる実装差分を検知した場合は No-Go。
 - Verify の自己修復が3回を超えた場合は即停止（自動再試行を継続しない）。
+
+
+#### 2.8.1 Mock validation plan（実実装依存切断）
+- Scope: CE1 I/F契約（`ContextQueryV1` / `ContextBundleV1`）のみ。
+- Test harness: `stubDatasetId=A2-minimal-v1` を固定し、実DB/実LLM/worker依存を持ち込まない。
+- Required checks:
+  1. `previewConfirmed=false` は常に `422 preview_required`。
+  2. unknown key は常に `400 unknown_contract_key`。
+  3. 同一canonical queryを3回再実行して `queryCanonicalHash` と `bundleHash` が3/3一致。
+  4. 不一致発生時は `409 nondeterministic_bundle` を返し fail-closed。
+- Handoff keys: CE2/CE4へ `queryCanonicalHash`, `bundleHash`, `sourceBundleHash` をread-onlyで引き渡す。
 
 ### 2.9 CE4 API/CLI/GUI 同値性・監査契約（CE4-API-CLI-AUDIT）
 
