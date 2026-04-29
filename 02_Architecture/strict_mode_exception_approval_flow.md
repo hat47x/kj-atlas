@@ -46,6 +46,28 @@ AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 
 `04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 
+## 1.2 CDC（Change Decision Contract）明文化
+
+AUTH系の設計変更は、実装/運用反映前に **CDC（Change Decision Contract）** を必ず確定する。
+
+- **C（Context）**: 変更対象、非目標、既存固定値（D1〜D4）との整合を明示する。
+- **D（Decision）**: 採択/却下した選択肢、採択理由、適用開始日、失効条件を記録する。
+- **C（Consequence）**: 影響範囲、検証方法、ロールバック条件、停止条件（`StoppedForClarification`）を明示する。
+
+### CDC最小テンプレート（必須）
+
+```md
+[CDC]
+- Context:
+- Decision:
+- Consequence:
+- Approved by:
+- Effective from (UTC):
+- Expire/Review by (UTC):
+```
+
+> CDC未確定の変更要求は `DraftRequest` のままとし、`ApprovalPending` へ遷移しない。
+
 ## 1.1 ミニ用語集（この文書で使う言葉）
 
 - **strict**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` の状態。未登録主体を拒否する。

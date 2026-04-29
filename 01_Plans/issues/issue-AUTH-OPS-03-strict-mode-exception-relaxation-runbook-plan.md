@@ -131,3 +131,30 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## 13) Stream G CDC同期ログ（2026-04-29）
+
+### Plan
+
+- 目的: AUTH-OPS-03 の設計正本に CDC（Change Decision Contract）を明文化し、Plan→Execute→Verify→Proceed の運用規律を欠落なく適用できる状態にする。
+- 変更範囲: `02_Architecture/strict_mode_exception_approval_flow.md` のみ（実装変更なし）。
+- 受入条件:
+  - CDCの Context/Decision/Consequence 定義が明記されている。
+  - CDC未確定時に `ApprovalPending` へ遷移禁止が明記されている。
+  - D1〜D4 と停止条件（`StoppedForClarification`）との矛盾がない。
+
+### Execute
+
+- `strict_mode_exception_approval_flow.md` に「1.2 CDC（Change Decision Contract）明文化」節を追加。
+- CDC最小テンプレート（Context/Decision/Consequence/承認者/適用日/見直し日）を追加。
+- CDC未確定時は `DraftRequest` 維持、`ApprovalPending` 遷移禁止を追記。
+
+### Verify
+
+- `rg -n "CDC|Change Decision Contract|ApprovalPending|StoppedForClarification|D1|D2|D3|D4" 02_Architecture/strict_mode_exception_approval_flow.md`
+- 期待: CDC節と停止条件・固定値の両方が同一文書内で確認できる。
+
+### Proceed
+
+- 判定: CDC明文化により、AUTH設計変更の事前合意条件が設計正本で再利用可能になった。
+- 次アクション: AUTH-ARCH/AUTH-SCHEMA の新規変更要求は、CDC記録作成→合意完了後にのみ実行へ進む。
