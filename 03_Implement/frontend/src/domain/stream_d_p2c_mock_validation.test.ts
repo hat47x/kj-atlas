@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { padPolygonFromCentroid } from "./geometry/polygon_pad";
+import fixtureRaw from "../../tests/fixtures/fb_p2c_01/polygon_autofit_cases.json?raw";
+import { runP2CMockValidation, type P2CFixtureBundle } from "./p2c_polygon_stub_client";
 
 describe("FB-P2C-01 A2 mock validation (Stream D)", () => {
   const fixture = [
@@ -33,5 +35,16 @@ describe("FB-P2C-01 A2 mock validation (Stream D)", () => {
     }, 0);
 
     expect(violations).toBe(0);
+  });
+
+  it("keeps deterministic tie-break evidence stable across repeated fixture runs", () => {
+    const fixtureBundle = JSON.parse(fixtureRaw) as P2CFixtureBundle;
+
+    const first = runP2CMockValidation(fixtureBundle);
+    const second = runP2CMockValidation(fixtureBundle);
+
+    expect(second.logs).toEqual(first.logs);
+    expect(first.goNoGo).toEqual({ go: true, reason: "go" });
+    expect(second.goNoGo).toEqual({ go: true, reason: "go" });
   });
 });
