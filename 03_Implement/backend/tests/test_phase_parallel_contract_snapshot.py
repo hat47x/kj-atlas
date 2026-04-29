@@ -22,6 +22,7 @@ def test_api_signature_snapshot_keeps_minimum_paths_and_methods() -> None:
         "/context/bundle": {"post"},
         "/ai/suggest-merges": {"post"},
         "/ai/suggest-layout": {"post"},
+        "/admin/provision/users": {"post"},
     }
 
     with TestClient(app) as client:
