@@ -472,3 +472,26 @@
 ### Phase 5 Read同期 + Proceed
 - Read同期: `Stop conditions` と `ADR handling rule` を再読。
 - 判定: **Ready**（理由: 公開境界固定メモのみを追加し、横断編集禁止・CDC承認前進行禁止・self-correction上限を満たしたため）。
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate確認: `Improve external` / `GoNoGoGate=Required` / `VerificationLevel=docs-check`。
+
+### 2) Context / Decision / Consequences
+- Context: security は公開原則文書、運用詳細は guidelines へ委譲。
+- Decision: 分類は **Improve external 維持**。
+- Consequences: Open化時に原則と運用詳細の境界を保持し、誤公開リスクを抑える。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: 役割語彙（Security Officer / System Owner / Platform Operator）整合と導線整備を満たすこと。
+- DoD: Proceed三値+理由、Verify結果、停止条件（修復>3）を明記。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモのみ更新（docs-only）。
+- Verify: docs-check方針維持、自己修復 0/3。
+
+### 5) Proceed
+- 判定: **Ready**。
+- 理由: Open化判定に必要な要素が固定され、未承認確定化がない。

@@ -1557,3 +1557,26 @@
 ### Self-Correction fail-safe
 - 自己修復は最大3回まで。
 - **4回目（3回超）に到達した時点で直ちに停止し、`Hold` として CD&C にエスカレーションする。**
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate抽出: 検証ログ文書の配置判定（internal移動 or external改善）が未確定論点。
+
+### 2) Context / Decision / Consequences
+- Context: 単日ログは恒久的な対外文書としては再利用性が低い。
+- Decision: **Move internal 推奨**（運用証跡として保持）。
+- Consequences: 対外導線からは要約runbookのみを残し、ログ詳細は内部参照へ寄せる。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: 汎用化された対外説明へ再構成できる場合のみ再判定。
+- DoD: 配置先/導線/Proceed三値を明記。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモへの判断追記のみ。
+- Verify: docs-check方針維持、自己修復 0/3。
+
+### 5) Proceed
+- 判定: **Hold**（Open化不可）。
+- 理由: 現状は時点依存の検証ログであり、公開恒久文書に不向き。

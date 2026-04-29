@@ -118,3 +118,26 @@
 - Open readiness: **Ready**
 - Blocker: なし
 - Needs decision: なし（DecisionStatus=Fixed）
+
+
+## Stream E phase run（2026-04-29）
+
+### 1) Read（Draft gate条件抽出）
+- Draft gate条件を再確認: `Status=Draft` / `DecisionStatus=Fixed` / `VerificationLevel=docs-check`。
+
+### 2) Context / Decision / Consequences
+- Context: `documentation_quality.md` は内部品質規約の正本。
+- Decision: 分類は **Move internal 維持**。
+- Consequences: 対外公開より内部統制の一貫性を優先。
+
+### 3) AC/DoD・Open化条件の明文化
+- Open化条件: 外部向け品質基準へ再編集し、内部運用規約の機微を分離できた場合のみ再審査。
+- DoD: 三値Proceed + Verify結果の併記を必須とする。
+
+### 4) Plan→Execute→Verify（自己修復）
+- Plan/Execute: 本Issueメモのみ更新。
+- Verify: docs-check方針維持、自己修復 0/3。
+
+### 5) Proceed
+- 判定: **Hold**（Open化不可）。
+- 理由: 文書の性質が内部運用品質ゲートに固定されている。
