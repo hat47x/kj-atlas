@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-29 (JST, Stream D integrated sync rerun-57)
+最終更新: 2026-04-29 (JST, Stream D integrated sync rerun-58)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
@@ -781,3 +781,5 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 3 Verify（validator/unittest/rg）: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-54|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の一致を確認。
 - Phase 4 公開値固定: **共有3ファイルの公開値を `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` に固定。**
 - Phase 5 Proceed（再開判定1行更新）: **共有3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` が一致していること。**
+
+- Stream D 共有統合同期（2026-04-29 rerun-58）で Phase 1 Read & Reconcile（件数/状態/依存順/Decision Queue照合）→ Phase 2 Plan Sync（同期項目=件数47・Active=5・Done=26・Queue Ready=1/Open=2・停止条件違反0件、AC/DoD不足なし）→ Phase 3 Execute Single-Set（shared resource 3ファイルのみ更新）→ Phase 4 Verify（validator/unittest/rg成功）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` の一致を維持した。
