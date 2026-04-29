@@ -456,3 +456,34 @@ gate:
   3. `Source Issue` 運用逸脱（親子関係喪失・return path改変）
 - 現在判定:
   - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
+
+
+## Stream A serial execution log（2026-04-28 / 固定順 Phase 3）
+
+### Fixed Phase
+- Phase 3: `HIL-RS-01 A1 minimum I/F`（本Issue）
+
+### Read Sync
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` の一致を確認。
+- 判定: 差分0、`A1 -> A2 -> A3` 依存順を維持。
+
+### Plan
+- 最小I/Fシグネチャ定義のみを扱い、契約値再定義・実装確定は禁止。
+- A2/A3向けには `mock可能な最小シグネチャ` のread-only引き渡しに限定。
+
+### ADR合意ゲート（必須）
+- Context: A1最小I/Fの曖昧さはA2/A3での未定義競合を誘発する。
+- Decision: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` と関連固定キーを不変とする。
+- Consequences: A1完了前のA2/A3 Open禁止、NoGo pathはA1へ固定。
+- Approval Record: `Pending`（`approved_by` / `approved_at` / `evidence` 未入力）。
+
+### Execute
+- 実施: I/F契約記述の整合チェックとログ化のみ。
+
+### Verify
+- 自己検証: 固定キー後退兆候なし、Pending bypassなし、NoGo path改変なし。
+- self-correction: `0/3`。
+
+### Proceed
+- 判定: `Conditional`。
+- 根拠: 承認記録未確定のため、Phase 4（RS-01 umbrella）への進行は保留。

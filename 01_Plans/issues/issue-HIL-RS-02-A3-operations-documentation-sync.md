@@ -578,3 +578,35 @@
   3. `Source Issue` 運用逸脱（親子関係喪失・return path改変）
 - 現在判定:
   - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
+
+
+## Stream A serial execution log（2026-04-28 / 固定順 Phase 5）
+
+### Fixed Phase
+- Phase 5: `HIL-RS-02 A3 mock-I/F prep`（本Issue）
+
+### Read Sync
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` を同期確認。
+- 判定: A3は`Draft`維持、固定キー差分なし。
+
+### Plan
+- A3範囲を `mock I/F preparation only` に固定。
+- 実装確定・契約値再定義・SafeMode緩和を禁止。
+
+### ADR合意ゲート（必須）
+- Context: A3はA1完了前にOpen化すると依存順と統治契約を破壊する。
+- Decision: `ProceedGate` と `PrepGate` を分離し、`a1Status!=Done` ではConditionalのみ許可。
+- Consequences: A3は準備継続のみ、Open化はA1完了後の承認時点に限定。
+- Approval Record: `Pending`（`approved_by` / `approved_at` / `evidence` 未入力）。
+
+### Execute
+- 実施: mock I/F準備ログの明文化のみ。
+- 非実施: Open化、契約更新、実装コード変更。
+
+### Verify
+- 自己検証: fail-safe停止条件未検知（pending bypass/NoGo path改変/safe mode後退なし）。
+- self-correction: `0/3`。
+
+### Proceed
+- 判定: `Conditional`（Draft維持）。
+- 根拠: A1未完了かつApproval Record未確定のため。
