@@ -1161,3 +1161,34 @@ type PatchProposal = {
   - `CE0-REVIEW-IF`（read-only）
   - `CG-01..05`（read-only）
 - 実装指示は行わず、上記I/F参照のみを次工程入力とする。
+
+## Stream B latest run（2026-04-29 / CE0 only / strict single-file contract freeze correction）
+
+- run_id: `stream-b-ce0-2026-04-29-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、直列Phaseを **Read → Plan → Execute → Verify → Proceed** に固定。
+- 編集対象は単一ファイルのみ、依存切離は mock-first（I/Fシグネチャ・型・契約語彙のみ固定）であることを再確認。
+
+### Phase 2 Plan
+- AC/DoD不足を再点検し、以下を本runの確認事項として合意。
+  - `ac_contract_signature_vocab_only`: 実装依存を持ち込まず、契約語彙のみ凍結する。
+  - `dod_single_file_scope_guard`: 指定外ファイル編集要求は即 `held` とする。
+- 不足判定: 追加必須項目はなし（既存DoDで充足）。
+
+### Phase 3 Execute
+- 実施: 本Issueへの実行ログ追記のみ（docs-only / contract-only）。
+- 非実施: 他Issue/02_Architecture/03_Implement/04_Documentation の編集、Contract ID追加・改名・削除、safeMode既定値変更。
+
+### Phase 4 Verify
+- attempt_1: docs-check と差分健全性を実施。
+- result: pass（self-correction `0/3`）。
+- 判定: 4回目相当の自己修復は不要、前提崩れなし。
+
+### Phase 5 Proceed
+- 判定: **Conditional-Go**。
+- 継続条件: CE0は read-only参照可能な契約固定のみ維持し、実装詳細は引き続き持ち込まない。
+- 停止条件: 依存前提崩れ、指定外編集要求、または自己修復4回目相当が発生した場合は即 `held`。
