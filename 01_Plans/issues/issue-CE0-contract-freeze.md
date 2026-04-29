@@ -219,6 +219,48 @@
   - CE1/CE2/CE4への引き渡しは Contract ID read-only参照のみ。
   - 承認前の新規論点は確定せず `held` を維持する。
 
+## Stream B latest run（2026-04-28 / CE0 only / 5-phase contract-only execution）
+
+- run_id: `stream-b-ce0-2026-04-28-10`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase冒頭で本Issueを再読し、対象ファイル単一編集制約と **Read → Plan → Execute → Verify → Proceed** の固定順序を同期。
+- contract-only / mock-first / docs-only 境界、および CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）再定義禁止を再確認。
+- fail-safe（指定外編集 / safeMode既定値後退 / Contract ID再定義 / 4回目修正要求）で即停止する条件を再確認。
+
+### Phase 2 Plan
+- Phase冒頭で本Issueを再読し、AC/DoD不足をドラフト化して合意可否を確認。
+- AC/DoD draft（不足補強候補）:
+  - `ac_phase_re_read_required`: 各Phase冒頭で対象ファイル再読を必須化し、ログに明記する。
+  - `dod_verify_retry_cap`: Verify失敗時の自己修正上限を `max 3` とし、4回目相当は停止報告を必須化する。
+  - `dod_contract_only_mock_first`: Executeで実装仕様確定・ID追加改名削除を禁止し、mock-first記録に限定する。
+- 合意: 本ドラフト3件を本runの運用DoDとして採用（新規ADR起票は不要、既存freeze境界内）。
+
+### Phase 3 Execute
+- Phase冒頭で本Issueを再読し、単一ファイル編集境界を再同期。
+- 実施: 本Issueへの実行ログ追記のみ（contract-only / mock-first / docs-only）。
+- 非実施: 指定外ファイル編集、実装変更、safeMode既定値変更、CE0 Contract IDの追加/改名/削除。
+
+### Phase 4 Verify
+- Phase冒頭で本Issueを再読し、Verify手順と自己修正上限（3回）を再同期。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: Verify成功。追加自己修正は不要。
+
+### Phase 5 Proceed
+- Phase冒頭で本Issueを再読し、Proceed可否と停止条件を再確認。
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0 Contract Freezeは read-only参照運用を維持する。
+  - ADR変更が必要な新規競合は Context/Decision/Consequences 明文化と承認完了まで `held`。
+  - 4回目相当の修正要求・競合・safeMode後退兆候を検知した時点で即停止し、原因/影響I/F/要人間判断を報告する。
+
 ## Stream B latest run（2026-04-27 / CE0 only / phase-gated hold）
 
 - run_id: `stream-b-ce0-2026-04-27-05`
