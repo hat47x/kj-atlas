@@ -519,6 +519,36 @@
   - 監査4点欠損の fail-closed を維持。
   - 未承認事項は `held` 維持（確定しない）。
 
+## CE4 Serial Execution Record（2026-04-29 / CE4 phase sync after CE1）
+
+### Phase 1 Read
+- 対象ファイルを再Readし、CE4境界（proposal-only / mock-first / contract-only）を再確認。
+- 固定条件（`equivalenceKey + bundleHash` AND、監査4点 `query/bundle/proposal/apply`、`queryCanonicalHash` 必須、fail-closed）に差分なし。
+
+### Phase 2 Plan（ADR Context / Decision / Consequences 先行）
+- Context: CE4はAPI/CLI/監査I/F契約を先行定義し、実装依存を切る必要がある。
+- Decision: API/CLI統合は実装せず、mock利用前提の契約固定（endpoint/CLI必須項目、exit code、監査必須項目）を維持する。
+- Consequences: backend/frontend/ops は本契約を境界に独立実装可能。監査欠損・AND不成立・`dryRun=true && sideEffect!=none` は成功扱いにしない。
+- Approval log: 既存 CDC（`CDC-CE4-001` / `CDC-CE4-002`）承認済みを再確認。追加CDCなし。
+
+### Phase 3 Execute（contract-only）
+- 実施: 本ファイル内の実行記録追記のみ。
+- 非実施: API/CLI実装、監査実装、他ファイル編集、safeMode緩和、語彙再定義。
+
+### Phase 4 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `rg -n "equivalenceKey \\+ bundleHash|queryCanonicalHash|fail-closed|mock:<hash>" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- `git diff --check`
+- 結果: pass（self-correction 0/3、競合なし）。
+
+### Phase 5 Proceed
+- Proceed Decision: **Go（contract-only / docs-only）**。
+- 維持事項:
+  - API/CLI統合は契約定義先行（mock活用）を継続し、実装依存を切る。
+  - proposal-only 境界（auto-apply/auto-confirm/auto-publish禁止）を継続する。
+  - 自己修復3回超過または契約競合時は `held` で停止する。
+
 ## Stream F Execution Record（2026-04-26 / CE4 phase-order compliance sync）
 
 ### Phase 1 Read
