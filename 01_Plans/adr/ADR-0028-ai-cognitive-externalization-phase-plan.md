@@ -388,3 +388,33 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - Related: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Related: `02_Architecture/llm_input_ir_spec.md`
 - Related: `02_Architecture/llm_quality_strategy.md`
+
+## Stream A Contract/Governance Freeze Snapshot（for downstream lanes）
+
+### Context
+- CE0/CE1 の契約・統治を先に固定しないまま下流（CE2/CE4）を進めると、語彙衝突と責務境界の再解釈が発生する。
+
+### Decision
+- Snapshot ID を `SNAP-CE0-CE1-CONTRACT-GOVERNANCE-v1` として固定し、以下を downstream read-only で引き渡す。
+  - `safeModeDefault=ON`
+  - `overridePolicy=human_dual_control_only`
+  - `queryPreviewRequired=true`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - 監査4点セット `query/bundle/proposal/apply` 必須
+- 署名境界（APIシグネチャ/データ境界/責務分離）を契約値として凍結し、実装詳細は下流でのみ確定する。
+
+### Consequences
+- 後続ストリームは契約再定義を行わず、mock前提で分離検証を実施できる。
+- 未承認確定化（Pending bypass）および safeMode 後退は即時 No-Go 判定になる。
+
+## Stream A Dependency-Cut Design（Mock-first assumptions）
+
+- Mockで分離可能な依存（contract-only）
+  1. `ContextQueryV1` 生成器（Preview Gateを通した canonical query のみ受理）
+  2. `ContextBundleV1` 生成器（`queryCanonicalHash` / `bundleHash` を固定返却）
+  3. Proposal Envelope（`proposalId + diff + rationale`）
+  4. Governance Gate（`go/conditional/no-go` 判定のみ）
+- Mock前提
+  - UI配置・操作導線は未確定のまま（契約語彙のみ固定）
+  - Provider実装差分は contract adapter で吸収し、contract key追加は禁止
+  - hash不一致は `409 nondeterministic_bundle` で fail-closed
