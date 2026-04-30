@@ -22,6 +22,14 @@
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A（DecisionStatus=Fixed）
 
+## Stream D drift-check update（2026-04-30）
+
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
+- Phase 2 情報構造: 本文責務を維持（operations=runbook / security=基底方針 / guidelines=運用判断補助）。
+- Phase 3 用語統一: `Security Officer / System Owner / Platform Operator`、状態語彙、D1〜D4固定値の一致を確認。
+- Phase 4 品質ゲート: docs-check と `git diff --check` 前提、自己修復上限3回を維持。
+- Phase 5 完了判定: 本更新は docs-only・allowlist 内で完結し、未承認事項の確定化は行わない。
+
 ## Serial cycle record（operations lane）
 
 ### Read
