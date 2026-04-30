@@ -410,3 +410,13 @@ DecisionQueue:
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2A-02 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream B execution log (2026-04-30, FB-P2A lane A3)
+
+- Phase 1 Read同期: A1/A2/A3 を再読し、`CTR-2A-02-COLLAPSE-EXPAND-V1` / `IslandVisibilityContractV1` / GoNoGo (`M1/M2/M3=pass`, `M4=fail`) の一致を確認。
+- Phase 2 interface-contract 固定: A1契約値を read-only 参照し、A3での再定義を行わないことを再確認。
+- Phase 3 mock-validation: A2 ledger の handoff payload（`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`）をA3入力条件として固定。
+- Phase 4 implementation接続: 実装着手条件・停止条件・ロールバック条件を契約値ベースで再確認（外部レーン依存なし）。
+- Phase 5 Verify: フロントエンド契約テスト（`stream_b_mock_validation`/`island_visibility_handoff`/`island_hierarchy_handoff`/`p2a.validation`）を実行し、全件pass。
+- self-correction count: `0/3`（再試行なし）
+- stop-condition check: 契約ドリフト / ownerOfFix未確定 / 指定外ファイル編集要求なし。
