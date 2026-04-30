@@ -15,6 +15,14 @@
 - Outcome: 役割ごとの判断責務とプロファイル選択条件（D1〜D4）を、外部読者が再利用可能な形で確認できる
 - Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
+## Stream D drift-check update（2026-04-30）
+
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
+- Phase 2 情報構造: 本文責務を維持（operations=runbook / security=基底方針 / guidelines=運用判断補助）。
+- Phase 3 用語統一: `Security Officer / System Owner / Platform Operator`、状態語彙、D1〜D4固定値の一致を確認。
+- Phase 4 品質ゲート: docs-check と `git diff --check` 前提、自己修復上限3回を維持。
+- Phase 5 完了判定: 本更新は docs-only・allowlist 内で完結し、未承認事項の確定化は行わない。
+
 ## DOC-OPS-05 統合同期メモ（2026-04-18）
 
 - 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
