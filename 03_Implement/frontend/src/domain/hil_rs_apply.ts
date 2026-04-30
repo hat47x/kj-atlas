@@ -14,6 +14,14 @@ function parseTargetRef(targetRef: string): { kind: "card" | "island"; id: strin
 }
 
 function cloneDocument(document: Document): Document {
+  if (document.version === 1) {
+    return {
+      ...document,
+      cards: document.cards.map((card) => ({ ...card })),
+      edges: document.edges.map((edge) => ({ ...edge })),
+    };
+  }
+
   return {
     ...document,
     cards: document.cards.map((card) => ({ ...card })),
