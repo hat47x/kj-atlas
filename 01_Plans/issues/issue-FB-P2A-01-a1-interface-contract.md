@@ -155,3 +155,12 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2A-01 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream F execution log (2026-04-30, FB-P2A lane A1)
+
+- Scope declaration（実装前宣言）: `issue-FB-P2A-01-a1-interface-contract.md` / `issue-FB-P2A-01-a2-mock-validation.md` / `issue-FB-P2A-01-a3-implementation.md` の最小3ファイルのみ更新。`03_Implement/frontend/src/domain/patch/*` を含む実装変更は本ログでは未着手（A1フェーズ固定）。
+- Phase: **A1 interface-contract 完了**。
+- 依存切断確認: A1完了後のA2は mock で独立進行可能（外部待ちなし）を再確認。
+- Stop-condition check: 契約ドリフト / 指定外ファイル編集要求 / 前提崩壊なし。
+- Next: A2 `issue-FB-P2A-01-a2-mock-validation.md` へ Annex固定値を参照渡し。
+

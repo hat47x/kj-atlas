@@ -174,3 +174,13 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2A-01 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream F execution log (2026-04-30, FB-P2A lane A2)
+
+- Scope declaration（A2）: A1で宣言した最小3ファイルスコープを維持。追加ファイル拡散なし。
+- Phase: **A2 mock-validation 完了**。
+- Mock independence: A1 Annex（`LCA-FB-P2A-01-A1-V1`）のみ参照し、外部I/F待ち・外部レビュー待ちを発生させず検証可能な構成を維持。
+- Validation recap: `M1/M2/M3=pass`、`M4=fail` の Go 条件を維持。
+- Stop-condition check: ownerOfFix未確定 / 契約リンク欠落 / 指定外ファイル編集なし。
+- Next: A3 `issue-FB-P2A-01-a3-implementation.md` へ ledger 固定値を引き渡し。
+
