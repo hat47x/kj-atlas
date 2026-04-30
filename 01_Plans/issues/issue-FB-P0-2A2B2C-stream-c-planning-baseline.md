@@ -315,3 +315,51 @@
 - 人間判断要求:
   1. Approval Record の承認入力完了可否。
   2. `HIL-RS-02-GOV-EXCEPTION-01` を `held` 継続するか、却下するか。
+
+
+## Stream B update（2026-04-30 / Phase 1-4 execution log）
+
+### Phase 1 Read（latest / Open・P0・Scope一致）
+- 最新再読で `Status=Open` / `Priority=P0` / `Scope=対象7Issueの契約/統治/handoff整合` を確認。
+- 固定依存 `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON` の一致を確認。
+- Stopper判定: 想定外競合・前提崩壊は未検知（Proceed可）。
+
+### Phase 2 ADR-style整理（Context / Decision / Consequences）
+#### Context
+- Stream B は P0 クリティカルパスの計画基準として、対象7Issueの契約/統治/handoff を単一基準へ正規化する責務を持つ。
+- A2/A3 の開始判定は A1 契約凍結と承認証跡に依存し、派生定義や例外確定を禁止する。
+
+#### Decision（固定基準）
+- 対象7Issueの整合基準を以下に固定する。
+  1. **Contract基準**: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`、`contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`、`schemaVersion=1.0.0` を全Issueで不変とする。
+  2. **Governance基準**: `overridePolicy=human_dual_control_only`、`contractLinkLocked=true`、`sharedResourceFreeze=true`、`safeModeDefault=ON`、`safeModeBoundary=SAFE_MODE_STRICT_ON` を全Issueで固定する。
+  3. **Handoff基準**: `A2A3_OPEN_ALLOWED` を唯一判定式（SSOT）とし、`NoGo`/`ProceedGate`/`Go`/`Conditional` の遷移式を再定義せず参照専用化する。
+  4. **Approval基準**: 未承認事項は `pending/held` のまま保持し、`Approval Record=Approved` まで `Done/Confirmed` 遷移を禁止する。
+
+#### Consequences
+- 上記固定基準により、対象7Issue間で契約ドリフト・統治ドリフト・handoff解釈差分を禁止する。
+- `pendingDecisionQueueCount==0` かつ `Approval Record=Approved` を満たさない限り、A2/A3は `Open(Planning)` 維持となる。
+- `HIL-RS-02-GOV-EXCEPTION-01` は継続して `held` 扱いとし、人間承認まで確定化しない。
+
+### Phase 3 Workflow（Plan / Execute / Verify）
+#### Plan
+- AC/DoD不足提案（追加）
+  - AC追加案: `Approval Record` 必須証跡キー（`approved_by` / `approved_at` / `evidence`）の空欄を `Needs-decision` 条件として明示する。
+  - DoD追加案: 対象7Issueで `A2A3_OPEN_ALLOWED` と `NoGo` 条件の文字列一致を確認する。
+- 本提案は承認まで `draft` 扱いとし、確定化しない。
+
+#### Execute
+- 実施内容: 本ファイルのみ更新（allowlist遵守）。
+- 反映内容: Context/Decision/Consequences の明記、および「対象7Issueの契約/統治/handoff整合」固定基準の明文化。
+
+#### Verify
+- AC/DoD + P0妥当性
+  - P0妥当性: A1契約凍結を唯一ゲートに維持し、A2/A3早期開放を抑止できる記述であることを確認。
+  - 依存切断: 実装・コード・他Issue編集への誘導を追加せず、計画基準文書として閉じていることを確認。
+- self-correction: 0回（追加修正不要）。
+
+### Phase 4 Stopper判定
+- self-correction 3回超過: 非該当（0/3）。
+- 想定外競合: 非検知。
+- 前提崩壊: 非検知。
+- 判定: **Continue可能（停止条件未発火）**。
