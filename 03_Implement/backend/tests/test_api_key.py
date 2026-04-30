@@ -30,3 +30,14 @@ def test_requires_x_api_key_when_api_key_is_set() -> None:
             assert healthz.status_code == 200
     finally:
         settings.api_key = original
+
+
+def test_trims_x_api_key_header_before_comparison() -> None:
+    original = settings.api_key
+    settings.api_key = 'test-secret'
+    try:
+        with TestClient(app) as client:
+            authorized = client.get('/not-found', headers={'X-API-Key': '  test-secret  '})
+            assert authorized.status_code == 404
+    finally:
+        settings.api_key = original

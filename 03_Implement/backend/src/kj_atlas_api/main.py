@@ -49,7 +49,8 @@ async def require_api_key(request: Request, call_next):
 
     if settings.api_key:
         provided_key = request.headers.get("x-api-key")
-        if not provided_key or not compare_digest(provided_key, settings.api_key):
+        normalized_key = provided_key.strip() if provided_key is not None else None
+        if not normalized_key or not compare_digest(normalized_key, settings.api_key):
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
 
     return await call_next(request)
