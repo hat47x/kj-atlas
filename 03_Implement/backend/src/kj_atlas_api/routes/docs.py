@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from hashlib import sha256
 from datetime import datetime, timezone
@@ -45,6 +46,7 @@ from kj_atlas_api.settings import settings
 
 router = APIRouter(prefix="/docs", tags=["docs"])
 document_payload_adapter: TypeAdapter[DocumentPayload] = TypeAdapter(DocumentPayload)
+logger = logging.getLogger(__name__)
 
 
 def _validate_review_attribution_identity(*, document: DocumentPayload, identity: AuthContext) -> None:
@@ -467,6 +469,15 @@ def _record_ce4_event_and_validate_completeness(
             state.proposal_source_bundle_hash = source_bundle_hash
         if operation == "apply" and state.proposal_source_bundle_hash is not None:
             if state.proposal_source_bundle_hash != source_bundle_hash:
+                logger.warning(
+                    "CE4 audit equivalence mismatch detected",
+                    extra={
+                        "equivalence_key": equivalence_key,
+                        "bundle_hash": bundle_hash,
+                        "expected_source_bundle_hash": state.proposal_source_bundle_hash,
+                        "provided_source_bundle_hash": source_bundle_hash,
+                    },
+                )
                 raise HTTPException(
                     status_code=409,
                     detail={
@@ -478,6 +489,14 @@ def _record_ce4_event_and_validate_completeness(
             return
         missing = sorted(_CE4_REQUIRED_EVENT_SET - state.seen_operations)
     if missing:
+        logger.warning(
+            "CE4 audit event set incomplete for apply operation",
+            extra={
+                "equivalence_key": equivalence_key,
+                "bundle_hash": bundle_hash,
+                "missing_events": missing,
+            },
+        )
         raise HTTPException(
             status_code=409,
             detail={
