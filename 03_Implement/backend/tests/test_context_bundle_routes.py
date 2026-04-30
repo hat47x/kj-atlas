@@ -156,3 +156,49 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
             assert response.json()["detail"]["code"] == "nondeterministic_bundle"
     finally:
         settings.api_key = original_api_key
+
+
+def test_context_resolve_bundle_requires_safe_mode_enabled() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = {
+                "query": "ce4 resolve",
+                "dryRun": True,
+                "sourceBundleHash": "mock:" + "a" * 64,
+                "safeMode": False,
+            }
+            response = client.post("/context/bundles:resolve", json=payload)
+            assert response.status_code == 422
+            assert response.json()["detail"]["code"] == "safe_mode_required"
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_resolve_bundle_returns_contract_context_decision_consequences() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = {
+                "query": "ce4 resolve",
+                "dryRun": True,
+                "sourceBundleHash": "sha256:" + "b" * 64,
+                "safeMode": True,
+            }
+            response = client.post("/context/v1/bundles:resolve", json=payload)
+            assert response.status_code == 200
+            body = response.json()
+            # Context
+            assert isinstance(body["queryCanonicalHash"], str) and len(body["queryCanonicalHash"]) == 64
+            # Decision
+            assert body["proposalLifecycle"] == "proposed"
+            assert body["sideEffect"] == "none"
+            # Consequences
+            assert body["auditChain"]["query"].startswith("query:")
+            assert body["auditChain"]["bundle"].startswith("bundle:")
+            assert body["auditChain"]["proposal"].startswith("proposal:")
+            assert body["auditChain"]["apply"].startswith("apply:")
+    finally:
+        settings.api_key = original_api_key
