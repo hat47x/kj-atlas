@@ -12,6 +12,7 @@ from kj_atlas_api.models_context import (
     ContextBundleResponse,
     ContextQuery,
     ContextQueryValidationResponse,
+    _canonical_bundle_hash_payload,
     _canonical_query_hash_payload,
     _sha256_canonical,
     build_ce4_resolved_bundle,
@@ -50,6 +51,11 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
         if str(exc) == "preview_required":
             raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    expected_bundle_hash = _sha256_canonical(_canonical_bundle_hash_payload(response))
+    if response.bundleHash != expected_bundle_hash:
+        raise HTTPException(status_code=409, detail={"code": "nondeterministic_bundle"})
+
     logger.info(
         "context_bundle_generated",
         extra={

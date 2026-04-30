@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from kj_atlas_api.main import app
+from kj_atlas_api.models_context import build_bundle as real_build_bundle
 from kj_atlas_api.settings import settings
 
 
@@ -136,3 +137,22 @@ def test_context_resolve_route_contract_paths_are_unique() -> None:
     ]
     assert routes.count(("/context/bundles:resolve", "POST")) == 1
     assert routes.count(("/context/v1/bundles:resolve", "POST")) == 1
+
+
+def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeypatch) -> None:
+    from kj_atlas_api import routes as routes_pkg
+
+    def _tampered_build_bundle(request):
+        response = real_build_bundle(request)
+        return response.model_copy(update={"bundleHash": "f" * 64})
+
+    original_api_key = settings.api_key
+    settings.api_key = None
+    monkeypatch.setattr(routes_pkg.context, "build_bundle", _tampered_build_bundle)
+    try:
+        with TestClient(app) as client:
+            response = client.post("/context/bundle", json=_bundle_payload())
+            assert response.status_code == 409
+            assert response.json()["detail"]["code"] == "nondeterministic_bundle"
+    finally:
+        settings.api_key = original_api_key
