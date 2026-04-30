@@ -699,3 +699,30 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2B-02 は系列メモ複数運用（4件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream G serial execution update（2026-04-30）
+
+- Stream role: `Stream G: FB-P2B lane (A1→A2→A3)` 専属。
+- Fixed edit targets (no overlap policy):
+  - `01_Plans/issues/issue-FB-P2B-02-a1-interface-contract.md`
+  - `01_Plans/issues/issue-FB-P2B-02-a2-mock-validation.md`
+  - `01_Plans/issues/issue-FB-P2B-02-a3-implementation.md`
+- Conflict policy: Stream F とのファイル重複編集は実行しない（対象一覧を開始時固定）。
+
+### Phase 1: interface-contract（Read同期）
+- Read: A1/A2/A3の3メモを再読し、`ContractID / DependsOnContractID / ReferenceContractID` の三点一致を確認する。
+- Verify: `CTR-2B-02-DECISION-LOG-V1` で一致し、依存順序 `A1 -> A2 -> A3` を維持する。
+
+### Phase 2: mock-validation（Read同期）
+- Read: A1契約本文とA2 mock条件を再読し、契約再定義禁止・4値制約・順序復元・非自動確定を確認する。
+- Verify: mock/fixture/stub のみで検証可能な境界を維持する。
+
+### Phase 3: implementation（Read同期）
+- Read: A3 handoff 条件を再読し、`CTR-2B-02-DECISION-LOG-V1` 単一参照と差し戻し条件を確認する。
+- Verify: 実装接続は契約準拠のみ、契約拡張要求はA1へ差し戻す。
+
+### Phase 4: verify（Read同期）
+- Read: Validation plan と Fail-safe を再読する。
+- Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証として実行する。
+- Verify: Self-correction を最大3回までに制限し、3回超過または競合兆候検知時は停止して競合一覧のみ報告する。
+
