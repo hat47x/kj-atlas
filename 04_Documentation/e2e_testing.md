@@ -206,6 +206,21 @@ CE3 Verify の自己修復順序（最大3回）:
 2. 2回目失敗: `playwright install-deps chromium`
 3. 3回目: E2E再実行（未収束なら停止して blocker 記録）
 
+
+### 2.7 Contract-based CE3 test mapping（Stream F運用）
+
+CE3 変更時は、次の **契約ベース最小マッピング** を満たすこと。
+
+| 契約ID | 対象 | 最低検証 | 推奨コマンド |
+|---|---|---|---|
+| CE3-CONTRACT-UI-STATE | Frontend Panel | `ce3-decision-state`, `ce3-candidate-state-*`, `ce3-candidate-audit-*`, `ce3-audit-log-size` が可観測であること | `cd 03_Implement/frontend && npm run test -- src/ui/PatchWorkspacePanel.test.ts` |
+| CE3-CONTRACT-DOMAIN-ROLLBACK | Frontend Domain | rollback が候補単位で独立復元されること | `cd 03_Implement/frontend && npm run test -- src/domain/ce3_patch_workspace.test.ts` |
+| CE3-CONTRACT-E2E-SMOKE | Playwright | 候補比較・部分採用・rollback の1フロー以上が通ること | `cd 03_Implement/frontend && npm run e2e -- --grep "Patch Workspace|Preset|rollback"` |
+
+補足:
+- `npm run test -- --runInBand` は Vitest では無効（Unknown option）なので使用しない。
+- 失敗時は本書の自己修復上限（最大3回）に従って再試行し、4回目相当で停止・記録する。
+
 #### CE3 UI状態機械 AC/DoD（Stream F frontend）
 
 CE3 Frontend の状態機械（`idle / decision_recorded / preset_replayed / rollback_ready / error` と候補単位の `adopt/hold/reject`）に対する最小AC/DoDを次で固定する。

@@ -60,6 +60,7 @@ describe("PatchWorkspacePanel", () => {
     expect(html).toContain('data-testid="ce3-candidate-audit-cand-beta"');
     expect(html).toContain('data-testid="ce3-candidate-audit-cand-gamma"');
     expect(html).toContain('data-testid="ce3-audit-log-size"');
+    expect(html).toMatch(/data-testid="ce3-audit-log-size"[^>]*>Audit transitions: \d+</);
     expect(html).toContain("no transition");
     expect(html).not.toContain("share");
     expect(html).not.toContain("export");
