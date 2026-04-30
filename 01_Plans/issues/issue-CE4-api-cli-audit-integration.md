@@ -1179,3 +1179,53 @@
   - CE0/CE1は read-only 参照のまま再定義しない。
   - contract-only で未決定項目を残さない。
   - `status=held` の項目は確定化せず、実装着手条件から除外する。
+
+## Stream G Serial Directive（2026-04-30 / CE4 API-CLI-Audit）
+- Owner は Stream G（CE4 API/CLI/Audit）専任とし、docs-only / contract-only を維持する。
+- Status は `Open / P2` を維持し、未承認の契約変更は `held` で停止する。
+- CE0/CE1 依存は **実装依存として扱わず、I/F参照依存としてのみ扱う**（read-only, no reverse update）。
+- workflow は `Plan → Execute → Verify` の固定順（mock-first）で運用し、実装コミットを禁止する。
+- 未定義競合または前提崩壊を検知した場合は即停止（Stopper優先）。
+
+### Phase 1 Read（latest / Open-P2確認）
+- latest Read を実施し、CE4 Issue の状態が `Open` かつ Priority が `P2` であることを確認する。
+- CE0/CE1/CE2 は read-only 参照に限定し、契約語彙の再定義を行わない。
+- `equivalenceKey + bundleHash`（AND）, `query/bundle/proposal/apply`, `queryCanonicalHash`, fail-closed を固定境界として再確認する。
+
+### Phase 2 ADR-style（Context / Decision / Consequences）
+#### Context
+- CE4 は API/CLI/監査境界の契約固定を目的とし、実装の先行確定は対象外。
+- 先行ストリームとの差分は「依存の扱い」に集中し、CE0/CE1 を実装待ち前提にしないことが必要。
+
+#### Decision
+- CE0/CE1 依存の記述を「実装依存」から「I/F参照依存（read-only contract reference）」へ統一する。
+- API signature / audit envelope / CLI contract は mock前提の検証可能粒度で固定する。
+- proposal-only と fail-closed を維持し、自動確定経路（auto-apply/auto-confirm/auto-publish）を禁止する。
+
+#### Consequences
+- CE4 は他ストリーム実装の進捗に引きずられず、契約I/Fの独立検証を先行できる。
+- 依存表現の明確化により、handoff 時の責務境界（contract vs implementation）が判別しやすくなる。
+- I/F参照依存に反する差分（語彙再定義・実装条件の逆流）が出た場合は `held` 停止が必要になる。
+
+### Phase 3 Workflow（Plan / Execute / Verify / self-correction<=3）
+#### Plan
+- API/CLI/Audit の契約差分を docs 上で定義し、AC/DoD不足は提案として追記する。
+- 人手承認前は `proposalLifecycle=held` を許容し、accepted をAIが確定しない。
+
+#### Execute
+- patch/diff は本issue内の contract 記述に限定する（code change禁止）。
+- API/CLI 同値判定は `equivalenceKey AND bundleHash` のみ成功とする。
+
+#### Verify（mock前提）
+- API signature: required request/response fields と fail-closed 条件を mock request で検証可能であること。
+- audit envelope: `query/bundle/proposal/apply + queryCanonicalHash` 欠損時に success を返さないこと。
+- CLI contract: required options / stdout JSON / exit code(0|1) が API 契約と矛盾しないこと。
+
+#### self-correction
+- Verify不整合時は `1/3` → `2/3` → `3/3` の順で自己修復し、`4/3` 着手を禁止する。
+- 3回以内に収束しない場合は fail-safe として `status=held` へ遷移する。
+
+### Phase 4 Stopper（即停止条件）
+- 未定義競合（契約語彙の衝突、責務境界の二重定義）を検知した場合は即停止。
+- 前提崩壊（proposal-only破綻、safeMode後退要求、監査欠損成功扱い要求）を検知した場合は即停止。
+- 停止時は推測補完を行わず、`status=held` と停止理由を記録して終了する。
