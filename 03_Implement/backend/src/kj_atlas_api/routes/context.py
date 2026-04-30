@@ -62,7 +62,6 @@ def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
     return response
 
 
-@router.post("/bundles:resolve", response_model=Ce4ResolveBundleResponse)
 def _resolve_ce4_bundle_contract(payload: object = Body(...)) -> Ce4ResolveBundleResponse:
     request = _validate_payload(Ce4ResolveBundleRequest, payload)
     try:
