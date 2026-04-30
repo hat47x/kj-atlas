@@ -36,6 +36,78 @@
 - preview gate 条件（`previewConfirmed` 必須確認）を固定する。
 - 実装詳細（handler/UI/DB/worker）は記述せず、契約I/Fに限定する。
 
+
+## Stream F update（2026-04-30 / CE1 Foundation docs-only）
+
+### Phase 1 Read（latest / docs-only scope確認）
+- Read Orderの上位文書を再確認し、CE1の責務を `contract-only / mock-first` に限定することを再確認。
+- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみへ固定（docs-only scope）。
+- CE0 read-only境界、CE1 Contract IDs、固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に差分なしを確認。
+
+### Phase 2 ADR-style（Context / Decision / Consequences）
+- **Context**: CE4が先行実装検証に使えるよう、CE1は実装詳細ではなく最小I/Fを先に固定する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` の最小I/Fを下記の contract-first で先行定義し、closed-worldを維持する。
+- **Consequences**: CE4は本I/Fをmockしてハンドラ非依存検証が可能。未定義キーや非決定論は固定語彙でfail-closedする。
+
+#### Decision: CE1 minimal I/F（mock-first / v1 fixed）
+```ts
+export type ContextQueryV1 = {
+  queryId: string;
+  goal: string;
+  scope: "document" | "view" | "island";
+  depth: number; // 0..5
+  constraints: Record<string, unknown>;
+  reviewFilter: "reviewedOnly" | "includeUnreviewed";
+  safeModePolicy: "strict";
+  outputMode: "summary" | "proposal" | "candidate";
+  previewConfirmed: boolean;
+};
+
+export type ContextBundleV1 = {
+  queryCanonicalHash: string; // sha256 hex
+  bundleHash: string; // sha256 hex
+  selected: unknown[];
+  relations: unknown[];
+  evidence: unknown[];
+  contradictions: unknown[];
+  reviewFlags: { reviewed: number; unreviewed: number };
+  truncationMeta: Record<string, unknown>;
+  excludedReason: string[];
+};
+```
+
+#### Decision: Fixed error semantics（v1）
+- `previewConfirmed=false -> 422 preview_required`
+- `unknown key -> 400 unknown_contract_key`
+- `same canonical query but bundle hash mismatch -> 409 nondeterministic_bundle`
+
+### Phase 3 Workflow
+#### Plan（AC/DoD補完）
+- AC補完1: `ContextQueryV1` / `ContextBundleV1` の最小I/Fを本Issue内で単独参照可能にする。
+- AC補完2: hash決定論を「同一canonical queryで3回一致」として固定。
+- AC補完3: エラー語彙とHTTPコードを1:1で固定。
+- DoD補完1: CE4がmockのみで検証可能（実実装依存なし）を明文化。
+- DoD補完2: docs-only差分であること（コード変更0）を確認。
+
+#### Execute
+- 本IssueにPhase 1〜4の運用記録を追記し、CE1最小I/Fと固定語彙を再掲して参照点を一本化。
+
+#### Verify（CE4に渡せるmock可能I/Fか）
+- Verify-1: 型定義が入力/出力で自己完結し、ハンドラ・DB・worker依存語彙を含まない。
+- Verify-2: 失敗語彙が3種に固定され、mockで正常/異常系を再現可能。
+- Verify-3: handoff key（`sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash`）に接続可能。
+- 判定: **pass（CE4 mock-first handoff 可能）**。
+
+#### self-correction（max 3）
+- Attempt 1: I/F再掲時の語彙揺れを点検（差分なし）。
+- Attempt 2: Verify観点に「実装依存語彙なし」を追加（反映済）。
+- Attempt 3: Stopper条件の明文化位置を本節末尾へ統合（反映済）。
+
+### Phase 4 Stopper
+- 停止条件1: self-correctionが3回を超える場合は `held` で停止。
+- 停止条件2: CE0/CE1/CE2/CE4で未定義の契約競合を検知した場合はPhase 2へロールバック。
+- 停止条件3: Contract ID collision / error semantics collision を検知した場合は承認完了までProceedしない。
+
 ## Lane guard（独立性）
 
 ## Stream D latest run（2026-04-29 / CE1 Context foundation contract rehearsal）
