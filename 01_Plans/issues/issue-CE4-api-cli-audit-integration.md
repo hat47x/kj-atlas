@@ -318,6 +318,11 @@
 - Read同期: 完了（No-Go: 語彙再定義禁止 / safeMode緩和禁止 / 監査欠損成功扱い禁止）。
 
 ### Handoff（確定事項のみ）
+
+## Stream B Integration Note（2026-04-30）
+- CE4 read-only handoff key（`equivalenceKey + bundleHash`、`queryCanonicalHash`）との整合を維持しつつ、CE1側の `/context/bundle` に deterministic guard を追加。
+- CE4側の契約語彙・監査4点・proposal-only 境界への変更はなし（No-Go維持）。
+- backend検証で `/context/bundle` の `409 nondeterministic_bundle` を追加確認し、CE4同値判定前提（bundle hashの決定論）への依存を明示。
 - CE4は `CE4-EQUIVALENCE-IF` / `CE4-AUDIT-CHAIN-IF` / `CE4-DRYRUN-SAFETY-IF` / `CE4-MOCK-HASH-IF` を固定。
 - CE0/CE1/CE2は read-only参照を維持し、再定義しない。
 - 監査欠損 fail-closed を維持し、成功扱いを行わない。
