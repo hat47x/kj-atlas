@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createHilRsClient } from "./hil_rs_client";
+import { createHilRsClient, selectValidatedRediffPayload } from "./hil_rs_client";
 import type { DocumentV2 } from "./types";
 
 const BASE_DOCUMENT: DocumentV2 = {
@@ -83,6 +83,41 @@ describe("hil_rs_client", () => {
 
     expect(provider.proposeReDiff).toHaveBeenCalledTimes(1);
     expect(payload?.proposalId).toBe("s1-provider");
+  });
+
+
+  it("selectValidatedRediffPayload returns draft when provider throws", () => {
+    const provider = {
+      proposeReDiff: vi.fn().mockImplementation(() => {
+        throw new Error("provider unavailable");
+      }),
+    };
+
+    const client = createHilRsClient();
+    const critiqueInputs = client.collectCritiqueInputs({
+      document: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], critique: "too close", critiqueTags: ["too_close"] }],
+      },
+      iteration: 1,
+      createdAt: "2026-03-14T00:00:00.000Z",
+    });
+
+    const draftPayload = client.previewRediff({
+      currentDocument: BASE_DOCUMENT,
+      suggestedDocument: {
+        ...BASE_DOCUMENT,
+        cards: [{ ...BASE_DOCUMENT.cards[0], x: 10 }],
+      },
+      suggestionId: "s1",
+      iteration: 1,
+      critiqueInputs,
+    });
+
+    expect(draftPayload).not.toBeNull();
+    const payload = selectValidatedRediffPayload(draftPayload!, provider);
+    expect(provider.proposeReDiff).toHaveBeenCalledTimes(1);
+    expect(payload.proposalId).toBe("s1");
   });
 
   it("falls back to stub payload when provider returns an invalid payload", () => {
