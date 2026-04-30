@@ -1265,3 +1265,52 @@ type PatchProposal = {
   - 契約語彙の再定義禁止。
   - safeMode既定ONの緩和禁止。
   - 未承認事項は `held` で維持し、確定化しない。
+
+## Stream D latest run（2026-04-30 / CE0 contract freeze / docs-only contract-only）
+
+- run_id: `stream-d-ce0-2026-04-30-11`
+- assignee: `Stream D（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `conflict=0 / premise_break=0 / self_correction_overflow=0 / out_of_scope_edit=0`
+
+### Phase 1 Read
+- 最新Readとして本Issueを再読し、`Status=Open / Priority=P1 / docs-only / contract-only / mock-first` を確認。
+- CE0固定契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）が read-only 参照であることを再確認。
+- Stopper条件（競合・前提崩れ・自己修正上限超過）発生時は即時 `held` 停止を再確認。
+
+### Phase 2 ADR-style（Context / Decision / Consequences）
+- **Context**: CE0は Contract Freeze 区間にあり、実装確定や契約語彙変更を伴わず、単一ファイルで監査可能な更新のみが許可される。
+- **Decision**:
+  - contract-only を維持し、契約IDの追加・改名・削除を禁止する。
+  - **Interface-first** を維持し、先行固定対象を schema/API型（`ContextQueryV1` / `ContextBundleV1` とエラー意味論）に限定する。
+  - Verifyは mock で依存切断可能な契約検証（preview gate / deterministic hash / unknown key reject）を優先する。
+- **Consequences**:
+  - 下流実装は read-only 参照で進行でき、契約ドリフトを抑制できる。
+  - backend未着手でも検証可能性を確保し、依存待ちによる停止を回避できる。
+  - 逸脱要求は `held` に集約され、可逆かつ監査可能な意思決定導線を維持できる。
+
+### Phase 3 Workflow
+#### Plan（AC/DoD不足補完提案）
+- AC/DoD補完提案:
+  - `ac_latest_read_open_p1`: 各runで Open/P1・docs-only/contract-only を明示記録する。
+  - `dod_interface_first_schema_api_only`: Decisionに interface-first（schema/API型先行）を必須化する。
+  - `dod_mock_decoupling_verify`: Verifyで mock依存切断の可否を明示し、不可時は停止理由を記録する。
+- 判定: 本runでは上記3件を採用し、追加ADR起票は不要（freeze境界内運用）。
+
+#### Execute
+- 実施: 本Issueへの run ledger 追記のみ。
+- 非実施: 他ファイル編集、実装変更、Contract ID再定義、safeMode既定値緩和。
+
+#### Verify（mockで依存切断可能か検証）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass
+- mock decoupling判定:
+  - `ContextQueryV1` / `ContextBundleV1` の固定I/Fで検証可能（backend実装依存なし）= `decoupling=pass`
+- self-correction: `0/3`（上限内、追加修正不要）
+
+### Phase 4 Stopper
+- 結果: stop条件は未発火（`conflict=0 / premise_break=0 / overflow=0`）。
+- Proceed判定: **Conditional-Go**（contract freeze継続、逸脱発生時は即 `held`）。
