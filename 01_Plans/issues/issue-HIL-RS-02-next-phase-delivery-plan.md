@@ -568,3 +568,50 @@ delivery_gate_v1:
 - ADR-0026/0027 の CDC と同型で AC/依存/検証計画を再同期した。
 - 実装詳細は本Issueに追加せず、契約・統治の境界記録に限定した。
 - `A1 -> A2 -> A3` 依存と `A1 Done 前の A2/A3 Open禁止` を再固定。
+
+## Stream A phase-serial execution log（2026-04-30 / Critical Path）
+
+### Phase 1: 現状把握（Read）
+- 対象再読: `ADR-0026` / `ADR-0027` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 本Issue / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
+- Status一覧:
+  - `Status=Open`（A3は `Draft` 維持）
+  - `Priority=P1`
+  - 依存順: `A1 -> A2 -> A3`
+- Decision一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` を固定。
+  - `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` を固定。
+- 未解決論点一覧:
+  1. `Approval Record` 必須フィールド（`approved_by` / `approved_at` / `evidence`）
+  2. `held` 論点の人間判断
+
+### Phase 2: ADR明文化（必須ゲート）
+- Context: delivery plan は A1契約固定を満たさない限り実装フェーズへ進めない。
+- Decision: A2/A3の準備は mock contract 参照のみ許可し、契約再定義は禁止。
+- Consequences: 承認未充足時は `Conditional` 維持、Open化判定は保留。
+- Approval Record: `Pending`（承認証跡入力待ち）。
+
+### Phase 3: 契約凍結（Interface Freeze）
+- 凍結I/F:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- 凍結ルール:
+  - `Pending -> Approved | Pending -> Rejected` のみ許可。
+  - `Pending bypass` / `safeMode後退` / `share-export緩和` を禁止。
+- 依存吸収: 他ストリーム依存は `read-only contract snapshot` で吸収し、待機しない。
+
+### Phase 4: 整合チェック（Verify）
+- Link整合: issue/ADR の親子参照に欠落なし。
+- 用語整合: `safeModeDefault` / `safeModeBoundary` / `overridePolicy` の語彙ドリフトなし。
+- 優先度整合: A1先行の critical path を維持。
+- self-correction: `0/3`（再試行なし）。
+
+### Phase 5: 完了判定（Proceed）
+- 判定: **Conditional / Needs-decision**。
+- DoD判定:
+  - 契約固定・境界固定・禁止事項の明文化は完了。
+  - 未解決論点（承認証跡）が残るため完了クローズ不可。
+- 停止/再開条件:
+  - 停止: self-correction 4回目相当、未定義競合、未承認確定化。
+  - 再開: `approved_by` / `approved_at` / `evidence` 入力完了後、同一Gate式で再判定。
