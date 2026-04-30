@@ -13,5 +13,8 @@ describe("P2AReadinessPanel", () => {
     expect(html).toContain("M2: pass (A3)");
     expect(html).toContain("M3: pass (A3)");
     expect(html).toContain("M4: fail (A2)");
+    expect(html).toContain("CTR-2A-02-COLLAPSE-EXPAND-V1");
+    expect(html).toContain("IslandVisibilityContractV1");
+    expect(html).toContain("Accepted: M1, M2, M3 / Blocked: M4");
   });
 });
