@@ -485,3 +485,52 @@ def test_docs_strict_mode_rejects_ambiguous_identity_mapping(tmp_path) -> None:
             assert payload["detail"]["code"] == "identity_mapping_conflict"
     finally:
         settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_strict_mode_accepts_provider_case_and_whitespace_variants(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            provision = client.post(
+                "/admin/provision/users",
+                json={
+                    "provider": "  OIDC  ",
+                    "externalUid": "case-variant-user",
+                    "displayName": "Case Variant",
+                },
+            )
+            assert provision.status_code == 201
+
+            allowed = client.put(
+                "/docs/doc-auth-case-variant",
+                json=_sample_payload("doc-auth-case-variant"),
+                headers={"x-forwarded-user": "case-variant-user", "x-auth-provider": "oidc"},
+            )
+            assert allowed.status_code == 200
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
+
+
+@pytest.mark.auth_level1
+def test_admin_provision_contract_rejects_blank_provider_or_external_uid(tmp_path) -> None:
+    original_allow_jit = settings.allow_jit_provisioning
+    settings.allow_jit_provisioning = False
+    try:
+        with _sqlite_client(tmp_path) as fixture:
+            client, _ = fixture
+            blank_provider = client.post(
+                "/admin/provision/users",
+                json={"provider": "   ", "externalUid": "user-a", "displayName": "A"},
+            )
+            assert blank_provider.status_code == 400
+
+            blank_external_uid = client.post(
+                "/admin/provision/users",
+                json={"provider": "oidc", "externalUid": "   ", "displayName": "B"},
+            )
+            assert blank_external_uid.status_code == 400
+    finally:
+        settings.allow_jit_provisioning = original_allow_jit
