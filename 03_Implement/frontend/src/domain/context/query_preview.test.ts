@@ -106,6 +106,27 @@ describe("query preview state", () => {
     });
   });
 
+  it("returns 422 invalid_bundle_contract when fixture breaks ContextBundleV1 signature", async () => {
+    const draft = baseDraft();
+    const result = await runMockContextIntegration(draft, async () => ({
+      queryCanonicalHash: toCanonicalQueryKey(draft),
+      bundleHash: "",
+      selected: [],
+      relations: [],
+      evidence: [],
+      contradictions: [],
+      reviewFlags: { reviewed: 2, unreviewed: 0 },
+      truncationMeta: { truncated: false },
+      excludedReason: ["ok", 1] as unknown as string[],
+    }));
+    expect(result).toEqual({
+      canSubmit: false,
+      statusCode: 422,
+      errorCode: "invalid_bundle_contract",
+      invalidReasons: ["bundleHash must be non-empty string", "excludedReason must be string[]"],
+    });
+  });
+
   it("builds a deterministic canonical key for semantically equal inputs", () => {
     const first = baseDraft();
     const second: ContextQueryDraft = {

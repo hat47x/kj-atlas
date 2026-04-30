@@ -82,6 +82,7 @@ export function buildQueryPreviewState(draft: ContextQueryDraft): QueryPreviewSt
 
 export type RunMockContextIntegrationResult =
   | { canSubmit: false; statusCode: 400; errorCode: "unknown_contract_key"; unknownKeys: string[] }
+  | { canSubmit: false; statusCode: 422; errorCode: "invalid_bundle_contract"; invalidReasons: string[] }
   | { canSubmit: false; statusCode: 422; errorCode: "preview_required" | "invalid_query"; blockers: string[] }
   | { canSubmit: false; statusCode: 409; errorCode: "nondeterministic_bundle"; reason: "query_hash_mismatch" }
   | { canSubmit: true; statusCode: 200; queryCanonicalHash: string; bundleHash: string; sourceBundleHash: string; excludedReason: string[] };
@@ -97,6 +98,26 @@ const CONTEXT_QUERY_V1_KEYS = new Set([
   "outputMode",
   "previewConfirmed",
 ]);
+
+function validateContextBundleV1(bundle: ContextBundleMock): string[] {
+  const reasons: string[] = [];
+  if (typeof bundle.queryCanonicalHash !== "string" || bundle.queryCanonicalHash.length === 0) reasons.push("queryCanonicalHash must be non-empty string");
+  if (typeof bundle.bundleHash !== "string" || bundle.bundleHash.length === 0) reasons.push("bundleHash must be non-empty string");
+  if (!Array.isArray(bundle.selected)) reasons.push("selected must be array");
+  if (!Array.isArray(bundle.relations)) reasons.push("relations must be array");
+  if (!Array.isArray(bundle.evidence)) reasons.push("evidence must be array");
+  if (!Array.isArray(bundle.contradictions)) reasons.push("contradictions must be array");
+  if (!bundle.reviewFlags || typeof bundle.reviewFlags.reviewed !== "number" || typeof bundle.reviewFlags.unreviewed !== "number") {
+    reasons.push("reviewFlags must include numeric reviewed/unreviewed");
+  }
+  if (!bundle.truncationMeta || typeof bundle.truncationMeta !== "object" || Array.isArray(bundle.truncationMeta)) {
+    reasons.push("truncationMeta must be object");
+  }
+  if (!Array.isArray(bundle.excludedReason) || bundle.excludedReason.some((item) => typeof item !== "string")) {
+    reasons.push("excludedReason must be string[]");
+  }
+  return reasons;
+}
 
 function findUnknownContractKeys(draft: ContextQueryDraft): string[] {
   return Object.keys(draft as Record<string, unknown>)
@@ -130,6 +151,15 @@ export async function runMockContextIntegration(
   }
 
   const response = await postBundle(draft);
+  const bundleErrors = validateContextBundleV1(response);
+  if (bundleErrors.length > 0) {
+    return {
+      canSubmit: false,
+      statusCode: 422,
+      errorCode: "invalid_bundle_contract",
+      invalidReasons: bundleErrors,
+    };
+  }
   const queryCanonicalHash = toCanonicalQueryKey(draft);
   if (response.queryCanonicalHash !== queryCanonicalHash) {
     return {
