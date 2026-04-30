@@ -288,3 +288,30 @@
   3. `pendingDecisionQueueCount==0` の確認未完了。
 - 再開条件（Close条件）:
   - 上記3点がすべて解消され、`A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` を再検証で確認できること。
+
+
+## Stream B planning refresh（2026-04-30 / CE0-CE1-CE4 連携参照）
+
+### Phase 1 Read
+- `Approval Record` 必須証跡（`approved_by` / `approved_at` / `evidence`）未入力を継続確認。
+- `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持。
+
+### Phase 2 ADR整合
+- `ADR-0028` と矛盾なし。A1 freeze SSOT 優先を維持。
+- 追加Decisionが必要な場合は CDC 草案のみ提示し、承認待ち中は `held` 固定。
+
+### Phase 3 Plan→Execute
+- CE系への依存切断のため、実装非依存タスクを固定:
+  1. A1契約キー一致チェック（2ファイル同値）。
+  2. A2/A3解放条件の判定式固定（`A2A3_OPEN_ALLOWED`）。
+  3. No-Go判定の再現手順固定（mock dataset前提）。
+
+### Phase 4 Verify
+- Expected verification level: `docs-check`。
+- self-correction 最大3回、4回目相当は停止。
+
+### Phase 5 Proceed
+- 現時点の判定: **Needs-decision 維持**（Approval Record未充足 + held残存）。
+- 人間判断要求:
+  1. Approval Record の承認入力完了可否。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` を `held` 継続するか、却下するか。

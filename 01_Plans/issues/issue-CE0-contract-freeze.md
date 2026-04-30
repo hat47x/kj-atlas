@@ -1233,3 +1233,35 @@ type PatchProposal = {
 - verify attempt: `1/3` で通過。
 - stop condition check: 未定義競合なし、範囲外変更要求なし、4回目相当修正要求なし。
 - decision: **Go (contract-only / mock-first / implementation-decoupled)**。
+
+
+## Stream B planning refresh（2026-04-30 / CE0）
+
+### Phase 1 Read（欠落抽出）
+- Status/Priority は `Open` / `P0` を維持。
+- 欠落補完: `Expected verification level` を `docs-check`（validator + unittest + diff check）として明記。
+- 欠落補完: 実装担当向け `Task breakdown` をモック前提で固定。
+
+### Phase 2 ADR整合（ADR-0028系）
+- `ADR-0028` の「proposal-only / fail-closed / safeMode既定ON」と矛盾なし。
+- 追加CDC不要（方針差分なし）。差分発生時は `Context / Decision / Consequences` を追記し `held` 維持。
+
+### Phase 3 Plan→Execute（依存切断）
+- 実装依存を持たない作業として以下を固定:
+  1. CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の参照専用チェックリスト化。
+  2. mock入力 `sourceBundleHash=mock:<hash>` を許容する契約検証観点を明文化。
+  3. fail-closed 条件（監査欠損・safeMode後退要求・未承認確定化）を No-Go 固定。
+
+### Phase 4 Verify（AC/DoD/verification/task整合）
+- Expected verification level: `docs-check`。
+- Self-correction 上限: 3回（4回目相当は停止）。
+- Task breakdown（implementation-ready / code-free）:
+  - T1: Contract vocabulary freeze再確認。
+  - T2: Mock fixture観点（入力/期待値/No-Go）定義。
+  - T3: Verify checklist更新（AC/DoD/停止条件対応）。
+
+### Phase 5 Proceed（実装可能計画）
+- 実装担当への受け渡し条件を以下で固定:
+  - 契約語彙の再定義禁止。
+  - safeMode既定ONの緩和禁止。
+  - 未承認事項は `held` で維持し、確定化しない。
