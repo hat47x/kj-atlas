@@ -31,6 +31,26 @@ describe("HilRsRediffPreview", () => {
     );
 
     expect(html).toContain("proposal-1");
+    expect(html).toContain("1.0.0");
+    expect(html).toContain("Based on iteration:");
+    expect(html).toContain("Diff operations:</strong> 1");
     expect(html).toContain("move / card:c1");
+  });
+
+  it("renders deterministic empty-op message when diffOps is empty", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(HilRsRediffPreview, {
+        payload: {
+          schemaVersion: "1.0.0",
+          proposalId: "proposal-empty",
+          basedOnIteration: 3,
+          traceKey: "trace:card:c9:3",
+          diffOps: [],
+        },
+      }),
+    );
+
+    expect(html).toContain("Diff operations:</strong> 0");
+    expect(html).toContain("No diff operations returned for this proposal.");
   });
 });
