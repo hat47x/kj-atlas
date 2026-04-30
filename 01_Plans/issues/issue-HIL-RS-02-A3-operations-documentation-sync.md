@@ -241,7 +241,7 @@
 - 非実施: Open化、契約更新、実装コード変更、architecture本体変更、shared resource編集。
 
 ### Phase 5 Verify
-- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 - self-correction: 0/3。
@@ -509,7 +509,7 @@
 
 ### Phase 4: Verify（docs-check + link整合 + fixed-value grep）
 - 実行コマンド:
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `rg -n "strict_mode_exception_approval_flow.md|operations.md|security.md|e2e_testing.md|Security Officer|System Owner|Platform Operator|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|StoppedForClarification|4h / 2h / 代理承認なし / 48h \+ 15m/60m|safeModeDefault=ON|overridePolicy=human_dual_control_only|contractLinkLocked=true|sharedResourceFreeze=true" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/e2e_testing.md`
   - `git diff --check`
@@ -753,3 +753,66 @@
 - 判定: **Conditional / Needs-decision**。
 - 理由: `Approval Record: Pending` および `held` 論点が残存。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
+
+## Stream H execution log（2026-04-30 / Draft昇格専任）
+
+### Phase 1 Read（最新Read: Draft / Priority / Scope）
+#### Context
+- 最新Readとして本Issueを再読し、現在値を確認した（`Status: Draft` / `Priority: P1` / `Scope: 01_Plans/issues/（planning only）`）。
+- A3は `A1 -> A2 -> A3` の依存順に従うため、A1完了前はOpen化不可という前提を維持する。
+
+#### Decision
+- 対象を本ファイルに固定し、他ファイルは編集しない。
+- fixed keys（`freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `sharedResourceFreeze` / `safeModeDefault`）を read-only 参照として扱う。
+
+#### Consequences
+- Draft運用のまま、昇格判定に必要な不足条件を本ログ内で明文化できる。
+
+### Phase 2 ADR-style（Context / Decision / Consequences + Open昇格条件）
+#### Context
+- A3は運用同期ノードであり、契約SSOT更新はA1責務である。
+- Open昇格には gate 条件と検証証跡が必要だが、依存完了情報が本Issue単体では確定していない。
+
+#### Decision
+- Open昇格条件を以下で固定する（不足AC/DoD・依存条件・検証レベル）。
+  - 不足AC/DoD:
+    - AC-add-1: `A1 Done` の証跡リンクを明記すること。
+    - AC-add-2: `pendingDecisionQueueCount==0` の確認結果を明記すること。
+    - DoD-add-1: Open判定時に `ProceedGate=true` 判定ログ（日時・判定者）を残すこと。
+  - 依存条件:
+    - `A1 -> A2 -> A3` 固定順序を満たすこと。
+  - 検証レベル:
+    - `docs-check`（validator / unittest / diff check）を必須とする。
+
+#### Consequences
+- A1未完やDecision Queue未解消が残る場合、A3はDraft維持（Conditional）となる。
+- Open昇格は「条件充足後にのみ可能」と明文化され、推測昇格を防止できる。
+
+### Phase 3 Workflow（Plan -> Execute -> Verify -> Proceed）
+#### Plan
+- 本Issue内で昇格条件の不足点を追記し、判定式を再確認する。
+
+#### Execute
+- 本ログを追加し、Open昇格条件（不足AC/DoD・依存・検証レベル）を明文化した。
+
+#### Verify
+- 実施コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- Openに昇格可能か判定:
+  - **判定: Not Yet（Conditional）**
+  - 理由: `A1 Done` と `pendingDecisionQueueCount==0` の充足証跡が本時点で未提示のため。
+
+#### Proceed
+- 次アクションは「A1完了証跡とDecision Queue解消証跡の受領後に再判定」とする。
+
+### Phase 4 Stopper（停止条件）
+- 昇格条件が不明、または依存競合（A1状態不一致 / Decision Queue状態不一致）がある場合は停止し、人間判断を要求する。
+- self-correction は最大3回まで。4回目相当は fail-safe停止。
+
+### Self-correction log
+- Attempt 1/3: 不要な契約再定義文言がないことを確認。
+- Attempt 2/3: Open判定に必要な不足AC/DoDを追加確認。
+- Attempt 3/3: Verify手順とStopper条件の整合を確認。
+- Result: 3/3以内、停止条件未発火（ただし昇格判定はConditional）。
