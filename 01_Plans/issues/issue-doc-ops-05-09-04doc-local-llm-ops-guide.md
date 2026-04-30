@@ -8,6 +8,7 @@
 - Scope: `04_Documentation/local_llm_ops_guide.md`
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/local_llm_ops_guide.md`, `02_Architecture/llm_provider_spec.md`, `01_Plans/documentation_quality.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

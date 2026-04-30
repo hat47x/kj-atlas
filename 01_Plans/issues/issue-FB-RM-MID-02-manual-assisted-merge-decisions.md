@@ -8,6 +8,7 @@
 - Expected verification level: unit
 - Related Backlog: FB-RM-MID-02, FB-P2B-02
 - Related ADR/Spec: ADR-0001, ADR-0007, ADR-0019
+- Dependencies: FB-RM-MID-02, FB-P2B-02
 
 ## Context
 

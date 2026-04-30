@@ -8,6 +8,7 @@
 - Scope: `04_Documentation/configuration.md`
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/configuration.md`, `02_Architecture/runtime_parameter_registry.md`, `01_Plans/documentation_quality.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Execution protocol（DOC-OPS-05-Set1 固定）

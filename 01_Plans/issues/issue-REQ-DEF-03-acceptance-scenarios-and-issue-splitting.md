@@ -9,6 +9,7 @@
 - Scope: `01_Plans/`, `04_Documentation/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0012`, `ADR-0019`, `04_Documentation/e2e_testing.md`, `01_Plans/issues/README.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 

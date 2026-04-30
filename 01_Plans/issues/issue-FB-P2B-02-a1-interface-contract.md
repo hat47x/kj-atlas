@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2B-02-A1 Manual assisted mergeフロー / インターフェース先行（型/契約）
 
 - Type: Feature request
-- Status: Done (Stream D serial completion on 2026-04-17)
+- Status: Done
 - Lifecycle: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
@@ -9,6 +9,7 @@
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2B-02`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/schemas.md`
+- Dependencies: `FB-P2B-02`
 - Expected verification level: `docs-check`
 
 ## Dependencies

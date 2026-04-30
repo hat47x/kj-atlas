@@ -1,12 +1,13 @@
 # Issue Draft: FB-P2A-01-A3 Island階層モデル導入 / 実装計画接続
 
 - Type: Feature request
-- Status: Closed (Stream A serial phase complete: A3 fixed on 2026-04-18)
+- Status: Done
 - Priority: P0
 - Owner: Stream A（Critical Path / FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-01`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-01-a1-interface-contract.md`, `issue-FB-P2A-01-a2-mock-validation.md`
+- Dependencies: `FB-P2A-01`
 - Expected verification level: `docs-check`
 
 ## Dependencies

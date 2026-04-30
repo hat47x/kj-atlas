@@ -9,6 +9,7 @@
 - Scope: `01_Plans/issues/` / `01_Plans/adr/` / `01_Plans/project-progress-dashboard.md`（計画レイヤ同期のみ）
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0018`, `ADR-0019`, `ADR-0022`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement

@@ -5,8 +5,6 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
-import pytest
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 

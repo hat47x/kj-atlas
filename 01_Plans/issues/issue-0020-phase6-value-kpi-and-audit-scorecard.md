@@ -1,12 +1,13 @@
 # Issue Draft: 0020 Phase6 Value KPI and Audit Scorecard
 
 - Type: Process
-- Status: Completed
+- Status: Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream F
 - Scope: `01_Plans/issues/` + `04_Documentation/operations.md`
 - Related ADR/Spec: `ADR-0001`, `ADR-0019`, `ADR-0024`, `ADR-0028`, `04_Documentation/operations.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) Problem statement

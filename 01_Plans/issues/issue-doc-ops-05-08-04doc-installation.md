@@ -8,6 +8,7 @@
 - Scope: `04_Documentation/installation.md`
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/installation.md`, `04_Documentation/configuration.md`, `01_Plans/documentation_quality.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

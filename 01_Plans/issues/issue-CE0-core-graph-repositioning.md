@@ -8,6 +8,7 @@
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
+- Dependencies: `CE-0`
 - Verification: `docs-check`
 
 ## Lane guard

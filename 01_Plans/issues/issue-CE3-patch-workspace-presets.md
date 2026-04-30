@@ -1,13 +1,14 @@
 # Issue Draft: CE3 Patch Workspace / Query Presets
 
 - Type: Feature request
-- Status: Completed (workspace/preset/rollback AC satisfied)
+- Status: Done
 - Source Issue: N/A
 - Priority: P2
 - Owner: Frontend Team
 - Scope: `03_Implement/frontend/`, `04_Documentation/e2e_testing.md`
 - Related Backlog: `CE-3`
 - Related ADR/Spec: `ADR-0028`
+- Dependencies: `CE-3`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）

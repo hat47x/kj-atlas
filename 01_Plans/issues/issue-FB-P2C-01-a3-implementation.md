@@ -1,13 +1,14 @@
 # Issue Draft: FB-P2C-01-A3 Polygon auto-fit / 実装ハンドオフ
 
 - Type: Feature request
-- Status: Done (Stream C / P2C-A3 implementation)
+- Status: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
 - Priority: P0
 - Owner: Stream C
 - Scope: `01_Plans/issues/` + `03_Implement/frontend/src/domain/**`（P2C-A3実装）
 - Related Backlog: `FB-P2C-01`
 - Related ADR/Spec: `ADR-0007`, `ADR-0001`, `02_Architecture/island_shapes.md`, `02_Architecture/api.md`, `02_Architecture/schemas.md`
+- Dependencies: `FB-P2C-01`
 - Expected verification level: `integration`
 
 ## Requirement meta I/F（共通キー）

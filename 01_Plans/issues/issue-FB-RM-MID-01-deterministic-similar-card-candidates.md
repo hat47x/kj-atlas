@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/domain/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/App.tsx`, `01_Plans/`
 - Related Backlog: `FB-RM-MID-01` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0005-phase2-qualitative-integration.md`, `01_Plans/adr/ADR-0007-future-backlog.md`
+- Dependencies: `FB-RM-MID-01` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `unit`
 - Related Principles: `P-02` (反スコアリング), `P-04` (Human-in-the-loop), `P-05` (カード可管理性)
 

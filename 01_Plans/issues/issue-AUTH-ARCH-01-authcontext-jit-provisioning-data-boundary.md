@@ -9,6 +9,7 @@
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `01_Plans/adr/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0020`, `02_Architecture/schemas.md`, `02_Architecture/review_attribution.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## RACI（簡易）

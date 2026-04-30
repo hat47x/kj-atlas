@@ -8,6 +8,7 @@
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
+- Dependencies: `CE-1`
 - Verification: `docs-check`
 
 

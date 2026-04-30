@@ -9,6 +9,7 @@
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0011`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `02_Architecture/enterprise_architecture.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 

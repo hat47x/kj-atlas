@@ -8,6 +8,7 @@
 - Scope: `04_Documentation/narratives.md`
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/narratives.md`, `00_Prompt/domain.md`, `01_Plans/documentation_quality.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/domain/view/`, `04_Documentation/diagnostics.md`
 - Related Backlog: `FB-RM-RS-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `04_Documentation/diagnostics.md`
+- Dependencies: `FB-RM-RS-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `e2e`
 - Related Principles: `P-03` (レビュー追跡), `P-06` (視点制御), `P-07` (privacy-by-default)
 

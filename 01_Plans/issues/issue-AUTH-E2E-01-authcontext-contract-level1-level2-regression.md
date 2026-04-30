@@ -9,6 +9,7 @@
 - Scope: `03_Implement/frontend/`, `03_Implement/backend/`, `04_Documentation/e2e_testing.md`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0019`, `ADR-0020`, `04_Documentation/e2e_testing.md`, `02_Architecture/llm_runtime_constraints.md`
+- Dependencies: N/A
 - Expected verification level: `e2e`
 
 ## RACI（簡易）
