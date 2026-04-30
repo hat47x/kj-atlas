@@ -1123,3 +1123,26 @@
 ### Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、他ファイル編集なし、contract-only + mock-first 維持）。
 - 停止条件該当なし。自己修復上限（3回）超過なし。
+
+## Phase Execution Record（2026-04-30 / Stream E / CE0 Core Graph Repositioning 専任）
+### Phase 1 Read（最新確認）
+- 最新Run（2026-04-28）および本Issue全文を再読し、`role / transition / no-go` 固定語彙と SafeMode 境界に差分がないことを確認。
+- 編集対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに固定し、他ストリーム対象ファイルを編集しない制約を再確認。
+- インターフェース依存は実装参照ではなく mock contract で切断して記述する方針を再確認。
+
+### Phase 2 Context / Decision / Consequences 明文化
+- Context: CE0 Core Graph repositioning の契約固定を継続しつつ、他ストリーム依存を発火させないため interface coupling を mock contract に限定する必要がある。
+- Decision: `No ADR delta`。`working / context_projection / consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を維持し、I/F依存は `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の mock contract 参照に限定。
+- Consequences: 実装層（handler/UI/DB/worker/API）の変更・確定は行わず、未承認事項は `held/pending` のまま保持する。
+
+### Phase 3 Plan → Execute → Verify → Proceed（self-correction 3回）
+- Self-correction #1（Plan）: 変更範囲逸脱リスクを点検し、追記対象を実行記録セクションのみに再収束。
+- Self-correction #2（Execute）: 文面中の実装示唆を除去し、contract-only / mock-first 表現へ統一。
+- Self-correction #3（Verify）: no-go canonical 5 IDs と許可遷移表記を再照合し、語彙ドリフトがないことを確認。
+- Execute: 本Issueへ当該記録を追記（他ファイル変更なし）。
+- Verify: `docs-check` と `git diff --check` を実行し、エラーなしを確認。
+- Proceed: AC/DoD を満たすため判定 `Done`、新規 `held/pending` 在庫は追加なし。
+
+### Phase 4 致命エラー時停止
+- 本実行では致命エラー（SC-1〜SC-3）未検出のため停止不要。
+- 以後、語彙差分・CE0契約ID再定義・SafeMode既定ON後退・4回目相当再試行が発生した場合は `stopped_for_clarification` で即停止する。
