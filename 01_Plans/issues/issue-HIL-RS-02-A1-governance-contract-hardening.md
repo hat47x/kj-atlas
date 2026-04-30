@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
+- Non-target file policy: 本タスクでは `issue-HIL-RS-02-A1-governance-contract-hardening.md` のみ編集可（その他はread-only参照のみ）
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 5/7 HIL-RS-02 A1
@@ -66,14 +66,16 @@
 - 未承認事項は `pending/held` のまま保持し、確定扱いしない。
 - AC/DoDに不足がある場合はAIが不足項目をDraft提示し、`Approval Record` で合意するまで Execute へ進まない。
 
-### Approval Record（必須）
-- Status: `Approved`（`2026-04-30` 承認記録反映済み）
-- approved_by: `Stream A Architecture Owner`
-- approved_at: `2026-04-30T00:00:00Z`
-- evidence:
-  1. `ADR-0027 D5/D6` の固定キー・停止条件と整合することを再確認。
-  2. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の Freeze keys と一致することを再確認。
-  3. AC/DoD不足（承認記録必須項目の欠落）を本Issue内で補完し、Execute進行条件を満たした。
+### Approval Record（必須 / 承認待ち）
+- Status: `Pending`（未承認のため確定実装扱い禁止）
+- requested_by: `Stream A agent`
+- requested_at: `2026-04-30T00:00:00Z`
+- required_approvers: `Stream A Architecture Owner` + `Governance reviewer (dual-control)`
+- approval_evidence_required:
+  1. `ADR-0027 D5/D6` の固定キー・停止条件との整合確認。
+  2. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の Freeze keys 一致確認。
+  3. AC/DoD（Gate式・No-Go条件・依存切断性）の明示確認。
+- note: 承認が完了するまで本IssueのDecisionは `contract-only draft` として扱い、A2/A3のOpen判定に使う実装確定値へ昇格させない。
 
 ### Consequences
 - A1以外への差戻し禁止。
@@ -793,3 +795,19 @@ governance_gate_v1:
 - Contract freeze keys（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary`）の固定を再確認。
 - Verify phaseでは self-correction `0/3` から開始し、3回超過時は停止する運用を再固定。
 - NoGo return path の一意固定（A1）を維持する。
+
+
+## Phase 4 Final Gate Record（Go / Conditional / No-Go）
+- Gate date: `2026-04-30`
+- Judgment: `No-Go`
+- Reason:
+  1. `Approval Record` が `Pending` のため、承認なし実装確定を禁止するルールにより停止。
+  2. 未承認事項（`HIL-RS-02-GOV-EXCEPTION-01` held）が残存。
+  3. A2/A3は `mock/contract-only` 継続は可能だが、Open/実装移行を許可する最終Go条件は未充足。
+- Impact on downstream streams:
+  - A2: `A1-CRITIQUE-IF / A1-REDIFF-IF / A1-ATTR-IF / A1-ERROR-IF` を read-only mock 契約として利用可。
+  - A3: 運用文書の下書き・参照同期は可、ただし `A2A3_OPEN_ALLOWED=true` を前提にする実装確定は禁止。
+- Human decisions required:
+  1. Approval Record の承認可否（dual-control）
+  2. held項目 `HIL-RS-02-GOV-EXCEPTION-01` の解消方針（Approve/Reject）
+  3. 承認後に `Go` へ遷移させる日付・責任者の確定
