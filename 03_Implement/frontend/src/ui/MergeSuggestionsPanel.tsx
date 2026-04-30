@@ -178,7 +178,7 @@ export function MergeSuggestionsPanel({
 
     const decisionReason = normalizeHilDecisionReason(decisionReasonByGroup[groupId]);
     if (!decisionReason) {
-      setTrustBoundaryErrorMessage("Decision reason is required before recording accept/reject/defer.");
+      setTrustBoundaryErrorMessage("Decision reason is required before recording accept/partial/reject/defer.");
       return;
     }
 
@@ -337,6 +337,7 @@ export function MergeSuggestionsPanel({
             value={decisionReasonByGroup[suggestion.groupId] ?? ""}
             disabled={isReadOnly}
             onChange={(event) => {
+              setTrustBoundaryErrorMessage(null);
               setDecisionReasonByGroup((current) => ({
                 ...current,
                 [suggestion.groupId]: event.target.value,
