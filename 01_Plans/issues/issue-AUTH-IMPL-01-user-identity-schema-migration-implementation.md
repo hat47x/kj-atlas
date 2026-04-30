@@ -9,6 +9,7 @@
 - Scope: `03_Implement/backend/`, `02_Architecture/schemas.md`, `02_Architecture/schemas_review_attribution.md`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0020`, `issue-AUTH-SCHEMA-01-identity-schema-planning.md`, `02_Architecture/schemas.md`, `02_Architecture/schemas_review_attribution.md`
+- Dependencies: N/A
 - Expected verification level: `integration`
 
 ## RACI（簡易）

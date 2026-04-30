@@ -9,6 +9,7 @@
 - Scope: `01_Plans/`, `02_Architecture/`, `04_Documentation/`, `AGENTS.md`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0021`, `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement

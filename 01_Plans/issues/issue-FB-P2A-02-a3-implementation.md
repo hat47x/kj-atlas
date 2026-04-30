@@ -1,12 +1,13 @@
 # Issue Draft: FB-P2A-02-A3 Collapse/Expand操作 / 実装計画接続
 
 - Type: Feature request
-- Status: Completed (Stream B lock complete; Go/NoGo fixed)
+- Status: Done
 - Priority: P0
 - Owner: Stream B（FB-P2A planning memo exclusive）
 - Scope: `01_Plans/issues/` (planning memo only)
 - Related Backlog: `FB-P2A-02`
 - Related ADR/Spec: `ADR-0007`, `issue-FB-P2A-02-a1-interface-contract.md`, `issue-FB-P2A-02-a2-mock-validation.md`
+- Dependencies: `FB-P2A-02`
 - Expected verification level: `docs-check`
 
 ## Dependencies

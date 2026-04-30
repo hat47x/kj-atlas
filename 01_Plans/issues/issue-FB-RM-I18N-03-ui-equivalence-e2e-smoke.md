@@ -3,6 +3,7 @@
 - Type: QA/E2E
 - Status: Done
 - Source Issue: N/A (GitHub Issues are not used in current operations)
+- Priority: P1
 - Scope: `03_Implement/frontend/e2e/`, `01_Plans/issues/`
 - Related Backlog: `FB-RM-I18N-03` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `e2e`
@@ -78,4 +79,5 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 ## Stream I Done/Completed Audit (2026-04-23)
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- Dependencies: `FB-RM-I18N-03` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - 重複Backlog: 該当なし。

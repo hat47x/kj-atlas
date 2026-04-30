@@ -1,12 +1,13 @@
 # Issue Draft: CE2 Low-Risk AI Assist（CE2意思決定準備 / proposal-only contract lock）
 
 - Type: Process / Decision preparation
-- Status: Draft（`status=held` until human agreement）
+- Status: Draft
 - Priority: P1
 - Owner: Stream F（CE2意思決定準備専任）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
+- Dependencies: `CE-2`
 - Expected verification level: `docs-check`
 
 ## Fixed Operation Contract（2026-04-29）

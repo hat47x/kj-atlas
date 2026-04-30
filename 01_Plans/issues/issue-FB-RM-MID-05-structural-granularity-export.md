@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/i18n/locales/`, `01_Plans/adr/ADR-0007-future-backlog.md`, `04_Documentation/operations.md`
 - Related Backlog: `FB-RM-MID-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Dependencies: `FB-RM-MID-05`
 - Expected verification level: `unit`
 
 ## 1) 課題 / Problem statement

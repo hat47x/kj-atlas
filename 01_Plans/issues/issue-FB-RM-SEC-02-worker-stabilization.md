@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/export/`, `03_Implement/frontend/src/worker/`, `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/export/*.test.ts`, `01_Plans/adr/ADR-0007-future-backlog.md`, `01_Plans/issues/README.md`
 - Related Backlog: `FB-RM-SEC-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0007-future-backlog.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Dependencies: `FB-RM-SEC-02`
 - Expected verification level: `integration`
 
 ## 1) 課題 / Problem statement

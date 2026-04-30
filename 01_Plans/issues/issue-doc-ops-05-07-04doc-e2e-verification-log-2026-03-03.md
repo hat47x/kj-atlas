@@ -9,6 +9,7 @@
 - Scope: `04_Documentation/e2e_verification_log_2026-03-03.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

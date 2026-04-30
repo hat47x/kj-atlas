@@ -9,6 +9,7 @@
 - Scope: `01_Plans/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0002`, `ADR-0007`, `01_Plans/issues/README.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement

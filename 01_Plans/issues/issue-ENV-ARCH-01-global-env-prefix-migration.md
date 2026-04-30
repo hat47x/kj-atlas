@@ -9,6 +9,7 @@
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/deploy/`, `04_Documentation/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0021`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`
+- Dependencies: N/A
 - Expected verification level: `integration`
 
 ## 1) 課題 / Problem statement

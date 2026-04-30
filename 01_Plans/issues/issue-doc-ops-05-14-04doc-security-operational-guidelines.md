@@ -8,6 +8,7 @@
 - Scope: `04_Documentation/security_operational_guidelines.md`
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/security_operational_guidelines.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `01_Plans/documentation_quality.md`
+- Dependencies: `DOC-OPS-05`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）

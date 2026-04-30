@@ -1,7 +1,7 @@
 # Issue Draft: FB-P0 baseline / Stream B critical-path planning baseline（legacy filename: stream-c）
 
 - Type: Process
-- Status: Open（critical path active）
+- Status: Open
 - Priority: P0
 - Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の計画・契約整合のみ

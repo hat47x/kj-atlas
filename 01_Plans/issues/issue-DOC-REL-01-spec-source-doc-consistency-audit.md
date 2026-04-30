@@ -7,6 +7,7 @@
 - Owner: TBD
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related ADR/Spec: `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement

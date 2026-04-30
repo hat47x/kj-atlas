@@ -1,7 +1,7 @@
 # Issue Memo: QA boundary E2E for PUB-01 + I18N-03
 
 - Type: QA/E2E verification log
-- Status: Done (SQLite fallback path)
+- Status: Done
 - Scope: `03_Implement/frontend/e2e/`, `01_Plans/issues/`
 - Related backlog: `PUB-01`, `I18N-03`
 - Policy reference: `ADR-0019`
@@ -56,4 +56,5 @@ smoke + 変更対象フロー + 安全境界（SafeMode/read-only）を E2E で�
 ## Stream I Done/Completed Audit (2026-04-23)
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
+- Dependencies: N/A
 - 重複Backlog: 該当なし。

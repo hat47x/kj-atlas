@@ -8,6 +8,7 @@
 - Scope: `03_Implement/frontend/src/i18n/`, `03_Implement/frontend/src/ui/`, `04_Documentation/configuration.md`
 - Related Backlog: `FB-RM-I18N-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0007-future-backlog.md`, `02_Architecture/architecture.md`
+- Dependencies: `FB-RM-I18N-02` (`01_Plans/adr/ADR-0007-future-backlog.md`)
 - Expected verification level: `unit`
 
 ## 1) 課題 / Problem statement

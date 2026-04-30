@@ -1,7 +1,7 @@
 # Issue Draft: FB-P2C-01 A1 interface contract freeze（Stream B critical path）
 
 - Type: Feature request
-- Status: Open（A1 contract freeze active）
+- Status: Open
 - Priority: P0
 - Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: A1最小I/F契約の固定（Contract ID / Signature / Deterministic Rule）

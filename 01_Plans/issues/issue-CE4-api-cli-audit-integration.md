@@ -8,6 +8,7 @@
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0008`, `02_Architecture/schemas.md`
+- Dependencies: `CE-4`
 - Verification: `docs-check`
 
 ## Stream D Execution Contract（2026-04-28 / CE4 API/CLI audit boundary）

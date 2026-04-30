@@ -9,6 +9,7 @@
 - Scope: `00_Prompt/skills/` / `04_Documentation/` / `01_Plans/issues/`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0001`, `ADR-0018`, `ADR-0019`, `ADR-0022`
+- Dependencies: N/A
 - Expected verification level: `docs-check`
 
 ## 1) 課題 / Problem statement

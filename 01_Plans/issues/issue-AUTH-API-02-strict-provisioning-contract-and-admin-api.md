@@ -9,6 +9,7 @@
 - Scope: `03_Implement/backend/src/kj_atlas_api/routes/`, `02_Architecture/api.md`, `04_Documentation/security.md`
 - Related Backlog: N/A
 - Related ADR/Spec: `ADR-0020`, `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`, `02_Architecture/api.md`, `02_Architecture/review_attribution.md`
+- Dependencies: N/A
 - Expected verification level: `integration`
 
 ## RACI（簡易）
