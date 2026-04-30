@@ -258,6 +258,51 @@ governance_gate_v1:
 - 影響I/F: A2/A3 は `A2A3_OPEN_ALLOWED=true` 充足まで `Draft/Open` 変更禁止。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了と pendingDecisionQueue の解消。
 
+## Stream A serial execution update（2026-04-30 / contract-governance only）
+
+### Phase 1: Read同期（差分表）
+| Key | Expected (A1 SSOT) | Observed | Result |
+| --- | --- | --- | --- |
+| `freezeContractId` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | Match |
+| `schemaVersion` | `1.0.0` | `1.0.0` | Match |
+| `overridePolicy` | `human_dual_control_only` | `human_dual_control_only` | Match |
+| `contractLinkLocked` | `true` | `true` | Match |
+| `sharedResourceFreeze` | `true` | `true` | Match |
+| `safeModeDefault` | `ON` | `ON` | Match |
+| `safeModeBoundary` | `SAFE_MODE_STRICT_ON` | `SAFE_MODE_STRICT_ON` | Match |
+| `decisionQueueTransition` | `Pending -> Approved \| Pending -> Rejected` | `Pending -> Approved \| Pending -> Rejected` | Match |
+
+- 差分判定: `0`（契約未固定項目なし）。
+- 未確定項目: `Approval Record: Pending`, `HIL-RS-02-GOV-EXCEPTION-01(held)`。
+
+### Phase 2: ADR/Decision明文化（未確定フラグ維持）
+- Context: A2/A3公開判定の誤開放を防ぐため、A1 SSOT契約からの派生定義を禁止する。
+- Decision: Gate判定・freeze keys・NoGo return pathを再定義せず参照専用で固定する。
+- Consequences: `Approval Record` が揃うまで **Needs-decision** を維持し、確定扱いを禁止する。
+
+### Phase 3: 契約固定（A2/A3向け固定参照表）
+> **Change Prohibited Declaration**: 以下の固定参照表は A2/A3 で再定義・改名・追加を禁止する。
+
+| Category | Fixed Reference | Consumer Rule |
+| --- | --- | --- |
+| Contract ID | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | 参照のみ（上書き禁止） |
+| Snapshot ID | `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1` | 参照のみ（派生ID生成禁止） |
+| Schema | `schemaVersion=1.0.0` | 改版要求はA1 CDCへ差戻し |
+| Policy | `overridePolicy=human_dual_control_only` | 緩和禁止 |
+| Safety | `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON` | 後退禁止 |
+| Queue | `Pending -> Approved \| Pending -> Rejected` | bypass禁止 |
+| Unlock | `a1Status=="Done" && pendingDecisionQueueCount==0` | 未充足時Open禁止 |
+| NoGo return path | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | 変更禁止 |
+
+### Phase 4: 引き渡し（固定値セット + 禁止事項）
+- 固定値セット: `freezeContractId`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`, `unlockRule`。
+- 下流禁止事項:
+  1. `Pending` を経由しない状態遷移。
+  2. A1未完了での A2/A3 `Draft -> Open`。
+  3. `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON` の緩和。
+  4. `NoGo return path` の変更。
+- Proceed判定: **Conditional / Needs-decision 維持**（承認記録未入力のため）。
+
 ## Stream A execution runbook log（2026-04-27 / Critical Path replay）
 
 ### Phase 1: Read snapshot（before change）

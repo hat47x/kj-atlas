@@ -154,6 +154,26 @@ A1契約の mock用I/F は以下の read-only artifact として固定し、A2/A
 - Artifact policy: `readOnly=true`, `mutationAllowed=false`, `changeRequestRoute=A1-CDC-only`。
 - Snapshot validity: `schemaVersion=="1.0.0"` かつ `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`。
 
+### A2/A3 Fixed Reference Table（2026-04-30 / immutable handoff）
+
+| Key | Fixed Value | Change Policy |
+| --- | --- | --- |
+| `freezeContractId` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | immutable |
+| `SnapshotID` | `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1` | immutable |
+| `schemaVersion` | `1.0.0` | immutable |
+| `overridePolicy` | `human_dual_control_only` | immutable |
+| `contractLinkLocked` | `true` | immutable |
+| `sharedResourceFreeze` | `true` | immutable |
+| `safeModeDefault` | `ON` | immutable |
+| `safeModeBoundary` | `SAFE_MODE_STRICT_ON` | immutable |
+| `decisionQueueTransition` | `Pending -> Approved \| Pending -> Rejected` | immutable |
+| `NoGo return path` | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | immutable |
+
+Prohibited for A2/A3:
+1. 追加ID・改名・派生判定式の導入。
+2. `Pending` bypass。
+3. 安全境界（safeMode/share-export）後退。
+
 ## 5) CDC（ADR要否）
 
 - Context:
