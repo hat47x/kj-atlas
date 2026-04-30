@@ -384,3 +384,34 @@ export type ContextBundleV1 = {
 - verify attempt: `1/3` で通過。
 - stop condition check: 未定義競合なし、範囲外変更要求なし、4回目相当修正要求なし。
 - decision: **Go (contract-only / mock-first / implementation-decoupled)**。
+
+
+## Stream B planning refresh（2026-04-30 / CE1）
+
+### Phase 1 Read（欠落抽出）
+- Status/Priority は既存値を維持（再定義なし）。
+- 欠落補完: AC と Validation の対応関係（どのACをどの検証で確認するか）を明文化。
+- 欠落補完: `Expected verification level` を `docs-check` に統一。
+
+### Phase 2 ADR整合（0028中心）
+- `ContextQuery -> ContextBundle` の契約最小I/F方針は `ADR-0028` と整合。
+- `bundleHash` deterministic / `queryCanonicalHash` 必須 / fail-closed を維持し矛盾なし。
+
+### Phase 3 Plan→Execute（mock-first）
+- 実装非依存の固定項目:
+  1. I/F: `query`, `dryRun`, `sourceBundleHash`, `safeMode` の必須性。
+  2. Fixture要件: 正常系1・欠損系1・AND不成立系1（最小3ケース）。
+  3. 検証観点: `equivalenceKey` と `bundleHash` のAND成立、`queryCanonicalHash` 欠損fail-closed。
+
+### Phase 4 Verify
+- Expected verification level: `docs-check`。
+- Task breakdown:
+  - T1: I/F field matrix（required/optional）確定。
+  - T2: Mock fixture matrix（input/expected/fail-closed reason）確定。
+  - T3: AC/DoDトレーサビリティ表の更新。
+
+### Phase 5 Proceed
+- 実装担当へ「未決定ゼロ」で渡す固定事項:
+  - 同値判定は `equivalenceKey + bundleHash`（AND）のみ。
+  - 部分一致成功は禁止。
+  - 監査欠損は常時 fail-closed。

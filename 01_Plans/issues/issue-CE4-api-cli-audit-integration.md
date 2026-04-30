@@ -1142,3 +1142,35 @@
 - verify attempt: `1/3` で通過。
 - stop condition check: 未定義競合なし、範囲外変更要求なし、4回目相当修正要求なし。
 - decision: **Go (contract-only / mock-first / implementation-decoupled)**。
+
+
+## Stream B planning refresh（2026-04-30 / CE4）
+
+### Phase 1 Read（欠落抽出）
+- CE4の serial phase lock（Read→ADR/CDC→Plan→Execute→Verify→Proceed）を継続。
+- 欠落補完: API/CLI同値判定の「入力同一性条件」を明文化（`query/dryRun/sourceBundleHash/safeMode`）。
+- 欠落補完: `Expected verification level` を `docs-check` + mock contract check に固定。
+
+### Phase 2 ADR整合
+- `ADR-0028` との整合結果: 矛盾なし（proposal-only / mock-first / fail-closed / human accept-reject）。
+- 差分が出た場合のみ CDC 追記し、承認完了まで `held`。
+
+### Phase 3 Plan→Execute（依存切断）
+- 実装非依存で固定する契約作業:
+  1. API/CLI同値判定 I/F の field-by-field 対応表作成。
+  2. 監査4点（`query/bundle/proposal/apply`）+ `queryCanonicalHash` の必須監査表作成。
+  3. `dryRun=true => sideEffect=none` の fail-closed 判定表作成。
+
+### Phase 4 Verify
+- Expected verification level: `docs-check`。
+- Task breakdown:
+  - T1: API/CLI equivalence matrix（入力・出力・exit code）
+  - T2: Audit completeness matrix（4点+canonical hash）
+  - T3: No-Go matrix（safeMode緩和/語彙再定義/監査欠損/自己修復超過）
+- Self-correction 上限 3回、4回目相当は停止。
+
+### Phase 5 Proceed
+- 実装担当引き渡しの確定条件:
+  - CE0/CE1は read-only 参照のまま再定義しない。
+  - contract-only で未決定項目を残さない。
+  - `status=held` の項目は確定化せず、実装着手条件から除外する。
