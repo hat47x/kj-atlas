@@ -126,3 +126,16 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream D verification refresh (2026-04-30)
+- Scope: Backend/Auth/Schema 再検証のみ（コード変更なし）。
+- Commands:
+  - `pytest 03_Implement/backend/tests -q`
+- Result:
+  - 210 passed, 18 skipped（既存 AUTH 実装に回帰なし）。
+- Compatibility impact:
+  - なし（既存 dual-read/write と migration 契約を維持）。
+- Rollback:
+  - 不要（変更は issue メモ追記のみ）。
+- Ops follow-up:
+  - AUTH 契約変更が再発した場合は `issue-AUTH-SCHEMA-01` と `issue-AUTH-API-02` を起点に再評価する。
