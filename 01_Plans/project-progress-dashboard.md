@@ -1,10 +1,12 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-30 (JST, Stream F integrated sync rerun-60)
+最終更新: 2026-04-30 (JST, Stream E dashboard sync rerun-61)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開。`
 
 - 2026-03-14 HIL-RS-02 planning syncで、議事録/ADR-0027/Issue4件（Open2+Draft2）を追加し、依存順 `HIL-RS-02-A1 → A2 → A3` とDecision Queue 2件（Open）を反映した。
 - ADRは `ADR-0000`〜`ADR-0026` がすべて Accepted系で、未解決ADRは0件。クリティカルパスは `ADR-0026` 配下の `HIL-RS-01-A1 -> A2 -> A3`。
@@ -39,6 +41,7 @@
 
 - Stream D 共有統合同期（2026-04-29 rerun-57）で Phase 1 Read同期（Stream A/B/C完了報告・Decision Queue・件数）→ Phase 2 Execute（Active一覧・状態・次の1手を3共有ファイルで同期）→ Phase 3 Verify（件数整合/依存順/停止条件違反0件）→ Phase 4 Publish（再開判定チェックリスト1行固定）→ Phase 5 Proceed（次サイクル条件明文化）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` の一致を維持した。
 - Stream D 共有統合同期（2026-04-30 rerun-59）で Phase 1 Read同期（Stream A/B/C完了報告・Decision Queue・件数）→ Phase 2 更新（Active Issue / Queue状態 / 次の1手を3共有ファイルで相互整合反映）→ Phase 3 監査（Open=10 / Draft=8 / Done系=26・依存順 `A1→A2→A3`・停止条件違反0件）→ Phase 4 公開固定（再開判定チェックリスト1行確定）を直列実行し、公開固定値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` を維持した。
+- Stream E dashboard単独同期（2026-04-30 rerun-61）で Phase 1 Read（dashboard再読）→ Phase 2 Sync（既存確定事項のみ反映）→ Phase 3 Verify（件数47内訳/Open10・In Progress1・Blocked2・Draft8・Done系26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3`、停止条件違反0件）→ Phase 4 Proceed（次サイクル再開条件1行固定）を実施し、未承認事項の確定扱い0件を確認した。
 - Stream D 共有統合同期（2026-04-30 rerun-60）で Phase 1 Read（全レーン完了報告と参照リンク再確認）→ Phase 2 Plan（件数 `47`、内訳 Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26、Decision Queue Ready=1/Open=2、次の1手=Ready監査継続+Open2件期限管理を固定）→ Phase 3 Execute（shared resource 3ファイル単一変更セット）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を完了し、未承認決定の確定扱い・件数不整合・3回超過の停止条件違反0件を確認した。
 ### 未完Issue全件（22件）とレーン割当
 
