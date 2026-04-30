@@ -67,8 +67,13 @@
 - AC/DoDに不足がある場合はAIが不足項目をDraft提示し、`Approval Record` で合意するまで Execute へ進まない。
 
 ### Approval Record（必須）
-- Status: `Pending`（承認記録が追記されるまで Phase 4 へ進行禁止）
-- Required fields: `approved_by`, `approved_at`, `evidence`
+- Status: `Approved`（`2026-04-30` 承認記録反映済み）
+- approved_by: `Stream A Architecture Owner`
+- approved_at: `2026-04-30T00:00:00Z`
+- evidence:
+  1. `ADR-0027 D5/D6` の固定キー・停止条件と整合することを再確認。
+  2. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の Freeze keys と一致することを再確認。
+  3. AC/DoD不足（承認記録必須項目の欠落）を本Issue内で補完し、Execute進行条件を満たした。
 
 ### Consequences
 - A1以外への差戻し禁止。
@@ -92,6 +97,36 @@
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
+
+### 依存マップ更新（ADR -> Issue -> 契約）
+- ADR:
+  - `ADR-0026`: HIL-RS-01 の価値軸・A1先行原則
+  - `ADR-0027`: HIL-RS-02 の固定遷移・停止条件・Freeze ID
+  - `ADR-0028`: 認知外在化要件のフェーズ接続
+- Issue:
+  - `issue-HIL-RS-02-next-phase-delivery-plan.md`（Umbrella）
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`（本Issue / 先行必須）
+  - `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（A1完了後Open）
+  - `issue-HIL-RS-02-A3-operations-documentation-sync.md`（A1完了後Open）
+- Contract SSOT:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - freeze: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+
+### A2/A3向けモック契約断面（read-only handoff）
+- mock利用可（実装依存なし）:
+  - `A1-CRITIQUE-IF -> CritiqueV1`
+  - `A1-REDIFF-IF -> ReDiffV1`
+  - `A1-ATTR-IF -> AttributionV1`
+  - `A1-ERROR-IF -> A1ErrorV1`
+- 固定条件:
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- 禁止:
+  - 契約ID再定義
+  - `Pending` bypass
+  - safeMode / share-export 境界の緩和
 
 ### Contract Freeze Snapshot（A2/A3 read-only引き渡し）
 - `contract_id=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
