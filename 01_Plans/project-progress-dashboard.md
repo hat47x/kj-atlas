@@ -1,6 +1,6 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-04-30 (JST, Stream D integrated sync rerun-59)
+最終更新: 2026-04-30 (JST, Stream F integrated sync rerun-60)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
