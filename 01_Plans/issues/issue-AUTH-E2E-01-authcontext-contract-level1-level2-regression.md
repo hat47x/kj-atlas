@@ -264,3 +264,10 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream F verification refresh (2026-04-30)
+- Scope: AUTH backend contract regression only（models/alembic/admin route/test_auth_* + AUTH issue memos）。
+- Verify (attempt 1): `pytest 03_Implement/backend/tests/test_auth_*.py -q` -> 20 passed, 3 skipped.
+- Verify (attempt 2, self-heal): `AUTH_PROVIDER_PROFILE_DIR=03_Implement/backend/tests/federation/profiles 03_Implement/backend/tests/scripts/run_auth_level2.sh` -> 実行パス誤りで失敗（exit 255）。
+- Verify (attempt 3, self-heal): `cd 03_Implement/backend && AUTH_PROVIDER_PROFILE_DIR=tests/federation/profiles tests/scripts/run_auth_level2.sh` -> 1 passed, 3 skipped.
+- Result: 3回以内の自己修復で回帰確認を完了。コード/DBスキーマ変更は不要。
