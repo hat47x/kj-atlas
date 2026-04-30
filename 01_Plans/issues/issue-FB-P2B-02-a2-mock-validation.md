@@ -464,3 +464,34 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証として実行する。
 - Verify: Self-correction を最大3回までに制限し、3回超過または競合兆候検知時は停止して競合一覧のみ報告する。
 
+
+## Stream C serial execution update（2026-04-30）
+
+- Stream role: `Stream C専任（FB-P2Bのみ）`
+- Edit scope: `03_Implement/frontend/src/canvas/*` / `03_Implement/frontend/src/domain/*` / `01_Plans/issues/issue-FB-P2B-*.md`
+- Guardrail: 指定外ファイル編集禁止、自己修復は最大3回（超過時停止）。
+
+### Phase 1: Read同期
+- Read: `issue-FB-P2B-02-a1-interface-contract.md` / `issue-FB-P2B-02-a2-mock-validation.md` / `issue-FB-P2B-02-a3-implementation.md`
+- Verify: `ContractID / DependsOnContractID / ReferenceContractID` が `CTR-2B-02-DECISION-LOG-V1` で一致。
+- Proceed: Pass。
+
+### Phase 2: a1契約明文化（Context / Decision / Consequences + 合意）
+- Context: decision log 契約の揺れは監査再現性を毀損するため、A1固定値を再利用する。
+- Decision: A2は `append/list/restore` と `accept|partial|reject|defer` 4値制約を参照専用で維持する。
+- Consequences: 契約拡張要求はA1差し戻し。A2では契約再定義を行わない。
+- Agreement: `agreementStatus=agreed`（A1固定契約に準拠）。
+
+### Phase 3: a2モック検証
+- Verify target: 非自動確定・順序保持・snapshot単位復元・enum境界。
+- Command: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Result: Pass（active issue memo整合）。
+
+### Phase 4: a3実装
+- Policy: 本レーンではA3への入力契約固定までを担当し、実装契約の変更は行わない。
+- Handoff: A3は `CTR-2B-02-DECISION-LOG-V1` 単一参照、契約逸脱はA1差し戻し。
+
+### Phase 5: Verify → Proceed
+- Self-Correction counter: `0/3`
+- Stop condition check: 契約不整合・依存逆転・指定外編集は未検知。
+- Proceed: Go（次レーンへ引き渡し可）。
