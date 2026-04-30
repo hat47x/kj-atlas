@@ -566,3 +566,22 @@
 
 ### Phase 5 issue更新
 - 判定: **Ready**（停止条件非該当、docs-only維持）。
+
+## Stream G DOC-OPS-02 sync run（2026-04-30）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` -> `02_Architecture/enterprise_architecture.md` -> `04_Documentation/operations.md` -> `04_Documentation/security.md` を固定順序で再読し、語彙・責務・固定値の一致を確認。
+
+### Phase 2 Plan（AC/DoD補完）
+- AC/DoD不足なしを確認。docs-only / 最小差分 / 未承認事項の非確定化を維持。
+
+### Phase 3 Sync
+- DOC-OPS-02の4観点（用語/役割/導線/固定値D1〜D4）で運用runbookの整合を再確認し、不一致ゼロを記録。
+
+### Phase 4 Verify
+- self-correction: 0/3。
+- 判定: D1〜D4（4h / tenant+2h / 代理承認なし / 48h+15m/60m）と
+  `Security Officer / System Owner / Platform Operator` の整合は維持。
+
+### Phase 5 Proceed
+- 状態: **Ready**（停止条件非該当）。
