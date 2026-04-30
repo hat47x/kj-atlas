@@ -46,4 +46,24 @@ describe("p2b_decision_log_mock", () => {
     expect(restored[0]?.selectedCardIds).toEqual(["c-1", "c-2"]);
     expect(restored[0]).not.toHaveProperty("representativeCardId");
   });
+
+  it("ignores invalid action entries during restore", () => {
+    const store = new P2BDecisionLogMockStore();
+    store.append(record({ decisionId: "d-1", action: "accept" }));
+    store.append(record({ decisionId: "d-x", action: "invalid" as MergeDecisionRecord["action"] }));
+    store.append(record({ decisionId: "d-2", action: "defer" }));
+
+    expect(store.restore("s-1").map((entry) => entry.decisionId)).toEqual(["d-1", "d-2"]);
+  });
+
+  it("restores copied card IDs (mutating restored data does not rewrite log)", () => {
+    const store = new P2BDecisionLogMockStore();
+    store.append(record({ decisionId: "d-1", selectedCardIds: ["c-1"] }));
+
+    const restored = store.restore("s-1");
+    restored[0]?.selectedCardIds.push("c-2");
+
+    expect(store.restore("s-1")[0]?.selectedCardIds).toEqual(["c-1"]);
+  });
+
 });
