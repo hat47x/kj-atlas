@@ -70,6 +70,18 @@
   2. SafeMode既定ON、share/export漏えい防止、`human_dual_control_only` の後退要求。
   3. 凍結対象共有リソース（dashboard/README）への未承認更新要求。
 
+### D7. 最小インターフェース契約（HIL-RS/CE0 bridge）
+
+- 契約は「型先行」で固定し、実装詳細（ロジック/画面挙動）は後続で確定する。
+- 最小監査イベントは `query` / `bundle` / `proposal` / `apply` の4点セットを必須とし、欠損時は No-Go。
+- `A1 -> A2 -> A3` への引き渡しは次の署名を canonical とする。
+
+| Signature ID | Input | Output | Failure |
+| --- | --- | --- | --- |
+| `A1-GOV-GATE-V1` | `approvalRecord`, `decisionQueueState` | `gateStatus`, `held[]` | `no_go_reason` |
+| `A2-PROPOSAL-ENVELOPE-V1` | `sourceBundleHash`, `proposalId`, `policySnapshot` | `proposalEnvelope` | `schema_mismatch` |
+| `A3-DOC-SYNC-CHECK-V1` | `contractId`, `syncTargets[]`, `auditDigest` | `syncResult`, `drift[]` | `drift_detected` |
+
 ## Consequences
 
 - 期待効果:

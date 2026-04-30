@@ -66,6 +66,19 @@
   - 短期の機能追加速度は抑制される。
   - 01/02/03/04 の同期運用コストが増える。
 
+### Contract Freeze Addendum（Stream A / HIL-RS最小I/F固定）
+
+実装前固定として、HIL-RS の最小I/Fを次の通り定義する（実装詳細は後続Phaseで確定）。
+
+| Interface | Input（最小） | Output（最小） | Audit Event（必須） |
+| --- | --- | --- | --- |
+| `HIL_RS_DECISION_GATE_V1` | `issueId`, `phase`, `approvalRecord` | `gateStatus`（`go/conditional/no-go`）, `held[]` | `query`,`bundle`,`proposal`,`apply` |
+| `HIL_RS_PATCH_PROPOSAL_V1` | `sourceBundleHash`, `proposalId`, `actor` | `patchDraft`, `riskLabels[]` | `proposal` |
+| `HIL_RS_APPLY_JUDGEMENT_V1` | `proposalId`, `humanDecision`, `approvedBy` | `applyResult`, `rollbackRef` | `apply` |
+
+- `Approval Record` が Pending の間、上記I/Fは **read-only contract** として扱う。
+- 上記I/Fのキー追加・削除は `approved_by` / `approved_at` / `evidence` の充足後のみ許可する。
+
 ## Approval Log
 
 - 2026-03-11: Deciders（Project Maintainers）が `Accepted` を確定。
