@@ -172,3 +172,12 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2A-01 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream F execution log (2026-04-30, FB-P2A lane A3 + verify)
+
+- Scope declaration（A3）: 最小3ファイルのみ更新を維持。実装領域への拡散なし（planning memo sync のみ）。
+- Phase: **A3 implementation 接続完了**（A1/A2固定契約を参照した実装入力I/Fを維持）。
+- Verify: `validate_active_issue_memos.py` 実行で issue メモ整合を確認。
+- Issue同期: FB-P2A lane（A1→A2→A3）の直列実行記録を3ファイルへ反映し、依存順と停止条件を再固定。
+- Proceed: 依存切断方針（A1後は mock 独立進行、外部待ち禁止）を継続条件として明記済み。
+
