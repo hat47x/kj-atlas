@@ -493,3 +493,12 @@ issue補助メモには、最低でも次の項目を含める。
 - Phase 5 Proceed（次サイクル条件）: 次サイクルは `DQ-HIL-EXEC-01` Ready監査継続、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open期限管理、shared resource 3ファイル単一変更セット維持を開始条件とする。
 
 - Stream F 共有統合同期（2026-04-29 rerun-59, Phase 1-5）: Phase 1 Read同期で shared resource 3ファイル（`01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`）を同時再読し、件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）・Active=5・Done=26・Decision Queue Ready=1/Open=2・依存順 `A1→A2→A3`・用語（Security Officer / System Owner / Platform Operator）・役割（2者承認と実行責務分離）・導線（`02_Architecture/strict_mode_exception_approval_flow.md` 起点）・固定値D1〜D4（4h / 2h / 代理承認なし / 48h+15m+60m）・停止条件違反0件の一致を確認。Phase 2 Planで反映対象を shared resource 3ファイル単一変更セットに限定。Phase 3 Executeで3ファイルを同一コミット境界の同期差分（本ログ追記）として更新。Phase 4 Verifyは `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-59|Decision Queue|Ready=1 / Open=2|A1→A2→A3|Security Officer|System Owner|Platform Operator|D1〜D4|4h / 2h / 代理承認なし / 48h\+15m\+60m|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` で整合一致を確認。Phase 5 Proceed（1行固定）: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
+
+### 6-61. Stream F 共有統合同期ログ（2026-04-30 rerun-61, Phase 1-4）
+
+- Phase 1 Read: `01_Plans/issues/README.md` と 本decision-pack を再読し、`Source Issue` 運用（Openは`N/A`、Draftは`TBD`）、Decision Queue（Ready=1 / Open=2）、再開判定チェックリスト1行、停止条件違反0件を確認。
+- Phase 2 Sync: `Source Issue` 運用基準・Queue状態・再開条件の表現を README/decision-pack 間で整合確認し、差分がないことを記録（指定外ファイルは未編集）。
+- Phase 3 Verify: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-61|Source Issue|Decision Queue|Ready=1 / Open=2|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、README/decision-pack の記述整合を確認。
+- Phase 4 Proceed: **次の人間判断待ち論点は `DQ-FB-P2C-01`（FB-P2C Gate 0承認）と `DQ-OPS-SOURCE-01`（GitHub Issues運用開始宣言）である。開始宣言未確定のため `Source Issue` は `N/A` 維持。**
+
