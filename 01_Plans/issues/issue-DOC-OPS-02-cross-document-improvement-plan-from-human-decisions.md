@@ -101,10 +101,10 @@
 
 ### Cross-doc review checklist（初版）
 
-- [ ] 用語定義が先に置かれている（登場人物・運用プロファイル）。
-- [ ] 「必須」「推奨」「参考」のレベルが明確で、文書間で矛盾しない。
-- [ ] 02の設計文書と04の運用文書が相互参照で辿れる。
-- [ ] issue側のタスク分解が、実際の文書更新順序に対応している。
+- [x] 用語定義が先に置かれている（登場人物・運用プロファイル）。
+- [x] 「必須」「推奨」「参考」のレベルが明確で、文書間で矛盾しない。
+- [x] 02の設計文書と04の運用文書が相互参照で辿れる。
+- [x] issue側のタスク分解が、実際の文書更新順序に対応している。
 - [x] Q1〜Q10固定値（AUTH-OPS-03）と strict/non-strict 記述が矛盾しない。
 - [x] 環境変数記述が `KJ_ATLAS_*` 契約のみを参照している。
 
@@ -119,10 +119,18 @@
 
 ### ドリフト検知項目（固定）
 
-- [ ] 用語ドリフト: Security Officer / System Owner / Platform Operator の定義が一致している。
-- [ ] 役割ドリフト: 2者承認責務と実行責務分離が一致している。
-- [ ] 導線ドリフト: 02→04→01 の相互リンクが有効。
-- [ ] 運用値ドリフト: D1〜D4 固定値（4h, tenant/2h, 代理承認なし, 48h+15m/60m）が一致している。
+- [x] 用語ドリフト: Security Officer / System Owner / Platform Operator の定義が一致している。
+- [x] 役割ドリフト: 2者承認責務と実行責務分離が一致している。
+- [x] 導線ドリフト: 02→04→01 の相互リンクが有効。
+- [x] 運用値ドリフト: D1〜D4 固定値（4h, tenant/2h, 代理承認なし, 48h+15m/60m）が一致している。
+
+## 13) Stream G同期ログ（2026-04-30）
+
+- Phase 1 Read同期: `strict_mode_exception_approval_flow.md` を起点に `enterprise_architecture.md` → `operations.md` → `security.md` → `decision-pack-2026-03-human-judgement.md` → 本issue の順で再読。
+- Phase 2 Plan: AC/DoD の不足がないことを確認し、未完チェックボックスのみを最小更新対象に固定。
+- Phase 3 Sync: DOC-OPS-02固定順序（`02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`）への適合を再確認し、本issueの未完チェックを完了状態へ同期。
+- Phase 4 Verify: 用語（Security Officer/System Owner/Platform Operator）・役割分離・導線・固定値D1〜D4（4h / tenant+2h / 代理承認なし / 48h+15m/60m）の一致を確認。
+- Phase 5 Proceed: 自己修復は 0/3 回で完了。次回同期時も同4観点を必須チェックとして継続。
 
 
 ## 12) 完了報告（2026-03-08）
