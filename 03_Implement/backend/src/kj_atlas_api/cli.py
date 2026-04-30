@@ -61,13 +61,15 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
         "apply": "apply --dry-run",
     }
 
+    query_hash = input_payload.get("queryCanonicalHash", input_payload.get("queryHash", equivalence_key))
+
     payload = {
         "operation": args.operation,
         "safeMode": args.safe_mode,
         "equivalenceKey": equivalence_key,
         "bundleHash": bundle_hash,
         "sourceBundleHash": input_payload.get("sourceBundleHash"),
-        "queryHash": input_payload.get("queryHash", equivalence_key),
+        "queryHash": query_hash,
         "dryRun": dry_run,
         "sideEffect": side_effect,
         "rejectReasonCode": input_payload.get("rejectReasonCode"),
