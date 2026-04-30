@@ -2,9 +2,12 @@ import type { HilRsRediffPayload } from "../domain/hil_rs_contract";
 
 type HilRsRediffPreviewProps = {
   payload: HilRsRediffPayload | null;
+  onApplyProposal?: (payload: HilRsRediffPayload) => void;
+  onDiscardProposal?: (proposalId: string) => void;
+  requiresHumanReview?: boolean;
 };
 
-export function HilRsRediffPreview({ payload }: HilRsRediffPreviewProps) {
+export function HilRsRediffPreview({ payload, onApplyProposal, onDiscardProposal, requiresHumanReview = true }: HilRsRediffPreviewProps) {
   if (!payload) {
     return <div style={{ fontSize: 12, color: "#64748b" }}>No mock re-proposal diff yet.</div>;
   }
@@ -29,6 +32,11 @@ export function HilRsRediffPreview({ payload }: HilRsRediffPreviewProps) {
       <div style={{ fontSize: 12, marginBottom: 8, color: "#475569" }}>
         <strong>Diff operations:</strong> {payload.diffOps.length}
       </div>
+      {requiresHumanReview ? (
+        <div style={{ fontSize: 12, marginBottom: 8, color: "#9a3412" }}>
+          Human approval required. Proposal remains unreviewed until explicitly applied.
+        </div>
+      ) : null}
       {payload.diffOps.length === 0 ? (
         <div style={{ fontSize: 12, color: "#64748b" }}>No diff operations returned for this proposal.</div>
       ) : null}
@@ -39,6 +47,10 @@ export function HilRsRediffPreview({ payload }: HilRsRediffPreviewProps) {
           </li>
         ))}
       </ul>
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <button type="button" onClick={() => onApplyProposal?.(payload)} disabled={!onApplyProposal}>Apply proposal</button>
+        <button type="button" onClick={() => onDiscardProposal?.(payload.proposalId)} disabled={!onDiscardProposal}>Discard proposal</button>
+      </div>
     </section>
   );
 }

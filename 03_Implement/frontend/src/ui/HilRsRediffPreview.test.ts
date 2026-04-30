@@ -9,7 +9,7 @@ describe("HilRsRediffPreview", () => {
     expect(html).toContain("No mock re-proposal diff yet");
   });
 
-  it("renders payload summary", () => {
+  it("renders payload summary with human-review guard and actions", () => {
     const html = renderToStaticMarkup(
       React.createElement(HilRsRediffPreview, {
         payload: {
@@ -35,6 +35,9 @@ describe("HilRsRediffPreview", () => {
     expect(html).toContain("Based on iteration:");
     expect(html).toContain("Diff operations:</strong> 1");
     expect(html).toContain("move / card:c1");
+    expect(html).toContain("Human approval required");
+    expect(html).toContain("Apply proposal");
+    expect(html).toContain("Discard proposal");
   });
 
   it("renders deterministic empty-op message when diffOps is empty", () => {
