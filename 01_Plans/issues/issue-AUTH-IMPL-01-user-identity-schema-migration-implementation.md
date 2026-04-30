@@ -139,3 +139,26 @@
   - 不要（変更は issue メモ追記のみ）。
 - Ops follow-up:
   - AUTH 契約変更が再発した場合は `issue-AUTH-SCHEMA-01` と `issue-AUTH-API-02` を起点に再評価する。
+
+## Stream D sequencing update (2026-04-30)
+### Phase 1: Read
+- Status/Priority/AC/Validation plan を再確認（`Status=Done`, `Priority=P1`、AC/T1-T5 完了、Validation plan 定義済み）。
+
+### Phase 2: Prioritize & Sequence
+- P0→P1→P2 の順序に照らし、AUTH 系は P1 クラスとして同順位内シーケンスを固定。
+- 同順位内の実行順を **contract → mock → implementation** に再配置:
+  1. `issue-AUTH-ARCH-01-authcontext-jit-provisioning-data-boundary.md`（contract）
+  2. `issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md`（contract + mock追従条件）
+  3. `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md`（mock/contract regression）
+  4. `issue-AUTH-IMPL-01-user-identity-schema-migration-implementation.md`（implementation）
+
+### Phase 3: DoD/AC 補強（確定）
+- AC-D-1: 本Issueの実装手順は upstream contract（AUTH-ARCH-01 / AUTH-API-02）に矛盾しない。
+- AC-D-2: mock 回帰（AUTH-E2E-01）の失敗時は implementation 完了扱いにしない。
+- DoD-D-1: 依存順序（contract→mock→implementation）を本文に明示し、逆順実施を禁止。
+- DoD-D-2: Validation plan の既存コマンドが再実行可能であることを確認。
+
+### Phase 4: Verify
+- issue間リンク整合: AUTH-ARCH-01 / AUTH-API-02 / AUTH-E2E-01 / AUTH-SCHEMA-01 への参照を確認。
+- 循環依存チェック: implementation から contract へ一方向参照のみで、循環依存は検出なし。
+- Fail-safe 判定: 循環依存なし、競合ファイルなし、承認待ち論点なしのため `Proceed`。
