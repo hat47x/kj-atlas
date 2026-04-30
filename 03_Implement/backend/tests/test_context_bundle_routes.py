@@ -126,3 +126,13 @@ def test_context_bundle_strict_safemode_filters_unreviewed_even_when_included() 
             assert "safe_mode_unreviewed_text" in body["excludedReason"]
     finally:
         settings.api_key = original_api_key
+
+
+def test_context_resolve_route_contract_paths_are_unique() -> None:
+    routes = [
+        (route.path, ",".join(sorted(route.methods)))
+        for route in app.router.routes
+        if getattr(route, "path", None) in {"/context/bundles:resolve", "/context/v1/bundles:resolve"}
+    ]
+    assert routes.count(("/context/bundles:resolve", "POST")) == 1
+    assert routes.count(("/context/v1/bundles:resolve", "POST")) == 1
