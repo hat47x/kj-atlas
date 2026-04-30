@@ -190,6 +190,46 @@ CE0境界（参照専用固定）:
   4. 不一致発生時は `409 nondeterministic_bundle` を返し fail-closed。
 - Handoff keys: CE2/CE4へ `queryCanonicalHash`, `bundleHash`, `sourceBundleHash` をread-onlyで引き渡す。
 
+
+
+### 2.10 Stream A Contract Freeze Log（2026-04-30, Architecture only）
+
+本節は Stream A（Critical Path）の契約固定ログであり、下流レーン参照用の **read-only 正本** とする。
+
+#### Fixed I/F list（mock利用可能な最小契約）
+
+- `ContextQueryV1`
+  - required: `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`
+  - invariant: `previewConfirmed=true` 必須（違反は `422 preview_required`）
+- `ContextBundleV1`
+  - required: `queryId, queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`
+  - invariant: same canonical query で deterministic `bundleHash`（不一致は `409 nondeterministic_bundle`）
+- `ProposalPatchV1`
+  - required: `proposalId, diff, sourceBundleHash, rationale, status, reviewState`
+  - invariant: proposal-only（auto-apply禁止）
+- `AuditEventV1`
+  - required: `eventType, equivalenceKey` + operation関連キー
+  - invariant: `query/bundle/proposal/apply` の監査4点欠損を成功扱いしない
+
+#### schemaVersion freeze
+
+- CE系契約は `v1` を固定し、**必須キー集合とエラー意味論**（`preview_required`, `unknown_contract_key`, `nondeterministic_bundle`）の破壊的変更を禁止する。
+- 拡張は `v2` 追加でのみ許可し、`v1` 互換を維持する。
+
+#### 変更禁止境界（Non-regression boundary）
+
+- `safeMode` 既定ONと `allowUnreviewedText=false` 既定を緩和しない。
+- AIによる `human_reviewed` 自動昇格を禁止する。
+- `Working -> Consensus` 直書きを禁止し、`patch + approval` 以外の適用経路を禁止する。
+- `preview` 経路をバイパスした apply/request を禁止する。
+
+#### Audit log
+
+- Stream: `A (Critical Path)`
+- Freeze date (UTC): `2026-04-30`
+- Scope: `02_Architecture/**`（契約/I-F定義のみ）
+- Downstream handoff: CE1/CE2/CE4 は本節のI/Fを read-only 参照し、実装都合で再定義しない。
+
 ### 2.9 CE4 API/CLI/GUI 同値性・監査契約（CE4-API-CLI-AUDIT）
 
 CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フェーズであり、実装方式やUI差分よりも監査可能性を優先する。
