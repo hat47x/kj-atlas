@@ -232,3 +232,39 @@
   - 契約固定と依存順固定は達成。
   - 未解決論点（承認証跡3項目）が残るため Go は未達。
 - 次アクション: 人間承認入力完了後に同一判定式で再検証する。
+
+## Stream A Phase-5 handover artifacts（次ストリーム非依存）
+
+### 固定I/F一覧（変更禁止）
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `safeModeDefault=ON`
+- `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+### 判定テンプレート（Go / Conditional / No-Go）
+```md
+[HIL-RS Gate Decision]
+- As of (UTC):
+- Target stream:
+- A2A3_OPEN_ALLOWED: true|false
+- Approval Record:
+  - approved_by:
+  - approved_at:
+  - evidence:
+- DecisionQueue:
+  - pending_count:
+  - transition_rule_match: true|false
+- Drift check:
+  - fixed_keys_diff_count:
+  - pending_bypass_detected: true|false
+  - undefined_conflict_detected: true|false
+- Result: Go | Conditional | No-Go
+- If No-Go:
+  - cause:
+  - impact_interface:
+  - required_human_approval:
+```
