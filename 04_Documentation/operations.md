@@ -1166,3 +1166,21 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 ### Phase 5 Proceed
 - 判定: **Conditional**（A1完了待ち）。
 - 次回再開条件: `a1Status=="Done" && pendingDecisionQueueCount==0`。
+
+## 0.10 DOC-OPS-02 固定同期順（運用runbookでの確認手順）
+
+AUTH-OPS-03 / DOC-OPS-02 の更新は、次の固定順序で照合する。
+
+1. `02_Architecture/strict_mode_exception_approval_flow.md`（正本）
+2. `04_Documentation/security.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/operations.md`
+3. `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+4. `AGENTS.md`
+
+runbook 側の Verify は次の4観点を必須とする。
+
+- 用語: `Security Officer / System Owner / Platform Operator`
+- 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は同値確認先）
+- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48hレビュー + 15m/60mエスカレーション
+
+不一致が残る場合は `StoppedForClarification` とし、自己修復は最大3回までとする。
