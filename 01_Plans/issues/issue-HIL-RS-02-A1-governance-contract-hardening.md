@@ -239,6 +239,58 @@ governance_gate_v1:
 - 上記3項目は `Approval Record: Pending` の間は確定扱いしない。
 - 未承認状態では Execute を準備作業のみに限定し、NoGo時はA1契約Issueへ差戻す。
 
+## Stream A execution record（2026-04-30 / Critical Governance Contract Audit）
+
+### Phase 1: Read Gate（Plan -> Execute -> Verify -> Proceed）
+- Plan:
+  - 対象: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` と本Issue。
+  - AC: 固定キー（`freezeContractId/schemaVersion/overridePolicy/safeMode境界/decisionQueueTransition`）差分0。
+  - DoD: 未確定項目の一覧化と不足有無判定を記録。
+- Execute:
+  - 契約項目・固定値・未確定点を再読監査し、差分なしを確認。
+- Verify:
+  - 固定キー差分 `0`、未確定項目は `held` 1件（`HIL-RS-02-GOV-EXCEPTION-01`）のみ。
+- Proceed:
+  - Phase 2進行可。
+
+### Phase 2: ADR判定（Plan -> Execute -> Verify -> Proceed）
+- Plan:
+  - 運用解釈で吸収不能な差分があるかを判定し、必要時のみADR草案を準備。
+- Execute:
+  - 判定結果: 新規ADR不要（既存A1契約とADR-0026/0027/0028の範囲で吸収可能）。
+- Verify:
+  - `context/decision/consequences` は既存記録と矛盾なし。
+- Proceed:
+  - Phase 3進行可。
+
+### Phase 3: Contract Freeze（Plan -> Execute -> Verify -> Proceed）
+- Plan:
+  - 凍結スナップショットに必須要素（ID / schemaVersion / API signature / validation rule / rollback条件）を固定。
+- Execute:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` に `Frozen Contract Snapshot v1.2 (2026-04-30)` を追加。
+- Verify:
+  - 必須5要素が全て明示され、`THIS_VERSION_IS_FROZEN_FOR_ALL_DOWNSTREAM_LANES` 宣言を確認。
+- Proceed:
+  - Phase 4進行可。
+
+### Phase 4: Verify（Plan -> Execute -> Verify -> Proceed）
+- Plan:
+  - 契約整合（重複・矛盾・未定義項目）を検証し、失敗時は最大3回まで自己修正。
+- Execute:
+  - docs-check と差分健全性チェックを実施。
+- Verify:
+  - self-correction `0/3`、重複/矛盾/未定義の新規発生なし。
+- Proceed:
+  - Phase 5進行可。
+
+### Phase 5: Proceed（固定リンク集 / read-only handoff）
+- A2/A3向け固定参照（read-only）:
+  1. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  2. `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  3. `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`
+  4. `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- 判定: `Go`（A1契約凍結の参照利用のみ許可。再定義は禁止）。
+
 ### AC/DoD gap draft（for approval）
 - AC-D1: `A1契約固定` の固定キーに差分がないこと（diff=0）。
 - AC-D2: `A2モック前提` の範囲逸脱（実装確定/契約改定）がないこと。
