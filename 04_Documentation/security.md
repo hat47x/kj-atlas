@@ -868,3 +868,14 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed
 - 判定: **Conditional**（Approval Pending 維持）。
 - 次回再開条件: A1完了 + pendingDecisionQueue解消 + 承認証跡充足。
+
+## 0.5 DOC-OPS-02 固定同期順（security基底方針）
+
+本書の更新時は、次の固定順序に従って差分を確認する。
+
+1. `02_Architecture/strict_mode_exception_approval_flow.md`
+2. `04_Documentation/security.md` -> `04_Documentation/security_operational_guidelines.md` -> `04_Documentation/operations.md`
+3. `01_Plans/project-progress-dashboard.md` -> `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+4. `AGENTS.md`
+
+確認観点は **用語 / 役割 / 導線 / D1〜D4固定値** の4点を必須とし、いずれか未充足時は `StoppedForClarification` として進行を停止する。

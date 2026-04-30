@@ -508,3 +508,21 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 
 ### Phase 5 Proceed
 - 判定: **Ready**（分類方針と公開境界を維持）。
+
+## 0.5 DOC-OPS-02 固定同期順（guidelines運用）
+
+本書は判断補助文書として、次の固定順序で同期する。
+
+1. `02_Architecture/strict_mode_exception_approval_flow.md`
+2. `04_Documentation/security.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/operations.md`
+3. `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+4. `AGENTS.md`
+
+同期時は、以下を同時に満たすこと。
+
+- 用語: `Security Officer / System Owner / Platform Operator`
+- 役割: 2者承認 + 実行責務分離
+- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`
+- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h/15m/60m
+
+未収束時は自己修復を最大3回まで実施し、4回目相当は `StoppedForClarification` で停止する。
