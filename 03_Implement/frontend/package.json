@@ -17,7 +17,9 @@
     "test:i18n": "vitest run src/i18n/translate.test.ts src/i18n/key_consistency.test.ts src/i18n/ui_hardcode_guard.test.ts src/i18n/catalog_integrity.test.ts",
     "test:i18n-security": "vitest run src/i18n/locale_conversion_guard.test.ts",
     "test:i18n-regression": "vitest run src/i18n/view_locale_resolution.test.ts src/i18n/document_locale_invariance.test.ts",
-    "verify:integrity": "node ./scripts/verify_artifact_integrity.mjs"
+    "verify:integrity": "node ./scripts/verify_artifact_integrity.mjs",
+    "e2e:mock": "playwright test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts",
+    "e2e:regression-harness": "./scripts/run_e2e_regression.sh"
   },
   "dependencies": {
     "jszip": "3.10.1",

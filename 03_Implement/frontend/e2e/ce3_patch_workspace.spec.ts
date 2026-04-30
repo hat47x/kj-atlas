@@ -1,4 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const fixtureDir = dirname(fileURLToPath(import.meta.url));
+const ce3SuggestionsFixture = JSON.parse(
+  readFileSync(resolve(fixtureDir, "../tests/fixtures/e2e/ce3_mock_candidates.json"), "utf-8"),
+) as { suggestions: unknown[] };
 
 test("CE3 patch workspace supports candidate comparison, preset replay, and rollback recovery", async ({ page }) => {
   await page.route("**/docs/doc_phase1_canvas", async (route) => {
@@ -22,43 +30,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        suggestions: [
-          {
-            groupId: "group-alpha",
-            targetCardId: "c1",
-            candidateCardIds: ["c2", "c3"],
-            scoreSummary: { min: 0.88, max: 0.99, avg: 0.93 },
-            reasonCodes: ["heuristic:normalized-text"],
-            snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
-            cardIds: ["c1", "c2", "c3"],
-            mergedTextDraft: "alpha",
-            rationale: "deterministic fixture",
-          },
-          {
-            groupId: "group-beta",
-            targetCardId: "c4",
-            candidateCardIds: [],
-            scoreSummary: { min: 0.95, max: 0.95, avg: 0.95 },
-            reasonCodes: ["heuristic:token-signature"],
-            snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
-            cardIds: ["c4"],
-            mergedTextDraft: "beta",
-            rationale: "deterministic fixture",
-          },
-          {
-            groupId: "group-gamma",
-            targetCardId: "c5",
-            candidateCardIds: [],
-            scoreSummary: { min: 0.91, max: 0.91, avg: 0.91 },
-            reasonCodes: ["heuristic:token-signature"],
-            snapshotVersion: "CTR-2B-01-CANDIDATE-GROUP-V1",
-            cardIds: ["c5"],
-            mergedTextDraft: "gamma",
-            rationale: "deterministic fixture",
-          },
-        ],
-      }),
+      body: JSON.stringify(ce3SuggestionsFixture),
     });
   });
 
