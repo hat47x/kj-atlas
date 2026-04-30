@@ -1,3 +1,9 @@
+## Stream D (contract-connection surface only) — 2026-04-30
+
+- Context: CE4 `/context/bundles:resolve` + `/context/v1/bundles:resolve` の接続面は `queryCanonicalHash` / `bundleHash` / `equivalenceKey` を最小契約として固定。
+- Decision: 契約面は `proposalLifecycle=proposed`（候補提示のみ）と `safeMode=true required` を維持し、unknown contract key は 400 を返す。
+- Consequences: 下流FB-P2C実装は監査4点セット（`query/bundle/proposal/apply`）を read-only 参照し、契約変更はA1再起票時のみ許可。
+
 # Issue Draft: FB-P2C-01 A1 interface contract freeze（Stream B critical path）
 
 - Type: Feature request
