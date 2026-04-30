@@ -1,7 +1,19 @@
 import type { Card, Document, DocumentV2, Island } from "../domain/types";
 import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 
-const API_BASE = "/api";
+function resolveApiBase(): string {
+  const kjAtlasApiBase = import.meta.env.VITE_KJ_ATLAS_API_BASE;
+  const legacyApiBase = import.meta.env.VITE_API_BASE;
+  const rawValue = (kjAtlasApiBase ?? legacyApiBase ?? "/api").trim();
+
+  if (rawValue.length === 0) {
+    return "/api";
+  }
+
+  return rawValue.endsWith("/") ? rawValue.slice(0, -1) : rawValue;
+}
+
+const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   readonly status: number;

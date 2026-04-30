@@ -103,3 +103,11 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream E Progress (2026-04-30)
+- Phase 1 Read同期: 完了（Read OrderおよびADR-0021/registry確認）。
+- Phase 2 変数契約確定: `VITE_KJ_ATLAS_API_BASE` をfrontend正規キーとして追加し、`VITE_API_BASE` は互換shimへ明確化。
+- Phase 3 backend移行: 既存 `KJ_ATLAS_*` 専用契約を再確認（追加変更なし）。
+- Phase 4 frontend移行: `client.ts` で `VITE_KJ_ATLAS_API_BASE` 優先読取へ移行。
+- Phase 5 backward compatibility shim: `VITE_API_BASE` fallbackを維持（trim + trailing slash正規化）。
+- Phase 6 検証/issue更新: 本節および検証ログを追記。

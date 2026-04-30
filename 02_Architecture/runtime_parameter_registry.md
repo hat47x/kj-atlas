@@ -78,7 +78,8 @@
 | `POSTGRES_USER` | `kj_atlas` | DBユーザ |
 | `POSTGRES_PASSWORD` | `kj_atlas` | DBパスワード |
 | `WEB_PORT` | `8080` | web公開ポート |
-| `VITE_API_BASE` | `/api` | frontend APIベースパス |
+| `VITE_KJ_ATLAS_API_BASE` | `/api` | frontend APIベースパス（正規キー） |
+| `VITE_API_BASE` | `/api` | frontend APIベースパス（後方互換shim。将来削除候補） |
 
 ## 5. ENV-ARCH-01 契約（一括移行）
 
