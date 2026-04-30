@@ -140,6 +140,7 @@
 #### Verify
 
 - `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -m auth_level1`（2回連続実行で同一pass）
+- `cd 03_Implement/backend && pytest tests/test_auth_jit_provisioning.py -q`（provider大文字/前後空白正規化と空入力400契約の回帰を追加確認）
 - `cd 03_Implement/frontend && npx playwright test -g "auth" --reporter=line`（browser導入後にpass）
 - 判定: 再実行で同一結果。flakiness は許容範囲。
 
