@@ -15,6 +15,22 @@ function requestToDraftPayload(client: HilRsStubClient, request: HilRsPreviewRed
   return client.previewRediff(request);
 }
 
+export function selectValidatedRediffPayload(
+  draftPayload: HilRsRediffPayload,
+  rediffProvider: HilRsRediffProvider,
+): HilRsRediffPayload {
+  try {
+    const providerPayload = rediffProvider.proposeReDiff(draftPayload);
+    if (!providerPayload) {
+      return draftPayload;
+    }
+
+    return validateHilRsRediffPayload(providerPayload) ? providerPayload : draftPayload;
+  } catch {
+    return draftPayload;
+  }
+}
+
 export function createHilRsClient(options: CreateHilRsClientOptions = {}): HilRsStubClient {
   const stubClient = createHilRsStubClient();
 
@@ -26,12 +42,7 @@ export function createHilRsClient(options: CreateHilRsClientOptions = {}): HilRs
         return draftPayload;
       }
 
-      const providerPayload = options.rediffProvider.proposeReDiff(draftPayload);
-      if (!providerPayload) {
-        return draftPayload;
-      }
-
-      return validateHilRsRediffPayload(providerPayload) ? providerPayload : draftPayload;
+      return selectValidatedRediffPayload(draftPayload, options.rediffProvider);
     },
   };
 }
