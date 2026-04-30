@@ -1444,3 +1444,22 @@
 ### Phase 5 Proceed
 - 判定: **Done**。
 - クローズ条件: GoNoGoGate=Required の判定項目（Audience/Goal/Public boundary/Next action）を維持しつつ、直列5Phase完了を記録。
+
+
+## Stream H DOC-OPS-05 serial update（2026-04-30）
+
+### Phase 1 Read同期
+- Read Order（00→02）と本Issue、対象Docを再読し、docs-only制約を確認。
+
+### Phase 2 章ごとのAC定義
+- AC固定: Audience / Goal / Non-goal / Public boundary / Related / GoNoGoGate / VerificationLevel(docs-check)。
+
+### Phase 3 章単位更新（直列）
+- 本Issueに対応する章のみを更新対象として直列処理し、未承認事項の確定化は行わない。
+
+### Phase 4 docs-check / link-check
+- `git diff --check` と `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-09-04doc-local-llm-ops-guide.md` を実行対象とする。
+- 自己修復回数: 0/3（4回目相当はHold停止）。
+
+### Phase 5 issue更新
+- 判定: **Ready**（停止条件非該当、docs-only維持）。
