@@ -1,6 +1,11 @@
 import React from "react";
 import { P2A_A2_MOCK_FIXTURES } from "../../../domain/p2a/mock_fixtures";
-import { evaluateP2AA3Proceed, toP2AValidationLedger } from "../../../domain/p2a/validation";
+import {
+  buildP2AImplementationReadiness,
+  evaluateP2AA3Proceed,
+  toP2AValidationLedger,
+} from "../../../domain/p2a/validation";
+import { P2A02_CONTRACT_ID, P2A02_CONTRACT_VERSION } from "../../../domain/p2a/contract";
 
 const panelStyle: React.CSSProperties = {
   border: "1px solid #d0d7de",
@@ -12,6 +17,7 @@ const panelStyle: React.CSSProperties = {
 export function P2AReadinessPanel(): React.ReactElement {
   const logs = toP2AValidationLedger(P2A_A2_MOCK_FIXTURES);
   const result = evaluateP2AA3Proceed(logs);
+  const readiness = buildP2AImplementationReadiness(logs);
 
   return (
     <section style={panelStyle} aria-label="p2a-readiness-panel">
@@ -20,6 +26,12 @@ export function P2AReadinessPanel(): React.ReactElement {
         Proceed: <strong>{result.go ? "go" : "no-go"}</strong>
       </p>
       <p>Reason: {result.reason}</p>
+      <p>
+        Contract: <code>{P2A02_CONTRACT_ID}</code> / <code>{P2A02_CONTRACT_VERSION}</code>
+      </p>
+      <p>
+        Accepted: {readiness.acceptedMockCases.join(", ") || "-"} / Blocked: {readiness.blockedMockCases.join(", ")}
+      </p>
       <ul>
         {logs.map((log) => (
           <li key={log.mockCaseId}>
