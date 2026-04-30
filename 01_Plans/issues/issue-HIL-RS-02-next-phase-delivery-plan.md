@@ -139,6 +139,20 @@ delivery_gate_v1:
 - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check`
 
+### 依存先公開インターフェース一覧（Phase 5出力固定）
+- `HIL_RS_DECISION_GATE_V1`
+  - input: `issueId`, `phase`, `approvalRecord`
+  - output: `gateStatus(go/conditional/no-go)`, `held[]`
+  - audit: `query`,`bundle`,`proposal`,`apply`
+- `A2-PROPOSAL-ENVELOPE-V1`
+  - input: `sourceBundleHash`, `proposalId`, `policySnapshot`
+  - output: `proposalEnvelope`
+  - audit: `proposal`
+- `A3-DOC-SYNC-CHECK-V1`
+  - input: `contractId`, `syncTargets[]`, `auditDigest`
+  - output: `syncResult`, `drift[]`
+  - audit: `apply`（同期結果反映時）
+
 ### Fail-safe held trigger（即停止）
 - `self_correction_attempt >= 4`（4回目相当）を検知した場合。
 - 未承認事項の確定化（pending bypass）を検知した場合。

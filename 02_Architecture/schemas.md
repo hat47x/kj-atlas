@@ -140,11 +140,33 @@ CE0/CE1 の下流実装が参照すべき固定シグネチャ一覧を次で凍
 - `ContextBundleV1`（Contract ID: `CE1-CTXB-IF`）
 - `ProposalPatchV1`（Contract IDs: `CE2-PROPOSAL-IF`, `CE2-LIFECYCLE-IF`）
 - `AuditEventV1`（Contract ID: `CE4-API-CLI-AUDIT`）
+- `HilRsDecisionGateV1`（Contract ID: `HIL-RS-DECISION-GATE-IF`）
+- `HilRsDocSyncCheckV1`（Contract ID: `HIL-RS-DOCSYNC-IF`）
 
 互換ルール（v1固定）:
 - v1 の必須キー集合とエラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）は変更しない。
 - 拡張は v2 追加でのみ許可し、v1 の `sameQuery && sameBundle` 判定は維持する。
 - Contract Freeze 中は、上記シグネチャに対する破壊的変更・改名・削除を禁止する。
+
+HIL-RS bridge signatures（A1->A2->A3 handoff固定）:
+
+```ts
+export type HilRsDecisionGateV1 = {
+  issueId: string;
+  phase: "A1" | "A2" | "A3";
+  approvalRecord: { approvedBy?: string; approvedAt?: string; evidence?: string };
+  gateStatus: "go" | "conditional" | "no-go";
+  held: string[];
+};
+
+export type HilRsDocSyncCheckV1 = {
+  contractId: string;
+  syncTargets: string[];
+  auditDigest: string;
+  syncResult: "ok" | "drift_detected";
+  drift?: string[];
+};
+```
 
 
 - v1 はエラーコード意味論（`preview_required` / `nondeterministic_bundle` / `unknown_contract_key`）を固定し、変更しない。
@@ -189,6 +211,8 @@ export type AuditEventType = "query" | "bundle" | "proposal" | "apply";
 
 export type AuditEventV1 = {
   eventType: AuditEventType;
+  contractId?: string;
+  phase?: "A1" | "A2" | "A3" | "CE0" | "CE1" | "CE2" | "CE4";
   equivalenceKey: string;
   queryId?: string;
   bundleHash?: string;
