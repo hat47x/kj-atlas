@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import fixtureRaw from "../../tests/fixtures/fb_p2c_01/polygon_autofit_cases.json?raw";
 import { P2C_A2_HANDOFF_ID } from "./p2c_polygon_handoff";
+import { P2C_TIE_BREAK_CONTRACT_ID } from "./merge/p2c_tie_break_contract";
 import {
   P2C_APPLIED_TIE_BREAK_ORDER,
   runP2CMockValidation,
@@ -17,6 +18,7 @@ describe("p2c_polygon_stub_client", () => {
 
     expect(first.handoffId).toBe(P2C_A2_HANDOFF_ID);
     expect(first.appliedTieBreakOrder).toBe(P2C_APPLIED_TIE_BREAK_ORDER);
+    expect(first.tieBreakContractId).toBe(P2C_TIE_BREAK_CONTRACT_ID);
     expect(first.logs).toHaveLength(3);
     expect(first.logs.map((log) => log.outputPolygonHash)).toEqual(second.logs.map((log) => log.outputPolygonHash));
     expect(first.logs.map((log) => log.paddingViolationCount)).toEqual([0, 0, 0]);
@@ -30,6 +32,17 @@ describe("p2c_polygon_stub_client", () => {
     } as unknown as P2CFixtureBundle;
 
     expect(() => runP2CMockValidation(drifted)).toThrowError("appliedTieBreakOrder mismatch");
+  });
+
+  it("fails fast when fixture contract id drifts", () => {
+    const drifted = {
+      ...FIXTURE,
+      tieBreakContractId: "CTR-FB-P0-P2C-A1-TIEBREAK-v2",
+    } as unknown as P2CFixtureBundle;
+
+    expect(() => runP2CMockValidation(drifted)).toThrowError(
+      "unexpected tieBreakContractId: CTR-FB-P0-P2C-A1-TIEBREAK-v2",
+    );
   });
 
   it("fails fast when fixture schemaVersion drifts", () => {

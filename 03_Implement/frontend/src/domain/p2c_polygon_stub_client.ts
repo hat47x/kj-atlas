@@ -2,9 +2,13 @@ import {
   buildP2CMockValidationLog,
   evaluateP2CA3StartCondition,
   P2C_A2_HANDOFF_ID,
-  P2C_DETERMINISTIC_TIE_BREAK_ORDER,
   type Point,
 } from "./p2c_polygon_handoff";
+import {
+  P2C_DETERMINISTIC_TIE_BREAK_ORDER,
+  P2C_TIE_BREAK_CONTRACT_ID,
+  P2C_TIE_BREAK_SCHEMA_VERSION,
+} from "./merge/p2c_tie_break_contract";
 
 export const P2C_APPLIED_TIE_BREAK_ORDER = "padding>self_intersection>area_delta>vertex_count" as const;
 
@@ -16,7 +20,8 @@ export type P2CFixtureCase = {
 };
 
 export type P2CFixtureBundle = {
-  schemaVersion: "1.0.0";
+  schemaVersion: typeof P2C_TIE_BREAK_SCHEMA_VERSION;
+  tieBreakContractId: typeof P2C_TIE_BREAK_CONTRACT_ID;
   handoffId: typeof P2C_A2_HANDOFF_ID;
   appliedTieBreakOrder: typeof P2C_APPLIED_TIE_BREAK_ORDER;
   cases: readonly P2CFixtureCase[];
@@ -25,6 +30,7 @@ export type P2CFixtureBundle = {
 export type P2CStubRunResult = {
   handoffId: typeof P2C_A2_HANDOFF_ID;
   appliedTieBreakOrder: typeof P2C_APPLIED_TIE_BREAK_ORDER;
+  tieBreakContractId: typeof P2C_TIE_BREAK_CONTRACT_ID;
   logs: ReturnType<typeof buildP2CMockValidationLog>[];
   goNoGo: ReturnType<typeof evaluateP2CA3StartCondition>;
 };
@@ -38,8 +44,12 @@ function assertFiniteNumber(value: number, fieldPath: string): void {
 }
 
 function assertBundleContract(bundle: P2CFixtureBundle): void {
-  if (bundle.schemaVersion !== "1.0.0") {
+  if (bundle.schemaVersion !== P2C_TIE_BREAK_SCHEMA_VERSION) {
     throw new Error(`unsupported schemaVersion: ${bundle.schemaVersion}`);
+  }
+
+  if (bundle.tieBreakContractId !== P2C_TIE_BREAK_CONTRACT_ID) {
+    throw new Error(`unexpected tieBreakContractId: ${bundle.tieBreakContractId}`);
   }
 
   const seenCases = new Set<P2CFixtureCase["mockCaseId"]>();
@@ -87,6 +97,7 @@ export function runP2CMockValidation(bundle: P2CFixtureBundle): P2CStubRunResult
   return {
     handoffId: P2C_A2_HANDOFF_ID,
     appliedTieBreakOrder: P2C_APPLIED_TIE_BREAK_ORDER,
+    tieBreakContractId: P2C_TIE_BREAK_CONTRACT_ID,
     logs,
     goNoGo: evaluateP2CA3StartCondition(logs, { gateApproved: true, a2VerifyPass: true }),
   };

@@ -1,4 +1,5 @@
 export const P2C_TIE_BREAK_SCHEMA_VERSION = "1.0.0" as const;
+export const P2C_TIE_BREAK_CONTRACT_ID = "CTR-FB-P0-P2C-A1-TIEBREAK-v1" as const;
 
 export const P2C_DETERMINISTIC_TIE_BREAK_ORDER = [
   "padding_compliance",
