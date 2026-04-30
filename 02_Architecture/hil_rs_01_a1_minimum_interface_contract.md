@@ -218,6 +218,41 @@ Prohibited for A2/A3:
 ### Phase 1: Read Sync（Plan → Execute → Verify → Proceed）
 - Plan: Freeze Pack要素（Contract IDs / `schemaVersion` / `overridePolicy` / SSOT）を抽出し、A1を唯一正本として照合する。
 - Execute: `A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF | A1-ERROR-IF` と固定値を再確認。
+
+## 8) Frozen Contract Snapshot v1.2（2026-04-30 / Stream A Audit）
+
+### Snapshot Declaration（参照固定）
+- declaration: `THIS_VERSION_IS_FROZEN_FOR_ALL_DOWNSTREAM_LANES`
+- snapshotId: `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- referenceContractId: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- schemaVersion: `1.0.0`
+- apiSignatureSet:
+  - `CritiqueV1(critiqueId, targetRef, critiqueType, createdAt, iteration, comment?, constraintHints?)`
+  - `ReDiffV1(proposalId, basedOnIteration, diffOps[], traceKey, rationale?)`
+  - `AttributionV1(reviewState, reviewedAt, reviewerRef, auditRecordedAt, reviewContext?, ownerRef?)`
+  - `A1ErrorV1(errorCode, message, contractId, retryable, occurredAt)`
+
+### Validation Rules（固定）
+- `overridePolicy == "human_dual_control_only"`
+- `contractLinkLocked == true`
+- `sharedResourceFreeze == true`
+- `safeModeDefault == "ON"`
+- `safeModeBoundary == "SAFE_MODE_STRICT_ON"`
+- `decisionQueueTransition == "Pending -> Approved | Pending -> Rejected"`
+- `pendingDecisionQueueCount == 0` を満たさない場合は `NoGo`
+
+### Rollback Conditions（停止/差戻し）
+- rollback_trigger_1: `schemaVersion != "1.0.0"`
+- rollback_trigger_2: `overridePolicy` の緩和要求（`human_dual_control_only` 以外）
+- rollback_trigger_3: `Pending` bypass または未定義遷移の要求
+- rollback_trigger_4: safeMode/share-export境界の後退要求
+- rollback_target: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+### Immutable Reference Links for Next Lanes（read-only）
+1. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（本SSOT）
+2. `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
+3. `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（A2参照先）
+4. `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（A3参照先）
 - Verify: 想定差分は 0（契約ID衝突 0 / 語彙衝突 0 / 安全境界後退 0）。
 - Proceed: 差分なしのため Freeze継続。
 
