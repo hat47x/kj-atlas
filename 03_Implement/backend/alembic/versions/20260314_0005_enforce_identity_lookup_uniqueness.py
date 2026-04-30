@@ -25,7 +25,7 @@ def _has_case_insensitive_duplicates(bind: sa.Connection) -> bool:
         """
         SELECT 1
         FROM user_identities
-        GROUP BY lower(provider), external_uid
+        GROUP BY lower(provider), lower(external_uid)
         HAVING COUNT(*) > 1
         LIMIT 1
         """
@@ -43,14 +43,14 @@ def upgrade() -> None:
     if _has_case_insensitive_duplicates(bind):
         raise RuntimeError(
             "Detected case-insensitive duplicates in user_identities. "
-            "Resolve duplicate (lower(provider), external_uid) rows before applying migration."
+            "Resolve duplicate (lower(provider), lower(external_uid)) rows before applying migration."
         )
 
     if not _has_index(inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"):
         op.create_index(
             "uq_user_identities_provider_lower_external_uid",
             "user_identities",
-            [sa.text("lower(provider)"), sa.text("external_uid")],
+            [sa.text("lower(provider)"), sa.text("lower(external_uid)")],
             unique=True,
         )
 
@@ -62,8 +62,4 @@ def downgrade() -> None:
     if not inspector.has_table("user_identities"):
         return
 
-    if _has_index(inspector, "user_identities", "uq_user_identities_provider_lower_external_uid"):
-        op.drop_index(
-            "uq_user_identities_provider_lower_external_uid",
-            table_name="user_identities",
-        )
+    op.execute(sa.text("DROP INDEX IF EXISTS uq_user_identities_provider_lower_external_uid"))
