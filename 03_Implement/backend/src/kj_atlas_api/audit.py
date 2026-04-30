@@ -86,6 +86,17 @@ SENSITIVE_KEYS = {
 }
 
 
+def resolve_ce4_query_hash(metadata: dict[str, object]) -> str | None:
+    """Return CE4 query hash in canonical priority order."""
+    canonical = metadata.get("queryCanonicalHash")
+    if isinstance(canonical, str) and canonical:
+        return canonical
+    legacy = metadata.get("queryHash")
+    if isinstance(legacy, str) and legacy:
+        return legacy
+    return None
+
+
 def _now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 

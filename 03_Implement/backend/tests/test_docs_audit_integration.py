@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from kj_atlas_api import cli
+from kj_atlas_api.audit import resolve_ce4_query_hash
 from kj_atlas_api.access_control import AccessDecision
 from kj_atlas_api.db import get_db
 from kj_atlas_api.main import app
@@ -497,6 +498,11 @@ def test_context_audit_rejects_apply_when_required_events_missing(tmp_path) -> N
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "missing_event"
     assert response.json()["detail"]["missingEvents"] == ["bundle", "proposal", "query"]
+
+
+def test_resolve_ce4_query_hash_prefers_canonical() -> None:
+    metadata = {"queryHash": "a" * 64, "queryCanonicalHash": "b" * 64}
+    assert resolve_ce4_query_hash(metadata) == "b" * 64
 
 
 def test_context_audit_rejects_apply_when_bundle_hash_differs_from_prior_events(tmp_path) -> None:

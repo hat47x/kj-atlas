@@ -251,6 +251,11 @@
 ### Phase開始 Read同期ログ
 - Read同期: 完了（CE0/CE1/CE2はread-only継続、再定義なし）。
 
+### Stream E Implementation Note（2026-04-30）
+- CLI `context-audit` payload で `queryCanonicalHash` 入力を優先し、監査比較キー `queryHash` へ正規化して送信する互換導線を追加（legacy `queryHash` は後方互換として維持）。
+- Audit utility に CE4比較キーの優先解決関数（`queryCanonicalHash` > `queryHash`）を追加し、API/CLI監査比較の実装側参照点を明確化。
+- 単体/統合テストに上記優先順位の検証を追加し、同値判定導線の回帰を防止。
+
 ### Fixed Contract IDs（CE4）
 - `CE4-EQUIVALENCE-IF`
 - `CE4-AUDIT-CHAIN-IF`

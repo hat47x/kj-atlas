@@ -128,3 +128,19 @@ def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.Monke
         "safeMode": False,
     }
     assert request_log["timeout"] == 5.0
+
+
+def test_build_payload_prefers_query_canonical_hash_when_present() -> None:
+    args = cli._parse_args(["context-query", "--input", "dummy.json"])
+    _, payload = cli._build_payload(
+        args,
+        {
+            "docId": "doc-1",
+            "equivalenceKey": "a" * 64,
+            "bundleHash": "b" * 64,
+            "queryHash": "c" * 64,
+            "queryCanonicalHash": "d" * 64,
+        },
+    )
+
+    assert payload["queryHash"] == "d" * 64
