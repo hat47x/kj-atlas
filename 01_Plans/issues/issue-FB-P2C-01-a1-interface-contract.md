@@ -315,3 +315,57 @@ mock_contract_v1:
   3. `pendingDecisionQueueCount==0` の監査確認未完了。
 - 再開条件（Close条件）:
   - 上記3点解消後に `A2A3_OPEN_ALLOWED=true`・`validatorPass=true`・`Approval Record=Approved` を同時充足。
+
+## Stream C 専任更新（2026-04-30）
+
+### Phase 1 Read（最新Read / A1最小I/F契約スコープ確認）
+- 対象: 本IssueのみをSSOTとして再読し、A1最小I/F契約の固定範囲（Contract ID / Signature / Deterministic Rule）を確認した。
+- 結果: `Status=Open`, `Priority=P0`, `Scope=A1契約固定のみ`, `Dependencies=A1 -> A2 -> A3（A2/A3はread-only参照）` を維持。
+- 差分判定: 既存凍結キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`）に変更なし。
+
+### Phase 2 ADR-style（Context / Decision / Consequences）
+#### Context
+- A1は下流A2/A3の開始判定を拘束する唯一ゲートであり、契約ドリフトを許容すると判定不一致が連鎖する。
+- そのため、A1最小I/F契約を単一記述へ固定し、下流は参照専用に限定する必要がある。
+
+#### Decision
+- Contract ID（固定）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Signature（固定）
+  - `schemaVersion=1.0.0`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+- Deterministic Rule（固定）
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+  - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
+  - `NoGo = (!ProceedGate && !Conditional)`
+
+#### Consequences
+- A2/A3はA1契約をread-only参照し、再定義・改版・緩和を行わない。
+- `held` 論点（例: `HIL-RS-02-GOV-EXCEPTION-01`）は未承認のまま維持し、確定扱いしない。
+- `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退させる変更は禁止。
+
+### Phase 3 Workflow（Plan→Execute→Verify→Proceed）
+#### Plan
+- 目的: A1最小I/F契約の固定記述を明確化し、下流の参照条件を決定論で拘束する。
+- 非干渉: allowlist外編集は実施しない。
+
+#### Execute
+- 本Issueへ ADR-style 追記のみを実施（実装コード・他ファイル変更なし）。
+- 固定キーと判定式は既存値を再利用し、再定義や改版を行わない。
+
+#### Verify
+- contract drift: Contract ID / Signature / Deterministic Rule が既存凍結値と一致することを確認。
+- 命名整合: `freezeContractId`, `SnapshotID`, `A2A3_OPEN_ALLOWED`, `ProceedGate`, `NoGo` の表記揺れがないことを確認。
+- 依存切断: A2/A3がA1 read-only参照である前提を維持し、下流独自契約の導入がないことを確認。
+- self-correction: 0回（修正往復なし）。最大3回ルールを維持。
+
+#### Proceed
+- 判定: `Needs-decision` 継続（`Approval Record: Pending` と `held` 論点が残存）。
+- Go移行条件: `ProceedGate=true` かつ未承認事項が `held` 以外で残存しないこと。
+
+### Phase 4 Stopper
+- 失敗継続禁止: contract drift / 未定義競合 / allowlist外編集要求 / self-correction 4回目相当を検知した時点で停止して人間照会する。
