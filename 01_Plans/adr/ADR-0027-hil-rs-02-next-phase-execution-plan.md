@@ -184,3 +184,39 @@
 ### Gate equation（再掲・固定）
 - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
 - `NoGo = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected`
+
+## Stream A critical-path contract freeze update（2026-04-30）
+
+### Phase 1: Read（Status / Decision / 未解決論点の再棚卸し）
+- Read対象: `ADR-0026` / `ADR-0027` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
+- Status要約:
+  - A1契約固定値（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault`）は差分 `0`。
+  - A2/A3開放条件は `A2A3_OPEN_ALLOWED` の固定式を継続参照。
+  - `Approval Record: Pending` と `held` 論点が残存。
+- 未解決論点:
+  1. `approved_by`
+  2. `approved_at`
+  3. `evidence`
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: HIL-RS/CE の上位契約を先行固定しない場合、A2/A3 で契約派生が発生し依存順が崩れる。
+- Decision: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `schemaVersion=1.0.0` を上位契約の固定参照として維持し、A2/A3は mock/contract 参照のみに限定する。
+- Consequences: 承認証跡が未入力の間は `Conditional / Needs-decision` を維持し、実装確定へ進まない。
+
+### Phase 3: 契約凍結（Interface-only）
+- 固定対象I/F: `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`。
+- 責務境界: `overridePolicy=human_dual_control_only`、`Pending -> Approved | Pending -> Rejected` 以外は禁止。
+- 外部依存の扱い: A2/A3は `readOnly=true` の contract artifact 参照で吸収し、待機依存を作らない。
+
+### Phase 4: 整合チェック（Issue/ADRリンク・用語・優先度）
+- リンク整合: `ADR-0026`/`ADR-0027` ⇄ HIL-RS-02 A1 / next-phase issue の相互参照を維持。
+- 用語整合: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `human_dual_control_only` を統一。
+- 優先度整合: critical path（A1先行、A2/A3後続）を維持。
+- self-correction: `0/3`（不整合未検知）。
+
+### Phase 5: 完了判定
+- 判定: **Conditional / Needs-decision**。
+- DoD達成状況:
+  - 契約固定と依存順固定は達成。
+  - 未解決論点（承認証跡3項目）が残るため Go は未達。
+- 次アクション: 人間承認入力完了後に同一判定式で再検証する。
