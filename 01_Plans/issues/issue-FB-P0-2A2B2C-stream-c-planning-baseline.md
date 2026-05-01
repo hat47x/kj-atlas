@@ -363,3 +363,19 @@
 - 想定外競合: 非検知。
 - 前提崩壊: 非検知。
 - 判定: **Continue可能（停止条件未発火）**。
+
+
+## Stream A alignment note（2026-05-01 / approved follow-up）
+
+### Contract fixation（API / data / boundary）
+- API signature fixed: `CritiqueV1/ReDiffV1/AttributionV1/A1ErrorV1`（A2/A3再定義禁止）。
+- Data type fixed: `contractIds` 順序固定、`schemaVersion=1.0.0` 固定。
+- Boundary fixed: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `contractLinkLocked=true` / `sharedResourceFreeze=true`。
+
+### Mock-only dependency rule
+- 依存先は `A1-CONTRACT-MOCK-v1` で検証し、実装結合を前提にしない。
+- `A2A3_OPEN_ALLOWED` を唯一判定式として文字列一致で確認する。
+
+### Proceed constraints
+- Go/Conditional/No-Go 判定は既存式を維持し、未承認事項は `held` のまま扱う。
+- `Pending -> Done` / `Held -> Done` の禁止遷移は継続。

@@ -113,3 +113,36 @@
 ### 変更凍結宣言
 - `contractLinkLocked=true` かつ `sharedResourceFreeze=true` を満たす間、A1契約を凍結対象とし、A2/A3は参照専用とする。
 - 解除は A1 CDC 承認記録（`approved_by`, `approved_at`, `evidence`）完備時のみ。
+
+
+## Stream A execution record（2026-05-01 / critical path）
+
+### Phase 2: Plan（approved）
+- Change targets: 本ファイルの契約固定セクション末尾、および baseline ファイルの同種セクションのみ。
+- AC/DoD:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として維持する。
+  2. 契約項目（API signature / data type / boundary）を文書で固定し、A2/A3で再定義しない。
+  3. 依存先は mock 前提（`A1-CONTRACT-MOCK-v1`）として扱い、実装依存を遮断する。
+- Verification commands:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 3: Execute（contract freeze detail）
+- API signature（fixed）
+  - `CritiqueV1(input)->CritiqueV1Result`
+  - `ReDiffV1(input)->ReDiffV1Result`
+  - `AttributionV1(input)->AttributionV1Result`
+  - `A1ErrorV1(input)->A1ErrorV1Result`
+- Data type boundary（fixed）
+  - `contractIds` は `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF` の順序固定文字列。
+  - `schemaVersion` は `1.0.0` のみ許容（改版は A1 CDC 承認時のみ）。
+- Governance boundary（fixed）
+  - `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` は後退不可。
+  - `contractLinkLocked=true` / `sharedResourceFreeze=true` は解除禁止（A1承認記録完備時を除く）。
+- Mock-first dependency isolation
+  - A2/A3 は `A1-CONTRACT-MOCK-v1` と固定判定式の照合のみ実施し、実装接続を前提にしない。
+
+### Phase 4/5: Verify & Proceed gate
+- Verify 結果は AC/DoD自己検証 + docs-check コマンド成功で判定する。
+- Self-Correction は最大3回まで。4回目相当、未定義競合、allowlist外編集要求を検知した場合は停止する。
