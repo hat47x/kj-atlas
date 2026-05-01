@@ -10,6 +10,7 @@
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `04_Documentation/release.md`
 - Dependencies: `DOC-OPS-05`
+- Dependency status: `未確定（DOC-OPS-05 の Open gate 判定待ち）`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -85,3 +86,22 @@
 - Final decision: **Hold**
 - Reason: 内部文書維持（Move internal）判定が妥当で、Open化Go条件は未達。
 - Stop条件該当: なし（致命的ブロッカーなし）。
+
+## Stream E Draft昇格メモ（2026-05-01）
+
+### AC/DoD 補強（Open判定向け）
+- AC追加:
+  - [ ] `Move internal` の受け皿（どこへ移管するか）と担当役割が記録済み。
+  - [ ] Open判定者（誰が Proceed を宣言できるか）が明記済み。
+- DoD追加:
+  - [ ] `Proceed/Hold/Stop` 判定に必要な証跡ID（ログ/リンク）を追跡できる。
+
+### Validation（docs-check）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+
+### Proceed（Open化可否）
+- 判定: **Hold**
+- Stopper:
+  1. 依存 `DOC-OPS-05` の Open gate確定待ち。
+  2. Move internal の移管責務者が未固定。

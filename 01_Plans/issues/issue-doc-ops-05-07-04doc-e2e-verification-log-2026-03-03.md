@@ -10,6 +10,7 @@
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 - Dependencies: `DOC-OPS-05`
+- Dependency status: `未確定（DOC-OPS-05 の Open gate 判定待ち）`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -51,9 +52,9 @@
 - Self-correction: 0/3
 
 ### 5) Proceed
-- 判定: **Ready**（分類方針の固定は完了）
+- 判定: **Conditional**（分類方針の固定は完了）
 - 根拠: Move internal 判定と移管先候補、Verify手順が明文化済み。
-- Blocker: なし（実体移設は後続タスク）。
+- Blocker: 依存 `DOC-OPS-05` の gate未確定（実体移設は後続タスク）。
 
 ## Stream E execution log（2026-05-01 / DOC-OPS-05-07 Draft解消）
 
@@ -61,8 +62,10 @@
 - Assumption: 日付付き検証ログは運用証跡であり、公開主文書ではなく移設判断を優先する。
 - AC補強: `Move internal` 判定根拠（Audience/Goal/Public boundary）と移設先候補の同時記録を必須化。
 
-### Phase 2: 04_Documentation対象章の更新
-- 対象章 `04_Documentation/e2e_verification_log_2026-03-03.md` に Stream E同期ログを追記し、Draft→Openゲートの実行証跡を追加した。
+### Phase 2: Plan（不足メタ提案）
+- 提案1: Move internal の最終配置先を `候補` から `確定` へ遷移させる判定者を固定。
+- 提案2: 移設後リンク方針（旧パスからの参照維持方法）を明記。
+- 提案3: `DOC-OPS-05` gate未確定時の既定判定を `Hold` に固定。
 
 ### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
 - 本IssueはAUTH固定値の再定義を行わず、関連章（operations/security/e2e_testing）への導線維持のみを実施。
@@ -78,3 +81,9 @@
 ### Phase 5: AC/DoD判定
 - 判定: **Conditional**（分類固定は完了、実体移設計画の確定待ち）。
 - Self-correction: 0/3。
+
+## Stream E Proceed判定（2026-05-01）
+- Open化可否: **Hold**
+- Stopper:
+  1. 依存 `DOC-OPS-05` の gate確定待ち。
+  2. Move internal の受け皿確定と責務者固定が未完了。

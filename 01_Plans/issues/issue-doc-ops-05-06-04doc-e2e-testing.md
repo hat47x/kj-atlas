@@ -10,6 +10,7 @@
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`, `04_Documentation/operations.md`
 - Dependencies: `DOC-OPS-05`
+- Dependency status: `未確定（DOC-OPS-05 の Open gate 判定待ち）`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -51,9 +52,9 @@
 - Self-correction: 0/3
 
 ### 5) Proceed
-- 判定: **Ready**
-- 根拠: Improve external 方針、GoNoGo条件、Verify手順が再現可能。
-- Blocker: なし。
+- 判定: **Conditional**
+- 根拠: Improve external 方針、GoNoGo条件、Verify手順は再現可能。
+- Blocker: 依存 `DOC-OPS-05` の Open gate未確定。
 
 
 ## Stream H DOC-OPS-05 serial update（2026-04-30）
@@ -80,8 +81,10 @@
 - Assumption: `Improve external` 判定は維持し、本文改稿より先にOpen判定ゲートを可逆的に固定する。
 - AC補強: `ADR-0019整合` / `GoNoGoGate=Required` / `docs-check再現性` をOpen必須条件として扱う。
 
-### Phase 2: 04_Documentation対象章の更新
-- 対象章 `04_Documentation/e2e_testing.md` に Stream E同期ログ（5Phase運用）を追記し、Open判定手順を本文内で参照可能化した。
+### Phase 2: Plan（不足メタ提案）
+- 提案1: `Improve external` のOpen責務者（最終判定ロール）を明示する。
+- 提案2: `ADR-0019整合` の判定証跡（どの節を根拠にするか）を固定する。
+- 提案3: 依存 `DOC-OPS-05` 未解消時の既定判定を `Hold` に統一する。
 
 ### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
 - canonical語彙: `Security Officer / System Owner / Platform Operator`。
@@ -96,5 +99,11 @@
   3. `validate_active_issue_memos.py` と `git diff --check` がpass。
 
 ### Phase 5: AC/DoD判定
-- 判定: **Ready**（Open化判定に必要な記録要件を充足）。
+- 判定: **Conditional**（記録要件は充足、依存未解消のためOpen化保留）。
 - Self-correction: 0/3。
+
+## Stream E Proceed判定（2026-05-01）
+- Open化可否: **Hold**
+- Stopper:
+  1. 依存 `DOC-OPS-05` の gate確定待ち。
+  2. Open最終判定ロール（誰がOpen宣言するか）の明文化待ち。

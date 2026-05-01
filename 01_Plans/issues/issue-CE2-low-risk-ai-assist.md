@@ -8,6 +8,7 @@
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
 - Dependencies: `CE-2`
+- Dependency status: `未確定（CE-2 Open判定待ち）`
 - Expected verification level: `docs-check`
 
 ## Fixed Operation Contract（2026-05-01）
@@ -153,3 +154,22 @@
   - single-file scope で、Phase 1〜6、I/Fとmock方針、リスク台帳、Draft→Open条件、Proceed/Stop条件が確認できる。
 - 未実施時の理由・代替検証:
   - なし（docs-checkのみ）。
+
+## Stream E Draft昇格メモ（2026-05-01）
+
+### AC/DoD/Validation/Dependency 明確化
+- AC補足:
+  - [ ] `Dependency status` が `確定` へ遷移する条件（CE-2 Open判定者/証跡）が記録されている。
+  - [ ] Proceed判定前に `Approval Record`（日時・承認者・対象・判断）を確認する手順がある。
+- DoD補足:
+  - [ ] Open化可否を `Proceed / Hold / Stop` の三値で再判定できる。
+  - [ ] 依存未確定時は `Hold` を維持する fail-safe が残っている。
+- Validation補足（docs-check固定）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+
+### Proceed（Open化可否）
+- 判定: **Hold（依存未確定のため Open不可）**
+- Stopper:
+  1. `CE-2` の依存確定条件（誰が何を承認したか）が本Issue単体で未確定。
+  2. `Approval Record` の実値（approved_by / approved_at / evidence）が未記入。

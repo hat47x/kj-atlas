@@ -5,10 +5,11 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: TBD
 - Priority: P1
-- Owner: Architecture Owner (Stream A contracts)
+- Owner: Stream E（Draft昇格準備）
 - Scope: `01_Plans/issues/`（planning only）
 - Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
+- Dependency status: `未確定（A1完了待ち）`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
 - Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
@@ -39,6 +40,30 @@
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 
 ### Consequences
+
+## Stream E Draft昇格メモ（2026-05-01）
+
+### Phase 2 Plan（不足メタ提案）
+- 不足メタ提案:
+  1. `Approval Record` の責務者を固定（`approved_by` の役割を `System Owner` に固定するか要決定）。
+  2. `pendingDecisionQueueCount` の観測元（どのログ/表を正本とするか）を明示。
+  3. `NoGo return path` の再開条件を1文で固定（A1側更新後に何を再検証するか）。
+
+### Phase 3 Execute（メモ整備のみ）
+- 本Issueは docs-only で、契約再定義や実装変更を行わない。
+- Open判定に必要な要素を `AC/DoD/ProceedGate` へ集約済み。
+
+### Phase 4 Verify（チェックリスト照合）
+- checklist-1: fixed keys diff=0
+- checklist-2: role vocabulary drift=0
+- checklist-3: ProceedGate と PrepGate の相互排他条件が明記済み
+- self-correction: `0/3`
+
+### Phase 5 Proceed（Open化可否）
+- 判定: **Hold**
+- 理由:
+  1. 依存 `A1 -> A2 -> A3` が未充足（`a1Status==Done` 未達）。
+  2. Approval Record が `Pending` のため、Open gateを満たさない。
 - 固定キー差分が1件でもあれば `held` に記録し、A3での契約改定は実施しない。
 
 ### Extracted
