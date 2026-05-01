@@ -1016,3 +1016,22 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 - 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
 - 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
 
+
+## Stream E execution record（2026-05-01 / DOC-OPS-05-06 Draft解消同期）
+
+### Phase 1: Plan
+- 目的: DOC-OPS-05-06 の Draft→Open 判定で必要な最小メタ（AC/DoD/Verify/Fail-safe）を同期する。
+- 非目標: 本章のE2E手順本体改稿、実装コード変更。
+
+### Phase 2: Read-Sync
+- 参照順: `02_Architecture/strict_mode_exception_approval_flow.md` -> `04_Documentation/operations.md` -> `04_Documentation/security.md` -> 本章。
+- 固定観点: 用語 / 役割 / 導線 / D1-D4。
+
+### Phase 3: Execute
+- `issue-doc-ops-05-06-04doc-e2e-testing.md` の Open判定条件と整合するよう、本文の運用ログ導線を維持。
+
+### Phase 4: Verify（self-correction <=3）
+- verifyは issue 側で `docs-check` を実行し、結果を記録する運用とする。
+
+### Phase 5: Proceed
+- 判定ルール: 4観点drift=0 かつ docs-check pass で Ready/Open候補、未充足時は `StoppedForClarification`。
