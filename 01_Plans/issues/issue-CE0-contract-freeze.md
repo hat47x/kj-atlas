@@ -1314,3 +1314,39 @@ type PatchProposal = {
 ### Phase 4 Stopper
 - 結果: stop条件は未発火（`conflict=0 / premise_break=0 / overflow=0`）。
 - Proceed判定: **Conditional-Go**（contract freeze継続、逸脱発生時は即 `held`）。
+
+## Stream C latest run（2026-05-01 / CE0 Contract Freeze / docs-only contract lane）
+
+- run_id: `stream-c-ce0-2026-05-01-01`
+- assignee: `Stream C（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- fixed_contract_ids: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`（再定義なし）
+- safety_guard: `safeMode=true default` + `allowUnreviewedText=false default`（後退なし）
+
+### Phase 1 Read（最新同期）
+- Read Order 上流を再確認し、CE0契約を `02_Architecture/schemas.md` の責務境界として read-only 参照。
+- 単一ファイル編集制約・docs-only / contract-only / mock-first 制約を再確認。
+
+### Phase 2 ADR/CDC（C/D/C）
+- Context: CE0 Contract Freeze を崩さず、契約運用記録のみ更新する。
+- Decision: CE0契約ID群・No-Go canonical IDs・safeMode既定境界を固定し、追加/改名/削除を行わない。
+- Consequences: 契約ドリフトとsafeMode後退を抑止し、拡張要求は `held` へ隔離可能。
+- CDC check: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC: `single-file-only` / `contract-id-mutation=0` / `safeMode-regression=0` / `docs-only` を維持。
+- DoD: 本Issueへフェーズ記録を追記し、固定契約語彙とNo-Go IDの不変を明記。
+
+### Phase 4 Execute（契約文面更新）
+- 実施内容: 本Issueへ Stream C 実行記録を追記（契約運用文面のみ更新）。
+- 非実施内容: 実装コード変更、CE0契約ID再定義、safeMode設定変更、他ファイル編集。
+
+### Phase 5 Verify（最大3回修復）
+- Verify-1: `out_of_scope_edit=0`（対象外ファイル変更なし）。
+- Verify-2: `contract_id_mutation=0`（固定ID再定義なし）。
+- Verify-3: `safeMode_regression=0`（既定境界の後退なし）。
+- self_repair_count: `0/3`（修復ループ不要）。
+
+### Phase 6 Proceed/Stop（致命時は即停止報告）
+- 判定: **Proceed (Conditional-Go)**。
+- stop_rule: 致命逸脱（指定外編集 / 契約ID再定義 / safeMode後退 / self-repair>3）検知時は即 `held` で停止報告。
