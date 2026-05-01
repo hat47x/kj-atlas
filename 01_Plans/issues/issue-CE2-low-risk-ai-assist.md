@@ -3,14 +3,14 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream F（CE2意思決定準備専任）
+- Owner: Stream G（CE2 Draft整備専任）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
 - Dependencies: `CE-2`
 - Expected verification level: `docs-check`
 
-## Fixed Operation Contract（2026-04-29）
+## Fixed Operation Contract（2026-05-01）
 
 - proposal-only 原則を固定し、AIは候補提示（`status=proposed`）のみを実施する。
 - `accepted / rejected` は人間責務。AIによる自動確定経路は作成しない。
@@ -20,19 +20,48 @@
 - 監査4点（`query / bundle / proposal / apply`）が欠損した場合は fail-closed。
 - **合意未取得時は CE2実装へ進まない（Proceed禁止）。**
 
-## Mandatory Workflow（Plan → Read-Sync → Execute → Verify→ Proceed）
+## Mandatory Workflow（Phase 1〜6 固定）
 
-1. **Plan**: CE2のAC/DoD・非機能制約・停止条件を先に固定する。
-2. **Read-Sync**: `ADR-0028` / `ADR-0001` / `schemas.md` の語彙と契約を照合し、矛盾を解消する。
-3. **Execute**: 本Issue内で Phase 1〜5 を更新し、CE2判断材料のみを具体化する（実装禁止）。
-4. **Verify（最大3回自動修復）**:
+1. **Phase 1 Read同期**: `ADR-0028` / `ADR-0001` / `schemas.md` の語彙と契約を照合し、矛盾を解消する。
+2. **Phase 2 ADR/CDC**: Context / Decision / Consequences を本Issue内に固定し、Draft→Open判断材料を明文化する。
+3. **Phase 3 Plan（AC/DoD補完）**: 受入条件・DoD・非機能制約・停止条件を先に固定する。
+4. **Phase 4 Execute（メモ整備のみ）**: 本Issue内の記述・表・トレーサビリティを整備し、実装は行わない。
+5. **Phase 5 Verify（最大3回修復）**:
    - V1: single-file scope逸脱チェック
    - V2: proposal-only / human decision / fail-closed 文言チェック
    - V3: Phase欠落・表の不整合チェック
    - 3回以内に修復不能な場合は `status=held` で停止。
-5. **Proceed**: 人間承認ログ確認後のみ次Phaseへ引き継ぐ。
+6. **Phase 6 Proceed/Stop**: 人間承認ログ確認後のみ Proceed。未承認または超過時は Stop（`held`）。
 
-## Phase 1: 受入条件・非機能制約（safeMode含む）
+## Phase 1: Read同期（語彙・契約）
+
+### Read対象（固定）
+- `ADR-0028`：CE2の上位計画と境界条件
+- `ADR-0001`：価値→要件の判断基準
+- `02_Architecture/schemas.md`：語彙・状態集合・契約語の整合
+
+### 同期結果（本Draft時点）
+- AI提案は `proposed` に限定し、`accepted/rejected` は人間責務として分離されている。
+- fail-closed（監査4点欠損時停止）と safeMode境界を後退させない方針で整合している。
+- 自動確定・自動公開系操作（auto-*）を禁止し、合意前の Proceed 禁止を維持している。
+
+## Phase 2: ADR/CDC（Context / Decision / Consequences）
+
+### Context
+- CE2は「低リスクAI補助」を扱うが、意思決定責務の混線を防ぐため proposal-only 契約が必要。
+- Draft→Open移行前に、契約語（status/reviewState/lifecycle）と停止条件を固定する必要がある。
+
+### Decision
+- 本Issueは **Draft→Open準備のみ** を対象とし、実装・運用変更を行わない。
+- AI出力は `proposed` 限定、人間のみが `accepted/rejected` を確定可能とする。
+- Verifyは3段（scope/contract/phase integrity）で最大3回修復。超過時は `held`。
+
+### Consequences
+- メリット: 責務分離と監査可能性が先に固定され、誤進行を抑止できる。
+- 制約: 実装前進は人間承認ログ取得後に限定され、短期の進行速度は意図的に抑制される。
+- 運用影響: Draft段階では記述整備と検証のみ実施し、auto-*導線追加は不可。
+
+## Phase 3: Plan（AC/DoD補完）
 
 ### 受入条件（CE2計画の成立条件）
 - proposal-only のまま AI補助案を作成し、`accepted/rejected` は人間判断として固定されている。
@@ -45,7 +74,19 @@
 - **Traceability**: 判定根拠を Phaseごとに再読可能（誰が何を承認したか復元可能）。
 - **Reversibility**: 合意前は常に `held` に戻せる（不可逆操作禁止）。
 
-## Phase 2: 依存I/Fの列挙と mock方針
+### AC（Acceptance Criteria）
+- [ ] CE2計画が proposal-only の範囲に限定されている。
+- [ ] Phase 1〜6（Read同期/ADR-CDC/Plan/Execute/Verify/Proceed-Stop）が記述済み。
+- [ ] safeMode既定ON、未レビュー保護、監査欠損fail-closed が後退していない。
+- [ ] 承認未取得時に Proceed しない条件が明示されている。
+
+### DoD（Definition of Done）
+- [ ] single-file scope を維持し、他ストリーム領域を編集していない。
+- [ ] CE2判断材料が再読可能（文言・表・条件が矛盾しない）。
+- [ ] Verify 3段（scope / contract / phase integrity）を通過している。
+- [ ] 次工程へ渡す「実装禁止解除条件」が1文で明示されている。
+
+## Phase 4: Execute（メモ整備のみ）
 
 ### 依存I/F（実装せず、契約のみ列挙）
 - Decision Input I/F: 人間レビュー入力（`accepted/rejected/held` の判定記録）。
@@ -59,7 +100,7 @@
 - **Mock-Policy-Gate**: auto-* 要素が混入した場合に `blocked` を返す判定表。
 - 実データ接続・実運用ログ接続は CE2範囲外（次Phaseへ持ち越し）。
 
-## Phase 3: リスク台帳（誤提案 / 漏洩 / 監査不能）
+### リスク台帳（誤提案 / 漏洩 / 監査不能）
 
 | Risk ID | リスク | 兆候 | 影響 | 予防策 | 検知時アクション |
 | --- | --- | --- | --- | --- | --- |
@@ -67,9 +108,31 @@
 | R-CE2-02 | 未レビュー情報の漏洩 | share/export相当の導線が追加される | 安全境界逸脱 | safeMode既定ONと未レビュー保護を明記 | fail-closed、Proceed停止 |
 | R-CE2-03 | 監査不能 | 監査4点のいずれか欠損 | 後追い検証不能 | 4点必須チェックを運用前提化 | 欠損補完まで `held` 継続 |
 
-## Phase 4: Draft→Open 移行条件
+## Phase 5: Verify（最大3回修復）
 
-DraftからOpenへ移行できるのは、以下を **全件** 満たした場合のみ。
+### Verify観点
+- V1 Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` 以外に差分がない。
+- V2 Contract: proposal-only / human decision / auto-*禁止 / fail-closed が明記されている。
+- V3 Integrity: Phase 1〜6 と AC/DoD/リスク台帳/CDC の対応が崩れていない。
+
+### 修復ルール
+- 修復は最大3回まで。
+- `4回目相当` を要する場合は **即時 `held`** とし、原因と未解決項目のみ記録する。
+
+## Phase 6: Proceed / Stop
+
+### Proceed条件（Open準備完了）
+- Draft→Open移行条件を **全件** 満たす。
+- 人間承認ログ最小項目（日時・承認者・対象・判断）を確認済み。
+- 「実装禁止解除条件」が次工程向け引継ぎ文に明示される。
+
+### Stop条件（held）
+- 合意未取得のまま次工程（実装・確定運用）へ進む要求。
+- Verify修復が3回を超過。
+- safeMode既定ON / 未レビュー保護 / fail-closed の後退要求。
+- 未定義競合（契約衝突・語彙衝突・責務分離崩壊）の検知。
+
+## Draft→Open 移行条件（再掲）
 
 - CD&C（Context / Decision / Consequences）が本Issue内で明文化されている。
 - 依存I/Fと mock方針が記録され、実装作業へ越境していない。
@@ -77,35 +140,9 @@ DraftからOpenへ移行できるのは、以下を **全件** 満たした場�
 - 人間承認ログの最小項目（日時・承認者・対象・判断）が記録されている。
 - 「未承認なら held 継続」の fail-safe が残っている。
 
-## Phase 5: AC/DoD 判定と実装タスク引継ぎ文
+## 実装タスクへの引継ぎ文（承認後に使用）
 
-### AC（Acceptance Criteria）
-- [ ] CE2計画が proposal-only の範囲に限定されている。
-- [ ] Phase 1〜4（受入/NFR・I/F+mock・リスク台帳・移行条件）が記述済み。
-- [ ] safeMode既定ON、未レビュー保護、監査欠損fail-closed が後退していない。
-- [ ] 承認未取得時に Proceed しない条件が明示されている。
-
-### DoD（Definition of Done）
-- [ ] single-file scope を維持し、他ストリーム領域を編集していない。
-- [ ] CE2判断材料が再読可能（文言・表・条件が矛盾しない）。
-- [ ] Verify 3段（scope / contract / phase integrity）を通過している。
-- [ ] 次工程へ渡す「実装禁止解除条件」が1文で明示されている。
-
-### 実装タスクへの引継ぎ文（承認後に使用）
-> CE2は proposal-only 契約・safeMode境界・監査4点必須を満たした計画として承認済み。実装フェーズは本契約を変更せず、`accepted/rejected` 人間責務と fail-closed を維持すること。
-
-## ADR Rule（CE2でADR草案を扱う場合）
-
-- ADR草案は **Context / Decision / Consequences** を最小3節で記載する。
-- 承認獲得までは ADR状態を Draft のまま維持し、実装Phaseへ遷移しない。
-- CE2で新規ADR草案を起票する場合、対象は `01_Plans/adr/` 配下に限定し、本Issueから相互参照を追加する。
-
-## Fail-safe Stop Conditions（即停止）
-
-- 合意未取得のまま次工程（実装・確定運用）へ進む要求。
-- Self-Correction `4/3` 相当（最大3回超過）。
-- safeMode既定ONや未レビュー保護など安全境界の後退要求。
-- 未定義競合（契約衝突・語彙衝突・責務分離崩壊）の検知。
+> CE2は proposal-only 契約・safeMode境界・監査4点必須を満たした計画として承認済み。実装フェーズは本契約を変更せず、`accepted/rejected` 人間責務と fail-closed を維持すること。実装禁止の解除は、Open化後に人間承認ログが確認できた場合に限る。
 
 ## Validation Plan
 
@@ -113,6 +150,6 @@ DraftからOpenへ移行できるのは、以下を **全件** 満たした場�
   - `git diff -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
   - `git status --short`
 - 期待結果:
-  - single-file scope で、Phase 1〜5、I/Fとmock方針、リスク台帳、Draft→Open条件、Proceed条件（承認時のみ）が確認できる。
+  - single-file scope で、Phase 1〜6、I/Fとmock方針、リスク台帳、Draft→Open条件、Proceed/Stop条件が確認できる。
 - 未実施時の理由・代替検証:
   - なし（docs-checkのみ）。
