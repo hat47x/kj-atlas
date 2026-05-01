@@ -604,3 +604,32 @@ gate:
   1. `approved_by` / `approved_at` / `evidence` を充足。
   2. `pendingDecisionQueueCount==0` を確認。
   3. 固定キー差分 `0` を再確認後に A2 を開始。
+
+
+## Stream B serial checkpoint（2026-05-01 / HIL-RS contract-governance alignment）
+
+### Phase 1 Read
+- 対象5Issueを再読し、`Status / Scope / Dependencies / 固定キー` を同期。
+- 固定キー（`freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / safeModeBoundary / unlockRule / decisionQueueTransition`）差分は `0`。
+
+### Phase 2 ADR/CDC
+- Context: A1固定を崩さず、A2/A3の契約再定義を禁止する。
+- Decision: `safeModeDefault=ON` 維持、Contract ID凍結値再定義なし、`A1 -> A2 -> A3` 順序維持。
+- Consequences: `Approval Record: Pending` が残るため、Executeで確定化は実施しない。
+
+### Phase 3 Plan
+- AC/DoD不足は追加未検知（既存Draft継続）。
+- A3は `mock I/F preparation only` を維持し、実装確定を禁止。
+
+### Phase 4 Execute
+- 実施: 本5Issueへの整合ログ追記のみ。
+- 非実施: allowlist外編集、契約値変更、Pending bypass、Open強行。
+
+### Phase 5 Verify
+- self-correction: `0/3`。
+- Verify失敗・未定義競合・allowlist外編集要求は未検知。
+
+### Phase 6 Proceed/Stop
+- 判定: **Conditional / Needs-decision**。
+- 理由: 未承認事項（`Approval Record: Pending`）が残存。
+- Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
