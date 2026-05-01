@@ -1229,3 +1229,38 @@
 - 未定義競合（契約語彙の衝突、責務境界の二重定義）を検知した場合は即停止。
 - 前提崩壊（proposal-only破綻、safeMode後退要求、監査欠損成功扱い要求）を検知した場合は即停止。
 - 停止時は推測補完を行わず、`status=held` と停止理由を記録して終了する。
+
+## Stream F Execution Record（2026-05-01 / CE4 API/CLI audit）
+
+### Phase 1 Read
+- 完了（CE0/CE1/CE2 read-only境界、proposal-only原則、監査4点 `query / bundle / proposal / apply` + hash固定、safeMode後退禁止を再確認）。
+- 差分検知: なし（語彙再定義なし、No-Go条項変更なし）。
+
+### Phase 2 ADR/CDC
+- 完了（既存 CDC `CDC-CE4-001` / `CDC-CE4-002` の承認状態を維持）。
+- Context: API/CLI同値判定と監査再現性の比較根拠を欠落させないこと。
+- Decision: 同値判定は `equivalenceKey AND bundleHash` 固定、監査4点 + `queryCanonicalHash` 欠損時 fail-closed 維持。
+- Consequences: contract-only境界を維持し、実装確定・自動確定化は行わない。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- 完了（不足補完は不要と判定。既存AC/DoDで以下を充足していることを再確認）。
+  - proposal-only（auto-apply / auto-confirm / auto-publish 禁止）
+  - API/CLI同値判定 `equivalenceKey AND bundleHash`
+  - 監査4点（`query / bundle / proposal / apply`）+ `queryCanonicalHash` の必須化
+  - fail-closed（欠損・不一致・禁止条件違反を成功扱いしない）
+
+### Phase 4 Execute
+- 実施: 本ファイルの execution record 追記のみ（docs-only / contract-only）。
+- 非実施: 実装変更、safeMode挙動変更、他ファイル編集。
+
+### Phase 5 Verify（自己修復上限3回）
+- Attempt 1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- 判定: pass（自己修復 0/3、`4/3` 着手なし）。
+
+### Phase 6 Proceed/Stop
+- Decision: **Proceed（contract-only）**。
+- 理由: proposal-only逸脱なし、AND同値判定固定維持、監査4点+hash固定維持、safeMode後退なし。
+- Stop条件: 継続監視（safeMode後退要求 / 監査欠損成功扱い / 自己修復3回超過は即 `held` 停止）。
