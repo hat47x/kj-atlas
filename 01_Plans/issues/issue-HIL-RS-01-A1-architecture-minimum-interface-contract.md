@@ -10,7 +10,7 @@
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: 本ストリームで編集許可された5 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`）以外は不干渉
+- Non-target file policy: Stream A allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream A fixed serial): 3/7 HIL-RS-01 A1
