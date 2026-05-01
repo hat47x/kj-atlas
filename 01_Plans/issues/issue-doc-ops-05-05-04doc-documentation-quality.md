@@ -54,3 +54,27 @@
 - 判定: **Hold**
 - 根拠: 内部運用品質ゲート文書として公開境界のGo条件を満たさない。
 - Blocker: なし（分類確定済み）。
+
+## Stream E execution log（2026-05-01 / DOC-OPS-05-05 Draft解消）
+
+### Phase 1: Draft issueのAC/DoD明文化
+- Assumption: `01_Plans/documentation_quality.md` 本体改稿は本IssueのScope外であり、Open化判定に必要な運用メタ情報の固定を優先する。
+- AC/DoD判定軸を `Move internal` 前提で再固定（公開導線化を非目標として明記）。
+
+### Phase 2: 04_Documentation対象章の更新
+- 本Issueは `01_Plans/documentation_quality.md` 対応のため、04_Documentation本文更新は **非対象**（docs-only境界を維持）。
+
+### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
+- 本Issue単体ではAUTH-OPS-03固定値を新規定義せず、`04_Documentation/security.md` / `operations.md` 側の既存定義を参照のみ。
+- 判定: drift未検知（再定義なし）。
+
+### Phase 4: issueステータス更新案（Draft→Open条件）
+- 提案: **Draft維持**。
+- Open条件案:
+  1. DOC-OPS-05全体で `Move internal` 実体移設先が合意済み。
+  2. 実体移設PRの受け皿（directory/policy）が確定。
+  3. Verify結果（validator + diff check）を再掲。
+
+### Phase 5: AC/DoD判定
+- 判定: **Conditional**（Draft解消準備は完了、ただしOpen条件(1)(2)未充足）。
+- Self-correction: 0/3。

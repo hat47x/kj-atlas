@@ -328,3 +328,21 @@ docker --version && docker compose version
 ### Phase 5 Proceed（Open化可否）
 - Open化可否: **Yes**。
 - 判定理由: Draft→Openの最小ゲート（メタ、AC/DoD、検証、停止条件）を満たし、docs-only境界を維持。
+
+## Stream E execution record（2026-05-01 / DOC-OPS-05-07 Draft解消同期）
+
+### Phase 1: Plan
+- 目的: Move internal 判定の根拠と移設前提を、Draft解消ログとして可逆追記する。
+- 非目標: 当日ログ本文の全面改稿。
+
+### Phase 2: Read-Sync
+- 参照: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` と本章分類ヘッダ。
+
+### Phase 3: Execute
+- Draft→Open 判定に必要な条件（移設先確定、導線維持、docs-check証跡）をログ化。
+
+### Phase 4: Verify（self-correction <=3）
+- 判定は issue 側 Verify 記録（validator/diff check）を正本とする。
+
+### Phase 5: Proceed
+- 現在値: Conditional（分類固定済み、実体移設計画は未確定）。

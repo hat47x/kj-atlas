@@ -73,3 +73,28 @@
 
 ### Phase 5 issue更新
 - 判定: **Ready**（停止条件非該当、docs-only維持）。
+
+## Stream E execution log（2026-05-01 / DOC-OPS-05-06 Draft解消）
+
+### Phase 1: Draft issueのAC/DoD明文化
+- Assumption: `Improve external` 判定は維持し、本文改稿より先にOpen判定ゲートを可逆的に固定する。
+- AC補強: `ADR-0019整合` / `GoNoGoGate=Required` / `docs-check再現性` をOpen必須条件として扱う。
+
+### Phase 2: 04_Documentation対象章の更新
+- 対象章 `04_Documentation/e2e_testing.md` に Stream E同期ログ（5Phase運用）を追記し、Open判定手順を本文内で参照可能化した。
+
+### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
+- canonical語彙: `Security Officer / System Owner / Platform Operator`。
+- 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed` + `StoppedForClarification`。
+- D1-D4: `4h / 2h / 代理承認なし / 48h + 15m/60m` を再定義せず参照固定。
+
+### Phase 4: issueステータス更新案（Draft→Open条件）
+- 提案: **Open候補（条件付き）**。
+- Open条件案:
+  1. `e2e_testing.md` の分類ヘッダ（Improve external）と本Issue判定の一致。
+  2. 4観点（用語・役割・導線・D1-D4）でdrift=0。
+  3. `validate_active_issue_memos.py` と `git diff --check` がpass。
+
+### Phase 5: AC/DoD判定
+- 判定: **Ready**（Open化判定に必要な記録要件を充足）。
+- Self-correction: 0/3。

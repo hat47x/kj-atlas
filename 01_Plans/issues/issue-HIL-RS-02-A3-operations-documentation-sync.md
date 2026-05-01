@@ -892,3 +892,33 @@
 #### Consequences
 - 次アクションは A1完了証跡とDecision Queue解消証跡の受領後に再判定。
 - 強制ストッパー（承認前確定化要求 / allowlist外編集要求 / 修復上限超過）は未発火。
+
+## Stream E execution log（2026-05-01 / operations documentation sync + DOC-OPS-05 Draft解消）
+
+### Phase 1: Draft issueのAC/DoD明文化
+- Assumption: A1契約凍結は未解除のため、A3は `mock I/F preparation only` を継続し、契約値再定義は行わない。
+- AC/DoD再確認:
+  - AC: fixed keys diff=0 / role vocabulary drift=0 / D1-D4再定義なし / Draft制約維持。
+  - DoD: docs-check証跡あり / self-correction<=3 / NoGo差戻し先=A1。
+
+### Phase 2: 04_Documentation対象章の更新
+- 同期対象: `04_Documentation/e2e_testing.md` / `04_Documentation/e2e_verification_log_2026-03-03.md`。
+- 実施内容: A3契約参照のみの前提を壊さない範囲で、Draft解消用の運用ログを追記。
+
+### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
+- 用語: `Security Officer / System Owner / Platform Operator` を維持。
+- 役割: 2者承認 + 実行責務分離を維持。
+- 導線: `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md` を維持。
+- 固定値: D1-D4（`4h / 2h / 代理承認なし / 48h + 15m/60m`）は参照専用として維持。
+
+### Phase 4: issueステータス更新案（Draft→Open条件）
+- 提案: **Draft維持（Conditional）**。
+- Open条件案:
+  1. `a1Status=="Done"`。
+  2. `pendingDecisionQueueCount==0`。
+  3. fixed keys diff=0、role drift=0、docs-check pass。
+  4. `Approval Record` の必須項目（approved_by/approved_at/evidence）充足。
+
+### Phase 5: AC/DoD判定
+- 判定: **Conditional**（A1依存未解消のためOpen化不可、準備継続のみ）。
+- Self-correction: 0/3。
