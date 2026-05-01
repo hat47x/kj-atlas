@@ -756,3 +756,9 @@
 - Phase 3 Verify: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-61|Source Issue|Decision Queue|Ready=1 / Open=2|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、README/decision-pack の記述整合を確認。
 - Phase 4 Proceed: **次の人間判断待ち論点は `DQ-FB-P2C-01`（FB-P2C Gate 0承認）と `DQ-OPS-SOURCE-01`（GitHub Issues運用開始宣言）である。開始宣言未確定のため `Source Issue` は `N/A` 維持。**
 
+### 6-62. Stream D 共有統合同期ログ（2026-05-01 rerun-62, Phase 1-4）
+
+- Phase 1 Read Sync: Stream A/B/C 完了報告リンク、Decision Queue（Ready=1 / Open=2）、件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）、依存順 `A1→A2→A3`、停止条件違反0件を再確認。
+- Phase 2 Update: Active issue / Queue / 次の1手を shared resource 3ファイル（`01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / 本decision-pack）で相互整合し、未承認決定の確定扱いを行わないことを確認。
+- Phase 3 Audit: Open/Draft/Done系件数、Decision Queue残件2（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`）、依存順 `A1→A2→A3`、停止条件違反0件を再計算し一致を確認。
+- Phase 4 Publish: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**

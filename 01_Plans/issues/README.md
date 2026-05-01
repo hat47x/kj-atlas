@@ -260,6 +260,7 @@ issue補助メモには、最低でも次の項目を含める。
 
 - Stream D Phase 1-4 同期（2026-04-30 rerun-59）: Phase 1 Read同期（Stream A/B/C完了報告、Decision Queue、件数47を再確認）→ Phase 2 更新（Active Issue/Queue状態/次の1手を3共有ファイルで相互整合）→ Phase 3 監査（Open=10 / Draft=8 / Done系=26、依存順 `A1→A2→A3`、停止条件違反0件）→ Phase 4 公開固定（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 - Stream D Phase 1-5 同期（2026-04-30 rerun-60）: Phase 1 Read（全レーン完了報告と参照リンク整合を再確認）→ Phase 2 Plan（公開値 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26） / Active=5 / Done=26 / Decision Queue Ready=1 Open=2`、次の1手= `DQ-HIL-EXEC-01` Ready監査継続 + `DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open期限管理を固定）→ Phase 3 Execute（shared resource 3ファイル単一変更セット同期）→ Phase 4 Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-60|Decision Queue|Ready=1 / Open=2|A1→A2→A3|再開判定チェックリスト|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を実施し、停止条件違反0件を確認。
+- Stream D Phase 1-4 同期（2026-05-01 rerun-62）: Phase 1 Read Sync（Stream A/B/C完了報告リンク、Decision Queue Ready=1/Open=2、件数47、依存順 `A1→A2→A3` を再確認）→ Phase 2 Update（Active issue / Queue / 次の1手を shared resource 3ファイルで相互整合）→ Phase 3 Audit（Open=10 / Draft=8 / Done系=26、停止条件違反0件を再計算）→ Phase 4 Publish（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 
 ### HIL-RS-01 実行順序と競合回避（Stream D 統合基準）
 
@@ -501,4 +502,3 @@ issue補助メモには、最低でも次の項目を含める。
 - Phase 2 Sync: `Source Issue` 運用基準・Queue状態・再開条件の表現を README/decision-pack 間で整合確認し、差分がないことを記録（指定外ファイルは未編集）。
 - Phase 3 Verify: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-61|Source Issue|Decision Queue|Ready=1 / Open=2|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、README/decision-pack の記述整合を確認。
 - Phase 4 Proceed: **次の人間判断待ち論点は `DQ-FB-P2C-01`（FB-P2C Gate 0承認）と `DQ-OPS-SOURCE-01`（GitHub Issues運用開始宣言）である。開始宣言未確定のため `Source Issue` は `N/A` 維持。**
-
