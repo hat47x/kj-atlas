@@ -181,3 +181,25 @@
 - Issue同期: FB-P2A lane（A1→A2→A3）の直列実行記録を3ファイルへ反映し、依存順と停止条件を再固定。
 - Proceed: 依存切断方針（A1後は mock 独立進行、外部待ち禁止）を継続条件として明記済み。
 
+## Stream D serial execution record (2026-05-01, FB-P2A-01)
+
+### Phase 1: Read同期
+- A1/A2/A3 を再読し、依存 (`A1 -> A2 -> A3`)・AC/DoD・Gate状態を確認。
+
+### Phase 2: ADR/CDC
+- 契約変更要否を評価。既存契約の固定値運用で完結するため **CDC起票不要**。
+
+### Phase 3: Plan
+- A1完了条件: Contract/Annex固定 + `DecisionStatus=Fixed`。
+- A2完了条件: mock ledger が GoNoGo 条件を満たす。
+- A3着手条件: A1/A2完了と契約ドリフトなし。
+
+### Phase 4: Execute
+- A1固定 → A2モック検証 → A3実装接続の順序を再確認（逆行なし）。
+
+### Phase 5: Verify
+- 契約整合 / モック整合 / 実装整合を点検し、Self-Correction は `0/3`。
+
+### Phase 6: Proceed
+- Decision: **Go**。次セットへ直列進行可能。
+
