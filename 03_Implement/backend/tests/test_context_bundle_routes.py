@@ -53,6 +53,22 @@ def test_context_query_rejects_unknown_contract_key() -> None:
         settings.api_key = original_api_key
 
 
+def test_context_query_rejects_invalid_depth_boundary() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = _query_payload()
+            payload["depth"] = 6
+            response = client.post("/context/query", json=payload)
+            assert response.status_code == 400
+            detail = response.json()["detail"]
+            assert isinstance(detail, list)
+            assert any(error.get("loc") == ["depth"] or error.get("loc") == ("depth",) for error in detail)
+    finally:
+        settings.api_key = original_api_key
+
+
 def test_context_bundle_rejects_unknown_contract_key() -> None:
     original_api_key = settings.api_key
     settings.api_key = None
@@ -63,6 +79,22 @@ def test_context_bundle_rejects_unknown_contract_key() -> None:
             response = client.post("/context/bundle", json=payload)
             assert response.status_code == 400
             assert response.json()["detail"]["code"] == "unknown_contract_key"
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_bundle_rejects_unknown_stub_dataset_id() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = _bundle_payload()
+            payload["stubDatasetId"] = "A2-unknown"
+            response = client.post("/context/bundle", json=payload)
+            assert response.status_code == 400
+            detail = response.json()["detail"]
+            assert isinstance(detail, list)
+            assert any(error.get("loc") == ["stubDatasetId"] or error.get("loc") == ("stubDatasetId",) for error in detail)
     finally:
         settings.api_key = original_api_key
 
