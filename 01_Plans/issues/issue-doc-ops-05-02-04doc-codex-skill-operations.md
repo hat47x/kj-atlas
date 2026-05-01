@@ -1,8 +1,8 @@
 # Issue Draft: DOC-OPS-05-02 04_Documentation/codex_skill_operations.md のOpen化準備
 
 - Type: Documentation quality
-- Status: Draft
-- Lifecycle: Draft
+- Status: Done
+- Lifecycle: Ready
 - Source Issue: N/A
 - Priority: P2
 - Owner: Stream E
@@ -73,3 +73,30 @@
 
 ### Phase 5 issue更新
 - 判定: **Ready**（停止条件非該当、docs-only維持）。
+
+
+## Stream F serial run（2026-05-01）
+
+### Phase 1: Read同期
+- 本Issueと `04_Documentation/codex_skill_operations.md` を再読し、allowlist（Issue+対応docの2ファイル）内での docs-only 更新に限定することを確認。
+
+### Phase 2: ADR/CDC判定
+- 判定: **新規決定なし**（DecisionStatus=Fixed を維持）。
+- C/D/C: 既存の `Move internal` 判定を再利用し、未承認事項の確定化は行わない。
+
+### Phase 3: Plan
+- AC/DoD補完: `Proceed` 三値（Go/Hold/Needs-decision）と `docs-check` 実行ログの追跡性を強化。
+- docs-check観点固定: `git diff --check` / issue memo validator / 用語整合（Move internal, Public boundary, GoNoGoGate）。
+
+### Phase 4: Execute
+- 本Issueに Stream F 実行ログを追記し、対応doc側にも同日の直列ログを追記（単一docのみ）。
+
+### Phase 5: Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+- `rg -n "Stream F serial run（2026-05-01）|Phase 1: Read同期|Phase 5: Verify|Move internal" 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md 04_Documentation/codex_skill_operations.md`
+- `git diff --check`
+- Self-Correction: 0/3
+
+### Phase 6: Proceed
+- 判定: **Go**
+- 理由: allowlist内・単一doc更新・未承認事項の確定化なし・docs-check整合を満たす。

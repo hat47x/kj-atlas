@@ -143,3 +143,27 @@ git diff --check
 - 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
 - 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
 
+
+
+## Stream F serial execution（2026-05-01 / DOC-OPS-05-02）
+
+### Phase 1: Read同期
+- 対応Issue（`issue-doc-ops-05-02-04doc-codex-skill-operations.md`）と本書を再読し、公開stub運用と `Move internal` 判定を再確認。
+
+### Phase 2: ADR/CDC判定
+- 新規ADR/CDCは不要。既存決定（公開stub + 内部正本導線）を維持。
+
+### Phase 3: Plan
+- docs-only / 単一doc更新を固定。
+- docs-check観点: 分類語彙・公開境界・Go/No-Go導線の追跡性を維持。
+
+### Phase 4: Execute
+- 本セクションを追記し、Issueと同日の直列ログを同期。
+
+### Phase 5: Verify
+- `rg -n "Stream F serial execution（2026-05-01 / DOC-OPS-05-02）|Move internal|公開stub|Go/No-Go" 04_Documentation/codex_skill_operations.md`
+- `git diff --check`
+- Self-correction: 0/3（上限3回）。
+
+### Phase 6: Proceed
+- 状態: **Go**（Stop条件非該当）。
