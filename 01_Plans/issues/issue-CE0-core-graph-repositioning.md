@@ -1146,3 +1146,29 @@
 ### Phase 4 致命エラー時停止
 - 本実行では致命エラー（SC-1〜SC-3）未検出のため停止不要。
 - 以後、語彙差分・CE0契約ID再定義・SafeMode既定ON後退・4回目相当再試行が発生した場合は `stopped_for_clarification` で即停止する。
+
+## Phase Execution Record（2026-05-01 / Stream D / CE0 Core Graph Repositioning）
+### Phase 1 Read同期
+- 本Issueを起点に `role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再読。
+- 差分判定: `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs に差分なし。
+
+### Phase 2 ADR/CDC
+- 判定: `No ADR delta`（方針差分なし）。
+- contract-only planning を維持し、未承認事項の確定化を行わない。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC/DoD/Validation/Stop Conditions を再点検し、不足は未検出。
+- 補完ルール確認: 不足検知時はAIドラフト追記のみ実施し、承認まで `held` 維持。
+
+### Phase 4 Execute
+- single-file 制約を遵守し、本Issue内の実行記録追記のみを実施。
+- 実装変更禁止（handler/UI/DB/worker/API/Schema migration への変更なし）。
+
+### Phase 5 Verify（自己修復最大3回）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数: 0/3（追加修復なし）。
+
+### Phase 6 Proceed/Stop
+- 判定: `Done`（AC/DoD整合、docs-check pass、proposal-only と contract-only 境界維持）。
+- 未定義競合: 検出なし。検出時は `stopped_for_clarification` として停止する。
