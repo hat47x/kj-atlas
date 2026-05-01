@@ -816,3 +816,79 @@
 - Attempt 2/3: Open判定に必要な不足AC/DoDを追加確認。
 - Attempt 3/3: Verify手順とStopper条件の整合を確認。
 - Result: 3/3以内、停止条件未発火（ただし昇格判定はConditional）。
+
+## Stream C execution log（2026-05-01 / HIL-RS-02-A3 operations documentation sync）
+
+### Phase 1: Read同期
+#### Context
+- allowlist（本Issue / `04_Documentation/operations.md`）を再読し、A3が契約変更なしの運用同期タスクであることを確認した。
+- `operations.md` 側の運用導線（`strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`）と、本Issueの Sync route 記述が整合していることを確認した。
+
+#### Decision
+- 固定確認観点を「用語・責務・導線・固定値」に限定し、契約値の再定義を行わない。
+- `Security Officer / System Owner / Platform Operator` を canonical 語彙として維持する。
+
+#### Consequences
+- 差分抽出結果は「契約変更を要する不整合なし（diff=0）」とし、A3は Draft のまま準備継続可能。
+
+### Phase 2: ADR/CDC（必要時判定）
+#### Context
+- 本同期は既存契約の参照整合が目的であり、新規方針の確定は対象外。
+
+#### Decision
+- 新規 ADR/CDC 起票は不要（未承認事項の確定化ゼロを維持）。
+- 既存 `Approval Record: Pending` を維持し、Open化条件の先行確定を禁止する。
+
+#### Consequences
+- A3側での governance 本体変更を回避し、契約凍結を維持したまま文書同期のみ進行できる。
+
+### Phase 3: Plan（AC/DoD補完提案）
+#### Context
+- 最低AC/DoDは既に定義済みだが、運用導線追跡の明示を強化すると再判定が容易になる。
+
+#### Decision
+- AC補完案（Draft）:
+  - AC-5: `02_Architecture/strict_mode_exception_approval_flow.md` から `04_Documentation/operations.md` への導線が追跡可能であること。
+- DoD補完案（Draft）:
+  - DoD-4: docs-check結果に加え、`Go / Hold / Needs-decision` の三値判定を本Issueに記録すること。
+- いずれも Draft 提案とし、承認前の確定化は行わない。
+
+#### Consequences
+- 受入判定の再現性を上げつつ、未承認事項の固定化を避けられる。
+
+### Phase 4: Execute（docs-only / allowlist厳守）
+#### Context
+- docs-only制約とallowlist制約が有効。
+
+#### Decision
+- 本Issueへの実行ログ追記のみ実施。
+- `04_Documentation/operations.md` は再読のみで編集なし。
+
+#### Consequences
+- 指定外編集ゼロを維持し、契約/統治本体および実装コードには不干渉。
+
+### Phase 5: Verify（docs-check相当）
+#### Context
+- 自己検証を実施し、失敗時のみself-correctionを加算する運用。
+
+#### Decision
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `rg -n "^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `git diff --check`
+- self-correction attempt は `0/3`（初回で整合）。
+
+#### Consequences
+- docs-check相当の証跡を満たし、修復上限超過なし。
+
+### Phase 6: Proceed（Go/Hold/Needs-decision）
+#### Decision
+- 判定: **Needs-decision（= Conditional / Hold）**。
+- 理由:
+  1) `Approval Record: Pending` が継続中。
+  2) A3 Open gate（`a1Status=="Done" && pendingDecisionQueueCount==0`）の充足証跡が未入力。
+
+#### Consequences
+- 次アクションは A1完了証跡とDecision Queue解消証跡の受領後に再判定。
+- 強制ストッパー（承認前確定化要求 / allowlist外編集要求 / 修復上限超過）は未発火。
