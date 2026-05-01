@@ -73,6 +73,32 @@ class HttpAuditTransport:
             raise RuntimeError(f"audit transport failed: {exc.reason}") from exc
 
 
+
+
+CE4_AUDIT_SCHEMA_VERSION = "ce4.audit.v1"
+CE4_AUDIT_REQUIRED_FIELDS: tuple[str, ...] = (
+    "operation",
+    "safeMode",
+    "equivalenceKey",
+    "bundleHash",
+    "sourceBundleHash",
+    "queryHash",
+    "dryRun",
+    "sideEffect",
+    "rejectReasonCode",
+    "command",
+    "channel",
+    "schemaVersion",
+)
+
+
+def normalize_ce4_audit_metadata(raw: dict[str, object]) -> dict[str, object]:
+    """Return CE4 audit metadata with the stable contract fields only."""
+    normalized: dict[str, object] = {}
+    for key in CE4_AUDIT_REQUIRED_FIELDS:
+        normalized[key] = raw.get(key)
+    normalized["schemaVersion"] = CE4_AUDIT_SCHEMA_VERSION
+    return normalized
 SENSITIVE_KEYS = {
     "text",
     "content",

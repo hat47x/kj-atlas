@@ -5,6 +5,8 @@ import json
 
 import httpx
 
+from kj_atlas_api.audit import CE4_AUDIT_SCHEMA_VERSION, normalize_ce4_audit_metadata
+
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="kj_atlas_api.cli")
@@ -63,20 +65,23 @@ def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -
 
     query_hash = input_payload.get("queryCanonicalHash", input_payload.get("queryHash", equivalence_key))
 
-    payload = {
-        "operation": args.operation,
-        "safeMode": args.safe_mode,
-        "equivalenceKey": equivalence_key,
-        "bundleHash": bundle_hash,
-        "sourceBundleHash": input_payload.get("sourceBundleHash"),
-        "queryHash": query_hash,
-        "dryRun": dry_run,
-        "sideEffect": side_effect,
-        "rejectReasonCode": input_payload.get("rejectReasonCode"),
-        "command": operation_to_command[args.operation],
-        "channel": "cli",
-        "schemaVersion": "ce4.audit.v1",
-    }
+    payload = normalize_ce4_audit_metadata(
+        {
+            "operation": args.operation,
+            "safeMode": args.safe_mode,
+            "equivalenceKey": equivalence_key,
+            "bundleHash": bundle_hash,
+            "sourceBundleHash": input_payload.get("sourceBundleHash"),
+            "queryHash": query_hash,
+            "dryRun": dry_run,
+            "sideEffect": side_effect,
+            "rejectReasonCode": input_payload.get("rejectReasonCode"),
+            "command": operation_to_command[args.operation],
+            "channel": "cli",
+            "schemaVersion": CE4_AUDIT_SCHEMA_VERSION,
+            "ignoredInput": input_payload.get("ignoredInput"),
+        }
+    )
     return doc_id, payload
 
 
