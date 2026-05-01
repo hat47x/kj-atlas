@@ -565,3 +565,42 @@ gate:
 - Phase 1-5の直列運用（Plan -> Execute -> Verify -> Proceed）を再確認。
 - 承認未充足時は `Needs-decision` を維持し、下流の確定化へ進まない。
 - A1契約凍結値は参照専用（再定義禁止）。
+
+
+## Stream B execution update（2026-05-01 / HIL-RS execution-plan alignment）
+
+### Phase 1: Read同期
+- allowlist 2ファイル（本Issue / `issue-HIL-RS-02-next-phase-delivery-plan.md`）を再読し、`Status / Scope / Dependencies / 固定キー` を照合。
+- Stream A 凍結I/F（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `NoGo return path`）との矛盾を確認し、差分 `0`。
+- 結果: **Proceed可**（矛盾検知なし）。
+
+### Phase 2: ADR/CDC（必要時）
+- 新規方針差分は未検知のため、C/D/Cの追加定義は実施しない（既存契約を参照のみ）。
+- `Approval Record: Pending` は維持し、未承認事項の確定化は行わない。
+
+### Phase 3: Plan（A1→A2→A3 直列化の明文化）
+- 実行順序を `A1 (contract freeze complete) -> A2 (mock I/F preparation) -> A3 (delivery/ops sync)` に固定。
+- A2着手条件: `a1Status=="Done" && pendingDecisionQueueCount==0` かつ固定キー差分 `0`。
+- A3着手条件: A2で `validatorPass==true`、`pending bypass` なし、`held` が未承認論点のみに限定。
+- 停止条件: 未承認確定化、Stream A契約矛盾、allowlist外編集要求、`self_correction_attempt>=4`。
+
+### Phase 4: Execute（planning docs only）
+- 契約本体は変更せず、実行計画の着手条件/停止条件のみを明文化（本追記）。
+- 実装コード・共有3ファイル・allowlist外ファイルは未編集。
+
+### Phase 5: Verify
+- AC照合:
+  - `A1 -> A2 -> A3` の順序で実行可能: **pass**
+- DoD照合:
+  - A2着手条件を明示: **pass**
+  - A3着手条件を明示: **pass**
+  - 停止条件を明示: **pass**
+- Self-Correction: `0/3`（再試行なし）。
+
+### Phase 6: Proceed
+- 判定: **Needs-decision**。
+- 理由: `Approval Record: Pending` と `held` 論点が残存し、人間承認待ちのため。
+- 次へ渡す着手条件:
+  1. `approved_by` / `approved_at` / `evidence` を充足。
+  2. `pendingDecisionQueueCount==0` を確認。
+  3. 固定キー差分 `0` を再確認後に A2 を開始。
