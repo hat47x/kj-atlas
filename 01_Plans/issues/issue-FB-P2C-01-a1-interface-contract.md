@@ -14,7 +14,7 @@
 - Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
 - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
-- Non-target file policy: allowlist（本Issue + `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）以外は不干渉
+- Non-target file policy: allowlist 2ファイル（本Issue + `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）以外は不干渉（編集禁止）
 
 - Contract snapshot date: `2026-05-01`（固定入力）
 - Execution order (Stream A fixed serial): 2/2 FB-P2C A1契約凍結
@@ -102,7 +102,7 @@
 ## Phase 4: Handoff
 
 ### Stream B/C向け引継ぎメモ（read-only）
-- Reference SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Reference SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（read-only参照、編集禁止）
 - Contract Freeze memo: 本Issue本文「Phase 3: Contract Freeze」
 - Prohibited:
   1. 契約IDの追加/改名/削除

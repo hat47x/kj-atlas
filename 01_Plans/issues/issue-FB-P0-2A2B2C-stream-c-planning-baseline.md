@@ -21,7 +21,7 @@
 ### Extracted (Status/Priority/Scope/Dependencies/Related ADR)
 - Status: `Open`
 - Priority: `P0`
-- Scope: 対象7Issueの契約/統治/handoff整合
+- Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の契約・統治整合のみ
 - Dependencies: `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON`
 - Related ADR: `ADR-0001/0019/0026/0027/0028`
 
@@ -81,7 +81,7 @@
 ### AC / DoD（ドラフト→合意済み）
 - AC
   1. 固定キー（`freezeContractId`, `contractIds`, `safeModeDefault`, `sharedResourceFreeze`）差分0。
-  2. 依存順序 `A1 -> A2 -> A3` を全7Issueで固定。
+  2. 依存順序 `A1 -> A2 -> A3` をallowlist 2ファイルで固定。
   3. 未承認論点は `pending/held` のまま固定（確定扱い禁止）。
   4. A1 -> A2 -> A3 判定式は `A2A3_OPEN_ALLOWED` を唯一のSSOTとして扱う。
 - DoD
