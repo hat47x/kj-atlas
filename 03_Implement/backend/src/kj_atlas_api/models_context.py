@@ -102,6 +102,10 @@ _STUB_DATASET = {
     ],
 }
 
+# TODO(CE1-Phase4): Replace `_STUB_DATASET` access with an injected repository
+# (fixture/mock in tests, concrete persistence in runtime) when integrating
+# actual data layer. Keep ContextQuery/ContextBundle I/F unchanged.
+
 
 def _stable_value(value: object) -> object:
     if isinstance(value, dict):
