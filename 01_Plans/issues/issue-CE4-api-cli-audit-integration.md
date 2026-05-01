@@ -1264,3 +1264,93 @@
 - Decision: **Proceed（contract-only）**。
 - 理由: proposal-only逸脱なし、AND同値判定固定維持、監査4点+hash固定維持、safeMode後退なし。
 - Stop条件: 継続監視（safeMode後退要求 / 監査欠損成功扱い / 自己修復3回超過は即 `held` 停止）。
+
+## Stream D Latest Sync (2026-05-01 / CE4 API-CLI Audit Contract Draft)
+
+### Phase 1) Read最新同期
+- Read Orderに基づき `00_Prompt` / `01_Plans` / `02_Architecture` の上流制約を再確認した。
+- CE4は docs-only / contract-only / mock-first の境界を維持し、実装確定（code commit）は行わない。
+- CE0/CE1/CE2は read-only handoff とし、再定義・語彙拡張は行わない。
+
+### Phase 2) Plan（対象・AC/DoD・検証）
+- **Scope**: 本issue内で CE4 API/CLI/監査連携のI/F契約を先行固定する。
+- **Non-Goals**: backend/frontend/CLI実装、他issue更新、ADR本文更新。
+- **Acceptance Criteria**:
+  - [ ] proposal-only 境界（auto-apply / auto-confirm / auto-publish禁止）が明記される。
+  - [ ] API I/F（必須入力・必須出力・fail-closed条件）が定義される。
+  - [ ] CLI I/F（必須オプション・出力JSON・終了コード）が定義される。
+  - [ ] 監査I/F（query/bundle/proposal/apply + queryCanonicalHash）が欠損時 fail-closed と定義される。
+  - [ ] API/CLI同値判定が `equivalenceKey AND bundleHash` のみ成功と定義される。
+- **Definition of Done**:
+  - [ ] 実装隊がmockで着手可能な契約パッケージとして参照できる。
+  - [ ] 依存が必要な箇所は「要求IF」のみ記述し、他ファイル変更を伴わない。
+- **Validation**:
+  - docs diff確認（本ファイルのみ）。
+  - fail-safe条件（safeMode後退/責務分離崩壊/自己修復3回超過）非発火の確認。
+
+### Phase 3) Execute（インターフェース仕様先行、実体はmock許容）
+
+#### CE4 API Contract (mock-first / proposal-only)
+- Endpoint: `POST /v1/ce4/proposals:generate`
+- Request (required):
+  - `requestId: string`
+  - `queryCanonicalHash: string` (sha256 hex)
+  - `equivalenceKey: string`
+  - `bundleHash: string` (`mock:<hash>` を許容)
+  - `safeMode: "strict"`
+  - `dryRun: boolean`（`true` でも監査記録必須、状態変更は禁止）
+- Response (required):
+  - `accepted: boolean`
+  - `proposalId: string`
+  - `equivalenceKey: string`
+  - `bundleHash: string`
+  - `queryCanonicalHash: string`
+  - `auditChainRef: string`
+  - `status: "proposal_created" | "rejected_fail_closed"`
+- Fail-closed conditions:
+  - 監査4点のいずれかを生成できない場合は `accepted=false` + `status="rejected_fail_closed"`。
+  - `equivalenceKey` または `bundleHash` 欠損時は成功応答を返さない。
+  - safeMode後退要求（`safeMode != "strict"`）は拒否する。
+
+#### CE4 CLI Contract (mock-first / parity-first)
+- Command: `kj-ce4 propose`
+- Required options:
+  - `--request-id <id>`
+  - `--query-canonical-hash <sha256>`
+  - `--equivalence-key <key>`
+  - `--bundle-hash <hash|mock:hash>`
+  - `--safe-mode strict`
+  - `--dry-run <true|false>`
+- Output JSON (stdout, required keys):
+  - `accepted`, `proposalId`, `equivalenceKey`, `bundleHash`, `queryCanonicalHash`, `auditChainRef`, `status`
+- Exit code:
+  - `0`: contract success (`accepted=true` かつ fail-closed非該当)
+  - `20`: contract reject (fail-closed)
+  - `40`: contract violation (required option不足 / 不正値)
+
+#### Audit Integration Contract (API/CLI共通)
+- Mandatory audit events: `query`, `bundle`, `proposal`, `apply`。
+- Mandatory correlation key: `queryCanonicalHash`。
+- Success predicate: `equivalenceKey AND bundleHash` が一致し、かつ監査4点が同一チェーンで追跡可能。
+- `dryRun=true` の場合でも `apply` は `mode="no-side-effect"` として監査記録し、実状態変更は不可。
+
+#### Required IF only（依存先へ要求する最小契約）
+- Backend側要求IF（記述のみ）: CE4 endpointが上記request/responseを厳密検証すること。
+- CLI側要求IF（記述のみ）: required options未指定時に終了コード40を返すこと。
+- Audit基盤要求IF（記述のみ）: `queryCanonicalHash` で4イベントを連結参照可能であること。
+
+### Phase 4) Verify（最大3回自己修復）
+- Verify結果: **pass（1回で完了 / 自己修復 0/3）**。
+- 確認観点:
+  - 追跡性: API/CLI共通で `auditChainRef + queryCanonicalHash` により監査チェーン参照可能。
+  - 再現性: `equivalenceKey/bundleHash/queryCanonicalHash` の比較条件を固定。
+  - 漏えい防止: safeMode strict固定、`dryRun=true` の副作用禁止を明記。
+  - fail-closed: 必須項目欠損時は成功扱い禁止を明記。
+
+### Phase 5) Proceed（完了判定）
+- 判定: **Completed (contract package ready for implementation stream)**。
+- 完了根拠:
+  - proposal-only維持（自動確定経路なし）。
+  - API/CLI/監査の境界がmock-firstで独立参照可能。
+  - 非干渉制約（本ファイルのみ編集）を遵守。
+- 未解決ブロッカー: なし（前提崩壊・未定義競合は未検知）。
