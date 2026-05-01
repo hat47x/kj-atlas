@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { alignSelectedCards, distributeSelectedCards, snapValueToGrid } from "./layout_ops";
+import { alignSelectedCards, distributeSelectedCards, repositionCoreGraph, snapValueToGrid } from "./layout_ops";
 import type { Card } from "./types";
 
 const cards: Card[] = [
@@ -53,4 +53,51 @@ describe("layout_ops", () => {
     expect(snapValueToGrid(16, { gridSize: 10 })).toBe(20);
     expect(snapValueToGrid(16, { gridSize: 0 })).toBe(16);
   });
+
+  it("repositions selected core graph by centroid deterministically", () => {
+    const first = repositionCoreGraph(cards, {
+      selectedIds: ["a", "b"],
+      targetX: 200,
+      targetY: 200,
+    });
+    const second = repositionCoreGraph(cards, {
+      selectedIds: ["a", "b"],
+      targetX: 200,
+      targetY: 200,
+    });
+
+    expect(first.cards).toEqual(second.cards);
+    expect(first.usedMockAdapter).toBe(true);
+    expect(first.cards.find((card) => card.id === "a")).toMatchObject({ x: 150, y: 170 });
+    expect(first.cards.find((card) => card.id === "b")).toMatchObject({ x: 250, y: 230 });
+  });
+
+  it("repositions using bounds-center anchor with grid snapping", () => {
+    const next = repositionCoreGraph(cards, {
+      selectedIds: ["a", "c"],
+      targetX: 125,
+      targetY: 115,
+      anchorMode: "bounds-center",
+      snapToGridSize: 10,
+    });
+
+    expect(next.cards.find((card) => card.id === "a")).toMatchObject({ x: 30, y: 60 });
+    expect(next.cards.find((card) => card.id === "c")).toMatchObject({ x: 230, y: 180 });
+  });
+
+  it("supports local contract adapter and flags non-mock path", () => {
+    const next = repositionCoreGraph(cards, {
+      selectedIds: ["b"],
+      targetX: 500,
+      targetY: 300,
+      adapter: {
+        toNode: (card) => ({ id: card.id, x: card.x + 1, y: card.y + 1 }),
+        applyPosition: (card, pos) => ({ ...card, x: pos.x - 1, y: pos.y - 1 }),
+      },
+    });
+
+    expect(next.usedMockAdapter).toBe(false);
+    expect(next.cards.find((card) => card.id === "b")).toMatchObject({ x: 499, y: 299 });
+  });
+
 });
