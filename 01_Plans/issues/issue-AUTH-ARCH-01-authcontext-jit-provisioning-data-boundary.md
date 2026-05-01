@@ -173,3 +173,13 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream E serial execution log (2026-05-01)
+
+- Phase 1 Read同期: 本Issueを起点に AUTH-SCHEMA-01 / AUTH-API-02 / AUTH-IMPL-01 / AUTH-E2E-01 / AUTH-OPS-03 の順序依存を再確認。
+- Phase 2 ADR/CDC: 既存決裁（2026-03-03）と `ADR-0020` の範囲で契約変更不要（新規CDC不要）と判定。
+- Phase 3 Plan: AC/DoD の不足なしを確認し、SCHEMA確定前にIMPLへ進まないストッパーを再宣言。
+- Phase 4 Execute: Stream E の固定順序 1/5（ARCH）を完了。
+- Phase 5 Verify: downstream issue の前提（属性境界, `reviewerRef/ownerRef` 正規化, strict責務境界）に矛盾なし。
+- Phase 6 Proceed: **Go**（SCHEMAフェーズへ進行）。
+

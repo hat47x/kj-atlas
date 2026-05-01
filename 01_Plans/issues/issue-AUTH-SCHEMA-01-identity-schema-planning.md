@@ -175,3 +175,13 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream E serial execution log (2026-05-01)
+
+- Phase 1 Read同期: AUTH-ARCH-01 の決裁値を前提に schema 契約の依存順を確認。
+- Phase 2 ADR/CDC: `users` + `user_identities` 分離、`UNIQUE(provider, external_uid)`、strict 403契約との整合に追加ADR不要。
+- Phase 3 Plan: Level1/Level2 適用条件を明示（Level1常時、Level2はIdP連携境界変更時必須）し、E2E側へ受け渡し。
+- Phase 4 Execute: Stream E の固定順序 2/5（SCHEMA）を完了。
+- Phase 5 Verify: `schemas.md` / `schemas_review_attribution.md` / `review_attribution.md` / `api.md` 同期済み前提を再検証。
+- Phase 6 Proceed: **Go**（API/IMPLフェーズへ進行）。
+

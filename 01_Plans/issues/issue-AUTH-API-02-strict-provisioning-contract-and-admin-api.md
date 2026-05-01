@@ -146,3 +146,13 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+## Stream E serial execution log (2026-05-01)
+
+- Phase 1 Read同期: AUTH-SCHEMA-01 の strict 契約（`identity_not_provisioned`）を前提に API/IMPL 依存を確認。
+- Phase 2 ADR/CDC: 未承認仕様の確定化は行わず、既存契約の追認に限定。
+- Phase 3 Plan: AC/DoD 不足なし。mock追従キー（`status`/`code`/`provisioned`）を境界として固定。
+- Phase 4 Execute: Stream E の固定順序 3/5（API/IMPL）を完了。
+- Phase 5 Verify: strict拒否・管理者導線・API正本/CLIラッパ方針に矛盾なし。
+- Phase 6 Proceed: **Go**（E2Eフェーズへ進行）。
+
