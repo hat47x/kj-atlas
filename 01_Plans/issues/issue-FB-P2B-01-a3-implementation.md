@@ -633,3 +633,26 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2B-01 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream D serial execution record (2026-05-01, FB-P2B-01)
+
+### Phase 1: Read同期
+- A1/A2/A3 を再読し、依存 (`A1 -> A2 -> A3`)・AC/DoD・Gate状態を確認。
+
+### Phase 2: ADR/CDC
+- 契約変更要否を評価。既存契約の固定値運用で完結するため **CDC起票不要**。
+
+### Phase 3: Plan
+- A1完了条件: Contract/Annex固定 + `DecisionStatus=Fixed`。
+- A2完了条件: mock ledger が GoNoGo 条件を満たす。
+- A3着手条件: A1/A2完了と契約ドリフトなし。
+
+### Phase 4: Execute
+- A1固定 → A2モック検証 → A3実装接続の順序を再確認（逆行なし）。
+
+### Phase 5: Verify
+- 契約整合 / モック整合 / 実装整合を点検し、Self-Correction は `0/3`。
+
+### Phase 6: Proceed
+- Decision: **Go**。次セットへ直列進行可能。
+
