@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from kj_atlas_api import cli
+from kj_atlas_api.audit import CE4_AUDIT_REQUIRED_FIELDS, CE4_AUDIT_SCHEMA_VERSION
 
 
 class _DummyResponse:
@@ -144,3 +145,20 @@ def test_build_payload_prefers_query_canonical_hash_when_present() -> None:
     )
 
     assert payload["queryHash"] == "d" * 64
+
+
+def test_build_payload_normalizes_ce4_contract_fields_only() -> None:
+    args = cli._parse_args(["context-query", "--input", "dummy.json"])
+    _, payload = cli._build_payload(
+        args,
+        {
+            "docId": "doc-1",
+            "equivalenceKey": "a" * 64,
+            "bundleHash": "b" * 64,
+            "ignoredInput": "must-not-pass-through",
+        },
+    )
+
+    assert set(payload.keys()) == set(CE4_AUDIT_REQUIRED_FIELDS)
+    assert payload["schemaVersion"] == CE4_AUDIT_SCHEMA_VERSION
+    assert "ignoredInput" not in payload
