@@ -1172,3 +1172,31 @@
 ### Phase 6 Proceed/Stop
 - 判定: `Done`（AC/DoD整合、docs-check pass、proposal-only と contract-only 境界維持）。
 - 未定義競合: 検出なし。検出時は `stopped_for_clarification` として停止する。
+
+## Stream B sync run（2026-05-01 / CE0 core graph memo alignment）
+
+### Phase 1 Read
+- 本Issueを再読し、`working / context_projection / consensus` と canonical No-Go 5 IDs の固定語彙に差分がないことを確認。
+- 編集境界を本Issueファイルのみに固定し、他領域非干渉を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0 core graph契約は他CEの前提となるため、語彙揺れや遷移規則の変更を防ぐ必要がある。
+- Decision: `working -> consensus` は `patch+approval` のみを許可し、direct write / auto-apply / auto-publish を禁止のまま維持。
+- Consequences: 下流ストリームは同一契約語彙でmock検証でき、未承認差分は `held` で隔離される。
+
+### Phase 3 Plan
+- AC/DoD不足は検出されず、既存定義のまま進行。
+- 実施範囲は contract-only の実行記録追記に限定。
+
+### Phase 4 Execute
+- 本Issueに同期ログを追記し、実装記述は追加しない。
+
+### Phase 5 Verify
+- attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
+- attempt_1: `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` → pass
+- attempt_1: `git diff --check` → pass
+- self-correction: `0/3`
+
+### Phase 6 Proceed
+- 判定: **Done（contract-only維持）**
+- 逸脱要求・契約衝突・自己修復上限超過時は `held` 停止。

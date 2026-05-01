@@ -518,3 +518,32 @@ export type ContextBundleV1 = {
 - **Proceed条件**: 本Issueが docs-only かつ contract-only のまま、上記固定契約を保持している場合。
 - **Stop条件**: 契約語彙衝突、Contract ID collision、または検証失敗が3回を超えた場合は `held`。
 - 現在判定: **Proceed**（契約凍結を維持して次streamへ受け渡し可能）。
+
+## Stream B sync run（2026-05-01 / CE1 foundation memo alignment）
+
+### Phase 1 Read
+- 本Issueを再読し、CE1凍結I/F（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と error semantics 固定値に差分がないことを確認。
+- CE0 read-only境界と safeMode 後退禁止を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE1はCE0契約参照の上で、実装依存を持たないI/F凍結を維持する必要がある。
+- Decision: `ContextQueryV1` / `ContextBundleV1` の closed-world、`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` を据え置く。
+- Consequences: CE2/CE4は実装非依存のmock検証を継続でき、契約語彙衝突時は `held` で停止できる。
+
+### Phase 3 Plan
+- AC/DoD不足の新規検出なし。
+- 本Issue内の同期ログ更新のみに限定して進行。
+
+### Phase 4 Execute
+- contract-only で本同期ログを追記。
+- 非実施: handler/UI/DB/worker/API 実装詳細の追加。
+
+### Phase 5 Verify
+- attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
+- attempt_1: `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` → pass
+- attempt_1: `git diff --check` → pass
+- self-correction: `0/3`
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go（contract freeze維持）**
+- 依存不整合・契約ID衝突・自己修復上限超過時は `held` 停止。

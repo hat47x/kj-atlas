@@ -1350,3 +1350,37 @@ type PatchProposal = {
 ### Phase 6 Proceed/Stop（致命時は即停止報告）
 - 判定: **Proceed (Conditional-Go)**。
 - stop_rule: 致命逸脱（指定外編集 / 契約ID再定義 / safeMode後退 / self-repair>3）検知時は即 `held` で停止報告。
+
+## Stream B latest run（2026-05-01 / CE0 only / contract freeze maintenance）
+
+- run_id: `stream-b-ce0-2026-05-01-10`
+- assignee: `Stream B（CE契約基盤）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、固定順序 `Read → Plan → Execute → Verify → Proceed` と fail-safe 条件を再確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の read-only 固定を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0契約凍結SSOTを維持し、他ストリーム領域へ影響を与えない運用継続が必要。
+- Decision: Contract ID追加/改名/削除を行わず、No-Go canonical IDs と safeMode境界を不変のまま維持。
+- Consequences: 契約ドリフトと安全境界後退を抑止し、逸脱要求発生時に `held` 停止へ即時遷移できる。
+
+### Phase 3 Plan
+- AC/DoD不足の新規検出なし。追加ドラフト提案は不要。
+- 実施内容を「本Issueの実行記録追記のみ」に固定。
+
+### Phase 4 Execute
+- contract-only / docs-only で本実行記録を追記。
+- 非実施: 実装変更、指定外ファイル編集、CE0契約再定義。
+
+### Phase 5 Verify
+- attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
+- attempt_1: `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` → pass
+- attempt_1: `git diff --check` → pass
+- self-correction: `0/3`
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件: 依存不整合・未定義競合・自己修復4回目相当を検知した場合は `held` で停止し指示待ち。
