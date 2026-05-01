@@ -1,9 +1,9 @@
-# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream D / CE1専任 / contract-only planning）
+# Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P1
-- Owner: Stream D（CE1基盤: ContextQuery/ContextBundle Foundation）
+- Owner: Stream E（CE1基盤: ContextQuery/ContextBundle Foundation）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
@@ -12,7 +12,7 @@
 - Verification: `docs-check`
 
 
-## Task Brief（Stream D / Plan→Execute→Verify→Proceed）
+## Task Brief（Stream E / Plan→Execute→Verify→Proceed/Stop）
 - Scope: docs-only（Issue + schema/APIのCE1 I/F節）
 - Non-Goals: handler/UI/DB/workerの実装詳細化
 - Acceptance Criteria:
@@ -487,3 +487,34 @@ export type ContextBundleV1 = {
   - 同値判定は `equivalenceKey + bundleHash`（AND）のみ。
   - 部分一致成功は禁止。
   - 監査欠損は常時 fail-closed。
+
+
+## Stream E execution note（2026-05-01 / CE1 Foundation）
+
+### Phase 1 Read
+- 本Issueを再読し、編集範囲が本ファイルのみであることを確認。
+- `docs-only / contract-only / mock-first` と closed-world v1 契約固定を再確認。
+
+### Phase 2 ADR/CDC
+- **Context**: CE1はCE4のmock検証を成立させるため、実装詳細を排除した契約固定が必要。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` をclosed-worldのまま凍結し、`previewConfirmed=false -> 422 preview_required`、`queryCanonicalHash` / `bundleHash` の決定論と `409 nondeterministic_bundle` を固定。
+- **Consequences**: CE2/CE4は実装非依存で異常系を再現可能。未定義キーは `400 unknown_contract_key` でfail-closed。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完: error semantics を HTTP と 1:1 対応で固定し、語彙揺れを禁止。
+- DoD補完: 実装語彙（handler/UI/DB/worker）非記載、かつ docs-only 差分で完了する。
+
+### Phase 4 Execute
+- 本節を追記し、Stream Eとしてのフェーズ進行記録を明示。
+- 既存契約（closed-world / preview gate / hash determinism）を変更せず維持。
+
+### Phase 5 Verify（max 3 repairs）
+- Verify-1: `ContextQueryV1` / `ContextBundleV1` の契約が自己完結していることを確認。
+- Verify-2: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3語彙固定を確認。
+- Verify-3: `queryCanonicalHash` と `bundleHash` の決定論要件（同一canonical queryで不一致なら409）を確認。
+- Repair count: 0/3（追加修復不要）。
+
+### Phase 6 Proceed/Stop
+- **Proceed条件**: 本Issueが docs-only かつ contract-only のまま、上記固定契約を保持している場合。
+- **Stop条件**: 契約語彙衝突、Contract ID collision、または検証失敗が3回を超えた場合は `held`。
+- 現在判定: **Proceed**（契約凍結を維持して次streamへ受け渡し可能）。
