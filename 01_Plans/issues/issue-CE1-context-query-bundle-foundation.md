@@ -608,3 +608,38 @@ export type ContextBundleV1 = {
   2. `selected/relations/evidence/contradictions` 各要素の最小共通shape（v2候補）。
   3. canonicalizationアルゴリズム詳細（実装前にCE0/CE1合同で別紙化）。
 - フェイルセーフ: 競合検知・前提崩壊・修復3回超過時は `held` へ停止し、Phase 2 CDCへロールバック。
+
+## Stream C update（2026-05-02 / CE1 ContextQuery-ContextBundle Foundation）
+
+### Phase 1: Read
+- 対象ファイル再読の結果、`ContextQueryV1` / `ContextBundleV1` のv1契約は既に自己完結しており、closed-worldと固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に矛盾なし。
+- CE1の編集可能スコープを本Issueに限定し、他ストリーム実装・他ファイル編集を行わない方針を再確認。
+- Plan再定義要否判定: **不要（契約凍結維持を継続）**。
+
+### Phase 2: ADR/仕様明文化（Context / Decision / Consequences）
+- **Context**: CE1は他ストリーム非依存で契約先行を維持する必要があり、実装詳細を持ち込むと契約境界が崩れる。
+- **Decision**: v1契約は現行定義を維持し、`previewConfirmed=false -> 422 preview_required`、`unknown key -> 400 unknown_contract_key`、`hash非決定論 -> 409 nondeterministic_bundle` を固定値として据え置く。
+- **Consequences**: CE2/CE4はモックのみで検証可能、CE1は実装方式に中立なままI/F正本として機能する。
+
+### Phase 3: Plan（変更対象/契約境界/非目標/検証）
+- 変更対象: 本Issueの運用記録追記のみ（docs-only）。
+- 契約境界: `ContextQueryV1` 入力契約、`ContextBundleV1` 出力契約、固定エラー語彙の3点。
+- 非目標: API handler、DB schema、worker、UI、他Issue/ADRの編集。
+- 検証方法: issue memo validator / unit test / `git diff --check`。
+
+### Phase 4: Execute（契約先行固定）
+- 本追記により、CE1は「既存v1契約を変更せず凍結維持」という実行結果を明示。
+- 実装詳細には踏み込まず、契約運用ルールのみ更新。
+
+### Phase 5: Verify（AC/DoD・整合確認）
+- AC1（ADR形式の根拠明記）: **pass**。
+- AC2（`ContextQueryV1` / `ContextBundleV1` の契約一致）: **pass**（既存定義維持）。
+- AC3（preview gate固定）: **pass**。
+- AC4（deterministic hash + `409 nondeterministic_bundle`）: **pass**。
+- AC5（mock validation計画）: **pass**（Plan節で明文化）。
+- self-correction: 1回（語彙揺れ点検のみ、追加修正不要）。
+
+### Phase 6: Proceed
+- 完了条件: docs-onlyでの契約凍結維持・検証実施を満たしたため **proceed**。
+- 未解決事項: なし（推測確定なし）。
+- フェイルセーフ判定: 修復3回超過/前提崩壊/競合検知は未発生。
