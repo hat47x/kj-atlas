@@ -33,6 +33,19 @@
   2. 前提崩れ（Gate順序・KPI定義・承認済みしきい値前提の崩壊）。
   3. 未定義競合（上流ADR間で解釈不能な競合が残存）。
 
+### 3.1 Context
+- Gate C（feedback分類）と Gate D（KPI監査）の境界が曖昧だと、Gate E の Proceed 判定根拠が監査不能になる。
+- QA公開境界（PUB/I18N/readOnly）の失敗を「運用逸脱」へ誤集計しないため、入力契約の粒度統一が必要。
+
+### 3.2 Decision
+- Gate C→D→E の順序、evidence6項目、停止条件3項目を運用固定値として扱う。
+- Gate D の記録は KPI 判定だけでなく「逸脱有無」と「反映先リンク」を必須化し、再監査を可能にする。
+
+### 3.3 Consequences
+- 監査時に「未分類残件」と「KPI逸脱」を分離して追跡できる。
+- Proceed 判定（Go/Conditional/No-Go）の説明責任を文書単体で満たせる。
+- 次サイクルでのドリフト検知（語彙・順序・閾値）を自動照合しやすくなる。
+
 ## 4) Phase 3 Plan（AC/DoD補完）
 
 ### 4.1 Acceptance Criteria
