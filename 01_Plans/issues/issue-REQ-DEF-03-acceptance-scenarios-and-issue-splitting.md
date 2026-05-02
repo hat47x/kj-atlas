@@ -155,7 +155,7 @@
 
 | Issue | 現在状態 | 適用優先度 | 適用理由（1Issue 1検証責務観点） |
 | --- | --- | --- | --- |
-| `issue-REQ-DEF-01-requirement-metadata-schema.md` | Open | High | REQ-DEF共通I/Fの定義源であり、R0（docs-check）責務を先に固定する必要がある。 |
+| `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Open | High | REQ-DEF共通I/Fの定義源であり、R0（docs-check）責務を先に固定する必要がある。 |
 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Done | High | 契約影響（schema/api/policy/ops）を扱うため、R1〜R2境界の分割規約適用を実施済み。 |
 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Done | High | 本文自体が規約正本のため、R0責務で完結させる適用サンプルとして機能する。 |
 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Draft | Medium | T1〜T4のdocs中心タスクが多く、複合検証を回避する分割基準の適用余地が大きい。 |
@@ -224,3 +224,18 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## 11) ADR-style decision snapshot
+
+### Context
+- REQ-DEF-03 は「受入シナリオ先行」と「1Issue 1検証責務」の運用境界を定義する要求文書であり、実装詳細へ踏み込まない独立要件として維持する必要がある。
+- 既存の `Expected verification level` 宣言のみでは、要求粒度（R0〜R3）との対応がレビュー時に揺れうる。
+
+### Decision
+- 要求粒度R0〜R3と主検証責務（docs-check/unit/integration/e2e）を一意対応で固定する。
+- 複合検証は「境界契約が不可分で分割不能」の場合に限定し、`Validation plan` と `Decision Queue` に例外理由・解除条件を記録する。
+
+### Consequences
+- 要件の検証可能性が向上し、Done判定が主検証責務で再現可能になる。
+- 例外運用は許容するが、記録コストが増えるため適用条件の継続監視が必要となる。
