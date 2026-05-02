@@ -235,3 +235,18 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## 11) ADR-style decision snapshot
+
+### Context
+- 責任分界が要求定義で固定されない場合、実装Issueで決定責務と承認責務が再燃し、監査説明責任が弱まる。
+- 契約影響（schema/api/policy/ops）を要求段階で明示しないと、後方互換判断が後工程へ遅延する。
+
+### Decision
+- `REQ-DEF-02-R1`〜`R3` を正本として、RACI固定・ContractImpact固定・Go/No-Go停止条件をMust要求として維持する。
+- `DecisionStatus=Fixed` の要求には `DecisionQueueRef` を要求せず、未確定項目のみQueue管理する。
+
+### Consequences
+- 進行可否の判定が要件段階で可能になり、未確定のまま実装へ進むリスクを低減できる。
+- 条件付き承認項目（R2-P2/R2-P3）は運用判断が必要で、継続的なレビュー負荷が残る。
