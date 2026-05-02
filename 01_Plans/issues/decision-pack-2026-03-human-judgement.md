@@ -770,3 +770,11 @@
 - Phase 3 Execute: 3ファイルを同一コミット境界で同期し、未承認決定の確定化を実施しないことを確認。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル一致を確認（Self-Correction 0/3）。
 - Phase 5 Proceed: 再開判定チェックリスト1行を固定（未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。判定は **Go**。
+
+### 6-65. Stream D 共有統合同期ログ（2026-05-02 rerun-64, Phase 1-4）
+
+- Phase 1 Read同期: Stream A/B/C完了報告リンク、Decision Queue（Ready=1 / Open=2）、件数47、依存順 `A1→A2→A3` を3共有ファイルで再確認。
+- Phase 2 反映: Active Issue状態・Decision Queue・依存順・次の1手（`DQ-HIL-EXEC-01` Ready監査継続、`DQ-FB-P2C-01` / `DQ-OPS-SOURCE-01` Open期限管理）を shared resource 3ファイルへ同期。
+- Phase 3 監査: 件数整合 `件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）`、Decision Queue整合（Ready=1 / Open=2）、停止条件違反0件を確認。
+- Phase 4 公開固定: **再開判定チェックリスト確定 = 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件（`DQ-FB-P2C-01`,`DQ-OPS-SOURCE-01`） / 停止条件違反なし。**
+
