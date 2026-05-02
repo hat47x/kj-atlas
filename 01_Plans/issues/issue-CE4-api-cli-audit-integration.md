@@ -1354,3 +1354,58 @@
   - API/CLI/監査の境界がmock-firstで独立参照可能。
   - 非干渉制約（本ファイルのみ編集）を遵守。
 - 未解決ブロッカー: なし（前提崩壊・未定義競合は未検知）。
+
+## Stream H Execution Record（2026-05-02 / CE4 API-CLI-Audit integration）
+
+### Phase 1 Read（再同期）
+- issue本文を再読し、API/CLI/Audit 連結点の未確定事項を再抽出。
+- 未確定事項:
+  - API正本とCLI責務境界（CLI独自分岐の許容余地）
+  - 監査ログ最小必須項目（日時/主体/操作/結果/相関ID）の固定
+  - 失敗時再試行と冪等性キーの扱い
+
+### Phase 2 CDC（Context / Decision / Consequences）
+- Context:
+  - API/CLI/Audit間で契約不一致が発生すると、同値判定と監査再現性が崩れる。
+- Decision:
+  - APIを正本（SSOT）とし、CLIはAPI契約に対する薄いラッパ責務のみを負う（独自分岐禁止）。
+  - 監査ログ最小必須項目を `timestamp` / `actor` / `operation` / `result` / `correlationId` に固定する。
+  - 失敗時は fail-closed を維持し、再試行は同一 `correlationId` による冪等実行のみ許可する。
+- Consequences:
+  - 実装自由度は制限されるが、API-CLI-Audit横断の監査再現性と追跡性が向上する。
+
+### Phase 3 Plan（AC / DoD提案）
+- AC:
+  1. API入力/応答の最小契約を固定する。
+  2. CLIはAPI契約準拠とし、独自分岐を導入しない。
+  3. 監査ログschemaは `timestamp/actor/operation/result/correlationId` を必須固定する。
+  4. モック監査データ（`sourceBundleHash=mock:<hash>`）で契約検証可能とする。
+- DoD:
+  - issue内で追跡可能な契約記述になっている。
+  - 例外パス（欠損・不一致・禁止条件違反）が fail-closed で定義済み。
+  - Verify記録（AC/DoD照合、矛盾有無、修復回数）が完了している。
+
+### Phase 4 Execute（allowlist内のみ）
+- 実施: 本issueへの contract-only 追記のみ。
+- 非目標（遮断）:
+  - backend/frontend 実装変更
+  - 自動確定経路（auto-apply/auto-confirm/auto-publish）
+  - CE0/CE1/CE2 語彙再定義
+
+### Phase 5 Verify（AC/DoD照合）
+- AC照合: 4/4 pass。
+- DoD照合: 3/3 pass。
+- API-CLI-Audit矛盾確認:
+  - `equivalenceKey + bundleHash` AND判定、監査4点、`queryCanonicalHash` 必須、fail-closed 条項と矛盾なし。
+  - 本追記の監査最小必須項目は既存監査導線を補完し、衝突なし。
+- Self-Correction ledger:
+  - Attempt 1: pass
+  - Attempt 2: n/a
+  - Attempt 3: n/a
+  - Attempt 4+: forbidden（fail-safe停止条件）
+
+### Phase 6 Proceed（判定と残課題）
+- 判定: **Ready（contract-only）**
+- 残課題（参照希望止まり）:
+  - APIレスポンス/CLI出力の `correlationId` 命名と型の最終固定は、関連ADR/API章の参照更新時に再確認を希望。
+- 依存要求: なし（他ストリームへの実装依頼は行わない）。
