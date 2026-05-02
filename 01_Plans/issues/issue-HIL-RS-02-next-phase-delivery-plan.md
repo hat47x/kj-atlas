@@ -697,3 +697,41 @@ delivery_gate_v1:
 - 判定: **Conditional / Needs-decision**。
 - 理由: 未承認事項（`Approval Record: Pending`）が残存。
 - Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
+
+
+## Stream G execution log（2026-05-02 / independent lane）
+
+### Phase 1 Read
+- 開始時・Phase開始時の同期を実施し、`Status=Open` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` を再確認。
+- 既存停止条件（`Pending bypass禁止`、`NoGo return path固定`、`safeMode境界固定`）を抽出。
+
+### Phase 2 CDC
+- Context: delivery plan 側で governance hardening の契約を崩さず段階導入する必要がある。
+- Decision:
+  - 2者承認・責務分離・override禁止境界を A1契約値に固定。
+  - 固定値/固定状態遷移（`schemaVersion=1.0.0`、`decisionQueueTransition`）の再定義禁止。
+- Consequences:
+  - 導入速度より監査可能性と停止安全性を優先。
+
+### Phase 3 Plan
+- AC案:
+  1. 契約ID固定・承認条件固定・逸脱時停止固定を delivery plan に明記。
+  2. 段階導入（A1→A2→A3）と各段階の検証要件を保持。
+- DoD案:
+  - A1 issue と delivery plan のGate式が一致。
+  - Verify証跡（validator / unittest / diff check）を記録。
+
+### Phase 4 Execute
+- A1 hardening -> delivery plan の順で契約整合を反映。
+- 実装コードには非干渉（docs planning only）。
+
+### Phase 5 Verify
+- AC/DoD検証を実施し、上流語彙（`safeModeDefault`、`safeModeBoundary`、`overridePolicy`）との不一致なし。
+- Self-Correction: `0/3`（修復不要）。
+
+### Phase 6 Proceed
+- 判定: **Needs-decision**（`Approval Record: Pending` と `held` 継続）。
+- Hold解除に必要な承認項目:
+  1. `approved_by`
+  2. `approved_at`
+  3. `evidence`
