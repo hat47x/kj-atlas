@@ -40,6 +40,17 @@ KPIスコアカードは定義済みでも、feedback分類（Gate C）と公開
 - Support Deflection
 - Feedback Closure
 
+### 4.1.1 KPI 測定定義（再現可能性優先）
+
+- **TFS**: `期限内完了feedback件数 / 対象feedback総件数`（測定期間ごと、0除算時は N/A と記録）
+- **Decision Readiness**: `Gate E 判定に必要な必須項目充足件数 / Gate E 対象件数`
+- **Support Deflection**: `文書参照で自己解決した問い合わせ件数 / 問い合わせ総件数`
+- **Feedback Closure**: `再判定日までにクローズしたfeedback件数 / 当期対応対象feedback件数`
+
+注記:
+- 分母・分子の集計対象は同一測定期間に固定する。
+- しきい値は承認済み台帳のみを参照し、本メモでは閾値値そのものを再定義しない。
+
 ### 4.2 Acceptance Criteria
 
 - [x] scorecard 4項目が Gate D の必須評価対象として固定されている。
@@ -79,6 +90,8 @@ scorecard必須入力は次で固定する。
 - 逸脱有無
 - 次アクション
 - 反映先リンク（issue/operations）
+
+加えて、各KPIの分子/分母または判定根拠（算出ログ参照先）を記録し、再計算可能性を担保する。
 
 ### 5.3 Gate E（Proceed decision）
 

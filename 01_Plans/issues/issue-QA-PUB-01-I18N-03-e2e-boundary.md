@@ -11,6 +11,35 @@
 仕様境界ベースで、PUB-01（visibility編集）と I18N-03（英語UI等価）を対象に、
 smoke + 変更対象フロー + 安全境界（SafeMode/read-only）を E2E で確認する。
 
+## CDC (Context / Decision / Consequences)
+
+### Context
+- QA-PUB 境界では、`PUB-01`（公開可視性）と `I18N-03`（ja/en 等価）に加えて、`readOnly` と SafeMode の禁止操作境界が同時に成立している必要がある。
+- KPI監査（Gate D）で再利用できるよう、E2E結果は「再現可能なコマンド列 + 判定根拠」で記録する必要がある。
+
+### Decision
+- 本メモの検証対象を 3 軸（公開互換 / i18n 等価 / 安全境界）で固定する。
+- 判定証跡は `Date / Gate / Command / Result / Decision / Next action` の 6 項目で記録する。
+- 失敗時は最大 3 回まで自己修復し、4回目相当は Fail-safe 停止とする。
+
+### Consequences
+- Gate C→D→E の引き継ぎ時に、QA 境界の pass/fail を KPI 監査へ直接入力できる。
+- 実行環境依存（ブラウザライブラリ不足等）を「仕様不一致」と分離して扱える。
+- 追加の公開境界ケースが発生した場合も、同一フォーマットで比較可能な監査履歴を維持できる。
+
+## AC/DoD 補強提案（QA-PUB 境界）
+
+### Acceptance Criteria（追補）
+1. 公開互換: visibility 変更が保存後リロードでも保持される（View/Pack 両方）。
+2. i18n 等価: `?locale=en` でも同一フローが成立し、ja と主要 UI 振る舞いが一致する。
+3. 安全境界: `?readOnly=1` で禁止操作が disable され、SafeMode locked context が表示される。
+4. 証跡再現性: 実行コマンドと結果を第三者が再実行可能な粒度で記録する。
+
+### Definition of Done（追補）
+- 境界3軸（公開互換 / i18n等価 / 安全境界）それぞれに pass/fail の根拠が1つ以上ある。
+- 失敗時は 3 回上限ルールに従った停止判断が明記される。
+- KPI監査文書（issue-0019 / issue-0020）と語彙不一致がない。
+
 ## Added / adjusted Playwright coverage
 
 - `e2e/pub_visibility_i18n_readonly_flow.spec.ts`（新規）
