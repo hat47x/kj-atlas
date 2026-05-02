@@ -906,3 +906,23 @@ governance_gate_v1:
   2. 固定値一覧: 本セクション Phase 3
   3. 変更禁止範囲: `03_Implement/**` と A1以外での契約再定義
 - Stop conditions: self-correction 4回目相当 / allowlist外編集要求 / 前提崩壊 / 未承認確定化。
+## Stream C fixed-order sync log（2026-05-02 / HIL-RS Contract Lane）
+
+### Phase alignment check
+- 固定実行順を再確認: `Phase 1 (HIL-RS-01 A1) -> Phase 2 (HIL-RS-01 umbrella) -> Phase 3 (HIL-RS-02 A1) -> Phase 4 (HIL-RS-02 delivery)`。
+- 開始時Read同期（`Status / Dependencies / 固定キー`）を実施し、4ファイル間で `diff=0` を確認。
+
+### ADR/CDC + Approval handling
+- ADR/CDCは既存Decisionを再定義せず維持（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`）。
+- `Approval Record: Pending` を未承認確定化せず、`held` 維持を継続。
+
+### Plan -> Execute -> Verify -> Proceed
+- Plan: allowlist 4ファイル内のみで運用記録を更新。
+- Execute: 本文末尾への固定順運用ログ追記のみ（契約値変更なし）。
+- Verify: 判定式・固定キー・NoGo return path の不変を再確認。
+- Proceed: 判定は `Conditional` 維持（未承認/held 残存のため）。
+
+### Self-Correction / Stop conditions
+- Self-Correction counter: `0/3`（再試行なし）。
+- 4回目相当、未承認確定化、未定義競合は未検知。
+- 継続条件: `approved_by` / `approved_at` / `evidence` の充足後に次段階再判定。
