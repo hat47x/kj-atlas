@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream H
+- Owner: Stream G
 - Scope: `01_Plans/documentation_quality.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `04_Documentation/release.md`
@@ -24,84 +24,68 @@
 - DecisionStatus: Fixed
 - DecisionQueueRef: N/A（DecisionStatus=Fixed）
 
-## Open化判断情報（分類/ゲート/検証/Proceed三値）
-### Classification
-- Decision: **Move internal（維持）**
-- Rationale: 内部統制向け品質規約のため、公開文書本体とは責務が異なる。
-- Boundary note: CE/HIL/FBおよび実装コードの変更は本Issue対象外。
+## Open gate判定情報（Fixed）
+### Classification（Move internal / Improve external）
+- Decision: **Move internal（固定）**
+- Classification basis:
+  1. Audience: 文書執筆者・レビュアー向け内部品質統制。
+  2. Goal: 公開文書の品質担保ルールを内部で運用すること。
+  3. Public boundary: 対外説明本文ではなく、内部審査の基準書。
+- Boundary note: CE/HIL/FBおよび実装コード変更は対象外。
 
-### Gate（GoNoGo）
+### GoNoGoGate=Required（判定条件）
 - Gate type: `Required`
-- Gate condition:
-  1. 公開境界（internal/public）の責務分離が明文化されていること。
-  2. Open化判断に必要な根拠（分類・検証・Proceed）が本メモ単体で追跡可能であること。
-  3. docs-check 前提の検証手順と結果が整合していること。
+- Go条件（全件必須）:
+  1. internal/public の責務分離（上記Classification basis）が明文化済み。
+  2. Open判定に必要な4要素（Classification / Gate / Verification / Proceed）が本メモ単体で追跡可能。
+  3. `docs-check` 手順・実行結果・自己修復回数（<=3）が併記されている。
+  4. 依存 `DOC-OPS-05` のOpen gateが確定済み。
+- NoGo/Hold条件（いずれかで不成立）:
+  - Go条件の欠落。
+  - 依存 gate 未確定。
 - Gate verdict: **NoGo（現時点）**
 
-### Verification plan/result
+### Verification（docs-check）
 - Planned checks:
-  - `git diff --check`
-  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- Result summary: pass（整形・メモ整合に問題なし）
-- Self-correction budget: `0/3`（本更新時点）
+  - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- Result summary: pass
+- Self-correction budget: `0/3`
 
 ### Proceed tri-state
 - ProceedDecision: **Hold**
 - Alternatives: `Proceed` / `Hold` / `Stop`
-- Current reason: Move internal 判定が固定であり、Open化のGo条件（公開側移設合意）が未充足。
+- Reason: Move internal 判定は固定済みだが、依存 `DOC-OPS-05` gate が未確定。
 
-## Acceptance criteria / DoD（Phase 3補完）
-- [x] AC1 Move internal 判定と根拠を単一箇所化。
-- [x] AC2 GoNoGoGate=Required の判定条件（公開境界・責務分離）を明文化。
-- [x] AC3 Validation plan は `docs-check` と一致。
+## Acceptance criteria / DoD
+- [x] AC1 Move internal 判定と分類根拠（Audience/Goal/Public boundary）を単一箇所化。
+- [x] AC2 GoNoGoGate=Required のGo/NoGo条件を明文化。
+- [x] AC3 Validation plan が `docs-check` と一致。
 - [x] AC4 Proceed 三値（Proceed/Hold/Stop）を記録。
-- [x] DoD1 AC確認・Verify結果併記で完了判定。
+- [x] DoD1 Verify結果とSelf-correction回数を併記。
 - [x] DoD2 Self-correction 最大3回、超過時は Hold。
 
-## Phase execution record（Stream H）
+## Phase execution record（Stream G）
+### Phase 1: Read
+- 本Issue・`ADR-0024`・`documentation_quality.md` の参照関係を再確認。
 
-### Phase 1 Read
-- 本Issue本文・Requirement meta I/F・既存Draftログを再読し、判断情報が複数節に分散している点を確認。
+### Phase 2: ADR/CDC
+- ADR整合: 品質ゲート境界（ADR-0024）に従い internal文書扱いを固定。
+- CDC: 対象外ファイル非編集、docs-only制約を維持。
 
-### Phase 2 ADR/CDC
-- 参照整合: `ADR-0024` の品質ゲート境界と `documentation_quality.md` の内部品質文書という位置づけを再確認。
-- CDC（変更制約）: CE/HIL/FB/実装コードへの干渉禁止、対象外ファイル非編集を維持。
+### Phase 3: Plan
+- Open gate情報を `Classification / Gate / Verification / Proceed` に再編。
+- Required gateのGo/NoGo条件を明示する計画を固定。
 
-### Phase 3 Plan（AC/DoD不足補完）
-- Open化判断情報を「Classification / Gate / Verification / Proceed tri-state」に再編する方針を確定。
-- AC/DoDの不足（Proceed三値の明示、Gate条件の具体化）を補完する計画を固定。
+### Phase 4: Execute
+- 本Issueメモのみ更新し、分類根拠と判定条件を統合。
 
-### Phase 4 Execute（メモ整備）
-- 本Issueファイルのみ更新し、判定情報を単一セクションへ集約。
-- Draft運用ログをPhase 1〜6構造へ統一。
-
-### Phase 5 Verify（3回まで自己修復）
-- Verify command:
-  - `git diff --check`
-  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+### Phase 5: Verify
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
 - Self-correction count: `0/3`
 - Verify verdict: **Pass**
 
-### Phase 6 Proceed/Stop
+### Phase 6: Proceed
 - Final decision: **Hold**
-- Reason: 内部文書維持（Move internal）判定が妥当で、Open化Go条件は未達。
-- Stop条件該当: なし（致命的ブロッカーなし）。
-
-## Stream E Draft昇格メモ（2026-05-01）
-
-### AC/DoD 補強（Open判定向け）
-- AC追加:
-  - [ ] `Move internal` の受け皿（どこへ移管するか）と担当役割が記録済み。
-  - [ ] Open判定者（誰が Proceed を宣言できるか）が明記済み。
-- DoD追加:
-  - [ ] `Proceed/Hold/Stop` 判定に必要な証跡ID（ログ/リンク）を追跡できる。
-
-### Validation（docs-check）
-- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
-- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
-
-### Proceed（Open化可否）
-- 判定: **Hold**
-- Stopper:
-  1. 依存 `DOC-OPS-05` の Open gate確定待ち。
-  2. Move internal の移管責務者が未固定。
+- Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
