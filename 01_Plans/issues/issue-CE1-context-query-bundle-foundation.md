@@ -547,3 +547,64 @@ export type ContextBundleV1 = {
 ### Phase 6 Proceed
 - 判定: **Conditional-Go（contract freeze維持）**
 - 依存不整合・契約ID衝突・自己修復上限超過時は `held` 停止。
+
+## Stream E update（2026-05-02 / CE1基盤契約固定）
+
+### Phase 1 Read（再同期Read）
+- 本Issue本文を再読し、前提を `docs-only / contract-only / mock-first / CE1 read-only upstream` に固定。
+- 範囲を `ContextQueryV1` / `ContextBundleV1` 契約本文と検証記述に限定し、実装（handler/UI/DB/worker）を非目標として再確認。
+- 検証粒度を「schema契約・エラー語彙・決定論要件をmock fixtureで単体検証可能な記述密度」に統一。
+
+### Phase 2 CDC（Context / Decision / Consequences）
+- **Context（不整合）**:
+  - 既存記述は契約骨子を満たすが、Query入力制約・Bundle整合チェック・版管理境界が散在し、downstream実装時の解釈幅が残る。
+  - 失敗系語彙は固定済みだが、どの契約違反をどの語彙へ写像するかの最小規約を1箇所で追跡しづらい。
+- **Decision（仕様固定）**:
+  1. Query仕様（入力条件/制約/フィルタ規約）
+     - 必須入力は `queryId/goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`。
+     - `depth` は `0..5` の閉区間、`safeModePolicy` は v1 で `"strict"` 固定、`reviewFilter` は `"reviewedOnly" | "includeUnreviewed"` のみ。
+     - closed-worldとして未定義キーは `400 unknown_contract_key`。
+  2. Bundle仕様（構成要素/整合チェック/版管理）
+     - 必須構成は `queryCanonicalHash/bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`。
+     - 整合チェックは「同一 canonical query で `bundleHash` が一致すること」。不一致は `409 nondeterministic_bundle`。
+     - 版管理は `ContextQueryV1/ContextBundleV1` を v1 凍結し、拡張は v2 以降でのみ許可。
+  3. 安全境界
+     - `previewConfirmed=false` は常に `422 preview_required`（公開前確認の強制）。
+     - CE1は `human_reviewed` への昇格を扱わず、review昇格の自動化記述を禁止。
+     - 公開可否を緩和する語彙（preview bypass / safeMode緩和）は No-Go として維持。
+- **Consequences（トレードオフ）**:
+  - 利点: downstream（CE2/CE4）が mock fixture だけで契約検証可能になり、実装依存を持たず並行開発しやすい。
+  - 制約: v1の拡張自由度は下がり、追加属性要求はv2設計プロセスを必須化する。
+
+### Phase 3 Plan（AC/DoD提案）
+- **AC提案**
+  - [x] Query/Bundle最小必須フィールドを列挙し、閉世界制約を固定。
+  - [x] スキーマ整合規則（deterministic hash）と異常系（422/400/409）の対応を固定。
+  - [x] mock fixtureで単体検証可能な判定粒度（入力制約・整合チェック・失敗語彙）へ分解。
+- **DoD提案**
+  - [x] Issue単体で契約追跡（CDC→AC→Verify）が可能。
+  - [x] downstreamが独立実装できる記述密度（必須項目・境界・失敗語彙）を満たす。
+  - [x] Verifyログ（自己検証・用語整合・self-correction）を記録。
+
+### Phase 4 Execute（allowlist内更新のみ）
+- 本IssueにStream Eの6Phaseログを追記し、CE1契約の散在条件を CDC と AC/DoD に再編。
+- 「最小・明確・テスト可能」を優先し、実装方式を示す記述を追加しない方針を維持。
+- 非目標を固定: 実装コード変更、UI仕上げ、DB構造、worker最適化、運用手順詳細化は対象外。
+
+### Phase 5 Verify（AC/DoD自己検証 + 用語整合 + Self-Correction）
+- **AC自己検証**: Query/Bundle必須項目、整合規則、異常系語彙、mock検証粒度の4点を本文で追跡可能。
+- **DoD自己検証**: CE1契約をIssue内で終端でき、downstreamが参照すべき要素（型・制約・エラー）が独立している。
+- **用語整合**: `safeMode` / `human_reviewed` / `closed-world` / `contract-only` / `mock-first` を上流語彙と一致させた。
+- **Self-Correction（max 3）**
+  - Attempt 1: Query制約の列挙漏れ確認（`previewConfirmed` を必須入力として明記）。
+  - Attempt 2: Bundle版管理の曖昧さ修正（v1凍結・v2拡張のみ許可を明記）。
+  - Attempt 3: 安全境界の粒度調整（review昇格禁止と公開可否緩和禁止を併記）。
+- 判定: **pass（self-correction 3回以内、停止条件未該当）**。
+
+### Phase 6 Proceed（判定 / 残課題）
+- **Proceed判定**: CE1基盤契約（ContextQuery / ContextBundle）の土台固定は完了。
+- **残課題（未決定キュー）**:
+  1. `constraints` / `truncationMeta` のキー標準化（v2候補）。
+  2. `selected/relations/evidence/contradictions` 各要素の最小共通shape（v2候補）。
+  3. canonicalizationアルゴリズム詳細（実装前にCE0/CE1合同で別紙化）。
+- フェイルセーフ: 競合検知・前提崩壊・修復3回超過時は `held` へ停止し、Phase 2 CDCへロールバック。
