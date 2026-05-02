@@ -346,3 +346,31 @@
 
 ### Phase 5 issue更新
 - 判定: **Ready**（停止条件非該当、docs-only維持）。
+
+## Stream I dedicated run（2026-05-02 / DOC-OPS-04-05 security lane）
+
+### Phase 1: Read
+- `AGENTS.md` の Read Order と本Issueを再確認し、対象を docs-only（issue + 04_Documentation）に限定。
+- `04_Documentation/security_operational_guidelines.md` の役割語彙（Security Officer / System Owner / Platform Operator）と導線を再確認。
+
+### Phase 2: ADR/仕様明文化（Context / Decision / Consequences）
+- Context: security lane の最終文書として、公開境界と責務分離の説明が drift しやすい。
+- Decision: 既存分類 `Improve external` を維持し、制度値の再定義は行わず参照導線を優先する。
+- Consequences: 未承認事項の確定化を防ぎつつ、運用判断補助としての責務を維持できる。
+
+### Phase 3: Plan
+- 変更単位: 本Issueに 6Phase 実行記録を追記する最小差分。
+- 整合ルール: 用語統一（3役割）・GoNoGoGate=Required・VerificationLevel=docs-check の一致を維持。
+
+### Phase 4: Execute
+- 実施: 本セクション追記のみ（docs-only）。
+- 非実施: backend/frontend 実装、architecture本文、指定外issue。
+
+### Phase 5: Verify（max 3 repairs）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+- `git diff --check`
+- self-repair: 0/3（4回目相当は停止）。
+
+### Phase 6: Proceed
+- 判定: **Go**（停止条件非該当、docs-only 完結）。
+- 次アクション: security lane の drift-check を次サイクルで再確認。
