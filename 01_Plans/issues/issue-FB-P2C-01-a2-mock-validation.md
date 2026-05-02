@@ -375,3 +375,40 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2C-01 は系列メモ複数運用（2件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream G addendum: FB-P2C-01 A2 lane re-validation lock（2026-05-02）
+
+### Phase 1: Read
+- A1/A2/A3 の最新状態を再確認し、A2の開始前提を `Gate0=Approved` + `A1 contract freeze` + `A3未着手依存なし` に固定。
+- 既存比較キーを再固定: `inputHash` / `seed` / `appliedTieBreakOrder` / `outputPolygonHash` / `paddingViolationCount`。
+
+### Phase 2: ADR/仕様明文化
+- Context: 既存契約の再確認と監査証跡の固定であり、新規上位方針は追加しない。
+- Decision: A2では `deterministicTieBreakOrder=padding>self_intersection>area_delta>vertex_count` を変更禁止とし、unknown key追加を禁止する。
+- Consequences: A3はA2証跡をread-onlyで受領し、契約未確定のまま実装着手できない。
+
+### Phase 3: Plan
+- 順序宣言（直列固定）: `a1(interface) -> a2(mock validation) -> a3(implementation)`。
+- A2検証項目:
+  1. repeatability（同一入力+同一seedの3回一致）
+  2. padding safety（`paddingViolationCount == 0`）
+  3. order integrity（`appliedTieBreakOrder` 完全一致）
+
+### Phase 4: Execute
+- A1契約値の再読のみ実施（変更なし）。
+- A2検証条件を上記3項目にロックし、A3へ渡す鍵を `A2VerifyStatus` と `A2EvidenceRef` に限定。
+- 未確定仕様が残る場合は A3 へ進まない。
+
+### Phase 5: Verify
+- Verify判定: A2は `3/3一致` + `paddingViolationCount==0` + `order一致` を同時達成した場合のみ Pass。
+- 自己修復上限: 3回。超過時は `A2 Verify=Unapproved` を固定して停止。
+
+### Phase 6: Proceed
+- Proceed条件: `A2 Verify=Pass` かつ `A2EvidenceRef` 参照可能。
+- 不明点（承認証跡欠落 / 契約キー増減 / 順序不一致）検知時は即停止する。
+
+### Fail-safe
+- 即停止トリガ:
+  1. 修復3回超過
+  2. 前提崩壊（Gate未承認・A1 freeze不一致）
+  3. 競合検知（他レーン依存・指定外編集要求）
