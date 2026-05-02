@@ -280,3 +280,12 @@
 - Phase 5 Verify: 契約整合 / スキーマ整合 / E2E境界整合の観点で既存ログと矛盾なし。
 - Phase 6 Proceed: **Go**（OPSフェーズへ進行）。
 
+
+## Stream E serial execution log (2026-05-02)
+
+- Phase 1 Read: AUTH-SCHEMA-01 / AUTH-API-02 / AUTH-IMPL-01 の既存契約（strict 403, `users`+`user_identities`, Level1/Level2方針）を再確認。
+- Phase 2 ADR/仕様: 既存決裁済み契約の追認のみを行い、未承認仕様の追加は実施しない方針を固定。
+- Phase 3 Plan: **schema → api → impl → e2e** の直列順を維持し、依存切断は既存 fixture/stub で継続する。
+- Phase 4 Execute: AUTH領域の issue メモ同期（本追記）を実施し、他ストリーム領域には非侵襲。
+- Phase 5 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` と `pytest 03_Implement/backend/tests -k "auth or provision or identity"` で契約回帰を確認。
+- Phase 6 Proceed: 不整合・競合・仕様矛盾を検出しないため **Go**。
