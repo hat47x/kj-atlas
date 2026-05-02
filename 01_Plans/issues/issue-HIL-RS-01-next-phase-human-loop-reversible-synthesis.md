@@ -633,3 +633,43 @@ gate:
 - 判定: **Conditional / Needs-decision**。
 - 理由: 未承認事項（`Approval Record: Pending`）が残存。
 - Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
+
+
+## Stream F serial execution log（2026-05-02）
+
+### Phase 1 Read
+- A1完了後に本Issue本文を再読し、Status=`Open` / Dependencies=`A1 -> A2 -> A3` / `Approval Record: Pending` を抽出。
+- 想定との差分: 既存本文のOwner/allowlist表記がStream C前提のまま残存（本実行はStream F専任）。
+
+### Phase 2 CDC
+- Context: HILループ未固定境界をA1契約へ従属させ、直列依存を破らない。
+- Decision:
+  1. 人間承認が必要な遷移は `Pending -> Approved|Rejected` のみ。
+  2. 可逆性境界は `NoGo return path` をA1へ固定し、A2/A3開放条件を厳守。
+  3. 監査ログ要件は `approved_by` / `approved_at` / `evidence` 必須を維持。
+- Consequences: 即時自動化は抑制されるが、統治性と監査可能性を優先できる。
+
+### Phase 3 Plan
+- AC/DoD不足は新規なし。既存 AC-D1〜D3 / DoD-D1〜D3 を継続。
+- 最低要件の充足確認:
+  - 決定キュー状態定義あり（Pending起点のみ）。
+  - Go/Conditional/No-Go 判定条件あり（既存式を再利用）。
+  - review状態の自動昇格禁止あり（Pending bypass禁止）。
+
+### Phase 4 Execute
+- 直列順2件目として本Issueを更新。
+- 他ファイルへ依存を追加せず、本Issue内の契約運用ログのみ追記。
+
+### Phase 5 Verify
+- A1との契約照合を実施し、`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeMode` / `decisionQueueTransition` の矛盾なし。
+- Self-repair実績: `0/3`。
+
+### Phase 6 Proceed
+- Issue判定: **Conditional**。
+- 根拠: `Approval Record: Pending` と held論点が残存。
+- 次の1手: 人間承認レコード入力後に `A2A3_OPEN_ALLOWED` を再評価。
+
+## Stream F final integrated verdict（2026-05-02）
+- A1判定: **Conditional**（承認待ち）。
+- Next-phase判定: **Conditional**（承認待ち）。
+- 総合判定: **Conditional / Stop**（未承認事項の既成事実化を避けるため、ここで停止）。
