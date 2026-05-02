@@ -379,3 +379,57 @@
 ### Proceed constraints
 - Go/Conditional/No-Go 判定は既存式を維持し、未承認事項は `held` のまま扱う。
 - `Pending -> Done` / `Held -> Done` の禁止遷移は継続。
+
+## Stream B P0 planning baseline fixation（2026-05-01）
+
+### 1) Read（最新状態再読）
+- 再読対象: 本ファイルのみ（allowlist準拠）。
+- 再読結果:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `A1 -> A2 -> A3` 固定、`A2A3_OPEN_ALLOWED` 判定式をSSOTとして維持
+  - `Approval Record` 未入力と `HIL-RS-02-GOV-EXCEPTION-01(held)` が残存
+- 判定: ベースラインは維持されているため、CDC更新へ進行可。
+
+### 2) CDC（Context / Decision / Consequences）
+#### Context
+- Stream B は P0 planning baseline の固定のみを担当し、実装依存を追加しない。
+- A2/A3 解放条件は A1 契約凍結と Decision Queue 解消に依存する。
+
+#### Decision（fixed）
+1. 判定式は既存の `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` を再利用し、再定義しない。
+2. `Approval Record=Approved` かつ `pendingDecisionQueueCount==0` を満たすまで `Go` を返さない。
+3. 未承認論点は `held` のまま保持し、確定化しない。
+4. allowlist外編集要求・未定義競合・self-correction 4回目相当は即停止する。
+
+#### Consequences
+- Planning baseline を固定したまま、A2/A3 への早期確定化を抑止できる。
+- 未承認事項が残る限り、判定は `Conditional / Needs-decision` 維持となる。
+
+### 3) Plan（不足AC/DoDの提案・合意）
+- 追加AC（合意済み）
+  1. `Approval Record` が `Pending` の場合、`Go` を返さない。
+  2. `held` 以外の未承認事項が1件でもある場合は `NoGo`。
+  3. `safeModeDefault=ON` と `SAFE_MODE_STRICT_ON` の後退差分を0件で維持する。
+- 追加DoD（合意済み）
+  1. 本更新で allowlist外ファイル差分が0件であること。
+  2. docs-check（validator/unittest/diff check）が通過すること。
+  3. Proceed判定は `Go/Conditional/NoGo` の固定条件に一致すること。
+
+### 4) Execute（baseline固定）
+- 実施内容: 本セクションを追記し、既存の固定値・判定式・停止条件を明文化。
+- 非実施内容: 他issue編集、実装ファイル編集、実装依存の新設。
+
+### 5) Verify（最大3回自己修復）
+- 実行順序: AC/DoD自己検証 → validator → unittest → diff check。
+- self-correction 上限: 3回。4回目相当で停止して人間判断待ち。
+
+### 6) Proceed（Ready / Hold判定）
+- 判定: **Hold（Needs-decision）**。
+- 理由:
+  1. `Approval Record` 証跡（`approved_by/approved_at/evidence`）が未入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が `held` 維持中。
+- Readyへの再開条件:
+  - `Approval Record=Approved` が証跡付きで充足。
+  - `pendingDecisionQueueCount==0` を確認。
+  - `A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` を再検証。
