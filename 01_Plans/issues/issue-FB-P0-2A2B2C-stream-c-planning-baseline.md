@@ -258,6 +258,23 @@
 - 固定禁止遷移
   1. `Pending -> Done`（Approved bypass）
   2. `Held -> Done`（承認証跡なし）
+
+## Stream A freeze evidence sync（2026-05-02 / A1 contract only）
+
+### Phase 1: Read re-check
+- 対象2ファイルを再読し、`Status / Priority / Dependencies / 固定キー` を照合。
+- 差分結果: `Status=Open`, `Priority=P0`, `Dependencies=A1 -> A2 -> A3` は一致。固定キー差分 `0`。
+
+### Phase 2: ADR/CDC confirmation
+- Context: A1契約が未固定だとA2/A3で契約再定義が発生しうる。
+- Decision: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `A2A3_OPEN_ALLOWED` を凍結SSOTとして維持。
+- Consequences: A2/A3は read-only 参照のみ、実装変更は対象外。未承認事項は `held` / `Needs-decision` のまま保持。
+
+### Phase 3-6: Plan/Execute/Verify/Proceed snapshot
+- Plan: 契約凍結文面のみ同期し、allowlist外は不干渉。
+- Execute: 本baselineとA1契約Issueの契約キー・判定式・停止条件のみ同期。
+- Verify: docs-check + 語彙整合 + 許可ファイル差分のみ確認。
+- Proceed: `Approval Record` 未充足のため状態は `Needs-decision` 維持（Goへ昇格しない）。
   3. `A1 not Done -> A2/A3 Confirmed`
 
 ## Stream G reconciliation note（2026-04-29 / FB残件清算）

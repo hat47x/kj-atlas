@@ -185,6 +185,12 @@
 
 ## Stream A contract fixation sync（2026-05-02 / A1 critical path）
 
+### Stream A serial protocol lock（2026-05-02 / this run）
+- Phase mode: `Plan -> Execute -> Verify -> Proceed` を直列固定（逆走禁止）。
+- Scope lock: allowlist 2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）以外は read-only。
+- A2/A3 rule: read-only参照のみ。A2/A3実装・契約再定義へは踏み込まない。
+- Stop triggers: 前提崩れ / 未定義競合 / allowlist外編集要求 / self-correction 4回目相当。
+
 ### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
 - 対象再読: 本Issue + A1契約Issue群。
 - 未確定項目: `Approval Record`（`approved_by` / `approved_at` / `evidence` 未入力）, `HIL-RS-02-GOV-EXCEPTION-01`（`held`）。
@@ -194,6 +200,7 @@
 - Context: `A1 -> A2 -> A3` 依存の唯一ゲートをA1契約に固定し、派生再定義を禁止する。
 - Decision: `A2A3_OPEN_ALLOWED` を唯一判定式として固定し、A2/A3は read-only 参照のみ許可。
 - Consequences: 未承認事項は `Needs-decision` を維持し、承認完了まで Executeを契約同期（docs）に限定。
+- Approval log: `approved-for-freeze-candidate`（docs scope）。`approved_by` / `approved_at` / `evidence` は未入力のため `Needs-decision` 継続。
 
 ### Phase 3: 契約固定（A2/A3変更禁止範囲を明示）
 - Frozen IDs: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`。
