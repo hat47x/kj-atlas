@@ -167,3 +167,42 @@ git diff --check
 
 ### Phase 6: Proceed
 - 状態: **Go**（Stop条件非該当）。
+
+## Stream J serial execution（2026-05-02 / DX-CODEX 運用導線改善）
+
+### Phase 1: Read
+- 再読対象: `00_Prompt/codex_gsd_skill_ops.md` / `00_Prompt/skills/gsd-kj-atlas/SKILL.md` / `00_Prompt/skills/markdown-mermaid-docops/SKILL.md` / `01_Plans/issues/issue-DX-CODEX-01-codex-skill-adoption-and-validation.md` / `01_Plans/issues/issue-DX-CODEX-02-markdown-mermaid-mcp-doc-ops-adoption.md` / 本書。
+- 目的: DX-CODEX の責務境界（公開stubと内部正本）を維持しつつ、再現可能な検証導線を明確化する。
+
+### Phase 2: ADR/仕様明文化
+- Context: DX-CODEX 系文書は「Done」状態が多く、更新時にどこへ実行証跡を追記すべきかが曖昧になりやすい。
+- Decision: 本書（公開stub）に Stream J の実行ログを追加し、`docs-check + リンク整合 + 再現性` を最小検証セットとして固定する。
+- Consequences:
+  - 正の影響: 次回以降のDX文書更新で Verify 観点が即時再利用できる。
+  - 留意点: 運用詳細は引き続き `00_Prompt/codex_gsd_skill_ops.md` を正本とし、本書は境界説明と証跡窓口に限定する。
+- AC/DoD 提案:
+  - AC-1: docs-only かつ DX-CODEX 直結文書のみ変更。
+  - AC-2: Verifyコマンドを3系統（validator / unittest / diff-check）で記録。
+  - DoD-1: `Move internal` の分類を維持。
+  - DoD-2: 自己修復回数を 0〜3 の範囲で明記。
+
+### Phase 3: Plan
+- 変更文書: `04_Documentation/codex_skill_operations.md` のみ。
+- 期待効果: Stream単位の運用履歴をこの公開stubに集約し、内部正本への導線を崩さずに監査可能性を向上する。
+- 検証方法:
+  1. issue memo validator
+  2. validator unittest
+  3. `git diff --check`
+
+### Phase 4: Execute
+- 本セクションを追記（最小差分）。
+
+### Phase 5: Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check`
+- self-repair: 0/3（失敗なし）。
+
+### Phase 6: Proceed
+- 判定: **Go**。
+- 停止条件（修復超過/前提崩壊/競合検知）: 非該当。
