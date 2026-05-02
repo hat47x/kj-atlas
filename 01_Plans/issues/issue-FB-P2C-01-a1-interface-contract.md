@@ -146,3 +146,39 @@
 ### Phase 4/5: Verify & Proceed gate
 - Verify 結果は AC/DoD自己検証 + docs-check コマンド成功で判定する。
 - Self-Correction は最大3回まで。4回目相当、未定義競合、allowlist外編集要求を検知した場合は停止する。
+
+## Stream A finalization record（P0: A1 Interface Contract Freeze / 2026-05-01）
+
+### Phase 2: CDC approval record
+- Context: `A1 -> A2 -> A3` の順序依存を崩さず、A2/A3の契約再定義を禁止するため、A1のI/F契約を先行固定する必要がある。
+- Decision: A1契約は `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（Contract snapshot date: `2026-05-01`）として凍結し、契約ID・版・互換境界・非目標を下記の通り固定する。
+- Consequences:
+  - A2/A3 は read-only 参照（mock-first）に限定。
+  - 未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）が解消するまで `Needs-decision` を維持。
+  - 破壊的変更（契約ID変更、schema改版、安全境界緩和）はA1再起票時のみ検討可能。
+- Approval status: `approved-for-freeze-candidate`（Stream A docs-check scope）
+
+### Contract freeze boundary（v1 fixed）
+- Contract ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Contract version: `schemaVersion=1.0.0`
+- Compatibility boundary:
+  - 受理対象は固定キー集合のみ（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）。
+  - unknown contract key は `400` を返す。
+- Non-goals（A1 freeze対象外）:
+  1. Runtime実装最適化（backend/frontend/workerのロジック変更）
+  2. 新規契約IDの追加・既存IDの改名/削除
+  3. `schemaVersion` 改版
+  4. `safeModeDefault` / `safeModeBoundary` の緩和
+
+### Phase 5: Verify（self-check）
+- Plan→Execute整合: AC/DoDで要求された判定式・契約固定・mock-first分離を本文内で満たすことを確認。
+- 差分健全性: allowlist内（本Issue）のみ変更。
+- Self-Correction count: `0/3`（追加修復なし）。
+
+### Phase 6: Proceed
+- Decision state: `Needs-decision`
+- Reason: human approval required の未解決項目（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）が残存。
+- Stream A next actions（in-stream only）:
+  1. `Approval Record` の `approved_by / approved_at / evidence` 充足確認。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の判定結果を本Issueへ反映。
+  3. 上記解消後に `Ready` へ遷移し、A2/A3へ read-only freeze 通知を再発行。
