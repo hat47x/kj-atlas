@@ -976,3 +976,38 @@
 - 判定: **Conditional / Needs-decision**。
 - 理由: 未承認事項（`Approval Record: Pending`）が残存。
 - Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
+
+
+## Stream F preparation log（2026-05-02 / Draft-to-Open Preparation）
+
+### Phase 1: Read（依存状態・固定キー確認）
+- 依存再確認: `A1 -> A2 -> A3`、`Dependency status=未確定（A1完了待ち）` を維持。
+- 固定キー再確認: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / unlockRule / decisionQueueTransition` の再定義を禁止。
+
+### Phase 2: ADR/CDC明文化（必須）
+- Context: A1未完了のためA3 Open化不可だが、mock I/F前提の準備は継続可能。
+- Decision: `mock I/F preparation only` を維持し、A3で契約改定・Pending bypassを行わない。
+- Consequences: 依存待ち中でも運用同期の判断材料を蓄積し、誤Openを防止できる。
+
+### Phase 3: Plan（Open gate基準・AC/DoD補完）
+- Open gate基準（再掲）:
+  1. `a1Status=="Done"`
+  2. `pendingDecisionQueueCount==0`
+  3. fixed keys diff=0 / role drift=0 / validator pass
+  4. `Approval Record(approved_by/approved_at/evidence)` 充足
+- AC/DoD補完: `Conditional=PrepGate` と `Go=ProceedGate` の相互排他を維持する。
+
+### Phase 4: Execute（メモ整備のみ）
+- 実施: 本Issue内でOpen gate再確認と停止条件の再記述のみ。
+- 非実施: 04_Documentation編集、契約値変更、A3 Open化。
+
+### Phase 5: Verify（docs-check、3回修復上限）
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `git diff --check -- 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+- self-correction: `0/3`（上限超過なし）。
+
+### Phase 6: Proceed/Stop（未承認/競合/超過は停止）
+- 判定: **Conditional / Hold**（Draft維持）。
+- 理由: `Approval Record: Pending` かつ `a1Status==Done` の証跡未充足。
+- Stop条件: 未承認確定化、固定キー後退、NoGo return path改変要求、self-correction 4回目相当で即停止。

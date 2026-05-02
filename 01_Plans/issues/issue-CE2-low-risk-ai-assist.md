@@ -173,3 +173,39 @@
 - Stopper:
   1. `CE-2` の依存確定条件（誰が何を承認したか）が本Issue単体で未確定。
   2. `Approval Record` の実値（approved_by / approved_at / evidence）が未記入。
+
+
+## Stream F preparation log（2026-05-02 / Draft-to-Open Preparation）
+
+### Phase 1: Read（依存状態・固定キー確認）
+- 依存状態再確認: `Dependency status=未確定（CE-2 Open判定待ち）` を維持。
+- 固定契約再確認: proposal-only / human decision / auto-*禁止 / fail-closed の4点を再読し、矛盾なし。
+
+### Phase 2: ADR/CDC明文化（必須）
+- Context: CE-2依存未確定のため、Draftのまま判断材料整備を継続する必要がある。
+- Decision: 本Issueは「Open化判断材料の整備」に限定し、実装・運用確定を禁止する。
+- Consequences: 依存確定前の誤Proceedを抑止し、承認後の再開手順を維持できる。
+
+### Phase 3: Plan（Open gate基準・AC/DoD補完）
+- Open gate補完:
+  1. `Dependency status=確定`（CE-2 Open判定者/証跡明記）。
+  2. `Approval Record`（日時・承認者・対象・判断）充足。
+  3. proposal-only / fail-closed / safeMode既定ON の後退なし。
+- DoD補完: `Proceed / Hold / Stop` 三値再判定が再現可能であること。
+
+### Phase 4: Execute（メモ整備のみ）
+- 実施: Draft文面の再確認とOpen gate補完項目の明文化のみ。
+- 非実施: 実装作業、契約値追加、承認なしの状態遷移。
+
+### Phase 5: Verify（docs-check、3回修復上限）
+- 実行予定（docs-check固定）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+- self-correction: `0/3`（上限超過なし）。
+
+### Phase 6: Proceed/Stop（未承認/競合/超過は停止）
+- 判定: **Hold**。
+- 理由:
+  1. CE-2依存の確定証跡が未入力。
+  2. Approval Record が未充足。
+- Stop条件: 未承認確定化要求 / 契約衝突 / self-correction 4回目相当を検知した場合は即時 `held`。
