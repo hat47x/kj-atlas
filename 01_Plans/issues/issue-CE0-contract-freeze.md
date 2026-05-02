@@ -1384,3 +1384,126 @@ type PatchProposal = {
 ### Phase 6 Proceed
 - 判定: **Conditional-Go**
 - 条件: 依存不整合・未定義競合・自己修復4回目相当を検知した場合は `held` で停止し指示待ち。
+
+## Stream C latest run（2026-05-02 / CE0 Contract Freeze completion）
+
+- run_id: `stream-c-ce0-2026-05-02-01`
+- assignee: `Stream C（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1: Read（Read再同期）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - read-only参照: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/architecture.md` / `02_Architecture/schemas.md`
+- Decisions:
+  - 現行メタデータを確認: Status=`Open` / Priority=`P1` / Scope=`docs-only, contract-only, mock-first` / Dependencies=`CE-0` / Verification=`docs-check`。
+  - 既存AC/DoDと fail-safe を維持し、Contract ID再定義禁止を継続。
+- Read差分メモ:
+  - 既存ログの lane 表記は Stream B 中心だが、今回依頼は Stream C 専任。契約実体の矛盾はなし、実行レーン名のみ差異として記録。
+- Diffs:
+  - なし（再同期のみ）。
+- Verification result:
+  - 前提崩壊なし、Phase 2へ進行可。
+- Next action:
+  - CDCを明文化して契約凍結点を再承認。
+
+### Phase 2: CDC（Read再同期済み）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - `ADR-0028` CE-0 Contract Matrix、`schemas.md` CE0 Contract Freeze節
+- Context:
+  - 未固定リスクは「実装前に I/F・状態遷移・禁止遷移の解釈が下流で分岐すること」。
+  - 特に `ContextQuery` 必須キー、`bundleHash` 決定論、`Working -> Consensus` の遷移条件、safeMode境界の解釈差が不確実性源。
+- Decision:
+  - Freeze Contract Name/Version: `CE0 Contract Freeze v1`（Snapshot `ce0-contract-freeze-2026-04-27` を継承）。
+  - 固定契約: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+  - 固定内容:
+    - API/型: ContextQuery 必須キー群、ContextBundle deterministic `bundleHash`。
+    - 状態遷移: `Working -> Consensus` は `patch + approval` のみ許可。
+    - エラー契約語彙: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`（v1で凍結）。
+    - 版管理: v1に対する破壊的変更は禁止。拡張は将来v2でのみ許容。
+- Consequences:
+  - 得られる独立性: 下流はモックで独立実行可能（契約I/Fが確定、実装待ち不要）。
+  - 失う柔軟性: v1期間中のキー追加・意味変更・禁止遷移緩和は不可。
+  - 互換方針: backward-compatible additive changeのみ検討可、破壊的変更はNo-Go。
+- Diffs:
+  - 本CDC節を追記。
+- Verification result:
+  - CDC合意条件を満たし、Phase 3へ進行可。
+- Next action:
+  - AC/DoD補完を最小で固定。
+
+### Phase 3: Plan（Read再同期済み）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+- Decisions:
+  - AC固定:
+    1. 契約IDと版（v1）を固定。
+    2. 入出力型・必須/任意属性・エラーコード語彙を固定。
+    3. 状態遷移/禁止遷移を固定。
+    4. モック実装可能条件（スタブ入力/期待出力）を定義。
+  - DoD固定:
+    1. issue内で契約変更点追跡可能。
+    2. 下流参照用の凍結点を明記。
+    3. Verify結果と停止条件を記録。
+- Diffs:
+  - Phase計画節を追記。
+- Verification result:
+  - AC/DoD不足なし。
+- Next action:
+  - Executeで契約本体の凍結点を明文化。
+
+### Phase 4: Execute（Read再同期済み）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+  - read-only参照: `02_Architecture/schemas.md` CE0節
+- Decisions:
+  - Contract Name / Version: `CE0 Contract Freeze v1`（固定）。
+  - Request/Response schema（抽象）:
+    - Request(abstract): `ContextQueryV1{goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode}`
+    - Response(abstract): `ContextBundleV1{bundleHash, ...projection}`
+  - State machine:
+    - Allowed: `Working -> ContextProjection -> (proposal) -> Consensus` with `patch+approval`。
+    - Denied: `Working -> Consensus` direct write、preview bypass、AI review auto-promotion。
+  - Backward compatibility policy:
+    - v1では契約語彙と必須キーの意味を不変化。
+    - 破壊的変更は v2 新設まで禁止。
+  - Mock利用前提:
+    - Query Previewを通過したスタブ入力に対し deterministic bundleHash を返すテストダブルで代替可能。
+    - `proposal/apply` 監査イベントをモックで記録できることを独立実行条件とする。
+- Diffs:
+  - CE0契約凍結点（I/F・状態遷移・互換方針・mock境界）を本実行ログに追記。
+- Verification result:
+  - 契約本体の最小・検証可能・互換志向を満たす。
+- Next action:
+  - VerifyでAC/DoDと差分健全性を確認。
+
+### Phase 5: Verify（Read再同期済み / self-correction上限3）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+- Decisions:
+  - 検証は docs-check + diff健全性 + allowlist逸脱監査を実施。
+- Diffs:
+  - なし（検証記録のみ）。
+- Verification result:
+  - attempt_1: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass
+  - attempt_1: `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass
+  - attempt_1: `git diff --check` => pass
+  - allowlist外編集: 0件
+  - self-correction usage: 0/3
+- Next action:
+  - Proceed判定を記録。
+
+### Phase 6: Proceed（Read再同期済み）
+- Inputs（読んだ対象）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`
+- Decisions:
+  - 最終判定: **Ready**
+  - 理由: CE0 v1 契約（I/F・状態遷移・禁止遷移・互換方針・mock境界）が issue SSOT で追跡可能になり、後続実装はモックで独立実行可能。
+- Diffs:
+  - 最終判定と次アクションを追記。
+- Verification result:
+  - 停止条件非該当（self-correction>3, 前提崩壊, allowlist外必須編集, 安全境界後退 いずれもなし）。
+- Next action:
+  - Stream C内閉域アクション: CE0をread-only契約として維持し、未承認拡張要求は `held` へ送る。
