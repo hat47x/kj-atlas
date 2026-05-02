@@ -234,3 +234,24 @@ def test_context_resolve_bundle_returns_contract_context_decision_consequences()
             assert body["auditChain"]["apply"].startswith("apply:")
     finally:
         settings.api_key = original_api_key
+
+
+def test_context_resolve_bundle_v1_alias_returns_identical_payload() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = {
+                "query": "ce4 resolve alias parity",
+                "dryRun": True,
+                "sourceBundleHash": "sha256:" + "c" * 64,
+                "safeMode": True,
+            }
+            latest_response = client.post("/context/bundles:resolve", json=payload)
+            versioned_response = client.post("/context/v1/bundles:resolve", json=payload)
+
+            assert latest_response.status_code == 200
+            assert versioned_response.status_code == 200
+            assert latest_response.json() == versioned_response.json()
+    finally:
+        settings.api_key = original_api_key
