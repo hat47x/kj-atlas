@@ -840,3 +840,44 @@ governance_gate_v1:
 - 判定: **Conditional / Needs-decision**。
 - 理由: 未承認事項（`Approval Record: Pending`）が残存。
 - Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
+
+
+## Stream G execution log（2026-05-02 / independent lane）
+
+### Phase 1 Read
+- 最新同期を開始時に実施し、`Status=Open` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` を再確認。
+- ガバナンス要件と停止条件（`dual-control`、`Pending bypass禁止`、`NoGo return path固定`、`safeMode境界固定`）を抽出。
+
+### Phase 2 CDC
+- Context: governance hardening で塞ぐべきリスクを `誤Open` / `責務混在` / `override境界逸脱` / `固定遷移ドリフト` に限定。
+- Decision:
+  - 2者承認と責務分離（`overridePolicy=human_dual_control_only`）を固定。
+  - `freezeContractId` / `contractIds` / `decisionQueueTransition` / `safeMode*` を固定値として再定義禁止。
+  - `NoGo return path` は A1 SSOT へ固定し、A1以外への差戻しを禁止。
+- Consequences:
+  - 運用負荷は増えるが、監査証跡と逸脱検知性を優先する。
+
+### Phase 3 Plan
+- AC案（固定化）:
+  1. 契約ID固定（`HIL-RS-02-A1-CONTRACT-FREEZE-v1`）。
+  2. 承認条件固定（`Approval Record: Pending` 残存時は Execute禁止）。
+  3. 逸脱時停止固定（`pendingBypassDetected || undefinedConflictDetected` で NoGo）。
+- DoD案:
+  - A1 hardening と delivery plan の判定式整合が取れている。
+  - Verify証跡（validator / unittest / diff check）が残る。
+
+### Phase 4 Execute
+- A1 hardening 観点を先行適用し、契約固定キーと停止条件を再掲。
+- 実装コード変更は行わず、issue契約整備の範囲に限定。
+
+### Phase 5 Verify
+- AC/DoD整合を自己検証し、語彙ドリフト（`dual-control`、`safeModeBoundary`、`decisionQueueTransition`）不一致なし。
+- Self-Correction: `0/3`（再試行なし）。
+
+### Phase 6 Proceed
+- 判定: **Needs-decision**。
+- 理由: `Approval Record: Pending` が残存し、`held`（`HIL-RS-02-GOV-EXCEPTION-01`）解消前のため。
+- 不足承認項目:
+  1. `approved_by`
+  2. `approved_at`
+  3. `evidence`（ADR-0027 D5/D6整合、A1 contract freeze一致、AC/DoD合意）
