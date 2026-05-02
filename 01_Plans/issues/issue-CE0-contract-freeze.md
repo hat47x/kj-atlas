@@ -1507,3 +1507,46 @@ type PatchProposal = {
   - 停止条件非該当（self-correction>3, 前提崩壊, allowlist外必須編集, 安全境界後退 いずれもなし）。
 - Next action:
   - Stream C内閉域アクション: CE0をread-only契約として維持し、未承認拡張要求は `held` へ送る。
+
+## Stream B latest run（2026-05-02 / CE0 only / phase-serial contract freeze refresh）
+
+- run_id: `stream-b-ce0-2026-05-02-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 対象ファイルの最新状態を再読し、単一ファイル編集制約（本Issueのみ編集可）を再確認。
+- CE0契約IDを抽出して固定値を再確認：`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- 固定パラメータと非機能制約を再確認：`safeMode=true`、`allowUnreviewedText=false`、contract-only / docs-only / mock-first、No-Go canonical IDs不変。
+- 事前想定との差分有無を確認し、`contract_id_mutation=0` / `safeMode_regression=0` / `scope_deviation=0` を確認（差分なし）。
+
+### Phase 2 ADR/仕様明文化（契約先行）
+- Context: CE0 Contract FreezeのSSOTを本Issueに限定し、他ストリーム成果物を前提にせず独立運用を継続する。
+- Decision: CE0契約ID・固定パラメータ・No-Go canonical IDsを凍結し、未承認拡張要求は `held` 扱いとする。
+- Consequences: 契約ドリフトとsafeMode境界後退を予防し、逸脱時は即時停止して監査可能な状態を維持できる。
+- AC/DoD不足確認: 新規不足なし（既存の `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` と `max_self_correction=3` で充足）。
+
+### Phase 3 Plan
+- 対象ファイル: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ。
+- 変更意図: CE0 Contract Freezeの最新実行ログ更新（本run追記）に限定。
+- 非目標: CE0以外の契約確定、実装変更、HIL-RS系・AUTH系・ダッシュボード更新、指定外ファイル編集。
+- 検証計画: `docs-check`（issue memo validator / unittest）と `git diff --check` を実施。
+- 変更境界宣言: 共有リソース（他Issue、README、dashboard、実装コード）には触れない。
+
+### Phase 4 Execute
+- 宣言どおり本Issueへのログ追記のみ実施（contract-onlyの最小変更）。
+- 仕様拡張・契約ID追加改名削除・safeMode既定値変更は未実施。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0 Contract Freezeは本IssueをSSOTとするread-only参照モードを維持する。
+  - 逸脱要求（指定外編集 / Contract ID再定義 / safeMode後退 / self-correction 4回目相当）発生時は即時 `held` 停止。
