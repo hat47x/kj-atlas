@@ -1200,3 +1200,65 @@
 ### Phase 6 Proceed
 - 判定: **Done（contract-only維持）**
 - 逸脱要求・契約衝突・自己修復上限超過時は `held` 停止。
+
+## Phase Execution Record（2026-05-02 / Stream D 専任 / CE0 Core Graph Repositioning independent completion）
+### Phase 1 Read
+- 本Issue最新状態を再読し、Scope/Dependencies/想定I/Fを抽出。
+- Scope抽出: `working` / `context_projection` / `consensus` の責務固定、`working -> consensus` の `patch+approval` 固定、canonical No-Go 5 IDs 固定。
+- Dependencies抽出: CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only 参照のみ。
+- 想定I/F抽出: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
+- Mock Contract Assumption:
+  - `Assumption-CE0-IF-01`: `ContextQueryV1` は query preview 済み入力のみを受理する前提。
+  - `Assumption-CE0-IF-02`: `ContextBundleV1` は deterministic `bundleHash` を返却する前提。
+  - `Assumption-CE0-IF-03`: `ProposalPatchV1` は proposal-only（auto-apply不可）前提。
+  - `Assumption-CE0-IF-04`: `AuditEventV1` は `query/patch/apply` の3イベント追跡が可能な前提。
+
+### Phase 2 CDC（Context / Decision / Consequences）
+- Context: Core Graph再配置では `ConsensusGraph` の直接更新を保護しつつ、`WorkingGraph` の提案を可逆に移送できる契約固定が必要。
+- Decision:
+  - 再配置規則: `working -> consensus` は `patch+approval` のみ許可。
+  - 安定性条件: 同一入力・同一制約では同一 `bundleHash` と同一 `proposal diff` を再現可能。
+  - 可逆条件: 採用済み提案は監査ログ付きで rollback 可能（proposal履歴が失われない）。
+  - 競合規則（固定）:
+    - 循環（cycle）: `held` として昇格停止、直接適用禁止。
+    - 孤立（orphan）: `working` に留め、`consensus` 昇格禁止。
+    - 重複（duplicate）: `proposal` を統合候補として扱い、単独自動採用禁止。
+- Consequences:
+  - 表示差異: Projection上で候補差分表示は増えるが、Consensus確定面は非破壊維持。
+  - 計算コスト: 競合判定（cycle/orphan/duplicate）分の検証負荷が増加。
+  - 後方互換: CE0契約IDとcanonical 5 IDsを維持するため破壊的変更は発生しない。
+
+### Phase 3 Plan（AC/DoD補完と擬似テスト観点）
+- AC補完提案:
+  - AC-7: 再配置ルールは deterministic（同入力同結果）であること。
+  - AC-8: 再配置ルールは reversible（rollback可能）であること。
+  - AC-9: 競合ケース（cycle/orphan/duplicate）の期待挙動が `held/working/proposal統合候補` で定義済みであること。
+  - AC-10: 監査イベント（query/patch/apply）が追跡可能であること。
+- DoD補完提案:
+  - DoD-5: mock入力群で expected outcome（normal/cycle/orphan/duplicate）を再現できる記述があること。
+- 擬似テスト観点（mock cases）:
+  - Case-Normal-01: 非競合提案が `patch+approval` 経由で `consensus` に反映。
+  - Case-Cycle-01: 循環依存提案は `held` で停止。
+  - Case-Orphan-01: 参照欠落提案は `working` に残置。
+  - Case-Duplicate-01: 重複提案は統合候補として表示し自動採用しない。
+
+### Phase 4 Execute
+- allowlist内（本Issueのみ）で計画を固定し、他ファイル変更を行わない。
+- Assumption差替え手順（実契約到着時）:
+  1) `Assumption-CE0-IF-01..04` の該当行を実契約IDへ置換。
+  2) 置換後に canonical語彙（role/transition/no-go）差分がないことを再確認。
+  3) 差分が生じた場合は `held` 化し、承認まで確定しない。
+- 他ファイルへの修正要求は提案止まりとし、本Issueからは編集しない。
+
+### Phase 5 Verify（AC/DoD / minimal assumptions / self-correction）
+- AC/DoDチェック: 既存AC/DoD + AC-7..10 / DoD-5 提案で contract-only 判定に不足がないことを確認。
+- 最小仮定原則チェック: Assumptionは I/F欠落箇所（preview/bundleHash/proposal-only/audit追跡）に限定し、実装詳細の仮定を追加しない。
+- Self-Correction:
+  - #1: 競合規則に自動確定を含まないことを再点検（問題なし）。
+  - #2: SafeMode既定ON後退表現が混入していないことを再点検（問題なし）。
+  - #3: allowlist外編集がないことを再点検（問題なし）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（Stream C 完了待ちなし、read-only契約参照 + Mock Contract Assumption明示で独立進行可能）。
+- 不足契約は `Assumption-CE0-IF-01..04` に局所化済みで、実契約受領後の差替え手順を併記。
+- Hold移行条件（将来）: 上流語彙矛盾、未定義競合、allowlist外必須編集、自己修復4回目相当のいずれかを検知した場合は `stopped_for_clarification` で停止。
