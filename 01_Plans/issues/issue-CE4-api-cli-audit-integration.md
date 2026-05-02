@@ -1409,3 +1409,17 @@
 - 残課題（参照希望止まり）:
   - APIレスポンス/CLI出力の `correlationId` 命名と型の最終固定は、関連ADR/API章の参照更新時に再確認を希望。
 - 依存要求: なし（他ストリームへの実装依頼は行わない）。
+
+## Stream D Execution Snapshot（2026-05-02 / CE4 API-CLI audit integration）
+
+- Phase 1 Read: 完了（CE4契約境界と fail-closed 条項を再確認）。
+- Phase 2 ADR/仕様明文化: 完了（Context/Decision/Consequences と AC/DoD を既存定義で追認）。
+- Phase 3 Plan: 完了（対象=CE4 CLI resolve 接続の最小 fail-closed 検証導線、広域リファクタなし）。
+- Phase 4 Execute: 完了（`resolve-bundle` 応答に必須契約キー検証と `dryRun=true -> sideEffect=none` 検証を追加）。
+- Phase 5 Verify: 完了（CE4 CLI監査テスト群を実行し成功、自己修復 0/3）。
+- Phase 6 Proceed: 完了（前提崩壊/未定義競合なし、契約互換性を維持）。
+
+### Context / Decision / Consequences（CE4-D-2026-05-02）
+- Context: CE4 CLI `resolve-bundle` はAPI応答の契約妥当性を無検証で通過でき、監査4点欠損時に fail-closed を保証できない。
+- Decision: CE4専用の最小接続実装として、CLI 側で必須応答キー（`equivalenceKey/bundleHash/queryCanonicalHash/proposalLifecycle/sideEffect/auditChain`）と `auditChain.query|bundle|proposal|apply`、`dryRun=true` 時の `sideEffect=none` を検証する。
+- Consequences: API署名を変更せずに契約違反をCLIレイヤで即時停止できる。下流実装は mock 応答でも同一契約検証を再利用できる。

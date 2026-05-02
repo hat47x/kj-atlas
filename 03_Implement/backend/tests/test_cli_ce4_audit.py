@@ -10,11 +10,15 @@ from kj_atlas_api.audit import CE4_AUDIT_REQUIRED_FIELDS, CE4_AUDIT_SCHEMA_VERSI
 
 
 class _DummyResponse:
-    def __init__(self, text: str = '{"status":"accepted"}') -> None:
-        self.text = text
+    def __init__(self, payload: dict[str, object] | None = None) -> None:
+        self._payload = payload or {"status": "accepted"}
+        self.text = json.dumps(self._payload)
 
     def raise_for_status(self) -> None:
         return None
+
+    def json(self) -> dict[str, object]:
+        return self._payload
 
 
 def _write_payload(tmp_path: Path, payload: dict[str, object]) -> Path:
@@ -102,7 +106,16 @@ def test_main_ce4_resolve_bundle_hits_resolve_endpoint(monkeypatch: pytest.Monke
 
     def _fake_post(url: str, json: dict[str, object], timeout: float):
         request_log.update({"url": url, "json": json, "timeout": timeout})
-        return _DummyResponse('{"bundleHash":"abc"}')
+        return _DummyResponse(
+            {
+                "equivalenceKey": "a" * 64,
+                "bundleHash": "b" * 64,
+                "queryCanonicalHash": "c" * 64,
+                "proposalLifecycle": "proposed",
+                "sideEffect": "none",
+                "auditChain": {"query": "1", "bundle": "2", "proposal": "3", "apply": "4"},
+            }
+        )
 
     monkeypatch.setattr(cli.httpx, "post", _fake_post)
 
@@ -162,3 +175,32 @@ def test_build_payload_normalizes_ce4_contract_fields_only() -> None:
     assert set(payload.keys()) == set(CE4_AUDIT_REQUIRED_FIELDS)
     assert payload["schemaVersion"] == CE4_AUDIT_SCHEMA_VERSION
     assert "ignoredInput" not in payload
+
+
+def test_main_ce4_resolve_bundle_fail_closed_when_response_missing_required_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _fake_post(url: str, json: dict[str, object], timeout: float):
+        return _DummyResponse({"bundleHash": "abc"})
+
+    monkeypatch.setattr(cli.httpx, "post", _fake_post)
+
+    with pytest.raises(SystemExit, match="missing response field"):
+        cli.main(["ce4", "resolve-bundle", "--query", "q", "--source-bundle-hash", "x" * 64])
+
+
+def test_main_ce4_resolve_bundle_fail_closed_when_dry_run_side_effect_is_not_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _fake_post(url: str, json: dict[str, object], timeout: float):
+        return _DummyResponse(
+            {
+                "equivalenceKey": "a" * 64,
+                "bundleHash": "b" * 64,
+                "queryCanonicalHash": "c" * 64,
+                "proposalLifecycle": "proposed",
+                "sideEffect": "write",
+                "auditChain": {"query": "1", "bundle": "2", "proposal": "3", "apply": "4"},
+            }
+        )
+
+    monkeypatch.setattr(cli.httpx, "post", _fake_post)
+
+    with pytest.raises(SystemExit, match="dryRun=true requires sideEffect=none"):
+        cli.main(["ce4", "resolve-bundle", "--query", "q", "--source-bundle-hash", "x" * 64])

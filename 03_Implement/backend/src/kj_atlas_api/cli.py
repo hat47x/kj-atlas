@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from typing import Any
 
 import httpx
 
@@ -39,6 +40,32 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         sub.set_defaults(operation=operation)
     return parser.parse_args(argv)
 
+
+
+
+def _validate_ce4_resolve_response(payload: dict[str, Any], *, dry_run: bool) -> None:
+    required_fields = (
+        "equivalenceKey",
+        "bundleHash",
+        "queryCanonicalHash",
+        "proposalLifecycle",
+        "sideEffect",
+        "auditChain",
+    )
+    missing = [field for field in required_fields if field not in payload]
+    if missing:
+        raise SystemExit(f"CE4 fail-closed: missing response field(s): {', '.join(missing)}")
+
+    if dry_run and payload.get("sideEffect") != "none":
+        raise SystemExit("CE4 fail-closed: dryRun=true requires sideEffect=none")
+
+    audit_chain = payload.get("auditChain")
+    if not isinstance(audit_chain, dict):
+        raise SystemExit("CE4 fail-closed: auditChain must be an object")
+
+    for event_key in ("query", "bundle", "proposal", "apply"):
+        if event_key not in audit_chain:
+            raise SystemExit(f"CE4 fail-closed: auditChain missing '{event_key}'")
 
 def _build_payload(args: argparse.Namespace, input_payload: dict[str, object]) -> tuple[str, dict[str, object]]:
     doc_id = str(input_payload["docId"])
@@ -100,7 +127,11 @@ def main(argv: list[str] | None = None) -> int:
             timeout=5.0,
         )
         response.raise_for_status()
-        print(response.text)
+        response_payload = response.json()
+        if not isinstance(response_payload, dict):
+            raise SystemExit("CE4 fail-closed: response must be a JSON object")
+        _validate_ce4_resolve_response(response_payload, dry_run=args.dry_run)
+        print(json.dumps(response_payload, ensure_ascii=False))
         return 0
 
     with open(args.input, encoding="utf-8") as fh:
