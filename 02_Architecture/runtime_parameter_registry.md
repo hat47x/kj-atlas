@@ -79,9 +79,11 @@
 | `POSTGRES_PASSWORD` | `kj_atlas` | DBパスワード |
 | `WEB_PORT` | `8080` | web公開ポート |
 | `VITE_KJ_ATLAS_API_BASE` | `/api` | frontend APIベースパス（正規キー） |
-| `VITE_API_BASE` | `/api` | frontend APIベースパス（後方互換shim。将来削除候補） |
+| `VITE_API_BASE` | `/api` | frontend APIベースパス（後方互換shim。互換期間中のみ許容） |
 
 ## 5. ENV-ARCH-01 契約（一括移行）
+
+- backend container defaults (`03_Implement/backend/Dockerfile`) も `KJ_ATLAS_DATABASE_URL` / `KJ_ATLAS_LLM_PROVIDER` を使用し、旧キーを導入しない。
 
 - 切替方式: 一括移行（E1: Option B）
 - 旧キー互換: なし（旧キーは受理しない）

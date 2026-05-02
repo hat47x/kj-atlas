@@ -111,3 +111,12 @@
 - Phase 4 frontend移行: `client.ts` で `VITE_KJ_ATLAS_API_BASE` 優先読取へ移行。
 - Phase 5 backward compatibility shim: `VITE_API_BASE` fallbackを維持（trim + trailing slash正規化）。
 - Phase 6 検証/issue更新: 本節および検証ログを追記。
+
+
+## Stream F Progress (2026-05-02)
+- Phase 1 Read: `ADR-0021` と `runtime_parameter_registry.md` を再確認し、`KJ_ATLAS_*` 単独契約を再検証。
+- Phase 2 ADR/仕様明文化: Context/Decision/Consequences は `ADR-0021`、運用SSOTは本Issueとregistryに分離維持。
+- Phase 3 Plan: 旧prefix→新prefixは backend container default を優先更新、frontendは `VITE_KJ_ATLAS_API_BASE` 正規 + `VITE_API_BASE` shim維持。
+- Phase 4 Execute: `03_Implement/backend/Dockerfile` の `DATABASE_URL` / `LLM_PROVIDER` を `KJ_ATLAS_*` へ更新。
+- Phase 5 Verify: `test_settings_env_prefix_migration.py` と `rg` で旧キー拒否契約および残存箇所を確認。
+- Phase 6 Proceed: 競合なし。互換shim (`VITE_API_BASE`) は独立レイヤとして継続し、将来削除判断を別タスクに分離。

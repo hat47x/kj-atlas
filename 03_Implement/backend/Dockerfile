@@ -16,8 +16,8 @@ COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 
 ENV PYTHONPATH=/app/src
-ENV DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
-ENV LLM_PROVIDER=none
+ENV KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas
+ENV KJ_ATLAS_LLM_PROVIDER=none
 
 EXPOSE 8000
 
