@@ -185,3 +185,18 @@
 - DoD-1: `Plan -> Execute -> Verify -> Proceed` の直列運用を維持する。
 - DoD-2: self-correction 試行回数を `0/3` から記録し、4回目相当で停止する。
 - DoD-3: `Approval Record` 未入力時は `Needs-decision` で停止またはConditional維持。
+
+## Stream A Phase 2 explicit CDC addendum（Contract freeze wording）
+
+### Context
+- Stream A は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を下流参照契約として維持し、A1より先にA2/A3で契約再解釈が起きないことを保証する必要がある。
+- 直近の再読で `contractId / schemaVersion / overridePolicy / audit event set` の4点セットは drift=0 だったため、更新は「明文化不足の補完」に限定できる。
+
+### Decision
+- A1契約の更新は **型定義（interface/type signature）に限定** し、ロジック実装・挙動変更・運用手順変更は本ストリームの対象外とする。
+- 固定4点セット（`contractIds` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `query|bundle|proposal|apply`）は凍結値として維持する。
+
+### Consequences
+- 契約統治の可読性が上がり、A1->A2->A3 の依存順を崩さずにレビュー可能になる。
+- 変更可能範囲が型定義に限定されるため、実装前提の差分混入を防止できる。
+

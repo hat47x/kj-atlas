@@ -268,3 +268,19 @@
   - impact_interface:
   - required_human_approval:
 ```
+
+## Stream A execution constraint addendum（Type-only change boundary）
+
+### Context
+- HIL-RS-02 では A1 契約を先行固定し、A2/A3 は read-only 参照で進行する前提である。
+- そのため、A1作業でロジック実装差分が混入すると `Plan -> Execute -> Verify -> Proceed` の検証軸が崩れる。
+
+### Decision
+- Stream A の Execute は **A1契約の型定義更新のみ** を許可する。
+- 禁止: 実装ロジック変更、runtime挙動変更、A2/A3のOpen化条件変更、`Pending` bypass の導入。
+- Verify では docs-check と契約整合（4点セット一致）を必須化し、失敗時は最大3回まで自己修復する。
+
+### Consequences
+- 契約凍結のまま文書品質を改善でき、下流レーンの参照安定性が向上する。
+- 検証失敗時の復旧手順が明確化され、Fail-safe停止条件との整合が保たれる。
+

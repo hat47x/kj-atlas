@@ -288,3 +288,22 @@ Prohibited for A2/A3:
 - Verify gate: `Go = (a1Status=="Done" && pendingDecisionQueueCount==0 && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true)`
 - Publish mode: `readOnly=true` / `mutationAllowed=false`。
 - 次の判断待ち: Decision Queueに証跡未充足の項目が1件でもあれば `Pending` 維持。
+
+## 9) Stream A change envelope（type-definition only）
+
+### Allowed updates（A1 scope）
+- 許可対象は interface/type signature の明文化・不足注記・整合補足のみ。
+- 追加可能なのは次の条件を全て満たす注記に限る。
+  1. `schemaVersion=="1.0.0"` を維持する。
+  2. `overridePolicy=="human_dual_control_only"` を維持する。
+  3. 監査イベント最小4点セット（`query|bundle|proposal|apply`）を欠損させない。
+
+### Prohibited updates（out of Stream A）
+- 実装ロジック追加・アルゴリズム変更・runtime挙動変更。
+- `contractIds` の追加/削除/改名。
+- `Pending -> Approved|Rejected` 以外の遷移導入。
+- SafeMode / share-export 境界の緩和。
+
+### Verification rule
+- docs-check と契約照合で不一致が出た場合は自己修復を最大3回まで許可し、4回目相当は即停止する。
+
