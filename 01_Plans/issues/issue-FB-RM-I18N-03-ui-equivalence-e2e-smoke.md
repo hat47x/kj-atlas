@@ -76,6 +76,27 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 ### 備考
 - E2E実行時に dev server から `/docs/*` proxy の `ECONNREFUSED` 警告は出るが、今回のフローは UI-only でテストはすべて pass。
 
+
+## Context / Decision / Consequences (Stream H addendum, 2026-05-02)
+
+### Context
+- I18N-03 は `Done` だが、回帰監視観点が E2E 1 系統（query locale）に偏っている。
+- RM stream（MID/SEC/I18N/RS）を独立運用する場合、I18N 側の失敗を feature-level で局所検知できる DoD 文面が必要。
+
+### Decision
+- 本メモの AC/DoD は維持し、追加の **運用DoD案** を提案として固定する（実装変更なし）。
+- 追加DoD案: 「`src/i18n/*.json` の key set 差分を CI で fail-fast 検知する専用チェックを I18N lane の必須ゲートに含める」。
+
+### Consequences
+- 利点: 翻訳差分起因の UI 欠損を unit/E2E 実行前に検出でき、RS/SEC lane へ影響波及しにくくなる。
+- トレードオフ: CI チェック追加時に locale追加PRの手順が増えるため、`I18N-04` 以降で運用テンプレート整備が必要。
+
+## AC/DoD gap draft proposal (for next RM-I18N cycle)
+
+- Draft-AC-G1: locale key-set drift を検知する静的テストが `npm run test:regression-guards` に常時含まれること。
+- Draft-AC-G2: locale query 不正値（例: `?locale=zz`）時に `requested -> ja -> key` へ収束する E2E を 1 本追加すること。
+- Draft-DoD-G3: 失敗時は I18N lane 単独で再現可能な最小 fixture（document 1件）を保持すること。
+
 ## Stream I Done/Completed Audit (2026-04-23)
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
