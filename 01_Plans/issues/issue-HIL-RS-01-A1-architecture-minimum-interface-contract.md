@@ -600,3 +600,38 @@ gate:
 - 判定: **Conditional / Needs-decision**。
 - 理由: 未承認事項（`Approval Record: Pending`）が残存。
 - Stop条件の再掲: 4回目相当self-correction、未定義競合、allowlist外編集要求を検知した場合は即停止。
+
+
+## Stream F serial execution log（2026-05-02）
+
+### Phase 1 Read
+- Issue本文を再読し、Status=`Open` / Dependencies=`A1 -> A2 -> A3` / `Approval Record: Pending` を抽出。
+- 想定との差分: 既存本文のOwner/allowlist表記がStream C前提のまま残存（本実行はStream F専任のため運用上の差分として明記）。
+
+### Phase 2 CDC
+- Context: HILループで未固定の判断境界は「人間承認が必要な遷移」「可逆性を守る操作境界」「監査ログの必須粒度」。
+- Decision:
+  1. 人間承認が必要な遷移は `Pending -> Approved|Rejected` のみ（Pending bypass禁止）。
+  2. 可逆性境界は `NoGo return path` をA1固定とし、A2/A3を開放しない。
+  3. 監査ログ要件は `approved_by` / `approved_at` / `evidence` の3点必須を維持。
+- Consequences: 自動化速度は低下するが、未承認確定化と契約ドリフトを抑止できる。
+
+### Phase 3 Plan
+- AC/DoD不足は新規検知なし。既存の AC-D1〜D3 / DoD-D1〜D3 を継続採用。
+- 最低要件の充足確認:
+  - 決定キュー状態定義: `Pending -> Approved|Rejected` を保持。
+  - Go/Conditional/No-Go 判定条件: 既存判定式を再利用（再定義なし）。
+  - review状態の自動昇格禁止: Pending bypass禁止で担保。
+
+### Phase 4 Execute
+- 実行順固定の1件目としてA1を先に更新。
+- 実施内容は本Issueへの契約密度強化ログ追記のみ（allowlist内）。
+
+### Phase 5 Verify
+- A1内部整合を確認し、固定キー/判定式/NoGo return path の矛盾なし。
+- Self-repair実績: `0/3`（修復不要）。
+
+### Phase 6 Proceed
+- Issue判定: **Conditional**。
+- 根拠: `Approval Record: Pending` が継続し、人間承認未完了。
+- 次の1手: `approved_by` / `approved_at` / `evidence` を入力して再判定。
