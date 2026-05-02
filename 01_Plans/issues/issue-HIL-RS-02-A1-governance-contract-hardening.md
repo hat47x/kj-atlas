@@ -881,3 +881,28 @@ governance_gate_v1:
   1. `approved_by`
   2. `approved_at`
   3. `evidence`（ADR-0027 D5/D6整合、A1 contract freeze一致、AC/DoD合意）
+
+## Stream A contract fixation sync（2026-05-02 / A1 critical path）
+
+### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
+- 対象再読: 本Issue + A1契約Issue群。
+- 未確定項目: `Approval Record`（`approved_by` / `approved_at` / `evidence` 未入力）, `HIL-RS-02-GOV-EXCEPTION-01`（`held`）。
+- 差分判定: 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）は差分 `0`。
+
+### Phase 2: ADR明文化ゲート（Context / Decision / Consequences）
+- Context: `A1 -> A2 -> A3` 依存の唯一ゲートをA1契約に固定し、派生再定義を禁止する。
+- Decision: `A2A3_OPEN_ALLOWED` を唯一判定式として固定し、A2/A3は read-only 参照のみ許可。
+- Consequences: 未承認事項は `Needs-decision` を維持し、承認完了まで Executeを契約同期（docs）に限定。
+
+### Phase 3: 契約固定（A2/A3変更禁止範囲を明示）
+- Frozen IDs: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`。
+- Frozen gate: `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`。
+- Prohibited mutations: 契約ID変更、`schemaVersion`改版、Pending bypass、`safeModeDefault=ON`/`safeModeBoundary=SAFE_MODE_STRICT_ON` 緩和、`NoGo return path` 変更。
+
+### Phase 4: Stream B/C handoff（mock-first）
+- Mock contract: `A1-CONTRACT-MOCK-v1`（実装依存なし）。
+- Handoff package:
+  1. SSOT参照: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  2. 固定値一覧: 本セクション Phase 3
+  3. 変更禁止範囲: `03_Implement/**` と A1以外での契約再定義
+- Stop conditions: self-correction 4回目相当 / allowlist外編集要求 / 前提崩壊 / 未承認確定化。
