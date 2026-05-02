@@ -643,3 +643,33 @@ export type ContextBundleV1 = {
 - 完了条件: docs-onlyでの契約凍結維持・検証実施を満たしたため **proceed**。
 - 未解決事項: なし（推測確定なし）。
 - フェイルセーフ判定: 修復3回超過/前提崩壊/競合検知は未発生。
+
+## Stream D execution note（2026-05-02 / CE1 ContextQuery-ContextBundle Foundation）
+
+### Phase 1 Read
+- 本Issueを再読し、編集範囲が `issue-CE1-context-query-bundle-foundation.md` のみであることを確認。
+- `contract-only / closed-world v1 / mock-first` の責務を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- **Context**: CE1はCE4 mock validationの前提として、実装非依存のI/F契約を固定し続ける必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` のclosed-world契約、`previewConfirmed=false -> 422 preview_required`、`same canonical query && bundleHash不一致 -> 409 nondeterministic_bundle` をv1固定として維持。
+- **Consequences**: CE2/CE4は `sourceBundleHash === bundleHash` および `equivalenceKey + bundleHash` を用いて、実装依存なしに正常/異常系を再現できる。
+- **CDC判定**: 新規衝突なし（`contract_id_collision=0`, `vocabulary_collision=0`）。
+
+### Phase 3 Plan（AC/DoD不足ドラフト）
+- AC補完案: error semanticsは `422/400/409` と `preview_required/unknown_contract_key/nondeterministic_bundle` を1:1固定。
+- DoD補完案: mock validationは「同一canonical queryで3回一致、1回でも不一致で409」を明示し、実装語彙を追加しない。
+
+### Phase 4 Execute（contract-only）
+- 本節の追記のみを実施し、既存契約定義を変更しない。
+- handler/UI/DB/worker/API実装詳細は追記しない。
+
+### Phase 5 Verify（docs-check / diff）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- `git diff --check`
+- 契約語彙確認: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` と `queryCanonicalHash` / `bundleHash` が維持されていることを確認。
+
+### Phase 6 Proceed/Stop
+- **Proceed条件**: docs-only かつ contract-only で v1固定契約を維持できること。
+- **Stop条件**: 競合検知、self-correction 3回超過、または範囲外編集要求で `held`。
+- 判定: **Proceed**（今回の更新は契約維持の実行記録追加のみ）。
