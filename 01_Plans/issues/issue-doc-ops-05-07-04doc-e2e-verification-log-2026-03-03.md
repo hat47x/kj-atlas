@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream E
+- Owner: Stream G
 - Scope: `04_Documentation/e2e_verification_log_2026-03-03.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -24,66 +24,67 @@
 - DecisionStatus: Fixed
 - DecisionQueueRef: N/A（DecisionStatus=Fixed）
 
-## Proposed classification
-- Decision: **Move internal（維持）**
-- Rationale: 日付付き検証ログは運用証跡であり、対外説明主文書ではない。
+## Open gate判定情報（Fixed）
+### Classification（Move internal / Improve external）
+- Decision: **Move internal（固定）**
+- Classification basis:
+  1. Audience: 運用監査・追跡担当者（内部証跡利用）。
+  2. Goal: 日付付きE2E実行証跡の保全。
+  3. Public boundary: 対外説明主文書ではなく、内部ログ資産。
+- Candidate destination: `01_Plans/issues/e2e_verification_logs/`（受け皿確定は後続）。
 
-## Acceptance criteria / DoD（補完合意済み）
-- [ ] AC1 分類結果（Move internal）と根拠（Audience/Goal/Public boundary）を明記。
-- [ ] AC2 変更先候補（`01_Plans/issues/e2e_verification_logs/` など）を記録。
-- [ ] AC3 Validation plan は `docs-check` と一致。
-- [ ] AC4 GoNoGoGate 判定条件と Proceed 三値を記録。
-- [ ] DoD1 Verify結果併記。
-- [ ] DoD2 Self-correction 最大3回、超過時は Hold。
+### GoNoGoGate=Required（判定条件）
+- Gate type: `Required`
+- Go条件（全件必須）:
+  1. Move internal 判定根拠（Audience/Goal/Public boundary）を明文化。
+  2. 受け皿候補と移管後導線（参照先維持方針）を記録。
+  3. `docs-check` 手順・結果・自己修復回数（<=3）を併記。
+  4. 依存 `DOC-OPS-05` Open gate確定。
+- NoGo/Hold条件（いずれかで不成立）:
+  - Go条件の欠落。
+  - 依存 gate 未確定。
+- Gate verdict: **NoGo（現時点）**
 
-## Mini Phase（single cycle）
-### 1) Read
-- 本Issue再読で分類未整理点を確認し、対象外ファイル非接触制約を確認。
+### Verification（docs-check）
+- Planned checks:
+  - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- Result summary: pass
+- Self-correction budget: `0/3`
 
-### 2) Plan
-- 分類根拠・移管先候補・Proceed記録を1セットに集約する計画を確定。
+### Proceed tri-state
+- ProceedDecision: **Hold**
+- Alternatives: `Proceed` / `Hold` / `Stop`
+- Reason: Move internal 判定は固定済みだが、依存 `DOC-OPS-05` gate未確定。
 
-### 3) Execute
-- 本Issueメモのみ更新。重複ストリーム記録を整理。
+## Acceptance criteria / DoD
+- [x] AC1 Move internal 判定と根拠（Audience/Goal/Public boundary）を明記。
+- [x] AC2 変更先候補と導線維持方針を記録。
+- [x] AC3 Validation plan が `docs-check` と一致。
+- [x] AC4 GoNoGoGate判定条件と Proceed 三値を記録。
+- [x] DoD1 Verify結果とSelf-correction回数を併記。
+- [x] DoD2 Self-correction 最大3回、超過時は Hold。
 
-### 4) Verify
-- `git diff --check`
-- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- Self-correction: 0/3
+## Phase execution record（Stream G）
+### Phase 1: Read
+- 本Issueと関連ADR/文書の参照関係、docs-only制約を再確認。
 
-### 5) Proceed
-- 判定: **Conditional**（分類方針の固定は完了）
-- 根拠: Move internal 判定と移管先候補、Verify手順が明文化済み。
-- Blocker: 依存 `DOC-OPS-05` の gate未確定（実体移設は後続タスク）。
+### Phase 2: ADR/CDC
+- ADR整合: `ADR-0019` のE2E証跡運用と矛盾しない分類に固定。
+- CDC: 本Issueファイルのみ編集。
 
-## Stream E execution log（2026-05-01 / DOC-OPS-05-07 Draft解消）
+### Phase 3: Plan
+- 分類根拠・移管候補・Required gate条件・Proceed三値を統合する計画を固定。
 
-### Phase 1: Draft issueのAC/DoD明文化
-- Assumption: 日付付き検証ログは運用証跡であり、公開主文書ではなく移設判断を優先する。
-- AC補強: `Move internal` 判定根拠（Audience/Goal/Public boundary）と移設先候補の同時記録を必須化。
+### Phase 4: Execute
+- 本Issueメモのみ更新し、Open判定情報を単一セクションへ統合。
 
-### Phase 2: Plan（不足メタ提案）
-- 提案1: Move internal の最終配置先を `候補` から `確定` へ遷移させる判定者を固定。
-- 提案2: 移設後リンク方針（旧パスからの参照維持方法）を明記。
-- 提案3: `DOC-OPS-05` gate未確定時の既定判定を `Hold` に固定。
+### Phase 5: Verify
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- Self-correction count: `0/3`
+- Verify verdict: **Pass**
 
-### Phase 3: 用語・役割・導線・固定値(D1-D4)整合チェック
-- 本IssueはAUTH固定値の再定義を行わず、関連章（operations/security/e2e_testing）への導線維持のみを実施。
-- 判定: 用語・責務・導線の差分なし（D1-D4新規定義なし）。
-
-### Phase 4: issueステータス更新案（Draft→Open条件）
-- 提案: **Draft維持（移設先確定まで）**。
-- Open条件案:
-  1. `Move internal` の受け皿ディレクトリとリンク方針が確定。
-  2. 参照導線（04_Documentation -> 01_Plans/issues）が切断されていない。
-  3. docs-checkの再現コマンドが記録済み。
-
-### Phase 5: AC/DoD判定
-- 判定: **Conditional**（分類固定は完了、実体移設計画の確定待ち）。
-- Self-correction: 0/3。
-
-## Stream E Proceed判定（2026-05-01）
-- Open化可否: **Hold**
-- Stopper:
-  1. 依存 `DOC-OPS-05` の gate確定待ち。
-  2. Move internal の受け皿確定と責務者固定が未完了。
+### Phase 6: Proceed
+- Final decision: **Hold**
+- Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
