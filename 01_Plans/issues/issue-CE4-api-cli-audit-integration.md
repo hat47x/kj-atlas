@@ -38,6 +38,7 @@
 
 ### Phase 5 Verify（最大3回修復）
 - 追跡性: API/CLI双方から同一監査チェーン（4イベント+`queryCanonicalHash`）を辿れること。
+- 追跡性(追加): 各監査イベントで `eventType`（`query|bundle|proposal|apply`）と `equivalenceKey` の双方を相関キーとして必須記録し、API/CLIの双方ログから同一実行を往復追跡できること。
 - 再現性: 同一入力で `equivalenceKey/bundleHash/queryCanonicalHash` を比較可能であること。
 - 安全境界: safeMode既定ON と proposal-only 境界の後退がないこと。
 - 修復上限: 検証失敗時の自己修復は `1/3`〜`3/3` まで。`4/3` 相当は fail-safe で即停止し `status=held`。
@@ -48,6 +49,8 @@
   - [ ] API I/F（必須入力・必須出力・fail-closed条件）が固定されている。
   - [ ] CLI I/F（必須オプション・出力JSON・終了コード）が固定されている。
   - [ ] 監査境界（4イベント + `queryCanonicalHash`）欠損時 fail-closed が明記されている。
+  - [ ] 監査4点セット（`query/bundle/proposal/apply`）のいずれか欠損時は **No-Go** と明記されている。
+  - [ ] `eventType` と `equivalenceKey` の追跡可能性（API/CLI相互追跡）が AC として明記されている。
   - [ ] API/CLI同値判定（`equivalenceKey AND bundleHash`）のみ成功とする契約が固定されている。
   - [ ] 実装隊が mock-first で着手可能な独立契約として参照できる。
 - Stop条件（いずれかで即停止）:
