@@ -726,3 +726,10 @@
 - Execute: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を基準検証として実行する。
 - Verify: Self-correction を最大3回までに制限し、3回超過または競合兆候検知時は停止して競合一覧のみ報告する。
 
+## Stream C completion checkpoint（2026-05-03）
+
+- Phase flow: Plan → Execute → Verify → Proceed を A1→A2→A3 直列で完了。
+- Contract consistency: A1/A2/A3 の ContractID 参照は不整合なし。
+- Fail-safe: 契約逸脱・未定義競合は未検知、Self-Correction は 0/3。
+- Proceed decision: Go（次レーンへ引き渡し可能）。
+
