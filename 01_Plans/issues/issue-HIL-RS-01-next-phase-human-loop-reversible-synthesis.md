@@ -22,6 +22,7 @@
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
 
 ## Phase Control Macro（各Phase共通）
+- **Execute gate hard-stop**: `Approval Record: Pending` が1件でも残存する場合、`Phase 4 Execute` は常に禁止（Go/Conditional判定前に停止）。
 - 各Phase開始直前に必ず対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
 - 各Phaseは `Plan -> Execute -> Verify -> Proceed` の順序を必須とし、スキップ/逆走を禁止する。
 - フェイルセーフ検知時（4回目相当self-correction、未承認確定化、未定義競合、指定外編集要求）は即停止し、次の3点を必ず出力する。
