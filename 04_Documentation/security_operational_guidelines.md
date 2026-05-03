@@ -534,3 +534,24 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h/15m/60m
 
 未収束時は自己修復を最大3回まで実施し、4回目相当は `StoppedForClarification` で停止する。
+
+## Stream F docs sync log（2026-05-03）
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、`security.md` / `operations.md` / 本書の同期状態を確認。
+
+### Phase 2 Plan
+- AC/DoDを補完: 用語・役割・導線・固定値（D1-D4）を同時一致させる。
+- Non-goal: 仕様追加、固定値変更、承認フロー正本の再定義。
+
+### Phase 3 Execute
+- 本節を docs-only で追記し、guidelines責務（運用判断補助）を維持したまま4観点一致の証跡を追加。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|strict_mode_exception_approval_flow|e2e_testing|StoppedForClarification" 04_Documentation/security.md 04_Documentation/operations.md 04_Documentation/security_operational_guidelines.md`
+- `git diff --check`
+- 判定: 不整合なし（自己修復 0/3）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**。
+- 停止条件: 4観点不一致または競合兆候検知時は `StoppedForClarification`。

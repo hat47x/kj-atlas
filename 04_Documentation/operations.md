@@ -1192,3 +1192,24 @@ runbook 側の Verify は次の4観点を必須とする。
 - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48hレビュー + 15m/60mエスカレーション
 
 不一致が残る場合は `StoppedForClarification` とし、自己修復は最大3回までとする。
+
+## Stream F docs sync log（2026-05-03）
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を起点に、`security.md` / `operations.md` / `security_operational_guidelines.md` を再読し、runbook同値を確認。
+
+### Phase 2 Plan
+- AC/DoDを補完: 4観点（用語/役割/導線/固定値D1-D4）一致と docs-only スコープ固定。
+- Non-goal: 契約値の改変、承認制度の再定義、他レーン編集。
+
+### Phase 3 Execute
+- 本節を追記し、runbook側の同期判定を `Security Officer / System Owner / Platform Operator`、D1=4h/D2=2h/D3=代理承認なし/D4=48h+15m/60m で固定。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|strict_mode_exception_approval_flow|e2e_testing|StoppedForClarification" 04_Documentation/security.md 04_Documentation/operations.md 04_Documentation/security_operational_guidelines.md`
+- `git diff --check`
+- 判定: 不整合なし（自己修復 0/3）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**。
+- 停止条件: 4観点不一致または競合兆候検知時は `StoppedForClarification`。
