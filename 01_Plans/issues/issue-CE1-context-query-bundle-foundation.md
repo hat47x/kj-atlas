@@ -857,3 +857,49 @@ handoffKeys:
   - Contract ID collision / vocabulary collision / handoff key collision を検知した場合は `held`。
   - 自己修復が3回を超えた場合は `held`。
 - 最終ステータス: **Proceed（CE1 contract-first handoff ready）**。
+
+## Stream D update（2026-05-03 / CE1 foundation interface-first rehearsal）
+
+### Phase 1: Read同期
+- 本対象ファイルを再読し、Scope が `docs-only / contract-only / mock-first` で固定されていることを再確認。
+- メタ差分確認: Contract IDs（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と error semantics（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に差分なし。
+- 判定: **差分なし（continue）**。差分が発生した場合は Status を `held` に固定して停止する。
+
+### Phase 2: ADR明文化（proposal-only 維持）
+- **Context**: CE2/CE4 先行検証で実装依存を持ち込まないため、CE1 は interface-first で契約凍結を優先する必要がある。
+- **Decision**: CE1 v1 は `ContextQueryV1` / `ContextBundleV1` の closed-world 契約、preview gate、hash決定論、固定エラー語彙のみを定義する。
+- **Consequences**: mock-first 検証で正常系/異常系を再現でき、実装詳細（handler/UI/DB/worker）を未確定のまま進行可能。
+- 承認前運用: **proposal-only** を維持し、自動確定・自動公開・auto-apply 導線は追加しない。
+
+### Phase 3: Plan（AC/DoD補完）
+- AC補完提案:
+  - AC-6: contract test で unknown key reject（`400 unknown_contract_key`）を `ContextQueryV1` / `ContextBundleV1` 双方で確認する。
+  - AC-7: hash決定論は同一 canonical query で 3連続一致を必須化し、1回でも不一致なら `409 nondeterministic_bundle` を返す。
+- DoD補完提案:
+  - DoD-3: 依存は **I/F参照依存のみ**（`ADR-0028` / `schemas.md` の契約節）に限定し、実装依存を持ち込まない。
+  - DoD-4: 契約語彙（`query` / `bundle` / `proposal` / `apply`）の意味揺れゼロを Verify で確認する。
+
+### Phase 4: Execute（メモ整備のみ）
+- 本更新は Issue メモ整備のみ（指定ファイルのみ編集）。
+- 契約語彙整合:
+  - `query`: `ContextQueryV1` 入力契約
+  - `bundle`: `ContextBundleV1` 出力契約
+  - `proposal`: 承認前の提案状態（proposal-only）
+  - `apply`: 承認後の適用操作（CE1では未実施・非自動）
+
+### Phase 5: Verify（docs-check相当 + Self-Correction）
+- Verify-1: Scope違反なし（編集対象は本ファイルのみ）。
+- Verify-2: Context / Decision / Consequences が明示され、proposal-only が維持されている。
+- Verify-3: I/F参照依存限定方針が明文化され、実装依存記述が追加されていない。
+- Self-Correction:
+  - Attempt 1: 用語揺れ点検（`query/bundle/proposal/apply`）→ 差分なし。
+  - Attempt 2: stop条件の明示位置を本節内に統合 → 反映済。
+  - Attempt 3: Fail-safe（自動確定/自動公開禁止、SafeMode境界後退禁止）再確認 → 反映済。
+
+### Phase 6: Proceed / Stop
+- Proceed条件: Verify pass かつ self-correction が 3回以内。
+- Stop条件:
+  - self-correction 4回目相当（3回超過）
+  - 未定義競合（Contract ID / error semantics / handoff key）
+  - 前提崩れ（CE0 read-only境界変更、safeMode既定後退）
+- Stop時動作: Status を `held` に固定し、承認完了まで次Phaseへ進まない。
