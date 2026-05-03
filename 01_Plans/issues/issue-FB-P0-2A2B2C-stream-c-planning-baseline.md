@@ -475,3 +475,34 @@
   2. 固定値一覧: 本セクション Phase 3
   3. 変更禁止範囲: `03_Implement/**` と A1以外での契約再定義
 - Stop conditions: self-correction 4回目相当 / allowlist外編集要求 / 前提崩壊 / 未承認確定化。
+
+
+## Stream A sync checkpoint（2026-05-03 / P0 memo only）
+
+### Phase 1 Read
+- Extracted:
+  - Status: `Open`
+  - Priority: `P0`
+  - Scope: allowlist 2ファイルのみ（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）
+  - Dependencies: `A1 -> A2 -> A3`、`A2A3_OPEN_ALLOWED`、`Approval Record`
+  - Verification level: `docs-check`
+- Re-read delta check: 固定キーおよび `A2A3_OPEN_ALLOWED` 判定式の文字列差分 `0`。
+
+### Phase 2 Plan
+- Target: baselineに最新同期記録を追記し、判定式SSOT維持を明文化。
+- Non-target: allowlist外ファイル、実装コード、他streamメモ。
+- AC/DoD:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として維持。
+  2. `NoGo` 条件に `allowlist外編集要求` と `契約未承認でA2/A3確定要求` を含める。
+  3. `held` は未承認のまま維持し確定化しない。
+
+### Phase 4 Execute（contract-only）
+- 判定式・固定キー・SafeMode境界に変更を加えず、2026-05-03時点の同期確認記録のみ追加。
+
+### Phase 5 Verify
+- AC/DoD自己検証: 充足。
+- Self-correction count: `0/3`。
+
+### Phase 6 Proceed
+- State: `Needs-decision`（`Approval Record` 未承認、`held` 継続）。
+- Next single action: 人間判断で `HIL-RS-02-GOV-EXCEPTION-01` の解消可否を確定する。
