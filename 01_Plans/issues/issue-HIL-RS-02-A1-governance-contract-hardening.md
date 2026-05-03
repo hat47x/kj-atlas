@@ -31,6 +31,20 @@
 - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` は境界条件として固定（緩和禁止）
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
 
+
+## Contract Vocabulary Sync Baseline（HIL-RS-02-A1-CONTRACT-FREEZE-v1）
+- Canonical vocabulary（再定義禁止）: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`, `NoGo return path`
+- Canonical values（固定）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Execute prohibition: `Approval Record: Pending` が1件でも残る場合は `Execute=Forbidden`（`Plan/Verify` のみ許可）。
+
 ## Phase Control Macro（各Phase共通）
 - **Execute gate hard-stop**: `Approval Record: Pending` が1件でも残存する場合、`Phase 4 Execute` は常に禁止（Go/Conditional判定前に停止）。
 - 各Phase開始直前に必ず対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
