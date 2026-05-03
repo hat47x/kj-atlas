@@ -88,3 +88,29 @@
 ### Phase 6: Proceed
 - Final decision: **Hold**
 - Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
+
+## Stream F integration log（2026-05-03 / Draft Gate Management）
+
+### Read
+- Move internal 判定・移管候補・依存 gate を再読し、Open条件未達を確認。
+
+### CDC
+- Context: 分類/導線は固定済み、依存 gate は未確定。
+- Decision: 配置見直しの条件定義のみ維持し、移管実行は次段へ保留。
+- Consequences: 推測移管を防止し、監査可能なHold状態を維持。
+
+### Plan
+- Open化条件（未達時Hold）
+  1. `Dependency status=確定`
+  2. 受け皿候補と導線維持方針が未矛盾
+  3. `docs-check` pass + self-correction `<=3`
+
+### Execute
+- メモ整備のみ（実ファイル移管・本文改稿は非実施）。
+
+### Verify（max3）
+- Verify attempt: `1/3`
+- 判定: Pass（条件定義は成立、依存未確定で Proceed不可）。
+
+### Proceed
+- Decision: **Hold**。

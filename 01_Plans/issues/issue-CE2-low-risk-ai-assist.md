@@ -219,6 +219,32 @@
 ### Read
 - CE1/CE2契約の境界を再確認し、CE1未確認時は仕様確定しないフェイルセーフを固定。
 
+## Stream F integration log（2026-05-03 / Draft Gate Management）
+
+### Read
+- proposal-only 契約、監査4点、`sourceBundleHash===bundleHash`、Proceed禁止条件を再確認。
+
+### CDC
+- Context: CE-2依存/CE1契約確認が未確定のため、Open化条件の厳密化が必要。
+- Decision: 実装禁止を維持し、Open化条件を「依存確定 + 承認ログ + 3段Verify通過」に限定。
+- Consequences: 誤Proceedを抑止し、承認後の再開条件を単一化できる。
+
+### Plan
+- Open化条件（未達時Hold）
+  1. `Dependency status=確定`（CE-2 Open判定証跡）
+  2. `Approval Record`（日時/承認者/対象/判断）充足
+  3. V1〜V3 Verify通過、self-correction `<=3`
+
+### Execute
+- 本Issue内のゲート定義整備のみ（実装・運用確定は非実施）。
+
+### Verify（max3）
+- Verify attempt: `1/3`
+- 判定: Pass（条件定義は整合、依存/承認未充足でHold継続）。
+
+### Proceed
+- Decision: **Hold**。
+
 ### ADR明文化（Context / Decision / Consequences）
 - Context: CE2はproposal-onlyを維持しつつ、`sourceBundleHash` をCE1の `bundleHash` と一致検証できる状態で管理する必要がある。
 - Decision: `reviewState` のAI自動昇格を禁止し、Verifyの必須判定に `sourceBundleHash === bundleHash` を追加する。
