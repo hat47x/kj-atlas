@@ -731,3 +731,44 @@ export type ContextBundleV1 = {
 - Proceed条件: Verify pass かつ collision未検知。
 - collision（contract id / error semantics / handoff key）検知時: Proceed禁止、Phase 2へ戻して `held`。
 - 現在状態: **proceed可能（docs contract freeze維持）**。
+
+## Stream E update（2026-05-03 / CE1 contract hard-freeze refresh）
+
+### Phase 1 Read
+- Scope を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` の docs-only に固定。
+- CE1 v1 契約ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）を再確認。
+- 固定語彙 `preview_required` / `nondeterministic_bundle` / `unknown_contract_key` を再確認。
+
+### Phase 2 ADR/CDC 先行合意（Context / Decision / Consequences）
+- **Context**: CE2/CE4 が backend 実装進捗へ依存せずに検証できるよう、CE1 は closed-world 契約と失敗語彙を先行固定する必要がある。
+- **Decision**:
+  1) `ContextQueryV1` / `ContextBundleV1` のキー集合を v1 closed-world として固定（未定義キーは `400 unknown_contract_key`）。
+  2) `previewConfirmed=false` は常に `422 preview_required`（fail-closed）とする。
+  3) 同一 canonical query で `bundleHash` 不一致は常に `409 nondeterministic_bundle` とする。
+  4) hash 決定論は `queryCanonicalHash` + `bundleHash` を契約キーとして固定する。
+- **Consequences**: 実装依存（handler/UI/DB/worker）を切断した mock validation が可能となり、CE1 は contract-only で進行できる。
+
+### Phase 3 Plan（mock validation / implementation decoupling）
+- Plan-1: 正常系 mock（`previewConfirmed=true` かつ `sameQuery && sameBundle`）で pass。
+- Plan-2: 異常系 mock を固定語彙で検証。
+  - `previewConfirmed=false` -> `422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - `sameQuery && !sameBundle` -> `409 nondeterministic_bundle`
+- Plan-3: 決定論要件を「同一 canonical query 入力で 3 回連続一致」に固定し、1回でも不一致なら fail-closed。
+- Plan-4: CE2/CE4 handoff key は `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` のみを受け渡し、実装詳細を渡さない。
+
+### Phase 4 Execute（contract text freeze）
+- 本Issueの契約記述を v1 固定値として運用し、拡張要求は v2 提案へ分離する。
+- v1 の判定式は `sameQuery && sameBundle` を必須とし、推測補完での継続判定を禁止する。
+
+### Phase 5 Verify（proceed / stop）
+- Verify-1: closed-world 契約とエラー語彙が 1:1 対応で固定されていること。
+- Verify-2: hash 決定論（`queryCanonicalHash` / `bundleHash`）と fail-closed 条件が固定されていること。
+- Verify-3: mock-only で CE2/CE4 検証が成立し、実装依存語彙が混入していないこと。
+- 判定: **pass（contract-only proceed）**。
+
+### Self-Correction log（max 3）
+- Attempt 1: `preview_required(422)` の明記位置を Phase 2/3 に統一。
+- Attempt 2: `nondeterministic_bundle(409)` 条件を `sameQuery && !sameBundle` に固定。
+- Attempt 3: hash 決定論要件を `queryCanonicalHash` + `bundleHash` の二段一致に明文化。
+- Guard: 4回目相当（3回超）は **即停止（held）**。
