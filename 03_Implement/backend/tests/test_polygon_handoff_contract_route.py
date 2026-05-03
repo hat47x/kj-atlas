@@ -201,3 +201,32 @@ def test_verify_polygon_handoff_contract_rejects_invalid_hash_shape(client: Test
     response = client.post(f"/docs/{doc_id}/polygon-handoff/verify-contract", json=payload)
 
     assert response.status_code == 422
+
+
+def test_verify_polygon_handoff_contract_rejects_schema_version_mismatch(client: TestClient) -> None:
+    doc_id = "doc-handoff-schema-mismatch"
+    put_response = client.put(f"/docs/{doc_id}", json=_sample_payload(doc_id))
+    assert put_response.status_code == 200
+
+    payload = _sample_contract_payload(
+        input_hash="6" * 64,
+        output_hash="7" * 64,
+        padding_violation_count=0,
+    )
+    payload["input"]["schemaVersion"] = "2026-03-14"
+    response = client.post(f"/docs/{doc_id}/polygon-handoff/verify-contract", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_verify_polygon_handoff_contract_returns_404_when_document_missing(client: TestClient) -> None:
+    payload = _sample_contract_payload(
+        input_hash="8" * 64,
+        output_hash="9" * 64,
+        padding_violation_count=0,
+    )
+
+    response = client.post("/docs/doc-handoff-missing/polygon-handoff/verify-contract", json=payload)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Document not found"
