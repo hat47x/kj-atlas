@@ -673,3 +673,30 @@ export type ContextBundleV1 = {
 - **Proceed条件**: docs-only かつ contract-only で v1固定契約を維持できること。
 - **Stop条件**: 競合検知、self-correction 3回超過、または範囲外編集要求で `held`。
 - 判定: **Proceed**（今回の更新は契約維持の実行記録追加のみ）。
+
+## Stream C update（2026-05-03 / CE1 ContextQuery/Bundle mock verification）
+
+### Phase 1 Read
+- `schemas.md` の CE1 v1 契約（`ContextQueryV1` / `ContextBundleV1`）と固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
+- backend本実装依存を避け、`mock-first` で契約テストのみ更新する方針を確認。
+
+### Phase 2 Plan
+- AC補完: `A2-minimal-v1` fixtureを追加し、契約再現入力を固定化する。
+- AC補完: `preview_required` / `unknown_contract_key` / deterministic hash（3/3一致）を pytest で明示検証する。
+- DoD補完: backend handler内部仕様に依存せず、HTTP契約とhash出力のみで判定する。
+
+### Phase 3 Execute
+- `03_Implement/backend/tests/fixtures/ce1_context_bundle_a2_minimal_v1.json` を追加し、`ContextQueryV1` + `stubDatasetId=A2-minimal-v1` を固定。
+- `test_context_bundle_routes.py` に fixture読込ヘルパーを追加。
+- 同ファイルに以下2テストを追加:
+  - fixture入力で `/context/bundle` 3回実行し `bundleHash` が3/3一致すること（決定論）。
+  - fixtureのqueryに未定義キーを混入した場合に `400 unknown_contract_key` になること（closed-world）。
+
+### Phase 4 Verify
+- `preview_required`: 既存テストで `previewConfirmed=false -> 422 preview_required` を継続確認。
+- `unknown_contract_key`: 既存 + 追加テストで top-level/nested 両方を確認。
+- deterministic hash: fixture入力による `/context/bundle` 3回一致を確認。
+
+### Phase 5 Proceed/Stop
+- 判定: `proceed`（自己修復0回、停止条件未該当）。
+- handoff: CE2/CE4 は当該fixtureと契約テストを read-only 参照して mock 検証を継続可能。

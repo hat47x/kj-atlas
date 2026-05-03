@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from kj_atlas_api.main import app
@@ -23,6 +26,11 @@ def _query_payload() -> dict:
 
 def _bundle_payload() -> dict:
     return {"query": _query_payload(), "stubDatasetId": "A2-minimal-v1"}
+
+
+def _fixture_bundle_payload() -> dict:
+    fixture_path = Path(__file__).parent / "fixtures" / "ce1_context_bundle_a2_minimal_v1.json"
+    return json.loads(fixture_path.read_text(encoding="utf-8"))
 
 
 def test_context_query_preview_required_when_not_confirmed() -> None:
@@ -253,5 +261,33 @@ def test_context_resolve_bundle_v1_alias_returns_identical_payload() -> None:
             assert latest_response.status_code == 200
             assert versioned_response.status_code == 200
             assert latest_response.json() == versioned_response.json()
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_bundle_fixture_contract_is_deterministic_3_of_3() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = _fixture_bundle_payload()
+            responses = [client.post("/context/bundle", json=payload) for _ in range(3)]
+            assert all(response.status_code == 200 for response in responses)
+            hashes = [response.json()["bundleHash"] for response in responses]
+            assert len(set(hashes)) == 1
+    finally:
+        settings.api_key = original_api_key
+
+
+def test_context_bundle_rejects_unknown_nested_query_contract_key() -> None:
+    original_api_key = settings.api_key
+    settings.api_key = None
+    try:
+        with TestClient(app) as client:
+            payload = _fixture_bundle_payload()
+            payload["query"]["unexpectedNestedKey"] = "nope"
+            response = client.post("/context/bundle", json=payload)
+            assert response.status_code == 400
+            assert response.json()["detail"]["code"] == "unknown_contract_key"
     finally:
         settings.api_key = original_api_key
