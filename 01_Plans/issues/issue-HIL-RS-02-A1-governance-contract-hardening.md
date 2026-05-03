@@ -218,6 +218,62 @@ governance_gate_v1:
 
 ## Phase 5: Verify→Proceed
 - AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+
+## Workflow Trace（Read同期 → Plan → ADR合意 → Execute → Verify → Proceed）
+### Step 1: Read同期（single-scope）
+- Read同期対象（固定）:
+  1. `issue-HIL-RS-02-A1-governance-contract-hardening.md`（本Issue）
+  2. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（NoGo return path）
+  3. `ADR-0026` / `ADR-0027` / `ADR-0028`（read-only）
+- Read同期出力（固定）:
+  - `Status=Open`
+  - `Scope=planning only`
+  - `Dependencies=A1 -> A2 -> A3`
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- 判定: 上記固定値に差分が1件でもあれば `held` へ記録し即停止（Execute進行禁止）。
+
+### Step 2: Plan（AC/DoD不足補完提案）
+- 補完提案（Draft; Approval Record合意まで未確定）:
+  1. **AC-ADD-01**: `decisionQueueTransition` が `Pending -> Approved | Pending -> Rejected` 以外を許容しないことを明文化。
+  2. **AC-ADD-02**: `NoGo return path` が単一固定値であることを `diff=0` で検証することを明文化。
+  3. **DoD-ADD-01**: `human_dual_control_only` の同義語・別名・派生キー追加を禁止することを明文化。
+  4. **DoD-ADD-02**: A2/A3向け記述は mock I/F のみ（実装確定禁止）を検証項目として明文化。
+- self-correction policy:
+  - 許容回数は最大3回（4回目相当は fail-safe 即停止）。
+  - 各再試行で「原因 / 修正内容 / 未解決論点」を更新し、未承認事項は `held` に維持する。
+
+### Step 3: ADR合意（必要時）
+- ADR更新が必要となる条件:
+  1. `freezeContractId` / `contractIds` / `overridePolicy` / `safeMode*` の定義変更が必要になった場合。
+  2. `A2A3_OPEN_ALLOWED` の論理式に変更要求が入った場合。
+- 上記条件に1つでも該当する場合は `ADR-0027` を起点に合意完了まで `Execute=NoGo`。
+- 本Issue単独で確定できるのは **契約固定の文書化** のみ（規範変更は不可）。
+
+### Step 4: Execute（contract hardening doc fix）
+- 実施内容は本Issue文書内の固定キー・判定式・禁止遷移の整形/明確化に限定する。
+- scope外編集は禁止（allowlist外ファイル変更は fail-safe 即停止）。
+- 依存は mock可能I/F で切断し、A2/A3の状態遷移確定を実施しない。
+
+### Step 5: Verify
+- 実行順序（固定）:
+  1. AC/DoD自己検証
+  2. `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  3. `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  4. `git diff --check`
+- 失敗時は self-correction を最大3回まで実施し、4回目相当で即停止。
+
+### Step 6: Proceed
+- `Proceed=Go` 条件:
+  - `A2A3_OPEN_ALLOWED==true` かつ `validatorPass==true` かつ `pendingApprovalCount==0`
+- `Proceed=Conditional` 条件:
+  - `A2A3_OPEN_ALLOWED==false` かつ `heldCount>0` かつ `unresolvedApprovalsAreHeldOnly==true`
+- `Proceed=NoGo` 条件:
+  - 上記以外すべて（特に pending bypass / undefined conflict / scope外編集要求）
+- `NoGo` 時は以下3点を必須出力:
+  1. 原因
+  2. 影響I/F
+  3. 人間判断が必要な論点
 - 失敗時は Self-Correction を最大3回まで実施し、4回目相当はフェイルセーフ停止する。
 - Self-Correction counterは `0/3` で開始し、各再試行で `+1` を明示記録する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
