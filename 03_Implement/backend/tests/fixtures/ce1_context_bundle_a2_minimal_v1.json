@@ -1,0 +1,17 @@
+{
+  "query": {
+    "queryId": "q-ce1-fixture-1",
+    "goal": "find stable context",
+    "scope": "document",
+    "depth": 2,
+    "constraints": {
+      "islandIds": ["island-1"],
+      "tags": {"priority": "high"}
+    },
+    "reviewFilter": "reviewedOnly",
+    "safeModePolicy": "strict",
+    "outputMode": "summary",
+    "previewConfirmed": true
+  },
+  "stubDatasetId": "A2-minimal-v1"
+}
