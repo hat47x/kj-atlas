@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream C contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
+- Dependencies: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（contract reference only）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）, `A1 -> A2 -> A3`（gate reference）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 - Non-target file policy: 本ストリームで編集許可された4 Issue（`issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-next-phase-delivery-plan.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md`）以外は不干渉
@@ -20,6 +20,20 @@
 - `NoGo return path` 固定: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（変更禁止）
 - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` は境界条件として固定（緩和禁止）
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
+
+
+## Contract Vocabulary Sync Baseline（HIL-RS-02-A1-CONTRACT-FREEZE-v1）
+- Canonical vocabulary（再定義禁止）: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`, `NoGo return path`
+- Canonical values（固定）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Execute prohibition: `Approval Record: Pending` が1件でも残る場合は `Execute=Forbidden`（`Plan/Verify` のみ許可）。
 
 ## Phase Control Macro（各Phase共通）
 - 各Phase開始直前に必ず対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー` をRead同期する。
