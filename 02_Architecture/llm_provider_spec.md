@@ -151,3 +151,28 @@ LLM_FIXTURE_DATASET=<fixture_dataset_path>
 - 品質戦略: `02_Architecture/llm_quality_strategy.md`
 - エスカレーション方針: `02_Architecture/llm_escalation_policy.md`
 - 計画正本: `01_Plans/adr/ADR-0009-local-llm-integration.md`
+
+
+## 9. CE1 ContextQuery/ContextBundle Contract Bridge（contract-only / mock-first）
+
+本仕様は provider 抽象の正本であるが、CE1基盤の query/bundle 契約整合を次の通り固定する。
+
+### 9.1 Closed-world contract（v1）
+
+- `ContextQueryV1` / `ContextBundleV1` は v1 で closed-world とし、未定義キーを拒否する。
+- 未定義キーは `400 unknown_contract_key` を返す。
+- `previewConfirmed=false` は provider 呼び出し前に `422 preview_required` として失敗させる。
+
+### 9.2 Deterministic hash gate
+
+- `queryCanonicalHash` と `bundleHash` は監査キーとして必須扱いにする。
+- 同一 canonical query で `bundleHash` が一致しない場合は `409 nondeterministic_bundle` を返し、provider実行を継続しない。
+
+### 9.3 Mock validation profile（実装依存切断）
+
+実LLM接続未確定でも以下を fixture で検証できる状態を DoD とする。
+
+1. `previewConfirmed=false -> 422 preview_required`
+2. 未定義キー -> `400 unknown_contract_key`
+3. 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3 一致
+4. 3回中1回でも不一致なら `409 nondeterministic_bundle`

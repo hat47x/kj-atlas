@@ -125,3 +125,19 @@ CE2 runtime では次のキーを記録し、同一入力で再現検証でき�
 - 漏洩防止境界の弱体化
 - 未定義状態遷移
 - Contract ID 衝突または意味不一致
+
+## 9. CE1 Verify Workflow Lock（Phase 1..6）
+
+CE1 contract 作業は次の直列Phaseを固定し、スキップ・逆走・並列化を禁止する。
+
+1. Phase 1 Read
+2. Phase 2 CDC（Context / Decision / Consequences）
+3. Phase 3 Plan（AC/DoD不足は提案して合意）
+4. Phase 4 Execute（contract-onlyで固定）
+5. Phase 5 Verify（失敗時は自己修復を最大3回）
+6. Phase 6 Proceed（参照専用 handoff）
+
+停止条件:
+
+- Verify失敗が3回を超えた場合は `held` で停止する。
+- Contract ID collision / error semantics collision を検知した場合は即停止し、Phase 2へ戻す。
