@@ -218,6 +218,22 @@
 #### Decision（不足ドラフト）
 - AC-5（追加）: `NoGo return path` が A1 issue を一意参照していることを毎回検証する。
 - DoD-4（追加）: Verify結果に self-correction試行回数（0〜3）を明記し、4回目相当で停止判断を再利用可能にする。
+
+## Stream F integration log（2026-05-03 / Draft Gate Management）
+
+### Read
+- `A1 -> A2 -> A3` 依存と固定キー群を再確認し、A1未完のため Open不可を確認。
+
+### CDC
+- Context: A3は契約再定義ノードではなく運用同期ノード。
+- Decision: mock I/F preparation only を維持し、Open判定は `ProceedGate=true` 時のみ許可。
+- Consequences: 依存未達でも準備継続は可能、契約改定は停止。
+
+### Plan / Execute / Verify / Proceed
+- Plan: `ProceedGate / PrepGate / NoGo` 三値を固定し未達時Hold。
+- Execute: docs-only の記述整備に限定。
+- Verify: attempt `1/3`、fixed keys diff=0 前提で継続。
+- Proceed: **Conditional(Hold相当)**（`a1Status!="Done"` 維持）。
 - 合意状態: **Draft（本Issue内で先行固定、Open化時に人間承認で最終化）**。
 
 #### Consequences

@@ -89,3 +89,29 @@
 ### Phase 6: Proceed
 - Final decision: **Hold**
 - Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
+
+## Stream F integration log（2026-05-03 / Draft Gate Management）
+
+### Read
+- Scope/Dependency/Gateを再読し、`DOC-OPS-05` 依存未確定のため Open化不能であることを再確認。
+
+### CDC
+- Context: Move internal 判定は固定済みだが、依存 gate 未確定。
+- Decision: Draftを維持し、Open化条件を「依存確定 + docs-check再現 + 自己修復<=3」に限定。
+- Consequences: 推測進行を防止し、Proceed誤判定を抑止。
+
+### Plan
+- Open化条件（未達時Hold）
+  1. `Dependency status=確定`（証跡付き）
+  2. Required Gate のGo条件4件を満たす
+  3. Verify結果（`docs-check`）と self-correction回数（`<=3`）を再掲
+
+### Execute
+- メモ整備のみ（実装コード変更なし）。
+
+### Verify（max3）
+- Verify attempt: `1/3`
+- 判定: Pass（本メモはゲート定義として整合、ただし依存未確定）。
+
+### Proceed
+- Decision: **Hold**（依存 gate 未確定）。

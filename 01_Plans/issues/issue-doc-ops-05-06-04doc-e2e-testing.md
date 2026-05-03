@@ -88,3 +88,29 @@
 ### Phase 6: Proceed
 - Final decision: **Hold**
 - Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
+
+## Stream F integration log（2026-05-03 / Draft Gate Management）
+
+### Read
+- `ADR-0019` 参照整合、Required Gate、依存状態を再読し、Open化前提未達を確認。
+
+### CDC
+- Context: Improve external 判定は固定済みだが、依存 gate が未確定。
+- Decision: 判定情報の固定に限定し、本文改稿・実装変更を行わない。
+- Consequences: Open化条件のみを明示し、依存確定まで Hold を維持。
+
+### Plan
+- Open化条件（未達時Hold）
+  1. `DOC-OPS-05` Open gate 確定
+  2. `ADR-0019` との整合記録維持
+  3. `docs-check` 再実行で pass、self-correction `<=3`
+
+### Execute
+- メモ整備のみ（Docs/Plan範囲、実装コード変更禁止を維持）。
+
+### Verify（max3）
+- Verify attempt: `1/3`
+- 判定: Pass（判定情報は整合、依存未確定のため Proceed不可）。
+
+### Proceed
+- Decision: **Hold**。
