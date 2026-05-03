@@ -279,3 +279,15 @@
 2. 本Issueは同判定式へ整合し、A2/A3へは契約面のみを引き渡す。
 3. 下流依存は `A1-CONTRACT-MOCK-v1` 前提で分離し、実装接続を行わない。
 - Execution status: `blocked-by-approval`（承認取得まで停止）。
+
+
+## Stream A Phase 1 stop report（2026-05-03 / critical path fail-safe）
+
+- Phase: `Read同期`
+- Result: `held`（停止）
+- Reason: 対象2ファイルの `Status/Priority/Dependencies/Related ADR/freeze keys` を再読照合した結果、以下の差分を検知。
+  1. `Dependencies` の記述粒度が不一致（baselineは `freezeContractId` / `unlockRule` SSOTを明示、A1側は未明示）。
+  2. `Related ADR` の列挙が不一致（baselineに `ADR-0019` を含み、A1側は未列挙）。
+- Action: フェイルセーフに従い Execute へ進まず停止。推測補完・契約再定義は未実施。
+- SafeMode boundary: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持（後退なし）。
+- Next required human instruction: 差分解消方針（どちらをSSOTとするか）を明示する承認指示。
