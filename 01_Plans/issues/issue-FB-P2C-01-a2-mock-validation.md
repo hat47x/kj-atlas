@@ -126,6 +126,20 @@
 - Proceed:
   - A2 Verify Pass をA3開始条件に引き渡し。
 
+## 12) Stream B serial closeout（2026-05-03）
+
+### Phase 3: A2モック検証（再確認）
+- fixture/stub契約は `A1-CONTRACT-MOCK-v1` 前提で継続し、A1契約値（ID/版/tie-break順序）に変更なし。
+- 比較キー（`inputHash`, `seed`, `tieBreakOrder`, `outputPolygonHash`, `paddingViolationCount`）の欠損なしを再確認。
+
+### Phase 5: Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、active issue memo検証が成功。
+- A2の `DecisionStatus=Fixed` と `A2 Verify Pass` をA3開始条件として再固定。
+
+### Phase 6: Proceed
+- A2は完了（Done）を維持。
+- 停止条件（`appliedTieBreakOrder mismatch` / `paddingViolationCount > 0` / `outputPolygonHash drift`）は引き続きA3側のblock criteriaとして有効。
+
 ### Phase 3: A3（Implementation Handoff Input）
 - Plan:
   - A3開始条件、実装着手条件、ロールバック条件を明文化する。
