@@ -115,3 +115,33 @@
 
 ### Proceed
 - Decision: **Hold**（依存 gate 未確定）。
+
+## Draft gate解消条件（Open化判定・合意形成専用 / 2026-05-03）
+
+### Phase 1〜6 適合チェック（厳守）
+- Phase 1 Read: 上位根拠（関連ADR/Spec）再読ログが当日付で記録されている。
+- Phase 2 ADR/CDC: `Context / Decision / Consequences` が本Issue内で更新されている。
+- Phase 3 Plan: AC/DoD/依存関係/停止条件が明文化されている。
+- Phase 4 Execute: **メモ整備のみ** を実施し、実装変更（`03_Implement/**`）が 0 件である。
+- Phase 5 Verify: docs-check 実行結果と self-correction 回数（`<=3`）が記録されている。
+- Phase 6 Proceed/Stop: Open可否を `Proceed / Hold / Stop` の三値で記録している。
+
+### Open化 AC（全件必須）
+- [ ] AC-Open-1: 依存ステータスが `確定` であり、承認証跡（日時・承認者・対象・判断）が追跡可能。
+- [ ] AC-Open-2: 本Issueの Go 条件と NoGo/Hold 条件が矛盾なく併記されている。
+- [ ] AC-Open-3: docs-check 結果が最新化され、self-correction が `3回以内`。
+- [ ] AC-Open-4: 実装禁止（proposal-only / docs-only / mock I/Fのみ など当該契約）を維持したまま判断情報が完結している。
+
+### Open化 DoD（完了定義）
+- [ ] DoD-Open-1: Open判定に必要な入力（AC/DoD/Dependency/Verification）が本Issue単体で再読可能。
+- [ ] DoD-Open-2: 未承認・依存未確定・検証未達のいずれかで **自動的に Hold/Stop** へ遷移する fail-safe が残っている。
+- [ ] DoD-Open-3: 次工程への引継ぎ文が「実装禁止解除条件」を1文で含む。
+
+### 停止報告（Open化不可時）
+- 判定: **Hold（Open化不可）**
+- 停止理由: 依存または承認証跡が未確定のため、Draft gate を解消できない。
+- 必須アクション（合意形成のみ）:
+  1. 依存判定者が `Dependency status=確定` を記録。
+  2. 承認ログ最小項目（日時・承認者・対象・判断）を補完。
+  3. docs-check を再実行し、self-correction 回数を更新。
+- 再開条件: 上記 1〜3 が揃った時点で Phase 6 を再判定する。
