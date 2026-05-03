@@ -1622,3 +1622,50 @@ type PatchProposal = {
 ### Phase 6 Proceed
 - 判定: **Conditional-Go**
 - 条件: CE0 Contract Freezeは read-only参照運用を継続し、逸脱要求・前提崩壊・自己修復4回目相当要求が発生した場合は即時 `held` 停止。
+
+## Stream B latest run（2026-05-03 / CE0 only / interface-freeze-first independent execution）
+
+- run_id: `stream-b-ce0-2026-05-03-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0 / cross_stream_dependency=0`
+
+### Phase 1 Read
+- Phase開始前に本Issueを再読し、編集許可が単一ファイル限定であることを確認。
+- 指示を再確認: Phase構成はA同一（Phase 1〜6）、contract-only / mock-first / docs-only 維持、他Stream成果物に依存しない独立完結を必須化。
+- fail-safe（指定外編集 / safeMode既定値後退 / Contract ID再定義 / cross-stream dependency混入）で即停止する条件を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract FreezeのSSOTを本Issue単体で維持し、実装・他文書更新を伴わずにI/F確定順序を明示する必要がある。
+- Decision: 実装論点より先にインターフェース定義（schema/API型）を凍結し、実装は mock 切替前提で依存を断つ方針を固定する。
+- Consequences: 下流実装は contract-first で独立実行可能になり、他Streamの進捗有無に関係なく CE0境界で検証できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC起票なし。
+
+### Phase 3 Plan
+- 優先順序を固定:
+  1) schema/API型のI/F定義凍結
+  2) mock切替前提の実装接続点定義（依存遮断）
+  3) Verifyで凍結逸脱ゼロを確認
+- Plan制約:
+  - CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の追加/改名/削除は禁止。
+  - 他Stream成果物（CE1/CE2/CE4の新規決定）を前提条件として参照しない。
+  - 実装詳細は確定せず、mock-first接続可能性の記録に限定する。
+
+### Phase 4 Execute
+- 実施: 本Issue内に contract-first（I/F先行確定）と mock-first（依存遮断）および独立完結ルールを実行ログとして追記。
+- 非実施: 指定外ファイル編集、実装コード変更、safeMode既定値変更、Contract ID再定義、他Stream成果物の取り込み。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: `interface_freeze_first=pass` / `mock_dependency_cut=pass` / `cross_stream_dependency=0`。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0は schema/API型I/F先行凍結を維持し、実装論点は mock切替前提で依存遮断を継続する。
+  - 他Stream成果物を前提化する要求が発生した場合は即時 `held` 停止。
+  - 逸脱（指定外編集 / safeMode既定値後退 / Contract ID再定義 / 自己修正4回目相当）が発生した場合も即時 `held`。
