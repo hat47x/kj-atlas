@@ -1583,3 +1583,42 @@ type PatchProposal = {
 - 条件:
   - CE1/CE2/CE4は CE0 Contract IDs / No-Go canonical IDs を read-only 参照のみで利用。
   - 未定義競合・前提崩壊・自己修復4回目相当要求時は即 `held` 停止（フェイルセーフ発動）。
+
+## Stream B latest run（2026-05-03 / CE0 only / strict single-file contract freeze lane）
+
+- run_id: `stream-b-ce0-2026-05-03-02`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、固定順序 **Read → ADR/CDC → Plan → Execute → Verify → Proceed** を再確認。
+- contract-only / docs-only / mock-first、ならびに Contract ID追加/改名/削除禁止を再確認。
+- safeMode既定値後退禁止と self-correction 上限3回（4回目相当で停止）を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract Freeze SSOTを本Issue単一ファイルで維持し、指定外編集を行わない。
+- Decision: CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）および No-Go canonical IDs を固定し、再定義しない。
+- Consequences: 契約ドリフトと安全境界後退を抑止し、逸脱要求発生時は `held` に即時遷移可能。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`（新規CDC起票なし）。
+
+### Phase 3 Plan
+- AC/DoD確認: `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` / `dod_verify_retry_cap(max=3)` を継続。
+- 実施計画: 本Issueへの実行ログ更新のみ。
+- 停止条件: 指定外編集、safeMode既定値後退、Contract ID変異、self-correction 4回目相当。
+
+### Phase 4 Execute
+- 実施: 本Issue内の実行ログ追記のみ（single-file / docs-only）。
+- 非実施: 実装変更、指定外ファイル編集、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- diff範囲検証: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ変更を確認。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件: CE0 Contract Freezeは read-only参照運用を継続し、逸脱要求・前提崩壊・自己修復4回目相当要求が発生した場合は即時 `held` 停止。
