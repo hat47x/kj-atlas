@@ -1351,3 +1351,32 @@
 ### Phase 6 Proceed
 - 判定: `Done`（Phase 1〜6順守、contract-only維持、差分分離方針を明記、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
+
+## Phase Execution Record（2026-05-03 / Stream C / candidate-adr-clarification for contract-only）
+### Phase 1 Read
+- 対象ファイルを再読し、固定キー `Status / Priority / Scope / Dependencies / Related ADR/Spec` を確認。
+- 差分判定: 想定差分なし（`Status: Open`、`Priority: P1`、`Scope: 01_Plans/issues（docs-only / contract-only / mock-first）`、`Dependencies: CE-0`、`Related ADR/Spec: ADR-0028, 02_Architecture/schemas.md`）。
+- `role / transition / no-go` 固定語彙、SafeMode既定ON境界、single-file 制約に変更なし。
+
+### Phase 2 ADR明文化（候補・未確定）
+- Context（候補）: CE0 Core Graph Repositioning は contract-only / mock-first 前提で、`working / context_projection / consensus` の責務境界を実装非依存で参照可能に保つ必要がある。
+- Decision（候補）: 本Issueでは契約記述整備のみを行い、`working -> consensus` の `patch+approval` 以外の遷移は追加しない。承認前は確定扱いにせず `候補` として保持する。
+- Consequences（候補）: 後続実装は承認済み契約のみ参照し、未承認論点は `held` で停止管理する。SafeMode既定ONの後退を伴う変更は受理しない。
+
+### Phase 3 Plan
+- AC/DoD は既存定義で不足なし（追加ドラフト不要）。
+- Non-goals を再明記: 実装変更禁止、指定外ファイル編集禁止、契約ID再定義禁止。
+- 合意前確定禁止を適用し、Phase 2 は候補状態を維持。
+
+### Phase 4 Execute
+- 実施内容は本Issueへの実行記録追記のみ（single-file / docs-only / contract-only）。
+- 契約語彙の一貫性（`role / transition / no-go`）を維持し、実装記述は追加しない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Self-Correction: 0/3（失敗なし）。
+
+### Phase 6 Proceed/Stop
+- 判定: `Proceed (Ready)`（docs-check観点 pass、single-file 制約遵守、候補は未確定維持）。
+- 停止条件発生時（語彙差分/前提崩壊/未定義競合/範囲外編集要求）は `held` で即停止する。
