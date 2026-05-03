@@ -7,8 +7,8 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream C contracts)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
-- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Dependencies: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（contract reference only）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）, `A1 -> A2 -> A3`（gate reference）
+- Related ADR/Spec: `ADR-0026`（Context）, `ADR-0027`（Decision）, `ADR-0028`（Consequences）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（contract SSOT）
 - Expected verification level: `docs-check`
 - Non-target file policy: Stream C allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
 
@@ -28,6 +28,12 @@
   1. 原因
   2. 影響I/F
   3. 人間判断が必要な論点
+
+
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
 
 ## Phase 1: Read
 - Phase開始直前に本ファイルを再読し、語彙・判定式・held条件の差分有無を確認する。
@@ -199,7 +205,13 @@ gate:
 
 ## Stream C critical-path execution log（2026-04-27 / contract governance hardening）
 
-### Phase 1: Read
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read
 - 再読対象: 本Issue本文。
 - Read同期チェック（`Status / Scope / Dependencies / freezeContractId / schemaVersion / overridePolicy / safeModeDefault`）を実施し、差分 `0` を確認。
 - 追加チェック: `NoGo return path` / `decisionQueueTransition` / `safeModeBoundary` も差分 `0`。
@@ -230,7 +242,13 @@ gate:
 
 ## Stream C execution runbook log（2026-04-27 / Critical Path replay）
 
-### Phase 1: Read snapshot（before change）
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read snapshot（before change）
 - Status snapshot: `Open`（A3のみ `Draft`）
 - Scope snapshot: `01_Plans/issues/`（planning only）
 - Dependencies snapshot: `A1 -> A2 -> A3`
@@ -278,7 +296,13 @@ gate:
 - Protocol lock: 各Phaseで `Plan -> Execute -> Verify -> Proceed` を維持（逆走・省略禁止）。
 - Contract lock: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を固定。
 
-### Phase 1: Read
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read
 - 対象7Issueを再読し、`Status / Scope / Dependencies / 固定キー` の差分を確認。
 - 差分検知時は `held` 記録のみ許可し、Executeへ進まない。
 
@@ -306,7 +330,13 @@ gate:
 
 ## Stream C execution log（2026-04-28 / A1 contract lock replay）
 
-### Phase 1: Read（状態同期）
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read（状態同期）
 - 対象4ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期確認。
 - 結果: `Status=Open` / `Priority=P1` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3` / `Approval Record=Pending` / `held=HIL-RS-02-GOV-EXCEPTION-01` 維持。
 - 事前想定との差分: なし。
@@ -349,7 +379,13 @@ gate:
 
 ## Stream C fixed-serial execution log（2026-04-28 / HIL-RS critical contract governance）
 
-### Phase 1: Read
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read
 - 対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー`（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `unlockRule`）を同期確認。
 - 読み取り結果: `Status=Open` / `Scope=planning only` / `Dependencies=A1 -> A2 -> A3`。
 - 固定I/F正規化: `unlockRule=(a1Status=="Done" && pendingDecisionQueueCount==0)` を canonical として参照し、派生再定義を禁止。
@@ -399,7 +435,13 @@ gate:
 
 ## Stream B completion pack（2026-04-28 / Contract & Operations Ready）
 
-### Phase 1: Read（Status / AC / Dependency contradiction list）
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read（Status / AC / Dependency contradiction list）
 - 読取対象: 本Issue + HIL-RS対象4Issueのメタ（Status / Source Issue / AC/DoD / Dependencies / Validation）。
 - 検知した矛盾（横断）:
   1. `Non-target file policy` の文言が「4 Issue」表記のままになっている箇所があり、実際の対象4Issueと不一致。
@@ -532,7 +574,13 @@ gate:
 
 ## Stream C execution snapshot（2026-04-29 / serial-phase sync）
 
-### Phase 1: Read & Snapshot
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read & Snapshot
 - 対象4Issueを再読し、`Status / Scope / Dependencies / 固定キー` の想定との差分を確認。
 - 差分判定: `no unexpected drift`（Proceed可）。
 
@@ -638,7 +686,13 @@ gate:
 
 ## Stream A contract fixation sync（2026-05-02 / A1 critical path）
 
-### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read同期（Plan → Execute → Verify → Proceed）
 - 対象再読: 本Issue + A1契約Issue群。
 - 未確定項目: `Approval Record`（`approved_by` / `approved_at` / `evidence` 未入力）, `HIL-RS-02-GOV-EXCEPTION-01`（`held`）。
 - 差分判定: 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）は差分 `0`。
@@ -683,7 +737,13 @@ gate:
 
 ## Stream A Critical Path Update（2026-05-03 / A1契約固定完了ログ）
 
-### Phase 1: Read Gate（Plan -> Execute -> Verify -> Proceed）
+#
+### Phase 1 normalization rule（dependency）
+- 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
+- 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
+- 契約参照差分が発生した場合は Executeへ進まず、ADRの **Context / Decision / Consequences** を先に確定して承認待ちへ移行する。
+
+## Phase 1: Read Gate（Plan -> Execute -> Verify -> Proceed）
 - A1未確定項目を再点検し、未確定は以下4分類で **0件** を確認。
   1. APIシグネチャ: `CritiqueV1 / ReDiffV1 / AttributionV1 / A1ErrorV1`
   2. 型: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only`
