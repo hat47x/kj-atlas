@@ -29,6 +29,7 @@
 
 ### Phase 2 CDC承認（必要時のみ）
 - ADR/CDCが必要な差分は **Context / Decision / Consequences** を先に明文化し、人手承認まで `status=held` を維持する。
+- **API signature（required input/output, status semantics）と audit event schema（必須キー/順序/No-Go条件）をPhase 2で先行固定し、Phase 3以降では再定義しない。**
 - AC/DoD不足時は契約ドラフトを追記し、推測実装・暗黙決定を禁止する。
 - 承認対象は「API責務境界」「CLI責務境界」「監査責務境界」を分離して扱う。
 
@@ -44,6 +45,7 @@
 
 ### Phase 4 Execute（contract-only / mock-first）
 - Executeは docs上の patch/diff 記録のみ許可し、実装着手・実装確定（implementation commit）を禁止する。
+- CLI実装記述は **契約準拠チェック（required option検証 / 出力JSON契約検証 / 終了コード契約検証）** のみを許可し、外部依存（外部API/IdP/監査基盤）接続実装は記述対象外とする。
 - API/CLI同値判定は `equivalenceKey` と `bundleHash` の **AND成立のみ成功** とし、部分一致成功を禁止する。
 - `sourceBundleHash=mock:<hash>` を同値検証参照キーとして許可し、本番hashと同一の fail-closed 条項を適用する。
 
@@ -69,6 +71,7 @@
   - 監査不能状態（必須監査項目欠損を成功扱い）
   - safeMode後退要求
   - 責務分離崩壊（API/CLI/監査境界の混線）
+  - 外部依存待ち（外部API/IdP/監査基盤の未提供）を理由に契約準拠チェック以外へ拡張しようとする要求
   - Verify自己修復3回超過（`4/3` 相当）
 
 ## Contract Definition（API / CLI / Audit）
@@ -84,6 +87,7 @@
 ### CLI Boundary Contract（proposal）
 - Required options: `--equivalence-key`, `--bundle-hash`, `--query-canonical-hash`, `--source-bundle-hash`。
 - Required JSON output: `proposalId`, `status`, `equivalenceResult`, `auditChainRef`, `events[]`。
+- CLI記述範囲は契約準拠チェックのみ（入力検証/出力検証/終了コード検証）。外部依存連携の実装記述は停止条件の管理対象とする。
 - Exit code contract:
   - `0`: すべての必須契約を満たし proposal生成のみ成功。
   - `2`: 入力契約違反（必須オプション欠損・型不正）。
