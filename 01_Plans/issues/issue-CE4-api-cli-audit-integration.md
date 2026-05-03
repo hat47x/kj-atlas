@@ -11,6 +11,12 @@
 - Dependencies: `CE-4`
 - Verification: `docs-check`
 
+## Objective（固定化する責務境界）
+- API/CLI/監査の責務境界を **contract-only** で固定する（実装確定を行わない）。
+- `proposal-only` を強制し、auto-apply / auto-confirm / auto-publish を禁止する。
+- `fail-closed` を既定とし、監査必須項目の欠損は成功扱いしない。
+- 監査イベント4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として固定する。
+
 ## Stream D Execution Contract（2026-05-03 / CE4 API/CLI Audit Integration）
 
 フェーズ順序は固定: **Read → CDC承認（必要時）→ Plan → Execute → Verify（最大3回修復）→ Proceed/Stop**。
@@ -64,6 +70,33 @@
   - safeMode後退要求
   - 責務分離崩壊（API/CLI/監査境界の混線）
   - Verify自己修復3回超過（`4/3` 相当）
+
+## Contract Definition（API / CLI / Audit）
+
+### API Boundary Contract（proposal）
+- Required input: `equivalenceKey`, `bundleHash`, `queryCanonicalHash`, `sourceBundleHash`（`mock:<hash>` 許容）。
+- Required output: `proposalId`, `status`, `auditChainRef`, `equivalenceResult`（`match|mismatch`）。
+- Fail-closed条件:
+  - Required input欠損時は `rejected`。
+  - `equivalenceKey AND bundleHash` 未成立時は `mismatch` 固定。
+  - 監査4イベントの事前/事後整合が確認できない場合は `rejected`。
+
+### CLI Boundary Contract（proposal）
+- Required options: `--equivalence-key`, `--bundle-hash`, `--query-canonical-hash`, `--source-bundle-hash`。
+- Required JSON output: `proposalId`, `status`, `equivalenceResult`, `auditChainRef`, `events[]`。
+- Exit code contract:
+  - `0`: すべての必須契約を満たし proposal生成のみ成功。
+  - `2`: 入力契約違反（必須オプション欠損・型不正）。
+  - `3`: 監査契約違反（4イベント欠損・追跡キー欠損）。
+  - `4`: 同値判定不成立（`equivalenceKey AND bundleHash` 不一致）。
+
+### Audit Boundary Contract（proposal）
+- 必須イベント順序: `query` → `bundle` → `proposal` → `apply`。
+- 各イベント必須キー: `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`。
+- Fail-closed:
+  - 4イベントのいずれか欠損で **No-Go**。
+  - `eventType` と `equivalenceKey` の相関がAPI/CLI双方ログで取れない場合は **No-Go**。
+  - `proposal-only` 逸脱の痕跡（自動apply等）がある場合は **No-Go**。
 
 ## CE4 Dependency Cut Contract（mock-first 固定）
 - CE4は `equivalenceKey + bundleHash` のI/F契約を mock前提で固定し、他ストリーム実装完了待ちを行わない。
