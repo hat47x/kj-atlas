@@ -887,3 +887,24 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 4. `AGENTS.md`
 
 確認観点は **用語 / 役割 / 導線 / D1〜D4固定値** の4点を必須とし、いずれか未充足時は `StoppedForClarification` として進行を停止する。
+
+## Stream F docs sync log（2026-05-03）
+
+### Phase 1 Read
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、`security.md` / `operations.md` / `security_operational_guidelines.md` の最新記述を照合。
+
+### Phase 2 Plan
+- AC/DoDを補完: 4観点（用語/役割/導線/固定値D1-D4）の同時一致を必須化。
+- Non-goal: 仕様追加、契約値改変、他レーン文書編集。
+
+### Phase 3 Execute
+- 本節を docs-only で追記し、`Security Officer / System Owner / Platform Operator`、2者承認+実行分離、導線、D1-D4 固定値の同値を明示。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|strict_mode_exception_approval_flow|e2e_testing|StoppedForClarification" 04_Documentation/security.md 04_Documentation/operations.md 04_Documentation/security_operational_guidelines.md`
+- `git diff --check`
+- 判定: 不整合なし（自己修復 0/3）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed (Ready)**。
+- 停止条件: 用語/役割/導線/固定値の不一致または競合兆候検知時は `StoppedForClarification`。
