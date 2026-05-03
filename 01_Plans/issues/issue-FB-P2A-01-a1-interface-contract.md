@@ -164,3 +164,11 @@
 - Stop-condition check: 契約ドリフト / 指定外ファイル編集要求 / 前提崩壊なし。
 - Next: A2 `issue-FB-P2A-01-a2-mock-validation.md` へ Annex固定値を参照渡し。
 
+## Stream D execution log (2026-05-03, FB-P2A-01 A1→A2→A3 serial)
+
+- Phase 1 Read sync: re-read A1/A2/A3 set and confirmed `ContractID=CTR-2A-01-ISLAND-HIERARCHY-V1` consistency and no dependency inversion.
+- Phase 2 A1 contract freeze: treated Annex (`LCA-FB-P2A-01-A1-V1`) as read-only and verified no required-field/invariant drift.
+- Phase 3 A2 mock validation: confirmed GoNoGo remains `M1/M2/M3=pass` and `M4=fail` with owner routing fixed.
+- Phase 4 A3 implementation readiness: handoff payload schema remained complete (`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`).
+- Phase 5 Verify: docs-check command kept as canonical verifier; self-correction count remained within `0/3`.
+- Phase 6 Proceed: lane status advanced as `ready-to-transition` under fail-safe rules.
