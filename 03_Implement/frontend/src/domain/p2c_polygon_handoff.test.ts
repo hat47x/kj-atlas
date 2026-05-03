@@ -49,6 +49,44 @@ describe("p2c_polygon_handoff", () => {
     expect(result).toEqual({ go: false, reason: "tieBreakOrderChanged=true" });
   });
 
+
+  it("fails start condition when handoffId drifts from A1-fixed value", () => {
+    const validA = buildP2CMockValidationLog("A", fixture, 1, 24);
+    const validB = buildP2CMockValidationLog("B", fixture.slice(0, 3), 2, 12);
+    const validC = buildP2CMockValidationLog("C", fixture, 3, 36);
+
+    const result = evaluateP2CA3StartCondition(
+      [
+        validA,
+        validB,
+        {
+          ...validC,
+          handoffId: "A2-HANDOFF-FB-P2C-01-DRIFTED" as typeof P2C_A2_HANDOFF_ID,
+        },
+      ],
+      { gateApproved: true, a2VerifyPass: true }
+    );
+
+    expect(result).toEqual({ go: false, reason: "invalid handoffId: A2-HANDOFF-FB-P2C-01-DRIFTED" });
+  });
+
+  it("fails start condition when Gate0/A2 verify preconditions are not both true", () => {
+    const logs = [
+      buildP2CMockValidationLog("A", fixture, 1, 24),
+      buildP2CMockValidationLog("B", fixture.slice(0, 3), 2, 12),
+      buildP2CMockValidationLog("C", fixture, 3, 36),
+    ];
+
+    expect(evaluateP2CA3StartCondition(logs, { gateApproved: false, a2VerifyPass: true })).toEqual({
+      go: false,
+      reason: "StartCondition requires Gate0=Approved and A2Verify=Pass",
+    });
+    expect(evaluateP2CA3StartCondition(logs, { gateApproved: true, a2VerifyPass: false })).toEqual({
+      go: false,
+      reason: "StartCondition requires Gate0=Approved and A2Verify=Pass",
+    });
+  });
+
   it("returns Go for A/B/C with Gate0 approved and A2 verify pass", () => {
     const logs = [
       buildP2CMockValidationLog("A", fixture, 1, 24),
