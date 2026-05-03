@@ -680,3 +680,50 @@ gate:
 - Self-Correction counter: `0/3`（再試行なし）。
 - 4回目相当、未承認確定化、未定義競合は未検知。
 - 継続条件: `approved_by` / `approved_at` / `evidence` の充足後に次段階再判定。
+
+## Stream A Critical Path Update（2026-05-03 / A1契約固定完了ログ）
+
+### Phase 1: Read Gate（Plan -> Execute -> Verify -> Proceed）
+- A1未確定項目を再点検し、未確定は以下4分類で **0件** を確認。
+  1. APIシグネチャ: `CritiqueV1 / ReDiffV1 / AttributionV1 / A1ErrorV1`
+  2. 型: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only`
+  3. schemaVersion: `1.0.0` 以外への更新要求
+  4. 判定条件: `A2A3_OPEN_ALLOWED` 以外の派生判定式
+
+### Phase 2: ADR明文化
+- Context / Decision / Consequences は本Issue既存Phase 2にて維持し、新規競合なし。
+- `Approval Record: Pending` のため、契約値は contract-only で固定（未承認確定化なし）。
+
+### Phase 3: 契約固定
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` を再固定。
+- deterministic inputs を固定:
+  - `pendingDecisionQueueCount`
+  - `hasUndefinedContractChangeRequest`
+  - `hasSafeModeRegressionRequest`
+  - `hasShareExportLeakageRelaxationRequest`
+- acceptance checkpoints を固定:
+  - freeze keys diff=0
+  - pending bypass=0
+  - A1完了前A2/A3 Open=0
+
+### Phase 4: 受け渡し（Lane B/C）
+- 固定I/F一覧:
+  - `A1-CRITIQUE-IF`
+  - `A1-REDIFF-IF`
+  - `A1-ATTR-IF`
+  - `A1-ERROR-IF`
+- 禁止変更一覧:
+  - Contract ID再定義
+  - `schemaVersion`更新
+  - `overridePolicy`緩和
+  - safeMode境界後退
+  - `Pending` bypass
+- モック前提一覧:
+  - A2/A3 は read-only mock参照のみ
+  - 実装確定はA1 gate充足後のみ
+
+### Phase 5: Verify & Publish（A1 DoD）
+- 差分説明可能性: 固定キー・判定式・NoGo return path の単一参照を維持。
+- 依存リンク: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
+- 停止条件確認: self-correction超過/未承認確定化/未定義競合/allowlist外編集要求の検知なし。
+- 判定: **Conditional-Go（Approval Record pending のため）**。
