@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream D / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream F / CE4専任 / contract-only planning）
 
 - Type: Feature request
 - Status: Open
 - Priority: P2
-- Owner: Stream D（CE4専任）
+- Owner: Stream F（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -17,9 +17,9 @@
 - `fail-closed` を既定とし、監査必須項目の欠損は成功扱いしない。
 - 監査イベント4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として固定する。
 
-## Stream D Execution Contract（2026-05-03 / CE4 API/CLI Audit Integration）
+## Stream F Execution Contract（2026-05-03 / CE4 API/CLI Audit Integration）
 
-フェーズ順序は固定: **Read → CDC承認（必要時）→ Plan → Execute → Verify（最大3回修復）→ Proceed/Stop**。
+フェーズ順序は固定: **Read同期 → ADR明文化 → Plan（AC/DoD補完）→ Execute（メモ整備のみ）→ Verify（最大3回修復）→ Proceed/Stop**。
 
 ### Phase 1 Read
 - CE4は API/CLI監査境界の契約固定に限定し、frontend/backend実装差分を要求しない（mock-first）。
@@ -27,13 +27,13 @@
 - fixed boundary を再確認する: `equivalenceKey + bundleHash`（AND）, 監査4イベント（`query/bundle/proposal/apply`）, fail-closed。
 - proposal-only 原則（auto-apply / auto-confirm / auto-publish 禁止）を開始時に再確認する。
 
-### Phase 2 CDC承認（必要時のみ）
-- ADR/CDCが必要な差分は **Context / Decision / Consequences** を先に明文化し、人手承認まで `status=held` を維持する。
+### Phase 2 ADR明文化
+- ADRが必要な差分は **Context / Decision / Consequences** を先に明文化し、人手承認まで `status=held` を維持する。
 - **API signature（required input/output, status semantics）と audit event schema（必須キー/順序/No-Go条件）をPhase 2で先行固定し、Phase 3以降では再定義しない。**
 - AC/DoD不足時は契約ドラフトを追記し、推測実装・暗黙決定を禁止する。
 - 承認対象は「API責務境界」「CLI責務境界」「監査責務境界」を分離して扱う。
 
-### Phase 3 Plan（proposal-only / non-target明記）
+### Phase 3 Plan（AC/DoD補完 / proposal-only / non-target明記）
 - Planは contract proposal のみを扱い、`accepted/rejected` の最終決定は人間責務とする。
 - 非対象（実装コード）は明示的に固定する。
   - `03_Implement/frontend/**`（全実装コード）
@@ -43,8 +43,8 @@
 - API I/F（必須入力・必須出力・fail-closed条件）とCLI I/F（必須オプション・出力JSON・終了コード）を mock可能粒度で定義する。
 - 監査要件は `query / bundle / proposal / apply + queryCanonicalHash` を必須項目として固定する。
 
-### Phase 4 Execute（contract-only / mock-first）
-- Executeは docs上の patch/diff 記録のみ許可し、実装着手・実装確定（implementation commit）を禁止する。
+### Phase 4 Execute（メモ整備のみ / contract-only / mock-first）
+- Executeは docs上の patch/diff 記録と監査メモ整備のみ許可し、実装着手・実装確定（implementation commit）を禁止する。
 - CLI実装記述は **契約準拠チェック（required option検証 / 出力JSON契約検証 / 終了コード契約検証）** のみを許可し、外部依存（外部API/IdP/監査基盤）接続実装は記述対象外とする。
 - API/CLI同値判定は `equivalenceKey` と `bundleHash` の **AND成立のみ成功** とし、部分一致成功を禁止する。
 - `sourceBundleHash=mock:<hash>` を同値検証参照キーとして許可し、本番hashと同一の fail-closed 条項を適用する。
@@ -73,6 +73,12 @@
   - 責務分離崩壊（API/CLI/監査境界の混線）
   - 外部依存待ち（外部API/IdP/監査基盤の未提供）を理由に契約準拠チェック以外へ拡張しようとする要求
   - Verify自己修復3回超過（`4/3` 相当）
+
+
+## Phase Gate Operating Rules（再読・自己修復上限）
+- 各Phase開始時は本ファイルを再読し、`proposal-only` / `fail-closed` / `safeMode既定ON` の3条件を再確認する。
+- Verifyの自己修復は最大3回（`1/3`〜`3/3`）。`4/3` 到達時は fail-safe で即停止し `status=held` を記録する。
+- 監査必須項目（4イベント + `queryCanonicalHash` + `eventType` + `equivalenceKey`）に欠損がある場合は常に No-Go とし、成功扱いを禁止する。
 
 ## Contract Definition（API / CLI / Audit）
 
