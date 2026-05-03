@@ -326,3 +326,40 @@
   2. 承認ログ最小項目（日時・承認者・対象・判断）を補完。
   3. docs-check を再実行し、self-correction 回数を更新。
 - 再開条件: 上記 1〜3 が揃った時点で Phase 6 を再判定する。
+
+## Stream H CE2 Draft pass（2026-05-03 / proposal-only contract hardening）
+
+### Phase 1 Read同期
+- `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` の契約語に対し、本Issue内の `status` / `reviewState` / lifecycle 記述を照合。
+- 照合結果: AIは `proposed` 限定、人間のみ `accepted/rejected` 決定、監査欠損時 fail-closed、`sourceBundleHash === bundleHash` 不一致時 `held` の固定契約と矛盾なし。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE2 Draft→Open準備では、proposal-only と人間責務分離を崩さずに判断材料を完結させる必要がある。
+- Decision: 本Issueは docs-only の判断材料整備に限定し、auto-* 操作導線と AIによる `accepted/rejected` 変更経路を追加しない。
+- Consequences: 実装前進は意図的に遅くなるが、責務混線・誤確定・監査欠損を Draft段階で封じる。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完:
+  - [ ] AC-H-1: proposal-only と human-only decision が同時に満たされる。
+  - [ ] AC-H-2: `reviewState` の自動昇格禁止と fail-closed が Verify観点で再確認できる。
+  - [ ] AC-H-3: 承認未取得時は Proceed せず `held` を維持する。
+- DoD補完:
+  - [ ] DoD-H-1: Open判定に必要な契約条件が本Issue単体で再読可能。
+  - [ ] DoD-H-2: self-correction 回数管理（3回上限）が明示され、超過時停止条件がある。
+
+### Phase 4 Execute（メモ整備のみ）
+- 実施: 本Issueへの追記のみ（契約整理・不足AC/DoDの補完）。
+- 非実施: 実装変更、状態確定、承認代行、auto-* 追加。
+
+### Phase 5 Verify（scope / contract / phase integrity）
+- V1 Scope: 本ファイル以外の差分がないことを確認（single-file fixed）。
+- V2 Contract: proposal-only / human責務分離 / auto-*禁止 / 監査欠損fail-closed / hash一致必須 を確認。
+- V3 Integrity: Phase 1〜6 の欠落がなく、AC/DoD/Stop条件の整合を確認。
+- self-correction: `0/3`（上限超過なし）。
+
+### Phase 6 Proceed / Stop
+- 判定: **Hold継続**。
+- 理由:
+  1. 人間承認ログ最小項目（日時・承認者・対象・判断）が未充足。
+  2. CE-2依存確定の証跡が未記録。
+- ルール固定: 未承認・依存未確定・検証未達のいずれかを検知した場合は `held`（fail-closed）で停止し、4回目相当の修復要求は行わない。
