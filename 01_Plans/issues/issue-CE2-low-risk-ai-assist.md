@@ -3,12 +3,13 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream G（CE2 Draft整備専任）
+- Owner: Stream D（CE2 low-risk proposal lifecycle）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
 - Dependencies: `CE-2`
 - Dependency status: `未確定（CE-2 Open判定待ち）`
+- CE1 contract status: `未確認（CE1契約確認完了まで仕様確定禁止）`
 - Expected verification level: `docs-check`
 
 ## Fixed Operation Contract（2026-05-01）
@@ -19,6 +20,7 @@
 - `reviewState` は `unreviewed | human_reviewed` の閉集合とし、AI提案は常に `unreviewed`。
 - lifecycle は `proposed | accepted | rejected | held` の閉集合を維持する。
 - 監査4点（`query / bundle / proposal / apply`）が欠損した場合は fail-closed。
+- Verify判定は `sourceBundleHash === bundleHash` を必須条件として固定し、不一致時は fail-closed（`held`）とする。
 - **合意未取得時は CE2実装へ進まない（Proceed禁止）。**
 
 ## Mandatory Workflow（Phase 1〜6 固定）
@@ -29,7 +31,7 @@
 4. **Phase 4 Execute（メモ整備のみ）**: 本Issue内の記述・表・トレーサビリティを整備し、実装は行わない。
 5. **Phase 5 Verify（最大3回修復）**:
    - V1: single-file scope逸脱チェック
-   - V2: proposal-only / human decision / fail-closed 文言チェック
+   - V2: proposal-only / reviewState自動昇格禁止 / sourceBundleHash一致 / fail-closed 文言チェック
    - V3: Phase欠落・表の不整合チェック
    - 3回以内に修復不能な場合は `status=held` で停止。
 6. **Phase 6 Proceed/Stop**: 人間承認ログ確認後のみ Proceed。未承認または超過時は Stop（`held`）。
@@ -91,7 +93,7 @@
 
 ### 依存I/F（実装せず、契約のみ列挙）
 - Decision Input I/F: 人間レビュー入力（`accepted/rejected/held` の判定記録）。
-- Proposal I/F: AI候補出力（`status=proposed`, `reviewState=unreviewed`）。
+- Proposal I/F: AI候補出力（`status=proposed`, `reviewState=unreviewed`, `sourceBundleHash` 必須）。
 - Audit I/F: 監査4点の存在検査（欠損時 fail-closed）。
 - Policy I/F: safeMode と No-Go（auto-* 禁止）制約の適用確認。
 
@@ -131,6 +133,7 @@
 - 合意未取得のまま次工程（実装・確定運用）へ進む要求。
 - Verify修復が3回を超過。
 - safeMode既定ON / 未レビュー保護 / fail-closed の後退要求。
+- CE1契約（ContextBundle/bundleHash契約）未確認状態での仕様確定要求。
 - 未定義競合（契約衝突・語彙衝突・責務分離崩壊）の検知。
 
 ## Draft→Open 移行条件（再掲）
@@ -209,3 +212,27 @@
   1. CE-2依存の確定証跡が未入力。
   2. Approval Record が未充足。
 - Stop条件: 未承認確定化要求 / 契約衝突 / self-correction 4回目相当を検知した場合は即時 `held`。
+
+
+## Stream D update log（2026-05-03 / CE2 low-risk proposal lifecycle）
+
+### Read
+- CE1/CE2契約の境界を再確認し、CE1未確認時は仕様確定しないフェイルセーフを固定。
+
+### ADR明文化（Context / Decision / Consequences）
+- Context: CE2はproposal-onlyを維持しつつ、`sourceBundleHash` をCE1の `bundleHash` と一致検証できる状態で管理する必要がある。
+- Decision: `reviewState` のAI自動昇格を禁止し、Verifyの必須判定に `sourceBundleHash === bundleHash` を追加する。
+- Consequences: 一致しない提案は `held` へ遷移し、承認待ちのまま停止するため、誤適用を抑止できる。
+
+### Plan
+- AC追加: `sourceBundleHash` 一致検証が明示されている。
+- DoD追加: `reviewState` がAI操作で `human_reviewed` へ遷移しないことを確認できる。
+
+### Execute
+- 本Issue内の契約文言のみ更新（コード変更なし）。
+
+### Verify
+- docs-checkで single-file scope / 契約語 / フェイルセーフ条件を確認する。
+
+### Proceed
+- CE1契約確認ログ（承認者・日時・対象・証跡）が揃うまで **Hold継続**。
