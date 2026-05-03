@@ -272,7 +272,7 @@
 ### Phase 1: Read & Scope Lock（re-read）
 - Extracted Status: `Open`
 - Extracted Priority: `P0`
-- Extracted Dependencies: `A1 -> A2 -> A3`（A2/A3はA1 read-only参照）, `A1-CONTRACT-MOCK-v1` 前提分離。
+- Extracted Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT, `sharedResourceFreeze=true`, `safeModeDefault=ON`（A2/A3はA1 read-only参照）, `A1-CONTRACT-MOCK-v1` 前提分離。
 - Scope lock reaffirmed: allowlist 2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）以外は編集しない。
 
 ### AC/DoD draft gap check
@@ -299,9 +299,9 @@
 
 - Phase: `Read同期`
 - Result: `held`（停止）
-- Reason: 対象2ファイルの `Status/Priority/Dependencies/Related ADR/freeze keys` を再読照合した結果、以下の差分を検知。
-  1. `Dependencies` の記述粒度が不一致（baselineは `freezeContractId` / `unlockRule` SSOTを明示、A1側は未明示）。
-  2. `Related ADR` の列挙が不一致（baselineに `ADR-0019` を含み、A1側は未列挙）。
-- Action: フェイルセーフに従い Execute へ進まず停止。推測補完・契約再定義は未実施。
+- Reason: 前回停止理由だった `Dependencies` 粒度 / `Related ADR` 列挙差分は、2026-05-03の合意方針（詳細Dependenciesを正、Related ADRは包含列挙）で解消済み。
+  1. Dependencies を `freezeContractId` / `unlockRule` / `sharedResourceFreeze` / `safeModeDefault` まで明示。
+  2. Related ADR に `ADR-0019` を含む包含列挙へ統一。
+- Action: フェイルセーフ停止を解除し、契約同期（docs-only）を継続。推測補完・契約再定義は未実施。
 - SafeMode boundary: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持（後退なし）。
 - Next required human instruction: 差分解消方針（どちらをSSOTとするか）を明示する承認指示。
