@@ -48,7 +48,7 @@
 ### Verification（docs-check）
 - Planned checks:
   - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Result summary: pass
 - Self-correction budget: `0/3`
 
@@ -81,7 +81,7 @@
 
 ### Phase 5: Verify
 - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
 - Self-correction count: `0/3`
 - Verify verdict: **Pass**
 
@@ -144,3 +144,39 @@
   2. 承認ログ最小項目（日時・承認者・対象・判断）を補完。
   3. docs-check を再実行し、self-correction 回数を更新。
 - 再開条件: 上記 1〜3 が揃った時点で Phase 6 を再判定する。
+
+
+## Stream K update log（2026-05-03 / Open化準備メモ再整備）
+
+### Phase 1: Read同期
+- `AGENTS.md` Read Order と本Issueの既存記録を再読し、docs-only / single-file制約を再確認。
+- 参照根拠を `ADR-0019`（E2E確認方針）と本Issue内固定情報に限定し、推測確定を禁止する前提を固定。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: Move internal 判定自体は固定済みだが、Open化判定に必要な依存確定証跡が未充足。
+- Decision: Open化準備メモは「再読可能性・追跡可能性・判定一貫性」軸で整備し、依存未確定の間は Proceed を選択しない。
+- Consequences: 判定材料の探索コストを下げつつ、誤Proceed（推測による確定）を防止する。
+
+### Phase 3: Plan（AC/DoD補完 + 停止条件）
+- AC-K1（再読可能性）: Open判定に必要な入力（依存/Go条件/Verify結果/Proceed三値）が本Issue単体で再確認できる。
+- AC-K2（追跡可能性）: Verify実行コマンド・結果・自己修復回数・判定日を記録する。
+- AC-K3（判定一貫性）: 依存未確定時は必ず Hold、3回超過時は Stop を明記する。
+- DoD-K1: Phase 1〜6 の実施結果が本セクションで完結している。
+- DoD-K2: Fail-safe（推測確定禁止 / 依存未確定Proceed禁止 / 自己修復3回上限）が本文で明示されている。
+- 停止条件:
+  1. 依存 `DOC-OPS-05` の確定証跡が不在。
+  2. docs-check が3回以内に収束しない。
+
+### Phase 4: Execute（メモ整備のみ）
+- 本Issueファイル内の追記に限定し、移管実行・他ファイル編集・実装変更は未実施。
+
+### Phase 5: Verify（docs-check / max 3）
+- Verify command 1: `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- Verify command 2: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- Verify result: Pass
+- Self-correction count: `0/3`
+
+### Phase 6: Proceed / Stop
+- ProceedDecision: **Hold**
+- Reason: 依存 `DOC-OPS-05` の Open gate 確定証跡が本Issue内で未充足のため。
+- Next gate to reopen: 依存確定証跡（日時・承認者・対象・判断）を追記後、Phase 5→6 を再実行。
