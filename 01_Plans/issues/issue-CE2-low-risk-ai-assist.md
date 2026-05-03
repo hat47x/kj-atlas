@@ -236,3 +236,37 @@
 
 ### Proceed
 - CE1契約確認ログ（承認者・日時・対象・証跡）が揃うまで **Hold継続**。
+
+## Stream G single-issue pass（2026-05-03 / Draft individual processing）
+
+### Phase: Read
+- 対象を本ファイル単独に固定し、既存の固定契約（proposal-only / auto-*禁止 / fail-closed / CE1未確認時仕様確定禁止）を再確認。
+
+### Phase: Plan（不足補完）
+- Open化に必要な不足条件を以下へ集約。
+
+#### Open化ゲート（AC / DoD / Validation / 依存条件）
+| 区分 | 必須条件 | 判定方法 | 未充足時 |
+| --- | --- | --- | --- |
+| AC-DEP-1 | `Dependency status=確定` かつ CE-2判定者/証跡が記録済み | `Dependency status` 行と Approval Record を目視確認 | **Hold維持** |
+| AC-SEC-1 | proposal-only + auto-*禁止 + fail-closed が同時に明記 | 本Issue内の Fixed Operation Contract と Verify観点を照合 | **Hold維持** |
+| AC-TRACE-1 | `sourceBundleHash === bundleHash` のVerify必須化 | Verify観点V2の契約文言を確認 | **Hold維持** |
+| DOD-GATE-1 | Proceed/Hold/Stop 三値で再判定可能 | Phase 6 と Draft→Open移行条件の整合確認 | **Hold維持** |
+| DOD-GATE-2 | 依存未確定時にProceedしない fail-safe が明示 | Stop条件・Proceed条件を照合 | **Hold維持** |
+| VAL-DOC-1 | docs-check 2コマンドが再現可能 | Validation Planのコマンド実行結果で確認 | **Hold維持** |
+
+### Phase: ADR合意（必要時）
+- 新規ADRは不要（既存 `ADR-0028` / `ADR-0001` の範囲内で契約補完が完結）。
+
+### Phase: Execute（issueメモ更新のみ）
+- 本セクション追加のみを実施。実装・仕様確定操作は未実施。
+
+### Phase: Verify
+- 修復回数カウンタ: `0/3`（超過なし）。
+- 判定: `AC-DEP-1` 未充足のため Open化は不可。
+
+### Phase: Proceed
+- 最終判定: **Hold継続**。
+- Hold理由（固定）:
+  1. CE-2依存確定の承認証跡が未入力。
+  2. Approval Record 実値（approved_by / approved_at / evidence）が未充足。
