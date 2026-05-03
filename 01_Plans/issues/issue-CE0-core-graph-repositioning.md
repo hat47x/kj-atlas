@@ -1292,3 +1292,31 @@
 ### Phase 6 Proceed（Ready/Hold判定）
 - 判定: **Ready**（AC/DoD整合、docs-check pass、single-file/docs-only/contract-only 維持）。
 - 致命条件が将来検出された場合は即時 `stopped_for_clarification` へ遷移し `Hold` で停止する。
+
+## Phase Execution Record（2026-05-03 / Stream C / contract boundary reaffirmation）
+### Phase 1 Read
+- 実行直前Readを実施し、`working` / `context_projection` / `consensus` の責務語彙、`working -> consensus` + `patch+approval`、canonical No-Go 5 IDs、SafeMode既定ON境界を再確認。
+- 前Phaseとの差分確認を実施し、語彙差分・禁止事項差分・SafeMode境界差分は 0 件（継続可）。
+
+### Phase 2 Plan（Context/Decision/Consequences）
+- Context: CE0 Core Graph 再配置において、`working/context_projection/consensus` の責務境界を contract-only で再固定し、実装変更を禁止したまま運用可能性を維持する必要がある。
+- Decision: 本Issue内の契約文言と実行記録の更新のみに限定し、実装変更（handler/UI/DB/worker/API/Schema migration）は行わない。Phase は直列実行とし、各Phase開始時Read同期を必須とする。
+- Consequences: 下流実装は既存契約を read-only 参照し、未承認事項は `held/pending` で保持する。契約逸脱の疑いがあれば Proceed を停止する。
+
+### Phase 3 ADR/CDC Consensus（Context/Decision/Consequences）
+- Context: 既存CE0契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）との整合を維持しつつ責務境界のみ固定する。
+- Decision: `No ADR delta`。契約ID再定義なし、語彙拡張なし、`working -> consensus` の `patch+approval` 以外の遷移を追加しない。
+- Consequences: 合意待ち論点が発生した場合は確定化せず `held` で停止し、承認待ちへ移行する。
+
+### Phase 4 Execute
+- contract-only 境界を維持し、本Issue本文のみ更新。
+- `role / transition / no-go` を固定語彙で再確認し、実装挙動を規定する新規記述は追加しない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Verify失敗回数は 0/3。運用規律として「Verify失敗が3回を超過、または競合検知時は即停止」を再確認。
+
+### Phase 6 Proceed
+- 判定: `Done`（contract-only 境界維持、AC/DoD整合、docs-check pass）。
+- 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
