@@ -1669,3 +1669,51 @@ type PatchProposal = {
   - CE0は schema/API型I/F先行凍結を維持し、実装論点は mock切替前提で依存遮断を継続する。
   - 他Stream成果物を前提化する要求が発生した場合は即時 `held` 停止。
   - 逸脱（指定外編集 / safeMode既定値後退 / Contract ID再定義 / 自己修正4回目相当）が発生した場合も即時 `held`。
+
+## Stream B latest run（2026-05-03 / CE0 only / mock-first contract-only completion prep）
+
+- run_id: `stream-b-ce0-2026-05-03-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read同期（対象ファイル再読）
+- Phase開始時に本Issueを再読し、固定順序 **Read同期 → ADR明文化 → Plan → Execute → Verify → Proceed/Stop** を再確認。
+- contract-only / mock-first / docs-only 制約、CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）凍結を再確認。
+- 停止条件（指定外編集・safeMode既定ON後退・未承認事項の確定化・自己修復4回目相当）を再確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE0契約凍結を単一ファイルSSOTで維持し、下流は mock-first で契約参照のみ行う。
+- Decision: 契約変更（ID追加/改名/削除、safeMode既定の緩和、実装確定につながる追記）は実施せず、未承認事項は `held` のまま保持する。
+- Consequences: CE0は contract-only で完了可能状態を維持し、実装依存を発生させずに下流検証準備を継続できる。
+- ADR追補要否: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規ADR起票なし。
+
+### Phase 3 Plan（AC/DoD不足を提案して合意）
+- AC/DoD不足提案（mock-first完了性の明確化）:
+  - `ac_mock_artifact_traceability`: mock成果物がCE0 Contract IDsへ1:1で逆引き可能であることを必須化。
+  - `dod_verify_docs_check_single_source`: Verifyは docs-check と差分健全性に限定し、単一ファイル更新で完結することを必須化。
+  - `dod_unapproved_held_lock`: 未承認要求は `held` のまま据え置き、Proceed条件に含めないことを明記。
+- 合意: 上記3点を本runの追加AC/DoDとして採用（freeze境界内、実装変更なし）。
+
+### Phase 4 Execute（メモ整備のみ）
+- 実施: 本Issueへの計画・判定ログ整備のみ（contract-only / mock-first / docs-only）。
+- 非実施: 実装コード変更、指定外ファイル編集、safeMode既定ONを崩す提案、未承認事項の確定。
+
+### Phase 5 Verify（docs-check、最大3回自己修復）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: docs-check系検証は初回通過。自己修復追加は不要。
+
+### Phase 6 Proceed/Stop（超過・競合・前提崩れで停止）
+- 判定: **Proceed（Conditional-Go）**
+- Proceed条件:
+  - CE0契約凍結は単一ファイルSSOTのまま維持。
+  - mock-first / contract-only 完了性を満たすための参照運用を継続。
+- Stop条件:
+  - 範囲超過（指定外編集）
+  - 契約競合（Contract ID再定義、語彙衝突）
+  - 前提崩れ（safeMode既定ON後退、未承認事項確定化、自己修復4回目相当）
+- 未承認事項: **`held` 維持**。
