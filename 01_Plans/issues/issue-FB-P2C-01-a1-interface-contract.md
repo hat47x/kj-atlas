@@ -218,6 +218,20 @@
 
 ## Stream A protocol run（2026-05-03 / contract-only）
 
+## Stream B completion sync（2026-05-03 / A1→A2→A3 serial handoff）
+
+### Phase 1: Read同期
+- A1固定契約（`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `safeModeDefault=ON`）を再確認。
+- A2/A3で許可される操作を read-only 参照 + fixture/stub検証に限定することを再確認。
+
+### Phase 2: A1契約確定（read-only）
+- 既存A1契約の変更要求はなし（CDC不要）。
+- `A2A3_OPEN_ALLOWED` 判定式の構成要素ドリフトが無いことを再確認。
+
+### Phase 6: Proceed（Stream B視点）
+- A1は固定済みのため、Stream BはA2/A3をA1契約逸脱なしで完了可能と判定。
+- 残課題は human decision queue（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）のみで、A2/A3の実装契約には影響なし。
+
 ### Phase 1 Read
 - Extracted:
   - Status: `Open`

@@ -258,6 +258,20 @@
 - Plan→Execute→Verify→Proceed の自己修復は最大3回。
 - 3回超過時は `Proceed=No` を固定し、未承認事項の確定扱いを禁止する。
 
+## 15) Stream B completion record（2026-05-03 / A1→A2→A3 closed）
+
+### Phase 4: A3実装（A2契約逸脱禁止）
+- A3実装はA2固定契約（tie-break順序・schemaVersion・handoffId）を変更せずに維持。
+- I/F固定（fixture/stub前提、unknown contract keyは許容しない）を前提に接続面の回帰なしを確認。
+
+### Phase 5: Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : Pass。
+- A3 block criteria（`GateDecision != approved`, `A2 Verify stale/fail`, `appliedTieBreakOrder mismatch`, `paddingViolationCount > 0`, `outputPolygonHash drift`）に該当なし。
+
+### Phase 6: Proceed
+- FB-P2C-01 の Stream B担当（A1→A2→A3直列）は完了。
+- 残タスクは他系列へ波及しない human approval queue のみ。契約逸脱または未定義依存が発生した場合は停止して再現手順を提出する。
+
 ## Stream E addendum: FB-P2C deterministic tie-break A3実装（2026-04-16）
 
 ### Phase 1) Read（承認記録・契約・テスト観点）
@@ -420,4 +434,3 @@
 
 ### Phase 6: Proceed
 - Decision: **Go**。次セットへ直列進行可能。
-
