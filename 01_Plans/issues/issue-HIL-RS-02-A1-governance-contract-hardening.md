@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening
+# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening (Stream B)
 
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Architecture Owner (Stream C contracts)
+- Owner: Architecture Owner (Stream B governance contract)
 - Scope: `01_Plans/issues/`（planning only）
 - Dependencies: `ADR-0026`, `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -13,7 +13,17 @@
 - Non-target file policy: Stream C allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream C fixed serial): 3/4 HIL-RS-02 A1
+- Execution order (Stream B fixed serial): HIL-RS-02 A1 single-scope
+
+## Stream B Operating Boundary（越境防止）
+- このストリームは **A1契約ハードニングのみ** を扱う。
+- A2/A3 の `Draft -> Open` 判定は **本ストリームで実行しない**（read-only参照のみ）。
+- `human_dual_control_only` は固定値であり、緩和/別名化/派生定義を禁止する。
+- Decision Queue は `Pending` を省略せず、`Pending -> Approved | Pending -> Rejected` のみ許可する。
+- フェイルセーフ（即停止）:
+  1. 契約ID齟齬
+  2. safeMode後退要求
+  3. 共有リソース競合（freeze対象への未承認変更要求）
 
 ## Stream C Contract Lock（HIL-RS fixed）
 - Contract ID固定: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
@@ -80,6 +90,7 @@
 ### Consequences
 - A1以外への差戻し禁止。
 - `Pending bypass` 禁止。
+- A2/A3 Open化判断は A1完了後の別ストリーム責務として保持し、本ストリームでは未決のまま維持する。
 
 ### held
 - `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持。
@@ -94,7 +105,8 @@
 - Gate式は固定値を参照のみとし、再定義・派生定義を禁止する。
 - AC/DoD
   - AC: fixed keys diff=0 / return path唯一 / Pending bypass禁止明記。
-  - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない。
+  - AC: `human_dual_control_only` 後退要求を 0 件で維持。
+  - DoD: 判定式一貫 / self-correction<=3 / 未承認を確定扱いしない / A2A3 Open判定を行わない。
 - 検証コマンド（Plan時点で固定）:
   - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`

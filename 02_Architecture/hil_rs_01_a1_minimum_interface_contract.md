@@ -6,6 +6,21 @@
 - Scope: `02_Architecture/`
 - Upstream: `ADR-0026`, `ADR-0027`, `ADR-0001`, `00_Prompt/domain.md`
 
+## 0) Governance Context / Decision / Consequences（A1 Hardening）
+
+### Context
+- HIL-RS-02 では A1契約を先行固定し、A2/A3の再定義・誤Open・Pending bypass を防止する必要がある。
+
+### Decision
+- 固定契約ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- 固定統治値: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `contractLinkLocked=true`, `sharedResourceFreeze=true`
+- Decision Queue 遷移: `Pending -> Approved | Pending -> Rejected` のみ
+- A2/A3 Open化判定は本書で定義する **Gate条件の参照のみ** とし、A1ストリームでは実行しない
+
+### Consequences
+- A1契約に関する変更要求はA1 CDCへ集約され、下流での局所補完を禁止する。
+- `human_dual_control_only` と safeMode境界の後退要求は NoGo（即停止）になる。
+
 ## 1) SSOT and Freeze
 
 - Single Source of Truth:
@@ -306,4 +321,3 @@ Prohibited for A2/A3:
 
 ### Verification rule
 - docs-check と契約照合で不一致が出た場合は自己修復を最大3回まで許可し、4回目相当は即停止する。
-
