@@ -1,32 +1,32 @@
-# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening (Stream B)
+# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening (Stream E)
 
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Architecture Owner (Stream B governance contract)
+- Owner: Architecture Owner (Stream E governance contract)
 - Scope: `01_Plans/issues/`（planning only）
 - Dependencies: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（contract reference only）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）, `A1 -> A2 -> A3`（gate reference）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
-- Non-target file policy: Stream C allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
+- Non-target file policy: Stream E allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
 
 - Contract snapshot date: `2026-04-27`（固定入力）
-- Execution order (Stream B fixed serial): HIL-RS-02 A1 single-scope
+- Execution order (Stream E fixed serial): HIL-RS-02 A1 single-scope
 
-## Stream B Operating Boundary（越境防止）
+## Stream E Operating Boundary（越境防止）
 - このストリームは **A1契約ハードニングのみ** を扱う。
 - A2/A3 の `Draft -> Open` 判定は **本ストリームで実行しない**（read-only参照のみ）。
 - `human_dual_control_only` は固定値であり、緩和/別名化/派生定義を禁止する。
-- 運用責務と承認責務を分離し、`required_approvers` の2者（`Stream C Architecture Owner` / `Governance reviewer`）が揃うまで確定化しない。
+- 運用責務と承認責務を分離し、`required_approvers` の2者（`Stream E Architecture Owner` / `Governance reviewer`）が揃うまで確定化しない。
 - Decision Queue は `Pending` を省略せず、`Pending -> Approved | Pending -> Rejected` のみ許可する。
 - フェイルセーフ（即停止）:
   1. 契約ID齟齬
   2. safeMode後退要求
   3. 共有リソース競合（freeze対象への未承認変更要求）
 
-## Stream C Contract Lock（HIL-RS fixed）
+## Stream E Contract Lock（HIL-RS fixed）
 - Contract ID固定: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
 - `NoGo return path` 固定: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（変更禁止）
 - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` は境界条件として固定（緩和禁止）
@@ -94,9 +94,9 @@
 
 ### Approval Record（必須 / 承認待ち）
 - Status: `Pending`（未承認のため確定実装扱い禁止）
-- requested_by: `Stream C agent`
+- requested_by: `Stream E agent`
 - requested_at: `2026-04-30T00:00:00Z`
-- required_approvers: `Stream C Architecture Owner` + `Governance reviewer (dual-control)`
+- required_approvers: `Stream E Architecture Owner` + `Governance reviewer (dual-control)`
 - separation_of_duties: `requester != approver` かつ `approver_a != approver_b`（同一人物による兼務禁止）
 - approval_evidence_required:
   1. `ADR-0027 D5/D6` の固定キー・停止条件との整合確認。
@@ -312,7 +312,7 @@ governance_gate_v1:
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
 
 
-## Stream C AC/DoD Draft Proposal（Pending Approval）
+## Stream E AC/DoD Draft Proposal（Pending Approval）
 
 ### Context
 - Phase 3要件として、`A1契約固定`・`A2モック前提`・`A3実装移行条件` を明文化し、承認前はDraft扱いに限定する。
@@ -326,7 +326,7 @@ governance_gate_v1:
 - 上記3項目は `Approval Record: Pending` の間は確定扱いしない。
 - 未承認状態では Execute を準備作業のみに限定し、NoGo時はA1契約Issueへ差戻す。
 
-## Stream C execution record（2026-04-30 / Critical Governance Contract Audit）
+## Stream E execution record（2026-04-30 / Critical Governance Contract Audit）
 
 ### Phase 1: Read Gate（Plan -> Execute -> Verify -> Proceed）
 - Plan:
@@ -386,7 +386,7 @@ governance_gate_v1:
 - DoD-D2: Proceed判定時に `Go/Conditional/No-Go` の根拠式を再掲すること。
 - DoD-D3: `Approval Record` が未入力の場合は **Needs-decision** として停止またはConditional維持にすること。
 
-## Stream C handover checkpoint（2026-04-27）
+## Stream E handover checkpoint（2026-04-27）
 
 ### Phase 6 Proceed判定（今回）
 - 判定: **Needs-decision**（`Approval Record: Pending` と `held` 論点が残存）。
@@ -401,7 +401,7 @@ governance_gate_v1:
 - self-correction 4回目相当、未承認確定化、未定義競合、allowlist外編集要求を検知した場合は即停止して人間へエスカレーションする。
 
 
-## Stream C critical-path execution log（2026-04-27 / contract governance hardening）
+## Stream E critical-path execution log（2026-04-27 / contract governance hardening）
 
 ### Phase 1: Read
 - 再読対象: 本Issue本文。
@@ -432,7 +432,7 @@ governance_gate_v1:
 - 影響I/F: A2/A3 は `A2A3_OPEN_ALLOWED=true` 充足まで `Draft/Open` 変更禁止。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了と pendingDecisionQueue の解消。
 
-## Stream C serial execution update（2026-04-30 / contract-governance only）
+## Stream E serial execution update（2026-04-30 / contract-governance only）
 
 ### Phase 1: Read同期（差分表）
 | Key | Expected (A1 SSOT) | Observed | Result |
@@ -477,7 +477,7 @@ governance_gate_v1:
   4. `NoGo return path` の変更。
 - Proceed判定: **Conditional / Needs-decision 維持**（承認記録未入力のため）。
 
-## Stream C execution runbook log（2026-04-27 / Critical Path replay）
+## Stream E execution runbook log（2026-04-27 / Critical Path replay）
 
 ### Phase 1: Read snapshot（before change）
 - Status snapshot: `Open`（A3のみ `Draft`）
@@ -521,7 +521,7 @@ governance_gate_v1:
 - 根拠: `Approval Record: Pending` と `held` 論点が残存し、`A2A3_OPEN_ALLOWED` 充足前。
 - 次の1手（再開条件）: `approved_by` / `approved_at` / `evidence` を入力し、`pendingDecisionQueueCount==0` を満たした時点で再検証する。
 
-## Stream C fixed-serial protocol replay（2026-04-27 / Plan→Execute→Verify→Proceed）
+## Stream E fixed-serial protocol replay（2026-04-27 / Plan→Execute→Verify→Proceed）
 
 - Issue order position: `3/4 HIL-RS-02 A1`
 - Protocol lock: 各Phaseで `Plan -> Execute -> Verify -> Proceed` を維持（逆走・省略禁止）。
@@ -553,7 +553,7 @@ governance_gate_v1:
 - `Approval Record: Pending` または `held` 残存時は `Conditional` または `Needs-decision` を維持。
 - フェイルセーフ発火時の報告形式を固定: `原因 / 影響I/F / 要判断点`。
 
-## Stream C execution log（2026-04-28 / governance hardening replay）
+## Stream E execution log（2026-04-28 / governance hardening replay）
 
 ### Phase 1: Read（状態同期）
 - 対象4ファイルを再読し、`Status / Priority / Scope / Dependencies / Approval Record / held` を同期。
@@ -596,7 +596,7 @@ governance_gate_v1:
 - 再開条件: 人間承認完了後にProceedGateを再評価。
 
 
-## Stream C fixed-serial execution log（2026-04-28 / HIL-RS critical contract governance）
+## Stream E fixed-serial execution log（2026-04-28 / HIL-RS critical contract governance）
 
 ### Phase 1: Read
 - 対象4ファイルを再読し、`Status / Scope / Dependencies / 固定キー`（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `unlockRule`）を同期確認。
@@ -605,7 +605,7 @@ governance_gate_v1:
 - 差分判定: fixed keys diff=`0`。`held` 追加なし。
 
 ### Phase 2: ADR/CDC（Context / Decision / Consequences）
-- Context: Stream Cは `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を単一契約として維持し、A1ゲート迂回を禁止する。
+- Context: Stream Eは `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を単一契約として維持し、A1ゲート迂回を禁止する。
 - Decision: `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `unlockRule=(a1Status=="Done" && pendingDecisionQueueCount==0)` を再確認して固定。
 - Consequences: `Approval Record: Pending` のため、契約確定操作・Open昇格は実施しない。
 
@@ -626,7 +626,7 @@ governance_gate_v1:
 - 理由: `Approval Record: Pending`（`approved_by` / `approved_at` / `evidence` 未充足）によりGo条件未達。
 - 失敗時の出力対象（継続保持）: 原因=`未承認` / 影響I/F=`A2,A3はDraft/準備のみ` / 人間判断論点=`Approval Record充足`。
 
-## Stream C Proceed Handover Package（Fixed Contract / Prohibitions / Stop-Resume）
+## Stream E Proceed Handover Package（Fixed Contract / Prohibitions / Stop-Resume）
 
 - 固定契約ID（Contract Freeze SSOT）
   - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
@@ -707,7 +707,7 @@ governance_gate_v1:
   - `Approval Record: Pending` と Decision Queue未解消のため **Conditional（準備継続）**。
 
 
-## Stream C serial execution log（2026-04-28 / 固定順 Phase 2）
+## Stream E serial execution log（2026-04-28 / 固定順 Phase 2）
 
 ### Fixed Phase
 - Phase 2: `HIL-RS-02 A1 hardening`（本Issue）
@@ -739,12 +739,12 @@ governance_gate_v1:
 - 根拠: Approval RecordがPendingのため、Phase 3への進行は「条件付き（承認後）」。
 
 
-## Stream C execution note（2026-04-29）
+## Stream E execution note（2026-04-29）
 - Contract baseline re-read completed.
 - `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` のドリフトは未検知。
 - `Approval Record` 未充足のため、状態は **Pending維持**。
 
-## Stream C serial phase checkpoint（2026-04-29）
+## Stream E serial phase checkpoint（2026-04-29）
 
 ### Phase 1: RS-01 A1 契約固定確認（Read -> Verify）
 - Context: A1契約は全後続Phaseの唯一参照点であり、再定義を許容しない。
@@ -777,7 +777,7 @@ governance_gate_v1:
 - 依存順序逆転（A1 -> A2 -> A3）: 未検知。
 - 変更差分allowlist（許可5ファイル内のみ）: 準拠。
 
-## Stream C critical-path execution log（2026-04-29 / Contract Freeze & Handover Packet refresh）
+## Stream E critical-path execution log（2026-04-29 / Contract Freeze & Handover Packet refresh）
 
 ### Phase 1: Read & Inventory
 - 再読対象: `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / `issue-CE0-contract-freeze.md` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
@@ -833,7 +833,7 @@ governance_gate_v1:
   - impacted_interfaces: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`。
   - human_decision_required: `approved_by` / `approved_at` / `evidence` の確定入力。
 
-## Stream C execution snapshot（2026-04-29 / serial-phase sync）
+## Stream E execution snapshot（2026-04-29 / serial-phase sync）
 
 ### Phase 1: Read & Snapshot
 - 対象4Issueを再読し、`Status / Scope / Dependencies / 固定キー` の想定との差分を確認。
@@ -863,7 +863,7 @@ governance_gate_v1:
 - 理由: `Approval Record: Pending` および `held` 論点が残存。
 - 再開条件: `approved_by` / `approved_at` / `evidence` の入力完了、かつ `a1Status=="Done" && pendingDecisionQueueCount==0` の充足。
 
-## Stream C fixed-key verification log（2026-04-29 / serial）
+## Stream E fixed-key verification log（2026-04-29 / serial）
 
 ### Read
 - 再読対象（allowlist）: `ADR-0026` / `ADR-0027` / `issue-HIL-RS-01-A1` / `issue-HIL-RS-02-A1`。
@@ -876,7 +876,7 @@ governance_gate_v1:
 - Proceed: **Conditional**（`Approval Record: Pending` 継続）。
 
 
-## Stream C governance hardening checkpoint (2026-04-29)
+## Stream E governance hardening checkpoint (2026-04-29)
 - Contract freeze keys（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary`）の固定を再確認。
 - Verify phaseでは self-correction `0/3` から開始し、3回超過時は停止する運用を再固定。
 - NoGo return path の一意固定（A1）を維持する。
@@ -991,7 +991,7 @@ governance_gate_v1:
   2. 固定値一覧: 本セクション Phase 3
   3. 変更禁止範囲: `03_Implement/**` と A1以外での契約再定義
 - Stop conditions: self-correction 4回目相当 / allowlist外編集要求 / 前提崩壊 / 未承認確定化。
-## Stream C fixed-order sync log（2026-05-02 / HIL-RS Contract Lane）
+## Stream E fixed-order sync log（2026-05-02 / HIL-RS Contract Lane）
 
 ### Phase alignment check
 - 固定実行順を再確認: `Phase 1 (HIL-RS-01 A1) -> Phase 2 (HIL-RS-01 umbrella) -> Phase 3 (HIL-RS-02 A1) -> Phase 4 (HIL-RS-02 delivery)`。
