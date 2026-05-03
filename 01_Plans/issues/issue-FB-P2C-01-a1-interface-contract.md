@@ -214,3 +214,40 @@
   2. 固定値一覧: 本セクション Phase 3
   3. 変更禁止範囲: `03_Implement/**` と A1以外での契約再定義
 - Stop conditions: self-correction 4回目相当 / allowlist外編集要求 / 前提崩壊 / 未承認確定化。
+
+
+## Stream A protocol run（2026-05-03 / contract-only）
+
+### Phase 1 Read
+- Extracted:
+  - Status: `Open`
+  - Priority: `P0`
+  - Scope: allowlist 2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）のみ
+  - AC/DoD: `A2A3_OPEN_ALLOWED` の唯一判定式維持、mock-first依存分離、SafeMode境界後退禁止
+  - Verification level: `docs-check`
+- Re-read delta check: 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の差分 `0`。
+
+### Phase 2 Plan
+- Target: 本Issueの契約固定セクション更新（実行記録追記）のみ。
+- Non-target: allowlist外ファイル、実装コード、他stream issue。
+- AC/DoD:
+  1. `A2A3_OPEN_ALLOWED` を唯一SSOTとして維持。
+  2. A2/A3は `A1-CONTRACT-MOCK-v1` 前提の read-only 参照に限定。
+  3. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退させない。
+- Verification commands:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 4 Execute（contract-only）
+- Contract freeze snapshot を `2026-05-03` 時点で再確認し、固定値・判定式・NoGo条件は変更なしで維持。
+- 依存切断は interface contract + mock のみ（実装依存なし）を継続。
+
+### Phase 5 Verify
+- Self-check: AC/DoDに対する文書整合を確認（差分は本Issue + baselineのallowlist内のみ）。
+- Self-correction count: `0/3`。
+
+### Phase 6 Proceed
+- State: `Needs-decision`。
+- Reason: `Approval Record` 未充足および `HIL-RS-02-GOV-EXCEPTION-01=held` 継続。
+- Next single action: `Approval Record` の `approved_by / approved_at / evidence` を人間承認で補完する。
