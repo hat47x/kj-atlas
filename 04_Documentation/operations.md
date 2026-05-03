@@ -952,6 +952,8 @@ rg -n "CTR-2B-01-CANDIDATE-GROUP-V1|CTR-2B-02-DECISION-LOG-V1|accept|partial|rej
 - Query Preview 未通過の送信導線は無効化し、mock `/context/query` `/context/bundle` でも同一契約（bypass禁止）を維持します。
 - Verify/Proceed の自己修復は最大3回まで許可し、4回目失敗時は即停止します。
 - 監査用途では `queryId` / `bundleHash` / `excludedReason` をログ相関キーとして固定します。
+- CE4監査統合では 4点セット（`query/bundle/proposal/apply`）を必須とし、1件でも欠損した実行は **No-Go（fail-closed）** とします。
+- CE4監査統合のACとして、各イベントで `eventType` と `equivalenceKey` の追跡可能性を必須化します（API/CLI双方ログから同一実行を相互追跡できること）。
 
 
 ## Stream G docs-only execution cycle（DOC-OPS-05）
