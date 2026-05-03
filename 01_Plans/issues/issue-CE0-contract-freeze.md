@@ -1717,3 +1717,40 @@ type PatchProposal = {
   - 契約競合（Contract ID再定義、語彙衝突）
   - 前提崩れ（safeMode既定ON後退、未承認事項確定化、自己修復4回目相当）
 - 未承認事項: **`held` 維持**。
+
+## Stream B latest run（2026-05-03 / CE0 only / serial contract freeze maintenance）
+
+- run_id: `stream-b-ce0-2026-05-03-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read（対象ファイル再Read）
+- Phase開始時に本Issueを再読し、CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定を再確認。
+- safeMode既定（`safeMode=true` / `allowUnreviewedText=false`）後退禁止を再確認。
+- 編集範囲が CE0 契約凍結 issue 文書のみであることを再確認。
+
+### Phase 2 Plan（AC/DoD不足ドラフト提示）
+- 既存AC/DoDを再確認し、以下の不足ドラフトを提示して本runで採用。
+  - `ac_phase_re_read_required`: 各Phase開始時に対象ファイル再Readを必須化。
+  - `dod_contract_clause_cdc_before_downstream`: Context/Decision/Consequences 明文化が完了するまで下流進行を禁止。
+  - `dod_verify_retry_cap_3`: Verifyの自己修復は最大3回、4回目相当は `held` 停止。
+
+### Phase 3 Execute（契約凍結）
+- **Context**: CE0契約凍結のSSOTを本Issueで維持し、他stream（CE1/HIL-RS/DOC-OPS）へ干渉しない必要がある。
+- **Decision**: CE0契約ID群・No-Go canonical IDs・safeMode既定境界を不変として維持し、追加/改名/削除/緩和を行わない。
+- **Consequences**: 下流は read-only 参照で前進可能、契約ドリフトと安全境界後退を抑止。未承認要求は `held` 維持。
+
+### Phase 4 Verify（最大3回修復）
+- attempt_1:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- diff範囲検証: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ変更。
+
+### Phase 5 Proceed
+- 判定: **Proceed（Conditional-Go）**
+- 継続条件:
+  - CE0契約凍結は単一ファイルSSOTとして維持。
+  - 逸脱（範囲外編集、契約ID再定義、safeMode既定後退、自己修復4回目相当）は即 `held` 停止。
