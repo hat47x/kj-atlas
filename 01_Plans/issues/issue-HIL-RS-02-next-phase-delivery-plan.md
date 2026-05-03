@@ -14,12 +14,14 @@
 
 - Contract snapshot date: `2026-04-27`（固定入力）
 - Execution order (Stream C fixed serial): 4/4 HIL-RS-02 delivery plan
+- Prerequisite lock: `issue-HIL-RS-02-A1-governance-contract-hardening.md` の `Phase 1〜6` 完了（少なくとも `Approval Record != Pending`）を満たすまで本Issueは `Plan/Verify` 以外へ進行禁止
 
 ## Stream C Contract Lock（HIL-RS fixed）
 - Contract ID固定: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
 - `NoGo return path` 固定: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（変更禁止）
 - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` は境界条件として固定（緩和禁止）
 - 未承認事項（`Approval Record: Pending`）が1件でも残る場合は `Phase 4 Execute` へ進行禁止
+- 運用責務（実行）と承認責務（承認）は分離し、2者承認 (`Architecture Owner` + `Governance reviewer`) 完了前のOpen化を禁止
 
 
 ## Contract Vocabulary Sync Baseline（HIL-RS-02-A1-CONTRACT-FREEZE-v1）
@@ -84,6 +86,7 @@
 ### Approval Record（必須）
 - Status: `Pending`（承認記録が追記されるまで Phase 4 へ進行禁止）
 - Required fields: `approved_by`, `approved_at`, `evidence`
+- Two-person approval rule: `approved_by` は2名以上かつ `requested_by` と重複不可（承認責務分離）
 
 ### Consequences
 - A1未完了ならA2/A3 Open不可。
@@ -178,7 +181,7 @@ delivery_gate_v1:
 ## Phase 6: Proceed/Stop（Go / Conditional / No-Go）
 - Go: `ProceedGate=true` かつ AC/DoD充足、`held` 以外に未承認なし。
 - Conditional: `ProceedGate=false` だが未承認事項が `held` のみに限定される場合。
-- No-Go: 前提崩れ、未定義競合、承認なき確定、Self-Correction 3回超過、指定外差分。
+- No-Go: 前提崩れ、未定義競合、承認なき確定、Self-Correction 3回超過、指定外差分、または A1 Governance hardening 未完了。
 - No-Go時出力: 原因・影響・再開条件を明文化する。
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
 
