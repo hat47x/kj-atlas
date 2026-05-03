@@ -156,3 +156,16 @@
 - Phase 5 Verify: strict拒否・管理者導線・API正本/CLIラッパ方針に矛盾なし。
 - Phase 6 Proceed: **Go**（E2Eフェーズへ進行）。
 
+
+## Stream E serial execution log (2026-05-03)
+
+### Plan → Execute → Verify → Proceed
+
+- Plan: Stream E の固定順序に従い、SCHEMA確定後の API/IMPL 契約（strict 403 + admin provisioning）のみを再確認対象に限定。
+- Execute: `Status=Done` と AC 全件達成状態を維持し、未承認仕様（新規エラーコードやCLI独自分岐）の追加を禁止。
+- Verify:
+  - `rg -n "identity_not_provisioned|/admin/provision/users|ALLOW_JIT_PROVISIONING|status|code|provisioned" 01_Plans/issues/issue-AUTH-API-02-strict-provisioning-contract-and-admin-api.md 03_Implement/backend/src/kj_atlas_api`
+  - `pytest 03_Implement/backend/tests -k "provision or auth or strict"`
+- Proceed:
+  - 判定: **Go**（migration競合・データ前提崩壊・契約逸脱なし）。
+  - handoff: 次段（AUTH-E2E-01）は Level1 常時 / Level2 条件付き必須の運用境界を維持すること。
