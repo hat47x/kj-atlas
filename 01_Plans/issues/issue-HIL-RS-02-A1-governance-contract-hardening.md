@@ -19,6 +19,7 @@
 - このストリームは **A1契約ハードニングのみ** を扱う。
 - A2/A3 の `Draft -> Open` 判定は **本ストリームで実行しない**（read-only参照のみ）。
 - `human_dual_control_only` は固定値であり、緩和/別名化/派生定義を禁止する。
+- 運用責務と承認責務を分離し、`required_approvers` の2者（`Stream C Architecture Owner` / `Governance reviewer`）が揃うまで確定化しない。
 - Decision Queue は `Pending` を省略せず、`Pending -> Approved | Pending -> Rejected` のみ許可する。
 - フェイルセーフ（即停止）:
   1. 契約ID齟齬
@@ -96,6 +97,7 @@
 - requested_by: `Stream C agent`
 - requested_at: `2026-04-30T00:00:00Z`
 - required_approvers: `Stream C Architecture Owner` + `Governance reviewer (dual-control)`
+- separation_of_duties: `requester != approver` かつ `approver_a != approver_b`（同一人物による兼務禁止）
 - approval_evidence_required:
   1. `ADR-0027 D5/D6` の固定キー・停止条件との整合確認。
   2. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の Freeze keys 一致確認。
