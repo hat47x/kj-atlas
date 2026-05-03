@@ -526,3 +526,32 @@
 - Gate status: `ProceedGate=false`（`pendingDecisionQueueCount` と承認証跡未充足）。
 - Outcome: `Needs-decision` 継続。
 - Next restart condition: 承認証跡3キー（`approved_by` / `approved_at` / `evidence`）が入力され、`pendingDecisionQueueCount==0` を満たした時点で再評価。
+
+
+## Stream A protocol update（2026-05-03 / Phase 1-3 scope lock）
+
+### Phase 1: Read & Scope Lock（re-read）
+- Extracted Status: `Open`
+- Extracted Priority: `P0`
+- Extracted Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT, `sharedResourceFreeze=true`, `safeModeDefault=ON`
+- Scope lock reaffirmed: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）のみ。
+
+### AC/DoD draft gap check
+- 判定: 既存AC/DoDは契約固定・停止条件を満たすが、**承認記録の必須キー充足条件**（`approved_by` / `approved_at` / `evidence`）をGo条件へ明示する補助文が必要。
+- Draft proposal（合意待ち）:
+  1. Go追加条件: `Approval Record` 3キー充足を必須化。
+  2. Conditional維持条件: 未承認項目は `held` のみ許可。
+  3. No-Go追加条件: 承認キー欠落のまま確定化要求を検知した場合。
+- State: `agreement-pending`（合意前のため確定扱い禁止）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: P0 baselineはA1契約凍結の上位ガードとして、A2/A3の開始可否を単一判定式で統制する必要がある。
+- Decision: `A2A3_OPEN_ALLOWED` と `ProceedGate/NoGo/Conditional` の既存SSOTを維持し、承認キー3点充足まで `Needs-decision` を維持する。
+- Consequences: 承認未取得の間はPhase 4以降を進めず、契約値の確定化・下流着手を禁止する。
+- Approval gate: `pending`（承認未取得）。
+
+### Phase 3: Plan（serial）
+1. `FB-P0 baseline` を先に固定（本ファイルの判定式と停止条件をSSOT化）。
+2. 続けて `FB-P2C-01 A1 interface contract` を同一判定式へ整合。
+3. 依存分離: A2/A3は `A1-CONTRACT-MOCK-v1` 前提の read-only 参照のみ許可。
+- Execution status: `blocked-by-approval`（承認前のため停止）。

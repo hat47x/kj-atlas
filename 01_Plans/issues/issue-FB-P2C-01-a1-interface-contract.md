@@ -251,3 +251,31 @@
 - State: `Needs-decision`。
 - Reason: `Approval Record` 未充足および `HIL-RS-02-GOV-EXCEPTION-01=held` 継続。
 - Next single action: `Approval Record` の `approved_by / approved_at / evidence` を人間承認で補完する。
+
+
+## Stream A gate update（2026-05-03 / Phase 1-3 scope lock）
+
+### Phase 1: Read & Scope Lock（re-read）
+- Extracted Status: `Open`
+- Extracted Priority: `P0`
+- Extracted Dependencies: `A1 -> A2 -> A3`（A2/A3はA1 read-only参照）, `A1-CONTRACT-MOCK-v1` 前提分離。
+- Scope lock reaffirmed: allowlist 2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）以外は編集しない。
+
+### AC/DoD draft gap check
+- 判定: 契約固定ACは満たすが、**承認記録キー3点の必須化**をDoDへ明示すると判定の再現性が上がる。
+- Draft proposal（合意待ち）:
+  1. DoD追加: `approved_by` / `approved_at` / `evidence` が全て埋まるまで `Ready` 遷移禁止。
+  2. DoD追加: `Needs-decision` 解除条件を `Approval Record=Approved` + `held解消` に固定。
+- State: `agreement-pending`。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1 I/F契約を先行固定しないと、A2/A3側で派生再定義が発生し依存順が崩れる。
+- Decision: 既存の契約固定値・判定式（`A2A3_OPEN_ALLOWED`）を変更せず維持し、承認キー3点未充足時は `Needs-decision` を固定する。
+- Consequences: 承認前は Phase 4 Execute/Phase 5 Verify/Phase 6 Proceed を完了扱いにせず停止する。
+- Approval gate: `pending`（承認未取得）。
+
+### Phase 3: Plan（serial）
+1. P0 baselineで判定式・停止条件を固定。
+2. 本Issueは同判定式へ整合し、A2/A3へは契約面のみを引き渡す。
+3. 下流依存は `A1-CONTRACT-MOCK-v1` 前提で分離し、実装接続を行わない。
+- Execution status: `blocked-by-approval`（承認取得まで停止）。
