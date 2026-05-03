@@ -274,6 +274,22 @@ No-Go 判定は次の canonical ID を正本とし、表記揺れは同義語扱
 - `ai_review_auto_promotion`
 - `safemode_default_relaxation`
 
+
+### 7A.6 CE1 Context Foundation固定（最小I/F + mock-first）
+
+CE1 は CE0 の下流契約として **最小I/F固定** を維持し、backend実装の進捗に依存せず mock-first で検証を継続する。
+
+- Contract IDs（固定）: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+- `ContextQueryV1` / `ContextBundleV1` は closed-world 契約とし、v1 への未定義キー追加を禁止する。
+- `previewConfirmed=false` は常に `422 preview_required` とする（preview gate bypass 禁止）。
+- `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）を Verify 条件として固定する。
+- CE2/CE4 連携は `sourceBundleHash === bundleHash` を read-only handoff で照合し、契約更新は CE1 再起票でのみ許可する。
+
+禁止事項（CE1 非回帰）:
+- v1 必須キー集合・エラー意味論（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の破壊的変更。
+- mock-first 検証の停止（backend完了待ちへの後退）。
+- deterministic hash 規約を満たさない `ContextBundle` の成功扱い。
+
 ### 7A.5 Drift-stop 固定（CE0）
 
 - Contract ID collision は 0 件固定（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の重複再定義禁止）。
