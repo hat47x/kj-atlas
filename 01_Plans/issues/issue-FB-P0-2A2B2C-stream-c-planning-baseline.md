@@ -506,3 +506,23 @@
 ### Phase 6 Proceed
 - State: `Needs-decision`（`Approval Record` 未承認、`held` 継続）。
 - Next single action: 人間判断で `HIL-RS-02-GOV-EXCEPTION-01` の解消可否を確定する。
+
+
+## Stream E planning baseline execution（2026-05-03 / FB-P0-2A2B2C）
+
+- Scope lock: `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` と `project-progress-dashboard.md` のみ更新（allowlist準拠）。
+- Phase protocol: `Read同期 -> CDC -> Plan -> Execute -> Verify(max3) -> Proceed` を直列で適用。
+- Conflict sentinel: 同一ファイルの別ストリーム編集兆候（未マージ差分・競合マーカー）を検知した場合は即停止。
+
+### Phase execution log
+1. **Read同期**: 固定キー（`freezeContractId` / `contractIds` / `safeModeDefault` / `sharedResourceFreeze`）と依存順 `A1 -> A2 -> A3` を再確認し差分0。
+2. **CDC**: 既存Decisionを再採用し、未承認事項 `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（確定化禁止）。
+3. **Plan**: docs-only差分（本issue + dashboard）に限定し、allowlist外編集を禁止。
+4. **Execute**: Stream E実行記録を追記し、判定式・固定値・NoGo条件は再定義せず参照専用を維持。
+5. **Verify(max3)**: `validator` / `unittest` / `git diff --check` を各1回実行して停止条件違反0件を確認（self-correction 0回）。
+6. **Proceed**: `Conditional/Needs-decision` 維持（`Approval Record` 未充足 + `held` 残存）。
+
+### Proceed snapshot
+- Gate status: `ProceedGate=false`（`pendingDecisionQueueCount` と承認証跡未充足）。
+- Outcome: `Needs-decision` 継続。
+- Next restart condition: 承認証跡3キー（`approved_by` / `approved_at` / `evidence`）が入力され、`pendingDecisionQueueCount==0` を満たした時点で再評価。
