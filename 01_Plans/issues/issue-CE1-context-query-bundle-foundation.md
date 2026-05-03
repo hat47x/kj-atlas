@@ -700,3 +700,34 @@ export type ContextBundleV1 = {
 ### Phase 5 Proceed/Stop
 - 判定: `proceed`（自己修復0回、停止条件未該当）。
 - handoff: CE2/CE4 は当該fixtureと契約テストを read-only 参照して mock 検証を継続可能。
+
+## Stream E runbook update（2026-05-03 / CE1 contract-only reaffirmation）
+
+### Phase 1 Read（必須同期 / 実行前）
+- Read同期を実施（本Issue再読 → `ADR-0028` → `02_Architecture/schemas.md` の順）。
+- 差分判定: ContextQuery/ContextBundle の契約ID、固定エラー語彙、safeMode境界に変更なし。
+- Proceed条件: 前提差分なしのため Phase 2 へ進行。
+
+### Phase 2 Plan（I/F先行固定 / 実装依存なし）
+- Plan-1: `ContextQueryV1` / `ContextBundleV1` を **contract-only** として再固定（実装方式は非規定）。
+- Plan-2: closed-world（未定義キー拒否）と固定エラー対応（422/400/409）を再確認。
+- Plan-3: mock-only検証可能性をDoDへ固定（handler/UI/DB/worker 依存を禁止）。
+
+### Phase 3 Execute（docs-only）
+- 本Issue内で契約再確認ログを追記し、I/F・エラー語彙・決定論条件の参照点を一本化。
+- 他streamファイルの編集は行わず、当該Issue単体で完結。
+
+### Phase 4 Verify（mock-first / 最大3回自律修復）
+- Verify-1: I/F定義が入力/出力とも自己完結し、実装依存語彙を含まないこと。
+- Verify-2: `previewConfirmed=false -> 422 preview_required` が明示されていること。
+- Verify-3: `queryCanonicalHash` / `bundleHash` 決定論（同一canonical queryで一致）と、失敗時 `409 nondeterministic_bundle` が明示されていること。
+- Verify-4: Plan→Execute→Verify→Proceed の順序記録が残っていること。
+- Self-repair policy:
+  - attempt=1..3: 不整合を自律修復してVerify再実行。
+  - attempt>3: **即停止（Status=`held`）**。
+- 判定: **pass（attempt=1）**。
+
+### Phase 5 Proceed（継続条件）
+- Proceed条件: Verify pass かつ collision未検知。
+- collision（contract id / error semantics / handoff key）検知時: Proceed禁止、Phase 2へ戻して `held`。
+- 現在状態: **proceed可能（docs contract freeze維持）**。
