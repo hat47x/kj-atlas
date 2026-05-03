@@ -1320,3 +1320,34 @@
 ### Phase 6 Proceed
 - 判定: `Done`（contract-only 境界維持、AC/DoD整合、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
+
+## Phase Execution Record（2026-05-03 / Stream C / contract-vs-implementation diff separation）
+### Phase 1 Read
+- 実行直前Readを実施し、固定語彙（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`）と canonical No-Go 5 IDs を再確認。
+- Phase 1〜6 の強制順序と、各Phase開始時Read義務を再確認。
+- SafeMode既定ON境界（`CE0-SAFEMODE-IF`）に後退差分がないことを確認。
+
+### Phase 2 Plan
+- Scope を本Issue単体の契約記述整理に限定（single-file / docs-only / contract-only）。
+- **差分分離方針を固定**:
+  - Contract Diff: 契約語彙・遷移規則・No-Go・停止条件の変更/追記のみを記録対象とする。
+  - Implementation Diff: handler/UI/DB/worker/API/schema migration 等の実装差分は本Issueでは扱わず、別タスクに分離する。
+- 契約が曖昧な場合は実装へ進まず、`Context/Decision/Consequences` を先に確定する。
+
+### Phase 3 ADR/CDC Consensus（Context/Decision/Consequences）
+- Context: Core Graph再配置で契約と実装を混在させると、CE0凍結境界が崩れ検証不能になる。
+- Decision: 本Issueでは Contract Diff のみ確定し、Implementation Diff は `pending` 管理で分離する。契約曖昧性がある場合は実装着手禁止。
+- Consequences: 下流実装は承認済み契約を read-only 参照し、曖昧点は `held` として在庫化してから合意形成を行う。
+
+### Phase 4 Execute
+- 本Issueに「Contract Diff / Implementation Diff 分離」と「契約曖昧時は Context/Decision/Consequences 先行確定」の運用規則を明文化。
+- 実装記述の追加・推測・代替設計の確定化は行わない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数: 0/3（追加修正なし）。
+
+### Phase 6 Proceed
+- 判定: `Done`（Phase 1〜6順守、contract-only維持、差分分離方針を明記、docs-check pass）。
+- 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
