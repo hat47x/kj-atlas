@@ -1027,3 +1027,29 @@
 - 判定: **Conditional / Hold**（Draft維持）。
 - 理由: `Approval Record: Pending` かつ `a1Status==Done` の証跡未充足。
 - Stop条件: 未承認確定化、固定キー後退、NoGo return path改変要求、self-correction 4回目相当で即停止。
+
+## Stream I proposal log（2026-05-03 / Draft→Open judgment material, fail-closed）
+
+### Context
+- 本ストリームの目的は Draft→Open 判定材料の整備であり、`proposal-only`・`mock I/F前提`・`fail-closed` を維持する。
+- A1未完了のため、Open化・契約再定義・実装変更は対象外。
+
+### Decision
+- 追加で以下の判定材料を固定し、Open判定前のチェック漏れを防止する。
+  - `OpenReadinessChecklist`（提案のみ）
+    1. `ProceedGate=true`（`a1Status=="Done" && pendingDecisionQueueCount==0` を満たす）。
+    2. Fixed keys差分 `0`（`freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault`）。
+    3. Role vocabulary drift `0`（`Security Officer / System Owner / Platform Operator`）。
+    4. `NoGo return path` が A1 issue を一意参照。
+    5. docs-check 4点（validator / unittest / scope rg / `git diff --check`）が全て成功。
+  - `FailClosedRule`
+    - 1項目でも未充足なら Open化せず `Conditional(Hold)` を返す。
+    - `verify_attempt_count > 3` または依存未確定（`a1Status!="Done"`）を検知した時点で `held` 記録を更新して停止。
+- AC/DoD不足が検出された場合は、本Issue内でAIドラフトを追記し、`Approval Record` 合意前は Execute昇格しない。
+
+### Consequences
+- 判定手順が「提案→合意→昇格」の順に固定され、A3での先走りOpen化を防止できる。
+- 依存未確定時の停止トリガー（verify 3回超過 / A1未完）を明示でき、再開時の判断が単純化される。
+
+### Proceed
+- 判定: **Conditional(Hold)**（`a1Status!="Done"` のため Draft維持）。
