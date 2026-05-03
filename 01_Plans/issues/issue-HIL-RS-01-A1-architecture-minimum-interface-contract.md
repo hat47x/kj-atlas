@@ -802,3 +802,21 @@ gate:
 - 依存リンク: `ADR-0026` / `ADR-0027` / `ADR-0028` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`。
 - 停止条件確認: self-correction超過/未承認確定化/未定義競合/allowlist外編集要求の検知なし。
 - 判定: **Conditional-Go（Approval Record pending のため）**。
+
+
+## Stream C serial approval lock（A1先行・Phase 1〜6厳守）
+
+### Context
+- `A1 -> 本体計画` の直列依存を崩すと、契約凍結（Contract Freeze）と実行判定（Proceed/Stop）の根拠が分岐し、監査不能になる。
+- そのため、A1契約定義の承認完了までは本体計画Issueを含む後続Phaseを **実行不可** とする。
+
+### Decision
+1. 実行順序を `A1契約定義 -> RS-01本体計画` に固定する（逆走禁止）。
+2. 両Issueとも Phase 1〜6 を `Read -> ADR/CDC -> Plan -> Execute -> Verify -> Proceed/Stop` の順で直列実施する。
+3. `Approval Record: Pending` が1件でもある場合、後続Issueの `Phase 4 Execute` は開始不可とする。
+4. 後続Issueの `ProceedGate` 判定は、A1側の承認完了（`approved_by/approved_at/evidence` 充足）を前提条件へ含める。
+
+### Consequences
+- A1未承認時は本体計画Issueの判定は `Conditional` もしくは `Needs-decision` に固定され、`Go` を返さない。
+- Context/Decision/Consequences の記述は両Issueで同一語彙（`Approval Record`, `ProceedGate`, `NoGo return path`, `A2A3_OPEN_ALLOWED`）を維持する。
+- 承認情報が欠落したまま先行実施したログは無効として扱い、A1 Issueへ差し戻して再検証する。
