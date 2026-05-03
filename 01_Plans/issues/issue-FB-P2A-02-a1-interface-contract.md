@@ -374,3 +374,12 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog整理提案: FB-P2A-02 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
+
+## Stream D execution log (2026-05-03, FB-P2A-02 A1→A2→A3 serial)
+
+- Phase 1 Read sync: re-read A1/A2/A3 set and confirmed `ContractID=CTR-2A-02-COLLAPSE-EXPAND-V1` consistency.
+- Phase 2 A1 contract freeze: contract fields/invariants stayed read-only with no CDC escalation needed.
+- Phase 3 A2 mock validation: validated GoNoGo lock (`M1/M2/M3=pass`, `M4=fail`) and no unresolved `ownerOfFix` entries.
+- Phase 4 A3 implementation readiness: verified handoff interface completeness and rollback triggers unchanged.
+- Phase 5 Verify: docs-check remained the lane verifier; self-correction stayed within upper bound (`<=3`).
+- Phase 6 Proceed: marked as proceedable with no unexpected conflict or contract deviation.
