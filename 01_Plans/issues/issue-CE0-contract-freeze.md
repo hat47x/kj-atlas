@@ -1544,3 +1544,42 @@ type PatchProposal = {
 ### Phase 6 Proceed/Stop
 - 判定: **Conditional-Go**（CE0 Contract Freeze継続）。
 - 継続条件: CE0契約は read-only参照運用を維持し、逸脱・競合・前提崩れが発生した場合は即時 `held` 停止。
+## Stream B latest run（2026-05-03 / CE0 Contract Freeze / serial-phase integrated execution）
+
+- run_id: `stream-b-ce0-2026-05-03-01`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md, 01_Plans/issues/issue-CE0-core-graph-repositioning.md, 02_Architecture/architecture.md(CE0該当節), 02_Architecture/schemas.md(CE0該当節)`（本runの実編集は本Issueのみ）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read同期
+- 本Issueを再読し、`Read → CDC → Plan → Execute → Verify → Proceed` の固定順序を確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定、No-Go canonical 5 IDs 固定、safeMode既定ON後退禁止を再確認。
+- 独立実行制約（allowlist外編集禁止）を再確認。
+
+### Phase 2 CDC（Context / Decision / Consequences）
+- Context: CE0 Contract FreezeをSSOTとして維持し、Core graph実装依存は固定I/F + fixture/mock graphで切り離して下流結合を回避する。
+- Decision: 本runは contract-only / docs-only とし、I/F凍結に必要な運用記録更新のみ実施。新規Contract ID追加・改名・削除は行わない。
+- Consequences: 下流は read-only 参照で並行作業可能。未定義競合・前提崩壊・4回目相当修復要求発生時は `held` で即停止。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- 既存AC/DoD（read-only参照、No-Go canonical IDs固定、CDCで `held` 移行条件明記）を再点検。
+- 不足判定: 新規不足なし。
+- 補完方針: 不足発生時はドラフト追記＋明示合意完了まで `held` 維持。
+
+### Phase 4 Execute（I/F先行・モック許容）
+- 実施: 本Issue内の実行記録追記のみ（contract-only / mock-first）。
+- 非実施: 実装変更、allowlist外編集、Contract ID再定義、safeMode既定値変更。
+
+### Phase 5 Verify（最大3回修復）
+- attempt_1:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: Verify成功。上限超過なし。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件:
+  - CE1/CE2/CE4は CE0 Contract IDs / No-Go canonical IDs を read-only 参照のみで利用。
+  - 未定義競合・前提崩壊・自己修復4回目相当要求時は即 `held` 停止（フェイルセーフ発動）。
