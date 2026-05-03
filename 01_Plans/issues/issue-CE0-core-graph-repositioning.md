@@ -1262,3 +1262,33 @@
 - 判定: **Ready**（Stream C 完了待ちなし、read-only契約参照 + Mock Contract Assumption明示で独立進行可能）。
 - 不足契約は `Assumption-CE0-IF-01..04` に局所化済みで、実契約受領後の差替え手順を併記。
 - Hold移行条件（将来）: 上流語彙矛盾、未定義競合、allowlist外必須編集、自己修復4回目相当のいずれかを検知した場合は `stopped_for_clarification` で停止。
+
+## Phase Execution Record（2026-05-03 / Stream C / single-file docs-only contract-only strict run）
+### Phase 1 Read（Scope/固定語彙/No-Go条件の再確認）
+- Scope を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみと再確認（single-file / docs-only / contract-only）。
+- 固定語彙を再確認：`role`=`working` / `context_projection` / `consensus`、`transition`=`working -> consensus` + `patch+approval`。
+- No-Go canonical 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）の不変を再確認。
+- 致命条件（未定義競合・依存循環・scope逸脱）監視を有効化し、検出なしのため継続。
+
+### Phase 2 Plan（AC/DoD不足時補完案の先行合意）
+- 既存 AC/DoD を再点検し、不足・矛盾は未検出。
+- 補完案の新規提案は不要と判定し、既存 AC/DoD を合意済み基準として採用。
+- 実施内容を「契約記述整合と実行記録更新のみ」に固定。
+
+### Phase 3 ADR合意（必要時のみ Context/Decision/Consequences）
+- 判定: `No ADR delta`（新規の方針差分なし）。
+- `Context/Decision/Consequences` の追加起票は不要、未承認事項の確定化は行わない。
+
+### Phase 4 Execute（契約記述と実行記録のみ更新）
+- 本Issue本文に本実行記録を追記。
+- 実装記述（handler/UI/DB/worker/API/schema migration）は追加しない。
+- CE0契約IDは参照のみで利用し、再定義・同義語置換・拡張を実施しない。
+
+### Phase 5 Verify（docs-check + diff整合、3回まで自己修正）
+- attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
+- attempt_1: `git diff --check` → pass
+- self-correction: `0/3`（追加修正なし）
+
+### Phase 6 Proceed（Ready/Hold判定）
+- 判定: **Ready**（AC/DoD整合、docs-check pass、single-file/docs-only/contract-only 維持）。
+- 致命条件が将来検出された場合は即時 `stopped_for_clarification` へ遷移し `Hold` で停止する。
