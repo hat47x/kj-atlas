@@ -780,3 +780,41 @@ delivery_gate_v1:
 - Self-Correction counter: `0/3`（再試行なし）。
 - 4回目相当、未承認確定化、未定義競合は未検知。
 - 継続条件: `approved_by` / `approved_at` / `evidence` の充足後に次段階再判定。
+
+
+## Stream A governance/interface freeze sync（2026-05-03 / Critical Path）
+
+### Phase 1: Read同期
+- Status / Scope / Dependencies を再抽出し、`Open` / `planning only` / `A1 -> A2 -> A3` を確認。
+- 固定キー再読: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`。
+- 差分判定: 固定キー `diff=0`（想定差分なし）。
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences）
+- Context: A2/A3のOpen化条件とPending bypass禁止をA1契約凍結に従属させる必要がある。
+- Decision: `A2A3_OPEN_ALLOWED` を唯一判定式として維持し、`Pending -> Approved | Pending -> Rejected` 以外の遷移を禁止。`safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を固定。
+- Consequences: `Approval Record` 未充足中は Execute を契約同期（docs）のみに限定し、A2/A3の確定遷移は実施しない。
+
+### Phase 3: Plan（AC/DoD補完）
+- 対象ファイル: 本ファイル（contract governance / delivery plan の契約I/F同期）
+- 非対象ファイル: allowlist外すべて（実装コード、他stream成果物、README/dashboard）
+- AC:
+  1. 固定キー集合を閉じた契約として維持（unknown keyは許容しない）。
+  2. `A2A3_OPEN_ALLOWED` と `NoGo return path` の一意性を維持。
+  3. Pending bypass禁止・SafeMode境界後退禁止を明文化。
+- DoD:
+  1. Plan→Execute→Verify→Proceed の順序ログを残す。
+  2. self-correction を `<=3` で管理。
+  3. 未承認事項は `Needs-decision/held` のまま維持。
+
+### Phase 4: Execute（契約I/Fのみ）
+- 契約語彙を `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeMode*` / `decisionQueueTransition` に統一。
+- 禁止遷移（Pending bypass、A1未完了でのA2/A3 Open、NoGo return path変更）を再固定。
+
+### Phase 5: Verify
+- docs-check / diff整合 / 用語整合を実行対象として確認。
+- self-correction count: `0/3`（追加修復なし）。
+
+### Phase 6: Proceed判定
+- 判定: `Conditional`。
+- 理由: `Approval Record`（`approved_by` / `approved_at` / `evidence`）未充足、および `HIL-RS-02-GOV-EXCEPTION-01=held` が継続。
+- No-Go条件（継続監視）: 固定キー矛盾、allowlist外編集要求、self-correction 4回目相当、未定義競合。
