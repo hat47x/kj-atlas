@@ -772,3 +772,88 @@ export type ContextBundleV1 = {
 - Attempt 2: `nondeterministic_bundle(409)` 条件を `sameQuery && !sameBundle` に固定。
 - Attempt 3: hash 決定論要件を `queryCanonicalHash` + `bundleHash` の二段一致に明文化。
 - Guard: 4回目相当（3回超）は **即停止（held）**。
+
+## Stream E execution update（2026-05-03 / Phase 1〜6 strict）
+
+### Phase 1 Read（scope lock / upstream reconfirm）
+- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
+- `ADR-0028` と `02_Architecture/schemas.md` に対するCE1責務を **contract-only / mock-first** として再確認。
+- CE0 read-only境界、CE1 Contract IDs、固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の変更なしを確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: ContextQuery/ContextBundleのI/F未固定だと、CE2/CE4が実装依存で先行検証できない。
+- **Decision**: CE1はv1で `ContextQueryV1` / `ContextBundleV1` を closed-world で先行確定し、モック契約で他レイヤ依存を遮断する。
+- **Consequences**: CE2/CE4は mock payload のみで正常系/異常系を再現でき、handler/UI/DB/worker実装待ちを不要化する。
+
+### Phase 3 Plan（I/F freeze + mock data contract 明示）
+- Plan-1: `ContextQueryV1` 入力キー集合をv1固定（unknown keyは `400 unknown_contract_key`）。
+- Plan-2: `ContextBundleV1` 出力キー集合をv1固定（hash・reviewFlags・excludedReasonを必須）。
+- Plan-3: `previewConfirmed=false -> 422 preview_required` を事前ゲートとして固定。
+- Plan-4: hash決定論を「同一canonical queryで `bundleHash` が3回一致しなければ `409 nondeterministic_bundle`」に固定。
+- Plan-5: 下記 **Mock Data Contract v1** を唯一の検証入力/出力契約として定義し、他レイヤ依存を禁止。
+
+### Phase 4 Execute（Mock Data Contract v1 / contract-first）
+- CE1は以下を **実装非依存の検証契約** として採用する。
+
+```yaml
+contractVersion: ce1-context-v1
+inputContractId: CE1-CTXQ-IF
+outputContractId: CE1-CTXB-IF
+
+goldenQuery:
+  queryId: "Q-0001"
+  goal: "cluster assumptions for policy draft"
+  scope: "document"
+  depth: 2
+  constraints: { tag: ["policy", "risk"] }
+  reviewFilter: "reviewedOnly"
+  safeModePolicy: "strict"
+  outputMode: "summary"
+  previewConfirmed: true
+
+goldenBundle:
+  queryCanonicalHash: "9c7f...aa01"  # sha256 hex placeholder
+  bundleHash: "4a2d...7f3b"          # sha256 hex placeholder
+  selected: []
+  relations: []
+  evidence: []
+  contradictions: []
+  reviewFlags:
+    reviewed: 0
+    unreviewed: 0
+  truncationMeta: { truncated: false }
+  excludedReason: []
+
+errorCases:
+  - caseId: "E-PREVIEW"
+    when: "previewConfirmed=false"
+    expectHttp: 422
+    expectError: "preview_required"
+  - caseId: "E-UNKNOWN-KEY"
+    when: "unknown key present"
+    expectHttp: 400
+    expectError: "unknown_contract_key"
+  - caseId: "E-NONDET"
+    when: "same queryCanonicalHash with different bundleHash"
+    expectHttp: 409
+    expectError: "nondeterministic_bundle"
+
+handoffKeys:
+  - "sourceBundleHash === bundleHash"
+  - "equivalenceKey + bundleHash"
+```
+
+### Phase 5 Verify（依存遮断 / fail-closed）
+- Verify-1: mock契約だけで正常系1件 + 異常系3件を再現できることを確認（実装依存なし）。
+- Verify-2: unknown key / preview gate / nondeterministic hash が固定語彙へ1:1マッピングされることを確認。
+- Verify-3: CE2/CE4 handoffキー（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）がMock Data Contract上で自己完結することを確認。
+- 判定: **pass（contract-onlyで他レイヤ依存を遮断）**。
+
+### Phase 6 Proceed/Stop（厳守）
+- Proceed条件:
+  - v1 I/Fキー集合・エラー語彙・hash決定論・mock契約が本Issue単体で参照可能。
+  - docs-only差分であり、コード/スキーマ実装の変更要求を含まない。
+- Stop条件:
+  - Contract ID collision / vocabulary collision / handoff key collision を検知した場合は `held`。
+  - 自己修復が3回を超えた場合は `held`。
+- 最終ステータス: **Proceed（CE1 contract-first handoff ready）**。
