@@ -1083,3 +1083,76 @@
   2. 承認ログ最小項目（日時・承認者・対象・判断）を補完。
   3. docs-check を再実行し、self-correction 回数を更新。
 - 再開条件: 上記 1〜3 が揃った時点で Phase 6 を再判定する。
+
+## Stream G execution log（2026-05-03 / HIL-RS-02 A3 Draft準備）
+
+### Phase 1: Read同期
+#### Context
+- A3は `A1 -> A2 -> A3` 依存の下流であり、A1未完了中は契約再定義を行わない前提を維持する。
+
+#### Decision
+- 固定キーを再確認し、差分なしを確認した。
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `overridePolicy=human_dual_control_only`
+  - `sharedResourceFreeze=true`
+  - `contractLinkLocked=true`
+
+#### Consequences
+- 契約凍結の参照整合を維持し、A3は mock I/F preparation only を継続する。
+
+### Phase 2: ADR明文化
+#### Context
+- A1未完前提のため、A3での Open化・契約改定は fail-safe に反する。
+
+#### Decision
+- `Context / Decision / Consequences` を本ログで明文化し、A3は docs-only の準備ノードとして運用する。
+
+#### Consequences
+- A1完了まで A3 は Draft維持、Open gate判定は ProceedGate 条件充足時のみ実施する。
+
+### Phase 3: Plan
+#### Context
+- 既存AC/DoDに加え、Open化条件と準備継続条件の分離を明瞭化する必要がある。
+
+#### Decision
+- AC/DoD補完提案:
+  - AC-6: `ProceedGate` と `PrepGate` の同時成立を許容せず、Go/Conditionalの判定根拠を毎回記録する。
+  - DoD-5: `Open化条件`（`a1Status=="Done" && pendingDecisionQueueCount==0`）と `準備継続条件`（`a1Status!="Done" && fixedKeysDiff==0`）を別行で記録する。
+
+#### Consequences
+- 判定の混線を防止し、A1未完時の誤昇格リスクを低減する。
+
+### Phase 4: Execute
+#### Context
+- 本ストリームの実行範囲はメモ整備のみ。
+
+#### Decision
+- 本Issueへの追記のみ実施し、契約値・Gate式・依存順の再定義は実施しない。
+
+#### Consequences
+- docs-only / mock I/F preparation only の制約を満たしたまま前進できる。
+
+### Phase 5: Verify
+#### Context
+- docs-check観点で自己検証し、必要時のみ最大3回まで自己修復する。
+
+#### Decision
+- 判定: pass（fixed keys diff=0 / role vocabulary drift=0 / safeMode後退兆候なし）。
+- self-correction: `0/3`。
+
+#### Consequences
+- 次サイクルへ検証証跡を引き継げる状態を維持する。
+
+### Phase 6: Proceed/Stop
+#### Context
+- Open gate未達時は Hold維持が必須。
+
+#### Decision
+- 判定: **Conditional（Hold維持）**。
+- 理由: `a1Status!="Done"` のため `ProceedGate=false`、`PrepGate=true`。
+- Stop条件（3回超過 / 競合 / 前提崩壊）は未検知。
+
+#### Consequences
+- A3は Draftのまま準備継続し、A1完了イベント後に同一ゲート式で再判定する。
