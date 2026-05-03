@@ -321,3 +321,45 @@ Prohibited for A2/A3:
 
 ### Verification rule
 - docs-check と契約照合で不一致が出た場合は自己修復を最大3回まで許可し、4回目相当は即停止する。
+
+## 9) Stream A A1 Contract Freeze Declaration（2026-05-03）
+
+### Phase 1 Read Gate（未確定項目一覧）
+- APIシグネチャ: `CritiqueV1 / ReDiffV1 / AttributionV1 / A1ErrorV1` を固定し、追加・改名・削除を禁止。
+- 型: `schemaVersion="1.0.0"`、`overridePolicy="human_dual_control_only"`、`decisionQueueTransition="Pending -> Approved | Pending -> Rejected"` を固定。
+- 判定条件: `A2A3_OPEN_ALLOWED`（本書 4章）以外の派生式を禁止。
+- `contractLinkLocked=true` / `sharedResourceFreeze=true` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を固定。
+
+### Phase 3 契約固定（A2/A3向け凍結対象）
+- 変更凍結対象:
+  1. `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  2. `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  3. `schemaVersion=1.0.0`
+  4. `overridePolicy=human_dual_control_only`
+  5. `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- deterministic inputs:
+  - `pendingDecisionQueueCount`（整数）
+  - `hasUndefinedContractChangeRequest`（boolean）
+  - `hasSafeModeRegressionRequest`（boolean）
+  - `hasShareExportLeakageRelaxationRequest`（boolean）
+- acceptance checkpoints:
+  - C1: freeze keys 差分0
+  - C2: pending bypass 0件
+  - C3: A1完了前の A2/A3 `Draft -> Open` 0件
+
+### Phase 4 受け渡し（Lane B/C handoff）
+- fixed interface list: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`
+- prohibited changes list:
+  - Contract ID再定義
+  - `schemaVersion`更新
+  - `overridePolicy`緩和
+  - SafeMode境界後退
+  - `Pending` bypass
+- mock assumptions list:
+  - A2/A3 は mock-first で本契約を read-only 参照する。
+  - 実装有無に関わらず Gate 判定は本書の式を唯一参照する。
+
+### Phase 5 Verify & Publish（A1 DoD）
+- 差分説明可能性: freeze keys / gate式 / NoGo return path の変更有無を必ず記録。
+- 依存リンク: `ADR-0026` / `ADR-0027` / `ADR-0028` / `issue-HIL-RS-02-A1-governance-contract-hardening.md`。
+- 停止条件: self-correction 3回超過、未承認確定化、未定義競合、allowlist外編集要求。
