@@ -101,8 +101,10 @@ export type ContextBundleV1 = {
 - `previewConfirmed=false` は契約違反（`422 preview_required`）。
 - 同一 canonical query で `bundleHash` 不一致は fail 判定。
 - CE1 v1 は **最小I/F固定** とし、`ContextQueryV1` / `ContextBundleV1` への未定義キー追加を禁止する（拡張は v2 でのみ許可）。
+- CE1 v1 は closed-world 契約とし、Contract Test/Stub API の双方で unknown key reject（`400 unknown_contract_key`）を同一意味で扱う。
 - CE2/CE4 は backend 実装完了待ちを行わず、mock `ContextQuery/ContextBundle` 契約で先行検証する（mock-first）。
 - CE2/CE4 への連携は read-only handoff とし、契約更新は CE1 再起票でのみ許可する。
+- CE2/CE4 側で `sourceBundleHash === bundleHash` を照合できない場合は fail-closed（適用停止）とする。
 
 CE1 A2 stub contract（検証専用）:
 
