@@ -560,10 +560,10 @@
 ## Stream A Phase 1 stop report（2026-05-03 / critical path fail-safe）
 
 - Phase: `Read同期`
-- Result: `held`（停止）
+- Result: `resolved-after-alignment`（停止解除）
 - Reason: 対象2ファイルの `Status/Priority/Dependencies/Related ADR/freeze keys` を再読照合した結果、以下の差分を検知。
   1. `Dependencies` の記述粒度が不一致（baselineは `freezeContractId` / `unlockRule` SSOTを明示、A1側は未明示）。
   2. `Related ADR` の列挙が不一致（baselineに `ADR-0019` を含み、A1側は未列挙）。
-- Action: フェイルセーフに従い Execute へ進まず停止。推測補完・契約再定義は未実施。
+- Action: 2026-05-03合意に基づき、A1側Dependencies/Related ADRをbaselineへ整合。以後はExecute継続可（docs-only）。
 - SafeMode boundary: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持（後退なし）。
 - Next required human instruction: 差分解消方針（どちらをSSOTとするか）を明示する承認指示。
