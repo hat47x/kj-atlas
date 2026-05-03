@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream G
+- Owner: Stream I
 - Scope: `01_Plans/documentation_quality.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `04_Documentation/release.md`
@@ -65,56 +65,33 @@
 - [x] DoD1 Verify結果とSelf-correction回数を併記。
 - [x] DoD2 Self-correction 最大3回、超過時は Hold。
 
-## Phase execution record（Stream G）
-### Phase 1: Read
-- 本Issue・`ADR-0024`・`documentation_quality.md` の参照関係を再確認。
+## Phase execution record（Stream I / 2026-05-03）
+### Phase 1: Read同期
+- 本Issueを再読し、Open gate判定に必要な4要素（Classification/Gate/Verification/Proceed）の単独再読性を確認。
+- 依存 `DOC-OPS-05` が未確定であることを再確認。
 
-### Phase 2: ADR/CDC
-- ADR整合: 品質ゲート境界（ADR-0024）に従い internal文書扱いを固定。
-- CDC: 対象外ファイル非編集、docs-only制約を維持。
+### Phase 2: ADR明文化（Context/Decision/Consequences）
+- Context: Move internal 判定は固定済みだが、依存 gate は未確定でOpen化判断を確定できない。
+- Decision: 判定情報を本Issue単体で再読完結できる構成として維持し、Proceedは Hold を維持する。
+- Consequences: 依存未確定時の誤Proceedを防止し、fail-safe（Hold/Stop遷移）を保持する。
 
-### Phase 3: Plan
-- Open gate情報を `Classification / Gate / Verification / Proceed` に再編。
-- Required gateのGo/NoGo条件を明示する計画を固定。
+### Phase 3: Plan（AC/DoD不足補完）
+- AC/DoDの狙いを Open gate 判定情報に直結させ、再読時の判定手順を固定。
+- 不足補完方針: 「依存確定証跡」「docs-check結果」「self-correction<=3」を同一メモ内で追跡可能に維持。
 
-### Phase 4: Execute
-- 本Issueメモのみ更新し、分類根拠と判定条件を統合。
+### Phase 4: Execute（メモ整備のみ）
+- 本Issueメモのみ整備（表現統一・判定理由明文化）。
+- 実装コード/他ファイルの変更は実施しない。
 
-### Phase 5: Verify
+### Phase 5: Verify（docs-check / self-correction<=3）
 - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
 - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
 - Self-correction count: `0/3`
 - Verify verdict: **Pass**
 
-### Phase 6: Proceed
+### Phase 6: Proceed/Stop
 - Final decision: **Hold**
-- Reason: 依存 `DOC-OPS-05` Open gate未確定のため。
-
-## Stream F integration log（2026-05-03 / Draft Gate Management）
-
-### Read
-- Scope/Dependency/Gateを再読し、`DOC-OPS-05` 依存未確定のため Open化不能であることを再確認。
-
-### CDC
-- Context: Move internal 判定は固定済みだが、依存 gate 未確定。
-- Decision: Draftを維持し、Open化条件を「依存確定 + docs-check再現 + 自己修復<=3」に限定。
-- Consequences: 推測進行を防止し、Proceed誤判定を抑止。
-
-### Plan
-- Open化条件（未達時Hold）
-  1. `Dependency status=確定`（証跡付き）
-  2. Required Gate のGo条件4件を満たす
-  3. Verify結果（`docs-check`）と self-correction回数（`<=3`）を再掲
-
-### Execute
-- メモ整備のみ（実装コード変更なし）。
-
-### Verify（max3）
-- Verify attempt: `1/3`
-- 判定: Pass（本メモはゲート定義として整合、ただし依存未確定）。
-
-### Proceed
-- Decision: **Hold**（依存 gate 未確定）。
+- Reason: 依存 `DOC-OPS-05` Open gate が未確定であり、Fail-safeにより Proceed 不可。
 
 ## Draft gate解消条件（Open化判定・合意形成専用 / 2026-05-03）
 
