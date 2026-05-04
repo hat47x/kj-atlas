@@ -1035,3 +1035,34 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 
 ### Phase 5: Proceed
 - 判定ルール: 4観点drift=0 かつ docs-check pass で Ready/Open候補、未充足時は `StoppedForClarification`。
+
+
+## Stream G P2 closure pack（2026-05-04 / DOC-OPS-05-06）
+
+### Phase 1: Plan（Read同期）
+- 参照: `01_Plans/documentation_quality.md`（QG-1〜QG-6）, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`。
+- 非目標: 実装仕様・設計仕様の変更は行わない（docs-only）。
+
+### Phase 2: Execute（品質強化）
+- 見出し体系を「方針（本書）/証跡（verification log）/診断仕様（diagnostics）」で固定する。
+- 判定メタの語彙を `pass / fail / blocked` に統一する。
+- 実行証跡の必須項目を次で固定する。
+
+#### E2E証跡テンプレート（標準）
+```md
+- Date: YYYY-MM-DD (UTC)
+- Environment: OS / Runtime / Browser / Route(Compose|SQLite)
+- Command: `<exact command>`
+- Result: pass | fail | blocked
+- Evidence: `<key output or error>`
+- Constraints: `<missing dependency / policy constraint>`
+- Next action: `<rerun condition + owner>`
+```
+
+### Phase 3: Verify（自己検証）
+- 初見読者が `e2e_testing.md -> e2e_verification_log_2026-03-03.md` の順で「手順→証跡」を再現できることを確認する。
+- 曖昧表現（例: 「必要に応じて」）は、可能な限り具体条件（Compose不可時は `blocked` 記録）へ置換する。
+
+### Phase 4: Proceed / Stopper
+- Proceed条件: 実行手順・判定語彙・証跡テンプレートが一筆書きで辿れる。
+- Stop条件: 上位正本（ADR-0019）と矛盾、または証跡必須項目欠落を検知した場合。

@@ -226,3 +226,24 @@
 - Execute: メタ統一と文言ドリフト抑制のみ実施。
 - Verify: 判定語彙（Proceed/Hold/Stop）とself-correction上限の一致を確認。
 - Proceed: 依存未確定につき **Hold**。
+
+
+## Stream G P2 closure（2026-05-04 / DOC-OPS-05-05）
+
+### AC/DoD補完ドラフト（docs-only）
+- AC-G1: `01_Plans/documentation_quality.md` の QG-1〜QG-6 と本Issueの Gate/Validation が矛盾しない。
+- AC-G2: 05/06/07 の3Issueで `Result: pass|fail|blocked` と self-correction 上限（<=3）を共通化する。
+- AC-G3: 参照導線が `documentation_quality -> e2e_testing -> e2e_verification_log` の順で追跡可能。
+- DoD-G1: Open判定に必要な不足情報（依存確定証跡/Approval Record）を欠落項目として明示済み。
+- DoD-G2: 非目標（実装・設計変更なし）を明記し、docs-only範囲を逸脱しない。
+
+### 検証ログ標準（Issue共通）
+- Command
+- Environment
+- Result（pass / fail / blocked）
+- Constraints
+- Next action
+
+### Proceed判定
+- Decision: **Hold**（依存確定証跡待ち）
+- Stopper: self-correction 4回目相当、または上位文書との語彙矛盾。

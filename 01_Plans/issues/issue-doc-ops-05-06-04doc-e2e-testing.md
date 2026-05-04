@@ -225,3 +225,17 @@
 - Execute: 実装に越境しない範囲で判定材料を整備。
 - Verify: CE2/CE4/QA-UNITと判定メタ形式を照合し不一致なし。
 - Proceed: 依存未確定のため **Hold**。
+
+
+## Stream G P2 closure（2026-05-04 / DOC-OPS-05-06）
+
+### AC/DoD補完ドラフト（docs-only）
+- AC-G1: `04_Documentation/e2e_testing.md` に Audience/Goal/Non-goal/Outcome と証跡導線が存在する。
+- AC-G2: E2E証跡の最小項目（Command/Environment/Result/Constraints/Next action）を定義し、log文書へ接続する。
+- AC-G3: 判定語彙を `pass / fail / blocked` に統一する。
+- DoD-G1: `ADR-0019` 正本との役割分離（方針=本書、実行履歴=log）を明文化。
+- DoD-G2: docs-check観点（整形・リンク・語彙）を本Issue単体で再読できる。
+
+### Proceed判定
+- Decision: **Hold**（`DOC-OPS-05` 依存確定待ち）
+- Stopper: 依存証跡欠落のまま Proceed しない。
