@@ -657,3 +657,45 @@
   - 未定義競合
   - allowlist外編集要求
   - 契約未承認のままA2/A3確定化要求
+
+
+## Stream A sync patch (2026-05-04 / contract freeze consumer baseline)
+
+### Phase 1: Read Sync
+- 対象2ファイルを再読し、freeze値・gate式・用語差分を照合。
+- 結果: 固定キー差分 `0`、`A2A3_OPEN_ALLOWED` 一致。
+- 用語整理: `unlockRule` は履歴項目として保持し、実運用ゲートは `A2A3_OPEN_ALLOWED` を唯一採用。
+- held維持: `Approval Record` 未完、`HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: baseline は Stream A のA1契約凍結を下流参照可能な固定契約として再現する必要がある。
+- Decision: baseline 側も `A2A3_OPEN_ALLOWED` を唯一判定式として参照し、A1契約固定値を変更せず read-only 連携する。
+- Consequences: 未承認事項が残る間は `Needs-decision/Conditional` を維持し、A2/A3確定化を禁止。
+- Approval: 承認未了項目あり（確定化禁止）。
+
+### Phase 3: Plan
+- 固定: `freezeContractId` を含む固定キー集合、`A2A3_OPEN_ALLOWED`、NoGo経路。
+- 保留: human decision queue 2件（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）。
+
+### Phase 4: Execute
+- 契約再定義は行わず、A1契約固定値の参照整合のみ維持。
+- 新規契約キー追加なし。
+
+### Phase 5: Verify
+- AC/DoD照合: pass。
+- 語彙衝突: `unlockRule` は履歴、判定は `A2A3_OPEN_ALLOWED` に統一。
+- safeMode後退: なし。
+- Self-correction count: `0/3`。
+
+### Phase 6: Proceed
+- 判定: `Needs-decision`。
+- 次回引継ぎ固定値（baseline参照用）
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `A2A3_OPEN_ALLOWED`（A1側固定式と文字列一致が必須）

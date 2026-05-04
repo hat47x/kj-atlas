@@ -436,3 +436,55 @@
 - AC/DoD self-check: pass（fixed keys diff=`0`, pending bypassなし, allowlist外編集なし）。
 - Self-Correction count: `0/3`。
 - Gate decision: **Conditional / Needs-decision**（未解決: `approved_by` / `approved_at` / `evidence`）。
+
+
+## Stream A dedicated run (2026-05-04 / A1 freeze lock)
+
+### Phase 1: Read Sync
+- Read targets: 本Issue + `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` のみ再読。
+- Freeze値照合: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition` は一致。
+- Gate式照合: `A2A3_OPEN_ALLOWED` は同一式を維持。
+- 用語差分: `unlockRule` 表記は baseline 側に履歴として残存するが、現行運用は `A2A3_OPEN_ALLOWED` を唯一判定式として採用。
+- held判定: 新規差分なし。`Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` を継続。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: HIL-RS-02 で A1 を唯一の開放ゲートに固定しない場合、A2/A3 側で契約再定義が発生しうる。
+- Decision: A1 契約は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `A2A3_OPEN_ALLOWED` を固定し、A2/A3 は read-only 参照のみ許可する。
+- Consequences: 未承認項目は `Needs-decision` を維持し、承認完了まで確定化しない。
+- Approval state: `approved-for-freeze-candidate`（docs scope）。未承認論点が残るため本固定は candidate のまま運用。
+
+### Phase 3: Plan
+- 固定するもの
+  1. `A2A3_OPEN_ALLOWED` を A1->A2->A3 の唯一判定式として維持。
+  2. NoGo経路 `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を固定。
+  3. SafeMode境界（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）を後退禁止で固定。
+- 保留するもの
+  1. `Approval Record` の証跡キー入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の human decision。
+- AC/DoD: 既存AC/DoDを継続採用（追加キーの新設なし）。
+
+### Phase 4: Execute
+- 契約固定値・gate条件・NoGo経路は既存値を再固定（変更なし）。
+- 新規キー追加なし。推測値導入なし。
+
+### Phase 5: Verify
+- AC/DoD照合: pass（契約固定値、唯一判定式、mock-first分離を維持）。
+- 語彙衝突: 実運用語彙は `A2A3_OPEN_ALLOWED` を優先、`unlockRule` は履歴語彙として扱う。
+- safeMode後退: なし（`ON` / `SAFE_MODE_STRICT_ON` 維持）。
+- Self-correction count: `0/3`。
+
+### Phase 6: Proceed
+- Decision state: `Needs-decision`（未承認2件継続）。
+- 次回引継ぎ用固定値一覧
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `A2A3_OPEN_ALLOWED`（既存固定式を唯一採用）
+  - `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
