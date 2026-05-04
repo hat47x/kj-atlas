@@ -733,3 +733,34 @@
 ### Phase 6: Proceed/Stop
 - Current state: `Conditional (Needs-decision)`。
 - Blocking items: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01` held。
+
+## Stream A contract lock replay（2026-05-04 / P0 critical path fixation）
+
+### Phase 1: Read同期
+- 対象2ファイルを再読し、固定キー/判定式/停止条件の差分有無を確認。
+- 結果: 差分 `0`（`freezeContractId`, `contractIds`, `schemaVersion`, `A2A3_OPEN_ALLOWED`, `NoGo`, `ProceedGate`）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: baseline と A1 契約Issueの判定語彙不一致は P0ゲートの決定論を損なう。
+- Decision:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+  - `NoGo = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected || contractNotFixedButA2A3ConfirmationRequested`
+  - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
+- Consequences: 未承認項目は `pending/held` のまま保持し、確定扱いを禁止。
+
+### Phase 3: Plan
+- AC/DoD不足なし。契約文面同期のみ実施。
+- 非目標: allowlist外編集、実装変更、safeMode境界変更。
+
+### Phase 4: Execute（契約文面のみ）
+- 判定式/停止条件を A1 契約Issueと文字列一致で固定。
+- tie-break `CTR-FB-P0-P2C-A1-TIEBREAK-v1` を決定論ルールとして維持。
+
+### Phase 5: Verify（AC/DoD照合）
+- 固定キー一致: pass。
+- 判定式一意性: pass（`A2A3_OPEN_ALLOWED` SSOT）。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed判定
+- 判定: `Conditional (Needs-decision)`。
+- 継続保留: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01` held。
