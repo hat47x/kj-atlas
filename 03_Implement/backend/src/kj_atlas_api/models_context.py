@@ -24,6 +24,7 @@ class ContextQuery(BaseModel):
 class ContextQueryValidationResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    schemaVersion: Literal["1.0.0"] = "1.0.0"
     accepted: bool = True
     queryCanonicalHash: str
 
@@ -45,6 +46,7 @@ class ReviewFlags(BaseModel):
 class ContextBundleResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    schemaVersion: Literal["1.0.0"] = "1.0.0"
     bundleHash: str
     selected: list[dict[str, object]]
     relations: list[dict[str, object]]
@@ -77,6 +79,7 @@ class Ce4AuditChain(BaseModel):
 class Ce4ResolveBundleResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    schemaVersion: Literal["1.0.0"] = "1.0.0"
     equivalenceKey: str
     bundleHash: str
     queryCanonicalHash: str
