@@ -200,3 +200,21 @@
 - 契約統治の可読性が上がり、A1->A2->A3 の依存順を崩さずにレビュー可能になる。
 - 変更可能範囲が型定義に限定されるため、実装前提の差分混入を防止できる。
 
+
+
+## Stream B Planning Sync Addendum（2026-05-04）
+
+### Context
+- HIL-RS-01 関連Issueの Ready 条件と Blocker の粒度に差があり、A1/A2/A3 への受け渡しで「実装依存」と「契約依存」が混在していた。
+
+### Decision
+- HIL-RS-01 系は **実装依存を契約依存へ置換** する方針を追加採用する。
+- Ready 判定は次の契約ゲートで統一する：
+  1. `freezeContractId` 一致
+  2. `Approval Record`（`approved_by/approved_at/evidence`）充足
+  3. `Decision Queue Pending=0`
+- mock 並行化可能項目（Query/Bundle/Proposal/Apply の監査4点セット確認）は、実装完了待ちをせず issue 側で先行検証する。
+
+### Consequences
+- A1 未完了時でも、A2/A3 は mock 契約ベースで準備作業を継続できる。
+- Ready/Blocker 判定が契約値ベースになり、再開時の分岐判断が単純化される。

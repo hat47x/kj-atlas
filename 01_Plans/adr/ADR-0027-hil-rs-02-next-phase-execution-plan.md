@@ -300,3 +300,19 @@
 - Fixed I/F handoff は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の4点を read-only に限定する。
 - Self-Correction は `0/3`。即時停止条件（前提崩壊 / 未定義競合 / allowlist外編集要求 / 4回目相当）は未発火。
 - Proceed判定: **Conditional / Needs-decision**（`approved_by` / `approved_at` / `evidence` が未入力）。
+
+
+## Stream B Planning Sync Addendum（2026-05-04）
+
+### Context
+- HIL-RS-02 では A1 依存が明示されている一方、Issue 実務では AC/DoD の不足判定と blocker 記法が不統一で、triage 出力の Ready/Blocked 判定に揺れがあった。
+
+### Decision
+- HIL-RS-02 配下Issueの運用規則として以下を固定する。
+  - Ready 条件は `contract-ready`（契約キー一致）と `execution-ready`（承認充足）を分離して記録する。
+  - Blocker は `contract_mismatch` / `approval_pending` / `decision_queue_pending` / `out_of_scope_request` の4分類へ正規化する。
+  - AC/DoD不足時は Phase 2（ADR/CDC）でドラフト補完し、合意完了まで `held` を維持する。
+
+### Consequences
+- triage CLI の再計算時に unlocks 判定の機械可読性が上がる。
+- 実装依存の曖昧な待ち状態を削減し、契約依存ベースで並行可能な作業を可視化できる。
