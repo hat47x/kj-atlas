@@ -152,3 +152,40 @@
 - Attempt 2: Gate条件と Stop条件の再整列。
 - Attempt 3: 依存/承認証跡の未充足を Hold理由へ明示。
 - 4回目相当: **Stop**（超過または依存崩壊として終了）。
+
+
+## Stream G normalization pass（2026-05-04）
+
+### Phase 1: Read同期（Issue ↔ 04_Documentation 対応表）
+| Issue | Target 04_Documentation | Current classification |
+| --- | --- | --- |
+| `issue-doc-ops-05-05-04doc-documentation-quality.md` | `04_Documentation/documentation_quality.md` | 既存本文の Decision / Proposed classification を継承 |
+
+### Phase 2: Plan（AC / DoD 統一テンプレ）
+- AC（統一）
+  - 読者タスク完遂性: Audience / Goal / Non-goal が追跡可能。
+  - 用語統一: 役割語彙と判定語彙（Move internal / Improve external / GoNoGo）を統一。
+  - 参照導線: Related ADR/Spec と対象04文書の相互参照を明記。
+- DoD（統一）
+  - 相互参照が明記される。
+  - 品質ゲート（`docs-check` + `git diff --check`）が明記される。
+  - 更新責務（Issue整備担当 / 04_Documentation改稿担当の分離）が明記される。
+
+### Phase 3: Execute（標準セクション）
+- 目的: DOC-OPS-05対象Issueを、公開境界を崩さず運用できる品質に正規化する。
+- 範囲: 本Issue本文（`01_Plans/issues`）のみ。
+- 非対象: `04_Documentation/**` 本文改稿、`03_Implement/**`、shared統合3ファイル。
+- 検証観点: メタ項目充足 / 優先度矛盾なし / リンク表記整合 / docs-check一致。
+- 停止条件: scope逸脱検知、自己修復4回目相当、未承認確定化要求。
+- 並行実行可能フラグ: **Yes**。
+
+### Phase 4: Verify（重複・矛盾・リンク）
+- 重複Issue: 既存DOC-OPS-05連番内で対象重複なし（本Issue固有対象）。
+- 優先度矛盾: `Priority=P2` 系列で整合（高優先度との衝突なし）。
+- リンク切れ: Related ADR/Spec は既存記載を継承し、解決不能リンクは本パスでは未検出。
+- 自己修復: 0/3（本更新時点）。
+
+### Phase 5: Proceed（04_Documentation改訂担当への引継ぎ）
+- 引継ぎメモ: 本Issueは「本文改稿を行わず、品質ゲートと参照導線を固定」済み。
+- 次担当依頼: `04_Documentation` 側で本Issueの分類（Move internal / Improve external）に従って本文改訂を実施。
+- ゲート条件: 改訂後は `docs-check` を再実行し、Issue側の分類・用語・導線と一致確認すること。
