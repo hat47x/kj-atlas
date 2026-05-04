@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream J / CE4専任 / contract-only）
+# Issue Draft: CE4 API/CLI/監査統合（Stream H / CE4専任 / contract-only）
 
 - Type: Feature request
 - Status: Draft (Contract Freeze Candidate)
 - Priority: P2
-- Owner: Stream J（CE4専任）
+- Owner: Stream H（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -147,7 +147,7 @@
 > 停止条件: 上記未確定点を確定仕様として扱う要求が来た場合、CE4契約の範囲逸脱として停止し、上位ADRでの判断を要請する。
 
 
-## Stream E preparation log（2026-05-04 / Draft→Open昇格準備, contract-only）
+## Stream H execution log（2026-05-04 / contract-freeze, mock-first）
 
 ### Phase 1: Read
 - `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` と本Issue契約を照合。
@@ -205,3 +205,57 @@
 - Attempt 2: Gate条件と Stop条件の再整列。
 - Attempt 3: 依存/承認証跡の未充足を Hold理由へ明示。
 - 4回目相当: **Stop**（超過または依存崩壊として終了）。
+
+
+## Stream H update（2026-05-04 / Read Sync → Proceed）
+
+### 1) Read Sync
+- `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` と本Issueを再同期し、契約語彙を以下に固定した。
+  - 同値判定: `equivalenceKey AND bundleHash`
+  - 実行制約: `proposal-only`（auto-*禁止）
+  - 失敗規律: `fail-closed`
+  - 監査系列: `query -> bundle -> proposal -> apply`
+- 判定: CE1/CE2 実装待ちなしで、mock I/F による検証観点固定が可能。
+
+### 2) ADR（Context / Decision / Consequences）補強
+- **Context**: CE1/CE2 未実装段階でも CE4 契約を先に凍結しないと API/CLI/監査の責務境界が後工程で分岐する。
+- **Decision**:
+  1. CE4 は contract-only を維持し、実装 I/F は `mock:<64hex>` を正規入力として検証対象化する。
+  2. API/CLI 双方で監査欠損を成功扱いしない（監査欠落ゼロ主義）。
+  3. 失敗分類は `入力違反 / 監査違反 / ポリシー違反 / 同値違反` の4区分で固定する。
+- **Consequences**: 下流は CE1/CE2 完了前に fixture 駆動で判定器を先行実装できる。
+
+### 3) Plan（AC/DoD補完提案）
+#### AC補完
+- [x] CE1/CE2 未実装でも成立する mock I/F 境界（`sourceBundleHash=mock:<64hex>`）を明記。
+- [x] 失敗分類4区分（入力/監査/ポリシー/同値）を API/CLI 共通語彙として固定。
+- [x] 監査欠落ゼロ観点（4イベント+必須キー欠損は全件No-Go）を明記。
+
+#### DoD補完
+- [x] fail-safe=fail-closed を明示（欠損・順序不整合・矛盾重複・auto-*検出を成功扱いしない）。
+- [x] 再現性判定は `queryCanonicalHash + bundleHash + equivalenceKey` の組で決定論的に再演算可能。
+- [x] 下流引継ぎ時に「未確定点を実装仕様へ昇格しない」境界が保持される。
+
+### 4) Execute（監査キー・失敗時fail-safe定義）
+#### 監査キー固定（共通必須）
+- `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`, `channel`, `command`, `schemaVersion`, `sourceBundleHash`
+
+#### fail-safe（=fail-closed）判定表
+- `必須キー欠損` → 監査違反 / No-Go
+- `イベント順序不整合` → 監査違反 / No-Go
+- `矛盾重複（同一eventType+equivalenceKeyで結果矛盾）` → 監査違反 / No-Go
+- `auto-apply|auto-confirm|auto-publish痕跡` → ポリシー違反 / No-Go
+- `equivalenceKey AND bundleHash 未成立` → 同値違反 / No-Go
+
+### 5) Verify（再現性・監査欠落ゼロ観点）
+- 再現性: 同一3キー組で同一判定結果に収束することを mock fixture で再計算可能。
+- 監査欠落ゼロ: 4イベントのどれか1つでも欠落した時点で No-Go。
+- self-correction: `0/3`（超過なし）。
+
+### 6) Proceed（下流引継ぎ）
+- 状態: **Proceed (Contract Freeze for Downstream)**
+- 引継ぎ入力:
+  1. mock fixture は `mock:<64hex>` と `sha256:<64hex>` の双方を同一検証器に通す。
+  2. CLI終了コードの数値割当は未確定のまま（分類語彙のみ固定）。
+  3. 監査転送基盤・匿名化方式は CE4 契約外（上位ADR判断待ち）。
+- Stop再掲: allowlist外編集、契約語彙衝突、self-correction超過、safeMode後退要求を検知した場合は即停止。
