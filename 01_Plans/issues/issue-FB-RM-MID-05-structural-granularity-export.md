@@ -63,3 +63,27 @@ overview/detail を使い分けた再現可能な出力モードがなかった�
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## Stream H realignment (2026-05-04)
+
+### Phase 1: Read同期（依存/優先度再評価）
+- 系列依存の再評価: `I18N -> MID -> RS -> SEC` を基本順とし、`FB-RM-MID-05-structural-granularity-export` はこの順序に従って前後の成果物契約を参照する。
+- 優先度再評価: reversible synthesis の実装引き渡し観点で、**決定論（reproducibility）** と **監査可能性（auditability）** を同列最優先とする。
+
+### Phase 2: Plan（A1/A2 契約）
+- A1（実装契約依存点）: downstream 実装は本メモの `Acceptance criteria` と `Validation plan` を満たす I/F を維持する。
+- A2（モック先行可能点）: deterministic 候補生成・監査出力フォーマット・固定フィクスチャを先行モック化して検証可能。
+
+### Phase 3: Execute（I/F・出力・監査証跡・Proceed条件）
+- 入力I/F: Document/locale/query/export context など、本メモで規定済みの入力契約を採用。
+- 期待出力: 同一入力で同一順序/同一内容の出力を返す（非決定挙動を禁止）。
+- 監査証跡: 実行コマンド、判定結果、失敗理由、再試行回数を issue memo に記録する。
+- Proceed条件: AC/DoD が満たされ、依存系列の受入条件と矛盾しないこと。
+
+### Phase 4: Verify（欠落検査 + 自己修復）
+- 決定論要件と監査要件の欠落をチェックし、欠落時は最大3回まで自己修復を試行する。
+- 3回で是正不可の場合はフェイルセーフ停止（非決定仕様混入 / 監査要件欠落 / 依存矛盾）。
+
+### Phase 5: Proceed（実装引き渡し優先度）
+- Frontend/Backend 実装への引き渡しは、`I18N-02 -> MID-01 -> MID-02 -> MID-03 -> MID-05 -> RS-02 -> SEC-02 -> I18N-03` の優先バックログ順を基準とする。
