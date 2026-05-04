@@ -1330,3 +1330,57 @@ handoffKeys:
   2. 依存先未定義（CE0/CE2/CE4 handoff key未成立）を検知した場合は停止。
   3. 契約語彙衝突（error semantics / contract id collision）を検知した場合は停止。
 - 本更新は docs-only の契約固定であり、実装タスクの追加・移譲は行わない。
+
+
+## Stream B update（2026-05-04 / CE1契約基盤 / mock-first固定）
+
+### Phase 1: Read同期（対象ファイル再Read）
+- 契約ID現状: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を維持。
+- error語彙現状: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を維持。
+- hash要件現状: `queryCanonicalHash` / `bundleHash` は同一canonical queryで決定論一致（3回一致、fail-closed）を維持。
+- 判定: 前提差分なし（continue）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- **Context**: CE1を先行固定しない場合、CE2（assist）/CE4（API+CLI監査）が実装待ち依存で停止する。よってCE1は実装より先に最小I/F契約を固定し、mock-onlyで下流の検証を可能にする必要がある。
+- **Decision**:
+  1. `ContextQueryV1` / `ContextBundleV1` をv1 closed-world契約として固定し、未定義キーは拒否する。
+  2. preview gateを固定し、`previewConfirmed=false -> 422 preview_required` を必須挙動とする。
+  3. hash決定論を固定し、同一canonical queryに対して `bundleHash` が不一致なら `409 nondeterministic_bundle` でfail-closedする。
+  4. 契約解釈はclosed-world（v1外拡張禁止、拡張はv2のみ）とする。
+- **Consequences**:
+  - CE2/CE4がmockで進める範囲: 契約ID、型I/F、固定エラー語彙、hash検証条件、handoff key接続検証。
+  - CE2/CE4が進めない範囲: handler/UI/DB/worker実装、永続化戦略、実ランタイム最適化。
+
+### Phase 3: Plan（AC/DoD + handoff artifact）
+- AC再掲（不足なし）:
+  - ADR形式でCE1先行固定理由を記述。
+  - `ContextQueryV1` / `ContextBundleV1` のclosed-world整合を維持。
+  - `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` を固定。
+  - hash決定論要件（3回一致）を固定。
+  - mock validation計画（実装依存切断）を維持。
+- DoD:
+  - docs-only差分であること。
+  - CE2/CE4がmock-onlyで検証継続可能であること。
+- handoff artifact（read-only）:
+  - 契約ID: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - 型: `ContextQueryV1` / `ContextBundleV1`
+  - エラー語彙: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+  - 検証条件: `sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`、同一canonical queryで3回一致
+
+### Phase 4: Execute（契約固定）
+- `previewConfirmed=false -> 422 preview_required` を固定。
+- unknown key -> `400 unknown_contract_key` を固定。
+- nondeterministic bundle -> `409 nondeterministic_bundle` を固定。
+- いずれも実装方式に依存しない契約要件として維持。
+
+### Phase 5: Verify（mock-only自己点検）
+- CE2 mock検証可否: `sourceBundleHash === bundleHash` 比較でpass/failを再現可能（pass）。
+- CE4 mock検証可否: `equivalenceKey + bundleHash` を監査キーとして固定検証可能（pass）。
+- 異常系再現可否: `422/400/409` の固定語彙をmock応答で再現可能（pass）。
+- Self-Correction: 0/3（追加修正不要）。
+
+### Phase 6: Proceed（read-only handoff）
+- Handoff（編集依頼なし / 依存断ち）:
+  - CE1契約はv1凍結維持。
+  - 下流は契約参照のみで並行進行し、実装依存要求を行わない。
+  - 未定義競合・前提崩壊・許可外ファイル要求が発生した場合は `held` で即停止する。
