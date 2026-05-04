@@ -58,6 +58,7 @@ export function SuggestionPanel({
     candidates: proposalCandidates,
   });
   const selectedCandidateId = selectedProposalId ?? candidates[0]?.proposalId ?? "";
+  const selectedCandidate = candidates.find((candidate) => candidate.proposalId === selectedCandidateId) ?? null;
   const reviewSummary = summarizeCe2ReviewStates(candidates);
 
   return (
@@ -146,6 +147,11 @@ export function SuggestionPanel({
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>
               review state: {reviewSummary.unreviewed} unreviewed / {reviewSummary.reviewed} human reviewed
             </div>
+            {selectedCandidate ? (
+              <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
+                selected: <strong>{selectedCandidate.label}</strong> ({selectedCandidate.status}, {selectedCandidate.reviewState})
+              </div>
+            ) : null}
             <select
               data-testid="ce2-proposal-candidate-select"
               style={{ width: "100%", marginBottom: 6 }}
@@ -162,6 +168,9 @@ export function SuggestionPanel({
                 </option>
               ))}
             </select>
+            <div style={{ fontSize: 11, color: "#64748b" }}>
+              Reversible synthesis keeps proposals isolated until explicit human approval.
+            </div>
           </section>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <input
