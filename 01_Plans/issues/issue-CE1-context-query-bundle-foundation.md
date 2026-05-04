@@ -38,6 +38,36 @@
 - 実装詳細（handler/UI/DB/worker）は記述せず、契約I/Fに限定する。
 
 
+
+
+## Stream C update（2026-05-04 / CE1 Foundation 専任）
+
+### Phase 1 Read（現状契約再読）
+- CE1の独立編集範囲（Issue + `llm_input_ir_spec.md` + `llm_provider_spec.md`）を確認し、CE2/CE4 issue と実装レイヤ（backend/frontend）へ非編集を再確認。
+- `ContextQueryV1` / `ContextBundleV1` の closed-world、固定エラー語彙、hash決定論（3回一致）を再確認。
+
+### Phase 2 Plan（AC/DoD補完 + mock-first 明文化）
+- AC補完: CE2/CE4 は **CE1未実装でも mock contract で前進可能** とする依存切断要件を必須化。
+- DoD補完: 引き渡し成果物を「契約ID / I/F型 / エラー語彙 / handoff key」に限定し、実装タスクを含めない。
+- mock-first方針: `preview gate` / `unknown key` / `nondeterministic bundle` を最小異常系セットとして固定。
+
+### Phase 3 Execute（ContextQueryV1/ContextBundleV1 固定）
+- v1キー集合の凍結を維持（未定義キーは `400 unknown_contract_key`）。
+- `previewConfirmed=false -> 422 preview_required` を入力ゲートとして再固定。
+- `queryCanonicalHash` と `bundleHash` の一致性失敗を `409 nondeterministic_bundle` で fail-closed 固定。
+
+### Phase 4 Verify（下流要求充足チェック）
+- CE2向け: `sourceBundleHash === bundleHash` 比較可能性を満たす。
+- CE4向け: `equivalenceKey + bundleHash` による再現監査キー運用に接続可能。
+- 判定: **pass**（下流は mock-only で検証継続可能、CE1実装待ち依存なし）。
+
+### Phase 5 Proceed（I/F引き渡し）
+- Handoff package（read-only contract）:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+  - Keys: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`
+- Stopper再掲: 自己修復3回超過、未定義競合、非許可ファイル要求時は `held` 停止。
+
 ## Stream F update（2026-04-30 / CE1 Foundation docs-only）
 
 ### Phase 1 Read（latest / docs-only scope確認）

@@ -10,6 +10,14 @@ This document is the single source of truth for provider abstraction in kj-atlas
 
 ---
 
+
+## CE1 Contract Handoff Boundary（Stream C / 2026-05-04）
+
+- Provider層は CE1 v1 契約を入力境界として扱い、`ContextQueryV1` / `ContextBundleV1` のキー追加・再定義を行わない。
+- 固定エラー語彙は provider 実装差異に依存させず、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を共通運用語彙として保持する。
+- `provider_meta.trace_id` と併せて `queryCanonicalHash` / `bundleHash` を監査相関キーとして扱えることを必須とする。
+- CE2/CE4 連携は mock-first を許容し、provider 実装完了を前提条件にしない（contract-only handoff）。
+
 ## 1. 目的と原則
 
 - safeMode既定ONと漏えい防止を優先し、既定は `none`（LLM無効）とする。
