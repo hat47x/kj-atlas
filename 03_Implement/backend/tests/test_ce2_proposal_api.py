@@ -80,3 +80,17 @@ def test_propose_island_summary_rejects_invalid_source_bundle_hash() -> None:
     with TestClient(app) as client:
         response = client.post("/ai/proposals/island-summary", json=payload)
     assert response.status_code == 422
+
+
+def test_record_proposal_decision_rejects_unknown_fields_via_schema_validation() -> None:
+    with TestClient(app) as client:
+        response = client.post(
+            "/ai/proposals/audit",
+            json={
+                "proposalId": "proposal-1",
+                "decision": "accepted",
+                "actor": "tester",
+                "unexpected": True,
+            },
+        )
+    assert response.status_code == 422
