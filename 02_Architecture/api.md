@@ -235,13 +235,28 @@ CE0境界（参照専用固定）:
 CE-4 は API/CLI/GUI の操作同値性と監査導線を固定する契約フェーズであり、実装方式やUI差分よりも監査可能性を優先する。
 また CE4 は proposal-only 境界を維持し、`accepted/rejected` の自動確定経路を許可しない。
 
-#### 2.9.0 Stream D boundary（proposal-only + API/CLI監査責務分離）
+#### 2.9.0 Stream E boundary（proposal-only + API/CLI監査責務分離）
 
 - CE4 の責務は **I/F契約固定** に限定する（実装方式・アルゴリズム詳細・自動適用導線は扱わない）。
 - API責務境界: 入力/出力/失敗時セマンティクスを固定する。
 - CLI責務境界: API同値の入力面・出力面・終了コードを固定する。
 - 監査責務境界: `query/bundle/proposal/apply` と `queryCanonicalHash` の記録を固定する。
 - Fail-safe: proposal-only 逸脱（auto-apply/auto-confirm/auto-publish）または監査欠損成功扱いを検知した場合は fail-closed。
+
+#### 2.9.0a CE4 API/CLI監査統合ゲート（Context / Decision / Consequences）
+
+Context:
+- CE4 は実装詳細を持ち込まず、API/CLI監査統合を contract-only で先行固定する必要がある。
+- `ADR-0016` のCLI契約と `ADR-0017` のSecurity/Ops Gateを、監査イベント最小スキーマで接続する必要がある。
+
+Decision:
+1. 監査イベント最小スキーマ（全イベント共通必須キー）を `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`, `channel`, `command`, `schemaVersion` に固定する。
+2. API→CLI同値性は `equivalenceKey AND bundleHash` 成立のみ成功とし、部分一致成功を禁止する。
+3. セキュリティ運用チェックは `eventType + equivalenceKey + queryCanonicalHash` の追跡成立を必須にする。
+
+Consequences:
+- mock fixture（`sourceBundleHash=mock:<hash>`）のみで API/CLI監査整合の検証が可能になる。
+- 監査欠損・同値不成立を成功扱いできなくなり、fail-closed境界が明確化される。
 
 #### 2.9.1 logical operation 同値性（固定）
 

@@ -77,6 +77,7 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 - Parent: `01_Plans/adr/ADR-0008-cli-tooling-plan.md`
 - Related: `01_Plans/adr/ADR-0015-cli-scope-phasing.md`
 - Related: `01_Plans/adr/ADR-0016-cli-command-contract.md`
+- Related: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
 - Related: `THREAT_MODEL.md`
 - Related: `04_Documentation/security.md`
 - Related: `04_Documentation/operations.md`
