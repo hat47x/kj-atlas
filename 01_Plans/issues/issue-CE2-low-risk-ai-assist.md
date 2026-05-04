@@ -3,13 +3,13 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream D（CE2 low-risk proposal lifecycle）
+- Owner: Stream G（CE2 proposal-only contract lock）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
 - Dependencies: `CE-2`
 - Dependency status: `未確定（CE-2 Open判定待ち）`
-- CE1 contract status: `未確認（CE1契約確認完了まで仕様確定禁止）`
+- CE1 contract status: `参照限定（CE1完了待ちは不要。mock contract参照のみ）`
 - Expected verification level: `docs-check`
 
 ## Fixed Operation Contract（2026-05-01）
@@ -17,6 +17,7 @@
 - proposal-only 原則を固定し、AIは候補提示（`status=proposed`）のみを実施する。
 - `accepted / rejected` は人間責務。AIによる自動確定経路は作成しない。
 - Auto操作（`auto-apply / auto-confirm / auto-publish`）を禁止する。
+- 自動review昇格（AI/システム起因で `unreviewed -> human_reviewed` へ遷移）を禁止する。
 - `reviewState` は `unreviewed | human_reviewed` の閉集合とし、AI提案は常に `unreviewed`。
 - lifecycle は `proposed | accepted | rejected | held` の閉集合を維持する。
 - 監査4点（`query / bundle / proposal / apply`）が欠損した場合は fail-closed。
@@ -133,7 +134,7 @@
 - 合意未取得のまま次工程（実装・確定運用）へ進む要求。
 - Verify修復が3回を超過。
 - safeMode既定ON / 未レビュー保護 / fail-closed の後退要求。
-- CE1契約（ContextBundle/bundleHash契約）未確認状態での仕様確定要求。
+- mock contract参照範囲を超えた CE1実装依存の仕様確定要求。
 - 未定義競合（契約衝突・語彙衝突・責務分離崩壊）の検知。
 
 ## Draft→Open 移行条件（再掲）
@@ -497,3 +498,32 @@
 - Attempt 2: Gate条件と Stop条件の再整列。
 - Attempt 3: 依存/承認証跡の未充足を Hold理由へ明示。
 - 4回目相当: **Stop**（超過または依存崩壊として終了）。
+
+
+## Stream G execution log（2026-05-04 / proposal-only hard lock）
+
+### Phase 1: Read
+- `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` の契約語を再読し、CE2を候補提示専用に固定する前提を確認。
+- CE1は完了待ちしない方針とし、I/Fは mock contract 参照のみに限定する。
+
+### Phase 2: ADR
+- Context: CE2は低リスク補助だが、責務混線を防ぐため proposal-only を不変条件として保持する必要がある。
+- Decision: 自動採用（accepted化）/自動公開（publish/share相当）/自動review昇格（human_reviewed化）を禁止する契約を明文化。
+- Consequences: 実装速度より統治・監査整合を優先し、未承認時は常に `held` を維持する。
+
+### Phase 3: Plan
+- AC-G-1: AI出力は `status=proposed` 固定、`accepted/rejected` は人間のみ。
+- AC-G-2: auto-apply / auto-confirm / auto-publish / auto-review-promotion を禁止語として維持。
+- AC-G-3: CE1依存は mock contract 参照のみとし、CE1完了待ちをProceed条件にしない。
+
+### Phase 4: Execute
+- 本Issue文書内の契約・運用条件のみ更新（実装詳細の追記なし、コード変更なし）。
+
+### Phase 5: Verify
+- V1 Scope: single-file fixed を維持。
+- V2 Contract: proposal-only / 自動採用禁止 / 自動公開禁止 / 自動review昇格禁止 / fail-closed を確認。
+- V3 Integrity: Read→ADR→Plan→Execute→Verify→Proceed の各Phase記述が存在。
+
+### Phase 6: Proceed
+- 判定: **Hold継続**。
+- 条件: 人間承認ログ未充足時は Proceed せず `held` を維持。
