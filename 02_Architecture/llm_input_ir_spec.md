@@ -108,6 +108,16 @@ A2 contract test では次を機械判定する。
 
 ---
 
+
+
+### Stream C CE1 Foundation Lock（2026-05-04）
+
+- 本仕様における CE1 責務は **契約固定のみ** とし、実装詳細（handler/UI/DB/worker）を追加しない。
+- `ContextQueryV1` / `ContextBundleV1` は closed-world v1 を維持し、未定義キーは常に `400 unknown_contract_key`。
+- preview gate は `previewConfirmed=false -> 422 preview_required` を固定し、IR 生成を開始しない。
+- hash 決定論は同一 canonical query で `queryCanonicalHash` / `bundleHash` が 3/3 一致を要件化し、不一致は `409 nondeterministic_bundle`。
+- CE2/CE4 は mock-first で依存切断を維持し、CE1実装待ちを禁止する（contract handoff のみで前進）。
+
 ## 2. KJ入力正規化（固定仕様）
 
 ### 2.1 cards
