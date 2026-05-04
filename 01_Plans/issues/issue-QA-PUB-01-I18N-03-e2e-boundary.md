@@ -127,3 +127,9 @@ smoke + 変更対象フロー + 安全境界（SafeMode/read-only）を E2E で�
 ### Phase 5) Stop条件適用（3回上限超で停止）
 - Verify retry は 3回で打ち切り。
 - 継続には実行環境への OS 依存パッケージ導入（`libatk-1.0-0` 等）が前提。
+
+
+## Stream H linkage for FB-RM realignment (2026-05-04)
+- FB-RM 系列の Proceed 判定に合わせ、QA 境界の証跡フォーマットは `Command/Result/Decision/Next action` を必須保持する。
+- A2 モック先行時も E2E 境界では同一入力再現（deterministic replay）を検証対象に含める。
+- 依存矛盾（I18N/MID/RS/SEC の前提不一致）検知時は、3回上限の自己修復ルール後に Fail-safe 停止する。
