@@ -1985,3 +1985,53 @@ type PatchProposal = {
 - 進捗記録:
   - CE0 SSOT維持を継続し、下流連携は read-only 参照のみ許可。
   - 未承認の契約拡張・再定義要求が発生した場合は `held` へ遷移して停止報告する。
+
+## Stream B latest run（2026-05-04 / CE0 only / contract freeze phase-serial update）
+
+- run_id: `stream-b-ce0-2026-05-04-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、`Status: Open` と `Scope: docs-only / contract-only / mock-first` の維持を確認。
+- 編集許可が単一ファイル（本Issue）のみであることを再確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE0 Contract FreezeはCE全体の上流契約であり、本IssueをSSOTとして維持する。CE1/CE2は依存先だが、実装進捗に依らず参照可能な契約境界を先に固定する必要がある。
+- Decision: CE0では契約I/FとNo-Go canonical IDsのみを固定し、実装手順・実装責務・実行順序は記載しない。判定者は Stream B 担当として本runで contract-only 維持を承認。
+- Consequences: 下流（CE1/CE2）は mock 前提で read-only 参照が可能となる一方、契約外の拡張要求は `held` として扱う。
+- 合意情報（判断根拠）:
+  - 根拠1: 単一ファイルSSOTにより契約ドリフト検知を容易化。
+  - 根拠2: safeMode既定値後退を防ぐため、契約変更と実装変更を分離。
+  - 根拠3: CE1/CE2依存をI/F前提に限定し、待ち依存を排除。
+
+### Phase 3 Plan
+- AC/DoD不足を点検し、追加ドラフトは不要（既存DoDで充足）と判断。
+- CE1/CE2依存の分離記述（I/F前提・mock前提）:
+  - CE1依存: `ContextQueryV1` / `ContextBundleV1` を **I/F read-only参照** とし、CE0側でCE1実装条件は規定しない。
+  - CE2依存: `ProposalPatchV1` / `AuditEventV1` を **mock前提参照** とし、CE0側でCE2検証方式は規定しない。
+- 非目標（No-go for this stream）:
+  - CE1/CE2の実装受入条件追加
+  - CE0 Contract ID追加・改名・削除
+  - safeMode既定値やNo-Go canonical IDsの再定義
+
+### Phase 4 Execute
+- CE0で固定すべき契約のみを対象に、本Issue実行ログを更新。
+- 実装指示・実装修正・他ファイル更新には越境しないことを確認。
+
+### Phase 5 Verify
+- docs整合・依存記述・非目標の3点を検証。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: 不整合なし（自己修復は未使用）。
+
+### Phase 6 Stopper
+- 判定: **Conditional-Go（Stopper未発動）**
+- 継続条件:
+  - 依存不明・対象外編集要求・自己修復4回目相当が発生した時点で即時 `held` 停止。
+  - CE0は契約凍結の維持に限定し、下流実装の確定判断は扱わない。
