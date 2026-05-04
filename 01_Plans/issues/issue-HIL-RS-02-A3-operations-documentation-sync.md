@@ -1306,3 +1306,29 @@
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+
+## Stream E execution update（2026-05-04 / A3用語・導線同期 only）
+
+### Phase 1 Read（対象ファイル再Read）
+- Read files:
+  - `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`
+  - `02_Architecture/strict_mode_exception_approval_flow.md`
+  - `04_Documentation/operations.md`
+  - `04_Documentation/security.md`
+
+### Context
+- Stream E は A3運用同期専任であり、A1未完了でも実施可能な作業は「用語・導線同期」に限定される。
+- 実装事項・契約再定義・Open化判定は A1 完了依存であり、本フェーズでは扱わない。
+
+### Decision
+- 編集を本Issueファイルのみ（strict allowlist内）に限定し、A3の docs-only 境界を維持する。
+- Phaseごとに対象ファイル再Readを実施し、`Plan -> Execute -> Verify -> Proceed/Stop` の強制ワークフローを継続する。
+- ADR形式（Context / Decision / Consequences）を各フェーズ記録に必須化し、Self-Correction 上限を `<=3` に固定する。
+- 致命条件（pending bypass / fixed key drift / A1依存事項の先行確定 / allowlist外編集要求）検知時は即停止する。
+
+### Consequences
+- A1未完了でも、A3の語彙固定（Security Officer / System Owner / Platform Operator）と導線固定（A1参照・NoGo return path）を先行維持できる。
+- A1完了後のOpen判定に必要な準備証跡を増やしつつ、契約境界の越境を防止できる。
+- Self-Correction counter: `0/3`（本更新時点）。
+- Current status: `Conditional (PrepGate)` を維持、`Draft` 継続。
