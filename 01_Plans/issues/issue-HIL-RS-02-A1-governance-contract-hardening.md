@@ -518,6 +518,73 @@ governance_gate_v1:
 - 差分判定: `0`（契約未固定項目なし）。
 - 未確定項目: `Approval Record: Pending`, `HIL-RS-02-GOV-EXCEPTION-01(held)`。
 
+## Stream F execution record（2026-05-04 / HIL-RS-02 A1 governance contract hardening）
+
+### Phase 1: Read
+- Read同期対象（planning only）:
+  1. 本Issue（`issue-HIL-RS-02-A1-governance-contract-hardening.md`）
+  2. `NoGo return path` 参照（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`）
+  3. 関連ADR参照（`ADR-0026` / `ADR-0027` / `ADR-0028`）
+- 固定キー再確認（差分判定）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Read結果: 固定キー差分 `0`、`Approval Record: Pending` 継続、`held` 維持。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context:
+  - A1契約凍結の運用では、誤Open・Pending bypass・責務混同を同時に防止する統治契約の明文化が必要。
+- Decision:
+  1. `Execute=Forbidden` 条件を `pendingApprovalCount>0` で固定し、例外を設けない。
+  2. `NoGo return path` を `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` に固定する。
+  3. `overridePolicy=human_dual_control_only` の別名化・派生定義・緩和を禁止する。
+- Consequences:
+  - A2/A3へのOpen判定はA1完了後に限定され、本ストリームでは確定化しない。
+  - 未承認事項は `held` のまま保持し、実装確定値へ昇格させない。
+
+### Phase 3: Plan（AC/DoD不足補完）
+- AC補完:
+  1. `AC-F-01`: `pendingApprovalCount>0` の間は `Go` 判定を返さない（`Execute=Forbidden`）。
+  2. `AC-F-02`: `NoGo return path` の単一固定値を維持し、差分 `0` を検証する。
+  3. `AC-F-03`: `decisionQueueTransition` は `Pending -> Approved | Pending -> Rejected` 以外を禁止する。
+- DoD補完:
+  1. `DoD-F-01`: self-correction は `0..3` のみ許可し、4回目相当で即停止する。
+  2. `DoD-F-02`: `requester/approver/executor` の責務分離条件を破る更新要求は No-Go とする。
+  3. `DoD-F-03`: planning only を維持し、allowlist外編集を行わない。
+
+### Phase 4: Execute（planning only）
+- 実施内容:
+  - 本Issueへ、Phase 1〜3の統治契約明文化とAC/DoD不足補完を追記。
+- 非実施内容:
+  - A2/A3判定の確定化
+  - 契約ID・固定キー・safeMode境界の変更
+  - allowlist外ファイル編集
+
+### Phase 5: Verify（self-correction 最大3回）
+- Verify結果:
+  - `self_correction_attempt=0/3`（追加修復なし）
+  - 固定キー差分 `0`
+  - `Approval Record: Pending` のため `Execute=Forbidden` 継続
+- docs-checkコマンド（実行予定/固定）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 6: Stopper
+- Stopper判定:
+  - 依存不明: なし（依存は既知のA1 SSOT/ADR参照で固定）
+  - 競合: なし（allowlist内単一ファイル更新）
+- 継続判定:
+  - `Proceed=Conditional`（`Approval Record: Pending` と `held` が残存）
+- 人間判断待ち:
+  1. `Approval Record` の dual-control 承認証跡入力（`approved_by` / `approved_at` / `evidence`）
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の解消または却下
+
 ### Phase 2: ADR/Decision明文化（未確定フラグ維持）
 - Context: A2/A3公開判定の誤開放を防ぐため、A1 SSOT契約からの派生定義を禁止する。
 - Decision: Gate判定・freeze keys・NoGo return pathを再定義せず参照専用で固定する。
