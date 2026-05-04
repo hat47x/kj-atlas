@@ -363,3 +363,41 @@
   1. 人間承認ログ最小項目（日時・承認者・対象・判断）が未充足。
   2. CE-2依存確定の証跡が未記録。
 - ルール固定: 未承認・依存未確定・検証未達のいずれかを検知した場合は `held`（fail-closed）で停止し、4回目相当の修復要求は行わない。
+
+## Stream F CE2 Draft昇格判定（2026-05-03 / Open readiness checkpoint）
+
+### Phase 1: Read & Sync
+- Draft理由を再抽出: `Dependency status=未確定` と `Approval Record未充足` が Open化阻害要因として継続。
+- 契約固定点を再確認: proposal-only / human-only decision / auto-*禁止 / fail-closed / `sourceBundleHash===bundleHash` 必須。
+
+### Phase 2: Plan（Open昇格の最小条件）
+- **Scope**: 本Issue本文の判定材料整備のみ（docs-only / single-file fixed）。
+- **Non-scope**: 実装変更、ADR更新、他Issue更新、状態遷移の強制実行。
+- **Dependencies**:
+  1. CE-2 Open判定の確定証跡（判定者・日時・対象・判断）
+  2. Approval Record 実値（approved_by / approved_at / evidence）
+- **検証観点**:
+  - V1: single-file scope
+  - V2: 固定契約語（proposal-only / fail-closed / auto-*禁止 / hash一致）
+  - V3: Phase 1〜6 + AC/DoD + Proceed/Hold/Stop 三値整合
+
+### Phase 3: Execute（issueメタ/本文整備）
+- Open判定に必要な最小入力を本Issue内で再読可能な形に統合済み。
+- 未承認時の fail-safe（`held` 継続）を維持し、Proceed条件を依存確定+承認ログ充足に限定。
+- 実装作業は未実施（計画整備のみ）。
+
+### Phase 4: Verify（self-correction上限3）
+- Verify結果: **Pass（整合） / Open gateは未達**。
+- self-correction: `0/3`（超過なし）。
+- 未達項目:
+  1. `Dependency status=確定` の証跡未記入。
+  2. `Approval Record` 実値未記入。
+
+### Phase 5: Proceed（Open化可否）
+- 判定: **Open化不可（Hold継続）**。
+- 阻害要因（具体）:
+  1. CE-2依存確定ログ（判定者・日時・対象・判断）が欠落。
+  2. Approval Record の `approved_by / approved_at / evidence` が未充足。
+- 再開条件:
+  1. 上記2点を記入。
+  2. docs-check再実行で V1〜V3 を再確認。
