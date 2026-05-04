@@ -184,6 +184,23 @@
 - 依存待ちによる無為停止を回避しつつ、契約凍結と安全境界を維持する。
 - 記録必須: 成果 / 未解決 / 次の1手（1項目）を残す。
 
+## Stream D Alignment Note（2026-05-04 / A3 preparation hard-limit）
+
+### Context
+- A1 `Approval Record` が Pending のため、A3は Open化不可。
+- Stream D（Governance）は A1統治契約硬化を先行し、A3は mock I/F準備に限定する。
+
+### Decision
+- A3で実施可能な作業を次に固定する（実装禁止）:
+  1. 語彙同期（`Security Officer` / `System Owner` / `Platform Operator`）
+  2. 固定キー差分監視（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`）
+  3. Gate式の参照維持（再定義禁止）
+- A1未完の間、`ProceedGate` 判定による Open 遷移は実施しない。
+
+### Consequences
+- A3は `Conditional=PrepGate` の範囲でのみ前進し、A1未完了時の越境実装を防止できる。
+- 前提不整合（固定キー差分、Pending bypass兆候）検知時は推測継続せず停止する。
+
 ---
 
 ## Stream B Execution Log（2026-04-26 / HIL-RS-02-A3 mock I/F準備）

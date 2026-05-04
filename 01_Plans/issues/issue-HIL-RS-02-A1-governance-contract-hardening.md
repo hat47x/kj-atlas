@@ -129,6 +129,22 @@
   - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
   - `git diff --check`
 
+## Stream D Update Log（2026-05-04 / A1 hardening）
+
+### ADR/C-D-C 追記（役割・責務分離の明文化）
+- Context: AUTH-OPS-03正本とA1凍結契約の間で、承認責務と実行責務の分離を明示的に同期する必要がある。
+- Decision:
+  1. `requester != approver` と `approver_a != approver_b` をA1側の必須条件として再確認した。
+  2. `Approval Record: Pending` が残存する間は `Execute=Forbidden` を維持する。
+  3. `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` 以外を禁止する。
+- Consequence:
+  - A1未完了状態でA3を実装フェーズへ越境させない。
+  - 承認・実行の分離が崩れる変更要求は No-Go として即停止する。
+
+### A3 handoff policy（A1側からの境界固定）
+- A3は `mock I/F preparation only` の範囲に限定し、契約値再定義・Open化判定を行わない。
+- A3進行条件は `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで `Conditional` のみ許可する。
+
 ### 依存マップ更新（ADR -> Issue -> 契約）
 - ADR:
   - `ADR-0026`: HIL-RS-01 の価値軸・A1先行原則
