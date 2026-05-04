@@ -1461,3 +1461,31 @@
 
 ### Phase 5 Proceed
 - 判定: `Done`（role/transition/no-go 語彙に差分なし、proposal-only境界維持）。
+
+## Phase Execution Record（2026-05-04 / Stream C / CE0-core-graph-repositioning plan-contract alignment）
+### Read
+- 本Issueを再読し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を確認。
+- 差分判定: `working / context_projection / consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs に変更なし。
+
+### ADR/CDC
+- 判定: `No ADR delta`（方針差分なし）。
+- Context/Decision/Consequences の新規確定は行わず、未承認論点は必要時 `held` 維持。
+- mock I/F 定義のみ許可の制約に従い、下流参照用シグネチャは文書上の参照に限定。
+
+### Plan
+- 目的を「CE0 core graph repositioning の計画・契約整合」に限定。
+- スコープを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` 単一ファイルに固定。
+- 禁止事項（実装変更、他issue参照更新、語彙再定義、SafeMode後退）を再確認。
+
+### Execute
+- contract-only で本実行記録を追記し、既存契約文言との整合のみ実施。
+- mock I/F は `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の参照定義のみを維持し、挙動実装を追加しない。
+
+### Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Self-Correction 実績: 0/3（再修正なし）。
+
+### Proceed
+- 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only 制約遵守）。
+- 停止条件発生なし。失敗時は Self-Correction 最大3回、超過時 `stopped_for_clarification` で停止する。
