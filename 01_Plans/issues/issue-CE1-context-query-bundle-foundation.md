@@ -10,6 +10,7 @@
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
 - Dependencies: `CE-1`
 - Verification: `docs-check`
+- Dependency meta: `blockers=none; depends_on=CE0-contract-freeze,FB-P2C-01-a1-interface-contract; unlocks=CE2-low-risk-ai-assist,CE4-api-cli-audit-integration`
 
 
 ## Task Brief（Stream E / Plan→Execute→Verify→Proceed/Stop）
