@@ -577,3 +577,70 @@
 ### Phase 3: Verify
 - `Plan -> Execute -> Verify -> Proceed` を直列維持。
 - Self-correction count: `0/3`（超過なし）。
+
+## Stream A protocol run（2026-05-04 / P0 gate hard-freeze）
+
+### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
+- Plan: allowlist対象（本Issue）のみ再Readし、固定契約キーの差分有無を判定する。
+- Execute: 本Issueを再読し、固定キー `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / safeModeBoundary / decisionQueueTransition` を照合。
+- Verify: 差分 `0`（想定との差分なし）。
+- Proceed: Plan更新不要として Phase 2 へ進行。
+
+### Phase 2: ADR明文化（Plan → Execute → Verify → Proceed）
+- Context: A1契約が揺らぐと `A1 -> A2 -> A3` の依存順が崩れ、下流で派生契約の再定義が発生しうる。
+- Decision: A1契約は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` を維持し、A2/A3 は read-only 参照のみ許可する。
+- Consequences:
+  1. 契約ID変更・schema改版・SafeMode境界緩和は NoGo。
+  2. `Approval Record` 未充足のため状態は `Needs-decision` を維持する。
+  3. human approval 完備までは freeze-candidate のまま停止可能状態を維持する。
+- Approval record: `approved_by` / `approved_at` / `evidence` 未記録（human decision pending）。
+
+### Phase 3: Plan（Plan → Execute → Verify → Proceed）
+- AC/DoD draft（A1 fixed set）:
+  1. `A2A3_OPEN_ALLOWED` を唯一の開放判定式として保持する。
+  2. 契約キー集合を閉集合で維持し、A2/A3で再定義させない。
+  3. `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退させない。
+  4. `Approval Record` 未充足時は `Needs-decision` のまま Proceed しない。
+- A2/A3 handoff contract keys（closed set）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Prohibitions / NoGo conditions:
+  - 契約IDの追加・改名・削除
+  - `schemaVersion` 改版
+  - `Pending` bypass
+  - `safeModeDefault` / `safeModeBoundary` の緩和
+  - `A2A3_OPEN_ALLOWED` の別式追加
+
+### Phase 4: Execute（Plan → Execute → Verify → Proceed）
+- 契約固定値・安全境界・遷移ルールを本文の固定セットとして再確定（値変更なし）。
+- 安全境界明示:
+  - `safeModeDefault=ON`（既定ON維持）
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`（境界緩和禁止）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`（bypass禁止）
+- A2/A3には `A1-CONTRACT-MOCK-v1` + read-only 参照のみ許可（implementation coupling 禁止）。
+
+### Phase 5: Verify（Plan → Execute → Verify → Proceed）
+- Self-check result:
+  1. AC/DoD 4項目を満たす記述を本セクション内で確認。
+  2. 契約キー閉集合・NoGo条件・safeMode境界の3点を明示済み。
+  3. 未承認事項を確定扱いにせず `Needs-decision` を維持。
+- Self-Correction count: `0/3`（再修正不要）。
+- Failure policy: 3回超過時は停止し、失敗原因・再現手順・必要判断を報告する運用を維持。
+
+### Phase 6: Proceed/Handoff（read-only）
+- Downstream handoff（A2/A3向け）:
+  - contractId: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - schemaVersion: `1.0.0`
+  - error semantics: `unknown contract key -> 400` / `Needs-decision unresolved -> no-go`
+  - prohibited changes: 契約ID変更、schema改版、Pending bypass、safeMode境界緩和
+- Decision state: `Needs-decision`（Proceed停止）
+- Stop reason: human approval 未記録（`Approval Record`）および `HIL-RS-02-GOV-EXCEPTION-01=held`。
+- Conflict signal: 現時点で契約キー衝突は検知なし（`delta=0`）。
