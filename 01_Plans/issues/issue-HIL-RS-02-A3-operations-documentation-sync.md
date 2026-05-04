@@ -8,7 +8,7 @@
 - Owner: Stream E（Draft昇格準備）
 - Scope: `01_Plans/issues/`（planning only）
 - Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
-- Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
+- Dependencies: `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（契約依存）, `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（入力依存; mockで暫定進行可）
 - Dependency meta: `blockers=HIL-RS-02-A1-governance-contract-hardening:not_done,approval_record:pending; depends_on=HIL-RS-02-A1-governance-contract-hardening,HIL-RS-02-next-phase-delivery-plan; unlocks=none`
 - Dependency status: `未確定（A1完了待ち）`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
@@ -78,7 +78,7 @@
 - Status: `Draft`
 - Priority: `P1`
 - Scope: operations documentation sync の契約参照のみ
-- Dependencies: `A1 -> A2 -> A3`（A1完了までDraft固定）
+- Dependencies: `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（契約依存）, `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（入力依存; mockで暫定進行可）
 - Related ADR/Spec: `ADR-0027/0028`
 
 ## Phase 2: ADR/CDC Consensus（A3準備範囲の固定）
@@ -416,7 +416,7 @@
 ### Phase 1: Read snapshot（before change）
 - Status snapshot: `Open`（A3のみ `Draft`）
 - Scope snapshot: `01_Plans/issues/`（planning only）
-- Dependencies snapshot: `A1 -> A2 -> A3`
+- Dependencies: `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（契約依存）, `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md`（入力依存; mockで暫定進行可）
 - Fixed key snapshot: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - Fixed key diff result: `diff=0`（drift not detected）
 

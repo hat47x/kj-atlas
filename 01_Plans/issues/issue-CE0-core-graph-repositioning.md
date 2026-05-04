@@ -8,7 +8,7 @@
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
-- Dependencies: `CE-0`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
 - Verification: `docs-check`
 
 ## Lane guard
@@ -1205,7 +1205,7 @@
 ### Phase 1 Read
 - 本Issue最新状態を再読し、Scope/Dependencies/想定I/Fを抽出。
 - Scope抽出: `working` / `context_projection` / `consensus` の責務固定、`working -> consensus` の `patch+approval` 固定、canonical No-Go 5 IDs 固定。
-- Dependencies抽出: CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only 参照のみ。
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; mockで並行検証可能）
 - 想定I/F抽出: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1`。
 - Mock Contract Assumption:
   - `Assumption-CE0-IF-01`: `ContextQueryV1` は query preview 済み入力のみを受理する前提。

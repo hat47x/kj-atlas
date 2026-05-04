@@ -5,6 +5,7 @@
 - Source Issue: N/A
 - Priority: P2
 - Owner: TBD
+- Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束後に着手）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
 - Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`
 - Related Backlog: `N/A`
 - Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`

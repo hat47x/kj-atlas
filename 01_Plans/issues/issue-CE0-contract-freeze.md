@@ -8,7 +8,7 @@
 - Editable: `01_Plans/issues/issue-CE0-contract-freeze.md` のみ（Stream B 制約）
 - Related Backlog: `CE-0`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
-- Dependencies: `CE-0`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
 - Verification: `docs-check`
 
 ## Stream B execution ledger（CE0専任 / contract-only）

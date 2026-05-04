@@ -8,7 +8,7 @@
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
 - Related ADR/Spec: `ADR-0028`, `ADR-0016`, `ADR-0017`, `02_Architecture/api.md`
-- Dependencies: `CE-4`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（ContextBundle I/F依存; mockで先行可能）
 - Verification: `docs-check`
 
 ## Mission（実装非依存の契約固定）
