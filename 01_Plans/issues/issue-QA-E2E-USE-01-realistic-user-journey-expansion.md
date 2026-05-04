@@ -26,13 +26,19 @@
 - DecisionStatus: Fixed-for-Execution
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 
-## Phase 1. Read（読取結果）
+## Phase 1. Read同期（ADR-0019整合）
 
 - `ADR-0019` の原則に従い、本Issueは「仕様評価前の結合バグ除去」を目的に据える。
 - safeMode既定ON・share/export漏えい防止は安全境界として最優先で固定する。
 - 本フェーズは **計画確定のみ** とし、実装ファイル変更は実施しない。
+### 1.1 Read同期チェックリスト（毎Phase再読）
 
-## Phase 2. ADR（C/D/C）
+- [x] `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を再読し、E2E目的を「仕様評価前の結合バグ除去」に固定。
+- [x] safeMode既定ON / share-export fail-closed / import sanitize を安全境界として再確認。
+- [x] 本Issueのスコープが docs-only（本ファイルのみ編集）であることを再確認。
+
+
+## Phase 2. ADR明文化（C/D/C）
 
 ### C: Context
 - 現行E2Eはスモーク中心で、実利用の縦断フロー（再編集・レビュー・安全共有）を十分に担保できていない。
@@ -85,7 +91,7 @@
 - [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
 - [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
 
-## Phase 4. Execute（Issue本文の計画確定）
+## Phase 4. Execute（シナリオ境界・安全境界・除外条件の固定）
 
 ### 4.1 Go/No-Go Gate（Required）
 
@@ -102,13 +108,19 @@
 
 ### 4.2 タスク分解（計画確定版）
 
-- [ ] T1: 既存E2E棚卸しと Journey-A〜D のマッピング。
+- [ ] T1: 既存E2E棚卸しと Journey-A〜D のマッピング（Smoke/Core/Safety分類を含む）。
 - [ ] T2: Journey-A（縦断基本）を最初に実装。
 - [ ] T3: Journey-B/Cを追加し、安全境界回帰を共通アサーション化。
 - [ ] T4: Journey-D（sanitize境界）を拡張実装（推奨）。
 - [ ] T5: `04_Documentation/e2e_testing.md` 同期更新（同一PR）。
 
-## Phase 5. Verify（Expected verification levelとの整合）
+### 4.3 固定境界（実装準備のための凍結）
+
+- **シナリオ境界**: 必須=Journey-A/B/C、推奨=Journey-D。
+- **安全境界**: safeMode既定ON、share/export fail-closed、review attribution human-only、import sanitize。
+- **除外条件**: SSO本番連携、外部LLM実通信、長時間負荷試験は本Requirementの対象外。
+
+## Phase 5. Verify（docs-check + 実行計画妥当性）
 
 - Expected verification level は `e2e`。
 - 実行要件（実装フェーズで必須）:
@@ -118,9 +130,13 @@
 - 判定整合:
   - 上記コマンドで Journey-A〜C が再現され、AC/DoDに対応するアサーションが確認できること。
 
-## Phase 6. Proceed（実装着手条件）
+- docs-check（本フェーズ）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py` が成功し、本Issueメモの構造整合が確認できること。
+  - GoNoGoGate/AC/DoD/停止条件の記述が相互矛盾しないこと。
 
-実装着手は、以下を満たした場合のみ許可。
+## Phase 6. Proceed/Stop（実装着手条件）
+
+実装着手は、以下を満たした場合のみ許可（未達ならStop）。
 
 1. 本Issueの `Status=Ready-for-Implementation` が維持されている。
 2. AC-01〜AC-05 / DoD-01〜DoD-05 が未矛盾で固定されている。
@@ -140,3 +156,10 @@
 
 - 関連Issue: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
 - ADR化トリガー: CI許容時間超過が継続し、E2Eレベル設計の方針変更が必要な場合。
+
+
+### Stop条件（明示）
+
+- 未定義依存が発生した場合は **Stop**（推測補完禁止）。
+- 安全境界（safeMode/share-export/import sanitize/review human-only）の曖昧化または後退が生じる場合は **Stop**。
+- Verify自己修復が3回を超える見込みとなった時点で **Stop**。
