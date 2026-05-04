@@ -172,6 +172,15 @@ DraftRequest
 
 > ポイント: 承認（A/R）と実行（A/R）を分離し、単独判断で緩和が常態化しないようにする。
 
+### 5.1 HIL-RS Governance 連携補強（A1 Contract Hardening）
+
+- `Security Officer` と `System Owner` は **承認責務のみ** を負い、`Platform Operator` は **実行責務のみ** を負う。
+- `requester` と `approver` の兼務は禁止し、さらに `approver_a != approver_b` を必須とする（dual-control）。
+- `Approval Record=Pending` が1件でも残る場合、`Approved` / `ActiveException` への遷移は禁止する。
+- `decisionQueueTransition` は `Pending -> Approved | Pending -> Rejected` のみ許可し、Pending bypass を禁止する。
+
+> 上記は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` の固定条件と整合させるための運用拘束であり、A3（operations documentation sync）は参照専用で再定義しない。
+
 ---
 
 ## 6. Q1〜Q10 決裁結果（AUTH-OPS-03 固定値）
