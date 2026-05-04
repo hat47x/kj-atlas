@@ -1380,3 +1380,67 @@
 ### Phase 6 Proceed/Stop
 - 判定: `Proceed (Ready)`（docs-check観点 pass、single-file 制約遵守、候補は未確定維持）。
 - 停止条件発生時（語彙差分/前提崩壊/未定義競合/範囲外編集要求）は `held` で即停止する。
+
+## Stream D Execution Record（2026-05-04 / Core Graph責務境界再配置 / proposal-only contract lock）
+
+### Phase 1: As-Is整理（Read同期→抽出）
+- Read同期を実施し、本Issueに固定済みの `role / transition / no-go` と SafeMode境界を再確認（差分なし）。
+- Core Graph責務境界（As-Is）を以下で抽出。
+  - `working`: 編集作業領域（提案生成の起点）。
+  - `context_projection`: read-only投影（直接更新禁止）。
+  - `consensus`: 承認済み合意領域（`patch+approval` 以外の経路禁止）。
+- 禁止事項（proposal-only維持のための不変条件）を再確認。
+  - `consensus_direct_write`（直接更新禁止）
+  - `auto_apply_or_publish`（自動適用/公開禁止）
+  - `preview_bypass`（Preview迂回禁止）
+  - `ai_review_auto_promotion`（AIレビュー自動昇格禁止）
+  - `safemode_default_relaxation`（SafeMode既定緩和禁止）
+
+### Phase 2: ADR-style 明文化（Context / Decision / Consequences）
+#### Context
+- CE0 Core Graphの責務境界を再配置しても、proposal-only運用（提案→承認→反映）を壊さない契約が必要。
+- 既存運用は contract-only であり、実装変更なしで監査可能性・可逆性を担保する必要がある。
+
+#### Decision
+- Core Graph再配置の契約は以下で固定する。
+  1) `context_projection` と `consensus` への直接更新を禁止する（更新経路は `working -> consensus` の `patch+approval` のみ）。
+  2) すべての反映候補は proposal（`ProposalPatchV1`）として生成し、Previewを経由して承認可否を判定する。
+  3) 監査可能性のため、遷移イベントを `AuditEventV1` として記録し、ロールバック可能な差分単位を保持する。
+  4) SafeMode既定ONを後退させる再配置案は受理しない。
+
+#### Consequences
+- 直接更新経路が遮断されるため、proposal-only契約は維持される。
+- 実装待ち要素は mock I/F で先行検証可能となり、承認前の不可逆変更を回避できる。
+- 監査ログと差分保持により、事後検証およびロールバック判断が可能となる。
+
+### Phase 3: I/F先行・mock戦略（契約粒度の固定）
+- CG入力契約（mock置換可能）
+  - `ContextQueryV1`: 対象範囲、制約、SafeMode状態、実行者ロールを受領。
+  - `ContextBundleV1`: `working/context_projection/consensus` の参照スナップショットを返却（read-only部を明示）。
+- CG出力契約（proposal-only）
+  - `ProposalPatchV1`: `working -> consensus` に適用可能な差分提案のみを返却。
+  - `AuditEventV1`: `requested / previewed / approved / applied / rolled_back` のイベント境界を記録。
+- イベント境界
+  - 許可: `requested -> previewed -> approved -> applied`。
+  - 禁止: `requested -> applied` の直行、`consensus` への直書き。
+- 実装待ち箇所のmock分割
+  - Query生成、Bundle取得、Patch生成、Audit記録を独立モジュール想定で分離し、各モジュールはfixtureで代替可能なI/Fに固定。
+
+### Phase 4: 実行計画（直列Phase分割）
+1. 契約確定Phase
+   - `role / transition / no-go / SafeMode` を本Issue契約に固定。
+2. 検証計画Phase
+   - `docs-check` + 語彙逸脱チェック + direct write経路不在チェックを実施。
+3. 受入基準Phase
+   - AC/DoD満了時のみ `Done`。未承認論点は `held/pending` で終了。
+
+### Phase 5: Verify（AC/DoD自己検証・未解消リスク・停止基準）
+- AC/DoD自己検証
+  - AC-1〜AC-6: 本追記はCE0契約ID参照限定、3 role固定、`patch+approval` 固定、canonical 5 IDs 維持、`held/pending` 原則維持、`docs-check` 手順維持を満たす。
+  - DoD-1〜DoD-4: 単一ファイル更新、Phase順序明記、検証手順維持、Proceed条件維持を満たす。
+- 未解消リスク一覧
+  1) 実装層で将来 direct write 経路が混入するリスク（本Issueは契約固定のみで実装拘束は未実施）。
+  2) `AuditEventV1` 永続化粒度の差異により、ロールバック証跡が不足するリスク。
+  3) mock I/F と実装I/F の乖離リスク（統合時に再検証が必要）。
+- 停止基準（再確認）
+  - 語彙差分検出、CE0契約ID再定義兆候、SafeMode既定ON後退兆候、docs-check 4回目相当の再試行要求が発生した場合は即停止（`held` または `stopped_for_clarification`）。
