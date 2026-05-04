@@ -363,3 +363,33 @@ Prohibited for A2/A3:
 - 差分説明可能性: freeze keys / gate式 / NoGo return path の変更有無を必ず記録。
 - 依存リンク: `ADR-0026` / `ADR-0027` / `ADR-0028` / `issue-HIL-RS-02-A1-governance-contract-hardening.md`。
 - 停止条件: self-correction 3回超過、未承認確定化、未定義競合、allowlist外編集要求。
+
+## 10) Stream A Contract Snapshot (read-only handoff, 2026-05-04)
+
+### A1 freeze declaration（Contract Freeze）
+- `freezeContractId="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+- `snapshotId="SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+- `schemaVersion="1.0.0"`
+- `safeModeDefault="ON"`
+- `safeModeBoundary="SAFE_MODE_STRICT_ON"`
+- `overridePolicy="human_dual_control_only"`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+
+### API signature freeze（変更禁止）
+- `CritiqueV1(critiqueId, targetRef, critiqueType, createdAt, iteration, comment?, constraintHints?)`
+- `ReDiffV1(proposalId, basedOnIteration, diffOps[], traceKey, rationale?)`
+- `AttributionV1(reviewState, reviewedAt, reviewerRef, auditRecordedAt, reviewContext?, ownerRef?)`
+- `A1ErrorV1(errorCode, message, contractId, retryable, occurredAt)`
+
+### Gate freeze（A2/A3 unlock）
+- `A2A3_OPEN_ALLOWED` は本書4章の固定式を唯一参照する。
+- DecisionQueue 遷移は `Pending -> Approved | Pending -> Rejected` のみ許可。
+- `NoGo return path="issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md"` を固定する。
+
+### Verification log（A1 scope）
+- Phase 1(Read): 未確定項目は `Approval Record` 未入力と `held` 1件のみ。
+- Phase 2(ADR): 追加ADR不要（既存 ADR-0026/0027/0028 で十分）。
+- Phase 3(Freeze): 固定キー差分 `0`。
+- Phase 4(Handoff): read-only snapshot 発行済み。
+- Phase 5(Verify): self-correction `0/3`、未承認が残るため Proceed は `Conditional`。

@@ -258,6 +258,39 @@ gate:
 ## Stream A execution runbook log（2026-04-27 / Critical Path replay）
 
 #
+
+## Stream A critical-path log（2026-05-04 / A1 contract-governance freeze）
+
+### Phase 1 (Read) — A1未確定項目一覧
+- 再読対象: 本Issue / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` / `ADR-0026` / `ADR-0027` / `ADR-0028`。
+- 未確定項目（A1 governance観点）:
+  1. `Approval Record` の `approved_by` / `approved_at` / `evidence` が未入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が `held` のまま（人間判断待ち）。
+  3. 上記2点未解消のため `Phase 4 Execute` は継続して禁止。
+
+### Phase 2 (ADR明文化) — 追加改訂要否
+- 判定: **新規ADR追加なし**（既存 ADR-0026/0027/0028 の範囲で固定値が定義済み）。
+- Context: A1の論点は新設方針ではなく、承認記録不足と保留案件の統治処理。
+- Decision: `Context / Decision / Consequences` は本IssueとSSOTに統合し、追加ADR起票は不要。
+- Consequences: 承認証跡が揃うまで `Needs-decision` を維持し、A2/A3へのOpenを禁止。
+
+### Phase 3 (Contract Freeze) — 固定値確認
+- API signature 固定: `CritiqueV1` / `ReDiffV1` / `AttributionV1` / `A1ErrorV1`。
+- Data type / version 固定: `schemaVersion=1.0.0`。
+- 安全既定値固定: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON`。
+- Gate固定: `Pending -> Approved | Pending -> Rejected` 以外の遷移は禁止。
+
+### Phase 4 (Handoff Spec) — read-only snapshot
+- Snapshot ID: `SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`。
+- Contract ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`。
+- 配布モード: `readOnly=true` / `mutationAllowed=false`。
+- A2/A3 の取り扱い: 参照のみ許可（再定義・派生判定式・Pending bypassは禁止）。
+
+### Phase 5 (Verify & Proceed) — 凍結ログ
+- Verify result: 固定キー差分 `0`、NoGo return path差分 `0`、safeMode境界差分 `0`。
+- self-correction: `0/3`（再試行なし）。
+- Proceed判定: **Conditional / Needs-decision**（未承認項目が残存）。
+- 次フェーズ入力: `Approval Record` 3項目入力完了まで凍結継続。
 ### Phase 1 normalization rule（dependency）
 - 依存記述は **contract reference only** とし、実装タスク・実装順の依存は記述しない。
 - 参照先は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` の2点へ正規化する。
