@@ -1913,3 +1913,28 @@ type PatchProposal = {
 - 継続条件:
   - CE0契約は read-only 参照モードを維持。
   - 未定義競合・前提崩れ・自己修復4回目相当が発生した時点で即時 `held` 停止。
+
+## Stream E latest run（2026-05-04 / CE0-CE1 contract connection hardening）
+
+### Phase 1 Read同期
+- 対象3Issueを再読し、A1上流契約（`ADR-0028` / `02_Architecture/schemas.md`）とのリンク整合を確認。
+- `safeMode` 既定ON非後退（`CE0-SAFEMODE-IF`）と未レビュー保護維持を再確認。
+- Core Graph 直接更新禁止（`CG-01..05`: proposal-only / patch+approval）記述を再確認。
+
+### Phase 2 Plan（AC/DoD明確化）
+- AC追記方針を確定: CE0/CE1契約境界の明示、A2/A3参照可能性、依存リンク可視化。
+- DoD追記方針を確定: 未承認事項の確定扱いゼロ、依存リンク切れゼロ、契約ID不変。
+
+### Phase 3 Execute（文書更新）
+- CE0→CE1接続前提として、ContextQuery/ContextBundleを「契約I/F（implementation-agnostic）」として参照固定。
+- A2（stub/mock）先行で契約検証可能、A3は契約順守下で後続接続とする方針を明記。
+- Core Graphは proposal-only（direct write禁止）を再固定。
+
+### Phase 4 Verify
+- 用語整合を3Issue間で照合（ContextQuery/ContextBundle / proposal-only / safeMode既定ON）。
+- 契約ID・依存リンク・停止条件の明記有無を確認し、不一致なし（self-fix 0/3）。
+
+### Phase 5 Proceed（Stream B/C handoff）
+- 固定I/F一覧: `CE1-CTXQ-IF`, `CE1-CTXB-IF`, `CE1-HASH-DET-IF`, `CE1-PREVIEW-GATE-IF`。
+- 禁止事項一覧: `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation`。
+- 検証前提: mock-first（A2先行可）、同一canonical queryで`bundleHash`決定論一致、未承認事項は`held`継続。

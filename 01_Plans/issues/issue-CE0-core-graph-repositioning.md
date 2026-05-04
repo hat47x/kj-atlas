@@ -1489,3 +1489,25 @@
 ### Proceed
 - 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only 制約遵守）。
 - 停止条件発生なし。失敗時は Self-Correction 最大3回、超過時 `stopped_for_clarification` で停止する。
+
+## Stream E latest run（2026-05-04 / CE0 Core Graph prohibition clarity）
+
+### Phase 1 Read同期
+- A1上流契約との整合、safeMode非後退、Core Graph direct write禁止を再読確認。
+
+### Phase 2 Plan（AC/DoD明確化）
+- AC: CE0/CE1境界明示とA2/A3参照導線。
+- DoD: 未承認確定ゼロ、依存リンク切れゼロ、停止条件明記。
+
+### Phase 3 Execute（文書更新）
+- Core Graph運用を contract-first で再明記: `working -> consensus` は `patch+approval` のみ。
+- `ContextQuery/ContextBundle` は CE1契約I/Fとして参照し、実装確定は行わない。
+- A2 mock-first先行可、A3接続は契約凍結順守を前提にする。
+
+### Phase 4 Verify
+- 3Issue横断で no-go語彙と proposal-only 表現を照合し不一致なし（self-fix 0/3）。
+
+### Phase 5 Proceed（Stream B/C handoff）
+- 固定I/F一覧: CE1 v1 contract IDs（`CE1-CTXQ-IF`/`CE1-CTXB-IF`/`CE1-HASH-DET-IF`/`CE1-PREVIEW-GATE-IF`）。
+- 禁止事項一覧: direct write / auto-apply / auto-publish / preview bypass / safeMode緩和。
+- 検証前提: mock-first + held運用（未承認事項は確定扱い禁止）。

@@ -1161,3 +1161,26 @@ handoffKeys:
 - 失敗3回超過（4回目相当）で `held` 停止。
 - 未承認の確定化要求（Security Officer / System Owner の承認不成立）で `held`。
 - 未定義競合（Contract ID / error semantics / handoff key collision）検知時は即停止し、Phase 2へ戻す。
+
+## Stream E latest run（2026-05-04 / CE1 contract I/F hardening）
+
+### Phase 1 Read同期
+- 対象3Issueを再読し、A1契約参照・safeMode既定ON・Core Graph proposal-onlyを再確認。
+
+### Phase 2 Plan（AC/DoD明確化）
+- AC追加: CE0/CE1契約境界明示、A2/A3参照導線、ContextQuery/Bundleの契約I/F固定。
+- DoD追加: 未承認事項確定ゼロ、依存リンク切れゼロ、契約ID/エラー語彙固定。
+
+### Phase 3 Execute（文書更新）
+- `ContextQueryV1` / `ContextBundleV1` を implementation-agnostic contract として明記。
+- A2はstub/mockで先行検証可、A3は同一契約ID・同一語彙を維持して接続する前提を明文化。
+- Core Graph更新は proposal-only、CE1からの直接反映を禁止する注記を追加。
+
+### Phase 4 Verify
+- 用語一致（queryCanonicalHash/bundleHash、preview_required、unknown_contract_key、nondeterministic_bundle）を3Issue横断確認。
+- 契約ID・依存リンク・停止条件を確認し、欠落なし（self-fix 0/3）。
+
+### Phase 5 Proceed（Stream B/C handoff）
+- 固定I/F一覧: `ContextQueryV1` keyset, `ContextBundleV1` keyset, hash/equivalence前提。
+- 禁止事項一覧: unknown key許容、preview bypass、non-deterministic bundle、consensus direct write。
+- 検証前提: mock-first A2先行、A3接続時は fail-closed / held 運用を継続。
