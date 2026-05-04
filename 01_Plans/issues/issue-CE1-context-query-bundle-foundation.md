@@ -1184,3 +1184,65 @@ handoffKeys:
 - 固定I/F一覧: `ContextQueryV1` keyset, `ContextBundleV1` keyset, hash/equivalence前提。
 - 禁止事項一覧: unknown key許容、preview bypass、non-deterministic bundle、consensus direct write。
 - 検証前提: mock-first A2先行、A3接続時は fail-closed / held 運用を継続。
+
+## Stream C update（2026-05-04 / CE1最小I/F契約固定 / contract-only）
+
+### Phase 1 Read Sync
+- 対象を `issue-CE1-context-query-bundle-foundation.md` のみに限定し、他ファイル非編集を再確認。
+- 既存凍結契約 `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を再読。
+- fail-safe 停止条件（未定義競合 / 非対象編集要求 / self-correction>3）を再確認。
+
+### Phase 2 ADR
+- **Context**: CE2/CE4 が CE1 実装待ちで停止しないよう、CE1 は最小I/F・hash決定論・preview gate を contract-only で先に固定する必要がある。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` は v1 closed-world（unknown key は拒否）を維持。
+  - `previewConfirmed=false -> 422 preview_required` を入力ゲートとして固定。
+  - `queryCanonicalHash` / `bundleHash` は同一 canonical query で3回一致を必須化し、不一致は `409 nondeterministic_bundle` で fail-closed。
+- **Consequences**:
+  - CE2 は `sourceBundleHash === bundleHash` のみで mock 検証を継続可能。
+  - CE4 は `equivalenceKey + bundleHash`（AND）で監査再現性を担保可能。
+  - backend/frontend/worker 実装詳細への依存を持ち込まない。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完:
+  1. v1キー集合の閉域性（closed-world）を固定。
+  2. preview gate のコード/語彙対応（422/`preview_required`）を固定。
+  3. hash決定論（3回一致）と不一致時の 409/`nondeterministic_bundle` を固定。
+- DoD補完:
+  1. CE2/CE4 は CE1未実装でも mock 契約で検証継続可能。
+  2. 引き渡し成果物は契約ID・型・エラー語彙・handoff key のみ。
+  3. 実装タスク（handler/UI/DB/worker）を本Issueに含めない。
+
+### Phase 4 Execute（closed-world key / error semantics 固定）
+- 固定キー契約:
+  - `ContextQueryV1` / `ContextBundleV1` は未定義キーを許可しない（`400 unknown_contract_key`）。
+- 固定エラー意味論:
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+- hash決定論:
+  - `queryCanonicalHash` / `bundleHash` は canonical JSON + sha256(lowercase-hex) を採用。
+  - 同一 canonical query で 3/3 一致しない場合は fail-closed。
+
+### Phase 5 Verify（determinism / preview / safeMode boundary）
+- determinism: `sameQuery && !sameBundle -> 409 nondeterministic_bundle` を維持。
+- preview: `previewConfirmed=false -> 422 preview_required` を維持。
+- safeMode境界: CE1では `CE0-SAFEMODE-IF` を read-only 参照し、既定ON/緩和禁止を維持。
+- 判定: **pass（contract-only / mock-first / dependency-decoupled）**。
+
+### Phase 6 Proceed（handoff package）
+- Contract IDs:
+  - `CE1-CTXQ-IF`
+  - `CE1-CTXB-IF`
+  - `CE1-HASH-DET-IF`
+  - `CE1-PREVIEW-GATE-IF`
+- Handoff keys:
+  - `queryCanonicalHash`
+  - `bundleHash`
+  - `sourceBundleHash`
+  - `equivalenceKey`
+- Error semantics:
+  - `preview_required`
+  - `unknown_contract_key`
+  - `nondeterministic_bundle`
+- 注記: CE1は契約固定のみ。下流実装依存は mock 契約で切断し、進捗待ち禁止。
