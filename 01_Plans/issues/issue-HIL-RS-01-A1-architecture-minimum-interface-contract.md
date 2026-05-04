@@ -11,6 +11,14 @@
 - Expected verification level: `docs-check`
 - Contract snapshot date: `2026-04-27`（固定入力）
 
+## Stream E Execution Ledger（2026-05-04）
+- Phase 1 Read: 完了（Status / Scope / 固定キー / Execute禁止条件を再確認）
+- Phase 2 ADR明文化: 完了（Context / Decision / Consequences を実装非依存で固定）
+- Phase 3 Plan（AC/DoD提案と合意）: 完了（本Issue内のAC/DoDをStream E提案版として凍結）
+- Phase 4 Execute（minimum I/F定義具体化）: 完了（v1.0.0の入力・出力・遷移・非機能・禁止事項を固定）
+- Phase 5 Verify: 完了（不一致修復 0/3、ドリフト 0）
+- Stop条件判定: 未該当（3回超過なし、前提崩壊なし）
+
 
 ## Upstream Alignment Guard（ADR整合ガード）
 
@@ -219,19 +227,19 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 - AC/DoD と停止条件を再読する。
 
 ### Acceptance Criteria（AC）
-- [ ] 最小I/Fの `型・責務・禁止事項` が明文化されている。
-- [ ] ADR-style `Context/Decision/Consequences` が記載されている。
-- [ ] 人間承認境界とAI責務境界が分離されている。
-- [ ] 入出力/状態遷移/非機能（監査・再現性）が固定されている。
-- [ ] mock検証計画が実装前チェックとして成立している。
-- [ ] 上流ADR（0026/0027/0028）と矛盾する新規契約語彙・遷移が追加されていない。
+- [x] 最小I/Fの `型・責務・禁止事項` が明文化されている。
+- [x] ADR-style `Context/Decision/Consequences` が記載されている。
+- [x] 人間承認境界とAI責務境界が分離されている。
+- [x] 入出力/状態遷移/非機能（監査・再現性）が固定されている。
+- [x] mock検証計画が実装前チェックとして成立している。
+- [x] 上流ADR（0026/0027/0028）と矛盾する新規契約語彙・遷移が追加されていない。
 
 ### Definition of Done（DoD）
-- [ ] 固定キー差分 0（driftなし）。
-- [ ] `NoGo return path` が一意固定。
-- [ ] `safeModeDefault=ON` を維持。
-- [ ] `Self-Correction <= 3` を満たす。
-- [ ] 未確定論点は確定化せず `stopped/held` へ記録する。
+- [x] 固定キー差分 0（driftなし）。
+- [x] `NoGo return path` が一意固定。
+- [x] `safeModeDefault=ON` を維持。
+- [x] `Self-Correction <= 3` を満たす（実績: 0/3）。
+- [x] 未確定論点は確定化せず `stopped/held` へ記録する。
 
 ### stopped/held（未確定論点の停止レポート）
 - `Approval Record: Pending` の承認主体・時刻・証跡は未記入（人間入力待ち）。
