@@ -305,3 +305,101 @@
 - Action: フェイルセーフ停止を解除し、契約同期（docs-only）を継続。推測補完・契約再定義は未実施。
 - SafeMode boundary: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持（後退なし）。
 - Next required human instruction: 差分解消方針（どちらをSSOTとするか）を明示する承認指示。
+
+
+## Stream A interface contract consolidation（2026-05-04 / contract-only）
+
+### Phase 1: Read & Plan（re-read complete）
+- Re-read target: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`（single-file scope）。
+- Extracted meta:
+  - Status: `Open`
+  - Priority: `P0`
+  - Scope: `A1最小I/F契約の固定`（A2/A3はread-only参照）
+  - Existing AC/DoD: `A2A3_OPEN_ALLOWED` を唯一判定式として維持、mock-first分離、SafeMode境界後退禁止
+  - Validation: `docs-check`
+- Gap review:
+  - ACは存在するが、**インターフェース契約単体での検証項目（request/response/error の型検証）**が明示不足。
+- AC/DoD draft proposal（agreement-pending）:
+  1. `Contract ID / schemaVersion / contractIds順序` の3点一致を必須化。
+  2. mock I/O（success + deterministic error）で unknown key `400` を再現できること。
+  3. `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` が全例で不変であること。
+
+### Phase 2: ADR-style明文化（Context / Decision / Consequences）
+#### Context
+- FB-P2C-01 A1は、後続A2/A3が契約を再定義しないための唯一の先行ゲートである。
+- 実装詳細に依存した契約は下流変更で揺らぐため、契約は**実装非依存**で固定する必要がある。
+
+#### Decision
+- Contract profileを `A1-CONTRACT-MOCK-v1` として凍結し、以下を固定する。
+  - Contract ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - API signature:
+    - `CritiqueV1(input)->CritiqueV1Result`
+    - `ReDiffV1(input)->ReDiffV1Result`
+    - `AttributionV1(input)->AttributionV1Result`
+    - `A1ErrorV1(input)->A1ErrorV1Result`
+  - Data type / boundary:
+    - `schemaVersion=1.0.0`
+    - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`（順序固定）
+    - 受理キーは固定閉集合（`freezeContractId`,`contractIds`,`schemaVersion`,`overridePolicy`,`contractLinkLocked`,`sharedResourceFreeze`,`safeModeDefault`,`safeModeBoundary`,`decisionQueueTransition`）
+  - Prohibitions:
+    1. 契約IDの追加・改名・削除
+    2. `schemaVersion` 改版
+    3. Pending bypass / decisionQueue短絡
+    4. SafeMode境界（`ON` / `SAFE_MODE_STRICT_ON`）の緩和
+  - Deterministic rule:
+    - unknown contract key は常に `400`
+    - `A2A3_OPEN_ALLOWED` 以外の開放判定式を導入しない
+
+#### Consequences
+- A2/A3は契約面をread-only参照し、実装接続なしで検証可能。
+- 契約変更はA1再起票（CDC承認）時のみ許可。
+- `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` 解消までは `Needs-decision` を維持。
+
+### Phase 3: Mock分離設計（implementation-independent）
+- Mock request example（deterministic success）:
+```json
+{
+  "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "contractIds": "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF",
+  "schemaVersion": "1.0.0",
+  "overridePolicy": "human_dual_control_only",
+  "contractLinkLocked": true,
+  "sharedResourceFreeze": true,
+  "safeModeDefault": "ON",
+  "safeModeBoundary": "SAFE_MODE_STRICT_ON",
+  "decisionQueueTransition": "Pending -> Approved | Pending -> Rejected"
+}
+```
+- Mock success response example:
+```json
+{
+  "status": "accepted",
+  "contractProfile": "A1-CONTRACT-MOCK-v1",
+  "deterministic": true
+}
+```
+- Mock error response example（unknown key）:
+```json
+{
+  "status": "rejected",
+  "code": 400,
+  "error": "unknown contract key",
+  "deterministic": true
+}
+```
+- Minimal validation plan（未実装依存なし）:
+  1. 固定キー閉集合チェック（許可外キーを1つ注入して `400` を確認）。
+  2. `contractIds` 順序一致チェック（順序変更時はreject）。
+  3. `safeModeDefault/safeModeBoundary` 不変チェック（いずれか変更時はreject）。
+  4. `A2A3_OPEN_ALLOWED` 判定式が唯一であることをdocs上で確認。
+
+### Phase 4: Verify（Plan → Execute → Verify → Proceed）
+- Plan: 上記契約固定・mock例・最小検証計画を単一ファイル内で確定。
+- Execute: 本Issueに追記完了（non-target file未編集）。
+- Verify: `docs-check` 系コマンドで整合を検証。
+- Proceed: 承認待ち状態のため `Needs-decision` 維持。
+
+### Phase 5: Stopper
+- self-correction count: `0/3`
+- stopper判定: `not-triggered`（3回超失敗/前提崩れ/未定義競合なし）
+- 現在状態: `agreement-pending`（Approval Record と held事項の人間判断待ち）
