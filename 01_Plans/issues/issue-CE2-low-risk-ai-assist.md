@@ -527,3 +527,30 @@
 ### Phase 6: Proceed
 - 判定: **Hold継続**。
 - 条件: 人間承認ログ未充足時は Proceed せず `held` を維持。
+
+
+## Stream H Proposal-Only Normalization（2026-05-04）
+
+### Phase 1 Read
+- 最新メタ再確認: `Status=Draft` / `Dependency status=未確定` / proposal-only契約維持。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE2は責務分離を崩すと自動確定リスクが高い。
+- Decision: 本IssueはDraft昇格準備の文書整備に限定し、実装着手を禁止する。
+- Consequences: Open判定までは `held` を維持でき、誤Proceedを回避できる。
+
+### Phase 3 Plan（Open化条件 / Go-NoGo）
+- Go: `Dependency status=確定` かつ `Approval Record`（日時/承認者/対象/判断）充足、V1〜V3通過。
+- No-Go: 承認未充足、契約衝突、Verify 4回目相当。
+- Conditional(Hold): 依存未確定だが契約整合は維持。
+
+### Phase 4 Execute（proposal-only整備）
+- 実施対象: 文言整備、ゲート定義、停止条件の明示。
+- 非実施: 実装指示、状態遷移の自動化導線追加、運用確定。
+
+### Phase 5 Verify（3回まで修復）
+- 検証軸: scope固定 / proposal-only契約 / Phase整合。
+- 失敗時: 最大3回まで修復し、超過時は `held`。
+
+### Phase 6 Stopper
+- 依存未確定・競合疑義・承認不足のいずれか検知で停止し、照会待ちに遷移する。

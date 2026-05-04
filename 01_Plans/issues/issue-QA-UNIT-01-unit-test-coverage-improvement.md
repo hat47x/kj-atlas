@@ -94,3 +94,30 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件（トレードオフ閾値）: カバレッジ閾値を品質ゲート（必須）へ昇格する場合。
+
+
+## Stream H Draft Reframe（2026-05-04 / proposal-only）
+
+### Phase 1 Read
+- 最新メタ確認: 本Issueは `Status=Draft` の提案段階として扱う。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: QA-UNIT-01 は品質向上の価値が高い一方、Draft段階で実装着手すると範囲逸脱が生じる。
+- Decision: 本Issueは「Open化のための提案整理」に限定し、実装タスクは承認後に切り出す。
+- Consequences: 受入条件と優先順位を先に固定でき、着手時の再調整コストを削減できる。
+
+### Phase 3 Plan（Go / No-Go gate）
+- Go: Owner確定、対象モジュール優先順、unit検証コマンド、承認記録が揃う。
+- No-Go: Owner未定、検証レベル不一致、実装先行要求。
+- Conditional(Hold): 提案記述は整ったが承認待ち。
+
+### Phase 4 Execute（proposal-only整備）
+- 実施: AC/DoD/Validationの提案粒度を揃える。
+- 非実施: テスト追加、コード変更、カバレッジ閾値の強制導入。
+
+### Phase 5 Verify（最大3回修復）
+- 観点: Proposal範囲の明示、実装指示の排除、Gate条件の明確性。
+- 失敗時: 3回まで修復、超過時は `held`。
+
+### Phase 6 Stopper
+- 依存未確定、承認不足、競合疑義（unit/e2e境界混線）を検知した場合は停止して照会する。

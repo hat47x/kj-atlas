@@ -1241,3 +1241,30 @@
 - Attempt 2: Gate条件と Stop条件の再整列。
 - Attempt 3: 依存/承認証跡の未充足を Hold理由へ明示。
 - 4回目相当: **Stop**（超過または依存崩壊として終了）。
+
+
+## Stream H Proposal-Only Consolidation（2026-05-04）
+
+### Phase 1 Read
+- 最新メタ確認: `Status=Draft`、`Dependency status=未確定（A1完了待ち）` を維持。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: A3はA1契約凍結を参照する運用同期ノードであり、独自確定は不可。
+- Decision: A3は `mock I/F preparation only` を継続し、Open判定は承認待ちに固定する。
+- Consequences: 依存解消前の越境確定を回避しつつ、準備証跡を保持できる。
+
+### Phase 3 Plan（Open化条件）
+- Go: `a1Status==Done` かつ `pendingDecisionQueueCount==0` かつ固定キー差分0。
+- No-Go: Pending bypass、固定キー後退、Self-Correction 4回目相当。
+- Conditional(Hold): 依存未達だがPrepGate成立。
+
+### Phase 4 Execute（proposal-only整備）
+- 実施: 用語・導線・Gate式の参照整備。
+- 非実施: 契約再定義、実装計画化、対象外ファイル編集。
+
+### Phase 5 Verify（最大3回修復）
+- 検証: fixed keys diff / role vocabulary drift / gate整合。
+- 上限: 3回超過で `held`。
+
+### Phase 6 Stopper
+- 依存未確定・競合疑義・未承認確定化の要求を検知した場合は停止して照会。

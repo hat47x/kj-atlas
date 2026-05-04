@@ -259,3 +259,31 @@
   2. CLI終了コードの数値割当は未確定のまま（分類語彙のみ固定）。
   3. 監査転送基盤・匿名化方式は CE4 契約外（上位ADR判断待ち）。
 - Stop再掲: allowlist外編集、契約語彙衝突、self-correction超過、safeMode後退要求を検知した場合は即停止。
+
+
+## Stream H Draft Promotion Prep（2026-05-04 / proposal-only）
+
+### Phase 1 Read
+- 最新メタ確認: `Status=Draft`、`docs-only / contract-only`、`Verification=docs-check`。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE4はAPI/CLI/監査の境界横断であり、実装前に契約凍結が必要。
+- Decision: Draft段階は契約文書の固定に限定し、実装仕様・実装指示を記載しない。
+- Consequences: Open判定時の論点が `同値条件 / 監査キー / fail-closed` に収束する。
+
+### Phase 3 Plan（Go / No-Go gate）
+- Go: 4イベント契約、AND同値条件、禁止操作（auto-*）が矛盾なく記述され承認記録が揃う。
+- No-Go: 承認欠落、監査キー欠落、契約語彙の衝突、Verify上限超過。
+- Conditional(Hold): 契約整備は完了しているが承認待ち。
+
+### Phase 4 Execute（proposal-only整備）
+- 実施: 用語統一、CDC整備、Gate明文化。
+- 非実施: API/CLI実装方法、終了コード数値の確定、監査基盤選定。
+
+### Phase 5 Verify（最大3回修復）
+- V1: 単一Issue内での整合。
+- V2: proposal-only/fail-closed/auto-*禁止の残存。
+- V3: Go/No-Go/Conditional 条件の相互排他性。
+
+### Phase 6 Stopper
+- 依存未確定、未承認確定化要求、契約競合疑義を検知した場合は停止して照会する。
