@@ -1571,3 +1571,34 @@
 ### Phase 6 Proceed/Stop
 - 判定: `Proceed = Done`（AC/DoD充足、docs-check pass、No-Go逸脱なし、安全境界整合）。
 - `Stop` 判定は不要（未承認の新規 `held/pending` なし）。
+
+
+## Stream B Sync Snapshot（2026-05-04 / Read&Gap→ADR→Dependency-cut→Verify）
+
+### 1) Dependency / Ready / Blocker 再検証
+- dependency_state: `contract-first` を維持（実装完了待ちを Ready 条件に含めない）。
+- ready_contract: `freezeContractId/schemaVersion/overridePolicy/safeModeDefault` 一致。
+- ready_execution: `approved_by/approved_at/evidence` 充足かつ `Decision Queue Pending=0`。
+- blockers_normalized:
+  - `approval_pending`
+  - `decision_queue_pending`
+  - `contract_mismatch`
+  - `out_of_scope_request`
+
+### 2) AC/DoD 不足補完ドラフト（合意用）
+- AC-draft-1: Ready 判定を `contract-ready` と `execution-ready` に二分し、両方の結果を記録する。
+- AC-draft-2: Blocker は正規化4分類のみ使用し、自由記述のみで終わらせない。
+- DoD-draft-1: `mock parallelizable items` を最低1件以上列挙する。
+- DoD-draft-2: verify の自己修復回数を `<=3` で記録し、`>=4` は停止報告とする。
+
+### 3) 依存切断（実装依存→契約依存）
+- replace_rule: 実装依存の待ち条件は、同等の契約キー検証へ置換する。
+- mock_parallelizable_items:
+  1. Contract ID / fixed key 一致検証
+  2. Gate 式（Go/Conditional/No-Go）の入力完全性検証
+  3. Audit 4点セット（`query/bundle/proposal/apply`）欠損検知
+
+### 4) Verify（triage再実行）
+- command: `python 01_Plans/triage_actionable_plans.py`
+- note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
+- self_correction: `0/3`（本更新時点）
