@@ -1540,3 +1540,34 @@
 ### Phase 6 Proceed/Stop
 - 判定: `Done`（AC/DoD整合、contract-only維持、docs-check pass、single-file制約充足）。
 - 競合・前提崩壊は未検出。検出時は `stopped_for_clarification` で停止する。
+
+## Phase Execution Record（2026-05-04 / Stream C / CE0 Core Graph Repositioning contract-only）
+### Phase 1 Read同期
+- Phase開始前に本Issueを再読し、`role / transition / no-go` 固定語彙と CE0 canonical 5 IDs に差分がないことを確認。
+- CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は参照専用であり、再定義禁止を再確認。
+- SafeMode境界（既定ON・後退禁止）に変更兆候がないことを確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE0 Core Graph Repositioning を contract-only で進め、下流実装へは固定契約のみを引き渡す。
+- Decision: `No ADR delta`。固定語彙は `working` / `context_projection` / `consensus`、許可遷移は `working -> consensus` + `patch+approval` のみ。
+- Consequences: 未承認事項は確定せず `held/pending` 在庫を維持し、推測確定を禁止する。
+
+### Phase 3 Plan（AC/DoD補完提案含む）
+- Scope: 本Issue 1ファイル内の契約固定・進行記録更新のみ（single-file / docs-only / contract-only）。
+- AC補完提案: 既存 AC-1〜AC-6 で充足しており、新規補完提案は不要（`held` 追加なし）。
+- DoD補完提案: 既存 DoD-1〜DoD-4 で充足しており、新規補完提案は不要（自己修復上限3回を維持）。
+- Stop Conditions再確認: 語彙差分検出、No-Go逸脱、SafeMode既定ON後退、docs-check 4回目相当は停止。
+
+### Phase 4 Execute（遷移規則・禁止事項の契約固定）
+- 遷移規則を契約固定: 許可は `working -> consensus` の `patch+approval` のみ。
+- 禁止事項を契約固定: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
+- 実装変更（handler/UI/DB/worker/API/Schema migration）は追加しない。
+
+### Phase 5 Verify（No-Go / 安全境界整合）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数: 0/3（停止条件未発火）。
+
+### Phase 6 Proceed/Stop
+- 判定: `Proceed = Done`（AC/DoD充足、docs-check pass、No-Go逸脱なし、安全境界整合）。
+- `Stop` 判定は不要（未承認の新規 `held/pending` なし）。
