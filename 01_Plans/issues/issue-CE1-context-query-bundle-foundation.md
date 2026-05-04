@@ -1246,3 +1246,39 @@ handoffKeys:
   - `unknown_contract_key`
   - `nondeterministic_bundle`
 - 注記: CE1は契約固定のみ。下流実装依存は mock 契約で切断し、進捗待ち禁止。
+
+## Stream D update（2026-05-04 / CE1 Foundation docs-only contract freeze）
+
+### Phase 1 Read
+- 上位文書（`AGENTS.md` Read Order 1〜6）と当該Issueを再読し、編集対象を本ファイルのみに限定することを再確認。
+- Interface-first / mock-first を適用し、`ContextQueryV1` / `ContextBundleV1` を実装非依存の契約として先行固定する前提を確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4 が CE1 実装完了待ちで停止しないよう、契約I/Fを先に固定して依存を切断する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` を closed-world 契約として固定し、未定義キーは `400 unknown_contract_key`、preview gate は `previewConfirmed=false -> 422 preview_required`、決定論不一致は `409 nondeterministic_bundle` とする。
+- **Consequences**: 下流は mock contract で並行検証可能。CE1 は docs-only で契約凍結を維持し、handler/UI/DB/worker の実装判断を持ち込まない。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完:
+  - `ContextQueryV1` / `ContextBundleV1` のv1キー集合を固定し、unknown key の失敗条件を明文化。
+  - `queryCanonicalHash` / `bundleHash` の決定論チェックを「同一canonical queryで3回一致」に固定。
+  - `previewConfirmed` の入力ゲートを契約上の必須条件として固定。
+- DoD補完:
+  - 引き渡し物は契約ID、I/F型、エラー語彙、handoff key のみ。
+  - 下流検証は mock-only で再現可能（実実装依存なし）。
+
+### Phase 4 Execute（docs-only契約固定）
+- 本Issue内の契約記述を正本として CE1 v1 契約を凍結。
+- Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を維持。
+- 追加仕様（新キー/新エラー/新HTTP語彙）は本フェーズでは導入しない。
+
+### Phase 5 Verify（最大3回自己修復）
+- Verify-1: `git diff --check`（フォーマット不整合なし）。
+- Verify-2: `rg -n "Stream D update|ContextQueryV1|ContextBundleV1|preview_required|unknown_contract_key|nondeterministic_bundle" 01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（契約語彙の存在確認）。
+- Verify-3: `git status --short`（編集対象が本ファイルのみであることを確認）。
+- 失敗時は原因を本ファイル内で修正し再検証、3回超過時は `held`。
+
+### Phase 6 Stopper（致命条件）
+- 非許可ファイル編集要求が発生した場合は即 `held` 停止。
+- 契約語彙衝突（error semantics / contract id collision）を検知した場合は `held` 停止。
+- Verify失敗が3回を超えた場合は `held` 停止。
