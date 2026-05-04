@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 次フェーズ実行計画（Stream D 自己完結版）
+# Issue Draft: HIL-RS-02 次フェーズ実行計画（Stream G 自己完結版）
 
 - Type: Process
 - Status: Open
 - Source Issue: N/A
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
-- Owner: Stream D Agent（Delivery Plan Self-Contained）
+- Owner: Stream G Agent（HIL-RS-02 delivery plan self-contained）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
 - Dependencies (minimal): `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（参照固定）, `A1-GOV-GATE-V1` / `A2-PROPOSAL-ENVELOPE-V1` / `A3-DOC-SYNC-CHECK-V1`（mock契約ID参照のみ）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -22,7 +22,7 @@
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## 1. 独立実行ルール（Stream D 固定）
+## 1. 独立実行ルール（Stream G 固定）
 - 他レーン進捗は参照しない（状態収集・進捗推定・完了見込み推測を禁止）。
 - 参照可能な外部入力は mock契約ID のみ（値の再定義は禁止）。
 - allowlist外編集は禁止（本ファイル以外の編集要求は即停止対象）。
@@ -30,7 +30,7 @@
 
 ---
 
-## Phase 1. Read（固定ガードレール再確認）
+## Phase 1. Read
 
 ### Plan
 - 固定ガードレールと独立実行ルールを再確認し、開始時点の逸脱有無を記録する。
@@ -44,44 +44,49 @@
 - ガードレール項目の欠落・改変がない。
 - 逸脱検知時の即停止条件が明記されている。
 
-### Proceed
-- 逸脱ゼロなら Phase 2 へ進行。
-
 ---
 
-## Phase 2. ADR（Context / Decision / Consequences）
+## Phase 2. ADR明文化（Context / Decision / Consequences）
 
-### Plan
-- Stream D 単独で自己完結可能な意思決定を ADR 形式で固定する。
-
-### Execute
-#### Context
+### Context
 - Delivery Plan が外部進捗参照を前提にすると、実行可能範囲と停止条件が曖昧化する。
 - 本タスクは単一ファイル編集・mock契約参照のみで自己完結する必要がある。
 
-#### Decision
-- D1: Stream D の責務を `Gate判定ログ整備 / AC-DoD照合 / 停止条件固定` に限定する。
+### Decision
+- D1: Stream G の責務を `Gate判定ログ整備 / AC-DoD照合 / 停止条件固定` に限定する。
 - D2: 他レーン状態は入力として扱わず、参照は mock契約ID の存在確認に限定する。
 - D3: `Approval Record: Pending` が残る間は `Conditional` を維持し、確定Goを宣言しない。
 
-#### Consequences
+### Consequences
 - 外部進捗に依存せず、文書単体で再開可能な運用ログを維持できる。
 - 依存未解決時も推測実装を避け、停止判断を即時に実行できる。
 
 ### Verify
 - Context / Decision / Consequences がすべて存在し、相互矛盾がない。
 
-### Proceed
-- 欠落がなければ Phase 3 へ進行。
-
 ---
 
-## Phase 3. Plan（依存分解と切断案定義）
+## Phase 3. Plan（AC/DoD補完・非目標固定）
 
-### Plan
-- 依存を `論理依存` と `資源依存` に分解し、Stream Dで切断可能な境界を定義する。
+### AC（Acceptance Criteria）
+- AC-1: 6フェーズ（Read / ADR明文化 / Plan / Execute / Verify / Stop）が順序通り定義されている。
+- AC-2: 依存分解（Logical/Resource）と切断案（C1-C3）が明示されている。
+- AC-3: Gate判定ログが `Conditional / Ready-By-Contract` で明示されている。
+- AC-4: Self-Correction 上限（最大3回）と停止条件（S1-S4）が固定されている。
 
-### Execute
+### DoD（Definition of Done）
+- DoD-1: 本ファイルのみ更新（allowlist遵守）。
+- DoD-2: 固定ガードレールの後退なし。
+- DoD-3: 他レーン進捗の参照記述なし。
+- DoD-4: mock契約ID参照境界が維持されている。
+- DoD-5: 再開条件と停止報告条件が本文で追跡可能。
+
+### 非目標（Out of Scope）
+- N1: A1/A2/A3 の実装進捗管理・完了見込みの推定。
+- N2: 共有リソース（dashboard/README/他issue）の編集。
+- N3: mock契約ID以外の新規入力値定義。
+
+### 依存分解
 #### 論理依存（Logical）
 - L1: `freezeContractId` 一致確認
 - L2: `Approval Record` 状態確認（Pending/Approved/Rejected）
@@ -92,54 +97,35 @@
 - R2: docs-check 実行環境
 - R3: mock契約ID定義の可読性
 
-#### 切断案（Stream D 自己完結）
+#### 切断案（Stream G 自己完結）
 - C1: 他レーン進捗説明を排除し、契約ID参照のみ保持する。
 - C2: 実装進捗管理を責務外とし、Gate判定ログ管理に限定する。
 - C3: 未承認時は `Conditional` 固定で Plan/Verify のみ継続可能とする。
 
-### Verify
-- 依存が `L1-L3 / R1-R3` に分類され、切断案 `C1-C3` が明示されている。
-
-### Proceed
-- 充足なら Phase 4 へ進行。
-
 ---
 
-## Phase 4. Execute（Gate判定ログ中心更新）
+## Phase 4. Execute（self-contained計画更新）
 
-### Plan
-- Gate判定ログを中心に、実行状態・停止条件・エスカレーション条件を固定する。
-
-### Execute
-#### Gate判定ログ（本Issue管理対象）
+### Gate判定ログ（本Issue管理対象）
 - GATE-01 `A1-GOV-GATE-V1`: **Conditional**（Approval Record 入力待ち）
 - GATE-02 `A2-PROPOSAL-ENVELOPE-V1`: **Ready-By-Contract**（契約ID参照のみ完了）
 - GATE-03 `A3-DOC-SYNC-CHECK-V1`: **Ready-By-Contract**（同期I/F参照のみ完了）
 
-#### 停止条件（Stop）
+### 停止条件（Stop）
 - S1: `self_correction_attempt >= 4`
 - S2: pending bypass 検知
 - S3: 固定ガードレール改変要求
 - S4: allowlist外編集要求
 
-#### エスカレーション条件
+### エスカレーション条件
 - E1: `Approval Record` の責務分離違反
 - E2: `A2A3_OPEN_ALLOWED` 判定不能（入力欠落/矛盾）
 - E3: `NoGo return path` 変更要求
 - E4: mock契約にない入力値の参照要求
 
-### Verify
-- Gate判定ログ、Stop条件 S1-S4、Escalation条件 E1-E4 が明記されている。
-
-### Proceed
-- 欠落がなければ Phase 5 へ進行。
-
 ---
 
-## Phase 5. Verify（AC/DoD一致と停止条件確認）
-
-### Plan
-- 全Phaseの受入条件（AC）と完了定義（DoD）を照合し、停止条件の有効性を確認する。
+## Phase 5. Verify（3回修復まで）
 
 ### Execute
 - Self-Correction counter: `0/3`（今回更新時点）
@@ -149,43 +135,33 @@
   - `git diff --check`
 
 ### Verify
-#### AC
-- AC-1: 6フェーズ（Read/ADR/Plan/Execute/Verify/Proceed）が順序通り定義されている。
-- AC-2: 依存分解（Logical/Resource）と切断案（C1-C3）が明示されている。
-- AC-3: Gate判定ログが `Conditional/Ready-By-Contract` で明示されている。
-- AC-4: Self-Correction 上限（最大3回）と停止条件（S1-S4）が固定されている。
-
-#### DoD
-- DoD-1: 本ファイルのみ更新（allowlist遵守）。
-- DoD-2: 固定ガードレールの後退なし。
-- DoD-3: 他レーン進捗の参照記述なし。
-- DoD-4: mock契約ID参照境界が維持されている。
-- DoD-5: 再開条件と停止報告条件が本文で追跡可能。
-
-### Proceed
+- AC-1〜AC-4 を満たす。
+- DoD-1〜DoD-5 を満たす。
+- 3回修復上限（`<=3`）を超える場合は Phase 6 へ強制遷移する。
 - 判定: **Conditional**（承認証跡入力待ちのため）。
-- 停止条件確認: S1-S4 のいずれか成立時は即停止報告。
 
 ---
 
-## Phase 6. Proceed（次回運用ログ化）
+## Phase 6. Stop（致命条件で停止）
 
-### Plan
-- 次回再開に必要な最小運用ログを残し、自己完結ループを維持する。
+### 致命停止条件
+1. `self_correction_attempt >= 4`
+2. pending bypass を検知
+3. 固定ガードレール改変要求を受領
+4. allowlist外編集要求を受領
 
-### Execute
-#### 次回再開チェックリスト
+### 停止時報告テンプレ
+- `stop_reason`: `S1|S2|S3|S4`
+- `last_safe_phase`: `Read|ADR|Plan|Execute|Verify`
+- `guardrail_diff`: `none|detected`
+- `next_action`: `NoGo return pathへ差戻し`
+
+### 次回再開チェックリスト（停止しなかった場合のみ）
 1. `freezeContractId` と Guardrail差分の再照合
 2. `Approval Record` 入力有無の確認
 3. `self_correction_attempt` の継続値確認（`<=3` 必須）
 4. allowlist外編集要求の有無確認
 
-#### 未解決論点（保持）
+### 未解決論点（保持）
 - O1: `approved_by / approved_at / evidence` の入力待ち
 - O2: `A2A3_OPEN_ALLOWED` の最終Go判定は A1入力確定後に再評価
-
-### Verify
-- 再開手順が4項目で固定され、未解決論点が推測なしで保持されている。
-
-### Proceed
-- 次回開始点: **Phase 1 (Read 再確認) から再開**。
