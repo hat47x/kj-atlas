@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Stream I Agent（Delivery Plan Orchestrator）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
-- Dependencies (minimal): `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（参照固定）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT参照）
+- Dependencies (minimal): `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（参照固定）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT参照）, `A1-GOV-GATE-V1` / `A2-PROPOSAL-ENVELOPE-V1` / `A3-DOC-SYNC-CHECK-V1`（mock契約参照のみ）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
@@ -23,6 +23,9 @@
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
 ## 1. 実行規律（全Phase共通）
+
+- Assumption A-01: 本Issueは **他レーン進捗を前提にしない**。他レーン状態は入力値として参照せず、必要時は mock契約のI/F値のみを受理する。
+- Assumption A-02: 未定義依存が発生した場合は推測せず停止し、`原因 / 影響I/F / 人間判断論点` を追記する。
 1. 各Phaseで **Read同期** を先に実施する。
 2. 各Phaseは必ず **Plan -> Execute -> Verify -> Proceed** の順序で進める。
 3. AC/DoD不足を検知した場合は **Draft提案を提示し、合意までExecuteを制限** する。
@@ -50,9 +53,11 @@
 - R1: 承認者（Architecture Owner / Governance reviewer）
 - R2: docs-check実行者
 - R3: A2/A3担当ストリームの着手タイミング
+  - Assumption: 他レーンの着手時期は未確定として扱い、判定には使用しない。
 
 #### 3) 切断候補（他ストリーム依存最小化）
 - C1: `A2/A3実装進行` を切断し、Stream Iは **Gate定義と判定ログ** のみ管理。
+- C4: 他レーン状態を参照する説明は削除し、依存表記は mock契約ID 参照のみを許可する。
 - C2: 承認未完了時は `Conditional` 固定として前進可能範囲を `Plan/Verify` に限定。
 - C3: I/F定義を mock-first で先行確定し、実装進捗待ち依存を分離。
 
@@ -75,7 +80,8 @@
 
 ### Decision
 - D1: Stream Iの責務を `Gate仕様固定・判定・証跡維持` に限定する。
-- D2: `A2/A3実装可否` は **判定出力のみ** 提供し、実装進捗管理は他ストリーム責務と分離。
+- D2: `A2/A3実装可否` は **判定出力のみ** 提供し、実装進捗管理は本Issueの責務外とする。
+- D2-Note (Assumption): 本Issueは他ストリームの状態収集を行わない。
 - D3: `Approval Record: Pending` が1件でもある場合、`Execute=Forbidden`（Plan/Verifyのみ許可）を維持する。
 
 ### Consequences
@@ -113,9 +119,11 @@
 - M3: `A3-DOC-SYNC-CHECK-V1` を同期結果I/Fとして固定。
 
 ### 実装待ち工程（他ストリーム依存）
-- W1: A2本実装への組込み
-- W2: A3本同期ジョブへの接続
-- W3: 承認者による本番承認入力
+- W1: A2本実装への組込み（参照のみ）
+- W2: A3本同期ジョブへの接続（参照のみ）
+- W3: 承認者による本番承認入力（参照のみ）
+
+> Assumption: W1-W3 は本Issueでは実行しない。mock契約境界の説明対象に限定する。
 
 ### フェーズ受入条件（AC）
 - AC-3.1: I/F名・入出力・監査フィールドが明示されている。
@@ -164,6 +172,7 @@
 ### エスカレーション条件
 - E1: `Approval Record` の責務分離違反
 - E2: `A2A3_OPEN_ALLOWED` 判定不能（入力欠落/矛盾）
+- E4: mock契約に存在しない入力値の参照要求（未定義依存）
 - E3: `NoGo return path` 変更要求
 
 ### Verify
@@ -194,7 +203,8 @@
 #### 残課題（Open）
 1. `Approval Record` の `approved_by / approved_at / evidence` 入力待ち。
 2. `HIL-RS-02-GOV-EXCEPTION-01` の人間判断待ち（held継続）。
-3. `A2A3_OPEN_ALLOWED` の最終Go判定はA1完了入力待ち。
+3. `A2A3_OPEN_ALLOWED` の最終Go判定は `A1-GOV-GATE-V1` 入力待ち。
+4. 未定義依存が発生した場合は即停止し、推測実装を行わない。
 
 ### Proceed
 - 判定: **Conditional**（未承認・held論点が残るため）。
