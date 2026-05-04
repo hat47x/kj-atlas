@@ -17,15 +17,15 @@
 
 > REQ-DEF-01/02/03 で共通利用する要求メタ項目。後続再編集競合を防ぐため、このキーセットを先に固定する。
 
-- Requirement ID
-- Requirement statement
-- Priority class（Must / Should / Could）
-- RACI（A/R/C/I）
-- Contract impact（schema/api/policy/ops: あり/なし）
-- Acceptance scenario（前提/操作/期待結果/除外）
-- Verification level（docs-check / unit / integration / e2e）
-- Decision status（Fixed / Pending）
-- Decision queue ref（未確定時の参照先）
+- `RequirementID`
+- `RequirementStatement`
+- `PriorityClass`（Must / Should / Could）
+- `RACI`（A/R/C/I）
+- `ContractImpact`（schema/api/policy/ops: あり/なし）
+- `AcceptanceScenario`（前提/操作/期待結果/除外）
+- `VerificationLevel`（docs-check / unit / integration / e2e）
+- `DecisionStatus`（Fixed / Pending）
+- `DecisionQueueRef`（未確定時の参照先）
 
 ## 1) 課題 / Problem statement
 
@@ -136,6 +136,13 @@
 - [x] Plan→Execute→Verify の実行手順と、自己修復最大3回・フェイルセーフ停止条件が本文に明記されている。
 - [x] 本Issue本文のみの変更で完結し、他Issue・コード・CIを変更していない。
 
+## 5.2 判定基準（acceptance-first 分割判定）
+
+- 判定基準-1（連鎖整合）: `RequirementStatement` → `AcceptanceScenario` → `VerificationLevel` の3点が全要求で連結している。
+- 判定基準-2（単一責務）: 主検証責務が1Issueにつき1つに固定され、例外は `Decision Queue` 記録済みである。
+- 判定基準-3（曖昧語除去）: 「適宜」「必要に応じて」等の曖昧語を残さず、条件と除外を明記している。
+- 判定基準-4（Fail-safe）: 価値定義と受入基準の不整合が残る場合は停止し、3回以内の自己修復後に未達を記録する。
+
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: 受入シナリオ記述テンプレを作成する。
@@ -184,6 +191,12 @@
 - 失敗モード: 分割ルールが厳しすぎて起票速度が下がる。
 - 影響範囲: Issue起票、レビュー、検証計画作成。
 - ロールバック手順: 分割ルールを「推奨」に戻し、必須はAcceptance最小セットに限定する。
+
+## 9.1 非目標（明示）
+
+- Playwright/E2Eシナリオそのものの実装追加。
+- CIワークフロー変更や検証自動化ポリシー変更。
+- REQ-DEF-01/02 の責務境界・契約判定の再定義。
 
 ## 10) Additional context
 

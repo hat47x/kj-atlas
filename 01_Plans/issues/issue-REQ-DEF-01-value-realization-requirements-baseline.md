@@ -85,6 +85,13 @@
 - [x] Requirement meta I/F の正規キーが camel-case で最終固定され、他REQが参照できる。
 - [x] `DecisionStatus` と `DecisionQueueRef` の相互必須条件（Pending時必須）が明文化される。
 
+## 5.1 判定基準（value→requirements→acceptance 連鎖）
+
+- 判定基準-1（Value整合）: `ADR-0001` の価値原則（P-01〜P-07）と `PriorityClass` が1対1で追跡可能であること。
+- 判定基準-2（Requirement整合）: 各要求が `RequirementStatement` と `RACI` を持ち、責務境界が未定義でないこと。
+- 判定基準-3（Acceptance整合）: 各要求が `AcceptanceScenario` と `VerificationLevel` を持ち、検証不能要求が残っていないこと。
+- 判定基準-4（Fail-safe）: 価値定義と受入基準の不整合を検出した場合、Proceedせず停止しDecision Queueへ移送すること。
+
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1: 価値原則ごとの要求優先度（Must/Should/Could）を策定する。
@@ -140,6 +147,17 @@
 - 失敗モード: 要求の粒度が粗すぎて、具体Issueに落とせない。
 - 影響範囲: `01_Plans/` と関連するArchitecture文書の参照整合。
 - ロールバック手順: 追加した要求優先度の分類を撤回し、既存ADR参照のみへ戻す。
+
+## 9.1 分割戦略（REQ-DEF共通判定軸の引き渡し）
+
+- 分割単位:
+  1. `責務境界` は REQ-DEF-02 へ引き渡す（RACI/ContractImpactの詳細化）。
+  2. `受入・検証` は REQ-DEF-03 へ引き渡す（AcceptanceScenario/VerificationLevelの詳細化）。
+- 分割ルール:
+  - 本Issueは canonical key と停止条件の固定のみを担当し、下流Issueの再定義を許可しない。
+  - 判定軸が競合した場合は `REQ-DEF-01` を正本として上書き統合する。
+- 分割完了条件:
+  - REQ-DEF-02/03 が本Issueの判定軸（key名/停止条件）を参照し、矛盾が0件であること。
 
 ## Definition of Done（DoD）
 
