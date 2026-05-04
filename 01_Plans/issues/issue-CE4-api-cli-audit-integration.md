@@ -1,9 +1,9 @@
-# Issue Draft: CE4 API/CLI/監査統合（Stream E / CE4専任 / contract-only planning）
+# Issue Draft: CE4 API/CLI/監査統合（Stream J / CE4専任 / contract-only）
 
 - Type: Feature request
-- Status: Open
+- Status: Draft (Contract Freeze Candidate)
 - Priority: P2
-- Owner: Stream E（CE4専任）
+- Owner: Stream J（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -11,77 +11,137 @@
 - Dependencies: `CE-4`
 - Verification: `docs-check`
 
-## Objective（固定化する責務境界）
-- API/CLI/監査の責務境界を **contract-only** で固定する（実装確定を行わない）。
+## Mission（実装非依存の契約固定）
+- CE4 API/CLI/監査統合を、実装方式から独立した**契約レベル**で固定する。
 - `proposal-only` を強制し、auto-apply / auto-confirm / auto-publish を禁止する。
 - `fail-closed` を既定とし、監査必須項目の欠損は成功扱いしない。
 - 監査イベント4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として固定する。
 
-## Phase 1 Read & Sync（差分抽出）
+---
 
-### 既存前提（抽出）
-- API契約側（`02_Architecture/api.md`）では CE4 同値判定を `equivalenceKey AND bundleHash` で固定済み。
-- 監査必須イベントは `query -> bundle -> proposal -> apply` の順序固定。
-- CLI契約側（`ADR-0016`）には共通exit code契約はあるが、CE4監査違反コードの明示は未整備。
-- セキュリティ運用側（`ADR-0017`）には監査帰属性Gateはあるが、CE4最小監査キー集合への参照は未整備。
+## Phase 1: 要件抽出（Read同期済み）
 
-### 不一致 / 欠落（一覧）
-1. CE4監査イベントの最小スキーマ（必須キー）が issue/ADR横断で単一記述化されていない。
-2. API→CLI の同値性要件（AND条件）と CLI exit code 契約の対応表が不足。
-3. セキュリティ運用チェック（S2）と CE4監査4点セットのトレーサビリティ接続が弱い。
+### 1.1 API契約要件（実装非依存）
+1. **同値性の成功条件**は `equivalenceKey AND bundleHash` の同時成立のみ。
+2. APIは `proposal-only` 以外の実行モードを成功として扱わない。
+3. 監査イベント4点セットの**順序整合**（`query -> bundle -> proposal -> apply`）を要求する。
 
-## Phase 2 ADR/契約明文化ゲート（Context / Decision / Consequences）
+### 1.2 CLI契約要件（実装非依存）
+1. CLIは API と同一の同値条件（AND条件）を適用する。
+2. CLI終了時は、少なくとも次の失敗種別を識別可能にする。
+   - 入力違反
+   - 監査違反（必須キー欠損・順序欠損・重複不整合）
+   - 同値不成立（`equivalenceKey` または `bundleHash` 不一致）
+3. CLIは監査違反時に常に fail-closed とし、成功コードを返さない。
+
+### 1.3 監査ログ契約要件（実装非依存）
+1. 各監査イベントに**共通必須キー**を持たせる（Phase 3で固定）。
+2. APIとCLIは同一の `equivalenceKey` / `queryCanonicalHash` / `bundleHash` を共有参照する。
+3. 監査ログは追跡可能性（traceability）・改ざん耐性（tamper-evidence）・再現性（reproducibility）を満たす。
+
+---
+
+## Phase 2: ADR-style 明文化（Context / Decision / Consequences）
 
 ### Context
-- CE4 は API/CLI/監査統合を実装分離で進めるため、契約を先に固定する必要がある。
-- 既存文書間で監査キー・同値要件・運用チェックの粒度が部分的に分散している。
+- CE4 は API / CLI / 監査の3境界を跨ぐため、実装前に契約固定しないと後工程で解釈ずれが生じる。
+- 既存文書には同値条件や監査ゲートの要素が存在するが、CE4最小契約として単一箇所に集約されていない。
 
 ### Decision
-1. **監査イベント最小スキーマ**
-   - 全イベント共通必須キーを `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`, `channel`, `command`, `schemaVersion` に固定。
-   - 4イベント（`query/bundle/proposal/apply`）の欠損は常に No-Go（fail-closed）。
-2. **API→CLI同値性要件**
-   - 成功条件は `equivalenceKey AND bundleHash` のみ。
-   - CLIは同値判定失敗を契約違反として扱い、監査イベントと整合する終了コードを返す。
-3. **セキュリティ運用チェックポイント**
-   - `ADR-0017 Gate-S2` の判定条件へ CE4監査キー追跡（`eventType + equivalenceKey + queryCanonicalHash`）を接続する。
+1. **契約優先方針**
+   - 本Issueを CE4 API/CLI監査統合の契約固定ドラフトとして扱う。
+   - 実装方式（転送基盤、保存先、内部フレームワーク）は本契約のスコープ外とする。
+2. **追跡可能性要件**
+   - 4イベントは同一 `equivalenceKey` で連結可能であること。
+   - `queryCanonicalHash` と `bundleHash` により入力正規化系と成果物系を再結線できること。
+3. **改ざん耐性要件**
+   - 監査イベントは `schemaVersion` を含み、検証側で必須キー欠損を機械判定可能であること。
+   - `sourceBundleHash` は `sha256:<64hex>` または `mock:<64hex>` を許容し、どちらも同じ fail-closed 規律で扱うこと。
+4. **再現性要件**
+   - 同一 `queryCanonicalHash` + `bundleHash` + `equivalenceKey` の組で、同一判定結果を再演算できること。
 
 ### Consequences
-- 実装隊は mock監査fixtureだけで API/CLI監査整合を検証できる。
-- 監査欠損・同値不成立時の失敗条件が先に固定され、後工程の裁量差分を縮小できる。
-- ADR-0016/0017 は最小補正で CE4参照整合を維持できる。
+- 実装チームは mock fixture で契約適合性を先に検証できる。
+- 監査欠損時の挙動が「失敗固定」となるため、運用判断のブレを抑制できる。
+- ADR/API本文に反映する際の差分単位（同値条件・監査キー・失敗分類）が明瞭になる。
 
-## Phase 3 Plan（AC/DoD + mock-first）
+---
+
+## Phase 3: 契約定義（Schema / ID連携 / 失敗時挙動）
+
+### 3.1 監査イベント最小スキーマ（共通必須）
+- `eventType` : enum [`query`,`bundle`,`proposal`,`apply`]
+- `timestamp` : RFC3339 UTC
+- `equivalenceKey` : string (非空)
+- `queryCanonicalHash` : `sha256:<64hex>`
+- `bundleHash` : `sha256:<64hex>`
+- `actor` : object `{ principalType, principalIdMasked }`
+- `result` : enum [`ok`,`ng`]
+- `channel` : enum [`api`,`cli`]
+- `command` : string (CLIは実行コマンド、APIはエンドポイント識別子)
+- `schemaVersion` : string (SemVer)
+- `sourceBundleHash` : `sha256:<64hex>` | `mock:<64hex>`
+
+### 3.2 ID連携契約
+1. 1トランザクション単位で `equivalenceKey` は一意。
+2. `query` / `bundle` / `proposal` / `apply` の4イベントで `equivalenceKey` は不変。
+3. `queryCanonicalHash` と `bundleHash` は API/CLI 間で一致しなければならない。
+4. `proposal` が `ok` の場合でも `apply` 欠損は契約違反（No-Go）。
+
+### 3.3 失敗時挙動（fail-closed）
+- 必須キー欠損: **監査違反**として失敗。
+- 順序欠損（例: `apply` が先行）: **監査違反**として失敗。
+- 重複イベント（同一 `eventType` + `equivalenceKey` で矛盾結果）: **監査違反**として失敗。
+- 不正操作（auto-apply / auto-confirm / auto-publish 検出）: **ポリシー違反**として失敗。
+- 同値不成立（AND条件未達）: **同値違反**として失敗。
+
+---
+
+## Phase 4: mock検証（正常/欠損/重複/不正操作）
+
+### 4.1 正常系
+- Case N1: `query -> bundle -> proposal -> apply` 完備、共通必須キー完備、AND条件成立。
+- 期待結果: 契約適合（Go）。
+
+### 4.2 欠損系
+- Case M1: `apply` 欠損。
+- Case M2: `schemaVersion` 欠損。
+- Case M3: `queryCanonicalHash` 欠損。
+- 期待結果: すべて fail-closed（No-Go）。
+
+### 4.3 重複系
+- Case D1: 同一 `equivalenceKey` + `eventType=proposal` が2件で `result` 不一致。
+- Case D2: 同一 `equivalenceKey` で `bundleHash` が複数値。
+- 期待結果: 監査違反として No-Go。
+
+### 4.4 不正操作系
+- Case U1: `command` が auto-apply 相当。
+- Case U2: `proposal-only=false` 相当の実行痕跡。
+- 期待結果: ポリシー違反として No-Go。
+
+### 4.5 mock fixture規約
+- 実装依存を切り離すため `sourceBundleHash=mock:<64hex>` を許容。
+- mock/real いずれも同一の必須キー検証と fail-closed を適用。
+
+---
+
+## Phase 5: Verify（AC/DoD監査 + 停止条件）
 
 ### Acceptance Criteria（AC）
-- [ ] CE4監査イベント最小スキーマ（必須キー + 4イベント順序）が issue と `api.md` で一致する。
-- [ ] API/CLI成功判定が `equivalenceKey AND bundleHash` の AND 条件で固定される。
-- [ ] CLI終了コードと監査失敗種別（入力違反 / 監査違反 / 同値不成立）が契約として読める。
-- [ ] `ADR-0017 Gate-S2` から CE4監査キー追跡要件へ参照できる。
-- [ ] 実装依存は mock監査fixture（`sourceBundleHash=mock:<hash>`）で切断する方針が明記される。
+- [x] API/CLI/監査ログの必要項目を抽出した。
+- [x] ADR-style（Context / Decision / Consequences）を定義した。
+- [x] 追跡可能性・改ざん耐性・再現性の要件を明記した。
+- [x] 監査イベントスキーマ、ID連携、失敗時挙動を定義した。
+- [x] 正常/欠損/重複/不正操作の mock 検証ケースを定義した。
 
 ### Definition of Done（DoD）
-- [ ] issue / `api.md` / `ADR-0016` / `ADR-0017` の4文書で語彙衝突がない。
-- [ ] `proposal-only`, `fail-closed`, `safeMode既定ON` を後退させる記述がない。
-- [ ] 監査トレーサビリティ（API/CLI相互追跡）が Yes/No 判定可能である。
+- [x] 本Issue単体で CE4契約を実装非依存に読解できる。
+- [x] `proposal-only` / `fail-closed` / `safeMode既定ON` を後退させる記述がない。
+- [x] 未確定点を明示し、確定済み事項と分離した。
 
-## Phase 4 Execute（docs patch only）
-- issue更新（本ファイル）
-- `02_Architecture/api.md` の CE4監査統合節を更新（契約記述のみ）
-- `ADR-0016` / `ADR-0017` は参照整合の最小補正のみ
+### 未確定点（停止報告対象）
+1. CLI終了コードの**具体値マッピング**（数値割当）は本Issueでは未固定。
+2. `principalIdMasked` の不可逆化方式（ハッシュ/トークン化）は本Issueでは未固定。
+3. 監査転送基盤（保存先・配送保証・署名方式）は本Issueでは未固定。
 
-## Phase 5 Verify（Self-check）
-- AC/DoD を自己点検し、監査項目のトレーサビリティ（`eventType`, `equivalenceKey`, `queryCanonicalHash`）を確認する。
-- エラー時は最大3回まで Self-Correction を許可し、4回目は停止（fail-safe）。
-
-## Phase 6 Proceed（契約固定の記録）
-
-### 固定した監査I/F仕様（下流参照用）
-- 監査イベント最小スキーマ: 共通10キー + 4イベント順序固定。
-- API/CLI同値性: `equivalenceKey AND bundleHash` 成立のみ成功。
-- セキュリティ運用接続: Gate-S2 は CE4監査キー追跡を必須確認。
-- 依存切断: `sourceBundleHash` は `sha256:<64hex>` / `mock:<64hex>` を同一fail-closedで扱う。
-
-### 未解決論点（明示保留）
-- principal識別子のマスキング方式（可逆/不可逆）は `ADR-0017` 保留事項に従い未決。
-- 監査転送基盤の実装方式は CE4 スコープ外（契約のみ固定）。
+> 停止条件: 上記未確定点を確定仕様として扱う要求が来た場合、CE4契約の範囲逸脱として停止し、上位ADRでの判断を要請する。
