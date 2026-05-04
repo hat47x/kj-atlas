@@ -6,12 +6,23 @@
 - Priority: P1
 - Source Issue: N/A
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
-- Owner: Stream F (Architecture Minimum I/F Contract)
+- Owner: Stream E (Architecture Minimum I/F Contract)
 - Scope: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` のみ
 - Expected verification level: `docs-check`
 - Contract snapshot date: `2026-04-27`（固定入力）
 
-## Stream F Mission
+
+## Upstream Alignment Guard（ADR整合ガード）
+
+- 本Issueは **contract-only** であり、実装記述（画面/コード/DB/運用手順の確定）は対象外。
+- 上流整合の正本は `ADR-0026`（契約先行・HIL境界）、`ADR-0027`（凍結値・Go/NoGo統治）、`ADR-0028`（CE-0非後退契約）とする。
+- 本Issueで定義する最小I/Fは次の不変条件を満たすこと。
+  - AIは `proposal-only`（承認・昇格・本番適用を行わない）
+  - 人間のみが `Pending -> Approved/Rejected` を確定できる
+  - `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退させない
+  - `NoGo return path` と `freezeContractId` を再定義しない
+
+## Stream E Mission
 HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）が **安全に並行実装** できる起点を提供する。
 
 ## Fixed Constraints（厳守）
@@ -85,7 +96,7 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 ### Plan
 - ADR形式（Context / Decision / Consequences）で、A1契約を **実装非依存** に固定する。
 
-### Execute
+### Execute（contract-only）
 ### Context
 - HIL-RS-01 A1は、A2/A3の並行実装時に参照される契約ゲートである。
 - 契約が曖昧なまま進行すると、ストリーム間で判定式と責務境界が分岐し、後段で非可逆な統合作業が発生する。
@@ -121,7 +132,7 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 ### Plan
 - 入出力、状態遷移、非機能（監査/再現性）を最小I/Fとして固定する。
 
-### Execute
+### Execute（contract-only）
 ### A1 Minimum Interface Contract（v1.0.0）
 
 #### 1) Inputs
@@ -213,6 +224,7 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 - [ ] 人間承認境界とAI責務境界が分離されている。
 - [ ] 入出力/状態遷移/非機能（監査・再現性）が固定されている。
 - [ ] mock検証計画が実装前チェックとして成立している。
+- [ ] 上流ADR（0026/0027/0028）と矛盾する新規契約語彙・遷移が追加されていない。
 
 ### Definition of Done（DoD）
 - [ ] 固定キー差分 0（driftなし）。
