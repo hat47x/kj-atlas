@@ -121,3 +121,20 @@
 
 ### Phase 6 Stopper
 - 依存未確定、承認不足、競合疑義（unit/e2e境界混線）を検知した場合は停止して照会する。
+
+
+## Stream G execution pass（2026-05-04 / QA-UNIT P2）
+
+### Phase Start Re-read
+- 対象再読: `issue-QA-UNIT-01-unit-test-coverage-improvement.md` を再読し、docs-only境界・Open gate・self-correction上限を確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: Open判定に必要な品質ゲート（AC/DoD/Validation/Stop）を欠落なく保持。
+- Execute: 単体テスト改善計画の判断材料を整備し、実装変更・実行結果の新規確定は行わない。
+- Verify: docs-check前提で表記整合と依存記述の一貫性を検証。
+- Proceed: 依存証跡未確定のため **Hold継続**。
+
+### ADR task C / D / Csq
+- Context: QA-UNITはカバレッジ改善の優先順位付けを誤ると、低効果の工数消費が発生する。
+- Decision: DraftをOpen判定可能品質へ整備し、実装前に評価軸と停止条件を固定する。
+- Consequences: 後続実装時の判断基準が明確になり、過剰実装や誤優先度を抑制できる。

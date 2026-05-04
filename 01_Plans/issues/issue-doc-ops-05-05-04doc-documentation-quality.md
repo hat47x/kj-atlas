@@ -214,3 +214,15 @@
 
 ### 6. Stop（gate未確定なら停止）
 - 判定: **Hold/Stop ready**。`DOC-OPS-05` の依存確定証跡が揃うまで Proceed しない。
+
+
+## Stream G serial pass（2026-05-04 / DOC-OPS-05-05）
+
+### Phase Start Re-read
+- 対象再読: `issue-doc-ops-05-05-04doc-documentation-quality.md` を再読し、Improve external分類・docs-check必須・Hold条件を確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: CE/QA系Issueと同一の判定メタ（C/D/Csq, AC/DoD, tri-state）へ揃える。
+- Execute: メタ統一と文言ドリフト抑制のみ実施。
+- Verify: 判定語彙（Proceed/Hold/Stop）とself-correction上限の一致を確認。
+- Proceed: 依存未確定につき **Hold**。

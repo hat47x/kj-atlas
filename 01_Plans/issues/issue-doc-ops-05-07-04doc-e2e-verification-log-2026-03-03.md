@@ -214,3 +214,20 @@
 
 ### 6. Stop（gate未確定なら停止）
 - 判定: **Hold/Stop ready**。`DOC-OPS-05` の依存確定証跡が揃うまで Proceed しない。
+
+
+## Stream G serial pass（2026-05-04 / DOC-OPS-05-07）
+
+### Phase Start Re-read
+- 対象再読: `issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` を再読し、Move internal分類・GoNoGoGate要件を確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: Open判定メタを3Issue共通テンプレへ整列。
+- Execute: 配置見直しの判断材料のみ整備し、本文移管は非実施。
+- Verify: Gate条件・Stop条件・self-correction上限が他DOC-OPS連番と一致。
+- Proceed: 依存未確定のため **Hold**。
+
+## 横断Verify（判定メタ統一 / Stream G）
+- 対象: CE2 / CE4 / QA-UNIT / DOC-OPS-05-05 / 05-06 / 05-07。
+- 統一項目: `Context/Decision/Consequences`、`Plan→Execute→Verify→Proceed`、`Proceed tri-state`、`self-correction <=3`。
+- 判定: 競合・前提崩壊は未検知。依存未確定のため全件 **Hold** を維持。

@@ -287,3 +287,20 @@
 
 ### Phase 6 Stopper
 - 依存未確定、未承認確定化要求、契約競合疑義を検知した場合は停止して照会する。
+
+
+## Stream G execution pass（2026-05-04 / CE4 P2）
+
+### Phase Start Re-read
+- 対象再読: `issue-CE4-api-cli-audit-integration.md` を再読し、API/CLI同値条件AND・監査4イベント・fail-closed契約を再確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: Open判定で必要な契約セット（C/D/Csq + AC/DoD + No-Go条件）を固定。
+- Execute: 実装非依存の契約文言のみ整備し、コード/API変更は行わない。
+- Verify: docs-check想定で契約矛盾（proposal-only逸脱/auto-*許容）を再点検。
+- Proceed: 依存確定ログ未充足のため **Hold継続**。
+
+### ADR task C / D / Csq
+- Context: CE4はAPI/CLI/監査の3境界を跨ぎ、契約不一致が後工程障害に直結する。
+- Decision: Draft段階で契約語彙と失敗分類を固定し、Open判断可能な記述密度へ統一する。
+- Consequences: 実装着手前に同値判定と監査条件が安定し、再作業リスクを低減できる。
