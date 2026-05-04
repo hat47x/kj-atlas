@@ -2035,3 +2035,51 @@ type PatchProposal = {
 - 継続条件:
   - 依存不明・対象外編集要求・自己修復4回目相当が発生した時点で即時 `held` 停止。
   - CE0は契約凍結の維持に限定し、下流実装の確定判断は扱わない。
+
+## Stream B latest run（2026-05-04 / CE0 only / Contract Freeze solo completion）
+
+- run_id: `stream-b-ce0-2026-05-04-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0 / no_go_trigger=0`
+
+### Phase 1 Read
+- Phase開始前に対象ファイル（本Issue）を再読し、CE0契約キー固定（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再確認。
+- 固定ワークフロー **Read → ADR明文化 → Plan → Execute → Verify → Proceed/Stop** を再確認。
+- 停止条件（契約ID衝突 / No-Go触発 / 指定外編集 / safeMode既定値後退 / self-correction超過）を再確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Phase開始前に対象ファイルを再読。
+- Context: CE0 Contract Freezeは本IssueをSSOTとし、他文書・実装への契約変更波及を禁止する。
+- Decision: 既存契約キーとNo-Go canonical IDsを不変のまま維持し、追加・改名・削除を行わない。
+- Consequences: 契約ドリフトと安全境界後退を防止し、衝突やNo-Go触発時は即時 `held` 停止できる。
+
+### Phase 3 Plan
+- Phase開始前に対象ファイルを再読。
+- AC/DoD不足補完提案:
+  - `ac_re_read_each_phase`: 各Phase冒頭の再読実施をログ必須化。
+  - `dod_verify_self_correction_cap`: Verify時の自己修正は最大3回、4回目相当は停止。
+  - `dod_contract_text_only`: Executeは契約文面更新のみ（実装記述禁止）を明示。
+- 合意: 上記3点を本runで採用し、追加ADR起票なし（freeze範囲内）。
+
+### Phase 4 Execute
+- Phase開始前に対象ファイルを再読。
+- 実施: 本Issueの契約文面（実行ログ）更新のみ。
+- 非実施: 実装手順・コード変更・指定外ファイル編集・契約ID再定義。
+
+### Phase 5 Verify
+- Phase開始前に対象ファイルを再読。
+- docs-check観点と差分整合を確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 差分判定: `contract_id_collision=0 / no_go_trigger=0 / safeMode_regression=0 / scope_deviation=0`。
+
+### Phase 6 Proceed/Stop
+- Phase開始前に対象ファイルを再読。
+- 判定: **Proceed（Conditional-Go）**。
+- 継続条件:
+  - CE0契約は本Issue SSOTのread-only参照を維持。
+  - 契約ID衝突・No-Go触発・4回目自己修正相当が発生した時点で即時 `held` 停止。
