@@ -58,6 +58,11 @@ security系文書更新時は、次を同時に満たさない限り Proceed し
 3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の順で参照可能
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）に差分がない
 
+### 0.2.1 HIL-RS-02-A3 同期確認（2026-05-04）
+
+- A3 Draft昇格準備では、運用判断時の必須確認を「4観点同時確認」に固定する。
+- 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離が崩れる提案は採択せず、`StoppedForClarification` とする。
+
 ### 0.3 Stream D 実行メモ（security docs-only）
 
 Stream D で本書を更新する場合、編集対象は `operations.md` / `security.md` / `security_operational_guidelines.md` に限定する。

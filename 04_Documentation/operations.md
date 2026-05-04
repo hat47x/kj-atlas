@@ -89,6 +89,15 @@
 
 相違が1つでもあれば No-Go とし、D1〜D4 不整合ゼロになるまで修復する。修復は最大3回までとし、4回目相当は `StoppedForClarification` で停止する。
 
+### 0.5.1 HIL-RS-02-A3 Draft昇格準備（2026-05-04）
+
+- 本書は A3 の operations documentation sync 対象として、`02_Architecture/strict_mode_exception_approval_flow.md` を正本参照し、次を再確認した。
+  - 用語: `Security Officer / System Owner / Platform Operator`
+  - 役割分離: 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）
+  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`
+  - 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）
+- 以後のA3更新でも、上記4観点を `Verify` で同時確認するまで Proceed しない。
+
 
 ## 0.6 Phase6 Feedback Loop / KPI運用（Stream E）
 
