@@ -554,3 +554,20 @@
 
 ### Phase 6 Stopper
 - 依存未確定・競合疑義・承認不足のいずれか検知で停止し、照会待ちに遷移する。
+
+
+## Stream G execution pass（2026-05-04 / CE2 P1）
+
+### Phase Start Re-read
+- 対象再読: `issue-CE2-low-risk-ai-assist.md` をPhase開始時に再読し、proposal-only / fail-closed / self-correction上限の固定条件を再確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: Open判定に必要な判定メタ（Context/Decision/Consequences, AC/DoD, Proceed tri-state）を保持。
+- Execute: docs-onlyで文言整備し、実装・状態遷移の確定化を行わない。
+- Verify: docs-check前提で整合確認、self-correction `<=3` を維持。
+- Proceed: 依存確定証跡未充足のため **Hold継続**。
+
+### ADR task C / D / Csq
+- Context: CE2は人間責務境界（accepted/rejected）を先に固定しないと誤確定リスクが高い。
+- Decision: 本IssueをOpen判定準備品質まで整備し、proposal-only契約を維持する。
+- Consequences: 実装前に監査可能性と停止条件が担保され、誤Proceedを抑止できる。

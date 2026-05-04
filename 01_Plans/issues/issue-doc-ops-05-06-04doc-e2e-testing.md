@@ -213,3 +213,15 @@
 
 ### 6. Stop（gate未確定なら停止）
 - 判定: **Hold/Stop ready**。`DOC-OPS-05` の依存確定証跡が揃うまで Proceed しない。
+
+
+## Stream G serial pass（2026-05-04 / DOC-OPS-05-06）
+
+### Phase Start Re-read
+- 対象再読: `issue-doc-ops-05-06-04doc-e2e-testing.md` を再読し、Move internal分類・docs-only制約を確認。
+
+### Plan → Execute → Verify → Proceed
+- Plan: Openゲートの最小要件（依存証跡、docs-check記録、self-correction<=3）を固定。
+- Execute: 実装に越境しない範囲で判定材料を整備。
+- Verify: CE2/CE4/QA-UNITと判定メタ形式を照合し不一致なし。
+- Proceed: 依存未確定のため **Hold**。
