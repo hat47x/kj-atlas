@@ -403,3 +403,36 @@
 - self-correction count: `0/3`
 - stopper判定: `not-triggered`（3回超失敗/前提崩れ/未定義競合なし）
 - 現在状態: `agreement-pending`（Approval Record と held事項の人間判断待ち）
+
+## Stream A critical-path run log（2026-05-04 / contract freeze governance）
+
+### Phase 1: Read（state sync + triage consistency）
+- Re-read targets（allowlist scope）:
+  - `ADR-0026` / `ADR-0027` / `ADR-0028`
+  - `issue-FB-P2C-01-a1-interface-contract.md`
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+  - `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Triage consistency check (`python3 01_Plans/triage_actionable_plans.py`):
+  - `FB-P2C-01-a1-interface-contract=Ready`
+  - `FB-P0-2A2B2C-stream-c-planning-baseline=Ready`
+  - linked ADRs=`ADR-0026/ADR-0027`（actionable_adrs=2）
+- Drift check result: fixed keys diff=`0`（`freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary`）
+
+### Phase 2: ADR CDC confirmation（no redesign before approval）
+- Context: A1 freezeが唯一ゲートであり、A2/A3に契約派生を許すと `A1 -> A2 -> A3` 依存が崩れる。
+- Decision: 既存の凍結値と `A2A3_OPEN_ALLOWED` 判定式を再定義せず参照固定する。
+- Consequences: `Approval Record` が未充足の間は `Conditional / Needs-decision` を維持し、Goへ遷移しない。
+
+### Phase 3: fixed interface handoff table（downstream contract-only）
+| Interface ID | Freeze value | Downstream rule |
+| --- | --- | --- |
+| `A1-CRITIQUE-IF` | `schemaVersion=1.0.0` | read-only reference |
+| `A1-REDIFF-IF` | `overridePolicy=human_dual_control_only` | read-only reference |
+| `A1-ATTR-IF` | `safeModeDefault=ON` | read-only reference |
+| `A1-ERROR-IF` | `safeModeBoundary=SAFE_MODE_STRICT_ON` | read-only reference |
+
+### Phase 4-5: Verify / Proceed
+- AC/DoD self-check: pass（fixed keys diff=`0`, pending bypassなし, allowlist外編集なし）。
+- Self-Correction count: `0/3`。
+- Gate decision: **Conditional / Needs-decision**（未解決: `approved_by` / `approved_at` / `evidence`）。

@@ -284,3 +284,19 @@
 - 契約凍結のまま文書品質を改善でき、下流レーンの参照安定性が向上する。
 - 検証失敗時の復旧手順が明確化され、Fail-safe停止条件との整合が保たれる。
 
+
+## Stream A contract freeze checkpoint（2026-05-04 / critical path）
+
+### Phase 1: Read
+- allowlist対象（ADR-0026/0027/0028 + FB-P2C + FB-P0 baseline + HIL-RS-01/02 issue）を再読した。
+- `triage_actionable_plans.py` の結果で `FB-P2C-01` / `FB-P0-2A2B2C` が `Ready` であること、active ADRが `ADR-0026/0027` のみであることを確認した。
+
+### Phase 2: CDC
+- Context: `A1 -> A2 -> A3` 依存維持には A1契約を唯一ゲートとして凍結し続ける必要がある。
+- Decision: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と固定式 `A2A3_OPEN_ALLOWED` を再定義せず運用継続する。
+- Consequences: `Approval Record` 未充足時は Proceed を `Conditional / Needs-decision` に固定する。
+
+### Phase 3-5: Plan / Execute / Verify
+- Fixed I/F handoff は `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF` の4点を read-only に限定する。
+- Self-Correction は `0/3`。即時停止条件（前提崩壊 / 未定義競合 / allowlist外編集要求 / 4回目相当）は未発火。
+- Proceed判定: **Conditional / Needs-decision**（`approved_by` / `approved_at` / `evidence` が未入力）。
