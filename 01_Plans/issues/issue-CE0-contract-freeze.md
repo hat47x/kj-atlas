@@ -1839,3 +1839,33 @@ type PatchProposal = {
 - Stopper判定:
   - 不整合残存なしのため `Conditional-Go`。
   - 以後、`CF-01..05` の変更要求は人間承認まで `held` で停止（実装先行禁止）。
+
+## Stream B latest run（2026-05-04 / CE0 Contract Freeze / interface-first handoff）
+
+- run_id: `stream-b-ce0-2026-05-04-13`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md, issue-CE0-core-graph-repositioning.md, 02_Architecture/api.md, 02_Architecture/schemas.md`
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 対象4ファイルを再読し、CE0/CE1の既存APIシグネチャ・型定義・error semantics差分を確認。
+- 固定対象を `ContextQueryV1 / ContextBundleV1 / ProposalPatchV1 / AuditEventV1` に限定。
+
+### Phase 2 Plan
+- I/Fのみ先行固定（関数シグネチャ、DTO、schema key）。
+- 実体未実装箇所は mock contract として扱い、実装待機を禁止。
+- 非互換候補は deprecate ルール（v1不変・v2追加）で明記。
+
+### Phase 3 Execute
+- `02_Architecture/api.md` と `02_Architecture/schemas.md` に handoff 固定I/Fと deprecate ルールを追記。
+- Contract IDs の追加/改名/削除は未実施。
+
+### Phase 4 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` => pass。
+- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` => pass。
+- `git diff --check` => pass（self-correction 0/3）。
+
+### Phase 5 Proceed / Stopper
+- 判定: **Proceed（CE1 handoff-ready）**。
+- 固定I/F成果物: `ContextQueryV1 / ContextBundleV1 / ProposalPatchV1 / AuditEventV1`。
+- 致命条件（前提崩壊/競合/3回超過）は未検出。

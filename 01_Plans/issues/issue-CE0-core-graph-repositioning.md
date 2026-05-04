@@ -1444,3 +1444,20 @@
   3) mock I/F と実装I/F の乖離リスク（統合時に再検証が必要）。
 - 停止基準（再確認）
   - 語彙差分検出、CE0契約ID再定義兆候、SafeMode既定ON後退兆候、docs-check 4回目相当の再試行要求が発生した場合は即停止（`held` または `stopped_for_clarification`）。
+
+## Stream B sync note（2026-05-04 / CE0 Core Graph / handoff consistency）
+
+### Phase 1 Read
+- `02_Architecture/api.md` / `02_Architecture/schemas.md` の I/F凍結追記と整合を確認。
+
+### Phase 2 Plan
+- Core Graph側は Contract Diff のみ参照し、Implementation Diff は継続して対象外とする。
+
+### Phase 3 Execute
+- 本Issueへ整合メモのみ追記（contract-only）。
+
+### Phase 4 Verify
+- `docs-check` 対象コマンドを issue-CE0-contract-freeze 側と同一で実施し整合確認。
+
+### Phase 5 Proceed
+- 判定: `Done`（role/transition/no-go 語彙に差分なし、proposal-only境界維持）。
