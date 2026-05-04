@@ -1,7 +1,7 @@
 # Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定
 
 - Type: Process
-- Status: Open
+- Status: Done (Contract Frozen)
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
 - Source Issue: N/A
@@ -9,10 +9,16 @@
 - Owner: Stream F (Architecture Minimum I/F Contract)
 - Scope: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` のみ
 - Expected verification level: `docs-check`
-- Contract snapshot date: `2026-04-27`（固定入力）
+- Contract snapshot date: `2026-05-04`（最終確定）
 
 ## Stream F Mission
 HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）が **安全に並行実装** できる起点を提供する。
+
+## Finalization Declaration（確定宣言）
+- 本Issueは **HIL-RS-01-A1 architecture minimum interface contract の最終契約文書** として確定する。
+- 本確定は docs-only の契約固定であり、コード実装・挙動変更を含まない。
+- 後続ストリーム（A2/A3）は本Issueに記載された固定語彙・固定値・I/F契約・禁止事項を **read-only準拠** で参照する。
+- `Approval Record: Pending` が1件でも残る間は、A2/A3の `Execute` は禁止（Plan/Verifyのみ許可）。
 
 ## Fixed Constraints（厳守）
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
@@ -208,18 +214,24 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 - AC/DoD と停止条件を再読する。
 
 ### Acceptance Criteria（AC）
-- [ ] 最小I/Fの `型・責務・禁止事項` が明文化されている。
-- [ ] ADR-style `Context/Decision/Consequences` が記載されている。
-- [ ] 人間承認境界とAI責務境界が分離されている。
-- [ ] 入出力/状態遷移/非機能（監査・再現性）が固定されている。
-- [ ] mock検証計画が実装前チェックとして成立している。
+- [x] 最小I/Fの `型・責務・禁止事項` が明文化されている。
+- [x] ADR-style `Context/Decision/Consequences` が記載されている。
+- [x] 人間承認境界とAI責務境界が分離されている。
+- [x] 入出力/状態遷移/非機能（監査・再現性）が固定されている。
+- [x] mock検証計画が実装前チェックとして成立している。
 
 ### Definition of Done（DoD）
-- [ ] 固定キー差分 0（driftなし）。
-- [ ] `NoGo return path` が一意固定。
-- [ ] `safeModeDefault=ON` を維持。
-- [ ] `Self-Correction <= 3` を満たす。
-- [ ] 未確定論点は確定化せず `stopped/held` へ記録する。
+- [x] 固定キー差分 0（driftなし）。
+- [x] `NoGo return path` が一意固定。
+- [x] `safeModeDefault=ON` を維持。
+- [x] `Self-Correction <= 3` を満たす（本更新時点: 1/3）。
+- [x] 未確定論点は確定化せず `stopped/held` へ記録する。
+
+### Verify Result（本確定時点）
+- AC/DoD監査結果: **Pass（docs-check観点）**
+- 固定契約ドリフト: **0件**
+- フェイルセーフ判定: **継続可能（停止条件未発火）**
+- Proceed判定: **Contract Frozen / 次工程へ進行可（ただし Pending 残存時は Execute 禁止）**
 
 ### stopped/held（未確定論点の停止レポート）
 - `Approval Record: Pending` の承認主体・時刻・証跡は未記入（人間入力待ち）。
