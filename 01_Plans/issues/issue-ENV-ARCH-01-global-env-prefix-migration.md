@@ -120,3 +120,86 @@
 - Phase 4 Execute: `03_Implement/backend/Dockerfile` の `DATABASE_URL` / `LLM_PROVIDER` を `KJ_ATLAS_*` へ更新。
 - Phase 5 Verify: `test_settings_env_prefix_migration.py` と `rg` で旧キー拒否契約および残存箇所を確認。
 - Phase 6 Proceed: 競合なし。互換shim (`VITE_API_BASE`) は独立レイヤとして継続し、将来削除判断を別タスクに分離。
+
+## Stream J Plan Update (2026-05-04)
+
+- Scope: Plan update only (`01_Plans/issues/...`), architecture SSOT read-only reference (`02_Architecture/runtime_parameter_registry.md`).
+- Mission: ENV-ARCH-01 の段階移行計画を実装担当へ再配布し、運用影響と検証観点を明示する。
+
+### Phase 1: Read同期（現状/未完了抽出）
+
+- 確認結果:
+  - backend契約は `KJ_ATLAS_*` 単独（旧prefix非受理）で確定済み。
+  - frontend API base は `VITE_KJ_ATLAS_API_BASE` 正規、`VITE_API_BASE` は互換shimとして残置。
+- 未完了/継続監視項目:
+  1. `VITE_API_BASE` shim の廃止判断と削除タイミングが未決定。
+  2. CI/deploy/docs における旧prefix再混入の継続監視（回帰防止）が必要。
+
+### Phase 2: ADR明文化（CDC）
+
+- 判定: **新規ADR追加は現時点で不要**（既存 `ADR-0021` + registry で契約は充足）。
+- CDC（Context / Decision / Consequences）:
+  - Context: backendは互換なし一括移行済み、frontendのみ限定的互換shimが残る。
+  - Decision: 互換維持方針は「backend互換なし維持 + frontend shimは期限付き検討対象」としてIssue運用で管理する。
+  - Consequences: 実装は契約逸脱（旧prefix再導入）を禁止し、shim除去時は `ADR-0021` 追補または本Issue更新を実施する。
+- 承認待ち論点:
+  - `VITE_API_BASE` 廃止の期限（date）
+  - 廃止時の利用者通知チャネル（release notes / operations）
+
+### Phase 3: Plan（段階化）
+
+1) 命名規約固定
+- backend: `KJ_ATLAS_*` のみ。
+- frontend: `VITE_KJ_ATLAS_API_BASE` を正規キーとして固定。
+
+2) 互換層方針
+- backend: 互換層なし（旧prefix受理禁止を継続）。
+- frontend: `VITE_API_BASE` を互換shimとして暫定維持し、削除は明示タスクで管理。
+
+3) 廃止期限/検証項目
+- 廃止期限: 未確定（要人間判断）。
+- 最低検証項目:
+  - 旧prefix単独指定が失敗すること。
+  - 新旧混在指定が失敗すること（backend）。
+  - frontendで正規キー優先解決が保持されること。
+  - docs/compose/runbook に旧prefix実行例が増えていないこと。
+
+### Phase 4: Verify（運用影響の列挙）
+
+- CI影響:
+  - 設定ロード系テストが旧prefix拒否を維持できるか。
+  - grep/lintersによる旧prefix混入検知（回帰監視）。
+- Deploy影響:
+  - compose・container default・環境注入手順で新prefix統一を維持。
+  - 秘匿値管理（secret manager, env file）更新漏れ防止。
+- Docs影響:
+  - README/operations/security/runbook の例示キーを正規契約へ揃える。
+  - 互換shimの扱い（暫定/削除予定）を明文化。
+- Self-heal policy (max 3):
+  1. 旧prefix再混入検知時、該当箇所を正規キーへ即時修正。
+  2. テスト不整合時、期待値をregistry契約に再同期。
+  3. docs不整合時、実装実態に追随し再記述。
+
+### Phase 5: Proceed（実装担当向け影響範囲マップ）
+
+- Backend実装:
+  - `settings.py`（env読取契約）
+  - provider/auth/audit の env依存分岐
+- Frontend実装:
+  - `client.ts` 等の API base 解決ロジック
+  - `VITE_API_BASE` shim 削除時の影響調査
+- Deploy/Runtime:
+  - `docker-compose.yml`, Dockerfile, CI secrets, runtime env templates
+- Documentation:
+  - backend README, `04_Documentation/operations.md`, `04_Documentation/security.md`, release notes
+- Test/Validation:
+  - env prefix migration tests
+  - docs内キー参照の回帰検知
+
+### Fail-safe gate
+
+- 互換性破壊リスク評価:
+  - backend: 評価済み（互換なしを契約化済み）。
+  - frontend shim削除: **未評価項目あり**（期限未確定）。
+- Gate判定:
+  - frontend shim廃止タスクは、影響評価（利用者通知/切替手順/ロールバック）完了まで **着手停止**。
