@@ -1117,3 +1117,47 @@ handoffKeys:
 - 契約語彙衝突: 新規衝突なし。
 - Self-Correction上限: 未到達（0/3）。
 - 致命条件: なし。
+
+## Stream E update（2026-05-04 / CE1 contract freeze mock-first, implementation-decoupled）
+
+### Phase 1 Read
+- Scopeを `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定（docs-only）。
+- CE1の責務を **ContextQueryV1/ContextBundleV1 のI/F先行固定** に限定し、実装手順（handler/UI/DB/worker）は別タスク扱いで本Issueから分離。
+- CE0 read-only境界と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の継続を確認。
+
+### Phase 2 ADR/CDC
+- **Context**: CE2/CE4がbackend実装待ちで停滞しないよう、CE1はmock-firstで契約を先に凍結する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` のキー集合・エラー語彙・hash決定論を v1で固定し、実装依存を切断する。
+- **Consequences**:
+  - 下流は `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` をmockで検証継続できる。
+  - 追加キー/語彙はv1へ混在させず、後方互換を壊さない形でv2に隔離する。
+  - 承認未了の確定化要求は `held` で停止する。
+
+### Phase 3 Plan
+- AC-1: `ContextQueryV1` / `ContextBundleV1` を **contract-first** で固定（実装手順は記載しない）。
+- AC-2: Verify項目を `I/F固定キー一致` `後方互換条件` `safeMode後退なし` に限定して明文化。
+- AC-3: mock validationを正常系+異常系（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）で再現可能に固定。
+
+### Phase 4 Execute
+- v1 closed-worldを継続固定（未定義キーは `400 unknown_contract_key`）。
+- preview gateを継続固定（`previewConfirmed=false -> 422 preview_required`）。
+- hash決定論を継続固定（同一canonical queryで3回一致、失敗時 `409 nondeterministic_bundle` fail-closed）。
+- 実装依存切断を明示（本Issueでは実装順序・実装方式・運用手順を確定しない）。
+
+### Phase 5 Verify
+- Verify-1（I/F固定キー一致）: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey` の引き渡しキー整合を維持。
+- Verify-2（後方互換条件）: v1キー集合・固定エラー語彙・Contract IDsに変更なし（互換破壊なし）。
+- Verify-3（safeMode後退なし）: `safeModePolicy: "strict"` を維持し、share/export既定安全境界を弱める記述を追加しない。
+- 判定: **pass（contract freeze維持、mock-first継続可能）**。
+
+### Phase 6 Proceed
+- Handoff（契約のみ）:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - I/F keys: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`
+  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- Implementation sequencingは別Issue/別ADRで扱い、本Issueでは扱わない（依存切断を維持）。
+
+### Stop conditions（再掲）
+- 失敗3回超過（4回目相当）で `held` 停止。
+- 未承認の確定化要求（Security Officer / System Owner の承認不成立）で `held`。
+- 未定義競合（Contract ID / error semantics / handoff key collision）検知時は即停止し、Phase 2へ戻す。
