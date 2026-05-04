@@ -735,3 +735,18 @@ Deprecateルール（v1固定）:
 1. v1 必須キーの削除/改名/意味変更は deprecate 不可（禁止）。
 2. 拡張は v2追加のみ許可し、v1 は read-only contract として保持する。
 3. `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙と判定条件は不変。
+
+
+## CE Contract Freeze Addendum（2026-05-04 / minimal delta）
+
+### Context
+- CE1/CE2/CE4 の並行進行で契約ドリフトを防ぐため、4型の責務境界を固定する。
+
+### Decision
+- SSOT対象を `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` に固定。
+- v1では unknown key reject（closed-world）を維持し、契約の拡張は v2 でのみ扱う。
+- mock-first 前提として `A1-CONTRACT-MOCK-v1` を契約検証入力に許可し、実装依存を持ち込まない。
+
+### Consequences
+- 下流は interface-only で先行でき、backend/frontend の完了待機を不要化できる。
+- 契約変更要求は CDC再承認が必須となり、無断拡張を防止できる。

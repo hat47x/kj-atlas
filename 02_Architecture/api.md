@@ -640,3 +640,18 @@ export type AdminProvisionUserConflictError = {
   1. v1 required key の削除・改名・意味変更は非互換として禁止（`v2` 追加でのみ許可）。
   2. `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味変更は禁止。
   3. v1 から v2 への移行期間中も v1 endpoint contract は read-only 互換維持とする。
+
+
+### 2.10 Contract Freeze & Mock-first Baseline（2026-05-04）
+
+#### Context
+- CE1/CE2/CE4 の依存順を維持しつつ、下流が実装待機で停止しないため、I/Fを先に固定する必要がある。
+
+#### Decision
+- 固定I/Fは `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の4型に限定する。
+- 本章のAPIは `schemas.md` の型を参照し、型語彙の追加・削除・意味変更を行わない。
+- mock-first 前提として、未実装区間は `A1-CONTRACT-MOCK-v1` 準拠の入出力検証で代替し、実装完了待ちを禁止する。
+
+#### Consequences
+- 下流ストリームは APIシグネチャ境界を read-only 参照し、再定義なしで並行作業可能になる。
+- 契約変更が必要な場合は CDC（Context/Decision/Consequences）で再起票し、v1を直接変更しない。

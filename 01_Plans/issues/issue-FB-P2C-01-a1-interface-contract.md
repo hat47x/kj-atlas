@@ -561,3 +561,19 @@
 ### Phase 6: Proceed判定
 - 判定: `Conditional (Needs-decision)`。
 - 理由: 未承認項目（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）が残存。
+
+
+## Stream A addendum（2026-05-04 / contract normalization）
+
+### Phase 1: Read同期
+- 抽出対象: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の4型、および `A2A3_OPEN_ALLOWED` 判定式。
+- 結果: 契約ID・判定式・SafeMode境界の差分 `0`。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: 下流待機を解消しつつ契約再定義を防ぐ必要がある。
+- Decision: 4型I/F境界を固定し、mock-first（`A1-CONTRACT-MOCK-v1`）を必須運用とする。
+- Consequences: 下流は read-only 参照で並行可能。契約改版は CDC再承認まで禁止。
+
+### Phase 3: Verify
+- `Plan -> Execute -> Verify -> Proceed` を直列維持。
+- Self-correction count: `0/3`（超過なし）。
