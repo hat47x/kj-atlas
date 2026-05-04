@@ -1754,3 +1754,88 @@ type PatchProposal = {
 - 継続条件:
   - CE0契約凍結は単一ファイルSSOTとして維持。
   - 逸脱（範囲外編集、契約ID再定義、safeMode既定後退、自己修復4回目相当）は即 `held` 停止。
+
+## Stream C latest run（2026-05-04 / CE0 Contract Freeze finalization）
+
+- run_id: `stream-c-ce0-2026-05-04-01`
+- assignee: `Stream C（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / review_boundary_break=0`
+
+### Phase 1: 現況把握（Read → Plan）
+- Phase開始時に本Issueを再読し、既存契約項目を抽出。
+- 固定済み:
+  - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`（再定義禁止）。
+  - No-Go canonical IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
+  - fail-safe: 指定外編集禁止、safeMode既定後退禁止、自己修正上限3回。
+- 未固定:
+  - APIシグネチャの最小必須型（request/response/errors）を1箇所で明示する記述。
+  - review state 遷移境界（AI提案と人間承認の責務分離）を機械可読に近い粒度で明示する記述。
+- 曖昧:
+  - `proposal-only` の禁止対象（直接更新の対象資産）をデータ境界ごとに明文化した箇所。
+  - safeMode境界での拒否応答コード/理由語彙の固定度。
+
+### Phase 2: ADR-style 明文化（Execute）
+- Context:
+  - CE1/CE2以降の実装が安全境界を後退させないため、CE0で契約凍結を先行する必要がある。
+  - 契約未凍結のまま実装を先行すると、`preview_required` や `ai_review_auto_promotion` の意味論ドリフトが発生する。
+- Decision:
+  - Contract Freeze対象を次で固定する。
+    - `CF-01`: safeMode既定 `true` / `allowUnreviewedText=false`。
+    - `CF-02`: AIは proposal-only（Patch提案のみ）で、永続化/公開/昇格は不可。
+    - `CF-03`: review境界は `Working -> Proposed -> ReviewPending -> Approved|Rejected -> Applied` のみ許可。
+    - `CF-04`: `Working -> Consensus` 直行は禁止（`patch+approval` 必須）。
+    - `CF-05`: 禁止事項 canonical IDs（No-Go 5件）を不変集合として維持。
+- Consequences:
+  - 実装自由度は「I/Fの内部実装」に限定され、状態遷移・safeMode境界・責務分離の変更は後退不可。
+  - 安全面では、AIの自動昇格・直接更新・未審査公開を契約段階で封じる。
+
+### Phase 3: 契約仕様の厳密化（Execute）
+- APIシグネチャ（contract-level; 実装非依存）:
+  - `ContextQueryV1`:
+    - required: `goal:string`, `scope:string[]`, `depth:{quick|standard|deep}`, `constraints:string[]`, `reviewFilter:{humanReviewedOnly:boolean}`, `safeModePolicy:{safeMode:boolean, allowUnreviewedText:boolean}`, `outputMode:{proposalOnly:boolean}`
+  - `ContextBundleV1`:
+    - required: `bundleHash:string`, `items:ContextItem[]`, `deterministic:boolean`
+  - `ProposalPatchV1`:
+    - required: `patchId:string`, `targetId:string`, `operations:PatchOp[]`, `reason:string`, `requiresHumanApproval:boolean=true`
+  - `AuditEventV1`:
+    - required: `eventId:string`, `contractId:string`, `actor:{ai|human|system}`, `action:string`, `result:{accepted|rejected|blocked}`, `timestamp:string`
+- review state遷移境界:
+  - 許可: `Working->Proposed`, `Proposed->ReviewPending`, `ReviewPending->Approved|Rejected`, `Approved->Applied`。
+  - 禁止: `Working->Applied`, `Working->Consensus`, `Proposed->Applied`, `AI actor による Approved 遷移`。
+- safeMode境界:
+  - defaultは常に `safeMode=true`。
+  - `safeMode=false` は契約外（本CE0では未許可）として `blocked` を返す。
+  - `allowUnreviewedText=true` は `safemode_default_relaxation` として拒否。
+- AIがやってはいけないこと（明文化）:
+  - 自動昇格（review status の自動 `Approved` 化）。
+  - 直接更新（proposalを経由しない state/data 書換）。
+  - 自動適用/公開（`auto_apply_or_publish`）。
+  - preview省略実行（`preview_bypass`）。
+
+### Phase 4: mock-first 検証計画（Verify）
+- 正常系:
+  1. `safeMode=true` + `proposalOnly=true` + `ReviewPending->Approved(human)` 後に `Applied` 可能。
+  2. 同一 `ContextQueryV1` 入力から同一 `bundleHash` を再現（決定論）。
+- 異常系:
+  1. `allowUnreviewedText=true` 指定時に `blocked:safemode_default_relaxation`。
+  2. `Working->Consensus` 直行要求時に `blocked:consensus_direct_write`。
+- 拒否系（No-Go）:
+  1. AI actor が `Approved` を発行しようとした場合 `blocked:ai_review_auto_promotion`。
+  2. preview未生成で apply 要求した場合 `blocked:preview_bypass`。
+- 決定論確認項目:
+  - same input / same policy / same fixtures で `bundleHash` と `operations` が一致すること。
+  - 不一致時は `nondeterministic_bundle` を返し `held`。
+
+### Phase 5: Verify / Stopper（Proceed）
+- AC適合:
+  - safeMode既定ON固定: 適合。
+  - proposal-only固定: 適合。
+  - review境界固定: 適合。
+  - mock-first検証可能性: 適合。
+- 矛盾確認:
+  - 既存No-Go canonical IDsとの衝突なし。
+  - 既存Contract IDsの追加/改名/削除なし。
+- Stopper判定:
+  - 不整合残存なしのため `Conditional-Go`。
+  - 以後、`CF-01..05` の変更要求は人間承認まで `held` で停止（実装先行禁止）。
