@@ -567,3 +567,93 @@
 - Action: 2026-05-03合意に基づき、A1側Dependencies/Related ADRをbaselineへ整合。以後はExecute継続可（docs-only）。
 - SafeMode boundary: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持（後退なし）。
 - Next required human instruction: 差分解消方針（どちらをSSOTとするか）を明示する承認指示。
+
+## Stream B P0 planning baseline fixation（2026-05-04 / contract-aligned + mock-first）
+
+> 本セクションを Stream B の最新ベースラインとして扱う。既存履歴は保持しつつ、P0 実行判断は本節を優先する。
+
+### Phase 1: Baseline Read & Gap Analysis
+- 再読対象: 本ファイル（実編集対象）と参照専用 `issue-FB-P2C-01-a1-interface-contract.md`。
+- 抽出（固定）
+  - Status: `Open`
+  - Priority: `P0`
+  - Scope: allowlist 2ファイルの計画・契約整合（実編集は本ファイルのみ）
+  - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
+  - AC/Validation: `A2A3_OPEN_ALLOWED` SSOT一致 + docs-check + diff check
+- 目的（Goal）
+  - A1契約凍結を唯一ゲートとして、A2/A3着手可否を再現可能な判定式へ固定する。
+- 非目的（Non-goals）
+  - 実装・コード変更手順の追加
+  - A2/A3を `Done/Confirmed` へ昇格させる運用判断
+  - allowlist外ファイルへの編集誘導
+- 曖昧点（解消対象）
+  1. `Approval Record` 証跡キー未入力時の扱いを Go 禁止として明示不足。
+  2. `held` のみ残存時に `Conditional` を返す条件が散在。
+  3. 契約整合（I/F）と実装依存（A2/A3作業）の切断説明が弱い。
+- 出口条件（Phase 1）
+  - 目的/非目的/曖昧点を列挙し、Phase 2 の CDC 明文化へ接続できること。
+
+### Phase 2: ADR-style 明文化（Context / Decision / Consequences）
+#### Context
+- P0 のクリティカルパスは `A1 -> A2 -> A3` の直列であり、A1契約未固定状態での A2/A3 進行は契約ドリフトを生む。
+- 安全境界（`safeModeDefault=ON`, `SAFE_MODE_STRICT_ON`）と `human_dual_control_only` は後退不可。
+
+#### Decision
+- クリティカルパス定義（P0根拠）
+  - `A1 contract freeze` 完了前は A2/A3 を `Open(Planning)` に固定。
+  - 開放判定は `A2A3_OPEN_ALLOWED` を唯一SSOTとして運用（再定義禁止）。
+- 判定の固定
+  - `Go`: `A2A3_OPEN_ALLOWED=true && validatorPass=true && Approval Record=Approved && pendingDecisionQueueCount==0`
+  - `Conditional`: Go未達かつ未承認事項が `held` のみ
+  - `No-Go`: `pendingBypassDetected || undefinedConflictDetected || allowlist外編集要求 || 契約未承認でA2/A3確定要求`
+- 承認前運用
+  - CDC更新が必要な場合は草案提示に限定し、確定化せず `held` 維持。
+
+#### Consequences
+- A2/A3 先行着手による契約上書きを防止できる。
+- 判定式の再現性が上がり、Stream間で Go/No-Go 判断が一致する。
+- `Approval Record` 未充足時は `Needs-decision` を維持し、誤ったDone遷移を防ぐ。
+
+### Phase 3: 依存切断設計（interface vs implementation / mock-first）
+- Interface依存（契約整合として先行検証可）
+  - `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`
+  - `A2A3_OPEN_ALLOWED` / `No-Go` / `ProceedGate` の固定文字列一致
+- 実装依存（本計画では扱わない）
+  - A2/A3 実作業・実装着手・コード変更・運用反映
+- mock-first 検証項目（`A1-CONTRACT-MOCK-v1`）
+  1. I/F整合: 固定キー一致（ドリフト0）
+  2. 禁止事項: `Pending -> Done` bypass、`Held -> Done` bypass、`A1 not Done -> A2/A3 Confirmed`
+  3. 決定論: Go/Conditional/No-Go 判定が同一入力で同一結果
+  4. 安全境界: `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON` の後退なし
+
+### Phase 4: Execution（docs更新の直列化 / conflict回避）
+- 実行順序（Phase N）
+  - Phase 4-1: 判定式・契約キーのSSOT確認（再読）
+  - Phase 4-2: 目的/非目的/出口条件を本節に固定
+  - Phase 4-3: CDC（Context/Decision/Consequences）を本節へ固定
+  - Phase 4-4: mock-first 検証項目と禁止遷移を本節へ固定
+  - Phase 4-5: Verify条件（docs-check / diff check / self-correction上限）を本節へ固定
+- 競合回避ルール
+  - allowlist: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（write）
+  - read-only reference: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+  - 禁止編集対象: 上記以外すべて
+  - 未定義競合・allowlist外編集要求・前提崩壊は即 `No-Go` 停止
+
+### Phase 5: Verify & Stopper
+- AC/DoD自己監査
+  - AC-1: 契約固定キーと判定式のSSOTを本節で明文化済み
+  - AC-2: クリティカルパス `A1 -> A2 -> A3` のP0根拠を明文化済み
+  - AC-3: interface依存と実装依存を分離し、mock-first 検証項目を列挙済み
+  - AC-4: allowlist/禁止編集対象/停止条件を明文化済み
+  - DoD-1: Go/Conditional/No-Go 条件が相互排他的
+  - DoD-2: `Approval Record` 未充足時の `Needs-decision` 維持を固定
+  - DoD-3: self-correction上限3回、4回目相当停止を固定
+- 未解消リスク（継続監視）
+  1. `Approval Record` 証跡未入力による Go 不可状態の長期化
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の human decision 未完了
+  3. 参照先ファイル側に将来ドリフトが発生した場合の再同期待ち
+- Stopper（即停止条件）
+  - self-correction 4回目相当
+  - 未定義競合
+  - allowlist外編集要求
+  - 契約未承認のままA2/A3確定化要求
