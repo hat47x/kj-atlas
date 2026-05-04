@@ -1,0 +1,96 @@
+# Issue Draft: QA-UNIT-01 ユニットテストのカバレッジ向上
+
+- Type: Process
+- Status: Draft (起票用)
+- Source Issue: N/A
+- Priority: P2
+- Owner: TBD
+- Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`
+- Related Backlog: `N/A`
+- Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`
+- Expected verification level: `unit`
+
+## Requirement meta I/F（共通キー）
+
+- RequirementID: `QA-UNIT-01`
+- RequirementStatement: 主要ドメインロジックに対するユニットテストを拡充し、回帰検知能力を向上させる。
+- PriorityClass: Should
+- AcceptanceScenario: 前提=既存テスト基盤が実行可能 / 操作=不足領域へunit test追加 / 期待結果=追加テストが安定通過し回帰検知観点をカバー / 除外=e2eシナリオ拡張
+- GoNoGoGate: Optional
+- SecurityGateImpact: SafeMode
+- VerificationLevel: unit
+- DecisionStatus: Pending
+- DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+
+## 1) 課題 / Problem statement
+
+- テストは存在するが、変更頻度の高いロジックで回帰検知の粒度にばらつきがある。
+- 仕様変更時に「どこまで壊れていないか」の判断が属人的になりやすい。
+- 結果として実装レビュー時に仕様評価よりデバッグに時間を使いやすい。
+
+## 2) 背景 / Context
+
+- ADR-0019で「結合前に下位検証を積み上げる」方針が示されている。
+- ADR-0001の価値整合（可逆性・人間レビュー追跡）を維持するため、局所的な振る舞い保証が必要。
+- Frontend/Backendともにunit test基盤は存在し、未カバー領域を優先拡張できる。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: 変更の安全な反復を支える品質基盤として妥当。
+- 安全（THREAT_MODEL / SafeMode）: SafeMode境界を持つロジックの回帰検知強化に有効。
+- 企業・行政要件（enterprise_architecture）: 監査時に挙動説明可能性を補強。
+- 後方互換（schemas）: スキーマ改変は伴わず互換リスクは低い。
+
+## 4) 提案する解決策 / Proposed solution
+
+- 変更対象（Docs / Frontend / Backend / Schema）: Frontend + Backend テストコード、必要最小限のテスト用fixture。
+- 変更の最小単位（再開可能な粒度）:
+  1. カバレッジ計測コマンドの基準化
+  2. 高優先ロジックからunit test追加
+  3. 失敗時の回帰パターンをテスト名で明示
+- 非目標（何をこのIssueでやらないか）:
+  - e2eシナリオ追加
+  - 大規模リファクタ
+  - 新機能追加
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] 優先対象ロジック（safeMode/validation/diff等）の不足ケースにunit testが追加される。
+- [ ] 追加テストがローカルCI相当コマンドで安定通過する。
+- [ ] テスト追加に伴う既存仕様との矛盾がない。
+- [ ] 必要な検証（unit）が `Expected verification level` と一致する。
+- [ ] `GoNoGoGate` の要否（Optional）が明示されている。
+- [ ] セキュリティ境界に影響する観点（SafeMode関連）を含むテスト観点が列挙される。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1: 現状テストの薄いモジュールを抽出し、優先順位を決める。
+- [ ] T2: Frontendのドメインロジックにunit testを追加する。
+- [ ] T3: Backendのバリデーション/サービス層にunit testを追加する。
+- [ ] T4: 追加テストを実行し、失敗時は最小修正で再検証する。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `cd 03_Implement/frontend && npm test -- --runInBand`
+  - `cd 03_Implement/backend && pytest -q`
+- 期待結果:
+  - 追加したunit testを含めて全件pass。
+- 未実施時の理由・代替検証:
+  - 依存不足で実行不可の場合は、対象テストファイルの静的レビュー結果と実行阻害要因を記録する。
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: 先にe2e中心で補う（却下: 原因切り分け粒度が粗い）。
+- 代替案B: カバレッジ閾値のみ導入（却下: 実質的なケース不足が残る）。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: brittle test増加による保守コスト上昇。
+- 影響範囲: CI時間、テストfixture管理。
+- ロールバック手順: 問題のある追加テストをコミット単位でrevertし、観点を再分割して再起票。
+
+## 10) Additional context
+
+- 関連Issue/PR/議論ログ: N/A
+- ADR化が必要になる条件（トレードオフ閾値）: カバレッジ閾値を品質ゲート（必須）へ昇格する場合。
