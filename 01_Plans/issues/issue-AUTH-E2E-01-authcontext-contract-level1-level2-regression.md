@@ -258,6 +258,28 @@
 - Verify:
   - `python 01_Plans/issues/validate_active_issue_memos.py`
   - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順）
+
+- 固定順序 **ARCH → API/SCHEMA → IMPL → E2E → OPS** を再確認し、E2E は IMPL 後段の回帰ゲートとして固定。
+- API signature 固定済みを前提に、Level1/Level2 の準備作業を並行可能（実施判定は依存順に従う）。
+
+### Phase 3: Plan（AC/DoD補完）
+
+- AC-F-1: Level1 常時必須、Level2 条件付き必須（IdP連携境界変更時）を維持。
+- AC-F-2: mock可能境界（`status/code/provisioned` と `identity_not_provisioned`）に基づき、contract-level 回帰を実施可能にする。
+- DoD-F-1: 未承認契約の追加を伴う E2E ケースは Ready 化しない。
+
+### Phase 4: Verify（責務分離）
+
+- Security Officer / System Owner / Platform Operator の承認責務は OPS で担保し、E2E は検証証跡の提供責務に限定。
+- strict mode 例外固定値（D1〜D4）に関わる運用変更をE2E仕様で上書きしないことを確認。
+
+### Phase 5: Proceed
+
+- 判定: **Go**（契約レベル回帰トラックとして着手条件を満たす）。
 - Proceed: validator/unittest は pass、統合ファイル競合は検出されず。
 
 ## Stream I Done/Completed Audit (2026-04-23)

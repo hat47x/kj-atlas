@@ -169,3 +169,24 @@
 - Proceed:
   - 判定: **Go**（migration競合・データ前提崩壊・契約逸脱なし）。
   - handoff: 次段（AUTH-E2E-01）は Level1 常時 / Level2 条件付き必須の運用境界を維持すること。
+
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順）
+
+- 依存順を **ARCH → API/SCHEMA → IMPL → E2E → OPS** へ固定し、本Issueは API 契約固定レイヤとして SCHEMA と同列で扱う。
+- ARCH 未承認論点が残る場合は API の Ready 化を停止するストッパーを再確認。
+
+### Phase 3: Plan（mock可能境界）
+
+- Mock 可能境界を `status` + `code` + `provisioned` の最小分岐キーで固定。
+- `POST /admin/provision/users` の API signature は、E2E 準備を先行可能にする契約固定点として扱う（実装差し替え可能）。
+
+### Phase 4: Verify（責務分離）
+
+- Security Officer / System Owner / Platform Operator の運用責務は AUTH-OPS-03 側で管理し、本Issueでは API 正本契約（CLIラッパ）を維持する責務境界に限定。
+- 未承認の新規エラーコード追加や CLI 独自分岐追加を禁止し、契約逸脱なしを確認。
+
+### Phase 5: Proceed
+
+- 判定: **Go**（strict provisioning 契約は固定済み、downstream 実装/E2E の準備条件を満たす）。

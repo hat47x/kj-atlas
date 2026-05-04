@@ -169,3 +169,34 @@
 - Phase 5 Verify: docs-only 変更として契約差分なし、自己修復上限超過なし。
 - Phase 6 Proceed: **Go**（Stream E 直列完了）。
 
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順）
+
+- 全AUTH Issue の依存順を **ARCH → API/SCHEMA → IMPL → E2E → OPS** で固定し、OPS を最終運用ゲートとして再確認。
+- 役割分離（Security Officer / System Owner / Platform Operator）記述の存在を全Issueで点検し、欠落なしを確認。
+
+### Phase 3: Plan（AC/DoD補完）
+
+- AC-F-1: D1〜D4 固定値（承認順序/TTL、適用スコープ、代理承認、SLA）を運用Runbookで再定義せず正本参照で運用する。
+- AC-F-2: 未承認決定の確定扱いを禁止し、`StoppedForClarification` 維持条件を明示。
+- DoD-F-1: 下流実装担当が参照する「契約固定一覧」を issue 間で一貫化する。
+
+### Phase 4: Verify（フェイルセーフ）
+
+- 停止条件:
+  1. 権限境界の矛盾
+  2. 未承認決定の確定扱い
+  3. 依存順破壊
+- 上記3条件のいずれも検出されず、自己修復ループ不要（0/3）。
+
+### Phase 5: Proceed（Backend着手用 契約固定一覧）
+
+- C-1: 依存順は **ARCH → API/SCHEMA → IMPL → E2E → OPS**（逆順禁止）。
+- C-2: strict拒否契約は `403 + code=identity_not_provisioned` を固定。
+- C-3: 管理導線は `POST /admin/provision/users` を API 正本、CLI はラッパのみ。
+- C-4: identity は `users` / `user_identities` 分離、基本制約は `UNIQUE(provider, external_uid)`。
+- C-5: attribution 正規化は `reviewerRef/ownerRef = user:<users.id>`。
+- C-6: 移行順序は `expand → dual-read/write → backfill → contract` 固定。
+- C-7: 運用固定値 D1〜D4 は `strict_mode_exception_approval_flow` 正本に従い、実装・E2E側で再定義しない。
+- 判定: **Go**（Backend実装担当が即着手可能）。
