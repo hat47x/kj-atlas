@@ -108,6 +108,14 @@ architecture -> security -> guidelines の直列同期後、operations/e2e で�
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `rg -n "Security Officer|System Owner|Platform Operator|StoppedForClarification|DraftRequest|ApprovalPending|Approved|ActiveException|RollbackPending|Closed|D1|D2|D3|D4|4h|2h|48h|15m|60m" 02_Architecture/strict_mode_exception_approval_flow.md 04_Documentation/operations.md 04_Documentation/security.md 04_Documentation/security_operational_guidelines.md 04_Documentation/e2e_testing.md`
 
+### 1.2 HIL-RS-02-A3 向け docs-check 追記（2026-05-04）
+
+- docs-only同期では、運用文書群の verify 証跡として次を必須にする。
+  - 役割分離（2者承認/実行責務分離）記述の有無確認
+  - D1〜D4 固定値一致確認
+  - `StoppedForClarification` 停止語彙の保持確認
+- 上記いずれかが欠ける場合は E2E方針更新を Proceed しない。
+
 ---
 
 ## 2. kj-atlas向け推奨E2Eスコープ

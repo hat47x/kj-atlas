@@ -77,6 +77,11 @@ security系文書の更新時は、次の4観点を **Verifyで必ず同時確�
 3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の参照導線が維持されていること
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）が改変されていないこと
 
+### 0.3.1 HIL-RS-02-A3 同期確認（2026-05-04）
+
+- A3（operations documentation sync）では、本書を `security` 正本として参照し、役割語彙・2者承認/実行分離・導線・D1〜D4を同値で維持する。
+- `operations.md` / `security_operational_guidelines.md` / `e2e_testing.md` に相違を検知した場合は、未確定のまま実施せず `StoppedForClarification` とする。
+
 
 ## 0.4 責務境界（security の単一責務）
 
