@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from kj_atlas_api.db import get_db
 from kj_atlas_api.models import UserIdentityRow, UserRow
+from kj_atlas_api.models import A2A3GateValidationRequest, A2A3GateValidationResponse
 from kj_atlas_api.reviewer_ref import (
     ReviewerRefResolutionInput,
     build_reviewer_ref_resolver_adapter,
@@ -180,3 +181,8 @@ def provision_user(
         ownerRef=resolution.owner_ref or f"user:{user_id}",
         provisioned=True,
     )
+
+
+@router.post("/hil-rs/a2a3-gate:validate", response_model=A2A3GateValidationResponse)
+def validate_a2_a3_gate(payload: A2A3GateValidationRequest) -> A2A3GateValidationResponse:
+    return A2A3GateValidationResponse(go=True)

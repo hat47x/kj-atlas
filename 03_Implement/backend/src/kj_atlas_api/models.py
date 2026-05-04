@@ -502,6 +502,29 @@ class A1ErrorResponse(BaseModel):
     errorEnvelope: A1ErrorEnvelope
 
 
+class A2A3GateValidationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    freezeContractId: Literal["HIL-RS-02-A1-CONTRACT-FREEZE-v1"]
+    schemaVersion: Literal["1.0.0"]
+    overridePolicy: Literal["human_dual_control_only"]
+    contractLinkLocked: Literal[True]
+    sharedResourceFreeze: Literal[True]
+    a1Status: Literal["Done"]
+    pendingDecisionQueueCount: Literal[0]
+    hasUndefinedContractChangeRequest: Literal[False]
+    hasSafeModeRegressionRequest: Literal[False]
+    hasShareExportLeakageRelaxationRequest: Literal[False]
+
+
+class A2A3GateValidationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    go: bool
+    schemaVersion: Literal["1.0.0"] = "1.0.0"
+    freezeContractId: Literal["HIL-RS-02-A1-CONTRACT-FREEZE-v1"] = "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
+
+
 class PolygonHandoffInputContract(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
