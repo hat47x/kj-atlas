@@ -708,3 +708,12 @@ export type A1ErrorEnvelope = {
 - `message` へ email / external_uid など生IDを含めない。
 - `contractId` は違反した契約IDを必ず指す。
 - A2/A3 で errorCode 列挙を拡張しない。
+
+#### CE1 v1 clarification（2026-05-03 / contract-only sync）
+
+- `ContextQueryV1` / `ContextBundleV1` は CE1 の **closed-world最小契約** とする。
+- `ContextBundleV1` の optional field は v1 では定義しない（required only）。
+- 追加フィールド・列挙拡張・エラー語彙追加は **v2 契約改訂** でのみ許可する。
+- エラー意味論の最小固定は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- `invalid_query_contract` のような補助バリデーション語彙を導入する場合でも、上記最小固定語彙を置換してはならない。
+- フォールバックは fail-open 禁止（fail-closed 固定）。
