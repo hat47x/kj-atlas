@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream L
+- Owner: Stream I
 - Scope: `04_Documentation/e2e_verification_log_2026-03-03.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -189,3 +189,28 @@
 - 引継ぎメモ: 本Issueは「本文改稿を行わず、品質ゲートと参照導線を固定」済み。
 - 次担当依頼: `04_Documentation` 側で本Issueの分類（Move internal / Improve external）に従って本文改訂を実施。
 - ゲート条件: 改訂後は `docs-check` を再実行し、Issue側の分類・用語・導線と一致確認すること。
+
+
+## Stream I phase run (2026-05-04)
+### 1. Read（最新同期）
+- 3Issueの現行Draftを再読し、Classification / GoNoGo / Validation / Proceed tri-state の整合を確認。
+
+### 2. ADR明文化（Context/Decision/Consequences）
+- Context: Open判定に必要なメタは存在するが、依存確定証跡が未充足。
+- Decision: 既存分類（Move internal / Improve external）を維持し、docs-check必須・他検証は期待レベル定義のみを固定。
+- Consequences: docs-only範囲を維持したまま、Open可否を単体再判定できる。
+
+### 3. Plan（AC/DoD不足補完）
+- AC/DoD に `Approval Record` と self-correction上限（<=3）を必須条件として維持。
+- 依存未確定時の Proceed 抑止（Hold/Stop）を明文化。
+
+### 4. Execute（Draft品質向上のみ）
+- 実施: 本Issueメモの整合性強化（phase運用・gate・stop条件の再確認）。
+- 非実施: `03_Implement/**` と `04_Documentation/**` 本文改稿。
+
+### 5. Verify（3回まで自己修復）
+- 実行結果: docs-check系コマンドで整形・メタ不整合なし。
+- Self-correction: `1/3`（初回検証で固定、4回目相当はStop）。
+
+### 6. Stop（gate未確定なら停止）
+- 判定: **Hold/Stop ready**。`DOC-OPS-05` の依存確定証跡が揃うまで Proceed しない。
