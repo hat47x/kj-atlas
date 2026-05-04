@@ -717,3 +717,21 @@ export type A1ErrorEnvelope = {
 - エラー意味論の最小固定は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
 - `invalid_query_contract` のような補助バリデーション語彙を導入する場合でも、上記最小固定語彙を置換してはならない。
 - フォールバックは fail-open 禁止（fail-closed 固定）。
+
+### 1.3 CE0 handoff frozen I/F（2026-05-04 / Stream B）
+
+CE1 への受け渡し固定I/Fを次で成果物化する（contract-only / mock-first）。
+
+- `ContextQueryV1`
+- `ContextBundleV1`
+- `ProposalPatchV1`
+- `AuditEventV1`
+
+mock contract明記:
+- backend未実装でも、上記4型を契約正本として stub/fixture で検証可能とする。
+- 実装差し替え時も key set / enum / error semantics を v1 互換で固定する。
+
+Deprecateルール（v1固定）:
+1. v1 必須キーの削除/改名/意味変更は deprecate 不可（禁止）。
+2. 拡張は v2追加のみ許可し、v1 は read-only contract として保持する。
+3. `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙と判定条件は不変。

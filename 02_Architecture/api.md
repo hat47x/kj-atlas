@@ -624,3 +624,19 @@ export type AdminProvisionUserConflictError = {
 - `422 invalid_query_contract` は enum/range の補助バリデーション語彙としては許可されるが、上記3語彙の置換には使えない。
 - API利用者向けのフォールバック挙動は fail-closed とし、`previewConfirmed` 未確認・hash非決定論・unknown key を成功扱いしてはならない。
 - versioning方針: v1は互換維持、拡張は v2 追加で行う。
+
+#### 2.8.2 CE0 Contract Freeze handoff（2026-05-04 / Stream B）
+
+- Scope: CE0/CE1 契約I/F凍結（implementation非依存、mock-first）。
+- Fixed handoff signatures（read-only）:
+  - `ContextQueryV1`
+  - `ContextBundleV1`
+  - `ProposalPatchV1`
+  - `AuditEventV1`
+- mock contract policy:
+  - 未実装箇所は **mock contract** として先行検証し、実装完了待機を禁止する。
+  - `POST /context/query` と `POST /context/bundle` は stub/fixture で同一エラー意味論を維持する。
+- deprecate policy（非互換候補の扱い）:
+  1. v1 required key の削除・改名・意味変更は非互換として禁止（`v2` 追加でのみ許可）。
+  2. `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味変更は禁止。
+  3. v1 から v2 への移行期間中も v1 endpoint contract は read-only 互換維持とする。
