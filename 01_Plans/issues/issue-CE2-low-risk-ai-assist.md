@@ -401,3 +401,38 @@
 - 再開条件:
   1. 上記2点を記入。
   2. docs-check再実行で V1〜V3 を再確認。
+
+
+## Open化準備ゲート（Stream K 2026-05-04）
+
+### RACI（CE2 Draft→Open判定）
+| Activity | Responsible | Accountable | Consulted | Informed |
+| --- | --- | --- | --- | --- |
+| proposal-only 契約の維持（`proposed`固定・auto-*禁止） | Stream D | System Owner | Security Officer | Platform Operator |
+| Approval Record 確認（日時/承認者/対象/判断） | Platform Operator | System Owner | Stream D | Security Officer |
+| 監査4点と `sourceBundleHash===bundleHash` 検証 | Stream D | Security Officer | Platform Operator | System Owner |
+| Proceed/Hold/Stop 判定記録 | Stream D | System Owner | Security Officer | Platform Operator |
+
+### Open化受入条件（確定版）
+- [ ] AC-CE2-01: `Dependency status=確定` かつ CE-2 Open判定証跡（判定者・日時・リンク）を記録。
+- [ ] AC-CE2-02: `Approval Record` の4項目（`approved_by` / `approved_at` / `target` / `decision`）が空欄なし。
+- [ ] AC-CE2-03: proposal-only 契約、`reviewState` 閉集合、auto-*禁止、fail-closed が全文中で矛盾しない。
+- [ ] AC-CE2-04: `sourceBundleHash===bundleHash` の不一致時 `held` が明記される。
+- [ ] AC-CE2-05: Open化判定を `Proceed/Hold/Stop` 三値で再現できる。
+
+### DoD（Open化準備完了の定義）
+- [ ] DoD-CE2-01: 本Issue単体で Context/Decision/Consequences・AC・DoD・Validation・RACI が再読可能。
+- [ ] DoD-CE2-02: docs-check証跡（validator / diff check / scope check）をログ化。
+- [ ] DoD-CE2-03: blocker未解消時に `Hold` 維持で終了し、誤Proceedができない。
+
+### Validation（docs-check固定 / 実行順）
+1. `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+2. `rg -n "^## Phase [1-6]:|^### RACI|^### Open化受入条件|^### DoD" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+3. `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+4. `git status --short`
+
+### Blockers（Open不可条件）
+- B-CE2-01: CE-2依存の判定証跡未入力。
+- B-CE2-02: Approval Record 未充足（必須4項目欠落）。
+- B-CE2-03: CE1契約未確認のまま仕様確定要求。
+- B-CE2-04: self-correction 4回目相当。

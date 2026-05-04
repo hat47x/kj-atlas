@@ -1157,3 +1157,43 @@
 
 #### Consequences
 - A3は Draftのまま準備継続し、A1完了イベント後に同一ゲート式で再判定する。
+
+
+## Open化準備ゲート（Stream K 2026-05-04）
+
+### A3運用同期範囲（固定）
+- 同期対象順序（固定）: `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`
+- A3で実施可能: 語彙同期、導線確認、検証式固定、`held`整理。
+- A3で禁止: 契約値再定義、A1未完了時のOpen化、実装/運用確定。
+
+### RACI（A3 Draft→Open準備）
+| Activity | Responsible | Accountable | Consulted | Informed |
+| --- | --- | --- | --- | --- |
+| 固定キー差分検査（diff=0） | Stream E | System Owner | Platform Operator | Security Officer |
+| role語彙同期（3語彙固定） | Platform Operator | System Owner | Security Officer | Stream E |
+| ProceedGate/PrepGate/NoGo 判定記録 | Stream E | System Owner | Security Officer | Platform Operator |
+| blocker/held 更新 | Stream E | System Owner | Platform Operator | Security Officer |
+
+### Open化受入条件（確定版）
+- [ ] AC-A3-01: `a1Status=="Done"` かつ `pendingDecisionQueueCount==0`。
+- [ ] AC-A3-02: 固定キー（freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault）diff=0。
+- [ ] AC-A3-03: role語彙（Security Officer / System Owner / Platform Operator）ドリフト0。
+- [ ] AC-A3-04: NoGo return path が `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` を一意参照。
+- [ ] AC-A3-05: Approval Record（`approved_by`/`approved_at`/`evidence`）が充足。
+
+### DoD（Open化準備完了の定義）
+- [ ] DoD-A3-01: Context/Decision/Consequences・AC・DoD・Validation・RACI が本Issue内で完結。
+- [ ] DoD-A3-02: docs-check証跡（validator / unittest / rg / diff check）を記録。
+- [ ] DoD-A3-03: `Go / Conditional / No-Go` 判定と再開条件が1読で復元可能。
+
+### Validation（docs-check固定 / 実行順）
+1. `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+2. `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+3. `rg -n "^## Phase [1-6]:|^### RACI|^### Open化受入条件|^### DoD|^### A3運用同期範囲" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+4. `git diff --check -- 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+
+### Blockers（Open不可条件）
+- B-A3-01: `a1Status!="Done"` または `pendingDecisionQueueCount>0`。
+- B-A3-02: Approval Record 未充足。
+- B-A3-03: 固定キー差分>0 または role語彙ドリフト>0。
+- B-A3-04: self-correction 4回目相当。
