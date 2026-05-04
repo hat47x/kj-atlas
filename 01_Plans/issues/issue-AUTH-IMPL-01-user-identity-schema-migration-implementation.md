@@ -169,3 +169,24 @@
 - expand → dual-read/write → backfill → contract の固定順を維持し、SCHEMA未確定での強行を禁止するストッパーに抵触しないことを確認。
 - 判定: **Go（実装前提整合済み）**。
 
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順）
+
+- 固定順序を **ARCH → API/SCHEMA → IMPL → E2E → OPS** で再確認。
+- IMPL は API/SCHEMA 契約固定後のみ着手可能とし、逆順実行を禁止。
+
+### Phase 3: Plan（AC/DoD補完）
+
+- AC-F-1: expand → dual-read/write → backfill → contract の順序違反を禁止。
+- AC-F-2: API signature 固定済み前提で test double による回帰準備（E2E先行準備）を許可。
+- DoD-F-1: 未承認の schema/API変更を実装へ混在させない。
+
+### Phase 4: Verify（フェイルセーフ）
+
+- 権限境界矛盾（roles分離崩壊）・未承認決定の確定扱い・依存順破壊の3条件を停止トリガーとして維持。
+- Security Officer / System Owner / Platform Operator の責務分離に実装側で介入しない（OPS正本準拠）。
+
+### Phase 5: Proceed
+
+- 判定: **Go**（Backend実装担当が着手可能な契約前提は固定済み）。

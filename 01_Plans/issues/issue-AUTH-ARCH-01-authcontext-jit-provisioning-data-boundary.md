@@ -183,3 +183,24 @@
 - Phase 5 Verify: downstream issue の前提（属性境界, `reviewerRef/ownerRef` 正規化, strict責務境界）に矛盾なし。
 - Phase 6 Proceed: **Go**（SCHEMAフェーズへ進行）。
 
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順固定）
+
+- 固定順序を **ARCH → API/SCHEMA → IMPL → E2E → OPS** に再確認し、ARCH を唯一の上流契約として維持。
+- 本Issueの出力を downstream Ready 判定の前提に固定（未承認論点は ARCH で停止）。
+
+### Phase 3: Plan（AC/DoD補完）
+
+- AC-F-1: AuthContext 属性境界（persist/transient/forbidden）を downstream で再定義しない。
+- AC-F-2: `reviewerRef/ownerRef` 正規化規則は `user:<users.id>` の契約境界として保持。
+- DoD-F-1: API/SCHEMA/IMPL/E2E/OPS が本Issueの境界条件を参照し、逆依存を作らない。
+
+### Phase 4: Verify（責務分離・固定値）
+
+- 役割分離（Security Officer / System Owner / Platform Operator）は AUTH-OPS-03 で運用責務として保持し、ARCH では設計境界のみを定義する責務分離に矛盾なし。
+- strict mode 例外運用の固定値（D1〜D4）は本Issueで再定義せず、`02_Architecture/strict_mode_exception_approval_flow.md` 正本参照に限定。
+
+### Phase 5: Proceed（契約固定）
+
+- 判定: **Go**（ARCH 契約は承認済み・未承認決定の確定化なし）。

@@ -185,3 +185,24 @@
 - Phase 5 Verify: `schemas.md` / `schemas_review_attribution.md` / `review_attribution.md` / `api.md` 同期済み前提を再検証。
 - Phase 6 Proceed: **Go**（API/IMPLフェーズへ進行）。
 
+## Stream F planning alignment log (2026-05-04)
+
+### Phase 1: Read同期（依存順）
+
+- 固定順序 **ARCH → API/SCHEMA → IMPL → E2E → OPS** を再確認。
+- SCHEMAは API と同層の契約固定レイヤとして扱い、IMPL Ready の前提ゲートを担う。
+
+### Phase 3: Plan（AC/DoD補完）
+
+- AC-F-1: `users` / `user_identities` / attribution 契約は ARCH 属性境界と矛盾しない。
+- AC-F-2: mock可能境界として `identity_not_provisioned` + `status/code/provisioned` の最小分岐契約を維持。
+- DoD-F-1: SCHEMA未確定で IMPL を Ready 化しない。
+
+### Phase 4: Verify（責務分離・固定値）
+
+- Security Officer / System Owner / Platform Operator の運用責務は OPS 正本へ委譲し、SCHEMAで再定義しない。
+- strict mode 例外運用固定値（D1〜D4）との矛盾なしを確認。
+
+### Phase 5: Proceed
+
+- 判定: **Go**（SCHEMA契約は実装準備に十分、未承認決定の確定扱いなし）。
