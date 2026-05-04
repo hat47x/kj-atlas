@@ -389,3 +389,11 @@ MVPでは高度な権限管理は後回し。
 - 認証境界の正本は `ADR-0020` とし、実装契約は `schemas.md` / `api.md` / `review_attribution.md` を同一論点で同期する。
 - `ALLOW_JIT_PROVISIONING=true` では未登録subjectをJITで `users` + `user_identities` 作成、`false` では `403` 拒否して事前プロビジョニング導線へ誘導する。
 - attribution の正規キーは `users.id` で、外部subjectは `user_identities` でのみ解決する。
+
+
+### 7B.1 Contract Freeze Baseline（2026-05-04 / interface-only）
+
+- Scope: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の **I/F境界のみ** を固定し、実装詳細は追加しない。
+- Fixed boundary: 上記4型は `02_Architecture/schemas.md` の定義をSSOTとし、`02_Architecture/api.md` はその入出力契約を参照する。
+- Mock-first policy: CE1/CE2/CE4 は backend/frontend の実装完了待機を禁止し、`A1-CONTRACT-MOCK-v1` 互換fixtureで契約検証を継続する。
+- Downstream rule: 下流は判定式と契約IDを read-only 参照し、派生I/Fの再定義を行わない。

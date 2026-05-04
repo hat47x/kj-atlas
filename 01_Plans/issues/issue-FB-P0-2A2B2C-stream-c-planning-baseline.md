@@ -764,3 +764,17 @@
 ### Phase 6: Proceed判定
 - 判定: `Conditional (Needs-decision)`。
 - 継続保留: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01` held。
+
+
+## Stream B baseline addendum（2026-05-04 / interface baseline sync）
+
+### Context
+- Stream Aで固定した4型I/FをStream B planning baselineでも同一参照し、派生再定義を抑止する。
+
+### Decision
+- `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` を baseline の参照I/Fとして固定。
+- mock-first は `A1-CONTRACT-MOCK-v1` を利用し、実装完了待ちを禁止。
+
+### Consequences
+- Plan段階で interface境界が確定し、A2/A3は read-only 契約参照で進行可能。
+- 仕様変更要求は本baselineでは確定せず、CDC草案→承認待ちに限定。
