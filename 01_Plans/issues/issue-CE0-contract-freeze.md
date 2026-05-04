@@ -1938,3 +1938,50 @@ type PatchProposal = {
 - 固定I/F一覧: `CE1-CTXQ-IF`, `CE1-CTXB-IF`, `CE1-HASH-DET-IF`, `CE1-PREVIEW-GATE-IF`。
 - 禁止事項一覧: `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation`。
 - 検証前提: mock-first（A2先行可）、同一canonical queryで`bundleHash`決定論一致、未承認事項は`held`継続。
+
+## Stream B latest run（2026-05-04 / CE0 only / SSOT maintenance cycle）
+
+- run_id: `stream-b-ce0-2026-05-04-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、現行Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）が固定であることを確認。
+- 停止条件（指定外編集 / safeMode既定値後退 / Contract ID追加改名削除 / self-correction 4回目相当）を再確認。
+- 強制サイクル **Plan → Execute → Verify → Proceed** を適用し、各Phase開始時Readを実施することを確認。
+
+### Phase 2 ADR
+- Phase開始時に本Issueを再読。
+- Context: CE0 Contract Freeze のSSOTを単一ファイルで維持し、下流はread-only参照に限定する必要がある。
+- Decision: Contract ID不変・safeMode境界不変・contract-only更新を継続し、仕様拡張要求は `held` 管理に送る。
+- Consequences: 契約ドリフトと安全境界後退を予防できる一方、未承認論点は即時確定せず `held` として進捗管理が必要になる。
+
+### Phase 3 Plan
+- Phase開始時に本Issueを再読。
+- AC/DoD補完提案:
+  - `ac_stop_condition_traceability`: 停止条件の照合結果を毎runで明示する。
+  - `dod_verify_zero_mutation_pair`: Verifyで `contract_id_mutation=0` と `safeMode_regression=0` をセットで必須化する。
+  - `dod_held_transition_rule`: 未承認拡張要求が出た場合は Proceed を `held` へ遷移させ、実行停止を記録する。
+- 判定: 既存freeze方針と整合し、追加ADR起票なしで本run運用に適用可能。
+
+### Phase 4 Execute
+- Phase開始時に本Issueを再読。
+- 実施: 本Issueへの contract-only ログ更新のみ。
+- 非実施: 指定外ファイル編集、実装変更、Contract ID追加改名削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- Phase開始時に本Issueを再読。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- contract drift/safety判定: `contract_id_mutation=0` / `safeMode_regression=0`。
+
+### Phase 6 Proceed
+- Phase開始時に本Issueを再読。
+- 判定: **Conditional-Go（held管理込み）**
+- 進捗記録:
+  - CE0 SSOT維持を継続し、下流連携は read-only 参照のみ許可。
+  - 未承認の契約拡張・再定義要求が発生した場合は `held` へ遷移して停止報告する。
