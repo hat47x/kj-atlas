@@ -1869,3 +1869,47 @@ type PatchProposal = {
 - 判定: **Proceed（CE1 handoff-ready）**。
 - 固定I/F成果物: `ContextQueryV1 / ContextBundleV1 / ProposalPatchV1 / AuditEventV1`。
 - 致命条件（前提崩壊/競合/3回超過）は未検出。
+
+## Stream B latest run（2026-05-04 / CE0 only / contract freeze independent completion）
+
+- run_id: `stream-b-ce0-2026-05-04-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始時に対象ファイル（本Issue）を再Readし、差分と固定ワークフロー **Read → ADR/CDC → Plan → Execute → Verify → Proceed** を再確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+- fail-safe（3回超過、前提崩れ、未定義競合、指定外編集要求）で即停止する条件を再確認。
+
+### Phase 2 ADR/CDC
+- Phase開始時に対象ファイルを再Readし、承認前実装禁止ルールを再確認。
+- Context: CE0-contract-freeze を単一ファイルSSOTとして独立完了し、他ストリーム非依存を維持する。
+- Decision: Contract ID / safeMode境界 / No-Go canonical IDs を固定し、実装確定や再定義に繋がる変更は行わない。
+- Consequences: 契約ドリフトを抑止し、逸脱要求発生時に `held` 停止へ安全遷移できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` につき追加CDC起票なし。
+
+### Phase 3 Plan
+- Phase開始時に対象ファイルを再Readし、AC/DoD不足有無を再確認。
+- AC/DoD不足判定: 新規不足なし（ドラフト提案・合意待ちは不要）。
+- Plan: 本Issueへの実行ログ更新のみ実施（contract-only / docs-only / mock-first）。
+
+### Phase 4 Execute
+- Phase開始時に対象ファイルを再Readし、編集許可範囲を再確認。
+- 実施: 本Issueへ最新runログを追記。
+- 非実施: 指定外ファイル編集、実装変更、Contract ID追加/改名/削除、safeMode既定値後退。
+
+### Phase 5 Verify
+- Phase開始時に対象ファイルを再Readし、Verify失敗時の自己修復上限（最大3回）を再確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- Phase開始時に対象ファイルを再Readし、Proceed判定条件を再確認。
+- 判定: **Go（CE0-contract-freeze independently completed）**
+- 継続条件:
+  - CE0契約は read-only 参照モードを維持。
+  - 未定義競合・前提崩れ・自己修復4回目相当が発生した時点で即時 `held` 停止。
