@@ -1214,3 +1214,64 @@ governance_gate_v1:
 - Stop判定:
   - 現時点は `Approval Record: Pending` が前提のため、全体Proceedは `Conditional` 維持。
   - A2/A3のOpen化判断は本ストリーム範囲外として停止条件を維持。
+
+## Stream A Execution Log (2026-05-04)
+
+### Phase 1: Read（Plan -> Execute -> Verify -> Proceed）
+- Plan: 対象4ファイル（A1/RS-01/RS-02/SSOT）を再読し、固定契約項目の差分有無を確認する。
+- Execute: `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / safeModeBoundary / unlockRule / decisionQueueTransition / NoGo return path` を照合。
+- Verify: 事前想定との差分は **0件**。`Approval Record: Pending` が残存しているため Execute確定化は禁止を再確認。
+- Proceed: Phase 2へ進行（契約明文化のみ）。
+
+### Phase 2: ADR明文化（Plan -> Execute -> Verify -> Proceed）
+#### Context
+- A1はA2/A3参照の単一正本であり、契約値の再定義や語彙追加は統合不整合を生む。
+
+#### Decision
+- 契約固定値は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を唯一参照し、A2/A3向けには read-only で配布する。
+- `Approval Record: Pending` が1件でも残る場合、実装遷移（Open化判定・状態確定）を禁止する。
+
+#### Consequences
+- 本ストリームの成果は「契約固定と禁止事項明文化」に限定され、実装系Phaseへ越境しない。
+- 未承認のまま進行要求が来た場合は No-Go とし、A1差戻しを維持する。
+
+### Phase 3: Contract Freeze（Plan -> Execute -> Verify -> Proceed）
+- Freeze declaration:
+  - API signature set:
+    - `CritiqueV1(critiqueId, targetRef, critiqueType, createdAt, iteration, comment?, constraintHints?)`
+    - `ReDiffV1(proposalId, basedOnIteration, diffOps[], traceKey, rationale?)`
+    - `AttributionV1(reviewState, reviewedAt, reviewerRef, auditRecordedAt, reviewContext?, ownerRef?)`
+    - `A1ErrorV1(errorCode, message, contractId, retryable, occurredAt)`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `overridePolicy=human_dual_control_only`
+- Verify: 固定I/Fは A2/A3参照用 read-only artifact として維持し、再定義禁止を確認。
+
+### Phase 4: Verify（AC/DoD + self-correction）
+- AC/DoD照合結果: 充足（契約固定、禁止事項、遷移制約、NoGo導線を維持）。
+- Self-Correction: `0/3`（修復不要）。
+- Fail-safe判定: 前提崩壊・未定義競合なし。
+
+### Phase 5: Handover（A2/A3固定I/F引き渡し）
+#### 固定I/F一覧（変更禁止）
+1. `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+2. `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+3. `schemaVersion=1.0.0`
+4. `overridePolicy=human_dual_control_only`
+5. `contractLinkLocked=true`
+6. `sharedResourceFreeze=true`
+7. `safeModeDefault=ON`
+8. `safeModeBoundary=SAFE_MODE_STRICT_ON`
+9. `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+10. `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+#### A2/A3 変更禁止事項
+- 固定値・固定語彙の再定義、別名化、派生判定式追加。
+- `Pending` bypass（未承認確定）。
+- safeMode/share-export境界の後退。
+- A1未完了（`a1Status!="Done"` or `pendingDecisionQueueCount>0`）状態での Open化判定。
+
+#### Proceed
+- 状態: **Conditional**（`Approval Record: Pending` のため）。
+- 次アクション: 人間承認（dual-control）で `approved_by / approved_at / evidence` を充足後、A2/A3判定へ受け渡し。
