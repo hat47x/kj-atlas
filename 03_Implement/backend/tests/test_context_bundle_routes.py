@@ -115,9 +115,13 @@ def test_context_hashes_are_deterministic_for_same_canonical_query() -> None:
             query_payload = _query_payload()
             bundle_payload = _bundle_payload()
 
-            query_hashes = [client.post("/context/query", json=query_payload).json()["queryCanonicalHash"] for _ in range(3)]
-            bundle_hashes = [client.post("/context/bundle", json=bundle_payload).json()["bundleHash"] for _ in range(3)]
+            query_bodies = [client.post("/context/query", json=query_payload).json() for _ in range(3)]
+            bundle_bodies = [client.post("/context/bundle", json=bundle_payload).json() for _ in range(3)]
 
+            query_hashes = [body["queryCanonicalHash"] for body in query_bodies]
+            bundle_hashes = [body["bundleHash"] for body in bundle_bodies]
+            assert all(body["schemaVersion"] == "1.0.0" for body in query_bodies)
+            assert all(body["schemaVersion"] == "1.0.0" for body in bundle_bodies)
             assert len(set(query_hashes)) == 1
             assert len(set(bundle_hashes)) == 1
     finally:
@@ -146,6 +150,7 @@ def test_context_bundle_downstream_source_hash_comparable() -> None:
             response = client.post("/context/bundle", json=_bundle_payload())
             assert response.status_code == 200
             body = response.json()
+            assert body["schemaVersion"] == "1.0.0"
             assert isinstance(body["bundleHash"], str)
             assert len(body["bundleHash"]) == 64
     finally:
@@ -230,6 +235,7 @@ def test_context_resolve_bundle_returns_contract_context_decision_consequences()
             response = client.post("/context/v1/bundles:resolve", json=payload)
             assert response.status_code == 200
             body = response.json()
+            assert body["schemaVersion"] == "1.0.0"
             # Context
             assert isinstance(body["queryCanonicalHash"], str) and len(body["queryCanonicalHash"]) == 64
             # Decision
