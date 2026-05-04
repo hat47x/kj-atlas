@@ -1049,3 +1049,99 @@ governance_gate_v1:
 - 判定: `Conditional`。
 - 理由: `Approval Record`（`approved_by` / `approved_at` / `evidence`）未充足、および `HIL-RS-02-GOV-EXCEPTION-01=held` が継続。
 - No-Go条件（継続監視）: 固定キー矛盾、allowlist外編集要求、self-correction 4回目相当、未定義競合。
+
+## Stream H governance hardening addendum（2026-05-04）
+
+### Task Brief（Phase開始前固定）
+- Scope: 本Issueのみ（docs-only）
+- Non-Goals: 実装コード変更、A2/A3状態遷移確定、SSOT再定義
+- Acceptance Criteria:
+  - [ ] 承認ロール・責務分離・監査導線を抽出し、契約化する
+  - [ ] ADR-style（Context / Decision / Consequences）で固定値を明記する
+  - [ ] 例外承認フロー・拒否条件・証跡要件・適用境界を明記する
+  - [ ] mock検証ケース（成功/拒否/期限切れ/ロール不一致）を定義する
+  - [ ] AC/DoD監査と停止条件を記録する
+- Stop Conditions:
+  - [ ] SSOT固定値への再定義要求
+  - [ ] `human_dual_control_only` / safeMode境界の後退要求
+  - [ ] allowlist外編集要求
+
+### Phase 1: 現状整理（Read同期）
+#### Extracted Baseline
+- 承認ロール:
+  - `required_approvers = Stream A Architecture Owner + Governance reviewer (dual-control)`
+- 責務分離:
+  - `requester != approver` かつ `approver_a != approver_b`
+- 監査導線:
+  - `Approval Record`（requested/approved/evidence）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+### Phase 2: ADR-style 明文化
+#### Context
+- RS-02 A1は、A2/A3公開判断の前段であり、承認省略・兼務承認・監査欠落が1件でもあると `A1 -> A2 -> A3` の統治連鎖が崩れる。
+
+#### Decision
+- 二者承認は必須固定（`required_approvers` の2者が揃うまで `Pending` 維持）。
+- 責務分離は必須固定（起案者と承認者の兼務禁止、承認者同士の同一人物禁止）。
+- 固定値は以下を再定義不可で運用する:
+  - `overridePolicy=human_dual_control_only`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- TTL固定:
+  - `approval_ttl_hours=72`（requested_atから72時間を超過した承認要求は `Expired` として再起票必須）
+
+#### Consequences
+- `Pending bypass` と `Expired approval reuse` を禁止する。
+- A2/A3は `A2A3_OPEN_ALLOWED=true` かつ承認レコード有効時のみ評価可能。
+- TTL失効・証跡欠落・ロール不一致は No-Go でA1へ差戻す。
+
+### Phase 3: 契約硬化（例外・拒否・証跡・境界）
+#### Exception Approval Flow（固定）
+1. requester が `Approval Record` を `Pending` で起票。
+2. approver_a（Architecture Owner）が適合性審査。
+3. approver_b（Governance reviewer）が独立審査。
+4. 両者承認 + 証跡完備 + TTL内の場合のみ `Approved` 遷移許可。
+
+#### Rejection Conditions（1件でも該当で Reject/No-Go）
+- `requester == approver_a` または `requester == approver_b`
+- `approver_a == approver_b`
+- `approved_at - requested_at > 72h`
+- `evidence` に固定キー照合結果（diff=0）がない
+- `NoGo return path` 不一致
+- `safeMode*` / `overridePolicy` 後退要求
+
+#### Audit Evidence Requirements（最小必須）
+- `requested_by`, `requested_at`, `approver_a`, `approver_b`, `approved_at`
+- `evidence.bundle_id`（監査束ID）
+- `evidence.fixed_key_diff=0`
+- `evidence.decision_queue_trace`（Pending→Approved/Rejected）
+- `evidence.nogo_path_check=true`
+
+#### 適用境界（緩和不可）
+- 本契約は A1 governance hardening 専用であり、A2/A3は参照のみ。
+- `human_dual_control_only` は別名・同義語・派生キー追加を禁止。
+- TTL値変更は本Issueでは不可（ADR改訂経由のみ）。
+
+### Phase 4: mock検証ケース
+- Case-GOV-01 承認成功:
+  - 条件: 二者承認/責務分離/証跡完備/72h以内
+  - 期待: `Pending -> Approved`, `Proceed=Conditional or Go`（他ブロッカー次第）
+- Case-GOV-02 拒否:
+  - 条件: fixed key diff!=0 または NoGo path不一致
+  - 期待: `Pending -> Rejected`, `Proceed=No-Go`
+- Case-GOV-03 期限切れ:
+  - 条件: `approved_at-requested_at > 72h`
+  - 期待: `Expired` 扱いで再起票要求、`Proceed=No-Go`
+- Case-GOV-04 ロール不一致:
+  - 条件: requester=approver または approver重複
+  - 期待: `Pending -> Rejected`, 監査違反記録
+
+### Phase 5: Verify（AC/DoD監査）
+- AC監査結果: 5/5 充足（本addendum内で固定化）。
+- 逸脱検知: なし（allowlist外編集なし、SSOT再定義なし）。
+- Self-Correction: `0/3`。
+- Stop判定:
+  - 現時点は `Approval Record: Pending` が前提のため、全体Proceedは `Conditional` 維持。
+  - A2/A3のOpen化判断は本ストリーム範囲外として停止条件を維持。
