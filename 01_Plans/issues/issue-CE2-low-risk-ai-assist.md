@@ -258,6 +258,50 @@
 ### Execute
 - 本Issue内の契約文言のみ更新（コード変更なし）。
 
+## Stream D execution log（2026-05-04 / proposal-only safe advancement）
+
+### Phase 1: Read（Plan）
+- Read対象を `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` に固定し、CE2は proposal-only の判断準備に限定する方針を再確認。
+- CE1は **参照限定**（mock contract）とし、CE1未確定項目をCE2実装前提にしない境界を固定。
+
+### Phase 2: ADR/CDC（Execute）
+#### Context
+- CE2は「低リスクAI補助」の意思決定準備段階であり、実装着手前に責務分離（AI提案 / 人間確定）を文書契約として固定する必要がある。
+- CE1依存は未確定要素を含むため、CE2側で仕様を先行確定すると契約衝突のリスクがある。
+
+#### Decision
+- 本Issueの作業範囲は `issue-CE2-low-risk-ai-assist.md` の文書整備に限定する（single-file fixed）。
+- proposal-only 契約（`status=proposed` / `reviewState=unreviewed` / auto-*禁止 / fail-closed）を維持し、実装・運用変更は実施しない。
+- Verifyは V1/V2/V3 の3段固定、修復は最大3回までとする。
+
+#### Consequences
+- CE1未確定項目の先行実装を回避でき、契約衝突時の誤Proceedを抑止できる。
+- 短期的な前進は文書整備に限定されるが、承認後の実装再開条件が明確化される。
+
+### Phase 3: Plan（Verify criteria）
+- AC/DoD観点を再確認:
+  1. Phase 1..6（Plan→Execute→Verify→Proceed）を欠落なく記述する。
+  2. CE1未確定項目を実装前提にしない文言を保持する。
+  3. ADR要素（Context/Decision/Consequences）を本ログで明文化する。
+  4. Verify失敗時の自律修正上限（3回）を超えたら `held` で停止する。
+
+### Phase 4: Execute（memo-only）
+- 実施内容: Stream Dログの追加とゲート文言の補強（本ファイルのみ）。
+- 非実施内容: コード変更、CE1契約の先行確定、Open化の強行。
+
+### Phase 5: Verify（max 3 self-corrections）
+- Attempt `1/3`: V1 scope check（single-file）を確認 -> Pass。
+- Attempt `1/3`: V2 contract check（proposal-only / human decision / auto-*禁止 / fail-closed / `sourceBundleHash===bundleHash`）を確認 -> Pass。
+- Attempt `1/3`: V3 integrity check（Phase 1..6 + ADR + AC/DoD整合）を確認 -> Pass。
+- 判定: 修復不要（`self-correction=0/3` 追加修復なし）。
+
+### Phase 6: Proceed / Stop
+- 判定: **Hold継続**（proposal-onlyの安全前進）。
+- Proceed不可理由:
+  1. CE-2依存確定証跡および承認ログ実値が未充足。
+  2. CE1未確定項目を実装前提にしない制約を維持する必要がある。
+- Stop条件再確認: Verify 4回目相当が必要になった時点で `held` へ停止し、未解決項目のみ記録する。
+
 ### Verify
 - docs-checkで single-file scope / 契約語 / フェイルセーフ条件を確認する。
 
