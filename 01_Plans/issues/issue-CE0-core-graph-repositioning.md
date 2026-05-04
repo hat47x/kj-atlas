@@ -1511,3 +1511,32 @@
 - 固定I/F一覧: CE1 v1 contract IDs（`CE1-CTXQ-IF`/`CE1-CTXB-IF`/`CE1-HASH-DET-IF`/`CE1-PREVIEW-GATE-IF`）。
 - 禁止事項一覧: direct write / auto-apply / auto-publish / preview bypass / safeMode緩和。
 - 検証前提: mock-first + held運用（未承認事項は確定扱い禁止）。
+
+## Phase Execution Record（2026-05-04 / Stream C / CE0 core graph role-transition-audit contract lock）
+### Phase 1 Read
+- 最新再読を実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を確認。
+- 想定差異確認: 差分なし（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を維持）。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE0 Core Graph Repositioning は contract-only で進行し、実装変更なしで graph role / transition / audit 契約を固定する必要がある。
+- Decision: `No ADR delta`。契約は `working` / `context_projection` / `consensus` の3役割、許可遷移は `working -> consensus` の `patch+approval` のみ、No-Go は canonical 5 IDs 固定とする。
+- Consequences: 未承認論点は確定せず `held/pending` 維持。承認なしの語彙追加・再定義・SafeMode境界緩和は実施しない。
+
+### Phase 3 Plan（AC/DoD補完提案）
+- AC補完提案: `audit` 契約固定を明示し、遷移監査イベントは `AuditEventV1` 参照のみを許可（新規スキーマ導入はしない）。
+- DoD補完提案: Verifyで `docs-check` pass かつ `git diff --name-only` が本Issue単一ファイルのみであることを確認する。
+- 上記補完提案は既存契約と矛盾しないため、`held` 追加なしで適用可能と判定。
+
+### Phase 4 Execute（graph role/transition/audit 契約固定のみ）
+- 本Issue本文内で contract-only 記述を固定し、graph role/transition/audit 契約以外の追記を行わない。
+- 実装記述（handler/UI/DB/worker/API/Schema migration）および他ファイル変更は実施しない。
+
+### Phase 5 Verify（自己検証 + 失敗時3回まで修復）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- `git diff --name-only` を実行し、`01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみ変更であることを確認。
+- 修復回数: 0/3（失敗なし）。
+
+### Phase 6 Proceed/Stop
+- 判定: `Done`（AC/DoD整合、contract-only維持、docs-check pass、single-file制約充足）。
+- 競合・前提崩壊は未検出。検出時は `stopped_for_clarification` で停止する。
