@@ -699,3 +699,37 @@
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `A2A3_OPEN_ALLOWED`（A1側固定式と文字列一致が必須）
+
+
+## Stream A critical-path alignment log（2026-05-04）
+
+### Phase 1: Read & Preconditions
+- Re-read completed for allowlist pair and gate strings.
+- Status/Priority/Scope drift: `0`（`Open` / `P0` / allowlist 2ファイル内契約整合）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: baseline側の判定・停止条件がA1契約Issueと1文字でもずれると、P0ゲートの決定論が崩れる。
+- Decision:
+  - `A2A3_OPEN_ALLOWED` を唯一SSOTとして継続固定。
+  - `NoGo` は `(!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected || contractNotFixedButA2A3ConfirmationRequested` を満たしたら成立。
+  - `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)` を維持。
+- Consequences:
+  - A2/A3確定化は `Approval Record=Approved` と `pendingDecisionQueueCount==0` 充足まで禁止。
+  - `held` 論点は確定化せず `Conditional/Needs-decision` を維持。
+- Approval record: `approved-for-freeze-candidate (Stream A docs scope, 2026-05-04)`。
+
+### Phase 3: Plan（変更意図・非目標・検証）
+- Change intent（this file）: baseline判定式をA1契約Issueの固定語彙へ同期し、決定論ルールの読替余地を排除。
+- Non-goals: 実装誘導、allowlist外差分、承認待ち論点の確定化。
+- Verification commands:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 5: Verify
+- AC/DoD self-check: pass（固定キー差分0、判定式SSOT維持、NoGo拡張条件明示）。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- Current state: `Conditional (Needs-decision)`。
+- Blocking items: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01` held。

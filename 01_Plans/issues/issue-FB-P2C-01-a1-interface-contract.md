@@ -488,3 +488,45 @@
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `A2A3_OPEN_ALLOWED`（既存固定式を唯一採用）
   - `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+
+## Stream A protocol run（2026-05-04 / P0 gate contract alignment）
+
+### Phase 1: Read & Preconditions
+- Re-read completed for allowlist pair (`issue-FB-P2C-01-a1-interface-contract.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`).
+- Status/Priority/Scope check:
+  - Status: `Open` / `Open`
+  - Priority: `P0` / `P0`
+  - Scope: allowlist 2ファイル内の契約整合で一致
+- Drift result: `Status/Priority/Scope` の差異なし。Proceed。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: P0ゲートで `A1 -> A2 -> A3` を保証するには、A1契約の判定式と固定キーを2ファイルで同一文字列に保つ必要がある。
+- Decision:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として維持（再定義禁止）。
+  2. 固定キー集合（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）を閉集合として維持。
+  3. `deterministic rule` として tie-break `CTR-FB-P0-P2C-A1-TIEBREAK-v1` を優先し、不一致は `NoGo`。
+- Consequences:
+  - A2/A3は引き続き read-only + mock-first（`A1-CONTRACT-MOCK-v1`）に限定。
+  - 未承認項目（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `Needs-decision/held` のまま固定。
+- Approval record: `approved-for-freeze-candidate (Stream A docs scope, 2026-05-04)`。
+
+### Phase 3: Plan（AC/DoD合意済み）
+- File intent #1（this file）: A1契約の固定語彙と判定式の一意性を再確認し、曖昧語を排除する。
+- File intent #2（baseline file）: 同一判定式・Go/Conditional/No-Go条件を同期し、A1との差分を0に固定する。
+- Non-goals:
+  1. allowlist外編集
+  2. 実装コード変更
+  3. 新規契約ID追加/改名/削除
+- Verification commands:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 5: Verify（self-check）
+- AC/DoD self-check: pass（判定式一意、固定キー閉集合、mock-first依存分離を維持）。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- Decision state: `Conditional (Needs-decision)`。
+- Stop reason not triggered（未定義競合・allowlist外編集・self-correction超過なし）。
