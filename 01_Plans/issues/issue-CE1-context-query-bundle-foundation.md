@@ -1282,3 +1282,51 @@ handoffKeys:
 - 非許可ファイル編集要求が発生した場合は即 `held` 停止。
 - 契約語彙衝突（error semantics / contract id collision）を検知した場合は `held` 停止。
 - Verify失敗が3回を超えた場合は `held` 停止。
+
+## Stream D update（2026-05-04 / CE1 ContextQuery/ContextBundle I/F freeze）
+
+### Phase 1 Read同期
+- Read Order 1〜13 のうち、CE1契約固定に必要な上流（`00_Prompt/*`, `ADR-0001`, `ADR-0028`, `02_Architecture/architecture.md`, `02_Architecture/schemas.md`, `ADR-0019`）を再確認。
+- Scope を docs-only / single-file（本Issueのみ）に再固定し、実装レイヤ（handler/UI/DB/worker）非編集を再確認。
+- 既存凍結語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）と Contract IDs（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）に衝突がないことを確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4 が CE1 実装待ちで停止しないため、I/F（型・必須キー・決定論hash）を先に固定する必要がある。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` を closed-world 契約として固定（未定義キーは `400 unknown_contract_key`）。
+  - `previewConfirmed=false -> 422 preview_required` を preview gate の必須エラー条件として固定。
+  - `queryCanonicalHash` / `bundleHash` は同一canonical queryで3回一致を決定論条件とし、不一致時は `409 nondeterministic_bundle` で fail-closed。
+- **Consequences**:
+  - CE2/CE4 は mock contract のみで正/異常系検証を継続可能。
+  - CE1 実装詳細が未定でも、handoff key（`sourceBundleHash === bundleHash`, `equivalenceKey + bundleHash`）の接続契約は維持される。
+
+### Phase 3 Plan（AC/DoD不足補完）
+- AC補完:
+  - [x] 型・必須キー・固定エラー条件を本Issue単体で参照可能に維持。
+  - [x] hash決定論（3回一致）と失敗条件（409）を明示。
+  - [x] mock-first 前提で CE2/CE4 の依存切断を明示。
+- DoD補完:
+  - [x] 成果物は契約ID / I/F型 / 固定語彙 / handoff key のみ。
+  - [x] 実装方式・内部アルゴリズム・ランタイム詳細は非対象。
+  - [x] Verify は mock validation 前提の整合確認で完了判定する。
+
+### Phase 4 Execute（closed-world契約・エラー条件固定）
+- `ContextQueryV1` / `ContextBundleV1` の v1 キー集合凍結を継続適用。
+- 未定義キー拒否（`400 unknown_contract_key`）を v1 契約の境界条件として再固定。
+- preview gate（`422 preview_required`）と hash非決定論（`409 nondeterministic_bundle`）を fail-closed の固定条件として再掲。
+- 契約語彙衝突を防ぐため、v1拡張は明示的にv2以降へ延期（v1内の暗黙拡張を禁止）。
+
+### Phase 5 Verify（mock validation前提の整合）
+- Verify-1: mock input で `previewConfirmed=false` を与えた場合、`422 preview_required` に一意マップできること。
+- Verify-2: mock query/bundle に未定義キーを注入した場合、`400 unknown_contract_key` に一意マップできること。
+- Verify-3: 同一canonical queryの3回試行で `bundleHash` 不一致を1回でも検知した場合、`409 nondeterministic_bundle` へ fail-closed できること。
+- Verify-4: CE2/CE4 引き渡しキー（`sourceBundleHash === bundleHash`, `equivalenceKey + bundleHash`）が契約上読み取れること。
+- 判定: **pass（mock-first整合成立 / 実装依存なし）**。
+
+### Phase 6 Proceed / Stop
+- **Proceed条件**: 上記Verify-1〜4がすべて満たされ、契約語彙衝突なし。
+- **Stop条件**:
+  1. Self-Correction が3回上限を超過（4回目相当）した場合は `held`。
+  2. 依存先未定義（CE0/CE2/CE4 handoff key未成立）を検知した場合は停止。
+  3. 契約語彙衝突（error semantics / contract id collision）を検知した場合は停止。
+- 本更新は docs-only の契約固定であり、実装タスクの追加・移譲は行わない。
