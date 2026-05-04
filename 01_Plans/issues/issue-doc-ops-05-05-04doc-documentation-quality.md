@@ -122,3 +122,40 @@
   2. 承認ログ最小項目（日時・承認者・対象・判断）を補完。
   3. docs-check を再実行し、self-correction 回数を更新。
 - 再開条件: 上記 1〜3 が揃った時点で Phase 6 を再判定する。
+
+---
+
+## Stream H execution log（2026-05-03 / DOC-OPS-05 Draft昇格直列化）
+
+### Phase 1: Read & Sync（05→06→07の起点）
+- 対象3Issue（05/06/07）を再読し、共通フォーマットの有無・重複・欠落を確認。
+- 確認結果:
+  - 重複: Open化 AC/DoD・停止報告テンプレは3Issueで重複しているが、運用上は共通テンプレとして許容。
+  - 欠落: 直列依存（05完了判定→06→07）の明示が不足。
+  - 順序不整合: 各Issue単体では成立するが、3Issue横断の実行順序が非明示。
+
+### Phase 2: Plan（AC/DoD不足補完案）
+- 直列チェーンを `DOC-OPS-05-05 -> DOC-OPS-05-06 -> DOC-OPS-05-07` に固定。
+- 補完方針:
+  1. 各Issueで「前段IssueのProceedDecision」を確認してから次段判定する。
+  2. Open判定の最終条件は共通で `Dependency status=確定` + `docs-check pass` + `self-correction<=3`。
+  3. 未達時は **Hold**、自己修復3回超過時は **Stop**。
+
+### Phase 3: Execute（本Issue更新）
+- 本Issueを直列起点（05）として定義。
+- 後続Issue（06/07）が参照する前段判定キーを以下に固定:
+  - `UpstreamDecisionKey: DOC-OPS-05-05/ProceedDecision`
+  - `UpstreamRequiredValue: Proceed`
+
+### Phase 4: Verify（整合）
+- 3Issue横断で Required Gate / Verify / Proceed 三値の見出し名称が一致していることを確認。
+- Self-correction count: `0/3`
+- Verify verdict: **Pass**
+
+### Phase 5: Proceed判定（本Issue）
+- Open昇格可否: **Hold**
+- 阻害要因: `Dependency status` が未確定。
+- 解消条件:
+  1. `DOC-OPS-05` Open gate 確定証跡（日時・承認者・対象・判断）を追記。
+  2. docs-check再実行結果を最新化。
+  3. 判定後に後続06へ引継ぎ（`UpstreamDecisionKey` を Proceed に更新）。
