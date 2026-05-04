@@ -231,3 +231,17 @@
 - 対象: CE2 / CE4 / QA-UNIT / DOC-OPS-05-05 / 05-06 / 05-07。
 - 統一項目: `Context/Decision/Consequences`、`Plan→Execute→Verify→Proceed`、`Proceed tri-state`、`self-correction <=3`。
 - 判定: 競合・前提崩壊は未検知。依存未確定のため全件 **Hold** を維持。
+
+
+## Stream G P2 closure（2026-05-04 / DOC-OPS-05-07）
+
+### AC/DoD補完ドラフト（docs-only）
+- AC-G1: 対象ログの役割を「内部証跡」に固定し、公開手順の正本化を行わない。
+- AC-G2: ログ1件あたりの必須項目を `Date/Environment/Command/Result/Evidence/Constraints/Next action` で統一する。
+- AC-G3: `e2e_testing.md` から辿れる証跡フォーマットとして再現可能性を担保する。
+- DoD-G1: 配置見直しは提案止まり（Move internal）で、実移管は依存確定後に限定。
+- DoD-G2: Hold理由（依存未確定、Approval Record不足）を維持し、誤Proceedを防止。
+
+### Proceed判定
+- Decision: **Hold**
+- Stopper: self-correction 4回目相当、または配置確定の根拠不足。
