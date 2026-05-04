@@ -251,6 +251,59 @@ governance_gate_v1:
 
 ## Phase 5: Verify→Proceed
 - AC/DoD自己検証を先に実施し、その後 docs-check（validator / unittest / diff check）を順に実行する。
+- 停止条件（固定）:
+  1. 承認証跡不足（`approval_evidence_required` のいずれか欠落）
+  2. self-correction が 3 回を超過（4回目に到達）
+  3. `undefinedConflictDetected==true`
+  - 上記のいずれかを検知した場合、`Proceed=Forbidden` とし、`NoGo return path` へ即時差し戻す。
+
+## Governance Contract Hardening Addendum（HIL-RS-02-A1 完了条件）
+### 1) 役割分離（Separation of Duties: Canonical）
+- 固定ロール:
+  - Requester: `Stream A agent`（起案のみ）
+  - Approver-A: `Stream A Architecture Owner`
+  - Approver-B: `Governance reviewer`
+  - Executor: `Platform Operator`（反映実務）
+- 兼務禁止ルール（固定）:
+  - `requester != approver_a`
+  - `requester != approver_b`
+  - `approver_a != approver_b`
+  - `executor != approver_a && executor != approver_b`
+- 例外承認境界:
+  - `overridePolicy=human_dual_control_only` を唯一の上書きポリシーとし、別名・派生・緩和を禁止する。
+
+### 2) 承認フロー（Approval Flow: Canonical）
+- 固定遷移:
+  1. `Draft`（起案）
+  2. `Pending`（証跡待ち）
+  3. `Approved` または `Rejected`（二者承認の完了でのみ遷移）
+- 許可遷移:
+  - `Pending -> Approved`
+  - `Pending -> Rejected`
+- 禁止遷移:
+  - `Draft -> Approved`（証跡スキップ）
+  - `Pending -> Execute`（Pending bypass）
+  - `Rejected -> Execute`（再承認なしの強行）
+- Execute前提:
+  - `Approval Record: Pending` が 0 件
+  - `approval_evidence_required` が 3/3 充足
+  - `A2A3_OPEN_ALLOWED=true`
+
+### 3) 固定値（Exception Approval Boundary: Immutable Set）
+- Freeze/Identity:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+- Governance:
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+- Safety:
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- Decision Queue:
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Boundary violation rule:
+  - 上記固定値の1項目でも不一致の場合は `NoGo` とし、A1以外への進行を禁止する。
 
 ## Workflow Trace（Read同期 → Plan → ADR合意 → Execute → Verify → Proceed）
 ### Step 1: Read同期（single-scope）
