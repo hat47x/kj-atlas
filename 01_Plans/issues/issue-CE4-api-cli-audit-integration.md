@@ -178,3 +178,30 @@
   1. 依存確定証跡（日時/承認者/対象/判断）を記録。
   2. docs-check再実行で契約欠落ゼロを確認。
 - 停止条件: 未確定点の仕様確定要求、self-correction超過、未定義競合発生時は **Stop**。
+
+## Open化最終整備（proposal-only / 2026-05-04）
+
+### Read→ADR/CDC→Plan→Execute→Verify→Proceed（固定運用）
+1. **Read**: 上位根拠（ADR / schemas / 関連Issue）との差分を再読して語彙ドリフトを検知する。
+2. **ADR/CDC**: Context / Decision / Consequences を本Issue内で閉じる（外部依存で確定しない）。
+3. **Plan**: Open判定の AC / DoD / Validation / Stop 条件を先に固定する。
+4. **Execute**: **blocker明文化・Open化条件定義・AC/DoD整備のみ** 実施し、実装化は行わない。
+5. **Verify**: docs-check を基準に、自己修復は最大3回（4回目相当は Stop）で運用する。
+6. **Proceed**: 依存確定と Approval Record が充足した場合のみ Proceed、それ以外は Hold/Stop。
+
+### Blocker明文化（Open不可時の固定理由）
+- 依存ステータス未確定、または承認証跡（日時/承認者/対象/判断/evidence）の欠落。
+- proposal-only 契約（実装禁止 / auto-*禁止 / fail-closed）に抵触する要求の混入。
+- Verify再試行が3回を超過、または未定義競合（契約衝突・責務分離崩壊）の検知。
+
+### Open化条件（proposal-only gate）
+- [ ] 条件1: 本Issue単体で Context/Decision/Consequences・AC・DoD・Validation・Proceed tri-state が再読可能。
+- [ ] 条件2: docs-check の pass 記録と self-correction `<=3` が記録済み。
+- [ ] 条件3: 依存確定証跡と Approval Record の最小項目が充足。
+- [ ] 条件4: 実装タスク化を行わず、未承認依存を確定扱いしていない。
+
+### Verify失敗時 Self-Correction ルール
+- Attempt 1: 文言矛盾・欠落メタの修正。
+- Attempt 2: Gate条件と Stop条件の再整列。
+- Attempt 3: 依存/承認証跡の未充足を Hold理由へ明示。
+- 4回目相当: **Stop**（超過または依存崩壊として終了）。
