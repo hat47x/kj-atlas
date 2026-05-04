@@ -598,3 +598,14 @@ export type AdminProvisionUserConflictError = {
 - expand: `users` / `user_identities` 追加後、APIは `provider+external_uid` で `users.id` を解決する。
 - contract: attribution APIは `reviewerRef` / `ownerRef` を `user:<users.id>` に統一し、外部subject直参照を受け付けない。
 - strict modeは contract 側の強制条件として扱い、未登録subjectを `403` で拒否する。
+
+#### 2.8.x CE1 v1 contract clarification（2026-05-03）
+
+- CE1 `ContextQueryV1` / `ContextBundleV1` は v1 固定の closed-world 契約であり、required key の削除・意味変更を禁止する。
+- v1 の最小エラー語彙は次の3つを固定する。
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+- `422 invalid_query_contract` は enum/range の補助バリデーション語彙としては許可されるが、上記3語彙の置換には使えない。
+- API利用者向けのフォールバック挙動は fail-closed とし、`previewConfirmed` 未確認・hash非決定論・unknown key を成功扱いしてはならない。
+- versioning方針: v1は互換維持、拡張は v2 追加で行う。

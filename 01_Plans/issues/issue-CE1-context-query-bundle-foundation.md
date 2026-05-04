@@ -903,3 +903,70 @@ handoffKeys:
   - 未定義競合（Contract ID / error semantics / handoff key）
   - 前提崩れ（CE0 read-only境界変更、safeMode既定後退）
 - Stop時動作: Status を `held` に固定し、承認完了まで次Phaseへ進まない。
+
+## Stream D update（2026-05-03 / CE1 ContextQuery-ContextBundle Foundation）
+
+### Phase 1: Read & Sync
+- Read対象: 本issue, `02_Architecture/schemas.md` CE1節, `02_Architecture/api.md` CE1節, `02_Architecture/llm_input_ir_spec.md` CE1接続節。
+- 事前想定との差分:
+  - 既存文書はすでに CE1 v1 の closed-world 契約を固定済み（`ContextQueryV1` / `ContextBundleV1`）。
+  - エラー語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` で一致。
+  - API側に `invalid_query_contract` が併記されているため、v1最小固定語彙との差分は「補助バリデーション語彙」であることを明示する必要がある。
+- 重大不一致判定: なし（継続）。
+
+### Phase 2: ADR/契約明文化ゲート（Context / Decision / Consequences）
+- Context:
+  - CE1は CE2/CE4 の mock-first 検証を成立させるため、実装詳細ではなく I/F 契約を先に凍結する必要がある。
+- Decision（v1最小固定）:
+  1. 入出力型:
+     - 入力: `ContextQueryV1`（必須 `previewConfirmed=true`、unknown key reject）
+     - 出力: `ContextBundleV1`（必須 `queryCanonicalHash` / `bundleHash`）
+  2. ContextBundle構造:
+     - 必須: `queryCanonicalHash`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason`
+     - 任意: なし（v1は closed-world、拡張は v2 のみ）
+     - versioning: `v1` は破壊変更禁止、追加は `v2` でのみ許可
+  3. エラー/フォールバック:
+     - `422 preview_required`（preview gate違反）
+     - `400 unknown_contract_key`（未定義キー）
+     - `409 nondeterministic_bundle`（同一canonical queryで bundleHash 不一致）
+     - フォールバックは fail-open禁止、fail-closed を固定
+- Consequences:
+  - CE2/CE4 は backend 実装待ちなしで mock 検証可能。
+  - 実装依存は契約依存から分離され、変更要求は CE1再起票へ集約される。
+- Approval gate:
+  - 本更新時点では「契約ゲート承認待ち（held可能）」を許容し、承認前に実装仕様を追加しない。
+
+### Phase 3: Plan（AC / DoD / 依存分離）
+- Acceptance Criteria（確定）:
+  - [x] Context/Decision/Consequences で CE1最小契約を明文化
+  - [x] `ContextQueryV1` 入出力契約と `ContextBundleV1` 構造を required/optional で明示
+  - [x] versioning 方針（v1凍結、v2拡張）を明示
+  - [x] error semantics と fail-closed を固定
+  - [x] 契約依存と実装依存を分離し、mock-first を明示
+- DoD（CE1 docs-only）:
+  - [x] schemas/api/issue の CE1語彙が同一
+  - [x] コード変更なし（docs-only）
+  - [x] CE2/CE4 handoff用固定契約キーを明示
+- Dependency split:
+  - 契約依存: `ContextQueryV1`, `ContextBundleV1`, hash規則, error語彙
+  - 実装依存: handler/DB/worker/LLM runtime（本issueの非対象）
+
+### Phase 4: Execute
+- 実施内容:
+  - issue内に CE1最小契約の再固定を追記。
+  - schemas/api 側の CE1節に「v1最小固定」「補助エラー語彙」「versioning」を同期。
+- Non-goals（再確認）:
+  - handler/UI/DB/worker 実装の追加記述は行わない。
+
+### Phase 5: Verify
+- AC/DoD自己検証: pass
+- 用語整合チェック: `ContextQuery` / `ContextBundle` の表記揺れなし
+- Self-correction count: 1/3（`invalid_query_contract` の位置づけ注記を追加）
+
+### Phase 6: Proceed
+- 完了判定: **CE1 contract docs update 完了（docs-only）**
+- 未解決事項:
+  - `invalid_query_contract` を v1補助語彙として維持するか、将来v2で統合するかの最終承認
+- 次ストリーム引継ぎ（固定契約 / mock仕様）:
+  - 固定契約: `ContextQueryV1`, `ContextBundleV1`, `queryCanonicalHash`, `bundleHash`
+  - mock仕様: `A2-minimal-v1` + `422/400/409` 固定エラー検証
