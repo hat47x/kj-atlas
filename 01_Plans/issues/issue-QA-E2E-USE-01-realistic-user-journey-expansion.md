@@ -1,11 +1,11 @@
 # Issue Draft: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Draft
+- Status: Ready-for-Implementation
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
-- Scope: `03_Implement/frontend/tests`, `04_Documentation/e2e_testing.md`
+- Owner: Stream F
+- Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`（本フェーズは計画確定のみ）
 - Related Backlog: `QA-E2E-USE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
 - Expected verification level: `e2e`
@@ -23,80 +23,120 @@
 - GoNoGoGate: Required
 - SecurityGateImpact: SafeMode / share-export / import-sanitize
 - VerificationLevel: e2e
-- DecisionStatus: Pending
+- DecisionStatus: Fixed-for-Execution
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 
-## 1) 課題 / Problem statement
+## Phase 1. Read（読取結果）
 
-- 現行E2Eがスモーク中心で、実務に近い複合操作（作業継続・再編集・安全共有）を十分に検証できていない。
-- UI/ドメインの境界変更時に、個別機能は通るが利用者フロー全体で破綻するリスクが残る。
-- safeModeやreview attributionのような統治系要件の回帰が、単発シナリオでは検知しづらい。
+- `ADR-0019` の原則に従い、本Issueは「仕様評価前の結合バグ除去」を目的に据える。
+- safeMode既定ON・share/export漏えい防止は安全境界として最優先で固定する。
+- 本フェーズは **計画確定のみ** とし、実装ファイル変更は実施しない。
 
-## 2) 背景 / Context
+## Phase 2. ADR（C/D/C）
 
-- E2E方針の正本は `ADR-0019` と `04_Documentation/e2e_testing.md`。
-- 既存IssueでもE2E境界（I18N/認証/UI同等性）は扱われているが、日常利用の縦断シナリオを統合した回帰セットは未整備。
-- 仕様上、safeMode既定ONとshare/export漏えい防止は最優先であり、実利用シナリオで常時検証すべき。
+### C: Context
+- 現行E2Eはスモーク中心で、実利用の縦断フロー（再編集・レビュー・安全共有）を十分に担保できていない。
 
-## 3) 判断基準による優先度評価
+### D: Decision
+- 実利用ジャーニーを3本以上、AC/DoD付きで固定し、safeMode/share-export境界の回帰検知を必須アサーションとして定義する。
+- GoNoGoGateをRequiredとし、実装着手前に合格基準を文書固定する。
 
-- 価値・判断軸（ADR-0001）: 利用者価値（安心して反復編集できる）と品質価値（回帰早期検知）に直結。
-- 安全（THREAT_MODEL / SafeMode）: 共有経路の誤開放を事前に検知するゲートとして有効。
-- 企業・行政要件（enterprise_architecture）: 監査可能な再現フローを準備することで導入時の説明責任を補強。
-- 後方互換（schemas）: UI/ワーカー/エクスポート境界の破壊的変更を早期発見し、互換維持に寄与。
+### C: Consequence
+- 実装フェーズでの迷いを排除し、E2E追加時の判定一貫性を確保する。
+- 安全境界後退（safeMode既定緩和、share/export誤開放）を即時に検知できる。
 
-## 4) 提案する解決策 / Proposed solution
+## Phase 3. Plan（不足AC/DoD補完提案）
 
-- 変更対象: Frontend tests + E2E運用ドキュメント（必要最小限）。
-- 変更の最小単位:
-  1. 実利用ジャーニー候補を3〜5本に定義（通常編集/レビュー重視/安全共有重視）。
-  2. 既存Playwright基盤へ段階導入（まず1本を安定化、次に並列追加）。
-  3. flaky要因を切り分け、fixture・待機戦略・assert粒度を標準化。
-- 非目標:
-  - 全機能の網羅テスト化
-  - パフォーマンス/負荷試験
-  - 本Issue内での認証基盤刷新
+### 3.1 実利用ジャーニー定義（3本以上）
 
-## 5) 受入条件 / Acceptance criteria
+1. **Journey-A: Authoring Continuity**（作成→再配置→保存復元）
+   - 前提: 新規docをfixtureで作成、safeMode=ON。
+   - 操作: card作成→island再配置→保存→再読込。
+   - 期待: 再読込後に位置・relation・pending整合が崩れない。
 
-- [ ] 実利用を想定した主要ジャーニー定義（前提/操作/期待結果/除外）が3本以上文書化される。
-- [ ] 少なくとも1本は「作成→再配置→レビュー反映→安全共有判定」を通しで自動実行できる。
-- [ ] safeMode既定ONとshare/export制御に関する回帰アサーションが含まれる。
-- [ ] CIで再実行可能なコマンドと失敗時の切り分け手順が明示される。
-- [ ] 必要な検証（unit/integration/e2e/docs-check）が `Expected verification level` と一致する。
-- [ ] `GoNoGoGate` の要否（Required/Optional/N/A）が明示され、Required時は判定基準が本文に記載される。
-- [ ] セキュリティ境界に影響するIssueでは `SecurityGateImpact` を明示し、レビューゲート項目を記載する。
+2. **Journey-B: Review Governance**（編集→差分→review attribution）
+   - 前提: unreviewed/human_reviewed混在fixture。
+   - 操作: 編集→diff確認→humanレビュー操作→状態再確認。
+   - 期待: `human_reviewed`昇格は人手経路のみ成功し、AI/自動昇格経路が存在しない。
 
-## 6) 実装タスク分解 / Task breakdown
+3. **Journey-C: Safe Sharing Gate**（レビュー→共有/エクスポート判定）
+   - 前提: unreviewed本文を含むdoc、safeMode=ON。
+   - 操作: share/exportを試行→レビュー条件を満たして再試行。
+   - 期待: 初回はfail-closed（拒否/警告）、条件充足後のみ許可。
 
-- [ ] T1: 現行E2Eシナリオ棚卸しと、実利用ジャーニー候補のマッピング。
-- [ ] T2: 優先1シナリオ（縦断フロー）をPlaywrightで実装しCI実行へ統合。
-- [ ] T3: safeMode/share-export回帰アサーションを共通ヘルパ化。
-- [ ] T4: `04_Documentation/e2e_testing.md` に運用手順・失敗時の診断手順を追記。
+4. **Journey-D: Import-to-Safe-Export**（sanitize境界）
+   - 前提: markdown/zip入力fixture（正常系+悪性入力）。
+   - 操作: import sanitize→編集→share/export判定。
+   - 期待: sanitize逸脱入力は拒否され、安全入力のみ後段に進める。
 
-## 7) 検証計画 / Validation plan
+### 3.2 追加AC（確定）
 
-- 実行コマンド:
+- [ ] AC-01: Journey-A〜Cを必須、Dを推奨として文書化する（計3本以上）。
+- [ ] AC-02: Journey-Cに「safeMode既定ON時 fail-closed」を明示する。
+- [ ] AC-03: share/export境界で unreviewed 含有時の拒否アサーションを必須化する。
+- [ ] AC-04: review attribution の昇格境界（human only）を必須アサーション化する。
+- [ ] AC-05: GoNoGoGate判定式（下記）を満たさない場合は実装マージ不可とする。
+
+### 3.3 DoD（確定）
+
+- [ ] DoD-01: 3本以上のジャーニーに前提/操作/期待/除外を明記。
+- [ ] DoD-02: safeMode/share-export回帰検知要件を test assertion レベルで記述。
+- [ ] DoD-03: Expected verification level=e2e と実行コマンドが一致。
+- [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
+- [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
+
+## Phase 4. Execute（Issue本文の計画確定）
+
+### 4.1 Go/No-Go Gate（Required）
+
+**Go条件（全て必須）**
+1. Journey-A〜CのACが満たされること。
+2. safeMode既定ON + share/export fail-closed回帰が検知可能であること。
+3. review attribution昇格境界（human only）の回帰検知があること。
+4. `npm run test:e2e` と対象grep実行手順が文書化されること。
+
+**No-Go条件（1つでも該当で停止）**
+- 未定義依存が残る。
+- safeMode/share-export境界が後退する。
+- Verify自己修復（self-correction）が3回を超える。
+
+### 4.2 タスク分解（計画確定版）
+
+- [ ] T1: 既存E2E棚卸しと Journey-A〜D のマッピング。
+- [ ] T2: Journey-A（縦断基本）を最初に実装。
+- [ ] T3: Journey-B/Cを追加し、安全境界回帰を共通アサーション化。
+- [ ] T4: Journey-D（sanitize境界）を拡張実装（推奨）。
+- [ ] T5: `04_Documentation/e2e_testing.md` 同期更新（同一PR）。
+
+## Phase 5. Verify（Expected verification levelとの整合）
+
+- Expected verification level は `e2e`。
+- 実行要件（実装フェーズで必須）:
   - `npm run test:e2e`
-  - `npm run test:e2e -- --grep "realistic journey"`
+  - `npm run test:e2e -- --grep "Journey-(A|B|C|D)|realistic journey|safe share"`
   - `python 01_Plans/issues/validate_active_issue_memos.py`
-- 期待結果:
-  - 主要ジャーニーが再現可能で、safeMode/share-exportの境界違反を検知できる。
-- 未実施時の理由・代替検証:
-  - CI環境差異で不安定な場合は、対象シナリオを単独実行しtraceを添付して要因分離する。
+- 判定整合:
+  - 上記コマンドで Journey-A〜C が再現され、AC/DoDに対応するアサーションが確認できること。
 
-## 8) 代替案 / Alternatives considered
+## Phase 6. Proceed（実装着手条件）
 
-- 代替案A: 既存スモークのみを増量する（実利用再現性が不足するため不採用）。
-- 代替案B: 手動回帰チェックリスト中心で運用する（継続負荷と漏れリスクが高いため限定採用）。
+実装着手は、以下を満たした場合のみ許可。
 
-## 9) リスクとロールバック / Risks & rollback
+1. 本Issueの `Status=Ready-for-Implementation` が維持されている。
+2. AC-01〜AC-05 / DoD-01〜DoD-05 が未矛盾で固定されている。
+3. GoNoGoGate=Required の判定式に曖昧さがない。
+4. `04_Documentation/e2e_testing.md` 同期更新タスクが同一PR対象に含まれる。
+5. フェイルセーフ3条件（未定義依存/境界後退/self-correction>3）を停止基準として実装計画に転記済み。
 
-- 失敗モード: シナリオが重くなりCI時間増大、flaky増加。
+---
+
+## リスクとロールバック / Risks & rollback
+
+- 失敗モード: シナリオ増加に伴うCI時間増大、flake増加。
 - 影響範囲: Frontend E2Eパイプライン、リリース判定時間。
-- ロールバック手順: 追加シナリオをfeature flag的に分離し、安定化までnightly専用ジョブへ退避。
+- ロールバック: 追加シナリオを `core` / `nightly` タグで分離し、安定化まで段階昇格。
 
-## 10) Additional context
+## Additional context
 
-- 関連Issue/PR/議論ログ: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
-- ADR化が必要になる条件（トレードオフ閾値）: CI所要時間が許容閾値を継続超過し、検証レベル設計の方針変更が必要になった場合。
+- 関連Issue: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+- ADR化トリガー: CI許容時間超過が継続し、E2Eレベル設計の方針変更が必要な場合。
