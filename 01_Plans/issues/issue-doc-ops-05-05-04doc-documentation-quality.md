@@ -247,3 +247,32 @@
 ### Proceed判定
 - Decision: **Hold**（依存確定証跡待ち）
 - Stopper: self-correction 4回目相当、または上位文書との語彙矛盾。
+
+
+## Stream F serial run（2026-05-04 / DOC-OPS-05-05）
+
+### Phase 1: Read同期
+- `AGENTS.md` Read Order と本Issue既存メタ（Classification/Gate/AC/DoD/Dependency）を再読し、未確定依存を Open blocker として維持。
+
+### Phase 2: ADR
+- Context: `DOC-OPS-05` gate 未確定のため Open可否を確定できない。
+- Decision: Open化条件/AC/DoD/依存証跡の明文化に限定し、実装・本文改稿は行わない。
+- Consequences: docs-only境界を維持しつつ、次担当が判定再開できる。
+
+### Phase 3: Plan
+- AC-F1: Open条件（分類/検証/Proceed tri-state/依存証跡）を単体再読可能にする。
+- AC-F2: self-correction 上限 `<=3` と 4回目相当 `Stop` を固定する。
+- DoD-F1: 依存未確定時は `Hold` を維持し `Proceed` へ遷移しない。
+
+### Phase 4: Execute
+- 実施: gate未確定下での Open化条件・AC/DoD・依存明文化のみ追記。
+- 非実施: `03_Implement/**`、`04_Documentation/**` 本文、Issue以外の編集。
+
+### Phase 5: Verify
+- `docs-check` 計画の再読性、Proceed tri-state、Stop条件（自己修復4回目相当）を確認。
+- Self-correction usage: `2/3`（本Phaseで1回追加、上限内）。
+
+### Phase 6: Proceed
+- Decision: **Hold**。
+- Hold理由: `DOC-OPS-05` 依存確定証跡（日時/承認者/対象/判断）が未充足。
+- Stop条件: 追加自己修復が4回目相当に達した場合は作業停止。

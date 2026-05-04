@@ -239,3 +239,32 @@
 ### Proceed判定
 - Decision: **Hold**（`DOC-OPS-05` 依存確定待ち）
 - Stopper: 依存証跡欠落のまま Proceed しない。
+
+
+## Stream F serial run（2026-05-04 / DOC-OPS-05-06）
+
+### Phase 1: Read同期
+- `ADR-0019` と 05/05・05/07 Issue を再照合し、**Improve external** 分類と未確定依存の両立を確認。
+
+### Phase 2: ADR
+- Context: Open gate 未確定のため、E2E文書本体の改稿判断は保留。
+- Decision: Open化条件/AC/DoD/依存証跡の固定に限定し、実装/本文改稿は非対象とする。
+- Consequences: 公開導線の品質判定材料のみ先行整備し、誤Proceedを防止。
+
+### Phase 3: Plan
+- AC-F1: Improve external 判定根拠と Go/NoGo 条件を単体再読可能にする。
+- AC-F2: docs-check必須、他検証は期待レベル定義のみを維持する。
+- DoD-F1: 依存未確定時の Proceed 抑止（Hold/Stop）を維持する。
+
+### Phase 4: Execute
+- 実施: gate未確定前提で Open化条件・AC/DoD・依存明文化のみ追記。
+- 非実施: `04_Documentation/e2e_testing.md` 本文改稿、`03_Implement/**` 変更。
+
+### Phase 5: Verify
+- 判定語彙（Proceed/Hold/Stop）と自己修復上限（<=3）を再確認。
+- Self-correction usage: `2/3`（本Phaseで1回追加、上限内）。
+
+### Phase 6: Proceed
+- Decision: **Hold**。
+- Hold理由: `DOC-OPS-05` 依存確定証跡と Approval Record が未充足。
+- Stop条件: 4回目相当の自己修復到達で停止。

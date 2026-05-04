@@ -245,3 +245,32 @@
 ### Proceed判定
 - Decision: **Hold**
 - Stopper: self-correction 4回目相当、または配置確定の根拠不足。
+
+
+## Stream F serial run（2026-05-04 / DOC-OPS-05-07）
+
+### Phase 1: Read同期
+- 05/05・05/06 と本Issueを再読し、Move internal 方針と Candidate destination 未確定扱いを確認。
+
+### Phase 2: ADR
+- Context: 配置見直し判断に必要な依存確定証跡が未充足。
+- Decision: Open化条件/AC/DoD/依存明文化のみ実施し、実移管判断は行わない。
+- Consequences: 監査証跡の役割を維持したまま、誤った配置確定を回避できる。
+
+### Phase 3: Plan
+- AC-F1: Move internal 根拠と Go/NoGo/Stop 条件を単体再読可能にする。
+- AC-F2: Candidate destination は提案扱い（未確定）を維持する。
+- DoD-F1: 依存未確定時は Hold 維持、Proceed しない。
+
+### Phase 4: Execute
+- 実施: gate未確定前提で Open化条件・AC/DoD・依存明文化のみ追記。
+- 非実施: `04_Documentation/e2e_verification_log_2026-03-03.md` 本文改稿、実ファイル移管、実装変更。
+
+### Phase 5: Verify
+- tri-state、Stop条件、self-correction 上限の整合を再確認。
+- Self-correction usage: `2/3`（本Phaseで1回追加、上限内）。
+
+### Phase 6: Proceed
+- Decision: **Hold**。
+- Hold理由: `DOC-OPS-05` 依存確定証跡と Approval Record 未充足。
+- Stop条件: 自己修復が4回目相当に到達した時点で停止。
