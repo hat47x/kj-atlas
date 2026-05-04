@@ -16,6 +16,13 @@
   - `ADR-0028`（Consequences）
   - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）
 
+## Stream E Serial Contract-Sync Protocol（2026-05-04）
+- Fixed serial order: Phase 1（A1最小I/F再確認）→ Phase 2（RS-01計画整合）→ Phase 3（RS-02 A1 governance hardening）→ Phase 4（RS-02 delivery plan同期）→ Phase 5（RS-02 A3 mock準備）→ Phase 6（Verify総合判定）。
+- Mandatory per-phase discipline: **対象ファイル再読 → Plan → Execute → Verify → Proceed**。
+- Mandatory per-phase memo: 各Phaseで `Context / Decision / Consequences (C/D/Csq)` を必ず残す。
+- Self-correction limit: `<=3`（4回目相当は即停止）。
+- Hard stop conditions: `safeMode` 後退要求、契約ID再定義要求、pending bypass を検知した時点で即停止し、`NoGo return path` へ差戻す。
+
 ## 0. Fixed Governance Envelope（固定境界）
 
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）

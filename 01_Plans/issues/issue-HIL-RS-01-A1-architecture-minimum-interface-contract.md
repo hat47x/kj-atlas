@@ -11,6 +11,13 @@
 - Expected verification level: `docs-check`
 - Contract snapshot date: `2026-04-27`（固定入力）
 
+## Stream E Serial Contract-Sync Protocol（2026-05-04）
+- Fixed serial order: Phase 1（A1最小I/F再確認）→ Phase 2（RS-01計画整合）→ Phase 3（RS-02 A1 governance hardening）→ Phase 4（RS-02 delivery plan同期）→ Phase 5（RS-02 A3 mock準備）→ Phase 6（Verify総合判定）。
+- Mandatory per-phase discipline: **対象ファイル再読 → Plan → Execute → Verify → Proceed**。
+- Mandatory per-phase memo: 各Phaseで `Context / Decision / Consequences (C/D/Csq)` を必ず残す。
+- Self-correction limit: `<=3`（4回目相当は即停止）。
+- Hard stop conditions: `safeMode` 後退要求、契約ID再定義要求、pending bypass を検知した時点で即停止し、`NoGo return path` へ差戻す。
+
 ## Stream E Execution Ledger（2026-05-04）
 - Phase 1 Read: 完了（Status / Scope / 固定キー / Execute禁止条件を再確認）
 - Phase 2 ADR明文化: 完了（Context / Decision / Consequences を実装非依存で固定）
