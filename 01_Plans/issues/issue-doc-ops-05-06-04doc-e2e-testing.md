@@ -103,3 +103,24 @@
 ### Phase 5: Verify/Stop
 - 3Issue横断の品質ゲート一致を確認。
 - 未解消: 依存確定証跡不足のため **Hold** 維持。
+
+
+## Stream E preparation addendum（2026-05-04 / Draft→Open昇格準備）
+
+### Phase 1: Read
+- `ADR-0019` と DOC-OPS-05-05/06/07 の整合を再確認し、Improve external分類と共通品質ゲート定義を維持。
+
+### Phase 2: Plan（AC/DoD不足補完）
+- AC補完: Open判定前の依存確定証跡 + Approval Record を必須化。
+- DoD補完: docs-only制約維持、self-correction `<=3`、超過時Stopを明示。
+
+### Phase 3: Execute（proposal-only）
+- 文章整備のみ。`04_Documentation/e2e_testing.md` 本文改稿・実装変更は非実施。
+
+### Phase 4: Verify
+- Gate条件（3Issue共通メタ一致 / docs-check記録 / 依存証跡）を再照合。
+
+### Phase 5: Proceed
+- 判定: **Hold**（依存未確定）。
+- Open昇格提案条件: 依存確定 + docs-check pass + tri-state再判定可能。
+- 未定義競合/4回目相当修復は **Stop**。
