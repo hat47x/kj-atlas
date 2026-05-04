@@ -9,7 +9,7 @@
 - Scope: `01_Plans/documentation_quality.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
-- Dependencies: `DOC-OPS-05`, `DOC-OPS-05-06`, `DOC-OPS-05-07`
+- Dependencies: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（相互参照。編集はmockで並行可）
 - Dependency status: `未確定（DOC-OPS-05 の Open gate 判定待ち）`
 - Expected verification level: `docs-check / unit / integration / e2e（期待レベル固定。実行義務はdocs-checkのみ）`
 

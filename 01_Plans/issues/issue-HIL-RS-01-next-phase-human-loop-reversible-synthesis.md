@@ -6,6 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Architecture Owner (Stream A contracts)
+- Dependencies: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1契約）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（実行接続）
 - Scope: `01_Plans/issues/`（planning only / docs only）
 - Editable policy: 本Issueのみ編集可（本ストリーム制約）
 - Expected verification level: `docs-check`

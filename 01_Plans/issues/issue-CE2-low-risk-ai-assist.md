@@ -7,7 +7,7 @@
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
-- Dependencies: `CE-2`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（I/F依存; mockで切断可能）
 - Dependency status: `未確定（CE-2 Open判定待ち）`
 - CE1 contract status: `参照限定（CE1完了待ちは不要。mock contract参照のみ）`
 - Expected verification level: `docs-check`

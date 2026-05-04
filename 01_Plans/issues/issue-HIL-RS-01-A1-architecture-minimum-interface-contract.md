@@ -7,6 +7,7 @@
 - Source Issue: N/A
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
 - Owner: Stream E (Architecture Minimum I/F Contract)
+- Dependencies: `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`（計画親）, `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（後続が参照）
 - Scope: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` のみ
 - Expected verification level: `docs-check`
 - Contract snapshot date: `2026-04-27`（固定入力）

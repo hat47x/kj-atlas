@@ -5,7 +5,7 @@
 - Priority: P0
 - Owner: Stream H（FB Open/P0 planning convergence）
 - Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の計画・契約整合のみ
-- Dependencies: `A1 -> A2 -> A3`, `freezeContractId` SSOT, `unlockRule` SSOT
+- Dependencies: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md -> issue-FB-P2A-01-a2-mock-validation.md -> issue-FB-P2A-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2B-01-a1-interface-contract.md -> issue-FB-P2B-01-a2-mock-validation.md -> issue-FB-P2B-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md -> issue-FB-P2C-01-a2-mock-validation.md -> issue-FB-P2C-01-a3-implementation.md` （いずれもA2/A3はmockで並行準備可能）
 - Related ADR: `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
 - Non-target file policy: allowlist 2ファイル以外は不干渉（編集禁止）
@@ -22,7 +22,7 @@
 - Status: `Open`
 - Priority: `P0`
 - Scope: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）の契約・統治整合のみ
-- Dependencies: `A1 -> A2 -> A3`、`sharedResourceFreeze=true`、`safeModeDefault=ON`
+- Dependencies: `01_Plans/issues/issue-FB-P2A-01-a1-interface-contract.md -> issue-FB-P2A-01-a2-mock-validation.md -> issue-FB-P2A-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2B-01-a1-interface-contract.md -> issue-FB-P2B-01-a2-mock-validation.md -> issue-FB-P2B-01-a3-implementation.md`, `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md -> issue-FB-P2C-01-a2-mock-validation.md -> issue-FB-P2C-01-a3-implementation.md` （いずれもA2/A3はmockで並行準備可能）
 - Related ADR: `ADR-0001/0019/0026/0027/0028`
 
 ### Delta log（A1→A2→A3 / freeze値）

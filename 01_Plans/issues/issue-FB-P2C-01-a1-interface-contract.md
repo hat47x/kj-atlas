@@ -11,7 +11,7 @@
 - Priority: P0
 - Owner: Stream A（critical path contract freeze）
 - Scope: A1最小I/F契約の固定（Contract ID / Signature / Deterministic Rule）
-- Dependencies: `A1 -> A2 -> A3`, A2/A3はA1 read-only参照
+- Dependencies: `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md -> issue-FB-P2C-01-a2-mock-validation.md -> issue-FB-P2C-01-a3-implementation.md`（A2/A3はA1契約をread-only参照; mockで先行可能）
 - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Verification level: `docs-check`
 - Non-target file policy: allowlist 2ファイル（本Issue + `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）以外は不干渉（編集禁止）

@@ -8,7 +8,7 @@
 - Editable: `issue-CE1-context-query-bundle-foundation.md` のみ
 - Related Backlog: `CE-1`
 - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
-- Dependencies: `CE-1`
+- Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存; ContextBundle payloadはmockで先行可能）
 - Verification: `docs-check`
 - Dependency meta: `blockers=none; depends_on=CE0-contract-freeze,FB-P2C-01-a1-interface-contract; unlocks=CE2-low-risk-ai-assist,CE4-api-cli-audit-integration`
 

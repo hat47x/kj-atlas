@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Architecture Owner (Stream A governance contract)
 - Scope: `01_Plans/issues/`（planning only）
-- Dependencies: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（contract reference only）, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）, `A1 -> A2 -> A3`（gate reference）
+- Dependencies: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（SSOT）, `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md` はA1成果を参照（A2/A3はmockで並行準備可）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 - Non-target file policy: Stream A allowlist（`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-02-A1-governance-contract-hardening.md` / 必要時 `ADR-0026/0027/0028`）以外は編集禁止
@@ -625,7 +625,7 @@ governance_gate_v1:
 ### Phase 1: Read snapshot（before change）
 - Status snapshot: `Open`（A3のみ `Draft`）
 - Scope snapshot: `01_Plans/issues/`（planning only）
-- Dependencies snapshot: `A1 -> A2 -> A3`
+- Dependencies: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（SSOT）, `01_Plans/issues/issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md` はA1成果を参照（A2/A3はmockで並行準備可）
 - Fixed key snapshot: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - Fixed key diff result: `diff=0`（drift not detected）
 

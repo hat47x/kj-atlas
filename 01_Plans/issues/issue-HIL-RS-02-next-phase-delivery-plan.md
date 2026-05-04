@@ -7,7 +7,7 @@
 - Priority: P1
 - Owner: Stream G Agent（HIL-RS-02 delivery plan self-contained）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
-- Dependencies (minimal): `HIL-RS-02-A1-CONTRACT-FREEZE-v1`（参照固定）, `A1-GOV-GATE-V1` / `A2-PROPOSAL-ENVELOPE-V1` / `A3-DOC-SYNC-CHECK-V1`（mock契約ID参照のみ）
+- Dependencies (minimal): `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（contract freeze参照）, `issue-HIL-RS-02-A2-frontend-reversible-synthesis-application.md` / `issue-HIL-RS-02-A3-operations-documentation-sync.md`（mock契約で並行可能）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
