@@ -304,3 +304,60 @@
 - Context: CE4はAPI/CLI/監査の3境界を跨ぎ、契約不一致が後工程障害に直結する。
 - Decision: Draft段階で契約語彙と失敗分類を固定し、Open判断可能な記述密度へ統一する。
 - Consequences: 実装着手前に同値判定と監査条件が安定し、再作業リスクを低減できる。
+
+
+## Stream C (CE4) final handoff（2026-05-04 / 独立完了）
+
+### Phase 1 Read（再Read + 契約参照キー整合）
+- 参照対象を再Readし、契約参照キーを `equivalenceKey` / `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `schemaVersion` に固定。
+- CE1契約は **read-only参照** とし、CE4側では「参照キー整合のみ」を扱う（CE1本文の意味拡張は行わない）。
+- 監査系列キーを `query -> bundle -> proposal -> apply` に固定し、順序欠損は監査違反で No-Go と再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+#### Context
+- CE4はAPI/CLI/監査の境界横断タスクであり、実装前に接続計画（contract integration plan）を固定しないと下流で判定語彙が分岐する。
+- CE1依存があっても、CE4は mock 前提で監査接続契約を先に確定できる。
+
+#### Decision
+1. CE4は **実装ではなく接続計画** を固定対象にする（contract-only）。
+2. API/CLIの成功条件は `equivalenceKey AND bundleHash` を満たし、かつ監査4点セット完備時のみ成立。
+3. `proposal-only` 強制、`auto-apply/auto-confirm/auto-publish` 禁止、違反時は fail-closed。
+4. 失敗分類は `入力違反 / 監査違反 / ポリシー違反 / 同値違反` をAPI/CLI共通で保持。
+
+#### Consequences
+- 下流実装は CE1/CE2 完了前でも mock fixture で統合判定器を先行検証できる。
+- 監査欠落を成功扱いしないため、運用時の判定揺れを抑止できる。
+- CLI終了コードの数値、匿名化詳細、監査転送基盤は未確定のまま安全に分離できる。
+
+### Phase 3 Plan（AC/DoD不足提案と合意）
+#### AC追加提案（本Issueで合意）
+- [x] CE1 read-only参照境界（CE4からCE1契約を再定義しない）を明記。
+- [x] API/CLI監査統合は「4イベント完備 + 共通必須キー完備 + AND同値条件成立」を同時充足条件とする。
+- [x] mock/real いずれも同一 fail-closed 判定規律を適用。
+
+#### DoD追加提案（本Issueで合意）
+- [x] 監査4点セットの欠損・順序不整合・矛盾重複をすべて No-Go で説明可能。
+- [x] 未確定点（終了コード数値、匿名化方式、転送基盤）を実装仕様に昇格していない。
+- [x] self-correction は最大3回、4回目相当は Stop を明記。
+
+### Phase 4 Execute（mock前提 監査4点セット定義）
+- `query`: 入力受理と `queryCanonicalHash` 確定イベント。
+- `bundle`: `bundleHash` / `sourceBundleHash` 確定イベント（`sha256:<64hex>` または `mock:<64hex>`）。
+- `proposal`: proposal-only 判定イベント（auto-*痕跡があれば即 No-Go）。
+- `apply`: 実行可否の監査終端イベント（`proposal` 正常後のみ許可）。
+- 4イベントすべてに共通必須キーを要求し、1件でも欠損なら fail-closed。
+
+### Phase 5 Verify（Lint/整合 + 自己修復ルール）
+- 検証対象: docs-check での文書整合、契約語彙整合、禁止事項（auto-*）不在。
+- 自己修復: 失敗時は最大3回まで以下順で修復。
+  1. 欠落キー/語彙ドリフト修正
+  2. Gate条件（AC/DoD/Stop）再整列
+  3. 依存未確定を Hold/Stop 理由として明示
+- 4回目相当は **Stop**（致命的衝突または依存崩壊）。
+
+### Phase 6 Proceed（handoff）
+- 判定: **Proceed（CE4接続計画として独立完了）**。
+- 下流への引継ぎ:
+  1. CE1は read-only参照を維持し、CE4側で契約再定義を行わない。
+  2. 監査判定器は mock/real 共通で4イベント完備性とAND同値条件を検証する。
+  3. 未確定点の仕様確定要求が入った場合は CE4範囲逸脱として Stop し、上位ADR判断へエスカレーション。
