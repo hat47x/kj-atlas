@@ -145,3 +145,36 @@
 3. 監査転送基盤（保存先・配送保証・署名方式）は本Issueでは未固定。
 
 > 停止条件: 上記未確定点を確定仕様として扱う要求が来た場合、CE4契約の範囲逸脱として停止し、上位ADRでの判断を要請する。
+
+
+## Stream E preparation log（2026-05-04 / Draft→Open昇格準備, contract-only）
+
+### Phase 1: Read
+- `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` と本Issue契約を照合。
+- `proposal-only`、監査4点、AND同値条件、fail-closed がDraft契約として一貫していることを確認。
+
+### Phase 2: Plan（AC/DoD不足補完）
+- AC補完:
+  - [ ] Open前に「未確定点は実装仕様に昇格しない」境界を明示。
+  - [ ] API/CLI共通で同値違反・監査違反・ポリシー違反の3分類が再読可能。
+- DoD補完:
+  - [ ] `proposal-only` 後退ゼロ、`auto-*` 禁止、`safeMode既定ON` 後退ゼロ。
+  - [ ] self-correction `<=3`、4回目相当は `Stop`。
+
+### Phase 3: Execute（proposal-only）
+- 本Issueの契約文整理のみ実施（コード・ADR本文・API実装は非実施）。
+- mock-first 原則を維持し、実装依存事項（終了コード数値/匿名化方式/転送基盤）は未確定のまま固定。
+
+### Phase 4: Verify（gate条件整合）
+- Verify観点:
+  1. contract-only scope逸脱なし。
+  2. 監査イベント最小スキーマ・ID連携・失敗時挙動の整合。
+  3. 未確定点が「停止報告対象」として隔離されている。
+- self-correction: `0/3`。
+
+### Phase 5: Proceed（Open条件判定）
+- 判定: **Hold**（依存 `CE-4` Open gate の確定証跡待ち）。
+- 昇格提案条件:
+  1. 依存確定証跡（日時/承認者/対象/判断）を記録。
+  2. docs-check再実行で契約欠落ゼロを確認。
+- 停止条件: 未確定点の仕様確定要求、self-correction超過、未定義競合発生時は **Stop**。

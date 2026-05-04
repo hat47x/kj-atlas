@@ -436,3 +436,37 @@
 - B-CE2-02: Approval Record 未充足（必須4項目欠落）。
 - B-CE2-03: CE1契約未確認のまま仕様確定要求。
 - B-CE2-04: self-correction 4回目相当。
+
+
+## Stream E preparation log（2026-05-04 / Draft→Open昇格準備, proposal-only）
+
+### Phase 1: Read
+- `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` と本Issueを再照合し、`proposal-only`・`fail-closed`・`sourceBundleHash===bundleHash` 必須契約の維持を確認。
+- 依存状態 `Dependency status=未確定` と `CE1 contract status=未確認` を再確認し、実装禁止境界を維持。
+
+### Phase 2: Plan（AC/DoD不足補完）
+- AC補完:
+  - [ ] Open判定前に `Approval Record`（日時/承認者/対象/判断/evidence）を必須項目として充足。
+  - [ ] `Proceed / Hold / Stop` 三値判定を同一基準で再演算可能。
+- DoD補完:
+  - [ ] 依存未確定時は `Hold` 維持、未定義競合時は即 `Stop(held)` を明記。
+  - [ ] self-correction 上限 `<=3` を超えた場合は修復停止。
+
+### Phase 3: Execute（proposal-only）
+- 実施範囲は本Issue文書の準備記述のみに限定（実装/運用確定/状態遷移は非実施）。
+- `auto-*` 禁止、AIによる `accepted/rejected` 自動確定禁止を再固定。
+
+### Phase 4: Verify（gate条件整合）
+- Gate整合チェック観点:
+  1. Scope逸脱なし（single-file）。
+  2. 契約語（proposal-only / human decision / fail-closed / hash一致）欠落なし。
+  3. Open条件（依存確定 + 承認ログ + Verify通過）の全件一致。
+- self-correction: `0/3`（超過なし）。
+
+### Phase 5: Proceed（Open条件判定）
+- 判定: **Hold**（依存未解放・承認ログ未充足のため）。
+- 昇格提案条件（揃えばOpen提案可能）:
+  1. `Dependency status=確定` の証跡記録。
+  2. `Approval Record` 最小項目の実値記入。
+  3. Verify 3段を再実行して pass。
+- 停止条件: self-correction 4回目相当、または未定義競合（契約衝突/語彙衝突/責務衝突）を検知した場合は **Stop(held)**。

@@ -104,3 +104,24 @@
 ### Phase 5: Verify/Stop
 - 3Issue横断の品質ゲート一致を確認。
 - 未解消: 依存確定証跡不足のため **Hold** 維持。
+
+
+## Stream E preparation addendum（2026-05-04 / Draft→Open昇格準備）
+
+### Phase 1: Read
+- DOC-OPS-05-05/06/07 の3Issueを再照合し、品質ゲート記述（docs-check必須、他は期待レベル定義のみ）の一致を確認。
+
+### Phase 2: Plan（AC/DoD不足補完）
+- AC補完: `Approval Record`（日時/承認者/対象/判断/evidence）記録をOpen必須条件に固定。
+- DoD補完: self-correction `<=3` を維持し、4回目相当は `Stop`。
+
+### Phase 3: Execute（proposal-only）
+- メモ整備のみ実施。`03_Implement/**` と `04_Documentation/**` 本文は非変更。
+
+### Phase 4: Verify
+- 3Issue横断のGate/Validation/Proceed三値が矛盾なく再読可能であることを確認。
+
+### Phase 5: Proceed
+- 判定: **Hold**（`DOC-OPS-05` 依存確定待ち）。
+- Open昇格提案条件: 依存確定証跡 + docs-check pass + self-correction上限内。
+- 未定義競合/4回目相当修復は **Stop**。
