@@ -971,3 +971,119 @@ handoffKeys:
 - 次ストリーム引継ぎ（固定契約 / mock仕様）:
   - 固定契約: `ContextQueryV1`, `ContextBundleV1`, `queryCanonicalHash`, `bundleHash`
   - mock仕様: `A2-minimal-v1` + `422/400/409` 固定エラー検証
+
+## Stream E run（2026-05-04 / contract-first refresh for mock decoupling）
+
+### Phase 1: 現状分析（Read同期）
+- Read同期を実施し、本Issue・`ADR-0028`・`02_Architecture/schemas.md` 参照前提で CE1 の責務が **contract-only / mock-first / closed-world** であることを再確認。
+- ContextQuery 入力要素として `queryId` / `goal` / `scope` / `depth(0..5)` / `constraints` / `reviewFilter` / `safeModePolicy=strict` / `outputMode` / `previewConfirmed` を抽出。
+- ContextBundle 出力要素として `queryCanonicalHash` / `bundleHash` / `selected` / `relations` / `evidence` / `contradictions` / `reviewFlags` / `truncationMeta` / `excludedReason` を抽出。
+- 制約は closed-world（未知キー拒否）・決定論hash（同一canonical queryで同一bundleHash）・preview gate（`previewConfirmed=false` 拒否）・safeMode統治（strict固定, bypass禁止）。
+
+### Phase 2: ADR-style 明文化（Context / Decision / Consequences）
+**Context**
+- CE2/CE4 が実装未確定状態でも前進するには、ContextQuery/ContextBundle の契約を先行凍結し mock で依存切断する必要がある。
+- 契約語彙の揺れは handoff key 衝突を誘発するため、Error semantics と hash 規則を固定する必要がある。
+
+**Decision**
+- `CE1-CTXQ-IF` と `CE1-CTXB-IF` を v1 固定として採用し、unknown key は fail-closed（`400 unknown_contract_key`）。
+- preview gate を必須化し、`previewConfirmed=false` は常に `422 preview_required`。
+- bundle 生成の決定論規則を固定:
+  1. Query canonicalization を先に実行し `queryCanonicalHash(sha256 hex)` を算出。
+  2. canonical query を入力に bundle を構成し canonical bundle representation を生成。
+  3. canonical bundle representation から `bundleHash(sha256 hex)` を算出。
+  4. 同一canonical queryで `bundleHash` が不一致の場合は `409 nondeterministic_bundle`。
+- safeMode除外規則を固定:
+  - `safeModePolicy` は v1 で `"strict"` のみ許可。
+  - `excludedReason` には safeMode 由来の除外理由を記録するが、bypass（`preview_bypass` 等 No-Go語彙）は許可しない。
+
+**Consequences**
+- CE2/CE4 は API/DB/worker 実装を待たず mock 入出力で検証を開始できる。
+- 失敗語彙が固定されるため、監査・diff・再実行時の判定が安定する。
+- v1 で拡張が必要な場合は v2 契約として扱い、v1 へ後方互換破壊を持ち込まない。
+
+### Phase 3: インターフェース定義（signature / type / error / audit）
+#### ContextQueryV1（入力）
+- 必須:
+  - `queryId: string`
+  - `goal: string`
+  - `scope: "document" | "view" | "island"`
+  - `depth: number`（0..5）
+  - `constraints: Record<string, unknown>`
+  - `reviewFilter: "reviewedOnly" | "includeUnreviewed"`
+  - `safeModePolicy: "strict"`
+  - `outputMode: "summary" | "proposal" | "candidate"`
+  - `previewConfirmed: boolean`
+- 任意: なし（v1 closed-world）
+
+#### ContextBundleV1（出力）
+- 必須:
+  - `queryCanonicalHash: string`（sha256 hex）
+  - `bundleHash: string`（sha256 hex）
+  - `selected: unknown[]`
+  - `relations: unknown[]`
+  - `evidence: unknown[]`
+  - `contradictions: unknown[]`
+  - `reviewFlags: { reviewed: number; unreviewed: number }`
+  - `truncationMeta: Record<string, unknown>`
+  - `excludedReason: string[]`
+- 任意: なし（v1 closed-world）
+
+#### Error code / semantics（固定）
+- `422 preview_required`: `previewConfirmed=false`
+- `400 unknown_contract_key`: ContextQueryV1/ContextBundleV1 の未定義キー検知
+- `409 nondeterministic_bundle`: 同一canonical queryで`bundleHash`不一致
+
+#### 監査属性（audit attributes）
+- 監査最小属性:
+  - `queryId`
+  - `queryCanonicalHash`
+  - `bundleHash`
+  - `reviewFilter`
+  - `safeModePolicy`
+  - `previewConfirmed`
+  - `excludedReason[]`
+  - `errorVocabulary`（正常時は空、異常時は上記固定語彙）
+- 監査要件: 同一query再実行時に hash・excludedReason・errorVocabulary の差分可視化を可能にする。
+
+#### preview確認フロー（仕様）
+1. Query受領時に contract key validation（closed-world）を先行。
+2. `previewConfirmed` を評価し、`false` の場合は処理中断して `422 preview_required`。
+3. `true` の場合のみ canonicalization / bundle生成へ進む。
+4. 完了時に audit attributes を出力し、後続 stream が diff 可能な形式で保持する。
+
+### Phase 4: mock-first 検証計画（実装依存切断）
+- Scenario A: 同一query再現性
+  - 同一 `ContextQueryV1` を3回投入。
+  - 期待値: `queryCanonicalHash` と `bundleHash` が3回一致。
+  - 不一致時: `409 nondeterministic_bundle` を返す。
+- Scenario B: safeMode除外ルール
+  - `safeModePolicy="strict"` 下で除外対象データを含む入力を模擬。
+  - 期待値: bypassせず `excludedReason[]` に理由を記録。
+  - No-Go語彙（`preview_bypass` 等）が出力・受理されないこと。
+- Scenario C: preview gate
+  - `previewConfirmed=false` を投入。
+  - 期待値: 常に `422 preview_required`、bundle生成未実行。
+- Scenario D: unknown key
+  - v1未定義キーを投入。
+  - 期待値: `400 unknown_contract_key`。
+- Scenario E: diff/audit 出力
+  - 正常系と異常系の監査属性を比較し、`queryCanonicalHash` / `bundleHash` / `excludedReason` / `errorVocabulary` が差分トレース可能。
+
+### Phase 5: Verify / Stop
+#### AC/DoDチェック
+- [x] ADR-style（Context/Decision/Consequences）を本Issue内に明文化。
+- [x] `ContextQueryV1` / `ContextBundleV1` の closed-world 契約を固定。
+- [x] `previewConfirmed=false -> 422 preview_required` を固定。
+- [x] `queryCanonicalHash` / `bundleHash` 決定論と `409 nondeterministic_bundle` を固定。
+- [x] mock-first 検証シナリオを定義し、実装依存を切断。
+
+#### Proceed判定
+- 判定: **Proceed（contract-onlyで次streamへ受け渡し可能）**。
+- 受け渡し対象: 契約型、決定論規則、previewフロー、固定エラー語彙、監査属性。
+
+#### Stop条件評価
+- 依存未確定箇所（CE0/CE2/CE4 handoff key）: 現時点で新規競合検知なし。
+- 契約語彙衝突: 新規衝突なし。
+- Self-Correction上限: 未到達（0/3）。
+- 致命条件: なし。
