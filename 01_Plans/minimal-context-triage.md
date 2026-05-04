@@ -123,3 +123,46 @@ python -m unittest 01_Plans/tests/test_triage_actionable_plans.py
 - `Ready issues` が0件なのに、実際には着手中タスクが存在する
 
 その場合は先に memo メタデータを修正し、`validate_active_issue_memos.py` を通してから再実行する。
+
+
+## 8. Stream E triage snapshot（2026-05-04）
+
+### 8.1 Phase 1 Read（Active/Draft/Open 依存再整理）
+
+- Active/Draft/Open: 15件（Ready 10 / Hold 5）。
+- blocker 明示が必要なDraft: `CE2-low-risk-ai-assist`, `HIL-RS-02-A3-operations-documentation-sync`, `DOC-OPS-05-05/06/07`。
+- 主要依存軸（再整理）:
+  - `FB-P2C-01-a1-interface-contract` → `CE1-context-query-bundle-foundation` → `CE4-api-cli-audit-integration`
+  - `CE0-contract-freeze` → `CE1-context-query-bundle-foundation` → `CE2-low-risk-ai-assist`
+  - `HIL-RS-02-A1-governance-contract-hardening` → `HIL-RS-02-A3-operations-documentation-sync`
+
+### 8.2 Phase 2 Priority（P0/P1/P2 再評価）
+
+- **P0**: 変更なし。A1契約凍結系（`FB-P0-2A2B2C`, `FB-P2C-01`）は全下流の解放ゲート。
+- **P1**: `CE1` は維持（理由: CE2/CE4の共通依存で、mock-first の分離実行を最も促進）。`HIL-RS-02-A3` は Draft/P1維持（理由: A1未完了のためOpen不可）。
+- **P2**: DOC-OPS 3件は維持（理由: `DOC-OPS-05` gate 未確定のため先行着手不能）。
+
+### 8.3 Phase 3 Dependency Cut（mock化可能依存）
+
+- CE1は `ContextQueryV1/ContextBundleV1` を mock 契約として先行固定し、実装依存を切断可能。
+- A3は `mock I/F preparation only` を維持し、A1完了前でも用語同期・導線同期のみ独立実行可能。
+- CE2は CE1契約確定までは `proposal-only` 文書整備に限定（実装依存切断）。
+
+### 8.4 Phase 4 Verify（整合チェック）
+
+- 実行コマンド:
+  - `python 01_Plans/triage_actionable_plans.py`
+  - `python 01_Plans/triage_actionable_plans.py --format json`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- 判定: `Dependency meta` 追加後も issue memo validator は通過。
+
+### 8.5 Phase 5 Proceed（レーン投入順序）
+
+1. `FB-P2C-01-a1-interface-contract`（P0 ゲート固定）
+2. `CE1-context-query-bundle-foundation`（P1 / CE2+CE4の共通依存）
+3. `CE4-api-cli-audit-integration`（P2だが CE1確定後は独立実行可）
+4. `CE2-low-risk-ai-assist`（Draft→Open判定、CE1契約確認後）
+5. `HIL-RS-02-A3-operations-documentation-sync`（A1完了後にOpen昇格）
+6. `DOC-OPS-05-05/06/07`（DOC-OPS-05 gate確定後に順次）
+
+停止条件: 依存の人間承認状態が未記録で推測が必要な場合は `Hold` で停止し、承認ログ入力を要求する。

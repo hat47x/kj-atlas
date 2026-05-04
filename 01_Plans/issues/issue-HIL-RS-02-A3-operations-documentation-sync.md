@@ -9,6 +9,7 @@
 - Scope: `01_Plans/issues/`（planning only）
 - Out of scope: `03_Implement/**`, `04_Documentation/**`, 対象5Issue以外
 - Dependencies: `ADR-0027`, `ADR-0028`, `A1 -> A2 -> A3`
+- Dependency meta: `blockers=HIL-RS-02-A1-governance-contract-hardening:not_done,approval_record:pending; depends_on=HIL-RS-02-A1-governance-contract-hardening,HIL-RS-02-next-phase-delivery-plan; unlocks=none`
 - Dependency status: `未確定（A1完了待ち）`
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
 - Expected verification level: `docs-check`
