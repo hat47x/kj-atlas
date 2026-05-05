@@ -1332,3 +1332,65 @@
 - A1完了後のOpen判定に必要な準備証跡を増やしつつ、契約境界の越境を防止できる。
 - Self-Correction counter: `0/3`（本更新時点）。
 - Current status: `Conditional (PrepGate)` を維持、`Draft` 継続。
+
+## Stream D Execution Log（2026-05-05 / strict phase + read-sync）
+
+### Phase 1: Read同期（必須）
+#### Context
+- 本実行の開始時に Read Order（00_Prompt〜02_Architecture〜該当ADR）と本Issue本文を再読し、A3が Draft固定かつ `mock I/F preparation only` であることを再確認した。
+- A1完了前に Open 遷移できない依存条件（`a1Status=="Done"` 必須）を再確認した。
+
+#### Decision
+- 変更対象を本ファイルの運用追記に限定し、契約値・Gate式・固定キーの再定義を禁止する。
+- 実行単位ごとに Read同期（再読）を必須化し、Phase順序 `Read -> Plan -> Execute -> Verify -> Proceed/Stop` を厳密適用する。
+
+#### Consequences
+- A1未完了下での越境判断（Open化、契約更新、未承認事項の確定化）を防止できる。
+
+### Phase 2: Plan（A3 Draft維持の運用固定）
+#### Context
+- A3は依存待ち中でも準備作業のみ継続可能。
+
+#### Decision
+- A3の実行範囲を次の4点に固定する。
+  1. 語彙同期（`Security Officer` / `System Owner` / `Platform Operator`）
+  2. 固定キー差分監視（既存キーの一致確認のみ）
+  3. Gate式の参照維持（再定義禁止）
+  4. held更新（未承認事項を確定せず記録のみ）
+- 未承認事項の推測確定を検知した場合は即停止し、`NoGo return path` へ差戻す。
+
+#### Consequences
+- Draftのまま品質維持を進めつつ、A1完了後の再開時に差分確認コストを最小化できる。
+
+### Phase 3: Execute（mock I/F preparation only）
+#### Context
+- A1 Approval Record は Pending のため、Open gate は未充足。
+
+#### Decision
+- 本実行では運用ドキュメント同期ルールの明文化のみ実施し、実装・契約改定・承認代行は実施しない。
+- `Conditional=PrepGate` の範囲内でのみ継続可能とし、`Go=ProceedGate` 判定は保留する。
+
+#### Consequences
+- Phase管理と依存整合を崩さず、A3準備タスクとして妥当な更新に限定できる。
+
+### Phase 4: Verify
+#### Context
+- docs-check により、対象外編集や構文逸脱を防止する。
+
+#### Decision
+- validator / unittest / scope grep / diff check を実行し、失敗時は self-correction <=3 を適用する。
+
+#### Consequences
+- 監査可能な証跡を維持し、A3 Draft運用の再現性を担保できる。
+
+### Phase 5: Proceed/Stop
+#### Context
+- `a1Status!="Done"` が継続。
+
+#### Decision
+- 判定: `Conditional (PrepGate)`。
+- A3は Draft 維持、Open遷移は実施しない。
+- 未承認事項の確定化を検知した場合は即時 `No-Go` として停止する。
+
+#### Consequences
+- A1完了まで安全境界を維持しつつ、A3準備の前進のみを許可する。
