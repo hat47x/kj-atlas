@@ -316,3 +316,46 @@
 - Open化条件: 依存確定証跡 + Approval Record + docs-check pass + tri-state再判定可能性の充足。
 - 現在判定: **Hold**（依存確定証跡未充足）。
 - Fail-safe: 相互依存が循環し判定不能化した場合は **Stop（判断待ち）** へ遷移。
+
+## Stream G pre-open gate pass（2026-05-05 / proposal-only）
+
+### Phase 1: Read（依存・停止条件の再確認）
+- 本Issueを単体再読し、`Draft gate` 判定に必要な `AC/DoD/Proceed tri-state/Stopper` の存在を確認。
+- 依存未解決のまま実装へ進まない原則を再固定（推測Go判定を禁止）。
+
+### Phase 2: Plan（不足AC/DoD提案）
+- AC追加提案（Open化ゲート）:
+  - [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）が明記される。
+  - [ ] Approval Record 未充足時は `Proceed=Hold` を維持する。
+  - [ ] docs-only / proposal-only の境界逸脱がない。
+- DoD追加提案（Open化ゲート）:
+  - [ ] Open可否を `Proceed/Hold/Stop` 三値で再判定可能。
+  - [ ] self-correction `<=3` を超えた場合は `Stop` へ遷移。
+
+### Phase 3: ADR（Context / Decision / Consequences）
+- Context: 依存が揃うまでの待機期間でも、Open判定材料を先に固定して再作業を削減する必要がある。
+- Decision: 実装・本文改稿には進まず、Open化ゲートと依存I/F（mock可能範囲）だけを先行定義する。
+- Consequences: 依存完了後に即Open判定できる一方、未承認時の誤Proceedを抑止できる。
+
+### Phase 4: Execute（依存・検証条件・停止条件の明文化のみ）
+- Dependency I/F（mock-first）:
+  - `ApprovalRecordIF`: `{approved_at, approved_by, target_issue, decision, evidence}`
+  - `DependencyStatusIF`: `{dependency_id, status, confirmed_by, confirmed_at}`
+  - `GateVerdictIF`: `{proceed_decision, unmet_conditions[], checked_at}`
+- mock運用規約:
+  - 依存本体未接続時は `mock:*` 値でI/F形式のみ検証。
+  - mockでも fail-closed を維持し、必須キー欠損は `NoGo/Hold`。
+
+### Phase 5: Verify（Open化ゲート検証）
+- 検証条件:
+  1. `AC/DoD/Proceed tri-state/Stopper` が本文内で再読可能。
+  2. 依存証跡が未充足なら `Hold` のまま。
+  3. self-correction 上限超過時 `Stop` に遷移可能。
+- 検証失敗時: 3回まで自己修復し、4回目相当は `Stop`。
+
+### Phase 6: Proceed（現時点判定）
+- 判定: **Hold（依存未解決）**。
+- Open化解除条件（全件必須）:
+  1. 依存確定証跡の充足。
+  2. Approval Record の充足。
+  3. proposal-only / docs-only / fail-closed の維持。
