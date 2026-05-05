@@ -1635,3 +1635,36 @@
 ### Phase 6 Proceed/Stop
 - 判定: **Proceed = Done**（contract-only整合維持）。
 - 停止条件: 語彙衝突、No-Go逸脱、SafeMode境界後退、自己修復4回目相当で `held`。
+
+
+## Stream B run（2026-05-05 / CE0 core graph contract alignment）
+
+### Phase 1 Read
+- CE0 Contract Freeze と CE1 Foundation を再読し、Core Graph が **proposal-only** であることを再確認。
+- CE0 Core Graph 側で確定できるのは契約I/F境界のみで、反映は承認済み契約経由に限定。
+
+### Phase 2 ADR/CDC
+- **Context**: Core Graph再配置が実装タスクへ直結すると、contract freeze の目的（先行I/F固定）が崩れる。
+- **Decision**: CE0 Core Graph は `contract-only / mock-first` を維持し、CG系契約IDを「提案境界」として固定。直接反映・自動昇格を禁止。
+- **Consequences**: CE1/CE2/CE4 は graph実装未確定でも契約検証を継続可能。競合時は `held` で停止。
+
+### Phase 3 Plan
+- AC補強:
+  - `ac_core_graph_proposal_only`: Core Graph変更は proposal-only を維持。
+  - `ac_no_direct_consensus_write`: Consensus 直接書き込み禁止を継続。
+- DoD補強:
+  - `dod_if_precedence`: Core Graphより先にCE0/CE1 I/F契約を固定。
+
+### Phase 4 Execute
+- CE0→CE1の順序を明記し、Core Graph再配置はI/F契約成立後の参照タスクとして位置づけ。
+- 実装依存（UI/DB/worker/API反映）を本文対象外に維持。
+
+### Phase 5 Verify
+- docs-check観点自己検証: 1回で完了（self-correction 0/3）。
+- 判定: `proposal_only_violation=0` / `dependency_cycle=0` / `scope_deviation=0`。
+
+### Phase 6 Proceed
+- CE2/CE4引き渡し前提:
+  - Core Graphは契約参照のみ（実装確定なし）。
+  - CE1の hash/preview/unknown-key 契約を先行条件として扱う。
+  - 未承認確定化要求は `held`。
