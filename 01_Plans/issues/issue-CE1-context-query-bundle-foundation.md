@@ -1544,3 +1544,42 @@ handoffKeys:
   1. 未定義契約衝突（contract id / error semantics collision）。
   2. safeMode 既定値緩和要求。
   3. 自己修正4回目相当（>3回）。
+
+## Stream C run（2026-05-05 / CE1 Foundation contract-only hardening）
+
+### Phase 1 Read（対象再読・差分確認）
+- 本対象ファイルをフェーズ開始時に再読し、CE1編集範囲が本Issue単体であることを再確認。
+- 既存凍結ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に差分なし。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4が外部ストリーム完了待ちなしで進行するため、CE1は実装ではなく契約だけを固定する必要がある。
+- **Decision**: `contract-only / mock-first` を維持し、`ContextQueryV1` / `ContextBundleV1` の closed-world 契約、`previewConfirmed=false -> 422 preview_required`、hash非決定論時 `409 nondeterministic_bundle` を変更不可として固定。
+- **Consequences**: 下流は mock 契約だけで検証継続できる。handler/UI/DB/worker 仕様は CE1で扱わず、依存を切断したまま並行実行可能。
+
+### Phase 3 Plan（AC/DoD確定）
+- **AC**:
+  1. `ContextQueryV1` / `ContextBundleV1` は v1 closed-world（unknown key は `400 unknown_contract_key`）。
+  2. preview gate は `previewConfirmed=false -> 422 preview_required` を必須化。
+  3. 決定論条件は同一canonical queryで `queryCanonicalHash` / `bundleHash` が3回一致。
+  4. 不一致時は `409 nondeterministic_bundle` で fail-closed。
+- **DoD**:
+  1. handoff成果物は「契約ID / I/F型 / エラー語彙 / handoff key」のみ。
+  2. CE2/CE4は mock 契約で検証可能（外部ストリーム完了待ち禁止）。
+  3. 実装詳細（handler/UI/DB/worker）へ逸脱しない。
+
+### Phase 4 Execute（契約固定）
+- `previewConfirmed` gate を固定し、bypassを許容しない。
+- closed-world違反（unknown key）は `400 unknown_contract_key` に固定。
+- same canonical query で bundle不一致は `409 nondeterministic_bundle` に固定。
+- 追加キー・追加語彙・実装方式の記述は導入しない。
+
+### Phase 5 Verify（自己検証）
+- AC/DoD充足を本Issue内で再確認し、契約衝突なしを確認。
+- self-correction: 0/3（修復不要）。
+
+### Phase 6 Proceed / Stop
+- 判定: **Proceed（CE1 Foundation contract maintained）**。
+- Stop条件（即 `held`）:
+  1. contract id / error semantics の衝突。
+  2. preview語彙・決定論語彙の変更要求。
+  3. 自己修復4回目相当（>3回）。
