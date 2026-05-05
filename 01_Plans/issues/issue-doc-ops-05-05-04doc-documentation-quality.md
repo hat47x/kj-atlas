@@ -295,3 +295,32 @@
 
 ### Proceed判定
 - Decision: **Hold**（依存確定証跡未充足）。
+
+## Stream G serial update（2026-05-05 / DOC-OPS-05 triad memo整備）
+
+### Phase 1 Read（相互依存・現状ゲート確認）
+- 3Issue相互依存（05↔06↔07）と `Dependency status=未確定` を再確認。
+- Gate verdict が全件 `NoGo（現時点）`、Proceed tri-state が全件 `Hold` で一致していることを確認。
+
+### Phase 2 ADR/CDC（必要最小限の明文化）
+- Context: Open判定に必要なメタは揃っているが、依存確定証跡と Approval Record が未充足。
+- Decision: 既存Classification（Move internal / Improve external）を維持し、`docs-check必須・他検証は期待レベル定義のみ` を継続。
+- Consequences: docs-only境界を維持しつつ、Open/Hold/Stopを単体再判定可能な状態を維持。
+
+### Phase 3 Plan（AC/DoD不足のAIドラフト補完）
+- AC補完提案: `Approval Record` 最小項目（日時/承認者/対象/判断/evidence）をOpen前必須として明記。
+- DoD補完提案: self-correction `<=3` を維持し、4回目相当はStopへ遷移。
+
+### Phase 4 Execute（相互参照・検証レベル・公開境界整合）
+- 相互参照: 3Issue間の依存リンクを維持し、関連ADR/Specとの導線を再確認。
+- 検証レベル: `docs-check` 実行義務、`unit/integration/e2e` は期待レベル定義のみで統一。
+- 公開境界: 05/07は Move internal、06は Improve external を維持し、`04_Documentation/**` 本文は非変更。
+
+### Phase 5 Verify（docs-check整合 / 最大3回修復）
+- 実行結果: Issueメモ検証スクリプトで対象3ファイルの整合を確認（pass）。
+- Self-correction: `1/3`（本パス）。残予算内でのみ再修復可。
+
+### Phase 6 Proceed（Open化条件 / Hold条件）
+- Open化条件: 依存確定証跡 + Approval Record + docs-check pass + tri-state再判定可能性の充足。
+- 現在判定: **Hold**（依存確定証跡未充足）。
+- Fail-safe: 相互依存が循環し判定不能化した場合は **Stop（判断待ち）** へ遷移。
