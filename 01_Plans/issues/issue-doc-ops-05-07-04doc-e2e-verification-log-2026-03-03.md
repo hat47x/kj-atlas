@@ -274,3 +274,22 @@
 - Decision: **Hold**。
 - Hold理由: `DOC-OPS-05` 依存確定証跡と Approval Record 未充足。
 - Stop条件: 自己修復が4回目相当に到達した時点で停止。
+
+
+## Stream F follow-up run（2026-05-05 / DOC-OPS-05-07）
+
+### 統合境界ガード（DOC-OPS-04）
+- 本更新は Open化判定メタの明確化のみ。ログ本文移管・ファイル移動・`04_Documentation/**` 改稿は非実施。
+
+### Open化条件・依存・停止条件（明確化）
+- Open化条件: `docs-check pass` / `self-correction <=3` / `Approval Record` / `DOC-OPS-05 依存確定証跡` を充足。
+- 依存: `DOC-OPS-05-05` と `DOC-OPS-05-06` の Gate/Validation/Proceed tri-state 一致、および Candidate destination 未確定扱い維持。
+- 停止条件: 4回目相当自己修復、配置先の根拠不足を確定扱いする要求、または未定義競合検知時は **Fail-safe Stop**。
+
+### Phase運用（各Phase開始時の再Read必須）
+1. 各Phase開始時に **本ファイル再Read**。
+2. 依存Issue（05/05, 05/06）を同時再Readし、語彙整合を確認。
+3. Verify再試行は最大3回、超過時は停止。
+
+### Proceed判定
+- Decision: **Hold**（依存確定証跡・Approval Record 未充足）。
