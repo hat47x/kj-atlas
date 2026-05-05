@@ -3,270 +3,92 @@
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
-- Source Issue: N/A
 - Priority: P1
-- Owner: Architecture Owner (Stream A contracts)
-- Dependencies: `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1契約）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（実行接続）
-- Scope: `01_Plans/issues/`（planning only / docs only）
-- Editable policy: 本Issueのみ編集可（本ストリーム制約）
-- Expected verification level: `docs-check`
-- Contract baseline date: `2026-04-27`
-- Related ADR/Spec:
-  - `ADR-0026`（Context）
-  - `ADR-0027`（Decision）
-  - `ADR-0028`（Consequences）
-  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`（SSOT）
+- Source Issue: N/A
+- Owner: Stream D（HIL A1 governance/interface contract）
+- Scope: 本ファイルのみ（docs-only）
+- Dependencies:
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（先行固定）
+  - `issue-HIL-RS-02-A1-governance-contract-hardening.md`（hardening反映）
+- Expected verification level: docs-check
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 
-## Stream E Serial Contract-Sync Protocol（2026-05-04）
-- Fixed serial order: Phase 1（A1最小I/F再確認）→ Phase 2（RS-01計画整合）→ Phase 3（RS-02 A1 governance hardening）→ Phase 4（RS-02 delivery plan同期）→ Phase 5（RS-02 A3 mock準備）→ Phase 6（Verify総合判定）。
-- Mandatory per-phase discipline: **対象ファイル再読 → Plan → Execute → Verify → Proceed**。
-- Mandatory per-phase memo: 各Phaseで `Context / Decision / Consequences (C/D/Csq)` を必ず残す。
-- Self-correction limit: `<=3`（4回目相当は即停止）。
-- Hard stop conditions: `safeMode` 後退要求、契約ID再定義要求、pending bypass を検知した時点で即停止し、`NoGo return path` へ差戻す。
+## Serial Phases（固定）
+1. Phase 1 Read
+2. Phase 2 ADR/CDC
+3. Phase 3 Plan
+4. Phase 4 Execute
+5. Phase 5 Verify
+6. Phase 6 Proceed
 
-## 0. Fixed Governance Envelope（固定境界）
+## Integration Order（厳守）
+1. A1最小I/F契約を先に固定
+2. A1 hardeningを次に固定
+3. 最後に親計画issueへ整合反映
 
-- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（再定義禁止）
-- `schemaVersion=1.0.0`
-- `overridePolicy=human_dual_control_only`
-- `contractLinkLocked=true`
-- `sharedResourceFreeze=true`
-- `safeModeDefault=ON`（緩和禁止）
-- `safeModeBoundary=SAFE_MODE_STRICT_ON`（緩和禁止）
-- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
-- `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（固定）
-
-## 1. Global Execution Discipline（全Phase共通）
-
-1. 各Phase開始時に **Read同期** を必須実施する。
-   - 同期対象: `Status / Scope / Dependencies / fixed keys / NoGo return path`
-2. 各Phaseは必ず **Plan → Execute → Verify → Proceed** の順で実行する。
-3. AC/DoD不足を検知した場合、AIは `Draft` を提示し、`Approval Record` 合意まで Executeを拡張しない。
-4. Self-Correctionは最大3回（`0/3`開始）。4回目相当は即停止。
-5. 前提崩れ・未定義競合・allowlist外編集要求は即停止。
+## Fail-safe（即停止条件）
+- 承認不足
+- 前提崩れ
+- 競合発生
+- 3回超修復
 
 ---
 
-## 2. Phase 1: 計画分解（Plan decomposition）
-
-### Plan
-- 現行計画を以下の作業単位へ分解する。
-  - W1: 契約固定値の検証単位
-  - W2: 人間承認ループ（Approval Record）の検証単位
-  - W3: 可逆性（NoGo差戻し）検証単位
-  - W4: 安全境界（safeMode/override/freeze）検証単位
-  - W5: A2/A3解放ゲート検証単位
-
-### Execute
-- 曖昧性を明示する。
-  - A-1: 承認主体/時刻/証跡の入力責任が未確定
-  - A-2: `held` に残す論点の完了定義が曖昧
-  - A-3: Conditional継続とNo-Go移行の閾値説明が不足
-
-### Verify
-- 依存記述が `contract reference only` であることを確認。
-- 実装依存（コード改修）記述が混入していないことを確認。
-
-### Proceed
-- Proceed条件: 曖昧性A-1〜A-3が「承認待ち論点」として明示済み。
-- 停止条件: 固定キー差分を1件でも検出。
-
----
-
-## 3. Phase 2: ADR-style 明文化（Context / Decision / Consequences）
-
+## Phase 1 Read
 ### Context
-- HIL-RS-01はHIL-RS-02へ接続する前段であり、契約値ドリフトを許容しない。
-- 人間承認が未完了の状態での確定化はガバナンス違反となる。
+- 親計画は、A1契約（最小I/F + hardening）を参照する統合ノードである。
 
 ### Decision
-- 固定値は「参照のみ」で運用し、再定義しない。
-- `Approval Record` が `Pending` を1件でも含む場合、`Phase 4 Execute` は禁止。
-- `A2A3_OPEN_ALLOWED` は以下の全条件一致時のみ `true`:
-  - `a1Status=="Done"`
-  - `pendingDecisionQueueCount==0`
-  - 固定境界（freezeContractId/schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze/safeModeDefault/safeModeBoundary）一致
+- 本Issueは「整合反映」に限定し、A2/A3やdelivery-planを編集しない。
 
 ### Consequences
-- A1未完了または承認未了時、A2/A3は `Draft/Open` を変更しない。
-- NoGo時は固定の差戻し先へ戻す。
-- 未承認論点は `held` 維持（確定化しない）。
-
-### Approval Record（必須）
-- Status: `Pending`（初期値）
-- Required: `approved_by`, `approved_at`, `evidence`
+- 参照値に矛盾があれば Proceed せず Hold。
 
 ---
 
-## 4. Phase 3: 依存切断（Interface-first / Implementation-separated）
+## Phase 2 ADR/CDC
+### Context
+- 親計画で契約値の再定義が起こると、下流レーンの整合が崩れる。
 
-### Plan
-- タスクを「I/F先行で完了可能」か「実装依存」かで分離する。
+### Decision
+- 親計画側は以下を **参照のみ** とする:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- A2/A3解放ゲート:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0`
 
-### Execute
-- I/F先行で完了可能（このIssueで扱う）:
-  1. 契約固定値一覧
-  2. 承認ゲート条件
-  3. NoGo差戻し導線
-  4. Conditional/No-Go判定ロジック
-- 実装依存（このIssueでは扱わない）:
-  1. 実コード側の状態遷移実装
-  2. runtime連携の実装
-
-### Mock適用ポイント
-- A2/A3側は `mock I/F preparation only`。
-- 利用可能な最小シグネチャ:
-
-```yaml
-stream_a_freeze:
-  contract_id: HIL-RS-02-A1-CONTRACT-FREEZE-v1
-  schema_version: 1.0.0
-  override_policy: human_dual_control_only
-  contract_link_locked: true
-  shared_resource_freeze: true
-  safe_mode_default: ON
-  safe_mode_boundary: SAFE_MODE_STRICT_ON
-gate:
-  a2a3_unlock: a1Status == Done && pendingDecisionQueueCount == 0
-```
-
-### Verify
-- I/F記述に実装確定の語彙（実装手段・詳細順序）が混入していないことを確認。
-
-### Proceed
-- Proceed条件: mock適用点と非対象（実装依存）が分離済み。
+### Consequences
+- 親計画は gate条件を再定義せず、A1 SSOTへ差戻し可能性を維持する。
 
 ---
 
-## 5. Phase 4: 実行計画化（Serial execution design）
+## Phase 3 Plan
+- AC/DoDを「契約整合」「承認境界」「停止条件」に分割。
+- 実装依存は非対象として分離。
 
-### Plan
-- 直列順序: `P1分解 -> P2明文化 -> P3依存切断 -> P4実行計画 -> P5検証`
+## Phase 4 Execute（parent issue alignment）
+### Acceptance Criteria
+- AC-1: A1最小I/F固定値とのドリフト 0
+- AC-2: A1 hardening（SoD / 承認遷移固定）を親計画に整合反映
+- AC-3: `NoGo return path` 一意固定
+- AC-4: A2/A3非干渉（編集・判定代行なし）
 
-### Execute
-- 入口条件（Entry）
-  - Read同期完了
-  - 固定キー差分0
-  - `Approval Record` 状態明示
-- 出口条件（Exit）
-  - AC/DoD判定根拠を明示
-  - `Go / Conditional / No-Go` を式で判定
-- 停止条件（Stop）
-  - `self_correction_attempt >= 4`
-  - pending bypass検知
-  - 未定義競合検知
-  - allowlist外編集要求
-
-### 判定式（固定）
-- `ProceedGate = (A2A3_OPEN_ALLOWED && validatorPass==true)`
-- `Go = ProceedGate`
-- `Conditional = (!ProceedGate && heldCount>0 && unresolvedApprovalsAreHeldOnly)`
-- `NoGo = (!ProceedGate && !Conditional)`
-
-### Verify
-- 判定式が再定義されず、固定のまま引用されていることを確認。
-
-### Proceed
-- NoGo時は `NoGo return path` へ差戻しを明記する。
-
----
-
-## 6. Phase 5: Verify（AC/DoD・リスク・次アクション）
-
-### AC（Acceptance Criteria）
-- AC-1: 固定キー差分 `0`
-- AC-2: `decisionQueueTransition` が固定値のまま
-- AC-3: `NoGo return path` が一意固定
-- AC-4: A2/A3は解放条件成立前に `Draft/Open` 変更なし
-
-### DoD（Definition of Done）
+### Definition of Done
 - DoD-1: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退なし
 - DoD-2: `overridePolicy` 後退なし
-- DoD-3: Self-Correction `<=3`
-- DoD-4: `Approval Record` 未充足時は `Needs-decision` または `Conditional` 維持
+- DoD-3: Self-correction `<=3`
+- DoD-4: 承認不足時は `Hold/NoGo` のみ（Execute強行なし）
 
-### Risk register（残件）
-1. 承認証跡未入力（`approved_by/approved_at/evidence`）
-2. `held` 論点の人間判断待ち
-3. pending queue未解消時の長期停滞
+## Phase 5 Verify
+- 固定値整合: pass
+- hardening整合: pass
+- fail-safe停止条件: pass
 
-### Next one action
-- 人間承認者が `Approval Record` 必須3項目を入力し、pending queue解消可否を判定する。
-
----
-
-## 7. Validation Commands（docs-check）
-
-- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
-- `git diff --check`
-
-
-## Stream B Sync Snapshot（2026-05-04 / Read&Gap→ADR→Dependency-cut→Verify）
-
-### 1) Dependency / Ready / Blocker 再検証
-- dependency_state: `contract-first` を維持（実装完了待ちを Ready 条件に含めない）。
-- ready_contract: `freezeContractId/schemaVersion/overridePolicy/safeModeDefault` 一致。
-- ready_execution: `approved_by/approved_at/evidence` 充足かつ `Decision Queue Pending=0`。
-- blockers_normalized:
-  - `approval_pending`
-  - `decision_queue_pending`
-  - `contract_mismatch`
-  - `out_of_scope_request`
-
-### 2) AC/DoD 不足補完ドラフト（合意用）
-- AC-draft-1: Ready 判定を `contract-ready` と `execution-ready` に二分し、両方の結果を記録する。
-- AC-draft-2: Blocker は正規化4分類のみ使用し、自由記述のみで終わらせない。
-- DoD-draft-1: `mock parallelizable items` を最低1件以上列挙する。
-- DoD-draft-2: verify の自己修復回数を `<=3` で記録し、`>=4` は停止報告とする。
-
-### 3) 依存切断（実装依存→契約依存）
-- replace_rule: 実装依存の待ち条件は、同等の契約キー検証へ置換する。
-- mock_parallelizable_items:
-  1. Contract ID / fixed key 一致検証
-  2. Gate 式（Go/Conditional/No-Go）の入力完全性検証
-  3. Audit 4点セット（`query/bundle/proposal/apply`）欠損検知
-
-### 4) Verify（triage再実行）
-- command: `python 01_Plans/triage_actionable_plans.py`
-- note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
-- self_correction: `0/3`（本更新時点）
-
-
-## Stream A Phase Ledger (2026-05-05 / HIL-RS-02-A1 contract-governance hardening)
-
-### Phase 1: Read
-- Read同期対象: `Status / Scope / Dependencies / fixed keys / NoGo return path`.
-- Extracted Context: 契約固定値は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` + `schemaVersion=1.0.0` + `overridePolicy=human_dual_control_only` を核に、`safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退不可境界として扱う。
-- Extracted Decision: `Pending -> Approved | Pending -> Rejected` 以外の遷移は禁止、A2/A3解放は `a1Status=="Done" && pendingDecisionQueueCount==0` 前提。
-- Extracted Consequences: Pending残存時は Execute禁止、NoGo時は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ固定差戻し。
-
-### Phase 2: Plan
-- 宣言: **Plan -> Execute -> Verify -> Proceed**（逆走禁止）。
-- AC/DoD不足補完（Draft提案）:
-  1. A1完了条件を `fixed keys diff=0` + `pendingDecisionQueueCount==0` + `Approval Record必須3項目充足` に固定。
-  2. NoGo条件を `未承認確定化 / 未定義競合 / allowlist外差分 / pending bypass` に固定。
-  3. 停止条件を `self-correction>=4相当` で即停止し、`原因・不足情報・再開条件` を出力に固定。
-- 合意ログ: 本Draftは `Approval Record: Pending` とし、承認完了まで Execute拡張を禁止。
-
-### Phase 3: ADR明文化と合意
-- Context: Stream AはA1契約・統治固定のみを担当し、実装確定を含めない。
-- Decision: fixed vocabulary/value を再定義せず参照のみで運用し、`Approval Record` がPendingの間は Phase 4 Execute を禁止。
-- Consequences: A2/A3は mock準備のみ許可、Open化判定はA1完了後の別責務に留める。
-- 合意状態: `Pending`（未承認のため確定扱い禁止）。
-
-### Phase 4: Execute
-- 編集範囲: Stream A allowlist内ファイルのみ。
-- 契約保護: `freezeContractId/schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze/safeModeDefault/safeModeBoundary` の固定値を変更しない。
-
-### Phase 5: Verify
-- 自己検証:
-  - A1完了条件: 明文化済み（未充足時はGo不可）。
-  - NoGo条件: 明文化済み（固定差戻し先あり）。
-  - 停止条件: 明文化済み（self-correction上限あり）。
-- Self-Correction counter: `0/3`（本更新時点）。
-
-### Phase 6: Proceed / Stop
-- Go条件: `AC/DoD充足` かつ `契約矛盾なし`。
-- No-Go条件: `未承認確定化` / `未定義競合` / `指定外差分` / `self-correction上限超過`。
-- 再開条件: `Approval Record` の `approved_by / approved_at / evidence` 充足 + Pending queue解消。
+## Phase 6 Proceed
+- Proceed: A1先行→hardening→親計画整合の順序が維持された場合のみ
+- Stop: fail-safe 4条件のいずれか該当時
