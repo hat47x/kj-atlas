@@ -102,3 +102,84 @@
 ## Phase 6 Proceed
 - Go: A1最小I/F契約の凍結完了（本書）
 - Hold/NoGo: 承認不足・前提崩れ・競合・修復上限超過時
+
+## Stream A contract freeze run（2026-05-05）
+
+### Phase 1: Plan → Execute → Verify → Proceed（Read sync）
+- Read対象を再同期し、契約キーを抽出。
+- state keys: `a1Status`, `decision`, `executeAllowed`。
+- gate keys: `pendingDecisionQueueCount`, `unlockRule`, `decisionQueueTransition`。
+- approval keys: `approved_by`, `approved_at`, `evidence`。
+- 判定: drift `0`（固定語彙/固定値の差分なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約を先に固定しない場合、A2/A3で承認境界と遷移条件の再解釈が発生する。
+- Decision: 本Issueの契約値を `contract-only` で凍結し、未合意事項は `未確定` として保持する。
+- Consequences: 合意入力がない限り `decision=Hold` を維持し、確定扱いに進めない。
+- 未確定: `Approver-A/B` の実名マッピング、証跡保管先URI。
+
+### Phase 3: 契約凍結案確定（implementation-decoupled）
+- I/F signature frozen:
+  - Inputs: `freezeContractId`, `contractIds`, `schemaVersion`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `a1Status`。
+  - Outputs: `executeAllowed`, `decision`, `reasonCodes`, `requiredHumanActions`, `noGoReturnPath`。
+- state transition frozen:
+  - `Pending -> Approved | Pending -> Rejected` のみ許可。
+- approval evidence frozen:
+  - `approved_by`, `approved_at`, `evidence`（全必須）。
+
+### Phase 4: モック仕様公開（他ストリーム独立進行可）
+- 下流向け mock contract（JSON例）:
+```json
+{
+  "contractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "schemaVersion": "1.0.0",
+  "input": {
+    "a1Status": "Done",
+    "pendingDecisionQueueCount": 0,
+    "approvalRecord": {
+      "approved_by": "Architecture Owner",
+      "approved_at": "2026-05-05T00:00:00Z",
+      "evidence": "decision-log://a1/2026-05-05"
+    }
+  },
+  "output": {
+    "executeAllowed": true,
+    "decision": "Go",
+    "reasonCodes": [],
+    "requiredHumanActions": [],
+    "noGoReturnPath": "issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md"
+  }
+}
+```
+- 型定義（契約専用）:
+```ts
+export type A1GovernanceGateV1 = {
+  contractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1";
+  schemaVersion: "1.0.0";
+  a1Status: "Draft" | "Open" | "In Progress" | "Done";
+  pendingDecisionQueueCount: number;
+  approvalRecord: {
+    approved_by?: string;
+    approved_at?: string;
+    evidence?: string;
+  };
+  executeAllowed: boolean;
+  decision: "Go" | "NoGo" | "Hold";
+};
+```
+- fixture雛形:
+  - `fixtureId: A1-contract-freeze-minimal-v1`
+  - `expectedDecisionWhenPending>0: Hold`
+  - `expectedDecisionWhenPending=0+approvalComplete: Go`
+- 明示: この契約に一致すれば実装は独立進行可（contract-only、挙動実装は別Issue）。
+
+### Phase 5: Verify & Handoff
+- AC/DoD照合: pass（契約ID・schemaVersion・禁止事項を固定）。
+- handoff最小セット:
+  - contractId: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - schemaVersion: `1.0.0`
+  - prohibitions:
+    1. safeMode既定緩和
+    2. AIによる承認自動昇格
+    3. `Pending` bypass
+    4. `freezeContractId` 再定義

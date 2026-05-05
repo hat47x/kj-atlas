@@ -2180,3 +2180,35 @@ type PatchProposal = {
   - CE0 Contract IDs は read-only。
   - safeMode境界（既定ON / 緩和禁止）は read-only。
   - 未定義競合・循環依存・許可外編集要求は即 `held`。
+
+## Stream A sync addendum（2026-05-05 / A1-CE0 interface contract freeze only）
+
+### Plan
+- ScopeをCE0/A1契約固定に限定し、実装依存情報を追加しない。
+- AC:
+  1. `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` 不変。
+  2. 承認証跡キー `approved_by/approved_at/evidence` をA1連携必須に明示。
+  3. mock-firstで下流独立進行可能を明記。
+
+### Execute
+- A1連携ゲートを contract-only で固定:
+  - `gateStatus=go|conditional|no-go`
+  - `approvalRecord` は `approved_by/approved_at/evidence` の3点必須。
+- CE0禁止事項を再固定:
+  - `preview_bypass`
+  - `consensus_direct_write`
+  - `auto_apply_or_publish`
+  - `ai_review_auto_promotion`
+  - `safemode_default_relaxation`
+
+### Verify
+- drift check: `contract_id_mutation=0` / `safeMode_regression=0` / `scope_deviation=0`。
+- self-correction: `0/3`（超過なし）。
+
+### Proceed
+- handoff:
+  - contractId set: `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05`
+  - schemaVersion: `1.0.0`（A1 bridge参照）
+  - prohibitions: 上記No-Go canonical IDs
+- 未達/未確定:
+  - 承認者実名割当と証跡URIは人手合意待ち（未確定）。
