@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
 - Source Issue: N/A
-- Owner: Stream D（HIL A1 governance/interface contract）
+- Owner: Stream E（HIL A1 governance/interface contract）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies:
   - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（先行固定）
@@ -15,8 +15,8 @@
 
 ## Serial Phases（固定）
 1. Phase 1 Read
-2. Phase 2 ADR/CDC
-3. Phase 3 Plan
+2. Phase 2 Plan
+3. Phase 3 ADR/CDC
 4. Phase 4 Execute
 5. Phase 5 Verify
 6. Phase 6 Proceed
@@ -46,7 +46,12 @@
 
 ---
 
-## Phase 2 ADR/CDC
+## Phase 2 Plan
+- Goal: A1最小I/F + A1 hardening を先に固定し、親計画への整合反映だけを実施する。
+- Non-goal: A2/A3実装、A3運用同期の実行、他ドメイン編集。
+- Planned checks: 固定値ドリフト0、承認境界維持、NoGo差戻し導線維持。
+
+## Phase 3 ADR/CDC
 ### Context
 - 親計画で契約値の再定義が起こると、下流レーンの整合が崩れる。
 
@@ -67,10 +72,6 @@
 
 ---
 
-## Phase 3 Plan
-- AC/DoDを「契約整合」「承認境界」「停止条件」に分割。
-- 実装依存は非対象として分離。
-
 ## Phase 4 Execute（parent issue alignment）
 ### Acceptance Criteria
 - AC-1: A1最小I/F固定値とのドリフト 0
@@ -83,6 +84,9 @@
 - DoD-2: `overridePolicy` 後退なし
 - DoD-3: Self-correction `<=3`
 - DoD-4: 承認不足時は `Hold/NoGo` のみ（Execute強行なし）
+
+### Needs-decision
+- A3運用文書同期の担当者・実施タイミングは人間判断待ち（本Issueでは確定しない）。
 
 ## Phase 5 Verify
 - 固定値整合: pass

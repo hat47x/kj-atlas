@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream D）
+# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream E）
 
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
 - Source Issue: N/A
-- Owner: Stream D（HIL A1 governance/interface contract）
+- Owner: Stream E（HIL A1 governance/interface contract）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Expected verification level: docs-check
@@ -13,8 +13,8 @@
 
 ## Serial Phases（固定）
 1. Phase 1 Read
-2. Phase 2 ADR/CDC（Context / Decision / Consequences）
-3. Phase 3 Plan
+2. Phase 2 Plan
+3. Phase 3 ADR/CDC（Context / Decision / Consequences）
 4. Phase 4 Execute
 5. Phase 5 Verify
 6. Phase 6 Proceed
@@ -42,7 +42,15 @@
 
 ---
 
-## Phase 2 ADR/CDC（先行明文化）
+## Phase 2 Plan（先行固定）
+- Goal: 統治契約と最小I/Fを先に固定し、A3（運用文書同期）を後続に分離可能な状態を作る。
+- Non-goal: A2/A3の実装・運用文書反映・他ドメイン編集。
+- Planned checks:
+  - 固定語彙/固定値ドリフト検査
+  - 承認境界（AI proposal-only / human approval-only）検査
+  - fail-safe（3回超修復停止）検査
+
+## Phase 3 ADR/CDC（先行明文化）
 ### Context
 - 承認境界とAI責務境界の曖昧さは、Pending bypass と監査不能を誘発する。
 
@@ -70,14 +78,14 @@
 ### Consequences
 - A2/A3は凍結値を read-only 参照。
 - 承認不足時は Execute 禁止（Plan/Verifyのみ許可）。
+- Needs-decision:
+  - `Approver-A/B` の実名ロール割当は人間判断待ち（未確定のまま保持）。
 
 ---
 
-## Phase 3 Plan（A1最小I/F）
+## Phase 4 Execute（contract definition）
 - 入力・出力・遷移・禁止事項を最小構成で固定。
 - Non-goal: 実装手順、runtime詳細、別レーン（A2/A3/Delivery）への介入。
-
-## Phase 4 Execute（contract definition）
 ### Inputs
 - `freezeContractId`, `contractIds`, `schemaVersion`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `a1Status`
 

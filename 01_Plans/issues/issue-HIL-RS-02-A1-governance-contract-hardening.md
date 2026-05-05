@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream D）
+# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream E）
 
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
 - Source Issue: N/A
-- Owner: Stream D（HIL A1 governance/interface contract）
+- Owner: Stream E（HIL A1 governance/interface contract）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1最小I/F固定済み前提）
 - Expected verification level: docs-check
@@ -13,8 +13,8 @@
 
 ## Serial Phases（固定）
 1. Phase 1 Read（A1固定値再確認）
-2. Phase 2 ADR/CDC（Context / Decision / Consequences）
-3. Phase 3 Plan（hardening計画）
+2. Phase 2 Plan（hardening計画）
+3. Phase 3 ADR/CDC（Context / Decision / Consequences）
 4. Phase 4 Execute（統治契約の強化明文化）
 5. Phase 5 Verify
 6. Phase 6 Proceed
@@ -41,7 +41,12 @@
 
 ---
 
-## Phase 2 ADR/CDC
+## Phase 2 Plan（hardening計画）
+- Goal: 統治契約をhardeningし、A2/A3がread-only参照可能な固定境界を提供する。
+- Non-goal: A2/A3実装、A3運用文書同期の実行。
+- Planned checks: SoD整合、承認遷移固定、freeze key一致、NoGo差戻し。
+
+## Phase 3 ADR/CDC
 ### Context
 - 失敗モードは主に `Pending bypass` と `承認責務の混線`。
 
@@ -70,16 +75,6 @@
 
 ---
 
-## Phase 3 Plan
-- hardening対象:
-  1. 承認証跡要件
-  2. SoD検証
-  3. Freeze key整合
-  4. NoGo差戻し導線
-- 非対象:
-  - A2/A3実装計画
-  - delivery-plan編集
-
 ## Phase 4 Execute（hardening contract）
 ### Approval Record（必須）
 - required_fields: `approved_by`, `approved_at`, `evidence`
@@ -90,6 +85,9 @@
 - `pendingDecisionQueueCount > 0` -> `decision=Hold` / `executeAllowed=false`
 - freeze key mismatch -> `decision=NoGo`
 - NoGo return: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+### Needs-decision
+- Approver-A/Bの実名アサインと証跡URI命名規約は人間判断待ち（未確定扱い）。
 
 ### Protected Immutable Set
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
