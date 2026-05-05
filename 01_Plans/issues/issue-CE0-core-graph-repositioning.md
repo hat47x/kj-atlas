@@ -1668,3 +1668,36 @@
   - Core Graphは契約参照のみ（実装確定なし）。
   - CE1の hash/preview/unknown-key 契約を先行条件として扱う。
   - 未承認確定化要求は `held`。
+
+## Phase Execution Record（2026-05-05 / Stream C / independent-contract run with mock I/F）
+### Phase 1 Read
+- 本Issue全文を再読し、固定語彙 `role / transition / no-go`、SafeMode既定ON後退禁止、CE0契約ID read-only制約を確認。
+- 差分判定: `working / context_projection / consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs に変更なし（継続可）。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- 依存切断方針を明示: 他Stream成果物を前提にせず、必要I/Fは仮契約として扱い mock で検証可能な粒度へ固定。
+- AC補完:
+  - AC-7: 仮契約I/Fを `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の参照名で固定し、実体実装前提の記述を追加しない。
+  - AC-8: 競合検知時は推測実装を行わず `held` かつ `stopped_for_clarification` で停止する。
+- DoD補完:
+  - DoD-5: 検証結果に self-heal 回数（最大3回）を明記する。
+  - DoD-6: 他ファイル無変更を `git status --short` で確認し、単一ファイル更新を担保する。
+
+### Phase 3 ADR（Context / Decision / Consequences）
+- Context: CE0 Core Graph 再配置の契約固定を継続しつつ、他Stream非依存で検証可能な仮契約I/Fを明文化する必要がある。
+- Decision: `No ADR delta`。上流方針の変更は不要とし、既存契約境界の明確化（AC/DoD補完）に限定する。
+- Consequences: 未承認事項は確定せず `held/pending` 在庫として扱い、承認まで contract-only を維持する。
+
+### Phase 4 Execute（設計・手順明文化のみ）
+- 実装変更は行わず、本Issue内で仮契約I/Fと停止条件運用（競合検知時即停止）を手順として追記。
+- `preview_bypass` ほか canonical 5 IDs の語彙、`patch+approval` 以外禁止、SafeMode既定ON後退禁止を維持。
+
+### Phase 5 Verify（docs-check / max 3 self-heal）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass（self-heal 0/3）。
+- `git diff --check` を実行し、pass。
+- `git status --short` を実行し、対象ファイルのみ変更を確認。
+
+### Phase 6 Proceed
+- 判定: `Done`（AC/DoD充足、docs-check pass、単一ファイル更新、contract-only維持）。
+- 未承認事項在庫: なし（新規 `held/pending` は発生せず）。
+- 競合検知時即停止・推測実装禁止の fail-safe を再確認。
