@@ -155,3 +155,34 @@
 - Context: QA-UNITはカバレッジ改善の優先順位付けを誤ると、低効果の工数消費が発生する。
 - Decision: DraftをOpen判定可能品質へ整備し、実装前に評価軸と停止条件を固定する。
 - Consequences: 後続実装時の判断基準が明確になり、過剰実装や誤優先度を抑制できる。
+
+
+## Stream F readiness pass（2026-05-05 / QA-UNIT issue readiness）
+
+### Phase 1 Read（前提確認）
+- FB-P0収束後に着手する依存前提を維持する（`issue-FB-P0-2A2B2C-stream-c-planning-baseline` 完了前はDraft維持）。
+- 本Issueは実装前の準備フェーズであり、frontend/backend/testsの分解定義を先に固定する。
+
+### Phase 2 Plan（対象分解）
+- Frontend対象: `03_Implement/frontend/src/domain`（safeMode/diff/validation関連ロジック）と `03_Implement/frontend/tests`。
+- Backend対象: `03_Implement/backend/src/kj_atlas_api` のvalidation/service層と `03_Implement/backend/tests`。
+- Tests対象: `03_Implement/*/tests` に限定し、実装コード変更は「テスト成立に必要な最小差分」のみ許容する。
+
+### Phase 3 Execute（AC/DoDドラフト提示）
+- AC補強ドラフト（合意取得待ち）:
+  - AC-F1: frontend/backendで対象モジュール一覧・追加ケース数・未対応理由を同一フォーマットで記録する。
+  - AC-F2: Before/Afterのcoverage差分ログを保存し、悪化時はNo-Go。
+  - AC-F3: safeMode/validation/diffで回帰検知アサーションを最低1件ずつ保持する。
+- DoDドラフト（合意取得待ち）:
+  1. unitコマンド実行結果（または代替検証ログ）を残す。
+  2. 停止条件（self-correction上限3回・依存未解決時停止）を満たす。
+  3. FB-P0依存が未解決ならStatusをDraftのまま据え置く。
+
+### Phase 4 Verify（整合チェック）
+- 想定コマンド・代替検証・停止条件の3点が矛盾しないことを確認する。
+- self-correctionは最大3回。4回目相当の修復が必要な場合は `held` で停止する。
+
+### Phase 5 Proceed（Fail-safe）
+- 依存（FB-P0収束、検証スコープ同期）が未解決の場合はOpen化せずDraft維持で停止する。
+- 依存解決後のみ、Owner確定とGo判定を実施する。
+
