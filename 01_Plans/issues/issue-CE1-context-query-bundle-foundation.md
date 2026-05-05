@@ -1422,3 +1422,36 @@ handoffKeys:
 ### Phase 6 Proceed/Stop
 - 判定: **Proceed（Interface Freeze Maintained）**。
 - 停止条件: 未定義競合、自己修復4回目相当、許可外ファイル要求で `held`。
+
+
+## Stream B run（2026-05-05 / CE1 interface-first freeze handoff）
+
+### Phase 1 Read
+- CE0 freeze / CE0 core graph / CE1 foundation の3Issue再読により、CE1が CE2/CE4 の共通I/F前提であることを再確認。
+- `ContextQueryV1` / `ContextBundleV1` と固定語彙（422/400/409）の凍結状態を確認。
+
+### Phase 2 ADR/CDC
+- **Context**: CE2/CE4の並行進行には、CE1の型・キー・エラー意味論を実装前に固定する必要がある。
+- **Decision**: CE1を `contract-only / mock-first` で維持し、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を1:1固定語彙として継続。
+- **Consequences**: 下流は mock-only で検証継続可能。v1拡張要求は `held` として分離。
+
+### Phase 3 Plan
+- AC/DoD補強（合意）:
+  - `ac_if_freeze_precedes_impl`: I/F固定を実装決定より常に先行。
+  - `dod_handoff_keys_explicit`: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey` を handoff 必須項目として明示。
+
+### Phase 4 Execute
+- CE0→CE1順で文言・依存・ゲート条件を正規化。
+- `previewConfirmed=false -> 422 preview_required`、unknown key -> `400 unknown_contract_key`、非決定論 -> `409 nondeterministic_bundle` を維持。
+- I/F先行固定（interface-first freeze）を明示し、実装順序確定は対象外を再宣言。
+
+### Phase 5 Verify
+- docs-check観点自己検証: 1回で完了（self-correction 0/3）。
+- 判定: `contract_id_collision=0` / `error_semantics_collision=0` / `dependency_cycle=0`。
+
+### Phase 6 Proceed
+- CE2/CE4引き渡し前提（read-only）:
+  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+  - Handoff keys: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`
+  - 固定語彙: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- 停止条件: 自己修復4回目相当、未定義競合、許可外編集要求で `held`。

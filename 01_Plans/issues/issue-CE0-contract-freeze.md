@@ -2148,3 +2148,35 @@ type PatchProposal = {
 ### Phase 6 Proceed/Stop
 - 判定: **Proceed（Conditional-Go）**。
 - 継続条件: 契約凍結維持。契約衝突/No-Go触発/safeMode後退/自己修復4回目相当で `held` 停止。
+
+
+## Stream B run（2026-05-05 / CE0 contract boundary normalization）
+
+### Phase 1 Read
+- 対象3Issue（CE0 contract freeze / CE0 core graph / CE1 context query-bundle）を再読し、依存順序を **CE0 → CE1 → CE2/CE4** に固定。
+- CE責務境界を `contract-only` / `mock-first` とし、実装仕様（handler/UI/DB/worker）を契約本文から分離する前提を再確認。
+
+### Phase 2 ADR/CDC
+- **Context**: CE0で契約境界が曖昧だと、CE1以降でI/F解釈差分が発生し、CE2/CE4 handoff が不安定化する。
+- **Decision**: CE0は Contract SSOT として `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` および `CG-01..05` を read-only 固定し、再定義・拡張を禁止。
+- **Consequences**: 下流は契約ID・固定語彙のみで mock 検証を継続でき、逸脱要求は `held` で停止可能。
+
+### Phase 3 Plan
+- AC/DoD不足の確認結果: 新規不足なし。
+- 合意補強（運用固定）:
+  - `ac_contract_only_boundary`: CE0本文に実装確定手順を追加しない。
+  - `dod_mock_first_handoff`: CE1/CE2/CE4へは契約ID・語彙・handoff key のみ引き渡す。
+
+### Phase 4 Execute
+- CE0境界文言を正規化し、I/F先行固定を明示（実装方式の決定を禁止）。
+- CE0→CE1の依存は「契約参照のみ」とし、直接実装依存を明示的に禁止。
+
+### Phase 5 Verify
+- docs-check観点自己検証: 1回で完了（self-correction 0/3）。
+- 判定: `contract_id_mutation=0` / `dependency_cycle=0` / `scope_deviation=0`。
+
+### Phase 6 Proceed
+- CE2/CE4引き渡し前提:
+  - CE0 Contract IDs は read-only。
+  - safeMode境界（既定ON / 緩和禁止）は read-only。
+  - 未定義競合・循環依存・許可外編集要求は即 `held`。
