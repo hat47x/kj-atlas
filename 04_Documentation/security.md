@@ -913,3 +913,12 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed (Ready)**。
 - 停止条件: 用語/役割/導線/固定値の不一致または競合兆候検知時は `StoppedForClarification`。
+
+
+## Stream M docs-only sync log（2026-05-05）
+
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` と `02_Architecture/enterprise_architecture.md` を再読し、`operations.md` / `security_operational_guidelines.md` / `e2e_testing.md` との整合を確認。
+- Phase 2 Plan: AC/DoD を補完し、4観点（用語・役割・導線・固定値D1〜D4）同時一致を Proceed 条件として固定。
+- Phase 3 Execute: 本書の責務を「安全境界の正本維持」に限定し、runbook詳細は `operations.md`、運用判断補助は `security_operational_guidelines.md` へ委譲。
+- Phase 4 Verify: canonical 用語、2者承認（Security Officer + System Owner）/ 実行責務（Platform Operator）分離、導線、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m を再確認。
+- Phase 5 Proceed: 未解決論点なし。承認未了事項を確定記述へ昇格させる提案が出た場合は `StoppedForClarification` とする。

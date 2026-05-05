@@ -1224,3 +1224,12 @@ runbook 側の Verify は次の4観点を必須とする。
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed (Ready)**。
 - 停止条件: 4観点不一致または競合兆候検知時は `StoppedForClarification`。
+
+
+## Stream M docs-only sync log（2026-05-05）
+
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、`04_Documentation/security.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/e2e_testing.md` との導線を再確認。
+- Phase 2 Plan: AC/DoD を docs-only に固定（用語・役割・導線・固定値 D1〜D4 を同時一致、自己修復上限3回、4回目相当は `StoppedForClarification`）。
+- Phase 3 Execute: 本書は runbook 同値確認先として更新し、承認制度の再定義は行わない。
+- Phase 4 Verify: `Security Officer / System Owner / Platform Operator`、2者承認+実行責務分離、`strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m の一致を確認。
+- Phase 5 Proceed: 未解決論点なし。次回差分で4観点不一致が再発した場合は `StoppedForClarification` で停止する。
