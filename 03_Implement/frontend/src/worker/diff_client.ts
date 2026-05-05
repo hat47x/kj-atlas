@@ -1,6 +1,6 @@
 import { buildMergeItemsIncremental, type MergeItem } from "../diff/merge_items";
 import { createCancelableTaskRunner } from "../utils/compute_scheduler";
-import type { DiffProgressStage, DiffRequestPayload, DiffWorkerRequestMessage, DiffWorkerResponseMessage } from "./diff_protocol";
+import { DIFF_WORKER_PROTOCOL_VERSION, type DiffProgressStage, type DiffRequestPayload, type DiffWorkerRequestMessage, type DiffWorkerResponseMessage } from "./diff_protocol";
 
 export type DiffComputeProgress = {
   stage: DiffProgressStage;
@@ -12,6 +12,13 @@ export type DiffComputeResult =
   | { status: "cancelled"; usedFallback: boolean };
 
 let requestCounter = 0;
+
+function assertDiffWorkerProtocolVersion(message: DiffWorkerResponseMessage): void {
+  if (message.protocolVersion !== DIFF_WORKER_PROTOCOL_VERSION) {
+    throw new Error(`Unsupported diff worker protocol version: ${String(message.protocolVersion)}`);
+  }
+}
+
 
 export class DiffWorkerClient {
   private worker: Worker | null = null;
@@ -46,6 +53,8 @@ export class DiffWorkerClient {
         if (message.requestId !== requestId) {
           return;
         }
+
+        assertDiffWorkerProtocolVersion(message);
 
         if (message.type === "diff.progress") {
           options.onProgress?.({ stage: message.stage, percent: message.percent });

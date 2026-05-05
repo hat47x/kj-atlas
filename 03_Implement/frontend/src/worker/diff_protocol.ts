@@ -16,8 +16,11 @@ export type DiffWorkerRequestMessage =
 
 export type DiffProgressStage = "cards" | "islands" | "edges" | "evidence" | "view";
 
+export const DIFF_WORKER_PROTOCOL_VERSION = 1 as const;
+export type DiffWorkerProtocolVersion = typeof DIFF_WORKER_PROTOCOL_VERSION;
+
 export type DiffWorkerResponseMessage =
-  | { type: "diff.progress"; requestId: string; stage: DiffProgressStage; percent: number }
-  | { type: "diff.result"; requestId: string; result: { documentDiff: MergeItem[]; viewDiff: MergeItem[] } }
-  | { type: "diff.error"; requestId: string; error: { code: string; message: string; details?: unknown } }
-  | { type: "diff.cancelled"; requestId: string };
+  | { type: "diff.progress"; requestId: string; stage: DiffProgressStage; percent: number; protocolVersion: DiffWorkerProtocolVersion }
+  | { type: "diff.result"; requestId: string; result: { documentDiff: MergeItem[]; viewDiff: MergeItem[] }; protocolVersion: DiffWorkerProtocolVersion }
+  | { type: "diff.error"; requestId: string; error: { code: string; message: string; details?: unknown }; protocolVersion: DiffWorkerProtocolVersion }
+  | { type: "diff.cancelled"; requestId: string; protocolVersion: DiffWorkerProtocolVersion };
