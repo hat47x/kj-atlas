@@ -1,10 +1,9 @@
-import { buildCe2ProposalOnlyState } from "../domain/ce2_proposal_only";
-import {
-  buildCe2SuggestionCandidates,
-  summarizeCe2ReviewStates,
-  type Ce2SuggestionCandidate,
-} from "../domain/ce2_suggestion_candidates";
 import { t } from "../i18n/translate";
+import {
+  defaultSuggestionPanelAdapter,
+  type Ce2SuggestionCandidate,
+  type SuggestionPanelAdapter,
+} from "./suggestion_panel_adapter";
 
 type SuggestionPanelProps = {
   isReadOnly?: boolean;
@@ -25,6 +24,10 @@ type SuggestionPanelProps = {
   isSuggesting: boolean;
   errorMessage: string | null;
   notes: string | null;
+  resuggestAttemptCount?: number;
+  resuggestAttemptLimit?: number;
+  onStopResuggest?: () => void;
+  adapter?: SuggestionPanelAdapter;
 };
 
 export function SuggestionPanel({
@@ -45,21 +48,26 @@ export function SuggestionPanel({
   isSuggesting,
   errorMessage,
   notes,
+  resuggestAttemptCount = 0,
+  resuggestAttemptLimit = 3,
+  onStopResuggest,
+  adapter = defaultSuggestionPanelAdapter,
   isReadOnly = false,
 }: SuggestionPanelProps) {
-  const ce2State = buildCe2ProposalOnlyState({
+  const ce2State = adapter.buildProposalOnlyState({
     safeModeEnabled: true,
     previewEnabled: isPreviewEnabled,
     hasSuggestion,
   });
-  const candidates = buildCe2SuggestionCandidates({
+  const candidates = adapter.buildCandidates({
     hasSuggestion,
     suggestionId,
     candidates: proposalCandidates,
   });
   const selectedCandidateId = selectedProposalId ?? candidates[0]?.proposalId ?? "";
   const selectedCandidate = candidates.find((candidate) => candidate.proposalId === selectedCandidateId) ?? null;
-  const reviewSummary = summarizeCe2ReviewStates(candidates);
+  const reviewSummary = adapter.summarizeReviewStates(candidates);
+  const resuggestStopReached = resuggestAttemptCount >= resuggestAttemptLimit;
 
   return (
     <section
@@ -94,7 +102,7 @@ export function SuggestionPanel({
         }}
       />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <button type="button" onClick={onSuggest} disabled={isReadOnly || isSuggesting}>
+        <button type="button" onClick={onSuggest} disabled={isReadOnly || isSuggesting || resuggestStopReached}>
           {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
         </button>
       </div>
@@ -123,6 +131,9 @@ export function SuggestionPanel({
               <button type="button" onClick={onResuggest} disabled={isReadOnly || isSuggesting}>
                 {isSuggesting ? t("suggestion.panel.resuggesting") : t("suggestion.panel.resuggest")}
               </button>
+              <button type="button" disabled={isReadOnly || !resuggestStopReached} onClick={onStopResuggest}>
+                Stop after {resuggestAttemptLimit} retries
+              </button>
               <button type="button" disabled={isReadOnly} onClick={onDiscard}>
                 {t("suggestion.panel.discard")}
               </button>
@@ -132,6 +143,10 @@ export function SuggestionPanel({
             </div>
             <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 6 }}>
               {t("suggestion.panel.proposal_only_hint")}
+            </div>
+            <div style={{ fontSize: 11, color: resuggestStopReached ? "#b45309" : "#475569", marginTop: 6 }}>
+              Self-repair attempts: {resuggestAttemptCount}/{resuggestAttemptLimit}
+              {resuggestStopReached ? " (stopper active)" : ""}
             </div>
           </section>
           <section
