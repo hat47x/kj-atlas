@@ -778,3 +778,31 @@
 ### Consequences
 - Plan段階で interface境界が確定し、A2/A3は read-only 契約参照で進行可能。
 - 仕様変更要求は本baselineでは確定せず、CDC草案→承認待ちに限定。
+
+## Stream A baseline sync run（2026-05-05 / serial protocol）
+
+### Phase 1: Read
+- 対象2ファイルを再読し、`Status / Priority / Scope / Dependencies / 固定キー` を比較。
+- 差分結果: `0`（Hold条件非該当）。
+
+### Phase 2: ADR/CDC Consensus
+- Context: baseline側とA1契約Issue側の語彙差異はP0ゲートの決定論を崩す。
+- Decision: `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` を既存SSOT表現のまま固定する。
+- Consequences: 未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `pending/held` 維持。
+
+### Phase 3: Plan
+- Target: allowlist 2ファイルの契約・ゲート記述整合。
+- Non-target: allowlist外編集、実装誘導、safeMode境界変更。
+- AC/DoD: 固定キー差分0、判定式一意、未承認確定化なし。
+
+### Phase 4: Execute
+- `freezeContractId` / `unlockRule` / `decisionQueueTransition` / gate条件を既存固定値で維持。
+- 重複語彙の扱いはA1契約Issueの固定語彙優先を継続。
+
+### Phase 5: Verify
+- AC/DoD自己検証: pass。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- State: `Conditional (Needs-decision)`。
+- Blockers: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
