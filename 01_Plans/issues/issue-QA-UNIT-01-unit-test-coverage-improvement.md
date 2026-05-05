@@ -62,6 +62,9 @@
 - [ ] 必要な検証（unit）が `Expected verification level` と一致する。
 - [ ] `GoNoGoGate` の要否（Optional）が明示されている。
 - [ ] セキュリティ境界に影響する観点（SafeMode関連）を含むテスト観点が列挙される。
+- [ ] AC-M1: 測定対象モジュール一覧（Frontend/Backend）を明記し、各モジュールで「追加ケース数（最低1件）」を定量記録する。
+- [ ] AC-M2: `pytest --cov` / `vitest --coverage`（または同等）で **statement coverageの差分（Before/After）** を保存し、対象モジュールで非負（悪化なし）を必須化する。
+- [ ] AC-M3: 回帰検知の実効性指標として、safeMode/validation/diffの3観点それぞれで「失敗を検知できるアサーション」を1件以上持つことを必須化する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -75,10 +78,23 @@
 - 実行コマンド:
   - `cd 03_Implement/frontend && npm test -- --runInBand`
   - `cd 03_Implement/backend && pytest -q`
+  - `cd 03_Implement/frontend && npm run test -- --coverage --runInBand`
+  - `cd 03_Implement/backend && pytest --cov=src --cov-report=term-missing`
 - 期待結果:
   - 追加したunit testを含めて全件pass。
+  - Coverage指標（statement/branchのうち収集可能なもの）がBefore比で悪化しない。
+  - 対象3観点（safeMode/validation/diff）で回帰検知アサーション件数が0でない。
 - 未実施時の理由・代替検証:
   - 依存不足で実行不可の場合は、対象テストファイルの静的レビュー結果と実行阻害要因を記録する。
+
+### 7.1 Verify時の測定可能指標（必須）
+
+- 指標V-UNIT-01: 追加unit test件数（frontend/backend別）。
+- 指標V-UNIT-02: 対象モジュールのcoverage差分（Before/After、%）。
+- 指標V-UNIT-03: 安全境界観点別アサーション件数（safeMode/validation/diff）。
+- 判定ルール:
+  - 3指標のうち1つでも未記録なら **No-Go**。
+  - Verifyの自己修復（self-correction）は最大3回。4回目が必要な場合は **Stop**。
 
 ## 8) 代替案 / Alternatives considered
 

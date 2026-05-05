@@ -129,10 +129,26 @@
   - `python 01_Plans/issues/validate_active_issue_memos.py`
 - 判定整合:
   - 上記コマンドで Journey-A〜C が再現され、AC/DoDに対応するアサーションが確認できること。
+  - 測定可能指標（下記 V-E2E-*）が記録され、閾値を満たすこと。
 
 - docs-check（本フェーズ）:
   - `python 01_Plans/issues/validate_active_issue_memos.py` が成功し、本Issueメモの構造整合が確認できること。
   - GoNoGoGate/AC/DoD/停止条件の記述が相互矛盾しないこと。
+
+### 5.1 測定可能なテスト指標（Verify必須）
+
+- V-E2E-01 実行成功率: Journey-A/B/C の各シナリオが `pass`（3/3必須、Dは推奨）。
+- V-E2E-02 安全境界アサーション件数:  
+  - safeMode既定ON検証 >= 1  
+  - share/export fail-closed検証 >= 1  
+  - review attribution human-only検証 >= 1  
+  - import sanitize検証 >= 1（Journey-D採用時は必須）
+- V-E2E-03 Flake管理: 同一コミットで2回連続実行し、Journey-A/B/Cの結果差分が0件。
+- V-E2E-04 所要時間上限: core（Journey-A/B/C）合計実行時間を記録し、基準時間から20%超過時は要因分析を添付。
+- 判定ルール:
+  - V-E2E-01〜03のいずれか未達は **No-Go**。
+  - V-E2E-04は超過時に即Failではなく、要因分析未添付なら **No-Go**。
+  - Verify自己修復（self-correction）は3回まで。4回目が必要な場合は **Stop**。
 
 ## Phase 6. Proceed/Stop（実装着手条件）
 
