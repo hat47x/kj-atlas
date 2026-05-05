@@ -2212,3 +2212,52 @@ type PatchProposal = {
   - prohibitions: 上記No-Go canonical IDs
 - 未達/未確定:
   - 承認者実名割当と証跡URIは人手合意待ち（未確定）。
+
+## Stream B latest run（2026-05-05 / CE0 only / contract boundary freeze refresh）
+
+- run_id: `stream-b-ce0-2026-05-05-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、直列Phase **Read → Plan → ADR明文化（必要時）→ Execute → Verify → Proceed** を同期。
+- CE1未確定でも、CE0側は「契約境界と期待I/Fまで」を定義して独立完了する方針（mock-first）を再確認。
+- stop条件（未承認事項の推測確定禁止 / 指定外編集禁止 / safeMode後退禁止 / Contract ID再定義禁止）を再確認。
+
+### Phase 2 Plan
+- AC/DoD不足の有無を確認し、以下を運用追跡項目として補強。
+  - `ac_contract_boundary_explicit`: CE0の責務境界（定義するもの / 定義しないもの）を毎runで明記する。
+  - `dod_dependency_cut_points_visible`: CE1/CE2/CE4への依存切断ポイント（read-only参照項目）を毎runで列挙する。
+  - `dod_hold_on_unapproved_dependency`: 依存先の未承認事項が契約に侵入する要求は推測確定せず `held` 停止する。
+- 判定: 追加ADRは不要（既存freeze方針の運用明確化で吸収可能）。
+
+### Phase 3 ADR明文化（Context / Decision / Consequences）
+- Context: CE0契約をSSOTとして維持しつつ、CE1未確定状態で下流が誤って実装確定に進まない境界記述を強化する必要がある。
+- Decision: CE0は `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を read-only freeze のまま固定し、CE1/CE2/CE4へは契約ID・No-Go canonical IDs・safeMode既定値のみを受け渡す。
+- Consequences: CE0は依存未承認でも独立完了できる一方、未承認仕様の推測確定は抑止され、必要時は `held` へ即停止できる。
+
+### Phase 4 Execute
+- 実施: 本Issueへの契約凍結方針の明文化と依存切断ポイントの追記（docs-only / contract-only）。
+- 依存切断ポイント（read-only受け渡し）:
+  - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  - No-Go canonical IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+  - Fixed defaults: `safeMode=true` / `allowUnreviewedText=false`
+- 非実施: 実装変更、他Issue編集、依存先未承認事項の確定、Contract ID追加/改名/削除。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- AC/DoD検証:
+  - `ac_contract_boundary_explicit`: pass
+  - `dod_dependency_cut_points_visible`: pass
+  - `dod_hold_on_unapproved_dependency`: pass
+
+### Phase 6 Proceed
+- 判定: **Ready**（CE0契約境界の独立完了条件を満たす）
+- 注記:
+  - CE1/CE2/CE4への引き渡しは read-only参照のみ。
+  - 依存先未承認事項の確定要求が入った時点で **Needs-decision/Hold** へ遷移し停止する。
