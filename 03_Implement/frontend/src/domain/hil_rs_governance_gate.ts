@@ -29,14 +29,21 @@ const A1_STATUS_DONE = "Done";
 export function evaluateHilRsGovernanceGate(input: HilRsGovernanceGateInput): HilRsGovernanceGateResult {
   const reasons: string[] = [];
 
-  if (input.freezeContractId !== FREEZE_CONTRACT_ID) reasons.push("freeze_contract_id_mismatch");
-  if (input.schemaVersion !== SCHEMA_VERSION) reasons.push("schema_version_mismatch");
-  if (input.overridePolicy !== OVERRIDE_POLICY) reasons.push("override_policy_mismatch");
+  const freezeContractId = input.freezeContractId.trim();
+  const schemaVersion = input.schemaVersion.trim();
+  const overridePolicy = input.overridePolicy.trim();
+  const safeModeDefault = input.safeModeDefault.trim();
+  const safeModeBoundary = input.safeModeBoundary.trim();
+  const a1Status = input.a1Status.trim();
+
+  if (freezeContractId !== FREEZE_CONTRACT_ID) reasons.push("freeze_contract_id_mismatch");
+  if (schemaVersion !== SCHEMA_VERSION) reasons.push("schema_version_mismatch");
+  if (overridePolicy !== OVERRIDE_POLICY) reasons.push("override_policy_mismatch");
   if (!input.contractLinkLocked) reasons.push("contract_link_unlocked");
   if (!input.sharedResourceFreeze) reasons.push("shared_resource_not_frozen");
-  if (input.safeModeDefault !== SAFE_MODE_DEFAULT) reasons.push("safe_mode_default_mismatch");
-  if (input.safeModeBoundary !== SAFE_MODE_BOUNDARY) reasons.push("safe_mode_boundary_mismatch");
-  if (input.a1Status !== A1_STATUS_DONE) reasons.push("a1_not_done");
+  if (safeModeDefault !== SAFE_MODE_DEFAULT) reasons.push("safe_mode_default_mismatch");
+  if (safeModeBoundary !== SAFE_MODE_BOUNDARY) reasons.push("safe_mode_boundary_mismatch");
+  if (a1Status !== A1_STATUS_DONE) reasons.push("a1_not_done");
   if (input.pendingDecisionQueueCount !== 0) reasons.push("pending_decision_exists");
   if (input.hasUndefinedContractChangeRequest) reasons.push("undefined_contract_change_request");
   if (input.hasSafeModeRegressionRequest) reasons.push("safe_mode_regression_request");

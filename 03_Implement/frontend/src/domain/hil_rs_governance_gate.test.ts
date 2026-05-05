@@ -54,4 +54,23 @@ describe("evaluateHilRsGovernanceGate", () => {
       "share_export_leakage_relaxation_request",
     ]);
   });
+
+  it("tolerates whitespace in fixed-value fields", () => {
+    const result = evaluateHilRsGovernanceGate({
+      freezeContractId: "  HIL-RS-02-A1-CONTRACT-FREEZE-v1  ",
+      schemaVersion: " 1.0.0 ",
+      overridePolicy: " human_dual_control_only ",
+      contractLinkLocked: true,
+      sharedResourceFreeze: true,
+      safeModeDefault: " ON ",
+      safeModeBoundary: " SAFE_MODE_STRICT_ON ",
+      a1Status: " Done ",
+      pendingDecisionQueueCount: 0,
+      hasUndefinedContractChangeRequest: false,
+      hasSafeModeRegressionRequest: false,
+      hasShareExportLeakageRelaxationRequest: false,
+    });
+
+    expect(result).toEqual({ go: true, noGo: false, reasons: [] });
+  });
 });
