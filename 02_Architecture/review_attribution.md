@@ -312,3 +312,18 @@ kj-atlas は OSS として、多様な環境で利用される：
 - Snapshot ID: `CE0-HIL-CONTRACT-SNAPSHOT-2026-04-16-v1`
 - Version: `1.0.0`
 - Hash (sha256): `851849b770825eb4844d46c77bae34bbefb4aec1ae9bd004e7dc4d50b875a698`
+
+## Stream B Contract Annotation（review boundary / conditional）
+
+### Context
+- review attribution は `CE0-REVIEW-IF` と `A1-ATTR-IF` の境界契約に依存しつつ、実装待機なしで schema整合を保つ必要がある。
+
+### Decision
+- review state は `unreviewed | human_reviewed` を固定し、AI自動昇格を禁止する。
+- `A1-ATTR-IF` 参照は read-only とし、未確定要素は conditional メモとして保持する。
+- mock review payload（`reviewerRef` / `reviewedAt` / `auditRecordedAt`）を使った契約検証を許可する。
+
+### Consequences
+- review運用の責任境界（人手昇格・2者承認・safeMode保護）を実装非依存で維持できる。
+- 下流は attribution 実装前でも export/redaction と整合した検証を継続できる。
+- 契約矛盾が発生した場合は `held` / fail-closed 判定へ収束できる。

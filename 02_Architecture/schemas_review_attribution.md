@@ -209,3 +209,18 @@ ReviewerRef 推奨フォーマット（例）:
 - attribution の永続層では `provider` / `external_uid` を保持せず、参照逆引きは `user_identities` に委譲する。
 
 これにより、IdP変更時でも `user_identities` の再紐付けで reviewer/owner 帰属を不変維持できる。
+
+## Stream B Contract Annotation（schema-only fixation）
+
+### Context
+- review attribution schema は privacy/safeMode 境界を壊さずに、mock payload で独立検証できる形で固定する必要がある。
+
+### Decision
+- `reviewerRef` は non-empty opaque string とし、`provider` / `external_uid` の直保存を禁止する。
+- `reviewEvents` / `reviewers` / `reviewAttributionPolicy` は型契約のみ固定し、実装値や運用値は本書で規定しない。
+- A系契約ID参照は conditional を許容するが、schema key set の再定義は行わない。
+
+### Consequences
+- 下流は mock sidecar（`review-signature.json`）を含む入出力契約を先行検証できる。
+- 用語統一（reviewerRef / ownerRef / reviewState）と safeMode境界の非侵害を schema review で担保できる。
+- 実装段階での過収集PIIや契約外キー混入を fail-closed で検知できる。

@@ -397,3 +397,19 @@ MVPでは高度な権限管理は後回し。
 - Fixed boundary: 上記4型は `02_Architecture/schemas.md` の定義をSSOTとし、`02_Architecture/api.md` はその入出力契約を参照する。
 - Mock-first policy: CE1/CE2/CE4 は backend/frontend の実装完了待機を禁止し、`A1-CONTRACT-MOCK-v1` 互換fixtureで契約検証を継続する。
 - Downstream rule: 下流は判定式と契約IDを read-only 参照し、派生I/Fの再定義を行わない。
+
+## 13. Stream B Contract Reflection Note（interface-only / conditional）
+
+### Context
+- Stream B は `02_Architecture` の契約反映のみを担当し、実装値ではなく schema/type/signature を固定する。
+- CE1/CE2/CE4 の並行進行により、A系契約IDの更新が遅延する可能性があるため、未確定項目は conditional 参照で保持する。
+
+### Decision
+- 本書では `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` を interface freeze 対象として維持する。
+- A系契約ID参照（例: `A1-ATTR-IF`）は read-only で引用し、未確定時は `conditional` 扱いとして再定義しない。
+- mock payload を契約検証の前提に許可し、backend/frontend 実装完了待機を行わない。
+
+### Consequences
+- 下流は mock-first で独立検証を継続でき、契約待ちで停止しない。
+- safeMode既定ON・未レビュー保護・proposal-only 境界を architecture 層で固定できる。
+- conditional 参照が確定した時点で、再採番ではなく参照先更新のみを許可する。

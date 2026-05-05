@@ -750,3 +750,19 @@ Deprecateルール（v1固定）:
 ### Consequences
 - 下流は interface-only で先行でき、backend/frontend の完了待機を不要化できる。
 - 契約変更要求は CDC再承認が必須となり、無断拡張を防止できる。
+
+## Stream B Contract Annotation（Phase 2/3 alignment）
+
+### Context
+- CE系契約は実装前に type/signature を固定し、mock payload で下流連携を維持する必要がある。
+- A系契約IDの一部は確定待ちがありうるため、参照は conditional を許可する。
+
+### Decision
+- v1契約は closed-world を維持し、必須キーとエラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を固定する。
+- mock payload 例（`A2-minimal-v1`）を正規の検証入力として扱い、実装値を契約へ持ち込まない。
+- conditional 参照中の契約IDは再定義せず、確定時に参照更新のみ実施する。
+
+### Consequences
+- CE2/CE4 は backend未完了でも契約テストを継続できる。
+- 状態遷移（`unreviewed -> human_reviewed` の人手限定）と safeMode 境界の侵害を schema 検証で早期検出できる。
+- 互換性判断は v1固定を基準に fail-closed で統一される。
