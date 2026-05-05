@@ -560,3 +560,12 @@ A3 docs同期では `operations.md` を runbook整合確認先として扱い、
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed (Ready)**。
 - 停止条件: 4観点不一致または競合兆候検知時は `StoppedForClarification`。
+
+
+## Stream M docs-only sync log（2026-05-05）
+
+- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に、`security.md` / `operations.md` / `e2e_testing.md` の最新記述を再読。
+- Phase 2 Plan: AC/DoD 不足を補完し、`Security Officer / System Owner / Platform Operator`、2者承認+実行分離、導線、D1〜D4 を同時一致条件に固定。
+- Phase 3 Execute: 本書は運用判断補助の範囲でのみ同期し、承認制度・固定値そのものの再定義は行わない。
+- Phase 4 Verify: 導線 `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` と、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m を確認。
+- Phase 5 Proceed: 未解決論点なし。自己修復が3回で収束しない場合は `StoppedForClarification` で停止する。
