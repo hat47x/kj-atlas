@@ -859,3 +859,37 @@
 ### Phase 6: Proceed
 - 判定: `Conditional (Needs-decision)`。
 - 停止理由: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+## Stream A strict-serial sync addendum（2026-05-05）
+
+### Phase 1 Read（対象2ファイル再読）
+- 再読対象を本ファイルと `issue-FB-P2C-01-a1-interface-contract.md` に固定し、語彙・判定式・held条件を照合。
+- 差分結果: `A2A3_OPEN_ALLOWED` 判定式および固定キー群に差分なし。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: Stream A契約凍結を唯一SSOTとし、A2/A3の派生再定義を禁止する。
+- Decision: 固定キー（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`, `safeModeDefault`, `contractLinkLocked`, `sharedResourceFreeze`, `decisionQueueTransition`）と `A2A3_OPEN_ALLOWED` を据え置く。
+- Consequences: `Approval Record` 未承認および `held` 論点が残る限り、状態は `Conditional/Needs-decision` を維持。
+- Human approval status: `pending`（未承認事項は凍結候補として扱う）。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  1. 2ファイルで固定キー差分0。
+  2. `A1 -> A2 -> A3` 依存順序を維持。
+  3. A2/A3依存は read-only参照 + mock-first。
+- DoD:
+  1. 未承認論点を確定化しない。
+  2. 未定義キー fail-closed を維持。
+  3. allowlist外編集0。
+
+### Phase 4 Execute（閉集合契約 + fail-closed）
+- 閉集合契約キーをA1 issue記載と同一に固定し、それ以外は受理しない。
+- `NoGo判定 = (!A2A3_OPEN_ALLOWED) || pendingBypassDetected || undefinedConflictDetected` を維持。
+
+### Phase 5 Verify
+- AC/DoD自己検証: 充足。
+- self-correction: `0/3`（追加修復なし）。
+
+### Phase 6 Proceed
+- 判定: `Needs-decision`。
+- 停止条件: 未承認確定化要求 / 未定義競合 / allowlist外編集要求 / self-correction 4回目相当。

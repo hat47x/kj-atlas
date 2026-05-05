@@ -706,3 +706,63 @@
 ### Phase 6: Proceed
 - 判定: `Conditional (Needs-decision)`。
 - 停止理由: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+## Stream A strict-serial execution log（2026-05-05）
+
+### Phase 1 Read（対象2ファイル再読）
+- 再読対象:
+  1. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+  2. `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+- Read同期結果: 固定契約キー（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`, `safeModeDefault`, `contractLinkLocked`, `sharedResourceFreeze`, `decisionQueueTransition`）は差分なし。
+- 未解決事項: `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` は `pending/held` のまま。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: A2/A3依存の唯一ゲートをA1契約凍結に固定し、派生再定義を禁止する。
+- Decision:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `safeModeDefault=ON`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Consequences:
+  - 未承認（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `frozen-candidate / Needs-decision` として維持し、確定化しない。
+  - 未承認状態のまま A2/A3 の確定化は NoGo。
+- Human approval status: `pending`（承認証跡未入力のため凍結候補継続）。
+
+### Phase 3 Plan（AC/DoD 宣言）
+- AC:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として維持。
+  2. 契約固定値を閉集合で列挙し、未定義キーは受理しない。
+  3. A2/A3依存は `read-only参照 + A1-CONTRACT-MOCK-v1` 前提で分離。
+- DoD:
+  1. 2ファイル間で固定キー値が一致。
+  2. `pending/held` 論点を確定扱いしない。
+  3. allowlist外ファイルの編集差分が0。
+- 不足AC/DoD: なし（追加ドラフト不要）。
+
+### Phase 4 Execute（契約閉集合固定 / fail-closed）
+- Fixed closed-set keys:
+  - `freezeContractId`
+  - `contractIds`
+  - `schemaVersion`
+  - `overridePolicy`
+  - `contractLinkLocked`
+  - `sharedResourceFreeze`
+  - `safeModeDefault`
+  - `safeModeBoundary`
+  - `decisionQueueTransition`
+- Fail-closed rule: 上記以外の未定義契約キーは `unknown key -> 400` 扱い（受理しない）。
+- 依存切断: A2/A3は read-only + mock-first のみ許可（実装依存を持ち込まない）。
+
+### Phase 5 Verify（自己検証 / self-correction）
+- AC/DoD自己検証: 充足。
+- self-correction 実施回数: `0/3`。
+- 失敗条件: 未定義競合・allowlist外編集要求・4回目相当の修正要求が発生した場合は停止。
+
+### Phase 6 Proceed
+- 判定: `Needs-decision`。
+- 理由: `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` が未承認のため。
+- 次工程進行条件: `approved_by / approved_at / evidence` 充足 + `held` 解消後に再判定。
