@@ -644,3 +644,36 @@
 - Decision state: `Needs-decision`（Proceed停止）
 - Stop reason: human approval 未記録（`Approval Record`）および `HIL-RS-02-GOV-EXCEPTION-01=held`。
 - Conflict signal: 現時点で契約キー衝突は検知なし（`delta=0`）。
+
+## Stream A serial run log（2026-05-05 / contract freeze guardrail）
+
+### Phase 1: Read
+- 対象2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）を再読。
+- `Status / Priority / Scope / Dependencies / 固定キー` を照合し、差分 `0` を確認。
+- 差分なしのため `Hold` は未発火。
+
+### Phase 2: ADR/CDC Consensus
+- Context: A1契約凍結が崩れると `A1 -> A2 -> A3` 依存の決定論が失われる。
+- Decision: `A2A3_OPEN_ALLOWED` を唯一SSOT判定式として維持し、固定キー群とSafeMode境界を変更しない。
+- Consequences: `Approval Record` / `HIL-RS-02-GOV-EXCEPTION-01` は未承認のため `pending/held` 維持（確定扱い禁止）。
+
+### Phase 3: Plan
+- Target: allowlist 2ファイル内の契約文面同期のみ。
+- Non-target: CE/HIL/DOC-OPS/QA系ファイル、実装コード、allowlist外ファイル。
+- AC/DoD:
+  1. `A2A3_OPEN_ALLOWED` 一意性維持。
+  2. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退なし。
+  3. 未承認論点を `Needs-decision` のまま維持。
+- Verification: docs-check 3コマンド + allowlist差分確認。
+
+### Phase 4: Execute
+- 契約ID・unlock rule・decision transition・gate条件は既存SSOTを維持（値変更なし）。
+- 重複/表現揺れは既存固定語彙へ寄せる方針を継続。
+
+### Phase 5: Verify
+- Self-check: AC/DoD観点で矛盾なし。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- State: `Needs-decision`。
+- Blockers: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
