@@ -1602,3 +1602,36 @@
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+
+## Stream B run（2026-05-05 / CE0-core-graph-repositioning / contract-only）
+
+### Phase 1 Read
+- 本Issueを再読し、`working` / `context_projection` / `consensus` の固定語彙と `working -> consensus` + `patch+approval` の遷移制約を再確認。
+- No-Go canonical 5 IDs と SafeMode既定ON境界の不変条件を再確認。
+
+### Phase 2 Plan（mock前提I/F + AC/DoD補完提案）
+- AC補完提案:
+  - `ac_transition_guard_mock`: mock遷移で `patch+approval` 以外を拒否する検証観点を明記。
+  - `ac_nogo_canonical_lock`: canonical 5 IDs 以外をNo-Goとして追加しないことを検証対象化。
+- DoD補完提案:
+  - `dod_contract_text_only`: 契約文面更新以外（実装語彙）を差分に含めない。
+  - `dod_single_lane_trace`: Verifyで単一レーン（本Issue）更新根拠をログ化。
+
+### Phase 3 ADR合意（Context / Decision / Consequences）
+- Context: CE0 Core Graphの責務再配置は語彙/遷移/禁止事項の契約固定が先行条件。
+- Decision: 既存固定語彙・遷移規則・No-Go canonical IDsを維持し、v1内拡張を行わない。
+- Consequences: 下流streamはmockで遷移検証可能。語彙衝突時は `held` 停止。
+
+### Phase 4 Execute
+- 本Issueの実行記録更新のみを実施。
+- 実装記述（handler/UI/DB/worker/API）追加は未実施。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : pass
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass
+- `git diff --check` : pass
+- 自己修復: 0/3。
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed = Done**（contract-only整合維持）。
+- 停止条件: 語彙衝突、No-Go逸脱、SafeMode境界後退、自己修復4回目相当で `held`。

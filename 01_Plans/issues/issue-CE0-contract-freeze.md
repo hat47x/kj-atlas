@@ -2114,3 +2114,37 @@ type PatchProposal = {
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+
+## Stream B run（2026-05-05 / CE0-contract-freeze / Read→Plan→ADR→Execute→Verify→Proceed）
+
+### Phase 1 Read
+- 本Issueを再読し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` が read-only 凍結であることを再確認。
+- 実施境界を docs-only / contract-only に固定し、指定外ファイル編集を禁止条件として再確認。
+
+### Phase 2 Plan（mock前提I/F + AC/DoD補完提案）
+- mock前提I/F定義の維持項目を確認: preview gate、closed-world、hash決定論、固定エラー語彙。
+- AC補完提案:
+  - `ac_mock_det_gate`: mockで `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3異常系を必須検証。
+  - `ac_contract_readonly_trace`: Contract ID再定義がないことをVerifyログで必須記録。
+- DoD補完提案:
+  - `dod_verify_attempt_cap`: 自己修復は最大3回、4回目相当は `held` 停止。
+  - `dod_scope_guard`: `git diff --name-only` で許可ファイルのみ変更を確認。
+
+### Phase 3 ADR合意（Context / Decision / Consequences）
+- Context: CE0は上位契約SSOTであり、CE1/CE2/CE4へ契約を供給する基底境界を維持する必要がある。
+- Decision: CE0 Contract IDs / No-Go canonical IDs / safeMode既定境界は変更しない（凍結継続）。
+- Consequences: 下流は契約参照で並行可能、契約衝突や境界後退は即時 `held` 停止で封じ込める。
+
+### Phase 4 Execute
+- 実行ログ更新のみを実施（contract-only）。
+- 実装記述追加・契約ID再定義・safeMode境界変更は未実施。
+
+### Phase 5 Verify
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : pass
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass
+- `git diff --check` : pass
+- 自己修復: 0/3。
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed（Conditional-Go）**。
+- 継続条件: 契約凍結維持。契約衝突/No-Go触発/safeMode後退/自己修復4回目相当で `held` 停止。

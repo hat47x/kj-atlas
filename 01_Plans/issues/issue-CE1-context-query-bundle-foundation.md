@@ -1384,3 +1384,41 @@ handoffKeys:
   - CE1契約はv1凍結維持。
   - 下流は契約参照のみで並行進行し、実装依存要求を行わない。
   - 未定義競合・前提崩壊・許可外ファイル要求が発生した場合は `held` で即停止する。
+
+## Stream B run（2026-05-05 / CE1-context-query-bundle-foundation / interface freeze）
+
+### Phase 1 Read
+- 本Issue再読により、`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` の凍結状態を確認。
+- 固定エラー語彙 `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を再確認。
+
+### Phase 2 Plan（mock前提I/F定義 + AC/DoD補完）
+- mock前提I/F定義（維持）:
+  - `ContextQueryV1` 入力ゲート: `previewConfirmed=false -> 422 preview_required`
+  - closed-world: 未定義キーは `400 unknown_contract_key`
+  - hash決定論: 同一canonical queryで不一致時 `409 nondeterministic_bundle`
+- AC補完提案:
+  - `ac_signature_freeze_trace`: `ContextQueryV1` / `ContextBundleV1` のキー集合不変を毎runで記録。
+  - `ac_mock_handoff_ready`: CE2/CE4向けに `sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash` を必須確認。
+- DoD補完提案:
+  - `dod_closed_world_enforced`: v1外拡張を本文で禁止明記。
+  - `dod_error_semantics_1to1`: 422/400/409と語彙の1:1対応を維持。
+
+### Phase 3 ADR合意（Context / Decision / Consequences）
+- Context: CE1の型・署名が先行固定されないと、CE2/CE4が実装待ちで停止する。
+- Decision: `ContextQueryV1` / `ContextBundleV1` を契約先行で凍結し、preview/hash/unknown-keyの失敗語彙をv1固定。
+- Consequences: 下流はmock-onlyで並行検証可能。契約衝突検知時は `held` 停止。
+
+### Phase 4 Execute（型・署名固定の運用記録）
+- ContextQuery/ContextBundleの型・署名は既存凍結値を維持（追加/改名/削除なし）。
+- 実装詳細（handler/UI/DB/worker/API behavior）は非対象として維持。
+
+### Phase 5 Verify（自己検証 + 整合）
+- `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : pass
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass
+- `git diff --check` : pass
+- 整合判定: `contract_id_collision=0 / error_semantics_collision=0 / scope_deviation=0`。
+- 自己修復: 0/3。
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed（Interface Freeze Maintained）**。
+- 停止条件: 未定義競合、自己修復4回目相当、許可外ファイル要求で `held`。
