@@ -806,3 +806,26 @@
 ### Phase 6: Proceed
 - State: `Conditional (Needs-decision)`。
 - Blockers: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+
+## Stream H Quick Sync (2026-05-05 / Phase 1-5 compressed)
+
+### Phase 1 Read（issue現況同期）
+- Status/Priority/Scope/Dependencies を再確認し、本ファイルの既存定義と矛盾がないことを確認。
+- 未確定事項は `held` / `Pending` のまま維持し、確定化しない。
+
+### Phase 2 Plan（優先順位・ブロッカー再定義）
+- 優先順位を `contract-first` で固定し、実装進捗ではなく契約整合を先行。
+- Blocker を次の正規化キーに限定: `approval_pending`, `decision_queue_pending`, `contract_mismatch`, `out_of_scope_request`。
+
+### Phase 3 Execute（Issue本文の整理、依存明示）
+- 依存を `A1 contract freeze -> A2 mock validation -> A3 implementation/sync` の順序で明示し、A2/A3の先行確定を禁止。
+- `A2A3_OPEN_ALLOWED` / `ProceedGate` / `NoGo` は参照専用（再定義禁止）として本文整合を維持。
+
+### Phase 4 Verify（ready/blocked判定整合）
+- Ready は `contract-ready` と `execution-ready` の2層で評価。
+- `approved_by/approved_at/evidence` 未入力、または `pendingDecisionQueueCount>0` の場合は `blocked` 扱い。
+- self-correction は `<=3` を上限とし、`>=4` は停止。
+
+### Phase 5 Proceed（次行動を1手に圧縮）
+- **Next One Action**: `Approval Record（approved_by / approved_at / evidence）をA1正本へ入力し、pendingDecisionQueueCount を 0 に更新する。`
