@@ -367,3 +367,37 @@
   1. 依存確定証跡の充足。
   2. Approval Record の充足。
   3. proposal-only / docs-only / fail-closed の維持。
+
+## Stream D DOC-OPS-05統合パス（2026-05-05）
+
+### Phase 1 Read（3Issue再読・メタ差分確認）
+- 3Issue（05/06/07）を各Phase冒頭で再読し、`Context/Decision/Consequences`、`GoNoGoGate`、`Validation`、`Proceed tri-state` の差分を確認。
+- 差分判定: 重大不一致なし（分類差分は仕様どおり、05/07=Move internal、06=Improve external）。
+
+### Phase 2 ADR（Context/Decision/Consequences整列）
+- Context: Open判定メタは概ね揃うが、依存確定証跡と Approval Record が未充足。
+- Decision: 3Issue共通で `docs-check必須`、`unit/integration/e2eは期待レベル定義のみ`、`docs-only` を維持。
+- Consequences: Open判定を単体再実行可能にしつつ、未承認Proceedを抑止。
+
+### Phase 3 Plan（Go/NoGo/Stop と自己修復上限）
+- Go: 依存確定証跡 + Approval Record + docs-check pass + tri-state再判定可能。
+- NoGo/Hold: 上記未充足時。
+- Stop: self-correction 4回目相当、または未定義競合。
+- Self-correction budget: `<=3`（共通固定）。
+- docs-only非目標共通化: 実装変更・04_Documentation本文改稿・新規E2E実行結果作成は非目標。
+
+### Phase 4 Execute（docs-check中心・実装非変更）
+- 実施: 本Issueメモの整合整理のみ（語彙・ゲート・停止条件・依存条件）。
+- 非実施: `03_Implement/**`、`04_Documentation/**` 本文、実装/設定変更。
+
+### Phase 5 Verify（3Issue横断一致検証）
+- 検証観点:
+  1. Context/Decision/Consequences の存在。
+  2. Go/NoGo/Stop と self-correction上限の一致。
+  3. docs-check必須・他検証は期待レベル定義のみ、の一致。
+- 失敗時運用: 最大3回まで修正、4回目相当はStop。
+
+### Phase 6 Proceed/Stop（依存証跡ゲート）
+- 現在判定: **Hold**（依存確定証跡不足）。
+- Proceed条件: 依存証跡充足後に再判定。
+- Stop条件: 4回目相当の自己修復、または依存矛盾が解消不能な場合。
