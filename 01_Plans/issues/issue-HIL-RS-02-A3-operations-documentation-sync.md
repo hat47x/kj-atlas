@@ -1394,3 +1394,68 @@
 
 #### Consequences
 - A1完了まで安全境界を維持しつつ、A3準備の前進のみを許可する。
+
+## Stream E Execution Log（2026-05-05 / Serial Phases 1-6）
+
+### Phase 1 Read
+#### Context
+- 対象2ファイルを再読し、A3が `mock I/F preparation only` であることを確認。
+
+#### Decision
+- 差分確認対象を `fixed keys / gate式 / hold条件 / no-go return path` に固定。
+
+#### Consequences
+- 参照境界が明確化され、推測確定を回避できる。
+
+### Phase 2 ADR/CDC
+#### Context
+- A1依存の未確定事項（Approval Record、pendingDecisionQueueCount）が残存。
+
+#### Decision
+- 未確定項目は「未確定」と明記し、A3側で確定表現を行わない。
+
+#### Consequences
+- A1未完了前提の強行を防止する。
+
+### Phase 3 Plan（mock I/F preparation only）
+#### Decision
+- AC:
+  1. fixed keys diff=0
+  2. role vocabulary drift=0
+  3. Gate再定義禁止（参照のみ）
+  4. A1未完時はDraft維持
+- DoD:
+  1. docs-check整合
+  2. NoGo return path一意
+  3. self-correction<=3
+
+#### Consequences
+- A3準備作業の完了判定基準が明文化される。
+
+### Phase 4 Execute
+#### Decision
+- 運用同期計画の整理のみ実施（実装変更なし）。
+
+#### Consequences
+- Scope逸脱を防止する。
+
+### Phase 5 Verify
+#### Decision
+- 検証レベル `docs-check` を維持。
+- Draft/Open昇格条件:
+  - Open: ProceedGate=true
+  - Draft継続: PrepGate=true かつ a1Status!=Done
+  - Hold/No-Go: pending bypass / fixed key drift / self_correction_attempt>=4
+- 修復上限は最大3回。
+
+#### Consequences
+- 失敗時の停止規律が一貫する。
+
+### Phase 6 Proceed
+#### Decision
+- 現判定: **Hold**
+- 理由: A1 Approval Record Pending、ProceedGate未成立。
+- 再開条件: `approved_by/approved_at/evidence` 充足 + `pendingDecisionQueueCount==0`。
+
+#### Consequences
+- fail-safeを満たしつつ、A3準備の継続可否を明確にできる。
