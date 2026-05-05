@@ -91,7 +91,7 @@
 - [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
 - [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
 
-## Phase 4. Execute（シナリオ境界・安全境界・除外条件の固定）
+## Phase 4. Execute（計画固定：シナリオ境界・安全境界・除外条件の凍結）
 
 ### 4.1 Go/No-Go Gate（Required）
 
@@ -120,7 +120,15 @@
 - **安全境界**: safeMode既定ON、share/export fail-closed、review attribution human-only、import sanitize。
 - **除外条件**: SSO本番連携、外部LLM実通信、長時間負荷試験は本Requirementの対象外。
 
-## Phase 5. Verify（docs-check + 実行計画妥当性）
+
+
+### 4.4 Execute完了条件（Plan→Execute→Verify→Proceed の直列性を固定）
+
+- [ ] E-01: Phase 3で定義したJourney/AC/DoDを変更せずに凍結する（追加・削除・意味変更を行わない）。
+- [ ] E-02: 固定した計画をVerify入力として参照し、Verify結果でのみProceed可否を判定する。
+- [ ] E-03: self-correction試行回数を記録し、`0/3` から開始する。
+
+## Phase 5. Verify（e2e観点の判定可能性確認）
 
 - Expected verification level は `e2e`。
 - 実行要件（実装フェーズで必須）:
@@ -151,6 +159,11 @@
   - Verify自己修復（self-correction）は3回まで。4回目が必要な場合は **Stop**。
 
 ## Phase 6. Proceed/Stop（実装着手条件）
+
+### self-correction カウンタ（本Issue運用）
+
+- 現在値: `0/3`
+- ルール: Verifyの自己修復は最大3回。`4回目相当` が必要になった時点で即Stop。
 
 実装着手は、以下を満たした場合のみ許可（未達ならStop）。
 
