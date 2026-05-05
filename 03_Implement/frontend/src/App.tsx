@@ -907,6 +907,9 @@ export default function App() {
   const [suggestionIteration, setSuggestionIteration] = useState(1);
   const [suggestionNotes, setSuggestionNotes] = useState<string | null>(null);
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [resuggestAttemptCount, setResuggestAttemptCount] = useState(0);
+  const resuggestAttemptLimit = 3;
+  const [resuggestStopperEnabled, setResuggestStopperEnabled] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isSuggestionPreviewEnabled, setIsSuggestionPreviewEnabled] = useState(true);
   const [isAnnotateOverlayEnabled, setIsAnnotateOverlayEnabled] = useState(false);
@@ -2195,8 +2198,12 @@ export default function App() {
     setProposalAuditTrail((current) => [...current, `${new Date().toISOString()} held ${islandSummaryProposal.proposalId}`]);
   }, [islandSummaryProposal]);
 
-  const handleSuggestLayout = useCallback(async () => {
+  const handleSuggestLayout = useCallback(async (mode: "suggest" | "resuggest" = "suggest") => {
     if (!document || isSuggesting) {
+      return;
+    }
+    if (mode === "resuggest" && resuggestStopperEnabled) {
+      setStatusMessage("Self-repair stopper active: retry limit reached. Discard or revise instruction.");
       return;
     }
 
@@ -2213,6 +2220,10 @@ export default function App() {
       setSuggestionError(null);
       setIsSuggestionPreviewEnabled(true);
       setIsAnnotateOverlayEnabled(false);
+      if (mode === "suggest") {
+        setResuggestAttemptCount(0);
+        setResuggestStopperEnabled(false);
+      }
       setStatusMessage("Draft suggestion proposal ready (preview only, no auto-apply)");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to get suggestion";
@@ -2221,10 +2232,19 @@ export default function App() {
       setSuggestedDocument(null);
       setSuggestionId(null);
       setSuggestionNotes(null);
+      if (mode === "resuggest") {
+        setResuggestAttemptCount((previous) => {
+          const next = previous + 1;
+          if (next >= resuggestAttemptLimit) {
+            setResuggestStopperEnabled(true);
+          }
+          return next;
+        });
+      }
     } finally {
       setIsSuggesting(false);
     }
-  }, [document, isSuggesting, suggestionInstruction]);
+  }, [document, isSuggesting, resuggestStopperEnabled, suggestionInstruction]);
 
   const handleDiscardSuggestion = useCallback(() => {
     setSuggestedDocument(null);
@@ -2232,6 +2252,8 @@ export default function App() {
     setSuggestionNotes(null);
     setSuggestionError(null);
     setSuggestionIteration(1);
+    setResuggestAttemptCount(0);
+    setResuggestStopperEnabled(false);
     setIsSuggestionPreviewEnabled(true);
     setIsAnnotateOverlayEnabled(false);
     setStatusMessage("Discarded draft suggestion");
@@ -8117,10 +8139,14 @@ ${parsedDocument.error}`);
                     instruction={suggestionInstruction}
                     onInstructionChange={setSuggestionInstruction}
                     onSuggest={() => {
-                      void handleSuggestLayout();
+                      void handleSuggestLayout("suggest");
                     }}
                     onResuggest={() => {
-                      void handleSuggestLayout();
+                      void handleSuggestLayout("resuggest");
+                    }}
+                    onStopResuggest={() => {
+                      setResuggestStopperEnabled(true);
+                      setStatusMessage("Self-repair stopper enabled manually.");
                     }}
                     onDiscard={handleDiscardSuggestion}
                     hasSuggestion={Boolean(suggestedDocument && suggestionId)}
@@ -8131,6 +8157,8 @@ ${parsedDocument.error}`);
                     isSuggesting={isSuggesting}
                     errorMessage={suggestionError}
                     notes={suggestionNotes}
+                    resuggestAttemptCount={resuggestAttemptCount}
+                    resuggestAttemptLimit={resuggestAttemptLimit}
                   />
                 }
                 diffVisualization={<>
