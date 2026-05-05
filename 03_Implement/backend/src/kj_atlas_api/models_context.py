@@ -105,9 +105,11 @@ _STUB_DATASET = {
     ],
 }
 
-# TODO(CE1-Phase4): Replace `_STUB_DATASET` access with an injected repository
-# (fixture/mock in tests, concrete persistence in runtime) when integrating
-# actual data layer. Keep ContextQuery/ContextBundle I/F unchanged.
+_HOLD_STATE_DATA_SOURCE = "hold:stub_dataset_contract_only"
+
+# Stream C hold state: data-source integration is intentionally deferred until
+# upstream schema/repository contracts are approved. Route/model I/F remains
+# stable and deterministic against the frozen stub dataset contract.
 
 
 def _stable_value(value: object) -> object:
@@ -191,7 +193,7 @@ def build_bundle(request: ContextBundleRequest) -> ContextBundleResponse:
         evidence=evidence,
         contradictions=contradictions,
         reviewFlags=review_flags,
-        truncationMeta={"stubDatasetId": request.stubDatasetId, "depth": query.depth},
+        truncationMeta={"stubDatasetId": request.stubDatasetId, "depth": query.depth, "holdState": _HOLD_STATE_DATA_SOURCE},
         excludedReason=sorted(excluded_reason),
         queryCanonicalHash=query_hash,
     )

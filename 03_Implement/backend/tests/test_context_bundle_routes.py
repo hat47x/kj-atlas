@@ -153,6 +153,7 @@ def test_context_bundle_downstream_source_hash_comparable() -> None:
             assert body["schemaVersion"] == "1.0.0"
             assert isinstance(body["bundleHash"], str)
             assert len(body["bundleHash"]) == 64
+            assert body["truncationMeta"]["holdState"] == "hold:stub_dataset_contract_only"
     finally:
         settings.api_key = original_api_key
 
