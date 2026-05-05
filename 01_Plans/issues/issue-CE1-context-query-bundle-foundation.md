@@ -1455,3 +1455,48 @@ handoffKeys:
   - Handoff keys: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`
   - 固定語彙: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
 - 停止条件: 自己修復4回目相当、未定義競合、許可外編集要求で `held`。
+
+## Stream D run（2026-05-05 / CE1基盤 contract-first rehearsal）
+
+### Phase 1 Read同期
+- Read Order準拠で `00_Prompt` → `01_Plans/adr/ADR-0001` → `02_Architecture/{architecture,schemas}` を再確認し、本Issueの編集スコープ（docs-only）を再固定。
+- CE1凍結対象 `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` と、固定エラー語彙 `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の不変性を確認。
+
+### Phase 2 Plan（AC/DoD提案）
+- AC提案:
+  - `ac_closed_world_v1`: `ContextQueryV1` / `ContextBundleV1` は v1 で unknown key reject（`400 unknown_contract_key`）。
+  - `ac_preview_gate_strict`: `previewConfirmed=false` は常に `422 preview_required`。
+  - `ac_hash_deterministic_3of3`: 同一 canonical query で `queryCanonicalHash` / `bundleHash` が3/3一致。
+  - `ac_downstream_decoupled`: CE2/CE4 が mock I/F のみで検証継続可能（実装依存なし）。
+- DoD提案:
+  - docs-only差分（実装コード変更なし）。
+  - handoff成果物を「Contract ID / 型I/F / error semantics / hash gate / handoff key」に限定。
+
+### Phase 3 ADR C/D/C明文化と合意
+- Context: CE2/CE4の停止要因は実装待ちではなく契約不確定であるため、CE1は契約先行固定が必須。
+- Decision: `ContextQueryV1` / `ContextBundleV1` を closed-world v1 として凍結し、`422/400/409` の固定語彙を変更禁止とする。
+- Consequences: 下流は read-only handoff（`queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`）で並行可能。v1拡張要求は v2 起票まで `held`。
+
+### Phase 4 Execute（契約・モック定義）
+- mock I/F boundary（実装非依存）を明示:
+  - `POST /context/query`: `ContextQueryV1` を受理し、preview gate と unknown key を検証。
+  - `POST /context/bundle`: `{ query: ContextQueryV1, stubDatasetId }` を受理し、deterministic hash を検証。
+- mock validation手順（契約テスト）:
+  1. preview gate異常系: `previewConfirmed=false` で `422 preview_required` を確認。
+  2. closed-world異常系: 未定義キー入力で `400 unknown_contract_key` を確認。
+  3. deterministic系: 同一canonical queryで3回実行し、`queryCanonicalHash` と `bundleHash` の3/3一致を確認。
+  4. 不一致系: same query で `bundleHash` 不一致時に `409 nondeterministic_bundle` を確認（fail-closed）。
+
+### Phase 5 Verify（self-correction 最大3回）
+- Attempt 1: Contract ID衝突チェック（結果: 競合なし）。
+- Attempt 2: schema語彙揺れチェック（結果: 競合なし）。
+- Attempt 3: handoff key完全性チェック（`sourceBundleHash === bundleHash` 比較可能、結果: pass）。
+- Verify総合: `contract_version_mismatch=0` / `schema_conflict=0` / `self_correction_count=3以内`。
+
+### Phase 6 Proceed（Go/No-Go判定）
+- 判定: **Go（CE1 contract-first mock handoff ready）**。
+- No-Go移行条件:
+  - 契約version不整合
+  - 未定義schema競合
+  - self-correction 3回超過（4回目相当）
+- No-Go時動作: 状態を `held` に固定し、Phase 3（ADR C/D/C）へロールバック。
