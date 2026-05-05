@@ -203,3 +203,76 @@
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+## Stream E Update（2026-05-05 / HIL-RS-02 delivery & operations sync prep）
+
+### Phase 1 Read（対象2ファイル再読・差分確認）
+#### Context
+- 対象は `issue-HIL-RS-02-next-phase-delivery-plan` と `issue-HIL-RS-02-A3-operations-documentation-sync` の2ファイルのみ。
+- A1系は read-only 参照であり、未確定事項の推測確定は禁止。
+
+#### Decision
+- 差分確認の観点を `固定キー / Gate式 / Open条件 / Hold条件 / NoGo return path` に固定する。
+- A3は `mock I/F preparation only` を維持し、実装変更を伴う要求は受付しない。
+
+#### Consequences
+- 依存未充足時でも、準備計画の品質を独立に維持できる。
+
+### Phase 2 ADR/CDC（未確定依存の明示）
+#### Context
+- A1 `Approval Record` は Pending のままで、`approved_by / approved_at / evidence` が未確定。
+- `a1Status==Done` および `pendingDecisionQueueCount==0` の最終確定はA1入力に依存する。
+
+#### Decision
+- 未確定事項を以下として固定し、確定表現を禁止する。
+  1. A1承認証跡の入力完了時刻
+  2. pendingDecisionQueueCount の正本値
+  3. A3 Open判定の最終Go可否
+- A1未完了を前提に、判定は `Conditional/Hold` のみ許可する。
+
+#### Consequences
+- 依存推測による premature Open を防止する。
+
+### Phase 3 Plan（A3 mock I/F preparation only AC/DoD）
+#### Decision
+- AC-A3-M1: fixed keys diff=0 を維持する。
+- AC-A3-M2: role vocabulary drift=0 を維持する。
+- AC-A3-M3: ProceedGateは参照のみ（再定義禁止）。
+- AC-A3-M4: A1未完時は Draft維持（Open遷移禁止）。
+- DoD-A3-M1: docs-check計画（validator/unittest/diff/scope）が明記されている。
+- DoD-A3-M2: NoGo return path がA1 issueへ一意に固定されている。
+- DoD-A3-M3: self-correction上限 `<=3` が明記されている。
+
+### Phase 4 Execute（運用同期計画整理のみ）
+#### Decision
+- 実行内容を「運用同期計画の整理（文書更新）」に限定し、コード・実装・README系更新は実施しない。
+- 同期導線は `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md` を参照順として保持する。
+
+#### Consequences
+- Stream Eの責務を計画同期に限定し、越境変更を回避する。
+
+### Phase 5 Verify（Draft/Open昇格条件と検証レベル整合）
+#### Decision
+- 検証レベルは `docs-check` を維持する。
+- Draft/Open判定を次で固定する。
+  - Open可: `ProceedGate=true` かつ AC/DoD充足
+  - Draft維持: `PrepGate=true` かつ `a1Status!=Done`
+  - Hold/No-Go: pending bypass / fixed key drift / self_correction_attempt>=4
+- 修復は最大3回まで。4回目相当は即停止。
+
+#### Consequences
+- 検証失敗時の挙動が deterministic になり、再開判断が容易になる。
+
+### Phase 6 Proceed（Proceed条件 / Hold理由）
+#### Decision
+- 現時点判定: **Hold**。
+- Hold理由:
+  1. A1 Approval Record が Pending。
+  2. `a1Status==Done` 未確定のため ProceedGate未成立。
+  3. A3は mock I/F preparation only の範囲を維持中。
+- Proceed再開条件:
+  - `approved_by / approved_at / evidence` 充足
+  - `pendingDecisionQueueCount==0`
+  - fixed keys diff=0 維持
+
+#### Consequences
+- A1未完了を前提にした強行を回避し、fail-safe制約に整合する。
