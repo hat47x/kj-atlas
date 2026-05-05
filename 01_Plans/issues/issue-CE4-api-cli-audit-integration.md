@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (Contract Freeze Candidate)
 - Priority: P2
-- Owner: Stream C（CE4専任）
+- Owner: Stream C（CE下流 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -382,3 +382,21 @@
 - **Proceed**: O1〜O5 が全て充足し、依存証跡が記録済み。
 - **Hold**: 契約本文は充足したが、依存証跡または docs-check 記録が未充足。
 - **Stop**: self-correction 超過（4回目相当）、または契約衝突（proposal-only/ fail-closed 後退）を検知。
+
+
+## Phase 6: Proceed（Open昇格）/ Hold（停止）
+
+### Proceed（Open昇格）条件
+- API/CLI/監査の契約が proposal-only 前提で閉じており、実装依存の記述を含まない。
+- `equivalenceKey AND bundleHash`、4イベント順序、必須キー検証、fail-closed が同時に満たされる。
+- 依存（CE0/CE1）は参照のみで、未確定項目を推測補完していない。
+
+### Hold条件
+- CE1の未確定仕様を前提にしないと CE4契約が成立しない。
+- 監査イベント4点セット、または `proposal-only` / `auto-*禁止` のいずれかが欠落。
+- 検証レベル（docs-check）を超える実装前提の確定要求が発生。
+
+### Verify整合チェック（最終）
+1. 依存表記（CE0/CE1）が read-only 参照に限定されている。
+2. 検証レベルが `docs-check` で一貫している。
+3. 停止条件が fail-safe（未確定=Hold）と一致している。

@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream G（CE2 proposal-only contract lock）
+- Owner: Stream C（CE下流 proposal-only）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -615,3 +615,19 @@
 - Context: CE2は人間責務境界（accepted/rejected）を先に固定しないと誤確定リスクが高い。
 - Decision: 本IssueをOpen判定準備品質まで整備し、proposal-only契約を維持する。
 - Consequences: 実装前に監査可能性と停止条件が担保され、誤Proceedを抑止できる。
+
+
+## Phase 6: Proceed / Hold 判定（最終）
+
+### Open昇格条件（Proceed）
+- CE0 契約凍結との差分がなく、CE2文言が `proposal-only` / `fail-closed` / `auto-*禁止` を維持している。
+- CE1 参照I/Fに対して **推測補完なし** で整合が取れている（未確定は `TBD` 明示）。
+- Verify（V1〜V3）を3回以内で通過し、承認ログ最小項目（日時・承認者・対象・判断）が確認済み。
+
+### Hold条件（停止）
+- CE1未確定を仮定で補完しないと文章が成立しない。
+- `reviewState` 自動昇格・`auto-apply/confirm/publish` 許容・`fail-open` を示唆する記述が混入。
+- Verify修復が3回を超過、または依存表記（CE0/CE1）に矛盾が残る。
+
+### Stopメモ（Fail-safe）
+- CE1未確定は推測で埋めず、`status=held` で停止する。
