@@ -1500,3 +1500,47 @@ handoffKeys:
   - 未定義schema競合
   - self-correction 3回超過（4回目相当）
 - No-Go時動作: 状態を `held` に固定し、Phase 3（ADR C/D/C）へロールバック。
+
+## Stream C run（2026-05-05 / CE1基盤 contract-first formalization）
+
+### Phase 1 Read（CE0固定契約の再読）
+- `issue-CE0-contract-freeze.md` を read-only で再読し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` と No-Go canonical IDs の固定を再確認。
+- 本Stream Cの編集許可が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4 が実装待ちで停止しないためには、CE1で ContextQuery/ContextBundle/Preview gate を実装非依存の契約として先行固定する必要がある。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` は v1 closed-world を維持し、未定義キーは `400 unknown_contract_key`。
+  - `previewConfirmed=false` は常に `422 preview_required`（preview bypass 禁止）。
+  - 同一 canonical query で hash 不一致を検知した場合は `409 nondeterministic_bundle` で fail-closed。
+- **Consequences**:
+  - 下流は mock-only で検証継続可能。
+  - safeMode 境界は CE0 の read-only 契約に従い、既定ON/緩和禁止を維持。
+
+### Phase 3 Plan（ContextQuery/Bundle/Preview の AC/DoD 確定）
+- **AC**:
+  1. `ContextQueryV1` / `ContextBundleV1` のキー集合は v1 で凍結（closed-world）。
+  2. Preview gate は `previewConfirmed=false -> 422 preview_required` を固定。
+  3. hash 決定論は同一 canonical query 3回一致、破綻時 `409 nondeterministic_bundle`。
+  4. handoff key は `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey` を必須。
+- **DoD**:
+  1. docs-only（本ファイルのみ）であること。
+  2. CE2/CE4 が mock 契約のみで正常系/異常系を再現できること。
+  3. safeMode 除外・緩和を導入しないこと（CE0境界維持）。
+
+### Phase 4 Execute（計画文書の具体化）
+- AC/DoD を本Issueへ具体化し、契約固定の運用記録として追記。
+- 実装詳細（handler/UI/DB/worker）や他ストリーム領域の変更は実施しない。
+
+### Phase 5 Verify（決定論・safeMode除外ルール・audit観点）
+- 決定論: `same canonical query` に対し `bundleHash` 不一致は `409 nondeterministic_bundle` を返す fail-closed を維持。
+- safeMode除外ルール: `CE0-SAFEMODE-IF` を read-only 参照し、既定ON・`allowUnreviewedText=false` 境界を逸脱しない。
+- audit観点: CE4連携キー `equivalenceKey + bundleHash` と CE2連携条件 `sourceBundleHash === bundleHash` の追跡可能性を維持。
+- 自己修正回数: 0/3（上限3回未満）。
+
+### Phase 6 Proceed
+- 判定: **Proceed（CE1 foundation contract maintained）**。
+- Stop条件（発生時は `held`）:
+  1. 未定義契約衝突（contract id / error semantics collision）。
+  2. safeMode 既定値緩和要求。
+  3. 自己修正4回目相当（>3回）。
