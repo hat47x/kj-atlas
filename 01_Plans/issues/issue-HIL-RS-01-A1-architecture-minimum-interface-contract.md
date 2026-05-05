@@ -284,3 +284,42 @@ HIL-RS-01 A1 の最小I/F契約を固定し、後続ストリーム（A2/A3）�
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+
+
+## Stream A Phase Ledger (2026-05-05 / HIL-RS-02-A1 contract-governance hardening)
+
+### Phase 1: Read
+- Read同期対象: `Status / Scope / Dependencies / fixed keys / NoGo return path`.
+- Extracted Context: 契約固定値は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` + `schemaVersion=1.0.0` + `overridePolicy=human_dual_control_only` を核に、`safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` を後退不可境界として扱う。
+- Extracted Decision: `Pending -> Approved | Pending -> Rejected` 以外の遷移は禁止、A2/A3解放は `a1Status=="Done" && pendingDecisionQueueCount==0` 前提。
+- Extracted Consequences: Pending残存時は Execute禁止、NoGo時は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` へ固定差戻し。
+
+### Phase 2: Plan
+- 宣言: **Plan -> Execute -> Verify -> Proceed**（逆走禁止）。
+- AC/DoD不足補完（Draft提案）:
+  1. A1完了条件を `fixed keys diff=0` + `pendingDecisionQueueCount==0` + `Approval Record必須3項目充足` に固定。
+  2. NoGo条件を `未承認確定化 / 未定義競合 / allowlist外差分 / pending bypass` に固定。
+  3. 停止条件を `self-correction>=4相当` で即停止し、`原因・不足情報・再開条件` を出力に固定。
+- 合意ログ: 本Draftは `Approval Record: Pending` とし、承認完了まで Execute拡張を禁止。
+
+### Phase 3: ADR明文化と合意
+- Context: Stream AはA1契約・統治固定のみを担当し、実装確定を含めない。
+- Decision: fixed vocabulary/value を再定義せず参照のみで運用し、`Approval Record` がPendingの間は Phase 4 Execute を禁止。
+- Consequences: A2/A3は mock準備のみ許可、Open化判定はA1完了後の別責務に留める。
+- 合意状態: `Pending`（未承認のため確定扱い禁止）。
+
+### Phase 4: Execute
+- 編集範囲: Stream A allowlist内ファイルのみ。
+- 契約保護: `freezeContractId/schemaVersion/overridePolicy/contractLinkLocked/sharedResourceFreeze/safeModeDefault/safeModeBoundary` の固定値を変更しない。
+
+### Phase 5: Verify
+- 自己検証:
+  - A1完了条件: 明文化済み（未充足時はGo不可）。
+  - NoGo条件: 明文化済み（固定差戻し先あり）。
+  - 停止条件: 明文化済み（self-correction上限あり）。
+- Self-Correction counter: `0/3`（本更新時点）。
+
+### Phase 6: Proceed / Stop
+- Go条件: `AC/DoD充足` かつ `契約矛盾なし`。
+- No-Go条件: `未承認確定化` / `未定義競合` / `指定外差分` / `self-correction上限超過`。
+- 再開条件: `Approval Record` の `approved_by / approved_at / evidence` 充足 + Pending queue解消。
