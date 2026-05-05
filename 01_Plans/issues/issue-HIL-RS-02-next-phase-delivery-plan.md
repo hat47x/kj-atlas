@@ -299,3 +299,54 @@
 
 ### Phase 5 Proceed（次行動を1手に圧縮）
 - **Next One Action**: `Approval Record（approved_by / approved_at / evidence）をA1正本へ入力し、pendingDecisionQueueCount を 0 に更新する。`
+
+
+## Stream F Execution Update（2026-05-05）
+
+### 1. Read同期
+- 対象文書内の固定ガードレール・停止条件・Self-Correction上限（<=3）を再確認。
+- Scopeを本ファイル限定として再固定（allowlist外編集禁止）。
+
+### 2. Plan（AC/DoD不足補完）
+- AC-F1: Phaseを `Read同期 -> Plan -> ADR C/D/C -> Execute -> Verify -> Proceed` の順序で明示。
+- AC-F2: Proceed判定を `Ready / Hold / Needs-decision` の三値で固定。
+- DoD-F1: A1未確定事項を推測で埋めず、「前提条件・リスク」として明記。
+- DoD-F2: 判定に必要な入力不足時は `Hold` または `Needs-decision` を選択し、Go確定を禁止。
+
+### 3. ADR C/D/C（必要時）
+#### Context
+- A1 `Approval Record`（`approved_by / approved_at / evidence`）は未確定の可能性があり、確定Go判定の前提が欠ける場合がある。
+
+#### Decision
+- D-F1: A1未確定時は `Proceed=Hold` を既定とする。
+- D-F2: 判定不能な入力欠落・矛盾がある場合は `Proceed=Needs-decision` とする。
+
+#### Consequences
+- 推測埋めを回避し、未確定論点を可視化したまま安全に継続/停止判定できる。
+
+### 4. Execute（delivery planの具体化）
+- Proceed判定ルールを次で運用する。
+  - `Ready`: 契約固定キー整合 + A1承認証跡充足 + pending bypassなし。
+  - `Hold`: 前提不足（例: A1承認証跡未充足）で安全側待機が妥当。
+  - `Needs-decision`: 入力矛盾・責務境界の衝突・NoGo経路変更要求など、上位判断が必要。
+- Self-Correctionカウンタは `0/3` から開始し、`>=4` は即停止（既存S1整合）。
+
+### 5. Verify（最大3回の自己修復）
+- 検証観点:
+  1. 本ファイルのみ更新（allowlist遵守）
+  2. 固定ガードレールの後退なし
+  3. A1未確定事項を「前提条件・リスク」として明示
+  4. Proceed三値（Ready/Hold/Needs-decision）が定義済み
+- 修復回数が3回を超える場合は検証継続せず停止報告へ遷移。
+
+### 6. Proceed（Ready/Hold/Needs-decision）
+- 現時点判定: **Hold**。
+- 前提条件（A1未確定事項）:
+  - `approved_by / approved_at / evidence` の正本入力完了。
+  - `pendingDecisionQueueCount` の確定値提示。
+- リスク:
+  - 前提未充足のままGo判定すると、pending bypassと同義の運用逸脱になる。
+- Ready移行条件:
+  - 固定ガードレール整合を維持したまま、前提条件がすべて充足すること。
+- Needs-decision遷移条件:
+  - 前提入力の矛盾、責務分離違反、または NoGo return path の再定義要求が発生した場合。
