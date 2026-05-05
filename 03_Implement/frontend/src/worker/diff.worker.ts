@@ -2,13 +2,13 @@
 
 import { computeDocumentDiff } from "../diff/document_diff";
 import { computeViewDiff } from "../diff/view_diff";
-import type { DiffWorkerRequestMessage, DiffWorkerResponseMessage } from "./diff_protocol";
+import { DIFF_WORKER_PROTOCOL_VERSION, type DiffWorkerRequestMessage, type DiffWorkerResponseMessage } from "./diff_protocol";
 
 const cancelledRequestIds = new Set<string>();
 const activeRequestIds = new Set<string>();
 
-function postMessageSafe(message: DiffWorkerResponseMessage): void {
-  self.postMessage(message);
+function postMessageSafe(message: Omit<DiffWorkerResponseMessage, "protocolVersion">): void {
+  self.postMessage({ ...message, protocolVersion: DIFF_WORKER_PROTOCOL_VERSION } satisfies DiffWorkerResponseMessage);
 }
 
 function shouldCancel(requestId: string): boolean {
