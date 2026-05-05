@@ -677,3 +677,32 @@
 ### Phase 6: Proceed
 - State: `Needs-decision`。
 - Blockers: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+## Stream A phase gate audit（2026-05-05 / serial strict）
+
+### Phase 1: Read同期
+- 対象2ファイルを再読し、`freezeContractId` / `contractIds` / `schemaVersion` / `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` を照合。
+- 差分検知: `0`（想定との差分なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: Stream A クリティカルパスでは A1 契約凍結が唯一ゲートであり、語彙の再定義は決定論を壊す。
+- Decision: 固定キー集合・SafeMode境界・`A2A3_OPEN_ALLOWED` を再定義せず、`pending/held` を確定化しない。
+- Consequences: `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` 解消前は `Needs-decision` を維持。
+
+### Phase 3: Plan
+- AC補強:
+  1. `NoGo` に `contractNotFixedButA2A3ConfirmationRequested` を含むこと。
+  2. allowlist 2ファイル以外の差分を `0` に維持すること。
+- DoD補強: Verify 3コマンド成功 + diff健全性 + self-correction `<=3`。
+
+### Phase 4: Execute
+- 契約凍結・ゲート式は現行値を維持（値更新なし、境界緩和なし、契約ID再定義なし）。
+- A2/A3 は `A1-CONTRACT-MOCK-v1` 前提の read-only 参照のみ許可。
+
+### Phase 5: Verify
+- Result: AC/DoD自己検証 `pass`。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- 判定: `Conditional (Needs-decision)`。
+- 停止理由: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。

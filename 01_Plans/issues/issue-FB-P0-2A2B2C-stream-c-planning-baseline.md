@@ -829,3 +829,33 @@
 
 ### Phase 5 Proceed（次行動を1手に圧縮）
 - **Next One Action**: `Approval Record（approved_by / approved_at / evidence）をA1正本へ入力し、pendingDecisionQueueCount を 0 に更新する。`
+
+## Stream A phase gate audit（2026-05-05 / baseline contract sync）
+
+### Phase 1: Read同期
+- 対象2ファイルを再読し、`Status/Priority/Scope/Dependencies` と固定キー群を照合。
+- 差分検知: `0`（語彙・判定式とも不一致なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: baseline と A1契約Issue の判定語彙が乖離すると P0 契約ゲートが非決定化する。
+- Decision: `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` は SSOT を再利用し、再定義しない。
+- Consequences: 未承認事項は `pending/held` で維持し、A2/A3確定化を禁止。
+
+### Phase 3: Plan
+- AC補強:
+  1. 固定キー差分 `0`。
+  2. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退なし。
+  3. `NoGo` に bypass/undefined conflict/未固定確定要求を維持。
+- DoD補強: docs-check 3コマンド成功 + allowlist外差分 `0`。
+
+### Phase 4: Execute
+- 契約文面同期のみ実施（実装誘導・allowlist外編集・契約ID変更は不実施）。
+- `A1 -> A2 -> A3` の依存順序と `Needs-decision` 運用を維持。
+
+### Phase 5: Verify
+- Result: AC/DoD自己検証 `pass`。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- 判定: `Conditional (Needs-decision)`。
+- 停止理由: `Approval Record` 未充足、`HIL-RS-02-GOV-EXCEPTION-01=held`。
