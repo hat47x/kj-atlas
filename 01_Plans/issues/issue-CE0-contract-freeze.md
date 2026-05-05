@@ -2261,3 +2261,44 @@ type PatchProposal = {
 - 注記:
   - CE1/CE2/CE4への引き渡しは read-only参照のみ。
   - 依存先未承認事項の確定要求が入った時点で **Needs-decision/Hold** へ遷移し停止する。
+
+## Stream B latest run（2026-05-05 / CE0 only / contract freeze serial-phase refresh）
+
+- run_id: `stream-b-ce0-2026-05-05-10`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Phase開始前に本Issueを再読し、固定直列 **Read → ADR/CDC → Plan → Execute → Verify → Proceed** を再確認。
+- contract-only / docs-only / mock-first、および CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）不変条件を再確認。
+- Stopper（allowlist外編集 / Contract ID mutation / safeMode regression / 前提崩壊・未定義競合 / 4回目相当の自己修復）で即時 `held` 停止することを再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract FreezeのSSOTを本Issue単独で維持し、他CE（CE1/CE2/CE4）は read-only 参照に限定する。
+- Decision: 既存Contract IDsとsafeMode境界を固定し、再定義・追加・改名・削除を行わない。
+- Consequences: 契約ドリフトと安全境界後退を抑止し、逸脱発生時は `held` へ即時遷移できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC起票なし。
+
+### Phase 3 Plan
+- AC/DoD追跡項目（`dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`）を再確認。
+- AC/DoD不足判定: 新規不足なし（AIドラフト提案・追加合意は不要）。
+- ゲート条件: 不足・競合・前提崩壊が発生した場合は合意完了まで `held` を維持。
+
+### Phase 4 Execute
+- 実施: 本Issueへの実行ログ追記のみ（single-file / contract-only / docs-only）。
+- 非実施: allowlist外ファイル編集、実装変更、Contract ID mutation、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 差分整合: `scope_deviation=0` / `contract_id_mutation=0` / `safeMode_regression=0`。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 条件:
+  - CE0 Contract Freezeは本IssueのSSOT運用（read-only参照境界）を維持。
+  - Stopper条件（未定義競合・逸脱要求・自己修復上限超過）発生時は即時 `held` 停止。
