@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (Contract Freeze Candidate)
 - Priority: P2
-- Owner: Stream H（CE4専任）
+- Owner: Stream C（CE4専任）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -147,7 +147,7 @@
 > 停止条件: 上記未確定点を確定仕様として扱う要求が来た場合、CE4契約の範囲逸脱として停止し、上位ADRでの判断を要請する。
 
 
-## Stream H execution log（2026-05-04 / contract-freeze, mock-first）
+## Stream C execution log（2026-05-05 / Draft gate解除準備, contract-only）
 
 ### Phase 1: Read
 - `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` と本Issue契約を照合。
@@ -207,7 +207,7 @@
 - 4回目相当: **Stop**（超過または依存崩壊として終了）。
 
 
-## Stream H update（2026-05-04 / Read Sync → Proceed）
+## Stream C update（2026-05-05 / Read Sync → Proceed準備）
 
 ### 1) Read Sync
 - `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` と本Issueを再同期し、契約語彙を以下に固定した。
@@ -361,3 +361,24 @@
   1. CE1は read-only参照を維持し、CE4側で契約再定義を行わない。
   2. 監査判定器は mock/real 共通で4イベント完備性とAND同値条件を検証する。
   3. 未確定点の仕様確定要求が入った場合は CE4範囲逸脱として Stop し、上位ADR判断へエスカレーション。
+
+
+## Draft gate解除準備（Open化判定の明文化 / 2026-05-05）
+
+### Contract references（参照のみ・実装変更なし）
+- `ADR-0028`（認知外在化フェーズ接続）
+- `ADR-0016` / `ADR-0017`（契約境界・品質ゲート語彙）
+- `02_Architecture/api.md`（API境界の単一正本）
+- `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）
+
+### Open化条件（Draft gate解除の必要十分条件）
+- [ ] O1: 本Issueの契約本文のみで、`proposal-only` / `fail-closed` / 監査4イベント順序が再読できる。
+- [ ] O2: `equivalenceKey AND bundleHash` のAND同値条件が API/CLI 共通で明文化され、例外運用が記載されていない。
+- [ ] O3: 未確定点（終了コード数値・匿名化方式・転送基盤）が「契約外」として隔離され、実装仕様へ昇格していない。
+- [ ] O4: 依存証跡（CE0/関連ADRの更新日時・判断者・判断内容）を追記できる状態で、欠落時は Hold を維持する。
+- [ ] O5: Verify の self-correction が `<=3` の範囲に収まり、4回目相当は Stop と明記されている。
+
+### Proceed tri-state（Open判定）
+- **Proceed**: O1〜O5 が全て充足し、依存証跡が記録済み。
+- **Hold**: 契約本文は充足したが、依存証跡または docs-check 記録が未充足。
+- **Stop**: self-correction 超過（4回目相当）、または契約衝突（proposal-only/ fail-closed 後退）を検知。
