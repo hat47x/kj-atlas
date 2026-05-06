@@ -802,3 +802,34 @@
 ### Phase 5: Proceed Gate
 - 判定: **次フェーズへ進行可（Conditional / Needs-decision）**。
 - 理由: 契約固定値と判定式は整合済み。未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `held` のまま維持され、確定化していない。
+
+
+## Stream A contract freeze summary（2026-05-06 / handoff-ready）
+
+### Phase 1 Plan
+- 対象: 本Issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` の3件のみ。
+- AC/DoD: Status/Priority/依存の再確認、A1最小I/F契約（APIシグネチャ・主要データ型・イベント契約・バリデーション境界）の固定、A2/A3 unblock条件の明文化。
+
+### Phase 2 Execute（ADR整合）
+- Context: A1契約が曖昧だとA2/A3で再定義が発生し、`A1 -> A2 -> A3` の依存順が崩れる。
+- Decision: `A2A3_OPEN_ALLOWED` を唯一ゲートとして維持し、固定キー集合（`freezeContractId` など）を凍結継続。
+- Consequences: 契約変更はA1 CDC承認経路のみ許可。承認未了時は `Needs-decision` 維持。
+
+### Phase 3 Verify（Interface Freeze）
+- API signatures (fixed): `CritiqueV1`, `ReDiffV1`, `AttributionV1`, `A1ErrorV1`。
+- Data types/boundary (fixed):
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - unknown contract key -> `400`
+- Event contract (fixed): `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` のみ。
+- Validation boundary (fixed): `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `overridePolicy=human_dual_control_only` の後退禁止。
+
+### Phase 4 Proceed（unblock条件）
+- A2/A3 unblockは次の全条件を満たした場合のみ:
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - `freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1"`
+  - `schemaVersion=="1.0.0"`
+  - `contractLinkLocked==true`
+  - `sharedResourceFreeze==true`
+- Stop条件: 前提崩壊 / 未定義競合 / self-correction上限(3)超過。
