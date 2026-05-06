@@ -1752,3 +1752,42 @@ handoffKeys:
 - Verify-3（異常系）: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` をmockだけで再現可能。
 - Verify-4（進行条件）: 「実装待ち」を前提にしなくてもCE2/CE4がProceedできることを確認。
 - 判定: **pass（CE2/CE4とも mock-only で正常系/異常系を再現し、実装待ち前提なしでProceed可能）**。
+
+
+## Stream E update（2026-05-06 / CE1-context-query-bundle-foundation 専任）
+
+### Phase 1 Read同期
+- 本issueを再読し、CE1の編集対象が `ContextQueryV1` / `ContextBundleV1` の契約固定に限定されることを再確認。
+- 作業境界を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` 単体に固定し、他ファイル編集禁止を確認。
+- 既存凍結項目（Contract IDs、固定エラー語彙、preview gate、hash決定論）に衝突差分がないことを確認。
+
+### Phase 2 ADR様式の契約整理（Context / Decision / Consequences）
+- **Context**: CE2/CE4が実装未着手でもmock-firstで前進するため、CE1は最小I/F・失敗語彙・決定論ルールを先に固定する必要がある。
+- **Decision**: v1契約として `ContextQueryV1` / `ContextBundleV1` をclosed-worldで維持し、`previewConfirmed=false -> 422 preview_required`、unknown keyは `400 unknown_contract_key`、決定論不一致は `409 nondeterministic_bundle` を固定する。
+- **Consequences**: 下流は実装依存を持たず、`sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` の監査キー連結でmock検証を継続できる。
+
+### Phase 3 Plan（AC/DoD合意）
+- AC-1: `ContextQueryV1` / `ContextBundleV1` の最小契約を本issue内で単独参照可能に維持する。
+- AC-2: hash決定論を「同一canonical queryで3回一致」として保持し、不一致はfail-closed（`409 nondeterministic_bundle`）とする。
+- AC-3: 失敗語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` に固定し、HTTPコードの1:1対応を維持する。
+- DoD-1: CE2向けに `sourceBundleHash === bundleHash`、CE4向けに `equivalenceKey + bundleHash` の接続可能性を明文化する。
+- DoD-2: docs-only差分（コード変更0 / 実装TODO不記載）を維持する。
+
+### Phase 4 Execute（ContextQuery/Bundleの最小契約・モック戦略明記）
+- 最小契約は既存の `ContextQueryV1` / `ContextBundleV1` を正本として再利用し、フィールド追加・削除・語彙拡張を行わない（v1固定）。
+- mock戦略を以下で固定する。
+  - 正常系: canonical query固定の同一入力で `queryCanonicalHash` と `bundleHash` が再現一致することを検証。
+  - 異常系A: `previewConfirmed=false` を投入し `422 preview_required` を返す。
+  - 異常系B: 未定義キーを投入し `400 unknown_contract_key` を返す。
+  - 異常系C: 同一canonical queryでbundle hash不一致を注入し `409 nondeterministic_bundle` を返す。
+- 実装依存（handler/UI/DB/worker）には踏み込まず、契約テキストとmock検証条件のみを受け渡し成果物とする。
+
+### Phase 5 Verify（整合 / 可逆性 / 監査性）
+- 整合: Contract IDs（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定語彙の競合なし。
+- 可逆性: v1 closed-world + fail-closed条件により、入力→判定→エラー語彙の写像が一意で再現可能。
+- 監査性: `queryCanonicalHash` / `bundleHash` と handoff key（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）で監査再実行が可能。
+- 判定: **pass（Proceed可）**。
+
+### Phase 6 Proceed
+- CE1は契約凍結を維持したまま、下流へは「型シグネチャ / 固定語彙 / hash決定論 / mock検証条件」のみを引き渡す。
+- 競合検知時（Contract ID / error semantics / handoff key）は `held` で停止し、Phase 2（ADR様式）へロールバックする。
