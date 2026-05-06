@@ -225,3 +225,53 @@
 ### Proceed policy
 - `pendingDecisionQueue` 未解消または未承認論点残存時は `Hold/Needs-decision` 固定。
 - Stopper検知（allowlist外要求/未定義競合/自己修復上限超過）時はNoGo停止して再開条件を明示する。
+
+## Stream A authoritative alignment update（2026-05-06 / A1 contract alignment）
+
+### Phase 1: Read同期
+- A1契約Issueと本親計画、ADR-0026参照を再読し、固定値ドリフト `0` を確認。
+- Status/Priority: `In Progress` / `P1`。
+- AC/DoD差分: 重大差分なし。未承認項目は継続（`Approval Record=Pending`）。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+親計画は A1契約の参照ノードであり、契約再定義は下流整合を破壊する。
+
+#### Decision
+- 親計画は A1 契約I/Fを参照専用で固定する。
+  - 判定I/F: `evaluateA1Gate(input: A1GateInput): A1GateOutput`
+  - mock I/F: `mockEvaluateA1Gate(input: A1GateInput): A1GateOutput`
+- 固定参照値:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 互換方針:
+  - 破壊的変更は human dual approval 完了まで禁止。
+
+#### Consequences
+- 親計画での派生判定式追加を禁止。
+- `pendingDecisionQueueCount>0` は `Hold` 固定。
+
+### Phase 3: Plan
+- 変更対象行: 本Issue末尾の親計画整合ブロックのみ。
+- 変更意図: A1契約のAPIシグネチャ/型/互換方針/mock I/F を親計画に明示参照。
+- 非変更範囲: A1正本値、他Issue、ADR本文、実装コード。
+
+### Phase 4: Execute
+- 親計画に A1契約参照（I/F + 互換 + mock）を追記。
+- A2/A3 は read-only handoff を前提に継続可能（実装完了待ちを前提化しない）。
+
+### Phase 5: Verify
+- AC-1 fixed keys drift=0: pass
+- AC-2 hardening参照整合: pass
+- AC-3 NoGo return path固定: pass
+- AC-4 A2/A3非干渉: pass
+- self-correction: `0/3`
+
+### Phase 6: Proceed判定
+- 判定: `Hold/Needs-decision`
+- 理由: 人間最終承認未完了。
+- 状態明記: **contract-frozen（read-only / pending human final approval）**。
