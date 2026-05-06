@@ -780,3 +780,31 @@
 - CE1 I/Fに未確定要素/差分が残る場合、CE2は**契約変更提案のみ**を許可し、実装・運用導線追加を禁止する。
 - `sourceBundleHash === bundleHash` の照合不能時は fail-closed で `held`。
 - unknown contract key を許容せず、closed-world前提のまま判定する。
+
+## Stream C update（2026-05-06 / Phase C Read→ADR→Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read（Status / Dependencies整合確認）
+- Status再確認: `Draft` を維持（Open未移行）。
+- Dependencies再確認: CE0契約依存 + CE1 I/F依存（mock切断可）。`Dependency status=未確定` を維持。
+- CE1参照制約: CE1契約は参照のみ。CE1仕様の確定化・CE1ファイル編集は行わない。
+
+### Phase 2 ADR C/D/C
+- Context: CE2は low-risk でも意思決定責務混線リスクがあるため、proposal-only を壊さずに Open判断材料を整備する必要がある。
+- Decision: CE2は proposal-only のまま、mock前提I/F接続条件のみ整理し、実装詳細は確定しない。
+- Consequences: 実装着手速度は抑制されるが、未承認Proceedと自動確定経路の混入を防止できる。
+
+### Phase 3 Plan→Execute（mock前提I/F接続条件のみ）
+- Plan（I/F接続条件）:
+  1. `Proposal I/F`: `status=proposed` + `reviewState=unreviewed` + `sourceBundleHash` 必須。
+  2. `Decision I/F`: 人間入力でのみ `accepted/rejected/held` を記録。
+  3. `Audit I/F`: `query/bundle/proposal/apply` 4点欠損時は fail-closed。
+- Execute: 文書整備のみ（実装手順・内部アルゴリズム確定は非実施）。
+
+### Phase 4 Verify（draft gate/Open移行/非目標）
+- Draft gate条件: proposal-only維持、auto-*禁止、`sourceBundleHash===bundleHash` 不一致時 `held`。
+- Open移行条件: `Dependency status=確定` の証跡 + Approval Record最小項目充足 + docs-check pass。
+- 非目標: CE1実装依存の仕様確定、状態遷移自動化、運用本番化。
+
+### Phase 5 Proceed 判定
+- 判定: **Hold**。
+- 根拠: 依存確定証跡とApproval Record実値が未充足。依存未確定のままOpen化を強行しない。

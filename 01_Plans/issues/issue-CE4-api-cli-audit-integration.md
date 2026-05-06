@@ -495,3 +495,31 @@
 - 本IssueでのADR相当記述は **Context / Decision / Consequences** を先に固定済み。
 - 未承認の契約更新は提案に留め、Decision確定として扱わない。
 - CE1契約が確定するまで `equivalenceKey AND bundleHash` 判定を運用導入しない（設計参照のみ）。
+
+## Stream C update（2026-05-06 / Phase C Read→ADR→Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read（Status / Dependencies整合確認）
+- Status再確認: `Draft` 維持（Contract Freeze Candidateのまま）。
+- Dependencies再確認: CE0契約依存 + CE1 ContextBundle I/F依存（mockで先行可）。依存確定証跡は未充足。
+- CE1参照制約: CE1契約は参照のみ。CE1側の実装詳細・定義変更は扱わない。
+
+### Phase 2 ADR C/D/C
+- Context: CE4はAPI/CLI/監査を跨ぐため、依存未確定下では実装仕様を固定せず、境界契約だけを保つ必要がある。
+- Decision: proposal-only + fail-closed を維持し、mock前提のI/F接続条件のみを整理する。
+- Consequences: 実装詳細の先走りは防げるが、Open判定は依存証跡が揃うまで `Hold` となる。
+
+### Phase 3 Plan→Execute（mock前提I/F接続条件のみ）
+- Plan（I/F接続条件）:
+  1. API/CLI共通で `equivalenceKey AND bundleHash` を同値成立条件にする。
+  2. 監査I/Fは `query -> bundle -> proposal -> apply` の4イベント連結を必須にする。
+  3. `sourceBundleHash` は `mock:<64hex>` を許容しつつ real と同じ fail-closed で検証する。
+- Execute: 本Issueの契約記述更新のみ（終了コード数値や転送基盤など実装詳細は未確定のまま維持）。
+
+### Phase 4 Verify（draft gate/Open移行/非目標）
+- Draft gate条件: 失敗分類（入力/監査/ポリシー/同値）維持、auto-*禁止、監査欠損fail-closed維持。
+- Open移行条件: 依存確定証跡 + Approval Record充足 + docs-check pass + self-correction <=3。
+- 非目標: CLI終了コードの数値固定、匿名化方式固定、監査転送基盤確定。
+
+### Phase 5 Proceed 判定
+- 判定: **Hold**。
+- 根拠: 依存確定証跡・Approval Record未充足のため、依存未確定のままOpen化を実施しない。
