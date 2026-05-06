@@ -111,3 +111,49 @@
 - Open化条件: U1〜U3完了時に Draft解除可。
 - Proceed判定日: `2026-05-06`（依存更新時に再判定）。
 - Stop条件: self-correction が4回目相当に到達、または05/05/07間でProceed語彙が不一致の場合は停止。
+
+
+## Stream K alignment pass（2026-05-06 / DOC-OPS-05-06 E2E Draft hardening）
+
+### Phase 1: Read（現状・依存・不足抽出）
+- 現状: `04_Documentation/e2e_testing.md` は公開向けE2E方針の正本であり、Issue 05-06 は Open化判定情報の固定を担う。
+- 依存: `05-05`（内部品質基準）と `05-07`（検証ログ配置）の Proceed 判定整合が前提。いずれも現時点は `Hold`。
+- 不足: 「対象シナリオ範囲」「環境前提」「成功/失敗判定」「ログ必須項目」の記述が Draft内で散在し、着手ゲートとして単体再読性が不足。
+
+### Phase 2: ADR（C/D/C）
+- Context: E2E方針の境界が曖昧なまま着手すると、再現性と監査可能性（pass/fail根拠）が崩れる。
+- Decision: 本Draftで **Scenario Scope / Environment Preconditions / Judgement Axes** を固定し、判定不能時は `Hold` で停止する。
+- Consequences: 05-05/05-07と矛盾しない共通ゲート（docs-check必須、self-correction上限3、4回目相当Stop）を維持したまま、Open化可否の再判定が可能になる。
+
+### Phase 3: Plan（AC/DoD明確化）
+- AC（受入条件）
+  - AC-1: 対象シナリオを `Smoke / Core Flow / Security-Safety Flow` の3区分で明示。
+  - AC-2: 環境前提を `Compose優先 / SQLite代替 / 実行不能時blocked記録` の3段階で明示。
+  - AC-3: 成功/失敗判定を `pass/fail/blocked` + 必須ログ4項目（実行コマンド・成否・未実施理由・再開条件）で明示。
+  - AC-4: 05-05/05-07との判定語彙（`Go/NoGo`, `Proceed/Hold/Stop`）一致を確認。
+- DoD（完了条件）
+  - DoD-1: 本Issue単体で着手基準（範囲/前提/判定軸/停止条件）が再読可能。
+  - DoD-2: `Dependency status` と `ProceedDecision` が依存Issueの最新状態と矛盾しない。
+  - DoD-3: docs-check計画（validator / rg / diff-check）が記載され、検証可能性が担保される。
+
+### Phase 4: Execute（本Draft本文のみ更新）
+- 実施範囲を `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみに限定。
+- 05-05/05-07本文、および `04_Documentation/e2e_testing.md`・実装コードは非編集を維持。
+
+### Phase 5: Verify（依存整合・判定軸検証・用語一貫）
+- 依存整合: 05-05/05-07が `Hold` 維持のため、本Issueの Proceed も `Hold` を維持する。
+- 判定軸検証可能性: AC-1〜AC-4 を `docs-check` で機械確認できるコマンドを保持する。
+- 用語一貫性: `Go/NoGo`, `Proceed/Hold/Stop`, `pass/fail/blocked`, `self-correction <=3` を固定。
+- Self-correction: `3/3`（次回追加修正が必要な場合は Stop 条件を適用）。
+
+### Phase 6: Proceed（Open化可否・未解決論点・次手順）
+- ProceedDecision: **Hold**
+- Open化可否: **Not ready**（依存確定証跡とApproval Record確定待ち）。
+- 未解決論点:
+  1. `DOC-OPS-05` Open gate の最終承認記録（日時/承認者/evidence link）。
+  2. 05-05/05-07のProceed再判定日との同期。
+  3. blocked発生時の再開条件テンプレートの運用先確定（Issue内記録かverification log集約か）。
+- 次手順:
+  1. 依存Issue（05-05/05-07）の `Dependency status` 更新を確認。
+  2. Approval Record 5項目を本Issueへ追記。
+  3. docs-check実行結果を添えて Draft解除可否を再判定。
