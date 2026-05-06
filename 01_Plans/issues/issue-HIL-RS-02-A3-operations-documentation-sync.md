@@ -1,8 +1,8 @@
 # Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream F preflight）
 
 - Type: Process
-- Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Status: Ready
+- Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
 - Owner: Stream F（operations sync planning preflight lane）
@@ -91,3 +91,37 @@
 - Stop: `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || hard stop`
 - Handover condition: `A1完了確認ログ` 追記まで Draft維持。
 - Current: **Hold**
+
+
+## Draft解除条件（Draft -> Ready）
+- [x] Scope が planning-only かつ allowlist内1ファイルに限定。
+- [x] Contract Freeze Reference が read-only で固定され、再定義禁止が明記。
+- [x] A1依存（Approval Record pending / A1未完 / Open gate未達）が gate に接続済み。
+- [x] ADR C/D/C で「A3は契約再定義ノードではない」が固定。
+- [x] Proceed 判定（Go/Hold/Stop）と Current=Hold が整合。
+
+## Ready定義（実行開始条件）
+- [x] Plan: M1-M3（用語同期・導線固定・証跡記録）が確定。
+- [x] Execute: planning文面更新のみ、実装/04_Documentation本文編集なし。
+- [x] Verify: DOC-OPS-02 4観点チェックを明示し、結果をGateへ反映可能。
+- [x] Proceed: A1完了ログ未着時は Hold 維持、Open化しない。
+
+## 依存切断条件（Ready維持のための独立性）
+- [x] A1依存は状態判定（Go/Hold）にのみ反映し、本文契約の編集依存を持たない。
+- [x] Stream Fで先行実施するのは「運用同期準備（語彙/導線/証跡）」のみ。
+- [x] fixedKeysDiff==0 を維持する限り、未承認でも Draftへ逆戻しせず Ready+Holdで待機可能。
+
+## 受入条件（Execute完了判定）
+- [ ] AC-1: Status=Ready へ遷移し、Draft解除条件が明示される。
+- [ ] AC-2: A1未完時は `Current: Hold` を維持し、Open化禁止を明記。
+- [ ] AC-3: DOC-OPS-02の4観点が欠落なく保持される。
+- [ ] AC-4: fixed key再定義・pending bypass・scope外編集が0件。
+
+## 検証導線（Verify手順）
+1. `rg -n "Status:|Lifecycle:|Draft解除条件|Ready定義|依存切断条件|Go:|Hold:|Stop:|Current" 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+2. `git diff -- 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+3. `git status --short`
+
+## Ready判定
+- 判定: **Ready（Proceed=Hold運用）**
+- 根拠: Draft解除条件を満たし、A1依存はGateで隔離、契約再定義なし。
