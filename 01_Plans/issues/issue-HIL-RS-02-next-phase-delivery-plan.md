@@ -12,7 +12,7 @@
 - Expected verification level: `docs-check`
 
 ## Stream E Serial Protocol（固定）
-- Serial phases: **Read → ADR(C/D/C) → Plan → Execute → Verify → Stop/Proceed**
+- Serial phases: **Read同期 → ADR(C/D/C, 承認待ち) → Plan（不足AC/DoD提案）→ Execute（ガバナンス契約整合）→ Verify（自己修復<=3）→ Stop/Proceed**
 - Mandatory per-phase discipline: **各Phase開始時に対象ファイルを再読する**。
 - AC/DoD不足時: **不足案をドラフト提示し、合意後に次Phaseへ進む**。
 - Self-correction limit: `<=3`（4回目相当は即停止）。
@@ -60,9 +60,11 @@
 - D1: Stream E の責務を `Gate判定ログ整備 / AC-DoD照合 / 停止条件固定` に限定する。
 - D2: 外部進捗や他ストリーム状態を入力に使わない。
 - D3: 不確定事項は `Hold` として保持し、推測確定を禁止する。
+- D4: ADR取り扱い時は `Context / Decision / Consequences` を明文化し、**承認待ち（Approval Pending）を挟むまで Execute に進まない**。
 
 ### Consequences
 - 単独完結で再開可能な計画を維持できる。
+- 承認待ちを明示することで、未承認事項の既成事実化を防止できる。
 
 ### Verify
 - C/D/C が欠落なく記述され、相互矛盾がないこと。
@@ -79,16 +81,17 @@
 - AC-2: 各Phaseに「Re-read target」が明記されている。
 - AC-3: Self-correction上限（<=3）と hard stop 条件が固定されている。
 - AC-4: Proceed判定が `Ready | Hold | No-Go` で定義されている。
+- AC-5: Gate判定ログに `Reason` が必須である。
 
 ### DoD（Definition of Done）
 - DoD-1: 本ファイルのみ更新（allowlist遵守）。
 - DoD-2: Fixed Guardrails に後退がない。
 - DoD-3: safeMode後退・契約ID再定義・pending bypass 要求を許容しない記述が残る。
 - DoD-4: docs-check手順が明示されている。
+- DoD-5: Stop report template に `last_safe_phase` が必須である。
 
 ### AC/DoD不足時ドラフト提案（合意用）
-- Draft-AC-5: Gate判定ログに理由（Reason）を必須化する。
-- Draft-DoD-5: Stop時報告テンプレに `last_safe_phase` を必須化する。
+- 本版で AC-5 / DoD-5 として採用済み。追加不足が出た場合のみ追補提案を起票する。
 
 ---
 
@@ -98,9 +101,9 @@
 - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 
 ### Gate判定ログ
-- GATE-01 `A1-GOV-GATE-V1`: **Conditional**
-- GATE-02 `A2-PROPOSAL-ENVELOPE-V1`: **Ready-By-Contract**
-- GATE-03 `A3-DOC-SYNC-CHECK-V1`: **Ready-By-Contract**
+- GATE-01 `A1-GOV-GATE-V1`: **Conditional**（Reason: `Approval Pending` 解消と固定キー一致が前提）
+- GATE-02 `A2-PROPOSAL-ENVELOPE-V1`: **Ready-By-Contract**（Reason: A1完了前は Open 不可）
+- GATE-03 `A3-DOC-SYNC-CHECK-V1`: **Ready-By-Contract**（Reason: A1完了前は Open 不可）
 
 ### Stop conditions
 - S1: `self_correction_attempt >= 4`
