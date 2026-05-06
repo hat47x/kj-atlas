@@ -1,8 +1,8 @@
 # Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream F planning lane）
 
 - Type: Process
-- Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Status: Ready
+- Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream F Agent（delivery plan + A3 ops sync preflight）
@@ -91,3 +91,37 @@
 - Proceed(Hold): `A1 not done && fixedKeysDiff==0`
 - Proceed(Stop): `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || scope violation`
 - Current decision: **Hold**（A1依存未解消）
+
+
+## Draft解除条件（Draft -> Ready）
+- [x] Scope/Out of scope が allowlist 2ファイルに限定されている。
+- [x] 固定契約値（freezeContractId / schemaVersion / safeMode / decisionQueueTransition）が明示され、再定義禁止が明記されている。
+- [x] A1依存を read-only とし、`A1 Done未達時はA3 Open禁止` が明記されている。
+- [x] Proceed判定式（Go/Hold/Stop）が定義済みで、Current decision が Hold と整合している。
+- [x] Verify 4観点（用語・役割分離・導線・固定値）が列挙されている。
+
+## Ready定義（実行開始条件）
+- [x] Plan: 里程標 M1-M3 と AC/DoD補完方針が確定。
+- [x] Execute: planning記述のみを更新対象とし、実装コード/04_Documentation本体を編集しない。
+- [x] Verify: docs-check（差分確認 + allowlist逸脱ゼロ）で判定可能。
+- [x] Gate: `A1 not done` 前提で Proceed=Hold を維持し、Open化は人手承認ログ待ち。
+
+## 依存切断条件（Ready維持のための独立性）
+- [x] A1成果物本文を参照専用に固定し、Stream F側で契約キーを書き換えない。
+- [x] A3準備は「用語同期 / 導線固定 / 検証証跡設計」の3点に限定し、A1完了を待たずに継続可能。
+- [x] 依存未解消でも Stop ではなく Hold で滞留できるよう判定式を固定。
+
+## 受入条件（Execute完了判定）
+- [ ] AC-1: 2ファイルとも Status=Ready で、Draft解除条件セクションを保持。
+- [ ] AC-2: Go/Hold/Stop 式が同一ロジック（fixedKeysDiff/pending bypass/A1 Done）で整合。
+- [ ] AC-3: A1未完時の運用は `Hold` 固定で、Open化禁止が明示される。
+- [ ] AC-4: Verify 4観点が両ファイルで欠落なく記載される。
+
+## 検証導線（Verify手順）
+1. `rg -n "Status:|Lifecycle:|Draft解除条件|Ready定義|依存切断条件|Proceed\(|Current" 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+2. `git diff -- 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+3. `git status --short` で allowlist外変更がないことを確認。
+
+## Ready判定
+- 判定: **Ready（Proceed=Hold運用）**
+- 根拠: Draft解除条件充足 + A1依存をHoldへ正規化 + fixed key再定義なし。
