@@ -218,6 +218,19 @@
 - 文書検証観点（docs-only）:
   - AC/DoD/Validation/Stop条件が相互参照で矛盾しない。
   - `Expected verification level=unit` と非目標（e2e拡張なし）が整合している。
+  - docs-check証跡（`git diff --check` / `validate_active_issue_memos.py`）を残し、実行不能時は阻害要因を記録する。
+- Self-correction: `3/3`（これ以上の自己修復は **Stop**）。
+
+### Phase 5 Proceed
+- ProceedDecision: **Hold（通常）**
+- Hold条件:
+  1. 依存 `issue-FB-P0-2A2B2C-stream-c-planning-baseline` 未収束。
+  2. `issue-HIL-RS-02-next-phase-delivery-plan` との検証スコープ同期未完了。
+  3. AC-M1/M2/M3 または AC-P1/P2/P3 のいずれかが `pending/hold`。
+- Open化判定（Ready条件）:
+  - 依存2件が解消され、Ownerが確定し、`V-UNIT-01/02/03` の記録先が確定していること。
+- Stop条件:
+  - self-correction 4回目相当が必要、または unit/e2e 境界が解消不能な競合状態になった場合。
   - Go/No-Go/Conditional(Hold) の判定条件が再現可能な表現になっている。
 - 検証結果記録ルール:
   - Verifyで未記録項目が1つでも残る場合は Open 化せず Draft 継続。

@@ -109,3 +109,5 @@
 ### Proceed
 - 判定: **Hold維持**。
 - Open化条件: U1〜U3完了時に Draft解除可。
+- Proceed判定日: `2026-05-06`（依存更新時に再判定）。
+- Stop条件: self-correction が4回目相当に到達、または05/05/07間でProceed語彙が不一致の場合は停止。
