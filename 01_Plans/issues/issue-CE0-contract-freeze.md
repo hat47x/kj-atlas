@@ -2447,3 +2447,38 @@ type PatchProposal = {
 ### Phase 5 Stopper
 - stopper 判定: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`。
 - 超過条件（自己修復4回目相当）が発生した場合は即時停止する。
+
+## Stream B latest run（2026-05-06 / CE0 only / boundary freeze clarification）
+
+- run_id: `stream-b-ce0-2026-05-06-10`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueの Scope を再確認：`docs-only / contract-only / mock-first`。
+- 依存関係を再確認：本Issueを CE0 契約SSOTとして、`issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` は read-only 参照。
+- CE0 固定境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+
+### Phase 2 C/D/C
+- Context: CE0 は契約凍結フェーズであり、下流の実装・確定仕様より先に I/F の安全境界と禁止事項の安定化を優先する。
+- Decision:
+  - **固定するもの（Freeze）**: Contract IDs、safeMode既定（`safeMode=true` / `allowUnreviewedText=false`）、No-Go canonical IDs、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の v1 意味論。
+  - **保留するもの（Held for CE1+）**: CE1 未確定項目（実装アルゴリズム、性能目標の確定値、運用自動化詳細、拡張キー追加）。推測で補完しない。
+- Consequences: 契約ドリフトと越境確定を抑止し、未承認拡張要求は `held` で停止する運用を維持できる。
+
+### Phase 3 Plan → Execute → Verify → Proceed
+- AC/DoD補完提案:
+  - `ac_freeze_boundary_explicit`: Freeze対象/保留対象を明示し、CE1未確定項目の推測補完を禁止する。
+  - `dod_ce1_unknowns_held`: CE1由来の未確定要求は `held` へエスカレーションする記録を必須化。
+- 合意/反映: 本Issue内の実行ログに上記を反映（単一ファイルのみ更新）。
+- docs-check相当の自己検証（attempt_1）:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- Proceed判定: **Conditional-Go**（CE0 契約凍結継続、CE1未確定項目は `held` 維持）。
+
+### Phase 4 Stopper
+- CE1未確定項目の推測補完は実施しない（0件）。
+- 他issue/ADRファイルへの書き込みは実施しない（0件）。
