@@ -945,3 +945,34 @@
 - Freeze: A2/A3は read-only 参照のみ。
 - Verify: AC/DoD自己検証で fixed keys drift=0、SafeMode後退なしを確認。
 - Proceed: `Conditional/Needs-decision`（人間承認待ち）。
+
+
+## Stream A execution log（2026-05-06 / Critical Path）
+
+### Phase 1: Read Sync
+- 対象4ファイルを再読し、`Status/Priority/Dependencies/固定キー` を突合した。
+- 矛盾一覧（検知結果）:
+  1. `Approval Record` が全ファイルで `Pending`（承認ログ未充足）。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が `held` 維持（未承認）。
+  3. `pendingDecisionQueueCount==0` の監査証跡が未添付（解放条件未達）。
+- 固定キー（`freezeContractId/schemaVersion/overridePolicy/safeModeDefault/safeModeBoundary/decisionQueueTransition`）は差分0。
+
+### Phase 2: ADR明文化（C/D/C）
+- Context: A1契約凍結がP0契約ゲートであり、ここが揺れるとA2/A3 mock参照が停止する。
+- Decision: 固定キーを再定義せず参照専用で維持し、未承認論点は `Pending/held` のまま固定する。
+- Consequences: `A2A3_OPEN_ALLOWED` の算出は継続可能だが、Proceedは `Hold/Needs-decision` を維持する。
+
+### Phase 3: Plan（AC/DoD固定）
+- AC:
+  1. `A1->A2/A3` 解放条件を単一式で固定する。
+  2. `pendingDecisionQueueCount>0` または未承認が1件でも `Go` を禁止する。
+  3. Stopper（allowlist外編集要求/未定義競合/self-correction 4回目相当）を明記する。
+- DoD:
+  1. 固定語彙ドリフト0。
+  2. pendingDecisionQueue条件が全対象文書で同値。
+  3. NoGo return pathがA1契約Issueへ一意。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: 契約語彙と依存式を維持（再定義なし）。
+- Verify: AC/DoD照合、用語ゆらぎ、状態遷移矛盾を確認し、破綻なし。
+- Proceed: **Hold**（`Approval Record=Pending` かつ `held` 残存のため）。

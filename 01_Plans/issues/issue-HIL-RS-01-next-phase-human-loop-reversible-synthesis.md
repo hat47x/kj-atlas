@@ -211,3 +211,17 @@
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
+
+
+## Stream A parent-plan gate sync（2026-05-06）
+
+### A1→A2/A3解放条件（親計画参照専用）
+- 親計画は以下を再定義せず参照する。
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - `Approval Record=Approved`
+  - `HIL-RS-02-GOV-EXCEPTION-01` が終端状態（Approved/Rejected）
+
+### Proceed policy
+- `pendingDecisionQueue` 未解消または未承認論点残存時は `Hold/Needs-decision` 固定。
+- Stopper検知（allowlist外要求/未定義競合/自己修復上限超過）時はNoGo停止して再開条件を明示する。
