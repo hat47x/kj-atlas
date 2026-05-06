@@ -218,3 +218,16 @@
 ### Consequences
 - A1 未完了時でも、A2/A3 は mock 契約ベースで準備作業を継続できる。
 - Ready/Blocker 判定が契約値ベースになり、再開時の分岐判断が単純化される。
+
+## Stream A addendum（2026-05-06 / Contract Freeze and minimum interface agreement）
+
+### Context
+- HIL-RS-01 の親ADRは A1契約凍結の上位参照であり、親側で再定義が入ると A1/A2/A3 の依存順が崩れる。
+
+### Decision
+- 親ADRでは契約固定値を参照専用として扱う（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）。
+- 判定は `A2A3_OPEN_ALLOWED`（または同値条件）を唯一ゲートとして維持し、派生判定式を導入しない。
+
+### Consequences
+- A2/A3 は read-only handoff を継続し、未承認事項（`Approval Record`, `held`）が解消するまでは `Needs-decision/Hold` を維持する。
+- SafeMode既定ONと厳格境界の後退を禁止する。

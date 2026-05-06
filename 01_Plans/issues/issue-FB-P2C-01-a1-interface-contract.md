@@ -890,3 +890,21 @@
   1. SafeMode既定ONの解除
   2. 安全境界後退
   3. A2/A3での契約再定義
+
+## Stream A contract freeze sync（2026-05-06 / Contract Freeze）
+
+### Phase 1: Read
+- allowlist対象と参照ADRを再読し、固定契約キーの差分 `0` を確認した。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1を唯一ゲートとして固定しない場合、A2/A3で契約再定義が起こる。
+- Decision: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を凍結維持。
+- Consequences: 未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `pending/held` のまま保持し、A2/A3は read-only handoff のみ許可。
+
+### Phase 3: Contract Freeze
+- 固定判定式は `A2A3_OPEN_ALLOWED` のみを採用し、派生式の追加を禁止する。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: 契約語彙と固定値の更新なし（drift=0維持）。
+- Verify: docs-check想定の自己検証で AC/DoD 充足。
+- Proceed: `Needs-decision`（human approval未完了）。

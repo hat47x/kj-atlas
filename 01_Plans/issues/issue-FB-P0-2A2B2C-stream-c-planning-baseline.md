@@ -929,3 +929,19 @@
 ### Phase 5: Proceed Gate
 - 判定: **次フェーズへ進行可（Conditional / Needs-decision）**。
 - 理由: 契約固定値と判定式は整合済み。未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `held` のまま維持され、確定化していない。
+
+## Stream A contract freeze sync（2026-05-06 / P0-P1 minimum interface agreement）
+
+### Phase 1: Read同期
+- 対象6ファイルを再読し、固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の差分を確認。
+- 差分結果: `0`（不一致なし）。
+
+### Phase 2: ADR明文化（C/D/C）
+- Context: A1契約固定が崩れると `A1 -> A2 -> A3` の依存順が崩壊する。
+- Decision: 契約は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` を維持し、`A2A3_OPEN_ALLOWED` を唯一判定式として継続。
+- Consequences: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が残る間は `Needs-decision` を維持し、確定扱いを禁止する。
+
+### Phase 3-6: Freeze / Verify / Proceed
+- Freeze: A2/A3は read-only 参照のみ。
+- Verify: AC/DoD自己検証で fixed keys drift=0、SafeMode後退なしを確認。
+- Proceed: `Conditional/Needs-decision`（人間承認待ち）。

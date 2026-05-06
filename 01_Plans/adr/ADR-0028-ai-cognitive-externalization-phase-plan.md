@@ -418,3 +418,16 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
   - UI配置・操作導線は未確定のまま（契約語彙のみ固定）
   - Provider実装差分は contract adapter で吸収し、contract key追加は禁止
   - hash不一致は `409 nondeterministic_bundle` で fail-closed
+
+## Stream A addendum（2026-05-06 / CE0 contract freeze linkage）
+
+### Context
+- CE0 Contract Freeze と HIL-RS A1最小I/F契約の接続点が曖昧だと、後続CEで契約再解釈が発生しうる。
+
+### Decision
+- CE0固定契約（proposal-only / safeMode既定ON / review昇格の人間責務）を、A1凍結契約 `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `schemaVersion=1.0.0` に明示的にリンクする。
+- A2/A3相当の下流作業は read-only 契約参照 + mock検証に限定し、未承認事項の確定化を禁止する。
+
+### Consequences
+- CEフェーズ実行時の判定分岐が固定化され、`Pending` 残存時は `Hold/Needs-decision` を一貫適用できる。
+- SafeMode境界後退や契約ID再定義を起点とするドリフトを抑止できる。
