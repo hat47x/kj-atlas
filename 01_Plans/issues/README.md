@@ -29,6 +29,7 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - 役割: AUTH系（`Security Officer / System Owner / Platform Operator`）と DOC系（`Platform Architecture Owner / Plan Owner / Architecture Owner`）の責務境界を分離する。
 - 導線: `02_Architecture/strict_mode_exception_approval_flow.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` の順に同期する。
 - 固定値（D1〜D4）: `承認順序=Security Officer先行 + 承認TTL=4h / scope=tenant最大2h / 代理承認なし / 48hレビュー + 15m一次 + 60m二次` を変更しない。
+- Stream E rerun-69（2026-05-06）で shared 3ファイル再読と DOC-OPS境界チェック（B/C/D・SoD）を再実施し、公開固定値と停止条件違反0件を再確認した。
 
 ## Source Issue 運用基準（Traceability）
 
