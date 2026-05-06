@@ -205,7 +205,56 @@
   - `CTR-FB-P0-P2C-A1-TIEBREAK-v1`
 - Prohibited transitions:
   1. `Pending -> Done`（`Approved` を経由しない遷移）
-  2. `Held -> Done`（人間承認なし）
+ 2. `Held -> Done`（人間承認なし）
+
+## Stream A alignment run（2026-05-06 / FB-P2C A1 freeze + FB-P0 baseline）
+
+### Phase 1: Read（Plan → Execute → Verify → Proceed）
+- Plan: allowlist 2ファイルを再読し、`Status/Priority/Scope/Dependencies/freeze keys` 差分検知時は `held` 記録で停止。
+- Execute: 本baselineと `issue-FB-P2C-01-a1-interface-contract.md` を再読。
+- Verify:
+  - `Status=Open`, `Priority=P0`, `Scope=allowlist 2ファイル限定`, `Dependencies=A1 -> A2 -> A3（A2/A3はmock-first）` を確認。
+  - freeze keys（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）差分 `0`。
+  - `held`: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held` を継続。
+- Proceed: 差分なしのため Phase 2 へ進行。
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences）
+- Context: FB-P0基準整合は A1 契約凍結を唯一SSOTとして運用し、A2/A3の派生再定義を防ぐために必要。
+- Decision:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として固定する。
+  2. `schemaVersion=1.0.0`、`safeModeDefault=ON`、`safeModeBoundary=SAFE_MODE_STRICT_ON`、`decisionQueueTransition=Pending -> Approved | Pending -> Rejected` を固定する。
+  3. A2/A3は `A1-CONTRACT-MOCK-v1` による read-only 条件のみ許可する。
+- Consequences:
+  - 契約未承認のまま A2/A3 を確定化する要求は `No-Go`。
+  - 未承認事項は `held` で維持し、確定扱いしない。
+
+### Phase 3: Plan（AC/DoD）
+- AC:
+  1. 判定式 `A2A3_OPEN_ALLOWED` が2ファイルで文字列一致。
+  2. A1契約ID・schemaVersion・safeMode境界・queue遷移の固定を明示。
+  3. A2/A3の前提は mock-first/read-only で依存切断。
+- DoD:
+  1. allowlist外編集 `0`。
+  2. No-Go条件に `pendingBypassDetected` / `undefinedConflictDetected` / `契約未承認でA2/A3確定要求` を保持。
+  3. safeMode後退 `0`。
+
+### Phase 4: Execute
+- 契約凍結・基準整合の文言同期のみ実施（実装誘導/コード変更記述は追加しない）。
+- A2/A3 は mock-first read-only 条件で固定。
+
+### Phase 5: Verify
+- AC/DoD照合: 充足。
+- 語彙一致: `ProceedGate`, `NoGo`, `Conditional`, `Needs-decision` をA1側と整合。
+- allowlist逸脱: なし。
+- safeMode後退: なし（`ON` / `SAFE_MODE_STRICT_ON` 維持）。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- 判定: `Conditional / Needs-decision` 維持。
+- 理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` 未解消。
+- Next actions（Stream A視点）:
+  1. 承認証跡（`approved_by`, `approved_at`, `evidence`）の充足待ち。
+  2. `held` 解消後に Go判定を再実施。
   3. `A1 not Done -> A2/A3 Confirmed`
   4. `safeModeDefault=ON -> OFF`
   5. `SAFE_MODE_STRICT_ON -> relaxed`
