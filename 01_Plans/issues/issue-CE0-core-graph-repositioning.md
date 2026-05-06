@@ -1701,3 +1701,30 @@
 - 判定: `Done`（AC/DoD充足、docs-check pass、単一ファイル更新、contract-only維持）。
 - 未承認事項在庫: なし（新規 `held/pending` は発生せず）。
 - 競合検知時即停止・推測実装禁止の fail-safe を再確認。
+
+## Stream B latest run（2026-05-06 / CE0 Core Graph repositioning design progression）
+
+- run_id: `stream-b-ce0-graph-2026-05-06-10`
+- assignee: `Stream B（CE0/CE1基盤進行）`
+- scope_guard: docs-only / contract-only
+
+### Phase 1 Read（latest + AC/DoD）
+- `working` / `context_projection` / `consensus` の3役割固定と、`patch+approval` 単一路遷移を再確認。
+- AC/DoD・停止条件（自己修復3回上限）を再確認。
+
+### Phase 2 CE0契約凍結整合
+- CE0 canonical 5 No-Go IDs とSafeMode既定ON後退禁止を再確認。
+- CE0 Contract IDsは参照のみで再定義なし。
+
+### Phase 3 Core Graph再配置設計
+- 再配置設計の契約境界を role/transition/no-go のみに限定し、実装記述は追加しない。
+- `working -> consensus` は `patch+approval` のみ許可を維持。
+
+### Phase 4 ContextQuery/Bundle基盤との整合
+- CE1へ引き渡す境界を「graph role責務 + no-go + preview gate依存」の契約情報に限定。
+- CE1実装詳細への拘束を持ち込まない方針を固定。
+
+### Phase 5 Verify & handoff
+- 判定: **Done（contract design freeze maintained）**。
+- handoff（CE2/CE4）: graph責務境界の read-only 契約参照。
+- self-correction usage: `0/3`。

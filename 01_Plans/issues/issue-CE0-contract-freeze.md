@@ -2340,3 +2340,31 @@ type PatchProposal = {
 - 継続可否記録:
   - 継続可（CE0 Contract Freezeを本Issue SSOTとして維持）。
   - ただし Stop条件（3回超過/前提崩れ/未定義競合/範囲逸脱）発生時は即時 `held` へ遷移して停止。
+
+## Stream B latest run（2026-05-06 / CE0 contract freeze baseline progression）
+
+- run_id: `stream-b-ce0-2026-05-06-10`
+- assignee: `Stream B（CE0/CE1基盤進行）`
+- scope_guard: `issue-CE0-contract-freeze.md / issue-CE0-core-graph-repositioning.md / issue-CE1-context-query-bundle-foundation.md` の3ファイルのみ
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read（latest + AC/DoD）
+- Read Order上位文書の再読を前提に、CE0 Contract FreezeのSSOT責務（contract-only / mock-first / docs-only）を再確認。
+- AC/DoDとfail-safe（自己修復3回上限、4回目相当で `held`）を再確認。
+
+### Phase 2 CE0契約凍結（独立化）
+- `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を read-only のまま凍結維持。
+- `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙を v1固定として再確認。
+
+### Phase 3 Core Graph再配置への受け渡し準備
+- CE0側から渡す情報を「契約ID / canonical no-go / safeMode境界」のみに限定。
+- 実装依存情報（handler/UI/DB/worker/API手順）は受け渡し対象外として固定。
+
+### Phase 4 CE1 Context基盤への接続準備
+- CE1が mock-only で検証継続できるよう、CE0は契約参照点のみ提供する方針を確認。
+- 依存逆流（CE1→CE0再定義）禁止を再確認。
+
+### Phase 5 Verify & handoff
+- 判定: **Conditional-Go**。
+- handoff（下流CE2/CE4向け）: CE0 Contract IDs / canonical No-Go IDs / safeMode境界の read-only 参照のみ。
+- self-correction usage: `0/3`（超過なし）。
