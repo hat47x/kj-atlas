@@ -393,3 +393,27 @@ Prohibited for A2/A3:
 - Phase 3(Freeze): 固定キー差分 `0`。
 - Phase 4(Handoff): read-only snapshot 発行済み。
 - Phase 5(Verify): self-correction `0/3`、未承認が残るため Proceed は `Conditional`。
+
+
+## 9) Stream A Verify Gate Snapshot（2026-05-06）
+
+### Context
+- 本スナップショットは A2/A3 開始前の最終ゲート確認を目的とする（contract freeze の再定義禁止）。
+
+### Decision
+- 以下を凍結参照として維持する。
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+
+### Consequences
+- ゲート判定は `Hold/Block` を維持。
+- 理由:
+  1. `Approval Record` が Pending（2者承認未完了）。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が held。
+  3. `pendingDecisionQueueCount==0` の監査証跡が未添付。
+- A2/A3は本書の固定I/Fを read-only 参照し、変更要求は A1 CDC に差し戻す。

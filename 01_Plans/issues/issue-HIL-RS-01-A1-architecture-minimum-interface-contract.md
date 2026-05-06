@@ -162,3 +162,57 @@
   1. SafeMode既定ONの解除
   2. 安全境界後退
   3. A2/A3での契約再定義
+
+
+## Stream A Critical Path Update（2026-05-06 / Phase 1-5）
+
+### Plan
+- Scope: `issue-HIL-RS-01*` と `*interface*` 契約文書の再読と凍結条件の再検証（docs-only）。
+- Non-Goals: 実装コード変更、A2/A3側契約の再定義、未承認事項の確定化。
+- AC:
+  - [ ] 契約未確定項目を一覧化する。
+  - [ ] CDC（Context / Decision / Consequences）を「承認待ち」状態で明文化する。
+  - [ ] `contractLinkLocked/sharedResourceFreeze` を固定参照として再確認する。
+  - [ ] A2/A3向け固定I/F配布情報を明記する。
+  - [ ] Verify GateでA2開始可否を判定する。
+
+### Execute
+#### Phase 1 Read（契約未確定項目）
+- `Approval Record`: Pending（最終 human dual approval 未完了）。
+- `HIL-RS-02-GOV-EXCEPTION-01`: held（例外可否の人間判断待ち）。
+- `pendingDecisionQueueCount`: 0確証の運用証跡が未添付（ゲート判定に必要）。
+
+#### Phase 2 ADR-CDC（承認待ち）
+- Context: A1凍結値はA2/A3の唯一参照境界であり、未承認事項を確定扱いすると契約ドリフトが発生する。
+- Decision: `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary` は凍結候補として維持し、未承認項目は `Pending` を継続する。
+- Consequences: A2/A3は read-only handoff のみ許可、実行判定は `Hold` 維持。
+
+#### Phase 3 Freeze（固定条件）
+- `contractLinkLocked=true`（固定）
+- `sharedResourceFreeze=true`（固定）
+- `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON`（固定）
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`（固定）
+
+#### Phase 4 Handoff（A2/A3配布）
+- Fixed I/F: `A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF | A1-ERROR-IF`
+- Fixed `schemaVersion=1.0.0`
+- Prohibited changes:
+  1. 契約ID・必須キー・`schemaVersion` の再定義
+  2. `Pending` bypass
+  3. SafeMode/share-export 境界後退
+
+### Verify（Phase 5 Gate）
+- Gate check:
+  - `a1Status=="Done"`: pass
+  - `contractLinkLocked==true && sharedResourceFreeze==true`: pass
+  - `pendingDecisionQueueCount==0` の監査証跡: **not satisfied**（証跡不足）
+  - 未承認項目0件: **not satisfied**
+- Decision: **Block 維持（A2開始不可）**。
+- Self-Correction count: `1/3`（文書内整合の再照合を1回実施、未解消論点は人間承認待ちのため停止継続）。
+
+### Proceed
+- 現状態は `Hold/Block`。
+- 解除に必要な人間判断:
+  1. `Approval Record` の最終承認（2者承認）
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の Approved/Rejected 確定
+  3. `pendingDecisionQueueCount==0` を示す監査証跡の添付
