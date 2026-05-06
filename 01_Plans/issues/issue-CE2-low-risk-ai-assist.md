@@ -766,3 +766,17 @@
   4. A契約未確定時の停止条件が明記されている
 - 判定: **Hold-Ready**（契約確定待ち）。
 - fail-safe result: A契約未確定・shared resource更新要求・他レーン競合のいずれか検知時は即時停止。
+
+
+## Stream C 直列Phase運用ログ（2026-05-06）
+
+- Phase 1 Read同期: 実施済み（ADR-0028 / ADR-0001 / schemas.md の契約語を再照合）。
+- Phase 2 CE1契約参照チェック: `issue-CE1-context-query-bundle-foundation.md` を**参照限定**で確認し、`ContextQueryV1/ContextBundleV1` は未確定要素を含むため CE2は proposal-only を維持。
+- Phase 3 Plan→Execute→Verify→Proceed: 本Issueは docs整備のみ実施、Proceedは人間承認ログ取得まで禁止。
+- Phase 4 Self-Correction: Verify失敗時の自己修復は最大3回。4回目相当は `held` 固定。
+- Phase 5 Stopper: 予定超過・前提崩壊（CE1契約破綻）・契約競合発生時は即時停止し `held` へ遷移。
+
+### CE1契約未確定時の扱い（proposal-only固定）
+- CE1 I/Fに未確定要素/差分が残る場合、CE2は**契約変更提案のみ**を許可し、実装・運用導線追加を禁止する。
+- `sourceBundleHash === bundleHash` の照合不能時は fail-closed で `held`。
+- unknown contract key を許容せず、closed-world前提のまま判定する。

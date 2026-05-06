@@ -481,3 +481,17 @@
   1. 依存確定証跡の充足。
   2. Approval Record の充足。
   3. proposal-only / docs-only / fail-closed の維持。
+
+
+## Stream C 直列Phase運用ログ（2026-05-06）
+
+1. **Read同期**: `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` を再参照し、CE4契約語彙を同期。
+2. **CE1契約参照チェック**: `ContextQueryV1/ContextBundleV1` は参照のみ。CE1未確定時は CE4を proposal-only のまま固定。
+3. **Plan→Execute→Verify→Proceed**: contract-only 文書整備を実施し、API/CLI実装変更は対象外。
+4. **Self-Correction（最大3回）**: 検証失敗時は3回まで自己修復。超過時は `held` 停止。
+5. **Stopper**: 工数超過、前提崩壊（CE1/CE0契約不成立）、他契約との競合検出時は即停止。
+
+### ADRルール適用メモ（proposal-only）
+- 本IssueでのADR相当記述は **Context / Decision / Consequences** を先に固定済み。
+- 未承認の契約更新は提案に留め、Decision確定として扱わない。
+- CE1契約が確定するまで `equivalenceKey AND bundleHash` 判定を運用導入しない（設計参照のみ）。
