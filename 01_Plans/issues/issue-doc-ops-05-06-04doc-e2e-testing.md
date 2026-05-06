@@ -393,3 +393,31 @@
 - 現在判定: **Hold**（依存確定証跡不足）。
 - Proceed条件: 依存証跡充足後に再判定。
 - Stop条件: 4回目相当の自己修復、または依存矛盾が解消不能な場合。
+
+## DOC-OPS-05 triad canonical alignment（2026-05-06）
+
+### Context
+- DOC-OPS-05 Draft群（05/06/07）に履歴追記が累積し、`self-correction` 消費量と Open 判定語彙の読み取りが分岐しやすい。
+- 本タスクは **3ファイル内のみ** を対象に、ADR/運用語彙の不一致を先に解消し、Open化条件を再固定する。
+
+### Decision
+- 本サイクルの正本判定を次で固定する。
+  1. Proceed tri-state は `Proceed / Hold / Stop` の3値のみを使用。
+  2. 現在判定は3Issue共通で `Hold`（依存確定証跡とApproval Record未充足）。
+  3. 検証実行義務は `docs-check` のみ。`unit/integration/e2e` は期待レベル定義のみ。
+  4. self-correction は **本サイクル基準で 0/3 から開始**し、3回超過（4回目相当）で `Stop`。
+  5. Open化条件は「依存確定証跡 + Approval Record + docs-check pass + tri-state再判定可能性」の4点を全件必須。
+- 既存履歴中の `1/3` や `2/3` は過去サイクル記録として保持し、Open判定には上記 canonical 条件のみを適用する。
+
+### Consequences
+- 3IssueのOpen判定を同一語彙・同一閾値で再実行でき、判断の恣意性を抑制できる。
+- self-correction ルールを「サイクル単位」で明示することで、履歴肥大による誤停止/誤Proceedを防止できる。
+- 依存確定前の fail-closed（Hold維持）が強化され、未承認Open化を回避できる。
+
+### Open化チェックリスト（canonical）
+- [ ] C1: Context/Decision/Consequences が本Issue単体で再読可能。
+- [ ] C2: Proceed tri-state（Proceed/Hold/Stop）を3値以外で拡張していない。
+- [ ] C3: self-correction は本サイクル `0/3` 開始、超過時 `Stop` を明記。
+- [ ] C4: `docs-check pass` 記録がある。
+- [ ] C5: 依存確定証跡（日時・承認者・対象・判断）と Approval Record がある。
+- [ ] C6: docs-only 境界（03_Implement/04_Documentation本文非変更）を維持。
