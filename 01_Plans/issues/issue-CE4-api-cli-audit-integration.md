@@ -523,3 +523,63 @@
 ### Phase 5 Proceed 判定
 - 判定: **Hold**。
 - 根拠: 依存確定証跡・Approval Record未充足のため、依存未確定のままOpen化を実施しない。
+
+## Stream H update（2026-05-06 / CE4 API/CLI Audit Integration Draft整備専任）
+
+### Phase 1: Read（Status/Priority/Dependencies + CE0/CE1契約再確認）
+- CE4現行メタを再確認: `Status=Draft (Contract Freeze Candidate)` / `Priority=P2` / `Dependencies=CE0契約・CE1 ContextBundle I/F`。
+- CE0参照契約（read-only）を再確認:
+  - CE0境界: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  - No-Go canonical IDs: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
+- CE1参照契約（read-only）を再確認:
+  - `ContextQueryV1` / `ContextBundleV1`（closed-world）
+  - 固定語彙: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+  - handoff keys: `sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`
+- 判定: CE4はCE0/CE1契約参照のみでDraft整備を進行可能（実装変更不要）。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- **Context**: CE4はAPI/CLI/監査の下流統合であり、CE0/CE1契約未固定のまま実装着手すると監査整合と責務境界が破綻する。
+- **Decision**:
+  1. Draft段階のCE4は **契約参照固定 + 監査観点固定** のみを扱う（contract-only）。
+  2. CE0/CE1契約をSSOT参照し、CE4側で再定義しない。
+  3. `proposal-only` / `fail-closed` / `auto-*禁止` を実装非依存の判定規律として維持する。
+- **Consequences**:
+  - Open判定前に API/CLI/監査の検証粒度を揃えられる。
+  - CE0/CE1に対する語彙ドリフトと責務衝突を事前に抑制できる。
+  - 実装着手条件（契約整合）を明確化し、下流競合を低減できる。
+
+### Phase 3: Plan（Open化判定AC/DoD）
+#### AC（Open候補判定に必要な観点）
+- [x] CE0/CE1参照契約（ID/語彙/handoff key）をCE4本文でread-only固定した。
+- [x] API/CLI境界の責務分離（同値判定・失敗分類・proposal-only）を再読可能化した。
+- [x] 監査ログ最小項目（4イベント + 共通必須キー）を維持し、非対象範囲（数値終了コード・匿名化方式・転送基盤）を明示した。
+
+#### DoD（Draft整備完了条件）
+- [x] CE0/CE1契約参照のみでCE4 Open判定可否を説明できる。
+- [x] 実装タスク化/API実装変更/CLI実装変更/監査実装変更を含まない。
+- [x] self-correction上限（3回）と超過時Stop条件を保持する。
+
+### Phase 4: Execute（CE4 Draft本文のみ更新）
+- 実施: 本 `issue-CE4-api-cli-audit-integration.md` へ Stream H運用記録を追記し、契約語彙・依存式・禁止事項をDraft判定向けに明文化。
+- 非実施（範囲外）:
+  - API/CLI/監査の実装変更
+  - CE0/CE1本体Issue修正
+  - Allowlist外ファイル編集
+
+### Phase 5: Verify（整合確認 / self-correction）
+- CE0整合: Contract ID・No-Go語彙との矛盾なし。
+- CE1整合: I/F語彙・error semantics・handoff keyとの矛盾なし。
+- CE4内部整合: `proposal-only` / `fail-closed` / 監査4イベント順序要件と衝突なし。
+- 状態遷移整合: Draft整備として矛盾なし（実装要求へ昇格していない）。
+- self-correction: `0/3`（修正再試行不要）。
+
+### Phase 6: Proceed（Open候補可否 / blocking items）
+- 判定: **Open候補（条件付きで可）**。
+- 根拠: CE0/CE1参照契約のみでCE4契約の監査境界・責務分離・fail-safeを再読可能。
+
+#### blocking items（未解決論点）
+1. CLI終了コードの**数値割当**（分類語彙は固定済みだが値は未固定）。
+2. `principalIdMasked` の不可逆化方式（hash/tokenizationの選定未確定）。
+3. 監査転送基盤（保存先・配送保証・署名方式）の上位ADR確定待ち。
+
+> 運用注記: 上記blocking itemsを実装確定要求として扱う場合は本レーン範囲外のため **Stop** とし、上位ADR/別Issueへエスカレーションする。
