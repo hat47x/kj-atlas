@@ -2524,3 +2524,53 @@ type PatchProposal = {
   - CE0 Contract Freezeは本IssueをSSOTとして固定（read-only参照継続）。
   - CE1/CE2/CE4は契約変更なしのmock参照のみ許可。
   - 逸脱要求またはself-correction 4回目相当発生時は即時 `held`。
+
+## Stream C latest run（2026-05-06 / CE0 only / contract freeze compatibility boundary confirmation）
+
+- run_id: `stream-c-ce0-2026-05-06-01`
+- assignee: `Stream C（CE0-contract-freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / compatibility_break=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read同期
+- 本Issueを再読し、固定順序 **Read → ADR様式（Context/Decision/Consequences）→ Plan → Execute → Verify → Proceed** を同期。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only 固定であることを再確認。
+- 停止条件（指定外編集 / safeMode既定値後退 / Contract ID追加・改名・削除 / 自己修復4回目相当）を再確認。
+
+### Phase 2 ADR様式（Context / Decision / Consequences）
+- Context: CE0 contract freeze のSSOTは本Issue単体で維持し、下流ストリームは read-only 参照に限定する。
+- Decision: 契約凍結条件を `no_contract_id_mutation` / `no_default_relaxation` / `no_unapproved_extension` として固定し、互換境界は v1 セマンティクス不変（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に確定する。
+- Consequences: 互換破壊を伴う変更要求は `held` 停止となり、人間承認まで実装・拡張を進めない。既存下流は契約ドリフトなしで参照継続可能。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC補完:
+  - `ac_contract_freeze_gate`: Contract ID変更ゼロを毎runで記録する。
+  - `ac_compat_boundary_v1`: v1互換境界3項目（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）の不変を確認する。
+- DoD補完:
+  - `dod_read_sync_each_phase`: 各Phase開始時の再読をログ化する。
+  - `dod_verify_retry_cap_3`: Verifyの自己修復は最大3回。4回目相当は停止して `held`。
+  - `dod_contract_only_execution`: Executeは本Issue追記のみ（docs-only / contract-only / mock-first）。
+
+### Phase 4 Execute（契約凍結条件と互換境界を確定）
+- 契約凍結条件を本runで明示固定：
+  - `freeze_rule_1`: Contract IDの追加・改名・削除を禁止。
+  - `freeze_rule_2`: safeMode既定（`safeMode=true` / `allowUnreviewedText=false`）の緩和を禁止。
+  - `freeze_rule_3`: 未承認拡張（新規キー/新規意味論）は `held`。
+- 互換境界を本runで明示固定：
+  - `compat_boundary_1`: `preview_required` は Query Preview 必須違反を示す canonical no-go として不変。
+  - `compat_boundary_2`: `unknown_contract_key` は未定義キー拒否を示す canonical no-go として不変。
+  - `compat_boundary_3`: `nondeterministic_bundle` は `ContextBundle.bundleHash` 非決定性を拒否する canonical no-go として不変。
+
+### Phase 5 Verify（自己修復は最大3回）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: 追加自己修復不要。3回上限未到達。
+
+### Phase 6 Proceed（停止条件チェック）
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0 contract freeze は本Issue SSOTの read-only 参照運用を継続。
+  - 互換境界を破る要求、または自己修復4回目相当が発生した場合は即時 `held` 停止。
