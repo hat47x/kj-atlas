@@ -2574,3 +2574,47 @@ type PatchProposal = {
 - 継続条件:
   - CE0 contract freeze は本Issue SSOTの read-only 参照運用を継続。
   - 互換境界を破る要求、または自己修復4回目相当が発生した場合は即時 `held` 停止。
+
+## Stream B latest run（2026-05-06 / CE0 only / SSOT freeze lane serial refresh）
+
+- run_id: `stream-b-ce0-2026-05-06-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / allowlist_deviation=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- CE0契約ID群（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の改変禁止を再確認。
+- safeMode既定（`safeMode=true` / `allowUnreviewedText=false`）後退禁止を再確認。
+- 互換エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）をv1固定語彙として再確認。
+- CE1/CE2/CE4は read-only参照先（mock前提）として扱い、依存切断のまま並行可能な記述のみ許可することを再確認。
+
+### Phase 2 CDC
+- Context: CE0契約SSOT凍結を単一ファイルで維持し、他ストリームは mock/read-only前提で参照する。
+- Decision: 契約ID・safeMode既定・互換エラー語彙を不変とし、再定義・拡張・名称変更を行わない。
+- Consequences: 契約ドリフトと安全境界後退を防止し、未定義競合/allowlist逸脱が発生した場合は `held` 停止へ即時遷移できる。
+- CDC承認: `contract_id_collision=0` / `safemode_regression=0` / `vocabulary_collision=0` のため本runは追加CDC起票なし。
+
+### Phase 3 Plan
+- AC/DoD補完提案:
+  - `ac_error_vocabulary_lock_v1`: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を CE0互換エラー語彙の正準IDとして固定。
+  - `dod_dependency_mock_read_only`: CE1/CE2/CE4は mock/read-only参照のみ許可し、契約確定依存を持ち込まない。
+  - `dod_fail_safe_stop`: 3回超修復・前提崩壊・未定義競合・allowlist逸脱で `held` 停止を必須化。
+- 合意: 上記3件を本runのPlan合意として採用（contract-only、追加ADRなし）。
+
+### Phase 4 Execute
+- 実施: 本Issueへの contract-only 更新のみ（実装コード変更なし）。
+- 非実施: 指定外ファイル編集、契約ID追加/改名/削除、safeMode既定緩和、CE1/CE2/CE4仕様確定。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: `contract_id_mutation=0` / `safeMode_regression=0` / `allowlist_deviation=0` を確認。
+
+### Phase 6 Proceed
+- 判定: **Ready**
+- 継続条件:
+  - CE0契約SSOT凍結を継続し、CE1/CE2/CE4は mock/read-only参照のみ許可。
+  - 3回超修復、前提崩壊、未定義競合、allowlist逸脱が発生した時点で即時 `held` 停止。
