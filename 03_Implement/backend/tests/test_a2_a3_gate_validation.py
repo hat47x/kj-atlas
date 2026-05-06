@@ -40,3 +40,33 @@ def test_validate_gate_rejects_non_frozen_schema_version() -> None:
         response = client.post("/admin/provision/hil-rs/a2a3-gate:validate", json=payload)
 
     assert response.status_code == 422
+
+
+def test_validate_gate_rejects_pending_decision_queue_count_not_zero() -> None:
+    payload = _valid_payload()
+    payload["pendingDecisionQueueCount"] = 1
+
+    with TestClient(app) as client:
+        response = client.post("/admin/provision/hil-rs/a2a3-gate:validate", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_validate_gate_rejects_share_export_leakage_relaxation_request_true() -> None:
+    payload = _valid_payload()
+    payload["hasShareExportLeakageRelaxationRequest"] = True
+
+    with TestClient(app) as client:
+        response = client.post("/admin/provision/hil-rs/a2a3-gate:validate", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_validate_gate_rejects_unknown_fields() -> None:
+    payload = _valid_payload()
+    payload["unexpected"] = "extra"
+
+    with TestClient(app) as client:
+        response = client.post("/admin/provision/hil-rs/a2a3-gate:validate", json=payload)
+
+    assert response.status_code == 422
