@@ -61,10 +61,38 @@
 ## Phase 4 Execute
 - A1先行固定 → hardening固定 → 親計画整合反映の順序だけを実施。
 
+### Responsibility Boundary（親計画の責務）
+- Parent Plan（本issue）:
+  - 契約再定義は行わず、A1/hardening契約の参照整合のみ判定する。
+  - `Go/Hold/NoGo` 判定結果と `reasonCodes` を記録する。
+- A1 Contract Owner:
+  - `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` の正本管理。
+- Human Approver:
+  - `Pending -> Approved | Rejected` の遷移確定責務を持つ。
+- AI / Automation:
+  - 判定補助（差分検知・整合チェック）まで。承認遷移確定は禁止。
+
+### Execute Gate（判定式固定）
+- `Go` の必要十分条件:
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - 固定参照値にドリフトなし
+- `Hold` 条件:
+  - `pendingDecisionQueueCount>0`
+- `NoGo` 条件:
+  - SafeMode境界後退 / overridePolicy後退 / fixed key drift / 競合検知
+
 ## Phase 5 Verify
 - 固定値整合: pass
 - hardening整合: pass
 - bypass禁止: pass
+
+### Verify Procedure（自己修復上限=3）
+1. A1固定参照値との一致確認（drift=0）。
+2. hardening参照（SoD/承認遷移固定）の一致確認。
+3. 非干渉確認（A2/A3への編集・判定代行なし）。
+4. 不一致は最小修正して再検証（最大3回）。
+5. 3回で解消不能なら **致命エラーとして停止**（Proceed禁止）。
 
 ## Phase 6 Proceed
 - Proceed: 上記順序・固定参照・非干渉が維持された場合のみ。
