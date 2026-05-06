@@ -105,3 +105,60 @@
 ## Phase 6 Proceed
 - Go: A1最小I/F契約の凍結完了。
 - Hold/NoGo: 承認不足・前提崩れ・競合・修復上限超過時。
+
+### Stream A protocol run（2026-05-06 / A1契約凍結クリティカルパス）
+
+#### Phase 1 Read（対象3ファイル再読）
+- 対象:
+  1. `issue-FB-P2C-01-a1-interface-contract.md`
+  2. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- 差分確認結果（固定値）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（一致）
+  - `schemaVersion=1.0.0`（一致）
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON`（一致）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`（一致）
+  - gate参照は `A2A3_OPEN_ALLOWED` または同値条件（`a1Status=="Done" && pendingDecisionQueueCount==0`）で整合。
+- 未承認項目:
+  - `Approval Record` = Pending
+  - `HIL-RS-02-GOV-EXCEPTION-01` = held
+- 判定: 想定との差分なし（Phase継続可）。
+
+#### Phase 2 ADR明文化（C/D/C）
+- Context:
+  - A1凍結契約はA2/A3の唯一参照境界であり、親計画側での再定義は契約ドリフトを生む。
+- Decision:
+  - A1契約は frozen-candidate として既存固定値を維持し、未承認項目を確定扱いしない。
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退を禁止する。
+- Consequences:
+  - 承認ログ（`approved_by`, `approved_at`, `evidence`）未充足のため状態は `Needs-decision` を維持。
+  - A2/A3への受け渡しは read-only 契約セットに限定。
+- Approval log status:
+  - `approved-for-freeze-candidate`（docs scope）
+  - Human final approval: 未完了
+
+#### Phase 3 Plan → Execute → Verify → Proceed
+- Plan（AC/DoD）:
+  - AC-1: 固定ID・schemaVersion・SafeMode境界・queue遷移にドリフト0。
+  - AC-2: 未承認項目を確定化しない。
+  - DoD-1: `A2A3_OPEN_ALLOWED` の前提式を後退させない。
+- Execute:
+  - 契約固定値の記述を更新せず維持（drift=0）。
+  - queue遷移は `Pending -> Approved | Pending -> Rejected` のみ許容を再確認。
+- Verify:
+  - self-check 1/3: pass（ドリフトなし・未承認明示あり）
+  - self-correction count: `0/3`
+- Proceed:
+  - `pendingDecisionQueueCount` 相当の未解決項目があるため `Hold/Needs-decision` 維持。
+
+#### Phase 4 Handoff（read-only）
+- Downstream handoff package（read-only）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 禁止事項再確認:
+  1. SafeMode既定ONの解除
+  2. 安全境界後退
+  3. A2/A3での契約再定義
