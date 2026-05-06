@@ -216,3 +216,18 @@
   1. `Approval Record` の最終承認（2者承認）
   2. `HIL-RS-02-GOV-EXCEPTION-01` の Approved/Rejected 確定
   3. `pendingDecisionQueueCount==0` を示す監査証跡の添付
+
+## Stream A contract freeze sync（2026-05-06 / A1 minimum interface）
+
+### Phase 1: Read
+- 固定語彙・固定値・責務境界（AI proposal-only / Human final approval）を再読し、差分 `0` を確認。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1最小I/Fは下流全体の契約SSOTであり、再定義を許すと統治が破綻する。
+- Decision: 固定語彙と固定値（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`）を維持。
+- Consequences: `Pending` が残る限り `executeAllowed=false` を継続し、Proceedを `Hold/Needs-decision` に固定する。
+
+### Phase 3-6: Freeze / Verify / Proceed
+- Freeze: `NoGo return path` は本Issueに固定。
+- Verify: `Pending bypass` なし、SafeMode後退なしを再確認。
+- Proceed: 人間承認待ちで `Hold`。

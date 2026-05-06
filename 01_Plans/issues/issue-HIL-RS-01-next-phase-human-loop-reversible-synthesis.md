@@ -153,3 +153,19 @@
   1. SafeMode既定ONの解除
   2. 安全境界後退
   3. A2/A3での契約再定義
+
+## Stream A contract freeze sync（2026-05-06 / parent plan alignment）
+
+### Phase 1: Read
+- A1契約Issue / P0 baseline / ADR-0026 / ADR-0028 を再読し、親計画は参照ノードであることを再確認。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: 親計画で契約値を再定義すると下流整合が崩れる。
+- Decision: `freezeContractId` / `schemaVersion` / `safeModeDefault` / `safeModeBoundary` / `decisionQueueTransition` は参照専用を継続。
+- Consequences: `Pending` 残存時は `Hold/Needs-decision` 以外へ遷移しない。
+
+### Phase 3-6: Plan / Execute / Verify / Proceed
+- Plan: A2/A3非干渉を維持。
+- Execute: 文書整合のみ（実装依存を追加しない）。
+- Verify: fixed key drift=0、SafeMode後退なし。
+- Proceed: human approval待ちのため `Hold` 維持。
