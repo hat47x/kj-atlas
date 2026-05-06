@@ -126,3 +126,27 @@ Compose不可環境でも SQLite 代替経路で品質ゲートを継続でき�
 
 ### Phase 5: Proceed（実装引き渡し優先度）
 - Frontend/Backend 実装への引き渡しは、`I18N-02 -> MID-01 -> MID-02 -> MID-03 -> MID-05 -> RS-02 -> SEC-02 -> I18N-03` の優先バックログ順を基準とする。
+
+## Stream F independent pass (2026-05-06)
+
+### Phase 1 Read同期
+- `AGENTS.md` の Stream F 対象境界を再確認し、本メモの編集範囲を QA/I18N/RM の独立検証記録に限定した。
+- 上流方針（`ADR-0019`, SafeMode既定ON, share/export fail-closed）との整合を再確認した。
+
+### Phase 2 依存確認（モック契約基準）
+- 依存 I/F は contract-first とし、内部実装詳細ではなく観測可能な入出力・状態遷移を判定対象に固定した。
+- 先行依存（I18N→MID→RS→SEC / PUB境界）に矛盾がないかを確認し、矛盾時は Proceed せず Stop する条件を維持した。
+
+### Phase 3 Plan / Execute / Verify / Proceed
+- Plan: AC/DoD/Go-NoGo と検証コマンドの対応を再点検した。
+- Execute: docs-only で判定文面を整備し、実装コード変更は行わない方針を維持した。
+- Verify: 本メモ記載の証跡形式（Command/Result/Decision/Next action）で再実行可能性を確認した。
+- Proceed: 依存未解決・環境制約・境界後退のいずれかがある場合は Hold/Stop を優先する。
+
+### Phase 4 Self-Correction（最大3回）
+- 自己修復上限を `3回` に固定し、4回目相当が必要な場合は Fail-safe 停止を適用する。
+- 修復時は「欠落AC補完 → 判定再確認 → 証跡更新」の順で最小差分更新のみ許容する。
+
+### Phase 5 Stopper
+- 停止トリガー: 依存矛盾、SafeMode境界後退、GoNoGo未充足、または自己修復上限超過。
+- 停止時は未達項目と再開前提（必要I/F・実行環境・判定根拠）を本メモへ追記して引き継ぐ。
