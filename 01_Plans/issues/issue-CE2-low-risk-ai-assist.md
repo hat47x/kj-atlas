@@ -808,3 +808,131 @@
 ### Phase 5 Proceed 判定
 - 判定: **Hold**。
 - 根拠: 依存確定証跡とApproval Record実値が未充足。依存未確定のままOpen化を強行しない。
+
+## Stream G execution log（2026-05-06 / CE2 Low-Risk AI Assist Draft整備専任）
+
+### Phase 1: Read同期（最新状態確認）
+#### Plan
+- 変更対象キーを `Status / Priority / Dependencies / Dependency status / CE1 contract status` の抽出結果整理に限定。
+- 参照専用ファイル（CE0/CE1/ADR-0028/ADR-0001/schemas）との語彙一致を確認し、差分を列挙する。
+
+#### Execute
+- 抽出結果:
+  - `Status=Draft`
+  - `Priority=P1`
+  - `Dependencies=CE0契約依存 + CE1 I/F依存（mock切断可）`
+  - `Dependency status=未確定（CE-2 Open判定待ち）`
+  - `CE1 contract status=参照限定（CE1完了待ちは不要。mock contract参照のみ）`
+- 語彙整合:
+  - CE0由来の No-Go 方針（auto-*禁止 / safeMode後退禁止）と矛盾なし。
+  - CE1由来の hash・closed-world 前提（`sourceBundleHash===bundleHash` / unknown key不許容）と矛盾なし。
+
+#### Verify
+- AC/DoD不足を点検し、Draft→Open判定の証跡項目（approval/evidence）が未充足であることを明示。
+- 禁止事項違反（Allowlist外編集・実装変更）はなし。
+- self-correction: `0/3`。
+
+#### Proceed
+- Phase 1 合格。Phase 2へ進行。
+
+### Phase 2: ADR（Context / Decision / Consequences）明文化
+#### Plan
+- CE2の Draft→Open判断に必須な C/D/C を、CE0依存・CE1 mock切断条件・禁止導線の3観点で明文化する。
+
+#### Execute
+- **Context**: CE2は low-risk 補助でも、AIの自動確定経路が混入すると責務分離が崩壊するため、proposal-only 契約を固定する必要がある。
+- **Decision**:
+  1. CE0契約は read-only 参照とし、CE2側で契約再定義しない。
+  2. CE1依存は mock contract参照で切断可能とし、CE1完了待ちをOpen条件にしない。
+  3. `auto-apply / auto-confirm / auto-publish` と `unreviewed -> human_reviewed` の自動昇格導線を禁止する。
+- **Consequences**:
+  - 責務分離と監査可能性は強化される。
+  - 承認ログ未充足時は `held` 維持となり、短期速度は制限される。
+
+#### Verify
+- C/D/Cに曖昧語（実装確定を示す語）が混入していないことを確認。
+- CE0/CE1との用語衝突なし。
+- self-correction: `0/3`。
+
+#### Proceed
+- Phase 2 合格。Phase 3へ進行。
+
+### Phase 3: Plan（AC/DoD定義）
+#### Plan
+- Draft→Open遷移判定に必要な AC/DoD を「依存定義」「用語一貫性」「停止条件」「非対象範囲」で再定義する。
+
+#### Execute
+- AC（Open候補判定）:
+  1. 依存関係が「待機」ではなく「参照条件（CE0 read-only / CE1 mock参照）」で記述されている。
+  2. `status / reviewState / lifecycle` が閉集合語彙で一貫している。
+  3. 停止条件（self-correction超過・未定義競合・未承認Proceed禁止）が明示されている。
+  4. 非対象範囲（実装・運用変更禁止）が明示されている。
+- DoD:
+  1. tri-state（Proceed/Hold/Stop）を同一根拠で再判定できる。
+  2. Approval Record最小項目（approved_at / approved_by / target / decision / evidence）がチェック対象として定義済み。
+
+#### Verify
+- AC/DoDが既存 fail-safe（fail-closed, safeMode後退禁止）を弱めていないことを確認。
+- self-correction: `0/3`。
+
+#### Proceed
+- Phase 3 合格。Phase 4へ進行。
+
+### Phase 4: Execute（文書整備）
+#### Plan
+- CE2ファイル内の契約語彙、依存式、mock-first境界、禁止導線を明示し、実装記述を追加しない。
+
+#### Execute
+- 契約語彙を `proposal-only / human decision / fail-closed / held` に固定。
+- 依存式を「CE0=契約参照」「CE1=mock contract参照」に整理。
+- mock-first境界を「Decision Log/Audit Matrix/Policy Gateの形式検証」に限定。
+- 禁止導線を auto-* と reviewState自動昇格の2系統で明記。
+
+#### Verify
+- Allowlist外変更なし。
+- 実装タスク・運用変更手順の追記なし。
+- self-correction: `0/3`。
+
+#### Proceed
+- Phase 4 合格。Phase 5へ進行。
+
+### Phase 5: Verify（自己検証）
+#### Plan
+- AC/DoDチェック、依存整合、禁止事項違反の有無を点検し、必要なら3回以内で修復する。
+
+#### Execute
+- AC/DoDチェック結果:
+  - AC1（参照条件化）: pass
+  - AC2（語彙一貫）: pass
+  - AC3（停止条件明記）: pass
+  - AC4（非対象範囲明記）: pass
+  - DoD1（三値再判定）: pass
+  - DoD2（Approval Record定義）: pass
+- 依存整合:
+  - CE0契約再定義なし。
+  - CE1はmock参照限定で整合。
+- 禁止事項違反: なし。
+
+#### Verify
+- self-correction: `0/3`（修復不要）。
+- 停止条件該当: なし。
+
+#### Proceed
+- Phase 5 合格。Phase 6へ進行。
+
+### Phase 6: Proceed（完了判定）
+#### Plan
+- Done化せず、Open候補またはDraft継続理由を明記し、次アクションを責務付きで整理する。
+
+#### Execute
+- 判定: **Open候補（条件付き）**。
+- なお現時点は Approval Record実値未記入のため、運用上の最終判定は **Hold継続**。
+
+#### Verify
+- Draft範囲逸脱なし（実装・運用変更なし）。
+- tri-state 判定の再現可能性を維持。
+
+#### Proceed（Next Action Block）
+- **Who**: System Owner + Security Officer（人間承認責務）
+- **What**: `Dependency status=確定` 証跡と `Approval Record` 実値（approved_at / approved_by / target / decision / evidence）を記入
+- **Condition**: proposal-only / fail-closed / safeMode既定ON / auto-*禁止 の後退ゼロを再確認後にのみ Draft→Open 判定を実施
