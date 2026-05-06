@@ -1715,3 +1715,40 @@ handoffKeys:
 - 下流引き渡し物は「契約ID・型シグネチャ・不変条件・固定エラー語彙・handoff key」のみ。
 - 実装提案（handler/UI/DB/worker/API詳細）はCE1範囲外として不採用。
 - self-repair運用: 失敗時は最大3回、超過時は `held` で停止。
+
+## Stream D run（2026-05-06 / CE1 ContextQuery/ContextBundle Foundation）
+
+### Phase 1 Read
+- Allowlistを再確認し、編集対象を本ファイルのみに固定（docs-only / contract-only）。
+- CE1凍結契約（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定エラー語彙3種を再確認。
+- CE2/CE4が依存するhandoff key（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）を再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4が実装待ちで停止しないためには、CE1でI/F契約と異常系語彙を先行固定し、mock-only検証を完結可能にする必要がある。
+- **Decision**: v1契約を維持し、正常系/異常系を下記の固定組で再現する。
+  - 正常系: `ContextQueryV1` -> `ContextBundleV1` 生成で `sourceBundleHash === bundleHash` が成立。
+  - 異常系1: `previewConfirmed=false` -> `422 preview_required`。
+  - 異常系2: 未定義キー混入 -> `400 unknown_contract_key`。
+  - 異常系3: canonical query同一で `bundleHash` 不一致 -> `409 nondeterministic_bundle`。
+- **Consequences**: CE2/CE4は実装有無に依存せず、契約ID・型・語彙・handoff keyのみで検証を継続できる。
+
+### Phase 3 Plan
+- AC-1: CE2/CE4向けに正常系/異常系のmock-only再現条件を明文化する。
+- AC-2: `implementation pending` を前提にした記述を禁止し、契約だけでProceed可能であることを明文化する。
+- AC-3: 既存v1契約（closed-world / error semantics / hash determinism）へ変更を入れない。
+
+### Phase 4 Execute
+- 本issueへ「mock-only正常/異常系の再現条件」を追記し、CE2/CE4受け渡しの最小単位を固定。
+- 実装待ち前提を排除し、受け渡し成果物を以下に限定:
+  - Contract IDs
+  - 型シグネチャ
+  - 固定エラー語彙
+  - hash決定論ルール
+  - handoff keys
+
+### Phase 5 Verify
+- Verify-1（CE2正常系）: `sourceBundleHash === bundleHash` の一致判定のみで入力整合性を再現可能。
+- Verify-2（CE4正常系）: `equivalenceKey + bundleHash` で監査再現キーを構成可能。
+- Verify-3（異常系）: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` をmockだけで再現可能。
+- Verify-4（進行条件）: 「実装待ち」を前提にしなくてもCE2/CE4がProceedできることを確認。
+- 判定: **pass（CE2/CE4とも mock-only で正常系/異常系を再現し、実装待ち前提なしでProceed可能）**。
