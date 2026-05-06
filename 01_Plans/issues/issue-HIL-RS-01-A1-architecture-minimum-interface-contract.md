@@ -231,3 +231,45 @@
 - Freeze: `NoGo return path` は本Issueに固定。
 - Verify: `Pending bypass` なし、SafeMode後退なしを再確認。
 - Proceed: 人間承認待ちで `Hold`。
+
+- Verify:
+  - self-check 2/3: pass（固定語彙・固定値・責務境界に差分なし）
+  - self-check 3/3: pass（Pending項目を確定化していない）
+- Proceed Gate:
+  - 判定: **Hold**
+  - 根拠: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` のため、`a1Status=="Done" && pendingDecisionQueueCount==0` を未充足。
+  - 停止条件評価: 前提崩れ/未定義競合/承認未記録は未解消であり、推測確定は行わない。
+
+#### Phase 4 Verify（AC/DoD照合・依存解放条件）
+- AC照合:
+  - AC-1（固定契約ドリフト0）: pass
+  - AC-2（Pending bypass禁止）: pass
+  - AC-3（NoGo return path固定）: pass
+  - AC-4（A2/A3非干渉）: pass
+- DoD照合:
+  - DoD-1 SafeMode後退なし: pass
+  - DoD-2 overridePolicy後退なし: pass
+  - DoD-3 人間承認責務分離: pass
+  - DoD-4 Pending残存時のExecute不許可: pass
+- 依存解放条件:
+  - 未解放（`pendingDecisionQueueCount==0` を満たさない）
+- 競合リスク（他stream編集候補）と禁止境界:
+  1. `freezeContractId` / `schemaVersion` の改変競合（禁止）
+  2. `decisionQueueTransition` の拡張（禁止）
+  3. SafeMode境界緩和（禁止）
+  4. A2/A3側での再定義（禁止）
+
+#### Phase 5 Proceed（Yes/Hold/Stop）
+- **Proceed=Hold**
+- 理由:
+  - 契約は frozen-candidate として凍結済みだが、人間最終承認ログが未完了。
+  - クリティカルパス要件に従い、未承認項目の推測確定は禁止。
+- 下流向け凍結契約サマリ（read-only）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
