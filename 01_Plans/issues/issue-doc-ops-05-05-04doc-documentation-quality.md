@@ -117,3 +117,24 @@
 - Reason: `DOC-OPS-05` 依存確定証跡待ち。
 - Proceed判定日: `2026-05-06`
 - Stop条件: self-correction が4回目相当に到達、または05-06/05-07と矛盾し解消不能になった場合。
+
+## Stream H Ready化 pass（2026-05-06 / DOC-OPS-05-05）
+
+### Ready判定の固定化
+- Ready gate（全件必須）:
+  - [ ] RG-0505-1: AC-1/AC-2/AC-3 の証跡欄が埋まっている。
+  - [ ] RG-0505-2: DoD-1/DoD-2/DoD-3 の判定結果（done/pending/hold）が記録されている。
+  - [ ] RG-0505-3: Approval Record 5項目（日時/承認者/対象/判断/evidence）が記入済み。
+  - [ ] RG-0505-4: 05-06/05-07 との `ProceedDecision` 語彙一致が確認済み。
+
+### 品質ゲート（docs-check）
+- Gate-D1: `validate_active_issue_memos.py` で本Issue単体検証が通る。
+- Gate-D2: `rg` により `Readability/Consistency/Verifiability` の3軸記述が存在する。
+- Gate-D3: `git diff --check` で整形異常がない。
+
+### E2E導線の扱い
+- 本Issueは内部品質基準（Move internal）であり、E2E実行手順本文の更新判断は `05-06` へ委譲。
+
+### Proceed
+- ProceedDecision: **Hold（Ready gate定義完了、依存証跡待ち）**
+- Ready化状態: **判定基準はReady、Open化は未実施**

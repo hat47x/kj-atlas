@@ -82,3 +82,23 @@
 - `04_Documentation/e2e_verification_log_2026-03-03.md` 本文改稿
 - 実ログ（実行結果・CI出力）の新規生成
 - 他Issue（05-05, 05-06含む）の編集
+
+## Stream H Ready化 pass（2026-05-06 / DOC-OPS-05-07）
+
+### 1) Ready gate（監査ログ運用の判定条件）
+- [ ] RG-0507-1: AC-1〜AC-4 の判定結果（done/pending/hold）記録。
+- [ ] RG-0507-2: DoD-1〜DoD-3 の判定結果（done/pending/hold）記録。
+- [ ] RG-0507-3: Candidate destination と公開除外境界の根拠が1段落で明示。
+- [ ] RG-0507-4: 05-05/05-06 と `Go/NoGo`, `Proceed/Hold/Stop` 語彙一致確認。
+
+### 2) 品質ゲート（docs-check）
+- Gate-L1: validator実行で必須キー欠落なし。
+- Gate-L2: `AC-1/DoD-2/ProceedDecision/Self-correction` の記述存在確認。
+- Gate-L3: diff整形異常なし。
+
+### 3) E2E導線との整合
+- 05-06で定義する `pass/fail/blocked` 判定軸と、ログ必須項目（コマンド/成否/未実施理由/再開条件）を相互参照できる状態を維持。
+
+### 4) Proceed
+- ProceedDecision: **Hold（Ready gate定義完了、承認証跡待ち）**
+- Ready化状態: **監査観点はReady、Open化は未実施**
