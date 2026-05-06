@@ -1,9 +1,9 @@
 # Issue Plan: HIL-RS-01 次フェーズ実行計画（Human-in-the-loop / Reversible Synthesis, Stream D）
 
 - Type: Process
-- Status: Open
+- Status: In Progress
 - Priority: P1
-- Owner: Stream D（HIL governance contract）
+- Owner: Stream A（contract freeze and minimum interface agreement）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies:
   - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`

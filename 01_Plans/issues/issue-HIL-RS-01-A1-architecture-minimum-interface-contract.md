@@ -1,10 +1,10 @@
 # Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream D）
 
 - Type: Process
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
-- Owner: Stream D（HIL governance contract）
+- Owner: Stream A（contract freeze and minimum interface agreement）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
