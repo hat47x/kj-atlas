@@ -1610,3 +1610,30 @@ handoffKeys:
 - Proceed条件: docs-only差分でCE1 v1契約に矛盾がないこと。
 - Stop条件: 自己修復が3回を超えた時点で `held` に固定して停止（4回目に進まない）。
 - 本更新の自己修復回数: `0/3`（追加修復なし）。
+
+## Stream B latest run（2026-05-06 / CE1 ContextQuery-Bundle foundation progression）
+
+- run_id: `stream-b-ce1-foundation-2026-05-06-10`
+- assignee: `Stream B（CE0/CE1基盤進行）`
+- scope_guard: docs-only / contract-only / mock-first
+
+### Phase 1 Read（latest + AC/DoD）
+- CE1凍結対象（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）とCE0 read-only境界を再確認。
+- AC/DoDおよび停止条件（自己修復3回上限）を再確認。
+
+### Phase 2 CE0契約凍結前提の独立化
+- `previewConfirmed=false -> 422 preview_required`、unknown key、hash不一致の固定失敗語彙を再確認。
+- CE0再定義を行わず、CE1は契約受領側として整合維持。
+
+### Phase 3 ContextQuery/Bundle基盤整備
+- `ContextQueryV1` / `ContextBundleV1` の closed-world と v1 key freeze を維持。
+- `queryCanonicalHash` / `bundleHash` の決定論要件（不一致時 `409 nondeterministic_bundle`）を再固定。
+
+### Phase 4 Mock-first validation alignment
+- CE2/CE4が mock-only で進行可能な handoff key（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）を再確認。
+- 実装非依存の契約成果物に限定。
+
+### Phase 5 Verify & handoff
+- 判定: **Conditional-Go**（CE1 foundation contract maintained）。
+- handoff（CE2/CE4）: Contract IDs / fixed error semantics / hash keys の read-only 契約パッケージ。
+- self-correction usage: `0/3`。
