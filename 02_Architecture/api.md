@@ -655,3 +655,17 @@ export type AdminProvisionUserConflictError = {
 #### Consequences
 - 下流ストリームは APIシグネチャ境界を read-only 参照し、再定義なしで並行作業可能になる。
 - 契約変更が必要な場合は CDC（Context/Decision/Consequences）で再起票し、v1を直接変更しない。
+
+#### 2.8.3 Stream B CE0/CE1 foundation sync（2026-05-06 / contract-only）
+
+- Phase固定順序: Read同期 → I/F先行定義（ContextQueryV1/ContextBundleV1）→ mock契約依存切断 → Plan/Execute/Verify/Proceed → Stopper。
+- v1 fixed semantics:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - deterministic hash violation -> `409 nondeterministic_bundle`
+- Mock-first handoff（read-only）:
+  - `queryCanonicalHash`
+  - `bundleHash`
+  - `sourceBundleHash`
+- Stopper:
+  - safeMode既定値後退、preview gate破壊、自己修復3回超過を検知した場合は即時 `held` 停止。
