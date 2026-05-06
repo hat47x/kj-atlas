@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream E (Doc-Ops)
+- Owner: Stream F (Doc-Ops Draft)
 - Scope: `04_Documentation/e2e_verification_log_2026-03-03.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -69,3 +69,24 @@
 ## Proceed tri-state
 - ProceedDecision: **Hold**
 - Reason: `DOC-OPS-05` 依存確定証跡待ち。
+
+
+## Stream F draft整備 pass（2026-05-06 / DOC-OPS-05-07）
+
+### Phase 1 Read同期
+- 対象限定を確認: 本Issueメモ以外は非編集、検証ログ本文ファイルの実体移動は実施しない。
+- 依存状態を確認: 配置確定に必要な承認証跡が未確定のため、Proceedは `Hold`。
+
+### Phase 2 ADR要素（C/D/C）
+- Context: 日付付きE2Eログの配置確定を早まると、監査証跡の保全導線が破綻する。
+- Decision: Classificationを `Move internal` とし、`Candidate destination` は承認確定まで暫定扱いに固定する。
+- Consequences: 未承認の移管確定を防止でき、Open化判定時に監査可能な履歴を維持できる。
+
+### Phase 3 Plan→Execute
+- Plan: AC/DoD/Validationを3Issue共通構造に合わせ、停止条件を明示する。
+- Execute: docs-onlyで判定文言を統一し、配置変更そのものは行わない。
+
+### Phase 4 Verify→Proceed
+- Verify: Gate/Validation/Proceedの非競合を確認。
+- Proceed: 依存証跡未確定につき `Hold` 継続。
+- Self-correction: `2/3`（上限内）。

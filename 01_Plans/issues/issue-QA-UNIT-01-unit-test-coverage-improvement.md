@@ -4,7 +4,7 @@
 - Status: Draft (起票用)
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Stream F (QA Draft)
 - Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束後に着手）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
 - Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`
 - Related Backlog: `N/A`
@@ -274,3 +274,17 @@
 - Fail-safe:
   - 不整合・依存崩壊時は停止して指示待ち。
   - 自己修復は3回まで。4回目相当でStop。
+
+
+## Stream F alignment pass（2026-05-06 / QA-UNIT-01）
+
+### Plan→Execute→Verify→Proceed（docs-only）
+- Plan: Draft整備に限定し、QA-UNIT-01のAC/DoD/Verify指標をOpen判定用に再読可能化する。
+- Execute: `Expected verification level: unit` を維持し、e2e拡張や実装変更を非目標として固定する。
+- Verify: 依存未解決（FB-P0収束前/検証スコープ未同期）では `Status: Draft` と `Proceed: Hold` を継続する。
+- Proceed: 依存解決・Owner確定・指標記録導線の3条件が揃うまで進めない。
+
+### ADR要素（C/D/C）
+- Context: Draft段階で実装に踏み込むと、unit/e2e境界の混線と再作業が発生する。
+- Decision: 本Issueは提案文書の品質整備に限定し、実装着手は承認後に分離する。
+- Consequences: QA-UNIT実装時の着手条件と停止条件が明確化され、過剰実装リスクを低減する。
