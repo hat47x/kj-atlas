@@ -735,3 +735,34 @@
   1. 依存確定証跡の充足。
   2. Approval Record の充足。
   3. proposal-only / docs-only / fail-closed の維持。
+
+## Stream E execution log（2026-05-06 / CE0-CE2 planning lane / contract-check enforced）
+
+### Phase 1 Read（CE0/CE1依存確認）
+- 参照元を `issue-CE0-contract-freeze.md` と `issue-CE1-context-query-bundle-foundation.md` に固定し、CE2側は read-only dependency として扱うことを再確認。
+- CE0 canonical No-Go（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）を再確認。
+- CE1固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）と hash決定論前提（`sourceBundleHash === bundleHash`）の参照整合を再確認。
+
+### Phase 2 Contractチェック（Aレーン契約参照）
+- Aレーン契約の未確定要素が残る場合は CE2を `held` 維持する方針を固定。
+- shared resource 更新要求、または他レーン競合要求が発生した場合は CE2作業を停止する fail-safe を再確認。
+- CE2側では契約の再定義・語彙追加を行わず、proposal-only 契約の参照適用に限定する。
+
+### Phase 3 Mock-first計画（A2観点）
+- Mock-Decision-Log / Mock-Audit-Matrix / Mock-Policy-Gate の3系統で A2検証を実施する計画を維持。
+- 正常系は `status=proposed` のみ、異常系は `auto-*混入` / `監査欠損` / `bundleHash不一致` の3種で fail-closed 判定を固定。
+- 実装依存（backend/frontend/worker）を持ち込まず、文書内 contract check だけで検証可能な粒度を維持。
+
+### Phase 4 実装準備（A3前提の検証計画）
+- A3進行前提として、承認ログ最小項目（`approved_at / approved_by / target / decision / evidence`）の充足確認を必須化。
+- 実装禁止解除条件を「A契約確定 + Approval Record充足 + No-Goゼロ」のAND条件として明文化。
+- A3前提が1つでも欠ける場合は Proceedせず `held` を継続する。
+
+### Phase 5 Verify（整合性監査）
+- Verify checklist:
+  1. single-file scope 維持（本Issue以外に差分なし）
+  2. proposal-only / human decision / fail-closed 文言の後退なし
+  3. CE0/CE1参照語彙との衝突なし
+  4. A契約未確定時の停止条件が明記されている
+- 判定: **Hold-Ready**（契約確定待ち）。
+- fail-safe result: A契約未確定・shared resource更新要求・他レーン競合のいずれか検知時は即時停止。
