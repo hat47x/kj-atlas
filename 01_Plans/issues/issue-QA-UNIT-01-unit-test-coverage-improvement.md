@@ -328,3 +328,51 @@
 ### Phase 5 Proceed
 - 判定: **Hold維持**（2026-05-06時点で依存証跡未添付）。
 - Open化条件: U1〜U4完了時に `Status: Ready-for-Implementation` へ更新可。
+
+## Stream I execution pass（2026-05-06 / QA-UNIT-01 Draft整備専任）
+
+### Phase 1 Read（依存・着手条件の同期）
+- 現在状態を再確認: `Status: Draft` / `Priority: P2` / `Expected verification level: unit` を維持する。
+- 依存整合:
+  - P0依存: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が `Open` 継続中のため、本Issueは **Open化しない**。
+  - P1依存: `issue-HIL-RS-02-next-phase-delivery-plan` が `Draft` のため、検証スコープ同期完了までは **Hold** 維持。
+- 非対象境界: 本レーンは Draft文書整備のみ。`03_Implement/**`・他Issue編集は禁止。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: 上流（P0/P1）の契約・運用ゲート未確定でQA実装を先行すると、unit/e2e境界の再試験コストが増大する。
+- Decision: Draft段階では「対象範囲」「優先テスト軸」「ゲート条件」のみ固定し、実装着手判断は依存解消後に限定する。
+- Consequences: 品質戦略を前倒しで提示しつつ、上流未確定事項との衝突を回避できる。
+
+### Phase 3 Plan（AC / DoD 明確化）
+- AC-I1（対象分類）:
+  - Frontend: `src/domain` 系の safeMode / validation / diff。
+  - Backend: validation / service 層。
+  - いずれも「追加ケース数（最低1件）」を分類単位で記録する。
+- AC-I2（最小改善目標）:
+  - Coverageは対象モジュール単位で Before/After を比較し、**差分非負（悪化なし）** を最低条件とする。
+- AC-I3（除外条件）:
+  - e2eシナリオ拡張、実装リファクタ、新機能追加は本Issueの対象外として固定する。
+- DoD-I1（着手条件）:
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が `Ready-for-Implementation` 以上。
+  - `issue-HIL-RS-02-next-phase-delivery-plan` が unit検証境界と矛盾しない状態（Draft解除済みまたは同等の承認記録あり）。
+- DoD-I2（完了判定式）:
+  - `Done = (U1 && U2 && U3 && AC-M1..M3 done && AC-P1..P3 done && AC-I1..I3 done && V-UNIT-01..03 recorded && self-correction<=3)`。
+
+### Phase 4 Execute（docs-only）
+- 実施内容: Draft本文に着手条件・完了判定式・除外条件を明文化。
+- 非実施内容: テストコード追加、実装コード変更、coverage実測値の新規確定。
+
+### Phase 5 Verify（依存整合・優先度整合・非対象明記）
+- Verify-V1: P0/P1依存が未解消なら `Proceed=Hold` を維持する記述になっている。
+- Verify-V2: 優先軸は `safeMode -> validation -> diff` の順で回帰検知観点が残っている。
+- Verify-V3: 非対象（e2e拡張/実装変更/他Issue編集）が明示されている。
+- Verify-V4: self-correction上限は `<=3`、4回目相当は `Stop` を維持。
+
+### Phase 6 Proceed（Open化可否 / 保留理由 / 次アクション）
+- Open化可否: **不可（現時点）**。
+- 保留理由:
+  1. P0依存Issueが `Open` で収束未了。
+  2. P1依存Issueが `Draft` でスコープ同期未了。
+- 次アクション（依存解消後に再判定）:
+  1. U1〜U4 + AC-M/P/I + V-UNIT 指標記録先の充足確認。
+  2. 充足済みなら `Status: Ready-for-Implementation` への更新を審査。
