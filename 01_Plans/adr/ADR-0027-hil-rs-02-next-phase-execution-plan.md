@@ -1,6 +1,6 @@
 # ADR-0027: HIL-RS-02 次フェーズ実行計画（議論→決定→文書化→同期）
 
-- Status: Accepted
+- Status: Accepted (Stream C alignment update: 2026-05-06)
 - Date: 2026-03-14
 - Deciders: Project Maintainers
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
@@ -316,3 +316,23 @@
 ### Consequences
 - triage CLI の再計算時に unlocks 判定の機械可読性が上がる。
 - 実装依存の曖昧な待ち状態を削減し、契約依存ベースで並行可能な作業を可視化できる。
+
+
+## Stream C Alignment Update（2026-05-06）
+
+### Context
+- HIL-RS-02 delivery と A3 operations sync を、他ストリーム非依存で実行するために、実務フェーズを5段へ再編した。
+- 既存の統治制約（SafeMode既定ON、human_dual_control_only、A1先行依存）は維持が必須。
+
+### Decision
+- Stream C の実行規律を ADR レベルで固定する。
+  1. フェーズ固定: `Read -> ADR整合 -> Delivery具体化 -> 運用同期条件定義 -> Verify`
+  2. 各フェーズ必須: `Plan -> Execute -> Verify -> Proceed`
+  3. Self-correction 上限: `<=3`（4回目相当は即停止）
+  4. A3 Open条件: `A1 Done` かつ `pendingDecisionQueueCount==0` を満たすまで `Conditional` 維持
+  5. 運用同期観点: 用語一致（Security Officer / System Owner / Platform Operator）、2者承認と実行責務分離、DOC-OPS-02 の固定同期順序を必須化
+
+### Consequences
+- delivery計画と運用同期計画の判定軸が一本化され、再開時の判断負荷が下がる。
+- A1未完時の先行Openを防止しつつ、準備作業（docs planning）は継続可能となる。
+- 競合判定は `allowlist外差分ゼロ` を必須化し、越境編集を抑止する。
