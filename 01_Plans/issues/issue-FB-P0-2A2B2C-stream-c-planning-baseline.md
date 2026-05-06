@@ -976,3 +976,43 @@
 - Execute: 契約語彙と依存式を維持（再定義なし）。
 - Verify: AC/DoD照合、用語ゆらぎ、状態遷移矛盾を確認し、破綻なし。
 - Proceed: **Hold**（`Approval Record=Pending` かつ `held` 残存のため）。
+
+
+## Stream B executable planning baseline（2026-05-06 refresh）
+
+> 目的: FB-P0 planning baseline を **実行可能タスク列** として固定し、優先度・依存・担当・期限の欠落をゼロにする。
+
+### Plan（AC/DoD補完ドラフト）
+- 追加AC（不足補完）
+  1. すべての実行タスクが `Task ID / Owner / Priority / Depends On / Due / Output` を持つ。
+  2. `Depends On` は循環参照を持たず、`A1 -> A2 -> A3` を破らない。
+  3. `Due` は絶対日付（YYYY-MM-DD）で統一する。
+- 追加DoD（不足補完）
+  1. Verify時点で未記入フィールド（Owner/Priority/Depends On/Due）が0件。
+  2. Proceed判定に使う `Go/Conditional/No-Go` が task outputs から再計算可能。
+
+### Execute（実行可能タスク列への再編）
+| Task ID | Phase | Task | Owner | Priority | Depends On | Due (UTC) | Output |
+|---|---|---|---|---|---|---|---|
+| FBP0-B-T01 | Read同期 | 対象2ファイル再読（語彙・判定式・固定キー差分確認） | Stream B | P0 | - | 2026-05-07 | `delta=0` or `held`更新 |
+| FBP0-B-T02 | Plan | AC/DoD不足補完のドラフト反映（本節のAC/DoD） | Stream B | P0 | FBP0-B-T01 | 2026-05-07 | AC/DoD補完済み |
+| FBP0-B-T03 | Execute | `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` のSSOT文字列一致確認 | Stream B | P0 | FBP0-B-T02 | 2026-05-08 | 一致確認ログ |
+| FBP0-B-T04 | Execute | `Approval Record` 必須証跡キー未入力を `held` として維持確認 | Stream B | P0 | FBP0-B-T03 | 2026-05-08 | held維持ログ |
+| FBP0-B-T05 | Verify | docs-check: validator実行 | Stream B | P0 | FBP0-B-T04 | 2026-05-08 | validator結果 |
+| FBP0-B-T06 | Verify | docs-check: unittest実行 | Stream B | P0 | FBP0-B-T05 | 2026-05-08 | unittest結果 |
+| FBP0-B-T07 | Verify | docs-check: `git diff --check` 実行 | Stream B | P0 | FBP0-B-T06 | 2026-05-08 | diff clean |
+| FBP0-B-T08 | Proceed | Go/Conditional/No-Go 判定と未解決論点の明示 | Stream B | P0 | FBP0-B-T07 | 2026-05-08 | Proceed判定 |
+
+### Verify（完全性検証）
+- 優先度: 全タスク `P0`（欠落0件）。
+- 依存: 直列 `T01 -> T02 -> T03 -> T04 -> T05 -> T06 -> T07 -> T08`（循環0件）。
+- 担当: 全タスク `Stream B`（欠落0件）。
+- 期限: 全タスクに絶対日付を設定（欠落0件）。
+- Self-correction policy: Verify失敗時は `T05-T07` を最大3回再実行し、4回目相当はNo-Go停止。
+
+### Proceed（未解決論点を明示）
+- 現時点判定: **Conditional / Needs-decision**。
+- 未解決論点（確定化禁止）
+  1. `Approval Record` の `approved_by` / `approved_at` / `evidence` が未入力。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（人間判断待ち）。
+  3. `a1Status=="Done"` かつ `pendingDecisionQueueCount==0` 未充足のため A2/A3 は `Open(Planning)` 維持。
