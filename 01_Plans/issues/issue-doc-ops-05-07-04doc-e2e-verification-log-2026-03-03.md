@@ -399,3 +399,31 @@
 - 現在判定: **Hold**（依存確定証跡不足）。
 - Proceed条件: 依存証跡充足後に再判定。
 - Stop条件: 4回目相当の自己修復、または依存矛盾が解消不能な場合。
+
+## Stream I final consistency sync（2026-05-06 / DOC-OPS-05-07）
+
+### Context
+- 日付付きE2E検証ログの配置見直しは `Move internal` 方針だが、Open化判定は DOC-OPS-05 Draft群（05/06/07）で同一運用語彙に揃える必要がある。
+- Candidate destination は提案状態であり、依存確定までは確定扱いできない。
+
+### Decision
+- 3Issue共通の Open gate 条件を採用し、語彙を先に正規化する。
+  1. `Context/Decision/Consequences` を単体再読可能に固定。
+  2. Validationは `docs-check` 必須、他検証は期待レベル定義のみ。
+  3. `Proceed` は依存確定証跡 + Approval Record 完備まで `Hold`。
+  4. self-correction は最大3回、4回目相当は `Stop`。
+- ADR/運用語彙の不一致は本IssueのContext/Decision/Consequencesで先行吸収し、実移管判断はOpen後に限定する。
+
+### Consequences
+- 配置見直しの判断が「提案止まり」で維持され、誤って確定移管されるリスクを低減できる。
+- 05/06/07横断で Open判定の再現性が上がり、依存未確定時の `Hold/Stop` 運用が明確になる。
+
+### Open化条件（確定版 / proposal-only）
+- [ ] OC-1: 3Issueで C/D/C・Gate・Proceed tri-state が一致。
+- [ ] OC-2: docs-check 記録あり、self-correction `<=3`。
+- [ ] OC-3: Approval Record（日時/承認者/対象/判断/evidence）完備。
+- [ ] OC-4: Candidate destination を確定扱いしていない。
+
+### Self-repair counter
+- Current: `2/3`
+- Next action on overflow: `Stop`（4回目相当で作業停止）
