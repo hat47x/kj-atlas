@@ -157,3 +157,26 @@
   1. 依存Issue（05-05/05-07）の `Dependency status` 更新を確認。
   2. Approval Record 5項目を本Issueへ追記。
   3. docs-check実行結果を添えて Draft解除可否を再判定。
+
+## Stream H Ready化 pass（2026-05-06 / DOC-OPS-05-06）
+
+### 1) Ready gate（Open判定前の必須条件）
+- [ ] RG-0506-1: AC-1〜AC-4 が `done/pending/hold` で判定記録済み。
+- [ ] RG-0506-2: DoD-1〜DoD-3 が `done/pending/hold` で判定記録済み。
+- [ ] RG-0506-3: Approval Record 5項目が記録済み。
+- [ ] RG-0506-4: 05-05/05-07 の `ProceedDecision` と再判定日が同期済み。
+
+### 2) 品質ゲート定義（docs-check）
+- Gate-E1: `validate_active_issue_memos.py` pass。
+- Gate-E2: `Classification/Dependency status/ProceedDecision` の必須キー存在確認。
+- Gate-E3: `git diff --check` pass。
+
+### 3) E2E導線の固定
+- 方針境界:
+  - Compose優先 / SQLite代替 / blocked記録 を維持。
+  - 実行不能時は `pass/fail/blocked` の tri-state で記録する。
+- 本IssueはDraft整備のため、`04_Documentation/e2e_testing.md` 本文更新は非目標を維持。
+
+### 4) Proceed
+- ProceedDecision: **Hold（Ready gate定義完了、依存確定待ち）**
+- Ready化状態: **判定基準はReady、Draft解除は未実施**

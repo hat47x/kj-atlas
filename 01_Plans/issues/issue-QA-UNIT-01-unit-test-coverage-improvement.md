@@ -376,3 +376,35 @@
 - 次アクション（依存解消後に再判定）:
   1. U1〜U4 + AC-M/P/I + V-UNIT 指標記録先の充足確認。
   2. 充足済みなら `Status: Ready-for-Implementation` への更新を審査。
+
+## Stream H Ready化 pass（2026-05-06 / QA-UNIT-01）
+
+### 1. Read同期
+- `Expected verification level=unit` と `Non-goals=e2e拡張なし` の境界を再固定。
+- 依存2件（FB-P0収束 / HIL-RS-02検証スコープ同期）が未解決のため、実装着手は不可。
+
+### 2. Plan（AC/DoD不足補完）
+- Open/Ready判定に使う不足項目を固定:
+  - RQ-1: Owner（個人またはチーム）確定。
+  - RQ-2: Frontend/Backend対象モジュール一覧の確定。
+  - RQ-3: `V-UNIT-01/02/03` の記録先（CIログ or artifact path）確定。
+  - RQ-4: No-Go時の再開条件（再実行コマンド / 停止理由テンプレ）確定。
+
+### 3. Execute（Ready化の判定基準明示）
+- Ready判定基準（全件必須）:
+  - [ ] RG-UNIT-1: AC-M1/M2/M3 + AC-P1/P2/P3 の評価欄が `done/pending/hold` で埋まっている。
+  - [ ] RG-UNIT-2: `Go/NoGo/Conditional(Hold)` の判定トリガーが再現可能な文章で記載されている。
+  - [ ] RG-UNIT-3: `self-correction <=3` と 4回目相当Stop条件が明示されている。
+  - [ ] RG-UNIT-4: unit実行コマンド4本と代替検証手段が矛盾なく併記されている。
+
+### 4. Verify（品質ゲート定義・E2E導線）
+- 品質ゲート:
+  - Gate-Q1: `VerificationLevel=unit` と `GoNoGoGate=Optional` が整合。
+  - Gate-Q2: SafeMode境界（safeMode/validation/diff）の回帰検知要件が3観点で定義済み。
+  - Gate-Q3: docs-check証跡（validator/rg/diff-check）が記録可能。
+- E2E導線の境界定義:
+  - 本Issueは unit専任であり、E2E要求は `ADR-0019` と `DOC-OPS-05-06` 側へ委譲する。
+
+### 5. Proceed
+- ProceedDecision: **Hold（Ready gate定義完了、依存解消待ち）**
+- Ready化状態: **判定基準はReady、着手状態はHold**
