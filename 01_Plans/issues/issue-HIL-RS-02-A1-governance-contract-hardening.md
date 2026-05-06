@@ -2,17 +2,21 @@
 
 - Type: Process
 - Status: Open（Approval Pending）
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
 - Owner: Stream B（HIL Governance）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Expected verification level: `docs-check`
 
 ## Serial Phases（固定）
-1. Phase 1 Read
-2. Phase 2 ADR（Context / Decision / Consequences）
-3. Phase 3 Plan（AC / DoD）
-4. Phase 4 Execute
-5. Phase 5 Verify
+1. Phase 1 Read同期
+2. Phase 2 ADR（Context / Decision / Consequences、承認待ち）
+3. Phase 3 Plan（AC / DoD、不足は提案）
+4. Phase 4 Execute（ガバナンス契約整合）
+5. Phase 5 Verify（自己修復<=3）
 6. Phase 6 Proceed/Stop
 
 ## Constraints（固定）
@@ -55,6 +59,7 @@
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - 承認待ち明文化:
   - `Status=Open（Approval Pending）` の間は `executeAllowed=false` を維持する。
+  - `Context / Decision / Consequences` を明文化し、承認待ちを経るまで Phase 4 へ遷移しない。
 
 ### Consequences
 - 未承認時は `Hold` 維持。
