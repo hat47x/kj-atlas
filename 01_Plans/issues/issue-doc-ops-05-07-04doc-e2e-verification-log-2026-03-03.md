@@ -5,57 +5,73 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream F (Doc-Ops Draft)
-- Scope: `04_Documentation/e2e_verification_log_2026-03-03.md`（※本Issueではメモ整備のみ）
+- Owner: Stream L (E2E Verification Log Draft)
+- Scope: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（※本Issueメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
-- Related ADR/Spec: `04_Documentation/e2e_verification_log_2026-03-03.md`, `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
 - Dependencies: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
 - Dependency status: `未確定（DOC-OPS-05 Open gate 判定待ち）`
 
 ## Requirement meta I/F
 - RequirementID: `DOC-OPS-05-07`
-- RequirementStatement: 対象検証ログを内部移管方針で固定し、Open化判定に必要な要件を完備する。
+- RequirementStatement: E2E検証ログの監査可能性を担保するDraft計画を固定し、実行前に必要証跡項目を欠落なく定義する。
 - GoNoGoGate: Required
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
 ## Classification（Fixed）
 - Decision: **Move internal**
-- Basis: 日付付きE2Eログは内部監査証跡として扱う。
-- Candidate destination: `01_Plans/issues/e2e_verification_logs/`（確定はOpen後判断）
+- Basis: 日付付きE2E実行ログは内部監査証跡であり、公開向け手順文書とは分離する。
+- Candidate destination: `01_Plans/issues/e2e_verification_logs/`（承認確定まで暫定）
 
 ## Phase Run（Plan→Execute→Verify→Proceed）
-### Phase 1: Read（Draft理由・不足情報確認）
-- Draft理由を「配置確定の依存証跡不足」に明確化。
-- 不足情報を Approval Record 5項目として固定。
 
-### Phase 2: AC/DoD補完提案→合意（提案整備）
-- AC提案:
-  - AC-1: Move internal の根拠と公開境界を単体再読可能化。
-  - AC-2: docs-check pass + self-correction `<=3` 記録。
-  - AC-3: Approval Record（日時/承認者/対象/判断/evidence）記録。
-- DoD提案:
-  - DoD-1: 3Issue横断で Gate/Validation/Proceed の構造一致。
-  - DoD-2: 未承認の配置確定を禁止し、依存未確定時は **Hold**。
+### Phase 1: Read同期（現状抽出）
+- 現状ログ項目: 実行コマンド/成否/未実施理由/再開条件の4点は `04_Documentation/e2e_testing.md` と整合。
+- 期間: 対象は `2026-03-03` 付ログ（過去実績の監査証跡）。
+- 対象シナリオ: Compose経路 / SQLite代替経路 / 実行不能時記録の3区分。
+- 依存: `05-05`（品質ゲート）と `05-06`（E2E試験設計）のOpen gate確定待ち。
 
-### Phase 3: Open化に必要な前提・証跡定義
-- 前提:
-  1. DOC-OPS-05 依存確定。
-  2. Candidate destination を確定扱いしない。
-  3. docs-only 制約維持。
-- 証跡:
-  - `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+### Phase 2: ADR（C/D/C）
+- Context: 検証ログの必須項目が不足すると、後日監査時に「何を検証し、なぜ失敗/保留だったか」を再現できない。
+- Decision: Draft段階で最低限ログ粒度・証跡項目・保存方針を固定し、未実行でも監査可能な記録テンプレートを確定する。
+- Consequences: 実行前に監査観点の欠落を防止し、05-06の試験設計と相互参照可能な追跡導線を維持できる。
 
-### Phase 4: 相互リンク・用語統一・完了条件整備
-- 05/05/06との相互リンクを固定。
-- 用語を `Go/NoGo`, `Proceed/Hold/Stop` に統一。
-- 完了条件を「依存確定 + AC/DoD充足 + docs-check pass」に統一。
+### Phase 3: Plan（AC/DoD）
+#### Acceptance Criteria
+- [ ] AC-1: ログ必須項目を定義済み（`日時 / シナリオID / 実行経路 / コマンド / 結果 / 失敗理由 / 再開条件 / 実行者ロール / 証跡リンク`）。
+- [ ] AC-2: 保存方針を定義済み（内部保管、改ざん防止のため追記型、公開文書には要約のみ）。
+- [ ] AC-3: 用語を `Go/NoGo`, `Proceed/Hold/Stop`, `docs-check` に統一。
+- [ ] AC-4: 実ログ生成を非目標として明記。
 
-### Phase 5: Verify（Draft脱却判定、非競合確認）
-- Draft脱却判定: **Hold**（依存未確定）。
-- 非競合確認: 3Issue間で分類・停止条件・非目標の競合なし。
-- Self-correction: `1/3`。
+#### Definition of Done
+- [ ] DoD-1: 本Issue単体で監査観点（粒度/証跡/保存/停止条件）を再読可能。
+- [ ] DoD-2: 05-06の試験設計（Compose/SQLite/blocked記録）と相互参照可能。
+- [ ] DoD-3: 依存未確定時は ProceedDecision を **Hold** に維持。
+
+### Phase 4: Execute（Draft本文のみ更新）
+- 実施: 本Issueメモのみ更新（Allowlist内）。
+- 非実施: 実行ログファイル作成、CI設定変更、実装コード変更。
+
+### Phase 5: Verify（監査観点・矛盾・用語）
+- 監査観点: 必須項目の欠落なしを確認。
+- 依存矛盾: 05-05/05-06のGate定義と矛盾なしを確認。
+- 用語不一致: 判定語彙を統一（`Go/NoGo`, `Proceed/Hold/Stop`）。
+- Self-correction: `3/3`（上限内。4回目相当は停止）。
+
+### Phase 6: Proceed（Open候補可否/保留理由/次アクション）
+- ProceedDecision: **Hold**
+- Open候補可否: 依存未確定のため現時点では不可。
+- 保留理由: `DOC-OPS-05` Open gate の承認証跡（Approval Record）未確定。
+- 次アクション:
+  - `System Owner`: 05-05/05-06の承認証跡確定日を記録。
+  - `Platform Operator`: ログ保管先確定時の移設PRを起票。
+  - `Security Officer`: 内部保管境界（公開除外）最終確認。
+
+## Verification commands（docs-check only）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `rg -n "AC-1|DoD-2|ProceedDecision|Self-correction|Move internal" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
 
 ## Validation
 - docs-check: **必須**
@@ -64,51 +80,5 @@
 ## Non-goals
 - `03_Implement/**` の実装変更
 - `04_Documentation/e2e_verification_log_2026-03-03.md` 本文改稿
-- unit/integration/e2e 実行結果の新規作成
-
-## Proceed tri-state
-- ProceedDecision: **Hold**
-- Reason: `DOC-OPS-05` 依存確定証跡待ち。
-
-
-## Stream F draft整備 pass（2026-05-06 / DOC-OPS-05-07）
-
-### Phase 1 Read同期
-- 対象限定を確認: 本Issueメモ以外は非編集、検証ログ本文ファイルの実体移動は実施しない。
-- 依存状態を確認: 配置確定に必要な承認証跡が未確定のため、Proceedは `Hold`。
-
-### Phase 2 ADR要素（C/D/C）
-- Context: 日付付きE2Eログの配置確定を早まると、監査証跡の保全導線が破綻する。
-- Decision: Classificationを `Move internal` とし、`Candidate destination` は承認確定まで暫定扱いに固定する。
-- Consequences: 未承認の移管確定を防止でき、Open化判定時に監査可能な履歴を維持できる。
-
-### Phase 3 Plan→Execute
-- Plan: AC/DoD/Validationを3Issue共通構造に合わせ、停止条件を明示する。
-- Execute: docs-onlyで判定文言を統一し、配置変更そのものは行わない。
-
-### Phase 4 Verify→Proceed
-- Verify: Gate/Validation/Proceedの非競合を確認。
-- Proceed: 依存証跡未確定につき `Hold` 継続。
-- Self-correction: `2/3`（上限内）。
-
-
-## Stream F unblock criteria update（2026-05-06 / execution readiness）
-
-### Read
-- 停止要因を `移管先確定の承認証跡不足` に固定。
-
-### AC/DoD解除条件（Open化条件）
-- [ ] U1: Candidate destination を確定した場合、承認者・承認日時・根拠を本Issueに追記。
-- [ ] U2: 「未承認時は暫定扱い」の但し書きを維持している。
-- [ ] U3: 05/05/06 のProceed判定と競合しない（全件Holdまたは全件Readyのどちらかに揃う）。
-
-### Validation plan（コマンド）
-- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-- `rg -n "Candidate destination|ProceedDecision|Dependency status|Stop conditions" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
-
-### Proceed
-- 判定: **Hold維持**。
-- Open化条件: U1〜U3充足時に Draft解除を提案。
-- Proceed判定日: `2026-05-06`（承認証跡更新時に再判定）。
-- Stop条件: self-correction が4回目相当に到達、または移管先確定を未承認で固定化しようとする要求が発生した場合。
+- 実ログ（実行結果・CI出力）の新規生成
+- 他Issue（05-05, 05-06含む）の編集
