@@ -184,3 +184,11 @@ LLM_FIXTURE_DATASET=<fixture_dataset_path>
 2. 未定義キー -> `400 unknown_contract_key`
 3. 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3 一致
 4. 3回中1回でも不一致なら `409 nondeterministic_bundle`
+
+## 10. Stream B CE0/CE1 mock-first provider alignment（2026-05-06）
+
+- Scope: CE0/CE1 契約整合（contract-only）。
+- Provider は `previewConfirmed` ゲート通過後にのみ呼び出される前提を維持する。
+- CE1 v1 closed-world により未定義キーは provider 層到達前に `400 unknown_contract_key` で拒否する。
+- `bundleHash` 非決定論検知時は `409 nondeterministic_bundle` を返し fail-closed とする。
+- 本節は mock-first 連携を想定し、実LLM実装差分を契約語彙へ反映しない。

@@ -2419,3 +2419,31 @@ type PatchProposal = {
 - handoff制約:
   - 実装詳細（API手順・DB・UI・worker・アルゴリズム）は提示禁止。
   - 追加要求はCE0 Contract Freeze承認ゲート通過まで `held`。
+
+## Stream B latest run（2026-05-06 / CE0 contract freeze + CE1 mock-first bridge）
+
+- run_id: `stream-b-ce0-2026-05-06-10`
+- assignee: `Stream B（CE0/CE1基盤・mock-first）`
+- scope_guard: 指定6ファイルのみ（他ストリーム編集なし）
+
+### Phase 1 Read同期
+- `Read -> I/F定義 -> mock契約 -> Plan/Execute/Verify/Proceed -> Stopper` の固定順序を再確認。
+- CE0固定境界（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を read-only 参照で再確認。
+
+### Phase 2 I/F先行定義（ContextQueryV1 / ContextBundleV1）
+- v1 closed-world と required key freeze を再確認。
+- エラー意味論 `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` を固定語彙として維持。
+
+### Phase 3 mock契約で下流依存切断
+- CE2/CE4 連携は `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` の read-only handoff に限定。
+- 実装待機を作らない mock-first 前提を維持。
+
+### Phase 4 Plan/Execute/Verify/Proceed
+- Plan: contract-only 文面更新のみ。
+- Execute: 指定範囲のみ更新、実装変更なし。
+- Verify: docs-check + diff健全性で確認（自己修復 0/3）。
+- Proceed: **Conditional-Go**（未承認拡張は `held` 維持）。
+
+### Phase 5 Stopper
+- stopper 判定: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`。
+- 超過条件（自己修復4回目相当）が発生した場合は即時停止する。

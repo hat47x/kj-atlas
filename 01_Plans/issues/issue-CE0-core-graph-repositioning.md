@@ -1728,3 +1728,22 @@
 - 判定: **Done（contract design freeze maintained）**。
 - handoff（CE2/CE4）: graph責務境界の read-only 契約参照。
 - self-correction usage: `0/3`。
+
+## Stream B latest run（2026-05-06 / CE0 graph contract + CE1 bridge sync）
+
+### Phase 1 Read同期
+- Graph role語彙（`working` / `context_projection` / `consensus`）と `patch+approval` 単一路遷移を再確認。
+
+### Phase 2 I/F先行定義整合
+- `ContextQueryV1` / `ContextBundleV1` の I/F先行定義と衝突しないよう、Graph側は role/transition/no-go の契約語彙に限定。
+
+### Phase 3 mock契約依存切断
+- CE1未実装でも CE2/CE4 が read-only 契約参照で進行できるよう、Graph側は実装依存記述を追加しない。
+
+### Phase 4 Plan/Execute/Verify/Proceed
+- Plan/Execute: contract-only 更新のみ。
+- Verify: docs-check前提、自己修復上限3回ルールを維持（本更新 0/3）。
+- Proceed: **Done**（語彙・停止条件・safeMode境界の差分なし）。
+
+### Phase 5 Stopper
+- `safeMode_default_relaxation` / `consensus_direct_write` を含む canonical No-Go の逸脱があれば即 `held` 停止。

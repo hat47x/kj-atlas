@@ -588,3 +588,10 @@ A2 contract test では次を機械判定する。
 
 上記語彙の意味変更・列挙値変更・安全境界変更は本書単独で行わず、Issue 契約（CE0/CE1/CE2）で CDC 承認後に同期する。
 
+
+## CE1 contract freeze sync note（2026-05-06 / Stream B）
+
+- `ContextQueryV1` / `ContextBundleV1` の required key と意味論は v1 凍結を維持する。
+- IR 生成前提ゲートとして `previewConfirmed=true` を必須化し、違反は `422 preview_required` とする。
+- unknown key は `400 unknown_contract_key`、hash非決定論は `409 nondeterministic_bundle` の fail-closed を維持する。
+- 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3 一致する検証を mock-first 基準とする。

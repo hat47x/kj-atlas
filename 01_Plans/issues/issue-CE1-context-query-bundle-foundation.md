@@ -1653,3 +1653,23 @@ handoffKeys:
 - 判定: **Conditional-Go**（CE1 foundation contract maintained）。
 - handoff（CE2/CE4）: Contract IDs / fixed error semantics / hash keys の read-only 契約パッケージ。
 - self-correction usage: `0/3`。
+
+## Stream B latest run（2026-05-06 / CE1 foundation contract freeze refresh）
+
+### Phase 1 Read同期
+- CE1固定境界（`ContextQueryV1` / `ContextBundleV1` / `queryCanonicalHash` / `bundleHash` / `previewConfirmed`）を再確認。
+
+### Phase 2 I/F先行定義
+- `previewConfirmed=true` 必須、unknown key reject、deterministic hash を v1 contract semantics として再固定。
+
+### Phase 3 mock契約で下流依存切断
+- stub/fixture で `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` を機械判定可能に維持。
+- CE2/CE4 への handoff は `sourceBundleHash === bundleHash` 比較可能性を read-only で保証。
+
+### Phase 4 Plan/Execute/Verify/Proceed
+- Plan/Execute: contract-only 記録更新のみ。
+- Verify: docs-check想定、自己修復 0/3。
+- Proceed: **Conditional-Go**（mock-first で依存切断を維持）。
+
+### Phase 5 Stopper
+- 自己修復4回目相当、または `preview gate` 破壊を検知した時点で即停止（`held`）。
