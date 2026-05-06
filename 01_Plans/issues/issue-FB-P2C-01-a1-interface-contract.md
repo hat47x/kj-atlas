@@ -218,6 +218,57 @@
 
 ## Stream A protocol run（2026-05-03 / contract-only）
 
+## Stream A dedicated run（2026-05-06 / FB-P2C A1 freeze + FB-P0 baseline alignment）
+
+### Phase 1: Read（Plan → Execute → Verify → Proceed）
+- Plan: allowlist 2ファイルの `Status / Priority / Scope / Dependencies / freeze keys` を再読し、差分があれば `held` 記録して停止する。
+- Execute: 本Issueと `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` を再読。
+- Verify:
+  - `Status=Open`, `Priority=P0`, `Scope=allowlist 2ファイル限定`, `Dependencies=A1 -> A2 -> A3（A2/A3はmock-first read-only）` を確認。
+  - freeze keys（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の差分 `0` を確認。
+  - `held` 継続: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`。
+- Proceed: 差分なしのため Phase 2 へ。
+
+### Phase 2: ADR/CDC明文化（必須）
+- Context: Stream A の責務は A1 契約凍結を唯一ゲートとして固定し、FB-P0 baseline と語彙・判定式を一致させること。
+- Decision:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として維持する。
+  2. A1固定項目（`contractIds`, `schemaVersion=1.0.0`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`, `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`）を変更しない。
+  3. A2/A3は `A1-CONTRACT-MOCK-v1` 前提の read-only 参照のみ許可する。
+- Consequences:
+  - 契約ID追加/改名/削除、schema改版、安全境界緩和は No-Go。
+  - 未承認事項は `Needs-decision` のまま維持し、確定化しない。
+- Approval state: `approved-for-freeze-candidate`（docs scope、未承認項目は `held` 維持）。
+
+### Phase 3: Plan（AC/DoD固定）
+- AC:
+  1. `A2A3_OPEN_ALLOWED` が唯一判定式として2ファイルで一致。
+  2. A1契約ID・`schemaVersion`・safeMode境界・queue遷移を固定値として明記。
+  3. A2/A3条件は mock-first / read-only として依存切断されている。
+- DoD:
+  1. allowlist外編集 `0`。
+  2. `NoGo` に pending bypass / undefined conflict / 契約未承認でA2/A3確定要求 が含まれる。
+  3. safeMode後退 `0`。
+
+### Phase 4: Execute（契約凍結のみ）
+- 契約凍結本文を更新対象に限定し、A2/A3実装手順は追加しない。
+- A2/A3参照条件を read-only + mock-first に固定（`A1-CONTRACT-MOCK-v1`）。
+
+### Phase 5: Verify
+- AC/DoD照合: 充足。
+- 語彙一致: `A2A3_OPEN_ALLOWED`, `ProceedGate`, `NoGo`, `Conditional`, `Needs-decision` をbaselineと整合。
+- allowlist逸脱: なし。
+- safeMode後退: なし（`ON` / `SAFE_MODE_STRICT_ON` 維持）。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed
+- 判定: `Conditional / Needs-decision`。
+- 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+- Next actions（Stream A内のみ）:
+  1. `approved_by / approved_at / evidence` の充足確認。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` の人間判断反映。
+  3. 解消後、A2/A3へ read-only freeze 再通知。
+
 ## Stream B completion sync（2026-05-03 / A1→A2→A3 serial handoff）
 
 ### Phase 1: Read同期
