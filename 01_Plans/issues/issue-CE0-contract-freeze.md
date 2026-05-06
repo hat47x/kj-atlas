@@ -2482,3 +2482,45 @@ type PatchProposal = {
 ### Phase 4 Stopper
 - CE1未確定項目の推測補完は実施しない（0件）。
 - 他issue/ADRファイルへの書き込みは実施しない（0件）。
+
+
+## Stream B latest run（2026-05-06 / CE0 only / CE0 Contract Freeze）
+
+- run_id: `stream-b-ce0-2026-05-06-01`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueと関連上流（`ADR-0028`, `02_Architecture/schemas.md`）のCE0契約境界を再確認し、**contract-only / docs-only / mock-first** を維持することを確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+- Self-Correction上限を3回とし、4回目相当は即時 `held` 停止であることを再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0契約をSSOTとして固定し、CE1/CE2/CE4がread-only参照でmock進行できる境界を維持する。
+- Decision: 既存Contract IDs・safeMode既定境界・No-Go canonical IDsを不変のまま維持し、再定義/拡張を行わない。
+- Consequences: 契約ドリフトと安全境界後退を防止し、下流はmock参照での実行を継続可能。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0`（新規CDC起票なし）。
+
+### Phase 3 Plan
+- 本更新は単一ファイルの実行ログ追記に限定（allowlist厳守）。
+- AC/DoD追跡: `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` を維持。
+- 逸脱条件（指定外編集・ID再定義・safeMode後退・self-correction overflow）検出時は `held` 停止。
+
+### Phase 4 Execute
+- 実施: 本Issueへの実行ログ追記のみ（contract-only）。
+- 非実施: 実装変更、他ファイル編集、CE0 Contract ID再定義、safeMode既定値変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- 維持条件:
+  - CE0 Contract Freezeは本IssueをSSOTとして固定（read-only参照継続）。
+  - CE1/CE2/CE4は契約変更なしのmock参照のみ許可。
+  - 逸脱要求またはself-correction 4回目相当発生時は即時 `held`。
