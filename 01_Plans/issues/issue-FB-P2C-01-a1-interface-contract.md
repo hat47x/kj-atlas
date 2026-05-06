@@ -950,3 +950,19 @@
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
+
+
+## Stream A contract-gate hardening note（2026-05-06）
+
+### Unlock rule（A1 -> A2/A3）
+- `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+
+### pendingDecisionQueue / Stopper
+- pendingDecisionQueue条件:
+  - `pendingDecisionQueueCount>0` の間は `executeAllowed=false` を強制する。
+  - `Approval Record` または `held` が1件でも `Go` を禁止する。
+- Stopper条件（即停止）:
+  1. allowlist外編集要求
+  2. 未定義競合（undefinedConflictDetected=true）
+  3. self-correction 4回目相当
+  4. 契約未承認状態でA2/A3確定要求

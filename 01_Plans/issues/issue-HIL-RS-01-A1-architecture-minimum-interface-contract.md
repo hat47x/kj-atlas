@@ -273,3 +273,15 @@
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
+
+
+## Stream A minimum-interface checkpoint（2026-05-06）
+
+### Phase summary（Plan → Execute → Verify → Proceed）
+- Plan: A1最小I/FをP0契約ゲートとして固定し、親計画・P2C・baselineの同値条件を維持する。
+- Execute: 固定キー（`freezeContractId/schemaVersion/overridePolicy/safeModeDefault/safeModeBoundary`）を参照専用で維持。
+- Verify: `pendingDecisionQueueCount==0` と最終承認ログをProceedの必須条件として再確認。
+- Proceed: **Hold**（未承認項目が残存するため）。
+
+### Contract consequence
+- mock参照でA2/A3の準備は継続可能だが、`Go` 判定は人間承認完了まで開放しない。
