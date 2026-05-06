@@ -72,10 +72,35 @@
 - Outputs: `executeAllowed`, `decision(Go|NoGo|Hold)`, `reasonCodes`, `requiredHumanActions`, `noGoReturnPath`
 - Gate: `Pending -> Approved | Pending -> Rejected` 以外禁止。
 
+### Responsibility Boundary（契約責務境界）
+- Human Approver（2者承認）:
+  - `decisionQueueTransition` の最終確定のみ実施可能。
+  - `Approved/Rejected` の根拠と `requiredHumanActions` を監査可能な形で記録する。
+- AI / Automation:
+  - `executeAllowed` / `decision` / `reasonCodes` の算出提案のみ可能（proposal-only）。
+  - `Pending` を終端状態へ遷移させる操作は禁止。
+- Parent Plan / Downstream（A2/A3）:
+  - A1固定値を read-only 参照する。
+  - `freezeContractId` / `schemaVersion` / `safeModeBoundary` の再定義は禁止。
+
+### Hold / NoGo Reason Codes（固定）
+- `HOLD_PENDING_QUEUE`: `pendingDecisionQueueCount > 0`
+- `NOGO_SAFE_MODE_REGRESSION`: `safeModeDefault!=ON` または `safeModeBoundary!=SAFE_MODE_STRICT_ON`
+- `NOGO_OVERRIDE_POLICY_REGRESSION`: `overridePolicy!=human_dual_control_only`
+- `NOGO_CONTRACT_DRIFT`: `freezeContractId` / `contractIds` / `schemaVersion` の不一致
+- `NOGO_SHARED_RESOURCE_CONFLICT`: `sharedResourceFreeze` 違反または競合検知
+
 ## Phase 5 Verify
 - 固定値整合: pass
 - 境界分離: pass
 - bypass禁止: pass
+
+### Verify Procedure（自己修復上限=3）
+1. Contract Snapshot照合（固定語彙/固定値/NoGo return path）。
+2. 責務境界照合（AI proposal-only / Human final approval）。
+3. `Pending` 残存チェック（1件でも `executeAllowed=false`）。
+4. 不一致があれば修正し再検証（最大3回）。
+5. 3回で解消不能なら **致命エラーとして停止**（Phase 6 Proceedへ進まない）。
 
 ## Phase 6 Proceed
 - Go: A1最小I/F契約の凍結完了。
