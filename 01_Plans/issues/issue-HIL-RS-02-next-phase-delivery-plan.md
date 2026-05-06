@@ -1,7 +1,7 @@
 # Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream E docs planning）
 
 - Type: Process
-- Status: Open
+- Status: Draft
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -29,7 +29,7 @@
 - Verify repair limit: `<=3`（4回目相当は即停止）
 - Hard stop: safeMode後退要求 / 契約ID再定義要求 / pending bypass / allowlist外編集要求
 
-## Phase 1: Read（毎Phase開始時に再読）
+## Phase 1: Read（A1依存状態の再確認）
 ### Plan
 - 両対象ファイルを各Phase開始時に再読し、未決事項を `Approval pending` / `dependency pending` / `drift risk` に分類する。
 
@@ -91,6 +91,26 @@
 ### Proceed
 - **Proceed=Conditional**（A1完了待ち）
 
+
+## Boundary Definition（C/D/C境界の固定）
+- Delivery plan boundary: 里程標・Gate判定・承認ログ要件の**計画定義のみ**を扱う。
+- A3 planning boundary: 運用文書同期の準備に限定し、**契約再定義ノードにしない**。
+- Prohibited: A1契約の再定義、未記録承認の推測補完、A1未完了時のOpen化。
+
+## Approval Log Requirements（記録必須要件）
+- `approved_by`: 人間承認者ID（Security Officer/System Ownerのいずれか、2者承認時は両者）。
+- `approved_at`: ISO8601 UTC timestamp。
+- `evidence`: issue/PR/meeting log の参照URIまたはID。
+- `decision`: `Approved` / `Rejected`（`Pending`のまま推測で確定しない）。
+- 欠損時判定: いずれか欠損は `Hold`、推測補完は禁止。
+
+## Verification Record（Proceed/Hold/Stop + self-correction）
+- self-correction loop upper bound: `<=3`（4回目相当は `Stop`）。
+- Proceed: `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0`
+- Hold: `A1 not done && fixedKeysDiff==0`
+- Stop: `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || scope violation`
+- Current: `Hold`（A1完了待ち）。
+
 ## Phase 5: Stopper（前提崩れ時停止）
 ### Plan
 - A1依存・固定キー・pending queue を最終ゲートとして判定する。
@@ -105,6 +125,6 @@
 
 ### Proceed
 - Go: `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0`
-- Conditional: `A1 not done && fixedKeysDiff==0`
-- No-Go: 上記以外（hard stop含む）
-- **Current decision: Conditional（A1依存未解消のため）**
+- Hold: `A1 not done && fixedKeysDiff==0`
+- Stop: 上記以外（hard stop含む）
+- **Current decision: Hold（A1依存未解消のため）**

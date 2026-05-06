@@ -28,7 +28,7 @@
 - Verify repair loop: `<=3`
 - Hard stop: pending bypass / fixed key rewrite / safeMode後退 / scope外編集
 
-## Phase 1: Read（毎Phase開始時に再読）
+## Phase 1: Read（A1依存状態の再確認）
 ### Plan
 - 対象2ファイルを毎Phase開始時に再読し、A3の役割を「運用同期準備」に限定する。
 ### Execute
@@ -73,7 +73,25 @@
 ### Verify
 - 4観点に不整合がないこと。
 ### Proceed
-- Proceed=Conditional（A1完了待ち）
+- Proceed=Hold（A1完了待ち）
+
+
+## Boundary Definition（delivery plan / A3 planning）
+- A3 lane role: Draft維持の planning only。運用文書同期の準備・論点整理のみを扱う。
+- Not allowed: 契約再定義、A1完了前のOpen化、未記録承認の推測補完。
+- Dependency gate: `A1 Done` が確認できるまで `Status=Draft` を固定する。
+
+## Approval Log Requirements（A3で参照する必須ログ）
+- `approved_by` / `approved_at` / `evidence` を3点セットで記録。
+- 2者承認対象は承認者2名の分離記録を必須化。
+- 記録欠損時は `Hold` 維持、`Approved` へ遷移しない。
+
+## Verification Record（Proceed/Hold/Stop + self-correction<=3）
+- self-correction: `<=3`。閾値超過は `Stop`。
+- Proceed: `A1 Done && pendingDecisionQueueCount==0 && validatorPass`
+- Hold: `A1 not done && fixedKeysDiff==0 && validatorPass`
+- Stop: `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || hard stop`
+- Handover condition: `A1完了確認ログ` が追記されるまで Draftのまま引き渡す。
 
 ## Phase 5: Stopper
 ### Plan
@@ -86,6 +104,6 @@
 - Stop条件発火時は `No-Go` を返し、継続しない。
 ### Proceed
 - Go: `A1 Done && pendingDecisionQueueCount==0 && validatorPass`
-- Conditional: `A1 not done && fixedKeysDiff==0 && validatorPass`
-- No-Go: 上記以外（hard stop含む）
-- **Current: Conditional**
+- Hold: `A1 not done && fixedKeysDiff==0 && validatorPass`
+- Stop: 上記以外（hard stop含む）
+- **Current: Hold**
