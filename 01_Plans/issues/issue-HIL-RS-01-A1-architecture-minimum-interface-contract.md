@@ -285,3 +285,70 @@
 
 ### Contract consequence
 - mock参照でA2/A3の準備は継続可能だが、`Go` 判定は人間承認完了まで開放しない。
+
+
+## Stream A authoritative update（2026-05-06 / Phase 1-6）
+
+### Phase 1: Read同期
+- Read対象:
+  1. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  3. `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`（参照のみ）
+- 抽出（Status/Priority/AC/DoD）:
+  - Status: `In Progress`
+  - Priority: `P1`
+  - AC/DoD: `fixed keys drift=0` / `Pending bypass禁止` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `overridePolicy=human_dual_control_only`
+- 差分判定:
+  - 重大差分なし（固定値ドリフト=0）。
+  - 未解消事項あり: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+### Phase 2: 契約明文化（ADR様式）
+#### Context
+A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再定義を行わない参照ノードである。
+
+#### Decision
+以下を **A1最小インターフェース契約（固定）** とする（再定義禁止）。
+
+- API Signature（判定I/F）
+  - `evaluateA1Gate(input: A1GateInput): A1GateOutput`
+- Data Types（最小）
+  - `type A1GateInput = { freezeContractId: "HIL-RS-02-A1-CONTRACT-FREEZE-v1"; contractIds: "A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF"; schemaVersion: "1.0.0"; overridePolicy: "human_dual_control_only"; safeModeDefault: "ON"; safeModeBoundary: "SAFE_MODE_STRICT_ON"; contractLinkLocked: true; sharedResourceFreeze: true; a1Status: "Draft"|"Open"|"In Progress"|"Done"; pendingDecisionQueueCount: number; decisionQueueTransition: "Pending -> Approved | Pending -> Rejected" }`
+  - `type A1GateOutput = { executeAllowed: boolean; decision: "Go"|"Hold"|"NoGo"; reasonCodes: ("HOLD_PENDING_QUEUE"|"NOGO_SAFE_MODE_REGRESSION"|"NOGO_OVERRIDE_POLICY_REGRESSION"|"NOGO_CONTRACT_DRIFT"|"NOGO_SHARED_RESOURCE_CONFLICT")[]; requiredHumanActions: string[]; noGoReturnPath: "issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md" }`
+- 互換方針
+  - 互換基線は `schemaVersion=1.0.0`。
+  - 互換を壊す変更（キー追加/削除/型変更/遷移追加）は human dual approval（`approved_by/approved_at/evidence`）完了まで禁止。
+- Mock I/F（下流作業用）
+  - `mockEvaluateA1Gate(input: A1GateInput): A1GateOutput` を read-only contract として使用可。
+  - mock は `Pending` を終端へ遷移させない（判定補助のみ）。
+
+#### Consequences
+- A2/A3 は固定値と型を read-only 参照する。
+- `pendingDecisionQueueCount>0` または未承認項目残存時は `decision=Hold` / `executeAllowed=false` を維持する。
+
+### Phase 3: Plan
+- 変更対象行: 本Issue末尾の Stream A 最新実行記録ブロックのみ。
+- 変更意図: A1契約の型・互換・mock I/F を1箇所で明文化し、下流の実装待ち依存を除去する。
+- 非変更範囲: 他Issue/ADR/実装コード・既存固定値・SafeMode境界。
+- AC追加提案（合意前提）:
+  - AC-5: API Signature/Data Types/Mock I/F が同一ブロックで参照可能。
+- DoD追加提案（合意前提）:
+  - DoD-5: `noGoReturnPath` がA1 issueへ固定される。
+
+### Phase 4: Execute
+- 本Issueを契約確定版として更新（型/互換/mock I/F を明示）。
+- 下流レーン向け read-only handoff:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+
+### Phase 5: Verify（Self-Correction）
+- check 1/3: fixed keys drift=0（pass）
+- check 2/3: Pending bypass禁止（pass）
+- check 3/3: 責務分離（AI proposal-only / Human final approval）（pass）
+- self-correction: `0/3`
+
+### Phase 6: Proceed判定
+- 判定: `Hold/Needs-decision`
+- 理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held`。
+- 状態明記: **contract-frozen（read-only / pending human final approval）**。
+
