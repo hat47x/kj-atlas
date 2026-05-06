@@ -229,3 +229,48 @@
   3. AC/DoD/Verify指標の記録導線が埋まっている。
 - Proceed不可条件（Fail-safe）:
   - 競合兆候（unit/e2e境界混線、依存差し込み、対象外ファイル編集要求）を検知した場合は `Hold` へ遷移し停止。
+
+
+## Stream D QA pass（2026-05-06 / UNIT拡張計画独立推進）
+
+### Phase 1: Read & ギャップ抽出
+- Draft維持前提（依存解消前はOpen化しない）を再確認。
+- ギャップ抽出:
+  1. 回帰/境界/性能の優先順が明示的な番号付きで固定されていない。
+  2. 実行手順と完了条件（誰が証跡を残すか）が分離している。
+  3. 他レーン非干渉（E2E側との境界）確認が明文化不足。
+
+### Phase 2: AC/DoDドラフト提示・合意（docs-only）
+- AC追記ドラフト:
+  - AC-DU1: 回帰優先として safeMode/validation/diff の3観点で失敗検知アサーションを必須化。
+  - AC-DU2: 境界優先として security境界に触れるケースは「fail時の期待シグナル」を併記。
+  - AC-DU3: 性能優先として unit実行時間のBefore/After比較を記録（悪化時は要因分析）。
+- DoD追記ドラフト:
+  1. frontend/backend別の追加件数・coverage差分・失敗シグナルを1表で管理する。
+  2. Verifyで `V-UNIT-01/02/03` 未記録があれば即No-Go。
+
+### Phase 3: テスト観点の優先順位付け（回帰/境界/性能）
+1. 回帰: safeMode/validation/diff の回帰検知アサーション充足。
+2. 境界: fail-closed/拒否系の期待挙動を明示し、曖昧なpass条件を禁止。
+3. 性能: coverage取得込みのunit実行時間を比較し、顕著悪化時に分割実行案を添付。
+
+### Phase 4: 実行手順と完了定義の明文化
+- 実行手順（実装フェーズ適用）:
+  1. `cd 03_Implement/frontend && npm test -- --runInBand`
+  2. `cd 03_Implement/backend && pytest -q`
+  3. `cd 03_Implement/frontend && npm run test -- --coverage --runInBand`
+  4. `cd 03_Implement/backend && pytest --cov=src --cov-report=term-missing`
+  5. `python 01_Plans/issues/validate_active_issue_memos.py`
+- 完了定義:
+  - V-UNIT-01/02/03 記録完了。
+  - coverage差分非負（対象モジュール）を満たす。
+  - self-correction は `<=3`、超過見込みでStop。
+
+### Phase 5: Verify（他レーン非干渉確認）
+- 非干渉チェック:
+  - 本更新は `issue-QA-UNIT-01` の計画本文のみ。
+  - 実装コード・E2E仕様・他Issueは未編集。
+  - unit/e2e境界を跨ぐ要求は Hold 扱いで停止。
+- Fail-safe:
+  - 不整合・依存崩壊時は停止して指示待ち。
+  - 自己修復は3回まで。4回目相当でStop。

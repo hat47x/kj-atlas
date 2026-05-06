@@ -201,3 +201,46 @@
 - 未定義依存が発生した場合は **Stop**（推測補完禁止）。
 - 安全境界（safeMode/share-export/import sanitize/review human-only）の曖昧化または後退が生じる場合は **Stop**。
 - Verify自己修復が3回を超える見込みとなった時点で **Stop**。
+
+
+## Stream D QA pass（2026-05-06 / E2E-UNIT独立推進）
+
+### Phase 1: Read & ギャップ抽出
+- Read対象を再確認し、E2E要件は `ADR-0019` と本Issueの contract 方針に一致していることを確認。
+- ギャップ抽出:
+  1. 優先順位（回帰/境界/性能）の明示順が本文で分散している。
+  2. 実行手順の「誰が何を完了とするか」がDoD本文に集約されていない。
+  3. 他レーン非干渉の検証観点が明文化されていない。
+
+### Phase 2: AC/DoDドラフト提示・合意（docs-only）
+- AC追記ドラフト:
+  - AC-D1: 回帰（Journey-A/B/C pass）を最優先ゲートとして明記する。
+  - AC-D2: 境界（safeMode/share-export/review attribution/import sanitize）を第2優先で必須化する。
+  - AC-D3: 性能（V-E2E-04）は回帰・境界を満たした上で評価する従属ゲートとする。
+- DoD追記ドラフト:
+  1. 実行担当（QA）と判定責務（Go/No-Go判定者）をIssue本文で追跡可能にする。
+  2. Verifyログに self-correction カウンタ（0/3起点）を必ず残す。
+
+### Phase 3: テスト観点の優先順位付け（回帰/境界/性能）
+1. 回帰: Journey-A/B/Cの再現性・flakeゼロを最優先。
+2. 境界: safeMode既定ON, share/export fail-closed, human-only昇格, sanitize拒否を次優先。
+3. 性能: core実行時間（V-E2E-04）を第3優先で監視し、超過時は要因分析を必須化。
+
+### Phase 4: 実行手順と完了定義の明文化
+- 実行手順（実装フェーズ適用）:
+  1. `npm run test:e2e`
+  2. `npm run test:e2e -- --grep "Journey-(A|B|C|D)|realistic journey|safe share"`
+  3. `python 01_Plans/issues/validate_active_issue_memos.py`
+- 完了定義:
+  - V-E2E-01〜03を満たし、V-E2E-04超過時は要因分析付きで記録。
+  - self-correction が `3/3` を超えない。
+  - No-Go条件ゼロを確認して Proceed 判定。
+
+### Phase 5: Verify（他レーン非干渉確認）
+- 非干渉チェック:
+  - 本更新は `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` の計画記述に限定。
+  - 実装コード（`03_Implement/*`）および他Issue本文は未編集。
+  - unit計画への越境指示は行わず、E2E境界内で完結。
+- Fail-safe:
+  - 不整合・依存崩壊を検知した場合は Stop。
+  - self-correction は最大3回。4回目相当が必要な時点で停止して指示待ち。
