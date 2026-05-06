@@ -40,33 +40,49 @@
 
 
 
-## Stream C update（2026-05-04 / CE1 Foundation 専任）
+## Stream C update（2026-05-06 / CE1 ContextQuery/ContextBundle Foundation 専任）
 
-### Phase 1 Read（現状契約再読）
-- CE1の独立編集範囲（Issue + `llm_input_ir_spec.md` + `llm_provider_spec.md`）を確認し、CE2/CE4 issue と実装レイヤ（backend/frontend）へ非編集を再確認。
-- `ContextQueryV1` / `ContextBundleV1` の closed-world、固定エラー語彙、hash決定論（3回一致）を再確認。
+### Phase 1 Read（対象ファイル再読: I/F・hash決定論・preview gate）
+- 本issueを再読し、`ContextQueryV1` / `ContextBundleV1` のclosed-world契約を再確認。
+- hash決定論要件を `queryCanonicalHash` / `bundleHash` の同一canonical query 3回一致で再確認。
+- preview gateを `previewConfirmed=false -> 422 preview_required` として再確認。
+- 編集範囲を本ファイルのみに固定し、CE2/CE4・backend/frontend・他issue非編集を確認。
 
-### Phase 2 Plan（AC/DoD補完 + mock-first 明文化）
-- AC補完: CE2/CE4 は **CE1未実装でも mock contract で前進可能** とする依存切断要件を必須化。
-- DoD補完: 引き渡し成果物を「契約ID / I/F型 / エラー語彙 / handoff key」に限定し、実装タスクを含めない。
-- mock-first方針: `preview gate` / `unknown key` / `nondeterministic bundle` を最小異常系セットとして固定。
+### Phase 2 ADR C/D/C（実装前の明文化・承認）
+- **Context**: CE2/CE4がCE1未実装でもmockのみで前進するため、CE1はI/F契約とエラー語彙を先行凍結する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1`、`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`、およびhash決定論失敗時`409`をv1固定する。
+- **Consequences**: 下流は契約ID・型・語彙だけでmock検証を継続でき、実装依存の待機が不要になる。
+- 承認ゲート: Contract collision検知時は本文反映を停止し `held` で承認待ちに遷移する。
 
-### Phase 3 Execute（ContextQueryV1/ContextBundleV1 固定）
-- v1キー集合の凍結を維持（未定義キーは `400 unknown_contract_key`）。
-- `previewConfirmed=false -> 422 preview_required` を入力ゲートとして再固定。
-- `queryCanonicalHash` と `bundleHash` の一致性失敗を `409 nondeterministic_bundle` で fail-closed 固定。
+### Phase 3 Plan → Execute → Verify → Proceed
+#### Plan（AC/DoD不足の補完提案）
+- AC追加提案1: CE2向けに `sourceBundleHash === bundleHash` を検証可能な最小フィールドセットをDoDへ固定。
+- AC追加提案2: CE4向けに `equivalenceKey + bundleHash` の監査再現キー接続性をDoDへ固定。
+- DoD追加提案: handoff成果物を「Contract IDs / 型 / error semantics / hash rule / handoff keys」のみとし、実装TODOを含めない。
 
-### Phase 4 Verify（下流要求充足チェック）
-- CE2向け: `sourceBundleHash === bundleHash` 比較可能性を満たす。
-- CE4向け: `equivalenceKey + bundleHash` による再現監査キー運用に接続可能。
-- 判定: **pass**（下流は mock-only で検証継続可能、CE1実装待ち依存なし）。
+#### Execute（contract-only整備）
+- `ContextQueryV1` / `ContextBundleV1` をv1固定契約として維持（unknown keyは `400 unknown_contract_key`）。
+- error semanticsを以下で固定:
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+- mock-first handoffを明文化し、CE2/CE4が実装なしで検証継続できる受け渡し単位を固定。
 
-### Phase 5 Proceed（I/F引き渡し）
-- Handoff package（read-only contract）:
-  - Contract IDs: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
-  - Error semantics: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
-  - Keys: `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` / `equivalenceKey`
-- Stopper再掲: 自己修復3回超過、未定義競合、非許可ファイル要求時は `held` 停止。
+#### Verify（CE2/CE4がmockのみで前進可能か）
+- Verify-1 (CE2): `sourceBundleHash === bundleHash` 比較のみで入力整合性確認が可能。
+- Verify-2 (CE4): `equivalenceKey + bundleHash` で再現監査キーを構成可能。
+- Verify-3 (共通): 正常系/異常系（3固定語彙）をmockだけで再現可能。
+- 結果: **pass**（CE2/CE4ともmock-onlyでProceed可能）。
+
+#### self-repair log（失敗時最大3回）
+- attempt 1: 契約語彙揺れ点検（差分なし）。
+- attempt 2: handoff keyのDoD表記を統一（反映済）。
+- attempt 3: Verify観点をCE2/CE4別に分離（反映済）。
+
+### Phase 4 Stopper
+- Stopper-1: self-repairが3回超過した場合は即時 `held` 停止。
+- Stopper-2: contract collision（Contract ID / error semantics / handoff key衝突）検知時は即時停止してPhase 2へロールバック。
+- Stopper-3: scope逸脱要求（CE2/CE4/backend/frontend/他issue編集）が発生した場合は作業停止し、本issueへの追記のみ維持。
 
 ## Stream F update（2026-04-30 / CE1 Foundation docs-only）
 
