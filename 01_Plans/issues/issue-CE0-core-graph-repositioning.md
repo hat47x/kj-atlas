@@ -1772,3 +1772,28 @@
 ### Phase 5 Proceed 判定
 - 判定: **Proceed（Open維持）**。
 - 根拠: 依存追加の未確定要素なし、契約語彙の差分なし、contract-only境界を維持。
+
+## Phase Execution Record（2026-05-06 / Stream C / CE0 core graph contract alignment read-only）
+### Read
+- CE0契約は `downstream_policy = read-only reference` の前提で再読し、契約ID再定義なしを確認。
+- Query Preview 必須条件（`CE0-CTX-IF` の preview経由）を維持し、bypass を禁止する境界を再確認。
+
+### ADR（Context / Decision / Consequences）
+- Context: CE0契約依存を read-only 参照しつつ、Core Graph 側の role/transition/no-go 契約整合を固定する。
+- Decision: `No ADR delta`。`working / context_projection / consensus` 分離、`working -> consensus` の `patch+approval` のみ許可、`auto_apply_or_publish` を No-Go として維持。
+- Consequences: 実装は mock-first で先行可能と明記し、契約固定の範囲を超える論点は `held/pending` へ退避する。
+
+### Plan
+- 本Issueの contract-only 記述を維持し、Query Preview 必須・auto-apply/auto-publish 禁止・SafeMode後退禁止を継続条件として固定。
+- 変更対象を本Issueファイルの実行記録追記のみに限定。
+
+### Execute
+- 契約文面の整合確認結果を追記（コード/スキーマ/運用手順ファイルは未変更）。
+- mock 先行検証は許容しつつ、本Issueでは read-only 契約参照のみで完結させる。
+
+### Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+
+### Proceed
+- 判定: `Done`（contract-only、Query Preview必須維持、auto-apply/auto-publish禁止維持、mock先行可能性を明記）。
