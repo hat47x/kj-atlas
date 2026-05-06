@@ -766,3 +766,39 @@
 - 判定: `Needs-decision`。
 - 理由: `Approval Record` と `HIL-RS-02-GOV-EXCEPTION-01` が未承認のため。
 - 次工程進行条件: `approved_by / approved_at / evidence` 充足 + `held` 解消後に再判定。
+
+## Stream A contract canonicalization update（2026-05-06）
+
+### Phase 1: Read & Drift Check
+- 対象再読: 本ファイルと `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`。
+- Drift check（Status/Priority/Scope/Dependencies/Related ADR）:
+  - `Status=Open` / `Priority=P0` を再確認。
+  - Scope は allowlist 2ファイル限定（編集境界固定）。
+  - Dependencies は `A1 -> A2 -> A3` を維持し、A2/A3は mock-first read-only。
+  - Related ADR は `ADR-0001`, `ADR-0019`, `ADR-0026`, `ADR-0027`, `ADR-0028` を正本語彙として採用。
+- 判定: 差分は用語揺れ（`Needs-decision` / `Conditional` の併記）に限定。契約値ドリフトなし。
+
+### Phase 2: Plan（AC/DoD）
+- AC
+  1. `A2A3_OPEN_ALLOWED` を唯一の開放判定式として維持する。
+  2. 固定キー集合（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）を閉集合で保持する。
+  3. 未承認事項は `held` として保持し、確定扱いしない。
+- DoD
+  1. 2ファイルで Related ADR を同一集合に正規化。
+  2. 依存注記を `A1 -> A2 -> A3（A2/A3はread-only mock-first）` に統一。
+  3. allowlist外ファイルの差分を発生させない。
+
+### Phase 3: Execute
+- 固定語彙を以下に正規化:
+  - 判定状態の正本を `Needs-decision`（`Conditional` は Proceed内の中間判定）として扱う。
+  - Related ADR は `ADR-0001/0019/0026/0027/0028` の5件固定。
+- 依存注記を更新:
+  - `A1 -> A2 -> A3` 順序を維持し、A2/A3の契約再定義禁止・mock-first参照限定を明記。
+
+### Phase 4: Verify
+- AC/DoD自己検証: 充足。
+- Self-Correction count: `0/3`。
+
+### Phase 5: Proceed Gate
+- 判定: **次フェーズへ進行可（Conditional / Needs-decision）**。
+- 理由: 契約固定値と判定式は整合済み。未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `held` のまま維持され、確定化していない。
