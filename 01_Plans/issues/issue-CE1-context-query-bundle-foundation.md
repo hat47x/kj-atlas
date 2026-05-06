@@ -1583,3 +1583,30 @@ handoffKeys:
   1. contract id / error semantics の衝突。
   2. preview語彙・決定論語彙の変更要求。
   3. 自己修復4回目相当（>3回）。
+
+## Stream CE1 update（2026-05-06 / ContextQuery-ContextBundle Foundation contract-only）
+
+### Phase 1 Read（latest mandatory read）
+- 本Issueを基準に、Read Order上流（`00_Prompt/*`、`ADR-0001`、`02_Architecture/architecture.md`、`02_Architecture/schemas.md`、`ADR-0028`、`ADR-0019`）を再読し、CE1の責務を **contract-only / docs-only / mock-first** に固定した。
+- 編集許可が `issue-CE1-context-query-bundle-foundation.md` のみであることを再確認し、実装層（backend/frontend/worker/DB）を非対象として分離した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4の先行検証を維持するため、CE1は実装依存を導入せず、I/F契約のみを先に確定する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` のclosed-world契約、固定エラー語彙、hash決定論（同一canonical queryで3回一致）をv1固定として継続する。
+- **Consequences**: CE2/CE4はmockで正常/異常系を検証可能とし、CE1実装待ちを依存条件にしない。
+
+### Phase 3 Contract-first plan（implementation dependency separation）
+- I/F先行: 引き渡し成果物を `Contract IDs + Type signature + Error semantics + handoff keys` に限定する。
+- mock-first: 検証対象を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3異常系と正常系最小ケースに固定する。
+- 依存切断: handler/UI/DB/worker/API実装詳細は本Issueに記述しない。
+
+### Phase 4 Verify（contract consistency）
+- `previewConfirmed=false -> 422 preview_required` を入力ゲートとして維持。
+- `queryCanonicalHash` / `bundleHash` の決定論違反を `409 nondeterministic_bundle` で fail-closed 維持。
+- `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` のhandoff key整合を維持。
+- 判定: **pass（contract-only consistency maintained）**。
+
+### Phase 5 Proceed/Stop
+- Proceed条件: docs-only差分でCE1 v1契約に矛盾がないこと。
+- Stop条件: 自己修復が3回を超えた時点で `held` に固定して停止（4回目に進まない）。
+- 本更新の自己修復回数: `0/3`（追加修復なし）。
