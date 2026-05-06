@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream B（HIL Governance）
+- Owner: Stream E（HIL Governance）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -93,11 +93,18 @@
 ## Phase 5 Verify
 - 検証基準: AC/DoDを逐次照合する。
 - 自己修復: 失敗時は最大3回まで修正・再検証し、超過時は `Stop`。
+- 必須検証項目（禁止遷移を含む）:
+  - `Status=Open（Approval Pending）` の間は常に `executeAllowed=false`。
+  - 禁止遷移 `Draft -> Approved` が成立しないこと。
+  - 禁止遷移 `Pending -> Execute` が成立しないこと。
+  - 禁止遷移 `Rejected -> Execute` が成立しないこと。
 - 検証結果（現時点）:
   - A1固定値一致: pass
   - SoD整合: pass
   - bypass禁止: pass
   - NoGo return path固定: pass
+  - Approval Pending中 executeAllowed=false 維持: pass
+  - 禁止遷移（Draft->Approved / Pending->Execute / Rejected->Execute）遮断: pass
 
 ## Phase 6 Proceed/Stop
 - Proceed条件:
