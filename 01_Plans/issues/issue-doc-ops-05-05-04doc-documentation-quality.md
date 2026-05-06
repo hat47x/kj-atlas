@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream E (Doc-Ops)
+- Owner: Stream F (Doc-Ops Draft)
 - Scope: `01_Plans/documentation_quality.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/documentation_quality.md`, `01_Plans/adr/ADR-0024-doc-ops-04-quality-gates-boundary.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -68,3 +68,24 @@
 ## Proceed tri-state
 - ProceedDecision: **Hold**
 - Reason: `DOC-OPS-05` 依存確定証跡待ち。
+
+
+## Stream F draft整備 pass（2026-05-06 / DOC-OPS-05-05）
+
+### Phase 1 Read同期
+- 対象限定を確認: 本対応は当該Issueメモのみを更新し、`01_Plans/documentation_quality.md` 本文や実装コードは変更しない。
+- 依存状態を確認: `DOC-OPS-05` のOpen gate証跡が未確定のため、Proceedは `Hold` 維持。
+
+### Phase 2 ADR要素（C/D/C）
+- Context: 内部品質基準文書の公開境界を誤ると、内部統制の運用情報が外部公開されるリスクがある。
+- Decision: Classificationを `Move internal` 固定とし、Open化判定に必要な承認証跡を `Approval Record` 5項目で管理する。
+- Consequences: 公開可否判断が再現可能になり、依存未確定時の誤Proceedを抑止できる。
+
+### Phase 3 Plan→Execute
+- Plan: AC/DoDの不足を「証跡項目」「停止条件」「語彙統一」の3点で補完する。
+- Execute: docs-only範囲で文言と判定導線を整備し、実装・公開判定の確定は行わない。
+
+### Phase 4 Verify→Proceed
+- Verify: docs-check前提の整合（Classification/Gate/Validation/Proceed）を確認。
+- Proceed: 依存証跡未確定のため `ProceedDecision: Hold` を継続。
+- Self-correction: `2/3`（上限内、4回目相当はStop）。

@@ -5,7 +5,7 @@
 - Lifecycle: Draft
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream E (Doc-Ops)
+- Owner: Stream F (Doc-Ops Draft)
 - Scope: `04_Documentation/e2e_testing.md`（※本Issueではメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`, `01_Plans/documentation_quality.md`
@@ -68,3 +68,24 @@
 ## Proceed tri-state
 - ProceedDecision: **Hold**
 - Reason: `DOC-OPS-05` 依存確定証跡待ち。
+
+
+## Stream F draft整備 pass（2026-05-06 / DOC-OPS-05-06）
+
+### Phase 1 Read同期
+- 対象限定を確認: 本対応はIssueメモ整備のみ。`04_Documentation/e2e_testing.md` 本文改稿は非実施。
+- 依存状態を確認: DOC-OPS-05 Open gate証跡未確定のため、Open化判定は保留。
+
+### Phase 2 ADR要素（C/D/C）
+- Context: E2E運用導線は公開対象だが、判定証跡が不足した状態でOpen化すると運用境界が曖昧になる。
+- Decision: Classificationを `Improve external` 固定、判定要件を `Approval Record` 5項目で明文化する。
+- Consequences: 公開文書としての改善方針を維持しつつ、依存未確定時は安全側（Hold）で停止できる。
+
+### Phase 3 Plan→Execute
+- Plan: AC/DoDに「再読可能性」「self-correction上限」「依存未確定時停止」を保持する。
+- Execute: 用語を `Go/NoGo` と `Proceed/Hold/Stop` に統一し、3Issue横断整合を維持する。
+
+### Phase 4 Verify→Proceed
+- Verify: docs-check基準の整合確認を実施。
+- Proceed: 依存証跡未確定のため `Hold` 継続。
+- Self-correction: `2/3`（上限内）。
