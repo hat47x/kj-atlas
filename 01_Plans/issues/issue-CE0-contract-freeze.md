@@ -2368,3 +2368,54 @@ type PatchProposal = {
 - 判定: **Conditional-Go**。
 - handoff（下流CE2/CE4向け）: CE0 Contract IDs / canonical No-Go IDs / safeMode境界の read-only 参照のみ。
 - self-correction usage: `0/3`（超過なし）。
+
+## Stream B latest run（2026-05-06 / CE0 only / contract freeze stream-b dedicated refresh）
+
+- run_id: `stream-b-ce0-2026-05-06-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / conflict_detected=0 / self_correction_overflow=0`
+
+### Phase 1 Read（対象ファイル再読）
+- 本Issueを再読し、単一編集許可（本ファイルのみ）と contract-only / docs-only / mock-first 制約を同期。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）凍結、および No-Go canonical IDs 固定を再確認。
+- Stopper条件（3回超過 / 未承認前提 / 競合検知 / allowlist外編集）を再確認。
+
+### Phase 2 ADR C/D/C（先行明文化 + 承認）
+- Context:
+  - CE0の責務は Contract Freeze SSOT維持のみであり、CE1/CE2/CE4へは read-only 契約参照のみ提供する。
+- Decision:
+  - 契約キーの追加/改名/削除を行わず、safeMode既定境界（`safeMode=true` / `allowUnreviewedText=false`）を不変として固定する。
+  - 未承認の新規前提（新キー導入・意味論変更・実装詳細記述）は採用しない。
+- Consequences:
+  - 契約ドリフトと安全境界後退を回避し、競合または未承認前提を検知した時点で `held` 停止へ遷移できる。
+- approval_gate:
+  - `cdc_explicit_documented=true`
+  - `unapproved_premise=0`
+  - `approval_status=approved-for-phase3`（本ランのProceed条件を満たす）
+
+### Phase 3 Workflow（Plan → Execute → Verify → Proceed）
+- Plan:
+  - AC/DoD不足確認を実施し、不足なし（追加提案不要）を確認。
+  - 維持DoD: `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required`。
+- Execute:
+  - 実施: 本Issueへのログ追記のみ。
+  - 非実施: 他ファイル編集、実装変更、契約ID再定義、safeMode既定値変更。
+- Verify（max 3 repair policy）:
+  - attempt_1 で docs-check + 差分健全性を実施（結果は pass、修復 0/3）。
+- Proceed:
+  - 判定: **Conditional-Go**（Stopper非該当のため継続可）。
+
+### Phase 4 Handoff（CE1向け最小契約キーのみ）
+- CE1参照許可（read-only / mock参照用 最小キー）:
+  - `CE0-CTX-IF`
+  - `CE0-SAFEMODE-IF`
+  - `CE0-REVIEW-IF`
+  - `CG-01`
+  - `CG-02`
+  - `CG-03`
+  - `CG-04`
+  - `CG-05`
+- handoff制約:
+  - 実装詳細（API手順・DB・UI・worker・アルゴリズム）は提示禁止。
+  - 追加要求はCE0 Contract Freeze承認ゲート通過まで `held`。
