@@ -90,3 +90,23 @@
 - Verify: Gate/Validation/Proceedの非競合を確認。
 - Proceed: 依存証跡未確定につき `Hold` 継続。
 - Self-correction: `2/3`（上限内）。
+
+
+## Stream F unblock criteria update（2026-05-06 / execution readiness）
+
+### Read
+- 停止要因を `移管先確定の承認証跡不足` に固定。
+
+### AC/DoD解除条件（Open化条件）
+- [ ] U1: Candidate destination を確定した場合、承認者・承認日時・根拠を本Issueに追記。
+- [ ] U2: 「未承認時は暫定扱い」の但し書きを維持している。
+- [ ] U3: 05/05/06 のProceed判定と競合しない（全件Holdまたは全件Readyのどちらかに揃う）。
+
+### Validation plan（コマンド）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `rg -n "Candidate destination|ProceedDecision|Dependency status|Stop conditions" 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`
+
+### Proceed
+- 判定: **Hold維持**。
+- Open化条件: U1〜U3充足時に Draft解除を提案。
