@@ -393,3 +393,31 @@
 - 現在判定: **Hold**（依存確定証跡不足）。
 - Proceed条件: 依存証跡充足後に再判定。
 - Stop条件: 4回目相当の自己修復、または依存矛盾が解消不能な場合。
+
+## Stream I final consistency sync（2026-05-06 / DOC-OPS-05-06）
+
+### Context
+- `ADR-0019` 正本との整合を維持したまま、DOC-OPS-05 Draft群（05/06/07）の Open gate 表現を統一する必要がある。
+- 本Issueは `Improve external` 分類を維持するが、現段階は docs-only の判定メタ整備に限定する。
+
+### Decision
+- Open判定の最小要件を3Issue共通で固定する。
+  1. `Context/Decision/Consequences` をIssue内完結で記述。
+  2. Validationは `docs-check` 必須、`unit/integration/e2e` は期待レベル定義のみ。
+  3. `Proceed` は依存確定証跡 + Approval Record 充足まで `Hold`。
+  4. self-correction は最大3回、4回目相当は `Stop`。
+- ADR/運用語彙不一致は、公開本文の改稿前に本IssueのContext/Decision/Consequencesで先行解消する。
+
+### Consequences
+- `Improve external` の公開導線を維持しながら、Open可否判定が内部3Issueで同一基準になる。
+- 実装変更や `04_Documentation/e2e_testing.md` 本文改稿を伴わずに、Open前提の判定メタを確定できる。
+
+### Open化条件（確定版 / proposal-only）
+- [ ] OC-1: 3Issueで Gate/Validation/Proceed語彙が一致。
+- [ ] OC-2: docs-check 記録あり、self-correction `<=3`。
+- [ ] OC-3: Approval Record（日時/承認者/対象/判断/evidence）完備。
+- [ ] OC-4: 依存未確定のまま Proceed していない。
+
+### Self-repair counter
+- Current: `2/3`
+- Next action on overflow: `Stop`（4回目相当で作業停止）
