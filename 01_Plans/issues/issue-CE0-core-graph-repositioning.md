@@ -1747,3 +1747,28 @@
 
 ### Phase 5 Stopper
 - `safeMode_default_relaxation` / `consensus_direct_write` を含む canonical No-Go の逸脱があれば即 `held` 停止。
+
+## Stream C update（2026-05-06 / Phase C Read→ADR→Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read（Status / Dependencies整合確認）
+- Status再確認: 本Issueは `Open` を維持し、contract-only の凍結管理を継続する。
+- Dependencies再確認: `issue-CE0-contract-freeze.md` 参照依存のみ。依存未確定の新規項目は検出なし。
+- CE1契約参照境界: CE1関連は参照のみとし、CE1ファイル編集要求は受理しない。
+
+### Phase 2 ADR C/D/C
+- Context: CE0はCore Graphの語彙固定が目的であり、下流提案（CE2/CE4）の安全境界を先に守る必要がある。
+- Decision: `working / context_projection / consensus`、`working -> consensus (patch+approval)`、canonical No-Go 5 IDs を継続固定する。
+- Consequences: 依存未確定の状態遷移を防止できる一方、未承認論点は `held` 在庫として残す運用が必要。
+
+### Phase 3 Plan→Execute（contract-only維持）
+- Plan: CE0では契約境界の監視のみ実施し、新規実装I/Fや状態遷移を追加しない。
+- Execute: 本Issueへの記録更新のみ実施（実装変更なし）。
+
+### Phase 4 Verify（draft gate/Open移行/非目標）
+- Draft gate条件: 語彙差分ゼロ・No-Go語彙不変・SafeMode既定ON後退ゼロ。
+- Open移行条件: docs-check pass かつ依存衝突なし（依存未確定の新規発生時は移行停止）。
+- 非目標: handler/UI/DB/worker/API実装、CE契約ID再定義、SafeMode緩和。
+
+### Phase 5 Proceed 判定
+- 判定: **Proceed（Open維持）**。
+- 根拠: 依存追加の未確定要素なし、契約語彙の差分なし、contract-only境界を維持。
