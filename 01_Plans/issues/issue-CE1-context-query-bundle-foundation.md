@@ -1673,3 +1673,45 @@ handoffKeys:
 
 ### Phase 5 Stopper
 - 自己修復4回目相当、または `preview gate` 破壊を検知した時点で即停止（`held`）。
+
+## Stream D run（2026-05-06 / CE1 contract freeze for CE2/CE4 decoupling）
+
+### Phase 1 Read（依存・受入条件確認）
+- 依存境界を `CE0-contract-freeze` 参照のみに固定し、CE1は `ContextQueryV1` / `ContextBundleV1` の契約凍結のみを担当することを再確認。
+- 受入条件（closed-world / preview gate / hash決定論 / mock validation）を本Issue内で再確認。
+- 編集範囲を本ファイルのみに限定し、CE2/CE4・実装コード・他issue非編集を確認。
+
+### Phase 2 C/D/C（契約最小要素の明文化）
+- **Context**: CE2/CE4がCE1の実装完了待ちになると統合遅延が発生するため、最小契約を先に固定して依存切断が必要。
+- **Decision**:
+  - 型: `ContextQueryV1` / `ContextBundleV1` をv1凍結。
+  - 署名: `queryCanonicalHash` / `bundleHash` をsha256 hexとして保持。
+  - 不変条件:
+    - `previewConfirmed=false -> 422 preview_required`
+    - unknown key -> `400 unknown_contract_key`
+    - same canonical query + hash不一致 -> `409 nondeterministic_bundle`
+    - 同一canonical queryで3回連続一致しない場合 fail-closed。
+- **Consequences**: CE2/CE4は契約ID・型・語彙・handoff keyのみを参照してmock検証を進行でき、CE1実装依存を持たない。
+
+### Phase 3 Plan→Execute（proposal lifecycle と safe境界）
+- **Proposal lifecycle（contract-only）**:
+  1. Draft: C/D/Cで差分提案を明文化。
+  2. Freeze Review: Contract ID / error semantics / handoff key の衝突検査。
+  3. Freeze: v1契約を凍結し、下流へ配布可能状態に固定。
+  4. Change Request: 変更はv2提案へ分離し、v1本文を不変維持。
+- **Safe boundary**:
+  - CE1は `CE0-SAFEMODE-IF` 参照のみ（再定義禁止）。
+  - No-Go語彙（`preview_bypass` 等5語彙）を逸脱要求として即時reject。
+  - preview gate bypassを許可しない。
+
+### Phase 4 Verify（CE2/CE4 参照のみ進行可否）
+- Verify-1 (CE2): `sourceBundleHash === bundleHash` と固定エラー語彙のみでmockケース作成可能。
+- Verify-2 (CE4): `equivalenceKey + bundleHash` による監査再現キーを契約参照だけで組成可能。
+- Verify-3 (共通): 正常/異常（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を実装非依存で再現可能。
+- 判定: **pass（CE2/CE4とも参照のみでProceed可能）**。
+
+### Phase 5 Proceed（契約凍結サマリ）
+- `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` をv1凍結維持。
+- 下流引き渡し物は「契約ID・型シグネチャ・不変条件・固定エラー語彙・handoff key」のみ。
+- 実装提案（handler/UI/DB/worker/API詳細）はCE1範囲外として不採用。
+- self-repair運用: 失敗時は最大3回、超過時は `held` で停止。
