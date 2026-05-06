@@ -258,6 +258,44 @@
   1. mock fixture は `mock:<64hex>` と `sha256:<64hex>` の双方を同一検証器に通す。
   2. CLI終了コードの数値割当は未確定のまま（分類語彙のみ固定）。
   3. 監査転送基盤・匿名化方式は CE4 契約外（上位ADR判断待ち）。
+
+## Stream CE4 Draft昇格準備（2026-05-06 / Read→Plan→Execute→Verify→Proceed）
+
+### Read（根拠再同期）
+- 再同期対象: `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` / 本Issue契約定義。
+- 整合確認:
+  - 同値条件 `equivalenceKey AND bundleHash` を維持。
+  - `proposal-only` と auto-*禁止を維持。
+  - 監査4イベント欠損時 fail-closed を維持。
+
+### Plan（Open判断材料の固定）
+- AC明確化:
+  - [ ] Context / Decision / Consequences、AC、DoD、Validation、tri-state が単一文書で再読可能。
+  - [ ] 失敗分類4区分（入力/監査/ポリシー/同値）が API/CLI 共通語彙として明示。
+  - [ ] 未確定点（終了コード数値/匿名化方式/転送基盤）が「未確定」のまま隔離されている。
+- DoD明確化:
+  - [ ] contract-only 境界（実装非依存、mock-first、推測実装禁止）を維持。
+  - [ ] self-correction `<=3`、4回目相当は Stop を明記。
+  - [ ] 依存証跡未充足時は Proceed 不可（Hold/Stop）を再現可能。
+- Validation明確化:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+  - `git diff -- 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+
+### Execute（文書整備のみ）
+- 実施: Draft→Open判定の材料（AC/DoD/Validation/Stop条件）を明確化。
+- 非実施: API/CLI実装、監査基盤選定、未確定点の確定化。
+
+### Verify（停止条件付き）
+- Verify結果: **Hold維持**（依存 `CE-4` Open gate の確定証跡待ち）。
+- self-correction: `0/3`。
+- Stop条件再掲: 未確定点を確定仕様として扱う要求、または修復4回目相当で Stop。
+
+### Proceed判定（現時点）
+- 判定: **Hold（Draft継続）**
+- Open移行に不足する項目:
+  1. 依存確定証跡（日時/承認者/対象/判断/evidence）。
+  2. Approval Record 実値の記録。
 - Stop再掲: allowlist外編集、契約語彙衝突、self-correction超過、safeMode後退要求を検知した場合は即停止。
 
 

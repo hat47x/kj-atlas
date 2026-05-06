@@ -25,6 +25,7 @@
 - VerificationLevel: e2e
 - DecisionStatus: Fixed-for-Execution
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+- ContractPolicy: E2Eケース定義は contract レベルで固定し、実装詳細（DOM構造・内部関数名・一時的UI文言）へ依存しない。
 
 ## Phase 1. Read同期（ADR-0019整合）
 
@@ -58,22 +59,26 @@
 1. **Journey-A: Authoring Continuity**（作成→再配置→保存復元）
    - 前提: 新規docをfixtureで作成、safeMode=ON。
    - 操作: card作成→island再配置→保存→再読込。
-   - 期待: 再読込後に位置・relation・pending整合が崩れない。
+   - 契約アサーション: 再読込後に位置・relation・pending整合が崩れない。
+   - 非依存条件: DOM class名、描画レイヤ内部実装、state管理方式に依存しない。
 
 2. **Journey-B: Review Governance**（編集→差分→review attribution）
    - 前提: unreviewed/human_reviewed混在fixture。
    - 操作: 編集→diff確認→humanレビュー操作→状態再確認。
-   - 期待: `human_reviewed`昇格は人手経路のみ成功し、AI/自動昇格経路が存在しない。
+   - 契約アサーション: `human_reviewed`昇格は人手経路のみ成功し、AI/自動昇格経路が存在しない。
+   - 非依存条件: UI部品名、ボタン配置、内部イベント名に依存しない。
 
 3. **Journey-C: Safe Sharing Gate**（レビュー→共有/エクスポート判定）
    - 前提: unreviewed本文を含むdoc、safeMode=ON。
    - 操作: share/exportを試行→レビュー条件を満たして再試行。
-   - 期待: 初回はfail-closed（拒否/警告）、条件充足後のみ許可。
+   - 契約アサーション: 初回はfail-closed（拒否/警告）、条件充足後のみ許可。
+   - 非依存条件: ダイアログ文言、通知トースト文面、送信実装方式に依存しない。
 
 4. **Journey-D: Import-to-Safe-Export**（sanitize境界）
    - 前提: markdown/zip入力fixture（正常系+悪性入力）。
    - 操作: import sanitize→編集→share/export判定。
-   - 期待: sanitize逸脱入力は拒否され、安全入力のみ後段に進める。
+   - 契約アサーション: sanitize逸脱入力は拒否され、安全入力のみ後段に進める。
+   - 非依存条件: パーサ内部実装、中間データ構造、エラーメッセージ文面に依存しない。
 
 ### 3.2 追加AC（確定）
 
@@ -82,6 +87,7 @@
 - [ ] AC-03: share/export境界で unreviewed 含有時の拒否アサーションを必須化する。
 - [ ] AC-04: review attribution の昇格境界（human only）を必須アサーション化する。
 - [ ] AC-05: GoNoGoGate判定式（下記）を満たさない場合は実装マージ不可とする。
+- [ ] AC-06: 各Journeyの期待結果を contract アサーションとして定義し、実装依存アサーションを禁止する。
 
 ### 3.3 DoD（確定）
 
@@ -90,6 +96,7 @@
 - [ ] DoD-03: Expected verification level=e2e と実行コマンドが一致。
 - [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
 - [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
+- [ ] DoD-06: ケース記述に実装依存語（固定CSSセレクタ/内部関数名/コンポーネント固有ID）が含まれていない。
 
 ## Phase 4. Execute（計画固定：シナリオ境界・安全境界・除外条件の凍結）
 
@@ -119,6 +126,7 @@
 - **シナリオ境界**: 必須=Journey-A/B/C、推奨=Journey-D。
 - **安全境界**: safeMode既定ON、share/export fail-closed、review attribution human-only、import sanitize。
 - **除外条件**: SSO本番連携、外部LLM実通信、長時間負荷試験は本Requirementの対象外。
+- **契約固定境界**: 判定対象は利用者に観測可能な入出力/状態遷移のみとし、内部実装変更で破綻しないこと。
 
 
 
@@ -138,6 +146,7 @@
 - 判定整合:
   - 上記コマンドで Journey-A〜C が再現され、AC/DoDに対応するアサーションが確認できること。
   - 測定可能指標（下記 V-E2E-*）が記録され、閾値を満たすこと。
+  - アサーションは contract レベル（観測可能な振る舞い）で記述され、実装依存を含まないこと。
 
 - docs-check（本フェーズ）:
   - `python 01_Plans/issues/validate_active_issue_memos.py` が成功し、本Issueメモの構造整合が確認できること。
@@ -168,7 +177,7 @@
 実装着手は、以下を満たした場合のみ許可（未達ならStop）。
 
 1. 本Issueの `Status=Ready-for-Implementation` が維持されている。
-2. AC-01〜AC-05 / DoD-01〜DoD-05 が未矛盾で固定されている。
+2. AC-01〜AC-06 / DoD-01〜DoD-06 が未矛盾で固定されている。
 3. GoNoGoGate=Required の判定式に曖昧さがない。
 4. `04_Documentation/e2e_testing.md` 同期更新タスクが同一PR対象に含まれる。
 5. フェイルセーフ3条件（未定義依存/境界後退/self-correction>3）を停止基準として実装計画に転記済み。

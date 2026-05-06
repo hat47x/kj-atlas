@@ -429,3 +429,30 @@
 - [ ] C4: `docs-check pass` 記録がある。
 - [ ] C5: 依存確定証跡（日時・承認者・対象・判断）と Approval Record がある。
 - [ ] C6: docs-only 境界（03_Implement/04_Documentation本文非変更）を維持。
+## Stream I final consistency sync（2026-05-06 / DOC-OPS-05-05）
+
+### Context
+- DOC-OPS-05 Draft群（05/06/07）で Open化条件の比較軸を固定するため、語彙を `Context/Decision/Consequences`・`Proceed tri-state`・`self-correction <=3` に統一する必要がある。
+- 本Issueは `Move internal` を維持し、`01_Plans/documentation_quality.md` の内部品質基準として扱う。
+
+### Decision
+- 3Issue共通で次を Open gate の必須条件として固定する。
+  1. `Context/Decision/Consequences` がIssue単体で閉じて再読可能。
+  2. Validationは `docs-check` 実行必須、`unit/integration/e2e` は期待レベル定義のみ。
+  3. `Proceed` は `Hold` 既定、依存確定証跡 + Approval Record 充足時のみ `Proceed`。
+  4. 自己修復は最大3回。4回目相当は `Stop`。
+- ADR/運用語彙差分は本Issue内のContext/Decision/Consequencesで先に吸収し、実装・本文改稿には展開しない。
+
+### Consequences
+- DOC-OPS-05-05/06/07 の Open可否を同一テンプレで判定でき、語彙ドリフト起因の誤判定を防止できる。
+- docs-only境界を維持しつつ、Open化の条件不足があれば `Hold/Stop` に即時遷移できる。
+
+### Open化条件（確定版 / proposal-only）
+- [ ] OC-1: 3Issueすべてで `Context/Decision/Consequences` と `Proceed tri-state` が一致。
+- [ ] OC-2: docs-check の実行記録があり、self-correction が `<=3`。
+- [ ] OC-3: Approval Record（日時/承認者/対象/判断/evidence）が記録済み。
+- [ ] OC-4: 未確定依存を確定扱いしていない。
+
+### Self-repair counter
+- Current: `2/3`
+- Next action on overflow: `Stop`（4回目相当で作業停止）

@@ -186,3 +186,46 @@
 - 依存（FB-P0収束、検証スコープ同期）が未解決の場合はOpen化せずDraft維持で停止する。
 - 依存解決後のみ、Owner確定とGo判定を実施する。
 
+
+## QA-UNIT-01 Draft整備 pass（2026-05-06 / QA-UNIT-01）
+
+### Phase 1 Read
+- 対象限定を確認: 本対応は `issue-QA-UNIT-01-unit-test-coverage-improvement.md` のみ編集し、実装コード・他Issueは非編集。
+- 依存関係を確認: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` 収束前は Open 化しない。
+- 検証レベルを確認: 本Issueの `Expected verification level=unit` を維持し、e2e拡張は非目標。
+
+### Phase 2 Plan（AC/DoD不足補完）
+- 補完方針: 既存ACを維持したまま、Open判定時に不足しやすい「測定単位」「停止条件」「証跡保存先」を明文化する。
+- 追加AC（Draft）:
+  - AC-P1: 対象モジュールごとに `risk tag`（safeMode / validation / diff）を付与し、どの境界を守るテストかを追跡可能にする。
+  - AC-P2: 追加テストは「期待挙動」と「回帰シグナル（壊れたときに何で検知するか）」をテストケース単位で記録する。
+  - AC-P3: Coverage差分は frontend/backend を別集計で保存し、片系のみ悪化時も No-Go とする。
+- DoD補完（Draft）:
+  1. AC-M1/M2/M3 と AC-P1/P2/P3 の全項目について、`done / pending / hold` を判定付きで記録する。
+  2. Verify指標 `V-UNIT-01/02/03` の記録先（CIログまたは成果物パス）を残す。
+  3. self-correction は最大3回、4回目相当は `Stop` とし、未解決理由をIssue本文へ追記する。
+  4. 依存未解決（FB-P0未収束 / 検証スコープ未同期）の場合は `Status: Draft` を維持する。
+
+### Phase 3 Execute（計画文書整備のみ）
+- 本フェーズでは計画文書のみ更新し、テストコード追加・実装変更・coverage値の新規確定は行わない。
+- Open判定に必要な追記チェックリスト（Draft）:
+  - [ ] Owner確定（個人またはチーム）
+  - [ ] 対象モジュール一覧確定（frontend/backend別）
+  - [ ] Before/After計測コマンド確定（環境差分時の代替手順含む）
+  - [ ] No-Go時の停止・再開条件確定（self-correction上限含む）
+
+### Phase 4 Verify
+- 文書検証観点（docs-only）:
+  - AC/DoD/Validation/Stop条件が相互参照で矛盾しない。
+  - `Expected verification level=unit` と非目標（e2e拡張なし）が整合している。
+  - Go/No-Go/Conditional(Hold) の判定条件が再現可能な表現になっている。
+- 検証結果記録ルール:
+  - Verifyで未記録項目が1つでも残る場合は Open 化せず Draft 継続。
+
+### Phase 5 Proceed
+- Proceed条件:
+  1. 依存Issueの前提解消（FB-P0収束 + 検証スコープ同期）。
+  2. Owner確定。
+  3. AC/DoD/Verify指標の記録導線が埋まっている。
+- Proceed不可条件（Fail-safe）:
+  - 競合兆候（unit/e2e境界混線、依存差し込み、対象外ファイル編集要求）を検知した場合は `Hold` へ遷移し停止。

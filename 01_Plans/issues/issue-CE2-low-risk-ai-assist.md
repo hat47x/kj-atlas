@@ -218,6 +218,44 @@
 ## Stream D update log（2026-05-03 / CE2 low-risk proposal lifecycle）
 
 ### Read
+
+## Stream CE2 Draft昇格準備（2026-05-06 / Read→Plan→Execute→Verify→Proceed）
+
+### Read（根拠再同期）
+- 再同期対象: `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` / 本Issue既存フェーズ定義。
+- 整合確認:
+  - proposal-only（`status=proposed`）維持。
+  - `accepted/rejected` は人間責務で固定。
+  - `sourceBundleHash === bundleHash` 不一致時 fail-closed（`held`）維持。
+
+### Plan（Draft→Open判断材料の明確化）
+- AC明確化（Open判定ゲート）:
+  - [ ] `Dependency status=確定` の証跡（日時/承認者/対象/判断/evidence）が本文に記録済み。
+  - [ ] `Approval Record` 最小項目（approved_at / approved_by / target / decision）が充足。
+  - [ ] proposal-only / fail-closed / safeMode既定ON 後退ゼロが確認可能。
+- DoD明確化:
+  - [ ] tri-state（Proceed/Hold/Stop）を同一条件で再判定可能。
+  - [ ] 依存未確定時は自動的に Hold 継続（誤Proceed不可）。
+  - [ ] docs-check結果と差分確認コマンドが再現可能。
+- Validation明確化:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+
+### Execute（文書整備のみ）
+- 実施: Open判定に必要な AC/DoD/Validation の判定軸を本文へ明記。
+- 非実施: 実装作業、依存の推測確定、承認記録の代入。
+
+### Verify（停止条件付き）
+- Verify結果: **Hold維持**（依存確定証跡と Approval Record 実値が未充足）。
+- self-correction: `0/3`（超過なし）。
+- Stop条件再掲: 4回目相当の修復要求、または未承認での Proceed 要求を検知した時点で `held` 固定。
+
+### Proceed判定（現時点）
+- 判定: **Hold（Draft継続）**
+- Open移行に不足する項目:
+  1. `Dependency status=確定` の一次証跡。
+  2. `Approval Record` 実値（approved_by / approved_at / evidence）。
 - CE1/CE2契約の境界を再確認し、CE1未確認時は仕様確定しないフェイルセーフを固定。
 
 ## Stream F integration log（2026-05-03 / Draft Gate Management）
