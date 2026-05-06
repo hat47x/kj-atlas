@@ -206,3 +206,33 @@
 ### Phase 5: Proceed
 
 - 判定: **Go**（SCHEMA契約は実装準備に十分、未承認決定の確定扱いなし）。
+
+## Stream D execution log (2026-05-06)
+
+### Phase 1 Read同期
+
+- `AUTH-ARCH-01` → `AUTH-SCHEMA-01` → `AUTH-API-02` → `AUTH-IMPL-01` → `AUTH-E2E-01` の順序依存を再確認した。
+- `02_Architecture/strict_mode_exception_approval_flow.md` と `02_Architecture/enterprise_architecture.md` を AUTH 系契約の正本として参照し、下流が上流を上書きしていないことを確認した。
+
+### Phase 2 ADR/契約明文化
+
+- 新規 ADR 追加は不要と判断（既存 `ADR-0020` と AUTH-OPS-03 の固定値 D1〜D4 で契約が閉じているため）。
+- AC/DoD に不足があればドラフト化して合意する方針を継続し、今回は不足なし判定。
+
+### Phase 3 Schema/API固定
+
+- Schema 境界（`users` / `user_identities` / `reviewerRef` 正規化）と API 境界（strict 403 + `identity_not_provisioned` + admin provisioning）の固定状態を再確認した。
+- 未承認の新規エラーコード追加や CLI 独自分岐を禁止するストッパーを維持した。
+
+### Phase 4 実装/検証（Plan → Execute → Verify → Proceed）
+
+- Plan: docs 正本と issue memo の整合を確認対象に限定。
+- Execute: AUTH 系 issue memo と architecture 正本へ直列実行ログを追記。
+- Verify: 文書整合チェックを再実行し、完了条件に矛盾がないことを確認。
+- Proceed: **Go**（次回は Stopper 条件に抵触しない限り同順序で継続）。
+
+### Phase 5 Stopper
+
+- 停止条件を再掲: (1) 未承認決定の確定化、(2) Schema 未固定での IMPL 着手、(3) strict mode 固定値 D1〜D4 の不一致。
+- 失敗時の自己修復は最大3回までとし、3回超過時は `StoppedForClarification` で停止する。
+
