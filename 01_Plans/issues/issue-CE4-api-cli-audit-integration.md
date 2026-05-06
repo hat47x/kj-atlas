@@ -583,3 +583,44 @@
 3. 監査転送基盤（保存先・配送保証・署名方式）の上位ADR確定待ち。
 
 > 運用注記: 上記blocking itemsを実装確定要求として扱う場合は本レーン範囲外のため **Stop** とし、上位ADR/別Issueへエスカレーションする。
+
+## Stream G update（2026-05-06 / CE4下流提案仕様化・実装着手前）
+
+### Phase: Read同期 → ADR様式整理 → Plan → Execute（モック前提のI/F合意）→ Verify → Proceed
+
+#### Read同期
+- `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` を再照合し、CE4契約語彙を固定。
+- 依存関係は **契約参照のみ** とし、CE1/CE2の実装有無に依存しない mock-first 判定境界を維持。
+
+#### ADR様式整理（Context / Decision / Consequences）
+- Context: API/CLI/監査の3境界で同値条件と失敗分類が一致しないと、実装着手後の監査整合が破綻する。
+- Decision: CE4は contract-only を維持し、I/Fは mock値（`mock:<64hex>`）を正規入力として先行合意する。
+- Consequences: 実装前に判定契約を固定でき、下流実装は監査欠損ゼロ・fail-closed を前提に開始できる。
+
+#### Plan（実装前合意条件）
+- AC-G1: API/CLI共通で `equivalenceKey AND bundleHash` のAND条件を成功条件として固定。
+- AC-G2: 失敗分類 `入力違反 / 監査違反 / ポリシー違反 / 同値違反` を共通化。
+- AC-G3: `proposal-only` 逸脱（auto-*含む）は常に No-Go。
+- DoD-G1: 4イベント（`query/bundle/proposal/apply`）の順序・存在検査が本Issue単体で再読可能。
+- DoD-G2: self-correction は **最大3回**、4回目相当は Stop。
+
+#### Execute（モック前提のI/F合意）
+- Mock API I/F:
+  - request keys: `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `sourceBundleHash=mock:<64hex>`
+  - response contract: `result=ok|ng`, `failureType`（4分類）
+- Mock CLI I/F:
+  - 入力はAPIと同一キー集合を要求
+  - 終了時に `failureType` を必ず出力し、監査違反時は成功扱いしない
+- Mock Audit I/F:
+  - 4イベント全件に `schemaVersion`, `channel`, `command`, `actor` を必須化
+  - 欠損・順序逆転・矛盾重複は fail-closed
+
+#### Verify（3回自己修復上限）
+- V1: editable scope（CE4ファイルのみ差分）
+- V2: contract-only / proposal-only / fail-closed 文言整合
+- V3: AC/DoD/未確定点/停止条件の一貫性
+- self-correction: `0/3`（本更新時点）
+
+#### Proceed
+- 判定: **Hold**（依存確定証跡およびApproval Record待ち）。
+- Proceed解除条件: 依存確定証跡（日時・承認者・対象・判断）を追記後、docs-check再実行で欠落ゼロ。

@@ -936,3 +936,43 @@
 - **Who**: System Owner + Security Officer（人間承認責務）
 - **What**: `Dependency status=確定` 証跡と `Approval Record` 実値（approved_at / approved_by / target / decision / evidence）を記入
 - **Condition**: proposal-only / fail-closed / safeMode既定ON / auto-*禁止 の後退ゼロを再確認後にのみ Draft→Open 判定を実施
+
+## Stream G update（2026-05-06 / CE2下流提案仕様化・実装着手前）
+
+### Phase: Read同期 → ADR様式整理 → Plan → Execute（モック前提のI/F合意）→ Verify → Proceed
+
+#### Read同期
+- `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` の契約語彙を再照合し、`proposal-only` / `fail-closed` / `reviewState閉集合` の3点を再固定。
+- 依存の扱いは **契約参照のみ** とし、CE1実装への依存要求はスコープ外として隔離。
+
+#### ADR様式整理（Context / Decision / Consequences）
+- Context: CE2は実装前に責務分離（AI提案と人間確定）を凍結しないと、承認経路と監査経路が混線する。
+- Decision: CE2下流提案仕様は mock I/F 合意までを対象とし、実装依存（実データ接続・実運用連携）は禁止。
+- Consequences: 監査可能性を維持したまま、実装着手前の合意材料を単独再読可能に保持できる。
+
+#### Plan（実装前合意条件）
+- AC-G1: `status=proposed` / `reviewState=unreviewed` / `sourceBundleHash` 必須を I/F 合意条件として固定。
+- AC-G2: 監査4点（`query/bundle/proposal/apply`）欠損時は常に `held`（No-Go）。
+- AC-G3: 承認未取得時は Proceed 禁止を維持。
+- DoD-G1: 本Issue単体で tri-state（Proceed/Hold/Stop）を再判定可能。
+- DoD-G2: self-correction は **最大3回**、4回目相当は即時停止（`held`）。
+
+#### Execute（モック前提のI/F合意）
+- Mock Proposal I/F:
+  - input: `equivalenceKey`, `bundleHash`, `sourceBundleHash=mock:<64hex>`
+  - output: `status=proposed`, `reviewState=unreviewed`, `lifecycle=proposed|held`
+- Mock Decision I/F:
+  - human actionのみ `accepted/rejected/held` を記録可能（AI起因の状態確定は不可）
+- Mock Audit I/F:
+  - `query -> bundle -> proposal -> apply` の順序検査と存在検査を実施
+  - 1件でも欠損・順序逆転があれば fail-closed
+
+#### Verify（3回自己修復上限）
+- V1: single-file scope（CE2ファイルのみ差分）
+- V2: 契約語彙（proposal-only / auto-*禁止 / fail-closed / human decision）
+- V3: Phase欠落・AC/DoD/tri-state整合
+- self-correction: `0/3`（本更新時点）
+
+#### Proceed
+- 判定: **Hold**（承認証跡未入力のため）。
+- Proceed解除条件: 人間承認ログ（日時・承認者・対象・判断）充足後に再判定。
