@@ -217,7 +217,30 @@
 
 ## Stream D update log（2026-05-03 / CE2 low-risk proposal lifecycle）
 
-### Read
+### Read（Phase 1: 対象ファイル最新同期）
+- 対象: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみを再読し、single-file scope を再確認。
+- 同期結果: proposal-only / human final decision / fail-closed / auto-*禁止 / `sourceBundleHash === bundleHash` 必須 の固定契約が本文内で維持されている。
+
+### ADR C/D/C（Phase 2: 承認前提の明文化）
+- Context: CE2は低リスク補助であっても意思決定責務の混線リスクがあるため、AIは提案に限定する必要がある。
+- Decision: `status=proposed` のみAIが扱い、`accepted/rejected` は人間最終決定とする。未承認状態での Proceed は禁止し `held` を継続する。
+- Consequences: 承認ログ（日時・承認者・対象・判断）未取得時は Go 判定不可。auto-*導線混入は No-Go として即時停止できる。
+
+### Workflow（Phase 3: Plan→Execute→Verify→Proceed）
+- Plan: AC/DoD不足の提案のみを行い、実装変更提案・状態確定提案を行わない。
+- Execute: 文書整備のみを実施し、コード変更・他Issue編集を行わない。
+- Verify: scope / contract / phase integrity を最大3回まで修復。4回目相当は `held` 固定で停止。
+- Proceed: 承認ログ取得済みかつ No-Go 条件なしの場合のみ検討可。未承認時は Proceed しない。
+
+### Gate（Phase 4: Proceed制御）
+- Go条件:
+  1. 承認ログ最小項目（approved_at / approved_by / target / decision / evidence）充足。
+  2. proposal-only・human final decision・fail-closed の後退ゼロ。
+- No-Go条件:
+  1. 承認ログ未取得（`held` 継続）。
+  2. auto-*導線（auto-apply / auto-confirm / auto-publish）混入。
+  3. 未定義競合（契約衝突・語彙衝突・責務分離崩壊）を検知。
+- Stopper: 修復3回超過、未定義競合、前提崩れ（依存確定証跡の欠落）が発生した時点で停止。
 
 ## Stream CE2 Draft昇格準備（2026-05-06 / Read→Plan→Execute→Verify→Proceed）
 
