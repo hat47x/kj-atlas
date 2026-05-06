@@ -1785,3 +1785,30 @@
 
 ### Proceed
 - 判定: `Done`（contract-only、Query Preview必須維持、auto-apply/auto-publish禁止維持、mock先行可能性を明記）。
+
+## Phase Execution Record（2026-05-06 / Stream C / CE0 core-graph contract lock maintenance）
+### Phase 1 Read
+- `role / transition / no-go` 固定語彙と SafeMode 境界を再読し、差分なしを確認。
+- `issue-CE0-contract-freeze.md` は read-only 契約参照に限定し、mock前提で並行検証可能な依存切断を維持。
+
+### Phase 2 CDC（Context / Decision / Consequences）
+- Context: CE0 Core Graph Repositioning の契約固定を single-file / contract-only で継続する。
+- Decision: `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を不変のまま維持する。
+- Consequences: 契約ドリフトと SafeMode 境界後退を抑止し、未承認論点は `held` で確定化しない。
+
+### Phase 3 Plan
+- AC/DoD 不足を再点検し、新規不足は未検出（追加提案・合意は不要）。
+- 変更範囲を本Issueの契約文面更新のみに固定し、実装変更を行わない。
+
+### Phase 4 Execute
+- contract-only 境界を維持し、本Issue本文に実行記録のみを追記。
+- CE0契約ID再定義、No-Go語彙拡張、SafeMode既定ON後退を伴う記述は追加しない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数は 0/3（超過なし）。
+
+### Phase 6 Proceed
+- 判定: `Ready`（AC/DoD整合、docs-check pass、allowlist逸脱なし）。
+- 失敗条件（語彙差分、契約ID再定義、SafeMode後退、自己修復4回目相当）発生時は即時 `held` 停止を継続。
