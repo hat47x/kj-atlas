@@ -89,3 +89,23 @@
 - Verify: docs-check基準の整合確認を実施。
 - Proceed: 依存証跡未確定のため `Hold` 継続。
 - Self-correction: `2/3`（上限内）。
+
+
+## Stream F unblock criteria update（2026-05-06 / execution readiness）
+
+### Read
+- 停止要因は `DOC-OPS-05依存証跡未確定` と `3Issue横断の語彙整合未確認`。
+
+### AC/DoD解除条件（Open化条件）
+- [ ] U1: `Classification: Improve external` の根拠段落に公開境界（含む/含まない）を1段落で追記。
+- [ ] U2: 05/05/07との相互リンクが存在し、各Issueの Proceed 判定日時が記録されている。
+- [ ] U3: `Dependency status` が更新され、Hold解除の根拠を明記。
+
+### Validation plan（コマンド）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `rg -n "Classification|Dependency status|ProceedDecision|Related Backlog" 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
+
+### Proceed
+- 判定: **Hold維持**。
+- Open化条件: U1〜U3完了時に Draft解除可。

@@ -89,3 +89,23 @@
 - Verify: docs-check前提の整合（Classification/Gate/Validation/Proceed）を確認。
 - Proceed: 依存証跡未確定のため `ProceedDecision: Hold` を継続。
 - Self-correction: `2/3`（上限内、4回目相当はStop）。
+
+
+## Stream F unblock criteria update（2026-05-06 / execution readiness）
+
+### Read
+- Blocked要因を `DOC-OPS-05依存証跡未確定` に固定。
+
+### AC/DoD解除条件（Open化条件）
+- [ ] U1: 05/06/07の3Issueで `ProceedDecision` が同一判定語彙（Proceed/Hold/Stop）で統一。
+- [ ] U2: `Approval Record` 5項目（日時/承認者/対象/判断/evidence）を本Issueに記録。
+- [ ] U3: `Dependency status` が「未確定」以外に更新され、根拠リンクを本文に追記。
+
+### Validation plan（コマンド）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `rg -n "Dependency status|Approval Record|ProceedDecision|VerificationLevel" 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+- `git diff --check -- 01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`
+
+### Proceed
+- 判定: **Hold維持**。
+- Open化条件: U1〜U3 が満たされた時点で Draft解除を提案可能。

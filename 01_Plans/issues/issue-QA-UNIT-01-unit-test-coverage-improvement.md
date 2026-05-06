@@ -288,3 +288,30 @@
 - Context: Draft段階で実装に踏み込むと、unit/e2e境界の混線と再作業が発生する。
 - Decision: 本Issueは提案文書の品質整備に限定し、実装着手は承認後に分離する。
 - Consequences: QA-UNIT実装時の着手条件と停止条件が明確化され、過剰実装リスクを低減する。
+
+
+## Stream F unblock criteria update（2026-05-06 / execution readiness）
+
+### Phase 1 Read（停止要因の確定）
+- 停止要因を `FB-P0収束待ち` と `QA-E2Eスコープ同期待ち` の2点に固定する。
+
+### Phase 2 AC/DoD補完（解除条件）
+- Open化解除条件（全件必須）:
+  - [ ] U1: `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` が `Status: Ready-for-Implementation` 以上である。
+  - [ ] U2: 本Issueの Owner が個人または実行チーム名で確定している。
+  - [ ] U3: Frontend/Backendの対象モジュール一覧と risk tag（safeMode/validation/diff）が記録済み。
+  - [ ] U4: AC-M1/M2/M3 と AC-P1/P2/P3 の判定欄（done/pending/hold）が全て埋まっている。
+
+### Phase 3 Validation plan（コマンド確定）
+- 準備完了判定コマンド（docs-only）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+  - `rg -n "^\- Status:|^\- Owner:|AC-M[123]|AC-P[123]|V-UNIT-0[123]" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+
+### Phase 4 Verify
+- Verify合格条件: 上記3コマンドが成功し、U1〜U4が全てチェック済み。
+- 失敗時: self-correction は最大3回、4回目相当は `Stop`。
+
+### Phase 5 Proceed
+- 判定: **Hold維持**（2026-05-06時点で依存証跡未添付）。
+- Open化条件: U1〜U4完了時に `Status: Ready-for-Implementation` へ更新可。
