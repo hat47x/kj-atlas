@@ -1,9 +1,9 @@
-# Issue Draft: CE0 Core Graph Repositioning（Stream C / CE契約群 / contract-only planning）
+# Issue Draft: CE0 Core Graph Repositioning（Stream D / CE契約群 / contract-only planning）
 
 - Type: Process
 - Status: Open
 - Priority: P1
-- Owner: Stream C（CE契約群）
+- Owner: Stream D（CE契約群）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE0-core-graph-repositioning.md` のみ
 - Related Backlog: `CE-0`
@@ -13,7 +13,7 @@
 
 ## Lane guard
 
-## Stream C latest run（2026-04-28 / CE0 Core Graph repositioning freeze）
+## Stream D latest run（2026-05-06 / CE0 Core Graph repositioning freeze sync）
 
 ### Phase 1 Read
 - `working` / `context_projection` / `consensus` の責務境界と CE0 canonical No-Go 5 IDs を再確認。
@@ -39,10 +39,10 @@
 - Core Graph責務境界の**契約固定のみ**を扱う（実装禁止）。
 - 未承認決定は `held` 扱いで確定しない。
 - `role / transition / no-go` 語彙は本Issueで固定し、同義語への置換や拡張定義を禁止。
-- 強制ワークフローは `Phase 1 Read → Phase 2 ADR/CDC → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed`。
+- 強制ワークフローは `Read同期 → Plan → Execute → Verify → Proceed`。
 - **各Phase開始時に必ずReadを実施**し、直前Phaseとの差分有無（語彙・禁止事項・SafeMode境界）を確認してから進行する。
 
-## Phase 1 Read（role / transition / no-go語彙確認）
+## Read同期（role / transition / no-go語彙確認）
 ### Read同期スナップショット
 - Contract ID: CE0契約ID群を参照のみで利用（再定義禁止）
 - No-Go語彙（CE0 canonical 5 IDs）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`
@@ -61,10 +61,10 @@
 - `CE0-SAFEMODE-IF` を参照し、Graph再配置タスク側で緩和しない。
 - SafeMode既定ONの後退を禁止する。
 
-### Phase 1 差分判定ルール
+### Read同期 差分判定ルール
 - 各Phase開始Readで `role / transition / no-go` に差分が1件でも検出された場合は即停止し、差分一覧を `held` で記録して指示待ちとする。
 
-## Phase 2 Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
+## Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
 ### Scope（このIssueで実施すること）
 - CE0 Core Graphの責務境界（`working` / `context_projection` / `consensus`）を**契約文言として固定**する。
 - `transition` と `no-go` を CE0 canonical語彙の範囲で整合化する。
@@ -86,7 +86,7 @@
 
 ### Definition of Done（DoD）
 - DoD-1: 本Issue本文だけを更新し、編集禁止ファイルに変更がない。
-- DoD-2: Phase 1〜6の固定順序と停止条件が明文化されている。
+- DoD-2: Read同期〜Proceedの固定順序と停止条件が明文化されている。
 - DoD-3: `docs-check` が成功し、失敗時自己修復上限（3回）が遵守される。
 - DoD-4: Proceed判定が AC全充足時のみ `Done`、未承認事項は在庫記録で終了する。
 
@@ -103,30 +103,18 @@
 ### AC/DoD不足時の扱い
 - AC/DoD不足を検知した場合は、本Issue内にAIドラフトを追記して**明示合意まで `held` 維持**とする。
 
-## Phase 3 ADR Consensus（方針差分が必要な場合のみ）
-### Context
-- CE0 Core Graph責務境界を契約レベルで固定するため、方針差分の要否を最小化して判定する。
-
-### Decision（状態制約付き）
-- 方針差分が不要な場合: `No ADR delta` として本Issue内の契約文言整備に限定する。
-- 方針差分が必要な場合: `pending` として Context/Decision/Consequences を記述し、**承認まで `held` 維持**する。
-
-### Consequences
-- 承認前は確定扱い禁止。
-- 合意待ち項目は未確定在庫として Phase 6 に引き継ぐ。
-
-## Phase 4 Execute（contract-only）
+## Execute（contract-only）
 - 本Issue本文内の契約記述（role / transition / no-go / stop条件 /判定条件）のみを修正対象とする。
 - 実装記述（handler/UI/DB/worker/API挙動）は追加しない。
 - 変更後に再読し、`Phase 1 Read` の固定語彙との不一致がないことを確認する。
 
-## Phase 5 Verify（docs-check / 自己修復最大3回）
+## Verify（docs-check / 自己修復最大3回）
 - 差分検知時は `held` で停止し、未承認のまま確定しない。
 - 実行: `docs-check`。
 - 失敗時: 原因を1点ずつ修正し再実行（最大3回）。
 - 4回目相当は実施せず、`stopped_for_clarification` として停止する。
 
-## Phase 6 Proceed（完了判定）
+## Proceed（完了判定）
 - Proceed条件: AC/DoD満了かつ docs-check pass。
 - 未承認事項がある場合: `held` 在庫（未確定）を明記して終了。
 - 完了時も contract-only の境界を維持し、実装タスクへ昇格しない。
@@ -147,11 +135,11 @@
 - contract-only 境界を維持したまま、本Issueへ実行記録を追記。
 - `working / context_projection / consensus`、`patch+approval`、canonical 5 IDs の語彙を維持。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、問題なし。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
 
@@ -184,11 +172,11 @@
 - `no-go`: canonical 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）以外を追加・置換しない。
 - 実装記述（handler/UI/DB/worker/API/Schema migration）を追加しない。
 
-### Phase 5 Verify
+### Verify
 - 最新Read後に `docs-check` を実行し、pass。
 - `git diff --check` を実行し、空白エラー等なし。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（既存AC/DoDを満たし、docs-check pass）。
 - 未承認事項在庫: なし（`held/pending` の新規発生なし）。
 
@@ -211,12 +199,12 @@
 - contract-only 境界を維持し、本Issue本文の記述整合のみを実施。
 - CE0契約IDは read-only 参照のみで利用し、再定義なし。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数は 0/3（追加修正なし）。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、contract-only維持）。
 - 致命条件の発生なし。発生時は `stopped_for_clarification` で停止報告する運用を再確認。
 
@@ -239,12 +227,12 @@
 - 承認済みの既存Plan/契約境界に一致する最小差分として、本実行記録のみ追記。
 - `role / transition / no-go` 語彙の追加・再定義は実施せず、SafeMode既定ONの後退を示唆する記述も追加しない。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 不一致は発生せず、自己修復回数は 0/3。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only 制約を維持）。
 - 未承認論点の新規発生なし。発生時は推測で進行せず `held` で停止する。
 
@@ -267,13 +255,13 @@
 - `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定語彙として維持。
 - 実装記述（handler/UI/DB/worker/API）を追加しないことを再確認。
 
-### Phase 5 Verify
+### Verify
 - 本Phase開始時に再読し、語彙差分・SafeMode後退兆候・No-Go逸脱がないことを確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数は 0/3（>3 に達せず停止条件未発火）。
 
-### Phase 6 Proceed
+### Proceed
 - 本Phase開始時に再読し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（contract-only / single-file / 語彙固定 / SafeMode境界維持）。
 - 未承認事項在庫: なし。新規発生時は `held` で停止し人手合意待ちとする。
@@ -299,13 +287,13 @@
 - `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定したまま本Issueの追記のみ実施。
 - 実装記述（handler/UI/DB/worker/API/Schema migration）を追加せず、contract-only 境界を維持。
 
-### Phase 5 Verify
+### Verify
 - Phase開始前Readを実施し、語彙差分とNo-Go逸脱がないことを確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Verify失敗時の自律修正上限は 3 回で運用し、本実行の自己修復回数は 0/3。
 
-### Phase 6 Proceed
+### Proceed
 - Phase開始前Readを実施し、Proceed条件（AC/DoD + docs-check pass）を照合。
 - 判定: `Done`（single-file / contract-only / 語彙固定 / CE0契約ID read-only / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は 3 回上限を超える前に `held` で停止し、4回目相当は `stopped_for_clarification` を適用。
@@ -330,13 +318,13 @@
 - `working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を固定維持。
 - 禁止事項（CE0契約ID再定義、SafeMode後退、語彙衝突、指定外編集）に抵触しないことを確認。
 
-### Phase 5 Verify
+### Verify
 - Phase開始時Readを再実施し、語彙差分・No-Go逸脱・SafeMode後退がないことを確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Verify失敗は発生せず、自己修復回数は 0/3。
 
-### Phase 6 Proceed
+### Proceed
 - Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Stream C専任、single-file、contract-only、責務境界契約固定を維持）。
 - 未承認事項在庫: なし。今後検出時は `held` で停止し、4回目相当のVerifyは実施しない。
@@ -397,13 +385,13 @@
 - `working -> consensus` は `patch+approval` のみを許可する契約を維持。
 - 実装領域（handler/UI/DB/worker/API/Schema migration）への変更は実施しない。
 
-### Phase 5 Verify
+### Verify
 - 対象ファイルを再読し、語彙逸脱・SafeMode後退・契約ID再定義がないことを確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Self-Correction実績: 0/3（上限3回を超過していない）。
 
-### Phase 6 Proceed
+### Proceed
 - 対象ファイルを再読し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（single-file / contract-only / 語彙固定 / CE0契約ID再定義禁止 / SafeMode既定ON維持）。
 - 未承認事項在庫: なし。AC/DoD不足が将来検出された場合はドラフト提示後、合意まで `held` で停止する。
@@ -430,12 +418,12 @@
 - `direct write` 容認につながる記述、SafeMode緩和記述、未定義競合の黙示許容は追加しない。
 - mock活用方針として、実装依存を持たない transition/no-go 契約の先行固定のみを実施。
 
-### Phase 5 Verify（self-correction <= 3）
+### Verify（self-correction <= 3）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - self-correction 実績: 0/3。上限超過（4回目相当）は未実施。
 
-### Phase 6 Proceed（handoff）
+### Proceed（handoff）
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
 - handoff: 他ストリームは本Issueの固定契約（role/transition/no-go, SafeMode境界, fail-safe停止条件）を read-only 参照して実装側へ展開する。
 - 未承認事項在庫: なし。将来検出時は `held` で停止し、人手合意まで確定化しない。
@@ -461,12 +449,12 @@
 - 更新対象を `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみに限定して実行記録を追記。
 - SafeMode後退、No-Go語彙変更、CE0契約ID再定義、指定外編集は未実施。
 
-### Phase 5 Verify（docs-check / 自己修復最大3回）
+### Verify（docs-check / 自己修復最大3回）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - self-correction 実績: 0/3（4回目相当は未実施）。
 
-### Phase 6 Proceed（未承認はheld維持）
+### Proceed（未承認はheld維持）
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 制約維持）。
 - 未承認事項在庫: なし。将来の未承認論点は `held` のまま維持し、承認前に確定化しない。
 
@@ -491,14 +479,14 @@
 - 実行内容は本Issue本文の記録更新のみ。実装変更（handler/UI/DB/worker/API/Schema migration）は未実施。
 - CE0契約IDは read-only 参照のみで再定義なし、No-Go canonical 5 IDs への追加/置換なし。
 
-### Phase 5 Verify
+### Verify
 - Phase開始時に再Readし、語彙逸脱・SafeMode後退・契約ID再定義がないことを再確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - `rg -n "preview_bypass|consensus_direct_write|auto_apply_or_publish|ai_review_auto_promotion|safemode_default_relaxation" 01_Plans/issues/issue-CE0-core-graph-repositioning.md` を実行し、canonical 5 IDs の固定参照を確認。
 - self-correction 実績: 0/3（上限超過なし、4回目相当は未実施）。
 
-### Phase 6 Proceed
+### Proceed
 - Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（独立性制約遵守、single-file / contract-only 維持）。
 - 未承認事項在庫: なし。今後AC/DoD不足が検出された場合はドラフト提案を追記し、合意まで `held` で停止する。
@@ -508,7 +496,7 @@
 - 実行開始時Readを実施し、`role`（`working` / `context_projection` / `consensus`）、`transition`（`working -> consensus` + `patch+approval`）、`no-go`（canonical 5 IDs）を再確認。
 - 直前記録との差分確認: 語彙ドリフト 0 件、No-Go語彙変更 0 件、SafeMode境界（既定ON維持）差分 0 件。
 
-### Phase 2 Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
+### Plan（Scope / Non-Goals / AC / DoD / Validation / Stop Conditions）
 - Scope: 本Issue単体の契約文言整合と実行記録追記のみ（single-file / contract-only）。
 - Non-Goals: 実装変更、CE0契約ID再定義、No-Go語彙変更・拡張、SafeMode既定ON後退、未承認事項の確定化。
 - AC/DoD: 既存定義（語彙固定・`patch+approval`固定・docs-check pass・self-correction 最大3回）を満たす方針を再確認。
@@ -523,12 +511,12 @@
 - 本Issue本文のみを更新し、実装領域（handler/UI/DB/worker/API/Schema migration）への変更は実施しない。
 - 固定語彙（`role / transition / no-go`）とSafeMode境界の不変条件を維持。
 
-### Phase 5 Verify（docs-check / diff check / 最大3回修復）
+### Verify（docs-check / diff check / 最大3回修復）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - self-correction 実績: 0/3（上限超過なし）。
 
-### Phase 6 Proceed（Go判定）
+### Proceed（Go判定）
 - 判定: `Done`（AC充足、docs-check pass、未承認事項の確定化なし）。
 - フェイルセーフ再確認: 語彙ドリフト / No-Go語彙変更 / SafeMode後退 / 3回超過が発生した場合は即停止し、`held` または `stopped_for_clarification` とする。
 
@@ -577,13 +565,13 @@
 - 実行内容は本Issue本文への実行記録追記のみ。実装領域（handler/UI/DB/worker/API/Schema migration）は未変更。
 - CE0契約ID再定義、No-Go語彙置換・拡張、SafeMode既定ON後退の記述追加は未実施。
 
-### Phase 5 Verify
+### Verify
 - Phase冒頭Read同期を再実施し、Phase 4 からの語彙差分 0 件を確認。
 - Verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - Verify attempt_1: `git diff --check` → pass。
 - self-correction 実績は 0/3。失敗時は最大3回まで自己修復し、4回目相当は実施せず `stopped_for_clarification` で停止する。
 
-### Phase 6 Proceed
+### Proceed
 - Phase冒頭Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（single-file / contract-only / CE0契約ID read-only / 語彙固定 / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は `held` へ遷移してエスカレーションする。
@@ -607,13 +595,13 @@
 - 開始時Read同期を再実施し、contract-only 境界と single-file 制約を確認。
 - 実施内容を本Issue内の実行記録追記に限定し、`role / transition / no-go` 語彙の同義語置換・再定義・拡張を実施しない。
 
-### Phase 5 Verify
+### Verify
 - 開始時Read同期を再実施し、検証コマンドと停止条件を再確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数: 0/3（追加修復不要）。
 
-### Phase 6 Proceed
+### Proceed
 - 開始時Read同期を再実施し、Proceed条件（AC/DoD満了 + docs-check pass）を確認。
 - 判定: `Done`（contract-only / single-file / 固定語彙維持 / docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
@@ -636,12 +624,12 @@
 - 本Issueファイル内の記録更新のみを実施し、実装変更（UI/DB/API/worker）は未実施。
 - CE0 canonical No-Go語彙（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）から逸脱しない。
 
-### Phase 5 Verify
+### Verify
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - 自律修正回数: 0/3（4回目再試行なし）。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only 維持）。
 - 未承認事項在庫: なし。今後、語彙ドリフト・SafeMode後退・CE0契約再定義兆候・4回目再試行条件を検出した場合は即停止する。
 
@@ -747,13 +735,13 @@
 - `role / transition / no-go` の再定義・同義語置換・拡張は未実施。実装記述（handler/UI/DB/worker/API/Schema migration）追加なし。
 - 差分検知結果: 0 件（契約境界の逸脱なし）。
 
-### Phase 5 Verify（Read同期 / self-heal <= 3）
+### Verify（Read同期 / self-heal <= 3）
 - Phase開始時に再Readし、検証対象と停止条件（4回目相当で停止）を確認。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し pass。
 - `git diff --check` を実行し pass。
 - Self-Correction実績: 0/3（4回目相当なし）。
 
-### Phase 6 Proceed（Read同期）
+### Proceed（Read同期）
 - Phase開始時に再Readし、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（contract-only / implementation禁止 / single-file 制約維持）。
 - 未承認事項在庫: なし。差分検知時停止ルールを維持したまま終了。
@@ -777,12 +765,12 @@
 - 開始時Readを再実施し、固定語彙と禁止事項の不一致がないことを確認したうえで本レコードのみ追記した。
 - contract-only / docs-only / single-file 境界を維持し、他ファイル編集は未実施。
 
-### Phase 5 Verify（自己修復最大3回）
+### Verify（自己修復最大3回）
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - 自己修復回数: 0/3。4回目相当は未実施。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: `Proceed=Done`（AC/DoD整合 + docs-check pass）。
 - 停止条件（前提崩れ / 未定義競合 / 3回超過）は未発火。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
@@ -808,12 +796,12 @@
 - `role / transition / no-go` 固定語彙を維持し、同義語置換・拡張定義を行わない。
 - SafeMode既定ON境界を後退させる記述を追加しない。
 
-### Phase 5 Verify（docs-check / self-repair <= 3）
+### Verify（docs-check / self-repair <= 3）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Verify失敗は発生せず、自己修復回数は 0/3。
 
-### Phase 6 Proceed
+### Proceed
 - Proceed条件（AC/DoD充足 + docs-check pass）を満たすことを確認。
 - 判定: `Done`（contract-only / single-file / 語彙固定 / SafeMode境界維持）。
 - 未承認事項在庫: なし。将来発生時は `held/pending` で在庫化し、確定しない。
@@ -840,13 +828,13 @@
 - 本Issueへの実行記録追記のみを実施（実装記述追加なし、他ファイル編集なし）。
 - contract-only 境界と固定語彙を維持。
 
-### Phase 5 Verify（語彙差分チェック / 自己修復最大3回）
+### Verify（語彙差分チェック / 自己修復最大3回）
 - Phase開始時に語彙差分チェックを実施し、差分 0 件。
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - 自己修復回数: 0/3（上限超過なし）。
 
-### Phase 6 Proceed（語彙差分チェック）
+### Proceed（語彙差分チェック）
 - Phase開始時に語彙差分チェックを実施し、差分 0 件。
 - 判定: `Done`（Read → Plan → ADR Consensus → Execute → Verify → Proceed の順序を満たし、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
@@ -873,13 +861,13 @@
 - Phase開始時Read同期を再実施し、差分 0 件を確認してから本Issue本文の実行記録のみ追記した。
 - 編集対象は `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみとし、他ファイル編集は行わない。
 
-### Phase 5 Verify（安全境界と整合）
+### Verify（安全境界と整合）
 - Phase開始時Read同期を再実施し、語彙・禁止事項・SafeMode境界の差分 0 件を確認した。
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - Self-Correction実績: 0/3（上限超過なし）。
 
-### Phase 6 Proceed（Go / Conditional / No-Go）
+### Proceed（Go / Conditional / No-Go）
 - Phase開始時Read同期を再実施し、Proceed判定条件（AC/DoD充足 + docs-check pass）を確認した。
 - 判定: `Go=Done`（contract-only / proposal-only / single-file 制約を維持）。
 - Conditional/No-Go該当: なし。未承認事項在庫: なし（新規 `held/pending` 追加なし）。
@@ -904,13 +892,13 @@
 - Phase開始時Read同期を再実施し、固定語彙・禁止事項・SafeMode境界の差分なしを確認して実行。
 - 実行内容は本Issue本文への追記のみ。実装ファイル・他ドキュメントは変更しない。
 
-### Phase 5 Verify
+### Verify
 - Phase開始時Read同期を再実施し、語彙差分・禁止事項逸脱・SafeMode境界ドリフトがないことを確認。
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - self-correction 実績: 0/3（上限超過なし）。
 
-### Phase 6 Proceed
+### Proceed
 - Phase開始時Read同期を再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Read → ADR/CDC → Plan → Execute → Verify → Proceed の固定順序を満たす）。
 - フェイルセーフ該当: なし（語彙・禁止事項・safeMode境界ドリフトなし、未承認事項確定化要求なし、self-correction上限超過なし）。
@@ -936,12 +924,12 @@
   - `consensus`: 承認済み合意領域（`patch+approval` 経由のみ更新可）
 - 語彙再定義・同義語置換・拡張定義は実施しない。
 
-### Phase 5 Verify（docs-check）
+### Verify（docs-check）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数は 0/3。上限超過・前提崩れ・指定外編集要求は発生なし。
 
-### Phase 6 Proceed（Go / Conditional / No-Go）
+### Proceed（Go / Conditional / No-Go）
 - 判定: `Go=Done`（AC/DoD整合、docs-check pass、contract-only維持）。
 - Conditional: なし。
 - No-Go: 該当なし（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation` の新規発生なし）。
@@ -967,12 +955,12 @@
 - 実装変更（handler/UI/DB/worker/API/schema migration）は未実施。
 - allowlist対象外ファイルの編集は未実施。
 
-### Phase 5 Verify（最大3回自己修復）
+### Verify（最大3回自己修復）
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass。
 - verify attempt_1: `git diff --check` → pass。
 - 自己修復は 0/3（不整合未検出）。
 
-### Phase 6 Proceed（Go / Conditional / No-Go）
+### Proceed（Go / Conditional / No-Go）
 - 判定: `Go=Done`。
 - Conditional: なし（未承認事項の追加なし）。
 - No-Go: 該当なし（safeMode後退なし / no-go語彙変更なし / allowlist外編集なし）。
@@ -1090,13 +1078,13 @@
 - Phase開始時Readを再実施し、合意済み Context/Decision/Consequences に一致することを確認後に実行。
 - contract-only で本Issueの実行記録のみ更新し、実装変更・スキーマ変更・allowlist外編集は未実施。
 
-### Phase 5 Verify
+### Verify
 - Phase開始時Readを再実施し、固定語彙・禁止事項・SafeMode境界の維持を再確認。
 - verify attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - verify attempt_1: `git diff --check` を実行し、pass。
 - Self-Correction実績: 0/3（上限超過なし）。
 
-### Phase 6 Proceed
+### Proceed
 - Phase開始時Readを再実施し、Proceed条件（AC/DoD充足 + docs-check pass）を確認。
 - 判定: `Done`（Plan→Execute→Verify→Proceed 直列、各Phase開始Read、Context/Decision/Consequences先行確定を満たす）。
 - 未承認事項在庫: なし。将来発生時は `held` で停止し、Self-Correction 3回上限を超える前に停止報告する。
@@ -1164,12 +1152,12 @@
 - single-file 制約を遵守し、本Issue内の実行記録追記のみを実施。
 - 実装変更禁止（handler/UI/DB/worker/API/Schema migration への変更なし）。
 
-### Phase 5 Verify（自己修復最大3回）
+### Verify（自己修復最大3回）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数: 0/3（追加修復なし）。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: `Done`（AC/DoD整合、docs-check pass、proposal-only と contract-only 境界維持）。
 - 未定義競合: 検出なし。検出時は `stopped_for_clarification` として停止する。
 
@@ -1191,13 +1179,13 @@
 ### Phase 4 Execute
 - 本Issueに同期ログを追記し、実装記述は追加しない。
 
-### Phase 5 Verify
+### Verify
 - attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
 - attempt_1: `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` → pass
 - attempt_1: `git diff --check` → pass
 - self-correction: `0/3`
 
-### Phase 6 Proceed
+### Proceed
 - 判定: **Done（contract-only維持）**
 - 逸脱要求・契約衝突・自己修復上限超過時は `held` 停止。
 
@@ -1250,7 +1238,7 @@
   3) 差分が生じた場合は `held` 化し、承認まで確定しない。
 - 他ファイルへの修正要求は提案止まりとし、本Issueからは編集しない。
 
-### Phase 5 Verify（AC/DoD / minimal assumptions / self-correction）
+### Verify（AC/DoD / minimal assumptions / self-correction）
 - AC/DoDチェック: 既存AC/DoD + AC-7..10 / DoD-5 提案で contract-only 判定に不足がないことを確認。
 - 最小仮定原則チェック: Assumptionは I/F欠落箇所（preview/bundleHash/proposal-only/audit追跡）に限定し、実装詳細の仮定を追加しない。
 - Self-Correction:
@@ -1258,7 +1246,7 @@
   - #2: SafeMode既定ON後退表現が混入していないことを再点検（問題なし）。
   - #3: allowlist外編集がないことを再点検（問題なし）。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: **Ready**（Stream C 完了待ちなし、read-only契約参照 + Mock Contract Assumption明示で独立進行可能）。
 - 不足契約は `Assumption-CE0-IF-01..04` に局所化済みで、実契約受領後の差替え手順を併記。
 - Hold移行条件（将来）: 上流語彙矛盾、未定義競合、allowlist外必須編集、自己修復4回目相当のいずれかを検知した場合は `stopped_for_clarification` で停止。
@@ -1284,12 +1272,12 @@
 - 実装記述（handler/UI/DB/worker/API/schema migration）は追加しない。
 - CE0契約IDは参照のみで利用し、再定義・同義語置換・拡張を実施しない。
 
-### Phase 5 Verify（docs-check + diff整合、3回まで自己修正）
+### Verify（docs-check + diff整合、3回まで自己修正）
 - attempt_1: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` → pass
 - attempt_1: `git diff --check` → pass
 - self-correction: `0/3`（追加修正なし）
 
-### Phase 6 Proceed（Ready/Hold判定）
+### Proceed（Ready/Hold判定）
 - 判定: **Ready**（AC/DoD整合、docs-check pass、single-file/docs-only/contract-only 維持）。
 - 致命条件が将来検出された場合は即時 `stopped_for_clarification` へ遷移し `Hold` で停止する。
 
@@ -1312,19 +1300,19 @@
 - contract-only 境界を維持し、本Issue本文のみ更新。
 - `role / transition / no-go` を固定語彙で再確認し、実装挙動を規定する新規記述は追加しない。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Verify失敗回数は 0/3。運用規律として「Verify失敗が3回を超過、または競合検知時は即停止」を再確認。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（contract-only 境界維持、AC/DoD整合、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
 
 ## Phase Execution Record（2026-05-03 / Stream C / contract-vs-implementation diff separation）
 ### Phase 1 Read
 - 実行直前Readを実施し、固定語彙（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`）と canonical No-Go 5 IDs を再確認。
-- Phase 1〜6 の強制順序と、各Phase開始時Read義務を再確認。
+- Read同期〜Proceed の強制順序と、各Phase開始時Read義務を再確認。
 - SafeMode既定ON境界（`CE0-SAFEMODE-IF`）に後退差分がないことを確認。
 
 ### Phase 2 Plan
@@ -1343,13 +1331,13 @@
 - 本Issueに「Contract Diff / Implementation Diff 分離」と「契約曖昧時は Context/Decision/Consequences 先行確定」の運用規則を明文化。
 - 実装記述の追加・推測・代替設計の確定化は行わない。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数: 0/3（追加修正なし）。
 
-### Phase 6 Proceed
-- 判定: `Done`（Phase 1〜6順守、contract-only維持、差分分離方針を明記、docs-check pass）。
+### Proceed
+- 判定: `Done`（Read同期〜Proceed順守、contract-only維持、差分分離方針を明記、docs-check pass）。
 - 未承認事項在庫: なし（新規 `held/pending` 追加なし）。
 
 ## Phase Execution Record（2026-05-03 / Stream C / candidate-adr-clarification for contract-only）
@@ -1372,12 +1360,12 @@
 - 実施内容は本Issueへの実行記録追記のみ（single-file / docs-only / contract-only）。
 - 契約語彙の一貫性（`role / transition / no-go`）を維持し、実装記述は追加しない。
 
-### Phase 5 Verify
+### Verify
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - Self-Correction: 0/3（失敗なし）。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: `Proceed (Ready)`（docs-check観点 pass、single-file 制約遵守、候補は未確定維持）。
 - 停止条件発生時（語彙差分/前提崩壊/未定義競合/範囲外編集要求）は `held` で即停止する。
 
@@ -1531,13 +1519,13 @@
 - 本Issue本文内で contract-only 記述を固定し、graph role/transition/audit 契約以外の追記を行わない。
 - 実装記述（handler/UI/DB/worker/API/Schema migration）および他ファイル変更は実施しない。
 
-### Phase 5 Verify（自己検証 + 失敗時3回まで修復）
+### Verify（自己検証 + 失敗時3回まで修復）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - `git diff --name-only` を実行し、`01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみ変更であることを確認。
 - 修復回数: 0/3（失敗なし）。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: `Done`（AC/DoD整合、contract-only維持、docs-check pass、single-file制約充足）。
 - 競合・前提崩壊は未検出。検出時は `stopped_for_clarification` で停止する。
 
@@ -1563,12 +1551,12 @@
 - 禁止事項を契約固定: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
 - 実装変更（handler/UI/DB/worker/API/Schema migration）は追加しない。
 
-### Phase 5 Verify（No-Go / 安全境界整合）
+### Verify（No-Go / 安全境界整合）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
 - `git diff --check` を実行し、pass。
 - 自己修復回数: 0/3（停止条件未発火）。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: `Proceed = Done`（AC/DoD充足、docs-check pass、No-Go逸脱なし、安全境界整合）。
 - `Stop` 判定は不要（未承認の新規 `held/pending` なし）。
 
@@ -1626,13 +1614,13 @@
 - 本Issueの実行記録更新のみを実施。
 - 実装記述（handler/UI/DB/worker/API）追加は未実施。
 
-### Phase 5 Verify
+### Verify
 - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` : pass
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` : pass
 - `git diff --check` : pass
 - 自己修復: 0/3。
 
-### Phase 6 Proceed/Stop
+### Proceed/Stop
 - 判定: **Proceed = Done**（contract-only整合維持）。
 - 停止条件: 語彙衝突、No-Go逸脱、SafeMode境界後退、自己修復4回目相当で `held`。
 
@@ -1659,11 +1647,11 @@
 - CE0→CE1の順序を明記し、Core Graph再配置はI/F契約成立後の参照タスクとして位置づけ。
 - 実装依存（UI/DB/worker/API反映）を本文対象外に維持。
 
-### Phase 5 Verify
+### Verify
 - docs-check観点自己検証: 1回で完了（self-correction 0/3）。
 - 判定: `proposal_only_violation=0` / `dependency_cycle=0` / `scope_deviation=0`。
 
-### Phase 6 Proceed
+### Proceed
 - CE2/CE4引き渡し前提:
   - Core Graphは契約参照のみ（実装確定なし）。
   - CE1の hash/preview/unknown-key 契約を先行条件として扱う。
@@ -1692,12 +1680,12 @@
 - 実装変更は行わず、本Issue内で仮契約I/Fと停止条件運用（競合検知時即停止）を手順として追記。
 - `preview_bypass` ほか canonical 5 IDs の語彙、`patch+approval` 以外禁止、SafeMode既定ON後退禁止を維持。
 
-### Phase 5 Verify（docs-check / max 3 self-heal）
+### Verify（docs-check / max 3 self-heal）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass（self-heal 0/3）。
 - `git diff --check` を実行し、pass。
 - `git status --short` を実行し、対象ファイルのみ変更を確認。
 
-### Phase 6 Proceed
+### Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、単一ファイル更新、contract-only維持）。
 - 未承認事項在庫: なし（新規 `held/pending` は発生せず）。
 - 競合検知時即停止・推測実装禁止の fail-safe を再確認。
@@ -1724,7 +1712,7 @@
 - CE1へ引き渡す境界を「graph role責務 + no-go + preview gate依存」の契約情報に限定。
 - CE1実装詳細への拘束を持ち込まない方針を固定。
 
-### Phase 5 Verify & handoff
+### Verify & handoff
 - 判定: **Done（contract design freeze maintained）**。
 - handoff（CE2/CE4）: graph責務境界の read-only 契約参照。
 - self-correction usage: `0/3`。
