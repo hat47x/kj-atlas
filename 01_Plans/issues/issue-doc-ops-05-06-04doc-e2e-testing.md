@@ -180,3 +180,35 @@
 ### 4) Proceed
 - ProceedDecision: **Hold（Ready gate定義完了、依存確定待ち）**
 - Ready化状態: **判定基準はReady、Draft解除は未実施**
+
+## Stream E Open化準備 pass（2026-05-07 / DOC-OPS-05-06）
+
+### Phase 1 Start Re-read
+- 対象再読: 本Issueのみを再読し、`Improve external` / `docs-check` / `ProceedDecision: Hold` を確認。
+- 依存再確認: 05-05/05-07 の承認証跡未確定により gate未成立。
+
+### Phase 2 Plan（AC/DoD不足提案）
+- AC/DoD不足提案（合意待ち）:
+  - 提案A: AC-1 に「公開境界（公開する内容 / しない内容）」の例示を1行追加。
+  - 提案B: DoD-3 に blocked時の再開条件テンプレート参照先を固定。
+- 合意状態: Draft内提案として保持し、依存更新時に最終化。
+
+### Phase 3 ADR明文化（C/D/C）
+- Context: 公開導線文書の判定情報が不足すると、Open時に運用境界が崩れる。
+- Decision: `Improve external` を維持しつつ、依存未確定期間は `Hold` を固定する。
+- Consequences: 公開改善方針を維持しながら、誤判定による公開リスクを回避できる。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issueメモ追記のみ。
+- 非実施: `04_Documentation/e2e_testing.md` 本文改稿、テスト実行結果の新規確定。
+
+### Phase 5 Verify
+- 判定: `Hold` 維持。
+- self-correction: `1/3`（Stream E pass）。
+- 失敗時方針: 3回以内修復、4回目相当で `Stop`。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- Stop条件（再確認）:
+  1. 05-05/05-07と判定語彙が不一致で解消不能。
+  2. self-correction上限超過。
