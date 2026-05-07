@@ -1158,3 +1158,36 @@
   - 3回超過: 該当なし
   - 前提崩れ: 該当なし
   - 未定義競合: 該当なし
+
+
+## Stream A serial run（2026-05-07 / P0 contract freeze critical path）
+
+### Phase 1: Read & Plan
+- Status: `Open`
+- Priority: `P0`
+- Dependencies: `A1 -> A2(mock validation) -> A3(implementation)` を維持（A2/A3はread-only参照）。
+- Scope: A1最小I/F契約（Contract ID / Signature / Deterministic Rule）の固定のみ。
+- AC/DoD補完（合意記録）:
+  1. AC: 固定キー閉集合（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）以外を受理しない。
+  2. AC: API signatureは `CritiqueV1/ReDiffV1/AttributionV1/A1ErrorV1` の4系統のみ。
+  3. DoD: mock先行（`A1-CONTRACT-MOCK-v1`）でA2/A3実装依存を切断。
+
+### Phase 2: ADR明文化（Approval gate）
+- Context: A1未固定のまま進むとA2/A3で契約再定義が起き、クリティカルパスが崩壊する。
+- Decision: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` + `schemaVersion=1.0.0` + SafeMode厳格境界を固定参照として維持する。
+- Consequences: 未承認項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）は確定化せず `Needs-decision` 維持。
+- Approval: `approved-for-freeze-candidate`（docs scope）を再確認。
+
+### Phase 3: Execute（契約凍結）
+- Deterministic open rule（唯一式）:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- Mock-first isolation:
+  - A2/A3は `A1-CONTRACT-MOCK-v1` との照合のみ許可、runtime実装接続は前提化しない。
+
+### Phase 4: Verify（self-check）
+- AC/DoD検証: pass（契約閉集合・signature固定・mock依存切断を確認）。
+- Self-Correction count: `0/3`。
+
+### Phase 5: Proceed / Stop
+- 判定: `Hold/Needs-decision`。
+- 理由: human最終承認ログ未完了および `held` 論点残存のため、推測確定せず停止条件を満たす。

@@ -536,3 +536,37 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
 ### Phase 6: Proceed/Stop
 - 判定: **Stop（Hold）**。
 - 根拠: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` の未解消により承認不足。
+
+
+## Stream A serial run（2026-05-07 / P1 minimum interface freeze）
+
+### Phase 1: Read & Plan
+- Status: `In Progress`
+- Priority: `P1`
+- Dependencies: なし（A1最小I/F先行固定）。
+- Scope: 本Issueの契約語彙・固定値・責務境界の維持のみ。
+- AC/DoD補完（合意記録）:
+  1. AC: `Pending` が1件でも `executeAllowed=false` を強制。
+  2. AC: `NoGo return path` を本Issueへ一意固定。
+  3. DoD: AI proposal-only / Human final approval 分離を常時維持。
+
+### Phase 2: ADR明文化（Approval gate）
+- Context: A1がSSOTであるため、親/下流での派生再定義は禁止。
+- Decision: 固定語彙・固定値（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `unlockRule`, `decisionQueueTransition`）を再固定。
+- Consequences: 未承認論点が解消するまで `Hold` を継続し、Go判定を出さない。
+- Approval: `approved-for-freeze-candidate`（docs scope）継続。
+
+### Phase 3: Execute（契約凍結）
+- Signature固定参照:
+  - `evaluateA1Gate(input: A1GateInput): A1GateOutput`
+  - `mockEvaluateA1Gate(input: A1GateInput): A1GateOutput`
+- Determinism:
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` 以外を禁止。
+
+### Phase 4: Verify（self-check）
+- AC/DoD検証: pass（語彙ドリフト0、責務分離維持、Pending bypassなし）。
+- Self-Correction count: `0/3`。
+
+### Phase 5: Proceed / Stop
+- 判定: `Hold`。
+- 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解決。
