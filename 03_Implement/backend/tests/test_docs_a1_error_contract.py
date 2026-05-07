@@ -105,3 +105,53 @@ def test_put_document_returns_a1_error_contract_for_pii_violation(sqlite_client:
     assert detail["errorEnvelope"]["errorCode"] == "A1_PII_POLICY_VIOLATION"
     assert detail["errorEnvelope"]["contractId"] == "A1-ATTR-IF"
     assert detail["errorEnvelope"]["retryable"] is False
+
+
+def test_put_document_returns_a1_error_contract_for_critique_schema_mismatch(sqlite_client: TestClient) -> None:
+    doc_id = "doc-a1-error-critique-schema"
+    payload = _sample_v2_payload(doc_id)
+    payload["critiqueInputs"] = [
+        {
+            "schemaVersion": "2.0.0",
+            "critiqueId": "critique-1",
+            "targetRef": "card:card-1",
+            "critiqueType": "feels_off",
+            "createdAt": "2026-02-11T00:03:00Z",
+            "iteration": 1,
+        }
+    ]
+
+    response = sqlite_client.put(f"/docs/{doc_id}", json=payload)
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["schemaVersion"] == "1.0.0"
+    assert detail["errorEnvelope"]["errorCode"] == "A1_SCHEMA_VERSION_MISMATCH"
+    assert detail["errorEnvelope"]["contractId"] == "A1-CRITIQUE-IF"
+    assert detail["errorEnvelope"]["retryable"] is False
+
+
+def test_put_document_returns_a1_error_contract_for_override_policy_violation(sqlite_client: TestClient) -> None:
+    doc_id = "doc-a1-error-override-policy"
+    payload = _sample_v2_payload(doc_id)
+    payload["reviewAttribution"] = {
+        "schemaVersion": "1.0.0",
+        "reviewState": "human_reviewed",
+        "reviewedAt": "2026-02-11T00:04:00Z",
+        "reviewerRef": "reviewer-opaque-id",
+        "auditRecordedAt": "2026-02-11T00:04:00Z",
+        "overridePolicy": "single_operator",
+    }
+
+    response = sqlite_client.put(
+        f"/docs/{doc_id}",
+        json=payload,
+        headers={"x-actor-ref": "operator-1"},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["schemaVersion"] == "1.0.0"
+    assert detail["errorEnvelope"]["errorCode"] == "A1_OVERRIDE_POLICY_VIOLATION"
+    assert detail["errorEnvelope"]["contractId"] == "A1-ATTR-IF"
+    assert detail["errorEnvelope"]["retryable"] is False

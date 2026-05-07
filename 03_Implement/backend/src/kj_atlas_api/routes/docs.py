@@ -88,13 +88,20 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
         message = str(errors[0].get("msg", "document payload validation failed")) if errors else str(exc)
         code = "A1_REQUIRED_FIELD_MISSING"
         contract_id = "A1-REDIFF-IF"
+        first_error_loc = tuple(errors[0].get("loc", ())) if errors else ()
 
         if "schemaVersion" in str(message):
             code = "A1_SCHEMA_VERSION_MISMATCH"
-            if "critiqueInputs" in str(message):
+            if "critiqueInputs" in str(message) or "critiqueInputs" in first_error_loc:
                 contract_id = "A1-CRITIQUE-IF"
-            elif "reviewAttribution" in str(message):
+            elif "reviewAttribution" in str(message) or "reviewAttribution" in first_error_loc:
                 contract_id = "A1-ATTR-IF"
+        if "reviewAttribution" in first_error_loc and "overridePolicy" in first_error_loc:
+            code = "A1_OVERRIDE_POLICY_VIOLATION"
+            contract_id = "A1-ATTR-IF"
+        elif "critiqueInputs" in first_error_loc and "schemaVersion" in first_error_loc:
+            code = "A1_SCHEMA_VERSION_MISMATCH"
+            contract_id = "A1-CRITIQUE-IF"
         if "reviewerRef must be opaque" in str(message):
             code = "A1_PII_POLICY_VIOLATION"
             contract_id = "A1-ATTR-IF"
