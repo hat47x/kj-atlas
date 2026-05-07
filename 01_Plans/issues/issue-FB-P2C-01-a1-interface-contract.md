@@ -1017,3 +1017,38 @@
   2. 未定義競合（undefinedConflictDetected=true）
   3. self-correction 4回目相当
   4. 契約未承認状態でA2/A3確定要求
+
+## Stream A dedicated run（2026-05-07 / FB-P2C-01 A1 contract freeze only）
+
+### Phase 1: Read同期
+- 再読対象: 本Issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（allowlist scope内）。
+- 確認値:
+  - `Status=Open`, `Priority=P0`, `Dependencies=A1 -> A2 -> A3`（A2/A3はread-only）。
+  - 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）差分 `0`。
+- 差分判定: 想定との差分なし。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1契約凍結はA2/A3再定義を防ぐ親ゲートであり、未承認のまま確定化すると統治境界が壊れる。
+- Decision: `A2A3_OPEN_ALLOWED` を唯一判定式として維持し、固定値・固定キーは参照固定（再定義禁止）。
+- Consequences: 未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）解消まで `Conditional / Needs-decision` を継続。
+
+### Phase 3: Plan
+- 変更対象行: 本Issueのランログ追記のみ。
+- 非変更範囲: allowlist外ファイル、実装コード、A2/A3契約本文。
+- 検証コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 4: Execute
+- 契約固定値を更新せず維持（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）。
+- A2/A3引渡しは read-only + mock-first（`A1-CONTRACT-MOCK-v1`）参照に限定。
+
+### Phase 5: Verify
+- AC/DoD: pass（唯一判定式維持、Pending bypassなし、safeMode後退なし）。
+- self-correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- 判定: `Conditional / Needs-decision`。
+- 停止理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` 継続。
+- 停止規則: 推測実行なし（human decision待ち）。
