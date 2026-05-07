@@ -2618,3 +2618,35 @@ type PatchProposal = {
 - 継続条件:
   - CE0契約SSOT凍結を継続し、CE1/CE2/CE4は mock/read-only参照のみ許可。
   - 3回超修復、前提崩壊、未定義競合、allowlist逸脱が発生した時点で即時 `held` 停止。
+
+## Stream D latest run（2026-05-07 / CE0 only / contract freeze maintenance）
+
+- run_id: `stream-d-ce0-2026-05-07-01`
+- assignee: `Stream D（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Read Order（`00_Prompt/system_prompt.md` → `00_Prompt/domain.md` → `00_Prompt/handoff.md` → `00_Prompt/agent_handover.md` → `00_Prompt/codex_gsd_skill_ops.md` → `00_Prompt/ai_cognitive_externalization_requirements.md` → `01_Plans/adr/ADR-0001-value-to-requirements.md` → `02_Architecture/architecture.md` → `02_Architecture/schemas.md` → `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`）を再実行し、本Issueも再読。
+- 固定順序 **Plan → Execute → Verify → Proceed**、および contract-only / docs-only / single-file 制約を再確認。
+
+### Phase 2 Plan
+- AC/DoD不足を点検し、現行の `dod_read_only_reference` / `dod_no_go_id_canonical` / `dod_cdc_held_required` で充足していることを確認（追加ドラフト提案なし）。
+- 実行計画を単一変更に限定：本Issueへ実行ログを追記し、CE0 Contract IDs・safeMode境界・No-Go canonical IDsは不変維持。
+
+### Phase 3 Execute
+- 本Issueのみを更新（実行ログ追記）。
+- 非実施を明示：指定外ファイル編集、契約IDの追加/改名/削除、safeMode既定値変更、実装コード変更。
+
+### Phase 4 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 Proceed
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0 Contract Freezeを単一ファイルSSOT（read-only参照モード）で維持。
+  - self-correction が 3回を超える見込み、または逸脱要求発生時は即時 `held` 停止。
