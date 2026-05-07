@@ -1041,3 +1041,48 @@
   2. `Approval Record` 4項目（日時・承認者・対象・判断）入力。
   3. proposal-only / fail-closed / safeMode境界の後退ゼロ確認。
 - 停止条件: 前提不整合・契約競合・4回目修復要求のいずれか検知時は即時 `held`。
+
+## Stream D CE2 Open移行品質整備（2026-05-07 / Phase 1→5）
+
+### Phase 1 Read（固定順序の再同期）
+- Read 実施: `ADR-0028` / `ADR-0001` / `02_Architecture/schemas.md` / 本Issue既存ログを再読し、proposal-only契約と語彙集合（`status` / `reviewState` / `lifecycle`）の衝突がないことを確認。
+- 範囲確認: Stream Dの編集範囲を本Issueに固定し、`03_Implement/*` を含む実装領域へ越境しないことを再宣言。
+
+### Phase 2 ADR補強（Context / Decision / Consequences）
+#### Context
+- CE2 DraftはOpen移行前に「実装依存を切断した意思決定準備文書」であることを明確化する必要がある。
+- 依存契約（CE0/CE1）が未確定のまま実装前提を書くと、責務分離崩壊と誤Proceedのリスクが高い。
+
+#### Decision
+- CE2 Draftは **proposal-only contract lock** を維持し、実装仕様・実行手順・運用確定値の新規追加を禁止する。
+- tri-state 判定は `Proceed / Hold / Stop` を維持し、依存契約未確定時は `Hold` を唯一許可する。
+- `sourceBundleHash === bundleHash` 不一致、監査4点欠損、auto-*導線混入のいずれかを検知した場合は `Stop`（`held`）で停止する。
+
+#### Consequences
+- Open移行判定に必要な文脈が ADR 形式で再読可能になり、実装依存の混入を抑制できる。
+- 短期的には進行速度が下がるが、依存契約確定前の誤実装着手を防止できる。
+
+### Phase 3 AC/DoD強化（Open判定専用）
+#### AC 追加（Open候補に必要な最小条件）
+- [ ] CE0/CE1 の依存契約確定証跡（日時/承認者/対象/判断/evidence）が本Issueから参照可能。
+- [ ] proposal-only / human final decision / fail-closed / safeMode既定ON 後退ゼロが同一セクションで確認可能。
+- [ ] `sourceBundleHash === bundleHash` 一致必須が Verify 条件として明示されている。
+
+#### DoD 追加（Stream D完了条件）
+- [ ] 実装依存の切断方針（mock contract参照のみ、実データ接続禁止）が明文化されている。
+- [ ] tri-state 再判定の入力（依存証跡・承認ログ・Verify結果）と出力（Proceed/Hold/Stop）が追跡可能。
+- [ ] 依存契約未確定時の Hold 理由が1文で再利用可能。
+
+### Phase 4 Verify（docs-check / max 3 repairs）
+- Verify V1（scope）: 本Issue単独差分であることを `git diff --` と `git status --short` で確認。
+- Verify V2（contract）: proposal-only / auto-*禁止 / fail-closed / human decision / hash一致必須の記述を目視照合。
+- Verify V3（integrity）: Phase 1〜5、AC/DoD、Proceed/Hold/Stop、Stop条件の整合を確認。
+- self-correction: `0/3`（修復超過なし）。
+
+### Phase 5 昇格判定（Draft→Open）
+- 判定: **Hold（Open移行不可）**。
+- Hold理由（依存契約未確定のため停止）:
+  1. CE0/CE1 依存契約の一次証跡（承認済みログ）が未提示。
+  2. Approval Record 実値（approved_by / approved_at / evidence）が未充足。
+  3. 上記未充足のため、実装依存切断を維持したまま Draft継続が唯一の安全選択。
+- Stop宣言: 未承認での Proceed 要求または契約衝突検知時は、即時 `held` で停止し追加提案を行わない。
