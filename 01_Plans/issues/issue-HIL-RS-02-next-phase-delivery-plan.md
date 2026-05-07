@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream F planning lane）
+# Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream E planning lane）
 
 - Type: Process
 - Status: Ready
 - Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream F Agent（delivery plan + A3 ops sync preflight）
+- Owner: Stream E Agent（delivery plan + A3 ops sync preflight）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`, `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
 - Out of scope: allowlist外のIssue/ADR編集、`03_Implement/**`、`04_Documentation/**`、実装コード編集
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -23,12 +23,12 @@
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## Stream F Execution Protocol（固定）
-- Required order: **Read → ADR(C/D/C) → Plan → Execute → Verify → Proceed**
+## Stream E Execution Protocol（固定）
+- Required order: **Phase 1 Read → Phase 2 ADR(C/D/C) → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed/Stop**
 - Verify repair limit: `<=3`（4回目相当は即停止）
 - Hard stop: safeMode後退要求 / 契約ID再定義要求 / pending bypass / allowlist外編集要求
 
-## Phase-Read
+## Phase 1 Read
 ### Plan
 - allowlist対象2ファイルを再読し、未決事項を `approval pending` / `dependency pending` / `drift risk` に分類する。
 ### Execute
@@ -38,19 +38,19 @@
 ### Proceed
 - Proceed=Yes
 
-## Phase-ADR（Context / Decision / Consequences）
+## Phase 2 ADR（Context / Decision / Consequences）
 ### Plan
 - ADR-0027/0028と2 issue の C/D/C 粒度を揃え、A3を契約再定義ノードにしない方針を固定する。
 ### Execute
 - Context: A1依存下でA2/A3を先行確定すると統治ドリフトを招く。
-- Decision: Stream Fは「契約参照固定 + delivery里程標固定 + docs sync条件固定」に限定する。
+- Decision: Stream Eは「契約参照固定 + delivery里程標固定 + docs sync条件固定」に限定する。
 - Consequences: **A1 DoneまでA3はDraft維持（Open化禁止）**。
 ### Verify
 - C/D/C が2ファイルで欠落なく整合していること。
 ### Proceed
 - Proceed=Yes（Approval Pending注記維持）
 
-## Phase-Plan
+## Phase 3 Plan
 ### Plan
 - 里程標（M1-M3）と AC/DoD を実行可能粒度で確定する。
 ### Execute
@@ -62,18 +62,18 @@
 ### Proceed
 - Proceed=Yes
 
-## Phase-Execute
+## Phase 4 Execute
 ### Plan
 - A3運用同期の前倒し準備を実施しつつ、A1依存はread-onlyで扱う。
 ### Execute
-- A3準備は `用語同期`, `同期導線`, `検証ログ要件` の論点整理に限定。
+- A3運用同期準備は `用語同期`, `同期導線`, `検証ログ要件` の論点整理に限定。
 - `A1 Done未達時はA3 Open化を禁止` を明示維持。
 ### Verify
 - 実装コード/04_Documentation本体未編集、allowlist内更新のみであること。
 ### Proceed
 - Proceed=Yes
 
-## Phase-Verify
+## Phase 5 Verify
 ### Plan
 - DOC-OPS-02の4観点で横断ドリフトを検証する。
 ### Execute
@@ -86,7 +86,7 @@
 ### Proceed
 - Proceed=Hold（A1完了待ち）
 
-## Phase-Proceed（Gate）
+## Phase 6 Proceed/Stop（Gate）
 - Proceed(Go): `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0`
 - Proceed(Hold): `A1 not done && fixedKeysDiff==0`
 - Proceed(Stop): `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || scope violation`
@@ -107,8 +107,8 @@
 - [x] Gate: `A1 not done` 前提で Proceed=Hold を維持し、Open化は人手承認ログ待ち。
 
 ## 依存切断条件（Ready維持のための独立性）
-- [x] A1成果物本文を参照専用に固定し、Stream F側で契約キーを書き換えない。
-- [x] A3準備は「用語同期 / 導線固定 / 検証証跡設計」の3点に限定し、A1完了を待たずに継続可能。
+- [x] A1成果物本文を参照専用に固定し、Stream E側で契約キーを書き換えない。
+- [x] A3運用同期準備は「用語同期 / 導線固定 / 検証証跡設計」の3点に限定し、A1完了を待たずに継続可能。
 - [x] 依存未解消でも Stop ではなく Hold で滞留できるよう判定式を固定。
 
 ## 受入条件（Execute完了判定）
@@ -125,3 +125,9 @@
 ## Ready判定
 - 判定: **Ready（Proceed=Hold運用）**
 - 根拠: Draft解除条件充足 + A1依存をHoldへ正規化 + fixed key再定義なし。
+
+
+## Stop条件（Prompt E適用）
+- A1固定値不一致（`fixedKeysDiff>0`）
+- 共有資源競合（`sharedResourceFreeze`違反、または共有資源の二重更新要求）
+- 承認前提崩壊（pending bypass / unrecorded approval inference / dual-control破綻）
