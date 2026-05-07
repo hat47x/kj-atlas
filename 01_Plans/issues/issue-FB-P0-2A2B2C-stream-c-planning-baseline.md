@@ -1065,3 +1065,44 @@
   1. `Approval Record` の `approved_by` / `approved_at` / `evidence` が未入力。
   2. `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（人間判断待ち）。
   3. `a1Status=="Done"` かつ `pendingDecisionQueueCount==0` 未充足のため A2/A3 は `Open(Planning)` 維持。
+
+## Stream E planning baseline addendum（FB-P0-2A2B2C / boundary & merge conditions）
+
+### Mission scope（docs-only / no implementation）
+- Stream E は複数ストリーム計画の**境界定義**と**合流条件**の文書化のみを担当する。
+- 編集対象は本ファイルのみ（allowlist 準拠）。実装コード・スキーマ・I/F本文の更新は行わず、既存契約を**参照専用**で扱う。
+- Cross-stream dependency は新規作成しない。既存依存（`A1 -> A2 -> A3`）の再記述に限定する。
+
+### Boundary contract（stream isolation）
+- Stream E boundary:
+  1. `planning baseline` の判定式・停止条件・承認状態の整合確認
+  2. `P2C A1 interface contract` へのリンク整合（read-only）
+  3. `Go / Conditional / No-Go` の判定語彙を他ストリームと同一化
+- Out of scope:
+  - `P2A/P2B/P2C` の実装・mockデータ更新
+  - `schemaVersion` や `overridePolicy` の値変更
+  - `safeModeDefault` / `safeModeBoundary` の緩和
+
+### Merge conditions（multi-stream convergence gate）
+- 合流判定は以下を**全て満たした場合のみ** `Merge-Ready` とする。
+  1. `A2A3_OPEN_ALLOWED` 判定式が allowlist 2ファイルで文字列一致
+  2. freeze keys（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`）差分 `0`
+  3. `Approval Record=Approved` もしくは未承認事項が `held` のみで確定化なし
+  4. No-Go 条件（`pendingBypassDetected`, `undefinedConflictDetected`, allowlist外編集要求, 契約未固定でA2/A3確定要求）を保持
+  5. `git diff --check` で whitespace/error 差分なし
+
+### Phase protocol（1..6 fixed）
+- Phase 1 Read: 対象2ファイルを再読し、固定キー差分が1件でもあれば `held` 更新で停止。
+- Phase 2 ADR: Context/Decision/Consequences を再定義せず、承認状態のみ更新。
+- Phase 3 Plan: AC/DoD の不足がある場合は「ドラフト提案」として追記し、確定扱いしない。
+- Phase 4 Execute: 文書語彙の同期のみ実施（実装変更禁止）。
+- Phase 5 Verify: docs-check を実施し、self-correction は最大3回。4回目相当は停止。
+- Phase 6 Proceed: `Go/Conditional/No-Go` を既存式で評価し、未定義競合は即 `No-Go`。
+
+### Stop conditions（fail-safe）
+- 即時停止条件:
+  1. self-correction 4回目相当
+  2. undefined conflict の発生
+  3. allowlist外編集要求
+  4. 未承認事項の確定化要求
+- 停止時出力フォーマット: `原因 / 影響I/F / 再開条件`。
