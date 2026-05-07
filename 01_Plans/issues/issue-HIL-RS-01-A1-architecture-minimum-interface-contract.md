@@ -352,3 +352,40 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
 - 理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held`。
 - 状態明記: **contract-frozen（read-only / pending human final approval）**。
 
+
+## Stream A dedicated run（2026-05-07 / A1 contract freeze critical path）
+
+### Phase 1: Read同期
+- 対象2ファイル（本Issue / `issue-FB-P2C-01-a1-interface-contract.md`）を再読し、`Status / Priority / Dependencies / 固定キー` を照合。
+- 照合結果:
+  - `Status`: In Progress（本Issue）/ Open（FB-P2C-01）
+  - `Priority`: P1（本Issue）/ P0（FB-P2C-01）
+  - `Dependencies`: `A1 -> A2 -> A3`（A2/A3はread-only参照）
+  - 固定キー: `freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary` を含む凍結セットは差分 `0`。
+- 差分記録: 想定との差分なし（計画更新不要）。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1契約凍結はA2/A3の再定義防止の唯一ゲートであり、Pending残存下での確定化は契約逸脱を招く。
+- Decision: 既存の固定語彙/固定値を再定義せず維持し、`Pending`/`held` 項目が解消するまで `Hold` を継続する。
+- Consequences: Executeは契約整合確認（docs-only）に限定し、A2/A3へはread-only契約参照のみ許可する。
+
+### Phase 3: Plan
+- 変更対象行: 本Issueの実行ログ追記のみ（他領域編集なし）。
+- 非変更範囲: 実装コード、A2/A3 issue、architecture配下の仕様本文。
+- 検証コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 4: Execute
+- `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary` は固定参照のみ実施（再定義なし）。
+- A2/A3引渡し条件は read-only 契約参照（`A1-CONTRACT-MOCK-v1` 前提）として維持。
+
+### Phase 5: Verify
+- AC/DoD適合: pass（契約固定値ドリフト0、Pending bypassなし、safeMode後退なし）。
+- self-correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- 判定: `Hold / Needs-decision` 維持。
+- 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消のため。
+- Stop trigger判定: 未発火（前提崩壊/未定義競合/修復上限超過なし）。
