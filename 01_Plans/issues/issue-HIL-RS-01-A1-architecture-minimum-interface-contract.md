@@ -442,3 +442,46 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
   3. `Pending` bypass / SafeMode後退
 
 - Final gate decision: **Stop/Hold**（未承認項目が残存し、A1領域は凍結状態のまま）。
+
+
+## Stream A integration run（2026-05-07 / A1 minimum I/F contract protocol）
+
+### Phase 1: Read同期（対象2ファイル再読）
+- 再読対象:
+  1. `issue-FB-P2C-01-a1-interface-contract.md`
+  2. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 差分確認（固定値）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1` 一致
+  - `schemaVersion=1.0.0` 一致
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON` 一致
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` 一致
+- 判定: 想定との差異なし（継続可）。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1最小I/Fは下流A2/A3の唯一契約境界であり、再定義を許すと統治/監査の単一性が破綻する。
+- Decision:
+  - `Pending bypass` 禁止を明示維持。
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退禁止。
+  - A2/A3は read-only 参照のみ。
+  - 承認ログ完備まで frozen-candidate のまま据え置く。
+- Consequences: 人間最終承認未完了時は `executeAllowed=false` と `decision=Hold` を維持。
+
+### Phase 3: Plan（AC/DoD）
+- AC-1: 固定語彙/固定値ドリフト0。
+- AC-2: `Pending -> Approved | Pending -> Rejected` 以外禁止。
+- AC-3: `NoGo return path` 固定。
+- DoD-1: SafeMode境界後退なし。
+- DoD-2: overridePolicy後退なし。
+- DoD-3: AI proposal-only / Human final approval 分離維持。
+
+### Phase 4: Execute
+- 既存固定値と責務境界を維持し、破壊的変更（ID変更・schema改版・safeMode緩和）を実施しない。
+- A2/A3 handoffは read-only 契約参照のみを許可。
+
+### Phase 5: Verify
+- AC/DoD: pass。
+- Self-Correction: `0/3`。
+
+### Phase 6: Proceed/Stop
+- 判定: **Stop（Hold）**。
+- 根拠: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` の未解消により承認不足。
