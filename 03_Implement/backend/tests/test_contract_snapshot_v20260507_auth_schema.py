@@ -47,5 +47,6 @@ def test_a2_gate_response_schema_snapshot_literals() -> None:
     response_schema = components["A2A3GateValidationResponse"]
     props = response_schema["properties"]
 
+    assert props["go"]["const"] is True
     assert props["schemaVersion"]["default"] == "1.0.0"
     assert props["freezeContractId"]["default"] == "HIL-RS-02-A1-CONTRACT-FREEZE-v1"

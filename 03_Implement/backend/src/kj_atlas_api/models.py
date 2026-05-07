@@ -520,7 +520,7 @@ class A2A3GateValidationRequest(BaseModel):
 class A2A3GateValidationResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    go: bool
+    go: Literal[True] = True
     schemaVersion: Literal["1.0.0"] = "1.0.0"
     freezeContractId: Literal["HIL-RS-02-A1-CONTRACT-FREEZE-v1"] = "HIL-RS-02-A1-CONTRACT-FREEZE-v1"
 
