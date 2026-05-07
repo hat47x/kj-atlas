@@ -1052,3 +1052,48 @@
 - 判定: `Conditional / Needs-decision`。
 - 停止理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` 継続。
 - 停止規則: 推測実行なし（human decision待ち）。
+
+
+## Stream A integration run（2026-05-07 / critical path freeze finalization attempt）
+
+### Phase 1: Read同期（対象2ファイル）
+- 再読対象:
+  1. `issue-FB-P2C-01-a1-interface-contract.md`
+  2. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+- 固定値差分確認:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（差分0）
+  - `schemaVersion=1.0.0`（差分0）
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`（差分0）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`（差分0）
+- 判定: 想定との差異なしのため、Phase 2へ進行。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約を固定しない場合、A2/A3で派生再定義が発生し、`A1 -> A2 -> A3` のクリティカルパスが崩れる。
+- Decision:
+  - `Pending` bypass を禁止する。
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退を禁止する。
+  - A2/A3は read-only 参照のみ許可する。
+  - 承認ログ完備（`approved_by` / `approved_at` / `evidence`）までは凍結候補（frozen-candidate）として扱う。
+- Consequences: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` が残る限り `Needs-decision` を維持する。
+
+### Phase 3: Plan（AC/DoD宣言）
+- AC:
+  1. 固定語彙/固定値ドリフト0。
+  2. `Pending -> Approved | Pending -> Rejected` 以外の遷移禁止。
+  3. `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` 固定。
+- DoD:
+  1. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退なし。
+  2. `overridePolicy=human_dual_control_only` 後退なし。
+  3. A2/A3 handoffがread-only条件で記述されている。
+
+### Phase 4: Execute
+- 契約値は既存凍結値を維持（ID変更・schema改版・safeMode緩和なし）。
+- A2/A3向けhandoff条件を read-only として再確認（再定義禁止）。
+
+### Phase 5: Verify
+- AC/DoD自己検証: pass（契約ドリフト0 / bypass禁止維持 / NoGo return path固定）。
+- Self-Correction count: `0/3`（追加修正不要）。
+
+### Phase 6: Proceed/Stop
+- 判定: **Stop（Hold/Needs-decision）**。
+- 根拠: 承認ログ未充足（`Approval Record=Pending`）および `HIL-RS-02-GOV-EXCEPTION-01=held` が解消していないため。
