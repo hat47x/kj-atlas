@@ -135,3 +135,34 @@
   - 前提崩壊（固定キー不一致、A1 SSOT不整合）
   - 固定保護キー不一致（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary`）
   - 上記発生時は推測実行せず `Hold/NoGo` で停止する。
+
+## Stream A Critical Path Addendum（2026-05-07）
+
+### Phase 1 Read（Plan → Execute → Verify → Proceed）
+- Plan: A1 SSOTとの契約差分のみ抽出する。
+- Execute: 固定キー/遷移制約/禁止事項を再照合。
+- Verify: 差分0件（未確定は Pending Decision IDs として分離）。
+- Proceed: Phase 2へ。
+
+### Phase 2 ADR/Decision明文化（Plan → Execute → Verify → Proceed）
+- Context: A2/A3での局所補完による契約ドリフトを防止する必要がある。
+- Decision:
+  - `PD-20260507-A1-001`（Approval evidence format）
+  - `PD-20260507-A1-002`（reviewerRef匿名化パターン）
+  - 未承認IDは確定扱いしない。
+- Consequences: Pending ID解消前は A1固定契約の拡張禁止。
+- Verify: 承認待ちIDが `executeAllowed=false` 条件と矛盾しないことを確認。
+- Proceed: Phase 3へ。
+
+### Phase 3 契約スナップショット固定（Plan → Execute → Verify → Proceed）
+- Execute: `contract_snapshot_v20260507` を read-only で固定。
+- Fixed values: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeBoundary=SAFE_MODE_STRICT_ON`。
+- Verify: SSOT一致を確認。
+- Proceed: Phase 4へ。
+
+### Phase 4 受け渡し（Plan → Execute → Verify → Proceed）
+- 変更不可I/F: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`。
+- 許容拡張: `PD-20260507-A1-001/002` が Approved の場合のみ A1 CDC 経由で審査。
+- エスカレーション条件: 固定キー不一致 / 未定義遷移 / Self-Correction 3回超過。
+- 凍結宣言: `freezeDeclaration=ACTIVE (2026-05-07 UTC)`。
+
