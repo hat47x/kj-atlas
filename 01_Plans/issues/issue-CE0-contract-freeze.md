@@ -2717,3 +2717,45 @@ type PatchProposal = {
 - Execute: 実装変更・ID再定義・safeMode後退記述を追加しない。
 - Verify: `docs-check` 実施（self-correction 0/3）。
 - Proceed: **Approved-to-Proceed（CE0 freeze maintained）**。
+
+## Stream B latest run（2026-05-07 / CE0 contract SSOT freeze / dedicated lane）
+
+- run_id: `stream-b-ce0-2026-05-07-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueと上流参照（`02_Architecture/schemas.md`）を再読し、CE0契約SSOT条項（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）が凍結済みであることを再確認。
+- 依存表記を再確認し、CE1/CE2/CE4は CE0契約を **read-only 参照** し、逆方向の契約再定義を行わない条件を固定。
+
+### Phase 2 Plan
+- AC/DoDを契約固定観点で再確認（不足なし）。
+  - AC1 識別子固定: CE0 Contract IDs / No-Go canonical IDs を追加・改名・削除しない。
+  - AC2 一貫性固定: safeMode既定境界（`safeMode=true` / `allowUnreviewedText=false`）を後退させない。
+  - AC3 mock参照条件: CE1/CE2/CE4は mock-first + read-only handoff のみ許可。
+  - DoD1 単一ファイル完結: 変更は本Issueのみ。
+  - DoD2 依存切断自己完結: backend実装待ちを前提にせず読める記述を維持。
+  - DoD3 Verify上限: self-correction は最大3回、4回目相当は `held` 停止。
+
+### Phase 3 Execute
+- CE下流向け契約境界を明文化（contract-only）。
+  - CE1: `ContextQueryV1` / `ContextBundleV1` closed-world契約を read-only 参照し、unknown key reject を維持。
+  - CE2: CE1 bundleを入力前提に `sourceBundleHash === bundleHash` 不一致時 fail-closed を維持。
+  - CE4: 提案/適用/監査で `query/bundle/proposal/apply` 監査4点セット欠損時は成功扱い禁止を維持。
+- 実装変更は未実施（docs-only / contract-only）。
+
+### Phase 4 Verify
+- 依存切断条件（mock-first）が自己完結で読めることを確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 Fail-safe
+- 判定: **Conditional-Go**
+- 停止条件（即時 `held`）:
+  - 承認待ち事項の先行確定要求を検知。
+  - CE0前提と下流要件の不一致（契約再定義要求）を検知。
+  - allowlist外編集 / safeMode既定後退 / Contract ID mutation / self-correction 4回目相当を検知。
