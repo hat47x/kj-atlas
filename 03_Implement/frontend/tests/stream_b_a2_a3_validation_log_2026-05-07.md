@@ -38,3 +38,28 @@
 - Unresolved items: none.
 - Notes for next lane:
   - Re-run the same contract-focused tests before any new frontend diff touching view visibility or readiness gating logic.
+
+## 2026-05-07 追加同期（Frontend A2/A3）
+
+### Phase 1: Read Gate
+- 契約固定点を再確認（`STREAM_B_CONTRACTS` と `evaluateStreamBA3GoNoGo` 系テスト導線）。
+- 対象ファイル最新状態を確認し、契約拡張不要を確認。
+
+### Phase 2: A2（モック検証）
+- fixture/stub前提の契約テストを再実行:
+  - `src/domain/stream_b_contract_handoff.test.ts`
+  - `src/api/client.test.ts`
+- 結果: **15/15 pass**。
+
+### Phase 3: A3（実装）
+- A2で固定した入出力契約前提で実装差分要否を再評価。
+- 結果: 追加実装不要（契約拡張要求なし）。
+
+### Phase 4: Verify
+- `npm run test -- src/domain/stream_b_contract_handoff.test.ts src/api/client.test.ts`
+- `npm run lint`
+- Self-Correction: **0 / 3**（失敗なし）。
+
+### Phase 5: Proceed
+- 現フェーズは verify-only 完了。
+- 次回差分着手時も同一契約テストの先行実行を必須とする。
