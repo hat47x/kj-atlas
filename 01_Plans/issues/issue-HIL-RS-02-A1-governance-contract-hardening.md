@@ -24,6 +24,7 @@
 - Rule-2: `Status=Open（Approval Pending）` の間は常に `executeAllowed=false` を維持する。
 - Rule-3: `Pending bypass` は常時禁止。`Pending -> Execute` は不成立でなければならない。
 - Rule-4: 自己修復は最大3回。3回超過、SoD競合、前提崩壊（固定キー不一致）が発生した場合は即 `Stop`。
+- Rule-5: A1 SSOT不一致が検出された時点で推測継続せず即 `NoGo return` する。
 
 ## Constraints（固定）
 - `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` は固定参照のみ。
@@ -31,7 +32,7 @@
 - mock契約参照で独立遂行し、外部レーン完了待ちを前提化しない。
 
 ## Phase 1 Read
-- 対象ファイル最新状態を再読し、SoD・Pending遷移・固定キーを確認する。
+- 対象ファイル最新状態を再読し、SoD・Pending遷移・固定キー・`executeAllowed=false` 維持を確認する。
 - RS-02 A1は最小I/Fへの統治hardening層であり、A1 SSOTとの差分を持ち込まない。
 - Read Gate:
   - `phaseStartRequiresReread=true`
@@ -95,6 +96,7 @@
 - Hard Gate:
   - `pendingDecisionQueueCount > 0` -> `decision=Hold` / `executeAllowed=false`
   - freeze key mismatch -> `decision=NoGo`
+  - A1 SSOT mismatch -> `decision=NoGo` / `return=A1 SSOT`
   - `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 実行遷移制約:
   - 承認遷移は `Pending -> Approved` または `Pending -> Rejected` のみ。
@@ -125,4 +127,5 @@
   - 試行回数超過（自己修復3回超過）
   - 役割競合（SoD違反）
   - 前提崩壊（固定キー不一致、A1 SSOT不整合）
+  - 固定保護キー不一致（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary`）
   - 上記発生時は推測実行せず `Hold/NoGo` で停止する。
