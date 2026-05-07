@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream E preflight）
+# Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream G preflight）
 
 - Type: Process
 - Status: Ready
 - Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream E（operations sync planning preflight lane）
+- Owner: Stream G（A3 preflight専任）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
 - Out of scope: 実装変更、allowlist外Issue/ADR編集、契約再定義、`04_Documentation/**` 本体編集
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
@@ -23,8 +23,8 @@
 - `safeModeBoundary=SAFE_MODE_STRICT_ON`
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 
-## Stream E Protocol
-- Required order: **Phase 1 Read → Phase 2 ADR(C/D/C) → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed/Stop**
+## Stream G Protocol
+- Required order: **Phase 1 Read → Phase 2 Plan（A1完了前提ゲート明文化）→ Phase 3 Execute（準備項目・受入条件先行定義）→ Phase 4 Verify（整合検証・修復上限3回）→ Phase 5 Stopper（A1未完了のまま実装へ進まない）**
 - Verify repair loop: `<=3`
 - Hard stop: pending bypass / fixed key rewrite / safeMode後退 / scope外編集
 
@@ -38,7 +38,7 @@
 ### Proceed
 - Proceed=Yes
 
-## Phase 2 ADR（C/D/C）
+## Phase 2 Plan（A1完了前提のゲート明文化）
 ### Plan
 - ADR-0027統治制約とA3本文を一致させる。
 ### Execute
@@ -50,7 +50,7 @@
 ### Proceed
 - Proceed=Yes（Pending注記維持）
 
-## Phase 3 Plan
+## Phase 3 Execute（準備項目・受入条件の先行定義）
 ### Plan
 - A3里程標を運用同期観点で固定し、AC/DoD不足を提案する。
 ### Execute
@@ -72,26 +72,17 @@
 ### Proceed
 - Proceed=Yes
 
-## Phase 5 Verify
+## Phase 5 Stopper（A1未完了のまま実装へ進まない）
 ### Plan
-- DOC-OPS-02横断ドリフト4観点を確認する。
+- A1未完了時の停止条件を明文化し、実装着手禁止をゲート化する。
 ### Execute
-- Check-1 用語一致（3ロール）
-- Check-2 2者承認 + 実行責務分離
-- Check-3 相互リンク導線
-- Check-4 固定値（D1-D4相当）の不変
+- Stopper-1: `A1 Done未達` の間は planning以外の変更を禁止。
+- Stopper-2: `fixedKeysDiff>0` / `pending bypass` / `scope violation` を即停止条件として維持。
+- Stopper-3: `Current: Hold` を維持し、Open/In Progress遷移を禁止。
 ### Verify
-- 4観点に不整合がないこと。
+- Stopper条件がGo/Hold/Stop判定と矛盾せず、修復回数が3回以内であること。
 ### Proceed
 - Proceed=Hold（A1完了待ち）
-
-## Phase 6 Proceed/Stop（Gate）
-- Go: `A1 Done && pendingDecisionQueueCount==0 && validatorPass`
-- Hold: `A1 not done && fixedKeysDiff==0 && validatorPass`
-- Stop: `fixedKeysDiff>0 || pending bypass || unrecorded approval inference || hard stop`
-- Handover condition: `A1完了確認ログ` 追記まで Draft維持（Stop条件未発火が前提）。
-- Current: **Hold**
-
 
 ## Draft解除条件（Draft -> Ready）
 - [x] Scope が planning-only かつ allowlist内1ファイルに限定。
@@ -108,7 +99,7 @@
 
 ## 依存切断条件（Ready維持のための独立性）
 - [x] A1依存は状態判定（Go/Hold）にのみ反映し、本文契約の編集依存を持たない。
-- [x] Stream Eで先行実施するのは「運用同期準備（語彙/導線/証跡）」のみ。
+- [x] Stream Gで先行実施するのは「運用同期準備（語彙/導線/証跡）」のみ。
 - [x] fixedKeysDiff==0 を維持する限り、未承認でも Draftへ逆戻しせず Ready+Holdで待機可能。
 
 ## 受入条件（Execute完了判定）
@@ -127,7 +118,7 @@
 - 根拠: Draft解除条件を満たし、A1依存はGateで隔離、契約再定義なし。
 
 
-## Stop条件（Prompt E適用）
+## Stop条件（Prompt G適用）
 - A1固定値不一致（`fixedKeysDiff>0`）
 - 共有資源競合（`sharedResourceFreeze`違反、または共有資源の二重更新要求）
 - 承認前提崩壊（pending bypass / unrecorded approval inference / dual-control破綻）
