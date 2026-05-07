@@ -671,3 +671,41 @@
   2. AC/DoD/Validation が docs-check で再確認可能であること。
   3. proposal-only / fail-closed / no auto-* の不変性が保たれること。
 - Stop条件: 前提不整合・契約競合・4回目修復要求を検知した場合は `held`。
+
+## Stream E update（2026-05-07 / CE4 Draft契約下書きの独立整備）
+
+### Phase 1 Read（最新再読）
+- 再読対象: `ADR-0028` / `ADR-0016` / `ADR-0017` / `02_Architecture/api.md` / 本Issue現行契約。
+- 再確認結果: `proposal-only`、`fail-closed`、同値AND条件、監査4イベント順序の4軸に矛盾なし。
+- 判定: CE4 Draftは contract-only のまま独立整備可能（実装着手条件は未充足のまま維持）。
+
+### Phase 2 Plan（AC/DoD不足提案）
+- AC補強提案:
+  1. API/CLI共通で失敗分類4区分（入力/監査/ポリシー/同値）を必須再読項目として固定。
+  2. `sourceBundleHash` の `mock`/`real` 両経路で同一検証規律（必須キー・順序・同値AND）を明文化。
+  3. 監査4イベントの欠落ゼロ（1件欠落でNo-Go）をOpen判定前提に固定。
+- DoD補強提案:
+  1. 未確定点（終了コード数値/匿名化方式/転送基盤）を実装仕様へ昇格しない境界を維持。
+  2. self-correction 上限 `<=3`、4回目相当は Stop を明示維持。
+  3. `safeMode既定ON` と `auto-*禁止` の後退ゼロを確認可能な記述粒度を維持。
+
+### Phase 3 Execute（contract-only / mock-first）
+- 実施内容: 本Issueの契約文のみを更新対象とし、コード・ADR本文・API/CLI実装は非変更。
+- 固定内容:
+  - 監査契約は `query -> bundle -> proposal -> apply` の順序整合を必須化。
+  - 同値判定は `equivalenceKey AND bundleHash` の同時成立のみ成功。
+  - `sourceBundleHash=mock:<64hex>` を正規入力として扱い、real経路と同一fail-closed判定を適用。
+
+### Phase 4 Verify（self-correction 上限3）
+- Verify観点:
+  1. 編集許可範囲（本Issueのみ）逸脱なし。
+  2. AC/DoD補強提案が contract-only 境界を越えていない。
+  3. 未確定点が停止報告対象として分離維持されている。
+- self-correction 実績: `0/3`（追加修復なし）。
+
+### Phase 5 Stop（致命エラー時停止条件）
+- Stop条件:
+  1. 未確定点の即時仕様確定要求（契約範囲逸脱）が入った場合。
+  2. self-correction が3回を超過した場合。
+  3. `proposal-only` / `fail-closed` / `auto-*禁止` のいずれかに抵触する要求が混入した場合。
+- 現在判定: **Proceed可能（contract draft整備完了）**。
