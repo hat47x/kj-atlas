@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream E（HIL Governance）
+- Owner: Stream B（HIL-RS-02 A1 Governance hardening）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -19,6 +19,12 @@
 5. Phase 5 Verify（自己修復<=3）
 6. Phase 6 Proceed/Stop
 
+## Stream B Execution Ledger（このIssue内で完結）
+- Rule-1: 各Phase開始時は本ファイルを再読してから着手する。
+- Rule-2: `Status=Open（Approval Pending）` の間は常に `executeAllowed=false` を維持する。
+- Rule-3: `Pending bypass` は常時禁止。`Pending -> Execute` は不成立でなければならない。
+- Rule-4: 自己修復は最大3回。3回超過、SoD競合、前提崩壊（固定キー不一致）が発生した場合は即 `Stop`。
+
 ## Constraints（固定）
 - `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` は固定参照のみ。
 - `Pending` bypass禁止。
@@ -27,6 +33,9 @@
 ## Phase 1 Read
 - 対象ファイル最新状態を再読し、SoD・Pending遷移・固定キーを確認する。
 - RS-02 A1は最小I/Fへの統治hardening層であり、A1 SSOTとの差分を持ち込まない。
+- Read Gate:
+  - `phaseStartRequiresReread=true`
+  - `readEvidence`（再読時刻/確認者）を残す。
 
 ## Phase 2 ADR（Context / Decision / Consequences）
 ### Context
@@ -80,6 +89,7 @@
 - DoD-3: freeze key mismatchで `decision=NoGo`。
 - DoD-4: 外部レーン完了待ちを前提にしない。
 - DoD-5: `Pending -> Approved/Rejected` 以外の遷移を許容しない。
+- DoD-6: 各Phase開始時の再読証跡（`readEvidence`）が存在する。
 
 ## Phase 4 Execute
 - Hard Gate:
@@ -105,6 +115,7 @@
   - NoGo return path固定: pass
   - Approval Pending中 executeAllowed=false 維持: pass
   - 禁止遷移（Draft->Approved / Pending->Execute / Rejected->Execute）遮断: pass
+  - 各Phase開始時の再読実施: pass
 
 ## Phase 6 Proceed/Stop
 - Proceed条件:
