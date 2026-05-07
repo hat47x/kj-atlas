@@ -4,9 +4,10 @@
 - Status: Draft (起票用)
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream F (QA Draft)
+- Owner: Stream H (planning only)
 - Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束後に着手）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
-- Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`
+- Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`（本フェーズは計画文書更新のみ / 実装禁止）
+- Start Gate (fixed): FB-P0収束完了 + HIL-RS-02計画同期完了まで `Draft/Hold` を維持する。
 - Related Backlog: `N/A`
 - Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`
 - Expected verification level: `unit`
@@ -20,7 +21,7 @@
 - GoNoGoGate: Optional
 - SecurityGateImpact: SafeMode
 - VerificationLevel: unit
-- DecisionStatus: Pending
+- DecisionStatus: Hold-for-Dependency-Gate
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 
 ## 1) 課題 / Problem statement
@@ -442,3 +443,15 @@
   1. 依存2件の前提矛盾が解消不能。
   2. unit/e2e境界競合が解消不能。
   3. self-correction上限超過。
+
+
+## Stream H dependency lock (2026-05-07 / planning freeze)
+
+- 本Issueは QA計画確定専用とし、実装・テスト追加は実施しない。
+- 依存固定（Go条件）:
+  1. `issue-FB-P0-2A2B2C-stream-c-planning-baseline` の収束完了。
+  2. `issue-HIL-RS-02-next-phase-delivery-plan` の計画同期完了（A1依存/Decision Queue条件を反映）。
+  3. unit/e2e 境界が再確認され、QA-E2E-USE-01 と優先順位矛盾がない。
+- 優先順位（固定）: FB-P0収束確認 → HIL-RS-02同期確認 → QA-UNIT実装着手判定。
+- ProceedDecision（現時点）: **Hold**。
+- Stopper: 上記依存のいずれか未解消、または依存証跡なしでOpen化要求が出た場合は即Stop。
