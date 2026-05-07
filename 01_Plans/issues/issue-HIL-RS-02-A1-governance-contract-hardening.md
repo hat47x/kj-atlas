@@ -1,11 +1,11 @@
 # Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream F）
 
 - Type: Process
-- Status: Open（Approval Pending）
-- Lifecycle: Draft -> Open -> In Progress -> Done
+- Status: Hold（Approval Pending / execute禁止）
+- Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream F（HIL-RS-02 A1 Governance hardening）
+- Owner: Stream E（HIL-RS-02 governance docs sync liaison）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -166,3 +166,9 @@
 - エスカレーション条件: 固定キー不一致 / 未定義遷移 / Self-Correction 3回超過。
 - 凍結宣言: `freezeDeclaration=ACTIVE (2026-05-07 UTC)`。
 
+
+
+## Stream E handoff note（2026-05-07）
+- 本Issueは A1未承認のため **Hold継続**。
+- A3/operations/security 側は本Issueを read-only 参照し、承認完了前の Open昇格文言を追加しない。
+- `executeAllowed=false` は固定。

@@ -1233,3 +1233,22 @@ runbook 側の Verify は次の4観点を必須とする。
 - Phase 3 Execute: 本書は runbook 同値確認先として更新し、承認制度の再定義は行わない。
 - Phase 4 Verify: `Security Officer / System Owner / Platform Operator`、2者承認+実行責務分離、`strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m の一致を確認。
 - Phase 5 Proceed: 未解決論点なし。次回差分で4観点不一致が再発した場合は `StoppedForClarification` で停止する。
+
+
+## 0.10 HIL-RS-02 A3 同期ステータス（A1承認前提）
+
+- Current state: **Preparation / Hold**（A1 Approval Pending 前提）
+- Scope: 用語 / 役割 / 導線 / 固定値（D1〜D4）の同期確認のみ
+- Not allowed while A1 incomplete:
+  - Open昇格を前提にした確定文言の追加
+  - 承認済みを示唆する運用状態遷移の記述
+  - fixed values の再定義
+
+### Verify checklist（DOC-OPS-02 4観点）
+
+1. 用語: `Security Officer / System Owner / Platform Operator`
+2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）
+3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`
+4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）
+
+> 判定ルール: 4観点のいずれかに不一致がある場合は `StoppedForClarification` とし、A1承認完了まで Proceed しない。
