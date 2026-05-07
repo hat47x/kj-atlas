@@ -810,3 +810,10 @@
 - DOC-OPS境界チェック: B/C/D編集境界（統合ファイル同時更新禁止）とSoD（Security Officer / System Owner / Platform Operator）の責務分離を再監査。
 - Plan→Execute→Verify→Proceed: 共有3ファイル限定の最小差分同期を実施し、Stopper条件（整合崩壊・競合・Self-Correction>3）未発生を確認。
 - Verify: validator/unittest/rg により整合監査を実施し、再開条件1行の公開値と矛盾がないことを確認。
+
+### 6-17. Stream D 共有統合同期ログ（2026-05-07 rerun-70, Phase 1-4）
+
+- Phase 1 Read: Stream A/B/C 完了報告リンクと既存決定ログを再読し、未承認事項の確定扱い混入なし（0件）を確認。
+- Phase 2 Execute: shared resource 3ファイルのみを更新対象に限定し、Active issue=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順 `A1→A2→A3` を同一値へ固定。
+- Phase 3 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し整合を確認。
+- Phase 4 Publish: 再開判定チェックリスト1行に `2026-05-07 rerun-70確認済み` を反映し、次サイクル条件を明記。
