@@ -1,11 +1,12 @@
 # Issue Draft: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Ready-for-Implementation
+- Status: Draft (dependency-locked for Stream H planning)
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream F
+- Owner: Stream H (planning only)
 - Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`（本フェーズは計画確定のみ）
+- Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（HIL-RS-02計画同期完了まで実装着手禁止）
 - Related Backlog: `QA-E2E-USE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
 - Expected verification level: `e2e`
@@ -23,7 +24,7 @@
 - GoNoGoGate: Required
 - SecurityGateImpact: SafeMode / share-export / import-sanitize
 - VerificationLevel: e2e
-- DecisionStatus: Fixed-for-Execution
+- DecisionStatus: Hold-for-Dependency-Gate
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 - ContractPolicy: E2Eケース定義は contract レベルで固定し、実装詳細（DOM構造・内部関数名・一時的UI文言）へ依存しない。
 
@@ -167,7 +168,7 @@
   - V-E2E-04は超過時に即Failではなく、要因分析未添付なら **No-Go**。
   - Verify自己修復（self-correction）は3回まで。4回目が必要な場合は **Stop**。
 
-## Phase 6. Proceed/Stop（実装着手条件）
+## Phase 6. Proceed/Stop（実装着手条件 / dependency gate fixed）
 
 ### self-correction カウンタ（本Issue運用）
 
@@ -176,7 +177,7 @@
 
 実装着手は、以下を満たした場合のみ許可（未達ならStop）。
 
-1. 本Issueの `Status=Ready-for-Implementation` が維持されている。
+1. 本Issueの `Status=Draft (dependency-locked)` が維持され、依存解消時のみ `Ready-for-Implementation` へ昇格する。
 2. AC-01〜AC-06 / DoD-01〜DoD-06 が未矛盾で固定されている。
 3. GoNoGoGate=Required の判定式に曖昧さがない。
 4. `04_Documentation/e2e_testing.md` 同期更新タスクが同一PR対象に含まれる。
@@ -268,3 +269,14 @@
 ### Phase 5 Stopper
 - 停止トリガー: 依存矛盾、SafeMode境界後退、GoNoGo未充足、または自己修復上限超過。
 - 停止時は未達項目と再開前提（必要I/F・実行環境・判定根拠）を本メモへ追記して引き継ぐ。
+
+
+## Stream H dependency lock (2026-05-07 / planning freeze)
+
+- FB-P0収束・HIL-RS-02計画同期を **実装着手の前提依存** として固定する。
+- 着手条件（全必須）:
+  1. `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が Done/Closed で、P0収束が証跡付きで確認できる。
+  2. `issue-HIL-RS-02-next-phase-delivery-plan` の依存解消状態（A1依存とDecision Queue条件）が本Issueに同期されている。
+  3. 本IssueのAC/DoD/GoNoGoが上記2依存と矛盾しない。
+- ProceedDecision（現時点）: **Hold**。
+- Stopper: 依存未解消、依存状態の再現不可、またはA1完了前の実装要求が出た場合は即Stop。
