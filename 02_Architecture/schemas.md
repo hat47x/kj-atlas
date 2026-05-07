@@ -766,3 +766,17 @@ Deprecateルール（v1固定）:
 - CE2/CE4 は backend未完了でも契約テストを継続できる。
 - 状態遷移（`unreviewed -> human_reviewed` の人手限定）と safeMode 境界の侵害を schema 検証で早期検出できる。
 - 互換性判断は v1固定を基準に fail-closed で統一される。
+
+### 1.2.1 CE1 freeze confirmation update（2026-05-07 / Stream B）
+
+- Context contracts are frozen as v1 (`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`) and remain mock-first.
+- Required `ContextQueryV1` key set is fixed to:
+  - `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`
+- Required `ContextBundleV1` key set is fixed to:
+  - `queryCanonicalHash/bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
+- Error semantics are frozen in v1:
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+- Verify gate is frozen as `sameQuery && sameBundle`; mismatch is fail-closed and self-repair is capped at max 3.
+- Conflict-safe rule: agreement missing / dependency contradiction / collision detected => `held` and stop for instruction.

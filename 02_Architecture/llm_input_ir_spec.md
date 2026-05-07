@@ -595,3 +595,11 @@ A2 contract test では次を機械判定する。
 - IR 生成前提ゲートとして `previewConfirmed=true` を必須化し、違反は `422 preview_required` とする。
 - unknown key は `400 unknown_contract_key`、hash非決定論は `409 nondeterministic_bundle` の fail-closed を維持する。
 - 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3 一致する検証を mock-first 基準とする。
+
+## CE1 contract-freeze note（2026-05-07 / Stream B）
+
+- 本仕様は CE1 `ContextQueryV1` / `ContextBundleV1` を **contract-only / mock-first** 境界として参照する。
+- IR 生成は Query Preview 完了後のみ許可し、`previewConfirmed=false` は `422 preview_required` で停止する。
+- v1 は closed-world とし、未定義キーは `400 unknown_contract_key` とする。
+- 同一 canonical query に対して `queryCanonicalHash` / `bundleHash` が一致しない場合は `409 nondeterministic_bundle` で fail-closed とする。
+- 本節は実装方式を拘束せず、契約語彙と検証条件のみを固定する。

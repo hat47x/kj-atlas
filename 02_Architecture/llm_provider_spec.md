@@ -192,3 +192,13 @@ LLM_FIXTURE_DATASET=<fixture_dataset_path>
 - CE1 v1 closed-world により未定義キーは provider 層到達前に `400 unknown_contract_key` で拒否する。
 - `bundleHash` 非決定論検知時は `409 nondeterministic_bundle` を返し fail-closed とする。
 - 本節は mock-first 連携を想定し、実LLM実装差分を契約語彙へ反映しない。
+
+## CE1 mock-first contract reaffirmation（2026-05-07 / Stream B）
+
+- Provider は CE1 v1 契約の下流であり、`ContextQueryV1` / `ContextBundleV1` のキー再定義を行わない。
+- Provider 到達前ゲートを固定する：
+  - `previewConfirmed=false` -> `422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - hash非決定論 -> `409 nondeterministic_bundle`
+- 監査相関キーは `queryCanonicalHash` / `bundleHash` / `provider_meta.trace_id` を最小集合として保持する。
+- 本再確認は contract-only であり、接続実装・リトライ戦略・モデル選定は本凍結範囲外とする。

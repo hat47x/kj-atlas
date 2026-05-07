@@ -2759,3 +2759,31 @@ type PatchProposal = {
   - 承認待ち事項の先行確定要求を検知。
   - CE0前提と下流要件の不一致（契約再定義要求）を検知。
   - allowlist外編集 / safeMode既定後退 / Contract ID mutation / self-correction 4回目相当を検知。
+
+## Stream B latest run（2026-05-07 / CE0 contract boundary confirmation for CE1 mock-first handoff）
+
+- run_id: `stream-b-ce0-2026-05-07-11`
+- assignee: `Stream B（CE0/CE1 contract boundary）`
+- scope_guard: `edit_allowlist strict`（許可ファイルのみ）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / dependency_conflict=0 / out_of_scope_edit=0`
+
+### Phase 1 Read
+- CE0固定契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を再読し、再定義禁止を確認。
+- CE1先行固定の前提として、CE0は read-only reference のみ許可する方針を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: CE1 `ContextQueryV1` / `ContextBundleV1` を先行固定するため、CE0側で追加変更を発生させない必要がある。
+- Decision: CE0は契約語彙とNo-Go canonical IDsを不変維持し、CE1への引き渡しは read-only handoff とする。
+- Consequences: CE1/CE2/CE4 は CE0ドリフトの影響なく mock-first 検証を継続できる。
+
+### Phase 3 Mock契約固定
+- CE0契約の固定値（safeMode既定ON、`allowUnreviewedText=false`、`human_reviewed` 手動昇格のみ）を再凍結。
+- 実装依存の追記は行わず、contract-only 記録に限定。
+
+### Phase 4 Verify（max 3 self-repair）
+- verify_attempts: `1/3`
+- result: pass（契約ID変更なし、safeMode後退なし、依存矛盾なし）
+
+### Phase 5 引継ぎメモ
+- CE1 handoff key: `CE0 contracts are immutable and read-only reference`。
+- fail-safe: 競合/矛盾/未合意検出時は `held` で停止し指示待ち。
