@@ -491,3 +491,29 @@ Prohibited for A2/A3:
 - Proceed:
   - Stream A handoff 完了。
 
+
+## 7) Stream A handoff manifest（2026-05-07 / contract-I/F freeze）
+
+### 7.1 Machine-readable freeze manifest
+```json
+{
+  "manifestVersion": "a1-freeze-manifest-2026-05-07",
+  "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "snapshotId": "SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "schemaVersion": "1.0.0",
+  "contractIds": ["A1-CRITIQUE-IF", "A1-REDIFF-IF", "A1-ATTR-IF", "A1-ERROR-IF"],
+  "overridePolicy": "human_dual_control_only",
+  "contractLinkLocked": true,
+  "sharedResourceFreeze": true,
+  "safeModeDefault": "ON",
+  "safeModeBoundary": "SAFE_MODE_STRICT_ON",
+  "decisionQueueTransition": ["Pending->Approved", "Pending->Rejected"],
+  "a2a3ReferenceMode": "read_only",
+  "destructiveChange": "forbidden"
+}
+```
+
+### 7.2 B/C handoff constraints
+- B/C（A2/A3）は本manifestを read-only 参照し、派生契約を再定義しない。
+- 変更要求は `A1-CDC-only` ルートに差し戻す。
+- 未解決項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）が残る間は `NoGo/Hold` を維持する。

@@ -570,3 +570,45 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
 ### Phase 5: Proceed / Stop
 - 判定: `Hold`。
 - 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解決。
+
+## Stream A serial run（2026-05-07 / A1 freeze handoff package）
+
+### Phase 1: Read Gate
+- Execute: `issue-FB-P2C-01-a1-interface-contract.md` / 本Issue / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読。
+- Verify: 既存固定値との差分は 0（契約ID・schemaVersion・Gate式・禁止事項すべて一致）。
+- Proceed: 差分なしのため契約固定フェーズへ進行。
+
+### Phase 2: ADR明文化（必要性判定）
+- Context: 本runは新規契約を追加せず、A1固定値の再確認と引き渡し専用。
+- Decision: 追加ADRなし（既存A1 CDCを参照継続）。
+- Consequences: A2/A3は read-only 参照以外を不可とする。
+
+### Phase 3: 契約固定（機械可読）
+```json
+{
+  "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "snapshotId": "SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+  "contractIds": ["A1-CRITIQUE-IF", "A1-REDIFF-IF", "A1-ATTR-IF", "A1-ERROR-IF"],
+  "schemaVersion": "1.0.0",
+  "overridePolicy": "human_dual_control_only",
+  "contractLinkLocked": true,
+  "sharedResourceFreeze": true,
+  "safeModeDefault": "ON",
+  "safeModeBoundary": "SAFE_MODE_STRICT_ON",
+  "decisionQueueTransition": ["Pending->Approved", "Pending->Rejected"]
+}
+```
+
+### Phase 4: 引き渡し（B/C向け）
+- SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Freeze list: 本run「Phase 3: 契約固定（機械可読）」
+- Prohibited（破壊的変更不可）:
+  1. 契約ID/`schemaVersion`/判定キーの追加・改名・削除
+  2. `Pending` bypass
+  3. SafeMode/share-export境界の後退
+
+### Verify（AC/DoD自己検証）
+- AC-1: 凍結対象を機械可読（JSON）で列挙済み。
+- AC-2: A2/A3参照はread-onlyで明示済み。
+- AC-3: 未解決人間判断（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）を維持明記。
+- Self-Correction count: `0/3`
