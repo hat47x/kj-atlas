@@ -669,3 +669,31 @@ export type AdminProvisionUserConflictError = {
   - `sourceBundleHash`
 - Stopper:
   - safeMode既定値後退、preview gate破壊、自己修復3回超過を検知した場合は即時 `held` 停止。
+
+### 2.11 Stream A freeze excerpt（2026-05-07, read-only handoff）
+
+Contract Freeze / minimum I/F agreement を下流へ渡す機械可読抜粋（参照専用）。
+
+```yaml
+contract_freeze:
+  id: HIL-RS-02-A1-CONTRACT-FREEZE-v1
+  schema_version: "1.0.0"
+  immutable:
+    - contract_ids
+    - schema_version
+    - safe_mode_default
+    - safe_mode_boundary
+    - decision_queue_transition
+  contract_ids:
+    - A1-CRITIQUE-IF
+    - A1-REDIFF-IF
+    - A1-ATTR-IF
+    - A1-ERROR-IF
+  compatibility:
+    allowed_transition:
+      - Pending->Approved
+      - Pending->Rejected
+    unknown_contract_key: 400
+  open_gate: "a1Status==Done && pendingDecisionQueueCount==0"
+  proceed_when_unapproved: Needs-decision
+```

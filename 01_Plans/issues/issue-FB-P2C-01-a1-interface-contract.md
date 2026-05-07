@@ -1191,3 +1191,46 @@
 ### Phase 5: Proceed / Stop
 - 判定: `Hold/Needs-decision`。
 - 理由: human最終承認ログ未完了および `held` 論点残存のため、推測確定せず停止条件を満たす。
+
+## Stream A Phase 1-5 run log（2026-05-07 / contract freeze strict mode）
+
+### Phase 1: Read & Baseline
+- `Status/Priority/Dependencies` を再確認し、A1が契約SSOTであることを再確認。
+- 未解決: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`。
+
+### Phase 2: ADR明文化（承認待ち明示）
+- Context: A1契約が未確定のまま下流へ進むと依存順が崩れる。
+- Decision: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` と `schemaVersion=1.0.0` を維持し、承認完了まで `Needs-decision` 固定。
+- Consequences: A2/A3は read-only 参照のみ。
+
+### Phase 3: Contract Freeze（変更不可/拡張可能の分離）
+- 変更不可範囲:
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 将来拡張余地:
+  - v2追加による非破壊拡張のみ許可（v1破壊変更は禁止）。
+
+### Phase 4: Verify
+- Plan -> Execute -> Verify -> Proceed を実施。
+- self-correction: `0/3`（不一致未検知）。
+
+### Phase 5: Handover Artifact（機械可読抜粋 / read-only）
+```yaml
+freeze_pack:
+  freezeContractId: HIL-RS-02-A1-CONTRACT-FREEZE-v1
+  schemaVersion: "1.0.0"
+  overridePolicy: human_dual_control_only
+  contractIds:
+    - A1-CRITIQUE-IF
+    - A1-REDIFF-IF
+    - A1-ATTR-IF
+    - A1-ERROR-IF
+  safeModeDefault: ON
+  safeModeBoundary: SAFE_MODE_STRICT_ON
+  decisionQueueTransition:
+    - Pending->Approved
+    - Pending->Rejected
+  a2a3_open_allowed: "a1Status==Done && pendingDecisionQueueCount==0"
+state: Needs-decision
+```

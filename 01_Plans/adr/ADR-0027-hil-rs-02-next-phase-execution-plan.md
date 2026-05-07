@@ -336,3 +336,20 @@
 - delivery計画と運用同期計画の判定軸が一本化され、再開時の判断負荷が下がる。
 - A1未完時の先行Openを防止しつつ、準備作業（docs planning）は継続可能となる。
 - 競合判定は `allowlist外差分ゼロ` を必須化し、越境編集を抑止する。
+
+## Stream A Contract Freeze synchronization（2026-05-07）
+
+### Context
+- HIL-RS-02 は A1契約凍結を唯一ゲートとして扱う必要があり、実装準備と契約確定の混線を防止する必要がある。
+
+### Decision
+- Contract Freeze Pack `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を継続参照し、次を固定する。
+  - API signature群: `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`（v1互換固定）
+  - `A2A3_OPEN_ALLOWED` 判定式の前提（`a1Status=="Done" && pendingDecisionQueueCount==0`）
+- 変更不可範囲: 契約ID変更、`schemaVersion` 改版、Pending bypass、SafeMode境界後退。
+- 将来拡張余地: v2契約の追加（v1非破壊）と監査イベント拡張のみ。
+
+### Consequences
+- A1未承認時は `Hold/Needs-decision` 維持となり、A2/A3のOpen化を防止できる。
+- 下流は mock-first で検証継続できるが、契約再定義は不可となる。

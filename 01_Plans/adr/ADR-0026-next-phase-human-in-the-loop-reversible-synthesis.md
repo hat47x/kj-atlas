@@ -231,3 +231,24 @@
 ### Consequences
 - A2/A3 は read-only handoff を継続し、未承認事項（`Approval Record`, `held`）が解消するまでは `Needs-decision/Hold` を維持する。
 - SafeMode既定ONと厳格境界の後退を禁止する。
+
+## Stream A Contract Freeze update（2026-05-07）
+
+### Context
+- Stream A の責務は、A1契約の固定値を親ADRで再定義せず、A2/A3の参照境界を凍結状態で維持することである。
+- 現時点で `Approval Record` が未充足のため、実装・下流確定へ進める前提が成立していない。
+
+### Decision
+- 親ADRの契約値は次を参照専用で固定する（変更不可範囲）。
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 将来拡張余地は `v2` 追加のみに限定し、`v1` 必須キー集合と失敗意味論は維持する。
+- `Approval Record` 未充足時は `Proceed=Needs-decision/Hold` を維持し、推測確定を行わない。
+
+### Consequences
+- A2/A3は read-only handoff のまま進行し、契約再定義を実施できない。
+- 契約ID改変、SafeMode境界緩和、Pending bypass を No-Go として維持できる。
