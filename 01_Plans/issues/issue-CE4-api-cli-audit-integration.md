@@ -709,3 +709,34 @@
   2. self-correction が3回を超過した場合。
   3. `proposal-only` / `fail-closed` / `auto-*禁止` のいずれかに抵触する要求が混入した場合。
 - 現在判定: **Proceed可能（contract draft整備完了）**。
+
+## Stream C update（2026-05-07 / implementation-ready prep, proposal-only）
+
+### 1) Read同期
+- `02_Architecture/api.md` と `02_Architecture/runtime_parameter_registry.md` の CE4 節を再同期し、契約未確定点を実装成功経路へ混在させない方針を再確認。
+
+### 2) Plan
+- AC提案（追加）:
+  - [x] 契約未確定項目を stub で隔離し、成功判定から除外する境界を API 契約に明示。
+  - [x] runtime registry に CE4 stub 制御キーを最小追加し、fail-closed を維持。
+- DoD提案（追加）:
+  - [x] 未確定点に対する mock/stub 応答が監査 `result=ng` を強制する。
+  - [x] A/B 依存が未確定のままでも proposal-only で停止可能な tri-state（Proceed/Hold/Stop）を保持する。
+
+### 3) Execute（mock-first / stub隔離）
+- `sourceBundleHash=mock:<64hex>` を維持したまま、以下の未確定項目を `501` stub で隔離する契約を追加:
+  - `ce4_stubbed_exit_code_mapping`
+  - `ce4_stubbed_principal_masking`
+  - `ce4_stubbed_audit_transport`
+- stub 応答時も `equivalenceKey/queryCanonicalHash/bundleHash/schemaVersion` を監査記録する fail-closed 契約を固定。
+
+### 4) Verify（self-correction 0/3）
+- 契約確認:
+  1. proposal-only 後退なし。
+  2. 監査4点 + 共通必須キー欠損を成功扱いしない。
+  3. 未確定項目は stub 隔離で成功判定へ混入しない。
+- self-correction: `0/3`。
+
+### 5) Proceed
+- 判定: **Proceed (Implementation Ready / Contract-Compliant with Stub Isolation)**
+- 但し、A/B ストリーム依存の確定前提が追加要求された場合は **proposal-only で Stop**（実装強行禁止）。
