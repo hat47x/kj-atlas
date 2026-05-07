@@ -9,8 +9,16 @@
 - Scope: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（※本Issueメモ整備のみ）
 - Related Backlog: `DOC-OPS-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
-- Dependencies: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`, `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`
-- Dependency status: `未確定（DOC-OPS-05 Open gate 判定待ち）`
+- Dependencies: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（完了後に着手）
+- Dependency status: `05-06完了待ち（単方向依存）`
+
+
+## Fixed execution order（DOC-OPS-05 Stream I proposal-only）
+- Step 1 (Gate-A): `DOC-OPS-05-05` を先行実行し、語彙・Gate・停止条件を基準化する。
+- Step 2 (Gate-B): `DOC-OPS-05-06` を実行し、05-05で固定した語彙とGateを継承する。
+- Step 3 (Gate-C): `DOC-OPS-05-07` を実行し、05-06確定後に監査ログ方針を整合させる。
+- Cycle break rule: 後続Issueから先行Issueへの「完了前依存」を禁止し、逆参照は informational link のみ許可する。
+- Stopper: Gate-A/B/C のいずれかで未解決競合が発生した場合、`ProceedDecision: Stop` で停止し次段へ進めない。
 
 ## Requirement meta I/F
 - RequirementID: `DOC-OPS-05-07`
