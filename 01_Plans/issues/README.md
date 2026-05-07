@@ -30,6 +30,7 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - 導線: `02_Architecture/strict_mode_exception_approval_flow.md` → `04_Documentation/operations.md` / `04_Documentation/security.md` → `01_Plans/issues/README.md` / `01_Plans/project-progress-dashboard.md` の順に同期する。
 - 固定値（D1〜D4）: `承認順序=Security Officer先行 + 承認TTL=4h / scope=tenant最大2h / 代理承認なし / 48hレビュー + 15m一次 + 60m二次` を変更しない。
 - Stream E rerun-69（2026-05-06）で shared 3ファイル再読と DOC-OPS境界チェック（B/C/D・SoD）を再実施し、公開固定値と停止条件違反0件を再確認した。
+- Stream D rerun-71（2026-05-07）で Phase 1-5（Read→Sync→Audit→Verify→Publish）を shared 3ファイル限定で再実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件を再確認した。
 
 ## Source Issue 運用基準（Traceability）
 
