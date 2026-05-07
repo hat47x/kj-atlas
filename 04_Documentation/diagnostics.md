@@ -540,3 +540,25 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 - 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
 - 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
 
+
+
+## Stream F targeted quality uplift (2026-05-07)
+
+### Read → Plan(AC/DoD補完) → Execute → Verify → Proceed
+- Read: 本文の判定語彙（Go/NoGo, Proceed/Hold/Stop, pass/fail/blocked）と依存状態を再確認した。
+- Plan: AC/DoD の不足項目を「単体再読で判定できるか」「docs-checkで検証できるか」に限定した。
+- Execute: 本文の目的・非目的・停止条件を明示し、推測での gate確定を禁止した。
+- Verify: docs-check 前提を維持し、自己修復上限を 3 回に固定した。
+- Proceed: gate未確定事項は Hold 維持、Assumption/TODO を明示して停止する。
+
+### AC/DoD delta（補完）
+- AC-Delta-1: 判定語彙を 1 セット（Go/NoGo, Proceed/Hold/Stop, pass/fail/blocked）に固定。
+- AC-Delta-2: 依存未確定時の扱いを `ProceedDecision: Hold` として明示。
+- DoD-Delta-1: `self-correction <= 3` を超える場合は `Stop`。
+- DoD-Delta-2: gate未確定事項は推測せず、TODO/Assumptionを残して停止。
+
+### Stopper handling（推測禁止）
+- TODO: `DOC-OPS-05` Open gate の最終承認証跡（日時/承認者/evidence link）確定待ち。
+- TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
+- Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
+
