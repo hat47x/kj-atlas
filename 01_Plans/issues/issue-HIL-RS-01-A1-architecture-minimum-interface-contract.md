@@ -389,3 +389,56 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
 - 判定: `Hold / Needs-decision` 維持。
 - 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消のため。
 - Stop trigger判定: 未発火（前提崩壊/未定義競合/修復上限超過なし）。
+
+## Stream A Critical Path run（2026-05-07 / A1 contract freeze confirmation）
+
+### Phase 1: Read同期（Plan → Execute → Verify → Proceed）
+- Plan: `issue-HIL-RS-01*` / `issue-FB-P2C-01-a1-interface-contract.md` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読し、A1未確定項目のみ抽出する。
+- Execute（未確定項目）:
+  1. `Approval Record` = `Pending`（`approved_by/approved_at/evidence` 未充足）
+  2. `HIL-RS-02-GOV-EXCEPTION-01` = `held`
+  3. `pendingDecisionQueueCount==0` の監査証跡 = 未添付
+- Verify: 固定値（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`, `decisionQueueTransition`）のドリフト `0`。
+- Proceed: 差分なしのためPhase 2へ進行。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約が未固定のまま下流が進行すると、A2/A3で派生判定式が導入され契約境界が分岐する。
+- Decision:
+  - 固定値は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持。
+  - A2/A3は read-only 参照のみ許可し、再定義は不可。
+- Consequences:
+  - 未承認項目が残るため状態は `Hold/Needs-decision` を維持。
+  - 承認ログ取得前に `Approved` 相当へ遷移しない。
+
+### Phase 3: 契約固定（A2/A3 handoff freeze）
+- Freeze API signature set:
+  - `CritiqueV1(input)->CritiqueV1Result`
+  - `ReDiffV1(input)->ReDiffV1Result`
+  - `AttributionV1(input)->AttributionV1Result`
+  - `A1ErrorV1(input)->A1ErrorV1Result`
+- Freeze deterministic / gate values:
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- Contract freeze declaration: `frozen-candidate`（human final approval待ち）。
+
+### Phase 4: 引き渡し（B/C向け）
+- 参照リンク一覧:
+  1. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  3. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+- 固定値一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `SnapshotID=SNAP-HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- 変更禁止領域:
+  1. `03_Implement/**`
+  2. A2/A3での契約ID・schemaVersion・判定式の再定義
+  3. `Pending` bypass / SafeMode後退
+
+- Final gate decision: **Stop/Hold**（未承認項目が残存し、A1領域は凍結状態のまま）。
