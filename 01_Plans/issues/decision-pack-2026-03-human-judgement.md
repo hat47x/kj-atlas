@@ -825,3 +825,11 @@
 - Phase 3 監査: 件数・状態・依存順・停止条件（未承認決定の確定扱い / 件数不整合 / 未定義競合）を再計算し、違反0件を確認。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=1|Open=2|件数47|Active=5|Done=26|A1→A2→A3|再開条件1行|再開判定" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行（validatorは既知不整合で失敗、unittest/rgは成功）。
 - Phase 5 Publish: 再開判定1行を固定し、未承認事項の確定扱いゼロを確認して Proceed 判定。
+
+
+### 6-17. Stream D 共有統合同期ログ（2026-05-07 rerun-72, Phase 1-4）
+
+- Phase 1 Read Gate: Stream A/B/C完了報告、決定リンク、件数根拠を再読し、未承認事項の確定扱い0件を確認。
+- Phase 2 同期更新: shared resource 3ファイル（`project-progress-dashboard.md` / `issues/README.md` / 本decision-pack）で Active一覧=5件、Decision Queue Ready=1/Open=2、次の1手、依存順 `A1→A2→A3` を同一値へ固定。
+- Phase 3 監査: 件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）と Queue（Ready=1/Open=2）を再計算し、停止条件違反0件を確認。
+- Phase 4 公開固定: 再開判定チェックリスト1行を更新し、参照リンク不整合0件・未定義競合0件を確認。

@@ -1,12 +1,12 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-07 (UTC, Stream D shared sync rerun-71)
+最終更新: 2026-05-07 (UTC, Stream D shared sync rerun-72)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
 
-再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-07 rerun-70確認済み）。`
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-07 rerun-72確認済み）。`
 
 - Stream E Phase 1-4 直列同期（2026-05-06 rerun-69）で3共有ファイル再読→DOC-OPS境界（B/C/DとSoD）監査→Plan/Execute/Verify/Proceedを実施し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）を維持した。
 - 2026-03-14 HIL-RS-02 planning syncで、議事録/ADR-0027/Issue4件（Open2+Draft2）を追加し、依存順 `HIL-RS-02-A1 → A2 → A3` とDecision Queue 2件（Open）を反映した。
@@ -51,6 +51,8 @@
 - Stream D 共有統合同期（2026-05-07 rerun-70）で Phase 1 Read同期（A/B/C完了報告リンクと未承認事項の確定扱い0件を再監査）→ Phase 2 統合反映（Active issue=5 / Decision Queue Ready=1 Open=2 / 次の1手を3共有ファイル同一値へ固定）→ Phase 3 Verify（validator/unittest/rg成功、件数47・依存順`A1→A2→A3`・停止条件違反0件を確認）→ Phase 4 Publish（再開判定チェックリスト1行を更新）を直列実行し、公開固定値 `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` を維持した。
 
 - Stream D 共有統合同期（2026-05-07 rerun-71）で Phase 1 Read同期（A/B/C完了報告リンクと決定リンクを再確認）→ Phase 2 統合反映（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 次の1手を固定）→ Phase 3 監査（依存順 `A1→A2→A3`・停止条件違反0件・未承認事項の確定扱い0件を再計算）→ Phase 4 Verify（validator/unittest/rg成功）→ Phase 5 Publish（再開条件1行を再固定）を直列実行し、不整合ID/未定義競合/件数不整合の発生なしを確認した。
+- Stream D 共有統合同期（2026-05-07 rerun-72）で Phase 1 Read Gate（A/B/C完了報告・決定リンク・件数根拠を再読）→ Phase 2 同期更新（Active一覧=5件 / Decision Queue Ready=1 Open=2 / 次の1手 / 依存順A1→A2→A3を3共有ファイルで同一値固定）→ Phase 3 監査（Open=10 / Draft=8 / Done系=26、Ready=1/Open=2、停止条件違反0件を再計算）→ Phase 4 公開固定（再開判定チェックリスト1行更新）を直列実行し、未承認事項の確定扱い0件・参照リンク不整合0件・未定義競合0件を確認した。
+
 - Stream E FB-P0-2A2B2C planning baseline同期（2026-05-03）で Phase 1-6（Read同期→CDC→Plan→Execute→Verify→Proceed）を docs-only で実行し、allowlist 2ファイル運用・依存順 `A1→A2→A3`・固定キー（`freezeContractId` / `contractIds` / `safeModeDefault=ON` / `sharedResourceFreeze=true`）・停止条件違反0件を再確認した。Proceed判定は `Needs-decision` を維持し、未承認事項 `HIL-RS-02-GOV-EXCEPTION-01` の確定扱いを行っていない。
 - Stream D 共有統合同期（2026-04-30 rerun-60）で Phase 1 Read（全レーン完了報告と参照リンク再確認）→ Phase 2 Plan（件数 `47`、内訳 Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26、Decision Queue Ready=1/Open=2、次の1手=Ready監査継続+Open2件期限管理を固定）→ Phase 3 Execute（shared resource 3ファイル単一変更セット）→ Phase 4 Verify（validator/unittest/rg）→ Phase 5 Proceed（再開判定チェックリスト1行固定）を完了し、未承認決定の確定扱い・件数不整合・3回超過の停止条件違反0件を確認した。
 ### 未完Issue全件（22件）とレーン割当
