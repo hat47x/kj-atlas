@@ -1908,3 +1908,44 @@ handoffKeys:
   - check: `equivalenceKey + bundleHash` で監査再現キーを構成
   - errors: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
 - handoff_note: CE1は契約のみ凍結済み。CE2/CE4はmockで先行可能、実実装の完了待ちは不要。
+
+## Stream C latest run（2026-05-07 / CE1 ContextQuery-ContextBundle I/F freeze for proposal-only independence）
+
+### Phase 1 Read
+- 最新版として本Issue全体を再読し、CE0契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を**参照のみ**で扱う境界を再確認。
+- CE1凍結ID（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に差分なしを確認。
+- スコープ制約（本ファイルのみ編集）を再確認。
+
+### Phase 2 Plan（AC/DoDドラフト補完）
+- 観点1: **I/F署名**
+  - `ContextBundleV1` のmock利用に必要な必須キーを `queryCanonicalHash` / `bundleHash` / `selected` / `relations` / `evidence` / `contradictions` / `reviewFlags` / `truncationMeta` / `excludedReason` に限定。
+- 観点2: **payload境界**
+  - payloadはclosed-world固定（未定義キーは `400 unknown_contract_key`）。
+  - 非決定論キー除外（`generatedAt` / `traceId` / `providerLatencyMs`）と配列順固定を契約条件として扱う。
+- 観点3: **mock可能性**
+  - CE2は `sourceBundleHash === bundleHash` の一致検証だけでproposal-only進行可能。
+  - CE4は `equivalenceKey + bundleHash + queryCanonicalHash` の監査キー再現だけでproposal-only進行可能。
+
+### Phase 3 Execute（ContextBundle payload契約の固定）
+- `ContextBundleV1` を「実装非依存・mock生成可能な最小契約」として固定し、下流へ渡す成果物を以下に限定：
+  - Contract IDs
+  - I/F型シグネチャ
+  - 固定エラー語彙（422/400/409）
+  - hash決定論ルール
+  - handoff keys（`sourceBundleHash === bundleHash`、`equivalenceKey + bundleHash`）
+- CE2/CE4が**独立にproposal-only**で進行できるよう、実装タスク・実装TODO・相互待機条件を本契約から排除。
+
+### Phase 4 Verify（曖昧語 / 循環依存 / Self-Correction）
+- Check-1 曖昧語: 「適宜」「可能なら」等の曖昧語を追加していないことを確認（pass）。
+- Check-2 循環依存: `CE0 -> CE1 -> CE2/CE4` の一方向依存を維持し、CE1からCE0再定義がないことを確認（pass）。
+- Check-3 mock独立性: CE2/CE4が本契約のみで正常/異常系を構築可能なことを再確認（pass）。
+- Self-Correction log（max 3）:
+  - attempt 1: payload境界語彙の統一（`closed-world`表記に統一）
+  - attempt 2: handoff key記法の統一（`equivalenceKey + bundleHash + queryCanonicalHash` を明記）
+  - attempt 3: proposal-only条件から実装依存語彙を除去
+
+### Phase 5 Stopper
+- 結論: **stopper未発火（proceed）**。
+- 停止規則（維持）:
+  - CE0契約条項と矛盾が解消不能な場合は `held` で停止し、CE0差分承認待ちへ遷移する。
+  - 失敗3回超過（4回目相当）のSelf-Correctionは禁止し、即停止する。
