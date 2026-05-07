@@ -767,6 +767,36 @@ Deprecateルール（v1固定）:
 - 状態遷移（`unreviewed -> human_reviewed` の人手限定）と safeMode 境界の侵害を schema 検証で早期検出できる。
 - 互換性判断は v1固定を基準に fail-closed で統一される。
 
+### 1.3 Stream A contract freeze manifest（2026-05-07）
+
+Contract Freeze と最小I/F合意の固定マニフェスト（read-only handoff）。
+
+```yaml
+hil_rs_a1_manifest_v1:
+  freezeContractId: HIL-RS-02-A1-CONTRACT-FREEZE-v1
+  schemaVersion: "1.0.0"
+  overridePolicy: human_dual_control_only
+  safeModeDefault: ON
+  safeModeBoundary: SAFE_MODE_STRICT_ON
+  contractIds:
+    - A1-CRITIQUE-IF
+    - A1-REDIFF-IF
+    - A1-ATTR-IF
+    - A1-ERROR-IF
+  immutable_scope:
+    - api_signature
+    - major_data_types
+    - compatibility_semantics
+  extensible_scope:
+    - v2_additive_fields_only
+    - additional_audit_metadata
+  decisionQueueTransition:
+    - Pending->Approved
+    - Pending->Rejected
+  gate:
+    a2a3_open_allowed: "a1Status==Done && pendingDecisionQueueCount==0"
+    otherwise: Hold
+```
 ### 1.2.1 CE1 freeze confirmation update（2026-05-07 / Stream B）
 
 - Context contracts are frozen as v1 (`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`) and remain mock-first.
