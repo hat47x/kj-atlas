@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream B）
+# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream F）
 
 - Type: Process
 - Status: Open（Approval Pending）
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream B（HIL-RS-02 A1 Governance hardening）
+- Owner: Stream F（HIL-RS-02 A1 Governance hardening）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -19,7 +19,7 @@
 5. Phase 5 Verify（自己修復<=3）
 6. Phase 6 Proceed/Stop
 
-## Stream B Execution Ledger（このIssue内で完結）
+## Stream F Execution Ledger（このIssue内で完結）
 - Rule-1: 各Phase開始時は本ファイルを再読してから着手する。
 - Rule-2: `Status=Open（Approval Pending）` の間は常に `executeAllowed=false` を維持する。
 - Rule-3: `Pending bypass` は常時禁止。`Pending -> Execute` は不成立でなければならない。
@@ -46,7 +46,7 @@
 
 ### Decision
 - SoD固定:
-  - Requester: Stream B agent
+  - Requester: Stream F agent
   - Approver-A: Architecture Owner
   - Approver-B: Governance reviewer
   - Executor: Platform Operator
@@ -70,6 +70,12 @@
 - 承認待ち明文化:
   - `Status=Open（Approval Pending）` の間は `executeAllowed=false` を維持する。
   - `Context / Decision / Consequences` を明文化し、承認待ちを経るまで Phase 4 へ遷移しない。
+
+
+### Approval Record（承認記録要件）
+- Required fields: `approved_by`, `approved_at`（ISO 8601）, `evidence`（ADR/Issue/meeting log URL or path）
+- Pre-approval default: `approved_by=null`, `approved_at=null`, `evidence=pending`
+- Validation rule: 3項目のいずれかが欠損している場合は `executeAllowed=false` を維持する。
 
 ### Consequences
 - 未承認時は `Hold` 維持。
