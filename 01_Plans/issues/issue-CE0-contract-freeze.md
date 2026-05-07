@@ -2650,3 +2650,48 @@ type PatchProposal = {
 - 継続条件:
   - CE0 Contract Freezeを単一ファイルSSOT（read-only参照モード）で維持。
   - self-correction が 3回を超える見込み、または逸脱要求発生時は即時 `held` 停止。
+
+## Stream D latest run（2026-05-07 / CE0 only / contract-freeze dedicated integration prompt）
+
+- run_id: `stream-d-ce0-2026-05-07-11`
+- assignee: `Stream D（CE0契約凍結専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- lane_separation: `CE1 lane (Stream C) とはファイル分離を維持`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / fatal_error=0`
+
+### Phase 1 Read
+- 本Issueを再読し、担当範囲が本ファイル単体であることを再確認。
+- 目的を固定: CE上流契約境界の確定と、CE1/CE2/CE4での再定義防止。
+- 致命停止条件（推測要求・指定外編集・契約ID再定義・safeMode既定値後退）を再確認。
+
+### Phase 2 ADR（C/D/C）
+- Context: CE0契約SSOTを単一ファイルで維持し、下流ストリームは read-only 参照のみ。
+- Decision: CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）と No-Go canonical IDs を凍結し、再定義要求は `held` 扱いとする。
+- Consequences: CE1/CE2/CE4 側での境界再解釈を抑止し、逸脱時に即時停止できる。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  - `ac_ce0_contract_boundary_frozen`: CE0契約境界が本Issueで明文化され、他ファイルに確定仕様を分散させない。
+  - `ac_no_redefinition_downstream`: CE1/CE2/CE4へは read-only 参照のみを許可し、再定義を禁止。
+- DoD:
+  - `dod_single_file_edit`: 変更は本ファイルのみで完結。
+  - `dod_phase_reread_required`: 各Phase開始時の再読ログを維持。
+  - `dod_verify_retry_cap_3`: Verifyの自己修復上限は3回、4回目相当は致命停止。
+
+### Phase 4 Execute（契約凍結）
+- 実施: contract-only / docs-only で本実行ログを追記し、凍結条件を再宣言。
+- 非実施: 実装変更、指定外ファイル編集、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify（3回修復上限）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 上限規則: self-correction は最大3回。4回目相当が必要な場合は即時 `held` 停止。
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed（Conditional-Go）**
+- 継続条件:
+  - CE0契約凍結を維持し、CE1/CE2/CE4は参照専用のまま運用。
+  - 推測要求・致命エラー・境界逸脱要求を検知した時点で即時 `Stop（held）`。
