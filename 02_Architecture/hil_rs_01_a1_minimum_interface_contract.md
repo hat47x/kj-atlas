@@ -417,3 +417,77 @@ Prohibited for A2/A3:
   2. `HIL-RS-02-GOV-EXCEPTION-01` が held。
   3. `pendingDecisionQueueCount==0` の監査証跡が未添付。
 - A2/A3は本書の固定I/Fを read-only 参照し、変更要求は A1 CDC に差し戻す。
+
+## 9) Stream A (Critical Path) Contract Freeze Pack v20260507
+
+### Phase 1: Read（Plan → Execute → Verify → Proceed）
+- Plan:
+  - 対象: 本書（A1 SSOT）と `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md` の契約値を比較。
+  - AC（Read）:
+    1. 固定キー（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary`）を抽出できる。
+    2. Decision Queue遷移制約の差分有無を判定できる。
+- Execute:
+  - 差分抽出結果: 既存契約との差分は0件（未確定事項のみ管理対象）。
+- Verify:
+  - `Pending -> Execute` 禁止が両文書で維持されていることを確認。
+- Proceed:
+  - Read Gate通過。
+
+### Phase 2: ADR/Decision明文化（Plan → Execute → Verify → Proceed）
+- Plan:
+  - 未確定点を確定値へ昇格せず、承認待ちIDを発行する。
+- Execute:
+  - Pending Decision IDs:
+    - `PD-20260507-A1-001`: Approval Recordの証跡URL形式を `path-or-url` のみで固定するか。
+    - `PD-20260507-A1-002`: `reviewerRef` の匿名化要件を正規表現で固定するか。
+  - Context:
+    - A2/A3で局所補完が起きるとI/Fドリフトが発生する。
+  - Decision:
+    - 未承認IDは `contract_snapshot_v20260507` に「pending」として記録し、確定扱いしない。
+  - Consequences:
+    - Pending ID解消までは既存固定I/F以外を追加禁止。
+- Verify:
+  - 承認待ちIDが「未確定」状態で記録されていることを確認。
+- Proceed:
+  - ADR Gate通過。
+
+### Phase 3: 契約スナップショット固定（Plan → Execute → Verify → Proceed）
+- Plan:
+  - A2/A3参照用 read-only snapshot を作成する。
+- Execute:
+  - `contract_snapshot_v20260507` を発行（readOnly=true / mutationAllowed=false）。
+  - 固定セット:
+    - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+    - `schemaVersion=1.0.0`
+    - `overridePolicy=human_dual_control_only`
+    - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+    - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+    - `apiSignatureSet` は v1.2 と同一。
+  - 禁止事項固定:
+    1. `Pending` bypass
+    2. `errorCode` の未承認追加
+    3. safeMode/share-export 後退
+- Verify:
+  - snapshot値が本書の固定値と一致。
+- Proceed:
+  - Snapshot Gate通過。
+
+### Phase 4: 受け渡し（Plan → Execute → Verify → Proceed）
+- Plan:
+  - 実装レーン向け凍結通知を明文化する。
+- Execute:
+  - 変更不可I/F:
+    - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+  - 許容拡張:
+    - `PD-20260507-A1-001/002` が Approved になった場合のみ A1 CDC経由で拡張審査。
+  - エスカレーション条件:
+    1. 固定キー不一致
+    2. 未定義遷移検出
+    3. Self-Correction 3回超過
+  - 凍結宣言:
+    - `freezeDeclaration=ACTIVE (2026-05-07 UTC)`
+- Verify:
+  - 実装レーンが参照すべき固定値・禁止事項・エスカレーション条件が明示されていることを確認。
+- Proceed:
+  - Stream A handoff 完了。
+
