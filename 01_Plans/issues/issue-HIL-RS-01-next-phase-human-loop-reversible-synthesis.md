@@ -275,3 +275,53 @@
 - 判定: `Hold/Needs-decision`
 - 理由: 人間最終承認未完了。
 - 状態明記: **contract-frozen（read-only / pending human final approval）**。
+
+## Stream D alignment run（2026-05-07 / Parent-plan lock）
+
+### Phase 1 Read同期（最新再確認）
+- 再読対象:
+  1. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  2. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`（本書）
+- 同期結果:
+  - 親計画は参照ノード、A1は正本ノードという責務分離を再確認。
+  - 固定参照値と解放ゲート（`a1Status=="Done" && pendingDecisionQueueCount==0`）の表記は一致。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context:
+  - 次フェーズ計画が契約値を再定義すると、A2/A3の判定系が二重化して統治不整合を生む。
+- Decision:
+  - 親計画は `evaluateA1Gate` 系I/Fを含めて**参照専用**を維持し、契約値の再記述を増やさない。
+  - `Hold` と `NoGo` の境界は A1 reason codes に従属させ、親計画独自の終端遷移は追加しない。
+- Consequences:
+  - 実行順序（A1固定 → hardening固定 → 親計画整合）は維持。
+  - 人間最終承認未完了の間は `Proceed=Hold` を継続。
+
+### Phase 3 Plan（AC/DoD不足提案→合意）
+- AC補強提案:
+  - AC-5: 親計画内の `Go/Hold/NoGo` 条件がA1契約の reason code 方針と矛盾しないこと。
+- DoD補強提案:
+  - DoD-5: `Approval Record=Pending` 時の状態名を `Hold/Needs-decision` に固定すること。
+- 合意結果:
+  - 本更新では文書整合チェックとして採用し、契約の新規導出は行わない。
+
+### Phase 4 Execute（docs-only）
+- 実施内容:
+  - 親計画の責務を「参照整合判定」に限定する方針を再固定。
+  - A2/A3への非干渉（編集/判定代行なし）を維持。
+
+### Phase 5 Verify（自己修復上限=3）
+- verify 1/3:
+  - A1固定値との drift=0: pass
+  - hardening参照（SoD/承認遷移）整合: pass
+- verify 2/3:
+  - `NoGo return path` 一意固定: pass
+  - `Pending bypass` 禁止: pass
+- verify 3/3:
+  - A2/A3非干渉: pass
+  - self-correction count: `0/3`
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed=Hold**
+- 理由:
+  - `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解決。
+  - 親計画は推測確定を禁止し、再開条件（終端承認 + queue解消）充足まで停止継続。

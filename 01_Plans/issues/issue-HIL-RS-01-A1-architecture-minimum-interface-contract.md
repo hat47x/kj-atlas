@@ -259,6 +259,57 @@
   3. SafeMode境界緩和（禁止）
   4. A2/A3側での再定義（禁止）
 
+## Stream D alignment run（2026-05-07 / Phase-ordered lock）
+
+### Phase 1 Read同期（最新再確認）
+- 再読対象:
+  1. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（本書）
+  2. `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- 同期結果:
+  - 固定参照値（`freezeContractId/schemaVersion/overridePolicy/safeModeDefault/safeModeBoundary`）は一致。
+  - `NoGo return path` は本Issueへ一意参照で一致。
+  - `Pending -> Approved | Pending -> Rejected` 以外の遷移は未定義（禁止）で一致。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context:
+  - A1契約はA2/A3と親計画の唯一境界であり、文言差分でも実行判定の解釈ずれが起きる。
+- Decision:
+  - A1を**authoritative SSOT**として固定し、本日付更新では再定義を一切行わない。
+  - `executeAllowed` 判定の停止条件は `Pending` 残存時の `false` に固定。
+- Consequences:
+  - 次フェーズ計画側はA1の参照整合チェックのみを実施し、契約値の導出/補完は禁止。
+  - 承認未完了時は `Hold/Needs-decision` を維持。
+
+### Phase 3 Plan（AC/DoD不足提案→合意）
+- AC補強提案:
+  - AC-5: `reasonCodes` と `Hold/NoGo` 条件の対応が文書内で1対1に追跡可能であること。
+- DoD補強提案:
+  - DoD-5: `Approval Record` が `Pending` の間、`Proceed=Go` へ遷移しないことを明示する。
+- 合意結果:
+  - 本Issueでは上記を運用上の確認項目として採用し、固定値自体の変更は行わない。
+
+### Phase 4 Execute（docs-only）
+- 実施内容:
+  - 参照整合のみ実施（固定語彙/固定値/遷移規則の再確認）。
+  - 追加の契約キー定義、既存キー値更新、他Issue改変は未実施。
+
+### Phase 5 Verify（自己修復上限=3）
+- verify 1/3:
+  - 固定値ドリフト: pass
+  - 責務境界（AI proposal-only / Human final approval）: pass
+- verify 2/3:
+  - `Pending bypass` 禁止: pass
+  - `NoGo return path` 一意固定: pass
+- verify 3/3:
+  - 親計画との参照整合: pass
+  - self-correction count: `0/3`
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed=Hold**
+- 理由:
+  - `Approval Record=Pending` および未解決判断項目が残存。
+  - `a1Status=="Done" && pendingDecisionQueueCount==0` の監査証跡が最終承認ログとして未充足。
+
 #### Phase 5 Proceed（Yes/Hold/Stop）
 - **Proceed=Hold**
 - 理由:
