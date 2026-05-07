@@ -250,13 +250,15 @@ Context:
 - `ADR-0016` のCLI契約と `ADR-0017` のSecurity/Ops Gateを、監査イベント最小スキーマで接続する必要がある。
 
 Decision:
-1. 監査イベント最小スキーマ（全イベント共通必須キー）を `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`, `channel`, `command`, `schemaVersion` に固定する。
+1. 監査イベント最小スキーマ（全イベント共通必須キー）を `eventType`, `timestamp`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `actor`, `result`, `channel`, `command`, `schemaVersion`, `sourceBundleHash` に固定する。
 2. API→CLI同値性は `equivalenceKey AND bundleHash` 成立のみ成功とし、部分一致成功を禁止する。
 3. セキュリティ運用チェックは `eventType + equivalenceKey + queryCanonicalHash` の追跡成立を必須にする。
+4. 契約未確定の実装依存点（終了コード数値割当、匿名化方式、監査転送基盤）は CE4 スコープ外として stub 隔離し、契約確定前に本番判定へ昇格しない。
 
 Consequences:
 - mock fixture（`sourceBundleHash=mock:<hash>`）のみで API/CLI監査整合の検証が可能になる。
 - 監査欠損・同値不成立を成功扱いできなくなり、fail-closed境界が明確化される。
+- 下流実装は proposal-only のまま契約準拠テストを先行でき、未確定点の混入を防げる。
 
 #### 2.9.1 logical operation 同値性（固定）
 
@@ -697,3 +699,12 @@ contract_freeze:
   open_gate: "a1Status==Done && pendingDecisionQueueCount==0"
   proceed_when_unapproved: Needs-decision
 ```
+#### 2.9.0b CE4 mock/stub execution boundary（implementation-ready）
+
+- APIは CE4 契約検証用に `sourceBundleHash=mock:<64hex>` を受理してよい。
+- 未確定項目は次の stub を返して隔離する（fail-closed を優先）。
+  - `501 ce4_stubbed_exit_code_mapping`
+  - `501 ce4_stubbed_principal_masking`
+  - `501 ce4_stubbed_audit_transport`
+- stub 応答時も `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `schemaVersion` を監査イベントへ記録し、`result=ng` で終了する。
+- 本節の stub は契約確定までの暫定隔離であり、成功系の代替として利用してはならない。

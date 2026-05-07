@@ -51,12 +51,15 @@
 | `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | `apply --dry-run` 副作用0を強制 |
 | `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | query/bundle/proposal/apply 欠損時 fail-closed |
 | `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
+| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 契約未確定項目を `501 ce4_stubbed_*` で隔離し成功扱いしない |
 
 補足:
 - `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
 - `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
 - `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `equivalence_and_bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
 - CE4同値性契約は Phase 1〜6 で固定し、`equivalenceKey + bundleHash` のAND判定を共通基準とする（単独判定を許可しない）。
+
+- `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS=true` の間は、終了コード数値割当/匿名化方式/監査転送基盤を stub 応答で隔離し、`result=ng` の監査記録を必須とする。
 
 ## 3. CE4 監査イベント必須キー（契約）
 

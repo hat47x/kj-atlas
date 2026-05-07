@@ -4,9 +4,9 @@
 - Status: Draft (起票用)
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream H (planning only)
+- Owner: Stream G (planning only)
 - Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束後に着手）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
-- Scope: `03_Implement/frontend`, `03_Implement/backend`, `03_Implement/*/tests`（本フェーズは計画文書更新のみ / 実装禁止）
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（本フェーズは計画文書更新のみ / 実装禁止）
 - Start Gate (fixed): FB-P0収束完了 + HIL-RS-02計画同期完了まで `Draft/Hold` を維持する。
 - Related Backlog: `N/A`
 - Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`
@@ -23,6 +23,17 @@
 - VerificationLevel: unit
 - DecisionStatus: Hold-for-Dependency-Gate
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
+- DependencyLockPolicy: FB-P0収束 + HIL-RS-02計画同期完了まで Draft/Holdを維持し、テスト実装・閾値導入・CI変更を開始しない。
+
+## Stream G phase protocol（dependency-locked planning）
+
+固定フェーズ: Read同期 → AC/DoD具体化 → 依存条件の明記 → Verify → Proceed
+
+- Read同期: ADR-0001 / ADR-0019 / 本IssueメタI/Fを毎回再確認。
+- AC/DoD具体化: coverage「改善」ではなく、非悪化 + 観点網羅 + 記録完全性で判定式化。
+- 依存条件の明記: 解除条件を明文化し、解除前の作業上限を docs-only に固定。
+- Verify: 実行ではなく「検証可能性（コマンド・指標・No-Go条件）」の整備状況を確認。
+- Proceed: dependency-locked のため本フェーズは `Proceed=Not Allowed`。
 
 ## 1) 課題 / Problem statement
 
@@ -66,13 +77,14 @@
 - [ ] AC-M1: 測定対象モジュール一覧（Frontend/Backend）を明記し、各モジュールで「追加ケース数（最低1件）」を定量記録する。
 - [ ] AC-M2: `pytest --cov` / `vitest --coverage`（または同等）で **statement coverageの差分（Before/After）** を保存し、対象モジュールで非負（悪化なし）を必須化する。
 - [ ] AC-M3: 回帰検知の実効性指標として、safeMode/validation/diffの3観点それぞれで「失敗を検知できるアサーション」を1件以上持つことを必須化する。
+- [ ] AC-M4: dependency lock 未解除時は、変更対象を計画文書のみに制限する統制文を保持する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1: 現状テストの薄いモジュールを抽出し、優先順位を決める。
-- [ ] T2: Frontendのドメインロジックにunit testを追加する。
-- [ ] T3: Backendのバリデーション/サービス層にunit testを追加する。
-- [ ] T4: 追加テストを実行し、失敗時は最小修正で再検証する。
+- [ ] T1: 現状テストの薄いモジュール抽出方法と優先順位付けルールを固定する（計画）。
+- [ ] T2: Frontend追加候補（safeMode/validation/diff）をケース粒度で列挙する（計画）。
+- [ ] T3: Backend追加候補（validation/service）をケース粒度で列挙する（計画）。
+- [ ] T4: Verifyで使う測定ログ様式（Before/After/Assertion count）を固定する（計画）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -112,6 +124,15 @@
 
 - 関連Issue/PR/議論ログ: N/A
 - ADR化が必要になる条件（トレードオフ閾値）: カバレッジ閾値を品質ゲート（必須）へ昇格する場合。
+
+## 11) Proceed gate（dependency lock）
+
+- Proceed = Not Allowed（現状態固定）
+- Proceed可能化条件（全て必須）
+  1. FB-P0収束 Go
+  2. HIL-RS-02 計画同期完了
+  3. AC-M1〜M4 と V-UNIT-01〜03 の記録テンプレート確定
+  4. 実装着手前レビューで `DecisionStatus` を Hold から Ready に更新
 
 
 ## Stream H Draft Reframe（2026-05-04 / proposal-only）

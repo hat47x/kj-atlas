@@ -1949,3 +1949,29 @@ handoffKeys:
 - 停止規則（維持）:
   - CE0契約条項と矛盾が解消不能な場合は `held` で停止し、CE0差分承認待ちへ遷移する。
   - 失敗3回超過（4回目相当）のSelf-Correctionは禁止し、即停止する。
+
+## Stream B update（2026-05-07 / CE1 contract freeze mock-first finalization）
+
+### Phase 1 Read
+- CE1対象I/F（`ContextQueryV1` / `ContextBundleV1`）とエラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再読。
+- 編集禁止範囲（実装コード・04_Documentation・HIL系Issue）を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: CE2/CE4 が実装未完でも前進できるよう、CE1 v1契約を mock-first で先行固定する必要がある。
+- Decision:
+  - `ContextQueryV1` 必須キーを `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed` に固定。
+  - `ContextBundleV1` 必須キーを `queryCanonicalHash/bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason` に固定。
+  - `previewConfirmed=false -> 422 preview_required`、unknown key -> `400 unknown_contract_key`、hash非決定論 -> `409 nondeterministic_bundle` を固定。
+- Consequences: 下流は provider/API 実装依存なしで契約テストと監査キー照合を継続可能。
+
+### Phase 3 Mock契約固定
+- v1 closed-world 契約を維持し、未定義キー追加は v2 まで禁止。
+- 決定論ゲートは `sameQuery && sameBundle`（`queryCanonicalHash` 一致かつ `bundleHash` 一致）で fail-closed を固定。
+
+### Phase 4 Verify（max 3 self-repair）
+- verify_attempts: `1/3`
+- result: pass（契約語彙衝突なし、依存矛盾なし、scope逸脱なし）
+
+### Phase 5 引継ぎメモ
+- CE2/CE4 handoff: `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` を read-only キーとして継続利用。
+- fail-safe: 合意未取得/依存矛盾/競合検出時は `held` 停止して指示待ち。

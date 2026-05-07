@@ -46,6 +46,8 @@ AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 
 `04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 
+> DOC-OPS-02運用補足: Stream E での文書同期は、上記順序に加えて `operations.md` を同一サイクルで照合し、A1未完了時は「準備状態（Hold）」を維持して確定文言を追加しない。
+
 ## 1.2 CDC（Change Decision Contract）明文化
 
 AUTH系の設計変更は、実装/運用反映前に **CDC（Change Decision Contract）** を必ず確定する。

@@ -922,3 +922,16 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 - Phase 3 Execute: 本書の責務を「安全境界の正本維持」に限定し、runbook詳細は `operations.md`、運用判断補助は `security_operational_guidelines.md` へ委譲。
 - Phase 4 Verify: canonical 用語、2者承認（Security Officer + System Owner）/ 実行責務（Platform Operator）分離、導線、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m を再確認。
 - Phase 5 Proceed: 未解決論点なし。承認未了事項を確定記述へ昇格させる提案が出た場合は `StoppedForClarification` とする。
+
+
+## 8.1 HIL-RS-02 A3 同期ステータス（A1承認前提）
+
+本書のA3同期は、**A1（governance contract hardening）承認完了前は準備状態**として扱う。
+
+- Current: `Hold (Approval Pending)`
+- Allowed: 4観点（用語/役割/導線/固定値）の同値確認
+- Not allowed: Open化前提の確定文言、承認完了扱い、固定値再定義
+
+Fail-safe:
+- A1未完了、または D1〜D4 / 役割分離 / 導線に不整合がある場合は `StoppedForClarification`。
+- `Pending -> Execute` を含む bypass 推測を検出した場合は即停止。

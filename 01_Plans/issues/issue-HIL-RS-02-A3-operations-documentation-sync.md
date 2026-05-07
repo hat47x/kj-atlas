@@ -1,11 +1,11 @@
 # Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream G preflight）
 
 - Type: Process
-- Status: Ready
-- Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
+- Status: Hold（A1 Approval Pending）
+- Lifecycle: Draft -> Ready -> Hold -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream G（A3 preflight専任）
+- Owner: Stream E（A3 documentation sync）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
 - Out of scope: 実装変更、allowlist外Issue/ADR編集、契約再定義、`04_Documentation/**` 本体編集
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
@@ -114,11 +114,17 @@
 3. `git status --short`
 
 ## Ready判定
-- 判定: **Ready（Proceed=Hold運用）**
-- 根拠: Draft解除条件を満たし、A1依存はGateで隔離、契約再定義なし。
+- 判定: **Ready + Hold（A1承認待ち）**
+- 根拠: Draft解除条件を満たすが、A1承認未了のため Open化しない。
 
 
 ## Stop条件（Prompt G適用）
 - A1固定値不一致（`fixedKeysDiff>0`）
 - 共有資源競合（`sharedResourceFreeze`違反、または共有資源の二重更新要求）
 - 承認前提崩壊（pending bypass / unrecorded approval inference / dual-control破綻）
+
+
+## Stream E同期メモ（2026-05-07）
+- DOC-OPS-02固定順（Architecture→Documentation→Plans→AGENTS）に合わせ、A3は documentation sync の準備状態で停止。
+- 用語/役割/導線/固定値（D1〜D4）の同値確認のみ実施。
+- A1承認完了ログ受領まで `Current: Hold` を維持し、Open昇格を行わない。

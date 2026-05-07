@@ -4,8 +4,8 @@
 - Status: Draft (dependency-locked for Stream H planning)
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream H (planning only)
-- Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`（本フェーズは計画確定のみ）
+- Owner: Stream G (planning only)
+- Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`（必要時最小、実装コード変更禁止）
 - Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（HIL-RS-02計画同期完了まで実装着手禁止）
 - Related Backlog: `QA-E2E-USE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
@@ -27,6 +27,25 @@
 - DecisionStatus: Hold-for-Dependency-Gate
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
 - ContractPolicy: E2Eケース定義は contract レベルで固定し、実装詳細（DOM構造・内部関数名・一時的UI文言）へ依存しない。
+- DependencyLockPolicy: FB-P0収束 + HIL-RS-02計画同期が完了するまで `Hold-for-Dependency-Gate` を維持し、`Proceed` 判定を出さない。
+
+## Stream G phase protocol（dependency-locked planning）
+
+本Issueは実装移行前の計画最適化フェーズとして、以下の固定順序でのみ更新する。
+
+1. Read同期（ADR-0019 / 関連Issue再読）
+2. AC/DoD具体化（測定可能な判定式へ変換）
+3. 依存条件の明記（解除条件・禁止事項の固定）
+4. Verify（計画としての検証項目を自己点検）
+5. Proceed（依存未解除のため **Proceed=Not Allowed** を明記）
+
+### Proceed rule（固定）
+
+- Proceed = Not Allowed（dependency-locked）
+- Proceed可能化条件（将来）:
+  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が Go 判定
+  - `issue-HIL-RS-02-next-phase-delivery-plan` の同期完了
+  - 本Issueの Go 条件（4.1）を満たす実装計画がレビュー承認済み
 
 ## Phase 1. Read同期（ADR-0019整合）
 
@@ -98,6 +117,8 @@
 - [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
 - [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
 - [ ] DoD-06: ケース記述に実装依存語（固定CSSセレクタ/内部関数名/コンポーネント固有ID）が含まれていない。
+- [ ] DoD-07: dependency lock 維持を明記し、Proceedを発火しない運用注記を保持。
+- [ ] DoD-08: Verify結果として「計画完了/実装未着手/依存未解除」を3点セットで記録。
 
 ## Phase 4. Execute（計画固定：シナリオ境界・安全境界・除外条件の凍結）
 
@@ -118,6 +139,7 @@
 
 - [ ] T1: 既存E2E棚卸しと Journey-A〜D のマッピング（Smoke/Core/Safety分類を含む）。
 - [ ] T2: Journey-A（縦断基本）を最初に実装。
+- [ ] T2: Journey-A（縦断基本）を最初に**実装対象として指定**（本フェーズでは実装しない）。
 - [ ] T3: Journey-B/Cを追加し、安全境界回帰を共通アサーション化。
 - [ ] T4: Journey-D（sanitize境界）を拡張実装（推奨）。
 - [ ] T5: `04_Documentation/e2e_testing.md` 同期更新（同一PR）。
