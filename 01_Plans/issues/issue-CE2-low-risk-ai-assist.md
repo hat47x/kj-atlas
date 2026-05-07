@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream C（CE下流 proposal-only）
+- Owner: Stream D（CE2 Draft proposal品質改善 / implementation dependency cut）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -23,6 +23,24 @@
 - 監査4点（`query / bundle / proposal / apply`）が欠損した場合は fail-closed。
 - Verify判定は `sourceBundleHash === bundleHash` を必須条件として固定し、不一致時は fail-closed（`held`）とする。
 - **合意未取得時は CE2実装へ進まない（Proceed禁止）。**
+
+
+## Stream D mission lock（2026-05-07）
+
+- Scope lock: 本Issueを **proposal品質向上** のみに限定し、実装仕様・実装タスク・運用確定値の追加を禁止する。
+- Dependency stance: `CE0` / `CE1` は **read-only 依存** とし、参照は契約確認（語彙・I/F・停止条件）に限定する。
+- Implementation decoupling: CE2 Draft段階では mock contract 以外の結合（実データ接続・実ランタイム依存・実装前提の状態遷移）を受理しない。
+
+### 実装着手条件（Implementation Start Gate）
+
+次の全条件を満たすまで CE2 実装着手を禁止する。
+
+1. `CE0 contract freeze` が承認済みで、証跡（日時・承認者・対象・判断・evidence）が参照可能。
+2. `CE1 context/query/bundle foundation` が **read-only contract として確定** し、CE2側で追加確定を要求しない。
+3. 本Issueの tri-state 判定が `Proceed` で、`Hold/Stop` 要因（未承認・契約衝突・修復超過）がゼロ。
+4. proposal-only / human final decision / fail-closed / safeMode既定ON の後退ゼロを再検証済み。
+
+満たさない場合は `held` を継続し、実装議論へ遷移しない。
 
 ## Mandatory Workflow（Phase 1〜6 固定）
 
@@ -65,7 +83,7 @@
 - 制約: 実装前進は人間承認ログ取得後に限定され、短期の進行速度は意図的に抑制される。
 - 運用影響: Draft段階では記述整備と検証のみ実施し、auto-*導線追加は不可。
 
-## Phase 3: Plan（AC/DoD補完）
+## Phase 3: Plan（AC/DoD補完・実装依存遮断）
 
 ### 受入条件（CE2計画の成立条件）
 - proposal-only のまま AI補助案を作成し、`accepted/rejected` は人間判断として固定されている。
