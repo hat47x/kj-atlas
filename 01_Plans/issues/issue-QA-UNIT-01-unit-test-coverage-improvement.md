@@ -408,3 +408,37 @@
 ### 5. Proceed
 - ProceedDecision: **Hold（Ready gate定義完了、依存解消待ち）**
 - Ready化状態: **判定基準はReady、着手状態はHold**
+
+## Stream E Open化準備 pass（2026-05-07 / QA-UNIT-01）
+
+### Phase 1 Start Re-read
+- 対象再読: 本Issueを再読し、`Draft維持`・`Expected verification level: unit`・依存2件未解決を確認。
+- 境界再確認: 本フェーズはP2 Draft整備のみで、実装/テスト追加は非実施。
+
+### Phase 2 Plan（AC/DoD不足提案）
+- AC/DoD不足提案（合意待ち）:
+  - 提案A: AC-M1 の「追加ケース数」を frontend/backend別に `0可否` ルール付きで明記。
+  - 提案B: DoDに「Owner未確定時はGo判定禁止」を明文化。
+  - 提案C: Verify指標 V-UNIT-02 の記録フォーマット（Before/After/差分）を固定。
+- 合意状態: 依存解決後に最終合意し反映する前提で提案保持。
+
+### Phase 3 ADR明文化（C/D/C）
+- Context: 依存未解決状態でQA-UNITをOpen化すると、unit/e2e境界と着手順が混線する。
+- Decision: 本IssueはDraftのまま判定情報を整備し、依存解決前は `Hold` を固定する。
+- Consequences: 実装先行を防ぎ、後続で再現可能なGo/NoGo判断を維持できる。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issueメモへの追記のみ。
+- 非実施: frontend/backendコード変更、unit test追加、coverage再計測。
+
+### Phase 5 Verify
+- 判定: `Hold` 維持（依存未確定）。
+- self-correction: `1/3`（Stream E pass）。
+- 失敗時方針: 3回まで修復、4回目相当で `Stop`。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- Stop条件（再確認）:
+  1. 依存2件の前提矛盾が解消不能。
+  2. unit/e2e境界競合が解消不能。
+  3. self-correction上限超過。

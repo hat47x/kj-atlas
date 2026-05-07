@@ -138,3 +138,35 @@
 ### Proceed
 - ProceedDecision: **Hold（Ready gate定義完了、依存証跡待ち）**
 - Ready化状態: **判定基準はReady、Open化は未実施**
+
+## Stream E Open化準備 pass（2026-05-07 / DOC-OPS-05-05）
+
+### Phase 1 Start Re-read
+- 対象再読: 本Issueのみを再読し、`Move internal` / `docs-check` / `ProceedDecision: Hold` を再確認。
+- 依存再確認: 05-06/05-07 の依存証跡が未確定のため、Open gateは未成立。
+
+### Phase 2 Plan（AC/DoD不足提案）
+- AC/DoD不足提案（合意前提）:
+  - 提案A: `Approval Record` に evidence link の保存先（issue comment / artifact）を明示する。
+  - 提案B: `DoD-2` の self-correction 上限到達時の停止メッセージ定型を固定する。
+- 合意状態: 本Draftでは「提案として記録」、依存確定時に反映可否を最終合意する。
+
+### Phase 3 ADR明文化（C/D/C）
+- Context: 内部品質基準を公開導線と混在させると判定責務が曖昧化する。
+- Decision: `Move internal` を維持し、Open化判定は依存Issue同期完了まで実施しない。
+- Consequences: 品質基準の内部統制を維持しつつ、誤公開リスクを抑制する。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issueメモへの整備追記のみ。
+- 非実施: `01_Plans/documentation_quality.md` 本文改稿、他Issue編集、実装変更。
+
+### Phase 5 Verify
+- 判定: `Hold` 維持（gate未成立）。
+- self-correction: `1/3`（上限内）。
+- 失敗時方針: 3回以内で修復、4回目相当は `Stop`。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- Stop条件（再確認）:
+  1. 依存Issueとの語彙不一致が解消不能。
+  2. self-correction 4回目相当が必要。

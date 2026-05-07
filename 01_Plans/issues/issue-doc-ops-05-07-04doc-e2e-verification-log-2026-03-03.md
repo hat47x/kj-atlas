@@ -102,3 +102,35 @@
 ### 4) Proceed
 - ProceedDecision: **Hold（Ready gate定義完了、承認証跡待ち）**
 - Ready化状態: **監査観点はReady、Open化は未実施**
+
+## Stream E Open化準備 pass（2026-05-07 / DOC-OPS-05-07）
+
+### Phase 1 Start Re-read
+- 対象再読: 本Issueを再読し、`Move internal` / 監査証跡用途 / `ProceedDecision: Hold` を確認。
+- 依存再確認: 05-05/05-06 のOpen gate証跡待ちで未解決。
+
+### Phase 2 Plan（AC/DoD不足提案）
+- AC/DoD不足提案（合意待ち）:
+  - 提案A: AC-2 に「追記型運用の責任者ロール」を固定記載。
+  - 提案B: DoD-2 に 05-06 相互参照のリンクチェック項目を追加。
+- 合意状態: 本文は提案保持とし、依存解決後に確定。
+
+### Phase 3 ADR明文化（C/D/C）
+- Context: 検証ログの配置・粒度が未固定だと監査で再現性が損なわれる。
+- Decision: `Move internal` と候補配置方針を維持し、承認証跡確定まで `Hold` 継続。
+- Consequences: 公開文書と監査証跡の境界を維持し、改ざん/誤公開リスクを抑制する。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issueメモの整備追記のみ。
+- 非実施: 実ログ生成、配置移設、他Issue編集。
+
+### Phase 5 Verify
+- 判定: `Hold` 維持。
+- self-correction: `1/3`（Stream E pass）。
+- 失敗時方針: 3回以内修復、4回目相当は `Stop`。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- Stop条件（再確認）:
+  1. 依存Issueと用語/判定が競合し解消不能。
+  2. self-correction上限超過。
