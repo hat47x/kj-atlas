@@ -1234,3 +1234,27 @@ freeze_pack:
   a2a3_open_allowed: "a1Status==Done && pendingDecisionQueueCount==0"
 state: Needs-decision
 ```
+
+## Stream A sync note（2026-05-07 / A1 contract fixation handoff）
+
+### Phase 1: Read Gate
+- Read target: 本Issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- Diff result: 固定値差分なし（契約ID、schemaVersion、Gate、禁止事項一致）。
+
+### Phase 2: ADR判定
+- 新規契約変更なしのため追加ADR不要（既存A1 CDC継続）。
+
+### Phase 3: Freeze values（A2/A3 read-only）
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `contractLinkLocked=true`
+- `sharedResourceFreeze=true`
+- `safeModeDefault=ON`
+- `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+
+### Phase 4: Handoff / Prohibited
+- SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#7-stream-a-handoff-manifest2026-05-07--contract-if-freeze`
+- Prohibited: 契約ID再定義、`schemaVersion`改版、Pending bypass、安全境界後退。
+- Status: `Hold`（人間判断待ち残件あり）。
