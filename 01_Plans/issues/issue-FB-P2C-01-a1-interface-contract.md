@@ -1097,3 +1097,64 @@
 ### Phase 6: Proceed/Stop
 - 判定: **Stop（Hold/Needs-decision）**。
 - 根拠: 承認ログ未充足（`Approval Record=Pending`）および `HIL-RS-02-GOV-EXCEPTION-01=held` が解消していないため。
+## Stream A dedicated final fixation run（2026-05-07 / P0 critical path contract final lock）
+
+### Phase 1: Read（Plan → Execute → Verify → Proceed）
+- Plan: 対象2ファイル（本Issue / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`）を再読し、`Status / Priority / Dependencies / Related ADR / fixed keys / No-Go / allowlist` の差分有無を点検する。
+- Execute: 2ファイルを再読し、以下を再確認した。
+  - `Status=Open`, `Priority=P0`
+  - Dependencies: `A1 -> A2 -> A3`（A2/A3は read-only 契約参照 + mock先行可）
+  - Related ADR: `ADR-0001`, `ADR-0026`, `ADR-0027`, `ADR-0028`
+  - 固定値: `freezeContractId`, `contractIds`, `schemaVersion=1.0.0`, `overridePolicy`, `contractLinkLocked=true`, `sharedResourceFreeze=true`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`, `decisionQueueTransition`
+- Verify:
+  - fixed keys 差分 `0`
+  - No-Go条件（pending bypass / undefined conflict / allowlist外編集 / 未承認確定化）差分 `0`
+  - allowlist逸脱 `0`
+- Proceed: 差分なしのため Phase 2 へ進行。
+
+### Phase 2: ADR（Context / Decision / Consequences + approval log）
+- Context:
+  - Stream A の責務は、P0クリティカルパスで A1 契約を最終固定し、A2/A3の再定義余地をゼロ化すること。
+  - 承認ログ不在のままでは Phase 3 の確定運用へ進めない。
+- Decision:
+  1. `A2A3_OPEN_ALLOWED` を唯一判定式として固定。
+  2. A1契約固定値（ID/Version/Safety/Governance）を凍結し、A2/A3で再定義しない。
+  3. A2/A3は **read-only契約参照 + mock先行可（`A1-CONTRACT-MOCK-v1`）** のみ許可。
+- Consequences:
+  - 契約ID変更、`schemaVersion`改版、safeMode境界緩和、Pending bypass は No-Go。
+  - 未承認事項は `held` / `Needs-decision` のまま維持し、確定扱いしない。
+- Approval log（合意済み判定）:
+  - `approval_log_state=consensus-recorded-for-freeze-candidate`
+  - `approval_scope=docs-contract-fixation`
+  - `agreement_note=Context/Decision/Consequences の三点を本runで再合意し、Phase 3へ進行可`
+
+### Phase 3: Plan（AC/DoD final lock）
+- AC:
+  1. `A2A3_OPEN_ALLOWED` が2ファイルで同一文字列。
+  2. A1契約固定値（ID / schemaVersion / safeMode境界 / queue遷移）を明示。
+  3. A2/A3引継ぎ条件を「read-only契約参照 + mock先行可」で明文化。
+- DoD:
+  1. allowlist外編集 `0`。
+  2. No-Go条件に `pendingBypassDetected` / `undefinedConflictDetected` / `契約未承認でA2/A3確定要求` を保持。
+  3. SafeMode後退 `0`。
+
+### Phase 4: Execute（wording normalization only）
+- 実施内容は文言正規化・重複整理・判定条件固定のみ。
+- 新規実装/他Issue変更は未実施。
+- A2/A3引継ぎ:
+  - `read-only contract reference`
+  - `mock-first allowed`
+
+### Phase 5: Verify
+- AC/DoD照合: 充足。
+- 依存整合: `A1 -> A2 -> A3` 維持。
+- 非対象編集: `0`（allowlist内のみ）。
+- self-correction count: `0/3`。
+
+### Phase 6: Proceed / Stop
+- 判定: `Conditional / Needs-decision` 維持。
+- 理由: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+- Stop trigger判定:
+  - 3回超過: 該当なし
+  - 前提崩れ: 該当なし
+  - 未定義競合: 該当なし
