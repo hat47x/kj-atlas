@@ -624,3 +624,50 @@
 #### Proceed
 - 判定: **Hold**（依存確定証跡およびApproval Record待ち）。
 - Proceed解除条件: 依存確定証跡（日時・承認者・対象・判断）を追記後、docs-check再実行で欠落ゼロ。
+
+
+## Stream C update（2026-05-07 / CE4 Draft→Open準備 / proposal-only contract）
+
+### Phase 1: Read（CE0/CE1参照条件の再確認）
+- CE0 Contract Freeze を read-only 参照し、No-Go canonical IDs・safeMode既定後退禁止・fail-closed優先を再確認。
+- CE1 Foundation を参照し、`queryCanonicalHash` / `bundleHash` / `equivalenceKey` の接続キーを mock前提で利用する境界を再確認。
+- CE4は API/CLI/監査の **契約整備のみ** とし、実装非依存の判断軸に限定する。
+
+### Phase 2: ADR（Context / Decision / Consequences 補強）
+- **Context**: CE4は3境界（API/CLI/監査）を跨ぐため、Draft段階で失敗分類・同値条件・監査必須キーを固定しないと実装時に逸脱しやすい。
+- **Decision**: `equivalenceKey AND bundleHash` 条件、4イベント順序、proposal-only、auto-*禁止、監査欠損fail-closedをOpen判定の必須軸として固定する。
+- **Consequences**: 実装チームはmock fixtureで先行検証可能になる一方、監査欠損は成功扱い不可となり運用判断の恣意性を抑制できる。
+
+### Phase 3: Plan（Open AC / DoD / Validation 明文化）
+- AC追加:
+  - [ ] API/CLI双方で同値条件（AND）が一致。
+  - [ ] 監査4点セットの順序整合と必須キー検証が明記。
+  - [ ] fail-closed / proposal-only / auto-*禁止が同時成立。
+- DoD追加:
+  - [ ] mock正常/欠損/重複/不正操作の4区分がNo-Go判定基準へ接続。
+  - [ ] Open化判定を `Proceed / Hold / Stop` で再現可能。
+- Validation（docs-check固定）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+
+### Phase 4: Execute（メモ整備のみ / mock I/F条件）
+- 実施: 監査契約の実装非依存軸を再整理。
+- mock I/F接続条件:
+  1. `sourceBundleHash` は `mock:<64hex>` を許容するが検証規律は real と同一。
+  2. `queryCanonicalHash` / `bundleHash` / `equivalenceKey` を API/CLI で共有参照。
+  3. `proposal` が `ok` でも `apply` 欠損ならNo-Go（fail-closed）。
+- 非実施: API/CLIハンドラ実装、DB永続化方式、ランタイム統合。
+
+### Phase 5: Verify（AC/DoD・依存・語彙統一）
+- self-repair attempt: `1/3`（失敗分類語彙を「監査違反/同値違反/ポリシー違反」に統一）。
+- self-repair attempt: `2/3`（proposal-only と auto-*禁止の同時成立を再点検）。
+- self-repair attempt: `3/3`（mock I/F条件とOpen gateの対応を補正）。
+- 判定: 3回以内で整合完了、超過なし。
+
+### Phase 6: Proceed / Stop（Open候補化の可否）
+- 判定: **Open候補化は可（Conditional Open Candidate）**。
+- Proceed前提:
+  1. CE0/CE1参照契約との語彙衝突がないこと。
+  2. AC/DoD/Validation が docs-check で再確認可能であること。
+  3. proposal-only / fail-closed / no auto-* の不変性が保たれること。
+- Stop条件: 前提不整合・契約競合・4回目修復要求を検知した場合は `held`。

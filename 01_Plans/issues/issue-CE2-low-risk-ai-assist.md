@@ -976,3 +976,50 @@
 #### Proceed
 - 判定: **Hold**（承認証跡未入力のため）。
 - Proceed解除条件: 人間承認ログ（日時・承認者・対象・判断）充足後に再判定。
+
+
+## Stream C update（2026-05-07 / CE2 Draft→Open準備 / proposal-only）
+
+### Phase 1: Read（CE0/CE1契約再確認）
+- `issue-CE0-contract-freeze.md` の Contract Freeze を read-only 参照し、No-Go canonical IDs と safeMode既定後退禁止を再確認。
+- `issue-CE1-context-query-bundle-foundation.md` の handoff keys（`sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash`）を参照し、CE2は mock contract 接続のみで進める方針を再確認。
+- CE2は proposal-only の判断準備に限定し、実装・状態遷移確定・運用確定を禁止する前提を再同期。
+
+### Phase 2: ADR（Context / Decision / Consequences 追記）
+- **Context**: CE2は低リスクAI補助であっても、意思決定責務分離（AI提案 vs 人間確定）を先に固定しないと downstream で誤Proceedが起こる。
+- **Decision**: CE2 Open準備では `status=proposed` 固定、`reviewState=unreviewed` 固定、`accepted/rejected` は人間責務固定、監査4点欠損時fail-closed固定を維持する。
+- **Consequences**: CE1未実装でもmockで契約検証を継続できる一方、承認未取得時は `held` 継続となり短期速度より安全を優先する。
+
+### Phase 3: Plan（Open化判定 AC / DoD / Validation 固定）
+- AC追加（Open gate）:
+  - [ ] `Approval Record`（日時・承認者・対象・判断）が記録されている。
+  - [ ] `Dependency status=確定` の根拠（判定者・証跡）が本文で追跡可能。
+  - [ ] proposal-only / auto-*禁止 / fail-closed / safeMode既定ON後退なしが同時成立。
+- DoD追加:
+  - [ ] `Proceed / Hold / Stop` 三値で再判定可能。
+  - [ ] 依存未確定・承認未充足時は `Hold` を維持する fail-safe が残存。
+- Validation（docs-only）:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+
+### Phase 4: Execute（メモ整備のみ / mock I/F接続条件）
+- 実施: 本Issue内の判断軸を補強し、mock接続条件を明文化。
+- mock I/F接続条件（実装非依存）:
+  1. Proposal出力は常に `status=proposed` かつ `reviewState=unreviewed`。
+  2. Verify時に `sourceBundleHash === bundleHash` を必須比較。
+  3. 監査4点（`query/bundle/proposal/apply`）が1つでも欠損なら fail-closed（`held`）。
+- 非実施: backend/frontend/schema/API実装変更、運用確定、承認代行。
+
+### Phase 5: Verify（AC/DoD・依存・語彙統一チェック）
+- self-repair attempt: `1/3`（語彙を `proposal-only / fail-closed / held` に統一）。
+- self-repair attempt: `2/3`（Open gate の `Approval Record` 要件を再掲）。
+- self-repair attempt: `3/3`（mock I/F条件と Proceed条件の対応を明示）。
+- 判定: 3回以内で整合完了、超過なし。
+
+### Phase 6: Proceed / Stop（Open候補可否）
+- 判定: **Open候補化は条件付き可（Conditional Open Candidate）**。
+- Open化の前提（未充足ならHold）:
+  1. `Dependency status=確定` の証跡入力。
+  2. `Approval Record` 4項目（日時・承認者・対象・判断）入力。
+  3. proposal-only / fail-closed / safeMode境界の後退ゼロ確認。
+- 停止条件: 前提不整合・契約競合・4回目修復要求のいずれか検知時は即時 `held`。
