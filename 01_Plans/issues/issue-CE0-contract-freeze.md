@@ -2695,3 +2695,25 @@ type PatchProposal = {
 - 継続条件:
   - CE0契約凍結を維持し、CE1/CE2/CE4は参照専用のまま運用。
   - 推測要求・致命エラー・境界逸脱要求を検知した時点で即時 `Stop（held）`。
+
+## Stream B latest run（2026-05-07 / CE0 contract freeze gate for CE1 unblocking）
+
+- run_id: `stream-b-ce0-2026-05-07-11`
+- assignee: `Stream B（CE0/CE1 契約基盤専任）`
+- scope_guard: `edit_allowlist=issue-CE0-contract-freeze.md, issue-CE0-core-graph-repositioning.md, issue-CE1-context-query-bundle-foundation.md`
+- drift_check: `status=Open / dependencies=no drift / blockers=none`
+
+### Phase 1 Read
+- 本ファイルを再Readし、CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を再確認。
+- Dependencies再確認: CE1/CE2/CE4は本CE0 freezeをread-only参照し、逆流再定義しない。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE1のcontract-freezeを進める前提として、CE0 SSOTの不変境界を再確定する必要がある。
+- Decision: CE0 Contract IDs・No-Go canonical IDs・safeMode既定境界を v1 不変として維持し、拡張要求は `held` 管理に固定。
+- Consequences: 下流CE1/CE2/CE4は contract collision 懸念なしで mock-first 検証へ進行可能。
+
+### Phase 3 Plan → Execute → Verify → Proceed
+- Plan: 本実行ログ追記のみ（contract-only / docs-only）。
+- Execute: 実装変更・ID再定義・safeMode後退記述を追加しない。
+- Verify: `docs-check` 実施（self-correction 0/3）。
+- Proceed: **Approved-to-Proceed（CE0 freeze maintained）**。
