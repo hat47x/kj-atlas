@@ -325,3 +325,36 @@
 - 理由:
   - `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解決。
   - 親計画は推測確定を禁止し、再開条件（終端承認 + queue解消）充足まで停止継続。
+
+
+## Stream A serial run（2026-05-07 / parent plan contract lock）
+
+### Phase 1: Read & Plan
+- Status: `In Progress`
+- Priority: `P1`
+- Dependencies: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（read-only参照）。
+- Scope: 親計画として参照整合のみ実施（契約再定義禁止）。
+- AC/DoD補完（合意記録）:
+  1. AC: A1固定参照値とのドリフト0。
+  2. AC: A2/A3非干渉（編集・判定代行なし）。
+  3. DoD: `pendingDecisionQueueCount>0` なら `Hold/NoGo` 固定。
+
+### Phase 2: ADR明文化（Approval gate）
+- Context: 親計画側の再定義は契約ドリフトを誘発する。
+- Decision: 親計画は `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary/decisionQueueTransition` を参照専用で固定。
+- Consequences: 未承認状態では Proceedせず `Needs-decision` 継続。
+- Approval: `approved-for-freeze-candidate`（docs scope）を維持。
+
+### Phase 3: Execute（契約凍結）
+- Fixed gate（参照専用）:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0`
+- Mock-first note:
+  - A2/A3は `A1-CONTRACT-MOCK-v1` で先行検証可能、実装接続待ちを前提化しない。
+
+### Phase 4: Verify（self-check）
+- AC/DoD検証: pass（参照整合・非干渉・Hold条件維持）。
+- Self-Correction count: `0/3`。
+
+### Phase 5: Proceed / Stop
+- 判定: `Hold`。
+- 理由: human final approval未完了のため、推測でGoへ遷移しない。
