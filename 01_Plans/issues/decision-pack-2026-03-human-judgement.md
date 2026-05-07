@@ -817,3 +817,11 @@
 - Phase 2 Execute: shared resource 3ファイルのみを更新対象に限定し、Active issue=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順 `A1→A2→A3` を同一値へ固定。
 - Phase 3 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し整合を確認。
 - Phase 4 Publish: 再開判定チェックリスト1行に `2026-05-07 rerun-70確認済み` を反映し、次サイクル条件を明記。
+
+### Stream D 共有統合同期ログ（2026-05-07 rerun-71, Phase 1-5）
+
+- Phase 1 Read同期: Stream A/B/C の完了報告リンクと決定リンクを再確認し、未承認事項の確定扱いが0件であることを確認。
+- Phase 2 統合反映: shared resource 3ファイルで `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3` を同一値に固定。
+- Phase 3 監査: 件数・状態・依存順・停止条件（未承認決定の確定扱い / 件数不整合 / 未定義競合）を再計算し、違反0件を確認。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=1|Open=2|件数47|Active=5|Done=26|A1→A2→A3|再開条件1行|再開判定" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行（validatorは既知不整合で失敗、unittest/rgは成功）。
+- Phase 5 Publish: 再開判定1行を固定し、未承認事項の確定扱いゼロを確認して Proceed 判定。
