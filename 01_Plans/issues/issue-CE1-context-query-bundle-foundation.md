@@ -1843,3 +1843,40 @@ handoffKeys:
 - attempt 1/3: 契約語彙の重複・揺れ点検（pass）
 - attempt 2/3: CE2/CE4 handoff keyの最小集合点検（pass）
 - attempt 3/3: error semanticsとHTTP status対応の再点検（pass）
+
+
+## Stream C integrated lock (2026-05-07 / CE1 contract-only freeze for CE2+CE4)
+
+### Phase 1: Read同期（closed-world / preview gate / non-determinism）
+- 本ファイル再読により、`ContextQueryV1` / `ContextBundleV1` は **closed-world**（v1未定義キー拒否）で固定済みと確認。
+- `previewConfirmed=false -> 422 preview_required` を契約必須挙動として再確認。
+- 同一canonical queryで`bundleHash`不一致時は `409 nondeterministic_bundle` を返す fail-closed を再確認。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4をCE1実装待ちで停止させないため、I/F・語彙・hash規則を先行固定する必要がある。
+- **Decision**: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` のv1契約を固定し、error semanticsを `400 unknown_contract_key` / `422 preview_required` / `409 nondeterministic_bundle` に固定する。
+- **Consequences**: CE2/CE4は実装依存なしにmock-onlyで正常系/異常系を前進可能。
+
+### Phase 3: Plan（AC/DoD + handoff key明示）
+- AC-1: unknown keyは常に `400 unknown_contract_key`。
+- AC-2: preview未確認は常に `422 preview_required`。
+- AC-3: 非決定論（same canonical query, different bundle）時は常に `409 nondeterministic_bundle`。
+- DoD-1: CE2 handoff key を `sourceBundleHash === bundleHash` として固定。
+- DoD-2: CE4 handoff key を `equivalenceKey + bundleHash` として固定。
+- DoD-3: 成果物は「契約ID・型・error semantics・hash rule・handoff key」のみ。
+
+### Phase 4: Execute（contract vocabulary freeze）
+- v1語彙固定を再宣言: `unknown_contract_key` / `preview_required` / `nondeterministic_bundle`。
+- closed-world原則を再宣言: v1は拡張禁止、未定義キー拒否、拡張はv2のみ。
+- hash ruleを再宣言: canonical query一致ケースでbundle hashが一致しない場合はfail-closed。
+
+### Phase 5: Verify（mock-only self-check + self-repair <= 3）
+- Verify-CE2: `sourceBundleHash === bundleHash` 比較のみで契約準拠判定が可能（実装依存なし）。
+- Verify-CE4: `equivalenceKey + bundleHash` の監査再現キー構成が可能（実装依存なし）。
+- Verify-Error: 3固定語彙（400/422/409）をmockで再現可能。
+- self-repair policy: 失敗時は最大3回。4回目相当は `held` で停止。
+- 判定: **pass（CE2/CE4ともmock-onlyで独立前進可能）**。
+
+### Phase 6: Proceed / Stop
+- Proceed条件: contract collisionなし、scope逸脱要求なし。
+- Stop条件: Contract ID / error semantics / handoff key collision検知時、または編集対象逸脱要求発生時は即停止し `held`。
