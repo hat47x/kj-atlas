@@ -520,3 +520,5 @@ issue補助メモには、最低でも次の項目を含める。
 - Phase 3 Audit: Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26、Active=5、Done=26 を再計算し不整合0件を確認。
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し成功。
 - Phase 5 Publish: 再開判定1行を維持（未承認事項の確定扱い0件 / 二重計上0件 / 未定義競合0件）。
+
+- Stream D Phase 1-4 同期（2026-05-07 rerun-70）: Plan→Execute→Verify→Proceed を直列実行し、A/B/C完了報告リンク再確認・未承認事項の確定扱い0件を監査したうえで、公開固定値 `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` と次サイクル再開条件1行を shared resource 3ファイルで一致させた。
