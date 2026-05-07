@@ -1791,3 +1791,55 @@ handoffKeys:
 ### Phase 6 Proceed
 - CE1は契約凍結を維持したまま、下流へは「型シグネチャ / 固定語彙 / hash決定論 / mock検証条件」のみを引き渡す。
 - 競合検知時（Contract ID / error semantics / handoff key）は `held` で停止し、Phase 2（ADR様式）へロールバックする。
+
+## Stream C update（2026-05-07 / CE1インターフェース先行 mock-first）
+
+### Phase 1) Read
+- Read Order上位（`system_prompt.md` / `domain.md` / `handoff.md` / `agent_handover.md` / `codex_gsd_skill_ops.md` / `ai_cognitive_externalization_requirements.md` / `ADR-0001` / `architecture.md` / `schemas.md` / `ADR-0028`）を再確認。
+- 本ストリームの編集許可を **本issueのみ** と再確認（backend/frontend/schema本体は非編集）。
+- CE0未完了時でも依存切断して進めるため、`ContextQueryV1` / `ContextBundleV1` / error semantics固定を優先対象として確定。
+
+### Phase 2) ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4が実装待ちで停止しないよう、CE1は契約語彙・型・失敗語彙を mock-first で先行固定する必要がある。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` を v1 固定（closed-world、unknown key reject）。
+  - エラー語彙を以下に固定：
+    - `422 preview_required`
+    - `400 unknown_contract_key`
+    - `409 nondeterministic_bundle`
+  - hash決定論は `queryCanonicalHash` / `bundleHash` を同一canonical queryで一致必須とする。
+- **Consequences**:
+  - CE2/CE4はbackend未実装でもmock契約のみで検証継続可能。
+  - 実装差異が発生しても契約テストで逸脱検知でき、fail-closed運用を維持できる。
+
+### Phase 3) Plan（AC/DoD不足提案）
+- AC追加提案（CE2向け）: `sourceBundleHash === bundleHash` を最小必須照合キーとして固定。
+- AC追加提案（CE4向け）: `equivalenceKey + bundleHash` を監査再現キーの最小集合として固定。
+- DoD追加提案: handoff成果物は `Contract IDs / 型 / error semantics / hash rule / handoff keys` のみに限定し、実装TODOを混在させない。
+
+### Phase 4) Execute（ContextQueryV1 / ContextBundleV1 + error semantics固定）
+- CE1 v1 契約は `ContextQueryV1` / `ContextBundleV1` を変更せず固定。
+- closed-world運用を固定（未定義キーは一律 `400 unknown_contract_key`）。
+- preview gate を固定（`previewConfirmed=false` は一律 `422 preview_required`）。
+- 決定論違反を固定（同一canonical queryでbundle不一致は `409 nondeterministic_bundle`）。
+
+### Phase 5) Verify（CE2/CE4 mock-only進行可否）
+- Verify-CE2: `sourceBundleHash === bundleHash` の照合だけで入力整合を検証可能（mock-onlyで進行可）。
+- Verify-CE4: `equivalenceKey + bundleHash` により再現監査キーを構成可能（mock-onlyで進行可）。
+- Verify-Common: 正常系＋3種異常系（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）をstubのみで再現可能。
+- 判定: **Proceed**（CE2/CE4ともmock-onlyで独立進行可能）。
+
+### Phase 6) Proceed / Stop
+- Proceed条件:
+  - 契約ID衝突なし
+  - エラー語彙衝突なし
+  - handoff key衝突なし
+- Stop条件:
+  - self-repair 4回目相当（>3回）到達時は `held` 停止
+  - scope逸脱要求（本issue以外の編集要求）発生時は停止
+  - Contract collision検知時はPhase 2へロールバック
+
+### Self-repair counter（max 3）
+- attempt 1/3: 契約語彙の重複・揺れ点検（pass）
+- attempt 2/3: CE2/CE4 handoff keyの最小集合点検（pass）
+- attempt 3/3: error semanticsとHTTP status対応の再点検（pass）
