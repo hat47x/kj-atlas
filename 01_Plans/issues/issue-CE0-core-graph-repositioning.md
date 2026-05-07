@@ -1812,3 +1812,20 @@
 ### Phase 6 Proceed
 - 判定: `Ready`（AC/DoD整合、docs-check pass、allowlist逸脱なし）。
 - 失敗条件（語彙差分、契約ID再定義、SafeMode後退、自己修復4回目相当）発生時は即時 `held` 停止を継続。
+
+## Stream B latest run（2026-05-07 / CE0 core graph repositioning contract confirmation）
+
+### Phase 1 Read
+- 対象ファイルを再Readし、`working` / `context_projection` / `consensus` と `working -> consensus`=`patch+approval only` の固定を確認。
+- Dependencies drift確認: `issue-CE0-contract-freeze.md` 参照は有効、語彙差分なし。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE1契約凍結の前に、CE0 core graph責務境界の語彙固定を再確認する。
+- Decision: role/transition/no-go を既存canonical語彙に固定し、同義語置換・追加・再定義を行わない。
+- Consequences: CE1のContextQuery/Bundle契約は graph境界への依存が安定化し、CE2/CE4のmock統合条件が明確化される。
+
+### Phase 3 Plan → Execute → Verify → Proceed
+- Plan: 契約固定ログ追記のみ、実装/スキーマ更新は対象外。
+- Execute: contract-only更新を実施し、safeMode既定境界後退なしを確認。
+- Verify: `docs-check` 実施（self-correction 0/3）。
+- Proceed: **Approved-to-Proceed（CE0 core graph contract frozen）**。

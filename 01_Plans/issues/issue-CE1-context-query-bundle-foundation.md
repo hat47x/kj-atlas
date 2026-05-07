@@ -1880,3 +1880,31 @@ handoffKeys:
 ### Phase 6: Proceed / Stop
 - Proceed条件: contract collisionなし、scope逸脱要求なし。
 - Stop条件: Contract ID / error semantics / handoff key collision検知時、または編集対象逸脱要求発生時は即停止し `held`。
+
+## Stream B latest run（2026-05-07 / CE1 contract foundation freeze + downstream unlock handoff）
+
+### Phase 1 Read
+- 対象ファイルを再Readし、`ContextQueryV1` / `ContextBundleV1` closed-world契約、固定エラー語彙、hash決定論要件を再確認。
+- Dependencies drift確認: `depends_on=CE0-contract-freeze,FB-P2C-01-a1-interface-contract` は成立、`unlocks=CE2-low-risk-ai-assist,CE4-api-cli-audit-integration` は有効。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE2/CE4を実装依存から解放するため、CE1はmock-firstで契約のみ先行固定する必要がある。
+- Decision: v1契約として `ContextQueryV1` / `ContextBundleV1`、`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`、および `queryCanonicalHash` / `bundleHash` 決定論を固定。
+- Consequences: CE2は `sourceBundleHash === bundleHash` 比較のみで入力整合検証可能、CE4は `equivalenceKey + bundleHash` で監査再現キーを構築可能。
+
+### Phase 3 Plan → Execute → Verify → Proceed
+- Plan: handoffを契約要素（Contract IDs / 型 / error semantics / hash rule / unlock keys）のみに限定。
+- Execute: mock-first依存切断を明記し、実装詳細（handler/UI/DB/worker）追加を禁止したままログ更新。
+- Verify: `docs-check` 実施（self-correction 0/3、競合なし）。
+- Proceed: **Approved-to-Proceed（CE1 contract freeze）**。
+
+### Downstream unlock handoff（CE2 / CE4）
+- unlock_for_CE2:
+  - consume: `ContextBundleV1.bundleHash`, `sourceBundleHash`
+  - check: `sourceBundleHash === bundleHash`
+  - errors: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- unlock_for_CE4:
+  - consume: `ContextBundleV1.bundleHash`, `equivalenceKey`
+  - check: `equivalenceKey + bundleHash` で監査再現キーを構成
+  - errors: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+- handoff_note: CE1は契約のみ凍結済み。CE2/CE4はmockで先行可能、実実装の完了待ちは不要。
