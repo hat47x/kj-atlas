@@ -1086,3 +1086,20 @@
   2. Approval Record 実値（approved_by / approved_at / evidence）が未充足。
   3. 上記未充足のため、実装依存切断を維持したまま Draft継続が唯一の安全選択。
 - Stop宣言: 未承認での Proceed 要求または契約衝突検知時は、即時 `held` で停止し追加提案を行わない。
+
+
+## Assumption Log（CE1契約前提 / CE2 Draft）
+
+| ID | Assumption（CE1前提） | 根拠 | 破綻時の扱い |
+| --- | --- | --- | --- |
+| A-CE2-01 | CE1の `ContextQuery/ContextBundle` は read-only contract として参照可能である。 | `schemas.md` CE1/CE2/CE4 freeze 節 | CE2を `held` に戻し、CE1再確認が完了するまで Proceed禁止。 |
+| A-CE2-02 | `sourceBundleHash === bundleHash` 検証は CE2側でも fail-closed として適用できる。 | CE0/CE1固定契約（hash deterministic） | 不一致または未検証なら No-Go とし、Draft更新のみ許容。 |
+| A-CE2-03 | CE1未実装でも mock contract で CE2判断材料を整備できる。 | mock-first 方針（契約先行） | 実装依存要求が出た時点で scope逸脱として Stop。 |
+
+## Draft→Open 昇格条件（CE2 / contract-only gate）
+
+- [ ] Context / Decision / Consequences が本Issue内で矛盾なく再読可能。
+- [ ] Assumption Log（A-CE2-01〜03）に未解決破綻がない。
+- [ ] proposal-only / human final decision / fail-closed / safeMode既定ON の後退がゼロ。
+- [ ] Approval Record（日時・承認者・対象・判断・evidence）が記録済み。
+- [ ] Verify（V1〜V3）を最大3回以内で完了し、4回目相当に到達していない。
