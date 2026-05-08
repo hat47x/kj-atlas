@@ -1,13 +1,19 @@
-# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream F）
+# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream E）
 
 - Type: Process
 - Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
-- Owner: Stream F（A1 minimum interface contract freeze）
+- Owner: Stream E（A1 minimum interface contract only）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+
+
+## Stream E Contract Gate Declaration
+- 本Issueは **HIL-RS-01 A1 minimum interface contract の唯一ゲート** として扱う。
+- A2/A3 を含む下流は、本Issueで固定した契約値を **read-only** 参照し、契約再定義を行わない。
+- `Pending` 承認が1件でも残る場合は、判定を `Hold` として明記し、`executeAllowed=false` を維持する。
 
 ## Mission
 A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界と停止条件込みで再読可能に固定する。
