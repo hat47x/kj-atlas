@@ -2062,3 +2062,48 @@ handoffKeys:
 - verify attempt 2/3: closed-world境界（unknown key reject）の記述一貫性確認（pass）。
 - verify attempt 3/3: CE2/CE4依存切断文言（実装待ち不要）の明示確認（pass）。
 - 最終判定: **pass**。自己修復回数は3回以内。4回目相当が必要になった場合は `held` で停止する。
+
+## Stream D run（2026-05-08 / CE1 ContextQuery/ContextBundle foundation）
+
+### Phase 1 Read
+- 本ファイルのみ再読し、CE1の編集許可範囲が docs-only / contract-only であることを再確認。
+- 既存の固定契約（`ContextQueryV1` / `ContextBundleV1`、`422 preview_required`、`409 nondeterministic_bundle`）と、実装非依存方針を再確認。
+- CE0参照は read-only、CE2/CE4へのhandoffは契約キーのみという境界を維持。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4が先行して検証を進めるには、実装詳細より先にI/F（型/APIシグネチャ）固定と失敗語彙固定が必要。
+- **Decision**: CE1では v1 契約を変更せず、`ContextQueryV1`/`ContextBundleV1` + fixed error mapping を唯一の受け渡し面として維持する。
+- **Consequences**: 下流は mock による独立検証が可能になり、handler/UI/DB/worker 実装待ちを発生させない。
+
+### Phase 3 Plan（AC / DoD）
+- AC-1: I/F固定順序を明示（型シグネチャ固定 → error semantics固定 → hash決定論固定）。
+- AC-2: mockで依存を切断できる箇所を列挙し、実装依存を持ち込まない。
+- AC-3: `previewConfirmed=false -> 422 preview_required` を API 契約として再固定。
+- AC-4: `queryCanonicalHash` と `bundleHash` の決定論要件（同一canonical queryで3回一致）を維持。
+- DoD-1: CE2/CE4が `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` のみで検証可能。
+- DoD-2: 実装タスク記述を追加しない（contract-only維持）。
+
+### Phase 4 Execute
+- 契約固定順序を以下に確定：
+  1. `ContextQueryV1` / `ContextBundleV1` の型シグネチャ固定
+  2. fixed error mapping（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）固定
+  3. hash決定論（同一canonical queryで3回一致、失敗時`409`）固定
+- **Mock cut points（依存切断箇所）**:
+  - Cut-1: Query入力検証層（unknown key / preview gate 判定のみ）
+  - Cut-2: Bundle生成層（`selected/relations/evidence/contradictions` は固定fixture注入）
+  - Cut-3: Hash評価層（canonical query/bundle 文字列をfixture化して一致性のみ検証）
+  - Cut-4: Handoff層（CE2: `sourceBundleHash`照合、CE4: `equivalenceKey + bundleHash`組立のみ）
+
+### Phase 5 Verify（自己修復上限3）
+- Verify-1: I/F先行固定（型/APIシグネチャ→error semantics→hash rule）が本文に明示されていることを確認。
+- Verify-2: mock cut pointsが実装依存（handler/UI/DB/worker）を参照していないことを確認。
+- Verify-3: fail-closed語彙が3種に固定され、追加語彙が混入していないことを確認。
+- self-repair attempt 1: 表記揺れ（`queryCanonicalHash`）を点検し統一。
+- self-repair attempt 2: mock cut pointsの責務境界を再点検（実装語彙なしを確認）。
+- self-repair attempt 3: Verify項目とAC/DoDの対応を再点検。
+- 判定: **Proceed**（停止条件非該当、contract-only維持）。
+
+### Stop conditions（再掲）
+- Verify失敗が3回を超えた場合は `held` で停止。
+- Contract ID / error semantics / handoff key の衝突検知時は即停止し、Phase 2（ADR）へ戻す。
+- 編集許可範囲外（本ファイル以外）への変更要求が発生した場合は停止。
