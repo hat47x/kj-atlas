@@ -1299,3 +1299,45 @@ state: Needs-decision
   - 未定義競合: 未検知
   - self-correction 4回目相当: 非該当
 - 次アクション（人間判断待ち）: 上記2件の承認/判定確定後に `Ready` へ遷移し、A2/A3へ read-only freeze 通知を再発行。
+
+## Stream A dedicated run（2026-05-08 / A1 interface contract freeze maintenance）
+
+### Phase 1: Read
+- Extracted baseline:
+  - Status=`Open`, Priority=`P0`, Scope=`A1最小I/F契約の固定`, Dependencies=`A1 -> A2 -> A3`（A2/A3はread-only参照）。
+  - Fixed contract key closed-set=`freezeContractId|contractIds|schemaVersion|overridePolicy|contractLinkLocked|sharedResourceFreeze|safeModeDefault|safeModeBoundary|decisionQueueTransition`.
+- Delta check result: 差分なし。
+- held record: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`（継続）。
+
+### Phase 2: ADR/CDC
+- Context: A2/A3の再定義を防止するため、A1の契約キー閉集合と判定式を唯一ゲートとして維持する必要がある。
+- Decision: A1契約は implementation-decoupled の freeze-candidate を継続し、`safeModeDefault=ON` と `overridePolicy=human_dual_control_only` を維持、unknown contract key は 400 を維持する。
+- Consequences: `Approval Record` 未確定のため確定扱いに進めず、`Needs-decision` を維持したまま docs 契約同期のみ許容する。
+- Approval Record: `未確定`（推測確定しない）。
+
+### Phase 3: Plan
+- AC draft補完:
+  1. 契約キーは閉集合のまま維持され、A2/A3へ追加キーを開放しない。
+  2. `A2A3_OPEN_ALLOWED` を唯一判定式として維持する。
+  3. SafeMode後退禁止（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）と `human_dual_control_only` を維持する。
+- DoD draft補完:
+  1. 本Issueのみ編集（allowlist外 write=0）。
+  2. 未承認項目は `Needs-decision` / `held` 明示を維持。
+  3. 契約ID・シグネチャ・エラー語彙・停止条件が同一文書内で整合。
+- Change target declaration: 本Issue内「A1 contract freeze maintenance」追記節のみ。
+
+### Phase 4: Execute
+- Contract ID維持: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`。
+- Signature維持: `CritiqueV1/ReDiffV1/AttributionV1/A1ErrorV1`。
+- Error vocabulary維持: `400 unknown_contract_key`, `Needs-decision`, `held`。
+- Stop condition維持: self-correction 3回超過 / 前提崩壊 / 未定義ファイル競合は即Stop。
+
+### Phase 5: Verify
+- AC/DoD照合: 充足。
+- docs-check結果:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` は既存他Issueの不整合で失敗（本Issue起因の新規失敗は未検出）。
+- Self-correction count: `0/3`。
+
+### Phase 6: Proceed
+- Proceed decision: `Hold`。
+- Reason: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消のため。
