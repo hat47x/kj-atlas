@@ -268,3 +268,17 @@
   5. safeMode後退要求（`ON -> OFF` または `SAFE_MODE_STRICT_ON -> relaxed`）
 - 停止時の報告フォーマット（固定）:
   - `原因` / `影響I/F` / `要判断点` / `再開条件`
+
+
+### Phase 6: Proceed（終了判定）
+- 判定は `Proceed / Hold / Stop` の3値で明記し、推測確定を禁止する。
+- `Proceed`: `A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` かつ `Approval Record=Approved`。
+- `Hold`: 未承認事項が `held` のみに限定され、固定キー差分が `0` の場合。
+- `Stop`: フェイルセーフ条件（allowlist外編集要求 / 前提崩壊 / self-correction 4回目相当 / 未定義競合）を満たした場合。
+- 次アクションは本Issue内で完結する内容（文面同期・held更新・判定式照合）に限定する。
+
+### Delta log分類ルール（Phase 1運用固定）
+- `語彙差分`: Go/No-Go/Conditional/Needs-decision など判定語彙の不一致。
+- `依存差分`: `A1 -> A2 -> A3` の順序・依存記法の不一致。
+- `契約キー差分`: `freezeContractId` / `contractIds` / `schemaVersion` / `safeModeDefault` など固定キーの不一致。
+- 差分を検知した場合は `held` に分類ラベル付きで記録し、Phase 2以降へ進行しない。
