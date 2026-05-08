@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+import pytest
 
 from kj_atlas_api.main import app
+from kj_atlas_api.models import A2A3GateValidationRequest
+from kj_atlas_api.routes.admin import validate_a2_a3_gate
 
 
 def _valid_payload() -> dict[str, object]:
@@ -70,3 +73,13 @@ def test_validate_gate_rejects_unknown_fields() -> None:
         response = client.post("/admin/provision/hil-rs/a2a3-gate:validate", json=payload)
 
     assert response.status_code == 422
+
+
+def test_validate_gate_function_raises_409_on_invariant_drift() -> None:
+    payload = A2A3GateValidationRequest.model_construct(**_valid_payload())
+    payload.schemaVersion = "9.9.9"  # type: ignore[assignment]
+
+    with pytest.raises(Exception) as exc_info:
+        validate_a2_a3_gate(payload)
+
+    assert getattr(exc_info.value, "status_code", None) == 409
