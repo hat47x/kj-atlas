@@ -390,3 +390,58 @@
 - 変更要約: A1固定契約の親Issue反映を参照専用で正規化。
 - 残リスク: 未承認論点があるため `Proceed=Hold` 継続。
 - 他ストリームへ渡す契約固定点: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`, `unlock precondition` は不変。
+
+## Stream G governance lock update（2026-05-08 / A1-A2-A3 responsibility split + Execute Gate）
+
+### Phase 1 Read
+- 親計画の AC / DoD / Execute Gate / Verify Procedure を再読し、親の責務を「計画・統治・停止判定」に限定することを再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context:
+  - 親計画の曖昧さは、A1/A2/A3 子Issue間で責務競合と判定競合を誘発する。
+- Decision:
+  - 親Issueは **統治ノード** として固定し、実装・契約正本更新・承認確定は子Issue/人間承認責務へ分離する。
+  - 親Issueの責務は以下に限定する。
+    1. 計画整合（AC/DoD/ゲート条件の維持）
+    2. 統治整合（A1固定参照値と承認遷移ルールの監査）
+    3. 停止判定（Go/Hold/NoGo の宣言、reasonCodes記録）
+- Consequences:
+  - 子Issueは親計画に対して read-only 参照で接続し、親から子への実装逆流を禁止。
+  - 親計画で未承認決定を確定しないことで、逸脱と循環依存を防止する。
+
+### Phase 3 Plan（AC / DoD 補完）
+#### Acceptance Criteria（補完）
+- AC-5: 親子責務分離を明文化（親=計画/統治/停止判定、子=実装/契約正本更新）。
+- AC-6: 停止条件を明文化（Pending残存、承認証跡不足、固定キーdrift、SoD違反兆候）。
+- AC-7: 承認記録形式を固定（`approved_by`, `approved_at`, `evidence`, `decision_id`, `reasonCodes`）。
+
+#### Definition of Done（補完）
+- DoD-5: `Approval Record=Pending` の間は `Proceed=Hold/Needs-decision` 以外に遷移しない。
+- DoD-6: 承認記録は上記5フィールドを欠落なく保持し、欠落時は `NoGo` ではなく `Hold` を優先判定する。
+- DoD-7: 親Issueは子Issueの実装内容を取り込まず、統治文面のみ更新する。
+
+### Phase 4 Execute（docs-only governance wording）
+- 本更新は親Issue内の統治文面に限定し、子Issueの実装・詳細設計・未承認決定は混入させない。
+- Execute Gate（既存固定）を維持:
+  - `Go`: `a1Status=="Done" && pendingDecisionQueueCount==0 && fixed key drift==0`
+  - `Hold`: `pendingDecisionQueueCount>0` または承認証跡不足
+  - `NoGo`: SafeMode境界後退 / overridePolicy後退 / fixed key drift / 競合検知
+
+### Phase 5 Verify（self-correction <= 3）
+- verify 1/3: A1/A2/A3導線を確認。
+  - A1（契約正本）→ Parent（統治判定）→ A2/A3（実装）の単方向を維持: pass
+- verify 2/3: 循環依存チェック。
+  - Parent から A1契約値を再定義して戻す経路なし: pass
+  - Parent から A2/A3実装詳細へ逆流する経路なし: pass
+- verify 3/3: 承認・停止条件チェック。
+  - `Pending -> Approved | Rejected` 以外の遷移追加なし: pass
+  - self-correction count: `0/3`
+
+### Phase 6 Proceed（Proceed/Hold/Stop）
+- 判定: **Hold**
+- 理由:
+  - 親計画責務は固定できたが、最終Goは人間承認証跡と pending 解消に依存する。
+- Stop条件（再掲）:
+  1. 子Issue実装内容の親への混入要求
+  2. 未承認決定の確定要求
+  3. 指定外ファイル編集要求
