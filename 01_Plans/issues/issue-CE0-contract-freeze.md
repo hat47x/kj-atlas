@@ -2849,3 +2849,53 @@ type PatchProposal = {
 - 判定:
   - 本実行では `dependency_undefined=0` / `contract_conflict=0` のため **Conditional-Go**。
   - 以後、競合検知時は即時 `held` へ遷移し、推測補完を行わない。
+
+## Stream C latest run（2026-05-08 / CE0 contract SSOT freeze reaffirmation）
+
+- run_id: `stream-c-ce0-2026-05-08-01`
+- assignee: `Stream C（CE0 Contract SSOT 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / scope_deviation=0`
+
+### Phase 1 Read
+- 対象を再読し、Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）が凍結済みであることを再確認。
+- safeMode境界（`safeMode=true` 既定、`allowUnreviewedText=false` 既定、`human_reviewed` 手動昇格のみ）の現値維持を確認。
+- fail-safe 条件（契約ID再定義禁止・safeMode後退禁止・指定外編集禁止）を再確認。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context:
+  - CE0を先に固定しない場合、CE1/CE2/CE4 が参照する契約語彙・エラー意味論・安全境界が実行中に変動し、mock-first 前提が崩壊する。
+  - その結果、下流での再モック、検証やり直し、監査ログ整合崩れが連鎖し、依存崩壊リスクが高まる。
+- Decision:
+  - `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再固定し、追加・改名・削除を禁止する。
+  - CE0は contract-only 記述に限定し、実装詳細の追加を行わない。
+- Consequences:
+  - 下流（CE1/CE2/CE4）は CE0契約を read-only 参照して mock を先行可能となる。
+  - 契約凍結を前提に、下流は実装着手前の検証を安全に並行化できる。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC補完:
+  - `ac_contract_id_redefinition_forbidden`: CE0 Contract ID の再定義（追加/改名/削除）を禁止。
+  - `ac_safemode_no_regression`: safeMode既定値・境界の後退を禁止。
+  - `ac_scope_single_file`: 指定外ファイル編集を禁止。
+- DoD補完:
+  - Verifyで `contract_id_mutation=0` / `safeMode_regression=0` / `scope_deviation=0` を満たすこと。
+
+### Phase 4 Execute
+- 本Issue内の契約文面のみ整備し、contract SSOT の凍結状態を明確化。
+- 実装仕様、アルゴリズム、保存方式、API挙動詳細の追加は実施しない。
+
+### Phase 5 Verify
+- verify_attempts: `1/3`
+- result: pass
+- check:
+  - `contract_id_mutation=0`
+  - `safeMode_regression=0`
+  - `scope_deviation=0`
+- 失敗時self-correction方針: 最大3回。4回目相当はStop。
+
+### Phase 6 Proceed
+- 判定: **Proceed（Conditional-Go）**
+- 条件:
+  - CE0 Contract SSOT は read-only freeze 維持。
+  - Stopper（契約ID追加/改名/削除要求、safeMode既定後退要求、指定外編集要求）検出時は即時 **Stop**。
