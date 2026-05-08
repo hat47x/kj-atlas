@@ -252,3 +252,31 @@
 ### Consequences
 - A2/A3は read-only handoff のまま進行し、契約再定義を実施できない。
 - 契約ID改変、SafeMode境界緩和、Pending bypass を No-Go として維持できる。
+
+
+## Stream A alignment update（2026-05-07 / Phase 1-5）
+
+### Phase 1: ADR整合確認（再Read実施）
+- 再読対象: `ADR-0026` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`。
+- Context差分: 本ADRは「親計画の実行順序と統治原則」、A1は「最小契約SSOT」、親Issueは「参照運用」の責務に分離されている。
+- Decision差分: 固定契約値の正本はA1であり、ADR-0026は再定義せず参照する。
+- Consequences差分: 未承認項目（Approval Record / GOV-EXCEPTION）が残る間は `Hold/Needs-decision` を維持。
+
+### Phase 2: 契約最小I/F固定（参照ルール）
+- 本ADRで固定するのは「A1契約を参照専用とする統治ルール」のみ。
+- 下流依存は mock参照で切断し、外部レーン完了待ちを開始条件にしない。
+
+### Phase 3: 親Issue反映ポリシー
+- 親IssueにはA1固定契約の read-only 参照・Gate条件・Hold運用のみ反映する。
+- 未承認論点は `Hold list` に隔離し、推測で確定しない。
+
+### Phase 4: 検証
+- AC/DoD照合: pass（固定語彙再定義なし、SafeMode後退なし、Pending bypass禁止）。
+- リンク整合: pass（NoGo return path はA1 Issueを維持）。
+- 状態遷移妥当性: pass（`Pending -> Approved | Rejected` 以外を不許可）。
+- Self-Correction: `0/3`。
+
+### Phase 5: 完了報告（Stream A）
+- 変更要約: ADR-0026は「契約再定義禁止・A1参照専用・Hold継続」を明文化。
+- 残リスク: 人間最終承認ログ未充足時はProceed不可。
+- 他ストリーム契約固定点: `freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` は read-only。
