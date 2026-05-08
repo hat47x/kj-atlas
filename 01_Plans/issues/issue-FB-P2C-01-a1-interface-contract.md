@@ -1258,3 +1258,44 @@ state: Needs-decision
 - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#7-stream-a-handoff-manifest2026-05-07--contract-if-freeze`
 - Prohibited: 契約ID再定義、`schemaVersion`改版、Pending bypass、安全境界後退。
 - Status: `Hold`（人間判断待ち残件あり）。
+
+## Stream A protocol run（2026-05-07 / user-directed Phase 1-5）
+
+### Phase 1: Read同期
+- 対象: 本Issue、`issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`、`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` を再読し、A1契約固定値の一致を確認。
+- 結果: `freezeContractId` / `schemaVersion` / `safeMode` 境界 / `A2A3_OPEN_ALLOWED` の差分は `0`。
+- 未解決前提: `Approval Record=Pending`、`HIL-RS-02-GOV-EXCEPTION-01=held` を維持。
+
+### Phase 2: P0契約の Context / Decision / Consequences 明文化
+- Context: P0クリティカルパスでは A1 未固定のまま A2/A3へ進むと、派生契約再定義により `A1 -> A2 -> A3` 依存が崩壊する。
+- Decision: A1契約は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` を凍結し、A2/A3は read-only + mock-first（`A1-CONTRACT-MOCK-v1`）参照のみ許可する。
+- Consequences:
+  1. 破壊的変更（契約ID変更、`schemaVersion` 改版、SafeMode境界緩和）は A1 再起票まで禁止。
+  2. 未承認論点は確定化せず `Needs-decision` を維持。
+  3. Execute は docs 契約同期に限定し、runtime 実装依存を導入しない。
+
+### Phase 3: 変更禁止境界（Non-goals）固定
+- Non-goals（A1 freeze対象外 / 変更禁止）:
+  1. `03_Implement/**` の runtime 実装最適化や挙動変更。
+  2. 新規契約ID追加、既存契約ID改名・削除。
+  3. `schemaVersion` の更新（`1.0.0` 以外の受理）。
+  4. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の緩和。
+  5. `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` 以外の遷移導入。
+
+### Phase 4: Verify（AC/DoD, max 3 self-corrections）
+- AC/DoD結果:
+  - AC-1（固定キー閉集合）: pass
+  - AC-2（API signature 4系統固定）: pass
+  - DoD（mock-firstで実装依存切断）: pass
+- self-correction count: `0/3`（追加修正不要）。
+
+### Phase 5: 停止条件評価（前提崩壊 / 競合）
+- 判定: `Hold / Needs-decision`。
+- 停止理由:
+  1. `Approval Record` が未充足（`approved_by` / `approved_at` / `evidence` 未完）。
+  2. `HIL-RS-02-GOV-EXCEPTION-01=held` が継続中。
+- 停止条件チェック:
+  - 前提崩壊: 未検知
+  - 未定義競合: 未検知
+  - self-correction 4回目相当: 非該当
+- 次アクション（人間判断待ち）: 上記2件の承認/判定確定後に `Ready` へ遷移し、A2/A3へ read-only freeze 通知を再発行。
