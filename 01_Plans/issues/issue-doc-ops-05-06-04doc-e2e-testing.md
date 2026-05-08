@@ -276,3 +276,34 @@
 - TODO: `DOC-OPS-05` Open gate の最終承認証跡（日時/承認者/evidence link）確定待ち。
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
+
+## Stream L serial gate pass（2026-05-08 / Gate-B: DOC-OPS-05-06）
+
+### Phase 1 Read
+- Status/Lifecycle: `Draft / Draft` を再確認。
+- Dependencies: `05-05完了待ち（単方向依存）` を維持し、後続05-07への逆依存は作らない。
+- AC/DoD/Proceed 条件: `Improve external` 方針、`docs-check 必須`、`ProceedDecision: Hold`、`self-correction <= 3`。
+
+### Phase 2 ADR/CDC
+- Context: 公開導線文書のOpen化判定情報を固定するGate。
+- Decision: `Improve external` を維持し、未承認（Approval Record未確定）は `Hold`。
+- Consequences: 05-05の語彙基準を継承しつつ、05-07へ監査ログ連携条件を informational に渡せる。
+
+### Phase 3 Plan
+- AC/DoD 補完方針:
+  - ACは `公開境界 / docs-check記録 / Approval Record` を最低セット化。
+  - DoDは `依存未確定時Hold` と `4回目相当Stop` を固定。
+- 用語統一宣言: `Go/NoGo`、`Proceed/Hold/Stop`、`docs-check` を05-05と同一で運用。
+
+### Phase 4 Execute
+- 実施: Gate-B対象（本ファイル）のみ更新。
+- 非実施: 05-05の再編集、05-07への先行波及編集。
+
+### Phase 5 Verify
+- docs-check観点: `Classification / Dependency status / ProceedDecision / Validation` の記載を確認。
+- self-correction: `1/3`（本Gate内）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- 判定理由: `DOC-OPS-05` 承認証跡未確定。
+- Gate-B 終了判定: **Hold（Gate-C は本Gate結果をinformational参照のみ）**

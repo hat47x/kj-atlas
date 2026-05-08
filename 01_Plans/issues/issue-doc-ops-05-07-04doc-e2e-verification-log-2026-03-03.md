@@ -198,3 +198,34 @@
 - Verify-2: 依存Issue更新後に再判定（予定）。
 - Verify-3: 承認証跡確定後に最終再判定（予定）。
 - 逸脱条件: 4回目相当の修正が必要な場合は `ProceedDecision: Stop`。
+
+## Stream L serial gate pass（2026-05-08 / Gate-C: DOC-OPS-05-07）
+
+### Phase 1 Read
+- Status/Lifecycle: `Draft / Draft` を再確認。
+- Dependencies: `05-06完了待ち（単方向依存）` を維持し、先行Gateへの完了前依存逆流を禁止。
+- AC/DoD/Proceed 条件: `Move internal`、`docs-check 必須`、`ProceedDecision: Hold`、`self-correction <= 3`。
+
+### Phase 2 ADR/CDC
+- Context: 日付付きE2E検証ログは監査証跡として公開文書と分離管理が必要。
+- Decision: `Move internal` と候補配置方針を維持。承認未確定のため `Hold` 継続。
+- Consequences: 05-06のE2E判定軸（pass/fail/blocked）との相互参照を維持しつつ、誤公開を防止。
+
+### Phase 3 Plan
+- AC/DoD 補完方針:
+  - ACは `必須ログ項目 / 保存方針 / 用語統一 / 実ログ非生成` を固定。
+  - DoDは `単体再読性 / 05-06相互参照 / 依存未確定時Hold` を固定。
+- 用語統一宣言: `Go/NoGo`、`Proceed/Hold/Stop`、`docs-check` を全Gateで共通化。
+
+### Phase 4 Execute
+- 実施: Gate-C対象（本ファイル）のみ更新。
+- 非実施: 実ログ生成、保管先移設、他Issue編集。
+
+### Phase 5 Verify
+- docs-check観点: `AC-1 / DoD-2 / ProceedDecision / Validation` 記載の存在を確認。
+- self-correction: `1/3`（本Gate内）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- 判定理由: 05-05/05-06 を含む `DOC-OPS-05` 承認証跡未確定。
+- Gate-C 終了判定: **Hold（全体Stopper未発動、ただしOpen化判定は保留）**
