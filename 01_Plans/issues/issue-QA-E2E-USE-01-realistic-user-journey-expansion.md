@@ -302,3 +302,29 @@
   3. 本IssueのAC/DoD/GoNoGoが上記2依存と矛盾しない。
 - ProceedDecision（現時点）: **Hold**。
 - Stopper: 依存未解消、依存状態の再現不可、またはA1完了前の実装要求が出た場合は即Stop。
+
+## Stream G sync pass（2026-05-07 / dependency-gate clarification）
+
+### Phase 1: Read同期
+- 再読対象を固定: `ADR-0019` / `04_Documentation/e2e_testing.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline` / `issue-HIL-RS-02-next-phase-delivery-plan`。
+- 本Issueは docs-only planning であり、実装コード変更禁止を再確認。
+
+### Phase 2: AC/DoDの具体化（測定可能条件）
+- AC-ME-01: Journey-A/B/C は Verifyで `pass=3/3` を必須、Journey-D は `pass=0/1以上` を推奨として別集計。
+- AC-ME-02: 安全境界アサーション（safeMode既定ON / share-export fail-closed / review attribution human-only）を各1件以上必須。
+- AC-ME-03: Flake検出として同一コミット2連続実行で Journey-A/B/C の差分0件を必須。
+- DoD-ME-01: Verifyログに `V-E2E-01..04` を全項目記録（未記録1件でもNo-Go）。
+- DoD-ME-02: Verifyログに self-correction カウンタを `n/3` 形式で残す。
+- DoD-ME-03: `Proceed=Not Allowed` と dependency lock 理由を同一節に明記。
+
+### Phase 3: 依存ゲート（契約クローズ条件）
+- Gate-E2E-01（FB-P0）: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` の Go 判定記録が存在すること。
+- Gate-E2E-02（HIL-RS-02）: `issue-HIL-RS-02-next-phase-delivery-plan` で検証スコープ同期完了が明示されること。
+- Gate-E2E-03（契約固定）: 本Issue内で Journey-A/B/C 必須、Go/No-Go式、停止条件（未定義依存/境界後退/self-correction>3）が同時に `done`。
+- Open化条件: Gate-E2E-01〜03 が全て closed のときのみ `Ready-for-Implementation` へ遷移可能。
+
+### Phase 4: Verify（最大3回）
+- Verify-1（docs整合）: `python 01_Plans/issues/validate_active_issue_memos.py` 成功。
+- Verify-2（差分健全性）: `git diff --check` 成功。
+- Verify-3（任意）: 追加修復が必要な場合のみ再実行し、`self-correction 3/3` 超過なら Stop。
+- 本pass結果: self-correction `1/3`、Proceedは dependency-locked のため Not Allowed 維持。

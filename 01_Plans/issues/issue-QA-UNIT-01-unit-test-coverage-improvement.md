@@ -476,3 +476,29 @@
 - 優先順位（固定）: FB-P0収束確認 → HIL-RS-02同期確認 → QA-UNIT実装着手判定。
 - ProceedDecision（現時点）: **Hold**。
 - Stopper: 上記依存のいずれか未解消、または依存証跡なしでOpen化要求が出た場合は即Stop。
+
+## Stream G sync pass（2026-05-07 / measurable DoD + dependency gate）
+
+### Phase 1: Read同期
+- 再読対象を固定: `ADR-0001` / `ADR-0019` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline` / `issue-HIL-RS-02-next-phase-delivery-plan`。
+- 本Issueは docs-only planning とし、テスト実装・CI閾値導入・コード変更を行わない。
+
+### Phase 2: AC/DoDの具体化（測定可能条件）
+- AC-MU-01: 対象モジュール一覧（frontend/backend）を確定し、各モジュールで追加ケース数 `>=1` を記録。
+- AC-MU-02: coverage差分は frontend/backend 別に Before/After を保存し、双方とも `After-Before >= 0` を必須。
+- AC-MU-03: safeMode/validation/diff で回帰検知アサーションを各1件以上必須。
+- DoD-MU-01: `V-UNIT-01..03` の記録先（CIログ or artifact path）を明示。
+- DoD-MU-02: Verifyログに self-correction を `n/3` 形式で保持し、未記録ならNo-Go。
+- DoD-MU-03: `Expected verification level=unit` と非目標（e2e拡張なし）の整合を維持。
+
+### Phase 3: 依存ゲート（契約クローズ条件）
+- Gate-UNIT-01（FB-P0）: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` の Go 記録。
+- Gate-UNIT-02（Scope Sync）: `issue-HIL-RS-02-next-phase-delivery-plan` で unit検証スコープ同期完了。
+- Gate-UNIT-03（計画契約）: AC-M1..M4 + AC-MU-01..03 + V-UNIT-01..03 が全て `done`。
+- Open化条件: Gate-UNIT-01〜03 が closed の場合のみ `DecisionStatus: Ready` へ更新可。
+
+### Phase 4: Verify（最大3回）
+- Verify-1（docs整合）: `python 01_Plans/issues/validate_active_issue_memos.py`。
+- Verify-2（差分健全性）: `git diff --check`。
+- Verify-3（任意再検証）: 修復差分がある場合のみ実行し、`self-correction > 3` で Stop。
+- 本pass結果: self-correction `1/3`、Proceedは Hold 継続。
