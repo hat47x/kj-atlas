@@ -358,3 +358,35 @@
 ### Phase 5: Proceed / Stop
 - 判定: `Hold`。
 - 理由: human final approval未完了のため、推測でGoへ遷移しない。
+
+
+## Stream A parent reflection update（2026-05-07 / Phase 1-5）
+
+### Phase 1: ADR整合確認（再Read実施）
+- 再読対象: 親Issue / A1 Issue / ADR-0026。
+- Context: 親Issueは契約参照ノードであり再定義ノードではない。
+- Decision: A1固定契約を read-only 参照し、判定式は `a1Status=="Done" && pendingDecisionQueueCount==0` を維持。
+- Consequences: 未承認論点は親Issueで確定せず `Hold list` に隔離。
+
+### Phase 2: A1最小契約の反映
+- 親Issueへ反映する対象を限定:
+  - fixed reference keys/values
+  - Go/Hold/NoGo gate
+  - 非干渉ポリシー（A2/A3編集・判定代行禁止）
+- 下流依存は mock前提で切断し、外部レーン完了待ちを開始条件にしない。
+
+### Phase 3: Hold list（未承認論点の隔離）
+- `Approval Record` final approval: Pending
+- `HIL-RS-02-GOV-EXCEPTION-01`: held
+- `pendingDecisionQueueCount==0` の監査証跡: insufficient evidence
+
+### Phase 4: 検証
+- AC/DoD照合: pass。
+- リンク整合: pass（NoGo return path はA1 Issueへ一意固定）。
+- 状態遷移妥当性: pass（`Pending -> Approved | Rejected` 以外禁止）。
+- Self-Correction: `0/3`。
+
+### Phase 5: 完了報告
+- 変更要約: A1固定契約の親Issue反映を参照専用で正規化。
+- 残リスク: 未承認論点があるため `Proceed=Hold` 継続。
+- 他ストリームへ渡す契約固定点: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`, `unlock precondition` は不変。
