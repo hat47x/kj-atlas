@@ -2899,3 +2899,49 @@ type PatchProposal = {
 - 条件:
   - CE0 Contract SSOT は read-only freeze 維持。
   - Stopper（契約ID追加/改名/削除要求、safeMode既定後退要求、指定外編集要求）検出時は即時 **Stop**。
+
+## Stream B latest run（2026-05-08 / CE0 only / phase-serial contract freeze refresh）
+
+- run_id: `stream-b-ce0-2026-05-08-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / duplicate_key_collision=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、実行順序 **Read → ADR(C/D/C) → Plan(AC/DoD) → Execute → Verify(自己修復最大3回) → Proceed/Stop** を確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）は read-only 固定、追加/改名/削除禁止を確認。
+- 重点ルールを再確認：インターフェース依存は mock 前提で切断可能性を評価し、契約変更は最小・明文化優先、同一キー多重定義兆候検出時は即停止。
+
+### Phase 2 ADR(C/D/C)
+- Context: CE0 Contract Freeze のSSOTを本Issue単一ファイルで維持し、下流ストリーム依存は mock-first で切断可能な参照契約に限定する。
+- Decision: 契約本体のキー/IDは不変とし、今回更新は実行記録のみ。インターフェース依存は「mockで代替可能（ハード依存なし）」として明文化。
+- Consequences: 実装並行時の結合リスクを抑制し、競合兆候（同一キー多重定義）検出時に `held` 即停止へ遷移可能。
+- collision check: `contract_key_collision=0` / `contract_id_collision=0` / `vocabulary_collision=0`。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  - `ac_mock_detachable_interface`: CE0契約参照は mock で代替可能であることを各Runで評価記録する。
+  - `ac_minimal_contract_change`: 契約変更は原則ゼロ、必要時も最小差分＋明文化理由を必須化。
+  - `ac_duplicate_key_stop`: 同一キー多重定義兆候を検出した場合は即 `held` 停止。
+- DoD:
+  - `dod_contract_read_only`: Contract ID/No-Go canonical IDs の追加・改名・削除なし。
+  - `dod_verify_retry_cap_3`: Verify自己修復は最大3回、4回目相当は停止報告。
+  - `dod_scope_single_file`: 編集対象は本ファイルのみ。
+
+### Phase 4 Execute
+- 実施: 本Issueへの run ledger 追記のみ（docs-only / contract-only）。
+- 非実施: 指定外ファイル編集、実装変更、safeMode既定値変更、Contract ID再定義、同一キー重複追加。
+
+### Phase 5 Verify（自己修復最大3回）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- verify summary: `mock_detachability=confirmed` / `duplicate_key_collision=0` / `contract_change_minimized=confirmed`。
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed (Conditional-Go)**
+- 継続条件:
+  - CE0契約は read-only 参照を継続。
+  - 未承認拡張要求・同一キー多重定義兆候・4回目相当の自己修復要求が発生した場合は即時 `held` 停止。
