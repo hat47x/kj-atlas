@@ -258,6 +258,53 @@ export type ContextBundleV1 = {
 - Query Preview bypass 禁止（`preview_bypass`）。
 - `CE0-SAFEMODE-IF` を参照し、CE1側でsafeMode既定を再定義しない。
 
+---
+
+## Stream E update（2026-05-08 / CE1 専任 / contract-only finalization）
+
+### Phase 1 Read（depends_on / unlocks / I/F再確認）
+- `depends_on=CE0-contract-freeze,FB-P2C-01-a1-interface-contract` と `unlocks=CE2-low-risk-ai-assist,CE4-api-cli-audit-integration` を再確認し、CE1の責務を「契約凍結のみ」に限定した。
+- `previewConfirmed=false -> 422 preview_required` を固定語彙として再確認した。
+- hash決定論要件（同一canonical queryで `queryCanonicalHash` と `bundleHash` が3回一致。1回でも不一致なら `409 nondeterministic_bundle`）を再確認した。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- **Context**: CE1が未固定だとCE2/CE4のproposal生成・監査再現の前提が揺れ、mock検証品質が不安定になる。
+- **Decision**: v1では `ContextQueryV1` / `ContextBundleV1` のclosed-world、固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）、およびhash決定論要件を契約として凍結する。
+- **Consequences**: CE2/CE4は実装待ちなしでmock先行できる。実装の有無に関係なく、I/F・エラー・hashの3軸で受入判定を実施可能。
+
+### Phase 3 Plan（AC/DoD補完・合意ログ）
+#### Acceptance Criteria（補完）
+- [x] **Contract collision検知手順**: Contract ID / error semantics / handoff key の衝突検知時は即停止し、Phase 2へロールバックする。
+- [x] **判定手順固定**: Verifyは `closed-world性` → `error mapping一致` → `mock独立性` の順に評価する。
+- [x] **停止条件固定**: self-correctionは最大3回。失敗3回超過で `held` 固定。
+
+#### Definition of Done（補完）
+- [x] CE1成果物は「Contract IDs / 型シグネチャ / error semantics / hash rule / handoff keys」に限定し、実装TODOを含めない。
+- [x] CE2引き渡しキー `sourceBundleHash === bundleHash` を契約レベルで再現可能。
+- [x] CE4引き渡しキー `equivalenceKey + bundleHash` を契約レベルで再現可能。
+
+### Phase 4 Execute（Issue本文のみ整備）
+- 本Issue内でのみCE1 v1契約を再固定し、schema/API実装変更は行わない。
+- `ContextQueryV1` / `ContextBundleV1` のclosed-worldと fixed error mapping を本Issue内SSOTとして再掲・整合させた。
+- mock-first前提（実実装依存切断）を明文化した。
+
+### Phase 5 Verify（closed-world / error整合 / mock独立）
+- **Verify-1 closed-world性**: v1未定義キーは `400 unknown_contract_key` で拒否する方針が本文全体で一貫していることを確認（pass）。
+- **Verify-2 error semantics整合**: `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` の1:1対応を確認（pass）。
+- **Verify-3 mock独立性**: CE2/CE4とも handoff key のみで検証可能で、handler/UI/DB/worker依存語彙が不要であることを確認（pass）。
+
+#### self-correction log（max 3）
+- attempt 1: depends_on / unlocks 表記ゆれ点検（修正不要）。
+- attempt 2: Verify順序（closed-world→error→mock）を明文化（反映済）。
+- attempt 3: Stopper語彙を `collision / semantics / scope` の3系統へ統一（反映済）。
+
+### Phase 6 Proceed / Hold / Stop
+- **判定: Proceed**
+- **理由**:
+  - closed-world契約、固定エラー語彙、hash決定論要件がv1として固定済み。
+  - CE2/CE4のmock先行に必要な handoff key が契約レベルで独立している。
+  - Stopper（contract id collision / error semantics collision / scope逸脱）は本更新内で未検知。
+
 ## Phase 1 Read（全対象Read: Status / Scope / Related ADR確認）
 - Phase sync: 本対象ファイルを基準版として再読開始。
 - Read log:
