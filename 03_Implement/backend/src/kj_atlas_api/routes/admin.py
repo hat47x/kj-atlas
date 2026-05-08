@@ -185,4 +185,20 @@ def provision_user(
 
 @router.post("/hil-rs/a2a3-gate:validate", response_model=A2A3GateValidationResponse)
 def validate_a2_a3_gate(payload: A2A3GateValidationRequest) -> A2A3GateValidationResponse:
+    frozen_values = {
+        "freezeContractId": "HIL-RS-02-A1-CONTRACT-FREEZE-v1",
+        "schemaVersion": "1.0.0",
+        "overridePolicy": "human_dual_control_only",
+        "contractLinkLocked": True,
+        "sharedResourceFreeze": True,
+        "a1Status": "Done",
+        "pendingDecisionQueueCount": 0,
+        "hasUndefinedContractChangeRequest": False,
+        "hasSafeModeRegressionRequest": False,
+        "hasShareExportLeakageRelaxationRequest": False,
+    }
+    payload_dict = payload.model_dump(mode="python")
+    go = all(payload_dict[key] == value for key, value in frozen_values.items())
+    if not go:
+        raise HTTPException(status_code=409, detail="A2/A3 gate invariants violated")
     return A2A3GateValidationResponse(go=True)
