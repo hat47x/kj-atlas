@@ -740,3 +740,27 @@
 ### 5) Proceed
 - 判定: **Proceed (Implementation Ready / Contract-Compliant with Stub Isolation)**
 - 但し、A/B ストリーム依存の確定前提が追加要求された場合は **proposal-only で Stop**（実装強行禁止）。
+
+
+## Phase 3.5: Assumption Log（CE1契約前提 / CE4 Draft）
+
+| ID | Assumption（CE1前提） | 根拠 | 破綻時の扱い |
+| --- | --- | --- | --- |
+| A-CE4-01 | `queryCanonicalHash` / `bundleHash` は CE1 contract の deterministic生成物として参照できる。 | `schemas.md` CE1-CONTEXT-FOUNDATION | 同値判定を停止し `Hold`、契約再同期まで Proceed禁止。 |
+| A-CE4-02 | CE1未実装でも `mock:<64hex>` による監査連結検証が可能。 | mock-first / contract-only 方針 | mock連結不能時は CE4 Open化停止（Stop）し、未確定点へ戻す。 |
+| A-CE4-03 | CE4は CE1 contract を拡張せず read-onlyで利用する。 | CE1 v1 closed-world 契約 | 追加キー要求が出た場合は CE1再起票へエスカレーション。 |
+
+## Draft→Open 昇格条件（CE4 / contract-only gate）
+
+- [ ] Context / Decision / Consequences・AC・DoD・停止条件が本Issue単体で再読可能。
+- [ ] Assumption Log（A-CE4-01〜03）に破綻が残っていない。
+- [ ] proposal-only / auto-*禁止 / fail-closed / safeMode既定ON 後退ゼロ。
+- [ ] 依存確定証跡（日時・承認者・対象・判断・evidence）を記録済み。
+- [ ] Verifyの自己修復が3回以内（4回目相当は Stop）である。
+
+## Phase 5 Verify運用（最大3回）
+
+- V1: scope/contract-only 逸脱確認（実装作業・他ファイル編集の混入検知）
+- V2: 契約語彙確認（AND同値 / 監査4点 / fail-closed / auto-*禁止）
+- V3: 昇格条件整合確認（Assumption LogとDraft→Open gateの整合）
+- 修復上限: `3回`。4回目相当は `Stop` 固定。
