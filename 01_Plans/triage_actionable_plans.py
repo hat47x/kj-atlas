@@ -16,6 +16,7 @@ REL_PATH_RE = re.compile(r"`([^`]*issue-[^`]+\.md)`")
 ADR_REF_RE = re.compile(r"`(ADR-\d{4}[^`]*)`")
 SECTION_RE = re.compile(r"^##+\s+")
 DEPENDENCY_HEADING_RE = re.compile(r"^##+\s+(?:\d+\)\s*)?(?:依存関係|Dependencies)")
+MOCK_POLICY_RE = re.compile(r"^- (?P<label>Mock(?:適用可否| Policy|方針)?|Mock readiness):\s*(?P<value>.+)$")
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,15 @@ class ActionableIssue:
     blockers: tuple[str, ...] = field(default_factory=tuple)
     depends_on: tuple[str, ...] = field(default_factory=tuple)
     unlocks: tuple[str, ...] = field(default_factory=tuple)
+    classification: str = "Blocked"
+    dependency_stage: int = 0
+    mock_applicable: str = "Unknown"
+
+
+@dataclass(frozen=True)
+class TriageError:
+    path: str
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -122,6 +132,21 @@ def parse_issue(path: Path) -> IssueMemo:
     )
 
 
+def detect_mock_applicability(path: Path) -> str:
+    lines = read_header_lines(path, limit=180)
+    for line in lines:
+        m = MOCK_POLICY_RE.match(line.strip())
+        if not m:
+            continue
+        value = m.group("value").lower()
+        if any(token in value for token in ("yes", "可", "可能", "applicable", "enabled")):
+            return "Yes"
+        if any(token in value for token in ("no", "不可", "not applicable", "disabled")):
+            return "No"
+        return "Conditional"
+    return "Unknown"
+
+
 def parse_adr(path: Path) -> AdrRecord:
     lines = read_header_lines(path, limit=40)
     title = lines[0].lstrip("# ").strip() if lines else path.stem
@@ -147,13 +172,32 @@ def parse_adr(path: Path) -> AdrRecord:
     )
 
 
-def build_actionable_issues(issues: list[IssueMemo]) -> list[ActionableIssue]:
+def build_actionable_issues(issues: list[IssueMemo], root: Path) -> list[ActionableIssue]:
     issue_by_path = {issue.path: issue for issue in issues}
     dependents: dict[str, list[str]] = {issue.path: [] for issue in issues}
     for issue in issues:
         for dep_path in issue.dependency_paths:
             if dep_path in dependents and dep_path != issue.path:
                 dependents[dep_path].append(issue.path)
+
+    stage_cache: dict[str, int] = {}
+
+    def dependency_stage(path: str, stack: set[str] | None = None) -> int:
+        if path in stage_cache:
+            return stage_cache[path]
+        stack = stack or set()
+        if path in stack:
+            return 999
+        stack.add(path)
+        issue = issue_by_path.get(path)
+        if issue is None:
+            return 999
+        if not issue.dependency_paths:
+            stage_cache[path] = 0
+            return 0
+        value = max(dependency_stage(dep, set(stack)) + 1 for dep in issue.dependency_paths if dep in issue_by_path)
+        stage_cache[path] = value
+        return value
 
     actionable: list[ActionableIssue] = []
     for issue in issues:
@@ -165,6 +209,7 @@ def build_actionable_issues(issues: list[IssueMemo]) -> list[ActionableIssue]:
             if dep_issue and dep_issue.path != issue.path and dep_issue.status != "Done":
                 blockers.append(f"{dep_issue.backlog_id}:{dep_issue.status}")
         ready = issue.status != "Draft" and not blockers
+        classification = "Ready" if ready else "Blocked"
         actionable.append(
             ActionableIssue(
                 backlog_id=issue.backlog_id,
@@ -176,10 +221,16 @@ def build_actionable_issues(issues: list[IssueMemo]) -> list[ActionableIssue]:
                 blockers=tuple(blockers),
                 depends_on=issue.dependency_paths,
                 unlocks=tuple(sorted(dependents.get(issue.path, []))),
+                classification=classification,
+                dependency_stage=dependency_stage(issue.path),
+                mock_applicable=detect_mock_applicability(root / issue.path),
             )
         )
     order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
-    return sorted(actionable, key=lambda x: (not x.ready, order.get(x.priority, 9), x.path))
+    return sorted(
+        actionable,
+        key=lambda x: (not x.ready, x.dependency_stage, order.get(x.priority, 9), x.path),
+    )
 
 
 def build_actionable_adrs(adrs: list[AdrRecord], issues: list[IssueMemo]) -> list[ActionableAdr]:
@@ -215,7 +266,13 @@ def collect(root: Path) -> dict[str, object]:
     adr_files = sorted((root / "adr").glob("ADR-*.md"))
     issues = [parse_issue(path) for path in issue_files]
     adrs = [parse_adr(path) for path in adr_files]
-    actionable_issues = build_actionable_issues(issues)
+    errors: list[TriageError] = []
+    for issue in issues:
+        if issue.status == "Unknown":
+            errors.append(TriageError(path=issue.path, reason="missing Status metadata"))
+        if issue.priority == "N/A":
+            errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))
+    actionable_issues = build_actionable_issues(issues, root)
     actionable_adrs = build_actionable_adrs(adrs, issues)
     return {
         "actionable_issues": [asdict(item) for item in actionable_issues],
@@ -226,6 +283,7 @@ def collect(root: Path) -> dict[str, object]:
             "blocked_issue_count": sum(1 for item in actionable_issues if item.blockers or item.status == "Draft"),
             "actionable_adr_count": len(actionable_adrs),
         },
+        "errors": [asdict(item) for item in errors],
     }
 
 
@@ -246,7 +304,8 @@ def render_text(report: dict[str, object]) -> str:
     if ready:
         for item in ready:
             lines.append(
-                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] owner={item['owner']} path={item['path']}"
+                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] "
+                f"stage={item['dependency_stage']} mock={item['mock_applicable']} owner={item['owner']} path={item['path']}"
             )
     else:
         lines.append("- none")
@@ -257,7 +316,8 @@ def render_text(report: dict[str, object]) -> str:
         for item in blocked:
             blocker_text = ", ".join(item["blockers"]) if item["blockers"] else "draft gate"
             lines.append(
-                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] blockers={blocker_text} path={item['path']}"
+                f"- {item['backlog_id']} [{item['status']}/{item['priority']}] "
+                f"stage={item['dependency_stage']} mock={item['mock_applicable']} blockers={blocker_text} path={item['path']}"
             )
     else:
         lines.append("- none")
@@ -270,6 +330,13 @@ def render_text(report: dict[str, object]) -> str:
             lines.append(f"- {item['adr_id']} [{item['status']}] refs={refs} path={item['path']}")
     else:
         lines.append("- none")
+    lines.append("")
+    lines.append("## Triage errors (stopper)")
+    if report.get("errors"):
+        for err in report["errors"]:
+            lines.append(f"- {err['path']}: {err['reason']}")
+    else:
+        lines.append("- none")
     return "\n".join(lines)
 
 
@@ -279,6 +346,12 @@ def main() -> int:
     parser.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args()
     report = collect(args.root)
+    if report.get("errors"):
+        if args.format == "json":
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            print(render_text(report))
+        return 2
     if args.format == "json":
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
