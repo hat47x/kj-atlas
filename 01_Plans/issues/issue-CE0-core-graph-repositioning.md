@@ -83,12 +83,16 @@
 - AC-4: No-Go語彙が canonical 5 IDs から逸脱しない。
 - AC-5: 未承認事項が `held` または `pending` として保持され、確定扱いされない。
 - AC-6: 検証手順として `docs-check` が明示される。
+- AC-7: `role / transition / no-go` 語彙が同一語彙で一貫し、同義語への置換がない。
+- AC-8: 禁止遷移として `direct write` / `auto-apply` / `auto-publish` が明示される。
+- AC-9: 契約文面のみを更新し、実装依存の挙動記述を追加しない。
 
 ### Definition of Done（DoD）
 - DoD-1: 本Issue本文だけを更新し、編集禁止ファイルに変更がない。
 - DoD-2: Read同期〜Proceedの固定順序と停止条件が明文化されている。
 - DoD-3: `docs-check` が成功し、失敗時自己修復上限（3回）が遵守される。
 - DoD-4: Proceed判定が AC全充足時のみ `Done`、未承認事項は在庫記録で終了する。
+- DoD-5: 禁止遷移（`direct write` / `auto-apply` / `auto-publish`）が本文内で明示され、否定されていない。
 
 ### Validation（docs-check）
 - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
@@ -1829,3 +1833,30 @@
 - Execute: contract-only更新を実施し、safeMode既定境界後退なしを確認。
 - Verify: `docs-check` 実施（self-correction 0/3）。
 - Proceed: **Approved-to-Proceed（CE0 core graph contract frozen）**。
+
+
+## Phase Execution Record（2026-05-08 / Stream D / role-transition-no-go contract lock）
+### Phase 1 Read
+- `working` / `context_projection` / `consensus` の責務境界、canonical No-Go 5 IDs、SafeMode境界を再読し、差分なし。
+- 語彙確認結果: `role / transition / no-go` は既存固定語彙のみを使用し、追加拡張要求は未承認のため不採用。
+
+### Phase 2 ADR/CDC Consensus（Context / Decision / Consequences）
+- Context: 役割境界が未固定のままだと `consensus` への direct write や自動公開系遷移が混入しうる。
+- Decision: 許可遷移を `working -> consensus` の `patch+approval` のみに固定し、禁止遷移を `direct write` / `auto-apply` / `auto-publish` として明示。No-Go語彙は canonical 5 IDs に固定。
+- Consequences: 実装非依存の検証軸が安定し、下流実装は同一契約で再現検証できる。
+
+### Phase 3 Plan
+- AC/DoDへ「語彙の一貫性」「禁止遷移の明示」「契約のみ更新」を追加して判定軸を固定。
+- Scopeは本Issue単一ファイルの契約文言整備のみに限定。
+
+### Phase 4 Execute
+- 重複する表現を契約語彙へ統一し、曖昧語（自動反映・自動公開等の同義語展開）を追加せずに整理。
+- 実装記述（handler/UI/DB/worker/API）やrole定義拡張は追加しない。
+
+### Phase 5 Verify
+- 禁止遷移検証: `direct write` / `auto-apply` / `auto-publish` は禁止として本文に明示されていることを確認。
+- 自己修復回数: 0/3（追加修正なしで整合）。
+
+### Phase 6 Proceed
+- 判定: `Done`（contract-only、single-file、AC/DoD更新を満たす）。
+- 次アクション: 下流は本契約語彙を変更せず検証へ進む。未承認のrole拡張要求が出た場合は `held` で停止。
