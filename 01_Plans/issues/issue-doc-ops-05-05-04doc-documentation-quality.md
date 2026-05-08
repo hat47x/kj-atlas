@@ -234,3 +234,34 @@
 - Verify-2: 依存Issue更新後に再判定（予定）。
 - Verify-3: 承認証跡確定後に最終再判定（予定）。
 - 逸脱条件: 4回目相当の修正が必要になった場合は `ProceedDecision: Stop`。
+
+## Stream L serial gate pass（2026-05-08 / Gate-A: DOC-OPS-05-05）
+
+### Phase 1 Read
+- Status/Lifecycle: `Draft / Draft` を再確認。
+- Dependencies: `なし（先行固定）` だが、05-06/05-07 は後続依存として informational のみ許可。
+- AC/DoD/Proceed 条件: `docs-check 必須`、`ProceedDecision: Hold`、`self-correction <= 3`、4回目相当は `Stop`。
+
+### Phase 2 ADR/CDC
+- Context: 本Issueは内部品質基準の判定情報を固定する起点Gate。
+- Decision: Classification は `Move internal` 維持。未承認項目（Approval Record未記入）は `Hold` 維持。
+- Consequences: 後続Gateが同一語彙（Go/NoGo, Proceed/Hold/Stop, docs-check）を継承できる。
+
+### Phase 3 Plan
+- AC/DoD 補完方針:
+  - ACは `Readability / Consistency / Verifiability` の3軸で判定。
+  - DoDは `依存未確定=Hold` と `self-correction上限` を停止条件として固定。
+- 用語統一宣言: `Go/NoGo`、`Proceed/Hold/Stop`、`docs-check` を本Gateの固定語彙とする。
+
+### Phase 4 Execute
+- 実施: Gate-A対象（本ファイル）のみ更新。
+- 非実施: 05-06/05-07 への波及編集。
+
+### Phase 5 Verify
+- docs-check観点: 必須キー（Requirement meta / Classification / Proceed tri-state / Validation）が本文内に存在。
+- self-correction: `1/3`（上限内）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**
+- 判定理由: Approval Record と依存証跡が未確定のため。
+- Gate-A 終了判定: **Hold（Gate-B へは情報継承のみ、確定依存は作らない）**
