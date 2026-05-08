@@ -1975,3 +1975,43 @@ handoffKeys:
 ### Phase 5 引継ぎメモ
 - CE2/CE4 handoff: `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` を read-only キーとして継続利用。
 - fail-safe: 合意未取得/依存矛盾/競合検出時は `held` 停止して指示待ち。
+
+## Stream E update（2026-05-07 / CE1 ContextQueryV1-ContextBundleV1 interface draft freeze, mock contract formalization）
+
+### Phase 1: Read同期
+- 本Issueを再読し、CE1 v1の固定対象を `ContextQueryV1` / `ContextBundleV1` / 固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）に限定することを再確認。
+- CE0は read-only 依存、CE2/CE4は downstream consumer である境界を再確認。
+- 編集範囲を本ファイルのみに固定（docs-only）し、実装層（backend/frontend/api handler）は非対象とする。
+
+### Phase 2: ContextQueryV1 / ContextBundleV1 のI/F草案固定
+- `ContextQueryV1` 必須キーを以下に固定：
+  - `queryId`, `goal`, `scope`, `depth`, `constraints`, `reviewFilter`, `safeModePolicy`, `outputMode`, `previewConfirmed`
+- `ContextBundleV1` 必須キーを以下に固定：
+  - `queryCanonicalHash`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason`
+- v1は closed-world 契約として運用し、未定義キーは `400 unknown_contract_key` とする。
+
+### Phase 3: Mock contract（API signature / data type）明文化
+- API signature（contract-only / stub）:
+  - `POST /context/query`
+    - request: `ContextQueryV1`
+    - success: `200 { accepted: true, queryCanonicalHash }`
+    - error: `422 preview_required`, `400 unknown_contract_key`
+  - `POST /context/bundle`
+    - request: `{ query: ContextQueryV1, stubDatasetId: "A2-minimal-v1" }`
+    - success: `200 ContextBundleV1`
+    - error: `409 nondeterministic_bundle`, `400 unknown_contract_key`
+- data type rule:
+  - `queryCanonicalHash` / `bundleHash` は canonical化済み入力からの deterministic sha256 hex を前提とする。
+  - 同一 canonical query で `bundleHash` が一致しない場合は fail-closed（`409 nondeterministic_bundle`）。
+
+### Phase 4: CE2/CE4 独立進行の依存切断宣言
+- 依存切断宣言（read-only handoff）:
+  - CE2 は `sourceBundleHash === bundleHash` の照合のみで前進可能（CE1実装完了待ち不要）。
+  - CE4 は `equivalenceKey + bundleHash`（必要に応じ `+ queryCanonicalHash`）の監査再現キーのみで前進可能（CE1実装完了待ち不要）。
+- CE1からCE2/CE4への提供物は「契約ID / I/F型 / error semantics / hash rule / handoff keys」に限定し、実装タスク依存を持ち込まない。
+
+### Phase 5: Verify（最大3回自己修復、超過で停止）
+- verify attempt 1/3: contract ID / error semantics / handoff key の衝突確認（pass）。
+- verify attempt 2/3: closed-world境界（unknown key reject）の記述一貫性確認（pass）。
+- verify attempt 3/3: CE2/CE4依存切断文言（実装待ち不要）の明示確認（pass）。
+- 最終判定: **pass**。自己修復回数は3回以内。4回目相当が必要になった場合は `held` で停止する。
