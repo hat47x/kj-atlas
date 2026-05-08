@@ -3,7 +3,7 @@
 - Type: Feature request
 - Status: Draft (Contract Freeze Candidate)
 - Priority: P2
-- Owner: Stream C（CE下流 proposal-only）
+- Owner: Stream I（CE下流 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -16,6 +16,7 @@
 - `proposal-only` を強制し、auto-apply / auto-confirm / auto-publish を禁止する。
 - `fail-closed` を既定とし、監査必須項目の欠損は成功扱いしない。
 - 監査イベント4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として固定する。
+- CE1（ContextQuery/ContextBundle基盤）未整備時でも、`mock:<64hex>` 経路で契約検証を継続可能にする。
 
 ---
 
@@ -87,6 +88,7 @@
 2. `query` / `bundle` / `proposal` / `apply` の4イベントで `equivalenceKey` は不変。
 3. `queryCanonicalHash` と `bundleHash` は API/CLI 間で一致しなければならない。
 4. `proposal` が `ok` の場合でも `apply` 欠損は契約違反（No-Go）。
+5. CE1由来IDが未払い出しの場合、`equivalenceKey` は CE4モック発番を許容するが、API/CLI/Audit の3経路で同一値を強制する（経路間不一致は監査違反）。
 
 ### 3.3 失敗時挙動（fail-closed）
 - 必須キー欠損: **監査違反**として失敗。
@@ -133,6 +135,8 @@
 - [x] 追跡可能性・改ざん耐性・再現性の要件を明記した。
 - [x] 監査イベントスキーマ、ID連携、失敗時挙動を定義した。
 - [x] 正常/欠損/重複/不正操作の mock 検証ケースを定義した。
+- [x] CE1未整備時のモック切断境界（`mock:<64hex>` とモック発番 `equivalenceKey`）を定義した。
+- [x] 停止規則（CE1未整備での実装要求、監査項目削減、指定外編集）を明記した。
 
 ### Definition of Done（DoD）
 - [x] 本Issue単体で CE4契約を実装非依存に読解できる。
@@ -178,6 +182,42 @@
   1. 依存確定証跡（日時/承認者/対象/判断）を記録。
   2. docs-check再実行で契約欠落ゼロを確認。
 - 停止条件: 未確定点の仕様確定要求、self-correction超過、未定義競合発生時は **Stop**。
+
+---
+
+## Stream I execution log（2026-05-08 / proposal-only契約固定）
+
+### Phase 1: Read（API/CLI/監査契約の再読）
+- API契約要件・CLI契約要件・監査ログ契約要件を再読し、4イベント系列とAND同値条件を確認。
+- 監査欠損を成功扱いしない fail-closed 規律を再確認。
+
+### Phase 2: ADR/CDC（不一致リスクの固定）
+- **Context**: API/CLI/Audit の3経路で契約不一致があると、監査追跡が断裂し検証不能になる。
+- **Decision**: 最小スキーマ、ID連携、失敗挙動を本Issueで固定。CE1依存は `mock:<64hex>` とモック `equivalenceKey` で切断可能とする。
+- **Consequences**: 実装前に監査可能性を先行確保し、下流は fixture 駆動で契約適合確認できる。
+
+### Phase 3: Plan（AC/DoD補完）
+- 必須イベント項目を 3.1 の共通必須キーに固定。
+- 整合判定を `equivalenceKey AND bundleHash` + 4イベント順序整合で固定。
+- 停止規則を以下で固定:
+  1. CE1未整備のまま実装要求が来た場合は Stop。
+  2. 監査項目削減で追跡不能化する変更要求は Stop。
+  3. 指定外ファイル編集要求は Stop。
+
+### Phase 4: Execute（契約文面整備のみ）
+- 実施内容は本Issue文面の契約整備のみ（proposal-only）。
+- コード・ADR本文・実装I/F変更は未実施。
+
+### Phase 5: Verify（自己完結性確認 / self-correction）
+- 確認1: 監査イベント最小スキーマ（3.1）が単体で読解可能。
+- 確認2: ID連携契約（3.2）で CE1未整備時のモック切断条件まで自己完結。
+- 確認3: fail-closed 判定（3.3）と停止規則の整合を確認。
+- self-correction: `1/3`（文言統一1回、超過なし）。
+
+### Phase 6: Proceed（Hold/Open候補/Stop）
+- **Hold**: CE1未整備かつ実装要求混入時。契約固定のみ維持。
+- **Open候補**: docs-check pass と依存証跡が揃い、proposal-only 境界が維持される場合。
+- **Stop**: ストッパー3条件（CE1未整備実装要求 / 監査項目削減 / 指定外編集）が発生した場合。
 
 ## Open化最終整備（proposal-only / 2026-05-04）
 
