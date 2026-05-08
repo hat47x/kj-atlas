@@ -200,3 +200,37 @@
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
 
+## Stream M phase-sync pass（2026-05-07 / DOC-OPS-05-05）
+
+### Phase 1: Read同期
+- 対象限定: 本Issueメモのみ更新（docs-only）を再確認。
+- 依存確認: 05-06/05-07 は承認証跡未確定のため `ProceedDecision: Hold` を維持。
+- 語彙確認: `Go/NoGo` / `Proceed/Hold/Stop` / `pass/fail/blocked` / `self-correction <= 3` を固定語彙として再確認。
+
+### Phase 2: Context / Decision / Consequences
+- Context: 内部品質基準（Move internal）の判定情報は、Open導線文書と分離して管理しないと責務境界が曖昧になる。
+- Decision: 本Issueは `Move internal` を維持し、Open化判定は依存証跡確定まで実施しない。
+- Consequences:
+  1. 内部品質基準の誤公開リスクを抑止できる。
+  2. 05-06/05-07 とのProceed語彙不一致を事前に検知できる。
+  3. Hold継続時の説明責務（理由・停止条件・再開条件）を明文化できる。
+
+### Phase 3: Draft解除条件（品質ゲート / 証跡 / 責務）
+- 品質ゲート:
+  - Gate-M1: `validate_active_issue_memos.py` pass。
+  - Gate-M2: `Classification` / `Dependency status` / `ProceedDecision` / `Approval Record` が記載済み。
+  - Gate-M3: `git diff --check` pass。
+- 証跡:
+  - E1: Approval Record 5項目（日時/承認者/対象/判断/evidence）。
+  - E2: 05-06/05-07 との Proceed 判定語彙一致ログ。
+  - E3: docs-check 実行コマンドと結果記録。
+- 責務:
+  - System Owner: Go/NoGo判定と承認記録確定。
+  - Platform Operator: docs-check実行結果の記録と追跡リンク管理。
+  - Security Officer: Move internal 境界（公開除外）の最終確認。
+
+### Phase 4: Verify（最大3回）
+- Verify-1: 実施（本pass）。`Hold` 維持。
+- Verify-2: 依存Issue更新後に再判定（予定）。
+- Verify-3: 承認証跡確定後に最終再判定（予定）。
+- 逸脱条件: 4回目相当の修正が必要になった場合は `ProceedDecision: Stop`。

@@ -238,7 +238,41 @@
 - DoD-Delta-2: gate未確定事項は推測せず、TODO/Assumptionを残して停止。
 
 ### Stopper handling（推測禁止）
+
+## Stream M phase-sync pass（2026-05-07 / DOC-OPS-05-06）
+
+### Phase 1: Read同期
+- 対象限定: 本Issueメモ整備のみ。`04_Documentation/e2e_testing.md` 本文・実装コードは非編集。
+- 依存確認: 05-05/05-07 の承認証跡未確定により `ProceedDecision: Hold` を継続。
+- 語彙確認: `Go/NoGo` / `Proceed/Hold/Stop` / `pass/fail/blocked` / `self-correction <= 3` を維持。
+
+### Phase 2: Context / Decision / Consequences
+- Context: 公開向けE2E導線（Improve external）は有効だが、依存証跡未確定のままOpen化すると運用境界が不明瞭化する。
+- Decision: Classification を `Improve external` のまま維持し、Open化は依存証跡確定まで保留する。
+- Consequences:
+  1. 公開改善方針を維持しつつ誤判定公開を回避できる。
+  2. 05-05/05-07 と判定語彙を同期しやすくなる。
+  3. E2E導線と監査証跡の責務分離を維持できる。
+
+### Phase 3: Draft解除条件（品質ゲート / 証跡 / 責務）
+- 品質ゲート:
+  - Gate-M1: `validate_active_issue_memos.py` pass。
+  - Gate-M2: `Classification` / `Dependency status` / `ProceedDecision` / `Approval Record` 記載確認。
+  - Gate-M3: `git diff --check` pass。
+- 証跡:
+  - E1: Approval Record 5項目（日時/承認者/対象/判断/evidence）。
+  - E2: 05-05/05-07 との Proceed 判定日・語彙一致記録。
+  - E3: docs-check 実行ログ（コマンド・結果・未実施理由）。
+- 責務:
+  - System Owner: Open化可否（Go/NoGo）の最終判定。
+  - Platform Operator: docs-check結果と再開条件の記録。
+  - Security Officer: 公開境界（公開/非公開）の確認。
+
+### Phase 4: Verify（最大3回）
+- Verify-1: 実施（本pass）。`Hold` 維持。
+- Verify-2: 依存Issue証跡更新後に再判定（予定）。
+- Verify-3: Approval Record確定後に最終判定（予定）。
+- 逸脱条件: 4回目相当の修正が必要な場合は `ProceedDecision: Stop`。
 - TODO: `DOC-OPS-05` Open gate の最終承認証跡（日時/承認者/evidence link）確定待ち。
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
-

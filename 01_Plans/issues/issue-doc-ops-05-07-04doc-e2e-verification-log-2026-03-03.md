@@ -164,3 +164,37 @@
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
 
+## Stream M phase-sync pass（2026-05-07 / DOC-OPS-05-07）
+
+### Phase 1: Read同期
+- 対象限定: 本Issueメモのみ更新し、実ログ生成・配置移設・他Issue編集は非実施。
+- 依存確認: 05-05/05-06 の承認証跡未確定により `ProceedDecision: Hold` を維持。
+- 語彙確認: `Go/NoGo` / `Proceed/Hold/Stop` / `pass/fail/blocked` / `self-correction <= 3` を共通語彙として固定。
+
+### Phase 2: Context / Decision / Consequences
+- Context: 日付付きE2E検証ログは監査証跡であり、公開手順文書と混在させると再現性と公開境界が崩れる。
+- Decision: `Move internal` と候補配置方針を維持し、依存証跡が揃うまでDraft解除を行わない。
+- Consequences:
+  1. 監査証跡の公開漏えいリスクを抑止できる。
+  2. 05-06 のE2E判定軸との相互参照整合を維持できる。
+  3. Hold時の責務分担（承認/記録/境界確認）を明確化できる。
+
+### Phase 3: Draft解除条件（品質ゲート / 証跡 / 責務）
+- 品質ゲート:
+  - Gate-M1: `validate_active_issue_memos.py` pass。
+  - Gate-M2: `AC-1` / `DoD-2` / `ProceedDecision` / `Approval Record` の記載確認。
+  - Gate-M3: `git diff --check` pass。
+- 証跡:
+  - E1: Approval Record 5項目（日時/承認者/対象/判断/evidence）。
+  - E2: 05-05/05-06 との判定語彙一致 + 再判定日同期ログ。
+  - E3: ログ保管境界（内部保管・公開除外）の確認記録。
+- 責務:
+  - System Owner: Go/NoGo最終判定と承認履歴確定。
+  - Platform Operator: 保管先/追記型運用の管理記録。
+  - Security Officer: 公開除外境界と改ざん防止観点の最終確認。
+
+### Phase 4: Verify（最大3回）
+- Verify-1: 実施（本pass）。`Hold` 維持。
+- Verify-2: 依存Issue更新後に再判定（予定）。
+- Verify-3: 承認証跡確定後に最終再判定（予定）。
+- 逸脱条件: 4回目相当の修正が必要な場合は `ProceedDecision: Stop`。
