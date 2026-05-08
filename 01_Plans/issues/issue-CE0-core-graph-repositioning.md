@@ -1860,3 +1860,30 @@
 ### Phase 6 Proceed
 - 判定: `Done`（contract-only、single-file、AC/DoD更新を満たす）。
 - 次アクション: 下流は本契約語彙を変更せず検証へ進む。未承認のrole拡張要求が出た場合は `held` で停止。
+
+## Phase Execution Record（2026-05-08 / Stream C / CE0 core-graph repositioning planning freeze reaffirmation）
+### Phase 1 Read
+- 最新本文を再読し、`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical No-Go 5 IDs、SafeMode既定ON境界に差分がないことを確認。
+- 依存の扱いは read-only 参照に限定し、外部レーン成果を前提にしない独立運用を維持。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE0 core graph repositioning の計画固定を継続するには、語彙ドリフトと禁止遷移の混入を防ぐ必要がある。
+- Decision: 既存契約を変更せず、`role / transition / no-go` を現行canonical語彙に固定する（No ADR delta）。
+- Consequences: 下流実装への前提注入を避けたまま、contract-only の検証軸を維持できる。
+
+### Phase 3 Plan
+- AC/DoD不足を再点検し、新規不足なし。追加ドラフト提案は不要と合意。
+- 実施内容を本Issue内の計画固定ログ追記のみに限定（single-file / docs-only）。
+
+### Phase 4 Execute
+- 計画文書の明確化として実行記録を追記し、契約ID再定義・No-Go拡張・SafeMode後退記述を追加しない。
+- 実装依存の挙動記述（handler/UI/DB/worker/API/Schema migration）を追加しない。
+
+### Phase 5 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- 自己修復回数: 0/3（追加修正なし）。
+
+### Phase 6 Proceed
+- 判定: `Done`（AC/DoD充足、docs-check pass、contract-only 維持）。
+- 失敗条件発生時は `held` で停止し、推測で依存補完しない運用を継続。
