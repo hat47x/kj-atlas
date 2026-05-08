@@ -445,3 +445,45 @@
   1. 子Issue実装内容の親への混入要求
   2. 未承認決定の確定要求
   3. 指定外ファイル編集要求
+
+## Stream F alignment fix（2026-05-08 / parent-reference lock + SoD hard separation）
+
+### 1) Read
+- 本親計画Issueの固定値参照、Execute Gate、Responsibility Boundary、Verify Procedure を再読。
+- 親計画の役割を「参照整合ノード」に限定し、下流契約（A1/A2/A3）の再定義禁止を再確認。
+
+### 2) ADR（Context / Decision / Consequences）
+- Context:
+  - 親計画が下流契約を再定義すると、契約正本と統治判定の境界が崩れ、承認責務分離（SoD）が毀損する。
+- Decision:
+  - 親計画は `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` / `decisionQueueTransition` を**参照専用**で固定する。
+  - SafeMode後退（既定ON解除・境界緩和）をNoGo条件として維持する。
+  - 承認責務分離を明文化し、**Human Approverのみ**が `Pending -> Approved | Rejected` を確定できる。
+- Consequences:
+  - 親計画は `Go/Hold/NoGo` の宣言と `reasonCodes` 記録に限定し、契約値・承認結果の確定代行を行わない。
+  - `pendingDecisionQueueCount>0` または承認証跡不足は `Hold/Needs-decision` 維持。
+
+### 3) Plan（AC/DoD補完提案と合意）
+- AC補完:
+  - AC-8: 親計画本文に「参照専用（no re-definition）」と「承認責務分離（Human-only finalization）」が同時成立していること。
+- DoD補完:
+  - DoD-8: SafeMode後退要求・承認代行要求・下流契約再定義要求を受けた場合は `NoGo/Hold` で停止し、親計画で確定しないこと。
+- 合意:
+  - 既存AC/DoDと非競合であり、統治文面の強化として採用（契約値追加・変更なし）。
+
+### 4) Execute
+- 親計画の統治文脈として、以下を固定:
+  1. 親=参照整合判定、子=契約正本/実装
+  2. SafeMode後退禁止（default ON + strict boundary維持）
+  3. 承認責務分離（Human final decision / AIは補助のみ）
+
+### 5) Verify（自己修復上限=3）
+- verify 1/3: fixed keys drift=0（参照値追加変更なし）: pass
+- verify 2/3: SafeMode後退条件の維持（ON/STRICT）: pass
+- verify 3/3: 承認責務分離（Human-only finalization）と親の非代行: pass
+- self-correction count: `0/3`
+
+### 6) Proceed / Hold / Stop
+- 判定: **Hold**
+- 理由:
+  - 親計画の参照ノード化と責務分離は固定できたが、Proceed解放は人間最終承認と pending 解消に従属。
