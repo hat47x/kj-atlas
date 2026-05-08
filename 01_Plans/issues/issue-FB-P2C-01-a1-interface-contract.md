@@ -1401,3 +1401,40 @@ state: Needs-decision
 - hold reason:
   - `Approval Record=Pending`
   - `HIL-RS-02-GOV-EXCEPTION-01=held`
+
+
+## Stream A focused sync（2026-05-08 / A1 contract freeze only）
+
+### Phase 1: Read（latest sync）
+- Re-read target and revalidated fixed keys: `freezeContractId`, `schemaVersion`, `safeModeBoundary`, `decisionQueueTransition`.
+- Diff status: `no-drift`（想定差分なし）。
+- Pending status kept explicit: `Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`.
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1 contract is the only upstream gate for `A1 -> A2 -> A3`; ambiguity here causes downstream redefinition risk.
+- Decision:
+  1. **Pending承認中はHold** を継続する（承認前に契約値を確定扱いしない）。
+  2. **SafeMode後退禁止**（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）を継続固定する。
+  3. **A2/A3はread-only参照** に限定する（契約値の再定義禁止）。
+- Consequences: execute gate remains `Hold/Needs-decision` until human approval evidence is recorded.
+
+### Phase 3: Plan（AC/DoD）
+- AC:
+  1. fixed keys remain unchanged (`freezeContractId`, `schemaVersion`, `safeModeBoundary`, `decisionQueueTransition`).
+  2. Pending items are explicitly preserved as unresolved (`Pending` / `held`).
+  3. No safeMode relaxation language is introduced.
+- DoD:
+  1. edit scope is this file only.
+  2. contract clarification only（no spec change）.
+  3. `Plan -> Execute -> Verify -> Proceed` trace remains in-document.
+
+### Phase 4: Execute（clarification only）
+- Added explicit freeze-governance wording only; no contract value changes.
+
+### Phase 5: Verify（AC/DoD self-check）
+- AC/DoD self-check: pass.
+- Self-correction count: `0/3`（4回目相当なし）。
+
+### Phase 6: Proceed / Stopper
+- Proceed: `No`（`Hold` 継続）。
+- Stopper reason: approval evidence unresolved (`approved_by`, `approved_at`, `evidence`).
