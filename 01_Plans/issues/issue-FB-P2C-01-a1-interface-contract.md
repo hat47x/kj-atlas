@@ -1341,3 +1341,63 @@ state: Needs-decision
 ### Phase 6: Proceed
 - Proceed decision: `Hold`。
 - Reason: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消のため。
+
+## Stream A protocol run（2026-05-08 / critical path A1 contract freeze）
+
+### Phase 1: Read sync（Plan → Execute → Verify → Proceed）
+- Plan: A1契約項目（APIシグネチャ/データ型/schemaVersion/判定キー）を再抽出し、既存fixed値との差分有無を確認する。
+- Execute:
+  - Read対象:
+    1. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+    2. `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+    3. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - 再抽出結果（差分確認）:
+    - API signatures: `CritiqueV1` / `ReDiffV1` / `AttributionV1` / `A1ErrorV1`（一致）
+    - Data keys: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`（一致）
+    - 判定ゲート: `a1Status=="Done" && pendingDecisionQueueCount==0`（一致）
+- Verify:
+  - AC判定: drift=0（pass）
+  - unresolved判定: `Approval Record=Pending` / `HIL-RS-02-GOV-EXCEPTION-01=held` を維持（pass）
+- Proceed:
+  - 前提崩壊なしのため次Phaseへ進行可。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約が唯一参照リンクとして固定されない場合、A2/A3で局所再定義が発生し承認境界が破綻する。
+- Decision:
+  - 凍結値は既存fixed値を維持し、追加再定義を行わない。
+  - 未承認項目は確定化せず `Needs-decision` として保持する。
+- Consequences:
+  - A2/A3はread-only参照のみ許可。
+  - 契約変更要求は `NoGo return path` へ差戻し。
+
+### Phase 3: 契約凍結（固定リンク宣言）
+- `contractLinkLocked=true` を維持。
+- `sharedResourceFreeze=true` を維持。
+- safeMode境界: `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` を維持。
+- **唯一の参照リンク（A2/A3共通）**:
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md#1-ssot-and-freeze`
+
+### Phase 4: 引き渡し（Stream B/C向け）
+- 固定I/F一覧（変更禁止）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 変更禁止項目:
+  1. 契約ID追加/改名/削除
+  2. `schemaVersion` 改版
+  3. SafeMode境界後退
+  4. Pending bypass
+- 再開条件:
+  - `a1Status=="Done"`
+  - `pendingDecisionQueueCount==0`
+  - human approval log（`approved_by`,`approved_at`,`evidence`）完備
+
+### Current gate decision
+- decision: `Hold`
+- executeAllowed: `false`
+- failure condition: なし（停止条件未該当）
+- hold reason:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
