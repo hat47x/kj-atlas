@@ -612,3 +612,39 @@ A1 は HIL-RS-01 の最小I/F正本であり、親計画・下流レーンは再
 - AC-2: A2/A3参照はread-onlyで明示済み。
 - AC-3: 未解決人間判断（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）を維持明記。
 - Self-Correction count: `0/3`
+
+
+## Stream A execution update（2026-05-07 / Phase 1-5）
+
+### Phase 1: ADR整合確認（再Read実施）
+- 再読対象: A1本Issue / 親Issue / ADR-0026。
+- Context: A1は最小契約の唯一正本。
+- Decision: 固定語彙・固定値・責務境界（AI proposal-only / Human final approval）を維持。
+- Consequences: 未承認論点は `Hold list` に隔離し、`executeAllowed=false` を継続。
+
+### Phase 2: 最小契約I/F固定（正規化）
+- Responsibility boundary（固定）:
+  - Human: `Pending -> Approved | Rejected` の確定のみ。
+  - AI/Automation: 判定補助のみ（遷移確定禁止）。
+- Interface（固定）:
+  - Inputs: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `a1Status`
+  - Outputs: `executeAllowed`, `decision`, `reasonCodes`, `requiredHumanActions`, `noGoReturnPath`
+- Approval condition（固定）:
+  - `Go` は `a1Status=="Done" && pendingDecisionQueueCount==0` かつ固定値ドリフト0 のときのみ。
+
+### Phase 3: 親Issue反映用の契約固定点
+- Parent向け配布は read-only 契約セットのみ。
+- Hold list（未承認）:
+  1. `Approval Record` final approval
+  2. `HIL-RS-02-GOV-EXCEPTION-01` terminal decision
+
+### Phase 4: 検証
+- AC/DoD照合: pass。
+- リンク整合: pass（NoGo return path は本Issue固定）。
+- 状態遷移妥当性: pass（`Pending` bypassなし）。
+- Self-Correction: `0/3`。
+
+### Phase 5: 完了報告
+- 変更要約: 最小契約I/F（責務境界・I/F・承認条件）を再固定。
+- 残リスク: 人間承認待ちが残る限り `Proceed=Hold`。
+- 他ストリーム契約固定点: fixed keys/fixed values/read-only 参照を厳守。
