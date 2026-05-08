@@ -502,3 +502,49 @@
 - Verify-2（差分健全性）: `git diff --check`。
 - Verify-3（任意再検証）: 修復差分がある場合のみ実行し、`self-correction > 3` で Stop。
 - 本pass結果: self-correction `1/3`、Proceedは Hold 継続。
+
+## Stream K planning quality pass（2026-05-08 / dependency-lock保全）
+
+### Phase 1 Read（課題/背景/提案/ACの再読）
+- 再確認結果: カバレッジ改善の方向性は記載済みだが、`対象範囲の固定粒度` と `Open化に必要な最小定量条件` が分散記述で追跡しづらい。
+- 不足情報として扱う項目:
+  1. 対象モジュールの固定単位（frontend/backendでどこまでを同一集計単位にするか）。
+  2. 優先モジュール選定ルール（safeMode/validation/diff の順序と根拠）。
+  3. 測定基準のNo-Go閾値（未記録・悪化・観点欠落）。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: カバレッジ目標が曖昧なままだと改善効果を比較できず、実装優先順位がぶれる。
+- Decision:
+  - 対象範囲は `Frontend: src/domain（safeMode/validation/diff）+ tests`、`Backend: kj_atlas_api validation/service + tests` を最小固定単位とする。
+  - 優先モジュールは `safeMode > validation > diff` の順で検証観点を配置する。
+  - 測定基準は `V-UNIT-01/02/03` を全件必須とし、1件でも未記録またはcoverage差分が負値ならNo-Goとする。
+- Consequences: 実装着手時に「どこからテストを書くか」「何をもって改善とみなすか」が固定され、依存解除後の着手判断が即時化される。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC補完（最低基準）:
+  - AC-K1: Frontend/Backendの対象モジュールを固定単位で列挙し、各単位ごとに追加ケース数を記録する。
+  - AC-K2: `Before/After` coverage差分は対象単位ごとに保存し、`差分 >= 0` を必須にする。
+  - AC-K3: safeMode/validation/diff の各観点で回帰検知アサーションを最低1件保持する。
+- 除外条件（本Issueでやらないこと）:
+  - 実装コード変更、e2e拡張、CI閾値強制導入。
+- 回帰防止:
+  - DoD-K1: 測定ログ（V-UNIT-01/02/03）とNo-Go判定理由を同一セクションに集約する。
+  - DoD-K2: self-correctionは最大3回、4回目相当はStopを維持する。
+
+### Phase 4 Execute（docs-only整備）
+- 実施内容は本Issue文書の計画品質整備のみ。依存ロック（Draft/Hold）を崩す変更は行わない。
+
+### Phase 5 Verify（定量判定性 + self-correction）
+- 判定可能性チェック:
+  - threshold: coverage差分 `>= 0`（対象単位別）。
+  - scope: Frontend/Backend対象単位を固定記述。
+  - completeness: `V-UNIT-01/02/03` 全件記録。
+- self-correction実績: `1/3`（本pass内で用語統一を1回補正）。
+
+### Phase 6 Proceed（Hold/Open候補/Stop）
+- Hold（現行）:
+  - FB-P0収束未確定、HIL-RS-02同期未確定、またはAC-K1〜K3未充足。
+- Open候補（依存解除後）:
+  - 依存2件解消 + Owner確定 + V-UNIT-01/02/03記録導線確定 + AC-K1〜K3充足。
+- Stop:
+  - 測定不能な目標再混入、docs-only逸脱、指定外ファイル編集要求を検知した場合。
