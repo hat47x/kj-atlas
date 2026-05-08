@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream D（CE2 Draft proposal品質改善 / implementation dependency cut）
+- Owner: Stream H（CE2 Draft proposal品質改善 / implementation dependency cut）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -258,6 +258,43 @@
   1. 承認ログ未取得（`held` 継続）。
   2. auto-*導線（auto-apply / auto-confirm / auto-publish）混入。
   3. 未定義競合（契約衝突・語彙衝突・責務分離崩壊）を検知。
+
+## Stream H quality update log（2026-05-08 / proposal-only Open準備）
+
+### Phase 1 Read（実装着手条件とDraft gate再読）
+- 実装着手条件（Implementation Start Gate 1〜4）を再読し、**CE1確定前にCE2実装へ進まない** 制約を再確認。
+- Draft gate（Proceed条件 / Stop条件 / Draft→Open移行条件）を再読し、依存未確定時は `held` 継続であることを確認。
+
+### Phase 2 ADR/CDC（依存崩壊回避の固定）
+- Context: CE1未確定状態でCE2実装前提を追加すると、契約責務と依存境界が崩壊する。
+- Decision: CE2は **proposal-only** とし、実装非着手を明示。実データ接続・実ランタイム依存・実装状態遷移を導入しない。
+- Consequences: CE1依存解消まで、安全に判断材料の品質改善のみを継続できる。
+
+### Phase 3 Plan（AC/DoD補完）
+- Open化条件補完:
+  1. `Dependency status=確定` の証跡（日時・承認者・対象・判断・evidence）記録。
+  2. `Approval Record` 最小項目（approved_at / approved_by / target / decision）充足。
+  3. proposal-only / fail-closed / safeMode既定ON 後退ゼロ。
+- 停止条件補完:
+  1. CE1確定前の実装前提追加要求を検知した時点で `Stop`（`held` 継続）。
+  2. self-correction が 4回目相当に達する場合は `Stop`。
+
+### Phase 4 Execute（Draft本文明確化のみ）
+- 実施: Draft本文の表現を proposal-only / 実装非着手 / 依存条件 / 停止条件の4点で明確化。
+- 非実施: 実装計画の具体化（タスク分解、実装順序、実行基盤、運用確定値の追加）。
+
+### Phase 5 Verify（3観点 + self-correction上限）
+- V1 実装非着手: 本Issue内で実装開始条件未達時は `held` とする文言を保持。
+- V2 依存条件: CE1は read-only contract 参照に限定し、CE1確定前の実装前提を禁止。
+- V3 停止条件: 未承認・契約衝突・修復超過時の `Stop`（`held`）を維持。
+- self-correction: `0/3`（超過なし）。
+
+### Phase 6 Proceed（判定記録）
+- 判定: **Hold継続（Open候補だが未遷移）**。
+- 理由:
+  1. 依存確定証跡（CE1/CE2 Open判定ログ）が未充足。
+  2. 承認ログ最小項目の実値未入力。
+- 注記: Open候補化は可能だが、承認証跡充足までは `held` を維持する。
 - Stopper: 修復3回超過、未定義競合、前提崩れ（依存確定証跡の欠落）が発生した時点で停止。
 
 ## Stream CE2 Draft昇格準備（2026-05-06 / Read→Plan→Execute→Verify→Proceed）
