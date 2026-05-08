@@ -2787,3 +2787,65 @@ type PatchProposal = {
 ### Phase 5 引継ぎメモ
 - CE1 handoff key: `CE0 contracts are immutable and read-only reference`。
 - fail-safe: 競合/矛盾/未合意検出時は `held` で停止し指示待ち。
+
+## Stream B latest run（2026-05-07 / CE0 contract freeze formalization refresh）
+
+- run_id: `stream-b-ce0-2026-05-07-01`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `dependency_undefined=0 / contract_conflict=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1: Read & Plan
+- 対象ファイル最新状態を再読し、CE0 lane が docs-only / contract-only / mock-first の固定境界で運用されていることを確認。
+- 前提差分確認: Contract ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）および No-Go canonical IDs の再定義・改名・削除なし。
+- AC/DoD不足確認: 既存 DoD（read-only reference / no-go canonical / CDC-held）で充足。追加ドラフト提案は不要と判定。
+
+### Phase 2: Contract Freeze明文化（Context / Decision / Consequences）
+- Context:
+  - CE0 は SSOT を本Issue単体に限定し、下流（CE1/CE2/CE4）には「参照可能な契約断面」のみ提供する。
+  - 契約記述は実装非依存（データ構造・入出力意味論・失敗条件）で固定し、実装手段（DB/API/UI）を拘束しない。
+- Decision:
+  - CE0 I/F境界を次の実装非依存契約として固定維持する。
+    - `CE0-CTX-IF`: Query Preview 経由必須 / deterministic bundle 必須。
+    - `CE0-SAFEMODE-IF`: safeMode既定ON / `allowUnreviewedText=false` 既定。
+    - `CE0-REVIEW-IF`: `human_reviewed` 昇格は人手操作のみ。
+    - `CG-01..05`: Working・Projection・Consensus 分離、`Working -> Consensus` は `patch + approval` のみ、auto-apply禁止。
+  - CE0 では interface の意味論のみを固定し、実行主体・実装技術・保存形式の確定は行わない。
+- Consequences:
+  - 下流実装の変更自由度を保持したまま、契約ドリフト（語彙衝突・ID衝突・安全境界後退）を抑止。
+  - 依存未定義または契約競合が検出された場合、実装前提の推測補完を禁止し `held` 停止へ遷移可能。
+
+### Phase 3: Mock切断定義（CE1/CE2/CE4参照用）
+- CE1/CE2/CE4 が参照可能な mock 契約を「署名・型・入出力のみ」で固定（実装なし）。
+- Contract surface:
+  - `ContextQueryV1`（入力型）
+    - required: `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`
+  - `ContextBundleV1`（出力型）
+    - required: `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`
+  - `ProposalPatchV1`（CE2参照）
+    - input: `{ sourceBundleHash: string, operations: unknown[] }`
+    - output: `{ proposalId: string, status: "proposed" }`
+  - `AuditEventV1`（CE4参照）
+    - input: `{ eventType: "query"|"bundle"|"proposal"|"apply", eventHash: string, timestamp: string }`
+    - output: `{ accepted: boolean }`
+- Error semantics（型レベル固定）:
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+
+### Phase 4: Verify（AC/DoD検証 + 自己修復ポリシー）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- result: pass（self-correction `0/3`）
+- self-repair policy: 最大3回まで。4回目相当が必要な場合は Stopper に従って即停止。
+
+### Phase 5: Stopper
+- 停止条件（固定）:
+  - 依存未定義（downstream参照に必要な型・署名が欠落）
+  - 契約競合（Contract ID再定義、語彙衝突、No-Go canonical IDs の矛盾）
+  - 指定外ファイル編集要求
+- 判定:
+  - 本実行では `dependency_undefined=0` / `contract_conflict=0` のため **Conditional-Go**。
+  - 以後、競合検知時は即時 `held` へ遷移し、推測補完を行わない。
