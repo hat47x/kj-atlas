@@ -8,9 +8,9 @@
 - `Draft/Open/In Progress` の issue と、それに紐づく ADR だけを処理候補として抽出する。
 - 依存未解決の `Draft` / `Open` を先に弾き、今すぐ着手できる対象だけを優先表示する。
 
-## 2. 判定原則
+## 2. 判定原則（機械判定）
 
-### 2.1 issue を「未処理」とみなす条件
+### 2.1 issue を「未処理」とみなす条件（Active母集団）
 
 次のいずれかに当てはまる issue memo を処理候補とする。
 
@@ -24,7 +24,7 @@
 - `Status: Blocked*`
 - 過去運用の `Ready*` / `Active*` は履歴として扱い、新規着手対象に混ぜない
 
-### 2.2 ADR を「未処理」とみなす条件
+### 2.2 ADR を「未処理」とみなす条件（Active issue逆引き）
 
 ADR 自体の `Status` だけでなく、**紐づく issue がまだ Active か**で判定する。
 
@@ -32,6 +32,38 @@ ADR 自体の `Status` だけでなく、**紐づく issue がまだ Active か*
 - もしくは `Traceability` / `Related` で参照している issue が Active な ADR
 
 つまり、ADR が `Accepted` でも、下流 issue が Active なら「処理中ADR」として扱う。
+
+### 2.3 Ready/Blocked の機械判定
+
+`triage_actionable_plans.py` は Active issue を次の規則で分類する。
+
+- `classification=Ready`:
+  - `Status ∈ {Open, In Progress}`
+  - 依存 issue がすべて `Done`
+- `classification=Blocked`:
+  - `Status=Draft`（draft gate）
+  - 依存 issue に `Done` 以外がある（blockers へ列挙）
+
+### 2.4 依存解放順（dependency_stage）
+
+依存解放順は `dependency_stage` で表す。値が小さいほど先に着手可能。
+
+- `0`: 依存なし（起点）
+- `1..n`: 依存を1段以上もつ
+- `999`: 循環依存または解析不能（停止対象）
+
+ソート順は **Ready優先 → dependency_stage昇順 → Priority(P0..P3) → path** の固定順とする。
+
+### 2.5 mock適用可否（mock_applicable）
+
+issue memo 先頭メタ（先頭180行）から `Mock適用可否` / `Mock Policy` / `Mock方針` / `Mock readiness` を読み取り、次を判定する。
+
+- `Yes`: `yes/可/可能/applicable/enabled` を含む
+- `No`: `no/不可/not applicable/disabled` を含む
+- `Conditional`: 上記いずれにも明確一致しないが記述あり
+- `Unknown`: メタ記載なし
+
+`Unknown` は自動停止条件ではない。Stopper は次節 `errors` を優先する。
 
 ## 3. 最小読取フロー
 
@@ -48,6 +80,7 @@ python 01_Plans/triage_actionable_plans.py
 1. `## Ready issues`
 2. `## Parked or blocked issues`
 3. `## ADRs linked to active work`
+4. `## Triage errors (stopper)`
 
 ### Step 2. Ready issue だけ読む
 
@@ -113,7 +146,13 @@ python -m unittest 01_Plans/tests/test_triage_actionable_plans.py
 
 これにより、計画実行前の人間/AIの読取対象を「全件」から「Ready issue + 関連ADR」に圧縮できる。
 
-## 7. 停止条件
+## 7. 停止条件（Stopper）
+
+`triage_actionable_plans.py` は `errors` を出力し、**終了コード2で停止**する。
+`errors` が1件でもある場合、推測実行は禁止。
+
+- `missing Status metadata`
+- `missing Priority metadata`
 
 次の場合はツール出力を鵜呑みにせず停止する。
 
