@@ -218,6 +218,40 @@
 ### A1→A2/A3解放条件（親計画参照専用）
 - 親計画は以下を再定義せず参照する。
   - `a1Status=="Done"`
+
+## Stream A parent-plan decision-queue closure sync（2026-05-09）
+
+### Phase 1 Read同期
+- 対象再読:
+  1. `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  2. `issue-FB-P2C-01-a1-interface-contract.md`
+  3. `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- 未確定一覧（I/F）:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+
+### Phase 2 ADR/Decision明文化
+- Context: 親計画は参照ノードであり、契約再定義ノードではない。
+- Decision:
+  - 確定項目（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）は参照固定。
+  - 承認待ち項目は Decision Queue に残し、`Hold` 維持。
+- Consequences:
+  - `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで `Proceed=Hold`。
+  - A2/A3への判定代行は行わない。
+
+### Phase 3 契約固定（親計画宣言）
+- A2/A3参照用凍結値（read-only）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+
+### Phase 4 受け渡し（参照専用）
+- downstream handoff: `read-only contract summary` 発行済み（本節）。
+- status: `Hold/Needs-decision`（未承認2件が残存）。
   - `pendingDecisionQueueCount==0`
   - `Approval Record=Approved`
   - `HIL-RS-02-GOV-EXCEPTION-01` が終端状態（Approved/Rejected）

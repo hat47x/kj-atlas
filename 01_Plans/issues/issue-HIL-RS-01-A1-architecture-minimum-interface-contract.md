@@ -164,3 +164,46 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - note:
   - 本更新は契約文面整備のみ。実装詳細の追加なし。
+
+## Stream A（critical path）phase-locked update — 2026-05-09
+
+### Phase 1 Read（Plan → Execute → Verify → Proceed）
+- Plan: 本issue / 親計画issue / FB-P2C A1 issue / SSOT（`02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`）を再読し、未確定一覧を再生成する。
+- Execute: 未確定項目を次の2件で固定。
+  1. `Approval Record=Pending`
+  2. `HIL-RS-02-GOV-EXCEPTION-01=held`
+- Verify: 固定値（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）のドリフト `0` を確認。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 ADR/Decision明文化（Plan → Execute → Verify → Proceed）
+- Context: A2/A3が参照する契約をA1以外で再定義すると、`A1 -> A2 -> A3` の依存順と監査線が破綻する。
+- Decision:
+  - 確定項目: 固定値群と `A2A3_OPEN_ALLOWED` 判定式は凍結維持。
+  - 承認待ち項目: `Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01` は Decision Queue に残し、確定扱いしない。
+- Consequences:
+  - `Pending -> Approved | Pending -> Rejected` 以外の遷移は禁止。
+  - `pendingDecisionQueueCount>0` の間は `executeAllowed=false` を強制。
+- Verify: CDC（Context/Decision/Consequences）3点が明示され、承認待ち/確定の分離が維持されることを確認。
+- Proceed: Phase 3へ進行。
+
+### Phase 3 契約固定（Plan → Execute → Verify → Proceed）
+- Plan: A2/A3向け固定I/F（型、署名、判定条件、schemaVersion）を read-only で再宣言する。
+- Execute（凍結宣言）:
+  - Interface IDs: `A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF | A1-ERROR-IF`
+  - schemaVersion: `1.0.0`
+  - Signatures: `CritiqueV1`, `ReDiffV1`, `AttributionV1`, `A1ErrorV1`
+  - 判定条件: `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- Verify: `Pending` 残存中のため `Go` を出していないことを確認。
+- Proceed: Phase 4へ進行。
+
+### Phase 4 受け渡し（read-only contract summary）
+- Stream B/C 参照専用サマリ:
+  - SSOT: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `unlockRule=a1Status=="Done" && pendingDecisionQueueCount==0`
+- 判定: `Hold`（承認待ち2件が未解消）。
