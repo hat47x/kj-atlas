@@ -77,6 +77,54 @@
 - 判定: **Hold 固定（Draft継続）**。
 - 解除条件: CE0/CE1確定証跡 + Approval Record実値 + AC/DoD全充足を人間確認後に限る。
 
+## Stream C execution log（2026-05-09 / CE2下流準備 / proposal-only）
+
+### Phase 1: Read同期
+- 本Issue既存契約（proposal-only / human-final / no-auto / fail-closed）と依存記述（CE0/CE1 read-only）を再読し、Draft維持理由を同期。
+- `Expected verification level=docs-check` と `Dependency status=未確定` の組み合わせが Open不可ゲートとして機能していることを確認。
+
+### Phase 2: ADR/契約依存の明文化（Context / Decision / Consequences）
+#### Context
+- CE2 は Open前の意思決定準備であり、依存承認の代替確定を許容しない。
+- 下流準備では CE1 I/F を mock 参照可能だが、承認事実（CE0/Approval Record）は mock 代替不可。
+
+#### Decision
+- 依存解放条件を機械判定可能な最小条件で固定する。
+  1. `E-01` と `E-02` が `fulfilled` であること。
+  2. Approval Record の `approved_at/approved_by/decision/evidence` が `TBD` でないこと。
+  3. 判定語彙は `Proceed/Hold/Stop(held)` の tri-state 以外を許可しないこと。
+
+#### Consequences
+- Open判定時に「依存未解決のまま Proceed」が発生しない。
+- 機械判定（チェックリスト判定）で Hold固定理由を再現できる。
+
+### Phase 3: Plan（Draft→Open条件 / AC・DoD / mock前提）
+- Open化条件（全て必須）:
+  - [ ] O1: Evidence matrix の E-01/E-02 が `fulfilled`。
+  - [ ] O2: Approval Record の missing=0。
+  - [ ] O3: AC-P1〜P4 / DoD-P1〜P4 が全完了。
+  - [ ] O4: docs-check pass 記録が最新。
+- mock前提タスク（proposal-only）:
+  - [ ] M1: CE1は contract参照のみ（mock可）と明記。
+  - [ ] M2: CE0承認証跡は mock不可（実値必須）と明記。
+  - [ ] M3: 依存未解決時の遷移先は `Hold` のみと固定。
+
+### Phase 4: Execute（proposal-only）
+- 実施範囲を本Issue文書更新に限定。
+- 実装要求・他Issue変更・依存値の推測補完は未実施。
+
+### Phase 5: Verify（依存解放条件の機械判定可能性）
+- V-CHK1: Evidence matrix と Approval Record が `fulfilled/missing` 判定可能な形式で定義済み。
+- V-CHK2: Open化条件 O1〜O4 がブール判定可能（all true のみ Proceed候補）。
+- V-CHK3: self-correction 上限 `<=3` が超過時 Stop へ遷移する規則が明文化済み。
+
+### Phase 6: Proceed/Stop
+- 判定: **Hold**（未解決承認あり）。
+- Stop条件:
+  1. self-correction が4回目相当に到達。
+  2. tri-state以外の判定語彙混入。
+  3. CE0承認証跡を mock 代替しようとする要求。
+
 ## Evidence matrix（Open判定の必要証跡）
 
 | ID | 証跡項目 | 必須値 | 未充足時の判定 |
