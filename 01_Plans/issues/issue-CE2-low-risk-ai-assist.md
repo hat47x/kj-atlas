@@ -1194,3 +1194,45 @@
 - 判定: `Hold` 維持（依存証跡未確定のため）。
 - self-correction: `1/3`（上限内）。
 - Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+
+## Stream D CE2 planning log（2026-05-09 / candidate-only planning lock）
+
+### Phase 1 Read（対象ファイル再読）
+- 再読対象を `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみに固定し、single-file scope を確認。
+- 再読確認: proposal-only / human final decision / fail-closed / safeMode既定ON / auto-*禁止 / reviewState自動昇格禁止 を維持。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences 先行確定）
+- Context: CE2は低リスク補助でも責務混線リスクがあるため、AIは候補提示に限定する契約固定が必要。
+- Decision: CE2は **候補提示のみ（candidate/proposal-only）** とし、AIによる自動確定・自動公開・review自動昇格を禁止する。
+- Consequences: 実装速度は抑制されるが、誤確定・漏洩・監査不能のリスクを Draft段階で遮断できる。
+
+### Phase 3 Plan（AC/DoD不足の補完案）
+- AC draft:
+  - [ ] AI提案は `status=proposed` のみで、`accepted/rejected` は人間最終判断である。
+  - [ ] AI自動確定（auto-confirm相当）/自動公開（auto-publish相当）/review自動昇格（`unreviewed -> human_reviewed`）が禁止として明記される。
+  - [ ] 承認未取得時は `Proceed` せず `held` 継続である。
+- DoD draft:
+  - [ ] Phase 1〜6 の記録が本Issue内で再読可能。
+  - [ ] Verify（V1/V2/V3）を3回以内で通過、または超過時 `held` 停止が記録される。
+  - [ ] scope逸脱・safeMode後退・未定義契約競合が0件である。
+- 合意待ちメモ: 上記AC/DoD draftは CE2 Open判定前の合意対象（未合意時は Draft/Hold 継続）。
+
+### Phase 4 Execute（対象ファイル再読 + 文書整備のみ）
+- 実施: 本Issue内への計画追記のみ。
+- 非実施: 実装仕様確定、コード変更、他ファイル編集。
+
+### Phase 5 Verify（対象ファイル再読 + 最大3回修復）
+- Attempt 1/3:
+  - V1 scope: single-file編集のみ -> Pass。
+  - V2 contract: proposal-only / no-auto-confirm / no-auto-publish / no-auto-review-promotion / fail-closed -> Pass。
+  - V3 integrity: Phase 1〜6, CDC, AC/DoD draft, Stopper整合 -> Pass。
+- self-correction: `0/3`（修復超過なし）。
+
+### Phase 6 Proceed（対象ファイル再読 + 判定）
+- 判定: **Hold継続**（承認証跡未充足のため）。
+- Proceed条件: 人間承認ログ（日時・承認者・対象・判断・evidence）充足後に再判定。
+- Stopper適用:
+  1. scope逸脱
+  2. safeMode後退
+  3. verify>3
+  4. 未定義契約競合
