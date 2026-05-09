@@ -3194,3 +3194,45 @@ type PatchProposal = {
 ### Phase 6 Proceed
 - ProceedDecision: **Ready**
 - 理由: AC/DoDを満たし、未承認事項は `held` 停止条件として分離済み。新規未承認論点は検出なし。
+
+## Stream B latest run（2026-05-09 / CE0 only / contract SSOT freeze maintenance）
+
+- run_id: `stream-b-ce0-2026-05-09-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / dependency_approval_missing=0 / out_of_scope_edit=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、編集対象が単一ファイルのみであることを再確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）固定、No-Go canonical IDs固定、safeMode既定値維持を再確認。
+- 即Stop条件（依存承認未記録 / safeMode後退検知 / 契約ID再定義要求）を再確認。
+
+### Phase 2 ADR(C/D/C)
+- Context: CE0契約のSSOTは本Issueのみで維持し、他ストリーム成果物は参照専用とする。
+- Decision: Contract ID再定義・safeMode境界変更・依存承認未記録のままの進行を禁止し、docs-only更新に限定する。
+- Consequences: 契約ドリフトと安全境界後退を抑止し、停止条件発火時に即 `held` へ遷移可能。
+
+### Phase 3 Plan
+- AC/DoD不足を点検し、新規不足なしと判定（追加ドラフト提案は不要）。
+- 実行計画: 本Issueへの実行ログ追記のみ（contract-only / docs-only / mock-first）。
+- Verify計画: self-correction最大3回、4回目相当は即Stop。
+
+### Phase 4 Execute
+- Phase開始時に本Issueを再読し、単一ファイル編集境界を再確認。
+- 実施: 本runのフェーズ記録を追記。
+- 非実施: 指定外ファイル編集、実装変更、Contract ID追加/改名/削除、safeMode既定値変更。
+
+### Phase 5 Verify
+- Phase開始時に本Issueを再読し、検証手順を再確認。
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- Phase開始時に本Issueを再読し、Proceed判定条件を再確認。
+- 判定: **Conditional-Go**
+- 継続条件:
+  - CE0 Contract Freezeは本IssueをSSOTとして継続（read-only参照のみ許可）。
+  - 依存承認未記録・safeMode後退検知・契約ID再定義要求が発生した時点で即 `held` 停止。
