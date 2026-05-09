@@ -2440,3 +2440,30 @@ handoffKeys:
 - **Proceed**: Phase 1〜5 を直列で完了し、差分が本Issue内の契約整備に限定される場合。
 - **Hold**: 2者承認待ち、または上流契約の未確定が残る場合。
 - **Stop**: 競合・承認不在・前提崩壊・自己修復上限超過（3回超過）を検知した場合は即停止し `held` を維持。
+
+
+## Stream B execution update（2026-05-09 / CE0-CE1 contract baseline sync）
+
+### Phase 1 Read同期
+- 対象3Issueを再読し、編集範囲を `issue-CE0-contract-freeze.md` / `issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` のみに固定。
+- CE0 canonical No-Go 5 IDs、`working / context_projection / consensus`、`working -> consensus (patch+approval only)` を差分なしで確認。
+- CE1 fixed error semantics（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）と hash決定論要件（`queryCanonicalHash` / `bundleHash`）を差分なしで確認。
+
+### Phase 2 Plan（AC/DoD補完提案）
+- AC補完提案（CE0）: `preview_bypass` と `consensus_direct_write` が本文内で **禁止語彙として明示** されることを追加。
+- AC補完提案（CE1）: closed-world 判定を「未定義キー検知時は常に `400 unknown_contract_key`」で1:1固定することを追加。
+- DoD補完提案（共通）: handoff成果物を interface/type/signature のみに限定し、実装TODO・実装依存記述を含めない。
+
+### Phase 3 Execute（契約定義先行 / mock前提分離）
+- 実装依存項目は interface/type/signature へ切り出して先行固定し、mock-only検証前提で完了扱い可能な記述へ統一。
+- CE0は contract-only boundary を維持し、実装経路（handler/UI/DB/worker/API migration）を追加しない。
+- CE1は `ContextQueryV1` / `ContextBundleV1` と固定エラー語彙、hash規約のみを更新対象として維持。
+
+### Phase 4 Verify（整合/依存確認）
+- 依存切断確認: CE2/CE4 連携は handoff key（`sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash`）のみで継続可能。
+- 衝突確認: contract id collision / error semantics collision / vocabulary collision の新規発生なし。
+- self-correction 実績: 0回（追加修正不要）。
+
+### Phase 5 Proceed/Stop
+- 判定: **Proceed**（直列フェーズ完了、scope逸脱なし、contract-only維持）。
+- Stop条件の再掲: self-correction 3回超過・契約衝突・前提崩壊時は `held` で停止し問い合わせ。
