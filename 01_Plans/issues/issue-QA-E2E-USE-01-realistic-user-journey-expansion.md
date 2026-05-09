@@ -3,7 +3,7 @@
 - Type: Process
 - Status: Draft Ready Candidate (implementation-decoupled)
 - Priority: P1
-- Owner: Stream I（QA-E2E-USE-01 Draft品質引き上げ専任）
+- Owner: Stream J（QA-E2E-USE-01 Draft整備専任）
 - Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` のみ（実装コード変更禁止）
 - Dependencies:
   - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）
@@ -82,6 +82,19 @@
 - AC-03: assertionは実装非依存（契約語彙）で表現され、DOM/内部関数への依存がない。
 - AC-04: blocked時記録テンプレート（後述4.5）で、発生事象を再開可能な粒度で残せる。
 - AC-05: Proceed判定は dependency gate解除証跡が揃うまで `Not Allowed` 固定。
+
+### 3.1.1 Draft→Open 判定ゲート（明文化）
+
+- Gate-O1（Contract Completeness）: S1〜S4すべてに `Given/When/Then + 前提データ + 境界条件 + assertion種別` が記入済み。
+- Gate-O2（Implementation Decoupling）: シナリオ本文・判定文に DOMセレクタ / 内部関数名 / 一時UI文言 への依存記述がない。
+- Gate-O3（Dependency Lock）: 依存Issueは read-only snapshot として参照され、状態推測・完了判定代行をしていない。
+- Gate-O4（Blocked Operability）: 4.5テンプレートで blocked 記録を再開可能粒度（Evidence / ReopenCondition 必須）で残せる。
+- Gate-O5（Go/No-Go Clarity）: ProceedDecision が依存解除証跡ベースで一意に判定でき、未提示時は `Not Allowed` になる。
+
+判定規則:
+- `Open` = Gate-O1〜O5 がすべて `Pass`。
+- `Draft` = Gate-O1〜O5 のいずれか1つでも `Fail`。
+- `Hold` は依存未解除時の実装可否状態であり、`Open/Draft`（計画品質判定）と独立して併記する。
 
 ### 3.2 DoD（Draft品質完了条件）
 
@@ -195,6 +208,15 @@
 - [x] 実装依存記述（DOM/関数名依存）なし。
 - [x] AC/DoD/blocked記録テンプレが明示。
 
+### 5.1.1 Gate-O 判定表（2026-05-09 UTC）
+
+- [x] Gate-O1: Pass
+- [x] Gate-O2: Pass
+- [x] Gate-O3: Pass
+- [x] Gate-O4: Pass
+- [x] Gate-O5: Pass
+- PlanningQualityStatus: **Open**
+
 ### 5.2 依存矛盾チェック
 
 - [x] 依存IssueはGo条件として参照のみ（状態を確定扱いしない）。
@@ -219,6 +241,7 @@
 - Ready for implementation: **No**
 - Dependency evidence: **Insufficient**
 - ProceedDecision: **Not Allowed**
+- DraftOpenStatus: **Open**（Gate-O1〜O5 Pass）
 - Overall: **Hold**
 
 ### 6.2 Hold継続条件（推測解決禁止）
