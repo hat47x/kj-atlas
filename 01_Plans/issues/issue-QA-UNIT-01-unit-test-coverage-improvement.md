@@ -1,591 +1,148 @@
-# Issue Draft: QA-UNIT-01 ユニットテストのカバレッジ向上
+# Issue Ready: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
 
 - Type: Process
-- Status: Draft (起票用)
+- Status: Ready (Execution Plan Fixed)
 - Source Issue: N/A
 - Priority: P2
-- Owner: Stream G (planning only)
-- Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束後に着手）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（本フェーズは計画文書更新のみ / 実装禁止）
-- Start Gate (fixed): FB-P0収束完了 + HIL-RS-02計画同期完了まで `Draft/Hold` を維持する。
-- Related Backlog: `N/A`
+- Owner: Stream I（QA-UNIT-01 Draft Ready化）
+- Dependencies:
+  - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束）
+  - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（本作業は計画文書更新のみ）
+- Out of Scope: 実装コード変更 / テストコード追加 / CI設定変更 / 他Issue・ADR編集
+- Start Gate (fixed): FB-P0収束完了 + HIL-RS-02計画同期完了まで execution は Hold（docs-only）
 - Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`
 - Expected verification level: `unit`
 
 ## Requirement meta I/F（共通キー）
 
 - RequirementID: `QA-UNIT-01`
-- RequirementStatement: 主要ドメインロジックに対するユニットテストを拡充し、回帰検知能力を向上させる。
+- RequirementStatement: 主要ドメインロジックのユニットテストを、**網羅率の数値目標ではなく欠陥検知能力**を基準として拡充する。
 - PriorityClass: Should
-- AcceptanceScenario: 前提=既存テスト基盤が実行可能 / 操作=不足領域へunit test追加 / 期待結果=追加テストが安定通過し回帰検知観点をカバー / 除外=e2eシナリオ拡張
+- AcceptanceScenario:
+  - 前提: 既存unit基盤（Vitest/Pytest）が実行可能
+  - 操作: 高リスク領域に対して設計済みテストケースを追加
+  - 期待結果: 正常系/異常系/境界値の失敗検知が再現可能
+  - 除外: E2E追加・機能改修・閾値先行導入
 - GoNoGoGate: Optional
 - SecurityGateImpact: SafeMode
 - VerificationLevel: unit
-- DecisionStatus: Hold-for-Dependency-Gate
+- DecisionStatus: Hold-for-Dependency-Gate（execution only）
 - DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
-- DependencyLockPolicy: FB-P0収束 + HIL-RS-02計画同期完了まで Draft/Holdを維持し、テスト実装・閾値導入・CI変更を開始しない。
-
-## Stream G phase protocol（dependency-locked planning）
+- DependencyLockPolicy: Dependency未解除時は docs-only。テスト実装・閾値導入・CI変更を開始しない。
 
-固定フェーズ: Read同期 → AC/DoD具体化 → 依存条件の明記 → Verify → Proceed
+## 1) 課題 / Problem statement（曖昧目標の明確化）
 
-- Read同期: ADR-0001 / ADR-0019 / 本IssueメタI/Fを毎回再確認。
-- AC/DoD具体化: coverage「改善」ではなく、非悪化 + 観点網羅 + 記録完全性で判定式化。
-- 依存条件の明記: 解除条件を明文化し、解除前の作業上限を docs-only に固定。
-- Verify: 実行ではなく「検証可能性（コマンド・指標・No-Go条件）」の整備状況を確認。
-- Proceed: dependency-locked のため本フェーズは `Proceed=Not Allowed`。
+従来の「coverage向上」は、以下の曖昧さを残していた。
 
-## 1) 課題 / Problem statement
+- coverage率が上がっても、欠陥を検知できるとは限らない。
+- 変更頻度の高い領域（safeMode/validation/diff）で、異常系や境界値の回帰検知が不足しうる。
+- テスト失敗時の切り分け順序が不明瞭で、レビューがデバッグ作業へ流れやすい。
 
-- テストは存在するが、変更頻度の高いロジックで回帰検知の粒度にばらつきがある。
-- 仕様変更時に「どこまで壊れていないか」の判断が属人的になりやすい。
-- 結果として実装レビュー時に仕様評価よりデバッグに時間を使いやすい。
+本Issueはこの曖昧さを解消し、実装前に「何を検知できれば十分か」を固定する。
 
-## 2) 背景 / Context
+## 2) Context
 
-- ADR-0019で「結合前に下位検証を積み上げる」方針が示されている。
-- ADR-0001の価値整合（可逆性・人間レビュー追跡）を維持するため、局所的な振る舞い保証が必要。
-- Frontend/Backendともにunit test基盤は存在し、未カバー領域を優先拡張できる。
+- ADR-0019: 結合品質の前段として unit 検証の積み上げを重視。
+- ADR-0001: 可逆性・説明可能性・レビュー追跡性を品質判断の軸に置く。
+- 現行基盤: Frontend（Vitest）/ Backend（Pytest）は存在し、追加設計を段階投入可能。
 
-## 3) 判断基準による優先度評価
+## 3) Decision（Ready化の中核）
 
-- 価値・判断軸（ADR-0001）: 変更の安全な反復を支える品質基盤として妥当。
-- 安全（THREAT_MODEL / SafeMode）: SafeMode境界を持つロジックの回帰検知強化に有効。
-- 企業・行政要件（enterprise_architecture）: 監査時に挙動説明可能性を補強。
-- 後方互換（schemas）: スキーマ改変は伴わず互換リスクは低い。
+### 3.1 リスクベース優先順位（対象モジュール候補）
 
-## 4) 提案する解決策 / Proposed solution
+P1（最優先: 安全境界 / 回帰影響大）
+1. Frontend `safe_mode` 相当ポリシー判定ロジック
+2. Frontend import/export 前段の validation ロジック
+3. Frontend diff/patch 適用可否判定ロジック
 
-- 変更対象（Docs / Frontend / Backend / Schema）: Frontend + Backend テストコード、必要最小限のテスト用fixture。
-- 変更の最小単位（再開可能な粒度）:
-  1. カバレッジ計測コマンドの基準化
-  2. 高優先ロジックからunit test追加
-  3. 失敗時の回帰パターンをテスト名で明示
-- 非目標（何をこのIssueでやらないか）:
-  - e2eシナリオ追加
-  - 大規模リファクタ
-  - 新機能追加
+P2（高優先: 仕様逸脱検知）
+4. Backend request validation / schema整合チェック
+5. Backend service層の失敗系ハンドリング（不正入力・前提不成立）
 
-## 5) 受入条件 / Acceptance criteria
+P3（依存確定後）
+6. 依存契約が未凍結の連携境界（mock先行で設計のみ保持）
 
-- [ ] 優先対象ロジック（safeMode/validation/diff等）の不足ケースにunit testが追加される。
-- [ ] 追加テストがローカルCI相当コマンドで安定通過する。
-- [ ] テスト追加に伴う既存仕様との矛盾がない。
-- [ ] 必要な検証（unit）が `Expected verification level` と一致する。
-- [ ] `GoNoGoGate` の要否（Optional）が明示されている。
-- [ ] セキュリティ境界に影響する観点（SafeMode関連）を含むテスト観点が列挙される。
-- [ ] AC-M1: 測定対象モジュール一覧（Frontend/Backend）を明記し、各モジュールで「追加ケース数（最低1件）」を定量記録する。
-- [ ] AC-M2: `pytest --cov` / `vitest --coverage`（または同等）で **statement coverageの差分（Before/After）** を保存し、対象モジュールで非負（悪化なし）を必須化する。
-- [ ] AC-M3: 回帰検知の実効性指標として、safeMode/validation/diffの3観点それぞれで「失敗を検知できるアサーション」を1件以上持つことを必須化する。
-- [ ] AC-M4: dependency lock 未解除時は、変更対象を計画文書のみに制限する統制文を保持する。
+### 3.2 欠陥検知能力で定義するカバレッジ目標
 
-## 6) 実装タスク分解 / Task breakdown
+本Issueでは coverage数値そのものを完了条件にしない。代わりに以下を必須化する。
 
-- [ ] T1: 現状テストの薄いモジュール抽出方法と優先順位付けルールを固定する（計画）。
-- [ ] T2: Frontend追加候補（safeMode/validation/diff）をケース粒度で列挙する（計画）。
-- [ ] T3: Backend追加候補（validation/service）をケース粒度で列挙する（計画）。
-- [ ] T4: Verifyで使う測定ログ様式（Before/After/Assertion count）を固定する（計画）。
+- 正常系: 期待出力・状態遷移が仕様どおりである。
+- 異常系: 不正入力・契約違反を fail-fast で拒否し、誤った成功を返さない。
+- 境界値: 空入力/最小値/最大値/閾値境界で挙動が安定し、意図しない丸め・通過がない。
+- 回帰点: 既知不具合クラス（safeMode緩和、validation抜け、diff誤適用）を再発時に必ず検知する。
 
-## 7) 検証計画 / Validation plan
+### 3.3 先行可能設計と契約待ち設計の分離
 
-- 実行コマンド:
-  - `cd 03_Implement/frontend && npm test -- --runInBand`
-  - `cd 03_Implement/backend && pytest -q`
-  - `cd 03_Implement/frontend && npm run test -- --coverage --runInBand`
-  - `cd 03_Implement/backend && pytest --cov=src --cov-report=term-missing`
-- 期待結果:
-  - 追加したunit testを含めて全件pass。
-  - Coverage指標（statement/branchのうち収集可能なもの）がBefore比で悪化しない。
-  - 対象3観点（safeMode/validation/diff）で回帰検知アサーション件数が0でない。
-- 未実施時の理由・代替検証:
-  - 依存不足で実行不可の場合は、対象テストファイルの静的レビュー結果と実行阻害要因を記録する。
+- 先に書けるユニットテスト設計（契約確定不要）
+  - 純関数/同期ロジック（safeMode判定、入力検証、diffルール）
+  - deterministicな入出力を持つユーティリティ
+- 契約確定後に実装する設計（契約待ち）
+  - API contract依存のエラーコード精査
+  - 外部境界での型拡張・互換動作
 
-### 7.1 Verify時の測定可能指標（必須）
+契約待ちは mock-first でテスト観点のみ先行定義し、実装着手は gate解除後に限定する。
 
-- 指標V-UNIT-01: 追加unit test件数（frontend/backend別）。
-- 指標V-UNIT-02: 対象モジュールのcoverage差分（Before/After、%）。
-- 指標V-UNIT-03: 安全境界観点別アサーション件数（safeMode/validation/diff）。
-- 判定ルール:
-  - 3指標のうち1つでも未記録なら **No-Go**。
-  - Verifyの自己修復（self-correction）は最大3回。4回目が必要な場合は **Stop**。
+### 3.4 CI実行前提と失敗時修復ポリシー
 
-## 8) 代替案 / Alternatives considered
+CI前提（unitレベル）
+- Frontend: `npm run test -- --coverage --runInBand`
+- Backend: `pytest -q --maxfail=1` と `pytest --cov=src --cov-report=term-missing`
 
-- 代替案A: 先にe2e中心で補う（却下: 原因切り分け粒度が粗い）。
-- 代替案B: カバレッジ閾値のみ導入（却下: 実質的なケース不足が残る）。
+失敗時トリアージ順序（固定）
+1. **前提不備**: 依存欠落・fixture破損・環境差分を確認
+2. **契約不整合**: 期待仕様とテスト期待値のズレを確認
+3. **実装回帰**: 直近変更点でロジック崩れを確認
+4. **テスト設計不良**: brittle/assertion不足/過剰モックを修正
 
-## 9) リスクとロールバック / Risks & rollback
+ルール
+- 同一失敗の自己修復（self-correction）は最大3回。
+- 4回目相当が必要なら停止し、ブロッカーを issue に記録して human judgement に移送する。
 
-- 失敗モード: brittle test増加による保守コスト上昇。
-- 影響範囲: CI時間、テストfixture管理。
-- ロールバック手順: 問題のある追加テストをコミット単位でrevertし、観点を再分割して再起票。
+## 4) Acceptance Criteria（検証可能なAC）
 
-## 10) Additional context
+- [ ] AC-01: リスクベース優先順位（P1/P2/P3）と対象候補が明示されている。
+- [ ] AC-02: 正常系/異常系/境界値/回帰点の4観点が、対象ごとに確認可能な形で定義されている。
+- [ ] AC-03: 欠陥検知能力ベースの完了条件が、coverage率の固定閾値に依存せず記述されている。
+- [ ] AC-04: 「先行可能（mock不要）」と「契約確定後（mock先行設計）」が分離されている。
+- [ ] AC-05: CI実行前提コマンドと失敗時トリアージ順序が明示されている。
+- [ ] AC-06: Dependency lock未解除時は docs-only を維持する統制文が保持されている。
 
-- 関連Issue/PR/議論ログ: N/A
-- ADR化が必要になる条件（トレードオフ閾値）: カバレッジ閾値を品質ゲート（必須）へ昇格する場合。
+## 5) Definition of Done（DoD）
 
-## 11) Proceed gate（dependency lock）
+- [ ] DoD-01: 追加テスト判定基準（何を検知できれば採用か）が明文化されている。
+- [ ] DoD-02: 回帰検知の再現性条件（同一入力で同一結果、flake回避方針）が定義されている。
+- [ ] DoD-03: 保守性条件（命名規約、fixture最小化、過剰モック回避）が定義されている。
+- [ ] DoD-04: 失敗時の修復ポリシー（最大3回・停止条件）が明示されている。
+- [ ] DoD-05: 実行開始前の依存解除条件（FB-P0 + HIL-RS-02同期）が明示されている。
 
-- Proceed = Not Allowed（現状態固定）
-- Proceed可能化条件（全て必須）
-  1. FB-P0収束 Go
-  2. HIL-RS-02 計画同期完了
-  3. AC-M1〜M4 と V-UNIT-01〜03 の記録テンプレート確定
-  4. 実装着手前レビューで `DecisionStatus` を Hold から Ready に更新
-
-
-## Stream H Draft Reframe（2026-05-04 / proposal-only）
-
-### Phase 1 Read
-- 最新メタ確認: 本Issueは `Status=Draft` の提案段階として扱う。
-
-### Phase 2 ADR明文化（Context / Decision / Consequences）
-- Context: QA-UNIT-01 は品質向上の価値が高い一方、Draft段階で実装着手すると範囲逸脱が生じる。
-- Decision: 本Issueは「Open化のための提案整理」に限定し、実装タスクは承認後に切り出す。
-- Consequences: 受入条件と優先順位を先に固定でき、着手時の再調整コストを削減できる。
-
-### Phase 3 Plan（Go / No-Go gate）
-- Go: Owner確定、対象モジュール優先順、unit検証コマンド、承認記録が揃う。
-- No-Go: Owner未定、検証レベル不一致、実装先行要求。
-- Conditional(Hold): 提案記述は整ったが承認待ち。
-
-### Phase 4 Execute（proposal-only整備）
-- 実施: AC/DoD/Validationの提案粒度を揃える。
-- 非実施: テスト追加、コード変更、カバレッジ閾値の強制導入。
-
-### Phase 5 Verify（最大3回修復）
-- 観点: Proposal範囲の明示、実装指示の排除、Gate条件の明確性。
-- 失敗時: 3回まで修復、超過時は `held`。
-
-### Phase 6 Stopper
-- 依存未確定、承認不足、競合疑義（unit/e2e境界混線）を検知した場合は停止して照会する。
-
-
-## Stream G execution pass（2026-05-04 / QA-UNIT P2）
-
-### Phase Start Re-read
-- 対象再読: `issue-QA-UNIT-01-unit-test-coverage-improvement.md` を再読し、docs-only境界・Open gate・self-correction上限を確認。
-
-### Plan → Execute → Verify → Proceed
-- Plan: Open判定に必要な品質ゲート（AC/DoD/Validation/Stop）を欠落なく保持。
-- Execute: 単体テスト改善計画の判断材料を整備し、実装変更・実行結果の新規確定は行わない。
-- Verify: docs-check前提で表記整合と依存記述の一貫性を検証。
-- Proceed: 依存証跡未確定のため **Hold継続**。
-
-### ADR task C / D / Csq
-- Context: QA-UNITはカバレッジ改善の優先順位付けを誤ると、低効果の工数消費が発生する。
-- Decision: DraftをOpen判定可能品質へ整備し、実装前に評価軸と停止条件を固定する。
-- Consequences: 後続実装時の判断基準が明確になり、過剰実装や誤優先度を抑制できる。
-
-
-## Stream F readiness pass（2026-05-05 / QA-UNIT issue readiness）
-
-### Phase 1 Read（前提確認）
-- FB-P0収束後に着手する依存前提を維持する（`issue-FB-P0-2A2B2C-stream-c-planning-baseline` 完了前はDraft維持）。
-- 本Issueは実装前の準備フェーズであり、frontend/backend/testsの分解定義を先に固定する。
-
-### Phase 2 Plan（対象分解）
-- Frontend対象: `03_Implement/frontend/src/domain`（safeMode/diff/validation関連ロジック）と `03_Implement/frontend/tests`。
-- Backend対象: `03_Implement/backend/src/kj_atlas_api` のvalidation/service層と `03_Implement/backend/tests`。
-- Tests対象: `03_Implement/*/tests` に限定し、実装コード変更は「テスト成立に必要な最小差分」のみ許容する。
-
-### Phase 3 Execute（AC/DoDドラフト提示）
-- AC補強ドラフト（合意取得待ち）:
-  - AC-F1: frontend/backendで対象モジュール一覧・追加ケース数・未対応理由を同一フォーマットで記録する。
-  - AC-F2: Before/Afterのcoverage差分ログを保存し、悪化時はNo-Go。
-  - AC-F3: safeMode/validation/diffで回帰検知アサーションを最低1件ずつ保持する。
-- DoDドラフト（合意取得待ち）:
-  1. unitコマンド実行結果（または代替検証ログ）を残す。
-  2. 停止条件（self-correction上限3回・依存未解決時停止）を満たす。
-  3. FB-P0依存が未解決ならStatusをDraftのまま据え置く。
-
-### Phase 4 Verify（整合チェック）
-- 想定コマンド・代替検証・停止条件の3点が矛盾しないことを確認する。
-- self-correctionは最大3回。4回目相当の修復が必要な場合は `held` で停止する。
-
-### Phase 5 Proceed（Fail-safe）
-- 依存（FB-P0収束、検証スコープ同期）が未解決の場合はOpen化せずDraft維持で停止する。
-- 依存解決後のみ、Owner確定とGo判定を実施する。
-
-
-## QA-UNIT-01 Draft整備 pass（2026-05-06 / QA-UNIT-01）
-
-### Phase 1 Read
-- 対象限定を確認: 本対応は `issue-QA-UNIT-01-unit-test-coverage-improvement.md` のみ編集し、実装コード・他Issueは非編集。
-- 依存関係を確認: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` 収束前は Open 化しない。
-- 検証レベルを確認: 本Issueの `Expected verification level=unit` を維持し、e2e拡張は非目標。
-
-### Phase 2 Plan（AC/DoD不足補完）
-- 補完方針: 既存ACを維持したまま、Open判定時に不足しやすい「測定単位」「停止条件」「証跡保存先」を明文化する。
-- 追加AC（Draft）:
-  - AC-P1: 対象モジュールごとに `risk tag`（safeMode / validation / diff）を付与し、どの境界を守るテストかを追跡可能にする。
-  - AC-P2: 追加テストは「期待挙動」と「回帰シグナル（壊れたときに何で検知するか）」をテストケース単位で記録する。
-  - AC-P3: Coverage差分は frontend/backend を別集計で保存し、片系のみ悪化時も No-Go とする。
-- DoD補完（Draft）:
-  1. AC-M1/M2/M3 と AC-P1/P2/P3 の全項目について、`done / pending / hold` を判定付きで記録する。
-  2. Verify指標 `V-UNIT-01/02/03` の記録先（CIログまたは成果物パス）を残す。
-  3. self-correction は最大3回、4回目相当は `Stop` とし、未解決理由をIssue本文へ追記する。
-  4. 依存未解決（FB-P0未収束 / 検証スコープ未同期）の場合は `Status: Draft` を維持する。
-
-### Phase 3 Execute（計画文書整備のみ）
-- 本フェーズでは計画文書のみ更新し、テストコード追加・実装変更・coverage値の新規確定は行わない。
-- Open判定に必要な追記チェックリスト（Draft）:
-  - [ ] Owner確定（個人またはチーム）
-  - [ ] 対象モジュール一覧確定（frontend/backend別）
-  - [ ] Before/After計測コマンド確定（環境差分時の代替手順含む）
-  - [ ] No-Go時の停止・再開条件確定（self-correction上限含む）
-
-### Phase 4 Verify
-- 文書検証観点（docs-only）:
-  - AC/DoD/Validation/Stop条件が相互参照で矛盾しない。
-  - `Expected verification level=unit` と非目標（e2e拡張なし）が整合している。
-  - docs-check証跡（`git diff --check` / `validate_active_issue_memos.py`）を残し、実行不能時は阻害要因を記録する。
-- Self-correction: `3/3`（これ以上の自己修復は **Stop**）。
-
-### Phase 5 Proceed
-- ProceedDecision: **Hold（通常）**
-- Hold条件:
-  1. 依存 `issue-FB-P0-2A2B2C-stream-c-planning-baseline` 未収束。
-  2. `issue-HIL-RS-02-next-phase-delivery-plan` との検証スコープ同期未完了。
-  3. AC-M1/M2/M3 または AC-P1/P2/P3 のいずれかが `pending/hold`。
-- Open化判定（Ready条件）:
-  - 依存2件が解消され、Ownerが確定し、`V-UNIT-01/02/03` の記録先が確定していること。
-- Stop条件:
-  - self-correction 4回目相当が必要、または unit/e2e 境界が解消不能な競合状態になった場合。
-  - Go/No-Go/Conditional(Hold) の判定条件が再現可能な表現になっている。
-- 検証結果記録ルール:
-  - Verifyで未記録項目が1つでも残る場合は Open 化せず Draft 継続。
-
-### Phase 5 Proceed
-- Proceed条件:
-  1. 依存Issueの前提解消（FB-P0収束 + 検証スコープ同期）。
-  2. Owner確定。
-  3. AC/DoD/Verify指標の記録導線が埋まっている。
-- Proceed不可条件（Fail-safe）:
-  - 競合兆候（unit/e2e境界混線、依存差し込み、対象外ファイル編集要求）を検知した場合は `Hold` へ遷移し停止。
-
-
-## Stream D QA pass（2026-05-06 / UNIT拡張計画独立推進）
-
-### Phase 1: Read & ギャップ抽出
-- Draft維持前提（依存解消前はOpen化しない）を再確認。
-- ギャップ抽出:
-  1. 回帰/境界/性能の優先順が明示的な番号付きで固定されていない。
-  2. 実行手順と完了条件（誰が証跡を残すか）が分離している。
-  3. 他レーン非干渉（E2E側との境界）確認が明文化不足。
-
-### Phase 2: AC/DoDドラフト提示・合意（docs-only）
-- AC追記ドラフト:
-  - AC-DU1: 回帰優先として safeMode/validation/diff の3観点で失敗検知アサーションを必須化。
-  - AC-DU2: 境界優先として security境界に触れるケースは「fail時の期待シグナル」を併記。
-  - AC-DU3: 性能優先として unit実行時間のBefore/After比較を記録（悪化時は要因分析）。
-- DoD追記ドラフト:
-  1. frontend/backend別の追加件数・coverage差分・失敗シグナルを1表で管理する。
-  2. Verifyで `V-UNIT-01/02/03` 未記録があれば即No-Go。
-
-### Phase 3: テスト観点の優先順位付け（回帰/境界/性能）
-1. 回帰: safeMode/validation/diff の回帰検知アサーション充足。
-2. 境界: fail-closed/拒否系の期待挙動を明示し、曖昧なpass条件を禁止。
-3. 性能: coverage取得込みのunit実行時間を比較し、顕著悪化時に分割実行案を添付。
-
-### Phase 4: 実行手順と完了定義の明文化
-- 実行手順（実装フェーズ適用）:
-  1. `cd 03_Implement/frontend && npm test -- --runInBand`
-  2. `cd 03_Implement/backend && pytest -q`
-  3. `cd 03_Implement/frontend && npm run test -- --coverage --runInBand`
-  4. `cd 03_Implement/backend && pytest --cov=src --cov-report=term-missing`
-  5. `python 01_Plans/issues/validate_active_issue_memos.py`
-- 完了定義:
-  - V-UNIT-01/02/03 記録完了。
-  - coverage差分非負（対象モジュール）を満たす。
-  - self-correction は `<=3`、超過見込みでStop。
-
-### Phase 5: Verify（他レーン非干渉確認）
-- 非干渉チェック:
-  - 本更新は `issue-QA-UNIT-01` の計画本文のみ。
-  - 実装コード・E2E仕様・他Issueは未編集。
-  - unit/e2e境界を跨ぐ要求は Hold 扱いで停止。
-- Fail-safe:
-  - 不整合・依存崩壊時は停止して指示待ち。
-  - 自己修復は3回まで。4回目相当でStop。
-
-
-## Stream F alignment pass（2026-05-06 / QA-UNIT-01）
-
-### Plan→Execute→Verify→Proceed（docs-only）
-- Plan: Draft整備に限定し、QA-UNIT-01のAC/DoD/Verify指標をOpen判定用に再読可能化する。
-- Execute: `Expected verification level: unit` を維持し、e2e拡張や実装変更を非目標として固定する。
-- Verify: 依存未解決（FB-P0収束前/検証スコープ未同期）では `Status: Draft` と `Proceed: Hold` を継続する。
-- Proceed: 依存解決・Owner確定・指標記録導線の3条件が揃うまで進めない。
-
-### ADR要素（C/D/C）
-- Context: Draft段階で実装に踏み込むと、unit/e2e境界の混線と再作業が発生する。
-- Decision: 本Issueは提案文書の品質整備に限定し、実装着手は承認後に分離する。
-- Consequences: QA-UNIT実装時の着手条件と停止条件が明確化され、過剰実装リスクを低減する。
-
-
-## Stream F unblock criteria update（2026-05-06 / execution readiness）
-
-### Phase 1 Read（停止要因の確定）
-- 停止要因を `FB-P0収束待ち` と `QA-E2Eスコープ同期待ち` の2点に固定する。
-
-### Phase 2 AC/DoD補完（解除条件）
-- Open化解除条件（全件必須）:
-  - [ ] U1: `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` が `Status: Ready-for-Implementation` 以上である。
-  - [ ] U2: 本Issueの Owner が個人または実行チーム名で確定している。
-  - [ ] U3: Frontend/Backendの対象モジュール一覧と risk tag（safeMode/validation/diff）が記録済み。
-  - [ ] U4: AC-M1/M2/M3 と AC-P1/P2/P3 の判定欄（done/pending/hold）が全て埋まっている。
-
-### Phase 3 Validation plan（コマンド確定）
-- 準備完了判定コマンド（docs-only）:
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
-  - `rg -n "^\- Status:|^\- Owner:|AC-M[123]|AC-P[123]|V-UNIT-0[123]" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
-  - `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
-
-### Phase 4 Verify
-- Verify合格条件: 上記3コマンドが成功し、U1〜U4が全てチェック済み。
-- 失敗時: self-correction は最大3回、4回目相当は `Stop`。
-
-### Phase 5 Proceed
-- 判定: **Hold維持**（2026-05-06時点で依存証跡未添付）。
-- Open化条件: U1〜U4完了時に `Status: Ready-for-Implementation` へ更新可。
-
-## Stream I execution pass（2026-05-06 / QA-UNIT-01 Draft整備専任）
-
-### Phase 1 Read（依存・着手条件の同期）
-- 現在状態を再確認: `Status: Draft` / `Priority: P2` / `Expected verification level: unit` を維持する。
-- 依存整合:
-  - P0依存: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が `Open` 継続中のため、本Issueは **Open化しない**。
-  - P1依存: `issue-HIL-RS-02-next-phase-delivery-plan` が `Draft` のため、検証スコープ同期完了までは **Hold** 維持。
-- 非対象境界: 本レーンは Draft文書整備のみ。`03_Implement/**`・他Issue編集は禁止。
-
-### Phase 2 ADR（Context / Decision / Consequences）
-- Context: 上流（P0/P1）の契約・運用ゲート未確定でQA実装を先行すると、unit/e2e境界の再試験コストが増大する。
-- Decision: Draft段階では「対象範囲」「優先テスト軸」「ゲート条件」のみ固定し、実装着手判断は依存解消後に限定する。
-- Consequences: 品質戦略を前倒しで提示しつつ、上流未確定事項との衝突を回避できる。
-
-### Phase 3 Plan（AC / DoD 明確化）
-- AC-I1（対象分類）:
-  - Frontend: `src/domain` 系の safeMode / validation / diff。
-  - Backend: validation / service 層。
-  - いずれも「追加ケース数（最低1件）」を分類単位で記録する。
-- AC-I2（最小改善目標）:
-  - Coverageは対象モジュール単位で Before/After を比較し、**差分非負（悪化なし）** を最低条件とする。
-- AC-I3（除外条件）:
-  - e2eシナリオ拡張、実装リファクタ、新機能追加は本Issueの対象外として固定する。
-- DoD-I1（着手条件）:
-  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が `Ready-for-Implementation` 以上。
-  - `issue-HIL-RS-02-next-phase-delivery-plan` が unit検証境界と矛盾しない状態（Draft解除済みまたは同等の承認記録あり）。
-- DoD-I2（完了判定式）:
-  - `Done = (U1 && U2 && U3 && AC-M1..M3 done && AC-P1..P3 done && AC-I1..I3 done && V-UNIT-01..03 recorded && self-correction<=3)`。
-
-### Phase 4 Execute（docs-only）
-- 実施内容: Draft本文に着手条件・完了判定式・除外条件を明文化。
-- 非実施内容: テストコード追加、実装コード変更、coverage実測値の新規確定。
-
-### Phase 5 Verify（依存整合・優先度整合・非対象明記）
-- Verify-V1: P0/P1依存が未解消なら `Proceed=Hold` を維持する記述になっている。
-- Verify-V2: 優先軸は `safeMode -> validation -> diff` の順で回帰検知観点が残っている。
-- Verify-V3: 非対象（e2e拡張/実装変更/他Issue編集）が明示されている。
-- Verify-V4: self-correction上限は `<=3`、4回目相当は `Stop` を維持。
-
-### Phase 6 Proceed（Open化可否 / 保留理由 / 次アクション）
-- Open化可否: **不可（現時点）**。
-- 保留理由:
-  1. P0依存Issueが `Open` で収束未了。
-  2. P1依存Issueが `Draft` でスコープ同期未了。
-- 次アクション（依存解消後に再判定）:
-  1. U1〜U4 + AC-M/P/I + V-UNIT 指標記録先の充足確認。
-  2. 充足済みなら `Status: Ready-for-Implementation` への更新を審査。
-
-## Stream H Ready化 pass（2026-05-06 / QA-UNIT-01）
-
-### 1. Read同期
-- `Expected verification level=unit` と `Non-goals=e2e拡張なし` の境界を再固定。
-- 依存2件（FB-P0収束 / HIL-RS-02検証スコープ同期）が未解決のため、実装着手は不可。
-
-### 2. Plan（AC/DoD不足補完）
-- Open/Ready判定に使う不足項目を固定:
-  - RQ-1: Owner（個人またはチーム）確定。
-  - RQ-2: Frontend/Backend対象モジュール一覧の確定。
-  - RQ-3: `V-UNIT-01/02/03` の記録先（CIログ or artifact path）確定。
-  - RQ-4: No-Go時の再開条件（再実行コマンド / 停止理由テンプレ）確定。
-
-### 3. Execute（Ready化の判定基準明示）
-- Ready判定基準（全件必須）:
-  - [ ] RG-UNIT-1: AC-M1/M2/M3 + AC-P1/P2/P3 の評価欄が `done/pending/hold` で埋まっている。
-  - [ ] RG-UNIT-2: `Go/NoGo/Conditional(Hold)` の判定トリガーが再現可能な文章で記載されている。
-  - [ ] RG-UNIT-3: `self-correction <=3` と 4回目相当Stop条件が明示されている。
-  - [ ] RG-UNIT-4: unit実行コマンド4本と代替検証手段が矛盾なく併記されている。
-
-### 4. Verify（品質ゲート定義・E2E導線）
-- 品質ゲート:
-  - Gate-Q1: `VerificationLevel=unit` と `GoNoGoGate=Optional` が整合。
-  - Gate-Q2: SafeMode境界（safeMode/validation/diff）の回帰検知要件が3観点で定義済み。
-  - Gate-Q3: docs-check証跡（validator/rg/diff-check）が記録可能。
-- E2E導線の境界定義:
-  - 本Issueは unit専任であり、E2E要求は `ADR-0019` と `DOC-OPS-05-06` 側へ委譲する。
-
-### 5. Proceed
-- ProceedDecision: **Hold（Ready gate定義完了、依存解消待ち）**
-- Ready化状態: **判定基準はReady、着手状態はHold**
-
-## Stream E Open化準備 pass（2026-05-07 / QA-UNIT-01）
-
-### Phase 1 Start Re-read
-- 対象再読: 本Issueを再読し、`Draft維持`・`Expected verification level: unit`・依存2件未解決を確認。
-- 境界再確認: 本フェーズはP2 Draft整備のみで、実装/テスト追加は非実施。
-
-### Phase 2 Plan（AC/DoD不足提案）
-- AC/DoD不足提案（合意待ち）:
-  - 提案A: AC-M1 の「追加ケース数」を frontend/backend別に `0可否` ルール付きで明記。
-  - 提案B: DoDに「Owner未確定時はGo判定禁止」を明文化。
-  - 提案C: Verify指標 V-UNIT-02 の記録フォーマット（Before/After/差分）を固定。
-- 合意状態: 依存解決後に最終合意し反映する前提で提案保持。
-
-### Phase 3 ADR明文化（C/D/C）
-- Context: 依存未解決状態でQA-UNITをOpen化すると、unit/e2e境界と着手順が混線する。
-- Decision: 本IssueはDraftのまま判定情報を整備し、依存解決前は `Hold` を固定する。
-- Consequences: 実装先行を防ぎ、後続で再現可能なGo/NoGo判断を維持できる。
-
-### Phase 4 Execute（docs-only）
-- 実施: 本Issueメモへの追記のみ。
-- 非実施: frontend/backendコード変更、unit test追加、coverage再計測。
-
-### Phase 5 Verify
-- 判定: `Hold` 維持（依存未確定）。
-- self-correction: `1/3`（Stream E pass）。
-- 失敗時方針: 3回まで修復、4回目相当で `Stop`。
-
-### Phase 6 Proceed
-- ProceedDecision: **Hold**
-- Stop条件（再確認）:
-  1. 依存2件の前提矛盾が解消不能。
-  2. unit/e2e境界競合が解消不能。
-  3. self-correction上限超過。
-
-
-## Stream H dependency lock (2026-05-07 / planning freeze)
-
-- 本Issueは QA計画確定専用とし、実装・テスト追加は実施しない。
-- 依存固定（Go条件）:
-  1. `issue-FB-P0-2A2B2C-stream-c-planning-baseline` の収束完了。
-  2. `issue-HIL-RS-02-next-phase-delivery-plan` の計画同期完了（A1依存/Decision Queue条件を反映）。
-  3. unit/e2e 境界が再確認され、QA-E2E-USE-01 と優先順位矛盾がない。
-- 優先順位（固定）: FB-P0収束確認 → HIL-RS-02同期確認 → QA-UNIT実装着手判定。
-- ProceedDecision（現時点）: **Hold**。
-- Stopper: 上記依存のいずれか未解消、または依存証跡なしでOpen化要求が出た場合は即Stop。
-
-## Stream G sync pass（2026-05-07 / measurable DoD + dependency gate）
-
-### Phase 1: Read同期
-- 再読対象を固定: `ADR-0001` / `ADR-0019` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline` / `issue-HIL-RS-02-next-phase-delivery-plan`。
-- 本Issueは docs-only planning とし、テスト実装・CI閾値導入・コード変更を行わない。
-
-### Phase 2: AC/DoDの具体化（測定可能条件）
-- AC-MU-01: 対象モジュール一覧（frontend/backend）を確定し、各モジュールで追加ケース数 `>=1` を記録。
-- AC-MU-02: coverage差分は frontend/backend 別に Before/After を保存し、双方とも `After-Before >= 0` を必須。
-- AC-MU-03: safeMode/validation/diff で回帰検知アサーションを各1件以上必須。
-- DoD-MU-01: `V-UNIT-01..03` の記録先（CIログ or artifact path）を明示。
-- DoD-MU-02: Verifyログに self-correction を `n/3` 形式で保持し、未記録ならNo-Go。
-- DoD-MU-03: `Expected verification level=unit` と非目標（e2e拡張なし）の整合を維持。
-
-### Phase 3: 依存ゲート（契約クローズ条件）
-- Gate-UNIT-01（FB-P0）: `issue-FB-P0-2A2B2C-stream-c-planning-baseline` の Go 記録。
-- Gate-UNIT-02（Scope Sync）: `issue-HIL-RS-02-next-phase-delivery-plan` で unit検証スコープ同期完了。
-- Gate-UNIT-03（計画契約）: AC-M1..M4 + AC-MU-01..03 + V-UNIT-01..03 が全て `done`。
-- Open化条件: Gate-UNIT-01〜03 が closed の場合のみ `DecisionStatus: Ready` へ更新可。
-
-### Phase 4: Verify（最大3回）
-- Verify-1（docs整合）: `python 01_Plans/issues/validate_active_issue_memos.py`。
-- Verify-2（差分健全性）: `git diff --check`。
-- Verify-3（任意再検証）: 修復差分がある場合のみ実行し、`self-correction > 3` で Stop。
-- 本pass結果: self-correction `1/3`、Proceedは Hold 継続。
-
-## Stream K planning quality pass（2026-05-08 / dependency-lock保全）
-
-### Phase 1 Read（課題/背景/提案/ACの再読）
-- 再確認結果: カバレッジ改善の方向性は記載済みだが、`対象範囲の固定粒度` と `Open化に必要な最小定量条件` が分散記述で追跡しづらい。
-- 不足情報として扱う項目:
-  1. 対象モジュールの固定単位（frontend/backendでどこまでを同一集計単位にするか）。
-  2. 優先モジュール選定ルール（safeMode/validation/diff の順序と根拠）。
-  3. 測定基準のNo-Go閾値（未記録・悪化・観点欠落）。
-
-### Phase 2 ADR/CDC（Context / Decision / Consequences）
-- Context: カバレッジ目標が曖昧なままだと改善効果を比較できず、実装優先順位がぶれる。
-- Decision:
-  - 対象範囲は `Frontend: src/domain（safeMode/validation/diff）+ tests`、`Backend: kj_atlas_api validation/service + tests` を最小固定単位とする。
-  - 優先モジュールは `safeMode > validation > diff` の順で検証観点を配置する。
-  - 測定基準は `V-UNIT-01/02/03` を全件必須とし、1件でも未記録またはcoverage差分が負値ならNo-Goとする。
-- Consequences: 実装着手時に「どこからテストを書くか」「何をもって改善とみなすか」が固定され、依存解除後の着手判断が即時化される。
-
-### Phase 3 Plan（AC/DoD補完）
-- AC補完（最低基準）:
-  - AC-K1: Frontend/Backendの対象モジュールを固定単位で列挙し、各単位ごとに追加ケース数を記録する。
-  - AC-K2: `Before/After` coverage差分は対象単位ごとに保存し、`差分 >= 0` を必須にする。
-  - AC-K3: safeMode/validation/diff の各観点で回帰検知アサーションを最低1件保持する。
-- 除外条件（本Issueでやらないこと）:
-  - 実装コード変更、e2e拡張、CI閾値強制導入。
-- 回帰防止:
-  - DoD-K1: 測定ログ（V-UNIT-01/02/03）とNo-Go判定理由を同一セクションに集約する。
-  - DoD-K2: self-correctionは最大3回、4回目相当はStopを維持する。
-
-### Phase 4 Execute（docs-only整備）
-- 実施内容は本Issue文書の計画品質整備のみ。依存ロック（Draft/Hold）を崩す変更は行わない。
-
-### Phase 5 Verify（定量判定性 + self-correction）
-- 判定可能性チェック:
-  - threshold: coverage差分 `>= 0`（対象単位別）。
-  - scope: Frontend/Backend対象単位を固定記述。
-  - completeness: `V-UNIT-01/02/03` 全件記録。
-- self-correction実績: `1/3`（本pass内で用語統一を1回補正）。
-
-### Phase 6 Proceed（Hold/Open候補/Stop）
-- Hold（現行）:
-  - FB-P0収束未確定、HIL-RS-02同期未確定、またはAC-K1〜K3未充足。
-- Open候補（依存解除後）:
-  - 依存2件解消 + Owner確定 + V-UNIT-01/02/03記録導線確定 + AC-K1〜K3充足。
-- Stop:
-  - 測定不能な目標再混入、docs-only逸脱、指定外ファイル編集要求を検知した場合。
-
-## Stream E Ready化設計 pass（2026-05-09 / Plan→Execute→Verify→Proceed）
-
-### Phase 1: Read同期（ブロッカー/依存/DoD不足）
-- Blocker: 依存Issueの承認証跡（Approval Record: 日時/承認者/対象/判断/evidence）が未確定の場合は `ProceedDecision: Hold` を維持する。
-- Dependency: 本Issueで定義済みの依存関係を read-only で再確認し、依存先の未確定値をこのIssue側で確定しない。
-- DoD gap: 「実装レーンが即着手可能な入力/出力/担当/解除条件」の4点が散在している場合、Phase 3で1ブロックに集約する。
-
-### Phase 2: 仕様明文化（Context / Decision / Consequences）
-- Context: 本Issueは Draft/Blocked を Ready化するための計画文書であり、実装や運用確定値の追加はスコープ外。
-- Decision: `Proceed/Hold/Stop` の三値判定、`self-correction <= 3`、`docs-check` 優先を固定し、依存未解除時は `Hold` を維持する。
-- Consequences: 先行依存が解決した時点で、実装レーンは追加解釈なしで着手可否を判定できる。
-
-### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
-- AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
-  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
-  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
-  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
-  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
-- 入力（Implementation lane input）:
-  - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
-- 出力（Implementation lane output expectation）:
-  - 着手可否の単一判定（Proceed or Hold/Stop）と、着手時に守る制約チェックリスト。
-- 担当:
-  - System Owner: Go/NoGo最終判定。
-  - Platform Operator: 実行/保管/運用ログ整備。
-  - Security Officer: 公開境界・safeMode/漏えい防止の最終確認。
-- 依存解除条件:
-  - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
-
-### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
-- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
-- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
-- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
-- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
-- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
-
-### Verify結果（本pass）
-- 判定: `Hold` 維持（依存証跡未確定のため）。
-- self-correction: `1/3`（上限内）。
-- Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+## 6) Task breakdown（Execution準備）
+
+- [ ] T1: 高リスク領域ごとに「正常/異常/境界/回帰」観点マトリクスを作成する。
+- [ ] T2: Frontend候補（safeMode/validation/diff）を case ID 単位で分解する。
+- [ ] T3: Backend候補（validation/service failure）を case ID 単位で分解する。
+- [ ] T4: mock先行領域と契約確定待ち領域を分離し、着手順を固定する。
+- [ ] T5: Verifyログ様式（Before/After、検知欠陥クラス、再現手順）を固定する。
+
+## 7) Validation plan（計画文書としての検証）
+
+本フェーズは docs-only のため、以下を満たせば検証完了とする。
+
+- 文書内に AC/DoD/Dependencies/Stop 条件が存在する。
+- AC/DoD が「実行時にYes/No判定可能」な粒度で記述される。
+- coverage率偏重を避け、欠陥検知能力が主判定になっている。
+
+## 8) Consequences
+
+- 実装フェーズ開始時に、対象優先度・観点・停止条件が既に固定され、手戻りを抑制できる。
+- coverage数値を追うだけの形式的改善を避け、実害のある回帰を捕捉しやすくなる。
+- dependency lock下でも docs-only で準備を進められ、再開可能性を維持できる。
+
+## 9) Fail-safe / Stop conditions
+
+以下のいずれかで停止し、必要最小限の確認事項のみ列挙する。
+
+1. 対象モジュールの優先順位を確定できない。
+2. 契約未確定で観点定義が成立しない。
+3. スコープ外編集が必要になる。
+4. self-correction が3回を超える。
