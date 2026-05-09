@@ -3236,3 +3236,48 @@ type PatchProposal = {
 - 継続条件:
   - CE0 Contract Freezeは本IssueをSSOTとして継続（read-only参照のみ許可）。
   - 依存承認未記録・safeMode後退検知・契約ID再定義要求が発生した時点で即 `held` 停止。
+
+## Stream F latest run（2026-05-09 / CE0 contract freeze / contract-only）
+
+- run_id: `stream-f-ce0-2026-05-09-01`
+- assignee: `Stream F（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / ambiguous_dependency=0`
+
+### Phase 1 Read
+- 本Issueを再読し、対象は **本ファイルのみ編集可**、かつ **mock-first / contract-only / 実装禁止** を再確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）を read-only SSOT として固定維持。
+- 競合・曖昧依存が検知された場合は `held` 停止するルールを再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE0契約を下流参照専用のSSOTとして凍結維持し、依存を mock-first で切断する必要がある。
+- Decision: Contract ID追加/改名/削除、safeMode境界の変更、実装仕様確定を禁止し、本Issueへの契約ログ更新のみ許可。
+- Consequences: 下流は read-only 参照で並行作業可能となる一方、未定義競合・曖昧依存・逸脱要求は即時 `held` 停止として処理する。
+
+### Phase 3 Plan（AC / DoD 補完）
+- AC補完:
+  - `ac_read_only_freeze`: CE0 Contract SSOTは本Issueで凍結し、下流は read-only 参照のみ。
+  - `ac_mock_first_detach`: 依存統合は mock-first 前提で実装依存を持ち込まない。
+  - `ac_stop_on_conflict`: 競合・曖昧依存検知時は作業継続せず `held` 停止。
+- DoD補完:
+  - `dod_no_contract_mutation`: Contract ID再定義（追加/改名/削除）= 0。
+  - `dod_no_implementation`: 実装/コード変更 = 0（docs-only）。
+  - `dod_verify_retry_cap_3`: Verifyの自己修復上限は最大3回、4回目相当は停止報告。
+
+### Phase 4 Execute（contract-only）
+- 実施: 本Issueへの実行ログ追記のみ。
+- 非実施: 指定外ファイル編集、実装変更、CE0 Contract ID再定義、safeMode既定値緩和。
+
+### Phase 5 Verify（max 3 repairs）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- 判定: Verify成功。修復は 0/3 で上限未到達。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go（Freeze Maintained）**
+- 継続条件:
+  - CE0契約SSOTは read-only 凍結状態を維持。
+  - 競合・曖昧依存・逸脱要求が発生した時点で即時 `held` 停止。
