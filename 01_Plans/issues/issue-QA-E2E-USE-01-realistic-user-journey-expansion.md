@@ -4,7 +4,7 @@
 - Status: Draft (dependency-locked for Stream J planning)
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream J (planning only)
+- Owner: Stream H (planning only)
 - Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` のみ（実装コード変更禁止）
 - Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（HIL-RS-02計画同期完了まで実装着手禁止）
 - Related Backlog: `QA-E2E-USE-01`
@@ -29,15 +29,16 @@
 - ContractPolicy: E2Eケース定義は contract レベルで固定し、実装詳細（DOM構造・内部関数名・一時的UI文言）へ依存しない。
 - DependencyLockPolicy: FB-P0収束 + HIL-RS-02計画同期が完了するまで `Hold-for-Dependency-Gate` を維持し、`Proceed` 判定を出さない。
 
-## Stream J phase protocol（dependency-locked planning）
+## Stream H phase protocol（dependency-locked planning）
 
-本Issueは実装移行前の計画最適化フェーズとして、以下の固定順序でのみ更新する。
+本Issueは実装移行前の計画最適化フェーズとして、以下の固定順序でのみ更新する（**Phase 1..6直列実行 + 毎Phase Read同期必須**）。
 
-1. Read同期（ADR-0019 / 関連Issue再読）
-2. AC/DoD具体化（測定可能な判定式へ変換）
-3. 依存条件の明記（解除条件・禁止事項の固定）
-4. Verify（計画としての検証項目を自己点検）
-5. Proceed（依存未解除のため **Proceed=Not Allowed** を明記）
+1. ADR明文化（C/D/C）を先に固定
+2. Read同期（ADR-0019 / 関連Issue再読）
+3. AC/DoD具体化（測定可能な判定式へ変換）
+4. 依存条件の明記（解除条件・禁止事項の固定）
+5. Verify（計画としての検証項目を自己点検、失敗時は3回まで修復）
+6. Proceed（依存未解除のため **Proceed=Not Allowed** を明記）
 
 ### Proceed rule（固定）
 
@@ -47,7 +48,35 @@
   - `issue-HIL-RS-02-next-phase-delivery-plan` の同期完了
   - 本Issueの Go 条件（4.1）を満たす実装計画がレビュー承認済み
 
-## Phase 1. Read同期（ADR-0019整合）
+## Phase 1. ADR明文化（C/D/C）
+
+### C: Context
+
+- 現行E2Eはスモーク中心で、実利用の縦断フロー（再編集・レビュー・安全共有）を十分に担保できていない。
+- ジャーニー定義が曖昧なままでは、E2Eが「形式上の実行」に留まり、価値検証が不可能になる。
+- dependency lock中に実装へ進むと、前提依存の崩れにより計画整合が破綻する。
+
+### D: Decision
+
+- 実利用ジャーニーを **最低3本（推奨4本）**、各ジャーニーに「前提/操作/観測点/期待結果/失敗時記録」を固定して定義する。
+- safeMode/share-export/review attribution を GoNoGoGate の必須判定軸とし、実装前に判定式を文書固定する。
+- dependency lock 解除前は計画更新のみに限定し、実装・テストコード更新は行わない。
+- Verify失敗時は **最大3回修復** し、超過時または依存崩れ検知時は **Stop** する。
+
+### C: Consequence
+
+- E2E価値検証の再現性が向上し、実行可否判定が曖昧にならない。
+- 依存ロック下でも、実装移行後に即時着手できる判定可能な運用仕様を維持できる。
+- 安全境界後退（safeMode既定緩和、share/export誤開放、review昇格逸脱）を検知可能な状態で引き渡せる。
+- Verify運用が上限付き修復ループになるため、無制限な再試行を防止できる。
+
+### 1.1 Read同期チェックリスト（毎Phase再読）
+
+- [x] `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を再読し、E2E目的を「仕様評価前の結合バグ除去」に固定。
+- [x] safeMode既定ON / share-export fail-closed / import sanitize を安全境界として再確認。
+- [x] 本Issueのスコープが docs-only（本ファイルのみ編集）であることを再確認。
+
+## Phase 2. Read同期（ADR-0019整合）
 
 - `ADR-0019` の原則に従い、本Issueは「仕様評価前の結合バグ除去」を目的に据える。
 - safeMode既定ON・share/export漏えい防止は安全境界として最優先で固定する。
@@ -58,25 +87,6 @@
 - [x] `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を再読し、E2E目的を「仕様評価前の結合バグ除去」に固定。
 - [x] safeMode既定ON / share-export fail-closed / import sanitize を安全境界として再確認。
 - [x] 本Issueのスコープが docs-only（本ファイルのみ編集）であることを再確認。
-
-## Phase 2. ADR明文化（C/D/C）
-
-### C: Context
-
-- 現行E2Eはスモーク中心で、実利用の縦断フロー（再編集・レビュー・安全共有）を十分に担保できていない。
-- ジャーニー定義が曖昧なままでは、E2Eが「形式上の実行」に留まり、価値検証が不可能になる。
-
-### D: Decision
-
-- 実利用ジャーニーを **最低3本（推奨4本）**、各ジャーニーに「前提/操作/観測点/期待結果/失敗時記録」を固定して定義する。
-- safeMode/share-export/review attribution を GoNoGoGate の必須判定軸とし、実装前に判定式を文書固定する。
-- dependency lock 解除前は計画更新のみに限定し、実装・テストコード更新は行わない。
-
-### C: Consequence
-
-- E2E価値検証の再現性が向上し、実行可否判定が曖昧にならない。
-- 依存ロック下でも、実装移行後に即時着手できる判定可能な運用仕様を維持できる。
-- 安全境界後退（safeMode既定緩和、share/export誤開放、review昇格逸脱）を検知可能な状態で引き渡せる。
 
 ## Phase 3. Plan（AC/DoD補完）
 
@@ -148,10 +158,13 @@
 
 ## Phase 4. Execute（Issue本文整備のみ）
 
+- 毎Phase Read同期ルールに従い、Phase 4開始時点でも `ADR-0019` と依存Issue状態を再確認する。
 - 本Issue本文のみを更新し、`03_Implement/*` およびテストコード変更は行わない。
 - dependency-locked protocol を維持し、実装前倒し判断を禁止する。
 
 ## Phase 5. Verify（実行可否判定 + self-correction）
+
+- 毎Phase Read同期ルールに従い、Verify前に `ADR-0019` / dependency状態 / Proceed rule を再読したうえで判定する。
 
 ### 5.1 判定可能性チェック
 
@@ -168,8 +181,11 @@
 3. 修正3: GoNoGo判定式とProceed ruleの関係を再記述し、依存未解決時の誤Proceedを防止。
 
 - self-correction count: 3 / 3（上限内）
+- 逸脱時停止規則: self-correction が 3 回を超過、または dependency gate 崩れを検知した場合は Proceed 判定を行わず Stop に遷移する。
 
 ## Phase 6. Proceed（dependency-locked）
+
+- 毎Phase Read同期ルールに従い、最終判定前に `ADR-0019` と依存Issue状態の再読結果を反映する。
 
 ### 6.1 GoNoGoGate 判定式（実装移行判定、将来適用）
 
