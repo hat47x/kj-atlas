@@ -840,3 +840,10 @@
 - Phase 2 整合更新: shared resource 3ファイル（`issues/README.md` / `project-progress-dashboard.md` / 本decision-pack）の Active issue=5、Decision Queue（Ready=1 / Open=2）、次の1手、依存順 `A1→A2→A3` を同一値に同期。
 - Phase 3 監査: 件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）を再計算し、Queue未解決2件・停止条件違反0件・未承認事項の確定扱い0件を確認。
 - Phase 4 公開固定: 再開判定チェックリスト1行を `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）` として確定。
+
+### 6-19. Stream D 共有統合同期ログ（2026-05-09 rerun-74, Phase 1-4）
+
+- Phase 1 Read同期: Stream A/B/C完了報告、Decisionリンク、件数根拠を再読し、未承認事項の確定扱い0件を確認。
+- Phase 2 反映: shared resource 3ファイル（`01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / 本decision-pack）で Active=5、Done=26、Decision Queue（Ready=1 / Open=2）、次の1手、依存順 `A1→A2→A3` を同一値へ同期。
+- Phase 3 監査: 件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）と Queue（Ready=1 / Open=2）を再計算し、停止条件違反0件・参照リンク不整合0件・未定義競合0件を確認。
+- Phase 4 公開固定: 再開判定チェックリスト1行を `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）` として確定。
