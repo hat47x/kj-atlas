@@ -391,3 +391,42 @@
   2. self-correction が4回目相当に到達した場合。
   3. Gate-A/B/C 間で未解決の語彙競合が発生した場合。
 - Policy: 依存証跡が揃うまで推測でOpen化（Proceed）しない。
+
+## Stream L-1 Gate-B統合 pass（2026-05-09 / DOC-OPS-05-06 Draft整備 専任）
+
+### Phase 1: Read同期（05-05基準語彙の継承確認）
+- 継承語彙を固定: `Go/NoGo`、`Proceed/Hold/Stop`、`pass/fail/blocked`、`self-correction <=3`。
+- Dependency status を再確認: `05-05完了待ち（単方向依存）` を維持し、依存証跡未確定時は Open 判定を実施しない。
+- Scope再確認: 本対応は `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ編集。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: E2E公開導線の Open 化は、語彙揺れや判定条件の欠落があると監査再現性を損なう。
+- Decision: 05-05基準語彙を継承し、Gate-B における Open 判定要件を本Issue内で固定する。
+- Consequences: 依存未確定時の安全停止（Hold）を維持しつつ、依存確定後は同一基準で再判定できる。
+
+### Phase 3: Plan（AC/DoD不足補完）
+- AC-L1:
+  - AC-L1-1: Open 判定要件として `Classification / Dependency status / ProceedDecision` の3キーを必須化。
+  - AC-L1-2: 依存確定後に参照する Approval Record 5項目（日時/承認者/対象/判断/evidence）を判定入力として固定。
+  - AC-L1-3: 判定語彙を `Go/NoGo` と `Proceed/Hold/Stop` に限定し、同義語を導入しない。
+- DoD-L1:
+  - DoD-L1-1: 本Issue単体で Gate-B の判定前提（依存・語彙・停止条件）が再読可能。
+  - DoD-L1-2: docs-check 実行計画（validator / rg / diff-check）が保持される。
+  - DoD-L1-3: self-correction は3回以内、4回目相当は Stop を適用する。
+
+### Phase 4: Execute（本Issueのみ）
+- 実施: Gate-B 判定要件固定のための追記を本Issueに限定して実施。
+- 非実施: `04_Documentation/e2e_testing.md` 本文改稿、他Issue編集、実装コード変更。
+
+### Phase 5: Verify（最大3回修復ポリシー）
+- Verify-L1-1: 語彙固定は `Go/NoGo` と `Proceed/Hold/Stop` で競合なし。
+- Verify-L1-2: 依存証跡未確定のため `ProceedDecision: Hold` を維持。
+- Verify-L1-3: self-correction `1/3`（本pass）。修復は最大3回、4回目相当は `Stop`。
+
+### Phase 6: Proceed / Hold / Stop
+- ProceedDecision: **Hold**。
+- Hold理由: `DOC-OPS-05` 依存の Approval Record 5項目が未確定で、Open判定の入力が未充足。
+- Stop条件:
+  1. self-correction が4回目相当に到達。
+  2. Gate-A/B/C 間で語彙競合または判定軸競合が未解決。
+  3. 指定外ファイル編集が必要になり、allowlist制約を維持できない。
