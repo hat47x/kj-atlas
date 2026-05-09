@@ -33,6 +33,7 @@ Decisionは ADR、Action は issue memo で管理し、本ディレクトリは�
 - Stream D rerun-71（2026-05-07）で Phase 1-5（Read→Sync→Audit→Verify→Publish）を shared 3ファイル限定で再実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件を再確認した。
 - Stream D rerun-72（2026-05-07）で Phase 1-4（Read Gate→同期更新→件数監査→公開固定）を shared 3ファイル限定で再実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と停止条件違反0件を再確認した。
 - Stream D rerun-73（2026-05-08）で Phase 1-4（Read同期→整合更新→件数監査→再開判定1行固定）を shared 3ファイル限定で再実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・停止条件違反0件を再確認した。
+- Stream D rerun-74（2026-05-09）で Phase 1-4（Read同期→Active/Done/Queue反映→件数監査→公開固定）を shared 3ファイル限定で再実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・参照リンク不整合0件・停止条件違反0件を再確認した。
 
 ## Source Issue 運用基準（Traceability）
 
