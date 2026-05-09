@@ -218,6 +218,47 @@
 
 ## Stream A protocol run（2026-05-03 / contract-only）
 
+## Stream A critical-path closure sync（2026-05-09）
+
+### Phase 1 Read同期
+- 再読対象:
+  - `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+  - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+  - `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`
+- I/F未確定項目（Decision Queue）:
+  1. `Approval Record=Pending`
+  2. `HIL-RS-02-GOV-EXCEPTION-01=held`
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: A1契約が未確定のままA2/A3へ進むと、契約再定義が発生し監査経路が分岐する。
+- Decision:
+  - 固定項目（ID/型/判定式/safeMode境界）は凍結継続。
+  - 未確定2件は `Needs-decision` として維持し、確定扱いしない。
+- Consequences:
+  - `pendingDecisionQueueCount>0` の間、A2/A3はOpen不可。
+  - 変更要求はA1 CDCに集約し、FB-P2C側で契約更新しない。
+
+### Phase 3 契約固定（A2/A3参照面）
+- Frozen:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Signature freeze:
+  - `CritiqueV1(input)->CritiqueV1Result`
+  - `ReDiffV1(input)->ReDiffV1Result`
+  - `AttributionV1(input)->AttributionV1Result`
+  - `A1ErrorV1(input)->A1ErrorV1Result`
+
+### Phase 4 受け渡し（read-only）
+- handoff status: `Hold/Needs-decision`
+- downstream policy:
+  - 参照のみ（契約再定義禁止）
+  - Pending bypass禁止
+  - SafeMode境界後退禁止
+
 ## Stream A dedicated run（2026-05-06 / FB-P2C A1 freeze + FB-P0 baseline alignment）
 
 ### Phase 1: Read（Plan → Execute → Verify → Proceed）

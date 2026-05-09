@@ -218,6 +218,49 @@ Prohibited for A2/A3:
 
 即停止条件:
 - 修復3回超過
+
+## 7) Stream A contract freeze declaration（2026-05-09）
+
+### Phase 1 Read（I/F unresolved inventory）
+- Unresolved（Decision Queue）:
+  1. `Approval Record=Pending`
+  2. `HIL-RS-02-GOV-EXCEPTION-01=held`
+- Confirmed frozen:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: A1契約はA2/A3の単一参照境界であり、未承認項目を確定化すると統治契約が破綻する。
+- Decision:
+  - A1最小I/Fの型・署名・判定条件・schemaVersionを凍結（read-only handoff）。
+  - 未承認2件は確定扱いにせず、`Pending/held` のまま管理。
+- Consequences:
+  - `pendingDecisionQueueCount>0` の間、A2/A3 `Draft -> Open` は不許可。
+  - 変更要求はA1 CDCへ戻す（下流で契約更新しない）。
+
+### Phase 3 Freeze scope（A2/A3参照専用）
+- Fixed Interfaces:
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+- Fixed Signatures:
+  - `CritiqueV1(input)->CritiqueV1Result`
+  - `ReDiffV1(input)->ReDiffV1Result`
+  - `AttributionV1(input)->AttributionV1Result`
+  - `A1ErrorV1(input)->A1ErrorV1Result`
+- Fixed gate:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+
+### Phase 4 Handoff summary（read-only）
+- Contract summary for downstream:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- Current decision: `Hold/Needs-decision`（承認待ち未解消）。
 - 未承認決定の確定化
 - 未定義競合検出
 
