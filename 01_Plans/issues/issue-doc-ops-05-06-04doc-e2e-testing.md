@@ -348,3 +348,46 @@
 - 判定: `Hold` 維持（依存証跡未確定のため）。
 - self-correction: `1/3`（上限内）。
 - Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+
+## Stream K proposal-only serial pass（2026-05-09 / DOC-OPS-05-06）
+
+### Phase 1: Read（Dependency status / Gate-A/B/C / ProceedDecision抽出）
+- Dependency status: `05-05完了待ち（単方向依存）` を維持し、依存確定証跡がない状態ではOpen化しない。
+- Gate抽出:
+  - Gate-A: `DOC-OPS-05-05` で語彙・Gate・停止条件を基準化。
+  - Gate-B: 本Issue `DOC-OPS-05-06` でOpen化判定情報を固定。
+  - Gate-C: `DOC-OPS-05-07` で監査ログ方針を整合。
+- ProceedDecision抽出: 現在値は **Hold**（依存未確定）。
+
+### Phase 2: ADR CDC（E2E運用文書Open化準備の根拠）
+- Context: `04_Documentation/e2e_testing.md` は公開導線文書だが、本Issueの目的は本文改稿ではなくOpen判定要件の固定化。
+- Decision: proposal-onlyで `Go/NoGo` と `Proceed/Hold/Stop` を固定語彙として維持し、承認証跡未確定時は `Hold`。
+- Consequences: 依存未確定でも独立検証（docs-check / key存在確認 / diff-check）が可能で、推測によるOpen化を防止できる。
+
+### Phase 3: Plan（AC/DoD確定）
+- AC:
+  - AC-K1: 語彙一致（`Go/NoGo`, `Proceed/Hold/Stop`, `pass/fail/blocked`）を本Issue内で保持する。
+  - AC-K2: 証跡コマンド（validator / `rg` / `git diff --check`）を再実行可能な形で保持する。
+  - AC-K3: 停止条件（依存未確定=Hold、自己修復4回目相当=Stop）を明文化する。
+- DoD:
+  - DoD-K1: 本Issue単体再読で Gate-A/B/C と Proceed 条件が理解できる。
+  - DoD-K2: 依存確定証跡なしでOpen化しないフェイルセーフを維持する。
+  - DoD-K3: allowlist外編集を行わず、本Issueのみ更新する。
+
+### Phase 4: Execute（本Issueのみ更新）
+- 実施: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md` のみ追記。
+- 非実施: `04_Documentation/e2e_testing.md` 本文、他Issue本文、実装コードの編集。
+
+### Phase 5: Verify（依存未確定時Hold維持・語彙競合なし）
+- Verify-1: 依存確定証跡が未提示のため `ProceedDecision: Hold` を維持。
+- Verify-2: 判定語彙は `Go/NoGo` と `Proceed/Hold/Stop` で競合なし。
+- Verify-3: Self-Correction は `1/3`（本pass内）。上限超過時は `Stop`。
+
+### Phase 6: Proceed（Hold/Stop明記、推測開放禁止）
+- ProceedDecision: **Hold**。
+- Hold理由: `DOC-OPS-05` 依存確定証跡（Approval Record 5項目）未確定。
+- Stop条件:
+  1. allowlist外編集要求が発生した場合。
+  2. self-correction が4回目相当に到達した場合。
+  3. Gate-A/B/C 間で未解決の語彙競合が発生した場合。
+- Policy: 依存証跡が揃うまで推測でOpen化（Proceed）しない。
