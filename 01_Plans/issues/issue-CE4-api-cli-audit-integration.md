@@ -903,3 +903,102 @@
 - 判定: **Proceed候補（docs-contract更新完了）**。
 - Hold条件: 依存証跡不足、または docs-check 未実行/不合格。
 - Stop条件: verify>3、契約語彙衝突、safeMode境界後退、allowlist外編集。
+
+## Stream H execution log（2026-05-09 / CE4 Draft Ready化, docs-only, contract-only）
+
+### Task Brief（Scope固定）
+- Scope: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` の契約整理のみ。
+- Non-Goals: backend/frontend/CLI実装、ADR更新、他Issue編集。
+- Acceptance Criteria:
+  - [x] API契約・CLI契約・Audit契約を分離して検証可能な粒度で記載する。
+  - [x] 統合点（`eventId`/`traceId`/`actor`/`timestamp`）の必須性を明記する。
+  - [x] `mock-first` で先行可能な I/F 境界と hard dependency を分離する。
+  - [x] セキュリティ・監査受入条件（fail-closed / proposal-only / auto-*禁止）を再定義する。
+- Validation Plan:
+  - [x] 本Issue内の契約項目整合（API/CLI/Audit/統合点）を目視確認。
+  - [x] `Proceed/Hold/Stop` と self-correction 上限 `<=3` の整合確認。
+- Stop Conditions:
+  - [x] 監査必須項目未定義のまま進行要求。
+  - [x] 契約境界不明確のまま責務競合が残る状態。
+
+### Phase 1: Read同期（抽出結果）
+- API契約: AND同値条件、proposal-only、4イベント順序整合、fail-closed が既存定義済み。
+- CLI契約: API同値条件準拠、失敗種別分離（入力/監査/同値）と監査違反fail-closed が既存定義済み。
+- Audit契約: 共通必須キー、追跡可能性、改ざん耐性、再現性が既存定義済み。
+- 不足メタ: `eventId`/`traceId` の明示不足、mock先行境界と凍結待ち依存の分離不足、Security ACの再掲不足。
+
+### Phase 2: Plan（Draft Ready化提案）
+
+#### 2.1 契約分離（検証単位）
+- **API Contract Unit**
+  - 入力: `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `sourceBundleHash`, `proposal-only`。
+  - 判定: `equivalenceKey AND bundleHash` + 監査4イベント系列が揃う場合のみ `ok`。
+  - 失敗: `input_validation_error` / `audit_contract_error` / `equivalence_error` / `policy_violation`。
+- **CLI Contract Unit**
+  - 入力: APIと同一語彙 + `command`（実行意図識別）。
+  - 判定: API判定の再現一致（同一入力で同一No-Go分類）。
+  - 失敗: API失敗分類をそのままCLI終了分類へ写像（数値コードは未固定）。
+- **Audit Contract Unit**
+  - 入力: 4イベント + 共通必須キー。
+  - 判定: キー完備/順序整合/重複矛盾なし。
+  - 失敗: 欠損/順序違反/重複矛盾を即 No-Go（fail-closed）。
+
+#### 2.2 統合点（API/CLI/Audit共通）
+- 必須統合キー（v1固定）:
+  1. `eventId`（イベント単位ユニーク、重複検知キー）
+  2. `traceId`（1トランザクション系列追跡）
+  3. `equivalenceKey`（同値判定キー）
+  4. `actor`（`principalType`, `principalIdMasked`）
+  5. `timestamp`（RFC3339 UTC）
+- 補助整合キー:
+  - `queryCanonicalHash`, `bundleHash`, `sourceBundleHash`, `channel`, `command`, `schemaVersion`, `result`。
+
+#### 2.3 依存関係とmock適用境界
+- **先行可能（mock）**:
+  - `sourceBundleHash=mock:<64hex>` を使った API/CLI/Audit 契約テスト。
+  - `eventId/traceId/equivalenceKey` の連結整合テスト。
+  - 失敗分類（入力/監査/同値/ポリシー）の再現一致テスト。
+- **凍結待ち（hard dependency）**:
+  - CE0/CE1 の実ID払い出し規約確定。
+  - CLI終了コード数値マッピング確定。
+  - 監査保管・署名・配送保証など実装基盤確定。
+
+### Phase 3: Execute（Context / Decision / Consequences 追記）
+
+#### Context（追加補正）
+- CE4は API/CLI/Audit の責務分離が曖昧なまま実装へ進むと、同一入力で判定不一致が発生し監査証跡が断裂する。
+- そのため Draft段階で、契約単位・統合キー・mock境界・hard dependency を分離し、実装着手前の誤結合を防ぐ必要がある。
+
+#### Decision（追加補正）
+1. API/CLI/Audit を別契約として固定し、評価軸を混在させない。
+2. 統合必須キーとして `eventId`/`traceId`/`equivalenceKey`/`actor`/`timestamp` を v1必須化する。
+3. mock先行は I/F 契約整合に限定し、実装基盤確定要求は hard dependency として Hold する。
+4. セキュリティ受入は `proposal-only` + `fail-closed` + `auto-apply/auto-confirm/auto-publish 禁止` の同時成立を必須化する。
+
+#### Consequences（追加補正）
+- 実装前の契約テストで API/CLI/Audit 判定不一致を先に排除できる。
+- 監査キー欠損や順序破綻を即時No-Go化でき、監査証跡の再現性が向上する。
+- 依存未解除項目を hard dependency として隔離でき、競合実装の同時進行リスクを下げられる。
+
+### Phase 4: Verify（自己検証 + Self-Correction）
+- AC検証:
+  - [x] API/CLI/Audit 契約分離を記載。
+  - [x] 統合点キー（eventId/traceId/actor/timestamp）を明記。
+  - [x] mock先行境界とhard dependencyを分離。
+  - [x] セキュリティ監査受入条件を明記。
+- DoD検証:
+  - [x] 契約境界と責務分離が読める。
+  - [x] リスク（監査断裂/判定不一致）と緩和策（必須キー/fail-closed/mock-first）が対応。
+- self-correction: `1/3`（文言統一のみ、上限超過なし）。
+
+### Phase 5: Proceed判定
+- 判定: **Draft Ready（contract plan）**。
+- Proceed条件（実装レーン移行前）:
+  1. docs-check pass。
+  2. CE0/CE1 依存の承認証跡確認。
+  3. hard dependency 未解除項目を Open化時に明示継続。
+- Stop条件（フェイルセーフ）:
+  - 未定義監査要件の確定要求。
+  - 契約境界不明確のまま責務競合解消不能。
+  - allowlist外編集要求。
+  - self-correction `>3`。
