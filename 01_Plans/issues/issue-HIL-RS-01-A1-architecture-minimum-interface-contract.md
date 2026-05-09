@@ -1,10 +1,10 @@
-# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream E）
+# Issue Draft: HIL-RS-01 A1 Architecture 最小I/F契約固定（Stream D）
 
 - Type: Process
 - Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
-- Owner: Stream E（A1 minimum interface contract only）
+- Owner: Stream D（A1 minimum interface contract only）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -239,3 +239,35 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - DoD-1: Verify手順で Contract drift / Responsibility boundary / Pending gate を全pass。
 - DoD-2: self-correction `0/3` から記録し、`>3` でStop。
 - DoD-3: 未承認2件（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）解消まで `Hold` 維持。
+
+## Stream D execution log（2026-05-09 / HIL-RS-01-A1 minimum interface contract）
+
+### Phase 1: Read Sync
+- Status/Priority/Scope/Dependencies/固定語彙（`freezeContractId`,`schemaVersion`,`overridePolicy`,`safeModeBoundary`）を再読し、差分不一致なし（drift=0）。
+
+### Phase 2: ADR Consensus
+- Context: A1契約が曖昧な場合、A2/A3で再定義が発生し監査可能性を損なう。
+- Decision: Critique/ReDiff/Attribution/Error の最小I/F集合、判定式、責務境界、Stop条件を本Issueで固定維持する。
+- Consequences: 人間承認記録が `Pending` の間は `executeAllowed=false`、`decision=Hold` を継続する。
+
+### Phase 3: Plan
+- AC補完: `A2A3_OPEN_ALLOWED` 以外のOpen化禁止、`NoGo return path` 一意固定、`Pending bypass` 禁止。
+- DoD補完: `proposal-only` 境界維持、2者承認責務分離、safeMode後退なし。
+- 検証方法: Contract Snapshot照合→責務境界照合→Pending残存照合→AC/DoD照合。
+- 停止条件: 未承認事項の確定化要求、safeMode後退前提、指定外編集検知。
+
+### Phase 4: Execute
+- 契約文面整備のみ実施（docs-only）。
+- 実装コード・他Issue・他ファイルへの変更は未実施。
+
+### Phase 5: Verify
+- self-check #1 Contract drift: pass
+- self-check #2 Responsibility boundary: pass
+- self-check #3 Pending/Stop condition: pass（`Pending` 残存のため `executeAllowed=false`）
+- self-correction count: `0/3`
+
+### Phase 6: Proceed
+- 判定: `Hold`
+- 理由: `HOLD_PENDING_QUEUE`（承認記録がPendingのため）。
+- executeAllowed: `false`
+- noGoReturnPath: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
