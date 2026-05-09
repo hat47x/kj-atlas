@@ -12,6 +12,62 @@
 - CE1 contract status: `参照限定（CE1完了待ちは不要。mock contract参照のみ）`
 - Expected verification level: `docs-check`
 
+
+## Stream F CE2 Draft→Ready plan fix（2026-05-09 / single-file）
+
+### Phase 1: Read同期（差分抽出）
+- Header抽出: `Status=Draft` / `Priority=P1` / `Owner=Stream G` / `Related Backlog=CE-2` / `Dependencies=CE0, CE1`。
+- 差分: Owner表記が旧ストリーム（Stream G）のままで、Ready化の判定責務（Stream F）と不一致。
+- 差分: AC/DoDは複数版が混在し、**Ready判定用の単一チェックリスト**が未固定。
+- 差分: Mock方針は記述済みだが tri-state（Yes/No/Conditional）表記が未固定。
+
+### 前提更新メモ
+- 本更新では `Status` を強制変更しない。
+- Ready化は **条件充足時のみ候補提案** とし、未充足時は `Draft/Hold` を維持する。
+
+### Phase 2: Plan（不足補完）
+#### Ready判定用 AC（検証可能文）
+- [ ] AC-R1: proposal-only（AIは `status=proposed` のみ）と human-only final decision（`accepted/rejected`）が同時成立している。
+- [ ] AC-R2: `reviewState` 自動昇格禁止、`auto-apply/auto-confirm/auto-publish` 禁止、監査4点欠損時 fail-closed が本文内で矛盾なく参照できる。
+- [ ] AC-R3: `sourceBundleHash === bundleHash` 不一致時 `held` 継続が明文化され、例外経路が存在しない。
+- [ ] AC-R4: 依存が具体化されている（CE0/CE1の参照先ファイル・条件・判定責任者）。
+- [ ] AC-R5: Approval Record 最小項目（approved_at / approved_by / target / decision / evidence）が埋まるまで Proceed しない。
+
+#### Ready判定用 DoD
+- [ ] DoD-R1: 本Issue単体で Context / Decision / Consequences が再読可能。
+- [ ] DoD-R2: AC-R1〜R5の判定証跡（どの節で満たすか）が1対1で対応づく。
+- [ ] DoD-R3: リスク（安全・品質・運用）と緩和策が最低1対1で対応づく。
+- [ ] DoD-R4: docs-checkコマンドが再実行可能で、single-file scope逸脱がない。
+
+#### 依存関係（具体化）
+| 依存ID | 参照先 | 条件 | CE2側判定 |
+| --- | --- | --- | --- |
+| DEP-CE0 | `01_Plans/issues/issue-CE0-contract-freeze.md` | contract freeze承認済み（日時・承認者・判断・evidence確認可能） | 未充足ならHold |
+| DEP-CE1 | `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` | CE1 I/Fをread-only参照し、CE2から追加確定要求をしない | 条件付き（mock切断） |
+| DEP-SCHEMA | `02_Architecture/schemas.md` | 語彙（status/reviewState/lifecycle）が閉集合で整合 | 不整合時Stop |
+
+#### Mock活用可否
+- CE0依存: **Conditional**（承認証跡の形式確認のみmock可、承認事実はmock不可）。
+- CE1依存: **Yes**（I/F参照はmock contractで切断可能）。
+- 承認ログ: **No**（Ready化判定では実値が必須）。
+
+### Phase 3: Execute（計画文書の固定）
+- Context: CE2は安全境界を崩さずに Draft→Ready 判定材料を単一化する必要がある。
+- Decision: Ready判定は AC-R1〜R5 / DoD-R1〜R4 / 依存表 / Mock tri-state の全充足を必須化する。
+- Consequences: 判定は厳格化されるが、未承認Proceed・依存推測確定・監査欠損を抑止できる。
+
+### Phase 4: Verify（セルフチェック）
+- AC検証可能性: AC-R1〜R5はすべて「確認対象」と「失敗時挙動（Hold/Stop）」を持つ。
+- DoD網羅: 文脈（CDC）/依存/リスク/検証再現性を包含。
+- 依存具体性: Backlog ID + file path + condition を明記。
+- Mock分離: Yes/No/Conditional を明示し、依存切断可能範囲を限定。
+- 競合確認: 本更新は single-file のみ。
+
+### Phase 5: Proceed判定（Ready候補提案）
+- 現判定: **Hold（Draft継続）**。
+- 理由: Approval Record 実値と依存確定証跡が本文上で未充足。
+- Ready更新候補: AC-R1〜R5 と DoD-R1〜R4 が実値で満たされた時のみ `Status: Ready` 変更を提案する。
+
 ## Fixed Operation Contract（2026-05-01）
 
 - proposal-only 原則を固定し、AIは候補提示（`status=proposed`）のみを実施する。
