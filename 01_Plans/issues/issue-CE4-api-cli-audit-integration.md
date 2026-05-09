@@ -232,6 +232,55 @@
 - **Open候補**: docs-check pass と依存証跡が揃い、proposal-only 境界が維持される場合。
 - **Stop**: ストッパー3条件（CE1未整備実装要求 / 監査項目削減 / 指定外編集）が発生した場合。
 
+## Stream C execution log（2026-05-09 / CE4下流準備 / proposal-only）
+
+### Phase 1: Read同期
+- CE4契約本文（API/CLI/監査、3.1〜3.3、4.x mock検証）を再読し、Draft維持理由が依存証跡待ちであることを同期。
+- `contract-only` と `mock-first` が同時成立し、実装要求を受けない境界を確認。
+
+### Phase 2: ADR/契約依存の明文化（Context / Decision / Consequences）
+#### Context
+- CE4 は CE1 I/F に依存するが、Open前は mock 経路で検証可能。
+- CE0/CE1承認証跡が未確定な状態での実装移行は契約逸脱リスクを増大させる。
+
+#### Decision
+- 依存解放条件を次の機械判定セットで固定。
+  1. `Open化条件` の4項目が全て true。
+  2. `未確定点` 3件が「仕様確定済み」に昇格していないこと（= 未確定のまま隔離）。
+  3. self-correction が `<=3`。
+
+#### Consequences
+- 下流は mock fixture のみで契約適合判定を先行可能。
+- 未承認依存の擬似確定を防ぎ、Hold/Stop判断を自動化しやすくなる。
+
+### Phase 3: Plan（Draft→Open化条件 / AC・DoD / mock前提タスク）
+- Draft→Open化条件（all required）:
+  - [ ] G1: Open化条件 条件1〜4 が全充足。
+  - [ ] G2: AC/DoD のチェックボックスが維持され、後退がない。
+  - [ ] G3: docs-check pass 記録が最新化される。
+  - [ ] G4: 未確定点3件が「停止報告対象」のまま維持される。
+- mock前提タスク:
+  - [ ] T1: `sourceBundleHash=mock:<64hex>` の許容は継続し、fail-closed 同一適用を保持。
+  - [ ] T2: CE1未整備時 `equivalenceKey` のモック発番許容を維持。
+  - [ ] T3: 実装依存事項（終了コード数値/匿名化方式/転送基盤）を確定値へ昇格しない。
+
+### Phase 4: Execute（proposal-only）
+- 本Issue文書の計画更新のみ実施。
+- コード/ADR/API本文/他Issueの編集は未実施。
+
+### Phase 5: Verify（依存解放条件の機械判定可能性）
+- V-CHK1: G1〜G4 が bool 判定可能（true/false）な表現で定義されている。
+- V-CHK2: Stop条件がイベント化されており、未解決承認時に Proceed しない。
+- V-CHK3: self-correction 超過時（4回目相当）Stop の規則が維持されている。
+
+### Phase 6: Proceed/Stop
+- 判定: **Hold**（承認依存未解決）。
+- Proceed条件: G1〜G4 true かつ依存証跡充足。
+- Stop条件:
+  1. 未確定点の仕様確定要求（範囲逸脱）。
+  2. self-correction 4回目相当。
+  3. 監査イベント4点またはAND同値条件の縮退要求。
+
 ## Open化最終整備（proposal-only / 2026-05-04）
 
 ### Read→ADR/CDC→Plan→Execute→Verify→Proceed（固定運用）
