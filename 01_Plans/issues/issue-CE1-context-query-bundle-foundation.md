@@ -2290,3 +2290,64 @@ handoffKeys:
   - Contract ID / error semantics / handoff key 衝突
   - 実装詳細（コード/他ファイル）への逸脱
 - 判定: **Proceed**（本更新は docs-only / contract-only / 単一ファイルで完了）。
+
+## Stream B update（2026-05-09 / CE1 minimal interface contract freeze for CE2/CE4 decoupling）
+
+### Phase 1: Read（現状同期 + Drift Log）
+- 対象ファイルを再読し、先頭メタを抽出して確認。
+  - Status: Open
+  - Priority: P1
+  - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
+  - Related ADR/Spec: `ADR-0028`, `02_Architecture/schemas.md`
+  - Dependencies: `issue-CE0-contract-freeze.md`（契約依存、payloadはmockで先行可）
+  - Non-goals: handler/UI/DB/worker の実装詳細化
+- CE2/CE4依存の最小I/F項目を列挙。
+  - CE2向け: `queryCanonicalHash`, `bundleHash`, `sourceBundleHash === bundleHash`, 固定エラー語彙3種
+  - CE4向け: `bundleHash`, `equivalenceKey + bundleHash`, fixed error semantics, closed-world拒否規則
+- Drift Log:
+  - 既存本文は Stream C/D/E/F 記録が混在するが、契約中核（`ContextQueryV1` / `ContextBundleV1` / fixed errors / hash determinism）は整合。
+  - 重大ドリフト（契約衝突・語彙衝突）は **なし**。Proceed継続。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- **Context**: CE1未固定のままでは、CE2/CE4が `ContextQueryV1` / `ContextBundleV1` の解釈を独自拡張し、契約分岐と再結合コスト増大を招く。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` を CE1 v1 最小契約として凍結候補に指定する。
+  - 契約対象を「入力/出力/必須キー/固定エラー方針」に限定し、closed-world（未定義キー拒否）を維持する。
+  - mock利用を公式化し、CE2/CE4は実装接続なしで「契約参照 + mock-consumer」として先行可能にする。
+- **Consequences**:
+  - 上位合意完了まで契約変更は禁止（proposal-only）。
+  - CE2/CE4は実装依存を導入せず、mock結果と契約語彙のみを受領して進行する。
+  - 競合検知時は `Proceed` せず `Hold/Stop` 判定へ遷移する。
+
+### Phase 3: Plan（AC/DoD確定）
+- Acceptance Criteria（確定）
+  1. 最小I/Fのキー集合が閉じている（closed-world）。
+  2. エラーケース（invalid key / missing or invalid gate condition）の定義がある。
+  3. 下流参照方式（read-only / mock-consumer）が明記されている。
+- Definition of Done（確定）
+  1. 実装変更なし（docs-only）。
+  2. allowlist外差分ゼロ（本ファイルのみ差分）。
+  3. 再読した第三者が、CE2/CE4依存切断方針を復元可能。
+- 合意ログ（AI draft）
+  - AC/DoD不足項目を上記3点で補完し、既存方針（contract-only / mock-first）と非矛盾であることを確認。
+
+### Phase 4: Execute（本文更新）
+- 本節（Stream B update）を追記し、CE1最小契約の固定対象を「入力/出力/必須キー/固定エラー方針」に再整理した。
+- CE2/CE4の依存切断方式を「read-only契約参照 + mock-consumer」に統一した。
+- 実装詳細への拡張は行わず、Non-goalsを維持した。
+
+### Phase 5: Verify（docs-check）
+- 用語一貫性: `ContextQuery` / `ContextBundle` の語彙一貫性を確認（pass）。
+- Gate語彙一貫性: `Proceed` / `Hold` / `Stop` を本節内で整列（pass）。
+- Non-goals逸脱: 実装詳細（handler/UI/DB/worker）への逸脱なし（pass）。
+- Self-Correction:
+  - attempt 1: CE2/CE4依存項目の重複表記を整理（反映済）。
+  - attempt 2: AC/DoDを番号付きで確定表現へ統一（反映済）。
+  - attempt 3: Gate語彙の表記揺れを `Proceed/Hold/Stop` に統一（反映済）。
+
+### Phase 6: Proceed
+- **ProceedDecision: Ready**
+- 理由: AC/DoDを満たし、契約固定とmock切断方針が本ファイル単独で復元可能。
+- Needs-decision:
+  1. 上位合意者（2者承認）の最終サインオフ時点をどの運用イベントで確定するか。
+  2. `missing key` を `400 unknown_contract_key` に統一するか、`422` 系に分離するか（現時点は既存固定語彙優先で据え置き）。
