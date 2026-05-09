@@ -295,3 +295,42 @@
   2. 実行ログ生成に踏み込む要求。
   3. allowlist違反編集。
   4. self-correction上限（3回）超過。
+
+## Stream L-2 integrated pass（2026-05-09 / Gate-C: DOC-OPS-05-07）
+
+### Read同期
+- Scope固定: 本Issueファイルのみ編集対象とし、指定外ファイルは更新しない。
+- 依存状態: `Dependency status: 05-06完了待ち（単方向依存）` を維持し、依存先の未確定値を本Issue側で確定しない。
+- 用語固定: `Go/NoGo`、`Proceed/Hold/Stop`、`docs-check`、`pass/fail/blocked` を監査判定語彙として使用する。
+
+### ADR（Context / Decision / Consequences）
+- Context: E2E検証ログは「実行したこと」だけでなく「未実施理由と再開条件」まで追跡できないと監査再現性が欠落する。
+- Decision: 監査可能性契約を固定し、実行記録は `実行コマンド / 成否 / 未実施理由 / 再開条件` を最小必須項目として扱う。
+- Consequences: Open候補化の前提として、実施/未実施のどちらでも監査説明責務を果たせる。
+
+### Plan（AC/DoD不足補完）
+- AC-Contract-1: 実行記録テンプレートに `command`, `result(pass|fail|blocked)`, `not_executed_reason`, `resume_condition` を必須キーとして保持する。
+- AC-Contract-2: `blocked` の場合は必ず `not_executed_reason` と `resume_condition` を同時記録する。
+- AC-Contract-3: 実行していない場合も「未実施理由」と「再開条件」が空欄でないことを確認する。
+- DoD-Contract-1: 本Issue単体再読で監査契約（必須キー/判定語彙/停止条件）を復元できる。
+- DoD-Contract-2: 依存未解除時の判定は `ProceedDecision: Hold` に固定し、推測でOpenに進めない。
+
+### Execute（本Issueのみ）
+- 実施: 監査可能性契約（必須キー/成否判定/未実施時ルール/再開条件）を本Issue本文へ追記。
+- 非実施: 実ログ新規作成、他Issue更新、`04_Documentation/**` 更新、実装変更。
+
+### Verify（最大3回修復）
+- Verify-1: 必須キー4点（実行コマンド/成否/未実施理由/再開条件）の本文存在を確認。
+- Verify-2: `ProceedDecision` が `Dependency status` と矛盾しないことを確認。
+- Verify-3: `self-correction` が上限 `3` を超えないことを確認。
+- 修復上限: 3回まで。4回目相当が必要な場合は `ProceedDecision: Stop`。
+
+### Proceed / Stop
+- ProceedDecision: **Hold**
+- Open候補化条件（再開条件）:
+  1. 依存Issue（05-05/05-06）の Approval Record 5項目が確定。
+  2. 本Issueの監査可能性契約キーが validator/docs-check で確認済み。
+  3. 判定語彙（Go/NoGo, Proceed/Hold/Stop, pass/fail/blocked）が依存Issueと一致。
+- Stop条件:
+  - `self-correction > 3`。
+  - 依存Issueとの語彙/判定競合が解消不能。
