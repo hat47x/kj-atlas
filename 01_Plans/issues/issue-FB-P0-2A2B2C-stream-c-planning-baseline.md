@@ -414,3 +414,42 @@
 ### Phase 5 Verify / Phase 6 Proceed
 - Verify: AC/DoD自己照合 + docs-check前提を満たすことを確認。
 - Proceed: `Conditional (Needs-decision)` 維持（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）。
+
+## Stream E planning-baseline convergence（2026-05-09）
+
+### Phase 1: 現状Read & ギャップ抽出
+- 対象: allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）のみ。
+- Read結果（固定値の再確認）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `A2A3_OPEN_ALLOWED` は A1完了 + pendingDecisionQueue=0 + 固定キー一致を必須。
+- ギャップ（収束阻害要因）:
+  1. `Approval Record=Pending` が継続し、Go判定に必要な承認証跡（`approved_by/approved_at/evidence`）が欠落。
+  2. `HIL-RS-02-GOV-EXCEPTION-01` が `held` のまま未解消。
+  3. Stream表記（B/C/F/H）が混在しており、実行主体の識別ノイズが残る。
+
+### Phase 2: 優先順位・依存・モック可否
+- 優先順位（P0固定）:
+  1. **Safety/Contract lock維持**: safeMode固定値とA2/A3誤開放防止を最優先。
+  2. **Approval evidence整備**: Go判定に必要な承認証跡の充足。
+  3. **表記正規化**: stream混在表記の整理（意味を変えず語彙を揃える）。
+- 依存関係（固定）:
+  - `A1 -> A2 -> A3`（A2/A3は `A2A3_OPEN_ALLOWED=true` になるまで確定禁止）。
+  - NoGo return path は `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` 固定。
+- モック可否:
+  - **可**: 契約整合検証（固定キー一致/判定式文字列一致/No-Go条件存在確認）は mock-first で実施可。
+  - **不可**: `Approval Record` の最終承認（人間承認）と `held` 解消判断はモック代替不可。
+
+### Phase 3: 実行可能タスク列（直列）
+1. **Plan**: allowlist 2ファイルを再読し、固定キーと判定式の差分有無をチェック（差分ありは即 `held`）。
+2. **Execute-1**: 本Issue内の運用表記を Stream E 観点で補足し、既存判定式・固定値は不変で維持。
+3. **Execute-2**: `Approval Record=Pending` / `held` 継続時の扱い（Go不可・Conditional/Needs-decision維持）を明文化。
+4. **Verify**: `validate_active_issue_memos.py` → `unittest` → `git diff --check` を順に実行。
+5. **Proceed判定**:
+   - Go: `A2A3_OPEN_ALLOWED=true` かつ `Approval Record=Approved` かつ `validatorPass=true`
+   - Conditional/Needs-decision: `held` のみ未承認が残る場合
+   - No-Go: 未定義競合 / allowlist外編集要求 / self-correction 3回超過
+- 実行制約: Plan→Execute→Verify→Proceed を厳守し、Self-Correction は最大3回。4回目相当で停止。
