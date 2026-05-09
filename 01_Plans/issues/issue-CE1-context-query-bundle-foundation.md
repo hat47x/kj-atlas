@@ -40,6 +40,54 @@
 
 
 
+
+## Stream C execution update（2026-05-09 / CE1 ContextQuery/ContextBundle Foundation）
+
+### Phase 1: Read（対象ファイル再読）
+- 本issueを再読し、編集範囲が `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみであることを再確認。
+- `ContextQueryV1` / `ContextBundleV1` を **closed-world 契約** として扱う前提を再確認。
+- fixed error semantics（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）を再確認。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4 を mock-only で前進させるため、CE1 は実装依存を持たない最小I/F契約を先行固定する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1`、hash規約（`queryCanonicalHash` / `bundleHash`）、固定エラー語彙3種を v1 契約として凍結し、closed-world 以外を拒否する。
+- **Consequences**: CE2/CE4 は型・語彙・hash規約の handoff key のみ受領して継続でき、handler/UI/DB/worker への依存を持ち込まない。
+
+### Phase 3: Plan（AC/DoD定義）
+- AC-1: `ContextQueryV1` / `ContextBundleV1` の語彙を本issue内で単独参照可能な状態で維持する。
+- AC-2: hash決定論を「同一 canonical query で `queryCanonicalHash` / `bundleHash` が3回一致」として固定する。
+- AC-3: error semantics を以下に固定し、語彙揺れを禁止する。
+  - `422 preview_required`
+  - `400 unknown_contract_key`
+  - `409 nondeterministic_bundle`
+- DoD-1: CE2 handoff key は `sourceBundleHash === bundleHash` のみで検証継続可能。
+- DoD-2: CE4 handoff key は `equivalenceKey + bundleHash` のみで監査再現可能。
+- DoD-3: handoff 成果物は「型・語彙・hash規約」のみに限定し、実装依存情報を含めない。
+
+### Phase 4: Execute（contract-only整備）
+- 本issue内の CE1 v1 契約を contract-only のまま維持し、実装詳細への拡張を行わない。
+- closed-world 逸脱（未定義キー）は `400 unknown_contract_key` で fail-closed とする方針を再固定。
+- preview gate は `previewConfirmed=false -> 422 preview_required` を唯一の入口制約として再固定。
+- 非決定論検知は `409 nondeterministic_bundle` で停止する方針を再固定。
+
+### Phase 5: Verify（最低実施 + self-correction 最大3回）
+- Verify-1（mock-only継続性）: CE2 は `sourceBundleHash === bundleHash` の比較のみで継続可能。
+- Verify-2（mock-only継続性）: CE4 は `equivalenceKey + bundleHash` で監査キー再構成が可能。
+- Verify-3（語彙/衝突）: 契約語彙揺れ・error semantics collision・handoff key collision がないことを確認。
+- self-correction:
+  - attempt 1: error semantics 表記揺れを点検（差分なし）
+  - attempt 2: handoff key 表記を `sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash` に統一（反映済）
+  - attempt 3: closed-world 記述を「未定義キー拒否」に一本化（反映済）
+- 判定: **pass（mock-only で CE2/CE4 継続可能）**
+
+### Phase 6: Proceed or Stop
+- **Proceed条件**: Phase 1→6 を直列順で完了し、差分が docs-only かつ本issue内契約整備に限定されること。
+- **Stop条件（必須）**:
+  - self-correction 3回超過
+  - Contract ID / error semantics / handoff key の衝突
+  - scope逸脱要求（他issue/実装コード編集）
+- Stop時は `held` を維持し、Phase 2 ADR へロールバックして承認待ちに遷移する。
+
 ## Stream C update（2026-05-06 / CE1 ContextQuery/ContextBundle Foundation 専任）
 
 ### Phase 1 Read（対象ファイル再読: I/F・hash決定論・preview gate）
