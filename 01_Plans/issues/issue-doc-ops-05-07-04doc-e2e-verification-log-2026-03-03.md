@@ -270,3 +270,28 @@
 - 判定: `Hold` 維持（依存証跡未確定のため）。
 - self-correction: `1/3`（上限内）。
 - Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+
+### Phase 4: Execute（本Issueのみ更新）
+- 実施: 本Issueに監査再読ブロック（必須項目/保管方針/停止条件/依存判定）を集約。
+- 非実施: 実ログファイル作成、`04_Documentation/**`改稿、他Issue編集、実装コード変更。
+
+### Phase 5: Verify（05-06整合/語彙/非目標）
+- 相互参照整合: 05-06の判定語彙 `pass/fail/blocked` と本Issueの必須ログ項目（コマンド/成否/未実施理由/再開条件）を再対応付け。
+- 語彙統一: `Go/NoGo`・`Proceed/Hold/Stop`・`docs-check` を維持。
+- 非目標逸脱防止: 公開境界の確定推測、実行ログ生成要求、allowlist外編集を禁止。
+- self-correction: `2/3`（本pass時点）。
+
+### Phase 6: Proceed（依存未確定時固定判定）
+- ProceedDecision: **Hold**
+- 固定理由: 依存Issue（05-05/05-06）のApproval Record未確定によりOpen化判定不可。
+- 再開条件: Approval Record 5項目（日時/承認者/対象/判断/evidence）確定後に再判定。
+
+## Audit-ready fixed block（DOC-OPS-05-07 / 2026-05-09）
+- Required log fields（固定）: `日時 / シナリオID / 実行経路 / コマンド / 結果 / 失敗理由 / 再開条件 / 実行者ロール / 証跡リンク`。
+- Retention policy（固定）: 内部保管・追記型・公開文書は要約のみ。
+- Dependency policy（固定）: `05-06完了待ち（単方向依存）` を維持し、未確定値の先取り確定を禁止。
+- Stop conditions（固定）:
+  1. 公開境界を推測で確定しようとする変更。
+  2. 実行ログ生成に踏み込む要求。
+  3. allowlist違反編集。
+  4. self-correction上限（3回）超過。
