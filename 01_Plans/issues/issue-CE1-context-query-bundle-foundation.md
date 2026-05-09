@@ -2193,3 +2193,54 @@ handoffKeys:
 - Verify失敗が3回を超えた場合は `held` で停止。
 - Contract ID / error semantics / handoff key の衝突検知時は即停止し、Phase 2（ADR）へ戻す。
 - 編集許可範囲外（本ファイル以外）への変更要求が発生した場合は停止。
+
+## Stream C update（2026-05-09 / CE1 ContextQuery/ContextBundle Foundation, mock handoff freeze）
+
+### Phase 1 Read（Plan → Execute → Verify → Proceed）
+- **Plan**: 本ファイル再読で closed-world 契約と error semantics（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）を確認する。
+- **Execute**: `ContextQueryV1` / `ContextBundleV1`、hash規約、preview gate、handoff key の既存定義を照合した。
+- **Verify**: 想定差分（契約語彙追加・HTTPコード変更・handoff key変更）がないことを確認。
+- **Proceed**: 差分なしのため Phase 2 へ進行（停止条件非該当）。
+
+### Phase 2 ADR/CDC（Plan → Execute → Verify → Proceed）
+- **Context**: CE2/CE4 を実装依存なしで継続させるには、CE1 が最小 I/F 契約を固定し mock handoff を成立させる必要がある。
+- **Decision**: CE1 は contract-only を維持し、CE2/CE4 は **mock-only handoff** で進める方針を固定する。
+- **Consequences**: 下流は契約キーと固定語彙のみを受領して継続可能となり、handler/UI/DB/worker の実装待ちを発生させない。
+- **Verify**: CDC が CE1 の責務境界（契約固定のみ）と整合することを確認。
+- **Proceed**: Phase 3 へ進行。
+
+### Phase 3 Plan（AC/DoD宣言）
+- AC-1: `ContextQueryV1` / `ContextBundleV1` を v1 固定契約として維持する。
+- AC-2: `queryCanonicalHash` / `bundleHash` の決定論（同一 canonical query で3回一致）を維持する。
+- AC-3: `previewConfirmed=false -> 422 preview_required` を固定する。
+- AC-4: closed-world 逸脱は `400 unknown_contract_key` に固定する。
+- AC-5: 非決定論検知は `409 nondeterministic_bundle` に固定する。
+- DoD-1: CE2 handoff key は `sourceBundleHash === bundleHash` で検証継続可能。
+- DoD-2: CE4 handoff key は `equivalenceKey + bundleHash` で監査再現可能。
+- DoD-3: handoff 成果物は contract IDs / I/F 型 / error semantics / hash rule / handoff keys のみ。
+
+### Phase 4 Execute（contract-only更新 / 語彙統一）
+- 実装詳細（handler/UI/DB/worker/DB schema変更案）を追加しない contract-only 更新に限定。
+- 語彙を以下へ統一して固定：
+  - `ContextQueryV1`, `ContextBundleV1`
+  - `queryCanonicalHash`, `bundleHash`
+  - `preview_required`, `unknown_contract_key`, `nondeterministic_bundle`
+  - `sourceBundleHash === bundleHash`, `equivalenceKey + bundleHash`
+
+### Phase 5 Verify（AC/DoD適合 + self-correction上限）
+- Verify-1: AC/DoD への適合を確認（pass）。
+- Verify-2: 語彙衝突ゼロ（contract ID / error semantics / handoff key collision なし）を確認（pass）。
+- Verify-3: CE2/CE4 mock-only 継続性を確認（pass）。
+- self-correction log:
+  - attempt 1: `queryCanonicalHash` 表記揺れ点検（差分なし）。
+  - attempt 2: handoff key 表記統一（`sourceBundleHash === bundleHash` / `equivalenceKey + bundleHash`）。
+  - attempt 3: closed-world 記述を unknown key reject へ統一。
+- 判定: **pass**（verify回数上限内）。
+
+### Phase 6 Proceed（完了 / held条件）
+- **Proceed**: CE1 の最小 I/F 契約固定と mock handoff 条件が満たされたため完了。
+- **held へ停止する条件（fail-safe stopper）**:
+  - verify > 3
+  - contract / handoff key collision
+  - allowlist外編集
+  - 未定義依存前提での強行
