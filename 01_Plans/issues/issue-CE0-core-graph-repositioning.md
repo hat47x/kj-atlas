@@ -1887,3 +1887,34 @@
 ### Phase 6 Proceed
 - 判定: `Done`（AC/DoD充足、docs-check pass、contract-only 維持）。
 - 失敗条件発生時は `held` で停止し、推測で依存補完しない運用を継続。
+
+## Phase Execution Record（2026-05-08 / Stream C / CE0 Core Graph Repositioning 専任 run）
+### Phase 1 Read
+- Read同期を実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認。
+- 差分判定: 固定語彙・禁止事項・SafeMode境界に差分なし（継続可）。
+
+### Phase 2 ADR
+- Phase冒頭Read同期を再実施し、前Phaseとの差分なしを確認。
+- ADR整合判定: `No ADR delta`（`ADR-0028` と既存契約固定方針に追加差分なし）。
+- 未承認事項は確定せず、必要時 `held/pending` で在庫化する方針を維持。
+
+### Phase 3 Plan
+- Phase冒頭Read同期を再実施し、語彙差分なしを確認。
+- 変更範囲を本Issue単体の実行記録追記に限定（single-file / contract-only）。
+- AC/DoD不足確認: 不足は未検出のため、追加ドラフト提案は不要と判定（合意記録: 既存AC/DoDを採用）。
+
+### Phase 4 Execute
+- Phase冒頭Read同期を再実施し、差分なしを確認して実行。
+- 本Issue本文への実行記録更新のみ実施し、`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を維持。
+- 実装変更（handler/UI/DB/worker/API/schema migration）および他ファイル編集は未実施。
+
+### Phase 5 Verify
+- Phase冒頭Read同期を再実施し、語彙・禁止事項・SafeMode境界に差分なし。
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass。
+- `git diff --check` を実行し、pass。
+- Verify失敗は発生せず、自己修復回数は 0/3。
+
+### Phase 6 Proceed
+- Phase冒頭Read同期を再実施し、Proceed前の差分なしを確認。
+- 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only制約維持）。
+- 停止条件（語彙差分、契約ID再定義、SafeMode既定ON後退、Verify 4回目相当）該当なし。
