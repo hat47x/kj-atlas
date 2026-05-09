@@ -517,3 +517,36 @@
 
 ### Phase 6 Proceed
 - 判定: `Needs-decision`（`Approval Record=Pending` と `held` 未解消のため）。
+
+
+## Stream B dedicated baseline alignment update（2026-05-09）
+
+### Mission（FB-P0 baseline契約整合）
+- 目的: `A1/A2/A3 freeze値・gate文言・held条件` を allowlist 2ファイル間で統一し、A1契約凍結を唯一SSOTとして維持する。
+- 対象: 本ファイルと `issue-FB-P2C-01-a1-interface-contract.md` のみ（指定外ファイル編集は禁止）。
+
+### Phase 1: Read
+- `A1/A2/A3` の固定値、`A2A3_OPEN_ALLOWED`、`ProceedGate/Conditional/No-Go/Needs-decision`、`held` 条件を再読比較する。
+- 差分または競合兆候（語彙不一致・判定式不一致・未定義条件）を検知した場合は **ProceedせずStop**。
+
+### Phase 2: Baseline freeze
+- freeze値は次を固定し再定義しない: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`。
+- gate文言は `A2A3_OPEN_ALLOWED` / `NoGo` / `ProceedGate` の既存SSOTをそのまま適用する。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持（確定扱い禁止）。
+
+### Phase 3: Dependency handling（read-only）
+- A2/A3依存は **mock前提のread-only参照** とし、A2/A3側の状態を本Issueで確定しない。
+- 依存関係表記は `A1 -> A2 -> A3` を維持し、A1 Done + pending queue 0 までA2/A3開放しない。
+
+### Phase 4: Execute
+- allowlist 2ファイルの契約文言同期のみ実施する。
+- allowlist外編集要求を受けた時点で **Stop（No-Go）**。
+
+### Phase 5: Verify
+- docs-check（validator / unittest / diff check）を実行し、self-correctionは最大3回。
+- 4回目相当、または競合兆候再発時は **Stop（人間判断へエスカレーション）**。
+
+### Phase 6: Proceed rule
+- Go: `ProceedGate=true` かつ承認証跡が充足。
+- Conditional: `ProceedGate=false` かつ未承認事項が `held` のみ。
+- No-Go/Stop: 競合兆候、未承認確定化、allowlist外編集要求、契約未固定でA2/A3確定要求。
