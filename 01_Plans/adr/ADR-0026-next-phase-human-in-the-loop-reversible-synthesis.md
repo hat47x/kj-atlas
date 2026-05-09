@@ -307,3 +307,27 @@
 - A2/A3 は mock依存で先行可能（backend完了待ち不要）だが、契約キー・型・版の再定義は不可。
 - Verify失敗時は self-correction 最大3回、超過時は停止（推測実行禁止）。
 - `pendingDecisionQueueCount>0` の間、判定は `Hold/Needs-decision` を維持する。
+
+
+## Stream A serial execution record（2026-05-09 / HIL-FB contract freeze gate）
+
+### Phase 1: Read同期
+- 対象再読: `ADR-0026`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`, `issue-FB-P2C-01-a1-interface-contract.md`。
+- 差分記録（Status/Priority/Dependencies/AC/DoD）:
+  - `ADR-0026`: `Status=Accepted`（維持）
+  - `HIL-RS-01 parent`: `Status=In Progress`, `Priority=P1`
+  - `HIL-RS-01 A1`: `Status=In Progress`, `Priority=P1`
+  - `FB-P0 baseline`: `Status=Open`, `Priority=P0`
+  - `FB-P2C A1`: `Status=Open`, `Priority=P0`
+- 不一致ログ: `HIL-RS系がIn Progress` と `FB系がOpen` で進捗段階が異なるため、Proceed判定を `Hold/Needs-decision` のまま維持する。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: クリティカルパスは `A1契約凍結` が唯一ゲートであり、親計画・baselineでの再定義は契約ドリフトを招く。
+- Decision: 本ADRでは固定キー（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）を参照専用で維持し、承認待ち2件の確定化を行わない。
+- Consequences: `pendingDecisionQueueCount>0` の間は `Go` 不可、`Hold/Needs-decision` を継続する。
+
+### Phase 3-6: Plan / Execute / Verify / Proceed
+- Plan: 実施範囲を docs-only に限定し、契約再定義を禁止。
+- Execute: 追記は本節のみ（既存契約値と判定式の更新なし）。
+- Verify: `A2A3_OPEN_ALLOWED` 判定式、SafeMode境界、承認遷移語彙のドリフト `0` を再確認。
+- Proceed: 未承認項目が残るため `Hold`。
