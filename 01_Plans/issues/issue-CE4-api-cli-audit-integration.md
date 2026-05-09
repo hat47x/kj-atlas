@@ -860,3 +860,46 @@
 - CE1 I/F未確定時は `sourceBundleHash=mock:<64hex>` とモック `equivalenceKey` を使用し、API/CLI/Audit 3経路の整合だけを検証対象にする。
 - 実装依存値（終了コード数値・匿名化方式・転送基盤）は Draft範囲外として固定し、Open化審査で確定扱いしない。
 - 依存がI/F契約のみの項目は `mock-first` で先行し、実装要求が混入した時点で `ProceedDecision: Stop` に移行する。
+
+## Stream E execution log（2026-05-09 / CE4 planning docs-only）
+
+### Phase 1: Read
+- 本Issue全文を再読し、`proposal-only` / `fail-closed` / 監査4イベントの既存契約を確認。
+- Scope制約（`issue-CE4-api-cli-audit-integration.md` のみ編集）と Stopper（verify>3 / 契約語彙衝突 / safeMode境界後退 / allowlist外編集）を確認。
+
+### Phase 2: ADR/CDC（Context / Decision / Consequences 確定）
+- **Context**: ContextQuery/ContextBundle の API/CLI/監査導線は、CE1依存有無（real/mock）に関係なく同一契約語彙で追跡可能である必要がある。
+- **Decision**:
+  1. 監査キーは `query` / `bundle` / `proposal` / `apply` を固定し、系列順序を必須化する。
+  2. `proposal-only` と `fail-closed` を維持し、監査欠損・同値不成立・ポリシー違反を成功扱いしない。
+  3. tri-state判定は `Proceed / Hold / Stop` を維持し、**fail-safe held 遷移**を以下で固定する。
+     - 任意の監査違反・同値違反・ポリシー違反を検知した時点で `Proceed -> Hold`。
+     - self-correction が 3 回を超える、または契約語彙衝突を検知した時点で `Hold -> Stop`。
+     - Hold 解除は「欠損修復 + docs-check pass + self-correction<=3」の同時成立時のみ許可する。
+- **Consequences**:
+  - API/CLI/監査の3経路で判定再現性が揃い、監査導線の断裂を抑制できる。
+  - 実装前に No-Go 条件を明確化でき、下流実装での安全境界後退を予防できる。
+
+### Phase 3: Plan（AC/DoD定義）
+- AC提案（本Issue内で合意固定）:
+  1. 監査キー4点（`query`/`bundle`/`proposal`/`apply`）と順序要件が明記されている。
+  2. fail-safe held 遷移（`Proceed->Hold->Stop`）と解除条件が明記されている。
+  3. API/CLI共通で `equivalenceKey AND bundleHash`、`proposal-only`、`fail-closed` が同時に読める。
+- DoD提案（本Issue内で合意固定）:
+  1. docs-only で契約文が自己完結し、実装依存の確定を持ち込んでいない。
+  2. safeMode境界後退（auto-*許可、fail-open化、監査項目削減）がない。
+  3. Verifyの自己修復回数が `<=3` で記録され、超過時 Stop が定義されている。
+
+### Phase 4: Execute（docs-only更新）
+- 本セクション追加のみ実施。コード/他文書/設定は未変更。
+
+### Phase 5: Verify（self-correction）
+- Verify-1: allowlist内単一ファイル編集であることを確認（pass）。
+- Verify-2: 監査キー4点と fail-safe held 遷移の明記を確認（pass）。
+- Verify-3: `proposal-only` / `fail-closed` / `equivalenceKey AND bundleHash` の後退なしを確認（pass）。
+- self-correction: `1/3`（文言統一のみ）。
+
+### Phase 6: Proceed/Stop
+- 判定: **Proceed候補（docs-contract更新完了）**。
+- Hold条件: 依存証跡不足、または docs-check 未実行/不合格。
+- Stop条件: verify>3、契約語彙衝突、safeMode境界後退、allowlist外編集。
