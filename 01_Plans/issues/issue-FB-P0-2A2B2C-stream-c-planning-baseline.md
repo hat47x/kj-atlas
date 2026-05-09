@@ -259,6 +259,74 @@
   3. `git diff --check`
 - Self-Correction count が `4回目相当` に到達した時点でフェイルセーフ停止。
 
+## Stream D 実行計画ベースライン（FB-P0-2A2B2C Planning Baseline / 2026-05-09）
+
+### Phase 1: Read
+- 各Phase開始時に allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）を再読する。
+- 差分確認の必須観点:
+  1. `A1 -> A2 -> A3` の依存順が維持されていること
+  2. Ready/Blocked 判定語彙が両ファイルで一致していること
+  3. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` が維持されていること
+- 差分発見時は `held` 記録のみ許可し、以降のPhaseへ進行しない。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+- A1契約凍結を唯一SSOTとして、A2/A3は誤って確定しないように統治する必要がある。
+- 依存関係を **実装依存** と **I/F依存** に分離し、並列化可能区間を明示する必要がある。
+
+#### Decision
+- 依存関係の分離定義（固定）:
+  - 実装依存: `A1 implementation -> A2 implementation -> A3 implementation`（直列）
+  - I/F依存: `A1 interface-contract -> A2 mock-validation`, `A1 interface-contract -> A3 mock-validation`（mock-firstで並列準備可）
+- Ready/Blocked 判定:
+  - `Ready(A2/A3) = (A1 interface-contract Approved) && (pendingDecisionQueueCount==0)`
+  - `Blocked(A2/A3) = !Ready(A2/A3) || undefinedConflictDetected`
+- mock活用条件（I/F依存のみで許可）:
+  1. upstreamが契約（I/F）未実装でも、契約ID・schemaVersionが一致していること
+  2. mock artifactに `A1-CONTRACT-MOCK-v1` を使用すること
+  3. mock結果は `implementation done` と同義扱いしないこと
+
+#### Consequences
+- I/F依存箇所は mock-first で並列準備可能、実装依存箇所は A1→A2→A3 の直列を維持する。
+- 依存自己矛盾（例: A2をReadyとしつつA1未承認）は `No-Go` として停止する。
+
+### Phase 3: Plan（AC/DoD）
+- AC
+  1. 依存関係が「実装依存 / I/F依存」に分離記述されている。
+  2. I/F依存の全箇所に mock-first 条件が付記されている。
+  3. Ready/Blocked 判定がA1→A2→A3依存順と矛盾しない。
+  4. allowlist外ファイル差分が0である。
+- DoD
+  1. docs-checkで依存順・優先度・競合回避の整合が確認できる。
+  2. diff健全性（`git diff --check`）がpassする。
+  3. self-correctionは最大3回以内で収束する。
+
+### Phase 4: Execute
+- 本ファイル内でのみ、依存関係・判定式・mock条件の記述を統一する。
+- 実装仕様の確定、他issueの改変、allowlist外編集を実施しない。
+- AC/DoD不足を検知した場合はドラフト提案として追記し、合意前は確定扱いしない。
+
+### Phase 5: Verify
+- 最低実施:
+  1. docs-check（依存順、優先度、競合回避の整合）
+  2. diff健全性（`git diff --check`）
+  3. self-correction 最大3回
+- 実行コマンド:
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+
+### Phase 6: Proceed or Stop
+- Proceed条件:
+  - AC/DoD充足
+  - 未承認事項が `held` として明示維持され、確定扱いされていない
+  - 依存関係の自己矛盾がない
+- Stop条件（ストッパー）:
+  1. 未定義競合
+  2. 依存関係の自己矛盾
+  3. scope逸脱（allowlist外編集要求/実施）
+  4. self-correction 3回超過の修復失敗
+
 ### Phase 5: 停止条件（即停止・報告）
 - 即停止トリガー:
   1. allowlist外編集要求
