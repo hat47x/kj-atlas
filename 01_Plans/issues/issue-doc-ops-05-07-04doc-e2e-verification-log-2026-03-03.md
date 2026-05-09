@@ -334,3 +334,34 @@
 - Stop条件:
   - `self-correction > 3`。
   - 依存Issueとの語彙/判定競合が解消不能。
+
+## Stream E serial pass（2026-05-09 / Gate-C proposal-only）
+
+### Phase 1 Read同期
+- 対象再Read: 本Issueのみ再読し、`Move internal`・監査証跡用途・`ProceedDecision: Hold` を再確認。
+- 依存確認: `05-06完了待ち（単方向依存）` を維持。
+
+### Phase 2 Plan（Open化条件・AC/DoD・レビュー観点）
+- Open化条件（提案）:
+  1. Approval Record 5項目確定。
+  2. 05-06の判定軸（pass/fail/blocked）との相互参照確認。
+  3. docs-check結果添付。
+- AC/DoD（提案）:
+  - AC-E-0507-1: 監査必須キー（実行コマンド/成否/未実施理由/再開条件）の再読可能性。
+  - DoD-E-0507-1: 依存未確定時 `Hold`、`self-correction <=3` の維持。
+- レビュー観点: 公開境界逸脱、監査キー欠落、Gate-Bとの語彙不一致。
+
+### Phase 3 Execute（proposal-only）
+- 実施: Gate-C提案整理のみ。
+- 非実施: 実ログ生成、配置移設、他Issue編集、実装変更。
+
+### Phase 4 Verify（依存ゲート・リンク・語彙整合）
+- 依存ゲート: Gate-B未確定のため `Hold`。
+- リンク: 05-06参照導線の存在を維持。
+- 語彙整合: `Go/NoGo`, `Proceed/Hold/Stop`, `pass/fail/blocked` を維持。
+
+### Phase 5 Proceed/Stop
+- ProceedDecision: **Hold**
+- Stop条件:
+  1. 依存競合が解消不能。
+  2. self-correction 4回目相当。
