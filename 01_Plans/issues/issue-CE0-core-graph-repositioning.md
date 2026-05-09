@@ -1972,3 +1972,31 @@
 ### Phase 6 Proceed
 - 判定: **Ready**（AC/DoDとの矛盾なし、contract-only境界維持、allowlist逸脱なし）。
 - 保留理由: なし（未承認事項の新規発生なし）。
+
+## Phase Execution Record（2026-05-09 / Stream C専任 / Core Graph contract-boundary freeze only）
+### Phase 1 Read（語彙/role/transition/no-go再確認）
+- `role / transition / no-go` 固定語彙を再読し、`working` / `context_projection` / `consensus` の責務境界に差分がないことを確認。
+- 許可遷移は `working -> consensus` の `patch+approval` のみ、禁止遷移は `direct write` / `auto-apply` / `auto-publish` のまま維持。
+- canonical No-Go 5 IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）の不変を確認。
+
+### Phase 2 ADR（C/D/C）
+- Context: Core Graph責務境界は下流実装へ拡張せず、契約固定のみを継続する必要がある。
+- Decision: `No ADR delta`。既存契約（role/transition/no-go、SafeMode既定ON後退禁止、direct write禁止）を変更しない。
+- Consequences: 未承認/未定義競合は確定化せず `held` に退避し、推測実装を行わない。
+
+### Phase 3 Plan（AC/DoD不足補完ドラフト）
+- AC/DoD不足確認の結果、新規不足は未検出。既存 AC-1〜AC-9 / DoD-1〜DoD-5 で判定可能。
+- 不足発生時の補完ドラフト方針を再確認: 本Issue内に追記し、明示合意まで `held` 維持。
+
+### Phase 4 Execute（契約文面のみ）
+- 実施内容を本Issueの実行記録追記のみに限定し、実装・スキーマ・他ストリームファイルへの変更は行わない。
+- `role / transition / no-go` 語彙および fail-safe（safeMode後退禁止、allowlist外編集禁止、未定義競合時停止）を維持。
+
+### Phase 5 Verify（自己修復は最大3回）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` を実行し、pass（self-heal 0/3）。
+- `git diff --check` を実行し、pass。
+- `git status --short` を実行し、編集対象が `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみであることを確認。
+
+### Phase 6 Proceed
+- 判定: `Ready`（contract-only / single-file / allowlist 準拠 / AC・DoD整合）。
+- Stop条件: `direct write許容` / `safeMode後退` / `未定義競合` / `allowlist外編集要求` が発生した場合は即停止。
