@@ -353,3 +353,55 @@
 - 依存Issue本文へ編集が必要になった場合は即 `Stop`。
 - 未定義競合（語彙定義またはGate境界）が発生し解消不能な場合は `Stop`。
 - 自己修復が3回を超える場合は `Stop`。
+
+## Stream K integration pass（2026-05-09 / Gate-A: DOC-OPS-05-05）
+
+### Scope lock（proposal-only）
+- Edit scope: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md` のみ。
+- Out of scope: 他Issue本文編集、`01_Plans/documentation_quality.md` 本文改稿、`03_Implement/**` 変更、`04_Documentation/**` 更新。
+- Dependency rule: Gate-B（05-06）/Gate-C（05-07）を逆依存させない（informational link のみ）。
+
+### Phase 1: Read（Gate-A基準再確認）
+- 固定語彙を再確認: `Go/NoGo`、`Proceed/Hold/Stop`、`docs-check`、`self-correction <= 3`。
+- 固定判定を再確認: `Classification: Move internal`、`ProceedDecision: Hold`。
+- 停止条件を再確認: 4回目相当の自己修復が必要な時点で `Stop`。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: Gate-A は後続Gate(B/C)の語彙・判定・停止条件の基準点であり、ここで揺れを残すとOpen化審査ログが分岐する。
+- Decision:
+  1. Gate-A 固定語彙を本Issueの単一正本として維持する。
+  2. Open化審査入力は `Approval Record` 5項目（日時/承認者/対象/判断/evidence）を必須とする。
+  3. 依存証跡未確定の間は `ProceedDecision: Hold` を維持し、推測でGo判定しない。
+- Consequences:
+  1. Gate-B/C の判定語彙ドリフトを抑止できる。
+  2. Open化審査時の監査入力不足を事前検知できる。
+  3. 停止条件が明示され、再実行の可逆性が維持される。
+
+### Phase 3: Plan（AC/DoD補完）
+- AC-K1（語彙固定）: Gate-A用語セット（Go/NoGo, Proceed/Hold/Stop, docs-check, self-correction<=3）が本文内で追跡可能。
+- AC-K2（判定固定）: `Classification` / `Dependency status` / `ProceedDecision` の三点が矛盾なく併記される。
+- AC-K3（審査入力）: `Approval Record` 5項目がOpen化判定入力として明示される。
+- DoD-K1: `proposal-only` と `本Issueのみ更新` が本文で明示される。
+- DoD-K2: Verify自己修復は最大3回、4回目相当で `Stop` を明示する。
+- DoD-K3: Gate-B/C逆依存禁止（informationalのみ）を明示する。
+
+### Phase 4: Execute（本Issueのみ更新）
+- 実施: Gate-A基準（語彙・判定・停止条件）とOpen化審査入力の固定化を本文に追記。
+- 非実施: 後続Gate（05-06/05-07）本文の編集。
+
+### Phase 5: Verify（最大3回修復）
+- Verify-K1: docs-check 前提の章立て（Read→ADR→Plan→Execute→Verify→Proceed/Stop）が存在する。
+- Verify-K2: `ProceedDecision: Hold` と `Stop条件` が同一節で再読可能。
+- Verify-K3: self-correction カウントが上限内である。
+- self-correction status: `2/3`（本pass時点）。
+
+### Phase 6: Proceed / Stop
+- ProceedDecision: **Hold**
+- Reason: Open化審査の承認証跡（Approval Record）が未確定。
+- Proceed再判定条件:
+  - R1: Approval Record 5項目の記入完了。
+  - R2: 05-06/05-07 と `ProceedDecision` 語彙一致確認ログの追記。
+  - R3: docs-check 実行記録の追記。
+- Stop条件:
+  1. self-correction が4回目相当へ到達。
+  2. Gate-B/C と語彙矛盾が発生し、3回以内に修復不能。
