@@ -2351,3 +2351,51 @@ handoffKeys:
 - Needs-decision:
   1. 上位合意者（2者承認）の最終サインオフ時点をどの運用イベントで確定するか。
   2. `missing key` を `400 unknown_contract_key` に統一するか、`422` 系に分離するか（現時点は既存固定語彙優先で据え置き）。
+
+## Stream D execution update（2026-05-09 / contract-only handoff freeze）
+
+### Phase 1 Read（latest state sync）
+- 編集対象を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` のみに再固定。
+- CE1の責務を `ContextQueryV1` / `ContextBundleV1` の **契約先行固定のみ** に限定し、実装要素（handler/UI/DB/worker）を除外することを再確認。
+- 固定エラー語彙を `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` に統一済みであることを確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4 を mock で独立進行させるには、CE1が契約（型・語彙・hash規約）を先行固定し、実装依存を切断している必要がある。
+- **Decision**:
+  - `ContextQueryV1` / `ContextBundleV1` を closed-world v1 契約として維持。
+  - `previewConfirmed=false -> 422 preview_required` を入口ゲートとして固定。
+  - `queryCanonicalHash` / `bundleHash` は同一 canonical query で決定論的一致を要求し、不一致時は `409 nondeterministic_bundle` とする。
+- **Consequences**: CE2/CE4 は mock-only で `sourceBundleHash === bundleHash` と `equivalenceKey + bundleHash` を利用して検証継続可能。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC補完:
+  - AC-1: 契約参照点を本issue単独で完結させる（型・語彙・hash規約）。
+  - AC-2: 決定論検証を「同一 canonical query 3回一致」で固定。
+  - AC-3: fixed error semantics を 3語彙に固定し、別名語彙を禁止。
+- DoD補完:
+  - DoD-1: CE2 は `sourceBundleHash === bundleHash` の比較のみで継続可。
+  - DoD-2: CE4 は `equivalenceKey + bundleHash` で監査再現可。
+  - DoD-3: handoff成果物は契約情報のみ（実装TODO非包含）。
+
+### Phase 4 Execute（contract-only）
+- 既存契約を再固定し、追加の実装依存記述を行わない。
+- closed-world逸脱（未定義キー）を `400 unknown_contract_key` で fail-closed とする方針を維持。
+- preview gate / hash決定論 / fixed error semantics を契約境界として維持。
+
+### Phase 5 Verify（self-repair max 3）
+- Verify-1: mock正常系で `queryCanonicalHash` / `bundleHash` の3回一致要件を再確認。
+- Verify-2: mock異常系で `previewConfirmed=false -> 422 preview_required` を再確認。
+- Verify-3: mock異常系で unknown key / 非決定論をそれぞれ `400 unknown_contract_key` / `409 nondeterministic_bundle` にマップできることを再確認。
+- self-repair log:
+  - attempt 1: 用語揺れ点検（差分なし）
+  - attempt 2: handoff key表記を既存定義へ再統一（差分なし）
+  - attempt 3: 停止条件との整合を点検（差分なし）
+- 判定: pass（contract-only verification）
+
+### Phase 6 Proceed（read-only handoff）
+- CE2/CE4 への引き渡しは **read-only契約**（型・語彙・hash規約・handoff key）に限定。
+- 実装接続要求は本issueの範囲外として reject。
+
+### Stop condition check
+- 承認未了（Security Officer / System Owner の2者承認待ち）が解消されるまで、状態は **held** を維持。
+- 依存推測補完・未定義競合の発生時は即時Stopし、Phase 2 ADRへロールバック。
