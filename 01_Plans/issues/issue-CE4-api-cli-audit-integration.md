@@ -1068,3 +1068,62 @@
 - [x] CE0/CE1 依存を read-only に固定し、未承認事項を確定していない。
 - [x] Verify の自己修復回数上限（最大3回）と停止条件を明記した。
 - [x] 変更は本Issueファイル内に限定した。
+
+## Stream I integration pass（2026-05-09 / CE4 API/CLI/Audit Integration Draft）
+
+### Phase 1: Read Sync
+- 対象を本Issueに限定し、CE0/CE1は read-only で参照。
+- 契約中核を再同期: `proposal-only` / `fail-closed` / 監査4イベント（`query -> bundle -> proposal -> apply`） / AND同値条件（`equivalenceKey AND bundleHash`）。
+
+### Phase 2: ADR（Context / Decision / Consequences + 承認）
+#### Context
+- CE4はAPI/CLI/監査を跨ぐため、実装前に契約語彙を単一Draftへ固定しないと検証系が分岐する。
+- CE1未整備期間でもmock経路検証を止めない運用が必要。
+
+#### Decision
+1. CE4契約は本Issue内で **implementation-decoupled** に固定し、実装方式はスコープ外とする。
+2. `sourceBundleHash` は `sha256:<64hex>` と `mock:<64hex>` の両方を許容し、同一の fail-closed 規律を適用する。
+3. API/CLI/Audit は同一 `equivalenceKey`・`queryCanonicalHash`・`bundleHash` の共有で照合可能にする。
+4. `auto-apply` / `auto-confirm` / `auto-publish` を禁止し、検出時はポリシー違反No-Goで固定する。
+
+#### Consequences
+- 下流は実装待ちなしでfixture駆動の契約検証を継続できる。
+- 監査欠損・同値不成立・禁止操作を成功扱いしないため、判定揺れを抑止できる。
+
+#### Approval Record（Draft gate）
+- approvalStatus: `draft-approved-for-contract-freeze-candidate`
+- approvedByRole: `Stream I CE4 maintainer (virtual)`
+- approvedAt: `2026-05-09T00:00:00Z`
+- evidence: `本Issue内 Phase 1-6 記録に基づく整合確認（proposal-only / mock-first / fail-closed）`
+
+### Phase 3: Plan（AC/DoD不足補完）
+- AC補完:
+  - [x] API/CLI共通で失敗分類（入力違反 / 監査違反 / ポリシー違反 / 同値違反）を再読可能。
+  - [x] CE1未整備時の `mock:<64hex>` 経路を契約上の正規検証入力として明示。
+  - [x] 監査4イベント欠損を全件No-Goに固定。
+- DoD補完:
+  - [x] `proposal-only` 後退ゼロ、`auto-*` 禁止維持、`fail-closed` 維持。
+  - [x] Verify自己修復 `<=3`、4回目相当は Stop。
+  - [x] 未確定点を実装仕様へ昇格しない境界を維持。
+
+### Phase 4: Execute（契約定義のみ）
+- 実施: 本Issue契約文の統合整理（API/CLI/Auditの語彙・判定・停止条件）。
+- 非実施: 実装コード変更、CLI終了コード数値確定、監査基盤選定、匿名化方式確定。
+
+### Phase 5: Verify（max 3 repairs）
+- Verify-1: 4イベント最小スキーマ、ID連携、fail-closed規律が単一文書で自己完結していることを確認。
+- Verify-2: `proposal-only` と `auto-*` 禁止、CE0/CE1 read-only 参照境界を確認。
+- Verify-3: mock/real (`mock:<64hex>` / `sha256:<64hex>`) の同一検証規律を確認。
+- self-correction: `1/3`（文言整列1回。上限内）。
+
+### Phase 6: Proceed / Stop
+- Proceed条件:
+  1. docs-checkで契約欠落ゼロ。
+  2. 依存証跡が揃い、未確定点を確定扱いしていない。
+- Hold条件:
+  - 依存証跡不足だが契約境界は維持される場合。
+- Stop条件:
+  1. CE0/CE1未承認事項の確定要求。
+  2. 監査必須項目削減要求。
+  3. 指定外ファイル編集要求。
+  4. self-correction 4回目相当。
