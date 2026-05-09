@@ -1,148 +1,99 @@
-# Issue Ready: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
+# Issue Plan: QA-UNIT-01 ユニットテスト拡充（欠陥検知能力ベース）
 
 - Type: Process
-- Status: Ready (Execution Plan Fixed)
-- Source Issue: N/A
+- Status: Draft (Plan-Refined / Execution Hold)
 - Priority: P2
-- Owner: Stream I（QA-UNIT-01 Draft Ready化）
-- Dependencies:
-  - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（P0収束）
-  - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（検証スコープ同期）
-- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（本作業は計画文書更新のみ）
+- Owner: Stream D（QA計画整備専任）
+- Scope: `01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`（計画文書更新のみ）
 - Out of Scope: 実装コード変更 / テストコード追加 / CI設定変更 / 他Issue・ADR編集
-- Start Gate (fixed): FB-P0収束完了 + HIL-RS-02計画同期完了まで execution は Hold（docs-only）
-- Related ADR/Spec: `ADR-0001-value-to-requirements`, `ADR-0019-e2e-verification-policy-and-compose-runbook`
+- Dependencies（前提条件として明示のみ）:
+  - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+  - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Start Gate: 依存未解除時は docs-only を維持
 - Expected verification level: `unit`
 
-## Requirement meta I/F（共通キー）
+## 1) Read同期（不足整理）
 
+- coverage向上の語だけでは、欠陥検知力の判定ができない。
+- 高リスク領域の優先度はあるが、Ready判定との接続が不足している。
+- 実行時の停止条件と自己修復上限の運用文が不足している。
+
+## 2) Plan（AC/DoD不足補完提案）
+
+## Requirement meta I/F
 - RequirementID: `QA-UNIT-01`
-- RequirementStatement: 主要ドメインロジックのユニットテストを、**網羅率の数値目標ではなく欠陥検知能力**を基準として拡充する。
+- RequirementStatement: 網羅率の数字ではなく、欠陥検知能力を基準にユニットテスト計画を拡充する。
 - PriorityClass: Should
-- AcceptanceScenario:
-  - 前提: 既存unit基盤（Vitest/Pytest）が実行可能
-  - 操作: 高リスク領域に対して設計済みテストケースを追加
-  - 期待結果: 正常系/異常系/境界値の失敗検知が再現可能
-  - 除外: E2E追加・機能改修・閾値先行導入
-- GoNoGoGate: Optional
-- SecurityGateImpact: SafeMode
 - VerificationLevel: unit
+- SecurityGateImpact: SafeMode
 - DecisionStatus: Hold-for-Dependency-Gate（execution only）
-- DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
-- DependencyLockPolicy: Dependency未解除時は docs-only。テスト実装・閾値導入・CI変更を開始しない。
 
-## 1) 課題 / Problem statement（曖昧目標の明確化）
+### 2.1 Acceptance Criteria（補完後）
+- AC-01: P1/P2/P3の優先順位と対象候補が固定されている。
+- AC-02: 正常系/異常系/境界値/回帰点の4観点が対象ごとに記載されている。
+- AC-03: 完了条件がcoverage固定閾値に依存せず、欠陥検知能力で定義される。
+- AC-04: 先行可能領域と契約待ち領域が分離されている。
+- AC-05: 実行前提コマンドと失敗時トリアージ順序が明示されている。
+- AC-06: 依存未解除時 docs-only 統制文が保持される。
 
-従来の「coverage向上」は、以下の曖昧さを残していた。
+### 2.2 Definition of Done（補完後）
+- DoD-01: 追加テスト採用基準（検知できる欠陥クラス）が明文化される。
+- DoD-02: 再現性条件（同一入力→同一結果、flake抑制方針）が定義される。
+- DoD-03: 保守性条件（命名規約、fixture最小化、過剰モック回避）が定義される。
+- DoD-04: 失敗時修復ポリシー（self-correction最大3回、4回目相当で停止）が明示される。
+- DoD-05: 依存解除前は execution を開始しないことが明記される。
 
-- coverage率が上がっても、欠陥を検知できるとは限らない。
-- 変更頻度の高い領域（safeMode/validation/diff）で、異常系や境界値の回帰検知が不足しうる。
-- テスト失敗時の切り分け順序が不明瞭で、レビューがデバッグ作業へ流れやすい。
+## 3) Execute（Draft/Ready条件の明文化 + テスト観点表）
 
-本Issueはこの曖昧さを解消し、実装前に「何を検知できれば十分か」を固定する。
+### 3.1 Draft/Ready条件
+- Draft維持条件: AC/DoDまたは観点表が未充足。
+- Ready（Planning）条件: AC/DoD/観点表/停止条件が揃い、docs-only統制が明記される。
+- Ready（Execution）条件: 上記に加え、依存解除証跡が確認済み。
 
-## 2) Context
+### 3.2 リスクベース対象
+- P1: Frontend safeMode判定 / validation / diff適用可否
+- P2: Backend request validation / service failure handling
+- P3: 契約未凍結の連携境界（mock-firstで観点のみ保持）
 
-- ADR-0019: 結合品質の前段として unit 検証の積み上げを重視。
-- ADR-0001: 可逆性・説明可能性・レビュー追跡性を品質判断の軸に置く。
-- 現行基盤: Frontend（Vitest）/ Backend（Pytest）は存在し、追加設計を段階投入可能。
+### 3.3 テスト観点表（unit計画）
 
-## 3) Decision（Ready化の中核）
+| Priority | 対象 | 正常系 | 異常系 | 境界値 | 回帰点 |
+|---|---|---|---|---|---|
+| P1 | safeMode判定 | 許可条件で許可 | 条件不足で拒否 | 閾値境界で安定 | safeMode緩和の再発検知 |
+| P1 | 入力validation | 正常入力通過 | 不正入力fail-fast | 空/最小/最大で安定 | validation抜け再発検知 |
+| P1 | diff適用判定 | 正常差分適用 | 不整合差分拒否 | 境界件数で安定 | 誤適用再発検知 |
+| P2 | request validation | 契約入力受理 | 契約違反拒否 | 欠落/過剰項目境界 | 契約逸脱再発検知 |
+| P2 | service失敗系 | 正常復帰パス | 失敗時に誤成功しない | 最小データで挙動一定 | 失敗握り潰し再発検知 |
 
-### 3.1 リスクベース優先順位（対象モジュール候補）
-
-P1（最優先: 安全境界 / 回帰影響大）
-1. Frontend `safe_mode` 相当ポリシー判定ロジック
-2. Frontend import/export 前段の validation ロジック
-3. Frontend diff/patch 適用可否判定ロジック
-
-P2（高優先: 仕様逸脱検知）
-4. Backend request validation / schema整合チェック
-5. Backend service層の失敗系ハンドリング（不正入力・前提不成立）
-
-P3（依存確定後）
-6. 依存契約が未凍結の連携境界（mock先行で設計のみ保持）
-
-### 3.2 欠陥検知能力で定義するカバレッジ目標
-
-本Issueでは coverage数値そのものを完了条件にしない。代わりに以下を必須化する。
-
-- 正常系: 期待出力・状態遷移が仕様どおりである。
-- 異常系: 不正入力・契約違反を fail-fast で拒否し、誤った成功を返さない。
-- 境界値: 空入力/最小値/最大値/閾値境界で挙動が安定し、意図しない丸め・通過がない。
-- 回帰点: 既知不具合クラス（safeMode緩和、validation抜け、diff誤適用）を再発時に必ず検知する。
-
-### 3.3 先行可能設計と契約待ち設計の分離
-
-- 先に書けるユニットテスト設計（契約確定不要）
-  - 純関数/同期ロジック（safeMode判定、入力検証、diffルール）
-  - deterministicな入出力を持つユーティリティ
-- 契約確定後に実装する設計（契約待ち）
-  - API contract依存のエラーコード精査
-  - 外部境界での型拡張・互換動作
-
-契約待ちは mock-first でテスト観点のみ先行定義し、実装着手は gate解除後に限定する。
-
-### 3.4 CI実行前提と失敗時修復ポリシー
-
-CI前提（unitレベル）
+### 3.4 実行前提とトリアージ
 - Frontend: `npm run test -- --coverage --runInBand`
-- Backend: `pytest -q --maxfail=1` と `pytest --cov=src --cov-report=term-missing`
+- Backend: `pytest -q --maxfail=1`
+- Backend coverage補助: `pytest --cov=src --cov-report=term-missing`
 
-失敗時トリアージ順序（固定）
-1. **前提不備**: 依存欠落・fixture破損・環境差分を確認
-2. **契約不整合**: 期待仕様とテスト期待値のズレを確認
-3. **実装回帰**: 直近変更点でロジック崩れを確認
-4. **テスト設計不良**: brittle/assertion不足/過剰モックを修正
+失敗時トリアージ順序:
+1. 前提不備（依存・fixture・環境差分）
+2. 契約不整合（仕様と期待値ズレ）
+3. 実装回帰（直近変更の影響）
+4. テスト設計不良（brittle/assertion不足/過剰モック）
 
-ルール
-- 同一失敗の自己修復（self-correction）は最大3回。
-- 4回目相当が必要なら停止し、ブロッカーを issue に記録して human judgement に移送する。
+## 4) Verify（検証手順の実行可能性自己点検）
 
-## 4) Acceptance Criteria（検証可能なAC）
+- チェック1: AC/DoDがYes/Noで判定可能。
+- チェック2: coverage値依存ではなく欠陥検知能力で説明可能。
+- チェック3: 優先順位と観点表から実装時ケース分解が可能。
+- チェック4: 停止条件とself-correction上限が明文化される。
 
-- [ ] AC-01: リスクベース優先順位（P1/P2/P3）と対象候補が明示されている。
-- [ ] AC-02: 正常系/異常系/境界値/回帰点の4観点が、対象ごとに確認可能な形で定義されている。
-- [ ] AC-03: 欠陥検知能力ベースの完了条件が、coverage率の固定閾値に依存せず記述されている。
-- [ ] AC-04: 「先行可能（mock不要）」と「契約確定後（mock先行設計）」が分離されている。
-- [ ] AC-05: CI実行前提コマンドと失敗時トリアージ順序が明示されている。
-- [ ] AC-06: Dependency lock未解除時は docs-only を維持する統制文が保持されている。
+自己点検結果（2026-05-09 UTC）
+- Planning Ready: Yes
+- Execution Ready: No（前提条件未確認のため）
 
-## 5) Definition of Done（DoD）
+## 5) Proceed / Stop
 
-- [ ] DoD-01: 追加テスト判定基準（何を検知できれば採用か）が明文化されている。
-- [ ] DoD-02: 回帰検知の再現性条件（同一入力で同一結果、flake回避方針）が定義されている。
-- [ ] DoD-03: 保守性条件（命名規約、fixture最小化、過剰モック回避）が定義されている。
-- [ ] DoD-04: 失敗時の修復ポリシー（最大3回・停止条件）が明示されている。
-- [ ] DoD-05: 実行開始前の依存解除条件（FB-P0 + HIL-RS-02同期）が明示されている。
+- Proceed条件: 依存解除証跡が揃った場合のみ execution に移行。
+- Stop条件:
+  1. 対象優先順位を確定できない。
+  2. 契約未確定で観点定義が成立しない。
+  3. スコープ外編集が必要。
+  4. self-correction が3回を超える。
 
-## 6) Task breakdown（Execution準備）
-
-- [ ] T1: 高リスク領域ごとに「正常/異常/境界/回帰」観点マトリクスを作成する。
-- [ ] T2: Frontend候補（safeMode/validation/diff）を case ID 単位で分解する。
-- [ ] T3: Backend候補（validation/service failure）を case ID 単位で分解する。
-- [ ] T4: mock先行領域と契約確定待ち領域を分離し、着手順を固定する。
-- [ ] T5: Verifyログ様式（Before/After、検知欠陥クラス、再現手順）を固定する。
-
-## 7) Validation plan（計画文書としての検証）
-
-本フェーズは docs-only のため、以下を満たせば検証完了とする。
-
-- 文書内に AC/DoD/Dependencies/Stop 条件が存在する。
-- AC/DoD が「実行時にYes/No判定可能」な粒度で記述される。
-- coverage率偏重を避け、欠陥検知能力が主判定になっている。
-
-## 8) Consequences
-
-- 実装フェーズ開始時に、対象優先度・観点・停止条件が既に固定され、手戻りを抑制できる。
-- coverage数値を追うだけの形式的改善を避け、実害のある回帰を捕捉しやすくなる。
-- dependency lock下でも docs-only で準備を進められ、再開可能性を維持できる。
-
-## 9) Fail-safe / Stop conditions
-
-以下のいずれかで停止し、必要最小限の確認事項のみ列挙する。
-
-1. 対象モジュールの優先順位を確定できない。
-2. 契約未確定で観点定義が成立しない。
-3. スコープ外編集が必要になる。
-4. self-correction が3回を超える。
+self-correction count: 0 / 3
