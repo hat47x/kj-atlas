@@ -1597,3 +1597,40 @@ state: Needs-decision
   - 未定義ファイル競合: no
   - 前提条件崩壊: no
   - 安全境界後退兆候: no
+
+
+## Stream A A1 freeze audit run（2026-05-09）
+
+### Phase 1 Read（Plan -> Execute -> Verify -> Proceed）
+- Plan: allowlist 2ファイルを再読し、契約キー・依存式・SafeMode境界の差分を検査する。
+- Execute: `freezeContractId`, `schemaVersion`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`, `A2A3_OPEN_ALLOWED` を照合。
+- Verify: 差分なし（契約キーおよび唯一判定式のドリフト `0`）。
+- Proceed: Phase 2へ進行。
+
+### Phase 2 ADR/CDC（internal approval log）
+- Context: A1契約凍結を唯一ゲートとして維持し、A2/A3での再定義を防止する必要がある。
+- Decision: 既存固定値（`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` / `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`）を変更せず据え置く。
+- Consequences: A2/A3は read-only 参照を継続し、未承認事項（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `held` のまま確定化しない。
+- Approval log: `stream-a-internal-consensus-2026-05-09=approved`（docs scope / freeze candidate維持）。
+
+### Phase 3 Plan
+- Target files: allowlist 2ファイルのみ。
+- Change sections: 監査実行記録（本セクション）とbaseline側同期記録。
+- AC/DoD:
+  1. 固定契約（`freezeContractId` / `schemaVersion` / `safeMode*` / `decisionQueueTransition`）を再定義しない。
+  2. `A2A3_OPEN_ALLOWED` を唯一判定式として保持する。
+  3. 未承認事項は `held` 維持のまま Proceed 判定する。
+
+### Phase 4 Execute
+- 実施内容: 文書同期のみ（allowlist内）。
+- 非実施: 契約ID改名/追加/削除、safeMode境界変更、A2/A3仕様追加。
+
+### Phase 5 Verify
+- AC/DoD照合: 充足。
+- docs-check: validator / unittest / diff check を実行（結果は本PRの検証ログ参照）。
+- Self-Correction: `0/3`。
+
+### Phase 6 Proceed
+- 判定: `Conditional (Needs-decision)`。
+- 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+- Stopper確認: safeMode後退要求・契約ID変更要求・allowlist外編集要求・未定義競合は未検知。

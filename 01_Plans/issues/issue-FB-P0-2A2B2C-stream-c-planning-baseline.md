@@ -393,3 +393,24 @@
 - Decision state: `Hold (Needs-decision)`。
 - 根拠: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
 - 必要承認項目: `approved_by`, `approved_at`, `evidence`, `HIL-RS-02-GOV-EXCEPTION-01 final decision`。
+
+
+## Stream A A1 contract-only sync run（2026-05-09）
+
+### Phase 1 Read
+- allowlist 2ファイルを再読し、`A2A3_OPEN_ALLOWED` と固定キー群（`freezeContractId`, `schemaVersion`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の差分を確認。
+- 結果: 差分 `0`。
+
+### Phase 2 ADR/CDC
+- Context: baselineはA1凍結契約の運用基準線であり、判定式ドリフトを許容しない。
+- Decision: 既存の固定値・判定式・No-Go条件を据え置く（再定義しない）。
+- Consequences: 未承認事項は `held` 維持、A2/A3の確定化は禁止。
+- Approval log: `stream-a-baseline-consensus-2026-05-09=approved`（docs scope）。
+
+### Phase 3 Plan / Phase 4 Execute
+- Plan: 本ファイルへ同期監査記録を追記し、A1契約Issueと整合を固定。
+- Execute: allowlist内のみ更新。契約ID・SafeMode境界・遷移式の値変更は未実施。
+
+### Phase 5 Verify / Phase 6 Proceed
+- Verify: AC/DoD自己照合 + docs-check前提を満たすことを確認。
+- Proceed: `Conditional (Needs-decision)` 維持（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）。
