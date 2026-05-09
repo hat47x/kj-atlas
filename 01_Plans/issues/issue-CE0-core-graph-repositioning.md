@@ -1944,3 +1944,31 @@
 - Proceed判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only維持）。
 - Stop判定: 致命条件は未発火（語彙差分なし、契約ID再定義なし、SafeMode後退なし、修復上限超過なし）。
 - 未承認事項在庫: なし。将来発生時は `held` または `stopped_for_clarification` で停止。
+
+## Phase Execution Record（2026-05-09 / Stream D / CE0 contract-boundary confirmation）
+### Phase 1 Read
+- 現行メタ（Scope/Non-Goals/AC/DoD/Stop Conditions）と依存（`issue-CE0-contract-freeze.md`）を再読し、契約境界が `contract-only` で固定されていることを確認。
+- 非目標（実装変更、Schema migration、契約ID再定義）を再抽出し、allowlist外編集要求は未検出。
+
+### Phase 2 ADR CDC（Context / Decision / Consequences）
+- Context: CE0 core graph repositioning を実装へ拡張せず、契約境界のみで確定する必要がある。
+- Decision: `role` は `working` / `context_projection` / `consensus`、許可遷移は `working -> consensus` の `patch+approval` のみ、No-Go は canonical 5 IDs のみを維持。
+- Consequences: 副作用として実装タスクの前倒し確定を防止し、未承認事項は `held/pending` 在庫のまま維持する。
+
+### Phase 3 Plan（AC/DoD）
+- AC再定義なしで既存 AC-1〜AC-9 を採用し、監査可能性は `docs-check` 実行記録と固定語彙トレースで担保。
+- DoD再定義なしで既存 DoD-1〜DoD-5 を採用し、非競合性は single-file 更新と allowlist 準拠で担保。
+
+### Phase 4 Execute
+- 本Issue本文のみを更新し、他ファイル（実装/図面/スキーマ本体）は未編集。
+- `role / transition / no-go` 語彙を固定したまま、契約境界確定の実行記録を追記。
+
+### Phase 5 Verify
+- 用語統一: `role / transition / no-go`、canonical 5 IDs、`patch+approval` の表記ゆれなし。
+- 依存矛盾: `issue-CE0-contract-freeze.md` 依存前提との矛盾なし。
+- allowlist逸脱: 編集対象は `01_Plans/issues/issue-CE0-core-graph-repositioning.md` のみ。
+- Self-Correction: 0/3（追加修正不要）。
+
+### Phase 6 Proceed
+- 判定: **Ready**（AC/DoDとの矛盾なし、contract-only境界維持、allowlist逸脱なし）。
+- 保留理由: なし（未承認事項の新規発生なし）。
