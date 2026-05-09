@@ -2244,3 +2244,49 @@ handoffKeys:
   - contract / handoff key collision
   - allowlist外編集
   - 未定義依存前提での強行
+
+## Stream D execution update（2026-05-09 / CE1 ContextQuery/ContextBundle Foundation）
+
+### Phase 1 Read sync（冒頭再読・前提固定）
+- 本Phase冒頭で本対象ファイルを再読し、編集スコープが本ファイルのみであることを確認。
+- CE1は contract-only（I/F定義・mock検証計画・実装準備境界）に限定し、実装コード変更を行わないことを確認。
+- 固定語彙と停止条件を再確認（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`、失敗時自己修復3回まで）。
+
+### Phase 2 Plan（I/F先行定義 → モック検証可能化 → 実装準備）
+- 手順固定:
+  1) **I/F先行定義**: `ContextQueryV1` / `ContextBundleV1` のclosed-world契約を先に固定。
+  2) **モック検証可能化**: 実装依存なしで正常系/異常系を再現できる検証観点を固定。
+  3) **実装準備**: CE2/CE4へ渡すhandoff keyと受入判定だけを定義（実装手段は未記述）。
+- 受入判定:
+  - `previewConfirmed=false -> 422 preview_required`
+  - unknown key -> `400 unknown_contract_key`
+  - same canonical query + unequal bundle hash -> `409 nondeterministic_bundle`
+  - hash決定論: 同一canonical queryで3回一致（`queryCanonicalHash` / `bundleHash`）
+
+### Phase 3 Execute（順序固定で契約更新）
+- Step 1（I/F先行定義）
+  - `ContextQueryV1` / `ContextBundleV1` のキー集合とclosed-world制約をv1固定として維持。
+- Step 2（モック検証可能化）
+  - mockケース（正常/preview gate/unknown key/nondeterministic）で検証可能な観点を本Issue内で明示。
+- Step 3（実装準備）
+  - CE2引き渡し: `sourceBundleHash === bundleHash`
+  - CE4引き渡し: `equivalenceKey + bundleHash`
+  - 実装依存情報（handler/UI/DB/worker）は記述しない。
+
+### Phase 4 Verify（冒頭Read同期 + 3回自己修復上限）
+- 本Phase冒頭で本対象ファイルを再読し、Phase 2/3との矛盾がないことを確認。
+- Verify結果:
+  - pass: I/F先行定義 → モック検証可能化 → 実装準備の順序が本文上で固定されている。
+  - pass: 3固定エラー語彙とHTTP対応が一意で、contract collisionなし。
+  - pass: CE2/CE4 handoff keyがmock-onlyで再現可能。
+- self-repair policy:
+  - attempt 1..3で語彙揺れ/順序崩れを自己修復。
+  - **失敗3回超過で即時停止（`held`）**。
+
+### Phase 5 Proceed / Stop
+- **Proceed条件**: Plan → Execute → Verify を直列完了し、差分が本Issue内のcontract-only更新に限定されること。
+- **Stop条件**:
+  - self-repair 3回超過
+  - Contract ID / error semantics / handoff key 衝突
+  - 実装詳細（コード/他ファイル）への逸脱
+- 判定: **Proceed**（本更新は docs-only / contract-only / 単一ファイルで完了）。
