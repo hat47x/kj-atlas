@@ -1728,3 +1728,27 @@ state: Needs-decision
 #### Phase 6 Proceed
 - 判定: `Needs-decision`。
 - 理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+
+### Phase 5 Verify（AC/DoD self-check）
+- AC-1（Contract ID固定）: `HIL-RS-02-A1-CONTRACT-FREEZE-v1` を唯一値として維持。
+- AC-2（Signature固定）: `CritiqueV1/ReDiffV1/AttributionV1/A1ErrorV1` の4署名を固定し、追加/改名/削除なし。
+- AC-3（Deterministic Rule固定）: `A2A3_OPEN_ALLOWED` を唯一判定式として維持。
+- AC-4（SafeMode後退禁止）: `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` の緩和なし。
+- AC-5（proposal-only）: 本Issueは契約文言の固定のみ（実装変更なし）。
+- DoD:
+  1. A2/A3がmock参照可能な固定値一覧を本Issue内で参照できる。
+  2. 非対象（実装・他Issue編集）が明示されている。
+  3. 未承認事項は `Needs-decision` として残置されている。
+- Self-correction count: `0/3`。
+
+### Phase 6 Proceed（Gate result）
+- Result: `Hold`。
+- Reason: human approval 欄未充足（`approved_by` / `approved_at` / `evidence` 未記入）かつ `HIL-RS-02-GOV-EXCEPTION-01=held`。
+- Next action (Stream A only): human approval記録の充足後に `Proceed=Ready` へ更新し、A2/A3へread-only通知を再発行する。
+
+### Human approval record（Execute unlock gate）
+- Rule: **以下3項目が入力されるまで Execute（確定適用）禁止**。
+- `approved_by`: `TBD`
+- `approved_at` (UTC ISO8601): `TBD`
+- `evidence`: `TBD`
+- Approval state: `Pending`
