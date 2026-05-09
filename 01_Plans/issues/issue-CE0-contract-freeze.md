@@ -3042,3 +3042,51 @@ type PatchProposal = {
   - Contract ID mutation
   - 指定外編集要求
   - 契約語彙衝突
+
+## Stream B latest run（2026-05-09 / CE0 only / serial phase reaffirmation-12）
+
+- run_id: `stream-b-ce0-2026-05-09-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0 / vocabulary_collision=0`
+
+### Phase 1 Read
+- 本Issueを再読し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の不変条件を再確認。
+- 直列固定順序 **Plan -> Execute -> Verify -> Proceed**（各Phase内）および全体 **Read -> ADR/CDC -> Plan -> Execute -> Verify -> Proceed** を再確認。
+- fail-safe stopper（Contract ID再定義要求 / safeMode既定値後退 / allowlist外編集 / verify>3 / 依存語彙衝突）を再確認。
+
+### Phase 2 ADR/CDC
+- Context: CE0 Contract SSOT を単一ファイルで維持し、下流は read-only 参照のみ許可する。
+- Decision: Contract語彙・ID・No-Go canonical IDs・safeMode既定境界を固定し、再定義や拡張を実施しない。
+- Consequences: 契約ドリフトと安全境界後退を抑止し、逸脱要求発生時は即時 `held` 停止へ移行できる。
+- CDC判定: `contract_id_collision=0` / `vocabulary_collision=0` / `scope_deviation=0` のため新規CDC不要。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  - `ac_read_only_reference_maintained`: CE1/CE2/CE4への引き渡しはread-only参照のみ。
+  - `ac_no_safemode_regression`: `safeMode=true` / `allowUnreviewedText=false` を後退させない。
+  - `ac_contract_id_immutable`: `CE0-*` / `CG-*` Contract IDs を不変とする。
+- DoD:
+  - `dod_contract_only_single_file`: 本Issue以外を編集しない。
+  - `dod_no_impl_details`: handler/UI/DB/worker 等の実装詳細を追記しない。
+  - `dod_verify_retry_cap_3`: Verify失敗時の自己修復は最大3回。
+- 不足AC/DoD判定: 新規不足なし（追加ドラフト不要）。
+
+### Phase 4 Execute
+- 実施: contract-only 更新（本実行ログ追記）のみ。
+- 非実施: 実装コード変更、allowlist外編集、Contract ID再定義、safeMode既定値変更。
+
+### Phase 5 Verify（docs-check）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go**
+- proceed_conditions:
+  - CE0 Contract Freeze SSOT を本Issue単一ファイルで維持。
+  - read-only参照維持、safeMode後退禁止、契約ID不変を継続。
+- held_conditions:
+  - fail-safe stopperのいずれか1件でも検知した場合は即時 `held`。
