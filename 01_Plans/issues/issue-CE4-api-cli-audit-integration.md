@@ -5,7 +5,7 @@
 - Status: Draft (Contract Freeze Candidate)
 - Source Issue: TBD (DraftのためOpen化時に採番)
 - Priority: P2
-- Owner: Stream I（CE下流 proposal-only）
+- Owner: Stream F（CE4 API/CLI/監査契約 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -22,6 +22,16 @@
 - CE1（ContextQuery/ContextBundle基盤）未整備時でも、`mock:<64hex>` 経路で契約検証を継続可能にする。
 
 ---
+
+## Operating Mode（Stream F / serial phases）
+- Execution mode: proposal-only（実装コード変更禁止 / 他Issue編集禁止）
+- Editable scope: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ
+- Dependency policy: CE0 / CE1 は read-only 参照（未承認事項の確定禁止）
+- Serial phases: **Read → ADR (Context/Decision/Consequences) → Plan (AC/DoD補完) → Execute (契約定義のみ) → Verify（自己修復は最大3回）→ Proceed**
+- Stop conditions:
+  - CE0/CE1 契約との矛盾が解消できない
+  - 前提（equivalenceKey/bundleHash/4イベント監査）が崩壊
+  - Verify で4回目の修復が必要（= 上限超過）
 
 ## Phase 1: 要件抽出（Read同期済み）
 
@@ -130,7 +140,7 @@
 
 ---
 
-## Phase 5: Verify（AC/DoD監査 + 停止条件）
+## Phase 5: Verify（AC/DoD監査 + 停止条件 / max 3 repairs）
 
 ### Acceptance Criteria（AC）
 - [x] API/CLI/監査ログの必要項目を抽出した。
@@ -1050,3 +1060,11 @@
   2. 依存前提の無根拠確定。
   3. allowlist違反（本Issue以外編集）。
   4. self-correction上限超過（4回目相当）。
+
+
+### DoD（proposal-only）
+- [x] CE4契約を API/CLI/監査の3境界で同一語彙に統一した。
+- [x] proposal-only / fail-closed / no auto-apply を No-Go 条件として明文化した。
+- [x] CE0/CE1 依存を read-only に固定し、未承認事項を確定していない。
+- [x] Verify の自己修復回数上限（最大3回）と停止条件を明記した。
+- [x] 変更は本Issueファイル内に限定した。
