@@ -3090,3 +3090,61 @@ type PatchProposal = {
   - read-only参照維持、safeMode後退禁止、契約ID不変を継続。
 - held_conditions:
   - fail-safe stopperのいずれか1件でも検知した場合は即時 `held`。
+
+## Stream B latest run（2026-05-09 / CE0 only / contract boundary-interface freeze-13）
+
+- run_id: `stream-b-ce0-2026-05-09-13`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0 / vocabulary_collision=0`
+
+### Phase 1 Read（Context / Decision / Consequences）
+- Context:
+  - CE0は契約凍結レーンとして、下流が実装待機せず mock-first で進行できる境界定義が必要。
+  - 既存固定値 `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を再定義しないことが前提。
+- Decision:
+  - CE0の契約境界を「read-only参照」「safeMode既定境界維持」「No-Go canonical IDs固定」に限定して凍結する。
+  - 本Issueを契約SSOTとし、他ファイル・他ストリームへの仕様波及編集は行わない。
+- Consequences:
+  - 下流は契約ID・境界条件の参照を固定化でき、実装ドリフトの起点を抑止できる。
+  - 逸脱要求は `held` に即時遷移し、人間承認前の拡張確定を防止できる。
+
+### Phase 2 Plan（インターフェース凍結: 入力/出力/エラー/監査）
+- 入力（Input）凍結:
+  - `ContextQueryV1`: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode` を必須境界として固定。
+  - `safeModePolicy`: `safeMode=true` / `allowUnreviewedText=false` を既定値として固定。
+- 出力（Output）凍結:
+  - `ContextBundleV1`: `bundleHash` を含む決定論出力を固定。
+  - Verify同値判定は `sameQuery && sameBundle` を維持し、fail-open を禁止。
+- エラー（Error semantics）凍結:
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論を v1 で不変化。
+  - 追加エラーや意味変更は v2 まで保留（CE0では未確定化しない）。
+- 監査（Audit）凍結:
+  - `AuditEventV1` の `eventType/queryId/bundleHash/equivalenceKey/phase` を参照契約として固定。
+  - CE0では監査I/Fを read-only 参照し、書込仕様や実装責務を追加しない。
+
+### Phase 3 Execute（モック可能点と下流非依存条件）
+- モック可能点（列挙）:
+  - `ContextQueryV1` の schema validation（必須キー検査）
+  - `ContextBundleV1` の canonicalization + `bundleHash` 判定
+  - `ProposalPatchV1` の lifecycle state (`proposed/accepted/rejected/held`) 遷移ガード
+  - `AuditEventV1` の最小監査フィールド整合チェック
+- 下流実装が非依存で動ける条件:
+  - backend未実装でも contract fixture + validator で I/F整合検証を継続できること。
+  - CE1/CE2/CE4は CE0契約を read-only参照し、Contract ID追加/改名/削除を行わないこと。
+  - Verify失敗時は自己修復を3回までに制限し、4回目相当は `held` 停止へ遷移すること。
+
+### Phase 4 Verify（docs-check）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 5 Proceed
+- 判定: **Conditional-Go**
+- proceed_conditions:
+  - CE0契約境界（入力/出力/エラー/監査）の凍結を維持。
+  - モック前提で下流の非依存検証を継続し、実装確定は各CEレーンに委譲。
+- held_conditions:
+  - Contract ID mutation / safeMode後退 / allowlist外編集 / verify 4回目相当 / 語彙衝突検知。
