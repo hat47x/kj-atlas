@@ -1,261 +1,232 @@
-# Issue Draft: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
+# Issue Ready Plan: QA-E2E-USE-01 E2Eテストを実利用ケースへ拡充
 
 - Type: Process
-- Status: Draft (dependency-locked for Stream J planning)
-- Source Issue: N/A
+- Status: Draft Ready Candidate (dependency-locked)
 - Priority: P1
-- Owner: Stream H (planning only)
+- Owner: Stream G（QA-E2E-USE-01 Draft Ready化専任）
 - Scope: `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` のみ（実装コード変更禁止）
-- Dependencies: `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）, `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（HIL-RS-02計画同期完了まで実装着手禁止）
+- Dependencies:
+  - `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`（FB-P0収束をGo条件として固定）
+  - `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`（HIL-RS-02計画同期完了まで実装着手禁止）
 - Related Backlog: `QA-E2E-USE-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `04_Documentation/e2e_testing.md`
+- Related ADR/Spec:
+  - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+  - `01_Plans/adr/ADR-0020-oidc-saml-mock-idp-sp-profile.md`
+  - `04_Documentation/e2e_testing.md`
 - Expected verification level: `e2e`
 
-## Requirement meta I/F（共通キー）
+## 0. Requirement meta I/F（共通キー）
 
 - RequirementID: QA-E2E-USE-01
 - RequirementStatement: 現在のE2E検証を、実運用に近いユーザージャーニー（作成→編集→レビュー→安全共有）で再現できるシナリオ群へ拡張し、回帰検知力を向上させる。
 - PriorityClass: Must
-- AcceptanceScenario:
-  - 前提: seedデータまたはfixtureから起動し、safeMode既定ONの状態でテスト開始できる。
-  - 操作: カード作成/配置、差分確認、review attribution更新、share/export判定を1フローで実行する。
-  - 期待結果: 主要導線が安定して完走し、安全境界（safeMode・share/export制御）に回帰がない。
-  - 除外: SSO本番連携、外部LLMプロバイダ実通信、長時間負荷試験。
-- GoNoGoGate: Required
-- SecurityGateImpact: SafeMode / share-export / import-sanitize
 - VerificationLevel: e2e
+- SecurityGateImpact: SafeMode / share-export / import-sanitize
+- ContractPolicy: E2Eケース定義は contract レベルで固定し、DOM構造・内部関数名・一時UI文言への依存を禁止する。
 - DecisionStatus: Hold-for-Dependency-Gate
-- DecisionQueueRef: `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
-- ContractPolicy: E2Eケース定義は contract レベルで固定し、実装詳細（DOM構造・内部関数名・一時的UI文言）へ依存しない。
-- DependencyLockPolicy: FB-P0収束 + HIL-RS-02計画同期が完了するまで `Hold-for-Dependency-Gate` を維持し、`Proceed` 判定を出さない。
+- GoNoGoGate: Required
 
-## Stream H phase protocol（dependency-locked planning）
+---
 
-本Issueは実装移行前の計画最適化フェーズとして、以下の固定順序でのみ更新する（**Phase 1..6直列実行 + 毎Phase Read同期必須**）。
+## Phase 1: Read同期（現状整理）
 
-1. ADR明文化（C/D/C）を先に固定
-2. Read同期（ADR-0019 / 関連Issue再読）
-3. AC/DoD具体化（測定可能な判定式へ変換）
-4. 依存条件の明記（解除条件・禁止事項の固定）
-5. Verify（計画としての検証項目を自己点検、失敗時は3回まで修復）
-6. Proceed（依存未解除のため **Proceed=Not Allowed** を明記）
+### 1.1 既存シナリオ棚卸し
 
-### Proceed rule（固定）
+現行ドラフトでは以下の4ジャーニー定義が存在する。
 
-- Proceed = Not Allowed（dependency-locked）
-- Proceed可能化条件（将来）:
-  - `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が Go 判定
-  - `issue-HIL-RS-02-next-phase-delivery-plan` の同期完了
-  - 本Issueの Go 条件（4.1）を満たす実装計画がレビュー承認済み
+1. Journey-A: Authoring Continuity（作成→再配置→保存復元）
+2. Journey-B: Review Governance（編集→差分→review attribution）
+3. Journey-C: Safe Sharing Gate（レビュー→共有/エクスポート判定）
+4. Journey-D: Import-to-Safe-Export（sanitize境界、推奨）
 
-## Phase 1. ADR明文化（C/D/C）
+### 1.2 欠落・曖昧語
 
-### C: Context
+- 欠落1: 優先度（critical/important/optional）がシナリオ単位で固定されていない。
+- 欠落2: 実行環境前提（compose profile / auth mode / fixture source）がシナリオ別に機械判定可能な形で記述されていない。
+- 欠落3: 失敗時診断導線（どのログをどの順序で確認するか）が統一されていない。
+- 曖昧語1: 「安定して完走」「安全境界に回帰がない」の判定基準が定量化不足。
+- 曖昧語2: dependency lock下での Ready 判定条件と Proceed 判定条件が混在。
 
-- 現行E2Eはスモーク中心で、実利用の縦断フロー（再編集・レビュー・安全共有）を十分に担保できていない。
-- ジャーニー定義が曖昧なままでは、E2Eが「形式上の実行」に留まり、価値検証が不可能になる。
-- dependency lock中に実装へ進むと、前提依存の崩れにより計画整合が破綻する。
+### 1.3 既存AC/DoDの有無確認
 
-### D: Decision
+- ACは定義済みだが、シナリオ優先度・実行環境との紐付けが不足。
+- DoDは定義済みだが、失敗時の診断再現性と再実行性（rerun条件）を追加明文化する余地がある。
 
-- 実利用ジャーニーを **最低3本（推奨4本）**、各ジャーニーに「前提/操作/観測点/期待結果/失敗時記録」を固定して定義する。
-- safeMode/share-export/review attribution を GoNoGoGate の必須判定軸とし、実装前に判定式を文書固定する。
-- dependency lock 解除前は計画更新のみに限定し、実装・テストコード更新は行わない。
-- Verify失敗時は **最大3回修復** し、超過時または依存崩れ検知時は **Stop** する。
+---
 
-### C: Consequence
+## Phase 2: Plan（AC/DoD草案 + 依存整理）
 
-- E2E価値検証の再現性が向上し、実行可否判定が曖昧にならない。
-- 依存ロック下でも、実装移行後に即時着手できる判定可能な運用仕様を維持できる。
-- 安全境界後退（safeMode既定緩和、share/export誤開放、review昇格逸脱）を検知可能な状態で引き渡せる。
-- Verify運用が上限付き修復ループになるため、無制限な再試行を防止できる。
+### 2.1 AC草案（Ready計画判定用）
 
-### 1.1 Read同期チェックリスト（毎Phase再読）
+- AC-01: 主要3ジャーニー（A/B/C）が `Given/When/Then` で再現可能に定義され、Journey-Dは optional として切替可能である。
+- AC-02: 各シナリオに「前提データ」「期待結果」「失敗時診断観点」が明示される。
+- AC-03: 期待結果は機械判定可能な contract assertion として記述される（pass/fail判定文を含む）。
+- AC-04: 実行環境前提（compose profile / auth mode / fixture / safeMode既定ON）がシナリオごとに明示される。
+- AC-05: 優先順（critical / important / optional）に沿った実施順が固定される。
 
-- [x] `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を再読し、E2E目的を「仕様評価前の結合バグ除去」に固定。
-- [x] safeMode既定ON / share-export fail-closed / import sanitize を安全境界として再確認。
-- [x] 本Issueのスコープが docs-only（本ファイルのみ編集）であることを再確認。
+### 2.2 DoD草案（Ready化完了判定）
 
-## Phase 2. Read同期（ADR-0019整合）
+- DoD-01: シナリオ3本以上（A/B/C必須）に対して Given/When/Then + 優先度 + 診断導線が揃っている。
+- DoD-02: safeMode既定ON・share/export fail-closed・review human-only昇格の3境界が必須判定軸として記述される。
+- DoD-03: 失敗時に必要なログ採取点（UI console / backend log / compose service log / test trace）が明示される。
+- DoD-04: rerun前提（同一fixtureで再実行可能、依存外部通信を切離し可能）が明示される。
+- DoD-05: Proceedは dependency gate解除まで Not Allowed のまま固定される。
 
-- `ADR-0019` の原則に従い、本Issueは「仕様評価前の結合バグ除去」を目的に据える。
-- safeMode既定ON・share/export漏えい防止は安全境界として最優先で固定する。
-- 本フェーズは **計画確定のみ** とし、実装ファイル変更は実施しない。
+### 2.3 依存関係（Auth / Mock IdP / Fixture）
 
-### 1.1 Read同期チェックリスト（毎Phase再読）
+- Auth依存:
+  - 基本は local/mock auth mode（IAP header相当のテストプロファイル）を使用。
+  - 本番OIDC/SAML直結は対象外（ADR-0020に従いMock検証プロファイルを優先）。
+- Mock IdP依存:
+  - 必須ではない（このIssueはDraft Ready化のみ）。
+  - ただし将来実装Issueでは「mock profileで再現可能」を前提条件にする。
+- Fixture依存:
+  - reviewed/unreviewed混在fixture
+  - import正常/悪性fixture
+  - 保存復元確認fixture
 
-- [x] `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` を再読し、E2E目的を「仕様評価前の結合バグ除去」に固定。
-- [x] safeMode既定ON / share-export fail-closed / import sanitize を安全境界として再確認。
-- [x] 本Issueのスコープが docs-only（本ファイルのみ編集）であることを再確認。
+### 2.4 Mock適用余地（外部依存切離し）
 
-## Phase 3. Plan（AC/DoD補完）
+- 判定: **適用推奨**
+- 理由:
+  1) 外部IdP/LLM実通信を除外してE2E回帰判定の再現性を上げるため。
+  2) dependency lock解除直後に最短で実行可能な検証レーンを構築するため。
 
-### 3.1 実利用ジャーニー定義（判定可能版）
+---
 
-1. **Journey-A: Authoring Continuity**（作成→再配置→保存復元）
-   - 前提: 新規docをfixtureで作成、safeMode=ON。
-   - 操作: card作成→island再配置→保存→再読込。
-   - 観測点:
-     - 保存前後でカード件数が一致。
-     - relation件数が欠損しない。
-     - pending shelf件数が意図せず変化しない。
-   - 期待結果: 再読込後に位置・relation・pending整合が崩れない。
-   - 失敗時記録: doc_id、fixture_id、操作ステップ、期待値/実測値差分。
-   - 非依存条件: DOM class名、描画レイヤ内部実装、state管理方式に依存しない。
+## Phase 3: Execute（Ready計画本文確定）
 
-2. **Journey-B: Review Governance**（編集→差分→review attribution）
-   - 前提: unreviewed/human_reviewed混在fixture。
-   - 操作: 編集→diff確認→humanレビュー操作→状態再確認。
-   - 観測点:
-     - diff生成が成功し、変更対象が記録される。
-     - `human_reviewed` への昇格イベントが人手操作でのみ発生。
-     - 非人手経路（自動/AI）で昇格が発生しない。
-   - 期待結果: review attribution 境界（human only）が維持される。
-   - 失敗時記録: review対象ID、昇格トリガー、イベントログ要約。
-   - 非依存条件: UI部品名、ボタン配置、内部イベント名に依存しない。
+## 3.1 Context / Decision / Consequences
 
-3. **Journey-C: Safe Sharing Gate**（レビュー→共有/エクスポート判定）
-   - 前提: unreviewed本文を含むdoc、safeMode=ON。
-   - 操作: share/exportを試行→レビュー条件を満たして再試行。
-   - 観測点:
-     - 初回試行が fail-closed（拒否/警告）になる。
-     - 条件充足後の再試行でのみ許可される。
-     - safeMode既定ONがセッション中に緩和されない。
-   - 期待結果: share/export境界で unreviewed 含有時の拒否が再現される。
-   - 失敗時記録: 試行時safeMode値、拒否理由、再試行時の許可条件。
-   - 非依存条件: ダイアログ文言、通知トースト文面、送信実装方式に依存しない。
+### Context
+- 現行E2Eはスモーク中心で、実利用の縦断フロー検証が不足。
+- dependency lock未解除のため、実装・テストコード着手は禁止。
 
-4. **Journey-D: Import-to-Safe-Export**（sanitize境界、推奨）
-   - 前提: markdown/zip入力fixture（正常系+悪性入力）。
-   - 操作: import sanitize→編集→share/export判定。
-   - 観測点:
-     - sanitize逸脱入力が reject される。
-     - 正常入力のみ後段フローへ進める。
-     - 後段でも safeMode/share-export gate が維持される。
-   - 期待結果: sanitize境界と共有境界の二重安全が維持される。
-   - 失敗時記録: 入力fixture種別、sanitize判定、後段gate判定。
-   - 非依存条件: パーサ内部実装、中間データ構造、エラーメッセージ文面に依存しない。
+### Decision
+- シナリオは A/B/C を必須、Dを optional とする。
+- 各シナリオを Given/When/Then + 前提データ + 期待結果 + 失敗時診断観点で固定する。
+- 優先度を critical/important/optional で固定し、実施順も固定する。
 
-### 3.2 追加AC（確定）
+### Consequences
+- 実装レーンは依存解除後に仕様解釈なしでテスト設計へ移行可能。
+- 安全境界後退（safeMode緩和/誤共有/review昇格逸脱）を回帰検知しやすくなる。
 
-- [ ] AC-01: Journey-A〜Cを必須、Dを推奨として文書化する（計3本以上）。
-- [ ] AC-02: 各Journeyに前提/操作/観測点/期待結果/失敗時記録を明記する。
-- [ ] AC-03: Journey-Cに「safeMode既定ON時 fail-closed」を明示する。
-- [ ] AC-04: share/export境界で unreviewed 含有時の拒否アサーションを必須化する。
-- [ ] AC-05: review attribution の昇格境界（human only）を必須アサーション化する。
-- [ ] AC-06: GoNoGoGate判定式（4.1）を満たさない場合は実装マージ不可とする。
-- [ ] AC-07: 各Journeyの期待結果を contract アサーションとして定義し、実装依存アサーションを禁止する。
+## 3.2 実行環境前提（シナリオ共通）
 
-### 3.3 DoD（確定）
+- Runtime profile: `docker compose` による結合実行（ADR-0019準拠）。
+- Auth mode: mock/local profile（本番IdP接続なし）。
+- Safe mode: default ON（開始時に確認必須）。
+- Data source: 固定fixture（seed idを記録）。
+- 外部通信: LLM provider / 本番SSO通信は無効化またはmock化。
 
-- [ ] DoD-01: 3本以上のジャーニーに前提/操作/観測点/期待/除外を明記。
-- [ ] DoD-02: safeMode/share-export回帰検知要件を assertion レベルで記述。
-- [ ] DoD-03: Expected verification level=e2e と実行コマンドが一致。
-- [ ] DoD-04: フェイルセーフ停止条件（未定義依存/境界後退/self-correction>3）を明記。
-- [ ] DoD-05: 実装着手条件（Phase 6）を満たすまでコード変更しない。
-- [ ] DoD-06: ケース記述に実装依存語（固定CSSセレクタ/内部関数名/コンポーネント固有ID）が含まれていない。
-- [ ] DoD-07: dependency lock 維持を明記し、Proceedを発火しない運用注記を保持。
+## 3.3 シナリオ定義（Given/When/Then）
 
-## Phase 4. Execute（Issue本文整備のみ）
+### S1: Authoring Continuity（Priority: critical）
+- Given: safeMode=ON、新規doc fixture、初期card/relation件数が取得可能。
+- When: card作成→配置変更→保存→再読込を実行する。
+- Then:
+  - card件数が保存前後で一致。
+  - relation件数が欠損しない。
+  - pending shelf件数が意図せず増減しない。
+- 前提データ: `doc_fixture_authoring_v1`。
+- 失敗時診断観点: frontend console / backend API response / persistence反映ログ。
 
-- 毎Phase Read同期ルールに従い、Phase 4開始時点でも `ADR-0019` と依存Issue状態を再確認する。
-- 本Issue本文のみを更新し、`03_Implement/*` およびテストコード変更は行わない。
-- dependency-locked protocol を維持し、実装前倒し判断を禁止する。
+### S2: Review Governance（Priority: critical）
+- Given: reviewed/unreviewed混在fixture、diff比較対象が存在。
+- When: 編集→diff確認→human review操作→状態再取得を実行する。
+- Then:
+  - diffが生成され変更対象が記録される。
+  - `human_reviewed` への昇格は人手操作でのみ成立。
+  - 自動経路で昇格が成立しない。
+- 前提データ: `doc_fixture_review_mix_v1`。
+- 失敗時診断観点: diff出力 / review attribution event / audit相当ログ。
 
-## Phase 5. Verify（実行可否判定 + self-correction）
+### S3: Safe Sharing Gate（Priority: critical）
+- Given: unreviewedを含むdoc、safeMode=ON。
+- When: share/exportを実行→review条件充足後に再試行する。
+- Then:
+  - 初回は fail-closed（拒否）となる。
+  - 条件充足後のみ許可される。
+  - セッション中にsafeMode既定ONが緩和されない。
+- 前提データ: `doc_fixture_unreviewed_block_v1`。
+- 失敗時診断観点: policy判定ログ / gate理由 / 再試行時の状態差分。
 
-- 毎Phase Read同期ルールに従い、Verify前に `ADR-0019` / dependency状態 / Proceed rule を再読したうえで判定する。
+### S4: Import-to-Safe-Export（Priority: important, optional実施）
+- Given: 正常markdown/zip fixture と悪性入力fixture。
+- When: import sanitize→編集→share/export判定を実行する。
+- Then:
+  - 悪性入力がsanitize段階でrejectされる。
+  - 正常入力のみ後段フローへ進行。
+  - 後段でもS3同等の安全境界が維持される。
+- 前提データ: `import_fixture_valid_v1` / `import_fixture_malicious_v1`。
+- 失敗時診断観点: import validate log / sanitize判定理由 / downstream gate判定。
 
-### 5.1 判定可能性チェック
+## 3.4 実施順（優先度別）
 
-- [x] 各Journeyに前提/操作/観測点/期待結果/失敗時記録が定義されている。
-- [x] Journey-A〜Cが必須ジャーニーとして固定されている。
-- [x] safeMode既定ON + share/export fail-closed が必須判定軸に入っている。
-- [x] review attribution human-only昇格が必須判定軸に入っている。
-- [x] dependency lock下で Proceed=Not Allowed が維持されている。
+1. critical: S1 → S2 → S3
+2. important: S4
+3. optional: S4をスキップする軽量回帰レーン（依存解決直後の初回運用向け）
 
-### 5.2 self-correction log（最大3回）
+## 3.5 失敗時トリアージ導線（固定順）
 
-1. 修正1: Journey記述へ「観測点」を追加し、実行可否判定の曖昧さを解消。
-2. 修正2: 各Journeyへ「失敗時記録」を追加し、失敗時トリアージの再現性を補強。
-3. 修正3: GoNoGo判定式とProceed ruleの関係を再記述し、依存未解決時の誤Proceedを防止。
+1. テスト実行ログで失敗シナリオID（S1〜S4）と失敗assertionを特定。
+2. frontend console / networkログでUI↔API境界エラーを確認。
+3. backend serviceログでpolicy/review/import判定の根拠を確認。
+4. compose service状態（対象コンテナの起動/疎通）を確認。
+5. fixture id・doc id・期待値/実測値差分を記録し、再実行可否を判定。
+
+---
+
+## Phase 4: Verify（客観判定 + Self-Correction）
+
+### 4.1 AC客観判定チェック
+
+- [x] AC-01: A/B/C必須、D optional が明記されている。
+- [x] AC-02: 全シナリオで前提データ・期待結果・失敗時診断観点が定義されている。
+- [x] AC-03: Then句が機械判定可能なassertion文で記載されている。
+- [x] AC-04: compose/auth/safeMode/fixture前提が明示されている。
+- [x] AC-05: critical/important/optional の順序が確定している。
+
+### 4.2 重複/欠落チェック
+
+- 重複: S2/S3のreview境界判定に一部重複あり（意図的重複。S2は昇格経路、S3は共有境界）。
+- 欠落: 本番SSO/外部LLMは除外とし、将来別Issueで管理。
+- 環境曖昧さ: compose profileとauth modeを共通前提として固定済み。
+
+### 4.3 Self-Correction（最大3回）
+
+1. 修正1: シナリオごとの優先度を明示。
+2. 修正2: 失敗時トリアージ導線を固定順で追加。
+3. 修正3: 実行環境前提（compose/auth/safeMode/fixture）を統一記述。
 
 - self-correction count: 3 / 3（上限内）
-- 逸脱時停止規則: self-correction が 3 回を超過、または dependency gate 崩れを検知した場合は Proceed 判定を行わず Stop に遷移する。
 
-## Phase 6. Proceed（dependency-locked）
+---
 
-- 毎Phase Read同期ルールに従い、最終判定前に `ADR-0019` と依存Issue状態の再読結果を反映する。
+## Phase 5: Proceed判定（dependency-locked）
 
-### 6.1 GoNoGoGate 判定式（実装移行判定、将来適用）
+### 5.1 Ready化判定
 
-以下をすべて満たした場合のみ、将来の実装Issueで Proceed=Allowed を検討できる。
+- Ready for planning: **Yes**（E2E実装可能な計画粒度まで到達）。
+- Ready for implementation: **No**（dependency gate未解除）。
 
-1. Dependency Gate:
-   - `issue-FB-P0-2A2B2C-stream-c-planning-baseline` が Go。
-   - `issue-HIL-RS-02-next-phase-delivery-plan` が同期完了。
-2. Journey Gate:
-   - Journey-A〜C の contract assertion がテスト設計へ展開済み。
-3. Safety Gate:
-   - safeMode既定ON / share-export fail-closed / review human-only の3境界が未緩和。
-4. Evidence Gate:
-   - 失敗時記録フォーマット（doc_id/fixture_id/期待値実測差分等）が運用手順へ反映済み。
-
-### 6.2 現在判定（2026-05-08）
+### 5.2 現在判定（2026-05-09）
 
 - Dependency状態: 未解除
-- Proceed: **Not Allowed（維持）**
-- 判定: **Hold**
+- ProceedDecision: **Not Allowed**
+- Overall: **Hold**
 
-### 6.3 Hold / Open候補 / Stop判定
+### 5.3 停止条件（フェイルセーフ）
 
-- Hold:
-  - 本Issueは dependency-locked planning として保持する。
-- Open候補（将来別Issue化）:
-  1) Journey-A〜C を Playwrightケースへ写像する実装Issue
-  2) 失敗時記録テンプレートを `04_Documentation/e2e_testing.md` へ反映する運用Issue
-- Stop条件:
-  - 実装・テストコード変更要求が入った場合
-  - 依存未解決のまま Proceed/確定宣言が要求された場合
-  - 指定外ファイル編集要求が入った場合
+以下に該当した場合は停止し、実装移行を行わない。
 
-## Stream E Ready化設計 pass（2026-05-09 / Plan→Execute→Verify→Proceed）
+1. 前提環境（compose/profile/auth mode）が特定不能。
+2. 依存先Issue/ADRが未特定または判定不整合。
+3. 本Issue以外の編集が必要になった。
+4. self-correction が 3 回を超過。
 
-### Phase 1: Read同期（ブロッカー/依存/DoD不足）
-- Blocker: 依存Issueの承認証跡（Approval Record: 日時/承認者/対象/判断/evidence）が未確定の場合は `ProceedDecision: Hold` を維持する。
-- Dependency: 本Issueで定義済みの依存関係を read-only で再確認し、依存先の未確定値をこのIssue側で確定しない。
-- DoD gap: 「実装レーンが即着手可能な入力/出力/担当/解除条件」の4点が散在している場合、Phase 3で1ブロックに集約する。
+### 5.4 停止時に提示すべき項目
 
-### Phase 2: 仕様明文化（Context / Decision / Consequences）
-- Context: 本Issueは Draft/Blocked を Ready化するための計画文書であり、実装や運用確定値の追加はスコープ外。
-- Decision: `Proceed/Hold/Stop` の三値判定、`self-correction <= 3`、`docs-check` 優先を固定し、依存未解除時は `Hold` を維持する。
-- Consequences: 先行依存が解決した時点で、実装レーンは追加解釈なしで着手可否を判定できる。
-
-### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
-- AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
-  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
-  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
-  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
-  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
-- 入力（Implementation lane input）:
-  - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
-- 出力（Implementation lane output expectation）:
-  - 着手可否の単一判定（Proceed or Hold/Stop）と、着手時に守る制約チェックリスト。
-- 担当:
-  - System Owner: Go/NoGo最終判定。
-  - Platform Operator: 実行/保管/運用ログ整備。
-  - Security Officer: 公開境界・safeMode/漏えい防止の最終確認。
-- 依存解除条件:
-  - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
-
-### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
-- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
-- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
-- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
-- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
-- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
-
-### Verify結果（本pass）
-- 判定: `Hold` 維持（依存証跡未確定のため）。
-- self-correction: `1/3`（上限内）。
-- Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+- 不足情報: 何が未確定か（例: dependency approval record欠落）。
+- 必要な判断: 誰が何を承認すべきか（System Owner / Platform Operator / Security Officer）。
+- 再開条件: どの証跡が揃えば Hold 解除できるか。
