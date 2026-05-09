@@ -306,3 +306,50 @@
 - 判定: `Hold` 維持（依存証跡未確定のため）。
 - self-correction: `1/3`（上限内）。
 - Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+
+## Stream J vocabulary/gate normalization pass（2026-05-09 / DOC-OPS-05-05 baseline）
+
+### Phase 1: Read（Gate語彙 / Approval Record / Dependency status 抽出）
+- Gate語彙（基準化対象）: `Go/NoGo`、`Proceed/Hold/Stop`、`pass/fail/blocked`、`docs-check`、`self-correction <= 3`。
+- Approval Record 抽出: 5項目（日時/承認者/対象/判断/evidence）を必須入力として維持。
+- Dependency status 抽出: `先行固定（他Issueの着手前提）` と `ProceedDecision: Hold` の組み合わせを基準状態とする。
+
+### Phase 2: ADR CDC（品質ゲート先行固定の理由）
+- Context: 05-06/05-07 より先に 05-05 の語彙・Gate・停止条件を固定しない場合、後続Issueで判定語彙が分岐し、Open判定の監査可能性が低下する。
+- Decision: DOC-OPS-05-05 を Gate-A（語彙/境界/停止条件の単一正本）として先行固定し、後続は継承のみ許可する。
+- Consequences:
+  1. 可読性: 1つのIssueで判定語彙と停止条件を再読できる。
+  2. 一貫性: 05-06/05-07 の判定値比較が機械的に可能。
+  3. 検証可能性: docs-check と Approval Record だけで Hold/Proceed の妥当性を追跡できる。
+
+### Phase 3: Plan（AC/DoD確定: 可読性・一貫性・検証可能性）
+- AC-J1 Readability: Gate語彙、Dependency status、Proceed tri-state、Stop条件が本Issue単体で確認できる。
+- AC-J2 Consistency: 05-06/05-07 と `Proceed/Hold/Stop` / `GoNoGoGate` / `VerificationLevel` の語彙衝突がない。
+- AC-J3 Verifiability: `Approval Record` 5項目と docs-check コマンド計画が本文に明示されている。
+- DoD-J1: 依存未解除時は `ProceedDecision: Hold` を維持する。
+- DoD-J2: 自己修復は最大3回、4回目相当は `ProceedDecision: Stop`。
+- DoD-J3: Non-goals（05-06/05-07本文編集禁止、`04_Documentation/**` 本文更新禁止、実装変更禁止）を維持。
+
+### Phase 4: Execute（本Issue本文のみ更新）
+- 実施: Stream J基準として語彙・Gate・停止条件・Open候補条件を追記。
+- 非実施: 05-06/05-07本文、`04_Documentation/**` 本文、実装コードの変更。
+
+### Phase 5: Verify（05-06/05-07との語彙衝突確認）
+- 対象: `issue-doc-ops-05-06-04doc-e2e-testing.md` / `issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` を read-only 参照。
+- 確認項目:
+  - `Proceed/Hold/Stop` の三値体系が衝突しない。
+  - `docs-check` を必須境界として扱う方針と矛盾しない。
+  - 依存未確定時の扱いが `Hold` で一致する。
+- 判定: **衝突なし / Hold維持**（依存証跡未確定のため）。
+
+### Phase 6: Proceed（Open候補条件 U1..Un / 未達はHold）
+- U1: 05-05/05-06/05-07 で `ProceedDecision` 語彙が一致している。
+- U2: 05-05 の Approval Record 5項目が記入済みで evidence link が追跡可能。
+- U3: `Dependency status` が更新され、更新根拠リンクが本文に追記済み。
+- U4: docs-check 実行結果（validator/rg/diff-check）が最新状態で再現可能。
+- ProceedDecision: **Hold**（U1〜U4 未充足のため）。
+
+### Stopper（Stream J）
+- 依存Issue本文へ編集が必要になった場合は即 `Stop`。
+- 未定義競合（語彙定義またはGate境界）が発生し解消不能な場合は `Stop`。
+- 自己修復が3回を超える場合は `Stop`。
