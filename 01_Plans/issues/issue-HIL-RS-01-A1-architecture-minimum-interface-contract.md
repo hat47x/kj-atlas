@@ -207,3 +207,35 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `unlockRule=a1Status=="Done" && pendingDecisionQueueCount==0`
 - 判定: `Hold`（承認待ち2件が未解消）。
+
+
+## Stream A execution sync（2026-05-09 / A1 minimum interface contract close-ready）
+
+### Phase 1: 契約整理
+- Read: Phase開始時に本Issue/親Issue/FB-P2C A1/ADR-0026を再読。
+- Context: A1契約の曖昧性は `Pending bypass` と `AI承認代行` を誘発する。
+- Decision（最小I/F固定）:
+  - API signatures: `CritiqueV1`, `ReDiffV1`, `AttributionV1`, `A1ErrorV1`
+  - Type boundary: `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - Versioning: `schemaVersion=1.0.0`（v1固定、拡張はv2のみ）
+  - Compatibility: v1必須キー集合維持・unknown key=`400`・SafeMode境界後退禁止
+- Consequences: A2/A3は read-only参照のみ、再定義は禁止。
+
+### Phase 2: ADR整合
+- `ADR-0026` と照合し、以下を固定契約として明示:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `overridePolicy=human_dual_control_only`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 変更可能領域:
+  - mock検証観点の説明追加
+  - 運用注記（reason code補足）
+- 変更不可領域:
+  - contract IDs / schemaVersion / unlockRule / safeMode境界
+
+### Phase 3: 受入条件固定（下流向け）
+- AC-1: 4契約ID + 4シグネチャ + schemaVersion を同時充足。
+- AC-2: `pendingDecisionQueueCount>0` では `executeAllowed=false`。
+- AC-3: `A2A3_OPEN_ALLOWED` 条件以外のOpen化を禁止。
+- DoD-1: Verify手順で Contract drift / Responsibility boundary / Pending gate を全pass。
+- DoD-2: self-correction `0/3` から記録し、`>3` でStop。
+- DoD-3: 未承認2件（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）解消まで `Hold` 維持。

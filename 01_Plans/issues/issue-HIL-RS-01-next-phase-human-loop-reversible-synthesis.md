@@ -574,3 +574,31 @@
   - 未定義競合: no
   - 前提崩壊: no
   - 安全境界後退兆候: no
+
+
+## Stream A Phase sync（2026-05-09 / parent-plan contract alignment）
+
+### Phase 1: 契約整理
+- Read: 親計画は参照ノードであり再定義ノードではないことを再確認。
+- Context: 親計画が契約値を再定義すると A1->A2->A3 の順序保証が崩れる。
+- Decision:
+  - 固定契約値は参照専用（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）。
+  - 変更可能領域は `reasonCodes` の運用注記・手順説明に限定（契約キー/判定式は変更不可）。
+- Consequences: 親計画は判定結果の記録のみを担い、契約更新要求はA1へ集約する。
+
+### Phase 2: ADR整合
+- `ADR-0026` の CDC と親Issueの CDC を照合し、契約固定値・Hold条件・SafeMode後退禁止が一致することを確認。
+- 実装へ渡す固定契約:
+  - `A2A3_OPEN_ALLOWED`（または同値 `a1Status=="Done" && pendingDecisionQueueCount==0`）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- 実装へ渡す変更可能領域:
+  - mock検証の手順最適化（契約値不変更）
+  - handoff記述の可読性改善（意味不変）
+
+### Phase 3: 受入条件固定（AC/DoD）
+- AC-1: 親計画とA1契約で fixed keys drift=`0`。
+- AC-2: `Pending` 残存時は必ず `Hold`。
+- AC-3: A2/A3非干渉（編集・判定代行なし）。
+- DoD-1: Plan -> Execute -> Verify -> Proceed の直列運用。
+- DoD-2: Verify失敗時 self-correction 最大3回。
+- DoD-3: 3回超過/前提崩れ/未定義競合で停止報告。

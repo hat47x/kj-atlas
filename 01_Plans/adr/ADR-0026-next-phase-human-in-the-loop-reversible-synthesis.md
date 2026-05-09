@@ -280,3 +280,30 @@
 - 変更要約: ADR-0026は「契約再定義禁止・A1参照専用・Hold継続」を明文化。
 - 残リスク: 人間最終承認ログ未充足時はProceed不可。
 - 他ストリーム契約固定点: `freezeContractId` / `contractIds` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` は read-only。
+
+
+## Stream A addendum（2026-05-09 / contract freeze and minimum interface agreement）
+
+### Context
+- Stream A の目的は「契約凍結と最小I/F合意」を最短で確定し、A2/A3を契約再解釈から保護すること。
+- 未承認項目（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）が残るため、承認済み契約と承認待ちを分離して扱う必要がある。
+
+### Decision
+- 固定契約（実装へ渡す不変領域）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - API signatures: `CritiqueV1`, `ReDiffV1`, `AttributionV1`, `A1ErrorV1`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - unlock gate: `A2A3_OPEN_ALLOWED`（同値条件含む）
+- 変更可能領域（実装準備で可変）:
+  - mock-first検証手順
+  - handoff記述の可読性改善
+  - reason codeの補助説明（意味不変）
+
+### Consequences
+- A2/A3 は mock依存で先行可能（backend完了待ち不要）だが、契約キー・型・版の再定義は不可。
+- Verify失敗時は self-correction 最大3回、超過時は停止（推測実行禁止）。
+- `pendingDecisionQueueCount>0` の間、判定は `Hold/Needs-decision` を維持する。
