@@ -2399,3 +2399,44 @@ handoffKeys:
 ### Stop condition check
 - 承認未了（Security Officer / System Owner の2者承認待ち）が解消されるまで、状態は **held** を維持。
 - 依存推測補完・未定義競合の発生時は即時Stopし、Phase 2 ADRへロールバック。
+
+## Stream E update（2026-05-09 / CE1 ContextQuery/ContextBundle Foundation 専任）
+
+### Phase 1: Read Sync（対象再読・差分確認）
+- 対象ファイルを再読し、編集許可が本ファイルのみに限定されることを再確認。
+- CE1の責務を `contract-only / mock-first` に固定し、実装コード・他Issue編集を除外。
+- 既存固定語彙（`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`）と fail-closed 方針に差分なしを確認。
+
+### Phase 2: ADR Consensus（Context / Decision / Consequences + 承認）
+- **Context**: CE2/CE4下流がmock参照で前進するため、CE1は `ContextQueryV1` / `ContextBundleV1` の契約I/Fと決定論条件を先行固定する必要がある。
+- **Decision**: CE1 v1は closed-world 契約を維持し、`previewConfirmed=false -> 422 preview_required`、未知キー `400 unknown_contract_key`、hash非決定論 `409 nondeterministic_bundle` を固定する。
+- **Consequences**: 下流は実装依存なしで契約検証を継続できる。契約衝突または承認不在時は `held` で停止する。
+- **承認条件**: Contract ID / error semantics / handoff key の衝突がないことを前提に合意扱い。
+
+### Phase 3: Plan（AC/DoD不足補完提案）
+- AC補完1: `ContextQueryV1` / `ContextBundleV1` の契約語彙を本Issue単独で参照可能な状態に維持。
+- AC補完2: 同一 canonical query で `queryCanonicalHash` と `bundleHash` が3回一致する決定論要件を固定。
+- AC補完3: `previewConfirmed=false` の入口拒否を `422 preview_required` へ1:1固定。
+- DoD補完1: CE2は `sourceBundleHash === bundleHash` 比較のみで検証継続可能。
+- DoD補完2: CE4は `equivalenceKey + bundleHash` で監査再現キー接続可能。
+
+### Phase 4: Execute（contract-only）
+- CE1 v1を I/F契約・hash決定論・preview gate のみで維持し、handler/UI/DB/workerの実装詳細を追加しない。
+- closed-world逸脱（未定義キー）は常に `400 unknown_contract_key` で fail-closed。
+- `previewConfirmed=false` は常に `422 preview_required`。
+- 同一 canonical query で hash 不一致時は `409 nondeterministic_bundle` で停止。
+
+### Phase 5: Verify（max 3 self-correction）
+- Verify-1: CE2 handoff key（`sourceBundleHash === bundleHash`）が mock-only で検証可能。
+- Verify-2: CE4 handoff key（`equivalenceKey + bundleHash`）が mock-only で再構成可能。
+- Verify-3: 固定エラー語彙3種が実装非依存で再現可能。
+- self-correction log:
+  - attempt 1: 語彙揺れ点検（差分なし）
+  - attempt 2: preview gate表記の再点検（`previewConfirmed=false -> 422 preview_required` に統一）
+  - attempt 3: fail-closed表現を unknown key / nondeterministic の2系統に明確化（反映済）
+- 判定: **pass**（mock参照可能状態を維持）
+
+### Phase 6: Proceed / Hold / Stop 判定
+- **Proceed**: Phase 1〜5 を直列で完了し、差分が本Issue内の契約整備に限定される場合。
+- **Hold**: 2者承認待ち、または上流契約の未確定が残る場合。
+- **Stop**: 競合・承認不在・前提崩壊・自己修復上限超過（3回超過）を検知した場合は即停止し `held` を維持。
