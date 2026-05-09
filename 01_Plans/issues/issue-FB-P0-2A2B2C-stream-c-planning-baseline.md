@@ -282,3 +282,46 @@
 - `依存差分`: `A1 -> A2 -> A3` の順序・依存記法の不一致。
 - `契約キー差分`: `freezeContractId` / `contractIds` / `schemaVersion` / `safeModeDefault` など固定キーの不一致。
 - 差分を検知した場合は `held` に分類ラベル付きで記録し、Phase 2以降へ進行しない。
+
+## Stream A alignment run（2026-05-08 / baseline sync for A1 freeze）
+
+### Phase 1: Read同期
+- allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）を再読。
+- 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の一致を確認。
+- 判定: 差分 `0`、未定義競合なし。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約凍結を唯一ゲートとして `A1 -> A2 -> A3` 順序を維持する。
+- Decision:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `A2A3_OPEN_ALLOWED` を唯一判定式として維持
+- Consequences:
+  - A2/A3 は read-only / mock-first 参照のみ。
+  - A2/A3で契約再定義は禁止。
+  - 未承認項目は `held` 維持で確定化しない。
+- Approval state: `approved-for-freeze-candidate`（docs scope）
+
+### Phase 3: Plan
+- 変更対象: baseline/A1 issue の契約固定・停止条件同期セクション。
+- 非対象: allowlist外ファイル、実装詳細、他ストリーム実作業。
+- 停止条件: 固定キー不一致 / 未定義競合 / allowlist外編集要求 / self-correction 4回目相当。
+
+### Phase 4: Execute
+- 契約固定値は変更せず、同期文面のみ更新。
+- 安全境界（`safeModeDefault=ON`, `SAFE_MODE_STRICT_ON`）後退なし。
+
+### Phase 5: Verify
+- Plan適合: 適合。
+- allowlist逸脱: なし。
+- 契約固定値整合: A1 issue と一致。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- Decision state: `Hold (Needs-decision)`。
+- 根拠: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+- 必要承認項目: `approved_by`, `approved_at`, `evidence`, `HIL-RS-02-GOV-EXCEPTION-01 final decision`。

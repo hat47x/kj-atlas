@@ -1438,3 +1438,63 @@ state: Needs-decision
 ### Phase 6: Proceed / Stopper
 - Proceed: `No`（`Hold` 継続）。
 - Stopper reason: approval evidence unresolved (`approved_by`, `approved_at`, `evidence`).
+
+## Stream A dedicated run（2026-05-08 / A1 Interface Contract Freeze only）
+
+### Phase 1: Read同期（fixed serial start）
+- 再読対象（allowlistのみ）:
+  1. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+  2. `01_Plans/issues/issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`
+- 契約固定キー再確認: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`。
+- 判定: 差分 `0`。前提崩れ（固定キー不一致/未定義競合）なし。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 依存順 `A1 -> A2 -> A3` を維持し、A2/A3の派生再定義を防止するため、A1契約を唯一SSOTとして固定する。
+- Decision:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `contractLinkLocked=true`
+  - `sharedResourceFreeze=true`
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `A2A3_OPEN_ALLOWED` を唯一判定式として固定（再定義禁止）
+- Consequences:
+  - A2/A3は read-only 参照のみ（mock-first）。
+  - A2/A3側で契約ID・schemaVersion・安全境界の再定義は禁止。
+  - 未承認項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）は確定化せず `Needs-decision` 維持。
+- Approval state: `approved-for-freeze-candidate`（docs scope）
+
+### Phase 3: Plan（宣言）
+- 変更対象セクション: 本追記セクション（Phase 1〜6）と baseline 側の同等同期セクションのみ。
+- 非対象セクション: 実装・他Issue・allowlist外ファイル。
+- 停止条件:
+  1. 固定キー不一致
+  2. 未定義競合
+  3. allowlist外編集要求
+  4. Self-Correction 4回目相当
+
+### Phase 4: Execute（契約固定値/禁止事項のみ更新）
+- 固定値は既存SSOTから変更なし（ドリフト `0`）。
+- 禁止事項を再確認:
+  1. 契約ID追加/改名/削除禁止
+  2. `schemaVersion` 改版禁止
+  3. `Pending` bypass禁止
+  4. `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退禁止
+
+### Phase 5: Verify
+- Plan適合性: 適合。
+- allowlist逸脱: `0`（2ファイルのみ更新）。
+- 契約固定値整合: A1 issue と baseline で整合。
+- Self-Correction count: `0/3`。
+
+### Phase 6: Proceed/Stop
+- Decision state: `Hold (Needs-decision)`
+- Proceed不可理由:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+- 停止報告（推測補完なし）:
+  1. 必要承認: `approved_by`
+  2. 必要承認: `approved_at`
+  3. 必要承認: `evidence`
+  4. 必要判断: `HIL-RS-02-GOV-EXCEPTION-01` の最終判定
