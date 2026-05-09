@@ -2,6 +2,7 @@
 
 - Type: QA/E2E verification log
 - Status: Done
+- Priority: High
 - Scope: `03_Implement/frontend/e2e/`, `01_Plans/issues/`
 - Related backlog: `PUB-01`, `I18N-03`
 - Policy reference: `ADR-0019`
