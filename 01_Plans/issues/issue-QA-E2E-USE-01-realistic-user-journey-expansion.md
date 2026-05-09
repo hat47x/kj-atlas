@@ -218,3 +218,44 @@
   - 実装・テストコード変更要求が入った場合
   - 依存未解決のまま Proceed/確定宣言が要求された場合
   - 指定外ファイル編集要求が入った場合
+
+## Stream E Ready化設計 pass（2026-05-09 / Plan→Execute→Verify→Proceed）
+
+### Phase 1: Read同期（ブロッカー/依存/DoD不足）
+- Blocker: 依存Issueの承認証跡（Approval Record: 日時/承認者/対象/判断/evidence）が未確定の場合は `ProceedDecision: Hold` を維持する。
+- Dependency: 本Issueで定義済みの依存関係を read-only で再確認し、依存先の未確定値をこのIssue側で確定しない。
+- DoD gap: 「実装レーンが即着手可能な入力/出力/担当/解除条件」の4点が散在している場合、Phase 3で1ブロックに集約する。
+
+### Phase 2: 仕様明文化（Context / Decision / Consequences）
+- Context: 本Issueは Draft/Blocked を Ready化するための計画文書であり、実装や運用確定値の追加はスコープ外。
+- Decision: `Proceed/Hold/Stop` の三値判定、`self-correction <= 3`、`docs-check` 優先を固定し、依存未解除時は `Hold` を維持する。
+- Consequences: 先行依存が解決した時点で、実装レーンは追加解釈なしで着手可否を判定できる。
+
+### Phase 3: Ready化（AC/DoD・入力/出力・担当・依存解除条件）
+- AC/DoD Readyセット（本Issueで確認すべき共通最小セット）:
+  - [ ] AC-R1: 受入条件が測定可能な判定文（done/pending/hold いずれか）で記録されている。
+  - [ ] AC-R2: `ProceedDecision` と `Dependency status` が矛盾しない。
+  - [ ] DoD-R1: 実装禁止境界（docs-only / proposal-only など）が明示されている。
+  - [ ] DoD-R2: `Hold` 継続条件と `Stop` 条件（上限超過・競合未解決）が明示されている。
+- 入力（Implementation lane input）:
+  - 承認証跡、依存Issueの最新判定、固定語彙（Go/NoGo・Proceed/Hold/Stop・pass/fail/blocked）。
+- 出力（Implementation lane output expectation）:
+  - 着手可否の単一判定（Proceed or Hold/Stop）と、着手時に守る制約チェックリスト。
+- 担当:
+  - System Owner: Go/NoGo最終判定。
+  - Platform Operator: 実行/保管/運用ログ整備。
+  - Security Officer: 公開境界・safeMode/漏えい防止の最終確認。
+- 依存解除条件:
+  - 依存Issueの Approval Record 5項目が確定し、相互参照リンクで追跡可能であること。
+
+### Phase 4: 引継ぎ（実装レーン即着手チェックリスト）
+- [ ] H1: Scope逸脱なし（本Issue外の仕様確定をしていない）。
+- [ ] H2: AC/DoDの未完了項目が `pending/hold` で可視化されている。
+- [ ] H3: 実装開始ゲート（Proceed条件）が1箇所に集約されている。
+- [ ] H4: Verifyコマンド（validator/rg/diff-check）が再実行可能。
+- [ ] H5: 依存未解除時は `Hold` を維持し、推測で `Proceed` しない。
+
+### Verify結果（本pass）
+- 判定: `Hold` 維持（依存証跡未確定のため）。
+- self-correction: `1/3`（上限内）。
+- Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
