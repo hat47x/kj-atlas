@@ -3148,3 +3148,49 @@ type PatchProposal = {
   - モック前提で下流の非依存検証を継続し、実装確定は各CEレーンに委譲。
 - held_conditions:
   - Contract ID mutation / safeMode後退 / allowlist外編集 / verify 4回目相当 / 語彙衝突検知。
+
+## Stream C latest run（2026-05-09 / CE0 contract freeze boundary clarification）
+
+- run_id: `stream-c-ce0-2026-05-09-01`
+- assignee: `Stream C（CE0 contract freeze 境界明文化専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- Status/Priority/Scope/Dependencies を再抽出: `Status=Open`, `Priority=P1`, `Scope=docs-only/contract-only/mock-first`, 依存先は CE0 SSOT 参照の CE1/CE2/CE4。
+- CE0 freeze 対象を棚卸し: 契約ID `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`、禁止変更は追加・改名・削除・意味変更。
+- 境界再確認: 下流は read-only 参照、`Working -> Consensus` は `patch+approval`、safeMode 既定緩和は禁止。
+
+### Phase 2 ADR CDC
+- Context: freeze 不在時は Contract ID の再定義、safeMode 境界後退、error semantics の解釈分岐が発生し、CE1/CE2/CE4 が競合しやすい。
+- Decision:
+  - freeze 対象キーを固定（`ContextQuery.goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode`, `ContextBundle.bundleHash`）。
+  - 凍結期間は **CE0 lane active 中（解除Decision承認前）** とし、解除は `explicit human approval + CE0 issue ledger更新 + downstream合意確認` を満たした時のみ許可。
+  - `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論を v1 で固定し、v2 まで変更禁止。
+- Consequences: 下流ストリームは CE0 を read-only 参照し、破壊的変更（Contract ID mutation / safeMode default relaxation / auto-apply化）を禁止。
+
+### Phase 3 Plan
+- AC:
+  1. 凍結対象（契約ID・必須キー・禁止変更）が明示されている。
+  2. 解除条件（誰が何を満たすか）が明示されている。
+  3. 依存先（CE1/CE2/CE4）への影響が read-only として明示されている。
+- DoD:
+  1. 単独再読で運用可能（Phase定義と停止条件を含む）。
+  2. 推測前提が残っていない（解除条件を明文化）。
+  3. non-goals 維持（実装・スキーマ実体変更を行わない）。
+
+### Phase 4 Execute
+- 本Issueのみを contract-only / docs-only で更新。
+- 非実施を明示: 実装コード変更、スキーマ実体変更、allowlist 外編集。
+
+### Phase 5 Verify
+- docs-check:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- freeze/hold 語彙一貫性: `freeze` は契約固定、`held/Hold` は停止条件としてのみ使用していることを確認。
+- self-correction: attempt_1 で完了（0/3）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Ready**
+- 理由: AC/DoDを満たし、未承認事項は `held` 停止条件として分離済み。新規未承認論点は検出なし。
