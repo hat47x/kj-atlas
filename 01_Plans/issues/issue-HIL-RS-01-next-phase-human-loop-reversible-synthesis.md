@@ -521,3 +521,56 @@
 - 判定: **Hold**
 - 理由:
   - 親計画の参照ノード化と責務分離は固定できたが、Proceed解放は人間最終承認と pending 解消に従属。
+
+## Stream A critical-path run sync（2026-05-09 / parent-plan read-only alignment）
+
+### Phase 1: Read
+- 再読対象（2ファイル固定）:
+  1. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- 前提差分（drift）:
+  - `freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition` はすべて drift=0。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: 親計画は A1契約の参照ノードであり、再定義ノードではない。
+- Decision:
+  - 親計画は fixed contract keys を参照専用で維持する。
+  - A2/A3 には read-only + mock-first handoff のみ許可する。
+- Consequences:
+  - `pendingDecisionQueueCount>0` の間は `Proceed=Hold` 固定。
+  - 承認待ち項目を推測確定しない。
+
+### Phase 3: Plan（AC/DoD）
+- AC-1: 親計画とA1契約間で fixed keys drift=0。
+- AC-2: `Pending -> Approved | Pending -> Rejected` 以外の遷移を追加しない。
+- AC-3: A2/A3 非干渉（編集・判定代行なし）。
+- DoD-1: SafeMode後退なし。
+- DoD-2: Pending bypassなし。
+- DoD-3: Verify失敗時の自己修復上限（3回）を超過しない。
+
+### Phase 4: Execute
+- 親計画側では契約値の再定義を行わず、A1契約凍結の参照境界を維持。
+- 下流向け handoff は read-only summary の再発行に限定（実装依存は mock で遮断）。
+
+### Phase 5: Verify
+- docs-check:
+  - 固定値整合: pass
+  - 依存順固定（A1 -> A2 -> A3）: pass
+  - NoGo条件（SafeMode後退/Pending bypass/契約ID変更）未検知: pass
+- 差分健全性チェック: allowlist内（2ファイル）編集のみ。
+- self-correction log:
+  - attempt 1: not needed
+  - attempt 2: not needed
+  - attempt 3: not needed
+  - count: `0/3`
+
+### Phase 6: Proceed or Stop
+- 判定: `Hold/Needs-decision`
+- 継続理由:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+- Stopper評価:
+  - self-correction超過: no
+  - 未定義競合: no
+  - 前提崩壊: no
+  - 安全境界後退兆候: no

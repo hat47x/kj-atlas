@@ -1539,3 +1539,61 @@ state: Needs-decision
   2. 必要承認: `approved_at`
   3. 必要承認: `evidence`
   4. 必要判断: `HIL-RS-02-GOV-EXCEPTION-01` の最終判定
+
+## Stream A critical-path run（2026-05-09 / prompt-compliant serial execution）
+
+### Phase 1: Read
+- 再読対象（2ファイル固定）:
+  1. `01_Plans/issues/issue-FB-P2C-01-a1-interface-contract.md`
+  2. `01_Plans/issues/issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`
+- 前提差分（drift）確認:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`（drift=0）
+  - `schemaVersion=1.0.0`（drift=0）
+  - `overridePolicy=human_dual_control_only`（drift=0）
+  - `safeModeDefault=ON`（drift=0）
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`（drift=0）
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`（drift=0）
+
+### Phase 2: ADR（Context / Decision / Consequences）
+- Context: A1契約凍結が崩れると A2/A3 が派生契約を再定義し、監査導線が分岐する。
+- Decision: A1固定契約値は再定義せず、A2/A3向けには read-only handoff のみ継続する。
+- Consequences:
+  - `pendingDecisionQueueCount>0` の間は `Proceed=Hold/Needs-decision` を維持。
+  - 実装依存は `A1-CONTRACT-MOCK-v1` 前提で切断し、契約凍結のみを同期対象とする。
+
+### Phase 3: Plan（AC/DoD）
+- AC-1: 固定契約値6点（ID/version/policy/safeMode/queue）の drift が 0。
+- AC-2: A2/A3向け handoff が read-only + mock-first であること。
+- AC-3: Pending bypass / SafeMode後退 / 契約ID変更を許容しないこと。
+- DoD-1: docs-check / 差分健全性が pass。
+- DoD-2: self-correction が 3回以内。
+- DoD-3: stopper 条件（未定義競合・前提崩壊・安全後退）未検知。
+
+### Phase 4: Execute
+- 契約固定値の再定義は実施せず、既存凍結境界を維持。
+- A2/A3向け read-only handoff 条件を再掲:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- 実装依存分離: `A1-CONTRACT-MOCK-v1` の照合に限定（runtime接続前提なし）。
+
+### Phase 5: Verify
+- docs-check:
+  - 固定値整合: pass
+  - 依存順（A1 -> A2 -> A3）: pass
+  - decision queue 遷移固定: pass
+- 差分健全性チェック: allowlist内（2ファイル）編集のみ。
+- self-correction log:
+  - attempt 1: not needed
+  - attempt 2: not needed
+  - attempt 3: not needed
+  - count: `0/3`
+
+### Phase 6: Proceed or Stop
+- 判定: `Hold/Needs-decision`
+- 理由:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+- Stopper評価:
+  - self-correction 3回超過: no
+  - 未定義ファイル競合: no
+  - 前提条件崩壊: no
+  - 安全境界後退兆候: no
