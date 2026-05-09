@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream H（CE2 Draft proposal品質改善 / implementation dependency cut）
+- Owner: Stream G（CE2 Low-Risk AI Assist Draft品質改善専任 / proposal-only）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -30,6 +30,15 @@
 - Scope lock: 本Issueを **proposal品質向上** のみに限定し、実装仕様・実装タスク・運用確定値の追加を禁止する。
 - Dependency stance: `CE0` / `CE1` は **read-only 依存** とし、参照は契約確認（語彙・I/F・停止条件）に限定する。
 - Implementation decoupling: CE2 Draft段階では mock contract 以外の結合（実データ接続・実ランタイム依存・実装前提の状態遷移）を受理しない。
+
+## Stream G mission lock（2026-05-08 / CE2 Draft quality only）
+
+- Assignment lock: Stream G は **CE2 Low-Risk AI Assist の Draft品質改善のみ** を担当し、実装・運用確定・他Issue編集を行わない。
+- File lock: 編集対象は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）。
+- Proposal-only lock: 実行可能仕様や自動遷移仕様を追加せず、判断材料の明確化に限定する。
+- No-auto lock: `auto-apply / auto-confirm / auto-publish` の導線・文言・黙示的許可を追加しない。
+- Dependency lock: `CE0` / `CE1` は **read-only依存**。契約語彙・I/F・停止条件の参照に限定し、CE2側から実装前提を要求しない。
+- Mock isolation: 依存参照は mock contract で切断し、実データ接続・実ランタイム前提の議論を禁止する。
 
 ### 実装着手条件（Implementation Start Gate）
 
@@ -140,6 +149,7 @@
 ### 修復ルール
 - 修復は最大3回まで。
 - `4回目相当` を要する場合は **即時 `held`** とし、原因と未解決項目のみ記録する。
+- Stream G 運用では `self-correction` カウンタを明示し、`3/3` 到達時点で Proceed 判定を停止する。
 
 ## Phase 6: Proceed / Stop
 
@@ -172,8 +182,11 @@
 - 実行コマンド:
   - `git diff -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
   - `git status --short`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+  - `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
 - 期待結果:
   - single-file scope で、Phase 1〜6、I/Fとmock方針、リスク台帳、Draft→Open条件、Proceed/Stop条件が確認できる。
+  - docs-check がゼロエラーで、proposal-only / no-auto / mock-isolated dependency の3条件に反証がない。
 - 未実施時の理由・代替検証:
   - なし（docs-checkのみ）。
 
