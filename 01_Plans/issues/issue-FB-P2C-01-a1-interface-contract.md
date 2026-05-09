@@ -1661,3 +1661,42 @@ state: Needs-decision
 - DoD-1: `Pending -> Approved | Pending -> Rejected` 以外の遷移を導入しない。
 - DoD-2: self-correction は最大3回、4回目相当で停止。
 - DoD-3: 未承認項目が1件でも `Hold/Needs-decision` を維持。
+
+
+## Stream A dedicated run（2026-05-09 / critical-path contract freeze）
+
+### Phase 1: Read & Baseline Sync（Plan→Execute→Verify→Proceed）
+- Read実施: allowlist 2ファイルを再読し、`Status/Priority/Dependencies` と固定契約キーを照合。
+- 固定キー一致確認:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `safeModeDefault=ON`
+  - `sharedResourceFreeze=true`
+- Drift判定: 差分なし（`held`追加なし）。Proceed。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約未固定のままA2/A3へ進むと再定義リスクが発生する。
+- Decision: 凍結候補を以下に固定（承認完了までは read-only）。
+  - ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - SafeMode境界: `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`
+  - `sharedResourceFreeze=true`
+- Consequences: 承認前は破壊的変更禁止、未承認事項は `Needs-decision/Hold` 維持。
+- Approval log: `approved-for-freeze-candidate`（human approval pending）。
+
+### Phase 3: Contract Freeze Definition
+- SSOT判定式（唯一）:
+  - `A2A3_OPEN_ALLOWED = (a1Status=="Done" && pendingDecisionQueueCount==0 && freezeContractId=="HIL-RS-02-A1-CONTRACT-FREEZE-v1" && schemaVersion=="1.0.0" && overridePolicy=="human_dual_control_only" && contractLinkLocked==true && sharedResourceFreeze==true && safeModeDefault=="ON" && safeModeBoundary=="SAFE_MODE_STRICT_ON")`
+- NoGo条件（固定）:
+  - `pendingBypassDetected==true`
+  - `undefinedConflictDetected==true`
+- non-target編集: `0`（allowlist外編集なし）。
+
+### Phase 4: Verify
+- docs-check観点: 構文・契約整合・判定式単一性・禁止事項（SafeMode後退/allowlist外編集）を確認。
+- Self-Correction count: `0/3`。失敗なし。
+
+### Phase 5: Proceed / Handoff
+- 判定: `Hold/Needs-decision`（`Approval Record: Pending`, `HIL-RS-02-GOV-EXCEPTION-01: held`）。
+- 次ストリーム向け: read-only参照のみ（契約再定義・確定化禁止）。
