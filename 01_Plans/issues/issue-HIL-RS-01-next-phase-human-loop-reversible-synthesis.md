@@ -602,3 +602,73 @@
 - DoD-1: Plan -> Execute -> Verify -> Proceed の直列運用。
 - DoD-2: Verify失敗時 self-correction 最大3回。
 - DoD-3: 3回超過/前提崩れ/未定義競合で停止報告。
+
+## Stream E governance consistency hardening（2026-05-09 / docs-only）
+
+### Phase 1 Read（Status / AC / Validation / Stop条件抽出）
+- Status: `In Progress`（変更なし）。
+- AC再抽出:
+  - AC-1: A1最小I/F固定値とのドリフト0。
+  - AC-2: hardening（SoD/承認遷移固定）参照整合。
+  - AC-3: `NoGo return path` 一意固定。
+  - AC-4: A2/A3非干渉。
+- Validation再抽出:
+  - fixed key drift=0
+  - `Pending bypass` 禁止
+  - `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` 後退なし
+- Stop条件再抽出:
+  1. SafeMode後退検知
+  2. 共有リソース（固定契約キー）競合
+  3. 未承認項目の確定化（推測確定）
+
+### Phase 2 ADR CDC（実装前固定）
+#### Context
+- 親計画は A1/hardening 契約の参照ノードであり、再定義を行うと統治境界が崩れる。
+- 未承認キュー残存時に `Proceed=Go` を選ぶと承認責務分離（Human dual control）を破壊する。
+
+#### Decision
+- 本更新は docs-only で、対象は本ファイルの統治整合補強に限定する。
+- `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeDefault` / `safeModeBoundary` / `decisionQueueTransition` は参照専用で固定。
+- `Proceed` 判定は `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで `Hold/Needs-decision` を維持。
+- Stopイベント（SafeMode後退・競合・未承認確定化）検知時は即時 `NoGo/Hold` に遷移し、再開条件を明示する。
+
+#### Consequences
+- 親計画の責務は「参照整合判定 + 判定ログ記録」に限定され、承認確定は human の責務として保持される。
+- A2/A3は read-only handoff を前提に継続可能だが、親計画からの判定代行は行わない。
+- 承認待ち項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）が解消するまで `Proceed=Hold` 固定。
+
+### Phase 3 Plan（AC / DoD不足補完提案）
+- AC補完:
+  - AC-5: `Proceed` 判定文言が常に gate式（`a1Status=="Done" && pendingDecisionQueueCount==0`）と一致する。
+- DoD補完:
+  - DoD-5: docs-only 実行時、編集範囲が本ファイルに限定されていることを明示する。
+  - DoD-6: Stop条件（SafeMode後退・共有契約競合・未承認確定化）が本文に明記されていること。
+
+### Phase 4 Execute（本ファイルのみ整合修正）
+- 実施:
+  1. Phase別の Status/AC/Validation/Stop条件を再固定。
+  2. CDC（Context/Decision/Consequences）を実装前セクションとして明記。
+  3. AC/DoD不足補完（AC-5, DoD-5, DoD-6）を追記。
+- 非実施（禁止）:
+  - A1契約正本値の変更
+  - A2/A3判定代行
+  - 未承認項目の確定化
+
+### Phase 5 Verify（上位ADR整合 / 語彙一貫 / docs-check）
+- 上位ADR整合:
+  - ADR-0026（HIL-RS方針）と矛盾なし（親計画は参照ノード）。
+  - ADR-0028（認知外在化フェーズ計画）と矛盾なし（承認責務分離と可逆運用維持）。
+- 語彙一貫:
+  - `Hold/Needs-decision` / `Proceed` / `NoGo` / `Pending -> Approved | Rejected` を統一。
+- docs-check:
+  - 本ファイル単独編集（docs-only）を満たす。
+
+### Phase 6 Proceed（承認待ちはHold）
+- 判定: **Hold/Needs-decision**。
+- 理由:
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+- 再開条件:
+  1. `a1Status=="Done"`
+  2. `pendingDecisionQueueCount==0`
+  3. human final approval 記録完了（推測確定禁止）
