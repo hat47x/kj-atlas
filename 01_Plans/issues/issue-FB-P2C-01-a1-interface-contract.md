@@ -1700,3 +1700,31 @@ state: Needs-decision
 ### Phase 5: Proceed / Handoff
 - 判定: `Hold/Needs-decision`（`Approval Record: Pending`, `HIL-RS-02-GOV-EXCEPTION-01: held`）。
 - 次ストリーム向け: read-only参照のみ（契約再定義・確定化禁止）。
+
+### Stream A protocol run（2026-05-09 / A1 contract freeze serial）
+
+#### Phase 1 Read（対象2ファイル再読）
+- Status/Scope/Dependencies/freeze keys を再確認し、差分 `0` を確認。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` は未解決のまま。
+
+#### Phase 2 ADR（Context / Decision / Consequences）
+- Context: クリティカルパス `A1 -> A2 -> A3` の順序維持にはA1契約凍結の先行固定が必要。
+- Decision: 既存固定値（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）と `A2A3_OPEN_ALLOWED` を唯一SSOTとして維持。
+- Consequences: 未承認項目（pending/held）は確定扱いしないため、Proceedは `Needs-decision` のみ許容。
+
+#### Phase 3 Plan
+- 対象ファイル: 本ファイル / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md`。
+- 非対象: allowlist外ファイル（編集禁止）。
+- 停止条件: allowlist外編集要求 / 未定義競合 / self-correction 4回目相当。
+
+#### Phase 4 Execute
+- 契約固定値の文言整合のみ実施（実装コード変更なし）。
+- A2/A3依存は `A1-CONTRACT-MOCK-v1` による mock-first 前提を維持。
+
+#### Phase 5 Verify
+- AC/DoD自己検証: 固定キー・判定式・安全境界の後退なしを確認。
+- self-correction: `0/3`。
+
+#### Phase 6 Proceed
+- 判定: `Needs-decision`。
+- 理由: `Approval Record=Pending` および `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。

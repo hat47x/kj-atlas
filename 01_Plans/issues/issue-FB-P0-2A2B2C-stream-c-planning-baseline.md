@@ -492,3 +492,28 @@
 ### Phase 5: Proceed / Handoff
 - 判定: `Hold/Needs-decision`（`Approval Record: Pending`, `HIL-RS-02-GOV-EXCEPTION-01: held`）。
 - 次ストリーム向け: read-only参照のみ（契約再定義・確定化禁止）。
+
+## Stream A critical-path alignment checkpoint（2026-05-09）
+
+### Phase 1 Read
+- 対象2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）を再読し、`Status / Scope / Dependencies / freeze keys` 差分 `0` を確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: P0基準線はA1契約凍結を唯一ゲートとしてA2/A3誤開放を防止する。
+- Decision: 固定値と `A2A3_OPEN_ALLOWED` 判定式を変更せず維持し、pending/held は確定化しない。
+- Consequences: 未承認が残る間は `Needs-decision` を維持し、Goに遷移しない。
+
+### Phase 3 Plan
+- 対象: allowlist 2ファイルの契約・ゲート文言同期のみ。
+- 非対象: allowlist外ファイル、実装コード、派生契約追加。
+- 停止条件: allowlist外編集要求 / 未定義競合 / self-correction 4回目相当。
+
+### Phase 4 Execute
+- 契約固定値整備のみを実施し、A2/A3は `A1-CONTRACT-MOCK-v1` 前提で依存切断可能であることを維持。
+
+### Phase 5 Verify
+- AC/DoD自己検証で固定キー一致、判定式一致、安全境界維持を確認。
+- self-correction: `0/3`。
+
+### Phase 6 Proceed
+- 判定: `Needs-decision`（`Approval Record=Pending` と `held` 未解消のため）。
