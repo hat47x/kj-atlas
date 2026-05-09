@@ -1918,3 +1918,29 @@
 - Phase冒頭Read同期を再実施し、Proceed前の差分なしを確認。
 - 判定: `Done`（AC/DoD整合、docs-check pass、single-file/contract-only制約維持）。
 - 停止条件（語彙差分、契約ID再定義、SafeMode既定ON後退、Verify 4回目相当）該当なし。
+
+## Phase Execution Record（2026-05-09 / Stream C専任 / CE0 core graph repositioning planning-to-implementation-prep）
+### 1) Read同期
+- Phase開始時Readを実施し、`role / transition / no-go` 固定語彙、CE0契約ID read-only 制約、SafeMode既定ON境界を再確認。
+- 差分判定: 語彙差分 0 件、No-Go canonical 5 IDs 逸脱 0 件、SafeMode後退兆候 0 件。
+- 致命条件の監視対象（語彙差分、契約ID再定義、SafeMode後退、Verify 4回目相当）を再確認。
+
+### 2) Plan（AC/DoD不足時は提案）
+- Scopeを `01_Plans/issues/issue-CE0-core-graph-repositioning.md` の契約固定と実行記録更新のみに限定（single-file / contract-only）。
+- AC/DoD不足判定: 既存AC-1〜AC-9、DoD-1〜DoD-5で実行可能。新規不足は未検出。
+- 不足発生時の運用を再確認: AIドラフトを本Issueへ追記し、明示合意まで `held` を維持。
+
+### 3) Execute（構造変更案・最小差分）
+- 構造変更案: 既存5フェーズ（Read同期 → Plan → Execute → Verify → Proceed/Stop）の契約運用を維持し、実装準備は契約境界の再固定に限定。
+- 最小差分実施: 本実行記録の追記のみ。`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、canonical 5 IDs を不変維持。
+- 実装記述（handler/UI/DB/worker/API/Schema migration）は追加しない。
+
+### 4) Verify（自己修復最大3回）
+- 実行: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`。
+- 実行: `git diff --check`。
+- 結果: pass。自己修復回数は 0/3（4回目相当は未実施）。
+
+### 5) Proceed/Stop判定（致命条件で停止）
+- Proceed判定: `Done`（AC/DoD充足、docs-check pass、single-file / contract-only維持）。
+- Stop判定: 致命条件は未発火（語彙差分なし、契約ID再定義なし、SafeMode後退なし、修復上限超過なし）。
+- 未承認事項在庫: なし。将来発生時は `held` または `stopped_for_clarification` で停止。
