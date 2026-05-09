@@ -430,3 +430,34 @@
   1. self-correction が4回目相当に到達。
   2. Gate-A/B/C 間で語彙競合または判定軸競合が未解決。
   3. 指定外ファイル編集が必要になり、allowlist制約を維持できない。
+
+## Stream E serial pass（2026-05-09 / Gate-B proposal-only）
+
+### Phase 1 Read同期
+- 対象再Read: 本Issueのみ再読し、`Improve external`・`docs-check`・`ProceedDecision: Hold` を再確認。
+- 依存確認: `05-05完了待ち（単方向依存）` を維持。
+
+### Phase 2 Plan（Open化条件・AC/DoD・レビュー観点）
+- Open化条件（提案）:
+  1. Approval Record 5項目が確定。
+  2. 05-05/05-07 との Proceed再判定日が同期。
+  3. docs-check結果が添付。
+- AC/DoD（提案）:
+  - AC-E-0506-1: 公開境界（含む/含まない）を1段落で再読可能。
+  - DoD-E-0506-1: `pass/fail/blocked` と `Proceed/Hold/Stop` の判定語彙を固定。
+- レビュー観点: Open境界の曖昧性、依存証跡不足、判定語彙競合。
+
+### Phase 3 Execute（proposal-only）
+- 実施: Gate-Bの提案整理のみ。
+- 非実施: `04_Documentation/e2e_testing.md` 改稿、他Issue編集、実装変更。
+
+### Phase 4 Verify（依存ゲート・リンク・語彙整合）
+- 依存ゲート: Gate-A未確定のため `Hold`。
+- リンク: 05-05/05-07参照導線を維持。
+- 語彙整合: `Go/NoGo`, `Proceed/Hold/Stop`, `pass/fail/blocked` を維持。
+
+### Phase 5 Proceed/Stop
+- ProceedDecision: **Hold**
+- Stop条件:
+  1. 依存前提崩壊。
+  2. self-correction 4回目相当。

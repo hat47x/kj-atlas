@@ -405,3 +405,34 @@
 - Stop条件:
   1. self-correction が4回目相当へ到達。
   2. Gate-B/C と語彙矛盾が発生し、3回以内に修復不能。
+
+## Stream E serial pass（2026-05-09 / Gate-A proposal-only）
+
+### Phase 1 Read同期
+- 対象再Read: 本Issueのみ再読し、`Classification` / `Dependency status` / `ProceedDecision` の現行値を確認。
+- 依存確認: 05-06/05-07 への逆依存禁止を維持。
+
+### Phase 2 Plan（Open化条件・AC/DoD・レビュー観点）
+- Open化条件（提案）:
+  1. Approval Record 5項目が記録済み。
+  2. 05-06/05-07 との語彙一致ログが存在。
+  3. docs-check記録が添付済み。
+- AC/DoD（提案）:
+  - AC-E-05A-1: Gate-A判定語彙の単一正本化。
+  - DoD-E-05A-1: 依存未確定時は `Hold`、`self-correction <=3` を維持。
+- レビュー観点: 語彙ドリフト、Proceed判定の推測、逆依存混入。
+
+### Phase 3 Execute（proposal-only）
+- 実施: Open化条件/AC/DoD/レビュー観点の提案追記のみ。
+- 非実施: 実文書改訂・他Issue編集・実装変更。
+
+### Phase 4 Verify（依存ゲート・リンク・語彙整合）
+- 依存ゲート: Gate-Aは先行基準として `Hold` 維持。
+- リンク: 05-06/05-07参照は informational link として維持。
+- 語彙整合: `Go/NoGo`, `Proceed/Hold/Stop`, `docs-check` の一致を維持。
+
+### Phase 5 Proceed/Stop
+- ProceedDecision: **Hold**
+- Stop条件:
+  1. 依存競合が3回以内で修復不能。
+  2. self-correction が4回目相当に到達。
