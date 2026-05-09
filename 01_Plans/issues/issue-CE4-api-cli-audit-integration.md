@@ -1002,3 +1002,51 @@
   - 契約境界不明確のまま責務競合解消不能。
   - allowlist外編集要求。
   - self-correction `>3`。
+
+## Stream H execution log（2026-05-09 / CE4 contract-first proposal, CE1 independent）
+
+### Phase 1: Read（API/CLI監査要件・依存抽出）
+- 本Issue既存契約を再読し、API/CLI/監査の共通要件を **実装非依存** で再確認。
+- 依存は以下の2層に分離して抽出。
+  1. 契約依存: `issue-CE0-contract-freeze`（契約凍結証跡）
+  2. I/F依存: `issue-CE1-context-query-bundle-foundation`（ContextBundle本体）
+- CE1未確定時の独立実行経路として `sourceBundleHash=mock:<64hex>` と CE4モック `equivalenceKey` を継続採用可能であることを確認。
+
+### Phase 2: ADR/CDC（監査I/Fの必要性と境界）
+- **Context**: CE4は API/CLI/Audit の3経路横断であり、実装先行だと経路間同値と監査整合が分断される。
+- **Decision**: CE4では監査I/Fを「4イベント系列 + 共通必須キー + fail-closed判定」の契約として固定し、保存先・配送・署名などの実装詳細は境界外に置く。
+- **Consequences**: CE1確定前でも mock-first で契約検証を先行でき、後続実装の差異は契約テストで吸収可能。
+
+### Phase 3: Plan（AC/DoD: シグネチャ・型・イベント・エラー）
+- AC追加（契約再読性）:
+  - [x] **Signature境界**: API/CLIとも `equivalenceKey`・`queryCanonicalHash`・`bundleHash` を同値判定の最小シグネチャとして共有。
+  - [x] **Type境界**: `sha256:<64hex>` / `mock:<64hex>`、`eventType enum`、`result enum` を契約型として固定。
+  - [x] **Event境界**: `query -> bundle -> proposal -> apply` の順序整合を必須化。
+  - [x] **Error境界**: 入力違反 / 監査違反 / 同値違反 / ポリシー違反を fail-closed で成功不可に固定。
+- DoD追加（CE1独立性）:
+  - [x] CE1未確定でも mock経路で契約検証フローを完結できる。
+  - [x] CE1由来の具体ID仕様・実装方式を本Issueで確定扱いしない。
+
+### Phase 4: Execute（本Issueのみ更新）
+- 実施内容は **本Issueへの proposal追記のみ**。
+- コード、ADR本文、API/CLI実装、他Issueは未編集。
+
+### Phase 5: Verify（CE1未確定との整合確認）
+- 確認結果:
+  1. CE1本体が未確定でも、CE4は `mock:<64hex>` とモック `equivalenceKey` で契約検証可能。
+  2. 具体実装前提（保存基盤、終了コード数値、匿名化アルゴリズム）を確定仕様へ昇格していない。
+  3. 依存前提は「契約依存 / I/F依存」に分離され、未確定事項の誤確定を回避できている。
+- self-correction: `0/3`（追加修復なし）。
+
+### Phase 6: Proceed（Ready/Hold/Stop）
+- 判定: **Hold**（通常運用）
+- 理由:
+  - CE1確定前でも契約提案は独立実行可能だが、実装移行の gate（依存証跡/承認記録）は未充足。
+- Ready条件（将来）:
+  1. 依存証跡（日時/承認者/対象/判断/evidence）の補完。
+  2. docs-checkで契約欠落ゼロの再確認。
+- Stop条件（再掲）:
+  1. 具体実装前提の混入。
+  2. 依存前提の無根拠確定。
+  3. allowlist違反（本Issue以外編集）。
+  4. self-correction上限超過（4回目相当）。
