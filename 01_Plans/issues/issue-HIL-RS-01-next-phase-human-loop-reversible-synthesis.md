@@ -107,3 +107,28 @@
 - `safeModeBoundary=SAFE_MODE_STRICT_ON`
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
+
+
+## Stream A serial execution record（2026-05-09 / critical-path parent plan sync）
+
+### Phase 1: Read同期
+- 対象: 本Issue / `ADR-0026` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `issue-FB-P0-2A2B2C-stream-c-planning-baseline.md` / `issue-FB-P2C-01-a1-interface-contract.md`。
+- 差分サマリ:
+  - HIL系: `Status=In Progress`, `Priority=P1`
+  - FB系: `Status=Open`, `Priority=P0`
+  - 依存順: `A1 -> A2 -> A3`（変更なし）
+- 不一致ログ: 優先度はFBが高いが、契約ゲートはHIL-A1完了条件に従うため、優先度のみではProceed不可。
+
+### Phase 2: ADR明文化
+- Context: 親計画は契約固定値の再定義を禁止し、A1契約を唯一ゲートとして扱う必要がある。
+- Decision: 承認待ち（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）を保持したまま、`Hold/Needs-decision` を継続する。
+- Consequences: `pendingDecisionQueueCount==0` になるまでは、A2/A3のGo判定を行わない。
+
+### Phase 3: Plan（変更対象行と理由）
+- 変更対象: 本節追記のみ。
+- 理由: AC/DoDの欠落はなく、直列プロトコルの実行証跡追加だけが最小変更であるため。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: docs-onlyで追記。
+- Verify: 固定キー・判定ゲート・NoGo条件の語彙一致を確認（drift=0）。
+- Proceed: `Hold/Needs-decision`。
