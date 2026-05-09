@@ -1,7 +1,9 @@
 # Issue Draft: CE4 API/CLI/監査統合（Stream H / CE4専任 / contract-only）
 
 - Type: Feature request
+- Lifecycle: Draft -> Open -> In Progress -> Done
 - Status: Draft (Contract Freeze Candidate)
+- Source Issue: TBD (DraftのためOpen化時に採番)
 - Priority: P2
 - Owner: Stream I（CE下流 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
@@ -10,6 +12,7 @@
 - Related ADR/Spec: `ADR-0028`, `ADR-0016`, `ADR-0017`, `02_Architecture/api.md`
 - Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約依存）, `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（ContextBundle I/F依存; mockで先行可能）
 - Verification: `docs-check`
+- Expected verification level: `docs-check`
 
 ## Mission（実装非依存の契約固定）
 - CE4 API/CLI/監査統合を、実装方式から独立した**契約レベル**で固定する。
@@ -845,3 +848,15 @@
 - 判定: `Hold` 維持（依存証跡未確定のため）。
 - self-correction: `1/3`（上限内）。
 - Stop条件再確認: 4回目相当の修復要求、または依存競合未解決時は `Stop`。
+
+
+## Validation plan（Open化前の必須チェック）
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- `rg -n "^- Type:|^- Status:|^- Priority:|^- Scope:|^- Related ADR/Spec:|^- Expected verification level:" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- `rg -n "mock:<64hex>|proposal-only|fail-closed|Proceed|Hold|Stop|self-correction" 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+- `git diff --check -- 01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
+
+## Mock-first dependency cut policy（依存切断方針）
+- CE1 I/F未確定時は `sourceBundleHash=mock:<64hex>` とモック `equivalenceKey` を使用し、API/CLI/Audit 3経路の整合だけを検証対象にする。
+- 実装依存値（終了コード数値・匿名化方式・転送基盤）は Draft範囲外として固定し、Open化審査で確定扱いしない。
+- 依存がI/F契約のみの項目は `mock-first` で先行し、実装要求が混入した時点で `ProceedDecision: Stop` に移行する。
