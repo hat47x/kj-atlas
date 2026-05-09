@@ -13,60 +13,63 @@
 - Expected verification level: `docs-check`
 
 
-## Stream F CE2 Draft→Ready plan fix（2026-05-09 / single-file）
+## Stream G CE2 Draft証跡整備アップデート（2026-05-09 / proposal-only, dependency-locked）
 
-### Phase 1: Read同期（差分抽出）
-- Header抽出: `Status=Draft` / `Priority=P1` / `Owner=Stream G` / `Related Backlog=CE-2` / `Dependencies=CE0, CE1`。
-- 差分: Owner表記が旧ストリーム（Stream G）のままで、Ready化の判定責務（Stream F）と不一致。
-- 差分: AC/DoDは複数版が混在し、**Ready判定用の単一チェックリスト**が未固定。
-- 差分: Mock方針は記述済みだが tri-state（Yes/No/Conditional）表記が未固定。
+### Phase 1: Read（Draft理由・依存・不足証跡）
+- 現在値: `Status=Draft` / `Dependency status=未確定` / `Expected verification level=docs-check`。
+- Draft維持理由: CE0承認証跡とCE1 read-only確定証跡が CE2 本文内で「実値確認済み」として未充足。
+- 不足証跡:
+  - Approval Record 実値（`approved_at / approved_by / target / decision / evidence`）
+  - CE0確定証跡への参照整合（承認日時・承認責務の一致）
+  - CE1契約参照が「追加確定要求なし」であることの確認記録
 
-### 前提更新メモ
-- 本更新では `Status` を強制変更しない。
-- Ready化は **条件充足時のみ候補提案** とし、未充足時は `Draft/Hold` を維持する。
+### Phase 2: ADR CDC（low-risk 定義境界の固定）
+#### Context
+- CE2 は low-risk AI assist の Open 判定準備タスクであり、実装タスクではない。
+- dependency-locked 前提のため、CE0/CE1 未確定項目は推測で補完しない。
 
-### Phase 2: Plan（不足補完）
-#### Ready判定用 AC（検証可能文）
-- [ ] AC-R1: proposal-only（AIは `status=proposed` のみ）と human-only final decision（`accepted/rejected`）が同時成立している。
-- [ ] AC-R2: `reviewState` 自動昇格禁止、`auto-apply/auto-confirm/auto-publish` 禁止、監査4点欠損時 fail-closed が本文内で矛盾なく参照できる。
-- [ ] AC-R3: `sourceBundleHash === bundleHash` 不一致時 `held` 継続が明文化され、例外経路が存在しない。
-- [ ] AC-R4: 依存が具体化されている（CE0/CE1の参照先ファイル・条件・判定責任者）。
-- [ ] AC-R5: Approval Record 最小項目（approved_at / approved_by / target / decision / evidence）が埋まるまで Proceed しない。
+#### Decision（low-risk boundary）
+- low-risk の成立条件を次で固定する（すべて満たすまで Hold）:
+  1. **proposal-only**: AI提案は `status=proposed` のみ。
+  2. **human-final**: `accepted/rejected` は人間責務のみ。
+  3. **no-auto**: `auto-apply/auto-confirm/auto-publish` 禁止。
+  4. **fail-closed**: 監査4点欠損・`sourceBundleHash!==bundleHash` は `held`。
+  5. **read-only dependency**: CE0/CE1 は参照限定、CE2側から実装前提を要求しない。
+- 上記5条件のいずれかが未証跡なら Open 化しない。
 
-#### Ready判定用 DoD
-- [ ] DoD-R1: 本Issue単体で Context / Decision / Consequences が再読可能。
-- [ ] DoD-R2: AC-R1〜R5の判定証跡（どの節で満たすか）が1対1で対応づく。
-- [ ] DoD-R3: リスク（安全・品質・運用）と緩和策が最低1対1で対応づく。
-- [ ] DoD-R4: docs-checkコマンドが再実行可能で、single-file scope逸脱がない。
+#### Consequences
+- Open化判定は厳格化されるが、依存推測・擬似確定・未承認Proceedを抑止できる。
 
-#### 依存関係（具体化）
-| 依存ID | 参照先 | 条件 | CE2側判定 |
-| --- | --- | --- | --- |
-| DEP-CE0 | `01_Plans/issues/issue-CE0-contract-freeze.md` | contract freeze承認済み（日時・承認者・判断・evidence確認可能） | 未充足ならHold |
-| DEP-CE1 | `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md` | CE1 I/Fをread-only参照し、CE2から追加確定要求をしない | 条件付き（mock切断） |
-| DEP-SCHEMA | `02_Architecture/schemas.md` | 語彙（status/reviewState/lifecycle）が閉集合で整合 | 不整合時Stop |
+### Phase 3: Plan（AC/DoD: proposal-only, mock-ready, hold条件）
+#### AC（Open判定準備）
+- [ ] AC-P1: proposal-only / human-final / no-auto / fail-closed の4条件が本文内で矛盾なく同時成立。
+- [ ] AC-P2: mock利用境界（Yes/No/Conditional）が依存別に明示され、承認事実のmock代替を禁止。
+- [ ] AC-P3: CE0/CE1依存に対し、未確定時は `Hold` を維持する条件が明示される。
+- [ ] AC-P4: Approval Record 最小項目が空欄時は Proceed 不可である。
 
-#### Mock活用可否
-- CE0依存: **Conditional**（承認証跡の形式確認のみmock可、承認事実はmock不可）。
-- CE1依存: **Yes**（I/F参照はmock contractで切断可能）。
-- 承認ログ: **No**（Ready化判定では実値が必須）。
+#### DoD（proposal品質）
+- [ ] DoD-P1: Context/Decision/Consequences と AC の対応が1対1で追跡可能。
+- [ ] DoD-P2: 実装指示・運用確定値追加・依存推測補完が本文に存在しない。
+- [ ] DoD-P3: docs-checkコマンドが再実行可能で、single-file scope逸脱がない。
+- [ ] DoD-P4: Proceed判定は依存未解決時に必ず `Hold` へ収束する。
 
-### Phase 3: Execute（計画文書の固定）
-- Context: CE2は安全境界を崩さずに Draft→Ready 判定材料を単一化する必要がある。
-- Decision: Ready判定は AC-R1〜R5 / DoD-R1〜R4 / 依存表 / Mock tri-state の全充足を必須化する。
-- Consequences: 判定は厳格化されるが、未承認Proceed・依存推測確定・監査欠損を抑止できる。
+#### Hold条件（固定）
+- CE0/CE1の確定証跡が未提示。
+- Approval Record 実値が未充足。
+- self-correction が3回を超過。
 
-### Phase 4: Verify（セルフチェック）
-- AC検証可能性: AC-R1〜R5はすべて「確認対象」と「失敗時挙動（Hold/Stop）」を持つ。
-- DoD網羅: 文脈（CDC）/依存/リスク/検証再現性を包含。
-- 依存具体性: Backlog ID + file path + condition を明記。
-- Mock分離: Yes/No/Conditional を明示し、依存切断可能範囲を限定。
-- 競合確認: 本更新は single-file のみ。
+### Phase 4: Execute（本Issueのみ更新）
+- 本更新は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ変更。
+- 実装・他Issue編集・依存値の推測補完は実施しない。
 
-### Phase 5: Proceed判定（Ready候補提案）
-- 現判定: **Hold（Draft継続）**。
-- 理由: Approval Record 実値と依存確定証跡が本文上で未充足。
-- Ready更新候補: AC-R1〜R5 と DoD-R1〜R4 が実値で満たされた時のみ `Status: Ready` 変更を提案する。
+### Phase 5: Verify（依存矛盾なし / 推測実装なし / docs-check）
+- V1 依存整合: CE0/CE1 は read-only dependency として記述され、確定を推測していない。
+- V2 境界整合: proposal-only / no-auto / fail-closed / human-final が維持されている。
+- V3 実施整合: docs-check 実行で文書品質を確認する。
+
+### Phase 6: Proceed（依存未解決時Hold固定）
+- 判定: **Hold 固定（Draft継続）**。
+- 解除条件: CE0/CE1確定証跡 + Approval Record実値 + AC/DoD全充足を人間確認後に限る。
 
 ## Fixed Operation Contract（2026-05-01）
 
