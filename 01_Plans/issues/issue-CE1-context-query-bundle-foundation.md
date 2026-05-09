@@ -157,6 +157,44 @@ export type ContextBundleV1 = {
 
 ## Lane guard（独立性）
 
+## Stream D update（2026-05-08 / CE1 ContextQuery/ContextBundle Foundation contract-first）
+
+### Phase 1 Read（scope固定 + 前提再確認）
+- 編集対象を本ファイルのみに固定（`01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`）。
+- 依存切断方針を「実装接続なし / I/F + mock契約先行」に固定。
+- CE1 v1 凍結対象（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）と固定語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を再確認。
+
+### Phase 2 ADR（実装前明文化: Context / Decision / Consequences）
+- **Context**: CE2/CE4が実装未接続でも前進するには、CE1で `ContextQueryV1` / `ContextBundleV1` のclosed-world契約と失敗語彙を先行凍結する必要がある。
+- **Decision**: CE1は実装要素（handler/UI/DB/worker）を記述せず、I/F契約・hash決定論・preview gateのみを固定する。`previewConfirmed=false` は必ず `422 preview_required` とする。
+- **Consequences**: 下流は mock only で検証可能となり、`sourceBundleHash === bundleHash` および `equivalenceKey + bundleHash` を再現キーとして利用できる。実装依存は契約範囲外として切断維持。
+
+### Phase 3 Contract Freeze（I/F + error semantics）
+- `ContextQueryV1` / `ContextBundleV1` を v1 固定契約として維持（closed-world）。
+- 未定義キーは `400 unknown_contract_key` を返す契約に固定。
+- 同一 canonical query で hash 不一致が1回でも発生した場合は `409 nondeterministic_bundle` に fail-closed。
+- preview gate は `previewConfirmed=false -> 422 preview_required` を唯一の入口制約として固定。
+
+### Phase 4 Mock Validation Plan（実装非依存）
+- mockケースA（正常系）: 同一 canonical query で3回実行し、`queryCanonicalHash` と `bundleHash` の一致を確認。
+- mockケースB（preview gate）: `previewConfirmed=false` 入力で `422 preview_required` を検証。
+- mockケースC（closed-world）: 未定義キー注入で `400 unknown_contract_key` を検証。
+- mockケースD（非決定論）: 同一 canonical query で不一致を意図注入し `409 nondeterministic_bundle` を検証。
+
+### Phase 5 Verify（max 3 self-repair）
+- Verify-1: CE2 handoff key（`sourceBundleHash === bundleHash`）が mock で検証可能。
+- Verify-2: CE4 監査キー（`equivalenceKey + bundleHash`）が mock で再構成可能。
+- Verify-3: 固定エラー3語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）が実装非依存で再現可能。
+- self-repair policy: 失敗時は `attempt=1..3` の範囲で自己修復し、**失敗3回超過で停止**（`held`）。
+
+### Phase 6 Proceed / Stop（直列完了判定）
+- **Proceed条件**: Phase 1〜5を順番どおり完了し、契約差分が I/F + mock計画に限定されていること。
+- **Stop条件**:
+  - self-repair 3回超過
+  - Contract ID / error semantics / handoff key 衝突
+  - 実装接続（handler/UI/DB/worker）への拡張要求が混入
+- 停止時は `held` を維持し、Phase 2 ADR（Context/Decision/Consequences）へロールバックして承認待ちに遷移する。
+
 ## Stream D latest run（2026-04-29 / CE1 Context foundation contract rehearsal）
 
 ### Phase 1 Read
