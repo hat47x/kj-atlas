@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream G（CE2 Low-Risk AI Assist Draft品質改善専任 / proposal-only）
+- Owner: Stream E（CE2 Open化準備専任 / proposal-only）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -13,7 +13,7 @@
 - Expected verification level: `docs-check`
 
 
-## Stream G CE2 Draft証跡整備アップデート（2026-05-09 / proposal-only, dependency-locked）
+## Stream E CE2 Open化準備アップデート（2026-05-09 / proposal-only, dependency-locked）
 
 ### Phase 1: Read（Draft理由・依存・不足証跡）
 - 現在値: `Status=Draft` / `Dependency status=未確定` / `Expected verification level=docs-check`。
@@ -90,9 +90,9 @@
 - Dependency stance: `CE0` / `CE1` は **read-only 依存** とし、参照は契約確認（語彙・I/F・停止条件）に限定する。
 - Implementation decoupling: CE2 Draft段階では mock contract 以外の結合（実データ接続・実ランタイム依存・実装前提の状態遷移）を受理しない。
 
-## Stream G mission lock（2026-05-08 / CE2 Draft quality only）
+## Stream E mission lock（2026-05-09 / CE2 Open readiness only）
 
-- Assignment lock: Stream G は **CE2 Low-Risk AI Assist の Draft品質改善のみ** を担当し、実装・運用確定・他Issue編集を行わない。
+- Assignment lock: Stream E は **CE2 Open化準備（proposal品質整備）のみ** を担当し、実装・運用確定・他Issue編集を行わない。
 - File lock: 編集対象は `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）。
 - Proposal-only lock: 実行可能仕様や自動遷移仕様を追加せず、判断材料の明確化に限定する。
 - No-auto lock: `auto-apply / auto-confirm / auto-publish` の導線・文言・黙示的許可を追加しない。
@@ -208,7 +208,7 @@
 ### 修復ルール
 - 修復は最大3回まで。
 - `4回目相当` を要する場合は **即時 `held`** とし、原因と未解決項目のみ記録する。
-- Stream G 運用では `self-correction` カウンタを明示し、`3/3` 到達時点で Proceed 判定を停止する。
+- Stream E 運用では `self-correction` カウンタを明示し、`3/3` 到達時点で Proceed 判定を停止する。
 
 ## Phase 6: Proceed / Stop
 
