@@ -1634,3 +1634,30 @@ state: Needs-decision
 - 判定: `Conditional (Needs-decision)`。
 - 理由: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
 - Stopper確認: safeMode後退要求・契約ID変更要求・allowlist外編集要求・未定義競合は未検知。
+
+
+## Stream A Phase lock update（2026-05-09 / contract freeze + minimum interface agreement）
+
+### Phase 1: 契約整理（Read -> Plan -> Execute -> Verify -> Proceed）
+- Read: 本Issue / `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `ADR-0026` を再読。
+- Context:
+  - A1契約が曖昧なまま下流へ進むと、A2/A3で派生契約が発生し監査線が分岐する。
+- Decision（A1固定契約）:
+  - API signature: `CritiqueV1(input)->CritiqueV1Result`, `ReDiffV1(input)->ReDiffV1Result`, `AttributionV1(input)->AttributionV1Result`, `A1ErrorV1(input)->A1ErrorV1Result`
+  - Type/version: `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`, `schemaVersion=1.0.0`
+  - Compatibility: v1必須キー集合固定、unknown key=`400`、破壊的変更は v2 追加時のみ。
+- Consequences:
+  - A2/A3 は read-only handoff を維持し契約再定義を禁止。
+  - 未承認（`Approval Record`, `HIL-RS-02-GOV-EXCEPTION-01`）は `Needs-decision/Hold` 維持。
+- Verify:
+  - fixed keys drift=`0`、`Pending bypass` なし、SafeMode境界後退なし。
+- Proceed:
+  - `Hold`（`pendingDecisionQueueCount>0` のため）。
+
+### Phase 3: 受入条件固定（下流レーン向け AC/DoD）
+- AC-1: `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary` に drift がない。
+- AC-2: `A2A3_OPEN_ALLOWED` 以外の解放判定式を導入しない。
+- AC-3: mock依存（`A1-CONTRACT-MOCK-v1`）で Query/Bundle/Proposal/Apply 監査4点セット照合が可能。
+- DoD-1: `Pending -> Approved | Pending -> Rejected` 以外の遷移を導入しない。
+- DoD-2: self-correction は最大3回、4回目相当で停止。
+- DoD-3: 未承認項目が1件でも `Hold/Needs-decision` を維持。
