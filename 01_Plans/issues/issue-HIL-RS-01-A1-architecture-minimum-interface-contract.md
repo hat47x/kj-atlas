@@ -12,7 +12,7 @@
 
 ## Stream E Contract Gate Declaration
 - 本Issueは **HIL-RS-01 A1 minimum interface contract の唯一ゲート** として扱う。
-- A2/A3 を含む下流は、本Issueで固定した契約値を **read-only** 参照し、契約再定義を行わない。
+- A2/A3 を含む下流は、本Issueで固定した契約値を **read-only** 参照し、契約再定義を行わない（read-only handoff原則）。
 - `Pending` 承認が1件でも残る場合は、判定を `Hold` として明記し、`executeAllowed=false` を維持する。
 
 ## Mission
@@ -44,6 +44,8 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - A1が曖昧だとA2/A3で契約再定義が発生する。
 
 ## Phase 2 ADR（C/D/C）
+### Read同期
+- Phase 1の固定語彙・固定値・停止条件を再読し、差分0を確認してからADR記述へ進む。
 ### Context
 - 失敗モードは `Pending bypass` と `AI承認代行`。
 - 契約曖昧性はA2/A3の差分解釈を誘発し、監査不可能性を増幅する。
@@ -74,6 +76,8 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - A2/A3は契約再定義なしで進行可能（read-only前提）。
 
 ## Phase 3 Plan（AC / DoD）
+### Read同期
+- Phase 2 Decision/Consequencesを再読し、A2/A3へ波及する再定義を追加しないことを確認する。
 ### Acceptance Criteria
 - AC-1: 固定語彙/固定値ドリフト0。
 - AC-2: `Pending` bypass禁止が明示されている。
@@ -90,6 +94,8 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - DoD-5: Hold/NoGo理由コードとStop条件が同一契約内で再読可能。
 
 ## Phase 4 Execute（文面整備のみ）
+### Read同期
+- Phase 3 AC/DoDを再読し、文面整備が契約固定の範囲内（docs-only）に留まることを確認する。
 - 実施原則: **契約優先**。実装詳細は追加しない。
 - Inputs: `freezeContractId`, `contractIds`, `schemaVersion`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `a1Status`
 - Outputs: `executeAllowed`, `decision(Go|NoGo|Hold)`, `reasonCodes`, `requiredHumanActions`, `noGoReturnPath`
@@ -121,6 +127,8 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 3. 指定外編集（本ファイル以外の変更）
 
 ## Phase 5 Verify
+### Read同期
+- Phase 4の入出力/Gate/責務境界を再読し、検証対象を固定してから自己照合を開始する。
 ### Verify Procedure（自己修復上限=3）
 1. Contract Snapshot照合（固定語彙/固定値/NoGo return path）。
 2. 責務境界照合（AI proposal-only / Human final approval）。
@@ -136,6 +144,8 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - self-correction count: `x/3`
 
 ## Phase 6 Proceed
+### Read同期
+- Phase 5検証結果（self-correction countを含む）を再読し、3回超過時はProceed禁止を確認する。
 - Proceed=Go 条件:
   - `a1Status=="Done" && pendingDecisionQueueCount==0`
   - Stop条件未検知
