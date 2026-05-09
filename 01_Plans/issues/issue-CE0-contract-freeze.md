@@ -2945,3 +2945,47 @@ type PatchProposal = {
 - 継続条件:
   - CE0契約は read-only 参照を継続。
   - 未承認拡張要求・同一キー多重定義兆候・4回目相当の自己修復要求が発生した場合は即時 `held` 停止。
+
+## Stream B latest run（2026-05-08 / CE0 only / contract freeze serial execution）
+
+- run_id: `stream-b-ce0-2026-05-08-12`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read
+- 本Issueを再読し、実行順序 **Phase 1 Read → Phase 2 ADR(C/D/C) → Phase 3 Plan(AC/DoD) → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed/Stop** を確認。
+- CE0 Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止と、safeMode境界（`safeMode=true` / `allowUnreviewedText=false`）の後退禁止を再確認。
+- 想定との差分確認: contract freeze 条項・No-Go canonical IDs・single-file 制約に差分なし。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE0 Contract Freeze を本Issue単一ファイルSSOTとして維持し、下流ストリームは read-only 参照のみを許可する。
+- Decision: 契約ID・安全境界・禁止事項は不変維持し、今回変更は run ledger 更新のみに限定する。
+- Consequences: 契約ドリフトと境界後退を抑止し、逸脱要求発生時に `held` へ即時停止できる。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  - `ac_single_file_scope_lock`: 編集対象は本ファイルのみとする。
+  - `ac_contract_redefinition_forbidden`: Contract IDs の追加/改名/削除を禁止する。
+  - `ac_safemode_boundary_locked`: safeMode既定境界の後退を禁止する。
+- DoD:
+  - `dod_phase_reread_logged`: 各Phase開始時の再読と差分確認をログ化する。
+  - `dod_verify_retry_cap_3`: Verify自己修復は最大3回まで、超過時は停止する。
+  - `dod_docs_only_contract_only`: 実装変更を行わず、contract-only 記録更新で完結する。
+
+### Phase 4 Execute
+- 実施: 本Issueへの実行ログ追記のみ（docs-only / contract-only）。
+- 非実施: 指定外ファイル編集、実装変更、safeMode既定値変更、Contract ID再定義。
+
+### Phase 5 Verify（max 3 self-correction）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed（Conditional-Go）**
+- 継続条件:
+  - CE0 Contract Freezeは read-only 参照運用を維持。
+  - Verify 4回目相当が必要な場合、または契約再定義/境界後退/範囲逸脱要求を検知した場合は即時 `Stop（held）`。
