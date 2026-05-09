@@ -2989,3 +2989,56 @@ type PatchProposal = {
 - 継続条件:
   - CE0 Contract Freezeは read-only 参照運用を維持。
   - Verify 4回目相当が必要な場合、または契約再定義/境界後退/範囲逸脱要求を検知した場合は即時 `Stop（held）`。
+
+## Stream B latest run（2026-05-09 / CE0 only / CE0 Contract Freeze serial execution）
+
+- run_id: `stream-b-ce0-2026-05-09-11`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0 / vocabulary_collision=0`
+
+### Phase 1 Read
+- Phase開始時に本Issueを再読し、直列フェーズ固定順序 **Read → ADR（Context / Decision / Consequences）→ Plan → Execute → Verify → Proceed or Stop** を確認。
+- 編集許可が本ファイルのみであること、CE1/CE2/CE4の仕様確定・実装変更が非スコープであることを再確認。
+- Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の追加・改名・削除禁止、および safeMode既定境界後退禁止を再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE0契約SSOTは本Issue単独で固定し、下流ストリームには read-only 参照のみを提供する必要がある。
+- Decision: 既存Contract IDとNo-Go canonical IDs、safeMode既定境界を不変のまま維持し、新規契約語彙の導入や再定義を実施しない。
+- Consequences: 契約ドリフトと境界後退の発生確率を抑制し、逸脱要求時に即時 `held` 停止へ遷移できる。
+- ADR判定: `new_adr_required=0`（既存契約の凍結運用を継続）。
+
+### Phase 3 Plan（AC/DoD）
+- AC:
+  - `ac_read_only_handoff`: CE1/CE2/CE4への引き渡しは Contract ID / No-Go canonical IDs の read-only 参照のみ。
+  - `ac_no_contract_mutation`: CE0-* / CG-* の追加・改名・削除を行わない。
+  - `ac_no_safemode_regression`: `safeMode=true` と `allowUnreviewedText=false` の既定境界を後退させない。
+- DoD:
+  - `dod_phase_reread`: 各Phase開始時に本Issue再読を実施し、ログへ明記。
+  - `dod_verify_minimum`: docs-check・issue memo validator/unit test・git diff健全性を実行。
+  - `dod_self_correction_cap`: 自己修復は最大3回、4回目相当は即停止して `held`。
+- AC/DoD不足判定: 新規不足なし（ドラフト追加提案不要）。
+
+### Phase 4 Execute
+- 実施: 本Issueへの実行ログ追記のみ（contract-only / docs-only / mock-first 維持）。
+- 非実施: 指定外ファイル編集、CE1/CE2/CE4仕様確定、実装変更、Contract ID mutation、safeMode既定境界変更。
+
+### Phase 5 Verify
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+- result: pass（self-correction 0/3）。
+- verify_summary: `docs_check=pass / memo_validator=pass / unit_test=pass / git_diff_health=pass`。
+
+### Phase 6 Proceed or Stop
+- 判定: **Conditional-Go**
+- proceed_conditions:
+  - CE0 Contract Freezeは本IssueのSSOT固定を継続。
+  - 下流参照は read-only のみ（契約確定・実装確定は非許可）。
+- stop_conditions:
+  - self-correction 3回超過
+  - safeMode後退兆候
+  - Contract ID mutation
+  - 指定外編集要求
+  - 契約語彙衝突
