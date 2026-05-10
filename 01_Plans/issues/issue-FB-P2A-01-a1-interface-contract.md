@@ -1,174 +1,57 @@
-# Issue Draft: FB-P2A-01-A1 Island階層モデル導入 / インターフェース先行（型/契約）
+# Issue Draft: FB-P2A-01-A1 Interface Contract（Stream E / FB-P2*）
 
-- Type: Feature request
+- Type: Planning
 - Status: Done
-- Priority: P0
-- Owner: Stream A（Critical Path / FB-P2A planning memo exclusive）
-- Scope: `01_Plans/issues/` (planning memo only)
-- Related Backlog: `FB-P2A-01`
-- Related ADR/Spec: `ADR-0007`, `ADR-0001`
-- Dependencies: `FB-P2A-01`
-- Expected verification level: `docs-check`
+- Owner: Stream E
+- Scope: `01_Plans/issues/` only
+- Phase: A1 Interface Contract
+- DecisionStatus: Fixed
+- VerificationLevel: docs-check
 
-## Dependencies
+## Plan → Execute → Verify → Proceed
+- Plan: A1として入力型・出力型・エラー契約・監査イベント名を固定する。
+- Execute: A2/A3がモック可能な最小I/Fに限定して契約化する。
+- Verify: A1未確定項目ゼロを確認する。
+- Proceed: A2へ進行可否を判定する。
 
-- DependsOn: none（A1 contract root）
-- Unblocks: `issue-FB-P2A-01-a2-mock-validation.md` / `issue-FB-P2A-01-a3-implementation.md`
-- Gate/Blocker: Ready when ContractID・Required fields・Invariants・ContractLinks・Local Contract Annex are Fixed; Blocked when contract drift or `DecisionStatus=Pending`.
+## Dependency Matrix（A1→A2→A3）
+- DependsOn: none（A1 root）
+- Unblocks: `issue-FB-P2A-01-a2-mock-validation.md`
+- Blocked when: `DecisionStatus != Fixed`
 
-## Requirement meta I/F（共通キー）
+## Interface Contract（Fixed）
+- ContractID: `CTR-FB-P2A-01-V1`
+- InputType:
+  - `requestId: string`
+  - `documentId: string`
+  - `payload: object`
+  - `safeMode: boolean`（default true）
+- OutputType:
+  - `status: "ok" | "error"`
+  - `result: object | null`
+  - `errors: ContractError[]`
+- ContractError:
+  - `code: "INVALID_INPUT" | "MISSING_REQUIRED_KEY" | "INVARIANT_VIOLATION" | "UNAUTHORIZED_TRANSITION"`
+  - `message: string`
+  - `fieldPath?: string`
+- AuditEvents（fixed names）:
+  - `audit.fb-p2a-01.request_received`
+  - `audit.fb-p2a-01.validation_passed`
+  - `audit.fb-p2a-01.validation_failed`
+  - `audit.fb-p2a-01.handoff_emitted`
 
-- RequirementID: `RQ-2A-01`
-- RequirementStatement: `Island階層モデル導入` の境界I/F（型・必須項目・契約リンク）を先行固定し、A2/A3参照専用の Local Contract Annex を確立する。
-- Phase: `A1 Interface First`
-- PriorityClass（Must / Should / Could）: Must
-- GoNoGoGate（Required / Optional / N/A）: Required
-- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A（計画のみ）
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
+## Contract uncertainty resolved in A1
+- 必須キー集合: fixed
+- 異常系コード体系: fixed
+- 監査イベント命名: fixed
+- A2 mock point: 入出力shape/required-key/error-code/event-name のみ検証（実装非依存）
 
-## Local Contract Annex（Stream A SSOT）
+## Acceptance Criteria
+- [x] 入力型・出力型・エラー契約・監査イベント名が固定されている。
+- [x] A2/A3がA1参照のみで進行可能。
+- [x] safeMode既定ONを弱めない。
 
-> 以降A2/A3は外部I/Fを直接参照せず、本Annexを唯一の参照源（SSOT）として使用する。
-
-### Annex identifier
-- AnnexID: `LCA-FB-P2A-01-A1-V1`
-- ContractID: `CTR-2A-01-ISLAND-HIERARCHY-V1`
-- InterfaceName: `IslandHierarchyContractV1`
-
-### External I/F mapping（A1内で写像済み）
-
-- Source reference（read-only origin）:
-  - `02_Architecture/schemas.md` の `parentIslandId?: string` 制約
-- Annex mapping（A2/A3が利用する値）:
-  - `document.schemaVersion: string`
-  - `island.id: string`
-  - `island.cardIds: string[]`
-  - `island.parentIslandId?: string`（rootは未設定許容）
-
-### Invariants
-
-1. `parentIslandId` が存在する場合、参照先 island は同一 document 内に存在する。
-2. `parentIslandId` のみを正本とし、子一覧は派生情報として契約必須項目へ含めない。
-3. self-parent を含む循環参照は許可しない。
-4. import 正規化では不正な `parentIslandId` を `undefined` にフォールバックできる。
-5. save/load roundtrip では有効な `parentIslandId` を欠落させず往復保持する。
-
-### Contract links
-- Downstream-A2: `issue-FB-P2A-01-a2-mock-validation.md`（Annex参照のみ）
-- Downstream-A3: `issue-FB-P2A-01-a3-implementation.md`（Annex参照のみ）
-
-## Phase management（Stream A / FB-P2A serial lock）
-
-## Phase 3 Plan result（agreement record）
-
-- agreementStatus: `agreed`
-- agreedAt: `2026-04-18`
-- Agreement scope: AC/DoD gaps are closed and Stream A serial order (`A1 -> A2 -> A3`) is locked.
-- Note: no undefined conflict found; no external lane file edits required.
-
-## Phase 4 Execute result（strict serial）
-
-1. A1: `ContractID / Required fields / Invariants / ContractLinks` fixed（done）
-2. A2: mock ledger (`M1..M4`) fixed under A1 Annex freeze（done）
-3. A3: implementation handoff contract and rollback conditions fixed（done）
-
-## Phase 5 Verify result
-
-- docs-check target: `01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-- verificationFocus: AC/DoD consistency, dependency alignment, contract drift absence
-- selfCorrectionCount: `0/3`（no retry needed）
-
-## Phase 6 Proceed decision
-
-- proceedDecision: `ready-to-transition`
-- nextStatusProposal: `FB-P2A-01 planning serial complete (Stream A)`
-- stopConditionCheck: clear（no blocker）
-
-
-- Phase 1 Read: A1/A2/A3 3点を再読し、Status/AC/DoD/依存を抽出する。
-- Phase 2 ADR CDC: 方針変更がある場合のみ CDC を起票し、承認記録完了まで停止する。
-- Phase 3 Plan: AC/DoD不足ドラフトを作成し、`agreementStatus=agreed` まで進行しない。
-- Phase 4 Execute: A1契約固定 → A2 mock検証 → A3実装計画確定を直列実行する。
-- Phase 5 Verify: docs-check + 契約リンク整合 + 自己修復上限3回を確認する。
-- Phase 6 Proceed: 完了条件を満たす場合のみ次ステータス提案、未達時は停止レポートを残す。
-
-## Phase 1 Read result（差分抽出）
-
-### 抽出（Status/AC/DoD/依存）
-- Status: A1/A2/A3 いずれも Open（Audit Hold系）
-- AC: 3ファイルとも契約固定・直列実行・GoNoGo明記あり
-- DoD: 明示不足（A1はDoD見出し未定義、A2/A3もDoD節が不足）
-- 依存: A1 -> A2 -> A3 の直列依存は定義済み
-
-### 事前想定との差分
-1. Ownerが Stream B 表記で、今回指示の Stream A 専属条件と不一致。
-2. A1/A2/A3が外部I/F（例: architecture配下）を直接参照しうる記述が残っていた。
-3. DoDの明文化が不足し、完了判定がAC中心に偏っていた。
-
-## Phase 2 ADR CDC（判定）
-
-- 判定: **起票不要（No ADR proposal）**
-- Context: 既存方針の運用明確化であり、新規アーキテクチャ決定は含まない。
-- Decision: A1に Local Contract Annex を追加し、A2/A3はAnnex参照限定とする。
-- Consequences: 外部ストリーム非依存でA1→A2→A3の直列進行が可能。
-
-## Acceptance criteria
-
-- [x] ContractID / Required fields / Invariants / ContractLinks が固定される。
-- [x] Local Contract Annex（`LCA-FB-P2A-01-A1-V1`）をA2/A3の唯一参照源として定義する。
-- [x] A2/A3はA1契約本文を変更せず参照のみで進行できる。
-- [x] SafeMode・share/export既定挙動に影響しないことを明記する。
-- [x] A1→A2→A3の契約リンク不整合がない。
-
-## Definition of Done (DoD)
-
-- [x] `DecisionStatus=Fixed` と `AnnexID` が同時に記録されている。
-- [x] A2/A3が参照する契約値（ContractID / InterfaceName / Invariants）がA1内で一意に取得できる。
-- [x] 外部I/F参照はA1の External I/F mapping に写像済みで、A2/A3本文から直接参照されない。
-- [x] docs-check 実行計画とFail-safe（self-correction<=3）が記録されている。
-
-## Validation plan
-
-- Command:
-  - `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
-
-## Fail-safe
-
-- self-correction上限: 3回。
-- 停止トリガ: 3回超過 / 契約ドリフト / 未定義競合 / 前提崩壊 / 指定外ファイル編集要求。
-- 停止時対応: 推測継続を禁止し、停止理由・再開条件・未達項目を記録する。
-
-## Handoff（A2/A3参照専用）
-
-- Fixed links:
-  - `issue-FB-P2A-01-a2-mock-validation.md`
-  - `issue-FB-P2A-01-a3-implementation.md`
-- 変更禁止項目:
-  - `AnnexID=LCA-FB-P2A-01-A1-V1`
-  - `ContractID=CTR-2A-01-ISLAND-HIERARCHY-V1`
-  - `InterfaceName=IslandHierarchyContractV1`
-  - Required fields / Invariants / ContractLinks
-- 逸脱要求はA1へ差し戻し。
-
-## Stream I Done/Completed Audit (2026-04-23)
-- 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
-- Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
-- 重複Backlog整理提案: FB-P2A-01 は系列メモ複数運用（3件）。再オープンではなく、次回は親統合メモ1本＋派生メモ参照化を提案。
-
-## Stream F execution log (2026-04-30, FB-P2A lane A1)
-
-- Scope declaration（実装前宣言）: `issue-FB-P2A-01-a1-interface-contract.md` / `issue-FB-P2A-01-a2-mock-validation.md` / `issue-FB-P2A-01-a3-implementation.md` の最小3ファイルのみ更新。`03_Implement/frontend/src/domain/patch/*` を含む実装変更は本ログでは未着手（A1フェーズ固定）。
-- Phase: **A1 interface-contract 完了**。
-- 依存切断確認: A1完了後のA2は mock で独立進行可能（外部待ちなし）を再確認。
-- Stop-condition check: 契約ドリフト / 指定外ファイル編集要求 / 前提崩壊なし。
-- Next: A2 `issue-FB-P2A-01-a2-mock-validation.md` へ Annex固定値を参照渡し。
-
-## Stream D execution log (2026-05-03, FB-P2A-01 A1→A2→A3 serial)
-
-- Phase 1 Read sync: re-read A1/A2/A3 set and confirmed `ContractID=CTR-2A-01-ISLAND-HIERARCHY-V1` consistency and no dependency inversion.
-- Phase 2 A1 contract freeze: treated Annex (`LCA-FB-P2A-01-A1-V1`) as read-only and verified no required-field/invariant drift.
-- Phase 3 A2 mock validation: confirmed GoNoGo remains `M1/M2/M3=pass` and `M4=fail` with owner routing fixed.
-- Phase 4 A3 implementation readiness: handoff payload schema remained complete (`contractId`,`contractVersion`,`mockCaseId`,`validationResult`,`ownerOfFix`,`evidence`).
-- Phase 5 Verify: docs-check command kept as canonical verifier; self-correction count remained within `0/3`.
-- Phase 6 Proceed: lane status advanced as `ready-to-transition` under fail-safe rules.
+## Definition of Done
+- [x] `ContractID` と `DecisionStatus=Fixed` を記録。
+- [x] 依存順 `A1 -> A2 -> A3` を明示。
+- [x] A1未確定項目ゼロ。
