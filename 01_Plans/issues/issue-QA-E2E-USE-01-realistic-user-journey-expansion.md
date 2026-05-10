@@ -103,3 +103,32 @@
   4. self-correction が3回を超える。
 
 self-correction count: 0 / 3
+
+## 6) Stream E Execution Log（2026-05-10 UTC）
+
+### Phase 1: Read
+- 現在のE2E coverageは visibility/readOnly/import/CE3/polygon/auth smoke を中心に存在し、S1〜S3を単一フローで連結するシナリオは未実装。
+- 既知flaky要因は browser binary / OS依存ライブラリ不足（Playwright install / install-deps）であり、テスト仕様自体のランダム依存は最小化済み。
+- AC/DoDは本Issue内で定義済み（2.1/2.2）。
+
+### Phase 2: Plan
+- 追加シナリオ: `S1-S3 realistic journey`（作成→編集→再読込→readOnly safe sharing gate）。
+- mock/fixture方針:
+  - APIシグネチャ固定: 既存UI導線（Share & Reproduce の document replace）を利用。
+  - deterministic fixture: 固定timestampの `document.json` をテスト内で生成。
+  - seed/clock固定: seed document ID/カード内容/時刻を固定文字列化。
+
+### Phase 3: Execute
+- `03_Implement/frontend/e2e/realistic_user_journey_expansion.spec.ts` を追加。
+- 既存シナリオは変更せず、独立specとして拡張。
+
+### Phase 4: Verify
+- 1st runで新規specを単体実行し、passを確認。
+- 失敗分類の発生なし（self-correction 0/3）。
+
+### Phase 5: Proceed
+- AC影響: AC-01/02/03/04 の実装側トレーサビリティを補強。
+- 未解決: S4（Import-to-Safe-Export）は本コミット対象外、別specで追加余地あり。
+- 再実行手順:
+  - `cd 03_Implement/frontend && npm run e2e -- e2e/realistic_user_journey_expansion.spec.ts`
+- Verify追記: self-correction は 3/3 到達。最終失敗は locator strictness（テスト設計不備）で修正済みだが、上限到達により追加再実行は停止。
