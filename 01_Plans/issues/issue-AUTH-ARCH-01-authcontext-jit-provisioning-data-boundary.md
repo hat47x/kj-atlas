@@ -234,3 +234,19 @@
 - 停止条件を再掲: (1) 未承認決定の確定化、(2) Schema 未固定での IMPL 着手、(3) strict mode 固定値 D1〜D4 の不一致。
 - 失敗時の自己修復は最大3回までとし、3回超過時は `StoppedForClarification` で停止する。
 
+## Stream E serial execution log (2026-05-10)
+
+### Phase 1 Triage (Ready/Hold)
+
+- 判定: `AUTH-ARCH-01=Ready(完了済みのため再実装不要)`、下流の `AUTH-SCHEMA-01` / `AUTH-API-02` / `AUTH-IMPL-01` / `AUTH-E2E-01` の前提契約を提供済み。
+- Hold 条件: D1〜D4改定、役割語彙変更、または strict 例外状態遷移の改定が提案された場合のみ再Open。
+
+### Phase 2 ADR明文化
+
+- Context: 役割分離、2者承認、strict 例外緩和、固定値 D1〜D4 は `strict_mode_exception_approval_flow.md` の正本に収束済み。
+- Decision: AUTH-ARCH-01 では上流契約の再定義を禁止し、下流は参照のみ許可。
+- Consequences: 下流（Schema/API/E2E）が安全側で固定可能。
+
+### Proceed
+
+- 判定: **Go**（未解決依存なし）。

@@ -816,3 +816,9 @@ hil_rs_a1_manifest_v1:
   - `409 nondeterministic_bundle`
 - Verify gate is frozen as `sameQuery && sameBundle`; mismatch is fail-closed and self-repair is capped at max 3.
 - Conflict-safe rule: agreement missing / dependency contradiction / collision detected => `held` and stop for instruction.
+
+### 10.4 Stream E freeze note (2026-05-10)
+
+- Contract freeze: `users` / `user_identities` 分離、strict時 `identity_not_provisioned`、admin provisioning 導線を AUTH 系の最小互換契約として固定。
+- Compatibility rule: 判定必須キーは `status/code/provisioned` の3点を保持し、将来拡張は後方互換（追加のみ・既存キー意味変更禁止）で行う。
+- Audit boundary: identity 生値（`provider/external_uid/email`）は監査最小項目へ保存しない。

@@ -752,3 +752,9 @@ contract_freeze:
   - `501 ce4_stubbed_audit_transport`
 - stub 応答時も `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `schemaVersion` を監査イベントへ記録し、`result=ng` で終了する。
 - 本節の stub は契約確定までの暫定隔離であり、成功系の代替として利用してはならない。
+
+### 9.5 Stream E freeze note (2026-05-10)
+
+- Interface-first fixed set: `AuthContext` 正規化、strict拒否（`403 + identity_not_provisioned`）、`POST /admin/provision/users` の request/success/conflict 分岐。
+- Backward compatibility: 必須分岐キーは `status/code/provisioned` を維持し、追加フィールドは optional 拡張のみ許可。
+- Audit minimum: API契約では「誰が何を実行したか」を `actorRef/requestId/result` で追跡し、PII生値は保存しない。
