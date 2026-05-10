@@ -2611,3 +2611,64 @@ handoffKeys:
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+## Stream CE1 execution update（2026-05-10 / ContextQuery/Bundle foundation planning hardening, docs-only）
+
+### Phase 1: Read
+- 編集範囲を `01_Plans/issues/issue-CE1-context-query-bundle-foundation.md`（主）と `01_Plans/issues/issue-CE2-low-risk-ai-assist.md`（参照のみ）に固定し、コード変更を禁止。
+- 既存契約の固定値を再確認：`ContextQueryV1` / `ContextBundleV1`（closed-world）、`previewConfirmed=false -> 422 preview_required`、`400 unknown_contract_key`、`409 nondeterministic_bundle`。
+- 停止条件を事前宣言：SafeMode既定ON後退案が必要になった場合、契約ID未定義のまま実装提案が必要になった場合、self-repair 3回超過で即Stop（`held`）。
+
+### Phase 2: ADR整合（Context / Decision / Consequences）
+#### Context
+- CE2/CE4 が実装依存なく継続するには、CE1 で I/F 契約・決定論ハッシュ・safeMode除外境界を文書上で先行固定する必要がある。
+- 本タスクは docs-only であり、契約語彙の確定に限定する（実装・運用値の推測補完を禁止）。
+
+#### Decision
+- `ContextQueryV1` / `ContextBundleV1` を v1 closed-world 契約として維持し、未定義キーは常に `400 unknown_contract_key`。
+- preview gate は `previewConfirmed=false -> 422 preview_required` を唯一の入口拒否条件として固定。
+- `queryCanonicalHash` / `bundleHash` は同一 canonical query で決定論的一致を要求し、不一致時は `409 nondeterministic_bundle` で fail-closed。
+- CE2 への handoff は固定I/F（契約ID・必須フィールド・エラー語彙・hash規約・handoff key）のみを提供し、実装提案は行わない。
+
+#### Consequences
+- CE2 は proposal-only のまま、CE1 未実装でも mock validation を継続できる。
+- 契約ID未定義や語彙衝突を検出した時点で Proceed を停止し、`held` を維持する。
+
+### Phase 3: Plan（I/F先行 + mock validation順序固定）
+- Plan-1（I/F先行）: 型・語彙・hash規約・error semantics を先に固定し、実装詳細は後続Issueへ委譲。
+- Plan-2（validation順序固定）:
+  1. Query構造（required/closed-world）
+  2. Bundle再現性（`queryCanonicalHash` / `bundleHash` の3回一致）
+  3. safeMode除外ルール（safeMode既定ONを後退させない契約境界）
+  4. handoff key整合（CE2/CE4）
+- Plan-3（DoD）: CE2へ引き渡す固定I/F一覧を本Issue末尾に明示し、依存未解決時は `Hold` へ遷移。
+
+### Phase 4: Execute（AC具体化）
+- AC-E1（Query構造）: `ContextQueryV1` は closed-world とし、未知キーは `400 unknown_contract_key`。
+- AC-E2（Bundle再現性）: 同一 canonical query 入力で `queryCanonicalHash` / `bundleHash` が 3回一致すること。
+- AC-E3（preview gate）: `previewConfirmed=false` の要求は必ず `422 preview_required` へ写像されること。
+- AC-E4（safeMode除外ルール）: CE1契約は safeMode既定ONを変更しない。share/export既定緩和を要求するI/Fは定義しない。
+- AC-E5（非決定論停止）: hash不一致時は必ず `409 nondeterministic_bundle` を返し、Proceedしない。
+
+### Phase 5: Verify（docs-check + self-repair <=3）
+- Verify-1: docs-check（issue memo validator）で本Issueの必須メタと契約記述を検証。
+- Verify-2: `git diff --check` で文書差分の整形異常がないことを確認。
+- self-repair log:
+  - attempt 1: `validate_active_issue_memos.py` 実行（pass）
+  - attempt 2: `git diff --check` 実行（pass）
+  - attempt 3: 不要（0件）
+- 判定: pass（3回上限未満、停止条件非該当）。
+
+### Phase 6: Proceed（CE2へ渡す固定I/F一覧）
+- CE2 handoff fixed I/F（read-only, contract-only）:
+  1. Contract IDs: `ContextQueryV1`, `ContextBundleV1`
+  2. Required gate field: `previewConfirmed`（`false -> 422 preview_required`）
+  3. Deterministic hashes: `queryCanonicalHash`, `bundleHash`
+  4. Fixed errors: `preview_required`, `unknown_contract_key`, `nondeterministic_bundle`
+  5. CE2 continuity key: `sourceBundleHash === bundleHash`
+  6. CE4 audit key: `equivalenceKey + bundleHash`
+  7. Closed-world rule: unknown keys are rejected (`400 unknown_contract_key`)
+  8. Fail-closed rule: nondeterministic bundle is rejected (`409 nondeterministic_bundle`)
+  9. Safe boundary: no SafeMode default rollback, no share/export default relaxation
+- Proceed判定: 上記固定I/Fが崩れない限り CE2 は mock-only で継続可能。
+- Hold/Stop判定: 契約ID未定義・SafeMode後退要求・self-repair 3回超過のいずれかで `held`。
