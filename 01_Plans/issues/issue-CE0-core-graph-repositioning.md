@@ -2153,3 +2153,23 @@
 
 ### Phase 5 Proceed
 - 判定: `Proceed`（本メモ時点で conflict signal なし、contract-only 維持、Stream G契約は read-only 参照）。
+
+
+## Stream B synchronization note（2026-05-10 / CE-0 Contract Freeze alignment）
+
+### Context
+- Stream B指示に基づき、CE-0 Contract Freezeとの整合確認を docs-only で実施。
+- Core Graph repositioning 文書は CE-0 fixed contract matrix の参照先として、I/F先行・mock-first 境界を再明示する。
+
+### Decision
+- 本Issueでは API署名・データ型・監査イベント名の固定参照のみを許可し、実装ロジックの確定記述を追加しない。
+- `working -> consensus` の `patch+approval` 以外の遷移は引き続き No-Go とする。
+
+### Consequences
+- CE-1 が参照する契約境界（signature/type/event）を先行固定したまま、実装自由度を保持できる。
+- 矛盾が発生した場合は是正案のみ提示し、本Issueでは確定変更しない（`held`）。
+
+### CE-1 handoff interface snapshot（contract-only）
+- API signatures: `POST /context/query`, `POST /context/bundle`
+- Data types: `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1`
+- Audit event names (reserved): `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked`
