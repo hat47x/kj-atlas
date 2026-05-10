@@ -19,6 +19,8 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 2. CLI設定の優先順位は `CLI引数 > 環境変数 > 設定ファイル > デフォルト`。
 3. CLIの実行はAPI監査ログに帰属可能であることを前提要件とする。
 4. SafeModeと矛盾する共有/公開導線をCLIで標準化しない。
+5. CE4監査ゲートでは `proposal-only` を強制し、`auto-apply` / `auto-confirm` / `auto-publish` をポリシー違反として fail-closed 停止する。
+6. CE1未整備時は `sourceBundleHash=mock:<64hex>` を許容し、実実装依存を切断した監査検証を許可する（同一 fail-closed 規律を適用）。
 
 ### 2) 後で決めること（保留）
 
@@ -39,6 +41,8 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 
 - 判定条件:
   - CLI起点実行が principal/request-id と紐づいて追跡可能。
+  - 監査4イベント `query -> bundle -> proposal -> apply` が同一 `equivalenceKey` で連結可能。
+  - API/CLI同値判定が `equivalenceKey AND bundleHash` のAND条件で再演算可能。
 - 検証粒度（実装後）:
   - `pytest 03_Implement/backend/tests/cli_security/test_audit_attribution.py`
 
@@ -53,6 +57,7 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 
 - 判定条件:
   - CLI運用手順の変更が `04_Documentation/operations.md` に同期される。
+  - CE4契約変更時は `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` / `02_Architecture/api.md` / `ADR-0016` / `ADR-0017` の4文書同期を必須とする（契約監査ドリフト防止）。
 - 検証粒度（Docs運用）:
   - PRチェックリストで「CLI運用変更時の同時更新」を必須項目化。
 
@@ -71,6 +76,7 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 
 - CLIの機能検討より前に、安全/運用の不成立を検出できる。
 - 監査観点レビューを独立実施でき、レビュー抜けを減らせる。
+- CE1依存が未実装でも mock 接続で監査ゲート検証を継続でき、契約適合監査を実装待ちから分離できる。
 
 ## Traceability
 

@@ -129,6 +129,7 @@ CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方�
 - 同値判定成功条件: `equivalenceKey AND bundleHash` の同時一致（片方一致は失敗）。
 - 監査イベント系列: `query -> bundle -> proposal -> apply` を固定順序とし、欠損/逆転は fail-closed。
 - proposal-only: `auto-apply` / `auto-confirm` / `auto-publish` を禁止し、検知時はポリシー違反で停止。
+- CE1未整備時の依存切断: `sourceBundleHash=mock:<64hex>` を許容し、実装待ちでも契約検証を継続可能にする。
 
 監査イベント共通必須キー（API/CLI共通）:
 - `eventType` (`query|bundle|proposal|apply`)
@@ -142,6 +143,7 @@ CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方�
 - `proposalId`
 - `timestamp` (RFC3339 UTC)
 - `result` (`ok|ng`)
+- `schemaVersion` (SemVer)
 
 fail-safe / stop:
 - 監査ログ欠落、`routingStage` 追跡不能、未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾値）は **Stop**。
@@ -152,6 +154,13 @@ API/CLI同値性検証（契約計画）:
 2. `equivalenceKey` と `bundleHash` のAND一致を確認。
 3. routing監査キー（`routingStage/provider/model/sourceBundleHash/proposalId`）の4イベント追跡を確認。
 4. 欠損/逆転/競合時は No-Go（fail-closed）。
+
+CE4監査チェックリスト（契約監査用）:
+1. 必須キー完備（`eventType/equivalenceKey/queryCanonicalHash/bundleHash/routingStage/provider/model/sourceBundleHash/proposalId/timestamp/result/schemaVersion`）。
+2. 4イベント順序整合（`query -> bundle -> proposal -> apply`）。
+3. AND同値条件成立（`equivalenceKey` と `bundleHash` の同時一致）。
+4. proposal-only違反不在（`auto-apply|auto-confirm|auto-publish` 痕跡ゼロ）。
+5. mock/real 同一規律（`sourceBundleHash=sha256:<64hex> | mock:<64hex>` で同一 fail-closed）。
 
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 

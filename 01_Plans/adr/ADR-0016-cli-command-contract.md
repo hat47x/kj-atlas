@@ -30,12 +30,18 @@ CLIコマンド仕様を早期に固定しすぎると、MVP後のAPI確定前�
 5. 互換性契約:
    - 既存引数の意味変更は禁止。
    - 廃止予定機能は最低1フェーズの非推奨期間を置く。
+6. CE4監査統合契約（API/CLI同値）:
+   - 成功条件は `equivalenceKey AND bundleHash` の同時成立のみ。
+   - `proposal-only` を固定し、`auto-apply` / `auto-confirm` / `auto-publish` を禁止する。
+   - 監査4イベント `query -> bundle -> proposal -> apply` が欠損/逆順の場合は fail-closed とする。
+   - 失敗分類は `validation_failed` / `audit_violation` / `equivalence_violation` / `policy_violation` の4種を固定語彙とする。
 
 ### 2) 後で決める契約（保留）
 
 - 各サブコマンド配下の詳細オプション。
 - `--profile` / `--request-id` / `--dry-run` の既定値。
 - エラー本文フォーマット（human-readableの詳細）。
+- exit code の具体値割当（CE4失敗分類との数値マッピング）。
 
 ## Command-level Acceptance（実装着手時の受入判定）
 
@@ -51,6 +57,13 @@ CLIコマンド仕様を早期に固定しすぎると、MVP後のAPI確定前�
 
 - `--input -` / `--output -` の標準入出力が機能する。
 - `--format` 指定に応じてシリアライズ形式が切り替わる。
+
+### B-2. CE4監査契約テスト（必須）
+
+- 同一入力に対し API/CLI で `equivalenceKey AND bundleHash` が同時一致する。
+- 監査4イベントの順序整合（`query -> bundle -> proposal -> apply`）が機械判定できる。
+- 欠損/逆順/矛盾値は `audit_violation` として失敗終了する。
+- `auto-*` 系操作痕跡検出時は `policy_violation` として失敗終了する。
 
 ### C. 互換性テスト（必須）
 
@@ -85,6 +98,7 @@ CLIコマンド仕様を早期に固定しすぎると、MVP後のAPI確定前�
 
 - 実装者は「まず何のテストを作るか」を迷わない。
 - 仕様未確定領域を残しつつ、破壊的変更を検知できる。
+- CE4実装着手前に API/CLI/監査の契約判定軸が固定され、mock-first で依存切断検証を先行できる。
 
 ## Traceability
 

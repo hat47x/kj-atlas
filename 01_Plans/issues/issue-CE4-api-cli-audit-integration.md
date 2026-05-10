@@ -5,7 +5,7 @@
 - Status: Draft (Contract Freeze Candidate)
 - Source Issue: TBD (DraftのためOpen化時に採番)
 - Priority: P2
-- Owner: Stream F（CE4 API/CLI/監査契約 proposal-only）
+- Owner: Stream C（CE4 API/CLI/監査契約 proposal-only）
 - Scope: `01_Plans/issues/`（docs-only / contract-only / mock-first）
 - Editable: `issue-CE4-api-cli-audit-integration.md` のみ
 - Related Backlog: `CE-4`
@@ -23,11 +23,11 @@
 
 ---
 
-## Operating Mode（Stream F / serial phases）
+## Operating Mode（Stream C / serial phases）
 - Execution mode: proposal-only（実装コード変更禁止 / 他Issue編集禁止）
 - Editable scope: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md` のみ
 - Dependency policy: CE0 / CE1 は read-only 参照（未承認事項の確定禁止）
-- Serial phases: **Read → ADR (Context/Decision/Consequences) → Plan (AC/DoD補完) → Execute (契約定義のみ) → Verify（自己修復は最大3回）→ Proceed**
+- Serial phases: **Plan+Read → ADR (Context/Decision/Consequences) → API/CLI監査チェックリスト定義 → Mock接続で依存切断 → Verify（自己修復は最大3回）→ Proceed**
 - Stop conditions:
   - CE0/CE1 契約との矛盾が解消できない
   - 前提（equivalenceKey/bundleHash/4イベント監査）が崩壊
@@ -162,6 +162,41 @@
 3. 監査転送基盤（保存先・配送保証・署名方式）は本Issueでは未固定。
 
 > 停止条件: 上記未確定点を確定仕様として扱う要求が来た場合、CE4契約の範囲逸脱として停止し、上位ADRでの判断を要請する。
+
+---
+
+## Stream C execution log（2026-05-10 / CE4 契約適合監査限定）
+
+### Phase 1: Plan+Read
+- スコープを契約・監査設計の4文書（本Issue / `02_Architecture/api.md` / `ADR-0016` / `ADR-0017`）に限定。
+- CE4論点を「API/CLI/監査の契約適合監査」に限定し、実装コード変更禁止を再確認。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+- CE4は API/CLI/Audit の3経路を跨ぐため、監査契約の単一判定軸がないと実装前レビューで解釈差分が残る。
+#### Decision
+- CE4判定軸を `AND同値条件`・`4イベント順序`・`proposal-only`・`fail-closed` に固定。
+- 失敗分類を `validation_failed` / `audit_violation` / `equivalence_violation` / `policy_violation` に固定語彙化。
+#### Consequences
+- 実装前に契約適合監査の pass/fail が決まり、レビューを実装品質ではなく契約準拠で進められる。
+
+### Phase 3: API/CLI監査チェックリスト定義
+- C1 必須キー完備（schemaVersion含む）
+- C2 4イベント順序整合（`query -> bundle -> proposal -> apply`）
+- C3 AND同値条件（`equivalenceKey AND bundleHash`）
+- C4 `proposal-only` 違反ゼロ（`auto-*` 検出時 No-Go）
+- C5 失敗分類の再読可能性（4種固定語彙）
+
+### Phase 4: Mock接続で依存切断
+- CE1未整備時は `sourceBundleHash=mock:<64hex>` で契約検証継続を許可。
+- mock/real を同一 fail-closed 規律で扱い、実装待ち項目（終了コード数値、匿名化方式、転送基盤）を未確定として隔離。
+
+### Phase 5: Verify（自己修復 <=3）
+- Verify-1: 4文書間で CE4判定軸（AND同値・4イベント・proposal-only・fail-closed）が一致。
+- Verify-2: 監査チェックリストが API/CLI 双方に適用可能。
+- Verify-3: 依存切断条件（`mock:<64hex>`）が明記され、実装待ち項目が誤って確定化されていない。
+- self-correction: `1/3`（Owner/Phase表記の不整合を補正）。
+- Proceed判定: **Hold**（契約固定完了、実装待ち）。
 
 
 ## Stream C execution log（2026-05-05 / Draft gate解除準備, contract-only）
