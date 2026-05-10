@@ -224,3 +224,8 @@ ReviewerRef 推奨フォーマット（例）:
 - 下流は mock sidecar（`review-signature.json`）を含む入出力契約を先行検証できる。
 - 用語統一（reviewerRef / ownerRef / reviewState）と safeMode境界の非侵害を schema review で担保できる。
 - 実装段階での過収集PIIや契約外キー混入を fail-closed で検知できる。
+
+### CE1整合メモ（Stream B / contract-only）
+- 本書は review attribution 契約に限定し、`ContextQueryV1` / `ContextBundleV1` のキー集合を再定義しない。
+- CE1 固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）との衝突を導入しない。
+- mock-first 検証時も safeMode 境界（PII最小化・匿名参照）を緩和しない。

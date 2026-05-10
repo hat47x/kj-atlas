@@ -65,6 +65,14 @@ This document finalizes ADR-0009 Phase B by defining deterministic KJ input norm
 8. 契約ID衝突（`CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`）または safeMode 後退を検知した場合は即停止する。
 9. CE2提案連携では `sourceBundleHash/status/reviewState` を必須監査キーとして扱い、proposal-only 境界（auto-apply禁止）を破ってはならない。
 
+### CE1 Contract Lock Summary（Stream B）
+
+- 署名（識別）固定: `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`
+- 型固定: `ContextQueryV1` / `ContextBundleV1` の v1 必須キー集合を closed-world として固定
+- エラー固定: `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`
+- mock-first 固定: `stubDatasetId=A2-minimal-v1` で検証し、実DB/実LLM/worker 依存を禁止
+- Verify自己修復上限: 3回（超過時は `held` で停止）
+
 ### CE1 A2 Stub Contract Profile（検証用）
 
 CE1 の IR 接続検証（A2）は backend 完了待ちを禁止し、次の stub contract を最小プロファイルとして固定する。

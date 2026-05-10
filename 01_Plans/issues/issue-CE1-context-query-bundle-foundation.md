@@ -1,5 +1,35 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
+## Stream B update（2026-05-10 / CE1 mock-first contract baseline）
+
+### Phase 1: Read & Stopper確認（CE1メタ欠落最優先）
+- 先頭メタ（Status / Priority / Scope / Dependencies）の欠落有無を確認し、欠落時は実装・拡張を行わず停止する。
+- 編集対象を `issue-CE1-context-query-bundle-foundation.md` / `02_Architecture/llm_input_ir_spec.md` / `02_Architecture/schemas.md` / `02_Architecture/schemas_review_attribution.md` に限定する。
+
+### Phase 2: ADR文法（Context / Decision / Consequences）
+- **Context**: CE2/CE4 が CE1 実装待ちで停止しないよう、CE1 は mock-first の契約基盤（署名・型・エラー語彙）を先に固定する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` を v1 closed-world 契約として凍結し、エラー語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` に固定する。
+- **Consequences**: 下流は `A2-minimal-v1` を用いた契約検証を継続でき、実DB/実LLM/worker 非依存のまま handoff 可能となる。
+
+### Phase 3: ContextQueryV1 / ContextBundleV1 固定（署名・型・エラー契約）
+- 署名（識別）: Contract IDs `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` を再定義禁止で固定。
+- 型: `ContextQueryV1` / `ContextBundleV1` の必須キー集合を v1 不変集合として固定。
+- エラー契約（fail-closed）:
+  - `previewConfirmed != true -> 422 preview_required`
+  - `unknown key -> 400 unknown_contract_key`
+  - `same canonical query && bundleHash mismatch -> 409 nondeterministic_bundle`
+
+### Phase 4: Mock適用方針（可能/不可/条件付）
+- 可能: `stubDatasetId="A2-minimal-v1"` で `/context/query` `/context/bundle` の契約検証（型/語彙/hash）を mock のみで実施。
+- 不可: 実DB接続・実LLM呼び出し・worker依存を混在させた検証。
+- 条件付: CE2/CE4 への連携は read-only handoff に限定し、契約更新は CE1 再起票時のみ許可。
+
+### Phase 5: Verify（自己修復最大3回、超過時停止）
+- Verify-1: `previewConfirmed=false -> 422 preview_required` を機械判定で満たす。
+- Verify-2: 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3 一致する。
+- Verify-3: unknown key を常に `400 unknown_contract_key` で拒否する。
+- Verify-4: 自己修復は最大3回。3回超過時は `held` に遷移し推測継続しない。
+
 ## Stream C interface/mock専任 update（2026-05-10 / Plan→Execute→Verify→Proceed）
 
 ### Phase 1 Read（latest）

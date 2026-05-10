@@ -132,6 +132,11 @@ Mock Validation Plan（implementation-decoupled）:
 - Verify: deterministic hash（3/3一致）、preview gate、unknown key reject を契約テストで確認。
 - Proceed: CE2/CE4へ `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` をread-only handoff。
 
+Mock適用方針（CE1 v1 固定）:
+- 可能: `A2-minimal-v1` を用いた契約テスト（型/語彙/hash）
+- 不可: 実DB・実LLM・worker依存を混在させる検証
+- 条件付: 下流への引き渡しは read-only（契約変更は CE1 再起票時のみ）
+
 後方互換観点（CE1 v1）:
 
 
