@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
-from typing import Literal
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -56,6 +56,18 @@ class ContextBundleResponse(BaseModel):
     truncationMeta: dict[str, object]
     excludedReason: list[str]
     queryCanonicalHash: str
+
+
+class ContextBundleProvider(Protocol):
+    def build_bundle(self, request: ContextBundleRequest) -> ContextBundleResponse: ...
+
+
+class MockContextBundleProvider:
+    def build_bundle(self, request: ContextBundleRequest) -> ContextBundleResponse:
+        return build_bundle(request)
+
+
+CONTEXT_BUNDLE_PROVIDER: ContextBundleProvider = MockContextBundleProvider()
 
 
 class Ce4ResolveBundleRequest(BaseModel):

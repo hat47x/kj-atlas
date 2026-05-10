@@ -194,12 +194,40 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
 
     original_api_key = settings.api_key
     settings.api_key = None
-    monkeypatch.setattr(routes_pkg.context, "build_bundle", _tampered_build_bundle)
+    class _TamperedProvider:
+        def build_bundle(self, request):
+            return _tampered_build_bundle(request)
+
+    monkeypatch.setattr(routes_pkg.context, "CONTEXT_BUNDLE_PROVIDER", _TamperedProvider())
     try:
         with TestClient(app) as client:
             response = client.post("/context/bundle", json=_bundle_payload())
             assert response.status_code == 409
             assert response.json()["detail"]["code"] == "nondeterministic_bundle"
+    finally:
+        settings.api_key = original_api_key
+
+
+
+
+def test_context_bundle_uses_mock_provider_contract(monkeypatch) -> None:
+    from kj_atlas_api import routes as routes_pkg
+
+    provider_calls = {"count": 0}
+
+    class _Provider:
+        def build_bundle(self, request):
+            provider_calls["count"] += 1
+            return real_build_bundle(request)
+
+    original_api_key = settings.api_key
+    settings.api_key = None
+    monkeypatch.setattr(routes_pkg.context, "CONTEXT_BUNDLE_PROVIDER", _Provider())
+    try:
+        with TestClient(app) as client:
+            response = client.post("/context/bundle", json=_bundle_payload())
+            assert response.status_code == 200
+            assert provider_calls["count"] == 1
     finally:
         settings.api_key = original_api_key
 

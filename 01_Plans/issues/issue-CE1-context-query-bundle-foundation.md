@@ -1,5 +1,25 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
+
+## Stream C update（2026-05-10 / CE1 mock provider foundation）
+
+### Phase 1: Read（latest再読 + I/F整合確認）
+- 本Issueと既存 `/context/query` `/context/bundle` 契約実装を再読し、`ContextQueryV1` / `ContextBundleV1` の closed-world と固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）を確認。
+- 実装スコープを CE1 関連 backend route/model/tests のみに固定。
+
+### Phase 2: ADR-style（Context / Decision / Consequences）
+- **Context**: CE2/CE4 の下流検証を継続するには、CE1で本実装依存（DB/worker）を切断し、mock可能な provider 境界を固定する必要がある。
+- **Decision**: `ContextBundleProvider` 契約と `MockContextBundleProvider` を導入し、`/context/bundle` は provider 経由で bundle を解決する。
+- **Consequences**: 下流は provider 差し替えで検証継続でき、現在値は deterministic な mock-first 実装を維持する。固定エラー語彙と hash 検証規約は不変。
+
+### Phase 3: Plan → Execute → Verify
+- Plan: provider境界導入、route接続切替、mock provider 経由呼び出しテスト追加。
+- Execute: `CONTEXT_BUNDLE_PROVIDER` を routes で使用し、既存 deterministic/hash 検証ロジックは維持。
+- Verify: CE1関連テストを実行し、preview gate / unknown key / nondeterministic hash / provider経由呼び出しを確認。
+
+### Phase 4: Stopper
+- Contract collision / 固定語彙逸脱 / scope逸脱が発生した場合は即時停止し `held` へ遷移。
+
 - Type: Feature request
 - Status: Open
 - Priority: P1
