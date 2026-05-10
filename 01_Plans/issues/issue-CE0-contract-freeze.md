@@ -3523,3 +3523,91 @@ type PatchProposal = {
 ### Phase 6 Proceed
 - 判定: **Conditional-Go（contract-only）**。
 - blocker: A1 approval evidence 未確定時は CE0拡張を `held` のまま停止。
+
+## CE0 Contract Definition Minimal Set（Freeze v1 / interface-signature fixed）
+
+> 目的: CE0 を契約先行で凍結し、実装着手前に **署名・型・境界・モック可能点** を単一文書で固定する。
+> 非目的: 実装詳細、アルゴリズム、永続化方式、UI仕様の確定。
+
+### 1) Frozen interface signatures（変更禁止）
+
+```ts
+export type ContextQueryV1 = {
+  goal: string
+  scope: string[]
+  depth: "brief" | "standard" | "deep"
+  constraints: string[]
+  reviewFilter: "none" | "human_only" | "approved_only"
+  safeModePolicy: {
+    safeMode: true
+    allowUnreviewedText: false
+  }
+  outputMode: "preview" | "proposal"
+}
+
+export type ContextBundleV1 = {
+  contractId: "CE0-CTX-IF"
+  bundleHash: string
+  query: ContextQueryV1
+  sources: Array<{
+    sourceId: string
+    kind: "card" | "island" | "edge" | "review"
+    version: string
+  }>
+}
+
+export type ProposalPatchV1 = {
+  contractId: "CE0-REVIEW-IF"
+  bundleHash: string
+  operations: Array<{
+    op: "add" | "replace" | "remove"
+    path: string
+    value?: unknown
+  }>
+  requiresApproval: true
+}
+
+export type AuditEventV1 = {
+  contractId: "CE0-SAFEMODE-IF"
+  eventId: string
+  eventType:
+    | "preview_required"
+    | "unknown_contract_key"
+    | "nondeterministic_bundle"
+    | "approval_granted"
+    | "approval_rejected"
+  timestamp: string
+  actor: "human" | "system"
+  bundleHash?: string
+}
+```
+
+### 2) Type/boundary freeze rules（v1）
+
+- `ContextQueryV1.goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode` は **必須**。
+- `safeModePolicy.safeMode=true` と `safeModePolicy.allowUnreviewedText=false` は **固定値**（緩和禁止）。
+- `ContextBundleV1.bundleHash` は決定論的に再計算可能であること（`nondeterministic_bundle` 検知対象）。
+- `ProposalPatchV1.requiresApproval=true` は固定。`Working -> Consensus` 直書きは禁止（patch+approvalのみ）。
+- 不明キーは受理せず `unknown_contract_key` を監査イベントへ記録。
+
+### 3) Contract boundary（責務分離）
+
+- CE0 が定義するのは **I/F 契約面のみ**。
+- CE1/CE2/CE4 は本契約を read-only 参照し、CE0 文面改変要求は `held` とする。
+- Backend / Frontend / CLI は同一署名を採用するが、内部実装差異は契約対象外。
+
+### 4) Explicit mock points（実装前提の差し替え点）
+
+- `ContextBundleProvider`（query→bundle生成）
+- `DeterministicHashProvider`（bundleHash算出）
+- `PatchPlanner`（preview/proposal生成）
+- `ApprovalGateway`（human approval 判定）
+- `AuditSink`（監査イベント永続化）
+
+> 上記5点は **モック実装を先行許可**。ただし入出力署名は本契約から逸脱してはならない。
+
+### 5) Freeze guard（逸脱時の扱い）
+
+- 追加/改名/削除を含む Contract ID 変更は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` 固定）。
+- No-Go canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）は固定。
+- 逸脱提案は実装せず `held` 登録し、人間承認まで凍結継続。
