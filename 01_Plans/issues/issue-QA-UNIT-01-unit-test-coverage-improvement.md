@@ -97,3 +97,10 @@
   4. self-correction が3回を超える。
 
 self-correction count: 0 / 3
+
+## 6) Execution Log (2026-05-10 UTC)
+
+- Stream F execution started with allowlist-constrained scope.
+- Added backend unit tests for `auth_context` risk paths (header normalization, provider normalization, identity-not-provisioned fail-fast, duplicate identity conflict detection).
+- Self-correction count: 1 / 3（header name mismatch corrected from `x-auth-sub` to `x-auth-subject`）.
+- No API contract changes, no schema changes, no SafeMode semantic changes.
