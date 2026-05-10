@@ -19,6 +19,12 @@
   2. PRに検証結果を書く前（記録項目の確認）
 - **この文書に含めないもの**: 日付付きの実行履歴・一時的な失敗経緯（`e2e_verification_log_2026-03-03.md`に記録）。
 
+### 読者別導線（運用担当 / 開発者 / 監査）
+
+- 運用担当（Platform Operator）: `2.1 Smoke` → `5. Composeでの実行手順` → `実行不能時の記録ルール` を先に読む。
+- 開発者: `2.2 Core Flow` / `2.3 Security/Safety Flow` / 変更対象セクション（CE3/Auth等）を読む。
+- 監査担当（Security Officer / System Owner）: `1.1 文書横断同期チェック` と `verification log` 記録粒度を確認する。
+
 ### 実行不能時の記録ルール（曖昧化禁止）
 
 E2Eが実行不能な場合、**未実施のままPass扱いにしない**。以下4点を必須記録とする。
@@ -62,6 +68,24 @@ E2Eが実行不能な場合、**未実施のままPass扱いにしない**。以
 - 4回目相当は作業を停止し、`01_Plans/issues/` にブロッカーを記録してエスカレーションする。
 
 - Stream F フェイルセーフ: テスト方針の矛盾または監査要件未達が判明した時点で更新を停止し、Proceedでは未解消項目を明示する。
+
+### 品質ゲート最小コマンド（docs-check）
+
+```bash
+python3 01_Plans/issues/validate_active_issue_memos.py --files \
+  01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md \
+  01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md
+rg -n "Audience|Goal|Non-goal|Public boundary|Outcome|Related|Proceed|Hold|Stop|pass|fail|blocked" \
+  04_Documentation/e2e_testing.md \
+  04_Documentation/e2e_verification_log_2026-03-03.md
+git diff --check
+```
+
+### 変更禁止領域（固定値・安全ポリシー）
+
+- SafeMode既定ON、share/export漏えい防止、review自動昇格禁止の境界は本書で緩和しない。
+- D1〜D4（`4h / 2h / 代理承認なし / 48h + 15m/60m`）は参照のみ。値の再定義は禁止。
+- 未承認の決定事項は `verification log` に「blocked」として記録し、本文で確定事項として記載しない。
 
 ## Stream F DQ-CONTRACT-v1 適用（2026-04-20）
 
