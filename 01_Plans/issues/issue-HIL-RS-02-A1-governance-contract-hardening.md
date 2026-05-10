@@ -1,7 +1,7 @@
 # Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream F）
 
 - Type: Process
-- Status: Hold（Approval Pending / execute禁止）
+- Status: Draft
 - Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
