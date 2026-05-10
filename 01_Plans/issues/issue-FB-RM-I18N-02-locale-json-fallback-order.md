@@ -142,3 +142,25 @@
 ### Phase 5 Stopper
 - 停止トリガー: 依存矛盾、SafeMode境界後退、GoNoGo未充足、または自己修復上限超過。
 - 停止時は未達項目と再開前提（必要I/F・実行環境・判定根拠）を本メモへ追記して引き継ぐ。
+
+## Stream G pass (2026-05-10)
+
+### Phase 1: Interface Read固定
+- domain/worker/export の既存I/F境界（入力契約・出力順序・型）を再確認し、今回の変更は **issue memo更新のみ** に限定する。
+- 決定論優先順位を P1 とし、乱数・非安定ソート・時刻依存を新規導入しない。
+
+### Phase 2: ADR明文化（Context/Decision/Consequences）
+- Context: MID/I18N/RS/SEC 系列は既に実装済みで、現在は運用上の受入境界を明文化する段階。
+- Decision: 「人間の最終判断を残す」「決定論を壊さない」「監査可能な証跡を維持する」を共通規範として固定。
+- Consequences: 後続streamは同一AC/DoDを参照可能になり、衝突なく局所改善できる。
+
+### Phase 3-6: Execute/Verify要点
+- Deterministic化: 既存比較キー・ソート規約の維持を前提化（仕様追加なし）。
+- 監査: manual intervention は audit log/export へ残す方針を再確認。
+- i18n/worker: fallback順序・worker fail-safe（fallback/cancel）を受入境界として再固定。
+- 構造メトリクス: locale非依存・再現可能出力の維持を受入条件として明記。
+
+### Phase 7: 完了判定
+- 判定: ✅ Done維持（docs整合）。
+- 根拠: 決定論 / 監査性 / 後方互換 / 最小E2E観点が既存AC/DoDと矛盾しない。
+- Stop条件: 依存矛盾またはAC欠落が観測された場合は3回自己修復後にFail-safe停止。
