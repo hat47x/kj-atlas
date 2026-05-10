@@ -443,3 +443,34 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 
 ### Consequences
 - 契約語彙と統治ゲートの解釈が統一され、下流laneでの再定義・強行遷移を抑止できる。
+
+
+## Stream A CE-0/CE-1 contract lock + A1 gate alignment（2026-05-10）
+
+### Phase 1 Read（stopper check）
+- Read target: 本ADR, `issue-FB-P2C-01-a1-interface-contract.md`, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`。
+- triage stopper check: 対象3 issue すべてで `Status` と `Priority` を確認済み（欠落なし）。
+
+### Phase 2 ADR clarification（CE-0 / CE-1）
+- Context: CE-0/CE-1 の契約固定が曖昧なまま下流へ進むと、A1以外で契約再定義が発生し、`Pending bypass` と SafeMode 後退リスクが増幅する。
+- Decision:
+  - CE-0/CE-1 は A1 契約凍結値を**再定義せず参照専用**で固定する。
+  - 固定参照値: `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `safeModeBoundary=SAFE_MODE_STRICT_ON`, `safeModeDefault=ON`, `overridePolicy=human_dual_control_only`。
+  - 人間承認遷移は `Pending -> Approved | Pending -> Rejected` のみ許可し、それ以外の遷移を禁止する。
+- Consequences:
+  - A2/A3 への受け渡しは read-only handoff のみ。
+  - `pendingDecisionQueueCount>0` の間は `Hold/Needs-decision` を維持する。
+
+### Phase 3 Plan（AC / DoD）
+- AC-1: safeMode後退 `0`。
+- AC-2: contract drift `0`（固定参照値の不一致なし）。
+- AC-3: responsibility boundary drift `0`（AI=proposal-only, Human=final approval）。
+- AC-4: `Pending bypass` 禁止。
+- AC-5: read-only handoff 成立（A2/A3側の再定義禁止）。
+- DoD: 上記 AC を満たし、Stop 条件（safeMode後退/契約再定義/未定義競合/指定外編集）未該当。
+
+### Phase 4-6 Execute / Verify / Proceed
+- Execute: docs-only 契約文言整合のみ（実装仕様の追加なし）。
+- Verify checkpoint: `contract drift`, `responsibility boundary`, `pending queue gate`, `stop condition consistency` を照合。
+- Proceed rule: `a1Status=="Done" && pendingDecisionQueueCount==0 && drift==0` のときのみ Go。
+- Current decision: `Hold`（Pending 解消待ち）。
