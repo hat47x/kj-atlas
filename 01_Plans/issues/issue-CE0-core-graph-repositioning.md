@@ -2079,3 +2079,31 @@
 ### Phase 5 Proceed
 - 判定: **proceed**（自己修復 0/3、契約不整合なし、想定外競合なし）。
 - 継続条件: UI 接続は別スコープ（本タスクでは contract mock と検証まで）。
+
+## Phase Execution Record（2026-05-10 / Stream D / contract-only boundary refix with mock-first continuity）
+### Phase 1 Read
+- 本Issue最新状態を再読し、`role / transition / no-go` 固定語彙、canonical No-Go 5 IDs、SafeMode既定ON境界を確認。
+- `CE0-contract-freeze` は read-only 参照のみとし、完了待ち依存を実行条件にしない（mock前提で並行可能）。
+- 差分判定: 固定語彙・禁止事項・SafeMode境界の差分は検出されず、継続可。
+
+### Phase 2 ADR/CDC（Context / Decision / Consequences）
+- Context: CE0 core graph（`working` / `context_projection` / `consensus`）の責務境界を contract-only で再固定し、mock前提で下流実行可能性を維持する。
+- Decision: 許可遷移は `working -> consensus` の `patch+approval` のみに固定し、`direct write` / `auto-apply` / `auto-publish` を禁止、proposal-only を維持する。
+- Consequences: `consensus` への反映は承認付きパッチ経路に限定されるため、実装待ち局面でも契約整合を保ったまま下流検証を継続可能。未承認論点は `held/pending` 在庫として保持し確定化しない。
+
+### Phase 3 Plan
+- AC固定: `working -> consensus` は `patch+approval` のみ許可（他遷移は許可しない）。
+- `context_projection` は read-only 投影として扱い、write経路を定義しない。
+- direct write禁止、proposal-only維持、SafeMode既定ON後退禁止を受入条件として再固定。
+
+### Phase 4 Execute
+- docs-only / single-file 制約で契約記述のみ整理し、実装コード変更は実施しない。
+- `role / transition / no-go` 語彙を canonical 範囲に維持し、同義語置換・拡張定義を行わない。
+
+### Phase 5 Verify
+- 検証観点: SafeMode既定ON後退なし、`consensus_direct_write`（direct write）禁止、proposal-only 維持。
+- `docs-check` を実行し、失敗時 self-correction は最大3回までの運用を維持。
+
+### Phase 6 Proceed
+- 判定: `Proceed`（本記録時点で contract-only 境界、No-Go 5 IDs、遷移規則、proposal-only 条件を維持）。
+- 以降、語彙差分またはSafeMode境界差分を検出した場合は `held` で停止し、4回目相当の再試行は行わず `Stop` とする。
