@@ -2,6 +2,8 @@
 
 - Type: Process
 - Status: In Progress
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
 - Priority: P1
 - Owner: Stream A（contract freeze and minimum interface agreement）
 - Scope: 本ファイルのみ（docs-only）
@@ -9,6 +11,8 @@
   - `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
   - `issue-HIL-RS-02-A1-governance-contract-hardening.md`
 - ADR Reference (read-only): `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`
+- Expected verification level: `docs-check`
 
 ## Serial Phases（固定）
 1. Phase 1 Read Sync（issue + ADR）

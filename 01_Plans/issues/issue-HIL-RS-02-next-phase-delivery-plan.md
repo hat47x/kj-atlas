@@ -1,14 +1,14 @@
 # Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream F planning lane）
 
 - Type: Process
-- Status: Ready
-- Lifecycle: Draft -> Ready -> Open -> In Progress -> Done
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
 - Owner: Stream F Agent（delivery plan 計画整理専任）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
 - Out of scope: 上記以外すべてのファイル編集、`03_Implement/**`、`04_Documentation/**`、実装コード編集
-- Related ADR/Spec（明文化必須）: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Dependencies (read-only): `issue-HIL-RS-02-A1-governance-contract-hardening.md`（A1）
 - Expected verification level: `docs-check`
 
