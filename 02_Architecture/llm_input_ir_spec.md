@@ -603,3 +603,25 @@ A2 contract test では次を機械判定する。
 - v1 は closed-world とし、未定義キーは `400 unknown_contract_key` とする。
 - 同一 canonical query に対して `queryCanonicalHash` / `bundleHash` が一致しない場合は `409 nondeterministic_bundle` で fail-closed とする。
 - 本節は実装方式を拘束せず、契約語彙と検証条件のみを固定する。
+
+## CE0 Contract Matrix Freeze（CTX / SAFEMODE / REVIEW）
+
+本節は CE0 契約行列を IR 仕様上で凍結する。実装進捗に依存せず、後退不能の契約境界として扱う。
+
+| Contract ID | Domain | Frozen rule | Regression check |
+| --- | --- | --- | --- |
+| `CE0-CTX-IF` | CTX | `ContextQuery/ContextBundle` は preview gate (`previewConfirmed=true`) を満たした場合のみ IR 生成を許可する。 | `previewConfirmed=false` は常に `422 preview_required`。 |
+| `CE0-SAFEMODE-IF` | SAFEMODE | safeMode 既定 `ON`（`meta.safe_mode=true`）を必須とし、`reviewFilter=reviewedOnly` を既定境界として保持する。 | safeMode OFF 入力、unreviewed 混入、既定値緩和は fail-closed。 |
+| `CE0-REVIEW-IF` | REVIEW | `reviewState` は `unreviewed | human_reviewed` のみ。AI による自動昇格を禁止。 | `unreviewed -> human_reviewed` が人手以外経路で発生したら fail。 |
+
+### Core Graph write boundary（CE0-CG-WRITE-IF）
+
+- `ConsensusGraph` への direct write は禁止。
+- AI/worker/API は proposal を生成しても、適用は `patch + approval` のみ許可。
+- quality gate 実行中に direct write path を1件でも検知した場合、検証を即時停止する。
+
+### Freeze invariants
+
+1. Contract ID の追加・改名・削除は禁止（重複定義 0 を維持）。
+2. safeMode 既定ON・unreviewed 保護・Core Graph direct write 禁止の3点は同時成立が必須。
+3. 本節で扱う契約は CE1 以降の実装進捗に依存せず、read-only 参照で運用する。

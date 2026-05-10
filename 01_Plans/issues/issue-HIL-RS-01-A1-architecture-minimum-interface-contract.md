@@ -305,3 +305,24 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `HOLD_PENDING_QUEUE`
 - proceedPolicy:
   - Proceedは `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで禁止。
+
+
+## Stream A critical-path alignment update（2026-05-10）
+
+### Phase 1 Read
+- Read同期: 本issue / FB-P2C A1 issue / HIL-RS-01親計画 issue / ADR-0028。
+- triage stopper check: `Status` / `Priority` 欠落なし。
+
+### Phase 2 ADR明文化
+- Context: CE-0/CE-1 契約がA1外で再定義されると、責務分離と承認ゲートが監査不能化する。
+- Decision: `freezeContractId`, `schemaVersion`, `safeModeBoundary` を参照固定し、`Pending -> Approved | Pending -> Rejected` 以外を禁止。
+- Consequences: AIはproposal-only、人間のみ最終承認。Pendingが残る限り `Hold` 継続。
+
+### Phase 3 Plan（AC / DoD）
+- AC: contract drift 0 / responsibility boundary drift 0 / pending bypass 0 / stop condition consistency 0。
+- DoD: `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで `executeAllowed=false` を維持。
+
+### Phase 4-6 Execute / Verify / Proceed
+- Execute: docs-onlyで契約表現を整合。
+- Verify: 4観点（drift, boundary, pending gate, stop consistency）を照合。
+- Proceed判定: 未解決Pendingがあるため `Hold/Needs-decision`。

@@ -1826,3 +1826,25 @@ state: Needs-decision
 - Result: `Hold`。
 - Reason: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
 - Stop条件評価: 前提崩れ/未定義競合/依存再定義要求なし（停止不要、Hold継続）。
+
+
+## Stream A CE-0/CE-1 completion lock record（2026-05-10）
+
+### Phase 1 Read
+- 対象再読: 本issue / A1最小I/F issue / HIL-RS-01親計画 issue / ADR-0028。
+- triage stopper: `Status`, `Priority` 欠落なし（Stop要因なし）。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE-0/CE-1 の契約をA1以外で再定義すると、`A1 -> A2 -> A3` のゲート整合が破綻する。
+- Decision: A1 fixed keys（`freezeContractId`, `schemaVersion`, `safeModeBoundary` ほか）を再定義せず参照固定し、承認遷移は `Pending -> Approved | Pending -> Rejected` のみ許可。
+- Consequences: Pending残存時は `executeAllowed=false` とし、Go判定を出さない。
+
+### Phase 3 Plan（AC / DoD）
+- AC: safeMode後退0 / contract drift 0 / pending bypass禁止 / read-only handoff成立。
+- DoD: `A2A3_OPEN_ALLOWED` 判定式と固定キー集合が本文内で一意に保全されていること。
+
+### Phase 4-6 Execute / Verify / Proceed
+- Execute: docs-only整合（契約文言のみ）。
+- Verify: `contract drift`, `responsibility boundary`, `pending queue gate`, `stop consistency` を自己照合。
+- Proceed: `a1Status=="Done" && pendingDecisionQueueCount==0 && drift==0` でのみ Go。
+- Current: `Hold/Needs-decision`（Pending解消待ち）。

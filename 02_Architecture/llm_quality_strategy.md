@@ -205,3 +205,35 @@ Layer A で以下を検知した場合は **即時 fail-closed** とし、Layer 
 - Self-Correction は最大3回とし、4回目相当は `fail-closed`（CE2 は `status=held`）で停止する。
 - 本書は実装手順を追加せず、mock-first 契約検証の基準のみを扱う。
 
+
+## CE0 Contract Matrix Quality Lock（CTX / SAFEMODE / REVIEW）
+
+CE0 契約行列は品質戦略より上位の固定境界として扱い、Layer A で必ず先に評価する。
+
+### Context
+
+- CE0 は contract-only freeze であり、実装可否とは独立して判定できる必要がある。
+- `safeMode default ON` / `unreviewed protection` / `Core Graph direct write prohibition` の後退は品質差ではなく契約違反とみなす。
+
+### Decision
+
+Layer A に次の固定監査キーを必須化する。
+
+- `ce0CtxGatePass`（preview gate + closed-world key check）
+- `ce0SafeModeDefaultOnPass`
+- `ce0UnreviewedProtectionPass`
+- `ce0ReviewPromotionManualOnlyPass`
+- `ce0CoreGraphDirectWritePathCount==0`
+- `ce0ContractIdCollisionCount==0`
+
+判定規則:
+
+1. 上記のいずれかが失敗した時点で fail-closed（Layer B 未実行）。
+2. Verify 自己修復は最大3回。4回目相当は停止。
+3. CE1/CE2/CE4 の実装進捗は判定前提にしない（mock contract で評価継続）。
+
+### Consequences
+
+- CE0 契約逸脱を「品質ばらつき」と誤分類しない。
+- Proceed 判定には `Read -> ADR(C/D/C) -> Plan(AC/DoD) -> Execute -> Verify -> Proceed/Stop` の順序証跡を必須化する。
+- Contract ID 衝突、未定義依存、safeMode 後退を検知した場合は `stop` を返す。
