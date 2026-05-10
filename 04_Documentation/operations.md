@@ -5,6 +5,22 @@
 
 ## 0. 文書分類（DOC-OPS-05-11）
 
+## 0.0 クイック導線（最初に確認）
+
+- 実行パラメータの正本: [`02_Architecture/runtime_parameter_registry.md`](../02_Architecture/runtime_parameter_registry.md)
+- strict mode 例外承認フロー正本: [`02_Architecture/strict_mode_exception_approval_flow.md`](../02_Architecture/strict_mode_exception_approval_flow.md)
+- セキュリティ運用方針: [`04_Documentation/security.md`](./security.md)
+- セキュリティ運用判断ガイド: [`04_Documentation/security_operational_guidelines.md`](./security_operational_guidelines.md)
+- E2E検証手順: [`04_Documentation/e2e_testing.md`](./e2e_testing.md)
+
+## 0.0.1 ロールと責務分離（固定）
+
+| ロール | 主責務 | 禁止事項 |
+|---|---|---|
+| Security Officer | セキュリティ観点で例外申請を審査 | 単独で例外を有効化しない |
+| System Owner | システム運用上の最終承認 | 実行作業を単独で兼務しない |
+| Platform Operator | 承認済み手順の実行と証跡記録 | 未承認例外の適用 |
+
 - Classification: **Improve external**（対外文書として改善しつつ維持）
 - Audience: self-host 運用担当者 / PoC管理者 / 初見の技術検証担当
 - Goal: 最小運用の再現手順（更新・確認・安全運用）を単体読解できる形で提供する
@@ -157,7 +173,7 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 
 ### 定点レビュー
 
-- 次回定点レビュー: **2026-04-26 09:00 UTC**
+- 次回定点レビュー: **2026-05-10 09:00 UTC（実施時に更新）**
 - 担当: **Stream F（Unified Feedback & KPI Audit Owner）**
 
 ### 次回監査Runbook（Phase 1〜6固定）
