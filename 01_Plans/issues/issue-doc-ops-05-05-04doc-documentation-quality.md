@@ -463,3 +463,11 @@
 ### Phase 6 Proceed
 - ProceedDecision: **Hold**（DOC-OPS-05 承認証跡待ち）。
 - 次段: 直列規則に従い Gate-B（05-06）へ進行可。
+
+## Stream H mapping exception note（2026-05-10）
+
+- Phase 1 Read Mapping: DOC-OPS-05 の1:1対応を再確認し、`05-05` は **唯一の例外**（対応先が `04_Documentation/*` ではなく `01_Plans/documentation_quality.md`）であることを固定。
+- Phase 2 Plan: AC/DoDに「例外理由（内部品質基準のため Move internal）」を保持することを追加。
+- Phase 3 Execute: `04_Documentation/README.md` に issue↔doc マップを追加し、例外を明示。
+- Phase 4 Verify: `docs-check`（validator / diff体裁）のみで整合を確認。
+- Phase 5 Proceed: 判定は `Hold` 維持（依存証跡待ち）。
