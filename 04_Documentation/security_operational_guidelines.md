@@ -1,571 +1,109 @@
-# Security Operational Guidelines（運用ガイドライン）
+# Security Operational Guidelines
 
-本書は、strict / non-strict いずれの運用プロファイルでも参照できる
-**セキュリティ運用ガイドライン**です。
+対象読者: Security Officer、System Owner、Platform Operator、監査担当者。
 
-> 注意: ここで示す項目は「推奨ガイドライン」です。各組織は法令・規程・システム特性に応じて採否を決定してください。
+目的: kj-atlas の安全設定を変更するときの役割分離、判断基準、停止条件を利用者向けに整理します。
 
-## 0. 文書分類（DOC-OPS-05-14）
+範囲外: 組織固有の承認システム、個別の監査証跡、非公開の例外承認履歴。
 
-- Classification: **Improve external**（公開可能な運用判断ガイドとして維持）
-- Audience: Security Officer / System Owner / Platform Operator / 監査担当
-- Goal: strict標準と公開運用プロファイルの選択判断を、役割分離と固定値付きで再利用可能にする
-- Non-goal: 承認フロー仕様の再定義（正本は `02_Architecture/strict_mode_exception_approval_flow.md`）
-- Public boundary: 組織固有の承認履歴・監査証跡の生データは除外し、公開可能な判断基準と手順のみ提供する
-- Outcome: 役割ごとの判断責務とプロファイル選択条件（D1〜D4）を、外部読者が再利用可能な形で確認できる
-- Related: `02_Architecture/strict_mode_exception_approval_flow.md`, `04_Documentation/security.md`, `04_Documentation/operations.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
+## 役割
 
-## Stream D drift-check update（2026-04-30）
+| 役割 | 主な責務 |
+| --- | --- |
+| Security Officer | セキュリティ例外、外部送信、SafeMode 緩和の可否を確認する |
+| System Owner | 業務上の必要性と利用者影響を確認する |
+| Platform Operator | 設定変更、ロールバック、運用ログ確認を実行する |
+| 監査担当 | 変更理由、確認結果、復旧可能性を確認する |
 
-- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に `operations.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の導線を再確認。
-- Phase 2 情報構造: 本文責務を維持（operations=runbook / security=基底方針 / guidelines=運用判断補助）。
-- Phase 3 用語統一: `Security Officer / System Owner / Platform Operator`、状態語彙、D1〜D4固定値の一致を確認。
-- Phase 4 品質ゲート: docs-check と `git diff --check` 前提、自己修復上限3回を維持。
-- Phase 5 完了判定: 本更新は docs-only・allowlist 内で完結し、未承認事項の確定化は行わない。
+同じ人が複数の役割を兼ねる場合でも、判断責務と実行責務は記録上分けます。
 
-## DOC-OPS-05 統合同期メモ（2026-04-18）
+## 変更前に確認する4点
 
-- 連携 issue: `issue-doc-ops-05-06` / `issue-doc-ops-05-11` / `issue-doc-ops-05-13` / `issue-doc-ops-05-14`
-- canonical 用語: `Security Officer / System Owner / Platform Operator`
-- canonical 状態語彙: `DraftRequest -> ApprovalPending -> Approved -> ActiveException -> RollbackPending -> Closed`（未確定時 `StoppedForClarification`）
-- fixed values (D1〜D4): `4h / 2h / 代理承認なし / 48h + 15m/60m`
-- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先）
+1. 何を変えるか: 対象の環境変数、サービス、データ出力。
+2. なぜ必要か: 利用者価値、障害対応、検証目的。
+3. 何が外へ出るか: LLM 入力、audit event、export、ログ。
+4. 戻せるか: rollback 手順、停止条件、確認コマンド。
 
-## 0.1 Context / Decision / Consequences（AUTH-OPS-03整合）
+## 例外判断の固定値
 
-### Context
+| ID | 基準 |
+| --- | --- |
+| D1 | 例外の有効期間は原則 4h 以内 |
+| D2 | 緊急例外でも 2h 以内に再確認 |
+| D3 | 代理承認だけで SafeMode 緩和を確定しない |
+| D4 | 48h を超える例外は、15m/60m の監視観点を含めて再評価 |
 
-- strict mode例外緩和は D1〜D4 固定値で運用する設計が確定している。
-- 本書は「運用判断の補助」、`security.md` は「安全境界」、`operations.md` は「実行runbook」を担当する。
+これらは公開可能な運用基準です。組織固有の承認者名や証跡 ID はここに書きません。
 
-### Decision
+## よくある判断
 
-- 役割語彙を `Security Officer / System Owner / Platform Operator` に統一する。
-- D1〜D4（4h承認TTL、最大2h、代理承認なし、48hレビュー+15m/60mSLA）をプロファイル選択時の確認項目として固定する。
-- 導線を `strict_mode_exception_approval_flow.md`（正本）-> `security.md`（基底方針）-> `security_operational_guidelines.md`（本書）-> `e2e_testing.md`（検証）として明示する。
+### local LLM を有効にする
 
-### Consequences
+Go 条件:
 
-- 役割分離と固定値の参照が1ページで確認でき、実運用での判断ブレを抑制できる。
-- 文書横断ドリフト（用語/役割/導線/固定値）の差分点検が容易になる。
+- 宛先が local または組織内 endpoint である。
+- endpoint が `/generate` に `{ "text": "..." }` を返す。
+- 入力に秘密情報を含めない運用が確認済み。
 
-### 0.2 Verify必須チェック（用語・役割・導線・固定値）
+Stop 条件:
 
-security系文書更新時は、次を同時に満たさない限り Proceed しない。
+- 宛先が外部サービスだった。
+- 入力内容の保持・二次利用条件が確認できない。
 
-1. 用語: `Security Officer / System Owner / Platform Operator` を統一している
-2. 役割: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）が崩れていない
-3. 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` の順で参照可能
-4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）に差分がない
+### large-scale LLM を有効にする
 
-### 0.2.1 HIL-RS-02-A3 同期確認（2026-05-04）
+Go 条件:
 
-- A3 Draft昇格準備では、運用判断時の必須確認を「4観点同時確認」に固定する。
-- 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離が崩れる提案は採択せず、`StoppedForClarification` とする。
+- `KJ_ATLAS_LLM_ESCALATION_ENABLED=true`
+- `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true`
+- `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` に実際の host が入っている。
+- Security Officer と System Owner の確認がある。
 
-### 0.3 Stream D 実行メモ（security docs-only）
+Stop 条件:
 
-Stream D で本書を更新する場合、編集対象は `operations.md` / `security.md` / `security_operational_guidelines.md` に限定する。
+- allowlist と実際の host が一致しない。
+- 未レビュー情報や秘密情報が送信される可能性が残っている。
 
-- 承認未了の決定事項は本文へ反映しない（検知時は停止）。
-- D1〜D4、役割語彙、導線の3観点を docs-check で同時確認する。
-- 自己修復は最大3回。3回で収束しない場合は `Hold` として Proceed しない。
+### audit HTTP export を有効にする
 
-## 0.4 責務境界（guidelines の単一責務）
+Go 条件:
 
-### 対象読者
-- Security Officer / System Owner（採否判断の責任者）
-- Platform Operator（実行前チェック担当）
-- 監査担当（判断妥当性の確認者）
+- audit endpoint が管理済み。
+- timeout と queue size が設定済み。
+- 送信 payload に秘密情報が含まれない。
 
-### 前提知識
-- `security.md` に定義された後退禁止境界（SafeMode既定ON、漏えい防止）を理解していること
-- `operations.md` が実行手順の正本であること
-- 承認制度の正本は `strict_mode_exception_approval_flow.md` であること
+Stop 条件:
 
-### 公開してよい情報
-- strict / 公開運用プロファイルの選択観点
-- 役割分離（2者承認 + 実行責務分離）と D1〜D4 チェック観点
-- 判断記録の最小粒度（日時、責任主体、見直し条件）
+- audit endpoint の所有者や保持期間が不明。
+- SafeMode 中の外部送信を許可する理由が記録されていない。
 
-### 本書で扱わない情報（security / operations へ委譲）
-- セキュリティ原則そのものの定義・禁止事項の正本化（`security.md`）
-- 日次運用コマンドや復旧Runbook（`operations.md`）
+## 変更記録に残す項目
 
-## 1. 目的
+- 変更日時
+- 対象環境
+- 変更した環境変数
+- 承認した役割
+- 実行した人
+- rollback 手順
+- 確認コマンドと結果
 
-- 運用プロファイル選択時の判断材料を共通化する。
-- 「誰が何を判断するか」を明確にし、属人化を減らす。
-- 監査時に説明可能な最低限の記録粒度をそろえる。
+## 確認コマンド
 
-## 2. 役割（登場人物）
+```bash
+curl -fsS http://localhost:8080/api/healthz
+docker compose logs api --tail=100
+```
 
-- **Security Officer**: セキュリティ妥当性を評価する責任者。
-- **System Owner**: 業務継続・提供責任を持つ責任者。
-- **Platform Operator**: 実際の設定変更と運用記録を担当する実行者。
-- **Reviewer/Auditor**: 定期レビューで運用履歴を検証する担当。
+API key を有効にしている場合:
 
-## 3. 運用プロファイル別ガイド
-
-### 3.1 strict標準プロファイル（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）
-
-推奨:
-
-- 事前ユーザ登録フロー（手動/自動連携）を定義する。
-- 未登録拒否イベントの監視と問い合わせ導線を整える。
-- 例外運用が必要な場合の承認・記録テンプレートを用意する。
-
-### 3.2 公開運用プロファイル（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` 継続）
-
-推奨:
-
-- 認証境界（IdP設定、到達経路、公開範囲）を明示する。
-- 編集系操作（write/share/export）を少人数へ制限する。
-- 新規作成件数・異常増加の監視閾値を定義する。
-- 事故時に strict または read-only へ戻す切替手順を整備する。
-
-## 4. 記録ガイド（最小）
-
-運用決定時に残すことを推奨:
-
-- 決定日時、決定者、対象環境
-- 採用プロファイル（strict / 公開運用）
-- 主な理由（機密性、公開要件、運用体制）
-- 見直し予定日（定期レビュー）
-
-## 5. 見直し
-
-- 四半期または主要インシデント後に見直すことを推奨。
-- 見直し時は `04_Documentation/security.md` と `02_Architecture/strict_mode_exception_approval_flow.md` の整合を確認する。
-
-
-## 6. AUTH-OPS-03 固定値（D1〜D4）チェック
-
-- D1: Security Officer先行、承認TTL=4h
-- D2: tenant単位、最大2h（超過時はstrictへ自動復帰）
-- D3: 2者共同判定、代理承認なし
-- D4: 変更台帳+監査ID相互参照、48hレビュー、15m一次/60m二次エスカレーション
-
-運用時は上記4点を同時に満たすこと。満たせない場合は `StoppedForClarification` 扱いで停止し、再承認を行う。
-
-A3 docs同期では `operations.md` を runbook整合確認先として扱い、canonical語彙・D1〜D4固定値の是正が必要な場合のみ最小修正を許可する。
-
-## 7. 関連導線（読む順序）
-
-1. 設計正本: `02_Architecture/strict_mode_exception_approval_flow.md`
-2. セキュリティ基底方針: `04_Documentation/security.md`
-3. 運用判断ガイド（本書）: `04_Documentation/security_operational_guidelines.md`
-4. 検証方針: `04_Documentation/e2e_testing.md`（docs-check 観点の回帰確認）
-
-補助導線: `04_Documentation/operations.md` は runbook 同値確認先として並行参照する。
-
-## 8. 同一ワークフロー（Read → C/D/C → Execute → Verify → Proceed）
-
-運用判断ガイドの更新は次の共通手順で行う。
-
-1. **Read**
-   - `strict_mode_exception_approval_flow.md` / `security.md` / `security_operational_guidelines.md` / `e2e_testing.md` を順に再読する。
-   - `operations.md` は runbook 同値確認先として並行参照する。
-   - 用語・役割・導線・固定値（D1〜D4）の差分がないことを確認する。
-2. **ADR CDC**
-   - Context: 本書は運用判断の補助文書であり、承認フロー仕様そのものではない。
-   - Decision: Verify時の必須4観点（用語/役割/導線/固定値）を固定する。
-   - Consequences: ドキュメント横断同期時の停止条件を明確化できる。
-3. **Plan**
-   - 役割（Security Officer / System Owner / Platform Operator）と D1〜D4 を正本と照合する。
-   - SafeMode・share/export漏洩防止の後退表現が差分にないことを確認する。
-4. **Execute**
-   - 本書の責務を「運用判断補助」に限定し、承認フロー正本の再定義は行わない。
-5. **Verify**
-   - docs-check とリンク整合確認を行う。
-   - 失敗時は最小修正で再実行し、**自己修復は最大3回**までとする。
-6. **Proceed**
-   - 3回で収束しない場合は fail-safe 停止し、Decision Queue / issue memo に記録する。
-
-### フェイルセーフ停止条件
-
-- SafeMode 既定ONの後退要求
-- share/export 漏洩防止の緩和要求
-- D1〜D4・役割分離・導線の不一致が解消しない状態
-- 承認未了の決定事項（未確定Q項目、再承認待ち）を確定事項として反映しようとした場合
-
-## 9. DOC-OPS-05 Stream F 専任サイクル（P1→P6）
-
-> 1サイクルで1文書のみを扱う。各Phase冒頭で本書を再読する。
-
-### P1 Read（再読）
-
-- 本書の Classification / Audience / Goal / Non-goal / Public boundary を再確認する。
-- D1〜D4、役割語彙（Security Officer / System Owner / Platform Operator）、SafeMode境界を再確認する。
-
-### P2 ADR CDC
-
-- Context: 本書は公開向け運用判断ガイドであり、承認フロー仕様の正本ではない。
-- Decision: `Improve external` を維持し、内部正本（`02_Architecture/strict_mode_exception_approval_flow.md`）への導線を固定する。
-- Consequences: 公開境界と内部正本の責務が分離され、運用判断の再現性が上がる。
-
-### P3 Plan
-
-- docs-only で更新し、実装/設定値の変更は行わない。
-- Verify手順（docs-check + 差分整合）を先に固定する。
-
-### P4 Execute
-
-- 本書内の公開ガイド記述を、役割語彙・固定値・導線の一致を保ったまま更新する。
-- 重複説明は `security.md` / `operations.md` 側へ委譲し、責務混在を避ける。
-
-### P5 Verify
-
-- `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator|Read → C/D/C → Execute → Verify → Proceed|フェイルセーフ" 04_Documentation/security_operational_guidelines.md`
-- `git diff --check`
-- D1〜D4 固定値の不一致を検知した場合は即時停止し、修復完了まで Proceed へ進めない。
-
-### P6 Proceed
-
-- Ready条件: 用語ドリフトなし、固定値一致、スコープ競合なし。
-- 停止条件: 自己修復3回超過、用語ドリフト未収束、スコープ競合検出（例: `operations.md` 変更要求）。
-
-
-## Stream F docs-only execution cycle（DOC-OPS-05）
-
-1. **Read**: 対象文書と関連正本（00〜02）を再読し、公開境界を確認する。
-2. **CDC**: Context / Decision / Consequences を明文化し、分類結果（Move internal / Improve external）を固定する。
-3. **Plan**: AC/DoD を先に定義し、docs-only スコープ（`03_Implement/**` 非変更）を明示する。
-4. **Execute**: 文書本文を更新し、Audience / Goal / Non-goal / Public boundary / Outcome / Related を維持する。
-5. **Verify**: リンク・語彙・固定値（必要時 D1〜D4）を確認し、`git diff --check` で体裁崩れを検査する。
-6. **Proceed**: Ready/Hold/Needs-decision を記録し、次Issueへ引き継ぐ。
-
-### Fail-safe
-
-- 語彙ドリフトが解消不能な場合は作業を停止する。
-- Verify の自己修復は最大3回まで。3回超過時は Hold 化してエスカレーションする。
-
-## 0.4 Phase 1-5 実行記録（2026-04-16 / DOC-OPS-05-14）
-
-- Phase 1 Read: 各Phase開始時に `security_operational_guidelines.md` / `security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` を再Read。
-- Phase 2 Plan: docs-only で公開運用判断ガイドに限定し、承認フロー正本の再定義を回避。
-- Phase 3 Execute: プロファイル判断と役割分離の記述を維持しつつ、導線を固定。
-- Phase 4 Verify（必須）:
-  - 語彙: `Security Officer / System Owner / Platform Operator`
-  - 役割: 2者承認と Platform Operator 実行責務分離
-  - 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`（`operations.md` は runbook 同値確認先として並行参照）
-  - 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h+15m/60m
-  - 実施コマンド: `rg` と `git diff --check`
-- Phase 5 Proceed: 判定は **Ready**。自己修復3回超過時は **StoppedForClarification** で停止。
-
-## Stream H 専任: DOC-OPS-05後半 実行記録（2026-04-16）
-
-### Phase 1 Read
-
-- 対象本文と関連正本（`00_Prompt/*` / `01_Plans/adr/ADR-0001` / `02_Architecture/*`）を再読し、公開境界を確認した。
-- 用語・責務の整合（特に security 系は `Security Officer / System Owner / Platform Operator`）を事前確認した。
-
-### Phase 2 Plan（AC/DoD補完）
-
-- AC補完:
-  - Audience / Goal / Non-goal / Public boundary / Outcome / Related の冒頭メタを維持する。
-  - 本文は docs-only で更新し、実装仕様・設定値の新規決定を持ち込まない。
-  - 参照導線（関連文書・issue memo）を切断しない。
-- DoD補完:
-  - Read → Plan → Execute → Verify → Proceed の記録を残す。
-  - Verify で `docs-check` とリンク整合を確認する。
-
-### Phase 3 Execute
-
-## Stream E serial update log（2026-04-29 / Doc-Ops Draft lane）
-
-### Phase 1 Plan
-
-- AC/DoD不足の扱いを先に固定した。
-  - AC: 用語（Security Officer / System Owner / Platform Operator）、役割（2者承認 + 実行責務分離）、導線（architecture → security → guidelines → e2e）、固定値（D1〜D4）を同時一致させる。
-  - DoD: docs-only 更新、docs-check 実施、Proceed 判定（Go/Hold/Needs-decision）を記録する。
-- 設計起因の不整合が見つかった場合は文書内で解消せず停止報告する方針を明示した。
-
-### Phase 2 Read同期
-
-- `02_Architecture/strict_mode_exception_approval_flow.md`、`04_Documentation/security.md`、`04_Documentation/operations.md`、`04_Documentation/e2e_testing.md` との整合観点を再確認した。
-- 本書の責務を「運用判断補助」に限定し、承認フロー仕様の再定義を行わないことを再確認した。
-
-### Phase 3 Execute
-
-- 本書の公開境界（公開可能情報のみ、組織固有の承認履歴・監査証跡は除外）を維持した。
-- 用語・責務・導線・固定値を既存正本に合わせ、追加の制度決定を持ち込まない方針を固定した。
-
-### Phase 4 Verify
-
-- docs-check 観点（リンク・表記・固定値）で自己検証し、差分の体裁崩れがないことを確認する。
-- 自己修復の上限は 3 回、4 回目相当は `StoppedForClarification` とする。
-
-### Phase 5 Proceed
-
-- 判定: **Go**（停止条件非該当）。
-- 次アクション: security lane の同一手順を他の Draft issue に横展開する。
-
-- 本文の方針を維持したまま、Stream H後半の実行責務（Phase運用・停止条件）を追記した。
-- 編集範囲外（backend/frontendコード、shared統合3ファイル）は変更しない。
-
-### Phase 4 Verify（docs-check + リンク整合）
-
-- `rg` で必須メタ語彙・Phase見出し・停止条件語彙を確認した。
-- `git diff --check` で体裁崩れがないことを確認した。
-- security 系は D1〜D4 と役割語彙の整合を追加確認した。
-
-### Phase 5 Proceed
-
-- 判定: **Ready**
-- 継続条件: 次回更新でも同一フェーズ順序と docs-only 制約を維持する。
-
-### 停止条件（固定）
-
-- 責務用語不整合（`Security Officer / System Owner / Platform Operator` の混在・崩れ）を検知した場合は停止。
-- D1〜D4 固定値矛盾（`4h / 2h / 代理承認なし / 48h+15m/60m`）を検知した場合は停止。
-- Verify の自己修復が3回を超える場合は `StoppedForClarification` として停止。
-
-## Stream I 専任サイクル（DOC-OPS-05 security guidelines / 2026-04-18）
-
-### Phase 1) Read
-
-- `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` の関連導線と固定値（D1〜D4）を再読した。
-- Stream G 競合回避のため、対象は `security.md` / `security_operational_guidelines.md` と対応issueのみに限定した。
-
-### Phase 2) Plan（語彙・責務・導線・固定値）
-
-- 語彙: `Security Officer / System Owner / Platform Operator` を統一維持。
-- 責務: 2者承認 + 実行責務分離を維持。
-- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を維持。
-- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h + 15m/60m を維持。
-
-### Phase 3) Execute
-
-- 本書に Stream I 実行記録を追加し、運用判断補助という責務境界を維持した。
-
-### Phase 4) Verify（docs-check + 参照整合）
-
-- docs-check: `rg` と `git diff --check` で必須語彙・固定値・体裁整合を確認。
-- 参照整合: `security.md` と対応issueの同一ワークフロー、停止条件（自己修復3回上限）を確認。
-
-### Phase 5) Proceed（運用注意点）
-
-- 判定: **Ready**（Stream G 競合検出なし）。
-- 運用注意点: 競合検出時は即停止、自己修復は最大3回。3回超過時は `Hold` / `StoppedForClarification` で停止する。
-
-## 10. Stream K docs-only execution log（2026-04-19 / DOC-OPS-05-14）
-
-### Phase 1 Read
-
-- `security_operational_guidelines.md` / `security.md` と対応issue（DOC-OPS-05-13, 05-14）を再読し、Scope・公開境界・運用責務の整合を確認。
-
-### Phase 2 ADR CDC
-
-- Context: 本書は公開向け運用判断ガイドであり、承認フロー正本の再定義を行わない。
-- Decision: 既存方針（Improve external、D1〜D4固定、役割分離）を維持し、Stream K の実行証跡のみ追記。
-- Consequences: 他ストリームとの責務競合を増やさず、再利用可能な運用記録を追加できる。
-
-### Phase 3 Plan
-
-- docs-only / 最小差分で更新し、実装や共有統合ファイルの編集は行わない。
-- Verify で `docs-check + リンク整合 + git diff --check` を実施する。
-
-### Phase 4 Execute
-
-- 本節を追加し、Plan → Execute → Verify → Proceed の固定ワークフローに沿った実施証跡を残した。
-
-### Phase 5 Verify
-
-- 実施: `rg -n "Stream K docs-only execution log|Phase 1 Read|Phase 5 Verify|D1|D2|D3|D4|Security Officer|System Owner|Platform Operator" 04_Documentation/security_operational_guidelines.md`
-- 実施: `git diff --check`
-- 結果: 体裁崩れなし。自己修復 0/3。
-
-### Phase 6 Proceed
-
-- 判定: **Ready**
-- 停止条件: 自己修復3回超過、または用語/役割/導線/固定値不一致が残る場合は fail-safe 停止。
-
-## Stream G 実行記録（DOC-OPS-05文書群② / 2026-04-19）
-
-### Phase 1 Read同期
-- `strict_mode_exception_approval_flow.md` / `security.md` / `operations.md` / 本書を再読し、4観点（用語・役割・導線・固定値）を同期確認した。
-- 役割分離（2者承認: Security Officer + System Owner、実行: Platform Operator）と D1〜D4 固定値の同値を確認した。
-
-### Phase 2 CDC明文化（判断分岐時のみ）
-- 判定: **分岐なし（CDC追加なし）**。
-- 理由: 本書は運用判断補助として既存Decisionを維持する更新であり、追加の方針分岐が発生していない。
-
-### Phase 3 Execute（文書更新）
-- Stream G のフェーズ進行記録を追記し、公開境界（Improve external / Non-goal: 承認フロー正本の再定義禁止）を維持した。
-- 既存の fail-safe 停止条件（不一致時停止、自己修復3回上限）を変更していない。
-
-### Phase 4 Verify（docs-check + 用語/固定値照合）
-- docs-check: `rg -n "Classification|Audience|Goal|Non-goal|Public boundary|Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|StoppedForClarification" 04_Documentation/security_operational_guidelines.md 04_Documentation/security.md 04_Documentation/operations.md`
-- diff-check: `git diff --check`
-- 判定: Pass（必須メタ・用語・固定値の不一致なし）。
-
-### Phase 5 Proceed/Stop
-- 判定: **Proceed（Ready）**。
-- 停止条件: D1〜D4不一致、導線切断、または語彙ドリフトが残る場合は `StoppedForClarification` として停止する。
-
-## Stream I boundary-first execution record（2026-04-19 / DOC-OPS-05-14）
-
-### Phase 1) Read
-- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` と `04_Documentation/security.md` を再読。
-
-### Phase 2) セキュリティ境界優先
-- D1〜D4、2者承認、Platform Operator実行責務分離、SafeMode後退禁止を最優先で確認。
-
-### Phase 3) e2e/testing/release整合
-- `operations.md` と `e2e_testing.md` の runbook/検証導線が本書の運用判断基準と一致することを確認。
-
-### Phase 4) installation/config/narratives/local-llm整合
-- 公開向け導入・LLM運用・narratives説明の境界が security guideline を逸脱していないことを確認。
-
-### Phase 5) Verify
-- docs-check + `git diff --check` を実施。
-
-### Phase 6) Proceed
-- 判定: **Ready**（公開運用判断ガイドとして Improve external 方針を維持）。
-
-## Stream E serial cycle（2026-04-20 / DOC-OPS-05後半 docs-only）
-
-### Phase 1 Read
-- 本文先頭メタ（Classification / Audience / Goal / Non-goal / Public boundary / Outcome / Related）を再確認。
-
-### Phase 2 Plan
-- 変更は docs-only に限定し、Plan→Execute→Verify→Proceed の固定順序で進める。
-- Verify失敗時の自己修復は最大3回、4回目相当は停止する。
-
-### Phase 3 Execute
-- 本文の公開境界・導線を維持し、safeMode既定ON／漏えい防止後退禁止を再確認。
-
-### Phase 4 Verify
-- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Outcome|Related" 04_Documentation/security_operational_guidelines.md`
-- `git diff --check`
-
-### Phase 5 Proceed
-- 判定: **Ready**。
-- 次担当へ: 致命的矛盾（上位文書不整合・安全境界後退・自己修復3回超過）を検知した場合は停止してIssueへ記録する。
-
-## 11. Track 4 sync addendum（2026-04-22）
-
-- 本書の更新は `05-05 → 05-11 → 05-13 → 05-14` の直列順序に従う。
-- 各Phase開始時Read同期を必須化し、`security.md` / `operations.md` / `strict_mode_exception_approval_flow.md` の整合を先に確認する。
-- ADRタスクは Context / Decision / Consequences を先行明文化し、承認（DecisionStatus=Fixed）確認後に Execute する。
-- Verify失敗時の自己修復は最大3回。超過時は停止して Hold / StoppedForClarification とする。
-
-## 12. Stream M serial update log（2026-04-22 / security_operational_guidelines担当）
-
-### Phase 1 Read
-- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` と基底方針 `04_Documentation/security.md` を再読。
-- 同期順序 `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` を再確認。
-
-### Phase 2 Plan
-- 用語を `Security Officer / System Owner / Platform Operator` に固定。
-- 役割を「2者承認（Security Officer + System Owner）/ 実行（Platform Operator）」で固定。
-- D1〜D4（4h / 2h / 代理承認なし / 48h+15m/60m）を運用判断チェック項目として維持。
-- 失敗時は `Hold` / `StoppedForClarification` で停止し、自己修復3回上限を適用。
-
-### Phase 3 Execute
-- 本節を追記し、運用判断ガイドとしての証跡を更新（docs-only、本文責務は不変更）。
-
-### Phase 4 Verify
-- docs-check（用語・責務・導線・D1〜D4）を `rg` で照合。
-- `git diff --check` でフォーマット崩れがないことを確認。
-
-### Phase 5 Proceed
-- 判定: **Ready**。
-- フェイルセーフ: 固定値不一致、役割ドリフト、導線切断、自己修復3回超過時は停止。
-
-## 13. Stream L serial lane log（2026-04-26 / DOC-OPS-05-14）
-
-### Phase 1 Read
-- `issue-doc-ops-05-14-04doc-security-operational-guidelines.md` と本書、`security.md` / `operations.md` を再読。
-
-### Phase 2 ADR/CDC
-- Context: 本書は公開向けの運用判断補助で、承認制度の正本ではない。
-- Decision: `Improve external` を維持し、`Security Officer / System Owner / Platform Operator`、2者承認+実行分離、D1〜D4固定、safeMode後退禁止を固定。
-- Consequences: 運用判断の再利用性を保ちつつ、security/runbookとの責務境界を維持できる。
-
-### Phase 3 Plan
-- Scope: docs-only追記。
-- Non-goal: 実装/設定値変更、承認フロー再定義。
-- AC/DoD: 4観点（用語/役割/導線/固定値）と停止条件を維持。
-- Validation: `rg` / `git diff --check`。
-- Stop: 自己修復3回超過、不整合未収束。
-
-### Phase 4 Execute
-- 本節を追加し、DOC-OPS-05-14直列完了の証跡を追記。
-
-### Phase 5 Verify
-- docs-check観点で不整合なし（自己修復 0/3）。
-
-### Phase 6 Proceed
-- 判定: **Ready**。
-
-
-## Stream G mini-Phase serial run（2026-04-27）
-
-### Phase 1 Read
-- 対応Issue（`DOC-OPS-05-14`）と本書の分類ヘッダを再読し、公開境界を確認。
-
-### Phase 2 Plan
-- 変更責務を docs-only の記録同期に限定し、本文の分類（Move internal / Improve external）を維持。
-- 共通ACテンプレ（Scope固定 / 境界明示 / GoNoGo / docs-check / 3回上限）を適用。
-
-### Phase 3 Execute
-- 本節を追記し、Read→Plan→Execute→Verify→Proceed の直列実行証跡を固定。
-- 指定外ファイル・実装コード・共有統合ファイルは未編集。
-
-### Phase 4 Verify
-- `rg -n "DOC-OPS|Classification|Audience|Goal|Public boundary|Go/No-Go|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5" 04_Documentation/security_operational_guidelines.md`
-- `git diff --check`
-- self-repair count: 0/3。
-
-### Phase 5 Proceed
-- 判定: **Ready**（分類方針と公開境界を維持）。
-
-## 0.5 DOC-OPS-02 固定同期順（guidelines運用）
-
-本書は判断補助文書として、次の固定順序で同期する。
-
-1. `02_Architecture/strict_mode_exception_approval_flow.md`
-2. `04_Documentation/security.md` / `04_Documentation/security_operational_guidelines.md` / `04_Documentation/operations.md`
-3. `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md`
-4. `AGENTS.md`
-
-同期時は、以下を同時に満たすこと。
-
-- 用語: `Security Officer / System Owner / Platform Operator`
-- 役割: 2者承認 + 実行責務分離
-- 導線: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`
-- 固定値: D1=4h, D2=2h, D3=代理承認なし, D4=48h/15m/60m
-
-未収束時は自己修復を最大3回まで実施し、4回目相当は `StoppedForClarification` で停止する。
-
-## Stream F docs sync log（2026-05-03）
-
-### Phase 1 Read
-- `02_Architecture/strict_mode_exception_approval_flow.md` を正本として再読し、`security.md` / `operations.md` / 本書の同期状態を確認。
-
-### Phase 2 Plan
-- AC/DoDを補完: 用語・役割・導線・固定値（D1-D4）を同時一致させる。
-- Non-goal: 仕様追加、固定値変更、承認フロー正本の再定義。
-
-### Phase 3 Execute
-- 本節を docs-only で追記し、guidelines責務（運用判断補助）を維持したまま4観点一致の証跡を追加。
-
-### Phase 4 Verify
-- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|strict_mode_exception_approval_flow|e2e_testing|StoppedForClarification" 04_Documentation/security.md 04_Documentation/operations.md 04_Documentation/security_operational_guidelines.md`
-- `git diff --check`
-- 判定: 不整合なし（自己修復 0/3）。
-
-### Phase 5 Proceed/Stop
-- 判定: **Proceed (Ready)**。
-- 停止条件: 4観点不一致または競合兆候検知時は `StoppedForClarification`。
-
-
-## Stream M docs-only sync log（2026-05-05）
-
-- Phase 1 Read: `02_Architecture/strict_mode_exception_approval_flow.md` を起点に、`security.md` / `operations.md` / `e2e_testing.md` の最新記述を再読。
-- Phase 2 Plan: AC/DoD 不足を補完し、`Security Officer / System Owner / Platform Operator`、2者承認+実行分離、導線、D1〜D4 を同時一致条件に固定。
-- Phase 3 Execute: 本書は運用判断補助の範囲でのみ同期し、承認制度・固定値そのものの再定義は行わない。
-- Phase 4 Verify: 導線 `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md` と、D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m を確認。
-- Phase 5 Proceed: 未解決論点なし。自己修復が3回で収束しない場合は `StoppedForClarification` で停止する。
+```bash
+curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
+```
+
+## 関連文書
+
+- [security.md](security.md)
+- [configuration.md](configuration.md)
+- [operations.md](operations.md)
+- [e2e_testing.md](e2e_testing.md)
+- [strict_mode_exception_approval_flow.md](../02_Architecture/strict_mode_exception_approval_flow.md)

@@ -1,22 +1,62 @@
-# CE2 Low-risk AI Assist（proposal-only運用）
+# CE2 Low-Risk AI Assist
 
-## 概要
+対象読者: AI 提案機能を使う利用者、レビュー担当者、QA。
 
-CE2では AI の出力を**即時適用せず**、`proposalId + diff + sourceBundleHash` を持つ提案として扱います。
+目的: AI 出力を「提案」として扱い、人間が採用・保留・破棄を判断する運用を説明します。
 
-- API: `POST /ai/proposals/island-summary`
-- 監査記録: `POST /ai/proposals/audit`
-- UI: 提案は `Adopt / Hold / Reject` で人間が確定
+範囲外: AI 出力の自動採用、自動公開、レビュー済み状態への自動昇格。
 
-## 安全境界
+## 基本方針
 
-- 自動適用（auto-apply）は実装しません。
-- `adopt` は明示的な人間操作でのみ実行します。
-- 監査ログ（採用/保留/却下）は proposalId 単位で残します。
+CE2 の AI assist は proposal-only です。AI は候補や下書きを出せますが、ドキュメントを自動で確定変更しません。
 
-## 最低運用フロー
+提案には、少なくとも次の情報が必要です。
 
-1. 提案生成（proposed）
-2. 人間レビュー（内容確認）
-3. `adopt` / `hold` / `reject`
-4. 監査イベント確認（proposalIdベース）
+- `proposalId`
+- `diff`
+- `sourceBundleHash`
+- `rationale`
+- `status`
+- `reviewState`
+
+## 状態
+
+| 状態 | 意味 |
+| --- | --- |
+| `proposed` | AI または補助機能が提案した状態 |
+| `accepted` | 人間が採用した状態 |
+| `rejected` | 人間が破棄した状態 |
+| `held` | 根拠不足、hash 不一致、追加確認待ち |
+
+`human_reviewed` への変更は、人間の明示操作だけで行います。
+
+## 利用フロー
+
+1. AI 提案を生成する。
+2. `sourceBundleHash` と対象データが対応していることを確認する。
+3. 差分を読む。
+4. 必要なら手で修正する。
+5. `accept`、`hold`、`reject` を選ぶ。
+6. 判断理由を記録する。
+
+## 採用してはいけない例
+
+- hash が一致しない。
+- 提案が元データにない断定を追加している。
+- 未レビュー情報を確定情報として扱っている。
+- 秘密情報や個人情報が出力に混ざっている。
+- SafeMode の境界を緩める内容になっている。
+
+## 関連 API
+
+- `POST /ai/proposals/island-summary`
+- `POST /ai/proposals/audit`
+
+API の詳細は実装と設計正本を参照してください。この文書では、利用者向けの安全な扱いだけを説明します。
+
+## 関連文書
+
+- [narratives.md](narratives.md)
+- [local_llm_ops_guide.md](local_llm_ops_guide.md)
+- [security.md](security.md)
+- [canonicalization.md](canonicalization.md)

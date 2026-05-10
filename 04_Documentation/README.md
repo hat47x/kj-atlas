@@ -1,34 +1,35 @@
-# 04_Documentation Hub
+# 04_Documentation
 
-このREADMEは `04_Documentation/` 配下の公開向け運用ドキュメント導線を定義します。
+`04_Documentation` は、kj-atlas を導入・設定・運用する人のための公開ガイドです。内部の作業ログ、issue 管理、設計判断の詳細はこの階層には置かず、利用者が再現できる手順と判断基準だけを残します。
 
-## DOC-OPS-05 issue ↔ documentation mapping（Stream H）
+## まず読む文書
 
-| DOC-OPS-05 Issue | Primary target document | Classification |
-| --- | --- | --- |
-| `issue-doc-ops-05-01-04doc-canonicalization.md` | `04_Documentation/canonicalization.md` | Move internal |
-| `issue-doc-ops-05-02-04doc-codex-skill-operations.md` | `04_Documentation/codex_skill_operations.md` | Move internal |
-| `issue-doc-ops-05-03-04doc-configuration.md` | `04_Documentation/configuration.md` | Improve external |
-| `issue-doc-ops-05-04-04doc-diagnostics.md` | `04_Documentation/diagnostics.md` | Improve external |
-| `issue-doc-ops-05-05-04doc-documentation-quality.md` | `01_Plans/documentation_quality.md`（例外: 04配下対象なし） | Move internal |
-| `issue-doc-ops-05-06-04doc-e2e-testing.md` | `04_Documentation/e2e_testing.md` | Improve external |
-| `issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md` | `04_Documentation/e2e_verification_log_2026-03-03.md` | Move internal |
-| `issue-doc-ops-05-08-04doc-installation.md` | `04_Documentation/installation.md` | Improve external |
-| `issue-doc-ops-05-09-04doc-local-llm-ops-guide.md` | `04_Documentation/local_llm_ops_guide.md` | Improve external |
-| `issue-doc-ops-05-10-04doc-narratives.md` | `04_Documentation/narratives.md` | Improve external |
-| `issue-doc-ops-05-11-04doc-operations.md` | `04_Documentation/operations.md` | Improve external |
-| `issue-doc-ops-05-12-04doc-release.md` | `04_Documentation/release.md` | Improve external |
-| `issue-doc-ops-05-13-04doc-security.md` | `04_Documentation/security.md` | Improve external |
-| `issue-doc-ops-05-14-04doc-security-operational-guidelines.md` | `04_Documentation/security_operational_guidelines.md` | Improve external |
+| 目的 | 文書 |
+| --- | --- |
+| 初回起動 | [installation.md](installation.md) |
+| 環境変数と安全な既定値 | [configuration.md](configuration.md) |
+| 日常運用、更新、バックアップ | [operations.md](operations.md) |
+| セキュリティ境界と SafeMode | [security.md](security.md) |
+| 受け入れ確認と E2E | [e2e_testing.md](e2e_testing.md) |
+| リリース前確認 | [release.md](release.md) |
 
-## Verification checklist（docs-only）
+## 機能別リファレンス
 
-- 用語: Audience / Goal / Non-goal / Public boundary / GoNoGoGate / VerificationLevel
-- 固定値: `VerificationLevel=docs-check`、自己修復上限3回（4回目はHold）
-- 導線: issueと対象文書の相互参照を維持
+| 領域 | 文書 |
+| --- | --- |
+| 診断 worker と障害調査 | [diagnostics.md](diagnostics.md) |
+| ローカル LLM 運用 | [local_llm_ops_guide.md](local_llm_ops_guide.md) |
+| AI 提案の扱い | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) |
+| ナラティブ生成とレビュー | [narratives.md](narratives.md) |
+| 正規化と決定論的比較 | [canonicalization.md](canonicalization.md) |
+| Codex skill の位置づけ | [codex_skill_operations.md](codex_skill_operations.md) |
+| セキュリティ運用判断 | [security_operational_guidelines.md](security_operational_guidelines.md) |
+| E2E 実施記録テンプレート | [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md) |
 
-## Related governance
+## 文書品質のルール
 
-- Documentation quality baseline: `../01_Plans/documentation_quality.md`
-- Architecture baseline: `../02_Architecture/architecture.md`
-- Security and safeMode boundary: `../04_Documentation/security.md`
+- 1文書は、対象読者、目的、範囲外、完了状態を本文の冒頭で分かるようにします。
+- コマンドはコピーして実行できる形で示します。
+- 環境固有の秘密情報、社内 URL、承認履歴、生の監査ログは含めません。
+- 実装・設計の正本をここで再定義しません。必要な場合は `02_Architecture` または `03_Implement` にリンクします。
+- 内部作業ログは `01_Plans` 側で管理し、利用者向け文書には混在させません。
