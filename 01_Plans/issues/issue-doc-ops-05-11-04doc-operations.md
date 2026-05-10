@@ -622,3 +622,28 @@
 - 引継ぎメモ: 本Issueは「本文改稿を行わず、品質ゲートと参照導線を固定」済み。
 - 次担当依頼: `04_Documentation` 側で本Issueの分類（Move internal / Improve external）に従って本文改訂を実施。
 - ゲート条件: 改訂後は `docs-check` を再実行し、Issue側の分類・用語・導線と一致確認すること。
+
+
+## Stream G dedicated run（2026-05-10）
+
+### Phase 1 Read
+- `04_Documentation/operations.md` を再読し、導線欠落（冒頭からの正本参照リンク不足）を確認。
+- 役割分離（Security Officer / System Owner / Platform Operator）は本文中で散在し、一覧性が弱いことを確認。
+
+### Phase 2 Plan
+- 冒頭に「クイック導線」を追加して、Architecture→Documentation の固定順序を即時追跡可能にする。
+- ロール責務を表形式で追加し、2者承認と実行責務分離を一目で確認できるようにする。
+- 意味変更は行わず、可読性・導線・整合性のみを改善する。
+
+### Phase 3 Execute
+- `operations.md` に `0.0 クイック導線` と `0.0.1 ロールと責務分離` を追加。
+- 定点レビュー日時を 2026-05-10 時点の運用表記へ更新（値の意味変更なし）。
+
+### Phase 4 Verify
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**。
+- 未解決: 環境別チェックリスト（single-node / HA / air-gapped）は本Issueの既知ギャップとして継続委譲。
