@@ -1,12 +1,14 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-09 (UTC, Stream D shared sync rerun-74)
+最終更新: 2026-05-10 (UTC, Stream G shared sync rerun-75)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
 
-再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-09 rerun-74確認済み）。`
+- Stream G 共有統合同期（2026-05-10 rerun-75）で Phase 1 Read Gate（A〜I報告ログとDecision Queue状態の再収集）→ Phase 2 Plan Sync（同期対象: Status/Queue/Next Action/依存順の固定）→ Phase 3 Execute Single-Set（shared resource 3ファイル同時更新）→ Phase 4 Verify（validator/unittest/rg 成功）→ Phase 5 Proceed（再開条件1行固定）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・停止条件違反0件を再確認した。
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-10 rerun-75確認済み）。`
 
 - Stream D 共有統合同期（2026-05-09 rerun-74）で Phase 1 Read同期（A/B/C完了報告・決定リンク・件数根拠の再読）→ Phase 2 反映（Active/Done/Decision Queue/次の1手を shared resource 3ファイルで同一値固定）→ Phase 3 監査（件数47、Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26、依存順 `A1→A2→A3`、停止条件違反0件）→ Phase 4 公開固定（再開判定チェックリスト1行確定）を直列実行し、未承認事項の確定扱い0件・参照リンク不整合0件・未定義競合0件を確認した。
 

@@ -857,3 +857,12 @@
 - Phase 5 Verify: 用語一致・2者承認責務分離・相互リンク・D1〜D4一致を再確認。
 - Phase 6 Proceed/Stop: Stop条件（順序逸脱/用語不一致/責務混線）0件のため Proceed。
 
+
+### 6-10. Stream G 共有ハブ同期ログ（2026-05-10 rerun-75）
+
+- Phase 1 Read Gate: Stream A〜I の完了/未完報告ログ、Decision Queue（Ready=1 / Open=2）、依存順 `A1→A2→A3`、停止条件違反0件を再収集し、推測補完なしを確認。
+- Phase 2 Plan Sync: 同期対象を `Status / Queue / Next Action / 依存順` に固定し、AC/DoD不足は新規確定せず保留記録とする方針で合意。
+- Phase 3 Execute Single-Set: `issues/README.md` / `project-progress-dashboard.md` / 本decision-pack の3ファイルを単一変更セットで更新し、表記ゆれ・数値不一致・リンク崩れ0件を維持。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開条件1行|再開判定" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
+- Phase 5 Proceed（公開1行固定）: **再開条件1行 = 公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開（2026-05-10 rerun-75確認済み）。**
+
