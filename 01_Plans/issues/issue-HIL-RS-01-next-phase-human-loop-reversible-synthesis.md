@@ -247,3 +247,20 @@
   - `HIL-RS-02-GOV-EXCEPTION-01=held`
 - Final decision:
   - `Hold/Needs-decision`（未解決論点が解消するまでGo不可）。
+
+## Stream A serial gate lock（2026-05-10）
+
+### A1 -> A2 -> A3 dependency lock
+- 固定依存順: `A1(Contract Freeze) -> A2(Implementation Planning) -> A3(Operations Sync)`。
+- ルール: `a1Status!="Done"` の間、A2/A3 は `Open/In Progress` 判定を生成しない（準備メモのみ許可）。
+
+### AC/DoD gap closing
+- AC-6: `A1 -> A2 -> A3` の順序違反が 0 件であること。
+- AC-7: `Approval Record` 欠損時に `Proceed=Hold` を必須化すること。
+- DoD-6: モック検証の許可範囲（型適合・監査イベント検証）と禁止範囲（状態確定・契約再定義）を明文化していること。
+
+### Contract freeze snapshot（read-only）
+- API signatures: `HIL_RS_DECISION_GATE_V1`, `HIL_RS_PATCH_PROPOSAL_V1`, `HIL_RS_APPLY_JUDGEMENT_V1`。
+- Minimal types: `ApprovalRecordV1`, `GateStatusV1`, `DecisionQueueTransitionV1`。
+- Audit events: `query|bundle|proposal|apply`。
+- Current gate: `Hold/Needs-decision`（`Approval Record=Pending` のため）。

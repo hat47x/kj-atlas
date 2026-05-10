@@ -129,3 +129,18 @@
 - 承認前提崩壊（pending bypass / unrecorded approval inference / dual-control破綻）
 - allowlist外編集
 - `verifyAttempts>3`
+
+## Stream A contract-first gate note（2026-05-10）
+
+### Dependency order lock
+- 固定順序: `A1 -> A2 -> A3`。
+- delivery plan は A1完了まで `Proceed=Hold` を維持し、A2/A3へ `Go` を伝播しない。
+
+### Contract freeze reference（read-only）
+- API signatures: `HIL_RS_DECISION_GATE_V1`, `HIL_RS_PATCH_PROPOSAL_V1`, `HIL_RS_APPLY_JUDGEMENT_V1`
+- Minimal types: `ApprovalRecordV1`, `GateStatusV1`, `DecisionQueueTransitionV1`
+- Audit events: `query|bundle|proposal|apply`
+
+### AC/DoD addendum
+- AC-6: A1未完了時に `Open/In Progress` 昇格条件を生成しない。
+- DoD-6: mock検証は型・イベント・Hold判定まで、承認確定や契約再定義を含まない。

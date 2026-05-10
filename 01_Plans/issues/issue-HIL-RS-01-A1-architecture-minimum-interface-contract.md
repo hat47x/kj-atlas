@@ -398,3 +398,25 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `HIL-RS-02-GOV-EXCEPTION-01=held`
 - Final decision:
   - `Hold/Needs-decision`（未解決論点が解消するまでGo不可）。
+
+## Stream A contract freeze clarification（2026-05-10）
+
+### Read-only contract（固定）
+- API signature set:
+  - `CritiqueV1(input: CritiqueInputV1): CritiqueResultV1`
+  - `ReDiffV1(input: ReDiffInputV1): ReDiffResultV1`
+  - `AttributionV1(input: AttributionInputV1): AttributionResultV1`
+  - `A1ErrorV1(input: A1ErrorInputV1): A1ErrorResultV1`
+- Minimal shared types:
+  - `ApprovalRecordV1{approved_by, approved_at, evidence}`
+  - `GateDecisionV1{decision, executeAllowed, reasonCodes}`
+  - `DecisionQueueTransitionV1{Pending->Approved|Pending->Rejected}`
+- Audit events（必須）: `query`, `bundle`, `proposal`, `apply`。
+
+### Mock usage boundary
+- 許可: スキーマ適合テスト、reason code 出力確認、`Pending` 時 `executeAllowed=false` 検証。
+- 禁止: 承認状態の擬似確定、`freezeContractId/schemaVersion/contractIds` 書換、SafeMode境界緩和。
+
+### Proceed gate（A1専用）
+- `Go`: `a1Status=="Done" && pendingDecisionQueueCount==0 && fixedKeyDrift==0`
+- それ以外: `Hold/NoGo`（推測で `Go` を作らない）。

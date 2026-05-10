@@ -172,3 +172,18 @@
 - 本Issueは A1未承認のため **Hold継続**。
 - A3/operations/security 側は本Issueを read-only 参照し、承認完了前の Open昇格文言を追加しない。
 - `executeAllowed=false` は固定。
+
+## Stream A hardening freeze memo（2026-05-10）
+
+### Read-only governance contract
+- 固定I/F: `HIL_RS_DECISION_GATE_V1` を統治ゲートの唯一判定源として参照する。
+- 固定型: `ApprovalRecordV1`（`approved_by`, `approved_at`, `evidence`）欠損時は `executeAllowed=false`。
+- 固定監査イベント: `query`, `bundle`, `proposal`, `apply`。
+
+### Mock allowance
+- 許可: 承認記録の必須項目チェック、禁止遷移チェック、監査イベント整合チェック。
+- 不許可: 承認の擬似投入、`Pending->Execute` の例外化、固定キー変更。
+
+### Proceed gate
+- `Proceed=Go` は `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0` のみ。
+- それ以外は `Hold/NoGo` 固定。
