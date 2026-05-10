@@ -164,3 +164,14 @@
 ### Phase 6: Proceed
 - 未確定論点（A1承認ログ未着）は保留のまま切り出し、推測補完は行わない。
 - 判定: **Ready + Hold 維持**。
+
+
+## Typecheck follow-up（2026-05-10, additional instruction）
+
+- 実行コマンド: `cd 03_Implement/frontend && npm run typecheck`
+- 結果: **Fail（exit code 2）**
+- 失敗内容（scope外の既存不整合）:
+  - `src/domain/hil_rs_client_apply.integration.test.ts(17,3)` `schemaVersion` が `Document` 型に存在しない。
+  - `src/domain/hil_rs_client_apply.integration.test.ts(42,7)` `Document` を `DocumentV2` へ代入不可（`islands` 欠落）。
+  - `src/domain/hil_rs_client_apply.integration.test.ts(43,7)` 同上。
+- 判定: Stream C の編集許可範囲外（`03_Implement/**`）のため、本Issueでは修正を行わず、実装ストリームへ切り出して対処する。
