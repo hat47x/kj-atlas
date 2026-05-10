@@ -3353,3 +3353,45 @@ type PatchProposal = {
 ### Phase 6 Proceed
 - 判定: **Proceed**
 - 理由: 依存不整合なし、未承認拡張なし、解釈不能競合なし、致命衝突なし。
+
+## Stream B latest run（2026-05-10 / CE0 Contract Matrix Freeze to Architecture SSOT）
+
+- run_id: `stream-b-ce0-2026-05-10-11`
+- assignee: `Stream B（CE0 Contract Freeze 文書専任）`
+- scope_guard: `issue-CE0 + llm_input_ir_spec + llm_quality_strategy + review_attribution`（許可範囲内のみ）
+- stopper_check: `safeMode_regression=0 / unreviewed_protection_regression=0 / core_graph_direct_write_regression=0 / contract_id_collision=0`
+
+### Phase 1 Read
+- Read Order の上流（00/01/02）と CE0 契約既定値を再確認。
+- 作業対象を契約文書固定（実装変更なし）に限定。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE0契約行列（CTX/SAFEMODE/REVIEW）を 02_Architecture 文書に固定し、CE1以降進捗と独立に参照可能にする必要がある。
+- Decision: `llm_input_ir_spec.md` / `llm_quality_strategy.md` / `review_attribution.md` に同一契約行列を明示し、Core Graph direct write 禁止を含む fail-closed 判定を固定した。
+- Consequences: 契約境界は後退不能となり、下流は read-only 参照で実装可能。契約衝突・未定義依存・safeMode後退は即停止対象になる。
+
+### Phase 3 Plan（AC / DoD）
+- AC:
+  1. CE0-CTX-IF / CE0-SAFEMODE-IF / CE0-REVIEW-IF / CE0-CG-WRITE-IF が3文書で整合。
+  2. safeMode既定ON・unreviewed保護・Core Graph直接更新禁止の後退が0。
+  3. Contract ID 重複定義が0。
+- DoD:
+  - 4ファイル以外を変更しない。
+  - Verify を最大3回までで収束できない場合は停止。
+
+### Phase 4 Execute
+- 上記3つの 02_Architecture 文書へ CE0 契約行列固定節を追加。
+- 本Issueへ実行記録を追記し、contract-only lane を更新。
+
+### Phase 5 Verify（self-repair upper bound: 3）
+- attempt_1: 契約節追加後に差分・整形・重複を確認。
+- result: pass（self-correction 0/3）。
+- check summary:
+  - safeMode default ON regression: 0
+  - unreviewed protection regression: 0
+  - Core Graph direct write prohibition regression: 0
+  - Contract ID collision: 0
+
+### Phase 6 Proceed/Stop
+- 判定: **Proceed（Contract Freeze Complete）**
+- 備考: CE1以降の実装進捗には依存せず、本行列を read-only 契約として運用継続。
