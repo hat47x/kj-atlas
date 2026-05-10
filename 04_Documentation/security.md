@@ -133,9 +133,10 @@ CE2（低リスクAI支援）を有効化する場合、以下を最低セキュ
 2. proposal は `proposalId/diff/sourceBundleHash/status/reviewState` を必須とする。
 3. `reviewState` の `unreviewed -> reviewed` 昇格は人間の明示操作のみ許可する。
 4. safeMode ON時は未レビュー本文をAI入力へ混入させない。
-5. CE1最小I/Fモック契約との差異を検知した場合は `status=held` で停止し、指示待ちとする。
+5. 中間処理モデル（候補生成・整形・検証補助）に `accept / reject / finalize` を付与しない。
+6. CE1最小I/Fモック契約との差異を検知した場合は `status=held` で停止し、指示待ちとする。
 
-> 停止トリガ（review自動昇格 / safeMode後退 / 直接適用経路）を検知した場合は、
+> 停止トリガ（review自動昇格 / safeMode後退 / 直接適用経路 / 自動finalize・公開）を検知した場合は、
 > セキュリティイベントとして扱い、適用を進めないこと。
 
 ## 4. 実施しやすい最小コントロール
@@ -935,3 +936,11 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 Fail-safe:
 - A1未完了、または D1〜D4 / 役割分離 / 導線に不整合がある場合は `StoppedForClarification`。
 - `Pending -> Execute` を含む bypass 推測を検出した場合は即停止。
+
+
+### 3.2 Proposal-only運用ガード（Stream D / 2026-05-10）
+
+- CE2は「候補提示専用」とし、AI経路での意思決定確定（accept/reject/finalize）を禁止する。
+- reviewed状態の昇格は人間明示操作のみで、システム自動昇格を許可しない。
+- 公開系操作（share/export/publish）は人間レビュー完了後の明示操作に限定し、AI提案からの直結経路を設けない。
+- 上記逸脱を検知した場合は即時停止（`held`）し、復旧前に原因の是正と再検証を必須化する。
