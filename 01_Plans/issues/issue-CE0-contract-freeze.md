@@ -3395,3 +3395,75 @@ type PatchProposal = {
 ### Phase 6 Proceed/Stop
 - 判定: **Proceed（Contract Freeze Complete）**
 - 備考: CE1以降の実装進捗には依存せず、本行列を read-only 契約として運用継続。
+## Stream A contract freeze serial run (2026-05-10 / P0 critical path)
+
+### Phase 1: Triage Stopper確認（Plan → Read → Execute → Verify → Proceed）
+- Plan:
+  - 目的: triage blocker の残存有無を確認し、契約凍結の開始可否を判定する。
+  - 対象ファイル: 本ファイル（docs-only）。
+  - AC: triageエラー有無、CE1メタ欠落有無、依存前提の確定/未確定を明示する。
+  - DoD: CE1メタ欠落が残る場合は `依存前提未確定` として記録する。
+- Read:
+  - 本ファイルの最新状態を再読し、契約固定値（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`）との差分なしを確認。
+- Execute:
+  - triage stopper 判定結果を記録: `triage_error=0`。
+  - CE1メタ欠落は未解消として記録: `dependency_status=依存前提未確定`。
+- Verify:
+  - AC/DoD照合: pass（未確定依存を明示済み）。
+  - self-correction: `0/3`。
+- Proceed:
+  - Phase 2へ進行（依存未確定は保持したまま先行可能な docs 契約明文化のみ実施）。
+
+### Phase 2: ADR明文化（必須）
+- Context:
+  - 契約凍結前に Context/Decision/Consequences を明文化しない場合、A1境界が再定義され downstream の read-only 契約参照が破綻する。
+- Decision:
+  - 契約境界は本runで再定義せず、既存固定値を参照専用で維持する。
+  - CE1メタ欠落が残るため、`依存前提未確定` を維持し、実装判断に使用しない。
+- Consequences:
+  - 契約凍結文面は確定可能だが、Proceed判定は `Hold/Needs-decision` を継続する。
+  - 未承認/未確定依存の推測確定は禁止。
+- Verify:
+  - C/D/C 3点明示を確認: pass。
+- Proceed:
+  - Phase 3へ進行可（docs-only）。
+
+### Phase 3: 契約凍結文面の確定
+- Interface boundary（fixed/read-only）:
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- Non-goals（fixed）:
+  1. 契約IDの追加/改名/削除
+  2. `schemaVersion` 改版
+  3. SafeMode境界（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）の緩和
+  4. Pending bypass（`Pending -> Approved | Pending -> Rejected` 以外）
+- Verify:
+  - インターフェース境界と非目標を明記: pass。
+- Proceed:
+  - Phase 4へ進行。
+
+### Phase 4: 依存切断宣言
+- 契約版数:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0`
+- 後方互換ルール:
+  - v1固定キー集合は互換維持必須、unknown key は `400`。
+- 破壊的変更禁止条件:
+  - A1再起票と人間承認記録（`approved_by`, `approved_at`, `evidence`）が揃うまで禁止。
+- Stream分離:
+  - 他ストリームは read-only 参照のみ。契約再定義・判定代行を禁止。
+- Verify:
+  - 依存切断3要素（契約版数/互換/破壊的変更禁止）を明記: pass。
+
+### Phase 5: 完了判定
+- AC/DoD:
+  - AC pass（Phase 1-4の明示要件充足）。
+  - DoD pass（docs-only契約凍結文面として完了）。
+- Traceability:
+  - triage（Phase1）→ ADR（Phase2）→ freeze（Phase3）→ dependency cut（Phase4）を同一runで記録。
+- 未解決論点:
+  - `CE1メタ欠落`（依存前提未確定）
+  - `Approval Record=Pending`
+  - `HIL-RS-02-GOV-EXCEPTION-01=held`
+- Final decision:
+  - `Hold/Needs-decision`（未解決論点が解消するまでGo不可）。
