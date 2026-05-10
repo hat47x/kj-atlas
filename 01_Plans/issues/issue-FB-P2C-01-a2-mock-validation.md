@@ -426,3 +426,24 @@
   1. 修復3回超過
   2. 前提崩壊（Gate未承認・A1 freeze不一致）
   3. 競合検知（他レーン依存・指定外編集要求）
+
+## Stream D update (2026-05-10)
+
+### Phase Start Read (latest)
+- Read order re-check completed for this phase scope: `AGENTS.md` index and related FB-P2C-01 A1/A2/A3 issue memos.
+- Scope lock confirmed: only Stream D allowlisted files are edited.
+- Self-repair budget: max `3` retries (not exceeded in this update).
+
+### Context
+- FB-P2C-01 requires serial integrity across `A1 -> A2 -> A3`.
+- Stream D must keep contract-connection surface stable and avoid non-allowlisted edits.
+
+### Decision
+- Maintain the fixed interface/governance boundary already frozen in A1 and consume it read-only in A2/A3.
+- Keep `Plan -> Execute -> Verify` trace explicitly in each phase memo.
+- Do not introduce interface-breaking changes in implementation handoff.
+
+### Consequences
+- A2 and A3 proceed only when upstream fixed conditions remain satisfied.
+- If any contract drift is detected, stop and route back to A1 contract review instead of local mutation.
+- Current run status: Proceed allowed, with no additional corrective retry required (`0/3`).
