@@ -329,3 +329,27 @@
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+
+## Stream H addendum（2026-05-10 / CE2 Draft Open品質整備）
+
+### Phase 1 Read（対象ファイル再読）
+- 対象: 本ファイル（single-file fixed）を再読し、proposal-only / human-final / no-auto / fail-closed を再確認。
+- 承認未了（Approval Record `missing`）は `Pending` として保持し、確定扱いしない。
+
+### Phase 2 Plan（AC/DoD/Validation plan の Open品質化）
+- AC-H1: CE2 は実装要求を含まない（docs-only / decision-prep only）。
+- AC-H2: tri-state（`Proceed / Hold / Stop(held)`）以外の判定語彙を追加しない。
+- AC-H3: CE0/CE1 依存は read-only のまま維持し、未確定は `Hold` 固定。
+- DoD-H1: Approval Record の `missing > 0` なら Proceed 不能が明記される。
+- DoD-H2: Validationコマンドが再実行可能で single-file scope 逸脱がない。
+- DoD-H3: 未承認事項を推測確定せず `Pending` として残す。
+
+### Phase 3 Validation plan（docs-check）
+- `rg -n "AC-H1|AC-H2|AC-H3|DoD-H1|DoD-H2|DoD-H3|Pending|Proceed / Hold / Stop\(held\)" 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+- `git diff --check -- 01_Plans/issues/issue-CE2-low-risk-ai-assist.md`
+
+### Phase 4 Proceed
+- 判定: **Hold（Draft継続）**。
+- 理由: Approval Record が `missing` を含むため Open確定条件未達。
