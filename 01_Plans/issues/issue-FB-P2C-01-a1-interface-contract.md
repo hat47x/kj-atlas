@@ -1773,3 +1773,56 @@ state: Needs-decision
 - A2 and A3 proceed only when upstream fixed conditions remain satisfied.
 - If any contract drift is detected, stop and route back to A1 contract review instead of local mutation.
 - Current run status: Proceed allowed, with no additional corrective retry required (`0/3`).
+
+
+## Stream A dedicated run (2026-05-10 / FB-P2C-01 A1 contract-only)
+
+### Phase 1 Read（Plan → Execute → Verify → Proceed）
+- Plan: 本Issueを再読し、`Status/Priority/Dependencies/Non-target policy` と固定契約キーの差分確認を実施する。
+- Execute:
+  - Status: `Open`
+  - Priority: `P0`
+  - Dependencies: `A1 -> A2 -> A3`（A2/A3はread-only、mockで先行可能）
+  - Non-target policy: allowlist外編集禁止（実装/他stream不干渉）
+- Verify:
+  - 固定キー（`freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `contractLinkLocked`, `sharedResourceFreeze`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`）の drift=`0`。
+  - A2/A3は `A1-CONTRACT-MOCK-v1` で先行可能という前提に差分なし。
+- Proceed: Phase 2 へ。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: A1契約凍結が曖昧だと A2/A3で派生契約が再定義され、監査線と依存順が崩れる。
+- Decision:
+  1. **契約凍結の理由**: `A1 -> A2 -> A3` の直列依存と監査一貫性を守るため。
+  2. **変更禁止境界**: 契約ID追加/改名/削除、`schemaVersion`改版、`Pending` bypass、safeMode境界緩和を禁止。
+  3. **mock連携条件**: A2/A3は `A1-CONTRACT-MOCK-v1` + `A2A3_OPEN_ALLOWED` の照合のみ許可（実装依存なし）。
+- Consequences: 未承認項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）が残る限り `Hold/Needs-decision` を維持。
+- Approval gate: human approval未充足のため、次Phaseはdocs更新に限定。
+
+### Phase 3 Plan（A1契約固定チェックリスト + AC/DoD）
+- Checklist（A1 fixed items）:
+  - [x] Contract ID: `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - [x] Signature set: `CritiqueV1/ReDiffV1/AttributionV1/A1ErrorV1`
+  - [x] Deterministic Rule: `A2A3_OPEN_ALLOWED` を唯一判定式として維持
+- AC:
+  1. 固定契約値にdriftがない。
+  2. safeMode後退なし（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）。
+  3. unknown key fail-closed（`400`）方針を維持。
+- DoD:
+  1. docs-only更新。
+  2. 新規依存導入なし。
+  3. 非対象編集なし。
+
+### Phase 4 Execute（docs-only / minimum change）
+- 実施: 本セクション追記のみ。
+- 非実施: 実装変更、依存追加、allowlist外編集。
+
+### Phase 5 Verify（contract consistency / safety）
+- 契約一貫性: pass（固定キー、signature、`A2A3_OPEN_ALLOWED` は維持）。
+- safeMode後退: none（`ON` / `SAFE_MODE_STRICT_ON` 維持）。
+- unknown key fail-closed: pass（`400` ポリシー維持）。
+- Self-correction count: `0/3`（修復不要）。
+
+### Phase 6 Proceed
+- Result: `Hold`。
+- Reason: `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` が未解消。
+- Stop条件評価: 前提崩れ/未定義競合/依存再定義要求なし（停止不要、Hold継続）。
