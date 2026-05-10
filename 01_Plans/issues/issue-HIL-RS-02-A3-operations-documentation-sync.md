@@ -1,9 +1,9 @@
 # Issue Draft: HIL-RS-02 A3 Operations Documentation Sync（Stream G preflight）
 
 - Type: Process
-- Status: Hold（A1 Approval Pending）
-- Lifecycle: Draft -> Ready -> Hold -> Open -> In Progress -> Done
-- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: TBD
 - Priority: P1
 - Owner: Stream E（A3 documentation sync）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）

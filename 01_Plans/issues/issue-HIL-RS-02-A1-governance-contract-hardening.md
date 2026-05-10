@@ -1,9 +1,9 @@
 # Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream F）
 
 - Type: Process
-- Status: Hold（Approval Pending / execute禁止）
-- Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
-- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
 - Priority: P1
 - Owner: Stream E（HIL-RS-02 governance docs sync liaison）
 - Scope: 本ファイルのみ（docs-only）
