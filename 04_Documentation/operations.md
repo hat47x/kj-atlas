@@ -206,6 +206,27 @@ Phase6の運用系文書（`issue-0019`, `issue-0020`, `issue-doc-ops-05-11`）�
 - セキュリティ原則の詳細根拠、脅威分類、禁止事項一覧（`security.md`）
 - strict / non-strict の採否判断フロー、例外判断の比較観点（`security_operational_guidelines.md`）
 
+## 0.10 監査導線クイックチェック（DOC-OPS-02 / A3）
+
+運用文書同期（A3）を実行する際は、開始前に次を **同一サイクルで** 検証する。
+
+1. 用語一致: `Security Officer / System Owner / Platform Operator`
+2. 役割一致: 2者承認（Security Officer + System Owner）と実行責務分離（Platform Operator）
+3. 導線一致: `strict_mode_exception_approval_flow.md -> security.md -> security_operational_guidelines.md -> e2e_testing.md`
+4. 固定値一致: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）
+
+不一致が1件でもあれば `StoppedForClarification` として停止し、A1承認ログ未着の状態で Open/In Progress へ進めない。
+
+### 最小証跡コマンド（docs-only）
+
+```bash
+rg -n "Security Officer|System Owner|Platform Operator|StoppedForClarification|D1|D2|D3|D4|4h|2h|48h|15m|60m"   02_Architecture/strict_mode_exception_approval_flow.md   04_Documentation/operations.md   04_Documentation/security.md   04_Documentation/security_operational_guidelines.md
+
+git diff --check
+
+git status --short
+```
+
 ## 1. バックアップ / リストア
 
 最小手順はバックエンド README を参照してください。
