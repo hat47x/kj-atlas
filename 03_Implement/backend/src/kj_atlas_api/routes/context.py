@@ -17,7 +17,6 @@ from kj_atlas_api.models_context import (
     _canonical_query_hash_payload,
     _sha256_canonical,
     build_ce4_resolved_bundle,
-    build_bundle,
 )
 
 router = APIRouter(prefix="/context", tags=["context"])
