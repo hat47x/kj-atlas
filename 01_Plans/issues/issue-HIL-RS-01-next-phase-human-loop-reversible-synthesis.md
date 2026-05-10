@@ -154,3 +154,24 @@
 - Execute: docs-onlyで追記。
 - Verify: 固定キー・判定ゲート・NoGo条件の語彙一致を確認（drift=0）。
 - Proceed: `Hold/Needs-decision`。
+
+
+## Stream A CE-0/CE-1 and A1 gate sync（2026-05-10）
+
+### Phase 1 Read
+- 対象再読: 本issue / A1最小I/F issue / FB-P2C A1 issue / ADR-0028。
+- triage stopper check: `Status` / `Priority` 欠落なし。
+
+### Phase 2 ADR明文化
+- Context: 親計画で契約語彙を再定義すると A1ゲートが崩れ、下流の安全解放条件が失効する。
+- Decision: CE-0/CE-1対象は A1固定値を参照専用で固定（`freezeContractId`, `schemaVersion`, `safeModeBoundary` など）。承認遷移は `Pending -> Approved | Pending -> Rejected` のみ許可。
+- Consequences: pendingDecisionQueueCount>0 の間は `Hold` 維持、A2/A3はread-only handoffのみ。
+
+### Phase 3 Plan（AC / DoD）
+- AC: safeMode後退0 / contract drift 0 / pending bypass禁止 / read-only handoff成立。
+- DoD: Go条件（`a1Status=="Done" && pendingDecisionQueueCount==0 && drift==0`）以外でProceedしない。
+
+### Phase 4-6 Execute / Verify / Proceed
+- Execute: docs-only整合調整のみ。
+- Verify: contract drift / responsibility boundary / pending queue gate / stop consistency を自己照合。
+- Current decision: `Hold/Needs-decision`。
