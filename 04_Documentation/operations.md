@@ -1315,3 +1315,9 @@ runbook 側の Verify は次の4観点を必須とする。
   2. `routingStage` 追跡不能。
   3. 未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾結果）。
   4. 自己修復4回目相当（>3）。
+
+## Stream E AUTH runbook sync note (2026-05-10)
+
+- 同期順序は `02_Architecture -> 04_Documentation -> 01_Plans/issues` を固定し、本書は実行runbook責務のみ保持する。
+- AUTH系運用では `Security Officer / System Owner / Platform Operator` の語彙固定、2者承認と実行責務分離、D1〜D4不変を Verify 必須項目にする。
+- 逸脱（承認不備、TTL超過、監査項目欠落）は `StoppedForClarification` 扱いで停止し、推測で続行しない。

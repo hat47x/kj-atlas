@@ -341,3 +341,17 @@
 - 停止条件を再掲: (1) 未承認決定の確定化、(2) Schema 未固定での IMPL 着手、(3) strict mode 固定値 D1〜D4 の不一致。
 - 失敗時の自己修復は最大3回までとし、3回超過時は `StoppedForClarification` で停止する。
 
+## Stream E serial execution log (2026-05-10)
+
+### Phase 5 E2E契約レベル検証計画（更新）
+
+- Level1（常時必須）
+  - strict拒否逸脱（`403 + identity_not_provisioned` 欠落）を即Fail。
+  - 監査ログ最小項目（時刻/理由/承認者/対象環境/復旧条件）の欠落をFail。
+- Level2（条件付き必須: IdP連携境界変更時）
+  - D1承認TTL=4h、D2最大2h超過、D3代理承認、D4レビュー/SLA逸脱の各違反を回帰観点に固定。
+  - mock活用: `status/code/provisioned` の最小分岐キーで contract-level 回帰を先行し、実SP/IdP接続は条件成立時に昇格。
+
+### Proceed
+
+- 判定: **Go**（本Phaseは計画固定まで。実コード改修なし）。
