@@ -221,3 +221,53 @@
   1. self-correction が4回目相当に到達。
   2. tri-state 以外の判定語彙が混入。
   3. `human-final / no-auto / fail-closed` のいずれかに反する提案が混入。
+
+
+## Stream D（CE2 proposal-only専任）追補（2026-05-10）
+
+### Phase 1 Read
+- CE2 の目的を「AI候補提示のみ（proposal-only）」に固定し、自動採用・自動公開を禁止する境界を再確認。
+- CE1契約は read-only 参照とし、backend routing 実装本体・CE1/CE4契約ファイルを編集対象外に固定。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+#### Context
+- 低リスクAI支援は補助提案に限定しない限り、reviewed自動昇格・自動公開の逸脱経路が発生しうる。
+- 実装依存は未確定領域を含むため、mock前提で運用・UI・データ契約文面を先行整備する必要がある。
+
+#### Decision
+- proposal-only を必須化し、**reviewed自動昇格を禁止**する。
+- 中間処理モデル（AI候補生成・整形・検証補助）には `accept / reject / finalize` を許可しない。
+- 逸脱検知（自動昇格、暗黙apply、公開直結）時は `Stop(held)` を即時適用する。
+
+#### Consequences
+- AIが確定判断へ越境するリスクを運用上で先に封じ、実装段階の逸脱検知基準を明確化できる。
+- CE1依存が未確定でも、proposal-only担保の検証観点を先行して再利用できる。
+
+### Phase 3 Plan（AC / DoD）
+#### Acceptance Criteria
+- AC-D1: `reviewState` は AI経路で `unreviewed` に固定され、`human_reviewed` への自動遷移記述が存在しない。
+- AC-D2: `accept/reject/finalize` は人間レビュー責務としてのみ記載され、中間処理モデルの許可操作に含めない。
+- AC-D3: proposal-only違反時の停止条件が即時 `Stop(held)` として明示される。
+- AC-D4: docs-only / allowlist内編集を維持し、CE1 read-only 境界を破らない。
+
+#### Definition of Done
+- DoD-D1: issue / narratives / security の3文書で proposal-only制約が同義に表現されている。
+- DoD-D2: reviewed自動昇格禁止・中間処理モデルの権限制約・逸脱時即Stop が3文書で確認できる。
+- DoD-D3: `git diff --check` と対象ファイル限定差分確認が成功する。
+
+### Phase 4 Execute（docs/process）
+- 本issueに Stream D 専任の運用境界（proposal-only強制、no-auto、即Stop）を追記。
+- narratives に UI/運用上の禁止事項（auto-accept / auto-finalize / auto-publish 禁止）を追記。
+- security にデータ・運用契約として中間処理モデルの非権限化を追記。
+
+### Phase 5 Verify（proposal-only担保）
+- Verify観点:
+  1. reviewed自動昇格禁止の明記。
+  2. `accept/reject/finalize` 非許可（中間処理モデル）。
+  3. 逸脱時即Stop（held）の明記。
+- 逸脱を検知した場合は修正を継続せず停止し、人間判断待ちへ遷移する。
+
+### Phase 6 Proceed / Stop
+- 判定: **Proceed（docs-only反映完了）**。
+- 継続条件: 実装化時も本契約をテストで fail-closed に固定すること。
+- 即Stop条件: reviewed自動昇格・暗黙accept/finalize・公開直結経路のいずれかを検知した場合。

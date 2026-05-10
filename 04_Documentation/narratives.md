@@ -43,6 +43,8 @@ Go 条件（全て必須）:
 
 - narrative支援出力は提案（proposal）として扱う。
 - auto-apply は禁止。
+- 中間処理モデル（候補生成・整形・検証補助）に `accept / reject / finalize` を許可しない。
+- auto-accept / auto-finalize / auto-publish を禁止し、逸脱検知時は `Stop(held)` とする。
 - SafeMode ON時は未レビュー本文の混入を禁止する。
 
 ## 4. 推奨ワークフロー
@@ -134,3 +136,11 @@ git diff --check
 - 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
 - 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
 
+
+
+## 9. Stream D proposal-only enforcement（2026-05-10）
+
+- 本文書におけるAI出力は常に proposal であり、確定操作は人間レビュー境界の外へ移譲できない。
+- `reviewState` は AI経路で `unreviewed` 固定とし、`human_reviewed` への昇格は人間の明示操作のみ許可する。
+- `accept / reject / finalize` は中間処理モデルの責務から除外する。
+- 逸脱（自動昇格・自動確定・自動公開）検知時は即時 `Stop(held)` とし、Proceedしない。
