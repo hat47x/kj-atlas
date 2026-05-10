@@ -10,6 +10,8 @@
 4. boolean は肯定形で命名し、既定値と安全側の意味を固定します。
 5. 04 文書には「主要なもの」だけではなく、この文書に載る公開環境変数をすべて記載します。
 
+6. サードパーティイメージや build tool が要求する内部名は、kj-atlas の公開設定キーではありません。必要な内部変換は `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` で扱い、利用者は `KJ_ATLAS_*` だけを設定します。
+
 ## Backend settings
 
 | Key | Default | Purpose |

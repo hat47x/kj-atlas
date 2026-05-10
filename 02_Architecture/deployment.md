@@ -10,6 +10,8 @@
 - サードパーティコンテナや build tool が内部的に別名を要求する場合でも、公開設定キーは `KJ_ATLAS_*` だけにします。
 - 本番相当の構成では、Compose を起点に組織の認証、監視、バックアップ、秘密管理を追加します。
 
+サードパーティイメージが要求する変数名は、`01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` に基づく private adapter 名として扱います。運用者が設定する値は `KJ_ATLAS_*` だけです。
+
 ## 標準構成
 
 | Service | 役割 |

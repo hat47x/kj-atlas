@@ -8,7 +8,7 @@
 - Owner: TBD
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/deploy/`, `04_Documentation/`
 - Related Backlog: `ENV-ARCH-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`
+- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`
 - Dependencies: N/A
 - Expected verification level: `integration`
 
@@ -31,7 +31,7 @@
 - Frontend build configuration previously exposed Vite-style keys to users, and Compose previously exposed non-prefixed port/database keys.
 - Backend settings and the runtime registry previously diverged on `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`.
 - Access control behavior still has a policy decision point: `external_http` without endpoint currently falls back to `noop`. Changing that to fail-fast may require ADR because it changes the accepted availability/security trade-off.
-- Compose still has to pass values into a third-party PostgreSQL container using that image's required internal names. If the project interprets "no exceptions" as applying to every process environment inside third-party containers, the deployment design needs either a replacement implementation or an ADR-backed adapter boundary.
+- Compose still has to pass values into a third-party PostgreSQL container using that image's required internal names. `ADR-0029` proposes the adapter boundary. If the project interprets "no exceptions" as applying to every process environment inside third-party containers, the deployment design needs a replacement implementation.
 
 ## 2) 背景 / Context
 
@@ -53,7 +53,8 @@
 - Ensure `runtime_parameter_registry.md` and `04_Documentation/configuration.md` list the same public key set.
 - Keep backend `Settings` validation aligned with the registry, including `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`.
 - Validate access-control adapter and fail-safe enum values in settings.
-- Create an ADR only if the team decides to change accepted runtime behavior, especially `external_http` missing-endpoint fallback or the third-party container environment boundary.
+- Keep `ADR-0029` as the proposed decision record for the third-party container environment boundary.
+- Create another ADR only if the team decides to change accepted runtime behavior, especially `external_http` missing-endpoint fallback or a stricter no-vendor-env deployment model.
 
 Non-goals:
 
@@ -68,6 +69,7 @@ Non-goals:
 - [ ] Public docs and run guides do not instruct users to set non-`KJ_ATLAS_*` environment variables.
 - [ ] Frontend build can be configured with `KJ_ATLAS_FRONTEND_API_BASE`.
 - [ ] Docker Compose public inputs use `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, and `KJ_ATLAS_FRONTEND_API_BASE`.
+- [ ] Third-party container environment boundaries are resolved through `ADR-0029` or by replacing the dependency on vendor-defined process environment names.
 - [ ] Backend settings and `runtime_parameter_registry.md` agree on all `KJ_ATLAS_CE4_*` keys, including legacy-key rejection behavior.
 - [ ] Invalid access-control adapter and fail-safe values fail validation or are explicitly justified by ADR.
 - [ ] `external_http` without endpoint is either fail-fast or explicitly retained by ADR with user-facing warning text.
@@ -79,7 +81,7 @@ Non-goals:
 - [ ] T2: Reconcile Compose public input keys with the `KJ_ATLAS_*` contract.
 - [ ] T3: Reconcile CE4 runtime keys across registry, settings, legacy-key rejection, and tests.
 - [ ] T4: Add settings validation for access-control adapter and fail-safe mode.
-- [ ] T5: Confirm whether third-party container internal environment names require ADR or implementation replacement.
+- [ ] T5: Resolve `ADR-0029` or replace the PostgreSQL deployment path so no vendor-defined process environment names are required.
 - [ ] T6: Update 02/03/04 docs after implementation alignment.
 - [ ] T7: Add or update tests for the agreed runtime contract.
 
@@ -117,5 +119,5 @@ Non-goals:
 
 - Related issue: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
 - ADR化が必要になる条件:
-  - retaining non-`KJ_ATLAS_*` process environment names as acceptable beyond internal third-party adapter boundaries.
+  - changing the proposed `ADR-0029` adapter boundary into a stricter no-vendor-env deployment redesign.
   - changing `external_http` missing-endpoint behavior from current `noop` fallback to fail-fast.
