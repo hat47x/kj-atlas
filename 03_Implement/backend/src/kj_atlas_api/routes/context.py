@@ -12,6 +12,7 @@ from kj_atlas_api.models_context import (
     ContextBundleResponse,
     ContextQuery,
     ContextQueryValidationResponse,
+    CONTEXT_BUNDLE_PROVIDER,
     _canonical_bundle_hash_payload,
     _canonical_query_hash_payload,
     _sha256_canonical,
@@ -46,7 +47,7 @@ def validate_context_query(payload: object = Body(...)) -> ContextQueryValidatio
 def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
     request = _validate_payload(ContextBundleRequest, payload)
     try:
-        response = build_bundle(request)
+        response = CONTEXT_BUNDLE_PROVIDER.build_bundle(request)
     except ValueError as exc:
         if str(exc) == "preview_required":
             raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
