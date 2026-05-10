@@ -1,5 +1,11 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
+- Type: Feature request
+- Status: Open
+- Priority: P1
+- Owner: Stream E（CE1基盤: ContextQuery/ContextBundle Foundation）
+
+
 ## Stream B update（2026-05-10 / CE1 mock-first contract baseline）
 
 ### Phase 1: Read & Stopper確認（CE1メタ欠落最優先）
