@@ -1,257 +1,118 @@
-# 設定（OSS / イントラ・自前ホスト向け）
+# Configuration
 
-> DOC-OPS-05 Classification: **Improve external**
-> Audience: 外部運用者・管理者
-> Goal: 公開設定ガイドとして最小安全設定と確認手順を提供する。
-> Public boundary: 実行可能な設定手順のみ公開し、内部判断メモ・組織固有運用は含めない。
-> Non-goal: 未公開ネットワーク情報、内部承認フロー、組織固有の秘密管理手順の共有。
-> Related: `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/security.md`, `01_Plans/issues/issue-doc-ops-05-03-04doc-configuration.md`
+対象読者: kj-atlas を起動・運用する管理者、検証担当者。
 
-> 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書は外部利用者向けに最小構成のみ記載します。
+目的: 安全な既定値、主要な環境変数、設定変更後の確認方法を示します。
 
-## 1. 基本方針（既定は外部送信なし）
+範囲外: 組織固有の秘密管理、未公開ネットワーク情報、承認履歴。
 
-- `KJ_ATLAS_LLM_PROVIDER=none` が既定です。
-- 既定のままでは外部 LLM へのデータ送信は行いません。
-- ローカル/社内 LLM を使う場合のみ `KJ_ATLAS_LLM_PROVIDER=local` を明示設定します。
+## 基本方針
 
-## 2. 主要環境変数
+- すべての backend 実行時設定は `KJ_ATLAS_*` 接頭辞を使います。
+- 接頭辞のない旧キーは使いません。
+- 既定では LLM 連携は無効です。
+- 外部送信や大規模 LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
-### `KJ_ATLAS_DATABASE_URL`
+## 最小設定
 
-保存先DBを指定します。
-
-- SQLite 例: `sqlite:///./kj_atlas.db`
-- PostgreSQL 例: `postgresql+asyncpg://<user>:<password>@<host>:5432/<db>`
-
-### `KJ_ATLAS_LLM_PROVIDER`
-
-LLM連携方式を指定します。
-
-- `none`（既定）
-- `local`
-- `external`（将来向け・現状未実装）
-
-### `KJ_ATLAS_AUDIT_EXPORT_ENABLED` / `KJ_ATLAS_AUDIT_TRANSPORT`
-
-閲覧/エクスポート監査イベントの外部送信を制御します。
-
-- `KJ_ATLAS_AUDIT_EXPORT_ENABLED=false`（既定）: 監査外部送信を無効化
-- `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` + `KJ_ATLAS_AUDIT_TRANSPORT=noop`: 送信処理のみ有効（外部送信なし）
-- `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` + `KJ_ATLAS_AUDIT_TRANSPORT=http`: `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` へPOST送信
-
-補助設定:
-
-- `KJ_ATLAS_AUDIT_HTTP_ENDPOINT`（`http`利用時に必須）
-- `KJ_ATLAS_AUDIT_HTTP_API_KEY`（任意、Bearerトークン）
-- `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS`（既定 2.0）
-- `KJ_ATLAS_AUDIT_QUEUE_SIZE`（既定 100）
-- `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE`（既定 `false`。SafeMode時送信を許可する場合のみ `true`）
-
-### `KJ_ATLAS_API_KEY`（任意）
-
-簡易なAPI保護キーです。
-
-- 未設定: 認証なし（既定動作）
-- 設定時: `/healthz` 以外のAPIで `X-API-Key: <KJ_ATLAS_API_KEY>` を必須化
-
-> 本機能はMVP向けの簡易ガードです。完全な認証/認可の代替ではありません。
-
-## 3. `local` 設定（ローカル/社内LLM）
-
-`KJ_ATLAS_LLM_PROVIDER=local` のときは以下を設定します。
-
-- `KJ_ATLAS_LOCAL_LLM_BASE_URL`（必須）例: `http://localhost:8001`
-- `KJ_ATLAS_LOCAL_LLM_MODEL`（任意）例: `local-model-name`
-
-バックエンドは `KJ_ATLAS_LOCAL_LLM_BASE_URL + /generate` へ HTTP POST します。
-
-## 4. Docker Composeでの設定例
+Docker Compose の既定値で起動する場合、通常は追加設定なしで動きます。明示するなら次を使います。
 
 ```bash
-cd /path/to/kj-atlas/03_Implement/deploy
+export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
-export KJ_ATLAS_LLM_PROVIDER='none'
-docker compose up -d
 ```
 
-ローカル/社内LLMを利用する場合:
+ローカル SQLite で backend を直接起動する場合:
 
 ```bash
-cd /path/to/kj-atlas/03_Implement/deploy
-export KJ_ATLAS_LLM_PROVIDER='local'
+export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
+export KJ_ATLAS_LLM_PROVIDER=none
+```
+
+## 主要な backend 環境変数
+
+| 変数 | 既定値 | 用途 |
+| --- | --- | --- |
+| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使う DB 接続先 |
+| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
+| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す model 名 |
+| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM の base URL |
+| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す model 名 |
+| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
+| `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
+| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可するホスト名のカンマ区切り |
+| `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントの外部送信を有効化 |
+| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP 送信先 |
+| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout |
+| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
+| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信許可 |
+| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control 障害時の既定動作 |
+
+## Frontend の API 接続先
+
+frontend は `VITE_KJ_ATLAS_API_BASE` を優先し、未設定なら `VITE_API_BASE`、さらに未設定なら `/api` を使います。
+
+```bash
+export VITE_KJ_ATLAS_API_BASE=/api
+```
+
+Docker Compose の標準構成では nginx が `/api/` を backend の `:8000` に proxy するため、通常は変更不要です。
+
+## API キーを有効にする
+
+```bash
+export KJ_ATLAS_API_KEY='change-me'
+```
+
+`/healthz` は API キーなしで確認できます。それ以外の API には次のヘッダーを付けます。
+
+```bash
+curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
+```
+
+## local LLM を使う
+
+local provider は `<base_url>/generate` に JSON を POST します。応答は `{ "text": "..." }` を返す必要があります。
+
+```bash
+export KJ_ATLAS_LLM_PROVIDER=local
 export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
-docker compose up -d
 ```
 
-APIキーを有効化する場合:
+## large-scale LLM を使う
+
+large-scale provider は既定で無効です。利用する場合は、昇格許可、明示 opt-in、allowlist をすべて設定します。
 
 ```bash
-cd /path/to/kj-atlas/03_Implement/deploy
-export KJ_ATLAS_API_KEY='change-me'
-docker compose up -d
+export KJ_ATLAS_LLM_PROVIDER=large-scale
+export KJ_ATLAS_LLM_ESCALATION_ENABLED=true
+export KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true
+export KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL='https://llm.example.com'
+export KJ_ATLAS_LARGE_SCALE_LLM_MODEL='model-name'
+export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
 
-## 5. データ搬送（JSON Export / Import）
+## 設定後の確認
 
-- Export: 現在ドキュメントをJSON保存
-- Import: JSONを読み込み、バリデーション後に反映
+```bash
+curl -fsS http://localhost:8080/api/healthz
+docker compose logs api --tail=100
+```
 
-イントラ運用時の持ち出し可否や保管場所は、組織ルールで管理してください。
+直接 backend を起動している場合:
 
-## 6. 関連ドキュメント
+```bash
+curl -fsS http://127.0.0.1:8000/healthz
+```
 
-- セキュリティ運用: `04_Documentation/security.md`
-- インストール手順: `04_Documentation/installation.md`
-- 実行パラメータ正本: `02_Architecture/runtime_parameter_registry.md`
+## 関連文書
 
-## Go/No-Go gate（公開判定）
-
-公開「Go」は次を満たす場合のみ:
-
-1. Audience / Goal / Public boundary / Non-goal が明示されている。
-2. 既定の安全設定（`KJ_ATLAS_LLM_PROVIDER=none`、監査外部送信OFF既定）が明記されている。
-3. 追加/改名パラメータの正本が `02_Architecture/runtime_parameter_registry.md` であることを明記している。
-
-いずれか未充足の場合は「No-Go」として公開更新を停止します。
-
-## Stream D serial cycle（2026-04-21 / DOC-OPS-05-03 前半 docs-only）
-
-### Phase 1 Read
-- 本書と対応Issue（`issue-doc-ops-05-03-04doc-configuration.md`）を再読し、公開境界と `Classification=Improve external` を確認。
-- 編集範囲を docs-only（本ファイルのみ）に固定し、担当外ファイルへ非接触で進行する。
-
-### Phase 2 Plan（AC/DoD補完）
-- AC:
-  1. 既定安全値（`KJ_ATLAS_LLM_PROVIDER=none`、監査外部送信OFF既定）が明確であること。
-  2. 環境変数の正本が `02_Architecture/runtime_parameter_registry.md` である導線が維持されること。
-- DoD:
-  1. Read → Plan → Execute → Verify → Proceed を記録すること。
-  2. Verifyで docs-check を実施し、失敗時は3回以内の自己修復に限定すること。
-
-### Phase 3 Execute
-- 本節を追記し、Stream D 前半担当の実行証跡を追加。
-- 変数仕様の新規決定は行わず、既存公開ガイドの責務（最小安全設定と確認手順）を維持。
-
-### Phase 4 Verify（docs-check）
-- `rg -n "DOC-OPS-05 Classification|Audience|Goal|Non-goal|Public boundary|Related|Go/No-Go|KJ_ATLAS_LLM_PROVIDER=none|Stream D serial cycle" 04_Documentation/configuration.md`
-- `git diff --check`
-- 自己修復は最大3回。4回目相当は停止して Hold。
-
-### Phase 5 Proceed
-- 判定: **Ready**
-- 次アクション: 追加/改名パラメータ発生時は runtime parameter registry と同時同期する。
-
-
-## DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-03）
-
-### Phase 1 Read（同期）
-- Read同期: `04_Documentation/configuration.md` と `issue-doc-ops-05-03-04doc-configuration.md` を再読。
-
-### Phase 2 ADR/CDC
-- Context: 公開設定ガイドとして安全既定と正本導線の一貫性が必要。
-- Decision: Improve external を維持し、公開境界を厳守する。
-- Consequences: 内部情報混入を抑制し、外部利用者の設定失敗を低減。
-
-### Phase 3 Plan（AC/DoDドラフト→合意）
-- AC draft: 安全既定・正本導線・Go/No-Go 条件の追跡可能性。
-- DoD draft: 6Phase記録と docs-check 成功、失敗時3回自己修復上限。
-- 合意: Issueメモで合意済み。
-
-### Phase 4 Execute
-- 本節を追記し、Issueとの整合運用を固定。
-
-### Phase 5 Verify
-- `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/configuration.md`
-
-### Phase 6 Proceed
-- Ready。docs-onlyで継続改善。
-
-
-## DOC-OPS user-requested serial execution（2026-04-22 / Issue 05-03）
-
-### Phase 1 Read
-- Phase開始時再Read: `04_Documentation/configuration.md` と対応Issueを再読。
-
-### Phase 2 Plan
-- Phase開始時再Read: 先頭メタ（Audience/Goal/Public boundary/Non-goal）を再読。
-- AC/DoD不足判定: 不足なし。Improve external 方針を維持。
-
-### Phase 3 Execute
-- Phase開始時再Read: Go/No-Go節を再読。
-- 実施: 本直列実行ログを追記（安全既定と正本導線の記述を維持）。
-
-### Phase 4 Verify
-- Phase開始時再Read: Verify対象キーワードを再読。
-- 実行: `rg -n "DOC-OPS user-requested serial execution|Phase 1 Read|Phase 2 Plan|Phase 3 Execute|Phase 4 Verify|Phase 5 Proceed" 04_Documentation/configuration.md`。
-- 自己修復回数: 0/3。
-
-### Phase 5 Proceed
-- 判定: **Ready**（公開設定ガイドとして継続）。
-
-## Stream I strict serial execution（2026-04-26 / DOC-OPS-05-03）
-
-### Phase 1 Read
-- 対象再読: `04_Documentation/configuration.md` と `issue-doc-ops-05-03-04doc-configuration.md`。
-- 範囲固定: Docs-only、かつ指定4ファイル内のみ編集。
-
-### Phase 2 ADR/CDC
-- Context: 公開設定ガイドとして、外部読者に再現可能な最小安全設定を示す必要がある。
-- Decision: **Improve external** を維持し、公開境界外の内部運用情報は追加しない。
-- Consequences: 正本参照（runtime parameter registry）とGo/No-Go導線を維持する。
-
-### Phase 3 Plan
-- Scope: 本文書の実行記録追記とIssue整合。
-- Non-goals: パラメータ仕様の新規決定、実装仕様変更、指定外文書更新。
-- AC: Audience/Goal/Public boundary/Non-goal と Go/No-Go が追跡可能。
-- DoD: Phase 1〜6記録 + docs-check 成功 + 指定外差分0。
-- Validation: `rg` キーワード確認 + `git diff --check`。
-- Stop conditions: 修復4回目相当 / Requirement meta I/F矛盾 / 指定外編集必要化。
-
-### Phase 4 Execute
-- 実施: Stream I の直列実行記録を追記。
-- 維持: 既存の安全既定（`KJ_ATLAS_LLM_PROVIDER=none` 等）と正本導線。
-
-### Phase 5 Verify
-- 実行: `rg -n "Stream I strict serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/configuration.md`
-- 実行: `git diff --check`
-- 自己修復: 最大3回、4回目相当で停止。
-
-### Phase 6 Proceed
-- 判定: **Ready**
-- 次工程: DOC-OPS-05-08（installation）へ直列遷移。
-
-
-## Stream G mini-Phase serial run（2026-04-27）
-
-### Phase 1 Read
-- 対応Issue（`DOC-OPS-05-03`）と本書の分類ヘッダを再読し、公開境界を確認。
-
-### Phase 2 Plan
-- 変更責務を docs-only の記録同期に限定し、本文の分類（Move internal / Improve external）を維持。
-- 共通ACテンプレ（Scope固定 / 境界明示 / GoNoGo / docs-check / 3回上限）を適用。
-
-### Phase 3 Execute
-- 本節を追記し、Read→Plan→Execute→Verify→Proceed の直列実行証跡を固定。
-- 指定外ファイル・実装コード・共有統合ファイルは未編集。
-
-### Phase 4 Verify
-- `rg -n "DOC-OPS|Classification|Audience|Goal|Public boundary|Go/No-Go|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5" 04_Documentation/configuration.md`
-- `git diff --check`
-- self-repair count: 0/3。
-
-### Phase 5 Proceed
-- 判定: **Ready**（分類方針と公開境界を維持）。
-
-## Stream E共通: Draft課題のOpen化条件（DOC-OPS-05）
-
-- 本文書で扱う Draft 課題は、次の **5条件をすべて満たした場合のみ Open 化** する。
-  1. **Read**: 対象本文書と上位根拠（00〜02、必要なADR）を再読し、参照差分を列挙済み。
-  2. **Plan**: Scope / Non-Goals / Acceptance / Validation / Stop Conditions を明文化済み。
-  3. **Execute**: docs-only 境界（実装コード非変更）を維持し、allowlist 外の差分が 0。
-  4. **Verify**: 再現可能な docs-check コマンドと結果（成功/未実施理由）を記録済み。
-  5. **Proceed**: Go/No-Go/Conditional を明示し、未確定事項を「決定」扱いせず次アクションに分離済み。
-- 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
-- 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
-
+- [installation.md](installation.md)
+- [security.md](security.md)
+- [local_llm_ops_guide.md](local_llm_ops_guide.md)
+- [runtime_parameter_registry.md](../02_Architecture/runtime_parameter_registry.md)

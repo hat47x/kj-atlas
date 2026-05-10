@@ -1,213 +1,81 @@
-# リリース手順（最小）
+# Release
 
-> DOC-OPS-05 Classification: **Improve external**（対外文書として改善しつつ維持）
-> Audience: メンテナ・リリース担当者
-> Goal: 監査可能な最小リリース手順を、外部公開可能な形式で再現できるようにする。
-> Non-goal: 組織内部の承認会議ログ、秘密鍵詳細運用、未公開インシデント対応の確定。
-> Outcome: 判定根拠（Go/No-Go）と未実施理由を追跡できる公開リリースrunbookを維持する。
-> Public boundary: 公開文書は共通手順・確認観点・記録要件のみを扱い、組織固有の承認証跡や秘密情報は扱わない。
-> This document decides: SemVer、リリース前チェック、タグ作成、タグ後確認、公開記録。
-> This document does not decide: 組織内部の承認会議ログ、秘密鍵詳細運用、未公開インシデント対応。
-> Related: `01_Plans/documentation_quality.md`, `.github/workflows/release.yml`, `04_Documentation/local_llm_ops_guide.md`, `01_Plans/issues/issue-doc-ops-05-12-04doc-release.md`
+対象読者: kj-atlas のリリース、検証版配布、公開前確認を担当する人。
 
-## 1. SemVer 方針
+目的: リリース前に確認する品質、安全性、文書、E2E の最小手順をまとめます。
 
-バージョンは `MAJOR.MINOR.PATCH` を使用します。
+範囲外: 組織固有の承認システム、配布先ごとの秘密設定、マーケティング告知。
 
-- MAJOR: 互換性を壊す変更
-- MINOR: 後方互換な機能追加
-- PATCH: 後方互換な修正（不具合・文書）
-
-## 2. リリース前チェック（監査可能性の最小要件）
-
-前提条件:
-
-- 実行環境に Python / Node.js / npm が存在する。
-- `03_Implement/backend` と `03_Implement/frontend` の依存解決が済んでいる。
-
-必須チェック:
-
-1. Backend テストが成功。
-2. Frontend テストが成功。
-3. Frontend ビルドが成功。
-4. 公開文書が `01_Plans/documentation_quality.md` の Mandatory（QG-1〜QG-6）を満たす。
-5. strict mode例外運用を含む変更では、D1〜D4 と役割語彙が関連文書間で一致。
-
-実行例:
+## リリース前チェック
 
 ```bash
-# backend
-cd 03_Implement/backend
-python -m pytest
-
-# frontend
-cd ../frontend
-npm test
-npm run build
-```
-
-失敗時対応:
-
-- テスト失敗時は、失敗コマンド・失敗ログ要点・再現手順を記録してから修正する。
-- 前提未充足で実行できない場合は、未実施理由をリリース記録へ残す。
-
-## 3. バージョン更新
-
-1. `CHANGELOG.md` の `## [Unreleased]` に変更点を追加。
-2. リリース時に対象変更を新バージョン見出しへ移動。
-3. 比較リンクを使う運用ならリンク定義も更新。
-
-## 4. タグ作成（例: v0.1.1）
-
-```bash
-git checkout main
-git pull
-
-git add CHANGELOG.md 04_Documentation/release.md
-git commit -m "docs: prepare release v0.1.1"
-
-git tag -a v0.1.1 -m "Release v0.1.1"
-git push origin main
-git push origin v0.1.1
-```
-
-## 5. タグ後確認（GitHub Actions）
-
-`vX.Y.Z` タグ push 後、GitHub Actions の Releaseジョブを確認します。
-
-- Backend Docker build（no push）が成功。
-- Frontend dist build + artifact が成功。
-- `frontend-dist-vX.Y.Z` artifact が生成。
-
-## 6. リリースノートと公開記録
-
-- GitHub Release本文は `CHANGELOG.md` の対象節を基に作成。
-- 区分は `Added / Changed / Fixed` を基本とする。
-- 公開判定（Go/No-Go）と未実施項目は、PR本文またはリリースノートに記録する。
-
-## 7. Go/No-Go gate（公開判定）
-
-Go 条件:
-
-1. 本文に Audience / decides / does not decide がある。
-2. リリース前チェック結果を追跡できる。
-3. 実行できなかったチェックは理由が記録される。
-
-No-Go 条件:
-
-- テスト未実施かつ理由記録なし。
-- 監査導線（CHANGELOG、タグ、リリースノート）が欠落。
-- SafeMode/strict mode関連の整合未確認。
-
-## 8. Audit trail（公開判定の監査可能性）
-
-公開判定の記録には、最低限次を残します。
-
-1. 実施コマンド（実行した順序を含む）
-2. 未実施項目と理由
-3. Go/No-Go 判定と判定理由
-
-## 9. Verify
-
-```bash
-rg -n "Audience|This document decides|This document does not decide|SemVer|Go/No-Go|CHANGELOG|tag|Release" 04_Documentation/release.md
+git status -sb
 git diff --check
 ```
 
-## 10. 実行フェーズ固定（Read → Plan → Execute → Verify → Proceed）
+frontend:
 
-リリース作業は次の順序を固定し、順序入れ替えや省略を行わない。
+```bash
+cd 03_Implement/frontend
+npm install
+npm run typecheck
+npm run test
+npm run build
+```
 
-1. **Read**: 本書、`CHANGELOG.md`、関連runbook（`operations.md`）を再読し、今回の対象範囲を明確化する。
-2. **Plan**: リリース対象、実施コマンド、Go/No-Go判定観点、未実施時の記録先を先に固定する。
-3. **Execute**: 前節の手順（テスト・ビルド・タグ作成）を実行し、実行ログを残す。
-4. **Verify**: 本節の `rg` / `git diff --check` を含めて整合確認する。
-5. **Proceed**: 判定（Go / No-Go）と未解決項目を記録し、次アクションへ進む。
+backend:
 
-フェイルセーフ:
+```bash
+cd 03_Implement/backend
+python -m pytest
+```
 
-- Verify で不整合が出た場合の自己修復は **最大3回** まで。
-- 3回で収束しない場合は `StoppedForClarification` として停止し、判断要求を記録する。
+Docker Compose:
 
+```bash
+cd 03_Implement/deploy
+docker compose up --build -d
+curl -fsS http://localhost:8080/api/healthz
+```
 
-## 11. DOC-OPS Track 1 serial execution（2026-04-22 / DOC-OPS-05-12）
+## 手動確認
 
-### Phase 1 Read（同期）
-- Read同期: `04_Documentation/release.md` と `issue-doc-ops-05-12-04doc-release.md` を再読。
+- [ ] アプリが開く。
+- [ ] 新規ドキュメントを作成できる。
+- [ ] カードを追加・移動できる。
+- [ ] 保存して再読み込みしても内容が残る。
+- [ ] share/export に秘密情報や内部作業ログが含まれない。
+- [ ] SafeMode の既定動作が緩んでいない。
+- [ ] LLM provider が意図した値になっている。
 
-### Phase 2 ADR/CDC
-- Context: 公開リリース手順は監査可能性と再現性を両立する必要がある。
-- Decision: Improve external を維持し、判定根拠の記録を必須化。
-- Consequences: リリース時の判断と未実施理由を追跡可能にできる。
+## 文書確認
 
-### Phase 3 Plan（AC/DoDドラフト→合意）
-- AC draft: Audience/decides/does-not-decide/Go-NoGo の維持。
-- DoD draft: 6Phase記録 + docs-check + 自己修復3回上限。
-- 合意: Issueメモで合意済み。
+- [ ] [installation.md](installation.md) の起動手順が現行実装と合っている。
+- [ ] [configuration.md](configuration.md) の環境変数が `settings.py` と矛盾していない。
+- [ ] [security.md](security.md) の外部送信境界が維持されている。
+- [ ] [e2e_testing.md](e2e_testing.md) の確認手順が再現できる。
+- [ ] README や 04 文書に内部 issue 記録や秘密情報が混ざっていない。
 
-### Phase 4 Execute
-- 本節を追記し、Issue-Doc同期とPhase順序固定を明文化。
+## 失敗時の扱い
 
-### Phase 5 Verify
-- `rg -n "DOC-OPS Track 1 serial execution|Phase 1 Read|Phase 2 ADR/CDC|Phase 3 Plan|Phase 4 Execute|Phase 5 Verify|Phase 6 Proceed" 04_Documentation/release.md`
+次のいずれかに当てはまる場合、リリースを止めます。
 
-### Phase 6 Proceed
-- Ready。公開リリース手順の継続更新へ進行。
+- build、test、typecheck の失敗理由が説明できない。
+- SafeMode、share/export、LLM provider の安全境界が後退している。
+- 秘密情報、内部 URL、生の顧客情報が文書や export に混ざっている。
+- E2E の主要操作が再現できない。
 
+## リリース記録に残す項目
 
-## 12. Stream K serial completion record（2026-04-26）
+- 対象 commit
+- 実行した確認コマンド
+- E2E 結果
+- 既知の制限
+- rollback 方針
 
-### Phase 1 Read
-- 本書とIssue `issue-doc-ops-05-12-04doc-release.md` を再読し、公開境界とGo/No-Go判定導線を確認。
+## 関連文書
 
-### Phase 2 ADR/CDC
-- Context: release文書は公開運用手順と監査可能性を同時に満たす必要がある。
-- Decision: Improve externalを維持し、Audit trail必須項目を固定。
-- Consequences: 判定根拠と未実施理由を後追い監査で再現可能。
-
-### Phase 3 Plan
-- AC/DoD不足として監査記録項目（実施コマンド/未実施理由/Go-NoGo）を補完。
-
-### Phase 4 Execute
-- Audit trail節を追加し、既存手順は維持。
-
-### Phase 5 Verify
-- `rg -n "Audit trail|Go/No-Go|未実施|Public boundary|StoppedForClarification" 04_Documentation/release.md`
-- `git diff --check`
-
-### Phase 6 Proceed
-- 判定: **Ready**（自己修復0/3）。
-
-
-## Stream G mini-Phase serial run（2026-04-27）
-
-### Phase 1 Read
-- 対応Issue（`DOC-OPS-05-12`）と本書の分類ヘッダを再読し、公開境界を確認。
-
-### Phase 2 Plan
-- 変更責務を docs-only の記録同期に限定し、本文の分類（Move internal / Improve external）を維持。
-- 共通ACテンプレ（Scope固定 / 境界明示 / GoNoGo / docs-check / 3回上限）を適用。
-
-### Phase 3 Execute
-- 本節を追記し、Read→Plan→Execute→Verify→Proceed の直列実行証跡を固定。
-- 指定外ファイル・実装コード・共有統合ファイルは未編集。
-
-### Phase 4 Verify
-- `rg -n "DOC-OPS|Classification|Audience|Goal|Public boundary|Go/No-Go|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5" 04_Documentation/release.md`
-- `git diff --check`
-- self-repair count: 0/3。
-
-### Phase 5 Proceed
-- 判定: **Ready**（分類方針と公開境界を維持）。
-
-## Stream E共通: Draft課題のOpen化条件（DOC-OPS-05）
-
-- 本文書で扱う Draft 課題は、次の **5条件をすべて満たした場合のみ Open 化** する。
-  1. **Read**: 対象本文書と上位根拠（00〜02、必要なADR）を再読し、参照差分を列挙済み。
-  2. **Plan**: Scope / Non-Goals / Acceptance / Validation / Stop Conditions を明文化済み。
-  3. **Execute**: docs-only 境界（実装コード非変更）を維持し、allowlist 外の差分が 0。
-  4. **Verify**: 再現可能な docs-check コマンドと結果（成功/未実施理由）を記録済み。
-  5. **Proceed**: Go/No-Go/Conditional を明示し、未確定事項を「決定」扱いせず次アクションに分離済み。
-- 未確定事項は `TBD` / `Assumption` / `Decision Needed` で明示し、**承認前に仕様確定文へ昇格しない**。
-- 自己修復（同一原因への再試行）は最大3回まで。4回目相当は Stop とし、Open 化を保留する。
-
+- [e2e_testing.md](e2e_testing.md)
+- [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)
+- [operations.md](operations.md)
+- [security.md](security.md)
