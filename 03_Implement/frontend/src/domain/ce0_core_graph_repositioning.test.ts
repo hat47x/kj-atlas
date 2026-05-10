@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { validateCoreGraphRepositioning } from "./ce0_core_graph_repositioning";
+import {
+  createCoreGraphRepositionContractMock,
+  validateCoreGraphRepositioning,
+} from "./ce0_core_graph_repositioning";
 
 describe("validateCoreGraphRepositioning", () => {
   test("passes when transition is working -> consensus with patch+approval", () => {
@@ -32,5 +35,20 @@ describe("validateCoreGraphRepositioning", () => {
 
     expect(result.ok).toBe(false);
     expect(result.noGoId).toBe("consensus_direct_write");
+  });
+
+  test("creates contract mock response with frozen signature", () => {
+    const mock = createCoreGraphRepositionContractMock({
+      transition: { from: "working", to: "consensus", mode: "patch+approval" },
+      safeModeDefaultOn: true,
+      queryPreviewRequired: true,
+    });
+
+    expect(mock).toEqual({
+      contractVersion: "ce0-contract-freeze-2026-04-27",
+      accepted: true,
+      noGoId: undefined,
+      transition: { from: "working", to: "consensus", mode: "patch+approval" },
+    });
   });
 });
