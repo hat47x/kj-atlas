@@ -1,115 +1,76 @@
-# Runtime Parameter Registry（環境変数・実行パラメータ正本）
+# Runtime Parameter Registry
 
-本書は、kj-atlas の環境変数/実行パラメータに関する **単一正本（SSOT）** です。
+この文書は kj-atlas の環境変数と実行時パラメータの単一正本です。実装、Docker Compose、利用者向け文書で設定キーを追加・変更・削除する場合は、先にこの表を更新します。
 
-## 1. 基本ルール
+## 基本ルール
 
-1. 全ランタイムキーは `KJ_ATLAS_*` プレフィックスを必須とする。
-2. プレフィックスなし旧キーは受理しない。
-3. 新旧キーの混在指定は不正設定として扱う。
-4. boolean は肯定形 + 既定値で意味を固定する（例: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`, `KJ_ATLAS_LLM_ESCALATION_ENABLED`）。
-5. CE4監査契約では `query/bundle/proposal/apply` の4イベント欠損を成功扱いしない（fail-closed）。
-6. CE4の `dryRun=true` は常に `sideEffect=none` を必須とし、例外を許可しない。
+1. 利用者または運用者が設定する環境変数は、すべて例外なく `KJ_ATLAS_` で始めます。
+2. 接頭辞のない旧キーや、別接頭辞の互換キーは公開設定として扱いません。
+3. サードパーティコンテナや build tool が内部的に別名を必要とする場合でも、kj-atlas の公開設定キーは `KJ_ATLAS_*` だけです。実装側で内部名へ写像します。
+4. boolean は肯定形で命名し、既定値と安全側の意味を固定します。
+5. 04 文書には「主要なもの」だけではなく、この文書に載る公開環境変数をすべて記載します。
 
-## 2. バックエンド設定キー（`settings.py`）
+## Backend settings
 
-| 正規キー | 既定値 | 役割 |
-|---|---|---|
-| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化DB接続先 |
-| `KJ_ATLAS_LLM_PROVIDER` | `none` | LLMプロバイダ種別 |
-| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | `None` | local LLM ベースURL |
-| `KJ_ATLAS_LOCAL_LLM_MODEL` | `None` | local LLM モデル名 |
-| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | `None` | large-scale LLM ベースURL |
-| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | `None` | large-scale LLM モデル名 |
-| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale利用ガード |
-| `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale明示opt-in |
-| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | `None` | large-scale接続許可先 |
-| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM失敗時の `none` 退避 |
-| `KJ_ATLAS_API_KEY` | `None` | 簡易APIキー保護 |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査外部送信有効化 |
-| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | 監査送信方式 |
-| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | `None` | 監査HTTP送信先 |
-| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | `None` | 監査HTTP認証キー |
-| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | 監査HTTP timeout |
-| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 監査キュー上限 |
-| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode時の監査外送信許可 |
-| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | 認可アダプタ種別 |
-| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | 認可障害時フェイルセーフ |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | `None` | external_http PDPエンドポイント |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | external_http timeout |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | external_http 認証モード |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | `None` | external_http Bearer |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | `None` | external_http issuer ヘッダ値 |
-| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | JITプロビジョニング許可 |
-| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | provider ヘッダ名 |
-| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user ヘッダ名 |
-| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email ヘッダ名 |
-| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name ヘッダ名 |
-| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject ヘッダ名 |
-| `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決方式 |
-| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 API/CLI/GUI 同値性判定モード |
-| `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | `apply --dry-run` 副作用0を強制 |
-| `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | query/bundle/proposal/apply 欠損時 fail-closed |
-| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
-| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 契約未確定項目を `501 ce4_stubbed_*` で隔離し成功扱いしない |
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | 永続化 DB 接続先 |
+| `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider 種別。`none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
+| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す model 名 |
+| `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM の base URL |
+| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す model 名 |
+| `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale LLM への昇格許可 |
+| `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale LLM 利用の明示 opt-in |
+| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale LLM 接続を許可する host のカンマ区切り |
+| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
+| `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護する |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event の外部送信を有効化する |
+| `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | audit transport。`noop` または `http` |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP 送信先 |
+| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | audit HTTP 送信用 API key |
+| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout 秒数 |
+| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
+| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信を許可する |
+| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter。`noop`, `mock`, `external_http` |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control 障害時の動作。`read_only` または `deny` |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter の PDP endpoint |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `external_http` adapter の認証モード。`none`, `oidc`, `saml` |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter に渡す IdP issuer |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可する |
+| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
+| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
+| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 |
+| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name を受け取る header 名 |
+| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject を受け取る header 名 |
+| `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決 adapter。`user_id` または `sso_subject` |
+| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 同値性判定 mode |
+| `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制する |
+| `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | CE4 の query/bundle/proposal/apply audit 欠損を fail-closed にする |
+| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容する |
+| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離し、成功扱いにしない |
 
-補足:
-- `KJ_ATLAS_LLM_PROVIDER` は `none | local | local_http | large-scale | large_scale | external` を受理する。
-- `KJ_ATLAS_LLM_PROVIDER=large-scale/external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` かつ `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` が必須。
-- `KJ_ATLAS_CE4_EQUIVALENCE_MODE` は `equivalence_and_bundle_hash` 以外を許可しない（同値性定義多義化を防止）。
-- CE4同値性契約は Phase 1〜6 で固定し、`equivalenceKey + bundleHash` のAND判定を共通基準とする（単独判定を許可しない）。
+## Compose and frontend build keys
 
-- `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS=true` の間は、終了コード数値割当/匿名化方式/監査転送基盤を stub 応答で隔離し、`result=ng` の監査記録を必須とする。
+| Key | Default | Purpose |
+| --- | --- | --- |
+| `KJ_ATLAS_WEB_PORT` | `8080` | Compose の web 公開 port |
+| `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
+| `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
+| `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む API base path |
 
-## 3. CE4 監査イベント必須キー（契約）
+## Validation rules
 
-| Event | 必須キー |
-|---|---|
-| `query` | `queryId`, `timestamp`, `actor`, `safeMode`, `equivalenceKey` |
-| `bundle` | `queryId`, `bundleHash`, `excludedReason[]`, `equivalenceKey` |
-| `proposal` | `proposalId`, `sourceBundleHash`, `status`, `equivalenceKey` |
-| `apply` | `proposalId`, `approver`, `dryRun`, `sideEffect`, `result`, `equivalenceKey` |
+- `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` と `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` を必須にします。
+- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` は `noop`, `mock`, `external_http` だけを許可します。
+- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は `read_only`, `deny` だけを許可します。
+- `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` は `none`, `oidc`, `saml` だけを許可します。
+- `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` は `user_id`, `sso_subject` だけを許可します。
+- CE4 の固定契約値は、実装で安全側に検証します。
 
-- `dryRun=true` の場合、`sideEffect=none` を必須とする（must）。
-- 必須キー欠損時は成功扱いせず、監査失敗として扱う。
+## Operating rule
 
-## 4. Compose/デプロイ層パラメータ
-
-| キー | 既定値 | 役割 |
-|---|---|---|
-| `POSTGRES_DB` | `kj_atlas` | DB名 |
-| `POSTGRES_USER` | `kj_atlas` | DBユーザ |
-| `POSTGRES_PASSWORD` | `kj_atlas` | DBパスワード |
-| `WEB_PORT` | `8080` | web公開ポート |
-| `VITE_KJ_ATLAS_API_BASE` | `/api` | frontend APIベースパス（正規キー） |
-| `VITE_API_BASE` | `/api` | frontend APIベースパス（後方互換shim。互換期間中のみ許容） |
-
-## 5. ENV-ARCH-01 契約（一括移行）
-
-- backend container defaults (`03_Implement/backend/Dockerfile`) も `KJ_ATLAS_DATABASE_URL` / `KJ_ATLAS_LLM_PROVIDER` を使用し、旧キーを導入しない。
-
-- 切替方式: 一括移行（E1: Option B）
-- 旧キー互換: なし（旧キーは受理しない）
-- 移行痕跡: 追加しない（E2: Option C）
-- 期限運用: 採用しない（E3: 考慮外）
-
-## 6. strict mode 例外運用（AUTH-OPS-03）
-
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を本番 strict mode 標準とする。
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` は期限付き例外運用に限定する。
-- いずれでも SafeMode/read-only 優先を弱めない。
-
-## 7. フェイルセーフ停止条件（CE4）
-
-以下を検知した場合は、設定反映を停止する。
-
-1. 同値性定義の多義化（`KJ_ATLAS_CE4_EQUIVALENCE_MODE` の複数許容）
-2. ログ欠損を成功扱いする設定
-3. safeMode後退要求（未レビュー保護・share/export保護の緩和）
-
-## 8. 運用ルール（集約管理）
-
-1. 環境変数・パラメータの追加/改名/削除時は、先に本書を更新する。
-2. 他文書は値の列挙を最小化し、本書への参照を記載する。
-3. 実装（`settings.py` / `docker-compose.yml`）との差分が出た場合、PRで同時に整合を取る。
-4. ENV移行方針を変更する場合は `ADR-0021` と本書を同一PRで更新する。
+公開文書、runbook、Docker Compose の利用者入力、CI 設定例では、上記以外の環境変数名を kj-atlas の設定キーとして記載しません。内部実装上の写像が必要な場合も、利用者には `KJ_ATLAS_*` のみを提示します。

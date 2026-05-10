@@ -2,11 +2,11 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kj_atlas}
-      POSTGRES_USER: ${POSTGRES_USER:-kj_atlas}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kj_atlas}
+      POSTGRES_DB: ${KJ_ATLAS_POSTGRES_DB:-kj_atlas}
+      POSTGRES_USER: ${KJ_ATLAS_POSTGRES_USER:-kj_atlas}
+      POSTGRES_PASSWORD: ${KJ_ATLAS_POSTGRES_PASSWORD:-kj_atlas}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kj_atlas} -d ${POSTGRES_DB:-kj_atlas}"]
+      test: ["CMD-SHELL", "pg_isready -U ${KJ_ATLAS_POSTGRES_USER:-kj_atlas} -d ${KJ_ATLAS_POSTGRES_DB:-kj_atlas}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -30,9 +30,9 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
       args:
-        VITE_API_BASE: ${VITE_API_BASE:-/api}
+        KJ_ATLAS_FRONTEND_API_BASE: ${KJ_ATLAS_FRONTEND_API_BASE:-/api}
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${KJ_ATLAS_WEB_PORT:-8080}:80"
     depends_on:
       - api
 

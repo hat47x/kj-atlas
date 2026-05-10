@@ -468,7 +468,7 @@ A2 contract test では次を機械判定する。
 検証成功条件:
 
 - 同一 `document.json` から常に同一 `llm_ir.json` が生成される。
-- provider未起動（`LLM_PROVIDER=fixture`）でも回帰が成立する。
+- provider未起動（`KJ_ATLAS_LLM_PROVIDER=none`）でも回帰が成立する。
 
 ---
 

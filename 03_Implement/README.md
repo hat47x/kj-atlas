@@ -34,15 +34,15 @@ Open `http://localhost:8080`.
 
 Set values in shell env vars or `.env` in `03_Implement/deploy`.
 
-- `WEB_PORT` (default: `8080`)
+- `KJ_ATLAS_WEB_PORT` (default: `8080`)
 - `KJ_ATLAS_DATABASE_URL` (default: `postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas`)
 - `KJ_ATLAS_LLM_PROVIDER` (default: `none`)
-- `POSTGRES_DB` (default: `kj_atlas`)
-- `POSTGRES_USER` (default: `kj_atlas`)
-- `POSTGRES_PASSWORD` (default: `kj_atlas`)
-- `VITE_API_BASE` (default: `/api`, current Docker Compose build arg)
+- `KJ_ATLAS_POSTGRES_DB` (default: `kj_atlas`)
+- `KJ_ATLAS_POSTGRES_USER` (default: `kj_atlas`)
+- `KJ_ATLAS_POSTGRES_PASSWORD` (default: `kj_atlas`)
+- `KJ_ATLAS_FRONTEND_API_BASE` (default: `/api`)
 
-Frontend source code also accepts `VITE_KJ_ATLAS_API_BASE` as the preferred API base key. The current Docker Compose path passes `VITE_API_BASE` to the Dockerfile, so use `VITE_API_BASE` for Compose builds unless the Docker build wiring is updated.
+All public kj-atlas environment variables use the `KJ_ATLAS_` prefix. Docker Compose maps these values to any internal container-specific names that are needed.
 
 ## Manual frontend build (optional)
 

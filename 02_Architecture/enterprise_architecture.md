@@ -312,7 +312,7 @@ interface AccessControlAdapter {
 
 #### フォールバック仕様（policyRef不達・無効時 fail-safe）
 
-| 条件 | 既定挙動（`ACCESS_CONTROL_FAIL_SAFE_MODE=read_only`） | 厳格挙動（`deny`） | `reason` |
+| 条件 | 既定挙動（`KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only`） | 厳格挙動（`deny`） | `reason` |
 |---|---|---|---|
 | `visibility in {Org, Restricted}` かつ `policyRef` 欠損/空 | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `policy_ref_missing` |
 | `policyRef` 解決不能（DNS/接続/timeout） | `read`のみ許可、`write/export/share`拒否 | 全拒否 | `policy_ref_unreachable` |
@@ -360,7 +360,7 @@ interface AccessControlAdapter {
 - [ ] 監査イベントに PII（氏名/メール/本文/roles/groups生値）を残さない。
 - [ ] 監査送信失敗時に本体機能を停止しない（fail-open）一方、失敗件数は運用監視で観測できる。
 - [ ] `visibility` 追加によって readOnly/SafeMode の拒否強度が弱まらない。
-- [ ] `ACCESS_CONTROL_FAIL_SAFE_MODE` の既定値が `read_only` である。
+- [ ] `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の既定値が `read_only` である。
 
 #### 受入基準（DoD）
 
@@ -375,12 +375,12 @@ interface AccessControlAdapter {
 #### 実運用アダプタ最小実装計画（OIDC/SAML）
 
 1. **接続面の最小実装**
-   - `ACCESS_CONTROL_ADAPTER=external_http` を追加し、PDP（policy decision point）へ HTTP POST 委譲。
+   - `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` を追加し、PDP（policy decision point）へ HTTP POST 委譲。
    - `auth_mode=oidc|saml` と `idp_issuer` をヘッダ運搬し、SSO運用情報を policy engine 側へ渡す。
 2. **失敗時挙動の固定**
    - 4xx/不正JSON/契約違反は `policy_ref_invalid`。
    - 接続不可/timeout/5xx は `policy_ref_unreachable`。
-   - いずれも `ACCESS_CONTROL_FAIL_SAFE_MODE`（既定 `read_only`）へ委譲。
+   - いずれも `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE`（既定 `read_only`）へ委譲。
 3. **監査連携の固定**
    - `view/export` イベントに `decision_*`, `policyRefPresent`, `adapterName`, `traceId` を保持。
    - `roles/groups/policyRef` の生値非保存をテストで固定。

@@ -35,7 +35,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ## 3. CIで許容する実行パターン
 
-前提: `LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
+前提: `KJ_ATLAS_LLM_PROVIDER=none` は全環境で許容される既定状態（LLM無効）。
 
 ### 3.1 常時利用可能（必須）
 
@@ -47,7 +47,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ### 3.3 定期実行のみ（通常PRでは非必須）
 
-- **External provider（strong model）**: `LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
+- **External provider（strong model）**: `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` の明示設定下で夜間/定期統合テストのみ実行。
 - PRごと必須にしない（コストと接続可用性のため）。
 
 ---
@@ -56,7 +56,7 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 - `offline`: none | fixture | local。外部送信禁止。
 - `intranet`: local中心、必要時に社内ゲートウェイ経由。
-- `scheduled-integration`: `LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
+- `scheduled-integration`: `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
 
 safeModeは全モードで既定ONとし、外部送信可否と独立して漏えい防止ルールを適用する。
 
@@ -65,7 +65,7 @@ safeModeは全モードで既定ONとし、外部送信可否と独立して漏�
 ## 5. 失敗時ポリシー
 
 - LocalProvider未起動時は FixtureProvider へフォールバック可能とする。
-- `LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
+- `KJ_ATLAS_LLM_ESCALATION_ENABLED=false` 時は、external provider へフォールバックしない（fail-safe）。
 - 外部通信不能はテスト警告扱い（ただし通常CIの必須判定から除外）。
 - スキーマ検証失敗は通信可否に関わらず失敗扱い（品質ゲート優先）。
 
@@ -81,8 +81,8 @@ safeModeは全モードで既定ONとし、外部送信可否と独立して漏�
 
 ## 7. 設定キー整合
 
-- 本仕様の設定キーは `LLM_*` に統一する。
-- 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。
+- 本仕様の公開設定キーは `KJ_ATLAS_*` に統一する。
+- 接頭辞のない旧 LLM 設定キーは互換aliasを提供しない。
 
 ## 8. CE-2 Runtime Guardrails（low-risk / proposal-only）
 

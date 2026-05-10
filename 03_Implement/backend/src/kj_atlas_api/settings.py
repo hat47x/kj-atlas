@@ -40,6 +40,7 @@ LEGACY_ENV_KEYS = {
     "CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT",
     "CE4_AUDIT_REQUIRE_ALL_EVENTS",
     "CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK",
+    "CE4_STUB_UNRESOLVED_CONTRACTS",
 }
 
 
@@ -188,6 +189,10 @@ class Settings(BaseSettings):
         default=True,
         validation_alias="KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK",
     )
+    ce4_stub_unresolved_contracts: bool = Field(
+        default=True,
+        validation_alias="KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -225,6 +230,20 @@ class Settings(BaseSettings):
                 "KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE must be one of none|oidc|saml"
             )
         self.access_control_external_http_auth_mode = normalized_auth_mode
+
+        normalized_access_control_adapter = self.access_control_adapter.strip().lower()
+        if normalized_access_control_adapter not in {"noop", "mock", "external_http"}:
+            raise ValueError(
+                "KJ_ATLAS_ACCESS_CONTROL_ADAPTER must be one of noop|mock|external_http"
+            )
+        self.access_control_adapter = normalized_access_control_adapter
+
+        normalized_fail_safe_mode = self.access_control_fail_safe_mode.strip().lower()
+        if normalized_fail_safe_mode not in {"read_only", "deny"}:
+            raise ValueError(
+                "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE must be one of read_only|deny"
+            )
+        self.access_control_fail_safe_mode = normalized_fail_safe_mode
 
         normalized_reviewer_ref_adapter = self.reviewer_ref_resolver_adapter.strip().lower()
         if normalized_reviewer_ref_adapter not in {"user_id", "sso_subject"}:

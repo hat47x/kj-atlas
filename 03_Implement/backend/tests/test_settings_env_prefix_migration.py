@@ -54,6 +54,39 @@ def test_settings_normalizes_access_control_auth_mode(monkeypatch) -> None:  # t
     assert loaded.access_control_external_http_auth_mode == "oidc"
 
 
+def test_settings_normalizes_access_control_adapter_and_fail_safe(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_ADAPTER", "  MOCK ")
+    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE", "  DENY ")
+
+    loaded = Settings()
+
+    assert loaded.access_control_adapter == "mock"
+    assert loaded.access_control_fail_safe_mode == "deny"
+
+
+def test_settings_rejects_invalid_access_control_adapter(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_ADAPTER", "custom")
+
+    try:
+        Settings()
+        assert False, "Expected invalid access-control adapter to be rejected"
+    except ValueError as exc:
+        assert "KJ_ATLAS_ACCESS_CONTROL_ADAPTER" in str(exc)
+
+
+def test_settings_rejects_invalid_access_control_fail_safe(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE", "allow")
+
+    try:
+        Settings()
+        assert False, "Expected invalid access-control fail-safe mode to be rejected"
+    except ValueError as exc:
+        assert "KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE" in str(exc)
+
+
 def test_settings_normalizes_reviewer_ref_resolver_adapter(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     _unset_related_envs()
     monkeypatch.setenv("KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER", "  SSO_SUBJECT ")
@@ -83,3 +116,23 @@ def test_settings_rejects_disabling_ce4_audit_require_all_events(monkeypatch) ->
         assert False, "Expected CE4 audit fail-closed guard to be rejected"
     except ValueError as exc:
         assert "KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS" in str(exc)
+
+
+def test_settings_exposes_ce4_stub_unresolved_contracts(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS", "false")
+
+    loaded = Settings()
+
+    assert loaded.ce4_stub_unresolved_contracts is False
+
+
+def test_settings_rejects_legacy_ce4_stub_key(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _unset_related_envs()
+    monkeypatch.setenv("CE4_STUB_UNRESOLVED_CONTRACTS", "false")
+
+    try:
+        Settings()
+        assert False, "Expected legacy CE4 stub key to be rejected"
+    except ValueError as exc:
+        assert "CE4_STUB_UNRESOLVED_CONTRACTS" in str(exc)

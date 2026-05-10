@@ -20,9 +20,9 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ## 2. デフォルト設定
 
-- `LLM_ESCALATION_ENABLED=false`（既定: 無効）
-- `LLM_PROVIDER=none`（既定: 無効）
-- `LLM_PROVIDER=none|fixture|local|external` の列挙を前提とする（fixtureは回帰専用でエスカレーション対象外）。
+- `KJ_ATLAS_LLM_ESCALATION_ENABLED=false`（既定: 無効）
+- `KJ_ATLAS_LLM_PROVIDER=none`（既定: 無効）
+- `KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external` の列挙を前提とする。
 - 明示的に `true` へ変更しない限り、外部送信は行わない。
 - 設定変更には運用責任者の承認と監査ログ記録を要する。
 
@@ -147,5 +147,5 @@ CE2/CE4 で生成される監査イベントには、少なくとも以下を含
 
 ## 7. 設定キー整合
 
-- 本仕様の設定キーは `LLM_*` に統一する。
-- 旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は互換aliasを提供しない。
+- 本仕様の公開設定キーは `KJ_ATLAS_*` に統一する。
+- 接頭辞のない旧 LLM 設定キーは互換aliasを提供しない。

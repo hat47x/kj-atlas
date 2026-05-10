@@ -148,10 +148,10 @@ Docker Engine と Docker Compose v2 をインストールしてください。Do
 
 ### `port is already allocated`
 
-`WEB_PORT` を変えて起動します。
+`KJ_ATLAS_WEB_PORT` を変えて起動します。
 
 ```bash
-WEB_PORT=8081 docker compose up --build -d
+KJ_ATLAS_WEB_PORT=8081 docker compose up --build -d
 ```
 
 ### API が 401 を返す

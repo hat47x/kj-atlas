@@ -1,7 +1,7 @@
 # English Summary
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
-This document is the single source of truth for provider abstraction in kj-atlas. It standardizes provider enum, `LLM_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
+This document is the single source of truth for provider abstraction in kj-atlas. It standardizes provider enum, `KJ_ATLAS_*` configuration, `LLMRequest`/`LLMResponse` contracts, and links the LLM input IR to the dedicated Phase-B IR spec.
 
 # llm_provider_spec — LLMプロバイダ抽象仕様（正本）
 
@@ -46,24 +46,23 @@ This document is the single source of truth for provider abstraction in kj-atlas
 
 ---
 
-## 3. 設定キー（`LLM_*` に完全統一）
+## 3. 設定キー（`KJ_ATLAS_*` に完全統一）
 
-互換aliasは持たない。旧 `LLM_PROVIDER` / `LOCAL_LLM_*` / `EXTERNAL_LLM_*` は非対応とする。
+互換aliasは持たない。接頭辞のない旧 LLM 設定キーは非対応とする。
 
 ```text
-LLM_PROVIDER=none|fixture|local|external
-LLM_ESCALATION_ENABLED=false
-LLM_EXTERNAL_ENABLED=false
-LLM_TRANSPORT=in_process|ipc|http
-LOCAL_LLM_BASE_URL=<url-or-socket>
-LOCAL_LLM_MODEL=<model_id>
-LLM_EXTERNAL_ENDPOINT=<allowlisted_endpoint>
-LLM_EXTERNAL_MODEL=<model_id>
-LLM_FIXTURE_DATASET=<fixture_dataset_path>
+KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external
+KJ_ATLAS_LLM_ESCALATION_ENABLED=false
+KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=false
+KJ_ATLAS_LOCAL_LLM_BASE_URL=<url-or-socket>
+KJ_ATLAS_LOCAL_LLM_MODEL=<model_id>
+KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL=<allowlisted_endpoint>
+KJ_ATLAS_LARGE_SCALE_LLM_MODEL=<model_id>
+KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
 ```
 
-- `LLM_PROVIDER=none` を既定値とする。
-- `LLM_PROVIDER=external` は `LLM_ESCALATION_ENABLED=true` かつ `LLM_EXTERNAL_ENABLED=true` を必須とする。
+- `KJ_ATLAS_LLM_PROVIDER=none` を既定値とする。
+- `KJ_ATLAS_LLM_PROVIDER=external` は `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` を必須とする。
 
 ---
 
