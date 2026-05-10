@@ -169,3 +169,30 @@
 - 期待結果:
   - single-file scope で、Phase 1〜6、Evidence/Approval Record、Proceed/Hold/Stop条件が確認できる。
   - docs-check がゼロエラーで、proposal-only / no-auto / mock-isolated dependency の3条件に反証がない。
+
+## Stream H execution log（2026-05-10 / CE2-low-risk-ai-assist）
+
+### Phase 1: Read
+- CE2契約（proposal-only / human-final / no-auto / fail-closed）と CE1 read-only 依存境界を再確認。
+- 実装側では `proposed` 固定・`reviewState=unreviewed` 固定・決定語彙 `accepted|rejected|held` のみを許可する既存契約を照合。
+
+### Phase 2: Plan
+- CE2作業を CE4 と分離し、低リスク要件を「説明可能性（diff/rationale）」「巻き戻し容易性（proposal-only + no-auto）」で固定。
+- AC補完:
+  - [x] AI提案は `status=proposed` のみ。
+  - [x] 人間最終決定以外の遷移を許可しない。
+  - [x] `reviewState` は自動昇格させない。
+
+### Phase 3: Execute
+- mock interface を維持して `proposals/island-summary` を no-op apply（提案のみ）として運用。
+- 依存未確定項目（CE0/CE1承認証跡）は read-only 参照に固定し、推測確定を行わない。
+
+### Phase 4: Verify
+- `pytest -q 03_Implement/backend/tests/test_ce2_proposal_api.py` を実行し、proposal-only と決定語彙制約を回帰確認。
+- self-correction: `0/3`。
+
+### Phase 5: Proceed
+- 判定: **Proceed (CE2実装足場のみ達成)**。
+- 残リスク:
+  1. CE0/CE1承認証跡が未確定のため Open化判定は依然 Hold。
+  2. 運用監査の永続保存（DB/外部SIEM連携）は未範囲。
