@@ -1176,3 +1176,31 @@
   2. 監査必須項目削減要求。
   3. 指定外ファイル編集要求。
   4. self-correction 4回目相当。
+
+## Stream H execution log（2026-05-10 / CE4-api-cli-audit-integration）
+
+### Phase 1: Read
+- ADR-0015/0016/0017 と CE4契約本文を再読し、同値条件（`equivalenceKey AND bundleHash`）と fail-closed を再確認。
+- API/CLI同値性は mock `sourceBundleHash` を含めた監査4点セット前提であることを確認。
+
+### Phase 2: Plan
+- CE2と分離したCE4計画として、接続面を「API resolve endpoint」「CLI payload正規化」「監査キー検証」に限定。
+- AC補完:
+  - [x] CLI/APIで required field 同一性を保持。
+  - [x] dry-run時の sideEffect=none を必須化。
+  - [x] 監査連鎖 `query/bundle/proposal/apply` 欠損時 fail-closed。
+
+### Phase 3: Execute
+- interface+mock-first 方針を維持し、`ce4 resolve-bundle` 系を最小契約のまま固定（実装方式は未確定のまま）。
+- no-op fallback: 応答欠損や契約不一致時は成功にせず停止（SystemExit）する導線を保持。
+
+### Phase 4: Verify
+- `pytest -q 03_Implement/backend/tests/test_cli_ce4_audit.py` を実行し、API/CLI監査統合の契約テストを再検証。
+- self-correction: `0/3`。
+
+### Phase 5: Proceed
+- 判定: **Proceed (CE4接続面の整備達成)**。
+- 残リスク:
+  1. principalマスキング方式（可逆/不可逆）は未確定。
+  2. 監査転送基盤（保存先・署名・配送保証）は未確定。
+  3. CLI exit code 詳細マッピングは ADR 境界で保留。
