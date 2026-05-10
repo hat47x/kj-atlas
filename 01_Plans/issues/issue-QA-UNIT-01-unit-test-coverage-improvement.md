@@ -90,3 +90,26 @@ coverage数値のみでは Done 判定が曖昧で、欠陥再発を抑止でき
 - blocker: 契約未凍結、実行環境制約、上流承認待ち。
 - 再開条件: 対象契約凍結、実行環境復旧、承認記録の付与。
 - 未達時: `Execution: Hold` を維持。
+
+
+## Open readiness pack（AC/DoD/Validation plan 固定）
+
+### AC（Open化判定用 / 推測確定禁止）
+- AC-O1: Scope が docs-only（本ファイルのみ）として固定され、実装変更の要求が含まれない。
+- AC-O2: Gate `G1 Unit -> G2 Integration -> G3 E2E Traceability` の順序が崩れていない。
+- AC-O3: 失敗分類（`test defect / product defect / environment limitation`）が単一語彙で維持される。
+- AC-O4: blocker と再開条件が 1:1 対応で記載され、未充足時は `Execution: Hold` を維持する。
+
+### DoD（Open公開品質）
+- DoD-O1: 第三者が本ファイル単体で「何を実装しないか（Non-goal）」を判定できる。
+- DoD-O2: Validation plan がコマンド再現可能で、結果判定（pass/fail/blocked）が定義済み。
+- DoD-O3: 承認未了項目は `Pending` のまま保持し、確定語（Done/Approved）へ昇格しない。
+
+### Validation plan（docs-check）
+- `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Execution: Hold|Pending" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+- `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+
+### Pending approvals（未承認は保持）
+- Pending-1: テスト拡張実行の着手承認（実装タスク起票）。
+- Pending-2: 上流契約凍結の最終承認反映。

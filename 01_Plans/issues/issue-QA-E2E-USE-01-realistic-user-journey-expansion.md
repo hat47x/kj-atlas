@@ -84,3 +84,26 @@ E2Eがsmoke中心のため、実利用で重要な連続操作（作成→レビ
 ### blockers / 再開条件
 - blocker: 上流仕様未確定、E2E環境不足、関連stream未反映。
 - 再開条件: 上流仕様確定、E2E環境復旧、依存stream差分反映確認。
+
+
+## Open readiness pack（AC/DoD/Validation plan 固定）
+
+### AC（Open化判定用）
+- AC-O1: S1〜S3（Must）と S4（Should）の優先境界が維持される。
+- AC-O2: `locale + readOnly` のI18N境界が横断条件として残る。
+- AC-O3: `unit -> integration -> e2e` の前段ゲート未達時は E2E Proceed しない。
+- AC-O4: 失敗時の triage は `test defect / product defect / environment limitation` で固定される。
+
+### DoD（Open公開品質）
+- DoD-O1: 実装非実施（docs-only）が明示され、対象外変更を含まない。
+- DoD-O2: Validation手順が再現可能で、判定語彙（pass/fail/blocked）が追跡可能。
+- DoD-O3: 依存未確定・承認未了は `Pending` として保持し、推測確定しない。
+
+### Validation plan（docs-check）
+- `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Pending|Execution: Hold" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+- `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+- `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+
+### Pending approvals（未承認は保持）
+- Pending-1: 実運用E2E環境での実行承認。
+- Pending-2: QA-PUB-01 境界判定の最終レビュー承認。
