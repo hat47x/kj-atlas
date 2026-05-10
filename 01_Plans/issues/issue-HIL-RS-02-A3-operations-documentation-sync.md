@@ -128,3 +128,17 @@
 - DOC-OPS-02固定順（Architecture→Documentation→Plans→AGENTS）に合わせ、A3は documentation sync の準備状態で停止。
 - 用語/役割/導線/固定値（D1〜D4）の同値確認のみ実施。
 - A1承認完了ログ受領まで `Current: Hold` を維持し、Open昇格を行わない。
+
+## Stream A proceed gate lock（2026-05-10）
+
+### Dependency and status gate
+- A3は `A1 -> A2 -> A3` 依存の末端であり、A1完了前は `Hold` 維持。
+- `Current: Hold` を解除できるのは `a1Status=="Done" && pendingDecisionQueueCount==0` のみ。
+
+### Contract read-only boundaries
+- 参照対象: `freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`。
+- A3側での再定義禁止: APIシグネチャ変更、最小型変更、監査イベント名変更。
+
+### Mock usage（A3準備で許可）
+- 許可: 用語・導線・証跡テンプレート整合確認。
+- 不許可: 承認状態推測、A1契約値の補完確定、Open昇格判定代行。

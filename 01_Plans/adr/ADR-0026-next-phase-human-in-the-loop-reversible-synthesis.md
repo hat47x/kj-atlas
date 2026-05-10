@@ -253,6 +253,37 @@
 - A2/A3は read-only handoff のまま進行し、契約再定義を実施できない。
 - 契約ID改変、SafeMode境界緩和、Pending bypass を No-Go として維持できる。
 
+## Stream A serial contract freeze addendum（2026-05-10）
+
+### Phase 1: Read & Diff Check
+- 対象（ADR-0026 / RS-01親Issue / RS-01-A1 / RS-02親 / RS-02-A1 / RS-02-A3）を再読し、依存順 `A1 -> A2 -> A3` を確認した。
+- 差分確認の観点は `fixed keys`・`approval record`・`gate equation`・`A2/A3 open条件` に限定し、契約ドリフトの有無のみを判定対象とした。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1契約が未承認のままA2/A3側で判定式や語彙が増減すると、read-only handoff原則が崩れる。
+- Decision: 親ADRは契約値の**再定義を行わない参照専用ノード**として固定し、Proceed判定は `Needs-decision/Hold` を維持する。
+- Consequences: 承認完了まで下流は準備作業のみ可能、契約変更と実装指示は不可。
+
+### Phase 3: Contract Freeze（read-only contract）
+- API signature（固定）:
+  - `HIL_RS_DECISION_GATE_V1(issueId, phase, approvalRecord) -> {gateStatus, held[]}`
+  - `HIL_RS_PATCH_PROPOSAL_V1(sourceBundleHash, proposalId, actor) -> {patchDraft, riskLabels[]}`
+  - `HIL_RS_APPLY_JUDGEMENT_V1(proposalId, humanDecision, approvedBy) -> {applyResult, rollbackRef}`
+- 最小データ型（固定）:
+  - `ApprovalRecordV1 = { approved_by: string|null, approved_at: string|null, evidence: string|"pending" }`
+  - `GateStatusV1 = "go" | "conditional" | "no-go"`
+  - `DecisionQueueTransitionV1 = "Pending->Approved" | "Pending->Rejected"`
+- 監査イベント名（固定）: `query`, `bundle`, `proposal`, `apply`。
+- モック許可境界:
+  - 許可: 入出力の型適合検証、監査イベント4点セット検証、`Pending` 時の `Hold` 判定検証。
+  - 不許可: 状態遷移の確定、契約ID/キー集合/失敗意味論の変更、SafeMode境界緩和。
+
+### Phase 4: Proceed Gate
+- Go条件: `a1Status=="Done" && pendingDecisionQueueCount==0 && fixedKeyDrift==0 && undefinedConflictDetected==false`
+- Hold条件: `pendingDecisionQueueCount>0`
+- Stop条件: `pending bypass` / `contract redefinition` / `fixed key drift>0` / `safeMode retreat` / `undefined conflict`
+- 現在判定（2026-05-10）: **Hold/Needs-decision**。
+
 
 ## Stream A alignment update（2026-05-07 / Phase 1-5）
 
