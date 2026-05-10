@@ -398,3 +398,23 @@
 - 判定: **Hold/Needs-decision 維持**。
 - 理由: `Approval Record` が `Pending` のため unlock条件 `a1Status=="Done" && pendingDecisionQueueCount==0` が未成立。
 - 停止条件: self-correction>3 / 前提崩れ / 未定義競合を検知した場合は即Stop。
+
+
+## Stream A governance contract hardening update（2026-05-10）
+
+### Context
+- HIL-RS-02 A1 は固定契約値（`freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary`）を維持しているが、Decision Queue に未承認IDが残存している。
+- `Proceed=Go` は `A1 Done && pendingDecisionQueueCount==0` を満たす場合のみ許可される。
+
+### Decision
+- Stream A は直列固定運用（Read Gate → ADR明文化 → Plan → Execute → Verify → Proceed判定）を維持する。
+- 承認待ち（`approved_by`, `approved_at`, `evidence` 未充足、または Pending Decision ID 残存）の間は `executeAllowed=false` を固定する。
+- 禁止遷移（`Draft -> Approved`, `Pending -> Execute`, `Rejected -> Execute`）を追加例外なしで維持する。
+
+### Consequences
+- A1完了条件が明文化され、A2/A3の誤開放経路を継続遮断できる。
+- 判定は `Hold/NoGo` 優先となり、承認証跡が揃うまで Proceed は停止される。
+
+### Pending Decision Queue（as of 2026-05-10）
+- `PD-20260507-A1-001`（Approval evidence format）
+- `PD-20260507-A1-002`（reviewerRef匿名化パターン）
