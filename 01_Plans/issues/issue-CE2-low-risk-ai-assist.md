@@ -271,3 +271,37 @@
 - 判定: **Proceed（docs-only反映完了）**。
 - 継続条件: 実装化時も本契約をテストで fail-closed に固定すること。
 - 即Stop条件: reviewed自動昇格・暗黙accept/finalize・公開直結経路のいずれかを検知した場合。
+
+
+## Stream D execution（2026-05-10 / CE2 proposal-only）
+
+### Phase 1: Read（CE1契約未確定=proposal-only継続）
+- CE2契約の不変条件（`proposal-only / human-final / no-auto / fail-closed`）と tri-state（`Proceed / Hold / Stop(held)`）を再確認。
+- CE1は read-only dependency とし、契約未確定時は CE2 側で確定要求を行わない方針を維持。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+- CE2は実装前の意思決定準備であり、依存未確定状態では Open 判定を確定できない。
+
+#### Decision
+- CE1未確定の間は **proposal-only** を維持し、Proceed判定を発行しない。
+- 判定語彙は tri-state のみ許可し、二値判定（Proceed/Holdのみ）への退行を禁止する。
+- Approval Record の `missing>0` は必ず `Hold` とし、`Stop(held)` は安全境界逸脱時に限定する。
+
+#### Consequences
+- 依存推測での誤Proceedを抑止し、Open化判定の再現性を維持できる。
+- safeMode既定ONと fail-closed を侵害しないまま、審査文書だけを成熟化できる。
+
+### Phase 3: 低リスク運用ガード（safeMode後退禁止）
+- `safeMode` 既定ON、`share/export` 漏えい防止、`auto-apply/auto-confirm/auto-publish` 禁止を不変条件として維持。
+- `accepted/rejected` は human-final のみ。AI提案は常に `proposed` + `unreviewed`。
+- 監査4点（`query/bundle/proposal/apply`）または hash整合（`sourceBundleHash===bundleHash`）欠損時は fail-closed で `held`。
+
+### Phase 4: AC/DoD検証
+- AC-P1〜P4 / DoD-P1〜P4 の評価結果: **反証なし（proposal整合）**。
+- Open化判定は `O1〜O4=all true` 以外を `Hold` に固定。
+- 結論: **Hold継続**（CE0/CE1証跡未充足のため）。
+
+### Phase 5: 失敗時自己修復
+- self-correction counter: `0/3`。
+- 失敗時は同一原因の再試行を最大3回まで許可し、4回目相当は `Stop(held)`。
