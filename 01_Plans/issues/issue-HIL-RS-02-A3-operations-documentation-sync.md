@@ -142,3 +142,25 @@
 ### Mock usage（A3準備で許可）
 - 許可: 用語・導線・証跡テンプレート整合確認。
 - 不許可: 承認状態推測、A1契約値の補完確定、Open昇格判定代行。
+
+
+## Stream C execution record（2026-05-10, Documentation/Ops）
+
+### Phase 1: Read
+- `02_Architecture/strict_mode_exception_approval_flow.md`（正本）と `04_Documentation/operations.md` / `security.md` / `security_operational_guidelines.md` の語彙・役割・導線・D1〜D4 を再確認。
+
+### Phase 2: Plan
+- AC/DoD不足として、`operations.md` 側に「監査導線クイックチェック（4観点+停止条件+証跡）」を追記する方針を固定。
+- 品質ゲートを docs-only（`git diff --check` + `rg`照合 + `git status --short`）で先行定義。
+
+### Phase 4: Execute
+- 運用本文の契約再定義は行わず、runbook 側へ監査導線チェック手順を追加。
+- `Current: Hold` は維持（A1完了まで Open/In Progress へ遷移しない）。
+
+### Phase 5: Verify
+- 4観点（用語/役割/導線/固定値）と停止語彙（`StoppedForClarification`）の一致を確認。
+- 修復回数は 0/3（初回で収束）。
+
+### Phase 6: Proceed
+- 未確定論点（A1承認ログ未着）は保留のまま切り出し、推測補完は行わない。
+- 判定: **Ready + Hold 維持**。
