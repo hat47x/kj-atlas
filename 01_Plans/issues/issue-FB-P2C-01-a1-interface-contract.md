@@ -3,6 +3,7 @@
 - Context: CE4 `/context/bundles:resolve` + `/context/v1/bundles:resolve` の接続面は `queryCanonicalHash` / `bundleHash` / `equivalenceKey` を最小契約として固定。
 - Decision: 契約面は `proposalLifecycle=proposed`（候補提示のみ）と `safeMode=true required` を維持し、unknown contract key は 400 を返す。
 - Consequences: 下流FB-P2C実装は監査4点セット（`query/bundle/proposal/apply`）を read-only 参照し、契約変更はA1再起票時のみ許可。
+- CE1参照整合: `ContextQueryV1` / `ContextBundleV1` は `CE1-CTXQ-IF` / `CE1-CTXB-IF` を read-only 参照し、エラー語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種固定に従う。
 
 # Issue Draft: FB-P2C-01 A1 interface contract freeze（Stream A critical path）
 
