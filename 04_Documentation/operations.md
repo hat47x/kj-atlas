@@ -1268,3 +1268,43 @@ runbook 側の Verify は次の4観点を必須とする。
 4. 固定値: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）
 
 > 判定ルール: 4観点のいずれかに不一致がある場合は `StoppedForClarification` とし、A1承認完了まで Proceed しない。
+
+### Stream E serial execution（2026-05-10 / CE4 API/CLI/Audit, proposal-only）
+
+#### Phase 1 Read
+- `ADR-0028` CE-4要件、`02_Architecture/api.md`、`04_Documentation/operations.md`、`04_Documentation/local_llm_ops_guide.md` を再読し、監査導線の共通語彙を確認。
+- CE1契約は read-only 参照とし、`ContextQuery/ContextBundle` の contract freeze を変更しないことを確認。
+
+#### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: `query/bundle/proposal/apply` の監査4点セットは存在するが、API/CLI同値性判定と routing 監査キーの統一記述が分散している。
+- **Decision**: CE4同値判定を `equivalenceKey AND bundleHash` に固定し、routing監査キー（`routingStage/provider/model/sourceBundleHash/proposalId`）を API/CLI共通必須観点として固定する。
+- **Consequences**: 実装前でも docs-only で検証計画を統一でき、監査欠損時は fail-closed で停止判断可能になる。
+
+#### Phase 3 Plan
+- 受入条件:
+  - [x] API/CLI双方で同値性判定キーと失敗分類が同一語彙で読める。
+  - [x] 監査ログの必須イベント/必須キー/順序要件が operations / local LLM guide と整合する。
+  - [x] routingStage 追跡不能時の Stop 条件を明文化する。
+- 非目標:
+  - 実装コード変更、契約型定義（CE0/CE1）変更、frontend変更。
+
+#### Phase 4 Execute
+- 本Issueに CE4統合方針（同値条件・監査キー・停止条件）を追記。
+- API設計文書へ監査I/Fの統一節を追加。
+- Operations / Local LLM guide へ API/CLI同値性検証計画の実行手順を追加。
+
+#### Phase 5 Verify（API/CLI同値性検証計画）
+- 検証計画（docs-contract）:
+  1. 同一 canonical query で API/CLI それぞれ `query -> bundle -> proposal -> apply` を dry-run 実行。
+  2. `equivalenceKey` と `bundleHash` の一致（AND条件）を確認。
+  3. routing監査キー（`routingStage/provider/model/sourceBundleHash/proposalId`）が4イベントすべてで追跡可能か確認。
+  4. 欠損・順序逆転・競合（同一キーで矛盾値）時は fail-closed で No-Go。
+- 自己修復カウンタ: `0/3`。
+
+#### Phase 6 Proceed / Stop
+- **Proceed条件**: 4文書（Issue/API/operations/local_llm_ops）で同値判定・監査キー・停止条件が矛盾なく読解できること。
+- **Stop条件**:
+  1. 監査ログ欠落（4イベント欠損または必須キー欠損）。
+  2. `routingStage` 追跡不能。
+  3. 未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾結果）。
+  4. 自己修復4回目相当（>3）。
