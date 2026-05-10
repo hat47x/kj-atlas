@@ -550,3 +550,49 @@
 - Go: `ProceedGate=true` かつ承認証跡が充足。
 - Conditional: `ProceedGate=false` かつ未承認事項が `held` のみ。
 - No-Go/Stop: 競合兆候、未承認確定化、allowlist外編集要求、契約未固定でA2/A3確定要求。
+
+## Stream B dedicated contract update（2026-05-10）
+
+### Phase 1 Read（allowlist / dependencies / mocked parallel prerequisites）
+- allowlistは本Issueと `issue-FB-P2C-01-a1-interface-contract.md` の2ファイルのみ。
+- 依存は `A1 -> A2 -> A3` を固定し、A2/A3は **mock準備のみ並行可**（確定実装は禁止）。
+- 前提条件:
+  1. `freezeContractId` と `schemaVersion` が2ファイルで一致。
+  2. `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` が維持。
+  3. `Approval Record` 未承認項目は `held` のまま保持。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+#### Context
+- Stream Bの責務は、baseline契約文面の整合を維持し、A1契約凍結を唯一SSOTとしてA2/A3誤開放を防ぐこと。
+
+#### Decision
+- 固定値は既存freeze定義（`HIL-RS-02-A1-CONTRACT-FREEZE-v1` / `schemaVersion=1.0.0` / `overridePolicy=human_dual_control_only`）を再利用し、再定義しない。
+- 開放判定は `A2A3_OPEN_ALLOWED` を唯一判定式として継続。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01` は `held` 維持。
+
+#### Consequences
+- A1未完了または承認証跡不足時はA2/A3を確定扱いしない。
+- safeMode固定値の後退要求は `No-Go` で即停止。
+
+### Phase 3 Plan（A1->A2->A3 gate contract only）
+- Gate定義（実装禁止、契約のみ）:
+  1. **Gate A1**: `a1Status=="Done"` かつ `pendingDecisionQueueCount==0`。
+  2. **Gate A2**: `A2A3_OPEN_ALLOWED==true` を満たす場合のみ着手可能（mock validation範囲）。
+  3. **Gate A3**: A2完了と同一契約ID一致を条件に計画可能（実装確定は禁止）。
+- いずれのGateも allowlist外編集要求・未定義競合検知時は `No-Go`。
+
+### Phase 4 Execute（baseline契約文面のみ更新）
+- 実施内容は契約文面の同期と整合確認に限定。
+- 新規実装・新規依存・allowlist外ファイル編集は行わない。
+
+### Phase 5 Verify（gate矛盾 / 依存循環 / safeMode後退なし）
+- 検証観点:
+  1. Gate矛盾なし（`A1 -> A2 -> A3` の一方向のみ）。
+  2. 依存循環なし（逆参照・自己循環なし）。
+  3. `safeModeDefault=ON` / `SAFE_MODE_STRICT_ON` の後退なし。
+  4. `held` 未承認事項の確定化なし。
+
+### Phase 6 Proceed（Proceed / Hold / Stop）
+- **Proceed**: `A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` かつ `Approval Record=Approved`。
+- **Hold**: 契約矛盾なしだが `Approval Record=Pending` または `held` 残存。
+- **Stop**: Gate矛盾、依存循環、safeMode後退、allowlist外編集要求、未承認確定化のいずれかを検知。
