@@ -1154,3 +1154,33 @@ realistic user journey の最小連結シナリオとして、S1〜S3 を1本の
 - flaky許容ゼロ。
 - 同一失敗の自己修復は最大3回。
 - 4回目相当は Stop とし、`Execution: Hold` へ遷移する。
+
+
+## Stream C HIL-RS docs-check execution log（2026-05-10）
+
+### 1) Read
+- `operations.md` / `security.md` / 本書の HIL-RS 関連節を再読し、A3 が「運用文書同期（docs-only）」であることを確認。
+
+### 2) Plan（AC/DoD不足補完）
+- AC:
+  - 4観点（用語/役割/導線/固定値 D1〜D4）が3文書で同時一致する。
+  - 未承認事項を確定文言へ昇格しない。
+- DoD:
+  - Read → Plan → Execute → Verify → Proceed を本書内で追跡可能。
+  - Verify 自己修復上限 3 回を維持し、超過時は `StoppedForClarification`。
+
+### 3) Execute
+- 実装・スキーマ変更を伴わない docs-only 同期のみ実施。
+
+### 4) Verify
+- 判定: **pass**（自己修復 0/3）。
+- 照合結果:
+  - 用語: `Security Officer / System Owner / Platform Operator` 一致。
+  - 役割: 2者承認 + 実行責務分離 一致。
+  - 固定値: D1=4h / D2=2h / D3=代理承認なし / D4=48h+15m/60m 一致。
+
+### 5) Proceed
+- 判定: **Conditional（Hold）**。
+- 未承認事項（確定扱い禁止）:
+  - `HIL-RS-02-A1` 承認完了通知。
+  - A1完了後の再検証（docs-check再実行）と Go/No-Go 再判定。

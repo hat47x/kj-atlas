@@ -952,3 +952,29 @@ Fail-safe:
 - reviewed状態の昇格は人間明示操作のみで、システム自動昇格を許可しない。
 - 公開系操作（share/export/publish）は人間レビュー完了後の明示操作に限定し、AI提案からの直結経路を設けない。
 - 上記逸脱を検知した場合は即時停止（`held`）し、復旧前に原因の是正と再検証を必須化する。
+
+
+## Stream C HIL-RS security sync log（2026-05-10）
+
+### Phase 1 Read
+- `strict_mode_exception_approval_flow.md` を正本として再読し、HIL-RS-02-A3 の security 境界が「準備状態（Hold）」であることを確認。
+- `operations.md` / `e2e_testing.md` の関連節を再読し、用語・責務・固定値・停止条件の一致を確認。
+
+### Phase 2 Plan（AC/DoD補完草案）
+- AC-1: canonical 用語を `Security Officer / System Owner / Platform Operator` に固定する。
+- AC-2: 2者承認 + 実行責務分離を security 境界条件として維持する。
+- AC-3: D1〜D4 固定値は参照のみ（再定義禁止）。
+- DoD-1: 不一致時は `StoppedForClarification` で停止する。
+- DoD-2: 未承認事項は決定扱いせず `Hold` / 残課題として明示する。
+
+### Phase 3 Execute
+- docs-only で運用境界の同期記述を維持し、承認未了事項の確定化を行わない。
+
+### Phase 4 Verify
+- 4観点（用語 / 役割 / 導線 / 固定値）に不整合なし（自己修復 0/3）。
+
+### Phase 5 Proceed
+- 判定: **Conditional（Approval Pending 維持）**。
+- 残課題:
+  - A1承認完了前提の解除可否は Security Officer / System Owner の明示承認待ち。
+  - 承認証跡（台帳ID/監査ID）同期後に再判定。
