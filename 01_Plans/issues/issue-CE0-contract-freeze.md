@@ -3308,3 +3308,48 @@ type PatchProposal = {
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed**（直列フェーズ完了、scope逸脱なし、contract-only維持）。
 - Stop条件の再掲: self-correction 3回超過・契約衝突・前提崩壊時は `held` で停止し問い合わせ。
+
+## Stream C latest run（2026-05-10 / CE0 only / contract freeze SSOT maintenance）
+
+- run_id: `stream-c-ce0-2026-05-10-01`
+- assignee: `Stream C（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- stopper_check: `contract_id_mutation=0 / safeMode_regression=0 / out_of_scope_edit=0 / self_correction_overflow=0`
+
+### Phase 1 Read（状態同期）
+- 対象ファイルを実装開始直前に再読し、Status=`Open` / Priority=`P1` / Dependencies=`CE0 SSOT + CE0-core/CE1/CE2/CE4 read-only参照` / Scope=`docs-only contract-only` を抽出。
+- 凍結境界 `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` の維持を確認。
+- 想定差分なし（`held` 記録不要）。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE0契約をSSOTとして固定し、下流（CE0-core / CE1 / CE2 / CE4）の並行開発で契約ドリフト・安全境界逸脱・監査語彙崩れを防止する必要がある。
+- Decision: 凍結対象は `ContextQuery.goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode`、`ContextBundle.bundleHash`、契約ID（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）、および fail-closed語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）とする。
+- Consequences: 下流は read-only参照のみ許可。契約IDの追加/削除/改名、safeMode既定値後退、語彙再定義、実装確定を伴う仕様追記はすべて禁止。
+- 承認ゲート: 既存凍結境界内の明文化であり追加承認論点なし。未承認拡張要求は `held` 維持。
+
+### Phase 3 Plan（AC/DoD宣言）
+- AC:
+  - `ac_freeze_boundary_intact`: 凍結境界IDと契約属性が差分なく維持される。
+  - `ac_downstream_read_only`: 下流向け権限は read-only 参照のみを明記。
+  - `ac_fail_closed_vocabulary`: fail-closed語彙を不変として保持。
+- DoD（必須）:
+  - `dod_no_safemode_regression`: safeMode後退なし（`safeMode=true` / `allowUnreviewedText=false` 逸脱なし）。
+  - `dod_no_contract_id_mutation`: 契約IDの追加/削除/改名なし。
+  - `dod_fail_closed_vocab_preserved`: fail-closed語彙維持（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）。
+
+### Phase 4 Execute（docs-only）
+- 実施: 本Issue内の契約文面・実行記録更新のみ。
+- 非実施: 新規仕様追加、他Issueへの波及編集、実装変更、指定外ファイル編集。
+
+### Phase 5 Verify（自己検証）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction 0/3）
+- AC/DoD照合: 全項目充足。
+- 依存整合: 下流依存は mock/read-only 参照で維持。
+
+### Phase 6 Proceed
+- 判定: **Proceed**
+- 理由: 依存不整合なし、未承認拡張なし、解釈不能競合なし、致命衝突なし。
