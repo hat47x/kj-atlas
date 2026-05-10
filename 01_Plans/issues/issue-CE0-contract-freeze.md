@@ -3467,3 +3467,27 @@ type PatchProposal = {
   - `HIL-RS-02-GOV-EXCEPTION-01=held`
 - Final decision:
   - `Hold/Needs-decision`（未解決論点が解消するまでGo不可）。
+
+## Stream D serial phase checkpoint（2026-05-10 / CE track, docs-only）
+
+### Phase 1 Read Gate
+- Read対象を再同期し、Status / Priority / Scope / Related ADR/Spec / Acceptance criteria / Validation plan を再確認。
+- CE1のtriage必須メタ（Status/Priority）は本日時点で充足済み（欠落なし）として記録。
+- 依存整理: `depends_on` を満たすまで下流は proposal-only を維持し、`unlocks` を本IssueのProceed条件に限定。
+
+### Phase 2 Plan（AC/DoD合意）
+- 目的: CE契約の固定語彙・fail-closed・mock-first境界を維持しつつ、下流が実装準備を継続できる状態を保つ。
+- 非目標: 実装コード変更、共有ダッシュボード更新、他ストリーム専用ファイル編集。
+- AC/DoD不足がある場合は本Issue内ドラフトで補完し、未合意項目はHold扱いで固定。
+- 検証コマンド: `python 01_Plans/triage_actionable_plans.py --root . --format table`（存在時）/ `git diff -- <this issue file>`。
+
+### Phase 3 ADR Gate
+- 本Issueで新規ADR更新が必要な論点は Context / Decision / Consequences を先に明文化し、承認前は実装へ進まない。
+
+### Phase 4 Execute→Verify
+- 実行順序は CE0→CE1→CE2→CE3→CE4 を維持し、各Issueでは Plan→Execute→Verify を直列実施。
+- Verifyは proposal-only / contract-only / fail-closed の後退が無いことを最優先で確認。
+
+### Phase 5 Proceed
+- AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
+- 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
