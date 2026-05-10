@@ -1269,6 +1269,13 @@ runbook 側の Verify は次の4観点を必須とする。
 
 > 判定ルール: 4観点のいずれかに不一致がある場合は `StoppedForClarification` とし、A1承認完了まで Proceed しない。
 
+## AUTH-OPS-03 / DOC-OPS-02 実行同期メモ（Stream F / 2026-05-10）
+
+- 参照順序: `strict_mode_exception_approval_flow.md` -> `enterprise_architecture.md` -> 本書 -> `security.md` -> `project-progress-dashboard.md` -> `decision-pack-2026-03-human-judgement.md`。
+- 用語統一: Security Officer / System Owner / Platform Operator。
+- 役割統一: 承認（2者）と実行（Platform Operator）を分離し、承認者と実行者の責務混線を禁止。
+- 固定値統一: D1〜D4（承認TTL=4h、scope=tenant/最大2h、代理承認なし、48hレビュー+15m/60mエスカレーション）。
+
 ### Stream E serial execution（2026-05-10 / CE4 API/CLI/Audit, proposal-only）
 
 #### Phase 1 Read

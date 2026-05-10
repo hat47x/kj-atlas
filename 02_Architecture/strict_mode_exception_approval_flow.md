@@ -352,3 +352,12 @@ DraftRequest
 - 停止条件を再掲: (1) 未承認決定の確定化、(2) Schema 未固定での IMPL 着手、(3) strict mode 固定値 D1〜D4 の不一致。
 - 失敗時の自己修復は最大3回までとし、3回超過時は `StoppedForClarification` で停止する。
 
+## 11. DOC-OPS-02 固定同期ログ（Stream F / 2026-05-10）
+
+- 同期順序（固定）: `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md`。
+- 本フェーズの起点（正本）: 本書。
+- 用語固定: **Security Officer / System Owner / Platform Operator**。
+- 役割固定: **2者承認（Security Officer + System Owner）** と **実行責務分離（Platform Operator）**。
+- 導線固定: `enterprise_architecture.md` / `operations.md` / `security.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` を相互参照する。
+- 固定値: **D1〜D4**（6.8節）を単一正本とし、差分運用は新規 requestId 再承認を必須とする。
+
