@@ -813,3 +813,12 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Stream D 共有統合同期（2026-05-02 rerun-64）: Phase 1 Read同期（Stream A/B/C完了報告リンクと参照整合、Decision Queue Ready=1/Open=2、件数47、依存順 `A1→A2→A3` を再確認）→ Phase 2 反映（Active Issue状態・Decision Queue・依存順・次の1手を shared resource 3ファイルで相互同期）→ Phase 3 監査（Open=10 / Draft=8 / Done系=26、Queue未解決2件、停止条件違反0件を再計算）→ Phase 4 公開固定（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）を直列実行し、公開固定値 `件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件` を維持した。
 
 - Stream F 共有統合同期（2026-05-03 rerun-65）: Phase 1 Read Gateで Stream B/C/D/E の完了報告と証跡（Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3`、停止条件違反0件）を確認。Phase 2 Planで件数 `47`（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）、Active=5、Done=26、次の1手（Ready監査継続 + Open 2件期限管理）を固定。Phase 3 Executeで shared resource 3ファイルを単一変更セット同期。Phase 4 Verifyで `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "rerun-65|Decision Queue|Ready=1 / Open=2|A1→A2→A3|件数47|Active=5|Done=26|再開判定チェックリスト" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` の一致を確認。Phase 5 Proceedとして再開判定1行を `未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし` に更新した。
+
+## DOC-OPS-02 同期監査（Stream F / 2026-05-10）
+
+- 固定同期順序 `02_Architecture -> 04_Documentation -> 01_Plans -> AGENTS.md` で再同期を完了。
+- 用語監査: Security Officer / System Owner / Platform Operator の一致を確認。
+- 役割監査: 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離を確認。
+- 導線監査: `strict_mode_exception_approval_flow.md` / `enterprise_architecture.md` / `operations.md` / `security.md` / `decision-pack-2026-03-human-judgement.md` の相互参照を確認。
+- 固定値監査: D1〜D4（一致）を確認。
+

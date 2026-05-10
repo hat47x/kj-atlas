@@ -935,3 +935,12 @@ Similar-card 候補提示と Manual assisted merge は、次の安全境界を�
 Fail-safe:
 - A1未完了、または D1〜D4 / 役割分離 / 導線に不整合がある場合は `StoppedForClarification`。
 - `Pending -> Execute` を含む bypass 推測を検出した場合は即停止。
+
+## AUTH-OPS-03 / DOC-OPS-02 セキュリティ同期メモ（Stream F / 2026-05-10）
+
+- 正本: `02_Architecture/strict_mode_exception_approval_flow.md`。
+- 用語固定: Security Officer / System Owner / Platform Operator。
+- 職務分離: 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）を分離。
+- 導線: 実行手順は `04_Documentation/operations.md`、全体方針は `02_Architecture/enterprise_architecture.md`、進捗/判定ログは `01_Plans/project-progress-dashboard.md` / `01_Plans/issues/decision-pack-2026-03-human-judgement.md` を参照。
+- D1〜D4は上位正本に追従し、本書では再定義しない。
+

@@ -847,3 +847,13 @@
 - Phase 2 反映: shared resource 3ファイル（`01_Plans/project-progress-dashboard.md` / `01_Plans/issues/README.md` / 本decision-pack）で Active=5、Done=26、Decision Queue（Ready=1 / Open=2）、次の1手、依存順 `A1→A2→A3` を同一値へ同期。
 - Phase 3 監査: 件数47（Open=10 / In Progress=1 / Blocked=2 / Draft=8 / Done系=26）と Queue（Ready=1 / Open=2）を再計算し、停止条件違反0件・参照リンク不整合0件・未定義競合0件を確認。
 - Phase 4 公開固定: 再開判定チェックリスト1行を `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）` として確定。
+
+## 7. DOC-OPS-02 ドリフト除去ログ（Stream F / 2026-05-10）
+
+- Phase 1 Read: `strict_mode_exception_approval_flow.md` を正本に Read 実施。
+- Phase 2 ADR(C/D/C): Context（対象6文書）/ Decision（固定順序遵守）/ Consequence（用語・役割・導線・D1〜D4 の再固定）を記録。
+- Phase 3 Plan: 02_Architecture -> 04_Documentation -> 01_Plans の順で修正計画を固定。
+- Phase 4 Execute: 対象文書を順序どおり更新。
+- Phase 5 Verify: 用語一致・2者承認責務分離・相互リンク・D1〜D4一致を再確認。
+- Phase 6 Proceed/Stop: Stop条件（順序逸脱/用語不一致/責務混線）0件のため Proceed。
+
