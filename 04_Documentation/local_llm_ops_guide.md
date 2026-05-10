@@ -16,6 +16,10 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 この状態では AI 機能は disabled として扱われ、外部送信は行われません。
 
+## local LLM とは
+
+この文書での local LLM は、kj-atlas から見て管理できる範囲にある LLM endpoint を指します。必ずしも同じ PC 上という意味ではありません。組織内サーバーを使う場合も、送信先、保持期間、入力データの扱いを確認してください。
+
 ## local provider を有効にする
 
 ```bash
@@ -75,6 +79,15 @@ docker compose logs api --tail=100
 - 入力に秘密情報や未レビューの機密情報を含めないでください。
 - SafeMode の目的を緩める設定変更は、[security.md](security.md) と [security_operational_guidelines.md](security_operational_guidelines.md) を確認してから行ってください。
 - provider が不安定な場合は、まず `KJ_ATLAS_LLM_PROVIDER=none` に戻して基本操作が正常か確認します。
+
+## よくある失敗
+
+| 症状 | 確認 |
+| --- | --- |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL is not set` | base URL が未設定 |
+| provider timeout | local endpoint が起動していない、または応答が遅い |
+| response missing text field | endpoint の応答が `{ "text": "..." }` ではない |
+| AI disabled | `KJ_ATLAS_LLM_PROVIDER=none` のまま |
 
 ## large-scale との違い
 

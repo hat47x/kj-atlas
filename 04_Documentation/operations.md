@@ -18,6 +18,18 @@ Docker Compose の標準構成は次の3サービスです。
 
 標準 URL は `http://localhost:8080` です。nginx は `/api/` を backend に転送します。
 
+## 運用で見るもの
+
+kj-atlas の運用確認は、次の順で見ると切り分けやすくなります。
+
+1. 画面が開くか。
+2. API が `/api/healthz` に応答するか。
+3. DB が healthy か。
+4. 保存と再読み込みができるか。
+5. LLM や audit など、外部接続を有効にした部分だけ追加で確認する。
+
+最初からすべてのログを読む必要はありません。利用者影響のある入口から順に確認します。
+
 ## 起動
 
 ```bash
@@ -39,6 +51,8 @@ docker compose logs api --tail=100
 - `api` が migration 後に起動している。
 - `web` が `WEB_PORT` のポートで公開されている。
 - `/api/healthz` が `{"status":"ok"}` を返す。
+
+`docker compose ps` はサービスの生死を見るコマンドです。`curl` は API の応答を見るコマンドです。どちらか片方だけでは原因を絞り切れないため、両方を確認します。
 
 ## 停止
 
@@ -109,6 +123,19 @@ docker compose logs db --tail=100
 | API が 401 | `KJ_ATLAS_API_KEY` と `X-API-Key` ヘッダー |
 | AI 機能が使えない | `KJ_ATLAS_LLM_PROVIDER`、local/large-scale provider の設定 |
 | 保存できない | API logs、DB logs、ブラウザ developer tools の network |
+
+問い合わせや引き継ぎでは、次の形で共有すると調査が速くなります。
+
+```text
+発生日時:
+URL:
+操作:
+期待した結果:
+実際の結果:
+API status:
+直近の変更:
+確認したログ:
+```
 
 ## SafeMode と外部送信
 
