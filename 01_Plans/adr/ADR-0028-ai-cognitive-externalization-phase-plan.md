@@ -431,3 +431,15 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 ### Consequences
 - CEフェーズ実行時の判定分岐が固定化され、`Pending` 残存時は `Hold/Needs-decision` を一貫適用できる。
 - SafeMode境界後退や契約ID再定義を起点とするドリフトを抑止できる。
+
+## Stream A governance gate binding（2026-05-10）
+
+### Context
+- CE系の契約凍結（CE0）とHIL-RS A1凍結が別系統で運用されるため、遷移制約の単一解釈を明示しないとドリフトが起こる。
+
+### Decision
+- CE系/ HIL系の双方で `Pending bypass` を禁止し、承認遷移は `Pending -> Approved | Pending -> Rejected` のみ許可する。
+- Contract freezeは read-only（ID追加/改名/削除禁止）で維持し、承認待ちは `Hold/Needs-decision` を適用する。
+
+### Consequences
+- 契約語彙と統治ゲートの解釈が統一され、下流laneでの再定義・強行遷移を抑止できる。
