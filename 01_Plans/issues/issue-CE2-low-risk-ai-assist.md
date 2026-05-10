@@ -353,3 +353,58 @@
 ### Phase 4 Proceed
 - 判定: **Hold（Draft継続）**。
 - 理由: Approval Record が `missing` を含むため Open確定条件未達。
+## Open化判定資料（2026-05-10 / proposal-only / implementation-prohibited）
+
+### 1) Context（確定版）
+- CE2は**実装タスクではなく意思決定準備タスク**である。
+- 判定対象は「low-risk AI assist を Open化審査に進められるか」であり、CE0/CE1依存は read-only 参照に限定する。
+- 依存未確定時に推測補完を行うと誤Proceedのリスクがあるため、証跡不足は `Hold` を既定とする。
+
+### 2) Decision（確定版）
+- tri-state 判定を固定する：`Proceed / Hold / Stop(held)`。
+- low-risk 成立条件を以下に固定する（全充足必須）。
+  1. proposal-only（AIは `status=proposed` のみ）
+  2. human-final（`accepted/rejected` は人間責務のみ）
+  3. no-auto（`auto-apply/auto-confirm/auto-publish` 禁止）
+  4. fail-closed（監査4点欠損または hash 不一致時は `held`）
+  5. read-only dependency（CE0/CE1へ追加確定要求を出さない）
+- Approval Record 最小必須項目：`approved_at / approved_by / target / decision / evidence`。
+
+### 3) Consequences（確定版）
+- 依存未解決・証跡不足のまま Proceed する経路を遮断できる。
+- Open化審査を証跡ベースで再現可能にし、判定の恣意性を低減できる。
+- CE2は実装を伴わず、審査品質（文書整合・判定整合）に専念できる。
+
+### 4) AC / DoD（明文化・Open判定直結）
+
+#### AC（Acceptance Criteria）
+- [ ] AC-01: Context/Decision/Consequences が相互整合し、矛盾がない。
+- [ ] AC-02: `proposal-only / human-final / no-auto / fail-closed` の4条件が本文で同時成立している。
+- [ ] AC-03: CE0/CE1依存は read-only として明示され、承認事実の mock 代替禁止が明記される。
+- [ ] AC-04: Approval Record の必須5項目に `missing` が1つでもある場合 `Proceed不可` が明記される。
+- [ ] AC-05: tri-state 以外の判定語彙を不許可とする規則が明記される。
+
+#### DoD（Definition of Done）
+- [ ] DoD-01: Open化判定条件（O1〜O4）と Evidence matrix（E-01〜E-05）の対応が追跡可能。
+- [ ] DoD-02: 本Issue以外のファイル変更がない（single-file fixed scope）。
+- [ ] DoD-03: 実装指示（コード変更・運用確定値追加・依存推測補完）が本文に含まれない。
+- [ ] DoD-04: docs-check が再実行可能で、判定結果を再現できる。
+- [ ] DoD-05: 依存未解決時は必ず `Hold` へ収束する規則が明記される。
+
+### 5) Open化判定シート（提出用）
+
+| Gate | 判定項目 | Pass条件 | 現在値（2026-05-10） | 判定 |
+| --- | --- | --- | --- | --- |
+| G1 | 依存証跡 | E-01/E-02 fulfilled | 未充足 | Hold |
+| G2 | 安全条件 | human-final/no-auto/fail-closed 反証なし | 反証なし（文書上） | Hold維持 |
+| G3 | Approval Record | missing=0 | missingあり | Hold |
+| G4 | AC/DoD | AC/DoD全項目充足 | 一部未充足（証跡待ち） | Hold |
+| G5 | 判定語彙統制 | tri-stateのみ | 維持 | Hold維持 |
+
+**総合判定（2026-05-10）**: `Hold`（Open化不可）。
+
+### 6) Open化解除条件（人間最終承認前提）
+1. E-01/E-02 が `fulfilled` に更新されること。
+2. Approval Record の `missing=0`。
+3. AC/DoD が全チェック完了であること。
+4. 人間責務で最終判定（human-final）を実施すること。

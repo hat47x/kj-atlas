@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream F）
+# Issue Draft: HIL-RS-02 A1 Governance / Contract Hardening（Stream A）
 
 - Type: Process
-- Status: Hold（Approval Pending / execute禁止）
+- Status: Draft
 - Lifecycle: Draft -> Hold -> Open -> In Progress -> Done
 - Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream E（HIL-RS-02 governance docs sync liaison）
+- Owner: Stream A（HIL-RS governance contract freeze lead）
 - Scope: 本ファイルのみ（docs-only）
 - Dependency: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -219,3 +219,30 @@
 - 判定: **Hold/Needs-decision（継続）**。
 - blocker: `approved_by` / `approved_at` / `evidence` 未確定。
 - 完了条件を満たす項目のみ Done 化し、未解決は blocker のまま停止。
+
+
+## Stream A serial lock checkpoint（2026-05-10）
+
+### Phase 1 Read Gate
+- 本Issueを再読し、`Status=Hold`、`executeAllowed=false`、`Pending -> Approved|Rejected` 固定、`Proceed=Go` 条件（`A1 Done && pendingDecisionQueueCount==0`）を再確認。
+- Decision Queue 未解決: `PD-20260507-A1-001`, `PD-20260507-A1-002`。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: A1契約は凍結済みだが、承認証跡とPending Decision IDが未解消のため、実行解放は不可。
+- Decision: 承認待ち項目が1件以上ある限り `executeAllowed=false` を維持し、`Pending bypass` を禁止する。
+- Consequences: Phase 4 Execute は契約整合確認のみに限定し、`Proceed=Hold` を維持する。
+
+### Phase 3 Plan（AC / DoD）
+- AC/DoD不足はなし（追加ドラフト不要）。
+- 保留中の承認待ち項目: `approved_by`, `approved_at`, `evidence`。
+
+### Phase 4 Execute（最小差分）
+- 契約値の再定義は行わず、判定式と禁止遷移の整合確認のみ実施。
+
+### Phase 5 Verify
+- AC/DoD照合: pass。
+- self-correction: `0/3`。
+
+### Phase 6 Proceed判定
+- 判定: **Hold 維持**。
+- 理由: `A1 Done && pendingDecisionQueueCount==0` を未充足（Pending Decision IDs と Approval Record 未確定）。

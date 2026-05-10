@@ -392,3 +392,24 @@
 ### Phase 6 Proceed
 - ProceedDecision: **Hold**（DOC-OPS-05 承認証跡未確定）。
 - Cycle break rule: 後続から先行への完了前依存を作らないことを再確認。
+
+
+## Phase-link integrity check（2026-05-10 sync）
+
+### Cross-issue links
+- Prev phase dependency-1: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A基準語彙）。
+- Prev phase dependency-2: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B完了待ち）。
+- Current phase target: `DOC-OPS-05-07`（Gate-C）。
+
+### Required meta check（must remain synchronized）
+- RequirementID: `DOC-OPS-05-07`
+- Classification: `Move internal`
+- GoNoGoGate: `Required`
+- VerificationLevel: `docs-check`
+- ProceedDecision: `Hold`
+- Dependency status: `05-06完了待ち（単方向依存）`
+
+### Per-phase completion markers
+- Phase A baseline: 05-05の品質ゲート語彙を適用。
+- Phase B baseline: 05-06の判定軸（pass/fail/blocked）と相互参照。
+- Phase C output: 監査ログ配置方針（internal境界）をOpen判定入力として固定。

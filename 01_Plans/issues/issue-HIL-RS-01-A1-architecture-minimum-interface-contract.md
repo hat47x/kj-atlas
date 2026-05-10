@@ -3,11 +3,13 @@
 - Type: Process
 - Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
 - Priority: P1
 - Owner: Stream H（A1 minimum interface contract only）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
+- Expected verification level: `docs-check`
 
 
 ## Stream E Contract Gate Declaration

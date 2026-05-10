@@ -256,8 +256,8 @@ issue補助メモには、最低でも次の項目を含める。
 
 | Backlog ID | Memo | Status | Source Issue |
 |---|---|---|---|
-| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | Open | N/A |
-| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | Open | N/A |
+| HIL-RS-01 | `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md` | In Progress | N/A |
+| HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | In Progress | N/A |
 | HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Open | N/A |
 | HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
 | HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | TBD |

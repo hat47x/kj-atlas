@@ -2131,3 +2131,25 @@
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+## Stream D execution memo（2026-05-10 / core graph only / Stream G contract reference, no contract edits）
+
+### Phase 1 Read
+- 本Issueと CE0 固定語彙（`working` / `context_projection` / `consensus`、`working -> consensus` + `patch+approval`、No-Go canonical 5 IDs）を再読し差分なしを確認。
+- 参照契約は Stream G の既存 contract を **read-only 参照**とし、契約本文の編集を行わないことを再確認。
+
+### Phase 2 Plan
+- 対象範囲を本Issue（`issue-CE0-core-graph-repositioning.md`）と core graph 領域の契約記述に限定。
+- 実装依存が必要な場合は local mock で依存切り離しを継続し、他ストリームの完了待ちを前提にしない。
+- 競合兆候（語彙差分、契約ID再定義、SafeMode既定ON後退、禁止遷移の緩和）を検出した場合は即 `held` 停止。
+
+### Phase 3 Execute
+- contract-only / docs-only の境界で実行し、実装コード・契約本文（Stream G側）には変更を加えない。
+- `role / transition / no-go` 語彙を既存 canonical に固定し、同義語拡張を実施しない。
+
+### Phase 4 Verify
+- `docs-check` を実行し、失敗時 self-correction は最大3回まで。
+- 競合兆候が1件でも出た場合は 4回目試行に進まず `stopped_for_clarification` として停止。
+
+### Phase 5 Proceed
+- 判定: `Proceed`（本メモ時点で conflict signal なし、contract-only 維持、Stream G契約は read-only 参照）。

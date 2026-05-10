@@ -49,6 +49,8 @@ export function Shell({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          flexWrap: "wrap",
+          rowGap: 8,
           padding: "8px 16px",
           borderBottom: "1px solid #e2e8f0",
           backgroundColor: "#ffffff",
@@ -56,7 +58,7 @@ export function Shell({
           fontWeight: 600,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 240, flex: "1 1 320px" }}>
           <div
             style={{
               display: "flex",
@@ -85,7 +87,7 @@ export function Shell({
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", flex: "1 1 520px", minWidth: 320 }}>
               <span
                 style={{
                   fontSize: 12,
@@ -137,14 +139,14 @@ export function Shell({
           ) : null}
         </div>
         {headerCenter ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: "1 1 320px", minWidth: 240, padding: "0 16px" }}>
             {headerCenter}
           </div>
         ) : (
-          <div style={{ flex: 1 }} />
+          <div style={{ flex: "1 1 320px" }} />
         )}
         {headerRight ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{headerRight}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", flex: "1 1 520px", minWidth: 320 }}>{headerRight}</div>
         ) : null}
       </header>
       <main
