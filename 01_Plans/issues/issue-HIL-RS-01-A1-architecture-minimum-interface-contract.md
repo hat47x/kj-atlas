@@ -4,7 +4,7 @@
 - Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Priority: P1
-- Owner: Stream D（A1 minimum interface contract only）
+- Owner: Stream H（A1 minimum interface contract only）
 - Scope: 本ファイルのみ（docs-only）
 - Dependencies: なし（A1最小I/Fの先行固定）
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -271,3 +271,37 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 - 理由: `HOLD_PENDING_QUEUE`（承認記録がPendingのため）。
 - executeAllowed: `false`
 - noGoReturnPath: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
+
+
+## Stream H gate revalidation（2026-05-10 / A1 minimum interface contract read-only freeze）
+
+### Phase 1 Read
+- 最新メタ（Status/Scope/Dependencies）と Gate Declaration を再同期し、A1が唯一ゲートであることを再確認。
+- `Pending` が残る限り `executeAllowed=false` を維持する方針を再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: 下流A2/A3で契約再定義が発生すると監査線が分岐する。
+- Decision: Critique/ReDiff/Attribution/Error の最小I/F、固定語彙、固定値、責務境界、停止条件を本Issueで凍結維持（read-only handoff）。
+- Consequences: `Pending -> Approved | Pending -> Rejected` 以外は不可。`Pending` 残存時は `decision=Hold` と `executeAllowed=false` を維持。
+
+### Phase 3 Plan（AC / DoD）
+- AC: 4契約ID、判定式、NoGo return path、`Pending bypass` 禁止、safeMode境界維持を再確認。
+- DoD: `overridePolicy=human_dual_control_only` と `safeModeDefault=ON` / `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退なしを再確認。
+
+### Phase 4 Execute（docs-only）
+- 本Issue内の契約文面のみ更新し、指定外ファイルは未編集。
+- 下流向け方針を `read-only` として明文化し、再定義禁止を維持。
+
+### Phase 5 Verify
+- self-check #1 Contract drift: pass（固定語彙/固定値の差分なし）。
+- self-check #2 Responsibility boundary: pass（AI proposal-only / Human final approval を維持）。
+- self-check #3 Pending/Stop condition: pass（`Pending` 想定下で `Hold` / `executeAllowed=false` を維持）。
+- self-correction count: `1/3`（文面同期1回で収束）。
+
+### Phase 6 Proceed
+- 判定: `Hold`
+- executeAllowed: `false`
+- reasonCodes:
+  - `HOLD_PENDING_QUEUE`
+- proceedPolicy:
+  - Proceedは `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで禁止。
