@@ -27,6 +27,22 @@
 - VerificationLevel: docs-check
 - DecisionStatus: Fixed
 
+## Phase 1 Read Gate matrix（ADR-0022/0023/0024/0025 対応）
+
+| ADR | 本Issueでの扱い | 正本境界 | 本Issueの責務 |
+|---|---|---|---|
+| ADR-0022 | 文書I/Fキー（Audience/Goal/Non-goal/Public boundary/Outcome/Related）の適用 | `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md` | E2E文書でI/Fキー欠落を検知し、追補タスクを記録 |
+| ADR-0023 | 可読性・読者導線の統一 | `01_Plans/adr/ADR-0023*` | Reader Guide と導線の整合可否を判定 |
+| ADR-0024 | 品質ゲート境界（docs-check、自己修復上限3回） | `01_Plans/adr/ADR-0024*` | VerifyコマンドとStop条件の一致確認 |
+| ADR-0025 | 変更統治（未承認事項の確定化禁止） | `01_Plans/adr/ADR-0025*` | Draft/Open判定を `Proceed/Hold/Stop` で管理 |
+
+### 境界宣言（正本 / 暫定メモ / 決裁入力）
+
+- 正本: `04_Documentation/e2e_testing.md`（方針・手順）、`01_Plans/adr/ADR-0019*`（E2E政策）。
+- 暫定メモ: 本Issue本文（Open化準備・不足AC/DoD・依存状態）。
+- 決裁入力: `ProceedDecision`、`Dependency status`、Approval Record（5項目）。
+- 禁止: 本Issueで仕様値や実装挙動を独自に確定しない。
+
 ## Classification（Fixed）
 - Decision: **Improve external**
 - Basis: E2E検証導線を利用者に提示する公開導線文書である。
