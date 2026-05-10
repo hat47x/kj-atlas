@@ -23,6 +23,7 @@
 - `Pending` bypass禁止。
 - mock契約参照で独立遂行（外部レーン完了待ち前提を置かない）。
 - SafeMode既定ONと厳格境界（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）の後退禁止。
+- 親計画として **A1/RS-02 A1参照整合を維持** し、契約語彙を再定義しない。
 
 ## Phase 1 Read Sync
 - 親計画はA1契約（最小I/F + hardening）の参照ノードであり、再定義ノードではない。
@@ -92,6 +93,27 @@
   - `pendingDecisionQueueCount>0`
 - Stop条件:
   - SafeMode境界後退 / overridePolicy後退 / fixed key drift / 上位層矛盾 / 共有リソース競合
+  - `Pending` bypass要求 / 契約再定義要求 / 未定義競合の発生（推測解決せず停止）
+
+## Proceed/Hold/Stop Audit Fix（判定監査の固定化）
+
+### Audit Inputs（read-only）
+- `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+- `schemaVersion=1.0.0`
+- `overridePolicy=human_dual_control_only`
+- `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+- `approvalRecord`（`approved_by`, `approved_at`, `evidence`）
+
+### Gate Equation（固定・再定義禁止）
+- `Proceed = (a1Status=="Done" && pendingDecisionQueueCount==0 && fixedKeyDrift==0 && safeModeRetreat==false && undefinedConflictDetected==false)`
+- `Hold = (pendingDecisionQueueCount>0 && stopSignalDetected==false)`
+- `Stop = (pendingBypassDetected || contractRedefinitionRequested || undefinedConflictDetected || safeModeRetreat || fixedKeyDrift>0 || upperLayerConflict || sharedResourceConflict)`
+
+### Audit Evidence（必須記録）
+- 記録単位: `timestamp`, `actor`, `phase`, `inputSnapshot`, `gateResult`, `reason`, `nextAction`。
+- `gateResult` は `Proceed | Hold | Stop` の3値以外を許可しない。
+- `Hold` / `Stop` は `reason` を1件以上必須化する。
 
 ## Current Decision Queue Snapshot（2026-05-09）
 - `Approval Record=Pending`
