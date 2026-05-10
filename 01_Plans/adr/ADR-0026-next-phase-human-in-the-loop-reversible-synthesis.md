@@ -331,3 +331,15 @@
 - Execute: 追記は本節のみ（既存契約値と判定式の更新なし）。
 - Verify: `A2A3_OPEN_ALLOWED` 判定式、SafeMode境界、承認遷移語彙のドリフト `0` を再確認。
 - Proceed: 未承認項目が残るため `Hold`。
+
+## Stream A gate lock note（2026-05-10）
+
+### Context
+- A1契約凍結未完了時にProceedを許可すると、統治ゲートが形式化されず下流でPending bypassが発生しうる。
+
+### Decision
+- `decisionQueueTransition=Pending -> Approved | Pending -> Rejected` を唯一許容遷移として固定継続する。
+- `Approval Record=Pending` の間は `Proceed=Hold/Needs-decision` を強制し、Goへ遷移しない。
+
+### Consequences
+- 契約凍結と統治ゲートが同時にロックされ、A2/A3の強行Openを防止できる。

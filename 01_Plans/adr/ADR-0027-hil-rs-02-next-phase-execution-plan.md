@@ -353,3 +353,48 @@
 ### Consequences
 - A1未承認時は `Hold/Needs-decision` 維持となり、A2/A3のOpen化を防止できる。
 - 下流は mock-first で検証継続できるが、契約再定義は不可となる。
+
+## Stream A Critical Path update（2026-05-10 / contract freeze and governance gate finalization）
+
+### Phase 1: Read & Contract Inventory
+- 対象再読: `ADR-0026` / `ADR-0027` / `ADR-0028` / `issue-HIL-RS-01-*` / `issue-HIL-RS-02-*` / `issue-CE0-contract-freeze.md`。
+- Status抽出:
+  - HIL-RS-01 parent: `In Progress`
+  - HIL-RS-01 A1: `In Progress`
+  - HIL-RS-02 delivery: `Ready`（ただし `Proceed=Hold`）
+  - CE0 contract freeze: `Open`（SSOT freeze lane）
+- 契約ID棚卸し（read-only固定）:
+  - `HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `A1-CRITIQUE-IF` / `A1-REDIFF-IF` / `A1-ATTR-IF` / `A1-ERROR-IF`
+  - `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+- 遷移制約固定:
+  - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
+  - `Pending bypass` は禁止（未承認確定化禁止）
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+#### Context
+- クリティカルパスは契約凍結と統治ゲート確定であり、未承認項目を bypass すると A1->A2->A3 依存が破綻する。
+
+#### Decision
+- Stream A は契約キー・遷移制約・safeMode境界を再定義せず、`Pending` を明示的に `Hold/Needs-decision` として維持する。
+- 人間承認待ち箇所（Approval Record未充足、GOV exception held）は `Pending` のまま保持し、Open/Goへ昇格しない。
+
+#### Consequences
+- 下流は mock-first で準備継続できるが、契約再解釈余地は封じられる。
+- 未承認在庫が0になるまで `Proceed=Hold` を維持するため、統治上の抜け道が閉じる。
+
+### Phase 3: Plan -> Execute -> Verify
+- Plan（AC/DoD）:
+  - AC-1: 契約IDと固定値の再定義0件。
+  - AC-2: `Pending -> Approved|Rejected` 以外の遷移追加0件。
+  - AC-3: A1未完了時は `Proceed=Hold` 維持。
+- Execute:
+  - 本更新は planning/contract freeze 文書明文化のみ（実装変更なし）。
+- Verify:
+  - AC/DoD照合で矛盾0件。
+  - self-correction 使用回数 `0/3`。
+
+### Phase 4: Proceed Gate
+- 判定: **Hold/Needs-decision 維持**。
+- 理由: `Approval Record` が `Pending` のため unlock条件 `a1Status=="Done" && pendingDecisionQueueCount==0` が未成立。
+- 停止条件: self-correction>3 / 前提崩れ / 未定義競合を検知した場合は即Stop。
