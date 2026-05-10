@@ -148,3 +148,11 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## Stream H linkage (2026-05-10)
+- QA判定境界連携: Gate C→D→E へ投入するQA結果は「Done/Hold/Stop」の3値で統一。
+- Done条件: QA-UNIT-01 / QA-E2E-USE-01 / QA-PUB-01 のAC/DoDが全てYes。
+- Hold条件: 依存未解決・環境制約・承認待ちのいずれか。
+- Stop条件: flaky再試行3回超過、または安全境界後退。
+- エスカレーション基準: P0境界失敗は即時にGate Dへ逸脱として送る。

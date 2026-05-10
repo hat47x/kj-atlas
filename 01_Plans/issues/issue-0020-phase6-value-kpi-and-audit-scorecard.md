@@ -156,3 +156,9 @@ scorecard必須入力は次で固定する。
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## Stream H linkage (2026-05-10)
+- KPI接続: QA結果を 4KPI に反映する際、P0失敗は `Decision Readiness` を No-Go 相当に固定。
+- 監査記録: `Date/Gate/Command/Result/Decision/Next action` に加え `QA Boundary (P0/P1/P2)` を必須化。
+- エスカレーション: P0未達は再試行前に監査ログへ先行記録し、再開条件を明示する。

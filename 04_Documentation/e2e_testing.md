@@ -1140,3 +1140,17 @@ realistic user journey の最小連結シナリオとして、S1〜S3 を1本の
 - `cd 03_Implement/frontend && npm run e2e -- e2e/realistic_user_journey_expansion.spec.ts`
 
 失敗時は本書の自己修復上限（最大3回）と、`e2e_verification_log_2026-03-03.md` の記録ルールに従う。
+
+
+## Stream H: QA Done boundary (2026-05-10)
+
+優先課題に対する E2E 完了判定を次で固定する。
+
+- P0: Mustシナリオ（S1/S2/S3）と I18N+readOnly 境界が全て pass。
+- P1: 高リスク連結（Import-to-Safe-Export 等）が pass。
+- P2: smoke/補助検証が pass または Hold理由が記録済み。
+
+再試行ルール:
+- flaky許容ゼロ。
+- 同一失敗の自己修復は最大3回。
+- 4回目相当は Stop とし、`Execution: Hold` へ遷移する。
