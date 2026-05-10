@@ -471,3 +471,24 @@
 - Phase 3 Execute: `04_Documentation/README.md` に issue↔doc マップを追加し、例外を明示。
 - Phase 4 Verify: `docs-check`（validator / diff体裁）のみで整合を確認。
 - Phase 5 Proceed: 判定は `Hold` 維持（依存証跡待ち）。
+
+
+## Phase-link integrity check（2026-05-10 sync）
+
+### Cross-issue links
+- Prev phase dependency: `DOC-OPS-05-05` は Gate-A のため前段依存なし（基準化フェーズ）。
+- Next phase handoff: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`（Gate-B）。
+- Final phase reference: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
+
+### Required meta check（must remain synchronized）
+- RequirementID: `DOC-OPS-05-05`
+- Classification: `Move internal`
+- GoNoGoGate: `Required`
+- VerificationLevel: `docs-check`
+- ProceedDecision: `Hold`
+- Dependency status: `先行固定（他Issueの着手前提）`
+
+### Per-phase completion markers
+- Phase A (05-05): Gate語彙・停止条件の基準化を担当。
+- Phase B (05-06): 本Issueで固定した語彙継承を要求（逆流更新は禁止）。
+- Phase C (05-07): 監査ログ方針が本Issue語彙と一致することを確認。

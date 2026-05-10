@@ -504,3 +504,24 @@
 ### Phase 6 Proceed
 - ProceedDecision: **Hold**（承認証跡待ち）。
 - 次段: 05-06確定後にのみ Gate-C（05-07）へ進行。
+
+
+## Phase-link integrity check（2026-05-10 sync）
+
+### Cross-issue links
+- Prev phase dependency: `01_Plans/issues/issue-doc-ops-05-05-04doc-documentation-quality.md`（Gate-A完了待ち）。
+- Current phase target: `DOC-OPS-05-06`（Gate-B）。
+- Next phase handoff: `01_Plans/issues/issue-doc-ops-05-07-04doc-e2e-verification-log-2026-03-03.md`（Gate-C）。
+
+### Required meta check（must remain synchronized）
+- RequirementID: `DOC-OPS-05-06`
+- Classification: `Improve external`
+- GoNoGoGate: `Required`
+- VerificationLevel: `docs-check`
+- ProceedDecision: `Hold`
+- Dependency status: `05-05完了待ち（単方向依存）`
+
+### Per-phase completion markers
+- Phase A input: 05-05で固定した語彙と停止条件を継承。
+- Phase B output: E2E公開導線のOpen判定入力（Approval Record）を定義。
+- Phase C handoff: 05-07が監査ログの保存境界を定義できる状態にする。
