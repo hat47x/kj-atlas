@@ -19,6 +19,13 @@ export type CoreGraphRepositioningInput = {
   queryPreviewRequired: boolean;
 };
 
+export type CoreGraphRepositionContractMock = {
+  contractVersion: "ce0-contract-freeze-2026-04-27";
+  accepted: boolean;
+  noGoId?: CoreGraphNoGoId;
+  transition: CoreGraphTransition;
+};
+
 export type CoreGraphValidationResult = {
   ok: boolean;
   noGoId?: CoreGraphNoGoId;
@@ -55,4 +62,16 @@ export function validateCoreGraphRepositioning(input: CoreGraphRepositioningInpu
   }
 
   return { ok: true, reason: "ok" };
+}
+
+export function createCoreGraphRepositionContractMock(
+  input: CoreGraphRepositioningInput
+): CoreGraphRepositionContractMock {
+  const validation = validateCoreGraphRepositioning(input);
+  return {
+    contractVersion: "ce0-contract-freeze-2026-04-27",
+    accepted: validation.ok,
+    noGoId: validation.noGoId,
+    transition: input.transition,
+  };
 }

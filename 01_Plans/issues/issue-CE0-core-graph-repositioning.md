@@ -2057,3 +2057,25 @@
 ### Phase 5 Proceed/Stop
 - 判定: **Proceed**（直列フェーズ完了、scope逸脱なし、contract-only維持）。
 - Stop条件の再掲: self-correction 3回超過・契約衝突・前提崩壊時は `held` で停止し問い合わせ。
+
+## Stream B latest run（2026-05-10 / CE0 core graph repositioning mock-first implementation）
+
+### Phase 1 Read
+- `role / transition / no-go` 語彙と No-Go 5 IDs の固定を再読し、差分なしを確認。
+- `CE0-SAFEMODE-IF`（safeMode既定ON維持）と `working -> consensus (patch+approval)` のみ許可を再確認。
+
+### Phase 2 Plan
+- Stream A 非依存の mock-first 進行として、固定シグネチャの contract mock 応答を Domain 層に追加する方針を確定。
+- AC/DoD の不足は検出なし（既存 AC-1..AC-9 / DoD-1..DoD-5 で判定可能）。
+
+### Phase 3 Execute
+- `validateCoreGraphRepositioning` を再利用し、契約凍結バージョン付きの `createCoreGraphRepositionContractMock` を実装。
+- 固定返却フィールド: `contractVersion / accepted / noGoId / transition`。
+
+### Phase 4 Verify
+- CE0関連の unit test を実行して成功。
+- `git diff --check` でパッチ整合性を確認。
+
+### Phase 5 Proceed
+- 判定: **proceed**（自己修復 0/3、契約不整合なし、想定外競合なし）。
+- 継続条件: UI 接続は別スコープ（本タスクでは contract mock と検証まで）。
