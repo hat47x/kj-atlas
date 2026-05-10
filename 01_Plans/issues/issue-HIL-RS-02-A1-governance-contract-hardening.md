@@ -187,3 +187,35 @@
 ### Proceed gate
 - `Proceed=Go` は `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0` のみ。
 - それ以外は `Hold/NoGo` 固定。
+
+## Stream A serial contract lock run（2026-05-10 / HIL-RS A1 governance freeze）
+
+### Phase 1 Read
+- 最新状態を再読し、`Status=Hold` / `Priority=P1` / `Scope=docs-only` / `Dependencies=Approval Record` を再確認。
+- 差分確認: 既存想定との差分は **新規なし**。未解決は `approved_by` / `approved_at` / `evidence` の3点。
+
+### Phase 2 Plan
+- AC/DoD不足の有無を再判定し、追加ドラフト不要（不足なし）を確認。
+- 依存を二分:
+  - 契約決定が必要: Approval Record 3項目、人間2者承認の確定。
+  - モックで分離可能: 判定式評価、禁止遷移検証、監査イベント整合。
+
+### Phase 3 ADR（Context / Decision / Consequences）
+- Context: A1統治契約の未固定は A2/A3 での再定義リスクを増幅する。
+- Decision: `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` を read-only で維持し、承認前の契約拡張を禁止する。
+- Consequences: 後続は interface-first で進行可能だが、最終判定は `Hold/Needs-decision` を維持する。
+
+### Phase 4 Execute
+- 契約凍結文言・責務境界・非目標を再固定:
+  - 責務境界: AI=`proposal-only`、人間=`Pending -> Approved|Rejected` 確定のみ。
+  - 非目標: 契約ID再定義、SafeMode緩和、承認代行自動化。
+- 実装依存を増やさない I/F先行原則を維持。
+
+### Phase 5 Verify
+- AC/DoD照合: pass（契約範囲外差分なし）。
+- Self-Correction: `0/3`（修正ループ不要）。
+
+### Phase 6 Proceed
+- 判定: **Hold/Needs-decision（継続）**。
+- blocker: `approved_by` / `approved_at` / `evidence` 未確定。
+- 完了条件を満たす項目のみ Done 化し、未解決は blocker のまま停止。
