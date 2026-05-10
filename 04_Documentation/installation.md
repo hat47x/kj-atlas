@@ -119,9 +119,11 @@ $env:KJ_ATLAS_LLM_PROVIDER="none"
 
 ```bash
 cd 03_Implement/frontend
-npm install
+npm ci
 npm run dev -- --host 127.0.0.1 --port 4173
 ```
+
+このリポジトリには `package-lock.json` があるため、通常は `npm ci` を使います。依存関係そのものを更新する場合だけ `npm install` を使います。
 
 ブラウザで開きます。
 

@@ -10,6 +10,7 @@
 
 - すべての backend 実行時設定は `KJ_ATLAS_*` 接頭辞を使います。
 - 接頭辞のない旧キーは使いません。
+- frontend の Vite build-time 設定だけは、Vite の仕様により `VITE_*` 接頭辞を使います。
 - 既定では LLM 連携は無効です。
 - 外部送信や大規模 LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
@@ -71,8 +72,9 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout |
 | `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信許可 |
-| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter |
-| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control 障害時の既定動作 |
+| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter の PDP endpoint |
 
 ## よく使う構成例
 
@@ -102,11 +104,22 @@ export KJ_ATLAS_API_KEY='change-me'
 
 frontend は `VITE_KJ_ATLAS_API_BASE` を優先し、未設定なら `VITE_API_BASE`、さらに未設定なら `/api` を使います。
 
+ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
+
+直接 Vite build を実行する場合は、正規キーを build 前に設定します。
+
 ```bash
 export VITE_KJ_ATLAS_API_BASE=/api
 ```
 
-Docker Compose の標準構成では nginx が `/api/` を backend の `:8000` に proxy するため、通常は変更不要です。
+現行の Docker Compose / Dockerfile では、build arg として `VITE_API_BASE` を渡します。Compose で API base を変える場合は、現行実装に合わせて次を使ってください。
+
+```bash
+export VITE_API_BASE=/api
+docker compose up --build -d
+```
+
+`VITE_KJ_ATLAS_API_BASE` と `VITE_API_BASE` を両方設定した場合、frontend 実装は `VITE_KJ_ATLAS_API_BASE` を使います。
 
 ## API キーを有効にする
 
@@ -142,6 +155,18 @@ export KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL='https://llm.example.com'
 export KJ_ATLAS_LARGE_SCALE_LLM_MODEL='model-name'
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
+
+## access control を使う
+
+既定の `noop` は認可判定を外部へ委譲しません。外部 PDP を使う場合は、adapter、fail-safe、endpoint をセットで設定します。
+
+```bash
+export KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http
+export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
+export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
+```
+
+`external_http` を指定しても endpoint が空の場合、現行実装は `noop` と同じ扱いになります。外部 PDP を必須にする環境では、endpoint が設定済みであることを起動前チェックに含めてください。
 
 ## 設定後の確認
 

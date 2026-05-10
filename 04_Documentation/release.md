@@ -38,7 +38,7 @@ frontend:
 
 ```bash
 cd 03_Implement/frontend
-npm install
+npm ci
 npm run typecheck
 npm run test
 npm run build

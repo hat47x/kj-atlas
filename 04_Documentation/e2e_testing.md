@@ -45,8 +45,10 @@ frontend の依存関係を入れます。
 
 ```bash
 cd 03_Implement/frontend
-npm install
+npm ci
 ```
+
+`npm ci` は `package-lock.json` に固定された依存関係を入れるため、E2E の再現性を保ちやすい手順です。
 
 E2E を実行します。
 
