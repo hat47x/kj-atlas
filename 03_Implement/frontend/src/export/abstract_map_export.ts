@@ -141,7 +141,7 @@ function buildRelationRowBase(
 
 export function buildAbstractMapExport(doc: DocumentV2, viewState: AbstractMapExportViewState): AbstractMapExportModel {
   const visibleIslandIds = viewState.visibleIslandIds;
-  const includeUnreviewedDrafts = viewState.includeUnreviewedDrafts ?? true;
+  const includeUnreviewedDrafts = viewState.includeUnreviewedDrafts ?? false;
   const visibleIslands = doc.islands
     .filter((island) => visibleIslandIds.has(island.id))
     .sort((a, b) => a.id.localeCompare(b.id));

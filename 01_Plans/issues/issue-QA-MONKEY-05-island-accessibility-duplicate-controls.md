@@ -1,0 +1,98 @@
+# Issue Draft: QA-MONKEY-05 Island accessibility duplicate controls
+
+- Type: Bug
+- Status: Open
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P2
+- Owner: TBD
+- Scope: `03_Implement/frontend/src/canvas`
+- Related Backlog: `QA-MONKEY-05`
+- Related ADR/Spec: `02_Architecture/architecture.md`, `04_Documentation/e2e_testing.md`
+- Expected verification level: `e2e`
+
+## Requirement meta I/F（共通キー）
+
+- RequirementID: QA-MONKEY-05
+- RequirementStatement: Island canvas controls must expose unique, purposeful accessible controls without duplicate select targets or nested button names.
+- PriorityClass（Must / Should / Could）: Should
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=document with one selected card / 操作=Create Island, inspect DOM/accessibility tree / 期待結果=one select/focus target per island and no compound button name containing child controls / 除外=visual-only island labels that are not interactive.
+- GoNoGoGate（Required / Optional / N/A）: N/A
+- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
+- VerificationLevel（docs-check / unit / integration / e2e）: e2e
+- DecisionStatus（Fixed / Pending）: Pending
+- DecisionQueueRef（未確定時の参照先）: N/A
+
+## 1) 課題 / Problem statement
+
+- Monkey test created an island from a selected card.
+- DOM snapshot exposed multiple duplicate controls named like `Select island <uuid>`.
+- A compound island button also included nested control text such as focus/collapse actions in its accessible name.
+
+## 2) 背景 / Context
+
+- Canvas islands contain multiple visual and interactive layers.
+- The current DOM appears to expose repeated island selection affordances to keyboard/screen-reader users.
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: Canvas manipulation should remain understandable outside pointer-only use.
+- 安全（THREAT_MODEL / SafeMode）: No direct safety impact.
+- 企業・行政要件（enterprise_architecture）: Accessibility is important for enterprise/public operation.
+- 後方互換（schemas）: UI DOM/accessibility change only.
+
+## 4) 提案する解決策 / Proposed solution
+
+- 変更対象: Frontend canvas/island components.
+- 変更の最小単位: Audit `IslandView` interactive elements, mark decorative layers `aria-hidden`, and keep one keyboard target for island selection plus separate named controls for focus/collapse.
+- 非目標: Redesigning island visual appearance or changing island data model.
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] One island creates one primary accessible select target.
+- [ ] Focus/collapse controls have separate concise accessible names.
+- [ ] No button accessible name contains unrelated child control labels.
+- [ ] Browser e2e or DOM snapshot regression verifies the accessibility tree after island creation.
+- [ ] No SafeMode/share-export behavior changes.
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1 Inspect `IslandView` and related canvas layer roles.
+- [ ] T2 Remove duplicate interactive roles from decorative layers.
+- [ ] T3 Add accessibility regression coverage.
+- [ ] T4 Re-run frontend tests and browser island creation smoke.
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `npm run test -- <new-or-updated-island-a11y-test>`
+  - Browser smoke: create island and inspect DOM snapshot.
+- 期待結果:
+  - Duplicate `Select island <uuid>` controls are eliminated.
+- 未実施時の理由・代替検証:
+  - Open issue; not fixed in the current monkey-test repair set.
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: Hide all island controls from assistive tech. Rejected because keyboard users still need island operations.
+- 代替案B: Leave duplicate controls as-is. Rejected because it creates confusing navigation.
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: Removing the wrong role could make an operation inaccessible.
+- 影響範囲: Canvas island interaction.
+- ロールバック手順: Revert component role/ARIA changes and keep visual behavior unchanged.
+
+## 10) Additional context
+
+- ADR化が必要になる条件: Keyboard interaction model for the entire canvas is redesigned.
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] `Source Issue` が運用状態と整合している。
+- [x] `Related ADR/Spec` が最低1件ある。
+- [x] 受入条件に「安全」「互換」「検証」が含まれる。
+- [x] `Validation plan` に具体コマンドがある。
+- [x] 非目標が明記されスコープ逸脱を防いでいる。

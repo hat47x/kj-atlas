@@ -24,6 +24,10 @@ describe("view preset CRUD", () => {
     expect(migrated.some((item) => item.id === "default-review")).toBe(true);
     expect(migrated.some((item) => item.id === "default-summary")).toBe(true);
   });
+
+  it("keeps default explore inside the SafeMode boundary", () => {
+    expect(DEFAULT_VIEW_PRESETS.find((item) => item.id === "default-explore")?.viewPatch.safeMode).toBe(true);
+  });
 });
 
 

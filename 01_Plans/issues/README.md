@@ -260,6 +260,9 @@ issue補助メモには、最低でも次の項目を含める。
 | HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Open | N/A |
 | HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
 | HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | TBD |
+| QA-MONKEY-05 | `issue-QA-MONKEY-05-island-accessibility-duplicate-controls.md` | Open | N/A |
+| QA-MONKEY-06 | `issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md` | Open | N/A |
+| QA-MONKEY-08 | `issue-QA-MONKEY-08-active-issue-metadata-validator-drift.md` | Open | N/A |
 
 - Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 
@@ -360,6 +363,11 @@ issue補助メモには、最低でも次の項目を含める。
 | FB-RM-I18N-03 | `issue-FB-RM-I18N-03-ui-equivalence-e2e-smoke.md` | Done | N/A | 英語UI等価 E2E smoke/flow を記録済み。 |
 | FB-RM-MID-05 | `issue-FB-RM-MID-05-structural-granularity-export.md` | Done | N/A | export粒度とmanifest出力を実装済み。 |
 | QA-PUB-01 | `issue-QA-PUB-01-I18N-03-e2e-boundary.md` | Done (SQLite fallback path) | N/A | SQLite fallback の E2E 境界検証ログを固定し、将来の本番同等検証との差分前提を明文化。 |
+| QA-MONKEY-01 | `issue-QA-MONKEY-01-safemode-export-boundary.md` | Done | N/A | Monkey testで検出したSafeMode既定/Export境界の後退を修正し、テストとブラウザ確認で固定。 |
+| QA-MONKEY-02 | `issue-QA-MONKEY-02-provider-none-merge-candidate-fallback.md` | Done | N/A | provider-none環境のCE3候補収集503をローカル決定論フォールバックへ接続。 |
+| QA-MONKEY-03 | `issue-QA-MONKEY-03-search-state-document-scope.md` | Done | N/A | 文書切替時に検索/非一致非表示状態をリセットし、別文書が空に見える状態を解消。 |
+| QA-MONKEY-04 | `issue-QA-MONKEY-04-worker-golden-line-ending-portability.md` | Done | N/A | Windows CRLF checkoutでworker golden比較が失敗する問題を改行正規化で修正。 |
+| QA-MONKEY-07 | `issue-QA-MONKEY-07-local-generated-artifacts-ignore.md` | Done | N/A | 手順通りのローカル起動で生成されるnode_modules/SQLite DBをignore対象へ追加。 |
 
 | AUTH-E2E-01 | `issue-AUTH-E2E-01-authcontext-contract-level1-level2-regression.md` | Done | N/A | Level1/Level2運用固定、fixture回帰、PR記録テンプレを確定。 |
 
