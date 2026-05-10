@@ -1321,3 +1321,30 @@ runbook 側の Verify は次の4観点を必須とする。
 - 同期順序は `02_Architecture -> 04_Documentation -> 01_Plans/issues` を固定し、本書は実行runbook責務のみ保持する。
 - AUTH系運用では `Security Officer / System Owner / Platform Operator` の語彙固定、2者承認と実行責務分離、D1〜D4不変を Verify 必須項目にする。
 - 逸脱（承認不備、TTL超過、監査項目欠落）は `StoppedForClarification` 扱いで停止し、推測で続行しない。
+
+
+## Stream C HIL-RS runbook sync log（2026-05-10）
+
+### Phase 1 Read
+- `operations.md` / `security.md` / `e2e_testing.md` の HIL-RS 関連節を再読し、A3 が docs-only 同期であることを確認。
+- 正本 `02_Architecture/strict_mode_exception_approval_flow.md` の D1〜D4 固定値・役割分離・停止条件を再確認。
+
+### Phase 2 Plan（AC/DoD補完草案）
+- AC-1: Runbook 上で `Security Officer / System Owner / Platform Operator` の語彙混在がない。
+- AC-2: 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離が明示される。
+- AC-3: D1〜D4（4h / 2h / 代理承認なし / 48h + 15m/60m）を再定義せず参照専用で維持する。
+- DoD-1: `operations -> security -> e2e_testing` の導線が追跡可能。
+- DoD-2: Verify 自己修復は最大3回、4回目相当は `StoppedForClarification` で停止。
+
+### Phase 3 Execute
+- 本書は実行runbook責務のみを維持し、未承認事項（A1 Approval Pending）は **Hold** のまま据え置く。
+- A3 範囲外（実装変更 / 承認済み確定文言の追加）は実施しない。
+
+### Phase 4 Verify（DOC-OPS-02 4観点）
+- 用語 / 役割 / 導線 / 固定値（D1〜D4）を3文書で照合し、不一致なし（自己修復 0/3）。
+
+### Phase 5 Proceed
+- 判定: **Conditional（Hold 維持）**。
+- 未承認事項:
+  - A1完了時刻・承認証跡IDの確定。
+  - A1完了後の Proceed 再判定（再検証コマンド実行を含む）。
