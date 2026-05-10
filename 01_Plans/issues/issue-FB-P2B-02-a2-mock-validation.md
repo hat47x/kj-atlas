@@ -2,6 +2,7 @@
 
 - Type: Planning
 - Status: Done
+- Priority: P2
 - Owner: Stream E
 - Scope: `01_Plans/issues/` only
 - Phase: A2 Mock Validation
