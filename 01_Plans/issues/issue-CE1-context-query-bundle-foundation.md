@@ -1,6 +1,38 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
 
+## Stream E contract audit update（2026-05-10 / triage-stopper metadata + CE1 interface freeze）
+
+### Phase 1 Read（対象再読 + 先頭メタ抽出）
+- 先頭メタを再抽出し、`Status: Open` / `Priority: P1` / `Scope: 01_Plans/issues/（docs-only / contract-only / mock-first）` / `Dependencies: issue-CE0-contract-freeze.md` が機械判定可能な形式で存在することを確認。
+- triage stopper（Status/Priority欠落）は **本版で解消済み** と判定。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: CE2/CE4 を停止させないため、CE1 で I/F（入力/出力/エラー語彙）を先行固定し、実装依存を切断する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` を v1 不変契約として維持し、固定エラー語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` に限定する。
+- **Consequences**: 下流は mock provider 前提で依存切断を維持しつつ、契約監査（型・語彙・hash規約）を継続できる。
+
+### Phase 3 Plan（AC/DoD補完）
+- AC-1: triage必須メタ（Status / Priority / Scope / Dependencies）が先頭メタで充足している。
+- AC-2: closed-world 契約語彙は `ContextQueryV1` / `ContextBundleV1` + 固定エラー3語彙のみ。
+- AC-3: fail-closed を `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` で維持する。
+- DoD-1: docs-only かつ本ファイル単独で契約監査観点（I/F・語彙・hash）を復元可能。
+
+### Phase 4 Execute（docs-only）
+- 本追記でメタ充足判定と CE1 契約固定方針を一本化。実装コード・他Issue編集は実施しない。
+
+### Phase 5 Verify（triage互換 + self-correction）
+- Verify-1: `Status` / `Priority` が明示され、機械判定可能（pass）。
+- Verify-2: fixed vocabulary が `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3語彙に閉じている（pass）。
+- Verify-3: fail-closed 規約が HTTPコードと1:1で固定（pass）。
+- self-correction: attempt 1（メタ表記揺れ点検）/ attempt 2（語彙揺れ点検）/ attempt 3（fail-closed対応点検）= すべて差分不要。
+
+### Phase 6 Proceed / Hold / Stop
+- **Proceed**: 本Issue単独・docs-only・契約固定の条件を満たす。
+- **Hold**: 2者承認待ちなど運用ゲート未解消時。
+- **Stop**: 推測補完が必要な欠落メタや契約衝突を検知した場合。
+
+
 ## Stream C update（2026-05-10 / CE1 mock provider foundation）
 
 ### Phase 1: Read（latest再読 + I/F整合確認）
