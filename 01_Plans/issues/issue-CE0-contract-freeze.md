@@ -3491,3 +3491,35 @@ type PatchProposal = {
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+## Stream A CE0/HIL-RS contract fixation run（2026-05-10 / decision lock）
+
+### Phase 1 Read
+- CE0契約SSOTを再読し、`Status=Open` / `Priority=P1` / `Scope=contract-only` / `Dependencies=read-only handoff` を再確認。
+- 差分確認: 固定Contract IDsとNo-Go canonical IDsに差分なし。
+
+### Phase 2 Plan
+- AC/DoD不足は新規なし。
+- 依存二分:
+  - 契約決定が必要: A1承認証跡確定（Approval Record）。
+  - モックで分離可能: Query Preview必須、proposal-only遷移、禁止遷移検証。
+
+### Phase 3 ADR（Context / Decision / Consequences）
+- Context: CE0未固定のまま下流が進むとContext/Review/SafeMode境界が再定義される。
+- Decision: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を read-only固定とし、再定義を禁止する。
+- Consequences: 下流は mock-first で進行可能だが、未承認拡張要求は `held` 維持。
+
+### Phase 4 Execute
+- 契約凍結文言を再固定:
+  - 責務境界: Working→Consensus は `patch+approval` 経由のみ。
+  - 非目標: Contract ID追加/改名/削除、safeMode既定値後退、review自動昇格。
+- 実装依存は追加せず interface-first で維持。
+
+### Phase 5 Verify
+- 契約範囲外変更: なし。
+- drift check: `contract_id_mutation=0` / `safeMode_regression=0` / `scope_deviation=0`。
+- Self-Correction: `0/3`。
+
+### Phase 6 Proceed
+- 判定: **Conditional-Go（contract-only）**。
+- blocker: A1 approval evidence 未確定時は CE0拡張を `held` のまま停止。
