@@ -1204,3 +1204,50 @@
   1. principalマスキング方式（可逆/不可逆）は未確定。
   2. 監査転送基盤（保存先・署名・配送保証）は未確定。
   3. CLI exit code 詳細マッピングは ADR 境界で保留。
+
+## Stream G execution log（2026-05-10 / proposal-only契約完成度向上）
+
+### Phase 1: Read（Draft理由・Dependencies・Scopeの同期）
+- Status=Draft の理由を「依存証跡待ち（CE0/CE1）」として再確認し、Open前に契約凍結境界を維持することを確認。
+- Dependencies は CE0（契約凍結）/ CE1（ContextQuery/ContextBundle基盤）を read-only 参照とし、mock 経路で依存切断可能であることを同期。
+- Scope は `issue-CE4-api-cli-audit-integration.md` 単体編集のみで、docs-only / contract-only / proposal-only を維持。
+
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+- CE4 は API/CLI/監査イベントの3境界を跨ぐため、実装前に契約を固定しないと監査追跡と同値判定の解釈差が発生する。
+- CE1 未整備時に実装依存へ進むと、検証不能な状態で仕様だけが拡散するリスクがある。
+
+#### Decision
+1. CE4は **implementation-independent contract** として固定し、実装詳細（保存先・配送保証・署名・終了コード数値）は未確定点として隔離する。
+2. 監査イベント4点（`query` / `bundle` / `proposal` / `apply`）を必須化し、欠損時は fail-closed で No-Go とする。
+3. `proposal-only` を強制し、auto-apply / auto-confirm / auto-publish を禁止継続する。
+
+#### Consequences
+- 下流実装は mock fixture だけで契約適合判定を先行できる。
+- 監査欠損・順序欠損・同値不成立の判定基準が API/CLI で統一される。
+- 依存未確定時の拙速な実装移行を抑止し、Hold/Stop の運用判断が機械化しやすくなる。
+
+### Phase 3: Plan（監査4点必須化 / AC・DoD整備）
+- 監査4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として維持し、順序整合 `query -> bundle -> proposal -> apply` を検証対象に固定。
+- AC/DoD 観点の追補:
+  - fail-closed を後退させない（監査欠損・同値違反・ポリシー違反の成功扱い禁止）。
+  - unknown key は許容しても判定に使用しない（必須キー欠損検知を優先し、fail-open禁止）。
+  - 監査4点のいずれか欠損時は常に No-Go。
+
+### Phase 4: Execute（docs-only）
+- 本Issue文書のみ更新し、コード/ADR本文/API実装/CLI実装の変更は行わない。
+- allowlist外編集要求は受理しない（本ファイル外の編集禁止）。
+
+### Phase 5: Verify（fail-closed / unknown key / 監査欠損No-Go）
+- Verify-1: fail-closed 規律が API/CLI/監査契約全体で維持されていることを確認。
+- Verify-2: unknown key handling は「無視可能だが成功要件に不使用」とし、必須キー欠損時No-Goを優先することを確認。
+- Verify-3: 監査4点の欠損（特に `apply` 欠損）を No-Go とする契約が維持されていることを確認。
+- self-correction: `0/3`（追加修復なし）。
+
+### Phase 6: Proceed（Proceed / Hold / Stop）
+- **Proceed**: なし（Draftのため）。
+- **Hold**: 依存 CE0/CE1 のOpen化証跡待ち、かつ proposal-only 境界維持時。
+- **Stop**:
+  1. 未定義競合または契約衝突が解消不能な場合。
+  2. 監査4点必須の緩和や fail-open 要求が発生した場合。
+  3. allowlist外（本ファイル以外）編集要求が発生した場合。
