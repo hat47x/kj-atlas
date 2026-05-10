@@ -1096,3 +1096,23 @@ docs-checkで次のいずれかを検知した場合、A3同期は失敗とし�
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
 
+
+### 2.8 Realistic User Journey Expansion（QA-E2E-USE-01 / Stream E）
+
+realistic user journey の最小連結シナリオとして、S1〜S3 を1本のE2Eで固定する。
+
+- 対象spec: `03_Implement/frontend/e2e/realistic_user_journey_expansion.spec.ts`
+- 目的:
+  - S1 Authoring Continuity（作成/編集後の再読込で欠損なし）
+  - S2 Review Governance 前段（readOnly時の編集抑止）
+  - S3 Safe Sharing Gate（Share/Review Pack の locked redaction context 維持）
+- deterministic運用:
+  - 固定timestamp fixture (`2026-05-10T00:00:00.000Z`)
+  - 固定document id / card text
+  - locale=en で文言期待値を固定
+
+推奨コマンド:
+
+- `cd 03_Implement/frontend && npm run e2e -- e2e/realistic_user_journey_expansion.spec.ts`
+
+失敗時は本書の自己修復上限（最大3回）と、`e2e_verification_log_2026-03-03.md` の記録ルールに従う。
