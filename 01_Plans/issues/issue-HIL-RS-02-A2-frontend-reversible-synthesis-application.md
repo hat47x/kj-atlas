@@ -164,3 +164,15 @@
 - command: `python 01_Plans/triage_actionable_plans.py`
 - note: Ready/Blocked/Unlocks は triage 出力を正本とし、本Issue記録はその解釈補助とする。
 - self_correction: `0/3`（本更新時点）
+
+
+## Stream B Verification Refresh（2026-05-10）
+
+- Phase 1 (Read): `MergeSuggestionsPanel` / `HilRsWorkflowPanel` / `hil_rs_trusted_boundary` とA2 Issue本文を再読し、A1契約不変更・trusted境界・理由必須を再確認。
+- Phase 2 (Plan): A2 AC/DoDは不足なしと判断。trusted interaction限定・reason必須・SafeMode既定ON維持を継続方針として固定。
+- Phase 3 (Execute): `hil_rs_client_apply.integration.test.ts` の `Document` fixture型を `DocumentV2` へ整合化し、契約外キー（`schemaVersion`）依存を除去。
+- Phase 4 (Verify):
+  - `npm --prefix 03_Implement/frontend test -- src/ui/MergeSuggestionsPanel.test.ts src/ui/HilRsWorkflowPanel.test.ts src/domain/hil_rs_client_apply.integration.test.ts` ✅
+  - `npm --prefix 03_Implement/frontend run lint` ✅
+  - 自己修復回数: `1/3`（typecheck失敗をfixture修正で解消）
+- Phase 5 (Proceed): 変更は `03_Implement/frontend/**` と本Issueのみ。`contractId/schemaVersion/overridePolicy` の契約値変更なし。

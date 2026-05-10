@@ -3,21 +3,24 @@ import { describe, expect, it } from "vitest";
 import { applyHilRsRediffPayload } from "./hil_rs_apply";
 import { createHilRsClient } from "./hil_rs_client";
 import { HIL_RS_CRITIQUE_SCHEMA_VERSION, type HilRsCritiqueInput } from "./hil_rs_contract";
-import type { Document } from "./types";
+import type { DocumentV2 } from "./types";
 
-const CURRENT: Document = {
+const CURRENT: DocumentV2 = {
   id: "doc-current",
+  version: 2,
   title: "current",
+  createdAt: "2026-05-10T00:00:00.000Z",
+  updatedAt: "2026-05-10T00:00:00.000Z",
+  transform: { panX: 0, panY: 0, zoom: 1 },
   cards: [
     { id: "c1", text: "alpha", x: 0, y: 0 },
     { id: "c2", text: "beta", x: 100, y: 50 },
   ],
   islands: [],
   edges: [],
-  schemaVersion: "2.0.0",
 };
 
-const SUGGESTED: Document = {
+const SUGGESTED: DocumentV2 = {
   ...CURRENT,
   cards: [
     { id: "c1", text: "alpha (edited)", x: 10, y: 15 },
