@@ -236,3 +236,22 @@ Local LLM 運用変更時は、次の順序を固定する。
   2. `routingStage` 追跡不能。
   3. 未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾結果）。
   4. 自己修復4回目相当（>3）。
+
+
+## 10. Stream D addendum（2026-05-10 / CE2 low-risk proposal-only alignment）
+
+### Context
+- CE2（low-risk AI assist）の依存（CE0/CE1）が未確定な間は、ローカルLLM運用も **proposal-only** の境界を維持する。
+
+### Decision
+- 本runbookの運用判定は CE2未確定時に `Go` を拡張解釈せず、`Hold` または `StoppedForClarification` を優先する。
+- `safeMode` 既定ON、`human-final`、`no-auto`、`fail-closed` を CE2整合ガードとして扱う。
+- `query/bundle/proposal/apply` の監査4点、`equivalenceKey/bundleHash`、`dryRun=true & sideEffect=none` が欠ける場合は運用変更を停止する。
+
+### Consequences
+- CE2判定が未解放でも、ローカルLLM運用は安全側（Hold/Stop）へ収束する。
+- docs-only で CE2契約との語彙整合を維持でき、実装変更なしで監査再現性を確保できる。
+
+### AC / DoD check（proposal-only）
+- AC: safeMode後退なし / no-auto維持 / human-final維持 / fail-closed維持。
+- DoD: docs-only境界維持、再実行可能な検証コマンド維持、自己修復上限（3回）維持。
