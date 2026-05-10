@@ -112,6 +112,60 @@
 
 ---
 
+
+## Phase 3.5: API/CLI監査I/Fシグネチャ草案（contract-only / 実装禁止）
+
+> 目的: CE4の境界（API, CLI, Audit）で**入出力の形だけ**を先行固定する。ここで示すのは契約草案であり、実装・配線・永続化方式は未確定のまま維持する。
+
+### 3.5.1 API Signature Draft
+- `POST /v1/audit/proposals:verify`
+  - Request (contract fields)
+    - `mode`: literal `"proposal-only"`（必須）
+    - `equivalenceKey`: `string`
+    - `queryCanonicalHash`: `sha256:<64hex>`
+    - `bundleHash`: `sha256:<64hex>`
+    - `sourceBundleHash`: `sha256:<64hex>` | `mock:<64hex>`
+    - `events`: AuditEvent[4]（`query -> bundle -> proposal -> apply`）
+  - Response (contract fields)
+    - `decision`: enum [`go`,`no_go`]
+    - `classification`: enum [`ok`,`validation_failed`,`audit_violation`,`equivalence_violation`,`policy_violation`]
+    - `equivalenceSatisfied`: boolean
+    - `violations`: string[]
+    - `traceId`: string
+
+### 3.5.2 CLI Signature Draft
+- `kj-audit verify-proposal`
+  - Required flags
+    - `--mode proposal-only`
+    - `--equivalence-key <string>`
+    - `--query-canonical-hash <sha256:...>`
+    - `--bundle-hash <sha256:...>`
+    - `--source-bundle-hash <sha256:...|mock:...>`
+    - `--events-json <path>`（4イベント配列）
+  - Contracted stdout/stderr semantics
+    - stdout: `decision`, `classification`, `traceId` を機械可読で出力
+    - stderr: 契約違反詳細（必須キー欠損/順序違反/同値違反/ポリシー違反）
+  - Exit code policy
+    - 数値は未固定（未確定点を維持）
+    - ただし `classification != ok` は常に非0（fail-closed）
+
+### 3.5.3 Audit Adapter Signature Draft
+- `emitAudit(event: AuditEvent) -> Ack`
+  - `AuditEvent` は 3.1 の共通必須キーを満たすこと
+  - `Ack` は少なくとも `accepted: boolean`, `reason?: string`, `traceId: string` を持つこと
+- `verifySequence(events: AuditEvent[4]) -> VerificationResult`
+  - 4イベント順序・重複矛盾・ID整合を判定
+
+### 3.5.4 Mock接続点（依存切断境界）
+1. **API入口モック**: `sourceBundleHash=mock:<64hex>` を受理し、realと同一ルールで `verify-proposal` 判定。
+2. **CLI入力モック**: `--source-bundle-hash mock:<64hex>` と fixture events の組み合わせで契約検証。
+3. **監査出力モック**: `emitAudit` の配送先をモックSinkに差し替えても、`Ack.accepted=false` は No-Go。
+4. **ID発番モック**: CE1未整備時は `equivalenceKey` をCE4モック発番許容。ただし API/CLI/Audit の3経路一致を必須化。
+
+### 3.5.5 Non-Goals（この草案で確定しないもの）
+- HTTPステータス詳細、CLI終了コードの数値、監査保存先/配送QoS/署名方式は未固定。
+- 型定義の実コード化（OpenAPI/argparse/SDK生成）は実装フェーズまで禁止。
+
 ## Phase 4: mock検証（正常/欠損/重複/不正操作）
 
 ### 4.1 正常系

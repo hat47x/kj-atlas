@@ -2,10 +2,10 @@
 
 - Type: Process
 - Status: Draft
-- Lifecycle: Draft -> Open -> In Progress -> Done
-- Source Issue: TBD
+- Lifecycle: Draft -> Ready -> Hold -> Open -> In Progress -> Done
+- Source Issue: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 - Priority: P1
-- Owner: Stream E（A3 documentation sync）
+- Owner: Stream B（HIL-RS-02-A3 運用文書同期準備）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`（docs planning only）
 - Out of scope: 実装変更、allowlist外Issue/ADR編集、契約再定義、`04_Documentation/**` 本体編集
 - Related ADR/Spec: `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md`
@@ -175,3 +175,45 @@
   - `src/domain/hil_rs_client_apply.integration.test.ts(42,7)` `Document` を `DocumentV2` へ代入不可（`islands` 欠落）。
   - `src/domain/hil_rs_client_apply.integration.test.ts(43,7)` 同上。
 - 判定: Stream C の編集許可範囲外（`03_Implement/**`）のため、本Issueでは修正を行わず、実装ストリームへ切り出して対処する。
+
+
+## Stream B update（2026-05-10, HIL-RS-02-A3 運用文書同期準備）
+
+### Read（対象ファイル最新状態確認）
+- 対象を再確認: 本Issue草案（A3）と A3専用運用文書の同期準備メモのみを対象にし、A1/A2・README index・dashboard・実装コードは非対象。
+- 現在状態: `Status: Hold（A1 Approval Pending）` を維持し、A1完了前に Open 化しない前提を再固定。
+- 未確定: A1承認ログ未着、decision queue の Pending 解消未確認。
+
+### Plan（A1未完前提で「Openしない準備項目」のみ定義）
+- 準備項目P1: DOC-OPS-02の4観点（用語/役割/導線/固定値）をA3側チェックリストとして明文化。
+- 準備項目P2: Verify時の証跡コマンドを docs-only に限定（`rg`, `git diff --check`, `git status --short`）。
+- 準備項目P3: A1未完了時の遷移を `Ready + Hold` に固定し、`Open/In Progress` への遷移条件を A1完了ログ受領に限定。
+
+### Execute（docs草案・検証手順・ロールバック）
+- docs草案:
+  - A3は「運用文書同期準備」専任であり、契約再定義ノードではないことを明記。
+  - 承認待ち論点を `Context / Decision / Consequences` で保持し、推測補完を禁止。
+- 検証手順（docs-only）:
+  1. `rg -n "Status:|Current: Hold|Open化|Context:|Decision:|Consequences:" 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  2. `git diff --check -- 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  3. `git status --short`
+- ロールバック:
+  - `git restore -- 01_Plans/issues/issue-HIL-RS-02-A3-operations-documentation-sync.md`
+  - ロールバック後に `Current: Hold` と C/D/C の記録保持を再確認。
+
+### Verify（AC/DoD + リンク整合）
+- AC/DoD確認:
+  - AC-2（A1未完時 Hold維持）を最優先ゲートとして再確認。
+  - DoDとして docs-only 範囲逸脱が 0 件であることを確認。
+- リンク整合:
+  - 参照リンクは `ADR-0027`, `ADR-0028`, `02_Architecture/strict_mode_exception_approval_flow.md` のまま維持。
+  - A1/A2本文への直接編集導線を追加しない（read-only参照のみ）。
+
+### Proceed（A1完了までDraft/Conditional維持）
+- 判定: **Ready + Hold（Conditional）**。
+- A1完了条件未達のため、A3は Draft/Conditional の運用を維持し、Open化を実施しない。
+
+### Approval pending record（Context / Decision / Consequences）
+- Context: A1の承認・固定値整合が未確定であり、A3がOpen化するとDOC-OPS-02の固定順序に対して誤同期リスクがある。
+- Decision: A3は `Current: Hold` を維持し、実施は「準備項目の文書化・検証手順・ロールバック定義」に限定する。
+- Consequences: A1完了ログ受領までは運用本文のOpen遷移を停止。承認待ちの論点を明示的に残し、後続で可逆に再開できる。

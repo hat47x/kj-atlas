@@ -1,5 +1,5 @@
 import { memo, useContext } from "react";
-import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 
 import { getIslandPolygonPoints } from "../domain/geometry/island_geometry";
 import { isSelfIntersectingPolygon } from "../domain/geometry/polygon_self_intersection";
@@ -149,13 +149,6 @@ export function getIslandBounds(island: Island, cards: Card[]) {
   };
 }
 
-function handleTitleKeyDown(event: KeyboardEvent<HTMLDivElement>, onSelect: () => void) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    onSelect();
-  }
-}
-
 function IslandViewComponent({
   island,
   cards,
@@ -283,21 +276,17 @@ function IslandViewComponent({
             aria-label={`Select island ${island.id}`}
           />
           {EDGE_HITBOXES.map((edgeHitbox) => (
-            <button
+            <div
               key={edgeHitbox.key}
-              type="button"
               onClick={handleIslandPointerSelect}
+              aria-hidden="true"
               style={{
                 pointerEvents: isPickingEdgeTarget ? "none" : "auto",
                 position: "absolute",
                 ...edgeHitbox.style,
-                border: "none",
-                backgroundColor: "transparent",
-                padding: 0,
                 cursor: isPickingEdgeTarget ? "default" : "pointer",
                 zIndex: 2,
               }}
-              aria-label={`Select island ${island.id}`}
             />
           ))}
         </>
@@ -357,16 +346,9 @@ function IslandViewComponent({
         }}
       />
       <div
-        role="button"
-        tabIndex={isPickingEdgeTarget ? -1 : 0}
         onClick={(event) => {
           event.stopPropagation();
           if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
-        }}
-        onKeyDown={(event) => {
-          handleTitleKeyDown(event, () => {
-            if (!isPickingEdgeTarget) onSelect(island.id, event.shiftKey);
-          });
         }}
         onDoubleClick={(event) => {
           event.stopPropagation();
