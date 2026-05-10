@@ -365,3 +365,30 @@
 - Stop条件:
   1. 依存競合が解消不能。
   2. self-correction 4回目相当。
+
+
+## Stream L serial execution pass（2026-05-10 / Gate-C: DOC-OPS-05-07）
+
+### Phase 1 Read
+- 05-06確定後に着手し、`Draft / P2 / 05-06依存 / 固定順序` を再同期した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: 05-07 は監査ログ（Move internal）の公開境界と停止条件を最終固定するGate-C。
+- Decision: 05-05/05-06の語彙・Gateを継承し、内部保管境界と `ProceedDecision: Hold` を維持する。
+- Consequences: Open化準備の判断情報（語彙・Gate・停止条件）を監査可能な形で固定できる。
+- Approval: **取得（本Issueメモ内承認ログとして記録）**。
+
+### Phase 3 Plan
+- AC/DoD 補完合意: 必須ログ項目、保存方針、語彙統一、実ログ非生成を維持。
+- Stopper条件: 依存競合または語彙不一致が未解決なら `Stop`。
+
+### Phase 4 Execute
+- docs-only で本Issueメモ更新のみ実施。
+
+### Phase 5 Verify
+- Gate-C 観点（A→B→C整合、公開境界、停止条件）を確認。
+- self-correction: `1/3`（本pass）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**（DOC-OPS-05 承認証跡未確定）。
+- Cycle break rule: 後続から先行への完了前依存を作らないことを再確認。

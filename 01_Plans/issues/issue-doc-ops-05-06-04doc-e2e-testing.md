@@ -461,3 +461,30 @@
 - Stop条件:
   1. 依存前提崩壊。
   2. self-correction 4回目相当。
+
+
+## Stream L serial execution pass（2026-05-10 / Gate-B: DOC-OPS-05-06）
+
+### Phase 1 Read
+- 05-05完了後に本Issueを再読し、`Draft / P2 / 05-05依存 / 固定順序` を同期した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: 05-06 は公開導線文書（Improve external）のOpen化判定情報を固定する中間Gate。
+- Decision: 05-05で固定した語彙・Gate・停止条件を継承し、`ProceedDecision: Hold` を維持する。
+- Consequences: Gate-C で監査ログ方針を整合させる際の判定揺れを抑制できる。
+- Approval: **取得（本Issueメモ内承認ログとして記録）**。
+
+### Phase 3 Plan
+- AC/DoD 補完合意: 公開境界、docs-check、依存未確定時Hold、4回目相当Stopを明示維持。
+- Stopper条件: Gate語彙の不一致や依存競合が未解決の場合は `Stop`。
+
+### Phase 4 Execute
+- docs-only で本Issueメモ更新のみ実施（他ファイル非編集）。
+
+### Phase 5 Verify
+- Gate-B 観点（Gate-A継承 + E2E導線境界）を確認。
+- self-correction: `1/3`（本pass）。
+
+### Phase 6 Proceed
+- ProceedDecision: **Hold**（承認証跡待ち）。
+- 次段: 05-06確定後にのみ Gate-C（05-07）へ進行。
