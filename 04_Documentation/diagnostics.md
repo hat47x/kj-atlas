@@ -562,3 +562,12 @@ Fail-safe: diagnostics 指標とKPI判定が矛盾した場合は、Gate E の�
 - TODO: 05-05/05-06/05-07 の Proceed 再判定日の同期。
 - Assumption: 依存Issueの最終合意までは本Draftの分類（Move internal / Improve external）を暫定維持する。
 
+
+
+## Stream H: QA検証境界との接続（2026-05-10）
+
+diagnostics は E2E Done 判定の補助証跡として次を満たす。
+
+- P0境界失敗時は、該当 requestId / trigger / fallback先 を監査ログへ転記可能。
+- 同一入力で同一 diagnostics 結果（決定論）を再現できること。
+- fallback発生時も Pass扱いにせず、`blocked` か `fail` として記録すること。
