@@ -327,3 +327,22 @@ kj-atlas は OSS として、多様な環境で利用される：
 - review運用の責任境界（人手昇格・2者承認・safeMode保護）を実装非依存で維持できる。
 - 下流は attribution 実装前でも export/redaction と整合した検証を継続できる。
 - 契約矛盾が発生した場合は `held` / fail-closed 判定へ収束できる。
+
+## CE0 Contract Matrix Freeze Link（CTX / SAFEMODE / REVIEW）
+
+review attribution は CE0 契約行列の `REVIEW` 軸を担うが、`CTX` / `SAFEMODE` と分離せず同時拘束で運用する。
+
+### Contract matrix (frozen)
+
+| Contract ID | Required invariant | Stop condition |
+| --- | --- | --- |
+| `CE0-CTX-IF` | preview gate 未通過の文脈から review 生成を開始しない。 | `previewConfirmed!=true` で生成開始した場合。 |
+| `CE0-SAFEMODE-IF` | safeMode 既定ON、reviewed-only 既定を緩和しない。 | unreviewed 本文の露出、safeMode 既定値後退。 |
+| `CE0-REVIEW-IF` | `unreviewed | human_reviewed` のみ。昇格は人手のみ。 | AI/自動処理による `human_reviewed` 昇格。 |
+| `CE0-CG-WRITE-IF` | Core Graph direct write 禁止、`patch+approval` のみ許可。 | 直接更新経路を1件でも検出。 |
+
+### Freeze discipline
+
+1. 契約IDの重複定義は 0 を維持する。
+2. 上記4契約のいずれかに抵触した場合、review attribution 機能は `held/stop` を優先する。
+3. CE1 以降の実装有無に関わらず、本節は read-only 契約として適用する。
