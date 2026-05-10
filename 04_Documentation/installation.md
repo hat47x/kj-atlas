@@ -15,6 +15,16 @@
 
 Docker が使えない環境では、後述の「Docker を使わない最小起動」を使います。
 
+## どの手順を選ぶか
+
+| 状況 | 推奨手順 |
+| --- | --- |
+| 初めて試す、または評価環境で確認する | Docker Compose |
+| backend や frontend を個別に編集しながら確認する | Docker を使わない最小起動 |
+| 本番相当の構成を検証する | Docker Compose を起点に、組織の認証・監視・バックアップ方針を追加 |
+
+Docker Compose は、必要な `web`、`api`、`db` をまとめて起動します。個別起動は中身を開発・調査するときに便利ですが、端末を2つ以上使い、DB や環境変数も自分で管理します。
+
 ## Docker Compose で起動する
 
 1. リポジトリを取得します。
@@ -35,6 +45,8 @@ cd 03_Implement/deploy
 ```bash
 docker compose up --build -d
 ```
+
+`--build` は Docker image を作り直す指定、`-d` は裏側で起動し続ける指定です。初回や依存関係が変わった後は `--build` を付けます。
 
 4. サービス状態を確認します。
 
@@ -124,6 +136,8 @@ http://127.0.0.1:4173
 - 新規ドキュメントを作成し、再読み込み後も内容が残る。
 - 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM へ送信されない。
 
+`curl` は HTTP endpoint の応答を確認するコマンドです。`curl` が使えない場合は、ブラウザで `http://localhost:8080/api/healthz` を開いても確認できます。
+
 ## よくある問題
 
 ### `docker: command not found`
@@ -141,6 +155,19 @@ WEB_PORT=8081 docker compose up --build -d
 ### API が 401 を返す
 
 `KJ_ATLAS_API_KEY` を設定している環境では、`/healthz` 以外の API に `X-API-Key` ヘッダーが必要です。詳しくは [configuration.md](configuration.md) を参照してください。
+
+### 画面は開くが保存できない
+
+まず API と DB を確認します。
+
+```bash
+cd 03_Implement/deploy
+curl -fsS http://localhost:8080/api/healthz
+docker compose logs api --tail=100
+docker compose logs db --tail=100
+```
+
+API key を有効にしている場合は、ブラウザ側の API 呼び出しにもキー設定が必要です。
 
 ## 関連文書
 

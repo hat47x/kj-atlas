@@ -18,6 +18,16 @@ curl -fsS http://localhost:8080/api/healthz
 
 ローカル開発サーバーで確認する場合は [installation.md](installation.md) の「Docker を使わない最小起動」を使います。
 
+## 手動確認と自動テストの違い
+
+| 種類 | 目的 | 使う場面 |
+| --- | --- | --- |
+| 手動 smoke test | 利用者の主要操作が実際にできるかを見る | 初回起動、画面変更、障害調査 |
+| Playwright E2E | ブラウザ操作を自動で再現する | PR、リリース前、回帰確認 |
+| unit/regression test | 小さなロジックやデータ変換を速く確認する | 実装変更後、原因切り分け |
+
+一般利用者の確認では、まず手動 smoke test だけで十分です。開発変更を含む場合は自動テストも実行します。
+
 ## 手動 smoke test
 
 1. `http://localhost:8080` を開く。
@@ -84,6 +94,18 @@ python -m pytest
 | LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
 | export | 秘密情報や内部作業ログが混ざらない |
 | 画面 | ヘッダー、ツールバー、主要ボタンが狭い幅でも重ならない |
+
+## viewport の目安
+
+画面崩れを確認するときは、少なくとも次の幅を見ます。
+
+| 幅 | 目的 |
+| --- | --- |
+| 1280px | 標準的な desktop |
+| 960px | 狭めの desktop / tablet |
+| 390px | mobile 相当 |
+
+すべての細部を確認する必要はありません。主要操作が見えるか、テキストが重ならないか、保存操作ができるかを優先します。
 
 ## 失敗時に残す情報
 

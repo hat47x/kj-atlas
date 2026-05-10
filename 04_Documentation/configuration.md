@@ -13,6 +13,26 @@
 - 既定では LLM 連携は無効です。
 - 外部送信や大規模 LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
+## 設定を変える前に
+
+設定は「値を増やす」より先に「何を許可するか」を決めると安全です。
+
+| 確認すること | 例 |
+| --- | --- |
+| データはどこに保存するか | SQLite か PostgreSQL か |
+| 外部へ送る必要があるか | LLM、audit HTTP、access control |
+| 失敗したとき安全側に倒れるか | LLM disabled、access control read-only |
+| 秘密値をどこで管理するか | shell history や Git に残さない |
+
+## ここで出る用語
+
+| 用語 | 意味 |
+| --- | --- |
+| 環境変数 | 起動時にアプリへ渡す設定値です。 |
+| 既定値 | 何も設定しないときに使われる値です。 |
+| opt-in | 明示的に有効化することです。large-scale LLM は opt-in なしでは使えません。 |
+| allowlist | 接続してよい宛先だけを並べた一覧です。 |
+
 ## 最小設定
 
 Docker Compose の既定値で起動する場合、通常は追加設定なしで動きます。明示するなら次を使います。
@@ -28,6 +48,8 @@ export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_
 export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
+
+最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部送信を避けながら、保存・表示・E2E の基本動作を確認できます。
 
 ## 主要な backend 環境変数
 
@@ -51,6 +73,30 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control 障害時の既定動作 |
+
+## よく使う構成例
+
+### ローカル評価
+
+```bash
+export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
+export KJ_ATLAS_LLM_PROVIDER=none
+```
+
+### Docker Compose 評価
+
+```bash
+export KJ_ATLAS_LLM_PROVIDER=none
+export WEB_PORT=8080
+```
+
+### API key 付き検証
+
+```bash
+export KJ_ATLAS_API_KEY='change-me'
+```
+
+この値は例です。実運用では推測しにくい値を使い、Git にコミットしないでください。
 
 ## Frontend の API 接続先
 
@@ -109,6 +155,8 @@ docker compose logs api --tail=100
 ```bash
 curl -fsS http://127.0.0.1:8000/healthz
 ```
+
+設定ミスで backend が起動しない場合、`api` log に validation error が出ます。特に旧キー、provider 名、large-scale の opt-in 不足を確認してください。
 
 ## 関連文書
 

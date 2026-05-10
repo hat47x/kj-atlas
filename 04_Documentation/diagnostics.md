@@ -14,6 +14,27 @@
 4. API は応答しているか。
 5. ブラウザ console と network にエラーがあるか。
 
+## 調査の考え方
+
+障害調査では、まず「画面だけの問題か」「API も失敗しているか」「DB まで影響しているか」を分けます。原因を一度に決めつけず、利用者に見えている症状から奥へ進みます。
+
+| 層 | 見るもの |
+| --- | --- |
+| 画面 | ブラウザ console、表示崩れ、操作不能 |
+| API | HTTP status、`/healthz`、backend logs |
+| DB | `db` health、migration、保存結果 |
+| 外部接続 | LLM provider、audit endpoint、access control endpoint |
+
+## 前提知識
+
+この文書の調査では、次の3つを区別できれば十分です。
+
+| 用語 | 意味 |
+| --- | --- |
+| frontend | ブラウザで動く画面側です。 |
+| backend/API | 保存、AI 提案、認証などを処理するサーバー側です。 |
+| DB | ドキュメントや操作結果を保存するデータベースです。 |
+
 ## ヘルスチェック
 
 Docker Compose:
@@ -76,6 +97,22 @@ npm run test -- src/worker/<test-file>.test.ts
 - 再現率
 
 秘密情報、API key、token、生の顧客データは記録しません。
+
+## 共有用テンプレート
+
+```text
+発生日時:
+環境:
+URL:
+ブラウザ:
+操作手順:
+期待した結果:
+実際の結果:
+API status:
+再現率:
+添付できるログ:
+秘密情報の除去確認: 済 / 未
+```
 
 ## 復旧の基本
 

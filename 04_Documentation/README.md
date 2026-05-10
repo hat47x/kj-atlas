@@ -2,6 +2,18 @@
 
 `04_Documentation` は、kj-atlas を導入・設定・運用する人のための公開ガイドです。内部の作業ログ、issue 管理、設計判断の詳細はこの階層には置かず、利用者が再現できる手順と判断基準だけを残します。
 
+## はじめて読む人へ
+
+kj-atlas の文書は、まず「安全に起動できること」、次に「何を外部へ送る可能性があるか」、最後に「変更後にどう確認するか」の順で読むと迷いにくくなります。すべてを一度に読む必要はありません。
+
+| あなたの状況 | 読む順番 |
+| --- | --- |
+| とにかく動かしたい | `installation.md` -> `configuration.md` |
+| 運用担当になった | `installation.md` -> `operations.md` -> `security.md` |
+| セキュリティ確認をしたい | `security.md` -> `security_operational_guidelines.md` -> `configuration.md` |
+| 変更後の確認をしたい | `e2e_testing.md` -> `diagnostics.md` |
+| AI 提案機能を使いたい | `ce2_low_risk_ai_assist.md` -> `local_llm_ops_guide.md` -> `security.md` |
+
 ## まず読む文書
 
 | 目的 | 文書 |
@@ -33,3 +45,15 @@
 - 環境固有の秘密情報、社内 URL、承認履歴、生の監査ログは含めません。
 - 実装・設計の正本をここで再定義しません。必要な場合は `02_Architecture` または `03_Implement` にリンクします。
 - 内部作業ログは `01_Plans` 側で管理し、利用者向け文書には混在させません。
+
+## 最小用語集
+
+| 用語 | 意味 |
+| --- | --- |
+| Docker Compose | 複数のサービスをまとめて起動する仕組みです。kj-atlas では `web`、`api`、`db` をまとめて起動します。 |
+| API | 画面と backend がやり取りする入口です。通常は `/api/...` で呼び出されます。 |
+| SafeMode | 未レビュー情報の混入や外部送信を避けるための安全側の動作です。 |
+| LLM | 文章生成や要約を行う AI モデルです。kj-atlas では既定で無効です。 |
+| provider | LLM の接続先種別です。`none`、`local`、`large-scale` などがあります。 |
+| E2E | 画面から実際に操作して、利用者の流れ全体を確認するテストです。 |
+| audit | 後から確認できるように残す操作記録です。秘密情報を含めないことが前提です。 |
