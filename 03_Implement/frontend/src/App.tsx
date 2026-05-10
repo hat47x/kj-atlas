@@ -2277,7 +2277,7 @@ export default function App() {
         result = await suggestMerges(document, remoteInstruction);
       } catch (error) {
         const isApiUnavailable =
-          error instanceof ApiError && (error.status === 404 || error.status === 405 || error.status === 501);
+          error instanceof ApiError && (error.status === 404 || error.status === 405 || error.status === 501 || error.status === 503);
         const isNetworkUnavailable = error instanceof TypeError;
 
         if (!isApiUnavailable && !isNetworkUnavailable) {
@@ -5788,11 +5788,18 @@ ${parsedDocument.error}`);
   const currentReadingItem = readingList[clampReadingIndex(readingIndex, readingList.length)] ?? null;
 
   useEffect(() => {
+    setSearchQuery("");
+    setHideNonMatches(false);
+    setCurrentMatchIndex(0);
+  }, [activeDocumentId]);
+
+  useEffect(() => {
     if (!safeMode) {
       return;
     }
 
     setOutlineIncludeUnreviewed(false);
+    setIncludeUnreviewedDraftsInExport(false);
   }, [safeMode]);
 
   const handleSetReadingNavEnabled = useCallback((enabled: boolean) => {
@@ -7025,7 +7032,7 @@ ${parsedDocument.error}`);
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
-        includeUnreviewedDrafts: !safeMode || includeUnreviewedDraftsInExport,
+        includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
       });
 
       const snapshotFilename = "snapshot.png";
@@ -7082,7 +7089,7 @@ ${parsedDocument.error}`);
       const model = buildAbstractMapExport(document, {
         visibleIslandIds: visibleIslandIdSet,
         abstractMapView,
-        includeUnreviewedDrafts: !safeMode || includeUnreviewedDraftsInExport,
+        includeUnreviewedDrafts: !safeMode && includeUnreviewedDraftsInExport,
       });
 
       const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);

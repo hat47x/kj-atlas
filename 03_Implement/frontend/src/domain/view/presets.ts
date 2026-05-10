@@ -38,7 +38,7 @@ export const DEFAULT_VIEW_PRESETS: ViewPreset[] = [
       perspectiveMode: "default",
       perspectiveStrictFilter: false,
       showReadingOrder: false,
-      safeMode: false,
+      safeMode: true,
       lodEnabled: false,
     },
   },

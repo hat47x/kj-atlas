@@ -65,6 +65,13 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
+# Local development databases
+*.db
+*.db-journal
+
+# Node dependencies
+node_modules/
+
 # Scrapy stuff:
 .scrapy
 

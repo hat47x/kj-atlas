@@ -420,7 +420,7 @@ export function SharePanel({
             <button type="button" onClick={onExportAbstractMapHtmlWithPng} disabled={!hasDocument || isLoading}>
               {t("share.panel.export.abstract_html")}
             </button>
-            {safeMode ? (
+            {!safeMode ? (
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                 <input
                   type="checkbox"

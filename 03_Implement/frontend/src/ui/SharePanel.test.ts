@@ -90,6 +90,7 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("セーフモード: ON");
     expect(html).toContain("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
     expect(html).toContain("固定マスク対象: Share / Review Pack（無効化できません）。");
+    expect(html).not.toContain("未レビューのドラフトを含める");
   });
 
   it("shows consistent English safe-mode-off warnings", () => {
@@ -98,6 +99,7 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("SafeMode: OFF");
     expect(html).toContain("SafeMode is OFF. Exports may include raw text. Re-enable SafeMode before external sharing.");
     expect(html).toContain("Locked redaction contexts: Share / Review Pack (cannot be disabled).");
+    expect(html).toContain("Include unreviewed drafts");
   });
 });
 

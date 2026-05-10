@@ -8,29 +8,30 @@ import { buildTraceAnalyticsMd, computeTraceAnalytics } from "./trace_analytics"
 
 const fixturesDir = path.resolve(__dirname, "../../tests/fixtures/worker");
 const fixtureDoc = JSON.parse(fs.readFileSync(path.join(fixturesDir, "doc.small.json"), "utf8")) as DocumentV2;
+const readGolden = (filename: string): string => fs.readFileSync(path.join(fixturesDir, filename), "utf8").replace(/\r\n/g, "\n");
 
 describe("worker compute goldens", () => {
   it("evidence trace matches golden fixture", () => {
-    const expected = fs.readFileSync(path.join(fixturesDir, "evidence_trace_c1.md"), "utf8");
+    const expected = readGolden("evidence_trace_c1.md");
     const output = computeTrace({ doc: fixtureDoc, options: { kind: "evidence", startCardId: "c1", safeMode: true } });
     expect(output.traceMd).toBe(expected);
   });
 
   it("contradiction trace matches golden fixture", () => {
-    const expected = fs.readFileSync(path.join(fixturesDir, "contradiction_trace_c1.md"), "utf8");
+    const expected = readGolden("contradiction_trace_c1.md");
     const output = computeTrace({ doc: fixtureDoc, options: { kind: "contradiction", startCardId: "c1", safeMode: true } });
     expect(output.traceMd).toBe(expected);
   });
 
 
   it("trace analytics output matches golden fixture", () => {
-    const expected = fs.readFileSync(path.join(fixturesDir, "trace_analytics_c1.md"), "utf8");
+    const expected = readGolden("trace_analytics_c1.md");
     const output = buildTraceAnalyticsMd(computeTraceAnalytics(fixtureDoc, "c1", { safeMode: true }));
     expect(output).toBe(expected);
   });
 
   it("diagnostics output matches golden fixture and is deterministic", () => {
-    const expected = fs.readFileSync(path.join(fixturesDir, "diagnostics.md"), "utf8");
+    const expected = readGolden("diagnostics.md");
     const run1 = computeDiagnostics({ doc: fixtureDoc, view: { readingMode: "islands+cards", reviewedOnly: false } });
     const run2 = computeDiagnostics({ doc: fixtureDoc, view: { readingMode: "islands+cards", reviewedOnly: false } });
     expect(run1.diagnosticsMd).toBe(expected);
