@@ -157,8 +157,7 @@ CE0境界（参照専用固定）:
   - `previewConfirmed: true`
 - Error:
   - `422 preview_required`: `previewConfirmed != true`
-  - `422 invalid_query_contract`: enum/range違反
-  - `400 unknown_contract_key`: CE1 v1 最小I/F外のキーを検知
+  - `400 unknown_contract_key`: CE1 v1 最小I/F外のキー、または enum/range違反を fail-closed で拒否
 
 **POST** `/context/bundle`
 
@@ -174,6 +173,11 @@ CE0境界（参照専用固定）:
 4. `sha256(canonical_json)` を16進小文字で返す。
 
 判定可能要件: 同一 canonical query に対し `bundleHash` が一致しない場合、サーバは `409 nondeterministic_bundle` を返し監査ログへ記録する。
+
+CE1 v1 fixed vocabulary（closed-world）:
+- `422 preview_required`
+- `400 unknown_contract_key`
+- `409 nondeterministic_bundle`
 
 運用停止条件:
 - `previewConfirmed` 必須ゲートが破られる実装差分を検知した場合は No-Go。

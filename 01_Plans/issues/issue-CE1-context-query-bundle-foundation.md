@@ -1,5 +1,37 @@
 # Issue Draft: CE1 ContextQuery/ContextBundle Foundation（Stream E / CE1専任 / contract-only planning）
 
+## Stream C interface/mock専任 update（2026-05-10 / Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read（latest）
+- Read Order準拠で上位文書（`00_Prompt/*`, `ADR-0001`, `02_Architecture/api.md`, `02_Architecture/schemas.md`）を再確認。
+- 本Streamの編集許可範囲を `issue-CE1-*`, `issue-FB-P2C-01-a1-interface-contract.md`（参照整合のみ）, `02_Architecture/api.md`, `02_Architecture/schemas.md` に固定。
+- 実装コード（frontend/backend）と運用文書は非対象であることを再確認。
+
+### Phase 2 ADR（C/D/C）
+- **Context**: CE2/CE4 を停止させないため、CE1で `ContextQueryV1` / `ContextBundleV1` の最小I/Fと失敗語彙を先行凍結する必要がある。
+- **Decision**: CE1 v1 を closed-world 契約として固定し、fail-closed語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` に限定する。
+- **Consequences**: 下流は mock で依存切断を維持し、実装着手前に決定論・安全条件の検証設計を先行実施できる。
+
+### Phase 3 Plan（AC/DoD）
+- AC-1: `ContextQueryV1` / `ContextBundleV1` 必須キー集合が `api.md` と `schemas.md` で一致している。
+- AC-2: `previewConfirmed!=true -> 422 preview_required` を唯一のpreview gateとして固定する。
+- AC-3: unknown key は常に `400 unknown_contract_key`、同一canonical queryのhash不一致は `409 nondeterministic_bundle` とする。
+- AC-4: mock検証設計は `stubDatasetId=A2-minimal-v1` 固定で、実DB/実LLM/worker依存を持ち込まない。
+- DoD: docs-only差分のみで、CE2/CE4へ read-only handoffできる契約文書が復元可能。
+
+### Phase 4 Execute（契約文書更新のみ）
+- 本IssueをSSOTハブとして、CE1最小I/F・固定エラー語彙・決定論要件を再固定。
+- 実装依存記述は追加しない（contract-only維持）。
+
+### Phase 5 Verify（決定論/安全条件の検証設計）
+- Verify-1: 同一canonical queryで `queryCanonicalHash` / `bundleHash` が3/3一致する判定を契約化。
+- Verify-2: preview gate / unknown key / nondeterministic を fail-closed で拒否するHTTP対応を固定。
+- Verify-3: self-repairは最大3回まで。3回超過時は停止（`held`）とし推測継続しない。
+
+### Phase 6 Proceed
+- Proceed条件: docs-only、closed-world維持、固定語彙3種維持、mock-first依存切断維持。
+- Stop条件: 契約衝突・語彙逸脱・allowlist外編集要求・self-repair超過。
+
 
 ## Stream E contract audit update（2026-05-10 / triage-stopper metadata + CE1 interface freeze）
 
