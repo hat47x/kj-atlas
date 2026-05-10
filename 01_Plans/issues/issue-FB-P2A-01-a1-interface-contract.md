@@ -2,11 +2,18 @@
 
 - Type: Planning
 - Status: Done
+- Priority: P2
 - Owner: Stream E
 - Scope: `01_Plans/issues/` only
 - Phase: A1 Interface Contract
 - DecisionStatus: Fixed
 - VerificationLevel: docs-check
+
+## Dependencies
+- DependsOn: N/A
+- Unblocks: `issue-FB-P2A-01-a2-mock-validation.md`, `issue-FB-P2A-01-a3-implementation.md`
+- Gate: N/A
+
 
 ## Plan → Execute → Verify → Proceed
 - Plan: A1として入力型・出力型・エラー契約・監査イベント名を固定する。
