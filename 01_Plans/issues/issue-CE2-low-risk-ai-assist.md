@@ -3,7 +3,7 @@
 - Type: Process / Decision preparation
 - Status: Draft
 - Priority: P1
-- Owner: Stream E（CE2 Open化準備専任 / proposal-only）
+- Owner: Stream F（CE2 Open化準備専任 / proposal-only）
 - Scope: `01_Plans/issues/issue-CE2-low-risk-ai-assist.md` のみ（single-file fixed）
 - Related Backlog: `CE-2`
 - Related ADR/Spec: `ADR-0028`, `ADR-0001`, `02_Architecture/schemas.md`
@@ -170,29 +170,54 @@
   - single-file scope で、Phase 1〜6、Evidence/Approval Record、Proceed/Hold/Stop条件が確認できる。
   - docs-check がゼロエラーで、proposal-only / no-auto / mock-isolated dependency の3条件に反証がない。
 
-## Stream H execution log（2026-05-10 / CE2-low-risk-ai-assist）
+## Stream F execution log（2026-05-10 / CE2-low-risk-ai-assist）
 
 ### Phase 1: Read
 - CE2契約（proposal-only / human-final / no-auto / fail-closed）と CE1 read-only 依存境界を再確認。
-- 実装側では `proposed` 固定・`reviewState=unreviewed` 固定・決定語彙 `accepted|rejected|held` のみを許可する既存契約を照合。
+- Draft維持理由（不足証跡・依存未確定）を同期し、Open化審査に必要な証跡テンプレート不足を確認。
+- Dependency status を `未確定（CE-2 Open判定待ち）` のまま維持し、CE0/CE1 は read-only 参照とする方針を再確認。
 
-### Phase 2: Plan
-- CE2作業を CE4 と分離し、低リスク要件を「説明可能性（diff/rationale）」「巻き戻し容易性（proposal-only + no-auto）」で固定。
-- AC補完:
-  - [x] AI提案は `status=proposed` のみ。
-  - [x] 人間最終決定以外の遷移を許可しない。
-  - [x] `reviewState` は自動昇格させない。
+### Phase 2: ADR（Context / Decision / Consequences）
+#### Context
+- CE2 は Open化判定のための **意思決定準備（proposal-only）** であり、実装変更を含めない。
+- CE0/CE1 が未確定の状態では、依存情報の推測補完を禁止し、証跡テンプレート固定を優先する。
 
-### Phase 3: Execute
-- mock interface を維持して `proposals/island-summary` を no-op apply（提案のみ）として運用。
-- 依存未確定項目（CE0/CE1承認証跡）は read-only 参照に固定し、推測確定を行わない。
+#### Decision
+- proposal-only 維持を継続し、`human-final / no-auto / fail-closed` を不変条件として固定する。
+- Open化審査は tri-state（`Proceed / Hold / Stop(held)`）のみ許可し、二値判定への退行を禁止する。
+- Approval Record は `approved_at / approved_by / target / decision / evidence` を最小必須セットとして固定する。
 
-### Phase 4: Verify
-- `pytest -q 03_Implement/backend/tests/test_ce2_proposal_api.py` を実行し、proposal-only と決定語彙制約を回帰確認。
-- self-correction: `0/3`。
+#### Consequences
+- 依存未確定時の誤Proceedを防ぎ、Open化審査を再現可能な証跡駆動で実施できる。
+- CE2は実装前提を増やさず、審査入力（証跡）の品質のみを成熟化できる。
 
-### Phase 5: Proceed
-- 判定: **Proceed (CE2実装足場のみ達成)**。
-- 残リスク:
-  1. CE0/CE1承認証跡が未確定のため Open化判定は依然 Hold。
-  2. 運用監査の永続保存（DB/外部SIEM連携）は未範囲。
+### Phase 3: Plan（AC/DoD補完とOpen化判定条件）
+- AC/DoD の不足を以下で補完:
+  - [x] AC-P1〜P4 が proposal-only 前提で相互矛盾なく参照できる。
+  - [x] DoD-P1〜P4 と tri-state 判定の対応を明文化。
+  - [x] Open化判定は `O1〜O4=all true` のみ Proceed候補、未充足は Hold と明記。
+- Open化判定条件（固定）:
+  1. Evidence matrix の E-01〜E-05 が required semantics を満たす。
+  2. Approval Record の missing=0。
+  3. `human-final / no-auto / fail-closed` に反証なし。
+  4. docs-check が成功し、single-file scope逸脱がない。
+
+### Phase 4: Execute（証跡テンプレート整理）
+- Approval Record 項目（`approved_at/by/target/decision/evidence`）を Open化審査の最小必須証跡として維持。
+- Evidence matrix（E-01〜E-05）を tri-state 判定に直接接続し、未充足時の遷移先を固定（Hold または Stop）。
+- CE0/CE1 への追加確定要求は行わず、read-only dependency を維持。
+
+### Phase 5: Verify（三値判定整合 / safeMode後退なし）
+- tri-state は `Proceed / Hold / Stop(held)` のみで運用し、語彙逸脱を禁止。
+- `human-final / no-auto / fail-closed` の不変条件に後退がないことを確認。
+- self-correction: `0/3`（上限3、超過時は Stop）。
+
+### Phase 6: Proceed
+- 判定: **Hold（継続）**。
+- Hold条件（未充足）:
+  1. CE0承認証跡の実値未充足。
+  2. CE1 read-only契約確認の実値証跡未充足。
+- Stop条件:
+  1. self-correction が4回目相当に到達。
+  2. tri-state 以外の判定語彙が混入。
+  3. `human-final / no-auto / fail-closed` のいずれかに反する提案が混入。
