@@ -3611,3 +3611,47 @@ export type AuditEventV1 = {
 - 追加/改名/削除を含む Contract ID 変更は禁止（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` 固定）。
 - No-Go canonical IDs（`preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`）は固定。
 - 逸脱提案は実装せず `held` 登録し、人間承認まで凍結継続。
+
+## Stream B latest run（2026-05-10 / CE-0 Contract Freeze / Stream B execution）
+
+- run_id: `stream-b-ce0-2026-05-10-01`
+- assignee: `Stream B（CE-0 Contract Freeze 専任）`
+- edit_allowlist: `issue-CE0-contract-freeze.md`, `issue-CE0-core-graph-repositioning.md`（本実行指示に従い docs-only）
+- strategy: `contract-only / mock-first / I/F先行固定（API signature・data type・audit event name）`
+
+### Phase 1 Read（Contract ID / 禁止事項 / AC欠落抽出）
+- Contract IDs（固定・再定義禁止）: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`。
+- CE0 canonical No-Go IDs（固定）: `preview_bypass` / `consensus_direct_write` / `auto_apply_or_publish` / `ai_review_auto_promotion` / `safemode_default_relaxation`。
+- 禁止事項を再確認: Contract IDの追加・改名・削除、safeMode既定後退、実装ロジック確定、指定外ファイル編集。
+- AC欠落抽出: CE-1へ渡すI/Fの「API署名 / データ型 / 監査イベント名」の最小固定セットを明文化する受入条件が未明示。
+
+### Phase 2 ADR明文化（Context / Decision / Consequences）
+- Context: CE-0契約をSSOTとして固定し、CE-1以降の下流が契約ドリフトなく mock-first 検証できる状態が必要。
+- Decision: CE-0では `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` を **I/F名固定のみ** とし、実装意味論は凍結（mock前提）する。
+- Consequences: 実装依存を切り離して並行検証を維持できる一方、ロジック解釈が必要な論点は CE-1 へ持ち越す。
+- CE-0 fixed contract matrix との矛盾判定: 明示的矛盾なし。是正案: なし（将来矛盾が出た場合は `held` で是正案のみ提示）。
+
+### Phase 3 Plan（I/F先行固定）
+- 固定対象: API署名、データ型、監査イベント名のみ。
+- 非固定対象: 実装ロジック、アルゴリズム、最適化、永続化詳細（mock-firstで凍結）。
+- ACドラフト提案（合意待ち）:
+  - AC-IF-1: CE-0文書にあるI/F名は `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` 以外を増やさない。
+  - AC-IF-2: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の語彙意味をv1で固定する。
+  - AC-IF-3: 監査イベント名は `contract_freeze_verified` / `contract_drift_detected` / `freeze_hold_invoked` を予約語としてCE-1へhandoffする。
+
+### Phase 4 Execute（docs-only / contract-only）
+- 本Issueへの記録追加のみ実施。
+- 実装コード・schema・shared 3 files・他issueの変更は未実施。
+
+### Phase 5 Verify（docs-check / Self-Correction <=3）
+- attempt_1: `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+- attempt_1: `git diff --check`
+- attempt_1: pass（self-correction `0/3`）
+
+### Phase 6 Proceed（完了判定 / CE-1 handoff）
+- 判定: **Conditional-Go（CE-0 Contract Freeze maintained）**。
+- CE-1へ渡すI/F仕様（契約固定済）:
+  1) API署名: `POST /context/query`, `POST /context/bundle`（stub契約）
+  2) データ型: `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1`
+  3) 監査イベント名: `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked`
+- 停止条件: 未定義競合・No-Go語彙不一致・4回目相当の自己修復要求が発生した場合は `held` で停止して指示待ち。
