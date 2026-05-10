@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 ISSUE_STATUS_ACTIVE = {"Draft", "Open", "In Progress"}
+VALID_ISSUE_STATUSES = ISSUE_STATUS_ACTIVE | {"Done", "Blocked", "Ready", "Active"}
 ADR_ACTIONABLE_STATUSES = {"Accepted", "Proposed"}
 META_RE = re.compile(r"^- (?P<key>[^:]+):\s*(?P<value>.+)$")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
@@ -267,11 +268,17 @@ def collect(root: Path) -> dict[str, object]:
     issues = [parse_issue(path) for path in issue_files]
     adrs = [parse_adr(path) for path in adr_files]
     errors: list[TriageError] = []
+    known_issue_paths = {issue.path for issue in issues}
     for issue in issues:
         if issue.status == "Unknown":
             errors.append(TriageError(path=issue.path, reason="missing Status metadata"))
-        if issue.priority == "N/A":
+        elif issue.status not in VALID_ISSUE_STATUSES:
+            errors.append(TriageError(path=issue.path, reason=f"invalid Status metadata: {issue.status}"))
+        if issue.priority == "N/A" or not issue.priority.strip():
             errors.append(TriageError(path=issue.path, reason="missing Priority metadata"))
+        for dep in issue.dependency_paths:
+            if dep not in known_issue_paths:
+                errors.append(TriageError(path=issue.path, reason=f"dependency path not found: {dep}"))
     actionable_issues = build_actionable_issues(issues, root)
     actionable_adrs = build_actionable_adrs(adrs, issues)
     return {

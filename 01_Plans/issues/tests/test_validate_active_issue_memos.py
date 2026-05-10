@@ -211,6 +211,74 @@ class ValidateActiveIssueMemosTest(unittest.TestCase):
             errors = validate(root)
             self.assertEqual([], errors)
 
+    def test_validate_detects_invalid_active_status_enum(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    ## Active issue memos
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | Active | https://example.com/1 |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: Active
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: https://example.com/1
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `docs-check`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("invalid active status" in err for err in errors))
+            self.assertTrue(any("invalid Status" in err for err in errors))
+
+    def test_validate_detects_missing_dependency_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "README.md").write_text(
+                textwrap.dedent(
+                    """
+                    ## Active issue memos
+                    | Backlog ID | Memo | Status | Source Issue |
+                    |---|---|---|---|
+                    | DOC-REL-01 | `issue-doc.md` | Open | https://example.com/1 |
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "issue-doc.md").write_text(
+                textwrap.dedent(
+                    """
+                    - Type: Process / Documentation quality
+                    - Status: Open
+                    - Lifecycle: Draft -> Open -> In Progress -> Done -> GC(削除)
+                    - Source Issue: https://example.com/1
+                    - Priority: P1
+                    - Scope: `01_Plans/issues/`
+                    - Related ADR/Spec: `ADR-0000`
+                    - Expected verification level: `docs-check`
+
+                    ## Dependencies
+                    - requires `issue-does-not-exist.md`
+                    """
+                ),
+                encoding="utf-8",
+            )
+            errors = validate(root)
+            self.assertTrue(any("dependency path not found" in err for err in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

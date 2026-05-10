@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Iterable
 
 ALLOWED_VERIFICATION_LEVELS = {"docs-check", "unit", "integration", "e2e"}
+ALLOWED_ACTIVE_STATUSES = {"Draft", "Open", "In Progress"}
 REQUIRED_FIELDS = [
     "- Type:",
     "- Status:",
@@ -70,6 +71,24 @@ def parse_active_rows(readme_text: str) -> list[ActiveMemoRow]:
 
 
 
+def extract_dependency_paths(memo_text: str) -> list[str]:
+    lines = memo_text.splitlines()
+    in_dependencies = False
+    refs: list[str] = []
+    heading_re = re.compile(r"^##+\s+(?:\d+\)\s*)?(?:依存関係|Dependencies)")
+    section_re = re.compile(r"^##+\s+")
+    for line in lines:
+        stripped = line.strip()
+        if heading_re.match(stripped):
+            in_dependencies = True
+            continue
+        if in_dependencies and section_re.match(stripped):
+            break
+        if not in_dependencies:
+            continue
+        refs.extend(re.findall(r"`([^`]*issue-[^`]+\.md)`", line))
+    return refs
+
 
 def extract_field_value(memo_text: str, field_name: str) -> str | None:
     pattern = rf"^- {re.escape(field_name)}:\s*(.+)$"
@@ -108,6 +127,25 @@ def validate_rows(root: Path, rows: Iterable[ActiveMemoRow]) -> list[str]:
 
         memo_status = extract_field_value(text, "Status")
         memo_source = extract_field_value(text, "Source Issue")
+        memo_priority = extract_field_value(text, "Priority")
+
+        if row.status not in ALLOWED_ACTIVE_STATUSES:
+            errors.append(
+                f"{row.memo}: invalid active status `{row.status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
+            )
+
+        if memo_status and memo_status not in ALLOWED_ACTIVE_STATUSES:
+            errors.append(
+                f"{row.memo}: invalid Status `{memo_status}` (allowed: {sorted(ALLOWED_ACTIVE_STATUSES)})"
+            )
+
+        if memo_priority is None or not memo_priority.strip():
+            errors.append(f"{row.memo}: missing or empty Priority value")
+
+        for dep in extract_dependency_paths(text):
+            dep_path = (root / dep).resolve() if dep.startswith("issues/") else (root / "issues" / dep).resolve()
+            if not dep_path.exists():
+                errors.append(f"{row.memo}: dependency path not found `{dep}`")
 
         if row.status != "Draft" and row.source == "TBD":
             errors.append(
