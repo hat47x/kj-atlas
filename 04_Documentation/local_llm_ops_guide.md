@@ -16,13 +16,13 @@ kj-atlas は既定で LLM を使いません。
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
-この状態では、AI 機能は disabled として扱われ、外部送信は行われません。最初の評価、E2E、保存動作の確認では、この既定値を推奨します。
+この状態では、AI 機能は disabled として扱われ、LLM 連携による外部サービスとの共有は行われません。最初の評価、E2E、保存動作の確認では、この既定値を推奨します。
 
 ## local LLM とは
 
 この文書での local LLM は、kj-atlas から見て管理できる範囲にある LLM endpoint を指します。同じ PC 上のサービスとは限りません。組織内サーバーを使う場合もあります。
 
-local という名前でも、URL が外部サービスを指していれば外部送信です。接続先、保持期間、入力データの扱いを確認してから有効にしてください。
+local という名前でも、URL が外部サービスを指していれば、そのサービスにデータを渡す扱いです。接続先、保持期間、入力データの扱いを確認してから有効にしてください。
 
 ## local provider を有効にする
 
@@ -87,7 +87,7 @@ docker compose logs api --tail=100
 
 ## 運用上の注意
 
-- 入力に秘密情報、個人情報、未レビューの機密情報を含めないでください。送信してよい情報か迷う場合は [data_handling.md](data_handling.md) を確認します。
+- 入力に秘密情報、個人情報、未レビューの機密情報を含めないでください。共有してよい情報か迷う場合は [data_handling.md](data_handling.md) を確認します。
 - SafeMode の目的を緩める設定変更は、[security.md](security.md) と [security_operational_guidelines.md](security_operational_guidelines.md) を確認してから行ってください。
 - provider が不安定な場合は、まず `KJ_ATLAS_LLM_PROVIDER=none` に戻し、保存や表示などの基本操作が正常か確認します。
 - local endpoint のログに prompt 全文が残る場合があります。ログの保管先と閲覧権限を確認してください。

@@ -137,9 +137,9 @@ API status:
 確認したログ:
 ```
 
-## SafeMode と外部送信
+## SafeMode と外部サービスとの共有
 
-既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit 外部送信も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
+既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit HTTP 連携も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
 
 ## 運用前チェックリスト
 

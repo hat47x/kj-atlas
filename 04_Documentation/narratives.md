@@ -50,7 +50,7 @@ AI 出力をそのまま貼り付ける前に、必ず根拠となるカード�
 
 既定の `KJ_ATLAS_LLM_PROVIDER=none` では、AI 生成は disabled として失敗します。これは安全な既定値です。
 
-LLM を使う場合は、[local_llm_ops_guide.md](local_llm_ops_guide.md) と [security.md](security.md) を確認し、外部送信、秘密情報、review 状態の扱いを先に決めてください。
+LLM を使う場合は、[local_llm_ops_guide.md](local_llm_ops_guide.md) と [security.md](security.md) を確認し、外部サービスとの共有、秘密情報、review 状態の扱いを先に決めてください。
 
 ## 記録する情報
 

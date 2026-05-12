@@ -123,7 +123,7 @@ API status:
 1. 変更直後なら、直前の設定差分を確認します。
 2. DB 接続や migration エラーなら backend logs を確認します。
 3. frontend の表示だけ壊れている場合は cache を無効化して再読み込みします。
-4. LLM や audit の外部送信が関係する場合は、一度 `KJ_ATLAS_LLM_PROVIDER=none`、`KJ_ATLAS_AUDIT_EXPORT_ENABLED=false` に戻して再確認します。
+4. LLM や audit HTTP 連携が関係する場合は、一度 `KJ_ATLAS_LLM_PROVIDER=none`、`KJ_ATLAS_AUDIT_EXPORT_ENABLED=false` に戻して再確認します。
 
 復旧を急ぐ場合でも、秘密情報を含むログをそのまま共有しないでください。共有前に API key、token、個人情報、生の顧客データを除去します。
 
