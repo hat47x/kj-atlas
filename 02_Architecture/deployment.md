@@ -12,6 +12,8 @@
 
 サードパーティイメージが要求する変数名は、`01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` に基づく private adapter 名として扱います。運用者が設定する値は `KJ_ATLAS_*` だけです。
 
+環境別の推奨値は [runtime_parameter_registry.md](runtime_parameter_registry.md) の `Runtime profiles` を参照します。ローカル開発、評価、企業・行政の本番相当では、同じキーでも推奨値や確認事項が異なります。
+
 ## 標準構成
 
 | Service | 役割 |
@@ -76,10 +78,10 @@ export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_
 ## 運用境界
 
 - `web` と `api` は同一 Compose network 内で通信します。
-- 既定では `KJ_ATLAS_LLM_PROVIDER=none` とし、外部 LLM へ送信しません。
-- local LLM を使う場合は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を管理できる endpoint に向けます。
+- 既定では `KJ_ATLAS_LLM_PROVIDER=none` とし、外部 LLM にデータを渡しません。
+- local LLM を使う場合は `KJ_ATLAS_LOCAL_LLM_BASE_URL` を管理できる接続先（endpoint）に向けます。
 - large-scale LLM を使う場合は、明示 opt-in、昇格許可、allowlist をすべて設定します。
-- access control を外部 PDP に委譲する場合は、endpoint、timeout、fail-safe を同時に確認します。
+- access control を外部 PDP に委譲する場合は、接続先（endpoint）、timeout、fail-safe を同時に確認します。
 
 ## Cloud への載せ替え
 
@@ -93,4 +95,4 @@ export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_
 1. 設定キーを追加・改名・削除する場合は、先に `runtime_parameter_registry.md` を更新します。
 2. 実装、Compose、04 文書、release 手順を同じ PR で同期します。
 3. 旧キーや互換キーを公開設定として残しません。
-4. SafeMode、share/export、外部送信の安全境界を緩める変更は ADR で判断します。
+4. SafeMode、share/export、外部サービスとの共有の安全境界を緩める変更は ADR で判断します。

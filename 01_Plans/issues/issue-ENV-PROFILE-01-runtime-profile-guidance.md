@@ -1,0 +1,100 @@
+# Issue Memo: ENV-PROFILE-01 Runtime profile guidance
+
+- Type: Documentation quality / Process
+- Status: In Progress
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P1
+- Owner: Codex
+- Scope: `02_Architecture/`, `04_Documentation/`
+- Related Backlog: `ENV-CONFIG-DRIFT-01`
+- Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `02_Architecture/deployment.md`, `02_Architecture/enterprise_architecture.md`
+- Dependencies: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
+- Expected verification level: `docs-check`
+
+## Requirement meta I/F（共通キー）
+
+- RequirementID: ENV-PROFILE-01
+- RequirementStatement: 実行環境ごとの推奨設定プロファイルを明示し、既定値と本番推奨値の見え方を分離する。
+- PriorityClass（Must / Should / Could）: Must
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=公開環境変数はすべて `KJ_ATLAS_` で始まる; 操作=runtime registry と deployment/enterprise docs を読む; 期待結果=local-dev/evaluation/enterprise-production の違いを判断できる; 除外=実装既定値の変更。
+- GoNoGoGate（Required / Optional / N/A）: Required
+- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / public-exposure
+- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
+- DecisionStatus（Fixed / Pending）: Pending
+- DecisionQueueRef（未確定時の参照先）: N/A
+
+## 1) 課題 / Problem statement
+
+`KJ_ATLAS_ALLOW_JIT_PROVISIONING` は実装既定値として `true` だが、企業・行政運用では strict profile として `false` が推奨される。この関係は矛盾ではないが、初見では「本番でも true が推奨なのか」と誤読される可能性がある。
+
+また、LLM provider、audit HTTP、access control などの設定は、local-dev / evaluation / enterprise-production で推奨値が異なる。既定値、評価用設定、本番推奨を分けて示すことで、運用判断の負荷を下げられる。
+
+## 2) 背景 / Context
+
+- `runtime_parameter_registry.md` は公開環境変数の単一正本である。
+- 04文書ではすべての公開環境変数を記載する方針が確定している。
+- `enterprise_architecture.md` は strict mode を本番標準として扱う。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: 導入者が小さく始めつつ、安全な本番運用へ移行しやすくなる。
+- 安全（THREAT_MODEL / SafeMode）: 誤った既定値理解による公開・認証・外部連携リスクを下げる。
+- 企業・行政要件（enterprise_architecture）: strict profile の説明可能性が上がる。
+- 後方互換（schemas）: 実装既定値を変更しない限り互換影響はない。
+
+## 4) 提案する解決策 / Proposed solution
+
+- `runtime_parameter_registry.md` に profile guidance を追加する。
+- local-dev / evaluation / enterprise-production の推奨設定差分を表で示す。
+- 実装既定値と本番推奨値が異なる項目は、その理由と安全境界を明記する。
+- `deployment.md` と `enterprise_architecture.md` から profile guidance へ導線を追加する。
+
+Non-goals:
+
+- 実装既定値を変更しない。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の既定値変更は本issueでは扱わない。
+- サードパーティコンテナ内部環境変数の設計判断は ADR-0029 に委ねる。
+
+## 5) 受入条件 / Acceptance criteria
+
+- [x] `runtime_parameter_registry.md` に実行プロファイル表が追加される。
+- [x] `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` の実装既定と enterprise production の `false` 推奨が区別される。
+- [x] `deployment.md` と `enterprise_architecture.md` からプロファイル表へ辿れる。
+- [x] 公開設定キーはすべて `KJ_ATLAS_` で始まる方針を維持する。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [x] T1: `runtime_parameter_registry.md` に profile guidance を追加する。
+- [x] T2: `deployment.md` に評価/本番プロファイル参照を追加する。
+- [x] T3: `enterprise_architecture.md` に strict profile 参照を追加する。
+- [x] T4: 00/02の環境変数例に非 `KJ_ATLAS_` が混入していないことを確認する。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `git diff --check`
+  - `rg --pcre2 -n 'export (?!KJ_ATLAS_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
+  - `rg --pcre2 -n '\\$env:(?!KJ_ATLAS_)[A-Z][A-Z0-9_]*=' 00_Prompt 02_Architecture`
+  - `rg -n "Runtime profile|KJ_ATLAS_ALLOW_JIT_PROVISIONING|enterprise-production" 02_Architecture`
+- 期待結果:
+  - 実行プロファイルと導線が確認できる。
+  - 公開環境変数例は `KJ_ATLAS_` 接頭辞に揃う。
+
+## 8) 代替案 / Alternatives considered
+
+- 実装既定値を `false` に変更する:
+  - 保留。導入互換性と本番安全性のトレードオフがあるため ADR 判断が必要。
+- 04文書だけに profile を置く:
+  - 却下。runtime registry が単一正本であり、04は運用説明として追随すべき。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: profile 表が実装値と乖離する。
+- 影響範囲: runtime registry, deployment, enterprise architecture, configuration docs。
+- ロールバック手順: profile guidance と導線追加を revert する。実装既定値は変更しない。
+
+## 10) Additional context
+
+- 本件で実装既定値を変更しないため、ADRは不要と判断する。
+- 既定値変更、missing endpoint fail-fast化、または vendor env 完全排除を行う場合は別ADRを起票する。

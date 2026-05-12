@@ -20,6 +20,8 @@ The focus is integration readiness, not SaaS transformation.
 企業・行政運用において必要なのは「アプリの肥大化」ではなく、
 **外部基盤との安全な接続点の整備**である。
 
+本番相当の推奨設定は `02_Architecture/runtime_parameter_registry.md` の `enterprise-production` profile を参照する。特に `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`、SafeMode既定ON、AccessControlAdapter の fail-safe を同時に確認する。
+
 ---
 
 # 1. 統合認証（SSO / IdP連携）
@@ -177,6 +179,7 @@ MVPでは、まず view.json（または pack manifest）に **visibility** フ�
 ### strict mode 例外運用の責務境界（AUTH-OPS-03 T1/T4）
 
 `KJ_ATLAS_ALLOW_JIT_PROVISIONING` は、認証直後に未登録ユーザを自動作成するか否かを表す運用フラグとして扱う。
+企業・行政の本番相当では `runtime_parameter_registry.md` の `enterprise-production` profile に従い、原則として `false` を選択する。
 
 - **本番標準（strict mode）**: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
   - 未登録ユーザは作成せず、アクセス拒否または read-only 制約を優先する。

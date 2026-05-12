@@ -54,11 +54,11 @@ This document defines runtime constraints for LLM usage in Codex-like sandboxed 
 
 ## 4. 実行モード定義
 
-- `offline`: none | fixture | local。外部送信禁止。
+- `offline`: none | fixture | local。外部サービスにデータを渡さない。
 - `intranet`: local中心、必要時に社内ゲートウェイ経由。
 - `scheduled-integration`: `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` かつ allowlist-only outbound 条件で external provider による小規模評価セット実行。
 
-safeModeは全モードで既定ONとし、外部送信可否と独立して漏えい防止ルールを適用する。
+safeModeは全モードで既定ONとし、外部サービスとの共有可否と独立して漏えい防止ルールを適用する。
 
 ---
 
@@ -92,7 +92,7 @@ CE2運用では、適用処理を起動せずに以下を確認する。
 
 - safeMode が既定ONであること。
 - reviewed-only 既定により未レビュー本文が提案入力に混入しないこと。
-- share/export 境界を越える外部送信を伴わないこと。
+- share/export 境界を越える外部サービスとの共有を伴わないこと。
 
 ### 8.2 通信と状態遷移の拘束
 

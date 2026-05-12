@@ -60,15 +60,39 @@
 | ラベル | Label | Label | カードやクラスタにつける短い表札 |
 | たたき台 | Draft / Strawman | DraftCluster / ProvisionalLayout | AIが生成する仮配置・仮クラスタ |
 | グループ | Cluster | Cluster | 複数カードの仮統合単位 |
+| 島 | Island | Island | 複数カードや関係を視覚的に囲む意味のまとまり。KJ法の島に相当 |
+| 関係 | Relation | Relation / Edge | カード、島、仮説の間にある意味的なつながり |
 | 配置図 | Layout / Map | Layout | 空間的配置を含む図解状態 |
 | 違和感 | Discomfort / Incongruity | Critique | 理由の有無を問わない否定・ツッコミ |
 | 制約 | Constraint | Constraint | Critique等から生成される再配置条件 |
 | 未統合 | Pending / Unbundled | PendingItems / Shelf | まだ束ねない要素の退避場所 |
 | 保留状態 | Hold / Suspension | HoldState | 判断を確定させない状態 |
+| 作業グラフ | Working Graph | WorkingGraph | 主体ごとの探索・未確定保持を担う作業面 |
+| 文脈投影グラフ | Context Projection Graph | ContextProjectionGraph | AI問い合わせやプレビューのために作る読取専用の投影面 |
+| 合意グラフ | Consensus Graph | ConsensusGraph | 人間承認済みの差分だけを保持する統合面。旧称 Core Graph |
 
 ---
 
-## 4. Critique（違和感）についての厳密定義
+## 4. Cluster と Island の違い
+
+`Cluster` は、カード同士を「意味的に近いかもしれない」と仮に束ねる単位です。まだ確定した分類ではありません。
+
+`Island` は、配置図の上でカードや関係を囲む視覚的な領域です。利用者が図として見ながら、まとまり、境界、未整理の余白を扱うために使います。
+
+両者は一致する場合がありますが、同義ではありません。例えば、ひとつの `Island` の中に複数の `Cluster` がある場合や、まだ `Cluster` と呼べない保留カード群を `Island` として囲む場合があります。
+
+---
+
+## 5. Graph 責務境界
+
+- `WorkingGraph` は、探索中の配置、仮説、未確定の関係を保持します。
+- `ContextProjectionGraph` は、問い合わせ目的に合わせて読み取り専用で作る投影です。永続的な正本ではありません。
+- `Consensus Graph` は、`patch + approval` 済みの差分だけを保持します。
+- `Core Graph` は旧称です。履歴説明以外では契約語彙として再導入しません。
+
+---
+
+## 6. Critique（違和感）についての厳密定義
 
 ### Critique とは
 
@@ -90,33 +114,37 @@
 
 ---
 
-## 5. AI（LLM）の役割定義（ドメイン観点）
+## 7. AI（LLM）の役割定義（ドメイン観点）
 
 AI は以下を **行ってよい**：
 
 - カード分割・要約の候補提示
 - 複数のクラスタ案・配置案の生成
 - 制約を反映した再提案
+- `WorkingGraph` 上の候補や `ContextProjectionGraph` のプレビュー生成
 
 AI は以下を **行ってはならない**：
 
 - 単一の正解クラスタを断定する
 - 違和感を無視・正当化する
 - 保留状態を勝手に解消する
+- `Consensus Graph` を直接更新する
+- `human_reviewed` を自動付与する
+- 人間承認なしに提案を適用する
 
 ---
 
-## 6. 外向け表現（要約・説明）に関する注意
+## 8. 共有・要約・説明に関する注意
 
 - 本アプリケーション内部の構造は **未確定・仮説的** であることを明示する
-- 外向け要約では、必ず以下を含める：
+- 利用者が要約や資料として共有する内容では、必ず以下を含める：
   - 保留点
   - 対立・分岐点
   - 未測定・未評価項目
 
 ---
 
-## 7. 変更ルール
+## 9. 変更ルール
 
 - 本ファイルの変更は **思想変更に相当** します
 - 変更時は必ず理由と影響範囲を明記してください
@@ -125,7 +153,7 @@ AI は以下を **行ってはならない**：
 
 ---
 
-## 8. 最後に
+## 10. 最後に
 
 本アプリケーションは、
 
