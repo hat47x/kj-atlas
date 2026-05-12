@@ -23,7 +23,7 @@ This document specifies a deterministic Local-first escalation policy: system de
 - `KJ_ATLAS_LLM_ESCALATION_ENABLED=false`（既定: 無効）
 - `KJ_ATLAS_LLM_PROVIDER=none`（既定: 無効）
 - `KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external` の列挙を前提とする。
-- 明示的に `true` へ変更しない限り、外部送信は行わない。
+- 明示的に `true` へ変更しない限り、外部サービスにデータを渡さない。
 - 設定変更には運用責任者の承認と監査ログ記録を要する。
 
 ---
@@ -51,7 +51,7 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ### 4.2 有効時（明示opt-in）
 
-- 許可された送信先へのみ転送（allowlist-only outbound）。
+- 許可された接続先にだけデータを渡す（allowlist-only outbound）。
 - 送信前にsafeMode/赤線化ポリシーを適用。
 - 送信データは最小化し、不要メタデータを含めない。
 
@@ -76,7 +76,7 @@ This document specifies a deterministic Local-first escalation policy: system de
 
 ## 6. セキュリティ・プライバシー整合
 
-- safeMode ON時は、禁止対象の生カード文面を外部送信しない。
+- safeMode ON時は、禁止対象の生カード文面を外部サービスに渡さない。
 - エスカレーションログは理由コードを保持し、本文は最小化またはハッシュ化する。
 - 送信経路・承認履歴・モデル識別子を監査可能にする。
 

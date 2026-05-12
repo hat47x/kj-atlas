@@ -403,14 +403,14 @@ export type ViewMetadataV1 = {
 - 互換方針：旧データで `visibility` が無い場合は `Restricted` を補完する。
 - strict validator 方針：`visibility` が存在する場合は enum（`Public` / `Unlisted` / `Org` / `Restricted`）以外を拒否する。
 - 安全方針：`visibility` の有無に関わらず SafeMode 既定ON・share/export 制約の既存ポリシーを維持する。
-- 運用解釈：`visibility` は公開範囲の意図を示すメタデータであり、外部送信可否（SafeMode や export制御）を直接変更しない。
+- 運用解釈：`visibility` は公開範囲の意図を示すメタデータであり、外部サービスとの共有可否（SafeMode や export制御）を直接変更しない。
 
 ### 8.1.1 SafeMode / readOnly / visibility の評価優先順位
 
 競合時の評価順は次で固定する（上位が優先）。
 
 1. **SafeMode / share-export policy**（既定ON、漏えい防止）
-2. **readOnly**（書込・共有・export など破壊/外部送信系を抑止）
+2. **readOnly**（書込・共有・export など破壊的操作や外部サービスとの共有を抑止）
 3. **visibility**（公開範囲ラベル。UI表示・監査ラベル用途）
 
 補足:

@@ -260,10 +260,13 @@ issue補助メモには、最低でも次の項目を含める。
 | HIL-RS-01-A1 | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | In Progress | N/A |
 | HIL-RS-02 | `issue-HIL-RS-02-next-phase-delivery-plan.md` | Open | N/A |
 | HIL-RS-02-A1 | `issue-HIL-RS-02-A1-governance-contract-hardening.md` | Open | N/A |
-| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | TBD |
+| HIL-RS-02-A3 | `issue-HIL-RS-02-A3-operations-documentation-sync.md` | Draft | `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` |
 | QA-MONKEY-05 | `issue-QA-MONKEY-05-island-accessibility-duplicate-controls.md` | Open | N/A |
 | QA-MONKEY-06 | `issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md` | Open | N/A |
 | QA-MONKEY-08 | `issue-QA-MONKEY-08-active-issue-metadata-validator-drift.md` | Open | N/A |
+| DOC-ARCH-01 | `issue-DOC-ARCH-01-architecture-source-log-separation.md` | In Progress | N/A |
+| DOMAIN-ALIGN-01 | `issue-DOMAIN-ALIGN-01-00-02-vocabulary-sync.md` | In Progress | N/A |
+| ENV-PROFILE-01 | `issue-ENV-PROFILE-01-runtime-profile-guidance.md` | In Progress | N/A |
 
 - Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 

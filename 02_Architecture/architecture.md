@@ -8,6 +8,8 @@
 - ここでは思想や要件の追加はせず、**実装可能な構造**に落とします
 - 最小MVPは Phase 0〜3 を主対象とします（AIは後付け可能な境界だけ先に定義）
 
+価値判断と設計要素の対応は [value_traceability.md](value_traceability.md) を参照します。本書で新しい思想や要件を直接追加せず、上流文書で定義された価値を実装可能な責務境界へ落とします。
+
 ---
 
 ## 1. アーキテクチャの目標
@@ -179,7 +181,7 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 
 MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
-Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は `LLM_TRANSPORT`（in_process/ipc/http）で分離する。
+Provider列挙は信頼境界（none/fixture/local/external）で固定し、通信差異は環境変数ではなく内部の transport 抽象（in_process/ipc/http）で分離する。
 
 ## 7A. CE-0 固定契約（Contract Freeze: Consensus/Working Repositioning）
 
@@ -326,7 +328,7 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 
 - API/CLI/GUI の同値判定を `equivalenceKey AND bundleHash` で固定。
 - 監査4点セット（`query/bundle/proposal/apply`）は欠損時 fail-closed。
-- `dryRun=true` は `sideEffect=none` を必須化し、DB永続化・外部送信・review昇格を禁止。
+- `dryRun=true` は `sideEffect=none` を必須化し、DB永続化・外部サービスとの共有・review昇格を禁止。
 - CE3未完了期間は `sourceBundleHash=mock:<hash>` を許容し、契約検証を停止しない。
 
 ## 8. デプロイ形態
@@ -355,8 +357,8 @@ CE0に続く固定契約として、実装待機なしで I/F を先行凍結す
 MVPでは高度な権限管理は後回し。
 ただしイントラ利用を想定し、次を前提とします。
 
-- 外部送信（LLM含む）は設定で無効化できる
-- LLMの接続先は明示設定（デフォルトで外部へ送らない）
+- 外部サービスとの共有（LLM含む）は設定で無効化できる
+- LLMの接続先は明示設定（既定では外部サービスにデータを渡さない）
 - strict mode例外承認フローは `strict_mode_exception_approval_flow.md` を正本とする
 
 ---

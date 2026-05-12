@@ -367,7 +367,7 @@ CE4固定値は `schemaVersion="ce4.audit.v1"` とする。
 - `dryRun=true` の場合、`sideEffect` は常に `"none"`。
 - `dryRun=true` で禁止される副作用:
   - DB永続化
-  - 外部送信（監査転送を除く。監査転送は fail-open dispatcher 方針）
+  - 外部サービスとの共有（監査ログHTTP連携を除く。監査ログHTTP連携は fail-open dispatcher 方針）
   - review state の昇格（`unreviewed -> human_reviewed`）
 - 上記を満たさない場合は契約違反として失敗扱い（fail-closed）。
 
@@ -470,7 +470,7 @@ MVPでは、エラーを過度に作り込まない。
 - `view.json` / `packs/index.json` の `visibility` は **公開範囲ラベル用メタデータ** として扱う。
 - `visibility` の値は `Public | Unlisted | Org | Restricted` を採用し、不正値は validator で拒否する。
 - 後方互換として、`view.json` 欠損時は `Restricted`、`packs/index.json` 欠損時は `Public` を補完する。
-- `visibility` は APIの送信可否判定を上書きしない。外部送信制御は引き続き SafeMode / share/export policy を正本とする。
+- `visibility` は APIの共有可否判定を上書きしない。外部サービスとの共有制御は引き続き SafeMode / share/export policy を正本とする。
 
 
 ## 8. AccessControlAdapter API契約（FB-RM-PUB-04）
@@ -546,7 +546,7 @@ fail-safe マトリクス:
 
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
-- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy endpoint へ `POST` 委譲する。
+- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy 接続先（endpoint）へ `POST` 委譲する。
 - request body は `AccessRequest` 契約そのまま（`auth.roles/groups` と `resource.policyRef` を透過転送）とし、意味解釈は行わない。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。契約不整合は `policy_ref_invalid` として fail-safe を適用する。
@@ -562,17 +562,17 @@ fail-safe マトリクス:
 ### 9.1 AuthContext 正規化
 
 - 入力ヘッダ（設定差し替え可）:
-  - `AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
-  - `AUTH_USER_FIELD`（既定 `x-forwarded-user`）
-  - `AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
-  - `AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
-  - `AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
+  - `KJ_ATLAS_AUTH_PROVIDER_FIELD`（既定 `x-auth-provider`）
+  - `KJ_ATLAS_AUTH_USER_FIELD`（既定 `x-forwarded-user`）
+  - `KJ_ATLAS_AUTH_SUBJECT_FIELD`（既定 `x-auth-subject`）
+  - `KJ_ATLAS_AUTH_EMAIL_FIELD`（既定 `x-forwarded-email`）
+  - `KJ_ATLAS_AUTH_NAME_FIELD`（既定 `x-forwarded-name`）
 - 正規化後:
   - `AuthContext.userId`: `users.id`
   - `AuthContext.actorRef`: `user:<users.id>`
   - `AuthContext.provider` / `AuthContext.externalUid`
 - reviewerRef解決:
-  - `REVIEWER_REF_RESOLVER_ADAPTER`（既定: `user_id`）で `reviewerRef/ownerRef` を解決する。
+  - `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER`（既定: `user_id`）で `reviewerRef/ownerRef` を解決する。
   - adapter実装は `resolve(auth_context) -> { reviewerRef, ownerRef }` 契約を満たす。
   - profile:
     - `user_id`: `user:<users.id>`（未認証は `actorRef` → `null`）
