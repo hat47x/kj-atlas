@@ -48,6 +48,7 @@
 - `02_Architecture/value_traceability.md` を追加し、価値、設計要素、受入条件、検証観点を対応付ける。
 - `architecture.md` から value traceability へ導線を追加する。
 - `AGENTS.md` の Project Map に新規文書を追加する。
+- `02_Architecture/contract_reading_guide.md` を追加し、現行契約と履歴ログの読み分けを明示する。
 - 後続タスクとして、`api.md` / `schemas.md` の正本本文と Stream 実行ログを段階的に分離する。
 
 Non-goals:
@@ -61,6 +62,7 @@ Non-goals:
 - [x] 価値から設計要素へ辿る文書が `02_Architecture` に追加される。
 - [x] `architecture.md` と `AGENTS.md` から新規文書へ辿れる。
 - [x] SafeMode / share/export / proposal-only / review attribution の価値対応が説明される。
+- [x] `api.md` / `schemas.md` の現行契約と Stream / freeze 履歴の読み分け導線がある。
 - [x] `api.md` / `schemas.md` の正本/ログ分離は後続タスクとして明記され、今回PRでは契約値を変更しない。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -69,12 +71,13 @@ Non-goals:
 - [x] T2: `architecture.md` に価値トレーサビリティ導線を追加する。
 - [x] T3: `AGENTS.md` の Project Map を同期する。
 - [x] T4: `api.md` / `schemas.md` のログ分離方針を本メモに残す。
+- [x] T5: `02_Architecture/contract_reading_guide.md` を追加し、現行契約/履歴ログの読み分けを明示する。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `git diff --check`
-  - `rg -n "value_traceability|DOC-ARCH-01" AGENTS.md 01_Plans/issues 02_Architecture`
+  - `rg -n "value_traceability|contract_reading_guide|DOC-ARCH-01" AGENTS.md 01_Plans/issues 02_Architecture`
   - Markdown relative link check for changed docs
 - 期待結果:
   - 新規文書への導線が存在する。

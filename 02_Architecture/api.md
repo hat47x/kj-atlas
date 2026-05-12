@@ -2,6 +2,7 @@
 
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
+> 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 本ドキュメントは、kj-atlas の **MVP API（DocumentV1の保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします

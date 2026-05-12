@@ -4,6 +4,8 @@
 
 `00_Prompt` は価値・用語・禁止事項の上流、`02_Architecture` は実装可能な構造と責務境界の層です。設計や実装が上流の価値からずれている場合は、文書だけで吸収せず、内部 issue または ADR で修正方針を起票します。
 
+`02_Architecture` の各文書で、現行契約と履歴ログのどちらを読んでいるか迷った場合は [contract_reading_guide.md](contract_reading_guide.md) を参照します。
+
 ---
 
 ## 1. 読み方

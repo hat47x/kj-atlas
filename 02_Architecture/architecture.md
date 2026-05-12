@@ -9,6 +9,7 @@
 - 最小MVPは Phase 0〜3 を主対象とします（AIは後付け可能な境界だけ先に定義）
 
 価値判断と設計要素の対応は [value_traceability.md](value_traceability.md) を参照します。本書で新しい思想や要件を直接追加せず、上流文書で定義された価値を実装可能な責務境界へ落とします。
+`02_Architecture` 内の現行契約と履歴ログの読み分けは [contract_reading_guide.md](contract_reading_guide.md) を参照します。
 
 ---
 
