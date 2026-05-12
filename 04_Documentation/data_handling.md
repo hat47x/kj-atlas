@@ -1,0 +1,102 @@
+# データ取り扱い
+
+対象読者: kj-atlas でドキュメント、export、share、AI 提案、監査ログ、障害調査ログを扱う管理者、運用担当者、レビュー担当者。
+
+目的: データがどこに保存され、どの場面で外部サービスと共有される可能性があり、共有前に何を確認するかを説明します。
+
+範囲外: 組織固有の個人情報保護方針、法務判断、インシデント報告書、外部サービスとの契約条件、実装スキーマの詳細。
+
+読後にできること: 入力、保存、AI 提案、export、share、障害調査の前に、残してよい情報と削るべき情報を判断できます。
+
+## 最初に押さえること
+
+- ドキュメント本文、カード、島、レビュー状態は kj-atlas の通常データとして保存されます。
+- ブラウザには local storage、cache、download など、利用者端末側に残る情報があります。
+- LLM、audit HTTP、access control endpoint を有効にすると、設定したサービスに情報を連携する可能性があります。
+- export や share は、アプリ内の情報を取り出して共有できる操作です。実行前に出力範囲を確認します。
+- ログやスクリーンショットを共有するときは、秘密情報、API key、内部承認履歴、生の顧客情報を含めません。
+
+## データの種類
+
+| 区分 | 例 | 扱い方 |
+| --- | --- | --- |
+| 通常保存 | ドキュメント本文、カード、島、レイアウト、レビュー状態 | アプリの主要データとして保存できます。 |
+| 最小保持 | 表示名、メールアドレス、外部 identity 参照 | 必要な場面だけに限定し、export 前に残す必要があるか確認します。 |
+| 一時利用 | roles, groups, policyRef, trace id, provider 応答時間 | 調査や判定のために使い、長期保存や共有を前提にしません。 |
+| 保存・共有禁止 | password, token, secret, raw assertion, API key, 生の秘密情報 | 入力、ログ、export、issue、スクリーンショットに含めません。 |
+
+判断に迷う情報は、まず「最小保持」または「保存・共有禁止」として扱います。必要性を説明できてから範囲を広げます。
+
+## 主な流れ
+
+| 場面 | 残る場所 | 共有・連携の可能性 | 確認すること |
+| --- | --- | --- | --- |
+| ドキュメント作成・保存 | backend DB、ブラウザ cache | 通常はアプリ内だけ | 秘密情報を本文やカードに入れていないか。 |
+| AI 提案 | backend、LLM provider | `KJ_ATLAS_LLM_PROVIDER` が `local` や `large-scale` の場合 | provider、opt-in、allowlist、共有する情報。 |
+| export | ダウンロードしたファイル、共有先 | 利用者が共有した先 | 内部メモ、秘密情報、不要な identity 情報がないか。 |
+| share | 共有 URL、共有先の閲覧者 | 共有先の範囲 | visibility、SafeMode、readOnly、共有相手。 |
+| audit HTTP | audit endpoint | `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合 | endpoint、API key、SafeMode 中の許可理由。 |
+| access control | 外部 PDP | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` の場合 | PDP endpoint、fail-safe、連携する属性の最小化。 |
+| 障害調査 | ログ、スクリーンショット、調査メモ | 問い合わせ先やチーム内共有 | 再現手順と status を残し、秘密情報は削る。 |
+
+## 外部サービスと共有する前の判断
+
+外部サービスと共有する設定を有効にする前に、次を確認します。
+
+- 共有先を説明できる。
+- どの情報を共有するか説明できる。
+- どの情報を共有しないか説明できる。
+- 失敗時の動作が安全側に倒れる。
+- SafeMode 中に例外を許可する場合、理由を運用記録に残せる。
+
+説明できない項目がある場合は、設定を有効にせず、`KJ_ATLAS_LLM_PROVIDER=none` や audit HTTP 連携を無効にしたまま確認します。
+
+## Export と share 前チェック
+
+- [ ] 出力対象のドキュメントに秘密情報や内部承認履歴がない。
+- [ ] レビュー状態と未レビュー情報の扱いを確認した。
+- [ ] identity 情報を残す必要があるか確認した。
+- [ ] visibility が共有範囲の意図と合っている。
+- [ ] SafeMode や readOnly の警告を無視していない。
+- [ ] 共有先が必要最小限になっている。
+- [ ] ダウンロードしたファイルの保管先と削除方針を説明できる。
+
+## 障害調査で残す情報
+
+障害調査では、原因を追える最小限の情報だけを残します。
+
+残してよい情報:
+
+- 発生日時
+- 対象 URL
+- 操作手順
+- 期待した結果
+- 実際の結果
+- API status code
+- 対象ドキュメント ID
+- 秘密情報を除いたログの抜粋
+
+残さない情報:
+
+- API key、token、password
+- 生の認証 assertion
+- 顧客や利用者の未加工データ
+- 組織内の承認履歴
+- 調査に不要なスクリーンショット全体
+
+詳しい調査手順は [diagnostics.md](diagnostics.md) を参照してください。
+
+## 設計上の正本
+
+この文書は利用者向けの判断ガイドです。データ契約や実装上の正本は次の文書にあります。
+
+- [schemas.md](../02_Architecture/schemas.md)
+- [schemas_review_attribution.md](../02_Architecture/schemas_review_attribution.md)
+- [review_attribution.md](../02_Architecture/review_attribution.md)
+
+運用時は、次の文書も合わせて確認します。
+
+- [configuration.md](configuration.md)
+- [security.md](security.md)
+- [operations.md](operations.md)
+- [e2e_testing.md](e2e_testing.md)

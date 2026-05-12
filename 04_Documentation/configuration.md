@@ -12,7 +12,7 @@
 - 接頭辞のない旧キーや、別接頭辞の互換キーは使いません。
 - Docker Compose や build tool が内部的に別名を必要とする場合も、利用者が設定する公開キーは `KJ_ATLAS_*` だけです。
 - 既定では LLM 連携は無効です。
-- 外部送信や large-scale LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
+- 外部サービスとの共有や large-scale LLM の利用は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
 ## 設定を変える前に
 
@@ -21,7 +21,7 @@
 | 確認すること | 例 |
 | --- | --- |
 | データはどこに保存するか | SQLite か PostgreSQL か |
-| 外部へ送る必要があるか | LLM、audit HTTP、access control |
+| 外部サービスと共有する必要があるか | LLM、audit HTTP、access control |
 | 失敗したとき安全側に倒れるか | LLM disabled、access control read-only |
 | 秘密値をどこで管理するか | shell history や Git に残さない |
 
@@ -52,7 +52,7 @@ export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
-最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部送信を避けながら、保存・表示・E2E の基本動作を確認できます。
+最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部サービスとの共有を避けながら、保存・表示・E2E の基本動作を確認できます。
 
 ## Backend 環境変数
 
@@ -71,13 +71,13 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可する host のカンマ区切り |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event の外部送信を有効化 |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event を HTTP endpoint に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
-| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP 送信先 |
-| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | audit HTTP 送信用 API key |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP endpoint |
+| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | audit HTTP 連携用 API key |
 | `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout 秒数 |
 | `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
-| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信許可 |
+| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit HTTP 連携許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter の PDP endpoint |
@@ -217,6 +217,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 ## 関連文書
 
 - [installation.md](installation.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)
 - [local_llm_ops_guide.md](local_llm_ops_guide.md)
 - [runtime_parameter_registry.md](../02_Architecture/runtime_parameter_registry.md)

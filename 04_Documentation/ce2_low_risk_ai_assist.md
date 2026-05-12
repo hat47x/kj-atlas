@@ -75,5 +75,6 @@ API の詳細は実装と設計正本を参照してください。この文書�
 
 - [narratives.md](narratives.md)
 - [local_llm_ops_guide.md](local_llm_ops_guide.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)
 - [canonicalization.md](canonicalization.md)

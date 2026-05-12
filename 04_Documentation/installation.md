@@ -136,7 +136,7 @@ http://127.0.0.1:4173
 - 画面が表示される。
 - `curl -fsS http://localhost:8080/api/healthz` または `curl -fsS http://127.0.0.1:8000/healthz` が成功する。
 - 新規ドキュメントを作成し、再読み込み後も内容が残る。
-- 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM へ送信されない。
+- 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM にデータを渡さない。
 
 `curl` は HTTP endpoint の応答を確認するコマンドです。`curl` が使えない場合は、ブラウザで `http://localhost:8080/api/healthz` を開いても確認できます。
 
