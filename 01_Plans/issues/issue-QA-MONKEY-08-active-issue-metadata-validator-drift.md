@@ -1,11 +1,11 @@
 # Issue Draft: QA-MONKEY-08 Active issue metadata validator drift
 
 - Type: Process / Documentation quality
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `01_Plans/issues`
 - Related Backlog: `QA-MONKEY-08`
 - Related ADR/Spec: `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/issues/README.md`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -50,18 +50,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] Active HIL-RS memos include required validator fields.
-- [ ] README active table status/source values match memo metadata.
-- [ ] `validate_active_issue_memos.py --root 01_Plans/issues` passes.
-- [ ] Validator unit tests pass.
-- [ ] Changes are limited to metadata/index hygiene, with no unapproved decision changes.
+- [x] Active HIL-RS memos include required validator fields.
+- [x] README active table status/source values match memo metadata.
+- [x] `validate_active_issue_memos.py --root 01_Plans/issues` passes.
+- [x] Validator unit tests pass.
+- [x] Changes are limited to metadata/index hygiene, with no unapproved decision changes.
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 Review each validator failure and identify metadata-only fixes.
-- [ ] T2 Update active memo metadata or README rows consistently.
-- [ ] T3 Run validator and unit tests.
-- [ ] T4 Record any status decision ambiguity as a separate human decision queue item if needed.
+- [x] T1 Review each validator failure and identify metadata-only fixes.
+- [x] T2 Update active memo metadata or README rows consistently.
+- [x] T3 Run validator and unit tests.
+- [x] T4 Record any status decision ambiguity as a separate human decision queue item if needed.
 
 ## 7) 検証計画 / Validation plan
 
@@ -71,8 +71,8 @@
   - `git diff --check`
 - 期待結果:
   - Active issue memo validation passes with no metadata/index drift.
-- 未実施時の理由・代替検証:
-  - Open issue; not fixed in the current monkey-test repair set because HIL-RS status/source semantics may require owner confirmation.
+- 完了時の検証:
+  - Active issue memo validator and validator unit tests pass on the current active table.
 
 ## 8) 代替案 / Alternatives considered
 
@@ -88,6 +88,15 @@
 ## 10) Additional context
 
 - ADR化が必要になる条件: Active issue lifecycle/status vocabulary is redefined.
+
+## 11) Closeout
+
+- Completed by: PR #2131 and PR #2132 resolved the active HIL-RS metadata/index drift; this memo is closed by the follow-up issue index cleanup.
+- Result: active issue memo validation passes with no metadata/index drift on the remaining active rows.
+- Validation:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` -> `ok: validated 7 active issue memos`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> `Ran 10 tests ... OK`
+  - `git diff --check` -> no whitespace errors
 
 ---
 
