@@ -1,7 +1,7 @@
 # Issue Memo: DOC-ARCH-01 02 Architecture source/log separation and value traceability
 
 - Type: Documentation quality / Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -21,7 +21,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -100,3 +100,9 @@ Non-goals:
 
 - 本件は設計判断変更ではなく、既存価値と既存設計の追跡性改善である。
 - API/schema本文の大規模整理が必要になった場合は、本メモから後続 issue に分割する。
+
+## 11) Closeout
+
+- Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
+- Result: `value_traceability.md` と `contract_reading_guide.md` を追加し、`architecture.md` / `api.md` / `schemas.md` / `AGENTS.md` から導線を張った。
+- Validation: `git diff --check`, active issue memo validator, validator unit tests, Markdown relative link check, `rg` 導線確認。
