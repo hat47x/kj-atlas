@@ -27,7 +27,7 @@
 | 画面 | ブラウザ console、表示崩れ、操作不能 |
 | API | HTTP status、`/healthz`、backend logs |
 | DB | `db` health、migration、保存結果 |
-| 外部接続 | LLM provider、audit endpoint、access control endpoint |
+| 外部接続 | LLM provider、監査ログ連携の接続先、access control の接続先（endpoint） |
 
 ## 前提知識
 

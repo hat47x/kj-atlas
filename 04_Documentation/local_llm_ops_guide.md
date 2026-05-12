@@ -90,17 +90,17 @@ docker compose logs api --tail=100
 - 入力に秘密情報、個人情報、未レビューの機密情報を含めないでください。共有してよい情報か迷う場合は [data_handling.md](data_handling.md) を確認します。
 - SafeMode の目的を緩める設定変更は、[security.md](security.md) と [security_operational_guidelines.md](security_operational_guidelines.md) を確認してから行ってください。
 - provider が不安定な場合は、まず `KJ_ATLAS_LLM_PROVIDER=none` に戻し、保存や表示などの基本操作が正常か確認します。
-- local endpoint のログに prompt 全文が残る場合があります。ログの保管先と閲覧権限を確認してください。
+- local provider の接続先（endpoint）のログに prompt 全文が残る場合があります。ログの保管先と閲覧権限を確認してください。
 
 ## よくある失敗
 
 | 症状 | 確認すること |
 | --- | --- |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL is not set` | base URL が未設定です |
-| provider timeout | local endpoint が起動しているか、応答が遅すぎないか |
-| response missing text field | endpoint の応答が `{ "text": "..." }` になっているか |
+| provider timeout | local provider の接続先（endpoint）が起動しているか、応答が遅すぎないか |
+| response missing text field | 接続先（endpoint）の応答が `{ "text": "..." }` になっているか |
 | AI disabled | `KJ_ATLAS_LLM_PROVIDER=none` のままではないか |
-| 401 または 403 | endpoint 側の認証、proxy、ネットワーク制限 |
+| 401 または 403 | 接続先（endpoint）側の認証、proxy、ネットワーク制限 |
 
 ## large-scale との違い
 

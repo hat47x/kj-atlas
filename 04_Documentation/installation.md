@@ -98,7 +98,6 @@ python -m venv .venv
 . .venv/bin/activate
 pip install -e ".[test]"
 pip install alembic uvicorn
-export PYTHONPATH=src
 export KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
 export KJ_ATLAS_LLM_PROVIDER="none"
 alembic upgrade head
@@ -108,10 +107,11 @@ python -m uvicorn kj_atlas_api.main:app --host 127.0.0.1 --port 8000
 Windows PowerShell では環境変数を次のように設定します。
 
 ```powershell
-$env:PYTHONPATH="src"
 $env:KJ_ATLAS_DATABASE_URL="sqlite:///./kj_atlas.db"
 $env:KJ_ATLAS_LLM_PROVIDER="none"
 ```
+
+この手順では `pip install -e ".[test]"` によって backend package が開発用に登録されるため、Python の import path を個別に設定する必要はありません。
 
 ### Frontend
 
@@ -138,7 +138,7 @@ http://127.0.0.1:4173
 - 新規ドキュメントを作成し、再読み込み後も内容が残る。
 - 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM にデータを渡さない。
 
-`curl` は HTTP endpoint の応答を確認するコマンドです。`curl` が使えない場合は、ブラウザで `http://localhost:8080/api/healthz` を開いても確認できます。
+`curl` は HTTP の接続先が応答するか確認するコマンドです。`curl` が使えない場合は、ブラウザで `http://localhost:8080/api/healthz` を開いても確認できます。
 
 ## よくある問題
 

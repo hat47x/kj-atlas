@@ -69,7 +69,7 @@ curl -fsS http://localhost:8080/api/healthz
 - [ ] share/export に秘密情報や内部作業ログが含まれない。
 - [ ] SafeMode の既定動作が緩んでいない。
 - [ ] LLM provider が意図した値になっている。
-- [ ] audit HTTP や access control endpoint を有効にした場合、連携先と失敗時の動作が説明できる。
+- [ ] 監査ログの HTTP 連携や外部アクセス制御を有効にした場合、連携先と失敗時の動作が説明できる。
 
 ## 文書確認
 
