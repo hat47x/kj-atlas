@@ -167,7 +167,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `04_Documentation/installation.md`：導入手順。
 - `04_Documentation/configuration.md`：設定。
 - `04_Documentation/operations.md`：運用。
-- `04_Documentation/data_handling.md`：保存・外部送信・export/share・ログ共有前確認。
+- `04_Documentation/data_handling.md`：保存・外部サービスとの共有・export/share・ログ共有前確認。
 - `04_Documentation/e2e_testing.md`：PlaywrightベースE2E方針。
 - `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
