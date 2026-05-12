@@ -71,16 +71,16 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可する host のカンマ区切り |
 | `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event を HTTP endpoint に連携する |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントを HTTP の接続先に連携する |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
-| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP endpoint |
-| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | audit HTTP 連携用 API key |
-| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout 秒数 |
-| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
-| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit HTTP 連携許可 |
+| `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | 監査ログ連携の接続先 URL |
+| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | 監査ログの HTTP 連携用 API key |
+| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | 監査ログの HTTP 連携の timeout 秒数 |
+| `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | 監査ログキューの上限 |
+| `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中に監査ログの HTTP 連携を許可 |
 | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
 | `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter の PDP endpoint |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter で使う PDP の接続先 URL |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
@@ -187,9 +187,9 @@ export KJ_ATLAS_LARGE_SCALE_LLM_MODEL='model-name'
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
 
-## access control を使う
+## アクセス制御を使う
 
-既定の `noop` は認可判定を外部へ委譲しません。外部 PDP を使う場合は、adapter、fail-safe、endpoint をセットで設定します。
+既定の `noop` は、認可判定を外部の PDP に任せません。外部 PDP を使う場合は、方式（adapter）、失敗時の扱い（fail-safe）、接続先（endpoint）をセットで設定します。
 
 ```bash
 export KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http
@@ -197,7 +197,7 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-`external_http` を指定しても endpoint が空の場合、現行実装は `noop` と同じ扱いになります。外部 PDP を必須にする環境では、endpoint が設定済みであることを起動前チェックに含めてください。
+`external_http` を指定しても接続先（endpoint）が空の場合、現行実装は `noop` と同じ扱いになります。外部 PDP を必須にする環境では、接続先が設定済みであることを起動前チェックに含めてください。
 
 ## 設定後の確認
 
