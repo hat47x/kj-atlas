@@ -521,7 +521,7 @@ SafeMode/readOnly 優先順:
 - 条件: `visibility in {Org, Restricted}` かつ `policyRef` 欠損。
 - 既定 `read_only`: `read` のみ許可、`write/export/share` は `403`。
 - オプション `deny`: 全アクション `403`。
-- 実装パラメータ: `ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
+- 実装パラメータ: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only|deny`。
 
 fail-safe マトリクス:
 
@@ -530,7 +530,7 @@ fail-safe マトリクス:
 - `policyRef` 無効（形式不正/失効/署名不正）: `policy_ref_invalid`
 - adapter例外/想定外応答: `adapter_error`
 
-上記4系統は `ACCESS_CONTROL_FAIL_SAFE_MODE` に従い `read_only` または `deny` へ倒す。`visibility` が `Public/Unlisted` の場合は欠損系の強制fail-safe対象外。
+上記4系統は `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` に従い `read_only` または `deny` へ倒す。`visibility` が `Public/Unlisted` の場合は欠損系の強制fail-safe対象外。
 
 ### 8.4 監査イベント連携点
 
@@ -546,11 +546,11 @@ fail-safe マトリクス:
 
 ### 8.5 実運用アダプタ設定（OIDC/SAML接続）
 
-- `ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy endpoint へ `POST` 委譲する。
+- `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` で、APIは外部 policy endpoint へ `POST` 委譲する。
 - request body は `AccessRequest` 契約そのまま（`auth.roles/groups` と `resource.policyRef` を透過転送）とし、意味解釈は行わない。
 - request header には `x-acl-auth-mode: none|oidc|saml` を付与し、必要時のみ `Authorization: Bearer <static>` / `x-idp-issuer` / `x-trace-id` を付与する。
 - 応答は `allow:boolean`（必須）+ `readOnly:boolean?` + `reason:string?` の最小契約。契約不整合は `policy_ref_invalid` として fail-safe を適用する。
-- `ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` 指定でも `noop` へフォールバックする（可用性優先）。
+- `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` が未設定の場合、`external_http` 指定でも `noop` へフォールバックする（可用性優先）。
 
 ### 8.6 互換性
 
@@ -586,7 +586,7 @@ fail-safe マトリクス:
 
 ### 9.2 strict mode 拒否契約
 
-- 条件: `ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
+- 条件: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` かつ `provider+external_uid` が `user_identities` に未登録。
 - 応答: `403 Forbidden`
 - エラーボディ（最小契約）: `{ "code": "identity_not_provisioned", "message": "Identity not provisioned. Pre-provision via /admin/provision/users before access." }`
 
@@ -611,7 +611,7 @@ export type StrictProvisioningError = {
   - strict mode 条件に一致した要求を例外なく `403` で拒否する。
   - 緊急時でもアプリ内の一時バイパス（特定ユーザー許可など）を実装しない。
 - 例外承認責務:
-  - `ALLOW_JIT_PROVISIONING` の切替承認は **Security Officer + System Owner の2者承認** を必須とする。
+  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の切替承認は **Security Officer + System Owner の2者承認** を必須とする。
   - 実行（環境変数変更/再起動）は Platform Operator が行い、変更記録（時刻・理由・承認者）を監査証跡に残す。
 - 承認なき例外は不許可:
   - 開発者判断のみで strict mode を緩和してはならない。

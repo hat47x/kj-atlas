@@ -199,7 +199,7 @@ ReviewerRef 推奨フォーマット（例）:
 - 正規キーは `AuthContext.userId`（内部 `users.id`）とする。
 - `reviewerRef` / `ownerRef` は派生値 `user:<users.id>` を採用する。
 - `provider` や `external_uid` は attribution payload へ直保存しない。
-- strict mode（`ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
+- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）では、`users.id` が未確定の要求を拒否し attribution を作らない。
 - `reviewerRef` / `ownerRef` の具体値は `ReviewerRefResolverAdapter` が決定し、schema側は「non-empty opaque string」のみを保証する。
 - adapterが `sso_subject` の場合は `user:sso:<provider>:<externalUid>` を許容し、入力不足時は `user_id` profile（`actorRef` → `null`）へフォールバックする。
 - source判定は UI補助情報であり schema必須項目にしない（`reviewerRef` 単体で互換維持）。

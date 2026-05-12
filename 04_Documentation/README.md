@@ -2,17 +2,23 @@
 
 `04_Documentation` は、kj-atlas を導入・設定・運用する人のための公開ガイドです。内部の作業ログ、issue 管理、設計判断の詳細はこの階層には置かず、利用者が再現できる手順と判断基準だけを残します。
 
+対象読者: kj-atlas を初めて使う人、検証環境を起動する人、日常運用や安全確認を担当する人。
+
+読後にできること: 自分の目的に合う文書を選び、最初に読むべき順番と、困ったときの参照先を判断できます。
+
 ## はじめて読む人へ
 
 kj-atlas の文書は、まず「安全に起動できること」、次に「何を外部へ送る可能性があるか」、最後に「変更後にどう確認するか」の順で読むと迷いにくくなります。すべてを一度に読む必要はありません。
 
 | あなたの状況 | 読む順番 |
 | --- | --- |
-| とにかく動かしたい | `installation.md` -> `configuration.md` |
-| 運用担当になった | `installation.md` -> `operations.md` -> `security.md` |
-| セキュリティ確認をしたい | `security.md` -> `security_operational_guidelines.md` -> `configuration.md` |
-| 変更後の確認をしたい | `e2e_testing.md` -> `diagnostics.md` |
-| AI 提案機能を使いたい | `ce2_low_risk_ai_assist.md` -> `local_llm_ops_guide.md` -> `security.md` |
+| とにかく動かしたい | [installation.md](installation.md) -> [configuration.md](configuration.md) |
+| 運用担当になった | [installation.md](installation.md) -> [operations.md](operations.md) -> [security.md](security.md) |
+| セキュリティ確認をしたい | [security.md](security.md) -> [security_operational_guidelines.md](security_operational_guidelines.md) -> [configuration.md](configuration.md) |
+| 変更後の確認をしたい | [e2e_testing.md](e2e_testing.md) -> [diagnostics.md](diagnostics.md) |
+| AI 提案機能を使いたい | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) -> [local_llm_ops_guide.md](local_llm_ops_guide.md) -> [security.md](security.md) |
+
+迷った場合は、[installation.md](installation.md) と [configuration.md](configuration.md) から読んでください。起動できることと安全な既定値を先に確認すると、他の文書も読みやすくなります。
 
 ## まず読む文書
 
@@ -45,6 +51,8 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 - 環境固有の秘密情報、社内 URL、承認履歴、生の監査ログは含めません。
 - 実装・設計の正本をここで再定義しません。必要な場合は `02_Architecture` または `03_Implement` にリンクします。
 - 内部作業ログは `01_Plans` 側で管理し、利用者向け文書には混在させません。
+
+文書を読んでいて、前提知識が必要すぎる、手順の成功条件が分からない、どの文書に進めばよいか分からない場合は、その文書自体を改善対象にします。
 
 ## 最小用語集
 

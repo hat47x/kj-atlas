@@ -129,8 +129,8 @@ AI処理は同一サービスに実装しても良いし、
 
 接続先は **設定ファイル／環境変数** で切替可能にします。
 
-- `DATABASE_URL=sqlite+aiosqlite:///...`
-- `DATABASE_URL=postgresql+asyncpg://...`
+- `KJ_ATLAS_DATABASE_URL=sqlite+aiosqlite:///...`
+- `KJ_ATLAS_DATABASE_URL=postgresql+asyncpg://...`
 
 DB依存をAPI層の末端に隔離し、上位のユースケースはDB種別を意識しません。
 
@@ -172,10 +172,10 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 
 選択は環境変数で行います。
 
-- `LLM_PROVIDER=none|fixture|local|external`
-- `LOCAL_LLM_BASE_URL=...`（local時）
-- `LOCAL_LLM_MODEL=...`（local時）
-- `LLM_ESCALATION_ENABLED=false`（既定）
+- `KJ_ATLAS_LLM_PROVIDER=none|local|local_http|large-scale|large_scale|external`
+- `KJ_ATLAS_LOCAL_LLM_BASE_URL=...`（local時）
+- `KJ_ATLAS_LOCAL_LLM_MODEL=...`（local時）
+- `KJ_ATLAS_LLM_ESCALATION_ENABLED=false`（既定）
 
 MVPでは Provider 抽象の枠だけ用意し、実装は最小でよい。
 
@@ -387,7 +387,7 @@ MVPでは高度な権限管理は後回し。
 ## 12. AUTH-ARCH-01 境界（AuthContext / JIT / strict）
 
 - 認証境界の正本は `ADR-0020` とし、実装契約は `schemas.md` / `api.md` / `review_attribution.md` を同一論点で同期する。
-- `ALLOW_JIT_PROVISIONING=true` では未登録subjectをJITで `users` + `user_identities` 作成、`false` では `403` 拒否して事前プロビジョニング導線へ誘導する。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` では未登録subjectをJITで `users` + `user_identities` 作成、`false` では `403` 拒否して事前プロビジョニング導線へ誘導する。
 - attribution の正規キーは `users.id` で、外部subjectは `user_identities` でのみ解決する。
 
 

@@ -282,9 +282,9 @@ kj-atlas は OSS として、多様な環境で利用される：
   - `amr/acr/aal/auth_time` は reviewer attribution へ保存しない。
   - `roles/groups/policyRef` の生値は attribution 監査にも残さない。
 - strict mode:
-  - `ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
+  - `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` では未登録 subject を `403` 拒否し、事前プロビジョニング導線を必須とする。
   - 管理導線の責務分担: backend は拒否契約 (`403`) と最小API (`POST /admin/provision/users`) を提供し、運用管理者は事前登録・再紐付けを実施する。
-  - strict 緩和（`ALLOW_JIT_PROVISIONING=true` への変更）は Security Officer + System Owner の2者承認を必須とし、承認記録なき変更を禁止する。
+  - strict 緩和（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` への変更）は Security Officer + System Owner の2者承認を必須とし、承認記録なき変更を禁止する。
 
 ### 8.1 `amr/acr/aal/auth_time` の表示・監査の固定方針
 

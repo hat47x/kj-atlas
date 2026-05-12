@@ -547,8 +547,8 @@ export type Island = {
 
 運用モード:
 
-- `ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
-- `ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true`（既定）: 未登録 `provider+external_uid` を受信したら `users` / `user_identities` を同時作成。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`（strict）: 未登録は `403` とし、事前プロビジョニング済みのみ許可。
 
 API I/F 整合用の最小型（実装依存を避ける境界）:
 
@@ -600,8 +600,8 @@ export type MergeDecisionRecord = {
   3) 旧来の外部識別子直参照を段階的に廃止し、`reviewerRef` / `ownerRef` は `user:<users.id>` のみ許可する。
   4) strict 運用では未登録 subject を `403` とし、管理導線（`POST /admin/provision/users`）を必須化する。
 - backfill運用: 旧 `reviewerRef` / `ownerRef`（例: `user:sso:sub:<subject>`）は mapping JSON を使って `user:<users.id>` へ変換する。
-  - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <DATABASE_URL> --mapping-json mapping.json --dry-run`
-  - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <DATABASE_URL> --mapping-json mapping.json`
+  - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json --dry-run`
+  - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json`
 
 属性境界（persist/transient/forbidden）:
 

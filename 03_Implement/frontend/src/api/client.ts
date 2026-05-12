@@ -2,9 +2,7 @@ import type { Card, Document, DocumentV2, Island } from "../domain/types";
 import { STREAM_B_CONTRACTS } from "../domain/stream_b_contract";
 
 function resolveApiBase(): string {
-  const kjAtlasApiBase = import.meta.env.VITE_KJ_ATLAS_API_BASE;
-  const legacyApiBase = import.meta.env.VITE_API_BASE;
-  const rawValue = (kjAtlasApiBase ?? legacyApiBase ?? "/api").trim();
+  const rawValue = (import.meta.env.KJ_ATLAS_FRONTEND_API_BASE ?? "/api").trim();
 
   if (rawValue.length === 0) {
     return "/api";

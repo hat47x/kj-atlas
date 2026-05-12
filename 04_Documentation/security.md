@@ -97,7 +97,17 @@ export KJ_ATLAS_AUDIT_HTTP_ENDPOINT='https://audit.example.com/events'
 
 ## Access control
 
-既定の adapter は `noop` です。外部 PDP を使う場合は、fail-safe 動作を先に決めます。
+既定の adapter は `noop` です。これは外部 PDP へ問い合わせず、アプリ単体の local fail-safe だけで動きます。
+
+現行実装で使える adapter は次です。
+
+| adapter | 用途 |
+| --- | --- |
+| `noop` | 外部認可を使わない既定値 |
+| `mock` | 契約・結合テスト用 |
+| `external_http` | 外部 PDP へ HTTP POST で認可判定を委譲 |
+
+外部 PDP を使う場合は、fail-safe 動作を先に決めます。
 
 ```bash
 export KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http
@@ -105,7 +115,13 @@ export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
 export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
 ```
 
-障害時に読み取り専用へ落とす `read_only` を推奨します。
+障害時に読み取り専用へ落とす `read_only` を推奨します。より厳格に止めたい環境では `deny` を使います。
+
+注意:
+
+- `external_http` を指定しても endpoint が未設定の場合、現行実装は `noop` にフォールバックします。外部 PDP を必須にする環境では、endpoint 未設定を運用上の設定失敗として扱ってください。
+- `Org` または `Restricted` の対象で `policyRef` がない場合、local fail-safe が働きます。`read_only` では読み取りだけを許可し、`deny` では拒否します。
+- `Public` と `Unlisted` は `policyRef` 欠損による強制 fail-safe の対象外です。公開範囲を広げる前に、visibility と policyRef を確認してください。
 
 ## 保持してよい情報、避ける情報
 
@@ -124,6 +140,7 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 - [ ] SafeMode 中に外部送信を許可していない、または許可理由を記録している。
 - [ ] share/export の出力に秘密情報や内部メモが混ざっていない。
 - [ ] access control 障害時の fail-safe が `read_only` など保守的な値になっている。
+- [ ] `external_http` を使う場合、PDP endpoint が設定され、`noop` にフォールバックしていない。
 
 ## 迷ったときの判断
 

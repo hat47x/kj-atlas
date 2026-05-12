@@ -6,6 +6,8 @@
 
 範囲外: 特定モデルの導入手順、外部 large-scale LLM の契約管理、秘密情報の配布。
 
+読後にできること: 既定では LLM が無効であることを理解し、local LLM を有効にするときの設定、疎通確認、戻し方を判断できます。
+
 ## 既定値
 
 kj-atlas は既定で LLM を使いません。
@@ -14,11 +16,13 @@ kj-atlas は既定で LLM を使いません。
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
-この状態では AI 機能は disabled として扱われ、外部送信は行われません。
+この状態では、AI 機能は disabled として扱われ、外部送信は行われません。最初の評価、E2E、保存動作の確認では、この既定値を推奨します。
 
 ## local LLM とは
 
-この文書での local LLM は、kj-atlas から見て管理できる範囲にある LLM endpoint を指します。必ずしも同じ PC 上という意味ではありません。組織内サーバーを使う場合も、送信先、保持期間、入力データの扱いを確認してください。
+この文書での local LLM は、kj-atlas から見て管理できる範囲にある LLM endpoint を指します。同じ PC 上のサービスとは限りません。組織内サーバーを使う場合もあります。
+
+local という名前でも、URL が外部サービスを指していれば外部送信です。接続先、保持期間、入力データの扱いを確認してから有効にしてください。
 
 ## local provider を有効にする
 
@@ -28,7 +32,13 @@ export KJ_ATLAS_LOCAL_LLM_BASE_URL='http://localhost:8001'
 export KJ_ATLAS_LOCAL_LLM_MODEL='local-model-name'
 ```
 
-`local_http` も `local` の alias として扱われます。
+`local_http` は `local` の alias として扱われます。
+
+設定を戻す場合は、provider を `none` に戻します。
+
+```bash
+export KJ_ATLAS_LLM_PROVIDER=none
+```
 
 ## HTTP contract
 
@@ -58,7 +68,7 @@ Response:
 
 ## 疎通確認
 
-local endpoint 側:
+まず local endpoint 側を直接確認します。
 
 ```bash
 curl -fsS http://localhost:8001/generate \
@@ -66,28 +76,31 @@ curl -fsS http://localhost:8001/generate \
   --data '{"task":"health","prompt":"Say ok","temperature":0.2,"max_tokens":16,"model":"local-model-name"}'
 ```
 
-kj-atlas backend:
+次に kj-atlas backend とログを確認します。
 
 ```bash
 curl -fsS http://localhost:8080/api/healthz
 docker compose logs api --tail=100
 ```
 
+`/healthz` が通っても、LLM endpoint の疎通まで保証するわけではありません。AI 提案を実行し、provider error や timeout が出ないことも確認してください。
+
 ## 運用上の注意
 
-- local という名前でも、URL が外部サービスを指していれば外部送信です。
-- 入力に秘密情報や未レビューの機密情報を含めないでください。
+- 入力に秘密情報、個人情報、未レビューの機密情報を含めないでください。
 - SafeMode の目的を緩める設定変更は、[security.md](security.md) と [security_operational_guidelines.md](security_operational_guidelines.md) を確認してから行ってください。
-- provider が不安定な場合は、まず `KJ_ATLAS_LLM_PROVIDER=none` に戻して基本操作が正常か確認します。
+- provider が不安定な場合は、まず `KJ_ATLAS_LLM_PROVIDER=none` に戻し、保存や表示などの基本操作が正常か確認します。
+- local endpoint のログに prompt 全文が残る場合があります。ログの保管先と閲覧権限を確認してください。
 
 ## よくある失敗
 
-| 症状 | 確認 |
+| 症状 | 確認すること |
 | --- | --- |
-| `KJ_ATLAS_LOCAL_LLM_BASE_URL is not set` | base URL が未設定 |
-| provider timeout | local endpoint が起動していない、または応答が遅い |
-| response missing text field | endpoint の応答が `{ "text": "..." }` ではない |
-| AI disabled | `KJ_ATLAS_LLM_PROVIDER=none` のまま |
+| `KJ_ATLAS_LOCAL_LLM_BASE_URL is not set` | base URL が未設定です |
+| provider timeout | local endpoint が起動しているか、応答が遅すぎないか |
+| response missing text field | endpoint の応答が `{ "text": "..." }` になっているか |
+| AI disabled | `KJ_ATLAS_LLM_PROVIDER=none` のままではないか |
+| 401 または 403 | endpoint 側の認証、proxy、ネットワーク制限 |
 
 ## large-scale との違い
 
@@ -99,6 +112,8 @@ export KJ_ATLAS_LLM_ESCALATION_ENABLED=true
 export KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
+
+large-scale provider を使う場合は、[configuration.md](configuration.md) と [security.md](security.md) を確認してください。
 
 ## 関連文書
 

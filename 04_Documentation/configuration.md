@@ -2,16 +2,17 @@
 
 対象読者: kj-atlas を起動・運用する管理者、検証担当者。
 
-目的: 安全な既定値、主要な環境変数、設定変更後の確認方法を示します。
+目的: すべての公開環境変数、安全な既定値、設定変更後の確認方法を示します。
 
 範囲外: 組織固有の秘密管理、未公開ネットワーク情報、承認履歴。
 
 ## 基本方針
 
-- すべての backend 実行時設定は `KJ_ATLAS_*` 接頭辞を使います。
-- 接頭辞のない旧キーは使いません。
+- kj-atlas の利用者・運用者が設定する環境変数は、すべて例外なく `KJ_ATLAS_` で始まります。
+- 接頭辞のない旧キーや、別接頭辞の互換キーは使いません。
+- Docker Compose や build tool が内部的に別名を必要とする場合も、利用者が設定する公開キーは `KJ_ATLAS_*` だけです。
 - 既定では LLM 連携は無効です。
-- 外部送信や大規模 LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
+- 外部送信や large-scale LLM は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
 ## 設定を変える前に
 
@@ -28,7 +29,7 @@
 
 | 用語 | 意味 |
 | --- | --- |
-| 環境変数 | 起動時にアプリへ渡す設定値です。 |
+| 環境変数 | 起動時や build 時にアプリへ渡す設定値です。 |
 | 既定値 | 何も設定しないときに使われる値です。 |
 | opt-in | 明示的に有効化することです。large-scale LLM は opt-in なしでは使えません。 |
 | allowlist | 接続してよい宛先だけを並べた一覧です。 |
@@ -40,6 +41,8 @@ Docker Compose の既定値で起動する場合、通常は追加設定なし�
 ```bash
 export KJ_ATLAS_LLM_PROVIDER=none
 export KJ_ATLAS_DATABASE_URL='postgresql+asyncpg://kj_atlas:kj_atlas@db:5432/kj_atlas'
+export KJ_ATLAS_FRONTEND_API_BASE=/api
+export KJ_ATLAS_WEB_PORT=8080
 ```
 
 ローカル SQLite で backend を直接起動する場合:
@@ -51,7 +54,9 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部送信を避けながら、保存・表示・E2E の基本動作を確認できます。
 
-## 主要な backend 環境変数
+## Backend 環境変数
+
+次の表は backend が受け付ける全環境変数です。
 
 | 変数 | 既定値 | 用途 |
 | --- | --- | --- |
@@ -63,16 +68,51 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す model 名 |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
-| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可するホスト名のカンマ区切り |
+| `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可する host のカンマ区切り |
+| `KJ_ATLAS_LLM_FALLBACK_TO_NONE` | `true` | LLM 失敗時に `none` へ退避する |
 | `KJ_ATLAS_API_KEY` | 未設定 | `/healthz` 以外の API を `X-API-Key` で保護 |
-| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | 監査イベントの外部送信を有効化 |
+| `KJ_ATLAS_AUDIT_EXPORT_ENABLED` | `false` | audit event の外部送信を有効化 |
 | `KJ_ATLAS_AUDIT_TRANSPORT` | `noop` | `noop` または `http` |
 | `KJ_ATLAS_AUDIT_HTTP_ENDPOINT` | 未設定 | audit HTTP 送信先 |
-| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout |
+| `KJ_ATLAS_AUDIT_HTTP_API_KEY` | 未設定 | audit HTTP 送信用 API key |
+| `KJ_ATLAS_AUDIT_HTTP_TIMEOUT_SECONDS` | `2.0` | audit HTTP timeout 秒数 |
 | `KJ_ATLAS_AUDIT_QUEUE_SIZE` | `100` | audit queue 上限 |
 | `KJ_ATLAS_AUDIT_ALLOW_IN_SAFE_MODE` | `false` | SafeMode 中の audit 外部送信許可 |
-| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | access control adapter |
-| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | access control 障害時の既定動作 |
+| `KJ_ATLAS_ACCESS_CONTROL_ADAPTER` | `noop` | `noop`, `mock`, `external_http` |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT` | 未設定 | `external_http` adapter の PDP endpoint |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter に渡す IdP issuer |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可 |
+| `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
+| `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
+| `KJ_ATLAS_AUTH_EMAIL_FIELD` | `x-forwarded-email` | email を受け取る header 名 |
+| `KJ_ATLAS_AUTH_NAME_FIELD` | `x-forwarded-name` | display name を受け取る header 名 |
+| `KJ_ATLAS_AUTH_SUBJECT_FIELD` | `x-auth-subject` | subject を受け取る header 名 |
+| `KJ_ATLAS_REVIEWER_REF_RESOLVER_ADAPTER` | `user_id` | reviewerRef 解決 adapter。`user_id` または `sso_subject` |
+| `KJ_ATLAS_CE4_EQUIVALENCE_MODE` | `equivalence_and_bundle_hash` | CE4 同値性判定 mode |
+| `KJ_ATLAS_CE4_DRY_RUN_ENFORCE_NO_SIDE_EFFECT` | `true` | CE4 dry-run が副作用なしであることを強制 |
+| `KJ_ATLAS_CE4_AUDIT_REQUIRE_ALL_EVENTS` | `true` | CE4 audit 欠損を fail-closed にする |
+| `KJ_ATLAS_CE4_SOURCE_BUNDLE_HASH_ALLOW_MOCK` | `true` | `sourceBundleHash=mock:<hash>` を許容 |
+| `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS` | `true` | 未確定 CE4 契約を stub 応答で隔離 |
+
+## Compose / frontend build 環境変数
+
+次の表は Docker Compose と frontend build で利用者が設定できる全環境変数です。これらもすべて `KJ_ATLAS_` で始まります。
+
+| 変数 | 既定値 | 用途 |
+| --- | --- | --- |
+| `KJ_ATLAS_WEB_PORT` | `8080` | web の公開 port |
+| `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
+| `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
+| `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend が呼び出す API base path |
+
+PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。
+
+サードパーティイメージや build tool が要求する内部名は、kj-atlas の設定項目ではありません。この境界は `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` で扱い、利用者向けの設定は `KJ_ATLAS_*` だけに統一します。
 
 ## よく使う構成例
 
@@ -87,7 +127,8 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 ```bash
 export KJ_ATLAS_LLM_PROVIDER=none
-export WEB_PORT=8080
+export KJ_ATLAS_WEB_PORT=8080
+export KJ_ATLAS_FRONTEND_API_BASE=/api
 ```
 
 ### API key 付き検証
@@ -100,13 +141,16 @@ export KJ_ATLAS_API_KEY='change-me'
 
 ## Frontend の API 接続先
 
-frontend は `VITE_KJ_ATLAS_API_BASE` を優先し、未設定なら `VITE_API_BASE`、さらに未設定なら `/api` を使います。
+frontend の API 接続先は `KJ_ATLAS_FRONTEND_API_BASE` で指定します。未設定なら `/api` を使います。
+
+ローカル開発サーバーと Docker Compose の標準構成では `/api` が backend へ proxy されるため、通常は変更不要です。
+
+直接 frontend build を実行する場合も、build 前に `KJ_ATLAS_FRONTEND_API_BASE` を設定します。
 
 ```bash
-export VITE_KJ_ATLAS_API_BASE=/api
+export KJ_ATLAS_FRONTEND_API_BASE=/api
+npm run build
 ```
-
-Docker Compose の標準構成では nginx が `/api/` を backend の `:8000` に proxy するため、通常は変更不要です。
 
 ## API キーを有効にする
 
@@ -142,6 +186,18 @@ export KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL='https://llm.example.com'
 export KJ_ATLAS_LARGE_SCALE_LLM_MODEL='model-name'
 export KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST='llm.example.com'
 ```
+
+## access control を使う
+
+既定の `noop` は認可判定を外部へ委譲しません。外部 PDP を使う場合は、adapter、fail-safe、endpoint をセットで設定します。
+
+```bash
+export KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http
+export KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only
+export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/decide'
+```
+
+`external_http` を指定しても endpoint が空の場合、現行実装は `noop` と同じ扱いになります。外部 PDP を必須にする環境では、endpoint が設定済みであることを起動前チェックに含めてください。
 
 ## 設定後の確認
 

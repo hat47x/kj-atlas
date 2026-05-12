@@ -49,7 +49,7 @@ docker compose logs api --tail=100
 
 - `db` が healthy になっている。
 - `api` が migration 後に起動している。
-- `web` が `WEB_PORT` のポートで公開されている。
+- `web` が `KJ_ATLAS_WEB_PORT` のポートで公開されている。
 - `/api/healthz` が `{"status":"ok"}` を返す。
 
 `docker compose ps` はサービスの生死を見るコマンドです。`curl` は API の応答を見るコマンドです。どちらか片方だけでは原因を絞り切れないため、両方を確認します。
@@ -118,7 +118,7 @@ docker compose logs db --tail=100
 
 | 症状 | 確認 |
 | --- | --- |
-| 画面が開かない | `docker compose ps`、`web` の logs、`WEB_PORT` の競合 |
+| 画面が開かない | `docker compose ps`、`web` の logs、`KJ_ATLAS_WEB_PORT` の競合 |
 | API が 502/503 | `api` の logs、migration エラー、DB 接続 |
 | API が 401 | `KJ_ATLAS_API_KEY` と `X-API-Key` ヘッダー |
 | AI 機能が使えない | `KJ_ATLAS_LLM_PROVIDER`、local/large-scale provider の設定 |

@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  envPrefix: "KJ_ATLAS_",
   server: {
     proxy: {
       "/api": {
