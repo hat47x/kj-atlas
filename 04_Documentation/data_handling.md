@@ -11,8 +11,8 @@
 ## 最初に押さえること
 
 - ドキュメント本文、カード、島、レビュー状態は kj-atlas の通常データとして保存されます。
-- ブラウザには local storage、cache、download など、利用者端末側に残る情報があります。
-- LLM、audit HTTP、access control endpoint を有効にすると、設定したサービスに情報を連携する可能性があります。
+- ブラウザには保存領域（local storage）、キャッシュ、ダウンロードしたファイルなど、利用者端末側に残る情報があります。
+- LLM、監査ログの HTTP 連携（audit HTTP）、外部アクセス制御を有効にすると、設定したサービスに情報を連携する可能性があります。
 - export や share は、アプリ内の情報を取り出して共有できる操作です。実行前に出力範囲を確認します。
 - ログやスクリーンショットを共有するときは、秘密情報、API key、内部承認履歴、生の顧客情報を含めません。
 
@@ -32,11 +32,11 @@
 | 場面 | 残る場所 | 共有・連携の可能性 | 確認すること |
 | --- | --- | --- | --- |
 | ドキュメント作成・保存 | backend DB、ブラウザ cache | 通常はアプリ内だけ | 秘密情報を本文やカードに入れていないか。 |
-| AI 提案 | backend、LLM provider | `KJ_ATLAS_LLM_PROVIDER` が `local` や `large-scale` の場合 | provider、opt-in、allowlist、共有する情報。 |
+| AI 提案 | backend、LLM provider | `KJ_ATLAS_LLM_PROVIDER` が `local` や `large-scale` の場合 | 利用する provider、明示的な利用許可（opt-in）、許可先（allowlist）、共有する情報。 |
 | export | ダウンロードしたファイル、共有先 | 利用者が共有した先 | 内部メモ、秘密情報、不要な identity 情報がないか。 |
 | share | 共有 URL、共有先の閲覧者 | 共有先の範囲 | visibility、SafeMode、readOnly、共有相手。 |
-| audit HTTP | audit endpoint | `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合 | endpoint、API key、SafeMode 中の許可理由。 |
-| access control | 外部 PDP | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` の場合 | PDP endpoint、fail-safe、連携する属性の最小化。 |
+| audit HTTP | 監査ログ連携の接続先 | `KJ_ATLAS_AUDIT_EXPORT_ENABLED=true` の場合 | 接続先（endpoint）、API key、SafeMode 中の許可理由。 |
+| access control | 外部 PDP | `KJ_ATLAS_ACCESS_CONTROL_ADAPTER=external_http` の場合 | PDP の接続先（endpoint）、失敗時の扱い（fail-safe）、連携する属性の最小化。 |
 | 障害調査 | ログ、スクリーンショット、調査メモ | 問い合わせ先やチーム内共有 | 再現手順と status を残し、秘密情報は削る。 |
 
 ## 外部サービスと共有する前の判断
