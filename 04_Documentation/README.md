@@ -15,6 +15,7 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 | とにかく動かしたい | [installation.md](installation.md) -> [configuration.md](configuration.md) |
 | 運用担当になった | [installation.md](installation.md) -> [operations.md](operations.md) -> [security.md](security.md) |
 | セキュリティ確認をしたい | [security.md](security.md) -> [security_operational_guidelines.md](security_operational_guidelines.md) -> [configuration.md](configuration.md) |
+| データの保存・外部送信・共有範囲を確認したい | [data_handling.md](data_handling.md) -> [security.md](security.md) -> [configuration.md](configuration.md) |
 | 変更後の確認をしたい | [e2e_testing.md](e2e_testing.md) -> [diagnostics.md](diagnostics.md) |
 | AI 提案機能を使いたい | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) -> [local_llm_ops_guide.md](local_llm_ops_guide.md) -> [security.md](security.md) |
 
@@ -26,6 +27,7 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 | --- | --- |
 | 初回起動 | [installation.md](installation.md) |
 | 環境変数と安全な既定値 | [configuration.md](configuration.md) |
+| データ取り扱いと共有前確認 | [data_handling.md](data_handling.md) |
 | 日常運用、更新、バックアップ | [operations.md](operations.md) |
 | セキュリティ境界と SafeMode | [security.md](security.md) |
 | 受け入れ確認と E2E | [e2e_testing.md](e2e_testing.md) |
@@ -36,6 +38,7 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 | 領域 | 文書 |
 | --- | --- |
 | 診断 worker と障害調査 | [diagnostics.md](diagnostics.md) |
+| 保存、外部送信、export、share の判断 | [data_handling.md](data_handling.md) |
 | ローカル LLM 運用 | [local_llm_ops_guide.md](local_llm_ops_guide.md) |
 | AI 提案の扱い | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) |
 | ナラティブ生成とレビュー | [narratives.md](narratives.md) |
@@ -65,3 +68,6 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 | provider | LLM の接続先種別です。`none`、`local`、`large-scale` などがあります。 |
 | E2E | 画面から実際に操作して、利用者の流れ全体を確認するテストです。 |
 | audit | 後から確認できるように残す操作記録です。秘密情報を含めないことが前提です。 |
+| export | アプリ内の情報をファイルとして外へ出す操作です。共有前に秘密情報や不要な identity 情報がないか確認します。 |
+| share | 他の人が閲覧できるように共有する操作です。公開範囲、SafeMode、readOnly の状態を確認してから使います。 |
+| visibility | 公開範囲の意図を示す分類です。SafeMode や readOnly の拒否結果を上書きするものではありません。 |

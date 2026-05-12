@@ -112,7 +112,7 @@ docker compose logs api --tail=200
 docker compose logs db --tail=100
 ```
 
-障害調査では、最初に発生時刻、操作内容、対象ドキュメント ID、HTTP status、画面上のエラーを控えます。診断 worker の見方は [diagnostics.md](diagnostics.md) を参照してください。
+障害調査では、最初に発生時刻、操作内容、対象ドキュメント ID、HTTP status、画面上のエラーを控えます。ログやスクリーンショットを共有する前に、秘密情報を除外してください。診断 worker の見方は [diagnostics.md](diagnostics.md)、残してよい情報の判断は [data_handling.md](data_handling.md) を参照してください。
 
 ## 障害時の初動
 
@@ -139,7 +139,7 @@ API status:
 
 ## SafeMode と外部送信
 
-既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit 外部送信も無効です。外部 LLM や audit HTTP を有効にする場合は、[security.md](security.md) と [configuration.md](configuration.md) を先に確認してください。
+既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit 外部送信も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
 
 ## 運用前チェックリスト
 
@@ -154,6 +154,7 @@ API status:
 
 - [installation.md](installation.md)
 - [configuration.md](configuration.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)
 - [diagnostics.md](diagnostics.md)
 - [release.md](release.md)

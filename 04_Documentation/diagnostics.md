@@ -100,7 +100,7 @@ npm run test -- src/worker/<test-file>.test.ts
 - console error
 - 再現率
 
-秘密情報、API key、token、生の顧客データは記録しません。
+秘密情報、API key、token、生の顧客データは記録しません。どの情報を残せるか迷う場合は [data_handling.md](data_handling.md) を確認してください。
 
 ## 共有用テンプレート
 
@@ -132,4 +132,5 @@ API status:
 - [operations.md](operations.md)
 - [configuration.md](configuration.md)
 - [e2e_testing.md](e2e_testing.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)

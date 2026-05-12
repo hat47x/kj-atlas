@@ -37,7 +37,7 @@ curl -fsS http://localhost:8080/api/healthz
 5. 島またはレビュー関連の表示が崩れていないことを確認する。
 6. 保存し、ページを再読み込みする。
 7. 変更が残っていることを確認する。
-8. share/export を使う場合、出力に秘密情報や内部メモが混ざっていないことを確認する。
+8. share/export を使う場合、[data_handling.md](data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認する。
 
 ## Playwright を実行する
 
@@ -119,6 +119,8 @@ python -m pytest
 - `docker compose logs api --tail=200`
 - 可能ならスクリーンショット
 
+ログやスクリーンショットを共有するときは、API key、token、password、未加工の顧客情報を含めません。どこまで残すか迷う場合は [data_handling.md](data_handling.md) を参照してください。
+
 ## E2E 記録
 
 検証結果を残すときは [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md) のテンプレートを使います。個人情報、秘密情報、内部承認履歴は記録しません。
@@ -128,4 +130,5 @@ python -m pytest
 - [installation.md](installation.md)
 - [operations.md](operations.md)
 - [diagnostics.md](diagnostics.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)

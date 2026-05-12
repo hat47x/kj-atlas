@@ -217,6 +217,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 ## 関連文書
 
 - [installation.md](installation.md)
+- [data_handling.md](data_handling.md)
 - [security.md](security.md)
 - [local_llm_ops_guide.md](local_llm_ops_guide.md)
 - [runtime_parameter_registry.md](../02_Architecture/runtime_parameter_registry.md)

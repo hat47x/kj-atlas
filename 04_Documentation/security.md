@@ -6,6 +6,8 @@
 
 範囲外: 組織固有の承認履歴、秘密情報の配布、個別インシデントの詳細記録。
 
+データが保存、送信、共有される場面を横断して確認したい場合は、先に [data_handling.md](data_handling.md) を読んでください。
+
 ## 基本方針
 
 - 既定では外部 LLM へ送信しません。
@@ -132,6 +134,8 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 | 一時利用 | roles, groups, policyRef, trace id | 永続化しない前提で扱う |
 | 禁止 | password, token, secret, raw assertion | 保存、ログ、export に含めない |
 
+export、share、障害調査でどの情報を削るか迷う場合は、[data_handling.md](data_handling.md) のチェックリストを使います。
+
 ## セキュリティ確認チェックリスト
 
 - [ ] LLM provider が意図した値になっている。
@@ -152,6 +156,7 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 ## 関連文書
 
 - [configuration.md](configuration.md)
+- [data_handling.md](data_handling.md)
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
 - [THREAT_MODEL.md](../THREAT_MODEL.md)

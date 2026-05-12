@@ -32,7 +32,8 @@ git diff --check
 2. 影響するテストを実行する。
 3. 手動 smoke test で利用者の主要操作を確認する。
 4. security / SafeMode / 外部送信の後退がないことを確認する。
-5. rollback 方針を確認する。
+5. data handling の観点で export、share、ログ、外部送信の扱いを確認する。
+6. rollback 方針を確認する。
 
 frontend:
 
@@ -68,11 +69,13 @@ curl -fsS http://localhost:8080/api/healthz
 - [ ] share/export に秘密情報や内部作業ログが含まれない。
 - [ ] SafeMode の既定動作が緩んでいない。
 - [ ] LLM provider が意図した値になっている。
+- [ ] audit HTTP や access control endpoint を有効にした場合、送信先と失敗時の動作が説明できる。
 
 ## 文書確認
 
 - [ ] [installation.md](installation.md) の起動手順が現行実装と合っている。
 - [ ] [configuration.md](configuration.md) の環境変数が `settings.py` と矛盾していない。
+- [ ] [data_handling.md](data_handling.md) の保存・外部送信・共有前確認が現行実装と矛盾していない。
 - [ ] [security.md](security.md) の外部送信境界が維持されている。
 - [ ] [e2e_testing.md](e2e_testing.md) の確認手順が再現できる。
 - [ ] README や 04 文書に内部 issue 記録や秘密情報が混ざっていない。
@@ -100,5 +103,6 @@ curl -fsS http://localhost:8080/api/healthz
 
 - [e2e_testing.md](e2e_testing.md)
 - [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)
+- [data_handling.md](data_handling.md)
 - [operations.md](operations.md)
 - [security.md](security.md)

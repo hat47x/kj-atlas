@@ -124,6 +124,7 @@ curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 ## 関連文書
 
 - [security.md](security.md)
+- [data_handling.md](data_handling.md)
 - [configuration.md](configuration.md)
 - [operations.md](operations.md)
 - [e2e_testing.md](e2e_testing.md)
