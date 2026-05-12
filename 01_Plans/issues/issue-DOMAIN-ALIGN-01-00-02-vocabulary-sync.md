@@ -1,7 +1,7 @@
 # Issue Memo: DOMAIN-ALIGN-01 00/02 vocabulary synchronization
 
 - Type: Documentation quality
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -21,7 +21,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -91,3 +91,9 @@ Non-goals:
 ## 10) Additional context
 
 - 本件は用語同期であり、思想変更ではない。新しい判断軸が必要になった場合は ADR 化する。
+
+## 11) Closeout
+
+- Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
+- Result: `domain.md` に `Island` / `Consensus Graph` / `WorkingGraph` / `ContextProjectionGraph` を同期し、AIの proposal-only / 人手レビュー境界を補足した。
+- Validation: `git diff --check`, active issue memo validator, validator unit tests, `rg` による語彙・表現確認。

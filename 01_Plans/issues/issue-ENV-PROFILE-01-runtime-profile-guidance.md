@@ -1,7 +1,7 @@
 # Issue Memo: ENV-PROFILE-01 Runtime profile guidance
 
 - Type: Documentation quality / Process
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -21,7 +21,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -98,3 +98,9 @@ Non-goals:
 
 - 本件で実装既定値を変更しないため、ADRは不要と判断する。
 - 既定値変更、missing endpoint fail-fast化、または vendor env 完全排除を行う場合は別ADRを起票する。
+
+## 11) Closeout
+
+- Completed by: PR #2131 `[codex] Align 00 and 02 value documentation`
+- Result: `runtime_parameter_registry.md` に `local-dev` / `evaluation` / `enterprise-production` の profile guidance を追加し、`deployment.md` と `enterprise_architecture.md` から導線を張った。
+- Validation: `git diff --check`, active issue memo validator, validator unit tests, 非 `KJ_ATLAS_` 公開環境変数例の `rg` 確認。

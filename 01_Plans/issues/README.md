@@ -264,9 +264,6 @@ issue補助メモには、最低でも次の項目を含める。
 | QA-MONKEY-05 | `issue-QA-MONKEY-05-island-accessibility-duplicate-controls.md` | Open | N/A |
 | QA-MONKEY-06 | `issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md` | Open | N/A |
 | QA-MONKEY-08 | `issue-QA-MONKEY-08-active-issue-metadata-validator-drift.md` | Open | N/A |
-| DOC-ARCH-01 | `issue-DOC-ARCH-01-architecture-source-log-separation.md` | In Progress | N/A |
-| DOMAIN-ALIGN-01 | `issue-DOMAIN-ALIGN-01-00-02-vocabulary-sync.md` | In Progress | N/A |
-| ENV-PROFILE-01 | `issue-ENV-PROFILE-01-runtime-profile-guidance.md` | In Progress | N/A |
 
 - Stream D Phase 1-5 同期（2026-04-29 rerun-58）: Read & Reconcile（3共有ファイル再読、件数47/Active=5/Done=26、Decision Queue Ready=1/Open=2、依存順 `A1→A2→A3` を再確認）→ Plan Sync（同期項目と停止条件を固定、AC/DoD不足なし）→ Execute Single-Set（3ファイル同時更新）→ Verify（`python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開判定チェックリスト|A1→A2→A3|件数47|Active=5|Done=26" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md`）→ Proceed（再開判定チェックリスト1行確定: 未固定箇所0件 / 依存タスク契約リンク確定 / Queue未解決2件 / 停止条件違反なし）。
 
@@ -356,6 +353,9 @@ issue補助メモには、最低でも次の項目を含める。
 | DOC-OPS-02 | `issue-DOC-OPS-02-cross-document-improvement-plan-from-human-decisions.md` | Done | N/A | 文書横断ドリフト（用語/役割/導線/D1〜D4）を解消。 |
 | DOC-OPS-03 | `issue-DOC-OPS-03-project-progress-dashboard-planning.md` | Done | N/A | dashboard運用プロトコルと競合停止条件を固定。 |
 | DOC-OPS-04 | `issue-DOC-OPS-04-documentation-visibility-readability-governance.md` | Done | N/A | ADR-0023/0024/0025 を直列処理し、統合同期と検証を完了。 |
+| DOC-ARCH-01 | `issue-DOC-ARCH-01-architecture-source-log-separation.md` | Done | N/A | 価値トレーサビリティと02層の現行契約/履歴ログ読み分け導線を追加。 |
+| DOMAIN-ALIGN-01 | `issue-DOMAIN-ALIGN-01-00-02-vocabulary-sync.md` | Done | N/A | 00層の用語正本をIsland/三層Graph語彙とAI境界へ同期。 |
+| ENV-PROFILE-01 | `issue-ENV-PROFILE-01-runtime-profile-guidance.md` | Done | N/A | runtime profile guidanceを追加し、KJ_ATLAS_公開設定キー方針を維持。 |
 | REQ-DEF-02 | `issue-REQ-DEF-02-responsibility-boundary-and-contract-checkpoints.md` | Done | N/A | R2-P1 Reject, R2-P2/R2-P3 Conditional Approve を確定し運用方針へ反映。 |
 | REQ-DEF-03 | `issue-REQ-DEF-03-acceptance-scenarios-and-issue-splitting.md` | Done | N/A | R3-P1 Approve, R3-P2/R3-P3 Conditional Approve を確定しテンプレ運用へ反映。 |
 | REQ-DEF-01 | `issue-REQ-DEF-01-value-realization-requirements-baseline.md` | Done | N/A | REQ-DEF共通I/F正本とDecision Queue連携を最終固定。 |
