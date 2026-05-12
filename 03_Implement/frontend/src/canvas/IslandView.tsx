@@ -205,7 +205,7 @@ function IslandViewComponent({
       return;
     }
 
-    if (hasPolygon) {
+    if (hasPolygon && event.detail !== 0) {
       const targetRect = event.currentTarget.getBoundingClientRect();
       if (targetRect.width <= 0 || targetRect.height <= 0) {
         return;
@@ -243,21 +243,30 @@ function IslandViewComponent({
       }}
     >
       {hasPolygon && polygonPath ? (
-        <svg
+        <button
+          type="button"
           aria-label={`Select island ${island.id}`}
-          role="button"
           onClick={handleIslandPointerSelect}
           style={{
             position: "absolute",
             inset: 0,
+            border: "none",
+            backgroundColor: "transparent",
+            padding: 0,
             pointerEvents: isPickingEdgeTarget ? "none" : "auto",
             zIndex: 2,
             cursor: isPickingEdgeTarget ? "default" : "pointer",
           }}
-          viewBox={`0 0 ${Math.max(bounds.width, 1)} ${Math.max(bounds.height, 1)}`}
         >
-          <polygon points={polygonPath} fill="rgba(0, 0, 0, 0.001)" stroke="transparent" />
-        </svg>
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            viewBox={`0 0 ${Math.max(bounds.width, 1)} ${Math.max(bounds.height, 1)}`}
+          >
+            <polygon points={polygonPath} fill="rgba(0, 0, 0, 0.001)" stroke="transparent" />
+          </svg>
+        </button>
       ) : (
         <>
           <button
@@ -322,6 +331,7 @@ function IslandViewComponent({
         </svg>
       ) : (
         <div
+          aria-hidden="true"
           style={{
             position: "absolute",
             inset: 0,
