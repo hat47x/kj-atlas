@@ -70,6 +70,41 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 
 文書を読んでいて、前提知識が必要すぎる、手順の成功条件が分からない、どの文書に進めばよいか分からない場合は、その文書自体を改善対象にします。
 
+## Gist 公開の考え方
+
+`04_Documentation` を Gist で公開するときは、読み手がリポジトリ構成を知らなくても追えるように、複数の Markdown を1つの公開用文書へまとめます。Gist は共有用の写しであり、正本はこのリポジトリの `04_Documentation` です。Gist だけを直接直さず、先にこの階層を更新してから公開用文書を作り直します。
+
+公開用文書には次の情報を含めます。
+
+- どの repository、branch、commit から作ったか。
+- この README と、`04_Documentation` 直下の利用者向け Markdown。
+- 画面例を読むためのスクリーンショット。画像は Gist 内へ再編集せず、固定 commit の `raw.githubusercontent.com` URL を使います。
+- 画像やリンクが切れていないことを確認した手順。
+- 秘密情報、API key、token、password、未加工の顧客情報を含めていないこと。
+
+公開前には次の順に確認します。
+
+```bash
+git status --short
+git rev-parse HEAD
+rg -n "ghp_\\w+|github_pat_\\w+|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|password\\s*=|token\\s*=" 04_Documentation
+rg -n "assets/screenshots/|\\.md\\)" 04_Documentation -g "*.md"
+```
+
+1つ目の検索は、公開対象に明らかな秘密情報の文字列が混ざっていないかを確認する簡易チェックです。文書上の用語説明として `token` や `password` を使う場合は、実値ではないことを確認します。2つ目の検索では、Gist 用に変換する画像リンクと文書リンクを洗い出します。
+
+公開手順は次の通りです。
+
+1. 変更を commit し、公開に使う commit hash を決める。
+2. `04_Documentation` 直下の Markdown を公開用の1ファイルへ連結する。
+3. `assets/screenshots/...` の画像リンクを、手順1の commit hash を含む raw GitHub URL に置き換える。
+4. `04_Documentation` 内の相互リンクは、連結後の見出しへ置き換える。
+5. `02_Architecture` など別階層へのリンクは、手順1の commit hash を含む GitHub の `blob` URL に置き換える。
+6. 生成した Markdown を読み、画像リンク、見出し、コードブロック、公開範囲の説明を確認する。
+7. public Gist として公開し、公開先 URL と元 commit hash を作業記録または PR に残す。
+
+更新時も同じ手順を繰り返します。公開済み Gist を更新する場合は、前回の Gist URL を保ったまま内容を差し替え、元 commit hash も新しい値に更新します。
+
 ## 最小用語集
 
 | 用語 | 意味 |
