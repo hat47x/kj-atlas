@@ -6499,7 +6499,7 @@ ${parsedDocument.error}`);
   });
 
   const headerRight = (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", rowGap: 6, whiteSpace: "nowrap", maxWidth: "100%" }}>
       <button
         type="button"
         onClick={handleNewDocument}
@@ -6645,6 +6645,8 @@ ${parsedDocument.error}`);
         type="button"
         onClick={handleImportClick}
         disabled={isLoading}
+        aria-label={t("app.toolbar.import_doc_json_legacy")}
+        title={t("app.toolbar.import_doc_json_legacy")}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6655,12 +6657,14 @@ ${parsedDocument.error}`);
           cursor: isLoading ? "not-allowed" : "pointer",
         }}
       >
-        {t("app.toolbar.import_doc_json_legacy")}
+        {t("app.toolbar.import_doc_json_legacy_short")}
       </button>
       <button
         type="button"
         onClick={handleExport}
         disabled={isLoading || !document}
+        aria-label={t("app.toolbar.export_doc_json_legacy")}
+        title={t("app.toolbar.export_doc_json_legacy")}
         style={{
           border: "1px solid #cbd5e1",
           backgroundColor: "#ffffff",
@@ -6671,7 +6675,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || !document ? "not-allowed" : "pointer",
         }}
       >
-        {t("app.toolbar.export_doc_json_legacy")}
+        {t("app.toolbar.export_doc_json_legacy_short")}
       </button>
       <button
         type="button"
@@ -7650,10 +7654,11 @@ ${parsedDocument.error}`);
   const safeModeIndicator = getSafeModeIndicator(safeMode);
 
   const headerViewControls = (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
       <button
         type="button"
         onClick={() => {
+          setIsViewControlsOpen(false);
           setIsSharePanelOpen(true);
         }}
         title={safeModeIndicator.detail}
@@ -7701,6 +7706,7 @@ ${parsedDocument.error}`);
       <button
         type="button"
         onClick={() => {
+          setIsSharePanelOpen(false);
           setIsViewControlsOpen((prev) => !prev);
         }}
         style={{
@@ -7717,7 +7723,16 @@ ${parsedDocument.error}`);
         View
       </button>
       {isViewControlsOpen ? (
-        <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 20 }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "var(--kj-atlas-header-panel-top, 72px)",
+            left: 16,
+            zIndex: 50,
+            maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
+            overflowY: "auto",
+          }}
+        >
           <ViewControlsPanel
             focusIslandId={focusTarget.focusIslandId}
             onClearFocus={handleClearFocus}
@@ -7898,7 +7913,13 @@ ${parsedDocument.error}`);
     <SharePanel
       isOpen={isSharePanelOpen}
       onToggleOpen={() => {
-        setIsSharePanelOpen((previousOpen) => !previousOpen);
+        setIsSharePanelOpen((previousOpen) => {
+          const nextOpen = !previousOpen;
+          if (nextOpen) {
+            setIsViewControlsOpen(false);
+          }
+          return nextOpen;
+        });
       }}
       hasDocument={Boolean(document)}
       isLoading={isLoading}

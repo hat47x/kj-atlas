@@ -1,11 +1,11 @@
 # Issue Draft: QA-MONKEY-06 Header toolbar responsive overlap
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui`
 - Related Backlog: `QA-MONKEY-06`
 - Related ADR/Spec: `04_Documentation/e2e_testing.md`, `02_Architecture/architecture.md`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export labels must remain visible.
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -49,18 +49,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] At 1280x720, toolbar labels are horizontal/readable and do not overlap adjacent controls.
-- [ ] Open panels are positioned without covering essential status controls incoherently.
-- [ ] SafeMode/share/export status remains visible and readable.
-- [ ] Browser screenshot/e2e regression covers at least 1280x720 and one narrower breakpoint.
-- [ ] No behavior changes to document data, SafeMode rules, or export output.
+- [x] At 1280x720, toolbar labels are horizontal/readable and do not overlap adjacent controls.
+- [x] Open panels are positioned without covering essential status controls incoherently.
+- [x] SafeMode/share/export status remains visible and readable.
+- [x] Browser screenshot/e2e regression covers at least 1280x720 and one narrower breakpoint.
+- [x] No behavior changes to document data, SafeMode rules, or export output.
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 Identify the header/control containers causing wrap and overlap.
-- [ ] T2 Add responsive grouping or overflow behavior.
-- [ ] T3 Verify screenshots at 1280x720 and a narrower breakpoint.
-- [ ] T4 Re-run frontend tests and browser smoke.
+- [x] T1 Identify the header/control containers causing wrap and overlap.
+- [x] T2 Add responsive grouping or overflow behavior.
+- [x] T3 Verify screenshots at 1280x720 and a narrower breakpoint.
+- [x] T4 Re-run frontend tests and browser smoke.
 
 ## 7) 検証計画 / Validation plan
 
@@ -71,7 +71,11 @@
 - 期待結果:
   - No vertical button text, no incoherent overlap, SafeMode/share labels readable.
 - 未実施時の理由・代替検証:
-  - Open issue; not fixed in the current monkey-test repair set because it requires layout design work.
+  - `npm run typecheck` passed.
+  - `npm run test` passed: 159 files / 721 tests.
+  - `npm run test -- src/ui/i18n_equivalence.integration.test.ts` passed: 9 tests.
+  - Edge + Playwright browser metrics passed at 1280x720 and 920x720: offscreen toolbar buttons=0, vertical-ish labels=0, View/share panel header overlap=false, share panel viewport overflow=false.
+  - Added `e2e/header_toolbar_layout.spec.ts` to keep the 1280x720 and 920x720 layout regression under Playwright E2E.
 
 ## 8) 代替案 / Alternatives considered
 
@@ -85,6 +89,8 @@
 - ロールバック手順: Revert layout grouping/overflow changes.
 
 ## 10) Additional context
+
+- Closeout: ADR is not required for this repair because the change preserves the existing product navigation and only stabilizes responsive layout, panel placement, and legacy label presentation.
 
 - ADR化が必要になる条件: Product-level navigation or responsive strategy is redefined.
 

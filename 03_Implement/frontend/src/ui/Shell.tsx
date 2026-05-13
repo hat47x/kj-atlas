@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../i18n/translate";
+
+const headerPanelGapPx = 8;
 
 type ShellProps = {
   title: string;
@@ -32,38 +34,73 @@ export function Shell({
   isReloadingAfterConflict = false,
   sidePanel,
 }: ShellProps) {
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerPanelTop, setHeaderPanelTop] = useState(72);
+
+  useLayoutEffect(() => {
+    const updateHeaderPanelTop = () => {
+      const rect = headerRef.current?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+
+      const nextTop = Math.ceil(rect.bottom + headerPanelGapPx);
+      setHeaderPanelTop((previousTop) => (previousTop === nextTop ? previousTop : nextTop));
+    };
+
+    updateHeaderPanelTop();
+
+    const headerElement = headerRef.current;
+    let resizeObserver: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined" && headerElement) {
+      resizeObserver = new ResizeObserver(updateHeaderPanelTop);
+      resizeObserver.observe(headerElement);
+    }
+    window.addEventListener("resize", updateHeaderPanelTop);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateHeaderPanelTop);
+    };
+  }, []);
+
+  const shellStyle: CSSProperties & { "--kj-atlas-header-panel-top": string } = {
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    width: "100vw",
+    overflow: "hidden",
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif",
+    "--kj-atlas-header-panel-top": `${headerPanelTop}px`,
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-        fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif",
-      }}
-    >
+    <div style={shellStyle}>
       <header
+        ref={headerRef}
         style={{
           minHeight: "56px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          rowGap: 8,
+          gap: "8px 12px",
           padding: "8px 16px",
           borderBottom: "1px solid #e2e8f0",
           backgroundColor: "#ffffff",
           color: "#0f172a",
           fontWeight: 600,
+          overflow: "visible",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 240, flex: "1 1 320px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 280, flex: "0 1 auto" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 12,
+              flexWrap: "wrap",
+              rowGap: 6,
             }}
           >
             <span style={{ whiteSpace: "nowrap" }}>{title}</span>
@@ -82,8 +119,8 @@ export function Shell({
                 {t("shell.unsaved_changes")}
               </span>
             ) : null}
-            {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerViewControls}</div> : null}
-            {headerShareControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>{headerShareControls}</div> : null}
+            {headerViewControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>{headerViewControls}</div> : null}
+            {headerShareControls ? <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>{headerShareControls}</div> : null}
           </div>
           {subtitle ? <div style={{ fontSize: 12, color: "#475569", fontWeight: 500 }}>{subtitle}</div> : null}
           {saveConflictMessage ? (
@@ -139,14 +176,30 @@ export function Shell({
           ) : null}
         </div>
         {headerCenter ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: "1 1 320px", minWidth: 240, padding: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: "1 1 360px", minWidth: 280, maxWidth: 520, padding: "0 4px", overflow: "hidden" }}>
             {headerCenter}
           </div>
         ) : (
           <div style={{ flex: "1 1 320px" }} />
         )}
         {headerRight ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", flex: "1 1 520px", minWidth: 320 }}>{headerRight}</div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 8,
+              flexWrap: "wrap",
+              flex: "1 1 520px",
+              minWidth: 0,
+              overflowX: "visible",
+              overflowY: "visible",
+              paddingBottom: 2,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {headerRight}
+          </div>
         ) : null}
       </header>
       <main

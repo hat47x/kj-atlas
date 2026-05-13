@@ -284,11 +284,14 @@ export function SharePanel({
       {isOpen ? (
         <section
           style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: 0,
-            zIndex: 20,
-            width: 340,
+            position: "fixed",
+            top: "var(--kj-atlas-header-panel-top, 72px)",
+            left: 16,
+            zIndex: 50,
+            width: "min(340px, calc(100vw - 32px))",
+            maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
+            boxSizing: "border-box",
+            overflowY: "auto",
             border: "1px solid #cbd5e1",
             borderRadius: 8,
             backgroundColor: "#ffffff",
