@@ -98,7 +98,7 @@ python -m pytest
 | 保存 | 作成・編集した内容が再読み込み後も残る |
 | SafeMode | 未レビュー情報を AI が自動確定しない |
 | LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |
-| export | 秘密情報や内部作業ログが混ざらない |
+| export | 秘密情報や共有不要な調査メモが混ざらない |
 | 画面 | ヘッダー、ツールバー、主要ボタンが狭い幅でも重ならない |
 
 ## viewport の目安

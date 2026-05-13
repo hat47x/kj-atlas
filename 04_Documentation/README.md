@@ -68,7 +68,7 @@
 
 1. 変更を commit し、公開に使う commit hash を決める。
 2. `public_index.md` と「Gist に含める文書」だけを公開用の1ファイルへ連結する。
-3. 画像リンクを、手順1の commit hash を含む raw GitHub URL に置き換える。
+3. Gist へスクリーンショット画像を同梱し、画像リンクは Gist 内の画像ファイルを参照する形に置き換える。
 4. 文書間リンクは、連結後の見出しへ置き換える。
 5. 公開対象外の管理文書、作業ログ、issue、ADR、公開手順、manifest が本文に混ざっていないことを確認する。
 6. public Gist として公開または既存 Gist を更新する。
@@ -80,7 +80,7 @@
 git status --short
 git rev-parse HEAD
 rg -n "ghp_\\w+|github_pat_\\w+|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|password\\s*=|token\\s*=" 04_Documentation
-rg -n "04_Documentation|AGENTS.md|01_Plans|02_Architecture|ADR-|Gist|内部管理|作業ログ" <generated-public-gist.md>
+rg -n "04_Documentation|AGENTS.md|01_Plans|02_Architecture|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ" <generated-public-gist.md>
 ```
 
 更新時も同じ手順を繰り返します。公開済み Gist を更新する場合は、前回の Gist URL を保ったまま本文を差し替えます。
