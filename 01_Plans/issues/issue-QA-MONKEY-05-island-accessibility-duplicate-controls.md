@@ -1,11 +1,11 @@
 # Issue Draft: QA-MONKEY-05 Island accessibility duplicate controls
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex
 - Scope: `03_Implement/frontend/src/canvas`
 - Related Backlog: `QA-MONKEY-05`
 - Related ADR/Spec: `02_Architecture/architecture.md`, `04_Documentation/e2e_testing.md`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: N/A
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -49,18 +49,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] One island creates one primary accessible select target.
-- [ ] Focus/collapse controls have separate concise accessible names.
-- [ ] No button accessible name contains unrelated child control labels.
-- [ ] Browser e2e or DOM snapshot regression verifies the accessibility tree after island creation.
-- [ ] No SafeMode/share-export behavior changes.
+- [x] One island creates one primary accessible select target.
+- [x] Focus/collapse controls have separate concise accessible names.
+- [x] No button accessible name contains unrelated child control labels.
+- [x] Browser e2e or DOM snapshot regression verifies the accessibility tree after island creation.
+- [x] No SafeMode/share-export behavior changes.
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 Inspect `IslandView` and related canvas layer roles.
-- [ ] T2 Remove duplicate interactive roles from decorative layers.
-- [ ] T3 Add accessibility regression coverage.
-- [ ] T4 Re-run frontend tests and browser island creation smoke.
+- [x] T1 Inspect `IslandView` and related canvas layer roles.
+- [x] T2 Remove duplicate interactive roles from decorative layers.
+- [x] T3 Add accessibility regression coverage.
+- [x] T4 Re-run frontend tests and browser island creation smoke.
 
 ## 7) 検証計画 / Validation plan
 
@@ -69,8 +69,8 @@
   - Browser smoke: create island and inspect DOM snapshot.
 - 期待結果:
   - Duplicate `Select island <uuid>` controls are eliminated.
-- 未実施時の理由・代替検証:
-  - Open issue; not fixed in the current monkey-test repair set.
+- 完了時の検証:
+  - Unit DOM snapshot coverage and browser smoke both confirm one select target plus separate focus/collapse controls.
 
 ## 8) 代替案 / Alternatives considered
 
@@ -86,6 +86,15 @@
 ## 10) Additional context
 
 - ADR化が必要になる条件: Keyboard interaction model for the entire canvas is redesigned.
+
+## 11) Closeout
+
+- Implementation: polygon island hit targets now use a native transparent `button` with the decorative SVG marked `aria-hidden`; keyboard-triggered selection bypasses pointer coordinate hit-testing. Rectangular decorative layers are explicitly `aria-hidden`.
+- Regression coverage: `IslandView.accessibility.test.ts` verifies rectangular, polygon, and collapsed island control naming.
+- Browser smoke: on `http://127.0.0.1:4173/`, created an island from one selected card and inspected the DOM/accessibility snapshot. Result: `Select island` count=1, `Focus island` count=1, `Collapse island` count=1, and compound select names=false.
+- Validation:
+  - `npm run test -- src/canvas/IslandView.accessibility.test.ts` -> 3 tests passed
+  - `npm run typecheck` -> passed
 
 ---
 
