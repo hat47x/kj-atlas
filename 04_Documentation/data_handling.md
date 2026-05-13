@@ -23,7 +23,7 @@
 | 通常保存 | ドキュメント本文、カード、島、レイアウト、レビュー状態 | アプリの主要データとして保存できます。 |
 | 最小保持 | 表示名、メールアドレス、外部 identity 参照 | 必要な場面だけに限定し、export 前に残す必要があるか確認します。 |
 | 一時利用 | roles, groups, policyRef, trace id, provider 応答時間 | 調査や判定のために使い、長期保存や共有を前提にしません。 |
-| 保存・共有禁止 | password, token, secret, raw assertion, API key, 生の秘密情報 | 入力、ログ、export、issue、スクリーンショットに含めません。 |
+| 保存・共有禁止 | password, token, secret, raw assertion, API key, 生の秘密情報 | 入力、ログ、export、問い合わせメモ、スクリーンショットに含めません。 |
 
 判断に迷う情報は、まず「最小保持」または「保存・共有禁止」として扱います。必要性を説明できてから範囲を広げます。
 

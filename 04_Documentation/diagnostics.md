@@ -77,7 +77,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 
 ## worker 関連の確認
 
-frontend の worker 実装は `03_Implement/frontend/src/worker/` にあります。worker 由来の問題は、まず入力データの大きさ、schema、review 状態を確認します。
+worker 由来の問題が疑われる場合は、まず入力データの大きさ、schema、review 状態を確認します。
 
 ```bash
 cd 03_Implement/frontend
