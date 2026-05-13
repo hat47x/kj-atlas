@@ -104,6 +104,14 @@ describe("SharePanel safe mode copy", () => {
 });
 
 describe("SharePanel bundle granularity", () => {
+  it("keeps the export panel controls within the fixed panel width", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("overflow-x:hidden");
+    expect(html).toContain("box-sizing:border-box");
+    expect(html).toContain("min-width:0");
+    expect(html).toContain("white-space:normal");
+  });
+
   it("renders Japanese granularity options in export section", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("エクスポート粒度");

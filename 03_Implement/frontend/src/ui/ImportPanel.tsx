@@ -48,7 +48,19 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
   };
 
   return (
-    <section style={{ border: "1px solid #cbd5e1", borderRadius: 8, padding: 10, display: "grid", gap: 8 }}>
+    <section
+      style={{
+        border: "1px solid #cbd5e1",
+        borderRadius: 8,
+        padding: 10,
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr)",
+        gap: 8,
+        boxSizing: "border-box",
+        minWidth: 0,
+        maxWidth: "100%",
+      }}
+    >
       <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("import.panel.title")}</div>
       <div
         onDragOver={(event) => {
@@ -64,8 +76,10 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
           borderRadius: 8,
           padding: 12,
           backgroundColor: isDragging ? "#eff6ff" : "#f8fafc",
+          boxSizing: "border-box",
           fontSize: 12,
           color: "#334155",
+          maxWidth: "100%",
           textAlign: "center",
         }}
       >
@@ -77,12 +91,13 @@ export function ImportPanel({ isLoading, onImportZip, onInvalidFileType, packImp
           inputRef.current?.click();
         }}
         disabled={isLoading}
+        style={{ boxSizing: "border-box", minWidth: 0, maxWidth: "100%", whiteSpace: "normal" }}
       >
         {t("import.panel.choose_zip")}
       </button>
       <input ref={inputRef} type="file" accept=".zip,application/zip" onChange={handleInputChange} style={{ display: "none" }} />
       {importedPackSummary ? (
-        <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 4 }}>
+        <div style={{ fontSize: 12, color: "#334155", display: "grid", gap: 4, minWidth: 0, overflowWrap: "anywhere" }}>
           <div>{t("import.panel.summary", { fileName: importedPackSummary.fileName, cardCount: importedPackSummary.cardCount, islandCount: importedPackSummary.islandCount, perspectiveMode: importedPackSummary.perspectiveMode })}</div>
           <div>{`visibility: ${importedPackSummary.visibility}`}</div>
           {importedPackSummary.warningCount > 0 ? (
