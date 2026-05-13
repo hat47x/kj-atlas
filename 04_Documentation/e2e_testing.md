@@ -39,6 +39,10 @@ curl -fsS http://localhost:8080/api/healthz
 7. 変更が残っていることを確認する。
 8. share/export を使う場合、[data_handling.md](data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認する。
 
+表示設定や SafeMode の確認を含める場合は、`View` パネルを開きます。手動 smoke test では、視点プリセット、深さ、SafeMode、export legacy 導線が表示され、キャンバスが操作不能になっていないことを確認します。
+
+![View パネルを開いた手動確認画面](assets/screenshots/view-controls-safe-mode.png)
+
 ## Playwright を実行する
 
 frontend の依存関係を入れます。
@@ -108,6 +112,10 @@ python -m pytest
 | 390px | mobile 相当 |
 
 すべての細部を確認する必要はありません。主要操作が見えるか、テキストが重ならないか、保存操作ができるかを優先します。
+
+390px では、ヘッダーが複数行に折り返され、検索、表示モード、共有と再現、保存などの主要操作が画面外へ消えないことを確認します。
+
+![390px viewport のヘッダー確認](assets/screenshots/mobile-toolbar-smoke-390.png)
 
 ## 失敗時に残す情報
 

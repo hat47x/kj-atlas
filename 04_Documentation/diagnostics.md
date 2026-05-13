@@ -61,6 +61,10 @@ curl -fsS http://127.0.0.1:8000/healthz
 - Network: `/api/docs/<doc_id>`、`/api/ai/*`、status code。
 - Application/Storage: local storage や cache が古い状態を保持していないか。
 
+画面内の diagnostics は、右側パネルの layout/outline 周辺から実行できます。実行後は品質レポート、所見件数、メトリクスが表示されるため、障害調査メモにはこの結果と API status を合わせて残します。
+
+![diagnostics 実行後の品質レポート](assets/screenshots/diagnostics-quality-report.png)
+
 ## よくある切り分け
 
 | 症状 | 主な確認 |

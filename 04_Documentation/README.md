@@ -21,6 +21,19 @@ kj-atlas の文書は、まず「安全に起動できること」、次に「�
 
 迷った場合は、[installation.md](installation.md) と [configuration.md](configuration.md) から読んでください。起動できることと安全な既定値を先に確認すると、他の文書も読みやすくなります。
 
+## 画面例を含む文書
+
+画面操作を伴う文書には、標準サンプル `doc_phase1_canvas` を使ったスクリーンショットを掲載します。画像は `assets/screenshots/` に置き、UI が変わった場合は同じ文脈で撮り直します。秘密情報、API key、組織固有の承認履歴、顧客データを含む画面は使いません。
+
+| 掲載先 | 画面例 | 読み取りポイント |
+| --- | --- | --- |
+| [installation.md](installation.md) | `app-canvas-overview.png` | 起動後に表示される標準画面、SafeMode、ヘッダー、キャンバス、右側パネル |
+| [operations.md](operations.md) | `app-canvas-overview.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
+| [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | share/export 前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
+| [security.md](security.md) | `share-export-safe-mode.png` | SafeMode と外部サービスとの共有前に見る安全境界 |
+| [e2e_testing.md](e2e_testing.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
+| [diagnostics.md](diagnostics.md) | `diagnostics-quality-report.png` | 診断 worker の実行結果、品質レポート、再現記録の入口 |
+
 ## まず読む文書
 
 | 目的 | 文書 |
