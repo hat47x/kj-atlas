@@ -3,7 +3,15 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+document.documentElement.style.margin = "0";
+document.documentElement.style.height = "100%";
+document.body.style.margin = "0";
+document.body.style.height = "100%";
+
+const rootElement = document.getElementById("root")!;
+rootElement.style.height = "100%";
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>

@@ -30,14 +30,15 @@ export function SearchBar({
   const displayedIndex = hasMatches ? currentMatchIndex + 1 : 0;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", minWidth: 0, whiteSpace: "nowrap" }}>
       <input
         type="text"
         value={query}
         onChange={handleInputChange}
         placeholder={t("search_bar.placeholder")}
         style={{
-          width: 220,
+          width: "min(220px, 32vw)",
+          minWidth: 120,
           height: 32,
           border: "1px solid #cbd5e1",
           borderRadius: 6,
@@ -76,7 +77,7 @@ export function SearchBar({
       >
         {t("search_bar.next")}
       </button>
-      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
         <input
           type="checkbox"
           checked={hideNonMatches}
