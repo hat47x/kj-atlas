@@ -2,7 +2,7 @@
 
 対象読者: kj-atlas のリリース、検証版配布、公開前確認を担当する人。
 
-目的: リリース前に確認する品質、安全性、文書、E2E の最小手順をまとめます。
+目的: リリース前に確認する品質、安全性、文書、受け入れ確認の最小手順をまとめます。
 
 範囲外: 組織固有の承認システム、配布先ごとの秘密設定、マーケティング告知。
 
@@ -77,7 +77,7 @@ curl -fsS http://localhost:8080/api/healthz
 - [ ] [configuration.md](configuration.md) の環境変数が `settings.py` と矛盾していない。
 - [ ] [data_handling.md](data_handling.md) の保存・外部サービスとの共有・共有前確認が現行実装と矛盾していない。
 - [ ] [security.md](security.md) の外部サービスとの共有の境界が維持されている。
-- [ ] [e2e_testing.md](e2e_testing.md) の確認手順が再現できる。
+- [ ] [acceptance_check.md](acceptance_check.md) の確認手順が再現できる。
 - [ ] README や 04 文書に内部 issue 記録や秘密情報が混ざっていない。
 
 ## 失敗時の扱い
@@ -87,7 +87,7 @@ curl -fsS http://localhost:8080/api/healthz
 - build、test、typecheck の失敗理由が説明できない。
 - SafeMode、share/export、LLM provider の安全境界が後退している。
 - 秘密情報、内部 URL、生の顧客情報が文書や export に混ざっている。
-- E2E の主要操作が再現できない。
+- 受け入れ確認の主要操作が再現できない。
 
 止めることは失敗ではありません。利用者に影響する不確実性を見つけた状態なので、原因、回避策、再開条件を記録してから次の確認に進みます。
 
@@ -95,13 +95,13 @@ curl -fsS http://localhost:8080/api/healthz
 
 - 対象 commit
 - 実行した確認コマンド
-- E2E 結果
+- 受け入れ確認の結果
 - 既知の制限
 - rollback 方針
 
 ## 関連文書
 
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)
 - [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)
 - [data_handling.md](data_handling.md)
 - [operations.md](operations.md)

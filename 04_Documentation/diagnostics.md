@@ -135,6 +135,6 @@ API status:
 
 - [operations.md](operations.md)
 - [configuration.md](configuration.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)
 - [data_handling.md](data_handling.md)
 - [security.md](security.md)

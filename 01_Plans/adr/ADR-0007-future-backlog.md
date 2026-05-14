@@ -167,7 +167,7 @@
 - [x] `diagnostics_compute.ts` と `SidePanel.tsx` を更新し、worker/export/UI のすべてで同一構造メトリクス値を表示するよう統一した。
 - [x] `structural_metrics.test.ts` / `worker_golden.test.ts` / fixture `tests/fixtures/worker/diagnostics.md` を更新し、追加指標と決定論を回帰固定した。
 - [x] Playwright E2E `e2e/diagnostics_structural_metrics.spec.ts` を追加し、Share Panel 経由 export の `diagnostics.md` に追加指標が含まれること、および同一入力2回で出力一致することを固定した。
-- [x] E2E未実装だった原因分析と再発防止を `04_Documentation/e2e_testing.md` に反映した（issueメモ依存を解消）。
+- [x] E2E未実装だった原因分析と再発防止を `03_Implement/frontend/docs/e2e_testing.md` に反映した（issueメモ依存を解消）。
 
 #### FB-RM-RS-03 実装TODO（完了ログ）
 

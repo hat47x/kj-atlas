@@ -1,4 +1,5 @@
 import type { HilRsRediffPayload } from "../domain/hil_rs_contract";
+import { t } from "../i18n/translate";
 
 type HilRsRediffPreviewProps = {
   payload: HilRsRediffPayload | null;
@@ -9,7 +10,7 @@ type HilRsRediffPreviewProps = {
 
 export function HilRsRediffPreview({ payload, onApplyProposal, onDiscardProposal, requiresHumanReview = true }: HilRsRediffPreviewProps) {
   if (!payload) {
-    return <div style={{ fontSize: 12, color: "#64748b" }}>No mock re-proposal diff yet.</div>;
+    return <div style={{ fontSize: 12, color: "#64748b" }}>{t("hil_rs_rediff_preview.empty")}</div>;
   }
 
   return (
@@ -18,27 +19,27 @@ export function HilRsRediffPreview({ payload, onApplyProposal, onDiscardProposal
       style={{ border: "1px dashed #cbd5e1", borderRadius: 6, padding: 8, marginBottom: 8, backgroundColor: "#fff" }}
     >
       <div style={{ fontSize: 12, marginBottom: 4 }}>
-        <strong>Proposal:</strong> {payload.proposalId}
+        <strong>{t("hil_rs_rediff_preview.proposal")}:</strong> {payload.proposalId}
       </div>
       <div style={{ fontSize: 12, marginBottom: 8 }}>
-        <strong>Trace:</strong> {payload.traceKey}
+        <strong>{t("hil_rs_rediff_preview.trace")}:</strong> {payload.traceKey}
       </div>
       <div style={{ fontSize: 12, marginBottom: 4 }}>
-        <strong>Schema:</strong> {payload.schemaVersion}
+        <strong>{t("hil_rs_rediff_preview.schema")}:</strong> {payload.schemaVersion}
       </div>
       <div style={{ fontSize: 12, marginBottom: 8 }}>
-        <strong>Based on iteration:</strong> {payload.basedOnIteration}
+        <strong>{t("hil_rs_rediff_preview.based_on_iteration")}:</strong> {payload.basedOnIteration}
       </div>
       <div style={{ fontSize: 12, marginBottom: 8, color: "#475569" }}>
-        <strong>Diff operations:</strong> {payload.diffOps.length}
+        <strong>{t("hil_rs_rediff_preview.diff_operations")}:</strong> {payload.diffOps.length}
       </div>
       {requiresHumanReview ? (
         <div style={{ fontSize: 12, marginBottom: 8, color: "#9a3412" }}>
-          Human approval required. Proposal remains unreviewed until explicitly applied.
+          {t("hil_rs_rediff_preview.human_review_required")}
         </div>
       ) : null}
       {payload.diffOps.length === 0 ? (
-        <div style={{ fontSize: 12, color: "#64748b" }}>No diff operations returned for this proposal.</div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>{t("hil_rs_rediff_preview.no_diff_ops")}</div>
       ) : null}
       <ul style={{ margin: 0, paddingLeft: 16 }}>
         {payload.diffOps.map((op) => (
@@ -48,8 +49,8 @@ export function HilRsRediffPreview({ payload, onApplyProposal, onDiscardProposal
         ))}
       </ul>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        <button type="button" onClick={() => onApplyProposal?.(payload)} disabled={!onApplyProposal}>Apply proposal</button>
-        <button type="button" onClick={() => onDiscardProposal?.(payload.proposalId)} disabled={!onDiscardProposal}>Discard proposal</button>
+        <button type="button" onClick={() => onApplyProposal?.(payload)} disabled={!onApplyProposal}>{t("hil_rs_rediff_preview.apply")}</button>
+        <button type="button" onClick={() => onDiscardProposal?.(payload.proposalId)} disabled={!onDiscardProposal}>{t("hil_rs_rediff_preview.discard")}</button>
       </div>
     </section>
   );

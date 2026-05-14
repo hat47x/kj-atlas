@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { HilRsWorkflowPanel } from "./HilRsWorkflowPanel";
+import { t } from "../i18n/translate";
 
 describe("HilRsWorkflowPanel", () => {
   it("renders three separated workflow sections for A2", () => {
@@ -14,12 +15,12 @@ describe("HilRsWorkflowPanel", () => {
       }),
     );
 
-    expect(html).toContain("A2-1 Candidate comparison");
-    expect(html).toContain("A2-2 Critique input");
-    expect(html).toContain("A2-3 Diff visualization");
+    expect(html).toContain(t("hil_rs_workflow.candidate.title"));
+    expect(html).toContain(t("hil_rs_workflow.critique.title"));
+    expect(html).toContain(t("hil_rs_workflow.diff.title"));
     expect(html).toContain("candidate-slot");
     expect(html).toContain("critique-slot");
     expect(html).toContain("diff-slot");
-    expect(html).toContain("trusted human confirmation");
+    expect(html).toContain(t("hil_rs_workflow.diff.description"));
   });
 });

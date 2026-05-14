@@ -286,9 +286,9 @@ describe("i18n functional equivalence", () => {
     const enDiagnosticsRun = t("side_panel.outline.run_diagnostics");
     const enClaimTypeUnknown = t("side_panel.claim_type.unknown");
 
-    expect(jaDiagnosticsRun).toBe("diagnostics を実行");
+    expect(jaDiagnosticsRun).toBe("診断を実行");
     expect(enDiagnosticsRun).toBe("Run diagnostics");
-    expect(jaClaimTypeUnknown).toBe("Unknown (未分類)");
+    expect(jaClaimTypeUnknown).toBe("不明（未分類）");
     expect(enClaimTypeUnknown).toBe("Unknown");
   });
 

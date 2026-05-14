@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { t } from "../i18n/translate";
 
 type HilRsWorkflowPanelProps = {
   candidateComparison: ReactNode;
@@ -31,18 +32,18 @@ export function HilRsWorkflowPanel({ candidateComparison, critiqueInput, diffVis
   return (
     <>
       <section style={SECTION_STYLE}>
-        <div style={TITLE_STYLE}>A2-1 Candidate comparison</div>
-        <div style={DESCRIPTION_STYLE}>Collect and compare merge/layout candidates before any commit.</div>
+        <div style={TITLE_STYLE}>{t("hil_rs_workflow.candidate.title")}</div>
+        <div style={DESCRIPTION_STYLE}>{t("hil_rs_workflow.candidate.description")}</div>
         {candidateComparison}
       </section>
       <section style={SECTION_STYLE}>
-        <div style={TITLE_STYLE}>A2-2 Critique input</div>
-        <div style={DESCRIPTION_STYLE}>Capture critique and re-suggest iteratively while keeping human final approval.</div>
+        <div style={TITLE_STYLE}>{t("hil_rs_workflow.critique.title")}</div>
+        <div style={DESCRIPTION_STYLE}>{t("hil_rs_workflow.critique.description")}</div>
         {critiqueInput}
       </section>
       <section style={SECTION_STYLE}>
-        <div style={TITLE_STYLE}>A2-3 Diff visualization</div>
-        <div style={DESCRIPTION_STYLE}>Review deterministic diffs before apply/discard to keep the workflow reversible and commit only by trusted human confirmation.</div>
+        <div style={TITLE_STYLE}>{t("hil_rs_workflow.diff.title")}</div>
+        <div style={DESCRIPTION_STYLE}>{t("hil_rs_workflow.diff.description")}</div>
         {diffVisualization}
       </section>
     </>

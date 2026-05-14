@@ -1,6 +1,7 @@
 import type { DocumentV2 } from "../types";
 import { analyzeEvidenceGaps, type EvidenceGapReport } from "./evidence_gap_checks";
 import type { PerspectiveMode } from "./perspective";
+import { t } from "../../i18n/translate";
 
 export type GuidedFlowStepId = "review" | "classify" | "evidence" | "contradiction";
 
@@ -83,35 +84,35 @@ export function buildDefaultGuidedFlowSteps(evidenceGapReport?: EvidenceGapRepor
   return [
     {
       id: "review",
-      title: "Review targets",
-      description: "Unreviewed islands first, then unknown cards.",
+      title: t("guided_flow.review.title"),
+      description: t("guided_flow.review.description"),
       perspectiveMode: "review",
       targetSelector: (doc) => buildReviewTargets(doc),
-      suggestedActions: ["Review summaries", "Confirm or keep pending"],
+      suggestedActions: [t("guided_flow.review.action_review"), t("guided_flow.review.action_confirm")],
     },
     {
       id: "classify",
-      title: "Classify unknown cards",
-      description: "Assign claim types to unknown cards.",
+      title: t("guided_flow.classify.title"),
+      description: t("guided_flow.classify.description"),
       perspectiveMode: "unknown",
       targetSelector: (doc) => buildClassifyTargets(doc),
-      suggestedActions: ["Set claim type", "Skip if intentionally unknown"],
+      suggestedActions: [t("guided_flow.classify.action_set"), t("guided_flow.classify.action_skip")],
     },
     {
       id: "evidence",
-      title: "Add evidence links",
-      description: "Focus hypotheses/claims lacking fact support.",
+      title: t("guided_flow.evidence.title"),
+      description: t("guided_flow.evidence.description"),
       perspectiveMode: "evidence",
       targetSelector: (doc) => buildEvidenceTargets(doc, evidenceGapReport),
-      suggestedActions: ["Open evidence link editor", "Add fact supports"],
+      suggestedActions: [t("guided_flow.evidence.action_open_editor"), t("guided_flow.evidence.action_add_supports")],
     },
     {
       id: "contradiction",
-      title: "Add contradiction links (optional)",
-      description: "Find hypotheses with no contradiction links.",
+      title: t("guided_flow.contradiction.title"),
+      description: t("guided_flow.contradiction.description"),
       perspectiveMode: "contradiction",
       targetSelector: (doc) => buildContradictionTargets(doc),
-      suggestedActions: ["Inspect opposing cards", "Add contradicts links if needed"],
+      suggestedActions: [t("guided_flow.contradiction.action_inspect"), t("guided_flow.contradiction.action_add")],
       optional: true,
     },
   ];

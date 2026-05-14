@@ -2,7 +2,7 @@
 
 - Status: Accepted (2026-03-06, D1〜D4 fixed)
 - Owner: Security Officer / System Owner / Platform Operator
-- Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/e2e_testing.md`
+- Scope: `02_Architecture/enterprise_architecture.md`, `04_Documentation/operations.md`, `04_Documentation/security.md`, `04_Documentation/security_operational_guidelines.md`, `04_Documentation/acceptance_check.md`, `03_Implement/frontend/docs/e2e_testing.md`
 - Related: `01_Plans/issues/issue-AUTH-OPS-03-strict-mode-exception-relaxation-runbook-plan.md`
 - DOC-OPS-05 Sync Issues: `01_Plans/issues/issue-doc-ops-05-06-04doc-e2e-testing.md`, `01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`, `01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`, `01_Plans/issues/issue-doc-ops-05-14-04doc-security-operational-guidelines.md`
 
@@ -42,7 +42,8 @@ AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 1. `02_Architecture/strict_mode_exception_approval_flow.md`（本書 / 正本）
 2. `04_Documentation/security.md`
 3. `04_Documentation/security_operational_guidelines.md`
-4. `04_Documentation/e2e_testing.md`
+4. `04_Documentation/acceptance_check.md`（利用者向け確認）
+5. `03_Implement/frontend/docs/e2e_testing.md`（開発者向けE2E）
 
 `04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 

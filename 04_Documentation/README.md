@@ -27,7 +27,7 @@
 | データ取り扱い | [data_handling.md](data_handling.md) |
 | 日常運用 | [operations.md](operations.md) |
 | セキュリティ | [security.md](security.md), [security_operational_guidelines.md](security_operational_guidelines.md) |
-| 変更後の確認 | [e2e_testing.md](e2e_testing.md), [diagnostics.md](diagnostics.md) |
+| 変更後の確認 | [acceptance_check.md](acceptance_check.md), [diagnostics.md](diagnostics.md) |
 | AI 提案・文章化 | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md), [local_llm_ops_guide.md](local_llm_ops_guide.md), [narratives.md](narratives.md) |
 | 比較・再現性 | [canonicalization.md](canonicalization.md) |
 
@@ -49,7 +49,7 @@
 | [operations.md](operations.md) | `app-canvas-overview.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
 | [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | share/export 前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
 | [security.md](security.md) | `share-export-safe-mode.png` | SafeMode と外部サービスとの共有前に見る安全境界 |
-| [e2e_testing.md](e2e_testing.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
+| [acceptance_check.md](acceptance_check.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
 | [diagnostics.md](diagnostics.md) | `diagnostics-quality-report.png` | 診断 worker の実行結果、品質レポート、再現記録の入口 |
 
 ## 文書品質のルール

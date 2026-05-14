@@ -94,13 +94,13 @@
 
 この文書は利用者向けの判断ガイドです。データ契約や実装上の正本は次の文書にあります。
 
-- [schemas.md](../02_Architecture/schemas.md)
-- [schemas_review_attribution.md](../02_Architecture/schemas_review_attribution.md)
-- [review_attribution.md](../02_Architecture/review_attribution.md)
+- [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
+- [schemas_review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas_review_attribution.md)
+- [review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/review_attribution.md)
 
 運用時は、次の文書も合わせて確認します。
 
 - [configuration.md](configuration.md)
 - [security.md](security.md)
 - [operations.md](operations.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)

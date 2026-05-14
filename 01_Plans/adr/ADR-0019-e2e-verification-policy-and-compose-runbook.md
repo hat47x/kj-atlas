@@ -73,7 +73,7 @@
 3. UI改修の増加に伴い、Playwrightシナリオを「価値境界ベース」で整理しないと肥大化する。
 
 対処方針:
-- `04_Documentation/e2e_testing.md` をE2E実務手順の正本とし、
+- `03_Implement/frontend/docs/e2e_testing.md` をE2E実務手順の正本とし、
   シナリオ追加時は Smoke / Core / Safety のどこを守るかを明示する。
 
 ### 6. ドキュメント同期ルール
@@ -81,16 +81,18 @@
 - 以下の文書は本ADRと整合させる。
   - `04_Documentation/installation.md`
   - `04_Documentation/operations.md`
-  - `04_Documentation/e2e_testing.md`
+  - `04_Documentation/acceptance_check.md`
+  - `03_Implement/frontend/docs/e2e_testing.md`
   - `CONTRIBUTING.md`
   - `02_Architecture/coding_standards.md`
 
 ### 7. 利用者向けドキュメントとの完全整合ルール
 
 1. **E2E手順の正本**
-   - `04_Documentation/e2e_testing.md` をE2E実施手順の正本（single source of truth）とする。
+   - `03_Implement/frontend/docs/e2e_testing.md` をE2E実施手順の正本（single source of truth）とする。
+   - `04_Documentation/acceptance_check.md` は一般利用者向けの手動確認だけを扱い、Playwright実行手順を正本化しない。
 2. **完全整合の対象**
-   - `installation.md` / `operations.md` / `CONTRIBUTING.md` / `02_Architecture/coding_standards.md` に記載する
+   - `acceptance_check.md` / `installation.md` / `operations.md` / `CONTRIBUTING.md` / `02_Architecture/coding_standards.md` に記載する
      E2Eコマンド、受入基準、代替経路（Docker未導入時）は、正本と同一意味で記述する。
 3. **同一PR更新の義務**
    - E2E関連のコマンド・判定基準・対象フローを変更した場合は、上記文書を同一PRで同期更新する。
@@ -116,7 +118,8 @@
 - Related: `03_Implement/backend/README.md`
 - Related: `04_Documentation/installation.md`
 - Related: `04_Documentation/operations.md`
-- Related: `04_Documentation/e2e_testing.md`
+- Related: `04_Documentation/acceptance_check.md`
+- Related: `03_Implement/frontend/docs/e2e_testing.md`
 - Related: `CONTRIBUTING.md`
 - Related: `02_Architecture/coding_standards.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`

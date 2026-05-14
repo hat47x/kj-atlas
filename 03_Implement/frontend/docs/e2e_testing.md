@@ -1,10 +1,10 @@
 # E2E Testing
 
-対象読者: 変更後に kj-atlas の主要操作を確認する開発者、QA、運用担当者。
+対象読者: kj-atlas の実装変更に対して Playwright E2E、回帰テスト、PR 前確認を行う開発者、QA、メンテナ。
 
-目的: Docker Compose またはローカル起動環境で、ブラウザを使った受け入れ確認と Playwright E2E を再現できるようにします。
+目的: Docker Compose またはローカル起動環境で、開発者向け E2E を再現できるようにします。一般利用者向けの画面確認は [受け入れ確認](../../../04_Documentation/acceptance_check.md) を参照してください。
 
-範囲外: 組織固有のテスト管理、非公開データを使った検証、CI 基盤の詳細設定。
+範囲外: 組織固有のテスト管理、非公開データを使った検証、CI 基盤の詳細設定、一般利用者向けの導入説明。
 
 ## 事前準備
 
@@ -16,7 +16,7 @@ docker compose up --build -d
 curl -fsS http://localhost:8080/api/healthz
 ```
 
-ローカル開発サーバーで確認する場合は [installation.md](installation.md) の「Docker を使わない最小起動」を使います。
+ローカル開発サーバーで確認する場合は [導入手順](../../../04_Documentation/installation.md) の「Docker を使わない最小起動」を使います。
 
 ## 手動確認と自動テストの違い
 
@@ -26,7 +26,7 @@ curl -fsS http://localhost:8080/api/healthz
 | Playwright E2E | ブラウザ操作を自動で再現する | PR、リリース前、回帰確認 |
 | unit/regression test | 小さなロジックやデータ変換を速く確認する | 実装変更後、原因切り分け |
 
-一般利用者の確認では、まず手動 smoke test だけで十分です。開発変更を含む場合は自動テストも実行します。
+一般利用者の確認では、まず [受け入れ確認](../../../04_Documentation/acceptance_check.md) の手動 smoke test だけで十分です。開発変更を含む場合は自動テストも実行します。
 
 ## 手動 smoke test
 
@@ -37,11 +37,11 @@ curl -fsS http://localhost:8080/api/healthz
 5. 島またはレビュー関連の表示が崩れていないことを確認する。
 6. 保存し、ページを再読み込みする。
 7. 変更が残っていることを確認する。
-8. share/export を使う場合、[data_handling.md](data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認する。
+8. share/export を使う場合、[データ取り扱い](../../../04_Documentation/data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認する。
 
 表示設定や SafeMode の確認を含める場合は、`View` パネルを開きます。手動 smoke test では、視点プリセット、深さ、SafeMode、export legacy 導線が表示され、キャンバスが操作不能になっていないことを確認します。
 
-![View パネルを開いた手動確認画面](assets/screenshots/view-controls-safe-mode.png)
+![View パネルを開いた手動確認画面](../../../04_Documentation/assets/screenshots/view-controls-safe-mode.png)
 
 ## Playwright を実行する
 
@@ -115,7 +115,7 @@ python -m pytest
 
 390px では、ヘッダーが複数行に折り返され、検索、表示モード、共有と再現、保存などの主要操作が画面外へ消えないことを確認します。
 
-![390px viewport のヘッダー確認](assets/screenshots/mobile-toolbar-smoke-390.png)
+![390px viewport のヘッダー確認](../../../04_Documentation/assets/screenshots/mobile-toolbar-smoke-390.png)
 
 ## 失敗時に残す情報
 
@@ -127,16 +127,17 @@ python -m pytest
 - `docker compose logs api --tail=200`
 - 可能ならスクリーンショット
 
-ログやスクリーンショットを共有するときは、API key、token、password、未加工の顧客情報を含めません。どこまで残すか迷う場合は [data_handling.md](data_handling.md) を参照してください。
+ログやスクリーンショットを共有するときは、API key、token、password、未加工の顧客情報を含めません。どこまで残すか迷う場合は [データ取り扱い](../../../04_Documentation/data_handling.md) を参照してください。
 
 ## E2E 記録
 
-検証結果を残すときは [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md) のテンプレートを使います。個人情報、秘密情報、内部承認履歴は記録しません。
+検証結果を残すときは内部の検証記録テンプレートを使います。個人情報、秘密情報、内部承認履歴は記録しません。
 
 ## 関連文書
 
-- [installation.md](installation.md)
-- [operations.md](operations.md)
-- [diagnostics.md](diagnostics.md)
-- [data_handling.md](data_handling.md)
-- [security.md](security.md)
+- [導入手順](../../../04_Documentation/installation.md)
+- [受け入れ確認](../../../04_Documentation/acceptance_check.md)
+- [運用手順](../../../04_Documentation/operations.md)
+- [診断と障害調査](../../../04_Documentation/diagnostics.md)
+- [データ取り扱い](../../../04_Documentation/data_handling.md)
+- [セキュリティ](../../../04_Documentation/security.md)

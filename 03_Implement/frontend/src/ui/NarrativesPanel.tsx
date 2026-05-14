@@ -9,6 +9,7 @@ import {
   downloadTextFile,
   type ReadingOrderSnippetMap,
 } from "../export/narrative_export";
+import { t } from "../i18n/translate";
 
 type NarrativesPanelProps = {
   narrativeText: string;
@@ -122,9 +123,9 @@ export function NarrativesPanel({
 
   return (
     <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Narrative (draft)</div>
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("narratives.panel.title")}</div>
       <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
-        AI checks are advisory and unreviewed. Treat results as suggestions for human review.
+        {t("narratives.panel.advisory_hint")}
       </div>
       <textarea
         value={narrativeText}
@@ -132,7 +133,7 @@ export function NarrativesPanel({
           onNarrativeTextChange(event.target.value);
         }}
         rows={6}
-        placeholder="Write or paste your narrative draft here"
+        placeholder={t("narratives.panel.placeholder")}
         style={{ width: "100%", resize: "vertical", marginBottom: 8 }}
       />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
@@ -144,7 +145,7 @@ export function NarrativesPanel({
           disabled={isChecking || narrativeText.trim().length === 0}
           style={{ cursor: isChecking || narrativeText.trim().length === 0 ? "not-allowed" : "pointer" }}
         >
-          {isChecking ? "Checking..." : "Check consistency"}
+          {isChecking ? t("narratives.panel.checking") : t("narratives.panel.check_consistency")}
         </button>
         <button
           type="button"
@@ -152,7 +153,7 @@ export function NarrativesPanel({
           disabled={isGenerating}
           style={{ cursor: isGenerating ? "not-allowed" : "pointer" }}
         >
-          {isGenerating ? "Generating..." : "Generate from Reading Order"}
+          {isGenerating ? t("narratives.panel.generating") : t("narratives.panel.generate_from_reading_order")}
         </button>
         <button
           type="button"
@@ -160,7 +161,7 @@ export function NarrativesPanel({
           disabled={!selectedNarrative}
           style={{ cursor: selectedNarrative ? "pointer" : "not-allowed" }}
         >
-          Export Markdown
+          {t("narratives.panel.export_markdown")}
         </button>
         <button
           type="button"
@@ -168,11 +169,11 @@ export function NarrativesPanel({
           disabled={!selectedNarrative}
           style={{ cursor: selectedNarrative ? "pointer" : "not-allowed" }}
         >
-          Export HTML
+          {t("narratives.panel.export_html")}
         </button>
       </div>
       <div style={{ fontSize: 11, color: "#7c2d12", marginBottom: 8 }}>
-        Generated draft (unreviewed). Please verify against the diagram.
+        {t("narratives.panel.generated_draft_warning")}
       </div>
       {generationErrorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{generationErrorMessage}</div> : null}
       {generatedNarratives.length > 0 ? (
@@ -199,8 +200,8 @@ export function NarrativesPanel({
                   }}
                 >
                   <div style={{ fontWeight: 700 }}>{entry.title}</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>CreatedAt: {entry.createdAt ?? "(generated at export time)"}</div>
-                  <div style={{ fontSize: 11, color: "#b45309" }}>Status: {entry.reviewed ? "reviewed" : "unreviewed"}</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>{t("narratives.panel.created_at", { value: entry.createdAt ?? t("narratives.panel.generated_at_export_time") })}</div>
+                  <div style={{ fontSize: 11, color: "#b45309" }}>{t("narratives.panel.status", { value: entry.reviewed ? t("narratives.panel.status_reviewed") : t("narratives.panel.status_unreviewed") })}</div>
                   <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{entry.text}</div>
                 </button>
               </li>
@@ -210,9 +211,9 @@ export function NarrativesPanel({
       ) : null}
       {selectedNarrative ? (
         <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>basedOnReadingOrder</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.based_on_reading_order")}</div>
           {(selectedNarrative.basedOnReadingOrder ?? []).length === 0 ? (
-            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>(empty)</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{t("narratives.panel.empty")}</div>
           ) : (
             <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 6 }}>
               {(selectedNarrative.basedOnReadingOrder ?? []).map((entryId) => {
@@ -227,7 +228,7 @@ export function NarrativesPanel({
                         }}
                         style={{ fontSize: 11, cursor: "pointer" }}
                       >
-                        Focus {entryKind}:{entryId}
+                        {t("narratives.panel.focus_ref", { kind: entryKind, id: entryId })}
                       </button>
                     ) : (
                       <span>{entryId}</span>
@@ -237,9 +238,9 @@ export function NarrativesPanel({
               })}
             </ul>
           )}
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Past checks</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.past_checks")}</div>
           {(selectedNarrative.checks ?? []).length === 0 ? (
-            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>No consistency checks yet.</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{t("narratives.panel.no_past_checks")}</div>
           ) : (
             <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "grid", gap: 6 }}>
               {(selectedNarrative.checks ?? []).map((check) => {
@@ -267,7 +268,7 @@ export function NarrativesPanel({
                       }}
                       style={{ fontSize: 12, cursor: "pointer" }}
                     >
-                      {isExpanded ? "▾" : "▸"} {check.createdAt} ({check.kind}) — issues: {check.issues.length} (error:{counts.error} warn:{counts.warn} info:{counts.info})
+                      {isExpanded ? "▼" : "▶"} {t("narratives.panel.check_summary", { createdAt: check.createdAt, kind: check.kind, issueCount: check.issues.length, errors: counts.error, warnings: counts.warn, infos: counts.info })}
                     </button>
                     {isExpanded ? (
                       <ul style={{ margin: "6px 0 0", paddingLeft: 16, display: "grid", gap: 6 }}>
@@ -288,7 +289,7 @@ export function NarrativesPanel({
                                     }}
                                     style={{ fontSize: 11, cursor: "pointer" }}
                                   >
-                                    Focus {reference.kind}:{reference.id}
+                                    {t("narratives.panel.focus_ref", { kind: reference.kind, id: reference.id })}
                                   </button>
                                 ))}
                               </div>
@@ -302,19 +303,19 @@ export function NarrativesPanel({
               })}
             </ul>
           )}
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Grounding / Citations</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.grounding_citations")}</div>
           {groundingEntries.length === 0 ? (
-            <div style={{ fontSize: 12, color: "#64748b" }}>No grounding entries.</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{t("narratives.panel.no_grounding")}</div>
           ) : (
             <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
               {groundingEntries.map((entry) => (
                 <li key={`${entry.anchor}-${entry.sourceId}`} style={{ fontSize: 12, color: "#1e293b" }}>
                   <div style={{ fontWeight: 600 }}>{entry.anchor}</div>
-                  {entry.kind === "missing" ? <div>Missing entry: {entry.sourceId}</div> : null}
+                  {entry.kind === "missing" ? <div>{t("narratives.panel.missing_entry", { id: entry.sourceId })}</div> : null}
                   {entry.kind === "card" && entry.card ? (
                     <div>
                       <div>
-                        Card{" "}
+                        {t("narratives.panel.card")}{" "}
                         <button
                           type="button"
                           onClick={() => {
@@ -329,13 +330,13 @@ export function NarrativesPanel({
                         [{entry.card.kind}
                         {entry.card.kind === "source" ? ` canonicalId: ${entry.card.canonicalId}` : ""}]
                       </div>
-                      <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || "(empty)"}</div>
+                      <div style={{ whiteSpace: "pre-wrap", color: "#475569" }}>{entry.card.text || t("narratives.panel.empty")}</div>
                     </div>
                   ) : null}
                   {entry.kind === "island" ? (
                     <div>
                       <div>
-                        Island:{" "}
+                        {t("narratives.panel.island")}{" "}
                         <button
                           type="button"
                           onClick={() => {
@@ -348,7 +349,7 @@ export function NarrativesPanel({
                       </div>
                       {entry.islandSummaryText ? (
                         <div style={{ color: "#475569" }}>
-                          Summary{entry.islandSummaryReviewed ? "" : " (unreviewed)"}: {entry.islandSummaryText}
+                          {t("narratives.panel.summary_label", { unreviewedSuffix: entry.islandSummaryReviewed ? "" : t("narratives.panel.unreviewed_suffix") })}: {entry.islandSummaryText}
                         </div>
                       ) : null}
                       <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
@@ -364,10 +365,10 @@ export function NarrativesPanel({
                               {member.id}
                             </button>{" "}
                             [{member.kind}
-                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] — {member.text || "(empty)"}
+                            {member.kind === "source" ? ` canonicalId: ${member.canonicalId}` : ""}] - {member.text || t("narratives.panel.empty")}
                           </li>
                         ))}
-                        {(entry.islandMembers ?? []).length === 0 ? <li>(no member cards)</li> : null}
+                        {(entry.islandMembers ?? []).length === 0 ? <li>{t("narratives.panel.no_member_cards")}</li> : null}
                       </ul>
                     </div>
                   ) : null}
@@ -378,9 +379,9 @@ export function NarrativesPanel({
         </div>
       ) : null}
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c", marginBottom: 8 }}>{errorMessage}</div> : null}
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Consistency issues (AI-generated, unreviewed)</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("narratives.panel.consistency_issues")}</div>
       {issues.length === 0 ? (
-        <div style={{ fontSize: 12, color: "#64748b" }}>No issues returned. This is not a correctness guarantee.</div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>{t("narratives.panel.no_issues")}</div>
       ) : (
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
           {issues.map((issue, index) => (
@@ -400,7 +401,7 @@ export function NarrativesPanel({
                       }}
                       style={{ fontSize: 11, cursor: "pointer" }}
                     >
-                      Focus {reference.kind}:{reference.id}
+                      {t("narratives.panel.focus_ref", { kind: reference.kind, id: reference.id })}
                     </button>
                   ))}
                 </div>

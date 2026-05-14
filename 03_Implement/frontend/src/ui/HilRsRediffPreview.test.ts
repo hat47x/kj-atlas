@@ -1,9 +1,14 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { HilRsRediffPreview } from "./HilRsRediffPreview";
+import { setActiveLocale } from "../i18n/translate";
 
 describe("HilRsRediffPreview", () => {
+  beforeEach(() => {
+    setActiveLocale("en");
+  });
+
   it("renders empty state when payload is null", () => {
     const html = renderToStaticMarkup(React.createElement(HilRsRediffPreview, { payload: null }));
     expect(html).toContain("No mock re-proposal diff yet");

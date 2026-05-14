@@ -14,7 +14,7 @@ canonicalization は、同じ意味のデータを同じ形にそろえる処理
 
 たとえば、人が見れば同じ内容でも、JSON のキー順、空白、生成時刻、trace id が違うだけで、機械的には別物に見えることがあります。kj-atlas では、そのような表記ゆれや一時的な情報に左右されず、カード、島、関係、レビュー状態、bundle hash などを安定して比較できるようにします。
 
-これは「内容が正しいことを保証する仕組み」ではありません。canonicalization は比較を安定させるための土台です。内容の妥当性は、人間のレビュー、E2E 確認、スキーマ検証などで判断します。
+これは「内容が正しいことを保証する仕組み」ではありません。canonicalization は比較を安定させるための土台です。内容の妥当性は、人間のレビュー、受け入れ確認、スキーマ検証などで判断します。
 
 ## 前提知識
 
@@ -33,7 +33,7 @@ canonicalization は、利用者が直接操作する機能というより、確
 - JSON を import するときの検証。
 - export したファイルを再度読み込むときの比較。
 - AI 提案が、どの入力データを根拠にしているかを確認するとき。
-- E2E や回帰テストで、不要な差分を見分けるとき。
+- 受け入れ確認や回帰テストで、不要な差分を見分けるとき。
 - review 済み、未 review の境界を確認するとき。
 
 ## 利用者が確認すること
@@ -69,12 +69,12 @@ hash が一致していても、提案はまだ「候補」です。内容の正
 
 詳細な schema と設計上の根拠は、次の文書を参照してください。
 
-- [schemas.md](../02_Architecture/schemas.md)
-- [architecture.md](../02_Architecture/architecture.md)
+- [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
+- [architecture.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/architecture.md)
 - [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md)
 
 ## 関連文書
 
 - [diagnostics.md](diagnostics.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)
 - [narratives.md](narratives.md)

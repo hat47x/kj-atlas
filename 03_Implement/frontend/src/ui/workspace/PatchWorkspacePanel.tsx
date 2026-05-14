@@ -14,6 +14,7 @@ import {
   type WorkspaceDecision,
   type WorkspaceState,
 } from "../../domain/patch/workspace/ce3_patch_workspace";
+import { t } from "../../i18n/translate";
 
 type PatchWorkspacePanelProps = {
   isReadOnly?: boolean;
@@ -30,6 +31,19 @@ type PatchWorkspacePanelProps = {
 };
 
 const PRESET_STORAGE_KEY = "kj-atlas:ce3:patch-workspace-presets:v1";
+
+function formatWorkspaceDecision(decision: WorkspaceDecision | "none"): string {
+  if (decision === "adopt") return t("patch_workspace.decision.adopt");
+  if (decision === "reject") return t("patch_workspace.decision.reject");
+  if (decision === "none") return t("patch_workspace.decision.none");
+  return t("patch_workspace.decision.hold");
+}
+
+function formatQueryScope(scope: QueryScope): string {
+  if (scope === "selection") return t("patch_workspace.scope.selection");
+  if (scope === "island") return t("patch_workspace.scope.island");
+  return t("patch_workspace.scope.all");
+}
 
 function loadPresets(): QueryPreset[] {
   if (typeof window === "undefined") {
@@ -103,8 +117,8 @@ export function PatchWorkspacePanel({
   const latestAuditByCandidate = useMemo(() => {
     const latest = new Map<string, string>();
     for (const entry of workspaceState.auditLog) {
-      const suffix = entry.reason === "rollback" ? " (rollback)" : "";
-      latest.set(entry.candidateId, `${entry.from}→${entry.to}${suffix}`);
+      const suffix = entry.reason === "rollback" ? t("patch_workspace.rollback_suffix") : "";
+      latest.set(entry.candidateId, `${formatWorkspaceDecision(entry.from)} -> ${formatWorkspaceDecision(entry.to)}${suffix}`);
     }
     return latest;
   }, [workspaceState.auditLog]);
@@ -161,7 +175,7 @@ export function PatchWorkspacePanel({
 
     const trimmedName = presetName.trim();
     if (!trimmedName) {
-      setWorkspaceState((previous) => ({ ...previous, failureMessage: "Preset name is required.", phase: "error" }));
+      setWorkspaceState((previous) => ({ ...previous, failureMessage: t("patch_workspace.preset_name_required"), phase: "error" }));
       return;
     }
 
@@ -201,12 +215,12 @@ export function PatchWorkspacePanel({
 
   return (
     <section style={{ border: "1px solid #cbd5e1", borderRadius: 8, padding: 12, marginTop: 12, backgroundColor: "#f8fafc" }} data-testid="ce3-workspace-panel">
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>CE3 Patch workspace</div>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>{t("patch_workspace.title")}</div>
       <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>
-        Compare candidates, record adopt/reject/hold decisions, and recover with one-click rollback.
+        {t("patch_workspace.description")}
       </div>
       <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }} data-testid="ce3-perspective-scope">
-        Perspective controls remain display-only and are not persisted by CE3 presets.
+        {t("patch_workspace.perspective_scope")}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
         <select
@@ -220,41 +234,44 @@ export function PatchWorkspacePanel({
             }));
           }}
         >
-          {candidates.length === 0 ? <option value="">No candidates yet</option> : null}
+          {candidates.length === 0 ? <option value="">{t("patch_workspace.no_candidates_yet")}</option> : null}
           {candidates.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>{candidate.label}</option>
           ))}
         </select>
         <div style={{ display: "flex", gap: 6 }}>
-          <button type="button" data-testid="ce3-adopt" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("adopt")}>Adopt (partial)</button>
-          <button type="button" data-testid="ce3-hold" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("hold")}>Hold</button>
-          <button type="button" data-testid="ce3-reject" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("reject")}>Discard</button>
+          <button type="button" data-testid="ce3-adopt" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("adopt")}>{t("patch_workspace.action.adopt")}</button>
+          <button type="button" data-testid="ce3-hold" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("hold")}>{t("patch_workspace.action.hold")}</button>
+          <button type="button" data-testid="ce3-reject" disabled={isReadOnly || !activeCandidateId} onClick={() => commitDecision("reject")}>{t("patch_workspace.action.discard")}</button>
         </div>
       </div>
       <div data-testid="ce3-decision-state" style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
-        Decision state: {activeCandidateId ? workspaceState.decisions[activeCandidateId] ?? "hold" : "none"} (phase: {workspaceState.phase})
+        {t("patch_workspace.decision_state", {
+          decision: activeCandidateId ? formatWorkspaceDecision(workspaceState.decisions[activeCandidateId] ?? "hold") : formatWorkspaceDecision("none"),
+          phase: workspaceState.phase,
+        })}
       </div>
       <div
         data-testid="ce3-candidate-state-list"
         style={{ border: "1px solid #e2e8f0", borderRadius: 6, backgroundColor: "#ffffff", padding: 8, marginBottom: 8 }}
       >
         <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>
-          Candidate decisions
+          {t("patch_workspace.candidate_decisions")}
           <span data-testid="ce3-candidate-count" style={{ marginLeft: 6, color: "#64748b", fontWeight: 500 }}>
             ({candidates.length})
           </span>
         </div>
-        {candidates.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>No candidates collected yet.</div> : null}
+        {candidates.length === 0 ? <div style={{ fontSize: 11, color: "#64748b" }}>{t("patch_workspace.no_candidates_collected")}</div> : null}
         {candidates.map((candidate) => (
           <div
             key={candidate.id}
             style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#334155", marginBottom: 2 }}
           >
             <span data-testid={`ce3-candidate-state-${candidate.id}`}>
-              {candidate.label}: {workspaceState.decisions[candidate.id] ?? "hold"}
+              {candidate.label}: {formatWorkspaceDecision(workspaceState.decisions[candidate.id] ?? "hold")}
             </span>
             <span data-testid={`ce3-candidate-audit-${candidate.id}`} style={{ color: "#64748b" }}>
-              {latestAuditByCandidate.get(candidate.id) ?? "no transition"}
+              {latestAuditByCandidate.get(candidate.id) ?? t("patch_workspace.no_transition")}
             </span>
           </div>
         ))}
@@ -263,56 +280,56 @@ export function PatchWorkspacePanel({
         data-testid="ce3-diff-preview"
         style={{ border: "1px dashed #cbd5e1", borderRadius: 6, padding: 8, marginBottom: 8, backgroundColor: "#ffffff" }}
       >
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>Patch diff preview</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", marginBottom: 4 }}>{t("patch_workspace.diff_preview")}</div>
         {activeCandidate?.preview ? (
           <>
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
-              Source snippets ({activeCandidate.preview.sourceSnippets.length}): {activeCandidate.preview.sourceSnippets.join(" / ")}
+              {t("patch_workspace.source_snippets", { count: activeCandidate.preview.sourceSnippets.length })}: {activeCandidate.preview.sourceSnippets.join(" / ")}
             </div>
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
-              Draft patch: {activeCandidate.preview.draftText}
+              {t("patch_workspace.draft_patch")}: {activeCandidate.preview.draftText}
             </div>
             <div style={{ fontSize: 11, color: "#334155", marginBottom: 4 }}>
-              Edited patch: {activeCandidate.preview.editedText ?? activeCandidate.preview.draftText}
+              {t("patch_workspace.edited_patch")}: {activeCandidate.preview.editedText ?? activeCandidate.preview.draftText}
             </div>
             <div style={{ fontSize: 11, color: "#475569" }}>
-              Token delta: +{activePreviewSummary?.additions ?? 0} / -{activePreviewSummary?.removals ?? 0}
-              {activePreviewSummary?.hasChanges ? "" : " (no textual change)"}
+              {t("patch_workspace.token_delta", { additions: activePreviewSummary?.additions ?? 0, removals: activePreviewSummary?.removals ?? 0 })}
+              {activePreviewSummary?.hasChanges ? "" : t("patch_workspace.no_textual_change_suffix")}
             </div>
           </>
         ) : (
-          <div style={{ fontSize: 11, color: "#64748b" }}>No patch preview available for the selected candidate.</div>
+          <div style={{ fontSize: 11, color: "#64748b" }}>{t("patch_workspace.no_patch_preview")}</div>
         )}
       </div>
       <button type="button" data-testid="ce3-rollback" disabled={isReadOnly || workspaceState.rollbackStack.length === 0} onClick={handleRollback}>
-        Roll back last workspace decision
+        {t("patch_workspace.rollback")}
       </button>
 
       <hr style={{ border: 0, borderTop: "1px solid #e2e8f0", margin: "12px 0" }} />
 
-      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>Query preset</div>
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>{t("patch_workspace.query_preset")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr)) auto", gap: 6, marginBottom: 8 }}>
-        <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder="Preset name" disabled={isReadOnly} />
+        <input data-testid="ce3-preset-name" value={presetName} onChange={(event) => setPresetName(event.target.value)} placeholder={t("patch_workspace.preset_name")} disabled={isReadOnly} />
         <select data-testid="ce3-preset-scope" value={scope} onChange={(event) => setScope(event.target.value as QueryScope)} disabled={isReadOnly}>
-          <option value="all">all</option>
-          <option value="selection">selection</option>
-          <option value="island">island</option>
+          <option value="all">{formatQueryScope("all")}</option>
+          <option value="selection">{formatQueryScope("selection")}</option>
+          <option value="island">{formatQueryScope("island")}</option>
         </select>
         <input data-testid="ce3-preset-depth" type="number" min={1} value={depth} onChange={(event) => setDepth(Number(event.target.value))} disabled={isReadOnly} />
         <input
           data-testid="ce3-preset-filters"
           value={filtersInput}
           onChange={(event) => setFiltersInput(event.target.value)}
-          placeholder="filters (comma separated)"
+          placeholder={t("patch_workspace.filters_placeholder")}
           disabled={isReadOnly}
         />
-        <button type="button" data-testid="ce3-save-preset" disabled={isReadOnly} onClick={handleSavePreset}>Save preset</button>
+        <button type="button" data-testid="ce3-save-preset" disabled={isReadOnly} onClick={handleSavePreset}>{t("patch_workspace.save_preset")}</button>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-        {presets.length === 0 ? <span style={{ fontSize: 12, color: "#64748b" }}>No saved presets.</span> : null}
+        {presets.length === 0 ? <span style={{ fontSize: 12, color: "#64748b" }}>{t("patch_workspace.no_saved_presets")}</span> : null}
         {presets.map((preset) => (
           <button key={preset.id} type="button" data-testid={`ce3-run-preset-${preset.id}`} disabled={isReadOnly} onClick={() => runPreset(preset)}>
-            Run {preset.name}
+            {t("patch_workspace.run_preset", { name: preset.name })}
           </button>
         ))}
       </div>
@@ -328,13 +345,13 @@ export function PatchWorkspacePanel({
           });
         }}
       >
-        Run current preset
+        {t("patch_workspace.run_current_preset")}
       </button>
       <div data-testid="ce3-normalized-query" style={{ fontSize: 12, color: "#334155", marginTop: 8 }}>
-        Normalized query: {workspaceState.lastExecutedQuery ?? "(not executed)"}
+        {t("patch_workspace.normalized_query", { query: workspaceState.lastExecutedQuery ?? t("patch_workspace.not_executed") })}
       </div>
       <div data-testid="ce3-audit-log-size" style={{ fontSize: 12, color: "#334155", marginTop: 6 }}>
-        Audit transitions: {workspaceState.auditLog.length}
+        {t("patch_workspace.audit_transitions", { count: workspaceState.auditLog.length })}
       </div>
       {workspaceState.failureMessage ? (
         <div data-testid="ce3-failure" style={{ marginTop: 8, fontSize: 12, color: "#b91c1c" }}>
@@ -342,7 +359,7 @@ export function PatchWorkspacePanel({
         </div>
       ) : null}
       <div style={{ marginTop: 8, fontSize: 11, color: "#64748b" }}>
-        Recovery path: if execution fails, recover by collecting candidates again and rolling back the last workspace decision.
+        {t("patch_workspace.recovery_path")}
       </div>
     </section>
   );

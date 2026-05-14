@@ -220,7 +220,7 @@ issue補助メモには、最低でも次の項目を含める。
 | `e2e` | `integration` + ユーザーフロー検証 | `playwright test ...` |
 
 > 詳細なE2E運用は `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md` と
-> `04_Documentation/e2e_testing.md` を正本とする。
+> 開発者向けE2Eは `03_Implement/frontend/docs/e2e_testing.md`、一般利用者向けの画面確認は `04_Documentation/acceptance_check.md` を正本とする。
 
 ## Quality checklist（レビュー観点）
 

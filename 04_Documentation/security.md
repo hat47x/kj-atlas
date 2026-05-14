@@ -61,7 +61,7 @@ share/export の前は、「共有と再現」パネルで SafeMode、visibility
 
 既定です。AI 機能は provider disabled として失敗します。検証やデモではこの状態を推奨します。
 
-初回導入時は、まず `none` のまま保存・表示・E2E を確認してください。AI 接続を後から足す方が、問題の原因を分けやすくなります。
+初回導入時は、まず `none` のまま保存・表示・受け入れ確認を行ってください。AI 接続を後から足す方が、問題の原因を分けやすくなります。
 
 ### `local`
 
@@ -165,4 +165,4 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [data_handling.md](data_handling.md)
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
-- [THREAT_MODEL.md](../THREAT_MODEL.md)
+- [THREAT_MODEL.md](https://github.com/hat47x/kj-atlas/blob/main/THREAT_MODEL.md)

@@ -432,16 +432,16 @@ export function SidePanel({
       .map(([kind, count]) => `- ${kind}: ${count}`)
       .join("\n");
     return [
-      `- timestamp: ${entry.createdAt}`,
-      `- source: ${entry.source.fileName ?? entry.source.packId ?? "unknown"}`,
-      `- source kind: ${entry.source.kind}`,
-      `- total items: ${entry.summary.totalItems}`,
-      "- by kind:",
-      byKind || "- (none)",
-      `- item ids: ${(entry.details.itemIds?.ids ?? []).join(", ") || "(none)"}`,
-      `- card ids: ${(entry.details.entityIds?.cards?.ids ?? []).join(", ") || "(none)"}`,
-      `- island ids: ${(entry.details.entityIds?.islands?.ids ?? []).join(", ") || "(none)"}`,
-      `- evidence ids: ${(entry.details.entityIds?.evidence?.ids ?? []).join(", ") || "(none)"}`,
+      `- ${t("side_panel.merge_history.timestamp")}: ${entry.createdAt}`,
+      `- ${t("side_panel.merge_history.source")}: ${entry.source.fileName ?? entry.source.packId ?? t("side_panel.merge_history.unknown_source")}`,
+      `- ${t("side_panel.merge_history.source_kind")}: ${entry.source.kind}`,
+      `- ${t("side_panel.merge_history.total_items")}: ${entry.summary.totalItems}`,
+      `- ${t("side_panel.merge_history.by_kind")}:`,
+      byKind || `- ${t("side_panel.none")}`,
+      `- ${t("side_panel.merge_history.item_ids")}: ${(entry.details.itemIds?.ids ?? []).join(", ") || t("side_panel.none")}`,
+      `- ${t("side_panel.merge_history.card_ids")}: ${(entry.details.entityIds?.cards?.ids ?? []).join(", ") || t("side_panel.none")}`,
+      `- ${t("side_panel.merge_history.island_ids")}: ${(entry.details.entityIds?.islands?.ids ?? []).join(", ") || t("side_panel.none")}`,
+      `- ${t("side_panel.merge_history.evidence_ids")}: ${(entry.details.entityIds?.evidence?.ids ?? []).join(", ") || t("side_panel.none")}`,
     ].join("\n");
   };
 
@@ -450,8 +450,8 @@ export function SidePanel({
     const truncated = value?.truncatedCount ?? 0;
     return (
       <div>
-        {label}: {listed.join(", ") || "(none)"}
-        {truncated > 0 ? ` (+${truncated} truncated)` : ""}
+        {label}: {listed.join(", ") || t("side_panel.none")}
+        {truncated > 0 ? ` (${t("side_panel.merge_history.truncated", { count: truncated })})` : ""}
       </div>
     );
   };
@@ -535,7 +535,7 @@ export function SidePanel({
       },
     }, {
       signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(`Trace analytics (${traceAnalyticsMode}): ${progress.stage} (${progress.percent}%)`),
+      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.analytics_progress", { mode: traceAnalyticsMode, stage: progress.stage, percent: progress.percent })),
     }).then((outcome) => {
       if (outcome.status !== "completed") {
         return;
@@ -543,7 +543,7 @@ export function SidePanel({
       setTraceAnalytics(outcome.result.analytics);
       setTraceAnalyticsMd(outcome.result.analyticsMd);
     }).catch(() => {
-      onEvidenceTraceError("Failed to compute trace analytics");
+      onEvidenceTraceError(t("side_panel.trace.analytics_failed"));
     }).finally(() => {
       if (analyticsAbortRef.current === controller) {
         analyticsAbortRef.current = null;
@@ -640,7 +640,11 @@ export function SidePanel({
       },
     }, {
       signal: controller.signal,
-      onProgress: (progress) => setTraceProgressMessage(`${kind === "evidence" ? "Evidence" : "Contradiction"} trace: ${progress.stage} (${progress.percent}%)`),
+      onProgress: (progress) => setTraceProgressMessage(t("side_panel.trace.progress", {
+        kind: kind === "evidence" ? t("side_panel.trace.evidence_trace") : t("side_panel.trace.contradiction_trace"),
+        stage: progress.stage,
+        percent: progress.percent,
+      })),
     });
 
     setIsTraceRunning(false);
@@ -648,7 +652,7 @@ export function SidePanel({
     traceAbortRef.current = null;
 
     if (outcome.status === "cancelled") {
-      onEvidenceTraceError("Trace cancelled");
+      onEvidenceTraceError(t("side_panel.trace.cancelled"));
       return null;
     }
     if (outcome.result.traceMd.startsWith("Error:")) {
@@ -668,7 +672,7 @@ export function SidePanel({
     try {
       await navigator.clipboard.writeText(markdown);
     } catch {
-      onEvidenceTraceError("Failed to copy contradiction trace");
+      onEvidenceTraceError(t("side_panel.trace.copy_contradiction_failed"));
     }
   };
 
@@ -690,7 +694,7 @@ export function SidePanel({
     try {
       await navigator.clipboard.writeText(markdown);
     } catch {
-      onEvidenceTraceError("Failed to copy evidence trace");
+      onEvidenceTraceError(t("side_panel.trace.copy_evidence_failed"));
     }
   };
 
@@ -780,13 +784,24 @@ export function SidePanel({
   const claimTypeMixSection = claimTypeMixReport ? (
     <details style={{ marginTop: 8 }}>
       <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>
-        Claim typing ({claimTypeMixReport.findings.length})
+        {t("side_panel.claim_type.mix_title", { count: claimTypeMixReport.findings.length })}
       </summary>
       <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
-        cards:{claimTypeMixReport.stats.totalCards} · F/C/H/U:{claimTypeMixReport.stats.countsByType.fact}/{claimTypeMixReport.stats.countsByType.claim}/{claimTypeMixReport.stats.countsByType.hypothesis}/{claimTypeMixReport.stats.countsByType.unknown}
+        {t("side_panel.claim_type.mix_stats", {
+          cards: claimTypeMixReport.stats.totalCards,
+          facts: claimTypeMixReport.stats.countsByType.fact,
+          claims: claimTypeMixReport.stats.countsByType.claim,
+          hypotheses: claimTypeMixReport.stats.countsByType.hypothesis,
+          unknown: claimTypeMixReport.stats.countsByType.unknown,
+        })}
       </div>
       <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>
-        checked islands:{claimTypeMixReport.stats.islandsChecked} · mixed:{claimTypeMixReport.stats.islandsMixedCount} · hypothesis-dominant:{claimTypeMixReport.stats.islandsHypothesisDominantCount} · unknown-dominant:{claimTypeMixReport.stats.islandsUnknownDominantCount}
+        {t("side_panel.claim_type.mix_island_stats", {
+          checked: claimTypeMixReport.stats.islandsChecked,
+          mixed: claimTypeMixReport.stats.islandsMixedCount,
+          hypothesisDominant: claimTypeMixReport.stats.islandsHypothesisDominantCount,
+          unknownDominant: claimTypeMixReport.stats.islandsUnknownDominantCount,
+        })}
       </div>
       {claimTypeMixReport.findings.length === 0 ? (
         <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.claim_type.no_findings")}</div>
@@ -801,7 +816,7 @@ export function SidePanel({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                   {finding.islandIds.map((islandId) => (
                     <button key={`${finding.code}_${islandId}`} type="button" onClick={() => { onFocusDistributionIsland(islandId); }} style={{ fontSize: 10, cursor: "pointer" }}>
-                      Focus {islandId}
+                      {t("side_panel.focus_item", { id: islandId })}
                     </button>
                   ))}
                 </div>
@@ -815,22 +830,22 @@ export function SidePanel({
 
   const evidenceGapSection = evidenceGapReport ? (
     <details style={{ marginTop: 8 }}>
-      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Evidence gaps ({evidenceGapReport.findings.length})</summary>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>{t("side_panel.evidence_gap.title", { count: evidenceGapReport.findings.length })}</summary>
       <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
-        <div>Links: {evidenceGapReport.stats.totalLinks} (supports {evidenceGapReport.stats.supportsLinks}, contradicts {evidenceGapReport.stats.contradictsLinks})</div>
-        <div>Hypotheses no fact support: {evidenceGapReport.stats.hypothesesWithNoFactSupport}</div>
-        <div>Claims no fact support: {evidenceGapReport.stats.claimsWithNoFactSupport}</div>
-        <div>Unused facts: {evidenceGapReport.stats.factsUnusedAsEvidence}</div>
-        <div>Contradictions needing grounding: {evidenceGapReport.stats.contradictionsWithoutCounterSupport}</div>
+        <div>{t("side_panel.evidence_gap.links", { total: evidenceGapReport.stats.totalLinks, supports: evidenceGapReport.stats.supportsLinks, contradicts: evidenceGapReport.stats.contradictsLinks })}</div>
+        <div>{t("side_panel.evidence_gap.hypotheses_no_fact", { count: evidenceGapReport.stats.hypothesesWithNoFactSupport })}</div>
+        <div>{t("side_panel.evidence_gap.claims_no_fact", { count: evidenceGapReport.stats.claimsWithNoFactSupport })}</div>
+        <div>{t("side_panel.evidence_gap.unused_facts", { count: evidenceGapReport.stats.factsUnusedAsEvidence })}</div>
+        <div>{t("side_panel.evidence_gap.contradictions_need_grounding", { count: evidenceGapReport.stats.contradictionsWithoutCounterSupport })}</div>
       </div>
       {(["E001", "E002", "E003", "E004"] as const).map((code) => {
         const findings = evidenceGapFindingsByCode[code] ?? [];
         if (findings.length === 0) return null;
         const titleByCode: Record<string, string> = {
-          E001: "Hypotheses lacking fact support",
-          E002: "Claims lacking fact support",
-          E003: "Unused facts",
-          E004: "Contradictions needing grounding",
+          E001: t("side_panel.evidence_gap.title_e001"),
+          E002: t("side_panel.evidence_gap.title_e002"),
+          E003: t("side_panel.evidence_gap.title_e003"),
+          E004: t("side_panel.evidence_gap.title_e004"),
         };
 
         return (
@@ -843,7 +858,7 @@ export function SidePanel({
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
                     {finding.cardIds.map((cardId) => (
                       <button key={`${code}_${index}_${cardId}`} type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(cardId); }}>
-                        Focus card:{cardId}
+                        {t("side_panel.evidence_gap.focus_card", { cardId })}
                       </button>
                     ))}
                   </div>
@@ -859,13 +874,19 @@ export function SidePanel({
   const distributionSignalsSection = distributionReport ? (
     <details style={{ marginTop: 8 }}>
       <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>
-        Distribution signals ({distributionReport.findings.length})
+        {t("side_panel.distribution.title", { count: distributionReport.findings.length })}
       </summary>
       <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
-        islands:{distributionReport.stats.islandCount} · cards:{distributionReport.stats.cardCount} · avg:{distributionReport.stats.avgCardsPerIsland.toFixed(2)} · median:{distributionReport.stats.medianCardsPerIsland.toFixed(2)} · p90:{distributionReport.stats.p90CardsPerIsland.toFixed(2)}
+        {t("side_panel.distribution.stats", {
+          islands: distributionReport.stats.islandCount,
+          cards: distributionReport.stats.cardCount,
+          avg: distributionReport.stats.avgCardsPerIsland.toFixed(2),
+          median: distributionReport.stats.medianCardsPerIsland.toFixed(2),
+          p90: distributionReport.stats.p90CardsPerIsland.toFixed(2),
+        })}
       </div>
       {distributionReport.findings.length === 0 ? (
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No distribution signals.</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.distribution.none")}</div>
       ) : (
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {distributionReport.findings.map((finding, index) => (
@@ -878,30 +899,30 @@ export function SidePanel({
         </ul>
       )}
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Most loaded islands</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{t("side_panel.distribution.most_loaded")}</div>
         {loadedIslands.length === 0 ? (
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>No islands.</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{t("side_panel.distribution.no_islands")}</div>
         ) : (
           <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
             {loadedIslands.map((item) => (
               <li key={`loaded_${item.id}`} style={{ fontSize: 11, color: "#0f172a" }}>
-                <div>{item.title} · cards:{item.cardCount} · degree:{item.degree}</div>
-                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>Focus</button>
+                <div>{t("side_panel.distribution.item_stats", { title: item.title, cards: item.cardCount, degree: item.degree })}</div>
+                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>{t("side_panel.focus")}</button>
               </li>
             ))}
           </ul>
         )}
       </div>
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Most isolated islands</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{t("side_panel.distribution.most_isolated")}</div>
         {isolatedIslands.length === 0 ? (
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>No isolated islands.</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{t("side_panel.distribution.no_isolated")}</div>
         ) : (
           <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
             {isolatedIslands.map((item) => (
               <li key={`isolated_${item.id}`} style={{ fontSize: 11, color: "#0f172a" }}>
-                <div>{item.title} · cards:{item.cardCount} · degree:{item.degree}</div>
-                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>Focus</button>
+                <div>{t("side_panel.distribution.item_stats", { title: item.title, cards: item.cardCount, degree: item.degree })}</div>
+                <button type="button" onClick={() => { onFocusDistributionIsland(item.id); }} style={{ fontSize: 10, cursor: "pointer", marginTop: 2 }}>{t("side_panel.focus")}</button>
               </li>
             ))}
           </ul>
@@ -920,33 +941,33 @@ export function SidePanel({
 
   const metricsSection = structuralMetrics ? (
     <details style={{ marginTop: 8 }} open>
-      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Metrics</summary>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>{t("side_panel.metrics.title")}</summary>
       <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
-        <div>card count: {structuralMetrics.cardCount}</div>
-        <div>island count: {structuralMetrics.islandCount}</div>
-        <div>evidence link count: {structuralMetrics.evidenceLinkCount}</div>
-        <div>evidence link density: {structuralMetrics.evidenceLinkDensity.toFixed(4)}</div>
-        <div>isolated cards: {structuralMetrics.isolatedCardCount}</div>
-        <div>isolation rate: {structuralMetrics.isolationRate.toFixed(4)}</div>
-        <div>connected components: {structuralMetrics.connectedComponentCount}</div>
-        <div>largest component ratio: {structuralMetrics.largestComponentRatio.toFixed(4)}</div>
-        <div>connectivity score: {structuralMetrics.connectivityScore.toFixed(4)}</div>
-        <div>average degree: {structuralMetrics.averageDegree.toFixed(4)}</div>
-        <div>degree p95: {structuralMetrics.degreeP95}</div>
-        <div>degree skew ratio: {structuralMetrics.degreeSkewRatio.toFixed(4)}</div>
-        <div>bridge edges: {structuralMetrics.bridgeEdgeCount}</div>
-        {structuralMetrics.contradictionRatio === null ? null : <div>contradiction ratio: {structuralMetrics.contradictionRatio.toFixed(4)}</div>}
-        {structuralMetrics.reviewedCoverage === null ? null : <div>reviewed coverage: {structuralMetrics.reviewedCoverage.toFixed(4)}</div>}
+        <div>{t("side_panel.metrics.card_count", { value: structuralMetrics.cardCount })}</div>
+        <div>{t("side_panel.metrics.island_count", { value: structuralMetrics.islandCount })}</div>
+        <div>{t("side_panel.metrics.evidence_link_count", { value: structuralMetrics.evidenceLinkCount })}</div>
+        <div>{t("side_panel.metrics.evidence_link_density", { value: structuralMetrics.evidenceLinkDensity.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.isolated_cards", { value: structuralMetrics.isolatedCardCount })}</div>
+        <div>{t("side_panel.metrics.isolation_rate", { value: structuralMetrics.isolationRate.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.connected_components", { value: structuralMetrics.connectedComponentCount })}</div>
+        <div>{t("side_panel.metrics.largest_component_ratio", { value: structuralMetrics.largestComponentRatio.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.connectivity_score", { value: structuralMetrics.connectivityScore.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.average_degree", { value: structuralMetrics.averageDegree.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.degree_p95", { value: structuralMetrics.degreeP95 })}</div>
+        <div>{t("side_panel.metrics.degree_skew_ratio", { value: structuralMetrics.degreeSkewRatio.toFixed(4) })}</div>
+        <div>{t("side_panel.metrics.bridge_edges", { value: structuralMetrics.bridgeEdgeCount })}</div>
+        {structuralMetrics.contradictionRatio === null ? null : <div>{t("side_panel.metrics.contradiction_ratio", { value: structuralMetrics.contradictionRatio.toFixed(4) })}</div>}
+        {structuralMetrics.reviewedCoverage === null ? null : <div>{t("side_panel.metrics.reviewed_coverage", { value: structuralMetrics.reviewedCoverage.toFixed(4) })}</div>}
       </div>
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>Island size distribution</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#334155" }}>{t("side_panel.metrics.island_size_distribution")}</div>
         {structuralMetrics.islandSizeDistribution.length === 0 ? (
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>(none)</div>
         ) : (
           <ul style={{ margin: "4px 0 0", paddingLeft: 18, display: "grid", gap: 4 }}>
             {structuralMetrics.islandSizeDistribution.map((bin) => (
               <li key={`size_${bin.size}`} style={{ fontSize: 11, color: "#0f172a" }}>
-                size {bin.size}: {bin.islands} island(s)
+                {t("side_panel.metrics.island_size_bin", { size: bin.size, islands: bin.islands })}
               </li>
             ))}
           </ul>
@@ -957,15 +978,15 @@ export function SidePanel({
 
   const dialecticBalanceSection = dialecticBalanceReport ? (
     <details style={{ marginTop: 8 }}>
-      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>Dialectic balance ({dialecticBalanceReport.findings.length})</summary>
+      <summary style={{ fontSize: 12, cursor: "pointer", color: "#7c3aed" }}>{t("side_panel.dialectic.title", { count: dialecticBalanceReport.findings.length })}</summary>
       <div style={{ marginTop: 6, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
-        <div>hypotheses: {dialecticBalanceReport.stats.hypothesisCount} (supported: {dialecticBalanceReport.stats.hypothesisWithSupportCount}, contradicted: {dialecticBalanceReport.stats.hypothesisWithContradictionCount})</div>
-        <div>claims: {dialecticBalanceReport.stats.claimCount} (supported: {dialecticBalanceReport.stats.claimWithSupportCount}, contradicted: {dialecticBalanceReport.stats.claimWithContradictionCount})</div>
-        <div>facts: {dialecticBalanceReport.stats.factCount}</div>
-        <div>links: supports {dialecticBalanceReport.stats.supportsCount}, contradicts {dialecticBalanceReport.stats.contradictsCount}</div>
+        <div>{t("side_panel.dialectic.hypotheses", { total: dialecticBalanceReport.stats.hypothesisCount, supported: dialecticBalanceReport.stats.hypothesisWithSupportCount, contradicted: dialecticBalanceReport.stats.hypothesisWithContradictionCount })}</div>
+        <div>{t("side_panel.dialectic.claims", { total: dialecticBalanceReport.stats.claimCount, supported: dialecticBalanceReport.stats.claimWithSupportCount, contradicted: dialecticBalanceReport.stats.claimWithContradictionCount })}</div>
+        <div>{t("side_panel.dialectic.facts", { count: dialecticBalanceReport.stats.factCount })}</div>
+        <div>{t("side_panel.dialectic.links", { supports: dialecticBalanceReport.stats.supportsCount, contradicts: dialecticBalanceReport.stats.contradictsCount })}</div>
       </div>
       {dialecticBalanceReport.findings.length === 0 ? (
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>No dialectic balance findings.</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("side_panel.dialectic.none")}</div>
       ) : (
         <ul style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 6 }}>
           {dialecticBalanceReport.findings.map((finding, index) => (
@@ -981,7 +1002,7 @@ export function SidePanel({
                     onFocusDialecticBalanceFinding(finding);
                   }}
                 >
-                  Focus sample
+                  {t("side_panel.dialectic.focus_sample")}
                 </button>
               ) : null}
             </li>
@@ -1070,19 +1091,19 @@ export function SidePanel({
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Pack Assets</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{t("side_panel.pack_assets.title")}</div>
           {importedPackSnapshotUrl ? (
             <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Snapshot</div>
-              <img src={importedPackSnapshotUrl} alt="Imported review pack snapshot" style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 6 }} />
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.pack_assets.snapshot")}</div>
+              <img src={importedPackSnapshotUrl} alt={t("side_panel.pack_assets.snapshot_alt")} style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 6 }} />
               <a href={importedPackSnapshotUrl} download="snapshot.png" style={{ fontSize: 12, color: "#1d4ed8" }}>
-                Download snapshot
+                {t("side_panel.pack_assets.download_snapshot")}
               </a>
             </div>
           ) : null}
           {importedPackDiagnosticsMd ? (
             <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Diagnostics</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.pack_assets.diagnostics")}</div>
               <pre style={{ margin: 0, maxHeight: 220, overflow: "auto", whiteSpace: "pre-wrap", fontSize: 11, backgroundColor: "#f8fafc", padding: 8, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                 {importedPackDiagnosticsMd}
               </pre>
@@ -1093,11 +1114,11 @@ export function SidePanel({
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <details>
           <summary style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>
-            History ({mergeAuditEntries.length})
+            {t("side_panel.history.with_count", { count: mergeAuditEntries.length })}
           </summary>
           <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
             {mergeAuditEntries.length === 0 ? (
-              <div style={{ fontSize: 12, color: "#64748b" }}>No merge history yet.</div>
+              <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.merge_history.empty")}</div>
             ) : (
               mergeAuditEntries.map((entry) => {
                 const isExpanded = expandedMergeAuditEntryId === entry.id;
@@ -1114,19 +1135,21 @@ export function SidePanel({
                       style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "grid", gap: 4 }}
                     >
                       <div style={{ fontSize: 11, color: "#64748b" }}>{formatSummaryHistoryTimestamp(entry.createdAt)}</div>
-                      <div style={{ fontSize: 12, color: "#0f172a" }}>{entry.source.fileName ?? entry.source.packId ?? "Unknown source"}</div>
-                      <div style={{ fontSize: 11, color: "#334155" }}>{entry.summary.totalItems} items · {topKinds || "no kinds"}</div>
+                      <div style={{ fontSize: 12, color: "#0f172a" }}>{entry.source.fileName ?? entry.source.packId ?? t("side_panel.merge_history.unknown_source")}</div>
+                      <div style={{ fontSize: 11, color: "#334155" }}>
+                        {t("side_panel.merge_history.items_summary", { count: entry.summary.totalItems, kinds: topKinds || t("side_panel.merge_history.no_kinds") })}
+                      </div>
                     </button>
                     {isExpanded ? (
                       <div style={{ marginTop: 8, display: "grid", gap: 6, fontSize: 11, color: "#475569" }}>
-                        <div>source kind: {entry.source.kind}</div>
-                        <div>by kind: {fullKinds || "(none)"}</div>
-                        {renderIdList("item ids", entry.details.itemIds)}
-                        {renderIdList("card ids", entry.details.entityIds?.cards)}
-                        {renderIdList("island ids", entry.details.entityIds?.islands)}
-                        {renderIdList("evidence ids", entry.details.entityIds?.evidence)}
+                        <div>{t("side_panel.merge_history.source_kind")}: {entry.source.kind}</div>
+                        <div>{t("side_panel.merge_history.by_kind")}: {fullKinds || t("side_panel.none")}</div>
+                        {renderIdList(t("side_panel.merge_history.item_ids"), entry.details.itemIds)}
+                        {renderIdList(t("side_panel.merge_history.card_ids"), entry.details.entityIds?.cards)}
+                        {renderIdList(t("side_panel.merge_history.island_ids"), entry.details.entityIds?.islands)}
+                        {renderIdList(t("side_panel.merge_history.evidence_ids"), entry.details.entityIds?.evidence)}
                         {entry.summary.warnings && entry.summary.warnings.length > 0 ? (
-                          <div>warnings: {entry.summary.warnings.join(", ")}</div>
+                          <div>{t("side_panel.merge_history.warnings")}: {entry.summary.warnings.join(", ")}</div>
                         ) : null}
                         <div style={{ display: "flex", gap: 8 }}>
                           <button
@@ -1135,7 +1158,7 @@ export function SidePanel({
                               await copyText(JSON.stringify(entry, null, 2));
                             }}
                           >
-                            Copy entry JSON
+                            {t("side_panel.merge_history.copy_json")}
                           </button>
                           <button
                             type="button"
@@ -1143,7 +1166,7 @@ export function SidePanel({
                               await copyText(buildMergeSummaryMarkdown(entry));
                             }}
                           >
-                            Copy summary MD
+                            {t("side_panel.merge_history.copy_md")}
                           </button>
                         </div>
                       </div>
@@ -1156,7 +1179,7 @@ export function SidePanel({
         </details>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Guided Flow</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.guided_flow.title")}</div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", marginBottom: 8 }}>
           <input
             type="checkbox"
@@ -1168,11 +1191,11 @@ export function SidePanel({
           {t("side_panel.reading_path.enable")}
         </label>
         <div style={{ fontSize: 12, color: "#334155", marginBottom: 4 }}>
-          Step {guidedFlowStepIndex + 1} / {guidedFlowTotalSteps}
+          {t("side_panel.guided_flow.step", { step: guidedFlowStepIndex + 1, total: guidedFlowTotalSteps })}
         </div>
         <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
           {guidedFlowStepTitle}
-          {guidedFlowStepOptional ? " (optional)" : ""}
+          {guidedFlowStepOptional ? t("side_panel.guided_flow.optional_suffix") : ""}
         </div>
         <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{guidedFlowStepDescription}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8, marginBottom: 8 }}>
@@ -1182,7 +1205,7 @@ export function SidePanel({
             disabled={!guidedFlowEnabled || guidedFlowStepIndex <= 0}
             style={{ cursor: !guidedFlowEnabled || guidedFlowStepIndex <= 0 ? "not-allowed" : "pointer" }}
           >
-            Prev step
+            {t("side_panel.guided_flow.prev_step")}
           </button>
           <button
             type="button"
@@ -1190,7 +1213,7 @@ export function SidePanel({
             disabled={!guidedFlowEnabled || guidedFlowStepIndex >= guidedFlowTotalSteps - 1}
             style={{ cursor: !guidedFlowEnabled || guidedFlowStepIndex >= guidedFlowTotalSteps - 1 ? "not-allowed" : "pointer" }}
           >
-            Next step
+            {t("side_panel.guided_flow.next_step")}
           </button>
         </div>
         <div style={{ display: "grid", gap: 8 }}>
@@ -1200,7 +1223,7 @@ export function SidePanel({
             disabled={!guidedFlowEnabled || guidedFlowTargetTotal === 0}
             style={{ cursor: !guidedFlowEnabled || guidedFlowTargetTotal === 0 ? "not-allowed" : "pointer" }}
           >
-            Next target
+            {t("side_panel.guided_flow.next_target")}
           </button>
           <button
             type="button"
@@ -1208,13 +1231,13 @@ export function SidePanel({
             disabled={!guidedFlowEnabled}
             style={{ cursor: guidedFlowEnabled ? "pointer" : "not-allowed" }}
           >
-            Open relevant editor
+            {t("side_panel.guided_flow.open_relevant_editor")}
           </button>
         </div>
         <div style={{ fontSize: 11, color: "#334155", marginTop: 8 }}>
           {guidedFlowTargetTotal === 0
-            ? "No targets"
-            : `Target ${Math.min(guidedFlowTargetIndex + 1, guidedFlowTargetTotal)} / ${guidedFlowTargetTotal}`}
+            ? t("side_panel.guided_flow.no_targets")
+            : t("side_panel.guided_flow.target", { target: Math.min(guidedFlowTargetIndex + 1, guidedFlowTargetTotal), total: guidedFlowTargetTotal })}
         </div>
         {guidedFlowSuggestedActions.length > 0 ? (
           <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
@@ -1225,9 +1248,9 @@ export function SidePanel({
         ) : null}
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Aggregated edge inspector</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.aggregated_edges.title")}</div>
         {aggregatedEdgeInspectorItems.length === 0 ? (
-          <div style={{ fontSize: 12, color: "#64748b" }}>No aggregated edges available.</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.aggregated_edges.none")}</div>
         ) : (
           <div style={{ display: "grid", gap: 8 }}>
             {aggregatedEdgeInspectorItems.map((item) => (
@@ -1240,7 +1263,7 @@ export function SidePanel({
                   }}
                   style={{ width: "100%" }}
                 >
-                  Promote to real edge
+                  {t("side_panel.aggregated_edges.promote")}
                 </button>
               </div>
             ))}
@@ -1248,7 +1271,7 @@ export function SidePanel({
         )}
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Layout</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.layout.title")}</div>
         <label
           style={{
             display: "flex",
@@ -1266,7 +1289,7 @@ export function SidePanel({
               onGridSnapToggle(event.target.checked);
             }}
           />
-          Grid Snap (10)
+          {t("side_panel.canvas.grid_snap", { size: 10 })}
         </label>
         <label
           style={{
@@ -1285,7 +1308,7 @@ export function SidePanel({
               onShowCanonicalOnlyEdgesChange(event.target.checked);
             }}
           />
-          Show canonical-only edges
+          {t("side_panel.canvas.show_canonical_only_edges")}
         </label>
         <div style={{ display: "grid", gap: 6, marginBottom: 8 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -1496,16 +1519,16 @@ export function SidePanel({
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <button type="button" onClick={onAlignLeft} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
-            Align Left
+            {t("side_panel.layout.align_left")}
           </button>
           <button type="button" onClick={onAlignRight} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
-            Align Right
+            {t("side_panel.layout.align_right")}
           </button>
           <button type="button" onClick={onAlignTop} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
-            Align Top
+            {t("side_panel.layout.align_top")}
           </button>
           <button type="button" onClick={onAlignBottom} disabled={!canAlign} style={{ cursor: canAlign ? "pointer" : "not-allowed" }}>
-            Align Bottom
+            {t("side_panel.layout.align_bottom")}
           </button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
@@ -1515,7 +1538,7 @@ export function SidePanel({
             disabled={!canDistribute}
             style={{ cursor: canDistribute ? "pointer" : "not-allowed" }}
           >
-            Distribute Horizontally
+            {t("side_panel.layout.distribute_horizontally")}
           </button>
           <button
             type="button"
@@ -1523,7 +1546,7 @@ export function SidePanel({
             disabled={!canDistribute}
             style={{ cursor: canDistribute ? "pointer" : "not-allowed" }}
           >
-            Distribute Vertically
+            {t("side_panel.layout.distribute_vertically")}
           </button>
         </div>
         <button
@@ -1532,7 +1555,7 @@ export function SidePanel({
           disabled={selectedCardCount < 2}
           style={{ cursor: selectedCardCount >= 2 ? "pointer" : "not-allowed" }}
         >
-          Create representative card
+          {t("side_panel.layout.create_representative_card")}
         </button>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
@@ -1556,7 +1579,7 @@ export function SidePanel({
             disabled={!canStartConnect || isPickingEdgeTarget}
             style={{ cursor: !canStartConnect || isPickingEdgeTarget ? "not-allowed" : "pointer" }}
           >
-            Connect
+            {t("side_panel.connect.connect")}
           </button>
           <button
             type="button"
@@ -1564,7 +1587,7 @@ export function SidePanel({
             disabled={!isPickingEdgeTarget}
             style={{ cursor: isPickingEdgeTarget ? "pointer" : "not-allowed" }}
           >
-            Cancel
+            {t("side_panel.connect.cancel")}
           </button>
         </div>
         {isPickingEdgeTarget ? (
@@ -1823,7 +1846,7 @@ export function SidePanel({
             disabled={!readingNavEnabled || readingTotal === 0 || readingStep <= 1}
             style={{ cursor: !readingNavEnabled || readingTotal === 0 || readingStep <= 1 ? "not-allowed" : "pointer" }}
           >
-            Prev
+            {t("side_panel.reading_path.prev")}
           </button>
           <button
             type="button"
@@ -1831,16 +1854,18 @@ export function SidePanel({
             disabled={!readingNavEnabled || readingTotal === 0 || readingStep >= readingTotal}
             style={{ cursor: !readingNavEnabled || readingTotal === 0 || readingStep >= readingTotal ? "not-allowed" : "pointer" }}
           >
-            Next
+            {t("side_panel.reading_path.next")}
           </button>
         </div>
         <div style={{ fontSize: 12, color: "#334155", marginBottom: 4 }}>
-          {readingTotal === 0 ? "No readable items" : `Step ${readingStep} / ${readingTotal}`}
+          {readingTotal === 0
+            ? t("side_panel.reading_path.no_items")
+            : t("side_panel.guided_flow.step", { step: readingStep, total: readingTotal })}
         </div>
         <div style={{ fontSize: 12, color: "#64748b" }}>{currentReadingLabel ?? "(none)"}</div>
       </section>
       <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Reading Order</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.reading_order.title")}</div>
         {canAddSelectedItemToReadingOrder ? (
           <button
             type="button"
@@ -1857,15 +1882,15 @@ export function SidePanel({
               cursor: "pointer",
             }}
           >
-            Add to Reading Order
+            {t("side_panel.reading_order.add")}
           </button>
         ) : (
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>
-            Select one island or one card to add to reading order.
+            {t("side_panel.reading_order.select_hint")}
           </div>
         )}
         {readingOrderItems.length === 0 ? (
-          <div style={{ fontSize: 12, color: "#64748b" }}>No reading order entries yet.</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.reading_order.empty")}</div>
         ) : (
           <div style={{ display: "grid", gap: 6 }}>
             {readingOrderItems.map((item, index) => (
@@ -1884,7 +1909,7 @@ export function SidePanel({
                     disabled={index === 0}
                     style={{ cursor: index === 0 ? "not-allowed" : "pointer" }}
                   >
-                    Up
+                    {t("side_panel.reading_order.up")}
                   </button>
                   <button
                     type="button"
@@ -1894,7 +1919,7 @@ export function SidePanel({
                     disabled={index === readingOrderItems.length - 1}
                     style={{ cursor: index === readingOrderItems.length - 1 ? "not-allowed" : "pointer" }}
                   >
-                    Down
+                    {t("side_panel.reading_order.down")}
                   </button>
                   <button
                     type="button"
@@ -1903,7 +1928,7 @@ export function SidePanel({
                     }}
                     style={{ cursor: "pointer" }}
                   >
-                    Remove
+                    {t("side_panel.reading_order.remove")}
                   </button>
                 </div>
               </div>
@@ -1912,19 +1937,19 @@ export function SidePanel({
         )}
       </section>
       <section style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Island visibility</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.island_visibility.title")}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button type="button" onClick={onCollapseAllIslands} disabled={!hasIslands} style={{ width: "100%" }}>
-            Collapse all
+            {t("side_panel.reading_path.collapse_all")}
           </button>
           <button type="button" onClick={onExpandAllIslands} disabled={!isAnyIslandCollapsed} style={{ width: "100%" }}>
-            Expand all
+            {t("side_panel.reading_path.expand_all")}
           </button>
         </div>
       </section>
       {selectedIsland ? (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Island Editor</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>{t("side_panel.island_editor.title")}</div>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
             ID
@@ -1976,10 +2001,10 @@ export function SidePanel({
           {summaryView || abstractMapView ? (
             <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
               <button type="button" onClick={onToggleSelectedIslandTemporaryReveal} style={{ width: "100%" }}>
-                {isSelectedIslandTemporarilyRevealed ? "Hide member cards" : "Reveal member cards temporarily"}
+                {isSelectedIslandTemporarilyRevealed ? t("side_panel.island_editor.hide_member_cards") : t("side_panel.island_editor.reveal_member_cards")}
               </button>
               <button type="button" onClick={onClearTemporaryReveal} style={{ width: "100%" }}>
-                Clear reveals
+                {t("side_panel.island_editor.clear_reveals")}
               </button>
             </div>
           ) : null}
@@ -2090,11 +2115,11 @@ export function SidePanel({
                 onTitleReviewedChange(event.target.checked);
               }}
             />
-            Reviewed
+            {t("side_panel.reviewed")}
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Summary
+            {t("side_panel.summary.label")}
           </label>
           <button
             type="button"
@@ -2102,21 +2127,21 @@ export function SidePanel({
             disabled={isSuggestingIslandSummary}
             style={{ width: "100%", marginBottom: 8, cursor: isSuggestingIslandSummary ? "not-allowed" : "pointer" }}
           >
-            {isSuggestingIslandSummary ? "Suggesting summary..." : "Suggest summary (AI)"}
+            {isSuggestingIslandSummary ? t("side_panel.summary.suggesting") : t("side_panel.summary.suggest_ai")}
           </button>
           {islandSummaryProposal ? (
             <div style={{ border: "1px solid #bfdbfe", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, marginBottom: 8, display: "grid", gap: 6 }}>
               <div style={{ fontSize: 11, color: "#1e3a8a" }}>
-                AI proposal <strong>{islandSummaryProposal.proposalId}</strong> ({islandSummaryProposal.status})
+                {t("side_panel.summary.ai_proposal")} <strong>{islandSummaryProposal.proposalId}</strong> ({islandSummaryProposal.status})
               </div>
-              <div style={{ fontSize: 12, color: "#1e293b" }}>Patch preview: {islandSummaryProposal.diff.after}</div>
+              <div style={{ fontSize: 12, color: "#1e293b" }}>{t("side_panel.summary.patch_preview")}: {islandSummaryProposal.diff.after}</div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button type="button" onClick={onAdoptIslandSummaryProposal} style={{ flex: 1 }}>Adopt</button>
-                <button type="button" onClick={onHoldIslandSummaryProposal} style={{ flex: 1 }}>Hold</button>
-                <button type="button" onClick={onRejectIslandSummaryProposal} style={{ flex: 1 }}>Reject</button>
+                <button type="button" onClick={onAdoptIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.adopt")}</button>
+                <button type="button" onClick={onHoldIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.hold")}</button>
+                <button type="button" onClick={onRejectIslandSummaryProposal} style={{ flex: 1 }}>{t("side_panel.summary.reject")}</button>
               </div>
               {proposalAuditTrail.length > 0 ? (
-                <div style={{ fontSize: 11, color: "#334155" }}>Audit: {proposalAuditTrail[proposalAuditTrail.length - 1]}</div>
+                <div style={{ fontSize: 11, color: "#334155" }}>{t("side_panel.summary.audit")}: {proposalAuditTrail[proposalAuditTrail.length - 1]}</div>
               ) : null}
             </div>
           ) : null}
@@ -2132,19 +2157,19 @@ export function SidePanel({
                 marginBottom: 8,
               }}
             >
-              AI draft (unreviewed). Please verify against cards.
+              {t("side_panel.summary.ai_draft_warning")}
             </div>
           ) : null}
           {summaryGroundingItems.length > 0 ? (
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding cards ({summaryGroundingItems.length})</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.summary.grounding_cards", { count: summaryGroundingItems.length })}</div>
                 <button type="button" onClick={onClearTemporaryReveal} style={{ fontSize: 11, padding: "2px 6px" }}>
-                  Clear reveal
+                  {t("side_panel.summary.clear_reveal")}
                 </button>
               </div>
               <button type="button" onClick={onShowAllSummaryGrounding} style={{ width: "100%", marginBottom: 8 }}>
-                Show all grounding on canvas
+                {t("side_panel.summary.show_all_grounding")}
               </button>
               <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
                 {summaryGroundingItems.map((item) => (
@@ -2196,7 +2221,7 @@ export function SidePanel({
           ) : null}
           {islandSummarySuggestionWarnings.length > 0 ? (
             <div style={{ fontSize: 12, color: "#92400e", marginBottom: 8 }}>
-              Warnings: {islandSummarySuggestionWarnings.join(" | ")}
+              {t("side_panel.summary.warnings")}: {islandSummarySuggestionWarnings.join(" | ")}
             </div>
           ) : null}
           <textarea
@@ -2207,7 +2232,7 @@ export function SidePanel({
             onBlur={() => {
               onSummaryTextChange(summaryDraft);
             }}
-            placeholder="Optional summary for collapsed view"
+            placeholder={t("side_panel.summary.placeholder")}
             rows={3}
             style={{
               width: "100%",
@@ -2221,11 +2246,11 @@ export function SidePanel({
           />
           <details style={{ marginBottom: 10 }}>
             <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-              Summary history ({summaryHistoryEntries.length})
+              {t("side_panel.summary.history_with_count", { count: summaryHistoryEntries.length })}
             </summary>
             <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
               {summaryHistoryEntries.length === 0 ? (
-                <div style={{ fontSize: 12, color: "#64748b" }}>No summary history yet.</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.summary.no_history")}</div>
               ) : (
                 summaryHistoryEntries.map((entry) => {
                   const isExpanded = expandedSummaryHistoryEntryId === entry.id;
@@ -2264,26 +2289,26 @@ export function SidePanel({
                           >
                             {entry.changeKind}
                           </span>
-                          <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || "(empty)"}</span>
+                          <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || t("side_panel.empty")}</span>
                         </div>
                         <div style={{ fontSize: 11, color: "#475569" }}>
-                          reviewed: {entry.toReviewed === null ? "(unchanged)" : entry.toReviewed ? "true" : "false"}
+                          {t("side_panel.summary.reviewed_state", { value: entry.toReviewed === null ? t("side_panel.unchanged") : entry.toReviewed ? t("side_panel.boolean.true") : t("side_panel.boolean.false") })}
                         </div>
                       </button>
                       {isExpanded ? (
                         <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                          <div style={{ fontSize: 11, color: "#475569" }}>From</div>
+                          <div style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.history.from")}</div>
                           <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
-                            {entry.fromText ?? "(empty)"}
+                            {entry.fromText ?? t("side_panel.empty")}
                           </pre>
-                          <div style={{ fontSize: 11, color: "#475569" }}>To</div>
+                          <div style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.history.to")}</div>
                           <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
-                            {entry.toText ?? "(empty)"}
+                            {entry.toText ?? t("side_panel.empty")}
                           </pre>
                           {entry.groundingIds && entry.groundingIds.length > 0 ? (
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                               <div style={{ fontSize: 11, color: "#475569" }}>
-                                Grounding snapshot: {entry.groundingIds.length}
+                                {t("side_panel.summary.grounding_snapshot", { count: entry.groundingIds.length })}
                               </div>
                               <button
                                 type="button"
@@ -2292,7 +2317,7 @@ export function SidePanel({
                                 }}
                                 style={{ fontSize: 11, padding: "2px 6px" }}
                               >
-                                Show grounding
+                                {t("side_panel.summary.show_grounding")}
                               </button>
                             </div>
                           ) : null}
@@ -2303,7 +2328,7 @@ export function SidePanel({
                             }}
                             style={{ width: "100%" }}
                           >
-                            Restore this version
+                            {t("side_panel.history.restore_version")}
                           </button>
                         </div>
                       ) : null}
@@ -2331,11 +2356,11 @@ export function SidePanel({
                 onSummaryReviewedChange(event.target.checked);
               }}
             />
-            Reviewed
+            {t("side_panel.reviewed")}
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Image URL
+            {t("side_panel.image_url")}
           </label>
           <input
             type="url"
@@ -2370,18 +2395,18 @@ export function SidePanel({
                 onImageReviewedChange(event.target.checked);
               }}
             />
-            Reviewed
+            {t("side_panel.reviewed")}
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Critique note
+            {t("side_panel.critique.note")}
           </label>
           <textarea
             value={selectedIsland.critique ?? ""}
             onChange={(event) => {
               onIslandCritiqueChange(event.target.value);
             }}
-            placeholder="Optional feedback about this island"
+            placeholder={t("side_panel.critique.note_placeholder")}
             rows={4}
             style={{
               width: "100%",
@@ -2393,7 +2418,7 @@ export function SidePanel({
               resize: "vertical",
             }}
           />
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Critique tags</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.critique.tags")}</div>
           <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
             {CRITIQUE_TAGS.map((tag) => (
               <label key={tag} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -2426,11 +2451,11 @@ export function SidePanel({
           >
             {selectedIsland.imageUrl ? (
               hasImagePreviewError ? (
-                <span style={{ color: "#b91c1c" }}>Unable to load image preview.</span>
+                <span style={{ color: "#b91c1c" }}>{t("side_panel.image.preview_error")}</span>
               ) : (
                 <img
                   src={selectedIsland.imageUrl}
-                  alt="Island preview"
+                  alt={t("side_panel.image.preview_alt")}
                   onError={() => {
                     setHasImagePreviewError(true);
                   }}
@@ -2438,12 +2463,12 @@ export function SidePanel({
                 />
               )
             ) : (
-              "No image"
+              t("side_panel.image.no_image")
             )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Selection: {selectedCardLabel}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.selection", { value: selectedCardLabel })}</div>
             <button
               type="button"
               onClick={onFocusIsland}
@@ -2457,7 +2482,7 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Focus this island
+              {t("side_panel.island_editor.focus")}
             </button>
             {selectedIsland.shapeStale === true ? (
               <div
@@ -2471,11 +2496,11 @@ export function SidePanel({
                   fontWeight: 600,
                 }}
               >
-                Shape is stale
+                {t("side_panel.island_editor.shape_stale")}
               </div>
             ) : null}
             <div style={{ display: "grid", gap: 6 }}>
-              <label style={{ fontSize: 12, color: "#475569" }}>Shape</label>
+              <label style={{ fontSize: 12, color: "#475569" }}>{t("side_panel.island_editor.shape")}</label>
               <select
                 value={selectedIsland.shape?.kind === "polygon" ? "polygon" : "rect"}
                 disabled={isReadOnly}
@@ -2491,8 +2516,8 @@ export function SidePanel({
                   color: "#0f172a",
                 }}
               >
-                <option value="rect">Rect</option>
-                <option value="polygon">Polygon</option>
+                <option value="rect">{t("side_panel.island_editor.shape_rect")}</option>
+                <option value="polygon">{t("side_panel.island_editor.shape_polygon")}</option>
               </select>
             </div>
             {selectedIsland.shape?.kind === "polygon" ? (
@@ -2506,10 +2531,10 @@ export function SidePanel({
                       onPolygonVertexEditEnabledChange(event.target.checked);
                     }}
                   />
-                  Edit island boundary
+                  {t("side_panel.island_editor.edit_boundary")}
                 </label>
                 <div style={{ fontSize: 12, color: "#475569" }}>
-                  Alt+Click edge: add vertex / Alt+Click vertex: remove
+                  {t("side_panel.island_editor.vertex_help")}
                 </div>
               </div>
             ) : null}
@@ -2526,7 +2551,7 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              {selectedIsland.shape?.generatedFrom ? "Reset to generated polygon" : "Regenerate polygon"}
+              {selectedIsland.shape?.generatedFrom ? t("side_panel.island_editor.reset_polygon") : t("side_panel.island_editor.regenerate_polygon")}
             </button>
             <button
               type="button"
@@ -2542,7 +2567,7 @@ export function SidePanel({
                 cursor: hasCardSelection ? "pointer" : "not-allowed",
               }}
             >
-              Add selected cards to island ({selectedCardCount})
+              {t("side_panel.island_editor.add_selected_cards", { count: selectedCardCount })}
             </button>
             <button
               type="button"
@@ -2558,7 +2583,7 @@ export function SidePanel({
                 cursor: hasCardSelection ? "pointer" : "not-allowed",
               }}
             >
-              Remove selected cards from island ({selectedCardCount})
+              {t("side_panel.island_editor.remove_selected_cards", { count: selectedCardCount })}
             </button>
             <button
               type="button"
@@ -2573,28 +2598,33 @@ export function SidePanel({
                 cursor: "pointer",
               }}
             >
-              Delete island
+              {t("side_panel.island_editor.delete")}
             </button>
           </div>
         </>
       ) : selectedAggregatedEdge ? (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Edge Inspector</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>{t("side_panel.edge_inspector.title")}</div>
           <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>
-            Endpoint: {selectedAggregatedEdge.fromLabel ?? selectedAggregatedEdge.fromId} ({selectedAggregatedEdge.fromKind}) → {selectedAggregatedEdge.toLabel ?? selectedAggregatedEdge.toId} ({selectedAggregatedEdge.toKind})
+            {t("side_panel.edge_inspector.endpoint", {
+              from: selectedAggregatedEdge.fromLabel ?? selectedAggregatedEdge.fromId,
+              fromKind: selectedAggregatedEdge.fromKind,
+              to: selectedAggregatedEdge.toLabel ?? selectedAggregatedEdge.toId,
+              toKind: selectedAggregatedEdge.toKind,
+            })}
           </div>
-          <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>Type: {selectedAggregatedEdge.type}</div>
+          <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>{t("side_panel.edge_inspector.type", { type: selectedAggregatedEdge.type })}</div>
           {selectedAggregatedEdge.isDerivedIslandEdge ? (
             <div style={{ fontSize: 12, color: "#334155", marginBottom: 8 }}>
-              Count: {selectedAggregatedEdge.aggregateCount ?? selectedAggregatedEdge.sources.length}
+              {t("side_panel.edge_inspector.count", { count: selectedAggregatedEdge.aggregateCount ?? selectedAggregatedEdge.sources.length })}
             </div>
           ) : null}
           <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-            Contributing source edges (
-            {selectedAggregatedEdge.isDerivedIslandEdge
-              ? selectedAggregatedEdge.contributingEdgeIds?.length ?? 0
-              : selectedAggregatedEdge.sources.length}
-            )
+            {t("side_panel.edge_inspector.contributing_edges", {
+              count: selectedAggregatedEdge.isDerivedIslandEdge
+                ? selectedAggregatedEdge.contributingEdgeIds?.length ?? 0
+                : selectedAggregatedEdge.sources.length,
+            })}
           </div>
           <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
             {(selectedAggregatedEdge.isDerivedIslandEdge
@@ -2616,12 +2646,12 @@ export function SidePanel({
             {(selectedAggregatedEdge.isDerivedIslandEdge
               ? (selectedAggregatedEdge.contributingEdgeIds?.length ?? 0)
               : selectedAggregatedEdge.sources.length) > 20 ? (
-              <div style={{ fontSize: 12, color: "#64748b" }}>+more</div>
+              <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.edge_inspector.more")}</div>
             ) : null}
           </div>
           {selectedAggregatedEdge.isDerivedIslandEdge && (selectedAggregatedEdge.contributingCardIds?.length ?? 0) > 0 ? (
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Contributing cards</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.edge_inspector.contributing_cards")}</div>
               <div style={{ display: "grid", gap: 4 }}>
                 {selectedAggregatedEdge.contributingCardIds?.map((cardId) => (
                   <button
@@ -2652,11 +2682,11 @@ export function SidePanel({
               fontWeight: 600,
             }}
           >
-            Reveal involved source cards
+            {t("side_panel.edge_inspector.reveal_sources")}
           </button>
           {selectedIslandRelationExplanation ? (
             <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>Explanation template (draft)</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: "#0f172a" }}>{t("side_panel.edge_inspector.explanation_template")}</div>
               <pre
                 style={{
                   margin: 0,
@@ -2670,30 +2700,30 @@ export function SidePanel({
                   color: "#0f172a",
                 }}
               >
-                {`${selectedIslandRelationExplanation.title}\n\n${selectedIslandRelationExplanation.body}\n\nGrounding edge IDs: ${selectedIslandRelationExplanation.groundingEdgeIds.join(", ") || "(none)"}\nGrounding card IDs: ${selectedIslandRelationExplanation.groundingCardIds.join(", ") || "(none)"}`}
+                {`${selectedIslandRelationExplanation.title}\n\n${selectedIslandRelationExplanation.body}\n\n${t("side_panel.edge_inspector.grounding_edge_ids")}: ${selectedIslandRelationExplanation.groundingEdgeIds.join(", ") || t("side_panel.none")}\n${t("side_panel.edge_inspector.grounding_card_ids")}: ${selectedIslandRelationExplanation.groundingCardIds.join(", ") || t("side_panel.none")}`}
               </pre>
               <button type="button" onClick={handleCopyExplanationClick} style={{ marginTop: 8, fontSize: 12 }}>
-                Copy Markdown explanation
+                {t("side_panel.edge_inspector.copy_explanation")}
               </button>
               {copyExplanationFeedback === "copied" ? (
-                <div style={{ fontSize: 12, color: "#166534", marginTop: 6 }}>Copied.</div>
+                <div style={{ fontSize: 12, color: "#166534", marginTop: 6 }}>{t("side_panel.copy.copied")}</div>
               ) : null}
               {copyExplanationFeedback === "failed" ? (
-                <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>Copy failed.</div>
+                <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>{t("side_panel.copy.failed")}</div>
               ) : null}
             </div>
           ) : null}
           <div style={{ marginTop: 12, borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
             <button type="button" onClick={onGenerateRelationSummary} disabled={isGeneratingRelationSummary}>
-              {isGeneratingRelationSummary ? "Generating..." : "Generate AI relation summary"}
+              {isGeneratingRelationSummary ? t("side_panel.relation_summary.generating") : t("side_panel.relation_summary.generate_ai")}
             </button>
             <div style={{ marginTop: 8, fontSize: 12, color: "#7f1d1d" }}>
-              Draft (unreviewed). Verify against grounding cards.
+              {t("side_panel.relation_summary.draft_warning")}
             </div>
             {selectedRelationSummary ? (
               <>
                 <textarea
-                  value={hideUnreviewedRelationSummary ? "UNREVIEWED hidden" : relationSummaryDraft}
+                  value={hideUnreviewedRelationSummary ? t("side_panel.relation_summary.unreviewed_hidden") : relationSummaryDraft}
                   onChange={(event) => {
                     if (hideUnreviewedRelationSummary) {
                       return;
@@ -2716,7 +2746,7 @@ export function SidePanel({
                   }}
                 />
                 <div style={{ marginTop: 4, fontSize: 11, color: "#64748b" }}>
-                  {hideUnreviewedRelationSummary ? "Safe mode: UNREVIEWED hidden" : `${relationSummaryDraft.length}/${RELATION_SUMMARY_TEXT_MAX_LENGTH}`}
+                  {hideUnreviewedRelationSummary ? t("side_panel.relation_summary.safe_mode_hidden") : `${relationSummaryDraft.length}/${RELATION_SUMMARY_TEXT_MAX_LENGTH}`}
                 </div>
                 <label style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
                   <input
@@ -2726,13 +2756,13 @@ export function SidePanel({
                       onRelationSummaryReviewedChange(event.target.checked);
                     }}
                   />
-                  Reviewed
+                  {t("side_panel.reviewed")}
                 </label>
                 {relationSummaryFeedback ? <div style={{ marginTop: 6, fontSize: 12, color: "#92400e" }}>{relationSummaryFeedback}</div> : null}
                 {selectedRelationSummary.warnings && selectedRelationSummary.warnings.length > 0 ? (
                   <div style={{ marginTop: 8, border: "1px solid #fca5a5", backgroundColor: "#fef2f2", borderRadius: 6, padding: 8 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "#991b1b", marginBottom: 6 }}>
-                      ⚠️ Warnings ({selectedRelationSummary.warnings.length})
+                      {t("side_panel.summary.warnings_with_count", { count: selectedRelationSummary.warnings.length })}
                     </div>
                     <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#7f1d1d" }}>
                       {selectedRelationSummary.warnings.map((warning, index) => (
@@ -2741,7 +2771,7 @@ export function SidePanel({
                     </ul>
                   </div>
                 ) : null}
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding cards</div>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.summary.grounding_cards_label")}</div>
                 <div style={{ display: "grid", gap: 4, marginTop: 4 }}>
                   {selectedRelationSummary.groundingCardIds.map((cardId) => (
                     <button key={cardId} type="button" style={{ textAlign: "left", fontSize: 12 }} onClick={() => onRelationSummaryGroundingInspect(cardId)}>
@@ -2749,17 +2779,17 @@ export function SidePanel({
                     </button>
                   ))}
                 </div>
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>Grounding edges</div>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.relation_summary.grounding_edges")}</div>
                 <div style={{ marginTop: 4, fontSize: 12, color: "#334155" }}>
-                  {selectedRelationSummary.groundingEdgeIds.join(", ") || "(none)"}
+                  {selectedRelationSummary.groundingEdgeIds.join(", ") || t("side_panel.none")}
                 </div>
                 <details style={{ marginTop: 10 }}>
                   <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-                    History ({relationSummaryHistoryEntries.length})
+                    {t("side_panel.history.with_count", { count: relationSummaryHistoryEntries.length })}
                   </summary>
                   <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
                     {relationSummaryHistoryEntries.length === 0 ? (
-                      <div style={{ fontSize: 12, color: "#64748b" }}>No relation summary history yet.</div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>{t("side_panel.relation_summary.no_history")}</div>
                     ) : (
                       relationSummaryHistoryEntries.map((entry) => {
                         const isExpanded = expandedRelationSummaryHistoryEntryId === entry.id;
@@ -2798,37 +2828,40 @@ export function SidePanel({
                                 >
                                   {entry.changeKind}
                                 </span>
-                                <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || "(empty)"}</span>
+                                <span style={{ fontSize: 12, color: "#0f172a" }}>{preview || t("side_panel.empty")}</span>
                               </div>
                             </button>
                             {isExpanded ? (
                               <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                                <div style={{ fontSize: 11, color: "#475569" }}>From</div>
+                                <div style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.history.from")}</div>
                                 <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
-                                  {entry.fromText ?? "(empty)"}
+                                  {entry.fromText ?? t("side_panel.empty")}
                                 </pre>
-                                <div style={{ fontSize: 11, color: "#475569" }}>To</div>
+                                <div style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.history.to")}</div>
                                 <pre style={{ margin: 0, fontSize: 12, backgroundColor: "#f8fafc", borderRadius: 6, padding: 8, whiteSpace: "pre-wrap" }}>
-                                  {entry.toText ?? "(empty)"}
+                                  {entry.toText ?? t("side_panel.empty")}
                                 </pre>
                                 <div style={{ fontSize: 11, color: "#475569" }}>
-                                  reviewed: {entry.fromReviewed === null ? "-" : entry.fromReviewed ? "true" : "false"} → {entry.toReviewed === null ? "-" : entry.toReviewed ? "true" : "false"}
+                                  {t("side_panel.summary.reviewed_transition", {
+                                    from: entry.fromReviewed === null ? "-" : entry.fromReviewed ? t("side_panel.boolean.true") : t("side_panel.boolean.false"),
+                                    to: entry.toReviewed === null ? "-" : entry.toReviewed ? t("side_panel.boolean.true") : t("side_panel.boolean.false"),
+                                  })}
                                 </div>
                                 <div style={{ fontSize: 11, color: "#475569" }}>
-                                  warnings snapshot: {(entry.warningsSnapshot ?? []).join(" | ") || "(none)"}
+                                  {t("side_panel.summary.warnings_snapshot", { value: (entry.warningsSnapshot ?? []).join(" | ") || t("side_panel.none") })}
                                 </div>
                                 <div style={{ fontSize: 11, color: "#475569" }}>
-                                  grounding cards snapshot: {(entry.groundingCardIdsSnapshot ?? []).join(", ") || "(none)"}
+                                  {t("side_panel.summary.grounding_cards_snapshot", { value: (entry.groundingCardIdsSnapshot ?? []).join(", ") || t("side_panel.none") })}
                                 </div>
                                 <div style={{ fontSize: 11, color: "#475569" }}>
-                                  grounding edges snapshot: {(entry.groundingEdgeIdsSnapshot ?? []).join(", ") || "(none)"}
+                                  {t("side_panel.summary.grounding_edges_snapshot", { value: (entry.groundingEdgeIdsSnapshot ?? []).join(", ") || t("side_panel.none") })}
                                 </div>
-                                {entry.note ? <div style={{ fontSize: 11, color: "#475569" }}>note: {entry.note}</div> : null}
+                                {entry.note ? <div style={{ fontSize: 11, color: "#475569" }}>{t("side_panel.summary.note", { value: entry.note })}</div> : null}
                                 <button
                                   type="button"
                                   onClick={() => {
                                     if (!entry.toText || entry.toText.trim().length === 0) {
-                                      setRelationSummaryFeedback("Cannot restore empty text versions.");
+                                      setRelationSummaryFeedback(t("side_panel.summary.cannot_restore_empty"));
                                       return;
                                     }
 
@@ -2837,7 +2870,7 @@ export function SidePanel({
                                   }}
                                   style={{ width: "100%" }}
                                 >
-                                  Restore this version
+                                  {t("side_panel.history.restore_version")}
                                 </button>
                               </div>
                             ) : null}
@@ -2854,10 +2887,10 @@ export function SidePanel({
         </>
       ) : hasCardSelection ? (
         <>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>Card Inspector</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>{t("side_panel.card_inspector.title")}</div>
           {!selectedCard ? (
             <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
-              {selectedCardLabel}. Select a single card to edit critique notes.
+              {t("side_panel.card_inspector.select_single", { label: selectedCardLabel })}
             </div>
           ) : (
             <>
@@ -2867,7 +2900,7 @@ export function SidePanel({
                 onClick={onFocusCard}
                 style={{ width: "100%", marginBottom: 10, fontWeight: 600 }}
               >
-                Focus this card
+                {t("side_panel.card_inspector.focus")}
               </button>
               {selectedCard.canonicalId ? (
                 <>
@@ -2895,7 +2928,7 @@ export function SidePanel({
                 <div style={{ marginBottom: 12 }}>
                   <details>
                     <summary style={{ fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}>
-                      Origins ({sourceCardsForSelectedCanonical.length + missingSourceCardIdsForSelectedCanonical.length})
+                      {t("side_panel.card_inspector.origins", { count: sourceCardsForSelectedCanonical.length + missingSourceCardIdsForSelectedCanonical.length })}
                     </summary>
                     <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
                       {sourceCardsForSelectedCanonical.map((sourceCard) => (
@@ -2933,7 +2966,7 @@ export function SidePanel({
                             fontSize: 12,
                           }}
                         >
-                          {sourceCardId} (deleted source)
+                          {t("side_panel.card_inspector.deleted_source", { id: sourceCardId })}
                         </div>
                       ))}
                     </div>
@@ -2955,12 +2988,12 @@ export function SidePanel({
                         onShowAllSourcesChange(event.target.checked);
                       }}
                     />
-                    Show all sources
+                    {t("side_panel.card_inspector.show_all_sources")}
                   </label>
                 </div>
               ) : null}
               <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Claim type</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.claim_type.label")}</span>
                 <span
                   style={{
                     fontSize: 10,
@@ -3012,12 +3045,12 @@ export function SidePanel({
                     onCardTextReviewedChange(event.target.checked);
                   }}
                 />
-                Card text reviewed
+                {t("side_panel.card_inspector.text_reviewed")}
               </label>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence</div>
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>Outgoing</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence.title")}</div>
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.outgoing")}</div>
                 {outgoingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
                   <div style={{ display: "grid", gap: 4, marginBottom: 8 }}>
                     {outgoingEvidenceLinks.map((link) => {
@@ -3026,20 +3059,20 @@ export function SidePanel({
                         <div key={link.id} style={{ fontSize: 11, border: "1px solid #e2e8f0", borderRadius: 6, padding: 6 }}>
                           <div>{link.type} → {target ? target.text.slice(0, 60) : link.toCardId}</div>
                           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>Focus</button>
-                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>Remove</button>
+                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onFocusCardById(link.toCardId); }}>{t("side_panel.focus")}</button>
+                            <button type="button" style={{ fontSize: 10 }} onClick={() => { onRemoveEvidenceLink(link.id); }}>{t("side_panel.remove")}</button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>Incoming (read-only)</div>
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{t("side_panel.evidence.incoming_readonly")}</div>
                 {incomingEvidenceLinks.length === 0 ? <div style={{ fontSize: 11, color: "#94a3b8" }}>(none)</div> : (
                   <div style={{ display: "grid", gap: 4 }}>
                     {incomingEvidenceLinks.map((link) => {
                       const source = document?.cards.find((card) => card.id === link.fromCardId);
-                      return <div key={link.id} style={{ fontSize: 11 }}>{source ? source.text.slice(0, 60) : link.fromCardId} {link.type} this</div>;
+                      return <div key={link.id} style={{ fontSize: 11 }}>{t("side_panel.evidence.incoming_item", { source: source ? source.text.slice(0, 60) : link.fromCardId, type: link.type })}</div>;
                     })}
                   </div>
                 )}
@@ -3049,17 +3082,17 @@ export function SidePanel({
                   setEvidenceTargetQuery("");
                   setPendingEvidenceTargetId("");
                 }}>
-                  Add evidence link…
+                  {t("side_panel.evidence.add_link")}
                 </button>
                 {isEvidenceModalOpen ? (
                   <div style={{ marginTop: 8, border: "1px solid #cbd5e1", borderRadius: 6, padding: 8, display: "grid", gap: 6, backgroundColor: "#f8fafc" }}>
                     <select value={pendingEvidenceType} onChange={(event) => { setPendingEvidenceType(event.target.value as EvidenceLink["type"]); }}>
-                      <option value="supports">supports</option>
-                      <option value="contradicts">contradicts</option>
+                      <option value="supports">{t("side_panel.evidence.supports")}</option>
+                      <option value="contradicts">{t("side_panel.evidence.contradicts")}</option>
                     </select>
-                    <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder="Search target card" />
+                    <input value={evidenceTargetQuery} onChange={(event) => { setEvidenceTargetQuery(event.target.value); }} placeholder={t("side_panel.evidence.search_target")} />
                     <select value={pendingEvidenceTargetId} onChange={(event) => { setPendingEvidenceTargetId(event.target.value); }}>
-                      <option value="">Select target</option>
+                      <option value="">{t("side_panel.evidence.select_target")}</option>
                       {availableEvidenceTargets.map((card) => (
                         <option key={card.id} value={card.id}>{card.text.slice(0, 80)}</option>
                       ))}
@@ -3069,7 +3102,7 @@ export function SidePanel({
                         if (!pendingEvidenceTargetId) return;
                         onAddEvidenceLink({ toCardId: pendingEvidenceTargetId, type: pendingEvidenceType });
                         setIsEvidenceModalOpen(false);
-                      }}>Confirm</button>
+                      }}>{t("side_panel.evidence.confirm")}</button>
                       <button type="button" onClick={() => { setIsEvidenceModalOpen(false); }}>{t("side_panel.connect.cancel")}</button>
                     </div>
                   </div>
@@ -3077,19 +3110,19 @@ export function SidePanel({
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence trace</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.trace.evidence_trace")}</div>
                 <div style={{ display: "grid", gap: 6 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Evidence trace</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("side_panel.trace.evidence_trace")}</div>
                   <button type="button" disabled={!selectedCard || isTraceRunning} onClick={() => { void handleCopyEvidenceTrace(); }}>
-                    {isTraceRunning ? "Working..." : "Copy evidence trace (MD)"}
+                    {isTraceRunning ? t("side_panel.trace.working") : t("side_panel.trace.copy_evidence")}
                   </button>
                   <button type="button" disabled={!selectedCard || isTraceRunning} onClick={handleDownloadEvidenceTrace}>
-                    Download evidence_trace.md
+                    {t("side_panel.trace.download_evidence")}
                   </button>
 
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>Contradiction trace</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>{t("side_panel.trace.contradiction_trace")}</div>
                   <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                    Depth
+                    {t("side_panel.trace.depth")}
                     <select
                       value={contradictionTraceDepthLimit}
                       onChange={(event) => {
@@ -3111,38 +3144,38 @@ export function SidePanel({
                         setContradictionTraceIncludeSupports(event.target.checked);
                       }}
                     />
-                    Include fact supports
+                    {t("side_panel.trace.include_fact_supports")}
                   </label>
                   <button type="button" disabled={!selectedCard || isTraceRunning} onClick={() => { void handleCopyContradictionTrace(); }}>
-                    {isTraceRunning ? "Working..." : "Copy contradiction trace (MD)"}
+                    {isTraceRunning ? t("side_panel.trace.working") : t("side_panel.trace.copy_contradiction")}
                   </button>
                   <button type="button" disabled={!selectedCard || isTraceRunning} onClick={handleDownloadContradictionTrace}>
-                    Download contradiction_trace.md
+                    {t("side_panel.trace.download_contradiction")}
                   </button>
-                  {isTraceRunning ? <button type="button" onClick={() => traceAbortRef.current?.abort()}>Cancel trace</button> : null}
+                  {isTraceRunning ? <button type="button" onClick={() => traceAbortRef.current?.abort()}>{t("side_panel.trace.cancel_trace")}</button> : null}
                   {traceProgressMessage ? <div style={{ fontSize: 11, color: "#334155" }}>{traceProgressMessage}</div> : null}
 
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>Trace Analytics</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginTop: 8 }}>{t("side_panel.trace.analytics")}</div>
                   <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                    Mode
+                    {t("side_panel.trace.mode")}
                     <select value={traceAnalyticsMode} onChange={(event) => setTraceAnalyticsMode(event.target.value as "evidence" | "contradiction" | "both") }>
-                      <option value="both">both</option>
-                      <option value="evidence">evidence</option>
-                      <option value="contradiction">contradiction</option>
+                      <option value="both">{t("side_panel.trace.mode_both")}</option>
+                      <option value="evidence">{t("side_panel.trace.mode_evidence")}</option>
+                      <option value="contradiction">{t("side_panel.trace.mode_contradiction")}</option>
                     </select>
                   </label>
-                  {isAnalyticsRunning ? <div style={{ fontSize: 11, color: "#64748b" }}>Computing analytics…</div> : null}
-                  {isAnalyticsRunning ? <button type="button" onClick={() => analyticsAbortRef.current?.abort()}>Cancel analytics</button> : null}
+                  {isAnalyticsRunning ? <div style={{ fontSize: 11, color: "#64748b" }}>{t("side_panel.trace.computing_analytics")}</div> : null}
+                  {isAnalyticsRunning ? <button type="button" onClick={() => analyticsAbortRef.current?.abort()}>{t("side_panel.trace.cancel_analytics")}</button> : null}
                   {traceAnalytics ? (
                     <div style={{ fontSize: 11, color: "#334155", display: "grid", gap: 4 }}>
-                      <div>Visited cards: {traceAnalytics.visitedCardIds.length} / Visited links: {traceAnalytics.visitedLinkIds.length}</div>
-                      <div>Evidence links (doc): {traceAnalytics.evidenceLinkCount}</div>
-                      <div>Isolated nodes (doc): {traceAnalytics.isolatedNodeCount}</div>
-                      <div>Source density (doc): {traceAnalytics.sourceDensity.toFixed(4)}</div>
-                      <div>Relation counts: {Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || "(none)"}</div>
-                      <div>Depth histogram: {Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || "(none)"}</div>
-                      <div>Top hubs: {traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || "(none)"}</div>
-                      <div>Cycle count: {traceAnalytics.cycles ? traceAnalytics.cycles.count : "skipped"}</div>
+                      <div>{t("side_panel.trace.visited", { cards: traceAnalytics.visitedCardIds.length, links: traceAnalytics.visitedLinkIds.length })}</div>
+                      <div>{t("side_panel.trace.evidence_links_doc", { count: traceAnalytics.evidenceLinkCount })}</div>
+                      <div>{t("side_panel.trace.isolated_nodes_doc", { count: traceAnalytics.isolatedNodeCount })}</div>
+                      <div>{t("side_panel.trace.source_density_doc", { value: traceAnalytics.sourceDensity.toFixed(4) })}</div>
+                      <div>{t("side_panel.trace.relation_counts", { value: Object.entries(traceAnalytics.byRelationType).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => `${type}:${count}`).join(", ") || t("side_panel.none") })}</div>
+                      <div>{t("side_panel.trace.depth_histogram", { value: Object.entries(traceAnalytics.depthHistogram).sort((a, b) => Number(a[0]) - Number(b[0])).map(([depth, count]) => `d${depth}:${count}`).join(", ") || t("side_panel.none") })}</div>
+                      <div>{t("side_panel.trace.top_hubs", { value: traceAnalytics.topHubs.map((hub) => `${hub.cardId}(${hub.degree})`).join(", ") || t("side_panel.none") })}</div>
+                      <div>{t("side_panel.trace.cycle_count", { value: traceAnalytics.cycles ? traceAnalytics.cycles.count : t("side_panel.trace.skipped") })}</div>
                     </div>
                   ) : null}
                   <button type="button" disabled={!traceAnalyticsMd || isAnalyticsRunning} onClick={handleDownloadTraceAnalytics}>
@@ -3150,15 +3183,15 @@ export function SidePanel({
                   </button>
 
                   {selectedCardContradictionsCount === 0 ? (
-                    <div style={{ fontSize: 11, color: "#94a3b8" }}>No contradiction links found.</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("side_panel.trace.no_contradictions")}</div>
                   ) : null}
                 </div>
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Evidence overlay</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.evidence_overlay.title")}</div>
                 <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>
-                  Overlay: {evidenceOverlayEnabled ? "on" : "off"} / scope: {evidenceOverlayScope}
+                  {t("side_panel.evidence_overlay.status", { state: evidenceOverlayEnabled ? t("side_panel.on") : t("side_panel.off"), scope: evidenceOverlayScope })}
                 </div>
                 <button
                   type="button"
@@ -3167,19 +3200,19 @@ export function SidePanel({
                     onEnableEvidenceOverlaySelectionExplore();
                   }}
                 >
-                  Explore from this card
+                  {t("side_panel.evidence_overlay.explore_from_card")}
                 </button>
               </div>
 
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                Critique note
+                {t("side_panel.critique.note")}
               </label>
               <textarea
                 value={selectedCard.critique ?? ""}
                 onChange={(event) => {
                   onCardCritiqueChange(event.target.value);
                 }}
-                placeholder="Optional feedback about this card"
+                placeholder={t("side_panel.critique.card_note_placeholder")}
                 rows={4}
                 style={{
                   width: "100%",
@@ -3191,7 +3224,7 @@ export function SidePanel({
                   resize: "vertical",
                 }}
               />
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Critique tags</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>{t("side_panel.critique.tags")}</div>
               <div style={{ display: "grid", gap: 6, marginBottom: 12 }}>
                 {CRITIQUE_TAGS.map((tag) => (
                   <label key={tag} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
@@ -3211,7 +3244,7 @@ export function SidePanel({
         </>
       ) : (
         <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>
-          Select an island to edit it, or select one or more cards to inspect card details.
+          {t("side_panel.empty_selection_hint")}
         </div>
       )}
     </aside>

@@ -179,5 +179,5 @@ API key を有効にしている場合は、ブラウザ側の API 呼び出し�
 
 - [configuration.md](configuration.md)
 - [operations.md](operations.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)
 - [security.md](security.md)
