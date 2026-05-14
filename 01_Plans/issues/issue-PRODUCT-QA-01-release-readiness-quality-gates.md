@@ -65,12 +65,47 @@
 - [ ] 環境変数、SafeMode、共有、取り込み、公開範囲の説明が設計文書と矛盾しない。
 - [ ] 既存データとレガシー導線の互換性確認が含まれる。
 
+### 5.1 初期品質ゲート案
+
+| Gate | 判定対象 | 必須/推奨 | Go条件 | No-Go条件 | 主な証跡 |
+| --- | --- | --- | --- | --- | --- |
+| G0 計画整合 | issue / ADR / 依存関係 | 必須 | 製品化対象が個別issueへ分かれ、ADR判断と実装作業が混在していない | 判断が必要な設計変更をissue本文だけで確定している | `validate_active_issue_memos.py`, `triage_actionable_plans.py` |
+| G1 安全既定 | SafeMode / 取り込み / 共有 | 必須 | SafeMode既定ON、共有前確認、import sanitize が画面・文書・テストで一致 | SafeMode OFFや未レビュー情報共有を既定導線にしている | SharePanel test, acceptance screenshot |
+| G2 主要操作 | 初回導線 / 選択 / 保存 / 表示 / 共有 | 必須 | マウスとキーボードで主要操作へ到達し、結果と戻り方が分かる | 選択対象の詳細が見えない、パネルを閉じられない、主要操作が見切れる | Playwright操作ログ, screenshots |
+| G3 日本語UI | i18n / 表記 / 用語 | 必須 | 一般利用者向けUIに未翻訳・不自然な主要ラベルが残らない | 主要ボタンや警告に英語、内部略語、実装都合の語が残る | i18n tests, `rg` |
+| G4 画面耐性 | 小画面 / 大きな文書 / 低速環境 | 必須 | 代表viewportで見切れず、待機・失敗・復帰導線が分かる | 共有前確認やSafeMode状態が見切れる | viewport matrix, diagnostics check |
+| G5 公開文書 | public index / screenshots / link | 必須 | 公開文書が使い方に集中し、内部管理情報を含まない | 公開本文にプロジェクト管理・内部issue/ADR導線が混入する | public-doc forbidden-term search |
+| G6 診断とサポート | エラー表示 / 診断 / SUPPORT | 推奨 | 保存失敗、API未接続、取り込み失敗時に次アクションが分かる | 利用者が機微情報を含む診断情報を共有しやすい | diagnostics docs, representative failure notes |
+| G7 ビルドと回帰 | frontend / backend / docs | 必須 | typecheck、主要unit、E2Eまたは代替証跡、文書整形が通る | 既知の必須テスト失敗を未分類のまま残す | CI log, local command log |
+
+### 5.2 Go/No-Go記録テンプレート
+
+```md
+## Productization Gate Record
+
+- Candidate: <PR / release / commit>
+- Date (JST): YYYY-MM-DD
+- Reviewer:
+- Scope:
+- Gates:
+  - G0 計画整合: Go / No-Go / N/A
+  - G1 安全既定: Go / No-Go / N/A
+  - G2 主要操作: Go / No-Go / N/A
+  - G3 日本語UI: Go / No-Go / N/A
+  - G4 画面耐性: Go / No-Go / N/A
+  - G5 公開文書: Go / No-Go / N/A
+  - G6 診断とサポート: Go / No-Go / N/A
+  - G7 ビルドと回帰: Go / No-Go / N/A
+- Required follow-up issue:
+- Decision: Go / Conditional Go / No-Go
+```
+
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 製品化ゲートのカテゴリと必須/推奨を定義する。
-- [ ] T2 既存issue/ADRをゲートに紐付ける。
-- [ ] T3 自動テスト、手動Playwright確認、文書チェックの実行手順を定義する。
-- [ ] T4 Go/No-Go判定の記録形式を定義する。
+- [x] T1 製品化ゲートのカテゴリと必須/推奨を定義する。
+- [x] T2 既存issue/ADRをゲートに紐付ける。
+- [x] T3 自動テスト、手動Playwright確認、文書チェックの実行手順を定義する。
+- [x] T4 Go/No-Go判定の記録形式を定義する。
 - [ ] T5 リリース前に不足した観点を個別issueへ戻す運用を決める。
 
 ## 7) 検証計画 / Validation plan
