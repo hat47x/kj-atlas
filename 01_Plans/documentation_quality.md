@@ -187,7 +187,7 @@ Gist リリース前に、少なくとも次を記録する。
 
 ## 12. DOC-OPS-05 Stream I 運用固定（non-conflict docs）
 
-Stream I では対象Issueで明示された文書のみを編集対象とする。既定では Stream H 専有（operations / security）は編集しない。`e2e_testing.md` は対象Issueで明示された場合のみ例外的に編集可能とする。
+Stream I では対象Issueで明示された文書のみを編集対象とする。既定では Stream H 専有（operations / security）は編集しない。利用者向けの `acceptance_check.md` と開発者向けの `03_Implement/frontend/docs/e2e_testing.md` は、対象Issueで明示された場合のみ例外的に編集可能とする。
 
 - `04_Documentation/canonicalization.md`
 - `04_Documentation/codex_skill_operations.md`
@@ -220,7 +220,7 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 
 ## 13. 共通ワークフローとフェイルセーフ（統一運用）
 
-対象文書（`diagnostics.md` / `e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `codex_skill_operations.md` / 本書）は、同一の5Phaseワークフロー（Read→Plan→Execute→Verify→Proceed）を適用する。
+対象文書（`diagnostics.md` / `acceptance_check.md` / `03_Implement/frontend/docs/e2e_testing.md` / `e2e_verification_log_2026-03-03.md` / `codex_skill_operations.md` / 本書）は、同一の5Phaseワークフロー（Read→Plan→Execute→Verify→Proceed）を適用する。
 
 - Verify 失敗時の自己修復は最大3回まで。
 - 4回目相当は停止し、`01_Plans/issues/` にブロッカーを記録して人間判断へエスカレーションする。
@@ -272,7 +272,7 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 
 ## 15. DQ-CONTRACT-v1（Stream F: Quality/E2E/Diagnostics）
 
-本契約は Stream F（Quality/E2E/Diagnostics docs）が `01_Plans/documentation_quality.md` / `04_Documentation/e2e_testing.md` / `04_Documentation/e2e_verification_log_2026-03-03.md` / `04_Documentation/diagnostics.md` を直列フェーズで更新する際の、**最小品質判定I/F** を定義する。
+本契約は Stream F（Quality/E2E/Diagnostics docs）が `01_Plans/documentation_quality.md` / `04_Documentation/acceptance_check.md` / `03_Implement/frontend/docs/e2e_testing.md` / `04_Documentation/e2e_verification_log_2026-03-03.md` / `04_Documentation/diagnostics.md` を直列フェーズで更新する際の、**最小品質判定I/F** を定義する。
 
 ### 15.1 Contract scope（固定）
 
@@ -287,7 +287,7 @@ Stream I では対象Issueで明示された文書のみを編集対象とする
 - **DQ-A2: Reproducibility**
   docs-checkコマンド（`rg` / `git diff --check` / 必要時validator）が再実行可能な形で記録される。
 - **DQ-A3: Cross-link integrity**
-  `documentation_quality.md` ↔ `e2e_testing.md` ↔ `e2e_verification_log_2026-03-03.md` ↔ `diagnostics.md` の参照導線が維持される。
+  `documentation_quality.md` ↔ `acceptance_check.md` ↔ `03_Implement/frontend/docs/e2e_testing.md` ↔ `e2e_verification_log_2026-03-03.md` ↔ `diagnostics.md` の参照導線が維持される。
 - **DQ-A4: Safety boundary**
   SafeMode既定ON・share/export漏えい防止を後退させる記述を追加しない。
 - **DQ-A5: Terminology consistency**

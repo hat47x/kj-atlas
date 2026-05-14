@@ -1,9 +1,14 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PatchWorkspacePanel } from "./PatchWorkspacePanel";
+import { setActiveLocale } from "../i18n/translate";
 
 describe("PatchWorkspacePanel", () => {
+  beforeEach(() => {
+    setActiveLocale("en");
+  });
+
   it("renders CE3 workspace controls and recovery guidance", () => {
     const html = renderToStaticMarkup(
       React.createElement(PatchWorkspacePanel, {

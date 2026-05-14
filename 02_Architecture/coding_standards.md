@@ -74,7 +74,7 @@
    - `03_Implement/*` を変更した場合、原則 `docker compose` による `web+api+db` の連動確認を行う。
    - Docker未導入環境では、SQLite代替E2E（`backend:8000` + `frontend:4173`）で連動確認を行う。
    - UI変更時は原則Playwright E2Eテストを追加/更新する（最低: `npx playwright test e2e/i18n_locale_query_equivalence.spec.ts --reporter=line`）。
-   - E2E手順の正本は `04_Documentation/e2e_testing.md` とし、`installation.md` / `operations.md` / `CONTRIBUTING.md` との記述整合を同一PRで維持する。
+   - E2E手順の正本は `03_Implement/frontend/docs/e2e_testing.md` とし、利用者向けの確認手順は `04_Documentation/acceptance_check.md` に分離する。E2E手順を変更した場合は `installation.md` / `operations.md` / `CONTRIBUTING.md` との記述整合を同一PRで確認する。
    - 正本の判断が難しい不足・不整合は、あるべき状態を整理したIssueを起票してから同期する（ADRに作業トラッキングを混在させない）。
    - それでも実行不能な環境のみ、未実施理由・代替検証・後続確認手順・Compose未確認リスク差分をPRに記載する。
 
@@ -160,7 +160,7 @@ Frontend lint は開発フローの急停止を避けるため、Phase A→B→C
 - [ ] `except Exception` / `any` / 危険APIを増やしていない
 - [ ] 影響範囲に対するテストを追加・更新した
 - [ ] E2E証跡（Playwright追加/更新、または未実施理由・代替検証）をPR本文に記載した
-- [ ] E2E関連ドキュメント（installation/operations/CONTRIBUTING）を正本（e2e_testing.md）と同期した
+- [ ] E2E関連ドキュメント（acceptance_check/installation/operations/CONTRIBUTING）を正本（03_Implement/frontend/docs/e2e_testing.md）と同期した
 - [ ] E2E不整合の正本判断が難しい場合、Issueを起票した
 
 ---

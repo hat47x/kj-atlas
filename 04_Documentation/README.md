@@ -1,73 +1,86 @@
-# 04_Documentation
+# 04_Documentation README
 
-`04_Documentation` は、kj-atlas を導入・設定・運用する人のための公開ガイドです。内部の作業ログ、issue 管理、設計判断の詳細はこの階層には置かず、利用者が再現できる手順と判断基準だけを残します。
+この README は、利用者向け文書を保守する人のための管理入口です。一般公開や Gist で最初に見せる入口には使いません。
 
-対象読者: kj-atlas を初めて使う人、検証環境を起動する人、日常運用や安全確認を担当する人。
+公開向けの入口は [public_index.md](public_index.md) です。公開用の Gist は、利用者が kj-atlas を使うための説明だけで構成し、文書管理、作業ログ、issue、ADR、Gist 更新手順などのプロジェクト管理情報を含めません。
 
-読後にできること: 自分の目的に合う文書を選び、最初に読むべき順番と、困ったときの参照先を判断できます。
+## 公開向けインデックス
 
-## はじめて読む人へ
+[public_index.md](public_index.md) は、リポジトリ構成を知らない読み手のための案内です。次の観点だけを扱います。
 
-kj-atlas の文書は、まず「安全に起動できること」、次に「どの情報を外部サービスと共有する可能性があるか」、最後に「変更後にどう確認するか」の順で読むと迷いにくくなります。すべてを一度に読む必要はありません。
+- kj-atlas で何ができるか。
+- 最初にどの手順を読めばよいか。
+- 安全な既定値、データ共有、AI 提案、障害調査で何を確認するか。
+- 画面例をどの文脈で見るか。
 
-| あなたの状況 | 読む順番 |
+公開用 Gist の README には、原則として `public_index.md` の内容を使います。`04_Documentation` という階層名や、公開作業の手順は出しません。
+
+## Gist に含める文書
+
+公開用 Gist は、使い方の説明に必要な文書だけを含めます。
+
+| 用途 | 文書 |
 | --- | --- |
-| とにかく動かしたい | [installation.md](installation.md) -> [configuration.md](configuration.md) |
-| 運用担当になった | [installation.md](installation.md) -> [operations.md](operations.md) -> [security.md](security.md) |
-| セキュリティ確認をしたい | [security.md](security.md) -> [security_operational_guidelines.md](security_operational_guidelines.md) -> [configuration.md](configuration.md) |
-| データの保存先・共有範囲を確認したい | [data_handling.md](data_handling.md) -> [security.md](security.md) -> [configuration.md](configuration.md) |
-| 変更後の確認をしたい | [e2e_testing.md](e2e_testing.md) -> [diagnostics.md](diagnostics.md) |
-| AI 提案機能を使いたい | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) -> [local_llm_ops_guide.md](local_llm_ops_guide.md) -> [security.md](security.md) |
-
-迷った場合は、[installation.md](installation.md) と [configuration.md](configuration.md) から読んでください。起動できることと安全な既定値を先に確認すると、他の文書も読みやすくなります。
-
-## まず読む文書
-
-| 目的 | 文書 |
-| --- | --- |
+| 公開入口 | [public_index.md](public_index.md) |
 | 初回起動 | [installation.md](installation.md) |
-| 環境変数と安全な既定値 | [configuration.md](configuration.md) |
-| データ取り扱いと共有前確認 | [data_handling.md](data_handling.md) |
-| 日常運用、更新、バックアップ | [operations.md](operations.md) |
-| セキュリティ境界と SafeMode | [security.md](security.md) |
-| 受け入れ確認と E2E | [e2e_testing.md](e2e_testing.md) |
-| リリース前確認 | [release.md](release.md) |
+| 設定 | [configuration.md](configuration.md) |
+| データ取り扱い | [data_handling.md](data_handling.md) |
+| 日常運用 | [operations.md](operations.md) |
+| セキュリティ | [security.md](security.md), [security_operational_guidelines.md](security_operational_guidelines.md) |
+| 変更後の確認 | [acceptance_check.md](acceptance_check.md), [diagnostics.md](diagnostics.md) |
+| AI 提案・文章化 | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md), [local_llm_ops_guide.md](local_llm_ops_guide.md), [narratives.md](narratives.md) |
+| 比較・再現性 | [canonicalization.md](canonicalization.md) |
 
-## 機能別リファレンス
+次の文書や情報は、Gist の本文には含めません。
 
-| 領域 | 文書 |
-| --- | --- |
-| 診断 worker と障害調査 | [diagnostics.md](diagnostics.md) |
-| 保存、外部サービスとの共有、export、share の判断 | [data_handling.md](data_handling.md) |
-| ローカル LLM 運用 | [local_llm_ops_guide.md](local_llm_ops_guide.md) |
-| AI 提案の扱い | [ce2_low_risk_ai_assist.md](ce2_low_risk_ai_assist.md) |
-| ナラティブ生成とレビュー | [narratives.md](narratives.md) |
-| 正規化と決定論的比較 | [canonicalization.md](canonicalization.md) |
-| Codex skill の位置づけ | [codex_skill_operations.md](codex_skill_operations.md) |
-| セキュリティ運用判断 | [security_operational_guidelines.md](security_operational_guidelines.md) |
-| E2E 実施記録テンプレート | [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md) |
+- この README。
+- [assets/screenshots/README.md](assets/screenshots/README.md)。
+- [codex_skill_operations.md](codex_skill_operations.md)。
+- [e2e_verification_log_2026-03-03.md](e2e_verification_log_2026-03-03.md)。
+- 公開作業の manifest、commit hash、PR、issue、ADR、内部作業ログ。
+
+## 画面例の管理
+
+画面操作を伴う文書には、標準サンプル `doc_phase1_canvas` を使ったスクリーンショットを掲載します。画像は `assets/screenshots/` に置き、UI が変わった場合は同じ文脈で撮り直します。秘密情報、API key、組織固有の承認履歴、顧客データを含む画面は使いません。
+
+| 掲載先 | 画面例 | 読み取りポイント |
+| --- | --- | --- |
+| [installation.md](installation.md) | `app-canvas-overview.png` | 起動後に表示される標準画面、SafeMode、ヘッダー、キャンバス、右側パネル |
+| [operations.md](operations.md) | `app-canvas-overview.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
+| [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | share/export 前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
+| [security.md](security.md) | `share-export-safe-mode.png` | SafeMode と外部サービスとの共有前に見る安全境界 |
+| [acceptance_check.md](acceptance_check.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
+| [diagnostics.md](diagnostics.md) | `diagnostics-quality-report.png` | 診断 worker の実行結果、品質レポート、再現記録の入口 |
 
 ## 文書品質のルール
 
 - 1文書は、対象読者、目的、範囲外、完了状態を本文の冒頭で分かるようにします。
 - コマンドはコピーして実行できる形で示します。
 - 環境固有の秘密情報、社内 URL、承認履歴、生の監査ログは含めません。
-- 実装・設計の正本をここで再定義しません。必要な場合は `02_Architecture` または `03_Implement` にリンクします。
-- 内部作業ログは `01_Plans` 側で管理し、利用者向け文書には混在させません。
+- 利用者が使う手順、判断基準、確認方法に集中します。
+- 設計判断、実装判断、プロジェクト管理情報は、公開用 Gist へ含めません。
 
 文書を読んでいて、前提知識が必要すぎる、手順の成功条件が分からない、どの文書に進めばよいか分からない場合は、その文書自体を改善対象にします。
 
-## 最小用語集
+## Gist 公開の手順
 
-| 用語 | 意味 |
-| --- | --- |
-| Docker Compose | 複数のサービスをまとめて起動する仕組みです。kj-atlas では `web`、`api`、`db` をまとめて起動します。 |
-| API | 画面と backend がやり取りする入口です。通常は `/api/...` で呼び出されます。 |
-| SafeMode | 未レビュー情報の混入や外部サービスとの共有を避けるための安全側の動作です。 |
-| LLM | 文章生成や要約を行う AI モデルです。kj-atlas では既定で無効です。 |
-| provider | LLM の接続先種別です。`none`、`local`、`large-scale` などがあります。 |
-| E2E | 画面から実際に操作して、利用者の流れ全体を確認するテストです。 |
-| audit | 後から確認できるように残す操作記録です。秘密情報を含めないことが前提です。 |
-| export | アプリ内の情報をファイルとして取り出す操作です。共有前に秘密情報や不要な identity 情報がないか確認します。 |
-| share | 他の人が閲覧できるように共有する操作です。公開範囲、SafeMode、readOnly の状態を確認してから使います。 |
-| visibility | 公開範囲の意図を示す分類です。SafeMode や readOnly の拒否結果を上書きするものではありません。 |
+この節は保守者向けです。公開用 Gist には含めません。
+
+1. 変更を commit し、公開に使う commit hash を決める。
+2. `public_index.md` と「Gist に含める文書」だけを公開用の1ファイルへ連結する。
+3. Gist へスクリーンショット画像を同梱し、画像リンクは Gist 内の画像ファイルを参照する形に置き換える。
+4. 文書間リンクは、連結後の見出しへ置き換える。
+5. 公開対象外の管理文書、作業ログ、issue、ADR、公開手順、manifest が本文に混ざっていないことを確認する。
+6. public Gist として公開または既存 Gist を更新する。
+7. 公開先 URL と元 commit hash は PR や作業記録に残し、Gist 本文には出さない。
+
+公開前には次を確認します。
+
+```bash
+git status --short
+git rev-parse HEAD
+rg -n "ghp_\\w+|github_pat_\\w+|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|password\\s*=|token\\s*=" 04_Documentation
+rg -n "04_Documentation|AGENTS.md|01_Plans|02_Architecture|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ" <generated-public-gist.md>
+```
+
+更新時も同じ手順を繰り返します。公開済み Gist を更新する場合は、前回の Gist URL を保ったまま本文を差し替えます。

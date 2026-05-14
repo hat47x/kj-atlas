@@ -34,6 +34,7 @@ import {
   type LabelItem,
 } from "../domain/view/label_culling";
 import { getIslandBounds, ISLAND_TITLE_MARGIN_LEFT, ISLAND_TITLE_MARGIN_TOP } from "./IslandView";
+import { t } from "../i18n/translate";
 import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
 const MIN_ZOOM = 0.2;
@@ -639,7 +640,7 @@ export function CanvasShell({
       const showsSummaryBlock = (hasSummary && shouldShowSummary) || abstractMapView;
 
       if (showsSummaryBlock) {
-        const summaryText = hasSummary ? island.summaryText ?? "" : "(no summary)";
+        const summaryText = hasSummary ? island.summaryText ?? "" : t("canvas.island.no_summary");
         const summaryWidth = Math.min(320, Math.max(120, estimateTextWidth(summaryText)));
         candidates.push({
           id: buildIslandSummaryLabelId(island.id),
@@ -672,7 +673,7 @@ export function CanvasShell({
               },
               transform
             ),
-            text: "UNREVIEWED",
+            text: t("canvas.island.unreviewed_badge"),
             payload: { islandId: island.id },
           });
         }
@@ -690,7 +691,7 @@ export function CanvasShell({
             },
             transform
           ),
-          text: "UNREVIEWED",
+          text: t("canvas.island.unreviewed_badge"),
           payload: { islandId: island.id },
         });
       }

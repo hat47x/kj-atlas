@@ -1,4 +1,5 @@
 import type { ContextQueryDraft, QueryPreviewState } from "../domain/context/query_preview";
+import { t } from "../i18n/translate";
 
 type ContextQueryPreviewPanelProps = {
   draft: ContextQueryDraft;
@@ -36,20 +37,20 @@ export function ContextQueryPreviewPanel({
       style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: 12, background: "#f8fafc", display: "grid", gap: 10 }}
     >
       <header style={{ display: "grid", gap: 2 }}>
-        <strong style={{ color: "#0f172a" }}>CE1 Query Preview</strong>
+        <strong style={{ color: "#0f172a" }}>{t("context_query.preview.title")}</strong>
         <span style={{ fontSize: 12, color: "#334155" }}>
-          ContextQueryを送信する前に、scope/depth/reviewFilter/safeMode/outputModeを確認してください。
+          {t("context_query.preview.description")}
         </span>
       </header>
 
       <div data-testid="ce1-query-preview-summary" style={{ fontSize: 12, color: "#1e293b", display: "grid", gap: 2 }}>
-        <span>queryId: {draft.queryId || "(missing)"}</span>
-        <span>goal: {draft.goal || "(missing)"}</span>
-        <span>scope: {previewState.scope}</span>
-        <span>depth: {previewState.depth}</span>
-        <span>reviewFilter: {previewState.reviewFilter}</span>
-        <span>safeModePolicy: {previewState.safeModePolicy}</span>
-        <span>outputMode: {previewState.outputMode}</span>
+        <span>{t("context_query.preview.query_id")}: {draft.queryId || t("context_query.preview.missing")}</span>
+        <span>{t("context_query.preview.goal")}: {draft.goal || t("context_query.preview.missing")}</span>
+        <span>{t("context_query.preview.scope")}: {previewState.scope}</span>
+        <span>{t("context_query.preview.depth")}: {previewState.depth}</span>
+        <span>{t("context_query.preview.review_filter")}: {previewState.reviewFilter}</span>
+        <span>{t("context_query.preview.safe_mode_policy")}: {previewState.safeModePolicy}</span>
+        <span>{t("context_query.preview.output_mode")}: {previewState.outputMode}</span>
       </div>
 
       {previewState.blockers.length > 0 ? (
@@ -60,7 +61,7 @@ export function ContextQueryPreviewPanel({
         </ul>
       ) : (
         <div data-testid="ce1-query-preview-ready" style={{ color: "#166534", fontSize: 12 }}>
-          Query Preview gate passed.
+          {t("context_query.preview.gate_passed")}
         </div>
       )}
 
@@ -72,7 +73,7 @@ export function ContextQueryPreviewPanel({
           onChange={(event) => onPreviewConfirmedChange(event.currentTarget.checked)}
           disabled={disabled}
         />
-        I reviewed this ContextQuery and confirm preview before submit.
+        {t("context_query.preview.confirm_label")}
       </label>
 
       <button
@@ -83,18 +84,18 @@ export function ContextQueryPreviewPanel({
         aria-disabled={submitBlocked}
         title={primaryBlocker ?? undefined}
       >
-        {isSubmitting ? "Submitting..." : "Submit Context Bundle (Mock)"}
+        {isSubmitting ? t("context_query.preview.submitting") : t("context_query.preview.submit")}
       </button>
 
       {primaryBlocker ? (
         <div data-testid="ce1-query-preview-gate-status" style={{ fontSize: 11, color: "#b91c1c" }}>
-          Preview gate block: {primaryBlocker}
+          {t("context_query.preview.gate_block", { blocker: primaryBlocker })}
         </div>
       ) : null}
 
       <footer style={{ fontSize: 11, color: "#475569", display: "grid", gap: 2 }}>
-        <span>latest bundleHash: {latestBundleHash ?? "(not generated)"}</span>
-        <span>excludedReason: {excludedReason.length > 0 ? excludedReason.join(", ") : "(none)"}</span>
+        <span>{t("context_query.preview.latest_bundle_hash")}: {latestBundleHash ?? t("context_query.preview.not_generated")}</span>
+        <span>{t("context_query.preview.excluded_reason")}: {excludedReason.length > 0 ? excludedReason.join(", ") : t("context_query.preview.none")}</span>
       </footer>
     </section>
   );

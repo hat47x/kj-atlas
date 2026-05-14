@@ -23,7 +23,7 @@
 | 通常保存 | ドキュメント本文、カード、島、レイアウト、レビュー状態 | アプリの主要データとして保存できます。 |
 | 最小保持 | 表示名、メールアドレス、外部 identity 参照 | 必要な場面だけに限定し、export 前に残す必要があるか確認します。 |
 | 一時利用 | roles, groups, policyRef, trace id, provider 応答時間 | 調査や判定のために使い、長期保存や共有を前提にしません。 |
-| 保存・共有禁止 | password, token, secret, raw assertion, API key, 生の秘密情報 | 入力、ログ、export、issue、スクリーンショットに含めません。 |
+| 保存・共有禁止 | password, token, secret, raw assertion, API key, 生の秘密情報 | 入力、ログ、export、問い合わせメモ、スクリーンショットに含めません。 |
 
 判断に迷う情報は、まず「最小保持」または「保存・共有禁止」として扱います。必要性を説明できてから範囲を広げます。
 
@@ -61,6 +61,10 @@
 - [ ] 共有先が必要最小限になっている。
 - [ ] ダウンロードしたファイルの保管先と削除方針を説明できる。
 
+「共有と再現」パネルでは、SafeMode、現在の reviewerRef、view visibility、pack visibility、出力形式を同じ場所で確認します。共有前は、画像のように SafeMode が有効であること、visibility が意図した範囲であること、reviewerRef を残す必要があることを確認してから export します。
+
+![共有と再現パネルの export/share 前チェック](assets/screenshots/share-export-safe-mode.png)
+
 ## 障害調査で残す情報
 
 障害調査では、原因を追える最小限の情報だけを残します。
@@ -90,13 +94,13 @@
 
 この文書は利用者向けの判断ガイドです。データ契約や実装上の正本は次の文書にあります。
 
-- [schemas.md](../02_Architecture/schemas.md)
-- [schemas_review_attribution.md](../02_Architecture/schemas_review_attribution.md)
-- [review_attribution.md](../02_Architecture/review_attribution.md)
+- [schemas.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas.md)
+- [schemas_review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/schemas_review_attribution.md)
+- [review_attribution.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/review_attribution.md)
 
 運用時は、次の文書も合わせて確認します。
 
 - [configuration.md](configuration.md)
 - [security.md](security.md)
 - [operations.md](operations.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)

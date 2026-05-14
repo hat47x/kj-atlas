@@ -245,7 +245,8 @@ IssueとADRは混在させず、次の基準で分離して運用します。
 
 ### E2Eドキュメント整合ルール
 
-- E2E手順の正本は `04_Documentation/e2e_testing.md` です。
-- E2Eのコマンド・受入基準・代替経路（Docker未導入時）を変更する場合は、同一PRで `04_Documentation/installation.md` と `04_Documentation/operations.md` も同期更新してください。
+- 開発者向けE2E手順の正本は `03_Implement/frontend/docs/e2e_testing.md` です。
+- 一般利用者向けの画面確認は `04_Documentation/acceptance_check.md` に分離します。
+- E2Eのコマンド・受入基準・代替経路（Docker未導入時）を変更する場合は、同一PRで `04_Documentation/acceptance_check.md`、`04_Documentation/installation.md`、`04_Documentation/operations.md` も同期確認してください。
 - 不足・不整合を見つけたら「あるべき状態」を先に明文化し、正本へ合わせて同期してください。正本判断が難しい場合はIssueを起票して管理してください。
 - PR本文には、更新したE2E関連文書の一覧を記載してください。

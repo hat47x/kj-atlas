@@ -2,6 +2,7 @@ import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MergeSuggestionsPanel } from "./MergeSuggestionsPanel";
+import { t } from "../i18n/translate";
 
 function buildProps() {
   return {
@@ -67,34 +68,32 @@ describe("MergeSuggestionsPanel", () => {
   it("shows deterministic-heuristic guidance, decision status, and four decision actions", () => {
     const html = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, buildProps()));
 
-    expect(html).toContain("Similar card merge candidates");
-    expect(html).toContain("Deterministic heuristic only (no AI decision)");
-    expect(html).toContain("Cards in candidate group");
-    expect(html).toContain("Decision: Deferred");
+    expect(html).toContain(t("merge_suggestions.title"));
+    expect(html).toContain(t("merge_suggestions.deterministic_hint"));
+    expect(html).toContain(t("merge_suggestions.cards_in_group"));
+    expect(html).toContain(t("merge_suggestions.decision_label", { decision: t("merge_suggestions.decision.deferred") }));
     expect(html).toContain("a: Risk mitigation");
     expect(html).toContain("b: risk mitigation");
-    expect(html).toContain("Representative: a [fallback], source count: 1");
-    expect(html).toContain("Rationale: heuristic:normalized-text");
-    expect(html).toContain("Audit event recorded at");
-    expect(html).toContain("decision=defer");
-    expect(html).toContain("Export decision audit events (JSONL)");
-    expect(html).toContain("1 event(s)");
-    expect(html).toContain("Draft diff preview:");
-    expect(html).toContain("Decision reason (required)");
-    expect(html).toContain("Record why you accept/partial/reject/defer this proposal");
-    expect(html).toContain("Decision buttons unlock after recording a reason.");
-    expect(html).toContain("Accept");
-    expect(html).toContain("Partially accept");
-    expect(html).toContain("Reject");
-    expect(html).toContain("Defer");
-    expect(html).toContain("no automatic canonical merge is executed");
-    expect(html).toContain("Trusted human interaction is required for decision commits.");
+    expect(html).toContain(`${t("merge_suggestions.representative")}: a [fallback]${t("merge_suggestions.source_count_suffix", { count: 1 })}`);
+    expect(html).toContain(`${t("merge_suggestions.rationale")}: heuristic:normalized-text`);
+    expect(html).toContain("判断=defer");
+    expect(html).toContain(t("merge_suggestions.export_audit"));
+    expect(html).toContain(t("merge_suggestions.events_count", { count: 1 }));
+    expect(html).toContain(`${t("merge_suggestions.draft_diff_preview")}:`);
+    expect(html).toContain(t("merge_suggestions.decision_reason"));
+    expect(html).toContain(t("merge_suggestions.decision_reason_placeholder"));
+    expect(html).toContain(t("merge_suggestions.decision_unlock_hint"));
+    expect(html).toContain(t("merge_suggestions.action.accept"));
+    expect(html).toContain(t("merge_suggestions.action.partial"));
+    expect(html).toContain(t("merge_suggestions.action.reject"));
+    expect(html).toContain(t("merge_suggestions.action.defer"));
+    expect(html).toContain(t("merge_suggestions.human_in_loop_hint"));
   });
 
   it("disables merge-decision editing controls in read-only mode", () => {
     const html = renderToStaticMarkup(React.createElement(MergeSuggestionsPanel, { ...buildProps(), isReadOnly: true }));
 
-    expect(html).toContain("Collect candidates");
+    expect(html).toContain(t("merge_suggestions.collect_candidates"));
     expect(html).toContain("disabled");
   });
 
@@ -106,6 +105,6 @@ describe("MergeSuggestionsPanel", () => {
       })
     );
 
-    expect(html).toContain("No audit events yet");
+    expect(html).toContain(t("merge_suggestions.no_audit_events"));
   });
 });

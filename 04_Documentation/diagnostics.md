@@ -61,11 +61,16 @@ curl -fsS http://127.0.0.1:8000/healthz
 - Network: `/api/docs/<doc_id>`、`/api/ai/*`、status code。
 - Application/Storage: local storage や cache が古い状態を保持していないか。
 
+画面内の diagnostics は、右側パネルの layout/outline 周辺から実行できます。実行後は品質レポート、所見件数、メトリクスが表示されるため、障害調査メモにはこの結果と API status を合わせて残します。
+
+![diagnostics 実行後の品質レポート](assets/screenshots/diagnostics-quality-report.png)
+
 ## よくある切り分け
 
 | 症状 | 主な確認 |
 | --- | --- |
 | 画面が真っ白 | frontend build、console error、nginx logs |
+| `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
 | export が失敗 | 対象ドキュメントの schema、ブラウザ console |
@@ -73,7 +78,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 
 ## worker 関連の確認
 
-frontend の worker 実装は `03_Implement/frontend/src/worker/` にあります。worker 由来の問題は、まず入力データの大きさ、schema、review 状態を確認します。
+worker 由来の問題が疑われる場合は、まず入力データの大きさ、schema、review 状態を確認します。
 
 ```bash
 cd 03_Implement/frontend
@@ -131,6 +136,6 @@ API status:
 
 - [operations.md](operations.md)
 - [configuration.md](configuration.md)
-- [e2e_testing.md](e2e_testing.md)
+- [acceptance_check.md](acceptance_check.md)
 - [data_handling.md](data_handling.md)
 - [security.md](security.md)

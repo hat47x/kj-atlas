@@ -52,7 +52,7 @@ export KJ_ATLAS_DATABASE_URL='sqlite:///./kj_atlas.db'
 export KJ_ATLAS_LLM_PROVIDER=none
 ```
 
-最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部サービスとの共有を避けながら、保存・表示・E2E の基本動作を確認できます。
+最初の確認では `KJ_ATLAS_LLM_PROVIDER=none` を推奨します。AI 機能は使えませんが、意図しない外部サービスとの共有を避けながら、保存・表示・受け入れ確認の基本動作を確認できます。
 
 ## Backend 環境変数
 
@@ -112,7 +112,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 
 PostgreSQL image や frontend build tool の内部名は、kj-atlas の公開設定キーではありません。利用者は上の `KJ_ATLAS_*` だけを設定します。
 
-サードパーティイメージや build tool が要求する内部名は、kj-atlas の設定項目ではありません。この境界は `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` で扱い、利用者向けの設定は `KJ_ATLAS_*` だけに統一します。
+サードパーティイメージや build tool が内部的に別名を要求する場合でも、利用者が設定する kj-atlas の公開設定は `KJ_ATLAS_*` だけに統一します。
 
 ## よく使う構成例
 
@@ -220,4 +220,4 @@ curl -fsS http://127.0.0.1:8000/healthz
 - [data_handling.md](data_handling.md)
 - [security.md](security.md)
 - [local_llm_ops_guide.md](local_llm_ops_guide.md)
-- [runtime_parameter_registry.md](../02_Architecture/runtime_parameter_registry.md)
+- [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md)

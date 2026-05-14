@@ -85,6 +85,6 @@ curl -fsS http://localhost:8080/api/healthz
 
 ## 関連文書
 
-- [e2e_testing.md](e2e_testing.md)
+- [開発者向け E2E Testing](https://github.com/hat47x/kj-atlas/blob/main/03_Implement/frontend/docs/e2e_testing.md)
 - [release.md](release.md)
 - [security.md](security.md)

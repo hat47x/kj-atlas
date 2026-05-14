@@ -166,11 +166,14 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 ### 3.5 `04_Documentation/`（Guide：運用・利用者向け）
 
+- `04_Documentation/public_index.md`：一般公開向け入口。Gist 等の外部共有ではこの文書を先頭にし、管理情報を含めない。
+- `04_Documentation/README.md`：04文書のメンテナ向け管理入口。一般公開向け入口ではない。
 - `04_Documentation/installation.md`：導入手順。
 - `04_Documentation/configuration.md`：設定。
 - `04_Documentation/operations.md`：運用。
 - `04_Documentation/data_handling.md`：保存・外部サービスとの共有・export/share・ログ共有前確認。
-- `04_Documentation/e2e_testing.md`：PlaywrightベースE2E方針。
+- `04_Documentation/acceptance_check.md`：利用者向けの受け入れ確認。
+- `03_Implement/frontend/docs/e2e_testing.md`：開発者向けのPlaywrightベースE2E方針。
 - `04_Documentation/diagnostics.md`：diagnostics worker のschemaVersion/互換/フォールバック方針。
 - `04_Documentation/security.md`：運用上のセキュリティ。
 - `04_Documentation/security_operational_guidelines.md`：セキュリティ運用ガイドライン（プロファイル選択時の判断補助）。

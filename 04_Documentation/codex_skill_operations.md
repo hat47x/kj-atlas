@@ -12,7 +12,7 @@
 
 ## まず読むもの
 
-AI エージェント作業では、最初にリポジトリルートの [AGENTS.md](../AGENTS.md) を読みます。AGENTS.md が、読み順、対象階層、設計正本、docs-only 作業の境界を示します。
+AI エージェント作業では、最初にリポジトリルートの [AGENTS.md](https://github.com/hat47x/kj-atlas/blob/main/AGENTS.md) を読みます。AGENTS.md が、読み順、対象階層、設計正本、docs-only 作業の境界を示します。
 
 ## 公開文書で決めること
 
@@ -53,6 +53,6 @@ rg -n "internal execution log|private approval|secret|token" 04_Documentation
 
 ## 関連文書
 
-- [AGENTS.md](../AGENTS.md)
-- [documentation_quality.md](../01_Plans/documentation_quality.md)
+- [AGENTS.md](https://github.com/hat47x/kj-atlas/blob/main/AGENTS.md)
+- [documentation_quality.md](https://github.com/hat47x/kj-atlas/blob/main/01_Plans/documentation_quality.md)
 - [security.md](security.md)

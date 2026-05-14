@@ -49,13 +49,19 @@ curl -H "X-API-Key: change-me" http://localhost:8080/api/docs/example
 
 API key は簡易保護です。公開ネットワークでの本格運用では、TLS、認証 proxy、アクセス制御、監査を組み合わせてください。
 
+## SafeMode の画面確認
+
+share/export の前は、「共有と再現」パネルで SafeMode、visibility、reviewerRef、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないことが画面上に示されます。
+
+![SafeMode と共有前の確認画面](assets/screenshots/share-export-safe-mode.png)
+
 ## LLM provider の安全境界
 
 ### `none`
 
 既定です。AI 機能は provider disabled として失敗します。検証やデモではこの状態を推奨します。
 
-初回導入時は、まず `none` のまま保存・表示・E2E を確認してください。AI 接続を後から足す方が、問題の原因を分けやすくなります。
+初回導入時は、まず `none` のまま保存・表示・受け入れ確認を行ってください。AI 接続を後から足す方が、問題の原因を分けやすくなります。
 
 ### `local`
 
@@ -159,4 +165,4 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [data_handling.md](data_handling.md)
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
-- [THREAT_MODEL.md](../THREAT_MODEL.md)
+- [THREAT_MODEL.md](https://github.com/hat47x/kj-atlas/blob/main/THREAT_MODEL.md)

@@ -23,6 +23,8 @@ describe("ImportPanel copy", () => {
     expect(html).toContain("レビューパックを取り込む (.zip)");
     expect(html).toContain("review-pack .zip をここにドラッグ");
     expect(html).toContain("ZIPを選択…");
+    expect(html).toContain("box-sizing:border-box");
+    expect(html).toContain("min-width:0");
   });
 
   it("renders English labels with locale switch", () => {

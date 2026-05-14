@@ -89,7 +89,7 @@ describe("SharePanel safe mode copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("セーフモード: ON");
     expect(html).toContain("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
-    expect(html).toContain("固定マスク対象: Share / Review Pack（無効化できません）。");
+    expect(html).toContain("固定マスク対象: 共有 / レビューパック（無効化できません）。");
     expect(html).not.toContain("未レビューのドラフトを含める");
   });
 
@@ -104,6 +104,14 @@ describe("SharePanel safe mode copy", () => {
 });
 
 describe("SharePanel bundle granularity", () => {
+  it("keeps the export panel controls within the fixed panel width", () => {
+    const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("overflow-x:hidden");
+    expect(html).toContain("box-sizing:border-box");
+    expect(html).toContain("min-width:0");
+    expect(html).toContain("white-space:normal");
+  });
+
   it("renders Japanese granularity options in export section", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("エクスポート粒度");
@@ -142,13 +150,14 @@ describe("SharePanel patch section localization", () => {
 describe("SharePanel visibility controls", () => {
   it("renders view/pack visibility selectors with fallback copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
-    expect(html).toContain("View visibility");
-    expect(html).toContain("Pack visibility");
+    expect(html).toContain("view の公開範囲");
+    expect(html).toContain("パックの公開範囲");
     expect(html).toContain('option value="Public"');
     expect(html).toContain('option value="Unlisted"');
     expect(html).toContain('option value="Org"');
     expect(html).toContain('option value="Restricted"');
-    expect(html).toContain("Fallback: when view visibility is missing, Restricted is applied.");
-    expect(html).toContain("Fallback: when pack visibility is missing, Public is applied.");
+    expect(html).toContain('option value="Restricted">制限付き</option>');
+    expect(html).toContain("view の公開範囲が未指定の場合は、制限付きとして扱います。");
+    expect(html).toContain("パックの公開範囲が未指定の場合は、公開として扱います。");
   });
 });

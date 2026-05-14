@@ -207,7 +207,7 @@
   - 部分採用後のロールバック復元をE2Eで確認。
   - Presetによる query 再現性（同preset=同query）を確認。
 - CE3-D（Sync）
-  - `04_Documentation/e2e_testing.md` へCE-3検証シナリオを追加。
+  - `03_Implement/frontend/docs/e2e_testing.md` へCE-3検証シナリオを追加。
 
 **CE-3 Done条件**
 - 部分採用/保留/廃棄の状態遷移が監査ログに残る。

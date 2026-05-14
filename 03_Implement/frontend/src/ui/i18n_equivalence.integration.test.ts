@@ -261,7 +261,8 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).toContain("proposal-only");
+    expect(jaHtml).toContain("提案のみ運用");
+    expect(jaHtml).not.toContain("CE2 proposal-only blockers");
     expect(enHtml).toContain("proposal-only");
     expect(enHtml).not.toContain("Apply suggestion");
   });
@@ -286,9 +287,9 @@ describe("i18n functional equivalence", () => {
     const enDiagnosticsRun = t("side_panel.outline.run_diagnostics");
     const enClaimTypeUnknown = t("side_panel.claim_type.unknown");
 
-    expect(jaDiagnosticsRun).toBe("diagnostics を実行");
+    expect(jaDiagnosticsRun).toBe("診断を実行");
     expect(enDiagnosticsRun).toBe("Run diagnostics");
-    expect(jaClaimTypeUnknown).toBe("Unknown (未分類)");
+    expect(jaClaimTypeUnknown).toBe("不明（未分類）");
     expect(enClaimTypeUnknown).toBe("Unknown");
   });
 

@@ -114,11 +114,83 @@ type SharePanelProps = {
 
 const sectionStyle = {
   display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
   gap: 8,
   paddingBottom: 10,
   marginBottom: 10,
   borderBottom: "1px solid #e2e8f0",
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
 } as const;
+
+const borderedPanelStyle = {
+  boxSizing: "border-box",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  minWidth: 0,
+  maxWidth: "100%",
+} as const;
+
+const wrapRowStyle = {
+  minWidth: 0,
+  maxWidth: "100%",
+  flexWrap: "wrap",
+} as const;
+
+const textInputStyle = {
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+} as const;
+
+const actionButtonStyle = {
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
+} as const;
+
+function publishVisibilityLabel(value: PublishVisibility): string {
+  switch (value) {
+    case "Org":
+      return t("share.panel.visibility.org");
+    case "Public":
+      return t("share.panel.visibility.public");
+    case "Restricted":
+      return t("share.panel.visibility.restricted");
+    case "Unlisted":
+    default:
+      return t("share.panel.visibility.unlisted");
+  }
+}
+
+const sharePanelLayoutCss = `
+  .kj-atlas-share-panel,
+  .kj-atlas-share-panel * {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .kj-atlas-share-panel button,
+  .kj-atlas-share-panel input,
+  .kj-atlas-share-panel select,
+  .kj-atlas-share-panel textarea {
+    max-width: 100%;
+  }
+
+  .kj-atlas-share-panel button,
+  .kj-atlas-share-panel label,
+  .kj-atlas-share-panel summary {
+    overflow-wrap: anywhere;
+  }
+
+  .kj-atlas-share-panel button {
+    white-space: normal;
+  }
+`;
 
 export function SharePanel({
   isOpen,
@@ -282,23 +354,27 @@ export function SharePanel({
         {t("share.panel.trigger")}
       </button>
       {isOpen ? (
-        <section
-          style={{
-            position: "fixed",
-            top: "var(--kj-atlas-header-panel-top, 72px)",
-            left: 16,
-            zIndex: 50,
-            width: "min(340px, calc(100vw - 32px))",
-            maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
-            boxSizing: "border-box",
-            overflowY: "auto",
-            border: "1px solid #cbd5e1",
-            borderRadius: 8,
-            backgroundColor: "#ffffff",
-            padding: 10,
-            boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
-          }}
-        >
+        <>
+          <style>{sharePanelLayoutCss}</style>
+          <section
+            className="kj-atlas-share-panel"
+            style={{
+              position: "fixed",
+              top: "var(--kj-atlas-header-panel-top, 72px)",
+              left: 16,
+              zIndex: 50,
+              width: "min(340px, calc(100vw - 32px))",
+              maxHeight: "calc(100vh - var(--kj-atlas-header-panel-top, 72px) - 16px)",
+              boxSizing: "border-box",
+              overflowX: "hidden",
+              overflowY: "auto",
+              border: "1px solid #cbd5e1",
+              borderRadius: 8,
+              backgroundColor: "#ffffff",
+              padding: 10,
+              boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
+            }}
+          >
           <div style={sectionStyle}>
             <ImportPanel
               isLoading={isLoading}
@@ -320,13 +396,14 @@ export function SharePanel({
                 backgroundColor: safeModeIndicator.tone === "safe" ? "#f0fdf4" : "#fff7ed",
                 borderRadius: 8,
                 padding: 8,
+                ...borderedPanelStyle,
                 display: "grid",
                 gap: 6,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, ...wrapRowStyle }}>
                 <strong style={{ fontSize: 12, color: "#0f172a" }}>{safeModeIndicator.label}</strong>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                   <input
                     type="checkbox"
                     checked={safeMode}
@@ -343,10 +420,10 @@ export function SharePanel({
               </div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{getSafeModeLockedContextLabel()}</div>
             </div>
-            <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8 }}>
+            <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, ...borderedPanelStyle }}>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                 <span style={{ fontWeight: 600, color: "#0f172a" }}>
-                  Current reviewer ({currentReviewerRefSource === "sso" ? "SSO" : currentReviewerRefSource})
+                  {t("share.panel.reviewer.current", { source: currentReviewerRefSource === "sso" ? "SSO" : currentReviewerRefSource })}
                 </span>
                 <input
                   type="text"
@@ -356,12 +433,15 @@ export function SharePanel({
                   }}
                   placeholder={currentReviewerRefSource === "sso" ? "user:sso:<provider>:<subject>" : "user:local:..."}
                   readOnly={currentReviewerRefSource === "sso"}
+                  style={textInputStyle}
                 />
               </label>
-              <button type="button" onClick={onResetCurrentReviewerRef} disabled={currentReviewerRefSource === "sso"}>Generate reviewerRef</button>
-              <div style={{ fontSize: 11, color: "#64748b" }}>SSO source is read-only and keeps IdP provided reviewerRef.</div>
+              <button type="button" onClick={onResetCurrentReviewerRef} disabled={currentReviewerRefSource === "sso"} style={actionButtonStyle}>
+                {t("share.panel.reviewer.generate")}
+              </button>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.reviewer.sso_readonly_hint")}</div>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                <span style={{ fontWeight: 600, color: "#0f172a" }}>View visibility</span>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>{t("share.panel.visibility.view")}</span>
                 <select
                   value={viewVisibility}
                   onChange={(event) => {
@@ -369,14 +449,15 @@ export function SharePanel({
                       onViewVisibilityChange(event.target.value as PublishVisibility);
                     }
                   }}
+                  style={textInputStyle}
                 >
                   {PUBLISH_VISIBILITY_VALUES.map((value) => (
-                    <option key={value} value={value}>{value}</option>
+                    <option key={value} value={value}>{publishVisibilityLabel(value)}</option>
                   ))}
                 </select>
               </label>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                <span style={{ fontWeight: 600, color: "#0f172a" }}>Pack visibility</span>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>{t("share.panel.visibility.pack")}</span>
                 <select
                   value={packVisibility}
                   onChange={(event) => {
@@ -384,22 +465,23 @@ export function SharePanel({
                       onPackVisibilityChange(event.target.value as PublishVisibility);
                     }
                   }}
+                  style={textInputStyle}
                 >
                   {PUBLISH_VISIBILITY_VALUES.map((value) => (
-                    <option key={`pack-${value}`} value={value}>{value}</option>
+                    <option key={`pack-${value}`} value={value}>{publishVisibilityLabel(value)}</option>
                   ))}
                 </select>
               </label>
-              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when view visibility is missing, Restricted is applied.</div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when pack visibility is missing, Public is applied.</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.view_fallback")}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.pack_fallback")}</div>
             </div>
-            <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.svg_viewport")}
             </button>
-            <button type="button" onClick={onExportSvgVisibleBounds} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportSvgVisibleBounds} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.svg_visible")}
             </button>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
               {t("share.panel.export.png_scale")}
               <select
                 value={String(pngExportScale)}
@@ -411,20 +493,20 @@ export function SharePanel({
                 <option value="2">2x</option>
               </select>
             </label>
-            <button type="button" onClick={onExportPngViewport} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportPngViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.png_viewport")}
             </button>
-            <button type="button" onClick={onExportPngVisibleBounds} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportPngVisibleBounds} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.png_visible")}
             </button>
-            <button type="button" onClick={onExportAbstractMapMarkdownWithPng} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportAbstractMapMarkdownWithPng} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.abstract_md")}
             </button>
-            <button type="button" onClick={onExportAbstractMapHtmlWithPng} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportAbstractMapHtmlWithPng} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.abstract_html")}
             </button>
             {!safeMode ? (
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
                   checked={includeUnreviewedDrafts}
@@ -435,15 +517,15 @@ export function SharePanel({
                 {t("share.panel.export.include_drafts")}
               </label>
             ) : null}
-            <button type="button" onClick={onExportViewViewport} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportViewViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.view_viewport")}
             </button>
-            <button type="button" onClick={onExportViewVisibleBounds} disabled={!hasDocument || isLoading}>
+            <button type="button" onClick={onExportViewVisibleBounds} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.view_visible")}
             </button>
-            <div style={{ borderTop: "1px dashed #e2e8f0", paddingTop: 8, marginTop: 4, display: "grid", gap: 6 }}>
+            <div style={{ borderTop: "1px dashed #e2e8f0", paddingTop: 8, marginTop: 4, display: "grid", gap: 6, ...borderedPanelStyle }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.export.bundle_title")}</div>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
                   checked={bundleIncludeOutline}
@@ -453,7 +535,7 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_outline")}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
                   checked={bundleIncludeDiagnostics}
@@ -463,7 +545,7 @@ export function SharePanel({
                 />
                 {t("share.panel.export.bundle_include_diagnostics")}
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canIncludeTraces ? "#334155" : "#94a3b8" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: canIncludeTraces ? "#334155" : "#94a3b8", ...wrapRowStyle }}>
                 <input
                   type="checkbox"
                   checked={bundleIncludeSelectedCardTraces}
@@ -476,7 +558,7 @@ export function SharePanel({
               </label>
               <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("share.panel.export.bundle_granularity")}</div>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                   <input
                     type="radio"
                     name={bundleGranularityFieldName}
@@ -486,7 +568,7 @@ export function SharePanel({
                   />
                   {t("share.panel.export.bundle_granularity_detail")}
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", ...wrapRowStyle }}>
                   <input
                     type="radio"
                     name={bundleGranularityFieldName}
@@ -509,10 +591,11 @@ export function SharePanel({
                   });
                 }}
                 disabled={!hasDocument || isLoading || isBundleExportRunning}
+                style={actionButtonStyle}
               >
                 {isBundleExportRunning ? t("share.panel.export.bundle_working") : t("share.panel.export.bundle_export")}
               </button>
-              {isBundleExportRunning ? <button type="button" onClick={onCancelBundleExport}>{t("share.panel.export.bundle_cancel")}</button> : null}
+              {isBundleExportRunning ? <button type="button" onClick={onCancelBundleExport} style={actionButtonStyle}>{t("share.panel.export.bundle_cancel")}</button> : null}
               {isBundleExportRunning && computeProgressMessage ? <div style={{ fontSize: 12 }}>{computeProgressMessage}</div> : null}
             </div>
           </div>
@@ -892,7 +975,8 @@ export function SharePanel({
             </div>
             {structuralDiffSection}
           </div>
-        </section>
+          </section>
+        </>
       ) : null}
     </div>
   );

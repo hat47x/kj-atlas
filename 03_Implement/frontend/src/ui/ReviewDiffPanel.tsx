@@ -93,9 +93,9 @@ export function ReviewDiffPanel({ comparisonFileName, comparisonDocument, mergeI
         );
       })}
 
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
         <button type="button" onClick={onApplySelected} disabled={!canApply}>{t("review.panel.apply_selected")}</button>
-        <button type="button" onClick={onUndoLastMerge} style={{ marginLeft: 8 }}>{t("review.panel.revert_last")}</button>
+        <button type="button" onClick={onUndoLastMerge}>{t("review.panel.revert_last")}</button>
       </div>
     </section>
   );

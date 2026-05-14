@@ -116,7 +116,7 @@ import {
   type PerspectiveState,
 } from "./domain/view/perspective";
 import { DEFAULT_VIEW_PRESETS, migrateViewPresets, removeViewPreset, renameViewPreset, replaceViewPreset, resolveSummaryAbstractFromPatch, type ViewPatch, type ViewPreset } from "./domain/view/presets";
-import { getPresetIdForViewMode, getViewModeForPresetId, getViewModeLabel, type ViewMode } from "./domain/view/view_mode";
+import { getPresetIdForViewMode, getViewModeForPresetId, type ViewMode } from "./domain/view/view_mode";
 import { buildDefaultGuidedFlowSteps, getGuidedFlowStepIndex, type GuidedFlowStepId } from "./domain/view/guided_flow";
 import {
   buildIslandVisibilityContractPayload,
@@ -171,6 +171,18 @@ const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
 
+function getViewModeDisplayLabel(mode: ViewMode): string {
+  if (mode === "review") return t("app.view_mode.review");
+  if (mode === "summary") return t("app.view_mode.summary");
+  return t("app.view_mode.explore");
+}
+
+function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string {
+  if (decision === "adopt") return t("patch_workspace.decision.adopt");
+  if (decision === "reject") return t("patch_workspace.decision.reject");
+  if (decision === "hold") return t("patch_workspace.decision.hold");
+  return t("patch_workspace.decision.none");
+}
 
 function isPerspectiveModeValue(value: unknown): value is PerspectiveMode {
   return typeof value === "string" && PERSPECTIVE_MODE_VALUES.includes(value as PerspectiveMode);
@@ -1578,13 +1590,13 @@ export default function App() {
 
   const handleExportMergeDecisionAuditEvents = useCallback(() => {
     if (mergeDecisionAuditEvents.length === 0) {
-      setStatusMessage("No merge decision audit events to export");
+      setStatusMessage(t("merge_suggestions.status.no_audit_events_to_export"));
       return;
     }
 
     const lines = mergeDecisionAuditEvents.map((event) => JSON.stringify(event));
     downloadTextFile("merge-decision-audit-events.jsonl", "application/x-ndjson", `${lines.join("\n")}\n`);
-    setStatusMessage(`Exported ${mergeDecisionAuditEvents.length} merge decision audit event(s)`);
+    setStatusMessage(t("merge_suggestions.status.exported_audit_events", { count: mergeDecisionAuditEvents.length }));
   }, [mergeDecisionAuditEvents]);
   const selectedAggregatedEdge = useMemo(() => {
     if (!selectedEdgeId) {
@@ -1702,7 +1714,7 @@ export default function App() {
         setViewVisibility(persistedVisibility.viewVisibility);
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
-        setStatusMessage("Document loaded");
+        setStatusMessage(t("app.status.document_loaded"));
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
           const defaultDocument = createDefaultDocument(docId);
@@ -1742,7 +1754,7 @@ export default function App() {
             setViewVisibility(persistedVisibility.viewVisibility);
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
-            setStatusMessage("Created a new document");
+            setStatusMessage(t("app.status.document_created"));
           } catch (saveError) {
             setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
           }
@@ -2042,7 +2054,7 @@ export default function App() {
     }
 
     setIsSaving(true);
-    setStatusMessage("Saving...");
+    setStatusMessage(t("app.status.saving"));
 
     try {
       const saved = await putDocument(document.id, withUpdatedTimestamp(document), docEtag ?? undefined);
@@ -2059,15 +2071,15 @@ export default function App() {
       setDocEtag(saved.etag ?? null);
       setIsDirty(false);
       setHasSaveConflict(false);
-      setStatusMessage("Saved");
+      setStatusMessage(t("app.status.saved"));
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
         setHasSaveConflict(true);
-        setStatusMessage("This document has been updated elsewhere. Please reload or export your changes.");
+        setStatusMessage(t("app.status.save_conflict"));
         return;
       }
 
-      setStatusMessage(error instanceof Error ? error.message : "Failed to save document");
+      setStatusMessage(error instanceof Error ? error.message : t("app.status.save_failed"));
     } finally {
       setIsSaving(false);
     }
@@ -2094,7 +2106,7 @@ export default function App() {
     setSuggestionId(null);
     setSuggestionNotes(null);
     setSuggestionError(null);
-    setStatusMessage("Created a new local document");
+    setStatusMessage(t("app.status.created_document"));
   }, [abstractMapView, summaryView]);
 
   const handleDuplicateDocument = useCallback(() => {
@@ -2121,7 +2133,7 @@ export default function App() {
     setSuggestionId(null);
     setSuggestionNotes(null);
     setSuggestionError(null);
-    setStatusMessage("Duplicated the current document");
+    setStatusMessage(t("app.status.duplicated_document"));
   }, [document]);
 
   const handleOpenRecent = useCallback(() => {
@@ -2203,13 +2215,13 @@ export default function App() {
       return;
     }
     if (mode === "resuggest" && resuggestStopperEnabled) {
-      setStatusMessage("Self-repair stopper active: retry limit reached. Discard or revise instruction.");
+      setStatusMessage(t("suggestion.panel.status.stopper_active_retry_limit"));
       return;
     }
 
     setIsSuggesting(true);
     setSuggestionError(null);
-    setStatusMessage("Requesting draft suggestion...");
+    setStatusMessage(t("suggestion.panel.status.requesting_draft"));
 
     try {
       const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
@@ -2224,9 +2236,9 @@ export default function App() {
         setResuggestAttemptCount(0);
         setResuggestStopperEnabled(false);
       }
-      setStatusMessage("Draft suggestion proposal ready (preview only, no auto-apply)");
+      setStatusMessage(t("suggestion.panel.status.draft_ready"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to get suggestion";
+      const message = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
       setSuggestionError(message);
       setStatusMessage(message);
       setSuggestedDocument(null);
@@ -2256,7 +2268,7 @@ export default function App() {
     setResuggestStopperEnabled(false);
     setIsSuggestionPreviewEnabled(true);
     setIsAnnotateOverlayEnabled(false);
-    setStatusMessage("Discarded draft suggestion");
+    setStatusMessage(t("suggestion.panel.status.discarded_draft"));
   }, [abstractMapView, summaryView]);
 
   const handleSuggestMerges = useCallback(async () => {
@@ -2266,7 +2278,7 @@ export default function App() {
 
     setIsSuggestingMerges(true);
     setMergeSuggestionError(null);
-    setStatusMessage("Collecting merge candidates...");
+    setStatusMessage(t("merge_suggestions.status.collecting"));
 
     try {
       const remoteInstruction = mergeSuggestionInstruction.trim() || undefined;
@@ -2308,11 +2320,11 @@ export default function App() {
       setMergeSuggestionError(null);
       setStatusMessage(
         result.suggestions.length > 0
-          ? `Merge candidates ready (${result.suggestions.length})`
-          : "No deterministic merge candidates found"
+          ? t("merge_suggestions.status.ready", { count: result.suggestions.length })
+          : t("merge_suggestions.status.none_found")
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to collect merge candidates";
+      const message = error instanceof Error ? error.message : t("merge_suggestions.status.failed");
       setMergeSuggestionError(message);
       setMergeSuggestions([]);
       setStatusMessage(message);
@@ -5736,7 +5748,7 @@ ${parsedDocument.error}`);
 
   const handleGuidedFlowNextTarget = useCallback(() => {
     if (guidedFlowTargets.length === 0) {
-      setStatusMessage("No targets for this guided step");
+      setStatusMessage(t("side_panel.guided_flow.no_targets"));
       return;
     }
 
@@ -6514,7 +6526,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || isSaving ? "not-allowed" : "pointer",
         }}
       >
-        New
+        {t("app.toolbar.new")}
       </button>
       <button
         type="button"
@@ -6530,7 +6542,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || isSaving || !document ? "not-allowed" : "pointer",
         }}
       >
-        Duplicate
+        {t("app.toolbar.duplicate")}
       </button>
       <select
         value={selectedRecentDocumentId}
@@ -6548,7 +6560,7 @@ ${parsedDocument.error}`);
           minWidth: 180,
         }}
       >
-        <option value="">Recent documents</option>
+        <option value="">{t("app.toolbar.recent_documents")}</option>
         {recentDocumentIds.map((docId) => (
           <option key={docId} value={docId}>
             {docId}
@@ -6572,7 +6584,7 @@ ${parsedDocument.error}`);
               : "pointer",
         }}
       >
-        Open
+        {t("app.toolbar.open")}
       </button>
       <button
         type="button"
@@ -6590,7 +6602,7 @@ ${parsedDocument.error}`);
           cursor: isReadOnly || isLoading || !document || isSuggesting ? "not-allowed" : "pointer",
         }}
       >
-        {isSuggesting ? "Suggesting..." : "Suggest layout"}
+        {isSuggesting ? t("suggestion.panel.suggesting") : t("suggestion.panel.suggest_layout")}
       </button>
       <button
         type="button"
@@ -6606,7 +6618,7 @@ ${parsedDocument.error}`);
           cursor: isReadOnly || isLoading || !document || !canUndo ? "not-allowed" : "pointer",
         }}
       >
-        Undo
+        {t("app.toolbar.undo")}
       </button>
       <button
         type="button"
@@ -6622,7 +6634,7 @@ ${parsedDocument.error}`);
           cursor: isReadOnly || isLoading || !document || !canRedo ? "not-allowed" : "pointer",
         }}
       >
-        Redo
+        {t("app.toolbar.redo")}
       </button>
       {focusHistory.length > 0 ? (
         <button
@@ -6638,7 +6650,7 @@ ${parsedDocument.error}`);
             cursor: "pointer",
           }}
         >
-          Back
+          {t("app.toolbar.back")}
         </button>
       ) : null}
       <button
@@ -6691,7 +6703,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || !document || !canCreateIsland ? "not-allowed" : "pointer",
         }}
       >
-        Create Island
+        {t("app.toolbar.create_island")}
       </button>
       <button
         type="button"
@@ -6709,7 +6721,7 @@ ${parsedDocument.error}`);
           cursor: isLoading || !document || isSaving || !isDirty ? "not-allowed" : "pointer",
         }}
       >
-        {isSaving ? "Saving..." : "Save"}
+        {isSaving ? t("app.status.saving") : t("app.toolbar.save")}
       </button>
     </div>
   );
@@ -7489,12 +7501,12 @@ ${parsedDocument.error}`);
       setIncludeUnreviewedDraftsInExport(false);
     }
     if (options?.announce ?? true) {
-      setStatusMessage(`Applied mode: ${getViewModeLabel(mode)}`);
+      setStatusMessage(t("app.status.applied_mode", { mode: getViewModeDisplayLabel(mode) }));
     }
   }, [activeDocumentId, applyResolvedLocaleForView, applyViewPatch, isReadOnly, viewMode, viewPresets]);
 
   const handleSaveViewPreset = useCallback(() => {
-    const name = window.prompt("Preset name", "My preset")?.trim();
+    const name = window.prompt(t("view_controls.perspective.prompt_name"), t("view_controls.perspective.prompt_default_name"))?.trim();
     if (!name) return;
     const now = new Date().toISOString();
     const nextPreset: ViewPreset = {
@@ -7506,7 +7518,7 @@ ${parsedDocument.error}`);
     };
     setViewPresets((previous) => migrateViewPresets(replaceViewPreset(previous, nextPreset)));
     setActivePresetId(nextPreset.id);
-    setStatusMessage(`Saved preset: ${name}`);
+    setStatusMessage(t("app.status.saved_preset", { name }));
   }, [captureCurrentViewPatch]);
 
   const handleApplyViewPreset = useCallback((presetId: string) => {
@@ -7522,29 +7534,29 @@ ${parsedDocument.error}`);
       setSafeMode(true);
       setIncludeUnreviewedDraftsInExport(false);
     }
-    setStatusMessage(`Applied preset: ${preset.name}`);
+    setStatusMessage(t("app.status.applied_preset", { name: preset.name }));
   }, [applyViewPatch, viewPresets]);
 
   const handleRenameViewPreset = useCallback((presetId: string) => {
     const target = viewPresets.find((preset) => preset.id === presetId);
     if (!target) return;
-    const nextName = window.prompt("Rename preset", target.name)?.trim();
+    const nextName = window.prompt(t("view_controls.perspective.prompt_rename"), target.name)?.trim();
     if (!nextName) return;
     setViewPresets((previous) => renameViewPreset(previous, presetId, nextName, new Date().toISOString()));
-    setStatusMessage(`Renamed preset: ${nextName}`);
+    setStatusMessage(t("app.status.renamed_preset", { name: nextName }));
   }, [viewPresets]);
 
   const handleDeleteViewPreset = useCallback((presetId: string) => {
     const target = viewPresets.find((preset) => preset.id === presetId);
     if (!target) return;
     if (presetId.startsWith("default-")) {
-      setStatusMessage(`Default preset cannot be deleted: ${target.name}`);
+      setStatusMessage(t("app.status.default_preset_cannot_delete", { name: target.name }));
       return;
     }
-    if (!window.confirm(`Delete preset "${target.name}"?`)) return;
+    if (!window.confirm(t("view_controls.perspective.confirm_delete", { name: target.name }))) return;
     setViewPresets((previous) => removeViewPreset(previous, presetId));
     setActivePresetId((current) => (current === presetId ? null : current));
-    setStatusMessage(`Deleted preset: ${target.name}`);
+    setStatusMessage(t("app.status.deleted_preset", { name: target.name }));
   }, [viewPresets]);
 
   useEffect(() => {
@@ -7686,7 +7698,7 @@ ${parsedDocument.error}`);
               onClick={() => {
                 handleApplyViewMode(mode);
               }}
-              title={`${getViewModeLabel(mode)} (${shortcutLabel})`}
+              title={`${getViewModeDisplayLabel(mode)} (${shortcutLabel})`}
               style={{
                 border: "none",
                 borderRight: mode === "summary" ? "none" : "1px solid #cbd5e1",
@@ -7698,7 +7710,7 @@ ${parsedDocument.error}`);
                 cursor: "pointer",
               }}
             >
-              {getViewModeLabel(mode)}
+              {getViewModeDisplayLabel(mode)}
             </button>
           );
         })}
@@ -7720,7 +7732,7 @@ ${parsedDocument.error}`);
           cursor: "pointer",
         }}
       >
-        View
+        {t("view_controls.trigger")}
       </button>
       {isViewControlsOpen ? (
         <div
@@ -8051,8 +8063,11 @@ ${parsedDocument.error}`);
 
   return (
     <Shell
-      title="kj-atlas Canvas MVP"
-      subtitle={`Document: ${activeDocumentId}${isReadOnly ? " • Read-only" : ""}`}
+      title={t("app.title")}
+      subtitle={t("app.subtitle.document", {
+        documentId: activeDocumentId,
+        readOnlySuffix: isReadOnly ? t("app.subtitle.read_only_suffix") : "",
+      })}
       headerViewControls={headerViewControls}
       headerShareControls={headerShareControls}
       headerCenter={headerCenter}
@@ -8060,7 +8075,7 @@ ${parsedDocument.error}`);
       hasUnsavedChanges={isDirty}
       saveConflictMessage={
         hasSaveConflict
-          ? "This document has been updated elsewhere. Please reload or export your changes."
+          ? t("app.status.save_conflict")
           : undefined
       }
       onReloadAfterConflict={() => {
@@ -8147,16 +8162,20 @@ ${parsedDocument.error}`);
                         },
                       }))}
                       onDecisionCommitted={({ candidateId, decision, previousDecision }) => {
-                        setStatusMessage(`Workspace decision: ${candidateId} ${previousDecision} → ${decision}`);
+                        setStatusMessage(t("patch_workspace.status.decision", {
+                          candidateId,
+                          previousDecision: getWorkspaceDecisionDisplayLabel(previousDecision),
+                          decision: getWorkspaceDecisionDisplayLabel(decision),
+                        }));
                       }}
                       onDecisionRolledBack={({ restoredCandidateIds }) => {
-                        setStatusMessage(`Workspace rollback restored: ${restoredCandidateIds.join(", ")}`);
+                        setStatusMessage(t("patch_workspace.status.rollback_restored", { ids: restoredCandidateIds.join(", ") }));
                       }}
                       onPresetSaved={(preset) => {
-                        setStatusMessage(`Workspace preset saved: ${preset.name}`);
+                        setStatusMessage(t("patch_workspace.status.preset_saved", { name: preset.name }));
                       }}
                       onPresetExecuted={({ query }) => {
-                        setStatusMessage(`Workspace preset executed: ${query}`);
+                        setStatusMessage(t("patch_workspace.status.preset_executed", { query }));
                       }}
                     />
                   </>
@@ -8174,7 +8193,7 @@ ${parsedDocument.error}`);
                     }}
                     onStopResuggest={() => {
                       setResuggestStopperEnabled(true);
-                      setStatusMessage("Self-repair stopper enabled manually.");
+                      setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
                     }}
                     onDiscard={handleDiscardSuggestion}
                     hasSuggestion={Boolean(suggestedDocument && suggestionId)}
@@ -8577,7 +8596,7 @@ ${parsedDocument.error}`);
             color: "#334155",
           }}
         >
-          Loading canvas...
+          {t("app.loading_canvas")}
         </div>
       ) : (
         <>
