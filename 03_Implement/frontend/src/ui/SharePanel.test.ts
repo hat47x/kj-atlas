@@ -89,7 +89,7 @@ describe("SharePanel safe mode copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("セーフモード: ON");
     expect(html).toContain("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
-    expect(html).toContain("固定マスク対象: Share / Review Pack（無効化できません）。");
+    expect(html).toContain("固定マスク対象: 共有 / レビューパック（無効化できません）。");
     expect(html).not.toContain("未レビューのドラフトを含める");
   });
 
