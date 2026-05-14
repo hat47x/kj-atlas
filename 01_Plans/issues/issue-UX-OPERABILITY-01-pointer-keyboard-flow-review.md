@@ -8,7 +8,7 @@
 - Owner: Codex
 - Scope: `03_Implement/frontend/src/`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `UX-OPERABILITY-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/architecture.md`, `04_Documentation/acceptance_check.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `02_Architecture/architecture.md`, `04_Documentation/acceptance_check.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -28,6 +28,7 @@
 - 右側パネルの一部で横幅が不足し、ボタンや入力欄が見切れる状態が確認された。
 - UI上に英語ラベルが残っており、日本語利用者にとって操作の意味が直感的でない箇所がある。
 - 一般利用者向け文書では、マウス操作だけでなくキーボード操作、フォーカス順序、戻り方、操作結果の分かりやすさまで扱う必要がある。
+- 2026-05-14 の代表操作検証で、カードがキーボード選択できない、カード選択後に関連詳細が現在表示範囲へ出ない、表示/共有パネルが `Escape` で閉じない、主要ツールバーにlegacy操作が目立つ、という具体課題を確認した。
 
 ## 2) 背景 / Context
 
@@ -48,6 +49,7 @@
   - ヘッダー、表示パネル、共有と再現パネル、右側パネル、CE3パッチワークスペース、ナラティブ、関係要約
 - 変更の最小単位:
   - 主要ユーザージャーニーをPlaywrightで記録し、見切れ、未翻訳、フォーカス迷子、戻れない操作を個別修正する。
+  - 個別修正が大きいものは `UX-OPERABILITY-02` 以降へ分離し、操作モデルの判断は `ADR-0030` で管理する。
 - 非目標:
   - 画面構成やナビゲーション全体を一度に作り替えること。
 
@@ -62,11 +64,11 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 Chromeで標準サンプルを開き、マウス操作の主要経路を記録する。
-- [ ] T2 `Tab` / `Enter` / `Space` / テキスト入力で同じ経路を確認する。
-- [ ] T3 不自然な操作名、重なり、見切れ、フォーカス順序を分類する。
+- [x] T1 Chromeで標準サンプルを開き、マウス操作の主要経路を記録する。
+- [x] T2 `Tab` / `Enter` / `Space` / テキスト入力で同じ経路を確認する。
+- [x] T3 不自然な操作名、重なり、見切れ、フォーカス順序を分類する。
 - [ ] T4 小さく直せるUIラベル・レイアウトは修正する。
-- [ ] T5 情報設計やナビゲーションの変更が必要なものはADR候補として分離する。
+- [x] T5 情報設計やナビゲーションの変更が必要なものはADR候補として分離する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -92,6 +94,16 @@
 ## 10) Additional context
 
 - ADR化が必要になる条件: ヘッダー/サイドパネル/共有と再現の情報設計、ショートカット体系、キーボード操作モデルを再定義する場合。
+- 2026-05-14 実施ログ:
+  - 実行環境: Edge Chromium（Chrome代替。ローカルChrome実体は未検出） / `http://127.0.0.1:5173/?locale=ja` / backend `127.0.0.1:8000` 起動済み。
+  - viewport: `1440x900`, `960x720`, `390x844`。
+  - 起動確認: `/api/docs/doc_phase1_canvas` は frontend proxy 経由で 200。`Internal Server Error` は画面本文に出ない。
+  - 検証済みの良好点: 検索欄に `観察` を入力すると `1/1` になり、検索状態は理解できる。共有パネルの右端見切れは `390px` / `960px` / `1440px` で再発なし。SafeMode と共有範囲ラベルは日本語表示。
+  - 課題1: `Tab` 70回の巡回にキャンバスカード本文が含まれず、`CardView.tsx` も `div` + pointer handler のみでキーボード選択の意味付けがない。起票: `issue-UX-OPERABILITY-02-keyboard-card-selection.md`。
+  - 課題2: マウスで `ユーザー課題を集める` を選択しても、`カードの確認` は `y=3956`、`1 card selected` は `y=3987` で現在viewport外。起票: `issue-UX-OPERABILITY-03-contextual-selection-panel.md`。
+  - 課題3: `表示` / `共有と再現` を開いた後、`Escape` で閉じられない。起票: `issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`。
+  - 課題4: 起動直後の主要ツールバーに `JSON取り込み` / `JSON書き出し` が目立ち、画面上ではlegacy導線として案内される。起票: `issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`。
+  - ADR: 右側パネルの段階的開示、選択文脈優先、パネルの閉じ方、キーボードスコープを `ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md` として提案。
 
 ---
 
