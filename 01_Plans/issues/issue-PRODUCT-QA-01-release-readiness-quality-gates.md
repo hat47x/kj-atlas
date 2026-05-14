@@ -78,7 +78,17 @@
 | G6 診断とサポート | エラー表示 / 診断 / SUPPORT | 推奨 | 保存失敗、API未接続、取り込み失敗時に次アクションが分かる | 利用者が機微情報を含む診断情報を共有しやすい | diagnostics docs, representative failure notes |
 | G7 ビルドと回帰 | frontend / backend / docs | 必須 | typecheck、主要unit、E2Eまたは代替証跡、文書整形が通る | 既知の必須テスト失敗を未分類のまま残す | CI log, local command log |
 
-### 5.2 Go/No-Go記録テンプレート
+### 5.2 価値実現ゲート
+
+| Value Gate | 判定対象 | Go条件 | No-Go条件 | 戻し先issue |
+| --- | --- | --- | --- | --- |
+| V0/V1 初回価値実感 | 開始、サンプル、短いメモ、カード化、保留点 | 初回利用者が最初の意味ある配置へ到達できる | 文書を開けても、カードや保留点を作る次操作が分からない | `PRODUCT-VALUE-01` |
+| V2 保留・違和感の作業化 | Hold / Critique / Evidence / Contradiction | 未確定、違和感、根拠不足を失敗ではなく作業状態として残せる | 未確定情報が削除、非表示、または確定情報のように扱われる | `PRODUCT-VALUE-02` |
+| V3 人間レビュー中心 | proposal-only / reviewState / patch + approval | AI提案を比較、部分採用、保留、破棄できる | auto-apply、AIによる `human_reviewed` 昇格、直接確定がある | `PRODUCT-VALUE-02`, `CE-*` |
+| V4 レビュー可能な成果物 | Narrative / Review Pack / SafeMode / source trace | 確定点、保留点、未レビュー情報、根拠への戻り方が共有物で分かる | 共有物が読みやすいだけで、根拠や未確定点へ戻れない | `PRODUCT-VALUE-03` |
+| 横断 LLM任意性 | `KJ_ATLAS_LLM_PROVIDER=none` | 既定構成でも開始、外在化、構造化、共有前確認の主要価値が成立する | LLM接続がないと基本価値を体験できない | `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02` |
+
+### 5.3 Go/No-Go記録テンプレート
 
 ```md
 ## Productization Gate Record
@@ -96,6 +106,12 @@
   - G5 公開文書: Go / No-Go / N/A
   - G6 診断とサポート: Go / No-Go / N/A
   - G7 ビルドと回帰: Go / No-Go / N/A
+- Value gates:
+  - V0/V1 初回価値実感: Go / No-Go / N/A
+  - V2 保留・違和感の作業化: Go / No-Go / N/A
+  - V3 人間レビュー中心: Go / No-Go / N/A
+  - V4 レビュー可能な成果物: Go / No-Go / N/A
+  - 横断 LLM任意性: Go / No-Go / N/A
 - Required follow-up issue:
 - Decision: Go / Conditional Go / No-Go
 ```
@@ -106,7 +122,7 @@
 - [x] T2 既存issue/ADRをゲートに紐付ける。
 - [x] T3 自動テスト、手動Playwright確認、文書チェックの実行手順を定義する。
 - [x] T4 Go/No-Go判定の記録形式を定義する。
-- [ ] T5 リリース前に不足した観点を個別issueへ戻す運用を決める。
+- [x] T5 リリース前に不足した観点を個別issueへ戻す運用を決める。
 
 ## 7) 検証計画 / Validation plan
 

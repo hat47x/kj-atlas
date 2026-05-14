@@ -43,7 +43,13 @@
 - `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`（E2E確認方針）
 - `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`（環境変数プレフィックス移行方針）
 
-### 3.4 CLI 分割
+### 3.4 製品化・価値実現
+
+- `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`（UI操作性・段階的開示）
+- `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`（製品化画面情報設計）
+- `01_Plans/adr/ADR-0032-product-value-realization-model.md`（プロダクト価値実現モデル）
+
+### 3.5 CLI 分割
 
 - `01_Plans/adr/ADR-0015-cli-scope-phasing.md`（対象範囲・段階導入）
 - `01_Plans/adr/ADR-0016-cli-command-contract.md`（コマンド体系・共通I/F）
