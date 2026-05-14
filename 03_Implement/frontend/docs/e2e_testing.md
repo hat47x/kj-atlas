@@ -14,9 +14,16 @@
 cd 03_Implement/deploy
 docker compose up --build -d
 curl -fsS http://localhost:8080/api/healthz
+curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 ```
 
-ローカル開発サーバーで確認する場合は [導入手順](../../../04_Documentation/installation.md) の「Docker を使わない最小起動」を使います。
+ローカル開発サーバーで確認する場合は [導入手順](../../../04_Documentation/installation.md) の「Docker を使わない最小起動」を使います。Vite の `/api` proxy は backend が起動していないと 500 を返すため、E2E 前に次の両方を確認します。frontend の port を変更した場合は `4173` を実際の port に置き換えてください。
+
+```bash
+curl -fsS http://127.0.0.1:8000/healthz
+curl -fsS http://127.0.0.1:8000/docs/doc_phase1_canvas
+curl -fsS http://127.0.0.1:4173/api/docs/doc_phase1_canvas
+```
 
 ## 手動確認と自動テストの違い
 
@@ -95,6 +102,7 @@ python -m pytest
 | 観点 | 期待 |
 | --- | --- |
 | 起動 | `/api/healthz` が成功する |
+| 標準サンプル | `doc_phase1_canvas` が backend 直アクセスと frontend proxy の両方で成功する |
 | 保存 | 作成・編集した内容が再読み込み後も残る |
 | SafeMode | 未レビュー情報を AI が自動確定しない |
 | LLM disabled | `KJ_ATLAS_LLM_PROVIDER=none` では AI 機能が disabled として扱われる |

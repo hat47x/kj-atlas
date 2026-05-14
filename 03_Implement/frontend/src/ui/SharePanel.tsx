@@ -151,6 +151,20 @@ const actionButtonStyle = {
   whiteSpace: "normal",
 } as const;
 
+function publishVisibilityLabel(value: PublishVisibility): string {
+  switch (value) {
+    case "Org":
+      return t("share.panel.visibility.org");
+    case "Public":
+      return t("share.panel.visibility.public");
+    case "Restricted":
+      return t("share.panel.visibility.restricted");
+    case "Unlisted":
+    default:
+      return t("share.panel.visibility.unlisted");
+  }
+}
+
 const sharePanelLayoutCss = `
   .kj-atlas-share-panel,
   .kj-atlas-share-panel * {
@@ -409,7 +423,7 @@ export function SharePanel({
             <div style={{ display: "grid", gap: 4, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, ...borderedPanelStyle }}>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
                 <span style={{ fontWeight: 600, color: "#0f172a" }}>
-                  Current reviewer ({currentReviewerRefSource === "sso" ? "SSO" : currentReviewerRefSource})
+                  {t("share.panel.reviewer.current", { source: currentReviewerRefSource === "sso" ? "SSO" : currentReviewerRefSource })}
                 </span>
                 <input
                   type="text"
@@ -422,10 +436,12 @@ export function SharePanel({
                   style={textInputStyle}
                 />
               </label>
-              <button type="button" onClick={onResetCurrentReviewerRef} disabled={currentReviewerRefSource === "sso"} style={actionButtonStyle}>Generate reviewerRef</button>
-              <div style={{ fontSize: 11, color: "#64748b" }}>SSO source is read-only and keeps IdP provided reviewerRef.</div>
+              <button type="button" onClick={onResetCurrentReviewerRef} disabled={currentReviewerRefSource === "sso"} style={actionButtonStyle}>
+                {t("share.panel.reviewer.generate")}
+              </button>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.reviewer.sso_readonly_hint")}</div>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                <span style={{ fontWeight: 600, color: "#0f172a" }}>View visibility</span>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>{t("share.panel.visibility.view")}</span>
                 <select
                   value={viewVisibility}
                   onChange={(event) => {
@@ -436,12 +452,12 @@ export function SharePanel({
                   style={textInputStyle}
                 >
                   {PUBLISH_VISIBILITY_VALUES.map((value) => (
-                    <option key={value} value={value}>{value}</option>
+                    <option key={value} value={value}>{publishVisibilityLabel(value)}</option>
                   ))}
                 </select>
               </label>
               <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#334155" }}>
-                <span style={{ fontWeight: 600, color: "#0f172a" }}>Pack visibility</span>
+                <span style={{ fontWeight: 600, color: "#0f172a" }}>{t("share.panel.visibility.pack")}</span>
                 <select
                   value={packVisibility}
                   onChange={(event) => {
@@ -452,12 +468,12 @@ export function SharePanel({
                   style={textInputStyle}
                 >
                   {PUBLISH_VISIBILITY_VALUES.map((value) => (
-                    <option key={`pack-${value}`} value={value}>{value}</option>
+                    <option key={`pack-${value}`} value={value}>{publishVisibilityLabel(value)}</option>
                   ))}
                 </select>
               </label>
-              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when view visibility is missing, Restricted is applied.</div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>Fallback: when pack visibility is missing, Public is applied.</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.view_fallback")}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.pack_fallback")}</div>
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.svg_viewport")}

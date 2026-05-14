@@ -14,9 +14,12 @@
 cd 03_Implement/deploy
 docker compose up --build -d
 curl -fsS http://localhost:8080/api/healthz
+curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 ```
 
 ブラウザで `http://localhost:8080` を開きます。Docker を使わない起動方法は [導入手順](installation.md) を参照してください。
+
+標準サンプルの確認で `Internal Server Error` が表示される場合は、まず backend が起動しているかを確認します。Docker を使わない場合は、frontend だけでなく backend も別端末で起動してから、`http://127.0.0.1:<frontend-port>/api/docs/doc_phase1_canvas` が成功することを確認してください。
 
 ## 画面全体を見る
 

@@ -10,6 +10,7 @@ import {
   buildIslandUnreviewedLabelId,
 } from "../domain/view/label_culling";
 import type { Card, Island, Point } from "../domain/types";
+import { t } from "../i18n/translate";
 import { LabelVisibilityContext } from "./LabelVisibilityContext";
 
 const CARD_WIDTH = 220;
@@ -567,14 +568,14 @@ function IslandViewComponent({
             overflow: "hidden",
             textOverflow: "ellipsis",
           }}
-          title={hideUnreviewedSummary ? "UNREVIEWED hidden" : hasSummary ? island.summaryText : "(no summary)"}
+          title={hideUnreviewedSummary ? t("canvas.island.unreviewed_hidden") : hasSummary ? island.summaryText : t("canvas.island.no_summary")}
         >
           {hideUnreviewedSummary ? (
-            <span style={{ color: "#92400e", fontWeight: 700 }}>UNREVIEWED hidden</span>
+            <span style={{ color: "#92400e", fontWeight: 700 }}>{t("canvas.island.unreviewed_hidden")}</span>
           ) : hasSummary ? (
             island.summaryText
           ) : (
-            <span style={{ color: "#64748b" }}>(no summary)</span>
+            <span style={{ color: "#64748b" }}>{t("canvas.island.no_summary")}</span>
           )}
           {island.summaryReviewed === false && hasSummary && showUnreviewedLabel ? (
             <span
@@ -590,7 +591,7 @@ function IslandViewComponent({
                 padding: "1px 6px",
               }}
             >
-              UNREVIEWED
+              {t("canvas.island.unreviewed_badge")}
             </span>
           ) : null}
         </div>
@@ -610,9 +611,9 @@ function IslandViewComponent({
             padding: "1px 6px",
             zIndex: 3,
           }}
-          title="Summary is UNREVIEWED"
+          title={t("canvas.island.summary_unreviewed_title")}
         >
-          UNREVIEWED
+          {t("canvas.island.unreviewed_badge")}
         </div>
       ) : null}
     </div>

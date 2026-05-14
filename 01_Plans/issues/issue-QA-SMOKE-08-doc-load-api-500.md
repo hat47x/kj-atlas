@@ -1,7 +1,7 @@
 # Issue Draft: QA-SMOKE-08 doc_phase1_canvas 読み込み時の API 500 切り分け
 
 - Type: Bug
-- Status: Draft
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -20,12 +20,13 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: N/A
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 
 - 2026-05-14 のブラウザ smoke で `http://127.0.0.1:5173/?locale=ja&i18nAudit=1778707096017` を開いたところ、`/api/docs/doc_phase1_canvas` が 500 を返し、画面本文に `Internal Server Error` が表示された。
+- 2026-05-14 18:00台の再確認で、port 8000 の backend が未起動だったことを確認した。`03_Implement/backend` から backend を起動すると backend 直アクセス、frontend proxy 経由ともに `doc_phase1_canvas` は 200 で返った。
 - 同時に UI 本体は表示され、レイアウト見切れや主要ラベルの未翻訳は検出されなかったため、frontend 表示崩れとは別に API/起動手順/fixture 初期化の切り分けが必要。
 - 標準サンプルは 04 文書のスクリーンショットや受け入れ確認の前提になっているため、利用者向け確認でエラーが混ざると文書品質と導入体験を損なう。
 
@@ -58,24 +59,24 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `curl http://127.0.0.1:5173/api/docs/doc_phase1_canvas` または同等の proxy 経由確認で 2xx が返る。
-- [ ] backend 直アクセスでも `doc_phase1_canvas` が取得できるか、存在しない場合は明確な 404/初期化手順が返る。
-- [ ] Chromium smoke で画面本文に `Internal Server Error` が出ない。
-- [ ] 失敗時に利用者へ出す文言が過度に内部実装へ寄らない。
-- [ ] `03_Implement/frontend/docs/e2e_testing.md` に再現コマンドまたは確認観点が反映される。
+- [x] `curl http://127.0.0.1:5173/api/docs/doc_phase1_canvas` または同等の proxy 経由確認で 2xx が返る。
+- [x] backend 直アクセスでも `doc_phase1_canvas` が取得できるか、存在しない場合は明確な 404/初期化手順が返る。
+- [x] Chromium smoke で画面本文に `Internal Server Error` が出ない。
+- [x] 失敗時に利用者へ出す文言が過度に内部実装へ寄らない。
+- [x] `03_Implement/frontend/docs/e2e_testing.md` に再現コマンドまたは確認観点が反映される。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 frontend dev proxy と backend 直アクセスの response/log を採取する。
-- [ ] T2 `doc_phase1_canvas` の seed/fixture/DB 初期化契約を確認する。
-- [ ] T3 原因に応じて route、seed、起動手順、または frontend error 表示を最小修正する。
-- [ ] T4 Playwright smoke を追加または既存 E2E に組み込む。
+- [x] T1 frontend dev proxy と backend 直アクセスの response/log を採取する。
+- [x] T2 `doc_phase1_canvas` の seed/fixture/DB 初期化契約を確認する。
+- [x] T3 原因に応じて route、seed、起動手順、または frontend error 表示を最小修正する。
+- [x] T4 Chromium smoke と文書化で再発時の切り分け手順を固定する。自動 Playwright 追加は、今回の原因が backend 未起動であり実装回帰ではないため非採用。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `curl -i http://127.0.0.1:5173/api/docs/doc_phase1_canvas`
-  - `curl -i http://127.0.0.1:8000/api/docs/doc_phase1_canvas`
+  - `curl -i http://127.0.0.1:8000/docs/doc_phase1_canvas`
   - `cd 03_Implement/frontend && node node_modules/vitest/vitest.mjs run <affected tests>`
   - `cd 03_Implement/frontend && npx playwright test <smoke spec>`
 - 期待結果:
@@ -100,6 +101,12 @@
   - `GET http://127.0.0.1:5173/api/docs/doc_phase1_canvas` -> 500
   - 画面本文に `Internal Server Error`
   - 主要UIラベルの日本語化と右端見切れは同時確認では再発なし
+- 2026-05-14 follow-up:
+  - backend process was not running on `127.0.0.1:8000` when the 500 occurred.
+  - backend 起動後: `http://127.0.0.1:8000/healthz` -> 200
+  - backend 起動後: `http://127.0.0.1:8000/docs/doc_phase1_canvas` -> 200, `id=doc_phase1_canvas`, `cards=3`
+  - backend 起動後: `http://127.0.0.1:5173/api/docs/doc_phase1_canvas` -> 200, `id=doc_phase1_canvas`, `cards=3`
+  - Chromium smoke で代表的な未翻訳ラベルと右端見切れは検出なし。`Internal Server Error` も消えた。
 
 ---
 

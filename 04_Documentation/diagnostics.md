@@ -70,6 +70,7 @@ curl -fsS http://127.0.0.1:8000/healthz
 | 症状 | 主な確認 |
 | --- | --- |
 | 画面が真っ白 | frontend build、console error、nginx logs |
+| `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
 | export が失敗 | 対象ドキュメントの schema、ブラウザ console |

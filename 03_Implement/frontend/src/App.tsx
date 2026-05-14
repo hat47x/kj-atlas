@@ -1714,7 +1714,7 @@ export default function App() {
         setViewVisibility(persistedVisibility.viewVisibility);
         setPackVisibility(persistedVisibility.packVisibility);
         pendingCardDragSnapshotRef.current = null;
-        setStatusMessage("Document loaded");
+        setStatusMessage(t("app.status.document_loaded"));
       } catch (error) {
         if (allowCreateOnNotFound && error instanceof ApiError && error.status === 404) {
           const defaultDocument = createDefaultDocument(docId);
@@ -1754,7 +1754,7 @@ export default function App() {
             setViewVisibility(persistedVisibility.viewVisibility);
             setPackVisibility(persistedVisibility.packVisibility);
             pendingCardDragSnapshotRef.current = null;
-            setStatusMessage("Created a new document");
+            setStatusMessage(t("app.status.document_created"));
           } catch (saveError) {
             setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
           }
@@ -2215,13 +2215,13 @@ export default function App() {
       return;
     }
     if (mode === "resuggest" && resuggestStopperEnabled) {
-      setStatusMessage("Self-repair stopper active: retry limit reached. Discard or revise instruction.");
+      setStatusMessage(t("suggestion.panel.status.stopper_active_retry_limit"));
       return;
     }
 
     setIsSuggesting(true);
     setSuggestionError(null);
-    setStatusMessage("Requesting draft suggestion...");
+    setStatusMessage(t("suggestion.panel.status.requesting_draft"));
 
     try {
       const result = await suggestLayout(document, suggestionInstruction.trim() || undefined);
@@ -2236,9 +2236,9 @@ export default function App() {
         setResuggestAttemptCount(0);
         setResuggestStopperEnabled(false);
       }
-      setStatusMessage("Draft suggestion proposal ready (preview only, no auto-apply)");
+      setStatusMessage(t("suggestion.panel.status.draft_ready"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to get suggestion";
+      const message = error instanceof Error ? error.message : t("suggestion.panel.status.failed_to_get_suggestion");
       setSuggestionError(message);
       setStatusMessage(message);
       setSuggestedDocument(null);
@@ -8193,7 +8193,7 @@ ${parsedDocument.error}`);
                     }}
                     onStopResuggest={() => {
                       setResuggestStopperEnabled(true);
-                      setStatusMessage("Self-repair stopper enabled manually.");
+                      setStatusMessage(t("suggestion.panel.status.stopper_enabled_manually"));
                     }}
                     onDiscard={handleDiscardSuggestion}
                     hasSuggestion={Boolean(suggestedDocument && suggestionId)}
@@ -8596,7 +8596,7 @@ ${parsedDocument.error}`);
             color: "#334155",
           }}
         >
-          Loading canvas...
+          {t("app.loading_canvas")}
         </div>
       ) : (
         <>

@@ -261,7 +261,8 @@ describe("i18n functional equivalence", () => {
     const enHtml = renderToStaticMarkup(React.createElement(SuggestionPanel, props));
 
     expect(metrics(enHtml)).toEqual(metrics(jaHtml));
-    expect(jaHtml).toContain("proposal-only");
+    expect(jaHtml).toContain("提案のみ運用");
+    expect(jaHtml).not.toContain("CE2 proposal-only blockers");
     expect(enHtml).toContain("proposal-only");
     expect(enHtml).not.toContain("Apply suggestion");
   });

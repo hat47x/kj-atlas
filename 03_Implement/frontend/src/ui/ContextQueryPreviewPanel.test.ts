@@ -1,9 +1,10 @@
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { ContextQueryPreviewPanel } from "./ContextQueryPreviewPanel";
 import { buildQueryPreviewState, type ContextQueryDraft } from "../domain/context/query_preview";
+import { setActiveLocale } from "../i18n/translate";
 
 function buildDraft(overrides: Partial<ContextQueryDraft> = {}): ContextQueryDraft {
   return {
@@ -20,8 +21,13 @@ function buildDraft(overrides: Partial<ContextQueryDraft> = {}): ContextQueryDra
   };
 }
 
+afterEach(() => {
+  setActiveLocale("ja");
+});
+
 describe("ContextQueryPreviewPanel", () => {
   it("renders CE1 query preview summary and mock bundle footer", () => {
+    setActiveLocale("en");
     const draft = buildDraft();
     const html = renderToStaticMarkup(
       React.createElement(ContextQueryPreviewPanel, {
@@ -46,6 +52,7 @@ describe("ContextQueryPreviewPanel", () => {
   });
 
   it("shows blockers and disables submit when previewConfirmed is false", () => {
+    setActiveLocale("en");
     const draft = buildDraft({ previewConfirmed: false });
     const html = renderToStaticMarkup(
       React.createElement(ContextQueryPreviewPanel, {
@@ -64,6 +71,7 @@ describe("ContextQueryPreviewPanel", () => {
   });
 
   it("shows safeMode guard when includeUnreviewed is selected", () => {
+    setActiveLocale("en");
     const draft = buildDraft({ reviewFilter: "includeUnreviewed" });
     const html = renderToStaticMarkup(
       React.createElement(ContextQueryPreviewPanel, {

@@ -55,8 +55,10 @@ describe("SuggestionPanel", () => {
     expect(enHtml).toContain("CE2 proposal-only blockers: auto_apply_blocked");
     expect(enHtml).toContain("Patch proposals");
     expect(enHtml).toContain("review state: 1 unreviewed / 1 human reviewed");
-    expect(enHtml).toContain("selected: <strong>Proposal 2</strong> (held, human_reviewed)");
-    expect(enHtml).toContain("Proposal 2 (held, human_reviewed)");
+    expect(jaHtml).toContain("提案パッチ");
+    expect(jaHtml).not.toContain("Patch proposals");
+    expect(enHtml).toContain("selected: <strong>Proposal 2</strong> (held, human reviewed)");
+    expect(enHtml).toContain("Proposal 2 (held, human reviewed)");
     expect(enHtml).toContain("Reversible synthesis keeps proposals isolated until explicit human approval.");
   });
 

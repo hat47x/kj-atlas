@@ -30,6 +30,41 @@ type SuggestionPanelProps = {
   adapter?: SuggestionPanelAdapter;
 };
 
+function proposalStatusLabel(status: Ce2SuggestionCandidate["status"]): string {
+  switch (status) {
+    case "accepted":
+      return t("suggestion.panel.proposal_status.accepted");
+    case "held":
+      return t("suggestion.panel.proposal_status.held");
+    case "rejected":
+      return t("suggestion.panel.proposal_status.rejected");
+    case "proposed":
+    default:
+      return t("suggestion.panel.proposal_status.proposed");
+  }
+}
+
+function proposalReviewStateLabel(reviewState: Ce2SuggestionCandidate["reviewState"]): string {
+  switch (reviewState) {
+    case "human_reviewed":
+      return t("suggestion.panel.review_state.human_reviewed");
+    case "unreviewed":
+    default:
+      return t("suggestion.panel.review_state.unreviewed");
+  }
+}
+
+function proposalCandidateLabel(candidate: Ce2SuggestionCandidate): string {
+  return candidate.label === "Current proposal" ? t("suggestion.panel.current_proposal") : candidate.label;
+}
+
+function proposalCandidateState(candidate: Ce2SuggestionCandidate): string {
+  return t("suggestion.panel.candidate_state", {
+    status: proposalStatusLabel(candidate.status),
+    reviewState: proposalReviewStateLabel(candidate.reviewState),
+  });
+}
+
 export function SuggestionPanel({
   instruction,
   onInstructionChange,
@@ -132,7 +167,7 @@ export function SuggestionPanel({
                 {isSuggesting ? t("suggestion.panel.resuggesting") : t("suggestion.panel.resuggest")}
               </button>
               <button type="button" disabled={isReadOnly || !resuggestStopReached} onClick={onStopResuggest}>
-                Stop after {resuggestAttemptLimit} retries
+                {t("suggestion.panel.stop_after_retries", { count: resuggestAttemptLimit })}
               </button>
               <button type="button" disabled={isReadOnly} onClick={onDiscard}>
                 {t("suggestion.panel.discard")}
@@ -145,8 +180,11 @@ export function SuggestionPanel({
               {t("suggestion.panel.proposal_only_hint")}
             </div>
             <div style={{ fontSize: 11, color: resuggestStopReached ? "#b45309" : "#475569", marginTop: 6 }}>
-              Self-repair attempts: {resuggestAttemptCount}/{resuggestAttemptLimit}
-              {resuggestStopReached ? " (stopper active)" : ""}
+              {t("suggestion.panel.self_repair_attempts", {
+                count: resuggestAttemptCount,
+                limit: resuggestAttemptLimit,
+              })}
+              {resuggestStopReached ? t("suggestion.panel.self_repair_stopper_active") : ""}
             </div>
           </section>
           <section
@@ -158,13 +196,19 @@ export function SuggestionPanel({
               backgroundColor: "#ffffff",
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Patch proposals</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
+              {t("suggestion.panel.patch_proposals")}
+            </div>
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>
-              review state: {reviewSummary.unreviewed} unreviewed / {reviewSummary.reviewed} human reviewed
+              {t("suggestion.panel.review_summary", {
+                unreviewed: reviewSummary.unreviewed,
+                reviewed: reviewSummary.reviewed,
+              })}
             </div>
             {selectedCandidate ? (
               <div style={{ fontSize: 11, color: "#334155", marginBottom: 6 }}>
-                selected: <strong>{selectedCandidate.label}</strong> ({selectedCandidate.status}, {selectedCandidate.reviewState})
+                {t("suggestion.panel.selected_label")} <strong>{proposalCandidateLabel(selectedCandidate)}</strong>{" "}
+                {proposalCandidateState(selectedCandidate)}
               </div>
             ) : null}
             <select
@@ -176,15 +220,15 @@ export function SuggestionPanel({
                 onSelectProposalCandidate?.(event.target.value);
               }}
             >
-              {candidates.length === 0 ? <option value="">No proposals</option> : null}
+              {candidates.length === 0 ? <option value="">{t("suggestion.panel.no_proposals")}</option> : null}
               {candidates.map((candidate) => (
                 <option key={candidate.proposalId} value={candidate.proposalId}>
-                  {candidate.label} ({candidate.status}, {candidate.reviewState})
+                  {proposalCandidateLabel(candidate)} {proposalCandidateState(candidate)}
                 </option>
               ))}
             </select>
             <div style={{ fontSize: 11, color: "#64748b" }}>
-              Reversible synthesis keeps proposals isolated until explicit human approval.
+              {t("suggestion.panel.reversible_synthesis_hint")}
             </div>
           </section>
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -202,7 +246,7 @@ export function SuggestionPanel({
       ) : null}
       {notes ? <div style={{ fontSize: 12, color: "#334155", marginBottom: 6 }}>{t("suggestion.panel.notes", { notes })}</div> : null}
       <div data-testid="ce2-proposal-only-state" style={{ fontSize: 11, color: "#64748b" }}>
-        CE2 proposal-only blockers: {ce2State.blockers.join(",")}
+        {t("suggestion.panel.proposal_only_blockers", { blockers: ce2State.blockers.join(",") })}
       </div>
       {errorMessage ? <div style={{ fontSize: 12, color: "#b91c1c" }}>{errorMessage}</div> : null}
     </section>

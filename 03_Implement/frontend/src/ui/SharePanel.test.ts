@@ -150,13 +150,14 @@ describe("SharePanel patch section localization", () => {
 describe("SharePanel visibility controls", () => {
   it("renders view/pack visibility selectors with fallback copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
-    expect(html).toContain("View visibility");
-    expect(html).toContain("Pack visibility");
+    expect(html).toContain("view の公開範囲");
+    expect(html).toContain("パックの公開範囲");
     expect(html).toContain('option value="Public"');
     expect(html).toContain('option value="Unlisted"');
     expect(html).toContain('option value="Org"');
     expect(html).toContain('option value="Restricted"');
-    expect(html).toContain("Fallback: when view visibility is missing, Restricted is applied.");
-    expect(html).toContain("Fallback: when pack visibility is missing, Public is applied.");
+    expect(html).toContain('option value="Restricted">制限付き</option>');
+    expect(html).toContain("view の公開範囲が未指定の場合は、制限付きとして扱います。");
+    expect(html).toContain("パックの公開範囲が未指定の場合は、公開として扱います。");
   });
 });
