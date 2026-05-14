@@ -10,6 +10,7 @@
 
 価値判断と設計要素の対応は [value_traceability.md](value_traceability.md) を参照します。本書で新しい思想や要件を直接追加せず、上流文書で定義された価値を実装可能な責務境界へ落とします。
 `02_Architecture` 内の現行契約と履歴ログの読み分けは [contract_reading_guide.md](contract_reading_guide.md) を参照します。
+MVPで運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は [data_model_operations_overview.md](data_model_operations_overview.md) を参照します。
 
 ---
 
@@ -131,6 +132,8 @@ AI処理は同一サービスに実装しても良いし、
 
 ## 5. 永続化（DB）
 
+MVPの永続化は、細かい論理エンティティを全て正規化する設計ではありません。ドキュメント本体はスナップショットとして保存し、補助ログや認証主体の対応表だけを別テーブルで扱います。物理ER、論理ER、CRUD可否、ステークホルダー別の保守責任は [data_model_operations_overview.md](data_model_operations_overview.md) を正本として参照します。
+
 ### 5.1 開発・検証
 
 - SQLite（ローカルで完結）
@@ -162,10 +165,10 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 ### 6.2 代表エンドポイント（例）
 
 - `GET /docs/{doc_id}`
-- `PUT /docs/{doc_id}`（スナップショット保存）
-- `POST /docs`（新規）
+- `PUT /docs/{doc_id}`（スナップショット保存。現行MVPでは存在しないIDへのPUTを作成として扱う）
+- `POST /docs`（サーバ採番の新規作成候補。MVP必須ではなく、実装契約化は `DATA-CONTRACT-01` で扱う）
 
-認証・共有は後回し。
+認証・共有の詳細は、文書保存APIとは分けて `enterprise_architecture.md`、`review_attribution.md`、share/export関連仕様で扱う。
 
 ---
 

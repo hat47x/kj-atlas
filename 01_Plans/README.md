@@ -48,6 +48,7 @@
 - `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`（UI操作性・段階的開示）
 - `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`（製品化画面情報設計）
 - `01_Plans/adr/ADR-0032-product-value-realization-model.md`（プロダクト価値実現モデル）
+- `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（MVPデータサポート境界と保守方針）
 
 ### 3.5 CLI 分割
 
