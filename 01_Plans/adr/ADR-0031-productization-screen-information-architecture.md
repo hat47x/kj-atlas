@@ -1,0 +1,71 @@
+# ADR-0031: 製品化に向けた画面情報設計
+
+- Status: Proposed
+- Date: 2026-05-14
+- Deciders: Project Maintainers
+- Scope: `03_Implement/frontend/src/`, `04_Documentation/`, `01_Plans/issues/`
+
+## Context
+
+- kj-atlas はMVP期に、カード、島、レビュー、差分、AI提案、共有、診断を単一画面へ高密度に追加してきた。
+- 2026-05-14 の操作検証では、右側パネルに高度機能が密集し、カード選択後に文脈に合う詳細が現在表示範囲へ出ない、レガシーJSON操作が主要ツールバーで目立つ、共有と再現の操作群が利用目的より実装順に近い、という課題を確認した。
+- ADR-0030 は段階的開示とキーボードスコープを定めたが、MVP脱却には画面全体の情報設計、初回導線、共有前確認、品質ゲートを束ねる上位方針が必要である。
+- ROADMAP は UX深化、SafeMode のUI明示性、視座プリセット、公開/アクセス可視性を近接・中期テーマとして掲げている。
+
+## Decision
+
+- kj-atlas の製品化UIは、次の5つの画面領域または作業面を基本構造として扱う。
+  - **開始/文書入口**: 新規作成、サンプル、最近使った文書、document.json/レビューパック取り込み、起動状態、SafeMode状態を扱う。
+  - **キャンバス作業面**: カード、島、関係線、パン/ズーム、検索、選択、配置を扱う主作業領域とする。
+  - **選択コンテキスト**: 選択したカード/島/関係線の確認、編集、レビュー状態、根拠、要約を優先して表示する。
+  - **作業モード面**: レビュー、差分、ナラティブ、AI提案、パッチ、診断などの高度機能を、タブまたは明示的なモードとして段階的に開く。
+  - **共有前確認面**: SafeMode、公開範囲、未レビュー情報、出力形式、レビューパック/静的公開の目的を確認してから共有・エクスポートする。
+- 起動直後または初回利用では、基本作業と安全状態を優先し、レガシー/高度/開発者寄りの操作は補助導線として扱う。
+- カードや島を選択した直後は、選択対象の確認・編集・レビューを現在の視野内へ出す。高度な分析や生成機能は選択文脈の後ろに置く。
+- 共有とエクスポートは、ファイル形式の一覧ではなく「何を誰と共有するか」を起点にした確認フローへ移行する。
+- キーボード操作、狭い画面、大きな文書、低速環境は、製品化UIの必須条件として扱い、後付けの例外対応にしない。
+- 非目標:
+  - 本ADRは全面リデザインの完成形を固定しない。
+  - 既存の document/view/pack スキーマを変更しない。
+  - レガシーimport/export機能を削除しない。
+  - 認証・認可の実装方針は本ADRでは確定しない。
+
+## Consequences
+
+- 期待される効果:
+  - 初回利用者が「開く/作る」「整理する」「確認する」「共有する」の流れを画面上で理解しやすくなる。
+  - 右側パネルの認知負荷を下げ、カード選択やレビュー状態確認を主導線へ戻せる。
+  - SafeMode と公開範囲の判断が共有直前に明示され、誤共有のリスクを下げられる。
+  - E2Eテストで画面領域ごとの期待操作を固定しやすくなる。
+- 想定される副作用/制約:
+  - 既存利用者が慣れているボタン位置やパネル順序が変わる可能性がある。
+  - タブ化やモード分離により、状態保持、URL/履歴、フォーカス復帰、スクリーンショット文書の同期が必要になる。
+  - 開発者向け検証導線と一般利用者向け導線を分けるため、一時的に文書・E2E・UI実装の同期コストが上がる。
+- 移行時に必要な対応:
+  - `PRODUCT-UX-01` で開始/文書入口を定義する。
+  - `PRODUCT-UX-02` でワークスペースの画面構造を整理する。
+  - `PRODUCT-UX-03` で共有前確認面を製品品質へ移行する。
+  - `PRODUCT-UX-04` でレスポンシブ、大規模文書、低速環境の操作性を検証する。
+  - `PRODUCT-QA-01` で製品化品質ゲートを固定する。
+
+## Traceability
+
+- Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- Related: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
+- Related: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Related: `01_Plans/issues/issue-UX-OPERABILITY-01-pointer-keyboard-flow-review.md`
+- Related: `ROADMAP.md`
+- Related: `02_Architecture/architecture.md`
+- Supersedes: N/A
+- Superseded by: N/A
+- Derived-from: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
+- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
+- [x] Decision に採用理由と非目標がある。
+- [x] Traceability に関連文書を1件以上記載した。
+- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。
