@@ -52,7 +52,7 @@
 - 変更の最小単位:
   - 製品化テーマごとに `UX-*`、`DOC-*`、`QA-*`、`SEC-*` のissueへ分解する。
 - 非目標:
-  - 認証・SSO・外部PDPなどの大規模実装を本Issueだけで完了させること。
+  - 認証・SSO・連携先PDPなどの大規模実装を本Issueだけで完了させること。
 
 ## 5) 受入条件 / Acceptance criteria
 
@@ -98,6 +98,23 @@
 ## 10) Additional context
 
 - ADR化が必要になる条件: ナビゲーション構造、公開配布方式、SafeMode既定値、認証・認可の製品方針を変更する場合。
+
+### 2026-05-14 製品化分解メモ
+
+- 画面設計の上位判断:
+  - `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
+- 初回導線:
+  - `01_Plans/issues/issue-PRODUCT-UX-01-first-run-document-entry.md`
+- ワークスペース構造:
+  - `01_Plans/issues/issue-PRODUCT-UX-02-workspace-information-architecture.md`
+- 共有・エクスポート・レビューパック:
+  - `01_Plans/issues/issue-PRODUCT-UX-03-safe-share-export-flow.md`
+- 小画面・大規模文書・低速環境:
+  - `01_Plans/issues/issue-PRODUCT-UX-04-responsive-large-document-operability.md`
+- リリース品質ゲート:
+  - `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+- サポート・診断・復帰導線:
+  - `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`
 
 ---
 

@@ -1,5 +1,10 @@
-import type { Card, DocumentV2, EvidenceLink, Island, Transform } from "./types";
+import type { Card, DeterministicTieBreak, DocumentV2, EvidenceLink, Island, Transform } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
+import {
+  validateHilRsCritiqueInput,
+  validateHilRsRediffPayload,
+  validateHilRsReviewAttribution,
+} from "./hil_rs_contract";
 
 type ValidateResult =
   | {
@@ -348,6 +353,52 @@ function parseEvidenceLinks(value: unknown): EvidenceLink[] | undefined {
   return evidenceLinks;
 }
 
+function parseCritiqueInputs(value: unknown): DocumentV2["critiqueInputs"] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value.filter(validateHilRsCritiqueInput);
+}
+
+function parseReproposalDiffs(value: unknown): DocumentV2["reproposalDiffs"] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value.filter(validateHilRsRediffPayload);
+}
+
+function parseReviewAttribution(value: unknown): DocumentV2["reviewAttribution"] | undefined {
+  return validateHilRsReviewAttribution(value) ? value : undefined;
+}
+
+function parseDeterministicTieBreak(value: unknown): DeterministicTieBreak | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const expectedOrder: DeterministicTieBreak["order"] = [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
+  const order = value.order;
+  if (
+    value.schemaVersion !== "1.0.0"
+    || !Array.isArray(order)
+    || expectedOrder.some((entry, index) => order[index] !== entry)
+  ) {
+    return undefined;
+  }
+
+  return {
+    schemaVersion: "1.0.0",
+    order: expectedOrder,
+  };
+}
+
 function normalizeVersion(value: unknown): 1 | 2 | null {
   if (value === 1 || value === "v1") {
     return 1;
@@ -408,6 +459,10 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
   const now = new Date().toISOString();
   const createdAt = parseIsoDate(value.createdAt, now);
   const updatedAt = parseIsoDate(value.updatedAt, now);
+  const critiqueInputs = parseCritiqueInputs(value.critiqueInputs);
+  const reproposalDiffs = parseReproposalDiffs(value.reproposalDiffs);
+  const reviewAttribution = parseReviewAttribution(value.reviewAttribution);
+  const deterministicTieBreak = parseDeterministicTieBreak(value.deterministicTieBreak);
 
   return {
     ok: true,
@@ -422,6 +477,10 @@ export function validateAndUpgradeImportedDocument(value: unknown): ValidateResu
       edges: parseEdges(value.edges),
       islands: version === 1 ? [] : parseIslands(value.islands),
       evidenceLinks: parseEvidenceLinks(value.evidenceLinks) ?? [],
+      ...(critiqueInputs !== undefined ? { critiqueInputs } : {}),
+      ...(reproposalDiffs !== undefined ? { reproposalDiffs } : {}),
+      ...(reviewAttribution !== undefined ? { reviewAttribution } : {}),
+      ...(deterministicTieBreak !== undefined ? { deterministicTieBreak } : {}),
     },
   };
 }

@@ -1,4 +1,4 @@
-import type { DocumentV2 } from "./types";
+import type { A1TargetRef, DocumentV2 } from "./types";
 import {
   HIL_RS_CRITIQUE_SCHEMA_VERSION,
   type HilRsCritiqueInput,
@@ -37,7 +37,7 @@ function resolveCritiqueTypeFromTags(tags: readonly string[] | undefined): HilRs
 
 function pushCritiqueInput(
   collected: HilRsCritiqueInput[],
-  targetRef: string,
+  targetRef: A1TargetRef,
   critique: string | undefined,
   critiqueTags: readonly string[] | undefined,
   options: BuildCritiqueOptions,

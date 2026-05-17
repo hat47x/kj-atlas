@@ -3,11 +3,14 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
+> MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
-- YAGNI方針に従い、MVPに不要な型は含めません
-- 出自情報（記録者・記録時間など）は **MVPでは保持しません**
-- 島（囲み）・画像・文章化・類似統合は後回しです
+- YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
+- 最小 `DocumentV1` では、出自情報（記録者・記録時間など）を保持しません
+- 島（囲み）・画像・文章化・類似統合などは、型の有無と標準保守範囲を分けて管理します
+
+ただし、本ファイルには後続フェーズのContract Freezeや型先行の記録も含まれます。型が記載されていることは、そのまま標準API/UIで個別保守できることを意味しません。
 
 ---
 
@@ -312,6 +315,115 @@ export type DocumentV1 = {
   edges: Edge[];
 };
 ```
+
+### 3.5 DocumentV2 embedded support
+
+`DocumentV2` は、MVPのスナップショット保存を保ったまま、島、文章化、根拠リンク、レビュー関連情報を含める拡張形式である。
+
+`DocumentV2` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
+
+```ts
+export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
+export type EdgeEndpointKind = "card" | "island";
+export type A1TargetRef =
+  | `card:${string}`
+  | `island:${string}`
+  | `cluster:${string}`
+  | `edge:${string}`
+  | `proposal:${string}`;
+
+export type EvidenceLink = {
+  id: string;
+  type: "supports" | "contradicts";
+  fromCardId: string;
+  toCardId: string;
+  note?: string;
+  createdAt?: string; // ISO 8601
+};
+
+export type CritiqueInput = {
+  schemaVersion: "1.0.0";
+  critiqueId: string;
+  targetRef: A1TargetRef;
+  critiqueType: "too_close" | "too_far" | "not_the_same" | "feels_off" | "no_articulable_reason";
+  createdAt: string; // ISO 8601
+  iteration: number; // >= 1
+  comment?: string;
+  constraintHints?: string[];
+};
+
+export type ReproposalDiffOp = {
+  opId: string;
+  opType: "add" | "remove" | "move" | "regroup" | "relabel";
+  targetRef: A1TargetRef;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  rationale?: string;
+};
+
+export type ReproposalDiff = {
+  schemaVersion: "1.0.0";
+  proposalId: string;
+  basedOnIteration: number; // >= 1
+  diffOps: ReproposalDiffOp[];
+  traceKey: string;
+  rationale?: string;
+};
+
+export type ReviewAttribution = {
+  schemaVersion: "1.0.0";
+  reviewState: "unreviewed" | "human_reviewed";
+  reviewedAt: string | null; // ISO 8601 when human_reviewed, null when unreviewed
+  reviewerRef: string; // opaque id; email/external_uid/provider user id must not be stored here
+  auditRecordedAt: string; // ISO 8601
+  overridePolicy: "human_dual_control_only";
+  reviewContext?: string;
+  ownerRef?: string;
+};
+
+export type DeterministicTieBreak = {
+  schemaVersion: "1.0.0";
+  order: [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
+};
+
+export type DocumentV2 = {
+  version: 2;
+  id: string;
+  title?: string;
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+  transform: Transform;
+  cards: Array<Card & { claimType?: CardClaimType }>;
+  edges: Array<Edge & { fromKind?: EdgeEndpointKind; toKind?: EdgeEndpointKind }>;
+  islands: Island[];
+  readingOrder?: string[];
+  narratives?: Narrative[];
+  relationSummaries?: RelationSummary[];
+  evidenceLinks?: EvidenceLink[];
+  patchApplyLog?: PatchApplyLogEntry[];
+  mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+  critiqueInputs?: CritiqueInput[];
+  reproposalDiffs?: ReproposalDiff[];
+  reviewAttribution?: ReviewAttribution;
+  deterministicTieBreak?: DeterministicTieBreak;
+};
+```
+
+支援レベル:
+
+- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
+- `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
+- `critiqueInputs`、`reproposalDiffs`、`reviewAttribution`、`deterministicTieBreak` は A1 契約の往復保持対象である。MVPでは画面上の個別編集や個別CRUDを提供せず、import/export/API保存時の型・検証・監査境界を固定する。
+- `targetRef` は `card:` / `island:` / `cluster:` / `edge:` / `proposal:` の名前空間を許可する。現行UIは島を `island:` として扱い、既存A1文書の `cluster:` と互換的に残す。
+- `reproposalDiffs[].diffOps[].before` と `after` はどちらも必須キーであり、追加/削除を可逆にするため片側 `null` を許可する。ただし両方 `null` は不可とする。
+- `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
+- 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
 ---
 

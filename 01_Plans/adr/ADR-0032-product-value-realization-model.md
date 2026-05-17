@@ -1,0 +1,78 @@
+# ADR-0032: プロダクト価値実現モデル
+
+- Status: Proposed
+- Date: 2026-05-15
+- Deciders: Project Maintainers
+- Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
+
+## Context
+
+`ADR-0001`、`domain.md`、`ai_cognitive_externalization_requirements.md` は、kj-atlas が守るべき価値を強く定義している。
+また `ADR-0031` は、MVPから製品化へ移るための画面情報設計を定義した。
+
+一方で、現状の計画と設計には次の不足がある。
+
+1. 利用者が初回利用で「価値を得た」と感じる最短経路が、受入条件として固定されていない。
+2. 保留、違和感、根拠不足、反対意見が上流概念やAI IRには存在するが、日常操作の中心動線としてまだ定義が薄い。
+3. ナラティブ、レビューパック、共有前確認は整備されているが、成果物が「何が分かり、何が未確定か」を読者へ伝える価値単位として十分に束ねられていない。
+4. 製品化品質ゲートはUI/安全/文書/診断を扱うが、プロダクト価値そのものを検証するゲートが不足している。
+
+このままでは、機能は増えても、kj-atlas の本質である「意味が揺れている状態に耐えながら、判断可能な形へ育てる」価値が利用者体験として届きにくい。
+
+## Decision
+
+kj-atlas の製品化では、次の5つの価値ループを最小モデルとして扱う。
+
+| 価値ループ | 利用者が得る状態 | 主な設計対象 | 関連issue |
+| --- | --- | --- | --- |
+| V0: 開始 | 迷わず作業を始められる | 開始/文書入口、サンプル、SafeMode表示 | `PRODUCT-UX-01`, `PRODUCT-VALUE-01` |
+| V1: 外在化 | メモや違和感をカードとして置ける | Raw Note、Card、Hold、Critique | `PRODUCT-VALUE-01`, `PRODUCT-VALUE-02` |
+| V2: 構造化 | まとまり、関係、未整理を同時に扱える | Island、Relation、Pending、View controls | `PRODUCT-UX-02`, `PRODUCT-VALUE-02` |
+| V3: レビュー | AI候補や要約を人間が採否判断できる | proposal-only、reviewState、patch + approval | `PRODUCT-VALUE-02`, `CE-*` |
+| V4: 共有と学習 | 読者が確定点、保留点、根拠を理解できる | Narrative、Review Pack、SafeMode、source trace | `PRODUCT-UX-03`, `PRODUCT-VALUE-03` |
+
+このモデルは新しい思想を追加するものではなく、既存価値を製品化の実行単位へ変換するための橋渡しである。
+
+製品化のGo/No-Goでは、次を価値実現ゲートとして追加で確認する。
+
+- V0/V1: 初回利用者が、サンプルまたは自分のメモから最初の意味ある配置へ到達できる。
+- V2: 保留、違和感、根拠不足、反対意見が、削除や失敗ではなく作業状態として残せる。
+- V3: AI提案は比較、部分採用、保留、破棄ができ、人間レビュー状態を自動昇格しない。
+- V4: 共有物には、確定点だけでなく保留点、未レビュー情報、根拠への戻り方が含まれる。
+- 横断: `KJ_ATLAS_LLM_PROVIDER=none` の既定構成でも、価値ループの主要部分が成立する。
+
+## Consequences
+
+- 期待される効果:
+  - 製品化作業が「画面を整える」だけでなく、プロダクト価値の実現単位で優先順位づけできる。
+  - 既存の認知外在化要件、SafeMode、review attribution、ナラティブ、共有導線が一つの利用者価値へ接続される。
+  - 価値実現に足りない作業を内部issueとして管理しやすくなる。
+- 想定される副作用/制約:
+  - UI、データ、文書、E2Eを横断するため、単一PRで完了しにくい。
+  - 価値ループを過剰に測定しようとすると、利用者行動の監視や不要なログ収集に寄りやすい。
+  - 指標は診断・受入確認の補助に留め、個人行動追跡やスコアリングへ転用しない。
+- 移行時に必要な対応:
+  - `02_Architecture/value_traceability.md` に価値ループと設計境界を追加する。
+  - `PRODUCT-VALUE-01` で初回価値実感の受入シナリオを定義する。
+  - `PRODUCT-VALUE-02` で保留・違和感・根拠不足を日常操作へ落とす。
+  - `PRODUCT-VALUE-03` で成果物化と共有後レビュー循環を定義する。
+
+## Traceability
+
+- Related: `00_Prompt/domain.md`
+- Related: `00_Prompt/ai_cognitive_externalization_requirements.md`
+- Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+- Related: `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`
+- Related: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
+- Related: `02_Architecture/value_traceability.md`
+- Derived-from: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
+- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
+- [x] Decision に採用理由と非目標がある。
+- [x] Traceability に関連文書を1件以上記載した。
+- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。

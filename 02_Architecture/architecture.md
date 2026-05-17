@@ -10,6 +10,7 @@
 
 価値判断と設計要素の対応は [value_traceability.md](value_traceability.md) を参照します。本書で新しい思想や要件を直接追加せず、上流文書で定義された価値を実装可能な責務境界へ落とします。
 `02_Architecture` 内の現行契約と履歴ログの読み分けは [contract_reading_guide.md](contract_reading_guide.md) を参照します。
+MVPで運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は [data_model_operations_overview.md](data_model_operations_overview.md) を参照します。
 
 ---
 
@@ -36,6 +37,17 @@
 - 社内サーバ上のLocal LLM（HTTP）を叩ける
 
 ことを想定し、AI連携は **Provider抽象（設定で切替）** を採用します。
+
+### 1.4 プロダクト価値実現の責務境界
+
+製品化では、単に機能が存在するだけでなく、利用者が価値を受け取る流れを構造として支える必要があります。
+価値実現ループの正本は `02_Architecture/value_traceability.md` と `01_Plans/adr/ADR-0032-product-value-realization-model.md` とし、本書では責務境界だけを固定します。
+
+- Frontend は、開始、カード化、保留/違和感の記録、選択コンテキスト、共有前確認を利用者の主要導線として扱う。
+- Backend は、保存、検証、ContextBundle、proposal、監査イベントを扱うが、AI提案の自動確定や `human_reviewed` 自動昇格を行わない。
+- DB は、作業状態、表示状態、レビュー状態、共有用メタデータを破壊的に混在させず、共有時に削除・抑制できる境界を維持する。
+- AI連携は任意機能であり、`KJ_ATLAS_LLM_PROVIDER=none` の既定構成でも、開始、外在化、構造化、共有前確認の主要価値が成立する。
+- 共有/export は単なるファイル出力ではなく、確定点、保留点、未レビュー情報、根拠への戻り方を安全に伝える成果物化の責務を持つ。
 
 ---
 
@@ -120,6 +132,8 @@ AI処理は同一サービスに実装しても良いし、
 
 ## 5. 永続化（DB）
 
+MVPの永続化は、細かい論理エンティティを全て正規化する設計ではありません。ドキュメント本体はスナップショットとして保存し、補助ログや認証主体の対応表だけを別テーブルで扱います。物理ER、論理ER、CRUD可否、ステークホルダー別の保守責任は [data_model_operations_overview.md](data_model_operations_overview.md) を正本として参照します。
+
 ### 5.1 開発・検証
 
 - SQLite（ローカルで完結）
@@ -151,10 +165,10 @@ MVPでは差分同期ではなく、**ドキュメントのスナップショッ
 ### 6.2 代表エンドポイント（例）
 
 - `GET /docs/{doc_id}`
-- `PUT /docs/{doc_id}`（スナップショット保存）
-- `POST /docs`（新規）
+- `PUT /docs/{doc_id}`（スナップショット保存。現行MVPでは存在しないIDへのPUTを作成として扱う）
+- `POST /docs`（サーバ採番の新規作成候補。MVP必須ではなく、実装契約化は `DATA-CONTRACT-01` で扱う）
 
-認証・共有は後回し。
+認証・共有の詳細は、文書保存APIとは分けて `enterprise_architecture.md`、`review_attribution.md`、share/export関連仕様で扱う。
 
 ---
 

@@ -39,6 +39,7 @@
 ### 2.1 `A1-CRITIQUE-IF`
 - `schemaVersion`: `1.0.0`
 - required: `critiqueId`, `targetRef`, `critiqueType`, `createdAt`, `iteration`
+- `targetRef`: `card:` / `island:` / `cluster:` / `edge:` / `proposal:` で始まる不透明参照。現行UIの島は `island:` を正とし、既存文書互換の `cluster:` を残す。
 - optional: `comment`, `constraintHints`
 - prohibits:
   - critique入力のみで自動確定
@@ -50,6 +51,7 @@
 - required: `proposalId`, `basedOnIteration`, `diffOps[]`, `traceKey`
 - `diffOps[].required`: `opId`, `opType`, `targetRef`, `before`, `after`
 - `opType`: `add | remove | move | regroup | relabel`
+- `before` / `after`: どちらもキーは必須。追加/削除など片側が存在しない操作では片側 `null` を許可する。ただし両方 `null` は非可逆として禁止する。
 - optional: `rationale`
 - prohibits:
   - 非可逆差分
@@ -61,6 +63,7 @@
 - required: `reviewState`, `reviewedAt`, `reviewerRef`, `auditRecordedAt`
 - optional: `reviewContext`, `ownerRef`
 - `reviewState`: `unreviewed | human_reviewed`
+- `reviewedAt`: `human_reviewed` では ISO 8601。`unreviewed` では `null`。
 - `overridePolicy`:
   - allowed: `human_dual_control_only`
   - prohibited: `ai_only_override`, `safemode_relaxation`, `share_export_leakage_relaxation`

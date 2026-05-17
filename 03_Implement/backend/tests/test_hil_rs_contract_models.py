@@ -124,11 +124,50 @@ def test_critique_input_rejects_unknown_target_ref_kind() -> None:
         CritiqueInput(
             schemaVersion="1.0.0",
             critiqueId="crit-3",
-            targetRef="island:i1",
+            targetRef="topic:i1",
             critiqueType="feels_off",
             createdAt=_now(),
             iteration=1,
         )
+
+
+def test_critique_input_accepts_island_target_ref_kind() -> None:
+    validated = CritiqueInput(
+        schemaVersion="1.0.0",
+        critiqueId="crit-4",
+        targetRef="island:i1",
+        critiqueType="feels_off",
+        createdAt=_now(),
+        iteration=1,
+    )
+    assert validated.targetRef == "island:i1"
+
+
+def test_reproposal_diff_allows_one_sided_reversible_add_remove_ops() -> None:
+    validated = ReproposalDiff(
+        schemaVersion="1.0.0",
+        proposalId="p3",
+        basedOnIteration=1,
+        traceKey="crit-3:p3",
+        diffOps=[
+            {
+                "opId": "op-add",
+                "opType": "add",
+                "targetRef": "card:c3",
+                "before": None,
+                "after": {"id": "c3", "text": "gamma"},
+            },
+            {
+                "opId": "op-remove",
+                "opType": "remove",
+                "targetRef": "card:c2",
+                "before": {"id": "c2", "text": "beta"},
+                "after": None,
+            },
+        ],
+    )
+    assert validated.diffOps[0].before is None
+    assert validated.diffOps[1].after is None
 
 
 def test_review_attribution_rejects_email_like_reviewer_ref() -> None:
@@ -145,7 +184,7 @@ def test_review_attribution_defaults_override_policy() -> None:
     validated = ReviewAttribution(
         schemaVersion="1.0.0",
         reviewState="unreviewed",
-        reviewedAt=_now(),
+        reviewedAt=None,
         reviewerRef="user:u-1",
         auditRecordedAt=_now(),
     )

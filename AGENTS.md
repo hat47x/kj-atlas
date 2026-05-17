@@ -32,10 +32,11 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 7) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
 8) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 9) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-10) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0028`
-11) **実装（03_Implement）**: 対象領域のソースへ
-12) **運用・手順**: `04_Documentation/*`（必要に応じて）
-13) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+10) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
+11) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0033`
+12) **実装（03_Implement）**: 対象領域のソースへ
+13) **運用・手順**: `04_Documentation/*`（必要に応じて）
+14) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -123,6 +124,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `02_Architecture/value_traceability.md`：価値→設計→受入条件→検証観点の対応表。
 - `02_Architecture/contract_reading_guide.md`：02層の現行契約と履歴ログの読み分けガイド。
 - `02_Architecture/schemas.md`：データスキーマ（document/view/pack等）。
+- `02_Architecture/data_model_operations_overview.md`：MVPデータモデル、論理ER、CRUDサポート表、ステークホルダー別運用境界。
 - `02_Architecture/api.md`：API設計。
 - `02_Architecture/deployment.md`：デプロイ構成（コンテナ・DB等）。
 - `02_Architecture/runtime_parameter_registry.md`：環境変数/実行パラメータの単一正本（命名規約・既定値）。

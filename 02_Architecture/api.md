@@ -3,6 +3,7 @@
 
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
+> MVPのCRUDサポート表と運用保守境界は `02_Architecture/data_model_operations_overview.md` を参照する。
 本ドキュメントは、kj-atlas の **MVP API（DocumentV1の保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
@@ -19,6 +20,7 @@
 - 最小のCRUD：Create / Read / Update
 
 DeleteはMVPでは必須ではない（必要なら追加）。
+Card / Edge / Island / Narrative などは Document 内の論理構造であり、MVPでは個別リソースCRUDを正本にしません。
 
 ### 1.2 更新方式
 
@@ -41,13 +43,12 @@ MVPではまず LWW とし、将来 ETag を追加できる形にする。
 
 ### 2.1 Create
 
-**POST** `/docs`
+MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs/{doc_id}` を呼び、対象IDが存在しない場合に作成として扱う。
 
-- Request body：任意（空でも良い）
-- Response：作成された `DocumentV1`
+- Request body：`DocumentV1` または `DocumentV2`
+- Response：保存後の `Document`
 
-> サーバでIDを採番しても良いが、フロント主導を優先するならクライアント採番でも良い。
-> どちらでも成立するよう、実装では「bodyにidがあれば採用、なければ生成」を許容してよい。
+**POST** `/docs` は、サーバ採番の新規作成が必要になった場合の将来候補であり、MVPの必須APIではない。`POST /docs` を標準契約に昇格する場合は、`DATA-CONTRACT-01` で文書、実装、テストを同期する。
 
 ---
 
