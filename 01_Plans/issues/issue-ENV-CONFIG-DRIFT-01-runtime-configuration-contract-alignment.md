@@ -158,3 +158,25 @@ Non-goals:
 
 - Frontend typecheck/test により API client の変更が既存型・振る舞いと整合することを確認。
 - backend/compose の公開キー面には追加ドリフトを検出しなかった（`KJ_ATLAS_*` 契約維持）。
+
+## 13) Stream E execution snapshot (2026-05-17)
+
+### Phase progression record
+
+- Phase 1 Read: `AGENTS.md` Read Order と対象契約（`runtime_parameter_registry.md`）を再確認し、Stream E の編集許可スコープを固定。
+- Phase 2 ADR: `ADR-0021`（global prefix policy）と `ADR-0029`（third-party runtime env boundary）を前提契約として採用し、新規ADR追加は不要と判断。
+- Phase 3 Plan: 本 issue を単一正本として、命名・既定値・境界の整合状態を「公開契約面」と「内部 adapter 面」に分けて検証する方針を確定。
+- Phase 4 Execute: issue 本文へ Stream E の独立検証結果を追記し、他ストリーム依存を増やさない形で整理。
+- Phase 5 Verify: 公開キー契約（`KJ_ATLAS_*` のみ）と `KJ_ATLAS_FRONTEND_API_BASE` の path 契約が維持されることを文書整合で確認。
+- Phase 6 Proceed/Stop: Stream E のミッション範囲では追加実装なしで Stop。残論点は governance queue に留め、設計変更は起票条件を満たした場合のみ進行。
+
+### Alignment result (naming / defaults / boundaries)
+
+- Naming: 公開環境変数の命名は `KJ_ATLAS_*` に統一され、例外は third-party container 内部名に限定される（公開契約外）。
+- Defaults: `runtime_parameter_registry.md` の既定値記述と issue 側の受入意図に矛盾なし（特に `KJ_ATLAS_FRONTEND_API_BASE=/api` と CE4/ACl 系の安全側既定）。
+- Boundaries: 利用者向け契約（公開キー）と内部実装変換（vendor/env adapter）の境界が `ADR-0029` 前提で一貫。
+
+### Stream E pending queue (governance-only)
+
+1. third-party container の内部環境名を将来的に完全排除するか（公開契約外で許容継続か）を governance で最終決定する。
+2. `external_http` endpoint 未設定時の `noop` fallback を fail-fast へ変更するかを ADR レベルで最終決定する。
