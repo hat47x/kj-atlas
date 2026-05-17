@@ -633,3 +633,11 @@ A2 contract test では次を機械判定する。
 1. Contract ID の追加・改名・削除は禁止（重複定義 0 を維持）。
 2. safeMode 既定ON・unreviewed 保護・Core Graph direct write 禁止の3点は同時成立が必須。
 3. 本節で扱う契約は CE1 以降の実装進捗に依存せず、read-only 参照で運用する。
+
+## Stream B Bridge Freeze Note（2026-05-17）
+
+- IR 接続時も CE1 v1 closed-world を維持し、未定義キー受理を禁止する。
+- 失敗語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種固定。
+- A2 では `stubDatasetId=A2-minimal-v1` を唯一の検証データセットとし、実DB/実LLM/worker 経路を無効化する。
+- Verify は `queryCanonicalHash` / `bundleHash` の 3/3 一致を必須とし、自己修復上限は3回。
+- Proceed は CE2/CE4 への read-only handoff のみ許可。

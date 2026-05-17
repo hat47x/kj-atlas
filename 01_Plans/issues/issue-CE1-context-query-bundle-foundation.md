@@ -2672,3 +2672,32 @@ handoffKeys:
   9. Safe boundary: no SafeMode default rollback, no share/export default relaxation
 - Proceed判定: 上記固定I/Fが崩れない限り CE2 は mock-only で継続可能。
 - Hold/Stop判定: 契約ID未定義・SafeMode後退要求・self-repair 3回超過のいずれかで `held`。
+
+## Stream B run（2026-05-17 / CE契約凍結）
+
+### Phase 1 Read
+- 抽出結果（固定）: Contract IDs `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF`。
+- エラー語彙（固定）: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- 依存: CE2/CE4 へは read-only handoff のみ許可。
+
+### Phase 2 ADR（Context/Decision/Consequences）
+- Context: CE1 v1 は closed-world 契約を先に固定し、下流依存を mock-first で切断する。
+- Decision: `ContextQueryV1` / `ContextBundleV1` の未定義キー受理を禁止し、HTTP失敗契約を固定する。
+- Consequences: 語彙ドリフト抑止、CE2/CE4 は実装待ちせず検証継続可能。
+
+### Phase 3 Interface Freeze
+- `POST /context/query`: `previewConfirmed=false -> 422 preview_required`、未知キー `400 unknown_contract_key`。
+- `POST /context/bundle`: 同一queryで hash 不一致 `409 nondeterministic_bundle`、未知キー `400 unknown_contract_key`。
+- v1 では必須キー集合・語彙・失敗意味論を変更しない。
+
+### Phase 4 Mock Plan
+- `stubDatasetId=A2-minimal-v1` 固定。
+- 実DB/実LLM/worker 禁止（contract testのみ）。
+
+### Phase 5 Verify
+- 判定キー: `dependency_cuttable=true` / `vocabulary_drift=0` / `docs_alignment=ok`。
+- self-correction は最大3回、超過時は `held` 停止。
+
+### Phase 6 Proceed
+- CE2/CE4 への handoff 条件を read-only に固定。
+- `sourceBundleHash === bundleHash` 比較不能時は fail-closed。

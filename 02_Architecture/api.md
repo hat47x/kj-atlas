@@ -760,3 +760,11 @@ contract_freeze:
 - Interface-first fixed set: `AuthContext` 正規化、strict拒否（`403 + identity_not_provisioned`）、`POST /admin/provision/users` の request/success/conflict 分岐。
 - Backward compatibility: 必須分岐キーは `status/code/provisioned` を維持し、追加フィールドは optional 拡張のみ許可。
 - Audit minimum: API契約では「誰が何を実行したか」を `actorRef/requestId/result` で追跡し、PII生値は保存しない。
+
+## CE1 v1 Freeze Addendum（2026-05-17 / Stream B）
+
+- `ContextQueryV1` / `ContextBundleV1` は v1 closed-world。未定義キーは常に `400 unknown_contract_key`。
+- Preview gate は `previewConfirmed=false -> 422 preview_required` で固定。
+- 同一 canonical query の `bundleHash` 不一致は `409 nondeterministic_bundle`（fail-closed）。
+- A2 検証は `stubDatasetId=A2-minimal-v1` 固定。実DB/実LLM/worker 依存を禁止。
+- CE2/CE4 への連携は read-only handoff のみ許可し、v1 契約改変は許可しない。
