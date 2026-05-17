@@ -23,6 +23,14 @@
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
+## Dependency graph（Stream I）
+
+- Upstream（先行固定）: `DATA-MODEL-OPS-01`（support level語彙・CRUD境界・参照導線）
+- Parallel（並行整備）: なし
+- Downstream（後続依存）: `DATA-MAINT-01`（復旧runbookで参照する契約整合チェック）
+- Blocker条件: `PUT /docs/{doc_id}` create-if-absent契約の表現が `schemas.md` / `api.md` / 実装で不一致のまま
+
+
 ## 1) 課題 / Problem statement
 
 - `DocumentV2` はfrontend/backend/API/設計文書の複数箇所に表現されており、フィールド追加や検証条件の同期漏れが起きやすい。
@@ -133,3 +141,12 @@
 - [ ] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
 - [ ] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
 - [ ] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。
+
+## Stream I Phase status
+
+- Phase 1 Read: 完了（Read Order上流と関連ADRを確認済み）
+- Phase 2 ADR/論点分離: 完了（契約ドリフト、運用保守、俯瞰境界を独立Issue化）
+- Phase 3 Plan: 完了（受入条件・非目標・検証計画を明文化）
+- Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
+- Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
+- Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）

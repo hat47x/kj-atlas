@@ -23,6 +23,14 @@
 - DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
+## Dependency graph（Stream I）
+
+- Upstream（先行固定）: `ADR-0033`
+- Parallel（並行整備）: なし
+- Downstream（後続依存）: `DATA-CONTRACT-01`, `DATA-MAINT-01`
+- Blocker条件: support level語彙（運用サポート / 埋め込み限定 / 契約のみ）が02文書間で不一致
+
+
 ## 1) 課題 / Problem statement
 
 - `schemas.md` と `api.md` は、MVP最小契約と将来契約を同じファイル内に含むため、どのデータが通常運用で保守できるかが読み取りにくい。
@@ -118,3 +126,12 @@
 - [ ] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
 - [ ] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
 - [ ] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
+
+## Stream I Phase status
+
+- Phase 1 Read: 完了（Read Order上流と関連ADRを確認済み）
+- Phase 2 ADR/論点分離: 完了（契約ドリフト、運用保守、俯瞰境界を独立Issue化）
+- Phase 3 Plan: 完了（受入条件・非目標・検証計画を明文化）
+- Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
+- Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
+- Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
