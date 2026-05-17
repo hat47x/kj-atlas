@@ -11,6 +11,12 @@
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
+## Canonical Gate Equation（A1 unlock single predicate）
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `Proceed=Go` は `A2A3_UNLOCK && fixedKeyDrift==0 && safeModeRetreat==false` のときのみ。
+- `Proceed=Hold` は `pendingDecisionQueueCount>0`（未承認/heldを含む）。
+- `Proceed=Stop` は `pendingBypassDetected || contractRedefinitionRequested || fixedKeyDrift>0 || safeModeRetreat || verifyAttempts>3`。
+
 ## Serial Phases（固定）
 1. Phase 1 Read同期
 2. Phase 2 ADR（Context / Decision / Consequences、承認待ち）
