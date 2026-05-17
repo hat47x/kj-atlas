@@ -145,3 +145,16 @@ Non-goals:
 - No conflict detected between public contract and internal adapter boundary under current ADR-0029 interpretation.
 - No SafeMode/share/export policy change in this stream.
 - Self-correction threshold not exceeded.
+
+
+## 12) Stream D execution snapshot (2026-05-17)
+
+### Runtime parameter contract alignment result
+
+- `KJ_ATLAS_FRONTEND_API_BASE` の公開契約を「path（`/` 始まり）」へ明文化し、`runtime_parameter_registry.md` と `deployment.md` の記述を一致させた。
+- frontend env 読み取り層（`src/api/client.ts`）で不正値（空文字、`/` 非始まり）を `/api` へ正規化し、実行時契約ドリフトを封じた。
+
+### Verification summary
+
+- Frontend typecheck/test により API client の変更が既存型・振る舞いと整合することを確認。
+- backend/compose の公開キー面には追加ドリフトを検出しなかった（`KJ_ATLAS_*` 契約維持）。
