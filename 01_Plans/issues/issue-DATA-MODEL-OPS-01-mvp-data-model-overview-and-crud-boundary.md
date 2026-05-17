@@ -102,3 +102,19 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 11) 運用境界（含む / 含まない）
+
+- 含む:
+  - `data_model_operations_overview.md` のER/CRUD/ステークホルダー境界の継続更新。
+  - `schemas.md` との用語同期（support level名称を含む）。
+  - Stream G成果としての境界表メンテナンス。
+- 含まない:
+  - backend/frontendの機能実装。
+  - public向け文書の全面改稿。
+
+## 12) 受入条件の補完（AC gap fill）
+
+- [ ] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
+- [ ] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
+- [ ] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
