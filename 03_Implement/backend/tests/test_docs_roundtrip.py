@@ -289,6 +289,62 @@ def _sample_payload_v2_without_relation_summary_history(doc_id: str) -> dict:
     return payload
 
 
+def _sample_payload_v2_with_evidence_links(doc_id: str) -> dict:
+    return {
+        "version": 2,
+        "id": doc_id,
+        "title": "roundtrip-v2-evidence",
+        "createdAt": "2026-02-11T00:00:00Z",
+        "updatedAt": "2026-02-11T00:00:00Z",
+        "transform": {"panX": 0, "panY": 0, "zoom": 1},
+        "cards": [
+            {"id": "fact-1", "text": "Observed fact", "x": 0, "y": 0, "claimType": "fact"},
+            {"id": "claim-1", "text": "Working claim", "x": 160, "y": 0, "claimType": "claim"},
+        ],
+        "edges": [
+            {
+                "id": "edge-claim-1",
+                "fromId": "fact-1",
+                "toId": "claim-1",
+                "fromKind": "card",
+                "toKind": "card",
+                "type": "related",
+            }
+        ],
+        "islands": [],
+        "evidenceLinks": [
+            {
+                "id": "evidence-1",
+                "type": "supports",
+                "fromCardId": "fact-1",
+                "toCardId": "claim-1",
+                "note": "manual link",
+                "createdAt": "2026-02-11T00:01:00Z",
+            }
+        ],
+        "patchApplyLog": [
+            {
+                "id": "patch-log-1",
+                "createdAt": "2026-02-11T00:02:00Z",
+                "patchVersion": "1",
+                "appliedOpIds": ["op-evidence-1"],
+                "stats": {
+                    "upsertCards": 0,
+                    "deleteCards": 0,
+                    "upsertIslands": 0,
+                    "deleteIslands": 0,
+                    "upsertEdges": 0,
+                    "deleteEdges": 0,
+                    "upsertRelationSummaries": 0,
+                    "deleteRelationSummaries": 0,
+                    "upsertEvidenceLinks": 1,
+                    "deleteEvidenceLinks": 0,
+                },
+            }
+        ],
+    }
+
+
 def _assert_v2_canonical_roundtrip(client: TestClient) -> None:
     doc_id = "doc-roundtrip-v2-canonical"
     payload = _sample_payload_v2_with_canonical(doc_id)
@@ -557,6 +613,29 @@ def _assert_v2_relation_summary_without_history_roundtrip(client: TestClient) ->
     assert "history" not in get_relation_summary
 
 
+def _assert_v2_evidence_links_roundtrip(client: TestClient) -> None:
+    doc_id = "doc-roundtrip-v2-evidence"
+    payload = _sample_payload_v2_with_evidence_links(doc_id)
+
+    put_response = client.put(f"/docs/{doc_id}", json=payload)
+    assert put_response.status_code == 200
+    put_json = put_response.json()
+    assert put_json["cards"][0]["claimType"] == "fact"
+    assert put_json["cards"][1]["claimType"] == "claim"
+    assert put_json["edges"][0]["fromKind"] == "card"
+    assert put_json["edges"][0]["toKind"] == "card"
+    assert put_json["evidenceLinks"] == payload["evidenceLinks"]
+    assert put_json["patchApplyLog"][0]["stats"]["upsertEvidenceLinks"] == 1
+
+    get_response = client.get(f"/docs/{doc_id}")
+    assert get_response.status_code == 200
+    get_json = get_response.json()
+    assert get_json["cards"][0]["claimType"] == "fact"
+    assert get_json["edges"][0]["toKind"] == "card"
+    assert get_json["evidenceLinks"][0]["id"] == "evidence-1"
+    assert get_json["patchApplyLog"][0]["stats"]["deleteEvidenceLinks"] == 0
+
+
 
 
 def _assert_v2_polygon_geometry_roundtrip(client: TestClient) -> None:
@@ -750,6 +829,10 @@ def test_docs_v2_relation_summary_without_history_roundtrip_sqlite(sqlite_client
     _assert_v2_relation_summary_without_history_roundtrip(sqlite_client)
 
 
+def test_docs_v2_evidence_links_roundtrip_sqlite(sqlite_client: TestClient) -> None:
+    _assert_v2_evidence_links_roundtrip(sqlite_client)
+
+
 def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) -> None:
     _assert_v2_polygon_geometry_roundtrip(sqlite_client)
 
@@ -757,6 +840,11 @@ def test_docs_v2_polygon_geometry_roundtrip_sqlite(sqlite_client: TestClient) ->
 @pytest.mark.postgres
 def test_docs_v2_relation_summary_without_history_roundtrip_postgres(postgres_client: TestClient) -> None:
     _assert_v2_relation_summary_without_history_roundtrip(postgres_client)
+
+
+@pytest.mark.postgres
+def test_docs_v2_evidence_links_roundtrip_postgres(postgres_client: TestClient) -> None:
+    _assert_v2_evidence_links_roundtrip(postgres_client)
 
 
 @pytest.mark.postgres

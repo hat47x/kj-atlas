@@ -90,6 +90,7 @@ erDiagram
 erDiagram
     DOCUMENT ||--o{ CARD : contains
     DOCUMENT ||--o{ EDGE : contains
+    DOCUMENT ||--o{ EVIDENCE_LINK : contains
     DOCUMENT ||--o{ ISLAND : contains
     DOCUMENT ||--o{ NARRATIVE : contains
     DOCUMENT ||--o{ RELATION_SUMMARY : contains
@@ -104,6 +105,7 @@ erDiagram
     DOCUMENT ||--o{ AUDIT_EVENT : emits
 
     CARD ||--o{ EDGE : endpoint
+    CARD ||--o{ EVIDENCE_LINK : evidence_endpoint
     ISLAND ||--o{ EDGE : endpoint
     ISLAND ||--o{ CARD : groups
     NARRATIVE ||--o{ CARD : references
@@ -114,8 +116,9 @@ erDiagram
 |---|---|---|
 | `DocumentV1` | 最小スナップショット。カード、線、表示変換を持つ | `GET /docs/{doc_id}` と `PUT /docs/{doc_id}` でドキュメント全体を取得/置換する。 |
 | `DocumentV2` | 島、文章化、レビュー帰属、判断ログ連携などを含む拡張スナップショット | 全体スナップショットとして保存する。個別構造の完全CRUDはMVP範囲外。 |
-| `Card` | 利用者が置く主要情報単位 | 画面操作またはインポート後、ドキュメント全体保存で反映する。 |
-| `Edge` | カード/島間の関係 | 個別APIは持たず、ドキュメント全体保存で反映する。 |
+| `Card` | 利用者が置く主要情報単位。`claimType` による事実/主張/仮説の分類を含む | 画面操作またはインポート後、ドキュメント全体保存で反映する。 |
+| `Edge` | カード/島間の関係。`fromKind` / `toKind` で endpoint 種別を保持できる | 個別APIは持たず、ドキュメント全体保存で反映する。 |
+| `EvidenceLink` | 根拠・反証のリンク | `DocumentV2.evidenceLinks` の埋め込み構造として保存する。個別CRUDは持たない。 |
 | `Island` | まとまり、囲み、構造化の単位 | `DocumentV2` 内の埋め込み構造。shapeやreview状態の完全保守は段階導入。 |
 | `Narrative` / `RelationSummary` | 文章化・要約成果物 | 共有前確認やレビューと連動するが、MVPでは個別CRUDを正本にしない。 |
 | `ReviewAttribution` | 人間レビュー済み状態と主体の追跡 | `user:<users.id>` 正規化を前提にする。自動昇格は禁止。 |
@@ -130,7 +133,8 @@ erDiagram
 | データ領域 | Create | Read | Update | Delete | MVP保守責任 | 備考 |
 |---|---|---|---|---|---|---|
 | Documentスナップショット | `PUT /docs/{doc_id}` で存在しなければ作成 | `GET /docs/{doc_id}` | `PUT /docs/{doc_id}` で全体置換 | 標準APIなし | Document owner / Platform operator | API文書上の `POST /docs` は任意/将来候補として扱い、実装契約化は `DATA-CONTRACT-01` で同期する。 |
-| Card / Edge | Document作成・更新に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Document owner | 個別カードAPIや個別エッジAPIはMVP範囲外。 |
+| Card / Edge | Document作成・更新に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Document owner | 個別カードAPIや個別エッジAPIはMVP範囲外。`claimType` と endpoint kind はスナップショット内で往復保持する。 |
+| EvidenceLink | Document作成・更新に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Reviewer | 個別APIは持たない。SafeMode/share/exportでは未レビュー本文や根拠の扱いを別途確認する。 |
 | Island / IslandShape | DocumentV2に含める | Document取得に含まれる | Document全体保存で反映 | Document全体保存で除去 | Standard user / Reviewer | shape再計算、階層、collapseなどはUI/実装の段階的対応が必要。 |
 | Narrative / RelationSummary | DocumentV2またはexport処理に含める | Document取得またはexport成果物で参照 | Document全体保存で反映 | Document全体保存で除去 | Reviewer / Document owner | 文章化品質、根拠、未レビュー状態の表示は製品化issueで継続管理する。 |
 | ReviewAttribution | DocumentV2更新時に含める | Document取得に含まれる | 認証主体と一致する場合のみ更新を許可 | 標準削除APIなし | Reviewer / Security officer | `human_reviewed` は人手操作のみ。AIや自動処理で昇格しない。 |
@@ -140,6 +144,28 @@ erDiagram
 | Export / Context audit event | 各audit endpointで送信 | アプリ内の標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Audit operator / Security officer | 監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。 |
 | User / UserIdentity | `POST /admin/provision/users` | 標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Platform operator | strict provisioningの入口。退避、無効化、棚卸しは `DATA-MAINT-01` の対象。 |
 | Import/Review Pack artifact | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |
+
+---
+
+### 4.1 DocumentV2フィールド支援レベル表
+
+`DocumentV2` は全フィールドを個別運用できるという意味ではありません。次の表は、frontend/backend/API/設計上の現在の扱いを、保守レベルとして固定します。
+
+| フィールド | frontend型 | backend保存/検証 | MVP保守レベル | 次アクション |
+|---|---|---|---|---|
+| `version` / `id` / `createdAt` / `updatedAt` / `transform` | 必須 | 必須 | 運用サポート | `PUT /docs/{doc_id}` のCreate/Update契約で維持する。 |
+| `cards[]` | `Card[]`。`claimType`、統合元、批評、レビュー状態を含む | `CardV2[]` として保存。`claimType` も往復保持する | 埋め込み限定 | 個別カードCRUDは作らず、スナップショット保存の互換を維持する。 |
+| `edges[]` | `Edge[]`。`fromKind` / `toKind` を含む | `EdgeV2[]` として保存。endpoint kind も往復保持する | 埋め込み限定 | 島endpointを含む関係のUI/API検証を `DATA-CONTRACT-01` で継続する。 |
+| `islands[]` | `Island[]`。階層、collapse、shape、summaryを含む | 保存/検証あり。geometry/shapeの互換正規化あり | 埋め込み限定 | shape再計算、階層、collapseの個別保守は製品化issueで扱う。 |
+| `readingOrder` | optional | optional | 埋め込み限定 | 文章化・共有時の読み順として扱う。 |
+| `narratives` | optional | optional | 埋め込み限定 | 個別CRUDではなく、成果物化と共有前確認で扱う。 |
+| `relationSummaries` | optional | optional。本文長上限あり | 埋め込み限定 | 要約品質、根拠、レビュー状態の検証を継続する。 |
+| `evidenceLinks` | optional。根拠/反証リンク | optional。往復保持する | 埋め込み限定 | share/exportとSafeModeでの表示・抑制条件を `PRODUCT-VALUE-02/03` と同期する。 |
+| `patchApplyLog` | optional。evidence件数を含むstats | optional。evidence件数を保持し、旧データは0として補完する | 埋め込み限定 | patch適用監査の保持範囲を `DATA-CONTRACT-01` で継続確認する。 |
+| `mergeSuggestionDecisions` | optional | optional | 埋め込み限定 | append-onlyの `merge_decision_logs` と混同しない。 |
+| `critiqueInputs` / `reproposalDiffs` | frontend正本型には未掲載 | backend契約型として保存 | 契約のみ/限定保存 | frontend型へ昇格するか、backend専用契約として分離するかを `DATA-CONTRACT-01` で決める。 |
+| `reviewAttribution` | frontend正本型には未掲載 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続する。 |
+| `deterministicTieBreak` | frontend正本型には未掲載 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
 
 ---
 

@@ -316,6 +316,51 @@ export type DocumentV1 = {
 };
 ```
 
+### 3.5 DocumentV2 embedded support
+
+`DocumentV2` は、MVPのスナップショット保存を保ったまま、島、文章化、根拠リンク、レビュー関連情報を含める拡張形式である。
+
+`DocumentV2` に含まれる構造は、標準API/UIで個別CRUDできることを意味しない。標準の永続化単位は引き続き `Document` 全体であり、個別CRUDの有無は `02_Architecture/data_model_operations_overview.md` のCRUD表に従う。
+
+```ts
+export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
+export type EdgeEndpointKind = "card" | "island";
+
+export type EvidenceLink = {
+  id: string;
+  type: "supports" | "contradicts";
+  fromCardId: string;
+  toCardId: string;
+  note?: string;
+  createdAt?: string; // ISO 8601
+};
+
+export type DocumentV2 = {
+  version: 2;
+  id: string;
+  title?: string;
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+  transform: Transform;
+  cards: Array<Card & { claimType?: CardClaimType }>;
+  edges: Array<Edge & { fromKind?: EdgeEndpointKind; toKind?: EdgeEndpointKind }>;
+  islands: Island[];
+  readingOrder?: string[];
+  narratives?: Narrative[];
+  relationSummaries?: RelationSummary[];
+  evidenceLinks?: EvidenceLink[];
+  patchApplyLog?: PatchApplyLogEntry[];
+  mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+};
+```
+
+支援レベル:
+
+- `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
+- `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
+- `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
+- 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
+
 ---
 
 ## 4. JSONスキーマ（サーバ検証用）

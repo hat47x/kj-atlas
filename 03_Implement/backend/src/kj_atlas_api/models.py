@@ -73,6 +73,9 @@ class Card(BaseModel):
     text: str
     x: float
     y: float
+    claimType: Literal["fact", "claim", "hypothesis", "unknown"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     mergedIntoCardId: str | None = Field(default=None, exclude_if=lambda value: value is None)
     repOf: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     canonicalId: str | None = Field(default=None, exclude_if=lambda value: value is None)
@@ -97,6 +100,12 @@ class EdgeV2(BaseModel):
     id: str
     fromId: str
     toId: str
+    fromKind: Literal["card", "island"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    toKind: Literal["card", "island"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     type: Literal["related", "negate"]
 
 
@@ -204,6 +213,15 @@ class Island(BaseModel):
         return self
 
 
+class EvidenceLink(BaseModel):
+    id: str
+    type: Literal["supports", "contradicts"]
+    fromCardId: str
+    toCardId: str
+    note: str | None = Field(default=None, exclude_if=lambda value: value is None)
+    createdAt: datetime | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
 class NarrativeCheckReference(BaseModel):
     id: str
     kind: Literal["card", "island"]
@@ -274,6 +292,8 @@ class PatchApplyStats(BaseModel):
     deleteEdges: int
     upsertRelationSummaries: int
     deleteRelationSummaries: int
+    upsertEvidenceLinks: int = 0
+    deleteEvidenceLinks: int = 0
 
 
 class PatchApplyConflictMeta(BaseModel):
@@ -600,6 +620,7 @@ class DocumentV2(BaseModel):
     readingOrder: list[str] | None = Field(default=None, exclude_if=lambda value: value is None)
     narratives: list[Narrative] | None = Field(default=None, exclude_if=lambda value: value is None)
     relationSummaries: list[RelationSummary] | None = Field(default=None, exclude_if=lambda value: value is None)
+    evidenceLinks: list[EvidenceLink] | None = Field(default=None, exclude_if=lambda value: value is None)
     patchApplyLog: list[PatchApplyLogEntry] | None = Field(default=None, exclude_if=lambda value: value is None)
     mergeSuggestionDecisions: list[MergeSuggestionDecision] | None = Field(default=None, exclude_if=lambda value: value is None)
     critiqueInputs: list[CritiqueInput] | None = Field(default=None, exclude_if=lambda value: value is None)
