@@ -162,3 +162,33 @@ python -m pytest
 5. 復帰: 閉じた後に起点フォーカスへ戻る。
 
 本節は計画記述であり、具体的なテスト実装は `UX-OPERABILITY-02`〜`04` の実装PRで追加する。
+
+
+## Draft群 Open化向け QA Gate テンプレート（Stream E）
+
+Draft状態の issue-QA-* を Open 判定可能にする時は、次の最小テンプレートをそのまま流用します。
+
+### 1) Context / Decision / Consequences（QA gate）
+- Context: Draft/Hold の理由を「依存・承認・実行経路」の3分類で明示する。
+- Decision: `Prerequisite` / `Environment` / `Scope` の3ゲートを固定する。
+- Consequences: Open可否を第三者が再判定できる状態にする。
+
+### 2) Open化条件テンプレ
+- `O-<ID>-01`: 必須依存（承認ID、上流参照）が `Pending` 欄に記録済み。
+- `O-<ID>-02`: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）が1つ事前選択済み。
+- `O-<ID>-03`: `Execution: Hold` の解除条件が1行で判定可能。
+- `O-<ID>-04`: blocker と再開条件が 1:1 対応。
+
+### 3) Verify（実行可能性）
+- docs-check: `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Execution: Hold|Pending" <target issue>`
+- metadata-check: `python3 01_Plans/issues/validate_active_issue_memos.py --files <target issue>`
+- diff-check: `git diff --check -- <target issue>`
+
+### 4) Proceed（3区分）
+- Open化可能: O条件が全充足。
+- 追加判断必要: O条件の一部充足（承認IDなどが未記入）。
+- 保留継続: blocker未解消、または実行経路未固定。
+
+### 5) 修復上限（失敗時）
+- 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
+- 4回目相当は Stop とし、保留理由/再開条件を追記して終了する。
