@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: `ADR-0031`
 
 ## 1) 課題 / Problem statement
@@ -41,6 +41,22 @@
 - 安全（THREAT_MODEL / SafeMode）: 未レビュー本文、公開範囲、SafeMode OFF の状態は誤共有の直接リスクである。
 - 企業・行政要件（enterprise_architecture）: 共有前確認、監査、公開範囲の説明は組織導入時に必須になりやすい。
 - 後方互換（schemas）: 出力形式とpack/view metadataの互換性を維持する。
+
+## 3.1 依存関係 / Dependencies
+
+- 直前依存: ADR-0031 の5領域定義。
+- 連携先: PRODUCT-UX/QA 系issue（本ファイル内 Related ADR/Spec を参照）。
+- ブロッカー条件: 上位ADRに矛盾がある場合は実装を開始しない。
+
+## 3.2 非目標 / Non-goals（運用明示）
+
+- 本issueの非目標は「4) 提案する解決策」の非目標節を正本とする。
+- 非目標に該当する変更要求は、別issueまたはADRへ切り出す。
+
+## 3.3 検証レベル / Verification level
+
+- 本issueの検証レベルは Requirement meta I/F の `VerificationLevel` を正本とする。
+- `e2e` 指定issueはPlaywright等の操作証跡を必須とし、`integration` 指定issueは横断ゲート記録を必須とする。
 
 ## 4) 提案する解決策 / Proposed solution
 
