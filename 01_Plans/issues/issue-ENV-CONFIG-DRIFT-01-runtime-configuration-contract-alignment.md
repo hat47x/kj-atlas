@@ -1,7 +1,7 @@
 # Issue Draft: ENV-CONFIG-DRIFT-01 Runtime configuration contract alignment
 
 - Type: Bug
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
@@ -21,7 +21,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed (with pending queue for governance-only items)
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -121,3 +121,27 @@ Non-goals:
 - ADR化が必要になる条件:
   - changing the proposed `ADR-0029` adapter boundary into a stricter no-vendor-env deployment redesign.
   - changing `external_http` missing-endpoint behavior from current `noop` fallback to fail-fast.
+
+
+## 11) Stream C execution snapshot (2026-05-17)
+
+### Public key extraction result
+
+- `02_Architecture/runtime_parameter_registry.md` and `04_Documentation/configuration.md` expose the same 42 public keys (`KJ_ATLAS_*` only).
+- Compose/public runtime inputs are constrained to `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, `KJ_ATLAS_FRONTEND_API_BASE`, and backend runtime keys remain `KJ_ATLAS_*`.
+
+### Contract boundary result
+
+- Third-party env names are limited to private adapter use inside the PostgreSQL service boundary and are not part of the public contract.
+- ADR-0029 now records C/D/C (Confirmed / Decided / Clarified pending) for this boundary.
+
+### Pending queue (non-blocking for this stream)
+
+1. Governance decision: whether to require zero non-`KJ_ATLAS_*` names in every process environment, including third-party containers.
+2. Governance decision: whether `external_http` without endpoint should remain fallback/noop or become fail-fast by default.
+
+### Stream C stop check (Fail-safe)
+
+- No conflict detected between public contract and internal adapter boundary under current ADR-0029 interpretation.
+- No SafeMode/share/export policy change in this stream.
+- Self-correction threshold not exceeded.

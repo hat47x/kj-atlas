@@ -53,6 +53,25 @@ Constraints and risks:
 - Automated checks must distinguish public configuration keys from private adapter keys.
 - A future "no non-prefixed process environment anywhere" requirement is a deployment redesign, not a documentation cleanup.
 
+
+## C/D/C log (for ENV-CONFIG-DRIFT-01)
+
+### Confirmed
+
+- Public runtime contract uses `KJ_ATLAS_*` keys only.
+- Vendor/build-tool specific names are allowed only inside adapter boundaries (Compose service internals, build-time bridge variables).
+- Public docs and runtime registry must never ask operators to set vendor-defined names directly.
+
+### Decided
+
+- Keep adapter-boundary interpretation as the accepted operating model for Compose + third-party images in this phase.
+- Treat vendor-defined process env names inside third-party containers as implementation details, not public contract exceptions.
+
+### Clarified pending
+
+- If project policy later upgrades to "no non-`KJ_ATLAS_*` process env names anywhere", that requires deployment redesign (replace PostgreSQL image path or enforce managed DB-only architecture).
+- `external_http` adapter behavior when endpoint is absent remains a separate governance decision and is not changed by this ADR.
+
 ## Traceability
 
 - Related: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`
