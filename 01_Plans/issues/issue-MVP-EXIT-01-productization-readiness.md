@@ -1,10 +1,10 @@
 # Issue Draft: MVP-EXIT-01 MVP脱却に向けた製品化準備
 
 - Type: Feature request
-- Status: Draft
+- Status: Open準備完了 (Ready for Open)
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P0 (Program)
 - Owner: Codex
 - Scope: `00_Prompt/`, `01_Plans/`, `02_Architecture/`, `03_Implement/`, `04_Documentation/`
 - Related Backlog: `MVP-EXIT-01`
@@ -62,6 +62,22 @@
 - [ ] 一般利用者向け文書と開発者向け文書が分離される。
 - [ ] share/export、SafeMode、AI提案、監査ログの安全説明が画面・文書・実装で矛盾しない。
 - [ ] 製品化に必要な残作業が個別issueへ分解され、ADR化が必要な判断だけADR候補として分離される。
+
+
+## Stream J 再整列（2026-05-17）
+
+### 優先度再整列
+- 本Issueは製品化親Issueとして **P0 Program Gate** とし、個別実装Issueの先行条件（Open化判定）を担う。
+- 実装を直接持たず、品質ゲート・依存切断・Open化条件の管理に限定する。
+
+### 依存切断ポリシー
+- `PRODUCT-UX-*` / `PRODUCT-QA-01` / `PRODUCT-OPS-01` は **相互待ち禁止** とし、本Issueからの一方向参照へ統一する。
+- 依存は「仕様確定依存」と「実装依存」を分離し、仕様確定は docs-check 完了で解除可能とする。
+
+### Open化条件（Definition of Ready for Open）
+- [ ] 個別Issueが `DecisionStatus` / `GoNoGoGate` / `VerificationLevel` を埋めている。
+- [ ] 受入条件に「安全境界」「回帰」「証跡」が含まれている。
+- [ ] 非目標が明記され、UI実装変更をこのIssue本文で要求していない。
 
 ## 6) 実装タスク分解 / Task breakdown
 

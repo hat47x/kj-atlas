@@ -1,15 +1,15 @@
 # Issue Draft: UX-OPERABILITY-05 主要ツールバーにレガシー/高度操作が混在している
 
-- Type: Feature request
-- Status: Draft
+- Type: Planning
+- Status: Open準備完了 (Ready for Open)
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P2
+- Priority: P1
 - Owner: TBD
-- Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/`, `04_Documentation/acceptance_check.md`
+- Scope: `01_Plans/issues/`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `UX-OPERABILITY-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
-- Expected verification level: `e2e`
+- Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
 
@@ -19,8 +19,8 @@
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプル `doc_phase1_canvas` を開く / 操作=ヘッダーと主要ツールバーをマウス・キーボードで確認する / 期待結果=新規、開く、保存、表示、共有、安全確認が優先され、レガシーJSON操作は補助導線として区別される / 除外=import/export機能そのものの削除。
 - GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
+- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: `ADR-0030`
 
 ## 1) 課題 / Problem statement
@@ -63,7 +63,7 @@
 - [ ] 既存のlegacy import/export機能は必要時に到達可能である。
 - [ ] 受け入れ確認文書が、推奨導線とlegacy導線を混同しない説明になっている。
 
-## 6) 実装タスク分解 / Task breakdown
+## 6) 計画タスク分解 / Task breakdown
 
 - [ ] T1 ツールバー上の主要/補助/legacy操作を分類する。
 - [ ] T2 legacy JSON操作の配置変更案を作成する。

@@ -1,10 +1,10 @@
 # Issue Draft: PRODUCT-QA-01 製品化リリース準備の品質ゲート定義
 
 - Type: Process
-- Status: Draft
+- Status: Open準備完了 (Ready for Open)
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P0
 - Owner: TBD
 - Scope: `01_Plans/`, `03_Implement/frontend/`, `03_Implement/backend/`, `04_Documentation/`
 - Related Backlog: `PRODUCT-QA-01`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
+- DecisionStatus（Fixed / Pending）: Fixed (Open化可)
 - DecisionQueueRef（未確定時の参照先）: `MVP-EXIT-01`
 
 ## 1) 課題 / Problem statement
@@ -57,6 +57,14 @@
 
 - 本issueの検証レベルは Requirement meta I/F の `VerificationLevel` を正本とする。
 - `e2e` 指定issueはPlaywright等の操作証跡を必須とし、`integration` 指定issueは横断ゲート記録を必須とする。
+
+
+
+## 3.4 Stream J 依存切断メモ（2026-05-17）
+
+- 本Issueは「ゲート定義」のみに限定し、UI/Backend実装チケットの完了待ちは **No-Go判定時の戻し先指定** のみで扱う。
+- `PRODUCT-UX-*` および `PRODUCT-OPS-01` との関係は「参照依存」に統一し、同時完了を要求しない。
+- Open化時点で必要なのは、各ゲートの判定手順と証跡形式があること（実装完了ではない）。
 
 ## 4) 提案する解決策 / Proposed solution
 
