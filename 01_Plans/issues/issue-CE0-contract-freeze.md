@@ -3655,3 +3655,48 @@ export type AuditEventV1 = {
   2) データ型: `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1`
   3) 監査イベント名: `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked`
 - 停止条件: 未定義競合・No-Go語彙不一致・4回目相当の自己修復要求が発生した場合は `held` で停止して指示待ち。
+
+## Stream B latest run（2026-05-17 / CE0 contract freeze docs-process confirmation）
+
+- run_id: `stream-b-ce0-2026-05-17-01`
+- assignee: `Stream B（CE0 Contract Freeze 専任）`
+- scope_guard: `edit_allowlist=01_Plans/issues/issue-CE0-contract-freeze.md only`（遵守）
+- mission: `CE0 contract freeze を docs/process 観点で確定（I/F先行定義・mock-first分離）`
+
+### Phase 1 Read
+- 本Issueを再読し、単一ファイル編集・contract-only・docs-only・mock-first の境界を再確認。
+- 固定Contract IDs（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）と No-Go canonical IDs 5件固定を再確認。
+- 停止条件（指定外編集 / safeMode既定後退 / Contract ID再定義 / Verify 4回目相当）を再確認。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: CE1/CE2/CE4 が read-only 参照できる CE0契約SSOT を維持しつつ、実装依存を切り離した handoff が必要。
+- Decision: CE0では I/F契約境界（型・シグネチャ・語彙意味）だけを固定し、実装意味論は mock に委譲して凍結継続。
+- Consequences: 並行実装時の契約ドリフトを抑止できる一方、実装最適化論点は CE1以降での人間承認付き検討に限定される。
+- ADR追補要否判定: `cdc_required=0`（既存契約と矛盾なし、追加ADR起票なし）。
+
+### Phase 3 Plan（AC / DoD）
+- AC:
+  - `ac_if_signature_freeze`: `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` の契約名を増減・改名しない。
+  - `ac_vocab_semantics_freeze`: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の意味論をv1固定で扱う。
+  - `ac_mock_first_boundary`: 実装はモック差し替えを許可し、契約署名逸脱を禁止する。
+- DoD:
+  - `dod_single_file_scope`: 編集対象が本Issue単一ファイルであること。
+  - `dod_no_contract_id_mutation`: Contract IDs / No-Go IDs の追加・改名・削除がないこと。
+  - `dod_verify_retry_cap`: Verify自己修復は最大3回、4回目相当は `held` 停止。
+
+### Phase 4 Execute
+- 実施: 本Issueへの docs/process 記録追記のみ。
+- 非実施: 実装コード変更、他ストリームファイル変更、schema変更、safeMode既定値変更。
+
+### Phase 5 Verify（<=3 retries）
+- attempt_1:
+  - `python 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  - `git diff --check`
+  - result: pass（self-correction `0/3`）
+
+### Phase 6 Proceed / Stop
+- 判定: **Proceed（Conditional-Go）**
+- 維持条件:
+  - CE0は契約SSOTを継続し、下流はread-only参照のみ。
+  - 未定義競合、語彙意味不一致、指定外編集要求、Verify 4回目相当が発生した場合は **Stop（`held`）**。
