@@ -1,9 +1,9 @@
 # ADR-0033: MVPデータサポート境界と保守方針
 
-- Status: Proposed
-- Date: 2026-05-15
+- Status: Accepted
+- Date: 2026-05-17
 - Deciders: Project Maintainers
-- Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`
+- Scope: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`
 
 ## Context
 
@@ -60,6 +60,14 @@ MVPでは、データサポート境界を次の4区分で管理する。
 4. **Recover**: `DATA-MAINT-01` の手順に従いバックアップ復元（DB単位）またはDocument再投入を行う。
 5. **Verify**: `DATA-CONTRACT-01` 観点で roundtrip と `PUT create-if-absent` 契約を再確認する。
 6. **Record**: 判断と再発防止を `DATA-MODEL-OPS-01` の境界表へ反映する。
+
+## Acceptance Criteria / Definition of Done
+
+- ADR-0033 is **Accepted** and defines a non-ambiguous boundary for MVP support vs maintenance vs contract-only concerns.
+- `data_model_operations_overview.md` uses the same four support classes (`L1`, `L1.5`, `L2`, `L2.5`, `L3`, `L0`) and the same terminology as this ADR.
+- `schemas.md` explicitly states that schema presence does not imply operational support, and points readers to `data_model_operations_overview.md` for the boundary table.
+- No statement in this ADR implies that Card/Edge/Island/Narrative have independent CRUD or operational recovery guarantees in MVP.
+- Downstream implementation work is split into issues (`DATA-MODEL-OPS-01`, `DATA-MAINT-01`, `DATA-CONTRACT-01`) rather than marked as already implemented.
 
 ## Consequences
 
