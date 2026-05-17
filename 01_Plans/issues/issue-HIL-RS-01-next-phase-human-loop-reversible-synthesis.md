@@ -14,6 +14,12 @@
 - Related ADR/Spec: `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`, `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`, `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`
 - Expected verification level: `docs-check`
 
+## Canonical Gate Equation（A1 unlock single predicate）
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `Proceed=Go` は `A2A3_UNLOCK && fixedKeyDrift==0 && safeModeRetreat==false` のときのみ。
+- `Proceed=Hold` は `pendingDecisionQueueCount>0`（未承認/heldを含む）。
+- `Proceed=Stop` は `pendingBypassDetected || contractRedefinitionRequested || fixedKeyDrift>0 || safeModeRetreat || verifyAttempts>3`。
+
 ## Serial Phases（固定）
 1. Phase 1 Read Sync（issue + ADR）
 2. Phase 2 ADR明文化（Context / Decision / Consequences）
@@ -132,7 +138,7 @@
 - `safeModeDefault=ON`
 - `safeModeBoundary=SAFE_MODE_STRICT_ON`
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
-- `unlock precondition=a1Status=="Done" && pendingDecisionQueueCount==0`
+- `unlock precondition=A2A3_UNLOCK`
 
 
 ## Stream A serial execution record（2026-05-09 / critical-path parent plan sync）

@@ -12,6 +12,12 @@
 - Dependencies (read-only): `issue-HIL-RS-02-A1-governance-contract-hardening.md`（A1）
 - Expected verification level: `docs-check`
 
+## Canonical Gate Equation（A1 unlock single predicate）
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `Proceed=Go` は `A2A3_UNLOCK && fixedKeyDrift==0 && safeModeRetreat==false` のときのみ。
+- `Proceed=Hold` は `pendingDecisionQueueCount>0`（未承認/heldを含む）。
+- `Proceed=Stop` は `pendingBypassDetected || contractRedefinitionRequested || fixedKeyDrift>0 || safeModeRetreat || verifyAttempts>3`。
+
 ## Fixed Guardrails（変更禁止）
 - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
 - `schemaVersion=1.0.0`
@@ -94,7 +100,7 @@
 ### Proceed
 - Proceed=Hold（A1完了待ち）
 
-## Draft解除条件（Draft -> Ready）
+## Draft解除条件（Draft -> Open/Hold）
 - [x] Scope が単一ファイル（本ファイル）のみに限定されている。
 - [x] 固定契約値（freezeContractId / schemaVersion / safeMode / decisionQueueTransition）が明示され、再定義禁止が明記されている。
 - [x] A1依存を read-only とし、`A1 not done => Proceed=Hold` が明記されている。
@@ -102,14 +108,14 @@
 - [x] Verify 3回上限と超過時Stopが明記されている。
 - [x] ADR-0026/0027/0028 の明文化参照がある。
 
-## Ready定義（実行開始条件）
+## Open/Hold定義（実行開始条件）
 - [x] Plan: M1-M3 / AC / Stopper が計画文書として確定。
 - [x] Execute: 編集対象は本ファイルのみ。
 - [x] Verify: docs-check（差分確認 + allowlist逸脱ゼロ）で判定可能。
 - [x] Gate: `A1 not done` 前提で Proceed=Hold を維持。
 
 ## 受入条件（Execute完了判定）
-- [x] AC-1: 本ファイルが Status=Ready を維持する。
+- [x] AC-1: 本ファイルが `Status=Open` を維持する（A1未完了時は `Proceed=Hold`）。
 - [x] AC-2: Go/Hold/Stop 判定が A1依存・固定値・pending bypass 条件で整合する。
 - [x] AC-3: A1未完時運用が `Hold` 固定で、強行Proceed禁止が明示される。
 - [x] AC-4: Phase 1..6直列 + 毎Phase Read同期が明示される。
@@ -120,8 +126,8 @@
 2. `git diff -- 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 3. `git status --short` で単一ファイル変更のみを確認。
 
-## Ready判定
-- 判定: **Ready（Proceed=Hold運用）**
+## Open/Hold判定
+- 判定: **Open/Hold（Proceed=Hold運用）**
 - 根拠: A1依存Hold固定 + Phase 1..6直列化 + ADR明文化 + Verify上限3回固定。
 
 ## Stop条件

@@ -11,6 +11,12 @@
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
+## Canonical Gate Equation（A1 unlock single predicate）
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- `Proceed=Go` は `A2A3_UNLOCK && fixedKeyDrift==0 && safeModeRetreat==false` のときのみ。
+- `Proceed=Hold` は `pendingDecisionQueueCount>0`（未承認/heldを含む）。
+- `Proceed=Stop` は `pendingBypassDetected || contractRedefinitionRequested || fixedKeyDrift>0 || safeModeRetreat || verifyAttempts>3`。
+
 
 ## Stream E Contract Gate Declaration
 - 本Issueは **HIL-RS-01 A1 minimum interface contract の唯一ゲート** として扱う。
@@ -65,7 +71,7 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `sharedResourceFreeze=true`
   - `safeModeDefault=ON`
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
-  - `unlockRule=a2a3Unlock = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+  - `unlockRule=A2A3_UNLOCK`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
   - `NoGo return path=issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 - 境界固定:
@@ -207,7 +213,7 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
   - `safeModeDefault=ON`
   - `safeModeBoundary=SAFE_MODE_STRICT_ON`
   - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
-  - `unlockRule=a1Status=="Done" && pendingDecisionQueueCount==0`
+  - `unlockRule=A2A3_UNLOCK`
 - 判定: `Hold`（承認待ち2件が未解消）。
 
 
