@@ -54,6 +54,14 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 2. 自動化/人間レビュー責務が混在しない。
 3. Hold解除条件が measurable。
 
+### Draft→Open ゲートチェックリスト（機械判定用）
+| Gate ID | 判定質問 | 必須証跡 | 判定値 |
+|---|---|---|---|
+| GO/NO-GO-1 | O-PUB-01 の3軸境界は全て記述済みか | 境界軸テーブル | pass / blocked |
+| GO/NO-GO-2 | PUB/I18N 承認IDは Pending欄へ記録済みか | Pending-1/2 のID・日付・参照リンク | pass / blocked |
+| GO/NO-GO-3 | 実行経路は `ADR-0019` 準拠で固定済みか | Compose / SQLite / 例外の選択記録 | pass / blocked |
+| GO/NO-GO-4 | docs-only 範囲外要求が混入していないか | Scope と本文差分の一致 | pass / blocked |
+
 ## Phase 4: Execute（具体化）
 
 ## 検証境界（Doneの定義）
@@ -66,6 +74,11 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 ## 自動化と人間レビュー分離
 - 自動化: 操作結果・状態遷移・境界遮断の可否。
 - 人間レビュー: 翻訳品質、説明文妥当性、監査判断文。
+
+## 実装依存の切断方針（mock/fixture前提）
+- 境界判定は fixture 化した `ja/en` ケースと readOnly/SafeMode の既存モックで測定する。
+- 外部公開導線（実プロダクト公開設定、外部翻訳配信基盤）は本IssueのOpen条件に含めない。
+- 本Issueは「境界定義と判定可能性」の固定のみを扱い、テストコード変更は別Issueへ委譲する。
 
 ## 再試行/停止ルール
 - flaky許容ゼロ。
