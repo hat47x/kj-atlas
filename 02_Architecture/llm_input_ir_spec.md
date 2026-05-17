@@ -641,3 +641,11 @@ A2 contract test では次を機械判定する。
 - A2 では `stubDatasetId=A2-minimal-v1` を唯一の検証データセットとし、実DB/実LLM/worker 経路を無効化する。
 - Verify は `queryCanonicalHash` / `bundleHash` の 3/3 一致を必須とし、自己修復上限は3回。
 - Proceed は CE2/CE4 への read-only handoff のみ許可。
+
+## CE1 Stream C sync note（2026-05-17 / I/F-first mock-first）
+
+- Phase開始ごとに `issue-CE1-context-query-bundle-foundation.md` / `schemas.md` / 本書を再Readし、contract drift を禁止する。
+- `ContextQueryV1` / `ContextBundleV1` は v1 closed-world のまま固定し、未定義キーを受理しない（`400 unknown_contract_key`）。
+- roundtrip 検証は `stubDatasetId=A2-minimal-v1` 固定で行い、同一 canonical query 3回で `queryCanonicalHash` と `bundleHash` の 3/3一致を必須とする。
+- `previewConfirmed=false` は IR 生成開始前に必ず `422 preview_required` として fail-closed する。
+- CE2/CE4 への引き渡しは read-only（`sourceBundleHash === bundleHash` 検証可能な最小鍵のみ）とし、CE1側での実装依存追加を禁止する。

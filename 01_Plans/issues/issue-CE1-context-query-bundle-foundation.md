@@ -2701,3 +2701,29 @@ handoffKeys:
 ### Phase 6 Proceed
 - CE2/CE4 への handoff 条件を read-only に固定。
 - `sourceBundleHash === bundleHash` 比較不能時は fail-closed。
+
+## Stream C update（2026-05-17 / CE1 I/F先行 + mock-first依存切断）
+
+### Phase 1 Read（対象再Read）
+- 再読対象を `issue-CE1-context-query-bundle-foundation.md` / `02_Architecture/llm_input_ir_spec.md` / `02_Architecture/schemas.md` に固定。
+- CE1 v1 closed-world（`ContextQueryV1` / `ContextBundleV1`）と固定エラー語彙3種を再確認。
+
+### Phase 2 契約明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4 を CE1 実装待ちで停止させないため、I/F先行で mock-first 契約を固定する必要がある。
+- **Decision**: `previewConfirmed=true` を IR生成の前提ゲートに固定し、`422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` を fail-closed 語彙として維持する。
+- **Consequences**: CE2/CE4 は `sourceBundleHash === bundleHash` を鍵に read-only handoff で前進し、実DB/実LLM/worker 依存を持ち込まない。
+
+### Phase 3 mock契約実装（contract-only）
+- CE1 A2 stub profile を `stubDatasetId="A2-minimal-v1"` 固定で維持。
+- `/context/query` は `ContextQueryV1` の closed-world 検証のみを契約対象とし、未定義キーを拒否。
+- `/context/bundle` は deterministic hash 契約（同一 canonical query で `queryCanonicalHash` / `bundleHash` 一致）を契約対象とする。
+
+### Phase 4 Verify（roundtrip / 型整合）
+- Verify-1: `previewConfirmed=false -> 422 preview_required`。
+- Verify-2: 同一 canonical query の3回再実行で `queryCanonicalHash` / `bundleHash` が3/3一致。
+- Verify-3: unknown key は常に `400 unknown_contract_key`。
+- self-correction は最大3回。超過時は `held` で停止。
+
+### Phase 5 Proceed（CE2/CE4 handoff）
+- Handoff payload は `ContextQueryV1` / `ContextBundleV1` / `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` の read-only 参照に限定。
+- 契約変更要求は CE1 再起票でのみ許可し、本Issueでの拡張実装は行わない。

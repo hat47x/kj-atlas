@@ -943,3 +943,11 @@ hil_rs_a1_manifest_v1:
 - `ContextQueryV1` / `ContextBundleV1` の v1 必須キー集合は closed-world（追加は v2 のみ）。
 - Mock-first: `stubDatasetId=A2-minimal-v1` の契約検証のみ許可（実DB/実LLM/worker 禁止）。
 - Proceed条件: CE2/CE4 は `sourceBundleHash` 参照整合を read-only で受け取る。
+
+## CE1 Stream C handoff lock（2026-05-17 / interface-first）
+
+- `ContextQueryV1` / `ContextBundleV1` の v1 必須キー集合は固定（closed-world; v2まで追加禁止）。
+- Error semantics は `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` の3種固定。
+- roundtrip contract test は `A2-minimal-v1` で実施し、同一 canonical query 3回の `queryCanonicalHash` / `bundleHash` 一致を合格条件とする。
+- CE2/CE4 handoff は read-only で `sourceBundleHash === bundleHash` を比較可能であることのみを要件とし、実装依存（DB/LLM/worker）を含めない。
+- Verify失敗時 self-correction は最大3回。超過時は `held` 停止を必須とする。
