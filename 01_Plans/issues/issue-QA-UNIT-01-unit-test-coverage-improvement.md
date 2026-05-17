@@ -54,6 +54,14 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 2. blocker解消条件の可測性。
 3. `Execution: Hold` の維持条件明示。
 
+### Draft→Open ゲートチェックリスト（機械判定用）
+| Gate ID | 判定質問 | 必須証跡 | 判定値 |
+|---|---|---|---|
+| GO/NO-GO-1 | O-UNIT-01〜04 は本文上で追跡可能か | O-UNIT節 + AC/DoD節 | pass / blocked |
+| GO/NO-GO-2 | blocker と再開条件は 1:1 対応か | B-UNIT表 + Pending欄 | pass / blocked |
+| GO/NO-GO-3 | G1→G2→G3 の順序と失敗分類は固定か | 段階ゲート定義テーブル | pass / blocked |
+| GO/NO-GO-4 | docs-only 範囲外要求が混入していないか | Scope / Out of Scope の一致 | pass / blocked |
+
 ## Phase 4: Execute（具体化）
 
 ### 段階ゲート定義（unit / integration / e2e）
@@ -64,6 +72,11 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 | G3 E2E Traceability | G2合格 | unit失敗を代表ジャーニーへ逆引き可能 | 同上 |
 
 > 注: 本issueは docs-only のため、実テスト追加は別実行タスクで実施する。
+
+### 実装依存の切断方針（mock/fixture前提）
+- 欠陥クラスの網羅判定は既存 fixture と失敗注入モック（入力異常/契約境界/環境制約）を前提に定義する。
+- 新規プロダクト挙動や新規テスト実装の有無を Open 条件に含めない。
+- 実装タスクは Pending-1 承認後に別Issueで実施し、本Issueは計画品質の判定語彙を固定する。
 
 ## Phase 5: Verify（測定可能性チェック）
 ### AC（Open化判定用 / 推測確定禁止）

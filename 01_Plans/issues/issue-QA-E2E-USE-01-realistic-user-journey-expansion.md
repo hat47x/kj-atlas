@@ -59,6 +59,14 @@ Open化ゲートを次の3カテゴリで固定する。
 2. blocker と再開条件が 1:1 対応。
 3. `Execution: Hold` 維持条件が明示。
 
+### Draft→Open ゲートチェックリスト（機械判定用）
+| Gate ID | 判定質問 | 必須証跡 | 判定値 |
+|---|---|---|---|
+| GO/NO-GO-1 | B-USE-01 と B-USE-02 は解消済みか | Pending欄の承認ID + 日付 + 参照リンク | pass / blocked |
+| GO/NO-GO-2 | 実行経路は `ADR-0019` 準拠で1つ固定済みか | Compose / SQLite / 例外の選択記録 | pass / blocked |
+| GO/NO-GO-3 | G1→G2→G3 の entry/exit 証跡欄は埋められるか | Gate表の entry/exit 欄 | pass / blocked |
+| GO/NO-GO-4 | docs-only 範囲外要求が混入していないか | Scope / Non-Goals の一致 | pass / blocked |
+
 ## Phase 4: Execute（Draft本文の具体化）
 
 ### シナリオ定義（実行本体は別Issue）
@@ -73,6 +81,11 @@ Open化ゲートを次の3カテゴリで固定する。
 - `?locale=en` でも S1〜S3 が同一判定で成立する。
 - `?readOnly=1` と locale 切替を併用しても禁止操作境界が維持される。
 - `ja/en` のユーザージャーニー等価は自動化で判定し、翻訳妥当性は人間レビューで判定する。
+
+### 実装依存の切断方針（mock/fixture前提）
+- 本Issueで定義するシナリオ妥当性は、既存 fixture とモック化済み外部依存（認証/共有境界/永続化失敗）で判定する。
+- 新規実装依存（新API・新UI・本番データ接続）を Open 条件に含めない。
+- 実環境との差分は「Execution Hold解除後の実行Issue」で検証し、本Issueでは依存一覧を固定する。
 
 ## Phase 5: Verify（測定可能性チェック）
 
