@@ -21,6 +21,22 @@
 - 監査イベント4点セット（`query` / `bundle` / `proposal` / `apply`）を必須契約として固定する。
 - CE1（ContextQuery/ContextBundle基盤）未整備時でも、`mock:<64hex>` 経路で契約検証を継続可能にする。
 
+## Stream L proposal-only 統合ゲート（2026-05-17）
+
+### 実装着手条件（Go条件）
+- `G-01` API/CLI/Audit の I/F草案が単一語彙で整合（`mode=proposal-only` / `decision` / `classification` / `equivalenceSatisfied`）。
+- `G-02` 監査4イベント（`query -> bundle -> proposal -> apply`）と共通必須キーが固定済み。
+- `G-03` fail-closed規律（欠損/順序違反/同値違反/ポリシー違反は成功扱い禁止）が明文化済み。
+- `G-04` CE1未整備時の mock 接続（`mock:<64hex>`）で real と同一規律を適用する記述がある。
+- `G-05` 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を「実装フェーズまで未固定」と明示できる。
+
+### 非着手条件（No-Go条件）
+- `NG-01` `proposal-only` 以外のモードを成功扱いする記述が混入。
+- `NG-02` 監査4イベントの欠損や順序逸脱を許容する記述が混入。
+- `NG-03` `equivalenceKey AND bundleHash` のAND同値条件が崩れる。
+- `NG-04` 実装方式（保存先/QoS/署名/HTTP詳細/CLI数値コード）を契約確定として先取りする要求。
+- `NG-05` CE0/CE1未確定事項を推測で補完する要求。
+
 ---
 
 ## Operating Mode（Stream C / serial phases）
@@ -165,6 +181,11 @@
 ### 3.5.5 Non-Goals（この草案で確定しないもの）
 - HTTPステータス詳細、CLI終了コードの数値、監査保存先/配送QoS/署名方式は未固定。
 - 型定義の実コード化（OpenAPI/argparse/SDK生成）は実装フェーズまで禁止。
+
+### 3.5.6 I/F先行固定ルール（API/CLI/監査）
+- 先行固定対象は **入出力フィールド・判定語彙・失敗分類** のみ。
+- 実装依存要素（永続化方式、配送方式、具体的終了コード値、HTTPステータス割当）は非固定とする。
+- 互換性判定は「旧I/Fで表現可能か」を基準にし、破壊的変更は次版契約でのみ扱う。
 
 ## Phase 4: mock検証（正常/欠損/重複/不正操作）
 

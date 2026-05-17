@@ -19,6 +19,22 @@
 - CE0/CE1依存は **read-only参照** とし、CE2側で確定要求を出さない。
 - 判定は `Proceed / Hold` の二値ではなく `Proceed / Hold / Stop(held)` 三値で運用する。
 
+## Stream L proposal-only 統合ゲート（2026-05-17）
+
+### 実装着手条件（Go条件）
+- `G-01` Evidence matrix `E-01..E-05` がすべて `fulfilled`。
+- `G-02` Approval Record の `missing=0`（`approved_at/approved_by/decision/evidence` が実値）。
+- `G-03` CE0/CE1 参照で **追加確定要求なし**（read-only dependency維持）。
+- `G-04` 判定語彙が `Proceed / Hold / Stop(held)` の tri-state のみ。
+- `G-05` docs-check 成功記録が最新で、single-file scope 逸脱がない。
+
+### 非着手条件（No-Go条件）
+- `NG-01` CE0承認証跡またはCE1 read-only確認の未充足。
+- `NG-02` Approval Record に `missing` が1つでも存在。
+- `NG-03` `proposal-only / human-final / no-auto / fail-closed` のいずれかに反証。
+- `NG-04` 依存値の推測補完、またはCE2側からの実装確定要求の混入。
+- `NG-05` self-correction が上限（3回）を超過。
+
 ## Stream E CE2 Open化準備アップデート（2026-05-09 / proposal-only, dependency-locked）
 
 ### Phase 1: Read（Draft理由・依存・不足証跡）
