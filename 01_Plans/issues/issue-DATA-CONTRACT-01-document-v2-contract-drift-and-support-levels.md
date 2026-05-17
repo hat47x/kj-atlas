@@ -116,3 +116,20 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 11) 運用境界（含む / 含まない）
+
+- 含む:
+  - DocumentV2契約の差分棚卸し（frontend/backend/api/schema）。
+  - Support levelの明示（運用サポート / 埋め込み限定 / 契約のみ）。
+  - `PUT /docs/{doc_id}` create-if-absent契約の検証観点固定。
+- 含まない:
+  - 個別エンティティCRUD実装。
+  - 管理者向け復旧UIの実装。
+  - HIL/CEワークフロー仕様の新規拡張。
+
+## 12) 受入条件の補完（AC gap fill）
+
+- [ ] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
+- [ ] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
+- [ ] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。

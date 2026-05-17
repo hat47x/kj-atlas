@@ -40,6 +40,27 @@ MVPでは、データサポート境界を次の4区分で管理する。
 - 監査ログ閲覧、削除/保管期限、所有者移管、復旧手順を完了扱いにしない。
 - 契約ドリフトを文書上の言い換えだけで解決しない。実装/API/型の不一致は内部issueで扱う。
 
+
+## Support / Maintenance / Contract Boundary Table
+
+| 項目 | Support Level（MVP標準運用） | Maintenance Boundary（保守責務） | Contract Boundary（契約責務） | 含む | 含まない |
+| --- | --- | --- | --- | --- | --- |
+| Document snapshot (`documents.payload_json`) | L1: Supported | Platform operatorが可用性/バックアップ、Document ownerが内容責任 | `DocumentV1/V2` の往復互換を維持 | `GET/PUT /docs/{doc_id}`、全体保存/復元 | 個別Card/Edge CRUD、部分修復API |
+| Embedded entities（Card/Edge/Island/Narrative/EvidenceLink） | L2: Embedded-only | Document owner/Reviewerが業務内容を管理 | 型互換とimport/export roundtripを維持 | スナップショット内保存、UI操作経由の更新 | 個別監査検索、個別削除・復元 |
+| Merge decision log (`merge_decision_logs`) | L1.5: Append-read | Reviewer/Audit operatorが判断履歴管理 | append-only契約とdoc従属を維持 | 追記/参照、group/snapshot整合 | 更新・削除API、独立ライフサイクル |
+| Derived read models（SimilarCandidateGroup/ContextBundle） | L3: Derived | Developerが生成ロジック品質を保守 | 生成I/F語彙とfail-closed条件を維持 | 生成・表示・検証 | 永続保守、手動補正 |
+| A1 contract fields（`critiqueInputs`等） | L2.5: Contract-limited | Developer/Reviewerが型整合を管理 | frontend/backend/api/schema同義性を維持 | 保存・読み込み・往復検証 | 個別編集UI、個別CRUD |
+| Admin maintenance ops（backup/restore/inventory） | L0: Planned | Platform operator/Security officer | Runbook契約を固定（将来） | 手順定義、演習設計 | 自動化済み運用、完全管理UI |
+
+### Recovery / Exception Flow（MVP）
+
+1. **Detect**: 異常検知（破損、契約ドリフト、復元要求）を運用者が起票する。
+2. **Classify**: 事象を `Contract` / `Maintenance` / `Support` の3系統で分類する。
+3. **Contain**: share/export を safeMode既定ONで凍結し、未レビュー本文の二次共有を抑止する。
+4. **Recover**: `DATA-MAINT-01` の手順に従いバックアップ復元（DB単位）またはDocument再投入を行う。
+5. **Verify**: `DATA-CONTRACT-01` 観点で roundtrip と `PUT create-if-absent` 契約を再確認する。
+6. **Record**: 判断と再発防止を `DATA-MODEL-OPS-01` の境界表へ反映する。
+
 ## Consequences
 
 - 期待される効果:

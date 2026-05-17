@@ -108,3 +108,29 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 11) 運用境界（含む / 含まない）
+
+- 含む:
+  - 管理・復旧・棚卸しのrunbook要件整理（SQLite/PostgreSQL）。
+  - 例外時のRACI（Platform operator / Security officer / Support）定義。
+  - Document復旧時の`merge_decision_logs`整合チェック要件。
+- 含まない:
+  - 本Issue内での管理API/管理UI実装。
+  - 法域別の保持期限自動判定。
+  - サポート担当への本文閲覧権限付与。
+
+## 12) 受入条件の補完（AC gap fill）
+
+- [ ] AC-01: 障害種別（破損/誤削除/契約ドリフト）ごとに一次対応SLA目安を記述する。
+- [ ] AC-02: 復旧演習結果に `成功条件 / 中断条件 / エスカレーション先` を明記する。
+- [ ] AC-03: 共有前確認（未レビュー本文・PII抑制）を復旧runbookに組み込む。
+
+## 13) 例外時フロー（提出成果）
+
+1. 障害検知・起票（Support）。
+2. 影響分類（Contract / Maintenance / Support）。
+3. 共有制御（safeMode既定ON、二次共有抑止）。
+4. 復旧方式選択（DB restore / Document再投入）。
+5. 整合確認（`documents` と `merge_decision_logs`）。
+6. 事後レビューと境界表更新。
