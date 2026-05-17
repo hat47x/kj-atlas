@@ -27,6 +27,17 @@ MVPは、データ構造の全てをサポートする段階ではありませ�
 
 MVPで最も重要なのは、カードやまとまりを扱えることではなく、利用者と運用者が「どこまでが正式に保守されるデータか」を誤解しないことです。
 
+### 1.1 ADR-0033 境界クラス（固定）
+
+本書のCRUD表・フィールド支援レベルは、ADR-0033の Support/Maintenance/Contract Boundary Table と同じ語彙で運用する。
+
+- `L1: Supported` = 標準API/UIで日常運用できる対象（例: Document snapshot）
+- `L1.5: Append-read` = 追記/参照のみを標準運用とする対象（例: merge decision log）
+- `L2: Embedded-only` = Document内埋め込みで保持し、個別CRUDは提供しない対象
+- `L2.5: Contract-limited` = 保存はするが個別編集UI・個別CRUDを持たない契約先行対象
+- `L3: Derived` = 生成・表示対象であり永続保守対象ではない
+- `L0: Planned` = MVP時点では運用手順を定義中で標準運用を保証しない
+
 ---
 
 ## 2. 物理永続化モデル
@@ -140,7 +151,7 @@ erDiagram
 | ReviewAttribution | DocumentV2更新時に含める | Document取得に含まれる | 認証主体と一致する場合のみ更新を許可 | 標準削除APIなし | Reviewer / Security officer | `human_reviewed` は人手操作のみ。AIや自動処理で昇格しない。 |
 | MergeDecisionRecord | `POST /docs/{doc_id}/merge-decision-logs` | group/snapshot別GET | 標準更新APIなし | 標準削除APIなし | Reviewer / Audit operator | 追記ログとして扱い、訂正は新しい判断記録で表現する方針。 |
 | SimilarCandidateGroup | 保存済みDocumentから導出 | `GET /docs/{doc_id}/similar-candidate-groups` | 標準更新APIなし | 標準削除APIなし | Reviewer | 結果の正しさは候補生成ロジックの検証対象で、データ保守対象ではない。 |
-| ContextQuery / ContextBundle | request/responseとして生成 | API/CLI/contract testで参照 | 永続更新なし | 永続削除なし | Developer / AI integration owner | 契約先行。利用者データの永続保守とは分ける。 |
+| ContextQuery / ContextBundle | request/responseとして生成 | API/CLI/contract testで参照 | 永続更新なし | 永続削除なし | Developer / AI integration owner | 契約先行。利用者データの永続保守とは分け、実装済み運用としては扱わない。 |
 | Export / Context audit event | 各audit endpointで送信 | アプリ内の標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Audit operator / Security officer | 監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。 |
 | User / UserIdentity | `POST /admin/provision/users` | 標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Platform operator | strict provisioningの入口。退避、無効化、棚卸しは `DATA-MAINT-01` の対象。 |
 | Import/Review Pack artifact | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |

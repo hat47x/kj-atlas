@@ -4,6 +4,7 @@
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPで実際に運用サポートするデータ構造、埋め込み限定の構造、契約のみの構造は `02_Architecture/data_model_operations_overview.md` を参照する。
+> ADR-0033 で定義した Support/Maintenance/Contract Boundary（L1/L1.5/L2/L2.5/L3/L0）を正本とし、本書の型定義単体で運用保証を主張しない。
 本ドキュメントは、kj-atlas の **MVPで扱う永続データの最小スキーマ** を定義します。
 
 - YAGNI方針に従い、MVPで標準運用しない型は「運用サポート済み」と扱いません
