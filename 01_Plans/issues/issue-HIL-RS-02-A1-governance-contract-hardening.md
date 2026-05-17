@@ -328,3 +328,48 @@
   - `HOLD_PENDING_QUEUE`
   - `HOLD_APPROVAL_EVIDENCE_INCOMPLETE`
 - Freeze handoff source: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` section `Stream A Freeze Pack（2026-05-17）`.
+
+## Stream A critical path run（2026-05-17 UTC / serial fixed phases）
+
+### Phase 1: Read Sync
+- 再読対象: 本Issue / `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` / `ADR-0026` / `ADR-0027` / `ADR-0028`。
+- 差分確認:
+  - `Status=Open（Approval Pending）` と `executeAllowed=false` は維持。
+  - 固定キー（`freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`）のドリフトは `0`。
+  - 未承認項目（`approved_by`, `approved_at`, `evidence`）は未解消のため Pending 維持。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: クリティカルパスは A1 統治契約凍結であり、Pending bypass と承認責務混線が最大リスク。
+- Decision:
+  - 承認前の `executeAllowed=true` を禁止し、`Pending -> Execute` を不成立固定とする。
+  - 承認遷移は `Pending -> Approved | Pending -> Rejected` のみ許可。
+  - 未承認事項は **Pending のまま保持** し、確定扱いしない。
+- Consequences:
+  - 後続ストリームは mock/I/F 先行で独立遂行可能（read-only 参照のみ）。
+  - 固定キー不一致・禁止遷移成立・自己修復3回超過は `Stop/NoGo`。
+
+### Phase 3: Plan（AC / DoD）
+- AC/DoD宣言:
+  - AC: fixed key drift=0, SoD明示, Pending bypass禁止, NoGo return path固定。
+  - DoD: Approval Record 3項目必須、Pending残存時 `executeAllowed=false`、禁止遷移不成立。
+- 不足項目:
+  - 追加仕様不足はなし。
+  - 未承認データ（`approved_by`, `approved_at`, `evidence`）は合意待ちとして維持。
+
+### Phase 4: Execute（contract freeze hardening）
+- 統治契約固定を再確認:
+  - 禁止遷移: `Draft -> Approved`, `Pending -> Execute`, `Rejected -> Execute`。
+  - 責務分離: requester / approver_a / approver_b / executor の兼務禁止。
+  - 承認記録要件: `approved_by`, `approved_at(ISO 8601)`, `evidence` 欠損時は `executeAllowed=false`。
+- SafeModeガード:
+  - `safeModeDefault=ON` と `safeModeBoundary=SAFE_MODE_STRICT_ON` の後退なし。
+
+### Phase 5: Verify
+- AC/DoD照合結果: pass。
+- 禁止遷移確認: `Pending -> Execute` 不成立を確認。
+- Self-Correction: `0/3`（修正ループ不要）。
+
+### Phase 6: Proceed / Stop
+- 判定: **Hold（Approval Pending 継続）**。
+- Go未達理由: `pendingDecisionQueueCount>0`（未承認3項目が残存）。
+- Stop非該当理由: 固定キー不一致なし、禁止遷移成立なし、verifyAttempts超過なし。
