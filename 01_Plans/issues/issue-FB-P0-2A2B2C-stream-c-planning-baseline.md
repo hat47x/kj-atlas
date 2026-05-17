@@ -596,3 +596,61 @@
 - **Proceed**: `A2A3_OPEN_ALLOWED=true` かつ `validatorPass=true` かつ `Approval Record=Approved`。
 - **Hold**: 契約矛盾なしだが `Approval Record=Pending` または `held` 残存。
 - **Stop**: Gate矛盾、依存循環、safeMode後退、allowlist外編集要求、未承認確定化のいずれかを検知。
+
+## Stream F planning baseline convergence run（2026-05-17）
+
+### Phase 1: Read（allowlist 2ファイル再読）
+- 対象は allowlist 2ファイル（本ファイル / `issue-FB-P2C-01-a1-interface-contract.md`）に限定する。
+- 再読チェック（差分1件でも `Stop`）:
+  1. 固定キー `freezeContractId / contractIds / schemaVersion / overridePolicy / contractLinkLocked / sharedResourceFreeze / safeModeDefault / safeModeBoundary` が一致。
+  2. 判定式 `A2A3_OPEN_ALLOWED` が文字列一致。
+  3. 未承認事項（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）が確定化されていない。
+
+### Phase 2: ADR/Decision整理（Ready化条件とDoD固定）
+#### Context
+- FB-P0-2A2B2C の収束条件は「A1契約凍結を唯一SSOTに保ったまま、A2/A3誤開放を防止すること」。
+- 収束遅延の主因は、依存関係（実装依存 / 計画依存 / I/F依存）が混在し、Ready条件が曖昧になる点。
+
+#### Decision
+- Ready判定を次で固定する（stream間で再定義しない）:
+  - `Ready(A2/A3-planning) = contractFreezeAligned && gateFormulaAligned && approvalState in {Pending, Approved}`
+  - `Ready(A2/A3-execution) = A2A3_OPEN_ALLOWED && Approval Record=Approved`
+- DoD（planning baseline）の最小集合を固定:
+  1. allowlist 2ファイルで固定キー差分 `0`
+  2. `A2A3_OPEN_ALLOWED` と `NoGo` 条件が文字列一致
+  3. 未承認事項は `held/pending` のまま維持（Done遷移禁止）
+  4. allowlist外差分 `0`
+
+#### Consequences
+- A2/A3は **planning準備Ready** と **execution Ready** を分離して扱う。
+- mock-first は planning準備にのみ適用し、実装完了の代替には使わない。
+- `Approval Record=Pending` が残る限り判定は `Conditional/Needs-decision` を維持する。
+
+### Phase 3: Plan（依存分離の明示）
+- 依存を3層で分離して記述固定:
+  1. **Implementation dependency（直列）**: `A1 impl -> A2 impl -> A3 impl`
+  2. **Interface dependency（並列準備可）**: `A1 interface-contract -> A2/A3 mock-validation`
+  3. **Planning dependency（本Issue完結）**: baselineとP2C A1の文面同期が完了すればClose候補
+- 非目標（明示）:
+  - 実装コード変更
+  - allowlist外Issue編集
+  - 承認状態の擬似確定
+
+### Phase 4: Execute（docs-only統合作業）
+- 本Issueでは planning baseline のメタ（Ready化条件 / DoD / 依存分離）整備のみを実施。
+- 契約固定値およびSafeMode境界（`safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）は変更しない。
+- `No-Go` 追加固定: 「契約未固定のままA2/A3をDone扱いする要求」を検知した場合は即停止。
+
+### Phase 5: Verify（収束判定）
+- 検証順序（固定）:
+  1. `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues`
+  2. `python3 -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+  3. `git diff --check`
+- 判定ルール:
+  - Self-Correction は最大3回。
+  - 4回目相当 / allowlist外編集要求 / 未定義競合 / safeMode後退要求は `Stop`。
+
+### Phase 6: Proceed/Stop
+- `Proceed`: planning DoD 4項目がすべて充足し、未承認事項が `held/pending` として明示維持されている。
+- `Conditional (Needs-decision)`: DoDは充足したが `Approval Record=Pending` または `held` 未解消が残る。
+- `Stop`: 依存矛盾、allowlist逸脱、未承認確定化、self-correction超過のいずれかを検知。
