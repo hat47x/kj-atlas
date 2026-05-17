@@ -8,7 +8,8 @@ function resolveApiBase(): string {
     return "/api";
   }
 
-  return rawValue.endsWith("/") ? rawValue.slice(0, -1) : rawValue;
+  const normalized = rawValue.endsWith("/") ? rawValue.slice(0, -1) : rawValue;
+  return normalized.startsWith("/") ? normalized : "/api";
 }
 
 const API_BASE = resolveApiBase();

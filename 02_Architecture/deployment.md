@@ -34,7 +34,7 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 | `KJ_ATLAS_POSTGRES_DB` | `kj_atlas` | Compose PostgreSQL の database 名 |
 | `KJ_ATLAS_POSTGRES_USER` | `kj_atlas` | Compose PostgreSQL の user 名 |
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
-| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む API base path |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む API base path（`/` 始まりのみ許可。不正値は `/api` へフォールバック） |
 | `KJ_ATLAS_DATABASE_URL` | Compose では PostgreSQL 接続先 | backend が使う DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | LLM provider |
 
