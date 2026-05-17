@@ -1,6 +1,6 @@
 # ADR-0031: 製品化に向けた画面情報設計
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-14
 - Deciders: Project Maintainers
 - Scope: `03_Implement/frontend/src/`, `04_Documentation/`, `01_Plans/issues/`
@@ -47,6 +47,35 @@
   - `PRODUCT-UX-03` で共有前確認面を製品品質へ移行する。
   - `PRODUCT-UX-04` でレスポンシブ、大規模文書、低速環境の操作性を検証する。
   - `PRODUCT-QA-01` で製品化品質ゲートを固定する。
+
+## Phase plan（Plan → Execute → Verify → Proceed）
+
+### Plan（直列分配）
+
+1. `PRODUCT-UX-01`（入口の定義）
+2. `PRODUCT-UX-02`（ワークスペース再編、`PRODUCT-UX-01` に依存）
+3. `PRODUCT-UX-03`（共有前確認、`PRODUCT-UX-01`/`PRODUCT-UX-02` に依存）
+4. `PRODUCT-UX-04`（レスポンシブ/大規模文書検証、`PRODUCT-UX-02`/`PRODUCT-UX-03` に依存）
+5. `PRODUCT-QA-01`（リリース判定、UX-01〜04 完了に依存）
+
+### Execute（文言統一ルール）
+
+- 全issueで「何を/誰が/どこで行うか」を次の形式で統一する。
+  - 何を: 作業目的（例: 共有前確認、選択対象編集）
+  - 誰が: 一般利用者/レビュー担当者/運用担当者
+  - どこで: 開始入口/キャンバス/選択コンテキスト/作業モード/共有前確認面
+
+### Verify（横断整合）
+
+- 重複禁止: 同一ACを複数issueで重複定義しない。
+- 矛盾禁止: SafeMode既定ON、共有前確認必須、レガシー導線補助扱いを崩さない。
+- 責務漏れ防止: 入口→作業→共有→品質判定の責務を5 issueで隙間なく分担する。
+
+### Proceed（引き渡し区分）
+
+- 設計合意済み: ADR-0031 Decision および5領域定義。
+- 実装待ち: `PRODUCT-UX-01`〜`PRODUCT-UX-04` の実装タスク。
+- 未決裁: `PRODUCT-QA-01` の最終 Go/No-Go 判定権限と運用日程。
 
 ## Traceability
 
