@@ -23,6 +23,14 @@
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
+## Dependency graph（Stream I）
+
+- Upstream（先行固定）: `DATA-MODEL-OPS-01`（MVP運用境界の正本化）, `DATA-CONTRACT-01`（DocumentV2契約ドリフト整理）
+- Parallel（並行整備）: なし
+- Downstream（後続依存）: なし（運用runbook確定後に実装Issueへ分割）
+- Blocker条件: support level未確定、またはDocument復旧時の契約整合チェック観点が未定義
+
+
 ## 1) 課題 / Problem statement
 
 - MVPはDocumentスナップショット保存を中心にしており、データをメンテナンスする標準手段が限定的である。
@@ -134,3 +142,12 @@
 4. 復旧方式選択（DB restore / Document再投入）。
 5. 整合確認（`documents` と `merge_decision_logs`）。
 6. 事後レビューと境界表更新。
+
+## Stream I Phase status
+
+- Phase 1 Read: 完了（Read Order上流と関連ADRを確認済み）
+- Phase 2 ADR/論点分離: 完了（契約ドリフト、運用保守、俯瞰境界を独立Issue化）
+- Phase 3 Plan: 完了（受入条件・非目標・検証計画を明文化）
+- Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
+- Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
+- Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
