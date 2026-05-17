@@ -170,6 +170,14 @@
 - DOC-OPS-02 / DOC-OPS-03 / REQ-DEF-01/02/03 は Done へ遷移。REQ-DEF系のDecision Queueは解消済み。
 
 
+### 6-10. Stream F 共有最終同期ログ（2026-05-17 rerun-76, Phase 1-5）
+
+- Phase 1 Read gate: `issues/README.md` / `project-progress-dashboard.md` / 本decision-pack を再読し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2）と依存順 `A1→A2→A3` を再確認。
+- Phase 2 Plan: 同期対象を shared resource 3ファイルのみに固定し、件数・Queue・依存順の反映方針を単一変更セット前提で確定。
+- Phase 3 Execute: shared resource 3ファイルのみを更新し、未承認事項の確定扱い0件・停止条件違反0件を維持。
+- Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開条件1行|依存順A1→A2→A3" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイルの公開固定値一致を確認。
+- Phase 5 Proceed（次回再開条件1行固定）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-17 rerun-76確認済み）。`
+
 ## 6. P1: DOC-OPS-04（完了 / 参照記録）
 
 ### 6-1. 現在のゲート状態
