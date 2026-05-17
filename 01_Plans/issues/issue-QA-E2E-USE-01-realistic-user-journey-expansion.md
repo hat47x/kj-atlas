@@ -44,6 +44,7 @@ Open化ゲートを次の3カテゴリで固定する。
 ## Phase 3: Plan（Open化条件・責務・最小検証セット）
 
 ### Open化条件
+- O-USE-04: blocker と再開条件が 1:1 で対応し、未解消時は `Execution: Hold` を維持する。
 - O-USE-01: B-USE-01/B-USE-02 が両方解消済み。
 - O-USE-02: `ADR-0019` 準拠の実行経路（Compose/SQLite/例外）が1つ指定済み。
 - O-USE-03: G1→G2→G3 の entry/exit 判定欄が埋められる構成である。
@@ -104,3 +105,8 @@ Open化ゲートを次の3カテゴリで固定する。
 
 ### Execution
 - `Execution: Hold`（Pending解消まで維持）
+
+
+### 修復上限（共通）
+- 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
+- 4回目相当は Stop。保留理由と再開条件を `Pending` 欄へ追記する。
