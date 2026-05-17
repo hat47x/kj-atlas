@@ -300,3 +300,31 @@
   2. `PD-20260507-A1-001` と `PD-20260507-A1-002` の承認/却下をDecision Queueで確定。
   3. 承認確定後に本Issueの `Status` を `Open` へ正規更新し、同時に `executeAllowed` 判定を再評価。
 - 変更理由: Proceed可否と次手順をIssue内の確定情報だけで完結させるため。
+
+
+## Stream A critical-path freeze execution（2026-05-17）
+
+### Phase 1 Read & Baseline
+- Re-read completed at phase start for this issue, `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-CE0-contract-freeze.md`, `ADR-0027`, and `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`.
+- Baseline check: fixed keys and transition constraints remain unchanged.
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- Context: critical path requires A1 as only contract gate to prevent downstream rework.
+- Decision: keep governance gate immutable (`Pending -> Approved|Rejected`, `executeAllowed=false` while pending).
+- Consequences: A2/A3 open remains blocked until approval evidence is complete.
+
+### Phase 3 Execute（contract-only）
+- Applied contract freeze confirmation only (no implementation start).
+- Explicit non-goals: frontend/backend edits, schema expansion, dashboard/README updates.
+
+### Phase 4 Verify
+- Dependency rule verified: A1 must be completed before A2/A3 Open.
+- No destructive drift in `freezeContractId`, `schemaVersion`, `overridePolicy`, `safeModeBoundary`.
+- Self-correction count: `0/3`.
+
+### Phase 5 Proceed
+- Gate result: `Hold`.
+- reasonCodes:
+  - `HOLD_PENDING_QUEUE`
+  - `HOLD_APPROVAL_EVIDENCE_INCOMPLETE`
+- Freeze handoff source: `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md` section `Stream A Freeze Pack（2026-05-17）`.

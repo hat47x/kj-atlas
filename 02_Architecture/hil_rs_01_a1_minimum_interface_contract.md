@@ -563,3 +563,59 @@ Prohibited for A2/A3:
 - B/C（A2/A3）は本manifestを read-only 参照し、派生契約を再定義しない。
 - 変更要求は `A1-CDC-only` ルートに差し戻す。
 - 未解決項目（`Approval Record=Pending`, `HIL-RS-02-GOV-EXCEPTION-01=held`）が残る間は `NoGo/Hold` を維持する。
+
+
+## 8) Stream A Freeze Pack（2026-05-17 / HIL-RS-CE0 contract freeze handoff）
+
+### Phase 1 Read & Baseline
+- Re-read completed: `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-HIL-RS-02-A1-governance-contract-hardening.md`, `issue-CE0-contract-freeze.md`, `ADR-0027`.
+- Baseline delta: no fixed-key drift detected for `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`.
+- AC/DoD gap decision: no new gaps; unresolved items remain approval-related only.
+
+### Phase 2 ADR freeze（Context / Decision / Consequences）
+- Context: downstream redefinition risk remains non-zero until A1 gate is the single source of truth.
+- Decision:
+  - Keep A1 fixed values immutable.
+  - Keep Decision Queue transitions fixed to `Pending -> Approved | Pending -> Rejected`.
+  - Keep `A2A3_UNLOCK` as the sole open predicate.
+- Consequences:
+  - A2/A3 cannot transition `Draft -> Open` while queue pending exists.
+  - Any contract redefinition request must return to A1 CDC/issue.
+
+### Phase 3 Execute（contract lock only / no implementation）
+- Contract lock scope is limited to interface/governance/stop-condition definition.
+- Non-goal (explicit): frontend/backend/schema implementation start, dashboard edit, and non-allowlist document edits.
+
+### Phase 4 Verify（self-check）
+- Dependency transition rule check: `A1 before A2/A3 Open` enforced.
+- Destructive diff check: no destructive mutation to frozen interface IDs/keys.
+- Self-correction count: `0/3`.
+
+### Phase 5 Proceed（Freeze Pack for downstream）
+
+| Item | Frozen value | Change policy |
+| --- | --- | --- |
+| Freeze Pack ID | `HIL-RS-CE0-FREEZE-PACK-2026-05-17` | immutable |
+| `freezeContractId` | `HIL-RS-02-A1-CONTRACT-FREEZE-v1` | immutable |
+| `contractIds` | `A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF` | immutable |
+| `schemaVersion` | `1.0.0` | immutable |
+| `overridePolicy` | `human_dual_control_only` | immutable |
+| `safeModeDefault` | `ON` | immutable |
+| `safeModeBoundary` | `SAFE_MODE_STRICT_ON` | immutable |
+| Decision Queue transition | `Pending -> Approved | Pending -> Rejected` | immutable |
+| Unlock rule | `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` | immutable |
+| NoGo return path | `issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md` | immutable |
+
+#### Downstream contract I/F table（input / output / failure / audit event）
+
+| Interface | Input | Output | Failure | Audit event |
+| --- | --- | --- | --- | --- |
+| `A1-CRITIQUE-IF` | `critiqueId,targetRef,critiqueType,createdAt,iteration` | critique proposal record | `A1_REQUIRED_FIELD_MISSING` / `A1_PII_POLICY_VIOLATION` | `query`,`proposal` |
+| `A1-REDIFF-IF` | `proposalId,basedOnIteration,diffOps[],traceKey` | reversible diff proposal | `A1_TRACE_KEY_MISSING` / non-reversible diff reject | `bundle`,`proposal` |
+| `A1-ATTR-IF` | `reviewState,reviewedAt,reviewerRef,auditRecordedAt` | attribution state update proposal | `A1_OVERRIDE_POLICY_VIOLATION` | `proposal`,`apply` |
+| `A1-ERROR-IF` | `errorCode,message,contractId,retryable,occurredAt` | structured contract error | invalid enum / PII in message | `query`,`bundle`,`proposal`,`apply` |
+
+#### Re-open conditions
+1. Human dual-approval evidence completed (`approved_by`, `approved_at`, `evidence`).
+2. `pendingDecisionQueueCount==0` confirmed.
+3. No fixed-key drift and no safeMode regression requests.
