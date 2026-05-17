@@ -428,3 +428,21 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 ### Proceed gate（A1専用）
 - `Go`: `a1Status=="Done" && pendingDecisionQueueCount==0 && fixedKeyDrift==0`
 - それ以外: `Hold/NoGo`（推測で `Go` を作らない）。
+
+## Stream A synchronization note（2026-05-17 UTC / governance freeze alignment）
+
+### Read Sync
+- 再読対象: 本Issue と `issue-HIL-RS-02-A1-governance-contract-hardening.md`。
+- 整合結果:
+  - 最小I/F固定値（`freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`, `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeBoundary=SAFE_MODE_STRICT_ON`）は差分0。
+  - 判定式 `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` を継続採用。
+
+### Contract guardrail reaffirmation
+- `Pending bypass` は禁止。
+- `Pending -> Approved | Pending -> Rejected` 以外の遷移は禁止。
+- Approval Pending 中は `executeAllowed=false` を維持。
+- NoGo return path は本Issue（A1 SSOT）へ固定。
+
+### Proceed state
+- 判定: **Hold/Needs-decision 継続**。
+- 理由: Approval Record（`approved_by`, `approved_at`, `evidence`）未確定のため Go 条件未達。
