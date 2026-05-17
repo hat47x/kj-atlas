@@ -135,6 +135,58 @@ export type EvidenceLink = {
   createdAt?: string;
 };
 
+export type A1TargetRef = `card:${string}` | `island:${string}` | `cluster:${string}` | `edge:${string}` | `proposal:${string}`;
+
+export type CritiqueInput = {
+  schemaVersion: "1.0.0";
+  critiqueId: string;
+  targetRef: A1TargetRef;
+  critiqueType: "too_close" | "too_far" | "not_the_same" | "feels_off" | "no_articulable_reason";
+  createdAt: string;
+  iteration: number;
+  comment?: string;
+  constraintHints?: string[];
+};
+
+export type ReproposalDiffOp = {
+  opId: string;
+  opType: "add" | "remove" | "move" | "regroup" | "relabel";
+  targetRef: A1TargetRef;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  rationale?: string;
+};
+
+export type ReproposalDiff = {
+  schemaVersion: "1.0.0";
+  proposalId: string;
+  basedOnIteration: number;
+  diffOps: ReproposalDiffOp[];
+  traceKey: string;
+  rationale?: string;
+};
+
+export type ReviewAttribution = {
+  schemaVersion: "1.0.0";
+  reviewState: "unreviewed" | "human_reviewed";
+  reviewedAt: string | null;
+  reviewerRef: string;
+  auditRecordedAt: string;
+  overridePolicy: "human_dual_control_only";
+  reviewContext?: string;
+  ownerRef?: string;
+};
+
+export type DeterministicTieBreak = {
+  schemaVersion: "1.0.0";
+  order: [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
+};
+
 export type NarrativeCheckReference = {
   id: string;
   kind: "card" | "island";
@@ -221,6 +273,10 @@ export type DocumentV2 = {
   evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
   mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+  critiqueInputs?: CritiqueInput[];
+  reproposalDiffs?: ReproposalDiff[];
+  reviewAttribution?: ReviewAttribution;
+  deterministicTieBreak?: DeterministicTieBreak;
 };
 
 export type MergeSuggestionDecision = "accept" | "partial" | "reject" | "defer";

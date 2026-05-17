@@ -29,6 +29,7 @@
 - `api.md` では `PUT /docs/{doc_id}` をMVPのCreate契約に寄せ、`POST /docs` を将来候補として残しているが、実装・テスト・関連文書の同期確認が必要である。
 - frontend型には `evidenceLinks`、`claimType`、edge endpoint kind など、backend型やMVP運用表での扱いを確認すべき構造がある。
 - `PatchApplyStats` などの補助型は、どこまでがMVP運用サポートで、どこからが将来契約かを明示する必要がある。
+- A1契約フィールド（`critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak`）は、UI個別編集の対象ではないが、DocumentV2内で保存・読み込み・API往復する契約境界としてfrontend/backend双方の型と検証を同期する必要がある。
 
 ## 2) 背景 / Context
 
@@ -63,20 +64,21 @@
 - [ ] `PUT /docs/{doc_id}` がMVPのCreate契約であること、`POST /docs` が未実装時は将来候補であることが、文書・実装・テストで一致している。
 - [x] `evidenceLinks`、PatchApplyStats、ReviewAttribution、DeterministicTieBreakなどのサポートレベルが明示されている。
 - [ ] SafeMode/share/exportに影響するフィールドは、漏れなくテスト観点に含まれている。
-- [ ] 契約のみのフィールドは、MVPで標準運用保守可能だと読めない表現になっている。
+- [x] 契約のみのフィールドは、MVPで標準運用保守可能だと読めない表現になっている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 frontend/backend/API/設計文書のDocumentV2フィールド一覧を抽出する。
 - [x] T2 差分をサポートレベル別に分類し、削除/保留/実装同期の判断を記録する。
 - [x] T3 `PUT create-if-absent` をMVP Create契約として固定し、`POST /docs` の昇格要否を判定する。
-- [ ] T4 型・バリデーション・APIテストを同期する。
+- [x] T4 型・バリデーション・APIテストを同期する。
 - [x] T5 `data_model_operations_overview.md` と `schemas.md` のサポート記述を更新する。
 
 進捗メモ:
 
 - `claimType`、edge endpoint kind、`evidenceLinks`、`patchApplyLog.stats.upsertEvidenceLinks/deleteEvidenceLinks` はbackend保存モデルとroundtrip testを同期済み。
-- `critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak` はbackend契約型として保存されるが、frontend正本型への昇格要否は未判断のため、T4は継続する。
+- `critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak` はfrontend正本型、strict validator、import正規化、backend保存モデル、backend roundtrip testを同期済み。
+- MVPでは上記A1契約フィールドの個別CRUD/UI編集を標準保守対象にしない。DocumentV2スナップショット内の契約のみ/限定保存として扱い、share/export/SafeModeの観点は継続確認する。
 
 ## 7) 検証計画 / Validation plan
 

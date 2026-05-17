@@ -1,4 +1,6 @@
 import type {
+  CritiqueInput,
+  DeterministicTieBreak,
   DocumentV2,
   EdgeType,
   EvidenceLink,
@@ -7,6 +9,8 @@ import type {
   MergeSuggestionDecisionEntry,
   Narrative,
   PatchApplyLogEntry,
+  ReproposalDiff,
+  ReviewAttribution,
   RelationSummary,
 } from "./types";
 import { canUsePolygonPoints } from "./geometry/polygon_edit";
@@ -63,6 +67,30 @@ function validateEdgeType(value: unknown): value is EdgeType {
 
 function validateClaimType(value: unknown): value is "fact" | "claim" | "hypothesis" | "unknown" {
   return value === "fact" || value === "claim" || value === "hypothesis" || value === "unknown";
+}
+
+const A1_TARGET_REF_PATTERN = /^(card|island|cluster|edge|proposal):[^:\s][^\s]*$/;
+const DETERMINISTIC_TIE_BREAK_ORDER = [
+  "padding_compliance",
+  "self_intersection_avoidance",
+  "minimum_area_delta",
+  "minimum_vertex_count",
+] as const;
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isIsoTimestamp(value: unknown): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function isPlainPayloadObject(value: unknown): value is Record<string, unknown> {
+  return isRecord(value) && !Array.isArray(value);
+}
+
+function validateA1TargetRef(value: unknown): boolean {
+  return typeof value === "string" && A1_TARGET_REF_PATTERN.test(value);
 }
 
 function validateCard(item: unknown, index: number, errors: string[]): item is DocumentV2["cards"][number] {
@@ -636,6 +664,257 @@ function validateEvidenceLink(item: unknown, index: number, errors: string[]): i
   return valid;
 }
 
+function validateCritiqueInput(item: unknown, index: number, errors: string[]): item is CritiqueInput {
+  const path = `critiqueInputs[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(
+    item,
+    ["schemaVersion", "critiqueId", "targetRef", "critiqueType", "createdAt", "iteration", "comment", "constraintHints"],
+    path,
+    errors
+  );
+
+  let valid = true;
+  if (item.schemaVersion !== "1.0.0") {
+    errors.push(`${path}.schemaVersion: must be '1.0.0'`);
+    valid = false;
+  }
+  if (!isNonEmptyString(item.critiqueId)) {
+    errors.push(`${path}.critiqueId: must be a non-empty string`);
+    valid = false;
+  }
+  if (!validateA1TargetRef(item.targetRef)) {
+    errors.push(`${path}.targetRef: must start with 'card:', 'island:', 'cluster:', 'edge:', or 'proposal:'`);
+    valid = false;
+  }
+  if (
+    item.critiqueType !== "too_close"
+    && item.critiqueType !== "too_far"
+    && item.critiqueType !== "not_the_same"
+    && item.critiqueType !== "feels_off"
+    && item.critiqueType !== "no_articulable_reason"
+  ) {
+    errors.push(`${path}.critiqueType: must be a known A1 critique type`);
+    valid = false;
+  }
+  if (!isIsoTimestamp(item.createdAt)) {
+    errors.push(`${path}.createdAt: must be an ISO timestamp`);
+    valid = false;
+  }
+  if (!Number.isInteger(item.iteration) || (item.iteration as number) < 1) {
+    errors.push(`${path}.iteration: must be an integer greater than or equal to 1`);
+    valid = false;
+  }
+  if (item.comment !== undefined && typeof item.comment !== "string") {
+    errors.push(`${path}.comment: must be a string when provided`);
+    valid = false;
+  }
+  if (item.constraintHints !== undefined && !validateStringArray(item.constraintHints, `${path}.constraintHints`, errors)) {
+    valid = false;
+  }
+
+  return valid;
+}
+
+function validateReproposalDiffOp(item: unknown, path: string, errors: string[]): boolean {
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["opId", "opType", "targetRef", "before", "after", "rationale"], path, errors);
+
+  let valid = true;
+  if (!isNonEmptyString(item.opId)) {
+    errors.push(`${path}.opId: must be a non-empty string`);
+    valid = false;
+  }
+  if (
+    item.opType !== "add"
+    && item.opType !== "remove"
+    && item.opType !== "move"
+    && item.opType !== "regroup"
+    && item.opType !== "relabel"
+  ) {
+    errors.push(`${path}.opType: must be 'add' | 'remove' | 'move' | 'regroup' | 'relabel'`);
+    valid = false;
+  }
+  if (!validateA1TargetRef(item.targetRef)) {
+    errors.push(`${path}.targetRef: must start with 'card:', 'island:', 'cluster:', 'edge:', or 'proposal:'`);
+    valid = false;
+  }
+
+  const hasBefore = Object.prototype.hasOwnProperty.call(item, "before");
+  const hasAfter = Object.prototype.hasOwnProperty.call(item, "after");
+  if (!hasBefore) {
+    errors.push(`${path}.before: field is required`);
+    valid = false;
+  }
+  if (!hasAfter) {
+    errors.push(`${path}.after: field is required`);
+    valid = false;
+  }
+  if (hasBefore && item.before !== null && !isPlainPayloadObject(item.before)) {
+    errors.push(`${path}.before: must be an object or null`);
+    valid = false;
+  }
+  if (hasAfter && item.after !== null && !isPlainPayloadObject(item.after)) {
+    errors.push(`${path}.after: must be an object or null`);
+    valid = false;
+  }
+  if (hasBefore && hasAfter && item.before === null && item.after === null) {
+    errors.push(`${path}: before and after must not both be null`);
+    valid = false;
+  }
+  if (item.rationale !== undefined && typeof item.rationale !== "string") {
+    errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+
+  return valid;
+}
+
+function validateReproposalDiff(item: unknown, index: number, errors: string[]): item is ReproposalDiff {
+  const path = `reproposalDiffs[${index}]`;
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["schemaVersion", "proposalId", "basedOnIteration", "diffOps", "traceKey", "rationale"], path, errors);
+
+  let valid = true;
+  if (item.schemaVersion !== "1.0.0") {
+    errors.push(`${path}.schemaVersion: must be '1.0.0'`);
+    valid = false;
+  }
+  if (!isNonEmptyString(item.proposalId)) {
+    errors.push(`${path}.proposalId: must be a non-empty string`);
+    valid = false;
+  }
+  if (!Number.isInteger(item.basedOnIteration) || (item.basedOnIteration as number) < 1) {
+    errors.push(`${path}.basedOnIteration: must be an integer greater than or equal to 1`);
+    valid = false;
+  }
+  if (!isNonEmptyString(item.traceKey)) {
+    errors.push(`${path}.traceKey: must be a non-empty string`);
+    valid = false;
+  }
+  if (item.rationale !== undefined && typeof item.rationale !== "string") {
+    errors.push(`${path}.rationale: must be a string when provided`);
+    valid = false;
+  }
+  if (!Array.isArray(item.diffOps) || item.diffOps.length === 0) {
+    errors.push(`${path}.diffOps: must be a non-empty array`);
+    valid = false;
+  } else {
+    item.diffOps.forEach((op, opIndex) => {
+      if (!validateReproposalDiffOp(op, `${path}.diffOps[${opIndex}]`, errors)) {
+        valid = false;
+      }
+    });
+  }
+
+  return valid;
+}
+
+function validateReviewAttribution(item: unknown, errors: string[]): item is ReviewAttribution {
+  const path = "reviewAttribution";
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(
+    item,
+    ["schemaVersion", "reviewState", "reviewedAt", "reviewerRef", "auditRecordedAt", "overridePolicy", "reviewContext", "ownerRef"],
+    path,
+    errors
+  );
+
+  let valid = true;
+  if (item.schemaVersion !== "1.0.0") {
+    errors.push(`${path}.schemaVersion: must be '1.0.0'`);
+    valid = false;
+  }
+  if (item.reviewState !== "unreviewed" && item.reviewState !== "human_reviewed") {
+    errors.push(`${path}.reviewState: must be 'unreviewed' or 'human_reviewed'`);
+    valid = false;
+  }
+  if (!isNonEmptyString(item.reviewerRef)) {
+    errors.push(`${path}.reviewerRef: must be a non-empty opaque string`);
+    valid = false;
+  } else if (item.reviewerRef.includes("@")) {
+    errors.push(`${path}.reviewerRef: must not contain email-like identifiers`);
+    valid = false;
+  }
+  if (!isIsoTimestamp(item.auditRecordedAt)) {
+    errors.push(`${path}.auditRecordedAt: must be an ISO timestamp`);
+    valid = false;
+  }
+  if (item.overridePolicy !== "human_dual_control_only") {
+    errors.push(`${path}.overridePolicy: must be 'human_dual_control_only'`);
+    valid = false;
+  }
+  if (item.reviewContext !== undefined && typeof item.reviewContext !== "string") {
+    errors.push(`${path}.reviewContext: must be a string when provided`);
+    valid = false;
+  }
+  if (item.ownerRef !== undefined) {
+    if (typeof item.ownerRef !== "string") {
+      errors.push(`${path}.ownerRef: must be a string when provided`);
+      valid = false;
+    } else if (item.ownerRef.includes("@")) {
+      errors.push(`${path}.ownerRef: must not contain email-like identifiers`);
+      valid = false;
+    }
+  }
+  if (item.reviewState === "human_reviewed" && !isIsoTimestamp(item.reviewedAt)) {
+    errors.push(`${path}.reviewedAt: must be an ISO timestamp when reviewState is 'human_reviewed'`);
+    valid = false;
+  }
+  if (item.reviewState === "unreviewed" && item.reviewedAt !== null) {
+    errors.push(`${path}.reviewedAt: must be null when reviewState is 'unreviewed'`);
+    valid = false;
+  }
+
+  return valid;
+}
+
+function validateDeterministicTieBreak(item: unknown, errors: string[]): item is DeterministicTieBreak {
+  const path = "deterministicTieBreak";
+  if (!isRecord(item)) {
+    errors.push(`${path}: must be an object`);
+    return false;
+  }
+
+  hasOnlyKeys(item, ["schemaVersion", "order"], path, errors);
+
+  let valid = true;
+  if (item.schemaVersion !== "1.0.0") {
+    errors.push(`${path}.schemaVersion: must be '1.0.0'`);
+    valid = false;
+  }
+  const order = item.order;
+  if (!Array.isArray(order) || order.length !== DETERMINISTIC_TIE_BREAK_ORDER.length) {
+    errors.push(`${path}.order: must contain the fixed deterministic order`);
+    valid = false;
+  } else {
+    DETERMINISTIC_TIE_BREAK_ORDER.forEach((expected, index) => {
+      if (order[index] !== expected) {
+        errors.push(`${path}.order[${index}]: must be '${expected}'`);
+        valid = false;
+      }
+    });
+  }
+
+  return valid;
+}
+
 
 function validateMergeSuggestionDecision(value: unknown): value is MergeSuggestionDecision {
   return value === "accept" || value === "partial" || value === "reject" || value === "defer";
@@ -760,7 +1039,27 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
 
   hasOnlyKeys(
     value,
-    ["version", "id", "title", "createdAt", "updatedAt", "transform", "cards", "edges", "islands", "readingOrder", "narratives", "relationSummaries", "evidenceLinks", "patchApplyLog", "mergeSuggestionDecisions"],
+    [
+      "version",
+      "id",
+      "title",
+      "createdAt",
+      "updatedAt",
+      "transform",
+      "cards",
+      "edges",
+      "islands",
+      "readingOrder",
+      "narratives",
+      "relationSummaries",
+      "evidenceLinks",
+      "patchApplyLog",
+      "mergeSuggestionDecisions",
+      "critiqueInputs",
+      "reproposalDiffs",
+      "reviewAttribution",
+      "deterministicTieBreak",
+    ],
     "document",
     errors
   );
@@ -888,6 +1187,34 @@ export function validateDocumentV2Strict(value: unknown): ValidateDocumentV2Stri
         validateMergeSuggestionDecisionEntry(item, index, errors);
       });
     }
+  }
+
+  if (value.critiqueInputs !== undefined) {
+    if (!Array.isArray(value.critiqueInputs)) {
+      errors.push("document.critiqueInputs: must be an array when provided");
+    } else {
+      value.critiqueInputs.forEach((item, index) => {
+        validateCritiqueInput(item, index, errors);
+      });
+    }
+  }
+
+  if (value.reproposalDiffs !== undefined) {
+    if (!Array.isArray(value.reproposalDiffs)) {
+      errors.push("document.reproposalDiffs: must be an array when provided");
+    } else {
+      value.reproposalDiffs.forEach((item, index) => {
+        validateReproposalDiff(item, index, errors);
+      });
+    }
+  }
+
+  if (value.reviewAttribution !== undefined) {
+    validateReviewAttribution(value.reviewAttribution, errors);
+  }
+
+  if (value.deterministicTieBreak !== undefined) {
+    validateDeterministicTieBreak(value.deterministicTieBreak, errors);
   }
 
   if (errors.length > 0) {

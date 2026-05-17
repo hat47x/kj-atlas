@@ -89,6 +89,7 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
         code = "A1_REQUIRED_FIELD_MISSING"
         contract_id = "A1-REDIFF-IF"
         first_error_loc = tuple(errors[0].get("loc", ())) if errors else ()
+        first_error_loc_text = ".".join(str(part) for part in first_error_loc)
 
         if "schemaVersion" in str(message):
             code = "A1_SCHEMA_VERSION_MISMATCH"
@@ -96,6 +97,12 @@ def _validate_document_payload_with_a1_contract(document_payload: object) -> Doc
                 contract_id = "A1-CRITIQUE-IF"
             elif "reviewAttribution" in str(message) or "reviewAttribution" in first_error_loc:
                 contract_id = "A1-ATTR-IF"
+        elif "critiqueInputs" in first_error_loc_text:
+            contract_id = "A1-CRITIQUE-IF"
+        elif "reviewAttribution" in first_error_loc_text:
+            contract_id = "A1-ATTR-IF"
+        elif "reproposalDiffs" in first_error_loc_text:
+            contract_id = "A1-REDIFF-IF"
         if "reviewAttribution" in first_error_loc and "overridePolicy" in first_error_loc:
             code = "A1_OVERRIDE_POLICY_VIOLATION"
             contract_id = "A1-ATTR-IF"

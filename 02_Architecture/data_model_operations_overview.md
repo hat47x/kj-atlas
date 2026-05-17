@@ -163,9 +163,9 @@ erDiagram
 | `evidenceLinks` | optional。根拠/反証リンク | optional。往復保持する | 埋め込み限定 | share/exportとSafeModeでの表示・抑制条件を `PRODUCT-VALUE-02/03` と同期する。 |
 | `patchApplyLog` | optional。evidence件数を含むstats | optional。evidence件数を保持し、旧データは0として補完する | 埋め込み限定 | patch適用監査の保持範囲を `DATA-CONTRACT-01` で継続確認する。 |
 | `mergeSuggestionDecisions` | optional | optional | 埋め込み限定 | append-onlyの `merge_decision_logs` と混同しない。 |
-| `critiqueInputs` / `reproposalDiffs` | frontend正本型には未掲載 | backend契約型として保存 | 契約のみ/限定保存 | frontend型へ昇格するか、backend専用契約として分離するかを `DATA-CONTRACT-01` で決める。 |
-| `reviewAttribution` | frontend正本型には未掲載 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続する。 |
-| `deterministicTieBreak` | frontend正本型には未掲載 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
+| `critiqueInputs` / `reproposalDiffs` | optional。A1契約型として掲載し、strict/import検証で往復保持 | backend契約型として保存。`island:` targetRef と片側 `null` の可逆差分を許可 | 契約のみ/限定保存 | 個別編集UIや個別CRUDはMVP範囲外。SafeMode/share/exportでの扱いはテスト観点に残す。 |
+| `reviewAttribution` | optional。A1契約型として掲載し、`reviewedAt` の状態別制約と生ID禁止を検証 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続し、監査閲覧・検索は製品化issueで扱う。 |
+| `deterministicTieBreak` | optional。固定順序をstrict/import検証で保持 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
 
 ---
 

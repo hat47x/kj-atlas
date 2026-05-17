@@ -325,6 +325,12 @@ export type DocumentV1 = {
 ```ts
 export type CardClaimType = "fact" | "claim" | "hypothesis" | "unknown";
 export type EdgeEndpointKind = "card" | "island";
+export type A1TargetRef =
+  | `card:${string}`
+  | `island:${string}`
+  | `cluster:${string}`
+  | `edge:${string}`
+  | `proposal:${string}`;
 
 export type EvidenceLink = {
   id: string;
@@ -333,6 +339,56 @@ export type EvidenceLink = {
   toCardId: string;
   note?: string;
   createdAt?: string; // ISO 8601
+};
+
+export type CritiqueInput = {
+  schemaVersion: "1.0.0";
+  critiqueId: string;
+  targetRef: A1TargetRef;
+  critiqueType: "too_close" | "too_far" | "not_the_same" | "feels_off" | "no_articulable_reason";
+  createdAt: string; // ISO 8601
+  iteration: number; // >= 1
+  comment?: string;
+  constraintHints?: string[];
+};
+
+export type ReproposalDiffOp = {
+  opId: string;
+  opType: "add" | "remove" | "move" | "regroup" | "relabel";
+  targetRef: A1TargetRef;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  rationale?: string;
+};
+
+export type ReproposalDiff = {
+  schemaVersion: "1.0.0";
+  proposalId: string;
+  basedOnIteration: number; // >= 1
+  diffOps: ReproposalDiffOp[];
+  traceKey: string;
+  rationale?: string;
+};
+
+export type ReviewAttribution = {
+  schemaVersion: "1.0.0";
+  reviewState: "unreviewed" | "human_reviewed";
+  reviewedAt: string | null; // ISO 8601 when human_reviewed, null when unreviewed
+  reviewerRef: string; // opaque id; email/external_uid/provider user id must not be stored here
+  auditRecordedAt: string; // ISO 8601
+  overridePolicy: "human_dual_control_only";
+  reviewContext?: string;
+  ownerRef?: string;
+};
+
+export type DeterministicTieBreak = {
+  schemaVersion: "1.0.0";
+  order: [
+    "padding_compliance",
+    "self_intersection_avoidance",
+    "minimum_area_delta",
+    "minimum_vertex_count",
+  ];
 };
 
 export type DocumentV2 = {
@@ -351,6 +407,10 @@ export type DocumentV2 = {
   evidenceLinks?: EvidenceLink[];
   patchApplyLog?: PatchApplyLogEntry[];
   mergeSuggestionDecisions?: MergeSuggestionDecisionEntry[];
+  critiqueInputs?: CritiqueInput[];
+  reproposalDiffs?: ReproposalDiff[];
+  reviewAttribution?: ReviewAttribution;
+  deterministicTieBreak?: DeterministicTieBreak;
 };
 ```
 
@@ -359,6 +419,10 @@ export type DocumentV2 = {
 - `claimType`、`fromKind`、`toKind`、`evidenceLinks` は `DocumentV2` スナップショット内で往復保持する。
 - `evidenceLinks` は根拠・反証のリンクであり、SafeMode/share/exportで未レビュー本文や根拠情報をどう扱うかは共有前確認のポリシーに従う。
 - `patchApplyLog.stats` は evidence link の追加/削除件数（`upsertEvidenceLinks` / `deleteEvidenceLinks`）を含める。旧データで欠損する場合は0として扱う。
+- `critiqueInputs`、`reproposalDiffs`、`reviewAttribution`、`deterministicTieBreak` は A1 契約の往復保持対象である。MVPでは画面上の個別編集や個別CRUDを提供せず、import/export/API保存時の型・検証・監査境界を固定する。
+- `targetRef` は `card:` / `island:` / `cluster:` / `edge:` / `proposal:` の名前空間を許可する。現行UIは島を `island:` として扱い、既存A1文書の `cluster:` と互換的に残す。
+- `reproposalDiffs[].diffOps[].before` と `after` はどちらも必須キーであり、追加/削除を可逆にするため片側 `null` を許可する。ただし両方 `null` は不可とする。
+- `reviewAttribution.reviewedAt` は `human_reviewed` のとき ISO 8601、`unreviewed` のとき `null` とする。`reviewerRef` / `ownerRef` は不透明参照であり、生IDを含めない。
 - 個別EvidenceLink API、個別Card分類API、個別Edge endpoint APIはMVP範囲外とする。
 
 ---

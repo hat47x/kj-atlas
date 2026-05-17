@@ -206,4 +206,125 @@ describe("validateDocumentV2Strict", () => {
     );
   });
 
+  it("accepts A1 contract-only DocumentV2 fields", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      critiqueInputs: [
+        {
+          schemaVersion: "1.0.0",
+          critiqueId: "crit-1",
+          targetRef: "island:i1",
+          critiqueType: "feels_off",
+          createdAt: now,
+          iteration: 1,
+          comment: "境界が分かりにくい",
+        },
+      ],
+      reproposalDiffs: [
+        {
+          schemaVersion: "1.0.0",
+          proposalId: "proposal-1",
+          basedOnIteration: 1,
+          traceKey: "trace:crit-1",
+          rationale: "カード追加の取り消しに必要な前後差分を保持する",
+          diffOps: [
+            {
+              opId: "op-add-c2",
+              opType: "add",
+              targetRef: "card:c2",
+              before: null,
+              after: { id: "c2", text: "B", x: 10, y: 20 },
+            },
+          ],
+        },
+      ],
+      reviewAttribution: {
+        schemaVersion: "1.0.0",
+        reviewState: "human_reviewed",
+        reviewedAt: now,
+        reviewerRef: "reviewer:opaque-1",
+        auditRecordedAt: now,
+        overridePolicy: "human_dual_control_only",
+      },
+      deterministicTieBreak: {
+        schemaVersion: "1.0.0",
+        order: [
+          "padding_compliance",
+          "self_intersection_avoidance",
+          "minimum_area_delta",
+          "minimum_vertex_count",
+        ],
+      },
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects irreversible reproposal diffs", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      reproposalDiffs: [
+        {
+          schemaVersion: "1.0.0",
+          proposalId: "proposal-1",
+          basedOnIteration: 1,
+          traceKey: "trace:crit-1",
+          diffOps: [
+            {
+              opId: "op-empty",
+              opType: "move",
+              targetRef: "card:c1",
+              before: null,
+              after: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain("reproposalDiffs[0].diffOps[0]: before and after must not both be null");
+  });
+
+  it("rejects review attribution with email-like reviewer refs", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      reviewAttribution: {
+        schemaVersion: "1.0.0",
+        reviewState: "human_reviewed",
+        reviewedAt: now,
+        reviewerRef: "reviewer@example.com",
+        auditRecordedAt: now,
+        overridePolicy: "human_dual_control_only",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain("reviewAttribution.reviewerRef: must not contain email-like identifiers");
+  });
+
+  it("rejects reordered deterministic tie-break fields", () => {
+    const result = validateDocumentV2Strict({
+      ...validDocument,
+      deterministicTieBreak: {
+        schemaVersion: "1.0.0",
+        order: [
+          "self_intersection_avoidance",
+          "padding_compliance",
+          "minimum_area_delta",
+          "minimum_vertex_count",
+        ],
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+
+    expect(result.errors).toContain("deterministicTieBreak.order[0]: must be 'padding_compliance'");
+  });
+
 });

@@ -1,3 +1,5 @@
+import type { A1TargetRef } from "./types";
+
 export const HIL_RS_CRITIQUE_TYPES = [
   "too_close",
   "too_far",
@@ -46,7 +48,7 @@ export type HilRsCritiqueType = (typeof HIL_RS_CRITIQUE_TYPES)[number];
 export type HilRsCritiqueInput = {
   schemaVersion: typeof HIL_RS_CRITIQUE_SCHEMA_VERSION;
   critiqueId: string;
-  targetRef: string;
+  targetRef: A1TargetRef;
   critiqueType: HilRsCritiqueType;
   createdAt: string;
   iteration: number;
@@ -61,9 +63,9 @@ export type HilRsDiffOpType = (typeof HIL_RS_DIFF_OP_TYPES)[number];
 export type HilRsDiffOp = {
   opId: string;
   opType: HilRsDiffOpType;
-  targetRef: string;
-  before: unknown | null;
-  after: unknown | null;
+  targetRef: A1TargetRef;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
   rationale?: string;
 };
 
@@ -73,6 +75,7 @@ export type HilRsRediffPayload = {
   basedOnIteration: number;
   diffOps: HilRsDiffOp[];
   traceKey: string;
+  rationale?: string;
 };
 
 export type HilRsErrorCode = (typeof HIL_RS_ERROR_CODES)[number];
@@ -112,7 +115,7 @@ const HIL_RS_CRITIQUE_ALLOWED_KEYS = new Set([
   "constraintHints",
 ]);
 
-const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["schemaVersion", "proposalId", "basedOnIteration", "diffOps", "traceKey"]);
+const HIL_RS_REDIFF_ALLOWED_KEYS = new Set(["schemaVersion", "proposalId", "basedOnIteration", "diffOps", "traceKey", "rationale"]);
 
 const HIL_RS_DIFF_OP_ALLOWED_KEYS = new Set(["opId", "opType", "targetRef", "before", "after", "rationale"]);
 
@@ -131,6 +134,17 @@ const HIL_RS_ERROR_ALLOWED_KEYS = new Set(["schemaVersion", "errorCode", "messag
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isA1TargetRef(value: unknown): value is A1TargetRef {
+  return (
+    typeof value === "string"
+    && /^(card|island|cluster|edge|proposal):[^:\s][^\s]*$/.test(value)
+  );
+}
+
+function isPlainPayloadObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isIsoTimestamp(value: string): boolean {
@@ -156,7 +170,7 @@ export function validateHilRsCritiqueInput(value: unknown): value is HilRsCritiq
   if (!hasOnlyAllowedKeys(input, HIL_RS_CRITIQUE_ALLOWED_KEYS)) return false;
   if (input.schemaVersion !== HIL_RS_CRITIQUE_SCHEMA_VERSION) return false;
   if (!isNonEmptyString(input.critiqueId)) return false;
-  if (!isNonEmptyString(input.targetRef)) return false;
+  if (!isA1TargetRef(input.targetRef)) return false;
   if (!isNonEmptyString(input.createdAt) || !isIsoTimestamp(input.createdAt)) return false;
   if (!Number.isInteger(input.iteration) || (input.iteration as number) < 1) return false;
   if (!HIL_RS_CRITIQUE_TYPES.includes(input.critiqueType as HilRsCritiqueType)) return false;
@@ -178,6 +192,7 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
   if (!isNonEmptyString(payload.proposalId)) return false;
   if (!Number.isInteger(payload.basedOnIteration) || (payload.basedOnIteration as number) < 1) return false;
   if (!isNonEmptyString(payload.traceKey)) return false;
+  if (payload.rationale !== undefined && typeof payload.rationale !== "string") return false;
   if (!Array.isArray(payload.diffOps) || payload.diffOps.length === 0) return false;
 
   for (const op of payload.diffOps) {
@@ -186,9 +201,11 @@ export function validateHilRsRediffPayload(value: unknown): value is HilRsRediff
     if (!hasOnlyAllowedKeys(parsed, HIL_RS_DIFF_OP_ALLOWED_KEYS)) return false;
     if (!isNonEmptyString(parsed.opId)) return false;
     if (!HIL_RS_DIFF_OP_TYPES.includes(parsed.opType as HilRsDiffOpType)) return false;
-    if (!isNonEmptyString(parsed.targetRef)) return false;
+    if (!isA1TargetRef(parsed.targetRef)) return false;
     if (!("before" in parsed) || !("after" in parsed)) return false;
     if (parsed.before === null && parsed.after === null) return false;
+    if (parsed.before !== null && !isPlainPayloadObject(parsed.before)) return false;
+    if (parsed.after !== null && !isPlainPayloadObject(parsed.after)) return false;
     if (parsed.rationale !== undefined && typeof parsed.rationale !== "string") return false;
   }
 
@@ -224,10 +241,12 @@ export function validateHilRsReviewAttribution(value: unknown): value is HilRsRe
   if (attribution.schemaVersion !== HIL_RS_REVIEW_ATTRIBUTION_SCHEMA_VERSION) return false;
   if (!HIL_RS_REVIEW_STATES.includes(attribution.reviewState as HilRsReviewState)) return false;
   if (!isNonEmptyString(attribution.reviewerRef)) return false;
+  if (hasPiiLikeText(attribution.reviewerRef)) return false;
   if (!isNonEmptyString(attribution.auditRecordedAt) || !isIsoTimestamp(attribution.auditRecordedAt)) return false;
   if (attribution.overridePolicy !== "human_dual_control_only") return false;
   if (attribution.reviewContext !== undefined && typeof attribution.reviewContext !== "string") return false;
   if (attribution.ownerRef !== undefined && typeof attribution.ownerRef !== "string") return false;
+  if (typeof attribution.ownerRef === "string" && hasPiiLikeText(attribution.ownerRef)) return false;
   if (!(typeof attribution.reviewedAt === "string" || attribution.reviewedAt === null)) return false;
   if (typeof attribution.reviewedAt === "string" && !isIsoTimestamp(attribution.reviewedAt)) return false;
   if (attribution.reviewState === "human_reviewed" && !isNonEmptyString(attribution.reviewedAt)) return false;

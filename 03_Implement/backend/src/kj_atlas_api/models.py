@@ -401,9 +401,9 @@ class CritiqueInput(BaseModel):
     @field_validator("targetRef")
     @classmethod
     def validate_target_ref_kind(cls, value: str) -> str:
-        allowed_prefixes = ("card:", "cluster:", "edge:", "proposal:")
+        allowed_prefixes = ("card:", "island:", "cluster:", "edge:", "proposal:")
         if not value.startswith(allowed_prefixes):
-            raise ValueError("targetRef must start with card:, cluster:, edge:, or proposal:")
+            raise ValueError("targetRef must start with card:, island:, cluster:, edge:, or proposal:")
         return value
 
 
@@ -413,8 +413,8 @@ class ReproposalDiffOp(BaseModel):
     opId: str
     opType: Literal["add", "remove", "move", "regroup", "relabel"]
     targetRef: str
-    before: dict[str, object] | None = None
-    after: dict[str, object] | None = None
+    before: dict[str, object] | None
+    after: dict[str, object] | None
 
     @model_validator(mode="after")
     def validate_reversible_payload(self) -> "ReproposalDiffOp":
@@ -433,23 +433,14 @@ class ReproposalDiff(BaseModel):
     traceKey: str
     rationale: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
-    @model_validator(mode="after")
-    def validate_required_before_after(self) -> "ReproposalDiff":
-        for op in self.diffOps:
-            if op.before is None:
-                raise ValueError("diffOps.before is required by A1-REDIFF-IF")
-            if op.after is None:
-                raise ValueError("diffOps.after is required by A1-REDIFF-IF")
-        return self
-
 
 class ReviewAttribution(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     schemaVersion: Literal["1.0.0"]
     reviewState: Literal["unreviewed", "human_reviewed"]
-    reviewedAt: datetime | None = None
-    reviewerRef: str | None = Field(default=None, min_length=1)
+    reviewedAt: datetime | None
+    reviewerRef: str = Field(min_length=1)
     auditRecordedAt: datetime
     overridePolicy: Literal["human_dual_control_only"] = "human_dual_control_only"
     reviewContext: str | None = Field(default=None, exclude_if=lambda value: value is None)
@@ -457,9 +448,7 @@ class ReviewAttribution(BaseModel):
 
     @field_validator("reviewerRef")
     @classmethod
-    def validate_reviewer_ref_opaque(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
+    def validate_reviewer_ref_opaque(cls, value: str) -> str:
         if "@" in value:
             raise ValueError("reviewerRef must be opaque and must not contain email-like identifiers")
         return value
@@ -475,10 +464,10 @@ class ReviewAttribution(BaseModel):
 
     @model_validator(mode="after")
     def validate_human_review_transition(self) -> "ReviewAttribution":
-        if self.reviewedAt is None:
-            raise ValueError("reviewedAt is required by A1-ATTR-IF")
-        if self.reviewerRef is None:
-            raise ValueError("reviewerRef is required by A1-ATTR-IF")
+        if self.reviewState == "human_reviewed" and self.reviewedAt is None:
+            raise ValueError("reviewedAt is required when reviewState is human_reviewed")
+        if self.reviewState == "unreviewed" and self.reviewedAt is not None:
+            raise ValueError("reviewedAt must be null when reviewState is unreviewed")
         return self
 
 

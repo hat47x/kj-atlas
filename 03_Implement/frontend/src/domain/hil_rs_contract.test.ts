@@ -220,6 +220,17 @@ describe("hil_rs_contract validators", () => {
         email: "reviewer@example.com",
       }),
     ).toBe(false);
+
+    expect(
+      validateHilRsReviewAttribution({
+        schemaVersion: "1.0.0",
+        reviewState: "human_reviewed",
+        auditRecordedAt: "2026-03-11T09:01:00.000Z",
+        overridePolicy: "human_dual_control_only",
+        reviewerRef: "reviewer@example.com",
+        reviewedAt: "2026-03-11T09:00:00.000Z",
+      }),
+    ).toBe(false);
   });
 
   it("rejects review attribution override policy violations", () => {
