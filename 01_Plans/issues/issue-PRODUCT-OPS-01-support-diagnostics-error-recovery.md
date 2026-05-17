@@ -1,10 +1,10 @@
 # Issue Draft: PRODUCT-OPS-01 サポート・診断・復帰導線の製品化
 
 - Type: Feature request
-- Status: Draft
+- Status: Open準備完了 (Ready for Open)
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P2
+- Priority: P1
 - Owner: TBD
 - Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
 - Related Backlog: `PRODUCT-OPS-01`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Optional
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -41,6 +41,12 @@
 - 安全（THREAT_MODEL / SafeMode）: 診断情報やサポート共有に機微情報を含めないガードが必要である。
 - 企業・行政要件（enterprise_architecture）: 障害時の初動、ログの扱い、サポートへ共有する情報の範囲が必要になる。
 - 後方互換（schemas）: エラー表示と診断導線の整理であり、データ契約は維持する。
+
+## 3.1 Open化境界（Stream J）
+
+- 本Issueは「失敗時の利用者復帰導線」と「安全な共有境界」の仕様定義を先行して Open 化する。
+- 実装依存（画面実装・診断機能追加）は別PRで扱い、本Issueでは受入条件と検証手順の成立を完了条件とする。
+- `PRODUCT-QA-01` からは G6 判定対象として参照されるが、相互ブロックは設定しない。
 
 ## 4) 提案する解決策 / Proposed solution
 
