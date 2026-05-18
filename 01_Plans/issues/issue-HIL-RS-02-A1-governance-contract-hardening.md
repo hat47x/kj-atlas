@@ -419,3 +419,60 @@
 - 判定: **Hold（Approval Pending 継続）**。
 - Go未達理由: `pendingDecisionQueueCount>0`（未承認3項目が残存）。
 - Stop非該当理由: 固定キー不一致なし、禁止遷移成立なし、verifyAttempts超過なし。
+
+
+## Stream A Contract Finalization Addendum（2026-05-18 / A1 fixed for downstream mock）
+
+### Phase 1 Read（Plan → Execute → Verify → Proceed）
+- Plan: A1/親計画/ADR-0027/SSOTの固定キーと依存を再読し、A2依存が `A1 Done && pendingDecisionQueueCount==0` であることを確認する。
+- Execute: `contractId` / `schemaVersion` / `overridePolicy` / trusted human interaction 境界を照合する。
+- Verify: 不一致なし（drift=0）。
+- Proceed: Phase 2へ。
+
+### Phase 2 Plan（A1専用AC/DoD最終化）
+- Minimum mock-ready I/F（後続実装がモックで進行可能な最小面）:
+  - Inputs: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `pendingDecisionQueueCount`, `approvalRecord`, `trustedHumanInteractionBoundary`
+  - Outputs: `decision(Proceed|Hold|Stop)`, `executeAllowed`, `reasonCodes[]`, `requiredHumanActions[]`
+- AC additions:
+  - AC-6: `contractId` は `HIL-RS-02-A1-CONTRACT-FREEZE-v1` 固定。
+  - AC-7: `schemaVersion=1.0.0` 固定。
+  - AC-8: `overridePolicy=human_dual_control_only` 固定。
+  - AC-9: trusted human interaction 境界を `approvalRecord + dual approver separation + Pending->Approved/Rejected only` として固定。
+- DoD additions:
+  - DoD-7: `auto-confirm / auto-approve / Pending bypass` を禁止事項として明示。
+  - DoD-8: A2/A3 は read-only contract 参照のみで実装可能であることを明記。
+
+### Phase 3 ADR明文化（Context / Decision / Consequences）
+- Context: A2/A3先行時の契約再定義を抑止するため、A1で固定キーと責務境界を確定する必要がある。
+- Decision:
+  - `contractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - trusted human interaction boundary:
+    - AIは判定補助のみ（`decision/reasonCodes`生成まで）
+    - 承認確定は人間2者承認のみ
+    - `Pending -> Approved | Rejected` 以外は禁止
+- Consequences: A2/A3はモックで並行準備可能だが、承認確定ロジックはA1固定契約を越えて実装してはならない。
+
+### Phase 4 Execute（固定値・非目標・禁止事項）
+- Fixed values（互換必須）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- Non-goals:
+  - 承認フローの新規状態追加
+  - A2/A3内での契約キー再定義
+- Prohibited:
+  - `auto-confirm`, `auto-approve`, `Pending->Execute`, `Rejected->Execute`, `Draft->Approved`
+
+### Phase 5 Verify（A1単体読解の自己検証）
+- 変更してよい: A1 issue内の統治文言・AC/DoDの明確化（docs-only）。
+- 変更してはいけない: 固定キー、承認遷移、SafeMode境界、override policy。
+- 互換必須値: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `decisionQueueTransition`。
+- Verify result: downstream mock実装に必要な最小I/FがA1文書単体で読解可能。
+
+### Phase 6 Proceed（handoff fixed block）
+- Handoff constraint: A2/A3 は `A1-GOV-GATE-V1` の入出力面だけを参照し、承認確定・例外承認ロジックをローカル実装しない。
+- Unlock rule（再掲）: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`。

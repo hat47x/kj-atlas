@@ -113,6 +113,16 @@
 - A2/A3への受け渡しは read-only contract summary のみとする。
 - 停止条件に該当した場合は、上位層（00〜02）を先に修正提案してから再開する。
 
+## Stream A dependency lock note（2026-05-18）
+- A2/A3 dependency is strictly fixed: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`。
+- A1 freeze compatibility keys are mandatory and immutable for downstream mock implementation:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- Prohibited downstream behavior: `auto-confirm`, `auto-approve`, `Pending bypass`, and local contract redefinition in A2/A3.
+
 ## Phase 3 Plan（AC / DoD不足補完提案）
 ### Acceptance Criteria
 - AC-1: `ADR-0026` の Context/Decision/Consequences と本issueの記述に矛盾がない。
