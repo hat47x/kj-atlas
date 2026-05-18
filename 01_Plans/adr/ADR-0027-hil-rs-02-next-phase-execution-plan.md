@@ -418,3 +418,19 @@
 ### Pending Decision Queue（as of 2026-05-10）
 - `PD-20260507-A1-001`（Approval evidence format）
 - `PD-20260507-A1-002`（reviewerRef匿名化パターン）
+
+
+## Stream A governance contract clarification（2026-05-18）
+
+### Context
+A1契約固定前にA2/A3が承認境界を実装すると、`Pending bypass` とローカル再定義のリスクが高い。
+
+### Decision
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` を唯一の解放条件として固定する。
+- trusted human interaction 境界を次で固定する。
+  - AI: `decision/reasonCodes` の提示まで。
+  - Human: 承認確定（2者承認）と例外判断。
+- 禁止事項: `auto-confirm`, `auto-approve`, `Pending->Execute`, `Rejected->Execute`, `Draft->Approved`。
+
+### Consequences
+A2/A3はモックI/Fで先行実装可能だが、承認確定の責務はA1ガバナンス契約の外に持ち出せない。
