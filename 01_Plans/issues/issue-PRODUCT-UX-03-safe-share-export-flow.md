@@ -144,3 +144,32 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+
+## Stream I 要件契約固定パック（2026-05-18）
+
+### Phase 1: Read同期サマリ
+- 重複論点: 画面導線の分かりやすさ、SafeMode境界、検証証跡要件。
+- 曖昧論点: Open化の判定条件と、依存関係が契約依存か実装依存かの境界。
+- 欠落補完: 価値→要件→受入→測定の追跡行と、Draft→Open判定を明文化。
+
+### Phase 2-3: ADR要素 + 要件契約
+| Context | Decision | Consequences |
+| --- | --- | --- |
+| 上流価値定義（ADR-0001/0031/0032）を実装入口へ接続する必要がある。 | AC/DoDを機械検証可能な粒度で固定し、未確定はDecision Queueへ隔離する。 | 下流実装Streamは要件の再発明をせず、検証可能なIssue単位で着手できる。 |
+
+### 価値→要件→受入→測定 対応表（最小）
+| 価値仮説 | 要件（Requirement） | 受入条件（AC） | 測定（Evidence/KPI） |
+| --- | --- | --- | --- |
+| 利用者が安全に判断を共有できる。 | SafeMode境界を保持し、共有前確認を必須化する。 | SafeMode/公開範囲/未レビュー状態を実行前に提示できる。 | docs-check + E2E記録 + 文言一致確認。 |
+| 要件から実装へ手戻りなく移行できる。 | AC/DoDをOpen前に固定し、未確定はPending化する。 | Draft→Open条件を満たしたIssueのみ実装に着手する。 | checklist充足率、No-Go件数、Pending解消件数。 |
+
+### Phase 4: Draft→Open 条件（要件側ゲート）
+- [ ] `DecisionStatus=Fixed` の要求のみでACが評価可能（PendingはDecision Queueへ退避済み）。
+- [ ] 依存が `契約依存`（schema/api/policy/ops）と `実装依存`（UI/Backend/E2E）に分離されている。
+- [ ] Validation plan のコマンドがこのIssue本文だけで再実行可能。
+
+### Phase 5-6: Verify / Proceed 引き継ぎ条件
+- Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
+- Proceed条件: 実装ストリームが「どのACをどのテストで満たすか」を追加解釈なしで決定できる。
+- フェイルセーフ: 上流価値定義との矛盾・非検証要件・競合編集を検出した場合はOpen化を停止する。
