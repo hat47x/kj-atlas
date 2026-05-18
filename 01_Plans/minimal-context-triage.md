@@ -153,6 +153,11 @@ python -m unittest 01_Plans/tests/test_triage_actionable_plans.py
 
 - `missing Status metadata`
 - `missing Priority metadata`
+- `invalid Status metadata`（例: `Open準備完了 (Ready for Open)`）
+
+運用メモ（2026-05-18更新）:
+- `invalid Status metadata` が1件でも出た場合、dashboard/decision-packの状態更新は停止し、まず status 正規化を実施する。
+- 修正は `Draft/Open/In Progress/Done/Blocked` の許容値へ限定し、再実行で `Triage errors (stopper)=0` を確認してから再開する。
 
 次の場合はツール出力を鵜呑みにせず停止する。
 
