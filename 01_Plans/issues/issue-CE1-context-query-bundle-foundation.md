@@ -2727,3 +2727,42 @@ handoffKeys:
 ### Phase 5 Proceed（CE2/CE4 handoff）
 - Handoff payload は `ContextQueryV1` / `ContextBundleV1` / `queryCanonicalHash` / `bundleHash` / `sourceBundleHash` の read-only 参照に限定。
 - 契約変更要求は CE1 再起票でのみ許可し、本Issueでの拡張実装は行わない。
+
+
+## Stream B execution update（2026-05-18 / CE1 foundation lock）
+
+### Phase 1: Read同期（Plan）
+- Read Order の上流文書を再読し、CE1 を **contract-only / mock-first / docs-only** で固定した。
+- 編集許可を本Issueおよび `02_Architecture/llm_input_ir_spec.md` / `02_Architecture/llm_provider_spec.md` / `02_Architecture/llm_runtime_constraints.md` に限定した。
+- 仕様競合検知条件を明文化: Contract ID衝突、固定エラー語彙衝突、safeMode後退、allowlist外編集要求。
+
+### Phase 2: ADR明文化（Execute）
+- **Context**: CE2/CE4 を停止させずに並行前進させるには、CE1で ContextQuery/ContextBundle の最小契約を先行凍結する必要がある。
+- **Decision**: v1を closed-world 契約として凍結し、固定値を以下に限定する。
+  - Contract IDs: `CE1-CTXQ-IF`, `CE1-CTXB-IF`, `CE1-HASH-DET-IF`, `CE1-PREVIEW-GATE-IF`
+  - Error vocabulary: `preview_required`, `unknown_contract_key`, `nondeterministic_bundle`
+  - HTTP mapping: `422`, `400`, `409`
+- **Consequences**: 下流は `stubDatasetId=A2-minimal-v1` で fixture/contract test を継続可能。実DB/実LLM/worker 依存なしで handoff できる。
+
+### Phase 3: I/F固定（Execute）
+- `ContextQueryV1` / `ContextBundleV1` の **必須キー集合は v1不変**。未知キー追加は v2契約改訂まで禁止。
+- versioning は `contractVersion=1` 相当の解釈を固定し、下位互換拡張は「任意キー追加」ではなく「契約改訂」で扱う。
+- truncation は Query/Bundle 契約外で実施し、契約境界では `queryCanonicalHash` / `bundleHash` 不変を必須とする。
+- fallback は fail-closed を固定し、`previewConfirmed!=true` / unknown key / hash不一致で即停止する。
+
+### Phase 4: モック方針（Execute）
+- fixture profile を `A2-minimal-v1` に固定。
+- contract test の必須観点: preview gate、unknown key、deterministic hash（3/3一致）。
+- mock は read-only handoff を前提とし、下流ストリームが契約を再定義しない。
+
+### Phase 5: Verify（Verify）
+- Verify-1: `previewConfirmed=false -> 422 preview_required`
+- Verify-2: 同一 canonical query 3回実行で `queryCanonicalHash` / `bundleHash` が 3/3一致
+- Verify-3: unknown key は常に `400 unknown_contract_key`
+- Verify-4: hash不一致は常に `409 nondeterministic_bundle`
+- Self-repair 上限: 3回。超過時は `held` へ遷移し、推測補完を禁止。
+
+### Phase 6: Proceed（下流アンロック条件）
+- CE2 unlock: `sourceBundleHash === bundleHash` を前提に proposal-only 連携を再開可能。
+- CE4 unlock: `equivalenceKey + bundleHash` を監査再現キーとして連携可能。
+- Stop: 仕様競合/上流矛盾/想定外ファイル競合を検知した場合は即停止。
