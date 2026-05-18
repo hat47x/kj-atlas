@@ -31,7 +31,7 @@ If a third-party image or build tool requires a vendor-defined environment name,
 
 Direct user configuration of vendor-defined names is not supported. Public documentation and runbooks must instruct users to set only `KJ_ATLAS_*` variables.
 
-If maintainers require the stricter interpretation that no process environment in any bundled deployment may contain a non-`KJ_ATLAS_*` name, the PostgreSQL service must be replaced with a project-owned initialization/runtime path or with a managed-database-only deployment before the issue can be marked Done.
+If maintainers require the stricter interpretation that no process environment in any bundled deployment may contain a non-`KJ_ATLAS_*` name, treat that as a separate architecture change. In that case, the PostgreSQL service must be replaced with a project-owned initialization/runtime path or with a managed-database-only deployment before the issue can be marked Done.
 
 Non-goals:
 
@@ -79,3 +79,10 @@ Constraints and risks:
 - Related: `03_Implement/deploy/docker-compose.yml`
 - Related issue: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+
+
+## Public key set (frozen for ENV-CONFIG-DRIFT-01)
+
+The public runtime key set is frozen to keys listed in `02_Architecture/runtime_parameter_registry.md` and all of them MUST use `KJ_ATLAS_*`.
+
+Any future requirement to ban all vendor-defined process environment names (including third-party container internals) is **not** an interpretation tweak of this ADR; it is a separate design-change track that requires a replacement deployment architecture.
