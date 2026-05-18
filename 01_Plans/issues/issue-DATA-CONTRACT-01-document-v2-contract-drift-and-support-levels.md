@@ -150,3 +150,11 @@
 - Phase 4 Execute: 完了（文書→型→ルート同期を更新し、PUT create-if-absent契約を再確認）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 13) Stream D fail-safe stop gates
+
+- [x] Stop gate A（後方互換）: `schemas.md` の version gate ルール（破壊的変更は version を上げる）が明記され、`data_model_operations_overview.md` と語彙一致している。
+- [x] Stop gate B（support level）: `L1/L1.5/L2/L2.5/L3/L0` の定義が契約文書と運用境界文書で一致している。
+- [x] Stop gate C（責務衝突）: Platform operator / Security officer / Support / Developer の責務分離が衝突なく記述されている。
+- 判定: **Proceed**（3つのStop gateは現行文書上で満たされる。実装依存は凍結契約で切断済み）。

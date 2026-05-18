@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: TBD
-- Scope: `03_Implement/backend/`, `03_Implement/frontend/`, `04_Documentation/operations.md`, `02_Architecture/data_model_operations_overview.md`
+- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`, `04_Documentation/operations.md`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
 - Expected verification level: `integration`
@@ -158,3 +158,11 @@
 - Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 13) Stream D fail-safe判定（Stop/Proceed）
+
+- 後方互換ルール: `schemas.md` の version gate 運用を前提にし、復旧手順で契約判定を先行させる。
+- support level: 復旧対象を `L1/L1.5` 優先、`L2/L2.5` は「埋め込み往復保持まで」として扱う。
+- 運用責務衝突: 削除・所有者移管・閲覧権限は未確定（Pending）のため、実装着手条件を満たすまで **Stop**。
+- 判定: **Stop**（DecisionStatus=Pendingのため、契約整備以外へ進まない）。

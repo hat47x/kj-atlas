@@ -466,6 +466,12 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 ---
 
+
+### 6.2 Stream D fail-safe guardrails
+
+- 後方互換が曖昧な変更（既存キーの意味変更、必須化、削除）は `version` を上げずに導入してはならない。
+- 新規フィールドは support level（L1/L1.5/L2/L2.5/L3/L0）を割り当てるまで `Contract-limited (L2.5)` とみなし、個別CRUD保証を主張しない。
+- 運用責務が未確定（DecisionStatus=Pending）の項目は、スキーマに存在しても実装Go判断に使わない（fail-closed）。
 ## 7. 次に作るもの
 
 - `02_Architecture/api.md`：Document（V1/V2）のCRUD I/F

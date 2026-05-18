@@ -136,3 +136,12 @@
 - Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 13) Stream D AC/DoD補完
+
+- [x] AC-04: CRUD表の全行に support level（L1/L1.5/L2/L2.5/L3/L0）が明示され、`schemas.md` の定義と同一語彙である。
+- [x] AC-05: 互換性判定の責務が「契約更新（Architecture）→実装追従（Implement）」の順序で記述されている。
+- [x] DoD-01: 新規フィールド追加時に、`schemas.md` と `data_model_operations_overview.md` を同一コミットで更新する運用規則が明記されている。
+- [x] DoD-02: 「型がある=運用可能」誤読を防ぐ注意書きが維持されている。
+- 判定: **Proceed**（MVP運用境界の固定化は完了、実装依存は契約凍結で切断）。
