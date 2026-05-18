@@ -1,6 +1,6 @@
 # ADR-0030: UI操作モデルの段階的開示とキーボードスコープ
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-17
 - Deciders: Project Maintainers
 - Scope: `01_Plans/adr/`, `01_Plans/issues/`, `04_Documentation/acceptance_check.md`, `03_Implement/frontend/docs/e2e_testing.md`
@@ -67,3 +67,28 @@ kj-atlas の UI操作モデルとして、次を確定方針とする（**仕様
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-02-keyboard-card-selection.md`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
 - Related: `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
+
+## CDC (Context / Decision / Consequences)
+
+### Context
+
+- Stream C は UI 実装に先行して、操作モデルの受入境界を I/F レベルで固定する責務を持つ。
+- 実装順が衝突すると、キーボード到達性・文脈優先表示・Escape 復帰の契約が相互に破綻するため、Issue を直列化する必要がある。
+- アクセシビリティ要求が曖昧な状態で実装へ進むと、後続 E2E が仕様不一致を検出できなくなる。
+
+### Decision
+
+- 本 ADR は **仕様固定済み（Accepted）** とし、実装は別 PR でのみ実施する。
+- 実装タスクは次の固定順で直列化する。
+  1. `UX-OPERABILITY-01`: 動線レビュー
+  2. `UX-OPERABILITY-02`: キーボード到達性（カード選択）
+  3. `UX-OPERABILITY-03`: 文脈優先パネル
+  4. `UX-OPERABILITY-04`: Escape 閉じる + フォーカス復帰
+- 各 Issue は UI 実装依存を断つため、**期待 DOM 状態とイベント契約のみ**を先行定義する。
+- フェイルセーフとして、アクセシビリティ要件が未確定な Issue は `Execution: Hold` とし、実装開始を禁止する。
+
+### Consequences
+
+- 実装 PR は I/F 契約との差分検証に集中でき、ストリーム間の衝突を最小化できる。
+- E2E は「開始→選択→表示→閉じる→復帰」を 4 Issue の受入境界としてトレース可能になる。
+- 未確定要件を残したままの実装着手を防ぎ、回帰時の責務分離（仕様 vs 実装）を維持できる。

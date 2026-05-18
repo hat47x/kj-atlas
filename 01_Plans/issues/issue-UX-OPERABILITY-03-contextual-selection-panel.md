@@ -1,34 +1,46 @@
-# Issue Draft: UX-OPERABILITY-03 選択文脈優先パネル境界（仕様）
+# Issue: UX-OPERABILITY-03 選択文脈優先パネル境界（仕様）
 
 - Type: Planning
-- Status: Draft
+- Status: Open
 - Priority: P1
-- Owner: Stream D
-- Scope: `01_Plans/issues/`, `01_Plans/adr/`
+- Owner: Stream C
+- DecisionStatus: Fixed
+- Execution: Ready
+- Scope: `01_Plans/issues/`, `01_Plans/adr/`, `03_Implement/frontend/docs/e2e_testing.md`
 - Related Backlog: `UX-OPERABILITY-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
 
 ## Goal
 
-選択直後に必要情報を提示し、高度機能は段階開示するUI情報境界を固定する。
+選択直後に必要情報を先頭提示し、高度機能は明示操作で開示する文脈優先モデルを固定する。
+
+## I/F Contract (Mock-first)
+
+- DOM expectation:
+  - `data-panel="selection-context"` が選択後に先頭表示される。
+  - `data-panel-group="advanced"` は初期状態 `aria-expanded="false"`。
+  - `data-panel-group="advanced"` は明示操作（button press）で `aria-expanded="true"` に遷移する。
+- Event contract:
+  - `ContextPanelRequested(targetId)` 受信時に `ContextPanelRendered(targetId)` を返す。
+  - `Tab` 順序は `selection-context` 内の主要導線を先に巡回し、その後に `advanced` 開示導線へ進む。
 
 ## AC (Acceptance Criteria)
 
-- [ ] 選択直後に表示されるべき情報（選択対象確認・基本編集・レビュー導線）を明記する。
-- [ ] 初期非表示/段階開示の対象（高度機能群）を明記する。
-- [ ] Tab順序が「文脈優先」であることを要件化する。
-- [ ] `UX-OPERABILITY-04` の閉じる/復帰要件と矛盾しない。
+- [ ] 選択直後の必須表示（確認・基本編集・レビュー導線）を明記する。
+- [ ] 高度機能群の初期非表示と段階開示条件を明記する。
+- [ ] Tab 順序が文脈優先であることを観測可能条件で示す。
+- [ ] `UX-OPERABILITY-04` の閉じる/復帰仕様と矛盾しない。
 
 ## DoD
 
-- [ ] 文脈優先の定義が曖昧語ではなく観測可能条件で書かれている。
-- [ ] `UX-OPERABILITY-02` と `UX-OPERABILITY-04` の接続点が明示されている。
-- [ ] 実装詳細（具体コンポーネント設計）へ踏み込んでいない。
+- [ ] `UX-OPERABILITY-02`（入力）と `UX-OPERABILITY-04`（終了動作）の接続点を明示する。
+- [ ] 実装詳細・コンポーネント分割の指定に踏み込まない。
+- [ ] 曖昧要件が残る場合は `Execution: Hold` 条件を明示する。
 
 ## Validation plan
 
-- `rg "文脈|段階的開示|Tab|選択直後|高度機能" 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
+- `rg -n "selection-context|advanced|aria-expanded|ContextPanelRequested|ContextPanelRendered|Tab" 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
 - `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
 
 ## Dependencies

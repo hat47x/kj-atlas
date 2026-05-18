@@ -187,8 +187,30 @@ python -m pytest
 4. 閉じる: `表示` / `共有と再現` を `Escape` で閉じられる。
 5. 復帰: 閉じた後に起点フォーカスへ戻る。
 
-本節は計画記述であり、具体的なテスト実装は `UX-OPERABILITY-02`〜`04` の実装PRで追加する。
+### Mock-first I/F 契約（実装非依存）
 
+- DOM 状態
+  - `data-ui-region="primary-flow"` が初期表示で観測可能。
+  - `data-panel="selection-context"` は選択後に可視化される。
+  - `data-panel-group="advanced"` は初期 `aria-expanded="false"`。
+  - 一時パネルは `data-panel="view"` / `data-panel="share-replay"` で識別可能。
+- イベント契約
+  - `PointerSelect|KeyboardSelect -> SelectionChanged` の同等性。
+  - `SelectionChanged -> ContextPanelRequested -> ContextPanelRendered` の連鎖。
+  - `Escape -> PanelDismissed(reason="escape") -> FocusReturned` の連鎖。
+
+### 直列実装順（固定）
+
+1. `UX-OPERABILITY-01`: 動線レビュー
+2. `UX-OPERABILITY-02`: キーボード到達性
+3. `UX-OPERABILITY-03`: 文脈優先パネル
+4. `UX-OPERABILITY-04`: Escape 閉じる + フォーカス復帰
+
+### フェイルセーフ
+
+アクセシビリティ要件（フォーカス可視、読み上げ可能名、キーボード到達性）が曖昧な場合、該当 Issue は `Execution: Hold` とし、実装 PR へ進めない。
+
+本節は計画記述であり、具体的なテスト実装は `UX-OPERABILITY-02`〜`04` の実装PRで追加する。
 
 ## Draft群 Open化向け QA Gate テンプレート（Stream E）
 
