@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MODEL-OPS-01 MVPデータモデル俯瞰とCRUD境界の継続管理
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -63,11 +63,11 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 物理テーブルと論理データ構造が別物として説明されている。
-- [ ] 各データ領域について Create / Read / Update / Delete の可否が明示されている。
-- [ ] MVPで個別CRUDを持たない構造が、標準運用で保守可能だと読めない表現になっている。
-- [ ] ステークホルダー別に、標準操作でできることと不足が記載されている。
-- [ ] 新しい主要データ構造が追加された場合、`AGENTS.md` と関連02文書の導線が同期されている。
+- [x] 物理テーブルと論理データ構造が別物として説明されている。
+- [x] 各データ領域について Create / Read / Update / Delete の可否が明示されている。
+- [x] MVPで個別CRUDを持たない構造が、標準運用で保守可能だと読めない表現になっている。
+- [x] ステークホルダー別に、標準操作でできることと不足が記載されている。
+- [x] 新しい主要データ構造が追加された場合、`AGENTS.md` と関連02文書の導線が同期されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
@@ -123,9 +123,9 @@
 
 ## 12) 受入条件の補完（AC gap fill）
 
-- [ ] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
-- [ ] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
-- [ ] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
+- [x] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
+- [x] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
+- [x] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
 
 ## Stream I Phase status
 

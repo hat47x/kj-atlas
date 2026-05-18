@@ -455,6 +455,15 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `Document.version` を用いてスキーマバージョンを管理する
 - 破壊的変更は version を上げ、API側で移行処理を提供する
 
+### 6.1 Document versioning / support level運用ルール（DATA-CONTRACT-01固定）
+
+- `DocumentV2` の互換性レベルは次で固定する。
+  - **Full**: `version: 2` かつ MVPで `L1/L1.5` に分類される運用対象（Document snapshot、merge decision append-read 連携）。
+  - **Partial**: `version: 2` だが `L2/L2.5` の埋め込み限定/契約限定フィールド（例: `evidenceLinks` / `reviewAttribution` / `critiqueInputs`）を含む。保存・往復は保証するが個別CRUDは保証しない。
+  - **Legacy**: `version: 1` または `version` 欠損の互換読込データ。読込時に `DocumentV2` へ正規化して扱う。
+- 非互換変更（必須キー追加、既存キー意味変更、削除）は **version gate** で隔離する。`version: 2` の意味を壊さず、破壊的拡張は `version: 3` 以降でのみ許可する。
+- `version gate` 導入前に実装が先行することを禁止し、契約文書（`schemas.md` / `data_model_operations_overview.md` / 該当issue AC）を先に同期する。
+
 ---
 
 ## 7. 次に作るもの
