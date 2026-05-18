@@ -180,3 +180,70 @@ Non-goals:
 
 1. third-party container の内部環境名を将来的に完全排除するか（公開契約外で許容継続か）を governance で最終決定する。
 2. `external_http` endpoint 未設定時の `noop` fallback を fail-fast へ変更するかを ADR レベルで最終決定する。
+
+
+## 14) Stream J execution snapshot (2026-05-18)
+
+### Plan → Execute → Verify → Proceed
+
+#### Phase 1: Read同期（棚卸し）
+
+- 対象SSOT（`runtime_parameter_registry.md`）と deploy 定義（`deployment.md` / `docker-compose.yml` / `nginx.conf`）を再読し、公開キー・既定値・適用範囲を棚卸しした。
+- 公開契約キーは `KJ_ATLAS_*` のみで一致していることを確認した。
+- `docker-compose.yml` の `POSTGRES_*` は third-party container 内部 adapter 名であり、公開契約外であることを再確認した（`ADR-0029` 前提）。
+
+#### Phase 2: ADR要素明文化（Context / Decision / Consequences）
+
+- Context: ENV prefix migration は backend で互換なし一括移行済み、deploy 層は公開キー `KJ_ATLAS_*` と内部 adapter 名（PostgreSQL）を分離して運用している。
+- Decision: 現時点では runtime/deploy の実装変更は不要とし、契約ドリフト防止の運用手順（切替条件・監視・ロールバック）を issue/architecture に固定する。
+- Consequences: 破壊的変更（例: `external_http` fail-fast 既定化、vendor env 完全排除）は本 issue では実施せず、ADR 起票条件を満たした場合のみ進行する。
+
+#### Phase 3: 契約固定（SSOT基準化 + 整合マトリクス）
+
+整合マトリクス（2026-05-18時点）:
+
+| Public key | Registry | Deployment policy | Compose | Status |
+| --- | --- | --- | --- | --- |
+| `KJ_ATLAS_WEB_PORT` | Defined (`8080`) | Defined | Used in `web.ports` | Aligned |
+| `KJ_ATLAS_POSTGRES_DB` | Defined (`kj_atlas`) | Defined | Mapped to `db.POSTGRES_DB` | Aligned |
+| `KJ_ATLAS_POSTGRES_USER` | Defined (`kj_atlas`) | Defined | Mapped to `db.POSTGRES_USER` | Aligned |
+| `KJ_ATLAS_POSTGRES_PASSWORD` | Defined (`kj_atlas`) | Defined | Mapped to `db.POSTGRES_PASSWORD` | Aligned |
+| `KJ_ATLAS_FRONTEND_API_BASE` | Defined (`/api`) | Defined | Used in `web.build.args` | Aligned |
+| `KJ_ATLAS_DATABASE_URL` | Defined | Defined | Used in `api.environment` | Aligned |
+| `KJ_ATLAS_LLM_PROVIDER` | Defined (`none`) | Defined | Used in `api.environment` | Aligned |
+
+補足:
+- `nginx.conf` は固定ルーティング (`/api` → `api:8000`) のみを担い、公開 env key を増やしていない。
+- Compose 内 `POSTGRES_*` は内部変換先であり、利用者入力は `KJ_ATLAS_POSTGRES_*` だけを維持する。
+
+#### Phase 4: Execute（Issue AC/DoD更新）
+
+- 本 issue に Stream J の同期結果と運用手順を追記し、環境依存の破壊的変更を避けた。
+- 実装ファイル変更は不要（既存契約が一致）と判断した。
+
+#### Phase 5: Verify（契約一致 / 後方互換 / 自己修復）
+
+- Registry ↔ Deployment ↔ Compose の key/default/purpose が一致していることを文書ベースで確認した。
+- 後方互換は「backend 互換なし」「frontend key は `KJ_ATLAS_FRONTEND_API_BASE` 正規」を前提に逸脱なし。
+- Self-heal policy（max 3）: 今回は不一致検知 0 件のため修復ループ未使用。
+
+#### Phase 6: Proceed（切替 / ロールバック / 監視）
+
+- 切替手順:
+  1. 運用者が設定する env を `KJ_ATLAS_*` のみに限定する。
+  2. Compose 起動前に `KJ_ATLAS_POSTGRES_*` と `KJ_ATLAS_DATABASE_URL` の整合を確認する。
+  3. frontend build では `KJ_ATLAS_FRONTEND_API_BASE` を `/` 始まり path のみで設定する。
+- ロールバック手順:
+  1. 新規設定投入後に起動不全が発生した場合、直前の `KJ_ATLAS_*` 設定セットへ復元する。
+  2. 旧キー復活は行わず、registry の契約値へ修正して再展開する。
+- 監視ポイント:
+  - Compose config 生成時に `KJ_ATLAS_*` 以外の公開キーが runbook/ops に混入していないこと。
+  - `KJ_ATLAS_FRONTEND_API_BASE` が不正値（空や `/` 非始まり）で運用されていないこと。
+  - third-party adapter 境界（`POSTGRES_*`）が公開契約へ漏れていないこと。
+
+### Stream J stop check (Fail-safe)
+
+- 3回超過修復: 未該当。
+- 既存運用停止リスク: 重大な新規リスク追加なし（変更は契約同期のみ）。
+- 不明な環境依存: 新規導入なし。
+- 判定: **Proceed（本 stream scope で完了）**。

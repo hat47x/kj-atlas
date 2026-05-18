@@ -24,6 +24,17 @@
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
+
+## Prefix migration governance（互換期間と切替条件）
+
+- Backend runtime key は `ADR-0021` に基づき **互換期間なし** で `KJ_ATLAS_*` へ一括切替済みです。
+- 旧キー（接頭辞なし/別接頭辞）は公開契約外であり、受理しません。
+- 切替条件（Go/No-Go）:
+  1. `runtime_parameter_registry.md`、`deployment.md`、Compose 定義で公開キーが一致していること。
+  2. backend settings validation が旧キー単独・新旧混在を拒否すること。
+  3. runbook/公開文書で利用者向けキーが `KJ_ATLAS_*` のみであること。
+- 破壊的な再移行（例: 旧キー互換の再導入、公開キー改名）は新規 ADR を必須とします。
+
 ## Backend settings
 
 | Key | Default | Purpose |
