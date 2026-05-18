@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Fixed
+- DecisionStatus（Fixed / Pending）: Fixed (2026-05-18)
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
 ## Dependency graph（Stream I）
@@ -147,6 +147,6 @@
 - Phase 1 Read: 完了（Read Order上流と関連ADRを確認済み）
 - Phase 2 ADR/論点分離: 完了（契約ドリフト、運用保守、俯瞰境界を独立Issue化）
 - Phase 3 Plan: 完了（受入条件・非目標・検証計画を明文化）
-- Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
+- Phase 4 Execute: 完了（文書→型→ルート同期を更新し、PUT create-if-absent契約を再確認）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）

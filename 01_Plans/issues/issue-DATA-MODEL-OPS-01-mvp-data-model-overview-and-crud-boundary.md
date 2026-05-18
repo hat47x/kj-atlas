@@ -29,6 +29,7 @@
 - Parallel（並行整備）: なし
 - Downstream（後続依存）: `DATA-CONTRACT-01`, `DATA-MAINT-01`
 - Blocker条件: support level語彙（運用サポート / 埋め込み限定 / 契約のみ）が02文書間で不一致
+- Contract fixture方針: `/docs/{doc_id}` の fixture（create-if-absent, DocumentV1/V2 roundtrip）を先に固定し、frontend/backendを追従させる。
 
 
 ## 1) 課題 / Problem statement
