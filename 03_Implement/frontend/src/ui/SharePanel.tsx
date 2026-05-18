@@ -1,5 +1,5 @@
-import { useId, useRef, useState } from "react";
-import type { ChangeEvent, ReactNode } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import type { PatchSummaryModel } from "../domain/patch/patch_summary";
 import type { PatchApplyLogEntry } from "../domain/types";
 import type { PatchLintIssue } from "../domain/patch/patch_lint";
@@ -265,6 +265,8 @@ export function SharePanel({
   onCopyPatchApplyLogEntry,
   structuralDiffSection,
 }: SharePanelProps) {
+  const panelRef = useRef<HTMLElement | null>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement | null>(null);
   const viewMetadataInputRef = useRef<HTMLInputElement | null>(null);
   const importDocumentInputRef = useRef<HTMLInputElement | null>(null);
   const patchInputRef = useRef<HTMLInputElement | null>(null);
@@ -321,7 +323,35 @@ export function SharePanel({
     onLoadPatchBaselineFile(selectedFile);
   };
 
-  const lintErrors = patchLintIssues.filter((item) => item.severity === "error");
+
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      panelRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen]);
+
+  const closePanelAndRestoreFocus = () => {
+    onToggleOpen();
+    window.requestAnimationFrame(() => {
+      triggerButtonRef.current?.focus();
+    });
+  };
+
+  const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePanelAndRestoreFocus();
+    }
+  };
+
+    const lintErrors = patchLintIssues.filter((item) => item.severity === "error");
   const lintWarnings = patchLintIssues.filter((item) => item.severity === "warn");
   const lintInfos = patchLintIssues.filter((item) => item.severity === "info");
 
@@ -338,6 +368,7 @@ export function SharePanel({
   return (
     <div style={{ position: "relative" }}>
       <button
+        ref={triggerButtonRef}
         type="button"
         onClick={onToggleOpen}
         style={{
@@ -357,7 +388,12 @@ export function SharePanel({
         <>
           <style>{sharePanelLayoutCss}</style>
           <section
+            ref={panelRef}
             className="kj-atlas-share-panel"
+            tabIndex={-1}
+            role="dialog"
+            aria-label={t("share.panel.trigger")}
+            onKeyDown={handlePanelKeyDown}
             style={{
               position: "fixed",
               top: "var(--kj-atlas-header-panel-top, 72px)",
@@ -375,6 +411,9 @@ export function SharePanel({
               boxShadow: "0 12px 24px rgba(15, 23, 42, 0.18)",
             }}
           >
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+            <button type="button" onClick={closePanelAndRestoreFocus} aria-label="Close panel">×</button>
+          </div>
           <div style={sectionStyle}>
             <ImportPanel
               isLoading={isLoading}
