@@ -4,7 +4,7 @@
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPのCRUDサポート表と運用保守境界は `02_Architecture/data_model_operations_overview.md` を参照する。
-本ドキュメントは、kj-atlas の **MVP API（DocumentV1の保存・取得）** を定義します。
+本ドキュメントは、kj-atlas の **MVP API（Documentの保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
 - 認証・共有・差分同期は後回しです
@@ -56,7 +56,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **GET** `/docs/{doc_id}`
 
-- Response：`DocumentV1`
+- Response：`DocumentV1` または `DocumentV2`
 - Not found：404
 
 ---
@@ -65,8 +65,8 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **PUT** `/docs/{doc_id}`
 
-- Request body：`DocumentV1`
-- Response：保存後の `DocumentV1`
+- Request body：`DocumentV1` または `DocumentV2`
+- Response：保存後の `DocumentV1` または `DocumentV2`
 - Validation error：400
 
 ---
