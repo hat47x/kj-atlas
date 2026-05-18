@@ -99,3 +99,10 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 ## Operating rule
 
 公開文書、runbook、Docker Compose の利用者入力、CI 設定例では、上記以外の環境変数名を kj-atlas の設定キーとして記載しません。内部実装上の写像が必要な場合も、利用者には `KJ_ATLAS_*` のみを提示します。
+
+
+### Public contract boundary (ENV-CONFIG-DRIFT-01)
+
+- This registry is the SSOT for public runtime keys and exposes only `KJ_ATLAS_*` names.
+- Vendor-defined names are implementation-internal adapter details and MUST NOT be treated as public keys.
+- A policy that bans non-`KJ_ATLAS_*` names from every process environment is a separate deployment redesign decision.

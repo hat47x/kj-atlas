@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16-alpine
     environment:
+      # Internal adapter mapping: public KJ_ATLAS_* -> vendor-defined POSTGRES_*
       POSTGRES_DB: ${KJ_ATLAS_POSTGRES_DB:-kj_atlas}
       POSTGRES_USER: ${KJ_ATLAS_POSTGRES_USER:-kj_atlas}
       POSTGRES_PASSWORD: ${KJ_ATLAS_POSTGRES_PASSWORD:-kj_atlas}

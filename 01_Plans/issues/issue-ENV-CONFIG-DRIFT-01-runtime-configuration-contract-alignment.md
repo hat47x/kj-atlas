@@ -123,6 +123,13 @@ Non-goals:
   - changing `external_http` missing-endpoint behavior from current `noop` fallback to fail-fast.
 
 
+
+### Stream B contract split (2026-05-18)
+
+- Public contract keys are frozen to the SSOT set in `02_Architecture/runtime_parameter_registry.md` (`KJ_ATLAS_*` only).
+- Vendor names are allowed only as private adapter names at implementation boundaries (Compose third-party service internals).
+- "Strict interpretation" (ban non-`KJ_ATLAS_*` in every process env) is tracked as a separate architecture change, not as a drift-fix interpretation of this issue.
+
 ## 11) Stream C execution snapshot (2026-05-17)
 
 ### Public key extraction result
