@@ -254,3 +254,40 @@ Non-goals:
 - 既存運用停止リスク: 重大な新規リスク追加なし（変更は契約同期のみ）。
 - 不明な環境依存: 新規導入なし。
 - 判定: **Proceed（本 stream scope で完了）**。
+
+## 15) Stream E re-validation snapshot (2026-05-18)
+
+### Phase 1 Read（再読）
+
+- `AGENTS.md` の Read Order と Stream E の編集境界を再確認した。
+- SSOT として `02_Architecture/runtime_parameter_registry.md`、公開運用文書として `04_Documentation/configuration.md` を再読した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+
+- Context: 公開キー契約は `KJ_ATLAS_*` 固定、内部 adapter 境界は `ADR-0029` で管理される。
+- Decision: Stream E では契約ドリフト検証に限定し、仕様変更や新規 ADR 起票は行わない。
+- Consequences: 既定値不一致・prefix 競合・registry/doc 不整合があれば Stop する前提を維持する。
+
+### Phase 3 Plan（AC / DoD）
+
+- AC-1: 命名が `KJ_ATLAS_*` 公開契約に一致すること。
+- AC-2: 既定値が registry と configuration で一致すること。
+- AC-3: 公開契約と内部 adapter 境界が混線していないこと。
+- DoD: ドリフト 0 件、または governance 論点として隔離済みであること。
+
+### Phase 4 Execute（命名・既定値・prefix整合）
+
+- 命名整合を確認: 公開キーは `KJ_ATLAS_*` のみ。
+- 既定値整合を確認: `KJ_ATLAS_FRONTEND_API_BASE=/api`、`KJ_ATLAS_WEB_PORT=8080`、`KJ_ATLAS_LLM_PROVIDER=none` 等が一致。
+- 境界整合を確認: `POSTGRES_*` は third-party container 内部名としてのみ扱い、公開契約外で維持。
+
+### Phase 5 Verify（lint/整合チェック・自己修復3回）
+
+- 文書差分と整合チェックで、prefix 競合・既定値不一致・registry/doc 不整合の新規発生なし。
+- 自己修復ループ（最大3回）は未使用（不一致検知 0 件）。
+
+### Phase 6 Proceed/Stop
+
+- 判定: **Proceed（Stream E scope で完了）**。
+- Stop 条件評価: 解消不能な不一致は未検出。
+- 残課題: `external_http` endpoint 未設定時の fail-fast 化可否、および third-party 内部名完全排除可否は governance/ADR 論点として継続。
