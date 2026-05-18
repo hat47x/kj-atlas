@@ -141,3 +141,22 @@ CE1 contract 作業は次の直列Phaseを固定し、スキップ・逆走・�
 
 - Verify失敗が3回を超えた場合は `held` で停止する。
 - Contract ID collision / error semantics collision を検知した場合は即停止し、Phase 2へ戻す。
+
+
+## Stream B verify workflow addendum（2026-05-18 / CE1-independent）
+
+### Context
+CE1 の Verify 失敗を曖昧に扱うと、下流に非決定論が伝播する。
+
+### Decision
+- CE1 Verify は以下4項目を必須機械判定とする。
+  1) `previewConfirmed=false -> 422 preview_required`
+  2) unknown key -> `400 unknown_contract_key`
+  3) 同一 canonical query 3回で hash 3/3一致
+  4) hash不一致 -> `409 nondeterministic_bundle`
+- self-repair は最大3回。3回超過時は `held` 停止。
+- 仕様競合・上流矛盾・想定外ファイル競合を検知した場合は即停止。
+
+### Consequences
+- runtime 制約に CE1 固定ゲートが接続され、fail-open を防止できる。
+- 下流ストリームは `Proceed` 条件を同一判定で再利用できる。
