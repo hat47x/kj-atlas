@@ -126,43 +126,48 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 
 ### 2.7 CE4 Audit Integration Contract（API/CLI equivalence）
 
-CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方式に依存しない監査I/Fを固定する。
+CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方式に依存しない接続契約のみを固定する。
 
+#### 2.7.1 固定ルール（Normative）
 - 同値判定成功条件: `equivalenceKey AND bundleHash` の同時一致（片方一致は失敗）。
-- 監査イベント系列: `query -> bundle -> proposal -> apply` を固定順序とし、欠損/逆転は fail-closed。
-- proposal-only: `auto-apply` / `auto-confirm` / `auto-publish` を禁止し、検知時はポリシー違反で停止。
-- CE1未整備時の依存切断: `sourceBundleHash=mock:<64hex>` を許容し、実装待ちでも契約検証を継続可能にする。
+- 実行モード: `mode=proposal-only` のみ許容（`auto-apply` / `auto-confirm` / `auto-publish` は禁止）。
+- 監査イベント順序: `query -> bundle -> proposal -> apply` を固定し、欠損/逆順は fail-closed。
+- 依存切断: CE1未整備時は `sourceBundleHash=mock:<64hex>` を許容し、realと同一規律で判定する。
 
-監査イベント共通必須キー（API/CLI共通）:
+#### 2.7.2 API Signature（contract-only）
+- `POST /v1/audit/proposals:verify`
+- Request必須: `mode`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `sourceBundleHash`, `events[4]`
+- Response必須: `decision` (`go|no_go`), `classification` (`ok|validation_failed|audit_violation|equivalence_violation|policy_violation`), `equivalenceSatisfied` (boolean), `violations` (string[]), `traceId`
+
+#### 2.7.3 CLI Signature（contract-only）
+- `kj audit verify-proposal`
+- 必須フラグ: `--mode proposal-only`, `--equivalence-key`, `--query-canonical-hash`, `--bundle-hash`, `--source-bundle-hash`, `--events-json`
+- 契約: `classification != ok` は常に非0終了（数値割当は未固定）。
+
+#### 2.7.4 監査イベント共通必須キー（API/CLI共通）
 - `eventType` (`query|bundle|proposal|apply`)
+- `timestamp` (RFC3339 UTC)
 - `equivalenceKey`
 - `queryCanonicalHash`
 - `bundleHash`
-- `routingStage`
-- `provider`
-- `model`
 - `sourceBundleHash` (`sha256:<64hex>` または `mock:<64hex>`)
-- `proposalId`
-- `timestamp` (RFC3339 UTC)
+- `actor` (`principalType`, `principalIdMasked`)
+- `channel` (`api|cli`)
+- `command`
 - `result` (`ok|ng`)
 - `schemaVersion` (SemVer)
 
-fail-safe / stop:
-- 監査ログ欠落、`routingStage` 追跡不能、未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾値）は **Stop**。
-- 自己修復は最大3回。4回目相当は `StoppedForClarification`。
+#### 2.7.5 失敗分類と停止規律
+- `validation_failed`: 入力契約違反
+- `audit_violation`: 必須キー欠損 / 順序違反 / 重複矛盾
+- `equivalence_violation`: `equivalenceKey` または `bundleHash` 不一致
+- `policy_violation`: proposal-only違反（auto-*検出）
+- fail-safe: 自己修復は最大3回。4回目相当は `StoppedForClarification`。
 
-API/CLI同値性検証（契約計画）:
-1. API/CLIで同一 canonical query を dry-run 実行。
-2. `equivalenceKey` と `bundleHash` のAND一致を確認。
-3. routing監査キー（`routingStage/provider/model/sourceBundleHash/proposalId`）の4イベント追跡を確認。
-4. 欠損/逆転/競合時は No-Go（fail-closed）。
-
-CE4監査チェックリスト（契約監査用）:
-1. 必須キー完備（`eventType/equivalenceKey/queryCanonicalHash/bundleHash/routingStage/provider/model/sourceBundleHash/proposalId/timestamp/result/schemaVersion`）。
-2. 4イベント順序整合（`query -> bundle -> proposal -> apply`）。
-3. AND同値条件成立（`equivalenceKey` と `bundleHash` の同時一致）。
-4. proposal-only違反不在（`auto-apply|auto-confirm|auto-publish` 痕跡ゼロ）。
-5. mock/real 同一規律（`sourceBundleHash=sha256:<64hex> | mock:<64hex>` で同一 fail-closed）。
+#### 2.7.6 責務境界（API / CLI / Audit）
+- API責務: 契約検証要求を受理し、分類語彙と判定結果を返す。
+- CLI責務: API同値語彙で入力を組み立て、失敗分類を終了ステータスへ反映する。
+- Audit責務: 4イベント順序、必須キー、同一 `equivalenceKey` 連結可能性を検証する。
 
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 

@@ -88,3 +88,10 @@ CLI導入では、機能追加より先に「漏洩しない・監査できる�
 - Related: `04_Documentation/security.md`
 - Related: `04_Documentation/operations.md`
 - Related: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+
+
+## CE4責務境界（API/CLI/Audit）
+
+- API: proposal検証要求を受理し、監査分類（`validation_failed|audit_violation|equivalence_violation|policy_violation`）を返す。
+- CLI: API同値条件（`equivalenceKey AND bundleHash`）を再演算可能な入力を必須化し、`classification != ok` を非0終了にする。
+- Audit: 4イベント順序と必須キー検証を実施し、欠損/逆順/矛盾を fail-closed 停止する。

@@ -34,6 +34,12 @@ CLI計画の実装着手条件が曖昧なままでは、MVP後に「何を確�
 - **Phase X-3（自動化拡張）**: バッチ/CIの再実行安全性を含む運用拡張。
 - **Phase X-4（MCP連携）**: CLI利用範囲を統制したAI連携。
 
+### 4) Phase X-2.5（CE4 contract freeze; docs-only）
+
+- Entry: ADR-0016/0017 と `02_Architecture/api.md` の CE4契約語彙が未整合である。
+- Exit: API/CLI/監査の接続契約（同値条件・失敗分類・proposal-only・4イベント順序）が3文書で同期される。
+- Non-goal: 実装方式（保存先/QoS/署名/終了コード数値）の確定。
+
 ## Gate（判定可能条件）
 
 ### Gate-A: Architecture整合（ADR-0001 / 02_Architecture整合）
