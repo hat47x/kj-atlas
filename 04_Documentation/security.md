@@ -166,3 +166,18 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
 - [THREAT_MODEL.md](https://github.com/hat47x/kj-atlas/blob/main/THREAT_MODEL.md)
+
+## 運用手順（DOC-OPS-05）
+1. 対象読者（Audience）と目的（Goal）を先に確認する。
+2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
+3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
+
+## 判断基準（DOC-OPS-05 品質ゲート）
+- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
+- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
+- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
+
+## 失敗時対応
+- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
+- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
+- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
