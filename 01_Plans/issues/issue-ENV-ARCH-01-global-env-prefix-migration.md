@@ -203,3 +203,9 @@
   - frontend shim削除: **未評価項目あり**（期限未確定）。
 - Gate判定:
   - frontend shim廃止タスクは、影響評価（利用者通知/切替手順/ロールバック）完了まで **着手停止**。
+
+## Stream J maintenance note (2026-05-18)
+
+- `runtime_parameter_registry.md` と `deployment.md` に prefix migration governance（互換期間なし・切替条件）を明文化し、運用判断の参照先を固定した。
+- Compose 公開入力 (`KJ_ATLAS_*`) と third-party private adapter (`POSTGRES_*`) の境界を再確認し、ENV-ARCH-01 の完了条件（公開契約の単一化）を維持していることを確認した。
+- 追加の破壊的変更（互換再導入・公開キー改名）は新規 ADR 必須の方針を追記済み。

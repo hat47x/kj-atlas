@@ -40,6 +40,23 @@ Compose と frontend build で利用者が設定する公開キーは次です�
 
 全量の backend runtime key は [runtime_parameter_registry.md](runtime_parameter_registry.md) を参照します。
 
+
+## Registry / Deploy alignment matrix
+
+`runtime_parameter_registry.md` を基準に、deploy 面で次を固定します。
+
+| Public key | Compose mapping | 備考 |
+| --- | --- | --- |
+| `KJ_ATLAS_WEB_PORT` | `web.ports` | web 公開ポート |
+| `KJ_ATLAS_POSTGRES_DB` | `db.environment.POSTGRES_DB` | third-party private adapter への内部写像 |
+| `KJ_ATLAS_POSTGRES_USER` | `db.environment.POSTGRES_USER` | third-party private adapter への内部写像 |
+| `KJ_ATLAS_POSTGRES_PASSWORD` | `db.environment.POSTGRES_PASSWORD` | third-party private adapter への内部写像 |
+| `KJ_ATLAS_FRONTEND_API_BASE` | `web.build.args.KJ_ATLAS_FRONTEND_API_BASE` | `/` 始まり path のみ許可 |
+| `KJ_ATLAS_DATABASE_URL` | `api.environment.KJ_ATLAS_DATABASE_URL` | backend DB 接続先 |
+| `KJ_ATLAS_LLM_PROVIDER` | `api.environment.KJ_ATLAS_LLM_PROVIDER` | provider 切替 |
+
+運用者が設定する公開キーは `KJ_ATLAS_*` のみとし、`POSTGRES_*` は Compose 内部で完結する private adapter 名として扱います。
+
 ## Docker Compose の設定例
 
 利用者が値を変える場合は、次のように `KJ_ATLAS_*` だけを設定します。
