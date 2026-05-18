@@ -49,6 +49,19 @@ AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 
 > DOC-OPS-02運用補足: Stream E での文書同期は、上記順序に加えて `operations.md` を同一サイクルで照合し、A1未完了時は「準備状態（Hold）」を維持して確定文言を追加しない。
 
+## 1.1.1 Stream E 同期ゲート（AUTH-ARCH/SCHEMA/API/OPS/E2E）
+
+AUTH系契約硬化を単独完結させる場合、同期順序は次を厳守する。
+
+1. `02_Architecture`（本書 + `enterprise_architecture.md`）
+2. `04_Documentation`（`operations.md` / `security.md`）
+3. `01_Plans`（AUTH issue memo と dashboard/decision-pack 参照更新）
+
+運用上の強制条件:
+- 下位層を先に更新しない（Architecture未確定でOperationsを確定しない）。
+- `StoppedForClarification` の解除は、上記3層で同一語彙（Security Officer / System Owner / Platform Operator）とD1〜D4整合が揃った場合のみ許可する。
+- 3回自己修復で収束しない場合は、推測補完を禁止して停止する。
+
 ## 1.2 CDC（Change Decision Contract）明文化
 
 AUTH系の設計変更は、実装/運用反映前に **CDC（Change Decision Contract）** を必ず確定する。
