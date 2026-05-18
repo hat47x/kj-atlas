@@ -2,6 +2,14 @@
 
 この README は、利用者向け文書を保守する人のための管理入口です。一般公開や Gist で最初に見せる入口には使いません。
 
+## 入口の役割分担（固定）
+
+- 利用者入口: [public_index.md](public_index.md)
+- 管理者入口: この `04_Documentation/README.md`
+- 開発者入口: ルート [README.md](../README.md)
+
+上記3系統は混在させず、公開本文に管理情報を混入させません。
+
 公開向けの入口は [public_index.md](public_index.md) です。公開用の Gist は、利用者が kj-atlas を使うための説明だけで構成し、文書管理、作業ログ、issue、ADR、Gist 更新手順などのプロジェクト管理情報を含めません。
 
 ## 公開向けインデックス
