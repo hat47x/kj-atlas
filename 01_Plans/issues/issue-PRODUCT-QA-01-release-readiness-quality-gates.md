@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-QA-01 製品化リリース準備の品質ゲート定義
 
 - Type: Process
-- Status: Open準備完了 (Ready for Open)
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0

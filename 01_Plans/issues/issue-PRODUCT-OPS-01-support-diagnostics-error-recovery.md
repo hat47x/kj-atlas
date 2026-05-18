@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-OPS-01 サポート・診断・復帰導線の製品化
 
 - Type: Feature request
-- Status: Open準備完了 (Ready for Open)
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1

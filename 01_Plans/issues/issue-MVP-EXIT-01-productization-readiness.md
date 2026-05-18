@@ -1,7 +1,7 @@
 # Issue Draft: MVP-EXIT-01 MVP脱却に向けた製品化準備
 
 - Type: Feature request
-- Status: Open準備完了 (Ready for Open)
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0 (Program)
