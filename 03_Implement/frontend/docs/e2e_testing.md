@@ -125,6 +125,32 @@ python -m pytest
 
 ![390px viewport のヘッダー確認](../../../04_Documentation/assets/screenshots/mobile-toolbar-smoke-390.png)
 
+
+
+## QA Monkey / E2E 境界（Stream E テスト資産限定）
+
+本節は **テスト資産のみ** を変更対象にする境界定義です。`src/ui` / `src/canvas` など本番実装コードの機能変更は含めません。
+
+### レイヤ分離（契約テスト / スモーク / E2E）
+
+| レイヤ | 目的 | 変更対象 | 禁止事項 |
+| --- | --- | --- | --- |
+| 契約テスト (unit/integration) | API・ドメイン契約の不整合を早期検知 | `03_Implement/frontend/tests/**/*` fixture / test | UI機能追加・仕様変更 |
+| スモーク (manual/lightweight) | 起動・主要導線・安全境界の即時確認 | 手動手順・記録テンプレート | 合否を翻訳品質だけで確定 |
+| E2E (Playwright) | 実利用シナリオと境界回帰の自動再現 | Playwright spec / mock fixture / docs | 本番データ依存・不安定な外部依存 |
+
+### QA Monkey 群の優先境界
+
+1. SafeMode / share-export は fail-closed を維持する。
+2. `KJ_ATLAS_LLM_PROVIDER=none` でも回帰検証が継続可能である。
+3. `ja/en` のユーザージャーニー等価は E2E で機械判定し、翻訳品質は人間レビューに分離する。
+
+### 再現性・flaky対策（必須）
+
+- mock/fixture を優先し、外部依存を固定する。
+- 同一 commit で `npm run test` → `npm run e2e:mock` を同順で実行し、差分再現を確認する。
+- flaky が発生した場合の自己修復は最大3回（再実行、待機調整、fixture補正）まで。4回目相当は Stop として `Pending` に保留理由と再開条件を残す。
+
 ## 失敗時に残す情報
 
 - 実行したコマンド

@@ -67,6 +67,26 @@ Open化ゲートを次の3カテゴリで固定する。
 | GO/NO-GO-3 | G1→G2→G3 の entry/exit 証跡欄は埋められるか | Gate表の entry/exit 欄 | pass / blocked |
 | GO/NO-GO-4 | docs-only 範囲外要求が混入していないか | Scope / Non-Goals の一致 | pass / blocked |
 
+
+
+## Phase 3.5: テスト設計境界（Stream E）
+
+### 目的
+- QA Monkey群とE2E境界を**テスト資産のみ**で整備し、実装コード変更を前提にしない。
+
+### 分離方針（契約 / スモーク / E2E）
+- 契約テスト: fixtureベースで API/状態遷移の契約を固定し、回帰差分の一次検知を担う。
+- スモーク: 主要導線と fail-closed 境界を手動で短時間確認する。
+- E2E: 実利用シナリオの再現と境界回帰の自動化を担う。
+
+### 非目標
+- `src/ui` / `src/canvas` の機能変更による問題解決。
+- 本番データ接続や外部公開環境を前提にした検証。
+
+### flaky対策と停止条件
+- mock/fixture 優先。
+- 自己修復上限は3回。4回目相当は Stop、`Pending` に再開条件を追記。
+
 ## Phase 4: Execute（Draft本文の具体化）
 
 ### シナリオ定義（実行本体は別Issue）
