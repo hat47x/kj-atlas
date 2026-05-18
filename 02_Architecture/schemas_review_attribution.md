@@ -229,3 +229,9 @@ ReviewerRef 推奨フォーマット（例）:
 - 本書は review attribution 契約に限定し、`ContextQueryV1` / `ContextBundleV1` のキー集合を再定義しない。
 - CE1 固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）との衝突を導入しない。
 - mock-first 検証時も safeMode 境界（PII最小化・匿名参照）を緩和しない。
+
+## Stream G regression-hardening constraints (2026-05-18)
+
+- Level1 契約境界: `reviewerRef` / `ownerRef` は non-empty opaque string、PII最小化、禁止キー（`provider`, `external_uid`）の fail-closed 検証を必須とする。
+- Level2 統合境界: `users` / `user_identities` と attribution の参照整合、strict 403 契約、audit 記録の再現性を同時検証する。
+- 自己修復上限: 契約不一致の自動修復は3回までとし、超過時は `StoppedForClarification` を返す。

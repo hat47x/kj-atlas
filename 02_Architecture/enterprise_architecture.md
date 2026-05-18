@@ -560,3 +560,18 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 - 導線: 運用詳細は `04_Documentation/operations.md`、統制詳細は `04_Documentation/security.md`、進捗/判定は `01_Plans/project-progress-dashboard.md` と `01_Plans/issues/decision-pack-2026-03-human-judgement.md` を参照する。
 - 固定値（D1〜D4）: 本書の strict mode 例外運用節は `strict_mode_exception_approval_flow.md` 6.8 の値を参照し、ローカル再定義を行わない。
 
+
+## Stream G contract hardening addendum (2026-05-18)
+
+### AuthContext / Provisioning boundary (fixed)
+- 認証は外部IdP/IAPで完了し、アプリは `AuthContext` を受領する。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` の strict 運用では、未登録 identity を fail-closed で拒否し、`403 + code=identity_not_provisioned` を返す。
+- 事前プロビジョニングの正本は Admin API とし、CLI は API ラッパ（監査責務は API 側）に固定する。
+
+### Separation of duties (fixed)
+- Security Officer / System Owner / Platform Operator の責務分離を維持する。
+- strict 例外緩和は2者承認を必須とし、運用迅速化を理由に単独承認へ緩和しない。
+
+### Regression boundary (L1/L2)
+- L1: 契約テストで `AuthContext -> resolver -> policy` の拒否/許可とエラー語彙を固定検証する。
+- L2: 統合テストで Admin API, audit trail, reviewer attribution の一貫性を検証する。

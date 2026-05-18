@@ -346,3 +346,9 @@ review attribution は CE0 契約行列の `REVIEW` 軸を担うが、`CTX` / `S
 1. 契約IDの重複定義は 0 を維持する。
 2. 上記4契約のいずれかに抵触した場合、review attribution 機能は `held/stop` を優先する。
 3. CE1 以降の実装有無に関わらず、本節は read-only 契約として適用する。
+
+## Stream G hardening note (2026-05-18)
+
+- `reviewerRef` / `ownerRef` は内部 `users.id` 起点の opaque 参照を正本とし、`provider` / `external_uid` の attribution 直保存を禁止する。
+- strict provisioning で identity 未確定の場合、review attribution を生成せず `identity_not_provisioned` を返す失敗モードを維持する。
+- 本契約は監査可能性のために fail-closed を優先し、便宜上の fail-open 例外を導入しない。
