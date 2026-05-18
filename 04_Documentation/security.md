@@ -181,3 +181,15 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
 - 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
 - Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
+
+
+## AUTH-OPS-03 契約整合チェック（Stream E）
+
+AUTH運用のセキュリティレビューでは、次を最小セットとして確認します。
+
+- D1〜D4（承認順序/TTL、適用スコープ/継続時間、代理承認禁止、監査SLA）が `02_Architecture/strict_mode_exception_approval_flow.md` と一致。
+- 承認責務（Security Officer / System Owner）と実行責務（Platform Operator）が分離されている。
+- `StoppedForClarification` 中に `ActiveException` へ遷移していない。
+- PII最小化（subject生値・roles/groups生値・自由記述PII非保存）を維持している。
+
+不一致が1件でもある場合、例外緩和を新規に有効化してはならない。

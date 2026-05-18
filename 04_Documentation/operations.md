@@ -177,3 +177,24 @@ API status:
 - 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
 - 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
 - Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
+
+
+## AUTH契約硬化ランブック（Stream E）
+
+AUTH系（schema/api/ops/e2e）の契約更新を行うときは、次の固定手順で実施します。
+
+1. `02_Architecture/strict_mode_exception_approval_flow.md` と `02_Architecture/enterprise_architecture.md` の契約差分を確定する。
+2. 本書と `04_Documentation/security.md` に同日反映する。
+3. `01_Plans/issues/issue-AUTH-*` の進捗・停止条件・検証ログを更新する。
+
+### 実行前チェック（Fail Fast）
+
+- D1〜D4 と役割語彙（Security Officer / System Owner / Platform Operator）が一致している。
+- `StoppedForClarification` 条件が解除される根拠が3層で一致している。
+- 例外運用の有効化条件（2者承認 + TTL + rollbackBy）が欠損していない。
+
+### 実行後チェック（Verify）
+
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の現在値・変更理由・復旧期限が監査ログに記録されている。
+- strict復帰（`false`）の手順と証跡（実行時刻、実行者、判定根拠）が残っている。
+- E2E回帰（Level 1 常時、Level 2 条件付き）の実施計画が issue 側に反映されている。

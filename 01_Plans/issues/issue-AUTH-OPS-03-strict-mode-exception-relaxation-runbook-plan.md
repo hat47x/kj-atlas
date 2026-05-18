@@ -200,3 +200,12 @@
 - C-6: 移行順序は `expand → dual-read/write → backfill → contract` 固定。
 - C-7: 運用固定値 D1〜D4 は `strict_mode_exception_approval_flow` 正本に従い、実装・E2E側で再定義しない。
 - 判定: **Go**（Backend実装担当が即着手可能）。
+
+
+## 18) Stream E execution record (2026-05-18)
+
+- Phase 1 Read: AUTH-ARCH-01 / AUTH-SCHEMA-01 / AUTH-API-02 / AUTH-E2E-01 と AUTH-OPS-03 正本を再読し、D1〜D4・役割語彙・停止条件を再確認。
+- Phase 2 Plan: 同期順序 `02_Architecture -> 04_Documentation -> 01_Plans` を固定し、AUTH以外への越境編集を禁止。
+- Phase 3 Execute: `strict_mode_exception_approval_flow.md` / `enterprise_architecture.md` 参照に合わせ、operations/security に運用チェックを追記。
+- Phase 4 Verify: docs差分確認で `StoppedForClarification` 条件と D1〜D4 が全層一致することを確認。
+- Phase 5 Proceed: 次回再開条件は「D1〜D4改定要求がないこと、かつ 3層同期ログが同日で揃うこと」。
