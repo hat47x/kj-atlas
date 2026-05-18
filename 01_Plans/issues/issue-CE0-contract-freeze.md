@@ -11,6 +11,52 @@
 - Dependencies: `01_Plans/issues/issue-CE0-contract-freeze.md`（契約SSOT）, `01_Plans/issues/issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md` / `issue-CE2-low-risk-ai-assist.md` / `issue-CE4-api-cli-audit-integration.md` が参照
 - Verification: `docs-check`
 
+## Stream A Phase 1 Metadata Snapshot（2026-05-18）
+
+| Issue | Status | Priority | Depends | Blockers | Delta vs prior run |
+|---|---|---|---|---|---|
+| HIL-RS-01 parent plan | In Progress | P1 | HIL-RS-01-A1, HIL-RS-02-A1 | `pendingDecisionQueueCount>0` | none |
+| HIL-RS-01-A1 minimum I/F | In Progress | P1 | none | human approval pending | none |
+| HIL-RS-02-A1 governance hardening | In Progress | P1 | HIL-RS-01-A1 freeze values | GOV exception held | none |
+| CE0 contract freeze | Open | P1 | HIL-RS-01-A1 freeze vocabulary (read-only) | approval record pending | none |
+| CE0 core-graph repositioning | Open | P1 | CE0 contract freeze | held items unresolved | none |
+
+## Stream A Phase 2 ADR Clarification（Context / Decision / Consequences）
+
+### Context
+- Stream A の最短クリティカルパスは **A1契約凍結 → RS-02-A1統治硬化 → CE0 read-only handoff固定**。
+- 承認待ち項目（Pending/held）が残る状態での下流着手は、`Pending bypass` と同義になり統治契約違反になる。
+
+### Decision
+- 依存グラフを以下に固定する（再定義禁止）。
+  - `HIL-RS-01-A1` → `HIL-RS-02-A1` → `HIL-RS-01(parent Proceed Go)`
+  - `HIL-RS-01-A1` → `CE0-contract-freeze` → `CE0-core-graph-repositioning`
+- 要承認事項を明示し、承認前は `Proceed=Hold` を維持する。
+  - `Approval Record`
+  - `HIL-RS-02-GOV-EXCEPTION-01`
+
+### Consequences
+- Open化条件（Draft→Open）は「固定キーdrift=0 かつ 要承認事項がissue本文に在庫化済み」である。
+- Go条件（Open→In Progress/Done）は `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで禁止。
+- 非互換変更要求は将来版隔離（`future-version backlog`）とし、現行凍結契約には混入させない。
+
+## Stream A Phase 3 Contract Freeze Draft（Minimum I/F + Mock boundary）
+- Minimum Input: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `approvalRecord`.
+- Minimum Output: `decision(Proceed|Hold|Stop)`, `executeAllowed`, `reasonCodes`, `requiredHumanActions`, `auditEventRef`.
+- Error surface: `NOGO_CONTRACT_DRIFT`, `NOGO_SAFE_MODE_REGRESSION`, `NOGO_OVERRIDE_POLICY_REGRESSION`, `HOLD_PENDING_QUEUE`.
+- Audit event required fields: `timestamp`, `actor`, `phase`, `inputSnapshot`, `gateResult`, `reason`, `nextAction`.
+- Mock boundary（UI先行可能範囲）: `decision/executeAllowed/reasonCodes` まで。`Pending -> Approved/Rejected` の実遷移確定は不可。
+- Non-compatible change policy: 新規遷移・新規固定キー・承認主体変更は `future-version` に隔離。
+
+## Stream A Phase 4-6 Execute / Verify / Proceed Rule（2026-05-18 fixed）
+- Execute: AC/DoD と相互リンク整備のみ（docs-only, contract-only）。
+- Verify command set: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `git diff --check`.
+- Self-correction cap: 最大3回。4回目相当は `Stop`。
+- Proceed output partition:
+  - **完了**: fixedKeyDrift=0 かつ pendingDecisionQueueCount=0 を満たしたissue
+  - **要承認**: Pending/held が残るissue
+  - **保留**: 依存解決待ちでOpen化条件未達のissue
+
 ## Stream B execution ledger（CE0専任 / contract-only）
 
 ## Stream C execution record（2026-04-28 / CE0 contract freeze confirmation）
