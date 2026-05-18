@@ -178,6 +178,15 @@ erDiagram
 | `reviewAttribution` | optional。A1契約型として掲載し、`reviewedAt` の状態別制約と生ID禁止を検証 | backend契約型として保存。認証主体一致を検証 | 契約のみ/限定保存 | review attribution正本との同期を継続し、監査閲覧・検索は製品化issueで扱う。 |
 | `deterministicTieBreak` | optional。固定順序をstrict/import検証で保持 | backend契約型として保存 | 契約のみ/限定保存 | polygon handoff契約との関係を維持する。 |
 
+### 4.2 DocumentV2サポートレベルとOpen化ゲート
+
+- `DocumentV2` の運用境界は `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` の versioning ルールと同時更新を必須とする。
+- Open化（実装チーム着手可）条件:
+  1) `schemas.md` の versioning / support level定義が更新済みである。
+  2) 本書のCRUD表とフィールド支援表が同じ語彙（L1〜L0）で同期されている。
+  3) `DATA-CONTRACT-01` / `DATA-MODEL-OPS-01` / `DATA-MAINT-01` のACに、同じ境界分類と検証レベルが反映されている。
+- 非互換変更は feature flag ではなく **version gate優先** とし、gate未導入時は契約変更を行わない（fail-closed）。
+
 ---
 
 ## 5. ステークホルダー別の運用境界

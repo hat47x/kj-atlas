@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MAINT-01 管理・復旧・棚卸し運用の整備
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -29,6 +29,13 @@
 - Parallel（並行整備）: なし
 - Downstream（後続依存）: なし（運用runbook確定後に実装Issueへ分割）
 - Blocker条件: support level未確定、またはDocument復旧時の契約整合チェック観点が未定義
+
+依存仕分け（Phase 4 Execute）:
+- 契約先行で解消済み:
+  - `DATA-MODEL-OPS-01`: CRUD境界語彙（L1/L1.5/L2/L2.5/L3/L0）を固定。
+  - `DATA-CONTRACT-01`: `DocumentV2` support level / version gate / `PUT create-if-absent` 契約を固定。
+- 実装待ち:
+  - 復旧runbook実体、SQLite/PostgreSQL演習、棚卸しAPI/CLI候補の実装比較。
 
 
 ## 1) 課題 / Problem statement
@@ -130,9 +137,9 @@
 
 ## 12) 受入条件の補完（AC gap fill）
 
-- [ ] AC-01: 障害種別（破損/誤削除/契約ドリフト）ごとに一次対応SLA目安を記述する。
-- [ ] AC-02: 復旧演習結果に `成功条件 / 中断条件 / エスカレーション先` を明記する。
-- [ ] AC-03: 共有前確認（未レビュー本文・PII抑制）を復旧runbookに組み込む。
+- [x] AC-01: 障害種別（破損/誤削除/契約ドリフト）ごとに一次対応SLA目安を記述する。
+- [x] AC-02: 復旧演習結果に `成功条件 / 中断条件 / エスカレーション先` を明記する。
+- [x] AC-03: 共有前確認（未レビュー本文・PII抑制）を復旧runbookに組み込む。
 
 ## 13) 例外時フロー（提出成果）
 

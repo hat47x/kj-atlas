@@ -1,7 +1,7 @@
 # Issue Draft: DATA-CONTRACT-01 DocumentV2契約ドリフトとサポートレベル同期
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
 ## Dependency graph（Stream I）
@@ -68,10 +68,10 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] DocumentV1/V2のフィールド差分表がfrontend/backend/API/設計文書を横断して作成されている。
-- [ ] `PUT /docs/{doc_id}` がMVPのCreate契約であること、`POST /docs` が未実装時は将来候補であることが、文書・実装・テストで一致している。
+- [x] DocumentV1/V2のフィールド差分表がfrontend/backend/API/設計文書を横断して作成されている。
+- [x] `PUT /docs/{doc_id}` がMVPのCreate契約であること、`POST /docs` が未実装時は将来候補であることが、文書・実装・テストで一致している。
 - [x] `evidenceLinks`、PatchApplyStats、ReviewAttribution、DeterministicTieBreakなどのサポートレベルが明示されている。
-- [ ] SafeMode/share/exportに影響するフィールドは、漏れなくテスト観点に含まれている。
+- [x] SafeMode/share/exportに影響するフィールドは、漏れなくテスト観点に含まれている。
 - [x] 契約のみのフィールドは、MVPで標準運用保守可能だと読めない表現になっている。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -138,9 +138,9 @@
 
 ## 12) 受入条件の補完（AC gap fill）
 
-- [ ] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
-- [ ] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
-- [ ] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。
+- [x] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
+- [x] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
+- [x] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。
 
 ## Stream I Phase status
 
