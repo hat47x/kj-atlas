@@ -32,6 +32,7 @@ kj-atlas の目的は、
 この README は **人間向けの入口**です。詳細な運用規約やAI向けの読み順は、役割に応じて次を参照してください。
 
 - **AIエージェント向けの入口**: [`AGENTS.md`](AGENTS.md)
+- **利用者向け公開入口**: [`04_Documentation/public_index.md`](04_Documentation/public_index.md)
 - **コントリビューション手順**: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - **実装ガイド（実行方法）**: [`03_Implement/README.md`](03_Implement/README.md)
 
