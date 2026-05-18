@@ -1425,3 +1425,24 @@
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+
+## Phase 6: Proceed（実装前提チェックリスト）
+
+### P0: Contract freeze gate（必須）
+- [ ] `mode=proposal-only` が API/CLI 契約の必須入力として固定されている。
+- [ ] 同値判定は `equivalenceKey AND bundleHash` のAND条件のみを成功として扱う。
+- [ ] 監査4イベント `query -> bundle -> proposal -> apply` の欠損/逆順を fail-closed で拒否する。
+
+### P1: Responsibility boundary gate（必須）
+- [ ] API責務: 検証要求を受理し、分類語彙（`classification`）を返す。
+- [ ] CLI責務: APIと同一語彙で入力を構成し、`classification != ok` を必ず非0終了に変換する。
+- [ ] 監査責務: 共通必須キー検証、順序検証、同一 `equivalenceKey` 連結の3点を実施する。
+
+### P2: Mock-first gate（依存切断）
+- [ ] `sourceBundleHash=mock:<64hex>` を許容し、real入力と同一の判定規律を適用する。
+- [ ] CE1未整備時の `equivalenceKey` モック発番を許容するが、API/CLI/Audit で同値を強制する。
+
+### P3: Verify/Stop gate（運用）
+- [ ] Verifyの自己修復は最大3回。4回目が必要な場合は `StoppedForClarification` で停止する。
+- [ ] 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を契約確定へ昇格しない。

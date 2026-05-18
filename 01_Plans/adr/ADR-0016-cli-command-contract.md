@@ -108,3 +108,10 @@ CLIコマンド仕様を早期に固定しすぎると、MVP後のAPI確定前�
 - Related: `01_Plans/issues/issue-CE4-api-cli-audit-integration.md`
 - Related: `02_Architecture/api.md`
 - Related: `02_Architecture/schemas.md`
+
+
+## Stream C 注記（CE4接続契約の固定範囲）
+
+- 本ADRで固定するのは API/CLI 間の語彙と判定契約のみ（`decision/classification/equivalenceSatisfied`）。
+- CLI終了コードの数値割当、HTTPステータスの詳細、監査配送方式は未固定（実装フェーズで確定）。
+- mock-first（`sourceBundleHash=mock:<64hex>`）を real と同一 fail-closed 規律で扱う。
