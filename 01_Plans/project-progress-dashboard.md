@@ -828,3 +828,10 @@ Theme-ID: DQ-OPS-SOURCE-01
 - 導線監査: `strict_mode_exception_approval_flow.md` / `enterprise_architecture.md` / `operations.md` / `security.md` / `decision-pack-2026-03-human-judgement.md` の相互参照を確認。
 - 固定値監査: D1〜D4（一致）を確認。
 
+
+## Stream L triage sync（2026-05-18）
+
+- Phase 1 Read同期: `python 01_Plans/triage_actionable_plans.py` の実測値を採用し、`active_issues=44 / ready=9 / blocked=35 / actionable_adrs=1` を確認。
+- Phase 2-3 契約更新: ダッシュボード更新は triage実測値のみを根拠とし、推測更新を禁止。`invalid Status metadata` が1件でもある場合は更新停止。
+- Phase 4 Verify: triage stopper `invalid Status metadata=4件（Open準備完了 (Ready for Open)）` を検知し、状態遷移の確定更新は停止。
+- Phase 5 Proceed: 次アクションは「(1) invalid status正規化 → (2) triage errors=0確認 → (3) shared 3ファイル同期」の固定順で運用。

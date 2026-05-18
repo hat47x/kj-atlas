@@ -116,3 +116,35 @@
 - Scope限定: shared統合リソース3ファイル + DOC-OPS issueのみに編集範囲を限定。
 - 直列Phase実行: Read同期 → DOC-OPS境界（B/C/D・SoD）チェック → Plan→Execute→Verify→Proceed を1サイクル実行。
 - Verify結果: `validate_active_issue_memos.py` と unittest 成功、`rg` 監査で `Self-Correction>3` / 競合 / 整合崩壊の該当なし。
+
+## Stream L execution log（2026-05-18）
+
+### Phase 1: Read同期（事実分類）
+- `python 01_Plans/triage_actionable_plans.py` を実行し、Active母集団を **44件（Ready=9 / Blocked=35）** として再分類した。
+- `Blocked` の内訳は Draft gate 起因が中心で、推測による状態更新は実施しない方針を維持した。
+- `invalid Status metadata` は4件（`Open準備完了 (Ready for Open)`）を検知し、運用停止条件（metadata不正多発）に該当するため、状態遷移更新は行わず修正フロー定義へ回した。
+
+### Phase 2: ADR要素明文化（進捗運用観点）
+- Context: Active件数が旧公開固定値（件数47系）と乖離しており、triage基準での再計測値を運用基準に採用する必要がある。
+- Decision: ダッシュボード契約は **triage実測値を唯一の更新根拠** とし、推測更新を禁止する。
+- Consequences: Dashboard/decision-pack/README の同期時に、実測値と不一致なら更新停止＋修正フローへ遷移する。
+
+### KPI定義（DOC-OPS-03運用）
+- 処理速度（Throughput）: `週次 Done遷移件数 / 週次 Active母集団件数`。
+- ブロッカー解消率（Blocker Resolution Rate）: `当週 Blocked→Ready 遷移件数 / 週初 Blocked件数`。
+- 再オープン率（Reopen Rate）: `Done→Open|In Progress へ戻った件数 / 当週 Done遷移件数`。
+
+### Phase 3: ダッシュボード契約固定
+- 優先度・依存・状態遷移は `triage_actionable_plans.py` 出力（classification/dependency_stage/priority）を正本とする。
+- invalid status 修正フローを固定:
+  1. `validate_active_issue_memos.py` と `triage_actionable_plans.py` の両方で不正値を検知。
+  2. 該当issueを `Draft/Open/In Progress/Done/Blocked` の許容値へ正規化。
+  3. 再実行で `Triage errors (stopper)=0` を確認するまで統合更新を停止。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: 本Issueに進捗運用契約（KPI/修正フロー）を追記。
+- Verify: triage・validator・unit test を実行し、現時点は triage error 4件を継続検知（既知課題として記録）。
+- Proceed（次アクション）:
+  1. 週次: triage実行→KPI集計→decision-pack更新（推測更新禁止）。
+  2. 日次: invalid metadata件数と Blocked→Ready 遷移の差分監査。
+  3. フェイルセーフ: invalid metadata多発が継続し3回修復を超える場合、意思決定者へエスカレーション。

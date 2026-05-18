@@ -874,3 +874,13 @@
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開条件1行|再開判定" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
 - Phase 5 Proceed（公開1行固定）: **再開条件1行 = 公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開（2026-05-10 rerun-75確認済み）。**
 
+
+## Stream L decision sync（2026-05-18）
+
+- Read同期: triage実行結果 `active_issues=44 / ready=9 / blocked=35` を採用し、旧固定値（件数47系）は履歴値として扱う。
+- Decision: 進捗ダッシュボード/decision-pack更新は triage実測値を正本とし、推測での優先度変更・状態更新を禁止。
+- Consequences: `invalid Status metadata` 4件（`Open準備完了 (Ready for Open)`）解消前は、状態遷移更新を停止し、修正フロー（status正規化→再triage）を優先。
+- Next action（週次/日次）:
+  1. 週次KPI更新（処理速度 / ブロッカー解消率 / 再オープン率）
+  2. 日次監査（invalid metadata件数、Blocked→Ready遷移件数）
+  3. 3回修復超過時は意思決定者へエスカレーション
