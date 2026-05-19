@@ -369,6 +369,7 @@ export function SharePanel({
     <div style={{ position: "relative" }}>
       <button
         ref={triggerButtonRef}
+        data-focus-return-id="share-panel-trigger"
         type="button"
         onClick={onToggleOpen}
         style={{
@@ -390,6 +391,7 @@ export function SharePanel({
           <section
             ref={panelRef}
             className="kj-atlas-share-panel"
+            data-panel="share-replay"
             tabIndex={-1}
             role="dialog"
             aria-label={t("share.panel.trigger")}
