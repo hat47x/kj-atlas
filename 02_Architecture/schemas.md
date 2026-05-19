@@ -967,3 +967,14 @@ hil_rs_a1_manifest_v1:
 - roundtrip contract test は `A2-minimal-v1` で実施し、同一 canonical query 3回の `queryCanonicalHash` / `bundleHash` 一致を合格条件とする。
 - CE2/CE4 handoff は read-only で `sourceBundleHash === bundleHash` を比較可能であることのみを要件とし、実装依存（DB/LLM/worker）を含めない。
 - Verify失敗時 self-correction は最大3回。超過時は `held` 停止を必須とする。
+
+
+## 11. Stream D execution log (2026-05-19)
+
+Phase直列実行（Read必須）で Data Contract & Model Ops を確認した。
+
+1. Contract drift抽出: `DATA-CONTRACT-01` の観点（frontend/backend/api/schema）で `DocumentV2` 契約差分を再確認し、`version gate` 優先の fail-closed を維持。
+2. Support level定義: `L1/L1.5/L2/L2.5/L3/L0` の語彙を本書の正本として再固定。新規フィールドは未分類なら `L2.5` 扱い。
+3. CRUD境界更新（参照）: 個別CRUDの可否は `data_model_operations_overview.md` の表を正本とし、本書は型契約に限定。
+4. Admin maintenance/recovery境界更新（参照）: 管理・復旧の実装可否は `DATA-MAINT-01` で管理し、契約変更を先行条件に据える。
+5. Verify: `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` 間で support level 語彙と責務分離の矛盾がないことを確認。

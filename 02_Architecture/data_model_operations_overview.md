@@ -233,3 +233,12 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 3. **運用責務衝突**: Platform operator / Security officer / Support / Developer の責務分離が矛盾。
 
 Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされること。
+
+
+## 9. Stream D phase verification log (2026-05-19)
+
+- Phase 1 Contract drift抽出: `DATA-CONTRACT-01` のドリフト観点（schema/api/frontend/backend）を再照合し、`DocumentV2` は version gate 先行で維持。
+- Phase 2 Support level定義: CRUD表・フィールド支援表・issue ACで `L1/L1.5/L2/L2.5/L3/L0` を同一語彙に統一。
+- Phase 3 CRUD境界更新: 「型がある = 運用CRUDあり」誤読を防ぐ注記を維持し、個別CRUD非対応行を明示。
+- Phase 4 Admin maintenance/recovery境界更新: Platform operator / Security officer / Support / Developer の責務分離と `DATA-MAINT-01` 参照を固定。
+- Phase 5 Verify（相互矛盾ゼロ）: `schemas.md`・`schemas_review_attribution.md`・本書で support level と version gate の矛盾がないことを確認。
