@@ -6653,42 +6653,47 @@ ${parsedDocument.error}`);
           {t("app.toolbar.back")}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={handleImportClick}
-        disabled={isLoading}
-        aria-label={t("app.toolbar.import_doc_json_legacy")}
-        title={t("app.toolbar.import_doc_json_legacy")}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.import_doc_json_legacy_short")}
-      </button>
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={isLoading || !document}
-        aria-label={t("app.toolbar.export_doc_json_legacy")}
-        title={t("app.toolbar.export_doc_json_legacy")}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.export_doc_json_legacy_short")}
-      </button>
+      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc" }}>
+        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>Legacy JSON</summary>
+        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={isLoading}
+            aria-label={t("app.toolbar.import_doc_json_legacy")}
+            title={t("app.toolbar.import_doc_json_legacy")}
+            style={{
+              border: "1px solid #cbd5e1",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontWeight: 600,
+              cursor: isLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {t("app.toolbar.import_doc_json_legacy_short")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isLoading || !document}
+            aria-label={t("app.toolbar.export_doc_json_legacy")}
+            title={t("app.toolbar.export_doc_json_legacy")}
+            style={{
+              border: "1px solid #cbd5e1",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontWeight: 600,
+              cursor: isLoading || !document ? "not-allowed" : "pointer",
+            }}
+          >
+            {t("app.toolbar.export_doc_json_legacy_short")}
+          </button>
+        </div>
+      </details>
       <button
         type="button"
         onClick={handleCreateIsland}
@@ -7664,6 +7669,7 @@ ${parsedDocument.error}`);
   }, [handleHierarchyLevelChange]);
 
   const safeModeIndicator = getSafeModeIndicator(safeMode);
+  const viewControlsTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const headerViewControls = (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
@@ -7716,6 +7722,8 @@ ${parsedDocument.error}`);
         })}
       </div>
       <button
+        ref={viewControlsTriggerRef}
+        data-focus-return-id="view-controls-trigger"
         type="button"
         onClick={() => {
           setIsSharePanelOpen(false);
@@ -7736,6 +7744,19 @@ ${parsedDocument.error}`);
       </button>
       {isViewControlsOpen ? (
         <div
+          data-panel="view"
+          role="dialog"
+          aria-label={t("view_controls.trigger")}
+          tabIndex={-1}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setIsViewControlsOpen(false);
+              window.requestAnimationFrame(() => {
+                viewControlsTriggerRef.current?.focus();
+              });
+            }
+          }}
           style={{
             position: "fixed",
             top: "var(--kj-atlas-header-panel-top, 72px)",
