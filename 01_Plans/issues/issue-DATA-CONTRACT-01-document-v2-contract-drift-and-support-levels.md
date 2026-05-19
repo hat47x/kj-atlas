@@ -165,3 +165,19 @@
 - [x] `data_model_operations_overview.md` の CRUD/運用責務表と語彙一致（L1/L1.5/L2/L2.5/L3/L0）を確認した。
 - [x] 復旧runbook側（`DATA-MAINT-01`）で必須の契約整合チェック（`Document.version`、埋め込み往復保持、`merge_decision_logs`連携）を明記した。
 - [x] 非目標（個別CRUD実装、管理UI実装）を再確認し、実装Issueへ越境しないことを固定した。
+
+## 15) Stream D execution delta (2026-05-19)
+
+### Context
+- Stream D の担当範囲では、`DocumentV2` の「型定義が存在する」ことと「MVP運用で個別CRUDを保証する」ことの混同が再発しやすい。
+- 特に `critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak` は、A1契約として往復保持が必要だが、運用上は個別編集対象外という境界を維持する必要がある。
+
+### Decision
+- `DocumentV2` の support level を `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` と `data_model_operations_overview.md` で同一語彙を必須化する。
+- `PUT /docs/{doc_id}` create-if-absent をMVPの唯一の標準Create契約として維持し、`POST /docs` は将来候補（L0）扱いを継続する。
+- 後方互換の判定は feature flag ではなく version gate を優先し、非互換変更は version 更新なしで導入しない。
+
+### Consequences
+- 運用責務境界（Platform operator / Security officer / Support / Developer）がドキュメント間で衝突せず、`DATA-MAINT-01` の復旧設計に引き渡し可能。
+- SafeMode/share-export 領域の契約フィールドが、実装拡張前でも検証観点として残り、契約ドリフトを先に検知できる。
+- Stream D の Proceed 判定を「後方互換・support level・責務分離」の3条件で機械的に再確認できる。

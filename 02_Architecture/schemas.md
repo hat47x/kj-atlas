@@ -978,3 +978,16 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 3. CRUD境界更新（参照）: 個別CRUDの可否は `data_model_operations_overview.md` の表を正本とし、本書は型契約に限定。
 4. Admin maintenance/recovery境界更新（参照）: 管理・復旧の実装可否は `DATA-MAINT-01` で管理し、契約変更を先行条件に据える。
 5. Verify: `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` 間で support level 語彙と責務分離の矛盾がないことを確認。
+
+## 12. Stream D reaffirmation (2026-05-19)
+
+### Context
+- `DocumentV2` には実装済み項目と契約先行項目が混在しており、型定義のみで運用CRUD保証と誤読されるリスクがある。
+
+### Decision
+- `L1/L1.5/L2/L2.5/L3/L0` を support level の唯一語彙として維持し、新規フィールドは未分類のまま導入しない。
+- `PUT /docs/{doc_id}` create-if-absent をMVPの標準Create契約として維持し、`POST /docs` はversion gate導入まで契約候補（L0）に据え置く。
+
+### Consequences
+- 後方互換判定を version gate 基準で統一でき、feature flag による暫定互換運用を抑止できる。
+- `data_model_operations_overview.md` / `schemas_review_attribution.md` / `issue-DATA-CONTRACT-01` と同一語彙で運用責務境界を同期できる。
