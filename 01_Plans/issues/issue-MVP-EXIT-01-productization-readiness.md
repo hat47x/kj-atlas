@@ -141,3 +141,31 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 11) Stream E update (2026-05-19): Program gate serialization
+
+### Phase 1: Read
+- 親Issueとしての役割を「実装タスク管理」ではなく「**Go/No-Go統治**」へ限定する方針を再確認した。
+
+### Phase 2: ゲート定義
+- 本Issueの Release判定入力は `PRODUCT-QA-01` の G0..G7 / Value gates を正本として参照する。
+- Env整合の必須入力は `ENV-CONFIG-DRIFT-01` の E系ゲート判定結果とする。
+
+### Phase 3: 検証設計
+- Program判定に必要な最小証跡:
+  1. Productization Gate Record（最新版）
+  2. Env contract alignment result
+  3. No-Go/Conditional Go の未解決フォローアップ一覧（owner + due）
+
+### Phase 4: 監査テンプレ
+- 判定ログは以下を必須化:
+  - 判定日（YYYY-MM-DD）, 判定者, 対象 candidate
+  - Gate summary（Go/Conditional Go/No-Go）
+  - Escalation decision（継続/停止/再判定日）
+
+### Phase 5: 反映
+- 本Issueの `DecisionStatus` は **Pending 維持**（親Issueとして最終判定待ち）。
+- 子Issueが No-Go の場合、本Issueは自動的に No-Go とし、条件付き解放は禁止。
+
+### Fail-safe
+- 判定基準が曖昧なままの場合は進行停止し、ADRまたは運用責任者承認を要求する。

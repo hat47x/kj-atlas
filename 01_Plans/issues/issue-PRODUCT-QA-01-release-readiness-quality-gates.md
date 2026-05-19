@@ -185,3 +185,36 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 16) Stream E update (2026-05-19): Release/Quality/Env gate normalization
+
+### Phase 1: Read
+- `PRODUCT-QA-01` / `MVP-EXIT-01` / `ENV-CONFIG-DRIFT-01` の受入条件、`GoNoGoGate`、`VerificationLevel` を比較し、**integration レベルの単一ゲート定義**に統一した。
+- 判定の曖昧語（「必要に応じて」「十分」）は、実行証跡（command log / gate record / follow-up issue）必須化で解消した。
+
+### Phase 2: ゲート定義（固定）
+- Release 判定は `G0..G7 + Value gates` を必須判定面として維持。
+- Env 判定は `E1 Public key contract` / `E2 Runtime validation` / `E3 Compose consistency` を追加トレースし、No-Go時に `ENV-CONFIG-DRIFT-01` へ戻す。
+- Conditional Go は「重大欠陥なし + 是正期限つきフォローアップ issue 発行済み」のときのみ許可。
+
+### Phase 3: 検証設計
+- 最低実施セット: issue metadata validator / frontend typecheck / backend settings tests / compose config / docs diff check。
+- 失敗時判定基準:
+  - **Blocker**: SafeMode境界破壊、公開契約キー不一致、主要導線E2E不能。
+  - **Major**: UI主要操作の到達不能、公開文書と実装不一致、i18n重大欠落。
+  - **Minor**: リリース阻害でない文言・体裁差分（follow-upで是正）。
+
+### Phase 4: 監査テンプレ標準
+- Gate record の必須項目を以下で固定:
+  - Candidate / Date / Reviewer / Scope
+  - Gate result (Go/No-Go/N/A)
+  - Evidence links (command logs, screenshots, test report)
+  - Escalation route (issue id, due date, owner)
+  - Final decision (Go / Conditional Go / No-Go)
+
+### Phase 5: 反映結果
+- Stream E として本 issue を **release-quality ゲート正本**として再確認。
+- Env契約逸脱の戻し先を `issue-ENV-CONFIG-DRIFT-01`、製品化親判断を `issue-MVP-EXIT-01` に固定。
+
+### Fail-safe
+- 判定曖昧さは本更新で解消済み。未解消論点は governance queue（ADR起票条件）へ送る。

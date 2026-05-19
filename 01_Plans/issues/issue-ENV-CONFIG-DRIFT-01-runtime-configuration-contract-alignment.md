@@ -307,3 +307,39 @@ Non-goals:
 1. Runtime profiles の選択条件を文書化（`local-dev` / `evaluation` / `enterprise-production`）。
 2. Drift check gates（命名・既定値・境界・プロファイル更新同時性）を SSOT 側へ追加。
 3. 変更は docs 範囲に限定し、SafeMode/share/export の既定や運用境界は不変更。
+
+## 16) Stream E update (2026-05-19): Env gate hardening
+
+### Phase 1: Read
+- `runtime_parameter_registry.md` / `configuration.md` / compose 契約境界の既存定義を再確認し、公開契約と内部adapterを分離して評価した。
+
+### Phase 2: ゲート定義（E1-E3）
+- **E1 Public key contract**: 公開文書・runbookに非 `KJ_ATLAS_*` を公開設定として記載しない。
+- **E2 Runtime validation**: backend settings が無効値（adapter/fail-safe/endpoint）を検出し、許容時は ADR 根拠を要求。
+- **E3 Compose consistency**: `KJ_ATLAS_*` 入力と compose 展開結果が一致し、vendor env 名は private boundary に閉じる。
+
+### Phase 3: 検証設計
+- 必須テストセット:
+  - issue validator
+  - backend settings env tests
+  - frontend typecheck/tests
+  - `docker compose config`
+  - docs key-drift search
+- 失敗時判断:
+  - Blocker: 公開契約キー逸脱、設定値検証欠落、compose 展開破綻。
+  - Major: 文書整合欠落（ただし即時修正可能）。
+  - Minor: 注釈不足・説明順序。
+
+### Phase 4: 監査テンプレ
+- Env判定ログ必須項目:
+  - Checked keys set hash（キー集合の比較結果）
+  - Validation failure sample
+  - ADR reference（例外時のみ）
+  - Escalation issue + owner + due date
+
+### Phase 5: 反映
+- 本Issueを env drift の戻し先として維持。
+- 破壊的判断（vendor env 完全排除 / external_http fail-fast 既定化）は本Issueで確定せず、ADR起票条件を維持。
+
+### Fail-safe
+- 判定に必要な契約正本が不整合のときは進行停止し、先に SSOT 修復を要求する。
