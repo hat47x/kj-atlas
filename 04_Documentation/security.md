@@ -131,6 +131,22 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 - `Org` または `Restricted` の対象で `policyRef` がない場合、local fail-safe が働きます。`read_only` では読み取りだけを許可し、`deny` では拒否します。
 - `Public` と `Unlisted` は `policyRef` 欠損による強制 fail-safe の対象外です。公開範囲を広げる前に、visibility と policyRef を確認してください。
 
+
+## 障害診断時の共有境界（PRODUCT-OPS-01 関連）
+
+障害対応時のログ共有は、次の境界を満たす場合のみ許可します。
+
+- 共有可: 発生日時、URL（機微部分を除去）、エラー種別、HTTP status、SafeMode 状態、再現手順。
+- 共有禁止: API key、token、password、未マスク本文、個人情報、生の監査イベント。
+- 条件付き: endpoint や組織内識別子は、System Owner 承認後に最小化して共有。
+
+承認と実行の責務は分離します。
+
+- 承認（System Owner）: 共有範囲とマスク方針の決定。
+- 実行（Platform Operator / First Responder）: マスク済みログの作成と送付。
+
+役割衝突または承認責務不明がある場合、共有を停止して `04_Documentation/operations.md` の停止条件に従います。
+
 ## 保持してよい情報、避ける情報
 
 | 区分 | 例 | 方針 |

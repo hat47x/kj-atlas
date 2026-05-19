@@ -141,6 +141,47 @@ API status:
 確認したログ:
 ```
 
+
+## Support Diagnostics & Recovery（PRODUCT-OPS-01）
+
+### 障害分類（一次切り分け）
+
+| 分類 | 代表症状 | 一次切り分け（5分以内） | 初期復旧アクション |
+| --- | --- | --- | --- |
+| WEB-ENTRY | 画面が開かない、表示崩れ | `web` logs、ポート競合、ブラウザ console | `web` 再起動、ポート競合解消、再読み込み |
+| API-UNAVAILABLE | 502/503、`/api/healthz` 失敗 | `api` logs、`db` health、migration 失敗 | `api`/`db` 再起動、migration 復旧 |
+| SAVE-FAILURE | 保存失敗、再読み込みで内容不一致 | API status、`db` logs、Network 失敗応答 | 再保存、API復旧後に再試行、バックアップ確認 |
+| IMPORT-VALIDATION | 取り込み失敗、schema 不整合 | import エラー内容、schemaVersion、入力サイズ | 別ファイルで再試行、validation 結果を共有 |
+| SHARE-SAFEMODE | 共有前警告、export 制約 | SafeMode 状態、マスク警告、visibility 設定 | 共有を一時停止し、マスク対象確認後に再実行 |
+
+### 責務分離（役割衝突の停止条件）
+
+| 役割 | 責務 | 実施してはいけないこと |
+| --- | --- | --- |
+| First Responder（運用一次対応） | 症状分類、一次切り分け、再現手順の記録 | SafeMode 緩和を独断で有効化すること |
+| System Owner（運用責任者） | 復旧優先度判断、外部共有可否の承認 | API key/token を含むログ共有を許可すること |
+| Platform Operator（実行担当） | 再起動、設定復旧、ロールバック実行 | 承認なしの恒久設定変更 |
+
+次のいずれかに該当した場合は手順を停止し、責務を明示したうえでエスカレーションします。
+
+- 同一人物が「承認」と「実行」を同時に担う必要がある。
+- SafeMode 緩和の必要性はあるが、承認者が不在で判断できない。
+- 復旧のために secrets を含む生ログ共有が必要と主張される。
+
+### 復旧実行の再現テンプレート
+
+```text
+分類:
+発生日時:
+影響範囲:
+一次切り分け結果:
+実施コマンド:
+復旧結果:
+承認者:
+実行者:
+次回予防策:
+```
+
 ## SafeMode と外部サービスとの共有
 
 既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit HTTP 連携も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
