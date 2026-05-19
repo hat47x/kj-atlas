@@ -145,3 +145,10 @@
 - [x] DoD-01: 新規フィールド追加時に、`schemas.md` と `data_model_operations_overview.md` を同一コミットで更新する運用規則が明記されている。
 - [x] DoD-02: 「型がある=運用可能」誤読を防ぐ注意書きが維持されている。
 - 判定: **Proceed**（MVP運用境界の固定化は完了、実装依存は契約凍結で切断）。
+
+## 14) Stream D → 下流引き渡しチェックリスト
+
+- [x] 新規データ構造追加時に `schemas.md` と `data_model_operations_overview.md` を同一コミットで更新する規則を固定した。
+- [x] CRUD表の全行に support level と運用責務主体を併記し、運用者誤読の防止条件を満たした。
+- [x] 例外時フロー参照として `DATA-MAINT-01` への導線を維持した。
+- [x] `DATA-CONTRACT-01` で扱う契約ドリフト観点（frontend/backend/api/schema整合）との境界を重複なく明記した。

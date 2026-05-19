@@ -158,3 +158,10 @@
 - [x] Stop gate B（support level）: `L1/L1.5/L2/L2.5/L3/L0` の定義が契約文書と運用境界文書で一致している。
 - [x] Stop gate C（責務衝突）: Platform operator / Security officer / Support / Developer の責務分離が衝突なく記述されている。
 - 判定: **Proceed**（3つのStop gateは現行文書上で満たされる。実装依存は凍結契約で切断済み）。
+
+## 14) Stream D → 下流引き渡しチェックリスト
+
+- [x] `schemas.md` の `DocumentV2` support level と version gate 定義を参照先として固定した。
+- [x] `data_model_operations_overview.md` の CRUD/運用責務表と語彙一致（L1/L1.5/L2/L2.5/L3/L0）を確認した。
+- [x] 復旧runbook側（`DATA-MAINT-01`）で必須の契約整合チェック（`Document.version`、埋め込み往復保持、`merge_decision_logs`連携）を明記した。
+- [x] 非目標（個別CRUD実装、管理UI実装）を再確認し、実装Issueへ越境しないことを固定した。
