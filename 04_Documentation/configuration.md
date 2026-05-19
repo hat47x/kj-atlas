@@ -14,6 +14,14 @@
 - 既定では LLM 連携は無効です。
 - 外部サービスとの共有や large-scale LLM の利用は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
+
+## 公開設定と内部adapter境界
+
+| 区分 | 利用者が設定するか | 例 | 取り扱いルール |
+| --- | --- | --- | --- |
+| 公開設定（public contract） | はい | `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_*` | `KJ_ATLAS_*` のみを設定対象とします。 |
+| 内部adapter設定（private boundary） | いいえ | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | third-party コンテナ内部でのみ使用します。公開設定としては受け付けません。 |
+
 ## 設定を変える前に
 
 設定は「値を増やす」より先に「何を許可するか」を決めると安全です。

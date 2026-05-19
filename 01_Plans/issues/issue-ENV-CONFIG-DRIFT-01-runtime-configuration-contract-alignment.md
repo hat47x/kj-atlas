@@ -376,3 +376,28 @@ Non-goals:
 
 - 判定: **Stopper未発動**。
 - 理由: 今回は契約明文化のみであり、非互換を新規導入していない。非互換変更が必要になった場合は checklist の Compatibility gate に従って停止・承認待ちへ移行する。
+
+
+## 15) Stream B execution snapshot (2026-05-19)
+
+### Phase 1 Read同期
+
+- `ADR-0029` / `runtime_parameter_registry.md` / `docker-compose.yml` / `configuration.md` を再読し、公開契約面と内部adapter境界面を分離して確認。
+- 公開設定は `KJ_ATLAS_*` のみ、vendor 名は private adapter boundary のみという解釈で一致。
+
+### Phase 2 ADR確定
+
+- `ADR-0029` の Status を `Accepted` に更新。
+- Context / Decision / Consequences の適用境界を補強するため、boundary contract matrix を追加。
+
+### Phase 3 Contract反映
+
+- `runtime_parameter_registry.md` に private adapter boundary 表を追加。
+- `configuration.md` に公開設定と内部adapter境界の分離表を追加。
+- `docker-compose.yml` コメントを「private adapter boundary only」として明示。
+
+### Phase 4 Verify
+
+- 公開キー集合は `KJ_ATLAS_*` のみを維持（registry / configuration / compose inputs）。
+- 利用者向け文書で vendor 名を公開設定として要求しないことを確認。
+- Self-heal loop: 不一致 0 件のため未使用（上限3回以内）。
