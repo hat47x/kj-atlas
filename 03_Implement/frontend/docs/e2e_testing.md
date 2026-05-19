@@ -151,6 +151,21 @@ python -m pytest
 - 同一 commit で `npm run test` → `npm run e2e:mock` を同順で実行し、差分再現を確認する。
 - flaky が発生した場合の自己修復は最大3回（再実行、待機調整、fixture補正）まで。4回目相当は Stop として `Pending` に保留理由と再開条件を残す。
 
+
+## Draft QA issue の Open化条件（AC/DoD/証拠）
+
+`issue-QA-*` を Draft から Open に進める前に、次を満たします。
+
+- AC-O1: E2Eで担保する価値境界と、unit/integrationで担保する契約境界を1行ずつ記載する。
+- AC-O2: `Execution: Hold` の解除条件を1行で判定可能にする。
+- AC-O3: 証跡セット（コマンド、結果、失敗分類、follow-up issue）を残す。
+- AC-O4: 実行経路（Compose / SQLite / 例外記録）を事前選択する。
+
+DoD
+- DoD-O1: AC-O1〜O4が issue 本文に存在する。
+- DoD-O2: `python3 01_Plans/issues/validate_active_issue_memos.py` を通過する。
+- DoD-O3: No-Go時の戻し先 issue と再開条件が 1:1 対応する。
+
 ## 失敗時に残す情報
 
 - 実行したコマンド

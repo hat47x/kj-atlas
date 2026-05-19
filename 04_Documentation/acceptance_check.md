@@ -88,6 +88,18 @@ share/export を使う場合は、[データ取り扱い](data_handling.md) の�
 
 Playwright E2E や PR 前の自動確認は、公開利用者向けの本文ではなく、GitHub 上の [開発者向け E2E Testing](https://github.com/hat47x/kj-atlas/blob/main/03_Implement/frontend/docs/e2e_testing.md) を正本として管理します。
 
+
+## Product QA Gate（P0）に沿った記録
+
+受け入れ確認を実施したら、次の4点を最低限記録します。
+
+- Candidate（対象PR/コミット）
+- Gate結果（Go / Conditional Go / No-Go）
+- 証跡（実行コマンド、画面幅、スクリーンショット、失敗時メモ）
+- No-Go/Conditional Go時の戻し先 issue と再判定日
+
+この記録は `issue-PRODUCT-QA-01-release-readiness-quality-gates.md` の Gate Record と同じ項目で管理します。
+
 ## 関連文書
 
 - [導入手順](installation.md)
