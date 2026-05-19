@@ -218,3 +218,56 @@
 
 ### Fail-safe
 - 判定曖昧さは本更新で解消済み。未解消論点は governance queue（ADR起票条件）へ送る。
+
+## 17) Stream F update (2026-05-19): Release Readiness QA execution package
+
+### Phase 1: Read（quality gate定義抽出）
+- 判定対象は `G0..G7 + Value gates + E1..E3` とし、`GoNoGoGate=Required` / `VerificationLevel=integration` を固定する。
+- `ADR-0019` と `frontend/docs/e2e_testing.md` に合わせ、証跡を「自動テスト結果 + 手動スモーク観測 + フォローアップissue」に分離する。
+
+### Phase 2: Plan（Go/No-Go基準ドラフト）
+- **Go**: Blocker=0 かつ Major=0。Minor は期限付き follow-up issue で許容。
+- **Conditional Go**: Blocker=0 かつ Major>=1 だが、回避策・owner・due date・再判定日が同時に確定。
+- **No-Go**: Blocker>=1、または証跡不備（コマンド結果/判定ログ欠落）、または SafeMode/share-export 境界不整合。
+
+### Phase 3: Execute（受入条件反映）
+- 受入条件に「判定結果を Gate Record に残す」「Conditional Go は是正期限と再判定日を必須化」「No-Go の戻し先 issue を明示」を追加適用する。
+
+### Phase 4: Verify（測定可能性/再現性チェック）
+- 測定可能性: 各ゲートに `result`, `evidence`, `owner`, `due` が存在すること。
+- 再現性: 同一 candidate で同一コマンド集合を再実行した際、判定の差分理由を説明できること。
+- 証跡最小セット:
+  - issue metadata validator
+  - frontend typecheck + regression guards
+  - Playwright E2E（mock または実環境）
+  - docs diff check / compose config check
+
+### Phase 5: Proceed（リリース判定テンプレート）
+```md
+## Productization Release Decision Record
+- Candidate:
+- Decision date (YYYY-MM-DD):
+- Reviewer:
+- Scope:
+
+### Gate Summary
+- G0..G7:
+- Value gates:
+- E1..E3:
+- Final: Go | Conditional Go | No-Go
+
+### Evidence
+- Command log links:
+- Test report links:
+- Screenshot links (if UI impact):
+
+### Follow-ups
+- Blocking issues:
+- Conditional issues (owner / due):
+- Re-decision date:
+
+### Safety Confirmation
+- SafeMode default ON: pass/fail
+- share/export fail-closed: pass/fail
+- public exposure checks: pass/fail
+```
