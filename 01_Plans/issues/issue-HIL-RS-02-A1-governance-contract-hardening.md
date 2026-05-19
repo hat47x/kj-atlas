@@ -476,3 +476,20 @@
 ### Phase 6 Proceed（handoff fixed block）
 - Handoff constraint: A2/A3 は `A1-GOV-GATE-V1` の入出力面だけを参照し、承認確定・例外承認ロジックをローカル実装しない。
 - Unlock rule（再掲）: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`。
+
+
+## Stream B governance hardening sync（2026-05-19 / interface-first gate stabilization）
+
+### Context
+- HIL-RS-02-A1 は CE0/CE1 以降の着手可否を決める統治ゲートであり、契約境界の曖昧さがあると下流が循環依存になる。
+
+### Decision
+- Gate判定は既存の `A2A3_UNLOCK` 単一式を維持し、下流開始条件を次で固定する。
+  - `a1Status=="Done" && pendingDecisionQueueCount==0`
+  - `fixedKeyDrift==0`
+  - `safeModeRetreat==false`
+- No-Go理由は既存 canonical IDs（`NOGO_*` / `HOLD_PENDING_QUEUE`）以外を追加しない。
+
+### Consequences
+- 下流は「Go/Hold/Stop 契約」だけを参照して並行着手でき、実装詳細の待ち合わせを不要化できる。
+- 追加統治ルールが必要な場合は本Issueで即時確定せず、承認待ち `Pending` として保持する。
