@@ -242,3 +242,16 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 - Phase 3 CRUD境界更新: 「型がある = 運用CRUDあり」誤読を防ぐ注記を維持し、個別CRUD非対応行を明示。
 - Phase 4 Admin maintenance/recovery境界更新: Platform operator / Security officer / Support / Developer の責務分離と `DATA-MAINT-01` 参照を固定。
 - Phase 5 Verify（相互矛盾ゼロ）: `schemas.md`・`schemas_review_attribution.md`・本書で support level と version gate の矛盾がないことを確認。
+
+## 10. Stream D execution checkpoint (2026-05-19)
+
+### Context
+- Model Ops の観点では、`DocumentV2` の契約固定と運用CRUD境界を同時に管理しないと、保守責務が曖昧化する。
+
+### Decision
+- 本書の CRUD 境界表を運用責務の正本とし、`schemas.md` は型契約正本として役割を分離したまま同期する。
+- Platform operator / Security officer / Support / Developer の責務分離に変更がある場合は、`DATA-MAINT-01` の受入条件更新を先行必須とする。
+
+### Consequences
+- Stream D の Verify は「後方互換・support level・責務分離」の3軸で再現可能となり、3回修復上限を超える前に停止判断できる。
+- Data Contract変更が運用手順へ波及する際の引き渡し先が明確化される。
