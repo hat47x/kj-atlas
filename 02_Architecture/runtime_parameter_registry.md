@@ -126,3 +126,17 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - This registry is the SSOT for public runtime keys and exposes only `KJ_ATLAS_*` names.
 - Vendor-defined names are implementation-internal adapter details and MUST NOT be treated as public keys.
 - A policy that bans non-`KJ_ATLAS_*` names from every process environment is a separate deployment redesign decision.
+
+## Drift recurrence prevention checklist（ENV-CONFIG-DRIFT-01 / ENV-ARCH-01 / ENV-PROFILE-01）
+
+次のチェックは、runtime parameter contract 変更時に毎回実施します。
+
+1. **Naming**: 追加・変更する公開キーが `KJ_ATLAS_*` で始まること。
+2. **Defaults**: `Default` 列と実装既定値（settings/frontend build）が一致していること。
+3. **Boundary**: vendor 名（例: `POSTGRES_*`）を public key として公開文書に露出していないこと。
+4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合していること。
+5. **Cross-doc sync**: `deployment.md` と `04_Documentation/configuration.md` に同じ公開キー集合が反映されていること。
+6. **Compatibility gate**: 非互換が必要な場合は即実装せず、ADR/Issue に Go/No-Go とロールバックを先に記録すること。
+
+Stopper条件:
+- 上記 1〜6 のうち未充足がある場合は変更を停止し、承認待ちに切り替える。

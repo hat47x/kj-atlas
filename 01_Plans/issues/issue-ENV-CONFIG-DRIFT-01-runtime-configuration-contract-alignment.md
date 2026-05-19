@@ -343,3 +343,36 @@ Non-goals:
 
 ### Fail-safe
 - 判定に必要な契約正本が不整合のときは進行停止し、先に SSOT 修復を要求する。
+
+## 17) Stream E execution snapshot (2026-05-19)
+
+### Phase 1) Read
+
+- `runtime_parameter_registry.md` を再読し、命名/prefix/profile と公開契約境界（public vs private adapter）を再確認した。
+- `issue-ENV-ARCH-01` の「互換期間なし一括移行」と `issue-ENV-PROFILE-01` の profile guidance 前提を再確認した。
+
+### Phase 2) Plan
+
+- 互換維持方針:
+  - backend 公開キーは `KJ_ATLAS_*` 単独契約を維持する。
+  - vendor 内部 env 名は private adapter としてのみ許容し、公開契約へ昇格しない。
+- 移行ステップ提案:
+  1. SSOT（runtime registry）更新
+  2. issue 側の execution snapshot 追記
+  3. drift prevention checklist の更新
+  4. 非互換が必要なら Stopper 発動（ADR/承認待ち）
+
+### Phase 3) Execute
+
+- `runtime_parameter_registry.md` に drift recurrence prevention checklist を追記した。
+- 本 issue に Stream E（2026-05-19）の実行ログを追記し、ENV-CONFIG/ENV-ARCH/ENV-PROFILE の整合状態を明文化した。
+
+### Phase 4) Verify
+
+- drift 再発防止の確認観点を registry 側チェックリストへ固定した（Naming / Defaults / Boundary / Profiles / Cross-doc / Compatibility gate）。
+- 既存 pending queue（governance-only）を変更せず、設計変更が必要な論点は ADR 起票条件に留めた。
+
+### Phase 5) Stopper
+
+- 判定: **Stopper未発動**。
+- 理由: 今回は契約明文化のみであり、非互換を新規導入していない。非互換変更が必要になった場合は checklist の Compatibility gate に従って停止・承認待ちへ移行する。
