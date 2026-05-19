@@ -291,3 +291,19 @@ Non-goals:
 - 判定: **Proceed（Stream E scope で完了）**。
 - Stop 条件評価: 解消不能な不一致は未検出。
 - 残課題: `external_http` endpoint 未設定時の fail-fast 化可否、および third-party 内部名完全排除可否は governance/ADR 論点として継続。
+
+## 16) Stream E completion snapshot (2026-05-19)
+
+### Phase-based execution (Read → Plan → Execute → Verify → Proceed)
+
+- Read: AC/Validation と SSOT（`02_Architecture/runtime_parameter_registry.md`）を再確認し、編集対象を runtime registry と issue メモに限定。
+- Plan: DoD を「命名統一」「drift差分解消」「profile 運用判断基準の明文化」に固定。
+- Execute: runtime registry に Profile selection criteria と Drift check gates を追加し、命名・既定値・境界の判定軸を明示。
+- Verify: 公開契約キーが `KJ_ATLAS_*` のみであること、profile 表と新設判断基準が矛盾しないことを文書差分で確認。
+- Proceed: 実装コードや認証契約には波及させず、governance-only pending（strict interpretation / external_http fail-fast）は未確定キューのまま維持。
+
+### Stream E deliverables
+
+1. Runtime profiles の選択条件を文書化（`local-dev` / `evaluation` / `enterprise-production`）。
+2. Drift check gates（命名・既定値・境界・プロファイル更新同時性）を SSOT 側へ追加。
+3. 変更は docs 範囲に限定し、SafeMode/share/export の既定や運用境界は不変更。

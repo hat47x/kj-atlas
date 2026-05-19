@@ -9,7 +9,6 @@
 3. サードパーティコンテナや build tool が内部的に別名を必要とする場合でも、kj-atlas の公開設定キーは `KJ_ATLAS_*` だけです。実装側で内部名へ写像します。
 4. boolean は肯定形で命名し、既定値と安全側の意味を固定します。
 5. 04 文書には「主要なもの」だけではなく、この文書に載る公開環境変数をすべて記載します。
-
 6. サードパーティイメージや build tool が要求する内部名は、kj-atlas の公開設定キーではありません。必要な内部変換は `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` で扱い、利用者は `KJ_ATLAS_*` だけを設定します。
 
 ## Runtime profiles
@@ -24,6 +23,27 @@
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
+
+## Profile selection criteria（運用判断基準）
+
+実行プロファイルは「どこで動かすか」ではなく「どこまで外部依存を許可するか」で選びます。
+
+1. `local-dev` を選ぶ条件
+   - 目的が機能開発または再現テストであり、外部連携が不要。
+   - DB を SQLite でよい（`KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`）。
+2. `evaluation` を選ぶ条件
+   - Docker Compose 上で利用者評価を行い、PostgreSQL や Nginx 経由の導線を含めて検証したい。
+   - 外部監査/外部PDPは原則無効（`noop`）で、必要時のみ限定有効化する。
+3. `enterprise-production` を選ぶ条件
+   - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
+   - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
+
+### Drift check gates（設定ドリフト防止ゲート）
+
+- 命名ゲート: 公開キーは `KJ_ATLAS_*` のみ。
+- 既定値ゲート: `Default` 列と実装既定値が一致しない変更は差し戻す。
+- 境界ゲート: `POSTGRES_*` など vendor 名は private adapter 扱いとし、公開文書で利用者入力として記載しない。
+- プロファイルゲート: profile 変更は `runtime profiles` 表と同時に理由（Purpose/Notes）を更新する。
 
 ## Prefix migration governance（互換期間と切替条件）
 
