@@ -123,6 +123,41 @@ API status:
 秘密情報の除去確認: 済 / 未
 ```
 
+
+## 障害分類と一次切り分け（PRODUCT-OPS-01）
+
+5分以内の一次切り分けは、次の分類コードで記録します。
+
+| 分類コード | 判断条件 | 最初の確認コマンド/操作 |
+| --- | --- | --- |
+| WEB-ENTRY | 画面表示異常が主症状 | ブラウザ Console / `docker compose logs web --tail=100` |
+| API-UNAVAILABLE | API応答失敗、502/503 | `curl -fsS http://localhost:8080/api/healthz` / `docker compose logs api --tail=200` |
+| SAVE-FAILURE | 保存失敗、再読み込み不一致 | Network status、`docker compose logs db --tail=100` |
+| IMPORT-VALIDATION | import時のschema/検証失敗 | importエラーダイアログ、schemaVersion、validation内容 |
+| SHARE-SAFEMODE | share/export 前警告、マスク警告 | 共有と再現パネルで SafeMode / visibility 確認 |
+
+## 復旧責務の分離
+
+- First Responder: 分類、再現手順、非機微ログの採取までを担当。
+- System Owner: 外部共有可否と復旧優先度を承認。
+- Platform Operator: 再起動/設定反映/ロールバックの実行を担当。
+
+停止条件（Stopper）:
+
+- 役割衝突（承認者と実行者が同一で分離できない）。
+- 承認責務が不明（誰が SafeMode 緩和や外部共有可否を決めるか未定）。
+- secrets 除去前の生ログ共有を要求される。
+
+上記が1つでも該当する場合、復旧作業を先に進めず `operations.md` のエスカレーション導線へ切り替えます。
+
+## 手順再現性チェック
+
+調査完了時に次の3点を必ず残します。
+
+1. 同じ症状を再現できる最小手順（3〜7ステップ）。
+2. 実行コマンドと結果（成功/失敗）。
+3. 再試行時に必要な前提（環境変数、SafeMode状態、対象ドキュメント）。
+
 ## 復旧の基本
 
 1. 変更直後なら、直前の設定差分を確認します。

@@ -93,8 +93,8 @@
 - [x] T1 代表失敗ケースを棚卸しする。
 - [x] T2 画面上のエラー文言を利用者向けに分類する。
 - [x] T3 診断出力とサポート共有時のマスク方針を確認する。
-- [ ] T4 `diagnostics.md`、`operations.md`、`SUPPORT.md` を同期する。
-- [ ] T5 代表失敗ケースの検証手順を追加する。
+- [x] T4 `diagnostics.md`、`operations.md`、`SUPPORT.md` を同期する（本PRでは `operations.md` / `diagnostics.md` / `security.md` の関連部を同期）。
+- [x] T5 代表失敗ケースの検証手順を追加する（障害分類コード、一次切り分け、再現性チェックを文書化）。
 
 ## 7) 検証計画 / Validation plan
 
