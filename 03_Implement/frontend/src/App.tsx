@@ -8600,6 +8600,7 @@ ${parsedDocument.error}`);
         </div>
       ) : (
         <>
+          <div data-ui-region="primary-flow">
           <CanvasShell
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}
@@ -8665,6 +8666,7 @@ ${parsedDocument.error}`);
           >
             {islandViews}
           </CanvasShell>
+          </div>
         </>
       )}
       <div
