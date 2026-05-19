@@ -169,3 +169,47 @@
 
 ### Fail-safe
 - 判定基準が曖昧なままの場合は進行停止し、ADRまたは運用責任者承認を要求する。
+
+## 12) Stream F update (2026-05-19): Program-level Go/No-Go handoff
+
+### Phase 1: Read
+- 親Issueの判定入力を `PRODUCT-QA-01`（G/V/Eゲート）に一本化し、本Issueは Program 判定のみを担当する。
+- `ADR-0019` 準拠で、E2E未実施時は「未実施理由・再開条件・再判定日」を必須記録とする。
+
+### Phase 2: Plan
+- Program判定の閾値を固定:
+  - Go: 子ゲートがすべて Go。
+  - Conditional Go: 子ゲートに Conditional Go が残るが、期限付き是正計画が登録済み。
+  - No-Go: 子ゲートに No-Go が1件以上、または証跡不備。
+
+### Phase 3: Execute
+- 本Issue受入条件へ次を反映:
+  - Program 判定ログに `candidate/date/reviewer/final decision/escalation` を必須化。
+  - Conditional Go は「解除条件」と「再判定日」が埋まらない限り出荷不可。
+  - No-Go は自動的に本Issueも No-Go 扱いにする。
+
+### Phase 4: Verify
+- 測定可能性: Program判定ログから、どの子Issueが判定を規定したか追跡可能である。
+- 再現性: 同一 candidate の再判定で、前回との差分理由（修正済み/未修正/新規リスク）を1行で説明できる。
+
+### Phase 5: Proceed（Program判定テンプレート）
+```md
+## MVP-EXIT Program Gate Decision
+- Candidate:
+- Decision date:
+- Reviewer:
+- Input sources:
+  - PRODUCT-QA-01 gate record:
+  - ENV-CONFIG-DRIFT-01 result:
+
+### Decision
+- Final: Go | Conditional Go | No-Go
+- Reason summary:
+- Escalation route:
+
+### Conditional controls
+- Remaining risks:
+- Owner:
+- Due date:
+- Re-decision date:
+```
