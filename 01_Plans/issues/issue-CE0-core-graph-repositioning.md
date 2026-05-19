@@ -2219,3 +2219,32 @@
 - API signatures: `POST /context/query`, `POST /context/bundle`
 - Data types: `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1`
 - Audit event names (reserved): `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked`
+
+
+## Stream D execution update（2026-05-19 / CE0 Core Graph Repositioning contract lane）
+
+### Phase 1 Read（差分抽出）
+- 上位語彙を再確認し、`Core Graph` を履歴語として扱い、現行契約語彙を `ConsensusGraph` に統一する必要性を抽出。
+- CE0 freeze（read-only）と CE1 foundation（mock-first）間で、語彙差分が契約衝突を生まないよう照合。
+
+### Phase 2 契約定義（最小I/F固定）
+- 本Issueの再配置契約は「語彙再マッピング」に限定し、実装・スキーマ拡張は行わない。
+- 固定I/F: `WorkingGraph`（探索）, `ContextProjectionGraph`（読取専用投影）, `ConsensusGraph`（承認済差分の統合）。
+- 旧称 `Core Graph` は履歴説明以外で新規導入しない。
+
+### Phase 3 モック規約（境界・互換・後方互換）
+- mock境界: 名称マッピングと契約キー整合の検証まで（データ永続・実行経路は非対象）。
+- 互換ルール: 下流が `Core Graph` を参照する場合は「旧称→ConsensusGraph」の read-only alias 説明に限定。
+- 後方互換方針: v1 では `ConsensusGraph` を正本語彙に固定し、旧称再導入は将来版 ADR 承認時のみ。
+
+### Phase 4 検証（依存・影響）
+- 依存関係: CE0 contract freeze の固定IDと矛盾なし。
+- 他Issue影響: CE1/CE2/CE4 への handoff は語彙マッピング情報のみで実装依存を発生させない。
+- self-repair: 0/3。
+
+### Phase 5 受け渡し（Stream C/E向け）
+- 参照仕様として引き渡す内容:
+  1. Graph責務境界3点（Working / ContextProjection / Consensus）
+  2. 旧称 `Core Graph` の扱い（履歴限定）
+  3. 契約衝突時は `held` 停止
+- Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。

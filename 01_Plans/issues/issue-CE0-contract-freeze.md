@@ -3782,3 +3782,33 @@ export type AuditEventV1 = {
   - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1固定キー）
   - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
 - 判定: **Conditional-Go（Pending/held 残存のため）**。
+
+
+## Stream D execution update（2026-05-19 / CE契約群 / contract freeze cross-check）
+
+### Phase 1 Read（差分抽出）
+- CE0/CE1 関連契約を再読し、固定ID群 `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` と No-Go canonical IDs の再定義禁止を確認。
+- `Core Graph` は旧称であり、現行契約語彙は `ConsensusGraph` であることを `domain.md` と照合。
+- 未承認事項（新規ID追加・safeMode境界緩和・実装前提の確定）を「確定扱いしない」停止条件として明示。
+
+### Phase 2 契約定義（最小I/F固定: read-only）
+- CE0 は read-only freeze を維持し、Contract ID の追加/改名/削除を禁止。
+- CE1 参照契約の受け渡しキーを `queryCanonicalHash` / `bundleHash` / `previewConfirmed` に限定。
+- 本Issueでは実装I/F拡張を行わず、既存契約の境界明示のみ許可。
+
+### Phase 3 モック規約（互換・後方互換）
+- mock適用境界: contract-only 検証（型/語彙/hash）まで。
+- 互換性ルール: `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle` を v1 固定。
+- 後方互換方針: v1 は closed-world 固定。拡張は v2 契約改訂でのみ許可（v1 へ未定義キー逆流禁止）。
+
+### Phase 4 検証（依存・他Issue影響）
+- 依存確認: CE0 freeze は CE1/CE2/CE4 の前提だが、下流は mock-first 継続可。
+- 影響確認: CE0本文で CE1 実装詳細を確定しないことにより、ストリーム間の契約衝突を回避。
+- self-repair: 0/3（修復不要）。
+
+### Phase 5 受け渡し（Stream C/E向け）
+- Stream C/E へは read-only 参照仕様として以下を引き渡す。
+  - Contract IDs（CE0固定）
+  - fixed error semantics 3種
+  - hash監査キー（`queryCanonicalHash` / `bundleHash`）
+- Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
