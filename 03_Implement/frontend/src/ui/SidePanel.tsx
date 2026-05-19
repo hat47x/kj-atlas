@@ -1073,6 +1073,7 @@ export function SidePanel({
 
   return (
     <aside
+      data-ui-region="selection-context"
       style={{
         width: 320,
         minWidth: 320,
@@ -1111,8 +1112,8 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
-      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <details>
+      <section data-panel="selection-context" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <details data-panel-group="advanced" aria-expanded="false">
           <summary style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>
             {t("side_panel.history.with_count", { count: mergeAuditEntries.length })}
           </summary>

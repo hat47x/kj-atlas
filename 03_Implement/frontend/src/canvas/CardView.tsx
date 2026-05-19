@@ -1,5 +1,5 @@
 import { memo, useRef, useState } from "react";
-import type { PointerEvent } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 
 import type { Card } from "../domain/types";
 
@@ -180,6 +180,15 @@ function CardViewComponent({
     clearDragState(event);
   };
 
+
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(card.id, event.shiftKey);
+    }
+  };
+
   return (
     <div
       onPointerDown={handlePointerDown}
@@ -217,6 +226,11 @@ function CardViewComponent({
         cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
       title={compactMode ? card.text : undefined}
+      role="option"
+      aria-selected={isSelected}
+      data-focus={isSelected ? "card" : undefined}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
       {!markerMode && representativeCount > 0 ? (
         <span
