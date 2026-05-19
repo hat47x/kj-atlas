@@ -493,3 +493,39 @@
 ### Consequences
 - 下流は「Go/Hold/Stop 契約」だけを参照して並行着手でき、実装詳細の待ち合わせを不要化できる。
 - 追加統治ルールが必要な場合は本Issueで即時確定せず、承認待ち `Pending` として保持する。
+
+## Stream A serial Phase 1-5 report（2026-05-19 / critical path）
+
+### Plan
+- Scope: docs-only（本Issue + ADR参照整合）。
+- Goal: A1統治契約の凍結境界を再確認し、B〜Fが独立並行できる handoff を固定する。
+
+### Execute
+- 固定I/Fを再確認（変更なし）:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- 固定遷移を再確認（変更なし）:
+  - `Pending -> Approved | Pending -> Rejected`
+- 変更禁止境界を明文化:
+  - A1完了前の A2/A3 `Draft->Open`
+  - fixed key 再定義
+  - SafeMode境界後退
+
+### Verify
+- AC/DoD照合: pass（fixedKeyDrift=0 / pendingBypassDetected=false / safeModeRetreat=false）。
+- Self-correction: `0/3`。
+- 未確定事項: `approved_by`, `approved_at`, `evidence`, `HIL-RS-02-GOV-EXCEPTION-01`。
+
+### Proceed
+- Gate result: **Hold / Needs-decision**。
+- B〜F向け mock許可:
+  1. 型整合検証
+  2. 監査イベント4点セット存在確認
+  3. Hold/NoGo 判定式検証
+- B〜F向け禁止:
+  1. 承認状態の擬似確定
+  2. `Pending -> Execute` 例外化
+  3. fixed key 変更

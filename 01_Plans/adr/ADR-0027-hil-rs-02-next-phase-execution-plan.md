@@ -434,3 +434,40 @@ A1契約固定前にA2/A3が承認境界を実装すると、`Pending bypass` �
 
 ### Consequences
 A2/A3はモックI/Fで先行実装可能だが、承認確定の責務はA1ガバナンス契約の外に持ち出せない。
+
+## Stream A critical-path freeze handoff（2026-05-19）
+
+### Phase 1: Read（契約未確定項目と依存差分）
+- Read対象（allowlist）: `ADR-0026`, `ADR-0027`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-HIL-RS-02-A1-governance-contract-hardening.md`, `contract_reading_guide.md`, `runtime_parameter_registry.md`。
+- 未確定項目（承認待ち）: `approved_by`, `approved_at`, `evidence`, `HIL-RS-02-GOV-EXCEPTION-01`。
+- 依存関係固定: `HIL-RS-01-A1 -> HIL-RS-02-A1 -> A2/A3 unlock`（差分なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 承認入力未充足のまま A2/A3 を開放すると `Pending bypass` が発生し、統治契約違反となる。
+- Decision: 承認待ち論点を `Decision Queue` に保持し、`Proceed=Hold/Needs-decision` を継続する。
+- Consequences: 下流は mock 検証のみ並行可。契約値更新・状態確定は禁止。
+
+### Phase 3: 契約凍結（変更禁止境界）
+- API signature（固定）: `A1-GOV-GATE-V1`, `A2-PROPOSAL-ENVELOPE-V1`, `A3-DOC-SYNC-CHECK-V1`。
+- Data/type（固定）: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`。
+- Transition（固定）: `Pending -> Approved | Pending -> Rejected` のみ。
+- 変更禁止境界: fixed keyの再定義、SafeMode後退、A1完了前の A2/A3 `Draft->Open`。
+
+### Phase 4: 受け渡し仕様（B〜F向け）
+- 固定済みI/F一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `Decision gate`: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- 変更不可項目:
+  - fixed keys（上記）
+  - `overridePolicy=human_dual_control_only`
+  - `decisionQueueTransition`
+- mock許可項目:
+  - 監査4イベント（`query`,`bundle`,`proposal`,`apply`）の存在検証
+  - 入出力型の適合検証
+  - `pendingDecisionQueueCount>0` の Hold 判定検証
+
+### Phase 5: 検証（AC/DoD + 依存再確認）
+- AC/DoD判定: pass（契約差分 `0`、禁止遷移追加なし、SafeMode後退なし）。
+- 未確定事項: `Approval Record` 3項目 + `HIL-RS-02-GOV-EXCEPTION-01`。
+- 最終判定: **Conditional / Needs-decision**（人間承認待ち）。
