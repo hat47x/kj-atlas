@@ -1,11 +1,11 @@
-# Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream G planning lane）
+# Issue Draft: HIL-RS-02 Next-Phase Delivery Plan（Stream H delivery planning lane）
 
 - Type: Process
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: Stream G Agent（delivery plan 独立整備専任）
+- Owner: Stream H Agent（delivery planning only）
 - Scope: `01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md` のみ
 - Out of scope: 上記以外すべてのファイル編集、`03_Implement/**`、`04_Documentation/**`、実装コード編集
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
@@ -29,7 +29,7 @@
 - `decisionQueueTransition=Pending -> Approved | Pending -> Rejected`
 - `NoGo return path = issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`
 
-## Stream G Execution Protocol（固定）
+## Stream H Execution Protocol（固定）
 - Required order: **Phase 1 Read → Phase 2 ADR → Phase 3 Plan → Phase 4 Execute → Phase 5 Verify → Phase 6 Proceed/Stop**（直列、並列禁止）
 - Every phase rule: 各Phaseは先頭で必ず Read同期（依存・固定値・A1状態確認）を行ってから次へ進む。
 - A1 gate rule: **A1未完了時は Proceed=Hold を維持し、確定化・強行Proceedを禁止する。**
@@ -50,7 +50,7 @@
 ### Plan
 - delivery plan本文の判断根拠を `ADR-0026/0027/0028` に明示リンクし、契約再定義を行わない方針を固定する。
 ### Execute
-- Decision: Stream Gは「計画整備のみ」「契約参照固定」「A1 read-only（Pending参照のみ）」の3点を維持する。
+- Decision: Stream Hは「delivery planning only」「契約参照固定」「A1 read-only（Pending参照のみ）」の3点を維持する。
 ### Verify
 - ADR参照が欠落なく記載され、A1未完了下での確定化文言（Open化許可・承認済み扱い）が存在しないこと。
 ### Proceed/Stop
@@ -114,7 +114,7 @@
 - [x] Verify: docs-check（差分確認 + allowlist逸脱ゼロ）で判定可能。
 - [x] Gate: `A1 not done` 前提で Proceed=Hold を維持。
 
-## 受入条件（Execute完了判定）
+## 受入条件（Delivery Planning完了判定）
 - [x] AC-1: 本ファイルが `Status=Open` を維持する（A1未完了時は `Proceed=Hold`）。
 - [x] AC-2: Go/Hold/Stop 判定が A1依存・固定値・pending bypass 条件で整合する。
 - [x] AC-3: A1未完時運用が `Hold` 固定で、強行Proceed禁止が明示される。
@@ -126,6 +126,13 @@
 1. `rg -n "Status:|Scope:|Related ADR|Phase 1|Phase 2|Phase 3|Phase 4|Phase 5|Phase 6|Proceed=|verifyAttempts|A1 not done|Pending参照" 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 2. `git diff -- 01_Plans/issues/issue-HIL-RS-02-next-phase-delivery-plan.md`
 3. `git status --short` で単一ファイル変更のみを確認。
+
+
+## Stream H 完結性チェック（他ストリーム非依存）
+- [x] 本ファイル単体でマイルストーン/DoD/Stopperが読解可能。
+- [x] 実装コード・他Issue編集を前提条件にしない。
+- [x] A1依存は read-only 判定式参照のみ（値更新・契約再定義なし）。
+- [x] 外部依存が必須化した場合は Proceed=Stop とし、確認要求を起票して停止する。
 
 ## Open/Hold判定
 - 判定: **Open/Hold（Proceed=Hold運用）**
@@ -139,7 +146,7 @@
 
 ## Stream A contract-first gate note（2026-05-10）
 
-### Dependency order lock
+### Dependency order lock（Stream H non-blocking note）
 - 固定順序: `A1 -> A2 -> A3`。
 - delivery plan は A1完了まで `Proceed=Hold` を維持し、A2/A3へ `Go` を伝播しない。
 
