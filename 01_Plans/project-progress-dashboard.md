@@ -1,10 +1,14 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-17 (UTC, Stream F shared sync rerun-76)
+最終更新: 2026-05-19 (UTC, Stream F shared sync rerun-77)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
+
+- Stream F 共有統合同期（2026-05-19 rerun-77）で Phase 1 Read（全ストリーム完了報告と証跡の再収集）→ Phase 2 Plan（件数/状態/Decision Queue/依存順の反映方針固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（件数整合・Queue整合・依存順整合・停止条件違反0件を確認）→ Phase 5 Proceed（再開条件1行を明文化）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・参照リンク不整合0件を再確認した。
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-19 rerun-77確認済み）。`
 
 - Stream F 共有統合同期（2026-05-17 rerun-76）で Phase 1 Read gate（shared 3ファイル再読）→ Phase 2 Plan（件数・Queue・依存順の反映方針固定）→ Phase 3 Execute（単一変更セット）→ Phase 4 Verify（validator/unittest/rg 成功）→ Phase 5 Proceed（再開条件1行固定）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・停止条件違反0件を再確認した。
 
