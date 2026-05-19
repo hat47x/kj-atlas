@@ -2784,3 +2784,33 @@ handoffKeys:
 ### Consequences
 - CE2/CE4 は CE1 契約だけで interface test を開始できる。
 - 破壊的変更（署名追加/削除・エラー語彙変更）は `future-version backlog` へ隔離する。
+
+
+## Stream D execution update（2026-05-19 / CE1 ContextQuery/ContextBundle Foundation contract lock）
+
+### Phase 1 Read（必要契約の再読と差分抽出）
+- CE1 v1 契約と `02_Architecture/llm_*` の整合を確認し、最小I/Fが `ContextQueryV1` / `ContextBundleV1` に閉じていることを確認。
+- 差分抽出: `previewConfirmed` gate、canonical hash（`queryCanonicalHash` / `bundleHash`）、closed-world 拒否規約を固定対象として抽出。
+
+### Phase 2 契約定義（実装なし）
+- `ContextQueryV1` 最小必須: `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`。
+- `ContextBundleV1` 最小必須: `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`。
+- 失敗契約固定:
+  - `previewConfirmed != true -> 422 preview_required`
+  - `unknown key -> 400 unknown_contract_key`
+  - `same canonical query && bundleHash mismatch -> 409 nondeterministic_bundle`
+
+### Phase 3 モック規約（境界・互換・後方互換）
+- mock適用境界: `stubDatasetId=A2-minimal-v1` で `/context/query` `/context/bundle` の契約検証のみ許可。
+- 互換性ルール: v1 は closed-world。未定義キー受理・暗黙拡張・HTTP語彙追加を禁止。
+- 後方互換方針: 追加キーや意味変更は v2 契約改訂（ADR合意）でのみ実施し、v1 の意味論は凍結。
+
+### Phase 4 検証（依存・他Issue影響）
+- 依存確認: CE0 freeze 参照キー（safeMode境界 / No-Go）と矛盾なし。
+- 影響確認: CE2/CE4 は `sourceBundleHash` 参照で mock-first 継続可能、CE1実装完了待ちは不要。
+- self-repair: 0/3（検証失敗なし）。
+
+### Phase 5 受け渡し（Stream C/E）
+- Stream C へ: API/worker実装時に守る最小I/Fと固定エラー語彙3種を read-only handoff。
+- Stream E へ: 監査/運用文書に必要な hash決定論要件（同一canonical query 3/3一致）を handoff。
+- Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
