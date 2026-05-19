@@ -1,6 +1,6 @@
 # ADR-0029: Third-party runtime environment boundary
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-10
 - Deciders: Project Maintainers
 - Scope: `03_Implement/deploy/`, `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/configuration.md`
@@ -38,6 +38,14 @@ Non-goals:
 - Redesign the database topology in this ADR.
 - Add compatibility support for legacy unprefixed project variables.
 - Change SafeMode, access-control, or export behavior.
+
+
+## Boundary contract matrix
+
+| Boundary | Key namespace | Who sets it | Where it appears | Rule |
+| --- | --- | --- | --- | --- |
+| Public runtime contract | `KJ_ATLAS_*` only | Users / operators | Runtime registry, configuration docs, Compose input surface | MUST be documented and supported as public keys. |
+| Private adapter boundary | vendor-defined names (for example `POSTGRES_*`) | Compose/build implementation only | Third-party container `environment` / build internals | MUST NOT be exposed as public configuration keys. |
 
 ## Consequences
 
