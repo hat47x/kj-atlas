@@ -173,3 +173,19 @@
 - [x] 共有前確認（未レビュー本文・PII抑制・safeMode既定ON）を復旧runbook要件に含めた。
 - [x] `documents` と `merge_decision_logs` の整合検証を復旧フロー必須条件として固定した。
 - [x] Pending論点（削除/所有者移管/管理者閲覧権限）は ADR化前に実装しない Stop 条件として明示した。
+
+## 16) Stream C（Backend/Data Ops）phase log — 2026-05-19
+
+- Phase 1 Read: 完了（DATA-CONTRACT / DATA-MAINT / DATA-MODEL-OPS / PRODUCT-OPS のACと依存境界を再確認）。
+- Phase 2 モック検証: 完了（I/F固定前提で既存 backend test suite を契約回帰の代理として実行、契約逸脱なし）。
+- Phase 3 実装: スキップ（契約逸脱・DB競合・マイグレーション破壊リスクを検知せず、追加実装不要）。
+- Phase 4 検証: 完了（`pytest` 全件pass、skipは既知シナリオ）。
+- Phase 5 記録: 完了（本ログ追記）。
+
+Self-Correction履歴:
+- 0/3（再試行不要）
+
+Fail-safe判定:
+- DB競合/破壊的migrationリスク: 未検知
+- 契約逸脱（Document version gate / embedded round-trip / merge_decision_logs連携）: 未検知
+- 判定: Proceed（現行契約を維持）
