@@ -160,9 +160,16 @@
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
 
 
-## 13) Stream D fail-safe判定（Stop/Proceed）
+## 14) Stream D fail-safe判定（Stop/Proceed）
 
 - 後方互換ルール: `schemas.md` の version gate 運用を前提にし、復旧手順で契約判定を先行させる。
 - support level: 復旧対象を `L1/L1.5` 優先、`L2/L2.5` は「埋め込み往復保持まで」として扱う。
 - 運用責務衝突: 削除・所有者移管・閲覧権限は未確定（Pending）のため、実装着手条件を満たすまで **Stop**。
 - 判定: **Stop**（DecisionStatus=Pendingのため、契約整備以外へ進まない）。
+
+## 15) Stream D → 下流引き渡しチェックリスト
+
+- [x] 復旧手順は `L1/L1.5` を標準運用対象、`L2/L2.5` を契約整合チェック対象として分離した。
+- [x] 共有前確認（未レビュー本文・PII抑制・safeMode既定ON）を復旧runbook要件に含めた。
+- [x] `documents` と `merge_decision_logs` の整合検証を復旧フロー必須条件として固定した。
+- [x] Pending論点（削除/所有者移管/管理者閲覧権限）は ADR化前に実装しない Stop 条件として明示した。
