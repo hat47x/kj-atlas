@@ -271,3 +271,43 @@
 - share/export fail-closed: pass/fail
 - public exposure checks: pass/fail
 ```
+
+## 18) Stream E execution (2026-05-19): Product QA Gate 専任
+
+### Phase1 Read（上流整合の確認）
+- 参照正本を `ADR-0019` / `04_Documentation/acceptance_check.md` / `03_Implement/frontend/docs/e2e_testing.md` に固定し、公開利用者向け手動確認と開発者向け自動E2Eの境界を再確認した。
+- 本Issueの `GoNoGoGate=Required` / `VerificationLevel=integration` を **P0品質ゲートの最上位条件** として維持し、Draft課題のOpen化条件をこのゲートに従属させる。
+
+### Phase2 Gate定義（P0固定）
+- **P0 Gate-0（Evidence Completeness）**: Gate Record に `candidate/date/reviewer/scope/gate result/evidence/follow-up` が欠ける場合は即 No-Go。
+- **P0 Gate-1（Safety Boundary）**: SafeMode既定ON、share/export前確認、import sanitize の3点が文書・操作・証跡で一致しない場合は No-Go。
+- **P0 Gate-2（Execution Route）**: `ADR-0019` の Compose / SQLite代替 / 例外記録 のいずれかを事前固定し、未固定は No-Go。
+- **P0 Gate-3（Recovery Routing）**: No-Go時に戻し先issue（例: `QA-*`, `MVP-EXIT-01`, `ENV-CONFIG-DRIFT-01`）と再判定日が無い場合は No-Go。
+
+### Phase3 E2E/Unit境界定義（Draft Open化条件）
+Draft QA issue（`issue-QA-*`）は、次の **Open化条件（AC/DoD/証拠）** を満たすまで Draft 維持とする。
+
+- **AC-O1: Scope Boundary**
+  - E2Eで確認する価値境界（UI導線/SafeMode/share-export/i18nのどれか）を1行で明示。
+  - unit/integrationで担保する契約（変換/バリデーション/i18n guard など）を1行で明示。
+- **AC-O2: DoD Boundary**
+  - 完了条件に `pass条件` と `保留条件` を併記し、Execution: Hold解除条件を1行で判定可能にする。
+- **AC-O3: Evidence Contract**
+  - 最低証跡として `実行コマンド` / `結果` / `失敗分類(Blocker/Major/Minor)` / `follow-up issue` を持つ。
+- **AC-O4: Route Selection**
+  - Compose/SQLite/例外記録のいずれで検証するかを事前選択する。
+
+DoDテンプレ（Draft→Open）
+- DoD-O1: AC-O1〜O4が issue 本文に記載済み。
+- DoD-O2: metadata validator で構文不整合がない。
+- DoD-O3: No-Go時の戻し先と再開条件が 1:1 対応。
+
+### Phase4 Verify（運用検証）
+- Verify command set（最小）
+  - `python3 01_Plans/issues/validate_active_issue_memos.py`
+  - `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Execution: Hold|Pending" 01_Plans/issues/issue-QA-*.md`
+  - `git diff --check`
+- 判定
+  - Open化可能: AC/DoD/証跡が充足。
+  - 追加判断必要: 証跡または実行経路固定が不足。
+  - 保留継続: Blocker未解消、または安全境界が未確認。
