@@ -2814,3 +2814,31 @@ handoffKeys:
 - Stream C へ: API/worker実装時に守る最小I/Fと固定エラー語彙3種を read-only handoff。
 - Stream E へ: 監査/運用文書に必要な hash決定論要件（同一canonical query 3/3一致）を handoff。
 - Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
+
+
+## Stream B execution update（2026-05-19 / CE1 contract & mock lane）
+
+### Phase 1 Read（Status/Priority/Depends/Unblocks/AC 再確認）
+- Status=`Open` / Priority=`P1` を維持。
+- Depends: `issue-CE0-contract-freeze.md`（read-only handoff）を維持。
+- Unblocks: `CE2-low-risk-ai-assist` / `CE4-api-cli-audit-integration` を維持。
+- AC再確認: closed-world契約、固定エラー語彙3種、決定論hash、mock-first依存切断。
+
+### Phase 2 Mock-First切断設計（最小シグネチャ先行定義）
+- ContextQuery 最小シグネチャ（v1 fixed）:
+  - `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`
+- ContextBundle 最小シグネチャ（v1 fixed）:
+  - `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`
+- 実装依存切断手順（Mock Provider）:
+  1) `POST /context/query` は unknown key を `400 unknown_contract_key` で拒否（closed-world）。
+  2) `previewConfirmed!=true` は `422 preview_required` で拒否。
+  3) 同一 canonical query で hash不一致は `409 nondeterministic_bundle` を返し停止。
+  4) CE2/CE4 へは `queryCanonicalHash/bundleHash` と固定語彙のみ handoff（read-only）。
+
+### Phase 3 Plan→Execute→Verify
+- Plan: AC/DoD不足なし。追加提案は不要。
+- Execute: CE0→CE1 の契約連結を明文化し、実装詳細（DB/LLM/worker）を記載しない。
+- Verify: 依存逆転なし（CE1がCE0凍結語彙を参照）・下流参照可能（CE2/CE4 hashキー連携）を確認。
+
+### Phase 4 Stopper
+- 修復3回超過、契約語彙衝突、allowlist外編集要求、依存逆転のいずれかを検知した時点で `held` 停止し判断依頼。
