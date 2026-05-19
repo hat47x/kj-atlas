@@ -1,7 +1,7 @@
 # Issue Draft: UX-OPERABILITY-05 主要ツールバーにレガシー/高度操作が混在している
 
 - Type: Planning
-- Status: Open準備完了 (Ready for Open)
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
