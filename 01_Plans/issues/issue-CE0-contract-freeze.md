@@ -3746,3 +3746,39 @@ export type AuditEventV1 = {
 - 維持条件:
   - CE0は契約SSOTを継続し、下流はread-only参照のみ。
   - 未定義競合、語彙意味不一致、指定外編集要求、Verify 4回目相当が発生した場合は **Stop（`held`）**。
+
+
+## Stream B latest run（2026-05-19 / Contract Freeze + Interface-First refresh）
+
+### Phase 1 Read（dependency / boundary extraction）
+- CE0 の契約境界を `ADR-0028` CE-0 Contract Matrix、および HIL-RS A1 の固定値群と照合した。
+- 依存方向を **`HIL-RS-01-A1 -> HIL-RS-02-A1 -> CE0 -> CE1/CE2/CE4`** に固定し、CE0 から上流へ逆依存しないことを確認。
+- 未確定点は `approvalRecord` / `pendingDecisionQueueCount` / `HIL-RS-02-GOV-EXCEPTION-01` の3点に限定した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+- **Context**: 下流実装が他ストリーム待ちにならないため、CE0はread-only contractを先に固定する必要がある。
+- **Decision**: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を変更禁止のまま維持し、mock contract で handoff 可能状態を継続する。
+- **Consequences**: CE1/CE2/CE4 は CE0 を参照して着手できるが、契約更新は CE0 再起票＋承認完了まで禁止となる。
+
+### Phase 3 Plan（AC / DoD）
+- AC-1: CE0 Contract IDs と safeMode 境界が単一正本に明記されている。
+- AC-2: mock-only で `executeAllowed/reasonCodes` まで検証可能である。
+- AC-3: 破壊的変更は `future-version backlog` 隔離ポリシーが明記されている。
+- DoD: 下流が CE0 契約だけで作業開始可能、かつ依存が一方向で循環しない。
+
+### Phase 4 Execute（contract-only）
+- 実装仕様・コード変更は行わず、契約面のみ更新。
+- 未承認項目は `held` のまま据え置き、推測確定を行わない。
+
+### Phase 5 Verify
+- `contract_id_mutation=0`
+- `safeMode_regression=0`
+- `dependency_cycle=0`
+- self-correction: `0/3`
+
+### Phase 6 Proceed（downstream handoff pointers）
+- 下流参照先（read-only）:
+  - `01_Plans/issues/issue-CE0-contract-freeze.md`（本契約SSOT）
+  - `01_Plans/issues/issue-HIL-RS-01-A1-architecture-minimum-interface-contract.md`（A1固定キー）
+  - `01_Plans/issues/issue-HIL-RS-02-A1-governance-contract-hardening.md`（統治ゲート）
+- 判定: **Conditional-Go（Pending/held 残存のため）**。

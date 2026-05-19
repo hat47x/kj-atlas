@@ -2766,3 +2766,21 @@ handoffKeys:
 - CE2 unlock: `sourceBundleHash === bundleHash` を前提に proposal-only 連携を再開可能。
 - CE4 unlock: `equivalenceKey + bundleHash` を監査再現キーとして連携可能。
 - Stop: 仕様競合/上流矛盾/想定外ファイル競合を検知した場合は即停止。
+
+
+## Stream B contract sync addendum（2026-05-19 / CE1 downstream-startable contract）
+
+### Context
+- CE1 は CE0/HIL-RS 凍結契約を参照しつつ、実装依存（実DB/実LLM/worker）を切断したまま下流開始可能にする必要がある。
+
+### Decision
+- `ContextQueryV1` / `ContextBundleV1` の closed-world 契約を維持し、次の I/F を着手前固定値として扱う。
+  - version: `v1`
+  - preview gate: `previewConfirmed != true -> 422 preview_required`
+  - key gate: `unknown key -> 400 unknown_contract_key`
+  - determinism gate: `same canonical query && bundleHash mismatch -> 409 nondeterministic_bundle`
+- mock dataset は `A2-minimal-v1` 固定、実装依存は導入しない。
+
+### Consequences
+- CE2/CE4 は CE1 契約だけで interface test を開始できる。
+- 破壊的変更（署名追加/削除・エラー語彙変更）は `future-version backlog` へ隔離する。

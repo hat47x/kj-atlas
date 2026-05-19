@@ -492,3 +492,21 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 ### Proceed state
 - 判定: **Hold/Needs-decision 継続**。
 - 理由: Approval Record（`approved_by`, `approved_at`, `evidence`）未確定のため Go 条件未達。
+
+
+## Stream B proceed note（2026-05-19 / A1 interface freeze as downstream contract anchor）
+
+### Contract anchor for downstream
+- A1 固定契約は下流の唯一アンカーとして以下を維持する。
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+
+### Mock-first cut line
+- 下流がモックで利用できる境界は `executeAllowed/decision/reasonCodes/noGoReturnPath` まで。
+- `Pending -> Approved/Rejected` の確定遷移は人間承認のみで、AI/自動化は proposal-only。
+
+### Backward compatibility rule
+- 既存固定キーの変更は non-backward-compatible とみなし、A1 本線では受け付けず `future-version backlog` へ隔離する。
