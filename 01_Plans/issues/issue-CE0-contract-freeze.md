@@ -3812,3 +3812,32 @@ export type AuditEventV1 = {
   - fixed error semantics 3種
   - hash監査キー（`queryCanonicalHash` / `bundleHash`）
 - Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
+
+
+## Stream B execution update（2026-05-19 / CE0 contract SSOT refresh）
+
+### Phase 1 Read（Status/Priority/Depends/Unblocks/AC 再確認）
+- Status=`Open` / Priority=`P1` を維持し、Scope は docs-only・contract-only のまま固定。
+- Depends: `HIL-RS-01-A1 freeze vocabulary (read-only)`、Unblocks: `issue-CE0-core-graph-repositioning.md` / `issue-CE1-context-query-bundle-foundation.md`（read-only handoff）を再確認。
+- AC（read-only reference, no-go canonical IDs 固定, CDC held 必須）に欠落なしを確認。
+
+### Phase 2 Mock-First切断設計（共有リソース列挙 + 最小シグネチャ）
+- 競合しうる共有リソース（再定義禁止）:
+  - Contract IDs: `CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`
+  - schema/API語彙: `ContextQueryV1` / `ContextBundleV1` / `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`
+  - graph語彙: `WorkingGraph` / `ContextProjectionGraph` / `ConsensusGraph`
+- CE1先行最小シグネチャ（read-only handoff）:
+  - ContextQuery keys: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`
+  - ContextBundle keys: `queryCanonicalHash/bundleHash/selected/relations/evidence/contradictions/reviewFlags/truncationMeta/excludedReason`
+- 実装依存切断手順（Mock Provider）:
+  1) `/context/query` と `/context/bundle` は `stubDatasetId=A2-minimal-v1` を固定入力とする。
+  2) provider差し替えは `queryCanonicalHash` / `bundleHash` の決定論一致（3/3）を満たす場合のみ許可。
+  3) 実DB・実LLM・worker連携は CE1 契約検証フェーズへ持ち込まない（contract-only）。
+
+### Phase 3 Plan→Execute→Verify
+- Plan: AC/DoD不足なし。追加提案は不要（現行SSOT維持）。
+- Execute: CE0本文の契約固定のみ更新（ID追加/改名/削除なし）。
+- Verify: 依存逆転なし（CE0→CE1/CE0→CE0-core の一方向）を確認。下流参照は read-only で可能。
+
+### Phase 4 Stopper
+- 自己修復が3回を超える、または Contract ID collision / safeMode既定後退 / dependency inversion が発生した場合は `held` で停止し判断依頼する。
