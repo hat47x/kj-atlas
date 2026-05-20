@@ -393,3 +393,18 @@
 ### Consequences
 - A1/RS-02-A1/親計画の契約語彙ドリフトを抑制し、下流の誤解放を防止できる。
 - 人間承認が揃うまで `Conditional/Needs-decision` を維持し、推測確定を行わない。
+
+## Stream A boundary declaration（2026-05-20）
+
+### Context
+- クリティカルパス継続のため、Stream A は契約凍結（A1）と統治ゲート（RS-02-A1）を先に固定し、下流レーンの実装待ちを作らない必要がある。
+
+### Decision
+- ファイル単位境界を以下で固定する（競合防止）:
+  - Stream A: `ADR-0026/0027/0028`、`issue-HIL-RS-01-*`、`issue-HIL-RS-02-A1-*`、`issue-CE0-contract-freeze.md`
+  - Stream B/C等: 上記以外（特に A2/A3 issue、実装コード、dashboard）
+- Stream A は `contract/value/governance` 記述のみ更新し、実装仕様確定・コード変更を行わない。
+
+### Consequences
+- 競合可能性は `issue-CE0-contract-freeze.md` のみ（Stream B担当と重複）であり、更新時は「契約語彙の再定義禁止・追記のみ」を厳守する。
+- A2/A3 は本ADR群の read-only contract summary を参照して mock 実装準備を継続できる。

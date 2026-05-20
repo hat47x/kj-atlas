@@ -471,3 +471,36 @@ A2/A3はモックI/Fで先行実装可能だが、承認確定の責務はA1ガ�
 - AC/DoD判定: pass（契約差分 `0`、禁止遷移追加なし、SafeMode後退なし）。
 - 未確定事項: `Approval Record` 3項目 + `HIL-RS-02-GOV-EXCEPTION-01`。
 - 最終判定: **Conditional / Needs-decision**（人間承認待ち）。
+
+## Stream A critical-path contract lock update（2026-05-20）
+
+### Phase 1: Read / inventory
+- 対象（allowlist）再読結果:
+  - `HIL-RS-01 parent` = In Progress / P1
+  - `HIL-RS-01-A1` = In Progress / P1
+  - `HIL-RS-02-A1` = Open(In Progress運用) / P1
+  - `CE0 contract freeze` = Open / P1
+- 依存固定: `HIL-RS-01-A1 -> HIL-RS-02-A1 -> parent Proceed`、`HIL-RS-01-A1 -> CE0 contract freeze`。
+- mock方針固定: `decision/executeAllowed/reasonCodes` まで先行可能、`Pending -> Approved|Rejected` 確定は人間のみ。
+
+### Phase 2: ADR合意（Context / Decision / Consequences）
+- Context: 承認待ちを残したまま A2/A3 相当の下流開放を行うと `Pending bypass` となり統治違反。
+- Decision: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` を唯一ゲートとして継続固定。
+- Consequences: `Approval Record` 未充足時は `Hold/Needs-decision` を維持し、Proceed=Go を出さない。
+
+### Phase 3: HIL-RS最小I/F凍結（downstream mock可）
+- API signatures（凍結）:
+  - `A1-GOV-GATE-V1(approvalRecord, decisionQueueState) -> (gateStatus, held[], no_go_reason)`
+  - `A2-PROPOSAL-ENVELOPE-V1(sourceBundleHash, proposalId, policySnapshot) -> (proposalEnvelope | schema_mismatch)`
+  - `A3-DOC-SYNC-CHECK-V1(contractId, syncTargets[], auditDigest) -> (syncResult, drift[] | drift_detected)`
+- Payload schema最小集合（凍結）:
+  - required keys: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `approvalRecord`。
+- Event contract（凍結）:
+  - `query|bundle|proposal|apply` の4点欠損時は No-Go。
+- versioning方針:
+  - 破壊的変更（必須キー変更・遷移追加・承認主体変更）は `v2` へ隔離し、`v1` は read-only 維持。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: docs-only, contract-only の記述整合に限定。
+- Verify: `validate_active_issue_memos` / `git diff --check` で自己検証。
+- Proceed判定: **Hold/Needs-decision**（`Approval Record` と `held` 未解消のため）。
