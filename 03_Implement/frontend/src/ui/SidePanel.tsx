@@ -374,6 +374,7 @@ export function SidePanel({
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
   const [expandedMergeAuditEntryId, setExpandedMergeAuditEntryId] = useState<string | null>(null);
+  const [isAdvancedPanelOpen, setIsAdvancedPanelOpen] = useState(false);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
@@ -1113,7 +1114,13 @@ export function SidePanel({
         </section>
       ) : null}
       <section data-panel="selection-context" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <details data-panel-group="advanced" aria-expanded="false">
+        <details
+          data-panel-group="advanced"
+          aria-expanded={isAdvancedPanelOpen ? "true" : "false"}
+          onToggle={(event) => {
+            setIsAdvancedPanelOpen(event.currentTarget.open);
+          }}
+        >
           <summary style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>
             {t("side_panel.history.with_count", { count: mergeAuditEntries.length })}
           </summary>
