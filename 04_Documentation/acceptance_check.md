@@ -117,3 +117,14 @@ Playwright E2E や PR 前の自動確認は、公開利用者向けの本文で�
 - `Escape` での閉じると、起点フォーカス復帰を観測可能な受入条件として扱う。
 - キーボード到達性（カード/島/主要操作）と段階的開示（文脈優先）を同時に確認する。
 - 詳細要件は `ADR-0030` と `issue-UX-OPERABILITY-01`〜`04` を正本として参照する。
+
+
+## QA/Release Gate 実行順（PRODUCT-QA-01 / MVP-EXIT-01）
+
+1. 手動smoke（主要操作 + SafeMode + 共有前確認）
+2. 回帰（typecheck / unit / regression guard）
+3. E2E（compose優先、不可時mock）
+4. 公開文書・運用文書整合確認
+5. Gate Record記入と Exit 判定（Pass/Conditional/Fail）
+
+失敗時は次工程へ進まず、Blocker一覧に「再現手順・影響範囲・再開条件」を記録します。
