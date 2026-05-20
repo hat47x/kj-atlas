@@ -256,6 +256,15 @@ AUTH系（schema/api/ops/e2e）の契約更新を行うときは、次の固定�
 - strict復帰（`false`）の手順と証跡（実行時刻、実行者、判定根拠）が残っている。
 - E2E回帰（Level 1 常時、Level 2 条件付き）の実施計画が issue 側に反映されている。
 
+### AUTH-OPS-03 運用チェックリスト（申請→承認→実施→監査→失効）
+
+- 申請: requestId を採番し、対象tenant・理由・rollbackBy・監査ID参照を記録する。
+- 承認: Security Officer と System Owner の2者承認が4h以内に揃うことを確認する（D1）。
+- 実施: Platform Operator のみが `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用し、実行証跡を残す。
+- 監査: 最小監査項目（時刻/理由/承認者/対象環境/復旧条件）と PII最小化を確認する。
+- 失効: 最大2h 到達、停止指示、または不整合検出時に strict（`false`）へ復帰し、endedAt を記録する（D2/D3/D4）。
+
+参照正本: `02_Architecture/strict_mode_exception_approval_flow.md`（D1〜D4）、`04_Documentation/security.md`（セキュリティ検証）。
 
 ## 検証運用（Release Gate運用）
 

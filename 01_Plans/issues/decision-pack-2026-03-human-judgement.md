@@ -9,6 +9,10 @@
 - Phase 4 Verify: 件数整合・Queue整合・依存順整合・停止条件違反0件・未承認決定の確定扱い0件を確認。
 - Phase 5 Proceed: 再開条件1行を「公開固定値と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開」に固定。
 
+AUTH-OPS-03 再検証同期（Stream G / 2026-05-20）
+- 固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を再実行し、AUTH-OPS-03 の4観点（用語/役割/導線/D1〜D4）を再監査。
+- 判定: すべて一致（self-correction 0/3）。AUTH-OPS-03 は Done 維持、追加の人間判断待ちは「D1〜D4改定要求が発生した場合のみ」。
+
 ## 0. 対象と優先順位
 
 1. **P0 / AUTH-OPS-03**: strict mode例外緩和 Runbook の承認運用境界（Q1〜Q10）

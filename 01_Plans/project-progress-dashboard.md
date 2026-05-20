@@ -6,6 +6,8 @@
 
 ## 進捗サマリ
 
+- Stream G AUTH-OPS-03 同期（2026-05-20）で固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を直列実行し、`strict_mode_exception_approval_flow.md` を正本として operations/security の運用チェックリストを同期。4観点（用語/役割/導線/D1〜D4）検証を Pass（self-correction 0/3）で完了し、AUTH-OPS-03 Done 状態を維持した。
+
 - Stream F 共有統合同期（2026-05-19 rerun-77）で Phase 1 Read（全ストリーム完了報告と証跡の再収集）→ Phase 2 Plan（件数/状態/Decision Queue/依存順の反映方針固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（件数整合・Queue整合・依存順整合・停止条件違反0件を確認）→ Phase 5 Proceed（再開条件1行を明文化）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・参照リンク不整合0件を再確認した。
 
 再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-19 rerun-77確認済み）。`

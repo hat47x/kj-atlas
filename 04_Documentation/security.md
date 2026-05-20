@@ -209,3 +209,18 @@ AUTH運用のセキュリティレビューでは、次を最小セットとし�
 - PII最小化（subject生値・roles/groups生値・自由記述PII非保存）を維持している。
 
 不一致が1件でもある場合、例外緩和を新規に有効化してはならない。
+
+### AUTH-OPS-03 セキュリティ運用チェック（申請→承認→実施→監査→失効）
+
+1. 申請（request）  
+   - requestId・対象tenant・理由・rollbackBy・監査ID相互参照が揃っていること。
+2. 承認（approve）  
+   - Security Officer / System Owner の2者承認が成立し、承認TTL 4hを超過していないこと（D1）。
+3. 実施（execute）  
+   - Platform Operator が承認済み要求のみ実施し、未承認・承認不備の補完実行をしていないこと。
+4. 監査（audit）  
+   - `時刻/理由/承認者/対象環境/復旧条件` の最小監査項目が記録され、PII生値が保存されていないこと。
+5. 失効（expire/rollback）  
+   - 最大継続2h・停止条件成立・期限到来のいずれかで strict 復帰し、復旧時刻と判定根拠を記録していること（D2〜D4）。
+
+関連導線: `02_Architecture/strict_mode_exception_approval_flow.md`（正本）, `04_Documentation/operations.md`（実行Runbook）, `01_Plans/project-progress-dashboard.md`（進捗監査）。

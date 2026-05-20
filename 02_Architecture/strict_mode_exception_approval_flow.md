@@ -375,3 +375,34 @@ DraftRequest
 - 導線固定: `enterprise_architecture.md` / `operations.md` / `security.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` を相互参照する。
 - 固定値: **D1〜D4**（6.8節）を単一正本とし、差分運用は新規 requestId 再承認を必須とする。
 
+## 12. Stream G AUTH-OPS-03 整合ログ（2026-05-20）
+
+### Phase 1: Read & Terminology Gate
+
+- 用語定義を `Security Officer / System Owner / Platform Operator` に固定し、別名・同義語の追加なしを確認。
+- 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離維持を確認。
+- D1〜D4 固定値（4h / tenant+2h / 代理承認なし / 48h+15m/60m）を正本値として再確認。
+
+### Phase 2: Architecture 正本更新
+
+- 承認条件、停止条件、復旧条件、失効条件の記述を再確認し、正本を維持（仕様変更なし）。
+- 例外適用範囲（tenant単位）と期限管理（承認TTL 4h・最大継続2h）の契約再固定を記録。
+
+### Phase 3: Documentation 同期確認
+
+- `04_Documentation/operations.md` / `04_Documentation/security.md` に対し、申請→承認→実施→監査→失効の運用導線が正本と一致することを確認。
+- `StoppedForClarification` 中の有効化禁止、復旧時の strict 戻し記録必須を運用側で再確認。
+
+### Phase 4: Plans/Issue 同期確認
+
+- `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` / `issue-AUTH-OPS-03-...` の状態整合（Done維持）を確認。
+- 未解決論点は AUTH-OPS-03 固定値の改定要求が発生した場合のみ「人間判断が必要」とする。
+
+### 4観点検証ログ（Verify）
+
+1. 用語: 一致（Security Officer / System Owner / Platform Operator）
+2. 役割: 一致（2者承認 + 実行責務分離）
+3. 導線: 一致（02_Architecture → 04_Documentation → 01_Plans）
+4. 固定値: 一致（D1〜D4）
+
+判定: **Pass（self-correction 0/3）**
