@@ -138,6 +138,8 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 
 - 共有可: 発生日時、URL（機微部分を除去）、エラー種別、HTTP status、SafeMode 状態、再現手順。
 - 共有禁止: API key、token、password、未マスク本文、個人情報、生の監査イベント。
+
+- 復旧時は Plan → Execute → Verify の順を崩さず、AC/DoD 不足時は恒久変更を行わず Draft Proposal として扱う（`operations.md` / `diagnostics.md` 参照）。
 - 条件付き: endpoint や組織内識別子は、System Owner 承認後に最小化して共有。
 
 承認と実行の責務は分離します。

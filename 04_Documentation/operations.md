@@ -184,6 +184,33 @@ API status:
 - SafeMode 緩和の必要性はあるが、承認者が不在で判断できない。
 - 復旧のために secrets を含む生ログ共有が必要と主張される。
 
+
+### Plan → Execute → Verify（障害復旧ランブック）
+
+復旧作業は必ず次の順で進めます。各ステップで AC（受入条件）/DoD（完了条件）が不足している場合は、実装や恒久変更を確定せず **ドラフト提案** として記録します。
+
+1. **Plan（計画）**
+   - 失敗分類コード（WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）を決定する。
+   - 受入条件（AC）を3点で定義する: 「利用者影響の停止」「安全境界の維持」「再現手順の記録」。
+   - 承認者（System Owner）と実行者（Platform Operator / First Responder）を分離して記録する。
+2. **Execute（実行）**
+   - 一次切り分けコマンドを実行し、復旧アクションは最小変更（再起動・再試行・既知のロールバック）に限定する。
+   - SafeMode 緩和や外部共有の拡大が必要な場合は、承認が揃うまで停止する。
+3. **Verify（検証）**
+   - `/api/healthz`、保存、再読み込み、必要に応じて import/share の動作を確認する。
+   - マスク境界（API key / token / password / 未マスク本文を共有しない）を再確認する。
+   - 再現テンプレートを埋め、未解決項目は「Draft Proposal」として次アクションを残す。
+
+**Draft Proposal 記録フォーマット（AC/DoD不足時）**
+
+```text
+Draft Proposal ID:
+不足しているAC/DoD:
+不足により確定できない判断:
+暫定運用（いつまで）:
+恒久対応の提案先（Issue/ADR）:
+```
+
 ### 復旧実行の再現テンプレート
 
 ```text
