@@ -322,3 +322,34 @@
 - System Owner: Conditional/Failの最終判断
 - Platform Operator: 再現環境・実行ログ保証
 - Security Officer: SafeMode/share-export/public exposure関連の最終承認
+
+
+## 14) Stream H release readiness framework update (2026-05-20)
+
+### Phase 1: Read（Readyストリーム出口条件の収集）
+- Ready入力を次の3系統へ固定する。
+  1. `PRODUCT-QA-01` の Gate Record（G/V/E）
+  2. `ENV-CONFIG-DRIFT-01` の E系最終判定
+  3. `HIL-RS-02` delivery plan の Hold/Stop条件
+- 収集対象は「candidate/date/reviewer/final decision/escalation」を必須キーとし、欠落時は `evidence-missing` 扱い。
+
+### Phase 2: 統合判定フレーム（release readiness）
+- Program統合判定は次の順序で直列評価する。
+  - Step-1: Safety gate（safeMode / share-export / pending bypass）
+  - Step-2: Quality gate（G0..G7 / V0..V4 / E1..E3）
+  - Step-3: Evidence gate（candidate単位証跡の鮮度）
+- 最終判定は `Go | Conditional | No-Go`。
+  - `Go`: 3ゲートすべて通過。
+  - `Conditional`: Safety通過、Quality/Evidenceに期限付き未解決が残る。
+  - `No-Go`: Safety未通過、または証跡欠落。
+
+### Phase 3: Plan→Execute→Verify（非依存統合観点）
+- 本Issueで扱う作業を「統合判定ロジックの固定」と「証跡要求の明文化」に限定する。
+- 他ストリーム実装の完了待ちはしない。未入力は `pending evidence` として保持し、判定式側だけを先に固定する。
+- Verify観点: 判定式、入力必須キー、Stop条件が本文で相互矛盾しないこと。
+
+### Phase 4: Stopper
+- 下記が発生した場合は停止し、allowlist外編集を行わない。
+  1. `PRODUCT-QA-01` / `ENV-CONFIG-DRIFT-01` 実ファイル更新を要求された場合
+  2. Program判定に必要な証跡が候補単位で取得不能な場合
+  3. 判定式の再定義要求（safeMode後退・No-Go緩和）

@@ -182,3 +182,23 @@
 - Resume:
   - 最新Gate証跡（candidate/date/reviewer/final decision/escalation）が揃う。
   - Conditional項目の owner/due/re-decision date が記録済み。
+
+
+## Stream H release-readiness execution note（2026-05-20）
+
+### Phase 1: Read（Readyストリーム出口条件）
+- Read対象を `A1固定契約`, `MVP-EXIT Program Gate`, `ENV E-gates` の3系列に限定する。
+- 各系列で `date/reviewer/final decision/escalation` を最小証跡キーとして採取する。
+
+### Phase 2: 統合判定フレーム定義
+- Delivery plan側の統合判定入力は `Proceed=Hold/Stop` の妥当性検査に限定する。
+- `Go` 判定は A1完了 + Program Gate証跡完備の両方が揃った場合のみ許可。
+
+### Phase 3: Plan→Execute→Verify（依存を作らない範囲）
+- Plan: 判定式とStopperの固定。
+- Execute: 本ファイル内でHold/Stop条件を明文化し、外部ファイル更新を要求しない。
+- Verify: allowlist逸脱ゼロ、判定式ドリフトゼロ、Verify上限3回ルール維持。
+
+### Phase 4: Stopper（外部ファイル要求時）
+- `PRODUCT-QA-01` または `ENV-CONFIG-DRIFT-01` 本文更新が必須になった時点で `Proceed=Stop`。
+- `A1 not done` なのに Goを確定しようとする要求は `pending bypass` として即Stop。
