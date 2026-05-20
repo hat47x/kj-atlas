@@ -273,3 +273,15 @@
 - 保留対象: 固定値 D1〜D4 改定要求、または roles/groups の永続化要求（現契約では transient）を伴う変更。
 - 要承認対象: 監査保持期間変更、strict例外運用の承認フロー変更、IdP多様化に伴う一意制約拡張。
 
+
+
+## Stream E phase execution log (2026-05-20)
+
+- Read: AUTH系の直列依存を `AUTH-ARCH-01 -> AUTH-SCHEMA-01 -> AUTH-API-02 -> AUTH-E2E-01` で再確認。
+- ADR/CDC明文化: 既存正本（`ADR-0020`, `enterprise_architecture.md`, `schemas_review_attribution.md`）に未承認決定の確定化がないことを確認。
+- I/F先行定義: `reviewerRef/ownerRef = user:<users.id>` と strict時 `identity_not_provisioned` の契約境界を再固定。
+- モックIdP活用: `AUTH_PROVIDER_PROFILE` + ヘッダー差替で mock IdP 回帰を維持し、アプリ本体にIdP固有分岐を追加しない方針を維持。
+- 実装/文書同期: 本issueは docs契約の整合確認のみ実施（新規仕様追加なし）。
+- Verify: 上流契約とのドリフトなし。
+- Self-correction (<=3): 0回（修正不要）。
+- 報告: 次工程へ **Go**（下流は既存契約参照のみ許可）。

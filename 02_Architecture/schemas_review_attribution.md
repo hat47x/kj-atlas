@@ -249,3 +249,11 @@ ReviewerRef 推奨フォーマット（例）:
 - 本書は review attribution の契約提案を固定する文書であり、MVP時点では attribution 専用テーブル migration を要求しない。
 - Alembic head `20260314_0005` までの物理テーブルは `documents` / `users` / `user_identities` / `merge_decision_logs` で、review attribution は `Document` 埋め込み前提のまま維持する。
 - したがって review attribution は `L2/L2.5`（埋め込み/契約先行）として扱い、個別CRUDや独立 migration を前提にしない。
+
+
+## Stream E sync note (2026-05-20, Auth attribution only)
+
+- Auth属性の正規化境界を再確認: `reviewerRef` / `ownerRef` は non-empty opaque string を維持し、Auth内部正本は `user:<users.id>` 派生参照とする。
+- `provider` / `external_uid` は review attribution 永続層に保存しない（逆引きは `user_identities` へ委譲）。
+- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）時は `users.id` 未解決の要求を fail-closed で拒否し、attribution event を新規生成しない。
+- mock IdP 回帰での差分吸収点は `AUTH_PROVIDER_PROFILE` と header mapping に限定し、schema key set は不変。
