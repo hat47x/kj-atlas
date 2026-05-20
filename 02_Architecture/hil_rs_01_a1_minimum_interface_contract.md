@@ -619,3 +619,57 @@ Prohibited for A2/A3:
 1. Human dual-approval evidence completed (`approved_by`, `approved_at`, `evidence`).
 2. `pendingDecisionQueueCount==0` confirmed.
 3. No fixed-key drift and no safeMode regression requests.
+
+## 9) Stream A Contract Pack v3（2026-05-20 / critical-path refresh）
+
+### Phase 1: Read（再読差分確認）
+- Re-read targets: `ADR-0026`, `ADR-0027`, `02_Architecture/hil_rs_01_a1_minimum_interface_contract.md`.
+- Delta check result: fixed keys and transition constraints remain unchanged (`diff=0`)。
+- Remaining unresolved approvals are kept as pending; no implicit confirmation performed.
+
+### Phase 2: ADR確定（Context / Decision / Consequences）
+#### Context
+- Downstream streams require a stable and singular contract reference to prevent contract drift and unauthorized unlock.
+
+#### Decision
+- Freeze the contract pack as read-only reference with the following immutable set:
+  - API signatures: `A1-CRITIQUE-IF`, `A1-REDIFF-IF`, `A1-ATTR-IF`, `A1-ERROR-IF`
+  - Data type baseline: `CritiqueV1`, `ReDiffV1`, `AttributionV1`, `A1ErrorV1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - Feature-flag equivalent governance keys: `contractLinkLocked=true`, `sharedResourceFreeze=true`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`
+
+#### Consequences
+- Pending items (`Approval Record`, governance exception holds) remain explicit blockers; downstream cannot treat them as approved.
+- Any mutation request must be routed to A1 CDC and must not be implemented in downstream streams.
+
+### Phase 3: Contract Pack 発行（参照専用）
+```text
+Contract Pack v3
+- Pack ID: HIL-RS-CE0-CONTRACT-PACK-v3
+- SSOT: 02_Architecture/hil_rs_01_a1_minimum_interface_contract.md
+- API signatures frozen: A1-CRITIQUE-IF | A1-REDIFF-IF | A1-ATTR-IF | A1-ERROR-IF
+- Data types frozen: CritiqueV1 | ReDiffV1 | AttributionV1 | A1ErrorV1
+- schemaVersion: 1.0.0
+- Feature flags / governance keys frozen:
+  - contractLinkLocked=true
+  - sharedResourceFreeze=true
+  - safeModeDefault=ON
+  - safeModeBoundary=SAFE_MODE_STRICT_ON
+  - overridePolicy=human_dual_control_only
+- Transition rule frozen:
+  - DecisionQueue: Pending -> Approved | Pending -> Rejected
+  - Unlock: A2A3 only when (a1Status==Done && pendingDecisionQueueCount==0)
+```
+
+### Phase 4: Verify（AC/DoD自己検証）
+- AC-1: Context / Decision / Consequences explicitly documented. ✅
+- AC-2: API signature / data type / schemaVersion / feature-flag equivalents frozen. ✅
+- AC-3: Unapproved items are explicitly isolated as pending. ✅
+- AC-4: No implementation scope changes performed. ✅
+- Self-correction count: `0/3`.
+
+### Phase 5: Proceed/Stop
+- Gate result: **STOP (Conditional / approval pending)**。
+- Reason: unresolved approval artifacts remain (`approved_by`, `approved_at`, `evidence` not complete).
+- Policy: no speculative implementation or downstream unlock.
