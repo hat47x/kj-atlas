@@ -153,6 +153,23 @@ Non-goals:
 - No SafeMode/share/export policy change in this stream.
 - Self-correction threshold not exceeded.
 
+## 15) Stream F execution snapshot (2026-05-20)
+
+### Scope lock
+
+- Stream F は `runtime_parameter_registry.md` と関連運用文書（configuration / security operational guidelines）のみを対象にし、実装コード・deploy定義は変更しない。
+
+### Execute result（naming / defaults / compatibility）
+
+- Naming: 公開キーは引き続き `KJ_ATLAS_*` のみを許容し、追加の互換キー導入は行わない。
+- Defaults: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`（実装既定 `true`）と enterprise 推奨値（`false`）の差を registry と運用文書で明示した。
+- Compatibility: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の既定値と enterprise 運用時の選択肢（`read_only`/`deny`）を文書間で同期した。
+
+### Verify summary
+
+- `runtime_parameter_registry.md` / `configuration.md` / `security_operational_guidelines.md` の profile 記述に矛盾がないことを差分確認で検証。
+- SafeMode/share/export の既定ポリシー変更はなし。
+
 
 ## 12) Stream D execution snapshot (2026-05-17)
 

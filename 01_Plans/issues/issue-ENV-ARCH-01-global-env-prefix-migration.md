@@ -241,3 +241,8 @@
 
 - 本更新では Verify失敗 0回。
 - 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。
+
+## Stream F note (2026-05-20)
+
+- ENV-ARCH-01 の契約（公開キーは `KJ_ATLAS_*` のみ）を維持したまま、profile運用文書に「実装既定値」と「推奨値」の差分説明を追加した。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` と `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の運用判断を profile 起点で統一し、非互換変更や互換レイヤ再導入は実施していない。

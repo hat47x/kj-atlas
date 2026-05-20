@@ -53,6 +53,7 @@
 - `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
 
 > 注意: `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の実装既定値は `true` ですが、本番相当の推奨値は `false` です。これは契約不整合ではなく、導入容易性と本番安全性を分けているためです。
+> 補足: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は実装既定値 `read_only` ですが、`enterprise-production` では `read_only` と `deny` のどちらを採るかを事前に固定してください。
 
 ## 最小設定
 

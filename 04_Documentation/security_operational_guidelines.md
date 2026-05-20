@@ -37,6 +37,7 @@
 - `local-dev`: 外部共有を避ける初期検証向け（`KJ_ATLAS_LLM_PROVIDER=none`）。
 - `evaluation`: Compose評価向け。外部連携は必要時のみ限定有効化。
 - `enterprise-production`: strict 運用を前提に、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を標準とする。
+- `enterprise-production`: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` を `read_only` または `deny` で事前合意し、運用中に暗黙変更しない。
 
 プロファイル未確定のまま `KJ_ATLAS_ALLOW_JIT_PROVISIONING`、`KJ_ATLAS_AUDIT_*`、`KJ_ATLAS_ACCESS_CONTROL_*` を変更しないでください。
 

@@ -23,6 +23,16 @@
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
+### Profile default vs recommendation（既定値と推奨値）
+
+運用ドリフトを防ぐため、実装既定値（未設定時）と profile 推奨値（運用上の標準）を区別して扱います。
+
+| Key | Implementation default | Enterprise recommendation | Rationale |
+| --- | --- | --- | --- |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | `false` | 初期導入時の接続確認容易性と、本番運用時の厳格運用を分離するため。 |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` | 障害時の安全側挙動を明示的に選べるようにするため。 |
+| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`（必要時のみ opt-in） | 外部共有の既定無効を維持するため。 |
+
 
 ## Profile selection criteria（運用判断基準）
 

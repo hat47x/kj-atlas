@@ -136,3 +136,9 @@ Non-goals:
 
 - 本更新では Verify失敗 0回。
 - 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。
+
+## Stream F note (2026-05-20)
+
+- Profile guidance の運用明確化として、`runtime_parameter_registry.md` に既定値/推奨値対比表を追加した。
+- `configuration.md` と `security_operational_guidelines.md` の profile 節を同時同期し、`KJ_ATLAS_ALLOW_JIT_PROVISIONING` と `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の判断点を一致させた。
+- 命名規約（`KJ_ATLAS_*`）・既定値・互換方針（旧キー再導入なし）に変更はない。
