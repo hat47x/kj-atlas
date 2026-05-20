@@ -8,6 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 RELATION_SUMMARY_TEXT_MAX_LENGTH = 4000
+DOCUMENT_V2_MOCK_SCHEMA_VERSION = "mock-2026-05-19-dv2"
 
 
 class Base(DeclarativeBase):
@@ -449,8 +450,8 @@ class ReviewAttribution(BaseModel):
     @field_validator("reviewerRef")
     @classmethod
     def validate_reviewer_ref_opaque(cls, value: str) -> str:
-        if "@" in value:
-            raise ValueError("reviewerRef must be opaque and must not contain email-like identifiers")
+        if "@" in value or value.startswith(("sso:", "oidc:", "saml:", "provider:")):
+            raise ValueError("reviewerRef must be opaque and must not contain email-like/provider identifiers")
         return value
 
     @field_validator("ownerRef")
@@ -458,8 +459,8 @@ class ReviewAttribution(BaseModel):
     def validate_owner_ref_opaque(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        if "@" in value:
-            raise ValueError("ownerRef must be opaque and must not contain email-like identifiers")
+        if "@" in value or value.startswith(("sso:", "oidc:", "saml:", "provider:")):
+            raise ValueError("ownerRef must be opaque and must not contain email-like/provider identifiers")
         return value
 
     @model_validator(mode="after")
