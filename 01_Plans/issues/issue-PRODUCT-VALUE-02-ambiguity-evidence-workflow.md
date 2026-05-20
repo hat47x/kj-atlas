@@ -189,3 +189,38 @@
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+
+
+## Stream H Contract Finalization (2026-05-20)
+
+### Scope confirmation
+- Stream H dedicated; plan/ADR layer only; no implementation code edits.
+- Target backlog: `MVP-EXIT-01` / `PRODUCT-VALUE-01..03` only.
+
+### C/D/C lock (Context / Decision / Consequences)
+| Context | Decision | Consequences |
+| --- | --- | --- |
+| PRODUCT-VALUE-02 requires Open-ready contract quality before downstream execution. | AC/DoD/KPI/audit fields are locked for docs-only verification first. | Downstream streams can execute without re-interpreting value intent. |
+
+### KPI + audit scorecard mapping
+- KPI field quality gate: definition / formula / evidence / re-measurement must all exist.
+- Audit field quality gate: `reviewer`, `date`, `artifact id`, `decision`, `re-decision condition` must be explicit.
+
+### AC / DoD final lock
+- [ ] AC-F1 Hypothesis→Action→Evidence→Decision chain is explicit.
+- [ ] AC-F2 Go/No-Go rule is explicit and binary-decidable.
+- [ ] AC-F3 KPI definitions are re-measurable by docs-only procedure.
+- [ ] DoD-F1 No cross-stream implementation dependency is required for contract validation.
+- [ ] DoD-F2 Safety boundary wording (SafeMode/share-export/review attribution) is consistent with ADR-0032.
+
+### Verify (non-dependency)
+- Result: Contract validation is executable without waiting for other stream code merges.
+- Reason: Inputs are issue text completeness and evidence schema only.
+
+### Self-correction (<=3)
+1. Normalized gate terms to `Go / Conditional Go / No-Go`.
+2. Removed ambiguous wording that implied implementation readiness was required at this phase.
+3. Added explicit audit metadata requirements for approval traceability.
+
+### Approval-wait packet
+- This section + ADR-0032 Stream H block are the approval bundle for PRODUCT-VALUE-02.
