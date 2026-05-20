@@ -582,3 +582,32 @@
 ### Phase 4: Proceed / Stopper
 - 判定: **Hold/Needs-decision**。
 - Stopper: `approved_by` / `approved_at` / `evidence` 未充足。
+
+## Stream A serial checkpoint（2026-05-20）
+
+### Phase 1: 現状読取（Status / Priority / Dependencies / Mock）
+| backlog_id | Status | Priority | Dependencies | Mock方針 |
+| --- | --- | --- | --- | --- |
+| HIL-RS-01(parent) | In Progress | P1 | HIL-RS-01-A1, HIL-RS-02-A1 | gate判定レスポンスのみ先行 |
+| HIL-RS-01-A1 | In Progress | P1 | none | I/F固定値をread-only参照 |
+| HIL-RS-02-A1 | Open（Approval Pending） | P1 | HIL-RS-01-A1 | `executeAllowed=false` 固定で判定モックのみ |
+| CE0-contract-freeze | Open | P1 | HIL-RS-01-A1語彙固定 | CE0側はContract ID read-only参照 |
+
+### Phase 2: ADR合意（Context / Decision / Consequences）
+- Context: 承認証跡未充足で下流を開放すると SoD違反と `Pending bypass` が発生する。
+- Decision: `ApprovalRecordV1(approved_by, approved_at, evidence)` 欠損時は常に `decision=Hold`。
+- Consequences: `Proceed=Go` は `A1 Done && pendingDecisionQueueCount==0 && fixedKeysDiff==0` のみ。
+
+### Phase 3: 契約凍結（API / payload / event）
+- API signature:
+  - `HIL_RS_DECISION_GATE_V1(inputSnapshot) -> {decision, executeAllowed, reasonCodes, requiredHumanActions}`
+- payload required:
+  - `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `approvalRecord`, `pendingDecisionQueueCount`
+- event contract:
+  - `query|bundle|proposal|apply` を必須監査セットとして固定。
+- versioning:
+  - 破壊的変更は `HIL_RS_DECISION_GATE_V2` を新設して分離。v1はimmutable。
+
+### Phase 4: Verify / Proceed
+- 判定: **Hold/Needs-decision**（`approved_by/approved_at/evidence` 未充足）。
+- self-correction: `0/3`（新規修復不要）。
