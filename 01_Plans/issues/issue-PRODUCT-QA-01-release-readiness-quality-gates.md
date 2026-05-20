@@ -278,6 +278,64 @@
 - 参照正本を `ADR-0019` / `04_Documentation/acceptance_check.md` / `03_Implement/frontend/docs/e2e_testing.md` に固定し、公開利用者向け手動確認と開発者向け自動E2Eの境界を再確認した。
 - 本Issueの `GoNoGoGate=Required` / `VerificationLevel=integration` を **P0品質ゲートの最上位条件** として維持し、Draft課題のOpen化条件をこのゲートに従属させる。
 
+## 19) Stream F update (2026-05-20): Unified release readiness gate model
+
+### Phase 1 Read（重複・矛盾抽出）
+- `MVP-EXIT-01` と本Issueの判定条件を比較し、判定語彙・閾値・証跡要件のズレを抽出した。
+- 矛盾点:
+  - 判定カテゴリが「Gate一覧」中心と「Blocker/Critical/Major」中心で分離していた。
+  - Conditional Go の必須条件（owner/due/re-decision date）が本文中で強度不一致だった。
+  - 他ストリーム成果の受入時に必要な入力項目がテンプレート化されていなかった。
+
+### Phase 2 Plan（共通ゲートモデル定義）
+- `PRODUCT-QA-01` を Release Readiness 判定の正本とし、判定面を以下4カテゴリに統一する。
+  - **Quality**: G2/G3/G4/G7 + Value gates（V0..V4）
+  - **Security**: G1 + public exposure + SafeMode/share-export/import-sanitize整合
+  - **Operability**: G6 + E1..E3（環境契約/実行整合）
+  - **Documentation**: G0/G5 + 公開導線整合（`README.md`/`ROADMAP.md`/`public_index.md`）
+- 判定式（必須）を固定:
+  - Go: Blocker=0 かつ Critical=0 かつ Major=0 かつ 必須ゲート完了 かつ 証跡完備
+  - Conditional Go: Blocker=0 かつ Critical=0 かつ Major>=1 かつ 是正計画（owner/due/re-decision date）登録済み
+  - No-Go: Blocker>=1 または Critical>=1 または 必須証跡欠落
+
+### Phase 3 Execute（受入条件テンプレ整備）
+- 他ストリーム成果受入の最小テンプレートを追加し、判定入力を固定する。
+
+```md
+## Stream Deliverable Intake Template (PRODUCT-QA-01)
+- Stream ID:
+- Deliverable scope:
+- Mapped gate category: Quality | Security | Operability | Documentation
+- Target gates: (e.g., G3, V2, E2)
+- Evidence bundle:
+  - Command log:
+  - Test report:
+  - Screenshot / capture (UI影響時):
+  - Docs diff / spec sync:
+- Risk classification: Blocker | Critical | Major | Minor
+- Follow-up requirement (if not Go):
+  - issue id:
+  - owner:
+  - due:
+  - re-decision date:
+- Intake decision: Accepted | Accepted with condition | Rejected
+```
+
+### Phase 4 Verify（AC/DoD照合）
+- AC照合観点を次で固定:
+  1. 判定カテゴリが4分類へ正規化されている。
+  2. Go/Conditional/No-Go 判定式が測定可能（数値・有無判定）である。
+  3. 証跡要件が candidate 単位で追跡可能である。
+  4. 未達時の戻し先 issue と再判定日が必須入力である。
+- DoD観点:
+  - `GoNoGoGate=Required` と `VerificationLevel=integration` を維持し、E2E未実施時の代替記録方針は `ADR-0019` 準拠。
+
+### Phase 5 Proceed（Program受け渡し）
+- Program親Issue（`MVP-EXIT-01`）への受け渡し入力は、次を必須化する。
+  - Productization Gate Record（最新 candidate）
+  - Stream Deliverable Intake Template（該当ストリーム分）
+  - Conditional/No-Go の未解決一覧（owner/due/re-decision date）
+
 ### Phase2 Gate定義（P0固定）
 - **P0 Gate-0（Evidence Completeness）**: Gate Record に `candidate/date/reviewer/scope/gate result/evidence/follow-up` が欠ける場合は即 No-Go。
 - **P0 Gate-1（Safety Boundary）**: SafeMode既定ON、share/export前確認、import sanitize の3点が文書・操作・証跡で一致しない場合は No-Go。

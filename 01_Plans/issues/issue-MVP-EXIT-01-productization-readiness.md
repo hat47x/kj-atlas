@@ -258,6 +258,60 @@
 ### Required evidence pack
 
 - Gate Record（G0..G7, V0..V4, E1..E3）
+
+## Stream F update (2026-05-20): Program gate alignment with PRODUCT-QA-01
+
+### Phase 1 Read（親子判定境界の明確化）
+- 本Issueは Program 判定専任、`PRODUCT-QA-01` は Release Readiness 判定正本という責務分離を固定した。
+- 判定不整合を避けるため、本Issueはゲート定義を再発明せず、`PRODUCT-QA-01` の結果を入力として受理する。
+
+### Phase 2 Plan（Program判定式の統一）
+- Program 判定式を `PRODUCT-QA-01` と同一ロジックへ統一する。
+  - Go: 子ゲート判定が Go かつ必須証跡完備
+  - Conditional Go: Blocker/Critical=0 で、Major残件に期限付き是正計画あり
+  - No-Go: Blocker>=1 または Critical>=1 または証跡欠落
+- Program判定カテゴリは次の4観点で集約する。
+  - Quality
+  - Security
+  - Operability
+  - Documentation
+
+### Phase 3 Execute（受入条件テンプレート固定）
+- 他ストリーム成果を Program 判定へ取り込む際の受入条件テンプレートを固定する。
+
+```md
+## Program Intake Acceptance Template (MVP-EXIT-01)
+- Candidate:
+- Source stream / issue:
+- Category: Quality | Security | Operability | Documentation
+- Referenced QA gate result: (G/V/E + verdict)
+- Evidence completeness: pass/fail
+- Risk class: Blocker | Critical | Major | Minor
+- Intake result: Accept | Conditional Accept | Reject
+- If conditional/reject:
+  - Required follow-up issue:
+  - Owner:
+  - Due:
+  - Re-decision date:
+```
+
+### Phase 4 Verify（判定可能性チェック）
+- Program判定の必須入力:
+  1. `PRODUCT-QA-01` の最新 Gate Record（candidate/date/reviewer/final）
+  2. E系ゲート最終結果（E1..E3）
+  3. Conditional/No-Go の未解決フォローアップ（owner/due/re-decision date）
+- フェイルセーフ:
+  - 上記いずれか未定義/欠落時は **判定停止（No-Go扱い）**。
+  - 推測補完は禁止。
+
+### Phase 5 Proceed（Program判定出力規約）
+- Program判定ログは次を必須項目とする。
+  - Candidate / Decision date / Reviewer
+  - Final decision（Go | Conditional Go | No-Go）
+  - Decision reason（1行要約）
+  - Escalation route（継続/停止/再判定日）
+  - External dependencies（未解決項目）
+- 本Issueの完了条件は「製品実装完了」ではなく「判定枠組み確定 + 追跡可能な証跡様式確定」とする。
 - 実行コマンドログ（成功/失敗/未実施理由）
 - 手動smoke観測（viewport含む）
 - 未解決リスク台帳（owner/due date/escalation）
