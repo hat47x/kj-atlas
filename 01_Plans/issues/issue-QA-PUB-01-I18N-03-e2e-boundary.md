@@ -181,3 +181,27 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - 判定: **不可（Execution: Hold 維持）**。
 - 不足条件: Pending-1（PUB承認）/ Pending-2（I18N承認）未充足。
 - 解消順: 1) I18N-03承認確定 → 2) PUB-01承認確定 → 3) 経路固定の最終レビュー。
+
+## Stream E update (2026-05-20): Open化 entry criteria / I18N boundary gate
+
+### 1) Read（最新メタ）
+- 本issueは `QA-E2E-USE-01` の境界判定に依存するため、Open判定は承認ID・境界語彙・証跡形式の3点一致を前提とする。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-I18N-01: `ja/en` 等価判定の対象シナリオ一覧が固定され、追加時の差分記録先が明示されている。
+- EC-I18N-02: 翻訳品質（人間判断）と導線等価（機械判定）が分離され、No-Go条件が混線していない。
+- EC-I18N-03: `Execution: Hold` 解除条件に承認ID・再判定日・owner が揃っている。
+- EC-I18N-04: blocker と再開条件が 1:1 対応している。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: I18N境界を `flow parity`（機械）/`translation quality`（人間）へ二分して判定する。
+- Execute: docs-onlyで判定語彙を固定し、曖昧語を削除する。
+- Verify:
+  - `rg -n "EC-I18N-0[1-4]|Execution: Hold|Pending|parity|translation" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+
+### 4) Stopper条件適用
+- Stopper-I1: flow parity の証跡不備は Open不可。
+- Stopper-I2: 翻訳品質レビュー担当未確定は Open不可。
+- Stopper-I3: 境界外（本番実装変更）要求が混入した場合は即Hold。
