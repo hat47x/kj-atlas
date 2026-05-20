@@ -191,3 +191,17 @@
 
 ### Consequences
 - Stream Dの停止条件が明文化され、前提未確定のまま実装へ越境するリスクを抑制できる。
+
+## 18) Stream B phase sync（2026-05-20）
+
+### Context
+- Stream B 対象範囲で、schema/CRUD境界/運用責務の差分を再読した。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を固定し、未分類を `L2.5` として扱う。
+- backward compatibility は version gate 優先で固定し、`version: 2` の非互換変更を禁止する。
+- DB/API依存が未確定の統合点は read-only contract として公開し、mock-first で検証する。
+
+### Consequences
+- Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
+- Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
