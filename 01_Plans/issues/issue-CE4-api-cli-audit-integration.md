@@ -1446,3 +1446,24 @@
 ### P3: Verify/Stop gate（運用）
 - [ ] Verifyの自己修復は最大3回。4回目が必要な場合は `StoppedForClarification` で停止する。
 - [ ] 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を契約確定へ昇格しない。
+
+## Stream B proposal-only gate refresh（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- CE4は API/CLI/Audit の contract-only 統合Issue（Status=Draft, Priority=P2）として再確認。
+- 依存は CE0（語彙固定）/ CE1（Context I/F固定）への read-only 参照に限定。
+
+### Phase 2: CE1固定点への接続（proposal-only）
+- CE4は `ContextQueryV1/ContextBundleV1` を監査整合の前提入力として扱うが、実装配線は確定しない。
+- `mock:<64hex>` 経路は real と同一 fail-closed 規律を適用し、依存切断を維持。
+
+### Phase 3: Plan→Execute→Verify
+- Plan: I/F固定（入出力フィールド・判定語彙・失敗分類）と、未固定項目（HTTP詳細/CLI数値コード/配送方式）の境界を維持。
+- Execute: proposal-only 文書更新のみ。
+- Verify:
+  - 依存循環なし（CE4はCE1契約を参照し、CE1へ実装要求を逆流させない）。
+  - Draft→Open条件は G-01〜G-05 の充足で測定可能。
+  - self-correction 上限は3回。
+
+### Phase 4: Stopper
+- CE1契約が曖昧化した場合、またはCE4から他ストリーム実装領域編集が必要になった場合は停止・照会とする。
