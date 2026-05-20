@@ -682,3 +682,28 @@
   - `rg -n "Open readiness:|状態分類:|Phase 5: Proceed" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
   - `git diff --check`
 - Proceed verdict (Phase 6): `Open可能（条件付き）`
+
+## Stream G Documentation Ops log（2026-05-20, 5Phase + CDC）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` → `02_Architecture/enterprise_architecture.md` → `04_Documentation/operations.md` → `04_Documentation/security.md` の固定順序で再読。
+- DOC-OPS-02 の4観点（用語/役割/導線/固定値D1〜D4）を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: operations runbook の公開境界と security 文書群の導線整合を維持する必要がある。
+- Decision: 役割語彙（Security Officer / System Owner / Platform Operator）と D1〜D4 は再定義せず、正本参照を維持する。
+- Consequences: 公開境界の後退と未承認事項の確定化を防止し、docs-only で監査可能な更新に限定できる。
+
+### Phase 3 用語・導線・公開境界
+- 用語: 3ロール語彙の揺れゼロを確認。
+- 導線: strict mode 正本→enterprise→operations→security の順を維持。
+- 公開境界: 内部運用手順を公開文書へ持ち込まない方針を維持。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|公開境界" 04_Documentation/operations.md 04_Documentation/security.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（docs-only / scope内 / 停止条件非該当）。
+- 3回失敗停止ルール: 維持（未到達）。
