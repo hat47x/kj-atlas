@@ -839,3 +839,18 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 2-3 契約更新: ダッシュボード更新は triage実測値のみを根拠とし、推測更新を禁止。`invalid Status metadata` が1件でもある場合は更新停止。
 - Phase 4 Verify: triage stopper `invalid Status metadata=4件（Open準備完了 (Ready for Open)）` を検知し、状態遷移の確定更新は停止。
 - Phase 5 Proceed: 次アクションは「(1) invalid status正規化 → (2) triage errors=0確認 → (3) shared 3ファイル同期」の固定順で運用。
+
+## Stream H Program Orchestration update（2026-05-20, MVP Exit統合判定）
+
+- Phase 1 Read & Intake: A〜G成果の統合入力を再確認し、最新基準を 2026-05-19 (rerun-77) に固定。
+- Phase 2 クリティカルパス再計算: 真のブロッカーを「Program Gate証跡不足」に限定し、A2/A3のmock先行可能領域を分離。
+- Phase 3 MVP Exit一次判定: **Conditional**（判定式は整備済み、最新candidate証跡の埋め込み待ち）。
+- Phase 4 次サイクル計画: Lane-H1（Program Gate証跡統合）/ Lane-H2（Dashboard同期）/ Lane-H3（Acceptance導線同期）の非重複運用を提案。
+- Stop条件: allowlist外編集要求、証跡不足でのGo確定、Verify 3回超過。
+
+### Blocker一覧（回避可否付き）
+| Blocker | 状態 | 回避可否 | 必要アクション |
+|---|---|---|---|
+| `PRODUCT-QA-01` 最新Gate Record不足 | Open | 不可（True blocker） | candidate/date/reviewer/final decision/escalation を追記 |
+| `ENV-CONFIG-DRIFT-01` E系最終結果不足 | Open | 不可（True blocker） | E-gate結果をProgram判定に連結 |
+| Decision Queue Open 2件 | Open | 条件付き可（Conditional維持） | owner/due/re-decision date 明記 |

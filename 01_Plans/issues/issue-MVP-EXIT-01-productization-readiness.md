@@ -213,3 +213,34 @@
 - Due date:
 - Re-decision date:
 ```
+
+## 13) Stream H integration decision update (2026-05-20)
+
+### Phase 1: Read & Intake
+- A〜Gストリームの完了報告・検証ログは、`project-progress-dashboard` の最新同期（2026-05-19 rerun-77）を入力正本として採用した。
+- 証跡不足として、以下を Program Gate の追加要求に分類した。
+  1. `PRODUCT-QA-01` Gate Record の candidate単位の最新判定ログ（date/reviewer/final decision/escalation）
+  2. `ENV-CONFIG-DRIFT-01` のE系ゲート最終結果
+  3. Conditional/No-Go時の是正期限（owner/due/re-decision date）
+- 入力鮮度は 2026-05-19 (UTC) を最新として確認し、これより古い判定は再評価対象とする。
+
+### Phase 2: クリティカルパス再計算
+- 真のクリティカルパス: `PRODUCT-QA-01 Gate確定 -> ENV-CONFIG-DRIFT-01整合 -> MVP-EXIT Program Gate最終判定`。
+- モックで回避可能な依存: A2/A3実装前段のI/F整合確認（契約固定済み範囲）は継続可能。
+- モックで回避不能な依存: Program Gate最終判定（Go/Conditional/No-Go）に必要な承認記録とGate結果。
+
+### Phase 3: MVP Exit一次判定
+- **一次判定: Conditional**
+- 根拠:
+  - Program判定テンプレートと判定閾値は整備済み。
+  - 一方で最終Go判定に必要な最新Gate証跡（candidate単位）が本Issue本文で未確定。
+- 是正条件:
+  1. `PRODUCT-QA-01` と `ENV-CONFIG-DRIFT-01` の最新結果を Program Gate Decision テンプレートに転記。
+  2. Conditional項目ごとに owner/due/re-decision date を必須入力。
+  3. No-Go要因が1件でも残る場合は出荷判定を停止。
+
+### Phase 4: 次サイクル実行計画（衝突ゼロ）
+- Lane-H1（Program Gate証跡統合）: 本Issueのみ更新し、判定ログを確定する。
+- Lane-H2（進捗可視化）: `project-progress-dashboard.md` のみ更新し、公開固定値・判定状態を同期する。
+- Lane-H3（受入導線同期）: `04_Documentation/acceptance_check.md` の統合判定節のみ更新し、利用者向け確認導線を維持する。
+- 停止条件: 証跡不足、allowlist外編集要求、判定式ドリフト、Verify 3回超過。
