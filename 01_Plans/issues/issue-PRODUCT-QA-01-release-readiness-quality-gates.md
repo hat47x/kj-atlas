@@ -311,3 +311,56 @@ DoDテンプレ（Draft→Open）
   - Open化可能: AC/DoD/証跡が充足。
   - 追加判断必要: 証跡または実行経路固定が不足。
   - 保留継続: Blocker未解消、または安全境界が未確認。
+
+
+## 18) Stream F update (2026-05-20): Gate Contract v1.0（固定）
+
+### 18.1 Gate inventory（必須/推奨/将来）
+
+- **必須（Release Blocking）**: G0, G1, G2, G3, G4, G5, G7, Value V0/V1, V2, V3, V4, 横断LLM任意性, E1, E2, E3
+- **推奨（Conditional Go許容）**: G6（診断・サポート導線）
+- **将来（MVP-EXIT以降）**: 長時間耐久、大規模データ負荷、企業専用運用プロファイルの深掘り
+
+### 18.2 Severity contract（停止条件）
+
+- **Blocker**: SafeMode/share-export/import-sanitize/public exposure 境界違反、証跡欠落、主要導線E2E不能。→ **即 No-Go**
+- **Critical**: データ喪失リスク、保存復元失敗、公開文書と挙動の重大不一致。→ **No-Go（例外なし）**
+- **Major**: 主要導線の到達不能/誤誘導、i18n主要ラベル欠落、操作復帰不能。→ **Conditional Go まで**（期限・Owner・再判定日必須）
+- **Minor**: 表記・体裁・補助導線の軽微差分。→ **Go可**（follow-up issue必須）
+
+### 18.3 Gate contract（再現可能判定）
+
+| Gate | 目的 | 入力 | 実行コマンド/手順 | 合格基準 | 失敗時対応 |
+| --- | --- | --- | --- | --- | --- |
+| G0 計画整合 | 判定対象と依存を固定 | issue/ADR参照 | `python 01_Plans/issues/validate_active_issue_memos.py` | AC/DoD/戻し先issueが1:1で追跡可能 | `PRODUCT-QA-01` 本文差戻し |
+| G1 安全既定 | SafeMode境界維持 | policy/docs/e2e証跡 | 手動smoke +安全境界確認 | SafeMode既定ON、共有前確認導線一致 | Blockerとして No-Go |
+| G2 主要操作 | 操作可能性保証 | smoke手順/Playwright | `npm run e2e` または `npm run e2e:mock` | 開始→編集→保存→復帰が再現 | `QA-E2E-USE-01` へ戻す |
+| G3 日本語UI | 主要UIの理解可能性 | i18n test | `npm run test:regression-guards` | 主要ラベルに未翻訳/内部語なし | `PRODUCT-UX-*` へ戻す |
+| G4 画面耐性 | viewport崩れ防止 | 390/960/1280 観測 | 手動smoke viewport確認 | 主要操作が見切れない | `PRODUCT-UX-*` へ戻す |
+| G5 公開文書 | 公開境界維持 | public docs | `git diff --check` + 公開文書目視 | 内部運用情報が公開文書に混入しない | `04_Documentation/*` 差戻し |
+| G6 診断/サポート | 障害時初動 | diagnostics/support docs | 失敗時ログ採取手順確認 | 次アクションが利用者に伝わる | 推奨: follow-up |
+| G7 回帰 | 技術回帰防止 | FE/BE/docs | `npm run typecheck` / backend test / diff check | 必須回帰失敗なし | Major以上は No-Go |
+| E1 契約キー | Env公開契約 | runtime registry/docs | env keyの一致確認 | 公開契約キー逸脱なし | `ENV-CONFIG-DRIFT-01` |
+| E2 実行時検証 | 起動時破綻防止 | settings test | backend settings test | 不正値fail-fast | Blocker |
+| E3 Compose整合 | 配布時整合 | compose/env file | compose config check | compose/envの差分矛盾なし | `ENV-CONFIG-DRIFT-01` |
+
+### 18.4 固定実行順（Runbook）
+
+1. smoke（手動）
+2. unit/regression（軽量）
+3. integration（frontend/backend連動）
+4. e2e（Playwright: compose優先、不可時mock）
+5. release checks（docs/compose/env/public exposure）
+
+各段で失敗した場合は次段へ進まない。自己修復は3回まで、4回目相当は Blocker一覧を作成して停止する。
+
+### 18.5 Blocker一覧フォーマット（停止時）
+
+- Blocker ID:
+- Gate:
+- Severity:
+- 再現コマンド/手順:
+- 影響範囲:
+- 暫定回避策:
+- エスカレーション先:
+- 再開条件:

@@ -133,3 +133,13 @@ Playwright E2E や PR 前の自動確認は、公開利用者向けの本文で�
 - **Fail（No-Go）**: No-Go要因が1件以上、または証跡不足。
 
 証跡不足のままGoを確定してはいけません。Program判定は `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` の最新判定ログを正本として記録します。
+
+## QA/Release Gate 実行順（PRODUCT-QA-01 / MVP-EXIT-01）
+
+1. 手動smoke（主要操作 + SafeMode + 共有前確認）
+2. 回帰（typecheck / unit / regression guard）
+3. E2E（compose優先、不可時mock）
+4. 公開文書・運用文書整合確認
+5. Gate Record記入と Exit 判定（Pass/Conditional/Fail）
+
+失敗時は次工程へ進まず、Blocker一覧に「再現手順・影響範囲・再開条件」を記録します。

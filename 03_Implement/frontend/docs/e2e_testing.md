@@ -255,3 +255,10 @@ Draft状態の issue-QA-* を Open 判定可能にする時は、次の最小テ
 ### 5) 修復上限（失敗時）
 - 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
 - 4回目相当は Stop とし、保留理由/再開条件を追記して終了する。
+
+
+## Release Gate 連携（QA専任運用）
+
+- E2E結果は `PRODUCT-QA-01` の Gate Record に `result/evidence/owner/due` 形式で転記します。
+- Blocker または Critical を検出した場合は、E2E段で即時停止し `MVP-EXIT-01` 判定を Fail にします。
+- Compose実行不可時は `ADR-0019` の代替経路（SQLiteまたはmock）を使用し、未実施理由を必ず記録します。

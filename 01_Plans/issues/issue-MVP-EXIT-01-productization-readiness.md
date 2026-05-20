@@ -244,3 +244,27 @@
 - Lane-H2（進捗可視化）: `project-progress-dashboard.md` のみ更新し、公開固定値・判定状態を同期する。
 - Lane-H3（受入導線同期）: `04_Documentation/acceptance_check.md` の統合判定節のみ更新し、利用者向け確認導線を維持する。
 - 停止条件: 証跡不足、allowlist外編集要求、判定式ドリフト、Verify 3回超過。
+
+## Stream F update (2026-05-20): MVP Exit判定テンプレート固定
+
+### Exit Decision Matrix
+
+| 判定 | 条件 | 必須アクション |
+| --- | --- | --- |
+| Pass | Blocker=0 / Critical=0 / Major=0、必須ゲート完了、証跡完備 | リリース可 |
+| Conditional | Blocker=0 / Critical=0、Major>=1 かつ是正計画確定 | 期限付きフォローアップ発行後に限定リリース可 |
+| Fail | Blocker>=1 または Critical>=1、または証跡欠落 | リリース停止 |
+
+### Required evidence pack
+
+- Gate Record（G0..G7, V0..V4, E1..E3）
+- 実行コマンドログ（成功/失敗/未実施理由）
+- 手動smoke観測（viewport含む）
+- 未解決リスク台帳（owner/due date/escalation）
+
+### Escalation/approval responsibility
+
+- QA Lead: 判定取りまとめ・証跡整合確認
+- System Owner: Conditional/Failの最終判断
+- Platform Operator: 再現環境・実行ログ保証
+- Security Officer: SafeMode/share-export/public exposure関連の最終承認
