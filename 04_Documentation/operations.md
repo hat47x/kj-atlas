@@ -34,6 +34,22 @@ kj-atlas の運用確認は、次の順で見ると切り分けやすくなり�
 
 ![運用確認で見る標準画面](assets/screenshots/app-canvas-overview.png)
 
+
+## Runtime profile の選択
+
+運用手順を開始する前に、対象環境の profile を固定します。
+profile 判定は `02_Architecture/runtime_parameter_registry.md` の `Profile selection criteria` を正本とし、ここでは運用判断だけを示します。
+
+- 開発再現や不具合切り分け: `local-dev`
+- Compose での評価・受入確認: `evaluation`
+- 企業/行政の本番相当: `enterprise-production`
+
+`enterprise-production` では次を起動前チェックに追加します。
+
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
+- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
+- 外部接続（LLM / audit / external_http）を有効化する場合、接続先・timeout・秘密管理の確認記録
+
 ## 起動
 
 ```bash
