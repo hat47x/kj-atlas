@@ -296,3 +296,25 @@ Stopper（Open不可）
 ### Proceed
 - 3回以内で自己修復可能なら継続。
 - 4回目相当は Stop とし、`Pending` に「保留理由 / 再開条件 / owner」を追記する。
+
+## Stream G 補遺: Draft→Open昇格判定の実務テンプレ
+
+`issue-PRODUCT-QA-01` と `issue-QA-*` Draft を Open 判定する際は、次の matrix を使う。
+
+| Check | 必須証跡 | Pass条件 |
+| --- | --- | --- |
+| Gate定義 | Go/No-Go 条件表 | 各Gateが判定可能 |
+| Verify経路 | Compose/SQLite/例外の事前選択 | 未選択でない |
+| 失敗分類 | triage語彙 | `test defect / product defect / environment limitation` のみ |
+| Escalation | follow-up issue + 再開条件 | 1:1対応 |
+| Self-correction | retry上限定義 | `<=3` と4回目Stop |
+
+### Draft昇格時の最小コマンド
+
+```bash
+python3 01_Plans/issues/validate_active_issue_memos.py --files \
+  01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md \
+  01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md \
+  01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md \
+  01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
+```

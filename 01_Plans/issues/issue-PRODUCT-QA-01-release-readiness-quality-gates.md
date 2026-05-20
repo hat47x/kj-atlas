@@ -219,6 +219,28 @@
 ### Fail-safe
 - 判定曖昧さは本更新で解消済み。未解消論点は governance queue（ADR起票条件）へ送る。
 
+## 17) Stream G update (2026-05-20): Draft→Open昇格条件の固定（Gate定義専任）
+
+本Issueは「機能実装の完了」ではなく、**製品化ゲートの判定可能性**をOpen条件として扱う。
+
+| Gate ID | 条件 | 判定方法 | No-Go時の扱い |
+| --- | --- | --- | --- |
+| PQA-O1 | `G0..G7` + Value Gate の Go/No-Go 条件が固定されている | 本文テーブルに曖昧語（適宜/十分）がないこと | 条件未固定のゲートを `Draft` に戻す |
+| PQA-O2 | 各ゲートに証跡型（command log / screenshot / follow-up issue）が紐づく | `5.1` と `5.3` の対応確認 | 証跡不足は `No-Go` |
+| PQA-O3 | `Conditional Go` 条件が「重大欠陥なし + 期限付き是正issue」に限定 | Stream E更新節と一致すること | 条件逸脱は Open不可 |
+| PQA-O4 | Verify matrix で `Required/Optional/N/A` 判定が可能 | Gate Recordとの突合 | 判定不能は Open不可 |
+| PQA-O5 | 自己修復上限 `<=3` が明記される | 修復上限節の記載 | 未定義は Open不可 |
+
+### Verify matrix（昇格判定）
+
+| 観点 | Pass条件 |
+| --- | --- |
+| Completeness | G0..G7 + Value Gate に欠番なし |
+| Measurability | 全Gateで証跡形式が1件以上定義済み |
+| Escalation | No-Go時の戻し先issueが定義済み |
+| Safety | SafeMode/share-export/import sanitize/public exposure が Required |
+| Self-correction | 修復上限3回、4回目相当Stop が明記済み |
+
 ## 17) Stream F update (2026-05-19): Release Readiness QA execution package
 
 ### Phase 1: Read（quality gate定義抽出）

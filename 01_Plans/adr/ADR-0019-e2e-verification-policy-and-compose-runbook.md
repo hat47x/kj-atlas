@@ -123,3 +123,23 @@
 - Related: `CONTRIBUTING.md`
 - Related: `02_Architecture/coding_standards.md`
 - Related: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+
+## 8. Draft QA issue の昇格条件（PRODUCT-QA-01 / QA系共通）
+
+Draft issue を Open へ昇格させる最小条件を次で固定する。
+
+1. Gate定義が `Go/No-Go` と証跡型（command log / screenshot / follow-up issue）を持つ。
+2. 実行経路（Compose / SQLite / 例外記録）が事前選択され、未選択時は `Execution: Hold` を維持する。
+3. 失敗分類は `test defect / product defect / environment limitation` の3語彙に正規化する。
+4. No-Go時の戻し先issueと再開条件を 1:1 で記述する。
+5. 自己修復上限は3回、4回目相当で Stop とする。
+
+### 8.1 Verify matrix（昇格判定）
+
+| 観点 | Pass条件 |
+| --- | --- |
+| 判定可能性 | Gateごとに Go/No-Go 条件が明記される |
+| 証跡可能性 | コマンド/結果/失敗分類/戻し先issueが追跡できる |
+| 経路固定 | Compose/SQLite/例外のいずれかが事前選択される |
+| 安全境界 | SafeMode既定ON・share/export境界のNo-Go条件がある |
+| 自己修復 | 上限3回が明記される |

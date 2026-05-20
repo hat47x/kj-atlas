@@ -205,3 +205,21 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - Stopper-I1: flow parity の証跡不備は Open不可。
 - Stopper-I2: 翻訳品質レビュー担当未確定は Open不可。
 - Stopper-I3: 境界外（本番実装変更）要求が混入した場合は即Hold。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-PUB / I18N-03 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QP-O1 | 3軸境界（公開互換 / I18N等価 / 安全境界）の判定欄がある | 3軸すべて `pass|blocked` 判定可能 |
+| QP-O2 | flow parity（機械）と translation quality（人間）が分離 | 混線なし |
+| QP-O3 | `Execution: Hold` 解除条件に承認ID・再判定日・owner がある | 3要素が全て明記 |
+| QP-O4 | blocker と再開条件が1:1 | 欠落0件 |
+| QP-O5 | 自己修復上限 `<=3` / 4回目相当Stop が明記 | 記載あり |
+
+### Verify matrix（QA-PUB）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| 境界判定性 | `rg -n "公開互換|I18N等価|安全境界|parity|translation quality|Execution: Hold|Pending" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 必須語彙ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 警告なし |
