@@ -401,3 +401,28 @@ Non-goals:
 - 公開キー集合は `KJ_ATLAS_*` のみを維持（registry / configuration / compose inputs）。
 - 利用者向け文書で vendor 名を公開設定として要求しないことを確認。
 - Self-heal loop: 不一致 0 件のため未使用（上限3回以内）。
+
+## 16) Stream E execution snapshot (2026-05-20)
+
+### Plan → Execute → Verify → Proceed
+
+#### Phase 1: Read & Baseline固定
+- Allowlist 対象（registry/deployment/enterprise/configuration/operations/security guidelines/issue群/ADR-0021）を再読し、公開キーが `KJ_ATLAS_*` に統一されていることを再確認。
+- ギャップ抽出結果: 命名・既定値・公開/内部境界は 02 層で整合済み。04層に profile 運用判断の導線を追加する余地を確認。
+
+#### Phase 2: 契約統一方針の再確認
+- 旧名→新名方針は `ADR-0021` の「互換なし一括移行」を再採用（追加ADR不要）。
+- 後方互換方針: backend runtime は互換層なし、third-party adapter 内部名のみ private boundary として許容。
+- プロファイル安全既定値: `enterprise-production` では `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` と fail-safe (`read_only`/`deny`) を運用上の必須確認項目として維持。
+
+#### Phase 3: ドキュメント同期
+- `04_Documentation/configuration.md` に Runtime profiles セクションを追加し、実装既定値と本番推奨値の違い（JIT provisioning）を明示。
+- `04_Documentation/operations.md` に profile 選択セクションを追加し、運用開始前の profile 固定と enterprise 追加チェックを明示。
+- `04_Documentation/security_operational_guidelines.md` に profile 前提の変更抑止（未確定時は変更しない）を追加。
+
+#### Phase 4: 実装追随判定
+- ENV 読取実装への致命的不一致は検出せず、コード変更は不要と判断。
+
+#### Phase 5: Verify & Proceed
+- 文書差分を確認し、公開キー命名・既定値・境界に新たなドリフトがないことを確認。
+- Proceed 判定: Stream E scope で完了。残る論点は governance queue（strict no-vendor-env 解釈、`external_http` fail-fast 方針）のみ。

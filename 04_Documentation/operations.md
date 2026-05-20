@@ -34,6 +34,22 @@ kj-atlas の運用確認は、次の順で見ると切り分けやすくなり�
 
 ![運用確認で見る標準画面](assets/screenshots/app-canvas-overview.png)
 
+
+## Runtime profile の選択
+
+運用手順を開始する前に、対象環境の profile を固定します。
+profile 判定は `02_Architecture/runtime_parameter_registry.md` の `Profile selection criteria` を正本とし、ここでは運用判断だけを示します。
+
+- 開発再現や不具合切り分け: `local-dev`
+- Compose での評価・受入確認: `evaluation`
+- 企業/行政の本番相当: `enterprise-production`
+
+`enterprise-production` では次を起動前チェックに追加します。
+
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
+- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
+- 外部接続（LLM / audit / external_http）を有効化する場合、接続先・timeout・秘密管理の確認記録
+
 ## 起動
 
 ```bash
@@ -249,3 +265,10 @@ AUTH系（schema/api/ops/e2e）の契約更新を行うときは、次の固定�
 - 失効: 最大2h 到達、停止指示、または不整合検出時に strict（`false`）へ復帰し、endedAt を記録する（D2/D3/D4）。
 
 参照正本: `02_Architecture/strict_mode_exception_approval_flow.md`（D1〜D4）、`04_Documentation/security.md`（セキュリティ検証）。
+
+## 検証運用（Release Gate運用）
+
+- 判定順序は `smoke -> unit/regression -> integration -> e2e -> release checks` で固定します。
+- 判定ログは `Productization Release Decision Record`（PRODUCT-QA-01定義）を使用します。
+- Conditional Go は `owner / due date / re-check date` を必須とし、未記入は No-Go 扱いです。
+- 自己修復は3回まで。4回目相当は実行停止し、Blocker一覧へ移行します。
