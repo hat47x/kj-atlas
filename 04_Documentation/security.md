@@ -175,6 +175,18 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - SafeMode の緩和が必要に見える場合は、実装変更ではなく運用上の例外として扱う。
 - 障害時の挙動が分からない場合は、読み取り専用または LLM disabled に倒す。
 
+## 用語整合（DOC-OPS-05）
+
+本レーンでは役割語彙を次で統一します。
+
+- **Security Officer**: 安全境界（SafeMode、外部サービスとの共有、share/export）を評価する責務。
+- **System Owner**: 変更の業務上必要性と公開境界を判断する責務。
+- **Platform Operator**: 設定適用、復旧、実行ログ記録を担当する責務。
+
+> 2者承認（Security Officer と System Owner）と実行責務分離（Platform Operator）を原則とし、同一人物が兼務する場合も記録上は分離します。
+
+固定値 D1〜D4 は `02_Architecture/strict_mode_exception_approval_flow.md` を正本として参照し、この文書では再定義しません。
+
 ## 関連文書
 
 - [configuration.md](configuration.md)
