@@ -219,6 +219,69 @@ Non-goals:
 | `KJ_ATLAS_DATABASE_URL` | Defined | Defined | Used in `api.environment` | Aligned |
 | `KJ_ATLAS_LLM_PROVIDER` | Defined (`none`) | Defined | Used in `api.environment` | Aligned |
 
+## 15) Stream E execution snapshot (2026-05-20)
+
+### Plan → Execute → Verify → Proceed（Phase gate record）
+
+#### Phase 1 Read（再読・抽出）
+
+- SSOT と ADR を再読し、公開契約キー・既定値・適用境界の抽出対象を固定した。対象: `runtime_parameter_registry.md`, `ADR-0021`, `ADR-0029`。
+- 実装参照先（read-only）として `settings.py` / `docker-compose.yml` / frontend `Dockerfile` / `client.ts` / `access_control.py` を比較対象に設定した。
+
+#### Phase 2 Plan（AC/DoD 整理）
+
+- 優先順位を以下に固定:
+  1. **セキュリティ影響キー**: `KJ_ATLAS_ACCESS_CONTROL_*`, `KJ_ATLAS_AUDIT_*`, `KJ_ATLAS_API_KEY`
+  2. **起動不能リスクキー**: `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_POSTGRES_*`
+  3. **運用観測系キー**: profile 推奨値・adapter boundary の運用ルール
+- 本 issue の DoD を「公開契約（命名/既定値/境界）が文書正本で一意に読めること」に限定し、実装変更は非目標として維持した。
+
+#### Phase 3 ADR 明文化（追加 ADR 要否判定）
+
+- 追加 ADR は **不要** と判断。
+- 理由: 命名規約は `ADR-0021` で Accepted、third-party 境界は `ADR-0029` で Accepted。今回の残作業は「差分可視化と契約固定」であり、意思決定自体は既存 ADR で充足するため。
+
+#### Phase 4 Execute（差分可視化と契約固定）
+
+実装参照（read-only）とのドリフト確認表（2026-05-20時点）:
+
+| Contract topic | SSOT / ADR expectation | Implementation reference (read-only) | Drift |
+| --- | --- | --- | --- |
+| Public naming | Public key は `KJ_ATLAS_*` のみ | backend settings aliases は `KJ_ATLAS_*` のみ、legacy key は reject | None |
+| Legacy compatibility | 旧キー互換なし（fail-safe） | `LEGACY_ENV_KEYS` 検知時に `ValueError` | None |
+| Frontend API base key | `KJ_ATLAS_FRONTEND_API_BASE`（default `/api`、path契約） | Dockerfile ARG/ENV と `client.ts` の `/api` fallback 正規化 | None |
+| Compose public inputs | 利用者入力は `KJ_ATLAS_*` | `web/api/db` の公開入力は `KJ_ATLAS_*` | None |
+| Vendor adapter boundary | `POSTGRES_*` は private adapter（公開契約外） | `db.environment` 内のみ `POSTGRES_*` に写像 | None |
+| Access-control enum boundary | adapter=`noop/mock/external_http`, fail-safe=`read_only/deny` | settings validator で列挙値を fail-fast 検証 | None |
+| `external_http` endpoint absence | governance pending（現挙動を ADR で明示継続） | `external_http` 未設定時 fail-fast 既定化は未導入 | **Pending by design** |
+
+#### Phase 5 Verify（AC/DoD 照合）
+
+- Naming（`KJ_ATLAS_*` only）: **Pass**
+- Defaults（registry と実装既定値整合）: **Pass**
+- Boundary（public vs private adapter 分離）: **Pass**
+- Governance pending の切り分け: **Pass**（`external_http` endpoint 未設定時の fail-fast 化は別決定として維持）
+- 自己修復回数: 0/3（停止条件未到達）
+
+#### Phase 6 Proceed（完了/未完了/保留）
+
+**完了**
+- ENV-CONFIG-DRIFT-01 の計画・仕様レベルで、命名/既定値/適用境界を単一契約として再固定。
+- 実装参照との差分を可視化し、現時点ドリフトが「なし（または意図的保留）」であることを記録。
+
+**未完了（この stream では非実施）**
+- 実装コード変更（非目標のため未実施）。
+
+**保留（governance-only）**
+1. `external_http` endpoint 未設定時に `noop` fallback を廃止し fail-fast を既定化するか。
+2. third-party container 内部を含む「全 process env で非 `KJ_ATLAS_*` 禁止」を採用するか（採用時は deployment 再設計が前提）。
+
+### Stream E fail-safe stop check
+
+- `03_Implement/**` は未編集（禁止事項遵守）。
+- ENV 以外 issue は未編集（禁止事項遵守）。
+- 他ストリーム依存が必須化する変更は未着手。
+
 補足:
 - `nginx.conf` は固定ルーティング (`/api` → `api:8000`) のみを担い、公開 env key を増やしていない。
 - Compose 内 `POSTGRES_*` は内部変換先であり、利用者入力は `KJ_ATLAS_POSTGRES_*` だけを維持する。
