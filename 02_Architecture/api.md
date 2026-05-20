@@ -773,3 +773,31 @@ contract_freeze:
 - 同一 canonical query の `bundleHash` 不一致は `409 nondeterministic_bundle`（fail-closed）。
 - A2 検証は `stubDatasetId=A2-minimal-v1` 固定。実DB/実LLM/worker 依存を禁止。
 - CE2/CE4 への連携は read-only handoff のみ許可し、v1 契約改変は許可しない。
+
+## CE0 interface freeze handoff baseline（2026-05-19 / Stream A）
+
+### Context
+- CE0 完了条件として、下流ストリームが実装待ちなしで mock 検証を継続できる「固定契約面」の明示が必要。
+
+### Decision
+- Fixed I/F（read-only）:
+  - `ContextQueryV1`
+  - `ContextBundleV1`
+  - `ProposalPatchV1`
+  - `AuditEventV1`
+- Error contract（closed-world）:
+  - `400 unknown_contract_key`
+  - `422 preview_required`
+  - `409 nondeterministic_bundle`
+- Compatibility policy:
+  - v1 は optional 追記のみ許可。
+  - required key 削除・意味変更・enum再解釈は v1 で禁止。
+  - 破壊的変更は v2 起票 + migrate plan を必須とする。
+- Mock-first baseline:
+  - `stubDatasetId=A2-minimal-v1`
+  - `sourceBundleHash=mock:<64hex>`
+  - 実DB/実LLM/worker が未接続でも契約検証を継続可能とする。
+
+### Consequences
+- 下流は契約を再定義せず、固定I/Fに対する CDC / fixture / audit チェックを独立実行できる。
+- 契約逸脱は `contract drift` として即検出し、実装差分へ持ち込む前に停止できる。

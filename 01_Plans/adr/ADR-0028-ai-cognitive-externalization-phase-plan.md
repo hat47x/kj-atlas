@@ -474,3 +474,25 @@ AIエージェントは自由文入力をそのまま処理せず、次の順で
 - Verify checkpoint: `contract drift`, `responsibility boundary`, `pending queue gate`, `stop condition consistency` を照合。
 - Proceed rule: `a1Status=="Done" && pendingDecisionQueueCount==0 && drift==0` のときのみ Go。
 - Current decision: `Hold`（Pending 解消待ち）。
+
+## Stream A CE0 freeze completion update（2026-05-19）
+
+### Context
+- Stream A（クリティカルパス）として、HIL-RS/CE0 の契約凍結を「下流が mock だけで独立実行できる状態」まで固定する必要がある。
+- 実装着手前に、APIシグネチャ/データ型/エラー契約/互換ポリシーを再定義禁止の read-only 契約へ明文化し、ストリーム間依存を切断する。
+
+### Decision
+- CE0 の固定I/Fを `ContextQueryV1` / `ContextBundleV1` / `ProposalPatchV1` / `AuditEventV1` に限定し、v1 の required key の削除・意味変更を禁止する。
+- エラー契約語彙は `400 unknown_contract_key` / `422 preview_required` / `409 nondeterministic_bundle` を closed-world として凍結する。
+- 互換ポリシーは「v1追記は optional 拡張のみ許可、破壊的変更は v2 でのみ許可」とする。
+- 下流ストリームは mock contract（`stubDatasetId=A2-minimal-v1`, `sourceBundleHash=mock:<64hex>`）で先行実行し、CE1/CE2/CE4 実装完了待ちを禁止する。
+
+### Consequences
+- Stream B/C/E は固定I/Fを read-only 参照するだけで、契約再定義なしに CDC と検証を進められる。
+- 互換違反が出た場合は「v1更新」ではなく「v2起票 + 移行計画」へ強制分岐できる。
+- 契約凍結後の変更提案は Decision Queue 管理に一本化され、未承認項目の混入を抑止できる。
+
+### Decision Queue（未承認事項）
+- `DQ-CE0-001`: `ProposalPatchV1` の `diffFormat` 列挙（`json_patch` / `semantic_patch`）の初期値固定。
+- `DQ-CE0-002`: `AuditEventV1` の `command` マスキング規則（引数長上限・伏字方式）。
+- `DQ-CE0-003`: `classification != ok` 時の CLI 終了コードの数値割当（非0固定のみ確定、具体値は未承認）。
