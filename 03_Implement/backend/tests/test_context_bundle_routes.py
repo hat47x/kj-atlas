@@ -194,11 +194,17 @@ def test_context_bundle_returns_409_when_bundle_hash_is_nondeterministic(monkeyp
 
     original_api_key = settings.api_key
     settings.api_key = None
-    class _TamperedProvider:
+    class _TamperedAdapter:
+        def validate_query(self, query):
+            return "a" * 64
+
         def build_bundle(self, request):
             return _tampered_build_bundle(request)
 
-    monkeypatch.setattr(routes_pkg.context, "CONTEXT_BUNDLE_PROVIDER", _TamperedProvider())
+        def verify_bundle_determinism(self, response):
+            return False
+
+    monkeypatch.setattr(routes_pkg.context, "CONTEXT_FOUNDATION_ADAPTER", _TamperedAdapter())
     try:
         with TestClient(app) as client:
             response = client.post("/context/bundle", json=_bundle_payload())
@@ -215,14 +221,20 @@ def test_context_bundle_uses_mock_provider_contract(monkeypatch) -> None:
 
     provider_calls = {"count": 0}
 
-    class _Provider:
+    class _Adapter:
+        def validate_query(self, query):
+            return "b" * 64
+
         def build_bundle(self, request):
             provider_calls["count"] += 1
             return real_build_bundle(request)
 
+        def verify_bundle_determinism(self, response):
+            return True
+
     original_api_key = settings.api_key
     settings.api_key = None
-    monkeypatch.setattr(routes_pkg.context, "CONTEXT_BUNDLE_PROVIDER", _Provider())
+    monkeypatch.setattr(routes_pkg.context, "CONTEXT_FOUNDATION_ADAPTER", _Adapter())
     try:
         with TestClient(app) as client:
             response = client.post("/context/bundle", json=_bundle_payload())

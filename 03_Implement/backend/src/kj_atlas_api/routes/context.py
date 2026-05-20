@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import ValidationError
 
+from kj_atlas_api.context_adapter import CONTEXT_FOUNDATION_ADAPTER
 from kj_atlas_api.models_context import (
     Ce4ResolveBundleRequest,
     Ce4ResolveBundleResponse,
@@ -12,10 +13,6 @@ from kj_atlas_api.models_context import (
     ContextBundleResponse,
     ContextQuery,
     ContextQueryValidationResponse,
-    CONTEXT_BUNDLE_PROVIDER,
-    _canonical_bundle_hash_payload,
-    _canonical_query_hash_payload,
-    _sha256_canonical,
     build_ce4_resolved_bundle,
 )
 
@@ -38,7 +35,7 @@ def validate_context_query(payload: object = Body(...)) -> ContextQueryValidatio
     if not query.previewConfirmed:
         raise HTTPException(status_code=422, detail={"code": "preview_required"})
 
-    query_hash = _sha256_canonical(_canonical_query_hash_payload(query))
+    query_hash = CONTEXT_FOUNDATION_ADAPTER.validate_query(query)
     return ContextQueryValidationResponse(accepted=True, queryCanonicalHash=query_hash)
 
 
@@ -46,14 +43,13 @@ def validate_context_query(payload: object = Body(...)) -> ContextQueryValidatio
 def build_context_bundle(payload: object = Body(...)) -> ContextBundleResponse:
     request = _validate_payload(ContextBundleRequest, payload)
     try:
-        response = CONTEXT_BUNDLE_PROVIDER.build_bundle(request)
+        response = CONTEXT_FOUNDATION_ADAPTER.build_bundle(request)
     except ValueError as exc:
         if str(exc) == "preview_required":
             raise HTTPException(status_code=422, detail={"code": "preview_required"}) from exc
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    expected_bundle_hash = _sha256_canonical(_canonical_bundle_hash_payload(response))
-    if response.bundleHash != expected_bundle_hash:
+    if not CONTEXT_FOUNDATION_ADAPTER.verify_bundle_determinism(response):
         raise HTTPException(status_code=409, detail={"code": "nondeterministic_bundle"})
 
     logger.info(
