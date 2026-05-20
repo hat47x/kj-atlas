@@ -6,7 +6,7 @@
 - Owner: Stream C
 - DecisionStatus: Fixed
 - Execution: Ready
-- Scope: `01_Plans/issues/`, `01_Plans/adr/`, `03_Implement/frontend/docs/e2e_testing.md`
+- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs only）
 - Related Backlog: `UX-OPERABILITY-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
@@ -15,14 +15,17 @@
 
 カード選択におけるキーボード到達性を、実装方式に依存しない I/F 契約として固定する。
 
-## I/F Contract (Mock-first)
+## Operation Flow Contract（Unified / Mock-first）
 
-- DOM expectation:
-  - カード要素は `role="option"` 相当の選択可能要素として観測できる。
-  - フォーカス中カードは `data-focus="card"`、選択済みカードは `aria-selected="true"` で観測できる。
-- Event contract:
+- Pointer contract:
+  - pointer 選択時は `SelectionChanged(cardId)` を発火し、keyboard 契約と同一の結果を返す。
+- Keyboard contract:
   - `Tab/Shift+Tab` でカードへ到達できる。
   - `Enter` または `Space` により `SelectionChanged(cardId)` が発火する。
+- Focus contract:
+  - フォーカス中カードは `data-focus="card"` で観測できる。
+  - 選択済みカードは `aria-selected="true"` で観測できる。
+- Panel contract:
   - `SelectionChanged(cardId)` 後に `ContextPanelRequested(cardId)` が発火し、UX-03 に引き渡される。
 
 ## AC (Acceptance Criteria)
@@ -38,16 +41,28 @@
 - [x] 実装コードファイルは Scope に含まれない。
 - [x] 未確定アクセシビリティ項目がある場合は `Execution: Hold` と解除条件を記載する。
 
+## Phase Plan（Read → Contract → Execute/Verify）
+
+- Phase 1 Read:
+  - UX-01 基底契約（pointer/keyboard/focus/panel）を読み込み、カード選択境界へマップ。
+- Phase 2 Contract unify:
+  - `SelectionChanged(cardId)` を pointer/keyboard 共通の正準イベントとして固定。
+- Phase 3 Plan→Execute→Verify（max 3 self-heal）:
+  - `docs-check-1`: Tab 到達性と Enter/Space 契約記述の確認。
+  - `docs-check-2`: `data-focus` / `aria-selected` の観測属性確認。
+  - `docs-check-3`: `ContextPanelRequested` 接続確認。
+- Phase 4 Stopper:
+  - キー割当競合、フォーカス観測不能、または UX-03 への依存未定義を検知したら `Execution: Hold`。
+
 ## Validation plan
 
-- `rg -n "Tab|Shift\+Tab|Enter|Space|aria-selected|SelectionChanged|ContextPanelRequested" 01_Plans/issues/issue-UX-OPERABILITY-02-keyboard-card-selection.md`
+- `rg -n "Operation Flow Contract|Tab|Shift\+Tab|Enter|Space|aria-selected|data-focus|SelectionChanged|ContextPanelRequested" 01_Plans/issues/issue-UX-OPERABILITY-02-keyboard-card-selection.md`
 - `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-02-keyboard-card-selection.md`
 
 ## Dependencies
 
 - Depends on: `UX-OPERABILITY-01`
 - Blocks: `UX-OPERABILITY-03`
-
 
 ## Hold trigger
 

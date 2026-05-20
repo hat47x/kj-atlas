@@ -6,7 +6,7 @@
 - Owner: Stream C
 - DecisionStatus: Fixed
 - Execution: Ready
-- Scope: `01_Plans/issues/`, `01_Plans/adr/`, `03_Implement/frontend/docs/e2e_testing.md`
+- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs only）
 - Related Backlog: `UX-OPERABILITY-04`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
@@ -15,15 +15,18 @@
 
 `表示` / `共有と再現` パネルの `Escape` 閉じると起点フォーカス復帰を I/F 境界として固定する。
 
-## I/F Contract (Mock-first)
+## Operation Flow Contract（Unified / Mock-first）
 
-- DOM expectation:
+- Pointer contract:
+  - pointer 起点で開いたパネルでも `Escape` 閉じる契約を適用する。
+- Keyboard contract:
+  - keyboard 起点で開いたパネルでも `Escape` で閉じる。
+- Focus contract:
+  - 開始ボタンは `data-focus-return-id` を保持し、`FocusReturned(triggerId)` 後に同一起点へ復帰する。
+- Panel contract:
   - 一時パネルは `data-panel="view"` / `data-panel="share-replay"` で識別できる。
-  - 開始ボタンは `data-focus-return-id` を保持し、閉じる後の復帰先を識別できる。
-- Event contract:
-  - パネル open 中の `Escape` で `PanelDismissed(panelId, reason="escape")` を発火する。
+  - open 中の `Escape` で `PanelDismissed(panelId, reason="escape")` を発火する。
   - `PanelDismissed` 後に `FocusReturned(triggerId)` を発火する。
-  - `FocusReturned` は対応する起点ボタンへフォーカスされることで観測可能。
 
 ## AC (Acceptance Criteria)
 
@@ -38,15 +41,28 @@
 - [x] 仕様のみで実装手順やコード差分を含まない。
 - [x] 未確定アクセシビリティ要件があれば `Execution: Hold` と解除条件を明示する。
 
+## Phase Plan（Read → Contract → Execute/Verify）
+
+- Phase 1 Read:
+  - UX-03 までの `selection-context` 契約と終了動作境界の接続点を確認。
+- Phase 2 Contract unify:
+  - `PanelDismissed` / `FocusReturned` を終了時の正準イベントとして固定。
+- Phase 3 Plan→Execute→Verify（max 3 self-heal）:
+  - `docs-check-1`: `view` / `share-replay` の識別属性検証。
+  - `docs-check-2`: `Escape → PanelDismissed` の順序検証。
+  - `docs-check-3`: `FocusReturned` の起点一致検証。
+- Phase 4 Stopper:
+  - 閉鎖イベント欠落、復帰先未定義、または安全導線欠落を検知した場合は `Execution: Hold`。
+
 ## Validation plan
 
-- `rg -n "Escape|PanelDismissed|FocusReturned|focus-return|表示|共有と再現" 01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md 03_Implement/frontend/docs/e2e_testing.md`
-- `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md 03_Implement/frontend/docs/e2e_testing.md`
+- `rg -n "Operation Flow Contract|Escape|PanelDismissed|FocusReturned|data-focus-return-id|data-panel=\"view\"|data-panel=\"share-replay\"" 01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
+- `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
 
 ## Dependencies
 
 - Depends on: `UX-OPERABILITY-03`
-
+- Blocks: `UX-OPERABILITY-05`
 
 ## Hold trigger
 

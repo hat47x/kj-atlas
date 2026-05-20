@@ -6,7 +6,7 @@
 - Owner: Stream C
 - DecisionStatus: Fixed
 - Execution: Ready
-- Scope: `01_Plans/issues/`, `01_Plans/adr/`, `03_Implement/frontend/docs/e2e_testing.md`
+- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs only）
 - Related Backlog: `UX-OPERABILITY-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
@@ -15,15 +15,18 @@
 
 選択直後に必要情報を先頭提示し、高度機能は明示操作で開示する文脈優先モデルを固定する。
 
-## I/F Contract (Mock-first)
+## Operation Flow Contract（Unified / Mock-first）
 
-- DOM expectation:
+- Pointer contract:
+  - pointer 起点の選択でも `ContextPanelRequested(targetId)` を受信可能である。
+- Keyboard contract:
+  - keyboard 起点の選択でも同一に `ContextPanelRequested(targetId)` を受信可能である。
+- Focus contract:
+  - `Tab` 順序は `selection-context` 内の主要導線を先に巡回し、その後 `advanced` 開示導線へ進む。
+- Panel contract:
   - `data-panel="selection-context"` が選択後に先頭表示される。
-  - `data-panel-group="advanced"` は初期状態 `aria-expanded="false"`。
-  - `data-panel-group="advanced"` は明示操作（button press）で `aria-expanded="true"` に遷移する。
-- Event contract:
+  - `data-panel-group="advanced"` は初期 `aria-expanded="false"`、明示操作で `aria-expanded="true"`。
   - `ContextPanelRequested(targetId)` 受信時に `ContextPanelRendered(targetId)` を返す。
-  - `Tab` 順序は `selection-context` 内の主要導線を先に巡回し、その後に `advanced` 開示導線へ進む。
 
 ## AC (Acceptance Criteria)
 
@@ -38,16 +41,28 @@
 - [x] 実装詳細・コンポーネント分割の指定に踏み込まない。
 - [x] 曖昧要件が残る場合は `Execution: Hold` 条件を明示する。
 
+## Phase Plan（Read → Contract → Execute/Verify）
+
+- Phase 1 Read:
+  - UX-02 の `SelectionChanged → ContextPanelRequested` 契約を入力として確認。
+- Phase 2 Contract unify:
+  - `selection-context` 先頭表示 + `advanced` 段階開示を panel 契約として固定。
+- Phase 3 Plan→Execute→Verify（max 3 self-heal）:
+  - `docs-check-1`: `selection-context` の先頭提示条件を検証。
+  - `docs-check-2`: `advanced` の `aria-expanded` 遷移条件を検証。
+  - `docs-check-3`: `ContextPanelRendered` 応答契約を検証。
+- Phase 4 Stopper:
+  - Tab順序の競合、段階開示条件の未定義、または UX-04 との矛盾検知時は `Execution: Hold`。
+
 ## Validation plan
 
-- `rg -n "selection-context|advanced|aria-expanded|ContextPanelRequested|ContextPanelRendered|Tab" 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
+- `rg -n "Operation Flow Contract|selection-context|advanced|aria-expanded|ContextPanelRequested|ContextPanelRendered|Tab" 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
 - `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`
 
 ## Dependencies
 
 - Depends on: `UX-OPERABILITY-02`
 - Blocks: `UX-OPERABILITY-04`
-
 
 ## Hold trigger
 
