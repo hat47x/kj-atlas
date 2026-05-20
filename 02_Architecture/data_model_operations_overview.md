@@ -306,3 +306,17 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 - schema先行更新: 本書と `schemas.md` に migration 対応表と互換分類を追記。
 - migration追随: 新規 migration は不要（契約差分なしのため未追加）。
 - 整合検証: Alembic 実行・ヘッド確認・テーブル存在確認で一致を再検証。
+
+## 13. Stream B ops-boundary sync (2026-05-20)
+
+### Context
+- Model Ops では `DocumentV2` の保存往復保証と個別CRUD保証が混同されると、運用責務（Platform operator / Security officer / Support / Developer）が衝突する。
+
+### Decision
+- CRUD境界は本書を正本として維持し、`L1/L1.5/L2/L2.5/L3/L0` を唯一語彙とする。
+- `DocumentV2` の backward compatibility 判定は `schemas.md` の version gate を上流正本として参照し、本書側で独自判定を持たない。
+- CE系・A1系の統合ポイントは read-only contract として公開し、実DB/API依存が確定していない項目は `Contract-limited (L2.5)` のまま凍結する。
+
+### Consequences
+- Stream間ハンドオフで「契約固定」と「運用実装」の責務が分離され、Phase 4 Verifyを docs-check で再現できる。
+- 未確定項目は fail-closed で停止でき、DecisionStatus=Pending のまま実装へ越境するリスクを抑制できる。

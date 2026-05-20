@@ -1032,3 +1032,17 @@ Phase直列実行（Read必須）で Data Contract & Model Ops を確認した�
 ### Consequences
 - 後方互換判定を version gate 基準で統一でき、feature flag による暫定互換運用を抑止できる。
 - `data_model_operations_overview.md` / `schemas_review_attribution.md` / `issue-DATA-CONTRACT-01` と同一語彙で運用責務境界を同期できる。
+
+## 13. Stream B contract lock sync (2026-05-20)
+
+### Context
+- `DocumentV2` の support level と backward compatibility 判定が、契約文書と運用境界文書で同時に固定されていない場合、実装側で「型=運用保証」と誤読される。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を唯一語彙として維持し、未分類フィールドは `L2.5` 扱いを継続する。
+- backward compatibility は `version gate` 優先で固定し、`version: 2` の破壊的変更（必須化/意味変更/削除）は `version: 3` 以降でのみ許可する。
+- CE1/CE2/CE4 連携I/Fは read-only contract（`queryCanonicalHash` / `bundleHash` / `sourceBundleHash`）として扱い、DB/API依存実装を混在させない。
+
+### Consequences
+- Stream B から下流への引き渡しは mock-first で再現可能になり、実装進捗待ちなしで契約検証を継続できる。
+- CRUD保証の主張は `data_model_operations_overview.md` 側に限定され、契約文書単体の誤読リスクを抑制できる。
