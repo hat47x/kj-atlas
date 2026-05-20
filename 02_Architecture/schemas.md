@@ -24,6 +24,15 @@ MVPでは以下を成立させます。
 - キャンバス表示のためのビュー変換（パン／ズーム）
 - ドキュメントの保存・復元
 
+### 1.0.1 Stream D drift audit gate（2026-05-20）
+
+本書の運用境界は `02_Architecture/data_model_operations_overview.md` と対で解釈する。次のいずれかを満たした場合は drift として `Stop` 判定にする。
+
+1. `L1/L1.5/L2/L2.5/L3/L0` の語彙または意味が文書間で不一致。
+2. `PUT /docs/{doc_id}` create-if-absent をMVP標準Create契約とする記述が不一致。
+3. `Document.version` の非互換変更に version gate が伴わない。
+4. Verify自己修復回数が3回を超えたまま継続しようとする。
+
 ### 1.1 CE0 Contract Freeze（責務境界メタ契約）
 
 CE-0 の契約凍結として、実装型に先行して次のメタ契約を固定する。

@@ -205,3 +205,14 @@
 ### Consequences
 - Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
 - Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `DATA-MODEL-OPS-01` / `DATA-CONTRACT-01` / `data_handling.md` の関連境界を再読。
+2. Context/Decision/Consequences: Pending論点と Stop条件を維持する判断を再確認。
+3. CRUD境界固定: 復旧対象を `L1/L1.5` 優先、`L2/L2.5` は契約整合チェック対象に限定。
+4. ドリフト監査反映: `Document.version` と `documents`/`merge_decision_logs` 整合確認を必須化。
+5. 運用復旧手順整備: docs-only runbook導線（safeMode既定ON/PII抑制）を明文化。
+6. Verify: docs-checkでIssue/Architecture間の語彙一致を確認。
+7. Self-correction<=3: 3回超過でStop継続。
+8. Final: DecisionStatus=Pendingの間は実装へ越境しない。

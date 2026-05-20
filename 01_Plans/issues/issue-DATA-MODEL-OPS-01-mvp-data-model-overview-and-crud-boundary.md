@@ -195,3 +195,14 @@
 ### Consequences
 - Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
 - Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `schemas.md` / `data_model_operations_overview.md` / `data_handling.md` の境界記述を再読。
+2. Context/Decision/Consequences: 本Issueの C/D/C を Stream D 判定の正本として再確認。
+3. CRUD境界固定: `PUT /docs/{doc_id}` create-if-absent と `L1/L1.5/L2/L2.5/L3/L0` を固定語彙として扱う。
+4. ドリフト監査反映: 語彙不一致・version gate欠落・契約不一致を Stop 条件として再確認。
+5. 運用復旧手順整備: `DATA-MAINT-01` 側の `documents` / `merge_decision_logs` 整合検証導線を確認。
+6. Verify: docs-check（差分・語彙一致・責務境界一致）で確認。
+7. Self-correction<=3: Verify再試行上限を3回に固定。
+8. Final: docs-only 完遂条件を満たす場合のみ Proceed。
