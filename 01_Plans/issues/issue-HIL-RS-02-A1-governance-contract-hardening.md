@@ -559,3 +559,26 @@
 ### Proceed
 - 判定: **Hold/Needs-decision（承認待ち継続）**。
 - 次アクション: 承認記録 (`approved_by`, `approved_at`, `evidence`) 充足後にのみ Go 再判定。
+
+## Stream A serial run record（2026-05-20 / governance hardening）
+
+### Phase 1: Read & Scope Lock
+- RS-02-A1 hardening の SoD・承認遷移・固定保護キーを再読した。
+- Scope lock: docs-only、指定4ファイル以外は非対象。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: `Pending bypass` と SoD混線は統治契約破綻の主要リスク。
+- Decision: `Status=Open（Approval Pending）` の間は `executeAllowed=false` を固定し、`Pending -> Approved|Rejected` 以外を禁止。
+- Consequences: 承認記録欠損時は `Hold/NoGo` 維持で下流へ確定を渡さない。
+
+### Phase 3: Plan → Execute → Verify
+- Plan: AC/DoD不足確認後、必要最小の実行記録追記のみを実施。
+- Execute: 本節を追記し、統治ゲート判定を明文化。
+- Verify（self-correction `0/3`）:
+  - A1固定値一致: pass
+  - SoD制約維持: pass
+  - 禁止遷移遮断: pass
+
+### Phase 4: Proceed / Stopper
+- 判定: **Hold/Needs-decision**。
+- Stopper: `approved_by` / `approved_at` / `evidence` 未充足。

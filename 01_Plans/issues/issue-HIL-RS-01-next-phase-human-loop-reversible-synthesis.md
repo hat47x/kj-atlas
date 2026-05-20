@@ -360,3 +360,24 @@
 ### Proceed
 - 判定: **Hold/Needs-decision（承認待ち継続）**。
 - 次アクション: 承認記録 (`approved_by`, `approved_at`, `evidence`) 充足後にのみ Go 再判定。
+
+## Stream A serial run record（2026-05-20 / Phase 1-4）
+
+### Phase 1: Read & Scope Lock
+- 対象4ファイルを再読し、変更対象を Stream A 許可範囲のみに固定した。
+- 前提差分: fixed keys drift=`0`、`Pending bypass` 要求=`0`。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- `ADR-0026` の CDC を再確認し、親計画は契約値を再定義せず read-only 参照に限定する方針を継続した。
+
+### Phase 3: Plan → Execute → Verify
+- Plan（非対象再宣言）: 実装コード・他ストリーム文書は未編集。
+- Execute: 本issueのガバナンス記録を追記（docs-only）。
+- Verify（self-correction `0/3`）:
+  - AC/DoD整合: pass
+  - A2/A3非干渉: pass
+  - SafeMode後退: none
+
+### Phase 4: Proceed / Stopper
+- 判定: **Hold/Needs-decision**。
+- Stopper: `Approval Record` 未充足および `pendingDecisionQueueCount>0`。

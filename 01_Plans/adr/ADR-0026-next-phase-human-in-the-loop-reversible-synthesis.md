@@ -374,3 +374,22 @@
 
 ### Consequences
 - 契約凍結と統治ゲートが同時にロックされ、A2/A3の強行Openを防止できる。
+
+## Stream A serial governance checkpoint（2026-05-20）
+
+### Context
+- Stream A（critical path）は HIL-RS 契約・統治計画の上流整合を維持し、A1→RS-02-A1→parent Proceed の依存順を崩さないことを最優先とする。
+- 現時点でも `Approval Record` 未充足により、`Proceed=Go` 条件は未成立である。
+
+### Decision
+- 親ADRでは契約固定値を再定義せず、以下を read-only 維持する：
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- Gateは既存式を継続し、`Pending` 残存時は `Hold/Needs-decision` を強制する。
+
+### Consequences
+- A1/RS-02-A1/親計画の契約語彙ドリフトを抑制し、下流の誤解放を防止できる。
+- 人間承認が揃うまで `Conditional/Needs-decision` を維持し、推測確定を行わない。
