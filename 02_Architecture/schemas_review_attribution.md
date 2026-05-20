@@ -243,3 +243,9 @@ ReviewerRef 推奨フォーマット（例）:
 - Support level定義: `reviewerRef` / `ownerRef` / `reviewState` / `reviewedAt` は契約固定だが運用は `DATA-MODEL-OPS-01` のCRUD境界に従う。
 - Admin maintenance/recovery境界: 削除・移管・監査閲覧などの高権限運用は `DATA-MAINT-01` のPending論点として分離し、先行実装しない。
 - Verify: `schemas.md` と同じ support level語彙（L1/L1.5/L2/L2.5/L3/L0）を参照する前提で整合。
+
+## Stream D migration boundary memo (2026-05-20)
+
+- 本書は review attribution の契約提案を固定する文書であり、MVP時点では attribution 専用テーブル migration を要求しない。
+- Alembic head `20260314_0005` までの物理テーブルは `documents` / `users` / `user_identities` / `merge_decision_logs` で、review attribution は `Document` 埋め込み前提のまま維持する。
+- したがって review attribution は `L2/L2.5`（埋め込み/契約先行）として扱い、個別CRUDや独立 migration を前提にしない。
