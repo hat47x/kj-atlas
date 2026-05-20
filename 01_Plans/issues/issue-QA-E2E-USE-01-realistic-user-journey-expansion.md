@@ -222,3 +222,20 @@ Open化ゲートを次の3カテゴリで固定する。
 - Stopper-S1（Approval）: 承認ID未記入のままOpenへ遷移しない。
 - Stopper-S2（Environment）: 実行経路未固定ならOpen不可。
 - Stopper-S3（Scope）: docs-only範囲外要求が混入した時点で更新停止し、Hold理由として記録。
+
+## Stream F update (2026-05-20): QA専任実行パッケージ（tests/docs/issues限定）
+
+### Plan
+- Scope は `03_Implement/frontend/tests/**` `03_Implement/backend/tests/**` `03_Implement/frontend/docs/e2e_testing.md` `01_Plans/issues/issue-QA-*` に限定。
+- 実装本体の変更は行わず、契約トークン検証を unit 化して回帰入口を固定する。
+
+### Execute
+- `test_qa_e2e_doc_contract.py` を追加し、`Execution: Hold` / `AC-O*` / `DoD-O*` / Gate語彙の存在を自動検証対象へ昇格。
+- 未確定依存は mock/fixture 境界で保持し、Open条件の前倒し確定を禁止。
+
+### Verify
+- 追加テスト pass を前提に、`Execution: Hold` 維持条件（Pending-1/2 未解消）を再確認。
+- 自己修復上限は3回、4回目相当は Stop を維持。
+
+### Proceed
+- Pending-1/2 解消までは本Issueの状態遷移を行わず、証跡更新のみ継続する。

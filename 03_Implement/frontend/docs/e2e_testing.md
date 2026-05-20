@@ -277,3 +277,22 @@ Stopper（Open不可）
 - 実行経路未固定。
 - docs-only範囲外要求の混入。
 - SafeMode / share-export 境界の判定欠落。
+
+## Stream F update (2026-05-20): Plan → Execute → Verify → Proceed（QA/E2E/Unit）
+
+### Plan
+- Scope を `tests/docs/issues` に限定し、実装本体（`src/**`）は変更しない。
+- 契約未確定箇所は mock / fixture で依存分離し、Open 判定の証跡を優先する。
+
+### Execute
+- unit/integration は契約トークン（AC/DoD/Gate/Execution）の存在を自動検証する。
+- E2E は `e2e:mock` を既定経路とし、外部依存を伴う実行は issue 側へ保留理由を記録する。
+
+### Verify
+- `python -m pytest 03_Implement/backend/tests/test_qa_e2e_doc_contract.py`
+- `python3 01_Plans/issues/validate_active_issue_memos.py`
+- 判定語彙は `pass / blocked / fail` を使用し、No-Go 時は戻し先 issue を必ず記録する。
+
+### Proceed
+- 3回以内で自己修復可能なら継続。
+- 4回目相当は Stop とし、`Pending` に「保留理由 / 再開条件 / owner」を追記する。

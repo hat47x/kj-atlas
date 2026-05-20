@@ -447,3 +447,20 @@ DoDテンプレ（Draft→Open）
 - Stopper-P1: Blocker>0 で Go/Conditional Go を禁止。
 - Stopper-P2: 証跡欠落（command log / gate result / follow-up issue）時は No-Go。
 - Stopper-P3: SafeMode境界不整合は即No-Go。
+
+## 18) Stream F update (2026-05-20): Release QA gate verification hardening
+
+### Plan
+- `Go/Conditional Go/No-Go` 判定を docs と tests の双方で追跡可能にする。
+- Blocker/Major/Minor の分類語彙を regression 対象に固定する。
+
+### Execute
+- QA contract テストを追加し、Gate Record と判定語彙の欠落を CI 前段で検知可能にする。
+- 実装コード変更なしで、品質ゲート定義のドリフト検知を優先する。
+
+### Verify
+- `python -m pytest 03_Implement/backend/tests/test_qa_e2e_doc_contract.py` を実行し、release gate 主要トークンの存在を確認する。
+- metadata validator を併用し、issue memo 形式の逸脱を検知する。
+
+### Proceed
+- 判定語彙の逸脱が出た場合は No-Go とし、戻し先 issue を起票して是正期限を設定する。
