@@ -219,3 +219,14 @@
 ### Consequences
 - Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
 - Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `schemas.md` / `data_model_operations_overview.md` の契約語彙と support level を再確認。
+2. Context/Decision/Consequences: DocumentV2契約ドリフト判定の C/D/C を再固定。
+3. CRUD境界固定: MVP標準Create契約を `PUT /docs/{doc_id}` create-if-absent に固定。
+4. ドリフト監査反映: version gate と support level語彙一致を一次ゲート化。
+5. 運用復旧手順整備: `DATA-MAINT-01` へ契約整合チェック観点を引き渡し。
+6. Verify: docs-check（diff/rg）で整合を確認。
+7. Self-correction<=3: 再試行上限3回を継続。
+8. Final: 契約のみ/将来候補を運用サポートと誤読させない記述を維持。

@@ -104,3 +104,22 @@
 - [security.md](security.md)
 - [operations.md](operations.md)
 - [acceptance_check.md](acceptance_check.md)
+
+## Stream D 運用復旧手順（docs-only fixed, 2026-05-20）
+
+### 対象範囲
+
+- 本手順は `DATA-MAINT-01` の運用準備として、**文書整合と復旧判定基準の固定**のみを扱います。
+- 実DB復旧コマンド、管理UI/API実装、削除/所有者移管の実行は本手順の対象外です。
+
+### 復旧時の最小チェック順序（必須）
+
+1. `Document.version` が契約で許容される範囲かを確認する（version gate）。
+2. `documents` と `merge_decision_logs` の参照整合（`doc_id` / snapshot整合）を確認する。
+3. `L1/L1.5`（標準運用対象）と `L2/L2.5`（埋め込み/契約限定）を分けて影響範囲を記録する。
+4. 共有前確認として safeMode既定ON、未レビュー本文・PII抑制を再確認する。
+
+### Stop 条件
+
+- 上記4項目のうち1つでも未確認のまま復旧完了扱いにしない。
+- Verify/調整が3回を超えて収束しない場合は運用継続ではなく `Stop` とし、ADRまたは上位契約確認へ戻す。
