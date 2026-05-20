@@ -540,3 +540,26 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 ### Proceed
 - 判定: **Hold/Needs-decision（承認待ち継続）**。
 - 次アクション: 承認記録 (`approved_by`, `approved_at`, `evidence`) 充足後にのみ Go 再判定。
+
+## Stream A serial run record（2026-05-20 / A1 contract gate）
+
+### Phase 1: Read & Scope Lock
+- A1最小I/F契約の固定語彙・固定値・禁止遷移を再読した。
+- Scope lock: 本ファイル更新のみ、実装変更なし（docs-only）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1を再定義可能にすると A2/A3の契約分岐が再発する。
+- Decision: `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` を read-only 維持。
+- Consequences: 承認待ち中は `decision=Hold`, `executeAllowed=false` を継続する。
+
+### Phase 3: Plan → Execute → Verify
+- Plan: AC/DoD不足の補完対象有無を確認。
+- Execute: AC/DoDは既存で充足、追記は実行記録のみに限定。
+- Verify（self-correction `0/3`）:
+  - fixed-key drift: `0`
+  - `Pending -> Execute` 禁止: pass
+  - NoGo return path固定: pass
+
+### Phase 4: Proceed / Stopper
+- 判定: **Hold**（承認待ち）。
+- Stopper: `Approval Record` 未充足。
