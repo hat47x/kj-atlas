@@ -162,3 +162,22 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: `ADR-0019` 実行経路の事前選択が未確定。
+- 依存: PUB-01 / I18N-03 の承認IDが Pendingへ未記録。
+- 設計: 3軸境界（公開互換/I18N等価/安全境界）はあるが、重大逸脱=即Hold の閾値運用が未証跡化。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: Pending-1/Pending-2 に承認ID・日付・参照リンクを追記。
+- Gate-B（境界）: 3軸それぞれに `pass|blocked` 判定欄を維持。
+- Gate-C（検証経路）: Compose/SQLite/例外の採用経路を1件固定。
+- Gate-D（失敗時扱い）: 重大逸脱時は `Execution: Hold` に戻す（自動Proceed禁止）。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1（PUB承認）/ Pending-2（I18N承認）未充足。
+- 解消順: 1) I18N-03承認確定 → 2) PUB-01承認確定 → 3) 経路固定の最終レビュー。

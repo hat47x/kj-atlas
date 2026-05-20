@@ -131,3 +131,22 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: unit実行プロファイル（Compose/SQLite/例外）の採用理由が未記録。
+- 依存: Pending-1（実装タスク起票承認）/ Pending-2（上流契約凍結承認）が未完了。
+- 設計: G1→G2→G3 は定義済みだが、blocker解除証跡の責務分担が未入力。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: B-UNIT-01〜03 の再開条件を Pending欄へ反映。
+- Gate-B（AC）: AC-O1〜O4 が単一語彙で検索可能。
+- Gate-C（DoD）: DoD-O1〜O3 が `pass|blocked` で第三者判定可能。
+- Gate-D（失敗時扱い）: triage分類は `test defect / product defect / environment limitation` に固定。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1, Pending-2 の承認ID未記入。
+- 解消順: 1) Pending-2（契約凍結承認）→ 2) Pending-1（起票承認）→ 3) unit profile確定。

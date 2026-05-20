@@ -178,3 +178,22 @@ Open化ゲートを次の3カテゴリで固定する。
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）が candidate 単位で未固定。
+- 依存: Pending-1（実運用E2E承認）と Pending-2（I18N境界最終承認）が未解消。
+- 設計: Gate証跡欄（G1/G2/G3 entry/exit）の入力責務と判定語彙は定義済みだが、承認ID未記入。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: Pending-1/Pending-2 に承認ID・日付・参照リンクを記録。
+- Gate-B（検証経路）: `ADR-0019` の実行経路を1つ選択し、未選択経路は「未採用理由」を残す。
+- Gate-C（AC/DoD）: AC-O1〜O4 / DoD-O1〜O3 が `pass|blocked` で判定可能。
+- Gate-D（失敗時扱い）: `test defect / product defect / environment limitation` の3分類以外を使用しない。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1, Pending-2 の承認証跡。
+- 解消順: 1) Pending-2（I18N境界）→ 2) Pending-1（実運用E2E承認）→ 3) Gate表の最終記入確認。
