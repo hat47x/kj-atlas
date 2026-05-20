@@ -8,6 +8,15 @@
 
 データが保存される場面、外部サービスと共有される場面、利用者が共有する場面を横断して確認したい場合は、先に [data_handling.md](data_handling.md) を読んでください。
 
+
+## 文書導線と公開境界（DOC-OPS）
+
+- `operations.md`: 日常運用と障害一次対応の runbook（実行手順の正本）。
+- `security.md`（本書）: SafeMode / share-export / 外部接続の**基底方針**。
+- `security_operational_guidelines.md`: Security Officer / System Owner / Platform Operator が判断するときの運用ガイド。
+
+この3文書は役割分離のために責務を分けています。設定値の最終正本は `02_Architecture/runtime_parameter_registry.md` を参照し、本書で再定義しません。
+
 ## 基本方針
 
 - 既定では外部 LLM にデータを渡しません。
