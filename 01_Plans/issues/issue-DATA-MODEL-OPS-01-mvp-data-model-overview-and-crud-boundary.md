@@ -4,7 +4,7 @@
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P0 (Stream D highest)
 - Owner: TBD
 - Scope: `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`
 - Related Backlog: `DATA-MODEL-OPS-01`
@@ -30,6 +30,12 @@
 - Downstream（後続依存）: `DATA-CONTRACT-01`, `DATA-MAINT-01`
 - Blocker条件: support level語彙（運用サポート / 埋め込み限定 / 契約のみ）が02文書間で不一致
 - Contract fixture方針: `/docs/{doc_id}` の fixture（create-if-absent, DocumentV1/V2 roundtrip）を先に固定し、frontend/backendを追従させる。
+
+## Stream D Priority Queue（DATA active issues）
+
+1. `DATA-MODEL-OPS-01`（本Issue）: 境界語彙とCRUD責務の正本化（最優先）
+2. `DATA-CONTRACT-01`: contract drift判定規則の固定
+3. `DATA-MAINT-01`: 運用責務・復旧境界の固定
 
 
 ## 1) 課題 / Problem statement
@@ -86,6 +92,16 @@
   - ADR、issue、02文書、Project Mapの参照が相互に追跡できる。
 - 未実施時の理由・代替検証:
   - なし。
+
+### Stream D validation extension（AC/DoD運用固定）
+
+- AC運用:
+  1) `L1/L1.5/L2/L2.5/L3/L0` が `schemas.md` / `data_model_operations_overview.md` / DATA系3Issueで一致する。
+  2) 「型がある=運用可能」を否定する注記が維持される。
+  3) `DATA-CONTRACT-01` と `DATA-MAINT-01` への依存境界が重複なく記述される。
+- DoD運用:
+  - 本Issue更新時は、DATA系3Issueの `Status / Priority / Dependencies / Related ADR` を同一セッションで再確認する。
+  - 前提崩れ（未定義依存・上位矛盾）がある場合は Proceed せず Hold とする。
 
 ## 8) 代替案 / Alternatives considered
 

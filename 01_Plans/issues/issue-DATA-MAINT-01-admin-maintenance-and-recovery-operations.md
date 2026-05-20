@@ -4,12 +4,12 @@
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P2 (Stream D third)
 - Owner: TBD
-- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`, `04_Documentation/operations.md`（本Streamでは契約整理のみ）
+- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
-- Expected verification level: `integration`
+- Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
 
@@ -19,7 +19,7 @@
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが小規模組織でkj-atlasを運用する / 操作=文書一覧、利用停止ユーザー確認、バックアップ、復旧演習を行う / 期待結果=標準手順で安全に状況確認と復旧ができる / 除外=大規模マルチテナント管理、法務上の保持期限自動判定。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
+- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
@@ -91,13 +91,12 @@
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `git diff --check -- 01_Plans 02_Architecture 03_Implement 04_Documentation`
-  - `cd 03_Implement/backend && python -m pytest`
-  - `rg -n "DATA-MAINT-01|backup|restore|archive|provision" 01_Plans 02_Architecture 03_Implement 04_Documentation`
+  - `git diff --check -- 01_Plans/issues 02_Architecture`
+  - `rg -n "DATA-MAINT-01|backup|restore|archive|provision|L1\\.5|L2\\.5" 01_Plans/issues 02_Architecture`
 - 期待結果:
-  - 管理・復旧の最小運用が、文書と実装の両方で追跡できる。
+  - 管理・復旧の最小運用境界が、IssueとArchitecture文書で追跡できる。
 - 未実施時の理由・代替検証:
-  - 実装前は、RACI、API候補、runbook案、リスク表で代替する。
+  - Stream Dは非実装スコープのため、RACI・契約境界・Stop条件の文書整合で代替する。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -174,18 +173,8 @@
 - [x] `documents` と `merge_decision_logs` の整合検証を復旧フロー必須条件として固定した。
 - [x] Pending論点（削除/所有者移管/管理者閲覧権限）は ADR化前に実装しない Stop 条件として明示した。
 
-## 16) Stream C（Backend/Data Ops）phase log — 2026-05-19
+## 16) Stream D verification note（2026-05-20）
 
-- Phase 1 Read: 完了（DATA-CONTRACT / DATA-MAINT / DATA-MODEL-OPS / PRODUCT-OPS のACと依存境界を再確認）。
-- Phase 2 モック検証: 完了（I/F固定前提で既存 backend test suite を契約回帰の代理として実行、契約逸脱なし）。
-- Phase 3 実装: スキップ（契約逸脱・DB競合・マイグレーション破壊リスクを検知せず、追加実装不要）。
-- Phase 4 検証: 完了（`pytest` 全件pass、skipは既知シナリオ）。
-- Phase 5 記録: 完了（本ログ追記）。
-
-Self-Correction履歴:
-- 0/3（再試行不要）
-
-Fail-safe判定:
-- DB競合/破壊的migrationリスク: 未検知
-- 契約逸脱（Document version gate / embedded round-trip / merge_decision_logs連携）: 未検知
-- 判定: Proceed（現行契約を維持）
+- 本Issueは契約・運用境界の計画文書として維持し、backend/frontend実装検証は対象外とする。
+- 進行判定は `Status / Priority / Dependencies / Related ADR` と Stop条件（Section 14）の整合で行う。
+- 実装着手は `DecisionStatus=Fixed` 化と ADR承認後に別Issueで管理する。
