@@ -6,24 +6,36 @@ const readSource = (relativePath: string): string =>
   readFileSync(resolve(__dirname, "..", "..", relativePath), "utf8");
 
 describe("UX Operability regression contracts", () => {
-  it("keeps keyboard-selectable card contracts", () => {
-    const source = readSource("src/canvas/CardView.tsx");
-    expect(source).toContain('role="option"');
-    expect(source).toContain('aria-selected={isSelected}');
-    expect(source).toContain('tabIndex={0}');
-    expect(source).toContain('event.key === "Enter" || event.key === " "');
-    expect(source).toContain('onSelect(card.id, event.shiftKey)');
+  it("Phase 1: pointer-keyboard-flow-review", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+
+    expect(cardViewSource).toContain("function canStartDrag");
+    expect(cardViewSource).toContain('if (event.pointerType === "mouse")');
+    expect(cardViewSource).toContain("event.currentTarget.setPointerCapture(event.pointerId)");
+    expect(cardViewSource).toContain("event.currentTarget.releasePointerCapture(event.pointerId)");
+    expect(cardViewSource).toContain('event.key === "Enter" || event.key === " "');
   });
 
-  it("keeps selection-context and advanced disclosure contracts", () => {
-    const source = readSource("src/ui/SidePanel.tsx");
-    expect(source).toContain('data-ui-region="selection-context"');
-    expect(source).toContain('data-panel="selection-context"');
-    expect(source).toContain('data-panel-group="advanced"');
-    expect(source).toContain('aria-expanded="false"');
+  it("Phase 2: keyboard-card-selection", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+
+    expect(cardViewSource).toContain('role="option"');
+    expect(cardViewSource).toContain("aria-selected={isSelected}");
+    expect(cardViewSource).toContain("tabIndex={0}");
+    expect(cardViewSource).toContain("onKeyDown={handleKeyDown}");
+    expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
   });
 
-  it("keeps panel dismissal and focus return contracts", () => {
+  it("Phase 3: contextual-selection-panel", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+
+    expect(sidePanelSource).toContain('data-ui-region="selection-context"');
+    expect(sidePanelSource).toContain('data-panel="selection-context"');
+    expect(sidePanelSource).toContain('data-panel-group="advanced"');
+    expect(sidePanelSource).toContain('aria-expanded="false"');
+  });
+
+  it("Phase 4: panel-dismissal-focus-scope", () => {
     const sharePanelSource = readSource("src/ui/SharePanel.tsx");
     expect(sharePanelSource).toContain('data-focus-return-id="share-panel-trigger"');
     expect(sharePanelSource).toContain('data-panel="share-replay"');
@@ -33,5 +45,15 @@ describe("UX Operability regression contracts", () => {
     expect(appSource).toContain('data-focus-return-id="view-controls-trigger"');
     expect(appSource).toContain('data-panel="view"');
     expect(appSource).toContain('if (event.key === "Escape")');
+  });
+
+  it("Phase 5: primary-toolbar-task-prioritization", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain('data-ui-region="primary-flow"');
+    expect(appSource).toContain('t("app.toolbar.new")');
+    expect(appSource).toContain('t("app.toolbar.open")');
+    expect(appSource).toContain('t("app.toolbar.undo")');
+    expect(appSource).toContain('t("app.toolbar.save")');
   });
 });
