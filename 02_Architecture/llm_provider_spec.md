@@ -218,3 +218,18 @@ Provider 抽象の差異で CE1 契約語彙が揺れると、CE2/CE4 の監査�
 ### Consequences
 - provider 切替（none/fixture/local/external）でも CE1 I/F 契約は不変。
 - CE2/CE4 は provider 実装進捗と独立して契約連携を継続できる。
+
+
+## Stream B CE1 provider contract freeze addendum（2026-05-20 / I/F-first + mock-first）
+
+### Context
+Provider切替時にCE1語彙が変化すると、query/bundle 契約の監査相関が崩れる。
+
+### Decision
+- Provider層は CE1 v1 closed-world 契約語彙を変更しない。
+- 固定エラーは `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`。
+- mock-first 検証で `stubDatasetId=A2-minimal-v1` を利用し、実DB/実LLM依存なしで契約判定可能とする。
+
+### Consequences
+- provider 実装状態に依存せず、CE1契約を先に凍結して下流へ handoff できる。
+- 衝突検知時は provider側で意味変換せず、停止して上流契約へ戻す運用を徹底できる。

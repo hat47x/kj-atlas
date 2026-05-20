@@ -674,3 +674,18 @@ CE2/CE4 の進行を CE1 実装完了待ちにしないため、IR境界で Cont
 - IR実装は CE1 契約に依存しつつも backend 実装非依存で検証可能。
 - 下流は hash 監査キーを不変前提で再利用できる。
 - 契約衝突時は実装継続せず `held` 停止が必須となる。
+
+
+## Stream B CE1 contract freeze addendum（2026-05-20 / Context-Decision-Consequences）
+
+### Context
+CE1 v1 の query/bundle 契約が揺れると、IR生成境界でCE2/CE4の監査再現性が崩れる。
+
+### Decision
+- `ContextQueryV1` / `ContextBundleV1` は closed-world v1 として維持する。
+- 固定エラー語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種に限定する。
+- Verifyは `Plan -> Execute -> Verify -> Proceed` の直列順序を固定し、Verify失敗の自己修復は最大3回までとする。
+
+### Consequences
+- IR仕様は provider差分や実装進捗と独立して contract-first で検証可能。
+- 競合（契約ID衝突・語彙衝突）検知時は fail-closed で停止できる。

@@ -160,3 +160,21 @@ CE1 の Verify 失敗を曖昧に扱うと、下流に非決定論が伝播す�
 ### Consequences
 - runtime 制約に CE1 固定ゲートが接続され、fail-open を防止できる。
 - 下流ストリームは `Proceed` 条件を同一判定で再利用できる。
+
+
+## Stream B CE1 verify lock addendum（2026-05-20 / Verify-first safety）
+
+### Context
+CE1 Verify 判定が曖昧だと fail-open が発生し、契約凍結の意味が失われる。
+
+### Decision
+- Verify必須判定を次の4点に固定する。
+  1. `previewConfirmed=false -> 422 preview_required`
+  2. `unknown key -> 400 unknown_contract_key`
+  3. 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` が3/3一致
+  4. 不一致は `409 nondeterministic_bundle`
+- self-correction は最大3回。超過時は `held` 停止。
+
+### Consequences
+- CE1契約一貫性を機械的に再利用でき、Proceed判定の曖昧さを排除できる。
+- 競合検知時停止（推測実装禁止）を運用上の既定にできる。

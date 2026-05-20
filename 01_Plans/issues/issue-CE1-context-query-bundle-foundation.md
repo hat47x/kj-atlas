@@ -2865,3 +2865,54 @@ handoffKeys:
 
 ### Phase 4: Stopper
 - CE1契約定義が曖昧（必須キー/語彙/hash規律が不一致）になった時点で停止し、他Issueでの実装補完を行わない。
+
+
+## Stream B latest run（2026-05-20 / CE1 contract freeze / Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read Gate
+- Read Order準拠で上位文書と本Issue、`llm_input_ir_spec.md` / `llm_provider_spec.md` / `llm_runtime_constraints.md` のCE1節を再読。
+- 編集対象を許可5ファイルに固定し、他領域編集禁止を再確認。
+- 競合停止条件（Contract ID collision / error semantics collision / allowlist逸脱）を開始時点で明示。
+
+### Phase 2 ADR/契約明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4を停止させないには、CE1を実装依存なしで先に契約凍結する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` の closed-world v1、固定エラー語彙3種、hash決定論を凍結。
+- **Consequences**: mock-firstで並行実装を継続でき、CE1未実装でも契約検証とhandoffが可能。
+
+### Phase 3 I/F先行定義（型・APIシグネチャ・イベント）
+- 型固定: `ContextQueryV1` / `ContextBundleV1`（未定義キー禁止）。
+- API固定:
+  - `POST /context/query` : `previewConfirmed=false -> 422 preview_required`
+  - `POST /context/bundle` : 同一canonical queryでhash不一致 -> `409 nondeterministic_bundle`
+  - unknown key -> `400 unknown_contract_key`
+- 監査イベント最小キー: `queryCanonicalHash`, `bundleHash`, `trace_id`, `verifyAttempt`, `decision`。
+
+### Phase 4 モック方針定義
+- `stubDatasetId=A2-minimal-v1` を固定し、fixture/stubのみでCE1契約検証を可能化。
+- mock許可範囲: 型検証、固定エラー語彙、3回hash一致判定。
+- mock禁止範囲: 実DB・実LLM・worker依存の混入。
+
+### Phase 5 AC/DoD更新
+- AC追加固定:
+  1) preview gate固定（422）
+  2) unknown key拒否固定（400）
+  3) hash決定論固定（3/3一致、不一致409）
+  4) closed-world v1固定
+- DoD: 上記4点が docs 契約のみで再現でき、CE2/CE4へ read-only handoff 可能。
+
+### Phase 6 Verify（契約一貫性）
+- Verifyチェックリスト:
+  - preview gate semantics 一致
+  - unknown key semantics 一致
+  - nondeterministic semantics 一致
+  - Contract IDs `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` 一致
+- 不一致検知時は即停止し、推測実装を行わない。
+
+### Phase 7 Self-correction（最大3回）
+- attempt 1: 3固定エラー語彙の表記揺れ点検（差分不要）。
+- attempt 2: Contract ID衝突点検（差分不要）。
+- attempt 3: AC/DoDとVerify手順の突合（差分不要）。
+
+### Phase 8 完了報告
+- 判定: **Proceed（contract-only handoff ready）**。
+- 付帯条件: CE1凍結範囲外（実装詳細化、追加キー導入）は別版でのみ扱う。

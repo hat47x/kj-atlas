@@ -3861,3 +3861,42 @@ export type AuditEventV1 = {
 
 ### Phase 4: Stopper
 - CE1契約が曖昧化した場合、または他ストリーム領域編集が必要になった場合は `held` 停止として扱う。
+
+
+## Stream B latest run（2026-05-20 / CE0 contract freeze / Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read Gate
+- Read Order 上位文書と本Issueを再読し、CE0は **contract-only / docs-only / mock-first** の範囲に限定されることを確認。
+- 編集許可外ファイルの変更が必要になる場合は `held` で停止するゲートを再確認。
+- CE0固定契約（`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05`）の再定義禁止を確認。
+
+### Phase 2 ADR/契約明文化（Context / Decision / Consequences）
+- **Context**: CE1/CE2/CE4 が参照する前提として、CE0の禁止境界とNo-Go IDsを揺らさず維持する必要がある。
+- **Decision**: CE0契約は read-only SSOT として維持し、ID追加・改名・削除・意味変更を禁止する。
+- **Consequences**: 下流は契約衝突なく参照継続でき、競合検知時は `held` 停止で fail-closed を担保できる。
+
+### Phase 3 I/F先行定義（型・APIシグネチャ・イベント）
+- `freezeDecision = { decision: Proceed|Hold|Stop, executeAllowed: boolean, reasonCodes: string[] }` を CE0の最小判断I/Fとして固定。
+- 監査イベント最小キーを `timestamp/actor/phase/gateResult/reason/nextAction` で固定。
+- 本Phaseは定義のみであり、実装・状態遷移ロジックの確定は行わない。
+
+### Phase 4 モック方針定義
+- mock/stubは `decision` と `reasonCodes` の検証までを許可し、承認実遷移確定は対象外とする。
+- fixture/stub前提で並行実装可能とし、実DB/実LLM依存を持ち込まない。
+
+### Phase 5 AC/DoD更新
+- AC: CE0契約ID不変、No-Go IDs不変、safeMode後退ゼロを必須化。
+- DoD: docs-only差分で、下流参照に必要な判断I/F・停止条件・監査キーが本Issue単独で復元可能。
+
+### Phase 6 Verify（契約一貫性）
+- Verify観点: `contract_id_mutation=0` / `safeMode_regression=0` / `out_of_scope_edit=0`。
+- 競合検知ポリシー: 契約ID衝突・語彙衝突・allowlist逸脱を検知した時点で即停止（推測実装禁止）。
+
+### Phase 7 Self-correction（最大3回）
+- attempt 1: 契約ID表記揺れ点検（差分不要）。
+- attempt 2: No-Go IDs と fail-safe 条件の対応点検（差分不要）。
+- attempt 3: AC/DoD と Verify観点の整合点検（差分不要）。
+
+### Phase 8 完了報告
+- 判定: **Proceed（Conditional-Go）**。
+- 条件: CE0は引き続き read-only 契約参照専用。競合検知時は `held` 停止を維持。
