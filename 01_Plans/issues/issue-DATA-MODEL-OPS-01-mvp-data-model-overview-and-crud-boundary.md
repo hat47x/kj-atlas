@@ -80,8 +80,8 @@
 
 - [x] T1 MVPデータサポート境界をADR化する。
 - [x] T2 物理ER、論理ER、CRUD表を含む俯瞰文書を追加する。
-- [ ] T3 今後のDocumentV2/AI/監査連携の追加時に、CRUD表の同期を変更チェック項目へ組み込む。
-- [ ] T4 公開文書へ転記する場合は、内部管理情報を除いた利用者向け表現に整える。
+- [x] T3 今後のDocumentV2/AI/監査連携の追加時に、CRUD表の同期を変更チェック項目へ組み込む。（Stream D運用チェックとして固定）
+- [x] T4 公開文書へ転記する場合は、内部管理情報を除いた利用者向け表現に整える。（`public_index.md` 起点運用を参照する方針を固定）
 
 ## 7) 検証計画 / Validation plan
 
@@ -168,3 +168,16 @@
 - [x] CRUD表の全行に support level と運用責務主体を併記し、運用者誤読の防止条件を満たした。
 - [x] 例外時フロー参照として `DATA-MAINT-01` への導線を維持した。
 - [x] `DATA-CONTRACT-01` で扱う契約ドリフト観点（frontend/backend/api/schema整合）との境界を重複なく明記した。
+
+
+## 15) Stream D phase sync（2026-05-20）
+
+### Context
+- DATA系3Issueと02文書の語彙同期（L1/L1.5/L2/L2.5/L3/L0）を継続監視する必要がある。
+
+### Decision
+- Read同期の確認対象を `Status / Priority / Dependencies / Related ADR` に固定し、更新時は同一セッションで再確認する。
+- Verifyは docs-check（diff/rg）を最小必須とし、3回超過で収束しない場合はStopに切り替える。
+
+### Consequences
+- CRUD境界のドリフトを軽量に検知でき、DATA-CONTRACT-01 / DATA-MAINT-01 との接続が明確になる。

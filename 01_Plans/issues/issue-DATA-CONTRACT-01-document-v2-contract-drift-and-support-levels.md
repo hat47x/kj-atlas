@@ -192,3 +192,16 @@
 - 運用責務境界（Platform operator / Security officer / Support / Developer）がドキュメント間で衝突せず、`DATA-MAINT-01` の復旧設計に引き渡し可能。
 - SafeMode/share-export 領域の契約フィールドが、実装拡張前でも検証観点として残り、契約ドリフトを先に検知できる。
 - Stream D の Proceed 判定を「後方互換・support level・責務分離」の3条件で機械的に再確認できる。
+
+
+## 16) Stream D phase sync（2026-05-20）
+
+### Context
+- DocumentV2契約は `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` の解釈差でドリフトしやすい。
+
+### Decision
+- Critical判定ルール（Section: Stream D contract drift rule）をVerifyの一次ゲートとして固定する。
+- `PUT /docs/{doc_id}` create-if-absent と support level語彙一致を、毎回のRead同期で確認する。
+
+### Consequences
+- CRUD境界と契約境界を分離したまま、MVP運用責務の説明を維持できる。
