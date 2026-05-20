@@ -127,6 +127,21 @@ Open化ゲートを次の3カテゴリで固定する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
 - `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
 
+
+## Phase 5.1: Verify Evidence (2026-05-20, Stream E)
+
+- 実施経路: SQLite/ローカル検証（Compose未使用）。
+- 判定: **Execution: Hold 維持**（Pending-1 / Pending-2 未解消のため）。
+
+### 再現コマンドと結果
+- `npm run test:regression-guards`（frontend）: pass（97 tests）。
+- `python3 01_Plans/issues/validate_active_issue_memos.py` : pass（active memo検証OK）。
+- `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|O-USE-01|O-USE-02|O-USE-03|Execution: Hold|Pending" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` : pass（条項抽出可能）。
+
+### 失敗/制約の記録
+- `validate_active_issue_memos.py --files ...` は未対応引数のため失敗。再実行時は `--root` またはデフォルト実行を使用する。
+- 自己修復回数: 1/3（コマンド修正で復旧）。
+
 ## Phase 6: Proceed（3区分）
 - **Open化可能**: O-USE-01〜03が全充足。
 - **追加判断必要**: O-USE-02は充足、承認IDが一部未反映。
