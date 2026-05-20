@@ -668,3 +668,24 @@
 ### Phase 5 Proceed
 - 判定: **Ready**（docs-only / scope内 / 停止条件非該当）。
 - 3回失敗停止ルール: 維持（未到達）。
+
+## Stream G dedicated run（2026-05-20）
+
+### 1) Read同期
+- `04_Documentation/security.md`、`04_Documentation/operations.md`、`04_Documentation/security_operational_guidelines.md` を再読し、責務境界（runbook / 基底方針 / 運用判断補助）を確認。
+- 本Issueの `DecisionStatus=Fixed`、`GoNoGoGate=Required`、`VerificationLevel=docs-check` を再確認。
+
+### 2) Context / Decision / Consequences
+- Context: 公開文書で設定値や役割語彙を重複定義すると、運用時に参照先が競合し公開境界が曖昧化する。
+- Decision: `security.md` に「文書導線と公開境界」を追記し、3文書の責務分離と設定値の正本参照先（runtime_parameter_registry）を固定する。
+- Consequences: 利用者は security lane の入口を短時間で把握でき、設定値の再発明によるドリフトを抑制できる。
+
+### 3) Plan→Execute→Verify→Proceed
+- Plan: docs-only で `security.md` と本Issueのみ更新。
+- Execute: 導線セクション追加（制度変更なし）。
+- Verify: docs-check + diff-check を実施。
+- Proceed: 判定 **Ready**。
+
+### 4) 失敗回数管理（max 3）
+- self-repair count: 0/3。
+- 停止条件: 4回目修復要求が発生した場合は `Hold` に遷移。
