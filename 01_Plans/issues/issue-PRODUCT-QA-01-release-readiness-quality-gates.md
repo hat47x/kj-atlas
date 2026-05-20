@@ -422,3 +422,28 @@ DoDテンプレ（Draft→Open）
 - 暫定回避策:
 - エスカレーション先:
 - 再開条件:
+
+## Stream E update (2026-05-20): P0 release gate entry criteria / stopper application
+
+### 1) Read（最新メタ）
+- 本issueは `GoNoGoGate=Required` / `VerificationLevel=integration` の正本として扱う。
+- 判定軸は `G0..G7 + Value gates + E1..E3` を維持し、Blocker/Major/Minor分類で決裁する。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-PROD-01: 各ゲートに `result/evidence/owner/due` の4項目が存在する。
+- EC-PROD-02: Conditional Go の条件（期限付きfollow-up issue + 再判定日）が明文化されている。
+- EC-PROD-03: No-Go 時の戻し先 issue（`MVP-EXIT-01`, `ENV-CONFIG-DRIFT-01` など）が固定されている。
+- EC-PROD-04: SafeMode/share-export/import-sanitize/public-exposure の境界判定がゲート本文に含まれる。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: release判定テンプレートを単一運用（Gate Record）として扱う。
+- Execute: docs-onlyで証跡欄と戻し先導線の欠落を補完。
+- Verify:
+  - `rg -n "EC-PROD-0[1-4]|G0|G7|Value gates|E1|E2|E3|Conditional Go|No-Go" 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+  - `git diff --check -- 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+
+### 4) Stopper条件適用
+- Stopper-P1: Blocker>0 で Go/Conditional Go を禁止。
+- Stopper-P2: 証跡欠落（command log / gate result / follow-up issue）時は No-Go。
+- Stopper-P3: SafeMode境界不整合は即No-Go。

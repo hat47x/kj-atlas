@@ -197,3 +197,28 @@ Open化ゲートを次の3カテゴリで固定する。
 - 判定: **不可（Execution: Hold 維持）**。
 - 不足条件: Pending-1, Pending-2 の承認証跡。
 - 解消順: 1) Pending-2（I18N境界）→ 2) Pending-1（実運用E2E承認）→ 3) Gate表の最終記入確認。
+
+## Stream E update (2026-05-20): Open化 entry criteria / P0 gate measurableization
+
+### 1) Read（最新メタ）
+- `Status=Draft (Open-Readiness Prepared / Execution Hold)` を維持し、Open判定は `Pending-1/2` と `Execution path` の充足でのみ判断する。
+- `Expected verification level=e2e` を根拠に、Open条件は **実行可否の事実**（承認ID、経路固定、証跡欄）へ限定する。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-USE-01: `B-USE-01` と `B-USE-02` が解消済み（承認ID・日付・参照リンクを Pending 欄へ記録）。
+- EC-USE-02: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）を1つ固定し、変更時の更新責務者を明記。
+- EC-USE-03: `G1/G2/G3` それぞれに entry/exit 証跡欄（command / result / evidence link）を記入可能。
+- EC-USE-04: 未充足時は `Execution: Hold` を維持し、Stopper分類（approval/env/scope）を1件以上記録。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: `GO/NO-GO-1..4` を Open判定の唯一ゲートとして運用する。
+- Execute: docs-only 範囲で、承認ID・実行経路・証跡欄の欠落を補完する（実装変更は禁止）。
+- Verify:
+  - `rg -n "EC-USE-0[1-4]|Execution: Hold|Pending|GO/NO-GO" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+
+### 4) Stopper条件適用
+- Stopper-S1（Approval）: 承認ID未記入のままOpenへ遷移しない。
+- Stopper-S2（Environment）: 実行経路未固定ならOpen不可。
+- Stopper-S3（Scope）: docs-only範囲外要求が混入した時点で更新停止し、Hold理由として記録。

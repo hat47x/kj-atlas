@@ -262,3 +262,18 @@ Draft状態の issue-QA-* を Open 判定可能にする時は、次の最小テ
 - E2E結果は `PRODUCT-QA-01` の Gate Record に `result/evidence/owner/due` 形式で転記します。
 - Blocker または Critical を検出した場合は、E2E段で即時停止し `MVP-EXIT-01` 判定を Fail にします。
 - Compose実行不可時は `ADR-0019` の代替経路（SQLiteまたはmock）を使用し、未実施理由を必ず記録します。
+
+## Stream E (2026-05-20): Draft→Open entry criteria quick reference
+
+QA P0ゲート用に、Draft issue を Open 判定する最小 entry criteria を固定します（docs-only運用）。
+
+- EC-01 依存承認: Pending欄に承認ID・日付・参照リンクが揃う。
+- EC-02 実行経路: Compose / SQLite / 例外記録のいずれか1経路を事前選択。
+- EC-03 証跡欄: Gateごとに command / result / evidence link を記録可能。
+- EC-04 Hold解除: `Execution: Hold` の解除条件が1行で判定可能。
+
+Stopper（Open不可）
+- 承認ID未記入。
+- 実行経路未固定。
+- docs-only範囲外要求の混入。
+- SafeMode / share-export 境界の判定欠落。
