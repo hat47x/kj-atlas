@@ -742,6 +742,34 @@ export type MergeDecisionRecord = {
   3) 旧来の外部識別子直参照を段階的に廃止し、`reviewerRef` / `ownerRef` は `user:<users.id>` のみ許可する。
   4) strict 運用では未登録 subject を `403` とし、管理導線（`POST /admin/provision/users`）を必須化する。
 - backfill運用: 旧 `reviewerRef` / `ownerRef`（例: `user:sso:sub:<subject>`）は mapping JSON を使って `user:<users.id>` へ変換する。
+
+### 11.1 Migration alignment snapshot（2026-05-20 / Stream D）
+
+現行の物理スキーマは Alembic revision `20260314_0005` までで確定しており、本章の契約と次の対応で一致する。
+
+- `20260211_0001_create_documents.py`:
+  - `documents(id, version, updated_at, payload_json)`
+- `20260303_0002_create_users_identities.py`:
+  - `users(id, display_name, email, lifecycle_state, created_at, updated_at)`
+  - `user_identities(id, user_id, provider, external_uid, created_at)`
+  - `UNIQUE(provider, external_uid)`
+- `20260313_0003_create_merge_decision_logs.py`:
+  - `merge_decision_logs(id, doc_id, decision_id, group_id, snapshot_version, decided_at, payload_json)`
+  - `UNIQUE(doc_id, decision_id)`
+- `20260313_0004_add_merge_decision_log_indexes.py`:
+  - `ix_merge_decision_logs_doc_group_id(doc_id, group_id, id)`
+  - `ix_merge_decision_logs_doc_snapshot_id(doc_id, snapshot_version, id)`
+- `20260314_0005_enforce_identity_lookup_uniqueness.py`:
+  - `uq_user_identities_provider_lower_external_uid(lower(provider), lower(external_uid))`
+
+互換性判定（2026-05-20時点）:
+
+- **互換あり（backward-compatible）**
+  - 読み取り経路へ影響しない index 追加。
+  - `provider/external_uid` の case-insensitive uniqueness 強化（重複データがない前提）。
+- **互換なし（backward-incompatible）**
+  - 既存列の削除、必須化、意味変更は未実施。
+  - `Document.version` の意味変更を伴う migration は未実施。
   - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json --dry-run`
   - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json`
 

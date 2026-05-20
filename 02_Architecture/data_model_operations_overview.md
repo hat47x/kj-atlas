@@ -271,3 +271,32 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 - 下流は mock schema version を使って fixture 更新有無を自律判定でき、runtime version (`1|2`) と混同しない。
 - Data契約変更時の影響範囲が `schemas.md`（型）と本書（運用CRUD）で分離され、MVP責務境界の監査が容易になる。
 - reviewer/owner参照のPII混入リスクを抑えたまま、移行期データの互換方針を維持できる。
+
+## 12. Schema/Migration consistency check (2026-05-20 / Stream D)
+
+### Phase 1 Read（現状一致確認）
+- `schemas.md` の AUTH-SCHEMA-01 / Decision Log 契約と、`alembic/versions` の最新 revision (`20260314_0005`) を照合した。
+- 物理テーブル境界（`documents` / `users` / `user_identities` / `merge_decision_logs`）と本書2章の説明は一致し、追加 migration が必要な差分は検出しなかった。
+
+### Phase 2 Plan（互換分類 + AC/DoD提案）
+- 互換あり:
+  - index追加のみの変更。
+  - 大文字小文字非依存の一意制約強化（既存重複データが無い場合）。
+- 互換なし:
+  - 既存列の削除・必須化・意味変更。
+  - `Document.version` を据え置いた破壊的変更。
+
+提案AC（受入条件）:
+1. schema文書に revision 対応表があり、現行 migration と相互参照できる。
+2. 互換あり/なしの判定軸が明文化され、非互換変更は version gate 前提と明記される。
+3. contract test で `documents/users/user_identities/merge_decision_logs` の存在と主要制約を再現できる。
+
+提案DoD:
+1. `alembic upgrade head` が成功する。
+2. migration chain が単一路線（head一意）である。
+3. schema文書・運用文書・migration実体の3者に矛盾がない。
+
+### Phase 3/4 Execute + Verify（実施結果）
+- schema先行更新: 本書と `schemas.md` に migration 対応表と互換分類を追記。
+- migration追随: 新規 migration は不要（契約差分なしのため未追加）。
+- 整合検証: Alembic 実行・ヘッド確認・テーブル存在確認で一致を再検証。
