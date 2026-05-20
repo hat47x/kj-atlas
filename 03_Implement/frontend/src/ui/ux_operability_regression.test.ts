@@ -21,6 +21,10 @@ describe("UX Operability regression contracts", () => {
 
     expect(cardViewSource).toContain('role="option"');
     expect(cardViewSource).toContain("aria-selected={isSelected}");
+    expect(cardViewSource).toContain("const [isFocused, setIsFocused] = useState(false)");
+    expect(cardViewSource).toContain("onFocus={handleFocus}");
+    expect(cardViewSource).toContain("onBlur={handleBlur}");
+    expect(cardViewSource).toContain('data-focus={isFocused ? "card" : undefined}');
     expect(cardViewSource).toContain("tabIndex={0}");
     expect(cardViewSource).toContain("onKeyDown={handleKeyDown}");
     expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
