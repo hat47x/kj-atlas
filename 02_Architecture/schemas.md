@@ -455,6 +455,19 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `Document.version` を用いてスキーマバージョンを管理する
 - 破壊的変更は version を上げ、API側で移行処理を提供する
 
+### 6.0.1 DocumentV2 mock schema version（downstream独立性）
+
+`DocumentV2` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
+
+- `mockSchemaVersion = "mock-2026-05-19-dv2"`
+- 用途: contract test / fixture / handoff の識別子
+- 非用途: runtime の `Document.version` 代替（`Document.version` は引き続き `1|2` のみ）
+
+運用ルール:
+- 下流（import/export/validator/worker）は `mockSchemaVersion` を参照して fixture 互換性を判定してよい。
+- 本番永続データには `mockSchemaVersion` を書き込まない（read-only検証メタ）。
+- `mockSchemaVersion` を更新する場合は `schemas.md` と `data_model_operations_overview.md` を同時更新する。
+
 ### 6.1 Document versioning / support level運用ルール（DATA-CONTRACT-01固定）
 
 - `DocumentV2` の互換性レベルは次で固定する。

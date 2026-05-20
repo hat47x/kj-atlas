@@ -255,3 +255,19 @@ Proceed条件は、上記3点が `schemas.md` と本書で同時に満たされ�
 ### Consequences
 - Stream D の Verify は「後方互換・support level・責務分離」の3軸で再現可能となり、3回修復上限を超える前に停止判断できる。
 - Data Contract変更が運用手順へ波及する際の引き渡し先が明確化される。
+
+## 11. DATA-CONTRACT-01 execution record (2026-05-19)
+
+### Context
+- `DocumentV2` は型契約が拡張される一方、MVP CRUD 境界（L1/L1.5/L2/L2.5/L3/L0）の誤読により「個別CRUDあり」と解釈されるドリフトが残っていた。
+- contract test の fixture 識別子が文書間で固定されておらず、下流チームが実装進捗に依存した判定を行う余地があった。
+
+### Decision
+- `DocumentV2` の mock schema version を `mock-2026-05-19-dv2` で固定し、契約検証・handoffの識別子としてのみ使用する。
+- CRUD境界は本書4章と4.1章を正本とし、`L2/L2.5` 領域（evidence/review attribution/critique/reproposal等）は「保存往復は保証、個別CRUDは非保証」を明文化する。
+- review attribution の参照IDは生ID/IdP識別子を禁止し、`user:<users.id>` 正規化移行方針を継続する。
+
+### Consequences
+- 下流は mock schema version を使って fixture 更新有無を自律判定でき、runtime version (`1|2`) と混同しない。
+- Data契約変更時の影響範囲が `schemas.md`（型）と本書（運用CRUD）で分離され、MVP責務境界の監査が容易になる。
+- reviewer/owner参照のPII混入リスクを抑えたまま、移行期データの互換方針を維持できる。
