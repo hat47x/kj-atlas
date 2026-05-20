@@ -213,3 +213,28 @@
 - Due date:
 - Re-decision date:
 ```
+
+
+## Stream F update (2026-05-20): MVP Exit判定テンプレート固定
+
+### Exit Decision Matrix
+
+| 判定 | 条件 | 必須アクション |
+| --- | --- | --- |
+| Pass | Blocker=0 / Critical=0 / Major=0、必須ゲート完了、証跡完備 | リリース可 |
+| Conditional | Blocker=0 / Critical=0、Major>=1 かつ是正計画確定 | 期限付きフォローアップ発行後に限定リリース可 |
+| Fail | Blocker>=1 または Critical>=1、または証跡欠落 | リリース停止 |
+
+### Required evidence pack
+
+- Gate Record（G0..G7, V0..V4, E1..E3）
+- 実行コマンドログ（成功/失敗/未実施理由）
+- 手動smoke観測（viewport含む）
+- 未解決リスク台帳（owner/due date/escalation）
+
+### Escalation/approval responsibility
+
+- QA Lead: 判定取りまとめ・証跡整合確認
+- System Owner: Conditional/Failの最終判断
+- Platform Operator: 再現環境・実行ログ保証
+- Security Officer: SafeMode/share-export/public exposure関連の最終承認
