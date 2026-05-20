@@ -118,6 +118,21 @@ Playwright E2E や PR 前の自動確認は、公開利用者向けの本文で�
 - キーボード到達性（カード/島/主要操作）と段階的開示（文脈優先）を同時に確認する。
 - 詳細要件は `ADR-0030` と `issue-UX-OPERABILITY-01`〜`04` を正本として参照する。
 
+## 統合判定（Program Orchestration / MVP Exit）
+
+統合判定は、単一機能の可否ではなく、Program Gateとして次を確認します。
+
+1. Candidate（対象PR/コミット）
+2. `PRODUCT-QA-01` Gate結果（Go / Conditional Go / No-Go）
+3. `ENV-CONFIG-DRIFT-01` E系ゲート結果
+4. Conditional/No-Go時の是正計画（owner / due / re-decision date）
+
+判定ルール:
+- **Pass（Go）**: Gate入力がすべて揃い、No-Go要因が0件。
+- **Conditional**: Gate入力は揃うが、期限付き是正が残る。
+- **Fail（No-Go）**: No-Go要因が1件以上、または証跡不足。
+
+証跡不足のままGoを確定してはいけません。Program判定は `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` の最新判定ログを正本として記録します。
 
 ## QA/Release Gate 実行順（PRODUCT-QA-01 / MVP-EXIT-01）
 

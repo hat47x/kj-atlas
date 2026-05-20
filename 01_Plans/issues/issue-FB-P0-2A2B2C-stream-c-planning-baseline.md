@@ -654,3 +654,23 @@
 - `Proceed`: planning DoD 4項目がすべて充足し、未承認事項が `held/pending` として明示維持されている。
 - `Conditional (Needs-decision)`: DoDは充足したが `Approval Record=Pending` または `held` 未解消が残る。
 - `Stop`: 依存矛盾、allowlist逸脱、未承認確定化、self-correction超過のいずれかを検知。
+
+## Stream H critical-path recomputation note (2026-05-20)
+
+### Reclassification (Priority / Blocker / Dependency stage)
+| 項目 | Priority | 区分 | 依存ステージ |
+|---|---|---|---|
+| A1固定キー整合（2ファイル） | P0 | Gate prerequisite | A1 |
+| A2/A3 mock準備 | P1 | Bypass-capable dependency | A2/A3 pre-start |
+| Program Gate最終判定証跡 | P0 | True blocker | MVP Exit |
+| Decision Queue未解決2件 | P1 | Conditional blocker | Pre-Go |
+
+### Mock bypass vs true blocker
+- Mock bypass可能: A2/A3の事前検証（契約固定とsafeMode境界を前提）。
+- True blocker: Go/No-Goを確定するための承認記録不足（判定ログ未記録）。
+
+### Next iteration order (proposal)
+1. Gate証跡更新（`PRODUCT-QA-01`, `ENV-CONFIG-DRIFT-01`）
+2. Decision Queue Open 2件の期限・責任者更新
+3. Program Gate再判定（Go/Conditional/No-Go）
+4. A2/A3着手順の最終確定

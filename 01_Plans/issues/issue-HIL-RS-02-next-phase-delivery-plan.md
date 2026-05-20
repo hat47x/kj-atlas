@@ -158,3 +158,27 @@
 ### AC/DoD addendum
 - AC-7: A1未完了時に `Open/In Progress` 昇格条件を生成しない。
 - DoD-7: mock検証は型・イベント・Hold判定まで、承認確定や契約再定義を含まない。
+
+## Stream H Program orchestration addendum (2026-05-20)
+
+### Integration judgement matrix (Pass / Conditional / Fail)
+| 対象 | 判定 | 根拠 | 是正条件 |
+|---|---|---|---|
+| A1契約固定とHold運用 | Pass | `A1 not done => Proceed=Hold` と固定キーが文書化済み | 継続監査のみ |
+| 依存切断（A2/A3 mock先行） | Conditional | 並行準備は可能だが、Go最終判定証跡が未統合 | Program Gateログへ candidate別の証跡統合 |
+| MVP Exit統合判定 | Conditional | 判定式とテンプレは定義済み、最新入力の埋め込みが不足 | `PRODUCT-QA-01`/`ENV-CONFIG-DRIFT-01` 最新結果を反映 |
+
+### Critical path update
+1. `A1 contract freeze consistency`（継続監査）
+2. `PRODUCT-QA-01 gate record refresh`（必須）
+3. `ENV-CONFIG-DRIFT-01 E-gate refresh`（必須）
+4. `MVP-EXIT Program Gate Decision`（Go/Conditional/No-Go確定）
+
+### Stop/Resume contract
+- Stop:
+  - 証跡なしでGo判定を確定しようとする。
+  - allowlist外編集要求。
+  - Verify 3回超過。
+- Resume:
+  - 最新Gate証跡（candidate/date/reviewer/final decision/escalation）が揃う。
+  - Conditional項目の owner/due/re-decision date が記録済み。
