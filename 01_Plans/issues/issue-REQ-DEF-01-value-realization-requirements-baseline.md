@@ -237,3 +237,19 @@
 - Verify合格条件: 価値仮説とACの1対1追跡が可能で、非検証要件が残っていない。
 - Proceed条件: 実装ストリームが「どのACをどのテストで満たすか」を追加解釈なしで決定できる。
 - フェイルセーフ: 上流価値定義との矛盾・非検証要件・競合編集を検出した場合はOpen化を停止する。
+
+## Stream H addendum (2026-05-20): AC/DoD不足時のドラフト提案運用
+
+### Read同期トリガー
+- 各Phase開始時に `REQ-DEF-01/02/03` の `DecisionStatus`, `Acceptance criteria`, `Validation plan` を再読する。
+- 不整合がある場合、実装要求へ進まず `AC補完ドラフト` を先に追記して合意待ちへ移行する。
+
+### AC補完ドラフト最小テンプレ
+- Gap ID:
+- 欠落種別: `AC不足 | DoD不足 | Verification不整合`
+- 追加提案:
+- 影響範囲:
+- 合意状態: `Pending | Approved | Rejected`
+
+### Stop条件
+- self-repair 3回以内で整合不能な場合は停止し、`原因/影響/再開条件` を記録する。

@@ -447,3 +447,17 @@ DoDテンプレ（Draft→Open）
 - Stopper-P1: Blocker>0 で Go/Conditional Go を禁止。
 - Stopper-P2: 証跡欠落（command log / gate result / follow-up issue）時は No-Go。
 - Stopper-P3: SafeMode境界不整合は即No-Go。
+
+## Stream H addendum (2026-05-20): Release board integration protocol
+
+### Program board更新ルール
+- 本IssueのGate RecordをProgram boardの単一入力とする（重複フォーマット禁止）。
+- 各candidateに対して次を必須記録: `decision`, `blocker_count`, `major_count`, `evidence_link`, `follow-up issue`。
+
+### Proceed判定（Stream H）
+- Proceed=Go: `blocker_count=0` かつ Required gate未達なし。
+- Proceed=Conditional: `blocker_count=0` かつ Major残件のみ、再判定日あり。
+- Proceed=Stop/No-Go: `blocker_count>0` または evidence欠落、またはSafeMode境界不整合。
+
+### 非依存実行原則
+- 他ストリーム成果待ちはしない。未提出証跡は `missing evidence` として記録し、判定は `No-Go` または `Conditional` に反映する。

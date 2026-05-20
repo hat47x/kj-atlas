@@ -353,3 +353,29 @@
   1. `PRODUCT-QA-01` / `ENV-CONFIG-DRIFT-01` 実ファイル更新を要求された場合
   2. Program判定に必要な証跡が候補単位で取得不能な場合
   3. 判定式の再定義要求（safeMode後退・No-Go緩和）
+
+## Stream H update (2026-05-20): Program integration cadence and release decision SSOT
+
+### Phase cadence（各Phase開始時 Read同期必須）
+- 固定順序: `Read -> Plan -> Execute -> Verify -> Proceed`。
+- Read同期対象（毎Phase冒頭）:
+  1. `issue-MVP-EXIT-01-productization-readiness.md`（本ファイル）
+  2. `issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+  3. `issue-REQ-DEF-01/02/03`
+  4. `issue-PRODUCT-UX-*`, `issue-PRODUCT-VALUE-*`, `issue-PRODUCT-OPS-01`
+- 差分検知時運用: AC/DoDまたはGate定義の齟齬を検知した場合は `draft proposal` を先に追加し、未合意事項は `Pending` として隔離する。
+
+### Program-level AC/DoD補完（Stream H統合）
+- Program AC:
+  - [ ] PA-01: 全P0 issueで `GoNoGoGate` と `VerificationLevel` が整合している。
+  - [ ] PA-02: release判定の最終式が `PRODUCT-QA-01` の Gate Record と矛盾しない。
+  - [ ] PA-03: No-Go時の戻し先（REQ/PRODUCT/ENV）が候補ごとに一意に決まる。
+- Program DoD:
+  - [ ] PD-01: 判定ログ（candidate/date/reviewer/decision/follow-up）が埋まっている。
+  - [ ] PD-02: `Conditional` は期限付きfollow-up issueがある場合のみ許可。
+  - [ ] PD-03: self-repairは最大3回。4回目相当は停止報告（原因/影響/再開条件）。
+
+### Release decision rule（統合判定）
+- `Go`: Safety/Quality/Evidenceの全ゲート通過 + Blocker=0。
+- `Conditional`: Safety通過 + Blocker=0 + Majorのみ残存 + 期限付き是正Issueあり。
+- `No-Go`: Safety不通過、または証跡欠落、またはself-repair上限超過。
