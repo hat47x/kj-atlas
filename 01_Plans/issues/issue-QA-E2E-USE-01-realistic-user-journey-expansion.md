@@ -239,3 +239,21 @@ Open化ゲートを次の3カテゴリで固定する。
 
 ### Proceed
 - Pending-1/2 解消までは本Issueの状態遷移を行わず、証跡更新のみ継続する。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-E2E-USE 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QE-O1 | 代表ユーザージャーニー（smoke/core/safety）が境界別に列挙 | 3系統すべて記載 |
+| QE-O2 | 実行経路（Compose / SQLite / 例外記録）が事前選択 | 1経路以上が固定 |
+| QE-O3 | 失敗分類が `test defect / product defect / environment limitation` へ正規化 | 語彙ゆれなし |
+| QE-O4 | No-Go時の戻し先issueと再開条件が1:1 | 欠落0件 |
+| QE-O5 | 自己修復上限 `<=3` / 4回目相当Stop が明記 | 記載あり |
+
+### Verify matrix（QA-E2E-USE）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| 境界列挙 | `rg -n "smoke|core|safety|Compose|SQLite|例外記録|Execution: Hold" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 必須語彙ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 警告なし |

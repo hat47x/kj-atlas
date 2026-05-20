@@ -175,3 +175,21 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 - Stopper-U1: Pending-1/2 未解消のままOpen不可。
 - Stopper-U2: triage語彙が増殖・揺れた場合はHold。
 - Stopper-U3: docs-only範囲外の実装要求が混入した場合はStop。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-UNIT 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QU-O1 | `O-UNIT-01..04` が本文で検索可能 | `pass` 判定可能 |
+| QU-O2 | Blocker `B-UNIT-01..03` と再開条件が1:1対応 | 欠落0件 |
+| QU-O3 | `G1->G2->G3` の順序固定 | 順序崩れなし |
+| QU-O4 | triage語彙が `test defect / product defect / environment limitation` に固定 | 語彙差分なし |
+| QU-O5 | 自己修復上限 `<=3` と4回目相当Stopが明記 | 記載あり |
+
+### Verify matrix（QA-UNIT）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| Gate可観測性 | `rg -n "O-UNIT-0[1-4]|B-UNIT-0[1-3]|G1 Unit|G2 Integration|G3 E2E Traceability|Execution: Hold" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 必須語彙が全件ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 警告なし |
