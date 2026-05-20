@@ -7,6 +7,10 @@ describe("P2AReadinessPanel", () => {
   it("renders go status and all mock cases", () => {
     const html = renderToStaticMarkup(React.createElement(P2AReadinessPanel));
     expect(html).toContain("FB-P2A A3 readiness");
+    expect(html).toContain("data-ui-region=\"stream-b-p2a-readiness\"");
+    expect(html).toContain("data-testid=\"p2a-proceed-status\"");
+    expect(html).toContain("aria-live=\"polite\"");
+    expect(html).toContain("aria-label=\"p2a-mock-validation-log\"");
     expect(html).toContain("Proceed:");
     expect(html).toContain("go");
     expect(html).toContain("M1: pass (A3)");

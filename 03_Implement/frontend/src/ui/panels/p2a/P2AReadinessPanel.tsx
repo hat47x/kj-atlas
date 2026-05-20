@@ -20,9 +20,15 @@ export function P2AReadinessPanel(): React.ReactElement {
   const readiness = buildP2AImplementationReadiness(logs);
 
   return (
-    <section style={panelStyle} aria-label="p2a-readiness-panel">
+    <section
+      style={panelStyle}
+      aria-label="p2a-readiness-panel"
+      data-ui-region="stream-b-p2a-readiness"
+      data-contract-id={P2A02_CONTRACT_ID}
+      data-contract-version={P2A02_CONTRACT_VERSION}
+    >
       <h3 style={{ marginTop: 0 }}>FB-P2A A3 readiness</h3>
-      <p>
+      <p role="status" aria-live="polite" data-testid="p2a-proceed-status">
         Proceed: <strong>{result.go ? "go" : "no-go"}</strong>
       </p>
       <p>Reason: {result.reason}</p>
@@ -32,7 +38,7 @@ export function P2AReadinessPanel(): React.ReactElement {
       <p>
         Accepted: {readiness.acceptedMockCases.join(", ") || "-"} / Blocked: {readiness.blockedMockCases.join(", ")}
       </p>
-      <ul>
+      <ul aria-label="p2a-mock-validation-log" data-testid="p2a-validation-log">
         {logs.map((log) => (
           <li key={log.mockCaseId}>
             {log.mockCaseId}: {log.validationResult} ({log.ownerOfFix})
