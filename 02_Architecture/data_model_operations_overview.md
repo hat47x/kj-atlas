@@ -38,6 +38,12 @@ MVPで最も重要なのは、カードやまとまりを扱えることでは�
 - `L3: Derived` = 生成・表示対象であり永続保守対象ではない
 - `L0: Planned` = MVP時点では運用手順を定義中で標準運用を保証しない
 
+### 1.2 Stream D運用注記（Read→Plan→Execute→Verify）
+
+- DATA系Issue更新時は、`Status / Priority / Dependencies / Related ADR` のRead同期を同一セッションで実施する。
+- CRUD境界・サポートレベル・運用責務の3観点が揃わない場合は、実装ではなく契約整理を優先する。
+- Verifyが3回超過しても収束しない場合、または前提契約が崩壊した場合は `Stop` とする。
+
 ---
 
 ## 2. 物理永続化モデル

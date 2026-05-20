@@ -178,3 +178,16 @@
 - 本Issueは契約・運用境界の計画文書として維持し、backend/frontend実装検証は対象外とする。
 - 進行判定は `Status / Priority / Dependencies / Related ADR` と Stop条件（Section 14）の整合で行う。
 - 実装着手は `DecisionStatus=Fixed` 化と ADR承認後に別Issueで管理する。
+
+
+## 17) Stream D phase sync（2026-05-20）
+
+### Context
+- DecisionStatus=Pending のため、運用runbook実装へ進む前に契約前提の固定が必要。
+
+### Decision
+- 本Issueは docs-check に限定し、復旧実装・管理UI/API実装は別Issueへ分離する。
+- Verify/調整が3回超過または上位契約崩壊時はStopを継続する。
+
+### Consequences
+- Stream Dの停止条件が明文化され、前提未確定のまま実装へ越境するリスクを抑制できる。
