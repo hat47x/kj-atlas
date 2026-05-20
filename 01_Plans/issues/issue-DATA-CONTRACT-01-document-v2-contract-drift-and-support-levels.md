@@ -4,9 +4,9 @@
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P1 (Stream D second)
 - Owner: TBD
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/frontend/src/domain/types.ts`
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related Backlog: `DATA-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Expected verification level: `integration`
@@ -29,6 +29,19 @@
 - Parallel（並行整備）: なし
 - Downstream（後続依存）: `DATA-MAINT-01`（復旧runbookで参照する契約整合チェック）
 - Blocker条件: `PUT /docs/{doc_id}` create-if-absent契約の表現が `schemas.md` / `api.md` / 実装で不一致のまま
+
+## Stream D contract drift rule（固定判定規則）
+
+- Drift を **Critical** と判定する条件（いずれか1つで該当）:
+  1) `Document.version` または version gate 条件が `schemas.md` と `api.md` で不一致。
+  2) support level 語彙（L1/L1.5/L2/L2.5/L3/L0）が DATA系3Issue と02文書で不一致。
+  3) `PUT /docs/{doc_id}` create-if-absent のMVP契約位置づけが文書間で不一致。
+- Drift を **Major** と判定する条件:
+  - MVP保守責務（Platform operator / Security officer / Support / Developer）に衝突があるが、安全境界変更は含まない。
+- Drift を **Minor** と判定する条件:
+  - 用語揺れ・参照リンク欠落・重複記載のみで、契約意味論が一致している。
+- 判定手順:
+  - Phase 1 Readで `Status/Priority/Dependencies/Related ADR` を再抽出し、上記ルールで分類してから修正する。
 
 
 ## 1) 課題 / Problem statement
@@ -92,13 +105,11 @@
 
 - 実行コマンド:
   - `rg -n "DocumentV2|evidenceLinks|PatchApplyStats|reviewAttribution|deterministicTieBreak|POST /docs|PUT /docs" 02_Architecture 03_Implement`
-  - `cd 03_Implement/backend && python -m pytest`
-  - `cd 03_Implement/frontend && npm test -- --run`
-  - `git diff --check -- 02_Architecture 03_Implement`
+  - `git diff --check -- 01_Plans/issues 02_Architecture`
 - 期待結果:
   - 文書、型、実装、テストが同じCreate契約とDocumentV2サポートレベルを示す。
 - 未実施時の理由・代替検証:
-  - 実装同期前は差分表とdocs-checkで代替し、テスト未実施理由をPRに残す。
+  - Stream D は非実装スコープのため、docs-checkを正本検証とする。
 
 ## 8) 代替案 / Alternatives considered
 
