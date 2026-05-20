@@ -1,12 +1,12 @@
 # Issue: UX-OPERABILITY-05 主要ツールバーの推奨導線優先化（契約同期）
 
 - Type: Planning
-- Status: Open
+- Status: Done
 - Priority: P1
 - Owner: Stream C
 - DecisionStatus: Fixed
 - Execution: Ready
-- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs only）
+- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs + frontend ui）
 - Related Backlog: `UX-OPERABILITY-05`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
@@ -67,3 +67,10 @@
 
 - `Execution: Hold` は、キーボード導線（Enter/Space/Escape）またはフォーカス復帰契約が docs-check で観測不能になった場合に適用する。
 - 解除条件は、契約属性とイベント導線を再観測できること。
+
+
+## Implementation Notes
+
+- `03_Implement/frontend/src/canvas/CardView.tsx` における keyboard 選択契約（`Enter/Space`, `aria-selected`, `data-focus="card"`）を回帰対象として固定。
+- `03_Implement/frontend/src/ui/SidePanel.tsx` で `selection-context` / `advanced` の段階開示契約（`data-panel`, `data-panel-group`, `aria-expanded`）を実装・検証。
+- `03_Implement/frontend/src/ui/SharePanel.tsx` と `03_Implement/frontend/src/App.tsx` の `Escape` 閉鎖 + フォーカス復帰契約を回帰対象として維持。

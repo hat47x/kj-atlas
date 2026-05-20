@@ -36,7 +36,8 @@ describe("UX Operability regression contracts", () => {
     expect(sidePanelSource).toContain('data-ui-region="selection-context"');
     expect(sidePanelSource).toContain('data-panel="selection-context"');
     expect(sidePanelSource).toContain('data-panel-group="advanced"');
-    expect(sidePanelSource).toContain('aria-expanded="false"');
+    expect(sidePanelSource).toContain('aria-expanded={isAdvancedPanelOpen ? "true" : "false"}');
+    expect(sidePanelSource).toContain('onToggle={(event) => {');
   });
 
   it("Phase 4: panel-dismissal-focus-scope", () => {
