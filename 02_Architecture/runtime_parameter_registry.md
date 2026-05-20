@@ -151,3 +151,28 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 
 Stopper条件:
 - 上記 1〜6 のうち未充足がある場合は変更を停止し、承認待ちに切り替える。
+
+
+## Global prefix migration compatibility layer design（Stream D contract）
+
+`ADR-0021` に基づき backend runtime key は互換期間なしで `KJ_ATLAS_*` へ移行済みです。
+一方で deploy/frontend build には、利用者向け公開キーと実装内部adapterの境界があるため、互換レイヤを次の2層で固定します。
+
+1. **Public contract layer（利用者入力）**
+   - 受理する公開キーは `KJ_ATLAS_*` のみ。
+   - 旧prefix/無接頭辞キーは fail-fast で拒否する。
+2. **Private adapter layer（実装内部写像）**
+   - third-party container が要求する `POSTGRES_*` 等は内部写像に限定する。
+   - frontend の `VITE_API_BASE` は公開契約ではなく互換shimとして扱い、正規キーは `KJ_ATLAS_FRONTEND_API_BASE` を維持する。
+
+### Plan → Execute → Verify → Proceed gate
+
+- Plan: 変更前に `Naming / Defaults / Boundary / Profiles` の4観点を固定する。
+- Execute: 公開契約の更新を先に行い、実装・deploy・docs を追随させる。
+- Verify: docs-check + settings validation + compose config で同一キー集合を確認する。
+- Proceed: 4観点がすべて pass の場合のみ進行し、1つでも fail なら停止して Issue/ADR へ戻す。
+
+### Failure budget（3回失敗で停止）
+
+- 同一論点で Verify が3回連続失敗した場合、4回目の試行に進まず **Stop** とする。
+- Stop 時は「失敗原因」「再開条件」「要追加判断（ADR/Issue）」を `01_Plans/issues/` に記録する。

@@ -644,6 +644,30 @@
   - `git diff --check`
 - Proceed verdict (Phase 6): `Open可能（条件付き）`
 
+## Stream G Documentation Ops log（2026-05-20, 5Phase + CDC）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本に、`04_Documentation/security.md` と `04_Documentation/operations.md` の整合を再読。
+- DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: security 文書は公開境界を定義する基底であり、運用手順との責務分離が必須。
+- Decision: D1〜D4値の再掲/再定義を禁止し、正本リンク参照で統一する。
+- Consequences: 公開境界ドリフトと語彙再定義リスクを抑制し、後続レビューを短縮できる。
+
+### Phase 3 用語・導線・公開境界
+- 用語: Security Officer / System Owner / Platform Operator を固定語彙として維持。
+- 導線: strict mode 正本、operations runbook、dashboard への参照導線を維持。
+- 公開境界: 公開文書へ機微な内部手順を追加しない方針を維持。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|公開境界" 04_Documentation/security.md 04_Documentation/operations.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（docs-only / scope内 / 停止条件非該当）。
+- 3回失敗停止ルール: 維持（未到達）。
 
 ## Stream G dedicated run（2026-05-20）
 

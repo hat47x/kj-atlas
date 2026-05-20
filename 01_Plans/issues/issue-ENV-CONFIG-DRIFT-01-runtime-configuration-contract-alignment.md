@@ -489,3 +489,35 @@ Non-goals:
 #### Phase 5: Verify & Proceed
 - 文書差分を確認し、公開キー命名・既定値・境界に新たなドリフトがないことを確認。
 - Proceed 判定: Stream E scope で完了。残る論点は governance queue（strict no-vendor-env 解釈、`external_http` fail-fast 方針）のみ。
+
+
+## Stream D update (2026-05-20)
+
+### Phase 1) Read同期
+
+- `runtime_parameter_registry.md` をSSOTとして再読し、公開キー集合・既定値・profile差分を固定した。
+- 関連issue（ENV-ARCH-01 / ENV-CONFIG-DRIFT-01 / ENV-PROFILE-01）の `Status / Priority / Dependencies / Related ADR` を同一セッションで再確認した。
+
+### Phase 2) Context / Decision / Consequences
+
+- Context: backendは `KJ_ATLAS_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
+- Decision: 公開契約は `KJ_ATLAS_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
+- Consequences: 旧キー再導入や prefix例外は本streamで実施しない。必要時は新規ADRでGo/No-Goを先行確定する。
+
+### Phase 3) グローバルprefix移行と互換レイヤ設計
+
+- Public layer: 利用者入力は `KJ_ATLAS_*` のみ受理。
+- Private layer: `POSTGRES_*` は third-party container内部名、`VITE_API_BASE` は非公開互換shimとして限定運用。
+- Exit条件: 命名/既定値/境界/profile の4観点が同時に満たされること。
+
+### Phase 4) Plan → Execute → Verify → Proceed
+
+- Plan: 4観点ゲートを固定。
+- Execute: 契約文書（02）→ issue運用（01）の順で同期。
+- Verify: docs-check中心で差分検証し、実装契約との不整合がないことを確認。
+- Proceed: 不整合なしのため継続可能。追加の実装変更は不要。
+
+### Phase 5) 3回失敗で停止
+
+- 本更新では Verify失敗 0回。
+- 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。

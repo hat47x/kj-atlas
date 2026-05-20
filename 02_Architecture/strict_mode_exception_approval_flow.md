@@ -40,10 +40,11 @@
 AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 
 1. `02_Architecture/strict_mode_exception_approval_flow.md`（本書 / 正本）
-2. `04_Documentation/security.md`
-3. `04_Documentation/security_operational_guidelines.md`
-4. `04_Documentation/acceptance_check.md`（利用者向け確認）
-5. `03_Implement/frontend/docs/e2e_testing.md`（開発者向けE2E）
+2. `02_Architecture/enterprise_architecture.md`（責務境界・固定値参照先）
+3. `04_Documentation/security.md`
+4. `04_Documentation/security_operational_guidelines.md`
+5. `04_Documentation/acceptance_check.md`（利用者向け確認）
+6. `03_Implement/frontend/docs/e2e_testing.md`（開発者向けE2E）
 
 `04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 
