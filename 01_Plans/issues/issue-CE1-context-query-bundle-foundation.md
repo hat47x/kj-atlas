@@ -2842,3 +2842,26 @@ handoffKeys:
 
 ### Phase 4 Stopper
 - 修復3回超過、契約語彙衝突、allowlist外編集要求、依存逆転のいずれかを検知した時点で `held` 停止し判断依頼。
+
+## Stream B interface-first update（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- CE1を Context I/F の単一固定点として再確認（Status=Open, Priority=P1 を維持）。
+- 依存は CE0語彙固定の read-only 参照に限定し、CE2/CE4 へは実装でなく契約で接続する。
+
+### Phase 2: インターフェース先行定義（CE1固定点）
+- `ContextQueryV1` 固定項目: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`。
+- `ContextBundleV1` 固定項目: `queryCanonicalHash/bundleHash/sourceBundleHash/items/schemaVersion`。
+- fail-closed語彙固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- 上記は closed-world v1 契約とし、下流Issueは参照のみ（再解釈禁止）。
+
+### Phase 3: Plan→Execute→Verify
+- Plan: CE1を契約固定点、CE2/CE4を proposal-only 接続点として分離。
+- Execute: 実装依存（実DB/実LLM/worker）を持ち込まない文書契約のみ維持。
+- Verify:
+  - 依存循環なし（CE1 <- CE0語彙参照、CE1 -> CE2/CE4 handoff）。
+  - Draft→Open条件は `必須キー一致` `語彙3種固定` `mock-first維持` で機械判定可能。
+  - 修復上限は最大3回（超過時 Stop）。
+
+### Phase 4: Stopper
+- CE1契約定義が曖昧（必須キー/語彙/hash規律が不一致）になった時点で停止し、他Issueでの実装補完を行わない。

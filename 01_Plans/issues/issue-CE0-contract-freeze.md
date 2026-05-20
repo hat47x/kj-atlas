@@ -3841,3 +3841,23 @@ export type AuditEventV1 = {
 
 ### Phase 4 Stopper
 - 自己修復が3回を超える、または Contract ID collision / safeMode既定後退 / dependency inversion が発生した場合は `held` で停止し判断依頼する。
+
+## Stream B dependency reconfirmation（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- 対象4Issue（CE0/CE1/CE2/CE4）の Status/Priority/依存/Mock方針を再確認し、CE0は **契約SSOTのread-only基準点**として維持する。
+- 依存判定は実装依存ではなく、`Contract ID固定 + fail-closed語彙固定 + mock-first許容条件` の3点で切断可能と判断。
+
+### Phase 2: インターフェース先行定義との整合
+- CE1を契約固定点とする方針をCE0側から追認し、CE0は `CE1-CTXQ-IF/CE1-CTXB-IF` を **参照のみ**（再定義禁止）とする。
+- CE2/CE4は proposal-only 接続に限定し、CE0から実装要求を派生させない。
+
+### Phase 3: Plan→Execute→Verify（CE0視点）
+- Plan: CE0の役割を「語彙固定・No-Go固定・safeMode境界固定」に限定。
+- Execute: 本Issueへの記録更新のみ（docs-only / contract-only）。
+- Verify:
+  - 依存循環なし（CE0は上流基準点、CE2/CE4はCE1経由参照で接続）。
+  - Draft→Open条件は `fixedKeyDrift=0` / `approval missing=0` / `self-correction<=3` の測定可能条件で保持。
+
+### Phase 4: Stopper
+- CE1契約が曖昧化した場合、または他ストリーム領域編集が必要になった場合は `held` 停止として扱う。
