@@ -143,3 +143,22 @@
 - 判定: 再オープン不要（Done/Completed/Closedの完了根拠と整合）。
 - Related ADR/Spec: 参照先リンク切れなし（存在確認済み）。
 - 重複Backlog: 該当なし。
+
+
+## 14) Stream C governance lock record (2026-05-20)
+
+### Context
+- 対象は AUTH ガバナンス関連の文書同期のみ（`02_Architecture/strict_mode_exception_approval_flow.md` / `02_Architecture/enterprise_architecture.md` / AUTH系issue）。
+- 用語は `Security Officer / System Owner / Platform Operator` を単一語彙として維持し、別名導入を禁止する。
+- 固定値は AUTH-OPS-03 の D1〜D4（4h / tenant+2h / 代理承認なし / 48h+15m/60m）を正本参照で扱う。
+
+### Decision
+- DOC-OPS-02 同期順序は `02_Architecture（strict_mode_exception_approval_flow → enterprise_architecture） -> 04_Documentation -> 01_Plans -> AGENTS.md` を採択し固定する。
+- 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離を、AUTH関連メモで再定義せず参照維持する。
+- `Plan -> Execute -> Verify -> Proceed` を必須化し、自己修復は 3 回上限（超過時は `StoppedForClarification`）を維持する。
+
+### Consequences
+- Auth Governance の更新は Architecture 正本を先行し、下流文書の先行確定を防止できる。
+- 用語・役割・導線・D1〜D4 の4観点でドリフト検知を再利用できる。
+- SafeMode既定ONとshare/export保護を崩す変更は、AUTH関連の文書更新でも禁止のまま維持される。
+
