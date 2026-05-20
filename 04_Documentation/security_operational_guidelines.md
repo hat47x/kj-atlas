@@ -28,6 +28,18 @@
 
 同じ人が複数の責務を担う場合でも、記録上は「誰が判断し、誰が実行したか」を分けて残します。
 
+
+## Runtime profile とセキュリティ判断
+
+設定変更の前に、どの profile で運用するかを確定します。
+プロファイルの正本は `02_Architecture/runtime_parameter_registry.md` の `Runtime profiles` です。
+
+- `local-dev`: 外部共有を避ける初期検証向け（`KJ_ATLAS_LLM_PROVIDER=none`）。
+- `evaluation`: Compose評価向け。外部連携は必要時のみ限定有効化。
+- `enterprise-production`: strict 運用を前提に、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を標準とする。
+
+プロファイル未確定のまま `KJ_ATLAS_ALLOW_JIT_PROVISIONING`、`KJ_ATLAS_AUDIT_*`、`KJ_ATLAS_ACCESS_CONTROL_*` を変更しないでください。
+
 ## 設定変更前の確認
 
 設定を変える前に、次の4点を短く説明できる状態にします。

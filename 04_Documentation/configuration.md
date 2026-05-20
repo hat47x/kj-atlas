@@ -42,6 +42,18 @@
 | opt-in | 明示的に有効化することです。large-scale LLM は opt-in なしでは使えません。 |
 | allowlist | 接続してよい宛先だけを並べた一覧です。 |
 
+
+## Runtime profiles（推奨プロファイル）
+
+実装既定値（未設定時に使われる値）と、運用で推奨する値は異なる場合があります。
+迷った場合は `02_Architecture/runtime_parameter_registry.md` の `Runtime profiles` を正本として参照してください。
+
+- `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
+- `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
+- `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
+
+> 注意: `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の実装既定値は `true` ですが、本番相当の推奨値は `false` です。これは契約不整合ではなく、導入容易性と本番安全性を分けているためです。
+
 ## 最小設定
 
 Docker Compose の既定値で起動する場合、通常は追加設定なしで動きます。明示するなら次を使います。
