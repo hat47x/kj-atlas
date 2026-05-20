@@ -1,11 +1,15 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-19 (UTC, Stream F shared sync rerun-77)
+最終更新: 2026-05-20 (UTC, Stream F shared sync rerun-78)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
 
+
+- Stream F 共有統合同期（2026-05-20 rerun-78）で Phase 1 Read（全ストリーム完了報告の再収集と件数・状態・Queue再計算）→ Phase 2 Plan（反映対象を Status / Decision Queue / Next Action のみに固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（validator/unittest/rg で整合監査）→ Phase 5 Proceed（未承認事項の確定扱い0件・件数不整合0件・self-correction 3回超過なしを確認）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）を維持した。
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-20 rerun-78確認済み）。`
 - Stream G AUTH-OPS-03 同期（2026-05-20）で固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を直列実行し、`strict_mode_exception_approval_flow.md` を正本として operations/security の運用チェックリストを同期。4観点（用語/役割/導線/D1〜D4）検証を Pass（self-correction 0/3）で完了し、AUTH-OPS-03 Done 状態を維持した。
 
 - Stream F 共有統合同期（2026-05-19 rerun-77）で Phase 1 Read（全ストリーム完了報告と証跡の再収集）→ Phase 2 Plan（件数/状態/Decision Queue/依存順の反映方針固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（件数整合・Queue整合・依存順整合・停止条件違反0件を確認）→ Phase 5 Proceed（再開条件1行を明文化）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・参照リンク不整合0件を再確認した。
