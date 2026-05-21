@@ -499,3 +499,52 @@ DoDテンプレ（Draft→Open）
 
 ### 非依存実行原則
 - 他ストリーム成果待ちはしない。未提出証跡は `missing evidence` として記録し、判定は `No-Go` または `Conditional` に反映する。
+
+## Productization Gate Record 2026-05-21: latest-main baseline / PR #2251
+
+- Candidate: `origin/main@2a93c95e` + planning branch `codex/current-project-risk-analysis-issues@50f43e4c`
+- Decision date (JST): 2026-05-21
+- Reviewer: Codex
+- Scope: Planning baseline, unit/integration health, browser smoke. No `03_Implement` code changes in candidate branch.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Conditional Go
+- G2 主要操作: Conditional Go
+- G3 日本語UI: Go
+- G4 画面耐性: Not evaluated
+- G5 公開文書: Not evaluated
+- G6 診断とサポート: Conditional Go
+- G7 回帰: Go
+- Final: **No-Go for release readiness / Conditional for latest-main health baseline**
+
+### Evidence
+
+- Planning:
+  - `validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `triage_actionable_plans.py` -> pass (`active_issues=45 / ready=17 / blocked=28 / stopper=none`)
+- Frontend:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass
+  - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 732 tests)
+- Backend:
+  - `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` on `PATH` -> pass (256 passed / 19 skipped)
+- Browser smoke:
+  - Codex in-app browser opened `http://127.0.0.1:4173/`
+  - Observed `セーフモード: ON`, `共有と再現` dialog, and `固定マスク対象: 共有 / レビューパック（無効化できません）。`
+  - Browser warning/error logs: empty for the observed page
+
+### Follow-ups
+
+- Blocking issues:
+  - `QA-E2E-USE-01`: automated Playwright E2E evidence remains blocked because browser binaries are not installed.
+- Conditional issues:
+  - `PRODUCT-OPS-01`: standalone frontend smoke emits backend proxy `ECONNREFUSED` for `/docs/doc_phase1_canvas` when backend is not running; user-facing recovery evidence remains needed.
+- Re-decision date:
+  - TBD, after Playwright browser install or an approved ADR-0019 alternative evidence route.
+
+### Safety Confirmation
+
+- SafeMode default ON: pass by UI smoke and unit coverage.
+- share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; automated E2E evidence is missing.
+- public exposure checks: not evaluated in this baseline slice.
