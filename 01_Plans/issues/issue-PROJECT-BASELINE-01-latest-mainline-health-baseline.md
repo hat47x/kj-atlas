@@ -129,14 +129,15 @@
 | Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
 | Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
 | Backend pytest | `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 256 passed / 19 skipped | G7 / E2 |
-| Playwright mock E2E | bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` | Blocked: Playwright browser executable missing | G2 / G4 |
+| Playwright mock E2E | bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` | Pass: 2 passed after installing Playwright Chromium and starting Vite manually | G2 / G4 |
 | Browser smoke | Codex in-app browser against `http://127.0.0.1:4173/` | Conditional pass: app title `kj-atlas`, `セーフモード: ON`, `共有と再現` dialog, Japanese fixed mask text visible, browser warning/error logs empty | G1 / G2 / G3 |
 
 ### Environment findings
 
 - `npm` is not available in the current PowerShell `PATH`. Direct `node.exe` invocation works for `tsc`, `vitest`, `vite`, and `playwright`.
 - Playwright config uses `webServer.command = "npm run dev -- --host 127.0.0.1 --port 4173"`, so E2E startup fails in this environment unless Vite is started manually or `npm` is made available.
-- Playwright browsers are not installed under `C:\Users\yhata\AppData\Local\ms-playwright\chromium_headless_shell-1208\...`, so automated browser E2E cannot proceed to assertions.
+- Playwright browsers were installed during this baseline pass with bundled `node.exe .\node_modules\playwright\cli.js install chromium`; the initial blocker is resolved for this workstation.
+- `ce3_patch_workspace.spec.ts` initially failed after browser install because the test expected English-only `Collect candidates` while the current UI shows `候補を収集`. The test was updated to accept both English and Japanese labels for the same operation contract.
 - Standalone frontend smoke produced a Vite proxy warning for `/docs/doc_phase1_canvas` because backend was not running. This aligns with `PRODUCT-OPS-01` backend未接続 recovery scope and does not by itself indicate a frontend regression.
 - The first backend pytest run failed due `PermissionError` under `C:\Users\yhata\AppData\Local\Temp\pytest-of-hat47x`; rerunning with an explicit repo-external `--basetemp` resolved the environment limitation.
 - Backend migration/index tests require `alembic` on `PATH`; prepending `.venv\Scripts` fixed the remaining subprocess failures.
@@ -146,10 +147,10 @@
 | Gate | Baseline result | Reason |
 | --- | --- | --- |
 | G0 計画整合 | Go | issue metadata and triage pass with no stopper. |
-| G1 安全既定 | Conditional Go | unit coverage and browser smoke show SafeMode ON and fixed mask text, but full E2E is blocked. |
-| G2 主要操作 | Conditional Go | in-app browser smoke reaches share panel; automated Playwright evidence is missing. |
+| G1 安全既定 | Conditional Go | unit coverage, browser smoke, and auth smoke E2E pass; full share/export E2E is still outside this slice. |
+| G2 主要操作 | Go for sampled mock E2E | CE3 workspace and auth read-only smoke pass after i18n-tolerant E2E fix. |
 | G3 日本語UI | Go | frontend i18n/UI tests pass, and share panel smoke shows Japanese labels for observed flow. |
-| G4 画面耐性 | Not evaluated | viewport matrix was not executed in this baseline pass. |
+| G4 画面耐性 | Conditional | Playwright browser execution works, but viewport matrix was not executed in this baseline pass. |
 | G5 公開文書 | Not evaluated | public-doc forbidden-term scan was outside this execution slice. |
 | G6 診断とサポート | Conditional Go | backend未接続 proxy warning is classified under `PRODUCT-OPS-01`; user-facing recovery path still needs product gate evidence. |
 | G7 回帰 | Go | frontend typecheck/test and backend pytest pass after environment normalization. |
@@ -157,11 +158,11 @@
 ### Decision
 
 - Baseline decision: **Conditional** for latest-main health baseline.
-- Release readiness decision: **No-Go** until automated E2E browser dependencies are installed or an approved ADR-0019 alternative evidence route is recorded.
+- Release readiness decision: **No-Go** until viewport/public-document gates and full release-candidate E2E evidence are recorded.
 - Follow-up routing:
-  - E2E evidence gap: `QA-E2E-USE-01`
+  - E2E evidence gap: `QA-E2E-USE-01` remains for realistic journey expansion beyond the two mock scenarios verified here.
   - Backend未接続 recovery messaging: `PRODUCT-OPS-01`
-  - Playwright browser/dependency setup recurrence: `AUTH-E2E-01` and `CE3-patch-workspace-presets` already contain related environment notes; create a dedicated DX issue only if this remains unresolved after the next E2E setup pass.
+  - E2E runtime ergonomics: create a dedicated DX issue if `npm` PATH absence continues to make `playwright.config.ts` unusable without manual Vite startup.
 
 ---
 

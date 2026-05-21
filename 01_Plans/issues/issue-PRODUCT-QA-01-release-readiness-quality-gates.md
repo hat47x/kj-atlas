@@ -527,6 +527,9 @@ DoDテンプレ（Draft→Open）
 - Frontend:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass
   - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 732 tests)
+- E2E:
+  - bundled `node.exe .\node_modules\playwright\cli.js install chromium` -> pass
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` with manually started Vite -> pass (2 passed)
 - Backend:
   - `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` on `PATH` -> pass (256 passed / 19 skipped)
 - Browser smoke:
@@ -537,14 +540,15 @@ DoDテンプレ（Draft→Open）
 ### Follow-ups
 
 - Blocking issues:
-  - `QA-E2E-USE-01`: automated Playwright E2E evidence remains blocked because browser binaries are not installed.
+  - None for the two verified mock E2E scenarios.
 - Conditional issues:
+  - `QA-E2E-USE-01`: realistic journey expansion remains Draft/Hold beyond this sampled mock evidence.
   - `PRODUCT-OPS-01`: standalone frontend smoke emits backend proxy `ECONNREFUSED` for `/docs/doc_phase1_canvas` when backend is not running; user-facing recovery evidence remains needed.
 - Re-decision date:
-  - TBD, after Playwright browser install or an approved ADR-0019 alternative evidence route.
+  - TBD, after viewport/public-document gates and full release-candidate E2E route are recorded.
 
 ### Safety Confirmation
 
 - SafeMode default ON: pass by UI smoke and unit coverage.
-- share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; automated E2E evidence is missing.
+- share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; full share/export E2E remains outside this slice.
 - public exposure checks: not evaluated in this baseline slice.

@@ -68,14 +68,14 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
-  await page.getByRole("button", { name: /Collect candidates/i }).click();
+  await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
 
   const workspace = page.getByTestId("ce3-workspace-panel");
   await expect(workspace).toBeVisible();
   await expect(page.getByTestId("ce3-candidate-select")).toBeEnabled();
   await expect(page.getByTestId("ce3-candidate-count")).toContainText("(3)");
-  await expect(page.getByTestId("ce3-diff-preview")).toContainText("Patch diff preview");
-  await expect(page.getByTestId("ce3-diff-preview")).toContainText("Token delta:");
+  await expect(page.getByTestId("ce3-diff-preview")).toContainText(/Patch diff preview|パッチ差分プレビュー/);
+  await expect(page.getByTestId("ce3-diff-preview")).toContainText(/Token delta:|トークン差分:/);
   const optionLocator = page.locator('[data-testid="ce3-candidate-select"] option');
   await expect(optionLocator).toHaveCount(3);
   const alphaCandidateId = await optionLocator.nth(0).getAttribute("value");
@@ -86,22 +86,22 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   expect(gammaCandidateId).not.toBeNull();
 
   await page.getByTestId("ce3-adopt").click();
-  await expect(page.getByTestId("ce3-decision-state")).toContainText("adopt");
-  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
+  await expect(page.getByTestId("ce3-decision-state")).toContainText(/adopt|採用/);
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText(/adopt|採用/);
 
   await page.getByTestId("ce3-candidate-select").selectOption(betaCandidateId ?? "");
   await page.getByTestId("ce3-reject").click();
-  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("reject");
-  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
-  await expect(page.getByTestId(`ce3-candidate-state-${gammaCandidateId}`)).toContainText("hold");
+  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText(/reject|破棄/);
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText(/adopt|採用/);
+  await expect(page.getByTestId(`ce3-candidate-state-${gammaCandidateId}`)).toContainText(/hold|保留/);
   await expect(page.getByTestId("ce3-audit-log-size")).toContainText("2");
 
   await page.getByTestId("ce3-rollback").click();
-  await expect(page.getByTestId("ce3-decision-state")).toContainText("hold");
-  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText("hold");
-  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText("adopt");
-  await expect(page.getByTestId(`ce3-candidate-audit-${betaCandidateId ?? ""}`)).toContainText("rollback");
-  await expect(page.getByTestId(`ce3-candidate-audit-${alphaCandidateId ?? ""}`)).not.toContainText("rollback");
+  await expect(page.getByTestId("ce3-decision-state")).toContainText(/hold|保留/);
+  await expect(page.getByTestId(`ce3-candidate-state-${betaCandidateId}`)).toContainText(/hold|保留/);
+  await expect(page.getByTestId(`ce3-candidate-state-${alphaCandidateId}`)).toContainText(/adopt|採用/);
+  await expect(page.getByTestId(`ce3-candidate-audit-${betaCandidateId ?? ""}`)).toContainText(/rollback|ロールバック/);
+  await expect(page.getByTestId(`ce3-candidate-audit-${alphaCandidateId ?? ""}`)).not.toContainText(/rollback|ロールバック/);
   await expect(page.getByTestId("ce3-audit-log-size")).toContainText("3");
 
   await page.getByTestId("ce3-preset-name").fill("Local CE3 Preset");
@@ -110,17 +110,17 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
   await page.getByTestId("ce3-preset-filters").fill(" risk, merge ");
   await page.getByTestId("ce3-save-preset").click();
 
-  await page.getByRole("button", { name: "Run current preset" }).click();
+  await page.getByRole("button", { name: /Run current preset|現在のプリセットを実行/ }).click();
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"scope\":\"selection\"");
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"depth\":2");
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"filters\":[\"merge\",\"risk\"]");
 
-  await page.getByRole("button", { name: /Run Local CE3 Preset/ }).click();
+  await page.getByRole("button", { name: /Run Local CE3 Preset|Local CE3 Preset を実行/ }).click();
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"scope\":\"selection\"");
   await expect(page.getByTestId("ce3-failure")).toHaveCount(0);
 
   await page.reload();
-  await page.getByRole("button", { name: /Collect candidates/i }).click();
-  await page.getByRole("button", { name: /Run Local CE3 Preset/ }).click();
+  await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
+  await page.getByRole("button", { name: /Run Local CE3 Preset|Local CE3 Preset を実行/ }).click();
   await expect(page.getByTestId("ce3-normalized-query")).toContainText("\"filters\":[\"merge\",\"risk\"]");
 });
