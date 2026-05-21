@@ -84,21 +84,16 @@ share/export を使う場合は、[データ取り扱い](data_handling.md) の�
 
 ログやスクリーンショットを共有するときは、API key、token、password、未加工の顧客情報を含めません。どこまで残すか迷う場合は [データ取り扱い](data_handling.md) を確認してください。
 
-## 開発者向け自動テスト
-
-Playwright E2E や PR 前の自動確認は、公開利用者向けの本文ではなく、GitHub 上の [開発者向け E2E Testing](https://github.com/hat47x/kj-atlas/blob/main/03_Implement/frontend/docs/e2e_testing.md) を正本として管理します。
-
-
-## Product QA Gate（P0）に沿った記録
+## 確認記録のまとめ方
 
 受け入れ確認を実施したら、次の4点を最低限記録します。
 
-- Candidate（対象PR/コミット）
-- Gate結果（Go / Conditional Go / No-Go）
-- 証跡（実行コマンド、画面幅、スクリーンショット、失敗時メモ）
-- No-Go/Conditional Go時の戻し先 issue と再判定日
+- 確認した日時と対象環境。
+- 確認した画面幅とブラウザ。
+- 実施した操作と結果。
+- 問題があった場合の再現手順、スクリーンショット、次に確認すべきこと。
 
-この記録は `issue-PRODUCT-QA-01-release-readiness-quality-gates.md` の Gate Record と同じ項目で管理します。
+自動テストや開発者向けの詳細な検証は、この利用者向け手順とは分けて管理します。利用者向けの記録では、画面上で何を確認し、何が期待どおりで、何が期待と違ったかを分かるようにします。
 
 ## 関連文書
 
@@ -109,37 +104,24 @@ Playwright E2E や PR 前の自動確認は、公開利用者向けの本文で�
 - [セキュリティ](security.md)
 
 
-## UI Operability ADR-0030 に基づく実装前確認（計画）
+## 操作感の確認観点
 
-本節は **実装前の仕様確認計画** です。コード変更手順ではありません。
+画面操作を確認するときは、機能の有無だけでなく、次の流れが自然かも見ます。
 
-- 開始→選択→表示→閉じる→復帰 の5段階で確認観点を記録する。
-- `Escape` での閉じると、起点フォーカス復帰を観測可能な受入条件として扱う。
-- キーボード到達性（カード/島/主要操作）と段階的開示（文脈優先）を同時に確認する。
-- 詳細要件は `ADR-0030` と `issue-UX-OPERABILITY-01`〜`04` を正本として参照する。
+- 開始: どこから操作を始めればよいか分かる。
+- 選択: カード、島、表示、共有などの対象を迷わず選べる。
+- 表示: 選択した結果や状態が画面内で確認できる。
+- 閉じる: パネルやメニューを閉じる方法が分かる。
+- 復帰: 操作をやめたあと、元の作業へ戻れる。
 
-## 統合判定（Program Orchestration / MVP Exit）
+`Escape` で閉じる、`Tab` で次の操作へ進む、`Enter` や `Space` でボタンを実行する、といった基本操作も合わせて確認します。マウスだけ、またはキーボードだけで操作したときに流れが途切れる場合は、問題として記録してください。
 
-統合判定は、単一機能の可否ではなく、Program Gateとして次を確認します。
+## 確認結果の判定
 
-1. Candidate（対象PR/コミット）
-2. `PRODUCT-QA-01` Gate結果（Go / Conditional Go / No-Go）
-3. `ENV-CONFIG-DRIFT-01` E系ゲート結果
-4. Conditional/No-Go時の是正計画（owner / due / re-decision date）
+受け入れ確認の結果は、次の3つに分けて残します。
 
-判定ルール:
-- **Pass（Go）**: Gate入力がすべて揃い、No-Go要因が0件。
-- **Conditional**: Gate入力は揃うが、期限付き是正が残る。
-- **Fail（No-Go）**: No-Go要因が1件以上、または証跡不足。
+- **問題なし**: 主要操作が期待どおりに完了し、次の作業へ進める。
+- **注意あり**: 操作は完了するが、表示の分かりにくさ、待ち時間、軽微な崩れがある。
+- **停止**: 保存できない、共有前確認ができない、SafeMode 状態が分からない、主要操作が画面外に見切れる。
 
-証跡不足のままGoを確定してはいけません。Program判定は `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md` の最新判定ログを正本として記録します。
-
-## QA/Release Gate 実行順（PRODUCT-QA-01 / MVP-EXIT-01）
-
-1. 手動smoke（主要操作 + SafeMode + 共有前確認）
-2. 回帰（typecheck / unit / regression guard）
-3. E2E（compose優先、不可時mock）
-4. 公開文書・運用文書整合確認
-5. Gate Record記入と Exit 判定（Pass/Conditional/Fail）
-
-失敗時は次工程へ進まず、Blocker一覧に「再現手順・影響範囲・再開条件」を記録します。
+「停止」に該当する場合は次工程へ進まず、再現手順、影響範囲、再確認に必要な条件を記録します。

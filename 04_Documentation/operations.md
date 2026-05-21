@@ -38,7 +38,7 @@ kj-atlas の運用確認は、次の順で見ると切り分けやすくなり�
 ## Runtime profile の選択
 
 運用手順を開始する前に、対象環境の profile を固定します。
-profile 判定は `02_Architecture/runtime_parameter_registry.md` の `Profile selection criteria` を正本とし、ここでは運用判断だけを示します。
+profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。ここでは運用時の判断だけを示します。
 
 - 開発再現や不具合切り分け: `local-dev`
 - Compose での評価・受入確認: `evaluation`
@@ -158,7 +158,7 @@ API status:
 ```
 
 
-## Support Diagnostics & Recovery（PRODUCT-OPS-01）
+## 障害診断と復旧
 
 ### 障害分類（一次切り分け）
 
@@ -187,7 +187,7 @@ API status:
 
 ### Plan → Execute → Verify（障害復旧ランブック）
 
-復旧作業は必ず次の順で進めます。各ステップで AC（受入条件）/DoD（完了条件）が不足している場合は、実装や恒久変更を確定せず **ドラフト提案** として記録します。
+復旧作業は必ず次の順で進めます。各ステップで完了条件が不足している場合は、恒久変更を確定せず **暫定対応メモ** として記録します。
 
 1. **Plan（計画）**
    - 失敗分類コード（WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）を決定する。
@@ -199,16 +199,16 @@ API status:
 3. **Verify（検証）**
    - `/api/healthz`、保存、再読み込み、必要に応じて import/share の動作を確認する。
    - マスク境界（API key / token / password / 未マスク本文を共有しない）を再確認する。
-   - 再現テンプレートを埋め、未解決項目は「Draft Proposal」として次アクションを残す。
+   - 再現テンプレートを埋め、未解決項目は「暫定対応メモ」として次アクションを残す。
 
-**Draft Proposal 記録フォーマット（AC/DoD不足時）**
+**暫定対応メモの記録フォーマット**
 
 ```text
-Draft Proposal ID:
-不足しているAC/DoD:
+暫定対応メモID:
+不足している確認:
 不足により確定できない判断:
 暫定運用（いつまで）:
-恒久対応の提案先（Issue/ADR）:
+恒久対応が必要な場合の相談先:
 ```
 
 ### 復旧実行の再現テンプレート
@@ -247,55 +247,14 @@ Draft Proposal ID:
 - [diagnostics.md](diagnostics.md)
 - [release.md](release.md)
 
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
+## 更新後の確認
 
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
+更新や復旧のあと、少なくとも次の順で確認します。
 
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
+1. 画面が開く。
+2. `/api/healthz` が成功する。
+3. 標準サンプルまたは対象ドキュメントを読み込める。
+4. 保存、再読み込み、共有前確認ができる。
+5. 外部接続を有効にしている場合、その接続だけを追加で確認する。
 
-
-## AUTH契約硬化ランブック（Stream E）
-
-AUTH系（schema/api/ops/e2e）の契約更新を行うときは、次の固定手順で実施します。
-
-1. `02_Architecture/strict_mode_exception_approval_flow.md` と `02_Architecture/enterprise_architecture.md` の契約差分を確定する。
-2. 本書と `04_Documentation/security.md` に同日反映する。
-3. `01_Plans/issues/issue-AUTH-*` の進捗・停止条件・検証ログを更新する。
-
-### 実行前チェック（Fail Fast）
-
-- D1〜D4 と役割語彙（Security Officer / System Owner / Platform Operator）が一致している。
-- `StoppedForClarification` 条件が解除される根拠が3層で一致している。
-- 例外運用の有効化条件（2者承認 + TTL + rollbackBy）が欠損していない。
-
-### 実行後チェック（Verify）
-
-- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の現在値・変更理由・復旧期限が監査ログに記録されている。
-- strict復帰（`false`）の手順と証跡（実行時刻、実行者、判定根拠）が残っている。
-- E2E回帰（Level 1 常時、Level 2 条件付き）の実施計画が issue 側に反映されている。
-
-### AUTH-OPS-03 運用チェックリスト（申請→承認→実施→監査→失効）
-
-- 申請: requestId を採番し、対象tenant・理由・rollbackBy・監査ID参照を記録する。
-- 承認: Security Officer と System Owner の2者承認が4h以内に揃うことを確認する（D1）。
-- 実施: Platform Operator のみが `KJ_ATLAS_ALLOW_JIT_PROVISIONING=true` を適用し、実行証跡を残す。
-- 監査: 最小監査項目（時刻/理由/承認者/対象環境/復旧条件）と PII最小化を確認する。
-- 失効: 最大2h 到達、停止指示、または不整合検出時に strict（`false`）へ復帰し、endedAt を記録する（D2/D3/D4）。
-
-参照正本: `02_Architecture/strict_mode_exception_approval_flow.md`（D1〜D4）、`04_Documentation/security.md`（セキュリティ検証）。
-
-## 検証運用（Release Gate運用）
-
-- 判定順序は `smoke -> unit/regression -> integration -> e2e -> release checks` で固定します。
-- 判定ログは `Productization Release Decision Record`（PRODUCT-QA-01定義）を使用します。
-- Conditional Go は `owner / due date / re-check date` を必須とし、未記入は No-Go 扱いです。
-- 自己修復は3回まで。4回目相当は実行停止し、Blocker一覧へ移行します。
+どれか1つでも失敗する場合は、次の変更へ進まず、発生日時、操作、期待結果、実際の結果、直近の変更を記録します。

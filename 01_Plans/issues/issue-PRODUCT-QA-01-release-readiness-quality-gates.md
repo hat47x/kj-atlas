@@ -502,7 +502,7 @@ DoDテンプレ（Draft→Open）
 
 ## Productization Gate Record 2026-05-21: latest-main baseline / PR #2251
 
-- Candidate: `origin/main@2a93c95e` + planning branch `codex/current-project-risk-analysis-issues@50f43e4c`
+- Candidate: `origin/main@2a93c95e` + planning branch `codex/current-project-risk-analysis-issues`
 - Decision date (JST): 2026-05-21
 - Reviewer: Codex
 - Scope: Planning baseline, unit/integration health, browser smoke. No `03_Implement` code changes in candidate branch.
@@ -511,10 +511,10 @@ DoDテンプレ（Draft→Open）
 
 - G0 計画整合: Go
 - G1 安全既定: Conditional Go
-- G2 主要操作: Conditional Go
+- G2 主要操作: Go for sampled mock E2E
 - G3 日本語UI: Go
-- G4 画面耐性: Not evaluated
-- G5 公開文書: Not evaluated
+- G4 画面耐性: Conditional
+- G5 公開文書: Go for public-target boundary scan
 - G6 診断とサポート: Conditional Go
 - G7 回帰: Go
 - Final: **No-Go for release readiness / Conditional for latest-main health baseline**
@@ -532,6 +532,9 @@ DoDテンプレ（Draft→Open）
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` with manually started Vite -> pass (2 passed)
 - Backend:
   - `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` on `PATH` -> pass (256 passed / 19 skipped)
+- Public documentation:
+  - `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>` -> pass (no matches)
+  - `rg -n "外部に送る|外部送信|送る|渡す|渡さない|投げる" <public target 04 docs>` -> pass after context review; only `環境変数` definition uses `渡す` and is not an external-sharing expression.
 - Browser smoke:
   - Codex in-app browser opened `http://127.0.0.1:4173/`
   - Observed `セーフモード: ON`, `共有と再現` dialog, and `固定マスク対象: 共有 / レビューパック（無効化できません）。`
@@ -545,10 +548,10 @@ DoDテンプレ（Draft→Open）
   - `QA-E2E-USE-01`: realistic journey expansion remains Draft/Hold beyond this sampled mock evidence.
   - `PRODUCT-OPS-01`: standalone frontend smoke emits backend proxy `ECONNREFUSED` for `/docs/doc_phase1_canvas` when backend is not running; user-facing recovery evidence remains needed.
 - Re-decision date:
-  - TBD, after viewport/public-document gates and full release-candidate E2E route are recorded.
+  - TBD, after viewport matrix and full release-candidate E2E route are recorded.
 
 ### Safety Confirmation
 
 - SafeMode default ON: pass by UI smoke and unit coverage.
 - share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; full share/export E2E remains outside this slice.
-- public exposure checks: not evaluated in this baseline slice.
+- public document exposure boundary: pass for current public-target 04 docs; runtime/deployment public exposure remains outside this slice.
