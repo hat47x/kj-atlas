@@ -149,12 +149,12 @@
 | Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 1280px / 920px / 768px / 390px | large-document and slow/backend-recovery scenarios remain outside this fit check. |
 | Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | canvas edit-mode focus-order breadth remains under this issue. |
 | Canvas mouse and keyboard operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass: mouse drag, arrow-key nudge, Shift+arrow large nudge, Delete removal, self-intersection guard. | broader canvas edit-mode focus order remains under this issue. |
-| Full frontend E2E | bundled Playwright full suite | Pass: 21 tests | large-document fixture and slow/backend-recovery scenarios remain outside the current suite. |
+| Full frontend E2E | bundled Playwright full suite | Pass: 27 tests | synthetic large-document fixture is now covered; slow/backend-recovery scenarios remain outside the current suite. |
 | Frontend regression | full Vitest | Pass: 160 files / 732 tests | does not replace browser viewport evidence. |
 
 ### Task status adjustment
 
-- T3 remains open but narrowed: layout collapse, mouse hit-testing, polygon keyboard nudge/removal, 768px/1440px header-panel fit, and Share/View keyboard open-close focus return are fixed for covered flows; broader canvas edit-mode focus order and large-document interaction evidence remain.
+- T3 remains open but narrowed: layout collapse, mouse hit-testing, polygon keyboard nudge/removal, 768px/1440px header-panel fit, Share/View keyboard open-close focus return, and synthetic large-document interaction evidence are fixed for covered flows; broader canvas edit-mode focus order and slow/backend-recovery UX remain.
 - T5 remains open: public acceptance documentation should be updated after the full viewport/large-document/slow-environment matrix is recorded.
 
 ## 12) Evidence update 2026-05-22: header panel keyboard and viewport matrix
@@ -164,7 +164,7 @@
 - Verification:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line`: Pass, 7 tests.
-- Remaining gap: this closes the header/share/view panel portion of the viewport matrix. Large-document fixtures, slow/backend-recovery UX, and canvas edit-mode keyboard semantics remain open.
+- Remaining gap: this closes the header/share/view panel portion of the viewport matrix. Synthetic large-document coverage is recorded in section 14; slow/backend-recovery UX and broader canvas edit-mode keyboard semantics remain open.
 
 ## 13) Evidence update 2026-05-22: polygon edit keyboard operation
 
@@ -174,6 +174,16 @@
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts --reporter=line`: Pass, 2 tests.
 - Remaining gap: the polygon edit primitive is now keyboard-operable; full canvas focus-order coverage across card selection, island selection, panels, and edit handles remains open.
+
+## 14) Evidence update 2026-05-22: synthetic large-document operability
+
+- E2E route: `e2e/large_document_operability.spec.ts` loads a deterministic 120-card / 12-island / 119-edge document at 768px width.
+- Verification scope: search for a rare card, hide non-matches, confirm the rare card remains visible, open View and Share panels without fixed-panel viewport overflow, and export a review bundle whose `diagnostics.md` contains `connectivityScore`.
+- Command evidence:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/large_document_operability.spec.ts --reporter=line`: Pass, 1 test.
+  - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 27 tests.
+- Task status adjustment: T2 is covered for a synthetic browser fixture. T3 remains open for broader focus-order breadth. T4 remains open for slow/backend-recovery states. T5 remains open until public acceptance documentation is updated after the remaining slow-environment evidence is available.
 
 ---
 

@@ -9,6 +9,8 @@ export const EXPORT_BUNDLE_BUTTON = /Export bundle \(\.zip\)|bundle をエクス
 export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|ドキュメントJSONを書き出す（legacy）/;
 export const READ_ONLY_INDICATOR = /Read-only mode is active|読み取り専用モードが有効|Read-only|読み取り専用/;
 export const EDIT_ISLAND_BOUNDARY_CHECKBOX = /Edit island boundary|島の境界を編集/;
+export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
+export const HIDE_NON_MATCHES_CHECKBOX = /Hide non-matches|非一致を非表示/;
 
 export function visibilitySelect(page: Page, label: "view" | "pack") {
   const labelPattern = label === "view" ? /View visibility|view の公開範囲/ : /Pack visibility|パックの公開範囲/;
