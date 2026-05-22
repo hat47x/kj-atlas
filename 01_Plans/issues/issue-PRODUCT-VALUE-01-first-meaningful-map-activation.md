@@ -223,3 +223,24 @@
 
 ### Approval-wait packet
 - This section + ADR-0032 Stream H block are the approval bundle for PRODUCT-VALUE-01.
+
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、実装着手や公開文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Pending` と `Owner: TBD` が残っており、Open化は時期尚早。
+- Proposed RACI: R=Product Value Stream Lead（未割当）, A=Productization Program Owner, C=QA Lead / Platform Architecture Owner, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. ADR-0032の価値実現モデル、ADR-0031の開始導線、E2E証跡経路の依存は見えているが、各依存の再開条件がまだ本文上で完結していない。
+  - O-OPEN-03: Partial. ACとValidation planはいずれもe2e前提だが、5試行中4成功以上を測る具体シナリオ、入力fixture、画面状態の保存先が未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0032`: 「最初の意味ある配置」を価値実感のGo/No-Go単位としてFixedにする根拠。
+  - `ADR-0031`: 初回入口、文書入口、SafeMode表示の画面配置方針。
+  - `02_Architecture/value_traceability.md`: 価値仮説、受入条件、KPIの追跡表。
+- 実装/証跡依存:
+  - 初回利用の入力fixture（サンプルまたは短いメモ）と、カード3件以上、まとまりまたは保留点1件以上を確認するE2E。
+  - SafeMode/取り込み検証状態が初回経路内で見えることを示すスクリーンショットまたはPlaywright trace。
+- Next action:
+  - `Owner` 確定後、初回成功経路のE2Eシナリオ名、fixture名、証跡保存先を本文へ追記する。
+  - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。
