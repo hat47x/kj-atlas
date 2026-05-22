@@ -191,6 +191,40 @@ function getViewModeDisplayLabel(mode: ViewMode): string {
   return t("app.view_mode.explore");
 }
 
+function describeRecoverableError(error: unknown): string {
+  if (error instanceof ApiError) {
+    return `HTTP ${error.status}: ${error.message}`;
+  }
+
+  if (error instanceof TypeError) {
+    return t("app.status.error_detail_network");
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return t("app.status.error_detail_unknown");
+}
+
+function formatLoadDocumentFailure(error: unknown): string {
+  return t("app.status.load_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
+function formatCreateDocumentFailure(error: unknown): string {
+  return t("app.status.create_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
+function formatSaveDocumentFailure(error: unknown): string {
+  return t("app.status.save_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
 function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string {
   if (decision === "adopt") return t("patch_workspace.decision.adopt");
   if (decision === "reject") return t("patch_workspace.decision.reject");
@@ -1770,13 +1804,13 @@ export default function App() {
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage(t("app.status.document_created"));
           } catch (saveError) {
-            setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
+            setStatusMessage(formatCreateDocumentFailure(saveError));
           }
         } else {
           if (error instanceof ApiError && error.status === 404) {
-            setStatusMessage(`Document ${docId} was not found`);
+            setStatusMessage(t("app.status.document_not_found_recovery", { docId }));
           } else {
-            setStatusMessage(error instanceof Error ? error.message : "Failed to load document");
+            setStatusMessage(formatLoadDocumentFailure(error));
           }
         }
       } finally {
@@ -2093,7 +2127,7 @@ export default function App() {
         return;
       }
 
-      setStatusMessage(error instanceof Error ? error.message : t("app.status.save_failed"));
+      setStatusMessage(formatSaveDocumentFailure(error));
     } finally {
       setIsSaving(false);
     }
@@ -8720,15 +8754,22 @@ ${parsedDocument.error}`);
         </>
       )}
       <div
+        data-testid="status-message"
+        role="status"
+        aria-live="polite"
         style={{
-          position: "absolute",
+          position: "fixed",
           right: 16,
           bottom: 16,
+          maxWidth: "min(560px, calc(100vw - 32px))",
           backgroundColor: "rgba(15, 23, 42, 0.85)",
           color: "#f8fafc",
           padding: "6px 10px",
           borderRadius: 6,
           fontSize: 12,
+          lineHeight: 1.4,
+          overflowWrap: "break-word",
+          whiteSpace: "pre-wrap",
         }}
       >
         {statusMessage}

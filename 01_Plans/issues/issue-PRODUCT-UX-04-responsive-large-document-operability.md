@@ -185,6 +185,15 @@
   - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 27 tests.
 - Task status adjustment: T2 is covered for a synthetic browser fixture. T3 remains open for broader focus-order breadth. T4 remains open for slow/backend-recovery states. T5 remains open until public acceptance documentation is updated after the remaining slow-environment evidence is available.
 
+## 15) Evidence update 2026-05-22: backend-recovery guidance on small screens
+
+- Implementation route: API load/create/save failures now produce recovery-oriented status messages and the status region is fixed to the viewport with wrapping, preventing long diagnostic guidance from being pushed off-screen by the right panel.
+- E2E route: `e2e/ops_recovery_guidance.spec.ts` covers API load failure and save failure at 390px width, including viewport-fit checks for the status message.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 2 tests.
+- Task status adjustment: the backend-recovery messaging portion of T4 is covered for API unavailable/save failure. T4 remains open for genuinely slow operations, progress/cancel behavior, and worker/API delay states.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

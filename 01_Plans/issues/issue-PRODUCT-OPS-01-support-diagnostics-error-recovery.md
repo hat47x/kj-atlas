@@ -122,6 +122,17 @@
 
 - ADR化が必要になる条件: 自動ログ送信、サポート基盤連携、診断パッケージ仕様を固定する場合。
 
+## 11) Evidence update 2026-05-22: API/save recovery guidance
+
+- Implementation route: `App.tsx` now formats document load, document create, and save failures with recovery guidance instead of exposing only the raw exception message. The status message uses `role="status"` and fixed viewport placement so long recovery guidance remains visible on small screens.
+- E2E route: `e2e/ops_recovery_guidance.spec.ts` injects API failures for default document load and save. It verifies that the UI tells users to check `/api/healthz`, backend startup, retry/export JSON as appropriate, and avoid sharing API keys or tokens in diagnostics.
+- Support documentation route: `SUPPORT.md` now separates questions, bugs, feature requests, and security issues; it also lists information to share, information not to share, and the first recovery checks.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 2 tests.
+- ADR impact: no ADR required. This keeps the existing support/diagnostics policy and makes current UI behavior conform to it; it does not introduce automated log transmission or a new support integration.
+- Remaining gap: low-speed worker/API delay states still need explicit progress/cancel/retry evidence. Automated support bundle generation remains a future ADR candidate if product policy changes.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

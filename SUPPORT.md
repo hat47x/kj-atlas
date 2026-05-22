@@ -1,31 +1,41 @@
 # SUPPORT
 
-**English summary (short):**
-Read README first for project purpose and basic usage.
-Use Discussions for questions and open conversation.
-Use Issues for bugs and feature requests.
-For security concerns, follow SECURITY.md.
+kj-atlas の使い方、障害調査、セキュリティ連絡の入口をまとめます。まず [README.md](README.md) で目的と基本操作を確認し、具体的な切り分けは [診断と障害調査](04_Documentation/diagnostics.md) を参照してください。
 
-サポート窓口の使い分けを以下にまとめます。
-
-## まず確認すること
-
-- 最初に [README.md](README.md) を読み、目的・前提・運用方針を確認してください。
+**English summary:** Start with README for basic usage. Use Discussions for questions, Issues for bugs or feature requests, and SECURITY.md for vulnerability reports. Never share API keys, tokens, passwords, or raw customer data.
 
 ## 相談先
 
-- **質問・使い方相談**: GitHub Discussions
-- **バグ報告・機能提案**: GitHub Issues
-- **セキュリティ問題**: [SECURITY.md](SECURITY.md) の手順に従って報告
+| 内容 | 連絡先 | 補足 |
+| --- | --- | --- |
+| 使い方、設定、運用上の相談 | GitHub Discussions | 再現手順や画面名があると回答しやすくなります。 |
+| バグ報告、機能提案 | GitHub Issues | 公開してよい情報だけで再現できる形に整理してください。 |
+| セキュリティ問題、秘密情報の漏えい疑い | [SECURITY.md](SECURITY.md) | 公開 Issue には詳細を書かず、案内された手順を優先してください。 |
 
-## 投稿時に含めるとよい情報
+## 共有すると調査しやすい情報
 
-- 実行環境（OS / ブラウザ / 実行方法）
-- 最小再現手順
-- 期待結果と実際結果
-- 関連ログやスクリーンショット
+- 発生日時、利用していた URL、ブラウザ、OS。
+- 実行方法（Docker Compose、直接起動、公開環境など）。
+- 最小再現手順、期待した結果、実際の結果。
+- 画面上のエラー、HTTP status、`/api/healthz` の結果。
+- 直前に行った操作（保存、import、export、AI 提案、共有前確認など）。
+- 秘密情報を除外したスクリーンショットやログ。
 
-## 補足
+## 共有しない情報
 
-- まず公開情報で再現性を確認し、必要に応じて Discussion から Issue に整理します。
-- セキュリティ内容は公開 Issue に詳細を書かず、必ず `SECURITY.md` の案内を優先してください。
+- API key、token、password、secret。
+- 未マスクの本文、生の顧客データ、個人情報。
+- 組織固有の承認履歴、内部 URL、非公開の監査ログ。
+- 秘密情報を含む可能性があるファイル全文。
+
+判断に迷う場合は、まず [データ取り扱い](04_Documentation/data_handling.md) を確認してください。
+
+## 障害時の最初の確認
+
+1. 画面だけの問題か、API も失敗しているかを分けます。
+2. `curl -fsS http://localhost:8080/api/healthz` で API の応答を確認します。
+3. Docker Compose を使っている場合は `docker compose ps` と `docker compose logs api --tail=200` を確認します。
+4. 保存に失敗した場合は、画面上の内容を残したまま再試行し、必要であれば JSON 書き出しで変更を保全します。
+5. 共有前確認や SafeMode の警告が出ている場合は、警告内容を確認してから操作を続けます。
+
+詳しい切り分け順は [04_Documentation/diagnostics.md](04_Documentation/diagnostics.md)、日常運用の手順は [04_Documentation/operations.md](04_Documentation/operations.md) を参照してください。

@@ -231,16 +231,18 @@
 | --- | --- | --- | --- |
 | Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
 | Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
-| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 27 tests | G2 / G3 / G4 / G7 |
+| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 29 tests | G2 / G3 / G4 / G7 |
 | Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 1280px / 920px / 768px / 390px; share/view panels do not exceed viewport | G4 |
 | Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 768px Enter opens Share/View dialog, Escape closes, focus returns to trigger | G2 / G4 |
 | Polygon edit keyboard flow | `e2e/polygon_vertex_edit.spec.ts` | Pass: vertex handle focus, Arrow-key nudge, Shift+Arrow larger nudge, Delete removal, export persistence | G2 / G4 |
 | Large-document operability | `e2e/large_document_operability.spec.ts` | Pass: 120 cards / 12 islands at 768px; search, hide non-matches, View/Share panel fit, and bundle diagnostics export | G2 / G4 / G7 |
+| Ops recovery guidance | `e2e/ops_recovery_guidance.spec.ts` | Pass: API load failure and save failure at 390px show recovery steps, JSON-preservation guidance, and diagnostics secret-sharing guardrails without viewport overflow | G4 / G6 / G7 |
 
 ### Gate impact
 - G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, polygon vertex drag, and polygon vertex keyboard nudge/removal.
 - G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs.
-- G4 画面耐性: Conditional Go. Header/share/view panel fit is automated for 390px/768px/920px/1280px/1440px, and synthetic large-document operability is covered at 768px; slow-environment and backend-recovery matrix remain under `PRODUCT-UX-04`.
+- G4 画面耐性: Conditional Go. Header/share/view panel fit is automated for 390px/768px/920px/1280px/1440px, synthetic large-document operability is covered at 768px, and API/save recovery guidance is covered at 390px; genuinely slow worker/API delay states remain under `PRODUCT-UX-04`.
+- G6 診断とサポート: Conditional Go. API unavailable and save failure now point users to health checks, retry/export preservation, and safe diagnostic sharing; automated support bundle generation remains outside this slice.
 - G7 回帰: Go for frontend scope in this update.
 
 ## 17) Stream G update (2026-05-20): Draft→Open昇格条件の固定（Gate定義専任）
