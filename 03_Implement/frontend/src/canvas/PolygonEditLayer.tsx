@@ -103,8 +103,23 @@ export function PolygonEditLayer({
     return point;
   };
 
+  const minX = Math.min(...points.map((point) => point.x)) - HANDLE_SIZE;
+  const minY = Math.min(...points.map((point) => point.y)) - HANDLE_SIZE;
+  const maxX = Math.max(...points.map((point) => point.x)) + HANDLE_SIZE;
+  const maxY = Math.max(...points.map((point) => point.y)) + HANDLE_SIZE;
+
   return (
-    <>
+    <div
+      style={{
+        position: "absolute",
+        left: minX,
+        top: minY,
+        width: Math.max(HANDLE_SIZE, maxX - minX),
+        height: Math.max(HANDLE_SIZE, maxY - minY),
+        pointerEvents: "auto",
+        zIndex: 10000,
+      }}
+    >
       {points.map((point, index) => {
         const displayPoint = getDisplayPoint(point, index);
 
@@ -126,8 +141,8 @@ export function PolygonEditLayer({
             }}
             style={{
               position: "absolute",
-              left: displayPoint.x - HANDLE_SIZE / 2,
-              top: displayPoint.y - HANDLE_SIZE / 2,
+              left: displayPoint.x - minX - HANDLE_SIZE / 2,
+              top: displayPoint.y - minY - HANDLE_SIZE / 2,
               width: HANDLE_SIZE,
               height: HANDLE_SIZE,
               borderRadius: HANDLE_SIZE / 2,
@@ -135,11 +150,12 @@ export function PolygonEditLayer({
               backgroundColor: draggingVertexIndex === index ? "#2563eb" : "#93c5fd",
               boxShadow: "0 0 0 1px #ffffff",
               cursor: draggingVertexIndex === index ? "grabbing" : "grab",
+              pointerEvents: "auto",
               zIndex: 1000,
             }}
           />
         );
       })}
-    </>
+    </div>
   );
 }

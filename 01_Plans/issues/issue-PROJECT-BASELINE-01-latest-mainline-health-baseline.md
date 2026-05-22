@@ -165,6 +165,42 @@
   - Backend未接続 recovery messaging: `PRODUCT-OPS-01`
   - E2E runtime ergonomics: create a dedicated DX issue if `npm` PATH absence continues to make `playwright.config.ts` unusable without manual Vite startup.
 
+## 12) Baseline Record 2026-05-22: frontend E2E recovery on PR #2251 branch
+
+### Candidate
+
+- Target main: `origin/main` = `2a93c95e`
+- Baseline branch: `codex/current-project-risk-analysis-issues`
+- Scope note: this update covers frontend operability and E2E drift found while continuing PR #2251. It does not replace the backend pytest evidence in section 11.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / Vite manually running on `127.0.0.1:4173`
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Targeted frontend regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run src/ui/SharePanel.test.ts src/domain/geometry/polygon_edit.test.ts` | Pass: 13 tests | G1 / G3 / G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
+| Full frontend Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 21 tests | G2 / G3 / G4 / G7 |
+| Canvas/polygon E2E focus | `e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts` | Pass: 4 tests | G2 / G4 |
+
+### Findings and routing
+
+- Resolved defect: `primary-flow` had `height: 0px`, so canvas content was visible through overflow while pointer hit-testing did not reliably reach polygon vertex handles. The fix gives the primary canvas flow a real height, renders polygon edit controls above cards, and gives the edit layer a non-zero hit-test area.
+- Resolved E2E drift: affected Playwright specs now use shared bilingual label helpers for current Japanese/English UI labels, including share/export/read-only/visibility/polygon-edit actions.
+- No ADR required: the change restores the existing interaction contract and does not alter product policy, public contract, or architecture.
+- Remaining follow-up: large-document, 768px/1440px viewport, and slow/backend-recovery evidence remains routed to `PRODUCT-UX-04` and `PRODUCT-OPS-01`.
+
+### Gate classification delta
+
+| Gate | 2026-05-22 delta | Reason |
+| --- | --- | --- |
+| G2 荳ｻ隕∵桃菴・| Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, and polygon vertex drag. |
+| G3 譌･譛ｬ隱朸I | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers. |
+| G4 逕ｻ髱｢閠先ｧ | Conditional Go | 390px/header/share-panel and canvas hit-testing are now covered; 768px/1440px, large-document, and slow-environment matrix remain open. |
+| G7 蝗槫ｸｰ | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

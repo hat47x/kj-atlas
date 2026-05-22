@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SHARE_REPRODUCE_BUTTON, VIEW_BUTTON } from "./helpers/i18n";
 
 type Box = {
   bottom: number;
@@ -13,6 +14,7 @@ type Box = {
 const checkedViewports = [
   { width: 1280, height: 720 },
   { width: 920, height: 720 },
+  { width: 390, height: 720 },
 ] as const;
 
 async function collectHeaderButtons(page: Page): Promise<Box[]> {
@@ -76,13 +78,13 @@ for (const viewport of checkedViewports) {
     expect(offscreen).toEqual([]);
     expect(verticalish).toEqual([]);
 
-    await page.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("button", { name: VIEW_BUTTON }).click();
     const viewPanels = await collectFixedPanels(page);
     expect(viewPanels.length).toBeGreaterThan(0);
     expect(viewPanels.some((panel) => panel.y < headerBottom)).toBe(false);
-    await page.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("button", { name: VIEW_BUTTON }).click();
 
-    await page.locator("header button").nth(5).click();
+    await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
     const sharePanels = await collectFixedPanels(page);
     expect(sharePanels.length).toBeGreaterThan(0);
     expect(sharePanels.some((panel) => panel.y < headerBottom)).toBe(false);

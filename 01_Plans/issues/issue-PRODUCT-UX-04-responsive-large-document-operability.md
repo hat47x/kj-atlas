@@ -133,6 +133,29 @@
 
 - ADR化が必要になる条件: モバイル専用UI、別ルート、キャンバスレンダリング方式の変更を決める場合。
 
+## 11) Evidence update 2026-05-22: canvas pointer operability fixed, broader matrix remains
+
+### Closed in implementation
+
+- Resolved defect: the primary canvas flow had no effective height, so polygon handles could be visible while mouse hit-testing targeted surrounding layout instead of the handle buttons.
+- Implementation route: `App.tsx` gives `data-ui-region="primary-flow"` a real `height: 100%`; `CanvasShell.tsx` renders polygon edit controls above card layers; `PolygonEditLayer.tsx` uses a bounded hit-test area around the edited polygon.
+- Verification: `e2e/polygon_vertex_edit.spec.ts` and `e2e/polygon_autofit_qa_boundary.spec.ts` pass, including vertex drag and self-intersection guard behavior.
+- ADR impact: no ADR required because this restores the agreed mouse-operation contract instead of changing screen architecture or product policy.
+
+### Partial evidence now available
+
+| Area | Evidence | Result | Remaining gap |
+| --- | --- | --- | --- |
+| Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1280px / 920px / 390px | 768px and 1440px still need explicit matrix evidence. |
+| Canvas mouse operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass | keyboard/focus-path evidence for edit mode remains under this issue. |
+| Full frontend E2E | bundled Playwright full suite | Pass: 21 tests | large-document fixture and slow/backend-recovery scenarios remain outside the current suite. |
+| Frontend regression | full Vitest | Pass: 160 files / 732 tests | does not replace browser viewport evidence. |
+
+### Task status adjustment
+
+- T3 remains open but narrowed: layout collapse and mouse hit-testing for the covered canvas/share/header flows are fixed; focus order, 768px/1440px layout, and large-document interaction evidence remain.
+- T5 remains open: public acceptance documentation should be updated after the full viewport/large-document/slow-environment matrix is recorded.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

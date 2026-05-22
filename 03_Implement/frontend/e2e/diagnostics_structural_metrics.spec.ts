@@ -1,5 +1,11 @@
 import JSZip from "jszip";
 import { expect, test, type Download, type Page } from "@playwright/test";
+import {
+  EXPORT_BUNDLE_BUTTON,
+  LOAD_DOCUMENT_BUTTON,
+  REPLACE_DOCUMENT_BUTTON,
+  SHARE_REPRODUCE_BUTTON,
+} from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -21,7 +27,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 
 async function exportDiagnosticsMd(page: Page): Promise<string> {
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export bundle \(\.zip\)|bundle をエクスポート \(.zip\)/ }).click();
+  await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
   const zip = await JSZip.loadAsync(zipBuffer);
@@ -34,10 +40,10 @@ async function exportDiagnosticsMd(page: Page): Promise<string> {
 
 test("bundle diagnostics includes structural metrics and remains deterministic across exports", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
 
   const now = new Date().toISOString();
@@ -69,7 +75,7 @@ test("bundle diagnostics includes structural metrics and remains deterministic a
     buffer: Buffer.from(JSON.stringify(doc), "utf-8"),
   });
 
-  const replaceButton = page.getByRole("button", { name: /Replace current document|現在の document を置換/ });
+  const replaceButton = page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON });
   await expect(replaceButton).toBeEnabled();
   await replaceButton.click();
   await expect(page.getByText("Replaced current document")).toBeVisible();

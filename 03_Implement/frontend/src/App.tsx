@@ -170,6 +170,20 @@ const CARD_HEIGHT = 80;
 const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
+const FALLBACK_EXPORT_VIEWPORT = { width: 1280, height: 720 };
+
+function buildFallbackCanvasCamera(document: DocumentV2): CanvasCamera {
+  const viewportWidth = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.width : Math.max(1, Math.round(window.innerWidth || FALLBACK_EXPORT_VIEWPORT.width));
+  const viewportHeight = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.height : Math.max(1, Math.round(window.innerHeight || FALLBACK_EXPORT_VIEWPORT.height));
+
+  return {
+    panX: document.transform.panX,
+    panY: document.transform.panY,
+    zoom: document.transform.zoom || 1,
+    viewportWidth,
+    viewportHeight,
+  };
+}
 
 function getViewModeDisplayLabel(mode: ViewMode): string {
   if (mode === "review") return t("app.view_mode.review");
@@ -6847,7 +6861,7 @@ ${parsedDocument.error}`);
   );
 
   const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: "overview" | "detail" }) => {
-    if (!document || !canvasCamera) {
+    if (!document) {
       setStatusMessage("Nothing to export");
       return;
     }
@@ -6857,10 +6871,11 @@ ${parsedDocument.error}`);
       const exportTimestamp = formatBundleTimestamp(new Date());
       const rootFolderPath = `kj-atlas-export-${exportTimestamp}`;
       const deterministicNowIso = document.updatedAt || document.createdAt;
+      const exportCamera = canvasCamera ?? buildFallbackCanvasCamera(document);
       const viewMetadata = buildExportViewMetadata({
         doc: document,
         visibility: viewVisibility,
-        camera: canvasCamera,
+        camera: exportCamera,
         viewState: {
           summaryView,
           abstractMapView,
@@ -8621,7 +8636,7 @@ ${parsedDocument.error}`);
         </div>
       ) : (
         <>
-          <div data-ui-region="primary-flow">
+          <div data-ui-region="primary-flow" style={{ height: "100%", minHeight: 0 }}>
           <CanvasShell
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}

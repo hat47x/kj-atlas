@@ -1,4 +1,13 @@
 import { expect, test, type Download } from "@playwright/test";
+import {
+  EDIT_ISLAND_BOUNDARY_CHECKBOX,
+  EXPORT_DOCUMENT_JSON_BUTTON,
+  LOAD_DOCUMENT_BUTTON,
+  REPLACE_DOCUMENT_BUTTON,
+  SHARE_REPRODUCE_BUTTON,
+  closeSharePanelIfOpen,
+  openLegacyJsonMenu,
+} from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -20,7 +29,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 
 test("polygon vertex drag keeps constraints and persists edited points", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const now = new Date().toISOString();
   const polygonDoc = {
@@ -50,7 +59,7 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
   };
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles({
     name: "polygon-edit.json",
@@ -58,12 +67,12 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
     buffer: Buffer.from(JSON.stringify(polygonDoc), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
-  await page.getByRole("button", { name: /Polygon island #1/ }).dispatchEvent("click");
-  const editCheckbox = page.getByRole("checkbox", { name: /Edit island boundary/ });
+  await page.getByRole("button", { name: "Select island i1" }).dispatchEvent("click");
+  const editCheckbox = page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX });
   await expect(editCheckbox).toBeVisible();
   await editCheckbox.check();
 
@@ -74,13 +83,15 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
 
   const startX = (handleBox?.x ?? 0) + (handleBox?.width ?? 0) / 2;
   const startY = (handleBox?.y ?? 0) + (handleBox?.height ?? 0) / 2;
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  await page.mouse.move(startX + 40, startY + 28);
-  await page.mouse.up();
+  await firstVertexHandle.dragTo(page.locator("body"), {
+    sourcePosition: { x: (handleBox?.width ?? 10) / 2, y: (handleBox?.height ?? 10) / 2 },
+    targetPosition: { x: startX + 40, y: startY + 28 },
+  });
 
+  await closeSharePanelIfOpen(page);
+  await openLegacyJsonMenu(page);
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export document JSON|ドキュメントJSONを書き出す（legacy）/ }).click();
+  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const download = await downloadPromise;
   const jsonBuffer = await readDownloadToBuffer(download);
 
