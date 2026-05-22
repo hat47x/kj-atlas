@@ -582,3 +582,60 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: pass by UI smoke and unit coverage.
 - share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; full share/export E2E remains outside this slice.
 - public document exposure boundary: pass for current public-target 04 docs; runtime/deployment public exposure remains outside this slice.
+
+## Productization Gate Record 2026-05-23: PR #2251 ready-for-review
+
+- Candidate: PR #2251 `codex/current-project-risk-analysis-issues@771151d8dfcc3828ad6686418c38338e37d9a5a2`
+- Decision date (JST): 2026-05-23
+- Reviewer: Codex
+- Scope: Productization governance, public/private documentation boundary, UI/UX/i18n fixes, release-readiness evidence, and local Codex RTK DX note. This record evaluates the PR as a planning/productization evidence bundle, not as a full product release.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Conditional Go
+- G2 主要操作: Go for covered frontend flows
+- G3 日本語UI: Go for covered UI/i18n flows
+- G4 画面耐性: Conditional Go
+- G5 公開文書: Go
+- G6 診断とサポート: Conditional Go
+- G7 回帰: Go
+- Value gates: Conditional Go
+- E1..E3 環境契約: Not re-evaluated in this PR-specific record; no runtime env contract change in the final RTK note update.
+- Final: **Conditional Go for productization evidence / No-Go for full release shipment**
+
+### Evidence
+
+- PR state:
+  - PR #2251 is open and ready for review.
+  - Head commit: `771151d8dfcc3828ad6686418c38338e37d9a5a2`
+  - Base: `main@2a93c95ec830a8334b61bf870ca0b09d97c17732`
+- CI:
+  - GitHub Actions `CI` run 9051: success.
+  - Frontend test + build: success.
+  - Frontend i18n document hash regression: success.
+  - Frontend lint: success.
+  - Frontend i18n safe-mode leakage guards: success.
+  - Frontend regression guards: success.
+  - Frontend typecheck: success.
+  - Backend lint + test: success.
+- Local docs-check:
+  - `python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass (10 tests)
+  - `git diff --check` -> pass
+
+### Follow-ups
+
+- Blocking issues:
+  - None for PR readiness.
+- Conditional issues:
+  - Full shipment remains blocked by release-candidate evidence outside PR #2251, especially complete candidate Gate Record, final E1..E3 env contract result, and unresolved `PRODUCT-VALUE-*` / `PRODUCT-UX-*` Draft issue evidence.
+  - RTK is a local Codex DX helper only; it must not be counted as application runtime readiness evidence.
+- Re-decision date:
+  - Required when PR #2251 is merged or superseded, or when a release candidate is cut from `main`.
+
+### Safety Confirmation
+
+- SafeMode default ON: pass for previously covered UI/unit/E2E evidence in this PR.
+- share/export fail-closed: conditional pass for covered SharePanel and viewport evidence; full release shipment still requires a release-candidate share/export smoke record.
+- public document exposure boundary: pass for the current public/private documentation boundary changes in this PR.
