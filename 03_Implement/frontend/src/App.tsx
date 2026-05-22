@@ -230,6 +230,10 @@ function getDiagnosticsStageDisplayLabel(stage: DiagnosticsProgressStage): strin
   return t(`app.status.diagnostics.stage.${stage}`);
 }
 
+function getDiffStageDisplayLabel(stage: DiffProgressStage): string {
+  return t(`app.status.diff.stage.${stage}`);
+}
+
 function getBundleExportProgressStageLabel(stage: BundleExportProgressStage): string {
   if (stage === "diagnostics") return t("app.status.bundle.stage.diagnostics");
   if (stage === "evidence_trace") return t("app.status.bundle.stage.evidence_trace");
@@ -1176,7 +1180,6 @@ export default function App() {
     setIsDiffFallbackMode(false);
     const controller = new AbortController();
     diffAbortRef.current = controller;
-    const stageLabel: Record<DiffProgressStage, string> = { cards: "cards", islands: "islands", edges: "edges", evidence: "evidence", view: "view" };
 
     if (!diffWorkerClientRef.current) {
       diffWorkerClientRef.current = new DiffWorkerClient();
@@ -1194,12 +1197,15 @@ export default function App() {
         signal: controller.signal,
         onProgress: (progress) => {
           setComputeProgressPercent(progress.percent);
-          setComputeProgressMessage(`Computing diff: ${stageLabel[progress.stage]} (${progress.percent}%)`);
+          setComputeProgressMessage(t("app.status.diff.progress", {
+            stage: getDiffStageDisplayLabel(progress.stage),
+            percent: progress.percent,
+          }));
         },
       },
     ).then((outcome) => {
       if (controller.signal.aborted || outcome?.status === "cancelled") {
-        setStatusMessage("Diff computation cancelled");
+        setStatusMessage(t("app.status.diff.cancelled"));
         return;
       }
 

@@ -210,6 +210,71 @@ async function installSlowBundleZipWorker(page: Page) {
   });
 }
 
+async function installSlowDiffWorker(page: Page) {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+
+    class SlowDiffWorker extends EventTarget {
+      private requestId: string | null = null;
+      private progressTimer: number | null = null;
+
+      constructor(scriptURL: string | URL, options?: WorkerOptions) {
+        super();
+        if (!String(scriptURL).includes("diff.worker")) {
+          return new NativeWorker(scriptURL, options) as unknown as SlowDiffWorker;
+        }
+      }
+
+      postMessage(message: unknown) {
+        if (!message || typeof message !== "object") {
+          return;
+        }
+
+        const payload = message as { type?: string; requestId?: string };
+        if (payload.type === "diff.request" && payload.requestId) {
+          this.requestId = payload.requestId;
+          this.progressTimer = window.setTimeout(() => {
+            this.dispatchEvent(new MessageEvent("message", {
+              data: {
+                type: "diff.progress",
+                requestId: payload.requestId,
+                stage: "cards",
+                percent: 10,
+                protocolVersion: 1,
+              },
+            }));
+          }, 50);
+          return;
+        }
+
+        if (payload.type === "diff.cancel" && payload.requestId) {
+          if (this.progressTimer !== null) {
+            window.clearTimeout(this.progressTimer);
+            this.progressTimer = null;
+          }
+          this.dispatchEvent(new MessageEvent("message", {
+            data: {
+              type: "diff.cancelled",
+              requestId: payload.requestId,
+              protocolVersion: 1,
+            },
+          }));
+        }
+      }
+
+      terminate() {
+        if (this.progressTimer !== null) {
+          window.clearTimeout(this.progressTimer);
+          this.progressTimer = null;
+        }
+        this.requestId = null;
+      }
+    }
+
+    window.Worker = SlowDiffWorker as unknown as typeof Worker;
+  });
+}
+
 test("API load failure gives safe recovery guidance", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await routeDocumentApi(page, { failGet: true });
@@ -275,5 +340,41 @@ test("slow review pack export shows progress and can be cancelled", async ({ pag
 
   await page.locator("button:not([disabled])", { hasText: /^キャンセル$|^Cancel$/ }).last().click();
   await expect(page.getByTestId("status-message")).toContainText("レビューパックの書き出しを中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("slow review diff shows localized progress and can be cancelled", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await installSlowDiffWorker(page);
+  await routeDocumentApi(page, {});
+
+  const comparisonDocument = buildDocument();
+  comparisonDocument.cards = [
+    ...comparisonDocument.cards,
+    {
+      id: "card-2",
+      text: "差分キャンセル確認用カード",
+      x: 280,
+      y: 120,
+    },
+  ];
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /比較対象ドキュメントを読み込む|Load comparison document/ }).first().click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "diff-cancel.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(comparisonDocument), "utf-8"),
+  });
+
+  await expect(page.getByText("差分を計算中: カード（10%）").first()).toBeVisible();
+  await expect(page.getByText(/項目数: 0.*処理中|Items: 0.*Working/).first()).toBeVisible();
+
+  await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
+  await expect(page.getByTestId("status-message")).toContainText("差分計算を中止しました");
   await expectStatusFitsViewport(page);
 });
