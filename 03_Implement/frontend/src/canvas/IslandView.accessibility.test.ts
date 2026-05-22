@@ -1,11 +1,16 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Island } from "../domain/types";
+import { setActiveLocale } from "../i18n/translate";
 import { IslandView } from "./IslandView";
 
 describe("IslandView accessibility controls", () => {
+  beforeEach(() => {
+    setActiveLocale("ja");
+  });
+
   const renderIsland = (island: Island) =>
     renderToStaticMarkup(createElement(IslandView, {
       island,
@@ -25,10 +30,10 @@ describe("IslandView accessibility controls", () => {
 
     const html = renderIsland(island);
 
-    expect((html.match(/aria-label="Select island island-1"/g) ?? []).length).toBe(1);
-    expect((html.match(/aria-label="Focus island island-1"/g) ?? []).length).toBe(1);
-    expect((html.match(/aria-label="Collapse island island-1"/g) ?? []).length).toBe(1);
-    expect(html).not.toContain('aria-label="Select island island-1 Focus island island-1"');
+    expect((html.match(/aria-label="島 island-1 を選択"/g) ?? []).length).toBe(1);
+    expect((html.match(/aria-label="島 island-1 を表示"/g) ?? []).length).toBe(1);
+    expect((html.match(/aria-label="島 island-1 を折りたたむ"/g) ?? []).length).toBe(1);
+    expect(html).not.toContain('aria-label="島 island-1 を選択 島 island-1 を表示"');
   });
 
   it("uses one native select button for polygon islands", () => {
@@ -49,7 +54,7 @@ describe("IslandView accessibility controls", () => {
 
     const html = renderIsland(island);
 
-    expect((html.match(/<button[^>]+aria-label="Select island island-poly"/g) ?? []).length).toBe(1);
+    expect((html.match(/<button[^>]+aria-label="島 island-poly を選択"/g) ?? []).length).toBe(1);
     expect(html).not.toContain('role="button"');
     expect(html).toContain('aria-hidden="true" focusable="false"');
   });
@@ -64,11 +69,11 @@ describe("IslandView accessibility controls", () => {
 
     const html = renderIsland(island);
 
-    expect((html.match(/aria-label="Select island island-collapsed"/g) ?? []).length).toBe(1);
-    expect((html.match(/aria-label="Expand island island-collapsed"/g) ?? []).length).toBe(1);
-    expect((html.match(/aria-label="Peek island island-collapsed"/g) ?? []).length).toBe(1);
-    expect(html).not.toContain("Select island island-collapsed Focus island island-collapsed");
-    expect(html).not.toContain("Select island island-collapsed Expand island island-collapsed");
-    expect(html).not.toContain("Select island island-collapsed Peek island island-collapsed");
+    expect((html.match(/aria-label="島 island-collapsed を選択"/g) ?? []).length).toBe(1);
+    expect((html.match(/aria-label="島 island-collapsed を展開"/g) ?? []).length).toBe(1);
+    expect((html.match(/aria-label="島 island-collapsed のカードを一時表示"/g) ?? []).length).toBe(1);
+    expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed を表示");
+    expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed を展開");
+    expect(html).not.toContain("島 island-collapsed を選択 島 island-collapsed のカードを一時表示");
   });
 });

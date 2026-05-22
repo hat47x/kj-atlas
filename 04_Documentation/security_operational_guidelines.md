@@ -32,7 +32,7 @@
 ## Runtime profile とセキュリティ判断
 
 設定変更の前に、どの profile で運用するかを確定します。
-プロファイルの正本は `02_Architecture/runtime_parameter_registry.md` の `Runtime profiles` です。
+profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
 
 - `local-dev`: 外部共有を避ける初期検証向け（`KJ_ATLAS_LLM_PROVIDER=none`）。
 - `evaluation`: Compose評価向け。外部連携は必要時のみ限定有効化。
@@ -122,17 +122,15 @@ API key を有効にしている場合:
 curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 ```
 
-## 用語整合（DOC-OPS-05）
+## 役割を記録するときの考え方
 
-本レーンでは役割語彙を次で統一します。
+組織内の正式な役職名に関係なく、記録では次の責務を分けます。
 
-- **Security Officer**: 安全境界（SafeMode、外部サービスとの共有、share/export）を評価する責務。
-- **System Owner**: 変更の業務上必要性と公開境界を判断する責務。
-- **Platform Operator**: 設定適用、復旧、実行ログ記録を担当する責務。
+- 安全性を判断する責務。
+- 業務上の必要性を判断する責務。
+- 設定を実行し、結果を記録する責務。
 
-> 2者承認（Security Officer と System Owner）と実行責務分離（Platform Operator）を原則とし、同一人物が兼務する場合も記録上は分離します。
-
-固定値 D1〜D4 は `02_Architecture/strict_mode_exception_approval_flow.md` を正本として参照し、この文書では再定義しません。
+同じ人が複数の責務を担う場合でも、判断と実行が混ざらないように記録します。組織でより厳密な承認期限や承認人数を定める場合は、各組織の規程を優先してください。
 
 ## 関連文書
 
@@ -142,18 +140,3 @@ curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 - [operations.md](operations.md)
 - [acceptance_check.md](acceptance_check.md)
 - [strict_mode_exception_approval_flow.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/strict_mode_exception_approval_flow.md)
-
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
-
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
-
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。

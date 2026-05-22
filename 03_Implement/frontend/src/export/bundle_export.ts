@@ -23,6 +23,7 @@ export type BundleFile = {
 };
 
 export type ExportGranularity = "overview" | "detail";
+export type BundleExportProgressStage = "diagnostics" | "evidence_trace" | "contradiction_trace" | "trace_analytics";
 
 export type BundleExportContext = {
   rootFolderPath: string;
@@ -272,7 +273,7 @@ export async function buildExportBundleWithWorkers(
   doc: DocumentV2,
   viewState: unknown,
   context: BundleExportContext,
-  options: { signal?: AbortSignal; onProgress?: (message: string) => void } = {}
+  options: { signal?: AbortSignal; onProgress?: (stage: BundleExportProgressStage) => void } = {}
  ): Promise<BundleFile[]> {
   const safeMode = context.safeMode ?? true;
   const root = context.rootFolderPath.endsWith("/") ? context.rootFolderPath.slice(0, -1) : context.rootFolderPath;
@@ -292,7 +293,7 @@ export async function buildExportBundleWithWorkers(
   const traceClient = new TraceWorkerClient();
   try {
     if (context.includeDiagnostics) {
-      options.onProgress?.("Generating diagnostics...");
+      options.onProgress?.("diagnostics");
       const diagnosticsOutcome = await diagnosticsClient.computeDiagnostics({
         doc,
         view: {
@@ -316,7 +317,7 @@ export async function buildExportBundleWithWorkers(
         safeMode,
         includeRationale: false,
       };
-      options.onProgress?.("Generating evidence trace...");
+      options.onProgress?.("evidence_trace");
       const evidenceOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "evidence" } }, { signal: options.signal });
       if (evidenceOutcome.status === "cancelled") {
         throw new Error("Trace generation cancelled");
@@ -325,7 +326,7 @@ export async function buildExportBundleWithWorkers(
         bundleFiles.push({ path: `${root}/evidence_trace_${context.selectedCardId}.md`, content: evidenceOutcome.result.traceMd, mime: "text/markdown" });
       }
 
-      options.onProgress?.("Generating contradiction trace...");
+      options.onProgress?.("contradiction_trace");
       const contradictionOutcome = await traceClient.computeTrace({ doc, options: { ...sharedOptions, kind: "contradiction" } }, { signal: options.signal });
       if (contradictionOutcome.status === "cancelled") {
         throw new Error("Trace generation cancelled");
@@ -334,7 +335,7 @@ export async function buildExportBundleWithWorkers(
         bundleFiles.push({ path: `${root}/contradiction_trace_${context.selectedCardId}.md`, content: contradictionOutcome.result.traceMd, mime: "text/markdown" });
       }
 
-      options.onProgress?.("Generating trace analytics...");
+      options.onProgress?.("trace_analytics");
       const analyticsOutcome = await traceClient.computeTraceAnalytics({
         doc,
         options: {

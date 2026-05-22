@@ -1978,7 +1978,7 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Parent island
+            {t("side_panel.island_editor.parent")}
           </label>
           <select
             value={selectedIsland.parentIslandId ?? ""}
@@ -1996,7 +1996,7 @@ export function SidePanel({
               backgroundColor: "#ffffff",
             }}
           >
-            <option value="">(none)</option>
+            <option value="">{t("side_panel.none")}</option>
             {(document?.islands ?? [])
               .filter((island) => island.id !== selectedIsland.id)
               .map((island) => (
@@ -2034,11 +2034,11 @@ export function SidePanel({
                 onIslandCollapsedChange(event.target.checked);
               }}
             />
-            Collapsed
+            {t("side_panel.island_editor.collapsed")}
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Title
+            {t("side_panel.island_editor.title_label")}
           </label>
           <input
             type="text"
@@ -2057,7 +2057,7 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Placard card
+            {t("side_panel.island_editor.placard_card")}
           </label>
           <select
             value={selectedIsland.placardCardId ?? ""}
@@ -2075,7 +2075,7 @@ export function SidePanel({
               backgroundColor: "#ffffff",
             }}
           >
-            <option value="">(none)</option>
+            <option value="">{t("side_panel.none")}</option>
             {selectedIsland.cardIds.map((cardId) => {
               const card = document?.cards.find((entry) => entry.id === cardId);
               const text = card?.text.trim() ?? "";
@@ -2095,7 +2095,7 @@ export function SidePanel({
               onChange={(event) => {
                 onPlacardCardTextChange(event.target.value);
               }}
-              placeholder="Placard card text"
+              placeholder={t("side_panel.island_editor.placard_card_text")}
               style={{
                 width: "100%",
                 border: "1px solid #cbd5e1",

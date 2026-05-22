@@ -9,13 +9,13 @@
 データが保存される場面、外部サービスと共有される場面、利用者が共有する場面を横断して確認したい場合は、先に [data_handling.md](data_handling.md) を読んでください。
 
 
-## 文書導線と公開境界（DOC-OPS）
+## 関連文書の使い分け
 
-- `operations.md`: 日常運用と障害一次対応の runbook（実行手順の正本）。
-- `security.md`（本書）: SafeMode / share-export / 外部接続の**基底方針**。
-- `security_operational_guidelines.md`: Security Officer / System Owner / Platform Operator が判断するときの運用ガイド。
+- [operations.md](operations.md): 日常運用と障害時の初動。
+- [security.md](security.md)（本書）: SafeMode、share/export、外部接続の基本方針。
+- [security_operational_guidelines.md](security_operational_guidelines.md): 安全設定を変える前の判断例。
 
-この3文書は役割分離のために責務を分けています。設定値の最終正本は `02_Architecture/runtime_parameter_registry.md` を参照し、本書で再定義しません。
+設定値の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。本書では利用時に確認する境界だけを説明します。
 
 ## 基本方針
 
@@ -29,7 +29,7 @@
 | 用語 | 意味 |
 | --- | --- |
 | SafeMode | 危険な自動処理や未レビュー情報の混入を避けるため、安全側の挙動を優先する状態です。 |
-| 外部サービスとの共有 | LLM、監査ログ連携の接続先、外部アクセス制御の接続先など、アプリ外のサービスに情報を渡すことです。 |
+| 外部サービスとの共有 | LLM、監査ログ連携の接続先、外部アクセス制御の接続先など、アプリ外のサービスと情報を共有することです。 |
 | opt-in | 危険や影響を理解したうえで、明示的に有効化することです。 |
 | allowlist | 接続してよい宛先だけを列挙する一覧です。 |
 | fail-safe | 障害時に、便利さより安全を優先する動きです。 |
@@ -141,22 +141,21 @@ export KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_ENDPOINT='https://pdp.example.com/d
 - `Public` と `Unlisted` は `policyRef` 欠損による強制 fail-safe の対象外です。公開範囲を広げる前に、visibility と policyRef を確認してください。
 
 
-## 障害診断時の共有境界（PRODUCT-OPS-01 関連）
+## 障害診断時の共有境界
 
 障害対応時のログ共有は、次の境界を満たす場合のみ許可します。
 
 - 共有可: 発生日時、URL（機微部分を除去）、エラー種別、HTTP status、SafeMode 状態、再現手順。
 - 共有禁止: API key、token、password、未マスク本文、個人情報、生の監査イベント。
 
-- 復旧時は Plan → Execute → Verify の順を崩さず、AC/DoD 不足時は恒久変更を行わず Draft Proposal として扱う（`operations.md` / `diagnostics.md` 参照）。
-- 条件付き: endpoint や組織内識別子は、System Owner 承認後に最小化して共有。
+復旧時は、先に原因を決めつけず、計画、実行、確認の順で進めます。endpoint や組織内識別子を共有する必要がある場合は、必要性を確認し、機微部分を最小化してから共有します。
 
 承認と実行の責務は分離します。
 
-- 承認（System Owner）: 共有範囲とマスク方針の決定。
-- 実行（Platform Operator / First Responder）: マスク済みログの作成と送付。
+- 判断する人: 共有範囲とマスク方針を決める。
+- 実行する人: マスク済みログの作成と送付を行う。
 
-役割衝突または承認責務不明がある場合、共有を停止して `04_Documentation/operations.md` の停止条件に従います。
+誰が判断するか不明な場合は、ログ共有を止めて [operations.md](operations.md) の停止条件に従います。
 
 ## 保持してよい情報、避ける情報
 
@@ -186,17 +185,15 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - SafeMode の緩和が必要に見える場合は、実装変更ではなく運用上の例外として扱う。
 - 障害時の挙動が分からない場合は、読み取り専用または LLM disabled に倒す。
 
-## 用語整合（DOC-OPS-05）
+## 役割と記録の考え方
 
-本レーンでは役割語彙を次で統一します。
+組織内の正式な役職名に関係なく、少なくとも次の責務を分けて考えます。
 
-- **Security Officer**: 安全境界（SafeMode、外部サービスとの共有、share/export）を評価する責務。
-- **System Owner**: 変更の業務上必要性と公開境界を判断する責務。
-- **Platform Operator**: 設定適用、復旧、実行ログ記録を担当する責務。
+- 安全性を判断する人: SafeMode、外部サービスとの共有、share/export のリスクを確認する。
+- 業務上の必要性を判断する人: なぜ変更や共有が必要か、利用者にどの影響があるかを確認する。
+- 設定を実行する人: 設定変更、復旧、実行結果の記録を担当する。
 
-> 2者承認（Security Officer と System Owner）と実行責務分離（Platform Operator）を原則とし、同一人物が兼務する場合も記録上は分離します。
-
-固定値 D1〜D4 は `02_Architecture/strict_mode_exception_approval_flow.md` を正本として参照し、この文書では再定義しません。
+同じ人が複数の責務を担う場合でも、記録上は「誰が判断し、誰が実行したか」を分けて残します。
 
 ## 関連文書
 
@@ -205,45 +202,3 @@ export、share、障害調査でどの情報を削るか迷う場合は、[data_
 - [security_operational_guidelines.md](security_operational_guidelines.md)
 - [operations.md](operations.md)
 - [THREAT_MODEL.md](https://github.com/hat47x/kj-atlas/blob/main/THREAT_MODEL.md)
-
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
-
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
-
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。
-
-
-## AUTH-OPS-03 契約整合チェック（Stream E）
-
-AUTH運用のセキュリティレビューでは、次を最小セットとして確認します。
-
-- D1〜D4（承認順序/TTL、適用スコープ/継続時間、代理承認禁止、監査SLA）が `02_Architecture/strict_mode_exception_approval_flow.md` と一致。
-- 承認責務（Security Officer / System Owner）と実行責務（Platform Operator）が分離されている。
-- `StoppedForClarification` 中に `ActiveException` へ遷移していない。
-- PII最小化（subject生値・roles/groups生値・自由記述PII非保存）を維持している。
-
-不一致が1件でもある場合、例外緩和を新規に有効化してはならない。
-
-### AUTH-OPS-03 セキュリティ運用チェック（申請→承認→実施→監査→失効）
-
-1. 申請（request）  
-   - requestId・対象tenant・理由・rollbackBy・監査ID相互参照が揃っていること。
-2. 承認（approve）  
-   - Security Officer / System Owner の2者承認が成立し、承認TTL 4hを超過していないこと（D1）。
-3. 実施（execute）  
-   - Platform Operator が承認済み要求のみ実施し、未承認・承認不備の補完実行をしていないこと。
-4. 監査（audit）  
-   - `時刻/理由/承認者/対象環境/復旧条件` の最小監査項目が記録され、PII生値が保存されていないこと。
-5. 失効（expire/rollback）  
-   - 最大継続2h・停止条件成立・期限到来のいずれかで strict 復帰し、復旧時刻と判定根拠を記録していること（D2〜D4）。
-
-関連導線: `02_Architecture/strict_mode_exception_approval_flow.md`（正本）, `04_Documentation/operations.md`（実行Runbook）, `01_Plans/project-progress-dashboard.md`（進捗監査）。

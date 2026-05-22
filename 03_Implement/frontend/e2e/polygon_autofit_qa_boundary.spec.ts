@@ -1,5 +1,15 @@
 import { expect, test, type Download } from "@playwright/test";
 import JSZip from "jszip";
+import {
+  EDIT_ISLAND_BOUNDARY_CHECKBOX,
+  EXPORT_BUNDLE_BUTTON,
+  EXPORT_DOCUMENT_JSON_BUTTON,
+  LOAD_DOCUMENT_BUTTON,
+  REPLACE_DOCUMENT_BUTTON,
+  SHARE_REPRODUCE_BUTTON,
+  closeSharePanelIfOpen,
+  openLegacyJsonMenu,
+} from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -21,7 +31,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 
 test("QA-1: polygon export stays deterministic for identical input", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const now = new Date().toISOString();
   const polygonDoc = {
@@ -51,7 +61,7 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
   };
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles({
     name: "polygon-deterministic.json",
@@ -59,15 +69,18 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
     buffer: Buffer.from(JSON.stringify(polygonDoc), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
+  await closeSharePanelIfOpen(page);
+  await openLegacyJsonMenu(page);
 
   const firstDownloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export document JSON|ドキュメントJSONを書き出す（legacy）/ }).click();
+  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const firstBuffer = await readDownloadToBuffer(await firstDownloadPromise);
 
+  await openLegacyJsonMenu(page);
   const secondDownloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export document JSON|ドキュメントJSONを書き出す（legacy）/ }).click();
+  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const secondBuffer = await readDownloadToBuffer(await secondDownloadPromise);
 
   expect(secondBuffer.toString("utf-8")).toBe(firstBuffer.toString("utf-8"));
@@ -75,10 +88,10 @@ test("QA-1: polygon export stays deterministic for identical input", async ({ pa
 
 test("QA-2: importing self-intersecting polygon degrades invalid polygon to a non-polygon fallback shape", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
 
   const now = new Date().toISOString();
@@ -116,11 +129,11 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
     buffer: Buffer.from(JSON.stringify(invalidPolygonDoc), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export bundle \(\.zip\)|bundle をエクスポート \(.zip\)/ }).click();
+  await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
   const zipBuffer = await readDownloadToBuffer(await downloadPromise);
 
   const zip = await JSZip.loadAsync(zipBuffer);
@@ -135,7 +148,7 @@ test("QA-2: importing self-intersecting polygon degrades invalid polygon to a no
 
 test("QA-3: self-intersection edit is rejected and last valid polygon is kept", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const now = new Date().toISOString();
   const polygonDoc = {
@@ -165,7 +178,7 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
   };
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles({
     name: "polygon-guard.json",
@@ -173,32 +186,35 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
     buffer: Buffer.from(JSON.stringify(polygonDoc), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
-  await page.getByRole("button", { name: /Polygon island #1/ }).dispatchEvent("click");
-  await page.getByRole("checkbox", { name: /Edit island boundary/ }).check();
+  await page.getByRole("button", { name: /Select island i1|島 i1 を選択/ }).dispatchEvent("click");
+  await page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX }).check();
 
-  const firstVertexHandle = page.getByRole("button", { name: "Move polygon vertex 1" });
-  const handleBox = await firstVertexHandle.boundingBox();
+  const secondVertexHandle = page.getByRole("button", { name: "Move polygon vertex 2" });
+  const handleBox = await secondVertexHandle.boundingBox();
+  expect(handleBox).toBeTruthy();
   const startX = (handleBox?.x ?? 0) + (handleBox?.width ?? 0) / 2;
   const startY = (handleBox?.y ?? 0) + (handleBox?.height ?? 0) / 2;
 
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  await page.mouse.move(startX + 250, startY + 170);
-  await page.mouse.up();
+  await secondVertexHandle.dragTo(page.locator("body"), {
+    sourcePosition: { x: (handleBox?.width ?? 10) / 2, y: (handleBox?.height ?? 10) / 2 },
+    targetPosition: { x: startX - 250, y: startY + 170 },
+  });
 
   await expect(page.getByText("Polygon must not self-intersect")).toBeVisible();
 
+  await closeSharePanelIfOpen(page);
+  await openLegacyJsonMenu(page);
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export document JSON|ドキュメントJSONを書き出す（legacy）/ }).click();
+  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
   const jsonBuffer = await readDownloadToBuffer(await downloadPromise);
 
   const exportedDocument = JSON.parse(jsonBuffer.toString("utf-8")) as {
     islands: Array<{ id: string; shape?: { points?: Array<{ x: number; y: number }> } }>;
   };
 
-  expect(exportedDocument.islands.find((island) => island.id === "i1")?.shape?.points?.[0]).toEqual({ x: 120, y: 120 });
+  expect(exportedDocument.islands.find((island) => island.id === "i1")?.shape?.points?.[1]).toEqual({ x: 320, y: 120 });
 });

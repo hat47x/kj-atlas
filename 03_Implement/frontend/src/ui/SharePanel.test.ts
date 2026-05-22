@@ -114,9 +114,9 @@ describe("SharePanel bundle granularity", () => {
 
   it("renders Japanese granularity options in export section", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
-    expect(html).toContain("エクスポート粒度");
-    expect(html).toContain("Detail（完全な trace を出力）");
-    expect(html).toContain("Overview（高レベル要約）");
+    expect(html).toContain("書き出し粒度");
+    expect(html).toContain("詳細（トレースをすべて含める）");
+    expect(html).toContain("概要（高レベル要約）");
   });
 
   it("renders English granularity options in export section", () => {

@@ -73,12 +73,14 @@ curl -fsS http://127.0.0.1:8000/healthz
 | `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
-| export が失敗 | 対象ドキュメントの schema、ブラウザ console |
+| 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |
 | worker が落ちる | 入力データ、worker console、該当 worker の単体テスト |
 
 ## worker 関連の確認
 
 worker 由来の問題が疑われる場合は、まず入力データの大きさ、schema、review 状態を確認します。
+
+診断やレビューパックの書き出しが長く続く場合は、処理名、進捗表示、キャンセルできたか、キャンセル後の画面メッセージを記録します。キャンセルで復帰できる場合は、まず入力データの大きさや対象範囲を小さくして再試行してください。キャンセルしても画面が復帰しない場合は、worker error として扱います。
 
 ```bash
 cd 03_Implement/frontend
@@ -124,7 +126,7 @@ API status:
 ```
 
 
-## 障害分類と一次切り分け（PRODUCT-OPS-01）
+## 障害分類と一次切り分け
 
 5分以内の一次切り分けは、次の分類コードで記録します。
 
@@ -151,7 +153,7 @@ API status:
 上記が1つでも該当する場合、復旧作業を先に進めず `operations.md` のエスカレーション導線へ切り替えます。
 
 
-### Plan → Execute → Verify（診断フロー固定化）
+### Plan → Execute → Verify（診断フロー）
 
 診断は「原因推定」より先に、次の3段階を固定します。
 
@@ -159,7 +161,7 @@ API status:
 - **Execute**: 5分以内の一次切り分けを実行し、コマンド結果・画面症状・SafeMode状態を記録する。
 - **Verify**: `operations.md` 側の復旧担当へ引き渡せる粒度（症状、再現率、非機微ログ、未解決点）になっているか確認する。
 
-AC/DoD が未定義で検証完了を判定できない場合は、調査を「完了」とせず、`operations.md` の Draft Proposal 形式で不足点を記録して引き継ぎます。
+完了条件が足りず検証完了を判定できない場合は、調査を「完了」とせず、[operations.md](operations.md) の暫定対応メモとして不足点を記録して引き継ぎます。
 
 ## 手順再現性チェック
 
@@ -185,18 +187,3 @@ AC/DoD が未定義で検証完了を判定できない場合は、調査を「�
 - [acceptance_check.md](acceptance_check.md)
 - [data_handling.md](data_handling.md)
 - [security.md](security.md)
-
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
-
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
-
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。

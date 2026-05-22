@@ -614,7 +614,7 @@ export function CanvasShell({
         continue;
       }
 
-      const islandTitle = island.title && island.title.length > 0 ? island.title : "Island";
+      const islandTitle = island.title && island.title.length > 0 ? island.title : t("canvas.island.default_title");
       candidates.push({
         id: buildIslandTitleLabelId(island.id),
         kind: "islandTitle",
@@ -1255,50 +1255,6 @@ export function CanvasShell({
           />
         ) : null}
         {children}
-        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexDragCommit && onPolygonVertexRemove ? (
-          <PolygonEditLayer
-            points={polygonVertexEditShape.points}
-            onVertexDragStart={(vertexIndex) => {
-              onPolygonVertexDragStart?.(polygonVertexEditIslandId, vertexIndex);
-            }}
-            onVertexDragMove={(vertexIndex, screenPoint) => {
-              if (!onPolygonVertexDragMove) {
-                return;
-              }
-
-              const viewport = viewportRef.current;
-              if (!viewport) {
-                return;
-              }
-
-              const rect = viewport.getBoundingClientRect();
-              const worldPoint = {
-                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
-                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
-              };
-              onPolygonVertexDragMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
-            }}
-            onVertexDragCommit={(vertexIndex, screenPoint) => {
-              const viewport = viewportRef.current;
-              if (!viewport) {
-                return;
-              }
-
-              const rect = viewport.getBoundingClientRect();
-              const worldPoint = {
-                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
-                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
-              };
-              onPolygonVertexDragCommit(polygonVertexEditIslandId, vertexIndex, worldPoint);
-            }}
-            onVertexDragCancel={(vertexIndex) => {
-              onPolygonVertexDragCancel?.(polygonVertexEditIslandId, vertexIndex);
-            }}
-            onVertexRemove={(vertexIndex) => {
-              onPolygonVertexRemove(polygonVertexEditIslandId, vertexIndex);
-            }}
-          />
-        ) : null}
         {highlightedIslandBounds ? (
           <div
             aria-hidden="true"
@@ -1353,6 +1309,61 @@ export function CanvasShell({
             />
           );
         })}
+        {polygonVertexEditIslandId && polygonVertexEditShape && onPolygonVertexDragCommit && onPolygonVertexRemove ? (
+          <PolygonEditLayer
+            points={polygonVertexEditShape.points}
+            onVertexDragStart={(vertexIndex) => {
+              onPolygonVertexDragStart?.(polygonVertexEditIslandId, vertexIndex);
+            }}
+            onVertexDragMove={(vertexIndex, screenPoint) => {
+              if (!onPolygonVertexDragMove) {
+                return;
+              }
+
+              const viewport = viewportRef.current;
+              if (!viewport) {
+                return;
+              }
+
+              const rect = viewport.getBoundingClientRect();
+              const worldPoint = {
+                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
+                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
+              };
+              onPolygonVertexDragMove(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+            onVertexDragCommit={(vertexIndex, screenPoint) => {
+              const viewport = viewportRef.current;
+              if (!viewport) {
+                return;
+              }
+
+              const rect = viewport.getBoundingClientRect();
+              const worldPoint = {
+                x: (screenPoint.x - rect.left - transform.panX) / transform.zoom,
+                y: (screenPoint.y - rect.top - transform.panY) / transform.zoom,
+              };
+              onPolygonVertexDragCommit(polygonVertexEditIslandId, vertexIndex, worldPoint);
+            }}
+            onVertexDragCancel={(vertexIndex) => {
+              onPolygonVertexDragCancel?.(polygonVertexEditIslandId, vertexIndex);
+            }}
+            onVertexNudge={(vertexIndex, screenDelta) => {
+              const currentPoint = polygonVertexEditShape.points[vertexIndex];
+              if (!currentPoint) {
+                return;
+              }
+
+              onPolygonVertexDragCommit(polygonVertexEditIslandId, vertexIndex, {
+                x: currentPoint.x + screenDelta.x / transform.zoom,
+                y: currentPoint.y + screenDelta.y / transform.zoom,
+              });
+            }}
+            onVertexRemove={(vertexIndex) => {
+              onPolygonVertexRemove(polygonVertexEditIslandId, vertexIndex);
+            }}
+          />
+        ) : null}
       </div>
       {showLabelBounds
         ? [...labelCullingResult.accepted, ...labelCullingResult.culled].map((label) => {

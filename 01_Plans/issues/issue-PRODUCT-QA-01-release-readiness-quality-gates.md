@@ -219,6 +219,33 @@
 ### Fail-safe
 - 判定曖昧さは本更新で解消済み。未解消論点は governance queue（ADR起票条件）へ送る。
 
+## 17) Gate evidence update (2026-05-22): full frontend E2E + canvas operability fix
+
+### Observed issue
+- Product defect: `primary-flow` container height was `0px`; canvas contents were visible through overflow, but pointer hit-testing did not reach polygon vertex handles.
+- User impact: mouse users could see polygon edit handles but could not drag them reliably; QA-3 self-intersection guard and normal vertex move E2E both failed before the fix.
+- Fix route: implementation change in `03_Implement/frontend/src/App.tsx`, `CanvasShell.tsx`, and `PolygonEditLayer.tsx`; no ADR required because the interaction model did not change, only the existing edit affordance became operable.
+
+### Command evidence
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 32 tests | G2 / G3 / G4 / G7 |
+| Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 1280px / 920px / 768px / 390px; share/view panels do not exceed viewport | G4 |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 768px Enter opens Share/View dialog, Escape closes, focus returns to trigger | G2 / G4 |
+| Polygon edit keyboard flow | `e2e/polygon_vertex_edit.spec.ts` | Pass: vertex handle focus, Arrow-key nudge, Shift+Arrow larger nudge, Delete removal, export persistence | G2 / G4 |
+| Canvas focus-order flow | `e2e/canvas_focus_order.spec.ts` | Pass: keyboard card selection, Tab reachability to card action, keyboard island selection, Japanese island-editor labels, and Tab reachability to island action | G2 / G3 / G4 |
+| Large-document operability | `e2e/large_document_operability.spec.ts` | Pass: 120 cards / 12 islands at 768px; search, hide non-matches, View/Share panel fit, and bundle diagnostics export | G2 / G4 / G7 |
+| Ops recovery guidance | `e2e/ops_recovery_guidance.spec.ts` | Pass: API load failure, save failure, slow diagnostics cancellation, and slow review-pack export cancellation at 390px show recovery steps, progress/cancel state, JSON-preservation guidance, and diagnostics secret-sharing guardrails without viewport overflow | G4 / G6 / G7 |
+
+### Gate impact
+- G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability.
+- G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs, and residual SidePanel/IslandView labels are guarded by i18n regression tests.
+- G4 画面耐性: Conditional Go. Header/share/view panel fit is automated for 390px/768px/920px/1280px/1440px, synthetic large-document operability is covered at 768px, API/save recovery guidance is covered at 390px, and slow diagnostics plus slow review-pack export progress/cancel are covered at 390px; broader slow worker/API delay states remain under `PRODUCT-UX-04`.
+- G6 診断とサポート: Conditional Go. API unavailable, save failure, slow diagnostics, and slow review-pack export now point users to health checks, retry/export preservation, progress/cancel state, and safe diagnostic sharing; automated support bundle generation remains outside this slice.
+- G7 回帰: Go for frontend scope in this update.
+
 ## 17) Stream G update (2026-05-20): Draft→Open昇格条件の固定（Gate定義専任）
 
 本Issueは「機能実装の完了」ではなく、**製品化ゲートの判定可能性**をOpen条件として扱う。
@@ -499,3 +526,59 @@ DoDテンプレ（Draft→Open）
 
 ### 非依存実行原則
 - 他ストリーム成果待ちはしない。未提出証跡は `missing evidence` として記録し、判定は `No-Go` または `Conditional` に反映する。
+
+## Productization Gate Record 2026-05-21: latest-main baseline / PR #2251
+
+- Candidate: `origin/main@2a93c95e` + planning branch `codex/current-project-risk-analysis-issues`
+- Decision date (JST): 2026-05-21
+- Reviewer: Codex
+- Scope: Planning baseline, unit/integration health, browser smoke. No `03_Implement` code changes in candidate branch.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Conditional Go
+- G2 主要操作: Go for sampled mock E2E
+- G3 日本語UI: Go
+- G4 画面耐性: Conditional
+- G5 公開文書: Go for public-target boundary scan
+- G6 診断とサポート: Conditional Go
+- G7 回帰: Go
+- Final: **No-Go for release readiness / Conditional for latest-main health baseline**
+
+### Evidence
+
+- Planning:
+  - `validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `triage_actionable_plans.py` -> pass (`active_issues=45 / ready=17 / blocked=28 / stopper=none`)
+- Frontend:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass
+  - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 734 tests)
+- E2E:
+  - bundled `node.exe .\node_modules\playwright\cli.js install chromium` -> pass
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` with manually started Vite -> pass (2 passed)
+- Backend:
+  - `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` on `PATH` -> pass (256 passed / 19 skipped)
+- Public documentation:
+  - `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>` -> pass (no matches)
+  - `rg -n "外部に送る|外部送信|送る|渡す|渡さない|投げる" <public target 04 docs>` -> pass after context review; only `環境変数` definition uses `渡す` and is not an external-sharing expression.
+- Browser smoke:
+  - Codex in-app browser opened `http://127.0.0.1:4173/`
+  - Observed `セーフモード: ON`, `共有と再現` dialog, and `固定マスク対象: 共有 / レビューパック（無効化できません）。`
+  - Browser warning/error logs: empty for the observed page
+
+### Follow-ups
+
+- Blocking issues:
+  - None for the two verified mock E2E scenarios.
+- Conditional issues:
+  - `QA-E2E-USE-01`: realistic journey expansion remains Draft/Hold beyond this sampled mock evidence.
+  - `PRODUCT-OPS-01`: standalone frontend smoke emits backend proxy `ECONNREFUSED` for `/docs/doc_phase1_canvas` when backend is not running; user-facing recovery evidence remains needed.
+- Re-decision date:
+  - TBD, after viewport matrix and full release-candidate E2E route are recorded.
+
+### Safety Confirmation
+
+- SafeMode default ON: pass by UI smoke and unit coverage.
+- share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; full share/export E2E remains outside this slice.
+- public document exposure boundary: pass for current public-target 04 docs; runtime/deployment public exposure remains outside this slice.
