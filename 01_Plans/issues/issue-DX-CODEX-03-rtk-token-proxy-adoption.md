@@ -95,7 +95,7 @@
 - 代替案B: WSL distribution を導入して Linux 版 RTK を使う。
   - 不採用理由: 本タスクの範囲をローカル開発支援の導入に限定し、OS distribution 追加はユーザ端末の管理判断を要する。
 - 代替案C: 導入せず運用ルールだけでコマンド出力を短くする。
-  - 不採用理由: `rtk git status` で 2 回の検証時点でも 47.9% の savings が確認でき、限定導入の価値がある。
+  - 不採用理由: `rtk git status` で command-level savings が確認でき、限定導入の価値がある。
 
 ## 9) リスクとロールバック / Risks & rollback
 
@@ -124,7 +124,7 @@
   - `rtk 0.40.0`
   - `rtk config` parse error なし。
   - `rtk telemetry status`: consent never asked / enabled no / `RTK_TELEMETRY_DISABLED=1` blocked。
-  - `rtk gain --history`: `Total commands: 2`, `Tokens saved: 58 (47.9%)`。
+  - `rtk gain --history`: `rtk git status` 2回で `Saved: 58` を確認。global aggregate は後続の `rtk read` などで母数が増えるため、command-level savings を確認単位とする。
 - ADR 化が必要になる条件:
   - RTK を kj-atlas の標準開発環境、CI、レビューゲート、または contributor 必須ツールに昇格する場合。
   - RTK filter の結果をテスト証跡や監査証跡の正本として扱う場合。
