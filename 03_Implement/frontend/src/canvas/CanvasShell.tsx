@@ -614,7 +614,7 @@ export function CanvasShell({
         continue;
       }
 
-      const islandTitle = island.title && island.title.length > 0 ? island.title : "Island";
+      const islandTitle = island.title && island.title.length > 0 ? island.title : t("canvas.island.default_title");
       candidates.push({
         id: buildIslandTitleLabelId(island.id),
         kind: "islandTitle",

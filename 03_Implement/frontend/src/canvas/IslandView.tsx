@@ -52,7 +52,7 @@ export function resolveIslandRepresentativeTitle(island: Island, cards: Card[]):
     ? cards.find((card) => card.id === island.placardCardId)?.text?.trim() ?? ""
     : "";
 
-  return placardText || island.title?.trim() || "Island";
+  return placardText || island.title?.trim() || t("canvas.island.default_title");
 }
 
 const EDGE_HITBOXES: EdgeHitbox[] = [
@@ -199,6 +199,7 @@ function IslandViewComponent({
   const polygonPath = hasPolygon
     ? polygonPoints.map((point) => `${point.x - bounds.left},${point.y - bounds.top}`).join(" ")
     : null;
+  const collapsedActionLabel = isCollapsed ? t("canvas.island.expand_action") : t("canvas.island.collapse_action");
 
   const handleIslandPointerSelect = (event: MouseEvent<HTMLElement | SVGSVGElement>) => {
     event.stopPropagation();
@@ -246,7 +247,7 @@ function IslandViewComponent({
       {hasPolygon && polygonPath ? (
         <button
           type="button"
-          aria-label={`Select island ${island.id}`}
+          aria-label={t("canvas.island.select_label", { id: island.id })}
           onClick={handleIslandPointerSelect}
           style={{
             position: "absolute",
@@ -283,7 +284,7 @@ function IslandViewComponent({
               cursor: isPickingEdgeTarget ? "default" : "pointer",
               zIndex: 1,
             }}
-            aria-label={`Select island ${island.id}`}
+            aria-label={t("canvas.island.select_label", { id: island.id })}
           />
           {EDGE_HITBOXES.map((edgeHitbox) => (
             <div
@@ -393,7 +394,7 @@ function IslandViewComponent({
           gap: 6,
         }}
       >
-        {showTitleLabel ? (isCollapsed ? representativeTitle : island.title && island.title.length > 0 ? island.title : "Island") : null}
+        {showTitleLabel ? (isCollapsed ? representativeTitle : island.title && island.title.length > 0 ? island.title : t("canvas.island.default_title")) : null}
         <span
           style={{
             fontSize: 10,
@@ -404,7 +405,7 @@ function IslandViewComponent({
             borderRadius: 999,
             padding: "1px 6px",
           }}
-          title={`${island.cardIds.length} cards in island`}
+          title={t("canvas.island.card_count_title", { count: island.cardIds.length })}
         >
           #{island.cardIds.length}
         </span>
@@ -445,10 +446,10 @@ function IslandViewComponent({
             }}
             title={representativeTitle}
           >
-            Rep: {representativeTitle}
+            {t("canvas.island.representative_title", { title: representativeTitle })}
           </span>
         ) : null}
-        {isCollapsed ? <span style={{ fontWeight: 500 }}>(collapsed)</span> : null}
+        {isCollapsed ? <span style={{ fontWeight: 500 }}>{t("canvas.island.collapsed_badge")}</span> : null}
         <button
           type="button"
           onClick={(event) => {
@@ -469,8 +470,8 @@ function IslandViewComponent({
             padding: "3px 6px",
             cursor: isPickingEdgeTarget ? "default" : "pointer",
           }}
-          aria-label={`Focus island ${island.id}`}
-          title="Focus island"
+          aria-label={t("canvas.island.focus_label", { id: island.id })}
+          title={t("canvas.island.focus_title")}
         >
           ⤢
         </button>
@@ -494,12 +495,12 @@ function IslandViewComponent({
             padding: "3px 6px",
             cursor: isPickingEdgeTarget ? "default" : "pointer",
           }}
-          aria-label={`${isCollapsed ? "Expand" : "Collapse"} island ${island.id}`}
+          aria-label={t("canvas.island.toggle_collapsed_label", { action: collapsedActionLabel, id: island.id })}
         >
-          {isCollapsed ? "Expand" : "Collapse"}
+          {collapsedActionLabel}
         </button>
         {isShapeStale ? (
-          <span style={{ fontWeight: 600, color: "#b45309" }}>(stale)</span>
+          <span style={{ fontWeight: 600, color: "#b45309" }}>{t("canvas.island.stale_badge")}</span>
         ) : null}
         {isCollapsed ? (
           <button
@@ -530,16 +531,16 @@ function IslandViewComponent({
               padding: "3px 6px",
               cursor: isPickingEdgeTarget ? "default" : "pointer",
             }}
-            aria-label={`Peek island ${island.id}`}
-            title="Press and hold to peek cards"
+            aria-label={t("canvas.island.peek_label", { id: island.id })}
+            title={t("canvas.island.peek_title")}
           >
-            Peek
+            {t("canvas.island.peek_action")}
           </button>
         ) : null}
         {hasCritique ? (
           <span
-            aria-label="Island has critique note"
-            title="Island has critique note"
+            aria-label={t("canvas.island.critique_note_indicator")}
+            title={t("canvas.island.critique_note_indicator")}
             style={{
               width: 8,
               height: 8,

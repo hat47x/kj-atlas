@@ -147,14 +147,14 @@
 | Area | Evidence | Result | Remaining gap |
 | --- | --- | --- | --- |
 | Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 1280px / 920px / 768px / 390px | large-document and slow/backend-recovery scenarios remain outside this fit check. |
-| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | canvas edit-mode focus-order breadth remains under this issue. |
-| Canvas mouse and keyboard operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass: mouse drag, arrow-key nudge, Shift+arrow large nudge, Delete removal, self-intersection guard. | broader canvas edit-mode focus order remains under this issue. |
-| Full frontend E2E | bundled Playwright full suite | Pass: 27 tests | synthetic large-document fixture is now covered; slow/backend-recovery scenarios remain outside the current suite. |
-| Frontend regression | full Vitest | Pass: 160 files / 732 tests | does not replace browser viewport evidence. |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | advanced panel-specific focus paths remain sampled rather than exhaustive. |
+| Canvas mouse and keyboard operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts`, `e2e/canvas_focus_order.spec.ts` | Pass: mouse drag, arrow-key nudge, Shift+arrow large nudge, Delete removal, self-intersection guard, card selection, island selection, and side-panel focus reachability. | broader slow worker/API delay states remain under this issue. |
+| Full frontend E2E | bundled Playwright full suite | Pass: 32 tests | synthetic large-document fixture and canvas focus-order fixture are now covered; broader slow/backend-recovery scenarios remain outside the current suite. |
+| Frontend regression | full Vitest | Pass: 160 files / 734 tests | does not replace browser viewport evidence. |
 
 ### Task status adjustment
 
-- T3 remains open but narrowed: layout collapse, mouse hit-testing, polygon keyboard nudge/removal, 768px/1440px header-panel fit, Share/View keyboard open-close focus return, and synthetic large-document interaction evidence are fixed for covered flows; broader canvas edit-mode focus order and slow/backend-recovery UX remain.
+- T3 remains open but narrowed: layout collapse, mouse hit-testing, polygon keyboard nudge/removal, 768px/1440px header-panel fit, Share/View keyboard open-close focus return, card/island/side-panel focus reachability, and synthetic large-document interaction evidence are fixed for covered flows; advanced panel-specific focus paths and broader slow/backend-recovery UX remain.
 - T5 remains open: public acceptance documentation should be updated after the full viewport/large-document/slow-environment matrix is recorded.
 
 ## 12) Evidence update 2026-05-22: header panel keyboard and viewport matrix
@@ -173,7 +173,7 @@
 - Verification:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts --reporter=line`: Pass, 2 tests.
-- Remaining gap: the polygon edit primitive is now keyboard-operable; full canvas focus-order coverage across card selection, island selection, panels, and edit handles remains open.
+- Remaining gap: the polygon edit primitive is now keyboard-operable. Card selection, island selection, and side-panel focus reachability are recorded in section 16; advanced panel-specific focus paths remain sampled rather than exhaustive.
 
 ## 14) Evidence update 2026-05-22: synthetic large-document operability
 
@@ -182,7 +182,7 @@
 - Command evidence:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/large_document_operability.spec.ts --reporter=line`: Pass, 1 test.
-  - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 27 tests.
+  - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 32 tests.
 - Task status adjustment: T2 is covered for a synthetic browser fixture. T3 remains open for broader focus-order breadth. T4 remains open for slow/backend-recovery states. T5 remains open until public acceptance documentation is updated after the remaining slow-environment evidence is available.
 
 ## 15) Evidence update 2026-05-22: backend-recovery guidance on small screens
@@ -194,6 +194,18 @@
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 4 tests.
 - Task status adjustment: the backend-recovery messaging portion of T4 is covered for API unavailable/save failure. Progress/cancel behavior is covered for slow diagnostics and slow review-pack export. T4 remains open for broader worker/API delay states outside those covered flows.
+
+## 16) Evidence update 2026-05-22: canvas focus order and residual English labels
+
+- Implementation route: `IslandView.tsx` and `CanvasShell.tsx` now use the i18n catalog for island select/focus/collapse/peek labels, default island titles, representative labels, card-count tooltips, collapsed/stale badges, and critique indicators. `SidePanel.tsx` now localizes the island editor labels for parent island, collapse state, title, placard card, and placard-card text.
+- Regression route: `src/i18n/ui_hardcode_guard.test.ts` now guards the affected SidePanel and IslandView literals so these user-facing English strings do not return in source. `IslandView.accessibility.test.ts` and `IslandView.bounds.test.ts` verify Japanese default labels and English fallback when the active locale is switched.
+- E2E route: `e2e/canvas_focus_order.spec.ts` loads a deterministic card/island document at 960px width, selects a card with keyboard Enter, tabs to the selected-card side-panel action, focuses an island with keyboard activation, verifies the Japanese island-editor labels, and tabs to the selected-island action.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\vitest\vitest.mjs run`: Pass, 160 files / 734 tests.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/canvas_focus_order.spec.ts e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts --reporter=line`: Pass, 6 tests.
+  - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 32 tests.
+- Task status adjustment: T3 is covered for representative card selection, island selection, side-panel focus reachability, header panel focus return, and polygon edit handles. It remains open only for advanced panel-specific focus paths and slow-environment breadth outside the currently instrumented API, diagnostics, and review-pack export flows.
 
 ---
 

@@ -230,17 +230,18 @@
 | Area | Command | Result | Gate mapping |
 | --- | --- | --- | --- |
 | Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
-| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
-| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 31 tests | G2 / G3 / G4 / G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 32 tests | G2 / G3 / G4 / G7 |
 | Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 1280px / 920px / 768px / 390px; share/view panels do not exceed viewport | G4 |
 | Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 768px Enter opens Share/View dialog, Escape closes, focus returns to trigger | G2 / G4 |
 | Polygon edit keyboard flow | `e2e/polygon_vertex_edit.spec.ts` | Pass: vertex handle focus, Arrow-key nudge, Shift+Arrow larger nudge, Delete removal, export persistence | G2 / G4 |
+| Canvas focus-order flow | `e2e/canvas_focus_order.spec.ts` | Pass: keyboard card selection, Tab reachability to card action, keyboard island selection, Japanese island-editor labels, and Tab reachability to island action | G2 / G3 / G4 |
 | Large-document operability | `e2e/large_document_operability.spec.ts` | Pass: 120 cards / 12 islands at 768px; search, hide non-matches, View/Share panel fit, and bundle diagnostics export | G2 / G4 / G7 |
 | Ops recovery guidance | `e2e/ops_recovery_guidance.spec.ts` | Pass: API load failure, save failure, slow diagnostics cancellation, and slow review-pack export cancellation at 390px show recovery steps, progress/cancel state, JSON-preservation guidance, and diagnostics secret-sharing guardrails without viewport overflow | G4 / G6 / G7 |
 
 ### Gate impact
-- G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, polygon vertex drag, and polygon vertex keyboard nudge/removal.
-- G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs.
+- G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability.
+- G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs, and residual SidePanel/IslandView labels are guarded by i18n regression tests.
 - G4 画面耐性: Conditional Go. Header/share/view panel fit is automated for 390px/768px/920px/1280px/1440px, synthetic large-document operability is covered at 768px, API/save recovery guidance is covered at 390px, and slow diagnostics plus slow review-pack export progress/cancel are covered at 390px; broader slow worker/API delay states remain under `PRODUCT-UX-04`.
 - G6 診断とサポート: Conditional Go. API unavailable, save failure, slow diagnostics, and slow review-pack export now point users to health checks, retry/export preservation, progress/cancel state, and safe diagnostic sharing; automated support bundle generation remains outside this slice.
 - G7 回帰: Go for frontend scope in this update.
@@ -552,7 +553,7 @@ DoDテンプレ（Draft→Open）
   - `triage_actionable_plans.py` -> pass (`active_issues=45 / ready=17 / blocked=28 / stopper=none`)
 - Frontend:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass
-  - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 732 tests)
+  - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 734 tests)
 - E2E:
   - bundled `node.exe .\node_modules\playwright\cli.js install chromium` -> pass
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` with manually started Vite -> pass (2 passed)

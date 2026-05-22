@@ -73,7 +73,7 @@ async function replaceCurrentDocumentWithPolygon(page: import("@playwright/test"
   await expect(page.getByText("Replaced current document")).toBeVisible();
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
-  await page.getByRole("button", { name: "Select island i1" }).dispatchEvent("click");
+  await page.getByRole("button", { name: /Select island i1|島 i1 を選択/ }).dispatchEvent("click");
   const editCheckbox = page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX });
   await expect(editCheckbox).toBeVisible();
   await editCheckbox.check();

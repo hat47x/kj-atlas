@@ -190,7 +190,7 @@ test("QA-3: self-intersection edit is rejected and last valid polygon is kept", 
   await expect(page.getByText("Replaced current document")).toBeVisible();
   await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
-  await page.getByRole("button", { name: "Select island i1" }).dispatchEvent("click");
+  await page.getByRole("button", { name: /Select island i1|島 i1 を選択/ }).dispatchEvent("click");
   await page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX }).check();
 
   const secondVertexHandle = page.getByRole("button", { name: "Move polygon vertex 2" });
