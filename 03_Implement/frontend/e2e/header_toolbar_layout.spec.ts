@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SHARE_REPRODUCE_BUTTON, VIEW_BUTTON } from "./helpers/i18n";
 
 type Box = {
   bottom: number;
@@ -11,8 +12,16 @@ type Box = {
 };
 
 const checkedViewports = [
+  { width: 1440, height: 900 },
   { width: 1280, height: 720 },
   { width: 920, height: 720 },
+  { width: 768, height: 720 },
+  { width: 390, height: 720 },
+] as const;
+
+const keyboardViewports = [
+  { width: 1440, height: 900 },
+  { width: 768, height: 720 },
 ] as const;
 
 async function collectHeaderButtons(page: Page): Promise<Box[]> {
@@ -76,16 +85,56 @@ for (const viewport of checkedViewports) {
     expect(offscreen).toEqual([]);
     expect(verticalish).toEqual([]);
 
-    await page.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("button", { name: VIEW_BUTTON }).click();
     const viewPanels = await collectFixedPanels(page);
     expect(viewPanels.length).toBeGreaterThan(0);
     expect(viewPanels.some((panel) => panel.y < headerBottom)).toBe(false);
-    await page.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("button", { name: VIEW_BUTTON }).click();
 
-    await page.locator("header button").nth(5).click();
+    await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
     const sharePanels = await collectFixedPanels(page);
     expect(sharePanels.length).toBeGreaterThan(0);
     expect(sharePanels.some((panel) => panel.y < headerBottom)).toBe(false);
     expect(sharePanels.some((panel) => panel.bottom > viewport.height || panel.right > viewport.width)).toBe(false);
+  });
+}
+
+for (const viewport of keyboardViewports) {
+  test(`header panels support keyboard focus and Escape return at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.waitForSelector("header");
+
+    const viewButton = page.getByRole("button", { name: VIEW_BUTTON });
+    await viewButton.focus();
+    await expect(viewButton).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const viewDialog = page.locator('[data-panel="view"]');
+    await expect(viewDialog).toBeVisible();
+    await expect(viewDialog).toBeFocused();
+    let panels = await collectFixedPanels(page);
+    expect(panels.some((panel) => panel.bottom > viewport.height || panel.right > viewport.width)).toBe(false);
+
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Escape");
+    await expect(viewDialog).toBeHidden();
+    await expect(viewButton).toBeFocused();
+
+    const shareButton = page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON });
+    await shareButton.focus();
+    await expect(shareButton).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const shareDialog = page.locator('[data-panel="share-replay"]');
+    await expect(shareDialog).toBeVisible();
+    await expect(shareDialog).toBeFocused();
+    panels = await collectFixedPanels(page);
+    expect(panels.some((panel) => panel.bottom > viewport.height || panel.right > viewport.width)).toBe(false);
+
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Escape");
+    await expect(shareDialog).toBeHidden();
+    await expect(shareButton).toBeFocused();
   });
 }

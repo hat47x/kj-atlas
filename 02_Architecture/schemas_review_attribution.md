@@ -229,3 +229,31 @@ ReviewerRef 推奨フォーマット（例）:
 - 本書は review attribution 契約に限定し、`ContextQueryV1` / `ContextBundleV1` のキー集合を再定義しない。
 - CE1 固定エラー語彙（`preview_required` / `unknown_contract_key` / `nondeterministic_bundle`）との衝突を導入しない。
 - mock-first 検証時も safeMode 境界（PII最小化・匿名参照）を緩和しない。
+
+## Stream G regression-hardening constraints (2026-05-18)
+
+- Level1 契約境界: `reviewerRef` / `ownerRef` は non-empty opaque string、PII最小化、禁止キー（`provider`, `external_uid`）の fail-closed 検証を必須とする。
+- Level2 統合境界: `users` / `user_identities` と attribution の参照整合、strict 403 契約、audit 記録の再現性を同時検証する。
+- 自己修復上限: 契約不一致の自動修復は3回までとし、超過時は `StoppedForClarification` を返す。
+
+
+## Stream D alignment note (2026-05-19)
+
+- Contract drift抽出: review attribution は `DocumentV2` 埋め込み契約（L2.5）として維持し、個別CRUD保証を主張しない。
+- Support level定義: `reviewerRef` / `ownerRef` / `reviewState` / `reviewedAt` は契約固定だが運用は `DATA-MODEL-OPS-01` のCRUD境界に従う。
+- Admin maintenance/recovery境界: 削除・移管・監査閲覧などの高権限運用は `DATA-MAINT-01` のPending論点として分離し、先行実装しない。
+- Verify: `schemas.md` と同じ support level語彙（L1/L1.5/L2/L2.5/L3/L0）を参照する前提で整合。
+
+## Stream D migration boundary memo (2026-05-20)
+
+- 本書は review attribution の契約提案を固定する文書であり、MVP時点では attribution 専用テーブル migration を要求しない。
+- Alembic head `20260314_0005` までの物理テーブルは `documents` / `users` / `user_identities` / `merge_decision_logs` で、review attribution は `Document` 埋め込み前提のまま維持する。
+- したがって review attribution は `L2/L2.5`（埋め込み/契約先行）として扱い、個別CRUDや独立 migration を前提にしない。
+
+
+## Stream E sync note (2026-05-20, Auth attribution only)
+
+- Auth属性の正規化境界を再確認: `reviewerRef` / `ownerRef` は non-empty opaque string を維持し、Auth内部正本は `user:<users.id>` 派生参照とする。
+- `provider` / `external_uid` は review attribution 永続層に保存しない（逆引きは `user_identities` へ委譲）。
+- strict mode（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）時は `users.id` 未解決の要求を fail-closed で拒否し、attribution event を新規生成しない。
+- mock IdP 回帰での差分吸収点は `AUTH_PROVIDER_PROFILE` と header mapping に限定し、schema key set は不変。

@@ -1,10 +1,10 @@
 # Issue Draft: DATA-MODEL-OPS-01 MVPデータモデル俯瞰とCRUD境界の継続管理
 
 - Type: Documentation quality
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P0 (Stream D highest)
 - Owner: TBD
 - Scope: `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`
 - Related Backlog: `DATA-MODEL-OPS-01`
@@ -29,6 +29,13 @@
 - Parallel（並行整備）: なし
 - Downstream（後続依存）: `DATA-CONTRACT-01`, `DATA-MAINT-01`
 - Blocker条件: support level語彙（運用サポート / 埋め込み限定 / 契約のみ）が02文書間で不一致
+- Contract fixture方針: `/docs/{doc_id}` の fixture（create-if-absent, DocumentV1/V2 roundtrip）を先に固定し、frontend/backendを追従させる。
+
+## Stream D Priority Queue（DATA active issues）
+
+1. `DATA-MODEL-OPS-01`（本Issue）: 境界語彙とCRUD責務の正本化（最優先）
+2. `DATA-CONTRACT-01`: contract drift判定規則の固定
+3. `DATA-MAINT-01`: 運用責務・復旧境界の固定
 
 
 ## 1) 課題 / Problem statement
@@ -63,18 +70,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 物理テーブルと論理データ構造が別物として説明されている。
-- [ ] 各データ領域について Create / Read / Update / Delete の可否が明示されている。
-- [ ] MVPで個別CRUDを持たない構造が、標準運用で保守可能だと読めない表現になっている。
-- [ ] ステークホルダー別に、標準操作でできることと不足が記載されている。
-- [ ] 新しい主要データ構造が追加された場合、`AGENTS.md` と関連02文書の導線が同期されている。
+- [x] 物理テーブルと論理データ構造が別物として説明されている。
+- [x] 各データ領域について Create / Read / Update / Delete の可否が明示されている。
+- [x] MVPで個別CRUDを持たない構造が、標準運用で保守可能だと読めない表現になっている。
+- [x] ステークホルダー別に、標準操作でできることと不足が記載されている。
+- [x] 新しい主要データ構造が追加された場合、`AGENTS.md` と関連02文書の導線が同期されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 MVPデータサポート境界をADR化する。
 - [x] T2 物理ER、論理ER、CRUD表を含む俯瞰文書を追加する。
-- [ ] T3 今後のDocumentV2/AI/監査連携の追加時に、CRUD表の同期を変更チェック項目へ組み込む。
-- [ ] T4 公開文書へ転記する場合は、内部管理情報を除いた利用者向け表現に整える。
+- [x] T3 今後のDocumentV2/AI/監査連携の追加時に、CRUD表の同期を変更チェック項目へ組み込む。（Stream D運用チェックとして固定）
+- [x] T4 公開文書へ転記する場合は、内部管理情報を除いた利用者向け表現に整える。（`public_index.md` 起点運用を参照する方針を固定）
 
 ## 7) 検証計画 / Validation plan
 
@@ -85,6 +92,16 @@
   - ADR、issue、02文書、Project Mapの参照が相互に追跡できる。
 - 未実施時の理由・代替検証:
   - なし。
+
+### Stream D validation extension（AC/DoD運用固定）
+
+- AC運用:
+  1) `L1/L1.5/L2/L2.5/L3/L0` が `schemas.md` / `data_model_operations_overview.md` / DATA系3Issueで一致する。
+  2) 「型がある=運用可能」を否定する注記が維持される。
+  3) `DATA-CONTRACT-01` と `DATA-MAINT-01` への依存境界が重複なく記述される。
+- DoD運用:
+  - 本Issue更新時は、DATA系3Issueの `Status / Priority / Dependencies / Related ADR` を同一セッションで再確認する。
+  - 前提崩れ（未定義依存・上位矛盾）がある場合は Proceed せず Hold とする。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -123,9 +140,9 @@
 
 ## 12) 受入条件の補完（AC gap fill）
 
-- [ ] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
-- [ ] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
-- [ ] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
+- [x] AC-01: CRUD表の各行に `運用責務主体` が必須列として存在する。
+- [x] AC-02: 各四半期で1回以上のドリフト点検（issue checklist）を定義する。
+- [x] AC-03: 例外時フローへのリンク（DATA-MAINT-01）を明示する。
 
 ## Stream I Phase status
 
@@ -135,3 +152,57 @@
 - Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 13) Stream D AC/DoD補完
+
+- [x] AC-04: CRUD表の全行に support level（L1/L1.5/L2/L2.5/L3/L0）が明示され、`schemas.md` の定義と同一語彙である。
+- [x] AC-05: 互換性判定の責務が「契約更新（Architecture）→実装追従（Implement）」の順序で記述されている。
+- [x] DoD-01: 新規フィールド追加時に、`schemas.md` と `data_model_operations_overview.md` を同一コミットで更新する運用規則が明記されている。
+- [x] DoD-02: 「型がある=運用可能」誤読を防ぐ注意書きが維持されている。
+- 判定: **Proceed**（MVP運用境界の固定化は完了、実装依存は契約凍結で切断）。
+
+## 14) Stream D → 下流引き渡しチェックリスト
+
+- [x] 新規データ構造追加時に `schemas.md` と `data_model_operations_overview.md` を同一コミットで更新する規則を固定した。
+- [x] CRUD表の全行に support level と運用責務主体を併記し、運用者誤読の防止条件を満たした。
+- [x] 例外時フロー参照として `DATA-MAINT-01` への導線を維持した。
+- [x] `DATA-CONTRACT-01` で扱う契約ドリフト観点（frontend/backend/api/schema整合）との境界を重複なく明記した。
+
+
+## 15) Stream D phase sync（2026-05-20）
+
+### Context
+- DATA系3Issueと02文書の語彙同期（L1/L1.5/L2/L2.5/L3/L0）を継続監視する必要がある。
+
+### Decision
+- Read同期の確認対象を `Status / Priority / Dependencies / Related ADR` に固定し、更新時は同一セッションで再確認する。
+- Verifyは docs-check（diff/rg）を最小必須とし、3回超過で収束しない場合はStopに切り替える。
+
+### Consequences
+- CRUD境界のドリフトを軽量に検知でき、DATA-CONTRACT-01 / DATA-MAINT-01 との接続が明確になる。
+
+## 18) Stream B phase sync（2026-05-20）
+
+### Context
+- Stream B 対象範囲で、schema/CRUD境界/運用責務の差分を再読した。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を固定し、未分類を `L2.5` として扱う。
+- backward compatibility は version gate 優先で固定し、`version: 2` の非互換変更を禁止する。
+- DB/API依存が未確定の統合点は read-only contract として公開し、mock-first で検証する。
+
+### Consequences
+- Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
+- Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `schemas.md` / `data_model_operations_overview.md` / `data_handling.md` の境界記述を再読。
+2. Context/Decision/Consequences: 本Issueの C/D/C を Stream D 判定の正本として再確認。
+3. CRUD境界固定: `PUT /docs/{doc_id}` create-if-absent と `L1/L1.5/L2/L2.5/L3/L0` を固定語彙として扱う。
+4. ドリフト監査反映: 語彙不一致・version gate欠落・契約不一致を Stop 条件として再確認。
+5. 運用復旧手順整備: `DATA-MAINT-01` 側の `documents` / `merge_decision_logs` 整合検証導線を確認。
+6. Verify: docs-check（差分・語彙一致・責務境界一致）で確認。
+7. Self-correction<=3: Verify再試行上限を3回に固定。
+8. Final: docs-only 完遂条件を満たす場合のみ Proceed。

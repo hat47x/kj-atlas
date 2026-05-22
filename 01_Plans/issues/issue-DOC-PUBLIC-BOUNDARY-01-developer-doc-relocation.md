@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
-- Scope: `04_Documentation/`, `03_Implement/frontend/docs/`, `00_Prompt/`, `01_Plans/documentation_quality.md`
+- Scope: `04_Documentation/public_index.md`, Gist公開候補の `04_Documentation/*.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Related Backlog: `DOC-PUBLIC-BOUNDARY-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`, `04_Documentation/README.md`
 - Expected verification level: `docs-check`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed
 - DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
@@ -44,6 +44,25 @@
 
 ## 4) 提案する解決策 / Proposed solution
 
+### Context / Decision / Consequences（情報公開境界）
+
+- Context:
+  - 利用者向け公開入口（Gist/公開配布）と、保守者・開発者向け管理入口が同一導線上に見えると、公開本文に内部管理情報が混入しやすい。
+  - `04_Documentation/public_index.md` は利用者向け入口、`04_Documentation/README.md` は保守者向け入口という役割が既に定義されている。
+- Decision:
+  - 入口を3系統に固定する。
+    1. 利用者入口: `04_Documentation/public_index.md`
+    2. 管理者入口: `04_Documentation/README.md`
+    3. 開発者入口: `README.md`（実装・貢献導線は `03_Implement/README.md` と `CONTRIBUTING.md`）
+  - 相互リンク規約を固定する。
+    - `public_index.md` は利用者向け文書のみを参照し、管理情報や開発運用文書へ直接誘導しない。
+    - `04_Documentation/README.md` は `public_index.md` を公開入口として指し示しつつ、管理手順・除外方針を担当する。
+    - ルート `README.md` は「利用者向け公開入口（public_index）」と「開発者向け入口（03_Implement/README, CONTRIBUTING）」を明示分離する。
+- Consequences:
+  - 公開配布時に「含めるべき文書」と「含めない管理情報」の判定が単純化される。
+  - 利用者は手順探索に集中でき、開発者は管理・実装導線へ最短で到達できる。
+  - 文書更新時は3入口のリンク整合確認が必須になる。
+
 - 変更対象:
   - `04_Documentation/e2e_verification_log_2026-03-03.md`
   - `04_Documentation/codex_skill_operations.md`
@@ -57,19 +76,53 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] `04_Documentation/README.md` の公開対象一覧と実ファイル配置が一致する。
-- [ ] `public_index.md` から内部管理文書へ誘導していない。
-- [ ] 開発者向けE2E正本が `03_Implement/frontend/docs/e2e_testing.md` に固定される。
-- [ ] `codex_skill_operations.md` と検証ログテンプレートの移管先が決まり、リンク切れがない。
-- [ ] Gist公開前検索で `AGENTS.md`、`01_Plans`、`ADR-`、内部管理ログが公開本文へ混ざらない。
-- [ ] 歴史的なissue本文を除き、現行ADRと設計文書の `04_Documentation/e2e_testing.md` 参照が解消されている。
+- [x] `04_Documentation/README.md` の公開対象一覧と実ファイル配置が一致する。
+- [x] `public_index.md` から内部管理文書へ誘導していない。
+- [x] 利用者入口・管理者入口・開発者入口の3系統が明文化されている。
+- [x] 相互リンク規約（public→利用者限定、README(04)→管理、README(root)→二系統分離）が明文化されている。
+- [ ] 開発者向けE2E正本が `03_Implement/frontend/docs/e2e_testing.md` に固定される。（本Issueでは導線明示まで）
+- [ ] `codex_skill_operations.md` と検証ログテンプレートの移管先が決まり、リンク切れがない。（後続タスク）
+- [x] Gist公開前検索で `AGENTS.md`、`01_Plans`、`ADR-`、内部管理ログが公開本文へ混ざらない方針が明文化されている。
+- [ ] 歴史的なissue本文を除き、現行ADRと設計文書の `04_Documentation/e2e_testing.md` 参照が解消されている。（後続タスク）
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 `04_Documentation/` の全mdを対象読者で分類する。
-- [ ] T2 開発者向け、AIエージェント向け、内部検証向けの移管先を決める。
-- [ ] T3 移管対象ごとにリンク、README、関連正本を更新する。
-- [ ] T4 公開用Gist生成前の禁止語検索を更新する。
+- [x] T1 `public_index.md` / `04_Documentation/README.md` / `README.md` の対象読者導線を確認する。
+- [x] T2 情報公開境界における Context / Decision / Consequences をIssue本文へ明文化する。
+- [x] T3 利用者入口・管理者入口・開発者入口の3系統と相互リンク規約を固定する。
+- [x] T4 公開向け本文に管理情報を混入させない方針と確認観点を更新する。
+- [x] T5 Gist公開候補文書から、内部issue/ADR/Gate/Stream/DOC-OPS などの管理語を除去する。
+
+## 6.1 Definition of Done（DoD）
+
+- [x] 公開入口（`public_index.md`）が利用者向け説明に限定されている。
+- [x] 管理入口（`04_Documentation/README.md`）が公開境界管理の責務を持つことが明示されている。
+- [x] 開発者入口（`README.md`）に利用者導線と開発者導線の分離が明記されている。
+- [x] 3入口間のリンク到達性が `rg` により検証済み。
+- [x] Gist公開候補の利用者向け文書に、内部管理語が混ざらないことを `rg` で確認済み。
+
+## 6.2 Update 2026-05-21: Public-target boundary cleanup
+
+### 実施内容
+
+- `acceptance_check.md` から、開発者向けE2E、内部Gate Record、Program判定、ADR/issue参照を外し、画面操作と確認記録の説明へ寄せた。
+- `operations.md`、`diagnostics.md`、`security.md`、`security_operational_guidelines.md` から、内部Stream、DOC-OPS、AUTH運用の進捗管理節を外し、利用者・運用担当者が読める復旧手順と判断支援に整理した。
+- `configuration.md`、`operations.md`、`security.md`、`security_operational_guidelines.md` では、04以外の設計詳細を GitHub 上の設計文書リンクとして扱う方針に合わせた。
+- 「外部に送る」「データを渡す」に近い表現を、外部サービスとの「共有」として伝わる文に置き換えた。ただし `環境変数` の説明における「アプリへ渡す設定値」は外部共有を意味しないため維持した。
+
+### 検証結果
+
+- Public-target forbidden term scan:
+  - `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>`
+  - Result: no matches.
+- External-sharing wording scan:
+  - `rg -n "外部に送る|外部送信|送る|渡す|渡さない|投げる" <public target 04 docs>`
+  - Result: only `configuration.md` の `環境変数` 定義における `渡す` が残る。外部サービス共有の説明ではないため許容。
+
+### 残課題
+
+- `codex_skill_operations.md` と `e2e_verification_log_2026-03-03.md` は引き続き公開Gist対象外として扱う。物理移管は後続タスク。
+- Gist生成物そのものの連結後スキャンと公開更新は、公開作業時に改めて実施する。
 
 ## 7) 検証計画 / Validation plan
 

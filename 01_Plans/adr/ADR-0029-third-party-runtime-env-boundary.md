@@ -1,6 +1,6 @@
 # ADR-0029: Third-party runtime environment boundary
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-10
 - Deciders: Project Maintainers
 - Scope: `03_Implement/deploy/`, `02_Architecture/runtime_parameter_registry.md`, `04_Documentation/configuration.md`
@@ -31,13 +31,21 @@ If a third-party image or build tool requires a vendor-defined environment name,
 
 Direct user configuration of vendor-defined names is not supported. Public documentation and runbooks must instruct users to set only `KJ_ATLAS_*` variables.
 
-If maintainers require the stricter interpretation that no process environment in any bundled deployment may contain a non-`KJ_ATLAS_*` name, the PostgreSQL service must be replaced with a project-owned initialization/runtime path or with a managed-database-only deployment before the issue can be marked Done.
+If maintainers require the stricter interpretation that no process environment in any bundled deployment may contain a non-`KJ_ATLAS_*` name, treat that as a separate architecture change. In that case, the PostgreSQL service must be replaced with a project-owned initialization/runtime path or with a managed-database-only deployment before the issue can be marked Done.
 
 Non-goals:
 
 - Redesign the database topology in this ADR.
 - Add compatibility support for legacy unprefixed project variables.
 - Change SafeMode, access-control, or export behavior.
+
+
+## Boundary contract matrix
+
+| Boundary | Key namespace | Who sets it | Where it appears | Rule |
+| --- | --- | --- | --- | --- |
+| Public runtime contract | `KJ_ATLAS_*` only | Users / operators | Runtime registry, configuration docs, Compose input surface | MUST be documented and supported as public keys. |
+| Private adapter boundary | vendor-defined names (for example `POSTGRES_*`) | Compose/build implementation only | Third-party container `environment` / build internals | MUST NOT be exposed as public configuration keys. |
 
 ## Consequences
 
@@ -79,3 +87,10 @@ Constraints and risks:
 - Related: `03_Implement/deploy/docker-compose.yml`
 - Related issue: `01_Plans/issues/issue-ENV-CONFIG-DRIFT-01-runtime-configuration-contract-alignment.md`
 - Derived-from: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+
+
+## Public key set (frozen for ENV-CONFIG-DRIFT-01)
+
+The public runtime key set is frozen to keys listed in `02_Architecture/runtime_parameter_registry.md` and all of them MUST use `KJ_ATLAS_*`.
+
+Any future requirement to ban all vendor-defined process environment names (including third-party container internals) is **not** an interpretation tweak of this ADR; it is a separate design-change track that requires a replacement deployment architecture.

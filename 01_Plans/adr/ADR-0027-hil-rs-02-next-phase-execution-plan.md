@@ -418,3 +418,123 @@
 ### Pending Decision Queue（as of 2026-05-10）
 - `PD-20260507-A1-001`（Approval evidence format）
 - `PD-20260507-A1-002`（reviewerRef匿名化パターン）
+
+
+## Stream A governance contract clarification（2026-05-18）
+
+### Context
+A1契約固定前にA2/A3が承認境界を実装すると、`Pending bypass` とローカル再定義のリスクが高い。
+
+### Decision
+- `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` を唯一の解放条件として固定する。
+- trusted human interaction 境界を次で固定する。
+  - AI: `decision/reasonCodes` の提示まで。
+  - Human: 承認確定（2者承認）と例外判断。
+- 禁止事項: `auto-confirm`, `auto-approve`, `Pending->Execute`, `Rejected->Execute`, `Draft->Approved`。
+
+### Consequences
+A2/A3はモックI/Fで先行実装可能だが、承認確定の責務はA1ガバナンス契約の外に持ち出せない。
+
+## Stream A critical-path freeze handoff（2026-05-19）
+
+### Phase 1: Read（契約未確定項目と依存差分）
+- Read対象（allowlist）: `ADR-0026`, `ADR-0027`, `issue-HIL-RS-01-next-phase-human-loop-reversible-synthesis.md`, `issue-HIL-RS-02-A1-governance-contract-hardening.md`, `contract_reading_guide.md`, `runtime_parameter_registry.md`。
+- 未確定項目（承認待ち）: `approved_by`, `approved_at`, `evidence`, `HIL-RS-02-GOV-EXCEPTION-01`。
+- 依存関係固定: `HIL-RS-01-A1 -> HIL-RS-02-A1 -> A2/A3 unlock`（差分なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 承認入力未充足のまま A2/A3 を開放すると `Pending bypass` が発生し、統治契約違反となる。
+- Decision: 承認待ち論点を `Decision Queue` に保持し、`Proceed=Hold/Needs-decision` を継続する。
+- Consequences: 下流は mock 検証のみ並行可。契約値更新・状態確定は禁止。
+
+### Phase 3: 契約凍結（変更禁止境界）
+- API signature（固定）: `A1-GOV-GATE-V1`, `A2-PROPOSAL-ENVELOPE-V1`, `A3-DOC-SYNC-CHECK-V1`。
+- Data/type（固定）: `schemaVersion=1.0.0`, `overridePolicy=human_dual_control_only`, `safeModeDefault=ON`, `safeModeBoundary=SAFE_MODE_STRICT_ON`。
+- Transition（固定）: `Pending -> Approved | Pending -> Rejected` のみ。
+- 変更禁止境界: fixed keyの再定義、SafeMode後退、A1完了前の A2/A3 `Draft->Open`。
+
+### Phase 4: 受け渡し仕様（B〜F向け）
+- 固定済みI/F一覧:
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `Decision gate`: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
+- 変更不可項目:
+  - fixed keys（上記）
+  - `overridePolicy=human_dual_control_only`
+  - `decisionQueueTransition`
+- mock許可項目:
+  - 監査4イベント（`query`,`bundle`,`proposal`,`apply`）の存在検証
+  - 入出力型の適合検証
+  - `pendingDecisionQueueCount>0` の Hold 判定検証
+
+### Phase 5: 検証（AC/DoD + 依存再確認）
+- AC/DoD判定: pass（契約差分 `0`、禁止遷移追加なし、SafeMode後退なし）。
+- 未確定事項: `Approval Record` 3項目 + `HIL-RS-02-GOV-EXCEPTION-01`。
+- 最終判定: **Conditional / Needs-decision**（人間承認待ち）。
+
+## Stream A critical-path contract lock update（2026-05-20）
+
+### Phase 1: Read / inventory
+- 対象（allowlist）再読結果:
+  - `HIL-RS-01 parent` = In Progress / P1
+  - `HIL-RS-01-A1` = In Progress / P1
+  - `HIL-RS-02-A1` = Open(In Progress運用) / P1
+  - `CE0 contract freeze` = Open / P1
+- 依存固定: `HIL-RS-01-A1 -> HIL-RS-02-A1 -> parent Proceed`、`HIL-RS-01-A1 -> CE0 contract freeze`。
+- mock方針固定: `decision/executeAllowed/reasonCodes` まで先行可能、`Pending -> Approved|Rejected` 確定は人間のみ。
+
+### Phase 2: ADR合意（Context / Decision / Consequences）
+- Context: 承認待ちを残したまま A2/A3 相当の下流開放を行うと `Pending bypass` となり統治違反。
+- Decision: `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` を唯一ゲートとして継続固定。
+- Consequences: `Approval Record` 未充足時は `Hold/Needs-decision` を維持し、Proceed=Go を出さない。
+
+### Phase 3: HIL-RS最小I/F凍結（downstream mock可）
+- API signatures（凍結）:
+  - `A1-GOV-GATE-V1(approvalRecord, decisionQueueState) -> (gateStatus, held[], no_go_reason)`
+  - `A2-PROPOSAL-ENVELOPE-V1(sourceBundleHash, proposalId, policySnapshot) -> (proposalEnvelope | schema_mismatch)`
+  - `A3-DOC-SYNC-CHECK-V1(contractId, syncTargets[], auditDigest) -> (syncResult, drift[] | drift_detected)`
+- Payload schema最小集合（凍結）:
+  - required keys: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `approvalRecord`。
+- Event contract（凍結）:
+  - `query|bundle|proposal|apply` の4点欠損時は No-Go。
+- versioning方針:
+  - 破壊的変更（必須キー変更・遷移追加・承認主体変更）は `v2` へ隔離し、`v1` は read-only 維持。
+
+### Phase 4-6: Execute / Verify / Proceed
+- Execute: docs-only, contract-only の記述整合に限定。
+- Verify: `validate_active_issue_memos` / `git diff --check` で自己検証。
+- Proceed判定: **Hold/Needs-decision**（`Approval Record` と `held` 未解消のため）。
+
+
+## Stream A serial governance pass (2026-05-20)
+
+### Phase 1: Read Gate
+- 対象ファイルを再読し、Status/AC/依存を監査した。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` を未解決として確認した。
+
+### Phase 2: ADR明文化
+- Context/Decision/Consequences を再確認し、固定契約を再定義しない方針を継続する。
+- 変更禁止契約（minimum I/F と承認ゲート）を read-only 参照として固定する。
+
+### Phase 3: Issue整合
+- AC / Validation plan / Non-goals を ADR-0026, ADR-0027 と語彙一致させた（drift=0）。
+- `Pending -> Approved | Pending -> Rejected` 以外の遷移を追加しない。
+
+### Phase 4: Governance hardening
+- SoD（二者承認と実行責務分離）を維持し、`approver_a != approver_b` 制約を継続する。
+- 停止条件（pending bypass / contract drift / safeMode後退 / 未定義競合）を固定した。
+
+### Phase 5: Verify-1
+- 用語一致（Security Officer / System Owner / Platform Operator）を確認した。
+- 固定値 D1〜D4 とゲート式（Proceed/Hold/Stop）の整合を確認した。
+- 未承認事項を確定扱いにしていないことを確認した。
+
+### Phase 6: Self-correction
+- 不一致検知なし。修正ループ実行回数: 0/3。
+
+### Phase 7: Publish-ready
+- 次ストリーム非依存で読めるよう、判定根拠・停止条件・read-only handoff を明示した。
+
+### Phase 8: Final status
+- 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
+- Stop条件適用: なし（検証失敗・未定義競合は検出せず）。

@@ -111,3 +111,85 @@ Open化ゲートを「依存解消ID」「段階ゲート順序」「失敗分�
 ### 修復上限（共通）
 - 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
 - 4回目相当は Stop。保留理由と再開条件を `Pending` 欄へ追記する。
+
+## Open化判定メタ（Draft gate解除条件）
+
+### Open化に必要な最小条件（全件必須）
+- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
+- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
+- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
+- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
+
+### 依存待ち理由（未解消時は Draft 維持）
+| Dependency | 依存待ち理由 | 再開条件 | Owner |
+|---|---|---|---|
+| 上位ADR/関連Issue | 上位合意または境界仕様の最終確定待ち | 参照先に承認IDまたは確定コミットを追記 | Platform Architecture Owner / 各Issue Owner |
+| QA検証経路 | `e2e`/`integration` の実行経路と証跡フォーマット未固定 | 実行経路（Compose/SQLite/例外）を1件固定し、判定ログ形式を定義 | QA Lead |
+| 実行責務 | 実装担当とレビュー担当の分離未確定 | RACI（R/A）を本文に追記し通知記録を残す | PM/Triage |
+
+### Proceed / Stop
+- Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
+- Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
+
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: unit実行プロファイル（Compose/SQLite/例外）の採用理由が未記録。
+- 依存: Pending-1（実装タスク起票承認）/ Pending-2（上流契約凍結承認）が未完了。
+- 設計: G1→G2→G3 は定義済みだが、blocker解除証跡の責務分担が未入力。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: B-UNIT-01〜03 の再開条件を Pending欄へ反映。
+- Gate-B（AC）: AC-O1〜O4 が単一語彙で検索可能。
+- Gate-C（DoD）: DoD-O1〜O3 が `pass|blocked` で第三者判定可能。
+- Gate-D（失敗時扱い）: triage分類は `test defect / product defect / environment limitation` に固定。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1, Pending-2 の承認ID未記入。
+- 解消順: 1) Pending-2（契約凍結承認）→ 2) Pending-1（起票承認）→ 3) unit profile確定。
+
+## Stream E update (2026-05-20): Open化 entry criteria / unit gate normalization
+
+### 1) Read（最新メタ）
+- `Execution: Hold` 維持条件は `Pending-1/2` と `unit profile` 未確定であることを再確認。
+- `G1→G2→G3` と triage語彙固定（`test defect / product defect / environment limitation`）をOpen判定の基準に据える。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-UNIT-01: O-UNIT-01〜04 が本文内で追跡可能（検索可能）である。
+- EC-UNIT-02: `B-UNIT-01〜03` の各blockerに対応する再開条件が Pending欄に記録済み。
+- EC-UNIT-03: 実行プロファイル（Compose / SQLite / 例外記録）を1件選択済み。
+- EC-UNIT-04: 未充足時の Stopper分類（approval/contract/environment）が明示される。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: Open判定は `GO/NO-GO-1..4` と `AC-O1..O4` の交差一致を要求。
+- Execute: docs-onlyで不足メタ（承認ID、責務、判定語彙）を補完。
+- Verify:
+  - `rg -n "EC-UNIT-0[1-4]|O-UNIT-0[1-4]|Execution: Hold|Pending|test defect|product defect|environment limitation" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md`
+
+### 4) Stopper条件適用
+- Stopper-U1: Pending-1/2 未解消のままOpen不可。
+- Stopper-U2: triage語彙が増殖・揺れた場合はHold。
+- Stopper-U3: docs-only範囲外の実装要求が混入した場合はStop。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-UNIT 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QU-O1 | `O-UNIT-01..04` が本文で検索可能 | `pass` 判定可能 |
+| QU-O2 | Blocker `B-UNIT-01..03` と再開条件が1:1対応 | 欠落0件 |
+| QU-O3 | `G1->G2->G3` の順序固定 | 順序崩れなし |
+| QU-O4 | triage語彙が `test defect / product defect / environment limitation` に固定 | 語彙差分なし |
+| QU-O5 | 自己修復上限 `<=3` と4回目相当Stopが明記 | 記載あり |
+
+### Verify matrix（QA-UNIT）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| Gate可観測性 | `rg -n "O-UNIT-0[1-4]|B-UNIT-0[1-3]|G1 Unit|G2 Integration|G3 E2E Traceability|Execution: Hold" 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 必須語彙が全件ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md` | 警告なし |

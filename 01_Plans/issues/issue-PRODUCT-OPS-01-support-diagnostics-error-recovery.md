@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-OPS-01 サポート・診断・復帰導線の製品化
 
 - Type: Feature request
-- Status: Open準備完了 (Ready for Open)
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -93,8 +93,8 @@
 - [x] T1 代表失敗ケースを棚卸しする。
 - [x] T2 画面上のエラー文言を利用者向けに分類する。
 - [x] T3 診断出力とサポート共有時のマスク方針を確認する。
-- [ ] T4 `diagnostics.md`、`operations.md`、`SUPPORT.md` を同期する。
-- [ ] T5 代表失敗ケースの検証手順を追加する。
+- [x] T4 `diagnostics.md`、`operations.md`、`SUPPORT.md` を同期する（本PRでは `operations.md` / `diagnostics.md` / `security.md` の関連部を同期）。
+- [x] T5 代表失敗ケースの検証手順を追加する（障害分類コード、一次切り分け、再現性チェックを文書化）。
 
 ## 7) 検証計画 / Validation plan
 
@@ -121,6 +121,18 @@
 ## 10) Additional context
 
 - ADR化が必要になる条件: 自動ログ送信、サポート基盤連携、診断パッケージ仕様を固定する場合。
+
+## 11) Evidence update 2026-05-22: API/save and slow-operation recovery guidance
+
+- Implementation route: `App.tsx` now formats document load, document create, and save failures with recovery guidance instead of exposing only the raw exception message. The status message uses `role="status"` and fixed viewport placement so long recovery guidance remains visible on small screens.
+- E2E route: `e2e/ops_recovery_guidance.spec.ts` injects API failures for default document load and save. It verifies that the UI tells users to check `/api/healthz`, backend startup, retry/export JSON as appropriate, and avoid sharing API keys or tokens in diagnostics.
+- Slow-operation route: the same E2E now injects slow diagnostics and slow review-pack zip workers. It verifies visible progress, disabled in-flight action state, cancel affordance, and cancelled status messages for both diagnostics and review-pack export.
+- Support documentation route: `SUPPORT.md` now separates questions, bugs, feature requests, and security issues; it also lists information to share, information not to share, and the first recovery checks. `diagnostics.md` now records what to capture when diagnostics or review-pack export is slow, cancelled, or fails to recover.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 4 tests.
+- ADR impact: no ADR required. This keeps the existing support/diagnostics policy and makes current UI behavior conform to it; it does not introduce automated log transmission or a new support integration.
+- Remaining gap: save/API failure, diagnostics delay, and review-pack export delay/cancel are now covered. Broader worker/API delay states and automated support bundle generation remain future follow-up candidates; automated support bundle generation still requires ADR if product policy changes.
 
 ---
 

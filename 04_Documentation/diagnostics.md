@@ -73,12 +73,14 @@ curl -fsS http://127.0.0.1:8000/healthz
 | `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
-| export が失敗 | 対象ドキュメントの schema、ブラウザ console |
+| 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |
 | worker が落ちる | 入力データ、worker console、該当 worker の単体テスト |
 
 ## worker 関連の確認
 
 worker 由来の問題が疑われる場合は、まず入力データの大きさ、schema、review 状態を確認します。
+
+診断やレビューパックの書き出しが長く続く場合は、処理名、進捗表示、キャンセルできたか、キャンセル後の画面メッセージを記録します。キャンセルで復帰できる場合は、まず入力データの大きさや対象範囲を小さくして再試行してください。キャンセルしても画面が復帰しない場合は、worker error として扱います。
 
 ```bash
 cd 03_Implement/frontend
@@ -122,6 +124,52 @@ API status:
 添付できるログ:
 秘密情報の除去確認: 済 / 未
 ```
+
+
+## 障害分類と一次切り分け
+
+5分以内の一次切り分けは、次の分類コードで記録します。
+
+| 分類コード | 判断条件 | 最初の確認コマンド/操作 |
+| --- | --- | --- |
+| WEB-ENTRY | 画面表示異常が主症状 | ブラウザ Console / `docker compose logs web --tail=100` |
+| API-UNAVAILABLE | API応答失敗、502/503 | `curl -fsS http://localhost:8080/api/healthz` / `docker compose logs api --tail=200` |
+| SAVE-FAILURE | 保存失敗、再読み込み不一致 | Network status、`docker compose logs db --tail=100` |
+| IMPORT-VALIDATION | import時のschema/検証失敗 | importエラーダイアログ、schemaVersion、validation内容 |
+| SHARE-SAFEMODE | share/export 前警告、マスク警告 | 共有と再現パネルで SafeMode / visibility 確認 |
+
+## 復旧責務の分離
+
+- First Responder: 分類、再現手順、非機微ログの採取までを担当。
+- System Owner: 外部共有可否と復旧優先度を承認。
+- Platform Operator: 再起動/設定反映/ロールバックの実行を担当。
+
+停止条件（Stopper）:
+
+- 役割衝突（承認者と実行者が同一で分離できない）。
+- 承認責務が不明（誰が SafeMode 緩和や外部共有可否を決めるか未定）。
+- secrets 除去前の生ログ共有を要求される。
+
+上記が1つでも該当する場合、復旧作業を先に進めず `operations.md` のエスカレーション導線へ切り替えます。
+
+
+### Plan → Execute → Verify（診断フロー）
+
+診断は「原因推定」より先に、次の3段階を固定します。
+
+- **Plan**: 分類コードを1つ選び、成功判定（AC）を「再現条件が言語化できる」「安全に共有できる」「復旧判断へ渡せる」の3点で置く。
+- **Execute**: 5分以内の一次切り分けを実行し、コマンド結果・画面症状・SafeMode状態を記録する。
+- **Verify**: `operations.md` 側の復旧担当へ引き渡せる粒度（症状、再現率、非機微ログ、未解決点）になっているか確認する。
+
+完了条件が足りず検証完了を判定できない場合は、調査を「完了」とせず、[operations.md](operations.md) の暫定対応メモとして不足点を記録して引き継ぎます。
+
+## 手順再現性チェック
+
+調査完了時に次の3点を必ず残します。
+
+1. 同じ症状を再現できる最小手順（3〜7ステップ）。
+2. 実行コマンドと結果（成功/失敗）。
+3. 再試行時に必要な前提（環境変数、SafeMode状態、対象ドキュメント）。
 
 ## 復旧の基本
 

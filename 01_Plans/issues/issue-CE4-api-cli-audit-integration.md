@@ -1425,3 +1425,45 @@
 ### Phase 5 Proceed
 - AC/DoDが未成立、または依存解除条件未達の場合は Proceed せず Hold を維持する。
 - 共有ファイル更新が必要な場合は本Issueからの「更新要求メモ」作成に留め、直接編集しない。
+
+
+## Phase 6: Proceed（実装前提チェックリスト）
+
+### P0: Contract freeze gate（必須）
+- [ ] `mode=proposal-only` が API/CLI 契約の必須入力として固定されている。
+- [ ] 同値判定は `equivalenceKey AND bundleHash` のAND条件のみを成功として扱う。
+- [ ] 監査4イベント `query -> bundle -> proposal -> apply` の欠損/逆順を fail-closed で拒否する。
+
+### P1: Responsibility boundary gate（必須）
+- [ ] API責務: 検証要求を受理し、分類語彙（`classification`）を返す。
+- [ ] CLI責務: APIと同一語彙で入力を構成し、`classification != ok` を必ず非0終了に変換する。
+- [ ] 監査責務: 共通必須キー検証、順序検証、同一 `equivalenceKey` 連結の3点を実施する。
+
+### P2: Mock-first gate（依存切断）
+- [ ] `sourceBundleHash=mock:<64hex>` を許容し、real入力と同一の判定規律を適用する。
+- [ ] CE1未整備時の `equivalenceKey` モック発番を許容するが、API/CLI/Audit で同値を強制する。
+
+### P3: Verify/Stop gate（運用）
+- [ ] Verifyの自己修復は最大3回。4回目が必要な場合は `StoppedForClarification` で停止する。
+- [ ] 未確定点（HTTP詳細/CLI数値コード/監査配送方式）を契約確定へ昇格しない。
+
+## Stream B proposal-only gate refresh（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- CE4は API/CLI/Audit の contract-only 統合Issue（Status=Draft, Priority=P2）として再確認。
+- 依存は CE0（語彙固定）/ CE1（Context I/F固定）への read-only 参照に限定。
+
+### Phase 2: CE1固定点への接続（proposal-only）
+- CE4は `ContextQueryV1/ContextBundleV1` を監査整合の前提入力として扱うが、実装配線は確定しない。
+- `mock:<64hex>` 経路は real と同一 fail-closed 規律を適用し、依存切断を維持。
+
+### Phase 3: Plan→Execute→Verify
+- Plan: I/F固定（入出力フィールド・判定語彙・失敗分類）と、未固定項目（HTTP詳細/CLI数値コード/配送方式）の境界を維持。
+- Execute: proposal-only 文書更新のみ。
+- Verify:
+  - 依存循環なし（CE4はCE1契約を参照し、CE1へ実装要求を逆流させない）。
+  - Draft→Open条件は G-01〜G-05 の充足で測定可能。
+  - self-correction 上限は3回。
+
+### Phase 4: Stopper
+- CE1契約が曖昧化した場合、またはCE4から他ストリーム実装領域編集が必要になった場合は停止・照会とする。

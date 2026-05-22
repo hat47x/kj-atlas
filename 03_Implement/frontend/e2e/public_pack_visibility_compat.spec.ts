@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { SHARE_REPRODUCE_BUTTON, visibilitySelect } from "./helpers/i18n";
 
 test("loads legacy public pack without visibility and legacy view metadata without visibility", async ({ page }) => {
   const now = new Date().toISOString();
@@ -116,9 +117,9 @@ test("shows visibility controls with fallback view visibility and pack visibilit
   await page.goto("/?pack=org-pack");
   await expect(page.getByText("visible card")).toBeVisible();
 
-  await page.getByRole("button", { name: /共有と再現|Share & Reproduce/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
-  await expect(page.getByText("View visibility", { exact: true })).toBeVisible();
-  await expect(page.getByText("Fallback: when view visibility is missing, Restricted is applied.")).toBeVisible();
-  await expect(page.locator('select').first()).toHaveValue("Restricted");
+  await expect(page.getByText(/View visibility|view の公開範囲/).first()).toBeVisible();
+  await expect(page.getByText(/Fallback: when view visibility is missing, Restricted is applied\.|view の公開範囲が未指定の場合は、制限付きとして扱います。/)).toBeVisible();
+  await expect(visibilitySelect(page, "view")).toHaveValue("Restricted");
 });

@@ -11,6 +11,52 @@
 - Related ADR/Spec: `ADR-0026`, `ADR-0027`, `ADR-0028`
 - Expected verification level: `docs-check`
 
+## Stream A Phase 1 Metadata Snapshot（2026-05-18）
+
+| Issue | Status | Priority | Depends | Blockers | Delta vs prior run |
+|---|---|---|---|---|---|
+| HIL-RS-01 parent plan | In Progress | P1 | HIL-RS-01-A1, HIL-RS-02-A1 | `pendingDecisionQueueCount>0` | none |
+| HIL-RS-01-A1 minimum I/F | In Progress | P1 | none | human approval pending | none |
+| HIL-RS-02-A1 governance hardening | In Progress | P1 | HIL-RS-01-A1 freeze values | GOV exception held | none |
+| CE0 contract freeze | Open | P1 | HIL-RS-01-A1 freeze vocabulary (read-only) | approval record pending | none |
+| CE0 core-graph repositioning | Open | P1 | CE0 contract freeze | held items unresolved | none |
+
+## Stream A Phase 2 ADR Clarification（Context / Decision / Consequences）
+
+### Context
+- Stream A の最短クリティカルパスは **A1契約凍結 → RS-02-A1統治硬化 → CE0 read-only handoff固定**。
+- 承認待ち項目（Pending/held）が残る状態での下流着手は、`Pending bypass` と同義になり統治契約違反になる。
+
+### Decision
+- 依存グラフを以下に固定する（再定義禁止）。
+  - `HIL-RS-01-A1` → `HIL-RS-02-A1` → `HIL-RS-01(parent Proceed Go)`
+  - `HIL-RS-01-A1` → `CE0-contract-freeze` → `CE0-core-graph-repositioning`
+- 要承認事項を明示し、承認前は `Proceed=Hold` を維持する。
+  - `Approval Record`
+  - `HIL-RS-02-GOV-EXCEPTION-01`
+
+### Consequences
+- Open化条件（Draft→Open）は「固定キーdrift=0 かつ 要承認事項がissue本文に在庫化済み」である。
+- Go条件（Open→In Progress/Done）は `a1Status=="Done" && pendingDecisionQueueCount==0` を満たすまで禁止。
+- 非互換変更要求は将来版隔離（`future-version backlog`）とし、現行凍結契約には混入させない。
+
+## Stream A Phase 3 Contract Freeze Draft（Minimum I/F + Mock boundary）
+- Minimum Input: `freezeContractId`, `contractIds`, `schemaVersion`, `overridePolicy`, `safeModeDefault`, `safeModeBoundary`, `pendingDecisionQueueCount`, `approvalRecord`.
+- Minimum Output: `decision(Proceed|Hold|Stop)`, `executeAllowed`, `reasonCodes`, `requiredHumanActions`, `auditEventRef`.
+- Error surface: `NOGO_CONTRACT_DRIFT`, `NOGO_SAFE_MODE_REGRESSION`, `NOGO_OVERRIDE_POLICY_REGRESSION`, `HOLD_PENDING_QUEUE`.
+- Audit event required fields: `timestamp`, `actor`, `phase`, `inputSnapshot`, `gateResult`, `reason`, `nextAction`.
+- Mock boundary（UI先行可能範囲）: `decision/executeAllowed/reasonCodes` まで。`Pending -> Approved/Rejected` の実遷移確定は不可。
+- Non-compatible change policy: 新規遷移・新規固定キー・承認主体変更は `future-version` に隔離。
+
+## Stream A Phase 4-6 Execute / Verify / Proceed Rule（2026-05-18 fixed）
+- Execute: AC/DoD と相互リンク整備のみ（docs-only, contract-only）。
+- Verify command set: `python3 01_Plans/issues/validate_active_issue_memos.py --root 01_Plans/issues` / `git diff --check`.
+- Self-correction cap: 最大3回。4回目相当は `Stop`。
+- Proceed output partition:
+  - **完了**: fixedKeyDrift=0 かつ pendingDecisionQueueCount=0 を満たしたissue
+  - **要承認**: Pending/held が残るissue
+  - **保留**: 依存解決待ちでOpen化条件未達のissue
+
 ## Canonical Gate Equation（A1 unlock single predicate）
 - `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)`
 - `Proceed=Go` は `A2A3_UNLOCK && fixedKeyDrift==0 && safeModeRetreat==false` のときのみ。
@@ -446,3 +492,74 @@ A1最小I/F契約（Critique / ReDiff / Attribution / Error）を、責務境界
 ### Proceed state
 - 判定: **Hold/Needs-decision 継続**。
 - 理由: Approval Record（`approved_by`, `approved_at`, `evidence`）未確定のため Go 条件未達。
+
+
+## Stream B proceed note（2026-05-19 / A1 interface freeze as downstream contract anchor）
+
+### Contract anchor for downstream
+- A1 固定契約は下流の唯一アンカーとして以下を維持する。
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `contractIds=A1-CRITIQUE-IF|A1-REDIFF-IF|A1-ATTR-IF|A1-ERROR-IF`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+
+### Mock-first cut line
+- 下流がモックで利用できる境界は `executeAllowed/decision/reasonCodes/noGoReturnPath` まで。
+- `Pending -> Approved/Rejected` の確定遷移は人間承認のみで、AI/自動化は proposal-only。
+
+### Backward compatibility rule
+- 既存固定キーの変更は non-backward-compatible とみなし、A1 本線では受け付けず `future-version backlog` へ隔離する。
+
+## Stream A Contract Freeze Checkpoint（2026-05-19, Plan → Execute → Verify → Proceed）
+
+### Phase 1: Contract Baseline Read
+- 現行AC/DoD/依存/非目標を再読し、対象3 issue 間で契約語彙を照合した。
+- Baseline差分（事前想定との差分）:
+  - `Approval Record` は依然 `Pending`、`HIL-RS-02-GOV-EXCEPTION-01` は `held` のままで、Go条件未達。
+  - `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` は3 issueで一致し、driftなし。
+  - `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary` は固定値一致（再定義なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 承認未了状態での下流着手は `Pending bypass` となり契約違反。
+- Decision: HIL-RS最小I/Fは read-only contract とし、承認前は仕様拡張・実装遷移を禁止。
+- Consequences: `Proceed=Hold` を維持し、契約変更要求は A1 SSOT へ差し戻す。
+
+### Phase 3: Issue Contract Freeze
+- AC/DoD/Stop条件の同期ポリシーを固定:
+  - AC: fixed key drift=0 / Pending bypass禁止 / A2-A3非干渉。
+  - DoD: `safeModeDefault=ON`・`safeModeBoundary=SAFE_MODE_STRICT_ON`・`overridePolicy=human_dual_control_only` の後退禁止。
+  - Stop: fixed key drift、SafeMode後退、未定義競合、self-correction>3。
+- 明示制約: **承認前は read-only contract**（編集は契約文面整合のみ、実装系変更禁止）。
+
+### Phase 4: Verify
+- 用語整合チェック: `Security Officer` / `System Owner` / `Platform Operator` の役割語彙を維持。
+- 未解決依存チェック: `Approval Record=Pending` のため `Proceed=Hold` が唯一許可判定。
+- 矛盾チェック: fixed identifiers と gate equation に矛盾なし。
+
+### Proceed
+- 判定: **Hold/Needs-decision（承認待ち継続）**。
+- 次アクション: 承認記録 (`approved_by`, `approved_at`, `evidence`) 充足後にのみ Go 再判定。
+
+## Stream A serial run record（2026-05-20 / A1 contract gate）
+
+### Phase 1: Read & Scope Lock
+- A1最小I/F契約の固定語彙・固定値・禁止遷移を再読した。
+- Scope lock: 本ファイル更新のみ、実装変更なし（docs-only）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: A1を再定義可能にすると A2/A3の契約分岐が再発する。
+- Decision: `freezeContractId` / `schemaVersion` / `overridePolicy` / `safeModeBoundary` を read-only 維持。
+- Consequences: 承認待ち中は `decision=Hold`, `executeAllowed=false` を継続する。
+
+### Phase 3: Plan → Execute → Verify
+- Plan: AC/DoD不足の補完対象有無を確認。
+- Execute: AC/DoDは既存で充足、追記は実行記録のみに限定。
+- Verify（self-correction `0/3`）:
+  - fixed-key drift: `0`
+  - `Pending -> Execute` 禁止: pass
+  - NoGo return path固定: pass
+
+### Phase 4: Proceed / Stopper
+- 判定: **Hold**（承認待ち）。
+- Stopper: `Approval Record` 未充足。

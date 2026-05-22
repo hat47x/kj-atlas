@@ -28,6 +28,19 @@
 
 同じ人が複数の責務を担う場合でも、記録上は「誰が判断し、誰が実行したか」を分けて残します。
 
+
+## Runtime profile とセキュリティ判断
+
+設定変更の前に、どの profile で運用するかを確定します。
+profile の詳細は、GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
+
+- `local-dev`: 外部共有を避ける初期検証向け（`KJ_ATLAS_LLM_PROVIDER=none`）。
+- `evaluation`: Compose評価向け。外部連携は必要時のみ限定有効化。
+- `enterprise-production`: strict 運用を前提に、`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を標準とする。
+- `enterprise-production`: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` を `read_only` または `deny` で事前合意し、運用中に暗黙変更しない。
+
+プロファイル未確定のまま `KJ_ATLAS_ALLOW_JIT_PROVISIONING`、`KJ_ATLAS_AUDIT_*`、`KJ_ATLAS_ACCESS_CONTROL_*` を変更しないでください。
+
 ## 設定変更前の確認
 
 設定を変える前に、次の4点を短く説明できる状態にします。
@@ -108,6 +121,16 @@ API key を有効にしている場合:
 ```bash
 curl -H "X-API-Key: <key>" http://localhost:8080/api/docs/<doc_id>
 ```
+
+## 役割を記録するときの考え方
+
+組織内の正式な役職名に関係なく、記録では次の責務を分けます。
+
+- 安全性を判断する責務。
+- 業務上の必要性を判断する責務。
+- 設定を実行し、結果を記録する責務。
+
+同じ人が複数の責務を担う場合でも、判断と実行が混ざらないように記録します。組織でより厳密な承認期限や承認人数を定める場合は、各組織の規程を優先してください。
 
 ## 関連文書
 

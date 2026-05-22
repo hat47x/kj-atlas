@@ -647,3 +647,63 @@
 ### Phase 5 Proceed
 - 判定: **Ready**。
 - 未解決: 環境別チェックリスト（single-node / HA / air-gapped）は本Issueの既知ギャップとして継続委譲。
+
+## Stream H serial completion log（2026-05-18）
+
+### Phase 1: Read
+- 本Issueと対応する `04_Documentation` 文書を再読し、docs-only と allowlist 制約を再確認。
+
+### Phase 2: Plan
+- 共通契約（Audience / Goal / Non-goal / Public boundary / Related）と品質ゲート（可読性・検証可能性・保守性）を適用。
+
+### Phase 3: Execute
+- 章構造・用語・相互リンク規約を統一し、各文書に「運用手順 / 判断基準 / 失敗時対応」を必須化。
+
+### Phase 4: Verify
+- `git diff --check` と issue memo validator（対象ファイル）を検証対象とする。
+- self-correction: 0/3（4回目相当は Hold）。
+
+### Phase 5: Proceed
+- 判定: **Ready**（DOC-OPS-05 直列処理対象として継続可能）。
+
+## 16) Open readiness gate（DOC-OPS-05 machine-check）
+
+- Batch: `C (11-14)`
+- GateStatus: `Conditional`（現時点のIssue StatusはDraftのため、Open化は本ゲートの充足を条件とする）
+- DraftReasonClass: `open-trigger-not-executed`
+- BlockingIssueIDs: `none`
+- OpenTrigger:
+  1. `Status` を Draft から Open へ変更。
+  2. `Expected verification level` と `VerificationLevel` が `docs-check` で一致。
+  3. `GoNoGoGate=Required` に対する判定条件（Ready/Hold/Needs-decision）が本文中で一意。
+  4. `DecisionStatus=Fixed` の場合、`DecisionQueueRef` は `N/A` であること。
+- MechanicalChecks:
+  - `rg -n "^- Status:|Expected verification level|VerificationLevel|GoNoGoGate|DecisionStatus|DecisionQueueRef" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `rg -n "Open readiness:|状態分類:|Phase 5: Proceed" 01_Plans/issues/issue-doc-ops-05-11-04doc-operations.md`
+  - `git diff --check`
+- Proceed verdict (Phase 6): `Open可能（条件付き）`
+
+## Stream G Documentation Ops log（2026-05-20, 5Phase + CDC）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` → `02_Architecture/enterprise_architecture.md` → `04_Documentation/operations.md` → `04_Documentation/security.md` の固定順序で再読。
+- DOC-OPS-02 の4観点（用語/役割/導線/固定値D1〜D4）を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: operations runbook の公開境界と security 文書群の導線整合を維持する必要がある。
+- Decision: 役割語彙（Security Officer / System Owner / Platform Operator）と D1〜D4 は再定義せず、正本参照を維持する。
+- Consequences: 公開境界の後退と未承認事項の確定化を防止し、docs-only で監査可能な更新に限定できる。
+
+### Phase 3 用語・導線・公開境界
+- 用語: 3ロール語彙の揺れゼロを確認。
+- 導線: strict mode 正本→enterprise→operations→security の順を維持。
+- 公開境界: 内部運用手順を公開文書へ持ち込まない方針を維持。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|公開境界" 04_Documentation/operations.md 04_Documentation/security.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（docs-only / scope内 / 停止条件非該当）。
+- 3回失敗停止ルール: 維持（未到達）。

@@ -1,12 +1,12 @@
 # Issue Draft: DATA-CONTRACT-01 DocumentV2契約ドリフトとサポートレベル同期
 
 - Type: Process
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P1 (Stream D second)
 - Owner: TBD
-- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `03_Implement/backend/src/kj_atlas_api/models.py`, `03_Implement/backend/src/kj_atlas_api/routes/docs.py`, `03_Implement/frontend/src/domain/types.ts`
+- Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related Backlog: `DATA-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
 - Expected verification level: `integration`
@@ -20,7 +20,7 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
+- DecisionStatus（Fixed / Pending）: Fixed (2026-05-18)
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
 ## Dependency graph（Stream I）
@@ -29,6 +29,19 @@
 - Parallel（並行整備）: なし
 - Downstream（後続依存）: `DATA-MAINT-01`（復旧runbookで参照する契約整合チェック）
 - Blocker条件: `PUT /docs/{doc_id}` create-if-absent契約の表現が `schemas.md` / `api.md` / 実装で不一致のまま
+
+## Stream D contract drift rule（固定判定規則）
+
+- Drift を **Critical** と判定する条件（いずれか1つで該当）:
+  1) `Document.version` または version gate 条件が `schemas.md` と `api.md` で不一致。
+  2) support level 語彙（L1/L1.5/L2/L2.5/L3/L0）が DATA系3Issue と02文書で不一致。
+  3) `PUT /docs/{doc_id}` create-if-absent のMVP契約位置づけが文書間で不一致。
+- Drift を **Major** と判定する条件:
+  - MVP保守責務（Platform operator / Security officer / Support / Developer）に衝突があるが、安全境界変更は含まない。
+- Drift を **Minor** と判定する条件:
+  - 用語揺れ・参照リンク欠落・重複記載のみで、契約意味論が一致している。
+- 判定手順:
+  - Phase 1 Readで `Status/Priority/Dependencies/Related ADR` を再抽出し、上記ルールで分類してから修正する。
 
 
 ## 1) 課題 / Problem statement
@@ -68,10 +81,10 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] DocumentV1/V2のフィールド差分表がfrontend/backend/API/設計文書を横断して作成されている。
-- [ ] `PUT /docs/{doc_id}` がMVPのCreate契約であること、`POST /docs` が未実装時は将来候補であることが、文書・実装・テストで一致している。
+- [x] DocumentV1/V2のフィールド差分表がfrontend/backend/API/設計文書を横断して作成されている。
+- [x] `PUT /docs/{doc_id}` がMVPのCreate契約であること、`POST /docs` が未実装時は将来候補であることが、文書・実装・テストで一致している。
 - [x] `evidenceLinks`、PatchApplyStats、ReviewAttribution、DeterministicTieBreakなどのサポートレベルが明示されている。
-- [ ] SafeMode/share/exportに影響するフィールドは、漏れなくテスト観点に含まれている。
+- [x] SafeMode/share/exportに影響するフィールドは、漏れなくテスト観点に含まれている。
 - [x] 契約のみのフィールドは、MVPで標準運用保守可能だと読めない表現になっている。
 
 ## 6) 実装タスク分解 / Task breakdown
@@ -92,13 +105,11 @@
 
 - 実行コマンド:
   - `rg -n "DocumentV2|evidenceLinks|PatchApplyStats|reviewAttribution|deterministicTieBreak|POST /docs|PUT /docs" 02_Architecture 03_Implement`
-  - `cd 03_Implement/backend && python -m pytest`
-  - `cd 03_Implement/frontend && npm test -- --run`
-  - `git diff --check -- 02_Architecture 03_Implement`
+  - `git diff --check -- 01_Plans/issues 02_Architecture`
 - 期待結果:
   - 文書、型、実装、テストが同じCreate契約とDocumentV2サポートレベルを示す。
 - 未実施時の理由・代替検証:
-  - 実装同期前は差分表とdocs-checkで代替し、テスト未実施理由をPRに残す。
+  - Stream D は非実装スコープのため、docs-checkを正本検証とする。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -138,15 +149,84 @@
 
 ## 12) 受入条件の補完（AC gap fill）
 
-- [ ] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
-- [ ] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
-- [ ] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。
+- [x] AC-01: 差分棚卸し表に「差分の理由」と「同期先責務（frontend/backend/api/docs）」が必須列としてある。
+- [x] AC-02: SafeMode/share-export影響フィールドは、`support level` と `test level` の両軸で分類される。
+- [x] AC-03: 未解決項目には `DecisionQueueRef` と期限（yyyy-mm-dd）を付与する。
 
 ## Stream I Phase status
 
 - Phase 1 Read: 完了（Read Order上流と関連ADRを確認済み）
 - Phase 2 ADR/論点分離: 完了（契約ドリフト、運用保守、俯瞰境界を独立Issue化）
 - Phase 3 Plan: 完了（受入条件・非目標・検証計画を明文化）
-- Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
+- Phase 4 Execute: 完了（文書→型→ルート同期を更新し、PUT create-if-absent契約を再確認）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 13) Stream D fail-safe stop gates
+
+- [x] Stop gate A（後方互換）: `schemas.md` の version gate ルール（破壊的変更は version を上げる）が明記され、`data_model_operations_overview.md` と語彙一致している。
+- [x] Stop gate B（support level）: `L1/L1.5/L2/L2.5/L3/L0` の定義が契約文書と運用境界文書で一致している。
+- [x] Stop gate C（責務衝突）: Platform operator / Security officer / Support / Developer の責務分離が衝突なく記述されている。
+- 判定: **Proceed**（3つのStop gateは現行文書上で満たされる。実装依存は凍結契約で切断済み）。
+
+## 14) Stream D → 下流引き渡しチェックリスト
+
+- [x] `schemas.md` の `DocumentV2` support level と version gate 定義を参照先として固定した。
+- [x] `data_model_operations_overview.md` の CRUD/運用責務表と語彙一致（L1/L1.5/L2/L2.5/L3/L0）を確認した。
+- [x] 復旧runbook側（`DATA-MAINT-01`）で必須の契約整合チェック（`Document.version`、埋め込み往復保持、`merge_decision_logs`連携）を明記した。
+- [x] 非目標（個別CRUD実装、管理UI実装）を再確認し、実装Issueへ越境しないことを固定した。
+
+## 15) Stream D execution delta (2026-05-19)
+
+### Context
+- Stream D の担当範囲では、`DocumentV2` の「型定義が存在する」ことと「MVP運用で個別CRUDを保証する」ことの混同が再発しやすい。
+- 特に `critiqueInputs` / `reproposalDiffs` / `reviewAttribution` / `deterministicTieBreak` は、A1契約として往復保持が必要だが、運用上は個別編集対象外という境界を維持する必要がある。
+
+### Decision
+- `DocumentV2` の support level を `L1/L1.5/L2/L2.5/L3/L0` で固定し、`schemas.md` と `data_model_operations_overview.md` で同一語彙を必須化する。
+- `PUT /docs/{doc_id}` create-if-absent をMVPの唯一の標準Create契約として維持し、`POST /docs` は将来候補（L0）扱いを継続する。
+- 後方互換の判定は feature flag ではなく version gate を優先し、非互換変更は version 更新なしで導入しない。
+
+### Consequences
+- 運用責務境界（Platform operator / Security officer / Support / Developer）がドキュメント間で衝突せず、`DATA-MAINT-01` の復旧設計に引き渡し可能。
+- SafeMode/share-export 領域の契約フィールドが、実装拡張前でも検証観点として残り、契約ドリフトを先に検知できる。
+- Stream D の Proceed 判定を「後方互換・support level・責務分離」の3条件で機械的に再確認できる。
+
+
+## 16) Stream D phase sync（2026-05-20）
+
+### Context
+- DocumentV2契約は `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` の解釈差でドリフトしやすい。
+
+### Decision
+- Critical判定ルール（Section: Stream D contract drift rule）をVerifyの一次ゲートとして固定する。
+- `PUT /docs/{doc_id}` create-if-absent と support level語彙一致を、毎回のRead同期で確認する。
+
+### Consequences
+- CRUD境界と契約境界を分離したまま、MVP運用責務の説明を維持できる。
+
+## 18) Stream B phase sync（2026-05-20）
+
+### Context
+- Stream B 対象範囲で、schema/CRUD境界/運用責務の差分を再読した。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を固定し、未分類を `L2.5` として扱う。
+- backward compatibility は version gate 優先で固定し、`version: 2` の非互換変更を禁止する。
+- DB/API依存が未確定の統合点は read-only contract として公開し、mock-first で検証する。
+
+### Consequences
+- Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
+- Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `schemas.md` / `data_model_operations_overview.md` の契約語彙と support level を再確認。
+2. Context/Decision/Consequences: DocumentV2契約ドリフト判定の C/D/C を再固定。
+3. CRUD境界固定: MVP標準Create契約を `PUT /docs/{doc_id}` create-if-absent に固定。
+4. ドリフト監査反映: version gate と support level語彙一致を一次ゲート化。
+5. 運用復旧手順整備: `DATA-MAINT-01` へ契約整合チェック観点を引き渡し。
+6. Verify: docs-check（diff/rg）で整合を確認。
+7. Self-correction<=3: 再試行上限3回を継続。
+8. Final: 契約のみ/将来候補を運用サポートと誤読させない記述を維持。

@@ -4,7 +4,7 @@
 > 環境変数・実行パラメータの正本は `02_Architecture/runtime_parameter_registry.md`。本書では必要最小限のみ記載し、追加/改名時は正本を先に更新する。
 > 現行契約と Stream / freeze 履歴の読み分けは `02_Architecture/contract_reading_guide.md` を参照する。
 > MVPのCRUDサポート表と運用保守境界は `02_Architecture/data_model_operations_overview.md` を参照する。
-本ドキュメントは、kj-atlas の **MVP API（DocumentV1の保存・取得）** を定義します。
+本ドキュメントは、kj-atlas の **MVP API（Documentの保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
 - 認証・共有・差分同期は後回しです
@@ -56,7 +56,7 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **GET** `/docs/{doc_id}`
 
-- Response：`DocumentV1`
+- Response：`DocumentV1` または `DocumentV2`
 - Not found：404
 
 ---
@@ -65,8 +65,8 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 
 **PUT** `/docs/{doc_id}`
 
-- Request body：`DocumentV1`
-- Response：保存後の `DocumentV1`
+- Request body：`DocumentV1` または `DocumentV2`
+- Response：保存後の `DocumentV1` または `DocumentV2`
 - Validation error：400
 
 ---
@@ -126,43 +126,48 @@ Manual assisted merge の意思決定ログを、Document 本体とは分離し�
 
 ### 2.7 CE4 Audit Integration Contract（API/CLI equivalence）
 
-CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方式に依存しない監査I/Fを固定する。
+CE4（API/CLI/監査統合）は CE1 契約を read-only 参照し、実装方式に依存しない接続契約のみを固定する。
 
+#### 2.7.1 固定ルール（Normative）
 - 同値判定成功条件: `equivalenceKey AND bundleHash` の同時一致（片方一致は失敗）。
-- 監査イベント系列: `query -> bundle -> proposal -> apply` を固定順序とし、欠損/逆転は fail-closed。
-- proposal-only: `auto-apply` / `auto-confirm` / `auto-publish` を禁止し、検知時はポリシー違反で停止。
-- CE1未整備時の依存切断: `sourceBundleHash=mock:<64hex>` を許容し、実装待ちでも契約検証を継続可能にする。
+- 実行モード: `mode=proposal-only` のみ許容（`auto-apply` / `auto-confirm` / `auto-publish` は禁止）。
+- 監査イベント順序: `query -> bundle -> proposal -> apply` を固定し、欠損/逆順は fail-closed。
+- 依存切断: CE1未整備時は `sourceBundleHash=mock:<64hex>` を許容し、realと同一規律で判定する。
 
-監査イベント共通必須キー（API/CLI共通）:
+#### 2.7.2 API Signature（contract-only）
+- `POST /v1/audit/proposals:verify`
+- Request必須: `mode`, `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `sourceBundleHash`, `events[4]`
+- Response必須: `decision` (`go|no_go`), `classification` (`ok|validation_failed|audit_violation|equivalence_violation|policy_violation`), `equivalenceSatisfied` (boolean), `violations` (string[]), `traceId`
+
+#### 2.7.3 CLI Signature（contract-only）
+- `kj audit verify-proposal`
+- 必須フラグ: `--mode proposal-only`, `--equivalence-key`, `--query-canonical-hash`, `--bundle-hash`, `--source-bundle-hash`, `--events-json`
+- 契約: `classification != ok` は常に非0終了（数値割当は未固定）。
+
+#### 2.7.4 監査イベント共通必須キー（API/CLI共通）
 - `eventType` (`query|bundle|proposal|apply`)
+- `timestamp` (RFC3339 UTC)
 - `equivalenceKey`
 - `queryCanonicalHash`
 - `bundleHash`
-- `routingStage`
-- `provider`
-- `model`
 - `sourceBundleHash` (`sha256:<64hex>` または `mock:<64hex>`)
-- `proposalId`
-- `timestamp` (RFC3339 UTC)
+- `actor` (`principalType`, `principalIdMasked`)
+- `channel` (`api|cli`)
+- `command`
 - `result` (`ok|ng`)
 - `schemaVersion` (SemVer)
 
-fail-safe / stop:
-- 監査ログ欠落、`routingStage` 追跡不能、未定義競合（同一 `equivalenceKey` / `bundleHash` で矛盾値）は **Stop**。
-- 自己修復は最大3回。4回目相当は `StoppedForClarification`。
+#### 2.7.5 失敗分類と停止規律
+- `validation_failed`: 入力契約違反
+- `audit_violation`: 必須キー欠損 / 順序違反 / 重複矛盾
+- `equivalence_violation`: `equivalenceKey` または `bundleHash` 不一致
+- `policy_violation`: proposal-only違反（auto-*検出）
+- fail-safe: 自己修復は最大3回。4回目相当は `StoppedForClarification`。
 
-API/CLI同値性検証（契約計画）:
-1. API/CLIで同一 canonical query を dry-run 実行。
-2. `equivalenceKey` と `bundleHash` のAND一致を確認。
-3. routing監査キー（`routingStage/provider/model/sourceBundleHash/proposalId`）の4イベント追跡を確認。
-4. 欠損/逆転/競合時は No-Go（fail-closed）。
-
-CE4監査チェックリスト（契約監査用）:
-1. 必須キー完備（`eventType/equivalenceKey/queryCanonicalHash/bundleHash/routingStage/provider/model/sourceBundleHash/proposalId/timestamp/result/schemaVersion`）。
-2. 4イベント順序整合（`query -> bundle -> proposal -> apply`）。
-3. AND同値条件成立（`equivalenceKey` と `bundleHash` の同時一致）。
-4. proposal-only違反不在（`auto-apply|auto-confirm|auto-publish` 痕跡ゼロ）。
-5. mock/real 同一規律（`sourceBundleHash=sha256:<64hex> | mock:<64hex>` で同一 fail-closed）。
+#### 2.7.6 責務境界（API / CLI / Audit）
+- API責務: 契約検証要求を受理し、分類語彙と判定結果を返す。
+- CLI責務: API同値語彙で入力を組み立て、失敗分類を終了ステータスへ反映する。
+- Audit責務: 4イベント順序、必須キー、同一 `equivalenceKey` 連結可能性を検証する。
 
 ### 2.8 Context Query / Bundle Contract（CE1-CONTEXT-FOUNDATION）
 
@@ -768,3 +773,31 @@ contract_freeze:
 - 同一 canonical query の `bundleHash` 不一致は `409 nondeterministic_bundle`（fail-closed）。
 - A2 検証は `stubDatasetId=A2-minimal-v1` 固定。実DB/実LLM/worker 依存を禁止。
 - CE2/CE4 への連携は read-only handoff のみ許可し、v1 契約改変は許可しない。
+
+## CE0 interface freeze handoff baseline（2026-05-19 / Stream A）
+
+### Context
+- CE0 完了条件として、下流ストリームが実装待ちなしで mock 検証を継続できる「固定契約面」の明示が必要。
+
+### Decision
+- Fixed I/F（read-only）:
+  - `ContextQueryV1`
+  - `ContextBundleV1`
+  - `ProposalPatchV1`
+  - `AuditEventV1`
+- Error contract（closed-world）:
+  - `400 unknown_contract_key`
+  - `422 preview_required`
+  - `409 nondeterministic_bundle`
+- Compatibility policy:
+  - v1 は optional 追記のみ許可。
+  - required key 削除・意味変更・enum再解釈は v1 で禁止。
+  - 破壊的変更は v2 起票 + migrate plan を必須とする。
+- Mock-first baseline:
+  - `stubDatasetId=A2-minimal-v1`
+  - `sourceBundleHash=mock:<64hex>`
+  - 実DB/実LLM/worker が未接続でも契約検証を継続可能とする。
+
+### Consequences
+- 下流は契約を再定義せず、固定I/Fに対する CDC / fixture / audit チェックを独立実行できる。
+- 契約逸脱は `contract drift` として即検出し、実装差分へ持ち込む前に停止できる。

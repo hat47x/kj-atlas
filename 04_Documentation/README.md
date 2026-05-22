@@ -2,6 +2,14 @@
 
 この README は、利用者向け文書を保守する人のための管理入口です。一般公開や Gist で最初に見せる入口には使いません。
 
+## 入口の役割分担（固定）
+
+- 利用者入口: [public_index.md](public_index.md)
+- 管理者入口: この `04_Documentation/README.md`
+- 開発者入口: ルート [README.md](../README.md)
+
+上記3系統は混在させず、公開本文に管理情報を混入させません。
+
 公開向けの入口は [public_index.md](public_index.md) です。公開用の Gist は、利用者が kj-atlas を使うための説明だけで構成し、文書管理、作業ログ、issue、ADR、Gist 更新手順などのプロジェクト管理情報を含めません。
 
 ## 公開向けインデックス
@@ -80,7 +88,9 @@
 git status --short
 git rev-parse HEAD
 rg -n "ghp_\\w+|github_pat_\\w+|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|password\\s*=|token\\s*=" 04_Documentation
-rg -n "04_Documentation|AGENTS.md|01_Plans|02_Architecture|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ" <generated-public-gist.md>
+rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ" <generated-public-gist.md>
 ```
+
+設計仕様の詳細を説明するために GitHub 上の `02_Architecture` 文書へリンクすることは許容します。ただし、公開本文そのものは利用者の使い方と判断材料に集中させ、プロジェクト管理や作業記録を混ぜないでください。
 
 更新時も同じ手順を繰り返します。公開済み Gist を更新する場合は、前回の Gist URL を保ったまま本文を差し替えます。

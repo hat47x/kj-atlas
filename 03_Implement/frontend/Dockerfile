@@ -1,6 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Public build-time contract key (KJ_ATLAS_* only)
 ARG KJ_ATLAS_FRONTEND_API_BASE=/api
 ENV KJ_ATLAS_FRONTEND_API_BASE=${KJ_ATLAS_FRONTEND_API_BASE}
 

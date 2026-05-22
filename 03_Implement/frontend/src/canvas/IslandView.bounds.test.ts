@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { getIslandBounds, resolveIslandRepresentativeTitle } from "./IslandView";
 import type { Card, Island } from "../domain/types";
+import { setActiveLocale } from "../i18n/translate";
 
 const CARD_WIDTH = 220;
 const CARD_MIN_HEIGHT = 80;
@@ -124,6 +125,10 @@ describe("getIslandBounds", () => {
 
 
 describe("resolveIslandRepresentativeTitle", () => {
+  beforeEach(() => {
+    setActiveLocale("ja");
+  });
+
   it("prefers placard card text when present", () => {
     const island: Island = { id: "i1", cardIds: ["c1"], placardCardId: "c1", title: "Fallback" };
     const cards: Card[] = [{ id: "c1", text: " Placard title ", x: 0, y: 0 }];
@@ -139,6 +144,13 @@ describe("resolveIslandRepresentativeTitle", () => {
   });
 
   it("uses default label when both placard and title are absent", () => {
+    const island: Island = { id: "i1", cardIds: [] };
+
+    expect(resolveIslandRepresentativeTitle(island, [])).toBe("島");
+  });
+
+  it("uses localized default label for English locale", () => {
+    setActiveLocale("en");
     const island: Island = { id: "i1", cardIds: [] };
 
     expect(resolveIslandRepresentativeTitle(island, [])).toBe("Island");

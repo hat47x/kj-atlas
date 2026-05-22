@@ -374,3 +374,71 @@
 
 ### Consequences
 - 契約凍結と統治ゲートが同時にロックされ、A2/A3の強行Openを防止できる。
+
+## Stream A serial governance checkpoint（2026-05-20）
+
+### Context
+- Stream A（critical path）は HIL-RS 契約・統治計画の上流整合を維持し、A1→RS-02-A1→parent Proceed の依存順を崩さないことを最優先とする。
+- 現時点でも `Approval Record` 未充足により、`Proceed=Go` 条件は未成立である。
+
+### Decision
+- 親ADRでは契約固定値を再定義せず、以下を read-only 維持する：
+  - `freezeContractId=HIL-RS-02-A1-CONTRACT-FREEZE-v1`
+  - `schemaVersion=1.0.0`
+  - `overridePolicy=human_dual_control_only`
+  - `safeModeDefault=ON`
+  - `safeModeBoundary=SAFE_MODE_STRICT_ON`
+- Gateは既存式を継続し、`Pending` 残存時は `Hold/Needs-decision` を強制する。
+
+### Consequences
+- A1/RS-02-A1/親計画の契約語彙ドリフトを抑制し、下流の誤解放を防止できる。
+- 人間承認が揃うまで `Conditional/Needs-decision` を維持し、推測確定を行わない。
+
+## Stream A boundary declaration（2026-05-20）
+
+### Context
+- クリティカルパス継続のため、Stream A は契約凍結（A1）と統治ゲート（RS-02-A1）を先に固定し、下流レーンの実装待ちを作らない必要がある。
+
+### Decision
+- ファイル単位境界を以下で固定する（競合防止）:
+  - Stream A: `ADR-0026/0027/0028`、`issue-HIL-RS-01-*`、`issue-HIL-RS-02-A1-*`、`issue-CE0-contract-freeze.md`
+  - Stream B/C等: 上記以外（特に A2/A3 issue、実装コード、dashboard）
+- Stream A は `contract/value/governance` 記述のみ更新し、実装仕様確定・コード変更を行わない。
+
+### Consequences
+- 競合可能性は `issue-CE0-contract-freeze.md` のみ（Stream B担当と重複）であり、更新時は「契約語彙の再定義禁止・追記のみ」を厳守する。
+- A2/A3 は本ADR群の read-only contract summary を参照して mock 実装準備を継続できる。
+
+
+## Stream A serial governance pass (2026-05-20)
+
+### Phase 1: Read Gate
+- 対象ファイルを再読し、Status/AC/依存を監査した。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` を未解決として確認した。
+
+### Phase 2: ADR明文化
+- Context/Decision/Consequences を再確認し、固定契約を再定義しない方針を継続する。
+- 変更禁止契約（minimum I/F と承認ゲート）を read-only 参照として固定する。
+
+### Phase 3: Issue整合
+- AC / Validation plan / Non-goals を ADR-0026, ADR-0027 と語彙一致させた（drift=0）。
+- `Pending -> Approved | Pending -> Rejected` 以外の遷移を追加しない。
+
+### Phase 4: Governance hardening
+- SoD（二者承認と実行責務分離）を維持し、`approver_a != approver_b` 制約を継続する。
+- 停止条件（pending bypass / contract drift / safeMode後退 / 未定義競合）を固定した。
+
+### Phase 5: Verify-1
+- 用語一致（Security Officer / System Owner / Platform Operator）を確認した。
+- 固定値 D1〜D4 とゲート式（Proceed/Hold/Stop）の整合を確認した。
+- 未承認事項を確定扱いにしていないことを確認した。
+
+### Phase 6: Self-correction
+- 不一致検知なし。修正ループ実行回数: 0/3。
+
+### Phase 7: Publish-ready
+- 次ストリーム非依存で読めるよう、判定根拠・停止条件・read-only handoff を明示した。
+
+### Phase 8: Final status
+- 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
+- Stop条件適用: なし（検証失敗・未定義競合は検出せず）。

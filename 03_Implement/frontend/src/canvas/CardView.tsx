@@ -1,5 +1,5 @@
 import { memo, useRef, useState } from "react";
-import type { PointerEvent } from "react";
+import type { FocusEvent, KeyboardEvent, PointerEvent } from "react";
 
 import type { Card } from "../domain/types";
 
@@ -93,6 +93,7 @@ function CardViewComponent({
 }: CardViewProps) {
   const dragRef = useRef<CardDragState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const hasCritique = typeof card.critique === "string" && card.critique.trim().length > 0;
   const representativeCount = card.repOf?.length ?? 0;
   const compactText = card.text.trim().split(/\n+/).join(" ").slice(0, 72);
@@ -180,6 +181,23 @@ function CardViewComponent({
     clearDragState(event);
   };
 
+
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(card.id, event.shiftKey);
+    }
+  };
+
+  const handleFocus = (_event: FocusEvent<HTMLDivElement>) => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = (_event: FocusEvent<HTMLDivElement>) => {
+    setIsFocused(false);
+  };
+
   return (
     <div
       onPointerDown={handlePointerDown}
@@ -217,6 +235,13 @@ function CardViewComponent({
         cursor: isPickingEdgeTarget ? "crosshair" : isDragging ? "grabbing" : "grab",
       }}
       title={compactMode ? card.text : undefined}
+      role="option"
+      aria-selected={isSelected}
+      data-focus={isFocused ? "card" : undefined}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
       {!markerMode && representativeCount > 0 ? (
         <span

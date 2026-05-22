@@ -649,3 +649,43 @@ A2 contract test では次を機械判定する。
 - roundtrip 検証は `stubDatasetId=A2-minimal-v1` 固定で行い、同一 canonical query 3回で `queryCanonicalHash` と `bundleHash` の 3/3一致を必須とする。
 - `previewConfirmed=false` は IR 生成開始前に必ず `422 preview_required` として fail-closed する。
 - CE2/CE4 への引き渡しは read-only（`sourceBundleHash === bundleHash` 検証可能な最小鍵のみ）とし、CE1側での実装依存追加を禁止する。
+
+
+## Stream B contract lock addendum（2026-05-18 / CE1-independent）
+
+### Context
+CE2/CE4 の進行を CE1 実装完了待ちにしないため、IR境界で ContextQuery/ContextBundle 契約の不変条件を固定する。
+
+### Decision
+1. **Schema/versioning 固定**
+   - `ContextQueryV1` / `ContextBundleV1` は closed-world。
+   - v1 では未知キー拒否（`400 unknown_contract_key`）。
+   - 契約変更は v2 改訂のみ許可。
+2. **Truncation 境界固定**
+   - truncation は IR payload（`LLMRequest.inputs`）内でのみ許可。
+   - Query/Bundle canonicalization 結果（`queryCanonicalHash` / `bundleHash`）を変化させる truncation を禁止。
+3. **Fallback 固定（fail-closed）**
+   - `previewConfirmed!=true` は `422 preview_required` で即失敗。
+   - canonical query 同値で hash 不一致は `409 nondeterministic_bundle`。
+4. **Mock/contract test 固定**
+   - `stubDatasetId=A2-minimal-v1` を CE1 検証の唯一プロファイルとして固定。
+
+### Consequences
+- IR実装は CE1 契約に依存しつつも backend 実装非依存で検証可能。
+- 下流は hash 監査キーを不変前提で再利用できる。
+- 契約衝突時は実装継続せず `held` 停止が必須となる。
+
+
+## Stream B CE1 contract freeze addendum（2026-05-20 / Context-Decision-Consequences）
+
+### Context
+CE1 v1 の query/bundle 契約が揺れると、IR生成境界でCE2/CE4の監査再現性が崩れる。
+
+### Decision
+- `ContextQueryV1` / `ContextBundleV1` は closed-world v1 として維持する。
+- 固定エラー語彙を `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` の3種に限定する。
+- Verifyは `Plan -> Execute -> Verify -> Proceed` の直列順序を固定し、Verify失敗の自己修復は最大3回までとする。
+
+### Consequences
+- IR仕様は provider差分や実装進捗と独立して contract-first で検証可能。
+- 競合（契約ID衝突・語彙衝突）検知時は fail-closed で停止できる。

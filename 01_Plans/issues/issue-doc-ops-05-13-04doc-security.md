@@ -608,3 +608,84 @@
 - 引継ぎメモ: 本Issueは「本文改稿を行わず、品質ゲートと参照導線を固定」済み。
 - 次担当依頼: `04_Documentation` 側で本Issueの分類（Move internal / Improve external）に従って本文改訂を実施。
 - ゲート条件: 改訂後は `docs-check` を再実行し、Issue側の分類・用語・導線と一致確認すること。
+
+## Stream H serial completion log（2026-05-18）
+
+### Phase 1: Read
+- 本Issueと対応する `04_Documentation` 文書を再読し、docs-only と allowlist 制約を再確認。
+
+### Phase 2: Plan
+- 共通契約（Audience / Goal / Non-goal / Public boundary / Related）と品質ゲート（可読性・検証可能性・保守性）を適用。
+
+### Phase 3: Execute
+- 章構造・用語・相互リンク規約を統一し、各文書に「運用手順 / 判断基準 / 失敗時対応」を必須化。
+
+### Phase 4: Verify
+- `git diff --check` と issue memo validator（対象ファイル）を検証対象とする。
+- self-correction: 0/3（4回目相当は Hold）。
+
+### Phase 5: Proceed
+- 判定: **Ready**（DOC-OPS-05 直列処理対象として継続可能）。
+
+## 16) Open readiness gate（DOC-OPS-05 machine-check）
+
+- Batch: `C (11-14)`
+- GateStatus: `Conditional`（現時点のIssue StatusはDraftのため、Open化は本ゲートの充足を条件とする）
+- DraftReasonClass: `open-trigger-not-executed`
+- BlockingIssueIDs: `none`
+- OpenTrigger:
+  1. `Status` を Draft から Open へ変更。
+  2. `Expected verification level` と `VerificationLevel` が `docs-check` で一致。
+  3. `GoNoGoGate=Required` に対する判定条件（Ready/Hold/Needs-decision）が本文中で一意。
+  4. `DecisionStatus=Fixed` の場合、`DecisionQueueRef` は `N/A` であること。
+- MechanicalChecks:
+  - `rg -n "^- Status:|Expected verification level|VerificationLevel|GoNoGoGate|DecisionStatus|DecisionQueueRef" 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `rg -n "Open readiness:|状態分類:|Phase 5: Proceed" 01_Plans/issues/issue-doc-ops-05-13-04doc-security.md`
+  - `git diff --check`
+- Proceed verdict (Phase 6): `Open可能（条件付き）`
+
+## Stream G Documentation Ops log（2026-05-20, 5Phase + CDC）
+
+### Phase 1 Read同期
+- `02_Architecture/strict_mode_exception_approval_flow.md` を正本に、`04_Documentation/security.md` と `04_Documentation/operations.md` の整合を再読。
+- DOC-OPS-02 の同期観点（用語/役割/導線/固定値）を再確認。
+
+### Phase 2 Context / Decision / Consequences
+- Context: security 文書は公開境界を定義する基底であり、運用手順との責務分離が必須。
+- Decision: D1〜D4値の再掲/再定義を禁止し、正本リンク参照で統一する。
+- Consequences: 公開境界ドリフトと語彙再定義リスクを抑制し、後続レビューを短縮できる。
+
+### Phase 3 用語・導線・公開境界
+- 用語: Security Officer / System Owner / Platform Operator を固定語彙として維持。
+- 導線: strict mode 正本、operations runbook、dashboard への参照導線を維持。
+- 公開境界: 公開文書へ機微な内部手順を追加しない方針を維持。
+
+### Phase 4 Verify
+- `rg -n "Security Officer|System Owner|Platform Operator|D1|D2|D3|D4|公開境界" 04_Documentation/security.md 04_Documentation/operations.md`
+- `git diff --check`
+- self-correction: 0/3。
+
+### Phase 5 Proceed
+- 判定: **Ready**（docs-only / scope内 / 停止条件非該当）。
+- 3回失敗停止ルール: 維持（未到達）。
+
+## Stream G dedicated run（2026-05-20）
+
+### 1) Read同期
+- `04_Documentation/security.md`、`04_Documentation/operations.md`、`04_Documentation/security_operational_guidelines.md` を再読し、責務境界（runbook / 基底方針 / 運用判断補助）を確認。
+- 本Issueの `DecisionStatus=Fixed`、`GoNoGoGate=Required`、`VerificationLevel=docs-check` を再確認。
+
+### 2) Context / Decision / Consequences
+- Context: 公開文書で設定値や役割語彙を重複定義すると、運用時に参照先が競合し公開境界が曖昧化する。
+- Decision: `security.md` に「文書導線と公開境界」を追記し、3文書の責務分離と設定値の正本参照先（runtime_parameter_registry）を固定する。
+- Consequences: 利用者は security lane の入口を短時間で把握でき、設定値の再発明によるドリフトを抑制できる。
+
+### 3) Plan→Execute→Verify→Proceed
+- Plan: docs-only で `security.md` と本Issueのみ更新。
+- Execute: 導線セクション追加（制度変更なし）。
+- Verify: docs-check + diff-check を実施。
+- Proceed: 判定 **Ready**。
+
+### 4) 失敗回数管理（max 3）
+- self-repair count: 0/3。
+- 停止条件: 4回目修復要求が発生した場合は `Hold` に遷移。

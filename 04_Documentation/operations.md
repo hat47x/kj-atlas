@@ -34,6 +34,22 @@ kj-atlas の運用確認は、次の順で見ると切り分けやすくなり�
 
 ![運用確認で見る標準画面](assets/screenshots/app-canvas-overview.png)
 
+
+## Runtime profile の選択
+
+運用手順を開始する前に、対象環境の profile を固定します。
+profile の詳細は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。ここでは運用時の判断だけを示します。
+
+- 開発再現や不具合切り分け: `local-dev`
+- Compose での評価・受入確認: `evaluation`
+- 企業/行政の本番相当: `enterprise-production`
+
+`enterprise-production` では次を起動前チェックに追加します。
+
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`
+- `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE=read_only` または `deny`
+- 外部接続（LLM / audit / external_http）を有効化する場合、接続先・timeout・秘密管理の確認記録
+
 ## 起動
 
 ```bash
@@ -141,6 +157,74 @@ API status:
 確認したログ:
 ```
 
+
+## 障害診断と復旧
+
+### 障害分類（一次切り分け）
+
+| 分類 | 代表症状 | 一次切り分け（5分以内） | 初期復旧アクション |
+| --- | --- | --- | --- |
+| WEB-ENTRY | 画面が開かない、表示崩れ | `web` logs、ポート競合、ブラウザ console | `web` 再起動、ポート競合解消、再読み込み |
+| API-UNAVAILABLE | 502/503、`/api/healthz` 失敗 | `api` logs、`db` health、migration 失敗 | `api`/`db` 再起動、migration 復旧 |
+| SAVE-FAILURE | 保存失敗、再読み込みで内容不一致 | API status、`db` logs、Network 失敗応答 | 再保存、API復旧後に再試行、バックアップ確認 |
+| IMPORT-VALIDATION | 取り込み失敗、schema 不整合 | import エラー内容、schemaVersion、入力サイズ | 別ファイルで再試行、validation 結果を共有 |
+| SHARE-SAFEMODE | 共有前警告、export 制約 | SafeMode 状態、マスク警告、visibility 設定 | 共有を一時停止し、マスク対象確認後に再実行 |
+
+### 責務分離（役割衝突の停止条件）
+
+| 役割 | 責務 | 実施してはいけないこと |
+| --- | --- | --- |
+| First Responder（運用一次対応） | 症状分類、一次切り分け、再現手順の記録 | SafeMode 緩和を独断で有効化すること |
+| System Owner（運用責任者） | 復旧優先度判断、外部共有可否の承認 | API key/token を含むログ共有を許可すること |
+| Platform Operator（実行担当） | 再起動、設定復旧、ロールバック実行 | 承認なしの恒久設定変更 |
+
+次のいずれかに該当した場合は手順を停止し、責務を明示したうえでエスカレーションします。
+
+- 同一人物が「承認」と「実行」を同時に担う必要がある。
+- SafeMode 緩和の必要性はあるが、承認者が不在で判断できない。
+- 復旧のために secrets を含む生ログ共有が必要と主張される。
+
+
+### Plan → Execute → Verify（障害復旧ランブック）
+
+復旧作業は必ず次の順で進めます。各ステップで完了条件が不足している場合は、恒久変更を確定せず **暫定対応メモ** として記録します。
+
+1. **Plan（計画）**
+   - 失敗分類コード（WEB-ENTRY / API-UNAVAILABLE / SAVE-FAILURE / IMPORT-VALIDATION / SHARE-SAFEMODE）を決定する。
+   - 受入条件（AC）を3点で定義する: 「利用者影響の停止」「安全境界の維持」「再現手順の記録」。
+   - 承認者（System Owner）と実行者（Platform Operator / First Responder）を分離して記録する。
+2. **Execute（実行）**
+   - 一次切り分けコマンドを実行し、復旧アクションは最小変更（再起動・再試行・既知のロールバック）に限定する。
+   - SafeMode 緩和や外部共有の拡大が必要な場合は、承認が揃うまで停止する。
+3. **Verify（検証）**
+   - `/api/healthz`、保存、再読み込み、必要に応じて import/share の動作を確認する。
+   - マスク境界（API key / token / password / 未マスク本文を共有しない）を再確認する。
+   - 再現テンプレートを埋め、未解決項目は「暫定対応メモ」として次アクションを残す。
+
+**暫定対応メモの記録フォーマット**
+
+```text
+暫定対応メモID:
+不足している確認:
+不足により確定できない判断:
+暫定運用（いつまで）:
+恒久対応が必要な場合の相談先:
+```
+
+### 復旧実行の再現テンプレート
+
+```text
+分類:
+発生日時:
+影響範囲:
+一次切り分け結果:
+実施コマンド:
+復旧結果:
+承認者:
+実行者:
+次回予防策:
+```
+
 ## SafeMode と外部サービスとの共有
 
 既定では `KJ_ATLAS_LLM_PROVIDER=none`、audit HTTP 連携も無効です。外部 LLM や audit HTTP を有効にする場合は、[data_handling.md](data_handling.md)、[security.md](security.md)、[configuration.md](configuration.md) を先に確認してください。
@@ -162,3 +246,15 @@ API status:
 - [security.md](security.md)
 - [diagnostics.md](diagnostics.md)
 - [release.md](release.md)
+
+## 更新後の確認
+
+更新や復旧のあと、少なくとも次の順で確認します。
+
+1. 画面が開く。
+2. `/api/healthz` が成功する。
+3. 標準サンプルまたは対象ドキュメントを読み込める。
+4. 保存、再読み込み、共有前確認ができる。
+5. 外部接続を有効にしている場合、その接続だけを追加で確認する。
+
+どれか1つでも失敗する場合は、次の変更へ進まず、発生日時、操作、期待結果、実際の結果、直近の変更を記録します。

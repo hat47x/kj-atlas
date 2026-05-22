@@ -74,7 +74,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
-import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
+import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import {
   DEFAULT_LOD_THRESHOLDS,
@@ -159,6 +159,7 @@ import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
+import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -170,11 +171,70 @@ const CARD_HEIGHT = 80;
 const POLYGON_PADDING = 16;
 
 const SVG_VISIBLE_BOUNDS_PADDING = 64;
+const FALLBACK_EXPORT_VIEWPORT = { width: 1280, height: 720 };
+
+function buildFallbackCanvasCamera(document: DocumentV2): CanvasCamera {
+  const viewportWidth = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.width : Math.max(1, Math.round(window.innerWidth || FALLBACK_EXPORT_VIEWPORT.width));
+  const viewportHeight = typeof window === "undefined" ? FALLBACK_EXPORT_VIEWPORT.height : Math.max(1, Math.round(window.innerHeight || FALLBACK_EXPORT_VIEWPORT.height));
+
+  return {
+    panX: document.transform.panX,
+    panY: document.transform.panY,
+    zoom: document.transform.zoom || 1,
+    viewportWidth,
+    viewportHeight,
+  };
+}
 
 function getViewModeDisplayLabel(mode: ViewMode): string {
   if (mode === "review") return t("app.view_mode.review");
   if (mode === "summary") return t("app.view_mode.summary");
   return t("app.view_mode.explore");
+}
+
+function describeRecoverableError(error: unknown): string {
+  if (error instanceof ApiError) {
+    return `HTTP ${error.status}: ${error.message}`;
+  }
+
+  if (error instanceof TypeError) {
+    return t("app.status.error_detail_network");
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return t("app.status.error_detail_unknown");
+}
+
+function formatLoadDocumentFailure(error: unknown): string {
+  return t("app.status.load_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
+function formatCreateDocumentFailure(error: unknown): string {
+  return t("app.status.create_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
+function formatSaveDocumentFailure(error: unknown): string {
+  return t("app.status.save_failed_recovery", {
+    detail: describeRecoverableError(error),
+  });
+}
+
+function getDiagnosticsStageDisplayLabel(stage: DiagnosticsProgressStage): string {
+  return t(`app.status.diagnostics.stage.${stage}`);
+}
+
+function getBundleExportProgressStageLabel(stage: BundleExportProgressStage): string {
+  if (stage === "diagnostics") return t("app.status.bundle.stage.diagnostics");
+  if (stage === "evidence_trace") return t("app.status.bundle.stage.evidence_trace");
+  if (stage === "contradiction_trace") return t("app.status.bundle.stage.contradiction_trace");
+  return t("app.status.bundle.stage.trace_analytics");
 }
 
 function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string {
@@ -1756,13 +1816,13 @@ export default function App() {
             pendingCardDragSnapshotRef.current = null;
             setStatusMessage(t("app.status.document_created"));
           } catch (saveError) {
-            setStatusMessage(saveError instanceof Error ? saveError.message : "Failed to create document");
+            setStatusMessage(formatCreateDocumentFailure(saveError));
           }
         } else {
           if (error instanceof ApiError && error.status === 404) {
-            setStatusMessage(`Document ${docId} was not found`);
+            setStatusMessage(t("app.status.document_not_found_recovery", { docId }));
           } else {
-            setStatusMessage(error instanceof Error ? error.message : "Failed to load document");
+            setStatusMessage(formatLoadDocumentFailure(error));
           }
         }
       } finally {
@@ -2079,7 +2139,7 @@ export default function App() {
         return;
       }
 
-      setStatusMessage(error instanceof Error ? error.message : t("app.status.save_failed"));
+      setStatusMessage(formatSaveDocumentFailure(error));
     } finally {
       setIsSaving(false);
     }
@@ -5884,11 +5944,14 @@ ${parsedDocument.error}`);
     }, {
       signal: controller.signal,
       onProgress: (progress) => {
-        setComputeProgressMessage(`Diagnostics: ${progress.stage} (${progress.percent}%)`);
+        setComputeProgressMessage(t("app.status.diagnostics.progress", {
+          stage: getDiagnosticsStageDisplayLabel(progress.stage),
+          percent: progress.percent,
+        }));
       },
     }).then((outcome) => {
       if (outcome.status === "cancelled") {
-        setStatusMessage("Diagnostics cancelled");
+        setStatusMessage(t("app.status.diagnostics.cancelled"));
         return;
       }
       const { outlineReport, contradictionReport, distributionReport, dialecticBalanceReport } = outcome.result.diagnosticsData;
@@ -5901,7 +5964,13 @@ ${parsedDocument.error}`);
 
       const errorCount = outlineReport.findings.filter((finding) => finding.severity === "error").length;
       const warnCount = outlineReport.findings.filter((finding) => finding.severity === "warn").length;
-      setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradictionReport.stats.signals} contradiction signal(s), ${distributionReport.findings.length} distribution signal(s), ${dialecticBalanceReport.findings.length} dialectic balance signal(s)`);
+      setStatusMessage(t("app.status.diagnostics.complete", {
+        errors: errorCount,
+        warnings: warnCount,
+        contradictions: contradictionReport.stats.signals,
+        distributions: distributionReport.findings.length,
+        balances: dialecticBalanceReport.findings.length,
+      }));
     }).finally(() => {
       setIsDiagnosticsRunning(false);
       setComputeProgressMessage(null);
@@ -6653,42 +6722,47 @@ ${parsedDocument.error}`);
           {t("app.toolbar.back")}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={handleImportClick}
-        disabled={isLoading}
-        aria-label={t("app.toolbar.import_doc_json_legacy")}
-        title={t("app.toolbar.import_doc_json_legacy")}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.import_doc_json_legacy_short")}
-      </button>
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={isLoading || !document}
-        aria-label={t("app.toolbar.export_doc_json_legacy")}
-        title={t("app.toolbar.export_doc_json_legacy")}
-        style={{
-          border: "1px solid #cbd5e1",
-          backgroundColor: "#ffffff",
-          color: "#0f172a",
-          borderRadius: 6,
-          padding: "6px 12px",
-          fontWeight: 600,
-          cursor: isLoading || !document ? "not-allowed" : "pointer",
-        }}
-      >
-        {t("app.toolbar.export_doc_json_legacy_short")}
-      </button>
+      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc" }}>
+        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>Legacy JSON</summary>
+        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={isLoading}
+            aria-label={t("app.toolbar.import_doc_json_legacy")}
+            title={t("app.toolbar.import_doc_json_legacy")}
+            style={{
+              border: "1px solid #cbd5e1",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontWeight: 600,
+              cursor: isLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {t("app.toolbar.import_doc_json_legacy_short")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isLoading || !document}
+            aria-label={t("app.toolbar.export_doc_json_legacy")}
+            title={t("app.toolbar.export_doc_json_legacy")}
+            style={{
+              border: "1px solid #cbd5e1",
+              backgroundColor: "#ffffff",
+              color: "#0f172a",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontWeight: 600,
+              cursor: isLoading || !document ? "not-allowed" : "pointer",
+            }}
+          >
+            {t("app.toolbar.export_doc_json_legacy_short")}
+          </button>
+        </div>
+      </details>
       <button
         type="button"
         onClick={handleCreateIsland}
@@ -6842,8 +6916,8 @@ ${parsedDocument.error}`);
   );
 
   const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: "overview" | "detail" }) => {
-    if (!document || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+    if (!document) {
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -6852,10 +6926,11 @@ ${parsedDocument.error}`);
       const exportTimestamp = formatBundleTimestamp(new Date());
       const rootFolderPath = `kj-atlas-export-${exportTimestamp}`;
       const deterministicNowIso = document.updatedAt || document.createdAt;
+      const exportCamera = canvasCamera ?? buildFallbackCanvasCamera(document);
       const viewMetadata = buildExportViewMetadata({
         doc: document,
         visibility: viewVisibility,
-        camera: canvasCamera,
+        camera: exportCamera,
         viewState: {
           summaryView,
           abstractMapView,
@@ -6898,7 +6973,7 @@ ${parsedDocument.error}`);
       bundleAbortRef.current = controller;
       const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
       const outcome = await bundleRunnerRef.current.run(async (ctx) => {
-        ctx.reportProgress({ message: "Working... building bundle", completed: 1, total: 3 });
+        ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
           rootFolderPath,
@@ -6937,34 +7012,42 @@ ${parsedDocument.error}`);
           packVisibility,
         }, {
           signal: controller.signal,
-          onProgress: (message) => ctx.reportProgress({ message, completed: 2, total: 3 }),
+          onProgress: (stage) => ctx.reportProgress({
+            message: t("app.status.bundle.progress.stage", { stage: getBundleExportProgressStageLabel(stage) }),
+            completed: 2,
+            total: 3,
+          }),
         });
         if (controller.signal.aborted || ctx.isCancelled()) {
           return null;
         }
-        ctx.reportProgress({ message: "Working... zipping bundle", completed: 3, total: 3 });
+        ctx.reportProgress({ message: t("app.status.bundle.progress.zipping"), completed: 3, total: 3 });
         await ctx.yieldToMainThread();
         const zipBlob = await buildBundleZipBlob(files, {
           signal: controller.signal,
-          onProgress: (percent) => ctx.reportProgress({ message: `Working... zipping bundle (${percent}%)`, completed: 3, total: 3 }),
+          onProgress: (percent) => ctx.reportProgress({
+            message: t("app.status.bundle.progress.zipping_percent", { percent }),
+            completed: 3,
+            total: 3,
+          }),
         });
         return { files, zipBlob };
       });
       unsubscribe();
       if (outcome.status === "cancelled" || outcome.result === null) {
-        setStatusMessage("Bundle export cancelled");
+        setStatusMessage(t("app.status.bundle.cancelled"));
         return;
       }
       const { files, zipBlob } = outcome.result;
       downloadBlobAsFile(`${rootFolderPath}.zip`, zipBlob);
-      setStatusMessage(`Exported bundle (${files.length} files)`);
+      setStatusMessage(t("app.status.bundle.exported", { count: files.length }));
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Bundle export failed";
+      const message = error instanceof Error ? error.message : t("app.status.bundle.failed_unknown");
       if (message.toLowerCase().includes("cancelled")) {
-        setStatusMessage("Bundle export cancelled");
+        setStatusMessage(t("app.status.bundle.cancelled"));
       } else {
-        setStatusMessage(`Bundle export failed: ${message}`);
+        setStatusMessage(t("app.status.bundle.failed", { detail: message }));
       }
     } finally {
       setIsBundleExportRunning(false);
@@ -7664,6 +7747,20 @@ ${parsedDocument.error}`);
   }, [handleHierarchyLevelChange]);
 
   const safeModeIndicator = getSafeModeIndicator(safeMode);
+  const viewControlsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const viewControlsPanelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isViewControlsOpen) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      viewControlsPanelRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isViewControlsOpen]);
 
   const headerViewControls = (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
@@ -7716,6 +7813,8 @@ ${parsedDocument.error}`);
         })}
       </div>
       <button
+        ref={viewControlsTriggerRef}
+        data-focus-return-id="view-controls-trigger"
         type="button"
         onClick={() => {
           setIsSharePanelOpen(false);
@@ -7736,6 +7835,20 @@ ${parsedDocument.error}`);
       </button>
       {isViewControlsOpen ? (
         <div
+          ref={viewControlsPanelRef}
+          data-panel="view"
+          role="dialog"
+          aria-label={t("view_controls.trigger")}
+          tabIndex={-1}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              setIsViewControlsOpen(false);
+              window.requestAnimationFrame(() => {
+                viewControlsTriggerRef.current?.focus();
+              });
+            }
+          }}
           style={{
             position: "fixed",
             top: "var(--kj-atlas-header-panel-top, 72px)",
@@ -8600,6 +8713,7 @@ ${parsedDocument.error}`);
         </div>
       ) : (
         <>
+          <div data-ui-region="primary-flow" style={{ height: "100%", minHeight: 0 }}>
           <CanvasShell
             document={focusedVisibleDocument}
             onCardMove={handleCardMove}
@@ -8665,18 +8779,26 @@ ${parsedDocument.error}`);
           >
             {islandViews}
           </CanvasShell>
+          </div>
         </>
       )}
       <div
+        data-testid="status-message"
+        role="status"
+        aria-live="polite"
         style={{
-          position: "absolute",
+          position: "fixed",
           right: 16,
           bottom: 16,
+          maxWidth: "min(560px, calc(100vw - 32px))",
           backgroundColor: "rgba(15, 23, 42, 0.85)",
           color: "#f8fafc",
           padding: "6px 10px",
           borderRadius: 6,
           fontSize: 12,
+          lineHeight: 1.4,
+          overflowWrap: "break-word",
+          whiteSpace: "pre-wrap",
         }}
       >
         {statusMessage}

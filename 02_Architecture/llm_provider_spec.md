@@ -201,3 +201,35 @@ KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST=<host-list>
   - hash非決定論 -> `409 nondeterministic_bundle`
 - 監査相関キーは `queryCanonicalHash` / `bundleHash` / `provider_meta.trace_id` を最小集合として保持する。
 - 本再確認は contract-only であり、接続実装・リトライ戦略・モデル選定は本凍結範囲外とする。
+
+
+## Stream B contract stabilization addendum（2026-05-18 / CE1-independent）
+
+### Context
+Provider 抽象の差異で CE1 契約語彙が揺れると、CE2/CE4 の監査再現性が崩れる。
+
+### Decision
+- Provider 層は CE1 契約語彙を変更しない。
+- 固定語彙は `preview_required` / `unknown_contract_key` / `nondeterministic_bundle` のみ。
+- Provider 実装差異による fallback は **契約エラーを書き換えてはならない**。
+- `queryCanonicalHash` / `bundleHash` / `provider_meta.trace_id` を最小監査相関キーとして固定。
+- mock-first contract test は provider 種別に依存させない（fixture で同一判定）。
+
+### Consequences
+- provider 切替（none/fixture/local/external）でも CE1 I/F 契約は不変。
+- CE2/CE4 は provider 実装進捗と独立して契約連携を継続できる。
+
+
+## Stream B CE1 provider contract freeze addendum（2026-05-20 / I/F-first + mock-first）
+
+### Context
+Provider切替時にCE1語彙が変化すると、query/bundle 契約の監査相関が崩れる。
+
+### Decision
+- Provider層は CE1 v1 closed-world 契約語彙を変更しない。
+- 固定エラーは `422 preview_required` / `400 unknown_contract_key` / `409 nondeterministic_bundle`。
+- mock-first 検証で `stubDatasetId=A2-minimal-v1` を利用し、実DB/実LLM依存なしで契約判定可能とする。
+
+### Consequences
+- provider 実装状態に依存せず、CE1契約を先に凍結して下流へ handoff できる。
+- 衝突検知時は provider側で意味変換せず、停止して上流契約へ戻す運用を徹底できる。

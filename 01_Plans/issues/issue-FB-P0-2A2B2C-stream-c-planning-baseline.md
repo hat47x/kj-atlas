@@ -654,3 +654,45 @@
 - `Proceed`: planning DoD 4項目がすべて充足し、未承認事項が `held/pending` として明示維持されている。
 - `Conditional (Needs-decision)`: DoDは充足したが `Approval Record=Pending` または `held` 未解消が残る。
 - `Stop`: 依存矛盾、allowlist逸脱、未承認確定化、self-correction超過のいずれかを検知。
+
+## Stream H critical-path recomputation note (2026-05-20)
+
+### Reclassification (Priority / Blocker / Dependency stage)
+| 項目 | Priority | 区分 | 依存ステージ |
+|---|---|---|---|
+| A1固定キー整合（2ファイル） | P0 | Gate prerequisite | A1 |
+| A2/A3 mock準備 | P1 | Bypass-capable dependency | A2/A3 pre-start |
+| Program Gate最終判定証跡 | P0 | True blocker | MVP Exit |
+| Decision Queue未解決2件 | P1 | Conditional blocker | Pre-Go |
+
+### Mock bypass vs true blocker
+- Mock bypass可能: A2/A3の事前検証（契約固定とsafeMode境界を前提）。
+- True blocker: Go/No-Goを確定するための承認記録不足（判定ログ未記録）。
+
+### Next iteration order (proposal)
+1. Gate証跡更新（`PRODUCT-QA-01`, `ENV-CONFIG-DRIFT-01`）
+2. Decision Queue Open 2件の期限・責任者更新
+3. Program Gate再判定（Go/Conditional/No-Go）
+4. A2/A3着手順の最終確定
+
+
+## Stream H integration lock update（2026-05-20）
+
+### 1) Read集約（Ready出口条件の再収集）
+- baseline側で扱う出口条件を `A1 contract freeze consistency` のみに限定する。
+- A2/A3の状態は参照のみとし、baseline本文では Open化判定を新規定義しない。
+
+### 2) release readiness接続I/F（統合判定フレームへの受け渡し）
+- 本Issueから Program Gate へ渡す出力は次の2点のみ。
+  - `fixedKeyDrift=0|>0`
+  - `pendingBypassDetected=true|false`
+- 上記以外（品質値や候補別判定）は `MVP-EXIT-01` 側の責務とする。
+
+### 3) Plan→Execute→Verify（非依存）
+- Plan: allowlist 2ファイル内の固定キー整合を維持。
+- Execute: 判定式の再定義禁止、safeMode固定値の後退禁止。
+- Verify: `fixedKeyDrift` と `pendingBypassDetected` を再計算し、差分があれば `No-Go`。
+
+### 4) Stopper（他ストリーム要求時の停止）
+- `issue-FB-P2A-*` / `issue-FB-P2B-*` / `issue-FB-P2C-*` への直接編集要求が来た場合は停止。
+- 本Issueは統合入力I/Fの固定のみを担い、他ストリームの進行管理は行わない。

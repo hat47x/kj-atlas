@@ -2,6 +2,17 @@
 
 目的: Active issue memo（Draft/Open）で着手を止めている判断点を短時間で決定可能にする。
 
+最新共有統合同期（Stream F / 2026-05-20 rerun-78）
+- Phase 1 Read: 全ストリーム完了報告を再収集し、件数・状態・Decision Queue値を再計算したうえで公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）を再確認。
+- Phase 2 Plan: 反映対象を Status / Decision Queue / Next Action のみに固定。
+- Phase 3 Execute: `project-progress-dashboard.md` / `issues/README.md` / 本decision-pack を単一変更セットで同期。
+- Phase 4 Verify: validator / unittest / rg で整合監査を実施し、件数整合・Queue整合・依存順整合・停止条件違反0件・未承認決定の確定扱い0件を確認。
+- Phase 5 Proceed: 再開条件1行を「公開固定値と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開」に固定（self-correction 0/3）。
+
+AUTH-OPS-03 再検証同期（Stream G / 2026-05-20）
+- 固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を再実行し、AUTH-OPS-03 の4観点（用語/役割/導線/D1〜D4）を再監査。
+- 判定: すべて一致（self-correction 0/3）。AUTH-OPS-03 は Done 維持、追加の人間判断待ちは「D1〜D4改定要求が発生した場合のみ」。
+
 ## 0. 対象と優先順位
 
 1. **P0 / AUTH-OPS-03**: strict mode例外緩和 Runbook の承認運用境界（Q1〜Q10）
@@ -874,3 +885,13 @@
 - Phase 4 Verify: `python 01_Plans/issues/validate_active_issue_memos.py` / `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` / `rg -n "Decision Queue|Ready=|Open=|再開条件1行|再開判定" 01_Plans/issues/README.md 01_Plans/project-progress-dashboard.md 01_Plans/issues/decision-pack-2026-03-human-judgement.md` を実行し、3ファイル整合を確認。
 - Phase 5 Proceed（公開1行固定）: **再開条件1行 = 公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開（2026-05-10 rerun-75確認済み）。**
 
+
+## Stream L decision sync（2026-05-18）
+
+- Read同期: triage実行結果 `active_issues=44 / ready=9 / blocked=35` を採用し、旧固定値（件数47系）は履歴値として扱う。
+- Decision: 進捗ダッシュボード/decision-pack更新は triage実測値を正本とし、推測での優先度変更・状態更新を禁止。
+- Consequences: `invalid Status metadata` 4件（`Open準備完了 (Ready for Open)`）解消前は、状態遷移更新を停止し、修正フロー（status正規化→再triage）を優先。
+- Next action（週次/日次）:
+  1. 週次KPI更新（処理速度 / ブロッカー解消率 / 再オープン率）
+  2. 日次監査（invalid metadata件数、Blocked→Ready遷移件数）
+  3. 3回修復超過時は意思決定者へエスカレーション

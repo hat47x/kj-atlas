@@ -374,6 +374,7 @@ export function SidePanel({
   const [relationSummaryDraft, setRelationSummaryDraft] = useState("");
   const [expandedRelationSummaryHistoryEntryId, setExpandedRelationSummaryHistoryEntryId] = useState<string | null>(null);
   const [expandedMergeAuditEntryId, setExpandedMergeAuditEntryId] = useState<string | null>(null);
+  const [isAdvancedPanelOpen, setIsAdvancedPanelOpen] = useState(false);
   const [relationSummaryFeedback, setRelationSummaryFeedback] = useState<string | null>(null);
   const [copyExplanationFeedback, setCopyExplanationFeedback] = useState<"idle" | "copied" | "failed">("idle");
   const [showOnlyHighImpactRecommendations, setShowOnlyHighImpactRecommendations] = useState(false);
@@ -1073,6 +1074,7 @@ export function SidePanel({
 
   return (
     <aside
+      data-ui-region="selection-context"
       style={{
         width: 320,
         minWidth: 320,
@@ -1111,8 +1113,14 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
-      <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
-        <details>
+      <section data-panel="selection-context" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+        <details
+          data-panel-group="advanced"
+          aria-expanded={isAdvancedPanelOpen ? "true" : "false"}
+          onToggle={(event) => {
+            setIsAdvancedPanelOpen(event.currentTarget.open);
+          }}
+        >
           <summary style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>
             {t("side_panel.history.with_count", { count: mergeAuditEntries.length })}
           </summary>
@@ -1970,7 +1978,7 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Parent island
+            {t("side_panel.island_editor.parent")}
           </label>
           <select
             value={selectedIsland.parentIslandId ?? ""}
@@ -1988,7 +1996,7 @@ export function SidePanel({
               backgroundColor: "#ffffff",
             }}
           >
-            <option value="">(none)</option>
+            <option value="">{t("side_panel.none")}</option>
             {(document?.islands ?? [])
               .filter((island) => island.id !== selectedIsland.id)
               .map((island) => (
@@ -2026,11 +2034,11 @@ export function SidePanel({
                 onIslandCollapsedChange(event.target.checked);
               }}
             />
-            Collapsed
+            {t("side_panel.island_editor.collapsed")}
           </label>
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Title
+            {t("side_panel.island_editor.title_label")}
           </label>
           <input
             type="text"
@@ -2049,7 +2057,7 @@ export function SidePanel({
           />
 
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-            Placard card
+            {t("side_panel.island_editor.placard_card")}
           </label>
           <select
             value={selectedIsland.placardCardId ?? ""}
@@ -2067,7 +2075,7 @@ export function SidePanel({
               backgroundColor: "#ffffff",
             }}
           >
-            <option value="">(none)</option>
+            <option value="">{t("side_panel.none")}</option>
             {selectedIsland.cardIds.map((cardId) => {
               const card = document?.cards.find((entry) => entry.id === cardId);
               const text = card?.text.trim() ?? "";
@@ -2087,7 +2095,7 @@ export function SidePanel({
               onChange={(event) => {
                 onPlacardCardTextChange(event.target.value);
               }}
-              placeholder="Placard card text"
+              placeholder={t("side_panel.island_editor.placard_card_text")}
               style={{
                 width: "100%",
                 border: "1px solid #cbd5e1",

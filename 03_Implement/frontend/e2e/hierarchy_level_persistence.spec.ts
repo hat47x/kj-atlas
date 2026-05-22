@@ -1,5 +1,12 @@
 import JSZip from "jszip";
 import { expect, test, type Download } from "@playwright/test";
+import {
+  EXPORT_BUNDLE_BUTTON,
+  LOAD_DOCUMENT_BUTTON,
+  REPLACE_DOCUMENT_BUTTON,
+  SHARE_REPRODUCE_BUTTON,
+  VIEW_BUTTON,
+} from "./helpers/i18n";
 
 async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
@@ -21,7 +28,7 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
 
 test("hierarchy level switch changes only visibility and preserves sub-island/placard data", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Share & Reproduce|共有と再現/ }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const now = new Date().toISOString();
   const hierarchyDocument = {
@@ -53,7 +60,7 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   };
 
   const fileChooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: /^Load document\.json$|^document\.json を読み込む$/ }).click();
+  await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
   const fileChooser = await fileChooserPromise;
   await fileChooser.setFiles({
     name: "hierarchy-level.json",
@@ -61,10 +68,10 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
     buffer: Buffer.from(JSON.stringify(hierarchyDocument), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
-  await page.getByRole("button", { name: "View", exact: true }).click();
+  await page.getByRole("button", { name: VIEW_BUTTON }).click();
   await page.getByLabel(/Structure level|構造レベル/).selectOption("overview");
 
   await expect(page.getByText("Root Placard").first()).toBeVisible();
@@ -77,8 +84,10 @@ test("hierarchy level switch changes only visibility and preserves sub-island/pl
   await expect(page.getByText("Root Member").first()).toBeVisible();
   await expect(page.getByText("Child Member").first()).toBeVisible();
 
+  await page.getByRole("button", { name: VIEW_BUTTON }).click();
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Export bundle \(\.zip\)|bundle をエクスポート \(.zip\)/ }).click();
+  await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
   const download = await downloadPromise;
   const zipBuffer = await readDownloadToBuffer(download);
 
