@@ -639,3 +639,55 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: pass for previously covered UI/unit/E2E evidence in this PR.
 - share/export fail-closed: conditional pass for covered SharePanel and viewport evidence; full release shipment still requires a release-candidate share/export smoke record.
 - public document exposure boundary: pass for the current public/private documentation boundary changes in this PR.
+
+## Productization Gate Record 2026-05-23: PR #2253 draft-gate readiness
+
+- Candidate: PR #2253 `codex/product-value-ux-open-readiness@92ffa3320480c77d5b39027c4eb620dbbf4b8557`
+- Decision date (JST): 2026-05-23
+- Reviewer: Codex
+- Scope: Planning-layer Draft Gate Assessment for `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04`. This record evaluates release-readiness traceability only; it does not change application code or public documentation.
+
+### Gate Summary
+
+- G0 計画整合: Go for this PR. Seven Draft issues now state why they remain Draft, which O-OPEN gates are blocked or partial, and what evidence is needed next.
+- G1 安全既定: N/A for runtime behavior. SafeMode/share-export boundaries are referenced as contractual dependencies, but no policy or UI behavior changed.
+- G2 主要操作: No-Go for full shipment / N/A for this PR. User-operation E2E remains a required follow-up in the child issues.
+- G3 日本語UI: N/A for this PR. No UI copy changed.
+- G4 画面耐性: Conditional. `PRODUCT-UX-04` records covered evidence and remaining advanced panel / slow-environment breadth.
+- G5 公開文書: N/A for this PR. No public-facing 04 document changed.
+- G6 診断とサポート: N/A for this PR. No diagnostics/support behavior changed.
+- G7 回帰: Go for planning/doc validation and CI.
+- Value gates: No-Go for release shipment until `PRODUCT-VALUE-01..03` leave Draft with fixed owner, decision status, and E2E evidence contracts.
+- E1..E3 環境契約: Not re-evaluated; no runtime parameter or deploy contract changed.
+- Final: **Conditional Go for planning readiness evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- PR state:
+  - PR #2253 is open as a Draft PR.
+  - Head commit: `92ffa3320480c77d5b39027c4eb620dbbf4b8557`
+  - Base: `main@8411b8e947ca9c21edea1eb289831ba450596f04`
+- CI:
+  - GitHub Actions `CI` run 9064: success.
+- Local docs-check:
+  - `git diff --check` -> pass.
+  - bundled `python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - bundled `python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass (10 tests).
+  - bundled `python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=45 / ready=17 / blocked=28 / stopper=none`).
+
+### Follow-ups
+
+- Blocking issues:
+  - None for PR #2253 planning-readiness evidence.
+- Conditional issues:
+  - `PRODUCT-VALUE-01..03`: still Draft because `Owner: TBD`, `DecisionStatus=Pending`, and E2E/fixture evidence contracts are not fixed.
+  - `PRODUCT-UX-01..04`: still Draft because `Owner: TBD` and representative operation/evidence routes are not fixed.
+  - Full release shipment remains blocked until the Program Gate receives candidate-level evidence for value, UX, env contract, and share/export safety.
+- Re-decision date:
+  - Required when the seven child issues receive owners and fixed evidence routes, or when a release candidate is cut from `main`.
+
+### Safety Confirmation
+
+- SafeMode default ON: unchanged by this PR.
+- share/export fail-closed: unchanged by this PR; child issues now state the evidence needed before release shipment.
+- public document exposure boundary: unchanged by this PR because no public document changed.

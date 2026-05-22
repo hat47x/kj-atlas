@@ -191,3 +191,23 @@
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、画面実装や04文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Fixed` だが `Owner: TBD` が残り、初回入口の代表E2Eと証跡保存先が未固定。
+- Proposed RACI: R=Product UX Stream Lead（未割当）, A=Productization Program Owner, C=Frontend Lead / QA Lead / Documentation Maintainer, I=Platform Architecture Owner。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. `ADR-0031` と `MVP-EXIT-01` への依存は明示済みだが、再開条件が「どの画面証跡で足りるか」まで落ちていない。
+  - O-OPEN-03: Partial. e2e前提のACはあるが、初回起動、サンプル選択、自分の文書入力、SafeMode確認の代表経路が未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0031`: 開始、文書入口、作業面の情報設計。
+  - `MVP-EXIT-01`: MVP脱却時に初回利用者が迷わず主要作業へ入れること。
+- 実装/証跡依存:
+  - マウス操作でサンプルまたは文書入力から作業面へ入れることを示すE2E。
+  - `Tab`、`Enter`、`Space` で同じ入口へ到達できるキーボードE2Eとスクリーンショット。
+- Next action:
+  - 初回入口のE2Eシナリオ名、fixture名、スクリーンショット保存先を本文へ追記する。
+  - Owner確定と証跡経路固定が完了するまではOpen化しない。
+

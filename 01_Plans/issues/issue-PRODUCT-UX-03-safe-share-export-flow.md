@@ -193,3 +193,24 @@
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、SharePanel実装や04文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Fixed` だが `Owner: TBD` が残り、共有目的別の確認経路と証跡保存先が未固定。
+- Proposed RACI: R=Product UX Stream Lead（未割当）, A=Productization Program Owner, C=Frontend Lead / QA Lead / Security Officer, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. `ADR-0031`、`QA-MONKEY-01`、`UX-OPERABILITY-04` への依存は明示済みだが、SafeMode境界とパネル操作性の再開条件が分離しきれていない。
+  - O-OPEN-03: Partial. e2e前提のACはあるが、共有目的選択、固定マスク確認、エクスポート形式選択、キャンセル/戻るの代表経路が未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0031`: 共有前確認を製品化UIの主要導線として扱う方針。
+  - `QA-MONKEY-01`: SafeMode export境界の既知リスクと回帰観点。
+  - `UX-OPERABILITY-04`: パネルを閉じる、戻る、focusを戻す操作の原則。
+- 実装/証跡依存:
+  - マウスで共有目的を選び、固定マスク、SafeMode、未レビュー状態を確認してからexportするE2E。
+  - キーボードで目的選択、形式選択、キャンセル、実行へ移動でき、パネルからfocusが失われないことを示すE2E。
+- Next action:
+  - 共有目的別に「自分用」「チームレビュー用」「公開前確認用」の代表経路を固定し、各経路のスクリーンショットとtrace保存先を追記する。
+  - Owner確定と証跡経路固定が完了するまではOpen化しない。
+

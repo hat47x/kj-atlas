@@ -439,3 +439,32 @@
 - Owner: Codex for evidence maintenance; System Owner / QA Lead required for release shipment decision.
 - Due date: next release-candidate gate review.
 - Re-decision date: when PR #2251 is merged or superseded, or when a release candidate is cut from `main`.
+
+## MVP-EXIT Program Gate Decision 2026-05-23: PR #2253 draft-gate intake
+
+- Candidate: PR #2253 `codex/product-value-ux-open-readiness@92ffa3320480c77d5b39027c4eb620dbbf4b8557`
+- Decision date: 2026-05-23
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-05-23: PR #2253 draft-gate readiness`
+  - Draft child issue assessments:
+    - `PRODUCT-VALUE-01..03`
+    - `PRODUCT-UX-01..04`
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated in this intake; no runtime env contract change in PR #2253.
+
+### Decision
+
+- Final: **Conditional Go for planning-readiness evidence / No-Go for full release shipment**
+- Reason summary: PR #2253 improves Program Gate traceability by recording why the seven product value and UX issues remain Draft, but the actual release decision still lacks owners, fixed E2E routes, and candidate-level value/UX evidence.
+- Escalation route: keep PR #2253 reviewable as planning evidence. Do not count it as final release approval. Re-run Program Gate when child issue owners and evidence routes are fixed, or when a release candidate is cut.
+
+### Conditional controls
+
+- Remaining risks:
+  - `PRODUCT-VALUE-01..03` still depend on ADR-0032 finalization, owner assignment, and value-specific E2E evidence.
+  - `PRODUCT-UX-01..04` still depend on owner assignment and representative mouse/keyboard/viewport evidence.
+  - E1..E3 environment contract evidence is not part of this PR #2253 intake.
+  - SafeMode/share-export behavior is unchanged in this PR and still requires release-candidate smoke evidence before shipment.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for release shipment decision.
+- Due date: next child-issue Open readiness review.
+- Re-decision date: when child issue owners and evidence routes are fixed, or when a release candidate is cut from `main`.

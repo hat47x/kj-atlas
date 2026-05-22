@@ -224,3 +224,24 @@
 
 ### Approval-wait packet
 - This section + ADR-0032 Stream H block are the approval bundle for PRODUCT-VALUE-03.
+
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、export実装や公開文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Pending` と `Owner: TBD` が残り、レビュー可能な成果物パッケージの最小構成が未確定。
+- Proposed RACI: R=Product Value Stream Lead（未割当）, A=Productization Program Owner, C=QA Lead / Platform Architecture Owner / Security Officer, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. review attribution、value traceability、SafeMode境界の依存は見えているが、成果物ごとの再開条件がまだ本文上で完結していない。
+  - O-OPEN-03: Partial. ACとValidation planはいずれもe2e前提だが、review pack、narrative、共有前確認、証跡back-linkの代表経路が未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0032`: 「共有できる成果物」を価値ループの判定単位としてFixedにする根拠。
+  - `02_Architecture/review_attribution.md`: レビュー済み、未レビュー、AI補助の帰属表現。
+  - `02_Architecture/value_traceability.md`: 成果物から価値仮説と受入証跡へ戻れること。
+- 実装/証跡依存:
+  - review packまたはnarrative exportに、SafeMode状態、未レビュー状態、判断保留、根拠参照が欠落しないことを確認するE2E。
+  - 共有前確認の画面状態と、エクスポート結果から元の判断・証跡へ戻れるback-link検証。
+- Next action:
+  - 成果物パッケージの最小構成を「要約」「根拠」「未確定事項」「レビュー帰属」「SafeMode表示」に分解して、ACと対応付ける。
+  - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。

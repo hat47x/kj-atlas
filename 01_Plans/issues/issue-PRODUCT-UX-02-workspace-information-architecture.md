@@ -196,3 +196,24 @@
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、画面実装や04文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Fixed` だが `Owner: TBD` が残り、ワークスペース全体の情報設計を評価する代表操作が未固定。
+- Proposed RACI: R=Product UX Stream Lead（未割当）, A=Productization Program Owner, C=Frontend Lead / QA Lead / Platform Architecture Owner, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. `ADR-0030`、`ADR-0031`、UX-OPERABILITY系issueの依存は明示済みだが、どの依存が契約固定で、どれが実装証跡待ちかをさらに分ける必要がある。
+  - O-OPEN-03: Partial. e2e前提のACはあるが、選択、詳細確認、戻る、主要ツールへの移動を含む代表経路が未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0030`: 漸進開示とキーボード操作範囲の原則。
+  - `ADR-0031`: 製品化画面の主要領域と情報優先度。
+  - `UX-OPERABILITY-03` / `UX-OPERABILITY-05`: 選択コンテキストと主要ツール配置の課題管理。
+- 実装/証跡依存:
+  - マウスでカードまたは島を選択し、コンテキスト情報を確認し、主要操作へ移動できるE2E。
+  - キーボードで選択、詳細、ツール、戻るの順序が自然であることを確認するE2Eとfocus trace。
+- Next action:
+  - 代表操作を「選択」「詳細確認」「主要操作」「戻る」の4区分へ固定し、各区分に対応する証跡を追記する。
+  - Owner確定と証跡経路固定が完了するまではOpen化しない。
+

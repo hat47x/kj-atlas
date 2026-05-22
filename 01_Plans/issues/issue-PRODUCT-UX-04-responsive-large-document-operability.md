@@ -265,3 +265,25 @@
 - Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
 - Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
 
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、追加実装や04文書更新はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Fixed` だが `Owner: TBD` が残る。2026-05-22の証跡で大きく前進した一方、advanced panel固有のfocus経路と遅延環境の幅は未完了。
+- Proposed RACI: R=Product UX Stream Lead（未割当）, A=Productization Program Owner, C=Frontend Lead / QA Lead / Platform Architecture Owner, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Partial. `ADR-0031`、responsive overlap、pointer/keyboard flowの依存は明示済みで、既存証跡もあるが、残タスクの再開条件を「advanced panel focus」「slow worker/API breadth」「docs sync」に分ける必要がある。
+  - O-OPEN-03: Partial. 既存E2Eは narrow viewport、canvas focus、recovery guidance を確認済みだが、Expected verification level=e2eに対して残る操作範囲が明示されている。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0031`: 製品化画面での主要領域、情報優先度、レスポンシブ境界。
+  - `QA-MONKEY-06`: ヘッダー、ツールバー、右パネルの狭幅重なり回帰。
+  - `UX-OPERABILITY-01`: マウス操作とキーボード操作の代表フロー評価。
+- 実装/証跡依存:
+  - advanced panelを開く、編集する、閉じる、元の作業面へ戻るfocus経路のE2E。
+  - slow worker/API、遅いexport、キャンセル後再実行を含む遅延環境の代表E2E。
+  - `04_Documentation/acceptance_check.md` との同期確認。
+- Next action:
+  - 既存の2026-05-22証跡を残しつつ、残タスクを3区分に分けて証跡名と完了条件を追記する。
+  - Owner確定と残証跡の保存先固定が完了するまではOpen化しない。
+

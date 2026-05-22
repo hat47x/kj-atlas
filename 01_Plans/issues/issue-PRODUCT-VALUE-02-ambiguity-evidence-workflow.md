@@ -224,3 +224,25 @@
 
 ### Approval-wait packet
 - This section + ADR-0032 Stream H block are the approval bundle for PRODUCT-VALUE-02.
+
+## Draft Gate Assessment 2026-05-23: Open readiness
+
+- Assessment scope: 計画層のreadiness確認のみ。`Status: Draft` は維持し、実装着手やスキーマ変更はこの追記では行わない。
+- Gate result: Draft維持。`DecisionStatus=Pending` と `Owner: TBD` に加え、曖昧さ、違和感、証拠、矛盾を現行データ構造でどこまで表現するかの境界が未確定。
+- Proposed RACI: R=Product Value Stream Lead（未割当）, A=Productization Program Owner, C=Platform Architecture Owner / QA Lead, I=Documentation Maintainer。CodexはOwner確定までissue本文と証跡パックの整備を支援する。
+- O-OPEN status:
+  - O-OPEN-01: Blocked. `Owner` が `TBD` のため、実行責務者をロールまたは個人で確定する必要がある。
+  - O-OPEN-02: Blocked. `ADR-0032` と `llm_input_ir_spec.md` のどちらが保留・違和感・根拠・矛盾の最小表現を正本化するかが本文上で未分離。
+  - O-OPEN-03: Partial. ACはe2eで評価可能だが、入力、状態遷移、出力証跡の最小fixtureが未固定。
+  - O-OPEN-04: Pass for assessment. この追記はOpen判定の整理であり、docs-only範囲外の実装要求を追加しない。
+- 契約依存:
+  - `ADR-0032`: 保留や違和感を価値実現モデルの中でどの単位として扱うか。
+  - `00_Prompt/domain.md`: 保留、違和感、可逆性の用語定義。
+  - `00_Prompt/ai_cognitive_externalization_requirements.md`: AI支援時の文脈束、根拠、判断保留の扱い。
+  - `02_Architecture/llm_input_ir_spec.md`: LLM投入前の正規化IRで保持できる根拠・制約。
+- 実装/証跡依存:
+  - 利用者が曖昧さを1件登録し、根拠または反証メモを付与し、判断待ちとして画面上で確認できるE2E。
+  - AI未使用、ローカルLLM使用、共有前確認の3経路で、未確定情報が断定表現に変換されないことの検証。
+- Next action:
+  - 現行スキーマで対応する範囲と、ADRまたはschema issueが必要な範囲を1表に分ける。
+  - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。
