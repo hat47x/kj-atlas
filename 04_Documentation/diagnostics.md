@@ -73,12 +73,14 @@ curl -fsS http://127.0.0.1:8000/healthz
 | `Internal Server Error` が表示される | backend が起動しているか、`/api/healthz` と `/api/docs/doc_phase1_canvas` が成功するか |
 | 保存に失敗 | API status、`X-API-Key`、backend logs、DB 接続 |
 | AI 提案が出ない | `KJ_ATLAS_LLM_PROVIDER`、provider endpoint、SafeMode |
-| export が失敗 | 対象ドキュメントの schema、ブラウザ console |
+| 書き出しが失敗、または長時間終わらない | 対象ドキュメントの schema、画面上の進捗・中止メッセージ、ブラウザ console |
 | worker が落ちる | 入力データ、worker console、該当 worker の単体テスト |
 
 ## worker 関連の確認
 
 worker 由来の問題が疑われる場合は、まず入力データの大きさ、schema、review 状態を確認します。
+
+診断やレビューパックの書き出しが長く続く場合は、処理名、進捗表示、キャンセルできたか、キャンセル後の画面メッセージを記録します。キャンセルで復帰できる場合は、まず入力データの大きさや対象範囲を小さくして再試行してください。キャンセルしても画面が復帰しない場合は、worker error として扱います。
 
 ```bash
 cd 03_Implement/frontend

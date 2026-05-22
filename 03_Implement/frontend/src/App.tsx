@@ -74,7 +74,7 @@ import { downloadBlobFile, exportCanvasToPngBlob, readBlobAsDataUrl, type PngExp
 import { exportCanvasToSVG } from "./export/canvas_svg";
 import { downloadTextFile } from "./export/narrative_export";
 import { buildExportViewMetadata, type ExportViewMetadata } from "./export/view_metadata";
-import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp } from "./export/bundle_export";
+import { buildBundleZipBlob, buildExportBundleWithWorkers, downloadBlobAsFile, formatBundleTimestamp, type BundleExportProgressStage } from "./export/bundle_export";
 import { computeVisibleBounds, getCardWorldBounds, getIslandWorldBounds } from "./domain/geometry/bounds";
 import {
   DEFAULT_LOD_THRESHOLDS,
@@ -228,6 +228,13 @@ function formatSaveDocumentFailure(error: unknown): string {
 
 function getDiagnosticsStageDisplayLabel(stage: DiagnosticsProgressStage): string {
   return t(`app.status.diagnostics.stage.${stage}`);
+}
+
+function getBundleExportProgressStageLabel(stage: BundleExportProgressStage): string {
+  if (stage === "diagnostics") return t("app.status.bundle.stage.diagnostics");
+  if (stage === "evidence_trace") return t("app.status.bundle.stage.evidence_trace");
+  if (stage === "contradiction_trace") return t("app.status.bundle.stage.contradiction_trace");
+  return t("app.status.bundle.stage.trace_analytics");
 }
 
 function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string {
@@ -6910,7 +6917,7 @@ ${parsedDocument.error}`);
 
   const handleExportBundleZip = useCallback(async (options: { includeOutline: boolean; includeDiagnostics: boolean; includeSelectedCardTraces: boolean; exportGranularity: "overview" | "detail" }) => {
     if (!document) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -6966,7 +6973,7 @@ ${parsedDocument.error}`);
       bundleAbortRef.current = controller;
       const unsubscribe = bundleRunnerRef.current.onProgress((progress) => setComputeProgressMessage(progress.message));
       const outcome = await bundleRunnerRef.current.run(async (ctx) => {
-        ctx.reportProgress({ message: "Working... building bundle", completed: 1, total: 3 });
+        ctx.reportProgress({ message: t("app.status.bundle.progress.building"), completed: 1, total: 3 });
         await ctx.yieldToMainThread();
         const files = await buildExportBundleWithWorkers(document, viewMetadata, {
           rootFolderPath,
@@ -7005,34 +7012,42 @@ ${parsedDocument.error}`);
           packVisibility,
         }, {
           signal: controller.signal,
-          onProgress: (message) => ctx.reportProgress({ message, completed: 2, total: 3 }),
+          onProgress: (stage) => ctx.reportProgress({
+            message: t("app.status.bundle.progress.stage", { stage: getBundleExportProgressStageLabel(stage) }),
+            completed: 2,
+            total: 3,
+          }),
         });
         if (controller.signal.aborted || ctx.isCancelled()) {
           return null;
         }
-        ctx.reportProgress({ message: "Working... zipping bundle", completed: 3, total: 3 });
+        ctx.reportProgress({ message: t("app.status.bundle.progress.zipping"), completed: 3, total: 3 });
         await ctx.yieldToMainThread();
         const zipBlob = await buildBundleZipBlob(files, {
           signal: controller.signal,
-          onProgress: (percent) => ctx.reportProgress({ message: `Working... zipping bundle (${percent}%)`, completed: 3, total: 3 }),
+          onProgress: (percent) => ctx.reportProgress({
+            message: t("app.status.bundle.progress.zipping_percent", { percent }),
+            completed: 3,
+            total: 3,
+          }),
         });
         return { files, zipBlob };
       });
       unsubscribe();
       if (outcome.status === "cancelled" || outcome.result === null) {
-        setStatusMessage("Bundle export cancelled");
+        setStatusMessage(t("app.status.bundle.cancelled"));
         return;
       }
       const { files, zipBlob } = outcome.result;
       downloadBlobAsFile(`${rootFolderPath}.zip`, zipBlob);
-      setStatusMessage(`Exported bundle (${files.length} files)`);
+      setStatusMessage(t("app.status.bundle.exported", { count: files.length }));
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Bundle export failed";
+      const message = error instanceof Error ? error.message : t("app.status.bundle.failed_unknown");
       if (message.toLowerCase().includes("cancelled")) {
-        setStatusMessage("Bundle export cancelled");
+        setStatusMessage(t("app.status.bundle.cancelled"));
       } else {
-        setStatusMessage(`Bundle export failed: ${message}`);
+        setStatusMessage(t("app.status.bundle.failed", { detail: message }));
       }
     } finally {
       setIsBundleExportRunning(false);

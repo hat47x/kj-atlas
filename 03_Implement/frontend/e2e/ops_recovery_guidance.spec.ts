@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
 
 const DOCUMENT_ID = "doc_phase1_canvas";
 
@@ -147,6 +148,68 @@ async function installSlowDiagnosticsWorker(page: Page) {
   });
 }
 
+async function installSlowBundleZipWorker(page: Page) {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+
+    class SlowBundleZipWorker extends EventTarget {
+      private requestId: string | null = null;
+      private progressTimer: number | null = null;
+
+      constructor(scriptURL: string | URL, options?: WorkerOptions) {
+        super();
+        if (!String(scriptURL).includes("bundle_zip.worker")) {
+          return new NativeWorker(scriptURL, options) as unknown as SlowBundleZipWorker;
+        }
+      }
+
+      postMessage(message: unknown) {
+        if (!message || typeof message !== "object") {
+          return;
+        }
+
+        const payload = message as { type?: string; requestId?: string };
+        if (payload.type === "bundle.zip.request" && payload.requestId) {
+          this.requestId = payload.requestId;
+          this.progressTimer = window.setTimeout(() => {
+            this.dispatchEvent(new MessageEvent("message", {
+              data: {
+                type: "bundle.zip.progress",
+                requestId: payload.requestId,
+                percent: 10,
+              },
+            }));
+          }, 50);
+          return;
+        }
+
+        if (payload.type === "bundle.zip.cancel" && payload.requestId) {
+          if (this.progressTimer !== null) {
+            window.clearTimeout(this.progressTimer);
+            this.progressTimer = null;
+          }
+          this.dispatchEvent(new MessageEvent("message", {
+            data: {
+              type: "bundle.zip.cancelled",
+              requestId: payload.requestId,
+            },
+          }));
+        }
+      }
+
+      terminate() {
+        if (this.progressTimer !== null) {
+          window.clearTimeout(this.progressTimer);
+          this.progressTimer = null;
+        }
+        this.requestId = null;
+      }
+    }
+
+    window.Worker = SlowBundleZipWorker as unknown as typeof Worker;
+  });
+}
+
 test("API load failure gives safe recovery guidance", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 720 });
   await routeDocumentApi(page, { failGet: true });
@@ -193,5 +256,24 @@ test("slow diagnostics shows progress and can be cancelled", async ({ page }) =>
 
   await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
   await expect(page.getByTestId("status-message")).toContainText("診断を中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("slow review pack export shows progress and can be cancelled", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await installSlowBundleZipWorker(page);
+  await routeDocumentApi(page, {});
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+
+  await expect(page.getByText("レビューパックを圧縮中（10%）").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^処理中|^Working/ }).first()).toBeDisabled();
+
+  await page.locator("button:not([disabled])", { hasText: /^キャンセル$|^Cancel$/ }).last().click();
+  await expect(page.getByTestId("status-message")).toContainText("レビューパックの書き出しを中止しました");
   await expectStatusFitsViewport(page);
 });
