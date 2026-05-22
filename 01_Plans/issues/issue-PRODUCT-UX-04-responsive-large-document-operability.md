@@ -146,15 +146,25 @@
 
 | Area | Evidence | Result | Remaining gap |
 | --- | --- | --- | --- |
-| Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1280px / 920px / 390px | 768px and 1440px still need explicit matrix evidence. |
+| Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 1280px / 920px / 768px / 390px | large-document and slow/backend-recovery scenarios remain outside this fit check. |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | keyboard/focus-path evidence for canvas edit mode remains under this issue. |
 | Canvas mouse operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass | keyboard/focus-path evidence for edit mode remains under this issue. |
 | Full frontend E2E | bundled Playwright full suite | Pass: 21 tests | large-document fixture and slow/backend-recovery scenarios remain outside the current suite. |
 | Frontend regression | full Vitest | Pass: 160 files / 732 tests | does not replace browser viewport evidence. |
 
 ### Task status adjustment
 
-- T3 remains open but narrowed: layout collapse and mouse hit-testing for the covered canvas/share/header flows are fixed; focus order, 768px/1440px layout, and large-document interaction evidence remain.
+- T3 remains open but narrowed: layout collapse, mouse hit-testing, 768px/1440px header-panel fit, and Share/View keyboard open-close focus return are fixed for covered flows; canvas edit-mode keyboard/focus order and large-document interaction evidence remain.
 - T5 remains open: public acceptance documentation should be updated after the full viewport/large-document/slow-environment matrix is recorded.
+
+## 12) Evidence update 2026-05-22: header panel keyboard and viewport matrix
+
+- Implementation route: `App.tsx` now moves focus into the View dialog when it opens and restores focus to the View trigger when Escape closes it. This aligns View with the existing Share dialog focus-return behavior.
+- E2E route: `e2e/header_toolbar_layout.spec.ts` now checks 1440px, 1280px, 920px, 768px, and 390px layout fit, plus keyboard Enter/Escape focus return at 1440px and 768px.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line`: Pass, 7 tests.
+- Remaining gap: this closes the header/share/view panel portion of the viewport matrix. Large-document fixtures, slow/backend-recovery UX, and canvas edit-mode keyboard semantics remain open.
 
 ---
 

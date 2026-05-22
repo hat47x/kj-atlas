@@ -7685,6 +7685,19 @@ ${parsedDocument.error}`);
 
   const safeModeIndicator = getSafeModeIndicator(safeMode);
   const viewControlsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const viewControlsPanelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isViewControlsOpen) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      viewControlsPanelRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isViewControlsOpen]);
 
   const headerViewControls = (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", whiteSpace: "nowrap" }}>
@@ -7759,6 +7772,7 @@ ${parsedDocument.error}`);
       </button>
       {isViewControlsOpen ? (
         <div
+          ref={viewControlsPanelRef}
           data-panel="view"
           role="dialog"
           aria-label={t("view_controls.trigger")}

@@ -232,12 +232,13 @@
 | Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
 | Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 732 tests | G1 / G3 / G7 |
 | Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 21 tests | G2 / G3 / G4 / G7 |
-| Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1280px / 920px / 390px; share panel does not exceed viewport | G4 |
+| Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 1280px / 920px / 768px / 390px; share/view panels do not exceed viewport | G4 |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 768px Enter opens Share/View dialog, Escape closes, focus returns to trigger | G2 / G4 |
 
 ### Gate impact
 - G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, and polygon vertex drag.
 - G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs.
-- G4 画面耐性: Conditional Go. 390px coverage is now automated for header/share panel fit, but 768px/1440px and large-document/slow-environment matrix remain under `PRODUCT-UX-04`.
+- G4 画面耐性: Conditional Go. Header/share/view panel fit is now automated for 390px/768px/920px/1280px/1440px, but large-document and slow-environment matrix remain under `PRODUCT-UX-04`.
 - G7 回帰: Go for frontend scope in this update.
 
 ## 17) Stream G update (2026-05-20): Draft→Open昇格条件の固定（Gate定義専任）
