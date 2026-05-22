@@ -159,6 +159,7 @@ import { resolvePublicPackIdFromSearch } from "./domain/policy/public_pack";
 import { createCancelableTaskRunner } from "./utils/compute_scheduler";
 import { DiffWorkerClient } from "./worker/diff_client";
 import { DiagnosticsWorkerClient } from "./worker/diagnostics_client";
+import type { DiagnosticsProgressStage } from "./worker/diagnostics_protocol";
 import type { DiffProgressStage } from "./worker/diff_protocol";
 
 const DEFAULT_DOCUMENT_ID = "doc_phase1_canvas";
@@ -223,6 +224,10 @@ function formatSaveDocumentFailure(error: unknown): string {
   return t("app.status.save_failed_recovery", {
     detail: describeRecoverableError(error),
   });
+}
+
+function getDiagnosticsStageDisplayLabel(stage: DiagnosticsProgressStage): string {
+  return t(`app.status.diagnostics.stage.${stage}`);
 }
 
 function getWorkspaceDecisionDisplayLabel(decision: string | undefined): string {
@@ -5932,11 +5937,14 @@ ${parsedDocument.error}`);
     }, {
       signal: controller.signal,
       onProgress: (progress) => {
-        setComputeProgressMessage(`Diagnostics: ${progress.stage} (${progress.percent}%)`);
+        setComputeProgressMessage(t("app.status.diagnostics.progress", {
+          stage: getDiagnosticsStageDisplayLabel(progress.stage),
+          percent: progress.percent,
+        }));
       },
     }).then((outcome) => {
       if (outcome.status === "cancelled") {
-        setStatusMessage("Diagnostics cancelled");
+        setStatusMessage(t("app.status.diagnostics.cancelled"));
         return;
       }
       const { outlineReport, contradictionReport, distributionReport, dialecticBalanceReport } = outcome.result.diagnosticsData;
@@ -5949,7 +5957,13 @@ ${parsedDocument.error}`);
 
       const errorCount = outlineReport.findings.filter((finding) => finding.severity === "error").length;
       const warnCount = outlineReport.findings.filter((finding) => finding.severity === "warn").length;
-      setStatusMessage(`Diagnostics complete: ${errorCount} error(s), ${warnCount} warning(s), ${contradictionReport.stats.signals} contradiction signal(s), ${distributionReport.findings.length} distribution signal(s), ${dialecticBalanceReport.findings.length} dialectic balance signal(s)`);
+      setStatusMessage(t("app.status.diagnostics.complete", {
+        errors: errorCount,
+        warnings: warnCount,
+        contradictions: contradictionReport.stats.signals,
+        distributions: distributionReport.findings.length,
+        balances: dialecticBalanceReport.findings.length,
+      }));
     }).finally(() => {
       setIsDiagnosticsRunning(false);
       setComputeProgressMessage(null);

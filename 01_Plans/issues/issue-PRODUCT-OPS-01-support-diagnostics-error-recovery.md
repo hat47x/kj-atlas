@@ -126,12 +126,13 @@
 
 - Implementation route: `App.tsx` now formats document load, document create, and save failures with recovery guidance instead of exposing only the raw exception message. The status message uses `role="status"` and fixed viewport placement so long recovery guidance remains visible on small screens.
 - E2E route: `e2e/ops_recovery_guidance.spec.ts` injects API failures for default document load and save. It verifies that the UI tells users to check `/api/healthz`, backend startup, retry/export JSON as appropriate, and avoid sharing API keys or tokens in diagnostics.
+- Slow-operation route: the same E2E now injects a slow diagnostics worker. It verifies visible diagnostics progress, disabled in-flight action state, cancel affordance, and a cancelled status message.
 - Support documentation route: `SUPPORT.md` now separates questions, bugs, feature requests, and security issues; it also lists information to share, information not to share, and the first recovery checks.
 - Verification:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
-  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 2 tests.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 3 tests.
 - ADR impact: no ADR required. This keeps the existing support/diagnostics policy and makes current UI behavior conform to it; it does not introduce automated log transmission or a new support integration.
-- Remaining gap: low-speed worker/API delay states still need explicit progress/cancel/retry evidence. Automated support bundle generation remains a future ADR candidate if product policy changes.
+- Remaining gap: save/API failure and diagnostics delay are now covered. Bundle export delay/cancel and automated support bundle generation remain future follow-up candidates; automated support bundle generation still requires ADR if product policy changes.
 
 ---
 

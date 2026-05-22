@@ -188,11 +188,11 @@
 ## 15) Evidence update 2026-05-22: backend-recovery guidance on small screens
 
 - Implementation route: API load/create/save failures now produce recovery-oriented status messages and the status region is fixed to the viewport with wrapping, preventing long diagnostic guidance from being pushed off-screen by the right panel.
-- E2E route: `e2e/ops_recovery_guidance.spec.ts` covers API load failure and save failure at 390px width, including viewport-fit checks for the status message.
+- E2E route: `e2e/ops_recovery_guidance.spec.ts` covers API load failure, save failure, and slow diagnostics cancellation at 390px width, including viewport-fit checks for the status message.
 - Verification:
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
-  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 2 tests.
-- Task status adjustment: the backend-recovery messaging portion of T4 is covered for API unavailable/save failure. T4 remains open for genuinely slow operations, progress/cancel behavior, and worker/API delay states.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 3 tests.
+- Task status adjustment: the backend-recovery messaging portion of T4 is covered for API unavailable/save failure. Progress/cancel behavior is covered for slow diagnostics. T4 remains open for bundle export delay/cancel and broader worker/API delay states.
 
 ---
 
