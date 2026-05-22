@@ -414,3 +414,28 @@
 
 ### Approval-wait packet
 - This section + ADR-0032 Stream H block are the approval bundle for MVP-EXIT-01.
+
+## MVP-EXIT Program Gate Decision 2026-05-23: PR #2251 evidence intake
+
+- Candidate: PR #2251 `codex/current-project-risk-analysis-issues@771151d8dfcc3828ad6686418c38338e37d9a5a2`
+- Decision date: 2026-05-23
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-05-23: PR #2251 ready-for-review`
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated in this intake; no runtime env contract change in the final PR #2251 update.
+
+### Decision
+
+- Final: **Conditional Go for PR readiness / No-Go for full release shipment**
+- Reason summary: PR #2251 has passing CI and candidate-specific planning/productization evidence, but full product shipment still requires release-candidate evidence across env contract gates, value gates, and remaining Draft product/UX issues.
+- Escalation route: keep PR #2251 reviewable; do not treat it as final release approval. Re-run Program Gate after merge or release-candidate cut.
+
+### Conditional controls
+
+- Remaining risks:
+  - E1..E3 environment contract evidence is not part of this final PR #2251 intake.
+  - `PRODUCT-VALUE-*` and `PRODUCT-UX-*` Draft issues remain outside full release Go.
+  - RTK adoption is local Codex DX evidence only and must not be mixed into application runtime readiness.
+- Owner: Codex for evidence maintenance; System Owner / QA Lead required for release shipment decision.
+- Due date: next release-candidate gate review.
+- Re-decision date: when PR #2251 is merged or superseded, or when a release candidate is cut from `main`.
