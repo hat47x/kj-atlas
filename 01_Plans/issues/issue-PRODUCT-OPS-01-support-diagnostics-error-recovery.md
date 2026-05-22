@@ -134,6 +134,17 @@
 - ADR impact: no ADR required. This keeps the existing support/diagnostics policy and makes current UI behavior conform to it; it does not introduce automated log transmission or a new support integration.
 - Remaining gap: save/API failure, diagnostics delay, and review-pack export delay/cancel are now covered. Broader worker/API delay states and automated support bundle generation remain future follow-up candidates; automated support bundle generation still requires ADR if product policy changes.
 
+## 12) Evidence update 2026-05-23: review-diff worker recovery guidance
+
+- Implementation route: review diff worker progress and cancellation status now use the i18n catalog instead of hard-coded English. The Japanese UI shows `差分を計算中: カード（10%）` during worker progress and `差分計算を中止しました` after cancellation.
+- E2E route: `e2e/ops_recovery_guidance.spec.ts` injects a slow `diff.worker` for the review-diff flow, loads a comparison document, verifies localized progress, verifies the working/cancel affordance, cancels the worker, and checks that the status message still fits a 390px viewport.
+- Documentation route: `04_Documentation/diagnostics.md` now names review-diff calculation as a worker delay case and tells operators to record progress visibility, cancellation, and smaller comparison-file reproduction.
+- Verification target:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`
+- ADR impact: no ADR required. This is a UI recovery/i18n correction within the existing diagnostics policy and does not introduce automated support bundle generation or external log sharing.
+- Remaining gap: automated support bundle generation remains a future follow-up candidate and still requires ADR if product policy changes.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
