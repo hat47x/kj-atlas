@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import type { Point } from "../domain/types";
 
@@ -8,6 +8,7 @@ type PolygonEditLayerProps = {
   onVertexDragMove?: (vertexIndex: number, point: Point) => void;
   onVertexDragCommit: (vertexIndex: number, point: Point) => void;
   onVertexDragCancel?: (vertexIndex: number) => void;
+  onVertexNudge?: (vertexIndex: number, screenDelta: Point) => void;
   onVertexRemove: (vertexIndex: number) => void;
 };
 
@@ -17,6 +18,8 @@ type DragState = {
 };
 
 const HANDLE_SIZE = 10;
+const KEYBOARD_NUDGE_STEP = 8;
+const KEYBOARD_NUDGE_LARGE_STEP = 32;
 
 export function PolygonEditLayer({
   points,
@@ -24,6 +27,7 @@ export function PolygonEditLayer({
   onVertexDragMove,
   onVertexDragCommit,
   onVertexDragCancel,
+  onVertexNudge,
   onVertexRemove,
 }: PolygonEditLayerProps) {
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
@@ -103,6 +107,31 @@ export function PolygonEditLayer({
     return point;
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, vertexIndex: number) => {
+    if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      event.stopPropagation();
+      onVertexRemove(vertexIndex);
+      return;
+    }
+
+    const step = event.shiftKey ? KEYBOARD_NUDGE_LARGE_STEP : KEYBOARD_NUDGE_STEP;
+    const deltaByKey: Record<string, Point> = {
+      ArrowLeft: { x: -step, y: 0 },
+      ArrowRight: { x: step, y: 0 },
+      ArrowUp: { x: 0, y: -step },
+      ArrowDown: { x: 0, y: step },
+    };
+    const delta = deltaByKey[event.key];
+    if (!delta) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    onVertexNudge?.(vertexIndex, delta);
+  };
+
   const minX = Math.min(...points.map((point) => point.x)) - HANDLE_SIZE;
   const minY = Math.min(...points.map((point) => point.y)) - HANDLE_SIZE;
   const maxX = Math.max(...points.map((point) => point.x)) + HANDLE_SIZE;
@@ -127,8 +156,10 @@ export function PolygonEditLayer({
           <div
             key={index}
             role="button"
+            tabIndex={0}
             aria-label={`Move polygon vertex ${index + 1}`}
-            title="Drag to move / Alt+Click to remove"
+            aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown Delete Backspace"
+            title="Drag to move / Arrow keys to move / Delete to remove / Alt+Click to remove"
             onPointerDown={(event) => {
               handlePointerDown(event, index);
             }}
@@ -138,6 +169,9 @@ export function PolygonEditLayer({
             }}
             onPointerCancel={(event) => {
               clearDrag(event, true);
+            }}
+            onKeyDown={(event) => {
+              handleKeyDown(event, index);
             }}
             style={{
               position: "absolute",

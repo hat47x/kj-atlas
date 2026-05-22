@@ -147,14 +147,14 @@
 | Area | Evidence | Result | Remaining gap |
 | --- | --- | --- | --- |
 | Header/share responsive fit | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 1280px / 920px / 768px / 390px | large-document and slow/backend-recovery scenarios remain outside this fit check. |
-| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | keyboard/focus-path evidence for canvas edit mode remains under this issue. |
-| Canvas mouse operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass | keyboard/focus-path evidence for edit mode remains under this issue. |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass at 1440px / 768px: focus Share/View trigger, Enter opens dialog, Escape closes, focus returns to trigger. | canvas edit-mode focus-order breadth remains under this issue. |
+| Canvas mouse and keyboard operability | `e2e/polygon_vertex_edit.spec.ts`, `e2e/polygon_autofit_qa_boundary.spec.ts` | Pass: mouse drag, arrow-key nudge, Shift+arrow large nudge, Delete removal, self-intersection guard. | broader canvas edit-mode focus order remains under this issue. |
 | Full frontend E2E | bundled Playwright full suite | Pass: 21 tests | large-document fixture and slow/backend-recovery scenarios remain outside the current suite. |
 | Frontend regression | full Vitest | Pass: 160 files / 732 tests | does not replace browser viewport evidence. |
 
 ### Task status adjustment
 
-- T3 remains open but narrowed: layout collapse, mouse hit-testing, 768px/1440px header-panel fit, and Share/View keyboard open-close focus return are fixed for covered flows; canvas edit-mode keyboard/focus order and large-document interaction evidence remain.
+- T3 remains open but narrowed: layout collapse, mouse hit-testing, polygon keyboard nudge/removal, 768px/1440px header-panel fit, and Share/View keyboard open-close focus return are fixed for covered flows; broader canvas edit-mode focus order and large-document interaction evidence remain.
 - T5 remains open: public acceptance documentation should be updated after the full viewport/large-document/slow-environment matrix is recorded.
 
 ## 12) Evidence update 2026-05-22: header panel keyboard and viewport matrix
@@ -165,6 +165,15 @@
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line`: Pass, 7 tests.
 - Remaining gap: this closes the header/share/view panel portion of the viewport matrix. Large-document fixtures, slow/backend-recovery UX, and canvas edit-mode keyboard semantics remain open.
+
+## 13) Evidence update 2026-05-22: polygon edit keyboard operation
+
+- Implementation route: `PolygonEditLayer.tsx` now makes vertex handles keyboard focusable and supports Arrow-key nudging, Shift+Arrow larger nudging, and Delete/Backspace removal. `CanvasShell.tsx` converts screen-step keyboard deltas into world coordinates using the current zoom before committing the vertex move.
+- E2E route: `e2e/polygon_vertex_edit.spec.ts` now verifies focus on a vertex handle, ArrowRight + Shift+ArrowDown movement, Delete removal of another vertex, and persistence through legacy document JSON export.
+- Verification:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`: Pass.
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts --reporter=line`: Pass, 2 tests.
+- Remaining gap: the polygon edit primitive is now keyboard-operable; full canvas focus-order coverage across card selection, island selection, panels, and edit handles remains open.
 
 ---
 

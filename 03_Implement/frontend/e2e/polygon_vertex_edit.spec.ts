@@ -27,14 +27,11 @@ async function readDownloadToBuffer(download: Download): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-test("polygon vertex drag keeps constraints and persists edited points", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
-
+function buildPolygonDocument(id: string) {
   const now = new Date().toISOString();
-  const polygonDoc = {
+  return {
     version: 2,
-    id: "doc_e2e_polygon_vertex_edit",
+    id,
     createdAt: now,
     updatedAt: now,
     transform: { panX: 0, panY: 0, zoom: 1 },
@@ -57,6 +54,11 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
       },
     ],
   };
+}
+
+async function replaceCurrentDocumentWithPolygon(page: import("@playwright/test").Page, id: string): Promise<void> {
+  await page.goto("/");
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: LOAD_DOCUMENT_BUTTON }).click();
@@ -64,7 +66,7 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
   await fileChooser.setFiles({
     name: "polygon-edit.json",
     mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(polygonDoc), "utf-8"),
+    buffer: Buffer.from(JSON.stringify(buildPolygonDocument(id)), "utf-8"),
   });
 
   await page.getByRole("button", { name: REPLACE_DOCUMENT_BUTTON }).click();
@@ -75,6 +77,22 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
   const editCheckbox = page.getByRole("checkbox", { name: EDIT_ISLAND_BOUNDARY_CHECKBOX });
   await expect(editCheckbox).toBeVisible();
   await editCheckbox.check();
+}
+
+async function exportCurrentDocument(page: import("@playwright/test").Page) {
+  await closeSharePanelIfOpen(page);
+  await openLegacyJsonMenu(page);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
+  const download = await downloadPromise;
+  const jsonBuffer = await readDownloadToBuffer(download);
+  return JSON.parse(jsonBuffer.toString("utf-8")) as {
+    islands: Array<{ id: string; shape?: { kind: string; points?: Array<{ x: number; y: number }> } }>;
+  };
+}
+
+test("polygon vertex drag keeps constraints and persists edited points", async ({ page }) => {
+  await replaceCurrentDocumentWithPolygon(page, "doc_e2e_polygon_vertex_edit");
 
   const firstVertexHandle = page.getByRole("button", { name: "Move polygon vertex 1" });
   await expect(firstVertexHandle).toBeVisible();
@@ -88,16 +106,7 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
     targetPosition: { x: startX + 40, y: startY + 28 },
   });
 
-  await closeSharePanelIfOpen(page);
-  await openLegacyJsonMenu(page);
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: EXPORT_DOCUMENT_JSON_BUTTON }).click();
-  const download = await downloadPromise;
-  const jsonBuffer = await readDownloadToBuffer(download);
-
-  const exportedDocument = JSON.parse(jsonBuffer.toString("utf-8")) as {
-    islands: Array<{ id: string; shape?: { kind: string; points?: Array<{ x: number; y: number }> } }>;
-  };
+  const exportedDocument = await exportCurrentDocument(page);
 
   const editedIsland = exportedDocument.islands.find((island) => island.id === "i1");
   expect(editedIsland?.shape?.kind).toBe("polygon");
@@ -107,4 +116,26 @@ test("polygon vertex drag keeps constraints and persists edited points", async (
   expect(movedPoint?.x).toBeGreaterThan(140);
   expect(movedPoint?.y).toBeGreaterThan(130);
   expect(movedPoint).not.toEqual({ x: 120, y: 120 });
+});
+
+test("polygon vertex handles support keyboard nudging and removal", async ({ page }) => {
+  await replaceCurrentDocumentWithPolygon(page, "doc_e2e_polygon_vertex_keyboard_edit");
+
+  const firstVertexHandle = page.getByRole("button", { name: "Move polygon vertex 1" });
+  await expect(firstVertexHandle).toBeVisible();
+  await firstVertexHandle.focus();
+  await expect(firstVertexHandle).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Shift+ArrowDown");
+
+  const fourthVertexHandle = page.getByRole("button", { name: "Move polygon vertex 4" });
+  await fourthVertexHandle.focus();
+  await expect(fourthVertexHandle).toBeFocused();
+  await page.keyboard.press("Delete");
+
+  const exportedDocument = await exportCurrentDocument(page);
+  const editedIsland = exportedDocument.islands.find((island) => island.id === "i1");
+  expect(editedIsland?.shape?.kind).toBe("polygon");
+  expect(editedIsland?.shape?.points).toHaveLength(3);
+  expect(editedIsland?.shape?.points?.[0]).toEqual({ x: 128, y: 152 });
 });

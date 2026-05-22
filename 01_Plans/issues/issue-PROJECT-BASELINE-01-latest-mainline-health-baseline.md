@@ -185,11 +185,13 @@
 | Full frontend Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 21 tests | G2 / G3 / G4 / G7 |
 | Canvas/polygon E2E focus | `e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts` | Pass: 4 tests | G2 / G4 |
 | Header panel viewport/keyboard focus | bundled `node.exe .\node_modules\playwright\cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line` | Pass: 7 tests covering 1440px / 1280px / 920px / 768px / 390px fit and 1440px / 768px Enter/Escape focus return | G2 / G4 |
+| Polygon edit keyboard focus | bundled `node.exe .\node_modules\playwright\cli.js test e2e/polygon_vertex_edit.spec.ts --reporter=line` | Pass: 2 tests covering pointer drag plus keyboard nudge/removal persistence | G2 / G4 |
 
 ### Findings and routing
 
 - Resolved defect: `primary-flow` had `height: 0px`, so canvas content was visible through overflow while pointer hit-testing did not reliably reach polygon vertex handles. The fix gives the primary canvas flow a real height, renders polygon edit controls above cards, and gives the edit layer a non-zero hit-test area.
 - Resolved keyboard focus gap: View controls now move focus into the dialog on open and restore focus to the trigger on Escape, matching Share dialog behavior.
+- Resolved polygon keyboard gap: polygon vertex handles are focusable and support Arrow-key movement plus Delete/Backspace removal, with E2E export persistence evidence.
 - Resolved E2E drift: affected Playwright specs now use shared bilingual label helpers for current Japanese/English UI labels, including share/export/read-only/visibility/polygon-edit actions.
 - No ADR required: the change restores the existing interaction contract and does not alter product policy, public contract, or architecture.
 - Remaining follow-up: large-document and slow/backend-recovery evidence remains routed to `PRODUCT-UX-04` and `PRODUCT-OPS-01`.
@@ -198,7 +200,7 @@
 
 | Gate | 2026-05-22 delta | Reason |
 | --- | --- | --- |
-| G2 荳ｻ隕∵桃菴・| Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, and polygon vertex drag. |
+| G2 荳ｻ隕∵桃菴・| Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, polygon vertex drag, and polygon vertex keyboard nudge/removal. |
 | G3 譌･譛ｬ隱朸I | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers. |
 | G4 逕ｻ髱｢閠先ｧ | Conditional Go | 390px/768px/920px/1280px/1440px header-panel fit, Share/View keyboard focus return, and canvas hit-testing are now covered; large-document and slow-environment matrix remain open. |
 | G7 蝗槫ｸｰ | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |

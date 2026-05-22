@@ -1348,6 +1348,17 @@ export function CanvasShell({
             onVertexDragCancel={(vertexIndex) => {
               onPolygonVertexDragCancel?.(polygonVertexEditIslandId, vertexIndex);
             }}
+            onVertexNudge={(vertexIndex, screenDelta) => {
+              const currentPoint = polygonVertexEditShape.points[vertexIndex];
+              if (!currentPoint) {
+                return;
+              }
+
+              onPolygonVertexDragCommit(polygonVertexEditIslandId, vertexIndex, {
+                x: currentPoint.x + screenDelta.x / transform.zoom,
+                y: currentPoint.y + screenDelta.y / transform.zoom,
+              });
+            }}
             onVertexRemove={(vertexIndex) => {
               onPolygonVertexRemove(polygonVertexEditIslandId, vertexIndex);
             }}
