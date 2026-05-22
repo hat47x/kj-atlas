@@ -185,3 +185,400 @@
 - [x] 受入条件に「安全」「互換」「検証」が含まれる。
 - [x] `Validation plan` に具体コマンドがある。
 - [x] 非目標が明記されスコープ逸脱を防いでいる。
+
+## 16) Stream E update (2026-05-19): Release/Quality/Env gate normalization
+
+### Phase 1: Read
+- `PRODUCT-QA-01` / `MVP-EXIT-01` / `ENV-CONFIG-DRIFT-01` の受入条件、`GoNoGoGate`、`VerificationLevel` を比較し、**integration レベルの単一ゲート定義**に統一した。
+- 判定の曖昧語（「必要に応じて」「十分」）は、実行証跡（command log / gate record / follow-up issue）必須化で解消した。
+
+### Phase 2: ゲート定義（固定）
+- Release 判定は `G0..G7 + Value gates` を必須判定面として維持。
+- Env 判定は `E1 Public key contract` / `E2 Runtime validation` / `E3 Compose consistency` を追加トレースし、No-Go時に `ENV-CONFIG-DRIFT-01` へ戻す。
+- Conditional Go は「重大欠陥なし + 是正期限つきフォローアップ issue 発行済み」のときのみ許可。
+
+### Phase 3: 検証設計
+- 最低実施セット: issue metadata validator / frontend typecheck / backend settings tests / compose config / docs diff check。
+- 失敗時判定基準:
+  - **Blocker**: SafeMode境界破壊、公開契約キー不一致、主要導線E2E不能。
+  - **Major**: UI主要操作の到達不能、公開文書と実装不一致、i18n重大欠落。
+  - **Minor**: リリース阻害でない文言・体裁差分（follow-upで是正）。
+
+### Phase 4: 監査テンプレ標準
+- Gate record の必須項目を以下で固定:
+  - Candidate / Date / Reviewer / Scope
+  - Gate result (Go/No-Go/N/A)
+  - Evidence links (command logs, screenshots, test report)
+  - Escalation route (issue id, due date, owner)
+  - Final decision (Go / Conditional Go / No-Go)
+
+### Phase 5: 反映結果
+- Stream E として本 issue を **release-quality ゲート正本**として再確認。
+- Env契約逸脱の戻し先を `issue-ENV-CONFIG-DRIFT-01`、製品化親判断を `issue-MVP-EXIT-01` に固定。
+
+### Fail-safe
+- 判定曖昧さは本更新で解消済み。未解消論点は governance queue（ADR起票条件）へ送る。
+
+## 17) Gate evidence update (2026-05-22): full frontend E2E + canvas operability fix
+
+### Observed issue
+- Product defect: `primary-flow` container height was `0px`; canvas contents were visible through overflow, but pointer hit-testing did not reach polygon vertex handles.
+- User impact: mouse users could see polygon edit handles but could not drag them reliably; QA-3 self-intersection guard and normal vertex move E2E both failed before the fix.
+- Fix route: implementation change in `03_Implement/frontend/src/App.tsx`, `CanvasShell.tsx`, and `PolygonEditLayer.tsx`; no ADR required because the interaction model did not change, only the existing edit affordance became operable.
+
+### Command evidence
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Frontend full Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 32 tests | G2 / G3 / G4 / G7 |
+| Viewport panel check | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 1280px / 920px / 768px / 390px; share/view panels do not exceed viewport | G4 |
+| Header panel keyboard flow | `e2e/header_toolbar_layout.spec.ts` | Pass: 1440px / 768px Enter opens Share/View dialog, Escape closes, focus returns to trigger | G2 / G4 |
+| Polygon edit keyboard flow | `e2e/polygon_vertex_edit.spec.ts` | Pass: vertex handle focus, Arrow-key nudge, Shift+Arrow larger nudge, Delete removal, export persistence | G2 / G4 |
+| Canvas focus-order flow | `e2e/canvas_focus_order.spec.ts` | Pass: keyboard card selection, Tab reachability to card action, keyboard island selection, Japanese island-editor labels, and Tab reachability to island action | G2 / G3 / G4 |
+| Large-document operability | `e2e/large_document_operability.spec.ts` | Pass: 120 cards / 12 islands at 768px; search, hide non-matches, View/Share panel fit, and bundle diagnostics export | G2 / G4 / G7 |
+| Ops recovery guidance | `e2e/ops_recovery_guidance.spec.ts` | Pass: API load failure, save failure, slow diagnostics cancellation, and slow review-pack export cancellation at 390px show recovery steps, progress/cancel state, JSON-preservation guidance, and diagnostics secret-sharing guardrails without viewport overflow | G4 / G6 / G7 |
+
+### Gate impact
+- G2 主要操作: Go for covered frontend flows, including document replace, visibility selection, readOnly safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability.
+- G3 日本語UI: Go for current E2E coverage; stale English-only and mojibake expectations were removed from the affected specs, and residual SidePanel/IslandView labels are guarded by i18n regression tests.
+- G4 画面耐性: Conditional Go. Header/share/view panel fit is automated for 390px/768px/920px/1280px/1440px, synthetic large-document operability is covered at 768px, API/save recovery guidance is covered at 390px, and slow diagnostics plus slow review-pack export progress/cancel are covered at 390px; broader slow worker/API delay states remain under `PRODUCT-UX-04`.
+- G6 診断とサポート: Conditional Go. API unavailable, save failure, slow diagnostics, and slow review-pack export now point users to health checks, retry/export preservation, progress/cancel state, and safe diagnostic sharing; automated support bundle generation remains outside this slice.
+- G7 回帰: Go for frontend scope in this update.
+
+## 17) Stream G update (2026-05-20): Draft→Open昇格条件の固定（Gate定義専任）
+
+本Issueは「機能実装の完了」ではなく、**製品化ゲートの判定可能性**をOpen条件として扱う。
+
+| Gate ID | 条件 | 判定方法 | No-Go時の扱い |
+| --- | --- | --- | --- |
+| PQA-O1 | `G0..G7` + Value Gate の Go/No-Go 条件が固定されている | 本文テーブルに曖昧語（適宜/十分）がないこと | 条件未固定のゲートを `Draft` に戻す |
+| PQA-O2 | 各ゲートに証跡型（command log / screenshot / follow-up issue）が紐づく | `5.1` と `5.3` の対応確認 | 証跡不足は `No-Go` |
+| PQA-O3 | `Conditional Go` 条件が「重大欠陥なし + 期限付き是正issue」に限定 | Stream E更新節と一致すること | 条件逸脱は Open不可 |
+| PQA-O4 | Verify matrix で `Required/Optional/N/A` 判定が可能 | Gate Recordとの突合 | 判定不能は Open不可 |
+| PQA-O5 | 自己修復上限 `<=3` が明記される | 修復上限節の記載 | 未定義は Open不可 |
+
+### Verify matrix（昇格判定）
+
+| 観点 | Pass条件 |
+| --- | --- |
+| Completeness | G0..G7 + Value Gate に欠番なし |
+| Measurability | 全Gateで証跡形式が1件以上定義済み |
+| Escalation | No-Go時の戻し先issueが定義済み |
+| Safety | SafeMode/share-export/import sanitize/public exposure が Required |
+| Self-correction | 修復上限3回、4回目相当Stop が明記済み |
+
+## 17) Stream F update (2026-05-19): Release Readiness QA execution package
+
+### Phase 1: Read（quality gate定義抽出）
+- 判定対象は `G0..G7 + Value gates + E1..E3` とし、`GoNoGoGate=Required` / `VerificationLevel=integration` を固定する。
+- `ADR-0019` と `frontend/docs/e2e_testing.md` に合わせ、証跡を「自動テスト結果 + 手動スモーク観測 + フォローアップissue」に分離する。
+
+### Phase 2: Plan（Go/No-Go基準ドラフト）
+- **Go**: Blocker=0 かつ Major=0。Minor は期限付き follow-up issue で許容。
+- **Conditional Go**: Blocker=0 かつ Major>=1 だが、回避策・owner・due date・再判定日が同時に確定。
+- **No-Go**: Blocker>=1、または証跡不備（コマンド結果/判定ログ欠落）、または SafeMode/share-export 境界不整合。
+
+### Phase 3: Execute（受入条件反映）
+- 受入条件に「判定結果を Gate Record に残す」「Conditional Go は是正期限と再判定日を必須化」「No-Go の戻し先 issue を明示」を追加適用する。
+
+### Phase 4: Verify（測定可能性/再現性チェック）
+- 測定可能性: 各ゲートに `result`, `evidence`, `owner`, `due` が存在すること。
+- 再現性: 同一 candidate で同一コマンド集合を再実行した際、判定の差分理由を説明できること。
+- 証跡最小セット:
+  - issue metadata validator
+  - frontend typecheck + regression guards
+  - Playwright E2E（mock または実環境）
+  - docs diff check / compose config check
+
+### Phase 5: Proceed（リリース判定テンプレート）
+```md
+## Productization Release Decision Record
+- Candidate:
+- Decision date (YYYY-MM-DD):
+- Reviewer:
+- Scope:
+
+### Gate Summary
+- G0..G7:
+- Value gates:
+- E1..E3:
+- Final: Go | Conditional Go | No-Go
+
+### Evidence
+- Command log links:
+- Test report links:
+- Screenshot links (if UI impact):
+
+### Follow-ups
+- Blocking issues:
+- Conditional issues (owner / due):
+- Re-decision date:
+
+### Safety Confirmation
+- SafeMode default ON: pass/fail
+- share/export fail-closed: pass/fail
+- public exposure checks: pass/fail
+```
+
+## 18) Stream E execution (2026-05-19): Product QA Gate 専任
+
+### Phase1 Read（上流整合の確認）
+- 参照正本を `ADR-0019` / `04_Documentation/acceptance_check.md` / `03_Implement/frontend/docs/e2e_testing.md` に固定し、公開利用者向け手動確認と開発者向け自動E2Eの境界を再確認した。
+- 本Issueの `GoNoGoGate=Required` / `VerificationLevel=integration` を **P0品質ゲートの最上位条件** として維持し、Draft課題のOpen化条件をこのゲートに従属させる。
+
+## 19) Stream F update (2026-05-20): Unified release readiness gate model
+
+### Phase 1 Read（重複・矛盾抽出）
+- `MVP-EXIT-01` と本Issueの判定条件を比較し、判定語彙・閾値・証跡要件のズレを抽出した。
+- 矛盾点:
+  - 判定カテゴリが「Gate一覧」中心と「Blocker/Critical/Major」中心で分離していた。
+  - Conditional Go の必須条件（owner/due/re-decision date）が本文中で強度不一致だった。
+  - 他ストリーム成果の受入時に必要な入力項目がテンプレート化されていなかった。
+
+### Phase 2 Plan（共通ゲートモデル定義）
+- `PRODUCT-QA-01` を Release Readiness 判定の正本とし、判定面を以下4カテゴリに統一する。
+  - **Quality**: G2/G3/G4/G7 + Value gates（V0..V4）
+  - **Security**: G1 + public exposure + SafeMode/share-export/import-sanitize整合
+  - **Operability**: G6 + E1..E3（環境契約/実行整合）
+  - **Documentation**: G0/G5 + 公開導線整合（`README.md`/`ROADMAP.md`/`public_index.md`）
+- 判定式（必須）を固定:
+  - Go: Blocker=0 かつ Critical=0 かつ Major=0 かつ 必須ゲート完了 かつ 証跡完備
+  - Conditional Go: Blocker=0 かつ Critical=0 かつ Major>=1 かつ 是正計画（owner/due/re-decision date）登録済み
+  - No-Go: Blocker>=1 または Critical>=1 または 必須証跡欠落
+
+### Phase 3 Execute（受入条件テンプレ整備）
+- 他ストリーム成果受入の最小テンプレートを追加し、判定入力を固定する。
+
+```md
+## Stream Deliverable Intake Template (PRODUCT-QA-01)
+- Stream ID:
+- Deliverable scope:
+- Mapped gate category: Quality | Security | Operability | Documentation
+- Target gates: (e.g., G3, V2, E2)
+- Evidence bundle:
+  - Command log:
+  - Test report:
+  - Screenshot / capture (UI影響時):
+  - Docs diff / spec sync:
+- Risk classification: Blocker | Critical | Major | Minor
+- Follow-up requirement (if not Go):
+  - issue id:
+  - owner:
+  - due:
+  - re-decision date:
+- Intake decision: Accepted | Accepted with condition | Rejected
+```
+
+### Phase 4 Verify（AC/DoD照合）
+- AC照合観点を次で固定:
+  1. 判定カテゴリが4分類へ正規化されている。
+  2. Go/Conditional/No-Go 判定式が測定可能（数値・有無判定）である。
+  3. 証跡要件が candidate 単位で追跡可能である。
+  4. 未達時の戻し先 issue と再判定日が必須入力である。
+- DoD観点:
+  - `GoNoGoGate=Required` と `VerificationLevel=integration` を維持し、E2E未実施時の代替記録方針は `ADR-0019` 準拠。
+
+### Phase 5 Proceed（Program受け渡し）
+- Program親Issue（`MVP-EXIT-01`）への受け渡し入力は、次を必須化する。
+  - Productization Gate Record（最新 candidate）
+  - Stream Deliverable Intake Template（該当ストリーム分）
+  - Conditional/No-Go の未解決一覧（owner/due/re-decision date）
+
+### Phase2 Gate定義（P0固定）
+- **P0 Gate-0（Evidence Completeness）**: Gate Record に `candidate/date/reviewer/scope/gate result/evidence/follow-up` が欠ける場合は即 No-Go。
+- **P0 Gate-1（Safety Boundary）**: SafeMode既定ON、share/export前確認、import sanitize の3点が文書・操作・証跡で一致しない場合は No-Go。
+- **P0 Gate-2（Execution Route）**: `ADR-0019` の Compose / SQLite代替 / 例外記録 のいずれかを事前固定し、未固定は No-Go。
+- **P0 Gate-3（Recovery Routing）**: No-Go時に戻し先issue（例: `QA-*`, `MVP-EXIT-01`, `ENV-CONFIG-DRIFT-01`）と再判定日が無い場合は No-Go。
+
+### Phase3 E2E/Unit境界定義（Draft Open化条件）
+Draft QA issue（`issue-QA-*`）は、次の **Open化条件（AC/DoD/証拠）** を満たすまで Draft 維持とする。
+
+- **AC-O1: Scope Boundary**
+  - E2Eで確認する価値境界（UI導線/SafeMode/share-export/i18nのどれか）を1行で明示。
+  - unit/integrationで担保する契約（変換/バリデーション/i18n guard など）を1行で明示。
+- **AC-O2: DoD Boundary**
+  - 完了条件に `pass条件` と `保留条件` を併記し、Execution: Hold解除条件を1行で判定可能にする。
+- **AC-O3: Evidence Contract**
+  - 最低証跡として `実行コマンド` / `結果` / `失敗分類(Blocker/Major/Minor)` / `follow-up issue` を持つ。
+- **AC-O4: Route Selection**
+  - Compose/SQLite/例外記録のいずれで検証するかを事前選択する。
+
+DoDテンプレ（Draft→Open）
+- DoD-O1: AC-O1〜O4が issue 本文に記載済み。
+- DoD-O2: metadata validator で構文不整合がない。
+- DoD-O3: No-Go時の戻し先と再開条件が 1:1 対応。
+
+### Phase4 Verify（運用検証）
+- Verify command set（最小）
+  - `python3 01_Plans/issues/validate_active_issue_memos.py`
+  - `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|Execution: Hold|Pending" 01_Plans/issues/issue-QA-*.md`
+  - `git diff --check`
+- 判定
+  - Open化可能: AC/DoD/証跡が充足。
+  - 追加判断必要: 証跡または実行経路固定が不足。
+  - 保留継続: Blocker未解消、または安全境界が未確認。
+
+
+## 18) Stream F update (2026-05-20): Gate Contract v1.0（固定）
+
+### 18.1 Gate inventory（必須/推奨/将来）
+
+- **必須（Release Blocking）**: G0, G1, G2, G3, G4, G5, G7, Value V0/V1, V2, V3, V4, 横断LLM任意性, E1, E2, E3
+- **推奨（Conditional Go許容）**: G6（診断・サポート導線）
+- **将来（MVP-EXIT以降）**: 長時間耐久、大規模データ負荷、企業専用運用プロファイルの深掘り
+
+### 18.2 Severity contract（停止条件）
+
+- **Blocker**: SafeMode/share-export/import-sanitize/public exposure 境界違反、証跡欠落、主要導線E2E不能。→ **即 No-Go**
+- **Critical**: データ喪失リスク、保存復元失敗、公開文書と挙動の重大不一致。→ **No-Go（例外なし）**
+- **Major**: 主要導線の到達不能/誤誘導、i18n主要ラベル欠落、操作復帰不能。→ **Conditional Go まで**（期限・Owner・再判定日必須）
+- **Minor**: 表記・体裁・補助導線の軽微差分。→ **Go可**（follow-up issue必須）
+
+### 18.3 Gate contract（再現可能判定）
+
+| Gate | 目的 | 入力 | 実行コマンド/手順 | 合格基準 | 失敗時対応 |
+| --- | --- | --- | --- | --- | --- |
+| G0 計画整合 | 判定対象と依存を固定 | issue/ADR参照 | `python 01_Plans/issues/validate_active_issue_memos.py` | AC/DoD/戻し先issueが1:1で追跡可能 | `PRODUCT-QA-01` 本文差戻し |
+| G1 安全既定 | SafeMode境界維持 | policy/docs/e2e証跡 | 手動smoke +安全境界確認 | SafeMode既定ON、共有前確認導線一致 | Blockerとして No-Go |
+| G2 主要操作 | 操作可能性保証 | smoke手順/Playwright | `npm run e2e` または `npm run e2e:mock` | 開始→編集→保存→復帰が再現 | `QA-E2E-USE-01` へ戻す |
+| G3 日本語UI | 主要UIの理解可能性 | i18n test | `npm run test:regression-guards` | 主要ラベルに未翻訳/内部語なし | `PRODUCT-UX-*` へ戻す |
+| G4 画面耐性 | viewport崩れ防止 | 390/960/1280 観測 | 手動smoke viewport確認 | 主要操作が見切れない | `PRODUCT-UX-*` へ戻す |
+| G5 公開文書 | 公開境界維持 | public docs | `git diff --check` + 公開文書目視 | 内部運用情報が公開文書に混入しない | `04_Documentation/*` 差戻し |
+| G6 診断/サポート | 障害時初動 | diagnostics/support docs | 失敗時ログ採取手順確認 | 次アクションが利用者に伝わる | 推奨: follow-up |
+| G7 回帰 | 技術回帰防止 | FE/BE/docs | `npm run typecheck` / backend test / diff check | 必須回帰失敗なし | Major以上は No-Go |
+| E1 契約キー | Env公開契約 | runtime registry/docs | env keyの一致確認 | 公開契約キー逸脱なし | `ENV-CONFIG-DRIFT-01` |
+| E2 実行時検証 | 起動時破綻防止 | settings test | backend settings test | 不正値fail-fast | Blocker |
+| E3 Compose整合 | 配布時整合 | compose/env file | compose config check | compose/envの差分矛盾なし | `ENV-CONFIG-DRIFT-01` |
+
+### 18.4 固定実行順（Runbook）
+
+1. smoke（手動）
+2. unit/regression（軽量）
+3. integration（frontend/backend連動）
+4. e2e（Playwright: compose優先、不可時mock）
+5. release checks（docs/compose/env/public exposure）
+
+各段で失敗した場合は次段へ進まない。自己修復は3回まで、4回目相当は Blocker一覧を作成して停止する。
+
+### 18.5 Blocker一覧フォーマット（停止時）
+
+- Blocker ID:
+- Gate:
+- Severity:
+- 再現コマンド/手順:
+- 影響範囲:
+- 暫定回避策:
+- エスカレーション先:
+- 再開条件:
+
+## Stream E update (2026-05-20): P0 release gate entry criteria / stopper application
+
+### 1) Read（最新メタ）
+- 本issueは `GoNoGoGate=Required` / `VerificationLevel=integration` の正本として扱う。
+- 判定軸は `G0..G7 + Value gates + E1..E3` を維持し、Blocker/Major/Minor分類で決裁する。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-PROD-01: 各ゲートに `result/evidence/owner/due` の4項目が存在する。
+- EC-PROD-02: Conditional Go の条件（期限付きfollow-up issue + 再判定日）が明文化されている。
+- EC-PROD-03: No-Go 時の戻し先 issue（`MVP-EXIT-01`, `ENV-CONFIG-DRIFT-01` など）が固定されている。
+- EC-PROD-04: SafeMode/share-export/import-sanitize/public-exposure の境界判定がゲート本文に含まれる。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: release判定テンプレートを単一運用（Gate Record）として扱う。
+- Execute: docs-onlyで証跡欄と戻し先導線の欠落を補完。
+- Verify:
+  - `rg -n "EC-PROD-0[1-4]|G0|G7|Value gates|E1|E2|E3|Conditional Go|No-Go" 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+  - `git diff --check -- 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`
+
+### 4) Stopper条件適用
+- Stopper-P1: Blocker>0 で Go/Conditional Go を禁止。
+- Stopper-P2: 証跡欠落（command log / gate result / follow-up issue）時は No-Go。
+- Stopper-P3: SafeMode境界不整合は即No-Go。
+
+## 18) Stream F update (2026-05-20): Release QA gate verification hardening
+
+### Plan
+- `Go/Conditional Go/No-Go` 判定を docs と tests の双方で追跡可能にする。
+- Blocker/Major/Minor の分類語彙を regression 対象に固定する。
+
+### Execute
+- QA contract テストを追加し、Gate Record と判定語彙の欠落を CI 前段で検知可能にする。
+- 実装コード変更なしで、品質ゲート定義のドリフト検知を優先する。
+
+### Verify
+- `python -m pytest 03_Implement/backend/tests/test_qa_e2e_doc_contract.py` を実行し、release gate 主要トークンの存在を確認する。
+- metadata validator を併用し、issue memo 形式の逸脱を検知する。
+
+### Proceed
+- 判定語彙の逸脱が出た場合は No-Go とし、戻し先 issue を起票して是正期限を設定する。
+## Stream H addendum (2026-05-20): Release board integration protocol
+
+### Program board更新ルール
+- 本IssueのGate RecordをProgram boardの単一入力とする（重複フォーマット禁止）。
+- 各candidateに対して次を必須記録: `decision`, `blocker_count`, `major_count`, `evidence_link`, `follow-up issue`。
+
+### Proceed判定（Stream H）
+- Proceed=Go: `blocker_count=0` かつ Required gate未達なし。
+- Proceed=Conditional: `blocker_count=0` かつ Major残件のみ、再判定日あり。
+- Proceed=Stop/No-Go: `blocker_count>0` または evidence欠落、またはSafeMode境界不整合。
+
+### 非依存実行原則
+- 他ストリーム成果待ちはしない。未提出証跡は `missing evidence` として記録し、判定は `No-Go` または `Conditional` に反映する。
+
+## Productization Gate Record 2026-05-21: latest-main baseline / PR #2251
+
+- Candidate: `origin/main@2a93c95e` + planning branch `codex/current-project-risk-analysis-issues`
+- Decision date (JST): 2026-05-21
+- Reviewer: Codex
+- Scope: Planning baseline, unit/integration health, browser smoke. No `03_Implement` code changes in candidate branch.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Conditional Go
+- G2 主要操作: Go for sampled mock E2E
+- G3 日本語UI: Go
+- G4 画面耐性: Conditional
+- G5 公開文書: Go for public-target boundary scan
+- G6 診断とサポート: Conditional Go
+- G7 回帰: Go
+- Final: **No-Go for release readiness / Conditional for latest-main health baseline**
+
+### Evidence
+
+- Planning:
+  - `validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `triage_actionable_plans.py` -> pass (`active_issues=45 / ready=17 / blocked=28 / stopper=none`)
+- Frontend:
+  - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass
+  - bundled `node.exe .\node_modules\vitest\vitest.mjs run` -> pass (160 files / 734 tests)
+- E2E:
+  - bundled `node.exe .\node_modules\playwright\cli.js install chromium` -> pass
+  - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ce3_patch_workspace.spec.ts e2e/auth_context_level1_smoke.spec.ts --reporter=line` with manually started Vite -> pass (2 passed)
+- Backend:
+  - `.venv\Scripts\python.exe -m pytest --basetemp ... -p no:cacheprovider` with `.venv\Scripts` on `PATH` -> pass (256 passed / 19 skipped)
+- Public documentation:
+  - `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>` -> pass (no matches)
+  - `rg -n "外部に送る|外部送信|送る|渡す|渡さない|投げる" <public target 04 docs>` -> pass after context review; only `環境変数` definition uses `渡す` and is not an external-sharing expression.
+- Browser smoke:
+  - Codex in-app browser opened `http://127.0.0.1:4173/`
+  - Observed `セーフモード: ON`, `共有と再現` dialog, and `固定マスク対象: 共有 / レビューパック（無効化できません）。`
+  - Browser warning/error logs: empty for the observed page
+
+### Follow-ups
+
+- Blocking issues:
+  - None for the two verified mock E2E scenarios.
+- Conditional issues:
+  - `QA-E2E-USE-01`: realistic journey expansion remains Draft/Hold beyond this sampled mock evidence.
+  - `PRODUCT-OPS-01`: standalone frontend smoke emits backend proxy `ECONNREFUSED` for `/docs/doc_phase1_canvas` when backend is not running; user-facing recovery evidence remains needed.
+- Re-decision date:
+  - TBD, after viewport matrix and full release-candidate E2E route are recorded.
+
+### Safety Confirmation
+
+- SafeMode default ON: pass by UI smoke and unit coverage.
+- share/export fail-closed: conditional pass by observed disabled export actions and SafeMode text; full share/export E2E remains outside this slice.
+- public document exposure boundary: pass for current public-target 04 docs; runtime/deployment public exposure remains outside this slice.

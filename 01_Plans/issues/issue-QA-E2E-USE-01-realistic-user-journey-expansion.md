@@ -127,6 +127,21 @@ Open化ゲートを次の3カテゴリで固定する。
 - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
 - `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
 
+
+## Phase 5.1: Verify Evidence (2026-05-20, Stream E)
+
+- 実施経路: SQLite/ローカル検証（Compose未使用）。
+- 判定: **Execution: Hold 維持**（Pending-1 / Pending-2 未解消のため）。
+
+### 再現コマンドと結果
+- `npm run test:regression-guards`（frontend）: pass（97 tests）。
+- `python3 01_Plans/issues/validate_active_issue_memos.py` : pass（active memo検証OK）。
+- `rg -n "AC-O1|AC-O2|AC-O3|AC-O4|DoD-O1|DoD-O2|DoD-O3|O-USE-01|O-USE-02|O-USE-03|Execution: Hold|Pending" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` : pass（条項抽出可能）。
+
+### 失敗/制約の記録
+- `validate_active_issue_memos.py --files ...` は未対応引数のため失敗。再実行時は `--root` またはデフォルト実行を使用する。
+- 自己修復回数: 1/3（コマンド修正で復旧）。
+
 ## Phase 6: Proceed（3区分）
 - **Open化可能**: O-USE-01〜03が全充足。
 - **追加判断必要**: O-USE-02は充足、承認IDが一部未反映。
@@ -143,3 +158,102 @@ Open化ゲートを次の3カテゴリで固定する。
 ### 修復上限（共通）
 - 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
 - 4回目相当は Stop。保留理由と再開条件を `Pending` 欄へ追記する。
+
+## Open化判定メタ（Draft gate解除条件）
+
+### Open化に必要な最小条件（全件必須）
+- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
+- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
+- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
+- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
+
+### 依存待ち理由（未解消時は Draft 維持）
+| Dependency | 依存待ち理由 | 再開条件 | Owner |
+|---|---|---|---|
+| 上位ADR/関連Issue | 上位合意または境界仕様の最終確定待ち | 参照先に承認IDまたは確定コミットを追記 | Platform Architecture Owner / 各Issue Owner |
+| QA検証経路 | `e2e`/`integration` の実行経路と証跡フォーマット未固定 | 実行経路（Compose/SQLite/例外）を1件固定し、判定ログ形式を定義 | QA Lead |
+| 実行責務 | 実装担当とレビュー担当の分離未確定 | RACI（R/A）を本文に追記し通知記録を残す | PM/Triage |
+
+### Proceed / Stop
+- Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
+- Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
+
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）が candidate 単位で未固定。
+- 依存: Pending-1（実運用E2E承認）と Pending-2（I18N境界最終承認）が未解消。
+- 設計: Gate証跡欄（G1/G2/G3 entry/exit）の入力責務と判定語彙は定義済みだが、承認ID未記入。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: Pending-1/Pending-2 に承認ID・日付・参照リンクを記録。
+- Gate-B（検証経路）: `ADR-0019` の実行経路を1つ選択し、未選択経路は「未採用理由」を残す。
+- Gate-C（AC/DoD）: AC-O1〜O4 / DoD-O1〜O3 が `pass|blocked` で判定可能。
+- Gate-D（失敗時扱い）: `test defect / product defect / environment limitation` の3分類以外を使用しない。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1, Pending-2 の承認証跡。
+- 解消順: 1) Pending-2（I18N境界）→ 2) Pending-1（実運用E2E承認）→ 3) Gate表の最終記入確認。
+
+## Stream E update (2026-05-20): Open化 entry criteria / P0 gate measurableization
+
+### 1) Read（最新メタ）
+- `Status=Draft (Open-Readiness Prepared / Execution Hold)` を維持し、Open判定は `Pending-1/2` と `Execution path` の充足でのみ判断する。
+- `Expected verification level=e2e` を根拠に、Open条件は **実行可否の事実**（承認ID、経路固定、証跡欄）へ限定する。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-USE-01: `B-USE-01` と `B-USE-02` が解消済み（承認ID・日付・参照リンクを Pending 欄へ記録）。
+- EC-USE-02: `ADR-0019` 準拠の実行経路（Compose / SQLite / 例外記録）を1つ固定し、変更時の更新責務者を明記。
+- EC-USE-03: `G1/G2/G3` それぞれに entry/exit 証跡欄（command / result / evidence link）を記入可能。
+- EC-USE-04: 未充足時は `Execution: Hold` を維持し、Stopper分類（approval/env/scope）を1件以上記録。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: `GO/NO-GO-1..4` を Open判定の唯一ゲートとして運用する。
+- Execute: docs-only 範囲で、承認ID・実行経路・証跡欄の欠落を補完する（実装変更は禁止）。
+- Verify:
+  - `rg -n "EC-USE-0[1-4]|Execution: Hold|Pending|GO/NO-GO" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
+
+### 4) Stopper条件適用
+- Stopper-S1（Approval）: 承認ID未記入のままOpenへ遷移しない。
+- Stopper-S2（Environment）: 実行経路未固定ならOpen不可。
+- Stopper-S3（Scope）: docs-only範囲外要求が混入した時点で更新停止し、Hold理由として記録。
+
+## Stream F update (2026-05-20): QA専任実行パッケージ（tests/docs/issues限定）
+
+### Plan
+- Scope は `03_Implement/frontend/tests/**` `03_Implement/backend/tests/**` `03_Implement/frontend/docs/e2e_testing.md` `01_Plans/issues/issue-QA-*` に限定。
+- 実装本体の変更は行わず、契約トークン検証を unit 化して回帰入口を固定する。
+
+### Execute
+- `test_qa_e2e_doc_contract.py` を追加し、`Execution: Hold` / `AC-O*` / `DoD-O*` / Gate語彙の存在を自動検証対象へ昇格。
+- 未確定依存は mock/fixture 境界で保持し、Open条件の前倒し確定を禁止。
+
+### Verify
+- 追加テスト pass を前提に、`Execution: Hold` 維持条件（Pending-1/2 未解消）を再確認。
+- 自己修復上限は3回、4回目相当は Stop を維持。
+
+### Proceed
+- Pending-1/2 解消までは本Issueの状態遷移を行わず、証跡更新のみ継続する。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-E2E-USE 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QE-O1 | 代表ユーザージャーニー（smoke/core/safety）が境界別に列挙 | 3系統すべて記載 |
+| QE-O2 | 実行経路（Compose / SQLite / 例外記録）が事前選択 | 1経路以上が固定 |
+| QE-O3 | 失敗分類が `test defect / product defect / environment limitation` へ正規化 | 語彙ゆれなし |
+| QE-O4 | No-Go時の戻し先issueと再開条件が1:1 | 欠落0件 |
+| QE-O5 | 自己修復上限 `<=3` / 4回目相当Stop が明記 | 記載あり |
+
+### Verify matrix（QA-E2E-USE）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| 境界列挙 | `rg -n "smoke|core|safety|Compose|SQLite|例外記録|Execution: Hold" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 必須語彙ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 警告なし |

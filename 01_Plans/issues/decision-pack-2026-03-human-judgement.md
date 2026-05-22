@@ -2,6 +2,17 @@
 
 目的: Active issue memo（Draft/Open）で着手を止めている判断点を短時間で決定可能にする。
 
+最新共有統合同期（Stream F / 2026-05-20 rerun-78）
+- Phase 1 Read: 全ストリーム完了報告を再収集し、件数・状態・Decision Queue値を再計算したうえで公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）を再確認。
+- Phase 2 Plan: 反映対象を Status / Decision Queue / Next Action のみに固定。
+- Phase 3 Execute: `project-progress-dashboard.md` / `issues/README.md` / 本decision-pack を単一変更セットで同期。
+- Phase 4 Verify: validator / unittest / rg で整合監査を実施し、件数整合・Queue整合・依存順整合・停止条件違反0件・未承認決定の確定扱い0件を確認。
+- Phase 5 Proceed: 再開条件1行を「公開固定値と未承認事項の確定扱い0件が共有3ファイル監査で一致した場合のみ再開」に固定（self-correction 0/3）。
+
+AUTH-OPS-03 再検証同期（Stream G / 2026-05-20）
+- 固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を再実行し、AUTH-OPS-03 の4観点（用語/役割/導線/D1〜D4）を再監査。
+- 判定: すべて一致（self-correction 0/3）。AUTH-OPS-03 は Done 維持、追加の人間判断待ちは「D1〜D4改定要求が発生した場合のみ」。
+
 ## 0. 対象と優先順位
 
 1. **P0 / AUTH-OPS-03**: strict mode例外緩和 Runbook の承認運用境界（Q1〜Q10）

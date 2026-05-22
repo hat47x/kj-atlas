@@ -9,7 +9,6 @@
 3. サードパーティコンテナや build tool が内部的に別名を必要とする場合でも、kj-atlas の公開設定キーは `KJ_ATLAS_*` だけです。実装側で内部名へ写像します。
 4. boolean は肯定形で命名し、既定値と安全側の意味を固定します。
 5. 04 文書には「主要なもの」だけではなく、この文書に載る公開環境変数をすべて記載します。
-
 6. サードパーティイメージや build tool が要求する内部名は、kj-atlas の公開設定キーではありません。必要な内部変換は `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md` で扱い、利用者は `KJ_ATLAS_*` だけを設定します。
 
 ## Runtime profiles
@@ -24,6 +23,37 @@
 
 Profile に関係なく、利用者が設定する公開環境変数は例外なく `KJ_ATLAS_*` で始めます。サードパーティが別名を要求する場合は、実装または deployment adapter が内部で写像します。
 
+### Profile default vs recommendation（既定値と推奨値）
+
+運用ドリフトを防ぐため、実装既定値（未設定時）と profile 推奨値（運用上の標準）を区別して扱います。
+
+| Key | Implementation default | Enterprise recommendation | Rationale |
+| --- | --- | --- | --- |
+| `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | `false` | 初期導入時の接続確認容易性と、本番運用時の厳格運用を分離するため。 |
+| `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` | `read_only` | `read_only` または `deny` | 障害時の安全側挙動を明示的に選べるようにするため。 |
+| `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`（必要時のみ opt-in） | 外部共有の既定無効を維持するため。 |
+
+
+## Profile selection criteria（運用判断基準）
+
+実行プロファイルは「どこで動かすか」ではなく「どこまで外部依存を許可するか」で選びます。
+
+1. `local-dev` を選ぶ条件
+   - 目的が機能開発または再現テストであり、外部連携が不要。
+   - DB を SQLite でよい（`KJ_ATLAS_DATABASE_URL=sqlite:///./kj_atlas.db`）。
+2. `evaluation` を選ぶ条件
+   - Docker Compose 上で利用者評価を行い、PostgreSQL や Nginx 経由の導線を含めて検証したい。
+   - 外部監査/外部PDPは原則無効（`noop`）で、必要時のみ限定有効化する。
+3. `enterprise-production` を選ぶ条件
+   - 認証・認可・監査の責務分離が必要で、障害時の fail-safe を `read_only` か `deny` で固定する。
+   - JIT provisioning を無効化し、運用承認済みの接続先・秘密管理がある。
+
+### Drift check gates（設定ドリフト防止ゲート）
+
+- 命名ゲート: 公開キーは `KJ_ATLAS_*` のみ。
+- 既定値ゲート: `Default` 列と実装既定値が一致しない変更は差し戻す。
+- 境界ゲート: `POSTGRES_*` など vendor 名は private adapter 扱いとし、公開文書で利用者入力として記載しない。
+- プロファイルゲート: profile 変更は `runtime profiles` 表と同時に理由（Purpose/Notes）を更新する。
 
 ## Prefix migration governance（互換期間と切替条件）
 
@@ -87,6 +117,17 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 | `KJ_ATLAS_POSTGRES_PASSWORD` | `kj_atlas` | Compose PostgreSQL の password |
 | `KJ_ATLAS_FRONTEND_API_BASE` | `/api` | frontend build 時に埋め込む API base path。`/` で始まる path のみ受理し、それ以外は frontend 側で `/api` にフォールバック |
 
+
+## Private adapter boundary (non-public keys)
+
+以下は公開設定キーではなく、third-party adapter が内部で使用する名前です。利用者は設定しません。
+
+| Internal name | Adapter owner | Source public key | Scope |
+| --- | --- | --- | --- |
+| `POSTGRES_DB` | `docker-compose.yml` `db` service | `KJ_ATLAS_POSTGRES_DB` | PostgreSQL container internal env |
+| `POSTGRES_USER` | `docker-compose.yml` `db` service | `KJ_ATLAS_POSTGRES_USER` | PostgreSQL container internal env |
+| `POSTGRES_PASSWORD` | `docker-compose.yml` `db` service | `KJ_ATLAS_POSTGRES_PASSWORD` | PostgreSQL container internal env |
+
 ## Validation rules
 
 - `KJ_ATLAS_LLM_PROVIDER=large-scale`, `large_scale`, `external` は `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN=true` と `KJ_ATLAS_LLM_ESCALATION_ENABLED=true` を必須にします。
@@ -106,3 +147,42 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - This registry is the SSOT for public runtime keys and exposes only `KJ_ATLAS_*` names.
 - Vendor-defined names are implementation-internal adapter details and MUST NOT be treated as public keys.
 - A policy that bans non-`KJ_ATLAS_*` names from every process environment is a separate deployment redesign decision.
+
+## Drift recurrence prevention checklist（ENV-CONFIG-DRIFT-01 / ENV-ARCH-01 / ENV-PROFILE-01）
+
+次のチェックは、runtime parameter contract 変更時に毎回実施します。
+
+1. **Naming**: 追加・変更する公開キーが `KJ_ATLAS_*` で始まること。
+2. **Defaults**: `Default` 列と実装既定値（settings/frontend build）が一致していること。
+3. **Boundary**: vendor 名（例: `POSTGRES_*`）を public key として公開文書に露出していないこと。
+4. **Profiles**: `local-dev` / `evaluation` / `enterprise-production` の推奨差分が変更理由と整合していること。
+5. **Cross-doc sync**: `deployment.md` と `04_Documentation/configuration.md` に同じ公開キー集合が反映されていること。
+6. **Compatibility gate**: 非互換が必要な場合は即実装せず、ADR/Issue に Go/No-Go とロールバックを先に記録すること。
+
+Stopper条件:
+- 上記 1〜6 のうち未充足がある場合は変更を停止し、承認待ちに切り替える。
+
+
+## Global prefix migration compatibility layer design（Stream D contract）
+
+`ADR-0021` に基づき backend runtime key は互換期間なしで `KJ_ATLAS_*` へ移行済みです。
+一方で deploy/frontend build には、利用者向け公開キーと実装内部adapterの境界があるため、互換レイヤを次の2層で固定します。
+
+1. **Public contract layer（利用者入力）**
+   - 受理する公開キーは `KJ_ATLAS_*` のみ。
+   - 旧prefix/無接頭辞キーは fail-fast で拒否する。
+2. **Private adapter layer（実装内部写像）**
+   - third-party container が要求する `POSTGRES_*` 等は内部写像に限定する。
+   - frontend の `VITE_API_BASE` は公開契約ではなく互換shimとして扱い、正規キーは `KJ_ATLAS_FRONTEND_API_BASE` を維持する。
+
+### Plan → Execute → Verify → Proceed gate
+
+- Plan: 変更前に `Naming / Defaults / Boundary / Profiles` の4観点を固定する。
+- Execute: 公開契約の更新を先に行い、実装・deploy・docs を追随させる。
+- Verify: docs-check + settings validation + compose config で同一キー集合を確認する。
+- Proceed: 4観点がすべて pass の場合のみ進行し、1つでも fail なら停止して Issue/ADR へ戻す。
+
+### Failure budget（3回失敗で停止）
+
+- 同一論点で Verify が3回連続失敗した場合、4回目の試行に進まず **Stop** とする。
+- Stop 時は「失敗原因」「再開条件」「要追加判断（ADR/Issue）」を `01_Plans/issues/` に記録する。

@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P1
 - Owner: Codex
-- Scope: `04_Documentation/public_index.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
+- Scope: `04_Documentation/public_index.md`, Gist公開候補の `04_Documentation/*.md`, `04_Documentation/README.md`, `README.md`（必要最小限の導線整合）, `01_Plans/issues/issue-DOC-PUBLIC-BOUNDARY-01-developer-doc-relocation.md`
 - Related Backlog: `DOC-PUBLIC-BOUNDARY-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0022-doc-ops-04-documentation-information-interface.md`, `01_Plans/documentation_quality.md`, `04_Documentation/README.md`
 - Expected verification level: `docs-check`
@@ -91,6 +91,7 @@
 - [x] T2 情報公開境界における Context / Decision / Consequences をIssue本文へ明文化する。
 - [x] T3 利用者入口・管理者入口・開発者入口の3系統と相互リンク規約を固定する。
 - [x] T4 公開向け本文に管理情報を混入させない方針と確認観点を更新する。
+- [x] T5 Gist公開候補文書から、内部issue/ADR/Gate/Stream/DOC-OPS などの管理語を除去する。
 
 ## 6.1 Definition of Done（DoD）
 
@@ -98,6 +99,30 @@
 - [x] 管理入口（`04_Documentation/README.md`）が公開境界管理の責務を持つことが明示されている。
 - [x] 開発者入口（`README.md`）に利用者導線と開発者導線の分離が明記されている。
 - [x] 3入口間のリンク到達性が `rg` により検証済み。
+- [x] Gist公開候補の利用者向け文書に、内部管理語が混ざらないことを `rg` で確認済み。
+
+## 6.2 Update 2026-05-21: Public-target boundary cleanup
+
+### 実施内容
+
+- `acceptance_check.md` から、開発者向けE2E、内部Gate Record、Program判定、ADR/issue参照を外し、画面操作と確認記録の説明へ寄せた。
+- `operations.md`、`diagnostics.md`、`security.md`、`security_operational_guidelines.md` から、内部Stream、DOC-OPS、AUTH運用の進捗管理節を外し、利用者・運用担当者が読める復旧手順と判断支援に整理した。
+- `configuration.md`、`operations.md`、`security.md`、`security_operational_guidelines.md` では、04以外の設計詳細を GitHub 上の設計文書リンクとして扱う方針に合わせた。
+- 「外部に送る」「データを渡す」に近い表現を、外部サービスとの「共有」として伝わる文に置き換えた。ただし `環境変数` の説明における「アプリへ渡す設定値」は外部共有を意味しないため維持した。
+
+### 検証結果
+
+- Public-target forbidden term scan:
+  - `rg -n "04_Documentation|AGENTS.md|01_Plans|ADR-|PUBLICATION_MANIFEST|内部管理|作業ログ|issue-|Issue|PRODUCT-|MVP|Stream [A-Z]|Draft Proposal|DOC-OPS|AUTH-OPS|Gate Record|Productization" <public target 04 docs>`
+  - Result: no matches.
+- External-sharing wording scan:
+  - `rg -n "外部に送る|外部送信|送る|渡す|渡さない|投げる" <public target 04 docs>`
+  - Result: only `configuration.md` の `環境変数` 定義における `渡す` が残る。外部サービス共有の説明ではないため許容。
+
+### 残課題
+
+- `codex_skill_operations.md` と `e2e_verification_log_2026-03-03.md` は引き続き公開Gist対象外として扱う。物理移管は後続タスク。
+- Gist生成物そのものの連結後スキャンと公開更新は、公開作業時に改めて実施する。
 
 ## 7) 検証計画 / Validation plan
 

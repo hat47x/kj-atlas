@@ -424,3 +424,24 @@
 2. Approval Record の `missing=0`。
 3. AC/DoD が全チェック完了であること。
 4. 人間責務で最終判定（human-final）を実施すること。
+
+## Stream B proposal-link refresh（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- CE2は proposal-only / human-final / no-auto / fail-closed を維持するDraft系Issueとして再確認。
+- CE1依存は **I/F参照のみ** とし、実装依存を導入しない。
+
+### Phase 2: CE1固定点への接続（実装非依存）
+- CE2は `ContextQueryV1/ContextBundleV1` を入力契約として参照するが、契約の再定義や拡張を行わない。
+- Open判定の証跡は `Approval Record missing=0` と `Evidence fulfilled` を必須にし、mockで承認事実を代替しない。
+
+### Phase 3: Plan→Execute→Verify
+- Plan: CE2を「意思決定準備（proposal-only）」に固定。
+- Execute: 文書整備のみ（実装要求・他ストリーム編集なし）。
+- Verify:
+  - 依存循環なし（CE2はCE1固定契約を下流参照する一方向）。
+  - Draft→Open条件は O1〜O4 のブール条件で測定可能。
+  - self-correction は最大3回まで。
+
+### Phase 4: Stopper
+- CE1契約曖昧化、またはCE0承認証跡をmock代替する要求が出た時点で `Hold/Stop(held)` を維持する。

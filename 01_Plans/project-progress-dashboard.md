@@ -1,10 +1,20 @@
 # Project Progress Dashboard（DOC-OPS-03）
 
-最終更新: 2026-05-17 (UTC, Stream F shared sync rerun-76)
+最終更新: 2026-05-20 (UTC, Stream F shared sync rerun-78)
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
 ## 進捗サマリ
+
+
+- Stream F 共有統合同期（2026-05-20 rerun-78）で Phase 1 Read（全ストリーム完了報告の再収集と件数・状態・Queue再計算）→ Phase 2 Plan（反映対象を Status / Decision Queue / Next Action のみに固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（validator/unittest/rg で整合監査）→ Phase 5 Proceed（未承認事項の確定扱い0件・件数不整合0件・self-correction 3回超過なしを確認）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）を維持した。
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-20 rerun-78確認済み）。`
+- Stream G AUTH-OPS-03 同期（2026-05-20）で固定順序 `02_Architecture -> 04_Documentation -> 01_Plans` を直列実行し、`strict_mode_exception_approval_flow.md` を正本として operations/security の運用チェックリストを同期。4観点（用語/役割/導線/D1〜D4）検証を Pass（self-correction 0/3）で完了し、AUTH-OPS-03 Done 状態を維持した。
+
+- Stream F 共有統合同期（2026-05-19 rerun-77）で Phase 1 Read（全ストリーム完了報告と証跡の再収集）→ Phase 2 Plan（件数/状態/Decision Queue/依存順の反映方針固定）→ Phase 3 Execute（shared 3ファイル単一変更セット同期）→ Phase 4 Verify（件数整合・Queue整合・依存順整合・停止条件違反0件を確認）→ Phase 5 Proceed（再開条件1行を明文化）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・参照リンク不整合0件を再確認した。
+
+再開条件1行（次サイクル）: `公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3 / 停止条件違反0件）と未承認事項の確定扱い0件が、共有3ファイル監査で一致した場合のみ再開（2026-05-19 rerun-77確認済み）。`
 
 - Stream F 共有統合同期（2026-05-17 rerun-76）で Phase 1 Read gate（shared 3ファイル再読）→ Phase 2 Plan（件数・Queue・依存順の反映方針固定）→ Phase 3 Execute（単一変更セット）→ Phase 4 Verify（validator/unittest/rg 成功）→ Phase 5 Proceed（再開条件1行固定）を直列実行し、公開固定値（件数47 / Active=5 / Done=26 / Decision Queue Ready=1 Open=2 / 依存順A1→A2→A3）と未承認事項の確定扱い0件・停止条件違反0件を再確認した。
 
@@ -835,3 +845,18 @@ Theme-ID: DQ-OPS-SOURCE-01
 - Phase 2-3 契約更新: ダッシュボード更新は triage実測値のみを根拠とし、推測更新を禁止。`invalid Status metadata` が1件でもある場合は更新停止。
 - Phase 4 Verify: triage stopper `invalid Status metadata=4件（Open準備完了 (Ready for Open)）` を検知し、状態遷移の確定更新は停止。
 - Phase 5 Proceed: 次アクションは「(1) invalid status正規化 → (2) triage errors=0確認 → (3) shared 3ファイル同期」の固定順で運用。
+
+## Stream H Program Orchestration update（2026-05-20, MVP Exit統合判定）
+
+- Phase 1 Read & Intake: A〜G成果の統合入力を再確認し、最新基準を 2026-05-19 (rerun-77) に固定。
+- Phase 2 クリティカルパス再計算: 真のブロッカーを「Program Gate証跡不足」に限定し、A2/A3のmock先行可能領域を分離。
+- Phase 3 MVP Exit一次判定: **Conditional**（判定式は整備済み、最新candidate証跡の埋め込み待ち）。
+- Phase 4 次サイクル計画: Lane-H1（Program Gate証跡統合）/ Lane-H2（Dashboard同期）/ Lane-H3（Acceptance導線同期）の非重複運用を提案。
+- Stop条件: allowlist外編集要求、証跡不足でのGo確定、Verify 3回超過。
+
+### Blocker一覧（回避可否付き）
+| Blocker | 状態 | 回避可否 | 必要アクション |
+|---|---|---|---|
+| `PRODUCT-QA-01` 最新Gate Record不足 | Open | 不可（True blocker） | candidate/date/reviewer/final decision/escalation を追記 |
+| `ENV-CONFIG-DRIFT-01` E系最終結果不足 | Open | 不可（True blocker） | E-gate結果をProgram判定に連結 |
+| Decision Queue Open 2件 | Open | 条件付き可（Conditional維持） | owner/due/re-decision date 明記 |

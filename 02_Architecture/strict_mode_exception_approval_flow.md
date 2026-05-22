@@ -40,10 +40,11 @@
 AUTH-OPS-03 / DOC-OPS-02 の文書同期は、次の順序を固定する。
 
 1. `02_Architecture/strict_mode_exception_approval_flow.md`（本書 / 正本）
-2. `04_Documentation/security.md`
-3. `04_Documentation/security_operational_guidelines.md`
-4. `04_Documentation/acceptance_check.md`（利用者向け確認）
-5. `03_Implement/frontend/docs/e2e_testing.md`（開発者向けE2E）
+2. `02_Architecture/enterprise_architecture.md`（責務境界・固定値参照先）
+3. `04_Documentation/security.md`
+4. `04_Documentation/security_operational_guidelines.md`
+5. `04_Documentation/acceptance_check.md`（利用者向け確認）
+6. `03_Implement/frontend/docs/e2e_testing.md`（開発者向けE2E）
 
 `04_Documentation/operations.md` は実行runbookとして **常に整合確認対象** とし、D1〜D4・役割語彙・状態語彙の一致を維持する。
 
@@ -375,3 +376,68 @@ DraftRequest
 - 導線固定: `enterprise_architecture.md` / `operations.md` / `security.md` / `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` を相互参照する。
 - 固定値: **D1〜D4**（6.8節）を単一正本とし、差分運用は新規 requestId 再承認を必須とする。
 
+## 12. Stream G AUTH-OPS-03 整合ログ（2026-05-20）
+
+### Phase 1: Read & Terminology Gate
+
+- 用語定義を `Security Officer / System Owner / Platform Operator` に固定し、別名・同義語の追加なしを確認。
+- 2者承認（Security Officer + System Owner）と実行責務（Platform Operator）の分離維持を確認。
+- D1〜D4 固定値（4h / tenant+2h / 代理承認なし / 48h+15m/60m）を正本値として再確認。
+
+### Phase 2: Architecture 正本更新
+
+- 承認条件、停止条件、復旧条件、失効条件の記述を再確認し、正本を維持（仕様変更なし）。
+- 例外適用範囲（tenant単位）と期限管理（承認TTL 4h・最大継続2h）の契約再固定を記録。
+
+### Phase 3: Documentation 同期確認
+
+- `04_Documentation/operations.md` / `04_Documentation/security.md` に対し、申請→承認→実施→監査→失効の運用導線が正本と一致することを確認。
+- `StoppedForClarification` 中の有効化禁止、復旧時の strict 戻し記録必須を運用側で再確認。
+
+### Phase 4: Plans/Issue 同期確認
+
+- `project-progress-dashboard.md` / `decision-pack-2026-03-human-judgement.md` / `issue-AUTH-OPS-03-...` の状態整合（Done維持）を確認。
+- 未解決論点は AUTH-OPS-03 固定値の改定要求が発生した場合のみ「人間判断が必要」とする。
+
+### 4観点検証ログ（Verify）
+
+1. 用語: 一致（Security Officer / System Owner / Platform Operator）
+2. 役割: 一致（2者承認 + 実行責務分離）
+3. 導線: 一致（02_Architecture → 04_Documentation → 01_Plans）
+4. 固定値: 一致（D1〜D4）
+
+判定: **Pass（self-correction 0/3）**
+
+
+## Stream A serial governance pass (2026-05-20)
+
+### Phase 1: Read Gate
+- 対象ファイルを再読し、Status/AC/依存を監査した。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` を未解決として確認した。
+
+### Phase 2: ADR明文化
+- Context/Decision/Consequences を再確認し、固定契約を再定義しない方針を継続する。
+- 変更禁止契約（minimum I/F と承認ゲート）を read-only 参照として固定する。
+
+### Phase 3: Issue整合
+- AC / Validation plan / Non-goals を ADR-0026, ADR-0027 と語彙一致させた（drift=0）。
+- `Pending -> Approved | Pending -> Rejected` 以外の遷移を追加しない。
+
+### Phase 4: Governance hardening
+- SoD（二者承認と実行責務分離）を維持し、`approver_a != approver_b` 制約を継続する。
+- 停止条件（pending bypass / contract drift / safeMode後退 / 未定義競合）を固定した。
+
+### Phase 5: Verify-1
+- 用語一致（Security Officer / System Owner / Platform Operator）を確認した。
+- 固定値 D1〜D4 とゲート式（Proceed/Hold/Stop）の整合を確認した。
+- 未承認事項を確定扱いにしていないことを確認した。
+
+### Phase 6: Self-correction
+- 不一致検知なし。修正ループ実行回数: 0/3。
+
+### Phase 7: Publish-ready
+- 次ストリーム非依存で読めるよう、判定根拠・停止条件・read-only handoff を明示した。
+
+### Phase 8: Final status
+- 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
+- Stop条件適用: なし（検証失敗・未定義競合は検出せず）。

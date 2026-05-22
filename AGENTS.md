@@ -33,7 +33,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 8) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 9) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 10) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-11) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0033`
+11) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0034`
 12) **実装（03_Implement）**: 対象領域のソースへ
 13) **運用・手順**: `04_Documentation/*`（必要に応じて）
 14) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -112,6 +112,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0026-next-phase-human-in-the-loop-reversible-synthesis.md`：次フェーズ（HIL-RS-01）の計画ADR。
 - `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`：次フェーズ（HIL-RS-02）の実行計画ADR。
 - `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`：認知外在化要件を実装フェーズへ接続する計画ADR。
+- `01_Plans/adr/ADR-0029-ADR-0034*.md`：runtime境界、製品化、価値実現、データ運用、最新main収束/branch衛生の後続ADR群。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。

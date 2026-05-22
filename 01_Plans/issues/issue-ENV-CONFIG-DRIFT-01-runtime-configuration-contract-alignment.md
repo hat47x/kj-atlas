@@ -153,6 +153,23 @@ Non-goals:
 - No SafeMode/share/export policy change in this stream.
 - Self-correction threshold not exceeded.
 
+## 15) Stream F execution snapshot (2026-05-20)
+
+### Scope lock
+
+- Stream F は `runtime_parameter_registry.md` と関連運用文書（configuration / security operational guidelines）のみを対象にし、実装コード・deploy定義は変更しない。
+
+### Execute result（naming / defaults / compatibility）
+
+- Naming: 公開キーは引き続き `KJ_ATLAS_*` のみを許容し、追加の互換キー導入は行わない。
+- Defaults: `KJ_ATLAS_ALLOW_JIT_PROVISIONING`（実装既定 `true`）と enterprise 推奨値（`false`）の差を registry と運用文書で明示した。
+- Compatibility: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の既定値と enterprise 運用時の選択肢（`read_only`/`deny`）を文書間で同期した。
+
+### Verify summary
+
+- `runtime_parameter_registry.md` / `configuration.md` / `security_operational_guidelines.md` の profile 記述に矛盾がないことを差分確認で検証。
+- SafeMode/share/export の既定ポリシー変更はなし。
+
 
 ## 12) Stream D execution snapshot (2026-05-17)
 
@@ -219,6 +236,69 @@ Non-goals:
 | `KJ_ATLAS_DATABASE_URL` | Defined | Defined | Used in `api.environment` | Aligned |
 | `KJ_ATLAS_LLM_PROVIDER` | Defined (`none`) | Defined | Used in `api.environment` | Aligned |
 
+## 15) Stream E execution snapshot (2026-05-20)
+
+### Plan → Execute → Verify → Proceed（Phase gate record）
+
+#### Phase 1 Read（再読・抽出）
+
+- SSOT と ADR を再読し、公開契約キー・既定値・適用境界の抽出対象を固定した。対象: `runtime_parameter_registry.md`, `ADR-0021`, `ADR-0029`。
+- 実装参照先（read-only）として `settings.py` / `docker-compose.yml` / frontend `Dockerfile` / `client.ts` / `access_control.py` を比較対象に設定した。
+
+#### Phase 2 Plan（AC/DoD 整理）
+
+- 優先順位を以下に固定:
+  1. **セキュリティ影響キー**: `KJ_ATLAS_ACCESS_CONTROL_*`, `KJ_ATLAS_AUDIT_*`, `KJ_ATLAS_API_KEY`
+  2. **起動不能リスクキー**: `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_LLM_PROVIDER`, `KJ_ATLAS_POSTGRES_*`
+  3. **運用観測系キー**: profile 推奨値・adapter boundary の運用ルール
+- 本 issue の DoD を「公開契約（命名/既定値/境界）が文書正本で一意に読めること」に限定し、実装変更は非目標として維持した。
+
+#### Phase 3 ADR 明文化（追加 ADR 要否判定）
+
+- 追加 ADR は **不要** と判断。
+- 理由: 命名規約は `ADR-0021` で Accepted、third-party 境界は `ADR-0029` で Accepted。今回の残作業は「差分可視化と契約固定」であり、意思決定自体は既存 ADR で充足するため。
+
+#### Phase 4 Execute（差分可視化と契約固定）
+
+実装参照（read-only）とのドリフト確認表（2026-05-20時点）:
+
+| Contract topic | SSOT / ADR expectation | Implementation reference (read-only) | Drift |
+| --- | --- | --- | --- |
+| Public naming | Public key は `KJ_ATLAS_*` のみ | backend settings aliases は `KJ_ATLAS_*` のみ、legacy key は reject | None |
+| Legacy compatibility | 旧キー互換なし（fail-safe） | `LEGACY_ENV_KEYS` 検知時に `ValueError` | None |
+| Frontend API base key | `KJ_ATLAS_FRONTEND_API_BASE`（default `/api`、path契約） | Dockerfile ARG/ENV と `client.ts` の `/api` fallback 正規化 | None |
+| Compose public inputs | 利用者入力は `KJ_ATLAS_*` | `web/api/db` の公開入力は `KJ_ATLAS_*` | None |
+| Vendor adapter boundary | `POSTGRES_*` は private adapter（公開契約外） | `db.environment` 内のみ `POSTGRES_*` に写像 | None |
+| Access-control enum boundary | adapter=`noop/mock/external_http`, fail-safe=`read_only/deny` | settings validator で列挙値を fail-fast 検証 | None |
+| `external_http` endpoint absence | governance pending（現挙動を ADR で明示継続） | `external_http` 未設定時 fail-fast 既定化は未導入 | **Pending by design** |
+
+#### Phase 5 Verify（AC/DoD 照合）
+
+- Naming（`KJ_ATLAS_*` only）: **Pass**
+- Defaults（registry と実装既定値整合）: **Pass**
+- Boundary（public vs private adapter 分離）: **Pass**
+- Governance pending の切り分け: **Pass**（`external_http` endpoint 未設定時の fail-fast 化は別決定として維持）
+- 自己修復回数: 0/3（停止条件未到達）
+
+#### Phase 6 Proceed（完了/未完了/保留）
+
+**完了**
+- ENV-CONFIG-DRIFT-01 の計画・仕様レベルで、命名/既定値/適用境界を単一契約として再固定。
+- 実装参照との差分を可視化し、現時点ドリフトが「なし（または意図的保留）」であることを記録。
+
+**未完了（この stream では非実施）**
+- 実装コード変更（非目標のため未実施）。
+
+**保留（governance-only）**
+1. `external_http` endpoint 未設定時に `noop` fallback を廃止し fail-fast を既定化するか。
+2. third-party container 内部を含む「全 process env で非 `KJ_ATLAS_*` 禁止」を採用するか（採用時は deployment 再設計が前提）。
+
+### Stream E fail-safe stop check
+
+- `03_Implement/**` は未編集（禁止事項遵守）。
+- ENV 以外 issue は未編集（禁止事項遵守）。
+- 他ストリーム依存が必須化する変更は未着手。
+
 補足:
 - `nginx.conf` は固定ルーティング (`/api` → `api:8000`) のみを担い、公開 env key を増やしていない。
 - Compose 内 `POSTGRES_*` は内部変換先であり、利用者入力は `KJ_ATLAS_POSTGRES_*` だけを維持する。
@@ -254,3 +334,207 @@ Non-goals:
 - 既存運用停止リスク: 重大な新規リスク追加なし（変更は契約同期のみ）。
 - 不明な環境依存: 新規導入なし。
 - 判定: **Proceed（本 stream scope で完了）**。
+
+## 15) Stream E re-validation snapshot (2026-05-18)
+
+### Phase 1 Read（再読）
+
+- `AGENTS.md` の Read Order と Stream E の編集境界を再確認した。
+- SSOT として `02_Architecture/runtime_parameter_registry.md`、公開運用文書として `04_Documentation/configuration.md` を再読した。
+
+### Phase 2 ADR（Context / Decision / Consequences）
+
+- Context: 公開キー契約は `KJ_ATLAS_*` 固定、内部 adapter 境界は `ADR-0029` で管理される。
+- Decision: Stream E では契約ドリフト検証に限定し、仕様変更や新規 ADR 起票は行わない。
+- Consequences: 既定値不一致・prefix 競合・registry/doc 不整合があれば Stop する前提を維持する。
+
+### Phase 3 Plan（AC / DoD）
+
+- AC-1: 命名が `KJ_ATLAS_*` 公開契約に一致すること。
+- AC-2: 既定値が registry と configuration で一致すること。
+- AC-3: 公開契約と内部 adapter 境界が混線していないこと。
+- DoD: ドリフト 0 件、または governance 論点として隔離済みであること。
+
+### Phase 4 Execute（命名・既定値・prefix整合）
+
+- 命名整合を確認: 公開キーは `KJ_ATLAS_*` のみ。
+- 既定値整合を確認: `KJ_ATLAS_FRONTEND_API_BASE=/api`、`KJ_ATLAS_WEB_PORT=8080`、`KJ_ATLAS_LLM_PROVIDER=none` 等が一致。
+- 境界整合を確認: `POSTGRES_*` は third-party container 内部名としてのみ扱い、公開契約外で維持。
+
+### Phase 5 Verify（lint/整合チェック・自己修復3回）
+
+- 文書差分と整合チェックで、prefix 競合・既定値不一致・registry/doc 不整合の新規発生なし。
+- 自己修復ループ（最大3回）は未使用（不一致検知 0 件）。
+
+### Phase 6 Proceed/Stop
+
+- 判定: **Proceed（Stream E scope で完了）**。
+- Stop 条件評価: 解消不能な不一致は未検出。
+- 残課題: `external_http` endpoint 未設定時の fail-fast 化可否、および third-party 内部名完全排除可否は governance/ADR 論点として継続。
+
+## 16) Stream E completion snapshot (2026-05-19)
+
+### Phase-based execution (Read → Plan → Execute → Verify → Proceed)
+
+- Read: AC/Validation と SSOT（`02_Architecture/runtime_parameter_registry.md`）を再確認し、編集対象を runtime registry と issue メモに限定。
+- Plan: DoD を「命名統一」「drift差分解消」「profile 運用判断基準の明文化」に固定。
+- Execute: runtime registry に Profile selection criteria と Drift check gates を追加し、命名・既定値・境界の判定軸を明示。
+- Verify: 公開契約キーが `KJ_ATLAS_*` のみであること、profile 表と新設判断基準が矛盾しないことを文書差分で確認。
+- Proceed: 実装コードや認証契約には波及させず、governance-only pending（strict interpretation / external_http fail-fast）は未確定キューのまま維持。
+
+### Stream E deliverables
+
+1. Runtime profiles の選択条件を文書化（`local-dev` / `evaluation` / `enterprise-production`）。
+2. Drift check gates（命名・既定値・境界・プロファイル更新同時性）を SSOT 側へ追加。
+3. 変更は docs 範囲に限定し、SafeMode/share/export の既定や運用境界は不変更。
+
+## 16) Stream E update (2026-05-19): Env gate hardening
+
+### Phase 1: Read
+- `runtime_parameter_registry.md` / `configuration.md` / compose 契約境界の既存定義を再確認し、公開契約と内部adapterを分離して評価した。
+
+### Phase 2: ゲート定義（E1-E3）
+- **E1 Public key contract**: 公開文書・runbookに非 `KJ_ATLAS_*` を公開設定として記載しない。
+- **E2 Runtime validation**: backend settings が無効値（adapter/fail-safe/endpoint）を検出し、許容時は ADR 根拠を要求。
+- **E3 Compose consistency**: `KJ_ATLAS_*` 入力と compose 展開結果が一致し、vendor env 名は private boundary に閉じる。
+
+### Phase 3: 検証設計
+- 必須テストセット:
+  - issue validator
+  - backend settings env tests
+  - frontend typecheck/tests
+  - `docker compose config`
+  - docs key-drift search
+- 失敗時判断:
+  - Blocker: 公開契約キー逸脱、設定値検証欠落、compose 展開破綻。
+  - Major: 文書整合欠落（ただし即時修正可能）。
+  - Minor: 注釈不足・説明順序。
+
+### Phase 4: 監査テンプレ
+- Env判定ログ必須項目:
+  - Checked keys set hash（キー集合の比較結果）
+  - Validation failure sample
+  - ADR reference（例外時のみ）
+  - Escalation issue + owner + due date
+
+### Phase 5: 反映
+- 本Issueを env drift の戻し先として維持。
+- 破壊的判断（vendor env 完全排除 / external_http fail-fast 既定化）は本Issueで確定せず、ADR起票条件を維持。
+
+### Fail-safe
+- 判定に必要な契約正本が不整合のときは進行停止し、先に SSOT 修復を要求する。
+
+## 17) Stream E execution snapshot (2026-05-19)
+
+### Phase 1) Read
+
+- `runtime_parameter_registry.md` を再読し、命名/prefix/profile と公開契約境界（public vs private adapter）を再確認した。
+- `issue-ENV-ARCH-01` の「互換期間なし一括移行」と `issue-ENV-PROFILE-01` の profile guidance 前提を再確認した。
+
+### Phase 2) Plan
+
+- 互換維持方針:
+  - backend 公開キーは `KJ_ATLAS_*` 単独契約を維持する。
+  - vendor 内部 env 名は private adapter としてのみ許容し、公開契約へ昇格しない。
+- 移行ステップ提案:
+  1. SSOT（runtime registry）更新
+  2. issue 側の execution snapshot 追記
+  3. drift prevention checklist の更新
+  4. 非互換が必要なら Stopper 発動（ADR/承認待ち）
+
+### Phase 3) Execute
+
+- `runtime_parameter_registry.md` に drift recurrence prevention checklist を追記した。
+- 本 issue に Stream E（2026-05-19）の実行ログを追記し、ENV-CONFIG/ENV-ARCH/ENV-PROFILE の整合状態を明文化した。
+
+### Phase 4) Verify
+
+- drift 再発防止の確認観点を registry 側チェックリストへ固定した（Naming / Defaults / Boundary / Profiles / Cross-doc / Compatibility gate）。
+- 既存 pending queue（governance-only）を変更せず、設計変更が必要な論点は ADR 起票条件に留めた。
+
+### Phase 5) Stopper
+
+- 判定: **Stopper未発動**。
+- 理由: 今回は契約明文化のみであり、非互換を新規導入していない。非互換変更が必要になった場合は checklist の Compatibility gate に従って停止・承認待ちへ移行する。
+
+
+## 15) Stream B execution snapshot (2026-05-19)
+
+### Phase 1 Read同期
+
+- `ADR-0029` / `runtime_parameter_registry.md` / `docker-compose.yml` / `configuration.md` を再読し、公開契約面と内部adapter境界面を分離して確認。
+- 公開設定は `KJ_ATLAS_*` のみ、vendor 名は private adapter boundary のみという解釈で一致。
+
+### Phase 2 ADR確定
+
+- `ADR-0029` の Status を `Accepted` に更新。
+- Context / Decision / Consequences の適用境界を補強するため、boundary contract matrix を追加。
+
+### Phase 3 Contract反映
+
+- `runtime_parameter_registry.md` に private adapter boundary 表を追加。
+- `configuration.md` に公開設定と内部adapter境界の分離表を追加。
+- `docker-compose.yml` コメントを「private adapter boundary only」として明示。
+
+### Phase 4 Verify
+
+- 公開キー集合は `KJ_ATLAS_*` のみを維持（registry / configuration / compose inputs）。
+- 利用者向け文書で vendor 名を公開設定として要求しないことを確認。
+- Self-heal loop: 不一致 0 件のため未使用（上限3回以内）。
+
+## 16) Stream E execution snapshot (2026-05-20)
+
+### Plan → Execute → Verify → Proceed
+
+#### Phase 1: Read & Baseline固定
+- Allowlist 対象（registry/deployment/enterprise/configuration/operations/security guidelines/issue群/ADR-0021）を再読し、公開キーが `KJ_ATLAS_*` に統一されていることを再確認。
+- ギャップ抽出結果: 命名・既定値・公開/内部境界は 02 層で整合済み。04層に profile 運用判断の導線を追加する余地を確認。
+
+#### Phase 2: 契約統一方針の再確認
+- 旧名→新名方針は `ADR-0021` の「互換なし一括移行」を再採用（追加ADR不要）。
+- 後方互換方針: backend runtime は互換層なし、third-party adapter 内部名のみ private boundary として許容。
+- プロファイル安全既定値: `enterprise-production` では `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` と fail-safe (`read_only`/`deny`) を運用上の必須確認項目として維持。
+
+#### Phase 3: ドキュメント同期
+- `04_Documentation/configuration.md` に Runtime profiles セクションを追加し、実装既定値と本番推奨値の違い（JIT provisioning）を明示。
+- `04_Documentation/operations.md` に profile 選択セクションを追加し、運用開始前の profile 固定と enterprise 追加チェックを明示。
+- `04_Documentation/security_operational_guidelines.md` に profile 前提の変更抑止（未確定時は変更しない）を追加。
+
+#### Phase 4: 実装追随判定
+- ENV 読取実装への致命的不一致は検出せず、コード変更は不要と判断。
+
+#### Phase 5: Verify & Proceed
+- 文書差分を確認し、公開キー命名・既定値・境界に新たなドリフトがないことを確認。
+- Proceed 判定: Stream E scope で完了。残る論点は governance queue（strict no-vendor-env 解釈、`external_http` fail-fast 方針）のみ。
+
+
+## Stream D update (2026-05-20)
+
+### Phase 1) Read同期
+
+- `runtime_parameter_registry.md` をSSOTとして再読し、公開キー集合・既定値・profile差分を固定した。
+- 関連issue（ENV-ARCH-01 / ENV-CONFIG-DRIFT-01 / ENV-PROFILE-01）の `Status / Priority / Dependencies / Related ADR` を同一セッションで再確認した。
+
+### Phase 2) Context / Decision / Consequences
+
+- Context: backendは `KJ_ATLAS_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
+- Decision: 公開契約は `KJ_ATLAS_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
+- Consequences: 旧キー再導入や prefix例外は本streamで実施しない。必要時は新規ADRでGo/No-Goを先行確定する。
+
+### Phase 3) グローバルprefix移行と互換レイヤ設計
+
+- Public layer: 利用者入力は `KJ_ATLAS_*` のみ受理。
+- Private layer: `POSTGRES_*` は third-party container内部名、`VITE_API_BASE` は非公開互換shimとして限定運用。
+- Exit条件: 命名/既定値/境界/profile の4観点が同時に満たされること。
+
+### Phase 4) Plan → Execute → Verify → Proceed
+
+- Plan: 4観点ゲートを固定。
+- Execute: 契約文書（02）→ issue運用（01）の順で同期。
+- Verify: docs-check中心で差分検証し、実装契約との不整合がないことを確認。
+- Proceed: 不整合なしのため継続可能。追加の実装変更は不要。
+
+### Phase 5) 3回失敗で停止
+
+- 本更新では Verify失敗 0回。
+- 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。

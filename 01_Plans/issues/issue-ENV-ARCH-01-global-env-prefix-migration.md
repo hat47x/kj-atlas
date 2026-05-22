@@ -209,3 +209,40 @@
 - `runtime_parameter_registry.md` と `deployment.md` に prefix migration governance（互換期間なし・切替条件）を明文化し、運用判断の参照先を固定した。
 - Compose 公開入力 (`KJ_ATLAS_*`) と third-party private adapter (`POSTGRES_*`) の境界を再確認し、ENV-ARCH-01 の完了条件（公開契約の単一化）を維持していることを確認した。
 - 追加の破壊的変更（互換再導入・公開キー改名）は新規 ADR 必須の方針を追記済み。
+
+
+## Stream D update (2026-05-20)
+
+### Phase 1) Read同期
+
+- `runtime_parameter_registry.md` をSSOTとして再読し、公開キー集合・既定値・profile差分を固定した。
+- 関連issue（ENV-ARCH-01 / ENV-CONFIG-DRIFT-01 / ENV-PROFILE-01）の `Status / Priority / Dependencies / Related ADR` を同一セッションで再確認した。
+
+### Phase 2) Context / Decision / Consequences
+
+- Context: backendは `KJ_ATLAS_*` 単独契約で移行完了。deploy/frontendは公開契約と内部adapter境界の明文化が主課題。
+- Decision: 公開契約は `KJ_ATLAS_*` のみを維持し、互換は private layer（third-party env / frontend shim）に閉じ込める。
+- Consequences: 旧キー再導入や prefix例外は本streamで実施しない。必要時は新規ADRでGo/No-Goを先行確定する。
+
+### Phase 3) グローバルprefix移行と互換レイヤ設計
+
+- Public layer: 利用者入力は `KJ_ATLAS_*` のみ受理。
+- Private layer: `POSTGRES_*` は third-party container内部名、`VITE_API_BASE` は非公開互換shimとして限定運用。
+- Exit条件: 命名/既定値/境界/profile の4観点が同時に満たされること。
+
+### Phase 4) Plan → Execute → Verify → Proceed
+
+- Plan: 4観点ゲートを固定。
+- Execute: 契約文書（02）→ issue運用（01）の順で同期。
+- Verify: docs-check中心で差分検証し、実装契約との不整合がないことを確認。
+- Proceed: 不整合なしのため継続可能。追加の実装変更は不要。
+
+### Phase 5) 3回失敗で停止
+
+- 本更新では Verify失敗 0回。
+- 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。
+
+## Stream F note (2026-05-20)
+
+- ENV-ARCH-01 の契約（公開キーは `KJ_ATLAS_*` のみ）を維持したまま、profile運用文書に「実装既定値」と「推奨値」の差分説明を追加した。
+- `KJ_ATLAS_ALLOW_JIT_PROVISIONING` と `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` の運用判断を profile 起点で統一し、非互換変更や互換レイヤ再導入は実施していない。

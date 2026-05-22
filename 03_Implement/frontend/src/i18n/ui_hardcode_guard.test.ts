@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 type GuardCase = {
   file: string;
   forbiddenLiterals: string[];
+  matchAnywhere?: boolean;
 };
 
 const guardCases: GuardCase[] = [
@@ -86,7 +87,26 @@ const guardCases: GuardCase[] = [
   },
   {
     file: "ui/SidePanel.tsx",
-    forbiddenLiterals: ["Export Trace Analytics"],
+    matchAnywhere: true,
+    forbiddenLiterals: [
+      "Export Trace Analytics",
+      "Parent island",
+      "Placard card",
+      "Placard card text",
+    ],
+  },
+  {
+    file: "canvas/IslandView.tsx",
+    matchAnywhere: true,
+    forbiddenLiterals: [
+      "Select island",
+      "Focus island",
+      "Expand island",
+      "Collapse island",
+      "Peek island",
+      "cards in island",
+      "Island has critique note",
+    ],
   },
 ];
 
@@ -95,7 +115,8 @@ describe("i18n UI hardcoded text guard", () => {
     it(`does not keep raw UI literals in ${testCase.file}`, () => {
       const source = readFileSync(resolve(import.meta.dirname, "..", testCase.file), "utf-8");
       for (const literal of testCase.forbiddenLiterals) {
-        expect(source).not.toContain(`>${literal}<`);
+        const forbiddenSource = testCase.matchAnywhere ? literal : `>${literal}<`;
+        expect(source).not.toContain(forbiddenSource);
       }
     });
   }

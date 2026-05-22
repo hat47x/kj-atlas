@@ -575,3 +575,11 @@ Browser → Internal IdP → Hardened API → RDBMS（オンプレ）
 ### Regression boundary (L1/L2)
 - L1: 契約テストで `AuthContext -> resolver -> policy` の拒否/許可とエラー語彙を固定検証する。
 - L2: 統合テストで Admin API, audit trail, reviewer attribution の一貫性を検証する。
+
+
+### Stream E sync note (2026-05-20, Auth chapter only)
+
+- 本章のAuth契約は `ADR-0020` と `AUTH-ARCH-01` / `AUTH-API-02` の決裁内容を参照し、未承認の新規分岐を追加しない。
+- strict運用（`KJ_ATLAS_ALLOW_JIT_PROVISIONING=false`）では未登録主体を fail-closed（403 + `identity_not_provisioned`）とし、事前プロビジョニング導線を優先する。
+- `reviewerRef/ownerRef` は `user:<users.id>` 派生参照を正本とし、`provider`/`external_uid` を attribution payload へ保存しない。
+- mock IdP 検証は provider profile と header mapping の差替で吸収し、アプリ本体の認可ロジック境界（AccessControlAdapter外部委譲）を維持する。

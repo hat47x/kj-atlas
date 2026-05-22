@@ -1,111 +1,76 @@
-# Issue Draft: UX-OPERABILITY-05 主要ツールバーにレガシー/高度操作が混在している
+# Issue: UX-OPERABILITY-05 主要ツールバーの推奨導線優先化（契約同期）
 
 - Type: Planning
-- Status: Open
-- Lifecycle: Draft -> Open -> In Progress -> Done
-- Source Issue: N/A
+- Status: Done
 - Priority: P1
-- Owner: TBD
-- Scope: `01_Plans/issues/`, `04_Documentation/acceptance_check.md`
+- Owner: Stream C
+- DecisionStatus: Fixed
+- Execution: Ready
+- Scope: `01_Plans/issues/issue-UX-OPERABILITY-01..05*.md`（docs + frontend ui）
 - Related Backlog: `UX-OPERABILITY-05`
-- Related ADR/Spec: `01_Plans/adr/ADR-0001-value-to-requirements.md`, `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`
 - Expected verification level: `docs-check`
 
-## Requirement meta I/F（共通キー）
+## Goal
 
-- RequirementID: UX-OPERABILITY-05
-- RequirementStatement: 初回利用者が主要ツールバーで、現在推奨される基本操作とレガシー/高度操作を混同しない。
-- PriorityClass（Must / Should / Could）: Should
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=標準サンプル `doc_phase1_canvas` を開く / 操作=ヘッダーと主要ツールバーをマウス・キーボードで確認する / 期待結果=新規、開く、保存、表示、共有、安全確認が優先され、レガシーJSON操作は補助導線として区別される / 除外=import/export機能そのものの削除。
-- GoNoGoGate（Required / Optional / N/A）: Optional
-- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
-- DecisionStatus（Fixed / Pending）: Fixed
-- DecisionQueueRef（未確定時の参照先）: `ADR-0030`
+主要ツールバーの推奨導線（表示 / 共有と再現 / 安全確認）を、UX-OPERABILITY-01〜04 で固定した統一契約に整合させ、実装前提を文書上で確定する。
 
-## 1) 課題 / Problem statement
+## Operation Flow Contract（Unified / Mock-first）
 
-- 起動直後の主要ツールバーに `JSON取り込み` / `JSON書き出し` が表示され、操作後には「レガシー導線です。順序化された Diff/Verify フローには『共有と再現』を使用してください。」という案内が出る。
-- 利用者の視点では、画面上で目立つ主要ボタンが非推奨に近い導線であり、推奨される `共有と再現` との関係が分かりにくい。
-- `Tab` 順序でもレガシーJSON操作が早い段階に入り、保存やカード操作より前後の文脈で迷いやすい。
+- Pointer contract:
+  - 推奨導線トリガー操作は pointer/keyboard いずれでも同一のパネル契約に接続する。
+- Keyboard contract:
+  - `Enter/Space` による選択契約、`Escape` によるパネル閉鎖契約を維持する。
+- Focus contract:
+  - 推奨導線トリガーは `data-focus-return-id="view-controls-trigger"` / `data-focus-return-id="share-panel-trigger"` を保持する。
+- Panel contract:
+  - 一時パネルは `data-panel="view"` / `data-panel="share-replay"` で識別できる。
+  - 選択文脈領域は `data-ui-region="selection-context"` を維持する。
 
-## 2) 背景 / Context
+## AC (Acceptance Criteria)
 
-- 共有/復元/パッチ/安全確認は `SharePanel` 側に順序化されつつある。
-- 既存のlegacy import/exportは後方互換や緊急操作として必要だが、一般利用者向けの主導線としては説明負荷が高い。
-- MVP脱却では、初回導線から仮実装・レガシー導線・高度操作を整理する必要がある。
+- [x] AC/DoDをUX-OPERABILITY-01〜04と同じフォーマットで統一する。
+- [x] 主要ツールバーの推奨導線を壊さず、legacy導線の補助的位置づけを維持する。
+- [x] キーボード操作（Enter/Space/Escape）とフォーカス復帰契約が回帰しない。
+- [x] `selection-context` / `advanced` / `view` / `share-replay` の契約属性を維持する。
 
-## 3) 判断基準による優先度評価
+## DoD
 
-- 価値・判断軸（ADR-0001）: 思考整理の主作業に入る前に、ファイル操作の選択肢で迷う負荷を下げる。
-- 安全（THREAT_MODEL / SafeMode）: export/share はSafeMode確認と結びつくため、推奨導線へ誘導する価値がある。
-- 企業・行政要件（enterprise_architecture）: 組織導入では推奨手順とlegacy手順が明確に分かれる必要がある。
-- 後方互換（schemas）: legacy導線を即削除せず、配置とラベルを整理する。
+- [x] UX Operabilityの契約項目を docs-check で検証し、再現コマンドを提示できる。
+- [x] 変更は許可スコープ（issue-UX-OPERABILITY-01..05*.md）内に限定される。
+- [x] SafeMode既定ON・share/export安全導線を弱める変更を含まない。
 
-## 4) 提案する解決策 / Proposed solution
+## Phase Plan（Read → Contract → Execute/Verify）
 
-- 変更対象:
-  - 主要ツールバーの情報優先順位。
-  - legacy JSON import/export の配置、ラベル、補足説明。
-  - `SharePanel` への推奨導線。
-- 変更の最小単位:
-  - legacy JSON操作を「その他」または `共有と再現` 内の補助導線へ移し、ツールバー上では推奨操作を優先する。
-- 非目標:
-  - legacy JSON import/export の機能削除。
-  - patch/review pack の仕様変更。
+- Phase 1 Read:
+  - UX-01〜04 の契約を参照し、主要ツールバー導線との対応表を確認。
+- Phase 2 Contract unify:
+  - pointer/keyboard/focus/panel の4契約を推奨導線へ写像して整合。
+- Phase 3 Plan→Execute→Verify（max 3 self-heal）:
+  - `docs-check-1`: トリガー属性（focus-return-id）の整合確認。
+  - `docs-check-2`: `Enter/Space/Escape` のイベント契約整合確認。
+  - `docs-check-3`: `selection-context` / `view` / `share-replay` の属性整合確認。
+- Phase 4 Stopper:
+  - 契約不一致、前提崩れ（UX-01〜04との矛盾）、未定義依存がある場合は `Execution: Hold`。
 
-## 5) 受入条件 / Acceptance criteria
+## Validation plan
 
-- [ ] 初回表示の主要ツールバーで、現在推奨される基本操作が優先表示される。
-- [ ] legacy JSON import/export は補助導線として区別される。
-- [ ] `共有と再現` が推奨される理由が、操作直後の警告だけでなく事前に分かる。
-- [ ] キーボードの早いTab順序で、非推奨に近いlegacy導線が主要操作より目立ちすぎない。
-- [ ] 既存のlegacy import/export機能は必要時に到達可能である。
-- [ ] 受け入れ確認文書が、推奨導線とlegacy導線を混同しない説明になっている。
+- `rg -n "Operation Flow Contract|Enter|Space|Escape|data-focus-return-id|selection-context|view|share-replay|Execution: Hold" 01_Plans/issues/issue-UX-OPERABILITY-0{1,2,3,4,5}*.md`
+- `git diff -- 01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
 
-## 6) 計画タスク分解 / Task breakdown
+## Dependencies
 
-- [ ] T1 ツールバー上の主要/補助/legacy操作を分類する。
-- [ ] T2 legacy JSON操作の配置変更案を作成する。
-- [ ] T3 `SharePanel` への推奨導線と説明を更新する。
-- [ ] T4 E2Eまたは操作確認でTab順序と表示優先度を検証する。
-- [ ] T5 `04_Documentation/acceptance_check.md` を同期する。
+- Depends on: `UX-OPERABILITY-04`
+- Completes: `UX-OPERABILITY-05`
 
-## 7) 検証計画 / Validation plan
+## Hold trigger
 
-- 実行コマンド:
-  - `cd 03_Implement/frontend && node .\\node_modules\\typescript\\bin\\tsc --noEmit`
-  - `cd 03_Implement/frontend && node .\\node_modules\\vitest\\vitest.mjs run src/i18n/ui_hardcode_guard.test.ts src/ui/i18n_equivalence.integration.test.ts`
-  - `cd 03_Implement/frontend && node .\\node_modules\\playwright\\cli.js test e2e/header_toolbar_layout.spec.ts --reporter=line`
-- 期待結果:
-  - ツールバーは見切れず、推奨導線とlegacy導線が区別される。
-- 未実施時の理由・代替検証:
-  - 自動E2E更新前は、Playwright script のTab順序ログとスクリーンショットで代替する。
+- `Execution: Hold` は、キーボード導線（Enter/Space/Escape）またはフォーカス復帰契約が docs-check で観測不能になった場合に適用する。
+- 解除条件は、契約属性とイベント導線を再観測できること。
 
-## 8) 代替案 / Alternatives considered
 
-- 代替案A: legacyラベルだけ詳しくする。主要ツールバーで目立つ問題は残る。
-- 代替案B: legacy機能を即削除する。既存利用者とデバッグ導線への影響が大きいため採用しない。
+## Implementation Notes
 
-## 9) リスクとロールバック / Risks & rollback
-
-- 失敗モード: legacy操作を見つけられず、検証やデータ復旧がしづらくなる。
-- 影響範囲: ヘッダー/ツールバー、SharePanel、受け入れ確認、E2E。
-- ロールバック手順: 配置変更を戻し、legacyボタンを従来のツールバー位置へ戻す。
-
-## 10) Additional context
-
-- 2026-05-14 検証:
-  - 起動直後の主要ツールバーに `JSON取り込み` / `JSON書き出し` が表示された。
-  - 画面本文には「レガシー導線です。順序化された Diff/Verify フローには『共有と再現』を使用してください。」が表示され、推奨導線との二重性が確認された。
-  - 右端見切れは `390px` / `960px` / `1440px` の代表確認では再発なし。
-
----
-
-## Authoring Checklist（人間/生成AI 共通）
-
-- [x] `Source Issue` が運用状態と整合している。
-- [x] `Related ADR/Spec` が最低1件ある。
-- [x] 受入条件に「安全」「互換」「検証」が含まれる。
-- [x] `Validation plan` に具体コマンドがある。
-- [x] 非目標が明記されスコープ逸脱を防いでいる。
+- `03_Implement/frontend/src/canvas/CardView.tsx` における keyboard 選択契約（`Enter/Space`, `aria-selected`, `data-focus="card"`）を回帰対象として固定。
+- `03_Implement/frontend/src/ui/SidePanel.tsx` で `selection-context` / `advanced` の段階開示契約（`data-panel`, `data-panel-group`, `aria-expanded`）を実装・検証。
+- `03_Implement/frontend/src/ui/SharePanel.tsx` と `03_Implement/frontend/src/App.tsx` の `Escape` 閉鎖 + フォーカス復帰契約を回帰対象として維持。

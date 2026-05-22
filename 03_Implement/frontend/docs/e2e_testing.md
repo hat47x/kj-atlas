@@ -151,6 +151,21 @@ python -m pytest
 - 同一 commit で `npm run test` → `npm run e2e:mock` を同順で実行し、差分再現を確認する。
 - flaky が発生した場合の自己修復は最大3回（再実行、待機調整、fixture補正）まで。4回目相当は Stop として `Pending` に保留理由と再開条件を残す。
 
+
+## Draft QA issue の Open化条件（AC/DoD/証拠）
+
+`issue-QA-*` を Draft から Open に進める前に、次を満たします。
+
+- AC-O1: E2Eで担保する価値境界と、unit/integrationで担保する契約境界を1行ずつ記載する。
+- AC-O2: `Execution: Hold` の解除条件を1行で判定可能にする。
+- AC-O3: 証跡セット（コマンド、結果、失敗分類、follow-up issue）を残す。
+- AC-O4: 実行経路（Compose / SQLite / 例外記録）を事前選択する。
+
+DoD
+- DoD-O1: AC-O1〜O4が issue 本文に存在する。
+- DoD-O2: `python3 01_Plans/issues/validate_active_issue_memos.py` を通過する。
+- DoD-O3: No-Go時の戻し先 issue と再開条件が 1:1 対応する。
+
 ## 失敗時に残す情報
 
 - 実行したコマンド
@@ -240,3 +255,66 @@ Draft状態の issue-QA-* を Open 判定可能にする時は、次の最小テ
 ### 5) 修復上限（失敗時）
 - 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
 - 4回目相当は Stop とし、保留理由/再開条件を追記して終了する。
+
+
+## Release Gate 連携（QA専任運用）
+
+- E2E結果は `PRODUCT-QA-01` の Gate Record に `result/evidence/owner/due` 形式で転記します。
+- Blocker または Critical を検出した場合は、E2E段で即時停止し `MVP-EXIT-01` 判定を Fail にします。
+- Compose実行不可時は `ADR-0019` の代替経路（SQLiteまたはmock）を使用し、未実施理由を必ず記録します。
+
+## Stream E (2026-05-20): Draft→Open entry criteria quick reference
+
+QA P0ゲート用に、Draft issue を Open 判定する最小 entry criteria を固定します（docs-only運用）。
+
+- EC-01 依存承認: Pending欄に承認ID・日付・参照リンクが揃う。
+- EC-02 実行経路: Compose / SQLite / 例外記録のいずれか1経路を事前選択。
+- EC-03 証跡欄: Gateごとに command / result / evidence link を記録可能。
+- EC-04 Hold解除: `Execution: Hold` の解除条件が1行で判定可能。
+
+Stopper（Open不可）
+- 承認ID未記入。
+- 実行経路未固定。
+- docs-only範囲外要求の混入。
+- SafeMode / share-export 境界の判定欠落。
+
+## Stream F update (2026-05-20): Plan → Execute → Verify → Proceed（QA/E2E/Unit）
+
+### Plan
+- Scope を `tests/docs/issues` に限定し、実装本体（`src/**`）は変更しない。
+- 契約未確定箇所は mock / fixture で依存分離し、Open 判定の証跡を優先する。
+
+### Execute
+- unit/integration は契約トークン（AC/DoD/Gate/Execution）の存在を自動検証する。
+- E2E は `e2e:mock` を既定経路とし、外部依存を伴う実行は issue 側へ保留理由を記録する。
+
+### Verify
+- `python -m pytest 03_Implement/backend/tests/test_qa_e2e_doc_contract.py`
+- `python3 01_Plans/issues/validate_active_issue_memos.py`
+- 判定語彙は `pass / blocked / fail` を使用し、No-Go 時は戻し先 issue を必ず記録する。
+
+### Proceed
+- 3回以内で自己修復可能なら継続。
+- 4回目相当は Stop とし、`Pending` に「保留理由 / 再開条件 / owner」を追記する。
+
+## Stream G 補遺: Draft→Open昇格判定の実務テンプレ
+
+`issue-PRODUCT-QA-01` と `issue-QA-*` Draft を Open 判定する際は、次の matrix を使う。
+
+| Check | 必須証跡 | Pass条件 |
+| --- | --- | --- |
+| Gate定義 | Go/No-Go 条件表 | 各Gateが判定可能 |
+| Verify経路 | Compose/SQLite/例外の事前選択 | 未選択でない |
+| 失敗分類 | triage語彙 | `test defect / product defect / environment limitation` のみ |
+| Escalation | follow-up issue + 再開条件 | 1:1対応 |
+| Self-correction | retry上限定義 | `<=3` と4回目Stop |
+
+### Draft昇格時の最小コマンド
+
+```bash
+python3 01_Plans/issues/validate_active_issue_memos.py --files \
+  01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md \
+  01_Plans/issues/issue-QA-UNIT-01-unit-test-coverage-improvement.md \
+  01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md \
+  01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md
+```

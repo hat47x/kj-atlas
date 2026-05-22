@@ -97,3 +97,60 @@ KPIは次の3条件を満たすもののみ採用する。
 - [x] Decision に採用理由と非目標がある。
 - [x] Traceability に関連文書を1件以上記載した。
 - [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。
+
+
+## Stream H Finalization Pack (2026-05-20)
+
+### Context
+- Scope is constrained to `MVP-EXIT-01` and `PRODUCT-VALUE-01..03` in plan/ADR layer only.
+- Implementation code changes are explicitly out of scope.
+- Existing value-loop (V0..V4) is kept, and only contract-level readiness is finalized.
+
+### Decision
+1. ADR-0032 remains **Proposed** until all three value issues are Open-ready with fixed AC/DoD and measurable KPI definitions.
+2. The KPI and audit contract is fixed as a two-axis scorecard:
+   - **Value KPI axis**: activation, ambiguity-handling, reviewable-package completeness.
+   - **Governance axis**: safeMode boundary integrity, review attribution integrity, evidence reproducibility.
+3. Program gate linkage for `MVP-EXIT-01` is fixed to:
+   - Input: `PRODUCT-VALUE-01..03` issue evidence summaries.
+   - Output: `Go / Conditional Go / No-Go` with owner/due/re-decision metadata.
+4. Non-dependency rule: This ADR finalization does not depend on other stream implementation completion; it only depends on issue-level contract completeness.
+
+### Consequences
+- Positive:
+  - Product-value validation can be judged before feature completion by contract quality.
+  - Auditability increases because KPI and gate evidence are explicitly bound.
+- Trade-offs:
+  - Additional documentation discipline is required before Open transition.
+  - Proposed status must be retained until issue contract checks are all green.
+
+### KPI / Audit Scorecard Binding
+| Backlog | KPI ID | KPI name | Target | Evidence | Audit check |
+| --- | --- | --- | --- | --- | --- |
+| PRODUCT-VALUE-01 | PV01-K1 | first_meaningful_map_activation_rate | >= 0.90 | activation scenario record | scenario reproducibility (3/3) |
+| PRODUCT-VALUE-02 | PV02-K1 | unresolved_signal_capture_rate | = 1.00 | ambiguity signal checklist | signal loss = 0 |
+| PRODUCT-VALUE-03 | PV03-K1 | reviewable_package_completeness | = 1.00 | package element checklist | mandatory 6 elements present |
+| MVP-EXIT-01 | EXIT-K1 | productization_gate_traceability | = 1.00 | Go/No-Go decision log | candidate/date/reviewer/decision complete |
+
+### AC / DoD lock
+- AC-L1: Each value issue has `Hypothesis -> Action -> Evidence -> Decision` chain with explicit Go/No-Go rule.
+- AC-L2: Each KPI has definition, formula, data source, and re-measurement procedure.
+- AC-L3: Each issue includes audit fields (`reviewer`, `date`, `artifact id`, `re-decision condition`).
+- DoD-L1: Cross-stream implementation progress is not referenced as blocking condition.
+- DoD-L2: Plan/ADR documents are internally consistent for terminology and gate logic.
+
+### Verification of non-dependency
+- Verified by scope inspection: no implementation file paths are newly introduced in this finalization block.
+- Verified by gate logic inspection: all decisions are contract-evidence based and can run docs-only.
+
+### Self-correction log (<=3)
+1. Corrected KPI naming to align with existing issue KPI sections (`reviewable_package_completeness`).
+2. Corrected gate linkage wording to use `Go / Conditional Go / No-Go` consistently.
+3. Corrected DoD wording to avoid implicit dependency on other stream code delivery.
+
+### Approval-wait package
+- Package includes:
+  1. This ADR finalization block.
+  2. Updated issue-level AC/DoD/KPI scorecards for `MVP-EXIT-01` and `PRODUCT-VALUE-01..03`.
+  3. Non-dependency verification notes.
+- Approval decision requested: **Accept ADR-0032 proposed finalization for Stream H scope**.

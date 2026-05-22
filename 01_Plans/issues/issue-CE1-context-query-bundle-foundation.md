@@ -2766,3 +2766,153 @@ handoffKeys:
 - CE2 unlock: `sourceBundleHash === bundleHash` を前提に proposal-only 連携を再開可能。
 - CE4 unlock: `equivalenceKey + bundleHash` を監査再現キーとして連携可能。
 - Stop: 仕様競合/上流矛盾/想定外ファイル競合を検知した場合は即停止。
+
+
+## Stream B contract sync addendum（2026-05-19 / CE1 downstream-startable contract）
+
+### Context
+- CE1 は CE0/HIL-RS 凍結契約を参照しつつ、実装依存（実DB/実LLM/worker）を切断したまま下流開始可能にする必要がある。
+
+### Decision
+- `ContextQueryV1` / `ContextBundleV1` の closed-world 契約を維持し、次の I/F を着手前固定値として扱う。
+  - version: `v1`
+  - preview gate: `previewConfirmed != true -> 422 preview_required`
+  - key gate: `unknown key -> 400 unknown_contract_key`
+  - determinism gate: `same canonical query && bundleHash mismatch -> 409 nondeterministic_bundle`
+- mock dataset は `A2-minimal-v1` 固定、実装依存は導入しない。
+
+### Consequences
+- CE2/CE4 は CE1 契約だけで interface test を開始できる。
+- 破壊的変更（署名追加/削除・エラー語彙変更）は `future-version backlog` へ隔離する。
+
+
+## Stream D execution update（2026-05-19 / CE1 ContextQuery/ContextBundle Foundation contract lock）
+
+### Phase 1 Read（必要契約の再読と差分抽出）
+- CE1 v1 契約と `02_Architecture/llm_*` の整合を確認し、最小I/Fが `ContextQueryV1` / `ContextBundleV1` に閉じていることを確認。
+- 差分抽出: `previewConfirmed` gate、canonical hash（`queryCanonicalHash` / `bundleHash`）、closed-world 拒否規約を固定対象として抽出。
+
+### Phase 2 契約定義（実装なし）
+- `ContextQueryV1` 最小必須: `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`。
+- `ContextBundleV1` 最小必須: `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`。
+- 失敗契約固定:
+  - `previewConfirmed != true -> 422 preview_required`
+  - `unknown key -> 400 unknown_contract_key`
+  - `same canonical query && bundleHash mismatch -> 409 nondeterministic_bundle`
+
+### Phase 3 モック規約（境界・互換・後方互換）
+- mock適用境界: `stubDatasetId=A2-minimal-v1` で `/context/query` `/context/bundle` の契約検証のみ許可。
+- 互換性ルール: v1 は closed-world。未定義キー受理・暗黙拡張・HTTP語彙追加を禁止。
+- 後方互換方針: 追加キーや意味変更は v2 契約改訂（ADR合意）でのみ実施し、v1 の意味論は凍結。
+
+### Phase 4 検証（依存・他Issue影響）
+- 依存確認: CE0 freeze 参照キー（safeMode境界 / No-Go）と矛盾なし。
+- 影響確認: CE2/CE4 は `sourceBundleHash` 参照で mock-first 継続可能、CE1実装完了待ちは不要。
+- self-repair: 0/3（検証失敗なし）。
+
+### Phase 5 受け渡し（Stream C/E）
+- Stream C へ: API/worker実装時に守る最小I/Fと固定エラー語彙3種を read-only handoff。
+- Stream E へ: 監査/運用文書に必要な hash決定論要件（同一canonical query 3/3一致）を handoff。
+- Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
+
+
+## Stream B execution update（2026-05-19 / CE1 contract & mock lane）
+
+### Phase 1 Read（Status/Priority/Depends/Unblocks/AC 再確認）
+- Status=`Open` / Priority=`P1` を維持。
+- Depends: `issue-CE0-contract-freeze.md`（read-only handoff）を維持。
+- Unblocks: `CE2-low-risk-ai-assist` / `CE4-api-cli-audit-integration` を維持。
+- AC再確認: closed-world契約、固定エラー語彙3種、決定論hash、mock-first依存切断。
+
+### Phase 2 Mock-First切断設計（最小シグネチャ先行定義）
+- ContextQuery 最小シグネチャ（v1 fixed）:
+  - `queryId, goal, scope, depth, constraints, reviewFilter, safeModePolicy, outputMode, previewConfirmed`
+- ContextBundle 最小シグネチャ（v1 fixed）:
+  - `queryCanonicalHash, bundleHash, selected, relations, evidence, contradictions, reviewFlags, truncationMeta, excludedReason`
+- 実装依存切断手順（Mock Provider）:
+  1) `POST /context/query` は unknown key を `400 unknown_contract_key` で拒否（closed-world）。
+  2) `previewConfirmed!=true` は `422 preview_required` で拒否。
+  3) 同一 canonical query で hash不一致は `409 nondeterministic_bundle` を返し停止。
+  4) CE2/CE4 へは `queryCanonicalHash/bundleHash` と固定語彙のみ handoff（read-only）。
+
+### Phase 3 Plan→Execute→Verify
+- Plan: AC/DoD不足なし。追加提案は不要。
+- Execute: CE0→CE1 の契約連結を明文化し、実装詳細（DB/LLM/worker）を記載しない。
+- Verify: 依存逆転なし（CE1がCE0凍結語彙を参照）・下流参照可能（CE2/CE4 hashキー連携）を確認。
+
+### Phase 4 Stopper
+- 修復3回超過、契約語彙衝突、allowlist外編集要求、依存逆転のいずれかを検知した時点で `held` 停止し判断依頼。
+
+## Stream B interface-first update（2026-05-20 / CE契約・モック切断）
+
+### Phase 1: 最新Read + 依存再確認
+- CE1を Context I/F の単一固定点として再確認（Status=Open, Priority=P1 を維持）。
+- 依存は CE0語彙固定の read-only 参照に限定し、CE2/CE4 へは実装でなく契約で接続する。
+
+### Phase 2: インターフェース先行定義（CE1固定点）
+- `ContextQueryV1` 固定項目: `goal/scope/depth/constraints/reviewFilter/safeModePolicy/outputMode/previewConfirmed`。
+- `ContextBundleV1` 固定項目: `queryCanonicalHash/bundleHash/sourceBundleHash/items/schemaVersion`。
+- fail-closed語彙固定: `preview_required` / `unknown_contract_key` / `nondeterministic_bundle`。
+- 上記は closed-world v1 契約とし、下流Issueは参照のみ（再解釈禁止）。
+
+### Phase 3: Plan→Execute→Verify
+- Plan: CE1を契約固定点、CE2/CE4を proposal-only 接続点として分離。
+- Execute: 実装依存（実DB/実LLM/worker）を持ち込まない文書契約のみ維持。
+- Verify:
+  - 依存循環なし（CE1 <- CE0語彙参照、CE1 -> CE2/CE4 handoff）。
+  - Draft→Open条件は `必須キー一致` `語彙3種固定` `mock-first維持` で機械判定可能。
+  - 修復上限は最大3回（超過時 Stop）。
+
+### Phase 4: Stopper
+- CE1契約定義が曖昧（必須キー/語彙/hash規律が不一致）になった時点で停止し、他Issueでの実装補完を行わない。
+
+
+## Stream B latest run（2026-05-20 / CE1 contract freeze / Plan→Execute→Verify→Proceed）
+
+### Phase 1 Read Gate
+- Read Order準拠で上位文書と本Issue、`llm_input_ir_spec.md` / `llm_provider_spec.md` / `llm_runtime_constraints.md` のCE1節を再読。
+- 編集対象を許可5ファイルに固定し、他領域編集禁止を再確認。
+- 競合停止条件（Contract ID collision / error semantics collision / allowlist逸脱）を開始時点で明示。
+
+### Phase 2 ADR/契約明文化（Context / Decision / Consequences）
+- **Context**: CE2/CE4を停止させないには、CE1を実装依存なしで先に契約凍結する必要がある。
+- **Decision**: `ContextQueryV1` / `ContextBundleV1` の closed-world v1、固定エラー語彙3種、hash決定論を凍結。
+- **Consequences**: mock-firstで並行実装を継続でき、CE1未実装でも契約検証とhandoffが可能。
+
+### Phase 3 I/F先行定義（型・APIシグネチャ・イベント）
+- 型固定: `ContextQueryV1` / `ContextBundleV1`（未定義キー禁止）。
+- API固定:
+  - `POST /context/query` : `previewConfirmed=false -> 422 preview_required`
+  - `POST /context/bundle` : 同一canonical queryでhash不一致 -> `409 nondeterministic_bundle`
+  - unknown key -> `400 unknown_contract_key`
+- 監査イベント最小キー: `queryCanonicalHash`, `bundleHash`, `trace_id`, `verifyAttempt`, `decision`。
+
+### Phase 4 モック方針定義
+- `stubDatasetId=A2-minimal-v1` を固定し、fixture/stubのみでCE1契約検証を可能化。
+- mock許可範囲: 型検証、固定エラー語彙、3回hash一致判定。
+- mock禁止範囲: 実DB・実LLM・worker依存の混入。
+
+### Phase 5 AC/DoD更新
+- AC追加固定:
+  1) preview gate固定（422）
+  2) unknown key拒否固定（400）
+  3) hash決定論固定（3/3一致、不一致409）
+  4) closed-world v1固定
+- DoD: 上記4点が docs 契約のみで再現でき、CE2/CE4へ read-only handoff 可能。
+
+### Phase 6 Verify（契約一貫性）
+- Verifyチェックリスト:
+  - preview gate semantics 一致
+  - unknown key semantics 一致
+  - nondeterministic semantics 一致
+  - Contract IDs `CE1-CTXQ-IF` / `CE1-CTXB-IF` / `CE1-HASH-DET-IF` / `CE1-PREVIEW-GATE-IF` 一致
+- 不一致検知時は即停止し、推測実装を行わない。
+
+### Phase 7 Self-correction（最大3回）
+- attempt 1: 3固定エラー語彙の表記揺れ点検（差分不要）。
+- attempt 2: Contract ID衝突点検（差分不要）。
+- attempt 3: AC/DoDとVerify手順の突合（差分不要）。
+
+### Phase 8 完了報告
+- 判定: **Proceed（contract-only handoff ready）**。
+- 付帯条件: CE1凍結範囲外（実装詳細化、追加キー導入）は別版でのみ扱う。

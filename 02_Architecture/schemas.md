@@ -24,6 +24,15 @@ MVPでは以下を成立させます。
 - キャンバス表示のためのビュー変換（パン／ズーム）
 - ドキュメントの保存・復元
 
+### 1.0.1 Stream D drift audit gate（2026-05-20）
+
+本書の運用境界は `02_Architecture/data_model_operations_overview.md` と対で解釈する。次のいずれかを満たした場合は drift として `Stop` 判定にする。
+
+1. `L1/L1.5/L2/L2.5/L3/L0` の語彙または意味が文書間で不一致。
+2. `PUT /docs/{doc_id}` create-if-absent をMVP標準Create契約とする記述が不一致。
+3. `Document.version` の非互換変更に version gate が伴わない。
+4. Verify自己修復回数が3回を超えたまま継続しようとする。
+
 ### 1.1 CE0 Contract Freeze（責務境界メタ契約）
 
 CE-0 の契約凍結として、実装型に先行して次のメタ契約を固定する。
@@ -455,6 +464,19 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 - `Document.version` を用いてスキーマバージョンを管理する
 - 破壊的変更は version を上げ、API側で移行処理を提供する
 
+### 6.0.1 DocumentV2 mock schema version（downstream独立性）
+
+`DocumentV2` 契約ドリフト検証では、実装進捗と独立して次の mock schema version を固定する。
+
+- `mockSchemaVersion = "mock-2026-05-19-dv2"`
+- 用途: contract test / fixture / handoff の識別子
+- 非用途: runtime の `Document.version` 代替（`Document.version` は引き続き `1|2` のみ）
+
+運用ルール:
+- 下流（import/export/validator/worker）は `mockSchemaVersion` を参照して fixture 互換性を判定してよい。
+- 本番永続データには `mockSchemaVersion` を書き込まない（read-only検証メタ）。
+- `mockSchemaVersion` を更新する場合は `schemas.md` と `data_model_operations_overview.md` を同時更新する。
+
 ### 6.1 Document versioning / support level運用ルール（DATA-CONTRACT-01固定）
 
 - `DocumentV2` の互換性レベルは次で固定する。
@@ -466,6 +488,12 @@ MVPでは、サーバ側で最低限の検証（型・必須フィールド）�
 
 ---
 
+
+### 6.2 Stream D fail-safe guardrails
+
+- 後方互換が曖昧な変更（既存キーの意味変更、必須化、削除）は `version` を上げずに導入してはならない。
+- 新規フィールドは support level（L1/L1.5/L2/L2.5/L3/L0）を割り当てるまで `Contract-limited (L2.5)` とみなし、個別CRUD保証を主張しない。
+- 運用責務が未確定（DecisionStatus=Pending）の項目は、スキーマに存在しても実装Go判断に使わない（fail-closed）。
 ## 7. 次に作るもの
 
 - `02_Architecture/api.md`：Document（V1/V2）のCRUD I/F
@@ -723,6 +751,34 @@ export type MergeDecisionRecord = {
   3) 旧来の外部識別子直参照を段階的に廃止し、`reviewerRef` / `ownerRef` は `user:<users.id>` のみ許可する。
   4) strict 運用では未登録 subject を `403` とし、管理導線（`POST /admin/provision/users`）を必須化する。
 - backfill運用: 旧 `reviewerRef` / `ownerRef`（例: `user:sso:sub:<subject>`）は mapping JSON を使って `user:<users.id>` へ変換する。
+
+### 11.1 Migration alignment snapshot（2026-05-20 / Stream D）
+
+現行の物理スキーマは Alembic revision `20260314_0005` までで確定しており、本章の契約と次の対応で一致する。
+
+- `20260211_0001_create_documents.py`:
+  - `documents(id, version, updated_at, payload_json)`
+- `20260303_0002_create_users_identities.py`:
+  - `users(id, display_name, email, lifecycle_state, created_at, updated_at)`
+  - `user_identities(id, user_id, provider, external_uid, created_at)`
+  - `UNIQUE(provider, external_uid)`
+- `20260313_0003_create_merge_decision_logs.py`:
+  - `merge_decision_logs(id, doc_id, decision_id, group_id, snapshot_version, decided_at, payload_json)`
+  - `UNIQUE(doc_id, decision_id)`
+- `20260313_0004_add_merge_decision_log_indexes.py`:
+  - `ix_merge_decision_logs_doc_group_id(doc_id, group_id, id)`
+  - `ix_merge_decision_logs_doc_snapshot_id(doc_id, snapshot_version, id)`
+- `20260314_0005_enforce_identity_lookup_uniqueness.py`:
+  - `uq_user_identities_provider_lower_external_uid(lower(provider), lower(external_uid))`
+
+互換性判定（2026-05-20時点）:
+
+- **互換あり（backward-compatible）**
+  - 読み取り経路へ影響しない index 追加。
+  - `provider/external_uid` の case-insensitive uniqueness 強化（重複データがない前提）。
+- **互換なし（backward-incompatible）**
+  - 既存列の削除、必須化、意味変更は未実施。
+  - `Document.version` の意味変更を伴う migration は未実施。
   - dry-run: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json --dry-run`
   - apply: `python -m kj_atlas_api.backfill_identity_refs --database-url <KJ_ATLAS_DATABASE_URL> --mapping-json mapping.json`
 
@@ -961,3 +1017,41 @@ hil_rs_a1_manifest_v1:
 - roundtrip contract test は `A2-minimal-v1` で実施し、同一 canonical query 3回の `queryCanonicalHash` / `bundleHash` 一致を合格条件とする。
 - CE2/CE4 handoff は read-only で `sourceBundleHash === bundleHash` を比較可能であることのみを要件とし、実装依存（DB/LLM/worker）を含めない。
 - Verify失敗時 self-correction は最大3回。超過時は `held` 停止を必須とする。
+
+
+## 11. Stream D execution log (2026-05-19)
+
+Phase直列実行（Read必須）で Data Contract & Model Ops を確認した。
+
+1. Contract drift抽出: `DATA-CONTRACT-01` の観点（frontend/backend/api/schema）で `DocumentV2` 契約差分を再確認し、`version gate` 優先の fail-closed を維持。
+2. Support level定義: `L1/L1.5/L2/L2.5/L3/L0` の語彙を本書の正本として再固定。新規フィールドは未分類なら `L2.5` 扱い。
+3. CRUD境界更新（参照）: 個別CRUDの可否は `data_model_operations_overview.md` の表を正本とし、本書は型契約に限定。
+4. Admin maintenance/recovery境界更新（参照）: 管理・復旧の実装可否は `DATA-MAINT-01` で管理し、契約変更を先行条件に据える。
+5. Verify: `schemas.md` / `schemas_review_attribution.md` / `data_model_operations_overview.md` 間で support level 語彙と責務分離の矛盾がないことを確認。
+
+## 12. Stream D reaffirmation (2026-05-19)
+
+### Context
+- `DocumentV2` には実装済み項目と契約先行項目が混在しており、型定義のみで運用CRUD保証と誤読されるリスクがある。
+
+### Decision
+- `L1/L1.5/L2/L2.5/L3/L0` を support level の唯一語彙として維持し、新規フィールドは未分類のまま導入しない。
+- `PUT /docs/{doc_id}` create-if-absent をMVPの標準Create契約として維持し、`POST /docs` はversion gate導入まで契約候補（L0）に据え置く。
+
+### Consequences
+- 後方互換判定を version gate 基準で統一でき、feature flag による暫定互換運用を抑止できる。
+- `data_model_operations_overview.md` / `schemas_review_attribution.md` / `issue-DATA-CONTRACT-01` と同一語彙で運用責務境界を同期できる。
+
+## 13. Stream B contract lock sync (2026-05-20)
+
+### Context
+- `DocumentV2` の support level と backward compatibility 判定が、契約文書と運用境界文書で同時に固定されていない場合、実装側で「型=運用保証」と誤読される。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を唯一語彙として維持し、未分類フィールドは `L2.5` 扱いを継続する。
+- backward compatibility は `version gate` 優先で固定し、`version: 2` の破壊的変更（必須化/意味変更/削除）は `version: 3` 以降でのみ許可する。
+- CE1/CE2/CE4 連携I/Fは read-only contract（`queryCanonicalHash` / `bundleHash` / `sourceBundleHash`）として扱い、DB/API依存実装を混在させない。
+
+### Consequences
+- Stream B から下流への引き渡しは mock-first で再現可能になり、実装進捗待ちなしで契約検証を継続できる。
+- CRUD保証の主張は `data_model_operations_overview.md` 側に限定され、契約文書単体の誤読リスクを抑制できる。

@@ -14,6 +14,14 @@
 - 既定では LLM 連携は無効です。
 - 外部サービスとの共有や large-scale LLM の利用は、明示的な opt-in と宛先 allowlist がある場合だけ有効にします。
 
+
+## 公開設定と内部adapter境界
+
+| 区分 | 利用者が設定するか | 例 | 取り扱いルール |
+| --- | --- | --- | --- |
+| 公開設定（public contract） | はい | `KJ_ATLAS_DATABASE_URL`, `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_*` | `KJ_ATLAS_*` のみを設定対象とします。 |
+| 内部adapter設定（private boundary） | いいえ | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | third-party コンテナ内部でのみ使用します。公開設定としては受け付けません。 |
+
 ## 設定を変える前に
 
 設定は「値を増やす」より先に「何を許可するか」を決めると安全です。
@@ -33,6 +41,19 @@
 | 既定値 | 何も設定しないときに使われる値です。 |
 | opt-in | 明示的に有効化することです。large-scale LLM は opt-in なしでは使えません。 |
 | allowlist | 接続してよい宛先だけを並べた一覧です。 |
+
+
+## Runtime profiles（推奨プロファイル）
+
+実装既定値（未設定時に使われる値）と、運用で推奨する値は異なる場合があります。
+迷った場合は GitHub 上の [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md) を参照してください。
+
+- `local-dev`: SQLite + `KJ_ATLAS_LLM_PROVIDER=none` で最小起動。
+- `evaluation`: Compose + PostgreSQL で検証。監査HTTPと外部PDPは原則 `noop`。
+- `enterprise-production`: `KJ_ATLAS_ALLOW_JIT_PROVISIONING=false` を基本に、fail-safe を `read_only` または `deny` で固定。
+
+> 注意: `KJ_ATLAS_ALLOW_JIT_PROVISIONING` の実装既定値は `true` ですが、本番相当の推奨値は `false` です。これは契約不整合ではなく、導入容易性と本番安全性を分けているためです。
+> 補足: `KJ_ATLAS_ACCESS_CONTROL_FAIL_SAFE_MODE` は実装既定値 `read_only` ですが、`enterprise-production` では `read_only` と `deny` のどちらを採るかを事前に固定してください。
 
 ## 最小設定
 
@@ -63,9 +84,9 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_DATABASE_URL` | `sqlite:///./kj_atlas.db` | backend が使う DB 接続先 |
 | `KJ_ATLAS_LLM_PROVIDER` | `none` | `none`, `local`, `local_http`, `large-scale`, `large_scale`, `external` |
 | `KJ_ATLAS_LOCAL_LLM_BASE_URL` | 未設定 | local LLM の base URL |
-| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM に渡す model 名 |
+| `KJ_ATLAS_LOCAL_LLM_MODEL` | 未設定 | local LLM で使う model 名 |
 | `KJ_ATLAS_LARGE_SCALE_LLM_BASE_URL` | 未設定 | large-scale LLM の base URL |
-| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM に渡す model 名 |
+| `KJ_ATLAS_LARGE_SCALE_LLM_MODEL` | 未設定 | large-scale LLM で使う model 名 |
 | `KJ_ATLAS_LLM_ESCALATION_ENABLED` | `false` | large-scale への昇格許可 |
 | `KJ_ATLAS_LLM_LARGE_SCALE_OPT_IN` | `false` | large-scale 利用の明示 opt-in |
 | `KJ_ATLAS_LARGE_SCALE_LLM_ALLOWLIST` | 未設定 | large-scale 接続を許可する host のカンマ区切り |
@@ -84,7 +105,7 @@ export KJ_ATLAS_LLM_PROVIDER=none
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_TIMEOUT_SECONDS` | `1.5` | `external_http` adapter の timeout 秒数 |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_AUTH_MODE` | `none` | `none`, `oidc`, `saml` |
 | `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_STATIC_BEARER_TOKEN` | 未設定 | `external_http` adapter の固定 bearer token |
-| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter に渡す IdP issuer |
+| `KJ_ATLAS_ACCESS_CONTROL_EXTERNAL_HTTP_IDP_ISSUER` | 未設定 | `external_http` adapter で使う IdP issuer |
 | `KJ_ATLAS_ALLOW_JIT_PROVISIONING` | `true` | 未登録 identity の JIT provisioning を許可 |
 | `KJ_ATLAS_AUTH_PROVIDER_FIELD` | `x-auth-provider` | auth provider を受け取る header 名 |
 | `KJ_ATLAS_AUTH_USER_FIELD` | `x-forwarded-user` | user id を受け取る header 名 |
@@ -221,18 +242,3 @@ curl -fsS http://127.0.0.1:8000/healthz
 - [security.md](security.md)
 - [local_llm_ops_guide.md](local_llm_ops_guide.md)
 - [runtime_parameter_registry.md](https://github.com/hat47x/kj-atlas/blob/main/02_Architecture/runtime_parameter_registry.md)
-
-## 運用手順（DOC-OPS-05）
-1. 対象読者（Audience）と目的（Goal）を先に確認する。
-2. 公開境界（Public boundary）を確認し、内部手順は公開文書へ直接書かない。
-3. 実行後は関連文書の導線（Related links）と矛盾がないか確認する。
-
-## 判断基準（DOC-OPS-05 品質ゲート）
-- 可読性: 用語が定義済み語彙と一致し、読者の次アクションが明確であること。
-- 検証可能性: 手順・確認コマンド・期待結果が対応していること。
-- 保守性: 上流（00〜02）と矛盾せず、関連文書へ責務を分離していること。
-
-## 失敗時対応
-- 参照不整合、用語不一致、公開境界の曖昧化を検出した場合は更新を停止する。
-- 自己修復は最大3回までとし、4回目相当は Hold として論点化する。
-- Architecture/ADR 本体の変更が必要な場合は、この文書では確定せず提案に留める。

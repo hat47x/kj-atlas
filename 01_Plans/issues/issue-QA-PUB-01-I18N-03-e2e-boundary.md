@@ -142,3 +142,84 @@ Open化ゲートを「3軸境界 + 承認証跡 + 実行経路固定」で定義
 ### 修復上限（共通）
 - 自己修復は最大3回まで（再実行、記述補正、リンク補正）。
 - 4回目相当は Stop。保留理由と再開条件を `Pending` 欄へ追記する。
+
+## Open化判定メタ（Draft gate解除条件）
+
+### Open化に必要な最小条件（全件必須）
+- [ ] O-OPEN-01: `Owner` が `TBD` ではなく、実行責務者（個人またはロール）に確定している。
+- [ ] O-OPEN-02: 依存Issue/ADRごとに `依存待ち理由` と `再開条件` が1:1で明示されている。
+- [ ] O-OPEN-03: `Acceptance criteria` と `Validation plan` が `Expected verification level` と一致している。
+- [ ] O-OPEN-04: docs-only範囲外の要求が本文に混入していない（本memoの範囲と矛盾しない）。
+
+### 依存待ち理由（未解消時は Draft 維持）
+| Dependency | 依存待ち理由 | 再開条件 | Owner |
+|---|---|---|---|
+| 上位ADR/関連Issue | 上位合意または境界仕様の最終確定待ち | 参照先に承認IDまたは確定コミットを追記 | Platform Architecture Owner / 各Issue Owner |
+| QA検証経路 | `e2e`/`integration` の実行経路と証跡フォーマット未固定 | 実行経路（Compose/SQLite/例外）を1件固定し、判定ログ形式を定義 | QA Lead |
+| 実行責務 | 実装担当とレビュー担当の分離未確定 | RACI（R/A）を本文に追記し通知記録を残す | PM/Triage |
+
+### Proceed / Stop
+- Proceed（Open化可）: O-OPEN-01〜04がすべて充足。
+- Stop（Draft維持）: 依存先不明 / Status正規化不能 / 競合ファイル検出時は更新停止し、理由を `Additional context` に記録。
+
+
+
+## Stream H Finalization (2026-05-20): Draft理由分解 / Open化ゲート固定
+
+### Draft維持理由（分解）
+- 環境: `ADR-0019` 実行経路の事前選択が未確定。
+- 依存: PUB-01 / I18N-03 の承認IDが Pendingへ未記録。
+- 設計: 3軸境界（公開互換/I18N等価/安全境界）はあるが、重大逸脱=即Hold の閾値運用が未証跡化。
+
+### Open化ゲート（固定）
+- Gate-A（前提）: Pending-1/Pending-2 に承認ID・日付・参照リンクを追記。
+- Gate-B（境界）: 3軸それぞれに `pass|blocked` 判定欄を維持。
+- Gate-C（検証経路）: Compose/SQLite/例外の採用経路を1件固定。
+- Gate-D（失敗時扱い）: 重大逸脱時は `Execution: Hold` に戻す（自動Proceed禁止）。
+
+### Open移行可否（本日時点）
+- 判定: **不可（Execution: Hold 維持）**。
+- 不足条件: Pending-1（PUB承認）/ Pending-2（I18N承認）未充足。
+- 解消順: 1) I18N-03承認確定 → 2) PUB-01承認確定 → 3) 経路固定の最終レビュー。
+
+## Stream E update (2026-05-20): Open化 entry criteria / I18N boundary gate
+
+### 1) Read（最新メタ）
+- 本issueは `QA-E2E-USE-01` の境界判定に依存するため、Open判定は承認ID・境界語彙・証跡形式の3点一致を前提とする。
+
+### 2) Draft群のOpen化条件（entry criteria）
+- EC-I18N-01: `ja/en` 等価判定の対象シナリオ一覧が固定され、追加時の差分記録先が明示されている。
+- EC-I18N-02: 翻訳品質（人間判断）と導線等価（機械判定）が分離され、No-Go条件が混線していない。
+- EC-I18N-03: `Execution: Hold` 解除条件に承認ID・再判定日・owner が揃っている。
+- EC-I18N-04: blocker と再開条件が 1:1 対応している。
+
+### 3) Plan → Execute → Verify（測定可能化）
+- Plan: I18N境界を `flow parity`（機械）/`translation quality`（人間）へ二分して判定する。
+- Execute: docs-onlyで判定語彙を固定し、曖昧語を削除する。
+- Verify:
+  - `rg -n "EC-I18N-0[1-4]|Execution: Hold|Pending|parity|translation" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+  - `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+  - `git diff --check -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md`
+
+### 4) Stopper条件適用
+- Stopper-I1: flow parity の証跡不備は Open不可。
+- Stopper-I2: 翻訳品質レビュー担当未確定は Open不可。
+- Stopper-I3: 境界外（本番実装変更）要求が混入した場合は即Hold。
+
+## Stream G update (2026-05-20): Draft→Open昇格条件（QA-PUB / I18N-03 固定）
+
+| Gate ID | 条件 | Pass基準 |
+| --- | --- | --- |
+| QP-O1 | 3軸境界（公開互換 / I18N等価 / 安全境界）の判定欄がある | 3軸すべて `pass|blocked` 判定可能 |
+| QP-O2 | flow parity（機械）と translation quality（人間）が分離 | 混線なし |
+| QP-O3 | `Execution: Hold` 解除条件に承認ID・再判定日・owner がある | 3要素が全て明記 |
+| QP-O4 | blocker と再開条件が1:1 | 欠落0件 |
+| QP-O5 | 自己修復上限 `<=3` / 4回目相当Stop が明記 | 記載あり |
+
+### Verify matrix（QA-PUB）
+
+| チェック | コマンド | 合格条件 |
+| --- | --- | --- |
+| 境界判定性 | `rg -n "公開互換|I18N等価|安全境界|parity|translation quality|Execution: Hold|Pending" 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 必須語彙ヒット |
+| メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | exit 0 |
+| 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-PUB-01-I18N-03-e2e-boundary.md` | 警告なし |

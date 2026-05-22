@@ -1,0 +1,279 @@
+import { expect, test, type Page, type Route } from "@playwright/test";
+import { EXPORT_BUNDLE_BUTTON, SHARE_REPRODUCE_BUTTON } from "./helpers/i18n";
+
+const DOCUMENT_ID = "doc_phase1_canvas";
+
+function buildDocument() {
+  const now = "2026-05-22T00:00:00.000Z";
+
+  return {
+    version: 2,
+    id: DOCUMENT_ID,
+    title: "ops recovery fixture",
+    createdAt: now,
+    updatedAt: now,
+    transform: { panX: 0, panY: 0, zoom: 1 },
+    cards: [
+      {
+        id: "card-1",
+        text: "保存復旧の確認用カード",
+        x: 120,
+        y: 120,
+      },
+    ],
+    edges: [],
+    islands: [],
+  };
+}
+
+async function routeDocumentApi(
+  page: Page,
+  options: {
+    failGet?: boolean;
+    failPut?: boolean;
+  },
+) {
+  await page.route("**/api/docs/**", async (route: Route) => {
+    const method = route.request().method();
+    if (method === "GET") {
+      if (options.failGet) {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "backend unavailable" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(buildDocument()),
+      });
+      return;
+    }
+
+    if (method === "PUT") {
+      if (options.failPut) {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "database unavailable" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: route.request().postData() ?? JSON.stringify(buildDocument()),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+}
+
+async function expectStatusFitsViewport(page: Page) {
+  const viewport = page.viewportSize();
+  const box = await page.getByTestId("status-message").boundingBox();
+
+  expect(viewport).toBeTruthy();
+  expect(box).toBeTruthy();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
+}
+
+async function installSlowDiagnosticsWorker(page: Page) {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+
+    class SlowDiagnosticsWorker extends EventTarget {
+      private requestId: string | null = null;
+      private progressTimer: number | null = null;
+
+      constructor(scriptURL: string | URL, options?: WorkerOptions) {
+        super();
+        if (!String(scriptURL).includes("diagnostics.worker")) {
+          return new NativeWorker(scriptURL, options) as unknown as SlowDiagnosticsWorker;
+        }
+      }
+
+      postMessage(message: unknown) {
+        if (!message || typeof message !== "object") {
+          return;
+        }
+
+        const payload = message as { type?: string; requestId?: string };
+        if (payload.type === "diagnostics.request" && payload.requestId) {
+          this.requestId = payload.requestId;
+          this.progressTimer = window.setTimeout(() => {
+            this.dispatchEvent(new MessageEvent("message", {
+              data: {
+                type: "diagnostics.progress",
+                requestId: payload.requestId,
+                stage: "outline",
+                percent: 10,
+              },
+            }));
+          }, 50);
+          return;
+        }
+
+        if (payload.type === "diagnostics.cancel" && payload.requestId) {
+          if (this.progressTimer !== null) {
+            window.clearTimeout(this.progressTimer);
+            this.progressTimer = null;
+          }
+          this.dispatchEvent(new MessageEvent("message", {
+            data: {
+              type: "diagnostics.cancelled",
+              requestId: payload.requestId,
+            },
+          }));
+        }
+      }
+
+      terminate() {
+        if (this.progressTimer !== null) {
+          window.clearTimeout(this.progressTimer);
+          this.progressTimer = null;
+        }
+        this.requestId = null;
+      }
+    }
+
+    window.Worker = SlowDiagnosticsWorker as unknown as typeof Worker;
+  });
+}
+
+async function installSlowBundleZipWorker(page: Page) {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+
+    class SlowBundleZipWorker extends EventTarget {
+      private requestId: string | null = null;
+      private progressTimer: number | null = null;
+
+      constructor(scriptURL: string | URL, options?: WorkerOptions) {
+        super();
+        if (!String(scriptURL).includes("bundle_zip.worker")) {
+          return new NativeWorker(scriptURL, options) as unknown as SlowBundleZipWorker;
+        }
+      }
+
+      postMessage(message: unknown) {
+        if (!message || typeof message !== "object") {
+          return;
+        }
+
+        const payload = message as { type?: string; requestId?: string };
+        if (payload.type === "bundle.zip.request" && payload.requestId) {
+          this.requestId = payload.requestId;
+          this.progressTimer = window.setTimeout(() => {
+            this.dispatchEvent(new MessageEvent("message", {
+              data: {
+                type: "bundle.zip.progress",
+                requestId: payload.requestId,
+                percent: 10,
+              },
+            }));
+          }, 50);
+          return;
+        }
+
+        if (payload.type === "bundle.zip.cancel" && payload.requestId) {
+          if (this.progressTimer !== null) {
+            window.clearTimeout(this.progressTimer);
+            this.progressTimer = null;
+          }
+          this.dispatchEvent(new MessageEvent("message", {
+            data: {
+              type: "bundle.zip.cancelled",
+              requestId: payload.requestId,
+            },
+          }));
+        }
+      }
+
+      terminate() {
+        if (this.progressTimer !== null) {
+          window.clearTimeout(this.progressTimer);
+          this.progressTimer = null;
+        }
+        this.requestId = null;
+      }
+    }
+
+    window.Worker = SlowBundleZipWorker as unknown as typeof Worker;
+  });
+}
+
+test("API load failure gives safe recovery guidance", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await routeDocumentApi(page, { failGet: true });
+
+  await page.goto("/");
+
+  const status = page.getByTestId("status-message");
+  await expect(status).toContainText("ドキュメントを読み込めませんでした");
+  await expect(status).toContainText("/api/healthz");
+  await expect(status).toContainText("バックエンドの起動状態");
+  await expect(status).toContainText("API key や token を含めない");
+  await expectStatusFitsViewport(page);
+});
+
+test("save failure keeps content and points to export or retry", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await routeDocumentApi(page, { failPut: true });
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  await page.getByRole("button", { name: /新規|New/ }).click();
+  await page.getByRole("button", { name: /^保存$|^Save$/ }).click();
+
+  const status = page.getByTestId("status-message");
+  await expect(status).toContainText("ドキュメントを保存できませんでした");
+  await expect(status).toContainText("内容は画面上に残っています");
+  await expect(status).toContainText("JSONを書き出して保全");
+  await expect(status).toContainText("API key や token を除外");
+  await expectStatusFitsViewport(page);
+});
+
+test("slow diagnostics shows progress and can be cancelled", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await installSlowDiagnosticsWorker(page);
+  await routeDocumentApi(page, {});
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  await page.getByRole("button", { name: /診断を実行|Run diagnostics/ }).first().click();
+  await expect(page.getByText("診断中: アウトライン（10%）").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^処理中|^Working/ }).first()).toBeDisabled();
+
+  await page.getByRole("button", { name: /^キャンセル$|^Cancel$/ }).first().click();
+  await expect(page.getByTestId("status-message")).toContainText("診断を中止しました");
+  await expectStatusFitsViewport(page);
+});
+
+test("slow review pack export shows progress and can be cancelled", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  await installSlowBundleZipWorker(page);
+  await routeDocumentApi(page, {});
+
+  await page.goto("/");
+  await expect(page.getByTestId("status-message")).toContainText("ドキュメントを読み込みました");
+
+  await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+  await page.getByRole("button", { name: EXPORT_BUNDLE_BUTTON }).click();
+
+  await expect(page.getByText("レビューパックを圧縮中（10%）").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^処理中|^Working/ }).first()).toBeDisabled();
+
+  await page.locator("button:not([disabled])", { hasText: /^キャンセル$|^Cancel$/ }).last().click();
+  await expect(page.getByTestId("status-message")).toContainText("レビューパックの書き出しを中止しました");
+  await expectStatusFitsViewport(page);
+});

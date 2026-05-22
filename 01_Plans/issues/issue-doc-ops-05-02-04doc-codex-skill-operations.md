@@ -155,3 +155,20 @@
 
 ### Phase 5: Proceed
 - 判定: **Ready**（DOC-OPS-05 直列処理対象として継続可能）。
+
+## 16) Open readiness gate（DOC-OPS-05 machine-check）
+
+- Batch: `A (01-05)`
+- GateStatus: `Conditional`（現時点のIssue StatusはDraftのため、Open化は本ゲートの充足を条件とする）
+- DraftReasonClass: `open-trigger-not-executed`
+- BlockingIssueIDs: `none`
+- OpenTrigger:
+  1. `Status` を Draft から Open へ変更。
+  2. `Expected verification level` と `VerificationLevel` が `docs-check` で一致。
+  3. `GoNoGoGate=Required` に対する判定条件（Ready/Hold/Needs-decision）が本文中で一意。
+  4. `DecisionStatus=Fixed` の場合、`DecisionQueueRef` は `N/A` であること。
+- MechanicalChecks:
+  - `rg -n "^- Status:|Expected verification level|VerificationLevel|GoNoGoGate|DecisionStatus|DecisionQueueRef" 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `rg -n "Open readiness:|状態分類:|Phase 5: Proceed" 01_Plans/issues/issue-doc-ops-05-02-04doc-codex-skill-operations.md`
+  - `git diff --check`
+- Proceed verdict (Phase 6): `Open可能（条件付き）`

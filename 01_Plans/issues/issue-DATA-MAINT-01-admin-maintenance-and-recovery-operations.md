@@ -4,12 +4,12 @@
 - Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
-- Priority: P1
+- Priority: P2 (Stream D third)
 - Owner: TBD
-- Scope: `03_Implement/backend/`, `03_Implement/frontend/`, `04_Documentation/operations.md`, `02_Architecture/data_model_operations_overview.md`
+- Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
-- Expected verification level: `integration`
+- Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
 
@@ -19,7 +19,7 @@
 - AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=Platform operatorが小規模組織でkj-atlasを運用する / 操作=文書一覧、利用停止ユーザー確認、バックアップ、復旧演習を行う / 期待結果=標準手順で安全に状況確認と復旧ができる / 除外=大規模マルチテナント管理、法務上の保持期限自動判定。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
-- VerificationLevel（docs-check / unit / integration / e2e）: integration
+- VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
 - DecisionQueueRef（未確定時の参照先）: `ADR-0033`
 
@@ -91,13 +91,12 @@
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
-  - `git diff --check -- 01_Plans 02_Architecture 03_Implement 04_Documentation`
-  - `cd 03_Implement/backend && python -m pytest`
-  - `rg -n "DATA-MAINT-01|backup|restore|archive|provision" 01_Plans 02_Architecture 03_Implement 04_Documentation`
+  - `git diff --check -- 01_Plans/issues 02_Architecture`
+  - `rg -n "DATA-MAINT-01|backup|restore|archive|provision|L1\\.5|L2\\.5" 01_Plans/issues 02_Architecture`
 - 期待結果:
-  - 管理・復旧の最小運用が、文書と実装の両方で追跡できる。
+  - 管理・復旧の最小運用境界が、IssueとArchitecture文書で追跡できる。
 - 未実施時の理由・代替検証:
-  - 実装前は、RACI、API候補、runbook案、リスク表で代替する。
+  - Stream Dは非実装スコープのため、RACI・契約境界・Stop条件の文書整合で代替する。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -158,3 +157,62 @@
 - Phase 4 Execute: 完了（Draft本文・依存関係・AC gapを更新）
 - Phase 5 Verify: 完了（`git diff --check` と `rg` による整合確認を実施）
 - Phase 6 Proceed/Stop: Proceed（DB実装変更なし。Issue計画整備のみ継続可能）
+
+
+## 14) Stream D fail-safe判定（Stop/Proceed）
+
+- 後方互換ルール: `schemas.md` の version gate 運用を前提にし、復旧手順で契約判定を先行させる。
+- support level: 復旧対象を `L1/L1.5` 優先、`L2/L2.5` は「埋め込み往復保持まで」として扱う。
+- 運用責務衝突: 削除・所有者移管・閲覧権限は未確定（Pending）のため、実装着手条件を満たすまで **Stop**。
+- 判定: **Stop**（DecisionStatus=Pendingのため、契約整備以外へ進まない）。
+
+## 15) Stream D → 下流引き渡しチェックリスト
+
+- [x] 復旧手順は `L1/L1.5` を標準運用対象、`L2/L2.5` を契約整合チェック対象として分離した。
+- [x] 共有前確認（未レビュー本文・PII抑制・safeMode既定ON）を復旧runbook要件に含めた。
+- [x] `documents` と `merge_decision_logs` の整合検証を復旧フロー必須条件として固定した。
+- [x] Pending論点（削除/所有者移管/管理者閲覧権限）は ADR化前に実装しない Stop 条件として明示した。
+
+## 16) Stream D verification note（2026-05-20）
+
+- 本Issueは契約・運用境界の計画文書として維持し、backend/frontend実装検証は対象外とする。
+- 進行判定は `Status / Priority / Dependencies / Related ADR` と Stop条件（Section 14）の整合で行う。
+- 実装着手は `DecisionStatus=Fixed` 化と ADR承認後に別Issueで管理する。
+
+
+## 17) Stream D phase sync（2026-05-20）
+
+### Context
+- DecisionStatus=Pending のため、運用runbook実装へ進む前に契約前提の固定が必要。
+
+### Decision
+- 本Issueは docs-check に限定し、復旧実装・管理UI/API実装は別Issueへ分離する。
+- Verify/調整が3回超過または上位契約崩壊時はStopを継続する。
+
+### Consequences
+- Stream Dの停止条件が明文化され、前提未確定のまま実装へ越境するリスクを抑制できる。
+
+## 18) Stream B phase sync（2026-05-20）
+
+### Context
+- Stream B 対象範囲で、schema/CRUD境界/運用責務の差分を再読した。
+
+### Decision
+- `DocumentV2` support level は `L1/L1.5/L2/L2.5/L3/L0` を固定し、未分類を `L2.5` として扱う。
+- backward compatibility は version gate 優先で固定し、`version: 2` の非互換変更を禁止する。
+- DB/API依存が未確定の統合点は read-only contract として公開し、mock-first で検証する。
+
+### Consequences
+- Plan→Execute→Verify→Proceed の判定を docs-check で再現できる。
+- Self-correction は最大3回で停止条件を維持し、越境実装を防止できる。
+
+## 19) Stream D Phase execution log（2026-05-20）
+
+1. Read: `DATA-MODEL-OPS-01` / `DATA-CONTRACT-01` / `data_handling.md` の関連境界を再読。
+2. Context/Decision/Consequences: Pending論点と Stop条件を維持する判断を再確認。
+3. CRUD境界固定: 復旧対象を `L1/L1.5` 優先、`L2/L2.5` は契約整合チェック対象に限定。
+4. ドリフト監査反映: `Document.version` と `documents`/`merge_decision_logs` 整合確認を必須化。
+5. 運用復旧手順整備: docs-only runbook導線（safeMode既定ON/PII抑制）を明文化。
+6. Verify: docs-checkでIssue/Architecture間の語彙一致を確認。
+7. Self-correction<=3: 3回超過でStop継続。
+8. Final: DecisionStatus=Pendingの間は実装へ越境しない。

@@ -50,7 +50,11 @@
 - `01_Plans/adr/ADR-0032-product-value-realization-model.md`（プロダクト価値実現モデル）
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（MVPデータサポート境界と保守方針）
 
-### 3.5 CLI 分割
+### 3.5 計画・mainline収束
+
+- `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`（最新main収束とブランチ衛生の運用統治）
+
+### 3.6 CLI 分割
 
 - `01_Plans/adr/ADR-0015-cli-scope-phasing.md`（対象範囲・段階導入）
 - `01_Plans/adr/ADR-0016-cli-command-contract.md`（コマンド体系・共通I/F）

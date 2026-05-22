@@ -1,0 +1,64 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const readSource = (relativePath: string): string =>
+  readFileSync(resolve(__dirname, "..", "..", relativePath), "utf8");
+
+describe("UX Operability regression contracts", () => {
+  it("Phase 1: pointer-keyboard-flow-review", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+
+    expect(cardViewSource).toContain("function canStartDrag");
+    expect(cardViewSource).toContain('if (event.pointerType === "mouse")');
+    expect(cardViewSource).toContain("event.currentTarget.setPointerCapture(event.pointerId)");
+    expect(cardViewSource).toContain("event.currentTarget.releasePointerCapture(event.pointerId)");
+    expect(cardViewSource).toContain('event.key === "Enter" || event.key === " "');
+  });
+
+  it("Phase 2: keyboard-card-selection", () => {
+    const cardViewSource = readSource("src/canvas/CardView.tsx");
+
+    expect(cardViewSource).toContain('role="option"');
+    expect(cardViewSource).toContain("aria-selected={isSelected}");
+    expect(cardViewSource).toContain("const [isFocused, setIsFocused] = useState(false)");
+    expect(cardViewSource).toContain("onFocus={handleFocus}");
+    expect(cardViewSource).toContain("onBlur={handleBlur}");
+    expect(cardViewSource).toContain('data-focus={isFocused ? "card" : undefined}');
+    expect(cardViewSource).toContain("tabIndex={0}");
+    expect(cardViewSource).toContain("onKeyDown={handleKeyDown}");
+    expect(cardViewSource).toContain("onSelect(card.id, event.shiftKey)");
+  });
+
+  it("Phase 3: contextual-selection-panel", () => {
+    const sidePanelSource = readSource("src/ui/SidePanel.tsx");
+
+    expect(sidePanelSource).toContain('data-ui-region="selection-context"');
+    expect(sidePanelSource).toContain('data-panel="selection-context"');
+    expect(sidePanelSource).toContain('data-panel-group="advanced"');
+    expect(sidePanelSource).toContain('aria-expanded={isAdvancedPanelOpen ? "true" : "false"}');
+    expect(sidePanelSource).toContain('onToggle={(event) => {');
+  });
+
+  it("Phase 4: panel-dismissal-focus-scope", () => {
+    const sharePanelSource = readSource("src/ui/SharePanel.tsx");
+    expect(sharePanelSource).toContain('data-focus-return-id="share-panel-trigger"');
+    expect(sharePanelSource).toContain('data-panel="share-replay"');
+    expect(sharePanelSource).toContain('if (event.key === "Escape")');
+
+    const appSource = readSource("src/App.tsx");
+    expect(appSource).toContain('data-focus-return-id="view-controls-trigger"');
+    expect(appSource).toContain('data-panel="view"');
+    expect(appSource).toContain('if (event.key === "Escape")');
+  });
+
+  it("Phase 5: primary-toolbar-task-prioritization", () => {
+    const appSource = readSource("src/App.tsx");
+
+    expect(appSource).toContain('data-ui-region="primary-flow"');
+    expect(appSource).toContain('t("app.toolbar.new")');
+    expect(appSource).toContain('t("app.toolbar.open")');
+    expect(appSource).toContain('t("app.toolbar.undo")');
+    expect(appSource).toContain('t("app.toolbar.save")');
+  });
+});

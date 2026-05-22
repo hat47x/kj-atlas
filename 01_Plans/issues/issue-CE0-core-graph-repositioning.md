@@ -2219,3 +2219,59 @@
 - API signatures: `POST /context/query`, `POST /context/bundle`
 - Data types: `ContextQueryV1`, `ContextBundleV1`, `ProposalPatchV1`, `AuditEventV1`
 - Audit event names (reserved): `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked`
+
+
+## Stream D execution update（2026-05-19 / CE0 Core Graph Repositioning contract lane）
+
+### Phase 1 Read（差分抽出）
+- 上位語彙を再確認し、`Core Graph` を履歴語として扱い、現行契約語彙を `ConsensusGraph` に統一する必要性を抽出。
+- CE0 freeze（read-only）と CE1 foundation（mock-first）間で、語彙差分が契約衝突を生まないよう照合。
+
+### Phase 2 契約定義（最小I/F固定）
+- 本Issueの再配置契約は「語彙再マッピング」に限定し、実装・スキーマ拡張は行わない。
+- 固定I/F: `WorkingGraph`（探索）, `ContextProjectionGraph`（読取専用投影）, `ConsensusGraph`（承認済差分の統合）。
+- 旧称 `Core Graph` は履歴説明以外で新規導入しない。
+
+### Phase 3 モック規約（境界・互換・後方互換）
+- mock境界: 名称マッピングと契約キー整合の検証まで（データ永続・実行経路は非対象）。
+- 互換ルール: 下流が `Core Graph` を参照する場合は「旧称→ConsensusGraph」の read-only alias 説明に限定。
+- 後方互換方針: v1 では `ConsensusGraph` を正本語彙に固定し、旧称再導入は将来版 ADR 承認時のみ。
+
+### Phase 4 検証（依存・影響）
+- 依存関係: CE0 contract freeze の固定IDと矛盾なし。
+- 他Issue影響: CE1/CE2/CE4 への handoff は語彙マッピング情報のみで実装依存を発生させない。
+- self-repair: 0/3。
+
+### Phase 5 受け渡し（Stream C/E向け）
+- 参照仕様として引き渡す内容:
+  1. Graph責務境界3点（Working / ContextProjection / Consensus）
+  2. 旧称 `Core Graph` の扱い（履歴限定）
+  3. 契約衝突時は `held` 停止
+- Fail-safe判定: 用語不整合・契約衝突・未承認事項の確定化は未検知（`Proceed=Conditional-Go`）。
+
+
+## Stream B execution update（2026-05-19 / CE0 graph責務境界 refresh）
+
+### Phase 1 Read（Status/Priority/Depends/Unblocks/AC 再確認）
+- Status=`Open` / Priority=`P1` を維持。
+- Depends: `issue-CE0-contract-freeze.md`（契約依存）を再確認。
+- Unblocks: CE1/CE2/CE4 下流の graph語彙参照（read-only）を維持。
+- ACは「Working/ContextProjection/Consensus 分離」「Working→Consensus は patch+approval のみ」で欠落なし。
+
+### Phase 2 Mock-First切断設計（共有リソース列挙 + 最小シグネチャ）
+- 競合しうる共有リソース:
+  - I/F名: `ContextQueryV1`, `ContextBundleV1`
+  - schema名/語彙: `WorkingGraph`, `ContextProjectionGraph`, `ConsensusGraph`, `ProposalPatchV1`, `AuditEventV1`
+  - API語彙: `preview_required`, `unknown_contract_key`, `nondeterministic_bundle`
+- Mock Provider前提の切断手順:
+  1) Core graph repositioning の検証入力は `ContextBundleV1.bundleHash` のみを受領（payload本文依存なし）。
+  2) apply前に `sourceBundleHash===bundleHash` を照合し、不一致は fail-closed。
+  3) `mode=autonomous` でも proposal-only を維持し、direct write を禁止。
+
+### Phase 3 Plan→Execute→Verify
+- Plan: AC/DoD不足なし。必要十分な契約語彙は既存固定値を採用。
+- Execute: CE0→CE1 連結時の read-only handoff 条件を明文化。
+- Verify: 依存逆転なし（CE0-contract-freeze が上流）と下流参照可能性（hashキー連携）を確認。
+
+### Phase 4 Stopper
+- 3回修復超過、または graph語彙再定義・safeMode後退・direct write 要求を検知した場合は停止して判断依頼。

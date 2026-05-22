@@ -330,3 +330,88 @@
 - Minimal types: `ApprovalRecordV1`, `GateStatusV1`, `DecisionQueueTransitionV1`。
 - Audit events: `query|bundle|proposal|apply`。
 - Current gate: `Hold/Needs-decision`（`Approval Record=Pending` のため）。
+
+## Stream A Contract Freeze Checkpoint（2026-05-19, Plan → Execute → Verify → Proceed）
+
+### Phase 1: Contract Baseline Read
+- 現行AC/DoD/依存/非目標を再読し、対象3 issue 間で契約語彙を照合した。
+- Baseline差分（事前想定との差分）:
+  - `Approval Record` は依然 `Pending`、`HIL-RS-02-GOV-EXCEPTION-01` は `held` のままで、Go条件未達。
+  - `A2A3_UNLOCK = (a1Status=="Done" && pendingDecisionQueueCount==0)` は3 issueで一致し、driftなし。
+  - `freezeContractId/schemaVersion/overridePolicy/safeModeBoundary` は固定値一致（再定義なし）。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- Context: 承認未了状態での下流着手は `Pending bypass` となり契約違反。
+- Decision: HIL-RS最小I/Fは read-only contract とし、承認前は仕様拡張・実装遷移を禁止。
+- Consequences: `Proceed=Hold` を維持し、契約変更要求は A1 SSOT へ差し戻す。
+
+### Phase 3: Issue Contract Freeze
+- AC/DoD/Stop条件の同期ポリシーを固定:
+  - AC: fixed key drift=0 / Pending bypass禁止 / A2-A3非干渉。
+  - DoD: `safeModeDefault=ON`・`safeModeBoundary=SAFE_MODE_STRICT_ON`・`overridePolicy=human_dual_control_only` の後退禁止。
+  - Stop: fixed key drift、SafeMode後退、未定義競合、self-correction>3。
+- 明示制約: **承認前は read-only contract**（編集は契約文面整合のみ、実装系変更禁止）。
+
+### Phase 4: Verify
+- 用語整合チェック: `Security Officer` / `System Owner` / `Platform Operator` の役割語彙を維持。
+- 未解決依存チェック: `Approval Record=Pending` のため `Proceed=Hold` が唯一許可判定。
+- 矛盾チェック: fixed identifiers と gate equation に矛盾なし。
+
+### Proceed
+- 判定: **Hold/Needs-decision（承認待ち継続）**。
+- 次アクション: 承認記録 (`approved_by`, `approved_at`, `evidence`) 充足後にのみ Go 再判定。
+
+## Stream A serial run record（2026-05-20 / Phase 1-4）
+
+### Phase 1: Read & Scope Lock
+- 対象4ファイルを再読し、変更対象を Stream A 許可範囲のみに固定した。
+- 前提差分: fixed keys drift=`0`、`Pending bypass` 要求=`0`。
+
+### Phase 2: ADR明文化（Context / Decision / Consequences）
+- `ADR-0026` の CDC を再確認し、親計画は契約値を再定義せず read-only 参照に限定する方針を継続した。
+
+### Phase 3: Plan → Execute → Verify
+- Plan（非対象再宣言）: 実装コード・他ストリーム文書は未編集。
+- Execute: 本issueのガバナンス記録を追記（docs-only）。
+- Verify（self-correction `0/3`）:
+  - AC/DoD整合: pass
+  - A2/A3非干渉: pass
+  - SafeMode後退: none
+
+### Phase 4: Proceed / Stopper
+- 判定: **Hold/Needs-decision**。
+- Stopper: `Approval Record` 未充足および `pendingDecisionQueueCount>0`。
+
+
+## Stream A serial governance pass (2026-05-20)
+
+### Phase 1: Read Gate
+- 対象ファイルを再読し、Status/AC/依存を監査した。
+- `Approval Record=Pending` と `HIL-RS-02-GOV-EXCEPTION-01=held` を未解決として確認した。
+
+### Phase 2: ADR明文化
+- Context/Decision/Consequences を再確認し、固定契約を再定義しない方針を継続する。
+- 変更禁止契約（minimum I/F と承認ゲート）を read-only 参照として固定する。
+
+### Phase 3: Issue整合
+- AC / Validation plan / Non-goals を ADR-0026, ADR-0027 と語彙一致させた（drift=0）。
+- `Pending -> Approved | Pending -> Rejected` 以外の遷移を追加しない。
+
+### Phase 4: Governance hardening
+- SoD（二者承認と実行責務分離）を維持し、`approver_a != approver_b` 制約を継続する。
+- 停止条件（pending bypass / contract drift / safeMode後退 / 未定義競合）を固定した。
+
+### Phase 5: Verify-1
+- 用語一致（Security Officer / System Owner / Platform Operator）を確認した。
+- 固定値 D1〜D4 とゲート式（Proceed/Hold/Stop）の整合を確認した。
+- 未承認事項を確定扱いにしていないことを確認した。
+
+### Phase 6: Self-correction
+- 不一致検知なし。修正ループ実行回数: 0/3。
+
+### Phase 7: Publish-ready
+- 次ストリーム非依存で読めるよう、判定根拠・停止条件・read-only handoff を明示した。
+
+### Phase 8: Final status
+- 判定: **Hold/Needs-decision**（`pendingDecisionQueueCount>0` のため）。
+- Stop条件適用: なし（検証失敗・未定義競合は検出せず）。
