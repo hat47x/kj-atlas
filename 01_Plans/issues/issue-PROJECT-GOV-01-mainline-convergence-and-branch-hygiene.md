@@ -156,6 +156,61 @@
 - After #2261..#2264 are merged or closed, create a cleanup candidate table for the four corresponding `origin/codex/*` branches.
 - Full branch hygiene still requires a broader canonical / duplicate / stale / unknown classification across the 2239 `origin/codex/` branches; this checkpoint only covers the active open PR lane.
 
+## 12) Convergence checkpoint 2026-05-25: refreshed PR lane after baseline/recovery evidence
+
+### Observation
+
+- Observed after `git fetch --prune origin` on 2026-05-25.
+- `origin/main`: `512714e3a9935f91f085b3b9d0d0053943ad2841`
+- remote branch count: 2264
+- `origin/codex/` remote branch count: 2242
+- open PR count returned by GitHub search: 7
+- internal issue triage:
+  - `active_issues=46`
+  - `ready=18`
+  - `blocked=28`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Open PR inventory
+
+| PR | Branch | Topic | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- |
+| #2261 | `codex/data-maint-results-gate-sync` | DATA-MAINT-01 parent handoff for earlier recovery evidence | duplicate/superseded candidate | Prefer #2267 as the canonical DATA-MAINT recovery evidence because it includes the executable integration test and parent handoff. If #2267 merges, close or rebase #2261 instead of merging stale evidence. |
+| #2262 | `codex/mvp-exit-recovery-evidence-intake` | MVP-EXIT Program Gate intake | canonical but refresh-needed | Keep as the MVP-EXIT lane, but refresh after #2267 so it points to the executable recovery exercise rather than only #2259/#2260/#2261. |
+| #2263 | `codex/product-qa-recovery-evidence-gate` | PRODUCT-QA recovery evidence gate | duplicate/superseded candidate | #2267 already adds a PRODUCT-QA Gate Record for DATA-MAINT-02. If #2267 merges, close or rebase #2263 to avoid two QA records for the same evidence. |
+| #2264 | `codex/support-bundle-follow-up-issue` | PRODUCT-OPS-02 support diagnostics bundle policy split | independent canonical / merge-ready | Can merge independently. It creates a follow-up policy issue and does not depend on the DATA recovery lane. |
+| #2265 | `codex/project-gov-open-pr-convergence` | This PROJECT-GOV convergence checkpoint | canonical / update-in-place | Keep this PR as the active PR-lane inventory and update it rather than opening duplicate governance checkpoint PRs. |
+| #2266 | `codex/project-baseline-20260525` | Latest-main health baseline | time-boxed canonical / merge-ready | Can merge as a dated baseline record. Re-run a new baseline only after the DATA/OPS lane changes `main` materially. |
+| #2267 | `codex/data-maint-02-recovery-exercise` | Executable DATA-MAINT-02 SQLite backup/restore exercise plus issue/doc/QA evidence | primary canonical / merge-ready | Treat as the current canonical DATA-MAINT recovery evidence. Merge before refreshing #2262 and before deciding whether #2261/#2263 should be closed or rebased. |
+
+### Updated merge / close recommendation
+
+1. Merge or review #2267 first as the canonical DATA-MAINT-02 recovery evidence PR.
+2. After #2267, refresh #2262 so MVP-EXIT references #2267 and its CI result.
+3. After #2267, either close #2261/#2263 as superseded or rebase them to contain only evidence not already present in #2267.
+4. Merge #2264 independently when reviewers are ready.
+5. Merge #2266 as a dated baseline record, or create a fresh baseline if #2267 is merged before #2266 is reviewed.
+6. Keep #2265 as the active governance checkpoint and avoid creating additional PROJECT-GOV inventory PRs unless `origin/main` changes first.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/data-maint-results-gate-sync` | duplicate/superseded candidate | Delete after #2261 is closed or merged/rebased. |
+| `origin/codex/mvp-exit-recovery-evidence-intake` | canonical but refresh-needed | Keep until #2262 is refreshed and merged/closed. |
+| `origin/codex/product-qa-recovery-evidence-gate` | duplicate/superseded candidate | Delete after #2263 is closed or merged/rebased. |
+| `origin/codex/support-bundle-follow-up-issue` | independent canonical | Keep until #2264 is merged/closed. |
+| `origin/codex/project-gov-open-pr-convergence` | active governance checkpoint | Keep until #2265 is merged/closed. |
+| `origin/codex/project-baseline-20260525` | dated baseline | Keep until #2266 is merged/closed. |
+| `origin/codex/data-maint-02-recovery-exercise` | primary DATA-MAINT recovery evidence | Keep until #2267 is merged/closed. |
+
+### Decision
+
+- No branch deletion or PR closure is executed from this checkpoint.
+- No new ADR is required. ADR-0034 already defines the mainline convergence policy; this update only refreshes the open PR lane.
+- The canonical DATA recovery lane changes from the older #2261/#2263 planning-only records to #2267, because #2267 includes executable recovery test evidence and CI success.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
