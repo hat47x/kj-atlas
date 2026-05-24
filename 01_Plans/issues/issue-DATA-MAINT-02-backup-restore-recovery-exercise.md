@@ -75,8 +75,8 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 backendのDocument保存、判断ログ、SQLite/PostgreSQL設定、テストfixtureを確認する。
-- [ ] T2 SQLite隔離環境で、Document作成からbackup/restore/整合確認までの代表演習を実行または自動化する。
+- [x] T1 backendのDocument保存、判断ログ、SQLite/PostgreSQL設定、テストfixtureを確認する。
+- [x] T2 SQLite隔離環境で、Document作成からbackup/restore/整合確認までの代表演習を実行または自動化する。
 - [ ] T3 PostgreSQL compose環境で同等演習を実行し、難しい場合は阻害要因と再開条件を記録する。
 - [ ] T4 `04_Documentation/operations.md` と `04_Documentation/data_handling.md` に、一般向けに必要な最小限の判断支援情報を反映する。
 - [ ] T5 `DATA-MAINT-01`、`PRODUCT-QA-01`、必要なADR/issueへ結果を戻す。
@@ -128,3 +128,26 @@
 
 - `DATA-MAINT-01` のT5は、本Issueの実行結果を受けて完了判定する。
 - PostgreSQL演習やcomposeが実行できない場合でも、未実施理由と再開条件を残すことで、製品化ゲートの未達項目として扱える。
+
+## 12) SQLite recovery exercise implementation log（2026-05-24）
+
+### Context
+
+- backendにはDocument全体保存と`merge_decision_logs` append/list/restore APIの契約テストが既にある。
+- `DATA-MAINT-02` では、単なるAPI roundtripではなく、運用者が理解できるbackup/restore演習として、SQLite DBファイルを実際に退避・復元した後に読み直す証跡が必要である。
+
+### Decision
+
+- `03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py` を追加し、隔離SQLite DBで代表Documentと2件の判断ログを作成する。
+- TestClientを停止してDBファイルを`backup.sqlite3`へコピーし、さらに`restored.sqlite3`へ復元したうえで、別のTestClientからDocumentと判断ログを読み直す。
+- 直接SQLiteにも接続し、`documents.version` と `merge_decision_logs` 件数を確認することで、L1/L1.5の最小復旧境界を検証する。
+
+### Consequences
+
+- T1/T2は完了した。
+- PostgreSQL演習、公開向け運用文書への最小反映、`DATA-MAINT-01` / `PRODUCT-QA-01` への結果戻しは未完了であり、T3-T5で継続する。
+- このテストは本番restore手順ではなく、隔離環境での復旧演習証跡である。保持期間、暗号化、外部保管、承認手順は引き続き各組織の判断事項として扱う。
+
+### Verify
+
+- `cd 03_Implement/backend && .\\.venv\\Scripts\\python.exe -m pytest tests/test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider`
