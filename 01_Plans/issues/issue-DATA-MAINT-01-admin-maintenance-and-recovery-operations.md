@@ -86,9 +86,9 @@
 - [x] T2 読み取り中心の管理API/CLI/画面の候補を比較する。
 - [x] T3 バックアップ/復旧手順をSQLite/PostgreSQL別に定義する。
 - [x] T4 Document削除/アーカイブ/所有者移管のADR要否を判定する。
-- [ ] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
+- [x] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
 
-T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。実装、管理UI/API、実データを用いた復旧演習は本IssueのStop条件を維持し、T5または別issueで扱う。
+T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。T5は `DATA-MAINT-02` の代表SQLite復旧演習とrunbook検証結果を受けて、親issueの境界確認として完了扱いにする。実装、管理UI/API、PostgreSQL実環境での復旧演習は本IssueのStop条件を維持し、別issueで扱う。
 
 ## 7) 検証計画 / Validation plan
 
@@ -234,7 +234,7 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 
 ### Consequences
 
-- T1-T4は契約レベルで完了したが、T5の代表的な復旧演習は未完了のままとする。
+- T1-T4は契約レベルで完了した。T5は `DATA-MAINT-02` から返された代表SQLite復旧演習とrunbook検証をもって、本Issueの境界確認として完了扱いにする。
 - `DecisionStatus=Pending` と Stop判定は維持する。今回の更新は、実装へ進むための承認ではなく、実装を始める前に必要な判断材料の整理である。
 - バックアップ保持期間、暗号化、外部保管、法域ごとの保持期限は、製品一律の規定ではなく、各組織が検討する運用方針として扱う。
 
@@ -242,3 +242,34 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 
 - `git diff --check -- 01_Plans/issues 02_Architecture`
 - `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md`
+
+## 21) DATA-MAINT-02 recovery evidence handoff（2026-05-24）
+
+### Context
+
+- `DATA-MAINT-02` は、本Issueから分離した代表的な復旧演習のフォローアップである。
+- PR #2259 は、SQLite上で `documents` と `merge_decision_logs` を対象にバックアップ、復旧、整合確認を行うbackend integration testを追加した。
+- PR #2260 は、PostgreSQL演習がローカル環境では `docker` コマンド不在のため未実施であることを記録し、Docker利用可能環境での再実施条件を残した。
+- PR #2260 は、公開文書の復旧手順を、各組織が判断するための最小限の支援情報として整理した。保持期間、暗号化、保管先、法域ごとの要件は、製品一律の規定ではなく組織ごとの検討事項として扱う。
+
+### Decision
+
+- 本IssueのT5は、代表SQLite復旧演習とrunbook検証が揃ったため、親issueの境界確認として完了扱いにする。
+- PostgreSQL実環境での復旧演習は、`DATA-MAINT-02` の再実施条件として維持する。これを理由に、新しいADRは起票しない。
+- 削除、アーカイブ、所有者移管、管理者による本文閲覧、書き込み系管理API/UIのStop条件は変更しない。これらは引き続きADRまたは別issueで合意するまで実装しない。
+
+### Consequences
+
+- `DATA-MAINT-01` は、管理・復旧・棚卸しの設計境界と代表復旧証跡を持つ状態になった。
+- 製品リリース全体は、PostgreSQL compose演習、候補版レベルのリリースゲート記録、主要操作E2E証跡が揃うまで Conditional / No-Go を維持する。
+- 本handoffは、既存の運用境界を実装へ進める承認ではなく、上流issueへ証跡を戻すための整理である。
+
+### Verify
+
+- PR #2259: SQLite復旧integration testを追加し、GitHub Actions `CI` run 9082 が success。
+- PR #2260: PostgreSQL演習の未実施理由と再実施条件を記録し、GitHub Actions `CI` run 9084 が success。
+- `git diff --check -- 01_Plans/issues`
+- `01_Plans/issues/validate_active_issue_memos.py`
+- `01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `01_Plans/triage_actionable_plans.py`
+- `01_Plans/tests/test_triage_actionable_plans.py`
