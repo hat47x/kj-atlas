@@ -499,3 +499,32 @@
 - Owner: Codex for evidence maintenance; Platform Operator / System Owner required for recovery rehearsal approval.
 - Due date: next DATA-MAINT-02 restart window with Docker or equivalent PostgreSQL environment available.
 - Re-decision date: after PostgreSQL compose recovery rehearsal, or when a release candidate is cut from `main`.
+
+## MVP-EXIT Program Gate Decision 2026-05-25: DATA-MAINT executable recovery evidence refresh
+
+- Candidate:
+  - PR #2267 `codex/data-maint-02-recovery-exercise@6e4bc228f3fc97bd26d4d0936999e32039b86644`
+- Decision date: 2026-05-25
+- Reviewer: Codex
+- Input sources:
+  - DATA-MAINT-02 executable recovery exercise: backend integration test for SQLite backup, restored DB readback, `Document.version`, card review flags, embedded merge suggestion decision, `merge_decision_logs` group/snapshot order, and SafeMode export block.
+  - DATA-MAINT-01 handoff: PR #2267 records the parent handoff directly, so older PR #2261 is no longer the preferred parent evidence path.
+  - PRODUCT-QA-01 gate record: PR #2267 adds the DATA-MAINT-02 recovery exercise gate record directly, so older PR #2263 should be closed or rebased if #2267 is merged first.
+  - PROJECT-GOV-01 checkpoint: PR #2265 classifies #2267 as the primary canonical DATA-MAINT recovery evidence and #2261/#2263 as duplicate/superseded candidates after #2267.
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated; no runtime environment variable or deployment contract changed.
+
+### Decision
+
+- Final: **Conditional Go for executable data-maintenance recovery evidence / No-Go for full release shipment**
+- Reason summary: PR #2267 strengthens the Program Gate input because the recovery exercise now has executable integration evidence and CI success, not only planning-layer handoff records. Full release shipment remains No-Go because PostgreSQL production-like recovery rehearsal, final release-candidate QA record, and value/UX evidence are still open.
+- Escalation route: prefer #2267 as the canonical DATA-MAINT recovery evidence for future Program Gate intake. Refresh or close older recovery-evidence PRs that duplicate #2267 before merging them.
+
+### Conditional controls
+
+- Remaining risks:
+  - PostgreSQL compose recovery rehearsal is still conditional. CI for #2267 exercises PostgreSQL route coverage, but the local operational `pg_dump` / `psql` restore rehearsal remains gated by Docker/Compose availability.
+  - MVP-EXIT must not relax release readiness based on SQLite-only evidence. The release candidate still needs `PRODUCT-QA-01` final gate evidence and representative user-operation E2E.
+  - Destructive admin operations, owner transfer, archive/delete policy, support access to document bodies, backup retention, encryption, and external storage remain outside this decision and still require separate issue/ADR approval.
+- Owner: Codex for evidence maintenance; Platform Operator / System Owner required for PostgreSQL recovery rehearsal approval.
+- Due date: next DATA-MAINT-02 restart window with Docker or equivalent PostgreSQL environment available.
+- Re-decision date: after #2267 is merged or rejected, after PostgreSQL compose recovery rehearsal, or when a release candidate is cut from `main`.
