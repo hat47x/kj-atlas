@@ -205,10 +205,63 @@
 
 | Gate | 2026-05-22 delta | Reason |
 | --- | --- | --- |
-| G2 荳ｻ隕∵桃菴・| Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability. |
-| G3 譌･譛ｬ隱朸I | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers, and residual island/side-panel labels are i18n-backed. |
-| G4 逕ｻ髱｢閠先ｧ | Conditional Go | 390px/768px/920px/1280px/1440px header-panel fit, Share/View keyboard focus return, canvas hit-testing, synthetic large-document operability, 390px API/save recovery status fit, slow diagnostics progress/cancel, and slow review-pack export progress/cancel are now covered; broader slow worker/API delay states remain open. |
-| G7 蝗槫ｸｰ | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |
+| G2 主要操作 | Go for covered frontend flows | full Playwright suite covers document replacement, visibility selection, read-only safety, bundle export, polygon vertex drag, polygon vertex keyboard nudge/removal, keyboard card selection, keyboard island selection, and side-panel focus reachability. |
+| G3 日本語UI | Go for covered frontend flows | stale English-only/mojibake expectations were centralized and updated in E2E helpers, and residual island/side-panel labels are i18n-backed. |
+| G4 画面耐性 | Conditional Go | 390px/768px/920px/1280px/1440px header-panel fit, Share/View keyboard focus return, canvas hit-testing, synthetic large-document operability, 390px API/save recovery status fit, slow diagnostics progress/cancel, and slow review-pack export progress/cancel are now covered; broader slow worker/API delay states remain open. |
+| G7 回帰 | Go for frontend scope | typecheck, targeted regression, full Vitest, and full Playwright pass. |
+
+## 13) Baseline Record 2026-05-25: latest main health refresh
+
+### Candidate
+
+- Target main: `origin/main` = `512714e3a9935f91f085b3b9d0d0053943ad2841`
+- Baseline branch: `codex/project-baseline-20260525`
+- Scope note: this record refreshes the health baseline from the current `origin/main` before merging the open evidence PR lane. It does not supersede the release-gate records in `MVP-EXIT-01` or `PRODUCT-QA-01`.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend `.venv`
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=46 / ready=18 / blocked=28 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Backend pytest | `.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_project_baseline_20260525 -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 256 passed / 19 skipped | G7 / E2 |
+| Full frontend Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 33 tests | G2 / G3 / G4 / G7 |
+| Test server cleanup | PowerShell `Get-NetTCPConnection -LocalPort 4173` and `Stop-Process` for the listener | Pass: manual Vite listener was stopped after the run | G7 |
+
+### Findings and routing
+
+- No blocker was found in the tested latest-main scope. Frontend typecheck, full Vitest, backend pytest, and full Playwright all passed.
+- Full Playwright used a manually started Vite server, consistent with the prior Windows/PowerShell baseline. During the run, Vite emitted `/docs/doc_phase1_canvas` proxy connection-refused logs because the backend was not running in the frontend-only E2E setup; the tests passed and this remains covered by existing backend/recovery routing rather than a new blocker.
+- Open PR convergence remains the largest release-management risk. The evidence lane recorded in `PROJECT-GOV` should continue to merge in dependency order: DATA-MAINT recovery evidence, MVP-EXIT intake, PRODUCT-QA gate record, and the independent support-bundle follow-up issue.
+- No new ADR is required for this baseline record. The result is evidence capture and release-routing confirmation, not a policy or architecture change.
+
+### Gate classification
+
+| Gate | 2026-05-25 result | Reason |
+| --- | --- | --- |
+| G0 計画整合 | Go | active issue validation and triage pass with no stopper. |
+| G1 安全既定 | Go for tested scope | full frontend regression and Playwright pass, including current share/export and read-only safety coverage in the suite. |
+| G2 主要操作 | Go for tested scope | full Playwright pass covers representative authoring, import/visibility, read-only, canvas, diagnostics, and sharing flows. |
+| G3 日本語UI | Go for tested scope | full frontend regression and Playwright pass after the current Japanese UI/i18n hardening. |
+| G4 画面耐性 | Conditional Go | full Playwright pass includes the current viewport and keyboard scenarios, but release-candidate breadth still depends on the open product QA lane. |
+| G5 公開文書 | N/A for this run | this refresh changed internal baseline evidence only and did not republish public documentation. |
+| G6 診断とサポート | Conditional Go | diagnostics and recovery tests pass, while support-bundle policy follow-up remains tracked separately. |
+| G7 回帰 | Go | frontend typecheck, full Vitest, backend pytest, and full Playwright pass. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the latest-main health baseline.
+- Release readiness decision: **No-Go** until the open evidence PR lane is merged or explicitly rejected, and the remaining DATA-MAINT/PRODUCT-OPS release conditions have a final product gate result.
+- Follow-up routing:
+  - Open PR convergence: `PROJECT-GOV-01`
+  - Recovery evidence and PostgreSQL rehearsal: `DATA-MAINT-01`
+  - Productization gate intake: `MVP-EXIT-01`
+  - Release quality gate record: `PRODUCT-QA-01`
+  - Support diagnostics bundle scope: `PRODUCT-OPS-01` / `PRODUCT-OPS-02`
 
 ---
 
