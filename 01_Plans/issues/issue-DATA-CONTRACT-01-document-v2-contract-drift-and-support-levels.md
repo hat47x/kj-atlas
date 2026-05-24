@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1 (Stream D second)
-- Owner: TBD
+- Owner: Codex
 - Scope: `02_Architecture/schemas.md`, `02_Architecture/api.md`, `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related Backlog: `DATA-CONTRACT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`
@@ -230,3 +230,29 @@
 6. Verify: docs-check（diff/rg）で整合を確認。
 7. Self-correction<=3: 再試行上限3回を継続。
 8. Final: 契約のみ/将来候補を運用サポートと誤読させない記述を維持。
+
+## 20) Stream D API drift sync（2026-05-24）
+
+### Context
+- `DATA-MODEL-OPS-01` の support level 列追加後、`api.md` の冒頭と「将来拡張」節に古い記述が残っていた。
+- 具体的には、認証/共有/差分同期を一括で「後回し」とする説明、`ETag`・認証・AI用endpointを非MVPとして扱う説明が、実装済みの access-control / export-audit / Context / AI / ETag 契約と矛盾していた。
+- また、実装済みの `/docs/{doc_id}/context-audit` が `api.md` のDocument監査イベント節に載っておらず、CE4監査4点セットの入口を追跡しにくかった。
+
+### Decision
+- `api.md` の基本方針を「Document の標準CRUDは全体保存/取得に絞る。認証/認可、監査、Context/AI系APIは限定契約として別節で扱う」に更新する。
+- 競合節を、`If-Match` 未指定時は LWW、指定時は `ETag` 一致必須という現行実装に合わせる。
+- エラー設計に 403 / 409 / 422 を追加し、安全境界・競合・契約違反を区別する。
+- 「将来拡張」節を、現行限定契約と非MVP/別Issue拡張に分割する。`POST /docs`、一般的なPatch API、完全な共有/管理/監査UIは引き続き非MVPまたは別Issue扱いとする。
+- Document監査イベント節に `/docs/{doc_id}/context-audit` を追加し、`operation` / hash / dry-run / command / channel / schemaVersion の契約と 409/422 の失敗分類を明示する。
+
+### Consequences
+- `api.md` が `docs.py` / backend tests / `data_model_operations_overview.md` の現行境界と一致し、実装済み契約を非MVPと誤読するリスクを下げる。
+- `POST /docs` や個別CRUDを標準契約へ昇格する変更は、引き続き本IssueまたはADR経由で扱う。
+- 追加実装は行わず、契約文書とIssue記録の同期に限定する。
+
+### Verify
+- `rg -n "後回し|将来拡張|ETag|If-Match|POST /docs|認証|監査|Context|AI" 02_Architecture/api.md 01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
+- `rg -n "GET /docs|PUT /docs|If-Match|ETag|export-audit|context-audit|merge-decision-logs|similar-candidate-groups" 02_Architecture/api.md 03_Implement/backend/src/kj_atlas_api/routes/docs.py 03_Implement/backend/tests/test_docs_roundtrip.py`
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check -- 01_Plans 02_Architecture`
