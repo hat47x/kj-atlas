@@ -468,3 +468,34 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for release shipment decision.
 - Due date: next child-issue Open readiness review.
 - Re-decision date: when child issue owners and evidence routes are fixed, or when a release candidate is cut from `main`.
+
+## MVP-EXIT Program Gate Decision 2026-05-24: DATA-MAINT recovery evidence intake
+
+- Candidate:
+  - PR #2259 `codex/data-maint-sqlite-recovery-exercise@609a44576462e99e3c8031b9855beb04b098ee7c`
+  - PR #2260 `codex/data-maint-postgres-recovery-docs@9c6abd0221971a90df676024c5eea29c7722a690`
+  - PR #2261 `codex/data-maint-results-gate-sync@6ff535620ce461eee783fd445717f3b53f9d5154`
+- Decision date: 2026-05-24
+- Reviewer: Codex
+- Input sources:
+  - DATA-MAINT-02 SQLite recovery exercise: representative backend recovery evidence for `documents` and `merge_decision_logs`.
+  - DATA-MAINT-02 PostgreSQL rehearsal boundary: PostgreSQL compose exercise is documented as not run locally because Docker is unavailable, with a restart condition retained.
+  - DATA-MAINT-01 parent handoff: PR #2261 returns the recovery evidence to the parent issue without changing destructive admin-operation Stop conditions.
+  - PRODUCT-QA-01 gate record: not updated in this slice; this intake only connects data-maintenance evidence to the Program Gate.
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated; no runtime environment variable or deployment contract changed.
+
+### Decision
+
+- Final: **Conditional Go for data-maintenance evidence / No-Go for full release shipment**
+- Reason summary: The recovery evidence now covers a representative SQLite restore path and records the PostgreSQL real-environment rehearsal as an explicit remaining condition. This improves operational readiness traceability, but it is not sufficient for product shipment because the PostgreSQL compose exercise, release-candidate gate record, and major user-operation E2E evidence remain open.
+- Escalation route: keep DATA-MAINT recovery work reviewable and mergeable as planning/verification evidence. Re-run Program Gate when the PostgreSQL rehearsal is completed or when a release candidate is cut from `main`.
+
+### Conditional controls
+
+- Remaining risks:
+  - PostgreSQL restore has not been exercised in a real compose environment; DATA-MAINT-02 keeps the Docker restart condition.
+  - Destructive admin operations, owner transfer, archive/delete policy, and support access to document bodies remain Stop conditions and require separate issue/ADR approval before implementation.
+  - Full release shipment still requires candidate-level PRODUCT-QA gate evidence, especially SafeMode/share-export smoke coverage and representative mouse/keyboard user-operation E2E.
+- Owner: Codex for evidence maintenance; Platform Operator / System Owner required for recovery rehearsal approval.
+- Due date: next DATA-MAINT-02 restart window with Docker or equivalent PostgreSQL environment available.
+- Re-decision date: after PostgreSQL compose recovery rehearsal, or when a release candidate is cut from `main`.
