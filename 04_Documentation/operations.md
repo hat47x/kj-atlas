@@ -111,18 +111,31 @@ docker compose logs api --tail=100
 
 ## バックアップ
 
-PostgreSQL volume を使っている場合、更新や検証前に dump を取得します。
+PostgreSQL volume を使っている場合、更新や検証前に dump を取得します。この節は最小限の判断支援です。バックアップの保持期間、暗号化、保管先、承認手順は、各組織の運用方針に合わせて決めてください。
+
+本番環境へ復元する前に、可能な限り検証環境へ復元し、ドキュメントと判断ログを読み直せることを確認します。復元は既存データを上書きする可能性があるため、対象環境、取得日時、アプリの revision、実行者を記録してから進めます。
 
 ```bash
 cd 03_Implement/deploy
 docker compose exec db pg_dump -U kj_atlas kj_atlas > kj_atlas_backup.sql
 ```
 
-復元は既存データを上書きする可能性があります。対象環境を確認してから実行してください。
+`KJ_ATLAS_POSTGRES_USER` や `KJ_ATLAS_POSTGRES_DB` を既定値から変えている場合は、上の `kj_atlas` を実際の値に置き換えます。
+
+検証環境で復元する最小例です。
 
 ```bash
 cat kj_atlas_backup.sql | docker compose exec -T db psql -U kj_atlas kj_atlas
 ```
+
+復元後は、少なくとも次を確認します。
+
+- `/api/healthz` が成功する。
+- 代表ドキュメントを開ける。
+- 判断ログやレビュー状態が同じ対象を指している。
+- 共有前確認で SafeMode が有効であり、未レビュー本文や個人情報を不用意に共有しない。
+
+SQLite を使う小規模検証では、APIを停止してからDBファイルをコピーし、コピー先を別環境で読み直します。運用の正式手順として採用する場合は、保存場所、取得タイミング、復元確認の担当を組織内で決めてください。
 
 ## ログを見る
 

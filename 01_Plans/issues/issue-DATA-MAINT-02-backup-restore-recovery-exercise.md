@@ -77,8 +77,8 @@
 
 - [x] T1 backendのDocument保存、判断ログ、SQLite/PostgreSQL設定、テストfixtureを確認する。
 - [x] T2 SQLite隔離環境で、Document作成からbackup/restore/整合確認までの代表演習を実行または自動化する。
-- [ ] T3 PostgreSQL compose環境で同等演習を実行し、難しい場合は阻害要因と再開条件を記録する。
-- [ ] T4 `04_Documentation/operations.md` と `04_Documentation/data_handling.md` に、一般向けに必要な最小限の判断支援情報を反映する。
+- [x] T3 PostgreSQL compose環境で同等演習を実行し、難しい場合は阻害要因と再開条件を記録する。
+- [x] T4 `04_Documentation/operations.md` と `04_Documentation/data_handling.md` に、一般向けに必要な最小限の判断支援情報を反映する。
 - [ ] T5 `DATA-MAINT-01`、`PRODUCT-QA-01`、必要なADR/issueへ結果を戻す。
 
 ## 7) 検証計画 / Validation plan
@@ -151,3 +151,28 @@
 ### Verify
 
 - `cd 03_Implement/backend && .\\.venv\\Scripts\\python.exe -m pytest tests/test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider`
+
+## 13) PostgreSQL rehearsal and public guidance log（2026-05-24）
+
+### Context
+
+- PostgreSQL compose演習は `03_Implement/deploy/docker-compose.yml` の `db` / `api` / `web` 構成を前提にする。
+- 現在の実行環境では `docker` コマンドが見つからず、PostgreSQLコンテナを起動できないため、実DBを使った同等演習は未実施とした。
+- 一般向け文書では、バックアップ保持期間、暗号化、保管先、承認手順を製品側の一律規定として書かず、各組織の判断事項として伝える必要がある。
+
+### Decision
+
+- T3は「未実施理由と再開条件の記録」として完了扱いにする。再開条件は、Docker/Composeが使える環境で `03_Implement/deploy` を起動し、PostgreSQL上でDocumentと判断ログのbackup/restore演習を実施できること。
+- `04_Documentation/operations.md` のバックアップ節を、dump取得だけでなく、検証環境への復元確認、対象環境、取得日時、アプリrevision、実行者の記録、復元後の確認観点を含む説明に更新した。
+- `04_Documentation/data_handling.md` に、バックアップは復元確認できて初めて有効であり、保持期間・暗号化・保管先・外部保管可否は各組織が決める事項であることを追記した。
+
+### Consequences
+
+- T3/T4は完了した。
+- PostgreSQLの実行証跡そのものは未取得のため、製品化ゲートでは「Docker/Compose利用可能環境での再実行」が残る。
+- T5として、`DATA-MAINT-01` と `PRODUCT-QA-01` へ、SQLite演習完了、PostgreSQL演習未実施理由、公開文書反映済みを戻す必要がある。
+
+### Verify
+
+- `docker --version` / `docker compose version`: `docker` command not found
+- `rg -n "バックアップ|復元|復旧|保持|暗号|KJ_ATLAS_POSTGRES|SafeMode" 04_Documentation/operations.md 04_Documentation/data_handling.md 01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`
