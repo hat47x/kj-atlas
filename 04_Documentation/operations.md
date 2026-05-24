@@ -115,13 +115,14 @@ PostgreSQL volume を使っている場合、更新や検証前に dump を取�
 
 ```bash
 cd 03_Implement/deploy
-docker compose exec db pg_dump -U kj_atlas kj_atlas > kj_atlas_backup.sql
+docker compose exec db pg_dump -Fc -U kj_atlas kj_atlas > kj_atlas_backup.dump
 ```
 
-復元は既存データを上書きする可能性があります。対象環境を確認してから実行してください。
+復元は既存データを上書きする可能性があります。まず本番DBではない検証用DBへ戻してください。
 
 ```bash
-cat kj_atlas_backup.sql | docker compose exec -T db psql -U kj_atlas kj_atlas
+docker compose exec db createdb -U kj_atlas kj_atlas_restore
+cat kj_atlas_backup.dump | docker compose exec -T db pg_restore -U kj_atlas -d kj_atlas_restore --clean --if-exists
 ```
 
 ### 復旧演習
@@ -136,7 +137,7 @@ cat kj_atlas_backup.sql | docker compose exec -T db psql -U kj_atlas kj_atlas
 | 共有前確認 | SafeMode が有効で、未レビュー本文や個人情報を含む出力を不用意に共有しないこと |
 | 中断条件 | version不整合、判断ログ欠落、復元先取り違え、秘密情報を含むログ共有がある場合は完了扱いにしない |
 
-SQLite を使う開発・検証環境では、アプリを停止したうえでDBファイルを退避し、別パスへ戻して読み込み確認を行います。PostgreSQL を使う評価環境では、`pg_dump` と `psql` の復元先を検証用DBに限定して確認します。
+SQLite を使う開発・検証環境では、アプリを停止したうえでDBファイルを退避し、別パスへ戻して読み込み確認を行います。PostgreSQL を使う評価環境では、`pg_dump` と `pg_restore` の復元先を検証用DBに限定して確認します。
 
 ## ログを見る
 

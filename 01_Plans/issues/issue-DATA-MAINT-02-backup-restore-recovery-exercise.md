@@ -144,27 +144,35 @@
 | Area | Command / Evidence | Result | Gate mapping |
 | --- | --- | --- | --- |
 | Backend integration | `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests\test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` | Pass: 1 test | DATA-MAINT-02 / G6 / G7 |
-| Backend regression | `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` | Pass: 257 passed / 19 skipped | G7 |
+| Backend regression | `cd 03_Implement/backend && $env:Path="$PWD\.venv\Scripts;$env:Path"; .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` | Pass: 257 passed / 19 skipped | G7 |
 | SQLite backup/restore | test内で source SQLite DB に代表Documentと判断ログを作成し、`sqlite3.Connection.backup()` で退避後、別DBとして復元 | Pass: 復元先でDocumentと判断ログをAPI経由で確認 | L1 / L1.5 |
 | Document consistency | 復元後 `GET /docs/{doc_id}` | Pass: `version=2`, `id`, card review flags, embedded merge suggestion decisionを確認 | schema version gate / L1 |
 | Decision log consistency | 復元後 `GET /docs/{doc_id}/merge-decision-logs/by-group/{group_id}` と `/restore/{snapshot_version}` | Pass: `decision-1`, `decision-2` と `accept`, `partial` の順序を確認 | L1.5 |
 | Safe sharing gate | 復元後 `POST /docs/{doc_id}/export-audit` with `safeMode=true` | Pass: `403 Access denied: safe_mode` | SafeMode / share-export |
-| PostgreSQL rehearsal | `docker --version; docker compose version` | Not executed locally: `docker` is not available in the current PowerShell PATH | PostgreSQL再開条件 |
+| PostgreSQL toolchain | WSL2 `docker --version`; `docker compose version` | Pass: Docker 28.3.3 / Compose v2.39.1 | PostgreSQL実行条件 |
+| PostgreSQL schema | temporary PostgreSQL 16.14 container + `alembic upgrade head` | Pass: migrations `20260211_0001` through `20260314_0005` applied | L1 / L1.5 |
+| PostgreSQL app rehearsal | `python tests/scripts/data_maintenance_pg_rehearsal.py` against temporary PostgreSQL DB | Pass: `version=2`, card review flags `[true, false]`, decision logs `decision-pg-1`, `decision-pg-2`, SafeMode `403 Access denied: safe_mode` | DATA-MAINT-02 / G6 / G7 |
+| PostgreSQL dump/restore | `pg_dump -Fc -U kj_atlas kj_atlas`; `pg_restore -U kj_atlas -d kj_atlas_restore --clean --if-exists` | Pass: restored DB contains the rehearsal Document and `merge_decision_logs` in expected order | PostgreSQL代表演習 |
 
-### PostgreSQL未実施理由と再開条件
+### PostgreSQL実施内容と残る前提
 
-- 未実施理由: 現在のローカルPowerShell環境では `docker` / `docker compose` コマンドが利用できず、Composeの `db` service を起動できない。
-- 代替証跡: SQLiteでDB退避、別DB復元、Document/判断ログ/SafeModeの横断確認をintegration testとして追加した。既存 `test_docs_roundtrip.py` にはPostgreSQL marker付きのDocument/判断ログ契約テストがあり、PostgreSQL接続が提供されるCIまたは検証環境で再利用できる。
-- 再開条件:
-  1. Docker Compose が利用できる環境、または `KJ_ATLAS_DATABASE_URL=postgresql...` と `RUN_PG_TESTS=1` を設定できる検証DBを用意する。
-  2. `alembic upgrade head` を実行できること。
-  3. 復元先が本番DBではなく、一時DBまたは検証用volumeであること。
-  4. `pg_dump` / `psql` の復元後に、Document、`merge_decision_logs`、SafeMode共有前確認を同じ観点で確認する。
+- 実施環境: WSL2 / Docker 28.3.3 / PostgreSQL 16.14 / temporary Docker network `kj-atlas-rehearsal-20260525` / temporary DB `kj_atlas_restore`。
+- Compose build contextの検証で、backend配下の生成物 `.pytest_cache` がWSL/Dockerのxattr読み取りで失敗したため、`.dockerignore` を追加した。これはCompose運用上の不要ファイル混入を避ける修正であり、アプリの実行時契約は変更しない。
+- 代表データ:
+  - Document: `doc-data-maint-pg-recovery-20260525`
+  - `cards[0].textReviewed=true`, `cards[1].textReviewed=false`
+  - embedded merge suggestion group: `group-recovery-pg`
+  - `merge_decision_logs`: `decision-pg-1` / `accept`, `decision-pg-2` / `partial`
+  - SafeMode export gate: `POST /docs/{doc_id}/export-audit` with `safeMode=true` returned `403 Access denied: safe_mode`
+- 復元先確認:
+  - `documents`: `doc-data-maint-pg-recovery-20260525|2|true|false|group-recovery-pg`
+  - `merge_decision_logs`: `decision-pg-1|group-recovery-pg|snapshot-recovery-pg-1|accept`, `decision-pg-2|group-recovery-pg|snapshot-recovery-pg-1|partial`
+- 残る前提: 今回の確認は一時PostgreSQL DBでの製品代表演習であり、各組織の本番運用に必要な保持期間、暗号化、保管先、職務分掌、承認手順、復旧目標時間は固定しない。
 
 ### Decision
 
 - SQLite代表演習: **Go**。
-- PostgreSQL代表演習: **Conditional / Deferred**。環境制約によりローカル未実施だが、未実施理由と再開条件は明確。
+- PostgreSQL代表演習: **Go for temporary operational rehearsal**。一時PostgreSQL DBで `pg_dump` / `pg_restore` と復元先確認まで完了。ただし本番組織のバックアップ運用ポリシーは別issue/ADRなしに固定しない。
 - ADR要否: **不要**。今回の差分は演習証跡と公開文書の判断支援であり、保持期間、暗号化、外部保管、承認手順、削除、所有者移管、管理者本文閲覧の方針を固定していない。
 - 戻し先:
   - `DATA-MAINT-01`: T5代表復旧演習の実行証跡として参照可能。

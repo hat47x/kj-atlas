@@ -697,7 +697,7 @@ DoDテンプレ（Draft→Open）
 - Candidate: `codex/data-maint-02-recovery-exercise`
 - Decision date (JST): 2026-05-25
 - Reviewer: Codex
-- Scope: SQLite backup/restore representative exercise, recovery documentation, and DATA-MAINT issue evidence. This record does not claim PostgreSQL production readiness.
+- Scope: SQLite backup/restore representative exercise, temporary PostgreSQL dump/restore rehearsal, recovery documentation, and DATA-MAINT issue evidence. This record does not define organization-specific backup retention, encryption, storage, or approval policy.
 
 ### Gate Summary
 
@@ -707,27 +707,32 @@ DoDテンプレ（Draft→Open）
 - G3 日本語UI: N/A
 - G4 画面耐性: N/A
 - G5 公開文書: Conditional Go for recovery guidance wording
-- G6 診断とサポート: Conditional Go
+- G6 診断とサポート: Go for representative recovery evidence
 - G7 回帰: Go
-- Final: **Conditional Go for recovery evidence / No-Go for full release shipment**
+- Final: **Go for representative recovery evidence / No-Go for full release shipment**
 
 ### Evidence
 
 - Backend:
   - `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests\test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` -> pass (1 test)
-  - `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> pass (257 passed / 19 skipped)
+  - `cd 03_Implement/backend && $env:Path="$PWD\.venv\Scripts;$env:Path"; .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> pass (257 passed / 19 skipped)
+  - `03_Implement/backend/.venv/Scripts/python.exe -m py_compile 03_Implement/backend/tests/scripts/data_maintenance_pg_rehearsal.py` -> pass
 - Planning/docs:
-  - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md 03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py 04_Documentation/operations.md 04_Documentation/data_handling.md` -> pass (Windows LF-to-CRLF warning only)
+  - `git diff --check` -> pass (Windows LF-to-CRLF warning only)
   - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
   - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=46 / ready=18 / blocked=28 / actionable_adrs=1 / stopper=none`)
 - PostgreSQL:
-  - `docker --version; docker compose version` -> not executed because `docker` is not available in the current PowerShell PATH.
+  - WSL2 `docker --version` -> pass (`Docker version 28.3.3`)
+  - WSL2 `docker compose version` -> pass (`Docker Compose version v2.39.1`)
+  - temporary PostgreSQL 16.14 + `alembic upgrade head` -> pass
+  - `python tests/scripts/data_maintenance_pg_rehearsal.py` -> pass (`version=2`, review flags `[true, false]`, decision logs `decision-pg-1` / `decision-pg-2`, SafeMode `403 Access denied: safe_mode`)
+  - `pg_dump -Fc` + `pg_restore` to `kj_atlas_restore` -> pass; restored `documents` and `merge_decision_logs` were verified by SQL query.
 
 ### Follow-ups
 
-- PostgreSQL本番相当の復旧演習は、Docker Compose または `KJ_ATLAS_DATABASE_URL=postgresql...` と `RUN_PG_TESTS=1` を設定できる検証DBで再判定する。
+- 本番相当の復旧運用は、今回の一時PostgreSQL代表演習を入力にしつつ、各組織の保持期間、暗号化、保管先、職務分掌、承認手順、復旧目標時間を別途決める。
 - `DATA-MAINT-01` の書き込み系管理操作Stop条件は維持する。削除、所有者移管、管理者本文閲覧、保持期間、暗号化、外部保管の製品標準化は、ADRまたは別issueなしに実装しない。
-- Full shipment remains blocked until this conditional recovery evidence is combined with the broader MVP-EXIT release-candidate gate record.
+- Full shipment remains blocked until this recovery evidence is combined with the broader MVP-EXIT release-candidate gate record and representative user-operation evidence.
 
 ### Safety Confirmation
 
