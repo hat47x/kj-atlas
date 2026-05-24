@@ -7,8 +7,9 @@
 本ドキュメントは、kj-atlas の **MVP API（Documentの保存・取得）** を定義します。
 
 - MVPでは **スナップショット保存** を基本とします
-- 認証・共有・差分同期は後回しです
-- APIはイントラ利用を含むため、単純で監査しやすい設計を優先します
+- Document の標準CRUDは **全体保存/取得** に絞ります
+- 認証/認可、監査、Context/AI系APIは限定契約として別節で扱い、個別エンティティCRUDとは分けます
+- APIはイントラ利用や組織導入を含むため、単純で監査しやすい境界を優先します
 
 ---
 
@@ -33,9 +34,9 @@ Card / Edge / Island / Narrative などは Document 内の論理構造であり�
 MVPでは以下のいずれかで簡素に扱う。
 
 - Last Write Wins（デフォルト）
-- もしくは `If-Match` / `ETag` による楽観ロック（Phase 2以降）
+- `If-Match` / `ETag` による楽観ロック（任意ヘッダー。指定時は不一致を拒否）
 
-MVPではまず LWW とし、将来 ETag を追加できる形にする。
+`If-Match` が無い場合は LWW とし、`If-Match` がある場合は保存済み `ETag` と一致したときだけ更新する。
 
 ---
 
@@ -80,13 +81,36 @@ MVPの実装境界では、クライアントがIDを指定して **PUT** `/docs
 イントラ想定では一覧があると便利だが、MVPでは必須ではない。
 
 
-### 2.5 Export監査イベント（FB-RM-PUB-05）
+### 2.5 Document監査イベント（FB-RM-PUB-05 / CE4）
+
+Document 本体の標準CRUDとは別に、共有・Context操作の監査連携点を持つ。監査送信は本体処理を阻害しない fail-open dispatcher 方針を維持するが、各リクエスト自体は SafeMode/readOnly/access-control の判定対象になる。
 
 **POST** `/docs/{doc_id}/export-audit`
 
 - Request body: `{ "safeMode": boolean, "exportKind": string }`
 - Response: `{ "status": "accepted" }`
 - 目的: export完了通知を監査連携アダプタへ委譲（監査送信失敗でも本体機能を阻害しない）
+
+**POST** `/docs/{doc_id}/context-audit`
+
+- Request body:
+  - `operation: "query" | "bundle" | "proposal" | "apply"`
+  - `safeMode: boolean`
+  - `equivalenceKey: <64hex>`
+  - `bundleHash: <64hex>`
+  - `sourceBundleHash?: <64hex> | mock:<64hex>`
+  - `queryHash?: string`
+  - `dryRun: boolean`
+  - `sideEffect: "none"`
+  - `rejectReasonCode?: "none" | "missing_event" | "equivalence_mismatch" | "dry_run_side_effect" | "safemode_regression"`
+  - `command: string`
+  - `channel: "api" | "cli" | "gui"`
+  - `schemaVersion: "ce4.audit.v1"`
+- Response: `{ "status": "accepted" }`
+- Error:
+  - 409: CE4の4点監査イベントが `apply` 時点で揃わない、または deterministic 判定が不成立
+  - 422: operation/command不一致、`dryRun` 違反、`sourceBundleHash` 欠損などの契約違反
+- 目的: `query -> bundle -> proposal -> apply` の監査4点を同一 `equivalenceKey` / `bundleHash` で接続し、proposal-only / dry-run の境界を検証する。
 
 
 ### 2.6 Merge Decision Log（CTR-2B-02-DECISION-LOG-V1）
@@ -446,21 +470,34 @@ Polygon auto-fit の backend接続準備として、A2比較キーの最小契�
 
 ## 4. エラー設計（最小）
 
-MVPでは、エラーを過度に作り込まない。
+MVPでは、エラーを過度に作り込まない。ただし、実装済みの安全境界と契約境界は区別して返す。
 
 - 400：入力スキーマ不正（Pydanticのvalidation errorを整形）
+- 403：認可、readOnly、review attribution identity などの安全境界違反
 - 404：doc not found
+- 409：`If-Match` 不一致、重複する判断ログなどの競合
+- 422：A1契約フィールドや enum などの契約違反
 - 500：内部エラー
 
 ---
 
-## 5. 将来拡張（非MVP）
+## 5. 現行限定契約と将来拡張の境界
 
-- ETag（楽観ロック）
-- Patch API（差分同期）
-- 認証（OIDC / SSO / API Key）
-- 共有（read-only link / ACL）
-- AI用エンドポイント（draft, re-layout, merge suggestions）
+### 5.1 現行の限定契約
+
+- `ETag` / `If-Match`: Document全体保存の楽観ロックとして実装済み。個別エンティティの差分同期ではない。
+- 認証/認可: `AuthContext` 正規化、strict provisioning、access-control adapter、readOnly / SafeMode優先判定を提供する。完全な組織権限管理UIやRBACエンジンは含まない。
+- 監査: view/export/context/proposal 系のイベント連携点を持つ。監査ログ閲覧UIや保持期限管理は含まない。
+- AI/Context: proposal-only、mock-first、closed-world契約を中心に提供する。AI提案の自動適用や確定昇格は含まない。
+- Merge decision / Similar candidate: append-read / derived の限定契約として提供する。Document内エンティティの個別CRUDではない。
+
+### 5.2 非MVPまたは別Issueで扱う拡張
+
+- Patch APIによる一般的な差分同期。
+- サーバ採番の `POST /docs` 標準化。
+- read-only link、公開URL、共有管理画面などの完全な共有機能。
+- 管理者向け一覧、削除、アーカイブ、所有者移管、保管期限管理。
+- 大規模マルチテナント向けの権限管理UI、監査検索UI、SCIM連携。
 
 ---
 
@@ -543,6 +580,7 @@ fail-safe マトリクス:
 
 - `GET /docs/{doc_id}` でアクセス許可後に `eventType=view` を送信。
 - `POST /docs/{doc_id}/export-audit` でアクセス許可後に `eventType=export` を送信。
+- `POST /docs/{doc_id}/context-audit` でアクセス許可後に `eventType=query|bundle|proposal|apply` を送信。
 - 監査送信は既存の fail-open dispatcher 方針を維持する（監査送信失敗で本体機能は停止しない）。
 
 最小記録項目（PII非保存）:
