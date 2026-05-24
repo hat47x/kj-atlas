@@ -177,12 +177,12 @@
 | PR | Branch | Topic | Governance classification | Recommended action |
 | --- | --- | --- | --- | --- |
 | #2261 | `codex/data-maint-results-gate-sync` | DATA-MAINT-01 parent handoff for earlier recovery evidence | duplicate/superseded candidate | Prefer #2267 as the canonical DATA-MAINT recovery evidence because it includes the executable integration test and parent handoff. If #2267 merges, close or rebase #2261 instead of merging stale evidence. |
-| #2262 | `codex/mvp-exit-recovery-evidence-intake` | MVP-EXIT Program Gate intake for #2267 recovery evidence | canonical / merge-ready after #2267 | Refreshed at `6fffe201c6ce98816a7d5d5750bdf34e24337efd` and CI run 9108 passed. Merge after #2267 so the Program Gate intake points to the accepted executable recovery evidence. |
+| #2262 | `codex/mvp-exit-recovery-evidence-intake` | MVP-EXIT Program Gate intake for #2267 recovery evidence | canonical / merge-ready after #2267 | Refreshed at `5661f1fa90c1e65da2c21736f4d46f4d55533668` and CI run 9114 passed. Merge after #2267 so the Program Gate intake points to the accepted representative recovery evidence. |
 | #2263 | `codex/product-qa-recovery-evidence-gate` | PRODUCT-QA recovery evidence gate | duplicate/superseded candidate | #2267 already adds a PRODUCT-QA Gate Record for DATA-MAINT-02. If #2267 merges, close or rebase #2263 to avoid two QA records for the same evidence. |
 | #2264 | `codex/support-bundle-follow-up-issue` | PRODUCT-OPS-02 support diagnostics bundle policy split | independent canonical / merge-ready | Can merge independently. It creates a follow-up policy issue and does not depend on the DATA recovery lane. |
 | #2265 | `codex/project-gov-open-pr-convergence` | This PROJECT-GOV convergence checkpoint | canonical / update-in-place | Keep this PR as the active PR-lane inventory and update it rather than opening duplicate governance checkpoint PRs. |
 | #2266 | `codex/project-baseline-20260525` | Latest-main health baseline | time-boxed canonical / merge-ready | Can merge as a dated baseline record. Re-run a new baseline only after the DATA/OPS lane changes `main` materially. |
-| #2267 | `codex/data-maint-02-recovery-exercise` | Executable DATA-MAINT-02 SQLite backup/restore exercise plus issue/doc/QA evidence | primary canonical / merge-ready | Treat as the current canonical DATA-MAINT recovery evidence. Merge before refreshing #2262 and before deciding whether #2261/#2263 should be closed or rebased. |
+| #2267 | `codex/data-maint-02-recovery-exercise` | Executable DATA-MAINT-02 SQLite and temporary PostgreSQL recovery exercise plus issue/doc/QA evidence | primary canonical / merge-ready | Treat as the current canonical DATA-MAINT recovery evidence. Refreshed at `f230ea6b9d86f46478c029290175d9f4e7d9cb74` and CI run 9112 passed. Merge before #2262 and before deciding whether #2261/#2263 should be closed or rebased. |
 
 ### Updated merge / close recommendation
 
@@ -209,8 +209,8 @@
 
 - No branch deletion or PR closure is executed from this checkpoint.
 - No new ADR is required. ADR-0034 already defines the mainline convergence policy; this update only refreshes the open PR lane.
-- The canonical DATA recovery lane changes from the older #2261/#2263 planning-only records to #2267, because #2267 includes executable recovery test evidence and CI success.
-- #2262 has been refreshed to consume #2267 as its primary evidence candidate; it is no longer a pending refresh item.
+- The canonical DATA recovery lane changes from the older #2261/#2263 planning-only records to #2267, because #2267 includes executable SQLite evidence, temporary PostgreSQL dump/restore evidence, restored SQL readback, and CI success.
+- #2262 has been refreshed to consume #2267 at `f230ea6b9d86f46478c029290175d9f4e7d9cb74` as its primary evidence candidate; it is no longer a pending refresh item.
 
 ---
 
