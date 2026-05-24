@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0 (Stream D highest)
-- Owner: TBD
+- Owner: Codex
 - Scope: `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`
 - Related Backlog: `DATA-MODEL-OPS-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`
@@ -206,3 +206,25 @@
 6. Verify: docs-check（差分・語彙一致・責務境界一致）で確認。
 7. Self-correction<=3: Verify再試行上限を3回に固定。
 8. Final: docs-only 完遂条件を満たす場合のみ Proceed。
+
+## 20) Stream D support-level sync（2026-05-24）
+
+### Context
+- 本Issueの AC-04 / 下流引き渡しでは、CRUD表の全行に `L1/L1.5/L2/L2.5/L3/L0` を併記することを完了条件としていた。
+- `data_model_operations_overview.md` の本文は支援レベルの定義を持っていたが、CRUD表と `DocumentV2` フィールド表の各行には support level 列がなく、読者が「分類定義」と「具体データ領域」を照合する必要が残っていた。
+
+### Decision
+- `02_Architecture/data_model_operations_overview.md` の CRUDサポート表に `Support level` 列を追加し、各データ領域を `L1/L1.5/L2/L2.5/L3` へ直接対応させる。
+- `DocumentV2フィールド支援レベル表` にも `Support level` 列を追加し、スナップショットの正本フィールド、埋め込み限定フィールド、契約限定フィールドを同じ語彙で示す。
+- 実装変更、個別CRUD追加、管理UI/API追加は行わない。今回の修正は docs-check 範囲に限定する。
+
+### Consequences
+- AC-04 と下流引き渡しチェックの根拠が、読者の解釈ではなく表の列として確認できる。
+- `DATA-CONTRACT-01` / `DATA-MAINT-01` が参照する支援レベル語彙と、02正本文書の具体行が一致しやすくなる。
+- 未分類の新規データ領域が追加された場合、表に support level を記入しない限り差分レビューで検知できる。
+
+### Verify
+- `rg -n "Support level|L1\\.5|L2\\.5|DATA-MODEL-OPS-01|data_model_operations_overview|ADR-0033" 01_Plans/issues 02_Architecture AGENTS.md`
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `git diff --check -- 01_Plans 02_Architecture AGENTS.md`
