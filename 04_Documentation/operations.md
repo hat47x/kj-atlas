@@ -111,7 +111,7 @@ docker compose logs api --tail=100
 
 ## バックアップ
 
-PostgreSQL volume を使っている場合、更新や検証前に dump を取得します。
+PostgreSQL volume を使っている場合、更新や検証前に dump を取得します。取得先、保管期間、暗号化、外部保管の有無は組織ごとに決める運用事項です。kj-atlas の手順では、まず検証環境で復元できることと、安全確認を再現できることを重視します。
 
 ```bash
 cd 03_Implement/deploy
@@ -123,6 +123,20 @@ docker compose exec db pg_dump -U kj_atlas kj_atlas > kj_atlas_backup.sql
 ```bash
 cat kj_atlas_backup.sql | docker compose exec -T db psql -U kj_atlas kj_atlas
 ```
+
+### 復旧演習
+
+復旧演習は、本番DBを直接上書きする手順ではありません。検証環境または一時DBに復元し、次の最小項目を確認します。
+
+| 確認項目 | 見る内容 |
+| --- | --- |
+| 対象 | DB種別、アプリrevision、バックアップ取得日時、復元先 |
+| Document | `id`、`version`、`updated_at`、画面またはAPIで読み込めること |
+| 判断ログ | `merge_decision_logs` が対象Documentに紐づき、group/snapshot単位の順序が崩れていないこと |
+| 共有前確認 | SafeMode が有効で、未レビュー本文や個人情報を含む出力を不用意に共有しないこと |
+| 中断条件 | version不整合、判断ログ欠落、復元先取り違え、秘密情報を含むログ共有がある場合は完了扱いにしない |
+
+SQLite を使う開発・検証環境では、アプリを停止したうえでDBファイルを退避し、別パスへ戻して読み込み確認を行います。PostgreSQL を使う評価環境では、`pg_dump` と `psql` の復元先を検証用DBに限定して確認します。
 
 ## ログを見る
 

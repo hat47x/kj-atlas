@@ -65,21 +65,21 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 代表Documentと`merge_decision_logs`を持つ検証データを隔離環境で作成できる。
-- [ ] SQLiteのバックアップ/復元演習が、コマンド、入力、期待結果、失敗時の中断条件つきで記録されている。
-- [ ] PostgreSQLのバックアップ/復元演習が実行されるか、未実施理由と再開条件が明記されている。
-- [ ] 復元後に `Document.version`、schema version gate、`merge_decision_logs.doc_id`、判断ログ順序、L1/L1.5優先復旧を確認できる。
-- [ ] 復旧後の共有前確認で、SafeMode既定ON、PII抑制、未レビュー本文の扱いが破綻していないことを確認できる。
-- [ ] 一般公開向け文書では、保持期間、暗号化、外部保管、承認手順を各組織の判断事項として扱い、必要以上に細かい規定にしない。
-- [ ] 演習中に削除、所有者移管、管理者本文閲覧、法域別保持期限の方針固定が必要になった場合は、ADRまたは別issueへ分離されている。
+- [x] 代表Documentと`merge_decision_logs`を持つ検証データを隔離環境で作成できる。
+- [x] SQLiteのバックアップ/復元演習が、コマンド、入力、期待結果、失敗時の中断条件つきで記録されている。
+- [x] PostgreSQLのバックアップ/復元演習が実行されるか、未実施理由と再開条件が明記されている。
+- [x] 復元後に `Document.version`、schema version gate、`merge_decision_logs.doc_id`、判断ログ順序、L1/L1.5優先復旧を確認できる。
+- [x] 復旧後の共有前確認で、SafeMode既定ON、PII抑制、未レビュー本文の扱いが破綻していないことを確認できる。
+- [x] 一般公開向け文書では、保持期間、暗号化、外部保管、承認手順を各組織の判断事項として扱い、必要以上に細かい規定にしない。
+- [x] 演習中に削除、所有者移管、管理者本文閲覧、法域別保持期限の方針固定が必要になった場合は、ADRまたは別issueへ分離されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 backendのDocument保存、判断ログ、SQLite/PostgreSQL設定、テストfixtureを確認する。
-- [ ] T2 SQLite隔離環境で、Document作成からbackup/restore/整合確認までの代表演習を実行または自動化する。
-- [ ] T3 PostgreSQL compose環境で同等演習を実行し、難しい場合は阻害要因と再開条件を記録する。
-- [ ] T4 `04_Documentation/operations.md` と `04_Documentation/data_handling.md` に、一般向けに必要な最小限の判断支援情報を反映する。
-- [ ] T5 `DATA-MAINT-01`、`PRODUCT-QA-01`、必要なADR/issueへ結果を戻す。
+- [x] T1 backendのDocument保存、判断ログ、SQLite/PostgreSQL設定、テストfixtureを確認する。
+- [x] T2 SQLite隔離環境で、Document作成からbackup/restore/整合確認までの代表演習を実行または自動化する。
+- [x] T3 PostgreSQL compose環境で同等演習を実行し、難しい場合は阻害要因と再開条件を記録する。
+- [x] T4 `04_Documentation/operations.md` と `04_Documentation/data_handling.md` に、一般向けに必要な最小限の判断支援情報を反映する。
+- [x] T5 `DATA-MAINT-01`、`PRODUCT-QA-01`、必要なADR/issueへ結果を戻す。
 
 ## 7) 検証計画 / Validation plan
 
@@ -128,3 +128,45 @@
 
 - `DATA-MAINT-01` のT5は、本Issueの実行結果を受けて完了判定する。
 - PostgreSQL演習やcomposeが実行できない場合でも、未実施理由と再開条件を残すことで、製品化ゲートの未達項目として扱える。
+
+## 12) 復旧演習レコード（2026-05-25）
+
+### Candidate
+
+- 対象: SQLite隔離DBでの Document + `merge_decision_logs` 復旧演習。
+- 追加証跡: `03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py`
+- 公開文書反映: `04_Documentation/operations.md`, `04_Documentation/data_handling.md`
+- Executor: Codex
+- Environment: Windows / PowerShell / backend `.venv`
+
+### 実行内容
+
+| Area | Command / Evidence | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Backend integration | `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests\test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` | Pass: 1 test | DATA-MAINT-02 / G6 / G7 |
+| Backend regression | `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` | Pass: 257 passed / 19 skipped | G7 |
+| SQLite backup/restore | test内で source SQLite DB に代表Documentと判断ログを作成し、`sqlite3.Connection.backup()` で退避後、別DBとして復元 | Pass: 復元先でDocumentと判断ログをAPI経由で確認 | L1 / L1.5 |
+| Document consistency | 復元後 `GET /docs/{doc_id}` | Pass: `version=2`, `id`, card review flags, embedded merge suggestion decisionを確認 | schema version gate / L1 |
+| Decision log consistency | 復元後 `GET /docs/{doc_id}/merge-decision-logs/by-group/{group_id}` と `/restore/{snapshot_version}` | Pass: `decision-1`, `decision-2` と `accept`, `partial` の順序を確認 | L1.5 |
+| Safe sharing gate | 復元後 `POST /docs/{doc_id}/export-audit` with `safeMode=true` | Pass: `403 Access denied: safe_mode` | SafeMode / share-export |
+| PostgreSQL rehearsal | `docker --version; docker compose version` | Not executed locally: `docker` is not available in the current PowerShell PATH | PostgreSQL再開条件 |
+
+### PostgreSQL未実施理由と再開条件
+
+- 未実施理由: 現在のローカルPowerShell環境では `docker` / `docker compose` コマンドが利用できず、Composeの `db` service を起動できない。
+- 代替証跡: SQLiteでDB退避、別DB復元、Document/判断ログ/SafeModeの横断確認をintegration testとして追加した。既存 `test_docs_roundtrip.py` にはPostgreSQL marker付きのDocument/判断ログ契約テストがあり、PostgreSQL接続が提供されるCIまたは検証環境で再利用できる。
+- 再開条件:
+  1. Docker Compose が利用できる環境、または `KJ_ATLAS_DATABASE_URL=postgresql...` と `RUN_PG_TESTS=1` を設定できる検証DBを用意する。
+  2. `alembic upgrade head` を実行できること。
+  3. 復元先が本番DBではなく、一時DBまたは検証用volumeであること。
+  4. `pg_dump` / `psql` の復元後に、Document、`merge_decision_logs`、SafeMode共有前確認を同じ観点で確認する。
+
+### Decision
+
+- SQLite代表演習: **Go**。
+- PostgreSQL代表演習: **Conditional / Deferred**。環境制約によりローカル未実施だが、未実施理由と再開条件は明確。
+- ADR要否: **不要**。今回の差分は演習証跡と公開文書の判断支援であり、保持期間、暗号化、外部保管、承認手順、削除、所有者移管、管理者本文閲覧の方針を固定していない。
+- 戻し先:
+  - `DATA-MAINT-01`: T5代表復旧演習の実行証跡として参照可能。
+  - `PRODUCT-QA-01`: G6（診断とサポート）/ G7（回帰）の条件付き証跡として参照可能。
+  - `MVP-EXIT-01`: 製品化判定では、PostgreSQL本番相当演習が残るため Conditional のまま扱う。

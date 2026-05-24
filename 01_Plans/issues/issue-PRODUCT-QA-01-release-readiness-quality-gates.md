@@ -691,3 +691,45 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: unchanged by this PR.
 - share/export fail-closed: unchanged by this PR; child issues now state the evidence needed before release shipment.
 - public document exposure boundary: unchanged by this PR because no public document changed.
+
+## Productization Gate Record 2026-05-25: DATA-MAINT-02 recovery exercise
+
+- Candidate: `codex/data-maint-02-recovery-exercise`
+- Decision date (JST): 2026-05-25
+- Reviewer: Codex
+- Scope: SQLite backup/restore representative exercise, recovery documentation, and DATA-MAINT issue evidence. This record does not claim PostgreSQL production readiness.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Go for tested SafeMode export block
+- G2 主要操作: N/A for UI operation breadth
+- G3 日本語UI: N/A
+- G4 画面耐性: N/A
+- G5 公開文書: Conditional Go for recovery guidance wording
+- G6 診断とサポート: Conditional Go
+- G7 回帰: Go
+- Final: **Conditional Go for recovery evidence / No-Go for full release shipment**
+
+### Evidence
+
+- Backend:
+  - `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests\test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` -> pass (1 test)
+  - `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> pass (257 passed / 19 skipped)
+- Planning/docs:
+  - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md 03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py 04_Documentation/operations.md 04_Documentation/data_handling.md` -> pass (Windows LF-to-CRLF warning only)
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=46 / ready=18 / blocked=28 / actionable_adrs=1 / stopper=none`)
+- PostgreSQL:
+  - `docker --version; docker compose version` -> not executed because `docker` is not available in the current PowerShell PATH.
+
+### Follow-ups
+
+- PostgreSQL本番相当の復旧演習は、Docker Compose または `KJ_ATLAS_DATABASE_URL=postgresql...` と `RUN_PG_TESTS=1` を設定できる検証DBで再判定する。
+- `DATA-MAINT-01` の書き込み系管理操作Stop条件は維持する。削除、所有者移管、管理者本文閲覧、保持期間、暗号化、外部保管の製品標準化は、ADRまたは別issueなしに実装しない。
+- Full shipment remains blocked until this conditional recovery evidence is combined with the broader MVP-EXIT release-candidate gate record.
+
+### Safety Confirmation
+
+- SafeMode default ON / share-export fail-closed: pass for the restored Document route because `POST /docs/{doc_id}/export-audit` with `safeMode=true` returns `403 Access denied: safe_mode`.
+- public document exposure boundary: pass for this narrow change because recovery guidance presents retention/encryption/storage/approval as organization-specific decisions rather than product-wide rules.
