@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2 (Stream D third)
-- Owner: TBD
+- Owner: Codex
 - Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
@@ -82,17 +82,19 @@
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 管理・復旧で必要な最小ユースケースをRACI付きで整理する。
-- [ ] T2 読み取り中心の管理API/CLI/画面の候補を比較する。
-- [ ] T3 バックアップ/復旧手順をSQLite/PostgreSQL別に定義する。
-- [ ] T4 Document削除/アーカイブ/所有者移管のADR要否を判定する。
+- [x] T1 管理・復旧で必要な最小ユースケースをRACI付きで整理する。
+- [x] T2 読み取り中心の管理API/CLI/画面の候補を比較する。
+- [x] T3 バックアップ/復旧手順をSQLite/PostgreSQL別に定義する。
+- [x] T4 Document削除/アーカイブ/所有者移管のADR要否を判定する。
 - [ ] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
+
+T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。実装、管理UI/API、実データを用いた復旧演習は本IssueのStop条件を維持し、T5または別issueで扱う。
 
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
   - `git diff --check -- 01_Plans/issues 02_Architecture`
-  - `rg -n "DATA-MAINT-01|backup|restore|archive|provision|L1\\.5|L2\\.5" 01_Plans/issues 02_Architecture`
+  - `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md`
 - 期待結果:
   - 管理・復旧の最小運用境界が、IssueとArchitecture文書で追跡できる。
 - 未実施時の理由・代替検証:
@@ -216,3 +218,27 @@
 6. Verify: docs-checkでIssue/Architecture間の語彙一致を確認。
 7. Self-correction<=3: 3回超過でStop継続。
 8. Final: DecisionStatus=Pendingの間は実装へ越境しない。
+
+## 20) Stream D maintenance runbook boundary（2026-05-24）
+
+### Context
+
+- `DATA-MODEL-OPS-01` のサポートレベル整理により、MVPで標準保守するデータと、契約のみ保持するデータの境界が明確になった。
+- ただし、Platform operator / Security officer / Support が本番導入前に必要とする、棚卸し、バックアップ、復旧確認、支援情報共有、削除/所有者移管のGo/No-Goがまだ一覧化されていなかった。
+
+### Decision
+
+- `02_Architecture/data_model_operations_overview.md` に `5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）` を追加し、運用ごとに主担当、承認者、対象データ、MVPで許容する手段、必須確認、Stop/ADR化条件を固定した。
+- MVPで許容する管理運用は、読み取り専用の棚卸し、環境標準のバックアップ、検証環境での復旧確認、本文を含まない支援情報共有に限定する。
+- ドキュメント本文の横断閲覧、アーカイブ、削除、所有者移管、ユーザーライフサイクル管理、SCIM、書き込み系管理API/UIは、ADRまたは別issueで合意するまで実装しない。
+
+### Consequences
+
+- T1-T4は契約レベルで完了したが、T5の代表的な復旧演習は未完了のままとする。
+- `DecisionStatus=Pending` と Stop判定は維持する。今回の更新は、実装へ進むための承認ではなく、実装を始める前に必要な判断材料の整理である。
+- バックアップ保持期間、暗号化、外部保管、法域ごとの保持期限は、製品一律の規定ではなく、各組織が検討する運用方針として扱う。
+
+### Verify
+
+- `git diff --check -- 01_Plans/issues 02_Architecture`
+- `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md`
