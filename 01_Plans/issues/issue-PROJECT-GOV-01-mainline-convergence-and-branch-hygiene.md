@@ -110,6 +110,52 @@
   - triage stopper: none
 - ADR化済み: `ADR-0034`
 
+## 11) Convergence checkpoint 2026-05-24: DATA/OPS open PR lane
+
+### Observation
+
+- Observed after `git fetch --prune origin` on 2026-05-24.
+- `origin/main`: `512714e3a9935f91f085b3b9d0d0053943ad2841`
+- remote branch count: 2261
+- `origin/codex/` remote branch count: 2239
+- open PR count returned by GitHub search: 4
+- internal issue triage:
+  - `active_issues=46`
+  - `ready=18`
+  - `blocked=28`
+  - `actionable_adrs=1`
+  - stopper: none
+  - note: #2264 adds `PRODUCT-OPS-02` on a PR branch, so it is not counted in this `origin/main`-based triage until merged.
+
+### Open PR inventory
+
+| PR | Branch | Topic | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- |
+| #2261 | `codex/data-maint-results-gate-sync` | DATA-MAINT-01 parent handoff for recovery evidence | canonical / merge-ready | Merge before #2262 because #2262 references this handoff. |
+| #2262 | `codex/mvp-exit-recovery-evidence-intake` | MVP-EXIT Program Gate intake for recovery evidence | canonical / merge-ready after #2261 | Merge after #2261, then re-check conflict because both are planning-layer only but semantically ordered. |
+| #2263 | `codex/product-qa-recovery-evidence-gate` | PRODUCT-QA Gate Record for the same recovery evidence | canonical / merge-ready after #2262 | Merge after #2262 so QA record can point to the accepted Program Gate trail. |
+| #2264 | `codex/support-bundle-follow-up-issue` | PRODUCT-OPS-02 Draft issue split from PRODUCT-OPS-01 | independent canonical / merge-ready | Can merge independently; low conflict risk with DATA/MVP/QA lane. |
+
+### Closed stacked PRs used as evidence
+
+| PR | State | Note |
+| --- | --- | --- |
+| #2259 | merged into stacked branch | Adds representative SQLite recovery exercise evidence. |
+| #2260 | merged into stacked branch | Records PostgreSQL rehearsal boundary and Docker restart condition. |
+
+### Decision
+
+- Treat #2261 -> #2262 -> #2263 as a single ordered evidence lane: parent data-maintenance handoff, program gate intake, then QA gate record.
+- Treat #2264 as an independent support/diagnostics policy lane. It should not be blocked on the DATA lane unless reviewers want a single release-readiness bundle.
+- Do not close or delete remote branches from this issue update. Branch cleanup remains a separate permissioned operation after PR merge/close confirmation.
+- Do not create a new ADR for this checkpoint. ADR-0034 already governs mainline convergence and branch hygiene; this update only records current inventory and merge order.
+
+### Follow-up
+
+- After each merge, run `git fetch --prune origin` and re-check `origin/main`, open PR count, and triage stopper state.
+- After #2261..#2264 are merged or closed, create a cleanup candidate table for the four corresponding `origin/codex/*` branches.
+- Full branch hygiene still requires a broader canonical / duplicate / stale / unknown classification across the 2239 `origin/codex/` branches; this checkpoint only covers the active open PR lane.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
