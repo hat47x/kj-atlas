@@ -213,6 +213,21 @@ erDiagram
 | Support | 利用者から再現情報を受け取り、問題を切り分ける | diagnosticsや共有前確認の情報を補助的に利用 | 個人情報を含まない支援パッケージ、データ破損時の安全な切り戻し |
 | Developer / Maintainer | スキーマ、API、移行、テストを維持する | 契約文書、型、単体/結合テスト | DocumentV2の正本同期、マイグレーション、互換性ゲート |
 
+### 5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）
+
+`DATA-MAINT-01` では、MVPのデータ構造をすべて管理対象に広げるのではなく、運用者が本番導入前に最低限確認できる読み取り・退避・復旧確認を先に固定する。利用者本文、未レビュー情報、所有権、削除、保管期限のように組織方針と監査責任を変える操作は、ADRまたは別issueで合意するまで実装しない。
+
+| 運用 | 主担当 / 承認 | 対象データ | MVPで許容する手段 | 必須確認 | Stop / ADR化条件 |
+|---|---|---|---|---|---|
+| ドキュメント棚卸し | Platform operator / System owner | `documents`（L1） | 読み取り専用のDB確認または将来CLI/API候補。標準一覧APIや管理UIは未提供。 | 件数、`id`、`version`、`updated_at`、JSON構造の妥当性を確認し、`payload_json`本文の閲覧を運用標準にしない。 | 一般管理UI、検索、本文閲覧、利用者向け一覧を実装する場合は別issue。 |
+| ユーザー棚卸し | Platform operator / Security officer | `users`, `user_identities`（L1） | strict provisioning の登録結果を読み取りで確認する。ライフサイクル管理UIは未提供。 | `provider` + `external_uid` の重複、無効化予定ユーザー、登録主体と監査責任の整合を確認する。 | 無効化、削除、SCIM、権限ロール管理を製品機能にする場合はADR。 |
+| バックアップ | Platform operator / System owner | SQLite/PostgreSQLの永続DB | 環境標準のDBバックアップを用いる。SQLiteはDBファイルの停止時スナップショット、PostgreSQLは`pg_dump`等を候補にする。 | DB種別、取得日時、アプリrevision、秘匿情報の保護、バックアップ保管先を記録する。 | 保持期間、暗号化、外部保管を製品標準として固定する場合は組織方針またはADR。 |
+| 復旧確認 | Platform operator / Document owner | `documents`, `merge_decision_logs` | まず検証環境へ復元し、Document再投入またはDB restoreのどちらで復旧したかを記録する。 | `Document.version`、schema version gate、`merge_decision_logs.doc_id`、判断ログの時系列、L1/L1.5優先復旧を確認する。 | 本番への破壊的restore、互換性不明なDocumentの受け入れ、ログ欠落を伴う復旧はStop。 |
+| 支援用情報の共有 | Support / Security officer | diagnostics、共有前確認結果、非機微メタデータ | SafeMode既定ONの範囲で、本文を含まない再現情報と設定状態を共有する。 | PII、未レビュー本文、根拠未確認の要約、組織秘密を除外したことを確認する。 | サポート担当の本文閲覧、管理者横断閲覧、未レビュー情報の共有を許可する場合はADR。 |
+| アーカイブ・削除・所有者移管 | Document owner / Security officer | `documents`, `merge_decision_logs`, review attribution | MVPでは実装しない。必要性とリスクを分類し、直接DB操作を標準手順にしない。 | 削除対象、判断ログ保持、所有者変更の監査責任、復旧不能性を事前に記録する。 | いずれかを製品機能として実装する場合はADRと専用issueが必須。 |
+
+読み取り中心の棚卸しとバックアップ/復旧演習は、現時点では運用設計と検証観点の対象とする。書き込み系の管理操作は、認可・監査・データライフサイクルの合意が揃うまで実装対象に含めない。
+
 ---
 
 ## 6. 運用設計の不足と起票先
@@ -225,6 +240,8 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 | `DATA-MODEL-OPS-01` | ER/CRUD俯瞰とサポートレベル表の継続更新 | `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md` |
 | `DATA-MAINT-01` | 管理・復旧・棚卸し・データ保管運用の設計 | `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md` |
 | `DATA-CONTRACT-01` | DocumentV2/API/frontend/backend間の契約ドリフト解消 | `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md` |
+
+`DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルのADRを先行させる。
 
 ---
 
