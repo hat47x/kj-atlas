@@ -730,6 +730,82 @@ DoDテンプレ（Draft→Open）
   - `python.exe 01_Plans/triage_actionable_plans.py` -> pass.
   - `python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass.
   - `python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` -> pass.
+## Productization Gate Record 2026-05-25: DATA-MAINT-02 recovery exercise
+
+- Candidate: `codex/data-maint-02-recovery-exercise`
+- Decision date (JST): 2026-05-25
+- Reviewer: Codex
+- Scope: SQLite backup/restore representative exercise, temporary PostgreSQL dump/restore rehearsal, recovery documentation, and DATA-MAINT issue evidence. This record does not define organization-specific backup retention, encryption, storage, or approval policy.
+
+### Gate Summary
+
+- G0 計画整合: Go
+- G1 安全既定: Go for tested SafeMode export block
+- G2 主要操作: N/A for UI operation breadth
+- G3 日本語UI: N/A
+- G4 画面耐性: N/A
+- G5 公開文書: Conditional Go for recovery guidance wording
+- G6 診断とサポート: Go for representative recovery evidence
+- G7 回帰: Go
+- Final: **Go for representative recovery evidence / No-Go for full release shipment**
+
+### Evidence
+
+- Backend:
+  - `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests\test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` -> pass (1 test)
+  - `cd 03_Implement/backend && $env:Path="$PWD\.venv\Scripts;$env:Path"; .\.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> pass (257 passed / 19 skipped)
+  - `03_Implement/backend/.venv/Scripts/python.exe -m py_compile 03_Implement/backend/tests/scripts/data_maintenance_pg_rehearsal.py` -> pass
+- Planning/docs:
+  - `git diff --check` -> pass (Windows LF-to-CRLF warning only)
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`)
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=46 / ready=18 / blocked=28 / actionable_adrs=1 / stopper=none`)
+- PostgreSQL:
+  - WSL2 `docker --version` -> pass (`Docker version 28.3.3`)
+  - WSL2 `docker compose version` -> pass (`Docker Compose version v2.39.1`)
+  - temporary PostgreSQL 16.14 + `alembic upgrade head` -> pass
+  - `python tests/scripts/data_maintenance_pg_rehearsal.py` -> pass (`version=2`, review flags `[true, false]`, decision logs `decision-pg-1` / `decision-pg-2`, SafeMode `403 Access denied: safe_mode`)
+  - `pg_dump -Fc` + `pg_restore` to `kj_atlas_restore` -> pass; restored `documents` and `merge_decision_logs` were verified by SQL query.
+
+### Follow-ups
+
+- 本番相当の復旧運用は、今回の一時PostgreSQL代表演習を入力にしつつ、各組織の保持期間、暗号化、保管先、職務分掌、承認手順、復旧目標時間を別途決める。
+- `DATA-MAINT-01` の書き込み系管理操作Stop条件は維持する。削除、所有者移管、管理者本文閲覧、保持期間、暗号化、外部保管の製品標準化は、ADRまたは別issueなしに実装しない。
+- Full shipment remains blocked until this recovery evidence is combined with the broader MVP-EXIT release-candidate gate record and representative user-operation evidence.
+
+### Safety Confirmation
+
+- SafeMode default ON / share-export fail-closed: pass for the restored Document route because `POST /docs/{doc_id}/export-audit` with `safeMode=true` returns `403 Access denied: safe_mode`.
+- public document exposure boundary: pass for this narrow change because recovery guidance presents retention/encryption/storage/approval as organization-specific decisions rather than product-wide rules.
+## Productization Gate Record 2026-05-25: representative user-operation evidence lane
+
+- Candidate: `origin/main@512714e3a9935f91f085b3b9d0d0053943ad2841` + planning/config branch `codex/qa-e2e-user-operation-evidence-lane`
+- Decision date (JST): 2026-05-25
+- Reviewer: Codex
+- Scope: QA-E2E-USE-01 / frontend developer E2E guidance / frontend regression guard script. This record evaluates the evidence lane for representative user operations; it is not a full release-candidate E2E approval.
+
+### Gate Summary
+
+- G0 計画整合: Go for this evidence-lane update.
+- G1 安全既定: Conditional Go. SafeMode/share-export remains covered by existing SharePanel and import/export guards, but release-candidate browser evidence is still required.
+- G2 主要操作: Conditional Go for primary regression entry. `ux_operability_regression.test.ts` is now part of `npm run test:regression-guards`, so pointer selection, keyboard selection, panel dismissal, focus return, and primary toolbar contracts are checked before E2E.
+- G3 日本語UI: N/A for runtime change. No UI copy changed in this slice.
+- G4 画面耐性: N/A for runtime layout. Viewport/browser matrix remains a separate release-candidate requirement.
+- G5 公開文書: N/A. No public 04 document changed.
+- G6 診断とサポート: N/A. No diagnostics behavior changed.
+- G7 回帰: Go for local targeted validation. The updated regression target passed with 102 Vitest tests, including 5 UX operability contract tests.
+- Value gates: Conditional. The lane maps S1/S2/S3/S4 to V0/V1, V2, V3, and V4, but value gates remain No-Go for full shipment until Playwright or approved manual release-candidate evidence is attached.
+- Final: **Conditional Go for evidence-lane readiness / No-Go for full release shipment**.
+
+### Evidence
+
+- Frontend regression lane:
+  - Bundled Node.js + Vitest equivalent of `npm run test:regression-guards` -> pass: 10 files / 102 tests.
+  - Bundled Node.js + Vitest `src/ui/ux_operability_regression.test.ts` -> pass: 1 file / 5 tests.
+- Planning/docs checks:
+  - `.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py` -> pass (`active_issues=46 / ready=18 / blocked=28 / stopper=none`).
+  - `.venv\Scripts\python.exe -m pytest tests/test_qa_e2e_doc_contract.py` -> pass: 3 tests.
+  - `git diff --check` -> pass.
 
 ### Follow-ups
 
@@ -747,3 +823,15 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: unchanged by this record.
 - share/export fail-closed: unchanged by this record.
 - public document exposure boundary: unchanged by this record.
+  - None for adding the representative operation lane to regression guards.
+- Conditional issues:
+  - `QA-E2E-USE-01` remains Draft / Execution Hold until Pending-1 and Pending-2 are approved.
+  - Full G2 release approval still requires browser-level evidence that mouse and keyboard users can complete authoring, review, share-gate, import, and safe-export flows without layout clipping or focus traps.
+- Re-decision date:
+  - Required when this branch has local validation and CI, or when a release candidate receives complete Playwright evidence.
+
+### Safety Confirmation
+
+- SafeMode default ON: unchanged.
+- share/export fail-closed: unchanged; this update only adds operation-contract coverage to the regression lane.
+- public document exposure boundary: unchanged; no public 04 document changed.

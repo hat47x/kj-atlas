@@ -1,0 +1,129 @@
+# Issue Draft: PRODUCT-OPS-02 サポート診断バンドル方針の策定
+
+- Type: Feature request
+- Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P2
+- Owner: TBD
+- Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`, `01_Plans/adr/`
+- Related Backlog: `PRODUCT-OPS-02`
+- Related ADR/Spec: `01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `THREAT_MODEL.md`, `04_Documentation/diagnostics.md`
+- Expected verification level: `e2e`
+
+## Requirement meta I/F（共通キー）
+
+- RequirementID: PRODUCT-OPS-02
+- RequirementStatement: サポートへ共有できる診断バンドルを導入するか、導入する場合に何を含め、何を必ず除外し、利用者がどこで確認・キャンセルできるかを決定する。
+- PriorityClass（Must / Should / Could）: Could
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=利用者が保存失敗、backend未接続、取り込み失敗、共有前警告などの問題をサポートへ相談したい / 操作=診断バンドル作成または診断情報共有の導線を開く / 期待結果=共有前に内容、マスク状態、共有してはいけない情報が分かり、未承認の自動送信が起きない / 除外=自動ログ送信、チケットシステム連携、未加工本文や秘密情報を含むバンドル。
+- GoNoGoGate（Required / Optional / N/A）: Optional
+- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / import-sanitize / public-exposure
+- VerificationLevel（docs-check / unit / integration / e2e）: e2e
+- DecisionStatus（Fixed / Pending）: Pending
+- DecisionQueueRef（未確定時の参照先）: ADR required before implementation if bundle format, automatic collection, or support transmission is fixed.
+
+## 1) 課題 / Problem statement
+
+- `PRODUCT-OPS-01` で、画面上の復帰導線と手動診断共有の基本方針は整備された。
+- 一方、実運用ではサポート担当者が再現情報、環境情報、SafeMode状態、エラー種別をまとめて受け取れると切り分けが速くなる。
+- ただし、診断バンドルは未加工本文、API key、token、password、内部URL、個人情報を混入させるリスクがある。方針を決めずに実装すると、安全な共有境界が曖昧になる。
+
+## 2) 背景 / Context
+
+- `PRODUCT-OPS-01` は、自動ログ送信、診断パッケージ仕様、サポート基盤連携を固定する場合はADR化すると定めている。
+- `04_Documentation/diagnostics.md` は、共有してよい情報と共有しない情報を分け、復旧判断へ渡せる粒度の診断メモを作る方針を示している。
+- `THREAT_MODEL.md` と SafeMode 方針は、未レビュー本文や秘密情報の共有を既定で抑止する前提である。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: サポートへ渡す情報が揃うと、問題発生時の中断時間を減らせる。ただし、利用者が安心して共有できることが価値の前提である。
+- 安全（THREAT_MODEL / SafeMode）: 診断バンドルは share/export と同等の外部共有リスクを持つため、SafeMode、マスク、プレビュー、明示操作を必須条件にする。
+- 企業・行政要件（enterprise_architecture）: 組織導入では、サポート共有の承認、保持期間、監査責任、外部送信可否が組織ごとに異なる。
+- 後方互換（schemas）: Document schema や保存形式を変更せず、診断出力とUI導線の追加として扱う。
+
+## 4) 提案する解決策 / Proposed solution
+
+- 変更対象:
+  - 診断バンドルの許可項目/禁止項目の仕様。
+  - 画面上の作成、プレビュー、コピー/ダウンロード、キャンセル導線。
+  - `diagnostics.md`、`operations.md`、`SUPPORT.md` のサポート共有手順。
+  - 必要な場合はADRで、バンドル形式、自動収集範囲、送信有無、保持責任を固定する。
+- 変更の最小単位:
+  - まず仕様とADR要否を決める。
+  - 実装する場合も、最初はローカル作成と手動共有に限定し、自動送信は別判断にする。
+- 非目標:
+  - 未承認の自動ログ送信。
+  - チケットシステム連携。
+  - 未加工の文書本文、取り込みファイル全文、秘密情報、個人情報を含むバンドル。
+  - 組織共通の保持期間や送信先を製品側で一律規定すること。
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] 診断バンドルに含めてよい情報と含めてはいけない情報が、画面と文書の両方で一致している。
+- [ ] 利用者がバンドル作成前に、マスク状態、含まれる情報、共有先に渡す前の確認事項を理解できる。
+- [ ] バンドル作成は明示操作でのみ開始し、自動送信は行わない。
+- [ ] SafeMode ON 時は、未レビュー本文、カード本文、取り込みファイル全文、API key、token、password、個人情報、内部URLの機微部分が出力されない。
+- [ ] 自動送信、サポート基盤連携、固定バンドル形式、組織横断の保持方針を採用する場合は、実装前にADRが起票されている。
+- [ ] unit/integration/e2e のいずれかで、許可項目と禁止項目のマスクが検証されている。UI導線を実装する場合は e2e でプレビュー、キャンセル、コピー/ダウンロードを確認する。
+
+### 5.1 許可項目/禁止項目の初期案
+
+| 区分 | 初期案 | 備考 |
+| --- | --- | --- |
+| 含めてよい | 発生日時、画面名、操作名、エラー種別、HTTP status、SafeMode状態、ブラウザ/OSの概要、アプリrevision、診断メトリクス、再現手順メモ | URLやIDは必要最小限にし、組織内識別子はマスクする。 |
+| 条件付き | document id、schemaVersion、ファイルサイズ、worker名、処理時間、設定キー名 | 値が個人情報や秘密情報を含む場合は除外またはマスクする。 |
+| 含めない | 未加工本文、カード本文、取り込みファイル全文、API key、token、password、cookie、個人名、メールアドレス、機密メモ、内部URLの機微部分 | SafeMode ON/OFF に関わらず既定除外とする。 |
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1 診断バンドルの許可項目/禁止項目を確定し、`diagnostics.md` と `SUPPORT.md` に反映する。
+- [ ] T2 自動送信、固定バンドル形式、保持方針を採用するかを判断し、必要ならADRを起票する。
+- [ ] T3 ローカル作成/手動共有に限定する場合のUI導線を設計する。
+- [ ] T4 マスク処理のunit/integrationテストを追加する。
+- [ ] T5 UIを実装する場合は、プレビュー、キャンセル、コピー/ダウンロード、禁止項目不在をe2eで確認する。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `rg -n "PRODUCT-OPS-02|診断バンドル|support bundle|自動ログ送信|API key|token|password|未加工本文" 01_Plans 04_Documentation SUPPORT.md 03_Implement`
+  - `git diff --check -- 01_Plans 04_Documentation SUPPORT.md 03_Implement`
+  - 実装時: `cd 03_Implement/frontend && node .\\node_modules\\vitest\\vitest.mjs run`
+  - 実装時: `cd 03_Implement/frontend && node .\\node_modules\\playwright\\cli.js test e2e/<support-bundle-spec>.spec.ts --reporter=line`
+- 期待結果:
+  - 方針段階では、自動送信や固定バンドル形式が未承認のまま実装されていないことを確認できる。
+  - 実装段階では、禁止項目がバンドルに含まれず、利用者が共有前に内容を確認できる。
+- 未実施時の理由・代替検証:
+  - UI未実装段階では docs-check と issue/ADR整合確認に限定し、e2e は実装PRで実行する。
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: 現行の手動診断メモだけを維持する。安全だが、サポート時の再現情報が不足しやすい。
+- 代替案B: すべてのログを自動送信する。利用者同意、組織承認、機微情報混入のリスクが大きいため採用しない。
+- 代替案C: 診断バンドルを作るが、送信は利用者の手動共有に限定する。最初の候補として扱う。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: バンドルに機微情報が混入する。利用者が自動送信されたと誤解する。サポートがバンドルだけで復旧判断を確定してしまう。
+- 影響範囲: frontend diagnostics UI、export/share safety wording、support documentation、operations runbook。
+- ロールバック手順: UI導線を非表示に戻し、手動診断メモの既存導線へ戻す。文書上は診断バンドルを「未採用」に戻し、必要ならADRを Superseded または Rejected として記録する。
+
+## 10) Additional context
+
+- 親Issue: `PRODUCT-OPS-01`
+- 関連する品質ゲート: `PRODUCT-QA-01` G6 診断とサポート
+- ADR化が必要になる条件:
+  - 診断バンドル形式を製品仕様として固定する。
+  - 自動収集または自動送信を採用する。
+  - サポート基盤、チケットシステム、外部ストレージと連携する。
+  - 組織横断の保持期間、送信先、承認者を製品側で一律規定する。
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] `Source Issue` が運用状態と整合している（未運用時は `N/A`、運用時はURL）。
+- [x] `Related ADR/Spec` が最低1件ある。
+- [x] 受入条件に「安全」「互換」「検証」が含まれる。
+- [x] `Validation plan` に具体コマンドがある。
+- [x] 非目標が明記されスコープ逸脱を防いでいる。
