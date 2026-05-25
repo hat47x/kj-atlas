@@ -86,7 +86,7 @@
 - [x] T2 読み取り中心の管理API/CLI/画面の候補を比較する。
 - [x] T3 バックアップ/復旧手順をSQLite/PostgreSQL別に定義する。
 - [x] T4 Document削除/アーカイブ/所有者移管のADR要否を判定する。
-- [ ] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
+- [x] T5 代表的な復旧演習をintegration testまたはrunbook検証で確認する。
 
 T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理・復旧・棚卸しの最小運用境界` で契約レベルの整理を完了した。実装、管理UI/API、実データを用いた復旧演習は本IssueのStop条件を維持し、T5または別issueで扱う。
 
@@ -242,3 +242,22 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 
 - `git diff --check -- 01_Plans/issues 02_Architecture`
 - `rg -n "DATA-MAINT-01|棚卸し|バックアップ|復旧確認|アーカイブ|所有者移管|Support|L1\\.5|L2\\.5|ADR" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md`
+
+## 21) DATA-MAINT-02 recovery exercise handoff（2026-05-25）
+
+### Context
+
+- `DATA-MAINT-02` で、代表Documentと `merge_decision_logs` を持つSQLite隔離DBのバックアップ/復旧演習をintegration testとして追加した。
+- 復元後に `Document.version`、Document `id`、card review flags、embedded merge suggestion decision、`merge_decision_logs` のgroup/snapshot順序、SafeModeによるexportブロックを確認した。
+- PostgreSQL compose演習は、現在のローカルPowerShell環境で `docker` / `docker compose` が利用できないため未実施とし、再開条件を `DATA-MAINT-02` に記録した。
+
+### Decision
+
+- T5は **Conditional Go** として完了扱いにする。SQLite代表演習はGo、PostgreSQL本番相当演習は環境準備後に再判定する。
+- 本IssueのStop条件は維持する。削除、アーカイブ、所有者移管、管理者本文閲覧、保持期間、暗号化、外部保管の方針固定は、引き続きADRまたは別issueなしに実装しない。
+
+### Evidence
+
+- `03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py`
+- `03_Implement/backend/.venv/Scripts/python.exe -m pytest tests/test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` -> Pass: 1 test
+- `03_Implement/backend/.venv/Scripts/python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> Pass: 257 passed / 19 skipped
