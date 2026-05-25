@@ -692,6 +692,44 @@ DoDテンプレ（Draft→Open）
 - share/export fail-closed: unchanged by this PR; child issues now state the evidence needed before release shipment.
 - public document exposure boundary: unchanged by this PR because no public document changed.
 
+## Productization Gate Record 2026-05-24: DATA-MAINT recovery evidence
+
+- Candidate:
+  - PR #2259 `codex/data-maint-sqlite-recovery-exercise@609a44576462e99e3c8031b9855beb04b098ee7c`
+  - PR #2260 `codex/data-maint-postgres-recovery-docs@9c6abd0221971a90df676024c5eea29c7722a690`
+  - PR #2261 `codex/data-maint-results-gate-sync@6ff535620ce461eee783fd445717f3b53f9d5154`
+  - PR #2262 `codex/mvp-exit-recovery-evidence-intake@01e257c9463dd12724e8c6ea940e5931cac35b09`
+- Decision date (JST): 2026-05-24
+- Reviewer: Codex
+- Scope: Data-maintenance recovery evidence and release-readiness traceability. This record evaluates the evidence trail only; it does not change runtime behavior, deployment configuration, or public documentation.
+
+### Gate Summary
+
+- G0 計画整合: Go. DATA-MAINT-02 evidence is linked back to DATA-MAINT-01 and MVP-EXIT-01 without changing Stop conditions.
+- G1 安全既定: N/A for runtime behavior. SafeMode/share-export policy is unchanged.
+- G2 主要操作: No-Go for full shipment / N/A for this PR. Representative user-operation E2E is still outside this evidence slice.
+- G3 日本語UI: N/A. No UI copy changed.
+- G4 画面耐性: N/A. No viewport or layout behavior changed.
+- G5 公開文書: N/A. No public-facing 04 document changed.
+- G6 診断とサポート: Conditional Go. SQLite recovery evidence improves support/operations traceability, but PostgreSQL real-environment rehearsal remains open.
+- G7 回帰: Go for planning/doc validation and CI.
+- Value gates: N/A for direct product value; this is operational readiness evidence.
+- E1..E3 環境契約: Not re-evaluated. No environment variable, runtime parameter, or compose contract changed.
+- Final: **Conditional Go for recovery evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- PR state:
+  - PR #2259: CI run 9082 success; adds representative SQLite recovery exercise for `documents` and `merge_decision_logs`.
+  - PR #2260: CI run 9084 success; records PostgreSQL rehearsal boundary and Docker restart condition.
+  - PR #2261: CI run 9092 success; returns recovery evidence to DATA-MAINT-01.
+  - PR #2262: CI run 9094 success; records MVP-EXIT program intake for the recovery evidence.
+- Local docs-check for this QA record:
+  - `git diff --check -- 01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md` -> pass.
+  - `python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass.
+  - `python.exe 01_Plans/triage_actionable_plans.py` -> pass.
+  - `python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass.
+  - `python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` -> pass.
 ## Productization Gate Record 2026-05-25: DATA-MAINT-02 recovery exercise
 
 - Candidate: `codex/data-maint-02-recovery-exercise`
@@ -772,6 +810,19 @@ DoDテンプレ（Draft→Open）
 ### Follow-ups
 
 - Blocking issues:
+  - None for this QA evidence record.
+- Conditional issues:
+  - DATA-MAINT-02 still requires a PostgreSQL compose recovery rehearsal before full release shipment.
+  - Full release shipment still requires candidate-level SafeMode/share-export smoke evidence, representative mouse/keyboard E2E, and current E1..E3 environment contract results.
+  - Destructive admin operations, owner transfer, archive/delete policy, and support access to document bodies remain outside this evidence slice and require separate issue/ADR approval.
+- Re-decision date:
+  - Required after PostgreSQL compose recovery rehearsal, or when a release candidate is cut from `main`.
+
+### Safety Confirmation
+
+- SafeMode default ON: unchanged by this record.
+- share/export fail-closed: unchanged by this record.
+- public document exposure boundary: unchanged by this record.
   - None for adding the representative operation lane to regression guards.
 - Conditional issues:
   - `QA-E2E-USE-01` remains Draft / Execution Hold until Pending-1 and Pending-2 are approved.
