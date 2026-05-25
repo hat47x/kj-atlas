@@ -6,7 +6,7 @@
 - Source Issue: N/A
 - Priority: P0 (Stream D highest)
 - Owner: Codex
-- Scope: `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`
+- Scope: `02_Architecture/data_model_operations_overview.md`, `02_Architecture/schemas.md`, `02_Architecture/api.md`, `AGENTS.md`, `03_Implement/backend/tests/test_data_model_operations_contract.py`
 - Related Backlog: `DATA-MODEL-OPS-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`
 - Expected verification level: `docs-check`
@@ -228,3 +228,27 @@
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check -- 01_Plans 02_Architecture AGENTS.md`
+
+## 21) Stream D contract regression guard（2026-05-25）
+
+### Context
+- ER図、CRUD表、DocumentV2フィールド支援レベルは整備済みだが、更新時の検知は `rg` と人間レビューに寄っていた。
+- 製品化へ進むほど、新規フィールドやAPI候補が「型にあるので運用サポート済み」と読まれるリスクが増える。
+
+### Decision
+- `03_Implement/backend/tests/test_data_model_operations_contract.py` を追加し、次を回帰条件として固定する。
+  - CRUDサポート表の各行に `Support level`、Create/Read/Update/Delete、MVP保守責任、備考がある。
+  - 主要データ領域（Document、Card/Edge、EvidenceLink、ReviewAttribution、MergeDecisionRecord、ContextBundleなど）が期待する `L1/L1.5/L2/L2.5/L3` に分類されている。
+  - DocumentV2主要フィールドが `L1/L2/L2.5` の境界を維持し、個別CRUD保証に読める状態へ戻らない。
+  - `AGENTS.md`、`schemas.md`、`api.md` から `data_model_operations_overview.md` への参照導線が維持される。
+
+### Consequences
+- DATA-MODEL-OPS-01 の docs-check が、人間の読み合わせだけでなくCIで再現可能になる。
+- support level未分類、保守責任列の欠落、参照導線の欠落を、実装変更前に検出しやすくなる。
+- 本更新はテスト/issue更新に限定し、新しいCRUD API、管理画面、データライフサイクル方針は追加しない。
+
+### Verify
+- `cd 03_Implement/backend && .\.venv\Scripts\python.exe -m pytest tests/test_data_model_operations_contract.py`
+- `.\03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+- `.\03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+- `git diff --check -- 01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md 03_Implement/backend/tests/test_data_model_operations_contract.py`

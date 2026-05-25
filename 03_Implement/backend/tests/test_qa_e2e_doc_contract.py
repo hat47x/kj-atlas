@@ -14,6 +14,8 @@ def test_e2e_doc_has_plan_execute_verify_proceed_flow_and_self_repair_limit() ->
     text = _read(E2E_DOC)
     for token in (
         "Plan → Execute → Verify → Proceed",
+        "代表ユーザ操作の回帰レーン",
+        "ux_operability_regression.test.ts",
         "自己修復は最大3回",
         "4回目相当は Stop",
     ):
@@ -31,6 +33,8 @@ def test_qa_issue_keeps_execution_hold_and_open_gate_contract_tokens() -> None:
         "DoD-O1",
         "DoD-O2",
         "DoD-O3",
+        "代表ユーザ操作証跡レーン",
+        "Path-USE-A",
     ):
         assert token in text
 
@@ -43,5 +47,6 @@ def test_product_qa_issue_has_release_decision_contract() -> None:
         "Major",
         "Minor",
         "Gate Record",
+        "representative user-operation evidence lane",
     ):
         assert token in text

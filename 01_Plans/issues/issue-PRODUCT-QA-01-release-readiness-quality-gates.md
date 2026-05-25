@@ -738,3 +738,49 @@ DoDテンプレ（Draft→Open）
 
 - SafeMode default ON / share-export fail-closed: pass for the restored Document route because `POST /docs/{doc_id}/export-audit` with `safeMode=true` returns `403 Access denied: safe_mode`.
 - public document exposure boundary: pass for this narrow change because recovery guidance presents retention/encryption/storage/approval as organization-specific decisions rather than product-wide rules.
+## Productization Gate Record 2026-05-25: representative user-operation evidence lane
+
+- Candidate: `origin/main@512714e3a9935f91f085b3b9d0d0053943ad2841` + planning/config branch `codex/qa-e2e-user-operation-evidence-lane`
+- Decision date (JST): 2026-05-25
+- Reviewer: Codex
+- Scope: QA-E2E-USE-01 / frontend developer E2E guidance / frontend regression guard script. This record evaluates the evidence lane for representative user operations; it is not a full release-candidate E2E approval.
+
+### Gate Summary
+
+- G0 計画整合: Go for this evidence-lane update.
+- G1 安全既定: Conditional Go. SafeMode/share-export remains covered by existing SharePanel and import/export guards, but release-candidate browser evidence is still required.
+- G2 主要操作: Conditional Go for primary regression entry. `ux_operability_regression.test.ts` is now part of `npm run test:regression-guards`, so pointer selection, keyboard selection, panel dismissal, focus return, and primary toolbar contracts are checked before E2E.
+- G3 日本語UI: N/A for runtime change. No UI copy changed in this slice.
+- G4 画面耐性: N/A for runtime layout. Viewport/browser matrix remains a separate release-candidate requirement.
+- G5 公開文書: N/A. No public 04 document changed.
+- G6 診断とサポート: N/A. No diagnostics behavior changed.
+- G7 回帰: Go for local targeted validation. The updated regression target passed with 102 Vitest tests, including 5 UX operability contract tests.
+- Value gates: Conditional. The lane maps S1/S2/S3/S4 to V0/V1, V2, V3, and V4, but value gates remain No-Go for full shipment until Playwright or approved manual release-candidate evidence is attached.
+- Final: **Conditional Go for evidence-lane readiness / No-Go for full release shipment**.
+
+### Evidence
+
+- Frontend regression lane:
+  - Bundled Node.js + Vitest equivalent of `npm run test:regression-guards` -> pass: 10 files / 102 tests.
+  - Bundled Node.js + Vitest `src/ui/ux_operability_regression.test.ts` -> pass: 1 file / 5 tests.
+- Planning/docs checks:
+  - `.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py` -> pass (`active_issues=46 / ready=18 / blocked=28 / stopper=none`).
+  - `.venv\Scripts\python.exe -m pytest tests/test_qa_e2e_doc_contract.py` -> pass: 3 tests.
+  - `git diff --check` -> pass.
+
+### Follow-ups
+
+- Blocking issues:
+  - None for adding the representative operation lane to regression guards.
+- Conditional issues:
+  - `QA-E2E-USE-01` remains Draft / Execution Hold until Pending-1 and Pending-2 are approved.
+  - Full G2 release approval still requires browser-level evidence that mouse and keyboard users can complete authoring, review, share-gate, import, and safe-export flows without layout clipping or focus traps.
+- Re-decision date:
+  - Required when this branch has local validation and CI, or when a release candidate receives complete Playwright evidence.
+
+### Safety Confirmation
+
+- SafeMode default ON: unchanged.
+- share/export fail-closed: unchanged; this update only adds operation-contract coverage to the regression lane.
+- public document exposure boundary: unchanged; no public 04 document changed.
