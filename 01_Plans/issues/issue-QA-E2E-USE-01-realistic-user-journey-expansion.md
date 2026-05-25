@@ -257,3 +257,43 @@ Open化ゲートを次の3カテゴリで固定する。
 | 境界列挙 | `rg -n "smoke|core|safety|Compose|SQLite|例外記録|Execution: Hold" 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 必須語彙ヒット |
 | メタ整合 | `python3 01_Plans/issues/validate_active_issue_memos.py --files 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | exit 0 |
 | 差分健全性 | `git diff --check -- 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md` | 警告なし |
+
+## Stream H update (2026-05-25): 代表ユーザ操作証跡レーン
+
+### 目的
+- `Execution: Hold` を解除せず、PRODUCT-QA-01 の G2 主要操作 / Value gates が消費できる「代表ユーザ操作の一次証跡」を固定する。
+- マウス操作とキーボード操作を同じ価値境界で扱い、片方だけで成立する操作を release-ready と誤判定しない。
+- Playwright 実行前に壊れやすい入口（選択、文脈パネル、閉じる、フォーカス復帰、共有前確認）を軽量に検知する。
+
+### 実行経路（本更新で固定する一次証跡）
+- Path-USE-A: `03_Implement/frontend/src/ui/ux_operability_regression.test.ts` を `npm run test:regression-guards` に含める。
+- Path-USE-B: 手動 smoke では標準サンプルまたは新規文書を使い、秘密情報や顧客データを入力しない。
+- Path-USE-C: release candidate では `npm run e2e` または `npm run e2e:mock` の Playwright 証跡で Path-USE-A/B を補強する。
+
+### シナリオ別操作証跡
+
+| Scenario | マウス操作 | キーボード操作 | 一次証跡 | G/V gate mapping |
+| --- | --- | --- | --- | --- |
+| S1 Authoring Continuity | カード作成、カード移動、保存、再読込 | `Tab` 到達、`Enter` / `Space` 選択、保存導線到達 | `test:regression-guards` + 手動smoke | G2, V0/V1 |
+| S2 Review Governance | レビュー対象選択、文脈パネル確認、明示操作で状態確認 | 選択対象へ `Tab`、`Enter` / `Space`、選択後の文脈導線確認 | `ux_operability_regression.test.ts` | G2, V2, V3 |
+| S3 Safe Sharing Gate | `共有と再現` を開く、SafeMode表示、共有前確認、`Escape` 閉鎖 | 共有トリガーへ `Tab`、`Enter`、`Escape`、フォーカス復帰 | `ux_operability_regression.test.ts` + SharePanel系テスト | G1, G2, V4 |
+| S4 Import-to-Safe-Export | import後にsanitize結果を確認し、共有前確認へ進む | import結果から主要導線へ `Tab` で戻れることを確認 | `test:regression-guards` + release candidate E2E | G1, G2, G7, V4 |
+
+### Gate entry/exit 欄（PRODUCT-QA転記用）
+
+| Gate | Entry evidence | Exit evidence | 判定語彙 |
+| --- | --- | --- | --- |
+| G1 安全既定 | SafeMode既定ON、SharePanel文言、import sanitizeテスト | SafeMode/share-export境界の失敗がない | pass / blocked / fail |
+| G2 主要操作 | `ux_operability_regression.test.ts` が regression guards に含まれる | pointer/keyboard双方で主要導線へ到達し、閉じる/戻るが確認できる | pass / blocked / fail |
+| G3 日本語UI | i18n guard と UI hardcode guard | 主要ラベルに未翻訳・内部語が残らない | pass / blocked / fail |
+
+### Hold条件の扱い
+- Pending-1 / Pending-2 が未解消のため、本Issueの状態は **Draft / Execution: Hold 維持**。
+- Path-USE-A は Open解除ではなく、PRODUCT-QA-01 が G2 の不足を分類するための一次証跡として扱う。
+- Playwright または実運用E2Eで失敗した場合は、`test defect / product defect / environment limitation` のいずれかに分類し、戻し先を `QA-E2E-USE-01` または該当 `PRODUCT-UX-*` issue へ固定する。
+
+### 追加Verify
+- `cd 03_Implement/frontend && npm run test:regression-guards`
+- `cd 03_Implement/frontend && node .\node_modules\vitest\vitest.mjs run src/ui/ux_operability_regression.test.ts`
+- `python3 01_Plans/issues/validate_active_issue_memos.py`
+- `git diff --check -- 03_Implement/frontend/package.json 03_Implement/frontend/docs/e2e_testing.md 01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`
