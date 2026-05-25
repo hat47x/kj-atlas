@@ -143,7 +143,16 @@
   - bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit`
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`
 - ADR impact: no ADR required. This is a UI recovery/i18n correction within the existing diagnostics policy and does not introduce automated support bundle generation or external log sharing.
-- Remaining gap: automated support bundle generation remains a future follow-up candidate and still requires ADR if product policy changes.
+- Remaining gap: automated support bundle generation is split to `PRODUCT-OPS-02`. It remains a future follow-up candidate and still requires ADR if product policy changes.
+
+## 13) Follow-up split 2026-05-24: support diagnostics bundle policy
+
+- Follow-up issue: `01_Plans/issues/issue-PRODUCT-OPS-02-support-diagnostics-bundle-policy.md`
+- Reason: the remaining "automated support bundle generation" gap can change product policy around diagnostic package format, automatic collection, support transmission, and retention responsibility. It should not be implemented as a small UI correction under this issue.
+- Boundary:
+  - `PRODUCT-OPS-01` continues to own user-facing recovery guidance, manual diagnostic sharing, and current UI/docs consistency.
+  - `PRODUCT-OPS-02` owns the decision on whether a support diagnostics bundle exists, what it may contain, and when ADR approval is required.
+- ADR impact: no ADR is created in this split. ADR is required only if `PRODUCT-OPS-02` decides to fix a bundle format, automatic collection/transmission, support integration, or product-wide retention policy.
 
 ---
 
