@@ -90,6 +90,22 @@ npm run test
 npm run test:regression-guards
 ```
 
+### 代表ユーザ操作の回帰レーン
+
+`npm run test:regression-guards` には `src/ui/ux_operability_regression.test.ts` を含めます。このテストは、マウス操作とキーボード操作が同じ選択結果へつながること、カード選択後に文脈パネルへ進めること、`表示` / `共有と再現` パネルを `Escape` で閉じて起点へ戻れることを、実装上の契約として固定します。
+
+このレーンは Playwright の代替ではありません。狙いは、E2E 実行前に主要操作の入口が壊れていないことを短時間で確認し、`PRODUCT-QA-01` の G2 主要操作ゲートへ渡す一次証跡を作ることです。リリース候補では、次の順で証跡を積み上げます。
+
+Windows のローカルシェルで `npm` が PATH にない場合は、同梱 Node.js など、プロジェクトで承認された Node.js 実行ファイルから `node .\node_modules\vitest\vitest.mjs run <対象テスト>` を実行して同じ対象を確認します。CI と通常の開発環境では `npm run test:regression-guards` を正準コマンドとして扱います。
+
+| 段階 | 代表操作 | 証跡 |
+| --- | --- | --- |
+| 契約テスト | pointer 選択、`Enter` / `Space` 選択、`Escape` 閉鎖、フォーカス復帰 | `npm run test:regression-guards` |
+| 手動 smoke | 初期表示、カード作成、移動、保存、再読込、共有前確認 | 手順メモ、必要に応じてスクリーンショット |
+| Playwright E2E | 作成→編集→保存→再読込、共有試行→条件充足→許可 | `npm run e2e` または `npm run e2e:mock` |
+
+キーボードでは、`Tab` で対象へ移動し、`Enter` または `Space` で選択、`Escape` で一時パネルを閉じます。マウスでは、対象をクリックまたはドラッグした後、同じ詳細表示・保存・共有前確認へ進めることを確認します。どちらか一方だけで成立する操作は、G2 では未達として扱います。
+
 backend:
 
 ```bash
