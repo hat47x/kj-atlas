@@ -1,11 +1,11 @@
 # Issue Draft: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/`, `04_Documentation/data_handling.md`, `04_Documentation/security.md`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `PRODUCT-UX-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-QA-MONKEY-01-safemode-export-boundary.md`, `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
@@ -213,4 +213,28 @@
 - Next action:
   - 共有目的別に「自分用」「チームレビュー用」「公開前確認用」の代表経路を固定し、各経路のスクリーンショットとtrace保存先を追記する。
   - Owner確定と証跡経路固定が完了するまではOpen化しない。
+
+## Open Gate Reassessment 2026-05-27: stewardship and evidence route fixed
+
+- Assessment scope: 計画層のOpen化判定。これは共有/エクスポートUXの実装完了ではなく、SafeMode境界を崩さず実装・E2Eへ進むための責務固定である。
+- Gate result: **Open**. `DecisionStatus=Fixed`、OwnerはCodexの証跡整備責務として確定し、最終リリース判断はProductization Program Ownerの承認に残す。
+- RACI:
+  - R: Codex (Product UX evidence steward)
+  - A: Productization Program Owner
+  - C: Frontend Lead / QA Lead / Security Officer
+  - I: Documentation Maintainer
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Pass. 契約依存は`ADR-0031`、`QA-MONKEY-01`、`UX-OPERABILITY-04`、実装/証跡依存はSharePanel単体回帰と共有E2Eに分離した。
+  - O-OPEN-03: Pass. `Expected verification level=e2e`に対し、`realistic_user_journey_expansion.spec.ts`、`header_toolbar_layout.spec.ts`、`large_document_operability.spec.ts`、`ops_recovery_guidance.spec.ts`を代表経路として使う。
+  - O-OPEN-04: Pass. 本更新はOpen化と証跡経路の固定であり、SafeMode既定値、公開範囲、共有ポリシーを変更しない。
+- Fixed evidence route:
+  - SafeMode/share panel copy and fixed mask wording: `src/ui/SharePanel.test.ts`
+  - 共有前確認を含む代表操作: `e2e/realistic_user_journey_expansion.spec.ts`
+  - 右パネルfitとkeyboard focus: `e2e/header_toolbar_layout.spec.ts`, `e2e/large_document_operability.spec.ts`
+  - 遅いレビューパックexportのprogress/cancel: `e2e/ops_recovery_guidance.spec.ts`
+  - 公開文書同期: `04_Documentation/data_handling.md`, `acceptance_check.md`, `public_index.md`
+- Proceed rule:
+  - 実装PRでは、共有目的、SafeMode状態、固定マスク、未レビュー情報、キャンセル/戻る操作のいずれに影響するかを明記し、対応する単体またはE2E証跡を添付する。
+  - Product shipmentは本Issue OpenだけではGoにしない。共有前確認のE2Eと公開文書スクリーンショットが揃った時点で`PRODUCT-QA-01`へ戻す。
 

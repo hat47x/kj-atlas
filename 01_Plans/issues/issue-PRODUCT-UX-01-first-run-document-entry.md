@@ -1,11 +1,11 @@
 # Issue Draft: PRODUCT-UX-01 初回利用と文書入口の製品化
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `04_Documentation/installation.md`, `04_Documentation/operations.md`, `04_Documentation/public_index.md`
 - Related Backlog: `PRODUCT-UX-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `ROADMAP.md`
@@ -210,4 +210,27 @@
 - Next action:
   - 初回入口のE2Eシナリオ名、fixture名、スクリーンショット保存先を本文へ追記する。
   - Owner確定と証跡経路固定が完了するまではOpen化しない。
+
+## Open Gate Reassessment 2026-05-27: stewardship and evidence route fixed
+
+- Assessment scope: 計画層のOpen化判定。これは実装完了判定ではなく、実装、E2E、公開文書同期へ進めるための責務と証跡経路の固定である。
+- Gate result: **Open**. `DecisionStatus=Fixed`、OwnerはCodexの証跡整備責務として確定し、最終リリース判断はProductization Program Ownerの承認に残す。
+- RACI:
+  - R: Codex (Product UX evidence steward)
+  - A: Productization Program Owner
+  - C: Frontend Lead / QA Lead / Documentation Maintainer
+  - I: Platform Architecture Owner
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Pass. 契約依存は`ADR-0031`、実装/証跡依存は初回入口E2Eと公開文書同期に分離した。
+  - O-OPEN-03: Pass. `Expected verification level=e2e`に対し、`realistic_user_journey_expansion.spec.ts`、`header_toolbar_layout.spec.ts`、`polygon_import_validation.spec.ts`を代表経路として使う。
+  - O-OPEN-04: Pass. 本更新はOpen化と証跡経路の固定であり、実装変更や04文書変更を直接要求しない。
+- Fixed evidence route:
+  - 初回の作業開始: `e2e/realistic_user_journey_expansion.spec.ts`
+  - 起動後の表示、パネルfit、keyboard focus: `e2e/header_toolbar_layout.spec.ts`
+  - document/review pack系取り込み検証: `e2e/polygon_import_validation.spec.ts` および import系unit regression
+  - 公開文書同期: `04_Documentation/public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md`
+- Proceed rule:
+  - 実装PRでは「開始入口の文言」「SafeMode表示」「取り込み検証」「Tab/Enter到達性」「公開文書スクリーンショット」のうち、変更対象に対応する証跡を必ず添付する。
+  - Product shipmentは本Issue OpenだけではGoにしない。実装証跡と公開文書同期が揃った時点で`PRODUCT-QA-01`へ戻す。
 

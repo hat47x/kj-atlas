@@ -1,11 +1,11 @@
 # Issue Draft: PRODUCT-UX-02 ワークスペース画面構造の製品化
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/App.tsx`, `03_Implement/frontend/src/ui/`, `03_Implement/frontend/src/canvas/`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `PRODUCT-UX-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0030-ui-operability-progressive-disclosure-and-keyboard-scope.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-UX-OPERABILITY-03-contextual-selection-panel.md`, `01_Plans/issues/issue-UX-OPERABILITY-05-primary-toolbar-task-prioritization.md`
@@ -216,4 +216,27 @@
 - Next action:
   - 代表操作を「選択」「詳細確認」「主要操作」「戻る」の4区分へ固定し、各区分に対応する証跡を追記する。
   - Owner確定と証跡経路固定が完了するまではOpen化しない。
+
+## Open Gate Reassessment 2026-05-27: stewardship and evidence route fixed
+
+- Assessment scope: 計画層のOpen化判定。これは画面情報設計の実装完了ではなく、代表操作を実装、E2E、文書同期へ進めるための責務固定である。
+- Gate result: **Open**. `DecisionStatus=Fixed`、OwnerはCodexの証跡整備責務として確定し、最終リリース判断はProductization Program Ownerの承認に残す。
+- RACI:
+  - R: Codex (Product UX evidence steward)
+  - A: Productization Program Owner
+  - C: Frontend Lead / QA Lead / Platform Architecture Owner
+  - I: Documentation Maintainer
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Pass. 契約依存は`ADR-0030`と`ADR-0031`、実装/証跡依存は選択、詳細、主要操作、戻るの代表E2Eに分離した。
+  - O-OPEN-03: Pass. `Expected verification level=e2e`に対し、`canvas_focus_order.spec.ts`、`header_toolbar_layout.spec.ts`、`large_document_operability.spec.ts`を代表経路として使う。
+  - O-OPEN-04: Pass. 本更新はOpen化と証跡経路の固定であり、実装変更や04文書変更を直接要求しない。
+- Fixed evidence route:
+  - カード/島/右パネルの選択とfocus順序: `e2e/canvas_focus_order.spec.ts`
+  - 表示/共有パネルの開閉とfocus復帰: `e2e/header_toolbar_layout.spec.ts`
+  - 大きな文書での検索、表示、共有パネルfit: `e2e/large_document_operability.spec.ts`
+  - 文言/ラベル回帰: `src/i18n/ui_hardcode_guard.test.ts`, `src/ui/i18n_equivalence.integration.test.ts`
+- Proceed rule:
+  - 実装PRでは、画面上の主要操作を「選択」「詳細確認」「主要操作」「戻る」のいずれかに分類し、対応するfocus/viewport証跡を添付する。
+  - Product shipmentは本Issue OpenだけではGoにしない。E2E証跡と公開文書の操作説明が揃った時点で`PRODUCT-QA-01`へ戻す。
 
