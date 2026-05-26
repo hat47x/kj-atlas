@@ -1,7 +1,7 @@
 # Issue Draft: PROJECT-CI-01 GitHub Actions checkout/auth blocker
 
 - Type: Bug
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
@@ -20,14 +20,15 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: GitHub repository/account owner confirmation
+- DecisionStatus（Fixed / Pending）: Fixed
+- DecisionQueueRef（未確定時の参照先）: N/A
 
 ## 1) 課題 / Problem statement
 
 - PR #2271 の GitHub Actions `CI` run #9141 で、複数 job が `actions/checkout@v4` の段階で失敗した。
 - 失敗ログには GitHub から `Your account is suspended. Please visit https://support.github.com for more information.` が返り、`git fetch` が 403 で終了している。
 - checkout 前に失敗しているため、CI は frontend/backend の実テスト結果を返せず、製品化ゲートの G7 回帰証跡として利用できない。
+- その後の同一PR最新コミット `5fd1a304dc0577678b3d2afe4ed18642512e4286` に対する CI run #9143 は checkout を含む全 job が成功したため、本件は継続ブロッカーではなく一時的な repository/account operation incident としてクローズする。
 
 ## 2) 背景 / Context
 
@@ -57,18 +58,18 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] PR の GitHub Actions が `actions/checkout@v4` で 403 にならない。
-- [ ] `Frontend typecheck`, `Frontend test + build`, `Backend lint + test`, i18n/regression guard jobs が checkout 後の実ステップまで進む。
-- [ ] 失敗が残る場合は、checkout/auth ではなく具体的な test/build failure として分類できる。
-- [ ] `PRODUCT-QA-01` の G7 回帰証跡として、CI run の成功またはテスト由来の失敗を参照できる。
-- [ ] 必要な検証（integration）が `Expected verification level` と一致する。
+- [x] PR の GitHub Actions が `actions/checkout@v4` で 403 にならない。
+- [x] `Frontend typecheck`, `Frontend test + build`, `Backend lint + test`, i18n/regression guard jobs が checkout 後の実ステップまで進む。
+- [x] 失敗が残る場合は、checkout/auth ではなく具体的な test/build failure として分類できる。
+- [x] `PRODUCT-QA-01` の G7 回帰証跡として、CI run の成功またはテスト由来の失敗を参照できる。
+- [x] 必要な検証（integration）が `Expected verification level` と一致する。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 GitHub account/repository owner が suspension / repository permission / token state を確認する。
-- [ ] T2 CI run #9141 または後続 run を re-run し、checkout が成功するか確認する。
-- [ ] T3 checkout 成功後に残る test/build failure があれば、通常の CI failure として別issueまたは当該PRで処理する。
-- [ ] T4 `PRODUCT-QA-01` と `PROJECT-BASELINE-01` の release gate record へ、CI復旧後の結果を追記する。
+- [x] T1 GitHub account/repository owner が suspension / repository permission / token state を確認する。後続 run #9143 の checkout 成功をもって、少なくともPR実行経路の復旧を確認した。
+- [x] T2 CI run #9141 または後続 run を re-run し、checkout が成功するか確認する。
+- [x] T3 checkout 成功後に残る test/build failure があれば、通常の CI failure として別issueまたは当該PRで処理する。run #9143 では残存失敗なし。
+- [x] T4 `PRODUCT-QA-01` と `PROJECT-BASELINE-01` の release gate record へ、CI復旧後の結果を追記する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -77,8 +78,9 @@
   - `git fetch` / `actions/checkout@v4` step log confirmation
 - 期待結果:
   - checkout が成功し、CI が実テストへ進む。
-- 未実施時の理由・代替検証:
-  - repository/account owner 権限が必要なため、Codex単独では suspension 解除や account operation を実行できない。解除までの間はローカル検証結果を暫定証跡として扱うが、release shipment の最終Goには使わない。
+- 実施結果:
+  - GitHub Actions CI run #9143 が `actions/checkout@v4`、frontend i18n guard、frontend typecheck、frontend test/build、frontend lint、frontend regression guards、backend lint/test をすべて成功させた。
+  - run #9141 の checkout 403 は継続再現していない。再発時は本Issueを再オープンする。
 
 ## 8) 代替案 / Alternatives considered
 
@@ -97,6 +99,8 @@
   - PR #2271 CI run #9141
   - Failed step: `actions/checkout@v4`
   - Error class: GitHub 403 before repository checkout
+  - PR #2271 CI run #9143
+  - Resolution evidence: all jobs succeeded after checkout, including frontend/backend test jobs.
 - ADR化が必要になる条件:
   - CI provider を変更する場合。
   - checkout credential / token 権限モデルをプロジェクト方針として変更する場合。

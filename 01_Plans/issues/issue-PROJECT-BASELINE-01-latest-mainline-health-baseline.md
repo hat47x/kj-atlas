@@ -331,7 +331,7 @@
 - The default PowerShell `node.exe` resolved to the Codex WindowsApps shim and failed with `Access is denied`. Bundled Node.js by absolute path worked for typecheck, Vitest, build, and Playwright.
 - PowerShell `docker` was not on `PATH`, but WSL2 Docker Compose was available and rendered the Compose config successfully.
 - The first backend pytest run failed only because subprocess `alembic` was not visible on `PATH`. Rerunning with backend `.venv\Scripts` prepended to `PATH` passed.
-- GitHub Actions CI run #9141 failed at `actions/checkout@v4` with a GitHub 403 account/repository operation error before code checkout. This is not an application test failure and is routed to `PROJECT-CI-01`.
+- GitHub Actions CI run #9141 failed at `actions/checkout@v4` with a GitHub 403 account/repository operation error before code checkout. This was not an application test failure. Subsequent CI run #9143 on `5fd1a304dc0577678b3d2afe4ed18642512e4286` passed all jobs, so `PROJECT-CI-01` is closed as a transient checkout/auth incident and #9143 is the current PR G7 evidence.
 - No generated test artifacts were retained; `.pytest_tmp_*` and frontend `test-results/` were removed after verification.
 
 ### Gate classification
@@ -353,7 +353,7 @@
 - Baseline decision: **Conditional Go** for the current release-candidate evidence refresh.
 - Release readiness decision: **No-Go** until product value/UX Draft gates have assigned owners and explicit evidence routes, and a final release-candidate gate record is approved.
 - Follow-up routing:
-  - CI checkout/auth blocker: `PROJECT-CI-01`
+  - Historical CI checkout/auth incident: `PROJECT-CI-01` (Done after CI run #9143 success)
   - Product value and UX gates: `PRODUCT-VALUE-01..03`, `PRODUCT-UX-01..04`
   - Release quality gate: `PRODUCT-QA-01`
   - Program release decision: `MVP-EXIT-01`

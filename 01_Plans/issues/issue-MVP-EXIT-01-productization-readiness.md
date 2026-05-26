@@ -576,7 +576,7 @@
 ### Conditional controls
 
 - Remaining risks:
-  - GitHub Actions CI run #9141 is blocked before checkout by a GitHub 403 account/repository operation error; track and resolve via `PROJECT-CI-01` before using CI as final G7 evidence.
+  - GitHub Actions CI run #9141 was blocked before checkout by a GitHub 403 account/repository operation error, but subsequent run #9143 passed checkout and all jobs. Treat `PROJECT-CI-01` as a closed transient incident unless the failure recurs.
   - `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04` remain Draft, so the final product value/UX shipment decision is still blocked.
   - Compose was rendered successfully through WSL2, but full service startup was not executed in this evidence refresh.
   - Support diagnostics bundle policy remains a follow-up boundary and must not be implied by the passing recovery guidance E2E.
