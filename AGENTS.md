@@ -28,15 +28,16 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 3) **申し送り（重複排除済）**: `00_Prompt/handoff.md`
 4) **AI開発引き継ぎ運用**: `00_Prompt/agent_handover.md`
 5) **Codex+GSD運用ルール**: `00_Prompt/codex_gsd_skill_ops.md`
-6) **認知外在化AI要件（新規中核）**: `00_Prompt/ai_cognitive_externalization_requirements.md`
-7) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
-8) **全体アーキテクチャ**: `02_Architecture/architecture.md`
-9) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
-10) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-11) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0034`
-12) **実装（03_Implement）**: 対象領域のソースへ
-13) **運用・手順**: `04_Documentation/*`（必要に応じて）
-14) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
+6) **Codex+RTK token saving運用**: `00_Prompt/codex_rtk_token_saving_ops.md`
+7) **認知外在化AI要件（新規中核）**: `00_Prompt/ai_cognitive_externalization_requirements.md`
+8) **価値→要件**: `01_Plans/adr/ADR-0001-value-to-requirements.md`
+9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
+10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
+11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0034`
+13) **実装（03_Implement）**: 対象領域のソースへ
+14) **運用・手順**: `04_Documentation/*`（必要に応じて）
+15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
 
 ---
 
@@ -77,6 +78,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `00_Prompt/handoff.md`：申し送り（設計思想、注意点、B型文章化の扱い等）。
 - `00_Prompt/agent_handover.md`：AIエージェント開発引き継ぎ（共通DoD/戦略/継続進行）。
 - `00_Prompt/codex_gsd_skill_ops.md`：CodexにおけるGet Shit Done導入評価と運用ルール。
+- `00_Prompt/codex_rtk_token_saving_ops.md`：CodexにおけるRTK token-saving CLI proxyの使い分け、検証、ロールバック手順。
 - `00_Prompt/ai_cognitive_externalization_requirements.md`：生成AIの認知外在化フレームワーク要件（ContextQuery/ContextBundle/safeMode統治）。
 - `00_Prompt/meta_prompt.md`：ショートハンド（フェーズ完了判定 / 次フェーズ企画 / 並列実行 / 開発継続）を展開する自律進行メタプロンプト。
 - `00_Prompt/virtual_stakeholder_consensus.md`：人間判断待ち論点を扱う仮想ステークホルダー会議プロトコル。
@@ -194,6 +196,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 
 - 変更対象を明確化（Docs / Frontend / Backend / Schema）。
 - `Read Order` に従い、必要な設計文書を先に読む。
+- シェル出力が長くなりそうな確認は `00_Prompt/codex_rtk_token_saving_ops.md` に従い、RTK経由で要約する。ただし正確な全文や状態変更が必要な操作では通常コマンドを使う。
 - 受入条件（Acceptance criteria）を先に書き出す。
 - 実装/修正 → テスト → 受入確認 → ドキュメント整合。
 
