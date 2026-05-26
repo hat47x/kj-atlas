@@ -919,6 +919,7 @@ DoDテンプレ（Draft→Open）
 
 ### Follow-ups
 
+- GitHub Actions CI run #9141 failed before tests at `actions/checkout@v4` with a GitHub 403 account/repository operation error. This is routed to `PROJECT-CI-01` and must not be classified as an application regression.
 - Full shipment still requires owner/evidence route decisions for `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04`.
 - A full running Docker Compose stack was not started; this run verifies Compose config rendering and prior PostgreSQL recovery evidence, not end-to-end Compose service startup.
 - No ADR is needed for this evidence refresh because it does not change release authority, runtime behavior, SafeMode defaults, public configuration policy, or data lifecycle boundaries.
