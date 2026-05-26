@@ -835,3 +835,41 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: unchanged.
 - share/export fail-closed: unchanged; this update only adds operation-contract coverage to the regression lane.
 - public document exposure boundary: unchanged; no public 04 document changed.
+
+## Productization Gate Record 2026-05-26: merged evidence-lane convergence
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date (JST): 2026-05-26
+- Reviewer: Codex
+- Scope: PROJECT-GOV convergence after #2261..#2267 merged. This record evaluates release-gate input availability only; it is not a full release-candidate E2E run.
+
+### Gate Summary
+
+- G0 計画整合: Go. #2261..#2267 are merged into `main`, open PR inventory is reduced to #2270 only, and triage has no stopper.
+- G1 安全既定: N/A for this delta. SafeMode/share-export behavior was not changed or re-tested.
+- G2 主要操作: N/A for this delta. No browser operation matrix was executed in this record.
+- G3 日本語UI: N/A. No UI copy changed.
+- G4 画面耐性: N/A. No viewport behavior changed.
+- G5 公開文書: N/A. No public 04 document changed.
+- G6 診断とサポート: Conditional Go. DATA-MAINT and PRODUCT-OPS evidence is now merged, but support diagnostics bundle policy remains a follow-up boundary.
+- G7 回帰: Go for planning checks only.
+- Value gates: No-Go for full shipment until current release-candidate value/UX evidence is attached.
+- Final: **Go for evidence-lane convergence / No-Go for full release shipment**.
+
+### Evidence
+
+- GitHub PR state:
+  - #2261, #2262, #2263, #2264, #2265, #2266, and #2267 are merged.
+  - #2270 is the only open PR and is a DX-only Codex RTK token-saving runbook lane.
+- Planning/docs checks:
+  - `git fetch --prune origin` -> pass.
+  - `git rev-parse origin/main` -> `1a8ecd575e830f5fa51e537b75875840c69c7096`.
+  - GitHub PR search -> open PR count 1.
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- #2270 can be reviewed or merged independently because it is Codex local-operations guidance, not product release evidence.
+- Full shipment still requires a release-candidate gate record with current SafeMode/share-export smoke evidence, representative mouse/keyboard/browser evidence, value/UX evidence, and E1..E3 environment contract results.
+- No ADR is needed for this convergence update because it does not change release authority, product behavior, SafeMode defaults, or public documentation policy.

@@ -263,6 +263,42 @@
   - Release quality gate record: `PRODUCT-QA-01`
   - Support diagnostics bundle scope: `PRODUCT-OPS-01` / `PRODUCT-OPS-02`
 
+## 14) Baseline delta 2026-05-26: governance-only refresh
+
+### Candidate
+
+- Target main: `origin/main` = `1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Baseline branch: `codex/project-gov-20260526-convergence`
+- Scope note: this is a governance and planning delta after #2261..#2267 merged. It does not replace the 2026-05-25 full health baseline because no product runtime, frontend, backend, or public-documentation behavior is changed by this record.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend `.venv`
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git fetch --prune origin` and `git rev-parse origin/main` | Pass: `1a8ecd575e830f5fa51e537b75875840c69c7096` | G0 |
+| Branch inventory | `git branch -r` count checks | Pass: remote branch count 2267, `origin/codex/` count 2245 | G0 |
+| Open PR inventory | GitHub PR search | Pass: open PR count 1, #2270 only | G0 |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none` | G0 |
+
+### Findings and routing
+
+- #2261..#2267 are now merged into `main`, so the prior "open evidence PR lane" release-management risk is resolved as a convergence issue.
+- The only open PR is #2270, a Codex RTK token-saving runbook lane. It is developer-experience guidance and must not be counted as product runtime evidence, public user documentation, or release-candidate approval.
+- No new blocker was found in planning metadata or triage. No full regression suite was rerun in this delta because the change is an internal governance record rather than application code or public documentation.
+
+### Decision
+
+- Baseline delta decision: **Go for planning convergence / unchanged for full release readiness**.
+- Release readiness decision remains **No-Go** until a release-candidate gate record combines the merged recovery evidence with current SafeMode/share-export smoke evidence, representative user-operation E2E, value/UX evidence, and environment contract results.
+- Follow-up routing:
+  - Current open PR governance: `PROJECT-GOV-01`
+  - DX/rtk adoption: `DX-CODEX-03`
+  - Full release gate: `PRODUCT-QA-01`
+  - Program release decision: `MVP-EXIT-01`
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

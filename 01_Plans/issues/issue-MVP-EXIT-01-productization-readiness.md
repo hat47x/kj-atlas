@@ -529,3 +529,30 @@
 - Owner: Codex for evidence maintenance; Platform Operator / System Owner required only for organization-specific backup policy approval.
 - Due date: next MVP-EXIT release-candidate Program Gate.
 - Re-decision date: after #2267 is merged or rejected, or when a release candidate is cut from `main`.
+
+## MVP-EXIT Program Gate Decision 2026-05-26: evidence lane merge resolution
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date: 2026-05-26
+- Reviewer: Codex
+- Input sources:
+  - PROJECT-GOV-01 convergence checkpoint: #2261..#2267 are merged; current open PR set contains #2270 only.
+  - PROJECT-BASELINE-01 governance-only delta: triage stopper none, `active_issues=47 / ready=18 / blocked=29`.
+  - PRODUCT-QA-01 gate records: DATA-MAINT recovery evidence and representative user-operation evidence are recorded, but full release-candidate approval is still not granted.
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated in this delta; no runtime environment variable or deployment contract changed.
+
+### Decision
+
+- Final: **Go for evidence-lane convergence / No-Go for full release shipment**
+- Reason summary: The previously open DATA/MVP/QA/OPS evidence lane has merged into `main`, removing the immediate branch-convergence risk. This does not equal a product release approval because the final release candidate still needs current SafeMode/share-export smoke evidence, representative user-operation E2E, value/UX evidence, and E1..E3 environment contract results.
+- Escalation route: continue with product-release evidence collection through `PRODUCT-QA-01`. Treat #2270 as a DX-only rtk runbook PR and do not count it as application readiness evidence.
+
+### Conditional controls
+
+- Remaining risks:
+  - Release-candidate Program Gate evidence has not been assembled for `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`.
+  - `PRODUCT-VALUE-*` and `PRODUCT-UX-*` child issues remain Draft and still need owner/evidence routes before full shipment.
+  - Environment contract gates E1..E3 were not re-run in this convergence delta.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for shipment decision.
+- Due date: next release-candidate Program Gate.
+- Re-decision date: when a release candidate is cut from `main` or after the next material product/runtime change.
