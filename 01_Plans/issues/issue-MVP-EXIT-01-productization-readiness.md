@@ -577,9 +577,37 @@
 
 - Remaining risks:
   - GitHub Actions CI run #9141 was blocked before checkout by a GitHub 403 account/repository operation error, but subsequent run #9143 passed checkout and all jobs. Treat `PROJECT-CI-01` as a closed transient incident unless the failure recurs.
-  - `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04` remain Draft, so the final product value/UX shipment decision is still blocked.
+  - `PRODUCT-UX-01..04` now have owner/evidence routes and can be executed as Open internal issues, but their implementation and release-candidate evidence are not complete.
+  - `PRODUCT-VALUE-01..03` remain Draft because `ADR-0032` is still Proposed and value-specific fixtures/evidence locations are not fixed.
   - Compose was rendered successfully through WSL2, but full service startup was not executed in this evidence refresh.
   - Support diagnostics bundle policy remains a follow-up boundary and must not be implied by the passing recovery guidance E2E.
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next product value/UX gate review.
 - Re-decision date: after child issue owner/evidence routes are fixed, or after a material runtime/product change reaches `main`.
+
+## MVP-EXIT Program Gate Decision 2026-05-27: product UX/value gate refinement
+
+- Candidate: local branch `codex/project-gov-20260526-convergence@14bb45937243fb396e00eb597c3580625e4fbaab`
+- Decision date: 2026-05-27
+- Reviewer: Codex
+- Input sources:
+  - `PRODUCT-UX-01..04`: moved from Draft to Open with Codex stewardship, RACI, and fixed representative E2E/documentation evidence routes.
+  - `PRODUCT-VALUE-01..03`: owner stewardship fixed, but Status remains Draft pending `ADR-0032` acceptance or explicit Productization Program Owner approval.
+  - PRODUCT-QA-01 triage after local updates: `active_issues=47 / ready=22 / blocked=25 / actionable_adrs=1 / stopper=none`.
+  - PR #2271 metadata: remote head still `5fd1a304` because local git push is blocked by credential-manager authentication; PR body records the local follow-up commits.
+
+### Decision
+
+- Final: **Conditional Go for product UX planning execution / No-Go for full release shipment**
+- Reason summary: Product UX issues now have enough responsibility and evidence routing to proceed as executable internal issues. Product value gates remain intentionally Draft because accepting the value model would change the release decision basis and still needs ADR-0032 approval or an explicit program-owner decision.
+- Escalation route: execute `PRODUCT-UX-01..04` evidence work through focused implementation/E2E slices. Keep `PRODUCT-VALUE-01..03` in Draft until `ADR-0032` is accepted or explicitly approved as a provisional value-gate baseline.
+
+### Conditional controls
+
+- Remaining risks:
+  - UX Open status does not imply UI implementation completion, public documentation screenshot completion, or shipment approval.
+  - Product value gates remain No-Go for full shipment until the first meaningful map, ambiguity/evidence workflow, and reviewable package fixtures are fixed.
+  - Local commits must still be pushed to PR #2271 or recreated through another approved GitHub write path before merge.
+- Owner: Codex for evidence maintenance; Productization Program Owner required for ADR-0032/value-gate approval.
+- Due date: next value-gate approval review.
+- Re-decision date: after `ADR-0032` status changes, after UX evidence PRs land, or after the local branch is successfully pushed.

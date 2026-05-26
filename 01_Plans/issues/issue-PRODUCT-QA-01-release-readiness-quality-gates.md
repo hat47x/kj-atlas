@@ -920,6 +920,42 @@ DoDテンプレ（Draft→Open）
 ### Follow-ups
 
 - GitHub Actions CI run #9141 failed before tests at `actions/checkout@v4` with a GitHub 403 account/repository operation error. Subsequent CI run #9143 on `5fd1a304dc0577678b3d2afe4ed18642512e4286` passed checkout and all frontend/backend jobs, so `PROJECT-CI-01` is closed as a transient incident and must not be classified as an application regression.
-- Full shipment still requires owner/evidence route decisions for `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04`.
+- Full shipment still requires executed release-candidate evidence for `PRODUCT-UX-01..04` and ADR-0032-backed Open readiness for `PRODUCT-VALUE-01..03`.
 - A full running Docker Compose stack was not started; this run verifies Compose config rendering and prior PostgreSQL recovery evidence, not end-to-end Compose service startup.
 - No ADR is needed for this evidence refresh because it does not change release authority, runtime behavior, SafeMode defaults, public configuration policy, or data lifecycle boundaries.
+
+## Productization Gate Record 2026-05-27: product UX/value gate refinement
+
+- Candidate: local branch `codex/project-gov-20260526-convergence@14bb45937243fb396e00eb597c3580625e4fbaab`
+- Decision date (JST): 2026-05-27
+- Reviewer: Codex
+- Scope: internal issue gate refinement for product UX and product value readiness. This record changes planning/evidence routing only; it does not change application code, public documentation, runtime configuration, SafeMode defaults, or release authority.
+
+### Gate Summary
+
+- G0 計画整合: Go. Active issue validation passes, and triage has no stopper.
+- G1 安全既定: Unchanged. SafeMode/share-export behavior is not changed in this planning slice.
+- G2 主要操作: Conditional Go for planning execution. `PRODUCT-UX-01..04` are Open with representative E2E routes, but implementation and release-candidate screenshots are still pending.
+- G3 日本語UI: Unchanged. No UI copy changed in this slice.
+- G4 画面耐性: Conditional Go for planning execution. UX-04 now has fixed evidence buckets for viewport, focus, large document, and slow/failure recovery.
+- G5 公開文書/設定契約: Conditional Go. Documentation sync targets are named, but public docs were not republished.
+- G6 診断とサポート: Conditional Go. Recovery/diagnostics evidence routes are linked; support bundle policy remains separate.
+- G7 回帰: Go for planning checks only.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` now have Codex stewardship and clearer blockers, but remain Draft until `ADR-0032` is Accepted or explicitly approved as a provisional baseline.
+- Final: **Conditional Go for UX execution readiness / No-Go for full release shipment**.
+
+### Evidence
+
+- Planning/docs checks:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=22 / blocked=25 / actionable_adrs=1 / stopper=none`).
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass.
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` -> pass.
+  - `git diff --check` -> pass (Windows LF-to-CRLF warnings only).
+
+### Follow-ups
+
+- Execute `PRODUCT-UX-01..04` through focused implementation/E2E/documentation slices; Open status alone is not release evidence.
+- Decide `ADR-0032` before opening `PRODUCT-VALUE-01..03`, or record an explicit Productization Program Owner approval for provisional value-gate execution.
+- Push or otherwise publish local follow-up commits from PR #2271 before treating this record as mergeable branch evidence.
+- No ADR is needed for this refinement itself; ADR action remains limited to `ADR-0032` value-model acceptance.
