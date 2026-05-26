@@ -556,3 +556,29 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for shipment decision.
 - Due date: next release-candidate Program Gate.
 - Re-decision date: when a release candidate is cut from `main` or after the next material product/runtime change.
+
+## MVP-EXIT Program Gate Decision 2026-05-26: release-candidate evidence refresh
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date: 2026-05-26
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-05-26: release-candidate evidence refresh`
+  - PROJECT-BASELINE-01 record: current main evidence refresh for planning, frontend, backend, browser E2E, build, and Compose config.
+  - ENV-CONFIG-DRIFT-01 result: settings tests, public-key scan, production build, and WSL2 Compose config passed; full running Compose stack was not started.
+
+### Decision
+
+- Final: **Conditional Go for current release-candidate evidence / No-Go for full release shipment**
+- Reason summary: The current `main` now has fresh evidence for planning metadata, frontend typecheck, full Vitest, backend pytest, production build, full Playwright browser E2E, SafeMode/share-export tested scope, and Compose config rendering. Full shipment remains No-Go because the product value and UX child issues still need assigned owners and explicit release-candidate evidence routes, and a full running Compose stack was not started in this run.
+- Escalation route: treat this as a strong release-candidate evidence refresh, not a final shipment approval. Continue by opening or assigning the `PRODUCT-VALUE-*` and `PRODUCT-UX-*` Draft gates, then rerun Program Gate with owner and evidence route decisions.
+
+### Conditional controls
+
+- Remaining risks:
+  - `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04` remain Draft, so the final product value/UX shipment decision is still blocked.
+  - Compose was rendered successfully through WSL2, but full service startup was not executed in this evidence refresh.
+  - Support diagnostics bundle policy remains a follow-up boundary and must not be implied by the passing recovery guidance E2E.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next product value/UX gate review.
+- Re-decision date: after child issue owner/evidence routes are fixed, or after a material runtime/product change reaches `main`.

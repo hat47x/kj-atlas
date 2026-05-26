@@ -299,6 +299,64 @@
   - Full release gate: `PRODUCT-QA-01`
   - Program release decision: `MVP-EXIT-01`
 
+## 15) Baseline Record 2026-05-26: release-candidate evidence refresh
+
+### Candidate
+
+- Target main: `origin/main` = `1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Baseline branch: `codex/project-gov-20260526-convergence`
+- Scope note: this record refreshes current release-candidate evidence after the DATA/MVP/QA/OPS evidence lane merged. It includes automated frontend/backend/browser/build/config checks, but it does not replace the need for final product value/UX owner decisions.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend `.venv` / WSL2 Docker Compose
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Targeted i18n/share/UX regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run src/i18n/translate.test.ts src/i18n/key_consistency.test.ts src/i18n/ui_hardcode_guard.test.ts src/i18n/catalog_integrity.test.ts src/ui/SharePanel.test.ts src/ui/ux_operability_regression.test.ts` | Pass: 6 files / 39 tests | G1 / G2 / G3 / G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Frontend production build | bundled `node.exe .\node_modules\vite\bin\vite.js build` | Pass; existing chunk-size warning only | G7 / E1 |
+| Backend pytest | `.venv\Scripts\python.exe -m pytest --basetemp .pytest_tmp_rc_20260526_full_path -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 260 passed / 19 skipped | G7 / E2 |
+| Full frontend Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite manually running on `127.0.0.1:4173` | Pass: 33 tests | G1 / G2 / G3 / G4 / G6 / G7 |
+| Compose version | WSL2 `docker compose version` | Pass: `Docker Compose version v2.39.1` | E3 |
+| Compose config | WSL2 `docker compose config` in `03_Implement/deploy` | Pass; public `KJ_ATLAS_*` inputs render and private `POSTGRES_*` adapter env names remain internal to the PostgreSQL service | E3 |
+| Public env contract scan | `rg` scan for non-prefixed env names across 04/02/deploy | Pass for public contract; hits are private-boundary notes or `KJ_ATLAS_*` public settings | E1 / G5 |
+| Test server cleanup | `Stop-Process` for Vite listener on port 4173 | Pass: no listener remains | G7 |
+
+### Environment findings
+
+- The default PowerShell `node.exe` resolved to the Codex WindowsApps shim and failed with `Access is denied`. Bundled Node.js by absolute path worked for typecheck, Vitest, build, and Playwright.
+- PowerShell `docker` was not on `PATH`, but WSL2 Docker Compose was available and rendered the Compose config successfully.
+- The first backend pytest run failed only because subprocess `alembic` was not visible on `PATH`. Rerunning with backend `.venv\Scripts` prepended to `PATH` passed.
+- No generated test artifacts were retained; `.pytest_tmp_*` and frontend `test-results/` were removed after verification.
+
+### Gate classification
+
+| Gate | 2026-05-26 result | Reason |
+| --- | --- | --- |
+| G0 計画整合 | Go | active issue validation and triage pass with no stopper. |
+| G1 安全既定 | Go for tested scope | targeted SharePanel/i18n/UX regression, full Vitest, and Playwright safe-mode/read-only/safe-sharing flows pass. |
+| G2 主要操作 | Go for tested scope | full Playwright pass covers realistic journey, authoring continuity, safe sharing gate, keyboard focus, canvas/polygon operations, visibility, and recovery paths. |
+| G3 日本語UI | Go for tested scope | targeted i18n checks and full frontend regression pass. |
+| G4 画面耐性 | Go for tested scope | full Playwright includes header layout, 390px recovery paths, large document, progress/cancel, and focus return coverage. |
+| G5 公開文書/設定契約 | Conditional Go | public env contract scan and Compose config pass; public documentation was not republished. |
+| G6 診断とサポート | Conditional Go | recovery guidance E2E passes; support diagnostics bundle policy remains a follow-up boundary. |
+| G7 回帰 | Go | frontend typecheck/full Vitest/build, backend pytest, and full Playwright pass after environment normalization. |
+| E1..E3 環境契約 | Conditional Go | settings tests/build/env scan/Compose config pass; full running Compose service startup was not executed. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the current release-candidate evidence refresh.
+- Release readiness decision: **No-Go** until product value/UX Draft gates have assigned owners and explicit evidence routes, and a final release-candidate gate record is approved.
+- Follow-up routing:
+  - Product value and UX gates: `PRODUCT-VALUE-01..03`, `PRODUCT-UX-01..04`
+  - Release quality gate: `PRODUCT-QA-01`
+  - Program release decision: `MVP-EXIT-01`
+  - Support bundle policy: `PRODUCT-OPS-02`
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

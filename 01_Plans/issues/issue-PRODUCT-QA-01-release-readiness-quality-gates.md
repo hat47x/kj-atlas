@@ -873,3 +873,52 @@ DoDテンプレ（Draft→Open）
 - #2270 can be reviewed or merged independently because it is Codex local-operations guidance, not product release evidence.
 - Full shipment still requires a release-candidate gate record with current SafeMode/share-export smoke evidence, representative mouse/keyboard/browser evidence, value/UX evidence, and E1..E3 environment contract results.
 - No ADR is needed for this convergence update because it does not change release authority, product behavior, SafeMode defaults, or public documentation policy.
+
+## Productization Gate Record 2026-05-26: release-candidate evidence refresh
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date (JST): 2026-05-26
+- Reviewer: Codex
+- Scope: current release-candidate evidence refresh for planning metadata, frontend regression, backend regression, Playwright browser E2E, production build, runtime configuration, and Compose contract. This record does not grant final shipment approval because product value/UX child issues still need owner/evidence routes.
+
+### Gate Summary
+
+- G0 計画整合: Go. issue metadata and triage pass with no stopper.
+- G1 安全既定: Go for tested scope. SharePanel, SafeMode, read-only, import/export guards, and Playwright safe-sharing scenarios passed.
+- G2 主要操作: Go for tested scope. Full Playwright passed 33 browser tests, including realistic user journey, authoring continuity, safe sharing gate, keyboard focus, visibility, polygon editing, and recovery guidance.
+- G3 日本語UI: Go for tested scope. Full Vitest and targeted i18n/SharePanel checks passed.
+- G4 画面耐性: Go for tested viewport matrix. Header/layout, 390px recovery paths, large-document operability, slow diagnostics, and slow review-pack export cancellation were covered by the Playwright suite.
+- G5 公開文書/設定契約: Conditional Go. Public env contract scan found only internal vendor-boundary mentions of `POSTGRES_*`, and `KJ_ATLAS_*` keys remain the only public settings. Public documentation was not republished in this run.
+- G6 診断とサポート: Conditional Go. Recovery guidance E2E passed, but the support diagnostics bundle policy remains a follow-up boundary.
+- G7 回帰: Go. Frontend typecheck, full Vitest, backend pytest, production build, Playwright E2E, and Compose config passed after environment normalization.
+- Value gates: Conditional Go for tested realistic journey evidence; full shipment remains blocked until `PRODUCT-VALUE-*` and `PRODUCT-UX-*` Draft gates have assigned owners and release-candidate evidence routes.
+- E1..E3 環境契約: Conditional Go. backend settings tests, public-key scan, production build, and WSL2 `docker compose config` passed. A full running Compose stack was not started in this run.
+- Final: **Conditional Go for current release-candidate evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- Planning/docs:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none`).
+- Frontend:
+  - Bundled Node.js `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass.
+  - Bundled Node.js targeted i18n/SharePanel/UX Vitest -> pass: 6 files / 39 tests.
+  - Bundled Node.js full Vitest -> pass: 160 files / 734 tests.
+  - Bundled Node.js `vite build` -> pass with only the existing chunk-size warning.
+- Backend:
+  - First full pytest without `.venv\Scripts` on `PATH` failed because subprocess `alembic` was not found; this is an execution-environment issue.
+  - Rerun with `.venv\Scripts` prepended to `PATH` -> pass: 260 passed / 19 skipped.
+- Browser E2E:
+  - Vite manually started on `http://127.0.0.1:4173/`.
+  - Bundled Node.js `playwright test --reporter=line` -> pass: 33 tests.
+  - Test listener on port 4173 was stopped after the run.
+- Runtime configuration / Compose:
+  - PowerShell `docker compose` was unavailable, but WSL2 `docker compose version` -> `Docker Compose version v2.39.1`.
+  - WSL2 `docker compose config` under `03_Implement/deploy` -> pass, showing public `KJ_ATLAS_*` inputs mapped to private PostgreSQL `POSTGRES_*` adapter env names.
+  - Public env scan for `VITE_`, `POSTGRES_`, `DATABASE_URL`, `LLM_PROVIDER`, `API_KEY`, `WEB_PORT`, and `FRONTEND_API_BASE` found only documented private-boundary references or `KJ_ATLAS_*` public settings.
+
+### Follow-ups
+
+- Full shipment still requires owner/evidence route decisions for `PRODUCT-VALUE-01..03` and `PRODUCT-UX-01..04`.
+- A full running Docker Compose stack was not started; this run verifies Compose config rendering and prior PostgreSQL recovery evidence, not end-to-end Compose service startup.
+- No ADR is needed for this evidence refresh because it does not change release authority, runtime behavior, SafeMode defaults, public configuration policy, or data lifecycle boundaries.
