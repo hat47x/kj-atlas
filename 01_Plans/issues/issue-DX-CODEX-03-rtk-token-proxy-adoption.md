@@ -128,4 +128,26 @@
 - ADR 化が必要になる条件:
   - RTK を kj-atlas の標準開発環境、CI、レビューゲート、または contributor 必須ツールに昇格する場合。
   - RTK filter の結果をテスト証跡や監査証跡の正本として扱う場合。
+
+## 11) Agent-facing documentation update (2026-05-26)
+
+### Context
+- RTKの導入自体は完了していたが、生成AIが作業開始時に読む `AGENTS.md` / `00_Prompt` の導線では、どの場面でRTKを使い、どの場面で通常コマンドへ戻すかが十分に明示されていなかった。
+
+### Decision
+- `00_Prompt/codex_rtk_token_saving_ops.md` を追加し、Codex向けに次を正本化する。
+  - RTK配置、wrapper、telemetry無効化、history DB。
+  - 作業開始時の確認コマンド。
+  - RTKを使う場面と通常コマンドへ戻す場面。
+  - `rtk proxy` の使いどころ。
+  - ユーザ報告時の説明ルール。
+- `AGENTS.md` のRead OrderとProject Mapへ追加し、Codexが初期読解でRTK運用を拾えるようにする。
+- `04_Documentation/codex_skill_operations.md` では、RTKがローカルCodex補助であり、アプリ本体やCI必須要件ではないことだけを案内する。
+
+### Verify
+- `rtk --version`: `rtk 0.40.0`
+- `rtk config`: parse errorなし。
+- `rtk telemetry status`: `RTK_TELEMETRY_DISABLED=1` でblocked。
+- `rtk git status`: clean確認。
+- `rtk gain --history`: 履歴記録を確認。
   - WSL distribution 導入や Windows hook workaround をプロジェクト標準に含める場合。
