@@ -304,11 +304,11 @@ describe("i18n functional equivalence", () => {
     const enExportLegacy = t("view_controls.export_legacy.title");
     const enTraceAnalytics = t("side_panel.trace.export_analytics");
 
-    expect(jaImportLegacy).toContain("legacy");
+    expect(jaImportLegacy).toContain("旧式");
     expect(enImportLegacy).toContain("Import doc JSON");
-    expect(jaExportLegacy).toBe("エクスポート（legacy）");
+    expect(jaExportLegacy).toBe("書き出し（旧式）");
     expect(enExportLegacy).toBe("Export (legacy)");
-    expect(jaTraceAnalytics).toContain("エクスポート");
+    expect(jaTraceAnalytics).toContain("書き出す");
     expect(enTraceAnalytics).toBe("Export Trace Analytics");
   });
 });

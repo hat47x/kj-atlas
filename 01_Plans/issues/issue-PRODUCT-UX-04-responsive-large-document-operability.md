@@ -1,11 +1,11 @@
 # Issue Draft: PRODUCT-UX-04 小画面・大規模文書・低速環境での操作性確認
 
 - Type: Feature request
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `04_Documentation/acceptance_check.md`, `04_Documentation/diagnostics.md`
 - Related Backlog: `PRODUCT-UX-04`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-QA-MONKEY-06-header-toolbar-responsive-overlap.md`, `01_Plans/issues/issue-UX-OPERABILITY-01-pointer-keyboard-flow-review.md`
@@ -286,4 +286,32 @@
 - Next action:
   - 既存の2026-05-22証跡を残しつつ、残タスクを3区分に分けて証跡名と完了条件を追記する。
   - Owner確定と残証跡の保存先固定が完了するまではOpen化しない。
+
+## Open Gate Reassessment 2026-05-27: stewardship and evidence route fixed
+
+- Assessment scope: 計画層のOpen化判定。これはレスポンシブ/大規模文書/低速環境の完了判定ではなく、残タスクの証跡名と完了条件を固定して実装・E2Eへ進めるための更新である。
+- Gate result: **Open**. `DecisionStatus=Fixed`、OwnerはCodexの証跡整備責務として確定し、最終リリース判断はProductization Program Ownerの承認に残す。
+- RACI:
+  - R: Codex (Product UX evidence steward)
+  - A: Productization Program Owner
+  - C: Frontend Lead / QA Lead / Platform Architecture Owner
+  - I: Documentation Maintainer
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Pass. 契約依存は`ADR-0031`、`QA-MONKEY-06`、`UX-OPERABILITY-01`、実装/証跡依存はadvanced panel focus、slow worker/API breadth、docs syncに分離した。
+  - O-OPEN-03: Pass. `Expected verification level=e2e`に対し、`header_toolbar_layout.spec.ts`、`large_document_operability.spec.ts`、`canvas_focus_order.spec.ts`、`ops_recovery_guidance.spec.ts`を代表経路として使う。
+  - O-OPEN-04: Pass. 本更新はOpen化と証跡経路の固定であり、実装変更や04文書変更を直接要求しない。
+- Fixed evidence route:
+  - viewport matrix and panel focus return: `e2e/header_toolbar_layout.spec.ts`
+  - synthetic large document search/panel/export: `e2e/large_document_operability.spec.ts`
+  - card/island/selection-panel focus order: `e2e/canvas_focus_order.spec.ts`
+  - API/save/diagnostics/review-pack/review-diff slow or failure recovery: `e2e/ops_recovery_guidance.spec.ts`
+  - 公開文書同期: `04_Documentation/acceptance_check.md`, `operations.md`, `diagnostics.md`
+- Remaining completion buckets:
+  - Advanced panel focus breadth: panel固有の開く、編集する、閉じる、元へ戻る経路を追加または既存E2Eへ統合する。
+  - Slow worker/API breadth: diagnostics/review-pack/review-diff以外の長時間処理が追加された場合、progress/cancel/retryを同じ証跡形式で追加する。
+  - Docs sync: 代表viewport、キーボード操作、キャンセル後復帰の説明とスクリーンショットを公開文書へ同期する。
+- Proceed rule:
+  - 実装PRでは、変更がviewport、focus、large document、slow/failure recoveryのどれに影響するかを分類し、対応E2Eまたは明示的な未実施理由を添付する。
+  - Product shipmentは本Issue OpenだけではGoにしない。残Completion bucketが閉じた時点で`PRODUCT-QA-01`へ戻す。
 

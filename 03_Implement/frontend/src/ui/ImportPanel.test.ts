@@ -21,8 +21,8 @@ describe("ImportPanel copy", () => {
     );
 
     expect(html).toContain("レビューパックを取り込む (.zip)");
-    expect(html).toContain("review-pack .zip をここにドラッグ");
-    expect(html).toContain("ZIPを選択…");
+    expect(html).toContain("レビューパック（.zip）をここにドラッグ");
+    expect(html).toContain("ZIPファイルを選択…");
     expect(html).toContain("box-sizing:border-box");
     expect(html).toContain("min-width:0");
   });
@@ -66,7 +66,7 @@ describe("ImportPanel copy", () => {
     );
 
     expect(html).toContain("Imported sample.zip: cards 2, islands 1, perspective default");
-    expect(html).toContain("visibility: Restricted");
+    expect(html).toContain("Visibility: Restricted");
     expect(html).toContain("Ignored 3 unsupported or non-core file(s).");
   });
 });

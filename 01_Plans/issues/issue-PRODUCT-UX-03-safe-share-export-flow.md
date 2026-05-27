@@ -1,11 +1,11 @@
-# Issue Draft: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
+# Issue: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
 
 - Type: Feature request
-- Status: Draft
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product UX evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/ui/SharePanel.tsx`, `03_Implement/frontend/src/i18n/`, `04_Documentation/data_handling.md`, `04_Documentation/security.md`, `04_Documentation/acceptance_check.md`
 - Related Backlog: `PRODUCT-UX-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `01_Plans/issues/issue-QA-MONKEY-01-safemode-export-boundary.md`, `01_Plans/issues/issue-UX-OPERABILITY-04-panel-dismissal-focus-scope.md`
@@ -106,7 +106,7 @@
 - [x] T1 SharePanelの現行操作を目的別に分類する。
 - [x] T2 共有前確認のステップまたはタブ構成を設計する。
 - [ ] T3 SafeMode、公開範囲、未レビュー情報、出力形式の確認UIを追加する。
-- [ ] T4 取り込み、patch、Diff/Verifyの入口を補助または別タブとして整理する。
+- [x] T4 取り込み、patch、Diff/Verifyの入口を補助または別タブとして整理する。
 - [ ] T5 E2Eと公開文書を同期する。
 
 ## 7) 検証計画 / Validation plan
@@ -213,4 +213,61 @@
 - Next action:
   - 共有目的別に「自分用」「チームレビュー用」「公開前確認用」の代表経路を固定し、各経路のスクリーンショットとtrace保存先を追記する。
   - Owner確定と証跡経路固定が完了するまではOpen化しない。
+
+## Open Gate Reassessment 2026-05-27: stewardship and evidence route fixed
+
+- Assessment scope: 計画層のOpen化判定。これは共有/エクスポートUXの実装完了ではなく、SafeMode境界を崩さず実装・E2Eへ進むための責務固定である。
+- Gate result: **Open**. `DecisionStatus=Fixed`、OwnerはCodexの証跡整備責務として確定し、最終リリース判断はProductization Program Ownerの承認に残す。
+- RACI:
+  - R: Codex (Product UX evidence steward)
+  - A: Productization Program Owner
+  - C: Frontend Lead / QA Lead / Security Officer
+  - I: Documentation Maintainer
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Pass. 契約依存は`ADR-0031`、`QA-MONKEY-01`、`UX-OPERABILITY-04`、実装/証跡依存はSharePanel単体回帰と共有E2Eに分離した。
+  - O-OPEN-03: Pass. `Expected verification level=e2e`に対し、`realistic_user_journey_expansion.spec.ts`、`header_toolbar_layout.spec.ts`、`large_document_operability.spec.ts`、`ops_recovery_guidance.spec.ts`を代表経路として使う。
+  - O-OPEN-04: Pass. 本更新はOpen化と証跡経路の固定であり、SafeMode既定値、公開範囲、共有ポリシーを変更しない。
+- Fixed evidence route:
+  - SafeMode/share panel copy and fixed mask wording: `src/ui/SharePanel.test.ts`
+  - 共有前確認を含む代表操作: `e2e/realistic_user_journey_expansion.spec.ts`
+  - 右パネルfitとkeyboard focus: `e2e/header_toolbar_layout.spec.ts`, `e2e/large_document_operability.spec.ts`
+  - 遅いレビューパックexportのprogress/cancel: `e2e/ops_recovery_guidance.spec.ts`
+  - 公開文書同期: `04_Documentation/data_handling.md`, `acceptance_check.md`, `public_index.md`
+- Proceed rule:
+  - 実装PRでは、共有目的、SafeMode状態、固定マスク、未レビュー情報、キャンセル/戻る操作のいずれに影響するかを明記し、対応する単体またはE2E証跡を添付する。
+  - Product shipmentは本Issue OpenだけではGoにしない。共有前確認のE2Eと公開文書スクリーンショットが揃った時点で`PRODUCT-QA-01`へ戻す。
+
+## Implementation Evidence 2026-05-27: share panel first-view and Japanese copy
+
+- Scope:
+  - `SharePanel` の先頭に「共有と再現」の総合見出しと目的説明を追加し、パネルが「レビューパック取り込み」だけの画面に見えないようにした。
+  - 閉じるボタンのアクセシブル名を `パネルを閉じる` に変更し、E2E helperも日本語ラベルを認識するようにした。
+  - SafeMode、固定マスク、公開範囲、表示範囲、概念マップ、差分確認、patch検査、旧式導線、書き出し結果ステータスの日本語表現を整理した。
+  - `ImportPanel` の取り込み結果に `公開範囲: {visibility}` を使い、画面上に残る英語ラベルを減らした。
+- Acceptance impact:
+  - 「パネルの起点が取り込みだけに見えない」「SafeMode ON/OFF の警告が自然」「狭い画面で見切れない」は、本実装で証跡を追加した。
+  - T3は部分進捗。共有目的別タブと実行前プレビューは引き続き必要。
+- Evidence:
+  - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\ui\ImportPanel.test.ts src\ui\safe_mode_status.test.ts src\ui\i18n_equivalence.integration.test.ts src\ui\DiffPanel.test.ts src\i18n\translate.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts` -> 8 files / 49 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+  - `node .\node_modules\playwright\cli.js test header_toolbar_layout.spec.ts --reporter=line --timeout=60000` -> 7 tests passed.
+  - Browser measurement at `1280x720`: panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`, close aria label=`パネルを閉じる`。
+  - Header label check: `Legacy JSON` は画面表示から消え、旧式導線は `旧式JSON` として表示される。
+  - Screenshot: `04_Documentation/assets/screenshots/share-export-safe-mode.png`。
+
+## Implementation Evidence 2026-05-27: share panel purpose navigation
+
+- Scope:
+  - `SharePanel` の先頭に「目的を選ぶ」補助導線を追加し、共有用の書き出し、取り込み・復元、パッチ確認、差分確認へマウス操作で直接移動できるようにした。
+  - 目的ボタンは既存セクションを非表示にせず、`aria-controls` で対応先を示し、クリック後は対象セクションへスクロールしてフォーカスを移す。
+  - 日本語・英語カタログに目的別ラベルと説明を追加し、公開向けスクリーンショット `04_Documentation/assets/screenshots/share-export-safe-mode.png` を更新した。
+- Acceptance impact:
+  - T4を完了扱いに更新。取り込み、patch、Diff/Verify の入口がパネル上部から見えるため、実装順の長い一覧を読み下さなくても目的別に移動できる。
+  - T3は未完了。SafeMode、公開範囲、出力形式は確認できるが、共有目的別の実行前プレビューと戻る/キャンセル証跡は引き続き必要。
+- Evidence:
+  - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts` -> 3 files / 20 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+  - Browser check at `1280x720`: purpose buttons=4, panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`.
+  - Browser click check: `パッチを確認する` は `#share-panel-purpose-patch` へ移動し `activeElementId=share-panel-purpose-patch`、`差分を確認する` は `#share-panel-purpose-diff` へ移動し `activeElementId=share-panel-purpose-diff`。
 

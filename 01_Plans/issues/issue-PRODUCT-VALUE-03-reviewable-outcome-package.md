@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/value_traceability.md`, `04_Documentation/narratives.md`, `04_Documentation/data_handling.md`
 - Related Backlog: `PRODUCT-VALUE-03`
 - Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/review_attribution.md`, `02_Architecture/value_traceability.md`
@@ -245,3 +245,39 @@
 - Next action:
   - 成果物パッケージの最小構成を「要約」「根拠」「未確定事項」「レビュー帰属」「SafeMode表示」に分解して、ACと対応付ける。
   - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。
+
+## Draft Gate Reassessment 2026-05-27: owner fixed, package minimum split
+
+- Assessment scope: 計画層のDraft維持理由を、担当未確定ではなくADR-0032承認待ちと成果物パッケージ最小構成の承認待ちへ絞り込む。
+- Gate result: **Draft維持**. OwnerはCodexの契約・証跡整備責務として確定したが、`DecisionStatus=Pending` と `ADR-0032` Proposed が残るためOpen化しない。
+- RACI:
+  - R: Codex (Product Value contract steward)
+  - A: Productization Program Owner
+  - C: QA Lead / Platform Architecture Owner / Security Officer
+  - I: Documentation Maintainer / Frontend Lead
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Partial. `ADR-0032` のV4価値ループと SafeMode/share-export 境界は接続済みだが、成果物パッケージの最小構成は承認待ち。
+  - O-OPEN-03: Partial. e2e前提のACは維持するが、review pack、narrative、共有前確認、back-linkの代表fixtureと保存先は未固定。
+  - O-OPEN-04: Pass. 本更新は契約整理であり、export実装や公開文書変更を直接要求しない。
+
+### Reviewable package minimum
+
+| 最小要素 | 利用者に伝えること | 現行設計上の候補 | 判定証跡 |
+| --- | --- | --- | --- |
+| 要約 | 何を整理した成果物か | Narrative / Review Pack summary | export結果の本文確認 |
+| 確定点 | 人間が確認済みとして扱える内容 | `human_reviewed`、review attribution | reviewState集計と表示確認 |
+| 未確定事項 | 保留、違和感、根拠不足、未レビュー情報 | `unreviewed`、critique、claimType unknown、evidence gap | SafeMode ONでの共有前確認と出力抑制確認 |
+| 根拠への戻り方 | 読者が判断材料へ戻れること | evidenceLinks、trace/back-link、sourceBundleHash | back-link到達確認 |
+| SafeMode結果 | 何が含まれ、何が抑制されたか | SharePanel safe-mode summary / diagnostics | SharePanel test + E2E export結果 |
+| 再レビュー導線 | 受け取った人が差し戻し/確認できること | Review Pack import / readOnly view | import/readOnly E2E |
+
+- Fixed evidence route candidate:
+  - 共有前確認とSafeMode copy: `src/ui/SharePanel.test.ts`
+  - 代表共有操作: `e2e/realistic_user_journey_expansion.spec.ts`
+  - Review Pack遅延/キャンセル: `e2e/ops_recovery_guidance.spec.ts`
+  - 大きな文書のbundle diagnostics: `e2e/large_document_operability.spec.ts`
+- Reopen/Open condition:
+  - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記Reviewable package minimumを価値ゲートの暫定正本として明示承認する。
+  - review pack、narrative、共有前確認、back-linkの代表fixtureと保存先が本文で固定される。
+  - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V4へ戻す。

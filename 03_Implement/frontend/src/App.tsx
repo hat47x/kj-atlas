@@ -2491,7 +2491,7 @@ export default function App() {
     downloadLink.remove();
 
     URL.revokeObjectURL(objectUrl);
-    setStatusMessage("Exported document as JSON");
+    setStatusMessage(t("app.status.export.document_json"));
   }, [document]);
 
   const handleImportFileChange = useCallback(
@@ -2509,7 +2509,7 @@ export default function App() {
       if (!parseResult.ok) {
         setPendingImportedDocument(null);
         setImportDocumentError(parseResult.error);
-        setStatusMessage("Failed to load document JSON");
+        setStatusMessage(t("app.status.import.document_load_failed"));
         return;
       }
 
@@ -2518,7 +2518,7 @@ export default function App() {
         document: parseResult.document,
       });
       setImportDocumentError(null);
-      setStatusMessage("Document validated. Review summary, then click Replace current document.");
+      setStatusMessage(t("app.status.import.document_validated"));
     },
     []
   );
@@ -2701,12 +2701,12 @@ ${parsedDocument.error}`);
 
     if (metadata.viewState.focusIslandId && !hasFocusIsland) {
       setFocusTarget({});
-      setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility}); focus island not found (${metadata.viewState.focusIslandId}). Focus was cleared.`);
+      setStatusMessage(t("app.status.import.view_loaded_focus_missing", { statusPrefix, visibility: metadata.visibility, islandId: metadata.viewState.focusIslandId }));
       return;
     }
 
     setFocusTarget(metadata.viewState.focusIslandId ? { focusIslandId: metadata.viewState.focusIslandId } : {});
-    setStatusMessage(`${statusPrefix} (visibility: ${metadata.visibility})`);
+    setStatusMessage(t("app.status.import.view_loaded", { statusPrefix, visibility: metadata.visibility }));
   }, [applyResolvedLocaleForView]);
 
   const loadPublicPack = useCallback(async (requestedPackId: string | null): Promise<boolean> => {
@@ -2792,7 +2792,7 @@ ${parsedDocument.error}`);
       if (!viewParseResult.ok) {
         throw new Error(`Invalid pack view metadata: ${viewParseResult.error}`);
       }
-      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, "Public pack loaded");
+      applyImportedViewMetadata(viewParseResult.metadata, documentParseResult.document, importedViewMode, t("app.status.public_pack.loaded_prefix"));
     }
 
     setSafeMode(true);
@@ -2800,7 +2800,7 @@ ${parsedDocument.error}`);
       const persistedVisibility = loadViewVisibilityForDocument(documentParseResult.document.id);
       setViewVisibility(persistedVisibility.viewVisibility);
     }
-    setStatusMessage(`Public pack loaded: ${targetPack.id} (visibility: ${targetPack.visibility})`);
+    setStatusMessage(t("app.status.public_pack.loaded", { packId: targetPack.id, visibility: targetPack.visibility }));
     return true;
   }, [applyImportedViewMetadata]);
 
@@ -2847,7 +2847,7 @@ ${parsedDocument.error}`);
         return;
       }
 
-      applyImportedViewMetadata(parseResult.metadata, document, viewMode, "Loaded view metadata");
+      applyImportedViewMetadata(parseResult.metadata, document, viewMode, t("app.status.import.view_metadata_loaded_prefix"));
     },
     [applyImportedViewMetadata, document]
   );
@@ -2857,7 +2857,7 @@ ${parsedDocument.error}`);
     if (!parseResult.ok) {
       setPendingImportedDocument(null);
       setImportDocumentError(parseResult.error);
-      setStatusMessage("Failed to load document JSON");
+      setStatusMessage(t("app.status.import.document_load_failed"));
       return;
     }
 
@@ -2866,19 +2866,19 @@ ${parsedDocument.error}`);
       document: parseResult.document,
     });
     setImportDocumentError(null);
-    setStatusMessage("Document validated. Review summary, then click Replace current document.");
+    setStatusMessage(t("app.status.import.document_validated"));
   }, [abstractMapView, summaryView]);
 
   const handleInvalidReviewPackFileType = useCallback(() => {
-    setPackImportError("Please upload a .zip review pack.");
-    setStatusMessage("Please upload a .zip review pack.");
+    setPackImportError(t("app.status.import.review_pack_zip_required"));
+    setStatusMessage(t("app.status.import.review_pack_zip_required"));
   }, [abstractMapView, summaryView]);
 
   const handleImportReviewPackFile = useCallback(async (selectedFile: File) => {
     setPackImportError(null);
     if (!selectedFile.name.toLowerCase().endsWith(".zip")) {
-      setPackImportError("Please upload a .zip review pack.");
-      setStatusMessage("Please upload a .zip review pack.");
+      setPackImportError(t("app.status.import.review_pack_zip_required"));
+      setStatusMessage(t("app.status.import.review_pack_zip_required"));
       return;
     }
 
@@ -3147,12 +3147,12 @@ ${parsedDocument.error}`);
       return nextMap;
     });
 
-    setStatusMessage("Patch updated; re-running lint…");
+    setStatusMessage(t("app.status.patch.updated_rerun_lint"));
   }, [patchFixProposals, pendingPatchImport, selectedFixProposalIdSet]);
 
   const handleExportPatchFile = useCallback(async () => {
     if (!pendingPatchImport) {
-      setStatusMessage("No patch loaded");
+      setStatusMessage(t("app.status.patch.none_loaded"));
       return;
     }
 
@@ -3163,7 +3163,7 @@ ${parsedDocument.error}`);
     });
 
     downloadTextFile(`${pendingPatchImport.fileName.replace(/\.json$/i, "")}.export.json`, "application/json", `${JSON.stringify(exportedPatch, null, 2)}\n`);
-    setStatusMessage("Exported patch with fingerprint");
+    setStatusMessage(t("app.status.patch.exported_fingerprint"));
   }, [patchExportAuthor, patchExportAuthorNote, pendingPatchImport]);
 
   const handleResetPatchToOriginal = useCallback(() => {
@@ -3188,7 +3188,7 @@ ${parsedDocument.error}`);
 
   const handleApplyPatch = useCallback(() => {
     if (!document || !pendingPatchImport) {
-      setStatusMessage("No patch loaded");
+      setStatusMessage(t("app.status.patch.none_loaded"));
       return;
     }
 
@@ -3232,15 +3232,15 @@ ${parsedDocument.error}`);
 
   const handleCopyPatchSummary = useCallback(async () => {
     if (!patchSummary) {
-      setStatusMessage("No patch summary available");
+      setStatusMessage(t("app.status.patch.summary_none"));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(formatPatchSummaryMarkdown(patchSummary));
-      setStatusMessage("Copied patch summary (Markdown)");
+      setStatusMessage(t("app.status.patch.summary_copied"));
     } catch {
-      setStatusMessage("Failed to copy patch summary");
+      setStatusMessage(t("app.status.patch.summary_copy_failed"));
     }
   }, [patchSummary]);
 
@@ -6047,7 +6047,7 @@ ${parsedDocument.error}`);
 
   const buildReadingOutline = useCallback((): string | null => {
     if (!document) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return null;
     }
 
@@ -6728,8 +6728,8 @@ ${parsedDocument.error}`);
           {t("app.toolbar.back")}
         </button>
       ) : null}
-      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc" }}>
-        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>Legacy JSON</summary>
+      <details style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: "4px 8px", backgroundColor: "#f8fafc", minWidth: 132, boxSizing: "border-box" }}>
+        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#334155" }}>{t("app.toolbar.legacy_json_group")}</summary>
         <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
           <button
             type="button"
@@ -6745,6 +6745,7 @@ ${parsedDocument.error}`);
               padding: "6px 12px",
               fontWeight: 600,
               cursor: isLoading ? "not-allowed" : "pointer",
+              width: "100%",
             }}
           >
             {t("app.toolbar.import_doc_json_legacy_short")}
@@ -6763,6 +6764,7 @@ ${parsedDocument.error}`);
               padding: "6px 12px",
               fontWeight: 600,
               cursor: isLoading || !document ? "not-allowed" : "pointer",
+              width: "100%",
             }}
           >
             {t("app.toolbar.export_doc_json_legacy_short")}
@@ -7109,13 +7111,13 @@ ${parsedDocument.error}`);
 
   const handleExportAbstractMapMarkdownWithPng = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
     const area = getVisibleBoundsExportArea();
     if (!area) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7144,10 +7146,10 @@ ${parsedDocument.error}`);
       downloadBlobFile(snapshotFilename, pngBlob);
       downloadTextFile("report.md", "text/markdown", exportAbstractMapMarkdown(model, { snapshotFilename }));
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
-      setStatusMessage("Exported abstract map report (MD + PNG)");
+      setStatusMessage(t("app.status.export.abstract_md"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Report export failed";
-      setStatusMessage(`Report export failed: ${message}`);
+      const message = error instanceof Error ? error.message : t("app.status.export.report_failed_unknown");
+      setStatusMessage(t("app.status.export.report_failed", { detail: message }));
     }
   }, [
     abstractMapView,
@@ -7166,13 +7168,13 @@ ${parsedDocument.error}`);
 
   const handleExportAbstractMapHtmlWithPng = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
     const area = getVisibleBoundsExportArea();
     if (!area) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7200,10 +7202,10 @@ ${parsedDocument.error}`);
       const snapshotDataUrl = await readBlobAsDataUrl(pngBlob);
       downloadTextFile("report.html", "text/html", exportAbstractMapHTML(model, { snapshotDataUrl }));
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
-      setStatusMessage("Exported abstract map report (HTML + PNG)");
+      setStatusMessage(t("app.status.export.abstract_html"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Report export failed";
-      setStatusMessage(`Report export failed: ${message}`);
+      const message = error instanceof Error ? error.message : t("app.status.export.report_failed_unknown");
+      setStatusMessage(t("app.status.export.report_failed", { detail: message }));
     }
   }, [
     abstractMapView,
@@ -7236,7 +7238,7 @@ ${parsedDocument.error}`);
 
   const handleExportSvgViewport = useCallback(() => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7248,7 +7250,7 @@ ${parsedDocument.error}`);
     };
 
     if (area.w <= 0 || area.h <= 0) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7267,7 +7269,7 @@ ${parsedDocument.error}`);
 
     downloadTextFile(getSvgExportFilename("viewport"), "image/svg+xml", svg);
     downloadViewMetadata("viewport", area);
-    setStatusMessage("Exported SVG (Viewport)");
+    setStatusMessage(t("app.status.export.svg_viewport"));
   }, [
     abstractMapView,
     canvasCamera,
@@ -7285,7 +7287,7 @@ ${parsedDocument.error}`);
 
   const handleExportSvgVisibleBounds = useCallback(() => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7298,7 +7300,7 @@ ${parsedDocument.error}`);
     });
 
     if (!visibleBounds) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7324,7 +7326,7 @@ ${parsedDocument.error}`);
 
     downloadTextFile(getSvgExportFilename("visible-bounds"), "image/svg+xml", svg);
     downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
-    setStatusMessage("Exported SVG (Visible bounds)");
+    setStatusMessage(t("app.status.export.svg_visible_bounds"));
   }, [
     abstractMapView,
     canvasCamera,
@@ -7342,7 +7344,7 @@ ${parsedDocument.error}`);
 
   const handleExportPngViewport = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7354,7 +7356,7 @@ ${parsedDocument.error}`);
     };
 
     if (area.w <= 0 || area.h <= 0) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7375,10 +7377,10 @@ ${parsedDocument.error}`);
       });
       downloadBlobFile(getPngExportFilename("viewport", pngExportScale), pngBlob);
       downloadViewMetadata("viewport", area);
-      setStatusMessage(`Exported PNG (Viewport, ${pngExportScale}x)`);
+      setStatusMessage(t("app.status.export.png_viewport", { scale: pngExportScale }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "PNG export failed";
-      setStatusMessage(`PNG export failed: ${message}`);
+      const message = error instanceof Error ? error.message : t("app.status.export.png_failed_unknown");
+      setStatusMessage(t("app.status.export.png_failed", { detail: message }));
     }
   }, [
     abstractMapView,
@@ -7398,7 +7400,7 @@ ${parsedDocument.error}`);
 
   const handleExportPngVisibleBounds = useCallback(async () => {
     if (!document || !focusedVisibleDocument || !canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7411,7 +7413,7 @@ ${parsedDocument.error}`);
     });
 
     if (!visibleBounds) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7439,10 +7441,10 @@ ${parsedDocument.error}`);
       });
       downloadBlobFile(getPngExportFilename("visible-bounds", pngExportScale), pngBlob);
       downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
-      setStatusMessage(`Exported PNG (Visible bounds, ${pngExportScale}x)`);
+      setStatusMessage(t("app.status.export.png_visible_bounds", { scale: pngExportScale }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "PNG export failed";
-      setStatusMessage(`PNG export failed: ${message}`);
+      const message = error instanceof Error ? error.message : t("app.status.export.png_failed_unknown");
+      setStatusMessage(t("app.status.export.png_failed", { detail: message }));
     }
   }, [
     abstractMapView,
@@ -7462,7 +7464,7 @@ ${parsedDocument.error}`);
 
   const handleExportViewMetadataViewport = useCallback(() => {
     if (!canvasCamera) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
@@ -7474,28 +7476,28 @@ ${parsedDocument.error}`);
     };
 
     if (area.w <= 0 || area.h <= 0) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
     downloadViewMetadata("viewport", area);
-    setStatusMessage("Exported view.json (Viewport)");
+    setStatusMessage(t("app.status.export.view_viewport"));
   }, [canvasCamera, downloadViewMetadata]);
 
   const handleExportViewMetadataVisibleBounds = useCallback(() => {
     const area = getVisibleBoundsExportArea();
     if (!area) {
-      setStatusMessage("Nothing to export");
+      setStatusMessage(t("app.status.bundle.nothing_to_export"));
       return;
     }
 
     downloadViewMetadata("bounds", area, SVG_VISIBLE_BOUNDS_PADDING);
-    setStatusMessage("Exported view.json (Visible bounds)");
+    setStatusMessage(t("app.status.export.view_visible_bounds"));
   }, [downloadViewMetadata, getVisibleBoundsExportArea]);
 
   const handleSafeModeChange = useCallback((nextValue: boolean) => {
     if (!nextValue) {
-      const confirmed = window.confirm("May include draft/unreviewed text. Do you want to proceed?");
+      const confirmed = window.confirm(t("app.confirm.safe_mode_off"));
       if (!confirmed) {
         return;
       }

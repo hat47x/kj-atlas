@@ -212,6 +212,49 @@
 - The canonical DATA recovery lane changes from the older #2261/#2263 planning-only records to #2267, because #2267 includes executable SQLite evidence, temporary PostgreSQL dump/restore evidence, restored SQL readback, and CI success.
 - #2262 has been refreshed to consume #2267 at `f230ea6b9d86f46478c029290175d9f4e7d9cb74` as its primary evidence candidate; it is no longer a pending refresh item.
 
+## 13) Convergence checkpoint 2026-05-26: evidence lane merged, DX lane isolated
+
+### Observation
+
+- Observed after `git fetch --prune origin` on 2026-05-26.
+- `origin/main`: `1a8ecd575e830f5fa51e537b75875840c69c7096`
+- remote branch count: 2267
+- `origin/codex/` remote branch count: 2245
+- open PR count returned by GitHub search: 1
+- internal issue triage:
+  - `active_issues=47`
+  - `ready=18`
+  - `blocked=29`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### PR lane resolution
+
+| PR | State | Merge commit | Governance result |
+| --- | --- | --- | --- |
+| #2261 | merged | `1a8ecd575e830f5fa51e537b75875840c69c7096` | DATA-MAINT-01 parent handoff is now on `main`. |
+| #2262 | merged | `4e6c57078cfed0a2057a313731e298a6648ccf05` | MVP-EXIT recovery evidence intake is now on `main`. |
+| #2263 | merged | `6b5289723cb6216e214ef87c4847ddf967f7e66d` | PRODUCT-QA recovery evidence gate is now on `main`. |
+| #2264 | merged | `e72efc42c7dd689c805054379f2180513987c125` | PRODUCT-OPS-02 follow-up issue split is now on `main`. |
+| #2265 | merged | `1814d853147ed1e8cca4fd14e15707e3ab88e754` | Prior governance checkpoint is now on `main`. |
+| #2266 | merged | `5a242b5e16945b15b167f6c34c61ce5a3a668320` | 2026-05-25 latest-main baseline record is now on `main`. |
+| #2267 | merged | `e9c354f4cb8f76e7a35f8d51fd1ab6eca3c88f69` | DATA-MAINT-02 recovery exercise evidence is now on `main`. |
+| #2270 | open draft | N/A | Independent DX lane for Codex RTK token-saving runbook. It must not be treated as product/runtime release evidence. |
+
+### Decision
+
+- The DATA/MVP/QA/OPS evidence lane from #2261 through #2267 is considered converged into `main`.
+- #2270 is an independent developer-experience documentation lane. It is mergeable from a repository-governance perspective, but it does not change product runtime, SafeMode behavior, public user documentation, data maintenance evidence, or release readiness.
+- No new ADR is required. ADR-0034 already covers the mainline convergence policy, and the current change only records the updated inventory.
+- Branch deletion remains a permissioned cleanup action and is not executed from this issue update.
+
+### Updated recommendation
+
+1. Treat `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096` as the current planning input.
+2. Review or merge #2270 independently of product release gates because it is Codex local-operations guidance.
+3. After #2270 is merged or closed, add `origin/codex/rtk-agent-runbook` to the cleanup candidate table.
+4. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or the active issue triage materially changes.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

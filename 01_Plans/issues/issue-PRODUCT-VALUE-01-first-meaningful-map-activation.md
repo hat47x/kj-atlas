@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `04_Documentation/installation.md`, `04_Documentation/operations.md`
 - Related Backlog: `PRODUCT-VALUE-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/value_traceability.md`
@@ -244,3 +244,27 @@
 - Next action:
   - `Owner` 確定後、初回成功経路のE2Eシナリオ名、fixture名、証跡保存先を本文へ追記する。
   - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。
+
+## Draft Gate Reassessment 2026-05-27: owner fixed, ADR-0032 still blocking Open
+
+- Assessment scope: 計画層のDraft維持理由を、担当未確定ではなくADR-0032承認待ちと証跡経路の最終固定へ絞り込む。
+- Gate result: **Draft維持**. OwnerはCodexの契約・証跡整備責務として確定したが、`DecisionStatus=Pending` と `ADR-0032` Proposed が残るためOpen化しない。
+- RACI:
+  - R: Codex (Product Value contract steward)
+  - A: Productization Program Owner
+  - C: QA Lead / Platform Architecture Owner / Documentation Maintainer
+  - I: Frontend Lead
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Partial. `ADR-0032` がAcceptedまたは明示承認されるまでは価値ゲートの正本化が未完了。
+  - O-OPEN-03: Partial. `realistic_user_journey_expansion.spec.ts` を主経路にする方針は固定したが、5試行中4成功以上を測る反復実行手順と証跡保存先が未固定。
+  - O-OPEN-04: Pass. 本更新は契約整理であり、実装変更や公開文書変更を直接要求しない。
+- Fixed evidence route candidate:
+  - 初回価値シナリオ: `e2e/realistic_user_journey_expansion.spec.ts`
+  - 補助viewport/focus確認: `e2e/header_toolbar_layout.spec.ts`
+  - SafeMode/share確認: `src/ui/SharePanel.test.ts` と代表E2Eの共有前確認ステップ
+  - 公開文書同期: `04_Documentation/public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md`
+- Reopen/Open condition:
+  - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが本Issue単独の価値ゲート定義を明示承認する。
+  - 反復E2E手順、入力fixture、画面状態の保存先が本文で固定される。
+  - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V0/V1へ戻す。

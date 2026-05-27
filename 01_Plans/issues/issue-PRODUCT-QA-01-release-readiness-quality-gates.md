@@ -835,3 +835,127 @@ DoDテンプレ（Draft→Open）
 - SafeMode default ON: unchanged.
 - share/export fail-closed: unchanged; this update only adds operation-contract coverage to the regression lane.
 - public document exposure boundary: unchanged; no public 04 document changed.
+
+## Productization Gate Record 2026-05-26: merged evidence-lane convergence
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date (JST): 2026-05-26
+- Reviewer: Codex
+- Scope: PROJECT-GOV convergence after #2261..#2267 merged. This record evaluates release-gate input availability only; it is not a full release-candidate E2E run.
+
+### Gate Summary
+
+- G0 計画整合: Go. #2261..#2267 are merged into `main`, open PR inventory is reduced to #2270 only, and triage has no stopper.
+- G1 安全既定: N/A for this delta. SafeMode/share-export behavior was not changed or re-tested.
+- G2 主要操作: N/A for this delta. No browser operation matrix was executed in this record.
+- G3 日本語UI: N/A. No UI copy changed.
+- G4 画面耐性: N/A. No viewport behavior changed.
+- G5 公開文書: N/A. No public 04 document changed.
+- G6 診断とサポート: Conditional Go. DATA-MAINT and PRODUCT-OPS evidence is now merged, but support diagnostics bundle policy remains a follow-up boundary.
+- G7 回帰: Go for planning checks only.
+- Value gates: No-Go for full shipment until current release-candidate value/UX evidence is attached.
+- Final: **Go for evidence-lane convergence / No-Go for full release shipment**.
+
+### Evidence
+
+- GitHub PR state:
+  - #2261, #2262, #2263, #2264, #2265, #2266, and #2267 are merged.
+  - #2270 is the only open PR and is a DX-only Codex RTK token-saving runbook lane.
+- Planning/docs checks:
+  - `git fetch --prune origin` -> pass.
+  - `git rev-parse origin/main` -> `1a8ecd575e830f5fa51e537b75875840c69c7096`.
+  - GitHub PR search -> open PR count 1.
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- #2270 can be reviewed or merged independently because it is Codex local-operations guidance, not product release evidence.
+- Full shipment still requires a release-candidate gate record with current SafeMode/share-export smoke evidence, representative mouse/keyboard/browser evidence, value/UX evidence, and E1..E3 environment contract results.
+- No ADR is needed for this convergence update because it does not change release authority, product behavior, SafeMode defaults, or public documentation policy.
+
+## Productization Gate Record 2026-05-26: release-candidate evidence refresh
+
+- Candidate: `origin/main@1a8ecd575e830f5fa51e537b75875840c69c7096`
+- Decision date (JST): 2026-05-26
+- Reviewer: Codex
+- Scope: current release-candidate evidence refresh for planning metadata, frontend regression, backend regression, Playwright browser E2E, production build, runtime configuration, and Compose contract. This record does not grant final shipment approval because product value/UX child issues still need owner/evidence routes.
+
+### Gate Summary
+
+- G0 計画整合: Go. issue metadata and triage pass with no stopper.
+- G1 安全既定: Go for tested scope. SharePanel, SafeMode, read-only, import/export guards, and Playwright safe-sharing scenarios passed.
+- G2 主要操作: Go for tested scope. Full Playwright passed 33 browser tests, including realistic user journey, authoring continuity, safe sharing gate, keyboard focus, visibility, polygon editing, and recovery guidance.
+- G3 日本語UI: Go for tested scope. Full Vitest and targeted i18n/SharePanel checks passed.
+- G4 画面耐性: Go for tested viewport matrix. Header/layout, 390px recovery paths, large-document operability, slow diagnostics, and slow review-pack export cancellation were covered by the Playwright suite.
+- G5 公開文書/設定契約: Conditional Go. Public env contract scan found only internal vendor-boundary mentions of `POSTGRES_*`, and `KJ_ATLAS_*` keys remain the only public settings. Public documentation was not republished in this run.
+- G6 診断とサポート: Conditional Go. Recovery guidance E2E passed, but the support diagnostics bundle policy remains a follow-up boundary.
+- G7 回帰: Go. Frontend typecheck, full Vitest, backend pytest, production build, Playwright E2E, and Compose config passed after environment normalization.
+- Value gates: Conditional Go for tested realistic journey evidence; full shipment remains blocked until `PRODUCT-VALUE-*` and `PRODUCT-UX-*` Draft gates have assigned owners and release-candidate evidence routes.
+- E1..E3 環境契約: Conditional Go. backend settings tests, public-key scan, production build, and WSL2 `docker compose config` passed. A full running Compose stack was not started in this run.
+- Final: **Conditional Go for current release-candidate evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- Planning/docs:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=18 / blocked=29 / actionable_adrs=1 / stopper=none`).
+- Frontend:
+  - Bundled Node.js `node.exe .\node_modules\typescript\bin\tsc --noEmit` -> pass.
+  - Bundled Node.js targeted i18n/SharePanel/UX Vitest -> pass: 6 files / 39 tests.
+  - Bundled Node.js full Vitest -> pass: 160 files / 734 tests.
+  - Bundled Node.js `vite build` -> pass with only the existing chunk-size warning.
+- Backend:
+  - First full pytest without `.venv\Scripts` on `PATH` failed because subprocess `alembic` was not found; this is an execution-environment issue.
+  - Rerun with `.venv\Scripts` prepended to `PATH` -> pass: 260 passed / 19 skipped.
+- Browser E2E:
+  - Vite manually started on `http://127.0.0.1:4173/`.
+  - Bundled Node.js `playwright test --reporter=line` -> pass: 33 tests.
+  - Test listener on port 4173 was stopped after the run.
+- Runtime configuration / Compose:
+  - PowerShell `docker compose` was unavailable, but WSL2 `docker compose version` -> `Docker Compose version v2.39.1`.
+  - WSL2 `docker compose config` under `03_Implement/deploy` -> pass, showing public `KJ_ATLAS_*` inputs mapped to private PostgreSQL `POSTGRES_*` adapter env names.
+  - Public env scan for `VITE_`, `POSTGRES_`, `DATABASE_URL`, `LLM_PROVIDER`, `API_KEY`, `WEB_PORT`, and `FRONTEND_API_BASE` found only documented private-boundary references or `KJ_ATLAS_*` public settings.
+
+### Follow-ups
+
+- GitHub Actions CI run #9141 failed before tests at `actions/checkout@v4` with a GitHub 403 account/repository operation error. Subsequent CI run #9143 on `5fd1a304dc0577678b3d2afe4ed18642512e4286` passed checkout and all frontend/backend jobs, so `PROJECT-CI-01` is closed as a transient incident and must not be classified as an application regression.
+- Full shipment still requires executed release-candidate evidence for `PRODUCT-UX-01..04` and ADR-0032-backed Open readiness for `PRODUCT-VALUE-01..03`.
+- A full running Docker Compose stack was not started; this run verifies Compose config rendering and prior PostgreSQL recovery evidence, not end-to-end Compose service startup.
+- No ADR is needed for this evidence refresh because it does not change release authority, runtime behavior, SafeMode defaults, public configuration policy, or data lifecycle boundaries.
+
+## Productization Gate Record 2026-05-27: product UX/value gate refinement
+
+- Candidate: local branch `codex/project-gov-20260526-convergence@14bb45937243fb396e00eb597c3580625e4fbaab`
+- Decision date (JST): 2026-05-27
+- Reviewer: Codex
+- Scope: internal issue gate refinement for product UX and product value readiness. This record changes planning/evidence routing only; it does not change application code, public documentation, runtime configuration, SafeMode defaults, or release authority.
+
+### Gate Summary
+
+- G0 計画整合: Go. Active issue validation passes, and triage has no stopper.
+- G1 安全既定: Unchanged. SafeMode/share-export behavior is not changed in this planning slice.
+- G2 主要操作: Conditional Go for planning execution. `PRODUCT-UX-01..04` are Open with representative E2E routes, but implementation and release-candidate screenshots are still pending.
+- G3 日本語UI: Unchanged. No UI copy changed in this slice.
+- G4 画面耐性: Conditional Go for planning execution. UX-04 now has fixed evidence buckets for viewport, focus, large document, and slow/failure recovery.
+- G5 公開文書/設定契約: Conditional Go. Documentation sync targets are named, but public docs were not republished.
+- G6 診断とサポート: Conditional Go. Recovery/diagnostics evidence routes are linked; support bundle policy remains separate.
+- G7 回帰: Go for planning checks only.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` now have Codex stewardship and clearer blockers, but remain Draft until `ADR-0032` is Accepted or explicitly approved as a provisional baseline.
+- Final: **Conditional Go for UX execution readiness / No-Go for full release shipment**.
+
+### Evidence
+
+- Planning/docs checks:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=47 / ready=22 / blocked=25 / actionable_adrs=1 / stopper=none`).
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass.
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` -> pass.
+  - `git diff --check` -> pass (Windows LF-to-CRLF warnings only).
+
+### Follow-ups
+
+- Execute `PRODUCT-UX-01..04` through focused implementation/E2E/documentation slices; Open status alone is not release evidence.
+- Decide `ADR-0032` before opening `PRODUCT-VALUE-01..03`, or record an explicit Productization Program Owner approval for provisional value-gate execution.
+- Push or otherwise publish local follow-up commits from PR #2271 before treating this record as mergeable branch evidence.
+- No ADR is needed for this refinement itself; ADR action remains limited to `ADR-0032` value-model acceptance.

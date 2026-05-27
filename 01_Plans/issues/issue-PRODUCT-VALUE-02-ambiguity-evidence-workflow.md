@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`
 - Related Backlog: `PRODUCT-VALUE-02`
 - Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`
@@ -246,3 +246,33 @@
 - Next action:
   - 現行スキーマで対応する範囲と、ADRまたはschema issueが必要な範囲を1表に分ける。
   - ADR-0032でDecisionStatusをFixedにできる承認IDまたは確定コミットを得るまではOpen化しない。
+
+## Draft Gate Reassessment 2026-05-27: owner fixed, representation boundary split
+
+- Assessment scope: 計画層のDraft維持理由を、担当未確定ではなくADR-0032承認待ちと「現行構造で表現できる範囲」の固定へ絞り込む。
+- Gate result: **Draft維持**. OwnerはCodexの契約・証跡整備責務として確定したが、`DecisionStatus=Pending` と `ADR-0032` Proposed が残るためOpen化しない。
+- RACI:
+  - R: Codex (Product Value contract steward)
+  - A: Productization Program Owner
+  - C: Platform Architecture Owner / QA Lead
+  - I: Documentation Maintainer / Frontend Lead
+- O-OPEN status:
+  - O-OPEN-01: Pass. OwnerはCodexに確定し、最終説明責任はProductization Program Ownerに分離した。
+  - O-OPEN-02: Partial. `ADR-0032` の価値語彙と `02_Architecture/schemas.md` の現行DocumentV2要素を以下の表で分離したが、第一級のHold/Pendingデータ構造を追加するかは未承認。
+  - O-OPEN-03: Partial. e2e前提のACは維持するが、曖昧さ、違和感、証拠、矛盾の最小fixtureと保存先は未固定。
+  - O-OPEN-04: Pass. 本更新は契約整理であり、実装変更やスキーマ変更を直接要求しない。
+
+### Representation boundary table
+
+| 価値語彙 | 現行構造で扱える範囲 | 現行構造で不足する範囲 | 次の扱い |
+| --- | --- | --- | --- |
+| 保留 / Pending | `claimType="unknown"`、カード/島の`critique`、未レビュー`reviewState`で「未確定である」ことを補助的に表現できる。 | 利用者が明示的に「保留」として作業状態を付ける第一級フィールドは未固定。 | ADR-0032承認後に、既存フィールド運用で足りるか、schema issueを切るか判断する。 |
+| 違和感 / Critique | `critiqueInputs`、`critiqueTags`、HIL-RS critique payloadでAI入力境界には保持できる。 | 日常UIでの登録、一覧、絞り込み、共有前確認までの標準導線は未固定。 | 初回はUI語彙とE2E fixtureで検証し、永続化拡張が必要なら別issue化する。 |
+| 根拠 / Evidence | `evidenceLinks`、claim/evidence overlay、trace exportでカード間の支持/反証関係を扱える。 | 根拠の粒度、必須/任意、成果物内での表示順は価値ゲートとして未固定。 | `PRODUCT-VALUE-03` と連携し、reviewable packageの最小要素へ接続する。 |
+| 矛盾 / Contradiction | contradiction checks、evidence overlay mode、trace exportで検出/表示の入口がある。 | 矛盾を利用者が確認済み、保留、解決済みとして扱う状態遷移は未固定。 | schema変更なしで代表E2Eを先に固定し、状態遷移が必要ならADR/schema issueへ送る。 |
+| 人間レビュー境界 | `reviewState`（`unreviewed` / `human_reviewed`）と `reviewedAt` で人手昇格境界を保持できる。 | 曖昧さや根拠不足の解消と`human_reviewed`昇格の関係は未固定。 | `review_attribution.md` と整合し、AI自動昇格禁止を維持する。 |
+
+- Reopen/Open condition:
+  - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記representation boundaryを価値ゲートの暫定正本として明示承認する。
+  - 曖昧さ、違和感、根拠、矛盾を含む最小fixtureと、同一条件3回の再現性検証手順が本文で固定される。
+  - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V2/V3へ戻す。

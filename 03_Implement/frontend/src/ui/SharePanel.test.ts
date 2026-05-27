@@ -87,8 +87,18 @@ afterEach(() => {
 describe("SharePanel safe mode copy", () => {
   it("shows consistent Japanese safe-mode-on messages", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
+    expect(html).toContain("共有と再現");
+    expect(html).toContain("共有用の書き出し、レビューパックの取り込み、差分確認をここから行います。");
+    expect(html).toContain("目的を選ぶ");
+    expect(html).toContain("共有用に書き出す");
+    expect(html).toContain("取り込む・復元する");
+    expect(html).toContain("パッチを確認する");
+    expect(html).toContain("差分を確認する");
+    expect(html).toContain('aria-controls="share-panel-purpose-export"');
+    expect(html).toContain('id="share-panel-purpose-import"');
+    expect(html).toContain('aria-label="パネルを閉じる"');
     expect(html).toContain("セーフモード: ON");
-    expect(html).toContain("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
+    expect(html).toContain("セーフモードが ON です。書き出した要約は既定でプライバシー優先になります。");
     expect(html).toContain("固定マスク対象: 共有 / レビューパック（無効化できません）。");
     expect(html).not.toContain("未レビューのドラフトを含める");
   });
@@ -132,9 +142,9 @@ describe("SharePanel bundle granularity", () => {
 describe("SharePanel patch section localization", () => {
   it("renders Japanese patch controls", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
-    expect(html).toContain("4) パッチ");
+    expect(html).toContain("4) パッチを確認");
     expect(html).toContain("patch.json を読み込む");
-    expect(html).toContain("6) Diff / Verify");
+    expect(html).toContain("6) 差分確認 / 検証");
   });
 
   it("renders English patch controls", () => {
