@@ -28,7 +28,7 @@ describe("translate", () => {
         islandCount: 3,
         perspectiveMode: "default",
       }),
-    ).toBe("sample.zip を取り込みました: cards 12, islands 3, perspective default");
+    ).toBe("sample.zip を取り込みました: カード 12、島 3、表示モード default");
   });
 
   it("falls back to default locale when requested locale misses a key", () => {

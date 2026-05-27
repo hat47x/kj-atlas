@@ -10,10 +10,10 @@ describe("safe_mode_status", () => {
   it("returns safe indicator details in Japanese by default", () => {
     expect(getSafeModeIndicator(true)).toEqual({
       label: "セーフモード: ON",
-      detail: "export/share コンテキストでは機微テキストをマスクします。",
+      detail: "書き出しや共有の場面では機微テキストをマスクします。",
       tone: "safe",
     });
-    expect(getExportSafetyWarning(true)).toBe("セーフモードが ON です。エクスポートされた要約は既定でプライバシー優先になります。");
+    expect(getExportSafetyWarning(true)).toBe("セーフモードが ON です。書き出した要約は既定でプライバシー優先になります。");
   });
 
   it("returns warning indicator details in English when locale switched", () => {

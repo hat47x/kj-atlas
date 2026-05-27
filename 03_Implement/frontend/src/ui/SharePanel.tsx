@@ -414,7 +414,11 @@ export function SharePanel({
             }}
           >
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-            <button type="button" onClick={closePanelAndRestoreFocus} aria-label="Close panel">×</button>
+            <button type="button" onClick={closePanelAndRestoreFocus} aria-label={t("share.panel.close")}>×</button>
+          </div>
+          <div style={{ ...sectionStyle, paddingBottom: 8 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{t("share.panel.title")}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{t("share.panel.intent_hint")}</div>
           </div>
           <div style={sectionStyle}>
             <ImportPanel

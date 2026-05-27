@@ -4,9 +4,9 @@ export const SHARE_REPRODUCE_BUTTON = /Share & Reproduce|共有と再現/;
 export const VIEW_BUTTON = /^View$|^表示$/;
 export const SUGGEST_LAYOUT_BUTTON = /Suggest layout|配置を提案/;
 export const LOAD_DOCUMENT_BUTTON = /^Load document\.json$|^document\.json を読み込む$/;
-export const REPLACE_DOCUMENT_BUTTON = /Replace current document|現在の document を置換/;
+export const REPLACE_DOCUMENT_BUTTON = /Replace current document|現在のドキュメントを置換/;
 export const EXPORT_BUNDLE_BUTTON = /Export bundle \(\.zip\)|レビューパックを書き出す \(.zip\)|bundle をエクスポート \(.zip\)/;
-export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|ドキュメントJSONを書き出す（legacy）/;
+export const EXPORT_DOCUMENT_JSON_BUTTON = /Export document JSON|Export doc JSON \(legacy\)|ドキュメントJSONを書き出す（旧式）/;
 export const READ_ONLY_INDICATOR = /Read-only mode is active|読み取り専用モードが有効|Read-only|読み取り専用/;
 export const EDIT_ISLAND_BOUNDARY_CHECKBOX = /Edit island boundary|島の境界を編集/;
 export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
@@ -18,14 +18,14 @@ export function visibilitySelect(page: Page, label: "view" | "pack") {
 }
 
 export async function closeSharePanelIfOpen(page: Page): Promise<void> {
-  const closeButton = page.getByRole("button", { name: "Close panel" });
+  const closeButton = page.getByRole("button", { name: /Close panel|パネルを閉じる/ });
   if (await closeButton.isVisible().catch(() => false)) {
     await closeButton.click();
   }
 }
 
 export async function openLegacyJsonMenu(page: Page): Promise<void> {
-  await page.locator("details").filter({ hasText: "Legacy JSON" }).evaluate((node) => {
+  await page.locator("details").filter({ hasText: /Legacy JSON|旧式JSON/ }).evaluate((node) => {
     (node as HTMLDetailsElement).open = true;
   });
 }

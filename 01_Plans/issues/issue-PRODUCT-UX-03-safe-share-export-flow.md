@@ -1,7 +1,7 @@
-# Issue Draft: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
+# Issue: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
 
 - Type: Feature request
-- Status: Open
+- Status: In Progress
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -237,4 +237,22 @@
 - Proceed rule:
   - 実装PRでは、共有目的、SafeMode状態、固定マスク、未レビュー情報、キャンセル/戻る操作のいずれに影響するかを明記し、対応する単体またはE2E証跡を添付する。
   - Product shipmentは本Issue OpenだけではGoにしない。共有前確認のE2Eと公開文書スクリーンショットが揃った時点で`PRODUCT-QA-01`へ戻す。
+
+## Implementation Evidence 2026-05-27: share panel first-view and Japanese copy
+
+- Scope:
+  - `SharePanel` の先頭に「共有と再現」の総合見出しと目的説明を追加し、パネルが「レビューパック取り込み」だけの画面に見えないようにした。
+  - 閉じるボタンのアクセシブル名を `パネルを閉じる` に変更し、E2E helperも日本語ラベルを認識するようにした。
+  - SafeMode、固定マスク、公開範囲、表示範囲、概念マップ、差分確認、patch検査、旧式導線、書き出し結果ステータスの日本語表現を整理した。
+  - `ImportPanel` の取り込み結果に `公開範囲: {visibility}` を使い、画面上に残る英語ラベルを減らした。
+- Acceptance impact:
+  - 「パネルの起点が取り込みだけに見えない」「SafeMode ON/OFF の警告が自然」「狭い画面で見切れない」は、本実装で証跡を追加した。
+  - T3/T4は部分進捗。共有目的別タブ、実行前プレビュー、取り込み・patch・Diff/Verify の補助導線整理は引き続き必要。
+- Evidence:
+  - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\ui\ImportPanel.test.ts src\ui\safe_mode_status.test.ts src\ui\i18n_equivalence.integration.test.ts src\ui\DiffPanel.test.ts src\i18n\translate.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts` -> 8 files / 49 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+  - `node .\node_modules\playwright\cli.js test header_toolbar_layout.spec.ts --reporter=line --timeout=60000` -> 7 tests passed.
+  - Browser measurement at `1280x720`: panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`, close aria label=`パネルを閉じる`。
+  - Header label check: `Legacy JSON` は画面表示から消え、旧式導線は `旧式JSON` として表示される。
+  - Screenshot: `04_Documentation/assets/screenshots/share-export-safe-mode.png`。
 
