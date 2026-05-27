@@ -151,6 +151,26 @@ const actionButtonStyle = {
   whiteSpace: "normal",
 } as const;
 
+const purposeGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: 6,
+} as const;
+
+const purposeButtonStyle = {
+  ...actionButtonStyle,
+  display: "grid",
+  gap: 2,
+  width: "100%",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  padding: 8,
+  backgroundColor: "#f8fafc",
+  color: "#0f172a",
+  cursor: "pointer",
+  textAlign: "left",
+} as const;
+
 function publishVisibilityLabel(value: PublishVisibility): string {
   switch (value) {
     case "Org":
@@ -164,6 +184,29 @@ function publishVisibilityLabel(value: PublishVisibility): string {
       return t("share.panel.visibility.unlisted");
   }
 }
+
+const purposeLinks = [
+  {
+    id: "share-panel-purpose-export",
+    labelKey: "share.panel.purpose.export",
+    hintKey: "share.panel.purpose.export_hint",
+  },
+  {
+    id: "share-panel-purpose-import",
+    labelKey: "share.panel.purpose.import",
+    hintKey: "share.panel.purpose.import_hint",
+  },
+  {
+    id: "share-panel-purpose-patch",
+    labelKey: "share.panel.purpose.patch",
+    hintKey: "share.panel.purpose.patch_hint",
+  },
+  {
+    id: "share-panel-purpose-diff",
+    labelKey: "share.panel.purpose.diff",
+    hintKey: "share.panel.purpose.diff_hint",
+  },
+] as const;
 
 const sharePanelLayoutCss = `
   .kj-atlas-share-panel,
@@ -344,6 +387,12 @@ export function SharePanel({
     });
   };
 
+  const handlePurposeClick = (sectionId: string) => {
+    const target = panelRef.current?.querySelector<HTMLElement>(`#${sectionId}`);
+    target?.scrollIntoView({ block: "start", behavior: "smooth" });
+    target?.focus({ preventScroll: true });
+  };
+
   const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -421,6 +470,23 @@ export function SharePanel({
             <div style={{ fontSize: 12, color: "#64748b" }}>{t("share.panel.intent_hint")}</div>
           </div>
           <div style={sectionStyle}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.purpose.section_title")}</div>
+            <div style={purposeGridStyle}>
+              {purposeLinks.map((link) => (
+                <button
+                  key={link.id}
+                  type="button"
+                  aria-controls={link.id}
+                  onClick={() => handlePurposeClick(link.id)}
+                  style={purposeButtonStyle}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>{t(link.labelKey)}</span>
+                  <span style={{ fontSize: 11, color: "#475569" }}>{t(link.hintKey)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div id="share-panel-purpose-import" tabIndex={-1} style={sectionStyle}>
             <ImportPanel
               isLoading={isLoading}
               onImportZip={onImportReviewPackFile}
@@ -430,7 +496,7 @@ export function SharePanel({
             />
           </div>
 
-          <div style={sectionStyle}>
+          <div id="share-panel-purpose-export" tabIndex={-1} style={sectionStyle}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.export.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               {t("share.panel.export.section_hint")}
@@ -712,7 +778,7 @@ export function SharePanel({
             ) : null}
           </div>
 
-          <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
+          <div id="share-panel-purpose-patch" tabIndex={-1} style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.patch.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               {t("share.panel.patch.section_hint")}
@@ -1013,7 +1079,7 @@ export function SharePanel({
             )}
           </div>
 
-          <div style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
+          <div id="share-panel-purpose-diff" tabIndex={-1} style={{ ...sectionStyle, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("share.panel.diff.section_title")}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
               {t("share.panel.diff.section_hint")}

@@ -89,6 +89,13 @@ describe("SharePanel safe mode copy", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("共有と再現");
     expect(html).toContain("共有用の書き出し、レビューパックの取り込み、差分確認をここから行います。");
+    expect(html).toContain("目的を選ぶ");
+    expect(html).toContain("共有用に書き出す");
+    expect(html).toContain("取り込む・復元する");
+    expect(html).toContain("パッチを確認する");
+    expect(html).toContain("差分を確認する");
+    expect(html).toContain('aria-controls="share-panel-purpose-export"');
+    expect(html).toContain('id="share-panel-purpose-import"');
     expect(html).toContain('aria-label="パネルを閉じる"');
     expect(html).toContain("セーフモード: ON");
     expect(html).toContain("セーフモードが ON です。書き出した要約は既定でプライバシー優先になります。");

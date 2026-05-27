@@ -106,7 +106,7 @@
 - [x] T1 SharePanelの現行操作を目的別に分類する。
 - [x] T2 共有前確認のステップまたはタブ構成を設計する。
 - [ ] T3 SafeMode、公開範囲、未レビュー情報、出力形式の確認UIを追加する。
-- [ ] T4 取り込み、patch、Diff/Verifyの入口を補助または別タブとして整理する。
+- [x] T4 取り込み、patch、Diff/Verifyの入口を補助または別タブとして整理する。
 - [ ] T5 E2Eと公開文書を同期する。
 
 ## 7) 検証計画 / Validation plan
@@ -247,7 +247,7 @@
   - `ImportPanel` の取り込み結果に `公開範囲: {visibility}` を使い、画面上に残る英語ラベルを減らした。
 - Acceptance impact:
   - 「パネルの起点が取り込みだけに見えない」「SafeMode ON/OFF の警告が自然」「狭い画面で見切れない」は、本実装で証跡を追加した。
-  - T3/T4は部分進捗。共有目的別タブ、実行前プレビュー、取り込み・patch・Diff/Verify の補助導線整理は引き続き必要。
+  - T3は部分進捗。共有目的別タブと実行前プレビューは引き続き必要。
 - Evidence:
   - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\ui\ImportPanel.test.ts src\ui\safe_mode_status.test.ts src\ui\i18n_equivalence.integration.test.ts src\ui\DiffPanel.test.ts src\i18n\translate.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts` -> 8 files / 49 tests passed.
   - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
@@ -255,4 +255,19 @@
   - Browser measurement at `1280x720`: panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`, close aria label=`パネルを閉じる`。
   - Header label check: `Legacy JSON` は画面表示から消え、旧式導線は `旧式JSON` として表示される。
   - Screenshot: `04_Documentation/assets/screenshots/share-export-safe-mode.png`。
+
+## Implementation Evidence 2026-05-27: share panel purpose navigation
+
+- Scope:
+  - `SharePanel` の先頭に「目的を選ぶ」補助導線を追加し、共有用の書き出し、取り込み・復元、パッチ確認、差分確認へマウス操作で直接移動できるようにした。
+  - 目的ボタンは既存セクションを非表示にせず、`aria-controls` で対応先を示し、クリック後は対象セクションへスクロールしてフォーカスを移す。
+  - 日本語・英語カタログに目的別ラベルと説明を追加し、公開向けスクリーンショット `04_Documentation/assets/screenshots/share-export-safe-mode.png` を更新した。
+- Acceptance impact:
+  - T4を完了扱いに更新。取り込み、patch、Diff/Verify の入口がパネル上部から見えるため、実装順の長い一覧を読み下さなくても目的別に移動できる。
+  - T3は未完了。SafeMode、公開範囲、出力形式は確認できるが、共有目的別の実行前プレビューと戻る/キャンセル証跡は引き続き必要。
+- Evidence:
+  - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts` -> 3 files / 20 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+  - Browser check at `1280x720`: purpose buttons=4, panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`.
+  - Browser click check: `パッチを確認する` は `#share-panel-purpose-patch` へ移動し `activeElementId=share-panel-purpose-patch`、`差分を確認する` は `#share-panel-purpose-diff` へ移動し `activeElementId=share-panel-purpose-diff`。
 
