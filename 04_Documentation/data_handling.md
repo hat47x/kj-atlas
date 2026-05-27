@@ -61,7 +61,7 @@
 - [ ] 共有先が必要最小限になっている。
 - [ ] ダウンロードしたファイルの保管先と削除方針を説明できる。
 
-「共有と再現」パネルでは、SafeMode、現在の reviewerRef、view visibility、pack visibility、出力形式を同じ場所で確認します。共有前は、画像のように SafeMode が有効であること、visibility が意図した範囲であること、reviewerRef を残す必要があることを確認してから export します。
+「共有と再現」パネルでは、目的を選んだあとに `共有前チェック` を確認します。この欄には SafeMode、view の公開範囲、パックの公開範囲、未レビュー情報の扱い、出力形式、レビューパックの粒度がまとまって表示されます。共有前は、画像のように SafeMode が有効であること、公開範囲が意図した範囲であること、未レビュー情報を含めない設定になっていることを確認してから export します。
 
 ![共有と再現パネルの export/share 前チェック](assets/screenshots/share-export-safe-mode.png)
 

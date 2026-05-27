@@ -60,7 +60,7 @@ API key は簡易保護です。公開ネットワークでの本格運用では
 
 ## SafeMode の画面確認
 
-share/export の前は、「共有と再現」パネルで SafeMode、visibility、reviewerRef、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないことが画面上に示されます。
+share/export の前は、「共有と再現」パネルの `共有前チェック` で SafeMode、公開範囲、未レビュー情報、出力形式を確認します。SafeMode が有効な状態では、export/share コンテキストで機微テキストをマスクすること、固定マスク対象を無効化できないこと、未レビューのドラフトを含めないことが画面上に示されます。
 
 ![SafeMode と共有前の確認画面](assets/screenshots/share-export-safe-mode.png)
 

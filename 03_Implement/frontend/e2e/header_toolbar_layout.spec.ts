@@ -92,6 +92,10 @@ for (const viewport of checkedViewports) {
     await page.getByRole("button", { name: VIEW_BUTTON }).click();
 
     await page.getByRole("button", { name: SHARE_REPRODUCE_BUTTON }).click();
+    const shareDialog = page.locator('[data-panel="share-replay"]');
+    await expect(shareDialog).toContainText(/共有前チェック|Preflight check/);
+    await expect(shareDialog).toContainText(/未レビュー情報|Unreviewed content/);
+    await expect(shareDialog).toContainText(/出力形式|Output formats/);
     const sharePanels = await collectFixedPanels(page);
     expect(sharePanels.length).toBeGreaterThan(0);
     expect(sharePanels.some((panel) => panel.y < headerBottom)).toBe(false);
