@@ -86,7 +86,14 @@ test("cards, islands, and selection panel controls are reachable from keyboard f
 
   const selectionPanel = page.locator('[data-ui-region="selection-context"]');
   await expect(selectionPanel).toBeVisible();
+  await expect(selectionPanel.getByText(/現在の選択|Current selection/)).toBeVisible();
+  await expect(selectionPanel.getByText(/^カードを選択中$|^Card selected$/)).toBeVisible();
+  await expect(selectionPanel.getByText(/レビュー状態: レビュー済み|Review state: Reviewed/)).toBeVisible();
   await expect(selectionPanel.getByText(/カードの確認|Card Inspector/)).toBeVisible();
+
+  const selectedCardFocusButton = selectionPanel.getByRole("button", { name: /選択中のカードを表示|Focus selected card/ });
+  await pressTabUntilFocused(page, selectedCardFocusButton, 30);
+  await expect(selectedCardFocusButton).toBeFocused();
 
   const cardFocusButton = selectionPanel.getByRole("button", { name: /このカードを表示|Focus this card/ });
   await pressTabUntilFocused(page, cardFocusButton);
@@ -99,6 +106,8 @@ test("cards, islands, and selection panel controls are reachable from keyboard f
   await expect(islandSelect).toBeFocused();
   await page.keyboard.press("Enter");
 
+  await expect(selectionPanel.getByText(/^島を選択中$|^Island selected$/)).toBeVisible();
+  await expect(selectionPanel.getByRole("button", { name: /選択中の島を表示|Focus selected island/ })).toBeVisible();
   await expect(selectionPanel.getByText(/島の編集|Island editor/)).toBeVisible();
   await expect(selectionPanel.getByText("親の島")).toBeVisible();
   await expect(selectionPanel.getByText("代表カード", { exact: true })).toBeVisible();

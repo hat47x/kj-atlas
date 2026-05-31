@@ -16,6 +16,7 @@
 | ファイル | 内容 |
 | --- | --- |
 | `app-canvas-overview.png` | 起動直後のキャンバス、ヘッダー、右側パネル |
+| `selection-context-card.png` | カード選択後、右側パネルの先頭に現在の選択とレビュー状態が表示される状態 |
 | `share-export-safe-mode.png` | 「共有と再現」パネルの SafeMode と export/share 前チェック |
 | `view-controls-safe-mode.png` | `View` パネルの表示設定と SafeMode |
 | `diagnostics-quality-report.png` | diagnostics 実行後の品質レポート |

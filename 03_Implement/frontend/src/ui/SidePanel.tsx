@@ -565,13 +565,13 @@ export function SidePanel({
   const canAlign = selectedCardCount >= 2;
   const hideUnreviewedRelationSummary = safeMode && selectedRelationSummary?.reviewed === false;
   const canDistribute = selectedCardCount >= 3;
-  const selectedCardLabel = useMemo(() => {
-    if (selectedCardCount === 1) {
-      return "1 card selected";
-    }
-
-    return `${selectedCardCount} cards selected`;
-  }, [selectedCardCount]);
+  const selectedCardLabel = selectedCardCount === 1
+    ? t("side_panel.selection.card_single")
+    : t("side_panel.selection.card_multiple", { count: selectedCardCount });
+  const selectedIslandTitle = selectedIsland?.title?.trim() || selectedIsland?.id || "";
+  const selectedCardText = selectedCard?.text.trim() || selectedCard?.id || "";
+  const selectedCardReviewState = selectedCard?.textReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
+  const selectedIslandReviewState = selectedIsland?.summaryReviewed === true ? t("side_panel.reviewed") : t("side_panel.unreviewed");
 
   const visibleRecommendations = useMemo(() => {
     if (!showOnlyHighImpactRecommendations) {
@@ -1090,6 +1090,63 @@ export function SidePanel({
           {t("read_only.banner.active")}
         </div>
       ) : null}
+      <section
+        data-panel="selection-context"
+        aria-label={t("side_panel.context.title")}
+        style={{
+          marginBottom: 12,
+          padding: 10,
+          border: "1px solid #c7d2fe",
+          borderRadius: 8,
+          backgroundColor: "#eef2ff",
+          display: "grid",
+          gap: 8,
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>{t("side_panel.context.title")}</div>
+        {selectedIsland ? (
+          <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("side_panel.context.island_selected")}</div>
+            <div style={{ fontSize: 12, color: "#334155", overflowWrap: "anywhere" }}>
+              {t("side_panel.context.target", { value: selectedIslandTitle })}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              {t("side_panel.context.review_state", { value: selectedIslandReviewState })}
+            </div>
+            <button
+              type="button"
+              onClick={onFocusIsland}
+              style={{ width: "100%", border: "1px solid #a5b4fc", backgroundColor: "#ffffff", borderRadius: 6, padding: "6px 8px", fontWeight: 600, cursor: "pointer" }}
+            >
+              {t("side_panel.context.focus_selected_island")}
+            </button>
+          </>
+        ) : selectedCard ? (
+          <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{t("side_panel.context.card_selected")}</div>
+            <div style={{ fontSize: 12, color: "#334155", overflowWrap: "anywhere" }}>
+              {t("side_panel.context.target", { value: selectedCardText })}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              {t("side_panel.context.review_state", { value: selectedCardReviewState })}
+            </div>
+            <button
+              type="button"
+              onClick={onFocusCard}
+              style={{ width: "100%", border: "1px solid #a5b4fc", backgroundColor: "#ffffff", borderRadius: 6, padding: "6px 8px", fontWeight: 600, cursor: "pointer" }}
+            >
+              {t("side_panel.context.focus_selected_card")}
+            </button>
+          </>
+        ) : hasCardSelection ? (
+          <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{selectedCardLabel}</div>
+            <div style={{ fontSize: 12, color: "#475569" }}>{t("side_panel.context.multi_card_hint")}</div>
+          </>
+        ) : (
+          <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4 }}>{t("side_panel.context.empty_hint")}</div>
+        )}
+      </section>
       {topContent}
       {importedPackSnapshotUrl || importedPackDiagnosticsMd ? (
         <section style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0", display: "grid", gap: 8 }}>
@@ -1113,7 +1170,7 @@ export function SidePanel({
           ) : null}
         </section>
       ) : null}
-      <section data-panel="selection-context" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
+      <section data-panel="merge-history" style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #e2e8f0" }}>
         <details
           data-panel-group="advanced"
           aria-expanded={isAdvancedPanelOpen ? "true" : "false"}
