@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MAINT-02 バックアップ/復旧演習の標準検証
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -178,3 +178,29 @@
   - `DATA-MAINT-01`: T5代表復旧演習の実行証跡として参照可能。
   - `PRODUCT-QA-01`: G6（診断とサポート）/ G7（回帰）の条件付き証跡として参照可能。
   - `MVP-EXIT-01`: 製品化判定では、PostgreSQL本番相当演習が残るため Conditional のまま扱う。
+
+## 13) Closeout（2026-05-31）
+
+### Context
+
+- 最新mainには、SQLite隔離DBと一時PostgreSQL DBでの代表復旧演習、`merge_decision_logs` 整合確認、SafeMode export gate確認の証跡が反映されている。
+- 受入条件とT1-T5はすべて完了しており、演習結果は `DATA-MAINT-01`、`PRODUCT-QA-01`、`MVP-EXIT-01` の判断材料として戻し済みである。
+- 本Issueの目的は「製品代表演習の証跡を残すこと」であり、各組織の本番バックアップ保持期間、暗号化方式、保管先、職務分掌、承認手順を製品標準として固定することではない。
+
+### Decision
+
+- `DATA-MAINT-02` は **Done** とする。
+- 追加ADRは起票しない。今回の証跡はバックアップ/復旧演習であり、削除、アーカイブ、所有者移管、管理者本文閲覧、保持期限管理の製品方針を固定していない。
+- 高権限データライフサイクル操作は、`DATA-MAINT-01` のStop条件、および後続の `DATA-MAINT-03` / future ADRで扱う。
+
+### Consequences
+
+- `DATA-MAINT-02` はReady issueから外し、復旧演習の追加検証が必要になった場合は新しいIssueまたは `PRODUCT-QA-01` のリリース候補ゲートで扱う。
+- `MVP-EXIT-01` の全体出荷判定は、本Issue単独ではGoにしない。代表復旧演習はGoだが、製品価値、UX、release-candidate E2E、組織ごとの本番運用条件は別ゲートの判断対象である。
+
+### Verify
+
+- `03_Implement/backend/.venv/Scripts/python.exe -m pytest tests/test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02_closeout -p no:cacheprovider`
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py`
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-02-backup-restore-recovery-exercise.md`
