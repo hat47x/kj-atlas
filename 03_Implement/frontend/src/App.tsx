@@ -128,6 +128,7 @@ import { setAllIslandsCollapsed, setIslandCollapsed } from "./domain/view/collap
 import { ReviewDiffPanel } from "./ui/ReviewDiffPanel";
 import { createHilRsClient } from "./domain/hil_rs_client";
 import { HilRsRediffPreview } from "./ui/HilRsRediffPreview";
+import { StartPanel } from "./ui/StartPanel";
 import type { MergeItem } from "./diff/merge_items";
 import { applyMergeTransaction, buildMergeAuditEntry } from "./diff/merge_apply";
 import { evaluateMergeSelection } from "./diff/merge_dependencies";
@@ -1080,6 +1081,7 @@ export default function App() {
   const [hierarchyLevel, setHierarchyLevel] = useState<HierarchyLevel>("detail");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+  const [isStartPanelVisible, setIsStartPanelVisible] = useState(true);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
@@ -1642,6 +1644,7 @@ export default function App() {
   const suppressNextTransformPersistRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const compareImportInputRef = useRef<HTMLInputElement | null>(null);
+  const reviewPackInputRef = useRef<HTMLInputElement | null>(null);
   const cardsById = useMemo(() => new Map((document?.cards ?? []).map((card) => [card.id, card])), [document]);
   const latestMergeDecisionAuditByGroup = useMemo(() => {
     const latest = new Map<string, MergeDecisionAuditEvent>();
@@ -2804,6 +2807,46 @@ ${parsedDocument.error}`);
     return true;
   }, [applyImportedViewMetadata]);
 
+  const handleOpenSampleDocument = useCallback(async () => {
+    setIsStartPanelVisible(false);
+    setIsLoading(true);
+    setStatusMessage(t("app.status.start.opening_sample"));
+
+    try {
+      const loadedFromPack = await loadPublicPack(null);
+      if (!loadedFromPack) {
+        await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+      }
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : t("app.status.start.sample_failed"));
+      await loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDocument, loadPublicPack]);
+
+  const handleStartCreateNewDocument = useCallback(() => {
+    setIsStartPanelVisible(false);
+    handleNewDocument();
+  }, [handleNewDocument]);
+
+  const handleStartLoadDocumentFile = useCallback(() => {
+    setIsStartPanelVisible(false);
+    setIsSharePanelOpen(true);
+    importInputRef.current?.click();
+  }, []);
+
+  const handleStartImportReviewPack = useCallback(() => {
+    setIsStartPanelVisible(false);
+    setIsSharePanelOpen(true);
+    reviewPackInputRef.current?.click();
+  }, []);
+
+  const handleStartOpenRecent = useCallback(() => {
+    setIsStartPanelVisible(false);
+    handleOpenRecent();
+  }, [handleOpenRecent]);
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -3032,6 +3075,20 @@ ${parsedDocument.error}`);
       }
     }
   }, [applyImportedViewMetadata, importedPackSnapshotUrl]);
+
+  const handleReviewPackFileChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = event.target.files?.[0];
+      event.target.value = "";
+
+      if (!selectedFile) {
+        return;
+      }
+
+      void handleImportReviewPackFile(selectedFile);
+    },
+    [handleImportReviewPackFile]
+  );
 
   const handleLoadPatchFile = useCallback(async (selectedFile: File) => {
     try {
@@ -8707,6 +8764,34 @@ ${parsedDocument.error}`);
         }}
         style={{ display: "none" }}
       />
+      <input
+        ref={reviewPackInputRef}
+        type="file"
+        accept=".zip,application/zip"
+        onChange={handleReviewPackFileChange}
+        style={{ display: "none" }}
+      />
+      {isStartPanelVisible ? (
+        <StartPanel
+          currentDocumentId={activeDocumentId}
+          isDirty={isDirty}
+          isLoading={isLoading}
+          isReadOnly={isReadOnly}
+          isSaving={isSaving}
+          recentDocumentIds={recentDocumentIds}
+          safeMode={safeMode}
+          selectedRecentDocumentId={selectedRecentDocumentId}
+          onClose={() => setIsStartPanelVisible(false)}
+          onCreateNew={handleStartCreateNewDocument}
+          onImportReviewPack={handleStartImportReviewPack}
+          onLoadDocumentFile={handleStartLoadDocumentFile}
+          onOpenRecent={handleStartOpenRecent}
+          onOpenSample={() => {
+            void handleOpenSampleDocument();
+          }}
+          onSelectedRecentDocumentChange={setSelectedRecentDocumentId}
+        />
+      ) : null}
       {isLoading || !focusedVisibleDocument ? (
         <div
           style={{

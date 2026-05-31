@@ -15,6 +15,7 @@
 
 | ファイル | 内容 |
 | --- | --- |
+| `start-document-entry.png` | 起動直後の「作業を開始」パネル |
 | `app-canvas-overview.png` | 起動直後のキャンバス、ヘッダー、右側パネル |
 | `share-export-safe-mode.png` | 「共有と再現」パネルの SafeMode と export/share 前チェック |
 | `view-controls-safe-mode.png` | `View` パネルの表示設定と SafeMode |
