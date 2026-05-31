@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-UX-04 小画面・大規模文書・低速環境での操作性確認
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -102,10 +102,10 @@
 ## 6) 実装タスク分解 / Task breakdown
 
 - [x] T1 代表viewportと代表データ規模を定義する。
-- [ ] T2 大きめfixtureまたは既存サンプル拡張を用意する。
-- [ ] T3 主要パネルのレイアウト崩れ、長いラベル、フォーカス順序を検証する。
-- [ ] T4 待機表示、エラー表示、診断導線を確認する。
-- [ ] T5 E2Eと公開文書の受け入れ確認を更新する。
+- [x] T2 大きめfixtureまたは既存サンプル拡張を用意する。
+- [x] T3 主要パネルのレイアウト崩れ、長いラベル、フォーカス順序を検証する。
+- [x] T4 待機表示、エラー表示、診断導線を確認する。
+- [x] T5 E2Eと公開文書の受け入れ確認を更新する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -206,6 +206,19 @@
   - bundled `node.exe .\node_modules\playwright\cli.js test e2e/canvas_focus_order.spec.ts e2e/polygon_vertex_edit.spec.ts e2e/polygon_autofit_qa_boundary.spec.ts --reporter=line`: Pass, 6 tests.
   - bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line`: Pass, 32 tests.
 - Task status adjustment: T3 is covered for representative card selection, island selection, side-panel focus reachability, header panel focus return, and polygon edit handles. It remains open only for advanced panel-specific focus paths and slow-environment breadth outside the currently instrumented API, diagnostics, and review-pack export flows.
+
+## 17) Evidence update 2026-05-31: public acceptance and diagnostics sync
+
+- Documentation route:
+  - `04_Documentation/acceptance_check.md` now names the representative viewport set as `390px / 768px / 960px / 1440px` and adds a large-document confirmation flow for search, selection, display switching, share preflight, diagnostics, and review-pack export.
+  - `04_Documentation/diagnostics.md` now explains how to record large-document and slow-environment symptoms for search, view switching, share preflight, diagnostics, review-pack export, and diff calculation.
+- Completion decision:
+  - T2 is covered by `e2e/large_document_operability.spec.ts` with a deterministic 120-card / 12-island / 119-edge fixture.
+  - T3 is covered by the viewport matrix, Share/View panel fit checks, canvas selection focus checks, and polygon keyboard/mouse checks.
+  - T4 is covered by `e2e/ops_recovery_guidance.spec.ts` for API load failure, save failure, slow diagnostics cancellation, slow review-pack export cancellation, and slow review diff cancellation.
+  - T5 is covered by the public acceptance and diagnostics documentation updates above.
+- Residual breadth:
+  - Exhaustive advanced-panel focus traversal remains outside this issue and should stay in the broader E2E expansion backlog (`QA-E2E-USE-01`) rather than blocking the representative productization gate.
 
 ---
 
