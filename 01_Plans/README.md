@@ -49,6 +49,7 @@
 - `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`（製品化画面情報設計）
 - `01_Plans/adr/ADR-0032-product-value-realization-model.md`（プロダクト価値実現モデル）
 - `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`（MVPデータサポート境界と保守方針）
+- `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`（高権限データライフサイクル操作の製品境界）
 
 ### 3.5 計画・mainline収束
 

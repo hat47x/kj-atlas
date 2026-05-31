@@ -8,7 +8,7 @@
 - Owner: Codex
 - Scope: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -21,7 +21,7 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: Future ADR for data lifecycle and privileged maintenance operations
+- DecisionQueueRef（未確定時の参照先）: `ADR-0035`
 
 ## 1) 課題 / Problem statement
 
@@ -129,6 +129,31 @@
 - 製品標準として実装する操作について、ADRで権限、承認、監査、復旧不能性、共有抑制、検証レベルが固定されている。
 - 管理API、管理UI、CLI、外部監査連携のいずれで提供するかが、一般利用者の通常操作導線から分離されている。
 - `DATA-CONTRACT-01` のDocumentV2支援レベル、`PRODUCT-QA-01` のリリースゲート、`DATA-MODEL-OPS-01` のCRUD境界と矛盾しない。
+
+## 14) ADR-0035 proposal intake（2026-06-01）
+
+### Context
+
+- 本Issueの分類表により、削除、アーカイブ、所有者移管、管理者本文閲覧、監査ログ閲覧、保持期限管理のリスクとADR要否は整理済みである。
+- ただし `DecisionStatus=Pending` のままだと、実装側が「どれかを製品標準機能として採用する余地がある」と誤読しやすい。
+- `ADR-0033` は Admin maintenance ops を `L0: Planned` に留める判断であり、高権限操作を次の製品化準備段階で標準機能にしない判断までは明文化していない。
+
+### Decision
+
+- `ADR-0035` を起票し、高権限データライフサイクル操作の製品境界を提案する。
+- ADR案では、削除、アーカイブ、所有者移管、管理者本文閲覧、保持期限自動化を標準機能にしない。監査ログ閲覧は、本文を含まないメタデータ閲覧候補に限り内部issueで検討可能とする。
+- 本IssueはまだDoneにしない。`ADR-0035` がAcceptedになるまで、`DecisionStatus=Pending` を維持する。
+
+### Consequences
+
+- `DATA-MAINT-01` のStop条件は維持されるが、解除条件の参照先が `Future ADR` ではなく具体的な `ADR-0035` になった。
+- `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単純な欠落ではなく、提案中の製品境界として評価できる。
+- ADRがAcceptedされた場合は、本Issueを `DecisionStatus=Fixed` / Doneへ進め、標準機能にしない操作と将来issueに残す操作を最終整理する。
+
+### Verify
+
+- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+- `rg -n "ADR-0035|高権限|管理者本文閲覧|所有者移管|保持期限|標準機能にしない|メタデータ閲覧" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 
 ---
 

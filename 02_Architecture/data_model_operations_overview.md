@@ -215,7 +215,7 @@ erDiagram
 
 ### 5.1 管理・復旧・棚卸しの最小運用境界（DATA-MAINT-01）
 
-`DATA-MAINT-01` では、MVPのデータ構造をすべて管理対象に広げるのではなく、運用者が本番導入前に最低限確認できる読み取り・退避・復旧確認を先に固定する。利用者本文、未レビュー情報、所有権、削除、保管期限のように組織方針と監査責任を変える操作は、ADRまたは別issueで合意するまで実装しない。
+`DATA-MAINT-01` では、MVPのデータ構造をすべて管理対象に広げるのではなく、運用者が本番導入前に最低限確認できる読み取り・退避・復旧確認を先に固定する。利用者本文、未レビュー情報、所有権、削除、保管期限のように組織方針と監査責任を変える操作は、`ADR-0035` または後続ADRで合意するまで実装しない。
 
 | 運用 | 主担当 / 承認 | 対象データ | MVPで許容する手段 | 必須確認 | Stop / ADR化条件 |
 |---|---|---|---|---|---|
@@ -237,12 +237,13 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 | ID | 内容 | 管理先 |
 |---|---|---|
 | `ADR-0033` | MVPデータサポート境界と保守方針を固定する | `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md` |
+| `ADR-0035` | 高権限データライフサイクル操作を標準管理機能にしない境界を提案する | `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md` |
 | `DATA-MODEL-OPS-01` | ER/CRUD俯瞰とサポートレベル表の継続更新 | `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md` |
 | `DATA-MAINT-01` | 管理・復旧・棚卸し・データ保管運用の設計 | `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md` |
 | `DATA-MAINT-03` | 削除・アーカイブ・所有者移管・管理者本文閲覧・保持期限管理など、高権限データライフサイクル操作の方針判断 | `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md` |
 | `DATA-CONTRACT-01` | DocumentV2/API/frontend/backend間の契約ドリフト解消 | `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md` |
 
-`DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。高権限データライフサイクル操作を製品標準機能にするかどうかは、`DATA-MAINT-03` で対象操作・権限・監査・復旧不能性・共有抑制・検証レベルを整理してから判断する。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルのADRを先行させる。
+`DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。高権限データライフサイクル操作を製品標準機能にするかどうかは、`DATA-MAINT-03` と `ADR-0035` で対象操作・権限・監査・復旧不能性・共有抑制・検証レベルを整理してから判断する。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルのADRを先行させる。
 
 ---
 
