@@ -359,6 +359,73 @@
   - Program release decision: `MVP-EXIT-01`
   - Support bundle policy: `PRODUCT-OPS-02`
 
+## 16) Baseline Record 2026-05-31: latest main lightweight refresh
+
+### Candidate
+
+- Target main: `origin/main` = `0d705c2ed6d92b01346edebc406058e4ea09a9bb`
+- Baseline branch: `codex/project-baseline-20260531-refresh`
+- Scope note: this record refreshes latest-main evidence after the 2026-05-31 planning/evidence lane merged to main. It is a lightweight release-candidate baseline, not a full shipment approval.
+- Open PRs not included in this main baseline: #2282 (`DATA-MAINT-03` high-privilege lifecycle policy) and #2283 (`DATA-MAINT-02` closeout).
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node (`C:\Users\yhata\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`) / backend `.venv` / manual Vite server on `127.0.0.1:4173`
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git checkout main; git pull --ff-only origin main; git rev-parse HEAD` | Pass: `0d705c2ed6d92b01346edebc406058e4ea09a9bb` | G0 |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=41 / ready=16 / blocked=25 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Targeted i18n/share/UX/import/export regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run ...` for SharePanel, SafeMode status, i18n guards, UX operability, import/export, diff workflow, and validation tests | Pass: 16 files / 139 tests | G1 / G2 / G3 / G7 |
+| Frontend production build | bundled `node.exe .\node_modules\vite\bin\vite.js build` | Pass; existing chunk-size warning only | G7 / E1 |
+| Backend selected regression | `.venv\Scripts\python.exe -m pytest test_settings_env_prefix_migration.py test_docs_roundtrip.py test_docs_audit_integration.py test_docs_access_control_integration.py test_data_maintenance_recovery_exercise.py -q --basetemp ... -p no:cacheprovider` | Pass: 65 passed / 16 skipped | G5 / G6 / G7 |
+| Representative Playwright smoke | manual Vite server + bundled `node.exe .\node_modules\playwright\cli.js test ce3_patch_workspace.spec.ts auth_context_level1_smoke.spec.ts ops_recovery_guidance.spec.ts --reporter=line` | Pass: 7 tests | G2 / G4 / G6 / G7 |
+| Test server cleanup | `Get-NetTCPConnection -LocalPort 4173` + `Stop-Process` | Pass: stopped PID 30920; no listener remains | G7 |
+| Artifact cleanup | removed `.pytest_tmp_baseline_20260531`, `frontend/test-results`, and `frontend/dist` after verification | Pass: working tree clean before documentation edit | G7 |
+
+### Environment findings
+
+- Bundled Node by absolute path was used for frontend typecheck, Vitest, build, and Playwright. This avoids relying on the host `npm` command in PowerShell.
+- Playwright config uses `npm run dev` for its `webServer`. To keep the baseline independent of host `npm`, Vite was started manually with bundled Node and Playwright reused the existing server.
+- The first Playwright command used path patterns that did not match the configured `testDir`; it returned "No tests found". Re-running with `testDir`-relative file names passed and is the recorded smoke result.
+- No application regression was found in the tested scope.
+
+### Gate classification
+
+| Gate | 2026-05-31 result | Reason |
+| --- | --- | --- |
+| G0 計画整合 | Go | latest main intake, active issue validation, and triage pass with no stopper. |
+| G1 安全既定 | Go for tested scope | SharePanel, SafeMode status, import/export, and targeted regression tests pass. |
+| G2 主要操作 | Go for tested scope | representative Playwright smoke covers CE3 patch workspace, read-only auth boundary, and recovery guidance flows. |
+| G3 日本語UI | Go for tested scope | targeted i18n guard and catalog tests pass. |
+| G4 画面耐性 | Go for tested scope | representative Playwright smoke passes; full viewport matrix was not rerun. |
+| G5 公開文書/設定契約 | Conditional Go | settings/env-prefix and docs contract tests pass; public documentation was not republished in this run. |
+| G6 診断とサポート | Conditional Go | recovery guidance smoke and data-maintenance recovery tests pass; support diagnostics bundle policy remains a follow-up boundary. |
+| G7 回帰 | Go for tested scope | frontend typecheck, targeted Vitest, build, backend selected regression, and Playwright smoke pass. |
+| E1..E3 環境契約 | Conditional Go | frontend build and env-prefix tests pass; full running Compose stack was not started in this run. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for latest-main lightweight evidence refresh.
+- Release readiness decision: **No-Go** for full shipment until product value/UX gates, full release-candidate E2E evidence, and environment/operations gates are approved together.
+- Follow-up routing:
+  - High-privilege data lifecycle policy: PR #2282 / `DATA-MAINT-03`
+  - DATA-MAINT-02 closeout: PR #2283
+  - Product value and UX gates: `PRODUCT-VALUE-01..03`, `PRODUCT-UX-01..04`
+  - Full release gate: `PRODUCT-QA-01`
+  - Program release decision: `MVP-EXIT-01`
+
+### Follow-up accountability
+
+| Item | Owner | Due | Re-decision date |
+| --- | --- | --- | --- |
+| Product value / UX evidence routes | Productization Program Owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Full release-candidate E2E and viewport matrix | QA owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Open data-maintenance PR lane (#2282/#2283) | Codex author / Repository Maintainer reviewer | 2026-06-03 | 2026-06-05 |
+| Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
