@@ -50,8 +50,8 @@
 | 不足観点 | 現状の偏り | 設計上の補強方針 | 起票先 |
 |---|---|---|---|
 | 初回価値実感 | 文書を開くことと価値を得ることが混同されやすい | 「最初の意味ある配置」をカード、まとまり、保留点を含む状態として定義する | `PRODUCT-VALUE-01` |
-| 保留・違和感の日常操作 | 上流概念とAI IRにはあるが、UI作業語彙が不足している | Hold/Critique/Evidence/Contradictionを選択コンテキスト、絞り込み、共有前確認へ接続する | `PRODUCT-VALUE-02` |
-| 根拠・主張・反対意見の追跡 | ContextBundleには含まれるが、利用者が見て操作する境界が弱い | EvidenceLink/ClaimType/contradictionを、AI入力だけでなく人間レビューの確認対象にする | `PRODUCT-VALUE-02` |
+| 保留・違和感の日常操作 | 上流概念とAI IRにはあるが、UI作業語彙が不足している | Hold/Critique/Evidence/Contradictionを選択コンテキスト、絞り込み、共有前確認へ接続する | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01/02/03`（`ADR-0040`） |
+| 根拠・主張・反対意見の追跡 | ContextBundleには含まれるが、利用者が見て操作する境界が弱い | EvidenceLink/ClaimType/contradictionを、AI入力だけでなく人間レビューの確認対象にする | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-04`（`ADR-0040`） |
 | 成果物化 | 安全な共有に寄っており、読者が判断できる成果物単位が未固定 | 確定点、保留点、未レビュー情報、根拠への戻り方を成果物パッケージに含める | `PRODUCT-VALUE-03` |
 | 価値実現ゲート | UI/安全/文書/診断ゲートはあるが、価値ループ別の合否が薄い | V0〜V4の代表シナリオを `PRODUCT-QA-01` のGo/No-Goへ接続する | `PRODUCT-QA-01` |
 
@@ -76,6 +76,25 @@ Open 化前の共通条件:
 3. mouse操作とkeyboard操作の両方で、代表アクションに到達できることを検証対象に含める。
 4. SafeMode、share/export、import sanitize、review attributionへの影響が`PRODUCT-QA-01`へ戻せる。
 5. 追加の永続schema、review semantics、署名、組織承認workflowが必要になった場合は、実装PRではなくissue/ADRを先行する。
+
+---
+
+## 2.3 社会的目標への接続（VR0–VR5）
+
+`01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md` は、上記の価値ループ V0–V4 を社会的目標まで一直線に並べた実現フェーズ系列 VR0–VR5 を定義します。社会的目標は「散らばった暗黙知・主観・多様な意見を early collapse させずに、レビュー可能・可逆・説明可能な形へ構造化し、人間と生成AIが協働して説明可能で見直し可能な合意形成を行える場を社会へ広げること」です（`README.md` / `00_Prompt/domain.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` の統合表現）。
+
+| Phase | 価値→社会の接続 | 設計責務（02層） | 検証観点 | 担当issue |
+|---|---|---|---|---|
+| VR0 安全基盤 | 安全・可逆・監査の既定が崩れない土台 | SafeMode既定ON、proposal-only、patch+approval、`provider=none`既定 | 非後退の回帰固定 | `CE0`, safe_mode policy |
+| VR1 価値活性化 | 最初の意味ある配置へ到達 | UI Shell入口、import-sanitize境界 | 初回経路E2E | `PRODUCT-VALUE-01`, `PRODUCT-UX-01` |
+| VR2 曖昧さネイティブ作業 | 保留/違和感/根拠不足/反対意見を作業状態化 | Hold/Critique/Evidence/Contradiction、ContextBundle制約 | 4状態の付与・絞り込み・共有前確認 | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01..04`（`ADR-0040`）, `CE1`, `CE2` |
+| VR3 レビュー可能成果物 | 読者が確定/保留/根拠を理解 | Narrative、Review Pack、review attribution、source trace | 成果物最小6要素 + 安全共有 | `PRODUCT-VALUE-03`, `PRODUCT-UX-03`, `CE3` |
+| VR4 価値観測と製品化ゲート | 価値実感を再現可能に観測 | 観測ハーネス、二軸スコアカード（`ADR-0037`） | 証拠再現性、Go/No-Go追跡 | `VALUE-MEASURE-01/02`, `MVP-EXIT-01`, `PRODUCT-QA-01` |
+| VR5 社会的普及 | 説明可能な合意が再現・見直し・安全配布される | 複数レビュア再現性、経時的見直し、証拠定着配布、非監視シグナル（`ADR-0038`） | 再現性/再オープン/配布安全/非監視の各観点 | `SOCIAL-DIFFUSION-01..04`, `CE4` |
+
+VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価値軸で再配置する索引です。新規作業は VR4（`ADR-0037`）と VR5（`ADR-0038`）に限定されます。
+
+なお VR4/VR5 は `ADR-0039`（ガバナンス適正化）により activation を延期し、個人OSS・プレリリース段階では direction として保持します（VR0–VR3 と安全不変条件は active）。
 
 ## 3. 設計判断の扱い
 

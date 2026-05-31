@@ -8,7 +8,7 @@
 - Owner: Codex (Product Value contract steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/frontend/e2e/`, `02_Architecture/schemas.md`, `02_Architecture/value_traceability.md`
 - Related Backlog: `PRODUCT-VALUE-02`
-- Related ADR/Spec: `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `01_Plans/adr/ADR-0032-product-value-realization-model.md`, `00_Prompt/domain.md`, `00_Prompt/ai_cognitive_externalization_requirements.md`, `02_Architecture/llm_input_ir_spec.md`
 - Expected verification level: `e2e`
 
 ## Requirement meta I/F（共通キー）
@@ -20,8 +20,8 @@
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: e2e
-- DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0032`
+- DecisionStatus（Fixed / Pending）: Fixed（`ADR-0040` で schema 判断確定 / `ADR-0032` Accepted）
+- DecisionQueueRef（未確定時の参照先）: `ADR-0040`
 
 ## 1) 課題 / Problem statement
 
@@ -306,3 +306,11 @@ No-Go conditions for this value gate:
   - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記representation boundaryを価値ゲートの暫定正本として明示承認する。
   - 曖昧さ、違和感、根拠、矛盾を含む最小fixtureと、同一条件3回の再現性検証手順が本文で固定される。
   - 上記完了後、StatusをOpenへ変更し、`PRODUCT-QA-01` のValue Gate V2/V3へ戻す。
+
+## 解消ログ 2026-05-31（Maintainer 代理裁可 / `ADR-0040`）
+
+- 循環デッドロック（`ADR-0032` Proposed ⇄ 本issue Draft）を解消した。`ADR-0032` を **Accepted** 化し、本issueの `DecisionStatus` を **Fixed** に確定。
+- 上表 Representation boundary table を価値ゲートV2の**暫定正本として承認**。各行「次の扱い」で保留されていた schema 判断は `ADR-0040` で次のとおり確定:
+  - 違和感 / 根拠 / 矛盾 / claimType / レビュー境界 → **schema変更なし**。既存往復フィールドを読取UIへ露出（`DOMAIN-EXPR-01`）。
+  - 保留 Hold / 未統合 Shelf → **加算的・任意フィールドを新設**（`DOMAIN-EXPR-02`、後方互換・欠落は従来挙動）。
+- 本issueは「保留・違和感・根拠不足・反対意見の作業フロー」の価値仮説の正本を維持し、実装は段階分割した `DOMAIN-EXPR-01..04`（`ADR-0040`）が担う。本issue自体の Open化は個人OSS段階（`ADR-0039`）では延期し、Phase 1（`DOMAIN-EXPR-01`、schema変更なし）から着手可能とする。

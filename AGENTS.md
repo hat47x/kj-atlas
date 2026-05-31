@@ -34,7 +34,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 9) **全体アーキテクチャ**: `02_Architecture/architecture.md`
 10) **スキーマ**: `02_Architecture/schemas.md`（関連: `02_Architecture/schemas_review_attribution.md`）
 11) **MVPデータ運用境界**: `02_Architecture/data_model_operations_overview.md`
-12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0034`
+12) **該当フェーズ計画（ADR）**: `01_Plans/adr/ADR-0002`〜`ADR-0040`（価値→社会的目標の実現フェーズ索引は `ADR-0036`、ガバナンス適正化方針は `ADR-0039`、ドメイン表現第一級化は `ADR-0040`）
 13) **実装（03_Implement）**: 対象領域のソースへ
 14) **運用・手順**: `04_Documentation/*`（必要に応じて）
 15) **E2E確認方針**: `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`
@@ -115,6 +115,11 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 - `01_Plans/adr/ADR-0027-hil-rs-02-next-phase-execution-plan.md`：次フェーズ（HIL-RS-02）の実行計画ADR。
 - `01_Plans/adr/ADR-0028-ai-cognitive-externalization-phase-plan.md`：認知外在化要件を実装フェーズへ接続する計画ADR。
 - `01_Plans/adr/ADR-0029-ADR-0034*.md`：runtime境界、製品化、価値実現、データ運用、最新main収束/branch衛生の後続ADR群。
+- `01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md`：プロダクト価値(V0–V4)→社会的目標を VR0–VR5 として並べた実現フェーズ索引（親ADR）。
+- `01_Plans/adr/ADR-0037-value-measurement-harness-and-scorecard.md`：価値観測ハーネスと二軸スコアカード運用（VR4）。
+- `01_Plans/adr/ADR-0038-social-diffusion-of-explainable-consensus.md`：説明可能な合意形成の社会的普及モデル（VR5）。
+- `01_Plans/adr/ADR-0039-governance-right-sizing-personal-oss.md`：個人OSS・プレリリース段階のガバナンス適正化（KEEP/RELAX-DEFER/緩和禁止の不変条件、多役割→Maintainer集約）。
+- `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`：中核ドメイン概念（保留/違和感/根拠/矛盾）の第一級化戦略。`DOMAIN-EXPR-01..04` へ段階分割し、`ADR-0032` Accepted化と `PRODUCT-VALUE-02` 循環デッドロックを解消。
 - `01_Plans/documentation_quality.md`：AIエージェントが対外文書を作成する際の内部品質基準。
 - `01_Plans/minimal-context-triage.md`：未処理ADR/issueを最小読取で抽出する手順。
 - `01_Plans/triage_actionable_plans.py`：ADR/issueメタデータだけを走査して Ready/保留/関連ADR を抽出する軽量CLI。
