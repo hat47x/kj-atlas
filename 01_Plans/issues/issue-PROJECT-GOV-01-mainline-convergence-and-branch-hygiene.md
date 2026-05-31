@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Project governance evidence steward; accountable cleanup owner remains Repository Maintainer)
 - Scope: `01_Plans/`, repository branch/PR workflow
 - Related Backlog: `PROJECT-GOV-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0034-mainline-convergence-and-branch-hygiene.md`, `01_Plans/adr/ADR-0000-adr-governance.md`, `01_Plans/issues/issue-PRODUCT-QA-01-release-readiness-quality-gates.md`, `01_Plans/issues/issue-DOC-OPS-03-project-progress-dashboard-planning.md`
@@ -254,6 +254,55 @@
 2. Review or merge #2270 independently of product release gates because it is Codex local-operations guidance.
 3. After #2270 is merged or closed, add `origin/codex/rtk-agent-runbook` to the cleanup candidate table.
 4. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or the active issue triage materially changes.
+
+## 14) Convergence checkpoint 2026-05-31: productization evidence PR lane
+
+### Observation
+
+- Observed after `git fetch --prune origin` on 2026-05-31.
+- `origin/main`: `6a64b707d2944e24bcd9fa01614eacfdaea1bac1`
+- remote branch count: 2274
+- `origin/codex/` remote branch count: 2252
+- open PR count returned by GitHub search: 4
+- internal issue triage on current `main`:
+  - `active_issues=46`
+  - `ready=21`
+  - `blocked=25`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Open PR inventory
+
+| PR | Branch | Topic | Changed-file overlap | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- | --- |
+| #2273 | `codex/responsive-operability-docs-20260531` | `PRODUCT-UX-04` responsive/large-document operability closeout and public diagnostics/acceptance docs | overlaps #2275 on `04_Documentation/acceptance_check.md`; otherwise docs/issue only | canonical / reviewable | Merge before or after #2275 with a quick docs conflict check; it is productization evidence, not a runtime policy change. |
+| #2274 | `codex/first-run-document-entry-20260531` | `PRODUCT-UX-01` first-run document entry panel, i18n, E2E, screenshot, and public docs | overlaps #2275 on i18n locale files and screenshot README | primary UX implementation lane / reviewable | Review as the largest runtime UX change. If merged first, rebase #2275 for i18n/docs overlap before merge. |
+| #2275 | `codex/workspace-ia-context-20260531` | `PRODUCT-UX-02` workspace selection context summary, i18n, E2E, screenshot, and acceptance docs | overlaps #2273 on acceptance docs and #2274 on locale/screenshot README | companion UX implementation lane / reviewable | Merge after #2274 or rebase after #2274 to avoid locale/docs conflicts; keep as separate PR because it owns selection context rather than first-run entry. |
+| #2276 | `codex/product-ops-01-closeout-20260531` | `PRODUCT-OPS-01` recovery guidance issue closeout | no overlap with #2273..#2275 | independent planning closeout / reviewable | Can merge independently. Until it merges, `PRODUCT-OPS-01` remains active in `main` triage. |
+
+### Decision
+
+- Treat #2274 and #2275 as a paired product UX lane. They are semantically separate but both touch locale files and user-facing screenshots, so one should be merged first and the other rebased if conflicts appear.
+- Treat #2273 as a documentation/evidence lane for responsive operability. It can merge independently, but `04_Documentation/acceptance_check.md` overlap with #2275 requires a light conflict check.
+- Treat #2276 as an independent governance closeout for `PRODUCT-OPS-01`. It has no file overlap with the UX PRs and can be reviewed or merged separately.
+- No branch deletion or PR closure is executed from this checkpoint.
+- No new ADR is required. The checkpoint records PR-lane inventory under ADR-0034 governance and does not change product architecture, SafeMode policy, or release authority.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/responsive-operability-docs-20260531` | canonical productization evidence | Delete only after #2273 is merged or closed. |
+| `origin/codex/first-run-document-entry-20260531` | primary UX implementation evidence | Delete only after #2274 is merged or closed. |
+| `origin/codex/workspace-ia-context-20260531` | companion UX implementation evidence | Delete only after #2275 is merged or closed. |
+| `origin/codex/product-ops-01-closeout-20260531` | independent planning closeout | Delete only after #2276 is merged or closed. |
+
+### Updated recommendation
+
+1. Review #2274 first if reviewers want to settle the first-run entry behavior before the side-panel context summary.
+2. Rebase or conflict-check #2275 after #2274 because both touch `03_Implement/frontend/src/i18n/locales/*.json` and screenshot index documentation.
+3. Merge #2273 and #2276 independently when their docs/issue evidence is accepted.
+4. After any merge, rerun `git fetch --prune origin`, `validate_active_issue_memos.py`, and `triage_actionable_plans.py` before starting the next productization slice from `main`.
 
 ---
 
