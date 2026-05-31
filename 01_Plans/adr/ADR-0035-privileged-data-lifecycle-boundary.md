@@ -1,0 +1,89 @@
+# ADR-0035: 高権限データライフサイクル操作の製品境界
+
+- Status: Proposed
+- Date: 2026-06-01
+- Deciders: Project Maintainers
+- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+
+## Context
+
+`ADR-0033` は、MVPのデータサポート境界を固定し、Admin maintenance ops を `L0: Planned` として扱った。`DATA-MAINT-01` と `DATA-MAINT-02` により、読み取り中心の棚卸し、バックアップ、検証環境での復旧確認、本文を含まない支援情報共有は、代表演習と文書証跡を持つ状態になった。
+
+一方で、削除、アーカイブ、所有者移管、管理者本文閲覧、監査ログ閲覧、保持期限管理は、次の理由で通常の保守作業とは分ける必要がある。
+
+1. 利用者本文や未レビュー情報へ触れる可能性があり、SafeModeやshare/exportの安全境界を変える。
+2. 削除や保持期限は復旧不能性、監査保持、法務・契約上の説明責任に影響する。
+3. 所有者移管は共有範囲、review attribution、判断ログの説明責任を変える。
+4. 管理者本文閲覧や横断検索は、利用者が安心して考え途中の情報を預ける価値に直結する。
+5. 導入組織ごとの内部統制、承認者、保持期間、監査基盤、法域要件を製品が一律に決めると、かえって混乱を招く。
+
+このため、MVPから製品化へ進む際にも、高権限操作を「便利な管理機能」としてまとめて実装しない判断を正本化する必要がある。
+
+## Decision
+
+MVPおよび次の製品化準備段階では、高権限データライフサイクル操作を標準管理機能として提供しない。提供可否は次の境界で扱う。
+
+| 操作 | 製品境界 | 実装前提 |
+| --- | --- | --- |
+| ドキュメント削除 | 標準機能にしない。物理削除、論理削除、復旧可能削除のいずれも本ADRでは採用しない。 | 製品機能にする場合は、削除方式、監査保持、復旧不能性、共有済み成果物との関係を別ADRで固定する。 |
+| ドキュメントアーカイブ | 標準機能にしない。ただし将来の状態遷移候補として保留する。 | 一覧表示、共有、review pack、復旧、検索対象からの除外を別ADRまたは専用issueで固定する。 |
+| 所有者移管 | 標準機能にしない。 | 移管理由、承認者、履歴、通知、review attribution、判断ログの責任を別ADRで固定する。 |
+| 管理者本文閲覧 / 横断検索 | 禁止を既定とする。通常保守、Support、Platform operator の標準導線には含めない。 | 例外運用を認める場合も、目的、範囲、記録、通知、代替手段、監査証跡を別ADRで固定する。 |
+| 監査ログ閲覧 | 本文を含まないメタデータ閲覧候補に限り、内部issueで検討できる。 | 本文、未レビュー情報、保持方針、横断検索を含む場合は別ADRを必須とする。 |
+| 保持期限管理 | 組織判断事項として扱う。製品の自動削除や標準保持期間は採用しない。 | 自動削除、標準保持期間、法域別ルールを製品が持つ場合は別ADRを必須とする。 |
+
+採用理由:
+
+- kj-atlas の価値は、利用者が考え途中の情報を安心して置けることにある。管理者本文閲覧や破壊的操作を標準導線にすると、この信頼の前提が弱くなる。
+- バックアップや復旧確認は運用上必要だが、削除、所有者移管、保持期限は組織ごとの責任・監査・法務判断に依存する。
+- 製品標準として固定する範囲を狭くすることで、公開文書は判断支援に徹し、必要以上に細かい規定を避けられる。
+- 実装前にADRを要求することで、SafeMode、share/export、public exposure、review attribution、merge decision logの意味が暗黙に変わることを防げる。
+
+非目標:
+
+- このADRでは削除API、アーカイブUI、所有者移管、管理者本文閲覧、保持期限自動化を実装しない。
+- 各組織の保持期間、暗号化方式、保管先、承認手順、法域別削除義務を製品一律の規定として定めない。
+- 本文を含まない運用メタデータの読み取り改善を禁止しない。ただし本文や未レビュー情報を含む場合は本ADRの外へ出せない。
+
+## Consequences
+
+期待される効果:
+
+- `DATA-MAINT-03` の判断待ちが「高権限操作は標準機能にしない」という明確な境界へ収束する。
+- Platform operator、Security officer、Support が利用者本文へ標準的にアクセスできるように見える誤解を避けられる。
+- 公開文書や運用ガイドラインは、各組織の判断を支援する最小限の説明に留められる。
+- 将来、削除や所有者移管を本当に製品化する場合、ADRと専用issueを通して権限・監査・復旧・検証を先に合意できる。
+
+想定される副作用/制約:
+
+- 導入組織によっては、削除、アーカイブ、所有者移管、保持期限管理の不足を製品化前のギャップとして扱う必要がある。
+- 運用者は、標準機能ではなく組織内手順や外部監査基盤で補う範囲を明示する必要がある。
+- 管理画面や管理APIを一気に実装する要求は、ADR未承認のままでは進められない。
+
+移行時に必要な対応:
+
+- `DATA-MAINT-03` は本ADRを参照先として、DecisionStatusをAccepted後にFixedへ進める。
+- `data_model_operations_overview.md` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
+- `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単独のリリース阻害ではなく、明示された製品境界として扱う。ただし本番運用で必須と判断される場合は、別ADR/issueをリリース条件へ戻す。
+
+## Traceability
+
+- Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
+- Related: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- Related: `02_Architecture/data_model_operations_overview.md`
+- Related: `02_Architecture/api.md`
+- Related: `04_Documentation/security.md`
+- Supersedes: N/A
+- Superseded by: N/A
+- Derived-from: `DATA-MAINT-03` high-privilege operation classification
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] 必須ヘッダ（Status/Date/Deciders/Scope）を記載した。
+- [x] 必須章（Context/Decision/Consequences/Traceability）を記載した。
+- [x] Decision に採用理由と非目標がある。
+- [x] Traceability に関連文書を1件以上記載した。
+- [x] 実装進捗は ADR ではなく Issue で管理する前提を維持した。
