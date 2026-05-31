@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MODEL-OPS-01 MVPデータモデル俯瞰とCRUD境界の継続管理
 
 - Type: Documentation quality
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0 (Stream D highest)
@@ -252,3 +252,24 @@
 - `.\03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
 - `.\03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
 - `git diff --check -- 01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md 03_Implement/backend/tests/test_data_model_operations_contract.py`
+
+## 22) Closeout（2026-05-31）
+
+### Decision
+
+- 本Issueは **Done** とする。
+- 理由: `02_Architecture/data_model_operations_overview.md` に物理ER、論理ER、CRUDサポート表、DocumentV2フィールド支援レベル、ステークホルダー別運用境界、DATA-MAINT-01への導線が揃っている。`schemas.md` と `api.md` からの参照導線も維持され、`03_Implement/backend/tests/test_data_model_operations_contract.py` によって主要な境界語彙と表構造を回帰検知できる。
+- 実装変更は不要。MVPのデータ構造は全てを個別CRUDで支援する段階ではないため、本Issueは「どこまでが運用サポート済みかを誤読させない設計正本」を固定する範囲で完了する。
+
+### Verification
+
+- `03_Implement/backend/.venv/Scripts/python.exe -m pytest 03_Implement/backend/tests/test_data_model_operations_contract.py -q` -> pass: 3 tests. Pytest cache write warning only.
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass: `ok: validated 5 active issue memos`.
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass before closeout: `active_issues=42 / ready=17 / blocked=25 / actionable_adrs=1 / stopper=none`.
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass after closeout: `active_issues=41 / ready=16 / blocked=25 / actionable_adrs=1 / stopper=none`.
+
+### Remaining Work Routed Elsewhere
+
+- `DATA-CONTRACT-01`: DocumentV2/API/frontend/backend間の契約ドリフトを継続管理する。
+- `DATA-MAINT-01`: 棚卸し、バックアップ、復旧、削除・アーカイブ・所有者移管など、運用手順とStop条件を継続管理する。
+- データライフサイクル、監査保持、所有者移管、削除方針を製品標準として固定する場合は、ADRまたは専用issueを起票してから実装する。
