@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-UX-02 ワークスペース画面構造の製品化
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -109,8 +109,8 @@
 - [x] T1 現行画面を「開始/キャンバス/選択/作業モード/共有前確認」に分類する。
 - [x] T2 右側パネルのセクション順序と折りたたみ/タブ化方針を作成する。
 - [x] T3 ツールバー操作を基本、補助、高度、レガシーに分類する。
-- [ ] T4 選択コンテキストの表示位置とフォーカス順序を実装する。
-- [ ] T5 Playwrightで代表操作を検証し、スクリーンショットを公開文書へ同期する。
+- [x] T4 選択コンテキストの表示位置とフォーカス順序を実装する。
+- [x] T5 Playwrightで代表操作を検証し、スクリーンショットを公開文書へ同期する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -239,4 +239,21 @@
 - Proceed rule:
   - 実装PRでは、画面上の主要操作を「選択」「詳細確認」「主要操作」「戻る」のいずれかに分類し、対応するfocus/viewport証跡を添付する。
   - Product shipmentは本Issue OpenだけではGoにしない。E2E証跡と公開文書の操作説明が揃った時点で`PRODUCT-QA-01`へ戻す。
+
+## Implementation Evidence 2026-05-31: selection context visible first
+
+- Done scope:
+  - `SidePanel` の先頭に `現在の選択 / Current selection` を追加し、カードまたは島を選択した直後に、対象名、レビュー状態、次に使える表示操作を同じ表示範囲で確認できるようにした。
+  - 従来の履歴・差分・高度な検証情報は `merge-history` と advanced details 側に残し、主作業の文脈と高度機能を分離した。
+  - 既存の `1 card selected` / `{count} cards selected` を i18n カタログへ移し、日本語UIで英語ラベルが混ざらないようにした。
+- Public documentation:
+  - `04_Documentation/acceptance_check.md` に、カード選択後の右側パネル確認手順とスクリーンショットを追加した。
+  - 追加画像: `04_Documentation/assets/screenshots/selection-context-card.png`
+- Verification:
+  - `node.exe .\node_modules\typescript\bin\tsc --noEmit` passed.
+  - `node.exe .\node_modules\vitest\vitest.mjs run src/ui/ux_operability_regression.test.ts src/i18n/key_consistency.test.ts src/i18n/catalog_integrity.test.ts src/i18n/ui_hardcode_guard.test.ts` passed: 18 tests.
+  - `node.exe .\node_modules\playwright\cli.js test e2e/canvas_focus_order.spec.ts --reporter=line` passed: 1 test.
+  - Browser verification at `http://127.0.0.1:4173/?locale=ja` confirmed the right panel shows `現在の選択`, `カードを選択中`, `レビュー状態`, and the focus action after selecting a card.
+- Residual productization follow-up:
+  - 画面全体のタブ設計やURL単位の作業モード永続化は、本Issueの段階実装範囲外。必要になった場合は `ADR-0031` のナビゲーション階層判断として別Issue化する。
 

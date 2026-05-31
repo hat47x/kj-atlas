@@ -35,6 +35,8 @@ describe("UX Operability regression contracts", () => {
 
     expect(sidePanelSource).toContain('data-ui-region="selection-context"');
     expect(sidePanelSource).toContain('data-panel="selection-context"');
+    expect(sidePanelSource).toContain('t("side_panel.context.title")');
+    expect(sidePanelSource).toContain('t("side_panel.context.review_state"');
     expect(sidePanelSource).toContain('data-panel-group="advanced"');
     expect(sidePanelSource).toContain('aria-expanded={isAdvancedPanelOpen ? "true" : "false"}');
     expect(sidePanelSource).toContain('onToggle={(event) => {');
