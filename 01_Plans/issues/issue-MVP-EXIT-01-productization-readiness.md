@@ -611,3 +611,33 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner required for ADR-0032/value-gate approval.
 - Due date: next value-gate approval review.
 - Re-decision date: after `ADR-0032` status changes, after UX evidence PRs land, or after the local branch is successfully pushed.
+
+## MVP-EXIT Program Gate Decision 2026-05-31: latest main evidence intake
+
+- Candidate: `origin/main@b31dcbeaa05d30f9bf1f9f651d44a06166c51100`
+- Related PR: draft PR #2278 `codex/project-baseline-20260531@eb045b7615e65434f3f0f6b7a43dc5438d4a704b`
+- Decision date: 2026-05-31
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-05-31: latest main evidence intake`.
+  - PROJECT-BASELINE-01 preserved local full-evidence branch: `codex/project-baseline-20260531-full-local@f703bd24e88787bc9d983374230c0d776b23c789`.
+  - PR #2278: draft PR containing the narrow CE3 Playwright locator fix only.
+  - ENV-CONFIG-DRIFT-01 result: not re-evaluated in this intake; no runtime environment variable or deployment contract changed.
+
+### Decision
+
+- Final: **Conditional Go for latest-main evidence intake / No-Go for full release shipment**
+- Reason summary: The latest-main baseline has strong local regression evidence across planning validation, frontend typecheck, Vitest, backend pytest, production build, and Playwright after the CE3 Japanese locator fix. This is still not a final product release approval because the evidence is partly local/preserved, PR #2278 is intentionally narrow and draft, the product UX evidence work is not complete, `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032`, and a full running Compose stack was not started.
+- Escalation route: keep #2278 reviewable as a small E2E-locator correction. Continue the MVP exit program through product UX execution, value-model approval, and a full release-candidate gate rather than treating the preserved local baseline as shipment approval.
+
+### Conditional controls
+
+- Remaining risks:
+  - The full PROJECT-BASELINE closeout memo is preserved locally but is not part of the remote #2278 branch.
+  - Release-candidate screenshots and representative mouse/keyboard UX evidence are still required for `PRODUCT-UX-01..04`.
+  - `PRODUCT-VALUE-01..03` remain Draft until `ADR-0032` is accepted or Productization Program Owner approval explicitly authorizes provisional value-gate execution.
+  - Full Compose service startup was not executed in this intake; environment contract gates remain Conditional Go.
+  - Public documentation was not republished as part of this gate decision.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next product UX/value gate review.
+- Re-decision date: after #2278 is merged or rejected, after `ADR-0032` status changes, after UX evidence PRs land, or after a full running Compose rehearsal is completed.
