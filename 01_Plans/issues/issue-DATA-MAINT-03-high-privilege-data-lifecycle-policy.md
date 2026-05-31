@@ -1,7 +1,7 @@
 # Issue Draft: DATA-MAINT-03 高権限データライフサイクル方針の判断
 
 - Type: Security
-- Status: Draft
+- Status: Open
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -57,19 +57,19 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] 高権限操作ごとに、MVPでは禁止/保留/組織判断/実装候補のいずれかが明示されている。
-- [ ] ADRが必要な操作と、内部issueだけで進められる操作が分かれている。
-- [ ] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
-- [ ] 実装する場合の最小検証レベル（docs-check/unit/integration/e2e）が定義されている。
-- [ ] `DATA-MAINT-01` のStop条件を解除する条件が明示されている。
+- [x] 高権限操作ごとに、MVPでは禁止/保留/組織判断/実装候補のいずれかが明示されている。
+- [x] ADRが必要な操作と、内部issueだけで進められる操作が分かれている。
+- [x] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
+- [x] 実装する場合の最小検証レベル（docs-check/unit/integration/e2e）が定義されている。
+- [x] `DATA-MAINT-01` のStop条件を解除する条件が明示されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 高権限操作の分類表を作る。
-- [ ] T2 Productization Program Owner / Security officer / Platform operator の承認観点を整理する。
-- [ ] T3 ADR化が必要な操作を選別し、ADR候補のDecision内容を準備する。
-- [ ] T4 実装候補を管理API、CLI、運用手順、外部監査連携に分ける。
-- [ ] T5 `DATA-MAINT-01`、`DATA-CONTRACT-01`、`PRODUCT-QA-01` のゲート条件へ戻す。
+- [x] T1 高権限操作の分類表を作る。
+- [x] T2 Productization Program Owner / Security officer / Platform operator の承認観点を整理する。
+- [x] T3 ADR化が必要な操作を選別し、ADR候補のDecision内容を準備する。
+- [x] T4 実装候補を管理API、CLI、運用手順、外部監査連携に分ける。
+- [x] T5 `DATA-MAINT-01`、`DATA-CONTRACT-01`、`PRODUCT-QA-01` のゲート条件へ戻す。
 
 ## 7) 検証計画 / Validation plan
 
@@ -95,6 +95,40 @@
 ## 10) Additional context
 
 - `DATA-MAINT-01` のStop条件を解除するには、本Issueまたは後続ADRで少なくとも対象操作、権限、監査、復旧不能性、共有抑制、検証レベルを固定する必要がある。
+
+## 11) 高権限操作の初期分類（2026-05-31）
+
+この分類は、実装許可ではなく判断支援である。製品標準機能として採用する操作が1つでもある場合は、ここで示した論点をADRに移し、権限、監査、復旧、共有抑制、検証レベルを固定してから実装Issueへ進める。
+
+| 操作 | MVPでの分類 | 判断理由 | ADR要否 | 最小検証レベル |
+|---|---|---|---|---|
+| ドキュメントのアーカイブ | 保留 / 実装候補 | 削除より復旧可能性は高いが、一覧表示、共有、review pack、復旧時の扱いが変わる。 | 製品標準の状態遷移にする場合はADR。組織内の手動退避手順に留める場合はissueで足りる。 | docs-check + integration。UIを持つ場合はe2e。 |
+| ドキュメントの削除 | 原則保留 / MVPでは禁止 | `documents` と `merge_decision_logs` の整合、review attribution、復旧不能性、共有済み成果物との関係に影響する。 | 必須。物理削除、論理削除、復旧可能削除のいずれを選ぶかをADRで固定する。 | integration + e2e + security review。 |
+| 所有者移管 | 保留 | 所有者は共有範囲、レビュー責任、監査上の説明責任に関わる。単なるID付け替えでは扱えない。 | 必須。移管理由、承認者、履歴、通知、review attributionとの関係をADRで固定する。 | integration + e2e。 |
+| 管理者本文閲覧 / 横断検索 | MVPでは禁止 | 利用者が安心して考え途中の情報を預ける価値に直結し、SafeModeや共有抑制の前提を変える。 | 必須。例外運用を認める場合でも、目的、範囲、記録、通知、代替手段をADRで固定する。 | e2e + security review。 |
+| 監査ログ閲覧 | 実装候補 / 範囲限定 | 読み取り専用のメタデータ閲覧は運用価値があるが、本文や未レビュー情報を含むと高リスクになる。 | メタデータ限定の一覧はissueで開始可能。保持方針や本文連動を含む場合はADR。 | integration。UIを持つ場合はe2e。 |
+| 保持期限管理 | 組織判断 / 製品標準は保留 | 保持期間は法務、契約、組織ポリシーに依存し、製品一律の既定値は混乱を招きやすい。 | 自動削除や標準保持期間を製品が持つ場合はADR。判断材料の文書化だけならissueで足りる。 | docs-check。自動処理を持つ場合はintegration + e2e。 |
+
+## 12) ADR化と内部issue化の分岐基準
+
+- ADRが必要な変更:
+  - 利用者本文、未レビュー情報、共有範囲、所有者、削除不能性、保持期限のいずれかを製品標準の振る舞いとして変える。
+  - 管理者やSupportが、通常利用者の導線を越えて本文や履歴へアクセスできるようになる。
+  - SafeMode、share/export、review pack、public exposure、review attribution、merge decision logの意味が変わる。
+  - 組織ごとの判断事項だったものを、製品の既定値または自動処理として固定する。
+- 内部issueで進められる変更:
+  - 既存データを読み取り専用で棚卸しし、本文や未レビュー情報を含めない。
+  - 各組織が検討するための判断材料、チェックリスト、復旧演習の証跡を整理する。
+  - 管理API/UIを追加せず、既存の監査イベントやテスト証跡の参照性を改善する。
+
+## 13) Stop解除条件
+
+`DATA-MAINT-01` の高権限操作に関するStop条件は、少なくとも次の条件を満たすまで解除しない。
+
+- 対象操作が、禁止、保留、組織判断、実装候補のいずれかに分類されている。
+- 製品標準として実装する操作について、ADRで権限、承認、監査、復旧不能性、共有抑制、検証レベルが固定されている。
+- 管理API、管理UI、CLI、外部監査連携のいずれで提供するかが、一般利用者の通常操作導線から分離されている。
+- `DATA-CONTRACT-01` のDocumentV2支援レベル、`PRODUCT-QA-01` のリリースゲート、`DATA-MODEL-OPS-01` のCRUD境界と矛盾しない。
 
 ---
 
