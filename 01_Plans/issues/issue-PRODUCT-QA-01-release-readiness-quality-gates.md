@@ -959,3 +959,49 @@ DoDテンプレ（Draft→Open）
 - Decide `ADR-0032` before opening `PRODUCT-VALUE-01..03`, or record an explicit Productization Program Owner approval for provisional value-gate execution.
 - Push or otherwise publish local follow-up commits from PR #2271 before treating this record as mergeable branch evidence.
 - No ADR is needed for this refinement itself; ADR action remains limited to `ADR-0032` value-model acceptance.
+
+## Productization Gate Record 2026-05-31: latest main evidence intake
+
+- Candidate: `origin/main@b31dcbeaa05d30f9bf1f9f651d44a06166c51100`
+- Related PR: draft PR #2278 `codex/project-baseline-20260531`, head `eb045b7615e65434f3f0f6b7a43dc5438d4a704b`
+- Decision date (JST): 2026-05-31
+- Reviewer: Codex
+- Scope: latest `main` health intake, local full-regression evidence from the 2026-05-31 baseline run, and the narrow PR #2278 E2E locator fix. This record does not change runtime behavior, public documentation, SafeMode defaults, release authority, or the product value model.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue memo validation passes and triage has no stopper on the latest-main branch.
+- G1 safety defaults: Go for tested scope. SharePanel/SafeMode and safe sharing coverage passed in the baseline validation set; PR #2278 only fixes a stale Japanese locator in the CE3 Playwright route.
+- G2 primary user operations: Conditional Go. Full Playwright passed after the locator correction, but the evidence is a local baseline plus draft PR branch evidence, not a final release-candidate approval.
+- G3 Japanese UI: Conditional Go. The failing CE3 label was corrected from `現在の document を置換` to `現在のドキュメントを置換`; broader Japanese UI completeness still belongs to the product UX issue set.
+- G4 viewport and operability: Conditional Go. The full Playwright suite passed in the baseline run, but a product release still needs candidate-level screenshots and mouse/keyboard UX evidence under `PRODUCT-UX-01..04`.
+- G5 public documentation and configuration contract: Conditional Go. Public configuration continues to use `KJ_ATLAS_*` keys; private PostgreSQL container adapter names remain an internal Compose/CI boundary. Public documentation was not republished in this intake.
+- G6 diagnostics and support: Conditional Go. Existing recovery and diagnostics evidence remains valid for the tested scope; support bundle policy remains a separate follow-up boundary.
+- G7 regression: Go for the baseline validation set. Frontend typecheck, Vitest, backend pytest, production build, targeted CE3 E2E, and full Playwright passed after the locator fix.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032` acceptance or explicit Productization Program Owner approval.
+- E1..E3 environment contract: Conditional Go. Settings/config evidence and prior Compose config evidence are retained, but a full running Compose stack was not started in this intake.
+- Final: **Conditional Go for latest-main evidence intake / No-Go for full release shipment**.
+
+### Evidence
+
+- Baseline branch and preservation:
+  - Local full-evidence branch: `codex/project-baseline-20260531-full-local@f703bd24e88787bc9d983374230c0d776b23c789`.
+  - Draft PR #2278 contains only the E2E Japanese locator fix because direct Git push was blocked by local GitHub credentials, and syncing the large baseline memo through the connector was intentionally avoided.
+- Local full-regression baseline:
+  - Frontend typecheck -> pass.
+  - Full Vitest -> pass: 160 files / 734 tests.
+  - Backend pytest -> pass: 260 passed / 19 skipped.
+  - Production build -> pass with the existing chunk-size warning only.
+  - Full Playwright initially found one stale Japanese locator in `ce3_patch_workspace.spec.ts`; after the locator fix, Playwright passed: 36 tests.
+  - Targeted `e2e/ce3_patch_workspace.spec.ts` -> pass: 1 test.
+- Current planning/docs checks for this intake branch:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass; active issue count may differ from the preserved local baseline because the large PROJECT-BASELINE closeout memo is not on `main`.
+
+### Follow-ups
+
+- Keep PR #2278 scoped to the CE3 Japanese locator fix unless a safe Git push path becomes available for the preserved full baseline memo.
+- Execute `PRODUCT-UX-01..04` with release-candidate screenshots, representative mouse/keyboard evidence, focus behavior checks, and layout clipping checks before treating G2/G4 as shipment-ready.
+- Keep `PRODUCT-VALUE-01..03` Draft until `ADR-0032` is accepted or Productization Program Owner approval explicitly authorizes provisional value-gate execution.
+- Run a full service-start Compose rehearsal before promoting E1..E3 from Conditional Go to shipment Go.
+- No new ADR is needed for this intake itself; the remaining decision authority is still `ADR-0032` and the existing productization gate owners.
