@@ -133,6 +133,18 @@
 
 - ADR化が必要になる条件: 起動ルーティング、ローカル履歴保持、公開版と編集版の分離を再定義する場合。
 
+## 11) Evidence update 2026-05-31: first-run document entry panel
+
+- Implementation route: `StartPanel` を追加し、起動直後に「新しい文書を作成」「サンプルを開く」「文書ファイルを読み込む」「レビューパックを取り込む」を同じ入口に整理した。SafeMode 状態も同じパネル内に表示する。
+- Integration route: `App.tsx` で既存の新規作成、標準サンプル読み込み、`document.json` 検証、レビューパック取り込み処理へ接続した。`document.json` とレビューパックは既存の「共有と再現」パネルを開き、検証結果や置換確認を確認できる状態にする。
+- Documentation route: `04_Documentation/public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md` を開始パネル前提に更新し、`04_Documentation/assets/screenshots/start-panel-document-entry.png` を追加した。
+- Verification:
+  - `node .\node_modules\typescript\bin\tsc --noEmit`: Pass（Codex bundled Node）
+  - `node .\node_modules\vitest\vitest.mjs run src/ui/StartPanel.test.ts src/i18n/key_consistency.test.ts src/i18n/catalog_integrity.test.ts`: Pass, 6 tests
+  - `node .\node_modules\playwright\cli.js test e2e/first_run_start_panel.spec.ts --reporter=line`: Pass, 2 tests at 960px / 390px
+  - Browser check: `http://127.0.0.1:4173/?locale=ja` で開始パネル表示、横スクロールなし、SafeMode ON 表示を確認。
+- Task status adjustment: T3, T4, T5 は開始パネルの代表経路として covered。最近使った文書の入口統合や、取り込み後の詳細状態を開始パネル内に戻すかどうかは、広い情報設計判断が必要な場合のみ別 issue/ADR へ切り出す。
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
