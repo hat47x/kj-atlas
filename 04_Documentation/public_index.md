@@ -6,6 +6,10 @@ kj-atlas は、カード、島、関係線を使って情報を整理し、考�
 
 > このページは**利用者向け公開入口**です。文書管理手順や開発者向け運用は含めません。
 
+起動後は「作業を開始」パネルから、新しい文書、サンプル、手元の `document.json`、レビューパックを選びます。SafeMode が ON であることを確認してから作業を始めてください。
+
+![作業開始パネル](assets/screenshots/start-document-entry.png)
+
 ![起動後の標準画面](assets/screenshots/app-canvas-overview.png)
 
 ## まず試す

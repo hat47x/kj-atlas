@@ -1,7 +1,7 @@
 # Issue Draft: PRODUCT-UX-01 初回利用と文書入口の製品化
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -103,9 +103,9 @@
 
 - [x] T1 起動直後に必要な開始操作を利用者視点で分類する。
 - [x] T2 開始状態または開始パネルのワイヤーフローを作成する。
-- [ ] T3 SafeMode、読み取り専用、取り込み検証の状態表示を追加する。
-- [ ] T4 キーボード操作と小画面表示をE2Eで確認する。
-- [ ] T5 `04_Documentation/installation.md` と `operations.md` の手順・スクリーンショットを同期する。
+- [x] T3 SafeMode、読み取り専用、取り込み検証の状態表示を追加する。
+- [x] T4 キーボード操作と小画面表示をE2Eで確認する。
+- [x] T5 `04_Documentation/installation.md` と `operations.md` の手順・スクリーンショットを同期する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -233,4 +233,22 @@
 - Proceed rule:
   - 実装PRでは「開始入口の文言」「SafeMode表示」「取り込み検証」「Tab/Enter到達性」「公開文書スクリーンショット」のうち、変更対象に対応する証跡を必ず添付する。
   - Product shipmentは本Issue OpenだけではGoにしない。実装証跡と公開文書同期が揃った時点で`PRODUCT-QA-01`へ戻す。
+
+## Completion Evidence 2026-05-31: first-run entry implemented
+
+- 実装:
+  - `03_Implement/frontend/src/ui/StartPanel.tsx` を追加し、起動直後に「新しい文書を作成」「サンプルを開く」「文書ファイルを読み込む」「レビューパックを取り込む」を同じ入口で選べるようにした。
+  - `03_Implement/frontend/src/App.tsx` から既存の新規作成、サンプル読込、document.json 検証、レビューパック検証フローへ接続した。
+  - 開始パネルに SafeMode、現在の文書、編集状態（編集可/読み取り専用）を表示した。
+- 検証:
+  - `03_Implement/frontend/e2e/first_run_document_entry.spec.ts` を追加し、390pxでの表示収まり、document.json の検証後置換フロー、キーボード起動を確認した。
+  - `header_toolbar_layout.spec.ts` と同時実行し、開始パネル追加後もヘッダー、表示パネル、共有パネルのレイアウトとフォーカス復帰が崩れないことを確認した。
+- 公開文書:
+  - `04_Documentation/installation.md`、`operations.md`、`public_index.md` に開始パネルの説明を追加した。
+  - `04_Documentation/assets/screenshots/start-document-entry.png` を追加し、`04_Documentation/assets/screenshots/README.md` に撮影対象を追記した。
+- 実行確認:
+  - bundled node `tsc --noEmit`: Pass.
+  - bundled node `vitest run src/i18n/key_consistency.test.ts src/i18n/catalog_integrity.test.ts src/i18n/ui_hardcode_guard.test.ts`: Pass, 13 tests.
+  - bundled node `playwright test first_run_document_entry header_toolbar_layout --reporter=line`: Pass, 10 tests.
+  - Browser plugin / in-app browser で `http://127.0.0.1:4173/?locale=ja` を開き、開始パネルの表示文言を確認した。
 

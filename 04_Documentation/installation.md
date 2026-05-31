@@ -138,6 +138,10 @@ http://127.0.0.1:4173
 - 新規ドキュメントを作成し、再読み込み後も内容が残る。
 - 既定では `KJ_ATLAS_LLM_PROVIDER=none` のため、外部 LLM とデータを共有しない。
 
+画面が正常に開くと、まず「作業を開始」パネルで、新しい文書、サンプル、手元の `document.json`、レビューパックの入口を選べます。ここで SafeMode が ON であることも確認します。
+
+![作業開始パネル](assets/screenshots/start-document-entry.png)
+
 画面が正常に開くと、次のように SafeMode、表示モード、共有と再現、キャンバス、右側の操作パネルが同じ画面内に表示されます。最初の確認では、サンプル文書または新規文書を使い、秘密情報や実データを入力しない状態で確認してください。
 
 ![起動後の標準画面](assets/screenshots/app-canvas-overview.png)
