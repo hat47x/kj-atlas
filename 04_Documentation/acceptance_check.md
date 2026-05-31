@@ -66,7 +66,7 @@ curl -fsS http://localhost:8080/api/docs/doc_phase1_canvas
 
 ## 共有や書き出しの前に確認すること
 
-共有やレビューパックの書き出しを使う場合は、[データ取り扱い](data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認します。
+共有やレビューパックの書き出しを使う場合は、[データ取り扱い](data_handling.md) のチェックリストに沿って、出力に秘密情報や内部メモが混ざっていないことを確認します。受け入れ確認では、「共有と再現」を開き、`共有前チェック` に SafeMode、公開範囲、未レビュー情報、出力形式が表示されることを確認します。
 
 ![共有と再現パネルの export/share 前チェック](assets/screenshots/share-export-safe-mode.png)
 

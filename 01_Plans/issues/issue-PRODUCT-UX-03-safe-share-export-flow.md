@@ -1,7 +1,7 @@
 # Issue: PRODUCT-UX-03 共有・エクスポート・レビューパック導線の製品化
 
 - Type: Feature request
-- Status: In Progress
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
@@ -75,12 +75,12 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] パネルの起点が「取り込み」だけに見えず、共有・取り込み・差分確認の目的が分かる。
-- [ ] エクスポート前にSafeMode、公開範囲、未レビュー情報、出力形式が確認できる。
-- [ ] SafeMode ON/OFF の警告が日本語として自然で、共有前確認の文脈に合っている。
-- [ ] `Escape` と明示的な閉じる操作で共有パネルを閉じ、起点ボタンへフォーカスが戻る。
-- [ ] 狭い画面でボタン、入力、長いラベルが見切れない。
-- [ ] `data_handling.md`、`security.md`、`acceptance_check.md` の説明と画面文言が一致する。
+- [x] パネルの起点が「取り込み」だけに見えず、共有・取り込み・差分確認の目的が分かる。
+- [x] エクスポート前にSafeMode、公開範囲、未レビュー情報、出力形式が確認できる。
+- [x] SafeMode ON/OFF の警告が日本語として自然で、共有前確認の文脈に合っている。
+- [x] `Escape` と明示的な閉じる操作で共有パネルを閉じ、起点ボタンへフォーカスが戻る。
+- [x] 狭い画面でボタン、入力、長いラベルが見切れない。
+- [x] `data_handling.md`、`security.md`、`acceptance_check.md` の説明と画面文言が一致する。
 
 ### 5.1 初期フロー案
 
@@ -105,9 +105,9 @@
 
 - [x] T1 SharePanelの現行操作を目的別に分類する。
 - [x] T2 共有前確認のステップまたはタブ構成を設計する。
-- [ ] T3 SafeMode、公開範囲、未レビュー情報、出力形式の確認UIを追加する。
+- [x] T3 SafeMode、公開範囲、未レビュー情報、出力形式の確認UIを追加する。
 - [x] T4 取り込み、patch、Diff/Verifyの入口を補助または別タブとして整理する。
-- [ ] T5 E2Eと公開文書を同期する。
+- [x] T5 E2Eと公開文書を同期する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -270,4 +270,21 @@
   - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
   - Browser check at `1280x720`: purpose buttons=4, panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`.
   - Browser click check: `パッチを確認する` は `#share-panel-purpose-patch` へ移動し `activeElementId=share-panel-purpose-patch`、`差分を確認する` は `#share-panel-purpose-diff` へ移動し `activeElementId=share-panel-purpose-diff`。
+
+## Implementation Evidence 2026-05-27: share preflight check and docs sync
+
+- Scope:
+  - `SharePanel` の共有用書き出しセクションに `共有前チェック` を追加し、SafeMode、view の公開範囲、パックの公開範囲、未レビュー情報、出力形式、レビューパック粒度を実行前に読めるようにした。
+  - SafeMode ON では未レビューのドラフトを含めないこと、SafeMode OFF では未レビューを含める/含めない設定の意味を明示する。
+  - `header_toolbar_layout.spec.ts` に共有前チェック、未レビュー情報、出力形式の存在確認を追加した。
+  - `data_handling.md`、`security.md`、`acceptance_check.md` と `share-export-safe-mode.png` を画面文言に同期した。
+- Acceptance impact:
+  - T3/T5を完了扱いに更新。共有・書き出し前に「何を共有するか」「誰に見せる範囲か」「未レビュー情報を含むか」「どの形式で出すか」を同じ場所で確認できる。
+  - PRODUCT-UX-03 は `Status: Done`。ただし製品全体の出荷判断は `PRODUCT-QA-01` と `MVP-EXIT-01` のProgram Gateに残す。
+- Evidence:
+  - `node .\node_modules\vitest\vitest.mjs run src\ui\SharePanel.test.ts src\i18n\catalog_integrity.test.ts src\i18n\ui_hardcode_guard.test.ts src\i18n\translate.test.ts` -> 4 files / 33 tests passed.
+  - `node .\node_modules\typescript\bin\tsc --noEmit` -> passed.
+  - `node .\node_modules\playwright\cli.js test header_toolbar_layout.spec.ts --reporter=line --timeout=60000` -> 7 tests passed.
+  - Browser check at `1280x720`: `共有前チェック`、`SafeMode ON のため未レビューのドラフトは含めません。`、`SVG / PNG / view.json / 概念マップレポート / レビューパック.zip` を確認。panel `left=16`, `right=356`, `width=340`, `scrollWidth=338`, `clientWidth=338`, `horizontalOverflow=false`。
+  - Screenshot: `04_Documentation/assets/screenshots/share-export-safe-mode.png`。
 

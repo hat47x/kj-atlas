@@ -171,6 +171,43 @@ const purposeButtonStyle = {
   textAlign: "left",
 } as const;
 
+const preflightPanelStyle = {
+  display: "grid",
+  gap: 6,
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  padding: 8,
+  backgroundColor: "#f8fafc",
+  ...borderedPanelStyle,
+} as const;
+
+const preflightGridStyle = {
+  display: "grid",
+  gap: 5,
+  margin: 0,
+} as const;
+
+const preflightRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(90px, 0.45fr) minmax(0, 1fr)",
+  gap: 6,
+  alignItems: "start",
+} as const;
+
+const preflightTermStyle = {
+  margin: 0,
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#334155",
+} as const;
+
+const preflightValueStyle = {
+  margin: 0,
+  fontSize: 11,
+  color: "#0f172a",
+  overflowWrap: "anywhere",
+} as const;
+
 function publishVisibilityLabel(value: PublishVisibility): string {
   switch (value) {
     case "Org":
@@ -183,6 +220,12 @@ function publishVisibilityLabel(value: PublishVisibility): string {
     default:
       return t("share.panel.visibility.unlisted");
   }
+}
+
+function bundleGranularityLabel(value: ExportGranularity): string {
+  return value === "detail"
+    ? t("share.panel.export.bundle_granularity_detail")
+    : t("share.panel.export.bundle_granularity_overview");
 }
 
 const purposeLinks = [
@@ -407,6 +450,11 @@ export function SharePanel({
   const sortedPatchApplyLogEntries = [...patchApplyLogEntries].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   const safeModeIndicator = getSafeModeIndicator(safeMode);
   const safeModeWarning = getExportSafetyWarning(safeMode);
+  const unreviewedDraftPolicy = safeMode
+    ? t("share.panel.preflight.unreviewed.safe_mode")
+    : includeUnreviewedDrafts
+      ? t("share.panel.preflight.unreviewed.included")
+      : t("share.panel.preflight.unreviewed.excluded");
 
   const shortFingerprint = (value: string | undefined): string => {
     if (!value) return t("share.panel.patch.not_available");
@@ -585,6 +633,36 @@ export function SharePanel({
               </label>
               <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.view_fallback")}</div>
               <div style={{ fontSize: 11, color: "#64748b" }}>{t("share.panel.visibility.pack_fallback")}</div>
+            </div>
+            <div style={preflightPanelStyle}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#0f172a" }}>{t("share.panel.preflight.title")}</div>
+              <div style={{ fontSize: 11, color: "#475569" }}>{t("share.panel.preflight.hint")}</div>
+              <dl style={preflightGridStyle}>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.safe_mode")}</dt>
+                  <dd style={preflightValueStyle}>{safeModeIndicator.label}</dd>
+                </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.view_visibility")}</dt>
+                  <dd style={preflightValueStyle}>{publishVisibilityLabel(viewVisibility)}</dd>
+                </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.pack_visibility")}</dt>
+                  <dd style={preflightValueStyle}>{publishVisibilityLabel(packVisibility)}</dd>
+                </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.unreviewed")}</dt>
+                  <dd style={preflightValueStyle}>{unreviewedDraftPolicy}</dd>
+                </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.output_formats")}</dt>
+                  <dd style={preflightValueStyle}>{t("share.panel.preflight.output_formats_value")}</dd>
+                </div>
+                <div style={preflightRowStyle}>
+                  <dt style={preflightTermStyle}>{t("share.panel.preflight.bundle_granularity")}</dt>
+                  <dd style={preflightValueStyle}>{bundleGranularityLabel(bundleExportGranularity)}</dd>
+                </div>
+              </dl>
             </div>
             <button type="button" onClick={onExportSvgViewport} disabled={!hasDocument || isLoading} style={actionButtonStyle}>
               {t("share.panel.export.svg_viewport")}

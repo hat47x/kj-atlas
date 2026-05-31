@@ -100,6 +100,12 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("セーフモード: ON");
     expect(html).toContain("セーフモードが ON です。書き出した要約は既定でプライバシー優先になります。");
     expect(html).toContain("固定マスク対象: 共有 / レビューパック（無効化できません）。");
+    expect(html).toContain("共有前チェック");
+    expect(html).toContain("SafeMode、公開範囲、未レビュー情報、出力形式を確認してから実行してください。");
+    expect(html).toContain("未レビュー情報");
+    expect(html).toContain("SafeMode ON のため未レビューのドラフトは含めません。");
+    expect(html).toContain("出力形式");
+    expect(html).toContain("SVG / PNG / view.json / 概念マップレポート / レビューパック.zip");
     expect(html).not.toContain("未レビューのドラフトを含める");
   });
 
@@ -109,6 +115,8 @@ describe("SharePanel safe mode copy", () => {
     expect(html).toContain("SafeMode: OFF");
     expect(html).toContain("SafeMode is OFF. Exports may include raw text. Re-enable SafeMode before external sharing.");
     expect(html).toContain("Locked redaction contexts: Share / Review Pack (cannot be disabled).");
+    expect(html).toContain("Preflight check");
+    expect(html).toContain("Unreviewed drafts are excluded. Enable them only when the recipient expects draft content.");
     expect(html).toContain("Include unreviewed drafts");
   });
 });
@@ -162,6 +170,8 @@ describe("SharePanel visibility controls", () => {
     const html = renderToStaticMarkup(React.createElement(SharePanel, buildProps(true)));
     expect(html).toContain("view の公開範囲");
     expect(html).toContain("パックの公開範囲");
+    expect(html).toContain("公開範囲（view）");
+    expect(html).toContain("公開範囲（パック）");
     expect(html).toContain('option value="Public"');
     expect(html).toContain('option value="Unlisted"');
     expect(html).toContain('option value="Org"');
