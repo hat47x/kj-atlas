@@ -256,3 +256,29 @@
 - `python 01_Plans/issues/validate_active_issue_memos.py`
 - `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `git diff --check -- 01_Plans 02_Architecture`
+
+## 21) Verification intake（2026-05-31）
+
+### Context
+
+- `DATA-MODEL-OPS-01` の完了判定は PR #2280（`codex/data-model-ops-01-closeout-20260531`）で分離した。
+- 本Issueは `DATA-MODEL-OPS-01` を上流に持つため、現時点では **Openのまま** とし、#2280 がmainへ反映された後にCloseoutを行う。
+- ただし、DocumentV2/API/frontend/backendの契約ドリフト検証は、現行main上で再実行済みである。
+
+### Verification
+
+- Backend contract/API integration:
+  - Initial run without explicit `--basetemp` failed during pytest setup because `C:\Users\yhata\AppData\Local\Temp\pytest-of-hat47x` was not readable in this host session.
+  - Rerun with local basetemp and cache disabled passed:
+    - `03_Implement/backend/.venv/Scripts/python.exe -m pytest 03_Implement/backend/tests/test_docs_roundtrip.py 03_Implement/backend/tests/test_docs_a1_error_contract.py 03_Implement/backend/tests/test_docs_audit_integration.py 03_Implement/backend/tests/test_docs_access_control_integration.py 03_Implement/backend/tests/test_data_model_operations_contract.py -q --basetemp 03_Implement/backend/.pytest_tmp_data_contract_01 -p no:cacheprovider`
+    - Result: `59 passed, 16 skipped`.
+- Frontend contract/regression guard:
+  - PowerShell host did not expose `npm`, so the bundled Codex Node executable was used.
+  - `C:/Users/yhata/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe ./node_modules/vitest/vitest.mjs run src/import/zip_import.test.ts src/import/schema_validation.test.ts src/import/document_import.test.ts src/import/view_import.test.ts src/diff/review_pack_workflow.integration.test.ts src/export/bundle_export.test.ts src/export/view_metadata.test.ts src/domain/validate_doc.test.ts src/export/canvas_svg.test.ts src/ui/ux_operability_regression.test.ts`
+  - Result: `10 passed` files / `102 passed` tests.
+
+### Decision
+
+- `DATA-CONTRACT-01` is verified as closeout-ready, but remains **Open** until the upstream `DATA-MODEL-OPS-01` closeout in PR #2280 is merged or otherwise recreated on main.
+- No ADR is required for this verification intake because no create contract, version gate, SafeMode/share-export boundary, or data normalization strategy changed.
+- Next action after #2280: change `Status` to `Done`, add final Closeout, and rerun `validate_active_issue_memos.py` plus `triage_actionable_plans.py`.
