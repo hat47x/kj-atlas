@@ -1,11 +1,11 @@
 # Issue Draft: PRODUCT-OPS-01 サポート・診断・復帰導線の製品化
 
 - Type: Feature request
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1
-- Owner: TBD
+- Owner: Codex (Product Ops evidence steward; accountable owner remains Productization Program Owner)
 - Scope: `03_Implement/frontend/src/`, `03_Implement/backend/`, `04_Documentation/diagnostics.md`, `04_Documentation/operations.md`, `SUPPORT.md`
 - Related Backlog: `PRODUCT-OPS-01`
 - Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`, `02_Architecture/architecture.md`
@@ -64,11 +64,11 @@
 
 ## 5) 受入条件 / Acceptance criteria
 
-- [ ] backend未接続、保存失敗、取り込み失敗、共有前警告で、利用者向けの次アクションが表示される。
-- [ ] 診断情報を共有するときに、APIキー、token、password、未加工の機微本文を含めない注意が画面または文書で分かる。
-- [ ] SafeMode、share/export、import sanitizeの警告と診断文書の表現が矛盾しない。
-- [ ] `SUPPORT.md` と `diagnostics.md` が、サポートへ共有する情報と共有しない情報を分けて説明している。
-- [ ] 代表失敗ケースのunit/integrationまたは手動確認手順がある。
+- [x] backend未接続、保存失敗、取り込み失敗、共有前警告で、利用者向けの次アクションが表示される。
+- [x] 診断情報を共有するときに、APIキー、token、password、未加工の機微本文を含めない注意が画面または文書で分かる。
+- [x] SafeMode、share/export、import sanitizeの警告と診断文書の表現が矛盾しない。
+- [x] `SUPPORT.md` と `diagnostics.md` が、サポートへ共有する情報と共有しない情報を分けて説明している。
+- [x] 代表失敗ケースのunit/integrationまたは手動確認手順がある。
 
 ### 5.1 代表失敗ケース別の情報設計
 
@@ -153,6 +153,23 @@
   - `PRODUCT-OPS-01` continues to own user-facing recovery guidance, manual diagnostic sharing, and current UI/docs consistency.
   - `PRODUCT-OPS-02` owns the decision on whether a support diagnostics bundle exists, what it may contain, and when ADR approval is required.
 - ADR impact: no ADR is created in this split. ADR is required only if `PRODUCT-OPS-02` decides to fix a bundle format, automatic collection/transmission, support integration, or product-wide retention policy.
+
+## 14) Closeout 2026-05-31: PRODUCT-OPS-01 Done
+
+- Completion decision: Done. The user-facing recovery guidance, manual diagnostic sharing boundary, and support/operations documentation consistency required by this issue are implemented and evidenced.
+- Evidence route:
+  - UI/E2E: `03_Implement/frontend/e2e/ops_recovery_guidance.spec.ts` covers API load failure, save failure, slow diagnostics cancellation, slow review-pack export cancellation, and review-diff worker cancellation.
+  - Support docs: `SUPPORT.md` separates information to share from information not to share and lists first recovery checks.
+  - Diagnostics docs: `04_Documentation/diagnostics.md` defines failure classification, worker delay/cancel notes, safe recording scope, and a sharing template.
+  - Operations docs: `04_Documentation/operations.md` defines first response, role separation, stop conditions, Plan -> Execute -> Verify recovery flow, and the same no-secrets sharing boundary.
+  - Security docs: `04_Documentation/security.md` keeps SafeMode/share/export and incident-sharing boundaries aligned with diagnostics and support guidance.
+- Boundary retained: automated support diagnostics bundle generation is not part of this issue. That product-policy decision remains split to `PRODUCT-OPS-02` and requires ADR before fixing bundle format, automatic collection/transmission, support integration, or product-wide retention policy.
+- Verification for this closeout:
+  - `node .\node_modules\playwright\cli.js test e2e/ops_recovery_guidance.spec.ts --reporter=line`: Pass, 5 tests. Vite was started directly with bundled `node` because this Codex host does not expose `npm.cmd` on PATH.
+  - `python 01_Plans/issues/validate_active_issue_memos.py`: Pass.
+  - `python 01_Plans/triage_actionable_plans.py`: Pass; `PRODUCT-OPS-01` is no longer an active ready issue after status normalization.
+  - `git diff --check -- 01_Plans/issues/issue-PRODUCT-OPS-01-support-diagnostics-error-recovery.md`: Pass.
+- ADR impact: no ADR required. This closeout records existing evidence and keeps the remaining policy-changing work in `PRODUCT-OPS-02`.
 
 ---
 
