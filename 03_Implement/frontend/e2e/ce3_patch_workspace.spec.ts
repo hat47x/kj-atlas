@@ -65,7 +65,7 @@ test("CE3 patch workspace supports candidate comparison, preset replay, and roll
     buffer: Buffer.from(JSON.stringify(doc), "utf-8"),
   });
 
-  await page.getByRole("button", { name: /Replace current document|現在の document を置換/ }).click();
+  await page.getByRole("button", { name: /Replace current document|現在のドキュメントを置換/ }).click();
   await expect(page.getByText("Replaced current document")).toBeVisible();
 
   await page.getByRole("button", { name: /Collect candidates|候補を収集/i }).click();
