@@ -6,7 +6,9 @@ kj-atlas は、カード、島、関係線を使って情報を整理し、考�
 
 > このページは**利用者向け公開入口**です。文書管理手順や開発者向け運用は含めません。
 
-![起動後の標準画面](assets/screenshots/app-canvas-overview.png)
+起動後は「文書を開く・作成する」パネルから、新しい文書、サンプル、既存の `document.json`、レビューパックのどれで始めるかを選べます。画面上で SafeMode の状態も確認できます。
+
+![文書入口パネル](assets/screenshots/start-panel-document-entry.png)
 
 ## まず試す
 
@@ -16,7 +18,7 @@ kj-atlas は、カード、島、関係線を使って情報を整理し、考�
 | --- | --- |
 | まず起動したい | [導入手順](installation.md) |
 | 起動前に設定値を確認したい | [設定ガイド](configuration.md) |
-| 共有や export の前に安全確認したい | [データ取り扱い](data_handling.md) |
+| 共有や書き出しの前に安全確認したい | [データ取り扱い](data_handling.md) |
 | 日常運用の流れを知りたい | [運用手順](operations.md) |
 | 変更後に画面から確認したい | [受け入れ確認](acceptance_check.md) |
 
@@ -24,7 +26,7 @@ kj-atlas は、カード、島、関係線を使って情報を整理し、考�
 
 kj-atlas は、既定では AI 機能と外部連携を有効にしない安全側の設定を使います。最初の確認では、`KJ_ATLAS_LLM_PROVIDER=none` のまま起動してください。これにより、保存、表示、共有前確認などの基本操作を、意図しない外部サービス連携なしで確認できます。
 
-共有、export、AI 提案、監査ログ連携を使う前には、次の文書を確認します。
+共有、書き出し、AI 提案、監査ログ連携を使う前には、次の文書を確認します。
 
 | 確認したいこと | 読む手順 |
 | --- | --- |
@@ -33,7 +35,7 @@ kj-atlas は、既定では AI 機能と外部連携を有効にしない安全�
 | 安全設定を変える前の判断基準 | [セキュリティ運用ガイドライン](security_operational_guidelines.md) |
 | local LLM を使う場合の設定と戻し方 | [local LLM 運用](local_llm_ops_guide.md) |
 
-![共有と再現パネルの export/share 前チェック](assets/screenshots/share-export-safe-mode.png)
+![共有と再現パネルの共有/書き出し前チェック](assets/screenshots/share-export-safe-mode.png)
 
 ## 目的別に読む
 
@@ -46,11 +48,11 @@ kj-atlas は、既定では AI 機能と外部連携を有効にしない安全�
 | ブラウザ操作で主要機能を確認する | [受け入れ確認](acceptance_check.md) |
 | AI 提案を採用・保留・破棄する | [AI 提案の扱い](ce2_low_risk_ai_assist.md) |
 | カードや島から説明文を作る | [ナラティブ生成](narratives.md) |
-| import/export や比較結果の再現性を理解する | [正規化と決定論](canonicalization.md) |
+| 読み込み/書き出しや比較結果の再現性を理解する | [正規化と決定論](canonicalization.md) |
 
 ## 困ったとき
 
-画面が開かない、保存できない、AI 提案が出ない、export の内容が想定と違うなどの問題がある場合は、まず [診断と障害調査](diagnostics.md) を確認してください。画面から再現確認をする場合は [受け入れ確認](acceptance_check.md) を使います。
+画面が開かない、保存できない、AI 提案が出ない、書き出し内容が想定と違うなどの問題がある場合は、まず [診断と障害調査](diagnostics.md) を確認してください。画面から再現確認をする場合は [受け入れ確認](acceptance_check.md) を使います。
 
 問い合わせや共有用のメモを作るときは、秘密情報、API key、token、password、未加工の顧客情報を含めないでください。どこまで残してよいか迷う場合は [データ取り扱い](data_handling.md) を先に確認します。
 
@@ -65,6 +67,6 @@ kj-atlas は、既定では AI 機能と外部連携を有効にしない安全�
 | provider | LLM の接続先種別です。`none`、`local`、`large-scale` などがあります。 |
 | 受け入れ確認 | 画面から実際に操作して、利用者の流れ全体を確認することです。 |
 | audit | 後から確認できるように残す操作記録です。秘密情報を含めないことが前提です。 |
-| export | アプリ内の情報をファイルとして取り出す操作です。共有前に秘密情報や不要な identity 情報がないか確認します。 |
-| share | 他の人が閲覧できるように共有する操作です。公開範囲、SafeMode、readOnly の状態を確認してから使います。 |
+| 書き出し（export） | アプリ内の情報をファイルとして取り出す操作です。共有前に秘密情報や不要な identity 情報がないか確認します。 |
+| 共有（share） | 他の人が閲覧できるように共有する操作です。公開範囲、SafeMode、readOnly の状態を確認してから使います。 |
 | visibility | 公開範囲の意図を示す分類です。SafeMode や readOnly の拒否結果を上書きするものではありません。 |

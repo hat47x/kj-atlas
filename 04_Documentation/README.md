@@ -53,9 +53,10 @@
 
 | 掲載先 | 画面例 | 読み取りポイント |
 | --- | --- | --- |
-| [installation.md](installation.md) | `app-canvas-overview.png` | 起動後に表示される標準画面、SafeMode、ヘッダー、キャンバス、右側パネル |
-| [operations.md](operations.md) | `app-canvas-overview.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
-| [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | share/export 前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
+| [public_index.md](public_index.md) | `start-panel-document-entry.png` | 最初に選ぶ文書入口、SafeMode、新規/サンプル/取り込み導線 |
+| [installation.md](installation.md) | `start-panel-document-entry.png` | 起動後に表示される開始パネル、SafeMode、ヘッダー、キャンバス、右側パネル |
+| [operations.md](operations.md) | `start-panel-document-entry.png` | 運用確認で見る入口と、画面/API/保存確認の位置づけ |
+| [data_handling.md](data_handling.md) | `share-export-safe-mode.png` | 共有/書き出し前に確認する SafeMode、visibility、reviewerRef、出力範囲 |
 | [security.md](security.md) | `share-export-safe-mode.png` | SafeMode と外部サービスとの共有前に見る安全境界 |
 | [acceptance_check.md](acceptance_check.md) | `view-controls-safe-mode.png`, `mobile-toolbar-smoke-390.png` | 手動 smoke test、表示設定、狭い viewport でのヘッダー確認 |
 | [diagnostics.md](diagnostics.md) | `diagnostics-quality-report.png` | 診断 worker の実行結果、品質レポート、再現記録の入口 |

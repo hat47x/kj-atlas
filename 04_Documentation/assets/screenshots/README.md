@@ -15,8 +15,9 @@
 
 | ファイル | 内容 |
 | --- | --- |
+| `start-panel-document-entry.png` | 起動直後の文書入口、SafeMode、開始操作 |
 | `app-canvas-overview.png` | 起動直後のキャンバス、ヘッダー、右側パネル |
-| `share-export-safe-mode.png` | 「共有と再現」パネルの SafeMode と export/share 前チェック |
+| `share-export-safe-mode.png` | 「共有と再現」パネルの SafeMode と共有/書き出し前チェック |
 | `view-controls-safe-mode.png` | `View` パネルの表示設定と SafeMode |
 | `diagnostics-quality-report.png` | diagnostics 実行後の品質レポート |
 | `mobile-toolbar-smoke-390.png` | 390px viewport のヘッダーと主要操作 |

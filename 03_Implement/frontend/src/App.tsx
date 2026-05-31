@@ -52,6 +52,7 @@ import { SuggestionPanel } from "./ui/SuggestionPanel";
 import { HilRsWorkflowPanel } from "./ui/HilRsWorkflowPanel";
 import { SearchBar } from "./ui/SearchBar";
 import { ViewControlsPanel } from "./ui/ViewControlsPanel";
+import { StartPanel } from "./ui/StartPanel";
 import { MergeSuggestionsPanel } from "./ui/MergeSuggestionsPanel";
 import { PatchWorkspacePanel } from "./ui/workspace/PatchWorkspacePanel";
 import { NarrativesPanel } from "./ui/NarrativesPanel";
@@ -1080,6 +1081,7 @@ export default function App() {
   const [hierarchyLevel, setHierarchyLevel] = useState<HierarchyLevel>("detail");
   const [isViewControlsOpen, setIsViewControlsOpen] = useState(false);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+  const [isStartPanelOpen, setIsStartPanelOpen] = useState(true);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [visibleAggregatedEdges, setVisibleAggregatedEdges] = useState<AggregatedEdgeMeta[]>([]);
   const [isGeneratingRelationSummary, setIsGeneratingRelationSummary] = useState(false);
@@ -1840,6 +1842,10 @@ export default function App() {
     },
     [applyResolvedLocaleForView]
   );
+
+  const handleOpenSampleDocument = useCallback(() => {
+    void loadDocument(DEFAULT_DOCUMENT_ID, { allowCreateOnNotFound: true });
+  }, [loadDocument]);
 
   const applyDocumentChange = useCallback(
     (
@@ -8706,6 +8712,26 @@ ${parsedDocument.error}`);
           void handleComparisonFileChange(event);
         }}
         style={{ display: "none" }}
+      />
+      <StartPanel
+        isOpen={isStartPanelOpen}
+        safeMode={safeMode}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        hasDocument={Boolean(document)}
+        onClose={() => setIsStartPanelOpen(false)}
+        onCreateDocument={handleNewDocument}
+        onOpenSampleDocument={handleOpenSampleDocument}
+        onLoadDocumentFile={(file) => {
+          setIsViewControlsOpen(false);
+          setIsSharePanelOpen(true);
+          void handleLoadDocumentFile(file);
+        }}
+        onImportReviewPackFile={(file) => {
+          setIsViewControlsOpen(false);
+          setIsSharePanelOpen(true);
+          void handleImportReviewPackFile(file);
+        }}
       />
       {isLoading || !focusedVisibleDocument ? (
         <div

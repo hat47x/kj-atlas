@@ -11,6 +11,11 @@ export const READ_ONLY_INDICATOR = /Read-only mode is active|読み取り専用�
 export const EDIT_ISLAND_BOUNDARY_CHECKBOX = /Edit island boundary|島の境界を編集/;
 export const SEARCH_CARDS_PLACEHOLDER = /Search cards|カードを検索/;
 export const HIDE_NON_MATCHES_CHECKBOX = /Hide non-matches|非一致を非表示/;
+export const START_PANEL_TITLE = /Open or create a document|文書を開く・作成する/;
+export const START_PANEL_NEW_DOCUMENT = /Create new document|新しい文書を作成/;
+export const START_PANEL_SAMPLE = /Open sample|サンプルを開く/;
+export const START_PANEL_LOAD_DOCUMENT = /Load document file|文書ファイルを読み込む/;
+export const START_PANEL_IMPORT_PACK = /Import review pack|レビューパックを取り込む/;
 
 export function visibilitySelect(page: Page, label: "view" | "pack") {
   const labelPattern = label === "view" ? /View visibility|view の公開範囲/ : /Pack visibility|パックの公開範囲/;
