@@ -21,13 +21,13 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `ADR-0033`
+- DecisionQueueRef（未確定時の参照先）: `DATA-MAINT-03` / Future ADR for data lifecycle and privileged maintenance operations
 
 ## Dependency graph（Stream I）
 
 - Upstream（先行固定）: `DATA-MODEL-OPS-01`（MVP運用境界の正本化）, `DATA-CONTRACT-01`（DocumentV2契約ドリフト整理）
 - Parallel（並行整備）: なし
-- Downstream（後続依存）: なし（運用runbook確定後に実装Issueへ分割）
+- Downstream（後続依存）: `DATA-MAINT-03`（高権限データライフサイクル方針。運用runbook確定後の実装Issueは別途分割）
 - Blocker条件: support level未確定、またはDocument復旧時の契約整合チェック観点が未定義
 
 依存仕分け（Phase 4 Execute）:
@@ -273,7 +273,7 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 - `01_Plans/issues/tests/test_validate_active_issue_memos.py`
 - `01_Plans/triage_actionable_plans.py`
 - `01_Plans/tests/test_triage_actionable_plans.py`
-## 21) DATA-MAINT-02 recovery exercise handoff（2026-05-25）
+## 22) DATA-MAINT-02 recovery exercise handoff（2026-05-25）
 
 ### Context
 
@@ -291,3 +291,28 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 - `03_Implement/backend/tests/test_data_maintenance_recovery_exercise.py`
 - `03_Implement/backend/.venv/Scripts/python.exe -m pytest tests/test_data_maintenance_recovery_exercise.py -q --basetemp .pytest_tmp_data_maint_02 -p no:cacheprovider` -> Pass: 1 test
 - `03_Implement/backend/.venv/Scripts/python.exe -m pytest --basetemp .pytest_tmp_data_maint_02_full -p no:cacheprovider` -> Pass: 257 passed / 19 skipped
+
+## 23) DATA-MAINT-03 split and verification intake（2026-05-31）
+
+### Context
+
+- PR #2280 は、`DATA-MODEL-OPS-01` をDoneへ進め、ER/CRUD俯瞰とMVP運用境界の証跡を整理した。ただしmain未反映の間は、本Issue側では参照証跡として扱う。
+- PR #2281 は、`DATA-CONTRACT-01` の契約ドリフト検証結果を追記し、`DocumentV2` / API / frontend / backend の支援レベル整合を再確認した。
+- 本Issueは、読み取り専用の棚卸し、環境標準のバックアップ、検証環境での復旧確認、本文を含まない支援情報共有までは運用境界を持つ。一方で、削除、アーカイブ、所有者移管、管理者本文閲覧、監査ログ閲覧、保持期限管理は、組織の責任・監査・法務判断に強く依存する。
+
+### Decision
+
+- 高権限データライフサイクル操作は、本Issueの曖昧な残課題として残さず、`DATA-MAINT-03` に分割して追跡する。
+- `DATA-MAINT-01` は引き続き `Status=Open` / `DecisionStatus=Pending` とする。今回の更新は実装承認ではなく、読み取り中心の運用境界と高権限操作の判断待ちを分けるための整理である。
+- 削除、アーカイブ、所有者移管、管理者本文閲覧、監査ログ閲覧、保持期限管理のいずれかを製品標準機能にする場合は、`DATA-MAINT-03` で対象操作・権限・監査・復旧不能性・共有抑制・検証レベルを整理し、必要に応じてADRを先行する。
+
+### Consequences
+
+- `DATA-MAINT-01` は、管理・復旧・棚卸しの最小運用境界を扱う親issueとして維持できる。
+- `DATA-MAINT-03` は、管理者や運用者が通常の保守作業を越えて利用者本文、履歴、削除不能性、所有権へ影響する操作を判断するための専用issueになる。
+- 管理API、管理UI、CLI、外部監査連携に高権限操作を追加する作業は、`DATA-MAINT-03` または後続ADRの判断が固定されるまで着手しない。
+
+### Verify
+
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md`
+- `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
