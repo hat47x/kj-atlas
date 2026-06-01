@@ -670,3 +670,31 @@
 - Owner: Codex for evidence maintenance; Project Maintainers for ADR-0035; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next product value and data-lifecycle decision review.
 - Re-decision date: after ADR-0035 is accepted/replaced, after ADR-0032/value-gate authority changes, or after a full release-candidate evidence run is completed.
+
+## MVP-EXIT Program Gate Decision 2026-06-01: data-contract closeout and audit-boundary sync
+
+- Candidate: `origin/main@b38c7ac7a318acd94ab7da7b090976ed9059c2c7`
+- Decision date: 2026-06-01
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-01: data-contract closeout and audit-boundary sync`.
+  - DATA-CONTRACT-01 closeout: `DATA-CONTRACT-01` is Done for the current DocumentV2/API/support-level baseline.
+  - DATA-MAINT-01 routing: concrete downstream references now point to `DATA-MAINT-03`, `ADR-0035`, and `DATA-MAINT-04`.
+  - DATA-MAINT-04 baseline: metadata-only audit viewing remains Draft and blocked by the `ADR-0035` decision boundary.
+
+### Decision
+
+- Final: **Conditional Go for data-contract and audit-boundary planning convergence / No-Go for full release shipment**
+- Reason summary: The DocumentV2/API contract drift lane is now closed for the current baseline, and the data-maintenance follow-up lanes have concrete routing. This improves planning convergence but does not grant shipment approval because `ADR-0035` is still Proposed, `DATA-MAINT-03` remains Open, `DATA-MAINT-04` remains Draft, product value gates remain Draft, and current release-candidate E2E/viewport/screenshot plus full Compose startup evidence has not been assembled.
+- Escalation route: treat the current state as a cleaner release-candidate input, not as a release decision. Continue through `PRODUCT-QA-01` for evidence collection and through `ADR-0035` / `ADR-0032` for remaining decision authority.
+
+### Conditional controls
+
+- Remaining risks:
+  - `DATA-MAINT-03` cannot close until `ADR-0035` is accepted, replaced, or otherwise resolved.
+  - `DATA-MAINT-04` must not become implementation work while the high-privilege lifecycle boundary is Proposed.
+  - `PRODUCT-VALUE-01..03` remain Draft and block full shipment.
+  - Full release-candidate E2E, viewport matrix, screenshot evidence, and full running Compose startup were not executed in this planning-only sync.
+- Owner: Codex for evidence maintenance; Project Maintainers for ADR-0035; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next product value and data-lifecycle decision review.
+- Re-decision date: after ADR-0035 is accepted/replaced, after ADR-0032/value-gate authority changes, or after a full release-candidate evidence run is completed.
