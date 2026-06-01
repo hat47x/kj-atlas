@@ -1045,3 +1045,42 @@ DoDテンプレ（Draft→Open）
 - Keep `DATA-MAINT-01` high-privilege implementation paths stopped unless ADR-0035 is accepted or a successor ADR explicitly changes the boundary.
 - Keep full release shipment No-Go until product value gates, full release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
 - No new ADR is needed for this gate refresh. The only new architecture decision already exists as Proposed ADR-0035.
+
+## Productization Gate Record 2026-06-01: data-contract closeout and audit-boundary sync
+
+- Candidate: `origin/main@b38c7ac7a318acd94ab7da7b090976ed9059c2c7`
+- Related merged PRs: #2286, #2287, #2288, #2289, #2290
+- Decision date (JST): 2026-06-01
+- Reviewer: Codex
+- Scope: latest `main` gate synchronization after the latest-main baseline, `DATA-MAINT-04` draft/baseline, `DATA-MAINT-01` routing sync, and `DATA-CONTRACT-01` closeout were merged. This record changes planning evidence only; it does not change runtime behavior, UI copy, SafeMode defaults, public documentation, release authority, or the product value model.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation passes and triage has no stopper on `origin/main@b38c7ac7a318acd94ab7da7b090976ed9059c2c7`.
+- G1 safety defaults: Conditional Go / unchanged. `DATA-CONTRACT-01` is Done for the current DocumentV2 contract baseline, while `ADR-0035` remains Proposed and keeps high-privilege destructive/body-access lifecycle operations outside the standard feature set.
+- G2 primary user operations: Conditional Go / unchanged. No browser workflow, mouse/keyboard, or screenshot evidence was produced in this planning-only refresh.
+- G3 Japanese UI: Unchanged. No UI labels or translations changed.
+- G4 viewport and operability: Conditional Go / unchanged. No viewport matrix or layout clipping evidence was rerun.
+- G5 public documentation and configuration contract: Conditional Go / unchanged. Public docs and runtime configuration were not republished or changed.
+- G6 diagnostics and support: Conditional Go. `DATA-MAINT-04` now has a clearer metadata-only audit viewing baseline, but support diagnostics bundle policy and audit-viewing implementation remain separate follow-up boundaries.
+- G7 regression: Go for planning checks. Runtime/frontend/backend regression suites were intentionally not rerun because this slice only records merged planning state.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032` acceptance or Productization Program Owner approval for provisional execution.
+- E1..E3 environment contract: Conditional Go. Full running Compose startup was not executed.
+- Final: **Conditional Go for data-contract and audit-boundary planning convergence / No-Go for full release shipment**.
+
+### Evidence
+
+- Latest main:
+  - `git pull --ff-only origin main` -> fast-forwarded to `b38c7ac7a318acd94ab7da7b090976ed9059c2c7`.
+  - GitHub PR inventory -> no open Codex PRs found after the merge lane drained.
+- Planning checks:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=41 / ready=15 / blocked=26 / actionable_adrs=1 / stopper=none`).
+
+### Follow-ups
+
+- Treat `DATA-CONTRACT-01` as closed for the current DocumentV2/API/support-level baseline.
+- Keep `DATA-MAINT-03` Open until `ADR-0035` is accepted, replaced, or explicitly escalated.
+- Keep `DATA-MAINT-04` Draft until the high-privilege lifecycle boundary is fixed; metadata-only audit viewing is not implementation-authorized by this record.
+- Keep full release shipment No-Go until product value gates, full release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
+- No new ADR is needed for this gate refresh.
