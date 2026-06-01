@@ -272,6 +272,36 @@
 | 矛盾 / Contradiction | contradiction checks、evidence overlay mode、trace exportで検出/表示の入口がある。 | 矛盾を利用者が確認済み、保留、解決済みとして扱う状態遷移は未固定。 | schema変更なしで代表E2Eを先に固定し、状態遷移が必要ならADR/schema issueへ送る。 |
 | 人間レビュー境界 | `reviewState`（`unreviewed` / `human_reviewed`）と `reviewedAt` で人手昇格境界を保持できる。 | 曖昧さや根拠不足の解消と`human_reviewed`昇格の関係は未固定。 | `review_attribution.md` と整合し、AI自動昇格禁止を維持する。 |
 
+### Evidence route refinement 2026-06-02
+
+This refinement keeps `Status: Draft`. It does not authorize schema expansion or UI implementation. The goal is to make ambiguity/evidence work measurable with the current architecture first, and to identify the exact point where a future schema/ADR decision would be required.
+
+Minimum value states to exercise:
+
+| State | User-facing meaning | Current representation candidate | Evidence required before Open |
+| --- | --- | --- | --- |
+| Hold | The user intentionally pauses a decision | card/island note, critique marker, or unresolved review state | fixture plus screenshot/trace showing the hold can be found again |
+| Ambiguity | More than one interpretation remains plausible | critique text, relation context, or unresolved claim type | trace showing the ambiguity is visible before share/export |
+| Evidence gap | A claim lacks supporting material | evidence link absence or explicit gap note | fixture showing the gap is preserved and not converted to a resolved claim |
+| Contradiction | Two statements cannot both be accepted as-is | contradiction/evidence overlay or review note | trace showing the user can inspect both sides without auto-resolution |
+
+Required evidence packet before Open:
+
+| Evidence item | Required content | Gate handoff |
+| --- | --- | --- |
+| State fixture | At least one hold, ambiguity, evidence gap, and contradiction | `PRODUCT-QA-01` V2/V3 |
+| Review boundary proof | `human_reviewed` is not assigned by AI, worker, or API automation | G1 / G7 |
+| Share/export proof | unresolved or unreviewed state remains visible or safely excluded before sharing | G1 / G5 |
+| AI-input proof | ContextBundle or equivalent input keeps the state as a constraint, not as a solved fact | CE / value gate handoff |
+| Decision record | Go/Conditional Go/No-Go and unresolved schema/ADR need | `MVP-EXIT-01` |
+
+No-Go conditions for this value gate:
+
+- Ambiguity, hold, evidence gap, or contradiction is silently converted into a resolved claim.
+- AI output can mark a state as `human_reviewed`.
+- Share/export hides unresolved state in a way that makes the reader over-trust the result.
+- The scenario requires a new persistent schema field but no issue/ADR records that requirement.
+
 - Reopen/Open condition:
   - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記representation boundaryを価値ゲートの暫定正本として明示承認する。
   - 曖昧さ、違和感、根拠、矛盾を含む最小fixtureと、同一条件3回の再現性検証手順が本文で固定される。

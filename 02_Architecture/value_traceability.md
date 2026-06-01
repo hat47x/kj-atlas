@@ -57,6 +57,26 @@
 
 ---
 
+## 2.2 Product value evidence route（2026-06-02）
+
+`PRODUCT-VALUE-01..03` はまだ Draft であり、この表は実装許可ではなく、Open 化前に不足を確認するための証跡設計である。価値ゲートは「便利そうな機能があるか」ではなく、「利用者が考え途中の材料を、安全に配置し、保留や根拠不足を残し、他者が再確認できる形にできるか」で判断する。
+
+| Value gate | Representative user action | Evidence packet | Stop condition |
+| --- | --- | --- | --- |
+| `PRODUCT-VALUE-01` first meaningful map | sample or short memoから3枚以上のカードを作り、少なくとも1つのまとまり・関係・保留点へ進む | scenario fixture, mouse trace, keyboard trace, SafeMode/import validation screenshot, decision record | 初回利用者が内部文書を読まないと価値到達できない、またはSafeMode状態が共有前に確認できない |
+| `PRODUCT-VALUE-02` ambiguity/evidence workflow | 保留、あいまいさ、根拠不足、反対意見を作業状態として残し、共有前に確認する | state fixture, review-boundary proof, share/export proof, AI-input constraint proof, decision record | 未確定状態が解決済み主張へ変換される、またはAI/worker/APIが`human_reviewed`を自動付与できる |
+| `PRODUCT-VALUE-03` reviewable outcome package | narrativeまたはreview packで、要約・根拠・未解決点・SafeMode結果・参照元を確認できる | package fixture, pre-share confirmation, trace-back proof, read-only review proof, decision record | 成果物が最終回答のように読める一方で、未レビュー情報や根拠不足が見えない |
+| `PRODUCT-QA-01` value gate intake | 上記3つの証跡をG0..G7とV0..V4の判断材料へ戻す | gate record, evidence links, blocker owner, re-decision date | 証跡がissue本文だけに残り、再実行可能なfixture/trace/screenshotに接続されない |
+| `MVP-EXIT-01` program decision | product value、SafeMode、E2E/viewport、Compose startupをまとめてGo/No-Go判断する | program gate record with explicit No-Go or Conditional Go reason | data-contract closeoutやplanning convergenceを、出荷承認と誤って扱う |
+
+Open 化前の共通条件:
+
+1. `ADR-0032` がAcceptedになる、またはProductization Program Ownerが対象issue単位の暫定実行を明示承認する。
+2. 代表fixture名、保存場所、期待される画面状態、取得するscreenshot/traceがissue本文に固定される。
+3. mouse操作とkeyboard操作の両方で、代表アクションに到達できることを検証対象に含める。
+4. SafeMode、share/export、import sanitize、review attributionへの影響が`PRODUCT-QA-01`へ戻せる。
+5. 追加の永続schema、review semantics、署名、組織承認workflowが必要になった場合は、実装PRではなくissue/ADRを先行する。
+
 ## 3. 設計判断の扱い
 
 設計文書は、価値判断を再定義する場所ではありません。新しい要件や価値判断が必要になった場合は、先に `00_Prompt` または ADR で扱います。

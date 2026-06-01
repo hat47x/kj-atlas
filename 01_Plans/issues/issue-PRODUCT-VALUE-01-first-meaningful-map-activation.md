@@ -264,6 +264,35 @@
   - 補助viewport/focus確認: `e2e/header_toolbar_layout.spec.ts`
   - SafeMode/share確認: `src/ui/SharePanel.test.ts` と代表E2Eの共有前確認ステップ
   - 公開文書同期: `04_Documentation/public_index.md`, `installation.md`, `operations.md`, `acceptance_check.md`
+### Evidence route refinement 2026-06-02
+
+This refinement keeps `Status: Draft`. It does not authorize frontend implementation, public documentation changes, or release approval. Its purpose is to make the first meaningful map value gate executable once `ADR-0032` or an explicit Productization Program Owner approval allows the issue to move to Open.
+
+Minimum representative scenario:
+
+1. Start from either the bundled sample or a short user memo with 3 to 5 claims.
+2. Create at least 3 cards without requiring advanced settings or AI automation.
+3. Create at least 1 meaningful grouping, relation, or hold point that the user can see on the map.
+4. Confirm that SafeMode/import validation status is visible before any share or export action.
+5. Reach save, review, or share-preflight without reading internal project documentation.
+
+Required evidence packet before Open:
+
+| Evidence item | Required content | Gate handoff |
+| --- | --- | --- |
+| Scenario fixture | Input text/sample name, expected cards, expected grouping or hold point | `PRODUCT-QA-01` V0/V1 |
+| Mouse operation trace | Click path from first screen to cards/grouping/hold point | G2 / G4 |
+| Keyboard operation trace | `Tab`, `Enter`, and `Space` reach the same core path | G2 / G4 |
+| Safe entry evidence | Screenshot or trace showing SafeMode and import validation state | G1 / G5 |
+| Decision record | Go/Conditional Go/No-Go and remaining blocker | `MVP-EXIT-01` |
+
+No-Go conditions for this value gate:
+
+- The user must read architecture, AGENTS, or internal issue text to complete the first path.
+- The first path creates only isolated cards and no visible grouping, relation, or hold point.
+- SafeMode or import validation status is hidden until after a share/export action.
+- The scenario cannot be replayed with a stable fixture and saved evidence.
+
 - Reopen/Open condition:
   - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが本Issue単独の価値ゲート定義を明示承認する。
   - 反復E2E手順、入力fixture、画面状態の保存先が本文で固定される。
