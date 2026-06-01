@@ -1,7 +1,7 @@
 # Issue Draft: DATA-CONTRACT-01 DocumentV2契約ドリフトとサポートレベル同期
 
 - Type: Process
-- Status: Open
+- Status: Done
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P1 (Stream D second)
@@ -282,3 +282,30 @@
 - `DATA-CONTRACT-01` is verified as closeout-ready, but remains **Open** until the upstream `DATA-MODEL-OPS-01` closeout in PR #2280 is merged or otherwise recreated on main.
 - No ADR is required for this verification intake because no create contract, version gate, SafeMode/share-export boundary, or data normalization strategy changed.
 - Next action after #2280: change `Status` to `Done`, add final Closeout, and rerun `validate_active_issue_memos.py` plus `triage_actionable_plans.py`.
+
+## 22) Closeout（2026-06-01）
+
+### Context
+
+- PR #2280 (`DATA-MODEL-OPS-01` closeout) is now merged into `main`.
+- The 2026-05-31 verification intake already reran the backend Document/API contract checks and frontend import/export/regression guards, and classified this issue as closeout-ready.
+- Subsequent DATA-MAINT and ADR work did not change the `DocumentV2` create/update contract, version gate, support-level vocabulary, SafeMode/share-export boundary, or data normalization strategy.
+
+### Decision
+
+- Mark `DATA-CONTRACT-01` as `Done`.
+- Treat the `DocumentV2` contract drift slice as closed for the current MVP/productization baseline.
+- Keep future changes to individual CRUD, `POST /docs`, audit-viewing UI, retention management, or high-privilege lifecycle operations out of this issue. Those remain routed to `DATA-MAINT-01`, `DATA-MAINT-03`, `DATA-MAINT-04`, or a future ADR as appropriate.
+
+### Consequences
+
+- `DATA-MAINT-01` can continue using the fixed `DocumentV2` support-level and version-gate vocabulary as an upstream input.
+- `PRODUCT-QA-01` / `MVP-EXIT-01` should treat `DocumentV2` contract drift as closed for this baseline, while still requiring separate evidence for product value, UX, Compose startup, and high-privilege lifecycle decisions.
+- No runtime implementation or public documentation behavior changes in this closeout.
+
+### Verify
+
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py`
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
+- `03_Implement/backend/.venv/Scripts/python.exe -m pytest 03_Implement/backend/tests/test_data_model_operations_contract.py 03_Implement/backend/tests/test_docs_roundtrip.py 03_Implement/backend/tests/test_docs_audit_integration.py -q --basetemp 03_Implement/backend/.pytest_tmp_data_contract_01_closeout -p no:cacheprovider`
+- `git diff --check -- 01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md`
