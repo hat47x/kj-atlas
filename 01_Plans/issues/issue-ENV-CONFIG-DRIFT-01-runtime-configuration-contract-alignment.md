@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P2
-- Owner: TBD
+- Owner: Codex (runtime-configuration steward; accountable runtime owner remains Platform Operator)
 - Scope: `02_Architecture/`, `03_Implement/backend/`, `03_Implement/frontend/`, `03_Implement/deploy/`, `04_Documentation/`
 - Related Backlog: `ENV-ARCH-01`
 - Related ADR/Spec: `01_Plans/adr/ADR-0021-env-var-global-prefix-migration.md`, `01_Plans/adr/ADR-0029-third-party-runtime-env-boundary.md`, `02_Architecture/runtime_parameter_registry.md`, `03_Implement/frontend/src/api/client.ts`, `03_Implement/frontend/Dockerfile`, `03_Implement/deploy/docker-compose.yml`, `03_Implement/backend/src/kj_atlas_api/settings.py`, `03_Implement/backend/src/kj_atlas_api/access_control.py`
@@ -31,7 +31,7 @@
 - Frontend build configuration previously exposed Vite-style keys to users, and Compose previously exposed non-prefixed port/database keys.
 - Backend settings and the runtime registry previously diverged on `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`.
 - Access control behavior still has a policy decision point: `external_http` without endpoint currently falls back to `noop`. Changing that to fail-fast may require ADR because it changes the accepted availability/security trade-off.
-- Compose still has to pass values into a third-party PostgreSQL container using that image's required internal names. `ADR-0029` proposes the adapter boundary. If the project interprets "no exceptions" as applying to every process environment inside third-party containers, the deployment design needs a replacement implementation.
+- Compose still has to pass values into a third-party PostgreSQL container using that image's required internal names. `ADR-0029` defines the accepted adapter boundary. If the project interprets "no exceptions" as applying to every process environment inside third-party containers, the deployment design needs a replacement implementation.
 
 ## 2) 背景 / Context
 
@@ -53,7 +53,7 @@
 - Ensure `runtime_parameter_registry.md` and `04_Documentation/configuration.md` list the same public key set.
 - Keep backend `Settings` validation aligned with the registry, including `KJ_ATLAS_CE4_STUB_UNRESOLVED_CONTRACTS`.
 - Validate access-control adapter and fail-safe enum values in settings.
-- Keep `ADR-0029` as the proposed decision record for the third-party container environment boundary.
+- Keep `ADR-0029` as the accepted decision record for the third-party container environment boundary.
 - Create another ADR only if the team decides to change accepted runtime behavior, especially `external_http` missing-endpoint fallback or a stricter no-vendor-env deployment model.
 
 Non-goals:
@@ -69,7 +69,7 @@ Non-goals:
 - [ ] Public docs and run guides do not instruct users to set non-`KJ_ATLAS_*` environment variables.
 - [ ] Frontend build can be configured with `KJ_ATLAS_FRONTEND_API_BASE`.
 - [ ] Docker Compose public inputs use `KJ_ATLAS_WEB_PORT`, `KJ_ATLAS_POSTGRES_DB`, `KJ_ATLAS_POSTGRES_USER`, `KJ_ATLAS_POSTGRES_PASSWORD`, and `KJ_ATLAS_FRONTEND_API_BASE`.
-- [ ] Third-party container environment boundaries are resolved through `ADR-0029` or by replacing the dependency on vendor-defined process environment names.
+- [x] Third-party container environment boundaries are resolved through `ADR-0029`; replacing the PostgreSQL deployment path is only required if the team later adopts a stricter no-vendor-env policy.
 - [ ] Backend settings and `runtime_parameter_registry.md` agree on all `KJ_ATLAS_CE4_*` keys, including legacy-key rejection behavior.
 - [ ] Invalid access-control adapter and fail-safe values fail validation or are explicitly justified by ADR.
 - [ ] `external_http` without endpoint is either fail-fast or explicitly retained by ADR with user-facing warning text.
@@ -81,7 +81,7 @@ Non-goals:
 - [ ] T2: Reconcile Compose public input keys with the `KJ_ATLAS_*` contract.
 - [ ] T3: Reconcile CE4 runtime keys across registry, settings, legacy-key rejection, and tests.
 - [ ] T4: Add settings validation for access-control adapter and fail-safe mode.
-- [ ] T5: Resolve `ADR-0029` or replace the PostgreSQL deployment path so no vendor-defined process environment names are required.
+- [x] T5: Resolve the third-party container boundary through `ADR-0029`; replacement of the PostgreSQL deployment path is only required if stricter no-vendor-env policy is later adopted.
 - [ ] T6: Update 02/03/04 docs after implementation alignment.
 - [ ] T7: Add or update tests for the agreed runtime contract.
 
@@ -119,7 +119,7 @@ Non-goals:
 
 - Related issue: `01_Plans/issues/issue-ENV-ARCH-01-global-env-prefix-migration.md`
 - ADR化が必要になる条件:
-  - changing the proposed `ADR-0029` adapter boundary into a stricter no-vendor-env deployment redesign.
+  - changing the accepted `ADR-0029` adapter boundary into a stricter no-vendor-env deployment redesign.
   - changing `external_http` missing-endpoint behavior from current `noop` fallback to fail-fast.
 
 
@@ -538,3 +538,45 @@ Non-goals:
 
 - 本更新では Verify失敗 0回。
 - 以後、同一論点で Verify が3回連続失敗した場合は Stop し、再開条件と要判断事項をissueに追記する。
+
+## 18) Productization readiness boundary check (2026-06-02)
+
+### Read
+
+- `ADR-0029` の Status が `Accepted` であることを再確認した。
+- `runtime_parameter_registry.md` の公開キー表、private adapter boundary、drift recurrence checklist を再確認した。
+- 本 issue 冒頭に残っていた `ADR-0029` を proposed とする古い記述を、accepted decision として更新した。
+
+### Decision boundary
+
+| 論点 | 判定 | 理由 |
+| --- | --- | --- |
+| 公開環境変数の命名 | Pass | 利用者・運用者が設定する公開キーは `KJ_ATLAS_*` のみ。 |
+| 第三者コンテナ内部名 | Pass under ADR-0029 | `POSTGRES_*` は private adapter boundary であり、公開設定ではない。 |
+| issue owner | Clarified | `Owner: TBD` を解消し、runtime-configuration steward と accountable runtime owner を分離した。 |
+| 全 process env からの非 `KJ_ATLAS_*` 排除 | Pending by design | 採用する場合は deployment 再設計を伴う別ADRが必要。 |
+| `external_http` endpoint 未設定時の fail-fast 既定化 | Pending by design | 可用性/安全性トレードオフを変更するため、この issue だけでは決めない。 |
+
+### Done readiness
+
+- This issue is close to Done for the public runtime contract, because the registry, public documentation, Compose inputs, and backend settings contract now point to the same `KJ_ATLAS_*` namespace.
+- Do not mark the issue Done until final verification records the concrete command results for settings validation, frontend build-key behavior, docs key-drift search, and Compose config.
+- No new ADR is required for this update. A new ADR is required only if the team chooses either a stricter no-vendor-env deployment model or a fail-fast default for missing `external_http` endpoints.
+
+### Next verification commands
+
+- `python 01_Plans/issues/validate_active_issue_memos.py`
+- `python -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py`
+- `pytest 03_Implement/backend/tests/test_settings_env_prefix_migration.py`
+- `cd 03_Implement/deploy && docker compose config`
+- `rg -n -P "<non-prefixed-public-env-key-pattern>" 02_Architecture 03_Implement 04_Documentation`
+
+### Slice verification (2026-06-02)
+
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> validated 5 active issue memos.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> 10 tests passed.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py` -> stopper none.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\tests\test_triage_actionable_plans.py` -> 1 test passed.
+- Pass: `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_config_readiness -p no:cacheprovider` -> 12 tests passed.
+- Reviewed: key scan for `VITE_API_BASE`, `POSTGRES_*`, `DATABASE_URL`, `WEB_PORT`, and `FRONTEND_API_BASE` showed public docs/config using `KJ_ATLAS_*`; `POSTGRES_*` appears only in private-boundary documentation or Compose adapter mapping.
+- Not run: `docker compose config`; this host does not have the `docker` command. Final Done still requires a real Compose config/build verification on a Docker-capable host.
