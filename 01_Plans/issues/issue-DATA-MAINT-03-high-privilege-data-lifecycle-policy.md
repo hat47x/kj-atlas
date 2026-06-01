@@ -8,7 +8,7 @@
 - Owner: Codex
 - Scope: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`, `02_Architecture/api.md`
 - Related Backlog: `DATA-MAINT-03`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -154,6 +154,31 @@
 
 - `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 - `rg -n "ADR-0035|高権限|管理者本文閲覧|所有者移管|保持期限|標準機能にしない|メタデータ閲覧" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+
+## 15) DATA-MAINT-04 split for metadata-only audit viewing（2026-06-01）
+
+### Context
+
+- `ADR-0035` は、監査ログ閲覧について、本文を含まないメタデータ閲覧候補に限り内部issueで検討できるとした。
+- 一方で、「監査ログ閲覧」を広く解釈すると、本文閲覧、未レビュー情報閲覧、横断検索、保持期限管理、削除履歴管理と混ざりやすい。
+- 本Issueは高権限操作全体の判断待ちを扱うため、本文を含まない監査メタデータ閲覧候補だけを分離して追跡できる器が必要である。
+
+### Decision
+
+- `DATA-MAINT-04` をDraft issueとして起票し、本文を含まない監査メタデータ閲覧の候補、除外情報、権限、検証レベルを整理する。
+- `DATA-MAINT-04` は `ADR-0035` がAcceptedされるまでDraftのまま維持する。これは実装許可ではなく、ADR-0035の境界が固まった後にOpen化できるようにするための準備である。
+- 本文、未レビュー情報、横断検索、保持期限、自動削除、所有者移管、監査ログの外部共有は `DATA-MAINT-04` の外に置き、必要な場合は別ADRを必須とする。
+
+### Consequences
+
+- `DATA-MAINT-03` は、ADR-0035の決定待ちと高権限操作全体のStop条件を維持する。
+- `DATA-MAINT-04` により、将来検討できる低リスク寄りの監査メタデータ閲覧候補と、ADRが必要な本文アクセス系の高権限機能を分けて追跡できる。
+- `PRODUCT-QA-01` / `MVP-EXIT-01` は、監査閲覧の未実装を単純な欠落ではなく、Draft issue化された将来候補として扱える。ただしADR-0035がAcceptedされるまではリリースGoの根拠にしない。
+
+### Verify
+
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+- `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 
 ---
 

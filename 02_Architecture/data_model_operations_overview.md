@@ -164,7 +164,7 @@ erDiagram
 | MergeDecisionRecord | L1.5 | `POST /docs/{doc_id}/merge-decision-logs` | group/snapshot別GET | 標準更新APIなし | 標準削除APIなし | Reviewer / Audit operator | 追記ログとして扱い、訂正は新しい判断記録で表現する方針。 |
 | SimilarCandidateGroup | L3 | 保存済みDocumentから導出 | `GET /docs/{doc_id}/similar-candidate-groups` | 標準更新APIなし | 標準削除APIなし | Reviewer | 結果の正しさは候補生成ロジックの検証対象で、データ保守対象ではない。 |
 | ContextQuery / ContextBundle | L2.5 | request/responseとして生成 | API/CLI/contract testで参照 | 永続更新なし | 永続削除なし | Developer / AI integration owner | 契約先行。利用者データの永続保守とは分け、実装済み運用としては扱わない。 |
-| Export / Context audit event | L3 | 各audit endpointで送信 | アプリ内の標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Audit operator / Security officer | 監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。 |
+| Export / Context audit event | L3 | 各audit endpointで送信 | アプリ内の標準一覧APIなし。本文を含まない監査メタデータ閲覧候補は `DATA-MAINT-04` でDraft管理する | 標準更新APIなし | 標準削除APIなし | Audit operator / Security officer | 監査基盤への委譲を前提とし、アプリ本体に監査ログ閲覧UIを持たない。本文・未レビュー情報・横断検索を含む場合はADR必須。 |
 | User / UserIdentity | L1 | `POST /admin/provision/users` | 標準一覧APIなし | 標準更新APIなし | 標準削除APIなし | Platform operator | strict provisioningの入口。退避、無効化、棚卸しは `DATA-MAINT-01` の対象。 |
 | Import/Review Pack artifact | L3 | import/export処理で生成・取込 | ファイルまたはUI上の結果で参照 | 再export/再importで更新 | ファイル管理に依存 | Standard user / Document owner | DBの正本ではなく、共有・移行用成果物として扱う。 |
 
@@ -241,9 +241,10 @@ MVPの制約を明示したうえで、ステークホルダー運用に耐え�
 | `DATA-MODEL-OPS-01` | ER/CRUD俯瞰とサポートレベル表の継続更新 | `01_Plans/issues/issue-DATA-MODEL-OPS-01-mvp-data-model-overview-and-crud-boundary.md` |
 | `DATA-MAINT-01` | 管理・復旧・棚卸し・データ保管運用の設計 | `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md` |
 | `DATA-MAINT-03` | 削除・アーカイブ・所有者移管・管理者本文閲覧・保持期限管理など、高権限データライフサイクル操作の方針判断 | `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md` |
+| `DATA-MAINT-04` | 本文を含まない監査メタデータ閲覧候補のDraft境界 | `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md` |
 | `DATA-CONTRACT-01` | DocumentV2/API/frontend/backend間の契約ドリフト解消 | `01_Plans/issues/issue-DATA-CONTRACT-01-document-v2-contract-drift-and-support-levels.md` |
 
-`DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。高権限データライフサイクル操作を製品標準機能にするかどうかは、`DATA-MAINT-03` と `ADR-0035` で対象操作・権限・監査・復旧不能性・共有抑制・検証レベルを整理してから判断する。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルのADRを先行させる。
+`DATA-MAINT-01` は、読み取り専用の棚卸し候補、SQLite/PostgreSQL別のバックアップ/復旧演習、削除・アーカイブ・所有者移管・管理者本文閲覧のStop条件を管理する。高権限データライフサイクル操作を製品標準機能にするかどうかは、`DATA-MAINT-03` と `ADR-0035` で対象操作・権限・監査・復旧不能性・共有抑制・検証レベルを整理してから判断する。本文を含まない監査メタデータ閲覧だけは `DATA-MAINT-04` でDraftとして分離するが、`ADR-0035` がAcceptedされるまで実装候補にはしない。標準管理画面や書き込み系管理APIを追加する場合は、一般利用者の操作導線から分離し、監査・認可・データライフサイクルのADRを先行させる。
 
 ---
 
