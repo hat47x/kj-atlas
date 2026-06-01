@@ -8,7 +8,7 @@
 - Owner: Codex
 - Scope: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`, `02_Architecture/data_model_operations_overview.md`（本Streamでは契約整理のみ）
 - Related Backlog: `DATA-MAINT-01`
-- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
+- Related ADR/Spec: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/enterprise_architecture.md`
 - Expected verification level: `docs-check`
 
 ## Requirement meta I/F（共通キー）
@@ -21,13 +21,13 @@
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: public-exposure / share-export
 - VerificationLevel（docs-check / unit / integration / e2e）: docs-check
 - DecisionStatus（Fixed / Pending）: Pending
-- DecisionQueueRef（未確定時の参照先）: `DATA-MAINT-03` / Future ADR for data lifecycle and privileged maintenance operations
+- DecisionQueueRef（未確定時の参照先）: `DATA-MAINT-03` / `ADR-0035` / `DATA-MAINT-04`
 
 ## Dependency graph（Stream I）
 
 - Upstream（先行固定）: `DATA-MODEL-OPS-01`（MVP運用境界の正本化）, `DATA-CONTRACT-01`（DocumentV2契約ドリフト整理）
 - Parallel（並行整備）: なし
-- Downstream（後続依存）: `DATA-MAINT-03`（高権限データライフサイクル方針。運用runbook確定後の実装Issueは別途分割）
+- Downstream（後続依存）: `DATA-MAINT-03`（高権限データライフサイクル方針）, `ADR-0035`（標準機能にしない製品境界の提案）, `DATA-MAINT-04`（本文を含まない監査メタデータ閲覧のDraft候補。運用runbook確定後の実装Issueは別途分割）
 - Blocker条件: support level未確定、またはDocument復旧時の契約整合チェック観点が未定義
 
 依存仕分け（Phase 4 Execute）:
@@ -316,3 +316,30 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 
 - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 02_Architecture/data_model_operations_overview.md`
 - `rg -n "DATA-MAINT-03|削除|アーカイブ|所有者移管|管理者本文閲覧|保持期限|ADR" 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+
+## 24) ADR-0035 / DATA-MAINT-04 判断ルート同期（2026-06-01）
+
+### Context
+
+- PR #2285 で `ADR-0035` が main に反映された。`ADR-0035` は、削除、アーカイブ、所有者移管、管理者本文閲覧、保持期限自動化を、MVP/製品化の標準管理機能にしない境界として提案している。
+- PR #2287 で `DATA-MAINT-04` が Draft issue として main に反映された。`DATA-MAINT-04` は、本文を含まない監査メタデータ閲覧の候補であり、`ADR-0035` が Accepted または置き換えられるまで着手しない。
+- この親issueのヘッダーと依存メタデータには、具体的な判断先ができた後も「将来ADR」相当の表現が残っていた。
+
+### Decision
+
+- 抽象的な将来判断先ではなく、`ADR-0035` と `DATA-MAINT-04` を明示的な参照先にする。
+- `DATA-MAINT-01` は引き続き `Status=Open` / `DecisionStatus=Pending` とする。今回の同期は、実装承認でも親issueの完了判断でもない。
+- 読み取り専用の棚卸し、バックアップ、復旧演習、本文を含まない支援情報共有までを、この親issueで整理済みの計画・証跡境界として扱う。削除、所有者移管、本文閲覧、保持期限、監査閲覧の実装は、後続issue/ADRの判断ルートに分ける。
+
+### Consequences
+
+- 実装者は、曖昧な将来判断待ちではなく、具体的な参照先をたどってGo/No-Goを確認できる。
+- `DATA-MAINT-03` は高権限ライフサイクル操作の判断issue、`ADR-0035` は製品境界の Proposed ADR、`DATA-MAINT-04` は本文を含まない監査メタデータ閲覧の Draft 候補として維持する。
+- `PRODUCT-QA-01` / `MVP-EXIT-01` は、`ADR-0035` / `DATA-MAINT-03` と必要な運用証跡が解決するまで、`DATA-MAINT-01` を完全なリリース許可済みとして扱わない。
+
+### Verify
+
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py`
+- `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
+- `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- `rg -n "将来ADR|ADR-0035|DATA-MAINT-04|DecisionQueueRef|監査メタデータ" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
