@@ -16,7 +16,7 @@
 - RequirementID: DATA-MAINT-04
 - RequirementStatement: Security officer / Audit operator が、利用者本文や未レビュー情報に触れずに、共有・エクスポート・Context操作などの監査メタデータを確認できる最小境界を定義する。
 - PriorityClass（Must / Should / Could）: Should
-- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定される / 操作=監査メタデータ閲覧の対象項目、権限、除外情報、検証レベルを読む / 期待結果=本文を含まない読み取り専用の監査閲覧候補と、ADRが必要な高権限閲覧が区別できる / 除外=本文閲覧、未レビュー情報閲覧、横断検索、保持期限管理、削除、所有者移管、監査ログの外部共有。
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定される / 操作=監査メタデータ閲覧の対象項目、権限、除外情報、検証レベルを読む / 期待結果=本文を含まない読み取り専用の監査閲覧候補と、ADRが必要な高権限閲覧が区別できる / 除外=本文閲覧、未レビュー情報閲覧、横断検索、保持期限管理、削除、所有者移管、監査ログを共有する標準導線。
 - GoNoGoGate（Required / Optional / N/A）: Required
 - SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
 - VerificationLevel（docs-check / unit / integration / e2e）: integration
@@ -60,19 +60,59 @@
 ## 5) 受入条件 / Acceptance criteria
 
 - [ ] `ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定されてからOpen化される。
-- [ ] 監査メタデータとして扱ってよい項目と、扱ってはいけない本文/未レビュー情報/横断検索項目が分かれている。
-- [ ] Security officer / Audit operator / Platform operator / Support の閲覧責務が分離されている。
-- [ ] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
-- [ ] 実装へ進む場合の最小検証レベルが integration として定義され、UIを持つ場合は e2e へ引き上げる条件が明記されている。
-- [ ] ADRが必要になる条件が明記されている。
+- [x] 監査メタデータとして扱ってよい項目と、扱ってはいけない本文/未レビュー情報/横断検索項目が分かれている。
+- [x] Security officer / Audit operator / Platform operator / Support の閲覧責務が分離されている。
+- [x] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
+- [x] 実装へ進む場合の最小検証レベルが integration として定義され、UIを持つ場合は e2e へ引き上げる条件が明記されている。
+- [x] ADRが必要になる条件が明記されている。
 
 ## 6) 実装タスク分解 / Task breakdown
 
-- [ ] T1 監査メタデータ閲覧候補を、本文を含まない項目に限定して定義する。
-- [ ] T2 閲覧主体と権限境界を RACI で整理する。
-- [ ] T3 `api.md` の既存 audit endpoint / CE4 audit 契約と矛盾しないことを確認する。
-- [ ] T4 実装候補を API / CLI / UI / 外部監査連携に分け、各候補の検証レベルを定義する。
-- [ ] T5 ADR化が必要になる拡張条件を `DATA-MAINT-03` と照合する。
+- [x] T1 監査メタデータ閲覧候補を、本文を含まない項目に限定して定義する。
+- [x] T2 閲覧主体と権限境界を RACI で整理する。
+- [x] T3 `api.md` の既存 audit endpoint / CE4 audit 契約と矛盾しないことを確認する。
+- [x] T4 実装候補を API / CLI / UI / 外部監査連携に分け、各候補の検証レベルを定義する。
+- [x] T5 ADR化が必要になる拡張条件を `DATA-MAINT-03` と照合する。
+
+## 6.1) 事前Open化ベースライン（2026-06-01）
+
+`ADR-0035` がAcceptedされるまで、本IssueはDraftのまま維持する。以下は実装許可ではなく、Accepted後にOpen化する場合の最小境界である。
+
+### 扱ってよい監査メタデータ候補
+
+| 区分 | 候補項目 | 根拠 | 制約 |
+| --- | --- | --- | --- |
+| 共通イベント | `eventType`, `schemaVersion`, `occurredAt` / `timestamp`, `traceId` | `api.md` のDocument監査イベント / CE4監査契約 | 本文や添付ファイルをたどれる追加payloadを付けない。 |
+| 対象参照 | `docId` または既存イベントの対象ID、`eventVersion` | `GET /docs/{doc_id}` / export audit / access-control監査 | Document JSON全体、カード本文、diff本文、review pack本文は返さない。 |
+| 操作情報 | `action`, `exportKind`, `operation`, `channel`, `command`, `result`, `rejectReasonCode` | export audit / context audit / CE4監査4点 | 操作事実の確認に限定し、検索条件として本文語句を受け付けない。 |
+| SafeMode / 共有境界 | `safeMode`, `readOnly`, `visibility`, `decision.allow`, `decision.reason`, `policyRefPresent` | access-control監査とshare/export境界 | `policyRef` 生値、roles/groups生値、共有先の個人情報は返さない。 |
+| CE4同値性 | `equivalenceKey`, `queryCanonicalHash`, `bundleHash`, `sourceBundleHash` | CE4 API/CLI監査契約 | hashは同値性確認に限って扱い、元queryやbundle本文を復元・表示しない。 |
+| Actor最小情報 | `principalType`, masked principal id, `actorRef` など既存契約の匿名化済み参照 | strict provisioning / review attribution境界 | email、生IdP subject、外部UID、氏名の横断検索を含める場合は別ADR。 |
+
+### 除外する情報
+
+- 利用者本文、カード本文、島の本文、添付ファイル、Document JSON全体。
+- 未レビュー情報、根拠未確認の要約、review pack本文、diff本文、ContextBundle本文。
+- `policyRef` 生値、roles/groups生値、IdP subject、external UID、API key、token、secret。
+- 削除履歴管理、保持期限管理、所有者移管、管理者本文閲覧、本文横断検索。
+- 監査メタデータを標準機能として共有する導線。必要な場合は別ADRで目的、共有先、除外項目、証跡、無効化手順を固定する。
+
+### RACI
+
+| 主体 | 責務 | このIssueでの扱い |
+| --- | --- | --- |
+| Security officer | 監査閲覧の目的、除外情報、共有抑制の妥当性を確認する | Accountable。Open化前に `ADR-0035` のAcceptedまたは同等ADRを確認する。 |
+| Audit operator | 本文を読まずに操作事実、SafeMode逸脱、監査4点の欠損を確認する | Responsible。読み取り専用メタデータだけを扱う。 |
+| Platform operator | 監査イベントの保存先、adapter設定、traceIdの追跡可能性を確認する | Consulted。DBや外部adapterの直接閲覧を標準導線にしない。 |
+| Support | 利用者から受け取った再現情報と照合する | Informed。本文や未レビュー情報を閲覧する主体にはしない。 |
+| Document owner | 自分のドキュメントの共有範囲と成果物を説明する | Consulted。監査閲覧の標準権限は持たせない。 |
+
+### API / 実装候補の検証境界
+
+- Draft中は `api.md` の既存 audit endpoint / CE4契約を変更しない。閲覧API、管理UI、CLI、外部監査連携も実装しない。
+- `ADR-0035` Accepted後にOpen化する場合、最初の候補は読み取り専用のメタデータ一覧/詳細契約に限定する。最小検証レベルは integration とし、UIを追加する場合は代表的なマウス操作・キーボード操作を含む e2e を必須にする。
+- 監査送信の fail-open dispatcher 方針と、閲覧系の権限判定は分けて検証する。送信失敗が本体処理を止めないことと、閲覧権限が緩むことを混同しない。
+- 本文、未レビュー情報、横断検索、保持期限、自動削除、所有者移管、監査メタデータの標準共有導線に進む場合は、`DATA-MAINT-03` と照合したうえで別ADRを先行する。
 
 ## 7) 検証計画 / Validation plan
 
@@ -104,7 +144,7 @@
 - ADR化が必要になる条件:
   - 本文、未レビュー情報、添付ファイル、Document JSON全体、review pack本文、diff本文を閲覧対象に含める。
   - 管理者本文閲覧、横断検索、保持期限管理、自動削除、所有者移管と接続する。
-  - 監査メタデータを外部へ共有する標準導線を製品が持つ。
+  - 監査メタデータを標準機能として共有する導線を製品が持つ。
   - SafeMode、share/export、public exposure、review attribution、merge decision log の意味が変わる。
 
 ---
