@@ -369,6 +369,65 @@
 3. Keep full release shipment No-Go until `PRODUCT-VALUE-01..03`, full release-candidate E2E/viewport/screenshot evidence, and full Compose startup evidence are recorded.
 4. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or active issue triage materially changes.
 
+## 16) Convergence checkpoint 2026-06-01: data-contract closeout lane merged, productization gate sync open
+
+### Observation
+
+- Observed after `git fetch --prune origin` and GitHub connector open-PR search on 2026-06-01.
+- `origin/main`: `b38c7ac7a318acd94ab7da7b090976ed9059c2c7`
+- remote branch count: 2290
+- `origin/codex/` remote branch count: 2267
+- open PR count returned by GitHub connector search: 1
+- internal issue triage on current `main`:
+  - `active_issues=41`
+  - `ready=15`
+  - `blocked=26`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Recent PR lane resolution
+
+| PR | State | Governance result |
+| --- | --- | --- |
+| #2286 | merged | Latest-main gate sync for `origin/main@01fea1bb...` is on `main`. |
+| #2287 | merged | Draft `DATA-MAINT-04` metadata-only audit viewing issue split is on `main`. |
+| #2288 | merged | `DATA-CONTRACT-01` is closed for the current DocumentV2/API/support-level baseline. |
+| #2289 | merged | `DATA-MAINT-01` unresolved decision routing now points to `ADR-0035`, `DATA-MAINT-03`, and `DATA-MAINT-04`. |
+| #2290 | merged | `DATA-MAINT-04` audit metadata baseline and boundary wording are on `main`. |
+| #2291 | open draft | Productization gate sync after the data-contract closeout lane; keep as the current review lane rather than duplicating its file changes. |
+
+### Open PR inventory
+
+| PR | Branch | Topic | Governance classification | Recommended action |
+| --- | --- | --- | --- | --- |
+| #2291 | `codex/productization-data-contract-gate-sync-20260601` | `PRODUCT-QA-01` and `MVP-EXIT-01` gate sync after `DATA-CONTRACT-01` closeout and DATA-MAINT routing updates | canonical / reviewable | Review or merge as the single open productization gate sync. If `main` changes first, update #2291 in place instead of opening a duplicate gate record. |
+
+### Decision
+
+- `origin/main@b38c7ac7a318acd94ab7da7b090976ed9059c2c7` is the current planning input for work that does not intentionally build on #2291.
+- #2291 is the current canonical open PR lane for productization gate wording after `DATA-CONTRACT-01` closeout. This checkpoint must not be treated as a substitute for that gate record.
+- No branch deletion or PR closure is executed from this checkpoint. Branch cleanup remains a permissioned repository maintenance action after maintainer confirmation.
+- No new ADR is required. ADR-0034 governs mainline convergence and branch hygiene, while product/data lifecycle decision authority remains with ADR-0035 and value/release gate authority remains with ADR-0032 and the associated issues.
+- Full release shipment remains No-Go until product-value evidence, release-candidate E2E/viewport/screenshot evidence, Compose startup evidence, and final program approval are recorded.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/latest-main-gate-sync-20260601` | merged latest-main gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-audit-metadata-issue-20260601` | merged `DATA-MAINT-04` issue split | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-contract-01-closeout-20260601` | merged `DATA-CONTRACT-01` closeout | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-01-adr35-routing-20260601` | merged `DATA-MAINT-01` decision routing sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-04-audit-metadata-baseline-20260601` | merged `DATA-MAINT-04` audit metadata baseline | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/productization-data-contract-gate-sync-20260601` | open productization gate sync PR #2291 | Keep until #2291 is merged, closed, or intentionally superseded. |
+
+### Updated recommendation
+
+1. Review or merge #2291 before starting another productization gate PR that touches `PRODUCT-QA-01` or `MVP-EXIT-01`.
+2. Start independent planning or implementation work from `origin/main@b38c7ac7a318acd94ab7da7b090976ed9059c2c7` and explicitly note when it does or does not depend on #2291.
+3. After #2291 merges or closes, rerun `git fetch --prune origin`, GitHub open-PR search, `validate_active_issue_memos.py`, and `triage_actionable_plans.py`.
+4. Treat the listed stale branches as cleanup candidates only; do not delete them without repository maintainer confirmation.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
