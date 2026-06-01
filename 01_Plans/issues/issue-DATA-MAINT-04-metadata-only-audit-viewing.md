@@ -1,0 +1,118 @@
+# Issue Draft: DATA-MAINT-04 本文を含まない監査メタデータ閲覧の製品境界
+
+- Type: Security
+- Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P2
+- Owner: Codex
+- Scope: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+- Related Backlog: `DATA-MAINT-04`
+- Related ADR/Spec: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+- Expected verification level: `integration`
+
+## Requirement meta I/F（共通キー）
+
+- RequirementID: DATA-MAINT-04
+- RequirementStatement: Security officer / Audit operator が、利用者本文や未レビュー情報に触れずに、共有・エクスポート・Context操作などの監査メタデータを確認できる最小境界を定義する。
+- PriorityClass（Must / Should / Could）: Should
+- AcceptanceScenario（前提 / 操作 / 期待結果 / 除外）: 前提=`ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定される / 操作=監査メタデータ閲覧の対象項目、権限、除外情報、検証レベルを読む / 期待結果=本文を含まない読み取り専用の監査閲覧候補と、ADRが必要な高権限閲覧が区別できる / 除外=本文閲覧、未レビュー情報閲覧、横断検索、保持期限管理、削除、所有者移管、監査ログの外部共有。
+- GoNoGoGate（Required / Optional / N/A）: Required
+- SecurityGateImpact（SafeMode / share-export / import-sanitize / public-exposure）: SafeMode / share-export / public-exposure
+- VerificationLevel（docs-check / unit / integration / e2e）: integration
+- DecisionStatus（Fixed / Pending）: Pending
+- DecisionQueueRef（未確定時の参照先）: `ADR-0035`
+
+## 1) 課題 / Problem statement
+
+- `ADR-0035` は、監査ログ閲覧について「本文を含まないメタデータ閲覧候補に限り、内部issueで検討できる」とした。
+- ただし、監査閲覧という言葉は、本文、未レビュー情報、横断検索、保持期限、削除履歴などを含む高権限機能として誤読されやすい。
+- 誤読されたまま実装へ進むと、管理者本文閲覧やSupport向け横断検索を標準導線に入れてしまい、SafeMode、share/export、public exposure、review attribution の境界を暗黙に変える。
+
+## 2) 背景 / Context
+
+- `api.md` は、Document監査イベントとCE4監査契約を持つが、監査ログ閲覧UIや保持期限管理は含めていない。
+- `data_model_operations_overview.md` は、Export / Context audit event を派生/読み取り中心のデータとして扱い、アプリ本体に監査ログ閲覧UIを持たない前提を書いている。
+- `DATA-MAINT-03` は、高権限操作のうち監査ログ閲覧だけを、本文を含まない範囲で内部issue化可能と分類した。
+- `ADR-0035` はまだ Proposed であり、本Issueは実装許可ではなく、ADR-0035がAcceptedされた後に安全にOpen化するための検討器である。
+
+## 3) 判断基準による優先度評価
+
+- 価値・判断軸（ADR-0001）: 利用者が安心して思考途中の情報を扱うには、運用者が確認できるものと確認できないものを説明できる必要がある。
+- 安全（THREAT_MODEL / SafeMode）: 本文や未レビュー情報を監査閲覧に混ぜると、SafeModeと共有抑制の価値が弱くなる。
+- 企業・行政要件（enterprise_architecture）: Security officer / Audit operator は、本文を読まずに操作事実や安全境界の逸脱有無を確認できることが望ましい。
+- 後方互換（schemas）: 既存の監査イベントやDocumentV2の保存契約を変更せず、まず閲覧候補の項目と権限境界を固定する。
+
+## 4) 提案する解決策 / Proposed solution
+
+- 変更対象:
+  - 監査メタデータ閲覧で扱ってよい項目、扱ってはいけない項目、権限、監査証跡、検証レベルの整理。
+  - `api.md` と `data_model_operations_overview.md` にある既存監査イベント契約との整合確認。
+  - 実装へ進む場合の専用API/CLI/UI issue分割条件。
+- 変更の最小単位:
+  - まず本Issueで、本文を含まない読み取り専用メタデータの候補と、ADRが必要な高権限閲覧を分ける。
+  - `ADR-0035` がAcceptedされるまで、StatusはDraftのまま維持する。
+- 非目標:
+  - 本Issueで監査閲覧API、管理UI、CLI、外部監査連携を実装しない。
+  - 本文、未レビュー情報、添付ファイル、Document JSON全体、review pack本文、diff本文を閲覧対象にしない。
+  - 保持期限、自動削除、所有者移管、管理者本文閲覧、横断検索の方針を固定しない。
+
+## 5) 受入条件 / Acceptance criteria
+
+- [ ] `ADR-0035` がAcceptedまたは後続ADRで同等の境界が固定されてからOpen化される。
+- [ ] 監査メタデータとして扱ってよい項目と、扱ってはいけない本文/未レビュー情報/横断検索項目が分かれている。
+- [ ] Security officer / Audit operator / Platform operator / Support の閲覧責務が分離されている。
+- [ ] SafeMode、share/export、public exposure、review attribution、merge decision logへの影響が記載されている。
+- [ ] 実装へ進む場合の最小検証レベルが integration として定義され、UIを持つ場合は e2e へ引き上げる条件が明記されている。
+- [ ] ADRが必要になる条件が明記されている。
+
+## 6) 実装タスク分解 / Task breakdown
+
+- [ ] T1 監査メタデータ閲覧候補を、本文を含まない項目に限定して定義する。
+- [ ] T2 閲覧主体と権限境界を RACI で整理する。
+- [ ] T3 `api.md` の既存 audit endpoint / CE4 audit 契約と矛盾しないことを確認する。
+- [ ] T4 実装候補を API / CLI / UI / 外部監査連携に分け、各候補の検証レベルを定義する。
+- [ ] T5 ADR化が必要になる拡張条件を `DATA-MAINT-03` と照合する。
+
+## 7) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py`
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+  - `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
+- 期待結果:
+  - DATA-MAINT-04がDraftとして追跡され、ADR-0035がAcceptedされるまで実装に進まない。
+  - 監査閲覧候補が本文を含まない範囲に限定され、本文閲覧や横断検索はADR必須として残る。
+- 未実施時の理由・代替検証:
+  - 本Issue作成時点では実装を行わないため、docs-checkとtriage整合を検証する。Open化または実装分割時にintegration以上を実施する。
+
+## 8) 代替案 / Alternatives considered
+
+- 代替案A: 監査ログ閲覧を `DATA-MAINT-03` に残し続ける。本文閲覧や削除と混ざり、内部issueで進められる低リスク候補が見えにくくなるため採用しない。
+- 代替案B: ADR-0035のAcceptedを待たずにOpen化する。ADRがまだProposedの状態で実装許可に見えるため採用しない。
+- 代替案C: 監査閲覧UIを先に作る。権限と除外項目が未固定のままUIが先行するため採用しない。
+
+## 9) リスクとロールバック / Risks & rollback
+
+- 失敗モード: 「監査メタデータ閲覧」が本文横断検索、未レビュー情報閲覧、保持期限管理、削除履歴管理へ拡大解釈される。
+- 影響範囲: API、管理UI、Support導線、SafeMode、share/export、public exposure、review attribution、merge decision log。
+- ロールバック手順: DATA-MAINT-04をDraftに戻し、監査閲覧候補を `DATA-MAINT-03` / ADR-0035 の本文アクセス禁止境界へ戻す。実装済みの場合は該当API/UI/CLIを無効化し、本文を含まない棚卸し証跡だけを残す。
+
+## 10) Additional context
+
+- ADR化が必要になる条件:
+  - 本文、未レビュー情報、添付ファイル、Document JSON全体、review pack本文、diff本文を閲覧対象に含める。
+  - 管理者本文閲覧、横断検索、保持期限管理、自動削除、所有者移管と接続する。
+  - 監査メタデータを外部へ共有する標準導線を製品が持つ。
+  - SafeMode、share/export、public exposure、review attribution、merge decision log の意味が変わる。
+
+---
+
+## Authoring Checklist（人間/生成AI 共通）
+
+- [x] `Source Issue` が運用状態と整合している。
+- [x] `Related ADR/Spec` が最低1件ある。
+- [x] 受入条件に「安全」「互換」「検証」が含まれる。
+- [x] `Validation plan` に具体コマンドがある。
+- [x] 非目標が明記されスコープ逸脱を防いでいる。

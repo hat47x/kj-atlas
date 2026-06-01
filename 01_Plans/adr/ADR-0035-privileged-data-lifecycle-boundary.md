@@ -3,7 +3,7 @@
 - Status: Proposed
 - Date: 2026-06-01
 - Deciders: Project Maintainers
-- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
+- Scope: `01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md`, `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`, `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`, `02_Architecture/data_model_operations_overview.md`, `02_Architecture/api.md`
 
 ## Context
 
@@ -63,6 +63,7 @@ MVPおよび次の製品化準備段階では、高権限データライフサ�
 移行時に必要な対応:
 
 - `DATA-MAINT-03` は本ADRを参照先として、DecisionStatusをAccepted後にFixedへ進める。
+- 本文を含まない監査メタデータ閲覧候補は `DATA-MAINT-04` でDraftとして追跡し、本ADRがAcceptedされるまで実装着手しない。
 - `data_model_operations_overview.md` と `api.md` は、高権限データライフサイクル操作の標準提供なし、メタデータ限定の監査閲覧候補のみissueで検討可、という境界へ同期する。
 - `PRODUCT-QA-01` / `MVP-EXIT-01` は、削除や管理者本文閲覧の未実装を単独のリリース阻害ではなく、明示された製品境界として扱う。ただし本番運用で必須と判断される場合は、別ADR/issueをリリース条件へ戻す。
 
@@ -70,6 +71,7 @@ MVPおよび次の製品化準備段階では、高権限データライフサ�
 
 - Related: `01_Plans/adr/ADR-0033-mvp-data-support-and-maintenance-boundary.md`
 - Related: `01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Related: `01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md`
 - Related: `01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - Related: `02_Architecture/data_model_operations_overview.md`
 - Related: `02_Architecture/api.md`
