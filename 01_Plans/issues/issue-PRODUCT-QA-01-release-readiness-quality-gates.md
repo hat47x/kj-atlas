@@ -1005,3 +1005,43 @@ DoDテンプレ（Draft→Open）
 - Keep `PRODUCT-VALUE-01..03` Draft until `ADR-0032` is accepted or Productization Program Owner approval explicitly authorizes provisional value-gate execution.
 - Run a full service-start Compose rehearsal before promoting E1..E3 from Conditional Go to shipment Go.
 - No new ADR is needed for this intake itself; the remaining decision authority is still `ADR-0032` and the existing productization gate owners.
+
+## Productization Gate Record 2026-06-01: merged planning and data-maintenance lane refresh
+
+- Candidate: `origin/main@01fea1bb2724356f53077d4df52a296d21ed2f67`
+- Related merged PRs: #2282, #2283, #2284, #2285
+- Decision date (JST): 2026-06-01
+- Reviewer: Codex
+- Scope: latest `main` gate synchronization after the data-maintenance, baseline, and ADR-0035 proposal lanes were merged. This record does not change runtime behavior, UI copy, SafeMode defaults, public documentation, release authority, or the product value model.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Active issue validation, triage, and the validator/triage unit tests pass on `origin/main@01fea1bb2724356f53077d4df52a296d21ed2f67`.
+- G1 safety defaults: Conditional Go / unchanged. ADR-0035 is now Proposed on `main` and keeps high-privilege destructive or body-access lifecycle operations outside the standard MVP/productization feature set. SafeMode/share-export behavior was not changed or retested in this slice.
+- G2 primary user operations: Conditional Go / unchanged. No new browser workflow evidence was produced in this planning-only refresh.
+- G3 Japanese UI: Unchanged. No UI labels or translations changed.
+- G4 viewport and operability: Conditional Go / unchanged. No viewport matrix, screenshot, or mouse/keyboard run was executed in this refresh.
+- G5 public documentation and configuration contract: Conditional Go / unchanged. Public docs and runtime configuration were not republished or changed.
+- G6 diagnostics and support: Conditional Go. DATA-MAINT-02 recovery exercise closeout is now merged; support diagnostics bundle policy remains separate.
+- G7 regression: Go for planning checks. Runtime/frontend/backend regression suites were intentionally not rerun because this slice only records merged planning state.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032` acceptance or Productization Program Owner approval for provisional execution.
+- E1..E3 environment contract: Conditional Go. Full running Compose startup was not executed.
+- Final: **Conditional Go for latest-main planning/data-maintenance intake / No-Go for full release shipment**.
+
+### Evidence
+
+- Latest main:
+  - `git pull --ff-only origin main` -> fast-forwarded to `01fea1bb2724356f53077d4df52a296d21ed2f67`.
+  - GitHub PR inventory -> no open PRs found; recent merged PRs include #2282, #2283, #2284, #2285.
+- Planning checks:
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` -> pass (`active_issues=41 / ready=16 / blocked=25 / actionable_adrs=1 / stopper=none`).
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` -> pass (10 tests).
+  - `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` -> pass (1 test).
+
+### Follow-ups
+
+- Decide `ADR-0035` before closing `DATA-MAINT-03`; the issue remains Open while the high-privilege lifecycle boundary is Proposed.
+- Keep `DATA-MAINT-01` high-privilege implementation paths stopped unless ADR-0035 is accepted or a successor ADR explicitly changes the boundary.
+- Keep full release shipment No-Go until product value gates, full release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
+- No new ADR is needed for this gate refresh. The only new architecture decision already exists as Proposed ADR-0035.

@@ -426,6 +426,70 @@
 | Open data-maintenance PR lane (#2282/#2283) | Codex author / Repository Maintainer reviewer | 2026-06-03 | 2026-06-05 |
 | Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
 
+## 17) Baseline Record 2026-06-01: merged planning and data-maintenance lane refresh
+
+### Candidate
+
+- Target main: `origin/main` = `01fea1bb2724356f53077d4df52a296d21ed2f67`
+- Baseline branch: `codex/latest-main-gate-sync-20260601`
+- Scope note: this record refreshes the latest-main baseline after PR #2282, #2283, #2284, and #2285 were merged. It is a planning/gate synchronization record only; no frontend, backend, runtime configuration, SafeMode, or public documentation behavior is changed in this slice.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend `.venv` / RTK used only for compact read-only command output where exact output was not required.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git checkout main`; `git pull --ff-only origin main`; `git rev-parse origin/main` | Pass: `01fea1bb2724356f53077d4df52a296d21ed2f67` | G0 |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=41 / ready=16 / blocked=25 / actionable_adrs=1 / stopper=none` | G0 |
+| Issue validator tests | `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Triage tests | `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` | Pass: 1 test | G0 / G7 |
+| GitHub PR inventory | GitHub connector recent/open PR search | Open PRs: 0; recent merged PRs include #2282, #2283, #2284, #2285 | G0 |
+
+### Incorporated mainline changes
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2282 `DATA-MAINT-03` high-privilege lifecycle policy split | Merged into `main` before this refresh | High-privilege delete/archive/owner-transfer/admin-body-access/retention decisions are now tracked as a dedicated Open issue. |
+| #2283 `DATA-MAINT-02` recovery exercise closeout | Merged into `main` before this refresh | Representative recovery exercise evidence is closed out; organization-specific backup policy remains outside that issue. |
+| #2284 latest-main lightweight baseline | Merged into `main` before this refresh | 2026-05-31 lightweight baseline record is now canonical on `main`. |
+| #2285 ADR-0035 proposal | Merged into `main` before this refresh | High-privilege data lifecycle product-boundary proposal is now recorded as Proposed ADR-0035. |
+
+### Gate classification
+
+| Gate | 2026-06-01 result | Reason |
+| --- | --- | --- |
+| G0 計画整合 | Go | latest main intake, active issue validation, triage, validator unit tests, and triage unit test pass with no stopper. |
+| G1 安全既定 | Unchanged / Conditional Go | This slice does not change SafeMode, share/export, import sanitize, or data access behavior. ADR-0035 keeps high-privilege body/destructive operations outside standard MVP/productization behavior unless a future ADR changes that boundary. |
+| G2 主要操作 | Unchanged / Conditional Go | No browser or application workflow was re-tested in this planning-only refresh. Prior evidence remains valid for its recorded scope. |
+| G3 日本語UI | Unchanged | No UI copy changed. |
+| G4 画面耐性 | Unchanged / Conditional Go | No viewport matrix or screenshot run was executed in this refresh. |
+| G5 公開文書/設定契約 | Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this refresh. |
+| G6 診断とサポート | Conditional Go | DATA-MAINT-02 recovery evidence is closed out on `main`; support diagnostics bundle policy remains a separate follow-up boundary. |
+| G7 回帰 | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this slice records merged planning and ADR state only. |
+| E1..E3 環境契約 | Unchanged / Conditional Go | Full running Compose service startup was not executed. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for the latest-main planning and data-maintenance lane refresh.
+- Release readiness decision: **No-Go** for full shipment until product value gates, full release-candidate E2E/viewport evidence, environment/operations gates, and final program approval are recorded together.
+- Follow-up routing:
+  - `DATA-MAINT-03`: remains Open until ADR-0035 is accepted or replaced by a later decision.
+  - `PRODUCT-VALUE-01..03`: remain Draft until ADR-0032 is accepted or Productization Program Owner approval explicitly authorizes provisional value-gate execution.
+  - Full release-candidate evidence: `PRODUCT-QA-01`.
+  - Program release decision: `MVP-EXIT-01`.
+  - Branch cleanup: `PROJECT-GOV-01`; open PR lane is drained, but branch deletion remains a permissioned maintenance action.
+
+### Follow-up accountability
+
+| Item | Owner | Due | Re-decision date |
+| --- | --- | --- | --- |
+| ADR-0035 decision for high-privilege data lifecycle boundary | Project Maintainers + Codex evidence steward | 2026-06-05 | 2026-06-07 |
+| Product value gate approval or provisional execution decision | Productization Program Owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Full release-candidate E2E, viewport, and screenshot evidence | QA owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
