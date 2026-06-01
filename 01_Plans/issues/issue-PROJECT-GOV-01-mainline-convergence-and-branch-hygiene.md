@@ -304,6 +304,71 @@
 3. Merge #2273 and #2276 independently when their docs/issue evidence is accepted.
 4. After any merge, rerun `git fetch --prune origin`, `validate_active_issue_memos.py`, and `triage_actionable_plans.py` before starting the next productization slice from `main`.
 
+## 15) Convergence checkpoint 2026-06-01: merged PR lane drained
+
+### Observation
+
+- Observed after `git fetch --prune origin` on 2026-06-01.
+- `origin/main`: `01fea1bb2724356f53077d4df52a296d21ed2f67`
+- remote branch count: 2284
+- `origin/codex/` remote branch count: 2261
+- open PR count returned by GitHub connector search: 0
+- internal issue triage on current `main`:
+  - `active_issues=41`
+  - `ready=16`
+  - `blocked=25`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Recent PR lane resolution
+
+| PR | State | Governance result |
+| --- | --- | --- |
+| #2273 | merged | PRODUCT-UX-04 responsive/large-document operability evidence is on `main`. |
+| #2274 | merged | PRODUCT-UX-01 first-run document entry evidence is on `main`. |
+| #2275 | merged | PRODUCT-UX-02 workspace selection context summary evidence is on `main`. |
+| #2276 | merged | PRODUCT-OPS-01 recovery guidance closeout is on `main`. |
+| #2277 | merged | Previous 2026-05-31 PR-lane checkpoint is on `main`. |
+| #2278 | merged | CE3 Japanese E2E locator fix is on `main`. |
+| #2279 | merged | Latest-main release gate intake is on `main`. |
+| #2280 | merged | DATA-MODEL-OPS-01 closeout is on `main`. |
+| #2281 | merged | DATA-CONTRACT-01 verification intake is on `main`. |
+| #2282 | merged | DATA-MAINT-03 high-privilege lifecycle issue split is on `main`. |
+| #2283 | merged | DATA-MAINT-02 recovery exercise closeout is on `main`. |
+| #2284 | merged | Latest-main lightweight baseline record is on `main`. |
+| #2285 | merged | Proposed ADR-0035 high-privilege lifecycle boundary is on `main`. |
+
+### Decision
+
+- The open productization PR lane recorded on 2026-05-31 is now drained; no open PRs were found by the GitHub connector search.
+- `origin/main@01fea1bb2724356f53077d4df52a296d21ed2f67` is the current planning input for the next productization slice.
+- No new ADR is required for this checkpoint. The current change records repository governance state under ADR-0034; product/data lifecycle decision authority remains in ADR-0035 and value-gate decision authority remains in ADR-0032.
+- Branch deletion remains a permissioned repository maintenance action and is not executed from this checkpoint.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/responsive-operability-docs-20260531` | merged productization evidence | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/first-run-document-entry-20260531` | merged productization evidence | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/workspace-ia-context-20260531` | merged productization evidence | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/product-ops-01-closeout-20260531` | merged planning closeout | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-20260531` | merged E2E locator fix | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/release-gate-20260531-intake` | merged release-gate intake | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-model-ops-01-closeout-20260531` | merged data-model closeout | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-contract-01-review-20260531` | merged contract verification intake | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-01-review-20260531` | merged high-privilege issue split | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-02-closeout-20260531` | merged recovery closeout | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-baseline-20260531-refresh` | merged lightweight baseline | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-privileged-lifecycle-adr-20260601` | merged ADR-0035 proposal | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Updated recommendation
+
+1. Start the next productization work from `origin/main@01fea1bb2724356f53077d4df52a296d21ed2f67`.
+2. Prioritize ADR-0035 decisioning for `DATA-MAINT-03`, because the implementation boundary remains intentionally stopped until that ADR is accepted or replaced.
+3. Keep full release shipment No-Go until `PRODUCT-VALUE-01..03`, full release-candidate E2E/viewport/screenshot evidence, and full Compose startup evidence are recorded.
+4. Do not create another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, or active issue triage materially changes.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

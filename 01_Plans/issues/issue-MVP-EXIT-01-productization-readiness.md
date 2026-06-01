@@ -641,3 +641,32 @@
 - Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next product UX/value gate review.
 - Re-decision date: after #2278 is merged or rejected, after `ADR-0032` status changes, after UX evidence PRs land, or after a full running Compose rehearsal is completed.
+
+## MVP-EXIT Program Gate Decision 2026-06-01: merged planning and data-maintenance lane refresh
+
+- Candidate: `origin/main@01fea1bb2724356f53077d4df52a296d21ed2f67`
+- Decision date: 2026-06-01
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-01: merged planning and data-maintenance lane refresh`.
+  - PROJECT-BASELINE-01 record: `Baseline Record 2026-06-01: merged planning and data-maintenance lane refresh`.
+  - PROJECT-GOV-01 checkpoint: `Convergence checkpoint 2026-06-01: merged PR lane drained`.
+  - ADR-0035: `高権限データライフサイクル操作の製品境界` remains Proposed.
+
+### Decision
+
+- Final: **Conditional Go for latest-main planning/data-maintenance convergence / No-Go for full release shipment**
+- Reason summary: The latest `main` now includes the DATA-MAINT high-privilege issue split (#2282), DATA-MAINT-02 recovery closeout (#2283), latest-main lightweight baseline (#2284), and ADR-0035 proposal (#2285). Planning validators and their unit tests pass, and the open PR lane is currently drained. This is not a final shipment approval because ADR-0035 is still Proposed, `PRODUCT-VALUE-01..03` remain Draft pending ADR-0032 or explicit program-owner approval, full release-candidate E2E/viewport/screenshot evidence was not rerun, and full Compose service startup remains unexecuted.
+- Escalation route: decide ADR-0035 and ADR-0032/value-gate authority before converting this convergence state into a release candidate. Treat the current state as a clean planning input for the next productization slice, not as shipment readiness.
+
+### Conditional controls
+
+- Remaining risks:
+  - `DATA-MAINT-03` remains Open because ADR-0035 is Proposed rather than Accepted.
+  - `DATA-MAINT-01` must not implement high-privilege destructive/body-access lifecycle operations until ADR-0035 or a successor ADR explicitly authorizes the boundary.
+  - `PRODUCT-VALUE-01..03` remain Draft and still block full shipment.
+  - Full release-candidate E2E, viewport matrix, screenshot evidence, and full running Compose startup were not executed in this planning-only refresh.
+  - Open PR count is currently 0, but many historical `origin/codex/*` branches remain and require permissioned cleanup under PROJECT-GOV-01.
+- Owner: Codex for evidence maintenance; Project Maintainers for ADR-0035; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next product value and data-lifecycle decision review.
+- Re-decision date: after ADR-0035 is accepted/replaced, after ADR-0032/value-gate authority changes, or after a full release-candidate evidence run is completed.
