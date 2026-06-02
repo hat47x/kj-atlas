@@ -2916,3 +2916,39 @@ handoffKeys:
 ### Phase 8 完了報告
 - 判定: **Proceed（contract-only handoff ready）**。
 - 付帯条件: CE1凍結範囲外（実装詳細化、追加キー導入）は別版でのみ扱う。
+
+## Stream E open-readiness packet（2026-06-02 / CE1 read-only contract handoff）
+
+### Context
+- CE1 は引き続き docs-only / contract-only / mock-first の `ContextQueryV1` / `ContextBundleV1` 基盤として扱う。
+- 上流 CE0 は read-only 参照に限定し、`CE0-CTX-IF`、No-Go canonical IDs、SafeMode境界を CE1 側で再定義しない。
+- 本更新は実装許可ではなく、CE1 を次工程へ渡す前に固定確認すべき証跡、未解消の照合点、停止条件をまとめる。
+
+### Open-readiness evidence
+| Readiness item | CE1 expected evidence | Verification use | Stop condition |
+| --- | --- | --- | --- |
+| CE1 contract IDs | `CE1-CTXQ-IF`, `CE1-CTXB-IF`, `CE1-HASH-DET-IF`, `CE1-PREVIEW-GATE-IF` | 下流CE2/CE4が参照するI/F名を固定する | ID追加/改名/削除/意味変更 |
+| CE0 guard reference | `CE0-CTX-IF`, `preview_bypass`, safeMode default ON, `allowUnreviewedText=false` | CE0境界をCE1の失敗理由と監査理由へ接続する | CE0語彙の同義語化、preview bypass許容、SafeMode既定後退 |
+| ContextQuery shape | `queryId`, `goal`, `scope`, `depth`, `constraints`, `reviewFilter`, `safeModePolicy`, `outputMode`, `previewConfirmed` | closed-world 入力として unknown key を `400 unknown_contract_key` へ落とす | 任意キー許容、既定値補完によるpreview gate迂回 |
+| ContextBundle shape | `queryCanonicalHash`, `bundleHash`, `selected`, `relations`, `evidence`, `contradictions`, `reviewFlags`, `truncationMeta`, `excludedReason` | mock bundle の最小出力と下流handoff keyを固定する | `sourceBundleHash/items/schemaVersion` との正本差分を未照合のまま実装正本化 |
+| Deterministic hash | 同一 canonical query 3回で `queryCanonicalHash` / `bundleHash` が 3/3 一致 | `409 nondeterministic_bundle` の機械判定を確認する | hash不一致を成功扱い、非決定性を警告だけで通過 |
+| Mock-first boundary | `stubDatasetId=A2-minimal-v1`、実DB/実LLM/workerなし | CE2/CE4を実装依存なしで前進させる | 実データ依存、LLM応答依存、worker副作用依存 |
+
+### Reconciliation gate before implementation
+- `ContextBundleV1` のキー表現は、本Issue内で最小出力セットと `sourceBundleHash/items/schemaVersion` を含む記述が混在している。
+- 実装または `02_Architecture/schemas.md` への反映前に、CE1 の正本を「最小必須キー」と「派生・監査キー」に分けて照合する。
+- 照合が完了するまで、`sourceBundleHash/items/schemaVersion` は実装必須キーではなく、候補または派生キーとして扱う。
+
+### Downstream handoff gates
+- CE2: `sourceBundleHash === bundleHash` の比較に限定し、`human_reviewed` 昇格や ConsensusGraph 更新をCE1から自動化しない。
+- CE4: `equivalenceKey + bundleHash` と query/bundle/proposal/apply 監査4点を使い、bundle本文の暗黙再解釈を成功扱いしない。
+- CE1 implementation: `/context/query` と `/context/bundle` の mock provider 検証に限定し、UI/DB/worker/LLM連携をこのIssueで開始しない。
+
+### Verify / Proceed
+- Verify command remains docs-check only:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans\issues\issue-CE1-context-query-bundle-foundation.md`
+  - `rg -n "Stream E open-readiness|CE1-CTXQ-IF|ContextQuery shape|ContextBundle shape|Reconciliation gate|sourceBundleHash|A2-minimal-v1|preview_bypass" 01_Plans\issues\issue-CE1-context-query-bundle-foundation.md`
+- Proceed: Conditional-Go for CE1 read-only contract handoff and mock-first implementation planning.
+- Stop: Contract ID mutation, CE0 guard redefinition, preview bypass, unresolved bundle-key discrepancy being treated as implementation source, or mock-first boundary regression.
