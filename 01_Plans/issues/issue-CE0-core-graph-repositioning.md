@@ -2275,3 +2275,36 @@
 
 ### Phase 4 Stopper
 - 3回修復超過、または graph語彙再定義・safeMode後退・direct write 要求を検知した場合は停止して判断依頼。
+
+## Stream D handoff readiness packet（2026-06-02 / CE0 graph role-transition-audit boundary）
+
+### Context
+- CE0 core graph repositioning は引き続き docs-only / contract-only / mock-first の graph role / transition / audit 契約として扱う。
+- 上流 `issue-CE0-contract-freeze.md` は read-only 参照に限定し、`CE0-CTX-IF` / `CE0-SAFEMODE-IF` / `CE0-REVIEW-IF` / `CG-01..05` を本Issue側で再定義しない。
+- 本更新は実装許可ではなく、下流が参照してよい graph 境界、許可遷移、監査・停止条件を1か所にまとめる。
+
+### Handoff evidence
+| Handoff item | Frozen value / evidence | Downstream use | Stop condition |
+| --- | --- | --- | --- |
+| Graph roles | `working`, `context_projection`, `consensus` | UI/worker/API実装前の役割名を固定する | 追加/改名/削除/意味変更 |
+| Canonical graph term | `ConsensusGraph` を正本、`Core Graph` は履歴・説明上の旧称に限定 | 用語の読み替えを read-only alias として扱う | `Core Graph` を新規正本名として再導入 |
+| Allowed transition | `working -> consensus` only via `patch+approval` | 承認済みpatch経路だけを成功扱いする | direct write、auto-apply、auto-publish |
+| Context projection | read-only projection only | ContextQuery/ContextBundleの参照先として副作用を持たせない | projection側のwrite経路定義 |
+| No-Go canonical IDs | `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation` | 失敗理由、テスト名、監査理由の固定語彙として使う | 同義語化、別名化、優先度変更 |
+| SafeMode boundary | `CE0-SAFEMODE-IF`, safeMode default ON, `allowUnreviewedText=false` | graph反映時の安全既定を維持する | 既定OFF化、未レビュー本文許容、自動昇格 |
+| Audit minimum | `timestamp`, `actor`, `phase`, `inputSnapshot`, `gateResult`, `reason`, `nextAction` | gate evidence と `held` 判断を再現する | 入力snapshotやreason欠落を成功扱い |
+
+### Downstream readiness gates
+- CE1/ContextQuery: graph role名は read-only 参照に限定し、`context_projection` から `consensus` への暗黙反映を許可しない。
+- CE2/AI assist: AI出力は proposal-only とし、`consensus` への反映、`human_reviewed` 昇格、`patch+approval` 省略を自動化しない。
+- CE4/API/CLI audit: `contract_freeze_verified`, `contract_drift_detected`, `freeze_hold_invoked` を監査イベント候補として参照できるが、実装時は `AuditEventV1` 正本との照合を必須にする。
+- UI/worker/API implementation: 本Issueから実装詳細を開始せず、graph role / allowed transition / No-Go reason の fixture 化に限定する。
+
+### Verify / Proceed
+- Verify command remains docs-check only:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans\issues\issue-CE0-core-graph-repositioning.md`
+  - `rg -n "Stream D handoff readiness|working|context_projection|consensus|ConsensusGraph|patch\\+approval|consensus_direct_write|contract_freeze_verified|freeze_hold_invoked|allowUnreviewedText=false" 01_Plans\issues\issue-CE0-core-graph-repositioning.md`
+- Proceed: Conditional-Go for downstream read-only graph role and transition reference.
+- Stop: Contract ID mutation, graph role redefinition, `Core Graph` re-canonicalization, direct write, auto-apply/auto-publish, SafeMode default relaxation, or missing audit reason.
