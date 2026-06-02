@@ -212,6 +212,50 @@
 
 ---
 
+## 17) DATA-MAINT-03 decision handoff readiness（2026-06-02）
+
+### Context
+
+- `ADR-0035` は `Proposed` のままであり、本Issueの `DecisionStatus=Pending` を維持する。
+- 本Issueは高権限データライフサイクル操作を実装するためのIssueではなく、Deciders が標準機能にしない境界、別ADR必須の境界、内部issueで検討できる境界を判断するための証跡を保持する。
+- 本更新は `DATA-MAINT-01`、`DATA-MAINT-04`、`PRODUCT-QA-01`、`MVP-EXIT-01` への参照整理であり、API/UI/CLI/runtime behavior を変更しない。
+
+### Decision handoff matrix
+
+| Decision area | Current route | Required evidence before movement | Stop condition |
+| --- | --- | --- | --- |
+| Document deletion | 標準機能にしない。再検討時は別ADRを必須とする。 | 削除モデル、監査保持、不可逆性と復旧の関係、共有済み成果物への影響 | 本Issueから delete/archive API/UI/CLI を実装する |
+| Document archive | 将来の状態遷移候補に留める。 | 一覧、共有、review pack、復旧、検索への影響、利用者に見える状態モデル | archive を単純な soft delete として扱う |
+| Ownership transfer | 別ADRを必須とする。 | 移管理由、承認者、通知、レビュー帰属、判断ログ上の説明責任 | owner ID の置換だけで所有者移管を表現する |
+| Admin body browsing / cross-search | MVP/製品化の標準導線から除外する。 | 目的、範囲、通知、代替手段、監査、SafeMode と共有/エクスポートへの影響 | support/platform operator の標準導線に本文または未レビュー情報を含める |
+| Audit metadata viewing | `DATA-MAINT-04` Draft 候補に限定する。 | メタデータのみの範囲、除外フィールド、権限モデル、検証レベル | 本文、未レビュー情報、横断検索、保持期限を `DATA-MAINT-04` に混在させる |
+| Retention automation | 組織判断または法務判断の領域として扱う。 | 保持期間、削除/アーカイブの意味、法域、バックアップと復旧への影響 | 本Issueで製品既定の保持期限や自動削除を定義する |
+
+### Stakeholder acceptance route
+
+- Productization Program Owner: 未解決の高権限ライフサイクル操作を、隠れた実装漏れではなく明示された製品境界として扱えることを確認する。
+- Security officer: 標準の support/admin 導線が、document body、未レビューの review text、review pack body、横断検索を露出しないことを確認する。
+- Platform operator: 本文を含まない棚卸しや復旧の証跡は参照できるが、本Issueから高権限の変更操作を要求しない。
+- Support: 本文を含まない診断用メタデータは将来候補として要求できるが、本文アクセスは別ADR/Issueを必須とする。
+
+### Go / Hold / Stop
+
+- Go: `ADR-0035` がAcceptedされ、本Issueがどの操作を標準機能にしないか、どの操作を別ADR必須にするかを確認できた場合に限り、`DecisionStatus=Fixed` 候補へ進める。
+- Hold: `ADR-0035` がProposedのまま、または `DATA-MAINT-04` がDraftのままである間は、本IssueをPendingに維持する。
+- Stop: 本Issueから admin API/UI/CLI mutation、本文閲覧、自動保持、削除、アーカイブ、所有者移管、広範な監査閲覧を実装しようとする要求を検知した場合は停止する。
+
+### Verify / Proceed
+
+- Verify command remains docs-check only:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+  - `rg -n "DATA-MAINT-03 decision handoff|Decision handoff matrix|Document deletion|Ownership transfer|Admin body browsing|Audit metadata viewing|Retention automation|DecisionStatus=Pending|ADR-0035|DATA-MAINT-04" 01_Plans\issues\issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- Proceed: docs-only の判断引き継ぎとして Conditional-Go。ADR/API/UI/runtime/status は変更しない。
+- Stop: runtime/API/UI/CLI の変更、`ADR-0035` のStatus変更、`DATA-MAINT-04` のStatus変更、高権限ライフサイクル操作の実装要求。
+
+---
+
 ## Authoring Checklist（人間/生成AI 共通）
 
 - [x] `Source Issue` が運用状態と整合している。
