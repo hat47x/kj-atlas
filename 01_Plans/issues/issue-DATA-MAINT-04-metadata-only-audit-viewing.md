@@ -114,6 +114,34 @@
 - 監査送信の fail-open dispatcher 方針と、閲覧系の権限判定は分けて検証する。送信失敗が本体処理を止めないことと、閲覧権限が緩むことを混同しない。
 - 本文、未レビュー情報、横断検索、保持期限、自動削除、所有者移管、監査メタデータの標準共有導線に進む場合は、`DATA-MAINT-03` と照合したうえで別ADRを先行する。
 
+## 6.2) Open readiness packet（2026-06-02）
+
+本IssueをDraftからOpenへ進める場合、`ADR-0035` のAcceptedまたは同等ADRに加えて、次のOpen化証跡を先にそろえる。これは実装許可ではなく、実装Issueを分割できる状態かを判断するための入口条件である。
+
+### Representative read-only scenarios
+
+| Scenario | 操作主体 | 目的 | 返してよい情報 | Stop条件 |
+| --- | --- | --- | --- | --- |
+| A1 share/export event lookup | Audit operator | 共有またはexportの発生有無と安全境界を確認する | event type, timestamp, traceId, docId, exportKind, safeMode, result, rejectReasonCode | review pack本文、カード本文、共有先個人情報、policyRef生値を返す場合 |
+| A2 CE4 audit completeness check | Security officer | query/bundle/proposal/apply の監査4点が欠けていないか確認する | equivalenceKey, queryCanonicalHash, bundleHash, sourceBundleHash, command, result | 元query、bundle本文、proposal本文、Document JSON全体を復元または表示する場合 |
+| A3 access-control decision review | Platform operator | `external_http` / `noop` / `mock` 境界とfail-safe結果を確認する | adapter type, decision.allow, decision.reason, policyRefPresent, timeout bucket | roles/groups生値、IdP subject、bearer token、API keyを返す場合 |
+| A4 support correlation | Support | 利用者から共有されたtraceIdと操作事実を照合する | traceId, occurredAt, eventType, masked actorRef, result | Supportが本文、未レビュー情報、横断検索結果を閲覧できる場合 |
+
+### Open化チェックリスト
+
+- [ ] `ADR-0035` がAccepted、または同等の後続ADRで「本文を含まない監査メタデータ閲覧だけを検討可能」と固定されている。
+- [ ] A1-A4 のどれを最初の実装候補にするかを1つだけ選ぶ。複数同時に進める場合は別issueへ分割する。
+- [ ] 返却項目、検索条件、権限、監査証跡、エラー時の表示方針を、本文を含まない範囲で固定する。
+- [ ] UIを持つ場合は、マウス操作とキーボード操作の代表シナリオ、フォーカス順、viewport evidence、スクリーンショットを `PRODUCT-QA-01` へ渡す。
+- [ ] API/CLIだけで始める場合も、本文・未レビュー情報・secret・生IdP識別子が返らないことを integration test で確認する。
+
+### Open化しない条件
+
+- `ADR-0035` がProposedのまま、または高権限データライフサイクル境界が未決のまま実装へ進もうとしている。
+- 監査メタデータ閲覧と、管理者本文閲覧、横断検索、保持期限管理、自動削除、所有者移管、削除履歴管理が混ざっている。
+- Support または Platform operator が、利用者本文、未レビュー情報、Document JSON全体、review pack本文、diff本文を標準導線で閲覧できる。
+- 監査メタデータを外部へ共有する標準導線を製品が持つ。必要な場合は目的、共有先、除外項目、記録、無効化手順を別ADRで固定する。
+
 ## 7) 検証計画 / Validation plan
 
 - 実行コマンド:
