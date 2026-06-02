@@ -1,9 +1,11 @@
 # ADR-0032: プロダクト価値実現モデル
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-15
-- Deciders: Project Maintainers
+- Accepted-Date: 2026-05-31
+- Deciders: Maintainer（委譲された意思決定権限）
 - Scope: `01_Plans/`, `02_Architecture/`, `03_Implement/frontend/`, `04_Documentation/`
+- Activation: コア価値ループ V0–V4 は active。二軸スコアカード等の観測機構（Stream H / VR4）は `ADR-0039` により activation 延期。Accepted 化の根拠と PRODUCT-VALUE-02 の循環デッドロック解消は `ADR-0040` を参照。
 
 ## Context
 

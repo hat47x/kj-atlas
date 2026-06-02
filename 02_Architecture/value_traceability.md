@@ -50,8 +50,8 @@
 | 不足観点 | 現状の偏り | 設計上の補強方針 | 起票先 |
 |---|---|---|---|
 | 初回価値実感 | 文書を開くことと価値を得ることが混同されやすい | 「最初の意味ある配置」をカード、まとまり、保留点を含む状態として定義する | `PRODUCT-VALUE-01` |
-| 保留・違和感の日常操作 | 上流概念とAI IRにはあるが、UI作業語彙が不足している | Hold/Critique/Evidence/Contradictionを選択コンテキスト、絞り込み、共有前確認へ接続する | `PRODUCT-VALUE-02` |
-| 根拠・主張・反対意見の追跡 | ContextBundleには含まれるが、利用者が見て操作する境界が弱い | EvidenceLink/ClaimType/contradictionを、AI入力だけでなく人間レビューの確認対象にする | `PRODUCT-VALUE-02` |
+| 保留・違和感の日常操作 | 上流概念とAI IRにはあるが、UI作業語彙が不足している | Hold/Critique/Evidence/Contradictionを選択コンテキスト、絞り込み、共有前確認へ接続する | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01/02/03`（`ADR-0040`） |
+| 根拠・主張・反対意見の追跡 | ContextBundleには含まれるが、利用者が見て操作する境界が弱い | EvidenceLink/ClaimType/contradictionを、AI入力だけでなく人間レビューの確認対象にする | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-04`（`ADR-0040`） |
 | 成果物化 | 安全な共有に寄っており、読者が判断できる成果物単位が未固定 | 確定点、保留点、未レビュー情報、根拠への戻り方を成果物パッケージに含める | `PRODUCT-VALUE-03` |
 | 価値実現ゲート | UI/安全/文書/診断ゲートはあるが、価値ループ別の合否が薄い | V0〜V4の代表シナリオを `PRODUCT-QA-01` のGo/No-Goへ接続する | `PRODUCT-QA-01` |
 
@@ -76,6 +76,54 @@ Open 化前の共通条件:
 3. mouse操作とkeyboard操作の両方で、代表アクションに到達できることを検証対象に含める。
 4. SafeMode、share/export、import sanitize、review attributionへの影響が`PRODUCT-QA-01`へ戻せる。
 5. 追加の永続schema、review semantics、署名、組織承認workflowが必要になった場合は、実装PRではなくissue/ADRを先行する。
+
+---
+
+## 2.3 社会的目標への接続（VR0–VR5）
+
+`01_Plans/adr/ADR-0036-value-to-social-goal-realization-roadmap.md` は、上記の価値ループ V0–V4 を社会的目標まで一直線に並べた実現フェーズ系列 VR0–VR5 を定義します。社会的目標は「散らばった暗黙知・主観・多様な意見を early collapse させずに、レビュー可能・可逆・説明可能な形へ構造化し、人間と生成AIが協働して説明可能で見直し可能な合意形成を行える場を社会へ広げること」です（`README.md` / `00_Prompt/domain.md` / `00_Prompt/ai_cognitive_externalization_requirements.md` の統合表現）。
+
+| Phase | 価値→社会の接続 | 設計責務（02層） | 検証観点 | 担当issue |
+|---|---|---|---|---|
+| VR0 安全基盤 | 安全・可逆・監査の既定が崩れない土台 | SafeMode既定ON、proposal-only、patch+approval、`provider=none`既定 | 非後退の回帰固定 | `CE0`, safe_mode policy |
+| VR1 価値活性化 | 最初の意味ある配置へ到達 | UI Shell入口、import-sanitize境界 | 初回経路E2E | `PRODUCT-VALUE-01`, `PRODUCT-UX-01` |
+| VR2 曖昧さネイティブ作業 | 保留/違和感/根拠不足/反対意見を作業状態化 | Hold/Critique/Evidence/Contradiction、ContextBundle制約 | 4状態の付与・絞り込み・共有前確認 | `PRODUCT-VALUE-02`, `DOMAIN-EXPR-01..04`（`ADR-0040`）, `CE1`, `CE2` |
+| VR3 レビュー可能成果物 | 読者が確定/保留/根拠を理解 | Narrative、Review Pack、review attribution、source trace | 成果物最小6要素 + 安全共有 | `PRODUCT-VALUE-03`, `PRODUCT-UX-03`, `CE3` |
+| VR4 価値観測と製品化ゲート | 価値実感を再現可能に観測 | 観測ハーネス、二軸スコアカード（`ADR-0037`） | 証拠再現性、Go/No-Go追跡 | `VALUE-MEASURE-01/02`, `MVP-EXIT-01`, `PRODUCT-QA-01` |
+| VR5 社会的普及 | 説明可能な合意が再現・見直し・安全配布される | 複数レビュア再現性、経時的見直し、証拠定着配布、非監視シグナル（`ADR-0038`） | 再現性/再オープン/配布安全/非監視の各観点 | `SOCIAL-DIFFUSION-01..04`, `CE4` |
+
+VR系列は既存フェーズ体系（CE/FB/PRODUCT-UX）を置換せず、価値軸で再配置する索引です。新規作業は VR4（`ADR-0037`）と VR5（`ADR-0038`）に限定されます。
+
+なお VR4/VR5 は `ADR-0039`（ガバナンス適正化）により activation を延期し、個人OSS・プレリリース段階では direction として保持します（VR0–VR3 と安全不変条件は active）。
+
+---
+
+## 2.4 要件被覆マトリクス（プロダクト価値 / UI/UX / ドメイン表現）
+
+社会的目標の達成に必要な「プロダクト価値・UI/UX・ドメイン表現」要件が、フェーズ（VR）と担当issue/ADRへ過不足なく接続されていることを確認する被覆表です。**未接続セルが0件であることを「要件を上げ切った」状態の定義とします。** 新規起票は、この表に新しい行（本物の穴）が現れたときのみ行い、物量での追加はしません（`ADR-0039` 適正化方針）。
+
+| 観点 | 要件の核 | 上流 | 担当（issue / ADR） | 状態 |
+|---|---|---|---|---|
+| 価値: 開始 | 迷わず最初の意味ある配置へ | `ADR-0032` V0/V1 | `PRODUCT-UX-01`(Done), `PRODUCT-VALUE-01` | 被覆 |
+| 価値: 外在化 | メモ・違和感をカード化 | `ADR-0032` V1 | `PRODUCT-VALUE-01`, `DOMAIN-EXPR-01` | 被覆 |
+| 価値: 構造化 | まとまり・関係・未整理の同時保持 | `ADR-0032` V2 | `PRODUCT-UX-02`(Done), `PRODUCT-VALUE-02` | 被覆 |
+| 価値: レビュー | AI候補の人間採否・proposal-only | `ADR-0032` V3 | `PRODUCT-VALUE-02`, `CE2`, `CE3` | 被覆 |
+| 価値: 成果物化と共有 | 確定/保留/根拠/未レビューを束ねた成果物 | `ADR-0032` V4 | `PRODUCT-UX-03`(Done), `PRODUCT-VALUE-03` | 被覆 |
+| 価値: 観測と社会的普及 | 価値の再現観測・説明可能な合意の普及 | `ADR-0036`/`0037`/`0038` | `VALUE-MEASURE-01/02`, `SOCIAL-DIFFUSION-01..04` | 被覆（VR4/VR5は延期保持） |
+| UI/UX: 初回導線 | 文書入口・SafeMode可視 | `ADR-0031` | `PRODUCT-UX-01`(Done) | 被覆 |
+| UI/UX: 画面情報設計 | 選択コンテキスト・作業モード分離 | `ADR-0031` | `PRODUCT-UX-02`(Done), `UX-OPERABILITY-03/05` | 被覆 |
+| UI/UX: 視点制御 | 俯瞰↔詳細・折りたたみ・focus・preset | `ADR-0001` P-06 | `ViewControlsPanel.tsx` ほか実装済み, `CE3` presets | 被覆（実装済み） |
+| UI/UX: 操作性 | ポインタ/キーボード・パネル離脱・焦点 | `ADR-0030` | `UX-OPERABILITY-01..05`(Done系) | 被覆 |
+| UI/UX: 共有導線 | 共有前確認・公開範囲・SafeMode | `ADR-0031` | `PRODUCT-UX-03`(Done) | 被覆 |
+| UI/UX: 応答性/規模 | 小画面・大規模文書・低速環境 | `ADR-0031` | `PRODUCT-UX-04`(Done) | 被覆 |
+| ドメイン: 状態の可視化 | claimType/reviewState/根拠/違和感の読取 | `domain.md`, `ADR-0040` | `DOMAIN-EXPR-01`（Phase 1, schema非依存） | 被覆 |
+| ドメイン: 保留・未統合 | HoldState / Pending-Shelf の第一級化 | `domain.md`, `ADR-0001` P-01 | `DOMAIN-EXPR-02`（Phase 2, 加算schema） | 被覆 |
+| ドメイン: 違和感→再提案 | Critique入力と再提案差分 | `domain.md`, `ADR-0001` P-04 | `DOMAIN-EXPR-03`（Phase 3） | 被覆 |
+| ドメイン: 根拠・主張・矛盾 | Evidence/ClaimType/Contradictionのレビュー | `ai_cognitive_externalization_requirements.md` | `DOMAIN-EXPR-04`（Phase 4） | 被覆 |
+| ドメイン: 可逆性 | 配置やり直し・履歴・差分 | `domain.md`（可逆性） | snapshot/diff（`ADR-0032`基盤）, `summary_history_ops`, HIL-RS, `CE3` | 被覆（MVPはsnapshot基盤。汎用undoは`architecture.md`§10非目標） |
+| ドメイン: 用語整合 | 00↔02語彙同期 | `domain.md` | `DOMAIN-ALIGN-01`(Done) | 被覆 |
+
+**判定（2026-06-02）**: 全観点が担当issue/ADRへ接続済み（未接続=0件）。プロダクト価値・UI/UX・ドメイン表現の要件は VR0–VR5 のフェーズへ落とし込み済みであり、新規起票すべき本物の穴は無い。実装順序は DOMAIN-EXPR は Phase 1→4、VR4/VR5 は実ユーザー/協力者参加まで延期（`ADR-0039`）。
 
 ## 3. 設計判断の扱い
 

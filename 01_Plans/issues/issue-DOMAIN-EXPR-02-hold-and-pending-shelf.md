@@ -1,0 +1,66 @@
+# Issue Draft: DOMAIN-EXPR-02 保留(Hold)と未統合(Pending/Shelf)の第一級化
+
+- Type: Feature request
+- Status: Draft
+- Lifecycle: Draft -> Open -> In Progress -> Done
+- Source Issue: N/A
+- Priority: P1
+- Owner: TBD
+- Scope: `02_Architecture/schemas.md`, `03_Implement/frontend/src/`, `03_Implement/frontend/src/import/`, `03_Implement/frontend/src/export/`, `03_Implement/frontend/tests/`
+- Related Backlog: `DOMAIN-EXPR-02`
+- Related ADR/Spec: `01_Plans/adr/ADR-0040-domain-expression-first-class-strategy.md`, `00_Prompt/domain.md`, `01_Plans/adr/ADR-0001-value-to-requirements.md`, `02_Architecture/schemas.md`
+- Dependencies: `01_Plans/issues/issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`
+- Expected verification level: `integration`
+
+> 個人OSS段階（`ADR-0039`）の軽量起票。`ADR-0040` Phase 2。加算的・後方互換のschema拡張を含む。
+
+## Dependencies
+
+- 前段: `issue-DOMAIN-EXPR-01-readonly-state-surfacing.md`（`ADR-0040` Phase 1 の読取UIを前提に、保留/Shelfの登録・状態変更・加算スキーマを重ねる）。
+
+## 1) 課題 / Problem statement
+
+domain.md は `HoldState`（判断を確定させない状態）と `PendingItems/Shelf`（まだ束ねない要素の退避場所）を中核概念に定義するが、`schemas.md` にも frontend にも実体が無い（保留は `claimType="unknown"` の代理のみ、Shelf は型すら無し）。利用者が「これは今は決めない」「いったん脇に置く」を可逆的に表現できない。これは社会的目標（early collapse させない）の中核欠落。
+
+## 2) 背景 / Context
+
+- `ADR-0040` Phase 2 は保留と未統合を加算的・任意フィールドで第一級化する。
+- `ADR-0001` P-01（意味の保留）と `DATA-01-1`（確定/未確定状態の表現）、3.1 collapse要件（不可視化は削除扱いにしない）が上流要件。
+- `DOMAIN-EXPR-01`（読取UI）完了後に、登録/状態変更を加える順序。
+
+## 3) 提案する解決策 / Proposed solution
+
+- Schema（加算・後方互換、`AGENTS.md` §4.2 の順序で `schemas.md` 先行）:
+  - カード/島に任意の `holdState?`（例: `active | held`）を追加。欠落時は従来挙動（held でない）。
+  - 任意の Shelf membership（未統合退避）を追加。退避はキャンバス座標を保持し、復帰で原位置へ戻せる（内容削除と分離）。
+- Frontend: 保留トグル、Shelf への退避/復帰、Shelf 一覧表示。
+- import/export/validate/tests を新フィールドへ追随。
+- 非目標: AIによる自動保留解除、保留の自動分類、正解判定。
+
+## 4) 受入条件 / Acceptance criteria
+
+- [ ] カード/島を「保留」にでき、表示上も保留と分かる。
+- [ ] 要素を Shelf へ退避し、可逆に復帰できる（内容・座標が失われない）。
+- [ ] `holdState` / Shelf membership が import/export で往復保存される。
+- [ ] 旧データ（フィールド欠落）が破壊されず従来挙動で読める（後方互換）。
+- [ ] AIは保留を自動解除しない（proposal-only、保留は保持対象）。
+- [ ] `schemas.md` を先に更新し、validate/tests が新旧両形式で通る。
+
+## 5) 検証計画 / Validation plan
+
+- 実行コマンド:
+  - `cd 03_Implement/frontend && node ./node_modules/typescript/bin/tsc --noEmit`
+  - `cd 03_Implement/frontend && node ./node_modules/vitest/vitest.mjs run src/import src/export src/domain`
+  - `rg -n "holdState|shelf|Shelf|pending|Pending" 02_Architecture/schemas.md 03_Implement/frontend/src`
+- 期待結果: 保留と未統合が往復保存され、旧データ互換が保たれる。
+- 未実施時の代替: schema差分レビューと import/export golden fixture 比較。
+
+## 6) リスクとロールバック / Risks & rollback
+
+- 失敗モード: 新フィールドが旧クライアントで失われる／状態語彙が複雑化。
+- 影響範囲: DocumentV2、import/export、validate、canvas。
+- ロールバック: 加算フィールドのため、UIを無効化し読取保存のみへ縮退できる。
+
+## 7) Additional context
+
+- 本issueは schema を加算拡張するため `ADR-0040` の確定方針に直接対応する。破壊的変更が必要になった場合は新ADRを起票する。

@@ -1,5 +1,7 @@
 # Issue Draft: <BacklogID or Theme> <短いタイトル>
 
+> 個人OSS・プレリリース段階の運用（`ADR-0039`）: 下記のうち `Requirement meta I/F` / RACI / KPI などの重量級セクションは任意。最低限、Metaの必須キー（Type/Status/Lifecycle/Source Issue/Priority/Scope/Related ADR/Spec/Expected verification level）と 受入条件・検証計画 を満たせばよい。協力者参加・公開リリース時に重量級項目を再導入する。
+
 - Type: <Feature request / Bug / Process / Security / Documentation quality>
 - Status: Draft (起票用)
 - Source Issue: <N/A (未運用時) or GitHub Issue URL (運用時)>

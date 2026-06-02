@@ -4,6 +4,45 @@
 
 > 運用ルール: 本ダッシュボードは ADR / issue memo の決定事項を統合表示する参照レイヤ。必ず ADR/issue memo の正本更新後に同期する。
 
+## 次フェーズ計画レイヤ（価値→社会的目標, 2026-05-31 決定済み）
+
+> 本セッションで Maintainer（委譲された意思決定権限）として下記を決定。緩和方針は `ADR-0039`（ガバナンス適正化）に基づく。
+
+- 決定したADR:
+  - `ADR-0036`（価値→社会的目標 実現フェーズロードマップ / VR0–VR5索引）→ **Accepted**。VR0–VR3 active、VR4/VR5 は activation 延期。
+  - `ADR-0037`（観測ハーネス＋二軸スコアカード / VR4）→ **Accepted（direction、activation 延期）**。
+  - `ADR-0038`（説明可能な合意形成の社会的普及 / VR5）→ **Accepted（direction、activation 延期）**。
+  - `ADR-0039`（個人OSS・プレリリース段階のガバナンス適正化）→ **Accepted**。
+- バックログ issue（`VR-ROADMAP-01` / `VALUE-MEASURE-01,02` / `SOCIAL-DIFFUSION-01..04`）: **Draft の deferred backlog**（実ユーザー/協力者が現れる milestone まで非アクティブ）。triage 上は draft gate。
+- 位置づけ: VR0–VR3 は既存issue（`PRODUCT-VALUE-*` / `PRODUCT-UX-*` / `CE*`）の価値軸索引。新規重量級作業（VR4/VR5）は延期。
+- 安全（緩和禁止）: SafeMode既定ON / `human_reviewed`人手昇格 / patch+approval / `provider=none`既定 / import-sanitize は不変条件として維持。
+- 検証: validator=ok / unittest=OK / triage=stopper none。
+
+### Decision Queue
+
+- `DQ-VR-ROADMAP-01` → **Approved（activation deferred）/ Resolved**。Maintainer 決定により ADR-0036..0038 を Accepted 化し、VR4/VR5 は延期。本キューはクローズ。
+
+### ドメイン表現の第一級化（2026-05-31 決定済み, `ADR-0040`）
+
+> Maintainer（委譲された意思決定権限）として、社会的目標→VR2/VR3 の設計空白（domain.md 中核概念が「往復保存型」止まりで日常UI不在）を解消する判断を下した。
+
+- 決定したADR: `ADR-0040`（中核ドメイン概念の第一級化戦略）→ **Accepted**。
+- 循環デッドロック解消: `ADR-0032`（プロダクト価値実現モデル）を **Proposed→Accepted**（コアV0–V4 active、観測機構はVR4として延期）。`PRODUCT-VALUE-02` の `DecisionStatus` を **Pending→Fixed** とし、Representation boundary table を価値ゲートV2の暫定正本として承認。これで「ADR-0032⇄PV-02」の相互待ちを解消。
+- schema判断の確定: 違和感/根拠/矛盾/claim/レビュー境界は**schema変更なし**で読取UI露出（`DOMAIN-EXPR-01`）。保留Hold/未統合Shelfは**加算的・任意フィールド新設**（`DOMAIN-EXPR-02`、後方互換）。
+- 追加issue（Draft の deferred backlog、README Active表外）:
+  - `DOMAIN-EXPR-01`（既存状態の読取UI第一級化 / Phase 1 / schema変更なし、P1）
+  - `DOMAIN-EXPR-02`（Hold + Pending/Shelf 第一級化 / Phase 2 / 加算schema、P1）
+  - `DOMAIN-EXPR-03`（違和感→再提案ループUI / Phase 3、P2）
+  - `DOMAIN-EXPR-04`（根拠・主張・矛盾の人間レビュー＋成果物接続 / Phase 4、P2）
+- 安全（緩和禁止）: proposal-only / `human_reviewed`人手昇格 / SafeMode既定ON / `provider=none`既定でも各Phase主要価値成立 / 加算fieldは欠落=従来挙動。
+- 着手順: `DOMAIN-EXPR-01`（schema非依存・低リスク）から。Phase 1 は他Phaseの前提（依存: 02/03/04 → 01）。
+- 検証: validator=ok / triage=stopper none（依存パスは実在ファイルのみ参照）。
+
+### ダッシュボード運用の適正化（`ADR-0039`）
+
+- 今後、本ダッシュボードは現状スナップショットのみを保持し、per-rerun の共有統合同期ログ（`Stream X rerun-NN ... 再確認した`）の追記は行わない。
+- 上掲の歴史的 rerun ログは当時点の記録として凍結（削除は任意の低優先フォローアップ）。`01_Plans/issues/README.md` の `Active issue memos` 表は本決定では変更しない。
+
 ## 進捗サマリ
 
 
