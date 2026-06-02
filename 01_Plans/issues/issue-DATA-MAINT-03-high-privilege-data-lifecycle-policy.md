@@ -180,6 +180,36 @@
 - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 - `rg -n "DATA-MAINT-04|監査メタデータ|本文を含まない|ADR-0035|audit metadata|audit viewing" 01_Plans/issues/issue-DATA-MAINT-04-metadata-only-audit-viewing.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 02_Architecture/data_model_operations_overview.md 02_Architecture/api.md`
 
+## 16) ADR-0035 acceptance packet sync（2026-06-02）
+
+### Context
+
+- `ADR-0035` はまだ `Proposed` であり、本Issueの `DecisionStatus=Pending` は維持する。
+- ただし、Deciders が承認時に確認すべき点がADR本文だけでは散らばって読めるため、Accepted化の判断材料を `Acceptance readiness packet` としてADR側に集約した。
+- この更新は高権限操作の実装許可ではなく、むしろ誤って通常の管理機能として実装しないためのStop境界を明確にするものである。
+
+### Decision
+
+- 本Issueは `Status=Open` / `DecisionStatus=Pending` を維持する。
+- `ADR-0035` をAcceptedにする前の確認項目を、次の5点に固定した。
+  1. 削除、アーカイブ、所有者移管、管理者本文閲覧、保持期限自動化を標準機能にしない。
+  2. 保持期間、削除義務、承認者、保管先、暗号化方式を製品一律の規定として固定しない。
+  3. Support、Platform operator、管理者が標準導線で本文や未レビュー情報を横断閲覧しない。
+  4. 本文を含まない監査メタデータ閲覧だけを `DATA-MAINT-04` で検討可能にする。
+  5. 未実装の高権限操作を、単独のリリース阻害ではなく明示された製品境界として扱えるかを確認する。
+
+### Consequences
+
+- `ADR-0035` がAcceptedされた場合、本Issueは `DecisionStatus=Fixed` へ進める候補になる。ただし、実装Issueへの移行はしない。
+- `DATA-MAINT-04` はAccepted後にOpen化可否を判断できるが、本文閲覧、未レビュー情報閲覧、横断検索、保持期限、自動削除、所有者移管へ拡張する場合は別ADRを必須とする。
+- 本番導入組織が削除、保持期限、所有者移管、管理者本文閲覧を必須機能と判断する場合は、`PRODUCT-QA-01` / `MVP-EXIT-01` のリリース条件へ戻す。
+- この更新では `ADR-0035` のStatus、runtime behavior、API、UI、公開文書、SafeMode、share/export の既定を変更しない。
+
+### Verify
+
+- `git diff --check -- 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+- `rg -n "Acceptance readiness packet|Accepted 後の実装停止条件|DATA-MAINT-04|標準機能にしない|本文を含まない|DecisionStatus=Pending" 01_Plans/adr/ADR-0035-privileged-data-lifecycle-boundary.md 01_Plans/issues/issue-DATA-MAINT-03-high-privilege-data-lifecycle-policy.md`
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
