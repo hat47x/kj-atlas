@@ -428,6 +428,57 @@
 3. After #2291 merges or closes, rerun `git fetch --prune origin`, GitHub open-PR search, `validate_active_issue_memos.py`, and `triage_actionable_plans.py`.
 4. Treat the listed stale branches as cleanup candidates only; do not delete them without repository maintainer confirmation.
 
+## 17) Convergence checkpoint 2026-06-02: gate sync lane drained after merge
+
+### Observation
+
+- Observed after `git pull --ff-only origin main` and GitHub connector open-PR search on 2026-06-02.
+- `origin/main`: `44d9c526a83f1fad60a172895a9bbe7e1db02365`
+- remote branch count: 2291
+- `origin/codex/` remote branch count: 2268
+- open PR count returned by GitHub connector search: 0
+- internal issue triage on current `main`:
+  - `active_issues=41`
+  - `ready=15`
+  - `blocked=26`
+  - `actionable_adrs=1`
+  - stopper: none
+
+### Recent PR lane resolution
+
+| PR | State | Governance result |
+| --- | --- | --- |
+| #2288 | merged | `DATA-CONTRACT-01` closeout is on `main`. |
+| #2289 | merged | `DATA-MAINT-01` decision routing sync is on `main`. |
+| #2290 | merged | `DATA-MAINT-04` audit metadata baseline is on `main`. |
+| #2291 | merged | Productization gate sync after data-contract closeout is on `main`. |
+| #2292 | merged | Previous 2026-06-01 PROJECT-GOV checkpoint is on `main`. |
+
+### Decision
+
+- The open productization gate sync lane recorded in checkpoint 16 is now drained; no open PRs were found by the GitHub connector search.
+- `origin/main@44d9c526a83f1fad60a172895a9bbe7e1db02365` is the current planning input for new work unless a future PR intentionally builds on another branch.
+- No branch deletion, PR closure, or ADR status change is executed from this checkpoint. Branch cleanup remains a permissioned repository maintenance action after maintainer confirmation.
+- No new ADR is required. ADR-0034 already governs mainline convergence and branch hygiene; this update only refreshes the repository inventory after #2291/#2292 merged.
+- Full release shipment remains No-Go until product-value evidence, full release-candidate E2E/viewport/screenshot evidence, Compose startup evidence, and final program approval are recorded.
+
+### Cleanup candidate table
+
+| Branch | Current classification | Cleanup recommendation |
+| --- | --- | --- |
+| `origin/codex/data-contract-01-closeout-20260601` | merged `DATA-CONTRACT-01` closeout | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-01-adr35-routing-20260601` | merged `DATA-MAINT-01` decision routing sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/data-maint-04-audit-metadata-baseline-20260601` | merged `DATA-MAINT-04` audit metadata baseline | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/productization-data-contract-gate-sync-20260601` | merged productization gate sync | Delete only after repository maintainer confirms no post-merge audit need. |
+| `origin/codex/project-gov-20260601-contract-gate-checkpoint` | merged governance checkpoint | Delete only after repository maintainer confirms no post-merge audit need. |
+
+### Updated recommendation
+
+1. Start the next independent work from `origin/main@44d9c526a83f1fad60a172895a9bbe7e1db02365`.
+2. Do not open another PROJECT-GOV checkpoint unless `origin/main`, the open PR set, branch cleanup decision, or active issue triage materially changes.
+3. Keep branch deletion as a maintainer-approved cleanup task; this issue records candidates but does not perform deletion.
+4. Continue routing full release readiness through `PRODUCT-QA-01` and `MVP-EXIT-01`, because the drained PR lane does not itself approve shipment.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

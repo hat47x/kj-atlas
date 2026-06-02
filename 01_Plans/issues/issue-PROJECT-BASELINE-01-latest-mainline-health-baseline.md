@@ -490,6 +490,70 @@
 | Full release-candidate E2E, viewport, and screenshot evidence | QA owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
 | Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
 
+## 18) Baseline delta 2026-06-02: gate sync and governance checkpoint merged
+
+### Candidate
+
+- Target main: `origin/main` = `44d9c526a83f1fad60a172895a9bbe7e1db02365`
+- Baseline branch: `codex/latest-main-20260602-baseline-governance-sync`
+- Scope note: this is a lightweight planning/governance baseline delta after #2291 and #2292 merged. It confirms that the latest productization gate sync and repository-governance checkpoint are now on `main`; it does not rerun browser, frontend, backend, Compose, SafeMode, share/export, import sanitize, or public documentation checks.
+- Executor: Codex
+- Environment: Windows / PowerShell / backend `.venv` / GitHub connector / RTK used only for compact read-only output where exact output was not required.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git checkout main`; `git pull --ff-only origin main`; `git rev-parse origin/main` | Pass: `44d9c526a83f1fad60a172895a9bbe7e1db02365` | G0 |
+| Planning metadata | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py` | Pass: `active_issues=41 / ready=15 / blocked=26 / actionable_adrs=1 / stopper=none` | G0 |
+| Issue validator tests | `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/issues/tests/test_validate_active_issue_memos.py` | Pass: 10 tests | G0 / G7 |
+| Triage tests | `03_Implement/backend/.venv/Scripts/python.exe -m unittest 01_Plans/tests/test_triage_actionable_plans.py` | Pass: 1 test | G0 / G7 |
+| GitHub PR inventory | GitHub connector open PR search | Pass: open PRs 0 | G0 |
+
+### Incorporated mainline changes
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2288 | Merged into `main` before this refresh | `DATA-CONTRACT-01` is closed for the current DocumentV2/API/support-level baseline. |
+| #2289 | Merged into `main` before this refresh | `DATA-MAINT-01` unresolved decision routing now points to `ADR-0035`, `DATA-MAINT-03`, and `DATA-MAINT-04`. |
+| #2290 | Merged into `main` before this refresh | `DATA-MAINT-04` audit metadata baseline and boundary wording are now on `main`. |
+| #2291 | Merged into `main` before this refresh | `PRODUCT-QA-01` and `MVP-EXIT-01` now record that data-contract closeout is Conditional Go for the contract slice, while full shipment remains No-Go. |
+| #2292 | Merged into `main` before this refresh | `PROJECT-GOV-01` now records the prior open productization gate sync lane and cleanup candidates. |
+
+### Gate classification
+
+| Gate | 2026-06-02 result | Reason |
+| --- | --- | --- |
+| G0 險育判謨ｴ蜷・| Go | latest main intake, active issue validation, triage, validator unit tests, triage unit test, and open PR inventory pass with no stopper. |
+| G1 螳牙・譌｢螳・| Unchanged / Conditional Go | This delta records merged planning and governance evidence only. SafeMode, share/export, import sanitize, and data-access behavior were not changed or re-tested. |
+| G2 荳ｻ隕∵桃菴・| Unchanged / Conditional Go | No browser or representative user workflow was re-tested in this delta. Prior evidence remains valid only for its recorded scope. |
+| G3 譌･譛ｬ隱朸I | Unchanged | No UI copy changed in this baseline delta. |
+| G4 逕ｻ髱｢閠先ｧ | Unchanged / Conditional Go | No viewport matrix, screenshot run, or mouse/keyboard operation review was executed in this delta. |
+| G5 蜈ｬ髢区枚譖ｸ/險ｭ螳壼･醍ｴ・| Unchanged / Conditional Go | Public documentation and runtime configuration were not republished or changed in this delta. |
+| G6 險ｺ譁ｭ縺ｨ繧ｵ繝昴・繝・| Unchanged / Conditional Go | Support diagnostics and operations behavior were not re-tested; prior follow-up boundaries remain in force. |
+| G7 蝗槫ｸｰ | Go for planning checks | Planning validators and their unit tests pass. Runtime/frontend/backend regression suites were intentionally not rerun because this delta only records merged gate/governance state. |
+| E1..E3 迺ｰ蠅・･醍ｴ・| Unchanged / Conditional Go | Full running Compose service startup was not executed. |
+
+### Decision
+
+- Baseline delta decision: **Conditional Go** for latest-main planning and governance convergence.
+- Release readiness decision remains **No-Go** for full shipment. The merged #2291 gate record closes the current data-contract slice for the documented baseline, but it does not provide product value evidence, full release-candidate E2E/viewport/screenshot evidence, full Compose startup evidence, or final program approval.
+- Follow-up routing:
+  - Product value gates: `PRODUCT-VALUE-01..03`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Repository branch cleanup: `PROJECT-GOV-01`; no branch deletion is executed by this baseline delta.
+  - High-privilege data lifecycle and audit metadata follow-up: `DATA-MAINT-03`, `DATA-MAINT-04`, and `ADR-0035`.
+
+### Follow-up accountability
+
+| Item | Owner | Due | Re-decision date |
+| --- | --- | --- | --- |
+| Product value gate approval or provisional execution decision | Productization Program Owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Full release-candidate E2E, viewport, and screenshot evidence | QA owner + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
+| Post-merge branch cleanup decision for #2288..#2292 branches | Repository Maintainer + Codex evidence steward | 2026-06-05 | 2026-06-07 |
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
