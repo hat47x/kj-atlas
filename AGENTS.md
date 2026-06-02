@@ -129,7 +129,7 @@ This file is the navigation index for AI agents (Codex, etc.). Start here, then 
 ### 3.3 `02_Architecture/`（Structure：設計・I/F・デプロイ）
 
 - `02_Architecture/architecture.md`：全体構成（最上位）。
-- `02_Architecture/value_traceability.md`：価値→設計→受入条件→検証観点の対応表。
+- `02_Architecture/value_traceability.md`：価値→設計→受入条件→検証観点の対応表。§2.4 は プロダクト価値/UI-UX/ドメイン表現の要件被覆マトリクス（フェーズ・担当issueへの接続を1表で確認し、新規起票の要否を判定する正本）。
 - `02_Architecture/contract_reading_guide.md`：02層の現行契約と履歴ログの読み分けガイド。
 - `02_Architecture/schemas.md`：データスキーマ（document/view/pack等）。
 - `02_Architecture/data_model_operations_overview.md`：MVPデータモデル、論理ER、CRUDサポート表、ステークホルダー別運用境界。
