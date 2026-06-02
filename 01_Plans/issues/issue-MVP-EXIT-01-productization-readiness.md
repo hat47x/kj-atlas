@@ -698,3 +698,32 @@
 - Owner: Codex for evidence maintenance; Project Maintainers for ADR-0035; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next product value and data-lifecycle decision review.
 - Re-decision date: after ADR-0035 is accepted/replaced, after ADR-0032/value-gate authority changes, or after a full release-candidate evidence run is completed.
+
+## MVP-EXIT Program Gate Decision 2026-06-02: environment contract readiness boundary intake
+
+- Candidate: draft PR #2295 `codex/env-config-readiness-boundary-20260602@61e942ee271893f24919caf32af97eea0cee4b1a`
+- Decision date: 2026-06-02
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-02: environment contract readiness boundary intake`.
+  - ENV-CONFIG-DRIFT-01 update in PR #2295: `ADR-0029` is treated as the accepted third-party runtime env boundary.
+  - Runtime parameter registry update in PR #2295: productization readiness boundary distinguishes public `KJ_ATLAS_*` settings from private adapter names.
+  - PR #2295 metadata: draft, mergeable, 1 commit, 2 changed files.
+
+### Decision
+
+- Final: **Conditional Go for environment-contract readiness evidence / No-Go for full release shipment**
+- Reason summary: PR #2295 improves productization readiness by clarifying that public environment variables are `KJ_ATLAS_*` only, that `POSTGRES_*` remains a private Compose adapter boundary under accepted ADR-0029, and that stricter no-vendor-env or `external_http` fail-fast behavior would require separate ADR work. This is not a final shipment approval because PR #2295 is not merged, `docker compose config` was not run on the PR host, full Compose service startup has not been executed, and product value/UX release-candidate evidence remains incomplete.
+- Escalation route: keep PR #2295 reviewable as environment-contract evidence. Re-run Program Gate after #2295 is merged or superseded, after Compose config/startup evidence is recorded, or when a full release candidate is cut.
+
+### Conditional controls
+
+- Remaining risks:
+  - Environment-contract evidence is still branch evidence until PR #2295 lands on `main`.
+  - `docker compose config` and full running Compose startup remain required before full release shipment.
+  - `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032` acceptance or explicit Productization Program Owner approval for provisional execution.
+  - Release-candidate E2E, viewport matrix, screenshot evidence, mouse/keyboard evidence, and final program approval are still required together.
+  - Changing accepted `ADR-0029` or making missing `external_http` endpoint fail-fast by default remains ADR-level work and must not be implied by this intake.
+- Owner: Codex for evidence maintenance; Platform Operator for environment rehearsal approval; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next environment-contract or release-candidate gate review.
+- Re-decision date: after PR #2295 is merged/rejected, after Compose config/startup evidence is recorded, or after a release candidate is cut from `main`.
