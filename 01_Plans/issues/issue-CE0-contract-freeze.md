@@ -3900,3 +3900,34 @@ export type AuditEventV1 = {
 ### Phase 8 完了報告
 - 判定: **Proceed（Conditional-Go）**。
 - 条件: CE0は引き続き read-only 契約参照専用。競合検知時は `held` 停止を維持。
+
+## Stream B handoff readiness packet（2026-06-02 / CE0 read-only downstream evidence）
+
+### Context
+- CE0 は引き続き contract-only / docs-only / mock-first の SSOT として扱う。
+- 下流（CE0 core graph / CE1 / CE2 / CE4）は本Issueを read-only 参照できるが、Contract ID、No-Go ID、SafeMode境界を再定義してはいけない。
+- 本更新は実装許可や契約変更ではなく、下流が参照してよい証跡と停止条件を1か所にまとめる。
+
+### Handoff evidence
+| Handoff item | Frozen value / evidence | Downstream use | Stop condition |
+| --- | --- | --- | --- |
+| Contract IDs | `CE0-CTX-IF`, `CE0-SAFEMODE-IF`, `CE0-REVIEW-IF`, `CG-01..05` | IDを参照し、再定義しない | 追加/改名/削除/意味変更 |
+| No-Go canonical IDs | `preview_bypass`, `consensus_direct_write`, `auto_apply_or_publish`, `ai_review_auto_promotion`, `safemode_default_relaxation` | 下流の失敗理由・テスト名・監査理由へそのまま使う | 同義語化・別名化・優先度変更 |
+| SafeMode boundary | safeMode default ON / `allowUnreviewedText=false` | CE1/CE2/CE4 の mock とUI証跡で安全既定を維持 | 既定OFF化、未レビュー本文許容、自動昇格 |
+| Mock-first boundary | `decision`, `executeAllowed`, `reasonCodes` まで | 実DB/実LLM/workerなしで契約検証できる | Pending→Approved/Rejected の実遷移確定 |
+| Audit minimum | `timestamp`, `actor`, `phase`, `gateResult`, `reason`, `nextAction` | gate evidence と検証ログを接続する | 入力snapshotやreason欠落を成功扱い |
+
+### Downstream readiness gates
+- CE0-core graph: `working` / `context_projection` / `consensus` と `patch+approval` のみを参照し、direct write / auto-apply / auto-publish を許可しない。
+- CE1: `ContextQueryV1` / `ContextBundleV1` の closed-world 契約を利用し、Query Preview bypass を成功扱いしない。
+- CE2: AI assist は proposal-only とし、`human_reviewed` 昇格や ConsensusGraph 更新を自動化しない。
+- CE4: query/bundle/proposal/apply の監査4点と hash キーを、CE0 の audit minimum へ接続する。
+
+### Verify / Proceed
+- Verify command remains docs-check only:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans\issues\issue-CE0-contract-freeze.md`
+  - `rg -n "Stream B handoff readiness|CE0-CTX-IF|preview_bypass|safeMode default ON|decision|executeAllowed|reasonCodes|query/bundle/proposal/apply" 01_Plans\issues\issue-CE0-contract-freeze.md`
+- Proceed: Conditional-Go for downstream read-only reference.
+- Stop: Any implementation change, Contract ID mutation, No-Go aliasing, or SafeMode default relaxation.
