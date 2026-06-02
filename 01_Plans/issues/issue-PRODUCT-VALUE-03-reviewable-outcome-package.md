@@ -277,6 +277,36 @@
   - 代表共有操作: `e2e/realistic_user_journey_expansion.spec.ts`
   - Review Pack遅延/キャンセル: `e2e/ops_recovery_guidance.spec.ts`
   - 大きな文書のbundle diagnostics: `e2e/large_document_operability.spec.ts`
+### Evidence route refinement 2026-06-02
+
+This refinement keeps `Status: Draft`. It does not authorize export format changes, public publishing changes, or release approval. It defines the minimum evidence needed before a reviewable outcome package can be treated as a product value gate.
+
+Reviewer questions the package must answer:
+
+1. What conclusion or working summary is being shared?
+2. Which cards, groups, or relations support it?
+3. What remains unresolved, unreviewed, or contested?
+4. Who or what marked the content as reviewed?
+5. What did SafeMode include, mask, or exclude?
+6. How can the reader return to the source cards or evidence?
+
+Required evidence packet before Open:
+
+| Evidence item | Required content | Gate handoff |
+| --- | --- | --- |
+| Package fixture | A narrative or review pack with summary, evidence references, unresolved items, and SafeMode result | `PRODUCT-QA-01` V4 |
+| Pre-share confirmation | UI state showing reviewed/unreviewed content and masking result before export/share | G1 / G5 |
+| Trace-back proof | Back-link or source reference from package item to card/evidence | G2 / G7 |
+| Read-only review proof | Imported or shared package can be inspected without mutating source data | G2 / G5 |
+| Decision record | Go/Conditional Go/No-Go and any missing package element | `MVP-EXIT-01` |
+
+No-Go conditions for this value gate:
+
+- The package reads as a final answer while unresolved or unreviewed items remain hidden.
+- SafeMode masks data but the package does not tell the reviewer what category was masked.
+- A reviewer cannot navigate from package summary back to source evidence or card context.
+- The evidence requires organization-wide approval workflow or signature semantics not covered by `ADR-0032`.
+
 - Reopen/Open condition:
   - `ADR-0032` がAcceptedになる、またはProductization Program Ownerが上記Reviewable package minimumを価値ゲートの暫定正本として明示承認する。
   - review pack、narrative、共有前確認、back-linkの代表fixtureと保存先が本文で固定される。
