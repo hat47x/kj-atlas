@@ -5,7 +5,7 @@
 - Lifecycle: Draft -> Open -> In Progress -> Done
 - Source Issue: N/A
 - Priority: P0
-- Owner: TBD
+- Owner: Codex (release-gate evidence steward; accountable shipment owner remains Productization Program Owner / QA Lead)
 - Scope: `01_Plans/`, `03_Implement/frontend/`, `03_Implement/backend/`, `04_Documentation/`
 - Related Backlog: `PRODUCT-QA-01`
 - Related ADR/Spec: `01_Plans/issues/issue-MVP-EXIT-01-productization-readiness.md`, `01_Plans/issues/issue-QA-E2E-USE-01-realistic-user-journey-expansion.md`, `01_Plans/adr/ADR-0019-e2e-verification-policy-and-compose-runbook.md`, `01_Plans/adr/ADR-0031-productization-screen-information-architecture.md`
@@ -1084,3 +1084,44 @@ DoDテンプレ（Draft→Open）
 - Keep `DATA-MAINT-04` Draft until the high-privilege lifecycle boundary is fixed; metadata-only audit viewing is not implementation-authorized by this record.
 - Keep full release shipment No-Go until product value gates, full release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
 - No new ADR is needed for this gate refresh.
+
+## Productization Gate Record 2026-06-02: environment contract readiness boundary intake
+
+- Candidate: draft PR #2295 `codex/env-config-readiness-boundary-20260602@61e942ee271893f24919caf32af97eea0cee4b1a`
+- Base: `origin/main@44d9c526a83f1fad60a172895a9bbe7e1db02365`
+- Decision date (JST): 2026-06-02
+- Reviewer: Codex
+- Scope: environment-configuration readiness boundary intake for `ENV-CONFIG-DRIFT-01` and `02_Architecture/runtime_parameter_registry.md`. This record changes release-gate evidence only; it does not change runtime behavior, UI copy, SafeMode defaults, public documentation publication, release authority, or the product value model.
+
+### Gate Summary
+
+- G0 planning integrity: Go. PR #2295 is a two-file planning/architecture slice and is mergeable as a draft PR.
+- G1 safety defaults: Unchanged. SafeMode, share/export, import sanitization, and access-control runtime behavior are not changed.
+- G2 primary user operations: N/A for this slice. No browser workflow, mouse operation, keyboard operation, or screenshot evidence was produced.
+- G3 Japanese UI: Unchanged. No UI labels or translations changed.
+- G4 viewport and operability: N/A for this slice. No layout or viewport behavior changed.
+- G5 public documentation and configuration contract: Conditional Go. PR #2295 clarifies that public environment variables remain `KJ_ATLAS_*` only, and that `POSTGRES_*` is an `ADR-0029` private adapter boundary rather than a public setting. This evidence remains conditional until the PR is merged and Compose config/build evidence is recorded on a Docker-capable host.
+- G6 diagnostics and support: Unchanged. No diagnostics bundle, audit viewing, or support operation behavior changed.
+- G7 regression: Go for planning/settings checks. PR #2295 records issue validation, triage, unit tests, backend env-prefix pytest, key scan, and `git diff --check`.
+- E1..E3 environment contract: Conditional Go. Settings validation and key scan evidence exist in PR #2295, but `docker compose config` was not executed on that host because `docker` was unavailable, and a full running Compose stack was not started.
+- Value gates: No-Go for full shipment. `PRODUCT-VALUE-01..03` remain Draft pending `ADR-0032` acceptance or explicit Productization Program Owner approval for provisional execution.
+- Final: **Conditional Go for environment-contract readiness evidence / No-Go for full release shipment**.
+
+### Evidence
+
+- PR #2295 metadata: draft, mergeable, 1 commit, 2 changed files, 59 additions, 6 deletions.
+- PR #2295 validation:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\issues\tests\test_validate_active_issue_memos.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py` -> stopper none.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m unittest 01_Plans\tests\test_triage_actionable_plans.py` -> pass.
+  - `03_Implement\backend\.venv\Scripts\python.exe -m pytest 03_Implement\backend\tests\test_settings_env_prefix_migration.py -q --basetemp 03_Implement\backend\.pytest_tmp_env_config_readiness -p no:cacheprovider` -> 12 tests passed.
+  - key scan confirmed public docs/config use `KJ_ATLAS_*`; `POSTGRES_*` appears only in private-boundary documentation or Compose adapter mapping.
+  - `git diff --check` -> pass.
+
+### Follow-ups
+
+- Merge or supersede PR #2295 before treating this environment-contract evidence as part of `main`.
+- Run `docker compose config` and, for release shipment, a full running Compose startup on a Docker-capable host.
+- Keep full release shipment No-Go until product value gates, release-candidate E2E/viewport/screenshot evidence, Compose service startup, and final program approval are recorded together.
+- No new ADR is needed for this intake. New ADR work is required only if the team changes the accepted `ADR-0029` private-adapter boundary or makes missing `external_http` endpoint fail-fast by default.
