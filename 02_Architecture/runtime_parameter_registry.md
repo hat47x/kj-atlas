@@ -148,6 +148,17 @@ Profile に関係なく、利用者が設定する公開環境変数は例外な
 - Vendor-defined names are implementation-internal adapter details and MUST NOT be treated as public keys.
 - A policy that bans non-`KJ_ATLAS_*` names from every process environment is a separate deployment redesign decision.
 
+### Productization readiness boundary（ENV-CONFIG-DRIFT-01 / 2026-06-02）
+
+製品化判定では、「公開設定として利用者に求めるもの」と「実装内部で第三者コンポーネントに渡すもの」を分けて評価します。
+
+| 判定対象 | 現在の扱い | Done への影響 |
+| --- | --- | --- |
+| 公開環境変数 | この registry と公開文書に載せるキーは `KJ_ATLAS_*` のみ。 | 現在の方針で充足。キーを追加する場合はこの表を先に更新する。 |
+| 第三者コンテナ内部名 | `POSTGRES_*` は `ADR-0029` の private adapter boundary。利用者には設定させない。 | 現在の方針では Done 阻害要因ではない。全 process env からの排除を求める場合は別 ADR と deployment 再設計が必要。 |
+| `external_http` endpoint 未設定時の挙動 | 現挙動の変更はこの registry では決めない。 | fail-fast 既定化を求める場合は、設定表更新ではなく ADR で可用性/安全性トレードオフを先に決める。 |
+| 最終検証 | settings validation、docs key-drift search、Compose config、frontend build key の確認を実行する。 | issue Done 前の確認事項として残す。 |
+
 ## Drift recurrence prevention checklist（ENV-CONFIG-DRIFT-01 / ENV-ARCH-01 / ENV-PROFILE-01）
 
 次のチェックは、runtime parameter contract 変更時に毎回実施します。
