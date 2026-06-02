@@ -617,6 +617,22 @@ export function SidePanel({
     return (document.evidenceLinks ?? []).filter((link) => link.type === "contradicts" && (link.toCardId === selectedCard.id || link.fromCardId === selectedCard.id)).length;
   }, [document, selectedCard]);
 
+  const selectedCardClaimType: ClaimType = selectedCard?.claimType ?? "unknown";
+
+  const selectedCardEvidenceCount = useMemo(() => {
+    const links = [...outgoingEvidenceLinks, ...incomingEvidenceLinks];
+    const supports = links.filter((link) => link.type === "supports").length;
+    const contradicts = links.filter((link) => link.type === "contradicts").length;
+    return { supports, contradicts, total: supports + contradicts };
+  }, [outgoingEvidenceLinks, incomingEvidenceLinks]);
+
+  const selectedCardHasCritique = useMemo(() => {
+    if (!selectedCard) {
+      return false;
+    }
+    return (selectedCard.critique?.trim().length ?? 0) > 0 || (selectedCard.critiqueTags?.length ?? 0) > 0;
+  }, [selectedCard]);
+
   const computeTraceMarkdown = async (kind: "evidence" | "contradiction") => {
     if (!document || !selectedCard) {
       return null;
@@ -1129,6 +1145,36 @@ export function SidePanel({
             </div>
             <div style={{ fontSize: 12, color: "#475569" }}>
               {t("side_panel.context.review_state", { value: selectedCardReviewState })}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              {t("side_panel.context.claim_type", { value: claimTypeLabels[selectedCardClaimType] })}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569" }}>
+              {selectedCardEvidenceCount.total === 0
+                ? t("side_panel.context.evidence_none")
+                : t("side_panel.context.evidence_count", { supports: selectedCardEvidenceCount.supports, contradicts: selectedCardEvidenceCount.contradicts })}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }} data-testid="selection-context-state-badges">
+              <span
+                style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 6px", ...claimTypeBadgeColors[selectedCardClaimType] }}
+              >
+                {claimTypeLabels[selectedCardClaimType]}
+              </span>
+              {selectedCard.textReviewed !== true ? (
+                <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 6px", backgroundColor: "#fef9c3", color: "#854d0e" }}>
+                  {t("side_panel.context.badge_unreviewed")}
+                </span>
+              ) : null}
+              {selectedCardEvidenceCount.total === 0 ? (
+                <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 6px", backgroundColor: "#fee2e2", color: "#991b1b" }}>
+                  {t("side_panel.context.badge_no_evidence")}
+                </span>
+              ) : null}
+              {selectedCardHasCritique ? (
+                <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 6px", backgroundColor: "#ffe4e6", color: "#9f1239" }}>
+                  {t("side_panel.context.badge_has_critique")}
+                </span>
+              ) : null}
             </div>
             <button
               type="button"
