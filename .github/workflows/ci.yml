@@ -24,11 +24,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -49,12 +44,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Test regression guards
         run: ${{ steps.pm.outputs.run }} test:regression-guards
@@ -79,11 +91,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -104,12 +111,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Test i18n safe-mode leakage guards
         run: ${{ steps.pm.outputs.run }} test:i18n-security
@@ -133,11 +157,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -158,12 +177,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Test i18n document hash regression guards
         run: ${{ steps.pm.outputs.run }} test:i18n-regression
@@ -189,11 +225,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -214,12 +245,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Validate lint phase value
         run: |
@@ -278,11 +326,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -303,12 +346,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Typecheck
         run: ${{ steps.pm.outputs.run }} typecheck
@@ -337,11 +397,6 @@ jobs:
             echo "version=lts/*" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ steps.node.outputs.version }}
-
       - name: Detect package manager
         id: pm
         run: |
@@ -362,12 +417,29 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          cache: ${{ steps.pm.outputs.manager }}
+
       - name: Enable corepack (pnpm/yarn)
         if: steps.pm.outputs.manager != 'npm'
         run: corepack enable
 
       - name: Install dependencies
-        run: ${{ steps.pm.outputs.install }}
+        run: |
+          install_cmd="${{ steps.pm.outputs.install }}"
+          for attempt in 1 2 3; do
+            echo "Install attempt ${attempt}/3"
+            $install_cmd && break
+            if [ "$attempt" = "3" ]; then
+              echo "All install attempts failed" >&2
+              exit 1
+            fi
+            echo "Retrying in $((attempt * 15))s..."
+            sleep $((attempt * 15))
+          done
 
       - name: Test
         run: ${{ steps.pm.outputs.run }} test
