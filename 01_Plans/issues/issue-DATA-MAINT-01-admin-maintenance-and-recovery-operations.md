@@ -343,3 +343,46 @@ T1-T4は、`02_Architecture/data_model_operations_overview.md` の `5.1 管理�
 - `03_Implement/backend/.venv/Scripts/python.exe 01_Plans/triage_actionable_plans.py`
 - `git diff --check -- 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
 - `rg -n "将来ADR|ADR-0035|DATA-MAINT-04|DecisionQueueRef|監査メタデータ" 01_Plans/issues/issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+
+## 25) DATA-MAINT-01 operational readiness packet（2026-06-02）
+
+### Context
+
+- `DATA-MAINT-01` は引き続き Open / P2 の親Issueとして、管理・復旧・棚卸し運用の最小境界を整理する。
+- `ADR-0035`、`DATA-MAINT-03`、`DATA-MAINT-04` は明示的な参照先であり、本Issueから高権限操作や本文閲覧機能を実装許可しない。
+- 本更新は実装承認ではなく、Platform operator / Security officer / Support / Productization が同じ証跡で Go/No-Go を判断できるように、運用readinessを1か所にまとめる。
+
+### Operational readiness evidence
+
+| Readiness item | Minimum evidence | Primary stakeholder | Stop condition |
+| --- | --- | --- | --- |
+| Supported data surface | `documents` and `merge_decision_logs`; `DocumentV2` support level `L1/L1.5` first, `L2/L2.5` as contract-alignment check only | Platform operator | `L2/L2.5` を完全サポート扱いする |
+| Allowed maintenance action | read-only inventory, environment-standard backup, SQLite recovery exercise, bodyless support metadata sharing | Platform operator / Support | admin API/UI/CLI実装、本文閲覧、削除、アーカイブ、所有権移管 |
+| Recovery evidence | backup source, restore target, restored document count, `merge_decision_logs` consistency, `Document.version` gate result | Platform operator | restore count mismatch or version drift treated as pass |
+| Support evidence | metadata-only bundle, SafeMode default ON, no unreviewed body text, explicit reason and recipient | Support / Security officer | document body or unreviewed review text included by default |
+| Privileged lifecycle boundary | deletion, archival, ownership transfer, retention automation, body audit viewing are routed to `DATA-MAINT-03` / `ADR-0035` / `DATA-MAINT-04` | Security officer | parent issue used as direct implementation approval |
+| Productization gate | SQLite recovery evidence accepted; PostgreSQL compose rehearsal, release-candidate E2E, viewport/screenshot, and privileged lifecycle gates remain separate | Productization Program Owner | DATA-MAINT-01 treated as full release approval |
+
+### Stakeholder operating view
+
+- Platform operator can use this issue to confirm what data can be inventoried, backed up, restored, and checked without high-privilege product operations.
+- Security officer can use this issue to detect when a requested operation has crossed into privileged lifecycle policy and must be handled by `DATA-MAINT-03` / `ADR-0035`.
+- Support can use this issue to prepare bodyless diagnostic context, but cannot use it to justify sharing document bodies or unreviewed review content.
+- Productization can use this issue as maintenance-readiness input, but must continue to rely on `PRODUCT-QA-01` / `MVP-EXIT-01` for release readiness.
+
+### Implementation guard
+
+- Do not implement admin API, admin UI, CLI mutation commands, document body browsing, deletion, archival, ownership transfer, or retention automation from this parent issue.
+- Do not treat `DATA-MAINT-04` bodyless metadata viewing as production-ready until its Draft gate is explicitly lifted.
+- Do not treat PostgreSQL recovery rehearsal as complete until Docker/Compose execution evidence is captured in the dedicated follow-up lane.
+- If a requested maintenance action needs document body access, user lifecycle mutation, retention policy, or legal/organizational approval, keep this issue at planning boundary and route the decision to the appropriate child issue or ADR.
+
+### Verify / Proceed
+
+- Verify command remains docs-check only:
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\issues\validate_active_issue_memos.py`
+  - `03_Implement\backend\.venv\Scripts\python.exe 01_Plans\triage_actionable_plans.py`
+  - `git diff --check -- 01_Plans\issues\issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+  - `rg -n "DATA-MAINT-01 operational readiness|Supported data surface|Allowed maintenance action|Recovery evidence|Support evidence|Privileged lifecycle boundary|Productization gate|Implementation guard|DATA-MAINT-04|ADR-0035" 01_Plans\issues\issue-DATA-MAINT-01-admin-maintenance-and-recovery-operations.md`
+- Proceed: Conditional-Go for docs-only maintenance-readiness reference.
+- Stop: Any implementation request, document body access, privileged lifecycle mutation, PostgreSQL rehearsal being marked complete without evidence, or DATA-MAINT-01 being treated as full release approval.
