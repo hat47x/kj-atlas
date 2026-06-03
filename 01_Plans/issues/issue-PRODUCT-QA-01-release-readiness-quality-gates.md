@@ -1178,3 +1178,37 @@ DoDテンプレ（Draft→Open）
 - Keep full release shipment No-Go until release-candidate screenshots, physical keyboard evidence, product value Open gates, Compose service startup, and final program approval are recorded together.
 - Treat in-app browser screenshot timeout as evidence-collection limitation, not as a UI defect. A human-operated Chrome screenshot pass is still required.
 - No ADR is needed for this record. ADR work is required only if the team changes the first-run product boundary, SafeMode/share-export policy, or schema/API responsibilities.
+
+## Productization Gate Record 2026-06-03: post-merge UI/E2E gate sync
+
+- Candidate: `origin/main@455dc1bea8d2d9b4190daf4c47820a9be9ed49f8`
+- Decision date (JST): 2026-06-03
+- Reviewer: Codex
+- Scope: post-merge intake for #2304, #2305, and #2306. This record only synchronizes merged UI evidence and targeted Playwright checks into the release gate. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+
+### Gate Summary
+
+- G0 planning integrity: Go. Latest main, active issue validation, and triage pass with no stopper.
+- G1 safety defaults: Conditional Go / unchanged. SafeMode and share/export behavior were not changed in this sync; #2304 remains the latest observed UI evidence for SafeMode/share preflight.
+- G2 primary user operations: Conditional Go improved. First-run document entry and sample opening now have Playwright coverage on `main`, including keyboard activation for new-document creation.
+- G3 Japanese UI / i18n: Go for tested scope. Invalid `?locale=zz` now has Playwright coverage showing fallback to Japanese shell labels.
+- G4 viewport and operability: Conditional Go / unchanged. #2304 records 390px measurement evidence, but release-candidate screenshots and physical keyboard traversal remain human tasks.
+- G5 public documentation and configuration contract: Unchanged / Conditional Go. No publication or configuration change occurred in this sync.
+- G6 diagnostics and support: Unchanged / Conditional Go. No new support diagnostics behavior was tested.
+- G7 regression: Go for targeted UI E2E and planning checks. Full frontend/backend regression was intentionally not rerun in this lightweight sync.
+- Final: **Conditional Go for post-merge UI/E2E gate sync / No-Go for full release shipment**.
+
+### Evidence
+
+- Merged PRs: #2304 Chrome UI evidence and human task queue; #2305 first-run sample E2E and CI lockfile cache path; #2306 invalid locale fallback E2E.
+- Planning checks:
+  - `python 01_Plans/issues/validate_active_issue_memos.py` -> pass (`ok: validated 5 active issue memos`).
+  - `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` -> pass (`active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none`).
+- Targeted Playwright:
+  - `node .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts e2e/i18n_locale_query_equivalence.spec.ts --reporter=line` -> 7 passed.
+
+### Follow-ups
+
+- Keep H-UI-01 release screenshots and H-UI-02 physical keyboard traversal as human-owned release evidence tasks.
+- Keep full release shipment No-Go until product value Open gates, full release-candidate regression, Compose startup, and final program approval are recorded together.
+- No ADR is needed for this gate sync.

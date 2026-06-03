@@ -554,6 +554,55 @@
 | Full Compose service startup and operations gate | Platform operator + Codex evidence steward | 2026-06-07 | 2026-06-10 |
 | Post-merge branch cleanup decision for #2288..#2292 branches | Repository Maintainer + Codex evidence steward | 2026-06-05 | 2026-06-07 |
 
+## 19) Baseline delta 2026-06-03: UI evidence and targeted E2E merged
+
+### Candidate
+
+- Target main: `origin/main` = `455dc1bea8d2d9b4190daf4c47820a9be9ed49f8`
+- Scope note: this is a lightweight post-merge baseline after #2304, #2305, and #2306 landed. It records UI evidence and targeted E2E checks only; it does not grant release shipment approval, rerun full frontend/backend regression, publish public documentation, or execute full Compose startup.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node / manual Vite server on `127.0.0.1:4173` / RTK used for compact command output where exact failure detail was not needed.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD origin/main` | Pass: both resolve to `455dc1bea8d2d9b4190daf4c47820a9be9ed49f8` | G0 |
+| Planning metadata | `python 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Targeted UI E2E | `node .\node_modules\playwright\cli.js test e2e/first_run_document_entry.spec.ts e2e/i18n_locale_query_equivalence.spec.ts --reporter=line` | Pass: 7 tests | G2 / G3 / G7 |
+
+### Incorporated mainline changes
+
+| PR | Mainline result | Baseline impact |
+| --- | --- | --- |
+| #2304 | Merged into `main` before this refresh | Focused Chrome UI evidence and human-owned task queue are now canonical release-gate input. |
+| #2305 | Merged into `main` before this refresh | First-run sample entry E2E and frontend CI lockfile cache-path fix are now on `main`. |
+| #2306 | Merged into `main` before this refresh | Invalid `?locale=zz` fallback E2E and `Draft-AC-G2` I18N evidence note are now on `main`. |
+
+### Gate classification
+
+| Gate | 2026-06-03 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Conditional Go / unchanged | This delta does not change SafeMode, share/export, import sanitize, or access-control behavior. The #2304 UI evidence remains the latest observed SafeMode/share preflight evidence. |
+| G2 primary user operations | Conditional Go improved | First-run sample entry, file-entry validation, selection context, and keyboard activation E2E now pass on `main`; release-candidate physical keyboard traversal and screenshots remain human tasks. |
+| G3 Japanese UI / i18n | Go for tested scope | `?locale=en` shell labels, invalid `?locale=zz` Japanese fallback, and English document replace flow pass in targeted E2E. |
+| G4 viewport and operability | Conditional Go / unchanged | #2304 records 390px measurement evidence, but this delta does not add release screenshots or a full viewport matrix. |
+| G5 public docs and config | Unchanged / Conditional Go | No public documentation publication or Compose evidence was produced in this slice. |
+| G6 diagnostics and support | Unchanged / Conditional Go | No new support diagnostics or recovery behavior was tested. |
+| G7 regression | Go for targeted UI E2E and planning checks | Targeted Playwright and planning checks pass; full frontend/backend regression was not rerun in this lightweight delta. |
+
+### Decision
+
+- Baseline delta decision: **Conditional Go** for latest-main UI evidence and targeted E2E intake.
+- Release readiness decision remains **No-Go** for full shipment until release screenshots, physical keyboard evidence, product value Open gates, full release-candidate regression, Compose startup, and final program approval are recorded together.
+- Follow-up routing:
+  - Release screenshots and physical keyboard traversal: `PRODUCT-QA-01` human task queue from #2304.
+  - Product value gates: `PRODUCT-VALUE-01..03`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Full Compose service startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）

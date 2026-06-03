@@ -727,3 +727,30 @@
 - Owner: Codex for evidence maintenance; Platform Operator for environment rehearsal approval; Productization Program Owner / QA Lead required for final shipment decision.
 - Due date: next environment-contract or release-candidate gate review.
 - Re-decision date: after PR #2295 is merged/rejected, after Compose config/startup evidence is recorded, or after a release candidate is cut from `main`.
+
+## MVP-EXIT Program Gate Decision 2026-06-03: post-merge UI/E2E evidence sync
+
+- Candidate: `origin/main@455dc1bea8d2d9b4190daf4c47820a9be9ed49f8`
+- Decision date: 2026-06-03
+- Reviewer: Codex
+- Input sources:
+  - PRODUCT-QA-01 gate record: `Productization Gate Record 2026-06-03: post-merge UI/E2E gate sync`.
+  - PROJECT-BASELINE-01 record: `Baseline delta 2026-06-03: UI evidence and targeted E2E merged`.
+  - Merged PRs: #2304 Chrome UI evidence, #2305 first-run sample E2E, #2306 invalid locale fallback E2E.
+
+### Decision
+
+- Final: **Conditional Go for post-merge UI/E2E evidence sync / No-Go for full release shipment**
+- Reason summary: The latest `main` now includes focused Chrome UI evidence, first-run sample E2E, invalid-locale fallback E2E, and the CI lockfile cache-path fix. Targeted Playwright checks for these flows pass on the latest main. This improves G2/G3 evidence but does not replace release screenshots, physical keyboard traversal, product value Open gates, full release-candidate regression, Compose startup, or final program approval.
+- Escalation route: keep `PRODUCT-QA-01` as the release evidence steward and route human-owned screenshot/keyboard tasks through the #2304 task queue. Treat this sync as evidence intake, not shipment approval.
+
+### Conditional controls
+
+- Remaining risks:
+  - Release-candidate screenshots are still human-owned and not attached to the final evidence bundle.
+  - Physical keyboard traversal in real Chrome remains required for final G2/G4 approval.
+  - `PRODUCT-VALUE-01..03` remain Draft and block full shipment.
+  - Full frontend/backend regression and full running Compose startup were not executed in this lightweight sync.
+- Owner: Codex for evidence maintenance; Productization Program Owner / QA Lead required for final shipment decision.
+- Due date: next release-candidate evidence review.
+- Re-decision date: after H-UI-01/H-UI-02 evidence is recorded, after product value gates are opened/approved, or after a full release-candidate run is completed.
