@@ -603,6 +603,70 @@
   - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
   - Full Compose service startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
 
+## 20) Baseline Record 2026-06-03: full local regression and Chrome smoke refresh
+
+### Candidate
+
+- Target main: `origin/main` = `92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33`
+- Baseline branch: `codex/project-baseline-20260603`
+- Scope note: this record refreshes latest-main health after #2309 was merged. It records full local frontend/backend regression, production build, full Playwright E2E, and a focused full-stack Chrome smoke. It does not change runtime behavior, UI copy, SafeMode defaults, schema/API contracts, public documentation, release authority, or Compose configuration.
+- Executor: Codex
+- Environment: Windows / PowerShell / bundled Node / backend `.venv` / manual Vite on `127.0.0.1:4173` / manual Uvicorn on `127.0.0.1:8000` / RTK used for compact verbose output where exact failure detail was not required.
+
+### Command evidence
+
+| Area | Command | Result | Gate mapping |
+| --- | --- | --- | --- |
+| Mainline intake | `git pull --ff-only origin main`; `git rev-parse HEAD` | Pass: `92b4e3f2bdf91d185f56ab3b7a54cb458b7d4e33` | G0 |
+| Planning metadata | `python 01_Plans/issues/validate_active_issue_memos.py` | Pass: `ok: validated 5 active issue memos` | G0 |
+| Planning triage | `python 01_Plans/triage_actionable_plans.py --root 01_Plans --format text` | Pass: `active_issues=52 / ready=15 / blocked=37 / actionable_adrs=1 / stopper=none` | G0 |
+| Frontend typecheck | bundled `node.exe .\node_modules\typescript\bin\tsc --noEmit` | Pass | G7 |
+| Frontend unit/regression | bundled `node.exe .\node_modules\vitest\vitest.mjs run` | Pass: 160 files / 734 tests | G1 / G3 / G7 |
+| Backend pytest | `.venv\Scripts\python.exe -m pytest --basetemp ..\..\.pytest_tmp_project_baseline_20260603 -p no:cacheprovider` with `.venv\Scripts` prepended to `PATH` | Pass: 260 passed / 19 skipped | G7 / E2 |
+| Full frontend Playwright E2E | bundled `node.exe .\node_modules\playwright\cli.js test --reporter=line` with Vite already running on `127.0.0.1:4173` | Pass: 38 tests | G2 / G3 / G4 / G7 |
+| Backend migration | `.venv\Scripts\python.exe -m alembic upgrade head` | Pass on local SQLite | E2 |
+| Backend health | `GET http://127.0.0.1:8000/healthz` | Pass: `{"status":"ok"}` | G6 / E2 |
+| Frontend production build | bundled `node.exe .\node_modules\vite\bin\vite.js build` | Pass; existing chunk-size warning only | G7 |
+| Server cleanup | stopped temporary Vite and Uvicorn processes; verified ports 4173 and 8000 had no listeners | Pass | G7 |
+
+### Chrome smoke evidence
+
+- Target: `http://127.0.0.1:4173/`
+- Browser title: `kj-atlas`
+- Full-stack startup: backend `/healthz` returned `ok`; after reload the initial page showed no `HTTP 500` document-load error.
+- Initial UI: SafeMode ON was visible; first-run choices were visible, including creating a new document, opening the sample, loading `document.json`, importing a review pack, and opening the previous document.
+- Mouse operation: clicking the sample-open button loaded sample content with SafeMode still ON.
+- Share/export operation: clicking the share/reproduce button opened the share dialog with export, review-pack, import/recovery, patch-check, and diff controls.
+- Share dialog fit: viewport `{ width: 562, height: 694, scrollWidth: 562 }`; dialog rectangle `{ x: 16, y: 227, right: 356, bottom: 678, width: 340, height: 451 }`; right and bottom clipping were both false.
+- Safe share copy: fixed-mask copy for Share / Review Pack was present in the share dialog.
+- Keyboard close: pressing `Escape` on the dialog closed it (`dialogCount=0`) and returned focus toward the share trigger area.
+- Console: browser error log count was 0 during the focused full-stack smoke.
+- Screenshot limitation: in-app browser screenshot capture timed out twice at `Page.captureScreenshot`; this is treated as evidence-capture limitation, not as a UI defect. Release screenshots remain human-owned evidence.
+
+### Gate classification
+
+| Gate | 2026-06-03 result | Reason |
+| --- | --- | --- |
+| G0 planning integrity | Go | Latest main intake, active issue validation, and triage pass with no stopper. |
+| G1 safety defaults | Go for tested scope | Full Vitest passes, SafeMode ON is visible in Chrome, and fixed-mask share/review-pack copy is present in the share dialog. |
+| G2 primary user operations | Go for tested scope | Full Playwright E2E passes and the focused Chrome smoke covers first-run entry, sample open, share/export preflight, and keyboard close. |
+| G3 Japanese UI / i18n | Go for tested scope | Full Vitest and full Playwright pass; observed Chrome surfaces were Japanese for the tested flow. |
+| G4 viewport and operability | Conditional Go improved | Full Playwright viewport/operability coverage passes, and the focused Chrome share dialog did not clip at the observed 562px viewport. Release screenshot capture still remains human-owned because in-app screenshot capture timed out. |
+| G5 public docs and config | Unchanged / Conditional Go | No public documentation was republished and no configuration contract was changed in this refresh. |
+| G6 diagnostics and support | Conditional Go improved | Backend health passed and the full-stack Chrome smoke had no console errors. Support diagnostics bundle policy and final operational rehearsal remain separate gates. |
+| G7 regression | Go | Frontend typecheck, full Vitest, backend pytest, production build, full Playwright E2E, and cleanup all pass. |
+| E1..E3 environment contract | Conditional Go | Local Vite/Uvicorn startup and backend migration pass, but full Docker Compose startup was not executed. |
+
+### Decision
+
+- Baseline decision: **Conditional Go** for latest-main full local regression and focused full-stack Chrome smoke.
+- Release readiness decision remains **No-Go** for full shipment until human release screenshots, physical keyboard evidence, product value Open gates, full Compose startup, and final program approval are recorded together.
+- Follow-up routing:
+  - H-UI-01 release screenshots and H-UI-02 physical keyboard traversal: `PRODUCT-QA-01`.
+  - Product value gates and evidence packets: `PRODUCT-VALUE-01..03`.
+  - Full release-candidate evidence and approval: `PRODUCT-QA-01` and `MVP-EXIT-01`.
+  - Full Compose startup and environment rehearsal: `ENV-CONFIG-DRIFT-01` / platform operator lane.
+
 ---
 
 ## Authoring Checklist（人間/生成AI 共通）
